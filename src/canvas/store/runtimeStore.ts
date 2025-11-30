@@ -6,7 +6,7 @@
  */
 
 import { create } from 'zustand';
-import type { RuntimeStoreState, RuntimeElement, RuntimePage, RuntimeLayout, ThemeVar, DataSource, DataState, RuntimeDataTable } from './types';
+import type { RuntimeStoreState, RuntimeElement, RuntimePage, RuntimeLayout, ThemeVar, DataSource, DataState, RuntimeDataTable, RuntimeApiEndpoint } from './types';
 
 export const createRuntimeStore = () => create<RuntimeStoreState>((set, get) => ({
   // ============================================
@@ -82,6 +82,12 @@ export const createRuntimeStore = () => create<RuntimeStoreState>((set, get) => 
   // ============================================
   dataTables: [],
   setDataTables: (tables: RuntimeDataTable[]) => set({ dataTables: tables }),
+
+  // ============================================
+  // ApiEndpoints (PropertyDataBinding용)
+  // ============================================
+  apiEndpoints: [],
+  setApiEndpoints: (endpoints: RuntimeApiEndpoint[]) => set({ apiEndpoints: endpoints }),
 
   // ============================================
   // Auth Context

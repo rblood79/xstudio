@@ -7,6 +7,8 @@
 import { useState } from "react";
 import { Globe, Plus, Trash2, Edit2, Play } from "lucide-react";
 import { useDataStore, useApiEndpoints } from "../../../stores/data";
+import { ApiEndpointEditor } from "../editors/ApiEndpointEditor";
+import type { ApiEndpoint } from "../../../../types/builder/data.types";
 
 interface ApiEndpointListProps {
   projectId: string;
@@ -19,18 +21,32 @@ export function ApiEndpointList({ projectId }: ApiEndpointListProps) {
   const executeApiEndpoint = useDataStore((state) => state.executeApiEndpoint);
   const loadingApis = useDataStore((state) => state.loadingApis);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [editingEndpoint, setEditingEndpoint] = useState<ApiEndpoint | null>(null);
 
   const handleCreate = async () => {
-    const name = prompt("API Endpoint 이름을 입력하세요:");
-    if (!name) return;
+    const url = prompt("API URL을 입력하세요 (예: https://pokeapi.co/api/v2/pokemon):");
+    if (!url) return;
+
+    // URL 파싱하여 baseUrl과 path 분리
+    let baseUrl = "";
+    let path = "";
+    try {
+      const parsedUrl = new URL(url);
+      baseUrl = `${parsedUrl.protocol}//${parsedUrl.host}`;
+      path = parsedUrl.pathname || "/";
+    } catch {
+      // 유효하지 않은 URL인 경우 전체를 path로 사용
+      baseUrl = "https://api.example.com";
+      path = url.startsWith("/") ? url : `/${url}`;
+    }
 
     try {
       await createApiEndpoint({
-        name,
+        name: url,
         project_id: projectId,
         method: "GET",
-        baseUrl: "https://api.example.com",
-        path: "/data",
+        baseUrl,
+        path,
       });
     } catch (error) {
       console.error("API Endpoint 생성 실패:", error);
@@ -127,7 +143,7 @@ export function ApiEndpointList({ projectId }: ApiEndpointListProps) {
               className="iconButton"
               onClick={(e) => {
                 e.stopPropagation();
-                // TODO: Open editor modal
+                setEditingEndpoint(endpoint);
               }}
               title="편집"
             >
@@ -153,6 +169,16 @@ export function ApiEndpointList({ projectId }: ApiEndpointListProps) {
         <Plus size={16} />
         <span>API Endpoint 추가</span>
       </button>
+
+      {/* API Endpoint Editor */}
+      {editingEndpoint && (
+        <div className="dataset-editor-overlay">
+          <ApiEndpointEditor
+            endpoint={editingEndpoint}
+            onClose={() => setEditingEndpoint(null)}
+          />
+        </div>
+      )}
     </div>
   );
 }

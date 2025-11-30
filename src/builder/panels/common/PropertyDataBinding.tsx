@@ -144,9 +144,14 @@ export const PropertyDataBinding = memo(function PropertyDataBinding({
         path: updates.path !== undefined ? updates.path : path,
       };
 
+      console.log(`📊 PropertyDataBinding updateBinding:`, newBinding);
+
       // 유효한 바인딩인지 확인
       if (newBinding.source && newBinding.name) {
+        console.log(`✅ PropertyDataBinding: 바인딩 저장`, newBinding);
         onChange(newBinding);
+      } else {
+        console.warn(`⚠️ PropertyDataBinding: 유효하지 않은 바인딩 (source 또는 name 없음)`, newBinding);
       }
     },
     [source, name, path, onChange]
@@ -171,10 +176,11 @@ export const PropertyDataBinding = memo(function PropertyDataBinding({
   const handleNameChange = useCallback(
     (key: React.Key | null) => {
       const newName = key as string;
+      console.log(`🔗 PropertyDataBinding: ${source} 소스에서 "${newName}" 선택됨`);
       setName(newName);
       updateBinding({ name: newName });
     },
-    [updateBinding]
+    [source, updateBinding]
   );
 
   // 경로 변경

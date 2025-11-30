@@ -3,7 +3,7 @@ import { useMemo, useState, useCallback, useEffect } from "react";
 import type { DataBinding } from "../../types/builder/unified.types";
 import type { AsyncListLoadOptions } from "../../types/builder/stately.types";
 import { useDatasetStore } from "../stores/dataset";
-import { useDataTables } from "../stores/data";
+import { useDataTables, useApiEndpoints, useDataStore } from "../stores/data";
 import { useRuntimeStore } from "../../canvas/store/runtimeStore";
 
 /**
@@ -243,6 +243,13 @@ export function useCollectionData({
   const canvasDataTables = useRuntimeStore((state) => state.dataTables);
   const dataTables = isCanvasContext ? canvasDataTables : builderDataTables;
 
+  // ApiEndpoint Store 접근 (PropertyDataBinding 형식 지원)
+  // Canvas에서는 runtime store, Builder에서는 builder store 사용
+  const builderApiEndpoints = useApiEndpoints();
+  const canvasApiEndpoints = useRuntimeStore((state) => state.apiEndpoints);
+  const apiEndpoints = isCanvasContext ? canvasApiEndpoints : builderApiEndpoints;
+  const executeApiEndpoint = useDataStore((state) => state.executeApiEndpoint);
+
   // Dataset consumer 등록/해제
   useEffect(() => {
     if (datasetId && elementId) {
@@ -281,7 +288,7 @@ export function useCollectionData({
       if (binding.source === 'dataTable' && binding.name) {
         const table = dataTables.find(dt => dt.name === binding.name);
         if (table) {
-          console.log(`📊 ${componentName}: DataTable '${binding.name}' mockData 로드`, table.mockData);
+          console.log(`📊 ${componentName}: DataTable '${binding.name}' mockData 로드 [isCanvas: ${isCanvasContext}]`, table.mockData);
           return table.useMockData ? table.mockData : (table.runtimeData || table.mockData);
         } else {
           console.warn(`⚠️ ${componentName}: DataTable '${binding.name}'을 찾을 수 없습니다`);
@@ -290,6 +297,96 @@ export function useCollectionData({
     }
     return null;
   }, [propertyBindingFormat, dataBinding, dataTables, componentName]);
+
+  // API Endpoint 바인딩 상태
+  const [apiEndpointData, setApiEndpointData] = useState<Record<string, unknown>[] | null>(null);
+  const [apiEndpointLoading, setApiEndpointLoading] = useState(false);
+  const [apiEndpointError, setApiEndpointError] = useState<string | null>(null);
+
+  // API Endpoint 바인딩인 경우 데이터 로드
+  useEffect(() => {
+    console.log(`🔍 ${componentName}: useCollectionData useEffect [isCanvas: ${isCanvasContext}]`, {
+      propertyBindingFormat,
+      dataBinding,
+      apiEndpointsCount: apiEndpoints.length,
+    });
+
+    if (!propertyBindingFormat) return;
+
+    const binding = dataBinding as unknown as { source: string; name: string };
+    if (binding.source !== 'api' || !binding.name) return;
+
+    // API Endpoint 찾기
+    const endpoint = apiEndpoints.find(ep => ep.name === binding.name);
+    if (!endpoint) {
+      console.warn(`⚠️ ${componentName}: API Endpoint '${binding.name}'을 찾을 수 없습니다`);
+      setApiEndpointError(`API Endpoint '${binding.name}'을 찾을 수 없습니다`);
+      return;
+    }
+
+    console.log(`🌐 ${componentName}: API Endpoint '${binding.name}' 데이터 로드 시작 [isCanvas: ${isCanvasContext}]`, endpoint);
+    setApiEndpointLoading(true);
+    setApiEndpointError(null);
+
+    // Canvas에서는 직접 API 호출, Builder에서는 executeApiEndpoint 사용
+    const fetchData = async () => {
+      try {
+        let result: unknown;
+
+        if (isCanvasContext) {
+          // Canvas에서 직접 API 호출 (proxy 경유)
+          const url = `${endpoint.baseUrl}${endpoint.path}`;
+          console.log(`🌐 ${componentName}: Canvas에서 직접 API 호출: ${url}`);
+
+          // CORS bypass를 위해 proxy 사용
+          const proxyUrl = `/api/proxy?url=${encodeURIComponent(url)}`;
+          const response = await fetch(proxyUrl, {
+            method: endpoint.method || 'GET',
+            headers: endpoint.headers || {},
+          });
+
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+
+          result = await response.json();
+        } else {
+          // Builder에서 executeApiEndpoint 사용
+          result = await executeApiEndpoint(endpoint.id);
+        }
+
+        console.log(`✅ ${componentName}: API Endpoint '${binding.name}' 데이터 로드 완료`, result);
+
+        // 결과가 배열인지 확인
+        let items: Record<string, unknown>[] = [];
+        if (Array.isArray(result)) {
+          items = result as Record<string, unknown>[];
+        } else if (result && typeof result === 'object') {
+          // 결과가 객체이고 results/data 필드가 있으면 사용
+          const resultObj = result as Record<string, unknown>;
+          if (Array.isArray(resultObj.results)) {
+            items = resultObj.results as Record<string, unknown>[];
+          } else if (Array.isArray(resultObj.data)) {
+            items = resultObj.data as Record<string, unknown>[];
+          } else if (Array.isArray(resultObj.items)) {
+            items = resultObj.items as Record<string, unknown>[];
+          } else {
+            // 단일 객체를 배열로 변환
+            items = [resultObj];
+          }
+        }
+
+        setApiEndpointData(items);
+        setApiEndpointLoading(false);
+      } catch (error) {
+        console.error(`❌ ${componentName}: API Endpoint '${binding.name}' 데이터 로드 실패`, error);
+        setApiEndpointError((error as Error).message || '데이터 로드 실패');
+        setApiEndpointLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [propertyBindingFormat, dataBinding, apiEndpoints, executeApiEndpoint, componentName, isCanvasContext]);
 
   const list = useAsyncList<Record<string, unknown>>({
     async load({ signal }: AsyncListLoadOptions) {
@@ -365,12 +462,15 @@ export function useCollectionData({
 
   // 필터링 및 정렬된 데이터
   const processedData = useMemo(() => {
-    // 데이터 소스 우선순위: DataTable > Dataset > AsyncList
+    // 데이터 소스 우선순위: DataTable > API Endpoint > Dataset > AsyncList
     let sourceData: Record<string, unknown>[];
 
     if (dataTableData && dataTableData.length > 0) {
       // PropertyDataBinding 형식의 DataTable 바인딩
       sourceData = dataTableData;
+    } else if (apiEndpointData && apiEndpointData.length > 0) {
+      // PropertyDataBinding 형식의 API Endpoint 바인딩
+      sourceData = apiEndpointData;
     } else if (datasetId && datasetState) {
       // Dataset Store에서 데이터 사용
       sourceData = datasetState.data;
@@ -412,7 +512,7 @@ export function useCollectionData({
     }
 
     return result;
-  }, [list.items, filterText, sortDescriptor, datasetId, datasetState, dataTableData]);
+  }, [list.items, filterText, sortDescriptor, datasetId, datasetState, dataTableData, apiEndpointData]);
 
   // 페이지네이션 지원 (향후 구현)
   // 현재는 API가 cursor를 반환하지 않으므로 loadMore는 undefined
@@ -429,15 +529,20 @@ export function useCollectionData({
   }, [datasetId, loadDataset, list]);
 
   // 로딩/에러 상태: datasetId가 있으면 Dataset Store에서, 아니면 useAsyncList에서
-  // 로딩/에러 상태: DataTable > Dataset > AsyncList
+  // 로딩/에러 상태: DataTable > API Endpoint > Dataset > AsyncList
+  const isApiBinding = propertyBindingFormat &&
+    (dataBinding as unknown as { source: string }).source === 'api';
+
   const loading = propertyBindingFormat
-    ? false  // DataTable은 동기적으로 로드됨
+    ? (isApiBinding ? apiEndpointLoading : false)  // API는 비동기, DataTable은 동기
     : datasetId
       ? datasetState?.status === "loading"
       : list.isLoading;
 
   const error = propertyBindingFormat
-    ? (dataTableData === null && dataBinding ? `DataTable을 찾을 수 없습니다` : null)
+    ? (isApiBinding
+        ? apiEndpointError
+        : (dataTableData === null && dataBinding ? `DataTable을 찾을 수 없습니다` : null))
     : datasetId
       ? datasetState?.error || null
       : list.error ? list.error.message : null;

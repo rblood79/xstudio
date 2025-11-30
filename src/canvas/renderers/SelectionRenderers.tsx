@@ -50,6 +50,13 @@ export const renderListBox = (
   const columnMapping = (element.props as { columnMapping?: ColumnMapping })
     .columnMapping;
 
+  // PropertyDataBinding 형식 감지 (source: 'dataTable', name: 'xxx')
+  const dataBinding = element.dataBinding || element.props.dataBinding;
+  const isPropertyBinding = dataBinding &&
+    'source' in dataBinding &&
+    'name' in dataBinding &&
+    !('type' in dataBinding);
+
   if (columnMapping) {
     const visibleColumns = getVisibleColumns(columnMapping);
 
@@ -67,12 +74,31 @@ export const renderListBox = (
     console.log("ℹ️ Field Elements는 Inspector의 Data 섹션에서 컬럼 선택 시 생성됩니다.");
   }
 
-  // columnMapping이 있고 ListBoxItem 템플릿이 있으면 render function 사용
-  const hasValidTemplate = columnMapping && listBoxChildren.length > 0;
+  // columnMapping이 있거나 PropertyDataBinding이 있고 ListBoxItem 템플릿이 있으면 render function 사용
+  const hasValidTemplate = (columnMapping || isPropertyBinding) && listBoxChildren.length > 0;
 
-  if (columnMapping && listBoxChildren.length === 0) {
-    console.warn("⚠️ columnMapping이 있지만 ListBoxItem 템플릿이 없습니다. Layer Tree에서 ListBoxItem을 추가하세요.");
+  if ((columnMapping || isPropertyBinding) && listBoxChildren.length === 0) {
+    console.warn("⚠️ 데이터 바인딩이 있지만 ListBoxItem 템플릿이 없습니다. Layer Tree에서 ListBoxItem을 추가하세요.");
   }
+
+  if (isPropertyBinding && listBoxChildren.length > 0) {
+    console.log("🔄 ListBox PropertyDataBinding + ListBoxItem 템플릿 발견:", {
+      listBoxId: element.id,
+      dataBinding,
+      listBoxChildrenCount: listBoxChildren.length,
+    });
+  }
+
+  // 🔍 DEBUG: Always log dataBinding to help debug API Endpoint binding issue
+  console.log("🔍 [Canvas] ListBox renderListBox dataBinding:", {
+    elementId: element.id,
+    elementDataBinding: element.dataBinding,
+    propsDataBinding: element.props.dataBinding,
+    resolvedDataBinding: dataBinding,
+    isPropertyBinding,
+    hasValidTemplate,
+    listBoxChildrenCount: listBoxChildren.length,
+  });
 
   const renderChildren = hasValidTemplate
     ? (item: Record<string, unknown>) => {

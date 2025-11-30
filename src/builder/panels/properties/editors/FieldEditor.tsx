@@ -64,10 +64,9 @@ export const FieldEditor = memo(function FieldEditor({
         <PropertyInput
           label={PROPERTY_LABELS.DATA_KEY}
           value={fieldProps?.key || ""}
-          onChange={() => {}} // 읽기 전용
-          placeholder={PROPERTY_LABELS.DATA_KEY}
+          onChange={(value) => updateProps({ key: value || undefined })}
+          placeholder="id, name, email..."
           icon={Tag}
-          disabled
         />
 
         <PropertyInput

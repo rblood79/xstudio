@@ -75,6 +75,20 @@ export interface RuntimeDataTable {
   runtimeData?: Record<string, unknown>[];
 }
 
+// ApiEndpoint 타입 (Canvas Runtime용 - Builder의 ApiEndpoint 경량 버전)
+export interface RuntimeApiEndpoint {
+  id: string;
+  name: string;
+  method: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
+  baseUrl: string;
+  path: string;
+  headers?: Record<string, string>;
+  params?: Record<string, unknown>;
+  body?: Record<string, unknown>;
+  /** 마지막 호출 결과 캐시 */
+  cachedResponse?: Record<string, unknown>[] | null;
+}
+
 // Data State (loading, error, data)
 export interface DataState<T = unknown> {
   loading: boolean;
@@ -132,6 +146,10 @@ export interface RuntimeStoreState extends StateHierarchy {
   // DataTables (PropertyDataBinding용)
   dataTables: RuntimeDataTable[];
   setDataTables: (tables: RuntimeDataTable[]) => void;
+
+  // ApiEndpoints (PropertyDataBinding용)
+  apiEndpoints: RuntimeApiEndpoint[];
+  setApiEndpoints: (endpoints: RuntimeApiEndpoint[]) => void;
 
   // Auth Context
   authToken: string | null;

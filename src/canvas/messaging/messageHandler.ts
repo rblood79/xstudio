@@ -5,7 +5,7 @@
  * Preview Runtime은 이 핸들러를 통해서만 데이터를 수신합니다.
  */
 
-import type { PreviewStoreState, PreviewElement, PreviewPage, PreviewLayout, ThemeVar, DataSource, RuntimeDataTable } from '../store/types';
+import type { PreviewStoreState, PreviewElement, PreviewPage, PreviewLayout, ThemeVar, DataSource, RuntimeDataTable, RuntimeApiEndpoint } from '../store/types';
 
 // ============================================
 // Helper: Get Target Origin for postMessage
@@ -85,6 +85,11 @@ export interface UpdateDataTablesMessage {
   dataTables: RuntimeDataTable[];
 }
 
+export interface UpdateApiEndpointsMessage {
+  type: 'UPDATE_API_ENDPOINTS';
+  apiEndpoints: RuntimeApiEndpoint[];
+}
+
 export interface UpdateLayoutsMessage {
   type: 'UPDATE_LAYOUTS';
   layouts: PreviewLayout[];
@@ -112,6 +117,7 @@ export type BuilderToPreviewMessage =
   | UpdateLayoutsMessage
   | UpdateDataSourcesMessage
   | UpdateDataTablesMessage
+  | UpdateApiEndpointsMessage
   | UpdateAuthContextMessage
   | RequestElementSelectionMessage;
 
@@ -131,6 +137,7 @@ type StoreActions = Pick<
   | 'setLayouts'
   | 'setDataSources'
   | 'setDataTables'
+  | 'setApiEndpoints'
   | 'setAuthToken'
   | 'setReady'
 >;
@@ -211,6 +218,10 @@ export class MessageHandler {
         this.handleUpdateDataTables(data);
         break;
 
+      case 'UPDATE_API_ENDPOINTS':
+        this.handleUpdateApiEndpoints(data);
+        break;
+
       case 'UPDATE_AUTH_CONTEXT':
         this.handleUpdateAuthContext(data);
         break;
@@ -231,6 +242,20 @@ export class MessageHandler {
 
   private handleUpdateElements(data: UpdateElementsMessage): void {
     const elements = data.elements || [];
+
+    // 🔍 DEBUG: ListBox props.dataBinding 수신 추적
+    const listBoxElements = elements.filter((el: PreviewElement) => el.tag === 'ListBox');
+    if (listBoxElements.length > 0) {
+      listBoxElements.forEach((el: PreviewElement) => {
+        const propsDataBinding = (el.props as Record<string, unknown>)?.dataBinding;
+        console.log('📥 [Canvas] ListBox 수신:', {
+          elementId: el.id,
+          propsDataBinding,
+          topLevelDataBinding: el.dataBinding,
+        });
+      });
+    }
+
     this.store.setElements(elements);
 
     // ⭐ Layout/Slot System: pageInfo가 함께 전송된 경우 처리 (초기 로드 시)
@@ -302,6 +327,12 @@ export class MessageHandler {
     const dataTables = data.dataTables || [];
     this.store.setDataTables(dataTables);
     console.log(`[Preview] DataTables updated: ${dataTables.length} tables`);
+  }
+
+  private handleUpdateApiEndpoints(data: UpdateApiEndpointsMessage): void {
+    const apiEndpoints = data.apiEndpoints || [];
+    this.store.setApiEndpoints(apiEndpoints);
+    console.log(`[Preview] ApiEndpoints updated: ${apiEndpoints.length} endpoints`);
   }
 
   private handleUpdateAuthContext(data: UpdateAuthContextMessage): void {

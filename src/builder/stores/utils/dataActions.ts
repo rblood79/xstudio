@@ -518,13 +518,29 @@ export const createExecuteApiEndpointAction =
         }
       }
 
+      // 개발 환경에서 외부 API 호출 시 프록시 사용 (CORS 우회)
+      let fetchUrl = url;
+      const isExternalUrl = url.startsWith("http://") || url.startsWith("https://");
+      const isDevelopment = import.meta.env.DEV;
+
+      if (isExternalUrl && isDevelopment) {
+        fetchUrl = `/api/proxy?url=${encodeURIComponent(url)}`;
+        console.log(`🔄 [API Proxy] ${url} → ${fetchUrl}`);
+      }
+
+      // Timeout 설정 (AbortController 사용)
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), endpoint.timeout || 30000);
+
       // Fetch 요청
-      const response = await fetch(url, {
+      console.log(`🌐 [Fetch] ${endpoint.method} ${fetchUrl}`, { headers, body });
+      const response = await fetch(fetchUrl, {
         method: endpoint.method,
         headers,
         body,
-        signal: AbortSignal.timeout(endpoint.timeout || 30000),
+        signal: controller.signal,
       });
+      clearTimeout(timeoutId);
 
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
