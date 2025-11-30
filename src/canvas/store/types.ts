@@ -66,6 +66,15 @@ export interface DataSource {
   cacheTTL?: number;
 }
 
+// DataTable 타입 (Canvas Runtime용 - Builder의 DataTable 경량 버전)
+export interface RuntimeDataTable {
+  id: string;
+  name: string;
+  mockData: Record<string, unknown>[];
+  useMockData: boolean;
+  runtimeData?: Record<string, unknown>[];
+}
+
 // Data State (loading, error, data)
 export interface DataState<T = unknown> {
   loading: boolean;
@@ -119,6 +128,10 @@ export interface RuntimeStoreState extends StateHierarchy {
   setDataSources: (sources: DataSource[]) => void;
   dataStates: Map<string, DataState>;
   setDataState: (sourceId: string, state: DataState) => void;
+
+  // DataTables (PropertyDataBinding용)
+  dataTables: RuntimeDataTable[];
+  setDataTables: (tables: RuntimeDataTable[]) => void;
 
   // Auth Context
   authToken: string | null;

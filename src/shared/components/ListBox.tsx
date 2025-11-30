@@ -15,12 +15,13 @@ import {
 import { tv } from 'tailwind-variants';
 import type { ListBoxVariant, ComponentSize } from '../../types/componentVariants';
 import type { DataBinding, ColumnMapping } from "../../types/builder/unified.types";
+import type { DataBindingValue } from "../../builder/panels/common/PropertyDataBinding";
 import { useCollectionData } from "../../builder/hooks/useCollectionData";
 
 import "./styles/ListBox.css";
 
 interface ExtendedListBoxProps<T extends object> extends ListBoxProps<T> {
-  dataBinding?: DataBinding;
+  dataBinding?: DataBinding | DataBindingValue;
   columnMapping?: ColumnMapping;
   // M3 props
   variant?: ListBoxVariant;
@@ -72,7 +73,9 @@ export function ListBox<T extends object>({
   });
 
   // DataBinding이 있고 데이터가 로드되었을 때 동적 아이템 생성
-  const hasDataBinding = dataBinding?.type === "collection";
+  // PropertyDataBinding 형식 (source, name) 또는 DataBinding 형식 (type: "collection") 둘 다 지원
+  const isPropertyBinding = dataBinding && 'source' in dataBinding && 'name' in dataBinding && !('type' in dataBinding);
+  const hasDataBinding = dataBinding?.type === "collection" || isPropertyBinding;
 
   // ListBox className generator (reused across all conditional renders)
   const getListBoxClassName = (baseClassName?: string) =>

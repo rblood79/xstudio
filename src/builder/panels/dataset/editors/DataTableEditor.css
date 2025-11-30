@@ -5,9 +5,13 @@
 .datatable-editor {
   display: flex;
   flex-direction: column;
-  height: 100%;
-  background: var(--color-surface-50);
-  border-radius: var(--radius-md);
+  width: 600px;
+  max-width: 90vw;
+  height: 500px;
+  max-height: 80vh;
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
   overflow: hidden;
 }
 

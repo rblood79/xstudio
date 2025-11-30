@@ -7,6 +7,7 @@
 import { useState } from "react";
 import { Table2, Plus, Trash2, Edit2 } from "lucide-react";
 import { useDataStore, useDataTables } from "../../../stores/data";
+import { DataTableEditor } from "../editors/DataTableEditor";
 
 interface DataTableListProps {
   projectId: string;
@@ -16,7 +17,12 @@ export function DataTableList({ projectId }: DataTableListProps) {
   const dataTables = useDataTables();
   const createDataTable = useDataStore((state) => state.createDataTable);
   const deleteDataTable = useDataStore((state) => state.deleteDataTable);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+
+  // 현재 편집 중인 DataTable
+  const editingTable = editingId
+    ? dataTables.find((t) => t.id === editingId)
+    : null;
 
   const handleCreate = async () => {
     const name = prompt("DataTable 이름을 입력하세요:");
@@ -41,12 +47,21 @@ export function DataTableList({ projectId }: DataTableListProps) {
 
     try {
       await deleteDataTable(id);
-      if (selectedId === id) {
-        setSelectedId(null);
+      if (editingId === id) {
+        setEditingId(null);
       }
     } catch (error) {
       console.error("DataTable 삭제 실패:", error);
     }
+  };
+
+  const handleEdit = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setEditingId(id);
+  };
+
+  const handleCloseEditor = () => {
+    setEditingId(null);
   };
 
   if (dataTables.length === 0) {
@@ -82,8 +97,8 @@ export function DataTableList({ projectId }: DataTableListProps) {
       {dataTables.map((table) => (
         <div
           key={table.id}
-          className={`dataset-item ${selectedId === table.id ? "selected" : ""}`}
-          onClick={() => setSelectedId(table.id)}
+          className={`dataset-item ${editingId === table.id ? "selected" : ""}`}
+          onClick={() => setEditingId(table.id)}
         >
           <div className="dataset-item-icon">
             <Table2 size={16} />
@@ -104,10 +119,7 @@ export function DataTableList({ projectId }: DataTableListProps) {
             <button
               type="button"
               className="iconButton"
-              onClick={(e) => {
-                e.stopPropagation();
-                // TODO: Open editor modal
-              }}
+              onClick={(e) => handleEdit(table.id, e)}
               title="편집"
             >
               <Edit2 size={14} />
@@ -132,6 +144,16 @@ export function DataTableList({ projectId }: DataTableListProps) {
         <Plus size={16} />
         <span>DataTable 추가</span>
       </button>
+
+      {/* DataTable Editor Modal */}
+      {editingTable && (
+        <div className="dataset-editor-overlay">
+          <DataTableEditor
+            dataTable={editingTable}
+            onClose={handleCloseEditor}
+          />
+        </div>
+      )}
     </div>
   );
 }

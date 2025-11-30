@@ -158,7 +158,7 @@ export const renderListBox = (
           ? (element.props.selectedKeys as unknown as string[])
           : []
       }
-      dataBinding={element.dataBinding}
+      dataBinding={element.dataBinding || element.props.dataBinding}
       columnMapping={columnMapping}
       onSelectionChange={(selectedKeys) => {
         const updatedProps = {

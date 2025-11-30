@@ -541,6 +541,7 @@ export function App() {
       setPages: storeState.setPages,
       setLayouts: storeState.setLayouts,
       setDataSources: storeState.setDataSources,
+      setDataTables: storeState.setDataTables,
       setAuthToken: storeState.setAuthToken,
       setReady: storeState.setReady,
     });

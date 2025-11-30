@@ -3,6 +3,8 @@ import { useMemo, useState, useCallback, useEffect } from "react";
 import type { DataBinding } from "../../types/builder/unified.types";
 import type { AsyncListLoadOptions } from "../../types/builder/stately.types";
 import { useDatasetStore } from "../stores/dataset";
+import { useDataTables } from "../stores/data";
+import { useRuntimeStore } from "../../canvas/store/runtimeStore";
 
 /**
  * Collection 데이터 바인딩을 위한 공통 Hook
@@ -229,6 +231,18 @@ export function useCollectionData({
   const removeConsumer = useDatasetStore((state) => state.removeConsumer);
   const loadDataset = useDatasetStore((state) => state.loadDataset);
 
+  // Canvas 컨텍스트 감지 (iframe 내부인지 확인)
+  const isCanvasContext = useMemo(() => {
+    if (typeof window === 'undefined') return false;
+    return window.parent !== window;
+  }, []);
+
+  // DataTable Store 접근 (PropertyDataBinding 형식 지원)
+  // Canvas에서는 runtime store, Builder에서는 builder store 사용
+  const builderDataTables = useDataTables();
+  const canvasDataTables = useRuntimeStore((state) => state.dataTables);
+  const dataTables = isCanvasContext ? canvasDataTables : builderDataTables;
+
   // Dataset consumer 등록/해제
   useEffect(() => {
     if (datasetId && elementId) {
@@ -254,8 +268,36 @@ export function useCollectionData({
   // 필터 상태
   const [filterText, setFilterText] = useState<string>("");
 
+  // PropertyDataBinding 형식 감지 (source: 'dataTable', name: 'xxx')
+  const propertyBindingFormat = dataBinding &&
+    'source' in dataBinding &&
+    'name' in dataBinding &&
+    !('type' in dataBinding);
+
+  // DataTable 바인딩인 경우 mockData 직접 반환
+  const dataTableData = useMemo(() => {
+    if (propertyBindingFormat) {
+      const binding = dataBinding as unknown as { source: string; name: string };
+      if (binding.source === 'dataTable' && binding.name) {
+        const table = dataTables.find(dt => dt.name === binding.name);
+        if (table) {
+          console.log(`📊 ${componentName}: DataTable '${binding.name}' mockData 로드`, table.mockData);
+          return table.useMockData ? table.mockData : (table.runtimeData || table.mockData);
+        } else {
+          console.warn(`⚠️ ${componentName}: DataTable '${binding.name}'을 찾을 수 없습니다`);
+        }
+      }
+    }
+    return null;
+  }, [propertyBindingFormat, dataBinding, dataTables, componentName]);
+
   const list = useAsyncList<Record<string, unknown>>({
     async load({ signal }: AsyncListLoadOptions) {
+      // DataTable 바인딩인 경우 useAsyncList 스킵 (이미 dataTableData에서 처리)
+      if (propertyBindingFormat) {
+        return { items: [] };
+      }
+
       // datasetId가 있으면 Dataset Store에서 데이터 사용 (useAsyncList 스킵)
       if (datasetId) {
         return { items: [] };
@@ -323,10 +365,19 @@ export function useCollectionData({
 
   // 필터링 및 정렬된 데이터
   const processedData = useMemo(() => {
-    // datasetId가 있으면 Dataset Store에서 데이터 사용
-    const sourceData = datasetId && datasetState
-      ? datasetState.data
-      : list.items;
+    // 데이터 소스 우선순위: DataTable > Dataset > AsyncList
+    let sourceData: Record<string, unknown>[];
+
+    if (dataTableData && dataTableData.length > 0) {
+      // PropertyDataBinding 형식의 DataTable 바인딩
+      sourceData = dataTableData;
+    } else if (datasetId && datasetState) {
+      // Dataset Store에서 데이터 사용
+      sourceData = datasetState.data;
+    } else {
+      // AsyncList에서 데이터 사용
+      sourceData = list.items;
+    }
 
     let result = [...sourceData];
 
@@ -361,7 +412,7 @@ export function useCollectionData({
     }
 
     return result;
-  }, [list.items, filterText, sortDescriptor, datasetId, datasetState]);
+  }, [list.items, filterText, sortDescriptor, datasetId, datasetState, dataTableData]);
 
   // 페이지네이션 지원 (향후 구현)
   // 현재는 API가 cursor를 반환하지 않으므로 loadMore는 undefined
@@ -378,13 +429,18 @@ export function useCollectionData({
   }, [datasetId, loadDataset, list]);
 
   // 로딩/에러 상태: datasetId가 있으면 Dataset Store에서, 아니면 useAsyncList에서
-  const loading = datasetId
-    ? datasetState?.status === "loading"
-    : list.isLoading;
+  // 로딩/에러 상태: DataTable > Dataset > AsyncList
+  const loading = propertyBindingFormat
+    ? false  // DataTable은 동기적으로 로드됨
+    : datasetId
+      ? datasetState?.status === "loading"
+      : list.isLoading;
 
-  const error = datasetId
-    ? datasetState?.error || null
-    : list.error ? list.error.message : null;
+  const error = propertyBindingFormat
+    ? (dataTableData === null && dataBinding ? `DataTable을 찾을 수 없습니다` : null)
+    : datasetId
+      ? datasetState?.error || null
+      : list.error ? list.error.message : null;
 
   return {
     data: processedData,

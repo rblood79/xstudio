@@ -11,6 +11,7 @@
  */
 
 import { useState, useEffect } from "react";
+import { useParams } from "react-router-dom";
 import {
   Table2,
   Globe,
@@ -20,7 +21,6 @@ import {
 } from "lucide-react";
 import type { PanelProps } from "../core/types";
 import { useDataStore } from "../../stores/data";
-import { useStore } from "../../stores/elements";
 import { PanelHeader } from "../common/PanelHeader";
 import { EmptyState } from "../common/EmptyState";
 import { LoadingSpinner } from "../common/LoadingSpinner";
@@ -48,8 +48,8 @@ const TABS: TabConfig[] = [
 export function DatasetPanel({ isActive }: PanelProps) {
   const [activeTab, setActiveTab] = useState<DatasetTab>("tables");
 
-  // Store state
-  const currentProjectId = useStore((state) => state.currentProjectId);
+  // Get projectId from URL params
+  const { projectId: currentProjectId } = useParams<{ projectId: string }>();
   const isLoading = useDataStore((state) => state.isLoading);
   const fetchDataTables = useDataStore((state) => state.fetchDataTables);
   const fetchApiEndpoints = useDataStore((state) => state.fetchApiEndpoints);
@@ -130,23 +130,19 @@ export function DatasetPanel({ isActive }: PanelProps) {
 
       {/* Tab Content */}
       <div className="dataset-content">
-        {isLoading ? (
-          <LoadingSpinner />
-        ) : (
-          <>
-            {activeTab === "tables" && (
-              <DataTableList projectId={currentProjectId} />
-            )}
-            {activeTab === "endpoints" && (
-              <ApiEndpointList projectId={currentProjectId} />
-            )}
-            {activeTab === "variables" && (
-              <VariableList projectId={currentProjectId} />
-            )}
-            {activeTab === "transformers" && (
-              <TransformerList projectId={currentProjectId} />
-            )}
-          </>
+        {/* 로딩 중에도 리스트 유지 (에디터가 닫히는 것 방지) */}
+        {isLoading && <div className="dataset-loading-overlay"><LoadingSpinner /></div>}
+        {activeTab === "tables" && (
+          <DataTableList projectId={currentProjectId} />
+        )}
+        {activeTab === "endpoints" && (
+          <ApiEndpointList projectId={currentProjectId} />
+        )}
+        {activeTab === "variables" && (
+          <VariableList projectId={currentProjectId} />
+        )}
+        {activeTab === "transformers" && (
+          <TransformerList projectId={currentProjectId} />
         )}
       </div>
     </div>

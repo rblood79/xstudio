@@ -7,7 +7,7 @@
  * - useMockData 토글
  */
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import {
   Plus,
   Trash2,
@@ -435,6 +435,23 @@ interface CellEditorProps {
 }
 
 function CellEditor({ fieldType, value, onChange }: CellEditorProps) {
+  // 로컬 상태로 관리하여 한국어 IME 조합 문제 해결
+  const [localValue, setLocalValue] = useState<string>(String(value || ""));
+
+  // 외부 value가 변경되면 로컬 상태 동기화
+  useEffect(() => {
+    setLocalValue(String(value || ""));
+  }, [value]);
+
+  const handleBlur = () => {
+    // blur 시에만 부모에 알림
+    if (fieldType === "number") {
+      onChange(localValue === "" ? 0 : Number(localValue));
+    } else {
+      onChange(localValue);
+    }
+  };
+
   switch (fieldType) {
     case "boolean":
       return (
@@ -449,8 +466,9 @@ function CellEditor({ fieldType, value, onChange }: CellEditorProps) {
         <input
           type="number"
           className="cell-input"
-          value={value as number || ""}
-          onChange={(e) => onChange(Number(e.target.value))}
+          value={localValue}
+          onChange={(e) => setLocalValue(e.target.value)}
+          onBlur={handleBlur}
         />
       );
     case "date":
@@ -458,8 +476,9 @@ function CellEditor({ fieldType, value, onChange }: CellEditorProps) {
         <input
           type="date"
           className="cell-input"
-          value={String(value || "")}
-          onChange={(e) => onChange(e.target.value)}
+          value={localValue}
+          onChange={(e) => setLocalValue(e.target.value)}
+          onBlur={handleBlur}
         />
       );
     case "datetime":
@@ -467,8 +486,9 @@ function CellEditor({ fieldType, value, onChange }: CellEditorProps) {
         <input
           type="datetime-local"
           className="cell-input"
-          value={String(value || "")}
-          onChange={(e) => onChange(e.target.value)}
+          value={localValue}
+          onChange={(e) => setLocalValue(e.target.value)}
+          onBlur={handleBlur}
         />
       );
     default:
@@ -476,8 +496,9 @@ function CellEditor({ fieldType, value, onChange }: CellEditorProps) {
         <input
           type="text"
           className="cell-input"
-          value={String(value || "")}
-          onChange={(e) => onChange(e.target.value)}
+          value={localValue}
+          onChange={(e) => setLocalValue(e.target.value)}
+          onBlur={handleBlur}
         />
       );
   }

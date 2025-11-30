@@ -5,7 +5,7 @@
  * Preview Runtime은 이 핸들러를 통해서만 데이터를 수신합니다.
  */
 
-import type { PreviewStoreState, PreviewElement, PreviewPage, PreviewLayout, ThemeVar, DataSource } from '../store/types';
+import type { PreviewStoreState, PreviewElement, PreviewPage, PreviewLayout, ThemeVar, DataSource, RuntimeDataTable } from '../store/types';
 
 // ============================================
 // Helper: Get Target Origin for postMessage
@@ -80,6 +80,11 @@ export interface UpdateDataSourcesMessage {
   dataSources: DataSource[];
 }
 
+export interface UpdateDataTablesMessage {
+  type: 'UPDATE_DATA_TABLES';
+  dataTables: RuntimeDataTable[];
+}
+
 export interface UpdateLayoutsMessage {
   type: 'UPDATE_LAYOUTS';
   layouts: PreviewLayout[];
@@ -106,6 +111,7 @@ export type BuilderToPreviewMessage =
   | UpdatePagesMessage
   | UpdateLayoutsMessage
   | UpdateDataSourcesMessage
+  | UpdateDataTablesMessage
   | UpdateAuthContextMessage
   | RequestElementSelectionMessage;
 
@@ -124,6 +130,7 @@ type StoreActions = Pick<
   | 'setPages'
   | 'setLayouts'
   | 'setDataSources'
+  | 'setDataTables'
   | 'setAuthToken'
   | 'setReady'
 >;
@@ -198,6 +205,10 @@ export class MessageHandler {
 
       case 'UPDATE_DATA_SOURCES':
         this.handleUpdateDataSources(data);
+        break;
+
+      case 'UPDATE_DATA_TABLES':
+        this.handleUpdateDataTables(data);
         break;
 
       case 'UPDATE_AUTH_CONTEXT':
@@ -285,6 +296,12 @@ export class MessageHandler {
     const dataSources = data.dataSources || [];
     this.store.setDataSources(dataSources);
     console.log(`[Preview] Data sources updated: ${dataSources.length} sources`);
+  }
+
+  private handleUpdateDataTables(data: UpdateDataTablesMessage): void {
+    const dataTables = data.dataTables || [];
+    this.store.setDataTables(dataTables);
+    console.log(`[Preview] DataTables updated: ${dataTables.length} tables`);
   }
 
   private handleUpdateAuthContext(data: UpdateAuthContextMessage): void {

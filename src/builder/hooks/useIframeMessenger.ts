@@ -3,6 +3,7 @@ import { debounce, DebouncedFunc } from 'lodash';
 import { useStore } from '../stores';
 import { useEditModeStore } from '../stores/editMode';
 import { useLayoutsStore } from '../stores/layouts';
+import { useDataTables } from '../stores/data';
 // useZundoActions는 제거됨 - 기존 시스템 사용
 import type { ElementProps } from '../../types/integrations/supabase.types';
 import { Element } from '../../types/core/store.types';
@@ -27,6 +28,7 @@ export interface UseIframeMessengerReturn {
     requestElementSelection: (elementId: string) => void;
     requestAutoSelectAfterUpdate: (elementId: string) => void;
     sendLayoutsToIframe: () => void;
+    sendDataTablesToIframe: () => void;
     isIframeReady: boolean;
 }
 
@@ -54,6 +56,9 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
 
     // ⭐ Nested Routes & Slug System: Layouts 구독
     const layouts = useLayoutsStore((state) => state.layouts);
+
+    // ⭐ DataTables 구독 (PropertyDataBinding용)
+    const dataTables = useDataTables();
 
     // ⭐ Layout/Slot System: Edit Mode에 따라 요소 필터링
     const filteredElements = useMemo(() => {
@@ -167,6 +172,42 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
         console.log('🏗️ [Builder] Sent UPDATE_LAYOUTS:', previewLayouts.length, 'layouts');
     }, []); // ✅ 의존성 제거 (Ref 사용)
 
+    // ⭐ DataTables를 iframe에 전송 (PropertyDataBinding용)
+    const sendDataTablesToIframe = useCallback(() => {
+        const iframe = MessageService.getIframe();
+
+        // 🔧 FIX: Ref를 사용하여 최신 상태 확인
+        const currentReadyState = iframeReadyStateRef.current;
+
+        // 현재 dataTables 가져오기
+        const currentDataTables = dataTables;
+
+        // RuntimeDataTable 형태로 변환 (id, name, mockData, useMockData만 전송)
+        const runtimeDataTables = currentDataTables.map((dt) => ({
+            id: dt.id,
+            name: dt.name,
+            mockData: dt.mockData || [],
+            useMockData: dt.useMockData,
+        }));
+
+        const message = {
+            type: "UPDATE_DATA_TABLES",
+            dataTables: runtimeDataTables,
+        };
+
+        // iframe이 준비되지 않았으면 큐에 넣기
+        if (currentReadyState !== 'ready' || !iframe?.contentWindow) {
+            messageQueueRef.current.push({
+                type: "UPDATE_DATA_TABLES",
+                payload: message
+            });
+            return;
+        }
+
+        iframe.contentWindow.postMessage(message, window.location.origin);
+        console.log('📊 [Builder] Sent UPDATE_DATA_TABLES:', runtimeDataTables.length, 'tables');
+    }, [dataTables]); // dataTables 변경 시 갱신
+
     // 요소 선택 시 iframe에 메시지 전송
     const sendElementSelectedMessage = useCallback((elementId: string, props?: ElementProps) => {
         const iframe = MessageService.getIframe();
@@ -236,6 +277,10 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
                 // ⭐ Nested Routes & Slug System: Layouts 전송
                 iframe.contentWindow!.postMessage(item.payload, window.location.origin);
                 console.log(`✅ [Builder] Sent queued UPDATE_LAYOUTS`);
+            } else if (item.type === "UPDATE_DATA_TABLES") {
+                // ⭐ DataTables 전송 (PropertyDataBinding용)
+                iframe.contentWindow!.postMessage(item.payload, window.location.origin);
+                console.log(`✅ [Builder] Sent queued UPDATE_DATA_TABLES`);
             }
         });
     }, []); // ✅ 의존성 제거 (Ref 사용)
@@ -270,6 +315,9 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
             const sendInitialData = () => {
                 // ⭐ Nested Routes & Slug System: 초기 layouts 전송
                 sendLayoutsToIframe();
+
+                // ⭐ DataTables 전송 (PropertyDataBinding용)
+                sendDataTablesToIframe();
 
                 // Elements 전송
                 const currentElements = useStore.getState().elements;
@@ -553,7 +601,7 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
             //console.log('Element hovered in preview:', event.data.elementId);
             // 필요시 hover 상태 처리 로직 추가
         }
-    }, [setSelectedElement, elementsMap, isSyncingToBuilder, processMessageQueue, sendElementsToIframe, sendLayoutsToIframe]);
+    }, [setSelectedElement, elementsMap, isSyncingToBuilder, processMessageQueue, sendElementsToIframe, sendLayoutsToIframe, sendDataTablesToIframe]);
 
     const handleUndo = debounce(async () => {
         if (isProcessingRef.current) return;
@@ -736,6 +784,34 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
         sendLayoutsToIframe();
     }, [layouts, sendLayoutsToIframe]);
 
+    // ⭐ DataTables가 변경될 때마다 iframe에 전송 (PropertyDataBinding용)
+    const lastSentDataTablesRef = useRef<string>('');
+
+    useEffect(() => {
+        // iframe이 준비되지 않았으면 스킵
+        if (iframeReadyStateRef.current !== 'ready') {
+            return;
+        }
+
+        // JSON 문자열로 비교 (mockData 변경 감지 포함)
+        const dataTablesJson = JSON.stringify(dataTables.map(dt => ({
+            id: dt.id,
+            name: dt.name,
+            mockData: dt.mockData,
+            useMockData: dt.useMockData,
+        })));
+
+        // 이전 값과 같으면 스킵
+        if (lastSentDataTablesRef.current === dataTablesJson) {
+            return;
+        }
+
+        // 값 저장 후 전송
+        lastSentDataTablesRef.current = dataTablesJson;
+        sendDataTablesToIframe();
+        console.log('📊 [Builder] DataTables changed, sending to iframe:', dataTables.length, 'tables');
+    }, [dataTables, sendDataTablesToIframe]);
+
     // 🔧 REMOVED: Ref를 사용하므로 iframeReadyState 기반 useEffect 불필요
     // processMessageQueue는 PREVIEW_READY 핸들러에서 직접 호출됨
 
@@ -778,6 +854,7 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
         requestElementSelection,
         requestAutoSelectAfterUpdate,
         sendLayoutsToIframe,
+        sendDataTablesToIframe,
         isIframeReady
     };
 };
