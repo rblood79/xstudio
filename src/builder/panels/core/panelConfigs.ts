@@ -7,14 +7,13 @@
 import {
   File,
   Box,
-  Palette,
+  PaintRoller,
   Bot,
   Settings,
   Settings2,
   SwatchBook,
   Database,
   SquareMousePointer,
-  Table2,
 } from "lucide-react";
 import type { PanelConfig } from "./types";
 import { PanelRegistry } from "./PanelRegistry";
@@ -68,7 +67,7 @@ export const PANEL_CONFIGS: PanelConfig[] = [
     id: "dataset",
     name: "데이터셋",
     nameEn: "Dataset",
-    icon: Table2,
+    icon: Database,
     component: DatasetPanel,
     category: "navigation",
     defaultPosition: "left",
@@ -137,7 +136,7 @@ export const PANEL_CONFIGS: PanelConfig[] = [
     id: "styles",
     name: "스타일",
     nameEn: "Styles",
-    icon: Palette,
+    icon: PaintRoller,
     component: StylesPanel,
     category: "editor",
     defaultPosition: "right",

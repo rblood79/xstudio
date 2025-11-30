@@ -6,7 +6,7 @@
  */
 
 import type { Element, Page } from '../../types/core/store.types';
-import type { DesignToken } from '../../types/theme';
+import type { DesignToken, DesignTheme } from '../../types/theme';
 import type { Layout } from '../../types/builder/layout.types';
 
 // === Project Types ===
@@ -109,6 +109,17 @@ export interface DatabaseAdapter {
     delete(id: string): Promise<void>;
     getByProject(projectId: string): Promise<DesignToken[]>;
     getAll(): Promise<DesignToken[]>;
+  };
+
+  // Design Themes
+  themes: {
+    insert(theme: DesignTheme): Promise<DesignTheme>;
+    update(id: string, data: Partial<DesignTheme>): Promise<DesignTheme>;
+    delete(id: string): Promise<void>;
+    getById(id: string): Promise<DesignTheme | null>;
+    getByProject(projectId: string): Promise<DesignTheme[]>;
+    getActiveTheme(projectId: string): Promise<DesignTheme | null>;
+    getAll(): Promise<DesignTheme[]>;
   };
 
   // Layouts (Layout/Slot System)
