@@ -29,11 +29,10 @@ import { DatasetPanel } from "../dataset/DatasetPanel";
 // Editor panels
 import { PropertiesPanel } from "../properties/PropertiesPanel";
 import { StylesPanel } from "../styles/StylesPanel";
-import { DataPanel } from "../data/DataPanel";
 import { EventsPanel } from "../events/EventsPanel";
 
 /**
- * 10개 패널 설정
+ * 9개 패널 설정
  */
 export const PANEL_CONFIGS: PanelConfig[] = [
   // Navigation panels
@@ -144,19 +143,6 @@ export const PANEL_CONFIGS: PanelConfig[] = [
     maxWidth: 240,
     description: "CSS 스타일 편집",
     shortcut: "Ctrl+Shift+S",
-  },
-  {
-    id: "data",
-    name: "데이터",
-    nameEn: "Data",
-    icon: Database,
-    component: DataPanel,
-    category: "editor",
-    defaultPosition: "right",
-    minWidth: 233,
-    maxWidth: 233,
-    description: "데이터 바인딩 설정",
-    shortcut: "Ctrl+Shift+D",
   },
   {
     id: "events",
