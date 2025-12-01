@@ -27,7 +27,6 @@ import {
 } from 'react-aria-components';
 import { ChevronDown, Database, Globe, Variable, Link2, X } from 'lucide-react';
 import { PropertyFieldset } from './PropertyFieldset';
-import { iconProps } from '../../../utils/ui/uiConstants';
 import { useDataTables, useApiEndpoints, useVariables } from '../../stores/data';
 import './PropertyDataBinding.css';
 
@@ -96,12 +95,11 @@ export const PropertyDataBinding = memo(function PropertyDataBinding({
   // Sync with prop value when external value changes
   // This pattern is intentional for controlled/uncontrolled hybrid component
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
+    /* eslint-disable react-hooks/set-state-in-effect */
     setSource(value?.source || '');
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setName(value?.name || '');
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setPath(value?.path || '');
+    /* eslint-enable react-hooks/set-state-in-effect */
   }, [value]);
 
   // 소스 타입별 이름 옵션 가져오기
@@ -210,8 +208,6 @@ export const PropertyDataBinding = memo(function PropertyDataBinding({
     : '';
 
   const nameOptions = getNameOptions();
-  const SourceIcon =
-    SOURCE_OPTIONS.find((s) => s.value === source)?.icon || Link2;
 
   return (
     <PropertyFieldset legend={label} icon={Link2} className={className}>

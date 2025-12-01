@@ -170,7 +170,8 @@ const generateCategories = (count: number): Record<string, unknown>[] =>
   }));
 
 const generateOrders = (count: number): Record<string, unknown>[] =>
-  Array.from({ length: count }, (_, i) => ({
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  Array.from({ length: count }, (_unused, i) => ({
     id: getRandomId("ord_"),
     userId: getRandomId("usr_"),
     items: Array.from({ length: randomInt(1, 5) }, () => ({
@@ -233,7 +234,8 @@ const generateAuditLogs = (count: number): Record<string, unknown>[] =>
   }));
 
 const generateProjectMemberships = (count: number): Record<string, unknown>[] =>
-  Array.from({ length: count }, (_, i) => ({
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  Array.from({ length: count }, (_unused, i) => ({
     id: getRandomId("mem_"),
     projectId: getRandomId("proj_"),
     userId: getRandomId("usr_"),

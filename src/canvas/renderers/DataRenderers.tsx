@@ -232,6 +232,7 @@ function DatasetComponent({ element }: { element: PreviewElement }) {
  */
 export function renderDataset(
   element: PreviewElement,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   _context: RenderContext
 ): React.ReactNode {
   return <DatasetComponent key={element.id} element={element} />;

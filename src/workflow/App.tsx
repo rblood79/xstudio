@@ -62,7 +62,6 @@ function useWorkflowMessages() {
   const setElements = useWorkflowStore((s) => s.setElements);
   const setProjectId = useWorkflowStore((s) => s.setProjectId);
   const setLoading = useWorkflowStore((s) => s.setLoading);
-  const setError = useWorkflowStore((s) => s.setError);
 
   const mockLoadedRef = useRef(false);
 
@@ -99,7 +98,7 @@ function useWorkflowMessages() {
           break;
       }
     },
-    [setPages, setLayouts, setElements, setProjectId, setLoading, setError]
+    [setPages, setLayouts, setElements, setProjectId, setLoading]
   );
 
   useEffect(() => {
@@ -175,14 +174,13 @@ function WorkflowContent() {
 // ============================================
 
 export function App() {
-  const [isInitialized, setIsInitialized] = useState(false);
-
-  useEffect(() => {
-    // Initialize store
+  // Initialize synchronously using lazy initialization
+  const [isInitialized] = useState(() => {
+    // Initialize store on first render
     const store = getWorkflowStore();
     store.setLoading(true);
-    setIsInitialized(true);
-  }, []);
+    return true;
+  });
 
   if (!isInitialized) {
     return (
