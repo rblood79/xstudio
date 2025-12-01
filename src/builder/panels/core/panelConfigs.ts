@@ -7,7 +7,7 @@
 import {
   File,
   Box,
-  Palette,
+  PaintRoller,
   Bot,
   Settings,
   Settings2,
@@ -24,6 +24,7 @@ import { ComponentsPanel } from "../components/ComponentsPanel";
 import { ThemesPanel } from "../themes/ThemesPanel";
 import { AIPanel } from "../ai/AIPanel";
 import { SettingsPanel } from "../settings/SettingsPanel";
+import { DatasetPanel } from "../dataset/DatasetPanel";
 
 // Editor panels
 import { PropertiesPanel } from "../properties/PropertiesPanel";
@@ -32,7 +33,7 @@ import { DataPanel } from "../data/DataPanel";
 import { EventsPanel } from "../events/EventsPanel";
 
 /**
- * 9개 패널 설정
+ * 10개 패널 설정
  */
 export const PANEL_CONFIGS: PanelConfig[] = [
   // Navigation panels
@@ -61,6 +62,19 @@ export const PANEL_CONFIGS: PanelConfig[] = [
     maxWidth: 400,
     description: "컴포넌트 라이브러리",
     shortcut: "Ctrl+Shift+C",
+  },
+  {
+    id: "dataset",
+    name: "데이터셋",
+    nameEn: "Dataset",
+    icon: Database,
+    component: DatasetPanel,
+    category: "navigation",
+    defaultPosition: "left",
+    minWidth: 466,
+    maxWidth: 932,
+    description: "DataTables, APIs, Variables, Transformers 관리",
+    shortcut: "Ctrl+Shift+T",
   },
 
   // Tool panels
@@ -122,7 +136,7 @@ export const PANEL_CONFIGS: PanelConfig[] = [
     id: "styles",
     name: "스타일",
     nameEn: "Styles",
-    icon: Palette,
+    icon: PaintRoller,
     component: StylesPanel,
     category: "editor",
     defaultPosition: "right",

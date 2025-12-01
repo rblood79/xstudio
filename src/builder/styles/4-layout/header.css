@@ -1,0 +1,297 @@
+@layer builder-system {
+  /* ========================================
+   * Header Layout
+   * Extracted from main/index.css
+   * ======================================== */
+
+  /* App Root - Main Grid Layout */
+  .app {
+    background-color: var(--surface-variant);
+    height: 100vh;
+    overflow: hidden;
+    display: grid;
+    grid-template-rows: 48px calc(100% - 48px - 24px) 24px;
+    grid-template-columns: auto 1fr auto;
+    grid-template-areas:
+      "header header header"
+      "sidebar main inspector"
+      "footer footer footer";
+  }
+
+  /* ========================================
+   * Header
+   * ======================================== */
+
+  .app nav.header {
+    grid-area: header;
+    background-color: var(--surface-container);
+    border-bottom: 1px solid var(--outline-variant);
+    color: var(--on-surface);
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    position: relative;
+    height: calc(var(--spacing) * 12);
+    padding: 0;
+    z-index: 1000;
+  }
+
+  /* Header Contents */
+  .header_contents {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing);
+    position: relative;
+    flex: 0;
+  }
+
+  .header_contents .aria-ToggleButton {
+    padding: var(--spacing) var(--spacing-sm);
+  }
+
+  /* Header First Child (Left Section) */
+  .header_contents:first-child {
+    justify-content: flex-start;
+    flex: 1;
+  }
+
+  .header_contents:first-child button {
+    padding: var(--spacing-lg);
+    background-color: transparent;
+  }
+
+  /* Project Info */
+  .header_contents .project-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .header_contents .project-name {
+    font-weight: 600;
+    color: var(--on-surface);
+  }
+
+  .header_contents .project-id {
+    font-size: var(--text-xs);
+    color: var(--on-surface-variant);
+    opacity: 0.8;
+  }
+
+  /* Header Screen Section */
+  .header_contents.screen {
+    gap: var(--spacing-sm);
+
+    .react-aria-ToggleButtonGroup[data-indicator="true"] {
+      background-color: var(--outline-variant);
+      box-shadow: var(--inset-shadow-sm);
+      border-radius: var(--radius-lg);
+      gap: var(--spacing-xs);
+      padding: var(--spacing-xs);
+
+      &::before {
+        top: 0px;
+        left: 0px;
+        width: var(--indicator-width);
+        height: var(--indicator-height);
+        border-radius: var(--radius-md);
+        background: var(--surface-container-high);
+      }
+
+      .react-aria-ToggleButton {
+        background-color: transparent;
+        border-width: 0px;
+        padding: var(--spacing-xs);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        &[data-pressed] {
+          background: transparent;
+          color: var(--on-surface);
+        }
+
+        &[data-selected] {
+          background: transparent;
+          border-color: transparent;
+          color: var(--surface);
+
+          &[data-pressed] {
+            background: transparent;
+            border-color: transparent;
+            color: var(--surface);
+          }
+        }
+      }
+    }
+  }
+
+  .header_contents.screen .sizeInfo {
+    position: absolute;
+    width: 64px;
+    left: -64px;
+  }
+
+  /* Theme Selector */
+  .header_contents .theme-selector {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+  }
+
+  .theme-selector .react-aria-Select {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+  }
+
+  .theme-selector .react-aria-Select .react-aria-Label {
+    font-size: var(--text-sm);
+    font-weight: 500;
+    color: var(--on-surface);
+    white-space: nowrap;
+  }
+
+  .theme-selector .react-aria-Select .react-aria-Button {
+    padding: var(--spacing-xs) var(--spacing);
+    font-size: var(--text-sm);
+    border: 1px solid var(--outline);
+    border-radius: var(--radius-md);
+    background: var(--field-background);
+    color: var(--on-surface);
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    min-width: 120px;
+  }
+
+  .theme-selector .react-aria-Button[data-hovered] {
+    border-color: var(--focus-ring-color);
+    background: var(--outline);
+  }
+
+  .theme-selector .react-aria-Button[data-focus-visible] {
+    outline: 2px solid var(--focus-ring-color);
+    outline-offset: 2px;
+    border-color: var(--focus-ring-color);
+  }
+
+  .theme-selector .react-aria-Button[data-disabled] {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .theme-selector .select-chevron {
+    display: flex;
+    align-items: center;
+    margin-left: auto;
+  }
+
+  /* Theme Selector Popover */
+  .theme-selector .react-aria-Popover {
+    background: var(--field-background);
+    border: 1px solid var(--outline);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-md);
+    margin-top: var(--spacing-sm);
+  }
+
+  .theme-selector .react-aria-ListBox {
+    padding: var(--spacing-sm);
+    outline: none;
+  }
+
+  .theme-selector .react-aria-ListBoxItem {
+    padding: var(--spacing-sm) var(--spacing);
+    font-size: var(--text-sm);
+    color: var(--on-surface);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: background-color 0.2s;
+  }
+
+  .theme-selector .react-aria-ListBoxItem[data-hovered] {
+    background: var(--outline);
+  }
+
+  .theme-selector .react-aria-ListBoxItem[data-selected] {
+    background: var(--focus-ring-color);
+    color: var(--on-primary);
+    font-weight: 500;
+  }
+
+  .theme-selector .react-aria-ListBoxItem[data-focused] {
+    outline: 2px solid var(--focus-ring-color);
+    outline-offset: -2px;
+  }
+
+  /* Dark Mode Toggle */
+  .header_contents .dark-mode-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--spacing-sm);
+    background: transparent;
+    border: none;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: background-color 0.2s;
+  }
+
+  .dark-mode-toggle:hover:not(:disabled) {
+    background: var(--button-background-hover);
+  }
+
+  .dark-mode-toggle:active:not(:disabled) {
+    background: var(--button-background-pressed);
+  }
+
+  .dark-mode-toggle:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  /* Header Last Child (Right Section) */
+  .header_contents:last-child {
+    justify-content: flex-end;
+    flex: 1;
+  }
+
+  .header_contents:last-child button:not(.publish) {
+    border-radius: var(--radius-md);
+    background-color: var(--on-primary);
+    padding: var(--spacing-sm);
+  }
+
+  .header_contents:last-child button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  /* Publish Button */
+  .header_contents .publish {
+    background: linear-gradient(
+          var(--surface-container),
+          var(--outline-variant)
+        )
+        padding-box,
+      linear-gradient(
+          82.77deg,
+          var(--info) 11.87%,
+          var(--info) 38.42%,
+          var(--on-surface-variant) 64.19%,
+          var(--error) 89.96%
+        )
+        border-box;
+    border: 2px solid transparent;
+    border-radius: var(--radius-md);
+    color: var(--on-surface);
+    line-height: var(--text-sm--line-height);
+    font-size: var(--text-sm);
+    padding: var(--spacing-xs) var(--spacing-lg);
+  }
+}

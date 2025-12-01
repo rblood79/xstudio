@@ -28,7 +28,7 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: var(--spacing) var(--spacing-md);
+      padding: var(--spacing);
       border: 1px solid var(--outline-variant);
       border-radius: var(--border-radius);
       background: var(--surface-container);
@@ -394,7 +394,9 @@
       }
     }
 
-    .react-aria-Popover[data-trigger="Select"] .react-aria-ListBox .react-aria-ListBoxItem {
+    .react-aria-Popover[data-trigger="Select"]
+      .react-aria-ListBox
+      .react-aria-ListBoxItem {
       &[data-disabled] {
         color: rgba(0, 0, 0, 0.38);
       }
@@ -413,7 +415,10 @@
       }
     }
 
-    [data-theme="dark"] .react-aria-Popover[data-trigger="Select"] .react-aria-ListBox .react-aria-ListBoxItem {
+    [data-theme="dark"]
+      .react-aria-Popover[data-trigger="Select"]
+      .react-aria-ListBox
+      .react-aria-ListBoxItem {
       &[data-disabled] {
         color: rgba(255, 255, 255, 0.38);
       }

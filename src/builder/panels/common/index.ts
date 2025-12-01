@@ -19,5 +19,6 @@ export { SelectionFilter } from './SelectionFilter';
 export { KeyboardShortcutsHelp } from './KeyboardShortcutsHelp';
 export { SmartSelection } from './SmartSelection';
 export { SelectionMemory } from './SelectionMemory';
+export { PropertyDataBinding, type DataBindingValue } from './PropertyDataBinding';
 
 

@@ -162,7 +162,7 @@
         gap: var(--spacing-sm);
         grid-template-areas: "padding margin actions-spacing";
 
-        >* {
+        > * {
           min-width: 0;
         }
 
@@ -266,7 +266,7 @@
         "width height actions-size"
         "left top actions-position";
 
-      >* {
+      > * {
         min-width: 0;
       }
 
@@ -307,7 +307,7 @@
         gap: var(--spacing-sm);
         grid-template-areas: "background-color background-color icon";
 
-        >* {
+        > * {
           min-width: 0;
         }
       }
@@ -330,7 +330,7 @@
           "border-style border-style border-color"
           "border-width border-radius icon";
 
-        >* {
+        > * {
           min-width: 0;
         }
       }
@@ -366,7 +366,7 @@
         "text-transform . .";
 
       /* 모든 grid 자식 요소에 min-width: 0 적용하여 1fr 균등 분할 보장 */
-      >* {
+      > * {
         min-width: 0;
       }
 
@@ -427,7 +427,6 @@
     }
 
     .react-aria-ToggleButtonGroup[data-indicator="true"] {
-
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -475,9 +474,7 @@
     /* Section Header */
     .section-header {
       height: var(--header-height);
-      font-size: var(--text-xs);
-      line-height: var(--text-xs);
-      font-weight: var(--font-weight-bold);
+
       background-color: var(--surface-variant);
       border-bottom: 1px solid var(--outline-variant);
       display: flex;
@@ -490,7 +487,8 @@
       padding: var(--spacing-sm);
       border-bottom: 0;
       font-weight: var(--font-weight-semibold);
-      font-size: var(--text-sm);
+      font-size: var(--text-xs);
+      line-height: var(--text-xs--line-height);
     }
 
     .section-header .section-actions {
@@ -598,10 +596,8 @@
         display: flex;
         flex-direction: column;
         gap: var(--spacing-sm);
-        padding: var(--spacing-sm);
         background: var(--surface-variant);
         border-radius: var(--radius-sm);
-        margin-top: var(--spacing-sm);
       }
 
       .page-layout-description {
@@ -1681,9 +1677,18 @@
   .history-info {
     display: flex;
     flex-direction: column;
-    align-items: flex-start;
+    align-items: flex-end;
     gap: var(--spacing-2xs);
-    flex: 1;
+    font-family: var(--font-pixel);
+    font-weight: var(--font-weight-normal);
+    font-size: var(--text-xs);
+    text-transform: uppercase;
+    padding: var(--spacing) var(--spacing-sm);
+    cursor: default;
+    -webkit-font-smoothing: none;
+    -moz-osx-font-smoothing: unset;
+    font-smooth: never;
+    text-rendering: optimizeSpeed;
   }
 
   .history-label {
@@ -1748,10 +1753,8 @@
     display: flex;
     flex-direction: column;
     gap: var(--spacing-sm);
-    padding: var(--spacing-sm);
     background: var(--surface-variant);
     border-radius: var(--radius-sm);
-    margin-top: var(--spacing-sm);
   }
 
   .page-layout-description {
@@ -1766,16 +1769,16 @@
     gap: var(--spacing-sm);
     padding: var(--spacing-sm);
     background: transparent;
-    border: 1px solid var(--color-danger-300);
+    border: 1px solid var(--color-error-300);
     border-radius: var(--radius-sm);
-    color: var(--color-danger-600);
+    color: var(--color-error-600);
     font-size: var(--text-xs);
     cursor: pointer;
     transition: all 150ms;
 
     &:hover {
-      background: var(--color-danger-50);
-      border-color: var(--color-danger-500);
+      background: var(--color-error-50);
+      border-color: var(--color-error-500);
     }
   }
 
@@ -1790,9 +1793,9 @@
     align-items: center;
     gap: var(--spacing-sm);
     padding: var(--spacing-sm);
-    background: var(--color-danger-50);
+    background: var(--color-error-50);
     border-radius: var(--radius-sm);
-    color: var(--color-danger-600);
+    color: var(--color-error-600);
     font-size: var(--text-xs);
   }
 
@@ -1855,5 +1858,192 @@
   .layout-slug-actions .page-layout-clear {
     padding: var(--spacing-sm);
     font-size: var(--text-xs);
+  }
+
+  /* ========================================
+   * SlotEditor Styles
+   * Layout Slot 편집기 전용 스타일
+   * ======================================== */
+
+  .slot-editor-info {
+    padding: var(--spacing-sm);
+    background: var(--surface-container);
+    border-radius: var(--radius-sm);
+    font-size: var(--text-xs);
+    color: var(--on-surface-variant);
+  }
+
+  .slot-editor-info-text {
+    margin: 0 0 var(--spacing-sm) 0;
+    line-height: var(--text-xs--line-height);
+  }
+
+  .slot-editor-info-list {
+    margin: 0;
+    padding-left: var(--spacing-md);
+
+    li {
+      margin-bottom: var(--spacing-xs);
+      line-height: var(--text-xs--line-height);
+
+      &:last-child {
+        margin-bottom: 0;
+      }
+    }
+  }
+
+  /* Slot Children Preview */
+  .slot-children-preview {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-sm);
+    background: var(--surface-container);
+    border-radius: var(--radius-sm);
+    max-height: 200px;
+    overflow-y: auto;
+  }
+
+  .slot-children-empty {
+    color: var(--on-surface-variant);
+    font-size: var(--text-xs);
+    font-style: italic;
+    text-align: center;
+    padding: var(--spacing-md);
+  }
+
+  .slot-child-item {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-xs) var(--spacing-sm);
+    background: var(--surface);
+    border-radius: var(--radius-xs);
+    font-size: var(--text-xs);
+    color: var(--on-surface);
+    cursor: pointer;
+    transition: background 150ms;
+
+    &:hover {
+      background: var(--surface-container-high);
+    }
+
+    .slot-child-icon {
+      color: var(--on-surface-variant);
+    }
+
+    .slot-child-name {
+      flex: 1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .slot-child-type {
+      color: var(--on-surface-variant);
+      font-size: var(--text-2xs);
+    }
+  }
+
+  /* ========================================
+   * DatasetEditor Styles
+   * Dataset 편집기 전용 스타일
+   * ======================================== */
+
+  .dataset-status-preview {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-sm);
+    background: var(--surface-container);
+    border-radius: var(--radius-sm);
+  }
+
+  .dataset-status-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: var(--text-xs);
+
+    &.error {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: var(--spacing-xs);
+    }
+  }
+
+  .dataset-status-label {
+    color: var(--on-surface-variant);
+  }
+
+  .dataset-status-value {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    color: var(--on-surface);
+
+    &.text-success {
+      color: var(--color-success);
+    }
+
+    &.text-error {
+      color: var(--color-error);
+      word-break: break-word;
+    }
+  }
+
+  .dataset-actions {
+    display: flex;
+    gap: var(--spacing-sm);
+    margin-top: var(--spacing-sm);
+  }
+
+  .dataset-editor-info {
+    padding: var(--spacing-sm);
+    background: var(--surface-container);
+    border-radius: var(--radius-sm);
+    font-size: var(--text-xs);
+    color: var(--on-surface-variant);
+  }
+
+  .dataset-editor-info-text {
+    margin: 0 0 var(--spacing-sm) 0;
+    line-height: var(--text-xs--line-height);
+  }
+
+  .dataset-editor-info-list {
+    margin: 0;
+    padding-left: var(--spacing-md);
+
+    li {
+      margin-bottom: var(--spacing-xs);
+      line-height: var(--text-xs--line-height);
+
+      &:last-child {
+        margin-bottom: 0;
+      }
+    }
+
+    code {
+      background: var(--surface-container-high);
+      padding: 0 var(--spacing-xs);
+      border-radius: var(--radius-xs);
+      font-family: monospace;
+      font-size: var(--text-2xs);
+    }
+  }
+
+  /* Spinning animation for loader */
+  .spin {
+    animation: spin 1s linear infinite;
+  }
+
+  @keyframes spin {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
   }
 }

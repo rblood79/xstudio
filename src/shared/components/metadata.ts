@@ -742,6 +742,21 @@ export const componentMetadata: ComponentMeta[] = [
       supportedEvents: [],
     },
   },
+
+  // Data Management
+  {
+    type: "Dataset",
+    label: "Dataset",
+    category: "Data",
+    icon: "📊",
+    inspector: {
+      hasCustomEditor: true,
+      editorName: "DatasetEditor",
+      dataBindingType: "collection",
+      supportedEvents: ["onLoad", "onError", "onRefresh"],
+    },
+  },
+
 ];
 
 /**

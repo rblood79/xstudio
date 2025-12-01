@@ -1,0 +1,77 @@
+@layer builder-system {
+  /* ========================================
+   * Panel Navigation
+   * Extracted from sidebar/index.css
+   * ======================================== */
+
+  :root {
+    --hover-bg: var(--surface-container-low);
+    --sidebar-width: 240px;
+    --panel-nav-width: 48px;
+  }
+
+  /* Panel Navigation */
+  .panel-nav {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm);
+    width: var(--panel-nav-width);
+    height: 100%;
+    justify-content: space-between;
+    background-color: var(--surface);
+  }
+
+  .nav-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+    z-index: 1;
+  }
+
+  .nav-button {
+    position: relative;
+    border: none;
+    background: none;
+    padding: var(--spacing-sm);
+    cursor: pointer;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    stroke: var(--on-surface-variant);
+    border-radius: 6px;
+    svg {
+      stroke: inherit;
+      stroke-width: 1.5;
+      transition: color 0.2s ease;
+    }
+  }
+
+  .nav-button:hover {
+    background-color: var(--highlight-foreground-pressed);
+    border-radius: 6px;
+  }
+
+  .nav-button.active {
+    background-color: var(--highlight-background);
+    stroke: var(--surface-container);
+  }
+
+  /* Panel Slot */
+  .panel-slot {
+    position: relative; /* 🔧 absolute 패널의 기준점 */
+    display: flex;
+    flex-direction: row;
+    height: 100%;
+    width: 100%;
+    overflow: hidden; /* 🔧 화면 밖 패널 잘라내기 */
+  }
+
+  /* NodesPanel 내부의 Sidebar에서 중복 네비게이션 숨김 */
+  .nodes-panel .panel-nav {
+    display: none;
+  }
+}

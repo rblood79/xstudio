@@ -2,13 +2,15 @@ import React from 'react';
 
 export interface BuilderViewportProps {
     children: React.ReactNode;
+    className?: string;
 }
 
 export const BuilderViewport: React.FC<BuilderViewportProps> = ({
-    children
+    children,
+    className = 'app'
 }) => {
     return (
-        <div className="contents">
+        <div className={className}>
             {children}
         </div>
     );

@@ -1,0 +1,107 @@
+/**
+ * PropertyDataBinding CSS
+ *
+ * Property Editor에서 데이터 바인딩 UI 스타일
+ */
+
+.property-data-binding {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+/* 바인딩 표현식 프리뷰 */
+.binding-preview {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  background: var(--color-surface-100);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+}
+
+.binding-expression {
+  flex: 1;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--color-primary-600);
+  word-break: break-all;
+}
+
+.binding-clear {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-xs);
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  color: var(--color-gray-500);
+  cursor: pointer;
+  transition: all 150ms;
+}
+
+.binding-clear:hover {
+  background: var(--color-surface-200);
+  color: var(--color-gray-700);
+}
+
+/* 바인딩 행 */
+.binding-row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+/* 소스 선택 드롭다운 */
+.binding-source-select,
+.binding-name-select {
+  width: 100%;
+}
+
+.binding-source-select .react-aria-ListBoxItem,
+.binding-name-select .react-aria-ListBoxItem {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+/* 옵션 스타일 */
+.binding-option {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.binding-option-label {
+  font-size: var(--text-sm);
+  color: var(--color-text-primary);
+}
+
+.binding-option-desc {
+  font-size: var(--text-xs);
+  color: var(--color-text-secondary);
+}
+
+/* 경로 입력 */
+.binding-path-input {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+}
+
+.binding-path-input::placeholder {
+  font-family: var(--font-sans);
+  font-style: italic;
+}
+
+/* 빈 상태 */
+.binding-empty {
+  padding: var(--spacing-sm);
+  font-size: var(--text-xs);
+  color: var(--color-text-secondary);
+  text-align: center;
+  background: var(--color-surface-50);
+  border-radius: var(--radius-sm);
+  border: 1px dashed var(--color-border);
+}

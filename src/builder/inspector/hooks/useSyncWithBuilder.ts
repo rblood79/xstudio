@@ -23,8 +23,18 @@ export function useSyncWithBuilder(): void {
   const pendingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
+    // 🔍 DEBUG: useSyncWithBuilder 실행 추적
+    console.log("🔍 [useSyncWithBuilder] useEffect 시작:", {
+      hasSelectedElement: !!selectedElement,
+      selectedElementId: selectedElement?.id,
+      selectedElementType: selectedElement?.type,
+      historyOperationInProgress,
+      hasPropsDataBinding: !!(selectedElement?.properties as Record<string, unknown>)?.dataBinding,
+    });
+
     // 히스토리 작업 중이면 동기화 건너뛰기
     if (historyOperationInProgress) {
+      console.log("⏭️ [useSyncWithBuilder] 히스토리 작업 중 - 스킵");
       return;
     }
 
@@ -101,6 +111,16 @@ export function useSyncWithBuilder(): void {
 
     // Inspector에서 변경된 내용을 Builder에 반영
     const elementUpdate = mapSelectedToElementUpdate(selectedElement);
+
+    // 🔍 DEBUG: props.dataBinding 동기화 추적
+    if ((elementUpdate.props as Record<string, unknown>)?.dataBinding) {
+      console.log("🔄 [useSyncWithBuilder] props.dataBinding 감지:", {
+        elementId: selectedElement.id,
+        elementType: selectedElement.type,
+        propsDataBinding: (elementUpdate.props as Record<string, unknown>).dataBinding,
+        topLevelDataBinding: elementUpdate.dataBinding,
+      });
+    }
 
     // debounce를 통한 최적화 (100ms)
     pendingTimeoutRef.current = setTimeout(async () => {

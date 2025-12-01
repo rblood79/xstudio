@@ -134,7 +134,17 @@ export const createUpdateElementAction =
         elementTag: element.tag,
         updates,
         hasDataBinding: !!updates.dataBinding,
+        hasPropsDataBinding: !!(updates.props as Record<string, unknown>)?.dataBinding,
       });
+
+      // 🔍 DEBUG: props.dataBinding 저장 추적
+      if ((updates.props as Record<string, unknown>)?.dataBinding) {
+        console.log("💾 [updateElement] props.dataBinding 저장 중:", {
+          elementId,
+          elementTag: element.tag,
+          propsDataBinding: (updates.props as Record<string, unknown>).dataBinding,
+        });
+      }
     }
 
     // 1. 메모리 상태 업데이트

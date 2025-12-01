@@ -3,6 +3,7 @@ import { debounce, DebouncedFunc } from 'lodash';
 import { useStore } from '../stores';
 import { useEditModeStore } from '../stores/editMode';
 import { useLayoutsStore } from '../stores/layouts';
+import { useDataTables, useApiEndpoints } from '../stores/data';
 // useZundoActions는 제거됨 - 기존 시스템 사용
 import type { ElementProps } from '../../types/integrations/supabase.types';
 import { Element } from '../../types/core/store.types';
@@ -27,6 +28,8 @@ export interface UseIframeMessengerReturn {
     requestElementSelection: (elementId: string) => void;
     requestAutoSelectAfterUpdate: (elementId: string) => void;
     sendLayoutsToIframe: () => void;
+    sendDataTablesToIframe: () => void;
+    sendApiEndpointsToIframe: () => void;
     isIframeReady: boolean;
 }
 
@@ -54,6 +57,12 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
 
     // ⭐ Nested Routes & Slug System: Layouts 구독
     const layouts = useLayoutsStore((state) => state.layouts);
+
+    // ⭐ DataTables 구독 (PropertyDataBinding용)
+    const dataTables = useDataTables();
+
+    // ⭐ ApiEndpoints 구독 (PropertyDataBinding용)
+    const apiEndpoints = useApiEndpoints();
 
     // ⭐ Layout/Slot System: Edit Mode에 따라 요소 필터링
     const filteredElements = useMemo(() => {
@@ -167,6 +176,121 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
         console.log('🏗️ [Builder] Sent UPDATE_LAYOUTS:', previewLayouts.length, 'layouts');
     }, []); // ✅ 의존성 제거 (Ref 사용)
 
+    // ⭐ DataTables를 iframe에 전송 (PropertyDataBinding용)
+    const sendDataTablesToIframe = useCallback(() => {
+        const iframe = MessageService.getIframe();
+
+        // 🔧 FIX: Ref를 사용하여 최신 상태 확인
+        const currentReadyState = iframeReadyStateRef.current;
+
+        // 현재 dataTables 가져오기
+        const currentDataTables = dataTables;
+
+        console.log('🔍 [Builder] sendDataTablesToIframe 호출, dataTables 수:', currentDataTables.length);
+
+        if (currentDataTables.length === 0) {
+            console.warn('⚠️ [Builder] dataTables가 비어있습니다. 변환할 데이터가 없습니다.');
+        }
+
+        // RuntimeDataTable 형태로 변환 (id, name, mockData, useMockData만 전송)
+        // ⭐ mockData의 키를 schema의 label로 변환 (field_xxx → 사용자 정의 컬럼명)
+        const runtimeDataTables = currentDataTables.map((dt) => {
+            // schema에서 key → label 매핑 생성
+            const keyToLabel: Record<string, string> = {};
+            if (dt.schema) {
+                dt.schema.forEach((field) => {
+                    if (field.label) {
+                        keyToLabel[field.key] = field.label;
+                    }
+                });
+            }
+            console.log(`🔄 [Builder] DataTable '${dt.name}' key→label 매핑:`, keyToLabel);
+            console.log(`🔄 [Builder] DataTable '${dt.name}' schema:`, dt.schema);
+
+            if (Object.keys(keyToLabel).length === 0) {
+                console.warn(`⚠️ [Builder] DataTable '${dt.name}' schema에 label이 없습니다. Schema:`, dt.schema);
+            }
+
+            // mockData의 키를 label로 변환
+            const transformedMockData = (dt.mockData || []).map((row) => {
+                const transformedRow: Record<string, unknown> = {};
+                for (const [key, value] of Object.entries(row)) {
+                    const label = keyToLabel[key] || key; // label이 있으면 사용, 없으면 key 그대로
+                    transformedRow[label] = value;
+                }
+                return transformedRow;
+            });
+
+            console.log(`✅ [Builder] DataTable '${dt.name}' 변환된 mockData:`, transformedMockData);
+
+            return {
+                id: dt.id,
+                name: dt.name,
+                mockData: transformedMockData,
+                useMockData: dt.useMockData,
+            };
+        });
+
+        const message = {
+            type: "UPDATE_DATA_TABLES",
+            dataTables: runtimeDataTables,
+        };
+
+        // iframe이 준비되지 않았으면 큐에 넣기
+        if (currentReadyState !== 'ready' || !iframe?.contentWindow) {
+            messageQueueRef.current.push({
+                type: "UPDATE_DATA_TABLES",
+                payload: message
+            });
+            return;
+        }
+
+        iframe.contentWindow.postMessage(message, window.location.origin);
+        console.log('📊 [Builder] Sent UPDATE_DATA_TABLES:', runtimeDataTables.length, 'tables');
+    }, [dataTables]); // dataTables 변경 시 갱신
+
+    // ⭐ ApiEndpoints를 iframe에 전송 (PropertyDataBinding용)
+    const sendApiEndpointsToIframe = useCallback(() => {
+        const iframe = MessageService.getIframe();
+
+        // 🔧 FIX: Ref를 사용하여 최신 상태 확인
+        const currentReadyState = iframeReadyStateRef.current;
+
+        // 현재 apiEndpoints 가져오기
+        const currentApiEndpoints = apiEndpoints;
+
+        console.log('🔍 [Builder] sendApiEndpointsToIframe 호출, apiEndpoints 수:', currentApiEndpoints.length);
+
+        // RuntimeApiEndpoint 형태로 변환
+        const runtimeApiEndpoints = currentApiEndpoints.map((ep) => ({
+            id: ep.id,
+            name: ep.name,
+            method: ep.method,
+            baseUrl: ep.baseUrl,
+            path: ep.path,
+            headers: ep.headers,
+            params: ep.params,
+            body: ep.body,
+        }));
+
+        const message = {
+            type: "UPDATE_API_ENDPOINTS",
+            apiEndpoints: runtimeApiEndpoints,
+        };
+
+        // iframe이 준비되지 않았으면 큐에 넣기
+        if (currentReadyState !== 'ready' || !iframe?.contentWindow) {
+            messageQueueRef.current.push({
+                type: "UPDATE_API_ENDPOINTS",
+                payload: message
+            });
+            return;
+        }
+
+        iframe.contentWindow.postMessage(message, window.location.origin);
+        console.log('🌐 [Builder] Sent UPDATE_API_ENDPOINTS:', runtimeApiEndpoints.length, 'endpoints');
+    }, [apiEndpoints]); // apiEndpoints 변경 시 갱신
+
     // 요소 선택 시 iframe에 메시지 전송
     const sendElementSelectedMessage = useCallback((elementId: string, props?: ElementProps) => {
         const iframe = MessageService.getIframe();
@@ -236,6 +360,14 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
                 // ⭐ Nested Routes & Slug System: Layouts 전송
                 iframe.contentWindow!.postMessage(item.payload, window.location.origin);
                 console.log(`✅ [Builder] Sent queued UPDATE_LAYOUTS`);
+            } else if (item.type === "UPDATE_DATA_TABLES") {
+                // ⭐ DataTables 전송 (PropertyDataBinding용)
+                iframe.contentWindow!.postMessage(item.payload, window.location.origin);
+                console.log(`✅ [Builder] Sent queued UPDATE_DATA_TABLES`);
+            } else if (item.type === "UPDATE_API_ENDPOINTS") {
+                // ⭐ ApiEndpoints 전송 (PropertyDataBinding용)
+                iframe.contentWindow!.postMessage(item.payload, window.location.origin);
+                console.log(`✅ [Builder] Sent queued UPDATE_API_ENDPOINTS`);
             }
         });
     }, []); // ✅ 의존성 제거 (Ref 사용)
@@ -270,6 +402,12 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
             const sendInitialData = () => {
                 // ⭐ Nested Routes & Slug System: 초기 layouts 전송
                 sendLayoutsToIframe();
+
+                // ⭐ DataTables 전송 (PropertyDataBinding용)
+                sendDataTablesToIframe();
+
+                // ⭐ ApiEndpoints 전송 (PropertyDataBinding용)
+                sendApiEndpointsToIframe();
 
                 // Elements 전송
                 const currentElements = useStore.getState().elements;
@@ -553,7 +691,7 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
             //console.log('Element hovered in preview:', event.data.elementId);
             // 필요시 hover 상태 처리 로직 추가
         }
-    }, [setSelectedElement, elementsMap, isSyncingToBuilder, processMessageQueue, sendElementsToIframe, sendLayoutsToIframe]);
+    }, [setSelectedElement, elementsMap, isSyncingToBuilder, processMessageQueue, sendElementsToIframe, sendLayoutsToIframe, sendDataTablesToIframe, sendApiEndpointsToIframe]);
 
     const handleUndo = debounce(async () => {
         if (isProcessingRef.current) return;
@@ -664,6 +802,21 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
             iframeReadyState: iframeReadyStateRef.current
         });
 
+        // 🔍 DEBUG: ListBox props.dataBinding 전송 추적
+        const listBoxElements = filteredElements.filter(el => el.tag === 'ListBox');
+        if (listBoxElements.length > 0) {
+            listBoxElements.forEach(el => {
+                const propsDataBinding = (el.props as Record<string, unknown>)?.dataBinding;
+                if (propsDataBinding) {
+                    console.log('📤 [useIframeMessenger] ListBox props.dataBinding 전송:', {
+                        elementId: el.id,
+                        propsDataBinding,
+                        topLevelDataBinding: el.dataBinding,
+                    });
+                }
+            });
+        }
+
         // 전송 중 플래그 설정
         isSendingRef.current = true;
         lastSentElementsRef.current = filteredElements;
@@ -736,6 +889,63 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
         sendLayoutsToIframe();
     }, [layouts, sendLayoutsToIframe]);
 
+    // ⭐ DataTables가 변경될 때마다 iframe에 전송 (PropertyDataBinding용)
+    const lastSentDataTablesRef = useRef<string>('');
+
+    useEffect(() => {
+        // iframe이 준비되지 않았으면 스킵
+        if (iframeReadyStateRef.current !== 'ready') {
+            return;
+        }
+
+        // JSON 문자열로 비교 (mockData 변경 감지 포함)
+        const dataTablesJson = JSON.stringify(dataTables.map(dt => ({
+            id: dt.id,
+            name: dt.name,
+            mockData: dt.mockData,
+            useMockData: dt.useMockData,
+        })));
+
+        // 이전 값과 같으면 스킵
+        if (lastSentDataTablesRef.current === dataTablesJson) {
+            return;
+        }
+
+        // 값 저장 후 전송
+        lastSentDataTablesRef.current = dataTablesJson;
+        sendDataTablesToIframe();
+        console.log('📊 [Builder] DataTables changed, sending to iframe:', dataTables.length, 'tables');
+    }, [dataTables, sendDataTablesToIframe]);
+
+    // ⭐ ApiEndpoints가 변경될 때마다 iframe에 전송 (PropertyDataBinding용)
+    const lastSentApiEndpointsRef = useRef<string>('');
+
+    useEffect(() => {
+        // iframe이 준비되지 않았으면 스킵
+        if (iframeReadyStateRef.current !== 'ready') {
+            return;
+        }
+
+        // JSON 문자열로 비교
+        const apiEndpointsJson = JSON.stringify(apiEndpoints.map(ep => ({
+            id: ep.id,
+            name: ep.name,
+            method: ep.method,
+            baseUrl: ep.baseUrl,
+            path: ep.path,
+        })));
+
+        // 이전 값과 같으면 스킵
+        if (lastSentApiEndpointsRef.current === apiEndpointsJson) {
+            return;
+        }
+
+        // 값 저장 후 전송
+        lastSentApiEndpointsRef.current = apiEndpointsJson;
+        sendApiEndpointsToIframe();
+        console.log('🌐 [Builder] ApiEndpoints changed, sending to iframe:', apiEndpoints.length, 'endpoints');
+    }, [apiEndpoints, sendApiEndpointsToIframe]);
+
     // 🔧 REMOVED: Ref를 사용하므로 iframeReadyState 기반 useEffect 불필요
     // processMessageQueue는 PREVIEW_READY 핸들러에서 직접 호출됨
 
@@ -778,6 +988,8 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
         requestElementSelection,
         requestAutoSelectAfterUpdate,
         sendLayoutsToIframe,
+        sendDataTablesToIframe,
+        sendApiEndpointsToIframe,
         isIframeReady
     };
 };

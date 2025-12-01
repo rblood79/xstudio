@@ -2,11 +2,17 @@
 import { useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import "./App.css";
+import "./hero.css";
 import {
   SquarePlus,
   CloudUpload,
+  Brain,
   Box,
   Play,
+  BotMessageSquare,
+  CircleDivide,
+  CirclePercent,
+  Pyramid,
 } from "lucide-react";
 import { useParticleBackground } from "./components/ParticleBackground";
 import { ParticleButton } from "./components/ParticleButton";
@@ -39,42 +45,48 @@ function App() {
   }, []);
 
   // 회오리 시작 (마우스 다운)
-  const handleVortexStart = useCallback((e: React.MouseEvent) => {
-    // 버튼 위에서는 회오리 시작 안함
-    if ((e.target as HTMLElement).closest('button')) return;
+  const handleVortexStart = useCallback(
+    (e: React.MouseEvent) => {
+      // 버튼 위에서는 회오리 시작 안함
+      if ((e.target as HTMLElement).closest("button")) return;
 
-    const { x, y } = screenToWorld(e.clientX, e.clientY);
+      const { x, y } = screenToWorld(e.clientX, e.clientY);
 
-    vortexRef.current = {
-      active: true,
-      x,
-      y,
-      strength: 0.1,
-      radius: 20,
-      height: 0,
-    };
+      vortexRef.current = {
+        active: true,
+        x,
+        y,
+        strength: 0.1,
+        radius: 20,
+        height: 0,
+      };
 
-    // 누르는 동안 점점 강해짐
-    vortexIntervalRef.current = setInterval(() => {
-      if (vortexRef.current.active) {
-        vortexRef.current.strength = Math.min(
-          vortexRef.current.strength + VORTEX_GROWTH_RATE,
-          VORTEX_MAX_STRENGTH
-        );
-        vortexRef.current.radius = 20 + vortexRef.current.strength * 160;
-        vortexRef.current.height = vortexRef.current.strength * 250;
-      }
-    }, 16);
-  }, [vortexRef, screenToWorld]);
+      // 누르는 동안 점점 강해짐
+      vortexIntervalRef.current = setInterval(() => {
+        if (vortexRef.current.active) {
+          vortexRef.current.strength = Math.min(
+            vortexRef.current.strength + VORTEX_GROWTH_RATE,
+            VORTEX_MAX_STRENGTH
+          );
+          vortexRef.current.radius = 20 + vortexRef.current.strength * 160;
+          vortexRef.current.height = vortexRef.current.strength * 250;
+        }
+      }, 16);
+    },
+    [vortexRef, screenToWorld]
+  );
 
   // 회오리 이동 (마우스 무브)
-  const handleVortexMove = useCallback((e: React.MouseEvent) => {
-    if (!vortexRef.current.active) return;
+  const handleVortexMove = useCallback(
+    (e: React.MouseEvent) => {
+      if (!vortexRef.current.active) return;
 
-    const { x, y } = screenToWorld(e.clientX, e.clientY);
-    vortexRef.current.x = x;
-    vortexRef.current.y = y;
-  }, [vortexRef, screenToWorld]);
+      const { x, y } = screenToWorld(e.clientX, e.clientY);
+      vortexRef.current.x = x;
+      vortexRef.current.y = y;
+    },
+    [vortexRef, screenToWorld]
+  );
 
   // 회오리 종료 (마우스 업) - 천천히 흩어지도록
   const handleVortexEnd = useCallback(() => {
@@ -88,32 +100,66 @@ function App() {
 
   return (
     <main
-      style={{
-        position: "relative",
-        height: "100vh",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        zIndex: 10,
-        cursor: "crosshair",
-      }}
+      className="main"
       onMouseDown={handleVortexStart}
       onMouseMove={handleVortexMove}
       onMouseUp={handleVortexEnd}
       onMouseLeave={handleVortexEnd}
     >
-      <ParticleButton size="sm" variant="ghost">
-        <SquarePlus />
-      </ParticleButton>
-      <ParticleButton size="sm" variant="ghost">
-        <CloudUpload />
-      </ParticleButton>
-      <ParticleButton size="sm" variant="ghost">
-        <Box />
-      </ParticleButton>
-      <ParticleButton size="sm" variant="ghost" onClick={() => navigate("/signin")}>
-        <Play />
-      </ParticleButton>
+      <section className="welcome-wrapper">
+        <div className="welcome-container">
+          <div className="logo-container">
+            <div className="logo">ICONIC FUTURE</div>
+          </div>
+          <div className="header-container">
+            <div className="landing-header">
+              <h1 className="landing-header-title">Experience of BESPOKE</h1>
+              <p className="landing-header-subtitle">Unleash your creativity and bring your ideas to life with our cutting-edge platform.</p>
+            </div>
+          </div>
+          <div className="landing-cta">
+            <ParticleButton
+              size="md"
+              variant="primary"
+              onClick={() => navigate("/signin")}
+            >
+              Create Your App
+            </ParticleButton>
+          </div>
+          <div className="landing-features">
+            <ParticleButton size="sm" variant="ghost">
+              <SquarePlus />
+            </ParticleButton>
+            <ParticleButton size="sm" variant="ghost">
+              <CloudUpload />
+            </ParticleButton>
+            <ParticleButton size="sm" variant="ghost">
+              <Box />
+            </ParticleButton>
+            <ParticleButton size="sm" variant="ghost">
+              <CircleDivide />
+            </ParticleButton>
+            <ParticleButton size="sm" variant="ghost">
+              <Brain />
+            </ParticleButton>
+            <ParticleButton size="sm" variant="ghost">
+              <BotMessageSquare />
+            </ParticleButton>
+            <ParticleButton size="sm" variant="ghost">
+              <CirclePercent />
+            </ParticleButton>
+            <ParticleButton size="sm" variant="ghost">
+              <Pyramid />
+            </ParticleButton>
+            <ParticleButton size="sm" variant="ghost">
+              <Play />
+            </ParticleButton>
+          </div>
+          
+        </div>
+
+
+      </section>
     </main>
   );
 }

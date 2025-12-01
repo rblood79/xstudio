@@ -55,7 +55,7 @@ The builder consists of four main areas:
 
 1. **BuilderHeader** - Top toolbar with save/undo/redo controls
 2. **Sidebar** - Page tree and element hierarchy navigation
-3. **Preview** - iframe-based real-time preview of the page
+3. **Canvas** - iframe-based real-time canvas for editing (BuilderCanvas component)
 4. **Inspector** - Property editor for selected elements with inline style management
 
 ### State Management (Zustand)
@@ -103,15 +103,23 @@ User Action → Zustand Store → Supabase API → Real-time Update
 2. Send postMessage to iframe (for preview sync)
 3. Save to Supabase (async, failures don't break memory state)
 
-### Preview System (iframe)
+### Canvas Runtime (iframe)
 
-The preview runs in an isolated iframe (`src/builder/preview/index.tsx`):
+The canvas runs in an isolated srcdoc iframe with its own React application (`src/canvas/index.tsx`):
 
+- **Independent Zustand store** (`runtimeStore`) - completely separate from Builder state
 - Receives element updates via `postMessage` with origin validation
-- Queues messages until `PREVIEW_READY` state
+- Queues messages until `CANVAS_READY` state
 - Renders React Aria Components dynamically based on element tree
 - Handles component-specific rendering (Tabs, Tables, Collections, etc.)
 - **Collects computed styles** from DOM elements and sends to Inspector
+- **CanvasRouter** - MemoryRouter-based internal routing for page navigation
+
+**Key Files:**
+- `src/canvas/index.tsx` - Canvas runtime entry point
+- `src/canvas/store/runtimeStore.ts` - Independent Zustand store
+- `src/canvas/router/CanvasRouter.tsx` - MemoryRouter-based routing
+- `src/canvas/App.tsx` - Canvas React application
 
 ### Inspector Style Management System
 
@@ -1756,7 +1764,7 @@ TagGroup supports columnMapping for dynamic data rendering, plus a special `remo
 - **Undo-friendly**: Changes tracked in history system
 - **Restorable**: Simple UI to restore all removed items at once
 
-### Preview iframe Communication
+### Canvas iframe Communication
 
 **Always validate postMessage origins:**
 
@@ -1769,10 +1777,10 @@ window.addEventListener('message', (event) => {
 });
 ```
 
-**Queue messages until preview is ready:**
+**Queue messages until canvas is ready:**
 
 ```tsx
-if (!previewReady) {
+if (!canvasReady) {
   messageQueue.push(message);
 } else {
   window.parent.postMessage(message, '*');
@@ -2206,9 +2214,9 @@ Copilot learns from code patterns. Tips:
 > **Note**: This section has been moved to a dedicated document for better organization.
 > See **[COMPLETED_FEATURES.md](docs/COMPLETED_FEATURES.md)** for full implementation details of all completed features.
 
-### Summary of Completed Features (2025-11-27)
+### Summary of Completed Features (2025-11-30)
 
-**Total Features Completed**: 20 major features
+**Total Features Completed**: 21 major features
 **Code Reduction**: 37-88% in refactored areas
 **Performance Improvements**: 30-50% reduction in CPU/Memory usage
 
@@ -2232,13 +2240,14 @@ Copilot learns from code patterns. Tips:
 17. ✅ **M3 Color System** - Real-time M3 role visualization in Theme Studio
 18. ✅ **Panel Standardization** - Consistent naming, hooks compliance, unified styles
 19. ✅ **Layout Preset System** - Body editor separation, 9 presets, Slot auto-creation ([상세](docs/features/LAYOUT_PRESET_SYSTEM.md))
-20. ✅ **Preview Runtime Isolation** - srcdoc iframe, 독립 Zustand store, postMessage 통신 ([상세](docs/features/PREVIEW_RUNTIME_ISOLATION.md))
+20. ✅ **Canvas Runtime Isolation** - srcdoc iframe, 독립 runtimeStore, postMessage 통신 ([상세](docs/features/CANVAS_RUNTIME_ISOLATION.md))
+21. ✅ **Dataset Component** - Phase 1-6 완료: Store, Component, Editor, Factory, Preview, Transform, Cache ([상세](docs/PLANNED_FEATURES.md#-dataset-component-architecture))
 
 **Key Achievements**:
 - Zero TypeScript errors
 - Zero hardcoded colors (100% CSS variables)
 - 5 custom ESLint rules for anti-pattern prevention
-- Comprehensive documentation (20 feature docs)
+- Comprehensive documentation (21 feature docs)
 
 **Next**: See [PLANNED_FEATURES.md](docs/PLANNED_FEATURES.md) for upcoming implementations.
 
@@ -2251,8 +2260,8 @@ Copilot learns from code patterns. Tips:
 | 기능 | 상태 | 우선순위 |
 |------|------|----------|
 | **Context Menu System** | 📋 Planning | High |
-| **Dataset Component** | 📋 Planning | Medium |
-| **SlotEditor** | 📋 Planning | High |
+| **Dataset Component** | ✅ Complete | - |
+| **SlotEditor** | ✅ Complete | - |
 | **Grid/Flex 시각적 편집** | 📋 Planning | Medium |
 | **프리셋 커스터마이징** | 📋 Planning | Low |
 

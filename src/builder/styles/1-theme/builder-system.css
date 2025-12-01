@@ -33,7 +33,7 @@
   .footer,
   .overlay,
   .bg,
-  .workspace,
+  .canvas,
   body:not([data-preview="true"]) .react-aria-Popover,
   body:not([data-preview="true"]) .react-aria-Modal {
     /* ===== Core Semantic Colors (Light Mode) ===== */
@@ -135,7 +135,7 @@
   [data-builder-theme="dark"] .footer,
   [data-builder-theme="dark"] .overlay,
   [data-builder-theme="dark"] .bg,
-  [data-builder-theme="dark"] .workspace,
+  [data-builder-theme="dark"] .canvas,
   [data-builder-theme="dark"]
     body:not([data-preview="true"])
     .react-aria-Popover,

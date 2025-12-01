@@ -226,3 +226,130 @@ export function findUrlConflict(
 
   return null;
 }
+
+// ============================================
+// Dynamic Route Parameter Support
+// ============================================
+
+/**
+ * Slug에서 동적 파라미터 패턴 추출
+ *
+ * React Router 스타일의 :paramName 형식을 사용합니다.
+ *
+ * @param slug - 분석할 slug
+ * @returns 동적 파라미터 이름 배열
+ *
+ * @example
+ * extractDynamicParams('/products/:categoryId/items/:itemId')
+ * // → ['categoryId', 'itemId']
+ *
+ * extractDynamicParams('/users/:userId')
+ * // → ['userId']
+ */
+export function extractDynamicParams(slug: string): string[] {
+  const paramPattern = /:([a-zA-Z_][a-zA-Z0-9_]*)/g;
+  const params: string[] = [];
+  let match;
+
+  while ((match = paramPattern.exec(slug)) !== null) {
+    params.push(match[1]);
+  }
+
+  return params;
+}
+
+/**
+ * 동적 파라미터 slug를 React Router 형식으로 변환
+ *
+ * :paramName 형식을 그대로 유지 (React Router 호환)
+ *
+ * @param slug - 원본 slug
+ * @returns React Router 호환 path
+ *
+ * @example
+ * convertToRouterPath('/products/:categoryId')
+ * // → '/products/:categoryId'
+ */
+export function convertToRouterPath(slug: string): string {
+  // React Router는 :paramName 형식을 그대로 사용하므로 변환 불필요
+  return slug;
+}
+
+/**
+ * 동적 URL을 실제 값으로 채워넣기
+ *
+ * @param slug - 동적 파라미터가 포함된 slug
+ * @param params - 파라미터 값 객체
+ * @returns 실제 URL
+ *
+ * @example
+ * fillDynamicParams('/products/:categoryId/items/:itemId', {
+ *   categoryId: 'shoes',
+ *   itemId: '123'
+ * })
+ * // → '/products/shoes/items/123'
+ */
+export function fillDynamicParams(
+  slug: string,
+  params: Record<string, string>
+): string {
+  let result = slug;
+
+  for (const [key, value] of Object.entries(params)) {
+    result = result.replace(`:${key}`, value);
+  }
+
+  return result;
+}
+
+/**
+ * 슬러그가 동적 파라미터를 포함하는지 확인
+ *
+ * @param slug - 확인할 slug
+ * @returns 동적 파라미터 포함 여부
+ */
+export function hasDynamicParams(slug: string): boolean {
+  return /:([a-zA-Z_][a-zA-Z0-9_]*)/.test(slug);
+}
+
+/**
+ * URL이 동적 패턴과 일치하는지 확인하고 파라미터 추출
+ *
+ * @param pattern - 동적 파라미터가 포함된 패턴 (예: /products/:categoryId)
+ * @param url - 실제 URL (예: /products/shoes)
+ * @returns 일치하면 파라미터 객체, 불일치하면 null
+ *
+ * @example
+ * matchDynamicUrl('/products/:categoryId', '/products/shoes')
+ * // → { categoryId: 'shoes' }
+ *
+ * matchDynamicUrl('/products/:categoryId/items/:itemId', '/products/shoes/items/123')
+ * // → { categoryId: 'shoes', itemId: '123' }
+ *
+ * matchDynamicUrl('/products/:categoryId', '/users/123')
+ * // → null
+ */
+export function matchDynamicUrl(
+  pattern: string,
+  url: string
+): Record<string, string> | null {
+  // 패턴을 정규식으로 변환
+  const paramNames: string[] = [];
+  const regexPattern = pattern.replace(/:([a-zA-Z_][a-zA-Z0-9_]*)/g, (_, name) => {
+    paramNames.push(name);
+    return '([^/]+)';
+  });
+
+  const regex = new RegExp(`^${regexPattern}$`);
+  const match = url.match(regex);
+
+  if (!match) return null;
+
+  // 파라미터 추출
+  const params: Record<string, string> = {};
+  paramNames.forEach((name, index) => {
+    params[name] = match[index + 1];
+  });
+
+  return params;
+}

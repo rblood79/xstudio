@@ -40,7 +40,7 @@ export const ParticleButton = forwardRef<HTMLButtonElement, ParticleButtonProps>
     );
 
     const handleMouseEnter = useCallback(
-      (e: React.MouseEvent<HTMLButtonElement>) => {
+      () => {
         // 버튼 내부의 SVG 요소 찾기
         const svgElement = buttonRef.current?.querySelector("svg");
 
@@ -60,7 +60,7 @@ export const ParticleButton = forwardRef<HTMLButtonElement, ParticleButtonProps>
     );
 
     const handleMouseLeave = useCallback(
-      (e: React.MouseEvent<HTMLButtonElement>) => {
+      () => {
         setHoverContent(null);
 
         // 기존 onHoverEnd 핸들러 호출

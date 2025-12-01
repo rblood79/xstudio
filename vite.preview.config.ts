@@ -15,10 +15,10 @@ export default defineConfig({
     outDir: "dist/preview",
     emptyOutDir: true,
     lib: {
-      entry: path.resolve(__dirname, "src/preview/index.tsx"),
-      name: "Preview",
+      entry: path.resolve(__dirname, "src/canvas/index.tsx"),
+      name: "CanvasRuntime",
       formats: ["iife"], // 즉시 실행 함수로 번들링 (srcdoc용)
-      fileName: () => "preview.js",
+      fileName: () => "canvas.js",
     },
     rollupOptions: {
       // 모든 의존성을 번들에 포함
@@ -27,7 +27,7 @@ export default defineConfig({
         // 전역 변수 설정 (필요 시)
         globals: {},
         // 인라인 CSS
-        assetFileNames: "preview.[ext]",
+        assetFileNames: "canvas.[ext]",
       },
     },
     // 번들 최적화

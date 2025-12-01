@@ -9,7 +9,7 @@ import { historyManager } from "../stores/history";
 import "../panels";
 
 import { BuilderHeader, Breakpoint } from "./BuilderHeader";
-import { BuilderWorkspace } from "./BuilderWorkspace";
+import { BuilderCanvas } from "./BuilderCanvas";
 import { BuilderViewport } from "./BuilderViewport";
 import SelectionOverlay from "../overlay";
 import Grid from "../grid";
@@ -32,7 +32,6 @@ import { getDB } from "../../lib/db";
 import { useEditModeStore } from "../stores/editMode";
 import { useLayoutsStore } from "../stores/layouts";
 
-import "./index.css";
 import { MessageService } from "../../utils/messaging";
 
 export const BuilderCore: React.FC = () => {
@@ -459,7 +458,7 @@ export const BuilderCore: React.FC = () => {
   }, [setSelectedElement]);
 
   return (
-    <div className="app">
+    <BuilderViewport>
       {/* 에러 표시 */}
       {error && (
         <div className="error-banner">
@@ -475,53 +474,50 @@ export const BuilderCore: React.FC = () => {
         </div>
       )}
 
-      <BuilderViewport>
-        {/* Inspector 상태 동기화 (항상 마운트) */}
-        <InspectorSync />
+      {/* Inspector 상태 동기화 (항상 마운트) */}
+      <InspectorSync />
 
-        <BuilderHeader
-          projectId={projectId}
-          projectName={projectInfo?.name}
-          breakpoint={breakpoint}
-          breakpoints={breakpoints}
-          onBreakpointChange={handleBreakpointChange}
-          historyInfo={{
-            current: historyInfo.currentIndex + 1,
-            total: historyInfo.totalEntries,
-          }}
-          canUndo={canUndo}
-          canRedo={canRedo}
-          onUndo={handleUndo}
-          onRedo={handleRedo}
-          onPreview={handlePreview}
-          onPlay={handlePlay}
-          onPublish={handlePublish}
-        />
+      <BuilderHeader
+        projectId={projectId}
+        projectName={projectInfo?.name}
+        breakpoint={breakpoint}
+        breakpoints={breakpoints}
+        onBreakpointChange={handleBreakpointChange}
+        historyInfo={{
+          current: historyInfo.currentIndex + 1,
+          total: historyInfo.totalEntries,
+        }}
+        canUndo={canUndo}
+        canRedo={canRedo}
+        onUndo={handleUndo}
+        onRedo={handleRedo}
+        onPreview={handlePreview}
+        onPlay={handlePlay}
+        onPublish={handlePublish}
+      />
 
-        <BuilderWorkspace
-          projectId={projectId}
-          breakpoint={new Set(Array.from(breakpoint).map(String))}
-          breakpoints={breakpoints}
-          onIframeLoad={handleIframeLoad}
-          onMessage={handleMessage}
-        >
-          <Grid />
-          {showOverlay && <SelectionOverlay />}
-        </BuilderWorkspace>
+      <BuilderCanvas
+        projectId={projectId}
+        breakpoint={new Set(Array.from(breakpoint).map(String))}
+        breakpoints={breakpoints}
+        onIframeLoad={handleIframeLoad}
+        onMessage={handleMessage}
+      >
+        <Grid />
+        {showOverlay && <SelectionOverlay />}
+      </BuilderCanvas>
 
-        <aside className="sidebar">
-          <PanelSlot side="left" />
-        </aside>
+      <aside className="sidebar">
+        <PanelSlot side="left" />
+      </aside>
 
-        <aside className="inspector">
-          <PanelSlot side="right" />
-        </aside>
+      <aside className="inspector">
+        <PanelSlot side="right" />
+      </aside>
 
-        {/* 기존 footer 태그를 BuilderFooter 컴포넌트로 대체 */}
-        <footer className="footer">
-          <Monitor />
-        </footer>
-      </BuilderViewport>
-    </div>
+      <footer className="footer">
+        <Monitor />
+      </footer>
+    </BuilderViewport>
   );
 };

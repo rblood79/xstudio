@@ -1,4 +1,3 @@
-import "./index.css";
 import React, { useCallback } from "react";
 import {
   Settings2,

@@ -10,17 +10,24 @@ import {
   ListBoxItem as AriaListBoxItem,
   ListBoxItemProps,
   ListBoxProps,
-  composeRenderProps
+  composeRenderProps,
 } from "react-aria-components";
-import { tv } from 'tailwind-variants';
-import type { ListBoxVariant, ComponentSize } from '../../types/componentVariants';
-import type { DataBinding, ColumnMapping } from "../../types/builder/unified.types";
+import { tv } from "tailwind-variants";
+import type {
+  ListBoxVariant,
+  ComponentSize,
+} from "../../types/componentVariants";
+import type {
+  DataBinding,
+  ColumnMapping,
+} from "../../types/builder/unified.types";
+import type { DataBindingValue } from "../../builder/panels/common/PropertyDataBinding";
 import { useCollectionData } from "../../builder/hooks/useCollectionData";
 
 import "./styles/ListBox.css";
 
 interface ExtendedListBoxProps<T extends object> extends ListBoxProps<T> {
-  dataBinding?: DataBinding;
+  dataBinding?: DataBinding | DataBindingValue;
   columnMapping?: ColumnMapping;
   // M3 props
   variant?: ListBoxVariant;
@@ -28,24 +35,25 @@ interface ExtendedListBoxProps<T extends object> extends ListBoxProps<T> {
 }
 
 const listBoxStyles = tv({
-  base: 'react-aria-ListBox',
+  base: "react-aria-ListBox",
   variants: {
     variant: {
-      primary: 'primary',
-      secondary: 'secondary',
-      tertiary: 'tertiary',
-      error: 'error',
-      filled: 'filled',
+      primary: "primary",
+      secondary: "secondary",
+      tertiary: "tertiary",
+      error: "error",
+      filled: "filled",
+      surface: "surface",
     },
     size: {
-      sm: 'sm',
-      md: 'md',
-      lg: 'lg',
+      sm: "sm",
+      md: "md",
+      lg: "lg",
     },
   },
   defaultVariants: {
-    variant: 'primary',
-    size: 'md',
+    variant: "primary",
+    size: "md",
   },
 });
 
@@ -53,8 +61,8 @@ export function ListBox<T extends object>({
   children,
   dataBinding,
   columnMapping,
-  variant = 'primary',
-  size = 'md',
+  variant = "primary",
+  size = "md",
   ...props
 }: ExtendedListBoxProps<T>) {
   // useCollectionData Hook으로 데이터 가져오기 (Static, API, Supabase 통합)
@@ -63,7 +71,7 @@ export function ListBox<T extends object>({
     loading,
     error,
   } = useCollectionData({
-    dataBinding,
+    dataBinding: dataBinding as DataBinding,
     componentName: "ListBox",
     fallbackData: [
       { id: 1, name: "User 1", email: "user1@example.com", role: "Admin" },
@@ -72,21 +80,29 @@ export function ListBox<T extends object>({
   });
 
   // DataBinding이 있고 데이터가 로드되었을 때 동적 아이템 생성
-  const hasDataBinding = dataBinding?.type === "collection";
+  // PropertyDataBinding 형식 (source, name) 또는 DataBinding 형식 (type: "collection") 둘 다 지원
+  const isPropertyBinding =
+    dataBinding &&
+    "source" in dataBinding &&
+    "name" in dataBinding &&
+    !("type" in dataBinding);
+  const hasDataBinding =
+    (!isPropertyBinding &&
+      dataBinding &&
+      "type" in dataBinding &&
+      dataBinding.type === "collection") ||
+    isPropertyBinding;
 
   // ListBox className generator (reused across all conditional renders)
-  const getListBoxClassName = (baseClassName?: string) =>
-    composeRenderProps(
-      baseClassName,
-      (className, renderProps) => {
-        return listBoxStyles({
-          ...renderProps,
-          variant,
-          size,
-          className,
-        });
-      }
-    );
+  const getListBoxClassName = (baseClassName?: ListBoxProps<T>["className"]) =>
+    composeRenderProps(baseClassName, (className, renderProps) => {
+      return listBoxStyles({
+        ...renderProps,
+        variant,
+        size,
+        className,
+      });
+    });
 
   // ColumnMapping이 있으면 각 데이터 항목마다 ListBoxItem 렌더링
   // Table과 동일한 패턴: Element tree의 ListBoxItem 템플릿 + Field 자식 사용
@@ -100,7 +116,10 @@ export function ListBox<T extends object>({
     // Loading 상태
     if (loading) {
       return (
-        <AriaListBox {...props} className={getListBoxClassName(props.className)}>
+        <AriaListBox
+          {...props}
+          className={getListBoxClassName(props.className)}
+        >
           <AriaListBoxItem
             key="loading"
             value={{}}
@@ -116,7 +135,10 @@ export function ListBox<T extends object>({
     // Error 상태
     if (error) {
       return (
-        <AriaListBox {...props} className={getListBoxClassName(props.className)}>
+        <AriaListBox
+          {...props}
+          className={getListBoxClassName(props.className)}
+        >
           <AriaListBoxItem
             key="error"
             value={{}}
@@ -139,7 +161,11 @@ export function ListBox<T extends object>({
       console.log("✅ ListBox with columnMapping - items:", items);
 
       return (
-        <AriaListBox {...props} className={getListBoxClassName(props.className)} items={items}>
+        <AriaListBox
+          {...props}
+          className={getListBoxClassName(props.className)}
+          items={items}
+        >
           {children}
         </AriaListBox>
       );
@@ -158,7 +184,10 @@ export function ListBox<T extends object>({
     // Loading 상태
     if (loading) {
       return (
-        <AriaListBox {...props} className={getListBoxClassName(props.className)}>
+        <AriaListBox
+          {...props}
+          className={getListBoxClassName(props.className)}
+        >
           <AriaListBoxItem
             key="loading"
             value={{}}
@@ -174,7 +203,10 @@ export function ListBox<T extends object>({
     // Error 상태
     if (error) {
       return (
-        <AriaListBox {...props} className={getListBoxClassName(props.className)}>
+        <AriaListBox
+          {...props}
+          className={getListBoxClassName(props.className)}
+        >
           <AriaListBoxItem
             key="error"
             value={{}}
@@ -195,22 +227,45 @@ export function ListBox<T extends object>({
           item.name || item.title || item.label || `Item ${index + 1}`
         ),
         ...item,
-      }));
+      })) as T[];
 
       console.log("✅ ListBox Dynamic Collection - items:", items);
 
+      // children이 함수(render function)이면 그것을 사용
+      // 이는 renderListBox에서 Field 자식들을 포함한 템플릿 렌더 함수를 전달받는 경우
+      if (typeof children === "function") {
+        console.log("🔄 ListBox: children render function 사용");
+        return (
+          <AriaListBox
+            {...props}
+            className={getListBoxClassName(props.className)}
+            items={items}
+          >
+            {children}
+          </AriaListBox>
+        );
+      }
+
+      // 기본 렌더링 (children이 없거나 정적 children일 때)
       return (
-        <AriaListBox {...props} className={getListBoxClassName(props.className)} items={items}>
-          {(item) => (
-            <AriaListBoxItem
-              key={item.id}
-              id={item.id}
-              textValue={item.label}
-              className="react-aria-ListBoxItem"
-            >
-              {item.label}
-            </AriaListBoxItem>
-          )}
+        <AriaListBox
+          {...props}
+          className={getListBoxClassName(props.className)}
+          items={items}
+        >
+          {(item) => {
+            const itemWithLabel = item as T & { id: string; label: string };
+            return (
+              <AriaListBoxItem
+                key={itemWithLabel.id}
+                id={itemWithLabel.id}
+                textValue={itemWithLabel.label}
+                className="react-aria-ListBoxItem"
+              >
+                {itemWithLabel.label}
+              </AriaListBoxItem>
+            );
+          }}
         </AriaListBox>
       );
     }
