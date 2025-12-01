@@ -2,6 +2,7 @@
 import { useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import "./App.css";
+import "./hero.css";
 import {
   SquarePlus,
   CloudUpload,
@@ -99,57 +100,66 @@ function App() {
 
   return (
     <main
-      style={{
-        position: "absolute",
-        display: "grid",
-        alignItems: "center",
-        justifyContent: "center",
-        zIndex: 10,
-        gridTemplateColumns: "repeat(3, 1fr)",
-        gridTemplateRows: "repeat(3, 1fr)",
-        aspectRatio: "1/1",
-        left: "50%",
-        top: "50%",
-        transform: "translate(-50%, -50%)",
-      }}
+      className="main"
       onMouseDown={handleVortexStart}
       onMouseMove={handleVortexMove}
       onMouseUp={handleVortexEnd}
       onMouseLeave={handleVortexEnd}
     >
-      <ParticleButton size="sm" variant="ghost">
-        <SquarePlus />
-      </ParticleButton>
-      <ParticleButton size="sm" variant="ghost">
-        <CloudUpload />
-      </ParticleButton>
+      <section className="welcome-wrapper">
+        <div className="welcome-container">
+          <div className="logo-container">
+            <div className="logo">ICONIC FUTURE</div>
+          </div>
+          <div className="header-container">
+            <div className="landing-header">
+              <h1 className="landing-header-title">Experience of BESPOKE</h1>
+              <p className="landing-header-subtitle">Unleash your creativity and bring your ideas to life with our cutting-edge platform.</p>
+            </div>
+          </div>
+          <div className="landing-cta">
+            <ParticleButton
+              size="md"
+              variant="primary"
+              onClick={() => navigate("/signin")}
+            >
+              Create Your App
+            </ParticleButton>
+          </div>
+          <div className="landing-features">
+            <ParticleButton size="sm" variant="ghost">
+              <SquarePlus />
+            </ParticleButton>
+            <ParticleButton size="sm" variant="ghost">
+              <CloudUpload />
+            </ParticleButton>
+            <ParticleButton size="sm" variant="ghost">
+              <Box />
+            </ParticleButton>
+            <ParticleButton size="sm" variant="ghost">
+              <CircleDivide />
+            </ParticleButton>
+            <ParticleButton size="sm" variant="ghost">
+              <Brain />
+            </ParticleButton>
+            <ParticleButton size="sm" variant="ghost">
+              <BotMessageSquare />
+            </ParticleButton>
+            <ParticleButton size="sm" variant="ghost">
+              <CirclePercent />
+            </ParticleButton>
+            <ParticleButton size="sm" variant="ghost">
+              <Pyramid />
+            </ParticleButton>
+            <ParticleButton size="sm" variant="ghost">
+              <Play />
+            </ParticleButton>
+          </div>
+          
+        </div>
 
-      <ParticleButton size="sm" variant="ghost">
-        <Box />
-      </ParticleButton>
-      <ParticleButton size="sm" variant="ghost">
-        <CircleDivide />
-      </ParticleButton>
-      <ParticleButton size="sm" variant="ghost">
-        <Brain />
-      </ParticleButton>
-      <ParticleButton size="sm" variant="ghost">
-        <BotMessageSquare />
-      </ParticleButton>
-      <ParticleButton size="sm" variant="ghost">
-        <CirclePercent />
-      </ParticleButton>
-      <ParticleButton size="sm" variant="ghost">
-        <Pyramid />
-      </ParticleButton>
 
-      <ParticleButton
-        size="sm"
-        variant="ghost"
-        onClick={() => navigate("/signin")}
-      >
-        <Play />
-      </ParticleButton>
+      </section>
     </main>
   );
 }
