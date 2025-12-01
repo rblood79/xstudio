@@ -100,71 +100,119 @@ export const renderListBox = (
     listBoxChildrenCount: listBoxChildren.length,
   });
 
-  const renderChildren = hasValidTemplate
-    ? (item: Record<string, unknown>) => {
-        // ListBoxItem 템플릿을 각 데이터 항목에 대해 렌더링
-        const listBoxItemTemplate = listBoxChildren[0];
+  // hasValidTemplate일 때는 render function을 사용
+  if (hasValidTemplate) {
+    const listBoxItemTemplate = listBoxChildren[0];
 
-        // Field 자식들 찾기 - context.elements를 사용하여 최신 요소 접근
-        const fieldChildren = context.elements
-          .filter(
-            (child) =>
-              child.parent_id === listBoxItemTemplate.id && child.tag === "Field"
-          )
-          .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+    // Field 자식들 찾기 - context.elements를 사용하여 최신 요소 접근
+    const fieldChildren = context.elements
+      .filter(
+        (child) =>
+          child.parent_id === listBoxItemTemplate.id && child.tag === "Field"
+      )
+      .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
 
-        console.log("🎨 ListBox render function - Field 자식 찾기:", {
-          listBoxItemTemplateId: listBoxItemTemplate.id,
-          totalElementsInContext: context.elements.length,
-          fieldChildrenFound: fieldChildren.length,
-          fieldChildren: fieldChildren.map((f) => ({
-            id: f.id,
-            key: (f.props as { key?: string }).key,
-            label: (f.props as { label?: string }).label,
-          })),
-        });
+    console.log("🎨 ListBox hasValidTemplate - Field 자식 찾기:", {
+      listBoxItemTemplateId: listBoxItemTemplate.id,
+      totalElementsInContext: context.elements.length,
+      fieldChildrenFound: fieldChildren.length,
+      fieldChildren: fieldChildren.map((f) => ({
+        id: f.id,
+        key: (f.props as { key?: string }).key,
+        label: (f.props as { label?: string }).label,
+      })),
+    });
 
-        return (
-          <ListBoxItem
-            key={String(item.id)}
-            data-element-id={listBoxItemTemplate.id}
-            value={item}
-            isDisabled={Boolean(listBoxItemTemplate.props.isDisabled)}
-            style={listBoxItemTemplate.props.style}
-            className={listBoxItemTemplate.props.className}
-          >
-            {fieldChildren.length > 0
-              ? fieldChildren.map((field) => {
-                  const fieldKey = (field.props as { key?: string }).key;
-                  const fieldValue = fieldKey ? item[fieldKey] : undefined;
+    const renderItemFunction = (item: Record<string, unknown>) => {
+      console.log("🎨 ListBox renderItemFunction 호출:", {
+        itemId: item.id,
+        itemKeys: Object.keys(item),
+        item,
+      });
 
-                  return (
-                    <DataField
-                      key={field.id}
-                      fieldKey={fieldKey || ""}
-                      label={(field.props as { label?: string }).label}
-                      type={
-                        (field.props as { type?: string }).type as
-                          | "string"
-                          | "number"
-                          | "boolean"
-                          | "date"
-                          | "image"
-                          | "url"
-                          | "email"
-                      }
-                      value={fieldValue}
-                      visible={(field.props as { visible?: boolean }).visible !== false}
-                      style={field.props.style}
-                      className={field.props.className}
-                    />
-                  );
-                })
-              : String(listBoxItemTemplate.props.label || "")}
-          </ListBoxItem>
-        );
-      }
-    : listBoxChildren.map((item) => context.renderElement(item));
+      return (
+        <ListBoxItem
+          key={String(item.id)}
+          data-element-id={listBoxItemTemplate.id}
+          value={item}
+          isDisabled={Boolean(listBoxItemTemplate.props.isDisabled)}
+          style={listBoxItemTemplate.props.style}
+          className={listBoxItemTemplate.props.className}
+        >
+          {fieldChildren.length > 0
+            ? fieldChildren.map((field) => {
+                const fieldKey = (field.props as { key?: string }).key;
+                const fieldValue = fieldKey ? item[fieldKey] : undefined;
+
+                console.log("🏷️ Field 렌더링:", {
+                  fieldId: field.id,
+                  fieldKey,
+                  fieldValue,
+                  itemKeys: Object.keys(item),
+                });
+
+                return (
+                  <DataField
+                    key={field.id}
+                    fieldKey={fieldKey || ""}
+                    label={(field.props as { label?: string }).label}
+                    type={
+                      (field.props as { type?: string }).type as
+                        | "string"
+                        | "number"
+                        | "boolean"
+                        | "date"
+                        | "image"
+                        | "url"
+                        | "email"
+                    }
+                    value={fieldValue}
+                    visible={(field.props as { visible?: boolean }).visible !== false}
+                    style={field.props.style}
+                    className={field.props.className}
+                  />
+                );
+              })
+            : String(listBoxItemTemplate.props.label || "")}
+        </ListBoxItem>
+      );
+    };
+
+    return (
+      <ListBox
+        key={element.id}
+        id={element.customId}
+        data-element-id={element.id}
+        style={element.props.style}
+        className={element.props.className}
+        orientation={
+          (element.props.orientation as "horizontal" | "vertical") || "vertical"
+        }
+        selectionMode={
+          (element.props.selectionMode as "none" | "single" | "multiple") || "none"
+        }
+        defaultSelectedKeys={
+          Array.isArray(element.props.selectedKeys)
+            ? (element.props.selectedKeys as unknown as string[])
+            : []
+        }
+        dataBinding={element.dataBinding || element.props.dataBinding}
+        columnMapping={columnMapping}
+        onSelectionChange={(selectedKeys) => {
+          const updatedProps = {
+            ...element.props,
+            selectedKeys: Array.from(selectedKeys),
+          };
+          updateElementProps(element.id, updatedProps);
+        }}
+      >
+        {renderItemFunction}
+      </ListBox>
+    );
+  }
+
+  // Static children (no data binding)
+  const staticChildren = listBoxChildren.map((item) => context.renderElement(item));
 
   return (
     <ListBox
@@ -194,7 +242,7 @@ export const renderListBox = (
         updateElementProps(element.id, updatedProps);
       }}
     >
-      {renderChildren}
+      {staticChildren}
     </ListBox>
   );
 };

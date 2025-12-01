@@ -5,6 +5,12 @@
  */
 
 @layer components {
+  .preview-slot {
+    pointer-events: none;
+    & > * {
+      pointer-events: auto;
+    }
+  }
   /* ============================================
    * Base Slot Container
    * ============================================ */

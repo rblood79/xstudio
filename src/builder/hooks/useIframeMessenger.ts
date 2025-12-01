@@ -196,41 +196,17 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
             console.warn('⚠️ [Builder] dataTables가 비어있습니다. 변환할 데이터가 없습니다.');
         }
 
-        // RuntimeDataTable 형태로 변환 (id, name, mockData, useMockData만 전송)
-        // ⭐ mockData의 키를 schema의 label로 변환 (field_xxx → 사용자 정의 컬럼명)
+        // RuntimeDataTable 형태로 변환 (id, name, mockData, useMockData, schema 전송)
+        // ⭐ mockData의 키는 schema의 key를 그대로 유지 (label 변환 제거)
         const runtimeDataTables = currentDataTables.map((dt) => {
-            // schema에서 key → label 매핑 생성
-            const keyToLabel: Record<string, string> = {};
-            if (dt.schema) {
-                dt.schema.forEach((field) => {
-                    if (field.label) {
-                        keyToLabel[field.key] = field.label;
-                    }
-                });
-            }
-            console.log(`🔄 [Builder] DataTable '${dt.name}' key→label 매핑:`, keyToLabel);
             console.log(`🔄 [Builder] DataTable '${dt.name}' schema:`, dt.schema);
-
-            if (Object.keys(keyToLabel).length === 0) {
-                console.warn(`⚠️ [Builder] DataTable '${dt.name}' schema에 label이 없습니다. Schema:`, dt.schema);
-            }
-
-            // mockData의 키를 label로 변환
-            const transformedMockData = (dt.mockData || []).map((row) => {
-                const transformedRow: Record<string, unknown> = {};
-                for (const [key, value] of Object.entries(row)) {
-                    const label = keyToLabel[key] || key; // label이 있으면 사용, 없으면 key 그대로
-                    transformedRow[label] = value;
-                }
-                return transformedRow;
-            });
-
-            console.log(`✅ [Builder] DataTable '${dt.name}' 변환된 mockData:`, transformedMockData);
+            console.log(`✅ [Builder] DataTable '${dt.name}' mockData (key 유지):`, dt.mockData);
 
             return {
                 id: dt.id,
                 name: dt.name,
-                mockData: transformedMockData,
+                schema: dt.schema, // schema도 함께 전송
+                mockData: dt.mockData || [],
                 useMockData: dt.useMockData,
             };
         });

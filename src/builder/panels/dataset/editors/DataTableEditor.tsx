@@ -11,8 +11,6 @@ import { useState, useCallback, useEffect } from "react";
 import {
   Plus,
   Trash2,
-  ChevronDown,
-  ChevronRight,
   Table2,
   Database,
   Settings,
@@ -23,11 +21,7 @@ import type {
   DataField,
   DataFieldType,
 } from "../../../../types/builder/data.types";
-import {
-  PropertyInput,
-  PropertySelect,
-  PropertySwitch,
-} from "../../common";
+import { PropertySwitch } from "../../common";
 import "./DataTableEditor.css";
 
 interface DataTableEditorProps {
@@ -114,8 +108,19 @@ export function DataTableEditor({ dataTable, onClose }: DataTableEditorProps) {
   // Mock 데이터 행 추가
   const handleAddMockRow = useCallback(() => {
     const newRow: Record<string, unknown> = {};
+    const newRowIndex = dataTable.mockData.length + 1;
+
     dataTable.schema.forEach((field) => {
-      newRow[field.key] = field.defaultValue ?? getDefaultValueForType(field.type);
+      // id 필드는 고유한 값을 자동 생성
+      if (field.key === 'id') {
+        if (field.type === 'number') {
+          newRow[field.key] = newRowIndex;
+        } else {
+          newRow[field.key] = `row_${newRowIndex}`;
+        }
+      } else {
+        newRow[field.key] = field.defaultValue ?? getDefaultValueForType(field.type);
+      }
     });
     handleMockDataUpdate([...dataTable.mockData, newRow]);
   }, [dataTable.schema, dataTable.mockData, handleMockDataUpdate]);
@@ -197,7 +202,7 @@ export function DataTableEditor({ dataTable, onClose }: DataTableEditorProps) {
           onClick={() => setActiveTab("data")}
         >
           <Table2 size={14} />
-          Mock Data
+          Table
         </button>
         <button
           type="button"
@@ -258,89 +263,119 @@ interface SchemaEditorProps {
 
 function SchemaEditor({
   schema,
-  expandedFields,
-  setExpandedFields,
   onAddField,
   onDeleteField,
   onUpdateField,
 }: SchemaEditorProps) {
-  const toggleExpand = (key: string) => {
-    setExpandedFields((prev) => {
-      const next = new Set(prev);
-      if (next.has(key)) {
-        next.delete(key);
-      } else {
-        next.add(key);
-      }
-      return next;
+  // 로컬 상태로 입력값 관리 (blur 시에만 저장)
+  const [localValues, setLocalValues] = useState<Record<string, { key: string; label: string }>>({});
+
+  // schema 변경 시 로컬 상태 초기화
+  useEffect(() => {
+    const initial: Record<string, { key: string; label: string }> = {};
+    schema.forEach((field, index) => {
+      initial[index] = { key: field.key, label: field.label || "" };
     });
+    setLocalValues(initial);
+  }, [schema.length]); // schema.length가 변경될 때만 초기화
+
+  const handleLocalChange = (index: number, fieldName: 'key' | 'label', value: string) => {
+    setLocalValues(prev => ({
+      ...prev,
+      [index]: { ...prev[index], [fieldName]: value }
+    }));
+  };
+
+  const handleBlur = (index: number, originalKey: string, fieldName: 'key' | 'label') => {
+    const localValue = localValues[index];
+    if (!localValue) return;
+
+    if (fieldName === 'key' && localValue.key !== originalKey) {
+      onUpdateField(originalKey, { key: localValue.key });
+    } else if (fieldName === 'label') {
+      onUpdateField(originalKey, { label: localValue.label });
+    }
   };
 
   return (
     <div className="schema-editor">
-      <div className="schema-list">
-        {schema.map((field) => (
-          <div key={field.key} className="schema-field">
-            <div
-              className="schema-field-header"
-              onClick={() => toggleExpand(field.key)}
-            >
-              {expandedFields.has(field.key) ? (
-                <ChevronDown size={14} />
-              ) : (
-                <ChevronRight size={14} />
-              )}
-              <span className="field-key">{field.key}</span>
-              <span className="field-type">{field.type}</span>
-              {field.required && <span className="field-required">*</span>}
-              <button
-                type="button"
-                className="field-delete"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onDeleteField(field.key);
-                }}
-              >
-                <Trash2 size={12} />
-              </button>
-            </div>
-
-            {expandedFields.has(field.key) && (
-              <div className="schema-field-details">
-                <PropertyInput
-                  label="Key"
-                  value={field.key}
-                  onChange={(value) => onUpdateField(field.key, { key: value })}
-                />
-                <PropertySelect
-                  label="Type"
-                  value={field.type}
-                  onChange={(value) =>
-                    onUpdateField(field.key, { type: value as DataFieldType })
-                  }
-                  options={FIELD_TYPES}
-                />
-                <PropertyInput
-                  label="Label"
-                  value={field.label || ""}
-                  onChange={(value) => onUpdateField(field.key, { label: value })}
-                />
-                <PropertySwitch
-                  label="Required"
-                  isSelected={field.required || false}
-                  onChange={(checked) =>
-                    onUpdateField(field.key, { required: checked })
-                  }
-                />
-              </div>
-            )}
-          </div>
-        ))}
+      <div className="schema-table-wrapper">
+        <table className="schema-table">
+          <thead>
+            <tr>
+              <th>Key</th>
+              <th>Type</th>
+              <th>Label</th>
+              <th>Req</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {schema.map((field, index) => (
+              <tr key={index}>
+                <td>
+                  <input
+                    type="text"
+                    className="cell-input"
+                    value={localValues[index]?.key ?? field.key}
+                    onChange={(e) => handleLocalChange(index, 'key', e.target.value)}
+                    onBlur={() => handleBlur(index, field.key, 'key')}
+                  />
+                </td>
+                <td>
+                  <select
+                    className="cell-select"
+                    value={field.type}
+                    onChange={(e) =>
+                      onUpdateField(field.key, {
+                        type: e.target.value as DataFieldType,
+                      })
+                    }
+                  >
+                    {FIELD_TYPES.map((ft) => (
+                      <option key={ft.value} value={ft.value}>
+                        {ft.label}
+                      </option>
+                    ))}
+                  </select>
+                </td>
+                <td>
+                  <input
+                    type="text"
+                    className="cell-input"
+                    value={localValues[index]?.label ?? field.label ?? ""}
+                    onChange={(e) => handleLocalChange(index, 'label', e.target.value)}
+                    onBlur={() => handleBlur(index, field.key, 'label')}
+                    placeholder="Label"
+                  />
+                </td>
+                <td className="cell-center">
+                  <input
+                    type="checkbox"
+                    checked={field.required || false}
+                    onChange={(e) =>
+                      onUpdateField(field.key, { required: e.target.checked })
+                    }
+                  />
+                </td>
+                <td>
+                  <button
+                    type="button"
+                    className="delete-row-btn"
+                    onClick={() => onDeleteField(field.key)}
+                  >
+                    <Trash2 size={12} />
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
 
       <button type="button" className="add-field-btn" onClick={onAddField}>
         <Plus size={14} />
-        Add Field
+        Add Column
       </button>
     </div>
   );
@@ -381,7 +416,7 @@ function MockDataEditor({
             <tr>
               <th>#</th>
               {schema.map((field) => (
-                <th key={field.key}>{field.label || field.key}</th>
+                <th key={field.key}>{field.key}</th>
               ))}
               <th></th>
             </tr>
@@ -520,13 +555,13 @@ function SettingsEditor({
   return (
     <div className="settings-editor">
       <PropertySwitch
-        label="Use Mock Data"
+        label="Use Table Data"
         isSelected={useMockData}
         onChange={onUseMockDataChange}
       />
       <p className="settings-description">
         {useMockData
-          ? "Mock 데이터를 사용합니다. API 응답 대신 정의된 Mock 데이터가 표시됩니다."
+          ? "Table 데이터를 사용합니다. API 응답 대신 정의된 Table 데이터가 표시됩니다."
           : "실제 API 응답 데이터를 사용합니다."}
       </p>
     </div>
