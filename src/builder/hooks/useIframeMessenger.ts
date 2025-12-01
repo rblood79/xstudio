@@ -3,7 +3,7 @@ import { debounce, DebouncedFunc } from 'lodash';
 import { useStore } from '../stores';
 import { useEditModeStore } from '../stores/editMode';
 import { useLayoutsStore } from '../stores/layouts';
-import { useDataTables, useApiEndpoints } from '../stores/data';
+import { useDataTables, useApiEndpoints, useVariables } from '../stores/data';
 // useZundoActions는 제거됨 - 기존 시스템 사용
 import type { ElementProps } from '../../types/integrations/supabase.types';
 import { Element } from '../../types/core/store.types';
@@ -30,6 +30,7 @@ export interface UseIframeMessengerReturn {
     sendLayoutsToIframe: () => void;
     sendDataTablesToIframe: () => void;
     sendApiEndpointsToIframe: () => void;
+    sendVariablesToIframe: () => void;
     isIframeReady: boolean;
 }
 
@@ -63,6 +64,9 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
 
     // ⭐ ApiEndpoints 구독 (PropertyDataBinding용)
     const apiEndpoints = useApiEndpoints();
+
+    // ⭐ Variables 구독 (PropertyDataBinding용)
+    const variables = useVariables();
 
     // ⭐ Layout/Slot System: Edit Mode에 따라 요소 필터링
     const filteredElements = useMemo(() => {
@@ -291,6 +295,47 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
         console.log('🌐 [Builder] Sent UPDATE_API_ENDPOINTS:', runtimeApiEndpoints.length, 'endpoints');
     }, [apiEndpoints]); // apiEndpoints 변경 시 갱신
 
+    // ⭐ Variables를 iframe에 전송 (PropertyDataBinding용)
+    const sendVariablesToIframe = useCallback(() => {
+        const iframe = MessageService.getIframe();
+
+        // 🔧 FIX: Ref를 사용하여 최신 상태 확인
+        const currentReadyState = iframeReadyStateRef.current;
+
+        // 현재 variables 가져오기
+        const currentVariables = variables;
+
+        console.log('🔍 [Builder] sendVariablesToIframe 호출, variables 수:', currentVariables.length);
+
+        // RuntimeVariable 형태로 변환
+        const runtimeVariables = currentVariables.map((v) => ({
+            id: v.id,
+            name: v.name,
+            type: v.type,
+            defaultValue: v.defaultValue,
+            persist: v.persist,
+            scope: v.scope,
+            page_id: v.page_id,
+        }));
+
+        const message = {
+            type: "UPDATE_VARIABLES",
+            variables: runtimeVariables,
+        };
+
+        // iframe이 준비되지 않았으면 큐에 넣기
+        if (currentReadyState !== 'ready' || !iframe?.contentWindow) {
+            messageQueueRef.current.push({
+                type: "UPDATE_VARIABLES",
+                payload: message
+            });
+            return;
+        }
+
+        iframe.contentWindow.postMessage(message, window.location.origin);
+        console.log('📦 [Builder] Sent UPDATE_VARIABLES:', runtimeVariables.length, 'variables');
+    }, [variables]); // variables 변경 시 갱신
+
     // 요소 선택 시 iframe에 메시지 전송
     const sendElementSelectedMessage = useCallback((elementId: string, props?: ElementProps) => {
         const iframe = MessageService.getIframe();
@@ -368,6 +413,10 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
                 // ⭐ ApiEndpoints 전송 (PropertyDataBinding용)
                 iframe.contentWindow!.postMessage(item.payload, window.location.origin);
                 console.log(`✅ [Builder] Sent queued UPDATE_API_ENDPOINTS`);
+            } else if (item.type === "UPDATE_VARIABLES") {
+                // ⭐ Variables 전송 (PropertyDataBinding용)
+                iframe.contentWindow!.postMessage(item.payload, window.location.origin);
+                console.log(`✅ [Builder] Sent queued UPDATE_VARIABLES`);
             }
         });
     }, []); // ✅ 의존성 제거 (Ref 사용)
@@ -408,6 +457,9 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
 
                 // ⭐ ApiEndpoints 전송 (PropertyDataBinding용)
                 sendApiEndpointsToIframe();
+
+                // ⭐ Variables 전송 (PropertyDataBinding용)
+                sendVariablesToIframe();
 
                 // Elements 전송
                 const currentElements = useStore.getState().elements;
@@ -691,7 +743,7 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
             //console.log('Element hovered in preview:', event.data.elementId);
             // 필요시 hover 상태 처리 로직 추가
         }
-    }, [setSelectedElement, elementsMap, isSyncingToBuilder, processMessageQueue, sendElementsToIframe, sendLayoutsToIframe, sendDataTablesToIframe, sendApiEndpointsToIframe]);
+    }, [setSelectedElement, elementsMap, isSyncingToBuilder, processMessageQueue, sendElementsToIframe, sendLayoutsToIframe, sendDataTablesToIframe, sendApiEndpointsToIframe, sendVariablesToIframe]);
 
     const handleUndo = debounce(async () => {
         if (isProcessingRef.current) return;
@@ -946,6 +998,36 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
         console.log('🌐 [Builder] ApiEndpoints changed, sending to iframe:', apiEndpoints.length, 'endpoints');
     }, [apiEndpoints, sendApiEndpointsToIframe]);
 
+    // ⭐ Variables가 변경될 때마다 iframe에 전송 (PropertyDataBinding용)
+    const lastSentVariablesRef = useRef<string>('');
+
+    useEffect(() => {
+        // iframe이 준비되지 않았으면 스킵
+        if (iframeReadyStateRef.current !== 'ready') {
+            return;
+        }
+
+        // JSON 문자열로 비교
+        const variablesJson = JSON.stringify(variables.map(v => ({
+            id: v.id,
+            name: v.name,
+            type: v.type,
+            defaultValue: v.defaultValue,
+            persist: v.persist,
+            scope: v.scope,
+        })));
+
+        // 이전 값과 같으면 스킵
+        if (lastSentVariablesRef.current === variablesJson) {
+            return;
+        }
+
+        // 값 저장 후 전송
+        lastSentVariablesRef.current = variablesJson;
+        sendVariablesToIframe();
+        console.log('📦 [Builder] Variables changed, sending to iframe:', variables.length, 'variables');
+    }, [variables, sendVariablesToIframe]);
+
     // 🔧 REMOVED: Ref를 사용하므로 iframeReadyState 기반 useEffect 불필요
     // processMessageQueue는 PREVIEW_READY 핸들러에서 직접 호출됨
 
@@ -990,6 +1072,7 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
         sendLayoutsToIframe,
         sendDataTablesToIframe,
         sendApiEndpointsToIframe,
+        sendVariablesToIframe,
         isIframeReady
     };
 };

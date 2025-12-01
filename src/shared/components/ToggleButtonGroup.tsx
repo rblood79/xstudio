@@ -7,6 +7,7 @@ import {
 } from "react-aria-components";
 import { tv } from "tailwind-variants";
 import type { DataBinding, ColumnMapping } from "../../types/builder/unified.types";
+import type { DataBindingValue } from "../../builder/panels/common/PropertyDataBinding";
 import type {
   ComponentSizeSubset,
   ToggleButtonVariant,
@@ -27,7 +28,7 @@ export interface ToggleButtonGroupExtendedProps extends ToggleButtonGroupProps {
    */
   size?: ComponentSizeSubset;
   // 데이터 바인딩
-  dataBinding?: DataBinding;
+  dataBinding?: DataBinding | DataBindingValue;
   columnMapping?: ColumnMapping;
 }
 
@@ -69,7 +70,7 @@ export function ToggleButtonGroup({
     loading,
     error,
   } = useCollectionData({
-    dataBinding,
+    dataBinding: dataBinding as DataBinding,
     componentName: "ToggleButtonGroup",
     fallbackData: [
       { id: 1, name: "Button 1", value: "button-1" },
@@ -127,7 +128,18 @@ export function ToggleButtonGroup({
   }, [memoizedIndicator, props.selectedKeys, props.defaultSelectedKeys]);
 
   // DataBinding이 있고 데이터가 로드되었을 때 동적 ToggleButton 생성
-  const hasDataBinding = dataBinding?.type === "collection";
+  // PropertyDataBinding 형식 (source, name) 또는 DataBinding 형식 (type: "collection") 둘 다 지원
+  const isPropertyBinding =
+    dataBinding &&
+    "source" in dataBinding &&
+    "name" in dataBinding &&
+    !("type" in dataBinding);
+  const hasDataBinding =
+    (!isPropertyBinding &&
+      dataBinding &&
+      "type" in dataBinding &&
+      dataBinding.type === "collection") ||
+    isPropertyBinding;
 
   const toggleButtonGroupClassName = composeRenderProps(
     props.className,

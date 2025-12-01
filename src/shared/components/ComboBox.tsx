@@ -25,6 +25,7 @@ import { tv } from 'tailwind-variants';
 import { ChevronDown } from 'lucide-react';
 import type { ComboBoxVariant, ComponentSize } from '../../types/componentVariants';
 import type { DataBinding, ColumnMapping } from '../../types/builder/unified.types';
+import type { DataBindingValue } from '../../builder/panels/common/PropertyDataBinding';
 import { useCollectionData } from '../../builder/hooks/useCollectionData';
 import './styles/ComboBox.css';
 
@@ -37,7 +38,7 @@ export interface ComboBoxProps<T extends object>
   inputValue?: string;
   onInputChange?: (value: string) => void;
   children?: React.ReactNode | ((item: T) => React.ReactNode);
-  dataBinding?: DataBinding;
+  dataBinding?: DataBinding | DataBindingValue;
   columnMapping?: ColumnMapping;
   popoverClassName?: string;
   // M3 props
@@ -88,7 +89,7 @@ export function ComboBox<T extends object>({
     loading,
     error,
   } = useCollectionData({
-    dataBinding,
+    dataBinding: dataBinding as DataBinding,
     componentName: 'ComboBox',
     fallbackData: [
       { id: 1, name: 'Option 1', value: 'option-1' },
@@ -103,7 +104,18 @@ export function ComboBox<T extends object>({
     : props['aria-label'] || placeholder || 'Select an option';
 
   // DataBinding이 있고 데이터가 로드되었을 때 동적 아이템 생성
-  const hasDataBinding = dataBinding?.type === 'collection';
+  // PropertyDataBinding 형식 (source, name) 또는 DataBinding 형식 (type: "collection") 둘 다 지원
+  const isPropertyBinding =
+    dataBinding &&
+    "source" in dataBinding &&
+    "name" in dataBinding &&
+    !("type" in dataBinding);
+  const hasDataBinding =
+    (!isPropertyBinding &&
+      dataBinding &&
+      "type" in dataBinding &&
+      dataBinding.type === "collection") ||
+    isPropertyBinding;
 
   // ComboBox className generator (reused across all conditional renders)
   const getComboBoxClassName = (baseClassName?: string) =>
@@ -248,7 +260,7 @@ export function ComboBox<T extends object>({
 
   // Dynamic Collection: items prop 사용 (columnMapping 없을 때)
   if (hasDataBinding && !loading && !error && boundData.length > 0) {
-    const config = dataBinding.config as {
+    const config = (dataBinding as { config?: Record<string, unknown> })?.config as {
       columnMapping?: {
         id: string;
         label: string;
@@ -257,12 +269,12 @@ export function ComboBox<T extends object>({
         idField: string;
         labelField: string;
       };
-    };
+    } | undefined;
 
     const idField =
-      config.columnMapping?.id || config.dataMapping?.idField || 'id';
+      config?.columnMapping?.id || config?.dataMapping?.idField || 'id';
     const labelField =
-      config.columnMapping?.label || config.dataMapping?.labelField || 'label';
+      config?.columnMapping?.label || config?.dataMapping?.labelField || 'label';
 
     const comboBoxItems = boundData.map((item, index) => ({
       id: String(item[idField] || item.id || index),

@@ -7,6 +7,7 @@
 import { useState } from "react";
 import { Variable, Plus, Trash2, Edit2 } from "lucide-react";
 import { useDataStore, useVariables } from "../../../stores/data";
+import { VariableEditor } from "../editors/VariableEditor";
 import type { Variable as VariableType } from "../../../../types/builder/data.types";
 
 interface VariableListProps {
@@ -17,7 +18,12 @@ export function VariableList({ projectId }: VariableListProps) {
   const variables = useVariables();
   const createVariable = useDataStore((state) => state.createVariable);
   const deleteVariable = useDataStore((state) => state.deleteVariable);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+
+  // 현재 편집 중인 Variable
+  const editingVariable = editingId
+    ? variables.find((v) => v.id === editingId)
+    : null;
 
   // Group by scope
   const globalVariables = variables.filter((v) => v.scope === "global");
@@ -47,19 +53,28 @@ export function VariableList({ projectId }: VariableListProps) {
 
     try {
       await deleteVariable(id);
-      if (selectedId === id) {
-        setSelectedId(null);
+      if (editingId === id) {
+        setEditingId(null);
       }
     } catch (error) {
       console.error("Variable 삭제 실패:", error);
     }
   };
 
+  const handleEdit = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setEditingId(id);
+  };
+
+  const handleCloseEditor = () => {
+    setEditingId(null);
+  };
+
   const renderVariableItem = (variable: VariableType) => (
     <div
       key={variable.id}
-      className={`dataset-item ${selectedId === variable.id ? "selected" : ""}`}
-      onClick={() => setSelectedId(variable.id)}
+      className={`dataset-item ${editingId === variable.id ? "selected" : ""}`}
+      onClick={() => setEditingId(variable.id)}
     >
       <div className="dataset-item-icon">
         <Variable size={16} />
@@ -78,10 +93,7 @@ export function VariableList({ projectId }: VariableListProps) {
         <button
           type="button"
           className="iconButton"
-          onClick={(e) => {
-            e.stopPropagation();
-            // TODO: Open editor modal
-          }}
+          onClick={(e) => handleEdit(variable.id, e)}
           title="편집"
         >
           <Edit2 size={14} />
@@ -153,6 +165,16 @@ export function VariableList({ projectId }: VariableListProps) {
         <Plus size={16} />
         <span>Variable 추가</span>
       </button>
+
+      {/* Variable Editor Modal */}
+      {editingVariable && (
+        <div className="dataset-editor-overlay">
+          <VariableEditor
+            variable={editingVariable}
+            onClose={handleCloseEditor}
+          />
+        </div>
+      )}
     </div>
   );
 }

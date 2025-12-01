@@ -1,6 +1,6 @@
 import { memo, useMemo } from "react";
-import { Tag, PointerOff, Focus, SquareX, Menu, Type, Hash } from 'lucide-react';
-import { PropertyInput, PropertySelect, PropertySwitch, PropertyCustomId , PropertySection} from '../../common';
+import { Tag, PointerOff, Focus, SquareX, Menu, Type, Hash, Database } from 'lucide-react';
+import { PropertyInput, PropertySelect, PropertySwitch, PropertyCustomId, PropertySection, PropertyDataBinding, type DataBindingValue } from '../../common';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { PROPERTY_LABELS } from '../../../../utils/ui/labels';
 import { useStore } from '../../../stores';
@@ -23,6 +23,14 @@ export const MenuEditor = memo(function MenuEditor({ elementId, currentProps, on
         const updatedProps = {
             ...currentProps,
             [key]: value
+        };
+        onUpdate(updatedProps);
+    };
+
+    const handleDataBindingChange = (binding: DataBindingValue | null) => {
+        const updatedProps = {
+            ...currentProps,
+            dataBinding: binding || undefined
         };
         onUpdate(updatedProps);
     };
@@ -56,6 +64,15 @@ export const MenuEditor = memo(function MenuEditor({ elementId, currentProps, on
                     value={String(currentProps.label || '')}
                     onChange={(value) => updateProp('label', value || undefined)}
                     icon={Tag}
+                />
+            </PropertySection>
+
+            {/* Data Binding Section */}
+            <PropertySection title="Data Binding" icon={Database}>
+                <PropertyDataBinding
+                    label="데이터 소스"
+                    value={currentProps.dataBinding as DataBindingValue | undefined}
+                    onChange={handleDataBindingChange}
                 />
             </PropertySection>
 

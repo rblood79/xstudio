@@ -89,6 +89,17 @@ export interface RuntimeApiEndpoint {
   cachedResponse?: Record<string, unknown>[] | null;
 }
 
+// Variable 타입 (Canvas Runtime용 - Builder의 Variable 경량 버전)
+export interface RuntimeVariable {
+  id: string;
+  name: string;
+  type: 'string' | 'number' | 'boolean' | 'object' | 'array';
+  defaultValue?: unknown;
+  persist: boolean;
+  scope: 'global' | 'page' | 'component';
+  page_id?: string;
+}
+
 // Data State (loading, error, data)
 export interface DataState<T = unknown> {
   loading: boolean;
@@ -150,6 +161,10 @@ export interface RuntimeStoreState extends StateHierarchy {
   // ApiEndpoints (PropertyDataBinding용)
   apiEndpoints: RuntimeApiEndpoint[];
   setApiEndpoints: (endpoints: RuntimeApiEndpoint[]) => void;
+
+  // Variables (PropertyDataBinding용)
+  variables: RuntimeVariable[];
+  setVariables: (variables: RuntimeVariable[]) => void;
 
   // Auth Context
   authToken: string | null;

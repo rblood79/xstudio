@@ -253,7 +253,20 @@ export type VariableType = "string" | "number" | "boolean" | "object" | "array";
 /**
  * 변수 스코프
  */
-export type VariableScope = "global" | "page";
+export type VariableScope = "global" | "page" | "component";
+
+/**
+ * Variable 유효성 검사 규칙
+ */
+export interface VariableValidation {
+  required?: boolean;
+  minLength?: number;
+  maxLength?: number;
+  pattern?: string;
+  min?: number;
+  max?: number;
+  schema?: string; // JSON Schema for object/array types
+}
 
 /**
  * Variable 타입 (variables 테이블)
@@ -275,6 +288,12 @@ export interface Variable {
   /** scope가 "page"인 경우 페이지 ID */
   page_id?: string;
 
+  /** 유효성 검사 규칙 */
+  validation?: VariableValidation;
+
+  /** 변환 함수 코드 (value, context) => transformedValue */
+  transform?: string;
+
   created_at?: string;
   updated_at?: string;
 }
@@ -293,7 +312,7 @@ export type VariableCreate = Pick<Variable, "name" | "project_id" | "type"> & {
  * Variable 업데이트용 타입
  */
 export type VariableUpdate = Partial<
-  Pick<Variable, "name" | "type" | "defaultValue" | "persist" | "scope" | "page_id">
+  Pick<Variable, "name" | "type" | "defaultValue" | "persist" | "scope" | "page_id" | "validation" | "transform">
 >;
 
 // ============================================

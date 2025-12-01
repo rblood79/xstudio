@@ -1,5 +1,5 @@
 import { useAsyncList } from "react-stately";
-import { useMemo, useState, useCallback, useEffect } from "react";
+import { useMemo, useState, useCallback, useEffect, useRef } from "react";
 import type { DataBinding } from "../../types/builder/unified.types";
 import type { AsyncListLoadOptions } from "../../types/builder/stately.types";
 import { useDatasetStore } from "../stores/dataset";
@@ -289,20 +289,41 @@ export function useCollectionData({
   // 필터 상태
   const [filterText, setFilterText] = useState<string>("");
 
+  // ⭐ dataBinding 안정화: 참조 변경 방지 (리렌더링 시 불필요한 재계산 방지)
+  const dataBindingRef = useRef(dataBinding);
+  const dataBindingKey = useMemo(() => {
+    if (!dataBinding) return '';
+    // JSON 직렬화로 내용 기반 키 생성
+    try {
+      return JSON.stringify(dataBinding);
+    } catch {
+      return String(dataBinding);
+    }
+  }, [dataBinding]);
+
+  // 내용이 변경된 경우에만 ref 업데이트
+  useEffect(() => {
+    dataBindingRef.current = dataBinding;
+  }, [dataBindingKey]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // 안정화된 dataBinding 사용
+  const stableDataBinding = dataBindingRef.current;
+
   // PropertyDataBinding 형식 감지 (source: 'dataTable', name: 'xxx')
-  const propertyBindingFormat = dataBinding &&
-    'source' in dataBinding &&
-    'name' in dataBinding &&
-    !('type' in dataBinding);
+  const propertyBindingFormat = stableDataBinding &&
+    'source' in stableDataBinding &&
+    'name' in stableDataBinding &&
+    !('type' in stableDataBinding);
 
   // DataTable 바인딩인 경우 mockData 직접 반환
   const dataTableData = useMemo(() => {
     if (propertyBindingFormat) {
-      const binding = dataBinding as unknown as { source: string; name: string };
+      const binding = stableDataBinding as unknown as { source: string; name: string };
       if (binding.source === 'dataTable' && binding.name) {
         const table = dataTables.find(dt => dt.name === binding.name);
         if (table) {
-          console.log(`📊 ${componentName}: DataTable '${binding.name}' mockData 로드 [isCanvas: ${isCanvasContext}]`, table.mockData);
+          // ⭐ 불필요한 로그 제거 (리렌더링 시 혼란 방지)
+          // console.log(`📊 ${componentName}: DataTable '${binding.name}' mockData 로드`, table.mockData);
           return table.useMockData ? table.mockData : (table.runtimeData || table.mockData);
         } else {
           console.warn(`⚠️ ${componentName}: DataTable '${binding.name}'을 찾을 수 없습니다`);
@@ -310,7 +331,7 @@ export function useCollectionData({
       }
     }
     return null;
-  }, [propertyBindingFormat, dataBinding, dataTables, componentName]);
+  }, [propertyBindingFormat, dataBindingKey, dataTables, componentName]); // ⭐ dataBinding → dataBindingKey
 
   // API Endpoint 바인딩 상태
   const [apiEndpointData, setApiEndpointData] = useState<Record<string, unknown>[] | null>(null);
@@ -319,15 +340,12 @@ export function useCollectionData({
 
   // API Endpoint 바인딩인 경우 데이터 로드
   useEffect(() => {
-    console.log(`🔍 ${componentName}: useCollectionData useEffect [isCanvas: ${isCanvasContext}]`, {
-      propertyBindingFormat,
-      dataBinding,
-      apiEndpointsCount: apiEndpoints.length,
-    });
+    // ⭐ 불필요한 로그 제거 (리렌더링 시 혼란 방지)
+    // console.log(`🔍 ${componentName}: useCollectionData useEffect`, { propertyBindingFormat });
 
     if (!propertyBindingFormat) return;
 
-    const binding = dataBinding as unknown as { source: string; name: string };
+    const binding = stableDataBinding as unknown as { source: string; name: string };
     if (binding.source !== 'api' || !binding.name) return;
 
     // API Endpoint 찾기
@@ -400,7 +418,7 @@ export function useCollectionData({
     };
 
     fetchData();
-  }, [propertyBindingFormat, dataBinding, apiEndpoints, executeApiEndpoint, componentName, isCanvasContext]);
+  }, [propertyBindingFormat, dataBindingKey, apiEndpoints, executeApiEndpoint, componentName, isCanvasContext]); // ⭐ dataBinding → dataBindingKey
 
   const list = useAsyncList<Record<string, unknown>>({
     async load({ signal }: AsyncListLoadOptions) {
@@ -545,7 +563,7 @@ export function useCollectionData({
   // 로딩/에러 상태: datasetId가 있으면 Dataset Store에서, 아니면 useAsyncList에서
   // 로딩/에러 상태: DataTable > API Endpoint > Dataset > AsyncList
   const isApiBinding = propertyBindingFormat &&
-    (dataBinding as unknown as { source: string }).source === 'api';
+    (stableDataBinding as unknown as { source: string }).source === 'api';
 
   const loading = propertyBindingFormat
     ? (isApiBinding ? apiEndpointLoading : false)  // API는 비동기, DataTable은 동기
@@ -556,7 +574,7 @@ export function useCollectionData({
   const error = propertyBindingFormat
     ? (isApiBinding
         ? apiEndpointError
-        : (dataTableData === null && dataBinding ? `DataTable을 찾을 수 없습니다` : null))
+        : (dataTableData === null && stableDataBinding ? `DataTable을 찾을 수 없습니다` : null))
     : datasetId
       ? datasetState?.error || null
       : list.error ? list.error.message : null;

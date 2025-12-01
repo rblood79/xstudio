@@ -6,7 +6,7 @@
  */
 
 import { create } from 'zustand';
-import type { RuntimeStoreState, RuntimeElement, RuntimePage, RuntimeLayout, ThemeVar, DataSource, DataState, RuntimeDataTable, RuntimeApiEndpoint } from './types';
+import type { RuntimeStoreState, RuntimeElement, RuntimePage, RuntimeLayout, ThemeVar, DataSource, DataState, RuntimeDataTable, RuntimeApiEndpoint, RuntimeVariable } from './types';
 
 export const createRuntimeStore = () => create<RuntimeStoreState>((set, get) => ({
   // ============================================
@@ -88,6 +88,29 @@ export const createRuntimeStore = () => create<RuntimeStoreState>((set, get) => 
   // ============================================
   apiEndpoints: [],
   setApiEndpoints: (endpoints: RuntimeApiEndpoint[]) => set({ apiEndpoints: endpoints }),
+
+  // ============================================
+  // Variables (PropertyDataBinding용)
+  // ============================================
+  variables: [],
+  setVariables: (variables: RuntimeVariable[]) => {
+    set({ variables });
+    // Variables의 defaultValue를 appState/pageStates에 초기화
+    const currentAppState = get().appState;
+    const newAppState = { ...currentAppState };
+
+    variables.forEach((variable) => {
+      if (variable.scope === 'global' && variable.defaultValue !== undefined) {
+        // 이미 값이 설정되어 있지 않은 경우에만 기본값 설정
+        if (!(variable.name in newAppState)) {
+          newAppState[variable.name] = variable.defaultValue;
+        }
+      }
+    });
+
+    set({ appState: newAppState });
+    console.log(`[Preview] Variables initialized: ${variables.length} vars, appState:`, newAppState);
+  },
 
   // ============================================
   // Auth Context

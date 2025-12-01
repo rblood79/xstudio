@@ -2,12 +2,18 @@
  * DataTableList - DataTable 목록 컴포넌트
  *
  * DataTable CRUD 및 목록 표시
+ * DataTable Preset 선택 기능 포함
+ *
+ * @see docs/features/DATATABLE_PRESET_SYSTEM.md
  */
 
 import { useState } from "react";
 import { Table2, Plus, Trash2, Edit2 } from "lucide-react";
+import { Button } from "react-aria-components";
 import { useDataStore, useDataTables } from "../../../stores/data";
 import { DataTableEditor } from "../editors/DataTableEditor";
+import { DataTablePresetSelector } from "../../data/presets";
+import type { DataTablePreset } from "../../data/presets";
 
 interface DataTableListProps {
   projectId: string;
@@ -18,13 +24,31 @@ export function DataTableList({ projectId }: DataTableListProps) {
   const createDataTable = useDataStore((state) => state.createDataTable);
   const deleteDataTable = useDataStore((state) => state.deleteDataTable);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [isPresetSelectorOpen, setIsPresetSelectorOpen] = useState(false);
 
   // 현재 편집 중인 DataTable
   const editingTable = editingId
     ? dataTables.find((t) => t.id === editingId)
     : null;
 
-  const handleCreate = async () => {
+  // Preset 선택 시 DataTable 생성
+  const handlePresetSelect = async (preset: DataTablePreset, sampleCount: number) => {
+    try {
+      const sampleData = preset.generateSampleData(sampleCount);
+      await createDataTable({
+        name: preset.name,
+        project_id: projectId,
+        schema: preset.schema,
+        mockData: sampleData,
+        useMockData: true,
+      });
+    } catch (error) {
+      console.error("DataTable 생성 실패:", error);
+    }
+  };
+
+  // 빈 테이블 생성
+  const handleCreateEmpty = async () => {
     const name = prompt("DataTable 이름을 입력하세요:");
     if (!name) return;
 
@@ -75,14 +99,18 @@ export function DataTableList({ projectId }: DataTableListProps) {
             새 테이블을 추가하세요.
           </p>
         </div>
-        <button
-          type="button"
-          className="dataset-add-btn"
-          onClick={handleCreate}
-        >
-          <Plus size={16} />
-          <span>DataTable 추가</span>
-        </button>
+        <DataTablePresetSelector
+          trigger={
+            <Button className="dataset-add-btn">
+              <Plus size={16} />
+              <span>DataTable 추가</span>
+            </Button>
+          }
+          onSelect={handlePresetSelect}
+          onCreateEmpty={handleCreateEmpty}
+          isOpen={isPresetSelectorOpen}
+          onOpenChange={setIsPresetSelectorOpen}
+        />
       </div>
     );
   }
@@ -136,14 +164,18 @@ export function DataTableList({ projectId }: DataTableListProps) {
         </div>
       ))}
 
-      <button
-        type="button"
-        className="dataset-add-btn"
-        onClick={handleCreate}
-      >
-        <Plus size={16} />
-        <span>DataTable 추가</span>
-      </button>
+      <DataTablePresetSelector
+        trigger={
+          <Button className="dataset-add-btn">
+            <Plus size={16} />
+            <span>DataTable 추가</span>
+          </Button>
+        }
+        onSelect={handlePresetSelect}
+        onCreateEmpty={handleCreateEmpty}
+        isOpen={isPresetSelectorOpen}
+        onOpenChange={setIsPresetSelectorOpen}
+      />
 
       {/* DataTable Editor Modal */}
       {editingTable && (

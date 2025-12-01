@@ -1,6 +1,6 @@
 import { useEffect, memo, useCallback, useMemo } from "react";
-import { Tag, SquarePlus, Trash, PointerOff, AlertTriangle, Hash, Focus, CheckSquare, PenOff, Menu, SquareX, SpellCheck2, FileText, Binary, Type, FormInput } from 'lucide-react';
-import { PropertyInput, PropertySelect, PropertySwitch, PropertyCustomId , PropertySection} from '../../common';
+import { Tag, SquarePlus, Trash, PointerOff, AlertTriangle, Hash, Focus, CheckSquare, PenOff, Menu, SquareX, SpellCheck2, FileText, Binary, Type, FormInput, Database } from 'lucide-react';
+import { PropertyInput, PropertySelect, PropertySwitch, PropertyCustomId, PropertySection, PropertyDataBinding, type DataBindingValue } from '../../common';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { iconProps } from '../../../../utils/ui/uiConstants';
 import { PROPERTY_LABELS } from '../../../../utils/ui/labels';
@@ -105,6 +105,10 @@ export const SelectEditor = memo(function SelectEditor({ elementId, currentProps
 
   const handleAriaDescribedbyChange = useCallback((value: string) => {
     onUpdate({ ...currentProps, "aria-describedby": value || undefined });
+  }, [currentProps, onUpdate]);
+
+  const handleDataBindingChange = useCallback((binding: DataBindingValue | null) => {
+    onUpdate({ ...currentProps, dataBinding: binding || undefined });
   }, [currentProps, onUpdate]);
 
   // ⭐ 최적화: 옵션 편집 핸들러들
@@ -373,6 +377,19 @@ export const SelectEditor = memo(function SelectEditor({ elementId, currentProps
     ]
   );
 
+  const dataBindingSection = useMemo(
+    () => (
+      <PropertySection title="Data Binding" icon={Database}>
+        <PropertyDataBinding
+          label="데이터 소스"
+          value={currentProps.dataBinding as DataBindingValue | undefined}
+          onChange={handleDataBindingChange}
+        />
+      </PropertySection>
+    ),
+    [currentProps.dataBinding, handleDataBindingChange]
+  );
+
   const itemManagementSection = useMemo(
     () => (
       <PropertySection title="{PROPERTY_LABELS.ITEM_MANAGEMENT}">
@@ -475,6 +492,7 @@ export const SelectEditor = memo(function SelectEditor({ elementId, currentProps
     <>
       {basicSection}
       {contentSection}
+      {dataBindingSection}
       {stateSection}
       {behaviorSection}
       {formIntegrationSection}

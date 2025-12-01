@@ -10,8 +10,9 @@ import {
   Mouse,
   BookOpen,
   RulerDimensionLine,
+  Database,
 } from "lucide-react";
-import { PropertyInput, PropertySelect, PropertySwitch, PropertyCustomId, PropertySection } from '../../common';
+import { PropertyInput, PropertySelect, PropertySwitch, PropertyCustomId, PropertySection, PropertyDataBinding, type DataBindingValue } from '../../common';
 import { PropertyEditorProps } from "../types/editorTypes";
 import { iconProps } from "../../../../utils/ui/uiConstants";
 import { PROPERTY_LABELS } from "../../../../utils/ui/labels";
@@ -66,6 +67,16 @@ export const TableEditor = memo(function TableEditor({
       updateElement(elementId, { customId: newCustomId });
     }
   };
+
+  const handleDataBindingChange = useCallback(
+    (binding: DataBindingValue | null) => {
+      onUpdate({
+        ...currentProps,
+        dataBinding: binding || undefined,
+      });
+    },
+    [currentProps, onUpdate]
+  );
 
   // element가 없는 경우 빈 화면 반환
   if (!element || !element.id) {
@@ -289,6 +300,15 @@ export const TableEditor = memo(function TableEditor({
           elementId={elementId}
           onChange={updateCustomId}
           placeholder="table_1"
+        />
+      </PropertySection>
+
+      {/* Data Binding Section */}
+      <PropertySection title="Data Binding" icon={Database}>
+        <PropertyDataBinding
+          label="데이터 소스"
+          value={currentProps.dataBinding as DataBindingValue | undefined}
+          onChange={handleDataBindingChange}
         />
       </PropertySection>
 

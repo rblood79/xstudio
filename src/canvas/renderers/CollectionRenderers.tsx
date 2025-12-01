@@ -83,7 +83,7 @@ export const renderTree = (
       key={element.id}
       id={element.customId}
       data-element-id={element.id}
-      dataBinding={element.dataBinding}
+      dataBinding={element.dataBinding || element.props.dataBinding}
       style={element.props.style}
       className={element.props.className}
       aria-label={String(element.props["aria-label"] || "Tree")}
@@ -186,18 +186,22 @@ export const renderTagGroup = (
   const columnMapping = (element.props as { columnMapping?: ColumnMapping })
     .columnMapping;
 
-  if (columnMapping) {
-    const visibleColumns = getVisibleColumns(columnMapping);
-    console.log("🔍 TagGroup ColumnMapping 발견:", {
-      tagGroupId: element.id,
-      columnMapping,
-      visibleColumnsCount: visibleColumns.length,
-      visibleColumns,
-      tagChildrenCount: tagChildren.length,
-    });
-  }
+  // PropertyDataBinding 형식 감지 (source: 'dataTable' 또는 'apiEndpoint', name: 'xxx')
+  const dataBinding = element.dataBinding || element.props.dataBinding;
+  const isPropertyBinding = dataBinding &&
+    'source' in dataBinding &&
+    'name' in dataBinding &&
+    !('type' in dataBinding);
 
-  const hasValidTemplate = columnMapping && tagChildren.length > 0;
+  // Tag 템플릿에 Field children이 있는지 미리 확인
+  const tagTemplate = tagChildren.length > 0 ? tagChildren[0] : null;
+  const fieldChildrenInTemplate = tagTemplate
+    ? elements.filter((child) => child.parent_id === tagTemplate.id && child.tag === "Field")
+    : [];
+  const hasFieldChildren = fieldChildrenInTemplate.length > 0;
+
+  // columnMapping이 있거나, (PropertyDataBinding + Field children) 있으면 Field 렌더링 모드 사용
+  const hasValidTemplate = (columnMapping || (isPropertyBinding && hasFieldChildren)) && tagChildren.length > 0;
 
   // 제거된 항목 ID 추적 (columnMapping 모드에서 동적 데이터 항목 제거용)
   const removedItemIds = Array.isArray(element.props.removedItemIds)
@@ -224,7 +228,9 @@ export const renderTagGroup = (
           >
             {fieldChildren.length > 0
               ? fieldChildren.map((field) => {
-                  const fieldKey = (field.props as { key?: string }).key;
+                  // fieldKey 또는 key 속성 모두 지원 (fieldKey 우선)
+                  const fieldKey = (field.props as { fieldKey?: string; key?: string }).fieldKey ||
+                    (field.props as { key?: string }).key;
                   const fieldValue = fieldKey ? item[fieldKey] : undefined;
 
                   return (
@@ -298,7 +304,7 @@ export const renderTagGroup = (
       size={
         (element.props.size as "sm" | "md" | "lg") || "md"
       }
-      dataBinding={element.dataBinding}
+      dataBinding={element.dataBinding || element.props.dataBinding}
       columnMapping={columnMapping}
       removedItemIds={removedItemIds}
       onSelectionChange={async (selectedKeys) => {
@@ -452,12 +458,62 @@ export const renderTagGroup = (
 
 /**
  * Tag 렌더링 (독립적으로 렌더링될 때)
+ * - Static children 또는 Field children 지원
  */
 export const renderTag = (
-  element: PreviewElement
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  , _context: RenderContext
+  element: PreviewElement,
+  context: RenderContext
 ): React.ReactNode => {
+  const { elements } = context;
+
+  // Field 자식 요소 찾기
+  const fieldChildren = elements
+    .filter((child) => child.parent_id === element.id && child.tag === "Field")
+    .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+
+  // Field children이 있으면 DataField 렌더링 (단, 데이터는 없으므로 라벨만 표시)
+  if (fieldChildren.length > 0) {
+    return (
+      <Tag
+        key={element.id}
+        id={element.customId}
+        data-element-id={element.id}
+        isDisabled={Boolean(element.props.isDisabled)}
+        style={element.props.style}
+        className={element.props.className}
+        textValue={String(element.props.textValue || element.props.children || "")}
+      >
+        {fieldChildren.map((field) => {
+          const fieldKey = (field.props as { fieldKey?: string; key?: string }).fieldKey ||
+            (field.props as { key?: string }).key;
+          return (
+            <DataField
+              key={field.id}
+              fieldKey={fieldKey || ""}
+              label={(field.props as { label?: string }).label}
+              type={
+                (field.props as { type?: string }).type as
+                  | "string"
+                  | "number"
+                  | "boolean"
+                  | "date"
+                  | "image"
+                  | "url"
+                  | "email"
+              }
+              value={`{${fieldKey}}`} // 템플릿 모드에서 fieldKey 표시
+              showLabel={(field.props as { showLabel?: boolean }).showLabel !== false}
+              visible={(field.props as { visible?: boolean }).visible !== false}
+              style={field.props.style}
+              className={field.props.className}
+            />
+          );
+        })}
+      </Tag>
+    );
+  }
+
+  // Field children이 없으면 기존 static 렌더링
   return (
     <Tag
       key={element.id}
@@ -628,7 +684,7 @@ export const renderMenu = (
       label={String(element.props.label || "Menu")}
       style={element.props.style}
       className={element.props.className}
-      dataBinding={element.dataBinding}
+      dataBinding={element.dataBinding || element.props.dataBinding}
     >
       {/* Static 방법: MenuItem 자식 렌더링 (dataBinding이 없을 때만) */}
       {menuItemChildren.map((child) => renderElement(child, child.id))}

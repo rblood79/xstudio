@@ -13,6 +13,7 @@ import {
 import { tv } from 'tailwind-variants';
 import type { MenuVariant, ComponentSize } from '../../types/componentVariants';
 import type { DataBinding, ColumnMapping } from "../../types/builder/unified.types";
+import type { DataBindingValue } from "../../builder/panels/common/PropertyDataBinding";
 import { useCollectionData } from "../../builder/hooks/useCollectionData";
 
 import "./styles/Menu.css";
@@ -31,7 +32,7 @@ export interface MenuButtonProps<T>
   extends MenuProps<T>,
     Omit<MenuTriggerProps, "children"> {
   label?: string;
-  dataBinding?: DataBinding;
+  dataBinding?: DataBinding | DataBindingValue;
   columnMapping?: ColumnMapping;
   // M3 props
   variant?: MenuVariant;
@@ -75,7 +76,7 @@ export function MenuButton<T extends object>({
     loading,
     error,
   } = useCollectionData({
-    dataBinding,
+    dataBinding: dataBinding as DataBinding,
     componentName: "Menu",
     fallbackData: [
       {
@@ -91,7 +92,18 @@ export function MenuButton<T extends object>({
   });
 
   // 데이터 바인딩이 있는 경우
-  const hasDataBinding = dataBinding?.type === "collection";
+  // PropertyDataBinding 형식 (source, name) 또는 DataBinding 형식 (type: "collection") 둘 다 지원
+  const isPropertyBinding =
+    dataBinding &&
+    "source" in dataBinding &&
+    "name" in dataBinding &&
+    !("type" in dataBinding);
+  const hasDataBinding =
+    (!isPropertyBinding &&
+      dataBinding &&
+      "type" in dataBinding &&
+      dataBinding.type === "collection") ||
+    isPropertyBinding;
 
   console.log("🎯 Menu 렌더링:", {
     hasDataBinding,

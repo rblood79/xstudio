@@ -543,6 +543,7 @@ export function App() {
       setDataSources: storeState.setDataSources,
       setDataTables: storeState.setDataTables,
       setApiEndpoints: storeState.setApiEndpoints,
+      setVariables: storeState.setVariables,
       setAuthToken: storeState.setAuthToken,
       setReady: storeState.setReady,
     });

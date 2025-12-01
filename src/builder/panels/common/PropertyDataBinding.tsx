@@ -241,13 +241,7 @@ export const PropertyDataBinding = memo(function PropertyDataBinding({
             isDisabled={disabled}
           >
             <Button className="react-aria-Button">
-              <label className="control-label">
-                <SourceIcon
-                  color={iconProps.color}
-                  size={iconProps.size}
-                  strokeWidth={iconProps.stroke}
-                />
-              </label>
+              
               <SelectValue placeholder="소스 선택..." />
               <span aria-hidden="true" className="select-chevron">
                 <ChevronDown size={16} />

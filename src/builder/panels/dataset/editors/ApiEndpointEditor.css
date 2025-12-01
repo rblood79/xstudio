@@ -24,13 +24,6 @@
   margin: var(--spacing-md) 0;
 }
 
-.section-title {
-  font-size: var(--text-sm);
-  font-weight: 600;
-  color: var(--color-text-primary);
-  margin: 0 0 var(--spacing-sm);
-}
-
 /* Query Params Editor */
 .query-params-editor {
   display: flex;

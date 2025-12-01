@@ -75,6 +75,14 @@ export const renderTable = (
     };
   });
 
+  // PropertyDataBinding 형식 감지 (source: 'dataTable' 또는 'api', name: 'xxx')
+  const dataBinding = element.dataBinding || element.props.dataBinding;
+  const isPropertyBinding =
+    dataBinding &&
+    "source" in dataBinding &&
+    "name" in dataBinding &&
+    !("type" in dataBinding);
+
   // dataBinding을 통한 API 데이터 사용 여부 확인
   const hasApiBinding =
     element.dataBinding?.type === "collection" &&
@@ -385,8 +393,11 @@ export const renderTable = (
       className={element.props.className}
       columns={finalColumns as ColumnDefinition<{ id: string | number }>[]}
       columnGroups={columnGroups}
+      // PropertyDataBinding 지원
+      dataBinding={isPropertyBinding ? dataBinding : undefined}
+      columnMapping={element.props.columnMapping}
       data={
-        hasApiBinding
+        hasApiBinding || isPropertyBinding
           ? undefined
           : finalData && Array.isArray(finalData) && finalData.length > 0
             ? (finalData as { id: string | number }[])
@@ -422,7 +433,7 @@ export const renderTable = (
       overscan={
         typeof element.props.overscan === "number" ? element.props.overscan : 10
       }
-      enableAsyncLoading={hasApiBinding}
+      enableAsyncLoading={hasApiBinding && !isPropertyBinding}
       apiUrlKey={
         hasApiBinding && apiConfig.baseUrl ? apiConfig.baseUrl : undefined
       }

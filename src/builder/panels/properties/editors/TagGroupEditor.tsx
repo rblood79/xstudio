@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, memo } from "react";
-import { Type, Tag, SquarePlus, Trash, PointerOff, FileText, AlertTriangle, PenOff, MousePointer, ToggleLeft, ToggleRight, Layout, PencilRuler, Hash, FormInput, CheckSquare } from 'lucide-react';
-import { PropertyInput, PropertySwitch, PropertySelect, PropertyCustomId , PropertySection} from '../../common';
+import { Type, Tag, SquarePlus, Trash, PointerOff, FileText, AlertTriangle, PenOff, MousePointer, ToggleLeft, ToggleRight, Layout, PencilRuler, Hash, FormInput, CheckSquare, Database } from 'lucide-react';
+import { PropertyInput, PropertySwitch, PropertySelect, PropertyCustomId, PropertySection, PropertyDataBinding, type DataBindingValue } from '../../common';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { iconProps } from '../../../../utils/ui/uiConstants';
 import { PROPERTY_LABELS } from '../../../../utils/ui/labels';
@@ -31,6 +31,14 @@ export const TagGroupEditor = memo(function TagGroupEditor({ elementId, currentP
         const updatedProps = {
             ...currentProps,
             [key]: value
+        };
+        onUpdate(updatedProps);
+    };
+
+    const handleDataBindingChange = (binding: DataBindingValue | null) => {
+        const updatedProps = {
+            ...currentProps,
+            dataBinding: binding || undefined
         };
         onUpdate(updatedProps);
     };
@@ -151,6 +159,15 @@ export const TagGroupEditor = memo(function TagGroupEditor({ elementId, currentP
                     value={String(currentProps.errorMessage || '')}
                     onChange={(value) => updateProp('errorMessage', value)}
                     icon={AlertTriangle}
+                />
+            </PropertySection>
+
+            {/* Data Binding Section */}
+            <PropertySection title="Data Binding" icon={Database}>
+                <PropertyDataBinding
+                    label="데이터 소스"
+                    value={currentProps.dataBinding as DataBindingValue | undefined}
+                    onChange={handleDataBindingChange}
                 />
             </PropertySection>
 

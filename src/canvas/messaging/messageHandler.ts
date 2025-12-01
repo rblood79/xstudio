@@ -5,7 +5,7 @@
  * Preview Runtime은 이 핸들러를 통해서만 데이터를 수신합니다.
  */
 
-import type { PreviewStoreState, PreviewElement, PreviewPage, PreviewLayout, ThemeVar, DataSource, RuntimeDataTable, RuntimeApiEndpoint } from '../store/types';
+import type { PreviewStoreState, PreviewElement, PreviewPage, PreviewLayout, ThemeVar, DataSource, RuntimeDataTable, RuntimeApiEndpoint, RuntimeVariable } from '../store/types';
 
 // ============================================
 // Helper: Get Target Origin for postMessage
@@ -90,6 +90,11 @@ export interface UpdateApiEndpointsMessage {
   apiEndpoints: RuntimeApiEndpoint[];
 }
 
+export interface UpdateVariablesMessage {
+  type: 'UPDATE_VARIABLES';
+  variables: RuntimeVariable[];
+}
+
 export interface UpdateLayoutsMessage {
   type: 'UPDATE_LAYOUTS';
   layouts: PreviewLayout[];
@@ -118,6 +123,7 @@ export type BuilderToPreviewMessage =
   | UpdateDataSourcesMessage
   | UpdateDataTablesMessage
   | UpdateApiEndpointsMessage
+  | UpdateVariablesMessage
   | UpdateAuthContextMessage
   | RequestElementSelectionMessage;
 
@@ -138,6 +144,7 @@ type StoreActions = Pick<
   | 'setDataSources'
   | 'setDataTables'
   | 'setApiEndpoints'
+  | 'setVariables'
   | 'setAuthToken'
   | 'setReady'
 >;
@@ -220,6 +227,10 @@ export class MessageHandler {
 
       case 'UPDATE_API_ENDPOINTS':
         this.handleUpdateApiEndpoints(data);
+        break;
+
+      case 'UPDATE_VARIABLES':
+        this.handleUpdateVariables(data);
         break;
 
       case 'UPDATE_AUTH_CONTEXT':
@@ -333,6 +344,12 @@ export class MessageHandler {
     const apiEndpoints = data.apiEndpoints || [];
     this.store.setApiEndpoints(apiEndpoints);
     console.log(`[Preview] ApiEndpoints updated: ${apiEndpoints.length} endpoints`);
+  }
+
+  private handleUpdateVariables(data: UpdateVariablesMessage): void {
+    const variables = data.variables || [];
+    this.store.setVariables(variables);
+    console.log(`[Preview] Variables updated: ${variables.length} variables`);
   }
 
   private handleUpdateAuthContext(data: UpdateAuthContextMessage): void {

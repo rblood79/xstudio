@@ -13,6 +13,7 @@ import {
 import { X } from 'lucide-react';
 import type { Key, Selection } from '@react-types/shared';
 import type { DataBinding, ColumnMapping } from '../../types/builder/unified.types';
+import type { DataBindingValue } from '../../builder/panels/common/PropertyDataBinding';
 import { useCollectionData } from '../../builder/hooks/useCollectionData';
 import './styles/TagGroup.css';
 
@@ -37,7 +38,7 @@ export interface TagGroupProps<T>
   orientation?: 'horizontal' | 'vertical';
   disallowEmptySelection?: boolean;
   // 데이터 바인딩
-  dataBinding?: DataBinding;
+  dataBinding?: DataBinding | DataBindingValue;
   columnMapping?: ColumnMapping;
   // 제거된 항목 추적 (columnMapping 모드에서 동적 데이터 항목 제거용)
   removedItemIds?: string[];
@@ -79,7 +80,7 @@ export function TagGroup<T extends object>(
     loading,
     error,
   } = useCollectionData({
-    dataBinding,
+    dataBinding: dataBinding as DataBinding,
     componentName: 'TagGroup',
     fallbackData: [
       { id: 1, name: 'Tag 1', label: 'Tag 1' },
@@ -88,17 +89,25 @@ export function TagGroup<T extends object>(
   });
 
   // DataBinding이 있고 데이터가 로드되었을 때 동적 아이템 생성
-  const hasDataBinding = dataBinding?.type === 'collection';
+  // PropertyDataBinding 형식 (source, name) 또는 DataBinding 형식 (type: "collection") 둘 다 지원
+  const isPropertyBinding =
+    dataBinding &&
+    "source" in dataBinding &&
+    "name" in dataBinding &&
+    !("type" in dataBinding);
+  const hasDataBinding =
+    (!isPropertyBinding &&
+      dataBinding &&
+      "type" in dataBinding &&
+      dataBinding.type === "collection") ||
+    isPropertyBinding;
 
-  // ColumnMapping이 있으면 각 데이터 항목마다 Tag 렌더링
+  // children이 render function인지 확인 (Field children 렌더링 모드)
+  const isRenderFunction = typeof children === 'function';
+
+  // ColumnMapping이 있거나 children이 render function이면 Field 렌더링 모드 사용
   // ListBox와 동일한 패턴: Element tree의 Tag 템플릿 + Field 자식 사용
-  if (hasDataBinding && columnMapping) {
-    console.log('🎯 TagGroup: columnMapping 감지 - 데이터로 아이템 렌더링', {
-      columnMapping,
-      hasChildren: !!children,
-      dataCount: boundData.length,
-      removedItemIds,
-    });
+  if (hasDataBinding && (columnMapping || isRenderFunction)) {
 
     // Loading 상태
     if (loading) {

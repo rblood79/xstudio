@@ -1704,7 +1704,7 @@ See `src/builder/components/Field.tsx` and `src/builder/components/styles/Field.
 
 #### Collection Components + Field Pattern
 
-Collection components (ListBox, GridList, Select, ComboBox, Menu, Tree) support dynamic data rendering using the **Item + Field** pattern.
+Collection components support dynamic data rendering using the **Item + Field** pattern and `useCollectionData` hook.
 
 **Architecture - 3 Layers:**
 
@@ -1721,17 +1721,67 @@ Each Collection's ItemEditor (e.g., `ListBoxItemEditor`, `GridListItemEditor`) a
 
 See `src/builder/inspector/properties/editors/ListBoxItemEditor.tsx` for reference implementation.
 
-**Applicable to All Collection Components:**
-- ✅ **ListBox + ListBoxItem** (implemented)
-- ✅ **GridList + GridListItem** (implemented)
-- ✅ **Select + SelectItem** (implemented)
-- ✅ **ComboBox + ComboBoxItem** (implemented, with textValue for filtering)
-- ✅ **TagGroup + Tag** (implemented, with removedItemIds for item removal tracking)
-- 🔄 **Menu + MenuItem** (same pattern)
-- 🔄 **Tree + TreeItem** (same pattern)
+**All 13 Collection Components with DataBinding:**
+
+| Component | useCollectionData | Field Support | Notes |
+|-----------|-------------------|---------------|-------|
+| **ListBox** | ✅ | ✅ Field children | Reference implementation |
+| **GridList** | ✅ | ✅ Field children | Grid layout |
+| **Select** | ✅ | ✅ Field children | Dropdown selection |
+| **ComboBox** | ✅ | ✅ Field children + textValue | Auto-complete filtering |
+| **Menu** | ✅ | ✅ Field children | Context menu |
+| **TagGroup** | ✅ | ✅ Field children | removedItemIds tracking |
+| **Tree** | ✅ | hierarchical data | Recursive rendering |
+| **Table** | ✅ | Column/Cell mapping | Tabular data |
+| **Tabs** | ✅ | dynamic Tab/TabPanel | Navigation |
+| **Breadcrumbs** | ✅ | dynamic Breadcrumb | Navigation path |
+| **RadioGroup** | ✅ | dynamic Radio | Single selection |
+| **CheckboxGroup** | ✅ | dynamic Checkbox | Multiple selection |
+| **ToggleButtonGroup** | ✅ | dynamic ToggleButton | Toggle selection |
 
 **Initial Component Creation Pattern:**
 All collection components create only **1 initial child item** as a template for dynamic data rendering. See `src/builder/factories/definitions/SelectionComponents.ts`.
+
+#### PropertyDataBinding Format
+
+Collection components support two DataBinding formats:
+
+1. **PropertyDataBinding** (Inspector에서 설정): `{source: 'dataTable' | 'api', name: string}`
+2. **DataBinding** (프로그래매틱): `{type: 'collection', source: 'static' | 'api' | 'supabase', config: {...}}`
+
+**Detection Pattern (all 13 components use this):**
+```typescript
+const isPropertyBinding =
+  dataBinding &&
+  "source" in dataBinding &&
+  "name" in dataBinding &&
+  !("type" in dataBinding);
+
+const hasDataBinding =
+  (!isPropertyBinding &&
+    dataBinding &&
+    "type" in dataBinding &&
+    dataBinding.type === "collection") ||
+  isPropertyBinding;
+```
+
+**⚠️ Common Issue - `dataBinding.config` Access:**
+
+PropertyDataBinding format doesn't have a `config` property. Always use optional chaining:
+
+```typescript
+// ❌ WRONG - Crashes when PropertyDataBinding format
+const config = dataBinding.config as { columnMapping?: {...} };
+const idField = config.columnMapping?.id || "id";
+
+// ✅ CORRECT - Safe for both formats
+const config = (dataBinding as { config?: Record<string, unknown> })?.config as {
+  columnMapping?: { id: string; label: string };
+} | undefined;
+const idField = config?.columnMapping?.id || "id";
+```
+
+**Fixed in:** `Select.tsx:131-145`, `ComboBox.tsx:263-277`
 
 #### ComboBox Filtering with textValue
 
@@ -2170,8 +2220,9 @@ import type { EventType } from "@/types/events/events.types";
 | Update element | Use `updateElementProps()` or `updateElement()` | From Zustand store |
 | Add CSS value | Use CSS variable `var(--token-name)` | Defined in `theme.css` |
 | Name React Aria class | Use `react-aria-ComponentName` prefix | Follow existing patterns |
-| Add DataBinding to component | Add `dataBinding?: DataBinding` prop, implement useState/useEffect | Component file (see `ListBox.tsx`, `Select.tsx`, `Tree.tsx`) |
-| Pass DataBinding in renderer | Add `dataBinding={element.dataBinding}` prop | Renderer file in `src/builder/preview/renderers/` |
+| Add DataBinding to component | Add `dataBinding?: DataBinding` prop, use `useCollectionData` hook | Component file (see `ListBox.tsx`, `Select.tsx`) |
+| Pass DataBinding in renderer | Add `dataBinding={element.dataBinding \|\| element.props.dataBinding}` | Renderer file in `src/canvas/renderers/` |
+| Access dataBinding.config safely | Use optional chaining: `(dataBinding as {config?})?.config?.field` | PropertyDataBinding has no config |
 | Test with mock data | Use `baseUrl: "MOCK_DATA"` with available endpoints | See `src/services/api/index.ts` |
 | Display dynamic data in Collection | Use Field component inside ListBoxItem/GridListItem/MenuItem | `src/builder/components/Field.tsx` |
 | Add Field management to ItemEditor | Detect Field children, Edit → setSelectedElement() | Follow `ListBoxItemEditor.tsx` pattern |

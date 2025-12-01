@@ -17,12 +17,13 @@ import { tv } from 'tailwind-variants';
 import { MyCheckbox } from './Checkbox';
 import type { GridListVariant, ComponentSize } from '../../types/componentVariants';
 import type { DataBinding, ColumnMapping } from '../../types/builder/unified.types';
+import type { DataBindingValue } from '../../builder/panels/common/PropertyDataBinding';
 import { useCollectionData } from '../../builder/hooks/useCollectionData';
 
 import './styles/GridList.css';
 
 interface ExtendedGridListProps<T extends object> extends GridListProps<T> {
-  dataBinding?: DataBinding;
+  dataBinding?: DataBinding | DataBindingValue;
   columnMapping?: ColumnMapping;
   // M3 props
   variant?: GridListVariant;
@@ -65,7 +66,7 @@ export function GridList<T extends object>({
     loading,
     error,
   } = useCollectionData({
-    dataBinding,
+    dataBinding: dataBinding as DataBinding,
     componentName: 'GridList',
     fallbackData: [
       { id: 1, name: 'Item 1', description: 'Description 1' },
@@ -74,7 +75,18 @@ export function GridList<T extends object>({
   });
 
   // DataBinding이 있고 데이터가 로드되었을 때 동적 아이템 생성
-  const hasDataBinding = dataBinding?.type === 'collection';
+  // PropertyDataBinding 형식 (source, name) 또는 DataBinding 형식 (type: "collection") 둘 다 지원
+  const isPropertyBinding =
+    dataBinding &&
+    "source" in dataBinding &&
+    "name" in dataBinding &&
+    !("type" in dataBinding);
+  const hasDataBinding =
+    (!isPropertyBinding &&
+      dataBinding &&
+      "type" in dataBinding &&
+      dataBinding.type === "collection") ||
+    isPropertyBinding;
 
   // GridList className generator (reused across all conditional renders)
   const getGridListClassName = (baseClassName?: string) =>

@@ -1,6 +1,6 @@
 import { useMemo, useState, useEffect, memo } from "react";
-import { FolderTree, Workflow, Plus, Tag, FileText, PointerOff, Focus, SquareX, Type, Hash } from 'lucide-react';
-import { PropertyInput, PropertySelect, PropertySwitch, PropertyCustomId , PropertySection} from '../../common';
+import { FolderTree, Workflow, Plus, Tag, FileText, PointerOff, Focus, SquareX, Type, Hash, Database } from 'lucide-react';
+import { PropertyInput, PropertySelect, PropertySwitch, PropertyCustomId, PropertySection, PropertyDataBinding, type DataBindingValue } from '../../common';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { PROPERTY_LABELS } from '../../../../utils/ui/labels';
 import { useStore } from '../../../stores';
@@ -36,6 +36,14 @@ export const TreeEditor = memo(function TreeEditor({ elementId, currentProps, on
         const updatedProps = {
             ...currentProps,
             [key]: value
+        };
+        onUpdate(updatedProps);
+    };
+
+    const handleDataBindingChange = (binding: DataBindingValue | null) => {
+        const updatedProps = {
+            ...currentProps,
+            dataBinding: binding || undefined
         };
         onUpdate(updatedProps);
     };
@@ -121,6 +129,15 @@ export const TreeEditor = memo(function TreeEditor({ elementId, currentProps, on
                     value={String(currentProps.description || '')}
                     onChange={(value) => updateProp('description', value || undefined)}
                     icon={FileText}
+                />
+            </PropertySection>
+
+            {/* Data Binding Section */}
+            <PropertySection title="Data Binding" icon={Database}>
+                <PropertyDataBinding
+                    label="데이터 소스"
+                    value={currentProps.dataBinding as DataBindingValue | undefined}
+                    onChange={handleDataBindingChange}
                 />
             </PropertySection>
 

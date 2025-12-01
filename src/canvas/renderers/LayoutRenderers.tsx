@@ -41,6 +41,14 @@ export const renderTabs = (
 ): React.ReactNode => {
   const { elements, updateElementProps, renderElement } = context;
 
+  // PropertyDataBinding 형식 감지
+  const dataBinding = element.dataBinding || element.props.dataBinding;
+  const isPropertyBinding =
+    dataBinding &&
+    "source" in dataBinding &&
+    "name" in dataBinding &&
+    !("type" in dataBinding);
+
   const tabChildren = elements
     .filter((child) => child.parent_id === element.id && child.tag === "Tab")
     .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
@@ -61,6 +69,8 @@ export const renderTabs = (
         (element.props.orientation as "horizontal" | "vertical") || "horizontal"
       }
       isDisabled={Boolean(element.props.isDisabled)}
+      dataBinding={isPropertyBinding ? dataBinding : element.dataBinding}
+      columnMapping={element.props.columnMapping}
       onSelectionChange={(key) => {
         const updatedProps = {
           ...element.props,
@@ -451,6 +461,14 @@ export const renderBreadcrumbs = (
   const { elements, renderElement, eventEngine, projectId } = context;
   const eventHandlers = createEventHandlerMap(element, eventEngine, projectId);
 
+  // PropertyDataBinding 형식 감지
+  const dataBinding = element.dataBinding || element.props.dataBinding;
+  const isPropertyBinding =
+    dataBinding &&
+    "source" in dataBinding &&
+    "name" in dataBinding &&
+    !("type" in dataBinding);
+
   const breadcrumbChildren = elements
     .filter((child) => child.parent_id === element.id && child.tag === "Breadcrumb")
     .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
@@ -464,6 +482,8 @@ export const renderBreadcrumbs = (
       isDisabled={Boolean(element.props.isDisabled)}
       style={element.props.style}
       className={element.props.className}
+      dataBinding={isPropertyBinding ? dataBinding : element.dataBinding}
+      columnMapping={element.props.columnMapping}
       {...eventHandlers}
     >
       {breadcrumbChildren.map((child) => renderElement(child))}

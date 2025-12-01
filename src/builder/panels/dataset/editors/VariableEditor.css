@@ -13,17 +13,10 @@
 
 /* Section Header */
 .section-header {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-sm);
-  padding: var(--spacing-sm);
-  background: var(--color-surface-100);
-  border-radius: var(--radius-sm);
-  cursor: pointer;
+  
 }
 
 .section-header:hover {
-  background: var(--color-surface-200);
 }
 
 .section-header-title {

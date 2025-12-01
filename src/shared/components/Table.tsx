@@ -14,6 +14,9 @@ import { useVirtualizer } from "@tanstack/react-virtual";
 import { Button, Select, SelectItem } from "./list";
 import { tv } from 'tailwind-variants';
 import type { TableVariant, ComponentSize } from '../../types/componentVariants';
+import type { DataBinding, ColumnMapping } from '../../types/builder/unified.types';
+import type { DataBindingValue } from '../../builder/panels/common/PropertyDataBinding';
+import { useCollectionData } from '../../builder/hooks/useCollectionData';
 import './styles/Table.css';
 import {
   ChevronDown,
@@ -65,6 +68,10 @@ export interface TableProps<T extends { id: string | number }> {
   // M3 props
   variant?: TableVariant;
   size?: ComponentSize;
+
+  // 데이터 바인딩 (PropertyDataBinding 형식 지원)
+  dataBinding?: DataBinding | DataBindingValue;
+  columnMapping?: ColumnMapping;
 
   // 데이터 소스: 정적 or 비동기
   data?: T[]; // 정적 데이터면 API 호출 안 함
@@ -133,6 +140,9 @@ export default React.memo(function Table<T extends { id: string | number }>(
     variant = 'primary',
     size = 'md',
 
+    dataBinding,
+    columnMapping,
+
     data: staticData,
     apiUrlKey,
     customApiUrl,
@@ -160,10 +170,42 @@ export default React.memo(function Table<T extends { id: string | number }>(
     onItemsPerPageChange, // 페이지당 항목 수 변경 콜백
   } = props;
 
+  // useCollectionData Hook으로 데이터 가져오기 (PropertyDataBinding 형식 지원)
+  const {
+    data: boundData,
+    loading: boundDataLoading,
+  } = useCollectionData({
+    dataBinding: dataBinding as DataBinding,
+    componentName: "Table",
+    fallbackData: [],
+  });
+
+  // PropertyDataBinding 형식 감지
+  const isPropertyBinding =
+    dataBinding &&
+    "source" in dataBinding &&
+    "name" in dataBinding &&
+    !("type" in dataBinding);
+  const hasDataBinding =
+    (!isPropertyBinding &&
+      dataBinding &&
+      "type" in dataBinding &&
+      dataBinding.type === "collection") ||
+    isPropertyBinding;
+
+  // DataBinding 데이터가 있으면 사용, 없으면 staticData 사용
+  const effectiveStaticData = React.useMemo(() => {
+    if (hasDataBinding && boundData.length > 0) {
+      console.log("📊 Table: DataBinding 데이터 사용", boundData.length, "items");
+      return boundData as T[];
+    }
+    return staticData;
+  }, [hasDataBinding, boundData, staticData]);
+
   const mode: PaginationMode = paginationMode || "pagination";
 
   // staticData가 빈 배열이 아닌 실제 데이터가 있는지 확인
-  const hasValidStaticData = staticData && Array.isArray(staticData) && staticData.length > 0;
+  const hasValidStaticData = effectiveStaticData && Array.isArray(effectiveStaticData) && effectiveStaticData.length > 0;
 
   const isAsync =
     enableAsyncLoading === true &&
@@ -295,8 +337,8 @@ export default React.memo(function Table<T extends { id: string | number }>(
   React.useEffect(() => {
     // Static 데이터이고, 컬럼이 제공되지 않았고, 데이터가 있으면 자동 감지
     // 단, 이미 자동 감지된 컬럼이 있으면 건너뛰기 (중복 방지)
-    if (!isAsync && columns.length === 0 && staticData && staticData.length > 0 && detectedColumns.length === 0) {
-      const detected = detectColumnsFromData(staticData);
+    if (!isAsync && columns.length === 0 && effectiveStaticData && effectiveStaticData.length > 0 && detectedColumns.length === 0) {
+      const detected = detectColumnsFromData(effectiveStaticData);
       setDetectedColumns(detected);
       console.log("🔍 Static 데이터 컬럼 자동 감지:", detected);
 
@@ -305,7 +347,7 @@ export default React.memo(function Table<T extends { id: string | number }>(
         onColumnsDetected(detected);
       }
     }
-  }, [staticData, columns.length, isAsync, detectColumnsFromData, onColumnsDetected, detectedColumns.length]);
+  }, [effectiveStaticData, columns.length, isAsync, detectColumnsFromData, onColumnsDetected, detectedColumns.length]);
 
   // ---------- Column Definitions with Groups ----------
   const columnDefsWithGroups = React.useMemo<ColumnDef<T>[]>(() => {
@@ -499,18 +541,18 @@ export default React.memo(function Table<T extends { id: string | number }>(
 
   // Static/Supabase 데이터의 클라이언트 페이지네이션
   const clientPaginatedData = React.useMemo(() => {
-    if (isAsync || !staticData) return staticData || [];
-    if (mode !== "pagination") return staticData;
+    if (isAsync || !effectiveStaticData) return effectiveStaticData || [];
+    if (mode !== "pagination") return effectiveStaticData;
 
     const start = clientPageIndex * currentItemsPerPage;
     const end = start + currentItemsPerPage;
-    return staticData.slice(start, end);
-  }, [isAsync, staticData, mode, clientPageIndex, currentItemsPerPage]);
+    return effectiveStaticData.slice(start, end);
+  }, [isAsync, effectiveStaticData, mode, clientPageIndex, currentItemsPerPage]);
 
   const clientTotalPages = React.useMemo(() => {
-    if (isAsync || !staticData) return 0;
-    return Math.ceil(staticData.length / currentItemsPerPage);
-  }, [isAsync, staticData, currentItemsPerPage]);
+    if (isAsync || !effectiveStaticData) return 0;
+    return Math.ceil(effectiveStaticData.length / currentItemsPerPage);
+  }, [isAsync, effectiveStaticData, currentItemsPerPage]);
 
   // prop 변경 시 내부 상태 동기화
   React.useEffect(() => {
@@ -831,16 +873,16 @@ export default React.memo(function Table<T extends { id: string | number }>(
   const initialLoadRef = React.useRef(false);
   const prevModeRef = React.useRef<PaginationMode>(mode);
   const prevApiConfigRef = React.useRef({ apiUrlKey, customApiUrl, endpointPath, isAsync });
-  const prevStaticDataRef = React.useRef(staticData);
+  const prevStaticDataRef = React.useRef(effectiveStaticData);
 
   // Static 데이터 변경 감지 - 데이터 소스가 변경되면 detectedColumns 초기화
   React.useEffect(() => {
-    if (prevStaticDataRef.current !== staticData) {
-      prevStaticDataRef.current = staticData;
+    if (prevStaticDataRef.current !== effectiveStaticData) {
+      prevStaticDataRef.current = effectiveStaticData;
       setDetectedColumns([]);
       console.log("🔄 Static 데이터 변경 감지 - 자동 감지 컬럼 초기화");
     }
-  }, [staticData]);
+  }, [effectiveStaticData]);
 
   React.useEffect(() => {
     // 모드 변경 또는 API 설정 변경 감지
@@ -934,11 +976,11 @@ export default React.memo(function Table<T extends { id: string | number }>(
 
   // ---------- 데이터 결정 ----------
   const data: T[] = React.useMemo(() => {
-    if (staticData) {
-      if (sorting.length === 0) return staticData;
+    if (effectiveStaticData) {
+      if (sorting.length === 0) return effectiveStaticData;
       const s = sorting[0];
       const key = s?.id as keyof T;
-      const sorted = [...staticData].sort((a, b) => {
+      const sorted = [...effectiveStaticData].sort((a, b) => {
         const av = a[key] as string | number;
         const bv = b[key] as string | number;
         if (av == null && bv == null) return 0;
@@ -960,7 +1002,7 @@ export default React.memo(function Table<T extends { id: string | number }>(
 
     // 서버 사이드 페이지네이션 (API)
     return mode === "pagination" ? pageRows : flatRows;
-  }, [staticData, sorting, mode, pageRows, flatRows, isAsync, clientPaginatedData]);
+  }, [effectiveStaticData, sorting, mode, pageRows, flatRows, isAsync, clientPaginatedData]);
 
   // ---------- React Table ----------
   const table = useReactTable({
@@ -1304,7 +1346,7 @@ export default React.memo(function Table<T extends { id: string | number }>(
       {/* 페이지네이션 (grid 바깥) */}
       {shouldShowPagination && (
         (isAsync && pageCount !== null) ||
-        (staticData && staticData.length > 0)
+        (effectiveStaticData && effectiveStaticData.length > 0)
       ) && (
           <div className="react-aria-Pagination">
             {isAsync && pageCount !== null ? (
@@ -1530,7 +1572,7 @@ export default React.memo(function Table<T extends { id: string | number }>(
 
                 {loading && <span className="react-aria-LoadingText">Loading…</span>}
               </>
-            ) : staticData ? (
+            ) : effectiveStaticData ? (
               // 클라이언트 사이드 페이지네이션 (Static/Supabase)
               <>
                 {/* 페이지 정보 */}
@@ -1538,9 +1580,9 @@ export default React.memo(function Table<T extends { id: string | number }>(
                   {clientPageIndex * currentItemsPerPage + 1} to{" "}
                   {Math.min(
                     (clientPageIndex + 1) * currentItemsPerPage,
-                    staticData.length
+                    effectiveStaticData.length
                   )}{" "}
-                  of {staticData.length} entries
+                  of {effectiveStaticData.length} entries
                 </div>
 
                 {/* 페이지 네비게이션 */}

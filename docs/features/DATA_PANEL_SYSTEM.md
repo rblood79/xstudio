@@ -1762,6 +1762,93 @@ function renderListBox(element: Element, children: React.ReactNode) {
 }
 ```
 
+### 9.4 DataBinding 지원 컴포넌트 (13개)
+
+모든 컬렉션 컴포넌트는 `useCollectionData` Hook을 사용하여 DataTable, API, Supabase에서 데이터를 가져옵니다.
+
+#### 지원 컴포넌트 목록
+
+| 컴포넌트 | 파일 위치 | 특이사항 |
+|----------|-----------|----------|
+| ListBox | `src/shared/components/ListBox.tsx` | 기본 리스트 컴포넌트 |
+| GridList | `src/shared/components/GridList.tsx` | 그리드 레이아웃 |
+| Select | `src/shared/components/Select.tsx` | 드롭다운 선택 |
+| ComboBox | `src/shared/components/ComboBox.tsx` | 검색 가능한 드롭다운 |
+| Menu | `src/shared/components/Menu.tsx` | 메뉴 리스트 |
+| Tree | `src/shared/components/Tree.tsx` | 계층적 트리 구조 |
+| Table | `src/shared/components/Table.tsx` | 테이블 데이터 |
+| TagGroup | `src/shared/components/TagGroup.tsx` | 태그 그룹, removedItemIds 지원 |
+| RadioGroup | `src/shared/components/RadioGroup.tsx` | 라디오 버튼 그룹 |
+| CheckboxGroup | `src/shared/components/CheckboxGroup.tsx` | 체크박스 그룹 |
+| Tabs | `src/shared/components/Tabs.tsx` | 탭 네비게이션 |
+| Breadcrumbs | `src/shared/components/Breadcrumbs.tsx` | 경로 탐색 |
+| ToggleButtonGroup | `src/shared/components/ToggleButtonGroup.tsx` | 토글 버튼 그룹 |
+
+#### DataBinding 형식
+
+두 가지 DataBinding 형식이 존재합니다:
+
+**1. PropertyDataBinding 형식 (Inspector UI에서 설정)**
+```typescript
+// Inspector의 PropertyDataBinding 컴포넌트에서 생성
+{
+  source: 'dataTable' | 'api',
+  name: string  // DataTable 이름 또는 API endpoint 이름
+}
+```
+
+**2. DataBinding 형식 (프로그래밍 방식)**
+```typescript
+// 직접 element.dataBinding에 설정
+{
+  type: 'collection',
+  source: 'static' | 'api' | 'supabase',
+  config: {
+    columnMapping?: { id: string; label: string };
+    dataMapping?: { idField: string; labelField: string };
+    // ...기타 설정
+  }
+}
+```
+
+#### 감지 패턴 (모든 컴포넌트 공통)
+
+```typescript
+// PropertyDataBinding 형식 감지
+const isPropertyBinding =
+  dataBinding &&
+  "source" in dataBinding &&
+  "name" in dataBinding &&
+  !("type" in dataBinding);
+
+// DataBinding 활성화 여부
+const hasDataBinding =
+  (!isPropertyBinding &&
+    dataBinding &&
+    "type" in dataBinding &&
+    dataBinding.type === "collection") ||
+  isPropertyBinding;
+```
+
+#### ⚠️ 주의사항: dataBinding.config 접근
+
+PropertyDataBinding 형식에는 `config` 속성이 없습니다. 반드시 Optional Chaining을 사용하세요:
+
+```typescript
+// ❌ WRONG - PropertyDataBinding 사용 시 crash 발생
+const config = dataBinding.config as {...};
+const idField = config.columnMapping?.id || "id";
+
+// ✅ CORRECT - Optional chaining 사용
+const config = (dataBinding as { config?: Record<string, unknown> })?.config as {
+  columnMapping?: { id: string; label: string };
+  dataMapping?: { idField: string; labelField: string };
+} | undefined;
+
+const idField = config?.columnMapping?.id || config?.dataMapping?.idField || "id";
+const labelField = config?.columnMapping?.label || config?.dataMapping?.labelField || "label";
+```
+
 ---
 
 ## 10. Implementation Plan
