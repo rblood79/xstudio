@@ -271,13 +271,15 @@ function SchemaEditor({
   const [localValues, setLocalValues] = useState<Record<string, { key: string; label: string }>>({});
 
   // schema 변경 시 로컬 상태 초기화
+  // This pattern is intentional for syncing external prop with local state
   useEffect(() => {
     const initial: Record<string, { key: string; label: string }> = {};
     schema.forEach((field, index) => {
       initial[index] = { key: field.key, label: field.label || "" };
     });
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLocalValues(initial);
-  }, [schema.length]); // schema.length가 변경될 때만 초기화
+  }, [schema.length]);
 
   const handleLocalChange = (index: number, fieldName: 'key' | 'label', value: string) => {
     setLocalValues(prev => ({
@@ -474,7 +476,9 @@ function CellEditor({ fieldType, value, onChange }: CellEditorProps) {
   const [localValue, setLocalValue] = useState<string>(String(value || ""));
 
   // 외부 value가 변경되면 로컬 상태 동기화
+  // This pattern is intentional for syncing external prop with local state
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLocalValue(String(value || ""));
   }, [value]);
 
