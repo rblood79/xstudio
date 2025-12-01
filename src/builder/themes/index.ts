@@ -5,6 +5,18 @@
  * Themes affect the Builder UI (header, sidebar, inspector, footer).
  * Preview/Canvas uses separate theme system.
  *
+ * Features:
+ * - JSON-based themes (VS Code compatible format)
+ * - WCAG-compliant color derivation for accessibility
+ * - localStorage persistence for theme preference
+ * - Auto-derived UI states (pressed, disabled, focus)
+ *
+ * Available Themes:
+ * - VS Code: vs-dark, vs-light
+ * - Tokyo Night: tokyo-night
+ * - Solarized: solarized-dark, solarized-light
+ * - Google Antigravity: antigravity-dark, antigravity-light, antigravity-teal, antigravity-purple
+ *
  * @example
  * ```tsx
  * import { useBuilderThemeStore, useActiveBuilderTheme } from '@/builder/themes';
@@ -36,17 +48,24 @@ export {
   useIsBuilderDarkTheme,
 } from "./builderThemeStore";
 
-// Presets
+// Utilities
 export {
-  BUILDER_THEMES,
-  DEFAULT_THEME_ID,
-  getThemeIds,
-  getThemeById,
-  isThemeDark,
-  THEMES_BY_TYPE,
-  vsDark,
-  vsLight,
-  tokyoNight,
-  solarizedDark,
-  solarizedLight,
-} from "./presets";
+  // WCAG Accessibility
+  WCAG_RATIOS,
+  calculateContrastRatio,
+  meetsContrastRequirement,
+  adjustForContrast,
+  deriveAccessibleColor,
+  isColorDark,
+  getTextColorForBackground,
+  validateThemeContrast,
+  type ContrastViolation,
+  // Theme Loading
+  loadTheme,
+  loadAllThemes,
+  getAvailableThemeIds,
+  themeExists,
+  deriveUIColors,
+  type DerivedColors,
+  type EnhancedBuilderTheme,
+} from "./utils";

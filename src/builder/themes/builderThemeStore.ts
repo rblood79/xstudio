@@ -2,21 +2,34 @@
  * Builder Theme Store
  *
  * Manages the Builder UI theme state and CSS injection.
- * Uses VS Code compatible theme structure.
+ * Uses VS Code compatible theme structure with JSON-based themes.
+ *
+ * Features:
+ * - JSON theme loading (VS Code compatible)
+ * - WCAG-compliant color derivation for missing UI states
+ * - localStorage persistence
  */
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
 import type {
-  BuilderTheme,
   BuilderThemeMetadata,
   VSCodeWorkbenchColors,
 } from "./types";
-import { BUILDER_THEMES, DEFAULT_THEME_ID } from "./presets";
+import {
+  loadAllThemes,
+  themeExists,
+  type EnhancedBuilderTheme,
+  type DerivedColors,
+} from "./utils";
 
 // ==================== Constants ====================
 
 const STORAGE_KEY = "xstudio-builder-theme";
 const STYLE_ID = "builder-theme-vars";
+const DEFAULT_THEME_ID = "vs-dark";
+
+// Load all JSON themes at initialization
+const LOADED_THEMES = loadAllThemes();
 
 // ==================== VS Code → CSS Variable Mapping ====================
 
@@ -225,6 +238,52 @@ const VS_CODE_TO_CSS_MAP: Record<keyof VSCodeWorkbenchColors, string> = {
   "extensionButton.prominentHoverBackground": "--builder-ext-button-hover-bg",
 };
 
+/**
+ * Maps derived color keys to CSS custom property names
+ * These are XStudio extensions for UI components not in VS Code
+ */
+const DERIVED_TO_CSS_MAP: Record<keyof DerivedColors, string> = {
+  // Button states
+  "button.pressedBackground": "--builder-button-pressed-bg",
+  "button.disabledBackground": "--builder-button-disabled-bg",
+  "button.disabledForeground": "--builder-button-disabled-fg",
+  "button.secondaryPressedBackground": "--builder-button-secondary-pressed-bg",
+  "button.secondaryDisabledBackground": "--builder-button-secondary-disabled-bg",
+  "button.secondaryDisabledForeground": "--builder-button-secondary-disabled-fg",
+
+  // Input states
+  "input.focusBorder": "--builder-input-focus-border",
+  "input.disabledBackground": "--builder-input-disabled-bg",
+  "input.disabledForeground": "--builder-input-disabled-fg",
+
+  // Checkbox
+  "checkbox.background": "--builder-checkbox-bg",
+  "checkbox.foreground": "--builder-checkbox-fg",
+  "checkbox.border": "--builder-checkbox-border",
+  "checkbox.checkedBackground": "--builder-checkbox-checked-bg",
+  "checkbox.checkedForeground": "--builder-checkbox-checked-fg",
+  "checkbox.disabledBackground": "--builder-checkbox-disabled-bg",
+  "checkbox.disabledForeground": "--builder-checkbox-disabled-fg",
+
+  // Switch
+  "switch.background": "--builder-switch-bg",
+  "switch.foreground": "--builder-switch-fg",
+  "switch.checkedBackground": "--builder-switch-checked-bg",
+  "switch.thumbBackground": "--builder-switch-thumb-bg",
+
+  // Slider
+  "slider.trackBackground": "--builder-slider-track-bg",
+  "slider.trackFillBackground": "--builder-slider-track-fill-bg",
+  "slider.thumbBackground": "--builder-slider-thumb-bg",
+  "slider.thumbBorder": "--builder-slider-thumb-border",
+
+  // Radio
+  "radio.background": "--builder-radio-bg",
+  "radio.border": "--builder-radio-border",
+  "radio.checkedBackground": "--builder-radio-checked-bg",
+  "radio.checkedForeground": "--builder-radio-checked-fg",
+};
+
 // ==================== Utility Functions ====================
 
 /**
@@ -240,13 +299,24 @@ function vsCodeKeyToCSSVar(key: string): string {
 /**
  * Generate CSS variables from theme colors
  */
-function generateThemeCSS(theme: BuilderTheme): string {
+function generateThemeCSS(theme: EnhancedBuilderTheme): string {
   const cssVars: string[] = [];
 
+  // VS Code colors
   for (const [key, value] of Object.entries(theme.colors)) {
     if (value) {
       const cssVar = vsCodeKeyToCSSVar(key);
       cssVars.push(`  ${cssVar}: ${value};`);
+    }
+  }
+
+  // Derived colors (WCAG-compliant UI states)
+  for (const [key, value] of Object.entries(theme.derivedColors)) {
+    if (value) {
+      const cssVar = DERIVED_TO_CSS_MAP[key as keyof DerivedColors];
+      if (cssVar) {
+        cssVars.push(`  ${cssVar}: ${value};`);
+      }
     }
   }
 
@@ -260,8 +330,9 @@ function generateThemeCSS(theme: BuilderTheme): string {
  * Generate semantic CSS aliases for backward compatibility
  * Maps new builder theme vars to existing CSS variable names
  */
-function generateSemanticAliases(theme: BuilderTheme): string {
+function generateSemanticAliases(theme: EnhancedBuilderTheme): string {
   const colors = theme.colors;
+  const derived = theme.derivedColors;
   const aliases: string[] = [];
 
   // Map to existing builder-system.css variables
@@ -278,6 +349,10 @@ function generateSemanticAliases(theme: BuilderTheme): string {
   if (colors["button.hoverBackground"])
     aliases.push(
       `  --button-background-hover: ${colors["button.hoverBackground"]};`
+    );
+  if (derived["button.pressedBackground"])
+    aliases.push(
+      `  --button-background-pressed: ${derived["button.pressedBackground"]};`
     );
   if (colors["button.foreground"])
     aliases.push(`  --highlight-foreground: ${colors["button.foreground"]};`);
@@ -316,7 +391,7 @@ function generateSemanticAliases(theme: BuilderTheme): string {
 /**
  * Inject theme CSS into the document
  */
-function injectThemeCSS(theme: BuilderTheme): void {
+function injectThemeCSS(theme: EnhancedBuilderTheme): void {
   // Remove existing theme style
   const existingStyle = document.getElementById(STYLE_ID);
   if (existingStyle) {
@@ -340,7 +415,7 @@ function injectThemeCSS(theme: BuilderTheme): void {
 function loadStoredThemeId(): string {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored && BUILDER_THEMES[stored]) {
+    if (stored && themeExists(stored)) {
       return stored;
     }
   } catch {
@@ -365,17 +440,17 @@ function saveThemeId(themeId: string): void {
 interface BuilderThemeStore {
   // State
   activeThemeId: string;
-  themes: Record<string, BuilderTheme>;
+  themes: Record<string, EnhancedBuilderTheme>;
   loading: boolean;
   error: string | null;
 
   // Actions
   setTheme: (themeId: string) => void;
-  registerTheme: (theme: BuilderTheme) => void;
+  registerTheme: (theme: EnhancedBuilderTheme) => void;
   removeTheme: (themeId: string) => void;
-  getTheme: (themeId: string) => BuilderTheme | undefined;
+  getTheme: (themeId: string) => EnhancedBuilderTheme | undefined;
   getThemeList: () => BuilderThemeMetadata[];
-  getActiveTheme: () => BuilderTheme | undefined;
+  getActiveTheme: () => EnhancedBuilderTheme | undefined;
   initialize: () => void;
   resetToDefault: () => void;
 }
@@ -385,9 +460,9 @@ interface BuilderThemeStore {
 export const useBuilderThemeStore = create<BuilderThemeStore>()(
   devtools(
     (set, get) => ({
-      // Initial State
+      // Initial State - Load from JSON themes
       activeThemeId: DEFAULT_THEME_ID,
-      themes: { ...BUILDER_THEMES },
+      themes: { ...LOADED_THEMES },
       loading: false,
       error: null,
 
@@ -412,7 +487,7 @@ export const useBuilderThemeStore = create<BuilderThemeStore>()(
       },
 
       // Register a new theme
-      registerTheme: (theme: BuilderTheme) => {
+      registerTheme: (theme: EnhancedBuilderTheme) => {
         set((state) => ({
           themes: { ...state.themes, [theme.id]: theme },
         }));
@@ -429,7 +504,7 @@ export const useBuilderThemeStore = create<BuilderThemeStore>()(
         }
 
         // Can't remove built-in themes
-        if (BUILDER_THEMES[themeId]) {
+        if (LOADED_THEMES[themeId]) {
           set({ error: "Cannot remove built-in theme" });
           return;
         }
