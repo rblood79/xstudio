@@ -10,7 +10,7 @@
  * - Column Selection + Import to DataTable (Phase 4)
  */
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import {
   Plus,
   Trash2,
@@ -44,6 +44,8 @@ import "./ApiEndpointEditor.css";
 interface ApiEndpointEditorProps {
   endpoint: ApiEndpoint;
   onClose: () => void;
+  /** 초기 활성 탭 (외부에서 Test 탭으로 바로 이동할 때 사용) */
+  initialTab?: "basic" | "headers" | "body" | "response" | "test";
 }
 
 const HTTP_METHODS: { value: HttpMethod; label: string }[] = [
@@ -54,13 +56,13 @@ const HTTP_METHODS: { value: HttpMethod; label: string }[] = [
   { value: "DELETE", label: "DELETE" },
 ];
 
-export function ApiEndpointEditor({ endpoint, onClose }: ApiEndpointEditorProps) {
+export function ApiEndpointEditor({ endpoint, onClose, initialTab }: ApiEndpointEditorProps) {
   const updateApiEndpoint = useDataStore((state) => state.updateApiEndpoint);
   const executeApiEndpoint = useDataStore((state) => state.executeApiEndpoint);
   const createDataTable = useDataStore((state) => state.createDataTable);
 
   const [activeTab, setActiveTab] = useState<"basic" | "headers" | "body" | "response" | "test">(
-    "basic"
+    initialTab || "basic"
   );
   const [expandedSections, setExpandedSections] = useState<Set<string>>(
     new Set(["headers", "queryParams"])
@@ -69,6 +71,7 @@ export function ApiEndpointEditor({ endpoint, onClose }: ApiEndpointEditorProps)
   const [isExecuting, setIsExecuting] = useState(false);
   const [detectedColumns, setDetectedColumns] = useState<DetectedColumn[]>([]);
   const [isImporting, setIsImporting] = useState(false);
+  const hasAutoTriggeredTest = useRef(false);
 
   // 기본 정보 업데이트
   const handleBasicUpdate = useCallback(
@@ -148,21 +151,42 @@ export function ApiEndpointEditor({ endpoint, onClose }: ApiEndpointEditorProps)
     setDetectedColumns([]);
     try {
       const result = await executeApiEndpoint(endpoint.id);
+
+      console.log("🔍 API result:", {
+        result,
+        resultType: typeof result,
+        dataPath: endpoint.responseMapping?.dataPath,
+      });
+
       setTestResult({ success: true, data: result });
 
       // 성공 시 컬럼 자동 감지
-      // dataPath가 설정되어 있으면 해당 경로의 데이터 사용
+      // executeApiEndpoint이 이미 dataPath를 적용한 결과를 반환하므로
+      // 여기서는 다시 적용하지 않음
       let dataToAnalyze = result;
-      if (endpoint.responseMapping?.dataPath) {
-        const paths = endpoint.responseMapping.dataPath.split(".");
-        for (const path of paths) {
-          if (dataToAnalyze && typeof dataToAnalyze === "object") {
-            dataToAnalyze = (dataToAnalyze as Record<string, unknown>)[path];
+
+      // 응답이 객체인 경우 배열 필드 자동 탐색
+      if (!Array.isArray(dataToAnalyze) && typeof dataToAnalyze === "object" && dataToAnalyze !== null) {
+        // 응답 객체에서 배열 필드 찾기 (예: results, data, items, records 등)
+        const commonArrayFields = ["results", "data", "items", "records", "list", "rows", "entries"];
+        for (const field of commonArrayFields) {
+          const fieldValue = (dataToAnalyze as Record<string, unknown>)[field];
+          if (Array.isArray(fieldValue) && fieldValue.length > 0) {
+            console.log(`🔍 Auto-detected array field: "${field}" with ${fieldValue.length} items`);
+            dataToAnalyze = fieldValue;
+            break;
           }
         }
       }
 
+      console.log("🔍 Column detection - dataToAnalyze:", {
+        isArray: Array.isArray(dataToAnalyze),
+        type: typeof dataToAnalyze,
+        length: Array.isArray(dataToAnalyze) ? dataToAnalyze.length : "N/A",
+      });
+
       const columns = detectColumns(dataToAnalyze);
+      console.log("🔍 Detected columns:", columns);
       setDetectedColumns(columns);
     } catch (error) {
       setTestResult({ success: false, data: (error as Error).message });
@@ -170,6 +194,14 @@ export function ApiEndpointEditor({ endpoint, onClose }: ApiEndpointEditorProps)
       setIsExecuting(false);
     }
   }, [endpoint.id, endpoint.responseMapping?.dataPath, executeApiEndpoint]);
+
+  // initialTab="test"로 열렸을 때 자동으로 테스트 실행
+  useEffect(() => {
+    if (initialTab === "test" && !hasAutoTriggeredTest.current && !isExecuting) {
+      hasAutoTriggeredTest.current = true;
+      handleTest();
+    }
+  }, [initialTab, handleTest, isExecuting]);
 
   // DataTable Import 핸들러
   const handleImport = useCallback(

@@ -18,10 +18,9 @@ export function ApiEndpointList({ projectId }: ApiEndpointListProps) {
   const apiEndpoints = useApiEndpoints();
   const createApiEndpoint = useDataStore((state) => state.createApiEndpoint);
   const deleteApiEndpoint = useDataStore((state) => state.deleteApiEndpoint);
-  const executeApiEndpoint = useDataStore((state) => state.executeApiEndpoint);
-  const loadingApis = useDataStore((state) => state.loadingApis);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [editingEndpoint, setEditingEndpoint] = useState<ApiEndpoint | null>(null);
+  const [initialTab, setInitialTab] = useState<"basic" | "headers" | "body" | "response" | "test" | undefined>(undefined);
 
   const handleCreate = async () => {
     const url = prompt("API URL을 입력하세요 (예: https://pokeapi.co/api/v2/pokemon):");
@@ -67,15 +66,13 @@ export function ApiEndpointList({ projectId }: ApiEndpointListProps) {
     }
   };
 
-  const handleExecute = async (id: string, e: React.MouseEvent) => {
+  const handleExecute = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    try {
-      const result = await executeApiEndpoint(id);
-      console.log("API 실행 결과:", result);
-      alert("API 호출 성공! 콘솔을 확인하세요.");
-    } catch (error) {
-      console.error("API 실행 실패:", error);
-      alert(`API 호출 실패: ${(error as Error).message}`);
+    // API 실행 대신 Editor의 Test 탭으로 이동 (컬럼 자동 감지 기능 포함)
+    const endpoint = apiEndpoints.find(ep => ep.id === id);
+    if (endpoint) {
+      setEditingEndpoint(endpoint);
+      setInitialTab("test");
     }
   };
 
@@ -133,8 +130,7 @@ export function ApiEndpointList({ projectId }: ApiEndpointListProps) {
               type="button"
               className="iconButton"
               onClick={(e) => handleExecute(endpoint.id, e)}
-              disabled={loadingApis.has(endpoint.id)}
-              title="실행"
+              title="테스트"
             >
               <Play size={14} />
             </button>
@@ -175,7 +171,11 @@ export function ApiEndpointList({ projectId }: ApiEndpointListProps) {
         <div className="dataset-editor-overlay">
           <ApiEndpointEditor
             endpoint={editingEndpoint}
-            onClose={() => setEditingEndpoint(null)}
+            onClose={() => {
+              setEditingEndpoint(null);
+              setInitialTab(undefined);
+            }}
+            initialTab={initialTab}
           />
         </div>
       )}
