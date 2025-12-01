@@ -117,7 +117,7 @@ DataTable Preset System은 Data Panel에서 사용자가 빠르게 DataTable을 
 ### 타입 정의
 
 ```typescript
-// src/builder/panels/data/presets/types.ts
+// src/builder/panels/dataset/presets/types.ts
 
 import type { DataField } from "../../../../types/builder/data.types";
 
@@ -149,7 +149,7 @@ export interface DataTablePreset {
 ### Preset 정의 예시
 
 ```typescript
-// src/builder/panels/data/presets/dataTablePresets.ts
+// src/builder/panels/dataset/presets/dataTablePresets.ts
 
 export const DATATABLE_PRESETS: Record<string, DataTablePreset> = {
   users: {
@@ -178,7 +178,7 @@ export const DATATABLE_PRESETS: Record<string, DataTablePreset> = {
 ### 사용법
 
 ```typescript
-// Data Panel에서 Preset 선택 후 DataTable 생성
+// Dataset Panel에서 Preset 선택 후 DataTable 생성
 const preset = DATATABLE_PRESETS.users;
 const sampleData = preset.generateSampleData(preset.defaultSampleCount);
 
@@ -196,28 +196,33 @@ await createDataTable({
 ## 파일 구조
 
 ```
-src/builder/panels/data/
-├── presets/
-│   ├── index.ts                      # Export all
-│   ├── types.ts                      # Type definitions
-│   ├── dataTablePresets.ts           # Preset definitions
-│   ├── DataTablePresetSelector.tsx   # UI component
-│   └── DataTablePresetSelector.css   # Styles
-├── DataTablePanel.tsx                # (수정) Preset 통합
-└── ...
+src/builder/panels/dataset/
+├── DatasetPanel.tsx                  # 4-tab panel (Tables, APIs, Variables, Transformers)
+├── components/
+│   ├── DataTableList.tsx             # DataTable 목록 + Preset 선택 통합
+│   └── ...
+├── editors/
+│   ├── DataTableEditor.tsx           # 스키마/Mock 데이터 편집
+│   └── ...
+└── presets/
+    ├── index.ts                      # Export all
+    ├── types.ts                      # Type definitions
+    ├── dataTablePresets.ts           # Preset definitions (14개)
+    ├── DataTablePresetSelector.tsx   # UI component (Modal)
+    └── DataTablePresetSelector.css   # Styles
 ```
 
 ---
 
-## 구현 일정
+## 구현 상태
 
 | Phase | 내용 | 상태 |
 |-------|------|------|
 | 1 | 문서 작성 | ✅ 완료 |
-| 2 | Preset 타입/정의 파일 생성 | 🔄 진행 예정 |
-| 3 | UI 컴포넌트 구현 | 🔄 진행 예정 |
-| 4 | Data Panel 통합 | 🔄 진행 예정 |
-| 5 | 정리 및 테스트 | 🔄 진행 예정 |
+| 2 | Preset 타입/정의 파일 생성 | ✅ 완료 |
+| 3 | UI 컴포넌트 구현 | ✅ 완료 |
+| 4 | Dataset Panel 통합 | ✅ 완료 |
+| 5 | Legacy data/ 패널 제거 | ✅ 완료 |
 
 ---
 
@@ -227,3 +232,4 @@ src/builder/panels/data/
 - Mock Data: `src/services/api/mocks/mockLargeDataV2.ts`
 - DataTable 타입: `src/types/builder/data.types.ts`
 - Data Store: `src/builder/stores/data.ts`
+- useColumnLoader Hook: `src/builder/hooks/useColumnLoader.ts`
