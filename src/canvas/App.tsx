@@ -542,6 +542,7 @@ export function App() {
       setLayouts: storeState.setLayouts,
       setDataSources: storeState.setDataSources,
       setDataTables: storeState.setDataTables,
+      setApiEndpoints: storeState.setApiEndpoints,
       setAuthToken: storeState.setAuthToken,
       setReady: storeState.setReady,
     });

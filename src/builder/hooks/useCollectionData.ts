@@ -156,20 +156,34 @@ async function loadApiData(
     }
   }
 
+  // Base URL 매핑 (APICollectionEditor와 동일한 매핑)
+  let resolvedBaseUrl = config.baseUrl || "";
+  switch (config.baseUrl) {
+    case "JSONPLACEHOLDER":
+      resolvedBaseUrl = "https://jsonplaceholder.typicode.com";
+      break;
+    case "DUMMYJSON":
+      resolvedBaseUrl = "https://dummyjson.com";
+      break;
+    case "CUSTOM":
+      resolvedBaseUrl = config.customUrl || "";
+      break;
+    // MOCK_DATA는 위에서 이미 처리됨
+  }
+
+  const fullUrl = `${resolvedBaseUrl}${config.endpoint}`;
+  console.log(`🌐 ${componentName} API 호출 URL:`, fullUrl);
+
   // 실제 REST API 호출
-  const response = await fetch(
-    `${config.baseUrl}${config.customUrl || config.endpoint}`,
-    {
-      method: config.method || "GET",
-      headers: {
-        ...config.headers,
-        "Content-Type": "application/json",
-      },
-      body:
-        config.method !== "GET" ? JSON.stringify(config.params) : undefined,
-      signal, // AbortController signal 전달
-    }
-  );
+  const response = await fetch(fullUrl, {
+    method: config.method || "GET",
+    headers: {
+      ...config.headers,
+      "Content-Type": "application/json",
+    },
+    body: config.method !== "GET" ? JSON.stringify(config.params) : undefined,
+    signal, // AbortController signal 전달
+  });
 
   if (!response.ok) {
     throw new Error(`HTTP error! status: ${response.status}`);
