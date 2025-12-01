@@ -1,0 +1,211 @@
+/**
+ * Solarized Light Theme
+ * Based on VS Code's Solarized Light theme
+ * @see https://github.com/microsoft/vscode/tree/main/extensions/theme-solarized-light
+ */
+import type { BuilderTheme } from "../types";
+
+export const solarizedLight: BuilderTheme = {
+  id: "solarized-light",
+  name: "Solarized Light",
+  type: "light",
+  author: "Ethan Schoonover",
+  colors: {
+    // Base Colors
+    foreground: "#657B83",
+    disabledForeground: "#93A1A1",
+    focusBorder: "#b49471",
+    "widget.shadow": "#00000029",
+    "widget.border": "#DDD6C1",
+    "selection.background": "#878b9180",
+    descriptionForeground: "#586E75",
+    errorForeground: "#dc322f",
+    "icon.foreground": "#586E75",
+
+    // Window Border
+    "window.activeBorder": "#EEE8D5",
+    "window.inactiveBorder": "#EEE8D5",
+
+    // Activity Bar (Panel Nav)
+    "activityBar.background": "#DDD6C1",
+    "activityBar.foreground": "#584c27",
+    "activityBar.inactiveForeground": "#93A1A1",
+    "activityBar.border": "#DDD6C1",
+    "activityBarBadge.background": "#B58900",
+    "activityBarBadge.foreground": "#FDF6E3",
+
+    // Side Bar
+    "sideBar.background": "#EEE8D5",
+    "sideBar.foreground": "#586E75",
+    "sideBar.border": "#DDD6C1",
+    "sideBarTitle.foreground": "#586E75",
+    "sideBarSectionHeader.background": "#EEE8D5",
+    "sideBarSectionHeader.foreground": "#586E75",
+    "sideBarSectionHeader.border": "#DDD6C1",
+    "sideBar.dropBackground": "#DDD6C1AA",
+
+    // Editor / Canvas
+    "editor.background": "#FDF6E3",
+    "editor.foreground": "#657B83",
+    "editorWidget.background": "#EEE8D5",
+    "editorWidget.foreground": "#657B83",
+    "editorWidget.border": "#DDD6C1",
+    "editorGroup.border": "#DDD6C1",
+    "editorGroup.dropBackground": "#DDD6C1AA",
+    "editorPane.background": "#FDF6E3",
+
+    // Title Bar (Header)
+    "titleBar.activeBackground": "#EEE8D5",
+    "titleBar.activeForeground": "#586E75",
+    "titleBar.inactiveBackground": "#EEE8D5",
+    "titleBar.inactiveForeground": "#93A1A1",
+    "titleBar.border": "#DDD6C1",
+
+    // Tab (Header)
+    "tab.activeBackground": "#FDF6E3",
+    "tab.activeForeground": "#657B83",
+    "tab.inactiveBackground": "#D3CBB7",
+    "tab.inactiveForeground": "#586E75",
+    "tab.border": "#DDD6C1",
+    "tab.activeBorder": "#B58900",
+    "tab.hoverForeground": "#657B83",
+    "editorGroupHeader.tabsBackground": "#D9D2C2",
+    "editorGroupHeader.tabsBorder": "#DDD6C1",
+
+    // Panel (Footer / Monitor)
+    "panel.background": "#FDF6E3",
+    "panel.border": "#DDD6C1",
+    "panelTitle.activeForeground": "#586E75",
+    "panelTitle.inactiveForeground": "#93A1A1",
+    "panelTitle.activeBorder": "#B58900",
+    "panelInput.border": "#DDD6C1",
+
+    // Status Bar
+    "statusBar.background": "#EEE8D5",
+    "statusBar.foreground": "#586E75",
+    "statusBar.border": "#DDD6C1",
+    "statusBar.debuggingBackground": "#EEE8D5",
+    "statusBar.debuggingForeground": "#586E75",
+    "statusBar.noFolderBackground": "#EEE8D5",
+    "statusBarItem.activeBackground": "#DDD6C199",
+    "statusBarItem.hoverBackground": "#DDD6C1",
+    "statusBarItem.prominentBackground": "#DDD6C1",
+
+    // Input Controls
+    "input.background": "#DDD6C1",
+    "input.foreground": "#586E75",
+    "input.border": "#D3AF86",
+    "input.placeholderForeground": "#586E75AA",
+    "inputOption.activeBorder": "#D3AF86",
+    "inputOption.activeBackground": "#DFCA8844",
+    "inputOption.activeForeground": "#586E75",
+    "inputValidation.infoBackground": "#D6ECF2",
+    "inputValidation.infoBorder": "#268bd2",
+    "inputValidation.warningBackground": "#F6F5D2",
+    "inputValidation.warningBorder": "#B58900",
+    "inputValidation.errorBackground": "#F2DEDE",
+    "inputValidation.errorBorder": "#dc322f",
+
+    // Dropdown
+    "dropdown.background": "#EEE8D5",
+    "dropdown.foreground": "#586E75",
+    "dropdown.border": "#D3AF86",
+    "dropdown.listBackground": "#EEE8D5",
+
+    // Button
+    "button.background": "#AC9D57",
+    "button.foreground": "#FDF6E3",
+    "button.hoverBackground": "#B58900",
+    "button.secondaryBackground": "#DDD6C1",
+    "button.secondaryForeground": "#586E75",
+    "button.secondaryHoverBackground": "#D3CBB7",
+
+    // Badge
+    "badge.background": "#B58900AA",
+    "badge.foreground": "#FDF6E3",
+
+    // Scrollbar
+    "scrollbar.shadow": "#DDD6C1",
+    "scrollbarSlider.background": "#586E7544",
+    "scrollbarSlider.hoverBackground": "#586E7566",
+    "scrollbarSlider.activeBackground": "#586E7588",
+
+    // Progress Bar
+    "progressBar.background": "#B58900",
+
+    // List / Tree
+    "list.activeSelectionBackground": "#DFCA88",
+    "list.activeSelectionForeground": "#6C6C6C",
+    "list.inactiveSelectionBackground": "#D1CBB8",
+    "list.inactiveSelectionForeground": "#586E75",
+    "list.hoverBackground": "#DFCA8844",
+    "list.hoverForeground": "#586E75",
+    "list.focusBackground": "#DFCA8866",
+    "list.focusForeground": "#586E75",
+    "list.dropBackground": "#DDD6C1AA",
+    "list.highlightForeground": "#B58900",
+    "list.errorForeground": "#dc322f",
+    "list.warningForeground": "#B58900",
+    "tree.indentGuidesStroke": "#93A1A1",
+
+    // Quick Input / Picker
+    "quickInput.background": "#EEE8D5",
+    "quickInput.foreground": "#586E75",
+    "quickInputList.focusBackground": "#DFCA8866",
+    "pickerGroup.border": "#2AA19899",
+    "pickerGroup.foreground": "#2AA19899",
+
+    // Menu
+    "menu.background": "#EEE8D5",
+    "menu.foreground": "#586E75",
+    "menu.selectionBackground": "#DFCA88",
+    "menu.selectionForeground": "#6C6C6C",
+    "menu.separatorBackground": "#DDD6C1",
+    "menu.border": "#DDD6C1",
+
+    // Toolbar
+    "toolbar.hoverBackground": "#DFCA8844",
+    "toolbar.activeBackground": "#DFCA8866",
+
+    // Notification
+    "notificationCenterHeader.background": "#EEE8D5",
+    "notifications.background": "#EEE8D5",
+    "notifications.border": "#DDD6C1",
+    "notificationLink.foreground": "#268bd2",
+    "notificationsErrorIcon.foreground": "#dc322f",
+    "notificationsWarningIcon.foreground": "#B58900",
+    "notificationsInfoIcon.foreground": "#268bd2",
+
+    // Breadcrumb
+    "breadcrumb.background": "#EEE8D5",
+    "breadcrumb.foreground": "#93A1A1",
+    "breadcrumb.focusForeground": "#586E75",
+    "breadcrumb.activeSelectionForeground": "#586E75",
+    "breadcrumbPicker.background": "#EEE8D5",
+
+    // Text Link
+    "textLink.foreground": "#268bd2",
+    "textLink.activeForeground": "#2aa198",
+
+    // Settings
+    "settings.headerForeground": "#268bd2",
+
+    // Charts
+    "charts.foreground": "#586E75",
+    "charts.lines": "#93A1A1",
+    "charts.red": "#dc322f",
+    "charts.blue": "#268bd2",
+    "charts.yellow": "#b58900",
+    "charts.orange": "#cb4b16",
+    "charts.green": "#859900",
+    "charts.purple": "#6c71c4",
+
+    // Action Bar
+    "actionBar.toggledBackground": "#DFCA8866",
+
+    // Extension Button
+    "extensionButton.prominentBackground": "#b58900",
+    "extensionButton.prominentForeground": "#FDF6E3",
+    "extensionButton.prominentHoverBackground": "#584c27aa",
+  },
+};

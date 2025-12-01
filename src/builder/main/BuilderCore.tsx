@@ -31,6 +31,7 @@ import { useUnifiedThemeStore } from "../../stores/themeStore";
 import { getDB } from "../../lib/db";
 import { useEditModeStore } from "../stores/editMode";
 import { useLayoutsStore } from "../stores/layouts";
+import { useBuilderThemeStore } from "../themes";
 
 import { MessageService } from "../../utils/messaging";
 
@@ -59,33 +60,17 @@ export const BuilderCore: React.FC = () => {
     }
   }, [currentPageId, setHistoryInfo]);
 
-  // Theme Mode 적용 (Builder UI 전용 - Preview와 분리)
+  // ==================== Builder Theme 초기화 (VS Code 스타일) ====================
+  // localStorage에서 저장된 테마를 복원하고 CSS 변수 주입
+  // 이 시스템은 Builder UI (header, sidebar, inspector)에만 적용됨
   useEffect(() => {
-    const applyTheme = (theme: 'light' | 'dark') => {
-      document.documentElement.setAttribute('data-builder-theme', theme);
-    };
+    const initializeBuilderTheme = useBuilderThemeStore.getState().initialize;
+    initializeBuilderTheme();
+  }, []);
 
-    if (themeMode === 'auto') {
-      // 시스템 테마 감지
-      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-      const handleChange = (e: MediaQueryListEvent | MediaQueryList) => {
-        applyTheme(e.matches ? 'dark' : 'light');
-      };
-
-      // 초기 테마 적용
-      handleChange(mediaQuery);
-
-      // 시스템 테마 변경 리스너
-      mediaQuery.addEventListener('change', handleChange);
-
-      return () => {
-        mediaQuery.removeEventListener('change', handleChange);
-      };
-    } else {
-      // 명시적인 테마 적용
-      applyTheme(themeMode);
-    }
-  }, [themeMode]);
+  // Legacy themeMode 처리 (Preview dark mode 전용)
+  // Builder UI 테마는 builderThemeStore에서 관리하므로 여기서는 제거
+  // themeMode는 Preview iframe의 dark mode 설정에만 사용됨
 
   // UI Scale 적용 (Builder UI만, Preview iframe 제외)
   useEffect(() => {

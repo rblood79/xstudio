@@ -19,6 +19,7 @@ import {
   Save,
   Moon,
   Sun,
+  Monitor,
 } from "lucide-react";
 import { Button } from "react-aria-components";
 import { useParams } from "react-router-dom";
@@ -36,6 +37,10 @@ import {
 import { useThemes } from "../../../hooks/theme/useThemes";
 import { ThemeService } from "../../../services/theme";
 import { useThemeMessenger } from "../../hooks/useThemeMessenger";
+import {
+  useBuilderThemeStore,
+  useBuilderThemeList,
+} from "../../themes";
 
 function SettingsContent() {
   const { projectId } = useParams<{ projectId: string }>();
@@ -109,6 +114,11 @@ function SettingsContent() {
     }
   };
 
+  // Builder Theme (VS Code style)
+  const builderThemeId = useBuilderThemeStore((state) => state.activeThemeId);
+  const setBuilderTheme = useBuilderThemeStore((state) => state.setTheme);
+  const builderThemes = useBuilderThemeList();
+
   // Theme Mode에 따른 아이콘 결정
   const getThemeModeIcon = () => {
     if (themeMode === "dark") return Moon;
@@ -118,6 +128,10 @@ function SettingsContent() {
       "(prefers-color-scheme: dark)"
     ).matches;
     return prefersDark ? Moon : Sun;
+  };
+
+  const handleBuilderThemeChange = (value: string) => {
+    setBuilderTheme(value);
   };
 
   const themeModeOptions = [
@@ -276,12 +290,26 @@ function SettingsContent() {
           />
         </PropertySection>
 
-        {/* Theme Settings Section */}
-        <PropertySection title="Theme & Appearance">
-          {/* Theme Select */}
+        {/* Builder Theme Section */}
+        <PropertySection title="Builder Theme">
+          <PropertySelect
+            label="Color Theme"
+            value={builderThemeId}
+            onChange={handleBuilderThemeChange}
+            options={builderThemes.map((theme) => ({
+              value: theme.id,
+              label: `${theme.name}${theme.type === "dark" ? " (Dark)" : " (Light)"}`,
+            }))}
+            icon={Monitor}
+          />
+        </PropertySection>
+
+        {/* Preview Theme Section */}
+        <PropertySection title="Preview Theme">
+          {/* Preview Theme Select */}
           {projectId && themes.length > 0 && (
             <PropertySelect
-              label="Theme Select"
+              label="Theme"
               value={activeTheme?.id || ""}
               onChange={handleThemeChange}
               options={themes.map((theme) => ({
@@ -293,13 +321,16 @@ function SettingsContent() {
           )}
 
           <PropertySelect
-            label="Theme Mode"
+            label="Color Mode"
             value={themeMode}
             onChange={handleThemeModeChange}
             options={themeModeOptions}
             icon={getThemeModeIcon()}
           />
+        </PropertySection>
 
+        {/* UI Settings Section */}
+        <PropertySection title="UI Settings">
           <PropertySelect
             label="UI Scale"
             value={String(uiScale)}
