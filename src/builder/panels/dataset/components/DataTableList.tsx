@@ -12,8 +12,8 @@ import { Table2, Plus, Trash2, Edit2 } from "lucide-react";
 import { Button } from "react-aria-components";
 import { useDataStore, useDataTables } from "../../../stores/data";
 import { DataTableEditor } from "../editors/DataTableEditor";
-import { DataTablePresetSelector } from "../../data/presets";
-import type { DataTablePreset } from "../../data/presets";
+import { DataTablePresetSelector } from "../presets";
+import type { DataTablePreset } from "../presets";
 
 interface DataTableListProps {
   projectId: string;

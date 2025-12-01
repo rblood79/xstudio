@@ -7,6 +7,7 @@
  * - Request Body 설정
  * - Response Mapping 설정
  * - 테스트 실행
+ * - Column Selection + Import to DataTable (Phase 4)
  */
 
 import { useState, useCallback } from "react";
@@ -31,6 +32,13 @@ import {
   PropertySelect,
   PropertySwitch,
 } from "../../common";
+import { ColumnSelector } from "../components/ColumnSelector";
+import {
+  detectColumns,
+  columnsToSchema,
+  extractSelectedData,
+  type DetectedColumn,
+} from "../utils/columnDetector";
 import "./ApiEndpointEditor.css";
 
 interface ApiEndpointEditorProps {
@@ -49,6 +57,7 @@ const HTTP_METHODS: { value: HttpMethod; label: string }[] = [
 export function ApiEndpointEditor({ endpoint, onClose }: ApiEndpointEditorProps) {
   const updateApiEndpoint = useDataStore((state) => state.updateApiEndpoint);
   const executeApiEndpoint = useDataStore((state) => state.executeApiEndpoint);
+  const createDataTable = useDataStore((state) => state.createDataTable);
 
   const [activeTab, setActiveTab] = useState<"basic" | "headers" | "body" | "response" | "test">(
     "basic"
@@ -58,6 +67,8 @@ export function ApiEndpointEditor({ endpoint, onClose }: ApiEndpointEditorProps)
   );
   const [testResult, setTestResult] = useState<{ success: boolean; data: unknown } | null>(null);
   const [isExecuting, setIsExecuting] = useState(false);
+  const [detectedColumns, setDetectedColumns] = useState<DetectedColumn[]>([]);
+  const [isImporting, setIsImporting] = useState(false);
 
   // 기본 정보 업데이트
   const handleBasicUpdate = useCallback(
@@ -134,15 +145,83 @@ export function ApiEndpointEditor({ endpoint, onClose }: ApiEndpointEditorProps)
   const handleTest = useCallback(async () => {
     setIsExecuting(true);
     setTestResult(null);
+    setDetectedColumns([]);
     try {
       const result = await executeApiEndpoint(endpoint.id);
       setTestResult({ success: true, data: result });
+
+      // 성공 시 컬럼 자동 감지
+      // dataPath가 설정되어 있으면 해당 경로의 데이터 사용
+      let dataToAnalyze = result;
+      if (endpoint.responseMapping?.dataPath) {
+        const paths = endpoint.responseMapping.dataPath.split(".");
+        for (const path of paths) {
+          if (dataToAnalyze && typeof dataToAnalyze === "object") {
+            dataToAnalyze = (dataToAnalyze as Record<string, unknown>)[path];
+          }
+        }
+      }
+
+      const columns = detectColumns(dataToAnalyze);
+      setDetectedColumns(columns);
     } catch (error) {
       setTestResult({ success: false, data: (error as Error).message });
     } finally {
       setIsExecuting(false);
     }
-  }, [endpoint.id, executeApiEndpoint]);
+  }, [endpoint.id, endpoint.responseMapping?.dataPath, executeApiEndpoint]);
+
+  // DataTable Import 핸들러
+  const handleImport = useCallback(
+    async (columns: DetectedColumn[], tableName: string) => {
+      setIsImporting(true);
+      try {
+        // 스키마 생성
+        const schema = columnsToSchema(columns);
+        const selectedKeys = columns.filter((c) => c.selected).map((c) => c.key);
+
+        // 데이터 추출 (dataPath 적용)
+        let dataToImport = testResult?.data;
+        if (endpoint.responseMapping?.dataPath) {
+          const paths = endpoint.responseMapping.dataPath.split(".");
+          for (const path of paths) {
+            if (dataToImport && typeof dataToImport === "object") {
+              dataToImport = (dataToImport as Record<string, unknown>)[path];
+            }
+          }
+        }
+
+        // 선택된 컬럼만 추출
+        const mockData = extractSelectedData(
+          dataToImport as unknown[],
+          selectedKeys
+        );
+
+        // DataTable 생성
+        await createDataTable({
+          name: tableName,
+          project_id: endpoint.project_id,
+          schema,
+          mockData,
+          useMockData: false, // API 데이터이므로 mockData 사용 안함
+        });
+
+        console.log(`✅ DataTable "${tableName}" 생성 완료 (${schema.length} 컬럼, ${mockData.length} 행)`);
+
+        // 성공 알림 (간단한 alert - 추후 Toast로 개선)
+        alert(`DataTable "${tableName}"이(가) 생성되었습니다.\n${schema.length}개 컬럼, ${mockData.length}개 행`);
+
+        // 컬럼 선택 초기화
+        setDetectedColumns([]);
+      } catch (error) {
+        console.error("❌ DataTable Import 실패:", error);
+        alert(`Import 실패: ${(error as Error).message}`);
+      } finally {
+        setIsImporting(false);
+      }
+    },
+    [testResult?.data, endpoint.responseMapping?.dataPath, endpoint.project_id, createDataTable]
+  );
 
   const toggleSection = (section: string) => {
     setExpandedSections((prev) => {
@@ -260,6 +339,10 @@ export function ApiEndpointEditor({ endpoint, onClose }: ApiEndpointEditorProps)
             testResult={testResult}
             isExecuting={isExecuting}
             onTest={handleTest}
+            detectedColumns={detectedColumns}
+            onColumnsChange={setDetectedColumns}
+            onImport={handleImport}
+            isImporting={isImporting}
           />
         )}
       </div>
@@ -660,9 +743,22 @@ interface TestEditorProps {
   testResult: { success: boolean; data: unknown } | null;
   isExecuting: boolean;
   onTest: () => void;
+  detectedColumns: DetectedColumn[];
+  onColumnsChange: (columns: DetectedColumn[]) => void;
+  onImport: (columns: DetectedColumn[], tableName: string) => void;
+  isImporting: boolean;
 }
 
-function TestEditor({ endpoint, testResult, isExecuting, onTest }: TestEditorProps) {
+function TestEditor({
+  endpoint,
+  testResult,
+  isExecuting,
+  onTest,
+  detectedColumns,
+  onColumnsChange,
+  onImport,
+  isImporting,
+}: TestEditorProps) {
   return (
     <div className="test-editor">
       <div className="test-info">
@@ -696,6 +792,16 @@ function TestEditor({ endpoint, testResult, isExecuting, onTest }: TestEditorPro
               : JSON.stringify(testResult.data, null, 2)}
           </pre>
         </div>
+      )}
+
+      {/* Column Selector - API 성공 시 표시 */}
+      {testResult?.success && detectedColumns.length > 0 && (
+        <ColumnSelector
+          columns={detectedColumns}
+          onColumnsChange={onColumnsChange}
+          onImport={onImport}
+          isImporting={isImporting}
+        />
       )}
     </div>
   );

@@ -91,6 +91,9 @@ interface DataTablePresetSelectorProps {
   onOpenChange?: (isOpen: boolean) => void;
 }
 
+// Silence unused variable warning
+void DATATABLE_PRESETS;
+
 // ============================================
 // Component
 // ============================================
