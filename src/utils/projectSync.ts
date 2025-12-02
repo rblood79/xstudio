@@ -199,6 +199,73 @@ export async function deleteProject(
   try {
     if (location === 'local' || location === 'both') {
       const db = await getDB();
+
+      // 1. 프로젝트의 모든 페이지 삭제
+      const pages = await db.pages.getByProject(projectId);
+      for (const page of pages) {
+        // 페이지의 모든 요소 삭제
+        const elements = await db.elements.getByPage(page.id);
+        if (elements.length > 0) {
+          await db.elements.deleteMany(elements.map((el) => el.id));
+        }
+        // 페이지 삭제
+        await db.pages.delete(page.id);
+      }
+      console.log(`[ProjectSync] 페이지 ${pages.length}개 삭제 완료`);
+
+      // 2. 프로젝트의 레이아웃 삭제
+      const layouts = await db.layouts.getByProject(projectId);
+      for (const layout of layouts) {
+        // 레이아웃의 모든 요소 삭제
+        const layoutElements = await db.elements.getByLayout(layout.id);
+        if (layoutElements.length > 0) {
+          await db.elements.deleteMany(layoutElements.map((el) => el.id));
+        }
+        // 레이아웃 삭제
+        await db.layouts.delete(layout.id);
+      }
+      console.log(`[ProjectSync] 레이아웃 ${layouts.length}개 삭제 완료`);
+
+      // 3. 프로젝트의 디자인 토큰 삭제
+      const tokens = await db.designTokens.getByProject(projectId);
+      for (const token of tokens) {
+        await db.designTokens.delete(token.id);
+      }
+      console.log(`[ProjectSync] 디자인 토큰 ${tokens.length}개 삭제 완료`);
+
+      // 4. 프로젝트의 테마 삭제
+      const themes = await db.themes.getByProject(projectId);
+      for (const theme of themes) {
+        await db.themes.delete(theme.id);
+      }
+      console.log(`[ProjectSync] 테마 ${themes.length}개 삭제 완료`);
+
+      // 5. Data Panel 테이블들 삭제 (data_tables, api_endpoints, variables, transformers)
+      const dataTables = await db.data_tables.getByProject(projectId);
+      for (const dataTable of dataTables) {
+        await db.data_tables.delete(dataTable.id);
+      }
+      console.log(`[ProjectSync] DataTables ${dataTables.length}개 삭제 완료`);
+
+      const apiEndpoints = await db.api_endpoints.getByProject(projectId);
+      for (const endpoint of apiEndpoints) {
+        await db.api_endpoints.delete(endpoint.id);
+      }
+      console.log(`[ProjectSync] API Endpoints ${apiEndpoints.length}개 삭제 완료`);
+
+      const variables = await db.variables.getByProject(projectId);
+      for (const variable of variables) {
+        await db.variables.delete(variable.id);
+      }
+      console.log(`[ProjectSync] Variables ${variables.length}개 삭제 완료`);
+
+      const transformers = await db.transformers.getByProject(projectId);
+      for (const transformer of transformers) {
+        await db.transformers.delete(transformer.id);
+      }
+      console.log(`[ProjectSync] Transformers ${transformers.length}개 삭제 완료`);
+
+      // 6. 프로젝트 삭제
       await db.projects.delete(projectId);
       console.log('✅ [ProjectSync] 로컬 프로젝트 삭제 완료');
     }
