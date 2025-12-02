@@ -232,6 +232,30 @@ export function MyPanel({ isActive }: PanelProps) {
 
 ## CSS 클래스
 
+### 표준 패널 구조 (2025-12-02 Updated)
+
+```
+.panel
+├── PanelHeader (title, actions)
+├── .panel-tabs (탭이 있는 경우)
+│   └── .panel-tab / .panel-tab.active
+└── .panel-contents
+    └── .section
+        ├── SectionHeader (title, actions, collapsible)
+        └── .section-content
+            └── 컨텐츠
+```
+
+**panel-tabs** (패널 내부 탭):
+- `.panel-tabs` - 탭 컨테이너
+- `.panel-tab` - 개별 탭 버튼
+- `.panel-tab.active` - 활성 탭
+
+**section** (섹션 구조):
+- `.section` - 섹션 컨테이너
+- `.section-header` - 섹션 헤더 (SectionHeader 컴포넌트)
+- `.section-content` - 섹션 콘텐츠
+
 ### 기존 클래스 재사용
 
 **sidebar-nav** (48px 네비게이션):
