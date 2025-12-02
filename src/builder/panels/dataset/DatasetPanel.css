@@ -13,10 +13,6 @@
   min-width: var(--panel-width);
 }
 
-.dataset-panel + .datatable-panel{
-  border-left: 1px solid var(--outline-variant);
-}
-
 /* Tab Bar */
 .panel-tabs {
   display: flex;
@@ -114,6 +110,11 @@
 .dataset-item.selected {
   background: var(--color-primary-50);
   border-color: var(--color-primary-400);
+}
+
+.dataset-item.editing {
+  background: var(--color-primary-100);
+  border-color: var(--color-primary-500);
 }
 
 .dataset-item-icon {
@@ -291,17 +292,6 @@
 .level-badge.level3 {
   background: var(--color-error-100);
   color: var(--color-error-700);
-}
-
-/* Editor Overlay */
-.dataset-editor-overlay {
-  position: fixed;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(0, 0, 0, 0.5);
-  z-index: 1000;
 }
 
 /* Loading Overlay (리스트 위에 반투명 표시) */
