@@ -7,6 +7,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed - DatasetEditorPanel Tab Management Refactoring (2025-12-03)
+
+#### State Lifting Pattern
+DatasetEditorPanel에서 탭 상태를 관리하도록 변경 (이전: 각 에디터 내부에서 관리)
+
+**변경 사항:**
+- **DatasetEditorPanel.tsx** - 모든 에디터 탭 상태 관리 (tableTab, apiTab, variableTab, creatorMode)
+- **DataTableEditor.tsx** - 내부 탭 상태 제거, `activeTab` prop 수신
+- **ApiEndpointEditor.tsx** - 내부 탭 상태 제거, `activeTab` prop 수신 (initialTab 제거)
+- **VariableEditor.tsx** - 내부 탭 상태 제거, `activeTab` prop 수신
+- **DataTableCreator.tsx** - 내부 mode 상태 제거, `mode` prop 수신
+
+**새 타입 추가 (editorTypes.ts):**
+```typescript
+export type TableEditorTab = "schema" | "data" | "settings";
+export type ApiEditorTab = "basic" | "headers" | "body" | "response" | "test";
+export type VariableEditorTab = "basic" | "validation" | "transform";
+```
+
+**최종 구조:**
+```
+DatasetEditorPanel
+├── PanelHeader (동적 타이틀)
+├── panel-tabs 또는 creator-mode-selection (renderTabs)
+└── panel-contents
+    └── Editor 컴포넌트 (activeTab prop으로 탭 전달)
+```
+
+**관련 문서:** docs/features/DATA_PANEL_SYSTEM.md Section 18
+
+---
+
 ### Changed - Dataset Panel Standardization (2025-12-02)
 
 #### Panel Structure Refactoring
