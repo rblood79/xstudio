@@ -12,45 +12,13 @@
 }
 
 /* NOTE: editor-header styles removed - now using PanelHeader component */
-
-/* Tabs */
-.editor-tabs {
-  display: flex;
-  gap: var(--spacing-xs);
-  padding: var(--spacing-sm) var(--spacing-md);
-  background: var(--color-surface-50);
-  border-bottom: 1px solid var(--color-border);
-}
-
-.editor-tab {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-xs);
-  padding: var(--spacing-xs) var(--spacing-sm);
-  background: transparent;
-  border: none;
-  border-radius: var(--radius-sm);
-  font-size: var(--text-xs);
-  color: var(--color-text-secondary);
-  cursor: pointer;
-  transition: all 150ms ease;
-}
-
-.editor-tab:hover {
-  background: var(--color-surface-200);
-  color: var(--color-text-primary);
-}
-
-.editor-tab.active {
-  background: var(--color-primary-100);
-  color: var(--color-primary-700);
-}
+/* NOTE: editor-tabs styles removed - now using panel-tabs from DatasetPanel.css */
 
 /* Content */
 .editor-content {
   flex: 1;
   overflow: auto;
-  padding: var(--spacing-md);
+  padding: var(--spacing-sm);
 }
 
 /* Schema Editor */

@@ -9,6 +9,12 @@
   flex-direction: column;
   height: 100%;
   background: var(--color-surface);
+  max-width: var(--panel-width);
+  min-width: var(--panel-width);
+}
+
+.dataset-panel + .datatable-panel{
+  border-left: 1px solid var(--outline-variant);
 }
 
 /* Tab Bar */

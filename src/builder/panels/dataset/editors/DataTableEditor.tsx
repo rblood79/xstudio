@@ -182,10 +182,10 @@ export function DataTableEditor({ dataTable, onClose }: DataTableEditorProps) {
       />
 
       {/* Tabs */}
-      <div className="editor-tabs">
+      <div className="panel-tabs">
         <button
           type="button"
-          className={`editor-tab ${activeTab === "schema" ? "active" : ""}`}
+          className={`panel-tab ${activeTab === "schema" ? "active" : ""}`}
           onClick={() => setActiveTab("schema")}
         >
           <Database size={14} />
@@ -193,7 +193,7 @@ export function DataTableEditor({ dataTable, onClose }: DataTableEditorProps) {
         </button>
         <button
           type="button"
-          className={`editor-tab ${activeTab === "data" ? "active" : ""}`}
+          className={`panel-tab ${activeTab === "data" ? "active" : ""}`}
           onClick={() => setActiveTab("data")}
         >
           <Table2 size={14} />
@@ -201,7 +201,7 @@ export function DataTableEditor({ dataTable, onClose }: DataTableEditorProps) {
         </button>
         <button
           type="button"
-          className={`editor-tab ${activeTab === "settings" ? "active" : ""}`}
+          className={`panel-tab ${activeTab === "settings" ? "active" : ""}`}
           onClick={() => setActiveTab("settings")}
         >
           <Settings size={14} />
