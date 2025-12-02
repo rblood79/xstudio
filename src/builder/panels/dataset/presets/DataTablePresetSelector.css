@@ -150,7 +150,6 @@
   gap: var(--spacing-md);
   padding: var(--spacing-md) var(--spacing-lg);
   overflow-y: auto;
-  max-height: 200px;
 }
 
 .preset-card {

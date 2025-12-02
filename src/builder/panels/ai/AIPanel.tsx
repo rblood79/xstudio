@@ -550,7 +550,7 @@ function AIPanelContent() {
   );
 
   return (
-    <div className="inspector ai-panel">
+    <div className="ai-panel">
       <PanelHeader
         title="AI Assistant"
         actions={
