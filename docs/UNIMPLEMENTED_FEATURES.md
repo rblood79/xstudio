@@ -11,8 +11,9 @@
 
 1. [Transformer 보안 샌드박스](#1-transformer-보안-샌드박스)
 2. ~~[MOCK_DATA Migration](#2-mock_data-migration)~~ ✅ 완료
-3. [Context Menu System](#3-context-menu-system)
-4. [Layout Preset 개선](#4-layout-preset-개선)
+3. [Server-side Action](#3-server-side-action)
+4. [Context Menu System](#4-context-menu-system)
+5. [Layout Preset 개선](#5-layout-preset-개선)
 
 ---
 
@@ -116,7 +117,98 @@ DatasetPanel > New DataTable > Preset 선택 시 자동 스키마 및 샘플 데
 
 ---
 
-## 3. Context Menu System
+## 3. Server-side Action
+
+**Status**: 📋 Planning Phase
+**Priority**: P1
+**Related**: DatasetPanel > ApiEndpoint
+
+### 문제점
+
+현재 설계는 클라이언트 사이드 중심이라 **API Key 노출 위험**이 있습니다.
+
+```
+현재 클라이언트 사이드 호출:
+
+Browser (Preview iframe)
+    ↓
+API Call: GET https://api.stripe.com/v1/charges
+Header: Authorization: Bearer sk_live_xxxxx  ← ⚠️ DevTools에서 노출!
+    ↓
+External API
+
+문제:
+- API 키가 브라우저 DevTools에서 보임
+- 네트워크 탭에서 헤더 확인 가능
+- 악의적 사용자가 키를 탈취할 수 있음
+```
+
+### 해결 방안
+
+Supabase Edge Function을 통한 서버 사이드 프록시:
+
+```
+Server-side Action 아키텍처:
+
+Browser (Preview iframe)
+    ↓
+API Call: POST /api/proxy/stripe-charges
+Header: Authorization: Bearer <user_session_token>
+    ↓
+┌───────────────────────────────────────────────────────┐
+│  Supabase Edge Function (Server)                       │
+│                                                        │
+│  1. 세션 토큰 검증                                      │
+│  2. 프로젝트 권한 확인                                  │
+│  3. Vault에서 API 키 조회 (sk_live_xxxxx)              │
+│  4. 실제 외부 API 호출                                  │
+│  5. 응답 반환 (민감 정보 필터링)                        │
+│                                                        │
+└───────────────────────────────────────────────────────┘
+    ↓
+External API (Stripe, OpenAI, etc.)
+```
+
+### 구현 필요 항목
+
+| 항목 | 설명 | 우선순위 |
+|------|------|----------|
+| executionMode 필드 | ApiEndpoint에 `client` / `server` 선택 | P1 |
+| Edge Function 템플릿 | api-proxy Edge Function 코드 | P1 |
+| Vault 연동 | Supabase Vault에서 시크릿 조회 | P1 |
+| Server Configuration UI | Inspector에서 서버 설정 UI | P1 |
+
+### ApiEndpoint 타입 확장
+
+```typescript
+interface ApiEndpoint {
+  // ... 기존 필드
+
+  // 실행 환경 설정
+  executionMode: "client" | "server";
+
+  // server 모드 전용
+  serverConfig?: {
+    edgeFunctionName: string;
+    secretMappings?: {
+      headerKey: string;   // "Authorization"
+      vaultKey: string;    // "stripe_api_key"
+      format?: string;     // "Bearer {{value}}"
+    }[];
+    responseFilter?: {
+      excludeFields: string[];  // 민감 정보 필드 제거
+    };
+  };
+}
+```
+
+### 관련 파일
+
+- `docs/features/DATA_PANEL_SYSTEM.md` - 상세 설계 (섹션 12.3)
+
+---
+
+## 4. Context Menu System
 
 **Status**: 📋 Planning Phase (전체 미구현)
 **Priority**: Medium
@@ -143,7 +235,7 @@ Element/Area/Multi-select에 대한 컨텍스트 메뉴 시스템
 
 ---
 
-## 4. Layout Preset 개선
+## 5. Layout Preset 개선
 
 **Status**: 📋 Planning Phase
 **Priority**: Low
@@ -183,6 +275,7 @@ CREATE TABLE custom_presets (
 | 순위 | 기능 | 상태 | 비고 |
 |------|------|------|------|
 | **P0** | Transformer 샌드박스 | ⛔ | Level 3 활성화 전제 조건 |
+| **P1** | Server-side Action | 📋 | API Key 보호 |
 | ~~**P2**~~ | ~~MOCK_DATA Migration~~ | ✅ | DataTable Preset으로 구현 완료 |
 | **Medium** | Context Menu System | 📋 | UX 개선 |
 | **Low** | Layout Preset 개선 | 📋 | 편의 기능 |
