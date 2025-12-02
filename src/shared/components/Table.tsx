@@ -141,9 +141,7 @@ export default React.memo(function Table<T extends { id: string | number }>(
     size = 'md',
 
     dataBinding,
-    // columnMapping is destructured but reserved for future use
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    columnMapping,
+    // Note: columnMapping is available in props but not destructured until needed
 
     data: staticData,
     apiUrlKey,
@@ -173,12 +171,7 @@ export default React.memo(function Table<T extends { id: string | number }>(
   } = props;
 
   // useCollectionData Hook으로 데이터 가져오기 (PropertyDataBinding 형식 지원)
-  const {
-    data: boundData,
-    // loading is available for future use
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    loading: boundDataLoading,
-  } = useCollectionData({
+  const { data: boundData } = useCollectionData({
     dataBinding: dataBinding as DataBinding,
     componentName: "Table",
     fallbackData: [],

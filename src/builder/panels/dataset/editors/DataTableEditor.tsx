@@ -7,7 +7,7 @@
  * - useMockData 토글
  */
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback } from "react";
 import {
   Plus,
   Trash2,
@@ -261,44 +261,84 @@ interface SchemaEditorProps {
   onUpdateField: (key: string, updates: Partial<DataField>) => void;
 }
 
+// 개별 스키마 필드 행 컴포넌트 (로컬 상태로 IME 문제 해결)
+interface SchemaFieldRowProps {
+  field: DataField;
+  onUpdateField: (key: string, updates: Partial<DataField>) => void;
+  onDeleteField: (key: string) => void;
+}
+
+function SchemaFieldRow({ field, onUpdateField, onDeleteField }: SchemaFieldRowProps) {
+  // 각 필드에 대한 로컬 상태 (key 변경 시 컴포넌트가 새로 마운트되어 자동 초기화)
+  const [localKey, setLocalKey] = useState(field.key);
+  const [localLabel, setLocalLabel] = useState(field.label || "");
+
+  return (
+    <tr>
+      <td>
+        <input
+          type="text"
+          className="cell-input"
+          value={localKey}
+          onChange={(e) => setLocalKey(e.target.value)}
+          onBlur={() => {
+            if (localKey !== field.key) {
+              onUpdateField(field.key, { key: localKey });
+            }
+          }}
+        />
+      </td>
+      <td>
+        <select
+          className="cell-select"
+          value={field.type}
+          onChange={(e) =>
+            onUpdateField(field.key, { type: e.target.value as DataFieldType })
+          }
+        >
+          {FIELD_TYPES.map((ft) => (
+            <option key={ft.value} value={ft.value}>
+              {ft.label}
+            </option>
+          ))}
+        </select>
+      </td>
+      <td>
+        <input
+          type="text"
+          className="cell-input"
+          value={localLabel}
+          onChange={(e) => setLocalLabel(e.target.value)}
+          onBlur={() => onUpdateField(field.key, { label: localLabel })}
+          placeholder="Label"
+        />
+      </td>
+      <td className="cell-center">
+        <input
+          type="checkbox"
+          checked={field.required || false}
+          onChange={(e) => onUpdateField(field.key, { required: e.target.checked })}
+        />
+      </td>
+      <td>
+        <button
+          type="button"
+          className="delete-row-btn"
+          onClick={() => onDeleteField(field.key)}
+        >
+          <Trash2 size={12} />
+        </button>
+      </td>
+    </tr>
+  );
+}
+
 function SchemaEditor({
   schema,
   onAddField,
   onDeleteField,
   onUpdateField,
 }: SchemaEditorProps) {
-  // 로컬 상태로 입력값 관리 (blur 시에만 저장)
-  const [localValues, setLocalValues] = useState<Record<string, { key: string; label: string }>>({});
-
-  // schema 변경 시 로컬 상태 초기화
-  // This pattern is intentional for syncing external prop with local state
-  useEffect(() => {
-    const initial: Record<string, { key: string; label: string }> = {};
-    schema.forEach((field, index) => {
-      initial[index] = { key: field.key, label: field.label || "" };
-    });
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setLocalValues(initial);
-  }, [schema.length]);
-
-  const handleLocalChange = (index: number, fieldName: 'key' | 'label', value: string) => {
-    setLocalValues(prev => ({
-      ...prev,
-      [index]: { ...prev[index], [fieldName]: value }
-    }));
-  };
-
-  const handleBlur = (index: number, originalKey: string, fieldName: 'key' | 'label') => {
-    const localValue = localValues[index];
-    if (!localValue) return;
-
-    if (fieldName === 'key' && localValue.key !== originalKey) {
-      onUpdateField(originalKey, { key: localValue.key });
-    } else if (fieldName === 'label') {
-      onUpdateField(originalKey, { label: localValue.label });
-    }
-  };
-
   return (
     <div className="schema-editor">
       <div className="schema-table-wrapper">
@@ -313,63 +353,13 @@ function SchemaEditor({
             </tr>
           </thead>
           <tbody>
-            {schema.map((field, index) => (
-              <tr key={index}>
-                <td>
-                  <input
-                    type="text"
-                    className="cell-input"
-                    value={localValues[index]?.key ?? field.key}
-                    onChange={(e) => handleLocalChange(index, 'key', e.target.value)}
-                    onBlur={() => handleBlur(index, field.key, 'key')}
-                  />
-                </td>
-                <td>
-                  <select
-                    className="cell-select"
-                    value={field.type}
-                    onChange={(e) =>
-                      onUpdateField(field.key, {
-                        type: e.target.value as DataFieldType,
-                      })
-                    }
-                  >
-                    {FIELD_TYPES.map((ft) => (
-                      <option key={ft.value} value={ft.value}>
-                        {ft.label}
-                      </option>
-                    ))}
-                  </select>
-                </td>
-                <td>
-                  <input
-                    type="text"
-                    className="cell-input"
-                    value={localValues[index]?.label ?? field.label ?? ""}
-                    onChange={(e) => handleLocalChange(index, 'label', e.target.value)}
-                    onBlur={() => handleBlur(index, field.key, 'label')}
-                    placeholder="Label"
-                  />
-                </td>
-                <td className="cell-center">
-                  <input
-                    type="checkbox"
-                    checked={field.required || false}
-                    onChange={(e) =>
-                      onUpdateField(field.key, { required: e.target.checked })
-                    }
-                  />
-                </td>
-                <td>
-                  <button
-                    type="button"
-                    className="delete-row-btn"
-                    onClick={() => onDeleteField(field.key)}
-                  >
-                    <Trash2 size={12} />
-                  </button>
-                </td>
-              </tr>
+            {schema.map((field) => (
+              <SchemaFieldRow
+                key={field.key}
+                field={field}
+                onUpdateField={onUpdateField}
+                onDeleteField={onDeleteField}
+              />
             ))}
           </tbody>
         </table>
@@ -430,6 +420,7 @@ function MockDataEditor({
                 {schema.map((field) => (
                   <td key={field.key}>
                     <CellEditor
+                      key={`${rowIndex}-${field.key}-${JSON.stringify(row[field.key])}`}
                       fieldType={field.type}
                       value={row[field.key]}
                       onChange={(value) =>
@@ -473,14 +464,8 @@ interface CellEditorProps {
 
 function CellEditor({ fieldType, value, onChange }: CellEditorProps) {
   // 로컬 상태로 관리하여 한국어 IME 조합 문제 해결
+  // useState 초기값으로 props를 사용하고, key prop으로 리셋 처리
   const [localValue, setLocalValue] = useState<string>(String(value || ""));
-
-  // 외부 value가 변경되면 로컬 상태 동기화
-  // This pattern is intentional for syncing external prop with local state
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setLocalValue(String(value || ""));
-  }, [value]);
 
   const handleBlur = () => {
     // blur 시에만 부모에 알림
