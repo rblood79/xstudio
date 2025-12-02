@@ -31,6 +31,7 @@ export type PanelId =
   | 'components'
   | 'library'
   | 'dataset'
+  | 'datasetEditor'  // Dataset 에디터 패널 (DatasetPanel과 함께 사용)
   // Tool panels
   | 'theme'
   | 'ai'

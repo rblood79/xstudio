@@ -2,12 +2,12 @@
  * VariableList - Variable 목록 컴포넌트
  *
  * 전역/페이지 변수 CRUD 및 목록 표시
+ * 편집 UI는 DatasetEditorPanel에서 처리
  */
 
-import { useState } from "react";
 import { Variable, Plus, Trash2, Edit2 } from "lucide-react";
 import { useDataStore, useVariables } from "../../../stores/data";
-import { VariableEditor } from "../editors/VariableEditor";
+import { useDatasetEditorStore } from "../stores/datasetEditorStore";
 import { SectionHeader } from "../../common/SectionHeader";
 import type { Variable as VariableType } from "../../../../types/builder/data.types";
 
@@ -19,12 +19,13 @@ export function VariableList({ projectId }: VariableListProps) {
   const variables = useVariables();
   const createVariable = useDataStore((state) => state.createVariable);
   const deleteVariable = useDataStore((state) => state.deleteVariable);
-  const [editingId, setEditingId] = useState<string | null>(null);
 
-  // 현재 편집 중인 Variable
-  const editingVariable = editingId
-    ? variables.find((v) => v.id === editingId)
-    : null;
+  // Editor Store 액션
+  const editorMode = useDatasetEditorStore((state) => state.mode);
+  const openVariableEditor = useDatasetEditorStore((state) => state.openVariableEditor);
+
+  // 현재 편집 중인 Variable ID (하이라이트용)
+  const editingVariableId = editorMode?.type === "variable-edit" ? editorMode.variableId : null;
 
   // Group by scope
   const globalVariables = variables.filter((v) => v.scope === "global");
@@ -54,9 +55,6 @@ export function VariableList({ projectId }: VariableListProps) {
 
     try {
       await deleteVariable(id);
-      if (editingId === id) {
-        setEditingId(null);
-      }
     } catch (error) {
       console.error("Variable 삭제 실패:", error);
     }
@@ -64,18 +62,14 @@ export function VariableList({ projectId }: VariableListProps) {
 
   const handleEdit = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    setEditingId(id);
-  };
-
-  const handleCloseEditor = () => {
-    setEditingId(null);
+    openVariableEditor(id);
   };
 
   const renderVariableItem = (variable: VariableType) => (
     <div
       key={variable.id}
-      className={`dataset-item ${editingId === variable.id ? "selected" : ""}`}
-      onClick={() => setEditingId(variable.id)}
+      className={`dataset-item ${editingVariableId === variable.id ? "editing" : ""}`}
+      onClick={() => openVariableEditor(variable.id)}
     >
       <div className="dataset-item-icon">
         <Variable size={16} />
@@ -168,16 +162,6 @@ export function VariableList({ projectId }: VariableListProps) {
           <span>Variable 추가</span>
         </button>
       </div>
-
-      {/* Variable Editor Modal */}
-      {editingVariable && (
-        <div className="dataset-editor-overlay">
-          <VariableEditor
-            variable={editingVariable}
-            onClose={handleCloseEditor}
-          />
-        </div>
-      )}
     </div>
   );
 }

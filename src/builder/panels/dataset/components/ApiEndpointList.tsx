@@ -2,14 +2,14 @@
  * ApiEndpointList - API Endpoint 목록 컴포넌트
  *
  * API Endpoint CRUD 및 목록 표시
+ * 편집 UI는 DatasetEditorPanel에서 처리
  */
 
 import { useState } from "react";
 import { Globe, Plus, Trash2, Edit2, Play } from "lucide-react";
 import { useDataStore, useApiEndpoints } from "../../../stores/data";
-import { ApiEndpointEditor } from "../editors/ApiEndpointEditor";
+import { useDatasetEditorStore } from "../stores/datasetEditorStore";
 import { SectionHeader } from "../../common/SectionHeader";
-import type { ApiEndpoint } from "../../../../types/builder/data.types";
 
 interface ApiEndpointListProps {
   projectId: string;
@@ -20,8 +20,13 @@ export function ApiEndpointList({ projectId }: ApiEndpointListProps) {
   const createApiEndpoint = useDataStore((state) => state.createApiEndpoint);
   const deleteApiEndpoint = useDataStore((state) => state.deleteApiEndpoint);
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [editingEndpoint, setEditingEndpoint] = useState<ApiEndpoint | null>(null);
-  const [initialTab, setInitialTab] = useState<"basic" | "headers" | "body" | "response" | "test" | undefined>(undefined);
+
+  // Editor Store 액션
+  const editorMode = useDatasetEditorStore((state) => state.mode);
+  const openApiEditor = useDatasetEditorStore((state) => state.openApiEditor);
+
+  // 현재 편집 중인 API ID (하이라이트용)
+  const editingApiId = editorMode?.type === "api-edit" ? editorMode.endpointId : null;
 
   const handleCreate = async () => {
     const url = prompt("API URL을 입력하세요 (예: https://pokeapi.co/api/v2/pokemon):");
@@ -69,12 +74,13 @@ export function ApiEndpointList({ projectId }: ApiEndpointListProps) {
 
   const handleExecute = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    // API 실행 대신 Editor의 Test 탭으로 이동 (컬럼 자동 감지 기능 포함)
-    const endpoint = apiEndpoints.find(ep => ep.id === id);
-    if (endpoint) {
-      setEditingEndpoint(endpoint);
-      setInitialTab("test");
-    }
+    // Editor의 Test 탭으로 이동 (컬럼 자동 감지 기능 포함)
+    openApiEditor(id, "test");
+  };
+
+  const handleEdit = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    openApiEditor(id);
   };
 
   return (
@@ -100,7 +106,7 @@ export function ApiEndpointList({ projectId }: ApiEndpointListProps) {
             {apiEndpoints.map((endpoint) => (
               <div
                 key={endpoint.id}
-                className={`dataset-item ${selectedId === endpoint.id ? "selected" : ""}`}
+                className={`dataset-item ${selectedId === endpoint.id ? "selected" : ""} ${editingApiId === endpoint.id ? "editing" : ""}`}
                 onClick={() => setSelectedId(endpoint.id)}
               >
                 <div className="dataset-item-icon">
@@ -128,10 +134,7 @@ export function ApiEndpointList({ projectId }: ApiEndpointListProps) {
                   <button
                     type="button"
                     className="iconButton"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setEditingEndpoint(endpoint);
-                    }}
+                    onClick={(e) => handleEdit(endpoint.id, e)}
                     title="편집"
                   >
                     <Edit2 size={14} />
@@ -159,20 +162,6 @@ export function ApiEndpointList({ projectId }: ApiEndpointListProps) {
           <span>API Endpoint 추가</span>
         </button>
       </div>
-
-      {/* API Endpoint Editor */}
-      {editingEndpoint && (
-        <div className="dataset-editor-overlay">
-          <ApiEndpointEditor
-            endpoint={editingEndpoint}
-            onClose={() => {
-              setEditingEndpoint(null);
-              setInitialTab(undefined);
-            }}
-            initialTab={initialTab}
-          />
-        </div>
-      )}
     </div>
   );
 }

@@ -14,6 +14,7 @@ import {
   SwatchBook,
   Database,
   SquareMousePointer,
+  FileEdit,
 } from "lucide-react";
 import type { PanelConfig } from "./types";
 import { PanelRegistry } from "./PanelRegistry";
@@ -25,6 +26,7 @@ import { ThemesPanel } from "../themes/ThemesPanel";
 import { AIPanel } from "../ai/AIPanel";
 import { SettingsPanel } from "../settings/SettingsPanel";
 import { DatasetPanel } from "../dataset/DatasetPanel";
+import { DatasetEditorPanel } from "../dataset/DatasetEditorPanel";
 
 // Editor panels
 import { PropertiesPanel } from "../properties/PropertiesPanel";
@@ -71,9 +73,21 @@ export const PANEL_CONFIGS: PanelConfig[] = [
     category: "navigation",
     defaultPosition: "left",
     minWidth: 329,
-    maxWidth: 723,
+    maxWidth: 329,
     description: "DataTables, APIs, Variables, Transformers 관리",
     shortcut: "Ctrl+Shift+T",
+  },
+  {
+    id: "datasetEditor",
+    name: "데이터셋 에디터",
+    nameEn: "Dataset Editor",
+    icon: FileEdit,
+    component: DatasetEditorPanel,
+    category: "editor",
+    defaultPosition: "left",
+    minWidth: 394,
+    maxWidth: 500,
+    description: "DataTable, API, Variable, Transformer 편집",
   },
 
   // Tool panels

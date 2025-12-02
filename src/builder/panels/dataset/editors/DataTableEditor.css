@@ -1,5 +1,12 @@
 /**
  * DataTableEditor Styles
+ *
+ * 표준 구조:
+ * .datatable-editor
+ *   .panel-tabs (DatasetPanel.css에서 스타일 제공)
+ *   .section-content
+ *
+ * 헤더는 부모 DatasetEditorPanel의 PanelHeader에서 처리
  */
 
 .datatable-editor {
@@ -11,11 +18,8 @@
   overflow: hidden;
 }
 
-/* NOTE: editor-header styles removed - now using PanelHeader component */
-/* NOTE: editor-tabs styles removed - now using panel-tabs from DatasetPanel.css */
-
-/* Content */
-.editor-content {
+/* section-content inherits from common panel styles */
+.datatable-editor .section-content {
   flex: 1;
   overflow: auto;
   padding: var(--spacing-sm);
@@ -119,6 +123,113 @@
   color: var(--color-text-secondary);
   font-size: var(--text-sm);
   text-align: center;
+}
+
+/* Toolbar */
+.mock-data-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-md);
+  padding: var(--spacing-sm);
+  background: var(--color-surface-50);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+/* Filter */
+.filter-input-wrapper {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  max-width: 240px;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  background: var(--color-surface-0);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  gap: var(--spacing-xs);
+}
+
+.filter-input-wrapper:focus-within {
+  border-color: var(--color-primary-500);
+  box-shadow: 0 0 0 2px var(--color-primary-100);
+}
+
+.filter-icon {
+  color: var(--color-text-tertiary);
+  flex-shrink: 0;
+}
+
+.filter-input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  font-size: var(--text-sm);
+  color: var(--color-text-primary);
+  outline: none;
+  min-width: 0;
+}
+
+.filter-input::placeholder {
+  color: var(--color-text-tertiary);
+}
+
+.filter-clear-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  background: var(--color-surface-200);
+  border: none;
+  border-radius: var(--radius-sm);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.filter-clear-btn:hover {
+  background: var(--color-surface-300);
+  color: var(--color-text-primary);
+}
+
+/* Filter result info */
+.filter-result-info {
+  font-size: var(--text-xs);
+  color: var(--color-text-secondary);
+  padding: var(--spacing-xs) 0;
+}
+
+/* Toolbar Actions */
+.toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.toolbar-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  background: var(--color-surface-0);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-xs);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: all 150ms ease;
+}
+
+.toolbar-btn:hover:not(:disabled) {
+  background: var(--color-surface-100);
+  border-color: var(--color-text-tertiary);
+  color: var(--color-text-primary);
+}
+
+.toolbar-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .mock-data-table-wrapper {

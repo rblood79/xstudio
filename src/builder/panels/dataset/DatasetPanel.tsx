@@ -7,6 +7,8 @@
  * - Variables: 전역/페이지 상태 관리
  * - Transformers: 데이터 변환 시스템
  *
+ * 편집 UI는 DatasetEditorPanel에서 처리
+ *
  * @see docs/features/DATA_PANEL_SYSTEM.md
  */
 
@@ -20,7 +22,8 @@ import {
   RefreshCw,
 } from "lucide-react";
 import type { PanelProps } from "../core/types";
-import { useDataStore, useDataTables } from "../../stores/data";
+import { useDataStore } from "../../stores/data";
+import { useDatasetEditorStore } from "./stores/datasetEditorStore";
 import { PanelHeader } from "../common/PanelHeader";
 import { EmptyState } from "../common/EmptyState";
 import { LoadingSpinner } from "../common/LoadingSpinner";
@@ -28,7 +31,6 @@ import { DataTableList } from "./components/DataTableList";
 import { ApiEndpointList } from "./components/ApiEndpointList";
 import { VariableList } from "./components/VariableList";
 import { TransformerList } from "./components/TransformerList";
-import { DataTableEditor, DataTableCreator } from "./editors";
 import "./DatasetPanel.css";
 
 type DatasetTab = "tables" | "endpoints" | "variables" | "transformers";
@@ -48,8 +50,6 @@ const TABS: TabConfig[] = [
 
 export function DatasetPanel({ isActive }: PanelProps) {
   const [activeTab, setActiveTab] = useState<DatasetTab>("tables");
-  const [editingTableId, setEditingTableId] = useState<string | null>(null);
-  const [isCreating, setIsCreating] = useState(false);
 
   // Get projectId from URL params
   const { projectId: currentProjectId } = useParams<{ projectId: string }>();
@@ -58,12 +58,14 @@ export function DatasetPanel({ isActive }: PanelProps) {
   const fetchApiEndpoints = useDataStore((state) => state.fetchApiEndpoints);
   const fetchVariables = useDataStore((state) => state.fetchVariables);
   const fetchTransformers = useDataStore((state) => state.fetchTransformers);
-  const dataTables = useDataTables();
 
-  // 현재 편집 중인 DataTable
-  const editingTable = editingTableId
-    ? dataTables.find((t) => t.id === editingTableId)
-    : null;
+  // Editor Store 액션
+  const editorMode = useDatasetEditorStore((state) => state.mode);
+  const openTableCreator = useDatasetEditorStore((state) => state.openTableCreator);
+  const openTableEditor = useDatasetEditorStore((state) => state.openTableEditor);
+
+  // 현재 편집 중인 테이블 ID (하이라이트용)
+  const editingTableId = editorMode?.type === "table-edit" ? editorMode.tableId : null;
 
   // Fetch data when panel becomes active or project changes
   useEffect(() => {
@@ -106,99 +108,73 @@ export function DatasetPanel({ isActive }: PanelProps) {
     }
   };
 
-  const handleCloseEditor = () => {
-    setEditingTableId(null);
-  };
-
-  const handleCloseCreator = () => {
-    setIsCreating(false);
-  };
-
   const handleCreateClick = () => {
-    setEditingTableId(null); // 편집 모드 종료
-    setIsCreating(true);
+    openTableCreator(currentProjectId);
   };
 
   const handleEditingChange = (id: string | null) => {
-    setIsCreating(false); // 생성 모드 종료
-    setEditingTableId(id);
+    if (id) {
+      openTableEditor(id);
+    }
   };
 
-  // datatable-panel 표시 여부
-  const showDatatablePanel = isCreating || editingTable;
-
   return (
-    <>
-      <div className="dataset-panel">
-        <PanelHeader
-          title="Dataset"
-          actions={
-            <button
-              className="iconButton"
-              type="button"
-              onClick={handleRefresh}
-              title="새로고침"
-            >
-              <RefreshCw size={16} />
-            </button>
-          }
-        />
+    <div className="dataset-panel">
+      <PanelHeader
+        title="Dataset"
+        actions={
+          <button
+            className="iconButton"
+            type="button"
+            onClick={handleRefresh}
+            title="새로고침"
+          >
+            <RefreshCw size={16} />
+          </button>
+        }
+      />
 
-        {/* Tab Bar */}
-        <div className="panel-tabs">
-          {TABS.map((tab) => (
-            <button
-              key={tab.id}
-              className={`panel-tab ${activeTab === tab.id ? "active" : ""}`}
-              onClick={() => setActiveTab(tab.id)}
-              type="button"
-            >
-              <tab.icon size={14} />
-              <span>{tab.label}</span>
-            </button>
-          ))}
-        </div>
-
-        {/* Panel Contents */}
-        <div className="panel-contents">
-          {/* 로딩 중에도 리스트 유지 (에디터가 닫히는 것 방지) */}
-          {isLoading && <div className="dataset-loading-overlay"><LoadingSpinner /></div>}
-          {activeTab === "tables" && (
-            <DataTableList
-              projectId={currentProjectId}
-              editingId={editingTableId}
-              onEditingChange={handleEditingChange}
-              onCreateClick={handleCreateClick}
-            />
-          )}
-          {activeTab === "endpoints" && (
-            <ApiEndpointList projectId={currentProjectId} />
-          )}
-          {activeTab === "variables" && (
-            <VariableList projectId={currentProjectId} />
-          )}
-          {activeTab === "transformers" && (
-            <TransformerList projectId={currentProjectId} />
-          )}
-        </div>
+      {/* Tab Bar */}
+      <div className="panel-tabs">
+        {TABS.map((tab) => (
+          <button
+            key={tab.id}
+            className={`panel-tab ${activeTab === tab.id ? "active" : ""}`}
+            onClick={() => setActiveTab(tab.id)}
+            type="button"
+          >
+            <tab.icon size={14} />
+            <span>{tab.label}</span>
+          </button>
+        ))}
       </div>
 
-      {/* DataTable Panel (Creator or Editor) */}
-      {showDatatablePanel && (
-        <div className="datatable-panel">
-          {isCreating ? (
-            <DataTableCreator
-              projectId={currentProjectId}
-              onClose={handleCloseCreator}
-            />
-          ) : editingTable ? (
-            <DataTableEditor
-              dataTable={editingTable}
-              onClose={handleCloseEditor}
-            />
-          ) : null}
-        </div>
-      )}
-    </>
+      {/* Panel Contents */}
+      <div className="panel-contents">
+        {/* 로딩 중에도 리스트 유지 (에디터가 닫히는 것 방지) */}
+        {isLoading && (
+          <div className="dataset-loading-overlay">
+            <LoadingSpinner />
+          </div>
+        )}
+        {activeTab === "tables" && (
+          <DataTableList
+            projectId={currentProjectId}
+            editingId={editingTableId}
+            onEditingChange={handleEditingChange}
+            onCreateClick={handleCreateClick}
+          />
+        )}
+        {activeTab === "endpoints" && (
+          <ApiEndpointList projectId={currentProjectId} />
+        )}
+        {activeTab === "variables" && (
+          <VariableList projectId={currentProjectId} />
+        )}
+        {activeTab === "transformers" && (
+          <TransformerList projectId={currentProjectId} />
+        )}
+      </div>
+    </div>
   );
 }
