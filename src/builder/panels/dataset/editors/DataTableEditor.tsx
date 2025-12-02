@@ -14,7 +14,6 @@ import {
   Table2,
   Database,
   Settings,
-  X,
 } from "lucide-react";
 import { useDataStore } from "../../../stores/data";
 import type {
@@ -22,7 +21,7 @@ import type {
   DataField,
   DataFieldType,
 } from "../../../../types/builder/data.types";
-import { PropertySwitch, PanelHeader } from "../../common";
+import { PropertySwitch } from "../../common";
 import "./DataTableEditor.css";
 
 interface DataTableEditorProps {
@@ -170,17 +169,11 @@ export function DataTableEditor({ dataTable, onClose }: DataTableEditorProps) {
     [dataTable.id, updateDataTable]
   );
 
+  // Note: onClose is handled by parent DatasetEditorPanel
+  void onClose;
+
   return (
     <div className="datatable-editor">
-      <PanelHeader
-        title={dataTable.name}
-        actions={
-          <button type="button" className="iconButton" onClick={onClose} title="닫기">
-            <X size={16} />
-          </button>
-        }
-      />
-
       {/* Tabs */}
       <div className="panel-tabs">
         <button
@@ -210,7 +203,7 @@ export function DataTableEditor({ dataTable, onClose }: DataTableEditorProps) {
       </div>
 
       {/* Tab Content */}
-      <div className="editor-content">
+      <div className="section-content">
         {activeTab === "schema" && (
           <SchemaEditor
             schema={dataTable.schema}

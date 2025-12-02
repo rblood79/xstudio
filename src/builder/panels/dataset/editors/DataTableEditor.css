@@ -1,5 +1,12 @@
 /**
  * DataTableEditor Styles
+ *
+ * 표준 구조:
+ * .datatable-editor
+ *   .panel-tabs (DatasetPanel.css에서 스타일 제공)
+ *   .section-content
+ *
+ * 헤더는 부모 DatasetEditorPanel의 PanelHeader에서 처리
  */
 
 .datatable-editor {
@@ -11,11 +18,8 @@
   overflow: hidden;
 }
 
-/* NOTE: editor-header styles removed - now using PanelHeader component */
-/* NOTE: editor-tabs styles removed - now using panel-tabs from DatasetPanel.css */
-
-/* Content */
-.editor-content {
+/* section-content inherits from common panel styles */
+.datatable-editor .section-content {
   flex: 1;
   overflow: auto;
   padding: var(--spacing-sm);

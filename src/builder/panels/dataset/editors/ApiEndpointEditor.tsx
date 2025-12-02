@@ -16,7 +16,6 @@ import {
   Trash2,
   ChevronDown,
   ChevronRight,
-  Globe,
   Settings,
   Play,
   Code,
@@ -267,28 +266,16 @@ export function ApiEndpointEditor({ endpoint, onClose, initialTab }: ApiEndpoint
     });
   };
 
+  // Note: onClose is handled by parent DatasetEditorPanel
+  void onClose;
+
   return (
     <div className="api-editor">
-      <div className="editor-header">
-        <div className="editor-title">
-          <Globe size={18} />
-          <input
-            type="text"
-            className="editor-name-input"
-            value={endpoint.name}
-            onChange={(e) => handleBasicUpdate({ name: e.target.value })}
-          />
-        </div>
-        <button type="button" className="editor-close" onClick={onClose}>
-          ×
-        </button>
-      </div>
-
       {/* Tabs */}
-      <div className="editor-tabs">
+      <div className="panel-tabs">
         <button
           type="button"
-          className={`editor-tab ${activeTab === "basic" ? "active" : ""}`}
+          className={`panel-tab ${activeTab === "basic" ? "active" : ""}`}
           onClick={() => setActiveTab("basic")}
         >
           <Settings size={14} />
@@ -296,7 +283,7 @@ export function ApiEndpointEditor({ endpoint, onClose, initialTab }: ApiEndpoint
         </button>
         <button
           type="button"
-          className={`editor-tab ${activeTab === "headers" ? "active" : ""}`}
+          className={`panel-tab ${activeTab === "headers" ? "active" : ""}`}
           onClick={() => setActiveTab("headers")}
         >
           <Code size={14} />
@@ -304,7 +291,7 @@ export function ApiEndpointEditor({ endpoint, onClose, initialTab }: ApiEndpoint
         </button>
         <button
           type="button"
-          className={`editor-tab ${activeTab === "body" ? "active" : ""}`}
+          className={`panel-tab ${activeTab === "body" ? "active" : ""}`}
           onClick={() => setActiveTab("body")}
         >
           <FileJson size={14} />
@@ -312,7 +299,7 @@ export function ApiEndpointEditor({ endpoint, onClose, initialTab }: ApiEndpoint
         </button>
         <button
           type="button"
-          className={`editor-tab ${activeTab === "response" ? "active" : ""}`}
+          className={`panel-tab ${activeTab === "response" ? "active" : ""}`}
           onClick={() => setActiveTab("response")}
         >
           <FileJson size={14} />
@@ -320,7 +307,7 @@ export function ApiEndpointEditor({ endpoint, onClose, initialTab }: ApiEndpoint
         </button>
         <button
           type="button"
-          className={`editor-tab ${activeTab === "test" ? "active" : ""}`}
+          className={`panel-tab ${activeTab === "test" ? "active" : ""}`}
           onClick={() => setActiveTab("test")}
         >
           <Play size={14} />
@@ -329,7 +316,7 @@ export function ApiEndpointEditor({ endpoint, onClose, initialTab }: ApiEndpoint
       </div>
 
       {/* Tab Content */}
-      <div className="editor-content">
+      <div className="section-content">
         {activeTab === "basic" && (
           <BasicEditor
             endpoint={endpoint}

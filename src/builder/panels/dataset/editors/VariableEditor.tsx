@@ -10,7 +10,6 @@
 
 import { useState, useCallback } from "react";
 import {
-  Variable,
   Settings,
   Code,
   Shield,
@@ -83,28 +82,16 @@ export function VariableEditor({ variable, onClose }: VariableEditorProps) {
     });
   };
 
+  // Note: onClose is handled by parent DatasetEditorPanel
+  void onClose;
+
   return (
     <div className="variable-editor">
-      <div className="editor-header">
-        <div className="editor-title">
-          <Variable size={18} />
-          <input
-            type="text"
-            className="editor-name-input"
-            value={variable.name}
-            onChange={(e) => handleUpdate({ name: e.target.value })}
-          />
-        </div>
-        <button type="button" className="editor-close" onClick={onClose}>
-          ×
-        </button>
-      </div>
-
       {/* Tabs */}
-      <div className="editor-tabs">
+      <div className="panel-tabs">
         <button
           type="button"
-          className={`editor-tab ${activeTab === "basic" ? "active" : ""}`}
+          className={`panel-tab ${activeTab === "basic" ? "active" : ""}`}
           onClick={() => setActiveTab("basic")}
         >
           <Settings size={14} />
@@ -112,7 +99,7 @@ export function VariableEditor({ variable, onClose }: VariableEditorProps) {
         </button>
         <button
           type="button"
-          className={`editor-tab ${activeTab === "validation" ? "active" : ""}`}
+          className={`panel-tab ${activeTab === "validation" ? "active" : ""}`}
           onClick={() => setActiveTab("validation")}
         >
           <Shield size={14} />
@@ -120,7 +107,7 @@ export function VariableEditor({ variable, onClose }: VariableEditorProps) {
         </button>
         <button
           type="button"
-          className={`editor-tab ${activeTab === "transform" ? "active" : ""}`}
+          className={`panel-tab ${activeTab === "transform" ? "active" : ""}`}
           onClick={() => setActiveTab("transform")}
         >
           <Code size={14} />
@@ -129,7 +116,7 @@ export function VariableEditor({ variable, onClose }: VariableEditorProps) {
       </div>
 
       {/* Tab Content */}
-      <div className="editor-content">
+      <div className="section-content">
         {activeTab === "basic" && (
           <BasicEditor
             variable={variable}

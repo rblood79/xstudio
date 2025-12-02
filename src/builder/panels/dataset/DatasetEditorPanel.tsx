@@ -45,13 +45,49 @@ export function DatasetEditorPanel({ isActive }: PanelProps) {
     return (
       <div className="dataset-editor-panel">
         <PanelHeader title="Editor" />
-        <EmptyState message="편집할 항목을 선택하세요" />
+        <div className="panel-contents">
+          <EmptyState message="편집할 항목을 선택하세요" />
+        </div>
       </div>
     );
   }
 
-  // 모드에 따른 에디터 렌더링
-  const renderEditor = () => {
+  // 모드에 따른 헤더 제목 결정
+  const getHeaderTitle = (): string => {
+    switch (mode.type) {
+      case "table-create":
+        return "New Table";
+      case "table-edit": {
+        const dataTable = dataTables.find((t) => t.id === mode.tableId);
+        return dataTable?.name || "Table Editor";
+      }
+      case "api-create":
+        return "New API";
+      case "api-edit": {
+        const endpoint = apiEndpoints.find((e) => e.id === mode.endpointId);
+        return endpoint?.name || "API Editor";
+      }
+      case "variable-create":
+        return "New Variable";
+      case "variable-edit": {
+        const variable = variables.find((v) => v.id === mode.variableId);
+        return variable?.name || "Variable Editor";
+      }
+      case "transformer-create":
+        return "New Transformer";
+      case "transformer-edit": {
+        const transformer = transformers.find(
+          (t) => t.id === mode.transformerId
+        );
+        return transformer?.name || "Transformer Editor";
+      }
+      default:
+        return "Editor";
+    }
+  };
+
+  // 모드에 따른 에디터 컨텐츠 렌더링
+  const renderEditorContent = () => {
     switch (mode.type) {
       case "table-create":
         return (
@@ -116,5 +152,24 @@ export function DatasetEditorPanel({ isActive }: PanelProps) {
     }
   };
 
-  return <div className="dataset-editor-panel">{renderEditor()}</div>;
+  return (
+    <div className="dataset-editor-panel">
+      <PanelHeader
+        title={getHeaderTitle()}
+        actions={
+          <button
+            type="button"
+            className="iconButton"
+            onClick={close}
+            title="닫기"
+          >
+            ×
+          </button>
+        }
+      />
+      <div className="panel-contents">
+        {renderEditorContent()}
+      </div>
+    </div>
+  );
 }
