@@ -10,6 +10,10 @@
 
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
+import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer.js";
+import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
+import { AfterimagePass } from "three/examples/jsm/postprocessing/AfterimagePass.js";
+import { OutputPass } from "three/examples/jsm/postprocessing/OutputPass.js";
 import { useParticleBackground } from "./ParticleContext";
 import { generatePointsFromContent } from "./canvasUtils";
 import {
@@ -270,6 +274,8 @@ interface CurlNoiseCanvasProps {
     color3: { r: number; g: number; b: number };
   };
   particleCount?: number;
+  /** 잔상 효과 강도 (0.0 ~ 1.0, 높을수록 오래 지속) */
+  afterImageDamp?: number;
 }
 
 const DEFAULT_COLORS = {
@@ -288,6 +294,7 @@ const DEFAULT_COLORS = {
 export function CurlNoiseCanvas({
   colors,
   particleCount = PARTICLE_COUNT,
+  afterImageDamp = 0.35,
 }: CurlNoiseCanvasProps) {
   const mountRef = useRef<HTMLDivElement>(null);
   const { targetMorphRef, contentRef, contentVersion, vortexRef } =
@@ -418,6 +425,21 @@ export function CurlNoiseCanvas({
 
     scene.add(new THREE.Points(geometry, material));
 
+    // ==================== Post-processing ====================
+    const composer = new EffectComposer(renderer);
+
+    // 1. 기본 렌더 패스
+    const renderPass = new RenderPass(scene, camera);
+    composer.addPass(renderPass);
+
+    // 2. Afterimage 패스 (잔상 효과)
+    const afterimagePass = new AfterimagePass(afterImageDamp);
+    composer.addPass(afterimagePass);
+
+    // 3. 출력 패스 (항상 마지막)
+    const outputPass = new OutputPass();
+    composer.addPass(outputPass);
+
     // 애니메이션
     const clock = new THREE.Clock();
     let animationFrameId: number;
@@ -449,7 +471,8 @@ export function CurlNoiseCanvas({
       material.uniforms.vortexCenter.value.set(vortex.x, vortex.y);
       material.uniforms.vortexStrength.value = vortex.strength;
 
-      renderer.render(scene, camera);
+      // EffectComposer로 렌더링
+      composer.render();
       animationFrameId = requestAnimationFrame(animate);
     };
     animate();
@@ -459,6 +482,7 @@ export function CurlNoiseCanvas({
       camera.aspect = window.innerWidth / window.innerHeight;
       camera.updateProjectionMatrix();
       renderer.setSize(window.innerWidth, window.innerHeight);
+      composer.setSize(window.innerWidth, window.innerHeight);
     };
     window.addEventListener("resize", onResize);
 
@@ -472,9 +496,10 @@ export function CurlNoiseCanvas({
       mountElement.removeChild(renderer.domElement);
       geometry.dispose();
       material.dispose();
+      composer.dispose();
       renderer.dispose();
     };
-  }, [targetMorphRef, contentRef, vortexRef, colors, particleCount]);
+  }, [targetMorphRef, contentRef, vortexRef, colors, particleCount, afterImageDamp]);
 
   return (
     <div

@@ -1,5 +1,10 @@
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
+import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer.js";
+import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
+import { AfterimagePass } from "three/examples/jsm/postprocessing/AfterimagePass.js";
+import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPass.js";
+import { OutputPass } from "three/examples/jsm/postprocessing/OutputPass.js";
 import { useParticleBackground } from "./ParticleContext";
 import { generatePointsFromContent } from "./canvasUtils";
 import { PARTICLE_VERTEX_SHADER, PARTICLE_FRAGMENT_SHADER } from "./shaders";
@@ -14,9 +19,23 @@ import type { ParticleThemePreset } from "./types";
 
 interface ParticleCanvasProps {
   preset: ParticleThemePreset;
+  /** 잔상 효과 강도 (0.0 ~ 1.0, 높을수록 오래 지속) */
+  afterImageDamp?: number;
+  /** Bloom 강도 (0.0 ~ 2.0) */
+  bloomStrength?: number;
+  /** Bloom 반경 */
+  bloomRadius?: number;
+  /** Bloom 임계값 (0.0 ~ 1.0, 낮을수록 더 많은 영역이 발광) */
+  bloomThreshold?: number;
 }
 
-export function ParticleCanvas({ preset }: ParticleCanvasProps) {
+export function ParticleCanvas({
+  preset,
+  afterImageDamp = 0.35,
+  bloomStrength = 0.4,
+  bloomRadius = 0.3,
+  bloomThreshold = 0.6,
+}: ParticleCanvasProps) {
   const mountRef = useRef<HTMLDivElement>(null);
   const { targetMorphRef, contentRef, contentVersion, vortexRef } =
     useParticleBackground();
@@ -213,6 +232,30 @@ export function ParticleCanvas({ preset }: ParticleCanvasProps) {
 
     scene.add(new THREE.Points(geometry, material));
 
+    // ==================== Post-processing ====================
+    const composer = new EffectComposer(renderer);
+
+    // 1. 기본 렌더 패스
+    const renderPass = new RenderPass(scene, camera);
+    composer.addPass(renderPass);
+
+    // 2. Afterimage 패스 (잔상 효과)
+    const afterimagePass = new AfterimagePass(afterImageDamp);
+    composer.addPass(afterimagePass);
+
+    // 3. UnrealBloom 패스 (발광 효과)
+    const bloomPass = new UnrealBloomPass(
+      new THREE.Vector2(window.innerWidth, window.innerHeight),
+      bloomStrength,
+      bloomRadius,
+      bloomThreshold
+    );
+    composer.addPass(bloomPass);
+
+    // 4. 출력 패스 (항상 마지막)
+    const outputPass = new OutputPass();
+    composer.addPass(outputPass);
+
     // 애니메이션 루프
     const clock = new THREE.Clock();
     let animationFrameId: number;
@@ -252,7 +295,8 @@ export function ParticleCanvas({ preset }: ParticleCanvasProps) {
       material.uniforms.vortexRadius.value = vortex.radius;
       material.uniforms.vortexHeight.value = vortex.height;
 
-      renderer.render(scene, camera);
+      // EffectComposer로 렌더링
+      composer.render();
       animationFrameId = requestAnimationFrame(animate);
     };
     animate();
@@ -262,6 +306,8 @@ export function ParticleCanvas({ preset }: ParticleCanvasProps) {
       camera.aspect = window.innerWidth / window.innerHeight;
       camera.updateProjectionMatrix();
       renderer.setSize(window.innerWidth, window.innerHeight);
+      composer.setSize(window.innerWidth, window.innerHeight);
+      bloomPass.resolution.set(window.innerWidth, window.innerHeight);
     };
     window.addEventListener("resize", onResize);
 
@@ -275,9 +321,10 @@ export function ParticleCanvas({ preset }: ParticleCanvasProps) {
       mountElement.removeChild(renderer.domElement);
       geometry.dispose();
       material.dispose();
+      composer.dispose();
       renderer.dispose();
     };
-  }, [targetMorphRef, contentRef, vortexRef, preset]);
+  }, [targetMorphRef, contentRef, vortexRef, preset, afterImageDamp, bloomStrength, bloomRadius, bloomThreshold]);
 
   return (
     <div
