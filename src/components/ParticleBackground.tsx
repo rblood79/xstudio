@@ -1,7 +1,7 @@
 /**
- * ParticleBackground - Sand 테마 파티클 효과
+ * ParticleBackground - Sand/Curl 테마 파티클 효과
  *
- * 모래바람처럼 흩날리는 파티클 효과입니다.
+ * effectType에 따라 Sand(모래바람) 또는 Curl(유체 흐름) 효과를 전환합니다.
  * Provider와 Hook을 re-export하여 기존 API 호환성을 유지합니다.
  */
 
@@ -10,16 +10,28 @@ import {
   ParticleBackgroundProvider,
   useParticleBackground,
   ParticleCanvas,
+  CurlNoiseCanvas,
   sandPreset,
 } from "./particle";
-import type { MorphContent } from "./particle";
+import type { MorphContent, EffectType } from "./particle";
 
 // ==================== Re-exports for backward compatibility ====================
 export { ParticleBackgroundProvider, useParticleBackground };
-export type { MorphContent };
+export type { MorphContent, EffectType };
 
 // ==================== Main Component ====================
 export function ParticleBackground() {
+  const { effectType } = useParticleBackground();
+
+  if (effectType === "curl") {
+    return (
+      <CurlNoiseCanvas
+        afterImageDamp={0.35}  // Curl은 잔상 약하게
+      />
+    );
+  }
+
+  // Default: Sand effect
   return (
     <ParticleCanvas
       preset={sandPreset}

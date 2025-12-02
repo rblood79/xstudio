@@ -19,9 +19,10 @@
 .creator-mode-selection {
   display: flex;
   gap: var(--spacing-lg);
-  padding: var(--spacing-sm) var(--spacing-md);
+  padding: var(--spacing-xs) var(--spacing-sm);
   border-bottom: 1px solid var(--color-border);
   background: var(--color-surface-50);
+  height: var(--header-height);
 }
 
 .creator-mode-option {
@@ -93,16 +94,16 @@
    Category Tabs
    ============================================ */
 
-.creator-category-tabs {
+.section-tabs {
   display: flex;
-  gap: var(--spacing-xs);
-  padding: var(--spacing-sm) var(--spacing-md);
+  gap: 0;
+  padding: var(--spacing-2xs) var(--spacing-sm);
   border-bottom: 1px solid var(--color-border);
   background: var(--color-surface-50);
   overflow-x: auto;
 }
 
-.creator-category-tab {
+.section-tab {
   display: flex;
   align-items: center;
   gap: var(--spacing-xs);
@@ -117,12 +118,12 @@
   transition: background-color 150ms, color 150ms;
 }
 
-.creator-category-tab:hover {
+.section-tab:hover {
   background: var(--color-surface-100);
   color: var(--color-text-primary);
 }
 
-.creator-category-tab.active {
+.section-tab.active {
   background: var(--color-primary-100);
   color: var(--color-primary-700);
 }
@@ -131,7 +132,7 @@
    Preset Grid
    ============================================ */
 
-.creator-preset-grid {
+.section-content {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
   gap: var(--spacing-sm);

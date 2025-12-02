@@ -23,9 +23,12 @@ export type DatasetEditorMode =
   | null;
 
 /**
- * API 에디터 탭 타입
+ * 에디터 탭 타입들
  */
+export type TableEditorTab = "schema" | "data" | "settings";
 export type ApiEditorTab = "basic" | "headers" | "body" | "response" | "test";
+export type VariableEditorTab = "basic" | "validation" | "transform";
+export type TransformerEditorTab = "config" | "code" | "test";
 
 /**
  * 에디터 상태 인터페이스

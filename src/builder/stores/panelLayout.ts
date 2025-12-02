@@ -69,6 +69,18 @@ function loadLayoutFromStorage(): import('../panels/core/types').PanelLayoutStat
         result.activeRightPanels = DEFAULT_PANEL_LAYOUT.activeRightPanels;
       }
 
+      // 마이그레이션: datasetEditor가 leftPanels에 없으면 추가
+      if (Array.isArray(result.leftPanels) && !result.leftPanels.includes('datasetEditor')) {
+        const datasetIndex = result.leftPanels.indexOf('dataset');
+        if (datasetIndex >= 0) {
+          // dataset 바로 뒤에 삽입
+          result.leftPanels.splice(datasetIndex + 1, 0, 'datasetEditor');
+        } else {
+          // dataset이 없으면 맨 뒤에 추가
+          result.leftPanels.push('datasetEditor');
+        }
+      }
+
       // 🔧 임시 수정: 너무 많은 패널이 활성화된 경우 기본값으로 리셋
       if (result.activeLeftPanels.length > 2 || result.activeRightPanels.length > 2) {
         console.warn('[PanelLayout] 너무 많은 패널이 활성화되어 있습니다. 기본값으로 리셋합니다.');

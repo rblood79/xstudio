@@ -1,5 +1,5 @@
 // src/App.tsx
-import { useCallback, useRef } from "react";
+import { useCallback, useRef, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import "./App.css";
 import "./hero.css";
@@ -15,7 +15,8 @@ import {
   Pyramid,
 } from "lucide-react";
 import { useParticleBackground } from "./components/ParticleBackground";
-import { ParticleButton} from "./components/ParticleButton";
+import { ParticleButton } from "./components/ParticleButton";
+import { ToggleButton } from "@/shared/components";
 
 // 회오리 성장 설정
 const VORTEX_GROWTH_RATE = 0.02;
@@ -23,8 +24,35 @@ const VORTEX_MAX_STRENGTH = 1.0;
 
 function App() {
   const navigate = useNavigate();
-  const { vortexRef } = useParticleBackground();
+  const { vortexRef, effectType, setEffectType } = useParticleBackground();
   const vortexIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // 이펙트 토글 핸들러
+  const handleEffectToggle = useCallback(
+    (isSelected: boolean) => {
+      setEffectType(isSelected ? "curl" : "sand");
+    },
+    [setEffectType]
+  );
+
+  // 다크/라이트 모드 상태 (시스템 설정 기반 초기값)
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    // localStorage에서 저장된 값 확인, 없으면 시스템 설정 사용
+    const saved = localStorage.getItem("theme");
+    if (saved) return saved === "dark";
+    return window.matchMedia("(prefers-color-scheme: dark)").matches;
+  });
+
+  // 테마 변경 시 document에 적용
+  useEffect(() => {
+    document.documentElement.setAttribute("data-theme", isDarkMode ? "dark" : "light");
+    localStorage.setItem("theme", isDarkMode ? "dark" : "light");
+  }, [isDarkMode]);
+
+  // 테마 토글 핸들러
+  const handleThemeToggle = useCallback((isSelected: boolean) => {
+    setIsDarkMode(isSelected);
+  }, []);
 
   // 화면 좌표를 Three.js 월드 좌표로 변환
   const screenToWorld = useCallback((clientX: number, clientY: number) => {
@@ -114,7 +142,10 @@ function App() {
           <div className="header-container">
             <div className="landing-header">
               <h1 className="landing-header-title">Experience of BESPOKE</h1>
-              <p className="landing-header-subtitle">Unleash your creativity and bring your ideas to life with our cutting-edge platform.</p>
+              <p className="landing-header-subtitle">
+                Unleash your creativity and bring your ideas to life with our
+                cutting-edge platform.
+              </p>
             </div>
           </div>
           <div className="landing-cta">
@@ -155,11 +186,26 @@ function App() {
               <Play />
             </ParticleButton>
           </div>
-          
         </div>
-
-
       </section>
+      <footer className="footer">
+        <ToggleButton
+          id="effect"
+          className="toggle-button"
+          isSelected={effectType === "curl"}
+          onChange={handleEffectToggle}
+        >
+          {effectType === "curl" ? "CURL" : "SAND"}
+        </ToggleButton>
+        <ToggleButton
+          id="day"
+          className="toggle-button"
+          isSelected={isDarkMode}
+          onChange={handleThemeToggle}
+        >
+          {isDarkMode ? "DARK" : "LIGHT"}
+        </ToggleButton>
+      </footer>
     </main>
   );
 }

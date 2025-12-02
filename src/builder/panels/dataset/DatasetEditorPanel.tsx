@@ -8,8 +8,20 @@
  * - Transformer 편집
  *
  * Store 기반으로 모드에 따라 에디터 컴포넌트를 렌더링
+ * 탭은 패널 레벨에서 관리 (DatasetPanel과 동일한 구조)
  */
 
+import { useState, useEffect } from "react";
+import {
+  Database,
+  Table2,
+  Settings,
+  Code,
+  FileJson,
+  Play,
+  Shield,
+  X,
+} from "lucide-react";
 import type { PanelProps } from "../core/types";
 import { useDatasetEditorStore } from "./stores/datasetEditorStore";
 import {
@@ -26,17 +38,86 @@ import {
 } from "./editors";
 import { EmptyState } from "../common/EmptyState";
 import { PanelHeader } from "../common/PanelHeader";
+import type {
+  TableEditorTab,
+  ApiEditorTab,
+  VariableEditorTab,
+} from "./types/editorTypes";
 import "./DatasetEditorPanel.css";
+
+// 탭 설정 타입
+interface TabConfig<T extends string> {
+  id: T;
+  label: string;
+  icon: typeof Database;
+}
+
+// 각 에디터 타입별 탭 설정
+const TABLE_TABS: TabConfig<TableEditorTab>[] = [
+  { id: "schema", label: "Schema", icon: Database },
+  { id: "data", label: "Table", icon: Table2 },
+  { id: "settings", label: "Settings", icon: Settings },
+];
+
+const API_TABS: TabConfig<ApiEditorTab>[] = [
+  { id: "basic", label: "Basic", icon: Settings },
+  { id: "headers", label: "Headers", icon: Code },
+  { id: "body", label: "Body", icon: FileJson },
+  { id: "response", label: "Response", icon: FileJson },
+  { id: "test", label: "Test", icon: Play },
+];
+
+const VARIABLE_TABS: TabConfig<VariableEditorTab>[] = [
+  { id: "basic", label: "Basic", icon: Settings },
+  { id: "validation", label: "Validation", icon: Shield },
+  { id: "transform", label: "Transform", icon: Code },
+];
+
+// Creator 모드 타입
+type CreatorMode = "empty" | "preset";
 
 export function DatasetEditorPanel({ isActive }: PanelProps) {
   const mode = useDatasetEditorStore((state) => state.mode);
   const close = useDatasetEditorStore((state) => state.close);
+
+  // 탭 상태 관리
+  const [tableTab, setTableTab] = useState<TableEditorTab>("schema");
+  const [apiTab, setApiTab] = useState<ApiEditorTab>("basic");
+  const [variableTab, setVariableTab] = useState<VariableEditorTab>("basic");
+
+  // DataTableCreator 모드 상태 (empty/preset)
+  const [creatorMode, setCreatorMode] = useState<CreatorMode>("preset");
 
   // 데이터 조회
   const dataTables = useDataTables();
   const apiEndpoints = useApiEndpoints();
   const variables = useVariables();
   const transformers = useTransformers();
+
+  // API 에디터 초기 탭 설정
+  useEffect(() => {
+    if (mode?.type === "api-edit" && mode.initialTab) {
+      setApiTab(mode.initialTab);
+    }
+  }, [mode]);
+
+  // 모드 변경 시 탭/creatorMode 초기화
+  useEffect(() => {
+    if (mode?.type === "table-create") {
+      setCreatorMode("preset"); // Creator 모드 초기화
+    } else if (mode?.type === "table-edit") {
+      setTableTab("schema");
+    } else if (mode?.type === "api-edit" || mode?.type === "api-create") {
+      if (mode?.type !== "api-edit" || !mode.initialTab) {
+        setApiTab("basic");
+      }
+    } else if (
+      mode?.type === "variable-edit" ||
+      mode?.type === "variable-create"
+    ) {
+      setVariableTab("basic");
+    }
+  }, [mode?.type]);
 
   if (!isActive) return null;
 
@@ -56,7 +137,7 @@ export function DatasetEditorPanel({ isActive }: PanelProps) {
   const getHeaderTitle = (): string => {
     switch (mode.type) {
       case "table-create":
-        return "New Table";
+        return "Data Table Creator";
       case "table-edit": {
         const dataTable = dataTables.find((t) => t.id === mode.tableId);
         return dataTable?.name || "Table Editor";
@@ -86,12 +167,107 @@ export function DatasetEditorPanel({ isActive }: PanelProps) {
     }
   };
 
+  // 현재 모드에 따른 탭 렌더링
+  // Note: table-create는 DataTableCreator가 자체 UI를 가지므로 탭 없음
+  const renderTabs = () => {
+    switch (mode.type) {
+      case "table-edit":
+        return (
+          <div className="panel-tabs">
+            {TABLE_TABS.map((tab) => (
+              <button
+                key={tab.id}
+                type="button"
+                className={`panel-tab ${tableTab === tab.id ? "active" : ""}`}
+                onClick={() => setTableTab(tab.id)}
+              >
+                <tab.icon size={14} />
+                <span>{tab.label}</span>
+              </button>
+            ))}
+          </div>
+        );
+
+      case "api-edit":
+        return (
+          <div className="panel-tabs">
+            {API_TABS.map((tab) => (
+              <button
+                key={tab.id}
+                type="button"
+                className={`panel-tab ${apiTab === tab.id ? "active" : ""}`}
+                onClick={() => setApiTab(tab.id)}
+              >
+                <tab.icon size={14} />
+                <span>{tab.label}</span>
+              </button>
+            ))}
+          </div>
+        );
+
+      case "variable-edit":
+        return (
+          <div className="panel-tabs">
+            {VARIABLE_TABS.map((tab) => (
+              <button
+                key={tab.id}
+                type="button"
+                className={`panel-tab ${
+                  variableTab === tab.id ? "active" : ""
+                }`}
+                onClick={() => setVariableTab(tab.id)}
+              >
+                <tab.icon size={14} />
+                <span>{tab.label}</span>
+              </button>
+            ))}
+          </div>
+        );
+
+      case "table-create":
+        return (
+          <div className="creator-mode-selection">
+            <label className="creator-mode-option">
+              <input
+                type="radio"
+                name="creatorMode"
+                checked={creatorMode === "empty"}
+                onChange={() => setCreatorMode("empty")}
+              />
+              <span className="creator-mode-label">빈 테이블로 시작</span>
+            </label>
+            <label className="creator-mode-option">
+              <input
+                type="radio"
+                name="creatorMode"
+                checked={creatorMode === "preset"}
+                onChange={() => setCreatorMode("preset")}
+              />
+              <span className="creator-mode-label">Preset에서 선택</span>
+            </label>
+          </div>
+        );
+
+      // 다른 create 모드들은 TODO 상태이므로 탭 없음
+      case "api-create":
+      case "variable-create":
+      case "transformer-create":
+      case "transformer-edit":
+      default:
+        return null;
+    }
+  };
+
   // 모드에 따른 에디터 컨텐츠 렌더링
   const renderEditorContent = () => {
     switch (mode.type) {
       case "table-create":
         return (
-          <DataTableCreator projectId={mode.projectId} onClose={close} />
+          <DataTableCreator
+            projectId={mode.projectId}
+            onClose={close}
+            mode={creatorMode}
+          />
         );
 
       case "table-edit": {
@@ -99,7 +275,13 @@ export function DatasetEditorPanel({ isActive }: PanelProps) {
         if (!dataTable) {
           return <EmptyState message="테이블을 찾을 수 없습니다" />;
         }
-        return <DataTableEditor dataTable={dataTable} onClose={close} />;
+        return (
+          <DataTableEditor
+            dataTable={dataTable}
+            onClose={close}
+            activeTab={tableTab}
+          />
+        );
       }
 
       case "api-create":
@@ -115,7 +297,7 @@ export function DatasetEditorPanel({ isActive }: PanelProps) {
           <ApiEndpointEditor
             endpoint={endpoint}
             onClose={close}
-            initialTab={mode.initialTab}
+            activeTab={apiTab}
           />
         );
       }
@@ -129,7 +311,13 @@ export function DatasetEditorPanel({ isActive }: PanelProps) {
         if (!variable) {
           return <EmptyState message="변수를 찾을 수 없습니다" />;
         }
-        return <VariableEditor variable={variable} onClose={close} />;
+        return (
+          <VariableEditor
+            variable={variable}
+            onClose={close}
+            activeTab={variableTab}
+          />
+        );
       }
 
       case "transformer-create":
@@ -163,13 +351,12 @@ export function DatasetEditorPanel({ isActive }: PanelProps) {
             onClick={close}
             title="닫기"
           >
-            ×
+            <X size={16} />
           </button>
         }
       />
-      <div className="panel-contents">
-        {renderEditorContent()}
-      </div>
+      {renderTabs()}
+      <div className="panel-contents">{renderEditorContent()}</div>
     </div>
   );
 }

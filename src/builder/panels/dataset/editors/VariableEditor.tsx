@@ -6,13 +6,12 @@
  * - 기본값 설정
  * - 유효성 검사 규칙
  * - 변환 함수
+ *
+ * Note: 탭 상태는 DatasetEditorPanel에서 관리됨
  */
 
 import { useState, useCallback } from "react";
 import {
-  Settings,
-  Code,
-  Shield,
   ChevronDown,
   ChevronRight,
 } from "lucide-react";
@@ -22,6 +21,7 @@ import type {
   VariableType as VarType,
   VariableScope,
 } from "../../../../types/builder/data.types";
+import type { VariableEditorTab } from "../types/editorTypes";
 import {
   PropertyInput,
   PropertySelect,
@@ -32,6 +32,7 @@ import "./VariableEditor.css";
 interface VariableEditorProps {
   variable: VariableType;
   onClose: () => void;
+  activeTab: VariableEditorTab;
 }
 
 const VARIABLE_TYPES: { value: VarType; label: string }[] = [
@@ -48,12 +49,9 @@ const VARIABLE_SCOPES: { value: VariableScope; label: string }[] = [
   { value: "component", label: "Component" },
 ];
 
-export function VariableEditor({ variable, onClose }: VariableEditorProps) {
+export function VariableEditor({ variable, onClose, activeTab }: VariableEditorProps) {
   const updateVariable = useDataStore((state) => state.updateVariable);
 
-  const [activeTab, setActiveTab] = useState<"basic" | "validation" | "transform">(
-    "basic"
-  );
   const [expandedSections, setExpandedSections] = useState<Set<string>>(
     new Set(["validation"])
   );
@@ -85,62 +83,32 @@ export function VariableEditor({ variable, onClose }: VariableEditorProps) {
   // Note: onClose is handled by parent DatasetEditorPanel
   void onClose;
 
+  // 탭은 DatasetEditorPanel에서 렌더링됨
   return (
-    <div className="variable-editor">
-      {/* Tabs */}
-      <div className="panel-tabs">
-        <button
-          type="button"
-          className={`panel-tab ${activeTab === "basic" ? "active" : ""}`}
-          onClick={() => setActiveTab("basic")}
-        >
-          <Settings size={14} />
-          Basic
-        </button>
-        <button
-          type="button"
-          className={`panel-tab ${activeTab === "validation" ? "active" : ""}`}
-          onClick={() => setActiveTab("validation")}
-        >
-          <Shield size={14} />
-          Validation
-        </button>
-        <button
-          type="button"
-          className={`panel-tab ${activeTab === "transform" ? "active" : ""}`}
-          onClick={() => setActiveTab("transform")}
-        >
-          <Code size={14} />
-          Transform
-        </button>
-      </div>
+    <>
+      {activeTab === "basic" && (
+        <BasicEditor
+          variable={variable}
+          onUpdate={handleUpdate}
+        />
+      )}
 
-      {/* Tab Content */}
-      <div className="section-content">
-        {activeTab === "basic" && (
-          <BasicEditor
-            variable={variable}
-            onUpdate={handleUpdate}
-          />
-        )}
+      {activeTab === "validation" && (
+        <ValidationEditor
+          variable={variable}
+          onUpdate={handleUpdate}
+          expandedSections={expandedSections}
+          onToggleSection={toggleSection}
+        />
+      )}
 
-        {activeTab === "validation" && (
-          <ValidationEditor
-            variable={variable}
-            onUpdate={handleUpdate}
-            expandedSections={expandedSections}
-            onToggleSection={toggleSection}
-          />
-        )}
-
-        {activeTab === "transform" && (
-          <TransformEditor
-            variable={variable}
-            onUpdate={handleUpdate}
-          />
-        )}
-      </div>
-    </div>
+      {activeTab === "transform" && (
+        <TransformEditor
+          variable={variable}
+          onUpdate={handleUpdate}
+        />
+      )}
+    </>
   );
 }
 

@@ -63,6 +63,7 @@ export function DatasetPanel({ isActive }: PanelProps) {
   const editorMode = useDatasetEditorStore((state) => state.mode);
   const openTableCreator = useDatasetEditorStore((state) => state.openTableCreator);
   const openTableEditor = useDatasetEditorStore((state) => state.openTableEditor);
+  const closeEditor = useDatasetEditorStore((state) => state.close);
 
   // 현재 편집 중인 테이블 ID (하이라이트용)
   const editingTableId = editorMode?.type === "table-edit" ? editorMode.tableId : null;
@@ -140,7 +141,15 @@ export function DatasetPanel({ isActive }: PanelProps) {
           <button
             key={tab.id}
             className={`panel-tab ${activeTab === tab.id ? "active" : ""}`}
-            onClick={() => setActiveTab(tab.id)}
+            onClick={() => {
+              if (activeTab !== tab.id) {
+                // 탭이 변경되면 에디터 닫기
+                if (editorMode) {
+                  closeEditor();
+                }
+                setActiveTab(tab.id);
+              }
+            }}
             type="button"
           >
             <tab.icon size={14} />

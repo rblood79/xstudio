@@ -10,7 +10,6 @@
 import { useState, useMemo, useCallback } from "react";
 import { Button } from "react-aria-components";
 import {
-  X,
   User,
   Key,
   Lock,
@@ -30,7 +29,6 @@ import {
   Factory,
 } from "lucide-react";
 import { useDataStore } from "../../../stores/data";
-import { PanelHeader } from "../../common/PanelHeader";
 import type { DataTablePreset, PresetCategory } from "../presets/types";
 import { PRESET_CATEGORIES } from "../presets/types";
 import { getPresetsByCategory } from "../presets/dataTablePresets";
@@ -60,21 +58,27 @@ const iconMap: Record<string, React.ComponentType<{ size?: number }>> = {
   Factory,
 };
 
-const categoryIconMap: Record<string, React.ComponentType<{ size?: number }>> = {
+const categoryIconMap: Record<
+  string,
+  React.ComponentType<{ size?: number }>
+> = {
   "users-auth": Users,
-  "organization": Building2,
-  "ecommerce": ShoppingCart,
-  "manufacturing": Factory,
-  "system": Settings,
+  organization: Building2,
+  ecommerce: ShoppingCart,
+  manufacturing: Factory,
+  system: Settings,
 };
 
 // ============================================
 // Types
 // ============================================
 
+type CreatorMode = "empty" | "preset";
+
 interface DataTableCreatorProps {
   projectId: string;
   onClose: () => void;
+  mode: CreatorMode;
 }
 
 // ============================================
@@ -84,13 +88,16 @@ interface DataTableCreatorProps {
 export function DataTableCreator({
   projectId,
   onClose,
+  mode,
 }: DataTableCreatorProps) {
   const createDataTable = useDataStore((state) => state.createDataTable);
 
   // 선택 상태
-  const [mode, setMode] = useState<"empty" | "preset">("preset");
-  const [selectedCategory, setSelectedCategory] = useState<PresetCategory>("users-auth");
-  const [selectedPreset, setSelectedPreset] = useState<DataTablePreset | null>(null);
+  const [selectedCategory, setSelectedCategory] =
+    useState<PresetCategory>("users-auth");
+  const [selectedPreset, setSelectedPreset] = useState<DataTablePreset | null>(
+    null
+  );
   const [sampleCount, setSampleCount] = useState(10);
   const [tableName, setTableName] = useState("");
 
@@ -138,55 +145,40 @@ export function DataTableCreator({
     } catch (error) {
       console.error("DataTable 생성 실패:", error);
     }
-  }, [mode, tableName, selectedPreset, sampleCount, projectId, createDataTable, onClose]);
+  }, [
+    mode,
+    tableName,
+    selectedPreset,
+    sampleCount,
+    projectId,
+    createDataTable,
+    onClose,
+  ]);
 
   // 아이콘 렌더링 헬퍼
   const renderIcon = (iconName: string, size = 20) => {
     const IconComponent = iconMap[iconName];
-    return IconComponent ? <IconComponent size={size} /> : <Database size={size} />;
+    return IconComponent ? (
+      <IconComponent size={size} />
+    ) : (
+      <Database size={size} />
+    );
   };
 
   const renderCategoryIcon = (category: PresetCategory, size = 16) => {
     const IconComponent = categoryIconMap[category];
-    return IconComponent ? <IconComponent size={size} /> : <Database size={size} />;
+    return IconComponent ? (
+      <IconComponent size={size} />
+    ) : (
+      <Database size={size} />
+    );
   };
 
+  // mode-selection은 DatasetEditorPanel에서 렌더링됨
   return (
-    <div className="datatable-creator">
-      {/* Header */}
-      <PanelHeader
-        title="DataTable 추가"
-        actions={
-          <button type="button" className="iconButton" onClick={onClose} title="닫기">
-            <X size={16} />
-          </button>
-        }
-      />
-
-      {/* Mode Selection */}
-      <div className="creator-mode-selection">
-        <label className="creator-mode-option">
-          <input
-            type="radio"
-            name="mode"
-            checked={mode === "empty"}
-            onChange={() => setMode("empty")}
-          />
-          <span className="creator-mode-label">빈 테이블로 시작</span>
-        </label>
-        <label className="creator-mode-option">
-          <input
-            type="radio"
-            name="mode"
-            checked={mode === "preset"}
-            onChange={() => setMode("preset")}
-          />
-          <span className="creator-mode-label">Preset에서 선택</span>
-        </label>
-      </div>
-
+    <>
       {/* Content */}
-      <div className="creator-content">
+      <div className="section">
         {mode === "empty" ? (
           /* Empty Table Form */
           <div className="creator-empty-form">
@@ -208,12 +200,12 @@ export function DataTableCreator({
           /* Preset Selection */
           <>
             {/* Category Tabs */}
-            <div className="creator-category-tabs">
+            <div className="section-tabs">
               {PRESET_CATEGORIES.map((cat) => (
                 <button
                   key={cat.id}
                   type="button"
-                  className={`creator-category-tab ${
+                  className={`section-tab ${
                     selectedCategory === cat.id ? "active" : ""
                   }`}
                   onClick={() => handleCategoryChange(cat.id)}
@@ -226,7 +218,7 @@ export function DataTableCreator({
             </div>
 
             {/* Preset Grid */}
-            <div className="creator-preset-grid">
+            <div className="section-content">
               {presetsInCategory.map((preset) => (
                 <button
                   key={preset.id}
@@ -240,7 +232,9 @@ export function DataTableCreator({
                     {renderIcon(preset.icon, 24)}
                   </div>
                   <div className="creator-preset-name">{preset.name}</div>
-                  <div className="creator-preset-desc">{preset.description}</div>
+                  <div className="creator-preset-desc">
+                    {preset.description}
+                  </div>
                   <div className="creator-preset-meta">
                     {preset.schema.length} fields
                   </div>
@@ -265,7 +259,10 @@ export function DataTableCreator({
                       value={sampleCount}
                       onChange={(e) =>
                         setSampleCount(
-                          Math.max(0, Math.min(100, parseInt(e.target.value) || 0))
+                          Math.max(
+                            0,
+                            Math.min(100, parseInt(e.target.value) || 0)
+                          )
                         )
                       }
                     />
@@ -305,7 +302,7 @@ export function DataTableCreator({
           {mode === "empty" ? "빈 테이블 생성" : "생성"}
         </Button>
       </div>
-    </div>
+    </>
   );
 }
 

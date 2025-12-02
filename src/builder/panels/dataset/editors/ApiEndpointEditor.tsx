@@ -16,11 +16,9 @@ import {
   Trash2,
   ChevronDown,
   ChevronRight,
-  Settings,
   Play,
-  Code,
-  FileJson,
 } from "lucide-react";
+import type { ApiEditorTab } from "../types/editorTypes";
 import { useDataStore } from "../../../stores/data";
 import type {
   ApiEndpoint,
@@ -43,8 +41,7 @@ import "./ApiEndpointEditor.css";
 interface ApiEndpointEditorProps {
   endpoint: ApiEndpoint;
   onClose: () => void;
-  /** 초기 활성 탭 (외부에서 Test 탭으로 바로 이동할 때 사용) */
-  initialTab?: "basic" | "headers" | "body" | "response" | "test";
+  activeTab: ApiEditorTab;
 }
 
 const HTTP_METHODS: { value: HttpMethod; label: string }[] = [
@@ -55,14 +52,11 @@ const HTTP_METHODS: { value: HttpMethod; label: string }[] = [
   { value: "DELETE", label: "DELETE" },
 ];
 
-export function ApiEndpointEditor({ endpoint, onClose, initialTab }: ApiEndpointEditorProps) {
+export function ApiEndpointEditor({ endpoint, onClose, activeTab }: ApiEndpointEditorProps) {
   const updateApiEndpoint = useDataStore((state) => state.updateApiEndpoint);
   const executeApiEndpoint = useDataStore((state) => state.executeApiEndpoint);
   const createDataTable = useDataStore((state) => state.createDataTable);
 
-  const [activeTab, setActiveTab] = useState<"basic" | "headers" | "body" | "response" | "test">(
-    initialTab || "basic"
-  );
   const [expandedSections, setExpandedSections] = useState<Set<string>>(
     new Set(["headers", "queryParams"])
   );
@@ -194,13 +188,13 @@ export function ApiEndpointEditor({ endpoint, onClose, initialTab }: ApiEndpoint
     }
   }, [endpoint.id, endpoint.responseMapping?.dataPath, executeApiEndpoint]);
 
-  // initialTab="test"로 열렸을 때 자동으로 테스트 실행
+  // activeTab="test"로 열렸을 때 자동으로 테스트 실행 (초기 1회만)
   useEffect(() => {
-    if (initialTab === "test" && !hasAutoTriggeredTest.current && !isExecuting) {
+    if (activeTab === "test" && !hasAutoTriggeredTest.current && !isExecuting) {
       hasAutoTriggeredTest.current = true;
       handleTest();
     }
-  }, [initialTab, handleTest, isExecuting]);
+  }, [activeTab, handleTest, isExecuting]);
 
   // DataTable Import 핸들러
   const handleImport = useCallback(
@@ -270,102 +264,55 @@ export function ApiEndpointEditor({ endpoint, onClose, initialTab }: ApiEndpoint
   void onClose;
 
   return (
-    <div className="api-editor">
-      {/* Tabs */}
-      <div className="panel-tabs">
-        <button
-          type="button"
-          className={`panel-tab ${activeTab === "basic" ? "active" : ""}`}
-          onClick={() => setActiveTab("basic")}
-        >
-          <Settings size={14} />
-          Basic
-        </button>
-        <button
-          type="button"
-          className={`panel-tab ${activeTab === "headers" ? "active" : ""}`}
-          onClick={() => setActiveTab("headers")}
-        >
-          <Code size={14} />
-          Headers
-        </button>
-        <button
-          type="button"
-          className={`panel-tab ${activeTab === "body" ? "active" : ""}`}
-          onClick={() => setActiveTab("body")}
-        >
-          <FileJson size={14} />
-          Body
-        </button>
-        <button
-          type="button"
-          className={`panel-tab ${activeTab === "response" ? "active" : ""}`}
-          onClick={() => setActiveTab("response")}
-        >
-          <FileJson size={14} />
-          Response
-        </button>
-        <button
-          type="button"
-          className={`panel-tab ${activeTab === "test" ? "active" : ""}`}
-          onClick={() => setActiveTab("test")}
-        >
-          <Play size={14} />
-          Test
-        </button>
-      </div>
+    <>
+      {activeTab === "basic" && (
+        <BasicEditor
+          endpoint={endpoint}
+          onUpdate={handleBasicUpdate}
+        />
+      )}
 
-      {/* Tab Content */}
-      <div className="section-content">
-        {activeTab === "basic" && (
-          <BasicEditor
-            endpoint={endpoint}
-            onUpdate={handleBasicUpdate}
-          />
-        )}
+      {activeTab === "headers" && (
+        <KeyValueEditor
+          title="Headers"
+          description="HTTP 헤더를 설정합니다. {{변수명}} 형식으로 변수를 참조할 수 있습니다."
+          items={endpoint.headers || {}}
+          expandedSections={expandedSections}
+          onToggleSection={toggleSection}
+          onAdd={handleAddHeader}
+          onUpdate={handleUpdateHeader}
+          onDelete={handleDeleteHeader}
+          sectionKey="headers"
+        />
+      )}
 
-        {activeTab === "headers" && (
-          <KeyValueEditor
-            title="Headers"
-            description="HTTP 헤더를 설정합니다. {{변수명}} 형식으로 변수를 참조할 수 있습니다."
-            items={endpoint.headers || {}}
-            expandedSections={expandedSections}
-            onToggleSection={toggleSection}
-            onAdd={handleAddHeader}
-            onUpdate={handleUpdateHeader}
-            onDelete={handleDeleteHeader}
-            sectionKey="headers"
-          />
-        )}
+      {activeTab === "body" && (
+        <BodyEditor
+          endpoint={endpoint}
+          onUpdate={handleBasicUpdate}
+        />
+      )}
 
-        {activeTab === "body" && (
-          <BodyEditor
-            endpoint={endpoint}
-            onUpdate={handleBasicUpdate}
-          />
-        )}
+      {activeTab === "response" && (
+        <ResponseEditor
+          endpoint={endpoint}
+          onUpdate={handleBasicUpdate}
+        />
+      )}
 
-        {activeTab === "response" && (
-          <ResponseEditor
-            endpoint={endpoint}
-            onUpdate={handleBasicUpdate}
-          />
-        )}
-
-        {activeTab === "test" && (
-          <TestEditor
-            endpoint={endpoint}
-            testResult={testResult}
-            isExecuting={isExecuting}
-            onTest={handleTest}
-            detectedColumns={detectedColumns}
-            onColumnsChange={setDetectedColumns}
-            onImport={handleImport}
-            isImporting={isImporting}
-          />
-        )}
-      </div>
-    </div>
+      {activeTab === "test" && (
+        <TestEditor
+          endpoint={endpoint}
+          testResult={testResult}
+          isExecuting={isExecuting}
+          onTest={handleTest}
+          detectedColumns={detectedColumns}
+          onColumnsChange={setDetectedColumns}
+          onImport={handleImport}
+          isImporting={isImporting}
+        />
+      )}
+    </>
   );
 }
 

@@ -7,6 +7,7 @@ import {
   type ReactNode,
 } from "react";
 import type {
+  EffectType,
   MorphContent,
   VortexState,
   ParticleBackgroundContextValue,
@@ -24,6 +25,7 @@ interface ParticleBackgroundProviderProps {
   initialContent?: MorphContent;
   leaveDelayMs?: number;
   preset?: ParticleThemePreset;
+  initialEffectType?: EffectType;
 }
 
 // ==================== Provider ====================
@@ -32,11 +34,13 @@ export function ParticleBackgroundProvider({
   initialContent = DEFAULT_INITIAL_CONTENT,
   leaveDelayMs = DEFAULT_LEAVE_DELAY_MS,
   preset,
+  initialEffectType = "sand",
 }: ParticleBackgroundProviderProps) {
   const targetMorphRef = useRef(0);
   const contentRef = useRef<MorphContent>(initialContent);
   const [contentVersion, setContentVersion] = useState(0);
   const leaveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [effectType, setEffectType] = useState<EffectType>(initialEffectType);
 
   const minRadius = preset?.vortex.minRadius ?? 15;
 
@@ -92,6 +96,8 @@ export function ParticleBackgroundProvider({
         setHoverContent,
         contentVersion,
         vortexRef,
+        effectType,
+        setEffectType,
       }}
     >
       {children}

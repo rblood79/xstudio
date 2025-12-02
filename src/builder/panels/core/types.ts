@@ -135,6 +135,7 @@ export const DEFAULT_PANEL_LAYOUT: PanelLayoutState = {
     'nodes',
     'components',
     'dataset',
+    'datasetEditor',  // Dataset 에디터 (dataset과 함께 사용)
     'theme',
     'ai',
     'settings',
