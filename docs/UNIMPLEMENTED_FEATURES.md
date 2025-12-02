@@ -10,7 +10,7 @@
 ## 목차
 
 1. [Transformer 보안 샌드박스](#1-transformer-보안-샌드박스)
-2. [MOCK_DATA Migration](#2-mock_data-migration)
+2. ~~[MOCK_DATA Migration](#2-mock_data-migration)~~ ✅ 완료
 3. [Context Menu System](#3-context-menu-system)
 4. [Layout Preset 개선](#4-layout-preset-개선)
 
@@ -83,26 +83,36 @@ interface SandboxResult {
 
 ---
 
-## 2. MOCK_DATA Migration
+## 2. ~~MOCK_DATA Migration~~ ✅ 완료
 
-**Status**: ⏳ 향후 작업으로 연기
-**Priority**: P2
+**Status**: ✅ DataTable Preset 시스템으로 구현 완료
+**Priority**: ~~P2~~
 **Related**: DatasetPanel, Collection Components
 
-### 설명
+### 구현 완료
 
-기존 하드코딩된 `MOCK_DATA` 엔드포인트들을 새로운 DataTable 시스템으로 마이그레이션
+DataTable Preset 시스템으로 대체 구현됨:
 
-### 현재 상태
+**위치**: `src/builder/panels/dataset/presets/dataTablePresets.ts`
 
-- `src/services/api/index.ts`에 20+ 개의 MOCK_DATA 엔드포인트 존재
-- 컴포넌트에서 `baseUrl: "MOCK_DATA"` 형태로 직접 참조 중
+**14개 프리셋 제공**:
 
-### 마이그레이션 계획
+| 카테고리 | 프리셋 |
+|----------|--------|
+| Users & Auth | `users`, `roles`, `permissions`, `invitations` |
+| Organization | `organizations`, `departments`, `projects` |
+| E-commerce | `products`, `categories`, `orders` |
+| Manufacturing | `engines`, `components` |
+| System | `auditLogs`, `projectMemberships` |
 
-1. 각 MOCK_DATA 엔드포인트를 DataTable로 변환
-2. 기존 컴포넌트의 `dataBinding` 참조를 `datasetId`로 변경
-3. MOCK_DATA 서비스 deprecated 처리
+### 사용 방법
+
+DatasetPanel > New DataTable > Preset 선택 시 자동 스키마 및 샘플 데이터 생성
+
+### 기존 MOCK_DATA 현황
+
+- `src/services/api/index.ts`의 MOCK_DATA 엔드포인트는 하위 호환성을 위해 유지
+- 신규 개발 시 DataTable Preset 사용 권장
 
 ---
 
@@ -173,7 +183,7 @@ CREATE TABLE custom_presets (
 | 순위 | 기능 | 상태 | 비고 |
 |------|------|------|------|
 | **P0** | Transformer 샌드박스 | ⛔ | Level 3 활성화 전제 조건 |
-| **P2** | MOCK_DATA Migration | ⏳ | 현재 동작에 문제 없음 |
+| ~~**P2**~~ | ~~MOCK_DATA Migration~~ | ✅ | DataTable Preset으로 구현 완료 |
 | **Medium** | Context Menu System | 📋 | UX 개선 |
 | **Low** | Layout Preset 개선 | 📋 | 편의 기능 |
 
