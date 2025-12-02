@@ -15,7 +15,7 @@ import {
   Pyramid,
 } from "lucide-react";
 import { useParticleBackground } from "./components/ParticleBackground";
-import { ParticleButton } from "./components/ParticleButton";
+import { ParticleButton} from "./components/ParticleButton";
 
 // 회오리 성장 설정
 const VORTEX_GROWTH_RATE = 0.02;
@@ -119,11 +119,12 @@ function App() {
           </div>
           <div className="landing-cta">
             <ParticleButton
+              className="react-aria-Button"
               size="md"
               variant="primary"
               onClick={() => navigate("/signin")}
             >
-              Create Your App
+              Start App
             </ParticleButton>
           </div>
           <div className="landing-features">

@@ -20,7 +20,7 @@ import {
   RefreshCw,
 } from "lucide-react";
 import type { PanelProps } from "../core/types";
-import { useDataStore } from "../../stores/data";
+import { useDataStore, useDataTables } from "../../stores/data";
 import { PanelHeader } from "../common/PanelHeader";
 import { EmptyState } from "../common/EmptyState";
 import { LoadingSpinner } from "../common/LoadingSpinner";
@@ -28,6 +28,7 @@ import { DataTableList } from "./components/DataTableList";
 import { ApiEndpointList } from "./components/ApiEndpointList";
 import { VariableList } from "./components/VariableList";
 import { TransformerList } from "./components/TransformerList";
+import { DataTableEditor, DataTableCreator } from "./editors";
 import "./DatasetPanel.css";
 
 type DatasetTab = "tables" | "endpoints" | "variables" | "transformers";
@@ -47,6 +48,8 @@ const TABS: TabConfig[] = [
 
 export function DatasetPanel({ isActive }: PanelProps) {
   const [activeTab, setActiveTab] = useState<DatasetTab>("tables");
+  const [editingTableId, setEditingTableId] = useState<string | null>(null);
+  const [isCreating, setIsCreating] = useState(false);
 
   // Get projectId from URL params
   const { projectId: currentProjectId } = useParams<{ projectId: string }>();
@@ -55,6 +58,12 @@ export function DatasetPanel({ isActive }: PanelProps) {
   const fetchApiEndpoints = useDataStore((state) => state.fetchApiEndpoints);
   const fetchVariables = useDataStore((state) => state.fetchVariables);
   const fetchTransformers = useDataStore((state) => state.fetchTransformers);
+  const dataTables = useDataTables();
+
+  // 현재 편집 중인 DataTable
+  const editingTable = editingTableId
+    ? dataTables.find((t) => t.id === editingTableId)
+    : null;
 
   // Fetch data when panel becomes active or project changes
   useEffect(() => {
@@ -97,54 +106,99 @@ export function DatasetPanel({ isActive }: PanelProps) {
     }
   };
 
+  const handleCloseEditor = () => {
+    setEditingTableId(null);
+  };
+
+  const handleCloseCreator = () => {
+    setIsCreating(false);
+  };
+
+  const handleCreateClick = () => {
+    setEditingTableId(null); // 편집 모드 종료
+    setIsCreating(true);
+  };
+
+  const handleEditingChange = (id: string | null) => {
+    setIsCreating(false); // 생성 모드 종료
+    setEditingTableId(id);
+  };
+
+  // datatable-panel 표시 여부
+  const showDatatablePanel = isCreating || editingTable;
+
   return (
-    <div className="dataset-panel">
-      <PanelHeader
-        title="Dataset"
-        actions={
-          <button
-            className="iconButton"
-            type="button"
-            onClick={handleRefresh}
-            title="새로고침"
-          >
-            <RefreshCw size={16} />
-          </button>
-        }
-      />
+    <div className="dataset-panel-wrapper">
+      <div className="dataset-panel">
+        <PanelHeader
+          title="Dataset"
+          actions={
+            <button
+              className="iconButton"
+              type="button"
+              onClick={handleRefresh}
+              title="새로고침"
+            >
+              <RefreshCw size={16} />
+            </button>
+          }
+        />
 
-      {/* Tab Bar */}
-      <div className="dataset-tabs">
-        {TABS.map((tab) => (
-          <button
-            key={tab.id}
-            className={`dataset-tab ${activeTab === tab.id ? "active" : ""}`}
-            onClick={() => setActiveTab(tab.id)}
-            type="button"
-          >
-            <tab.icon size={14} />
-            <span>{tab.label}</span>
-          </button>
-        ))}
+        {/* Tab Bar */}
+        <div className="dataset-tabs">
+          {TABS.map((tab) => (
+            <button
+              key={tab.id}
+              className={`dataset-tab ${activeTab === tab.id ? "active" : ""}`}
+              onClick={() => setActiveTab(tab.id)}
+              type="button"
+            >
+              <tab.icon size={14} />
+              <span>{tab.label}</span>
+            </button>
+          ))}
+        </div>
+
+        {/* Tab Content */}
+        <div className="dataset-content">
+          {/* 로딩 중에도 리스트 유지 (에디터가 닫히는 것 방지) */}
+          {isLoading && <div className="dataset-loading-overlay"><LoadingSpinner /></div>}
+          {activeTab === "tables" && (
+            <DataTableList
+              projectId={currentProjectId}
+              editingId={editingTableId}
+              onEditingChange={handleEditingChange}
+              onCreateClick={handleCreateClick}
+            />
+          )}
+          {activeTab === "endpoints" && (
+            <ApiEndpointList projectId={currentProjectId} />
+          )}
+          {activeTab === "variables" && (
+            <VariableList projectId={currentProjectId} />
+          )}
+          {activeTab === "transformers" && (
+            <TransformerList projectId={currentProjectId} />
+          )}
+        </div>
       </div>
 
-      {/* Tab Content */}
-      <div className="dataset-content">
-        {/* 로딩 중에도 리스트 유지 (에디터가 닫히는 것 방지) */}
-        {isLoading && <div className="dataset-loading-overlay"><LoadingSpinner /></div>}
-        {activeTab === "tables" && (
-          <DataTableList projectId={currentProjectId} />
-        )}
-        {activeTab === "endpoints" && (
-          <ApiEndpointList projectId={currentProjectId} />
-        )}
-        {activeTab === "variables" && (
-          <VariableList projectId={currentProjectId} />
-        )}
-        {activeTab === "transformers" && (
-          <TransformerList projectId={currentProjectId} />
-        )}
-      </div>
+      {/* DataTable Panel (Creator or Editor) */}
+      {showDatatablePanel && (
+        <div className="datatable-panel">
+          {isCreating ? (
+            <DataTableCreator
+              projectId={currentProjectId}
+              onClose={handleCloseCreator}
+            />
+          ) : editingTable ? (
+            <DataTableEditor
+              dataTable={editingTable}
+              onClose={handleCloseEditor}
+            />
+          ) : null}
+        </div>
+      )}
     </div>
   );
 }

@@ -14,6 +14,7 @@ import {
   Table2,
   Database,
   Settings,
+  X,
 } from "lucide-react";
 import { useDataStore } from "../../../stores/data";
 import type {
@@ -21,7 +22,7 @@ import type {
   DataField,
   DataFieldType,
 } from "../../../../types/builder/data.types";
-import { PropertySwitch } from "../../common";
+import { PropertySwitch, PanelHeader } from "../../common";
 import "./DataTableEditor.css";
 
 interface DataTableEditorProps {
@@ -171,20 +172,14 @@ export function DataTableEditor({ dataTable, onClose }: DataTableEditorProps) {
 
   return (
     <div className="datatable-editor">
-      <div className="editor-header">
-        <div className="editor-title">
-          <Table2 size={18} />
-          <input
-            type="text"
-            className="editor-name-input"
-            value={dataTable.name}
-            onChange={(e) => handleNameChange(e.target.value)}
-          />
-        </div>
-        <button type="button" className="editor-close" onClick={onClose}>
-          ×
-        </button>
-      </div>
+      <PanelHeader
+        title={dataTable.name}
+        actions={
+          <button type="button" className="iconButton" onClick={onClose} title="닫기">
+            <X size={16} />
+          </button>
+        }
+      />
 
       {/* Tabs */}
       <div className="editor-tabs">
@@ -239,7 +234,9 @@ export function DataTableEditor({ dataTable, onClose }: DataTableEditorProps) {
 
         {activeTab === "settings" && (
           <SettingsEditor
+            name={dataTable.name}
             useMockData={dataTable.useMockData}
+            onNameChange={handleNameChange}
             onUseMockDataChange={handleUseMockDataToggle}
           />
         )}
@@ -533,16 +530,29 @@ function CellEditor({ fieldType, value, onChange }: CellEditorProps) {
 // ============================================
 
 interface SettingsEditorProps {
+  name: string;
   useMockData: boolean;
+  onNameChange: (name: string) => void;
   onUseMockDataChange: (checked: boolean) => void;
 }
 
 function SettingsEditor({
+  name,
   useMockData,
+  onNameChange,
   onUseMockDataChange,
 }: SettingsEditorProps) {
   return (
     <div className="settings-editor">
+      <div className="settings-field">
+        <label className="settings-label">테이블 이름</label>
+        <input
+          type="text"
+          className="settings-input"
+          value={name}
+          onChange={(e) => onNameChange(e.target.value)}
+        />
+      </div>
       <PropertySwitch
         label="Use Table Data"
         isSelected={useMockData}

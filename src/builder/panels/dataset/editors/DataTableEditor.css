@@ -5,70 +5,13 @@
 .datatable-editor {
   display: flex;
   flex-direction: column;
-  width: 600px;
-  max-width: 90vw;
-  height: 500px;
-  max-height: 80vh;
+  width: 100%;
+  height: 100%;
   background: var(--color-surface);
-  border-radius: var(--radius-lg);
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
   overflow: hidden;
 }
 
-.editor-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: var(--spacing-sm) var(--spacing-md);
-  background: var(--color-surface-100);
-  border-bottom: 1px solid var(--color-border);
-}
-
-.editor-title {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-sm);
-  color: var(--color-text-primary);
-}
-
-.editor-name-input {
-  background: transparent;
-  border: none;
-  font-size: var(--text-sm);
-  font-weight: 600;
-  color: var(--color-text-primary);
-  padding: var(--spacing-xs) var(--spacing-sm);
-  border-radius: var(--radius-sm);
-}
-
-.editor-name-input:hover {
-  background: var(--color-surface-200);
-}
-
-.editor-name-input:focus {
-  outline: none;
-  background: var(--color-surface-0);
-  box-shadow: 0 0 0 2px var(--color-primary-500);
-}
-
-.editor-close {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 24px;
-  height: 24px;
-  background: transparent;
-  border: none;
-  border-radius: var(--radius-sm);
-  color: var(--color-text-secondary);
-  cursor: pointer;
-  font-size: var(--text-lg);
-}
-
-.editor-close:hover {
-  background: var(--color-surface-200);
-  color: var(--color-text-primary);
-}
+/* NOTE: editor-header styles removed - now using PanelHeader component */
 
 /* Tabs */
 .editor-tabs {
@@ -311,6 +254,33 @@
   display: flex;
   flex-direction: column;
   gap: var(--spacing-md);
+}
+
+.settings-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.settings-label {
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--color-text-primary);
+}
+
+.settings-input {
+  padding: var(--spacing-sm);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
+  background: var(--color-surface-0);
+  color: var(--color-text-primary);
+}
+
+.settings-input:focus {
+  outline: none;
+  border-color: var(--color-primary-500);
+  box-shadow: 0 0 0 2px var(--color-primary-100);
 }
 
 .settings-description {
