@@ -16,7 +16,7 @@
  * />
  */
 
-import React, { useState, useEffect, useCallback, memo } from 'react';
+import React, { useCallback, memo } from 'react';
 import {
   Select as AriaSelect,
   Button,
@@ -85,22 +85,11 @@ export const PropertyDataBinding = memo(function PropertyDataBinding({
   const apiEndpoints = useApiEndpoints();
   const variables = useVariables();
 
-  // Local state
-  const [source, setSource] = useState<DataBindingValue['source'] | ''>(
-    value?.source || ''
-  );
-  const [name, setName] = useState(value?.name || '');
-  const [path, setPath] = useState(value?.path || '');
+  // 직접 prop 값 사용 (fully controlled)
+  const source = value?.source || '';
+  const name = value?.name || '';
+  const path = value?.path || '';
 
-  // Sync with prop value when external value changes
-  // This pattern is intentional for controlled/uncontrolled hybrid component
-  useEffect(() => {
-    /* eslint-disable react-hooks/set-state-in-effect */
-    setSource(value?.source || '');
-    setName(value?.name || '');
-    setPath(value?.path || '');
-    /* eslint-enable react-hooks/set-state-in-effect */
-  }, [value]);
 
   // 소스 타입별 이름 옵션 가져오기
   const getNameOptions = useCallback(() => {
@@ -131,39 +120,14 @@ export const PropertyDataBinding = memo(function PropertyDataBinding({
     }
   }, [source, dataTables, apiEndpoints, variables]);
 
-  // 바인딩 값 업데이트
-  const updateBinding = useCallback(
-    (updates: Partial<DataBindingValue>) => {
-      if (!source) return;
-
-      const newBinding: DataBindingValue = {
-        source: updates.source || (source as DataBindingValue['source']),
-        name: updates.name !== undefined ? updates.name : name,
-        path: updates.path !== undefined ? updates.path : path,
-      };
-
-      console.log(`📊 PropertyDataBinding updateBinding:`, newBinding);
-
-      // 유효한 바인딩인지 확인
-      if (newBinding.source && newBinding.name) {
-        console.log(`✅ PropertyDataBinding: 바인딩 저장`, newBinding);
-        onChange(newBinding);
-      } else {
-        console.warn(`⚠️ PropertyDataBinding: 유효하지 않은 바인딩 (source 또는 name 없음)`, newBinding);
-      }
-    },
-    [source, name, path, onChange]
-  );
-
-  // 소스 타입 변경
+  // 소스 타입 변경 (fully controlled - onChange 즉시 호출)
   const handleSourceChange = useCallback(
     (key: React.Key | null) => {
       const newSource = key as DataBindingValue['source'] | '';
-      setSource(newSource);
-      setName(''); // 소스 변경 시 이름 초기화
-      setPath('');
-
-      if (!newSource) {
+      if (newSource) {
+        // 소스 변경 시 name, path 초기화
+        onChange({ source: newSource, name: '', path: '' });
+      } else {
         onChange(null);
       }
     },
@@ -174,31 +138,27 @@ export const PropertyDataBinding = memo(function PropertyDataBinding({
   const handleNameChange = useCallback(
     (key: React.Key | null) => {
       const newName = key as string;
-      console.log(`🔗 PropertyDataBinding: ${source} 소스에서 "${newName}" 선택됨`);
-      setName(newName);
-      updateBinding({ name: newName });
+      if (source) {
+        console.log(`🔗 PropertyDataBinding: ${source} 소스에서 "${newName}" 선택됨`);
+        onChange({ source: source as DataBindingValue['source'], name: newName, path });
+      }
     },
-    [source, updateBinding]
+    [source, path, onChange]
   );
 
-  // 경로 변경
-  const handlePathChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
+  // 경로 변경 (blur 시 저장)
+  const handlePathBlur = useCallback(
+    (e: React.FocusEvent<HTMLInputElement>) => {
       const newPath = e.target.value;
-      setPath(newPath);
+      if (source && name) {
+        onChange({ source: source as DataBindingValue['source'], name, path: newPath || undefined });
+      }
     },
-    []
+    [source, name, onChange]
   );
-
-  const handlePathBlur = useCallback(() => {
-    updateBinding({ path: path || undefined });
-  }, [path, updateBinding]);
 
   // 바인딩 제거
   const handleClear = useCallback(() => {
-    setSource('');
-    setName('');
-    setPath('');
     onChange(null);
   }, [onChange]);
 
@@ -315,11 +275,14 @@ export const PropertyDataBinding = memo(function PropertyDataBinding({
             <input
               className="react-aria-Input"
               type="text"
-              value={name}
-              onChange={(e) => {
-                setName(e.target.value);
+              key={`route-${value?.name || ''}`}
+              defaultValue={name}
+              onBlur={(e) => {
+                const newName = e.target.value;
+                if (newName) {
+                  onChange({ source: 'route', name: newName, path });
+                }
               }}
-              onBlur={() => updateBinding({ name })}
               placeholder="파라미터 이름 (예: productId)"
               disabled={disabled}
             />
@@ -332,8 +295,8 @@ export const PropertyDataBinding = memo(function PropertyDataBinding({
             <input
               className="react-aria-Input binding-path-input"
               type="text"
-              value={path}
-              onChange={handlePathChange}
+              key={`path-${value?.source || ''}-${value?.name || ''}`}
+              defaultValue={path}
               onBlur={handlePathBlur}
               placeholder="데이터 경로 (예: items[0].name)"
               disabled={disabled}
