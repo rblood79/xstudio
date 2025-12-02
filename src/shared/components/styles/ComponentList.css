@@ -57,11 +57,10 @@
 
     .section-content button {
       position: relative;
-      width: var(--text-5xl);
-      height: var(--text-5xl);
       display: flex;
       align-items: center;
       justify-content: center;
+      padding: var(--spacing-sm);
       font-size: var(--text-sm);
       font-weight: var(--font-weight-semibold);
       background-color: var(--background-color);
@@ -95,7 +94,6 @@
 
     .section-content button:hover {
       background-color: var(--button-background-hover);
-      border-color: var(--border-color-hover);
       color: var(--text-color-hover);
     }
 

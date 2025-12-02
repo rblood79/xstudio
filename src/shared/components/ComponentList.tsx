@@ -166,7 +166,7 @@ const ComponentItem = ({
   return (
     <div className="component-list-item">
       <button onClick={handleClick} title={`Add ${component.label} element`}>
-        <component.icon strokeWidth={1} width={21} height={21} />
+        <component.icon strokeWidth={1} width={16} height={16} />
         {isRecent && count > 0 && <Badge>{count}</Badge>}
       </button>
       <span className="item-text">{component.label}</span>

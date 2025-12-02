@@ -120,7 +120,6 @@ function App() {
           <div className="landing-cta">
             <ParticleButton
               className="react-aria-Button"
-              size="md"
               variant="primary"
               onClick={() => navigate("/signin")}
             >
