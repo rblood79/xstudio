@@ -8,6 +8,7 @@ import { useState } from "react";
 import { Variable, Plus, Trash2, Edit2 } from "lucide-react";
 import { useDataStore, useVariables } from "../../../stores/data";
 import { VariableEditor } from "../editors/VariableEditor";
+import { SectionHeader } from "../../common/SectionHeader";
 import type { Variable as VariableType } from "../../../../types/builder/data.types";
 
 interface VariableListProps {
@@ -110,17 +111,54 @@ export function VariableList({ projectId }: VariableListProps) {
     </div>
   );
 
-  if (variables.length === 0) {
-    return (
-      <div className="dataset-list">
-        <div className="dataset-empty">
-          <Variable size={32} className="dataset-empty-icon" />
-          <p className="dataset-empty-text">
-            변수가 없습니다.
-            <br />
-            새 변수를 추가하세요.
-          </p>
-        </div>
+  return (
+    <div className="section">
+      <SectionHeader
+        title="Variables"
+        actions={
+          <span className="dataset-list-count">{variables.length}개</span>
+        }
+      />
+      <div className="section-content">
+        {variables.length === 0 ? (
+          <div className="dataset-empty">
+            <Variable size={32} className="dataset-empty-icon" />
+            <p className="dataset-empty-text">
+              변수가 없습니다.
+              <br />
+              새 변수를 추가하세요.
+            </p>
+          </div>
+        ) : (
+          <>
+            {/* Global Variables */}
+            {globalVariables.length > 0 && (
+              <div className="dataset-subgroup">
+                <div className="dataset-subgroup-header">
+                  <span className="dataset-subgroup-title">Global</span>
+                  <span className="dataset-list-count">{globalVariables.length}개</span>
+                </div>
+                <div className="dataset-list">
+                  {globalVariables.map(renderVariableItem)}
+                </div>
+              </div>
+            )}
+
+            {/* Page Variables */}
+            {pageVariables.length > 0 && (
+              <div className="dataset-subgroup">
+                <div className="dataset-subgroup-header">
+                  <span className="dataset-subgroup-title">Page</span>
+                  <span className="dataset-list-count">{pageVariables.length}개</span>
+                </div>
+                <div className="dataset-list">
+                  {pageVariables.map(renderVariableItem)}
+                </div>
+              </div>
+            )}
+          </>
+        )}
+
         <button
           type="button"
           className="dataset-add-btn"
@@ -130,41 +168,6 @@ export function VariableList({ projectId }: VariableListProps) {
           <span>Variable 추가</span>
         </button>
       </div>
-    );
-  }
-
-  return (
-    <div className="dataset-list">
-      {/* Global Variables */}
-      {globalVariables.length > 0 && (
-        <>
-          <div className="dataset-list-header">
-            <span className="dataset-list-title">Global Variables</span>
-            <span className="dataset-list-count">{globalVariables.length}개</span>
-          </div>
-          {globalVariables.map(renderVariableItem)}
-        </>
-      )}
-
-      {/* Page Variables */}
-      {pageVariables.length > 0 && (
-        <>
-          <div className="dataset-list-header" style={{ marginTop: "var(--spacing-md)" }}>
-            <span className="dataset-list-title">Page Variables</span>
-            <span className="dataset-list-count">{pageVariables.length}개</span>
-          </div>
-          {pageVariables.map(renderVariableItem)}
-        </>
-      )}
-
-      <button
-        type="button"
-        className="dataset-add-btn"
-        onClick={handleCreate}
-      >
-        <Plus size={16} />
-        <span>Variable 추가</span>
-      </button>
 
       {/* Variable Editor Modal */}
       {editingVariable && (

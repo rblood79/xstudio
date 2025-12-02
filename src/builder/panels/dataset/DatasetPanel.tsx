@@ -128,7 +128,7 @@ export function DatasetPanel({ isActive }: PanelProps) {
   const showDatatablePanel = isCreating || editingTable;
 
   return (
-    <div className="dataset-panel-wrapper">
+    <>
       <div className="dataset-panel">
         <PanelHeader
           title="Dataset"
@@ -145,11 +145,11 @@ export function DatasetPanel({ isActive }: PanelProps) {
         />
 
         {/* Tab Bar */}
-        <div className="dataset-tabs">
+        <div className="panel-tabs">
           {TABS.map((tab) => (
             <button
               key={tab.id}
-              className={`dataset-tab ${activeTab === tab.id ? "active" : ""}`}
+              className={`panel-tab ${activeTab === tab.id ? "active" : ""}`}
               onClick={() => setActiveTab(tab.id)}
               type="button"
             >
@@ -159,8 +159,8 @@ export function DatasetPanel({ isActive }: PanelProps) {
           ))}
         </div>
 
-        {/* Tab Content */}
-        <div className="dataset-content">
+        {/* Panel Contents */}
+        <div className="panel-contents">
           {/* 로딩 중에도 리스트 유지 (에디터가 닫히는 것 방지) */}
           {isLoading && <div className="dataset-loading-overlay"><LoadingSpinner /></div>}
           {activeTab === "tables" && (
@@ -199,6 +199,6 @@ export function DatasetPanel({ isActive }: PanelProps) {
           ) : null}
         </div>
       )}
-    </div>
+    </>
   );
 }
