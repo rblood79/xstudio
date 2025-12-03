@@ -12,6 +12,8 @@
 - ✅ **Zero 의존성**: 추가 라이브러리 설치 없음 (특히 상용 라이브러리 금지)
 - ✅ **성능 영향 최소화**: 빌더 사용 중 퍼포먼스 저하 없음
 - ✅ **Bottom 위치**: Footer 영역에 배치
+- ✅ **접근성 준수**: 키보드 탐색, Esc 닫기, ARIA 레이블 필수
+- ✅ **보안/프라이버시**: 메모리 데이터 외부 전송 금지, 민감 정보 로깅 금지
 
 ### 전체 작업 예상 시간
 
@@ -350,7 +352,88 @@ function handleResizeStart(
 1. **Conditional Rendering**: showBottom이 false면 null 반환
 2. **Resize Handle**: 드래그로 높이 조절 (150-600px)
 3. **Close Button**: × 버튼으로 패널 닫기
-4. **Keyboard Support**: Esc 키로 닫기 (추후 추가 가능)
+4. **Keyboard Support**: Esc 키로 닫기
+
+### ♿ 접근성/키보드 UX 필수 요구사항
+
+#### Esc 키로 패널 닫기
+```typescript
+// BottomPanelSlot.tsx에 추가
+useEffect(() => {
+  const handleKeyDown = (e: KeyboardEvent) => {
+    if (e.key === 'Escape' && showBottom) {
+      closeBottomPanel();
+    }
+  };
+
+  window.addEventListener('keydown', handleKeyDown);
+  return () => window.removeEventListener('keydown', handleKeyDown);
+}, [showBottom, closeBottomPanel]);
+```
+
+#### Resize Handle 키보드 포커스
+```tsx
+<div
+  className="resize-handle"
+  role="separator"
+  aria-orientation="horizontal"
+  aria-label="패널 높이 조절 핸들"
+  aria-describedby="resize-hint"
+  tabIndex={0}
+  onKeyDown={(e) => handleResizeKeyboard(e, bottomHeight, setBottomHeight)}
+/>
+<span id="resize-hint" className="sr-only">
+  위/아래 화살표 키로 패널 높이를 조절할 수 있습니다.
+</span>
+```
+
+```typescript
+function handleResizeKeyboard(
+  e: React.KeyboardEvent,
+  currentHeight: number,
+  setHeight: (h: number) => void
+) {
+  const step = e.shiftKey ? 50 : 10; // Shift로 큰 단위 이동
+
+  switch (e.key) {
+    case 'ArrowUp':
+      e.preventDefault();
+      setHeight(currentHeight + step);
+      break;
+    case 'ArrowDown':
+      e.preventDefault();
+      setHeight(currentHeight - step);
+      break;
+  }
+}
+```
+
+#### 필수 ARIA 속성
+| 요소 | ARIA 속성 | 값 |
+|------|-----------|-----|
+| 패널 컨테이너 | `role` | `region` |
+| 패널 컨테이너 | `aria-label` | `"메모리 모니터 패널"` |
+| Close 버튼 | `aria-label` | `"패널 닫기 (Esc)"` |
+| Resize 핸들 | `role` | `separator` |
+| Resize 핸들 | `aria-orientation` | `horizontal` |
+| Resize 핸들 | `aria-describedby` | `resize-hint` (설명 연결) |
+| 차트 SVG | `aria-label` | `"메모리 사용량 추이 차트"` |
+| Trend 아이콘 | `aria-label` | `"Trend: up/down/stable"` |
+
+#### 스크린 리더용 숨김 텍스트 CSS
+```css
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+```
 
 ### 🎯 Step 2.3: CSS 스타일 (30분)
 
@@ -494,6 +577,77 @@ type PanelContainerProps = {
 }
 ```
 
+### 🎯 Step 2.6: 상태 복원/퍼시스턴스 (선택적, 15분)
+
+**목적**: 사용자가 선호하는 패널 레이아웃(열림/닫힘 상태, 높이)을 유지
+
+#### localStorage 저장/복원
+```typescript
+// usePanelLayout.ts에 추가
+
+const STORAGE_KEY = 'xstudio-bottom-panel-state';
+
+interface BottomPanelPersistedState {
+  showBottom: boolean;
+  bottomHeight: number;
+  activeBottomPanels: PanelId[];
+}
+
+// 저장 함수
+function saveBottomPanelState(state: BottomPanelPersistedState): void {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  } catch (e) {
+    // localStorage 비활성화 또는 quota 초과 시 무시
+    console.warn('Failed to save bottom panel state:', e);
+  }
+}
+
+// 복원 함수
+function loadBottomPanelState(): Partial<BottomPanelPersistedState> {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored) {
+      return JSON.parse(stored);
+    }
+  } catch (e) {
+    console.warn('Failed to load bottom panel state:', e);
+  }
+  return {};
+}
+```
+
+#### 초기값에 복원 로직 통합
+```typescript
+const persistedState = loadBottomPanelState();
+
+const initialState: PanelLayoutState = {
+  // ... 기존 값
+  bottomPanels: ['monitor'],
+  activeBottomPanels: persistedState.activeBottomPanels || [],
+  showBottom: persistedState.showBottom ?? false,
+  bottomHeight: persistedState.bottomHeight ?? 200,
+};
+```
+
+#### 변경 시 자동 저장
+```typescript
+// subscribe로 변경 감지
+usePanelLayout.subscribe(
+  (state) => ({
+    showBottom: state.showBottom,
+    bottomHeight: state.bottomHeight,
+    activeBottomPanels: state.activeBottomPanels,
+  }),
+  (current) => {
+    saveBottomPanelState(current);
+  },
+  { equalityFn: shallow }
+);
+```
+
+**주의**: 이 단계는 선택적이며, 기본 기능 완료 후 Phase 4 또는 5에서 구현해도 무방합니다.
+
 ### ✅ Phase 2 완료 체크리스트
 
 ```bash
@@ -519,6 +673,11 @@ import { usePanelLayout } from './hooks/panels/usePanelLayout';
 const { bottomPanels, activeBottomPanels, toggleBottomPanel } = usePanelLayout();
 console.log(bottomPanels); // → ['monitor']
 console.log(activeBottomPanels); // → []
+
+# 5. 접근성 검증
+# → Esc 키로 패널 닫힘 확인
+# → Resize 핸들에 Tab으로 포커스 이동 확인
+# → 화살표 키로 높이 조절 확인
 ```
 
 ---
@@ -632,6 +791,140 @@ function analyzeMemory(usage: number, ratio: number): string {
 1. **RequestIdleCallback**: 브라우저 idle 상태에서만 수집 → 퍼포먼스 영향 최소화
 2. **10초 간격**: 기존과 동일 (충분히 빠름)
 3. **Safari fallback**: requestIdleCallback 미지원 브라우저 대응
+
+### ⚠️ 에러/권한 대응 (Fallback 정책)
+
+#### performance.memory 비지원 브라우저 대응
+
+`performance.memory`는 Chrome 계열에서만 지원되며, Firefox/Safari에서는 `undefined`입니다.
+
+```typescript
+// useMemoryStats.ts에 추가
+
+interface BrowserMemoryInfo {
+  usedJSHeapSize: number;
+  totalJSHeapSize: number;
+  jsHeapSizeLimit: number;
+}
+
+function getBrowserMemoryInfo(): BrowserMemoryInfo | null {
+  // Chrome/Edge only
+  const perf = performance as Performance & {
+    memory?: BrowserMemoryInfo;
+  };
+
+  if (perf.memory) {
+    return perf.memory;
+  }
+
+  return null; // Firefox, Safari
+}
+
+function getMemoryStats(): MemoryStats {
+  const browserMemory = getBrowserMemoryInfo();
+  const historyStats = historyManager.getMemoryStats();
+
+  return {
+    // historyManager 기반 (항상 작동)
+    totalEntries: historyStats.totalEntries,
+    commandCount: historyStats.commandStoreStats.commandCount,
+    cacheSize: historyStats.commandStoreStats.cacheSize,
+    estimatedMemoryUsage: historyStats.commandStoreStats.estimatedMemoryUsage,
+    compressionRatio: historyStats.commandStoreStats.compressionRatio,
+    recommendation: analyzeMemory(...),
+
+    // 브라우저 메모리 (Chrome only, optional)
+    browserHeapUsed: browserMemory?.usedJSHeapSize ?? null,
+    browserHeapTotal: browserMemory?.totalJSHeapSize ?? null,
+    isBrowserMemorySupported: browserMemory !== null,
+  };
+}
+```
+
+#### Fallback UI
+
+```tsx
+// MonitorPanel.tsx에 추가
+{!stats.isBrowserMemorySupported && (
+  <div className="browser-memory-fallback">
+    <span>ℹ️ 브라우저 메모리 정보는 Chrome/Edge에서만 지원됩니다.</span>
+  </div>
+)}
+```
+
+#### 에러 발생 시 Graceful Degradation
+
+```typescript
+const collectStats = () => {
+  try {
+    if ('requestIdleCallback' in window) {
+      requestIdleCallback(() => {
+        try {
+          const newStats = getMemoryStats();
+          setStats(newStats);
+          setError(null);
+        } catch (e) {
+          setError('메모리 통계 수집 중 오류가 발생했습니다.');
+          console.warn('[MonitorPanel] Stats collection error:', e);
+        }
+      });
+    } else {
+      setTimeout(() => {
+        try {
+          const newStats = getMemoryStats();
+          setStats(newStats);
+          setError(null);
+        } catch (e) {
+          setError('메모리 통계 수집 중 오류가 발생했습니다.');
+          console.warn('[MonitorPanel] Stats collection error:', e);
+        }
+      }, 0);
+    }
+  } catch (e) {
+    setError('메모리 모니터링을 시작할 수 없습니다.');
+    console.error('[MonitorPanel] Critical error:', e);
+  }
+};
+```
+
+### 🔒 보안/프라이버시 주의사항
+
+#### 금지 사항 (MUST NOT)
+
+1. **외부 전송 금지**: 메모리 통계 데이터를 외부 서버로 전송하지 않음
+2. **민감 정보 로깅 금지**: element 내용, 사용자 데이터 등을 로그에 기록하지 않음
+3. **스냅숏 저장 금지**: 메모리 덤프, 객체 스냅숏을 저장하지 않음
+
+```typescript
+// ❌ NEVER DO THIS
+console.log('Elements:', elements);  // 사용자 데이터 노출
+console.log('Memory dump:', JSON.stringify(historyManager));  // 전체 덤프
+
+// ✅ SAFE - 수치 정보만 로깅
+console.log('[MonitorPanel] Memory usage:', stats.estimatedMemoryUsage, 'bytes');
+console.log('[MonitorPanel] Entry count:', stats.totalEntries);
+```
+
+#### 로깅 정책
+
+| 로그 레벨 | 허용 정보 | 금지 정보 |
+|-----------|-----------|-----------|
+| `info` | 수치 메트릭 (bytes, count) | 객체 내용 |
+| `warn` | 에러 타입, 메시지 | 스택트레이스 내 데이터 |
+| `error` | 에러 발생 여부 | 원본 에러 객체 |
+| `debug` | 함수 호출 흐름 | 파라미터 값 |
+
+#### 개발 환경 전용 로깅
+
+```typescript
+// 개발 환경에서만 상세 로그 출력
+if (import.meta.env.DEV) {
+  console.debug('[MonitorPanel] Stats updated:', {
+    entries: stats.totalEntries,
+    memory: formatBytes(stats.estimatedMemoryUsage),
+  });
+}
+```
 
 ### 🎯 Step 3.2: MemoryChart 컴포넌트 (1시간)
 
@@ -1310,6 +1603,84 @@ console.timeEnd('memory-stats');
 # → Expected: RequestIdleCallback 실행, CPU usage < 5%
 ```
 
+### 📊 성능 검증 지표 보강
+
+#### 필수 측정 항목
+
+| 지표 | 측정 방법 | 기준값 | 비고 |
+|------|-----------|--------|------|
+| **getMemoryStats 실행 시간** | `console.time()` | < 10ms | 캐시 히트 시 |
+| **getMemoryStats 실행 시간 (cold)** | `console.time()` | < 100ms | 캐시 미스 시 |
+| **SizeEstimator 캐시 히트율** | `sizeEstimator.getCacheHitRate()` | > 80% | 정상 사용 시 |
+| **CPU 사용률 (패널 열림)** | Performance 프로파일링 | < 5% | idle 시간 기준 |
+| **CPU 사용률 (패널 닫힘)** | Performance 프로파일링 | 0% | 수집 중단 확인 |
+| **메모리 히스토리 GC 영향** | Memory 프로파일링 | < 1MB/min | GC 증가분 |
+
+#### GC 부담 측정
+
+```typescript
+// 콘솔에서 실행
+function measureGCImpact() {
+  const iterations = 100;
+  const memoryBefore = performance.memory?.usedJSHeapSize;
+
+  for (let i = 0; i < iterations; i++) {
+    historyManager.getMemoryStats();
+  }
+
+  // Force GC (Chrome DevTools > Performance > 🗑️ 버튼)
+  // 또는 --expose-gc 플래그로 Node 실행 시 gc()
+
+  const memoryAfter = performance.memory?.usedJSHeapSize;
+  console.log(`GC 부담: ${(memoryAfter - memoryBefore) / 1024}KB per ${iterations} calls`);
+}
+```
+
+#### 패널 비활성 시 수집 중단 확인
+
+```typescript
+// 콘솔에서 실행
+let collectCount = 0;
+const originalCollect = window.__monitorCollectStats;
+
+window.__monitorCollectStats = function() {
+  collectCount++;
+  console.log(`[DEBUG] Stats collected: ${collectCount}`);
+  return originalCollect?.apply(this, arguments);
+};
+
+// 1. 패널 열기 → 10초 대기 → collectCount 증가 확인
+// 2. 패널 닫기 → 10초 대기 → collectCount 증가 없음 확인
+```
+
+#### Performance 프로파일링 스크린샷 체크리스트
+
+- [ ] **패널 열림 상태 10초 Recording**
+  - RequestIdleCallback 호출 확인
+  - Scripting 시간 < 50ms/10초
+  - CPU flame graph에 `getMemoryStats` 피크 없음
+
+- [ ] **패널 닫힘 상태 10초 Recording**
+  - Monitor 관련 함수 호출 0건
+  - setInterval 콜백 없음
+
+- [ ] **Memory 프로파일링 (Heap snapshot)**
+  - Monitor 관련 객체 메모리 < 500KB
+  - 히스토리 배열 크기 < 60개 유지
+
+#### 회귀 검증용 숫자 로그 저장
+
+```bash
+# 테스트 결과를 파일로 저장 (CI에서 비교용)
+echo "=== Monitor Panel Performance Report ===" > perf-report.txt
+echo "Date: $(date)" >> perf-report.txt
+echo "getMemoryStats (cached): XX ms" >> perf-report.txt
+echo "getMemoryStats (cold): XX ms" >> perf-report.txt
+echo "Cache hit rate: XX%" >> perf-report.txt
+echo "CPU usage (panel open): XX%" >> perf-report.txt
+echo "Memory overhead: XX KB" >> perf-report.txt
+```
+
 ---
 
 ## 📦 최종 파일 구조 요약
@@ -1387,6 +1758,448 @@ src/builder/styles/4-layout/footer.css (일부)
 5. **Phase 5 (1-2h)**: 성능 최적화 → 마무리
 
 **총 8.5-11.5시간** → 1.5일 작업
+
+---
+
+## 🧪 테스트 시나리오 확장
+
+### 단위 테스트 (Unit Tests)
+
+#### SizeEstimator 테스트
+
+**파일**: `src/builder/stores/utils/__tests__/sizeEstimator.test.ts`
+
+```typescript
+import { describe, it, expect, beforeEach } from 'vitest';
+import { sizeEstimator } from '../sizeEstimator';
+
+describe('SizeEstimator', () => {
+  beforeEach(() => {
+    sizeEstimator.clear();
+  });
+
+  describe('캐시 히트/미스', () => {
+    it('같은 키로 두 번째 호출 시 캐시 히트', () => {
+      const obj = { name: 'test', value: 123 };
+
+      const size1 = sizeEstimator.estimate(obj, 'test_key');
+      const size2 = sizeEstimator.estimate(obj, 'test_key');
+
+      expect(size1).toBe(size2);
+      expect(sizeEstimator.getCacheSize()).toBe(1);
+    });
+
+    it('다른 키로 호출 시 캐시 미스', () => {
+      const obj = { name: 'test' };
+
+      sizeEstimator.estimate(obj, 'key1');
+      sizeEstimator.estimate(obj, 'key2');
+
+      expect(sizeEstimator.getCacheSize()).toBe(2);
+    });
+
+    it('invalidate 후 캐시 미스', () => {
+      const obj = { name: 'test' };
+      sizeEstimator.estimate(obj, 'key1');
+
+      sizeEstimator.invalidate('key1');
+
+      expect(sizeEstimator.getCacheSize()).toBe(0);
+    });
+  });
+
+  describe('사이즈 계산', () => {
+    it('string 크기 계산 (UTF-16)', () => {
+      const size = sizeEstimator.estimate('hello');
+      expect(size).toBe(10); // 5 chars * 2 bytes
+    });
+
+    it('number 크기 계산', () => {
+      const size = sizeEstimator.estimate(123);
+      expect(size).toBe(8); // 8 bytes for number
+    });
+
+    it('nested object 크기 계산', () => {
+      const obj = { a: { b: 'c' } };
+      const size = sizeEstimator.estimate(obj);
+      expect(size).toBeGreaterThan(0);
+    });
+  });
+});
+```
+
+#### usePanelLayout 토글 동작 테스트
+
+**파일**: `src/builder/hooks/panels/__tests__/usePanelLayout.test.ts`
+
+```typescript
+import { describe, it, expect, beforeEach } from 'vitest';
+import { renderHook, act } from '@testing-library/react';
+import { usePanelLayout } from '../usePanelLayout';
+
+describe('usePanelLayout - Bottom Panel', () => {
+  beforeEach(() => {
+    // Reset store state
+    usePanelLayout.setState({
+      activeBottomPanels: [],
+      showBottom: false,
+      bottomHeight: 200,
+    });
+  });
+
+  describe('toggleBottomPanel', () => {
+    it('닫힌 상태에서 토글 시 패널 열림', () => {
+      const { result } = renderHook(() => usePanelLayout());
+
+      act(() => {
+        result.current.toggleBottomPanel('monitor');
+      });
+
+      expect(result.current.showBottom).toBe(true);
+      expect(result.current.activeBottomPanels).toContain('monitor');
+    });
+
+    it('열린 상태에서 토글 시 패널 닫힘', () => {
+      const { result } = renderHook(() => usePanelLayout());
+
+      act(() => {
+        result.current.toggleBottomPanel('monitor');
+        result.current.toggleBottomPanel('monitor');
+      });
+
+      expect(result.current.showBottom).toBe(false);
+      expect(result.current.activeBottomPanels).not.toContain('monitor');
+    });
+  });
+
+  describe('setBottomHeight', () => {
+    it('높이 설정 (정상 범위)', () => {
+      const { result } = renderHook(() => usePanelLayout());
+
+      act(() => {
+        result.current.setBottomHeight(300);
+      });
+
+      expect(result.current.bottomHeight).toBe(300);
+    });
+
+    it('최소값 미만 시 최소값으로 고정', () => {
+      const { result } = renderHook(() => usePanelLayout());
+
+      act(() => {
+        result.current.setBottomHeight(100); // min: 150
+      });
+
+      expect(result.current.bottomHeight).toBe(150);
+    });
+
+    it('최대값 초과 시 최대값으로 고정', () => {
+      const { result } = renderHook(() => usePanelLayout());
+
+      act(() => {
+        result.current.setBottomHeight(800); // max: 600
+      });
+
+      expect(result.current.bottomHeight).toBe(600);
+    });
+  });
+
+  describe('closeBottomPanel', () => {
+    it('패널 닫기 시 상태 초기화', () => {
+      const { result } = renderHook(() => usePanelLayout());
+
+      act(() => {
+        result.current.toggleBottomPanel('monitor');
+        result.current.closeBottomPanel();
+      });
+
+      expect(result.current.showBottom).toBe(false);
+      expect(result.current.activeBottomPanels).toHaveLength(0);
+    });
+  });
+});
+```
+
+#### useMemoryStats 테스트
+
+**파일**: `src/builder/panels/monitor/hooks/__tests__/useMemoryStats.test.ts`
+
+```typescript
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { renderHook, act, waitFor } from '@testing-library/react';
+import { useMemoryStats } from '../useMemoryStats';
+
+// Mock historyManager
+vi.mock('../../../../stores/history', () => ({
+  historyManager: {
+    getMemoryStats: vi.fn(() => ({
+      totalEntries: 10,
+      commandStoreStats: {
+        commandCount: 5,
+        cacheSize: 3,
+        estimatedMemoryUsage: 1024,
+        compressionRatio: 0.5,
+      },
+    })),
+    optimizeMemory: vi.fn(),
+  },
+}));
+
+describe('useMemoryStats', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('초기 로딩 후 stats 반환', async () => {
+    const { result } = renderHook(() => useMemoryStats());
+
+    // RequestIdleCallback 시뮬레이션
+    await act(async () => {
+      vi.runOnlyPendingTimers();
+    });
+
+    expect(result.current.stats).not.toBeNull();
+    expect(result.current.stats?.totalEntries).toBe(10);
+  });
+
+  it('optimize 호출 시 statusMessage 업데이트', async () => {
+    const { result } = renderHook(() => useMemoryStats());
+
+    await act(async () => {
+      vi.runOnlyPendingTimers();
+    });
+
+    act(() => {
+      result.current.optimize();
+    });
+
+    expect(result.current.statusMessage).toContain('최적화');
+
+    // 3초 후 메시지 사라짐
+    act(() => {
+      vi.advanceTimersByTime(3000);
+    });
+
+    expect(result.current.statusMessage).toBe('');
+  });
+});
+```
+
+### E2E 테스트 (Playwright)
+
+**파일**: `e2e/monitor-panel.spec.ts`
+
+```typescript
+import { test, expect } from '@playwright/test';
+
+test.describe('Monitor Panel E2E', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/builder');
+    await page.waitForSelector('.builder-container');
+  });
+
+  test('헤더 버튼 → 열기 → 리사이즈 → 닫기 플로우', async ({ page }) => {
+    // 1. 헤더에서 Monitor 버튼 찾기
+    const monitorButton = page.locator('.monitor-toggle');
+    await expect(monitorButton).toBeVisible();
+
+    // 2. 클릭하여 패널 열기
+    await monitorButton.click();
+
+    // 3. Bottom panel 열림 확인
+    const bottomPanel = page.locator('.bottom-panel-slot');
+    await expect(bottomPanel).toBeVisible();
+
+    // 4. MonitorPanel 내용 확인
+    await expect(page.locator('.monitor-panel')).toBeVisible();
+    await expect(page.locator('.stat-card')).toHaveCount(5);
+
+    // 5. 리사이즈 핸들 드래그
+    const resizeHandle = page.locator('.bottom-panel-slot .resize-handle');
+    const initialHeight = await bottomPanel.evaluate(el => el.offsetHeight);
+
+    await resizeHandle.hover();
+    await page.mouse.down();
+    await page.mouse.move(0, -100, { steps: 10 });
+    await page.mouse.up();
+
+    const newHeight = await bottomPanel.evaluate(el => el.offsetHeight);
+    expect(newHeight).toBeGreaterThan(initialHeight);
+
+    // 6. Close 버튼으로 닫기
+    await page.locator('.bottom-panel-slot .close-btn').click();
+    await expect(bottomPanel).not.toBeVisible();
+  });
+
+  test('Esc 키로 패널 닫기', async ({ page }) => {
+    // 패널 열기
+    await page.locator('.monitor-toggle').click();
+    await expect(page.locator('.bottom-panel-slot')).toBeVisible();
+
+    // Esc 키 누르기
+    await page.keyboard.press('Escape');
+
+    // 패널 닫힘 확인
+    await expect(page.locator('.bottom-panel-slot')).not.toBeVisible();
+  });
+
+  test('키보드로 리사이즈', async ({ page }) => {
+    await page.locator('.monitor-toggle').click();
+
+    const bottomPanel = page.locator('.bottom-panel-slot');
+    const initialHeight = await bottomPanel.evaluate(el => el.offsetHeight);
+
+    // 리사이즈 핸들에 포커스
+    await page.locator('.resize-handle').focus();
+
+    // 화살표 위로 높이 증가
+    await page.keyboard.press('ArrowUp');
+    await page.keyboard.press('ArrowUp');
+
+    const newHeight = await bottomPanel.evaluate(el => el.offsetHeight);
+    expect(newHeight).toBeGreaterThan(initialHeight);
+  });
+
+  test('Optimize 버튼 동작', async ({ page }) => {
+    await page.locator('.monitor-toggle').click();
+
+    // Optimize 버튼 클릭
+    const optimizeBtn = page.locator('.optimize-btn');
+    await optimizeBtn.click();
+
+    // 상태 메시지 표시 확인
+    await expect(page.locator('.status-message')).toContainText('최적화');
+
+    // 3초 후 메시지 사라짐
+    await page.waitForTimeout(3500);
+    await expect(page.locator('.status-message')).not.toBeVisible();
+  });
+});
+```
+
+### 접근성 테스트 (A11y)
+
+**파일**: `e2e/monitor-panel-a11y.spec.ts`
+
+```typescript
+import { test, expect } from '@playwright/test';
+import AxeBuilder from '@axe-core/playwright';
+
+test.describe('Monitor Panel Accessibility', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/builder');
+    await page.locator('.monitor-toggle').click();
+    await page.waitForSelector('.monitor-panel');
+  });
+
+  test('axe 접근성 검사 통과', async ({ page }) => {
+    const results = await new AxeBuilder({ page })
+      .include('.bottom-panel-slot')
+      .analyze();
+
+    expect(results.violations).toHaveLength(0);
+  });
+
+  test('ARIA role 및 label 확인', async ({ page }) => {
+    // Panel container
+    const panel = page.locator('.bottom-panel-slot');
+    await expect(panel).toHaveAttribute('role', 'region');
+
+    // Resize handle
+    const resizeHandle = page.locator('.resize-handle');
+    await expect(resizeHandle).toHaveAttribute('role', 'separator');
+    await expect(resizeHandle).toHaveAttribute('aria-orientation', 'horizontal');
+    await expect(resizeHandle).toHaveAttribute('aria-describedby', 'resize-hint');
+
+    // Close button
+    const closeBtn = page.locator('.close-btn');
+    await expect(closeBtn).toHaveAttribute('aria-label');
+
+    // Chart SVG
+    const chart = page.locator('.memory-chart svg');
+    await expect(chart).toHaveAttribute('aria-label');
+  });
+
+  test('Tab 순서 확인', async ({ page }) => {
+    // Monitor button에서 시작
+    await page.locator('.monitor-toggle').focus();
+
+    // Tab으로 resize handle로 이동
+    await page.keyboard.press('Tab');
+    await expect(page.locator('.resize-handle')).toBeFocused();
+
+    // Tab으로 close button으로 이동
+    await page.keyboard.press('Tab');
+    await expect(page.locator('.close-btn')).toBeFocused();
+
+    // Tab으로 optimize button으로 이동
+    await page.keyboard.press('Tab');
+    await expect(page.locator('.optimize-btn')).toBeFocused();
+  });
+
+  test('스크린 리더 텍스트 확인', async ({ page }) => {
+    // sr-only 텍스트 존재 확인
+    const srOnly = page.locator('.sr-only');
+    await expect(srOnly).toBeAttached();
+
+    // 실제 내용 확인 (시각적으로 숨겨져 있어도 DOM에 존재)
+    const text = await srOnly.textContent();
+    expect(text).toContain('화살표 키');
+  });
+
+  test('고대비 모드 테스트', async ({ page }) => {
+    // 고대비 모드 에뮬레이션
+    await page.emulateMedia({ forcedColors: 'active' });
+
+    // 패널이 여전히 보이는지 확인
+    await expect(page.locator('.monitor-panel')).toBeVisible();
+    await expect(page.locator('.stat-card')).toHaveCount(5);
+  });
+});
+```
+
+### QA 체크리스트 종합
+
+#### 기능 테스트
+- [ ] Header Monitor 버튼 클릭 → 패널 열림
+- [ ] Close 버튼 클릭 → 패널 닫힘
+- [ ] Esc 키 → 패널 닫힘
+- [ ] 마우스 드래그로 리사이즈
+- [ ] 키보드 화살표로 리사이즈
+- [ ] Optimize 버튼 → 상태 메시지 표시 → 3초 후 사라짐
+- [ ] 5개 stat 카드 표시
+- [ ] 차트 표시 (데이터 있을 때)
+- [ ] Trend 아이콘 표시 (up/down/stable)
+- [ ] 패널 닫을 때 수집 중단
+
+#### 접근성 테스트
+- [ ] axe 검사 통과 (violations = 0)
+- [ ] Tab 키로 모든 컨트롤 탐색 가능
+- [ ] ARIA role, label 모두 설정됨
+- [ ] 스크린 리더로 내용 읽기 가능
+- [ ] 고대비 모드에서 정상 표시
+- [ ] 150% 확대에서 레이아웃 유지
+
+#### 성능 테스트
+- [ ] getMemoryStats < 10ms (캐시 히트)
+- [ ] CPU < 5% (패널 열림)
+- [ ] CPU = 0% (패널 닫힘, 수집 중단)
+- [ ] 메모리 오버헤드 < 500KB
+
+#### 브라우저 호환성
+- [ ] Chrome 120+
+- [ ] Firefox 120+ (performance.memory 미지원 fallback)
+- [ ] Safari 17+ (requestIdleCallback 미지원 fallback)
+- [ ] Edge 120+
+
+#### 에러 처리
+- [ ] performance.memory 미지원 시 fallback UI 표시
+- [ ] 통계 수집 에러 시 에러 메시지 표시
+- [ ] localStorage 비활성화 시 정상 동작 (저장 실패 무시)
 
 ---
 
