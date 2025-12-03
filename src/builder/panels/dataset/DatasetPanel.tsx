@@ -20,6 +20,7 @@ import {
   Variable,
   Workflow,
   RefreshCw,
+  Database,
 } from "lucide-react";
 import type { PanelProps } from "../core/types";
 import { useDataStore } from "../../stores/data";
@@ -94,7 +95,7 @@ export function DatasetPanel({ isActive }: PanelProps) {
   if (!currentProjectId) {
     return (
       <div className="dataset-panel">
-        <PanelHeader title="Dataset" />
+        <PanelHeader icon={<Database size={16} />} title="Dataset" />
         <EmptyState message="프로젝트를 선택하세요" />
       </div>
     );
@@ -122,6 +123,7 @@ export function DatasetPanel({ isActive }: PanelProps) {
   return (
     <div className="dataset-panel">
       <PanelHeader
+        icon={<Database size={16} />}
         title="Dataset"
         actions={
           <button

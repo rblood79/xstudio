@@ -68,14 +68,14 @@
   }
 
   .preset-item.applied {
-    border-color: var(--color-success-500);
-    background: var(--color-success-50);
+    border-color: var(--primary-pressed);
+    background: var(--primary);
     cursor: default;
   }
 
   .preset-item.applied:hover {
-    border-color: var(--color-success-500);
-    background: var(--color-success-50);
+    border-color: var(--primary-hover);
+    background: var(--primary-container);
   }
 
   .preset-item[data-disabled] {

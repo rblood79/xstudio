@@ -112,10 +112,20 @@
   }
 
   .panel-header .panel-title {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
     padding-left: var(--spacing-sm);
     border-bottom: 0px;
     line-height: var(--text-xs--line-height);
     font-size: var(--text-xs);
+  }
+
+  .panel-header .panel-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--on-surface-variant);
   }
 
   /* Component Search */

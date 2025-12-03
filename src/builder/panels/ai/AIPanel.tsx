@@ -15,7 +15,7 @@ import type { KeyboardEvent } from "react";
 import type { PanelProps } from "../core/types";
 import { PanelHeader } from "../common";
 import { Button } from "../../../shared/components";
-import { MessageCircle, Trash2 } from "lucide-react";
+import { MessageCircle, Trash2, Bot } from "lucide-react";
 import { iconProps } from "../../../utils/ui/uiConstants";
 import { useConversationStore } from "../../stores/conversation";
 import { useStore } from "../../stores";
@@ -30,7 +30,7 @@ import type { Element } from "../../../types/core/store.types";
 import "../../../shared/components/styles/ChatContainer.css";
 import "../../../shared/components/styles/ChatMessage.css";
 import "../../../shared/components/styles/ChatInput.css";
-
+import './AIPanel.css';
 /**
  * ChatMessage - 개별 메시지 표시
  */
@@ -552,6 +552,7 @@ function AIPanelContent() {
   return (
     <div className="ai-panel">
       <PanelHeader
+        icon={<Bot size={16} />}
         title="AI Assistant"
         actions={
           messages.length > 0 && (

@@ -43,8 +43,8 @@
 }
 
 .panel-tab.active {
-  background: var(--color-primary-100);
-  color: var(--color-primary-700);
+  background: var(--primary);
+  color: var(--on-primary);
 }
 
 /* List Styles */

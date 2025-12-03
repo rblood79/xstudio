@@ -29,6 +29,7 @@ import {
   Factory,
 } from "lucide-react";
 import { useDataStore } from "../../../stores/data";
+import { SectionHeader } from "../../common/SectionHeader";
 import type { DataTablePreset, PresetCategory } from "../presets/types";
 import { PRESET_CATEGORIES } from "../presets/types";
 import { getPresetsByCategory } from "../presets/dataTablePresets";
@@ -178,7 +179,7 @@ export function DataTableCreator({
   return (
     <>
       {/* Content */}
-      <div className="section">
+      <div className="section" data-section-id="table-creator">
         {mode === "empty" ? (
           /* Empty Table Form */
           <div className="creator-empty-form">
@@ -241,53 +242,53 @@ export function DataTableCreator({
                 </button>
               ))}
             </div>
-
-            {/* Schema Preview */}
-            {selectedPreset && (
-              <div className="creator-preview">
-                <div className="creator-preview-header">
-                  <span className="creator-preview-title">
-                    {renderIcon(selectedPreset.icon, 16)}
-                    {selectedPreset.name} Schema
-                  </span>
-                  <div className="creator-sample-count">
-                    <label>샘플 데이터:</label>
-                    <input
-                      type="number"
-                      min="0"
-                      max="100"
-                      value={sampleCount}
-                      onChange={(e) =>
-                        setSampleCount(
-                          Math.max(
-                            0,
-                            Math.min(100, parseInt(e.target.value) || 0)
-                          )
-                        )
-                      }
-                    />
-                    <span>개</span>
-                  </div>
-                </div>
-                <div className="creator-preview-schema">
-                  {selectedPreset.schema.map((field) => (
-                    <div key={field.key} className="creator-schema-field">
-                      <span className="schema-field-name">
-                        {field.key}
-                        {field.required && (
-                          <span className="schema-field-required">*</span>
-                        )}
-                      </span>
-                      <span className="schema-field-type">{field.type}</span>
-                      <span className="schema-field-label">{field.label}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
           </>
         )}
       </div>
+
+      {/* Schema Preview - table-creator의 형제로 위치 */}
+      {mode === "preset" && selectedPreset && (
+        <div className="section" data-section-id="schema-preview">
+          <SectionHeader
+            icon={renderIcon(selectedPreset.icon, 16)}
+            title={`${selectedPreset.name} Schema`}
+            actions={
+              <div className="creator-sample-count">
+                <label htmlFor="sample-count">row count</label>
+                <input
+                  id="sample-count"
+                  aria-label="row count"
+                  aria-required="true"
+                  aria-invalid="false"  
+                  type="number"
+                  min="0"
+                  max="100"
+                  value={sampleCount}
+                  onChange={(e) =>
+                    setSampleCount(
+                      Math.max(0, Math.min(100, parseInt(e.target.value) || 0))
+                    )
+                  }
+                />
+              </div>
+            }
+          />
+          <div className="section-content">
+            {selectedPreset.schema.map((field) => (
+              <div key={field.key} className="creator-schema-field">
+                <span className="schema-field-name">
+                  {field.key}
+                  {field.required && (
+                    <span className="schema-field-required">*</span>
+                  )}
+                </span>
+                <span className="schema-field-type">{field.type}</span>
+                <span className="schema-field-label">{field.label}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Footer */}
       <div className="creator-footer">

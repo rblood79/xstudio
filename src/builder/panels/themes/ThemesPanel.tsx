@@ -7,7 +7,7 @@
 
 import { useParams } from 'react-router-dom';
 import { useMemo } from 'react';
-import { Palette } from 'lucide-react';
+import { Palette, SwatchBook } from 'lucide-react';
 import type { PanelProps } from '../core/types';
 import { useUnifiedThemeStore } from '../../../stores/themeStore';
 import {
@@ -17,6 +17,7 @@ import {
   EmptyState,
 } from '../common';
 import { Button } from '../../../shared/components';
+import './ThemesPanel.css';
 
 function ThemesContent() {
   const { projectId } = useParams<{ projectId: string }>();
@@ -77,8 +78,9 @@ function ThemesContent() {
 
   if (!activeTheme) {
     return (
-      <div className="inspector themes-panel">
+      <div className="themes-panel">
         <PanelHeader
+          icon={<SwatchBook size={16} />}
           title="Themes"
           actions={
             <Button
@@ -100,17 +102,16 @@ function ThemesContent() {
   }
 
   return (
-    <div className="inspector themes-panel">
+    <div className="themes-panel">
       <PanelHeader
+        icon={<SwatchBook size={16} />}
         title="Themes"
         actions={
           <Button
             size="sm"
-            variant="secondary"
             onPress={handleOpenThemeStudio}
           >
-            <Palette size={14} />
-            Open Theme Studio
+            <Palette size={16} />
           </Button>
         }
       />

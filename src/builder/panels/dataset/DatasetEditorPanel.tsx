@@ -18,6 +18,7 @@ import {
   Settings,
   Code,
   FileJson,
+  FileEdit,
   Play,
   Shield,
   X,
@@ -125,7 +126,7 @@ export function DatasetEditorPanel({ isActive }: PanelProps) {
   if (!mode) {
     return (
       <div className="dataset-editor-panel">
-        <PanelHeader title="Editor" />
+        <PanelHeader icon={<FileEdit size={16} />} title="Editor" />
         <div className="panel-contents">
           <EmptyState message="편집할 항목을 선택하세요" />
         </div>
@@ -343,6 +344,7 @@ export function DatasetEditorPanel({ isActive }: PanelProps) {
   return (
     <div className="dataset-editor-panel">
       <PanelHeader
+        icon={<FileEdit size={16} />}
         title={getHeaderTitle()}
         actions={
           <button

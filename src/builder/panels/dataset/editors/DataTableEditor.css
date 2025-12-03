@@ -74,17 +74,17 @@
   width: 100%;
   min-width: 80px;
   padding: var(--spacing-xs) var(--spacing-sm);
-  background: var(--color-surface-0);
-  border: 1px solid var(--color-border);
+  background: var(--surface-variant);
+  border: 1px solid transparent;
   border-radius: var(--radius-sm);
-  font-size: var(--text-sm);
-  color: var(--color-text-primary);
+  font-size: var(--text-xs);
+  color: var(--color-text);
   cursor: pointer;
 }
 
 .cell-select:focus {
   outline: none;
-  border-color: var(--color-primary-500);
+  border-color: var(--focus-ring-color);
   box-shadow: 0 0 0 2px var(--color-primary-100);
 }
 
@@ -109,11 +109,7 @@
 }
 
 /* Data Editor */
-.data-editor {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-md);
-}
+
 
 .data-empty {
   display: flex;
@@ -234,7 +230,8 @@
 
 .data-table-wrapper {
   overflow: auto;
-  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  border: 0px solid transparent;
   border-radius: var(--radius-md);
 }
 
@@ -247,16 +244,24 @@
 
 .data-table th,
 .data-table td {
-  padding: var(--spacing-sm);
+  padding: var(--spacing-xs);
   text-align: left;
-  border-bottom: 1px solid var(--color-border);
+  border: 1px solid var(--color-border);
+  
 }
 
 .data-table th {
-  background: var(--color-surface-100);
-  font-weight: 600;
-  color: var(--color-text-primary);
+  background: var(--color-surface);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-color);
   white-space: nowrap;
+  font-size: var(--text-sm);
+  padding: var(--spacing-xs) var(--spacing-sm);
+}
+
+.data-table .row-index {
+  min-width: 40px;
+  text-align: center;
 }
 
 .data-table tr:last-child td {
@@ -273,20 +278,24 @@
   width: 40px;
 }
 
+.data-table th.cell-center, .data-table td.cell-center {
+  text-align: center;
+}
+
 .cell-input {
   width: 100%;
   min-width: 80px;
   padding: var(--spacing-xs) var(--spacing-sm);
-  background: var(--color-surface-0);
-  border: 1px solid var(--color-border);
+  background: var(--surface-variant);
+  border: 1px solid transparent;
   border-radius: var(--radius-sm);
-  font-size: var(--text-sm);
-  color: var(--color-text-primary);
+  font-size: var(--text-xs);
+  color: var(--color-text);
 }
 
 .cell-input:focus {
   outline: none;
-  border-color: var(--color-primary-500);
+  border-color: var(--focus-ring-color);
   box-shadow: 0 0 0 2px var(--color-primary-100);
 }
 

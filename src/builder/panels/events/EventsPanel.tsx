@@ -26,7 +26,7 @@ import { useActions } from "../../events/state/useActions";
 import { useEventSelection } from "../../events/state/useEventSelection";
 import { ConditionEditor } from "../../events/components/ConditionEditor";
 import { DebounceThrottleEditor } from "../../events/components/DebounceThrottleEditor";
-import { ChevronLeft, Trash, CirclePlus, Zap } from "lucide-react";
+import { ChevronLeft, Trash, CirclePlus, Zap, SquareMousePointer } from "lucide-react";
 import { iconProps } from "../../../utils/ui/uiConstants";
 import { PanelHeader, PropertySection, EmptyState } from "../common";
 import { useInitialMountDetection } from "../../hooks/useInitialMountDetection";
@@ -48,7 +48,7 @@ export function EventsPanel({ isActive }: PanelProps) {
   if (!selectedElement) {
     return (
       <div className="events-panel">
-        <PanelHeader title="Events" />
+        <PanelHeader icon={<SquareMousePointer size={16} />} title="Events" />
         <div className="panel-contents">
           <EmptyState message="요소를 선택하세요" />
         </div>
@@ -169,6 +169,7 @@ function EventsPanelContent({
   return (
     <div className="events-panel">
       <PanelHeader
+        icon={<SquareMousePointer size={16} />}
         title="Events"
         actions={
           <EventTypePicker

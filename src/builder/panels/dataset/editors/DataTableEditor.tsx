@@ -314,27 +314,29 @@ function SchemaEditor({
   return (
     <div className="section">
       <div className="section-content">
-        <table className="data-table">
-          <thead>
-            <tr>
-              <th>Key</th>
-              <th>Type</th>
-              <th>Label</th>
-              <th>Req</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            {schema.map((field) => (
-              <SchemaFieldRow
-                key={field.key}
-                field={field}
-                onUpdateField={onUpdateField}
-                onDeleteField={onDeleteField}
-              />
-            ))}
-          </tbody>
-        </table>
+        <div className="data-table-wrapper">
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>Key</th>
+                <th>Type</th>
+                <th>Label</th>
+                <th>Req</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              {schema.map((field) => (
+                <SchemaFieldRow
+                  key={field.key}
+                  field={field}
+                  onUpdateField={onUpdateField}
+                  onDeleteField={onDeleteField}
+                />
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       <button type="button" className="add-field-btn" onClick={onAddField}>
@@ -452,113 +454,116 @@ function MockDataEditor({
   }
 
   return (
-    <div className="data-editor">
+    <div className="section">
       {/* Toolbar */}
-      <div className="data-toolbar">
-        {/* Filter */}
-        <div className="filter-input-wrapper">
-          <Search size={14} className="filter-icon" />
-          <input
-            type="text"
-            className="filter-input"
-            placeholder="Filter rows..."
-            value={filterText}
-            onChange={(e) => setFilterText(e.target.value)}
-          />
-          {filterText && (
+      <div className="section-content">
+        <div className="data-toolbar">
+          {/* Filter */}
+          <div className="filter-input-wrapper">
+            <Search size={14} className="filter-icon" />
+            <input
+              type="text"
+              className="filter-input"
+              placeholder="Filter rows..."
+              value={filterText}
+              onChange={(e) => setFilterText(e.target.value)}
+            />
+            {filterText && (
+              <button
+                type="button"
+                className="filter-clear-btn"
+                onClick={() => setFilterText("")}
+              >
+                <X size={12} />
+              </button>
+            )}
+          </div>
+
+          {/* Actions */}
+          <div className="toolbar-actions">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".csv"
+              onChange={handleFileSelect}
+              style={{ display: "none" }}
+            />
             <button
               type="button"
-              className="filter-clear-btn"
-              onClick={() => setFilterText("")}
+              className="toolbar-btn"
+              onClick={() => fileInputRef.current?.click()}
+              title="Import CSV"
             >
-              <X size={12} />
+              <Upload size={14} />
+              Import
             </button>
-          )}
+            <button
+              type="button"
+              className="toolbar-btn"
+              onClick={handleExportCSV}
+              disabled={mockData.length === 0}
+              title="Export CSV"
+            >
+              <Download size={14} />
+              Export
+            </button>
+          </div>
         </div>
 
-        {/* Actions */}
-        <div className="toolbar-actions">
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept=".csv"
-            onChange={handleFileSelect}
-            style={{ display: "none" }}
-          />
-          <button
-            type="button"
-            className="toolbar-btn"
-            onClick={() => fileInputRef.current?.click()}
-            title="Import CSV"
-          >
-            <Upload size={14} />
-            Import
-          </button>
-          <button
-            type="button"
-            className="toolbar-btn"
-            onClick={handleExportCSV}
-            disabled={mockData.length === 0}
-            title="Export CSV"
-          >
-            <Download size={14} />
-            Export
-          </button>
-        </div>
-      </div>
+        {/* Filter 결과 표시 */}
+        {filterText && (
+          <div className="filter-result-info">
+            {filteredData.length} / {mockData.length} rows
+          </div>
+        )}
 
-      {/* Filter 결과 표시 */}
-      {filterText && (
-        <div className="filter-result-info">
-          {filteredData.length} / {mockData.length} rows
-        </div>
-      )}
-
-      {/* Table */}
-      <div className="data-table-wrapper">
-        <table className="data-table">
-          <thead>
-            <tr>
-              <th>#</th>
-              {schema.map((field) => (
-                <th key={field.key}>{field.key}</th>
-              ))}
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredData.map(({ row, originalIndex }) => (
-              <tr key={originalIndex}>
-                <td className="row-index">{originalIndex + 1}</td>
+        {/* Table */}
+        <div className="data-table-wrapper">
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th className="row-index">#</th>
                 {schema.map((field) => (
-                  <td key={field.key}>
-                    <CellEditor
-                      key={`${originalIndex}-${field.key}-${JSON.stringify(
-                        row[field.key]
-                      )}`}
-                      fieldType={field.type}
-                      value={row[field.key]}
-                      onChange={(value) =>
-                        onUpdateCell(originalIndex, field.key, value)
-                      }
-                    />
-                  </td>
+                  <th key={field.key}>{field.key}</th>
                 ))}
-                <td>
-                  <button
-                    type="button"
-                    className="delete-row-btn"
-                    onClick={() => onDeleteRow(originalIndex)}
-                  >
-                    <Trash2 size={12} />
-                  </button>
-                </td>
+                <th></th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {filteredData.map(({ row, originalIndex }) => (
+                <tr key={originalIndex}>
+                  <td className="row-index">{originalIndex + 1}</td>
+                  {schema.map((field) => (
+                    <td key={field.key}>
+                      <CellEditor
+                        key={`${originalIndex}-${field.key}-${JSON.stringify(
+                          row[field.key]
+                        )}`}
+                        fieldType={field.type}
+                        value={row[field.key]}
+                        onChange={(value) =>
+                          onUpdateCell(originalIndex, field.key, value)
+                        }
+                      />
+                    </td>
+                  ))}
+                  <td>
+                    <button
+                      type="button"
+                      className="delete-row-btn"
+                      onClick={() => onDeleteRow(originalIndex)}
+                    >
+                      <Trash2 size={12} />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
 
+
+      </div>
       <button type="button" className="add-row-btn" onClick={onAddRow}>
         <Plus size={14} />
         Add Row
