@@ -139,13 +139,44 @@ export function useTreeExpandState(
 
   /**
    * selectedElementId 변경 시 자동으로 부모 펼치기
+   *
+   * 🚀 Phase 4 최적화: expandParents 의존성 제거
+   * - 기존: [selectedElementId, elements, expandParents] → expandParents가 elements 변경 시 재생성되어 불필요 실행
+   * - 개선: [selectedElementId, elements] → 직접 inline 로직으로 처리
    */
   useEffect(() => {
-    if (selectedElementId && elements.length > 0) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      expandParents(selectedElementId, elements);
+    if (!selectedElementId || elements.length === 0) return;
+
+    // 🚀 Inline parent-finding logic (O(n) Map 생성 + O(depth) 순회)
+    const elementsMap = new Map<string, Element>();
+    elements.forEach((el) => elementsMap.set(el.id, el));
+
+    const parentIds = new Set<string>();
+    let currentElement = elementsMap.get(selectedElementId);
+
+    // 부모 체인 순회
+    while (currentElement?.parent_id) {
+      parentIds.add(currentElement.parent_id);
+      currentElement = elementsMap.get(currentElement.parent_id);
     }
-  }, [selectedElementId, elements, expandParents]);
+
+    // 기존 expandedKeys에 부모 ID 추가
+    if (parentIds.size > 0) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setExpandedKeys((prev) => {
+        const newSet = new Set(prev);
+        let hasChanges = false;
+        parentIds.forEach((id) => {
+          if (!newSet.has(id)) {
+            newSet.add(id);
+            hasChanges = true;
+          }
+        });
+        // 변경이 없으면 이전 Set 반환 (불필요한 상태 업데이트 방지)
+        return hasChanges ? newSet : prev;
+      });
+    }
+  }, [selectedElementId, elements]); // ✅ expandParents 의존성 제거
 
   return {
     expandedKeys,

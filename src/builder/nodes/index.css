@@ -261,3 +261,72 @@
 .element[data-has-children="false"] .elementItemIcon svg {
   stroke: var(--on-surface-variant);
 }
+
+/* ========================================
+ * 🚀 VirtualizedTree - 가상화된 트리 스타일
+ * ======================================== */
+
+/* 가상화된 트리 컨테이너 */
+.virtualized-tree {
+  outline: none;
+
+  &:focus-visible {
+    outline: 2px solid var(--color-primary-500);
+    outline-offset: -2px;
+  }
+}
+
+.virtualized-tree-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-xl);
+}
+
+/* ♿ Keyboard Focus 상태 (ARIA) */
+.elementItem.focused {
+  outline: 2px solid var(--color-primary-400);
+  outline-offset: -2px;
+  background-color: var(--surface-container-high);
+}
+
+.elementItem.focused.active {
+  outline-color: var(--color-primary-600);
+}
+
+/* Focus visible 상태 (탭 키로 포커스 시) */
+.element[data-focused="true"] .elementItem {
+  outline: 2px solid var(--color-primary-400);
+  outline-offset: -2px;
+}
+
+.element[data-focused="true"] .elementItem.active {
+  outline-color: var(--color-primary-600);
+}
+
+/* ARIA role="treeitem" 스타일 */
+.element[role="treeitem"] {
+  /* 접근성: 포커스 가능하도록 outline 유지 */
+  &:focus-visible {
+    outline: none; /* .elementItem에서 처리 */
+  }
+}
+
+/* 트리 아이템 전환 애니메이션 */
+.element[role="treeitem"] .elementItemIcon svg {
+  transition: transform 150ms ease;
+}
+
+/* 선택 가능한 요소 시각적 피드백 */
+.element[role="treeitem"][aria-selected="true"] .elementItem {
+  background-color: var(--button-background-pressed);
+}
+
+/* 펼침/접기 상태 표시 */
+.element[role="treeitem"][aria-expanded="true"] .elementItemIcon svg[data-chevron] {
+  transform: rotate(90deg);
+}
+
+.element[role="treeitem"][aria-expanded="false"] .elementItemIcon svg[data-chevron] {
+  transform: rotate(0deg);
+}

@@ -7,7 +7,7 @@ import {
   Folder,
   File,
 } from "lucide-react";
-import { useStore } from "../stores";
+import { useStore, useCurrentPageElements } from "../stores";
 import { ElementProps } from "../../types/integrations/supabase.types";
 import { Element, Page } from "../../types/core/store.types"; // Page 타입도 추가
 import type { DataBinding } from "../../types/builder/unified.types";
@@ -52,8 +52,11 @@ export default function Sidebar({
   forcedActiveTabs,
   projectId,
 }: SidebarProps) {
-  // 메모이제이션 추가
-  const elements = useStore((state) => state.elements);
+  // 🚀 Performance Optimization: 선택적 selector 사용
+  // 기존: useStore((state) => state.elements) → 모든 요소 변경에 재렌더
+  // 개선: useCurrentPageElements() → 현재 페이지 요소만 구독
+  const currentPageElements = useCurrentPageElements();
+
   const currentPageId = useStore((state) => state.currentPageId);
   const selectedElementId = useStore(
     useCallback((state) => state.selectedElementId, [])
@@ -65,12 +68,6 @@ export default function Sidebar({
   // 활성 탭 상태 관리 (localStorage 연동) - forcedActiveTabs가 있으면 그것을 사용
   const { activeTabs: storedActiveTabs } = useSidebarTabs();
   const activeTabs = forcedActiveTabs || storedActiveTabs;
-
-  // 현재 페이지의 요소만 필터링
-  const currentPageElements = React.useMemo(() => {
-    if (!currentPageId) return [];
-    return elements.filter((el) => el.page_id === currentPageId);
-  }, [elements, currentPageId]);
   const [iconEditProps] = React.useState({
     color: "#171717",
     stroke: 1,
