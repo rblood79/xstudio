@@ -165,7 +165,7 @@ const ComponentItem = ({
   }, [component.tag, onAdd, selectedElementId]);
 
   return (
-    <div className="component-list-item">
+    <div className="list-item">
       <button onClick={handleClick} title={`Add ${component.label} element`}>
         <component.icon strokeWidth={1} width={16} height={16} />
         {isRecent && count > 0 && <Badge>{count}</Badge>}
@@ -396,7 +396,6 @@ const ComponentList = memo(
                       size={iconProps.size}
                     />
                   </button>
-                  
                 </div>
               </div>
               <div className="section-content">

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useCallback } from "react";
 import { CopyMinus } from "lucide-react"; // CopyMinus 추가
 import { ElementProps } from "../../types/integrations/supabase.types";
 import { Element } from "../../types/core/store.types"; // 통합된 타입 사용
@@ -6,7 +6,11 @@ import { useStore } from "../stores"; // useStore import 추가
 import { MessageService } from "../../utils/messaging"; // 메시징 서비스 추가
 import type { ElementTreeItem } from "../../types/builder/stately.types";
 import { buildTreeFromElements } from "../utils/treeUtils";
+import { VirtualizedLayerTree } from "../sidebar/VirtualizedLayerTree";
 import "./index.css";
+
+// 🚀 Performance: Virtual Scrolling 임계값 (이 수 이상이면 가상화 적용)
+const VIRTUALIZATION_THRESHOLD = 50;
 
 interface LayersProps {
   elements: Element[];
@@ -19,7 +23,14 @@ interface LayersProps {
     depth?: number
   ) => React.ReactNode;
   sendElementSelectedMessage: (id: string, props: ElementProps) => void;
-  collapseAllTreeItems?: () => void; // 새로운 props 추가
+  collapseAllTreeItems?: () => void;
+  /** 🚀 Performance: Virtual Scrolling용 props */
+  expandedKeys?: Set<string | number>;
+  onToggleExpand?: (key: string) => void;
+  selectedTab?: { parentId: string; tabIndex: number } | null;
+  onSelectTabElement?: (parentId: string, props: ElementProps, index: number) => void;
+  /** 가상 스크롤링 강제 사용 여부 */
+  forceVirtualization?: boolean;
 }
 
 export function Layers({
@@ -29,6 +40,11 @@ export function Layers({
   renderElementTree,
   sendElementSelectedMessage,
   collapseAllTreeItems,
+  expandedKeys,
+  onToggleExpand,
+  selectedTab,
+  onSelectTabElement,
+  forceVirtualization = false,
 }: LayersProps) {
   const { removeElement } = useStore(); // removeElement 함수 가져오기
 
@@ -36,6 +52,33 @@ export function Layers({
   const elementTree = React.useMemo(() => {
     return buildTreeFromElements(elements);
   }, [elements]);
+
+  // 🚀 Performance: 가상 스크롤링 사용 여부 결정
+  const useVirtualization = forceVirtualization || elements.length >= VIRTUALIZATION_THRESHOLD;
+  const hasVirtualizationProps = expandedKeys && onToggleExpand;
+
+  // 아이템 클릭 핸들러 (memoized)
+  const handleItemClick = useCallback(
+    (el: Element) => {
+      setSelectedElement(el.id, el.props as ElementProps);
+      requestAnimationFrame(() =>
+        sendElementSelectedMessage(el.id, el.props as ElementProps)
+      );
+    },
+    [setSelectedElement, sendElementSelectedMessage]
+  );
+
+  // 아이템 삭제 핸들러 (memoized)
+  const handleItemDelete = useCallback(
+    async (el: Element) => {
+      await removeElement(el.id);
+      if (el.id === selectedElementId) {
+        setSelectedElement(null);
+        MessageService.clearOverlay();
+      }
+    },
+    [removeElement, selectedElementId, setSelectedElement]
+  );
 
   return (
     <div className="sidebar_elements">
@@ -46,7 +89,6 @@ export function Layers({
             className="iconButton"
             aria-label="collapseAll"
             onClick={() => {
-              // collapseAllTreeItems 함수가 있으면 호출
               if (collapseAllTreeItems) {
                 collapseAllTreeItems();
               }
@@ -59,26 +101,26 @@ export function Layers({
       <div className="elements">
         {elements.length === 0 ? (
           <p className="no_element">No element available</p>
+        ) : useVirtualization && hasVirtualizationProps ? (
+          // 🚀 Performance: Virtual Scrolling 사용
+          <VirtualizedLayerTree
+            tree={elementTree}
+            expandedKeys={expandedKeys}
+            selectedElementId={selectedElementId}
+            selectedTab={selectedTab}
+            onItemClick={handleItemClick}
+            onItemDelete={handleItemDelete}
+            onToggleExpand={onToggleExpand}
+            onSelectTabElement={onSelectTabElement}
+            elements={elements}
+            containerHeight={400}
+          />
         ) : (
-          // Phase 3.2: hierarchical renderElementTree 사용
+          // 기존 renderElementTree 사용 (적은 요소 또는 가상화 props 없음)
           renderElementTree(
             elementTree,
-            (el) => {
-              setSelectedElement(el.id, el.props as ElementProps);
-              requestAnimationFrame(() =>
-                sendElementSelectedMessage(el.id, el.props as ElementProps)
-              );
-            },
-            async (el) => {
-              // removeElement 함수 사용 (Tab/Panel 쌍 삭제 로직 포함)
-              await removeElement(el.id);
-
-              // 선택된 요소가 삭제된 경우 선택 해제
-              if (el.id === selectedElementId) {
-                setSelectedElement(null);
-                MessageService.clearOverlay();
-              }
-            }
+            handleItemClick,
+            handleItemDelete
           )
         )}
       </div>

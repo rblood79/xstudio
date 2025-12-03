@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { create, type StoreApi, type UseBoundStore } from "zustand";
 import { createSelectionSlice, SelectionState } from "./selection";
 import { createElementsSlice, ElementsState } from "./elements";
@@ -95,13 +96,19 @@ export const usePages = () => useStore((state) => state.pages);
  * 🎯 최적화 효과:
  * - 다른 페이지의 요소 변경에 재렌더되지 않음
  * - Sidebar에서 전체 elements 대신 사용
+ *
+ * ⚠️ 중요: useMemo를 사용하여 필터링 결과를 캐시합니다.
+ * .filter()는 항상 새 배열을 반환하므로, useMemo 없이는 무한 루프가 발생합니다.
  */
-export const useCurrentPageElements = () =>
-  useStore((state) => {
-    const { elements, currentPageId } = state;
+export const useCurrentPageElements = () => {
+  const elements = useStore((state) => state.elements);
+  const currentPageId = useStore((state) => state.currentPageId);
+
+  return useMemo(() => {
     if (!currentPageId) return [];
     return elements.filter((el) => el.page_id === currentPageId);
-  });
+  }, [elements, currentPageId]);
+};
 
 /**
  * elementsMap을 활용한 O(1) 요소 조회 selector
@@ -123,13 +130,19 @@ export const useChildElements = (parentId: string | null) =>
 
 /**
  * 현재 페이지의 요소 개수만 반환 (가벼운 조회용)
+ *
+ * ⚠️ 참고: 이 selector는 primitive 값(number)을 반환하므로 useMemo가 필요 없습니다.
+ * Zustand는 primitive 값의 변경만 감지하여 재렌더합니다.
  */
-export const useCurrentPageElementCount = () =>
-  useStore((state) => {
-    const { elements, currentPageId } = state;
+export const useCurrentPageElementCount = () => {
+  const elements = useStore((state) => state.elements);
+  const currentPageId = useStore((state) => state.currentPageId);
+
+  return useMemo(() => {
     if (!currentPageId) return 0;
     return elements.filter((el) => el.page_id === currentPageId).length;
-  });
+  }, [elements, currentPageId]);
+};
 
 // 액션 선택기들
 // NOTE: These grouped selectors are intentional API exports for convenience.

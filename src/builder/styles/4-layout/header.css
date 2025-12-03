@@ -6,7 +6,6 @@
 
   /* App Root - Main Grid Layout */
   .app {
-    background-color: var(--surface-variant);
     height: 100vh;
     overflow: hidden;
     display: grid;
@@ -16,6 +15,7 @@
       "header header header"
       "sidebar main inspector"
       "footer footer footer";
+    background-color: var(--surface);
   }
 
   /* ========================================

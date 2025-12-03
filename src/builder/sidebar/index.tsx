@@ -1,4 +1,4 @@
-import React, { useCallback } from "react";
+import React, { useCallback, useMemo } from "react";
 import {
   Settings2,
   Trash,
@@ -21,6 +21,19 @@ import { useIframeMessenger } from "../hooks/useIframeMessenger";
 import { useTreeExpandState } from "../hooks/useTreeExpandState";
 import { useSidebarTabs } from "../hooks/useSidebarTabs";
 import type { ElementTreeItem } from "../../types/builder/stately.types";
+// 🚀 Performance: 헬퍼 함수 및 타입 외부 추출
+import {
+  hasChildren,
+  hasTag,
+  hasProps,
+  childrenAs,
+  ICON_EDIT_PROPS,
+  type ButtonItem,
+  type CheckboxItem,
+  type RadioItem,
+  type ListItem,
+  type TreeItem,
+} from "./treeHelpers";
 
 interface SidebarProps {
   pages: Page[];
@@ -68,68 +81,16 @@ export default function Sidebar({
   // 활성 탭 상태 관리 (localStorage 연동) - forcedActiveTabs가 있으면 그것을 사용
   const { activeTabs: storedActiveTabs } = useSidebarTabs();
   const activeTabs = forcedActiveTabs || storedActiveTabs;
-  const [iconEditProps] = React.useState({
-    color: "#171717",
-    stroke: 1,
-    size: 16,
-  });
 
+  // 🚀 Performance: 상수를 외부로 추출 (ICON_EDIT_PROPS)
   // React Stately 기반 트리 펼치기/접기 상태 관리
   const { expandedKeys, toggleKey, collapseAll } = useTreeExpandState({
     selectedElementId,
     elements: currentPageElements,
   });
 
-  // setElements는 Nodes 컴포넌트에서 더 이상 사용되지 않으므로 제거됨
-  // 필요시 storeSetElements를 직접 사용하거나, 다른 방식으로 관리
-
-  // toggleTab은 useSidebarTabs에서 제공
-
-  const hasChildren = <T extends { id: string; parent_id?: string | null }>(
-    items: T[],
-    itemId: string
-  ): boolean => {
-    return items.some((item) => item.parent_id === itemId);
-  };
-
   // toggleExpand 함수를 useTreeExpandState의 toggleKey로 교체
   const toggleExpand = toggleKey;
-
-  type ButtonItem = { id: string; title: string; isSelected?: boolean };
-  type CheckboxItem = { id: string; label: string; isSelected?: boolean };
-  type RadioItem = { id: string; label: string; value: string };
-  type ListItem = {
-    id: string;
-    label: string;
-    value?: string;
-    isDisabled?: boolean;
-  };
-  type TreeItem = {
-    id: string;
-    title: string;
-    type: "folder" | "file";
-    parent_id: string | null;
-    originalIndex: number;
-    children: TreeItem[];
-  };
-
-  type WithTag = { tag: string };
-  type WithProps = { props: ElementProps };
-
-  const hasTag = (x: unknown): x is WithTag =>
-    typeof x === "object" &&
-    x !== null &&
-    "tag" in x &&
-    typeof (x as Record<string, unknown>)["tag"] === "string";
-
-  const hasProps = (x: unknown): x is WithProps => {
-    if (typeof x !== "object" || x === null || !("props" in x)) return false;
-    const p = (x as { props?: unknown }).props;
-    return typeof p === "object" && p !== null;
-  };
-
-  const childrenAs = <C,>(v: unknown): C[] =>
-    Array.isArray(v) ? (v as C[]) : [];
 
   // Table 구조를 특별히 렌더링하는 함수
   // Phase 2.4 최적화: 단일 패스로 5회 순회 → 1회 순회
@@ -217,9 +178,9 @@ export default function Sidebar({
             >
               {columnGroups.length > 0 || columns.length > 0 ? (
                 <ChevronRight
-                  color={iconEditProps.color}
-                  strokeWidth={iconEditProps.stroke}
-                  size={iconEditProps.size}
+                  color={ICON_EDIT_PROPS.color}
+                  strokeWidth={ICON_EDIT_PROPS.stroke}
+                  size={ICON_EDIT_PROPS.size}
                   style={{
                     transform: expandedKeys.has(tableHeader.id)
                       ? "rotate(90deg)"
@@ -228,9 +189,9 @@ export default function Sidebar({
                 />
               ) : (
                 <Box
-                  color={iconEditProps.color}
-                  strokeWidth={iconEditProps.stroke}
-                  size={iconEditProps.size}
+                  color={ICON_EDIT_PROPS.color}
+                  strokeWidth={ICON_EDIT_PROPS.stroke}
+                  size={ICON_EDIT_PROPS.size}
                   style={{ padding: "2px" }}
                 />
               )}
@@ -239,9 +200,9 @@ export default function Sidebar({
             <div className="elementItemActions">
               <button className="iconButton" aria-label="Settings">
                 <Settings2
-                  color={iconEditProps.color}
-                  strokeWidth={iconEditProps.stroke}
-                  size={iconEditProps.size}
+                  color={ICON_EDIT_PROPS.color}
+                  strokeWidth={ICON_EDIT_PROPS.stroke}
+                  size={ICON_EDIT_PROPS.size}
                 />
               </button>
               <button
@@ -253,9 +214,9 @@ export default function Sidebar({
                 }}
               >
                 <Trash
-                  color={iconEditProps.color}
-                  strokeWidth={iconEditProps.stroke}
-                  size={iconEditProps.size}
+                  color={ICON_EDIT_PROPS.color}
+                  strokeWidth={ICON_EDIT_PROPS.stroke}
+                  size={ICON_EDIT_PROPS.size}
                 />
               </button>
             </div>
@@ -287,9 +248,9 @@ export default function Sidebar({
               >
                 {columnGroups.length > 0 ? (
                   <ChevronRight
-                    color={iconEditProps.color}
-                    strokeWidth={iconEditProps.stroke}
-                    size={iconEditProps.size}
+                    color={ICON_EDIT_PROPS.color}
+                    strokeWidth={ICON_EDIT_PROPS.stroke}
+                    size={ICON_EDIT_PROPS.size}
                     style={{
                       transform: expandedKeys.has(
                         `column-groups-${tableHeader.id}`
@@ -300,9 +261,9 @@ export default function Sidebar({
                   />
                 ) : (
                   <Box
-                    color={iconEditProps.color}
-                    strokeWidth={iconEditProps.stroke}
-                    size={iconEditProps.size}
+                    color={ICON_EDIT_PROPS.color}
+                    strokeWidth={ICON_EDIT_PROPS.stroke}
+                    size={ICON_EDIT_PROPS.size}
                     style={{ padding: "2px" }}
                   />
                 )}
@@ -336,9 +297,9 @@ export default function Sidebar({
                 ></div>
                 <div className="elementItemIcon">
                   <Box
-                    color={iconEditProps.color}
-                    strokeWidth={iconEditProps.stroke}
-                    size={iconEditProps.size}
+                    color={ICON_EDIT_PROPS.color}
+                    strokeWidth={ICON_EDIT_PROPS.stroke}
+                    size={ICON_EDIT_PROPS.size}
                     style={{ padding: "2px" }}
                   />
                 </div>
@@ -350,9 +311,9 @@ export default function Sidebar({
                 <div className="elementItemActions">
                   <button className="iconButton" aria-label="Settings">
                     <Settings2
-                      color={iconEditProps.color}
-                      strokeWidth={iconEditProps.stroke}
-                      size={iconEditProps.size}
+                      color={ICON_EDIT_PROPS.color}
+                      strokeWidth={ICON_EDIT_PROPS.stroke}
+                      size={ICON_EDIT_PROPS.size}
                     />
                   </button>
                   <button
@@ -364,9 +325,9 @@ export default function Sidebar({
                     }}
                   >
                     <Trash
-                      color={iconEditProps.color}
-                      strokeWidth={iconEditProps.stroke}
-                      size={iconEditProps.size}
+                      color={ICON_EDIT_PROPS.color}
+                      strokeWidth={ICON_EDIT_PROPS.stroke}
+                      size={ICON_EDIT_PROPS.size}
                     />
                   </button>
                 </div>
@@ -399,9 +360,9 @@ export default function Sidebar({
               >
                 {columns.length > 0 ? (
                   <ChevronRight
-                    color={iconEditProps.color}
-                    strokeWidth={iconEditProps.stroke}
-                    size={iconEditProps.size}
+                    color={ICON_EDIT_PROPS.color}
+                    strokeWidth={ICON_EDIT_PROPS.stroke}
+                    size={ICON_EDIT_PROPS.size}
                     style={{
                       transform: expandedKeys.has(
                         `individual-columns-${tableHeader.id}`
@@ -412,9 +373,9 @@ export default function Sidebar({
                   />
                 ) : (
                   <Box
-                    color={iconEditProps.color}
-                    strokeWidth={iconEditProps.stroke}
-                    size={iconEditProps.size}
+                    color={ICON_EDIT_PROPS.color}
+                    strokeWidth={ICON_EDIT_PROPS.stroke}
+                    size={ICON_EDIT_PROPS.size}
                     style={{ padding: "2px" }}
                   />
                 )}
@@ -448,9 +409,9 @@ export default function Sidebar({
                 ></div>
                 <div className="elementItemIcon">
                   <Box
-                    color={iconEditProps.color}
-                    strokeWidth={iconEditProps.stroke}
-                    size={iconEditProps.size}
+                    color={ICON_EDIT_PROPS.color}
+                    strokeWidth={ICON_EDIT_PROPS.stroke}
+                    size={ICON_EDIT_PROPS.size}
                     style={{ padding: "2px" }}
                   />
                 </div>
@@ -462,9 +423,9 @@ export default function Sidebar({
                 <div className="elementItemActions">
                   <button className="iconButton" aria-label="Settings">
                     <Settings2
-                      color={iconEditProps.color}
-                      strokeWidth={iconEditProps.stroke}
-                      size={iconEditProps.size}
+                      color={ICON_EDIT_PROPS.color}
+                      strokeWidth={ICON_EDIT_PROPS.stroke}
+                      size={ICON_EDIT_PROPS.size}
                     />
                   </button>
                   <button
@@ -476,9 +437,9 @@ export default function Sidebar({
                     }}
                   >
                     <Trash
-                      color={iconEditProps.color}
-                      strokeWidth={iconEditProps.stroke}
-                      size={iconEditProps.size}
+                      color={ICON_EDIT_PROPS.color}
+                      strokeWidth={ICON_EDIT_PROPS.stroke}
+                      size={ICON_EDIT_PROPS.size}
                     />
                   </button>
                 </div>
@@ -782,9 +743,9 @@ export default function Sidebar({
                 >
                   {hasAnyChildren ? (
                     <ChevronRight
-                      color={iconEditProps.color}
-                      strokeWidth={iconEditProps.stroke}
-                      size={iconEditProps.size}
+                      color={ICON_EDIT_PROPS.color}
+                      strokeWidth={ICON_EDIT_PROPS.stroke}
+                      size={ICON_EDIT_PROPS.size}
                       style={{
                         transform: isExpanded
                           ? "rotate(90deg)"
@@ -793,9 +754,9 @@ export default function Sidebar({
                     />
                   ) : (
                     <Box
-                      color={iconEditProps.color}
-                      strokeWidth={iconEditProps.stroke}
-                      size={iconEditProps.size}
+                      color={ICON_EDIT_PROPS.color}
+                      strokeWidth={ICON_EDIT_PROPS.stroke}
+                      size={ICON_EDIT_PROPS.size}
                       style={{ padding: "2px" }}
                     />
                   )}
@@ -821,9 +782,9 @@ export default function Sidebar({
                 <div className="elementItemActions">
                   <button className="iconButton" aria-label="Settings">
                     <Settings2
-                      color={iconEditProps.color}
-                      strokeWidth={iconEditProps.stroke}
-                      size={iconEditProps.size}
+                      color={ICON_EDIT_PROPS.color}
+                      strokeWidth={ICON_EDIT_PROPS.stroke}
+                      size={ICON_EDIT_PROPS.size}
                     />
                   </button>
                   {/* body 요소 또는 루트 Home 페이지가 아닐 때만 삭제 버튼 표시 */}
@@ -840,9 +801,9 @@ export default function Sidebar({
                       }}
                     >
                       <Trash
-                        color={iconEditProps.color}
-                        strokeWidth={iconEditProps.stroke}
-                        size={iconEditProps.size}
+                        color={ICON_EDIT_PROPS.color}
+                        strokeWidth={ICON_EDIT_PROPS.stroke}
+                        size={ICON_EDIT_PROPS.size}
                       />
                     </button>
                   )}
@@ -911,9 +872,9 @@ export default function Sidebar({
                               ></div>
                               <div className="elementItemIcon">
                                 <Box
-                                  color={iconEditProps.color}
-                                  strokeWidth={iconEditProps.stroke}
-                                  size={iconEditProps.size}
+                                  color={ICON_EDIT_PROPS.color}
+                                  strokeWidth={ICON_EDIT_PROPS.stroke}
+                                  size={ICON_EDIT_PROPS.size}
                                   style={{ padding: "2px" }}
                                 />
                               </div>
@@ -961,9 +922,9 @@ export default function Sidebar({
                               ></div>
                               <div className="elementItemIcon">
                                 <Box
-                                  color={iconEditProps.color}
-                                  strokeWidth={iconEditProps.stroke}
-                                  size={iconEditProps.size}
+                                  color={ICON_EDIT_PROPS.color}
+                                  strokeWidth={ICON_EDIT_PROPS.stroke}
+                                  size={ICON_EDIT_PROPS.size}
                                   style={{ padding: "2px" }}
                                 />
                               </div>
@@ -1011,9 +972,9 @@ export default function Sidebar({
                               ></div>
                               <div className="elementItemIcon">
                                 <Box
-                                  color={iconEditProps.color}
-                                  strokeWidth={iconEditProps.stroke}
-                                  size={iconEditProps.size}
+                                  color={ICON_EDIT_PROPS.color}
+                                  strokeWidth={ICON_EDIT_PROPS.stroke}
+                                  size={ICON_EDIT_PROPS.size}
                                   style={{ padding: "2px" }}
                                 />
                               </div>
@@ -1061,9 +1022,9 @@ export default function Sidebar({
                               ></div>
                               <div className="elementItemIcon">
                                 <Box
-                                  color={iconEditProps.color}
-                                  strokeWidth={iconEditProps.stroke}
-                                  size={iconEditProps.size}
+                                  color={ICON_EDIT_PROPS.color}
+                                  strokeWidth={ICON_EDIT_PROPS.stroke}
+                                  size={ICON_EDIT_PROPS.size}
                                   style={{ padding: "2px" }}
                                 />
                               </div>
@@ -1111,9 +1072,9 @@ export default function Sidebar({
                               ></div>
                               <div className="elementItemIcon">
                                 <Box
-                                  color={iconEditProps.color}
-                                  strokeWidth={iconEditProps.stroke}
-                                  size={iconEditProps.size}
+                                  color={ICON_EDIT_PROPS.color}
+                                  strokeWidth={ICON_EDIT_PROPS.stroke}
+                                  size={ICON_EDIT_PROPS.size}
                                   style={{ padding: "2px" }}
                                 />
                               </div>
@@ -1161,9 +1122,9 @@ export default function Sidebar({
                               ></div>
                               <div className="elementItemIcon">
                                 <Box
-                                  color={iconEditProps.color}
-                                  strokeWidth={iconEditProps.stroke}
-                                  size={iconEditProps.size}
+                                  color={ICON_EDIT_PROPS.color}
+                                  strokeWidth={ICON_EDIT_PROPS.stroke}
+                                  size={ICON_EDIT_PROPS.size}
                                   style={{ padding: "2px" }}
                                 />
                               </div>
@@ -1211,9 +1172,9 @@ export default function Sidebar({
                               ></div>
                               <div className="elementItemIcon">
                                 <Box
-                                  color={iconEditProps.color}
-                                  strokeWidth={iconEditProps.stroke}
-                                  size={iconEditProps.size}
+                                  color={ICON_EDIT_PROPS.color}
+                                  strokeWidth={ICON_EDIT_PROPS.stroke}
+                                  size={ICON_EDIT_PROPS.size}
                                   style={{ padding: "2px" }}
                                 />
                               </div>
@@ -1265,15 +1226,15 @@ export default function Sidebar({
                                 {treeItem.children &&
                                 treeItem.children.length > 0 ? (
                                   <Folder
-                                    color={iconEditProps.color}
-                                    strokeWidth={iconEditProps.stroke}
-                                    size={iconEditProps.size}
+                                    color={ICON_EDIT_PROPS.color}
+                                    strokeWidth={ICON_EDIT_PROPS.stroke}
+                                    size={ICON_EDIT_PROPS.size}
                                   />
                                 ) : (
                                   <File
-                                    color={iconEditProps.color}
-                                    strokeWidth={iconEditProps.stroke}
-                                    size={iconEditProps.size}
+                                    color={ICON_EDIT_PROPS.color}
+                                    strokeWidth={ICON_EDIT_PROPS.stroke}
+                                    size={ICON_EDIT_PROPS.size}
                                   />
                                 )}
                               </div>
@@ -1311,9 +1272,9 @@ export default function Sidebar({
                                           ></div>
                                           <div className="elementItemIcon">
                                             <File
-                                              color={iconEditProps.color}
-                                              strokeWidth={iconEditProps.stroke}
-                                              size={iconEditProps.size}
+                                              color={ICON_EDIT_PROPS.color}
+                                              strokeWidth={ICON_EDIT_PROPS.stroke}
+                                              size={ICON_EDIT_PROPS.size}
                                             />
                                           </div>
                                           <div className="elementItemLabel">
@@ -1462,9 +1423,9 @@ export default function Sidebar({
                 >
                   {hasAnyChildren ? (
                     <ChevronRight
-                      color={iconEditProps.color}
-                      strokeWidth={iconEditProps.stroke}
-                      size={iconEditProps.size}
+                      color={ICON_EDIT_PROPS.color}
+                      strokeWidth={ICON_EDIT_PROPS.stroke}
+                      size={ICON_EDIT_PROPS.size}
                       style={{
                         transform: isExpanded
                           ? "rotate(90deg)"
@@ -1473,9 +1434,9 @@ export default function Sidebar({
                     />
                   ) : (
                     <Box
-                      color={iconEditProps.color}
-                      strokeWidth={iconEditProps.stroke}
-                      size={iconEditProps.size}
+                      color={ICON_EDIT_PROPS.color}
+                      strokeWidth={ICON_EDIT_PROPS.stroke}
+                      size={ICON_EDIT_PROPS.size}
                       style={{ padding: "2px" }}
                     />
                   )}
@@ -1503,9 +1464,9 @@ export default function Sidebar({
                 <div className="elementItemActions">
                   <button className="iconButton" aria-label="Settings">
                     <Settings2
-                      color={iconEditProps.color}
-                      strokeWidth={iconEditProps.stroke}
-                      size={iconEditProps.size}
+                      color={ICON_EDIT_PROPS.color}
+                      strokeWidth={ICON_EDIT_PROPS.stroke}
+                      size={ICON_EDIT_PROPS.size}
                     />
                   </button>
                   {/* body 요소가 아닐 때만 삭제 버튼 표시 */}
@@ -1519,9 +1480,9 @@ export default function Sidebar({
                       }}
                     >
                       <Trash
-                        color={iconEditProps.color}
-                        strokeWidth={iconEditProps.stroke}
-                        size={iconEditProps.size}
+                        color={ICON_EDIT_PROPS.color}
+                        strokeWidth={ICON_EDIT_PROPS.stroke}
+                        size={ICON_EDIT_PROPS.size}
                       />
                     </button>
                   )}
@@ -1636,9 +1597,9 @@ export default function Sidebar({
                               ></div>
                               <div className="elementItemIcon">
                                 <Box
-                                  color={iconEditProps.color}
-                                  strokeWidth={iconEditProps.stroke}
-                                  size={iconEditProps.size}
+                                  color={ICON_EDIT_PROPS.color}
+                                  strokeWidth={ICON_EDIT_PROPS.stroke}
+                                  size={ICON_EDIT_PROPS.size}
                                   style={{ padding: "2px" }}
                                 />
                               </div>
@@ -1686,9 +1647,9 @@ export default function Sidebar({
                               ></div>
                               <div className="elementItemIcon">
                                 <Box
-                                  color={iconEditProps.color}
-                                  strokeWidth={iconEditProps.stroke}
-                                  size={iconEditProps.size}
+                                  color={ICON_EDIT_PROPS.color}
+                                  strokeWidth={ICON_EDIT_PROPS.stroke}
+                                  size={ICON_EDIT_PROPS.size}
                                   style={{ padding: "2px" }}
                                 />
                               </div>
@@ -1736,9 +1697,9 @@ export default function Sidebar({
                               ></div>
                               <div className="elementItemIcon">
                                 <Box
-                                  color={iconEditProps.color}
-                                  strokeWidth={iconEditProps.stroke}
-                                  size={iconEditProps.size}
+                                  color={ICON_EDIT_PROPS.color}
+                                  strokeWidth={ICON_EDIT_PROPS.stroke}
+                                  size={ICON_EDIT_PROPS.size}
                                   style={{ padding: "2px" }}
                                 />
                               </div>
@@ -1786,9 +1747,9 @@ export default function Sidebar({
                               ></div>
                               <div className="elementItemIcon">
                                 <Box
-                                  color={iconEditProps.color}
-                                  strokeWidth={iconEditProps.stroke}
-                                  size={iconEditProps.size}
+                                  color={ICON_EDIT_PROPS.color}
+                                  strokeWidth={ICON_EDIT_PROPS.stroke}
+                                  size={ICON_EDIT_PROPS.size}
                                   style={{ padding: "2px" }}
                                 />
                               </div>
@@ -1836,9 +1797,9 @@ export default function Sidebar({
                               ></div>
                               <div className="elementItemIcon">
                                 <Box
-                                  color={iconEditProps.color}
-                                  strokeWidth={iconEditProps.stroke}
-                                  size={iconEditProps.size}
+                                  color={ICON_EDIT_PROPS.color}
+                                  strokeWidth={ICON_EDIT_PROPS.stroke}
+                                  size={ICON_EDIT_PROPS.size}
                                   style={{ padding: "2px" }}
                                 />
                               </div>
@@ -1886,9 +1847,9 @@ export default function Sidebar({
                               ></div>
                               <div className="elementItemIcon">
                                 <Box
-                                  color={iconEditProps.color}
-                                  strokeWidth={iconEditProps.stroke}
-                                  size={iconEditProps.size}
+                                  color={ICON_EDIT_PROPS.color}
+                                  strokeWidth={ICON_EDIT_PROPS.stroke}
+                                  size={ICON_EDIT_PROPS.size}
                                   style={{ padding: "2px" }}
                                 />
                               </div>
@@ -1936,9 +1897,9 @@ export default function Sidebar({
                               ></div>
                               <div className="elementItemIcon">
                                 <Box
-                                  color={iconEditProps.color}
-                                  strokeWidth={iconEditProps.stroke}
-                                  size={iconEditProps.size}
+                                  color={ICON_EDIT_PROPS.color}
+                                  strokeWidth={ICON_EDIT_PROPS.stroke}
+                                  size={ICON_EDIT_PROPS.size}
                                   style={{ padding: "2px" }}
                                 />
                               </div>
@@ -1990,15 +1951,15 @@ export default function Sidebar({
                                 {treeItem.children &&
                                 treeItem.children.length > 0 ? (
                                   <Folder
-                                    color={iconEditProps.color}
-                                    strokeWidth={iconEditProps.stroke}
-                                    size={iconEditProps.size}
+                                    color={ICON_EDIT_PROPS.color}
+                                    strokeWidth={ICON_EDIT_PROPS.stroke}
+                                    size={ICON_EDIT_PROPS.size}
                                   />
                                 ) : (
                                   <File
-                                    color={iconEditProps.color}
-                                    strokeWidth={iconEditProps.stroke}
-                                    size={iconEditProps.size}
+                                    color={ICON_EDIT_PROPS.color}
+                                    strokeWidth={ICON_EDIT_PROPS.stroke}
+                                    size={ICON_EDIT_PROPS.size}
                                   />
                                 )}
                               </div>
@@ -2036,9 +1997,9 @@ export default function Sidebar({
                                           ></div>
                                           <div className="elementItemIcon">
                                             <File
-                                              color={iconEditProps.color}
-                                              strokeWidth={iconEditProps.stroke}
-                                              size={iconEditProps.size}
+                                              color={ICON_EDIT_PROPS.color}
+                                              strokeWidth={ICON_EDIT_PROPS.stroke}
+                                              size={ICON_EDIT_PROPS.size}
                                             />
                                           </div>
                                           <div className="elementItemLabel">
@@ -2094,6 +2055,10 @@ export default function Sidebar({
             requestAutoSelectAfterUpdate={requestAutoSelectAfterUpdate}
             collapseAllTreeItems={collapseAllTreeItems}
             projectId={projectId}
+            expandedKeys={expandedKeys}
+            onToggleExpand={toggleExpand}
+            selectedTab={selectedTab}
+            onSelectTabElement={selectTabElement}
           />
         </div>
       );

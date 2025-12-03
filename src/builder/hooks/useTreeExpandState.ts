@@ -3,11 +3,14 @@
  *
  * React Stately 기반 트리 확장 상태 관리 훅
  * Sidebar Layer Tree의 펼치기/접기 로직을 캡슐화
+ *
+ * 🚀 Performance: Store의 elementsMap 재사용으로 O(n) Map 생성 제거
  */
 
 import { useState, useCallback, useEffect } from 'react';
 import type { Key } from 'react-stately';
 import type { Element } from '../../types/core/store.types';
+import { useStore } from '../stores';
 
 export interface UseTreeExpandStateOptions {
   /** 초기 펼쳐진 키 */
@@ -58,6 +61,9 @@ export function useTreeExpandState(
   options: UseTreeExpandStateOptions = {}
 ): UseTreeExpandStateResult {
   const { initialExpandedKeys, selectedElementId, elements = [] } = options;
+
+  // 🚀 Performance: Store의 elementsMap 재사용 (O(n) Map 생성 제거)
+  const storeElementsMap = useStore((state) => state.elementsMap);
 
   const [expandedKeys, setExpandedKeys] = useState<Set<Key>>(
     initialExpandedKeys || new Set()
@@ -111,20 +117,17 @@ export function useTreeExpandState(
 
   /**
    * 선택된 요소의 모든 부모 자동 펼치기
-   * Phase 2.3 최적화: Map 기반 조회로 O(depth × n) → O(depth)
+   * 🚀 Phase 2.3 최적화: Store의 elementsMap 재사용으로 O(n) Map 생성 제거
    */
-  const expandParents = useCallback((elementId: string, allElements: Element[]) => {
-    // O(n): elementsMap 생성
-    const elementsMap = new Map<string, Element>();
-    allElements.forEach((el) => elementsMap.set(el.id, el));
-
+  const expandParents = useCallback((elementId: string, _allElements: Element[]) => {
+    // 🚀 Store의 elementsMap 재사용 (O(1) 조회)
     const parentIds = new Set<string>();
-    let currentElement = elementsMap.get(elementId); // O(1)
+    let currentElement = storeElementsMap.get(elementId);
 
     // 부모 체인 순회 (O(depth))
     while (currentElement?.parent_id) {
       parentIds.add(currentElement.parent_id);
-      currentElement = elementsMap.get(currentElement.parent_id); // O(1)
+      currentElement = storeElementsMap.get(currentElement.parent_id);
     }
 
     // 기존 expandedKeys에 부모 ID 추가
@@ -135,29 +138,26 @@ export function useTreeExpandState(
         return newSet;
       });
     }
-  }, []);
+  }, [storeElementsMap]);
 
   /**
    * selectedElementId 변경 시 자동으로 부모 펼치기
    *
-   * 🚀 Phase 4 최적화: expandParents 의존성 제거
-   * - 기존: [selectedElementId, elements, expandParents] → expandParents가 elements 변경 시 재생성되어 불필요 실행
-   * - 개선: [selectedElementId, elements] → 직접 inline 로직으로 처리
+   * 🚀 Phase 4 최적화: Store의 elementsMap 재사용
+   * - 기존: O(n) Map 생성 매번 실행
+   * - 개선: Store의 elementsMap 재사용으로 O(1) 조회
    */
   useEffect(() => {
     if (!selectedElementId || elements.length === 0) return;
 
-    // 🚀 Inline parent-finding logic (O(n) Map 생성 + O(depth) 순회)
-    const elementsMap = new Map<string, Element>();
-    elements.forEach((el) => elementsMap.set(el.id, el));
-
+    // 🚀 Store의 elementsMap 재사용 (O(1) 조회)
     const parentIds = new Set<string>();
-    let currentElement = elementsMap.get(selectedElementId);
+    let currentElement = storeElementsMap.get(selectedElementId);
 
-    // 부모 체인 순회
+    // 부모 체인 순회 (O(depth))
     while (currentElement?.parent_id) {
       parentIds.add(currentElement.parent_id);
-      currentElement = elementsMap.get(currentElement.parent_id);
+      currentElement = storeElementsMap.get(currentElement.parent_id);
     }
 
     // 기존 expandedKeys에 부모 ID 추가
@@ -176,7 +176,7 @@ export function useTreeExpandState(
         return hasChanges ? newSet : prev;
       });
     }
-  }, [selectedElementId, elements]); // ✅ expandParents 의존성 제거
+  }, [selectedElementId, elements.length, storeElementsMap]); // ✅ storeElementsMap 사용
 
   return {
     expandedKeys,

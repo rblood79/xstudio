@@ -45,6 +45,11 @@ interface NodesPanelProps {
   requestAutoSelectAfterUpdate: (elementId: string) => void; // ⭐ ACK 기반 auto-select
   collapseAllTreeItems?: () => void;
   projectId?: string; // Layout/Slot System용 projectId
+  /** 🚀 Performance: Virtual Scrolling용 props */
+  expandedKeys?: Set<string | number>;
+  onToggleExpand?: (key: string) => void;
+  selectedTab?: { parentId: string; tabIndex: number } | null;
+  onSelectTabElement?: (parentId: string, props: ElementProps, index: number) => void;
 }
 
 export function NodesPanel({
@@ -62,6 +67,10 @@ export function NodesPanel({
   requestAutoSelectAfterUpdate,
   collapseAllTreeItems,
   projectId,
+  expandedKeys,
+  onToggleExpand,
+  selectedTab,
+  onSelectTabElement,
 }: NodesPanelProps) {
   // Edit Mode 상태
   const editMode = useEditModeStore((state) => state.mode);
@@ -109,6 +118,10 @@ export function NodesPanel({
           sendElementSelectedMessage={sendElementSelectedMessage}
           requestAutoSelectAfterUpdate={requestAutoSelectAfterUpdate}
           collapseAllTreeItems={collapseAllTreeItems}
+          expandedKeys={expandedKeys}
+          onToggleExpand={onToggleExpand}
+          selectedTab={selectedTab}
+          onSelectTabElement={onSelectTabElement}
         />
       );
     }
@@ -138,6 +151,10 @@ export function NodesPanel({
     sendElementSelectedMessage,
     requestAutoSelectAfterUpdate,
     collapseAllTreeItems,
+    expandedKeys,
+    onToggleExpand,
+    selectedTab,
+    onSelectTabElement,
   ]);
 
   return (
