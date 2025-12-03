@@ -126,13 +126,13 @@ export const LayoutPresetSelector = memo(function LayoutPresetSelector({
         const CategoryIcon = CATEGORY_ICONS[categoryKey] || Layout;
 
         return (
-          <div key={categoryKey} className="preset-category">
-            <div className="preset-category-header">
-              <CategoryIcon size={14} className="category-icon" />
-              <span className="category-label">{meta.label}</span>
+          <div key={categoryKey} className="list-subgroup">
+            <div className="list-subgroup-header">
+              <CategoryIcon size={14} className="list-subgroup-icon" />
+              <span className="list-subgroup-title">{meta.label}</span>
             </div>
 
-            <div className="preset-grid">
+            <div className="list-group" role="list">
               {presetKeys.map((presetKey) => {
                 const preset = LAYOUT_PRESETS[presetKey];
                 if (!preset) return null;
@@ -144,7 +144,7 @@ export const LayoutPresetSelector = memo(function LayoutPresetSelector({
                   <Button
                     key={presetKey}
                     variant="default"
-                    className={`preset-item ${isSelected ? "selected" : ""} ${isApplied ? "applied" : ""}`}
+                    className={`list-item preset-card ${isSelected ? "selected" : ""} ${isApplied ? "applied" : ""}`}
                     onPress={() => handlePresetClick(presetKey)}
                     isDisabled={isApplying}
                   >
@@ -153,8 +153,8 @@ export const LayoutPresetSelector = memo(function LayoutPresetSelector({
                       width={80}
                       height={60}
                     />
-                    <span className="preset-name">{preset.name}</span>
-                    {isApplied && <span className="preset-applied-badge">적용됨</span>}
+                    <span className="list-item-name">{preset.name}</span>
+                    {isApplied && <span className="list-item-badge applied">적용됨</span>}
                   </Button>
                 );
               })}

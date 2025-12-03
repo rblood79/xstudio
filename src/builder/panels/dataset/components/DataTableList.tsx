@@ -68,29 +68,30 @@ export function DataTableList({
             </p>
           </div>
         ) : (
-          <div className="dataset-list">
+          <div className="list-group" role="list">
             {dataTables.map((table) => (
               <div
                 key={table.id}
-                className={`dataset-item ${editingId === table.id ? "selected" : ""}`}
+                role="listitem"
+                className={`list-item-card ${editingId === table.id ? "selected" : ""}`}
                 onClick={() => onEditingChange(table.id)}
               >
-                <div className="dataset-item-icon">
+                <div className="list-item-icon">
                   <Table2 size={16} />
                 </div>
-                <div className="dataset-item-info">
-                  <div className="dataset-item-name">{table.name}</div>
-                  <div className="dataset-item-meta">
+                <div className="list-item-content">
+                  <div className="list-item-name">{table.name}</div>
+                  <div className="list-item-meta">
                     {table.schema.length}개 필드 ·{" "}
                     {table.mockData?.length || 0}개 행
                   </div>
                 </div>
                 <span
-                  className={`dataset-badge ${table.useMockData ? "mock" : "live"}`}
+                  className={`list-item-badge ${table.useMockData ? "mock" : "live"}`}
                 >
                   {table.useMockData ? "Mock" : "Live"}
                 </span>
-                <div className="dataset-item-actions">
+                <div className="list-item-actions">
                   <button
                     type="button"
                     className="iconButton"

@@ -165,13 +165,17 @@ const ComponentItem = ({
   }, [component.tag, onAdd, selectedElementId]);
 
   return (
-    <div className="list-item">
-      <button onClick={handleClick} title={`Add ${component.label} element`}>
-        <component.icon strokeWidth={1} width={16} height={16} />
-        {isRecent && count > 0 && <Badge>{count}</Badge>}
-      </button>
+    <button
+      className="list-item"
+      onClick={handleClick}
+      title={`Add ${component.label} element`}
+    >
+      <div className="list-item-icon">
+        <component.icon strokeWidth={1.5} width={16} height={16} />
+      </div>
+      {isRecent && count > 0 && <Badge>{count}</Badge>}
       <span className="item-text">{component.label}</span>
-    </div>
+    </button>
   );
 };
 
@@ -399,16 +403,18 @@ const ComponentList = memo(
                 </div>
               </div>
               <div className="section-content">
-                {recentComponents.map((component) => (
-                  <ComponentItem
-                    key={component.tag}
-                    component={component}
-                    onAdd={handleComponentAdd}
-                    selectedElementId={selectedElementId}
-                    isRecent={true}
-                    count={getComponentCount(component.tag)}
-                  />
-                ))}
+                <div className="list-group" role="list">
+                  {recentComponents.map((component) => (
+                    <ComponentItem
+                      key={component.tag}
+                      component={component}
+                      onAdd={handleComponentAdd}
+                      selectedElementId={selectedElementId}
+                      isRecent={true}
+                      count={getComponentCount(component.tag)}
+                    />
+                  ))}
+                </div>
               </div>
             </div>
           )}
@@ -426,14 +432,16 @@ const ComponentList = memo(
                 </div>
               </div>
               <div className="section-content">
-                {favoriteComponents.map((component) => (
-                  <ComponentItem
-                    key={component.tag}
-                    component={component}
-                    onAdd={handleComponentAdd}
-                    selectedElementId={selectedElementId}
-                  />
-                ))}
+                <div className="list-group" role="list">
+                  {favoriteComponents.map((component) => (
+                    <ComponentItem
+                      key={component.tag}
+                      component={component}
+                      onAdd={handleComponentAdd}
+                      selectedElementId={selectedElementId}
+                    />
+                  ))}
+                </div>
               </div>
             </div>
           )}
@@ -482,14 +490,16 @@ const ComponentList = memo(
                   </div>
                   {expanded && (
                     <div className="section-content">
-                      {components.map((component) => (
-                        <ComponentItem
-                          key={component.tag}
-                          component={component}
-                          onAdd={handleComponentAdd}
-                          selectedElementId={selectedElementId}
-                        />
-                      ))}
+                      <div className="list-group" role="list">
+                        {components.map((component) => (
+                          <ComponentItem
+                            key={component.tag}
+                            component={component}
+                            onAdd={handleComponentAdd}
+                            selectedElementId={selectedElementId}
+                          />
+                        ))}
+                      </div>
                     </div>
                   )}
                 </div>
@@ -535,14 +545,16 @@ const ComponentList = memo(
                   </div>
                   {expanded && (
                     <div className="section-content">
-                      {components.map((component) => (
-                        <ComponentItem
-                          key={component.tag}
-                          component={component}
-                          onAdd={handleComponentAdd}
-                          selectedElementId={selectedElementId}
-                        />
-                      ))}
+                      <div className="list-group" role="list">
+                        {components.map((component) => (
+                          <ComponentItem
+                            key={component.tag}
+                            component={component}
+                            onAdd={handleComponentAdd}
+                            selectedElementId={selectedElementId}
+                          />
+                        ))}
+                      </div>
                     </div>
                   )}
                 </div>

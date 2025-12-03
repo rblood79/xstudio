@@ -290,7 +290,7 @@ const TreeItemRow = React.memo(function TreeItemRow({
         className="element"
       >
         <div className={`elementItem ${isSelected ? "active" : ""}`}>
-          <div className="elementItemIndent" style={{ width: `${depth * 8}px` }}></div>
+          <div className="elementItemIndent" style={{ width: depth > 0 ? `${depth * 8}px` : "0px" }}></div>
           <div className="elementItemIcon">{icon}</div>
           <div className="elementItemLabel">{label}</div>
           <div className="elementItemActions"></div>
@@ -432,10 +432,11 @@ export const VirtualizedLayerTree = React.memo(function VirtualizedLayerTree({
   const virtualItems = virtualizer.getVirtualItems();
 
   // 아이템이 적은 경우 일반 렌더링 (가상화 오버헤드 방지)
+  // 🚀 Performance: 컨테이너 wrapper 제거하여 기존 renderElementTree와 동일한 DOM 구조 유지
   if (flattenedItems.length < 50) {
     return (
-      <div className="virtualized-tree-container" style={{ height: containerHeight, overflow: "auto" }}>
-        {flattenedItems.map((flatItem, index) => (
+      <>
+        {flattenedItems.map((flatItem) => (
           <TreeItemRow
             key={flatItem.virtualChildType ? `${flatItem.item.id}-${flatItem.virtualChildType}-${flatItem.virtualChildIndex}` : flatItem.item.id}
             flatItem={flatItem}
@@ -447,7 +448,7 @@ export const VirtualizedLayerTree = React.memo(function VirtualizedLayerTree({
             onSelectTabElement={onSelectTabElement}
           />
         ))}
-      </div>
+      </>
     );
   }
 

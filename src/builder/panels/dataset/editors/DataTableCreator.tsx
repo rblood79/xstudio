@@ -220,27 +220,28 @@ export function DataTableCreator({
 
             {/* Preset Grid */}
             <div className="section-content">
-              {presetsInCategory.map((preset) => (
-                <button
-                  key={preset.id}
-                  type="button"
-                  className={`creator-preset-card ${
-                    selectedPreset?.id === preset.id ? "selected" : ""
-                  }`}
-                  onClick={() => handlePresetSelect(preset)}
-                >
-                  <div className="creator-preset-icon">
-                    {renderIcon(preset.icon, 24)}
-                  </div>
-                  <div className="creator-preset-name">{preset.name}</div>
-                  <div className="creator-preset-desc">
-                    {preset.description}
-                  </div>
-                  <div className="creator-preset-meta">
-                    {preset.schema.length} fields
-                  </div>
-                </button>
-              ))}
+              <div className="list-group" role="list">
+                {presetsInCategory.map((preset) => (
+                  <button
+                    key={preset.id}
+                    type="button"
+                    role="listitem"
+                    className={`list-item preset-card ${
+                      selectedPreset?.id === preset.id ? "selected" : ""
+                    }`}
+                    onClick={() => handlePresetSelect(preset)}
+                  >
+                    <div className="list-item-icon">
+                      {renderIcon(preset.icon, 16)}
+                    </div>
+                    <div className="list-item-name">{preset.name}</div>
+                    <div className="list-item-desc">{preset.description}</div>
+                    <div className="list-item-meta">
+                      {preset.schema.length} fields
+                    </div>
+                  </button>
+                ))}
+              </div>
             </div>
           </>
         )}
@@ -259,7 +260,7 @@ export function DataTableCreator({
                   id="sample-count"
                   aria-label="row count"
                   aria-required="true"
-                  aria-invalid="false"  
+                  aria-invalid="false"
                   type="number"
                   min="0"
                   max="100"

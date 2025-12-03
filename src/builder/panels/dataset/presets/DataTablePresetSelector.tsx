@@ -228,21 +228,22 @@ export function DataTablePresetSelector({
                     </div>
 
                     {/* Preset Grid */}
-                    <div className="preset-grid">
+                    <div className="list-group" role="list">
                       {presetsInCategory.map((preset) => (
                         <button
                           key={preset.id}
-                          className={`preset-card ${
+                          role="listitem"
+                          className={`list-item preset-card ${
                             selectedPreset?.id === preset.id ? "selected" : ""
                           }`}
                           onClick={() => handlePresetSelect(preset)}
                         >
-                          <div className="preset-card-icon">
+                          <div className="list-item-icon">
                             {renderIcon(preset.icon, 24)}
                           </div>
-                          <div className="preset-card-name">{preset.name}</div>
-                          <div className="preset-card-desc">{preset.description}</div>
-                          <div className="preset-card-meta">
+                          <div className="list-item-name">{preset.name}</div>
+                          <div className="list-item-desc">{preset.description}</div>
+                          <div className="list-item-meta">
                             {preset.schema.length} fields
                           </div>
                         </button>

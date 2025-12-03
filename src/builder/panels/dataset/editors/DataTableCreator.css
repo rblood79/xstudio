@@ -129,21 +129,26 @@
 }
 
 /* ============================================
-   Preset Grid
+   Preset Grid - 표준화된 list-group 구조
    ============================================ */
 
 .section[data-section-id="table-creator"] .section-content {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(128px, 1fr));
-  gap: var(--spacing-sm);
   padding: var(--spacing-sm);
   overflow-y: auto;
 }
 
-.creator-preset-card {
+.section[data-section-id="table-creator"] .list-group {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(128px, 1fr));
+  gap: var(--spacing-sm);
+}
+
+/* Preset Card - list-item 확장 */
+.section[data-section-id="table-creator"] button.list-item.preset-card {
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   gap: var(--spacing-xs);
   padding: var(--spacing-sm);
   border: 1px solid var(--color-border);
@@ -151,56 +156,60 @@
   background: var(--color-surface);
   cursor: pointer;
   transition: all 150ms;
+  aspect-ratio: 1 / 1;
 }
 
-.creator-preset-card:hover {
+.section[data-section-id="table-creator"] button.list-item.preset-card:hover {
   border-color: var(--primary-hover);
   background: var(--primary-container);
 }
 
-.creator-preset-card.selected {
+.section[data-section-id="table-creator"]
+  button.list-item.preset-card.selected {
   border-color: var(--primary-pressed);
   background: var(--primary);
   color: var(--on-primary);
   box-shadow: var(--shadow-sm);
-
 }
 
-.creator-preset-icon {
+.section[data-section-id="table-creator"] .list-item-icon {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
   border-radius: var(--radius-md);
   background: var(--color-surface-100);
   color: var(--color-primary-600);
+  padding: var(--spacing-sm);
 }
 
-.creator-preset-card.selected .creator-preset-icon {
+.section[data-section-id="table-creator"]
+  button.list-item.preset-card.selected
+  .list-item-icon {
   background: var(--color-primary-100);
   color: var(--color-primary-700);
 }
 
-.creator-preset-name {
+.section[data-section-id="table-creator"] .list-item-name {
   font-size: var(--text-sm);
   font-weight: 600;
   color: var(--primary);
   text-align: center;
 }
 
-.creator-preset-card.selected .creator-preset-name {
+.section[data-section-id="table-creator"]
+  button.list-item.preset-card.selected
+  .list-item-name {
   color: var(--on-primary);
 }
 
-.creator-preset-desc {
+.section[data-section-id="table-creator"] .list-item-desc {
   font-size: var(--text-xs);
   color: var(--color-text-secondary);
   text-align: center;
   line-height: 1.3;
 }
 
-.creator-preset-meta {
+.section[data-section-id="table-creator"] .list-item-meta {
   font-size: 10px;
   color: var(--color-text-tertiary);
   padding: 2px 6px;
@@ -219,8 +228,6 @@
   display: flex;
   flex-direction: column;
 }
-
-
 
 .creator-sample-count {
   display: flex;

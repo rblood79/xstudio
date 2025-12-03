@@ -68,23 +68,24 @@ export function VariableList({ projectId }: VariableListProps) {
   const renderVariableItem = (variable: VariableType) => (
     <div
       key={variable.id}
-      className={`dataset-item ${editingVariableId === variable.id ? "editing" : ""}`}
+      role="listitem"
+      className={`list-item-card ${editingVariableId === variable.id ? "editing" : ""}`}
       onClick={() => openVariableEditor(variable.id)}
     >
-      <div className="dataset-item-icon">
+      <div className="list-item-icon">
         <Variable size={16} />
       </div>
-      <div className="dataset-item-info">
-        <div className="dataset-item-name">{variable.name}</div>
-        <div className="dataset-item-meta">
+      <div className="list-item-content">
+        <div className="list-item-name">{variable.name}</div>
+        <div className="list-item-meta">
           {variable.type}
           {variable.persist && " · localStorage"}
         </div>
       </div>
-      <span className={`dataset-badge ${variable.scope}`}>
+      <span className={`list-item-badge ${variable.scope}`}>
         {variable.scope}
       </span>
-      <div className="dataset-item-actions">
+      <div className="list-item-actions">
         <button
           type="button"
           className="iconButton"
@@ -127,12 +128,12 @@ export function VariableList({ projectId }: VariableListProps) {
           <>
             {/* Global Variables */}
             {globalVariables.length > 0 && (
-              <div className="dataset-subgroup">
-                <div className="dataset-subgroup-header">
-                  <span className="dataset-subgroup-title">Global</span>
-                  <span className="dataset-list-count">{globalVariables.length}개</span>
+              <div className="list-subgroup">
+                <div className="list-subgroup-header">
+                  <span className="list-subgroup-title">Global</span>
+                  <span className="list-subgroup-count">{globalVariables.length}개</span>
                 </div>
-                <div className="dataset-list">
+                <div className="list-group" role="list">
                   {globalVariables.map(renderVariableItem)}
                 </div>
               </div>
@@ -140,12 +141,12 @@ export function VariableList({ projectId }: VariableListProps) {
 
             {/* Page Variables */}
             {pageVariables.length > 0 && (
-              <div className="dataset-subgroup">
-                <div className="dataset-subgroup-header">
-                  <span className="dataset-subgroup-title">Page</span>
-                  <span className="dataset-list-count">{pageVariables.length}개</span>
+              <div className="list-subgroup">
+                <div className="list-subgroup-header">
+                  <span className="list-subgroup-title">Page</span>
+                  <span className="list-subgroup-count">{pageVariables.length}개</span>
                 </div>
-                <div className="dataset-list">
+                <div className="list-group" role="list">
                   {pageVariables.map(renderVariableItem)}
                 </div>
               </div>

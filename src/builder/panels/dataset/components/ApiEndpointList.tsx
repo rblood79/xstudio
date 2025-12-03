@@ -102,27 +102,28 @@ export function ApiEndpointList({ projectId }: ApiEndpointListProps) {
             </p>
           </div>
         ) : (
-          <div className="dataset-list">
+          <div className="list-group" role="list">
             {apiEndpoints.map((endpoint) => (
               <div
                 key={endpoint.id}
-                className={`dataset-item ${selectedId === endpoint.id ? "selected" : ""} ${editingApiId === endpoint.id ? "editing" : ""}`}
+                role="listitem"
+                className={`list-item-card ${selectedId === endpoint.id ? "selected" : ""} ${editingApiId === endpoint.id ? "editing" : ""}`}
                 onClick={() => setSelectedId(endpoint.id)}
               >
-                <div className="dataset-item-icon">
+                <div className="list-item-icon">
                   <Globe size={16} />
                 </div>
-                <div className="dataset-item-info">
-                  <div className="dataset-item-name">{endpoint.name}</div>
-                  <div className="dataset-item-meta">
+                <div className="list-item-content">
+                  <div className="list-item-name">{endpoint.name}</div>
+                  <div className="list-item-meta">
                     {endpoint.baseUrl}
                     {endpoint.path}
                   </div>
                 </div>
-                <span className={`method-badge ${endpoint.method}`}>
+                <span className={`list-item-badge method ${endpoint.method}`}>
                   {endpoint.method}
                 </span>
-                <div className="dataset-item-actions">
+                <div className="list-item-actions">
                   <button
                     type="button"
                     className="iconButton"
