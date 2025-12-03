@@ -107,6 +107,10 @@ export function useBorderRadiusDrag(
     lastRadius: -1,
   });
 
+  // RAF throttling을 위한 ref
+  const rafIdRef = useRef<number | null>(null);
+  const pendingUpdateRef = useRef<{ radius: number; shiftKey: boolean } | null>(null);
+
   const optionsRef = useRef({ onDrag, onDragEnd });
   optionsRef.current = { onDrag, onDragEnd };
 
@@ -116,6 +120,46 @@ export function useBorderRadiusDrag(
   } | null>(null);
 
   useEffect(() => {
+    // ⚡ RAF로 throttle된 Canvas 업데이트
+    const flushPendingUpdate = () => {
+      const pending = pendingUpdateRef.current;
+      const state = dragStateRef.current;
+
+      if (!pending || !state.corner) {
+        rafIdRef.current = null;
+        return;
+      }
+
+      const selectedElementId = useStore.getState().selectedElementId;
+      if (!selectedElementId) {
+        rafIdRef.current = null;
+        pendingUpdateRef.current = null;
+        return;
+      }
+
+      // 스타일 객체 생성
+      let styleProps: Record<string, string>;
+      if (pending.shiftKey) {
+        styleProps = {
+          borderTopLeftRadius: `${pending.radius}px`,
+          borderTopRightRadius: `${pending.radius}px`,
+          borderBottomLeftRadius: `${pending.radius}px`,
+          borderBottomRightRadius: `${pending.radius}px`,
+          borderRadius: `${pending.radius}px`,
+        };
+      } else {
+        const property = cornerPropertyMap[state.corner];
+        styleProps = { [property]: `${pending.radius}px` };
+      }
+
+      // Canvas에 전송
+      sendStyleToCanvas(selectedElementId, styleProps);
+      optionsRef.current.onDrag?.(pending.radius, state.corner);
+
+      pendingUpdateRef.current = null;
+      rafIdRef.current = null;
+    };
+
     const handleMouseMove = (e: MouseEvent) => {
       const state = dragStateRef.current;
       if (!state.isDragging || !state.corner) return;
@@ -127,41 +171,32 @@ export function useBorderRadiusDrag(
       let newRadius = Math.round(state.initialRadius + diagonalDistance);
       newRadius = Math.max(0, Math.min(state.maxRadius, newRadius));
 
-      // 같은 값이면 스킵 (성능 최적화)
+      // 같은 값이면 스킵
       if (newRadius === state.lastRadius) return;
       state.lastRadius = newRadius;
 
-      // 선택된 요소 ID 가져오기
-      const selectedElementId = useStore.getState().selectedElementId;
-      if (!selectedElementId) return;
+      // ⚡ pending 업데이트 저장 (RAF가 처리)
+      pendingUpdateRef.current = { radius: newRadius, shiftKey: e.shiftKey };
 
-      // 스타일 객체 생성
-      let styleProps: Record<string, string>;
-
-      if (e.shiftKey) {
-        // Shift+드래그: 모든 코너 동시 조절
-        styleProps = {
-          borderTopLeftRadius: `${newRadius}px`,
-          borderTopRightRadius: `${newRadius}px`,
-          borderBottomLeftRadius: `${newRadius}px`,
-          borderBottomRightRadius: `${newRadius}px`,
-          borderRadius: `${newRadius}px`,
-        };
-      } else {
-        // 기본: 개별 코너 조절
-        const property = cornerPropertyMap[state.corner];
-        styleProps = { [property]: `${newRadius}px` };
+      // ⚡ RAF 스케줄 (이미 대기 중이면 스킵)
+      if (rafIdRef.current === null) {
+        rafIdRef.current = requestAnimationFrame(flushPendingUpdate);
       }
-
-      // ⚡ Canvas에 직접 전송 (즉시 렌더링)
-      sendStyleToCanvas(selectedElementId, styleProps);
-
-      optionsRef.current.onDrag?.(newRadius, state.corner);
     };
 
     const handleMouseUp = (e: MouseEvent) => {
       const state = dragStateRef.current;
       if (!state.isDragging || !state.corner) return;
+
+      // ⚡ 먼저 이벤트 리스너 제거 + RAF 취소
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+
+      if (rafIdRef.current !== null) {
+        cancelAnimationFrame(rafIdRef.current);
+        rafIdRef.current = null;
+      }
+      pendingUpdateRef.current = null;
 
       const deltaX = e.clientX - state.initialMouseX;
       const deltaY = e.clientY - state.initialMouseY;
@@ -171,10 +206,6 @@ export function useBorderRadiusDrag(
 
       const corner = state.corner;
       const shiftKey = e.shiftKey;
-
-      // ⚡ 먼저 이벤트 리스너 제거 (추가 mousemove 방지)
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
 
       // 상태 초기화
       dragStateRef.current = {
