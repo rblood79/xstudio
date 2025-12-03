@@ -142,9 +142,19 @@ export const PARTICLE_VERTEX_SHADER = `
     float clusterX = snoise(clusterPos) * clusterStrength * 20.0;
     float clusterY = snoise(clusterPos + vec3(100.0, 0.0, 0.0)) * clusterStrength * 15.0;
 
+    // 순환 바람 (Curl 스타일 - 한 방향이 아닌 회전하는 흐름)
+    vec3 windPos = vec3(pos.xy * 0.003, time * 0.08);
+    float windAngle = snoise(windPos) * 6.28; // 노이즈 기반 방향
+    vec2 circularWind = vec2(cos(windAngle), sin(windAngle)) * primarySpeed * 8.0;
+
+    // 중심으로 약하게 수렴 (너무 멀어지지 않도록)
+    float distFromCenter = length(pos.xy);
+    float convergeFactor = smoothstep(100.0, 250.0, distFromCenter);
+    vec2 toCenter = -normalize(pos.xy + vec2(0.001)) * convergeFactor * 2.0;
+
     vec3 driftMove = vec3(
-      primaryDirection * baseMove + moveNoise * 8.0 + highMoveX + clusterX + lowMove,
-      baseMove * 0.5 + midMove + wave + clusterY + highMoveY,
+      circularWind.x + moveNoise * 8.0 + highMoveX + clusterX + lowMove + toCenter.x,
+      circularWind.y + midMove + wave + clusterY + highMoveY + toCenter.y,
       snoise(vec3(pos.xy * 0.008, time * 0.3)) * 4.0 * (0.3 + layerFactor * 0.7)
     );
 
