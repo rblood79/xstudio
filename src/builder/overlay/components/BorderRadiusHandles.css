@@ -10,7 +10,7 @@
   pointer-events: none;
 }
 
-/* 코너 핸들 (공통) - Adobe XD/Figma 스타일 */
+/* 코너 핸들 (공통) - Figma 스타일: 호버 시에만 표시 */
 .border-radius-handle {
   position: absolute;
   width: 6px;
@@ -18,6 +18,8 @@
   pointer-events: auto;
   transform: translate(-50%, -50%);
   z-index: 10;
+  opacity: 0;
+  transition: opacity 0.15s ease;
 
   /* 히트 영역 확장 (14x14px) */
   &::before {
@@ -25,6 +27,11 @@
     position: absolute;
     inset: -4px;
   }
+}
+
+/* 부모 overlay에 호버 시 핸들 표시 */
+.overlay-element:hover .border-radius-handle {
+  opacity: 1;
 }
 
 /* 핸들 내부 원형 */

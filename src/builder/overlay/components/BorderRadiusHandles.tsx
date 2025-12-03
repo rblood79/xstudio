@@ -131,12 +131,7 @@ export function BorderRadiusHandles({
     };
   }, [rect.width, rect.height, radii]);
 
-  // radius가 0이고 요소가 너무 작으면 핸들 숨기기
-  const shouldShowHandles = rect.width >= 40 && rect.height >= 40;
-
-  if (!shouldShowHandles) {
-    return null;
-  }
+  // 최소 크기 제한 없음 - Figma 스타일로 호버 시에만 CSS로 표시
 
   return (
     <div className="border-radius-handles">
