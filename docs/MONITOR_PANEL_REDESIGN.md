@@ -9,11 +9,22 @@
 - ✅ **기존 시스템 삭제**: `src/builder/monitor/` 전면 제거 + 연계 코드 완전 삭제
 - ✅ **패널 시스템 통합**: `src/builder/panels/monitor/` 로 이전, PanelRegistry 등록
 - ✅ **메모리 관리 필수**: 메모리 사용량 모니터링 및 최적화 기능
-- ✅ **Zero 의존성**: 추가 라이브러리 설치 없음 (특히 상용 라이브러리 금지)
+- ✅ **기존 라이브러리 활용**: 이미 설치된 오픈소스 라이브러리 사용 가능 (유료 라이브러리만 금지)
 - ✅ **성능 영향 최소화**: 빌더 사용 중 퍼포먼스 저하 없음
 - ✅ **Bottom 위치**: Footer 영역에 배치
 - ✅ **접근성 준수**: 키보드 탐색, Esc 닫기, ARIA 레이블 필수
 - ✅ **보안/프라이버시**: 메모리 데이터 외부 전송 금지, 민감 정보 로깅 금지
+
+### 사용 가능한 라이브러리 (package.json 기준)
+
+| 라이브러리 | 버전 | 용도 | 추천 활용처 |
+|-----------|------|------|-------------|
+| **reactflow** | 11.11.4 | 플로우 다이어그램 | 히스토리 플로우 시각화, 의존성 그래프 |
+| **three** | 0.181.2 | 3D 그래픽 | 고급 메모리 시각화 (선택적) |
+| **@tanstack/react-virtual** | 3.13.12 | 가상 스크롤링 | 긴 히스토리 목록 렌더링 |
+| **lucide-react** | 0.553.0 | 아이콘 | UI 아이콘 |
+
+> **참고**: SVG 기반 차트도 여전히 유효한 옵션이며, 경량 구현이 필요한 경우 사용 가능합니다.
 
 ### 전체 작업 예상 시간
 
@@ -928,6 +939,10 @@ if (import.meta.env.DEV) {
 
 ### 🎯 Step 3.2: MemoryChart 컴포넌트 (1시간)
 
+차트 구현에는 두 가지 옵션이 있습니다:
+
+#### Option A: SVG 기반 경량 차트 (기본 권장)
+
 **파일**: `src/builder/panels/monitor/components/MemoryChart.tsx` (새 파일, 70줄)
 
 ```typescript
@@ -951,7 +966,7 @@ export function MemoryChart({ data, height }: MemoryChartProps) {
   const min = Math.min(...data);
   const range = max - min || 1;
 
-  // SVG 경로 생성 (Zero 의존성!)
+  // SVG 경로 생성
   const points = data.map((value, index) => {
     const x = (index / (data.length - 1)) * 100;
     const y = ((max - value) / range) * 80 + 10;
@@ -1007,10 +1022,173 @@ function formatBytes(bytes: number): string {
 ```
 
 **SVG 기반 차트 장점**:
-- ✅ Zero 의존성 (react-chartjs 등 불필요)
 - ✅ 가볍고 빠름
 - ✅ CSS variables 사용 (테마 대응)
 - ✅ Responsive (viewBox)
+- ✅ 간단한 시계열 데이터에 적합
+
+#### Option B: ReactFlow 기반 히스토리 플로우 (고급 기능)
+
+히스토리 변화를 플로우 다이어그램으로 시각화하려면 이미 설치된 **reactflow**를 활용할 수 있습니다.
+
+**파일**: `src/builder/panels/monitor/components/HistoryFlowChart.tsx`
+
+```typescript
+import React, { useMemo } from 'react';
+import ReactFlow, {
+  Node,
+  Edge,
+  Background,
+  BackgroundVariant,
+  MiniMap,
+} from 'reactflow';
+import 'reactflow/dist/style.css';
+
+interface HistoryEntry {
+  id: string;
+  type: 'add' | 'update' | 'delete';
+  elementId: string;
+  timestamp: number;
+}
+
+interface HistoryFlowChartProps {
+  history: HistoryEntry[];
+  height: number;
+}
+
+export function HistoryFlowChart({ history, height }: HistoryFlowChartProps) {
+  const { nodes, edges } = useMemo(() => {
+    const nodes: Node[] = history.slice(-20).map((entry, index) => ({
+      id: entry.id,
+      position: { x: index * 120, y: getYPosition(entry.type) },
+      data: {
+        label: `${entry.type}\n${entry.elementId.slice(0, 8)}`,
+      },
+      style: getNodeStyle(entry.type),
+      type: 'default',
+    }));
+
+    const edges: Edge[] = nodes.slice(1).map((node, index) => ({
+      id: `e${index}`,
+      source: nodes[index].id,
+      target: node.id,
+      animated: index === nodes.length - 2,
+    }));
+
+    return { nodes, edges };
+  }, [history]);
+
+  return (
+    <div className="history-flow-chart" style={{ height }}>
+      <ReactFlow
+        nodes={nodes}
+        edges={edges}
+        fitView
+        panOnDrag={false}
+        zoomOnScroll={false}
+        nodesDraggable={false}
+        nodesConnectable={false}
+        elementsSelectable={false}
+        proOptions={{ hideAttribution: true }}
+      >
+        <Background variant={BackgroundVariant.Dots} gap={12} size={1} />
+        <MiniMap nodeColor={getMinimapColor} zoomable={false} pannable={false} />
+      </ReactFlow>
+    </div>
+  );
+}
+
+function getYPosition(type: string): number {
+  switch (type) {
+    case 'add': return 0;
+    case 'update': return 60;
+    case 'delete': return 120;
+    default: return 60;
+  }
+}
+
+function getNodeStyle(type: string) {
+  const colors = {
+    add: { background: 'var(--success-container)', border: 'var(--success)' },
+    update: { background: 'var(--primary-container)', border: 'var(--primary)' },
+    delete: { background: 'var(--error-container)', border: 'var(--error)' },
+  };
+  return {
+    ...colors[type as keyof typeof colors],
+    borderRadius: 'var(--radius-sm)',
+    fontSize: 'var(--text-xs)',
+    padding: '4px 8px',
+  };
+}
+
+function getMinimapColor(node: Node): string {
+  const type = node.data?.label?.split('\n')[0];
+  switch (type) {
+    case 'add': return 'var(--success)';
+    case 'update': return 'var(--primary)';
+    case 'delete': return 'var(--error)';
+    default: return 'var(--on-surface-variant)';
+  }
+}
+```
+
+**ReactFlow 기반 차트 장점**:
+- ✅ 인터랙티브 (줌, 팬, 선택)
+- ✅ 노드/엣지 기반 복잡한 관계 표현
+- ✅ MiniMap으로 전체 뷰 제공
+- ✅ 이미 설치됨 (추가 설치 불필요)
+- ✅ MIT 라이선스 (무료)
+
+#### Option C: @tanstack/react-virtual로 긴 히스토리 목록
+
+히스토리 항목이 많을 경우 가상 스크롤링으로 성능 최적화:
+
+```typescript
+import { useVirtualizer } from '@tanstack/react-virtual';
+
+function HistoryList({ entries }: { entries: HistoryEntry[] }) {
+  const parentRef = useRef<HTMLDivElement>(null);
+
+  const virtualizer = useVirtualizer({
+    count: entries.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => 40,
+    overscan: 5,
+  });
+
+  return (
+    <div ref={parentRef} className="history-list" style={{ height: 200, overflow: 'auto' }}>
+      <div style={{ height: `${virtualizer.getTotalSize()}px`, position: 'relative' }}>
+        {virtualizer.getVirtualItems().map((virtualItem) => (
+          <div
+            key={virtualItem.key}
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: '100%',
+              height: `${virtualItem.size}px`,
+              transform: `translateY(${virtualItem.start}px)`,
+            }}
+          >
+            <HistoryEntryRow entry={entries[virtualItem.index]} />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+```
+
+#### 권장 조합
+
+| 기능 | 권장 구현 | 이유 |
+|------|-----------|------|
+| **메모리 추이 차트** | SVG (Option A) | 경량, 빠름, 단순 시계열에 적합 |
+| **히스토리 플로우** | ReactFlow (Option B) | 관계 시각화, 인터랙션 필요 시 |
+| **히스토리 목록** | @tanstack/react-virtual (Option C) | 100개 이상 항목 시 필수 |
+
+**구현 우선순위**: Option A → Option C → Option B (필요에 따라)
 
 ### 🎯 Step 3.3: MonitorPanel 메인 컴포넌트 (1-1.5시간)
 
