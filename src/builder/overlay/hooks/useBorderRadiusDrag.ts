@@ -20,10 +20,6 @@ interface DragState {
 
 interface UseBorderRadiusDragOptions {
   /**
-   * 개별 코너 조절 모드 활성화 (기본: false = 모든 코너 동시 조절)
-   */
-  individualCorners?: boolean;
-  /**
    * 드래그 시작 콜백
    */
   onDragStart?: () => void;
@@ -97,7 +93,7 @@ export function useBorderRadiusDrag(
   currentBorderRadius: string | undefined,
   options: UseBorderRadiusDragOptions = {}
 ) {
-  const { individualCorners = false, onDragStart, onDrag, onDragEnd } = options;
+  const { onDragStart, onDrag, onDragEnd } = options;
 
   const dragStateRef = useRef<DragState>({
     isDragging: false,
@@ -109,8 +105,8 @@ export function useBorderRadiusDrag(
   });
 
   // 옵션을 ref로 저장하여 최신 값 참조
-  const optionsRef = useRef({ individualCorners, onDrag, onDragEnd });
-  optionsRef.current = { individualCorners, onDrag, onDragEnd };
+  const optionsRef = useRef({ onDrag, onDragEnd });
+  optionsRef.current = { onDrag, onDragEnd };
 
   // 이벤트 핸들러를 ref로 저장
   const handlersRef = useRef<{
@@ -138,12 +134,8 @@ export function useBorderRadiusDrag(
       const updateInlineStyle = useInspectorState.getState().updateInlineStyle;
       const updateInlineStyles = useInspectorState.getState().updateInlineStyles;
 
-      if (optionsRef.current.individualCorners && !e.altKey) {
-        // 개별 코너 조절
-        const property = cornerPropertyMap[state.corner];
-        updateInlineStyle(property, `${newRadius}px`);
-      } else {
-        // 모든 코너 동시 조절
+      if (e.shiftKey) {
+        // Shift+드래그: 모든 코너 동시 조절
         updateInlineStyles({
           borderTopLeftRadius: `${newRadius}px`,
           borderTopRightRadius: `${newRadius}px`,
@@ -151,6 +143,10 @@ export function useBorderRadiusDrag(
           borderBottomRightRadius: `${newRadius}px`,
           borderRadius: `${newRadius}px`,
         });
+      } else {
+        // 기본: 개별 코너 조절
+        const property = cornerPropertyMap[state.corner];
+        updateInlineStyle(property, `${newRadius}px`);
       }
 
       optionsRef.current.onDrag?.(newRadius, state.corner);

@@ -74,14 +74,11 @@ export function BorderRadiusHandles({
   onDragEnd,
 }: BorderRadiusHandlesProps) {
   // 드래그 훅
+  // 기본: 개별 코너 조절 / Shift+드래그: 모든 코너 동시 조절
   const { handleDragStart, activeCorner } = useBorderRadiusDrag(
     { width: rect.width, height: rect.height },
     borderRadius,
-    {
-      individualCorners: false, // 기본: 모든 코너 동시 조절
-      onDragStart,
-      onDragEnd,
-    }
+    { onDragStart, onDragEnd }
   );
 
   // 각 코너의 radius 값 계산
