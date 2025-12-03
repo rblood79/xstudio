@@ -5,6 +5,8 @@ import { MessageService } from "../../utils/messaging";
 import { useVisibleOverlays } from "./hooks/useVisibleOverlays";
 import type { OverlayData as VisibleOverlayData } from "./hooks/useVisibleOverlays";
 import { useOverlayDebug } from "./OverlayDebug";
+import { BorderRadiusHandles } from "./components/BorderRadiusHandles";
+import { useInspectorState } from "../inspector/hooks/useInspectorState";
 
 import "./index.css";
 
@@ -366,6 +368,13 @@ export default function SelectionOverlay() {
     );
   }
 
+  // ⭐ Border Radius 구독 (리액티브 업데이트)
+  const borderRadiusFromInspector = useInspectorState((state) => {
+    const computed = state.selectedElement?.computedStyle?.borderRadius;
+    const inline = state.selectedElement?.style?.borderRadius as string | undefined;
+    return inline || computed;
+  });
+
   // ⭐ Single-select mode: Render single overlay (backward compatibility)
   if (!overlayRect) return null;
 
@@ -394,6 +403,12 @@ export default function SelectionOverlay() {
         <div className="overlay-pattern">
           <div className="overlay-pattern-inner" />
         </div>
+
+        {/* Border Radius 코너 포인트 */}
+        <BorderRadiusHandles
+          rect={overlayRect}
+          borderRadius={borderRadiusFromInspector}
+        />
       </div>
     </div>
   );
