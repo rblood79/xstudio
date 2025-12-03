@@ -172,6 +172,10 @@ export function useBorderRadiusDrag(
       const corner = state.corner;
       const shiftKey = e.shiftKey;
 
+      // ⚡ 먼저 이벤트 리스너 제거 (추가 mousemove 방지)
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+
       // 상태 초기화
       dragStateRef.current = {
         isDragging: false,
@@ -183,21 +187,34 @@ export function useBorderRadiusDrag(
         lastRadius: -1,
       };
 
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
+      // 선택된 요소 ID 가져오기
+      const selectedElementId = useStore.getState().selectedElementId;
+      if (!selectedElementId) return;
 
-      // ⚡ 드래그 종료 시에만 Inspector state 업데이트 (store 저장)
-      const updateInlineStyle = useInspectorState.getState().updateInlineStyle;
-      const updateInlineStyles = useInspectorState.getState().updateInlineStyles;
-
+      // 스타일 객체 생성
+      let styleProps: Record<string, string>;
       if (shiftKey) {
-        updateInlineStyles({
+        styleProps = {
           borderTopLeftRadius: `${finalRadius}px`,
           borderTopRightRadius: `${finalRadius}px`,
           borderBottomLeftRadius: `${finalRadius}px`,
           borderBottomRightRadius: `${finalRadius}px`,
           borderRadius: `${finalRadius}px`,
-        });
+        };
+      } else {
+        const property = cornerPropertyMap[corner];
+        styleProps = { [property]: `${finalRadius}px` };
+      }
+
+      // ⚡ Canvas에 최종 값 직접 전송 (즉시 반영)
+      sendStyleToCanvas(selectedElementId, styleProps);
+
+      // ⚡ Inspector state 업데이트 (store 저장)
+      const updateInlineStyle = useInspectorState.getState().updateInlineStyle;
+      const updateInlineStyles = useInspectorState.getState().updateInlineStyles;
+
+      if (shiftKey) {
+        updateInlineStyles(styleProps);
       } else {
         const property = cornerPropertyMap[corner];
         updateInlineStyle(property, `${finalRadius}px`);
