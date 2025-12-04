@@ -28,75 +28,86 @@
     }
 
     /* section-content: 컴포넌트 그리드 레이아웃 */
-    .section-content {
-      padding: var(--spacing-md) var(--spacing-sm);
+
+    /* list-group: 그리드 레이아웃 래퍼 */
+    .list-group {
       display: grid;
-      gap: var(--spacing-md) var(--spacing);
-      grid-template-columns: repeat(3, minmax(30%, 1fr));
-      background-color: var(--secondary-container);
+      grid-template-columns: repeat(auto-fill, minmax(64px, 1fr));
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: var(--spacing-sm);
     }
 
-    .component-list-item {
+    /* list-item = button (통합 구조) */
+    button.list-item {
+      position: relative;
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: var(--gap);
-      font-size: var(--text-xs);
-
-      .item-text {
-        width: 100%;
-        font-size: var(--text-xs);
-        text-overflow: ellipsis;
-        overflow: hidden;
-        white-space: nowrap;
-        padding: 0 var(--spacing-2xs);
-        text-align: center;
-        color: var(--on-surface-variant);
-      }
-    }
-
-    .section-content button {
-      position: relative;
-      width: var(--text-5xl);
-      height: var(--text-5xl);
-      display: flex;
-      align-items: center;
       justify-content: center;
-      font-size: var(--text-sm);
-      font-weight: var(--font-weight-semibold);
+      gap: var(--gap);
+      padding: var(--spacing-xs);
+      font-size: var(--text-xs);
       background-color: var(--background-color);
       border: 1px solid var(--border-color);
       border-radius: var(--radius-md);
       color: var(--text-color);
       transition: all 0.2s ease;
-    }
+      cursor: pointer;
+      aspect-ratio: 1 / 1;
 
-    .section-content button .react-aria-Badge {
-      position: absolute;
-      top: 0;
-      right: 0;
-      translate: 33% -33%;
-      background-color: var(--error);
-      color: var(--on-error);
-      border-radius: 48px;
-      font-size: var(--text-xs);
-      aspect-ratio: 1;
-      font-family: var(--font-pixel);
-      font-weight: var(--font-weight-normal);
-      padding: var(--spacing-2xs);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      -webkit-font-smoothing: none;
-      -moz-osx-font-smoothing: unset;
-      font-smooth: never;
-      text-rendering: optimizeSpeed;
-    }
+      .list-item-icon {
+        position: relative;
+        border: none;
+        background: var(--outline-variant);
+        padding: var(--spacing-sm);
+        cursor: pointer;
+        z-index: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+        stroke: var(--on-surface-variant);
+        border-radius: var(--spacing-sm);
+      }
 
-    .section-content button:hover {
-      background-color: var(--button-background-hover);
-      border-color: var(--border-color-hover);
-      color: var(--text-color-hover);
+      .item-text {
+        width: 100%;
+        font-size: var(--text-xs);
+        font-weight: var(--font-weight-semibold);
+        text-overflow: ellipsis;
+        overflow: hidden;
+        white-space: nowrap;
+        padding: 0 var(--spacing-2xs);
+        text-align: center;
+        color: var(--primary);
+      }
+
+      .react-aria-Badge {
+        position: absolute;
+        top: 0;
+        right: 0;
+        translate: 33% -33%;
+        background-color: var(--error);
+        color: var(--on-error);
+        border-radius: 48px;
+        font-size: var(--text-xs);
+        aspect-ratio: 1;
+        font-family: var(--font-pixel);
+        font-weight: var(--font-weight-normal);
+        padding: var(--spacing-2xs);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        -webkit-font-smoothing: none;
+        -moz-osx-font-smoothing: unset;
+        font-smooth: never;
+        text-rendering: optimizeSpeed;
+      }
+
+      &:hover {
+        background-color: var(--button-background-hover);
+        color: var(--text-color-hover);
+      }
     }
 
     /* 검색 결과 없음 상태 */

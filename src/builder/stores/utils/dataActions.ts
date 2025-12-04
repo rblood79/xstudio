@@ -44,7 +44,6 @@ type GetState = Parameters<StateCreator<DataStore>>[1];
 export const createFetchDataTablesAction =
   (set: SetState) =>
   async (projectId: string): Promise<void> => {
-    console.log(`📥 [fetchDataTables] 프로젝트 ${projectId}의 DataTable 조회 시작...`);
     set({ isLoading: true });
 
     try {
@@ -52,8 +51,6 @@ export const createFetchDataTablesAction =
       const data = await (db as unknown as {
         data_tables: { getByProject: (projectId: string) => Promise<DataTable[]> }
       }).data_tables?.getByProject(projectId) || [];
-
-      console.log(`📥 [fetchDataTables] IndexedDB에서 ${data?.length || 0}개 DataTable 조회됨`);
 
       const dataTablesMap = new Map<string, DataTable>();
       (data || []).forEach((dt) => {
@@ -107,7 +104,6 @@ export const createCreateDataTableAction =
 
       set({ dataTables: newMap, isLoading: false });
 
-      console.log("✅ DataTable 생성 완료:", newDataTable.name);
       return newDataTable;
     } catch (error) {
       console.error("❌ DataTable 생성 실패:", error);
@@ -158,8 +154,6 @@ export const createUpdateDataTableAction =
       }
 
       set({ dataTables: newMap, isLoading: false });
-
-      console.log("✅ DataTable 업데이트 완료:", id);
     } catch (error) {
       console.error("❌ DataTable 업데이트 실패:", error);
       set((state) => {
@@ -195,8 +189,6 @@ export const createDeleteDataTableAction =
       });
 
       set({ dataTables: newMap, isLoading: false });
-
-      console.log("✅ DataTable 삭제 완료:", id);
     } catch (error) {
       console.error("❌ DataTable 삭제 실패:", error);
       set((state) => {
@@ -248,8 +240,6 @@ export const createSetRuntimeDataAction =
     newMap.set(name, { ...dataTable, runtimeData: data });
 
     set({ dataTables: newMap });
-
-    console.log(`📊 [setRuntimeData] DataTable "${name}"에 ${data.length}개 데이터 설정`);
   };
 
 // ============================================
@@ -262,7 +252,6 @@ export const createSetRuntimeDataAction =
 export const createFetchApiEndpointsAction =
   (set: SetState) =>
   async (projectId: string): Promise<void> => {
-    console.log(`📥 [fetchApiEndpoints] 프로젝트 ${projectId}의 ApiEndpoint 조회 시작...`);
     set({ isLoading: true });
 
     try {
@@ -270,8 +259,6 @@ export const createFetchApiEndpointsAction =
       const data = await (db as unknown as {
         api_endpoints: { getByProject: (projectId: string) => Promise<ApiEndpoint[]> }
       }).api_endpoints?.getByProject(projectId) || [];
-
-      console.log(`📥 [fetchApiEndpoints] IndexedDB에서 ${data?.length || 0}개 ApiEndpoint 조회됨`);
 
       const apiEndpointsMap = new Map<string, ApiEndpoint>();
       (data || []).forEach((ep) => {
@@ -335,7 +322,6 @@ export const createCreateApiEndpointAction =
 
       set({ apiEndpoints: newMap, isLoading: false });
 
-      console.log("✅ ApiEndpoint 생성 완료:", newApiEndpoint.name);
       return newApiEndpoint;
     } catch (error) {
       console.error("❌ ApiEndpoint 생성 실패:", error);
@@ -386,8 +372,6 @@ export const createUpdateApiEndpointAction =
       }
 
       set({ apiEndpoints: newMap, isLoading: false });
-
-      console.log("✅ ApiEndpoint 업데이트 완료:", id);
     } catch (error) {
       console.error("❌ ApiEndpoint 업데이트 실패:", error);
       set((state) => {
@@ -423,8 +407,6 @@ export const createDeleteApiEndpointAction =
       });
 
       set({ apiEndpoints: newMap, isLoading: false });
-
-      console.log("✅ ApiEndpoint 삭제 완료:", id);
     } catch (error) {
       console.error("❌ ApiEndpoint 삭제 실패:", error);
       set((state) => {
@@ -525,7 +507,6 @@ export const createExecuteApiEndpointAction =
 
       if (isExternalUrl && isDevelopment) {
         fetchUrl = `/api/proxy?url=${encodeURIComponent(url)}`;
-        console.log(`🔄 [API Proxy] ${url} → ${fetchUrl}`);
       }
 
       // Timeout 설정 (AbortController 사용)
@@ -533,7 +514,6 @@ export const createExecuteApiEndpointAction =
       const timeoutId = setTimeout(() => controller.abort(), endpoint.timeout || 30000);
 
       // Fetch 요청
-      console.log(`🌐 [Fetch] ${endpoint.method} ${fetchUrl}`, { headers, body });
       const response = await fetch(fetchUrl, {
         method: endpoint.method,
         headers,
@@ -569,7 +549,6 @@ export const createExecuteApiEndpointAction =
         }
       }
 
-      console.log(`✅ ApiEndpoint "${endpoint.name}" 실행 완료`);
       return mappedData;
     } catch (error) {
       console.error(`❌ ApiEndpoint "${endpoint?.name}" 실행 실패:`, error);
@@ -598,7 +577,6 @@ export const createExecuteApiEndpointAction =
 export const createFetchVariablesAction =
   (set: SetState) =>
   async (projectId: string): Promise<void> => {
-    console.log(`📥 [fetchVariables] 프로젝트 ${projectId}의 Variable 조회 시작...`);
     set({ isLoading: true });
 
     try {
@@ -606,8 +584,6 @@ export const createFetchVariablesAction =
       const data = await (db as unknown as {
         variables: { getByProject: (projectId: string) => Promise<Variable[]> }
       }).variables?.getByProject(projectId) || [];
-
-      console.log(`📥 [fetchVariables] IndexedDB에서 ${data?.length || 0}개 Variable 조회됨`);
 
       const variablesMap = new Map<string, Variable>();
       (data || []).forEach((v) => {
@@ -663,7 +639,6 @@ export const createCreateVariableAction =
 
       set({ variables: newMap, isLoading: false });
 
-      console.log("✅ Variable 생성 완료:", newVariable.name);
       return newVariable;
     } catch (error) {
       console.error("❌ Variable 생성 실패:", error);
@@ -714,8 +689,6 @@ export const createUpdateVariableAction =
       }
 
       set({ variables: newMap, isLoading: false });
-
-      console.log("✅ Variable 업데이트 완료:", id);
     } catch (error) {
       console.error("❌ Variable 업데이트 실패:", error);
       set((state) => {
@@ -751,8 +724,6 @@ export const createDeleteVariableAction =
       });
 
       set({ variables: newMap, isLoading: false });
-
-      console.log("✅ Variable 삭제 완료:", id);
     } catch (error) {
       console.error("❌ Variable 삭제 실패:", error);
       set((state) => {
@@ -799,8 +770,6 @@ export const createSetVariableValueAction =
     newMap.set(name, { ...variable, defaultValue: value });
 
     set({ variables: newMap });
-
-    console.log(`📊 [setVariableValue] Variable "${name}" 값 설정:`, value);
   };
 
 // ============================================
@@ -813,7 +782,6 @@ export const createSetVariableValueAction =
 export const createFetchTransformersAction =
   (set: SetState) =>
   async (projectId: string): Promise<void> => {
-    console.log(`📥 [fetchTransformers] 프로젝트 ${projectId}의 Transformer 조회 시작...`);
     set({ isLoading: true });
 
     try {
@@ -821,8 +789,6 @@ export const createFetchTransformersAction =
       const data = await (db as unknown as {
         transformers: { getByProject: (projectId: string) => Promise<Transformer[]> }
       }).transformers?.getByProject(projectId) || [];
-
-      console.log(`📥 [fetchTransformers] IndexedDB에서 ${data?.length || 0}개 Transformer 조회됨`);
 
       const transformersMap = new Map<string, Transformer>();
       (data || []).forEach((t) => {
@@ -880,7 +846,6 @@ export const createCreateTransformerAction =
 
       set({ transformers: newMap, isLoading: false });
 
-      console.log("✅ Transformer 생성 완료:", newTransformer.name);
       return newTransformer;
     } catch (error) {
       console.error("❌ Transformer 생성 실패:", error);
@@ -931,8 +896,6 @@ export const createUpdateTransformerAction =
       }
 
       set({ transformers: newMap, isLoading: false });
-
-      console.log("✅ Transformer 업데이트 완료:", id);
     } catch (error) {
       console.error("❌ Transformer 업데이트 실패:", error);
       set((state) => {
@@ -968,8 +931,6 @@ export const createDeleteTransformerAction =
       });
 
       set({ transformers: newMap, isLoading: false });
-
-      console.log("✅ Transformer 삭제 완료:", id);
     } catch (error) {
       console.error("❌ Transformer 삭제 실패:", error);
       set((state) => {
@@ -1114,7 +1075,6 @@ export const createExecuteTransformerAction =
           break;
       }
 
-      console.log(`✅ Transformer "${transformer.name}" 실행 완료`);
       return Array.isArray(result) ? result : [result];
     } catch (error) {
       console.error(`❌ Transformer "${transformer?.name}" 실행 실패:`, error);

@@ -1,83 +1,99 @@
-// src/components/ParticleButton.tsx
-import { useRef, useCallback, forwardRef } from "react";
-import { Button, ButtonProps } from "../shared/components/list";
-import { useParticleBackground } from "./ParticleBackground";
+/**
+ * ParticleButton - 사막 모래(Sand) 테마 파티클 배경 + 버튼 컴포넌트
+ *
+ * 공유 모듈을 사용하여 모래바람 효과를 렌더링합니다.
+ * ParticleButton 컴포넌트는 호버 시 파티클 배경에 텍스트/SVG를 표시합니다.
+ */
 
-export interface ParticleButtonProps extends ButtonProps {
-  /** 파티클 효과에 사용할 텍스트 (SVG가 없을 경우 사용) */
-  particleText?: string;
+/* eslint-disable react-refresh/only-export-components */
+import React, { useRef, useCallback } from "react";
+import {
+  ParticleBackgroundProvider,
+  useParticleBackground,
+  ParticleCanvas,
+  sandPreset,
+} from "./particle";
+import type { MorphContent } from "./particle";
+
+// ==================== Re-exports for backward compatibility ====================
+export { ParticleBackgroundProvider, useParticleBackground };
+export type { MorphContent };
+
+// ==================== ParticleBackground (Sand Theme) ====================
+export function ParticleBackground() {
+  return <ParticleCanvas preset={sandPreset} />;
 }
 
-/**
- * 파티클 배경 효과와 연동되는 버튼 컴포넌트
- *
- * 버튼 내부의 Lucide 아이콘(SVG)을 자동으로 감지하여
- * hover 시 파티클 효과에 전달합니다.
- *
- * @example
- * ```tsx
- * <ParticleButton>
- *   <SquarePlus />
- * </ParticleButton>
- * ```
- */
-export const ParticleButton = forwardRef<HTMLButtonElement, ParticleButtonProps>(
-  function ParticleButton({ particleText, onHoverStart, onHoverEnd, children, ...props }, forwardedRef) {
-    const buttonRef = useRef<HTMLButtonElement>(null);
-    const { setHoverContent } = useParticleBackground();
+// ==================== ParticleButton Component ====================
+interface ParticleButtonProps {
+  children: React.ReactNode;
+  size?: "xs" | "sm" | "md" | "lg" | "xl";
+  variant?: "default" | "primary" | "secondary" | "surface" | "outline" | "ghost";
+  onClick?: () => void;
+  className?: string;
+}
 
-    // ref를 합침
-    const setRefs = useCallback(
-      (node: HTMLButtonElement | null) => {
-        buttonRef.current = node;
-        if (typeof forwardedRef === "function") {
-          forwardedRef(node);
-        } else if (forwardedRef) {
-          forwardedRef.current = node;
-        }
-      },
-      [forwardedRef]
-    );
+export function ParticleButton({
+  children,
+  size = "md",
+  variant = "default",
+  onClick,
+  className = "",
+}: ParticleButtonProps) {
+  // ParticleBackground.tsx의 useParticleBackground 사용
+  const { setHoverContent } = useParticleBackground();
+  const buttonRef = useRef<HTMLButtonElement>(null);
 
-    const handleMouseEnter = useCallback(
-      () => {
-        // 버튼 내부의 SVG 요소 찾기
-        const svgElement = buttonRef.current?.querySelector("svg");
+  const handleMouseEnter = useCallback(() => {
+    // children이 문자열이면 텍스트로 사용
+    if (typeof children === "string") {
+      setHoverContent({ type: "text", value: children });
+      return;
+    }
 
+    // React 요소인 경우 (아이콘 등), DOM에서 SVG 추출 시도
+    if (React.isValidElement(children) && buttonRef.current) {
+      const svgElement = buttonRef.current.querySelector("svg");
+
+      if (svgElement) {
+        const svgString = svgElement.outerHTML;
+        setHoverContent({ type: "svg", value: svgString });
+        return;
+      }
+    }
+
+    // 배열인 경우 처리
+    if (Array.isArray(children)) {
+      const firstChild = children[0];
+      if (typeof firstChild === "string") {
+        setHoverContent({ type: "text", value: firstChild });
+        return;
+      }
+
+      if (buttonRef.current) {
+        const svgElement = buttonRef.current.querySelector("svg");
         if (svgElement) {
-          // SVG의 outerHTML을 복제하여 사용
           const svgString = svgElement.outerHTML;
           setHoverContent({ type: "svg", value: svgString });
-        } else if (particleText) {
-          // SVG가 없으면 텍스트 사용
-          setHoverContent({ type: "text", value: particleText });
+          return;
         }
+      }
+    }
+  }, [children, setHoverContent]);
 
-        // 기존 onHoverStart 핸들러 호출
-        onHoverStart?.(true);
-      },
-      [setHoverContent, particleText, onHoverStart]
-    );
+  const handleMouseLeave = useCallback(() => {
+    setHoverContent(null);
+  }, [setHoverContent]);
 
-    const handleMouseLeave = useCallback(
-      () => {
-        setHoverContent(null);
-
-        // 기존 onHoverEnd 핸들러 호출
-        onHoverEnd?.(false);
-      },
-      [setHoverContent, onHoverEnd]
-    );
-
-    return (
-      <Button
-        ref={setRefs}
-        {...props}
-        onHoverStart={handleMouseEnter as unknown as (isHovering: boolean) => void}
-        onHoverEnd={handleMouseLeave as unknown as (isHovering: boolean) => void}
-      >
-        {children}
-      </Button>
-    );
-  }
-);
+  return (
+    <button
+      ref={buttonRef}
+      className={`particle-button particle-button-${variant} particle-button-${size} ${className}`}
+      onClick={onClick}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+    >
+      {children}
+    </button>
+  );
+}

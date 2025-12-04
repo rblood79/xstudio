@@ -254,32 +254,16 @@ export class MessageHandler {
   private handleUpdateElements(data: UpdateElementsMessage): void {
     const elements = data.elements || [];
 
-    // 🔍 DEBUG: ListBox props.dataBinding 수신 추적
-    const listBoxElements = elements.filter((el: PreviewElement) => el.tag === 'ListBox');
-    if (listBoxElements.length > 0) {
-      listBoxElements.forEach((el: PreviewElement) => {
-        const propsDataBinding = (el.props as Record<string, unknown>)?.dataBinding;
-        console.log('📥 [Canvas] ListBox 수신:', {
-          elementId: el.id,
-          propsDataBinding,
-          topLevelDataBinding: el.dataBinding,
-        });
-      });
-    }
-
     this.store.setElements(elements);
 
     // ⭐ Layout/Slot System: pageInfo가 함께 전송된 경우 처리 (초기 로드 시)
     if (data.pageInfo) {
       this.store.setCurrentPageId(data.pageInfo.pageId);
       this.store.setCurrentLayoutId(data.pageInfo.layoutId);
-      console.log(`[Preview] Page info updated: pageId=${data.pageInfo.pageId}, layoutId=${data.pageInfo.layoutId}`);
     }
 
     // ACK 전송
     this.sendToBuilder({ type: 'ELEMENTS_UPDATED_ACK' });
-
-    console.log(`[Preview] Elements updated: ${elements.length} elements`);
   }
 
   private handleUpdateElementProps(data: UpdateElementPropsMessage): void {
@@ -292,69 +276,59 @@ export class MessageHandler {
   private handleDeleteElement(data: DeleteElementMessage): void {
     // setElements를 통해 필터링하여 삭제
     // 실제 구현에서는 store에 deleteElement 메서드 추가 필요
-    console.log('[Preview] Delete element:', data.elementId);
+    void data.elementId;
   }
 
   private handleDeleteElements(data: DeleteElementsMessage): void {
-    console.log('[Preview] Delete elements:', data.elementIds);
+    void data.elementIds;
   }
 
   private handleThemeVars(data: ThemeVarsMessage): void {
     const vars = data.vars || [];
     this.store.setThemeVars(vars);
-    console.log(`[Preview] Theme vars updated: ${vars.length} variables`);
   }
 
   private handleSetDarkMode(data: SetDarkModeMessage): void {
     this.store.setDarkMode(data.isDark);
-    console.log(`[Preview] Dark mode: ${data.isDark}`);
   }
 
   private handleUpdatePageInfo(data: UpdatePageInfoMessage): void {
     this.store.setCurrentPageId(data.pageId);
     this.store.setCurrentLayoutId(data.layoutId);
-    console.log(`[Preview] Page info: pageId=${data.pageId}, layoutId=${data.layoutId}`);
   }
 
   private handleUpdatePages(data: UpdatePagesMessage): void {
     const pages = data.pages || [];
     this.store.setPages(pages);
-    console.log(`[Preview] Pages updated: ${pages.length} pages`);
   }
 
   private handleUpdateLayouts(data: UpdateLayoutsMessage): void {
     const layouts = data.layouts || [];
     this.store.setLayouts(layouts);
-    console.log(`[Preview] Layouts updated: ${layouts.length} layouts`);
   }
 
   private handleUpdateDataSources(data: UpdateDataSourcesMessage): void {
     const dataSources = data.dataSources || [];
     this.store.setDataSources(dataSources);
-    console.log(`[Preview] Data sources updated: ${dataSources.length} sources`);
   }
 
   private handleUpdateDataTables(data: UpdateDataTablesMessage): void {
     const dataTables = data.dataTables || [];
     this.store.setDataTables(dataTables);
-    console.log(`[Preview] DataTables updated: ${dataTables.length} tables`);
   }
 
   private handleUpdateApiEndpoints(data: UpdateApiEndpointsMessage): void {
     const apiEndpoints = data.apiEndpoints || [];
     this.store.setApiEndpoints(apiEndpoints);
-    console.log(`[Preview] ApiEndpoints updated: ${apiEndpoints.length} endpoints`);
   }
 
   private handleUpdateVariables(data: UpdateVariablesMessage): void {
     const variables = data.variables || [];
     this.store.setVariables(variables);
-    console.log(`[Preview] Variables updated: ${variables.length} variables`);
   }
 
   private handleUpdateAuthContext(data: UpdateAuthContextMessage): void {
     this.store.setAuthToken(data.token);
-    console.log('[Preview] Auth context updated');
   }
 
   private handleRequestElementSelection(data: RequestElementSelectionMessage): void {

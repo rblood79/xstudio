@@ -7,6 +7,77 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed - DatasetEditorPanel Tab Management Refactoring (2025-12-03)
+
+#### State Lifting Pattern
+DatasetEditorPanel에서 탭 상태를 관리하도록 변경 (이전: 각 에디터 내부에서 관리)
+
+**변경 사항:**
+- **DatasetEditorPanel.tsx** - 모든 에디터 탭 상태 관리 (tableTab, apiTab, variableTab, creatorMode)
+- **DataTableEditor.tsx** - 내부 탭 상태 제거, `activeTab` prop 수신
+- **ApiEndpointEditor.tsx** - 내부 탭 상태 제거, `activeTab` prop 수신 (initialTab 제거)
+- **VariableEditor.tsx** - 내부 탭 상태 제거, `activeTab` prop 수신
+- **DataTableCreator.tsx** - 내부 mode 상태 제거, `mode` prop 수신
+
+**새 타입 추가 (editorTypes.ts):**
+```typescript
+export type TableEditorTab = "schema" | "data" | "settings";
+export type ApiEditorTab = "basic" | "headers" | "body" | "response" | "test";
+export type VariableEditorTab = "basic" | "validation" | "transform";
+```
+
+**최종 구조:**
+```
+DatasetEditorPanel
+├── PanelHeader (동적 타이틀)
+├── panel-tabs 또는 creator-mode-selection (renderTabs)
+└── panel-contents
+    └── Editor 컴포넌트 (activeTab prop으로 탭 전달)
+```
+
+**관련 문서:** docs/features/DATA_PANEL_SYSTEM.md Section 18
+
+---
+
+### Changed - Dataset Panel Standardization (2025-12-02)
+
+#### Panel Structure Refactoring
+- **DatasetPanel** - `panel > panel-contents > section` 표준 구조로 변경
+- **DataTableList** - `section > SectionHeader + section-content` 패턴 적용
+- **ApiEndpointList** - 동일한 section 패턴 적용
+- **VariableList** - section 패턴 + `dataset-subgroup`으로 Global/Page 구분
+- **TransformerList** - 동일한 section 패턴 적용
+
+#### Class Naming Standardization
+- `dataset-tabs` → `panel-tabs` (일관된 패널 탭 클래스)
+- `dataset-tab` → `panel-tab`
+- `editor-tabs` → `panel-tabs` (DataTableEditor)
+- `editor-tab` → `panel-tab`
+
+#### Component Updates
+- **DataTableEditor** - PanelHeader 컴포넌트 사용, 테이블명 편집은 Settings 탭으로 이동
+- **DataTableCreator** - PanelHeader 컴포넌트 사용, 패널 형식으로 변경 (기존 popover에서)
+- **SectionHeader** - 모든 리스트 컴포넌트에서 공통 SectionHeader 사용
+
+#### Files Modified
+- `src/builder/panels/dataset/DatasetPanel.tsx`
+- `src/builder/panels/dataset/DatasetPanel.css`
+- `src/builder/panels/dataset/components/DataTableList.tsx`
+- `src/builder/panels/dataset/components/ApiEndpointList.tsx`
+- `src/builder/panels/dataset/components/VariableList.tsx`
+- `src/builder/panels/dataset/components/TransformerList.tsx`
+- `src/builder/panels/dataset/editors/DataTableEditor.tsx`
+- `src/builder/panels/dataset/editors/DataTableEditor.css`
+- `src/builder/panels/dataset/editors/DataTableCreator.tsx`
+- `src/builder/panels/dataset/editors/DataTableCreator.css`
+
+#### New CSS Classes
+- `.dataset-subgroup` - Variables 탭에서 Global/Page 그룹 구분
+- `.dataset-subgroup-header` - 서브그룹 헤더
+- `.dataset-subgroup-title` - 서브그룹 제목
+
+---
+
 ### Fixed - Layout Preset System Critical Bugs (2025-11-28)
 
 #### Same Preset Reapply Bug

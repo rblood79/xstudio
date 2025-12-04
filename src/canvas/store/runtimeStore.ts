@@ -109,7 +109,6 @@ export const createRuntimeStore = () => create<RuntimeStoreState>((set, get) => 
     });
 
     set({ appState: newAppState });
-    console.log(`[Preview] Variables initialized: ${variables.length} vars, appState:`, newAppState);
   },
 
   // ============================================

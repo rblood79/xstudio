@@ -12,6 +12,7 @@ import { MessageHandler, messageSender } from './messaging';
 import { useNavigate } from 'react-router-dom';
 import { rendererMap } from './renderers';
 import type { PreviewElement, RenderContext } from './types';
+import type { RuntimeElement } from './store/types';
 import { EventEngine } from '../utils/events/eventEngine';
 
 // ============================================
@@ -267,7 +268,7 @@ function CanvasContent() {
     elements,
     updateElementProps,
     setElements: (newElements: PreviewElement[]) => {
-      setElements(newElements as StorePreviewElement[]);
+      setElements(newElements as RuntimeElement[]);
     },
     eventEngine: eventEngineRef.current!,
     renderElement: (el: PreviewElement, key?: string) => renderElementInternalRef.current(el, key),
@@ -561,8 +562,6 @@ export function App() {
     queueMicrotask(() => {
       setIsInitialized(true);
     });
-
-    console.log('[Preview App] Initialized and ready');
 
     return () => {
       window.removeEventListener('message', handleMessage);

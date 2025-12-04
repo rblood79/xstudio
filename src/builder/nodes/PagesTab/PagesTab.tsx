@@ -44,6 +44,11 @@ interface PagesTabProps {
   sendElementSelectedMessage: (elementId: string, props: ElementProps) => void;
   requestAutoSelectAfterUpdate: (elementId: string) => void; // ⭐ ACK 기반 auto-select
   collapseAllTreeItems?: () => void;
+  /** 🚀 Performance: Virtual Scrolling용 props */
+  expandedKeys?: Set<string | number>;
+  onToggleExpand?: (key: string) => void;
+  selectedTab?: { parentId: string; tabIndex: number } | null;
+  onSelectTabElement?: (parentId: string, props: ElementProps, index: number) => void;
 }
 
 export function PagesTab({
@@ -61,6 +66,10 @@ export function PagesTab({
   sendElementSelectedMessage,
   requestAutoSelectAfterUpdate,
   collapseAllTreeItems,
+  expandedKeys,
+  onToggleExpand,
+  selectedTab,
+  onSelectTabElement,
 }: PagesTabProps) {
   // 현재 페이지 ID 추적
   const currentPageId = useStore((state) => state.currentPageId);
@@ -104,6 +113,10 @@ export function PagesTab({
         renderElementTree={renderElementTree}
         sendElementSelectedMessage={sendElementSelectedMessage}
         collapseAllTreeItems={collapseAllTreeItems}
+        expandedKeys={expandedKeys}
+        onToggleExpand={onToggleExpand}
+        selectedTab={selectedTab}
+        onSelectTabElement={onSelectTabElement}
       />
     </div>
   );

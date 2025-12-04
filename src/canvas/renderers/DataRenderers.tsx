@@ -232,7 +232,9 @@ function DatasetComponent({ element }: { element: PreviewElement }) {
  */
 export function renderDataset(
   element: PreviewElement,
-  _context: RenderContext
+  context: RenderContext
 ): React.ReactNode {
+  // context is required for rendererMap type consistency but not used in this renderer
+  void context;
   return <DatasetComponent key={element.id} element={element} />;
 }

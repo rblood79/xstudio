@@ -10,6 +10,8 @@ import type { ReactNode } from "react";
 export interface PanelHeaderProps {
   /** 헤더 제목 */
   title: string;
+  /** 제목 앞에 표시할 아이콘 (ReactNode) */
+  icon?: ReactNode;
   /** 헤더 우측 액션 버튼들 (ReactNode) */
   actions?: ReactNode;
   /** 추가 CSS 클래스 */
@@ -29,16 +31,28 @@ export interface PanelHeaderProps {
  *
  * @example
  * ```tsx
+ * // 아이콘이 있는 패널 헤더
+ * <PanelHeader
+ *   icon={<Database size={16} />}
+ *   title="Dataset"
+ * />
+ * ```
+ *
+ * @example
+ * ```tsx
  * <PanelHeader
  *   title="Events"
  *   actions={<EventTypePicker onSelect={handleAddEvent} />}
  * />
  * ```
  */
-export function PanelHeader({ title, actions, className = "" }: PanelHeaderProps) {
+export function PanelHeader({ title, icon, actions, className = "" }: PanelHeaderProps) {
   return (
     <div className={`panel-header ${className}`.trim()}>
-      <h3 className="panel-title">{title}</h3>
+      <h3 className="panel-title">
+        {icon && <span className="panel-icon">{icon}</span>}
+        {title}
+      </h3>
       {actions && <div className="panel-actions">{actions}</div>}
     </div>
   );

@@ -75,7 +75,8 @@
 
   /* ========== Base Modal Styles ========== */
   .react-aria-Modal {
-    box-shadow: 0 8px 24px color-mix(in srgb, var(--on-surface) 15%, transparent);
+    box-shadow: 0 8px 24px
+      color-mix(in srgb, var(--on-surface) 15%, transparent);
     border-radius: var(--radius-xl);
     background: var(--surface-container-high);
     color: var(--on-surface);
@@ -156,11 +157,11 @@
       box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
     }
 
-    [data-theme='dark'] .react-aria-ModalOverlay {
+    [data-theme="dark"] .react-aria-ModalOverlay {
       background: rgba(0, 0, 0, 0.5);
     }
 
-    [data-theme='dark'] .react-aria-Modal {
+    [data-theme="dark"] .react-aria-Modal {
       box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
     }
   }

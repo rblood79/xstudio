@@ -10,6 +10,8 @@ import type { ReactNode } from "react";
 export interface SectionHeaderProps {
   /** 섹션 제목 */
   title: string;
+  /** 제목 앞에 표시할 아이콘 (ReactNode) */
+  icon?: ReactNode;
   /** 헤더 우측 액션 버튼들 (ReactNode) */
   actions?: ReactNode;
   /** 접기/펼치기 기능 활성화 여부 */
@@ -29,6 +31,15 @@ export interface SectionHeaderProps {
  * ```tsx
  * // 기본 섹션 헤더 (제목만)
  * <SectionHeader title="Save Mode" />
+ * ```
+ *
+ * @example
+ * ```tsx
+ * // 아이콘이 있는 섹션 헤더
+ * <SectionHeader
+ *   icon={<Database size={16} />}
+ *   title="Users Schema"
+ * />
  * ```
  *
  * @example
@@ -53,6 +64,7 @@ export interface SectionHeaderProps {
  */
 export function SectionHeader({
   title,
+  icon,
   actions,
   collapsible = false,
   isCollapsed = false,
@@ -73,6 +85,7 @@ export function SectionHeader({
             {isCollapsed ? "▶" : "▼"}
           </span>
         )}
+        {icon && <span className="section-icon">{icon}</span>}
         {title}
       </div>
       {actions && <div className="header-actions">{actions}</div>}

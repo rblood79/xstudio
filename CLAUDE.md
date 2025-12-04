@@ -249,126 +249,21 @@ The project includes a comprehensive Mock Data API system for component testing 
 
 **Full Documentation:** See `src/services/api/index.ts` for all available endpoints, data structures, and implementation details.
 
-### Monitor System (Footer)
+### Monitor Panel (Bottom Panel)
 
-The Monitor System provides real-time performance tracking and debugging information displayed in the footer area of the Builder.
+> **Status**: 🔄 Rebuilding (2025-01) - 기존 footer monitor 시스템을 Panel 시스템 기반으로 재구축 중
 
-**Location**: `src/builder/monitor/`
+경량 메모리 모니터링 패널 (패널 시스템 통합)
 
-**Architecture**:
-- **Three Tabs**: Memory Monitor, Save Monitor, History
-- **No Console Pollution**: All status messages displayed in UI instead of console
-- **Auto-Update**: Metrics refresh automatically (Memory: 1s, Save: 5s, History: on change)
-
-#### Memory Monitor
-
-Tracks memory usage and history system performance.
+**Location**: `src/builder/panels/monitor/` (구현 예정)
 
 **Features**:
-- Total entries, command count, cache size
-- Estimated memory usage with compression ratio
-- Real-time recommendations for optimization
-- Manual memory optimization trigger
+- Memory usage monitoring (메모리 사용량 추적)
+- SVG 기반 Mini chart visualization
+- RequestIdleCallback 기반 수집 (퍼포먼스 영향 최소화)
+- Bottom Panel Slot 통합 (resize 지원)
 
-**Status Messages** (displayed in UI):
-- `📈 메모리 모니터링 시작 (10초마다 수집)`
-- `📉 메모리 모니터링 중지`
-- `✨ 메모리 최적화 실행됨`
-
-**Implementation**:
-```typescript
-// src/builder/stores/memoryMonitor.ts
-export class MemoryMonitor {
-  private statusMessage: string = ''; // UI에 표시
-
-  public getStatusMessage(): string {
-    return this.statusMessage;
-  }
-}
-
-// src/builder/hooks/useMemoryMonitor.ts
-export function useMemoryMonitor() {
-  const [statusMessage, setStatusMessage] = useState<string>('');
-
-  useEffect(() => {
-    const updateStats = () => {
-      setStatusMessage(memoryMonitor.getStatusMessage());
-    };
-    const interval = setInterval(updateStats, 1000);
-    return () => clearInterval(interval);
-  }, []);
-
-  return { stats, statusMessage, optimizeMemory };
-}
-```
-
-**Files**:
-- `src/builder/stores/memoryMonitor.ts` - Core monitoring class
-- `src/builder/hooks/useMemoryMonitor.ts` - React hook
-- `src/builder/monitor/index.tsx` - UI component
-- `src/builder/monitor/index.css` - Styles
-
-#### Save Monitor
-
-Tracks save operations, performance metrics, and validation errors.
-
-**Features**:
-- Save operations count and average time
-- Success rate calculation
-- Preview and validation skip counts
-- Validation error log (last 5 errors)
-- Metrics reset functionality
-
-**Status Messages** (displayed in UI):
-- `💾 저장할 변경사항이 없습니다.`
-- `💾 N개 변경사항 저장 시작...`
-- `✅ N개 변경사항 저장 완료`
-- `⚠️ 직렬화 불가능한 값 감지 - 필드: XXX`
-- `⚠️ 잘못된 키 형식: XXX`
-- `❌ 저장 실패: 에러 메시지`
-- `❌ Supabase 저장 실패: 에러 메시지`
-- `📊 SaveService 성능 메트릭이 리셋되었습니다.`
-
-**Implementation**:
-```typescript
-// src/services/save/saveService.ts
-export class SaveService {
-  private statusMessage: string = ''; // UI에 표시
-
-  public getStatusMessage(): string {
-    return this.statusMessage;
-  }
-
-  async saveAllPendingChanges(): Promise<void> {
-    this.statusMessage = `💾 ${changes.size}개 변경사항 저장 시작...`;
-    try {
-      await Promise.all(savePromises);
-      this.statusMessage = `✅ ${changes.size}개 변경사항 저장 완료`;
-    } catch (error) {
-      this.statusMessage = `❌ 저장 실패: ${error.message}`;
-    }
-  }
-}
-```
-
-**Files**:
-- `src/services/save/saveService.ts` - Save service with status tracking
-- `src/builder/monitor/index.tsx` - UI component (Save Monitor tab)
-
-#### History Monitor
-
-Tracks undo/redo history changes and state transitions.
-
-**Features**:
-- Current index and total entries
-- Can undo/redo status
-- Recent history changes log (last 10)
-- Page ID tracking
-
-**Files**:
-- `src/builder/monitor/index.tsx` - UI component (History tab)
-
-**Performance Impact**: ✅ Zero - All updates use existing intervals, no additional overhead.
+**Implementation Plan**: See `docs/MONITOR_PANEL_REDESIGN.md`
 
 ### Event System (Inspector Events Tab)
 
@@ -2273,7 +2168,7 @@ Copilot learns from code patterns. Tips:
 
 **Completed Implementations**:
 1. ✅ **Event System** - Visual programming with 21 action editors, 3 visual modes
-2. ✅ **Monitor System** - Real-time performance tracking in footer
+2. 🔄 **Monitor Panel** - Bottom panel with memory monitoring (rebuilding 2025-01)
 3. ✅ **Panel System Refactoring** - 3 reusable hooks, code reduction up to 82%
 4. ✅ **Multi-Element Selection** - Cmd+Click, lasso selection, AABB collision
 5. ✅ **Multi-Element Editing** - Batch property editor, mixed value detection

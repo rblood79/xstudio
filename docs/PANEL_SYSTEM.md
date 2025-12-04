@@ -4,29 +4,28 @@ XStudio의 유연한 패널 시스템 문서입니다.
 
 ## 개요
 
-패널 시스템은 12개의 독립적인 패널을 좌우 양쪽에 자유롭게 배치할 수 있는 아키텍처입니다. 모든 패널은 동등하게 취급되며, 사용자가 원하는 위치에 배치할 수 있습니다.
+패널 시스템은 9개의 독립적인 패널을 좌우 양쪽에 자유롭게 배치할 수 있는 아키텍처입니다. 모든 패널은 동등하게 취급되며, 사용자가 원하는 위치에 배치할 수 있습니다.
 
-## 패널 목록 (12개)
+## 패널 목록 (9개)
 
-### Navigation 패널 (4개)
+### Navigation 패널 (3개)
 - **Nodes** - 페이지 계층 구조 탐색 (`Ctrl+Shift+N`)
 - **Components** - 컴포넌트 라이브러리 (`Ctrl+Shift+C`)
-- **Library** - 재사용 가능한 에셋
-- **Dataset** - 데이터 소스 관리
+- **Dataset** - DataTables, APIs, Variables, Transformers 관리 (`Ctrl+Shift+T`)
 
 ### Tool 패널 (2개)
 - **Theme** - 디자인 토큰 및 테마
 - **AI** - AI 도구 및 제안
 
-### System 패널 (2개)
-- **User** - 사용자 프로필 및 계정
+### System 패널 (1개)
 - **Settings** - 앱 설정 및 환경설정 (`Ctrl+,`)
 
-### Editor 패널 (4개)
+### Editor 패널 (3개)
 - **Properties** - 요소 속성 편집 (`Ctrl+Shift+P`)
 - **Styles** - CSS 스타일 편집 (`Ctrl+Shift+S`)
-- **Data** - 데이터 바인딩 설정 (`Ctrl+Shift+D`)
 - **Events** - 이벤트 핸들러 관리 (`Ctrl+Shift+E`)
+
+> **Note:** Data 패널은 제거되었습니다. 데이터 바인딩은 Dataset 패널과 컴포넌트 Property Editor를 통해 관리합니다.
 
 ## 아키텍처
 
@@ -38,18 +37,19 @@ src/builder/
 │   ├── core/
 │   │   ├── types.ts          # PanelConfig, PanelProps 타입
 │   │   ├── PanelRegistry.ts  # 패널 등록 싱글톤
-│   │   └── panelConfigs.ts   # 12개 패널 설정
+│   │   └── panelConfigs.ts   # 9개 패널 설정
 │   ├── nodes/NodesPanel.tsx
 │   ├── components/ComponentsPanel.tsx
-│   ├── library/LibraryPanel.tsx
-│   ├── dataset/DatasetPanel.tsx
-│   ├── theme/ThemePanel.tsx
+│   ├── dataset/
+│   │   ├── DatasetPanel.tsx  # DataTables, APIs, Variables, Transformers
+│   │   ├── components/       # List 컴포넌트들
+│   │   ├── editors/          # Editor 컴포넌트들
+│   │   └── presets/          # DataTable Preset System
+│   ├── themes/ThemesPanel.tsx
 │   ├── ai/AIPanel.tsx
-│   ├── user/UserPanel.tsx
 │   ├── settings/SettingsPanel.tsx
 │   ├── properties/PropertiesPanel.tsx
 │   ├── styles/StylesPanel.tsx
-│   ├── data/DataPanel.tsx
 │   └── events/EventsPanel.tsx
 ├── layout/                    # 레이아웃 시스템
 │   ├── PanelNav.tsx          # 48px 네비게이션 바
@@ -90,8 +90,8 @@ interface PanelLayoutState {
 ```
 
 **기본 레이아웃**:
-- Left: `nodes`, `components`, `library`, `dataset`, `theme`, `ai`, `user`, `settings`
-- Right: `properties`, `styles`, `data`, `events`
+- Left: `nodes`, `components`, `dataset`, `theme`, `ai`, `settings`
+- Right: `properties`, `styles`, `events`
 - Active: `nodes` (left), `properties` (right)
 
 **localStorage 연동**:
@@ -231,6 +231,30 @@ export function MyPanel({ isActive }: PanelProps) {
 - usePanelLayout: useCallback으로 핸들러 최적화
 
 ## CSS 클래스
+
+### 표준 패널 구조 (2025-12-02 Updated)
+
+```
+.panel
+├── PanelHeader (title, actions)
+├── .panel-tabs (탭이 있는 경우)
+│   └── .panel-tab / .panel-tab.active
+└── .panel-contents
+    └── .section
+        ├── SectionHeader (title, actions, collapsible)
+        └── .section-content
+            └── 컨텐츠
+```
+
+**panel-tabs** (패널 내부 탭):
+- `.panel-tabs` - 탭 컨테이너
+- `.panel-tab` - 개별 탭 버튼
+- `.panel-tab.active` - 활성 탭
+
+**section** (섹션 구조):
+- `.section` - 섹션 컨테이너
+- `.section-header` - 섹션 헤더 (SectionHeader 컴포넌트)
+- `.section-content` - 섹션 콘텐츠
 
 ### 기존 클래스 재사용
 

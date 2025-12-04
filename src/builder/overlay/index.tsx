@@ -5,6 +5,8 @@ import { MessageService } from "../../utils/messaging";
 import { useVisibleOverlays } from "./hooks/useVisibleOverlays";
 import type { OverlayData as VisibleOverlayData } from "./hooks/useVisibleOverlays";
 import { useOverlayDebug } from "./OverlayDebug";
+import { BorderRadiusHandles } from "./components/BorderRadiusHandles";
+import { useInspectorState } from "../inspector/hooks/useInspectorState";
 
 import "./index.css";
 
@@ -46,6 +48,13 @@ export default function SelectionOverlay() {
 
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
   const rafIdRef = useRef<number | null>(null);
+
+  // ⭐ Border Radius 구독 (리액티브 업데이트) - 조건부 return 전에 선언
+  const borderRadiusFromInspector = useInspectorState((state) => {
+    const computed = state.selectedElement?.computedStyle?.borderRadius;
+    const inline = state.selectedElement?.style?.borderRadius as string | undefined;
+    return inline || computed;
+  });
 
   // Tag 표시 로직 (useMemo로 최적화, Map 사용)
   const displayTag = useMemo(() => {
@@ -223,10 +232,11 @@ export default function SelectionOverlay() {
     iframeRef.current = iframe;
 
     if (!iframe?.contentDocument) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setOverlayRect(null);
-
-      setSelectedTag("");
+      // ⭐ RAF로 초기화 - effect body에서 직접 setState 호출 방지
+      requestAnimationFrame(() => {
+        setOverlayRect(null);
+        setSelectedTag("");
+      });
       return;
     }
 
@@ -283,11 +293,14 @@ export default function SelectionOverlay() {
     window.addEventListener("message", handleMessage);
 
     if (selectedElementId && iframe?.contentWindow) {
-      if (multiSelectMode) {
-        updateMultiOverlays();
-      } else {
-        updatePosition();
-      }
+      // ⭐ RAF로 초기 위치 업데이트 - effect body에서 직접 setState 호출 방지
+      requestAnimationFrame(() => {
+        if (multiSelectMode) {
+          updateMultiOverlays();
+        } else {
+          updatePosition();
+        }
+      });
       iframe.contentWindow.addEventListener("scroll", handleScrollResize);
       window.addEventListener("resize", handleScrollResize);
       window.addEventListener("scroll", handleScrollResize);
@@ -394,6 +407,12 @@ export default function SelectionOverlay() {
         <div className="overlay-pattern">
           <div className="overlay-pattern-inner" />
         </div>
+
+        {/* Border Radius 코너 포인트 */}
+        <BorderRadiusHandles
+          rect={overlayRect}
+          borderRadius={borderRadiusFromInspector}
+        />
       </div>
     </div>
   );

@@ -2,68 +2,33 @@
  * DataTableList - DataTable 목록 컴포넌트
  *
  * DataTable CRUD 및 목록 표시
- * DataTable Preset 선택 기능 포함
  *
  * @see docs/features/DATATABLE_PRESET_SYSTEM.md
  */
 
-import { useState } from "react";
 import { Table2, Plus, Trash2, Edit2 } from "lucide-react";
 import { Button } from "react-aria-components";
 import { useDataStore, useDataTables } from "../../../stores/data";
-import { DataTableEditor } from "../editors/DataTableEditor";
-import { DataTablePresetSelector } from "../../data/presets";
-import type { DataTablePreset } from "../../data/presets";
+import { SectionHeader } from "../../common/SectionHeader";
 
 interface DataTableListProps {
   projectId: string;
+  editingId: string | null;
+  onEditingChange: (id: string | null) => void;
+  onCreateClick: () => void;
 }
 
-export function DataTableList({ projectId }: DataTableListProps) {
+export function DataTableList({
+  projectId,
+  editingId,
+  onEditingChange,
+  onCreateClick,
+}: DataTableListProps) {
   const dataTables = useDataTables();
-  const createDataTable = useDataStore((state) => state.createDataTable);
   const deleteDataTable = useDataStore((state) => state.deleteDataTable);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [isPresetSelectorOpen, setIsPresetSelectorOpen] = useState(false);
 
-  // 현재 편집 중인 DataTable
-  const editingTable = editingId
-    ? dataTables.find((t) => t.id === editingId)
-    : null;
-
-  // Preset 선택 시 DataTable 생성
-  const handlePresetSelect = async (preset: DataTablePreset, sampleCount: number) => {
-    try {
-      const sampleData = preset.generateSampleData(sampleCount);
-      await createDataTable({
-        name: preset.name,
-        project_id: projectId,
-        schema: preset.schema,
-        mockData: sampleData,
-        useMockData: true,
-      });
-    } catch (error) {
-      console.error("DataTable 생성 실패:", error);
-    }
-  };
-
-  // 빈 테이블 생성
-  const handleCreateEmpty = async () => {
-    const name = prompt("DataTable 이름을 입력하세요:");
-    if (!name) return;
-
-    try {
-      await createDataTable({
-        name,
-        project_id: projectId,
-        schema: [],
-        mockData: [],
-        useMockData: true,
-      });
-    } catch (error) {
-      console.error("DataTable 생성 실패:", error);
-    }
-  };
+  // Silence unused variable warning
+  void projectId;
 
   const handleDelete = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -72,7 +37,7 @@ export function DataTableList({ projectId }: DataTableListProps) {
     try {
       await deleteDataTable(id);
       if (editingId === id) {
-        setEditingId(null);
+        onEditingChange(null);
       }
     } catch (error) {
       console.error("DataTable 삭제 실패:", error);
@@ -81,111 +46,79 @@ export function DataTableList({ projectId }: DataTableListProps) {
 
   const handleEdit = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    setEditingId(id);
+    onEditingChange(id);
   };
-
-  const handleCloseEditor = () => {
-    setEditingId(null);
-  };
-
-  if (dataTables.length === 0) {
-    return (
-      <div className="dataset-list">
-        <div className="dataset-empty">
-          <Table2 size={32} className="dataset-empty-icon" />
-          <p className="dataset-empty-text">
-            데이터 테이블이 없습니다.
-            <br />
-            새 테이블을 추가하세요.
-          </p>
-        </div>
-        <DataTablePresetSelector
-          trigger={
-            <Button className="dataset-add-btn">
-              <Plus size={16} />
-              <span>DataTable 추가</span>
-            </Button>
-          }
-          onSelect={handlePresetSelect}
-          onCreateEmpty={handleCreateEmpty}
-          isOpen={isPresetSelectorOpen}
-          onOpenChange={setIsPresetSelectorOpen}
-        />
-      </div>
-    );
-  }
 
   return (
-    <div className="dataset-list">
-      <div className="dataset-list-header">
-        <span className="dataset-list-title">DataTables</span>
-        <span className="dataset-list-count">{dataTables.length}개</span>
-      </div>
-
-      {dataTables.map((table) => (
-        <div
-          key={table.id}
-          className={`dataset-item ${editingId === table.id ? "selected" : ""}`}
-          onClick={() => setEditingId(table.id)}
-        >
-          <div className="dataset-item-icon">
-            <Table2 size={16} />
-          </div>
-          <div className="dataset-item-info">
-            <div className="dataset-item-name">{table.name}</div>
-            <div className="dataset-item-meta">
-              {table.schema.length}개 필드 ·{" "}
-              {table.mockData?.length || 0}개 행
-            </div>
-          </div>
-          <span
-            className={`dataset-badge ${table.useMockData ? "mock" : "live"}`}
-          >
-            {table.useMockData ? "Mock" : "Live"}
-          </span>
-          <div className="dataset-item-actions">
-            <button
-              type="button"
-              className="iconButton"
-              onClick={(e) => handleEdit(table.id, e)}
-              title="편집"
-            >
-              <Edit2 size={14} />
-            </button>
-            <button
-              type="button"
-              className="iconButton"
-              onClick={(e) => handleDelete(table.id, e)}
-              title="삭제"
-            >
-              <Trash2 size={14} />
-            </button>
-          </div>
-        </div>
-      ))}
-
-      <DataTablePresetSelector
-        trigger={
-          <Button className="dataset-add-btn">
-            <Plus size={16} />
-            <span>DataTable 추가</span>
-          </Button>
+    <div className="section">
+      <SectionHeader
+        title="DataTables"
+        actions={
+          <span className="dataset-list-count">{dataTables.length}개</span>
         }
-        onSelect={handlePresetSelect}
-        onCreateEmpty={handleCreateEmpty}
-        isOpen={isPresetSelectorOpen}
-        onOpenChange={setIsPresetSelectorOpen}
       />
+      <div className="section-content">
+        {dataTables.length === 0 ? (
+          <div className="dataset-empty">
+            <Table2 size={32} className="dataset-empty-icon" />
+            <p className="dataset-empty-text">
+              데이터 테이블이 없습니다.
+              <br />
+              새 테이블을 추가하세요.
+            </p>
+          </div>
+        ) : (
+          <div className="list-group" role="list">
+            {dataTables.map((table) => (
+              <div
+                key={table.id}
+                role="listitem"
+                className={`list-item-card ${editingId === table.id ? "selected" : ""}`}
+                onClick={() => onEditingChange(table.id)}
+              >
+                <div className="list-item-icon">
+                  <Table2 size={16} />
+                </div>
+                <div className="list-item-content">
+                  <div className="list-item-name">{table.name}</div>
+                  <div className="list-item-meta">
+                    {table.schema.length}개 필드 ·{" "}
+                    {table.mockData?.length || 0}개 행
+                  </div>
+                </div>
+                <span
+                  className={`list-item-badge ${table.useMockData ? "mock" : "live"}`}
+                >
+                  {table.useMockData ? "Mock" : "Live"}
+                </span>
+                <div className="list-item-actions">
+                  <button
+                    type="button"
+                    className="iconButton"
+                    onClick={(e) => handleEdit(table.id, e)}
+                    title="편집"
+                  >
+                    <Edit2 size={14} />
+                  </button>
+                  <button
+                    type="button"
+                    className="iconButton"
+                    onClick={(e) => handleDelete(table.id, e)}
+                    title="삭제"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
 
-      {/* DataTable Editor Modal */}
-      {editingTable && (
-        <div className="dataset-editor-overlay">
-          <DataTableEditor
-            dataTable={editingTable}
-            onClose={handleCloseEditor}
-          />
-        </div>
-      )}
+        <Button className="dataset-add-btn" onPress={onCreateClick}>
+          <Plus size={16} />
+          <span>DataTable 추가</span>
+        </Button>
+      </div>
     </div>
   );
 }

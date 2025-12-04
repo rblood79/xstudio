@@ -362,3 +362,73 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
 
 // 기존 호환성을 위한 useStore export
 export const useStore = create<ElementsState>(createElementsSlice);
+
+// ============================================
+// 🚀 Performance Optimized Selectors
+// ============================================
+
+/**
+ * 현재 페이지의 요소만 반환하는 선택적 selector
+ *
+ * 🎯 최적화 효과:
+ * - 다른 페이지의 요소 변경에 재렌더되지 않음
+ * - Sidebar에서 전체 elements 대신 사용
+ *
+ * @example
+ * ```tsx
+ * // ❌ 기존: 모든 elements 구독 (불필요한 재렌더 발생)
+ * const elements = useStore((state) => state.elements);
+ * const currentPageElements = useMemo(() =>
+ *   elements.filter(el => el.page_id === currentPageId),
+ *   [elements, currentPageId]
+ * );
+ *
+ * // ✅ 개선: 현재 페이지 요소만 구독
+ * const currentPageElements = useCurrentPageElements();
+ * ```
+ */
+export const useCurrentPageElements = (): Element[] => {
+  return useStore((state) => {
+    const { elements, currentPageId } = state;
+    if (!currentPageId) return [];
+    return elements.filter((el) => el.page_id === currentPageId);
+  });
+};
+
+/**
+ * elementsMap을 활용한 O(1) 요소 조회 selector
+ *
+ * @param elementId - 조회할 요소 ID
+ * @returns 요소 또는 undefined
+ */
+export const useElementById = (elementId: string | null): Element | undefined => {
+  return useStore((state) => {
+    if (!elementId) return undefined;
+    return state.elementsMap.get(elementId);
+  });
+};
+
+/**
+ * childrenMap을 활용한 O(1) 자식 요소 조회 selector
+ *
+ * @param parentId - 부모 요소 ID (null이면 루트 요소들)
+ * @returns 자식 요소 배열
+ */
+export const useChildElements = (parentId: string | null): Element[] => {
+  return useStore((state) => {
+    const key = parentId || 'root';
+    return state.childrenMap.get(key) || [];
+  });
+};
+
+/**
+ * 현재 페이지의 요소 개수만 반환 (가벼운 조회용)
+ * 트리 노드 개수 표시 등에 사용
+ */
+export const useCurrentPageElementCount = (): number => {
+  return useStore((state) => {
+    const { elements, currentPageId } = state;
+    if (!currentPageId) return 0;
+    return elements.filter((el) => el.page_id === currentPageId).length;
+  });
+};

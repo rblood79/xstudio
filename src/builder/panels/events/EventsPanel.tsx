@@ -26,11 +26,17 @@ import { useActions } from "../../events/state/useActions";
 import { useEventSelection } from "../../events/state/useEventSelection";
 import { ConditionEditor } from "../../events/components/ConditionEditor";
 import { DebounceThrottleEditor } from "../../events/components/DebounceThrottleEditor";
-import { ChevronLeft, Trash, CirclePlus, Zap } from "lucide-react";
+import {
+  ChevronLeft,
+  Trash,
+  CirclePlus,
+  Zap,
+  SquareMousePointer,
+} from "lucide-react";
 import { iconProps } from "../../../utils/ui/uiConstants";
 import { PanelHeader, PropertySection, EmptyState } from "../common";
 import { useInitialMountDetection } from "../../hooks/useInitialMountDetection";
-import "../common/index.css";
+import "./EventsPanel.css";
 
 export function EventsPanel({ isActive }: PanelProps) {
   const [showAddAction, setShowAddAction] = useState(false);
@@ -48,7 +54,7 @@ export function EventsPanel({ isActive }: PanelProps) {
   if (!selectedElement) {
     return (
       <div className="events-panel">
-        <PanelHeader title="Events" />
+        <PanelHeader icon={<SquareMousePointer size={16} />} title="Events" />
         <div className="panel-contents">
           <EmptyState message="요소를 선택하세요" />
         </div>
@@ -87,8 +93,12 @@ function EventsPanelContent({
   const eventsFromElement = selectedElement?.events || [];
 
   // React Stately로 이벤트 핸들러 관리
-  const { handlers: rawHandlers, addHandler, updateHandler, removeHandler } =
-    useEventHandlers(eventsFromElement as EventHandler[]);
+  const {
+    handlers: rawHandlers,
+    addHandler,
+    updateHandler,
+    removeHandler,
+  } = useEventHandlers(eventsFromElement as EventHandler[]);
 
   // ⭐ Memoize handlers to prevent infinite loop
   const handlersJson = React.useMemo(
@@ -169,6 +179,7 @@ function EventsPanelContent({
   return (
     <div className="events-panel">
       <PanelHeader
+        icon={<SquareMousePointer size={16} />}
         title="Events"
         actions={
           <EventTypePicker
@@ -182,7 +193,13 @@ function EventsPanelContent({
         {handlers.length === 0 ? (
           /* 이벤트 핸들러 없음 */
           <EmptyState
-            icon={<Zap size={32} color={iconProps.color} strokeWidth={iconProps.stroke} />}
+            icon={
+              <Zap
+                size={32}
+                color={iconProps.color}
+                strokeWidth={iconProps.stroke}
+              />
+            }
             message="이벤트 핸들러가 없습니다"
             description="상단의 + 버튼을 눌러 이벤트를 추가하세요"
           />
@@ -246,10 +263,7 @@ function EventsPanelContent({
               </PropertySection>
 
               {/* Actions Section */}
-              <PropertySection
-                id="actions"
-                title="Actions"
-              >
+              <PropertySection id="actions" title="Actions">
                 <div className="actions-header">
                   {!showAddAction && (
                     <Button

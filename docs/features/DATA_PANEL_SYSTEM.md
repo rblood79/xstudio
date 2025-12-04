@@ -1,8 +1,8 @@
 # Data Panel System Design
 
-**Status:** Complete (v2.2 - Phase 6 Complete)
+**Status:** Complete (v2.3 - Panel Architecture Refactoring)
 **Created:** 2025-11-28
-**Updated:** 2025-11-30
+**Updated:** 2025-12-03
 **Author:** Claude
 **Related:** Event System, DataBinding, Collection Components
 
@@ -3027,10 +3027,17 @@ src/
 │   │   │   └── editors/
 │   │   │       └── ListBoxEditor.tsx     # ✅ 통합 예시
 │   │   └── dataset/
+│   │       ├── DatasetPanel.tsx          # ✅ 데이터 목록 패널 (4탭)
+│   │       ├── DatasetEditorPanel.tsx    # ✅ 에디터 패널 (탭 관리)
+│   │       ├── stores/
+│   │       │   └── datasetEditorStore.ts # ✅ 에디터 상태 관리
+│   │       ├── types/
+│   │       │   └── editorTypes.ts        # ✅ 에디터 모드/탭 타입
 │   │       └── editors/
-│   │           ├── DataTableEditor.tsx   # Phase 3
-│   │           ├── ApiEndpointEditor.tsx # Phase 3
-│   │           └── VariableEditor.tsx    # Phase 4
+│   │           ├── DataTableCreator.tsx  # ✅ 테이블 생성 (preset/empty)
+│   │           ├── DataTableEditor.tsx   # ✅ 테이블 편집 (schema/data/settings)
+│   │           ├── ApiEndpointEditor.tsx # ✅ API 편집 (basic/headers/body/response/test)
+│   │           └── VariableEditor.tsx    # ✅ 변수 편집 (basic/validation/transform)
 │   └── stores/
 │       └── data.ts                       # Phase 1
 │
@@ -3042,4 +3049,96 @@ src/
 
 ---
 
-## 18. 참고 자료
+## 18. Panel Architecture (v2.3)
+
+### 18.1 개요
+
+DatasetPanel과 DatasetEditorPanel은 분리된 패널로 동작하며, 탭 상태는 패널 레벨에서 관리됩니다.
+
+### 18.2 패널 구조
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                     DatasetPanel (목록)                          │
+├─────────────────────────────────────────────────────────────────┤
+│  PanelHeader ("Dataset")                                         │
+│  ├─ panel-tabs (Tables | APIs | Variables | Transformers)       │
+│  └─ panel-contents                                               │
+│      └─ DataTableList / ApiEndpointList / VariableList / ...    │
+└─────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────┐
+│                     DatasetEditorPanel (편집)                    │
+├─────────────────────────────────────────────────────────────────┤
+│  PanelHeader (동적 타이틀)                                       │
+│  ├─ panel-tabs 또는 creator-mode-selection (모드에 따라)        │
+│  └─ panel-contents                                               │
+│      └─ Editor 컴포넌트 (DataTableEditor 등)                     │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### 18.3 탭 상태 관리 (State Lifting)
+
+탭 상태는 DatasetEditorPanel에서 관리되며, 각 에디터는 `activeTab` prop을 받습니다.
+
+```tsx
+// DatasetEditorPanel.tsx
+const [tableTab, setTableTab] = useState<TableEditorTab>("schema");
+const [apiTab, setApiTab] = useState<ApiEditorTab>("basic");
+const [variableTab, setVariableTab] = useState<VariableEditorTab>("basic");
+const [creatorMode, setCreatorMode] = useState<"empty" | "preset">("preset");
+
+// 에디터에 activeTab 전달
+<DataTableEditor activeTab={tableTab} />
+<ApiEndpointEditor activeTab={apiTab} />
+<VariableEditor activeTab={variableTab} />
+<DataTableCreator mode={creatorMode} />
+```
+
+### 18.4 에디터 타입별 탭 구성
+
+| 에디터 | 탭 구성 |
+|--------|---------|
+| **DataTableCreator** | mode-selection (빈 테이블 / Preset) |
+| **DataTableEditor** | Schema, Table, Settings |
+| **ApiEndpointEditor** | Basic, Headers, Body, Response, Test |
+| **VariableEditor** | Basic, Validation, Transform |
+
+### 18.5 모드 타입 (editorTypes.ts)
+
+```typescript
+export type DatasetEditorMode =
+  | { type: "table-create"; projectId: string }
+  | { type: "table-edit"; tableId: string }
+  | { type: "api-create"; projectId: string }
+  | { type: "api-edit"; endpointId: string; initialTab?: ApiEditorTab }
+  | { type: "variable-create"; projectId: string }
+  | { type: "variable-edit"; variableId: string }
+  | { type: "transformer-create"; projectId: string }
+  | { type: "transformer-edit"; transformerId: string }
+  | null;
+
+export type TableEditorTab = "schema" | "data" | "settings";
+export type ApiEditorTab = "basic" | "headers" | "body" | "response" | "test";
+export type VariableEditorTab = "basic" | "validation" | "transform";
+```
+
+### 18.6 탭 변경 시 에디터 닫기
+
+DatasetPanel에서 탭(Tables/APIs/Variables/Transformers)이 변경되면 DatasetEditorPanel이 닫힙니다:
+
+```tsx
+// DatasetPanel.tsx
+onClick={() => {
+  if (activeTab !== tab.id) {
+    if (editorMode) {
+      closeEditor(); // 에디터 닫기
+    }
+    setActiveTab(tab.id);
+  }
+}}
+```
+
+---
+
+## 19. 참고 자료

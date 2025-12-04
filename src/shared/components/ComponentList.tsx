@@ -33,13 +33,14 @@ import {
   BarChart3,
   Settings2,
   ChevronRight,
-  Clock,
   Star,
   Trash2,
   Link,
   Paintbrush,
   Layers,
+  Box,
 } from "lucide-react";
+import { PanelHeader } from "../../builder/panels/common/PanelHeader";
 import { useEditModeStore } from "../../builder/stores/editMode";
 import { iconProps } from "../../utils/ui/uiConstants";
 import { ComponentSearch } from "./ComponentSearch";
@@ -164,13 +165,17 @@ const ComponentItem = ({
   }, [component.tag, onAdd, selectedElementId]);
 
   return (
-    <div className="component-list-item">
-      <button onClick={handleClick} title={`Add ${component.label} element`}>
-        <component.icon strokeWidth={1} width={21} height={21} />
-        {isRecent && count > 0 && <Badge>{count}</Badge>}
-      </button>
+    <button
+      className="list-item"
+      onClick={handleClick}
+      title={`Add ${component.label} element`}
+    >
+      <div className="list-item-icon">
+        <component.icon strokeWidth={1.5} width={16} height={16} />
+      </div>
+      {isRecent && count > 0 && <Badge>{count}</Badge>}
       <span className="item-text">{component.label}</span>
-    </div>
+    </button>
   );
 };
 
@@ -355,9 +360,10 @@ const ComponentList = memo(
 
     return (
       <div className="panel">
-        <div className="panel-header">
-          <h3 className="panel-title">Components</h3>
-          <div className="panel-actions">
+        <PanelHeader
+          icon={<Box size={16} />}
+          title="Components"
+          actions={
             <button className="iconButton" aria-label="filter components">
               <Settings2
                 color={iconProps.color}
@@ -365,8 +371,8 @@ const ComponentList = memo(
                 size={iconProps.size}
               />
             </button>
-          </div>
-        </div>
+          }
+        />
 
         {/* 검색바 */}
         <ComponentSearch onSearchChange={setSearchQuery} />
@@ -394,29 +400,21 @@ const ComponentList = memo(
                       size={iconProps.size}
                     />
                   </button>
-                  <button
-                    className="iconButton"
-                    aria-label="Toggle Recently Used"
-                  >
-                    <Clock
-                      color={iconProps.color}
-                      strokeWidth={iconProps.stroke}
-                      size={iconProps.size}
-                    />
-                  </button>
                 </div>
               </div>
               <div className="section-content">
-                {recentComponents.map((component) => (
-                  <ComponentItem
-                    key={component.tag}
-                    component={component}
-                    onAdd={handleComponentAdd}
-                    selectedElementId={selectedElementId}
-                    isRecent={true}
-                    count={getComponentCount(component.tag)}
-                  />
-                ))}
+                <div className="list-group" role="list">
+                  {recentComponents.map((component) => (
+                    <ComponentItem
+                      key={component.tag}
+                      component={component}
+                      onAdd={handleComponentAdd}
+                      selectedElementId={selectedElementId}
+                      isRecent={true}
+                      count={getComponentCount(component.tag)}
+                    />
+                  ))}
+                </div>
               </div>
             </div>
           )}
@@ -434,14 +432,16 @@ const ComponentList = memo(
                 </div>
               </div>
               <div className="section-content">
-                {favoriteComponents.map((component) => (
-                  <ComponentItem
-                    key={component.tag}
-                    component={component}
-                    onAdd={handleComponentAdd}
-                    selectedElementId={selectedElementId}
-                  />
-                ))}
+                <div className="list-group" role="list">
+                  {favoriteComponents.map((component) => (
+                    <ComponentItem
+                      key={component.tag}
+                      component={component}
+                      onAdd={handleComponentAdd}
+                      selectedElementId={selectedElementId}
+                    />
+                  ))}
+                </div>
               </div>
             </div>
           )}
@@ -490,14 +490,16 @@ const ComponentList = memo(
                   </div>
                   {expanded && (
                     <div className="section-content">
-                      {components.map((component) => (
-                        <ComponentItem
-                          key={component.tag}
-                          component={component}
-                          onAdd={handleComponentAdd}
-                          selectedElementId={selectedElementId}
-                        />
-                      ))}
+                      <div className="list-group" role="list">
+                        {components.map((component) => (
+                          <ComponentItem
+                            key={component.tag}
+                            component={component}
+                            onAdd={handleComponentAdd}
+                            selectedElementId={selectedElementId}
+                          />
+                        ))}
+                      </div>
                     </div>
                   )}
                 </div>
@@ -543,14 +545,16 @@ const ComponentList = memo(
                   </div>
                   {expanded && (
                     <div className="section-content">
-                      {components.map((component) => (
-                        <ComponentItem
-                          key={component.tag}
-                          component={component}
-                          onAdd={handleComponentAdd}
-                          selectedElementId={selectedElementId}
-                        />
-                      ))}
+                      <div className="list-group" role="list">
+                        {components.map((component) => (
+                          <ComponentItem
+                            key={component.tag}
+                            component={component}
+                            onAdd={handleComponentAdd}
+                            selectedElementId={selectedElementId}
+                          />
+                        ))}
+                      </div>
                     </div>
                   )}
                 </div>

@@ -66,7 +66,12 @@
   }
 
   .panel-wrapper[data-panel="components"] .section .section-content {
-    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
+  }
+
+  .panel-wrapper[data-panel="properties"] .section .section-content {
+    display: flex;
+    flex-direction: column;
   }
 
   .panel-contents {
@@ -484,11 +489,21 @@
     }
 
     .section-header .section-title {
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-sm);
       padding: var(--spacing-sm);
       border-bottom: 0;
       font-weight: var(--font-weight-semibold);
       font-size: var(--text-xs);
       line-height: var(--text-xs--line-height);
+    }
+
+    .section-header .section-icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--on-surface-variant);
     }
 
     .section-header .section-actions {
@@ -502,8 +517,7 @@
     .section-content {
       background-color: var(--secondary-container);
       padding: var(--spacing-sm);
-      display: flex;
-      flex-direction: column;
+
       gap: var(--spacing-sm);
 
       .fieldset-actions {

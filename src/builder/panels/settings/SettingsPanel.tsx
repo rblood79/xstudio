@@ -20,6 +20,7 @@ import {
   Moon,
   Sun,
   Monitor,
+  Settings,
 } from "lucide-react";
 import { Button } from "react-aria-components";
 import { useParams } from "react-router-dom";
@@ -203,7 +204,7 @@ function SettingsContent() {
 
   return (
     <div className="settings-panel">
-      <PanelHeader title="Settings" />
+      <PanelHeader icon={<Settings size={16} />} title="Settings" />
 
       <div className="panel-settings">
         {/* Save Mode Section */}

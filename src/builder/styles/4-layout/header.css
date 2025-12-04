@@ -6,16 +6,17 @@
 
   /* App Root - Main Grid Layout */
   .app {
-    background-color: var(--surface-variant);
     height: 100vh;
     overflow: hidden;
     display: grid;
-    grid-template-rows: 48px calc(100% - 48px - 24px) 24px;
+    /* Header(48px) + Main(flex) + Bottom(auto - 열리면 높이 표시) */
+    grid-template-rows: 48px 1fr auto;
     grid-template-columns: auto 1fr auto;
     grid-template-areas:
       "header header header"
       "sidebar main inspector"
-      "footer footer footer";
+      "bottom bottom bottom";
+    background-color: var(--surface);
   }
 
   /* ========================================

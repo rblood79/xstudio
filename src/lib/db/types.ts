@@ -8,6 +8,12 @@
 import type { Element, Page } from '../../types/core/store.types';
 import type { DesignToken, DesignTheme } from '../../types/theme';
 import type { Layout } from '../../types/builder/layout.types';
+import type {
+  DataTable,
+  ApiEndpoint,
+  Variable,
+  Transformer,
+} from '../../types/builder/data.types';
 
 // === Project Types ===
 
@@ -130,6 +136,56 @@ export interface DatabaseAdapter {
     getById(id: string): Promise<Layout | null>;
     getByProject(projectId: string): Promise<Layout[]>;
     getAll(): Promise<Layout[]>;
+  };
+
+  // Data Tables (Data Panel System)
+  data_tables: {
+    insert(dataTable: DataTable): Promise<DataTable>;
+    update(id: string, data: Partial<DataTable>): Promise<DataTable>;
+    delete(id: string): Promise<void>;
+    getById(id: string): Promise<DataTable | null>;
+    getByProject(projectId: string): Promise<DataTable[]>;
+    getByName(name: string): Promise<DataTable | null>;
+    getAll(): Promise<DataTable[]>;
+  };
+
+  // API Endpoints (Data Panel System)
+  api_endpoints: {
+    insert(apiEndpoint: ApiEndpoint): Promise<ApiEndpoint>;
+    update(id: string, data: Partial<ApiEndpoint>): Promise<ApiEndpoint>;
+    delete(id: string): Promise<void>;
+    getById(id: string): Promise<ApiEndpoint | null>;
+    getByProject(projectId: string): Promise<ApiEndpoint[]>;
+    getByName(name: string): Promise<ApiEndpoint | null>;
+    getByTargetDataTable(tableName: string): Promise<ApiEndpoint[]>;
+    getAll(): Promise<ApiEndpoint[]>;
+  };
+
+  // Variables (Data Panel System)
+  variables: {
+    insert(variable: Variable): Promise<Variable>;
+    update(id: string, data: Partial<Variable>): Promise<Variable>;
+    delete(id: string): Promise<void>;
+    getById(id: string): Promise<Variable | null>;
+    getByProject(projectId: string): Promise<Variable[]>;
+    getByName(name: string): Promise<Variable | null>;
+    getByScope(scope: string): Promise<Variable[]>;
+    getByPage(pageId: string): Promise<Variable[]>;
+    getAll(): Promise<Variable[]>;
+  };
+
+  // Transformers (Data Panel System)
+  transformers: {
+    insert(transformer: Transformer): Promise<Transformer>;
+    update(id: string, data: Partial<Transformer>): Promise<Transformer>;
+    delete(id: string): Promise<void>;
+    getById(id: string): Promise<Transformer | null>;
+    getByProject(projectId: string): Promise<Transformer[]>;
+    getByName(name: string): Promise<Transformer | null>;
+    getByLevel(level: string): Promise<Transformer[]>;
+    getByInputDataTable(tableName: string): Promise<Transformer[]>;
+    getByOutputDataTable(tableName: string): Promise<Transformer[]>;
+    getAll(): Promise<Transformer[]>;
   };
 
   // History

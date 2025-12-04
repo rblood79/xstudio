@@ -7,7 +7,7 @@
 ## 📋 Table of Contents
 
 - [Event System (2025-11-11)](#event-system)
-- [Monitor System (2025-11-11)](#monitor-system)
+- [Monitor Panel (Rebuilding)](#monitor-panel)
 - [Panel System Refactoring (2025-11-16)](#panel-system-refactoring)
 - [Multi-Element Selection (2025-11-16)](#multi-element-selection)
 - [Multi-Element Editing (2025-11-16)](#multi-element-editing)
@@ -60,29 +60,24 @@ Visual programming system with drag-and-drop event handlers and action configura
 
 ---
 
-## Monitor System
+## Monitor Panel
 
-**Status**: ✅ Complete (2025-11-11)
+**Status**: 🔄 Rebuilding (2025-01) - Panel 시스템 기반으로 재구축 중
 
 ### Overview
-Real-time performance tracking and debugging displayed in Builder footer.
+기존 footer monitor 시스템을 완전히 삭제하고 Panel 시스템 기반의 경량 모니터링 패널로 재구축
 
-### Key Features
-- Memory Monitor with real-time stats
-- Save Monitor with performance metrics
-- History Monitor with undo/redo tracking
-- All console logs moved to UI (no console pollution)
-- Zero performance impact
+### Planned Features
+- Memory usage monitoring (메모리 사용량 추적)
+- SVG 기반 Mini chart visualization
+- RequestIdleCallback 기반 수집 (퍼포먼스 영향 최소화)
+- Bottom Panel Slot 통합 (resize 지원)
 
-### Files
-- `src/builder/monitor/` - UI component
-- `src/builder/stores/memoryMonitor.ts` - Memory tracking
-- `src/services/save/saveService.ts` - Save tracking
+### Files (구현 예정)
+- `src/builder/panels/monitor/` - Panel component
 
-### Technical Details
-- Auto-update intervals (Memory: 1s, Save: 5s, History: on change)
-- UI-based status messages (no console.log)
-- Metrics reset functionality
+### Implementation Plan
+- See `docs/MONITOR_PANEL_REDESIGN.md` for detailed implementation plan
 
 ---
 

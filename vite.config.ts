@@ -157,6 +157,12 @@ export default defineConfig(({ command }) => {
         "@supabase/supabase-js",
         "react-aria-components",
         "zustand",
+        "three",
+        "three/examples/jsm/postprocessing/EffectComposer.js",
+        "three/examples/jsm/postprocessing/RenderPass.js",
+        "three/examples/jsm/postprocessing/AfterimagePass.js",
+        "three/examples/jsm/postprocessing/UnrealBloomPass.js",
+        "three/examples/jsm/postprocessing/OutputPass.js",
       ],
       // 문제가 있는 의존성을 사전 번들링에서 제외 (필요시 추가)
       exclude: [],

@@ -36,13 +36,11 @@ type GetState = Parameters<StateCreator<LayoutsStore>>[1];
 export const createFetchLayoutsAction =
   (set: SetState, get: GetState) =>
   async (projectId: string): Promise<void> => {
-    console.log(`📥 [fetchLayouts] 프로젝트 ${projectId}의 레이아웃 조회 시작...`);
     set({ isLoading: true, error: null });
 
     try {
       const db = await getDB();
       const data = await (db as unknown as { layouts: { getByProject: (projectId: string) => Promise<Layout[]> } }).layouts.getByProject(projectId);
-      console.log(`📥 [fetchLayouts] IndexedDB에서 ${data?.length || 0}개 레이아웃 조회됨`);
 
       // Sort by order_num first, then by name
       const sortedData = (data || []).sort((a, b) => {
@@ -53,7 +51,6 @@ export const createFetchLayoutsAction =
 
       // ⭐ Layout/Slot System: 저장된 currentLayoutId가 유효한지 검증
       const { currentLayoutId } = get();
-      console.log(`📥 [fetchLayouts] 현재 currentLayoutId: ${currentLayoutId}, 레이아웃 수: ${sortedData.length}`);
 
       // 저장된 currentLayoutId가 실제 레이아웃 목록에 있는지 확인
       const isCurrentLayoutValid = currentLayoutId && sortedData.some((l) => l.id === currentLayoutId);
@@ -70,14 +67,6 @@ export const createFetchLayoutsAction =
         isLoading: false,
         currentLayoutId: newCurrentLayoutId,
       });
-
-      if (shouldAutoSelect && defaultLayout) {
-        console.log(`✅ [fetchLayouts] Layout 자동 선택 (order_num=${defaultLayout.order_num}): ${defaultLayout.name} (${defaultLayout.id})`);
-      } else if (sortedData.length === 0) {
-        console.log("📥 [fetchLayouts] 레이아웃이 없음");
-      } else if (isCurrentLayoutValid) {
-        console.log(`📥 [fetchLayouts] 저장된 레이아웃 복원: ${currentLayoutId}`);
-      }
     } catch (error) {
       console.error("❌ Layout 목록 조회 실패:", error);
       set({ error: error as Error, isLoading: false });
@@ -120,7 +109,6 @@ export const createCreateLayoutAction =
       };
 
       await db.elements.insert(bodyElement);
-      console.log("✅ Layout body 요소 생성 완료:", bodyElement.id);
 
       // ⭐ Layout/Slot System: body 요소를 elements 스토어에도 추가
       const { elements, setElements } = useStore.getState();
@@ -133,7 +121,6 @@ export const createCreateLayoutAction =
         isLoading: false,
       });
 
-      console.log("✅ Layout 생성 완료:", newLayout.name);
       return newLayout;
     } catch (error) {
       console.error("❌ Layout 생성 실패:", error);
@@ -162,8 +149,6 @@ export const createUpdateLayoutAction =
         ),
         isLoading: false,
       });
-
-      console.log("✅ Layout 업데이트 완료:", id);
     } catch (error) {
       console.error("❌ Layout 업데이트 실패:", error);
       set({ error: error as Error, isLoading: false });
@@ -192,7 +177,6 @@ export const createDeleteLayoutAction =
       );
 
       if (pagesUsingLayout.length > 0) {
-        console.log(`🧹 [deleteLayout] ${pagesUsingLayout.length}개 Page의 layout_id 정리 중...`);
         await Promise.all(
           pagesUsingLayout.map((page) =>
             db.pages.update(page.id, { layout_id: null })
@@ -207,7 +191,6 @@ export const createDeleteLayoutAction =
             : p
         );
         setPages(updatedPages);
-        console.log(`✅ [deleteLayout] ${pagesUsingLayout.length}개 Page의 layout_id 정리 완료`);
       }
 
       // 2. ⭐ Layout의 모든 elements 삭제
@@ -215,7 +198,6 @@ export const createDeleteLayoutAction =
       const layoutElements = allElements.filter((el) => el.layout_id === id);
 
       if (layoutElements.length > 0) {
-        console.log(`🧹 [deleteLayout] ${layoutElements.length}개 Layout elements 삭제 중...`);
         await Promise.all(
           layoutElements.map((el) => db.elements.delete(el.id))
         );
@@ -224,7 +206,6 @@ export const createDeleteLayoutAction =
         const { elements, setElements } = useStore.getState();
         const filteredElements = elements.filter((el) => el.layout_id !== id);
         setElements(filteredElements, { skipHistory: true });
-        console.log(`✅ [deleteLayout] ${layoutElements.length}개 Layout elements 삭제 완료`);
       }
 
       // 3. Layout 삭제
@@ -238,8 +219,6 @@ export const createDeleteLayoutAction =
         currentLayoutId: currentLayoutId === id ? null : currentLayoutId,
         isLoading: false,
       });
-
-      console.log("✅ Layout 삭제 완료:", id);
     } catch (error) {
       console.error("❌ Layout 삭제 실패:", error);
       set({ error: error as Error, isLoading: false });
@@ -309,7 +288,6 @@ export const createDuplicateLayoutAction =
         isLoading: false,
       });
 
-      console.log("✅ Layout 복제 완료:", newLayout.name);
       return newLayout;
     } catch (error) {
       console.error("❌ Layout 복제 실패:", error);
@@ -328,7 +306,6 @@ export const createDuplicateLayoutAction =
 export const createSetCurrentLayoutAction =
   (set: SetState) =>
   (layoutId: string | null): void => {
-    console.log(`🏗️ [setCurrentLayout] Layout ID 변경: ${layoutId}`);
     set({ currentLayoutId: layoutId });
   };
 

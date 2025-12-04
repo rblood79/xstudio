@@ -7,20 +7,18 @@
  * - Request Body 설정
  * - Response Mapping 설정
  * - 테스트 실행
+ * - Column Selection + Import to DataTable (Phase 4)
  */
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import {
   Plus,
   Trash2,
   ChevronDown,
   ChevronRight,
-  Globe,
-  Settings,
   Play,
-  Code,
-  FileJson,
 } from "lucide-react";
+import type { ApiEditorTab } from "../types/editorTypes";
 import { useDataStore } from "../../../stores/data";
 import type {
   ApiEndpoint,
@@ -31,11 +29,19 @@ import {
   PropertySelect,
   PropertySwitch,
 } from "../../common";
+import { ColumnSelector } from "../components/ColumnSelector";
+import {
+  detectColumns,
+  columnsToSchema,
+  extractSelectedData,
+  type DetectedColumn,
+} from "../utils/columnDetector";
 import "./ApiEndpointEditor.css";
 
 interface ApiEndpointEditorProps {
   endpoint: ApiEndpoint;
   onClose: () => void;
+  activeTab: ApiEditorTab;
 }
 
 const HTTP_METHODS: { value: HttpMethod; label: string }[] = [
@@ -46,18 +52,19 @@ const HTTP_METHODS: { value: HttpMethod; label: string }[] = [
   { value: "DELETE", label: "DELETE" },
 ];
 
-export function ApiEndpointEditor({ endpoint, onClose }: ApiEndpointEditorProps) {
+export function ApiEndpointEditor({ endpoint, onClose, activeTab }: ApiEndpointEditorProps) {
   const updateApiEndpoint = useDataStore((state) => state.updateApiEndpoint);
   const executeApiEndpoint = useDataStore((state) => state.executeApiEndpoint);
+  const createDataTable = useDataStore((state) => state.createDataTable);
 
-  const [activeTab, setActiveTab] = useState<"basic" | "headers" | "body" | "response" | "test">(
-    "basic"
-  );
   const [expandedSections, setExpandedSections] = useState<Set<string>>(
     new Set(["headers", "queryParams"])
   );
   const [testResult, setTestResult] = useState<{ success: boolean; data: unknown } | null>(null);
   const [isExecuting, setIsExecuting] = useState(false);
+  const [detectedColumns, setDetectedColumns] = useState<DetectedColumn[]>([]);
+  const [isImporting, setIsImporting] = useState(false);
+  const hasAutoTriggeredTest = useRef(false);
 
   // 기본 정보 업데이트
   const handleBasicUpdate = useCallback(
@@ -134,15 +141,112 @@ export function ApiEndpointEditor({ endpoint, onClose }: ApiEndpointEditorProps)
   const handleTest = useCallback(async () => {
     setIsExecuting(true);
     setTestResult(null);
+    setDetectedColumns([]);
     try {
       const result = await executeApiEndpoint(endpoint.id);
+
+      console.log("🔍 API result:", {
+        result,
+        resultType: typeof result,
+        dataPath: endpoint.responseMapping?.dataPath,
+      });
+
       setTestResult({ success: true, data: result });
+
+      // 성공 시 컬럼 자동 감지
+      // executeApiEndpoint이 이미 dataPath를 적용한 결과를 반환하므로
+      // 여기서는 다시 적용하지 않음
+      let dataToAnalyze = result;
+
+      // 응답이 객체인 경우 배열 필드 자동 탐색
+      if (!Array.isArray(dataToAnalyze) && typeof dataToAnalyze === "object" && dataToAnalyze !== null) {
+        // 응답 객체에서 배열 필드 찾기 (예: results, data, items, records 등)
+        const commonArrayFields = ["results", "data", "items", "records", "list", "rows", "entries"];
+        for (const field of commonArrayFields) {
+          const fieldValue = (dataToAnalyze as Record<string, unknown>)[field];
+          if (Array.isArray(fieldValue) && fieldValue.length > 0) {
+            console.log(`🔍 Auto-detected array field: "${field}" with ${fieldValue.length} items`);
+            dataToAnalyze = fieldValue;
+            break;
+          }
+        }
+      }
+
+      console.log("🔍 Column detection - dataToAnalyze:", {
+        isArray: Array.isArray(dataToAnalyze),
+        type: typeof dataToAnalyze,
+        length: Array.isArray(dataToAnalyze) ? dataToAnalyze.length : "N/A",
+      });
+
+      const columns = detectColumns(dataToAnalyze);
+      console.log("🔍 Detected columns:", columns);
+      setDetectedColumns(columns);
     } catch (error) {
       setTestResult({ success: false, data: (error as Error).message });
     } finally {
       setIsExecuting(false);
     }
-  }, [endpoint.id, executeApiEndpoint]);
+  }, [endpoint.id, endpoint.responseMapping?.dataPath, executeApiEndpoint]);
+
+  // activeTab="test"로 열렸을 때 자동으로 테스트 실행 (초기 1회만)
+  useEffect(() => {
+    if (activeTab === "test" && !hasAutoTriggeredTest.current && !isExecuting) {
+      hasAutoTriggeredTest.current = true;
+      handleTest();
+    }
+  }, [activeTab, handleTest, isExecuting]);
+
+  // DataTable Import 핸들러
+  const handleImport = useCallback(
+    async (columns: DetectedColumn[], tableName: string) => {
+      setIsImporting(true);
+      try {
+        // 스키마 생성
+        const schema = columnsToSchema(columns);
+        const selectedKeys = columns.filter((c) => c.selected).map((c) => c.key);
+
+        // 데이터 추출 (dataPath 적용)
+        let dataToImport = testResult?.data;
+        if (endpoint.responseMapping?.dataPath) {
+          const paths = endpoint.responseMapping.dataPath.split(".");
+          for (const path of paths) {
+            if (dataToImport && typeof dataToImport === "object") {
+              dataToImport = (dataToImport as Record<string, unknown>)[path];
+            }
+          }
+        }
+
+        // 선택된 컬럼만 추출
+        const mockData = extractSelectedData(
+          dataToImport as unknown[],
+          selectedKeys
+        );
+
+        // DataTable 생성
+        await createDataTable({
+          name: tableName,
+          project_id: endpoint.project_id,
+          schema,
+          mockData,
+          useMockData: false, // API 데이터이므로 mockData 사용 안함
+        });
+
+        console.log(`✅ DataTable "${tableName}" 생성 완료 (${schema.length} 컬럼, ${mockData.length} 행)`);
+
+        // 성공 알림 (간단한 alert - 추후 Toast로 개선)
+        alert(`DataTable "${tableName}"이(가) 생성되었습니다.\n${schema.length}개 컬럼, ${mockData.length}개 행`);
+
+        // 컬럼 선택 초기화
+        setDetectedColumns([]);
+      } catch (error) {
+        console.error("❌ DataTable Import 실패:", error);
+        alert(`Import 실패: ${(error as Error).message}`);
+      } finally {
+        setIsImporting(false);
+      }
+    },
+    [testResult?.data, endpoint.responseMapping?.dataPath, endpoint.project_id, createDataTable]
+  );
 
   const toggleSection = (section: string) => {
     setExpandedSections((prev) => {
@@ -156,114 +260,59 @@ export function ApiEndpointEditor({ endpoint, onClose }: ApiEndpointEditorProps)
     });
   };
 
+  // Note: onClose is handled by parent DatasetEditorPanel
+  void onClose;
+
   return (
-    <div className="api-editor">
-      <div className="editor-header">
-        <div className="editor-title">
-          <Globe size={18} />
-          <input
-            type="text"
-            className="editor-name-input"
-            value={endpoint.name}
-            onChange={(e) => handleBasicUpdate({ name: e.target.value })}
-          />
-        </div>
-        <button type="button" className="editor-close" onClick={onClose}>
-          ×
-        </button>
-      </div>
+    <>
+      {activeTab === "basic" && (
+        <BasicEditor
+          endpoint={endpoint}
+          onUpdate={handleBasicUpdate}
+        />
+      )}
 
-      {/* Tabs */}
-      <div className="editor-tabs">
-        <button
-          type="button"
-          className={`editor-tab ${activeTab === "basic" ? "active" : ""}`}
-          onClick={() => setActiveTab("basic")}
-        >
-          <Settings size={14} />
-          Basic
-        </button>
-        <button
-          type="button"
-          className={`editor-tab ${activeTab === "headers" ? "active" : ""}`}
-          onClick={() => setActiveTab("headers")}
-        >
-          <Code size={14} />
-          Headers
-        </button>
-        <button
-          type="button"
-          className={`editor-tab ${activeTab === "body" ? "active" : ""}`}
-          onClick={() => setActiveTab("body")}
-        >
-          <FileJson size={14} />
-          Body
-        </button>
-        <button
-          type="button"
-          className={`editor-tab ${activeTab === "response" ? "active" : ""}`}
-          onClick={() => setActiveTab("response")}
-        >
-          <FileJson size={14} />
-          Response
-        </button>
-        <button
-          type="button"
-          className={`editor-tab ${activeTab === "test" ? "active" : ""}`}
-          onClick={() => setActiveTab("test")}
-        >
-          <Play size={14} />
-          Test
-        </button>
-      </div>
+      {activeTab === "headers" && (
+        <KeyValueEditor
+          title="Headers"
+          description="HTTP 헤더를 설정합니다. {{변수명}} 형식으로 변수를 참조할 수 있습니다."
+          items={endpoint.headers || {}}
+          expandedSections={expandedSections}
+          onToggleSection={toggleSection}
+          onAdd={handleAddHeader}
+          onUpdate={handleUpdateHeader}
+          onDelete={handleDeleteHeader}
+          sectionKey="headers"
+        />
+      )}
 
-      {/* Tab Content */}
-      <div className="editor-content">
-        {activeTab === "basic" && (
-          <BasicEditor
-            endpoint={endpoint}
-            onUpdate={handleBasicUpdate}
-          />
-        )}
+      {activeTab === "body" && (
+        <BodyEditor
+          endpoint={endpoint}
+          onUpdate={handleBasicUpdate}
+        />
+      )}
 
-        {activeTab === "headers" && (
-          <KeyValueEditor
-            title="Headers"
-            description="HTTP 헤더를 설정합니다. {{변수명}} 형식으로 변수를 참조할 수 있습니다."
-            items={endpoint.headers || {}}
-            expandedSections={expandedSections}
-            onToggleSection={toggleSection}
-            onAdd={handleAddHeader}
-            onUpdate={handleUpdateHeader}
-            onDelete={handleDeleteHeader}
-            sectionKey="headers"
-          />
-        )}
+      {activeTab === "response" && (
+        <ResponseEditor
+          endpoint={endpoint}
+          onUpdate={handleBasicUpdate}
+        />
+      )}
 
-        {activeTab === "body" && (
-          <BodyEditor
-            endpoint={endpoint}
-            onUpdate={handleBasicUpdate}
-          />
-        )}
-
-        {activeTab === "response" && (
-          <ResponseEditor
-            endpoint={endpoint}
-            onUpdate={handleBasicUpdate}
-          />
-        )}
-
-        {activeTab === "test" && (
-          <TestEditor
-            endpoint={endpoint}
-            testResult={testResult}
-            isExecuting={isExecuting}
-            onTest={handleTest}
-          />
-        )}
-      </div>
-    </div>
+      {activeTab === "test" && (
+        <TestEditor
+          endpoint={endpoint}
+          testResult={testResult}
+          isExecuting={isExecuting}
+          onTest={handleTest}
+          detectedColumns={detectedColumns}
+          onColumnsChange={setDetectedColumns}
+          onImport={handleImport}
+          isImporting={isImporting}
+        />
+      )}
+    </>
   );
 }
 
@@ -660,9 +709,22 @@ interface TestEditorProps {
   testResult: { success: boolean; data: unknown } | null;
   isExecuting: boolean;
   onTest: () => void;
+  detectedColumns: DetectedColumn[];
+  onColumnsChange: (columns: DetectedColumn[]) => void;
+  onImport: (columns: DetectedColumn[], tableName: string) => void;
+  isImporting: boolean;
 }
 
-function TestEditor({ endpoint, testResult, isExecuting, onTest }: TestEditorProps) {
+function TestEditor({
+  endpoint,
+  testResult,
+  isExecuting,
+  onTest,
+  detectedColumns,
+  onColumnsChange,
+  onImport,
+  isImporting,
+}: TestEditorProps) {
   return (
     <div className="test-editor">
       <div className="test-info">
@@ -696,6 +758,16 @@ function TestEditor({ endpoint, testResult, isExecuting, onTest }: TestEditorPro
               : JSON.stringify(testResult.data, null, 2)}
           </pre>
         </div>
+      )}
+
+      {/* Column Selector - API 성공 시 표시 */}
+      {testResult?.success && detectedColumns.length > 0 && (
+        <ColumnSelector
+          columns={detectedColumns}
+          onColumnsChange={onColumnsChange}
+          onImport={onImport}
+          isImporting={isImporting}
+        />
       )}
     </div>
   );

@@ -3,36 +3,27 @@
  *
  * 기능:
  * - 스키마 정의 (필드 추가/삭제/수정)
- * - Mock 데이터 관리
+ * - Mock 데이터 관리 (필터, CSV 가져오기)
  * - useMockData 토글
  */
 
-import { useState, useCallback, useEffect } from "react";
-import {
-  Plus,
-  Trash2,
-  ChevronDown,
-  ChevronRight,
-  Table2,
-  Database,
-  Settings,
-} from "lucide-react";
+import { useState, useCallback, useMemo, useRef } from "react";
+import { Plus, Trash2, Search, Upload, Download, X } from "lucide-react";
+import type { TableEditorTab } from "../types/editorTypes";
+import Papa from "papaparse";
 import { useDataStore } from "../../../stores/data";
 import type {
   DataTable,
   DataField,
   DataFieldType,
 } from "../../../../types/builder/data.types";
-import {
-  PropertyInput,
-  PropertySelect,
-  PropertySwitch,
-} from "../../common";
+import { PropertySwitch } from "../../common";
 import "./DataTableEditor.css";
 
 interface DataTableEditorProps {
   dataTable: DataTable;
   onClose: () => void;
+  activeTab: TableEditorTab;
 }
 
 const FIELD_TYPES: { value: DataFieldType; label: string }[] = [
@@ -48,12 +39,12 @@ const FIELD_TYPES: { value: DataFieldType; label: string }[] = [
   { value: "object", label: "Object" },
 ];
 
-export function DataTableEditor({ dataTable, onClose }: DataTableEditorProps) {
+export function DataTableEditor({
+  dataTable,
+  onClose,
+  activeTab,
+}: DataTableEditorProps) {
   const updateDataTable = useDataStore((state) => state.updateDataTable);
-
-  const [activeTab, setActiveTab] = useState<"schema" | "data" | "settings">(
-    "schema"
-  );
   const [expandedFields, setExpandedFields] = useState<Set<string>>(new Set());
 
   // Schema 업데이트
@@ -114,8 +105,20 @@ export function DataTableEditor({ dataTable, onClose }: DataTableEditorProps) {
   // Mock 데이터 행 추가
   const handleAddMockRow = useCallback(() => {
     const newRow: Record<string, unknown> = {};
+    const newRowIndex = dataTable.mockData.length + 1;
+
     dataTable.schema.forEach((field) => {
-      newRow[field.key] = field.defaultValue ?? getDefaultValueForType(field.type);
+      // id 필드는 고유한 값을 자동 생성
+      if (field.key === "id") {
+        if (field.type === "number") {
+          newRow[field.key] = newRowIndex;
+        } else {
+          newRow[field.key] = `row_${newRowIndex}`;
+        }
+      } else {
+        newRow[field.key] =
+          field.defaultValue ?? getDefaultValueForType(field.type);
+      }
     });
     handleMockDataUpdate([...dataTable.mockData, newRow]);
   }, [dataTable.schema, dataTable.mockData, handleMockDataUpdate]);
@@ -138,6 +141,14 @@ export function DataTableEditor({ dataTable, onClose }: DataTableEditorProps) {
       handleMockDataUpdate(newMockData);
     },
     [dataTable.mockData, handleMockDataUpdate]
+  );
+
+  // CSV 가져오기 (기존 데이터 대체)
+  const handleImportCSV = useCallback(
+    (importedData: Record<string, unknown>[]) => {
+      handleMockDataUpdate(importedData);
+    },
+    [handleMockDataUpdate]
   );
 
   // useMockData 토글
@@ -164,82 +175,42 @@ export function DataTableEditor({ dataTable, onClose }: DataTableEditorProps) {
     [dataTable.id, updateDataTable]
   );
 
+  // Note: onClose is handled by parent DatasetEditorPanel
+  void onClose;
+
   return (
-    <div className="datatable-editor">
-      <div className="editor-header">
-        <div className="editor-title">
-          <Table2 size={18} />
-          <input
-            type="text"
-            className="editor-name-input"
-            value={dataTable.name}
-            onChange={(e) => handleNameChange(e.target.value)}
-          />
-        </div>
-        <button type="button" className="editor-close" onClick={onClose}>
-          ×
-        </button>
-      </div>
+    <>
+      {activeTab === "schema" && (
+        <SchemaEditor
+          schema={dataTable.schema}
+          expandedFields={expandedFields}
+          setExpandedFields={setExpandedFields}
+          onAddField={handleAddField}
+          onDeleteField={handleDeleteField}
+          onUpdateField={handleUpdateField}
+        />
+      )}
 
-      {/* Tabs */}
-      <div className="editor-tabs">
-        <button
-          type="button"
-          className={`editor-tab ${activeTab === "schema" ? "active" : ""}`}
-          onClick={() => setActiveTab("schema")}
-        >
-          <Database size={14} />
-          Schema
-        </button>
-        <button
-          type="button"
-          className={`editor-tab ${activeTab === "data" ? "active" : ""}`}
-          onClick={() => setActiveTab("data")}
-        >
-          <Table2 size={14} />
-          Mock Data
-        </button>
-        <button
-          type="button"
-          className={`editor-tab ${activeTab === "settings" ? "active" : ""}`}
-          onClick={() => setActiveTab("settings")}
-        >
-          <Settings size={14} />
-          Settings
-        </button>
-      </div>
+      {activeTab === "data" && (
+        <MockDataEditor
+          schema={dataTable.schema}
+          mockData={dataTable.mockData}
+          onAddRow={handleAddMockRow}
+          onDeleteRow={handleDeleteMockRow}
+          onUpdateCell={handleUpdateMockCell}
+          onImportCSV={handleImportCSV}
+        />
+      )}
 
-      {/* Tab Content */}
-      <div className="editor-content">
-        {activeTab === "schema" && (
-          <SchemaEditor
-            schema={dataTable.schema}
-            expandedFields={expandedFields}
-            setExpandedFields={setExpandedFields}
-            onAddField={handleAddField}
-            onDeleteField={handleDeleteField}
-            onUpdateField={handleUpdateField}
-          />
-        )}
-
-        {activeTab === "data" && (
-          <MockDataEditor
-            schema={dataTable.schema}
-            mockData={dataTable.mockData}
-            onAddRow={handleAddMockRow}
-            onDeleteRow={handleDeleteMockRow}
-            onUpdateCell={handleUpdateMockCell}
-          />
-        )}
-
-        {activeTab === "settings" && (
-          <SettingsEditor
-            useMockData={dataTable.useMockData}
-            onUseMockDataChange={handleUseMockDataToggle}
-          />
-        )}
-      </div>
-    </div>
+      {activeTab === "settings" && (
+        <SettingsEditor
+          name={dataTable.name}
+          useMockData={dataTable.useMockData}
+          onNameChange={handleNameChange}
+          onUseMockDataChange={handleUseMockDataToggle}
+        />
+      )}
+    </>
   );
 }
 
@@ -256,91 +227,121 @@ interface SchemaEditorProps {
   onUpdateField: (key: string, updates: Partial<DataField>) => void;
 }
 
+// 개별 스키마 필드 행 컴포넌트 (로컬 상태로 IME 문제 해결)
+interface SchemaFieldRowProps {
+  field: DataField;
+  onUpdateField: (key: string, updates: Partial<DataField>) => void;
+  onDeleteField: (key: string) => void;
+}
+
+function SchemaFieldRow({
+  field,
+  onUpdateField,
+  onDeleteField,
+}: SchemaFieldRowProps) {
+  // 각 필드에 대한 로컬 상태 (key 변경 시 컴포넌트가 새로 마운트되어 자동 초기화)
+  const [localKey, setLocalKey] = useState(field.key);
+  const [localLabel, setLocalLabel] = useState(field.label || "");
+
+  return (
+    <tr>
+      <td>
+        <input
+          type="text"
+          className="cell-input"
+          value={localKey}
+          onChange={(e) => setLocalKey(e.target.value)}
+          onBlur={() => {
+            if (localKey !== field.key) {
+              onUpdateField(field.key, { key: localKey });
+            }
+          }}
+        />
+      </td>
+      <td>
+        <select
+          className="cell-select"
+          value={field.type}
+          onChange={(e) =>
+            onUpdateField(field.key, { type: e.target.value as DataFieldType })
+          }
+        >
+          {FIELD_TYPES.map((ft) => (
+            <option key={ft.value} value={ft.value}>
+              {ft.label}
+            </option>
+          ))}
+        </select>
+      </td>
+      <td>
+        <input
+          type="text"
+          className="cell-input"
+          value={localLabel}
+          onChange={(e) => setLocalLabel(e.target.value)}
+          onBlur={() => onUpdateField(field.key, { label: localLabel })}
+          placeholder="Label"
+        />
+      </td>
+      <td className="cell-center">
+        <input
+          type="checkbox"
+          checked={field.required || false}
+          onChange={(e) =>
+            onUpdateField(field.key, { required: e.target.checked })
+          }
+        />
+      </td>
+      <td>
+        <button
+          type="button"
+          className="delete-row-btn"
+          onClick={() => onDeleteField(field.key)}
+        >
+          <Trash2 size={12} />
+        </button>
+      </td>
+    </tr>
+  );
+}
+
 function SchemaEditor({
   schema,
-  expandedFields,
-  setExpandedFields,
   onAddField,
   onDeleteField,
   onUpdateField,
 }: SchemaEditorProps) {
-  const toggleExpand = (key: string) => {
-    setExpandedFields((prev) => {
-      const next = new Set(prev);
-      if (next.has(key)) {
-        next.delete(key);
-      } else {
-        next.add(key);
-      }
-      return next;
-    });
-  };
-
   return (
-    <div className="schema-editor">
-      <div className="schema-list">
-        {schema.map((field) => (
-          <div key={field.key} className="schema-field">
-            <div
-              className="schema-field-header"
-              onClick={() => toggleExpand(field.key)}
-            >
-              {expandedFields.has(field.key) ? (
-                <ChevronDown size={14} />
-              ) : (
-                <ChevronRight size={14} />
-              )}
-              <span className="field-key">{field.key}</span>
-              <span className="field-type">{field.type}</span>
-              {field.required && <span className="field-required">*</span>}
-              <button
-                type="button"
-                className="field-delete"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onDeleteField(field.key);
-                }}
-              >
-                <Trash2 size={12} />
-              </button>
-            </div>
-
-            {expandedFields.has(field.key) && (
-              <div className="schema-field-details">
-                <PropertyInput
-                  label="Key"
-                  value={field.key}
-                  onChange={(value) => onUpdateField(field.key, { key: value })}
+    <div className="section">
+      <div className="section-content">
+        <div className="data-table-wrapper">
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>Key</th>
+                <th>Type</th>
+                <th>Label</th>
+                <th>Req</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              {schema.map((field) => (
+                <SchemaFieldRow
+                  key={field.key}
+                  field={field}
+                  onUpdateField={onUpdateField}
+                  onDeleteField={onDeleteField}
                 />
-                <PropertySelect
-                  label="Type"
-                  value={field.type}
-                  onChange={(value) =>
-                    onUpdateField(field.key, { type: value as DataFieldType })
-                  }
-                  options={FIELD_TYPES}
-                />
-                <PropertyInput
-                  label="Label"
-                  value={field.label || ""}
-                  onChange={(value) => onUpdateField(field.key, { label: value })}
-                />
-                <PropertySwitch
-                  label="Required"
-                  isSelected={field.required || false}
-                  onChange={(checked) =>
-                    onUpdateField(field.key, { required: checked })
-                  }
-                />
-              </div>
-            )}
-          </div>
-        ))}
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       <button type="button" className="add-field-btn" onClick={onAddField}>
         <Plus size={14} />
-        Add Field
+        Add Column
       </button>
     </div>
   );
@@ -356,6 +357,7 @@ interface MockDataEditorProps {
   onAddRow: () => void;
   onDeleteRow: (index: number) => void;
   onUpdateCell: (rowIndex: number, fieldKey: string, value: unknown) => void;
+  onImportCSV: (data: Record<string, unknown>[]) => void;
 }
 
 function MockDataEditor({
@@ -364,64 +366,270 @@ function MockDataEditor({
   onAddRow,
   onDeleteRow,
   onUpdateCell,
+  onImportCSV,
 }: MockDataEditorProps) {
+  const [filterText, setFilterText] = useState("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // 필터링된 데이터 (원본 인덱스 유지)
+  const filteredData = useMemo(() => {
+    if (!filterText.trim()) {
+      return mockData.map((row, index) => ({ row, originalIndex: index }));
+    }
+
+    const searchTerm = filterText.toLowerCase();
+    return mockData
+      .map((row, index) => ({ row, originalIndex: index }))
+      .filter(({ row }) =>
+        schema.some((field) => {
+          const value = row[field.key];
+          if (value === null || value === undefined) return false;
+          return String(value).toLowerCase().includes(searchTerm);
+        })
+      );
+  }, [mockData, schema, filterText]);
+
+  // CSV 파일 처리
+  const handleFileSelect = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      const file = event.target.files?.[0];
+      if (!file) return;
+
+      Papa.parse(file, {
+        header: true,
+        skipEmptyLines: true,
+        complete: (results) => {
+          const parsedData = results.data as Record<string, unknown>[];
+
+          // 스키마에 맞게 데이터 타입 변환
+          const convertedData = parsedData.map((row, index) => {
+            const convertedRow: Record<string, unknown> = {};
+
+            schema.forEach((field) => {
+              const rawValue = row[field.key];
+              convertedRow[field.key] = convertValueToType(
+                rawValue,
+                field.type,
+                index + 1
+              );
+            });
+
+            return convertedRow;
+          });
+
+          onImportCSV(convertedData);
+
+          // 파일 입력 초기화
+          if (fileInputRef.current) {
+            fileInputRef.current.value = "";
+          }
+        },
+        error: (error) => {
+          console.error("CSV 파싱 오류:", error);
+        },
+      });
+    },
+    [schema, onImportCSV]
+  );
+
+  // CSV 내보내기
+  const handleExportCSV = useCallback(() => {
+    if (mockData.length === 0) return;
+
+    const csv = Papa.unparse(mockData, {
+      columns: schema.map((f) => f.key),
+    });
+
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "data.csv";
+    link.click();
+    URL.revokeObjectURL(url);
+  }, [mockData, schema]);
+
   if (schema.length === 0) {
-    return (
-      <div className="mock-data-empty">
-        스키마를 먼저 정의하세요.
-      </div>
-    );
+    return <div className="data-empty">스키마를 먼저 정의하세요.</div>;
   }
 
   return (
-    <div className="mock-data-editor">
-      <div className="mock-data-table-wrapper">
-        <table className="mock-data-table">
-          <thead>
-            <tr>
-              <th>#</th>
-              {schema.map((field) => (
-                <th key={field.key}>{field.label || field.key}</th>
-              ))}
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            {mockData.map((row, rowIndex) => (
-              <tr key={rowIndex}>
-                <td className="row-index">{rowIndex + 1}</td>
-                {schema.map((field) => (
-                  <td key={field.key}>
-                    <CellEditor
-                      fieldType={field.type}
-                      value={row[field.key]}
-                      onChange={(value) =>
-                        onUpdateCell(rowIndex, field.key, value)
-                      }
-                    />
-                  </td>
-                ))}
-                <td>
-                  <button
-                    type="button"
-                    className="delete-row-btn"
-                    onClick={() => onDeleteRow(rowIndex)}
-                  >
-                    <Trash2 size={12} />
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+    <div className="section">
+      {/* Toolbar */}
+      <div className="section-content">
+        <div className="data-toolbar">
+          {/* Filter */}
+          <div className="filter-input-wrapper">
+            <Search size={14} className="filter-icon" />
+            <input
+              type="text"
+              className="filter-input"
+              placeholder="Filter rows..."
+              value={filterText}
+              onChange={(e) => setFilterText(e.target.value)}
+            />
+            {filterText && (
+              <button
+                type="button"
+                className="filter-clear-btn"
+                onClick={() => setFilterText("")}
+              >
+                <X size={12} />
+              </button>
+            )}
+          </div>
 
+          {/* Actions */}
+          <div className="toolbar-actions">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".csv"
+              onChange={handleFileSelect}
+              style={{ display: "none" }}
+            />
+            <button
+              type="button"
+              className="toolbar-btn"
+              onClick={() => fileInputRef.current?.click()}
+              title="Import CSV"
+            >
+              <Upload size={14} />
+              Import
+            </button>
+            <button
+              type="button"
+              className="toolbar-btn"
+              onClick={handleExportCSV}
+              disabled={mockData.length === 0}
+              title="Export CSV"
+            >
+              <Download size={14} />
+              Export
+            </button>
+          </div>
+        </div>
+
+        {/* Filter 결과 표시 */}
+        {filterText && (
+          <div className="filter-result-info">
+            {filteredData.length} / {mockData.length} rows
+          </div>
+        )}
+
+        {/* Table */}
+        <div className="data-table-wrapper">
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th className="row-index">#</th>
+                {schema.map((field) => (
+                  <th key={field.key}>{field.key}</th>
+                ))}
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredData.map(({ row, originalIndex }) => (
+                <tr key={originalIndex}>
+                  <td className="row-index">{originalIndex + 1}</td>
+                  {schema.map((field) => (
+                    <td key={field.key}>
+                      <CellEditor
+                        key={`${originalIndex}-${field.key}-${JSON.stringify(
+                          row[field.key]
+                        )}`}
+                        fieldType={field.type}
+                        value={row[field.key]}
+                        onChange={(value) =>
+                          onUpdateCell(originalIndex, field.key, value)
+                        }
+                      />
+                    </td>
+                  ))}
+                  <td>
+                    <button
+                      type="button"
+                      className="delete-row-btn"
+                      onClick={() => onDeleteRow(originalIndex)}
+                    >
+                      <Trash2 size={12} />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+
+      </div>
       <button type="button" className="add-row-btn" onClick={onAddRow}>
         <Plus size={14} />
         Add Row
       </button>
     </div>
   );
+}
+
+// CSV 값을 필드 타입에 맞게 변환
+function convertValueToType(
+  value: unknown,
+  type: DataFieldType,
+  rowIndex: number
+): unknown {
+  if (value === null || value === undefined || value === "") {
+    return getDefaultValueForType(type);
+  }
+
+  const strValue = String(value);
+
+  switch (type) {
+    case "number": {
+      const num = Number(strValue);
+      return isNaN(num) ? 0 : num;
+    }
+    case "boolean":
+      return strValue.toLowerCase() === "true" || strValue === "1";
+    case "date":
+      // ISO 날짜 형식으로 변환 시도
+      try {
+        const date = new Date(strValue);
+        return isNaN(date.getTime())
+          ? new Date().toISOString().split("T")[0]
+          : date.toISOString().split("T")[0];
+      } catch {
+        return new Date().toISOString().split("T")[0];
+      }
+    case "datetime":
+      try {
+        const datetime = new Date(strValue);
+        return isNaN(datetime.getTime())
+          ? new Date().toISOString()
+          : datetime.toISOString();
+      } catch {
+        return new Date().toISOString();
+      }
+    case "array":
+      try {
+        const parsed = JSON.parse(strValue);
+        return Array.isArray(parsed) ? parsed : [strValue];
+      } catch {
+        return strValue.split(",").map((s) => s.trim());
+      }
+    case "object":
+      try {
+        return JSON.parse(strValue);
+      } catch {
+        return {};
+      }
+    default:
+      // id 필드인 경우 자동 생성
+      if (strValue === "" || strValue === "undefined") {
+        return `row_${rowIndex}`;
+      }
+      return strValue;
+  }
 }
 
 // ============================================
@@ -436,12 +644,8 @@ interface CellEditorProps {
 
 function CellEditor({ fieldType, value, onChange }: CellEditorProps) {
   // 로컬 상태로 관리하여 한국어 IME 조합 문제 해결
+  // useState 초기값으로 props를 사용하고, key prop으로 리셋 처리
   const [localValue, setLocalValue] = useState<string>(String(value || ""));
-
-  // 외부 value가 변경되면 로컬 상태 동기화
-  useEffect(() => {
-    setLocalValue(String(value || ""));
-  }, [value]);
 
   const handleBlur = () => {
     // blur 시에만 부모에 알림
@@ -509,24 +713,37 @@ function CellEditor({ fieldType, value, onChange }: CellEditorProps) {
 // ============================================
 
 interface SettingsEditorProps {
+  name: string;
   useMockData: boolean;
+  onNameChange: (name: string) => void;
   onUseMockDataChange: (checked: boolean) => void;
 }
 
 function SettingsEditor({
+  name,
   useMockData,
+  onNameChange,
   onUseMockDataChange,
 }: SettingsEditorProps) {
   return (
     <div className="settings-editor">
+      <div className="settings-field">
+        <label className="settings-label">테이블 이름</label>
+        <input
+          type="text"
+          className="settings-input"
+          value={name}
+          onChange={(e) => onNameChange(e.target.value)}
+        />
+      </div>
       <PropertySwitch
-        label="Use Mock Data"
+        label="Use Table Data"
         isSelected={useMockData}
         onChange={onUseMockDataChange}
       />
       <p className="settings-description">
         {useMockData
-          ? "Mock 데이터를 사용합니다. API 응답 대신 정의된 Mock 데이터가 표시됩니다."
+          ? "Table 데이터를 사용합니다. API 응답 대신 정의된 Table 데이터가 표시됩니다."
           : "실제 API 응답 데이터를 사용합니다."}
       </p>
     </div>

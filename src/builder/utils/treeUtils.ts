@@ -267,3 +267,116 @@ export function getAllTreeItemIds(tree: ElementTreeItem[]): string[] {
   traverse(tree);
   return ids;
 }
+
+// ============================================
+// 🚀 Performance Optimized Sorting Functions (Phase 2)
+// ============================================
+
+/**
+ * 트리 아이템 정렬 결과 캐시 (WeakMap 사용으로 GC 친화적)
+ */
+const sortCache = new WeakMap<Element[], Map<string, Element[]>>();
+
+/**
+ * 캐시된 정렬 결과 조회 또는 새로 정렬
+ */
+function getCachedSortResult(
+  items: Element[],
+  parentId: string,
+  sortFn: () => Element[]
+): Element[] {
+  let parentCache = sortCache.get(items);
+  if (!parentCache) {
+    parentCache = new Map();
+    sortCache.set(items, parentCache);
+  }
+
+  const cached = parentCache.get(parentId);
+  if (cached) {
+    return cached;
+  }
+
+  const result = sortFn();
+  parentCache.set(parentId, result);
+  return result;
+}
+
+/**
+ * Table 하위 요소들 정렬 (TableHeader → TableBody → ColumnGroup → Column → Row → Cell)
+ *
+ * @param items - Table의 자식 요소들
+ * @returns 정렬된 요소 배열
+ */
+export function sortTableChildren<T extends Element>(items: T[]): T[] {
+  const tableHeaders = items.filter((item) => item.tag === "TableHeader");
+  const tableBodies = items.filter((item) => item.tag === "TableBody");
+  const columnGroups = items.filter((item) => item.tag === "ColumnGroup");
+  const columns = items.filter((item) => item.tag === "Column");
+  const rows = items.filter((item) => item.tag === "Row");
+  const cells = items.filter((item) => item.tag === "Cell");
+
+  const byOrderNum = (a: T, b: T) => (a.order_num || 0) - (b.order_num || 0);
+
+  return [
+    ...tableHeaders.sort(byOrderNum),
+    ...tableBodies.sort(byOrderNum),
+    ...columnGroups.sort(byOrderNum),
+    ...columns.sort(byOrderNum),
+    ...rows.sort(byOrderNum),
+    ...cells.sort(byOrderNum),
+  ];
+}
+
+/**
+ * 일반적인 order_num 기반 정렬
+ */
+export function sortByOrderNum<T extends { order_num?: number }>(items: T[]): T[] {
+  return [...items].sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+}
+
+/**
+ * 부모 요소의 태그에 따른 자식 요소 정렬 (캐시 활용)
+ *
+ * @param items - 전체 요소 배열 (캐시 키로 사용)
+ * @param children - 부모의 자식 요소들
+ * @param parentTag - 부모 요소의 태그
+ * @param parentId - 부모 요소의 ID (캐시 키로 사용)
+ * @returns 정렬된 자식 요소 배열
+ */
+export function sortChildrenByParentTag<T extends Element>(
+  items: T[],
+  children: T[],
+  parentTag: string | undefined,
+  parentId: string
+): T[] {
+  if (!parentTag) {
+    return getCachedSortResult(items as Element[], parentId, () =>
+      sortByOrderNum(children)
+    ) as T[];
+  }
+
+  switch (parentTag) {
+    case "Tabs":
+      return getCachedSortResult(items as Element[], parentId, () =>
+        sortTabsChildren(children as Element[])
+      ) as T[];
+
+    case "Table":
+      return getCachedSortResult(items as Element[], parentId, () =>
+        sortTableChildren(children)
+      ) as T[];
+
+    default:
+      return getCachedSortResult(items as Element[], parentId, () =>
+        sortByOrderNum(children)
+      ) as T[];
+  }
+}
+
+/**
+ * 정렬 캐시 초기화 (페이지 전환 시 호출)
+ */
+export function clearSortCache(): void {
+  // WeakMap은 자동으로 GC되므로 별도 처리 불필요
+  // 명시적으로 초기화가 필요한 경우에만 사용
+}

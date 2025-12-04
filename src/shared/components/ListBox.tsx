@@ -229,12 +229,12 @@ export function ListBox<T extends object>({
         ...item,
       })) as T[];
 
-      console.log("✅ ListBox Dynamic Collection - items:", items);
+      console.log("✅ ListBox Dynamic Collection - items:", items, "children type:", typeof children);
 
       // children이 함수(render function)이면 그것을 사용
       // 이는 renderListBox에서 Field 자식들을 포함한 템플릿 렌더 함수를 전달받는 경우
       if (typeof children === "function") {
-        console.log("🔄 ListBox: children render function 사용");
+        console.log("🔄 ListBox: children render function 사용, items:", items);
         return (
           <AriaListBox
             {...props}
@@ -269,6 +269,9 @@ export function ListBox<T extends object>({
         </AriaListBox>
       );
     }
+
+    // 데이터가 비어있을 때도 children 함수인 경우 처리
+    console.log("⚠️ ListBox: boundData가 비어있음, hasDataBinding:", hasDataBinding, "isPropertyBinding:", isPropertyBinding);
   }
 
   // Static Children (기존 방식)
