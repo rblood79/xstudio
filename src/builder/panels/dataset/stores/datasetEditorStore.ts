@@ -7,7 +7,6 @@
 import { create } from "zustand";
 import type {
   DatasetEditorStore,
-  DatasetEditorMode,
   ApiEditorTab,
 } from "../types/editorTypes";
 import { useStore } from "../../../stores";

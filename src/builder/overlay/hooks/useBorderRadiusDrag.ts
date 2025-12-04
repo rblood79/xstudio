@@ -8,7 +8,7 @@
  * - 드래그 종료: Inspector state 업데이트 (store 저장)
  */
 
-import { useCallback, useRef, useEffect } from 'react';
+import { useCallback, useRef, useEffect, useState } from 'react';
 import { useInspectorState } from '../../inspector/hooks/useInspectorState';
 import { MessageService } from '../../../utils/messaging';
 import { useStore } from '../../stores';
@@ -97,6 +97,10 @@ export function useBorderRadiusDrag(
 ) {
   const { onDragStart, onDrag, onDragEnd } = options;
 
+  // 렌더링에 사용되는 상태는 useState로 관리 (ref는 render 중 접근 불가)
+  const [isDragging, setIsDragging] = useState(false);
+  const [activeCorner, setActiveCorner] = useState<CornerPosition | null>(null);
+
   const dragStateRef = useRef<DragState>({
     isDragging: false,
     corner: null,
@@ -108,7 +112,11 @@ export function useBorderRadiusDrag(
   });
 
   const optionsRef = useRef({ onDrag, onDragEnd });
-  optionsRef.current = { onDrag, onDragEnd };
+
+  // ref 업데이트는 useEffect에서 수행 (render 중 접근 방지)
+  useEffect(() => {
+    optionsRef.current = { onDrag, onDragEnd };
+  });
 
   const handlersRef = useRef<{
     handleMouseMove: (e: MouseEvent) => void;
@@ -172,7 +180,7 @@ export function useBorderRadiusDrag(
       const corner = state.corner;
       const shiftKey = e.shiftKey;
 
-      // 상태 초기화
+      // 상태 초기화 (ref + state 모두 업데이트)
       dragStateRef.current = {
         isDragging: false,
         corner: null,
@@ -182,6 +190,8 @@ export function useBorderRadiusDrag(
         maxRadius: 0,
         lastRadius: -1,
       };
+      setIsDragging(false);
+      setActiveCorner(null);
 
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
@@ -219,6 +229,7 @@ export function useBorderRadiusDrag(
       const initialRadius = parseBorderRadius(currentBorderRadius);
       const maxRadius = Math.min(rect.width, rect.height) / 2;
 
+      // ref + state 모두 업데이트
       dragStateRef.current = {
         isDragging: true,
         corner,
@@ -228,6 +239,8 @@ export function useBorderRadiusDrag(
         maxRadius,
         lastRadius: initialRadius,
       };
+      setIsDragging(true);
+      setActiveCorner(corner);
 
       onDragStart?.();
 
@@ -239,7 +252,7 @@ export function useBorderRadiusDrag(
 
   return {
     handleDragStart,
-    isDragging: dragStateRef.current.isDragging,
-    activeCorner: dragStateRef.current.corner,
+    isDragging,
+    activeCorner,
   };
 }

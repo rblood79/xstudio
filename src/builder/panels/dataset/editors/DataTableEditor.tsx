@@ -585,9 +585,10 @@ function convertValueToType(
   const strValue = String(value);
 
   switch (type) {
-    case "number":
+    case "number": {
       const num = Number(strValue);
       return isNaN(num) ? 0 : num;
+    }
     case "boolean":
       return strValue.toLowerCase() === "true" || strValue === "1";
     case "date":

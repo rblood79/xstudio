@@ -3,12 +3,12 @@
  *
  * 🚀 Performance Optimization:
  * - React.memo로 불필요한 재렌더 방지
- * - useCallback으로 핸들러 메모이제이션
+ * - useMemo로 메모이제이션
  * - sortChildrenByParentTag로 캐시된 정렬 사용
  * - TreeNodeItem으로 개별 노드 최적화
  */
 
-import React, { memo, useCallback, useMemo } from "react";
+import React, { memo, useMemo } from "react";
 import { TreeNodeItem } from "./TreeNodeItem";
 import type { Element } from "../../../types/core/store.types";
 import { sortChildrenByParentTag, sortByOrderNum } from "../../utils/treeUtils";
@@ -99,9 +99,10 @@ export const ElementTreeRenderer = memo(function ElementTreeRenderer({
 
   /**
    * 재귀적 요소 트리 렌더링
+   * ⚡ useMemo + 내부 함수 패턴으로 변경 (useCallback 재귀 참조 문제 해결)
    */
-  const renderElementTree = useCallback(
-    (parentId: string | null = null, depth: number = 0): React.ReactNode => {
+  const renderElementTree = useMemo(() => {
+    const render = (parentId: string | null = null, depth: number = 0): React.ReactNode => {
       // O(1) 조회로 자식 요소 가져오기
       const key = parentId || "root";
       const children = childrenMap.get(key) || [];
@@ -148,15 +149,15 @@ export const ElementTreeRenderer = memo(function ElementTreeRenderer({
                 onDelete={async () => onDelete(element)}
               >
                 {/* 펼쳐진 경우 자식 요소들 렌더링 */}
-                {isExpanded && hasChildren && renderElementTree(element.id, depth + 1)}
+                {isExpanded && hasChildren && render(element.id, depth + 1)}
               </TreeNodeItem>
             );
           })}
         </>
       );
-    },
-    [elements, childrenMap, elementsMap, selectedElementId, expandedKeys, onSelect, onDelete, onToggle]
-  );
+    };
+    return render;
+  }, [elements, childrenMap, elementsMap, selectedElementId, expandedKeys, onSelect, onDelete, onToggle]);
 
   return <>{renderElementTree(null, 0)}</>;
 });

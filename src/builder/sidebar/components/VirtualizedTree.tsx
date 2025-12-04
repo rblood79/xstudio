@@ -24,7 +24,6 @@ import React, {
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { Settings2, Trash, ChevronRight, Box } from "lucide-react";
 import type { Element } from "../../../types/core/store.types";
-import type { ElementProps } from "../../../types/integrations/supabase.types";
 import { sortChildrenByParentTag, sortByOrderNum } from "../../utils/treeUtils";
 
 // ============================================

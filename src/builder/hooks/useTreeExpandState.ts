@@ -33,7 +33,7 @@ export interface UseTreeExpandStateResult {
   /** 모든 키 접기 */
   collapseAll: () => void;
   /** 선택된 요소의 모든 부모 자동 펼치기 */
-  expandParents: (elementId: string, elements: Element[]) => void;
+  expandParents: (elementId: string) => void;
 }
 
 /**
@@ -52,7 +52,7 @@ export interface UseTreeExpandStateResult {
  * // 요소 선택 시 부모 자동 펼치기
  * useEffect(() => {
  *   if (selectedElementId) {
- *     expandParents(selectedElementId, elements);
+ *     expandParents(selectedElementId);
  *   }
  * }, [selectedElementId]);
  * ```
@@ -119,7 +119,7 @@ export function useTreeExpandState(
    * 선택된 요소의 모든 부모 자동 펼치기
    * 🚀 Phase 2.3 최적화: Store의 elementsMap 재사용으로 O(n) Map 생성 제거
    */
-  const expandParents = useCallback((elementId: string, _allElements: Element[]) => {
+  const expandParents = useCallback((elementId: string) => {
     // 🚀 Store의 elementsMap 재사용 (O(1) 조회)
     const parentIds = new Set<string>();
     let currentElement = storeElementsMap.get(elementId);

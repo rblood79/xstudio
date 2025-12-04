@@ -92,9 +92,6 @@ export function BorderRadiusHandles({
     };
   }, [borderRadius, individualRadii]);
 
-  // 최대 radius (요소 크기의 절반)
-  const maxRadius = Math.min(rect.width, rect.height) / 2;
-
   // 코너 포인트 위치 계산
   // 포인트는 코너에서 radius만큼 안쪽으로 오프셋
   const cornerPositions = useMemo(() => {

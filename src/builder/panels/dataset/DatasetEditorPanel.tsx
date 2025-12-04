@@ -9,9 +9,12 @@
  *
  * Store 기반으로 모드에 따라 에디터 컴포넌트를 렌더링
  * 탭은 패널 레벨에서 관리 (DatasetPanel과 동일한 구조)
+ *
+ * ⚡ React 권장 패턴: key prop으로 모드 변경 시 EditorContent 전체 리마운트
+ *    (useEffect에서 setState 호출하는 안티패턴 제거)
  */
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import {
   Database,
   Table2,
@@ -43,6 +46,7 @@ import type {
   TableEditorTab,
   ApiEditorTab,
   VariableEditorTab,
+  DatasetEditorMode,
 } from "./types/editorTypes";
 import "./DatasetEditorPanel.css";
 
@@ -77,16 +81,27 @@ const VARIABLE_TABS: TabConfig<VariableEditorTab>[] = [
 // Creator 모드 타입
 type CreatorMode = "empty" | "preset";
 
-export function DatasetEditorPanel({ isActive }: PanelProps) {
-  const mode = useDatasetEditorStore((state) => state.mode);
-  const close = useDatasetEditorStore((state) => state.close);
+/**
+ * EditorContent - 모드별 상태를 관리하는 내부 컴포넌트
+ *
+ * ⚡ key prop으로 mode 변경 시 리마운트되어 상태가 자동 초기화됨
+ * (useEffect에서 setState 호출하는 안티패턴 제거)
+ */
+interface EditorContentProps {
+  mode: DatasetEditorMode;
+  close: () => void;
+}
 
-  // 탭 상태 관리
+function EditorContent({ mode, close }: EditorContentProps) {
+  // 탭 상태 관리 - mode 변경 시 key가 바뀌어 자동 초기화됨
   const [tableTab, setTableTab] = useState<TableEditorTab>("schema");
-  const [apiTab, setApiTab] = useState<ApiEditorTab>("basic");
+  // API 에디터 초기 탭: mode.initialTab이 있으면 사용 (useEffect 대신 초기값으로)
+  const [apiTab, setApiTab] = useState<ApiEditorTab>(
+    mode.type === "api-edit" && mode.initialTab ? mode.initialTab : "basic"
+  );
   const [variableTab, setVariableTab] = useState<VariableEditorTab>("basic");
 
-  // DataTableCreator 모드 상태 (empty/preset)
+  // DataTableCreator 모드 상태 (empty/preset) - key로 자동 초기화
   const [creatorMode, setCreatorMode] = useState<CreatorMode>("preset");
 
   // 데이터 조회
@@ -94,45 +109,6 @@ export function DatasetEditorPanel({ isActive }: PanelProps) {
   const apiEndpoints = useApiEndpoints();
   const variables = useVariables();
   const transformers = useTransformers();
-
-  // API 에디터 초기 탭 설정
-  useEffect(() => {
-    if (mode?.type === "api-edit" && mode.initialTab) {
-      setApiTab(mode.initialTab);
-    }
-  }, [mode]);
-
-  // 모드 변경 시 탭/creatorMode 초기화
-  useEffect(() => {
-    if (mode?.type === "table-create") {
-      setCreatorMode("preset"); // Creator 모드 초기화
-    } else if (mode?.type === "table-edit") {
-      setTableTab("schema");
-    } else if (mode?.type === "api-edit" || mode?.type === "api-create") {
-      if (mode?.type !== "api-edit" || !mode.initialTab) {
-        setApiTab("basic");
-      }
-    } else if (
-      mode?.type === "variable-edit" ||
-      mode?.type === "variable-create"
-    ) {
-      setVariableTab("basic");
-    }
-  }, [mode?.type]);
-
-  if (!isActive) return null;
-
-  // 에디터가 열리지 않은 상태
-  if (!mode) {
-    return (
-      <div className="dataset-editor-panel">
-        <PanelHeader icon={<FileEdit size={16} />} title="Editor" />
-        <div className="panel-contents">
-          <EmptyState message="편집할 항목을 선택하세요" />
-        </div>
-      </div>
-    );
-  }
 
   // 모드에 따른 헤더 제목 결정
   const getHeaderTitle = (): string => {
@@ -361,4 +337,59 @@ export function DatasetEditorPanel({ isActive }: PanelProps) {
       <div className="panel-contents">{renderEditorContent()}</div>
     </div>
   );
+}
+
+/**
+ * 모드별 고유 키 생성
+ *
+ * mode.type + 관련 ID를 조합하여 고유 키 생성
+ * - table-create: type + projectId
+ * - table-edit: type + tableId
+ * - api-edit: type + endpointId
+ * - etc.
+ */
+function getModeKey(mode: DatasetEditorMode): string {
+  switch (mode.type) {
+    case "table-create":
+      return `table-create-${mode.projectId}`;
+    case "table-edit":
+      return `table-edit-${mode.tableId}`;
+    case "api-create":
+      return `api-create-${mode.projectId}`;
+    case "api-edit":
+      return `api-edit-${mode.endpointId}`;
+    case "variable-create":
+      return `variable-create-${mode.projectId}`;
+    case "variable-edit":
+      return `variable-edit-${mode.variableId}`;
+    case "transformer-create":
+      return `transformer-create-${mode.projectId}`;
+    case "transformer-edit":
+      return `transformer-edit-${mode.transformerId}`;
+    default:
+      return `unknown-${Date.now()}`;
+  }
+}
+
+export function DatasetEditorPanel({ isActive }: PanelProps) {
+  const mode = useDatasetEditorStore((state) => state.mode);
+  const close = useDatasetEditorStore((state) => state.close);
+
+  if (!isActive) return null;
+
+  // 에디터가 열리지 않은 상태
+  if (!mode) {
+    return (
+      <div className="dataset-editor-panel">
+        <PanelHeader icon={<FileEdit size={16} />} title="Editor" />
+        <div className="panel-contents">
+          <EmptyState message="편집할 항목을 선택하세요" />
+        </div>
+      </div>
+    );
+  }
+
+  // ⚡ React 권장 패턴: key prop으로 mode 변경 시 EditorContent 전체 리마운트
+  // 이렇게 하면 useEffect에서 setState 호출 없이 상태가 자동 초기화됨
+  return <EditorContent key={getModeKey(mode)} mode={mode} close={close} />;
 }

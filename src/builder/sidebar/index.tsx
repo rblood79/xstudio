@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo } from "react";
+import React, { useCallback } from "react";
 import {
   Settings2,
   Trash,
@@ -70,7 +70,6 @@ export default function Sidebar({
   // 개선: useCurrentPageElements() → 현재 페이지 요소만 구독
   const currentPageElements = useCurrentPageElements();
 
-  const currentPageId = useStore((state) => state.currentPageId);
   const selectedElementId = useStore(
     useCallback((state) => state.selectedElementId, [])
   );

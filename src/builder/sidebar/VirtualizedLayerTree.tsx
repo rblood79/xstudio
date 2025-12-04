@@ -6,7 +6,7 @@
  * - 보이는 영역만 렌더링하여 메모리 사용량 감소
  */
 
-import React, { useRef, useMemo, useCallback } from "react";
+import React, { useRef, useMemo } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { Settings2, Trash, ChevronRight, Box, Folder, File } from "lucide-react";
 import type { ElementTreeItem } from "../../types/builder/stately.types";
@@ -14,9 +14,6 @@ import type { ElementProps } from "../../types/integrations/supabase.types";
 import type { Element } from "../../types/core/store.types";
 import type { DataBinding } from "../../types/builder/unified.types";
 import {
-  hasTag,
-  hasProps,
-  childrenAs,
   ICON_EDIT_PROPS,
   type ButtonItem,
   type CheckboxItem,

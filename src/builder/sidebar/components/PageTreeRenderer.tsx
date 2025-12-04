@@ -3,11 +3,11 @@
  *
  * 🚀 Performance Optimization:
  * - React.memo로 불필요한 재렌더 방지
- * - useCallback으로 핸들러 메모이제이션
+ * - useMemo로 메모이제이션
  * - TreeNodeItem으로 개별 노드 최적화
  */
 
-import React, { memo, useCallback } from "react";
+import React, { memo, useMemo } from "react";
 import { TreeNodeItem } from "./TreeNodeItem";
 import type { Page } from "../../../types/builder/unified.types";
 import { sortByOrderNum } from "../../utils/treeUtils";
@@ -56,9 +56,10 @@ export const PageTreeRenderer = memo(function PageTreeRenderer({
 }: PageTreeRendererProps) {
   /**
    * 재귀적 페이지 트리 렌더링
+   * ⚡ useMemo + 내부 함수 패턴으로 변경 (useCallback 재귀 참조 문제 해결)
    */
-  const renderPageTree = useCallback(
-    (parentId: string | null = null, depth: number = 0): React.ReactNode => {
+  const renderPageTree = useMemo(() => {
+    const render = (parentId: string | null = null, depth: number = 0): React.ReactNode => {
       // 부모 ID에 해당하는 자식 페이지들 필터링
       const childPages = pages.filter((page) => {
         if (parentId === null) {
@@ -95,15 +96,15 @@ export const PageTreeRenderer = memo(function PageTreeRenderer({
                 onDelete={async () => onDelete(page)}
               >
                 {/* 펼쳐진 경우 자식 페이지들 렌더링 */}
-                {isExpanded && pageHasChildren && renderPageTree(page.id, depth + 1)}
+                {isExpanded && pageHasChildren && render(page.id, depth + 1)}
               </TreeNodeItem>
             );
           })}
         </>
       );
-    },
-    [pages, selectedPageId, expandedKeys, onSelect, onDelete, onToggle]
-  );
+    };
+    return render;
+  }, [pages, selectedPageId, expandedKeys, onSelect, onDelete, onToggle]);
 
   return <>{renderPageTree(null, 0)}</>;
 });
