@@ -26,6 +26,10 @@ import antigravityDarkJson from "../json/antigravity-dark.json";
 import antigravityLightJson from "../json/antigravity-light.json";
 import antigravityTealJson from "../json/antigravity-teal.json";
 import antigravityPurpleJson from "../json/antigravity-purple.json";
+// Retro themes
+import windows98Json from "../json/windows-98.json";
+import windowsXpJson from "../json/windows-xp.json";
+import macOs9Json from "../json/mac-os-9.json";
 
 // ==================== Types ====================
 
@@ -219,15 +223,23 @@ function ensureContrast(
  * All available JSON themes
  */
 const JSON_THEMES: Record<string, unknown> = {
+  // VS Code
   "vs-dark": vsDarkJson,
   "vs-light": vsLightJson,
+  // Tokyo Night
   "tokyo-night": tokyoNightJson,
+  // Solarized
   "solarized-dark": solarizedDarkJson,
   "solarized-light": solarizedLightJson,
+  // Google Antigravity
   "antigravity-dark": antigravityDarkJson,
   "antigravity-light": antigravityLightJson,
   "antigravity-teal": antigravityTealJson,
   "antigravity-purple": antigravityPurpleJson,
+  // Retro
+  "windows-98": windows98Json,
+  "windows-xp": windowsXpJson,
+  "mac-os-9": macOs9Json,
 };
 
 /**

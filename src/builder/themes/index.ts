@@ -16,6 +16,7 @@
  * - Tokyo Night: tokyo-night
  * - Solarized: solarized-dark, solarized-light
  * - Google Antigravity: antigravity-dark, antigravity-light, antigravity-teal, antigravity-purple
+ * - Retro: windows-98, windows-xp, mac-os-9
  *
  * @example
  * ```tsx
