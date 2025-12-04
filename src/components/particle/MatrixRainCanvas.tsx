@@ -100,6 +100,7 @@ const MATRIX_VERTEX_SHADER = `
   uniform float time;
   uniform float morphProgress;
   uniform float transitionProgress;
+  uniform float collisionRadius;
 
   varying float vBrightness;
   varying float vCharIndex;
@@ -107,55 +108,7 @@ const MATRIX_VERTEX_SHADER = `
   varying float vDepthLayer;
   varying float vFadeProgress;
   varying float vIsHead;
-
-  // Simplex noise for organic movement
-  vec3 mod289(vec3 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
-  vec4 mod289(vec4 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
-  vec4 permute(vec4 x) { return mod289(((x*34.0)+1.0)*x); }
-  vec4 taylorInvSqrt(vec4 r) { return 1.79284291400159 - 0.85373472095314 * r; }
-
-  float snoise(vec3 v) {
-    const vec2 C = vec2(1.0/6.0, 1.0/3.0);
-    const vec4 D = vec4(0.0, 0.5, 1.0, 2.0);
-    vec3 i = floor(v + dot(v, C.yyy));
-    vec3 x0 = v - i + dot(i, C.xxx);
-    vec3 g = step(x0.yzx, x0.xyz);
-    vec3 l = 1.0 - g;
-    vec3 i1 = min(g.xyz, l.zxy);
-    vec3 i2 = max(g.xyz, l.zxy);
-    vec3 x1 = x0 - i1 + C.xxx;
-    vec3 x2 = x0 - i2 + C.yyy;
-    vec3 x3 = x0 - D.yyy;
-    i = mod289(i);
-    vec4 p = permute(permute(permute(
-              i.z + vec4(0.0, i1.z, i2.z, 1.0))
-            + i.y + vec4(0.0, i1.y, i2.y, 1.0))
-            + i.x + vec4(0.0, i1.x, i2.x, 1.0));
-    float n_ = 0.142857142857;
-    vec3 ns = n_ * D.wyz - D.xzx;
-    vec4 j = p - 49.0 * floor(p * ns.z * ns.z);
-    vec4 x_ = floor(j * ns.z);
-    vec4 y_ = floor(j - 7.0 * x_);
-    vec4 x = x_ * ns.x + ns.yyyy;
-    vec4 y = y_ * ns.x + ns.yyyy;
-    vec4 h = 1.0 - abs(x) - abs(y);
-    vec4 b0 = vec4(x.xy, y.xy);
-    vec4 b1 = vec4(x.zw, y.zw);
-    vec4 s0 = floor(b0)*2.0 + 1.0;
-    vec4 s1 = floor(b1)*2.0 + 1.0;
-    vec4 sh = -step(h, vec4(0.0));
-    vec4 a0 = b0.xzyw + s0.xzyw*sh.xxyy;
-    vec4 a1 = b1.xzyw + s1.xzyw*sh.zzww;
-    vec3 p0 = vec3(a0.xy, h.x);
-    vec3 p1 = vec3(a0.zw, h.y);
-    vec3 p2 = vec3(a1.xy, h.z);
-    vec3 p3 = vec3(a1.zw, h.w);
-    vec4 norm = taylorInvSqrt(vec4(dot(p0,p0), dot(p1,p1), dot(p2,p2), dot(p3,p3)));
-    p0 *= norm.x; p1 *= norm.y; p2 *= norm.z; p3 *= norm.w;
-    vec4 m = max(0.6 - vec4(dot(x0,x0), dot(x1,x1), dot(x2,x2), dot(x3,x3)), 0.0);
-    m = m * m;
-    return 42.0 * dot(m*m, vec4(dot(p0,x0), dot(p1,x1), dot(p2,x2), dot(p3,x3)));
-  }
+  varying float vCollision;
 
   // Smooth easing
   float easeInOutCubic(float t) {
@@ -167,37 +120,26 @@ const MATRIX_VERTEX_SHADER = `
     float easedTransition = easeInOutCubic(transitionProgress);
     vec3 currentTarget = mix(prevTargetPos, targetPos, easedTransition);
 
-    // 기본 위치 (떨어지는 비)
-    vec3 rainPos = position;
-
-    // Parallax: 깊이에 따른 속도 차이 (뒤쪽이 느림)
-    float depthFactor = 1.0 - depthLayer * 0.15;
-
-    // 모핑 시 타겟을 향해 이동하는 동안의 유동적 움직임
-    float easedMorph = easeInOutCubic(morphProgress);
-
-    // 모핑 중 노이즈 기반 흐름
-    vec3 noiseOffset = vec3(0.0);
-    if (morphProgress > 0.01 && morphProgress < 0.99) {
-      float noiseScale = 0.02;
-      vec3 noisePos = rainPos * noiseScale + vec3(time * 0.3, 0.0, 0.0);
-      noiseOffset.x = snoise(noisePos) * 15.0 * (1.0 - easedMorph);
-      noiseOffset.y = snoise(noisePos + vec3(100.0, 0.0, 0.0)) * 15.0 * (1.0 - easedMorph);
-      noiseOffset.z = snoise(noisePos + vec3(0.0, 100.0, 0.0)) * 5.0 * (1.0 - easedMorph);
-    }
-
-    // 최종 위치: 비 위치와 타겟 위치 사이를 보간
-    vec3 finalPos = mix(rainPos + noiseOffset, currentTarget, easedMorph);
+    // 비는 원래 위치에서 계속 떨어짐 (이동하지 않음)
+    vec3 finalPos = position;
 
     // 머리 여부 판단
     float isHead = step(0.92, brightness);
     vIsHead = isHead;
 
-    // 밝기 조정: 모핑 시 전체적으로 밝아짐
+    // 충돌 감지: 현재 위치가 타겟 위치 근처인지 확인
+    // XY 평면에서의 거리 (Z는 무시 - 깊이가 다를 수 있음)
+    float distToTarget = length(finalPos.xy - currentTarget.xy);
+
+    // 충돌 강도 (가까울수록 1에 가까움)
+    float collision = smoothstep(collisionRadius, 0.0, distToTarget) * morphProgress;
+    vCollision = collision;
+
+    // 기본 밝기
     float finalBrightness = brightness;
-    if (morphProgress > 0.5) {
-      finalBrightness = mix(brightness, 0.8 + brightness * 0.2, (morphProgress - 0.5) * 2.0);
-    }
+
+    // 충돌 시 밝기 증가
+    finalBrightness = mix(finalBrightness, 1.0, collision * 0.8);
 
     // 페이드 효과 적용
     finalBrightness *= fadeProgress;
@@ -211,12 +153,12 @@ const MATRIX_VERTEX_SHADER = `
     vec4 mvPosition = modelViewMatrix * vec4(finalPos, 1.0);
     gl_Position = projectionMatrix * mvPosition;
 
-    // 파티클 크기 (모핑 시 약간 커짐, 깊이에 따라 작아짐)
-    float morphSize = 1.0 + morphProgress * 0.3;
+    // 파티클 크기
     float depthSize = 1.0 - depthLayer * 0.1;
-    // 머리는 더 크게
     float headSize = 1.0 + isHead * 0.3;
-    gl_PointSize = size * morphSize * depthSize * headSize * (300.0 / -mvPosition.z);
+    // 충돌 시 약간 커짐
+    float collisionSize = 1.0 + collision * 0.5;
+    gl_PointSize = size * depthSize * headSize * collisionSize * (300.0 / -mvPosition.z);
   }
 `;
 
@@ -233,6 +175,7 @@ const MATRIX_FRAGMENT_SHADER = `
   varying float vDepthLayer;
   varying float vFadeProgress;
   varying float vIsHead;
+  varying float vCollision;
 
   void main() {
     // 원형 마스크 (더 부드러운 가장자리)
@@ -257,6 +200,7 @@ const MATRIX_FRAGMENT_SHADER = `
     vec3 brightGreen = vec3(0.4, 1.0, 0.5);
     vec3 headWhite = vec3(0.9, 1.0, 0.95);
     vec3 headGlow = vec3(0.7, 1.0, 0.8);
+    vec3 collisionWhite = vec3(1.0, 1.0, 1.0);
 
     vec3 color;
 
@@ -276,19 +220,23 @@ const MATRIX_FRAGMENT_SHADER = `
     float depthDim = 1.0 - vDepthLayer * 0.25;
     color *= depthDim;
 
-    // 모핑 시 더 밝은 녹색으로
-    if (vMorphProgress > 0.5) {
-      vec3 morphColor = mix(matrixGreen, brightGreen, vBrightness);
-      color = mix(color, morphColor, (vMorphProgress - 0.5) * 2.0);
+    // 충돌 시 강한 발광 효과 (형태가 드러남)
+    if (vCollision > 0.01) {
+      // 충돌 강도에 따라 흰색/밝은 녹색으로
+      vec3 collisionColor = mix(brightGreen, collisionWhite, vCollision * 0.7);
+      color = mix(color, collisionColor, vCollision);
+      // 충돌 시 빠른 깜빡임
+      float collisionFlicker = 0.8 + 0.2 * sin(time * 25.0 + vCharIndex * 2.0);
+      color *= collisionFlicker;
     }
 
-    // 빠른 깜빡임 효과 (머리가 아닌 문자)
-    float flicker = 0.88 + 0.12 * sin(time * 12.0 + vCharIndex * 3.14159);
-    if (vIsHead < 0.5) {
+    // 빠른 깜빡임 효과 (머리가 아닌 문자, 충돌이 아닐 때)
+    if (vIsHead < 0.5 && vCollision < 0.1) {
+      float flicker = 0.88 + 0.12 * sin(time * 12.0 + vCharIndex * 3.14159);
       color *= flicker;
     }
 
-    // 알파 계산 - 가독성 향상을 위해 더 강한 알파
+    // 알파 계산
     float alpha = texColor.a * vBrightness * 1.6;
     alpha *= 1.0 - smoothstep(0.35, 0.48, dist);
 
@@ -297,8 +245,8 @@ const MATRIX_FRAGMENT_SHADER = `
       alpha *= 1.6;
     }
 
-    // 모핑 시 알파 증가
-    alpha *= 1.0 + vMorphProgress * 0.3;
+    // 충돌 시 알파 강화 (형태가 더 선명하게)
+    alpha = mix(alpha, min(alpha * 2.0, 1.0), vCollision);
 
     // 페이드 효과
     alpha *= vFadeProgress;
@@ -487,6 +435,7 @@ export function MatrixRainCanvas({
         time: { value: 0 },
         morphProgress: { value: 0 },
         transitionProgress: { value: 1 },
+        collisionRadius: { value: 15.0 }, // 충돌 감지 반경
       },
       vertexShader: MATRIX_VERTEX_SHADER,
       fragmentShader: MATRIX_FRAGMENT_SHADER,
@@ -544,8 +493,8 @@ export function MatrixRainCanvas({
         (1 - transitionProgressRef.current) * TRANSITION_SPEED;
       material.uniforms.transitionProgress.value = transitionProgressRef.current;
 
-      // 모핑 중이 아닐 때만 비 애니메이션
-      if (morphProgressRef.current < 0.1) {
+      // 비는 항상 떨어짐 (모핑 여부와 관계없이)
+      {
         const positionAttr = geometry.getAttribute("position") as THREE.BufferAttribute;
         const charIndexAttr = geometry.getAttribute("charIndex") as THREE.BufferAttribute;
         const brightnessAttr = geometry.getAttribute("brightness") as THREE.BufferAttribute;
