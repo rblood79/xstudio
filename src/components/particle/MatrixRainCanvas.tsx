@@ -6,6 +6,7 @@
  * - 가타카나, 숫자, 라틴 문자 조합
  * - 각 열의 속도와 길이가 랜덤
  * - 가장 밝은 머리 부분과 점점 흐려지는 꼬리
+ * - 호버 시 문자들이 모여서 텍스트/SVG 형태를 만듦
  * - Three.js Points + CanvasTexture 기반 렌더링
  */
 
@@ -15,12 +16,15 @@ import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer
 import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPass.js";
 import { OutputPass } from "three/examples/jsm/postprocessing/OutputPass.js";
+import { useParticleBackground } from "./ParticleContext";
+import { generatePointsFromContent } from "./canvasUtils";
+import { PARTICLE_COUNT, MORPH_IN_SPEED, MORPH_OUT_SPEED } from "./constants";
 
 // ==================== Constants ====================
-const COLUMN_COUNT = 80; // 열 개수
-const MAX_DROPS_PER_COLUMN = 25; // 각 열당 최대 문자 수
-const CHAR_SIZE = 24; // 문자 크기 (px)
+const COLUMN_COUNT = 60; // 열 개수
+const CHAR_SIZE = 20; // 문자 크기 (px)
 const TEXTURE_SIZE = 64; // 텍스처 크기
+const TRANSITION_SPEED = 0.015; // 형태 전환 속도
 
 // 매트릭스 문자셋: 가타카나 + 숫자 + 일부 라틴 문자
 const MATRIX_CHARS =
@@ -29,52 +33,7 @@ const MATRIX_CHARS =
   "ABCDEFGHIJKLMNOPQRSTUVWXYZ" +
   "ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜﾝ";
 
-// ==================== Types ====================
-interface Drop {
-  x: number;
-  y: number;
-  speed: number;
-  length: number;
-  charIndex: number;
-  brightness: number; // 0~1, 머리일수록 밝음
-  changeTimer: number;
-}
-
 // ==================== Helper Functions ====================
-function createCharTexture(char: string, brightness: number): THREE.CanvasTexture {
-  const canvas = document.createElement("canvas");
-  canvas.width = TEXTURE_SIZE;
-  canvas.height = TEXTURE_SIZE;
-  const ctx = canvas.getContext("2d")!;
-
-  // 배경 투명
-  ctx.clearRect(0, 0, TEXTURE_SIZE, TEXTURE_SIZE);
-
-  // 문자 그리기
-  const green = Math.floor(brightness * 255);
-  const red = Math.floor(brightness * 180);
-  ctx.fillStyle = brightness > 0.9
-    ? `rgb(255, 255, 255)` // 머리는 흰색
-    : `rgb(${red}, ${green}, ${Math.floor(red * 0.5)})`;
-
-  ctx.font = `bold ${TEXTURE_SIZE * 0.7}px "MS Gothic", "Meiryo", monospace`;
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-  ctx.fillText(char, TEXTURE_SIZE / 2, TEXTURE_SIZE / 2);
-
-  // 글로우 효과
-  if (brightness > 0.7) {
-    ctx.shadowColor = `rgba(0, 255, 70, ${brightness})`;
-    ctx.shadowBlur = 10;
-    ctx.fillText(char, TEXTURE_SIZE / 2, TEXTURE_SIZE / 2);
-  }
-
-  const texture = new THREE.CanvasTexture(canvas);
-  texture.needsUpdate = true;
-  return texture;
-}
-
-// 프리 생성된 문자 텍스처 아틀라스
 function createCharAtlas(): { texture: THREE.CanvasTexture; charCount: number } {
   const charsPerRow = 16;
   const rows = Math.ceil(MATRIX_CHARS.length / charsPerRow);
@@ -87,7 +46,6 @@ function createCharAtlas(): { texture: THREE.CanvasTexture; charCount: number } 
 
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  // 각 문자를 아틀라스에 그리기
   for (let i = 0; i < MATRIX_CHARS.length; i++) {
     const col = i % charsPerRow;
     const row = Math.floor(i / charsPerRow);
@@ -111,17 +69,128 @@ const MATRIX_VERTEX_SHADER = `
   attribute float charIndex;
   attribute float brightness;
   attribute float size;
+  attribute float columnIndex;
+  attribute float posInColumn;
+  attribute vec3 targetPos;
+  attribute vec3 prevTargetPos;
+
+  uniform float time;
+  uniform float morphProgress;
+  uniform float transitionProgress;
 
   varying float vBrightness;
   varying float vCharIndex;
+  varying float vMorphProgress;
+
+  // Simplex noise for organic movement
+  vec3 mod289(vec3 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
+  vec4 mod289(vec4 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
+  vec4 permute(vec4 x) { return mod289(((x*34.0)+1.0)*x); }
+  vec4 taylorInvSqrt(vec4 r) { return 1.79284291400159 - 0.85373472095314 * r; }
+
+  float snoise(vec3 v) {
+    const vec2 C = vec2(1.0/6.0, 1.0/3.0);
+    const vec4 D = vec4(0.0, 0.5, 1.0, 2.0);
+    vec3 i = floor(v + dot(v, C.yyy));
+    vec3 x0 = v - i + dot(i, C.xxx);
+    vec3 g = step(x0.yzx, x0.xyz);
+    vec3 l = 1.0 - g;
+    vec3 i1 = min(g.xyz, l.zxy);
+    vec3 i2 = max(g.xyz, l.zxy);
+    vec3 x1 = x0 - i1 + C.xxx;
+    vec3 x2 = x0 - i2 + C.yyy;
+    vec3 x3 = x0 - D.yyy;
+    i = mod289(i);
+    vec4 p = permute(permute(permute(
+              i.z + vec4(0.0, i1.z, i2.z, 1.0))
+            + i.y + vec4(0.0, i1.y, i2.y, 1.0))
+            + i.x + vec4(0.0, i1.x, i2.x, 1.0));
+    float n_ = 0.142857142857;
+    vec3 ns = n_ * D.wyz - D.xzx;
+    vec4 j = p - 49.0 * floor(p * ns.z * ns.z);
+    vec4 x_ = floor(j * ns.z);
+    vec4 y_ = floor(j - 7.0 * x_);
+    vec4 x = x_ * ns.x + ns.yyyy;
+    vec4 y = y_ * ns.x + ns.yyyy;
+    vec4 h = 1.0 - abs(x) - abs(y);
+    vec4 b0 = vec4(x.xy, y.xy);
+    vec4 b1 = vec4(x.zw, y.zw);
+    vec4 s0 = floor(b0)*2.0 + 1.0;
+    vec4 s1 = floor(b1)*2.0 + 1.0;
+    vec4 sh = -step(h, vec4(0.0));
+    vec4 a0 = b0.xzyw + s0.xzyw*sh.xxyy;
+    vec4 a1 = b1.xzyw + s1.xzyw*sh.zzww;
+    vec3 p0 = vec3(a0.xy, h.x);
+    vec3 p1 = vec3(a0.zw, h.y);
+    vec3 p2 = vec3(a1.xy, h.z);
+    vec3 p3 = vec3(a1.zw, h.w);
+    vec4 norm = taylorInvSqrt(vec4(dot(p0,p0), dot(p1,p1), dot(p2,p2), dot(p3,p3)));
+    p0 *= norm.x; p1 *= norm.y; p2 *= norm.z; p3 *= norm.w;
+    vec4 m = max(0.6 - vec4(dot(x0,x0), dot(x1,x1), dot(x2,x2), dot(x3,x3)), 0.0);
+    m = m * m;
+    return 42.0 * dot(m*m, vec4(dot(p0,x0), dot(p1,x1), dot(p2,x2), dot(p3,x3)));
+  }
+
+  // Smooth easing
+  float easeInOutCubic(float t) {
+    return t < 0.5 ? 4.0 * t * t * t : 1.0 - pow(-2.0 * t + 2.0, 3.0) / 2.0;
+  }
 
   void main() {
-    vBrightness = brightness;
-    vCharIndex = charIndex;
+    // 현재 타겟 위치 (전환 중일 때 보간)
+    float easedTransition = easeInOutCubic(transitionProgress);
+    vec3 currentTarget = mix(prevTargetPos, targetPos, easedTransition);
 
-    vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+    // 기본 위치 (떨어지는 비)
+    vec3 rainPos = position;
+
+    // 모핑 시 타겟을 향해 이동하는 동안의 유동적 움직임
+    float easedMorph = easeInOutCubic(morphProgress);
+
+    // 모핑 중 노이즈 기반 흐름
+    vec3 noiseOffset = vec3(0.0);
+    if (morphProgress > 0.01 && morphProgress < 0.99) {
+      float noiseScale = 0.02;
+      vec3 noisePos = rainPos * noiseScale + vec3(time * 0.3, 0.0, 0.0);
+      noiseOffset.x = snoise(noisePos) * 15.0 * (1.0 - easedMorph);
+      noiseOffset.y = snoise(noisePos + vec3(100.0, 0.0, 0.0)) * 15.0 * (1.0 - easedMorph);
+      noiseOffset.z = snoise(noisePos + vec3(0.0, 100.0, 0.0)) * 5.0 * (1.0 - easedMorph);
+    }
+
+    // 최종 위치: 비 위치와 타겟 위치 사이를 보간
+    vec3 finalPos = mix(rainPos + noiseOffset, currentTarget, easedMorph);
+
+    // 형태 유지 시 미세한 움직임 (호흡 효과)
+    if (morphProgress > 0.8) {
+      float aliveIntensity = (morphProgress - 0.8) * 5.0;
+      float breathe = sin(time * 1.5 + columnIndex * 0.5 + posInColumn * 0.3) * 2.0;
+      finalPos += normalize(currentTarget) * breathe * aliveIntensity * 0.3;
+
+      // 잔물결
+      vec3 ripple = vec3(
+        snoise(currentTarget * 0.03 + vec3(time * 0.4, 0.0, 0.0)),
+        snoise(currentTarget * 0.03 + vec3(0.0, time * 0.4, 0.0)),
+        0.0
+      ) * 2.0;
+      finalPos += ripple * aliveIntensity;
+    }
+
+    // 밝기 조정: 모핑 시 전체적으로 밝아짐
+    float finalBrightness = brightness;
+    if (morphProgress > 0.5) {
+      finalBrightness = mix(brightness, 0.8 + brightness * 0.2, (morphProgress - 0.5) * 2.0);
+    }
+
+    vBrightness = finalBrightness;
+    vCharIndex = charIndex;
+    vMorphProgress = morphProgress;
+
+    vec4 mvPosition = modelViewMatrix * vec4(finalPos, 1.0);
     gl_Position = projectionMatrix * mvPosition;
-    gl_PointSize = size * (300.0 / -mvPosition.z);
+
+    // 파티클 크기 (모핑 시 약간 커짐)
+    float morphSize = 1.0 + morphProgress * 0.3;
+    gl_PointSize = size * morphSize * (300.0 / -mvPosition.z);
   }
 `;
 
@@ -134,9 +203,10 @@ const MATRIX_FRAGMENT_SHADER = `
 
   varying float vBrightness;
   varying float vCharIndex;
+  varying float vMorphProgress;
 
   void main() {
-    // 원형 마스크 (부드러운 가장자리)
+    // 원형 마스크
     vec2 uv = gl_PointCoord;
     float dist = length(uv - 0.5);
     if (dist > 0.5) discard;
@@ -153,20 +223,34 @@ const MATRIX_FRAGMENT_SHADER = `
 
     vec4 texColor = texture2D(charAtlas, atlasUV);
 
-    // 밝기에 따른 색상 조정
+    // 색상: 녹색 그라데이션 + 머리는 흰색
     vec3 matrixGreen = vec3(0.0, 1.0, 0.27);
+    vec3 brightGreen = vec3(0.4, 1.0, 0.5);
     vec3 headWhite = vec3(1.0, 1.0, 1.0);
 
-    // 머리 부분은 흰색, 나머지는 녹색 그라데이션
-    vec3 color = mix(matrixGreen * vBrightness, headWhite, step(0.92, vBrightness));
+    vec3 color;
+    if (vBrightness > 0.92) {
+      color = headWhite;
+    } else {
+      color = mix(matrixGreen * 0.3, brightGreen, vBrightness);
+    }
 
-    // 약간의 깜빡임
-    float flicker = 0.95 + 0.05 * sin(time * 10.0 + vCharIndex * 3.14);
+    // 모핑 시 더 밝은 녹색으로
+    if (vMorphProgress > 0.5) {
+      vec3 morphColor = mix(matrixGreen, brightGreen, vBrightness);
+      color = mix(color, morphColor, (vMorphProgress - 0.5) * 2.0);
+    }
+
+    // 깜빡임 효과
+    float flicker = 0.92 + 0.08 * sin(time * 8.0 + vCharIndex * 2.71828);
     color *= flicker;
 
-    // 알파 계산 (밝기 + 텍스처)
-    float alpha = texColor.a * vBrightness * 1.2;
-    alpha *= 1.0 - smoothstep(0.3, 0.5, dist); // 가장자리 페이드
+    // 알파
+    float alpha = texColor.a * vBrightness * 1.3;
+    alpha *= 1.0 - smoothstep(0.35, 0.5, dist);
+
+    // 모핑 시 알파 증가
+    alpha *= 1.0 + vMorphProgress * 0.3;
 
     gl_FragColor = vec4(color, alpha);
   }
@@ -192,6 +276,35 @@ export function MatrixRainCanvas({
   speedMultiplier = 1.0,
 }: MatrixRainCanvasProps) {
   const mountRef = useRef<HTMLDivElement>(null);
+  const { targetMorphRef, contentRef, contentVersion } = useParticleBackground();
+  const morphProgressRef = useRef(0);
+  const transitionProgressRef = useRef(1);
+  const geometryRef = useRef<THREE.BufferGeometry | null>(null);
+  const materialRef = useRef<THREE.ShaderMaterial | null>(null);
+
+  // Content 변경 시 타겟 포지션 업데이트
+  useEffect(() => {
+    const geometry = geometryRef.current;
+    if (!geometry) return;
+
+    const currentTargetPos = geometry.getAttribute("targetPos");
+    if (currentTargetPos) {
+      geometry.setAttribute(
+        "prevTargetPos",
+        new THREE.BufferAttribute(new Float32Array(currentTargetPos.array), 3)
+      );
+    }
+
+    geometry.setAttribute(
+      "targetPos",
+      new THREE.BufferAttribute(
+        generatePointsFromContent(contentRef.current),
+        3
+      )
+    );
+
+    transitionProgressRef.current = 0;
+  }, [contentVersion, contentRef]);
 
   useEffect(() => {
     if (!mountRef.current) return;
@@ -225,61 +338,76 @@ export function MatrixRainCanvas({
     const charsPerRow = 16;
 
     // ========== Calculate Layout ==========
-    // 카메라 시야에 맞게 화면 영역 계산
     const fovRad = (60 * Math.PI) / 180;
     const halfHeight = Math.tan(fovRad / 2) * 200;
     const halfWidth = halfHeight * (window.innerWidth / window.innerHeight);
 
     const columnWidth = (halfWidth * 2) / COLUMN_COUNT;
+    const maxDropsPerColumn = Math.ceil(PARTICLE_COUNT / COLUMN_COUNT);
 
-    // ========== Initialize Drops ==========
-    const totalDrops = COLUMN_COUNT * MAX_DROPS_PER_COLUMN;
-    const drops: Drop[] = [];
+    // ========== Initialize Particles ==========
+    const positions = new Float32Array(PARTICLE_COUNT * 3);
+    const charIndices = new Float32Array(PARTICLE_COUNT);
+    const brightnesses = new Float32Array(PARTICLE_COUNT);
+    const sizes = new Float32Array(PARTICLE_COUNT);
+    const columnIndices = new Float32Array(PARTICLE_COUNT);
+    const posInColumns = new Float32Array(PARTICLE_COUNT);
+
+    // 각 열의 속도와 길이 정보
+    const columnSpeeds: number[] = [];
+    const columnLengths: number[] = [];
+    const columnStartY: number[] = [];
 
     for (let col = 0; col < COLUMN_COUNT; col++) {
+      columnSpeeds.push((0.5 + Math.random() * 1.5) * speedMultiplier);
+      columnLengths.push(8 + Math.floor(Math.random() * 12));
+      columnStartY.push(halfHeight + Math.random() * halfHeight * 2);
+    }
+
+    // 파티클 초기화
+    let particleIndex = 0;
+    for (let col = 0; col < COLUMN_COUNT && particleIndex < PARTICLE_COUNT; col++) {
       const columnX = -halfWidth + col * columnWidth + columnWidth / 2;
-      const speed = (0.5 + Math.random() * 1.5) * speedMultiplier;
-      const length = 5 + Math.floor(Math.random() * 15);
+      const length = columnLengths[col];
+      const startY = columnStartY[col];
 
-      // 각 열에 빗방울 체인 생성
-      const startY = halfHeight + Math.random() * halfHeight * 2; // 화면 위에서 시작
+      for (let i = 0; i < maxDropsPerColumn && particleIndex < PARTICLE_COUNT; i++) {
+        const idx = particleIndex;
+        const i3 = idx * 3;
 
-      for (let i = 0; i < MAX_DROPS_PER_COLUMN; i++) {
-        const brightness = i === 0 ? 1.0 : Math.max(0.1, 1.0 - (i / length) * 0.9);
-        drops.push({
-          x: columnX,
-          y: startY - i * (CHAR_SIZE / 4),
-          speed,
-          length,
-          charIndex: Math.floor(Math.random() * MATRIX_CHARS.length),
-          brightness: i < length ? brightness : 0,
-          changeTimer: Math.random() * 100,
-        });
+        positions[i3] = columnX + (Math.random() - 0.5) * 2;
+        positions[i3 + 1] = startY - i * (CHAR_SIZE / 3.5);
+        positions[i3 + 2] = (Math.random() - 0.5) * 10;
+
+        charIndices[idx] = Math.floor(Math.random() * MATRIX_CHARS.length);
+
+        // 밝기: 머리는 1.0, 꼬리로 갈수록 감소
+        const brightness = i === 0 ? 1.0 : (i < length ? Math.max(0.15, 1.0 - (i / length) * 0.85) : 0.1);
+        brightnesses[idx] = brightness;
+
+        sizes[idx] = CHAR_SIZE * (0.85 + Math.random() * 0.3);
+        columnIndices[idx] = col;
+        posInColumns[idx] = i;
+
+        particleIndex++;
       }
     }
 
     // ========== Geometry ==========
     const geometry = new THREE.BufferGeometry();
-    const positions = new Float32Array(totalDrops * 3);
-    const charIndices = new Float32Array(totalDrops);
-    const brightnesses = new Float32Array(totalDrops);
-    const sizes = new Float32Array(totalDrops);
-
-    // 초기값 설정
-    for (let i = 0; i < totalDrops; i++) {
-      const drop = drops[i];
-      positions[i * 3] = drop.x;
-      positions[i * 3 + 1] = drop.y;
-      positions[i * 3 + 2] = (Math.random() - 0.5) * 10; // 약간의 깊이 변화
-      charIndices[i] = drop.charIndex;
-      brightnesses[i] = drop.brightness;
-      sizes[i] = CHAR_SIZE * (0.8 + Math.random() * 0.4);
-    }
-
     geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
     geometry.setAttribute("charIndex", new THREE.BufferAttribute(charIndices, 1));
     geometry.setAttribute("brightness", new THREE.BufferAttribute(brightnesses, 1));
     geometry.setAttribute("size", new THREE.BufferAttribute(sizes, 1));
+    geometry.setAttribute("columnIndex", new THREE.BufferAttribute(columnIndices, 1));
+    geometry.setAttribute("posInColumn", new THREE.BufferAttribute(posInColumns, 1));
+
+    // 타겟 포지션 초기화
+    const initialTargetPos = generatePointsFromContent(contentRef.current);
+    geometry.setAttribute("targetPos", new THREE.BufferAttribute(initialTargetPos, 3));
+    geometry.setAttribute("prevTargetPos", new THREE.BufferAttribute(new Float32Array(initialTargetPos), 3));
+
+    geometryRef.current = geometry;
 
     // ========== Material ==========
     const material = new THREE.ShaderMaterial({
@@ -288,6 +416,8 @@ export function MatrixRainCanvas({
         charCount: { value: charCount },
         charsPerRow: { value: charsPerRow },
         time: { value: 0 },
+        morphProgress: { value: 0 },
+        transitionProgress: { value: 1 },
       },
       vertexShader: MATRIX_VERTEX_SHADER,
       fragmentShader: MATRIX_FRAGMENT_SHADER,
@@ -295,6 +425,7 @@ export function MatrixRainCanvas({
       blending: THREE.AdditiveBlending,
       depthWrite: false,
     });
+    materialRef.current = material;
 
     const points = new THREE.Points(geometry, material);
     scene.add(points);
@@ -319,65 +450,88 @@ export function MatrixRainCanvas({
     const clock = new THREE.Clock();
     let animationFrameId: number;
 
+    // 문자 변경 타이머
+    const charChangeTimers = new Float32Array(PARTICLE_COUNT);
+    for (let i = 0; i < PARTICLE_COUNT; i++) {
+      charChangeTimers[i] = Math.random() * 100;
+    }
+
     const animate = () => {
       const delta = clock.getDelta();
       const time = clock.getElapsedTime();
       material.uniforms.time.value = time;
 
-      const positionAttr = geometry.getAttribute("position") as THREE.BufferAttribute;
-      const charIndexAttr = geometry.getAttribute("charIndex") as THREE.BufferAttribute;
-      const brightnessAttr = geometry.getAttribute("brightness") as THREE.BufferAttribute;
+      // 모핑 진행도 업데이트
+      const morphSpeed =
+        targetMorphRef.current > morphProgressRef.current
+          ? MORPH_IN_SPEED
+          : MORPH_OUT_SPEED;
+      morphProgressRef.current +=
+        (targetMorphRef.current - morphProgressRef.current) * morphSpeed;
+      material.uniforms.morphProgress.value = morphProgressRef.current;
 
-      // 각 드롭 업데이트
-      for (let col = 0; col < COLUMN_COUNT; col++) {
-        const baseIdx = col * MAX_DROPS_PER_COLUMN;
-        const firstDrop = drops[baseIdx];
+      // 전환 진행도
+      transitionProgressRef.current +=
+        (1 - transitionProgressRef.current) * TRANSITION_SPEED;
+      material.uniforms.transitionProgress.value = transitionProgressRef.current;
 
-        // 열 전체를 아래로 이동
-        const moveAmount = firstDrop.speed * delta * 60;
+      // 모핑 중이 아닐 때만 비 애니메이션
+      if (morphProgressRef.current < 0.1) {
+        const positionAttr = geometry.getAttribute("position") as THREE.BufferAttribute;
+        const charIndexAttr = geometry.getAttribute("charIndex") as THREE.BufferAttribute;
+        const brightnessAttr = geometry.getAttribute("brightness") as THREE.BufferAttribute;
 
-        for (let i = 0; i < MAX_DROPS_PER_COLUMN; i++) {
-          const idx = baseIdx + i;
-          const drop = drops[idx];
+        for (let col = 0; col < COLUMN_COUNT; col++) {
+          const speed = columnSpeeds[col];
+          const length = columnLengths[col];
+          const moveAmount = speed * delta * 55;
 
-          drop.y -= moveAmount;
-          positionAttr.setY(idx, drop.y);
+          const startIdx = col * maxDropsPerColumn;
+          const endIdx = Math.min(startIdx + maxDropsPerColumn, PARTICLE_COUNT);
 
-          // 문자 변경 타이머
-          drop.changeTimer -= delta * 60;
-          if (drop.changeTimer <= 0) {
-            drop.charIndex = Math.floor(Math.random() * MATRIX_CHARS.length);
-            charIndexAttr.setX(idx, drop.charIndex);
-            drop.changeTimer = 20 + Math.random() * 80;
+          // 열 전체 이동
+          let headY = -Infinity;
+          for (let idx = startIdx; idx < endIdx; idx++) {
+            const newY = positionAttr.getY(idx) - moveAmount;
+            positionAttr.setY(idx, newY);
+
+            if (idx === startIdx) {
+              headY = newY;
+            }
+
+            // 문자 변경
+            charChangeTimers[idx] -= delta * 60;
+            if (charChangeTimers[idx] <= 0) {
+              charIndexAttr.setX(idx, Math.floor(Math.random() * MATRIX_CHARS.length));
+              charChangeTimers[idx] = 15 + Math.random() * 60;
+            }
+          }
+
+          // 머리가 화면 아래로 나가면 리셋
+          if (headY < -halfHeight - 100) {
+            const newStartY = halfHeight + 50 + Math.random() * 100;
+            const newLength = 8 + Math.floor(Math.random() * 12);
+            columnLengths[col] = newLength;
+            columnSpeeds[col] = (0.5 + Math.random() * 1.5) * speedMultiplier;
+
+            for (let i = 0; i < maxDropsPerColumn && startIdx + i < PARTICLE_COUNT; i++) {
+              const idx = startIdx + i;
+              const columnX = -halfWidth + col * columnWidth + columnWidth / 2;
+
+              positionAttr.setX(idx, columnX + (Math.random() - 0.5) * 2);
+              positionAttr.setY(idx, newStartY - i * (CHAR_SIZE / 3.5));
+              charIndexAttr.setX(idx, Math.floor(Math.random() * MATRIX_CHARS.length));
+
+              const brightness = i === 0 ? 1.0 : (i < newLength ? Math.max(0.15, 1.0 - (i / newLength) * 0.85) : 0.1);
+              brightnessAttr.setX(idx, brightness);
+            }
           }
         }
 
-        // 헤드(첫 번째 드롭)가 화면 아래로 나가면 리셋
-        if (drops[baseIdx].y < -halfHeight - 50) {
-          // 새로운 시작점
-          const newStartY = halfHeight + Math.random() * 100;
-          const newSpeed = (0.5 + Math.random() * 1.5) * speedMultiplier;
-          const newLength = 5 + Math.floor(Math.random() * 15);
-
-          for (let i = 0; i < MAX_DROPS_PER_COLUMN; i++) {
-            const idx = baseIdx + i;
-            const drop = drops[idx];
-
-            drop.y = newStartY - i * (CHAR_SIZE / 4);
-            drop.speed = newSpeed;
-            drop.length = newLength;
-            drop.brightness = i === 0 ? 1.0 : (i < newLength ? Math.max(0.1, 1.0 - (i / newLength) * 0.9) : 0);
-            drop.charIndex = Math.floor(Math.random() * MATRIX_CHARS.length);
-
-            positionAttr.setY(idx, drop.y);
-            charIndexAttr.setX(idx, drop.charIndex);
-            brightnessAttr.setX(idx, drop.brightness);
-          }
-        }
+        positionAttr.needsUpdate = true;
+        charIndexAttr.needsUpdate = true;
+        brightnessAttr.needsUpdate = true;
       }
-
-      positionAttr.needsUpdate = true;
-      charIndexAttr.needsUpdate = true;
 
       composer.render();
       animationFrameId = requestAnimationFrame(animate);
@@ -396,6 +550,8 @@ export function MatrixRainCanvas({
 
     // ========== Cleanup ==========
     return () => {
+      geometryRef.current = null;
+      materialRef.current = null;
       cancelAnimationFrame(animationFrameId);
       window.removeEventListener("resize", onResize);
       mountElement.removeChild(renderer.domElement);
@@ -405,7 +561,7 @@ export function MatrixRainCanvas({
       composer.dispose();
       renderer.dispose();
     };
-  }, [bloomStrength, bloomRadius, bloomThreshold, speedMultiplier]);
+  }, [targetMorphRef, contentRef, bloomStrength, bloomRadius, bloomThreshold, speedMultiplier]);
 
   return (
     <div
