@@ -1,14 +1,11 @@
 /**
- * MatrixRainCanvas - Matrix Digital Rain Effect
+ * MatrixRainCanvas - Matrix Digital Rain Effect (Enhanced)
  *
  * 영화 《매트릭스》의 인트로에서 등장하는 디지털 비(Digital Rain) 효과
- * - 검은 배경 위에 녹색 문자들이 세로로 흘러내림
- * - 가타카나, 숫자, 라틴 문자 조합
- * - 각 열의 속도와 길이가 랜덤
- * - 가장 밝은 머리 부분과 점점 흐려지는 꼬리
- * - 호버 시 문자들이 모여서 텍스트/SVG 형태를 만듦
- * - Parallax 깊이감 + 페이드 인/아웃 라이프사이클
- * - Three.js Points + CanvasTexture 기반 렌더링
+ * - InstancedMesh + PlaneGeometry로 선명한 문자 렌더링
+ * - 실제 3D 깊이감과 원근감
+ * - 호버 시 문자들이 형태 위에서 충돌하여 흘러내리는 효과
+ * - Three.js InstancedMesh 기반 고성능 렌더링
  */
 
 import { useEffect, useRef } from "react";
@@ -22,275 +19,193 @@ import { generatePointsFromContent } from "./canvasUtils";
 import { PARTICLE_COUNT, MORPH_IN_SPEED, MORPH_OUT_SPEED } from "./constants";
 
 // ==================== Constants ====================
-const COLUMN_COUNT = 70; // 열 개수
-const CHAR_SIZE = 18; // 문자 크기 (px)
-const TEXTURE_SIZE = 64; // 텍스처 크기
-const TRANSITION_SPEED = 0.015; // 형태 전환 속도
-const DEPTH_LAYERS = 5; // 깊이 레이어 수
-const MAX_DEPTH = 80; // 최대 Z 깊이
+const CHAR_COUNT = Math.min(PARTICLE_COUNT, 3000); // 성능을 위해 제한
+const COLUMN_COUNT = 50;
+const CHAR_SIZE = 1.2; // 3D 월드 단위
+const TEXTURE_CHAR_SIZE = 128; // 텍스처 해상도
+const DEPTH_RANGE = 150; // Z축 깊이 범위
+const TRANSITION_SPEED = 0.02;
 
-// 매트릭스 문자셋: 가타카나 + 숫자 + 일부 라틴 문자
+// 매트릭스 문자셋
 const MATRIX_CHARS =
   "アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン" +
-  "0123456789" +
-  "ABCDEFGHIJKLMNOPQRSTUVWXYZ" +
-  "ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜﾝ" +
-  "§±×÷≠≈∞∑∏√∫";
+  "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ" +
+  "ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜﾝ";
 
-// ==================== Helper Functions ====================
-function createCharAtlas(): { texture: THREE.CanvasTexture; charCount: number } {
-  const charsPerRow = 16;
+// ==================== Character Texture Atlas ====================
+function createCharacterAtlas(): THREE.CanvasTexture {
+  const charsPerRow = 12;
   const rows = Math.ceil(MATRIX_CHARS.length / charsPerRow);
-  const atlasSize = charsPerRow * TEXTURE_SIZE;
+  const atlasWidth = charsPerRow * TEXTURE_CHAR_SIZE;
+  const atlasHeight = rows * TEXTURE_CHAR_SIZE;
 
   const canvas = document.createElement("canvas");
-  canvas.width = atlasSize;
-  canvas.height = rows * TEXTURE_SIZE;
+  canvas.width = atlasWidth;
+  canvas.height = atlasHeight;
   const ctx = canvas.getContext("2d")!;
 
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  // 배경 투명
+  ctx.clearRect(0, 0, atlasWidth, atlasHeight);
+
+  // 폰트 설정 - 선명한 렌더링
+  ctx.font = `bold ${TEXTURE_CHAR_SIZE * 0.75}px "MS Gothic", "Meiryo", "Hiragino Kaku Gothic Pro", monospace`;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
 
   for (let i = 0; i < MATRIX_CHARS.length; i++) {
     const col = i % charsPerRow;
     const row = Math.floor(i / charsPerRow);
-    const x = col * TEXTURE_SIZE + TEXTURE_SIZE / 2;
-    const y = row * TEXTURE_SIZE + TEXTURE_SIZE / 2;
+    const x = col * TEXTURE_CHAR_SIZE + TEXTURE_CHAR_SIZE / 2;
+    const y = row * TEXTURE_CHAR_SIZE + TEXTURE_CHAR_SIZE / 2;
 
-    // 글로우 효과를 위한 그림자
-    ctx.shadowColor = "rgba(0, 255, 70, 0.8)";
-    ctx.shadowBlur = 4;
-    ctx.fillStyle = "rgb(0, 255, 70)";
-    ctx.font = `bold ${TEXTURE_SIZE * 0.7}px "MS Gothic", "Meiryo", monospace`;
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
+    // 글로우 효과
+    ctx.shadowColor = "rgba(0, 255, 100, 1)";
+    ctx.shadowBlur = 8;
+    ctx.fillStyle = "#00ff66";
+    ctx.fillText(MATRIX_CHARS[i], x, y);
+
+    // 더 선명하게 한번 더
+    ctx.shadowBlur = 0;
     ctx.fillText(MATRIX_CHARS[i], x, y);
   }
 
   const texture = new THREE.CanvasTexture(canvas);
+  texture.minFilter = THREE.LinearFilter;
+  texture.magFilter = THREE.LinearFilter;
   texture.needsUpdate = true;
-  return { texture, charCount: MATRIX_CHARS.length };
+
+  return texture;
 }
 
-// ==================== Vertex Shader ====================
-const MATRIX_VERTEX_SHADER = `
-  attribute float charIndex;
-  attribute float brightness;
-  attribute float size;
-  attribute float columnIndex;
-  attribute float posInColumn;
-  attribute float depthLayer;
-  attribute float fadeProgress;
-  attribute vec3 targetPos;
-  attribute vec3 prevTargetPos;
+// ==================== Vertex Shader for Instanced Mesh ====================
+const MATRIX_INSTANCE_VERTEX = `
+  attribute vec3 instancePosition;
+  attribute float instanceCharIndex;
+  attribute float instanceBrightness;
+  attribute float instanceDepth;
+  attribute float instanceSpeed;
 
   uniform float time;
   uniform float morphProgress;
-  uniform float transitionProgress;
+  uniform sampler2D targetPositions;
+  uniform vec2 targetSize;
+  uniform float screenHeight;
 
+  varying vec2 vUv;
   varying float vBrightness;
   varying float vCharIndex;
-  varying float vMorphProgress;
-  varying float vDepthLayer;
-  varying float vFadeProgress;
-  varying float vIsHead;
-
-  // Simplex noise for organic movement
-  vec3 mod289(vec3 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
-  vec4 mod289(vec4 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
-  vec4 permute(vec4 x) { return mod289(((x*34.0)+1.0)*x); }
-  vec4 taylorInvSqrt(vec4 r) { return 1.79284291400159 - 0.85373472095314 * r; }
-
-  float snoise(vec3 v) {
-    const vec2 C = vec2(1.0/6.0, 1.0/3.0);
-    const vec4 D = vec4(0.0, 0.5, 1.0, 2.0);
-    vec3 i = floor(v + dot(v, C.yyy));
-    vec3 x0 = v - i + dot(i, C.xxx);
-    vec3 g = step(x0.yzx, x0.xyz);
-    vec3 l = 1.0 - g;
-    vec3 i1 = min(g.xyz, l.zxy);
-    vec3 i2 = max(g.xyz, l.zxy);
-    vec3 x1 = x0 - i1 + C.xxx;
-    vec3 x2 = x0 - i2 + C.yyy;
-    vec3 x3 = x0 - D.yyy;
-    i = mod289(i);
-    vec4 p = permute(permute(permute(
-              i.z + vec4(0.0, i1.z, i2.z, 1.0))
-            + i.y + vec4(0.0, i1.y, i2.y, 1.0))
-            + i.x + vec4(0.0, i1.x, i2.x, 1.0));
-    float n_ = 0.142857142857;
-    vec3 ns = n_ * D.wyz - D.xzx;
-    vec4 j = p - 49.0 * floor(p * ns.z * ns.z);
-    vec4 x_ = floor(j * ns.z);
-    vec4 y_ = floor(j - 7.0 * x_);
-    vec4 x = x_ * ns.x + ns.yyyy;
-    vec4 y = y_ * ns.x + ns.yyyy;
-    vec4 h = 1.0 - abs(x) - abs(y);
-    vec4 b0 = vec4(x.xy, y.xy);
-    vec4 b1 = vec4(x.zw, y.zw);
-    vec4 s0 = floor(b0)*2.0 + 1.0;
-    vec4 s1 = floor(b1)*2.0 + 1.0;
-    vec4 sh = -step(h, vec4(0.0));
-    vec4 a0 = b0.xzyw + s0.xzyw*sh.xxyy;
-    vec4 a1 = b1.xzyw + s1.xzyw*sh.zzww;
-    vec3 p0 = vec3(a0.xy, h.x);
-    vec3 p1 = vec3(a0.zw, h.y);
-    vec3 p2 = vec3(a1.xy, h.z);
-    vec3 p3 = vec3(a1.zw, h.w);
-    vec4 norm = taylorInvSqrt(vec4(dot(p0,p0), dot(p1,p1), dot(p2,p2), dot(p3,p3)));
-    p0 *= norm.x; p1 *= norm.y; p2 *= norm.z; p3 *= norm.w;
-    vec4 m = max(0.6 - vec4(dot(x0,x0), dot(x1,x1), dot(x2,x2), dot(x3,x3)), 0.0);
-    m = m * m;
-    return 42.0 * dot(m*m, vec4(dot(p0,x0), dot(p1,x1), dot(p2,x2), dot(p3,x3)));
-  }
-
-  // Smooth easing
-  float easeInOutCubic(float t) {
-    return t < 0.5 ? 4.0 * t * t * t : 1.0 - pow(-2.0 * t + 2.0, 3.0) / 2.0;
-  }
+  varying float vDepth;
+  varying float vCollision;
 
   void main() {
-    // 현재 타겟 위치 (전환 중일 때 보간)
-    float easedTransition = easeInOutCubic(transitionProgress);
-    vec3 currentTarget = mix(prevTargetPos, targetPos, easedTransition);
+    vUv = uv;
+    vCharIndex = instanceCharIndex;
+    vDepth = instanceDepth;
 
-    // 기본 위치 (떨어지는 비)
-    vec3 rainPos = position;
+    vec3 pos = instancePosition;
 
-    // Parallax: 깊이에 따른 속도 차이 (뒤쪽이 느림)
-    float depthFactor = 1.0 - depthLayer * 0.15;
+    // 타겟 위치 가져오기 (충돌 검사용)
+    float normalizedIndex = gl_InstanceID / float(${CHAR_COUNT});
+    vec2 targetUV = vec2(mod(float(gl_InstanceID), targetSize.x) / targetSize.x,
+                         floor(float(gl_InstanceID) / targetSize.x) / targetSize.y);
+    vec4 targetData = texture2D(targetPositions, targetUV);
+    vec3 targetPos = targetData.xyz;
 
-    // 모핑 시 타겟을 향해 이동하는 동안의 유동적 움직임
-    float easedMorph = easeInOutCubic(morphProgress);
+    // 충돌 검사: 문자가 타겟 형태 근처에 있는지
+    float distToTarget = length(pos.xy - targetPos.xy);
+    float collisionRadius = 8.0;
+    float collision = smoothstep(collisionRadius, 0.0, distToTarget) * morphProgress;
+    vCollision = collision;
 
-    // 모핑 중 노이즈 기반 흐름
-    vec3 noiseOffset = vec3(0.0);
-    if (morphProgress > 0.01 && morphProgress < 0.99) {
-      float noiseScale = 0.02;
-      vec3 noisePos = rainPos * noiseScale + vec3(time * 0.3, 0.0, 0.0);
-      noiseOffset.x = snoise(noisePos) * 15.0 * (1.0 - easedMorph);
-      noiseOffset.y = snoise(noisePos + vec3(100.0, 0.0, 0.0)) * 15.0 * (1.0 - easedMorph);
-      noiseOffset.z = snoise(noisePos + vec3(0.0, 100.0, 0.0)) * 5.0 * (1.0 - easedMorph);
+    // 충돌 시: 타겟 위치에서 잠시 머물다가 옆으로 흘러내림
+    if (collision > 0.1) {
+      // 타겟 위치로 끌어당김
+      pos.xy = mix(pos.xy, targetPos.xy, collision * 0.8);
+      // 아래로 더 천천히 흐름
+      pos.y -= collision * time * instanceSpeed * 0.3;
+      // 약간 옆으로 흘러내림
+      pos.x += sin(time * 2.0 + float(gl_InstanceID) * 0.1) * collision * 2.0;
     }
 
-    // 최종 위치: 비 위치와 타겟 위치 사이를 보간
-    vec3 finalPos = mix(rainPos + noiseOffset, currentTarget, easedMorph);
+    // 깊이에 따른 스케일 (원근감)
+    float depthScale = 1.0 - instanceDepth * 0.4;
 
-    // 머리 여부 판단
-    float isHead = step(0.92, brightness);
-    vIsHead = isHead;
+    // 밝기 (머리는 밝게, 깊이에 따라 어둡게)
+    vBrightness = instanceBrightness * (1.0 - instanceDepth * 0.5);
 
-    // 밝기 조정: 모핑 시 전체적으로 밝아짐
-    float finalBrightness = brightness;
-    if (morphProgress > 0.5) {
-      finalBrightness = mix(brightness, 0.8 + brightness * 0.2, (morphProgress - 0.5) * 2.0);
-    }
+    // 충돌 시 더 밝게
+    vBrightness += collision * 0.5;
 
-    // 페이드 효과 적용
-    finalBrightness *= fadeProgress;
+    // 인스턴스 위치에 로컬 버텍스 추가
+    vec3 transformed = position * ${CHAR_SIZE.toFixed(1)} * depthScale + pos;
 
-    vBrightness = finalBrightness;
-    vCharIndex = charIndex;
-    vMorphProgress = morphProgress;
-    vDepthLayer = depthLayer;
-    vFadeProgress = fadeProgress;
+    // Billboard: 항상 카메라를 향하도록
+    vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
+    mvPosition.xyz += position * ${CHAR_SIZE.toFixed(1)} * depthScale;
 
-    vec4 mvPosition = modelViewMatrix * vec4(finalPos, 1.0);
     gl_Position = projectionMatrix * mvPosition;
-
-    // 파티클 크기 (모핑 시 약간 커짐, 깊이에 따라 작아짐)
-    float morphSize = 1.0 + morphProgress * 0.3;
-    float depthSize = 1.0 - depthLayer * 0.1;
-    // 머리는 더 크게
-    float headSize = 1.0 + isHead * 0.3;
-    gl_PointSize = size * morphSize * depthSize * headSize * (300.0 / -mvPosition.z);
   }
 `;
 
 // ==================== Fragment Shader ====================
-const MATRIX_FRAGMENT_SHADER = `
+const MATRIX_INSTANCE_FRAGMENT = `
   uniform sampler2D charAtlas;
-  uniform float charCount;
   uniform float charsPerRow;
+  uniform float charRows;
   uniform float time;
 
+  varying vec2 vUv;
   varying float vBrightness;
   varying float vCharIndex;
-  varying float vMorphProgress;
-  varying float vDepthLayer;
-  varying float vFadeProgress;
-  varying float vIsHead;
+  varying float vDepth;
+  varying float vCollision;
 
   void main() {
-    // 원형 마스크
-    vec2 uv = gl_PointCoord;
-    float dist = length(uv - 0.5);
-    if (dist > 0.5) discard;
-
-    // 아틀라스에서 문자 샘플링
+    // 아틀라스에서 문자 UV 계산
     float charIdx = floor(vCharIndex);
     float col = mod(charIdx, charsPerRow);
     float row = floor(charIdx / charsPerRow);
 
-    vec2 atlasUV = vec2(
-      (col + uv.x) / charsPerRow,
-      (row + uv.y) / ceil(charCount / charsPerRow)
+    vec2 charUV = vec2(
+      (col + vUv.x) / charsPerRow,
+      (row + (1.0 - vUv.y)) / charRows
     );
 
-    vec4 texColor = texture2D(charAtlas, atlasUV);
+    vec4 texColor = texture2D(charAtlas, charUV);
 
-    // 색상 정의
-    vec3 matrixGreen = vec3(0.0, 1.0, 0.27);
-    vec3 brightGreen = vec3(0.4, 1.0, 0.5);
+    // 녹색 색상
+    vec3 baseGreen = vec3(0.0, 1.0, 0.4);
+    vec3 brightGreen = vec3(0.5, 1.0, 0.6);
     vec3 headWhite = vec3(0.9, 1.0, 0.95);
-    vec3 headGlow = vec3(0.7, 1.0, 0.8);
 
+    // 밝기에 따른 색상
     vec3 color;
-
-    // 머리 문자: 강한 흰색/밝은 녹색 발광
-    if (vIsHead > 0.5) {
-      // 깜빡이는 머리 효과
-      float headFlicker = 0.85 + 0.15 * sin(time * 15.0 + vCharIndex * 1.618);
-      color = mix(headGlow, headWhite, headFlicker);
-      // 추가 글로우
-      color += vec3(0.2, 0.3, 0.25) * headFlicker;
+    if (vBrightness > 0.9) {
+      // 머리: 흰색
+      color = mix(brightGreen, headWhite, (vBrightness - 0.9) * 10.0);
     } else {
       // 꼬리: 녹색 그라데이션
-      color = mix(matrixGreen * 0.2, brightGreen, vBrightness);
+      color = mix(baseGreen * 0.3, brightGreen, vBrightness);
     }
 
-    // 깊이에 따른 색상 감쇠 (뒤쪽은 더 어두움)
-    float depthDim = 1.0 - vDepthLayer * 0.25;
-    color *= depthDim;
+    // 충돌 시 더 밝은 색상
+    color = mix(color, headWhite, vCollision * 0.5);
 
-    // 모핑 시 더 밝은 녹색으로
-    if (vMorphProgress > 0.5) {
-      vec3 morphColor = mix(matrixGreen, brightGreen, vBrightness);
-      color = mix(color, morphColor, (vMorphProgress - 0.5) * 2.0);
-    }
+    // 깜빡임 효과
+    float flicker = 0.9 + 0.1 * sin(time * 10.0 + vCharIndex * 2.5);
+    color *= flicker;
 
-    // 빠른 깜빡임 효과 (머리가 아닌 문자)
-    float flicker = 0.88 + 0.12 * sin(time * 12.0 + vCharIndex * 3.14159);
-    if (vIsHead < 0.5) {
-      color *= flicker;
-    }
+    // 깊이에 따른 안개 효과
+    float fog = 1.0 - vDepth * 0.3;
+    color *= fog;
 
-    // 알파 계산
-    float alpha = texColor.a * vBrightness * 1.4;
-    alpha *= 1.0 - smoothstep(0.3, 0.5, dist);
+    // 알파
+    float alpha = texColor.a * vBrightness;
 
-    // 머리는 더 강한 알파
-    if (vIsHead > 0.5) {
-      alpha *= 1.5;
-    }
+    // 충돌 시 더 강한 알파
+    alpha = mix(alpha, min(alpha * 1.5, 1.0), vCollision);
 
-    // 모핑 시 알파 증가
-    alpha *= 1.0 + vMorphProgress * 0.3;
-
-    // 페이드 효과
-    alpha *= vFadeProgress;
-
-    // 깊이에 따른 알파 감쇠
-    alpha *= depthDim;
+    if (alpha < 0.05) discard;
 
     gl_FragColor = vec4(color, alpha);
   }
@@ -298,52 +213,44 @@ const MATRIX_FRAGMENT_SHADER = `
 
 // ==================== Component Props ====================
 interface MatrixRainCanvasProps {
-  /** Bloom 강도 (0.0 ~ 2.0) */
   bloomStrength?: number;
-  /** Bloom 반경 */
   bloomRadius?: number;
-  /** Bloom 임계값 (0.0 ~ 1.0) */
   bloomThreshold?: number;
-  /** 낙하 속도 배율 */
   speedMultiplier?: number;
 }
 
 // ==================== Component ====================
 export function MatrixRainCanvas({
-  bloomStrength = 1.0,
-  bloomRadius = 0.6,
-  bloomThreshold = 0.15,
+  bloomStrength = 1.2,
+  bloomRadius = 0.8,
+  bloomThreshold = 0.1,
   speedMultiplier = 1.0,
 }: MatrixRainCanvasProps) {
   const mountRef = useRef<HTMLDivElement>(null);
   const { targetMorphRef, contentRef, contentVersion } = useParticleBackground();
   const morphProgressRef = useRef(0);
-  const transitionProgressRef = useRef(1);
-  const geometryRef = useRef<THREE.BufferGeometry | null>(null);
+  const targetTextureRef = useRef<THREE.DataTexture | null>(null);
   const materialRef = useRef<THREE.ShaderMaterial | null>(null);
 
-  // Content 변경 시 타겟 포지션 업데이트
+  // 타겟 위치 업데이트
   useEffect(() => {
-    const geometry = geometryRef.current;
-    if (!geometry) return;
+    if (!targetTextureRef.current) return;
 
-    const currentTargetPos = geometry.getAttribute("targetPos");
-    if (currentTargetPos) {
-      geometry.setAttribute(
-        "prevTargetPos",
-        new THREE.BufferAttribute(new Float32Array(currentTargetPos.array), 3)
-      );
+    const targetPoints = generatePointsFromContent(contentRef.current);
+    const textureSize = Math.ceil(Math.sqrt(CHAR_COUNT));
+    const data = new Float32Array(textureSize * textureSize * 4);
+
+    for (let i = 0; i < CHAR_COUNT; i++) {
+      const i3 = i * 3;
+      const i4 = i * 4;
+      data[i4] = targetPoints[i3] || 0;
+      data[i4 + 1] = targetPoints[i3 + 1] || 0;
+      data[i4 + 2] = targetPoints[i3 + 2] || 0;
+      data[i4 + 3] = 1;
     }
 
-    geometry.setAttribute(
-      "targetPos",
-      new THREE.BufferAttribute(
-        generatePointsFromContent(contentRef.current),
-        3
-      )
-    );
-
-    transitionProgressRef.current = 0;
+    targetTextureRef.current.image.data.set(data);
+    targetTextureRef.current.needsUpdate = true;
   }, [contentVersion, contentRef]);
 
   useEffect(() => {
@@ -354,14 +261,16 @@ export function MatrixRainCanvas({
     // ========== Scene Setup ==========
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x000000);
+    // 안개 효과로 깊이감 강화
+    scene.fog = new THREE.Fog(0x000000, 100, 400);
 
     const camera = new THREE.PerspectiveCamera(
-      60,
+      75, // 넓은 FOV로 원근감 강화
       window.innerWidth / window.innerHeight,
       0.1,
       1000
     );
-    camera.position.set(0, 0, 200);
+    camera.position.set(0, 0, 100);
     camera.lookAt(0, 0, 0);
 
     const renderer = new THREE.WebGLRenderer({
@@ -374,121 +283,139 @@ export function MatrixRainCanvas({
     mountElement.appendChild(renderer.domElement);
 
     // ========== Character Atlas ==========
-    const { texture: charAtlas, charCount } = createCharAtlas();
-    const charsPerRow = 16;
+    const charAtlas = createCharacterAtlas();
+    const charsPerRow = 12;
+    const charRows = Math.ceil(MATRIX_CHARS.length / charsPerRow);
+
+    // ========== Target Positions Texture ==========
+    const textureSize = Math.ceil(Math.sqrt(CHAR_COUNT));
+    const targetData = new Float32Array(textureSize * textureSize * 4);
+    const targetTexture = new THREE.DataTexture(
+      targetData,
+      textureSize,
+      textureSize,
+      THREE.RGBAFormat,
+      THREE.FloatType
+    );
+    targetTexture.needsUpdate = true;
+    targetTextureRef.current = targetTexture;
 
     // ========== Calculate Layout ==========
-    const fovRad = (60 * Math.PI) / 180;
-    const halfHeight = Math.tan(fovRad / 2) * 200;
-    const halfWidth = halfHeight * (window.innerWidth / window.innerHeight);
+    const aspect = window.innerWidth / window.innerHeight;
+    const frustumHeight = 2 * Math.tan((75 * Math.PI) / 360) * 100;
+    const frustumWidth = frustumHeight * aspect;
+    const halfWidth = frustumWidth / 2;
+    const halfHeight = frustumHeight / 2;
 
-    const columnWidth = (halfWidth * 2) / COLUMN_COUNT;
-    const maxDropsPerColumn = Math.ceil(PARTICLE_COUNT / COLUMN_COUNT);
+    // ========== Instanced Geometry ==========
+    const planeGeo = new THREE.PlaneGeometry(1, 1);
 
-    // ========== Initialize Particles ==========
-    const positions = new Float32Array(PARTICLE_COUNT * 3);
-    const charIndices = new Float32Array(PARTICLE_COUNT);
-    const brightnesses = new Float32Array(PARTICLE_COUNT);
-    const sizes = new Float32Array(PARTICLE_COUNT);
-    const columnIndices = new Float32Array(PARTICLE_COUNT);
-    const posInColumns = new Float32Array(PARTICLE_COUNT);
-    const depthLayers = new Float32Array(PARTICLE_COUNT);
-    const fadeProgresses = new Float32Array(PARTICLE_COUNT);
+    // 인스턴스 속성
+    const instancePositions = new Float32Array(CHAR_COUNT * 3);
+    const instanceCharIndices = new Float32Array(CHAR_COUNT);
+    const instanceBrightnesses = new Float32Array(CHAR_COUNT);
+    const instanceDepths = new Float32Array(CHAR_COUNT);
+    const instanceSpeeds = new Float32Array(CHAR_COUNT);
 
-    // 각 열의 속도와 길이 정보
-    const columnSpeeds: number[] = [];
-    const columnLengths: number[] = [];
-    const columnStartY: number[] = [];
-    const columnDepths: number[] = [];
+    // 열 설정
+    const charsPerColumn = Math.ceil(CHAR_COUNT / COLUMN_COUNT);
+    const columnWidth = (frustumWidth * 1.2) / COLUMN_COUNT;
+
+    // 열별 데이터
+    const columnData: {
+      speed: number;
+      length: number;
+      depth: number;
+      headY: number;
+    }[] = [];
 
     for (let col = 0; col < COLUMN_COUNT; col++) {
-      columnSpeeds.push((0.4 + Math.random() * 1.8) * speedMultiplier);
-      columnLengths.push(6 + Math.floor(Math.random() * 16));
-      columnStartY.push(halfHeight + Math.random() * halfHeight * 2);
-      // 깊이 레이어 랜덤 할당
-      columnDepths.push(Math.floor(Math.random() * DEPTH_LAYERS));
+      columnData.push({
+        speed: (0.3 + Math.random() * 0.7) * speedMultiplier,
+        length: 8 + Math.floor(Math.random() * 20),
+        depth: Math.random(), // 0~1 깊이
+        headY: halfHeight + Math.random() * halfHeight * 2,
+      });
     }
 
-    // 파티클 초기화
-    let particleIndex = 0;
-    for (let col = 0; col < COLUMN_COUNT && particleIndex < PARTICLE_COUNT; col++) {
-      const columnX = -halfWidth + col * columnWidth + columnWidth / 2;
-      const length = columnLengths[col];
-      const startY = columnStartY[col];
-      const depth = columnDepths[col];
+    // 인스턴스 초기화
+    let instanceIndex = 0;
+    for (let col = 0; col < COLUMN_COUNT && instanceIndex < CHAR_COUNT; col++) {
+      const colData = columnData[col];
+      const columnX = -halfWidth * 1.1 + col * columnWidth + columnWidth / 2;
 
-      for (let i = 0; i < maxDropsPerColumn && particleIndex < PARTICLE_COUNT; i++) {
-        const idx = particleIndex;
-        const i3 = idx * 3;
+      for (let row = 0; row < charsPerColumn && instanceIndex < CHAR_COUNT; row++) {
+        const i3 = instanceIndex * 3;
 
-        // X: 열 중심 + 약간의 랜덤
-        positions[i3] = columnX + (Math.random() - 0.5) * 3;
-        // Y: 시작점에서 아래로
-        positions[i3 + 1] = startY - i * (CHAR_SIZE / 3.2);
-        // Z: 깊이 레이어에 따라 (Parallax)
-        positions[i3 + 2] = -depth * (MAX_DEPTH / DEPTH_LAYERS) + (Math.random() - 0.5) * 5;
+        // 위치
+        instancePositions[i3] = columnX + (Math.random() - 0.5) * 2;
+        instancePositions[i3 + 1] = colData.headY - row * CHAR_SIZE * 1.5;
+        instancePositions[i3 + 2] = -colData.depth * DEPTH_RANGE;
 
-        charIndices[idx] = Math.floor(Math.random() * MATRIX_CHARS.length);
+        // 문자 인덱스
+        instanceCharIndices[instanceIndex] = Math.floor(Math.random() * MATRIX_CHARS.length);
 
         // 밝기: 머리는 1.0, 꼬리로 갈수록 감소
-        const brightness = i === 0 ? 1.0 : (i < length ? Math.max(0.1, 1.0 - (i / length) * 0.9) : 0.05);
-        brightnesses[idx] = brightness;
+        const brightness = row === 0 ? 1.0 :
+          (row < colData.length ? Math.max(0.1, 1.0 - (row / colData.length) * 0.9) : 0.05);
+        instanceBrightnesses[instanceIndex] = brightness;
 
-        sizes[idx] = CHAR_SIZE * (0.8 + Math.random() * 0.4);
-        columnIndices[idx] = col;
-        posInColumns[idx] = i;
-        depthLayers[idx] = depth / DEPTH_LAYERS; // 0~1 정규화
+        // 깊이
+        instanceDepths[instanceIndex] = colData.depth;
 
-        // 초기 페이드: 이미 나타난 상태 또는 페이드인 중
-        fadeProgresses[idx] = i < length ? 1.0 : 0.0;
+        // 속도
+        instanceSpeeds[instanceIndex] = colData.speed;
 
-        particleIndex++;
+        instanceIndex++;
       }
     }
 
-    // ========== Geometry ==========
-    const geometry = new THREE.BufferGeometry();
-    geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
-    geometry.setAttribute("charIndex", new THREE.BufferAttribute(charIndices, 1));
-    geometry.setAttribute("brightness", new THREE.BufferAttribute(brightnesses, 1));
-    geometry.setAttribute("size", new THREE.BufferAttribute(sizes, 1));
-    geometry.setAttribute("columnIndex", new THREE.BufferAttribute(columnIndices, 1));
-    geometry.setAttribute("posInColumn", new THREE.BufferAttribute(posInColumns, 1));
-    geometry.setAttribute("depthLayer", new THREE.BufferAttribute(depthLayers, 1));
-    geometry.setAttribute("fadeProgress", new THREE.BufferAttribute(fadeProgresses, 1));
+    // ========== Instanced Mesh ==========
+    const instancedGeo = planeGeo.clone();
+    instancedGeo.setAttribute("instancePosition", new THREE.InstancedBufferAttribute(instancePositions, 3));
+    instancedGeo.setAttribute("instanceCharIndex", new THREE.InstancedBufferAttribute(instanceCharIndices, 1));
+    instancedGeo.setAttribute("instanceBrightness", new THREE.InstancedBufferAttribute(instanceBrightnesses, 1));
+    instancedGeo.setAttribute("instanceDepth", new THREE.InstancedBufferAttribute(instanceDepths, 1));
+    instancedGeo.setAttribute("instanceSpeed", new THREE.InstancedBufferAttribute(instanceSpeeds, 1));
 
-    // 타겟 포지션 초기화
-    const initialTargetPos = generatePointsFromContent(contentRef.current);
-    geometry.setAttribute("targetPos", new THREE.BufferAttribute(initialTargetPos, 3));
-    geometry.setAttribute("prevTargetPos", new THREE.BufferAttribute(new Float32Array(initialTargetPos), 3));
-
-    geometryRef.current = geometry;
-
-    // ========== Material ==========
     const material = new THREE.ShaderMaterial({
       uniforms: {
         charAtlas: { value: charAtlas },
-        charCount: { value: charCount },
         charsPerRow: { value: charsPerRow },
+        charRows: { value: charRows },
         time: { value: 0 },
         morphProgress: { value: 0 },
-        transitionProgress: { value: 1 },
+        targetPositions: { value: targetTexture },
+        targetSize: { value: new THREE.Vector2(textureSize, textureSize) },
+        screenHeight: { value: frustumHeight },
       },
-      vertexShader: MATRIX_VERTEX_SHADER,
-      fragmentShader: MATRIX_FRAGMENT_SHADER,
+      vertexShader: MATRIX_INSTANCE_VERTEX,
+      fragmentShader: MATRIX_INSTANCE_FRAGMENT,
       transparent: true,
       blending: THREE.AdditiveBlending,
       depthWrite: false,
+      depthTest: true,
+      side: THREE.DoubleSide,
     });
     materialRef.current = material;
 
-    const points = new THREE.Points(geometry, material);
-    scene.add(points);
+    const mesh = new THREE.InstancedMesh(instancedGeo, material, CHAR_COUNT);
+    mesh.frustumCulled = false;
+
+    // 각 인스턴스의 변환 행렬 (기본값)
+    const dummy = new THREE.Object3D();
+    for (let i = 0; i < CHAR_COUNT; i++) {
+      dummy.position.set(0, 0, 0);
+      dummy.updateMatrix();
+      mesh.setMatrixAt(i, dummy.matrix);
+    }
+    mesh.instanceMatrix.needsUpdate = true;
+
+    scene.add(mesh);
 
     // ========== Post-processing ==========
     const composer = new EffectComposer(renderer);
-    const renderPass = new RenderPass(scene, camera);
-    composer.addPass(renderPass);
+    composer.addPass(new RenderPass(scene, camera));
 
     const bloomPass = new UnrealBloomPass(
       new THREE.Vector2(window.innerWidth, window.innerHeight),
@@ -497,18 +424,16 @@ export function MatrixRainCanvas({
       bloomThreshold
     );
     composer.addPass(bloomPass);
-
-    const outputPass = new OutputPass();
-    composer.addPass(outputPass);
+    composer.addPass(new OutputPass());
 
     // ========== Animation ==========
     const clock = new THREE.Clock();
     let animationFrameId: number;
 
-    // 문자 변경 타이머 (머리는 더 빈번하게)
-    const charChangeTimers = new Float32Array(PARTICLE_COUNT);
-    for (let i = 0; i < PARTICLE_COUNT; i++) {
-      charChangeTimers[i] = Math.random() * 50;
+    // 문자 변경 타이머
+    const charChangeTimers = new Float32Array(CHAR_COUNT);
+    for (let i = 0; i < CHAR_COUNT; i++) {
+      charChangeTimers[i] = Math.random() * 30;
     }
 
     const animate = () => {
@@ -516,112 +441,93 @@ export function MatrixRainCanvas({
       const time = clock.getElapsedTime();
       material.uniforms.time.value = time;
 
-      // 모핑 진행도 업데이트
-      const morphSpeed =
-        targetMorphRef.current > morphProgressRef.current
-          ? MORPH_IN_SPEED
-          : MORPH_OUT_SPEED;
-      morphProgressRef.current +=
-        (targetMorphRef.current - morphProgressRef.current) * morphSpeed;
+      // 모핑 진행도
+      const morphSpeed = targetMorphRef.current > morphProgressRef.current ? MORPH_IN_SPEED : MORPH_OUT_SPEED;
+      morphProgressRef.current += (targetMorphRef.current - morphProgressRef.current) * morphSpeed;
       material.uniforms.morphProgress.value = morphProgressRef.current;
 
-      // 전환 진행도
-      transitionProgressRef.current +=
-        (1 - transitionProgressRef.current) * TRANSITION_SPEED;
-      material.uniforms.transitionProgress.value = transitionProgressRef.current;
+      // 인스턴스 속성 업데이트
+      const posAttr = instancedGeo.getAttribute("instancePosition") as THREE.InstancedBufferAttribute;
+      const charAttr = instancedGeo.getAttribute("instanceCharIndex") as THREE.InstancedBufferAttribute;
+      const brightAttr = instancedGeo.getAttribute("instanceBrightness") as THREE.InstancedBufferAttribute;
+      const depthAttr = instancedGeo.getAttribute("instanceDepth") as THREE.InstancedBufferAttribute;
 
-      // 모핑 중이 아닐 때만 비 애니메이션
-      if (morphProgressRef.current < 0.1) {
-        const positionAttr = geometry.getAttribute("position") as THREE.BufferAttribute;
-        const charIndexAttr = geometry.getAttribute("charIndex") as THREE.BufferAttribute;
-        const brightnessAttr = geometry.getAttribute("brightness") as THREE.BufferAttribute;
-        const fadeAttr = geometry.getAttribute("fadeProgress") as THREE.BufferAttribute;
-        const depthLayerAttr = geometry.getAttribute("depthLayer") as THREE.BufferAttribute;
+      let charIndex = 0;
+      for (let col = 0; col < COLUMN_COUNT && charIndex < CHAR_COUNT; col++) {
+        const colData = columnData[col];
+        const columnX = -halfWidth * 1.1 + col * columnWidth + columnWidth / 2;
 
-        for (let col = 0; col < COLUMN_COUNT; col++) {
-          const speed = columnSpeeds[col];
-          const length = columnLengths[col];
-          const depth = columnDepths[col];
-          // Parallax: 깊이에 따른 속도 차이
-          const depthSpeedFactor = 1.0 - (depth / DEPTH_LAYERS) * 0.4;
-          const moveAmount = speed * depthSpeedFactor * delta * 50;
+        // 깊이에 따른 속도 조절 (뒤쪽이 느림)
+        const depthSpeedFactor = 1.0 - colData.depth * 0.5;
+        const moveAmount = colData.speed * depthSpeedFactor * delta * 30;
 
-          const startIdx = col * maxDropsPerColumn;
-          const endIdx = Math.min(startIdx + maxDropsPerColumn, PARTICLE_COUNT);
+        let headY = -Infinity;
 
-          // 열 전체 이동
-          let headY = -Infinity;
-          for (let idx = startIdx; idx < endIdx; idx++) {
-            const posInCol = idx - startIdx;
-            const newY = positionAttr.getY(idx) - moveAmount;
-            positionAttr.setY(idx, newY);
+        for (let row = 0; row < charsPerColumn && charIndex < CHAR_COUNT; row++) {
+          const idx = charIndex;
+          const i3 = idx * 3;
 
-            if (posInCol === 0) {
-              headY = newY;
-            }
+          // Y 이동
+          const newY = posAttr.array[i3 + 1] - moveAmount;
+          posAttr.array[i3 + 1] = newY;
 
-            // 문자 변경 (머리는 더 빈번하게)
-            const isHead = posInCol === 0;
-            const changeSpeed = isHead ? 3.0 : 1.0;
-            charChangeTimers[idx] -= delta * 60 * changeSpeed;
-
-            if (charChangeTimers[idx] <= 0) {
-              charIndexAttr.setX(idx, Math.floor(Math.random() * MATRIX_CHARS.length));
-              // 머리는 더 짧은 간격
-              charChangeTimers[idx] = isHead ? (3 + Math.random() * 8) : (10 + Math.random() * 40);
-            }
-
-            // 페이드 인/아웃 업데이트
-            const currentFade = fadeAttr.getX(idx);
-            const targetFade = posInCol < length ? 1.0 : 0.0;
-            const fadeSpeed = 3.0 * delta;
-            const newFade = currentFade + (targetFade - currentFade) * fadeSpeed;
-            fadeAttr.setX(idx, newFade);
+          if (row === 0) {
+            headY = newY;
           }
 
-          // 머리가 화면 아래로 나가면 리셋
-          if (headY < -halfHeight - 120) {
-            const newStartY = halfHeight + 60 + Math.random() * 120;
-            const newLength = 6 + Math.floor(Math.random() * 16);
-            const newDepth = Math.floor(Math.random() * DEPTH_LAYERS);
-            columnLengths[col] = newLength;
-            columnSpeeds[col] = (0.4 + Math.random() * 1.8) * speedMultiplier;
-            columnDepths[col] = newDepth;
-
-            for (let i = 0; i < maxDropsPerColumn && startIdx + i < PARTICLE_COUNT; i++) {
-              const idx = startIdx + i;
-              const columnX = -halfWidth + col * columnWidth + columnWidth / 2;
-
-              positionAttr.setX(idx, columnX + (Math.random() - 0.5) * 3);
-              positionAttr.setY(idx, newStartY - i * (CHAR_SIZE / 3.2));
-              positionAttr.setZ(idx, -newDepth * (MAX_DEPTH / DEPTH_LAYERS) + (Math.random() - 0.5) * 5);
-
-              charIndexAttr.setX(idx, Math.floor(Math.random() * MATRIX_CHARS.length));
-
-              const brightness = i === 0 ? 1.0 : (i < newLength ? Math.max(0.1, 1.0 - (i / newLength) * 0.9) : 0.05);
-              brightnessAttr.setX(idx, brightness);
-
-              depthLayerAttr.setX(idx, newDepth / DEPTH_LAYERS);
-
-              // 새로 나타나는 문자는 페이드 인
-              fadeAttr.setX(idx, i === 0 ? 0.3 : 0.0);
-            }
+          // 문자 변경 (머리는 더 빈번)
+          const isHead = row === 0;
+          charChangeTimers[idx] -= delta * 60 * (isHead ? 4 : 1);
+          if (charChangeTimers[idx] <= 0) {
+            charAttr.array[idx] = Math.floor(Math.random() * MATRIX_CHARS.length);
+            charChangeTimers[idx] = isHead ? (2 + Math.random() * 5) : (8 + Math.random() * 25);
           }
+
+          charIndex++;
         }
 
-        positionAttr.needsUpdate = true;
-        charIndexAttr.needsUpdate = true;
-        brightnessAttr.needsUpdate = true;
-        fadeAttr.needsUpdate = true;
-        depthLayerAttr.needsUpdate = true;
+        // 리셋
+        if (headY < -halfHeight - 30) {
+          const startIdx = col * charsPerColumn;
+          const newHeadY = halfHeight + 30 + Math.random() * 60;
+          const newLength = 8 + Math.floor(Math.random() * 20);
+          const newDepth = Math.random();
+
+          colData.headY = newHeadY;
+          colData.length = newLength;
+          colData.depth = newDepth;
+          colData.speed = (0.3 + Math.random() * 0.7) * speedMultiplier;
+
+          for (let row = 0; row < charsPerColumn && startIdx + row < CHAR_COUNT; row++) {
+            const idx = startIdx + row;
+            const i3 = idx * 3;
+
+            posAttr.array[i3] = columnX + (Math.random() - 0.5) * 2;
+            posAttr.array[i3 + 1] = newHeadY - row * CHAR_SIZE * 1.5;
+            posAttr.array[i3 + 2] = -newDepth * DEPTH_RANGE;
+
+            charAttr.array[idx] = Math.floor(Math.random() * MATRIX_CHARS.length);
+
+            const brightness = row === 0 ? 1.0 :
+              (row < newLength ? Math.max(0.1, 1.0 - (row / newLength) * 0.9) : 0.05);
+            brightAttr.array[idx] = brightness;
+
+            depthAttr.array[idx] = newDepth;
+          }
+        }
       }
+
+      posAttr.needsUpdate = true;
+      charAttr.needsUpdate = true;
+      brightAttr.needsUpdate = true;
+      depthAttr.needsUpdate = true;
 
       composer.render();
       animationFrameId = requestAnimationFrame(animate);
     };
     animate();
 
-    // ========== Resize Handler ==========
+    // ========== Resize ==========
     const onResize = () => {
       camera.aspect = window.innerWidth / window.innerHeight;
       camera.updateProjectionMatrix();
@@ -633,14 +539,16 @@ export function MatrixRainCanvas({
 
     // ========== Cleanup ==========
     return () => {
-      geometryRef.current = null;
+      targetTextureRef.current = null;
       materialRef.current = null;
       cancelAnimationFrame(animationFrameId);
       window.removeEventListener("resize", onResize);
       mountElement.removeChild(renderer.domElement);
-      geometry.dispose();
+      instancedGeo.dispose();
+      planeGeo.dispose();
       material.dispose();
       charAtlas.dispose();
+      targetTexture.dispose();
       composer.dispose();
       renderer.dispose();
     };
