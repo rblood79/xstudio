@@ -477,4 +477,58 @@
       forced-color-adjust: auto;
     }
   }
+
+  /* ========== Virtualized ListBox Styles ========== */
+  .react-aria-ListBox.virtualized {
+    /* 가상화 모드에서는 max-height 제거 (height prop으로 직접 제어) */
+    max-height: none;
+
+    /* 스크롤 성능 최적화 */
+    contain: strict;
+    will-change: scroll-position;
+
+    /* 스크롤바 항상 표시 (레이아웃 쉬프트 방지) */
+    scrollbar-gutter: stable;
+  }
+
+  /* 가상화 컨테이너 내부 */
+  .react-aria-ListBox.virtualized > div {
+    contain: content;
+  }
+
+  /* 가상화된 아이템 스타일 */
+  .react-aria-ListBox.virtualized .react-aria-ListBoxItem {
+    /* position: absolute이 인라인 스타일로 적용됨 */
+    box-sizing: border-box;
+
+    /* GPU 가속 활성화 */
+    will-change: transform;
+    backface-visibility: hidden;
+  }
+
+  /* 로딩/에러 상태 */
+  .react-aria-ListBox.virtualized .virtualized-loading,
+  .react-aria-ListBox.virtualized .virtualized-error {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: var(--on-surface-variant);
+    font-style: italic;
+  }
+
+  .react-aria-ListBox.virtualized .virtualized-error {
+    color: var(--error);
+  }
+
+  /* 포커스 링 최적화 */
+  .react-aria-ListBox.virtualized:focus {
+    outline: 2px solid var(--primary);
+    outline-offset: -1px;
+  }
+
+  .react-aria-ListBox.virtualized:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: -1px;
+  }
 }

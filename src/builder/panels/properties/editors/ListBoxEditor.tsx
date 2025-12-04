@@ -16,6 +16,9 @@ import {
   CheckSquare,
   Database,
   Wand2,
+  Zap,
+  Ruler,
+  Rows,
 } from "lucide-react";
 import { PropertyInput, PropertySelect, PropertySwitch, PropertyCustomId , PropertySection, PropertyDataBinding, type DataBindingValue } from '../../common';
 import { PropertyEditorProps } from "../types/editorTypes";
@@ -280,6 +283,25 @@ export const ListBoxEditor = memo(function ListBoxEditor({
     onUpdate({ ...currentProps, dataBinding: binding || undefined });
   }, [currentProps, onUpdate]);
 
+  // 가상화 관련 핸들러
+  const handleEnableVirtualizationChange = useCallback((checked: boolean) => {
+    onUpdate({ ...currentProps, enableVirtualization: checked });
+  }, [currentProps, onUpdate]);
+
+  const handleVirtualHeightChange = useCallback((value: string) => {
+    const numValue = parseInt(value, 10);
+    if (!isNaN(numValue) && numValue > 0) {
+      onUpdate({ ...currentProps, height: numValue });
+    }
+  }, [currentProps, onUpdate]);
+
+  const handleOverscanChange = useCallback((value: string) => {
+    const numValue = parseInt(value, 10);
+    if (!isNaN(numValue) && numValue >= 0) {
+      onUpdate({ ...currentProps, overscan: numValue });
+    }
+  }, [currentProps, onUpdate]);
+
   const updateCustomId = useCallback((newCustomId: string) => {
     const updateElement = useStore.getState().updateElement;
     if (updateElement && elementId) {
@@ -434,6 +456,51 @@ export const ListBoxEditor = memo(function ListBoxEditor({
       currentProps.autoFocus,
       handleIsDisabledChange,
       handleAutoFocusChange,
+    ]
+  );
+
+  const performanceSection = useMemo(
+    () => (
+      <PropertySection title="Performance">
+        <PropertySwitch
+          label="가상화 활성화"
+          isSelected={Boolean(currentProps.enableVirtualization)}
+          onChange={handleEnableVirtualizationChange}
+          icon={Zap}
+        />
+
+        {currentProps.enableVirtualization && (
+          <>
+            <PropertyInput
+              label="컨테이너 높이 (px)"
+              value={String(currentProps.height || 300)}
+              onChange={handleVirtualHeightChange}
+              icon={Ruler}
+              placeholder="300"
+            />
+
+            <PropertyInput
+              label="Overscan (추가 렌더)"
+              value={String(currentProps.overscan || 5)}
+              onChange={handleOverscanChange}
+              icon={Rows}
+              placeholder="5"
+            />
+
+            <p className="tab-overview-help">
+              💡 가상화 활성화 시 10,000+ 아이템도 원활하게 처리됩니다
+            </p>
+          </>
+        )}
+      </PropertySection>
+    ),
+    [
+      currentProps.enableVirtualization,
+      currentProps.height,
+      currentProps.overscan,
+      handleEnableVirtualizationChange,
+      handleVirtualHeightChange,
+      handleOverscanChange,
     ]
   );
 
@@ -678,6 +745,7 @@ export const ListBoxEditor = memo(function ListBoxEditor({
       {basicSection}
       {contentSection}
       {dataBindingSection}
+      {performanceSection}
       {stateSection}
       {behaviorSection}
       {formIntegrationSection}
