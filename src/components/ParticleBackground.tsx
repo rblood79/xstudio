@@ -11,6 +11,7 @@ import {
   useParticleBackground,
   ParticleCanvas,
   CurlNoiseCanvas,
+  MatrixRainCanvas,
   sandPreset,
 } from "./particle";
 import type { MorphContent, EffectType } from "./particle";
@@ -22,6 +23,17 @@ export type { MorphContent, EffectType };
 // ==================== Main Component ====================
 export function ParticleBackground() {
   const { effectType } = useParticleBackground();
+
+  if (effectType === "matrix") {
+    return (
+      <MatrixRainCanvas
+        bloomStrength={0.8}    // 강한 발광
+        bloomRadius={0.5}      // 발광 퍼짐
+        bloomThreshold={0.2}   // 낮은 임계값으로 더 많은 글로우
+        speedMultiplier={1.0}  // 낙하 속도
+      />
+    );
+  }
 
   if (effectType === "curl") {
     return (
