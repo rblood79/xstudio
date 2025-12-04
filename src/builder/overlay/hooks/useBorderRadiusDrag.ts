@@ -188,26 +188,13 @@ export function useBorderRadiusDrag(
       const state = dragStateRef.current;
       if (!state.isDragging || !state.corner) return;
 
-      // ⚡ 먼저 이벤트 리스너 제거 + RAF 취소
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
-
-      if (rafIdRef.current !== null) {
-        cancelAnimationFrame(rafIdRef.current);
-        rafIdRef.current = null;
-      }
-      pendingUpdateRef.current = null;
-
-      const deltaX = e.clientX - state.initialMouseX;
-      const deltaY = e.clientY - state.initialMouseY;
-      const diagonalDistance = calculateDiagonalDistance(state.corner, deltaX, deltaY);
-      let finalRadius = Math.round(state.initialRadius + diagonalDistance);
-      finalRadius = Math.max(0, Math.min(state.maxRadius, finalRadius));
-
+      // ⚡ 상태 먼저 초기화 (추가 업데이트 방지)
       const corner = state.corner;
-      const shiftKey = e.shiftKey;
+      const initialMouseX = state.initialMouseX;
+      const initialMouseY = state.initialMouseY;
+      const initialRadius = state.initialRadius;
+      const maxRadius = state.maxRadius;
 
-      // 상태 초기화
       dragStateRef.current = {
         isDragging: false,
         corner: null,
@@ -217,6 +204,27 @@ export function useBorderRadiusDrag(
         maxRadius: 0,
         lastRadius: -1,
       };
+
+      // ⚡ RAF 취소
+      if (rafIdRef.current !== null) {
+        cancelAnimationFrame(rafIdRef.current);
+        rafIdRef.current = null;
+      }
+      pendingUpdateRef.current = null;
+
+      // ⚡ 이벤트 리스너 제거 (handlersRef 사용)
+      if (handlersRef.current) {
+        document.removeEventListener('mousemove', handlersRef.current.handleMouseMove);
+        document.removeEventListener('mouseup', handlersRef.current.handleMouseUp);
+      }
+
+      const deltaX = e.clientX - initialMouseX;
+      const deltaY = e.clientY - initialMouseY;
+      const diagonalDistance = calculateDiagonalDistance(corner, deltaX, deltaY);
+      let finalRadius = Math.round(initialRadius + diagonalDistance);
+      finalRadius = Math.max(0, Math.min(maxRadius, finalRadius));
+
+      const shiftKey = e.shiftKey;
 
       // 선택된 요소 ID 가져오기
       const selectedElementId = useStore.getState().selectedElementId;
