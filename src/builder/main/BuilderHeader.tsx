@@ -9,11 +9,13 @@ import {
   Tablet,
   Smartphone,
   Asterisk,
+  Activity,
 } from "lucide-react";
 import { Key } from "react-aria-components";
 import { ToggleButtonGroup } from "../../shared/components/ToggleButtonGroup";
 import { ToggleButton } from "../../shared/components/ToggleButton";
 import { iconProps } from "../../utils/ui/uiConstants";
+import { usePanelLayout } from "../layout";
 
 export interface Breakpoint {
   id: string;
@@ -59,6 +61,9 @@ export const BuilderHeader: React.FC<BuilderHeaderProps> = ({
   onPlay,
   onPublish,
 }) => {
+  const { layout, toggleBottomPanel } = usePanelLayout();
+  const isMonitorOpen = layout.showBottom && layout.activeBottomPanels.includes("monitor");
+
   return (
     <nav className="header">
       <div className="header_contents header_left">
@@ -153,6 +158,18 @@ export const BuilderHeader: React.FC<BuilderHeaderProps> = ({
         >
           <Redo
             color={!canRedo ? "#999" : iconProps.color}
+            strokeWidth={iconProps.stroke}
+            size={iconProps.size}
+          />
+        </button>
+        <button
+          aria-label="Monitor"
+          onClick={() => toggleBottomPanel("monitor")}
+          className={isMonitorOpen ? "active" : ""}
+          title="Toggle Monitor Panel"
+        >
+          <Activity
+            color={isMonitorOpen ? iconProps.activeColor || iconProps.color : iconProps.color}
             strokeWidth={iconProps.stroke}
             size={iconProps.size}
           />

@@ -150,6 +150,55 @@ export function usePanelLayout(): UsePanelLayoutReturn {
     [setPanelLayout]
   );
 
+  /**
+   * 하단 패널 토글 (활성화/비활성화)
+   */
+  const toggleBottomPanel = useCallback(
+    (panelId: PanelId) => {
+      // 패널이 bottom에 없으면 무시
+      if (!layout.bottomPanels.includes(panelId)) {
+        console.warn(
+          `[usePanelLayout] Panel "${panelId}" not available on bottom`
+        );
+        return;
+      }
+
+      const isActive = layout.activeBottomPanels.includes(panelId);
+
+      setPanelLayout({
+        ...layout,
+        activeBottomPanels: isActive ? [] : [panelId],
+        showBottom: !isActive,
+      });
+    },
+    [layout, setPanelLayout]
+  );
+
+  /**
+   * 하단 패널 높이 설정 (150px ~ 600px)
+   */
+  const setBottomHeight = useCallback(
+    (height: number) => {
+      const clampedHeight = Math.max(150, Math.min(600, height));
+      setPanelLayout({
+        ...layout,
+        bottomHeight: clampedHeight,
+      });
+    },
+    [layout, setPanelLayout]
+  );
+
+  /**
+   * 하단 패널 닫기
+   */
+  const closeBottomPanel = useCallback(() => {
+    setPanelLayout({
+      ...layout,
+      activeBottomPanels: [],
+      showBottom: false,
+    });
+  }, [layout, setPanelLayout]);
+
   return {
     layout,
     isLoading: false, // 나중에 비동기 로딩 추가 시 사용
@@ -159,5 +208,8 @@ export function usePanelLayout(): UsePanelLayoutReturn {
     toggleSide,
     resetLayout,
     setLayout,
+    toggleBottomPanel,
+    setBottomHeight,
+    closeBottomPanel,
   };
 }

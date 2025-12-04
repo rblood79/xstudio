@@ -15,6 +15,7 @@ import {
   Database,
   SquareMousePointer,
   FileEdit,
+  Activity,
 } from "lucide-react";
 import type { PanelConfig } from "./types";
 import { PanelRegistry } from "./PanelRegistry";
@@ -32,6 +33,9 @@ import { DatasetEditorPanel } from "../dataset/DatasetEditorPanel";
 import { PropertiesPanel } from "../properties/PropertiesPanel";
 import { StylesPanel } from "../styles/StylesPanel";
 import { EventsPanel } from "../events/EventsPanel";
+
+// Bottom panels
+import { MonitorPanel } from "../monitor/MonitorPanel";
 
 /**
  * 9개 패널 설정
@@ -170,6 +174,19 @@ export const PANEL_CONFIGS: PanelConfig[] = [
     maxWidth: 500,
     description: "이벤트 핸들러 관리",
     shortcut: "Ctrl+Shift+E",
+  },
+
+  // Bottom panels
+  {
+    id: "monitor",
+    name: "모니터",
+    nameEn: "Monitor",
+    icon: Activity,
+    component: MonitorPanel,
+    category: "system",
+    defaultPosition: "bottom",
+    minWidth: 600,
+    description: "메모리 사용량 모니터링 및 최적화",
   },
 ];
 

@@ -13,7 +13,7 @@ import { BuilderCanvas } from "./BuilderCanvas";
 import { BuilderViewport } from "./BuilderViewport";
 import SelectionOverlay from "../overlay";
 import Grid from "../grid";
-import { PanelSlot } from "../layout";
+import { PanelSlot, BottomPanelSlot } from "../layout";
 import { InspectorSync } from "../inspector/InspectorSync";
 
 import { useErrorHandler } from "../hooks/useErrorHandler";
@@ -23,8 +23,6 @@ import { useIframeMessenger } from "../hooks/useIframeMessenger";
 import { useThemeManager } from "../hooks/useThemeManager";
 import { useValidation } from "../hooks/useValidation";
 import { useThemeMessenger } from "../hooks/useThemeMessenger";
-import { memoryMonitor } from "../stores/memoryMonitor";
-import { Monitor } from "../monitor"; // BuilderFooter 컴포넌트 임포트
 // import { projectsApi, type Project } from "../../services/api";  // Supabase 동기화는 대시보드에서만 처리
 import type { Project } from "../../services/api";
 import { useUnifiedThemeStore } from "../../stores/themeStore";
@@ -255,11 +253,6 @@ export const BuilderCore: React.FC = () => {
 
       initializedProjectId.current = projectId;
       isInitializing.current = false;
-
-      // 메모리 모니터링 시작 (개발 모드에서만)
-      if (import.meta.env.DEV) {
-        memoryMonitor.startMonitoring(); // Interval set in constructor
-      }
     };
 
     initialize();
@@ -267,10 +260,6 @@ export const BuilderCore: React.FC = () => {
     // 컴포넌트 언마운트 시 정리
     return () => {
       MessageService.clearIframeCache();
-
-      if (import.meta.env.DEV) {
-        memoryMonitor.stopMonitoring();
-      }
     };
   }, [projectId, initializeProject, setIsLoading, setError, loadProjectTheme]);
 
@@ -515,9 +504,8 @@ export const BuilderCore: React.FC = () => {
         <PanelSlot side="right" />
       </aside>
 
-      <footer className="footer">
-        <Monitor />
-      </footer>
+      {/* Bottom Panel (Monitor, etc.) */}
+      <BottomPanelSlot />
     </BuilderViewport>
   );
 };

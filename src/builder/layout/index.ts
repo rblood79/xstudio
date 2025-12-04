@@ -11,6 +11,7 @@ export { usePanelLayout } from "./usePanelLayout";
 export { PanelNav } from "./PanelNav";
 export { PanelContainer } from "./PanelContainer";
 export { PanelSlot } from "./PanelSlot";
+export { BottomPanelSlot } from "./BottomPanelSlot";
 
 // Types
 export * from "./types";
