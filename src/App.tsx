@@ -27,13 +27,14 @@ function App() {
   const { vortexRef, effectType, setEffectType } = useParticleBackground();
   const vortexIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // 이펙트 토글 핸들러
-  const handleEffectToggle = useCallback(
-    (isSelected: boolean) => {
-      setEffectType(isSelected ? "curl" : "sand");
-    },
-    [setEffectType]
-  );
+  // 이펙트 순환 핸들러 (sand → curl → matrix → sand)
+  const handleEffectCycle = useCallback(() => {
+    setEffectType((current) => {
+      if (current === "sand") return "curl";
+      if (current === "curl") return "matrix";
+      return "sand";
+    });
+  }, [setEffectType]);
 
   // 다크/라이트 모드 상태 (시스템 설정 기반 초기값)
   const [isDarkMode, setIsDarkMode] = useState(() => {
@@ -192,10 +193,10 @@ function App() {
         <ToggleButton
           id="effect"
           className="toggle-button"
-          isSelected={effectType === "curl"}
-          onChange={handleEffectToggle}
+          isSelected={effectType === "matrix"}
+          onChange={handleEffectCycle}
         >
-          {effectType === "curl" ? "CURL" : "SAND"}
+          {effectType.toUpperCase()}
         </ToggleButton>
         <ToggleButton
           id="day"
