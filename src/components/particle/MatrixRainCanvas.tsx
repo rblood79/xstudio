@@ -105,9 +105,9 @@ const MATRIX_INSTANCE_VERTEX = `
     vec3 pos = instancePosition;
 
     // 타겟 위치 가져오기 (충돌 검사용)
-    float normalizedIndex = gl_InstanceID / float(${CHAR_COUNT});
-    vec2 targetUV = vec2(mod(float(gl_InstanceID), targetSize.x) / targetSize.x,
-                         floor(float(gl_InstanceID) / targetSize.x) / targetSize.y);
+    float instanceId = float(gl_InstanceID);
+    vec2 targetUV = vec2(mod(instanceId, targetSize.x) / targetSize.x,
+                         floor(instanceId / targetSize.x) / targetSize.y);
     vec4 targetData = texture2D(targetPositions, targetUV);
     vec3 targetPos = targetData.xyz;
 
