@@ -73,13 +73,13 @@
       .item-text {
         width: 100%;
         font-size: var(--text-xs);
-        font-weight: var(--font-weight-normal);
+        font-weight: var(--font-weight-semibold);
         text-overflow: ellipsis;
         overflow: hidden;
         white-space: nowrap;
         padding: 0 var(--spacing-2xs);
         text-align: center;
-        color: var(--on-surface-variant);
+        color: var(--primary);
       }
 
       .react-aria-Badge {

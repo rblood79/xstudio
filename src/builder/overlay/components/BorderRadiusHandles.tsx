@@ -98,10 +98,10 @@ export function BorderRadiusHandles({
     // radius에 비례하여 포인트 위치 조정
     // radius가 0이면 코너 근처, radius가 커지면 안쪽으로 이동
     const getOffset = (radius: number) => {
-      // 최소 오프셋 (radius가 0일 때)
-      const minOffset = 8;
-      // radius에 비례한 오프셋 (대각선 방향)
-      const radiusOffset = radius * 0.7; // 45도 대각선이므로 약 0.7배
+      // 최소 오프셋 (radius가 0일 때) - 모서리에 더 가깝게
+      const minOffset = 4;
+      // radius에 비례한 오프셋 (대각선 방향) - 계수 감소로 모서리에 더 가깝게
+      const radiusOffset = radius * 0.5; // 45도 대각선이므로 약 0.5배
       return minOffset + radiusOffset;
     };
 

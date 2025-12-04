@@ -177,7 +177,7 @@
   align-items: center;
   justify-content: center;
   border-radius: var(--radius-md);
-  background: var(--color-surface-100);
+  background: var(--outline-variant);
   color: var(--color-primary-600);
   padding: var(--spacing-sm);
 }
@@ -186,7 +186,7 @@
   button.list-item.preset-card.selected
   .list-item-icon {
   background: var(--color-primary-100);
-  color: var(--color-primary-700);
+  color: var(--on-surface-variant);
 }
 
 .section[data-section-id="table-creator"] .list-item-name {

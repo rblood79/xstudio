@@ -23,12 +23,12 @@
   justify-content: space-between;
   transition: background-color 0.2s ease, outline 0s ease;
   overflow: hidden;
+  margin-left: var(--spacing-sm);
 }
 
 .elementItem:hover {
   background-color: var(--button-background-hover);
   outline: 1px solid var(--border-color-hover);
-  
 }
 
 .elementItem.active {
@@ -211,7 +211,7 @@
  * data-depth 속성에 따른 padding-left
  * ======================================== */
 
-.element[data-depth="0"] .elementItem {
+/*.element[data-depth="0"] .elementItem {
   padding-left: var(--spacing-sm);
 }
 
@@ -233,7 +233,7 @@
 
 .element[data-depth="5"] .elementItem {
   padding-left: calc(var(--spacing-lg) * 5 + var(--spacing-sm));
-}
+}*/
 
 /* Pages 트리의 자식 페이지 표시 (URL 배지) */
 .page-url-badge {
@@ -323,10 +323,14 @@
 }
 
 /* 펼침/접기 상태 표시 */
-.element[role="treeitem"][aria-expanded="true"] .elementItemIcon svg[data-chevron] {
+.element[role="treeitem"][aria-expanded="true"]
+  .elementItemIcon
+  svg[data-chevron] {
   transform: rotate(90deg);
 }
 
-.element[role="treeitem"][aria-expanded="false"] .elementItemIcon svg[data-chevron] {
+.element[role="treeitem"][aria-expanded="false"]
+  .elementItemIcon
+  svg[data-chevron] {
   transform: rotate(0deg);
 }
