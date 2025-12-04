@@ -70,6 +70,12 @@ export interface DataSource {
 export interface RuntimeDataTable {
   id: string;
   name: string;
+  /** 스키마 정의 (Field 자동 생성용) */
+  schema?: Array<{
+    key: string;
+    type: string;
+    label?: string;
+  }>;
   mockData: Record<string, unknown>[];
   useMockData: boolean;
   runtimeData?: Record<string, unknown>[];

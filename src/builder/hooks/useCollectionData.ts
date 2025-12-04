@@ -32,6 +32,13 @@ export interface UseCollectionDataOptions {
   elementId?: string;
 }
 
+/** DataTable 스키마 필드 타입 */
+export interface SchemaField {
+  key: string;
+  type: string;
+  label?: string;
+}
+
 export interface UseCollectionDataResult {
   /** 가져온 데이터 배열 */
   data: Record<string, unknown>[];
@@ -41,6 +48,8 @@ export interface UseCollectionDataResult {
   error: string | null;
   /** 데이터 재로드 */
   reload: () => void;
+  /** DataTable 스키마 정보 (Field 자동 생성용) */
+  schema?: SchemaField[];
   /** 정렬 함수 */
   sort?: (descriptor: {
     column: string;
@@ -315,23 +324,32 @@ export function useCollectionData({
     'name' in stableDataBinding &&
     !('type' in stableDataBinding);
 
-  // DataTable 바인딩인 경우 mockData 직접 반환
-  const dataTableData = useMemo(() => {
+  // DataTable 바인딩인 경우 mockData와 schema 직접 반환
+  const dataTableResult = useMemo(() => {
     if (propertyBindingFormat) {
       const binding = stableDataBinding as unknown as { source: string; name: string };
       if (binding.source === 'dataTable' && binding.name) {
         const table = dataTables.find(dt => dt.name === binding.name);
         if (table) {
-          // ⭐ 불필요한 로그 제거 (리렌더링 시 혼란 방지)
-          // console.log(`📊 ${componentName}: DataTable '${binding.name}' mockData 로드`, table.mockData);
-          return table.useMockData ? table.mockData : (table.runtimeData || table.mockData);
+          const data = table.useMockData ? table.mockData : (table.runtimeData || table.mockData);
+          // schema를 SchemaField 형식으로 변환
+          const schema: SchemaField[] = (table.schema || []).map(field => ({
+            key: field.key,
+            type: field.type,
+            label: field.label,
+          }));
+          return { data, schema };
         } else {
           console.warn(`⚠️ ${componentName}: DataTable '${binding.name}'을 찾을 수 없습니다`);
         }
       }
     }
     return null;
-  }, [propertyBindingFormat, dataBindingKey, dataTables, componentName]); // ⭐ dataBinding → dataBindingKey
+  }, [propertyBindingFormat, dataBindingKey, dataTables, componentName]);
+
+  // 하위 호환성을 위해 dataTableData 유지
+  const dataTableData = dataTableResult?.data || null;
+  const dataTableSchema = dataTableResult?.schema;
 
   // API Endpoint 바인딩 상태
   const [apiEndpointData, setApiEndpointData] = useState<Record<string, unknown>[] | null>(null);
@@ -584,6 +602,7 @@ export function useCollectionData({
     loading,
     error,
     reload,
+    schema: dataTableSchema,
     sort,
     filterText,
     setFilterText,

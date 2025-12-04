@@ -2060,4 +2060,48 @@
       transform: rotate(360deg);
     }
   }
+
+  /* ========================================
+   * Auto-Generate Fields Section
+   * DataBinding 후 Field 자동 생성 UI
+   * ======================================== */
+  .auto-generate-section {
+    margin-top: var(--spacing-md);
+    padding: var(--spacing-md);
+    background: var(--surface-container);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--outline-variant);
+  }
+
+  .schema-info {
+    margin-bottom: var(--spacing-sm);
+  }
+
+  .schema-columns {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-xs);
+    margin-top: var(--spacing-xs);
+  }
+
+  .schema-column-tag {
+    display: inline-flex;
+    align-items: center;
+    padding: var(--spacing-xs) var(--spacing-sm);
+    background: var(--surface-container-high);
+    border-radius: var(--radius-sm);
+    font-size: var(--text-2xs);
+    color: var(--on-surface-variant);
+  }
+
+  .schema-column-more {
+    display: inline-flex;
+    align-items: center;
+    padding: var(--spacing-xs) var(--spacing-sm);
+    background: var(--primary-container);
+    color: var(--on-primary-container);
+    border-radius: var(--radius-sm);
+    font-size: var(--text-2xs);
+    font-weight: 500;
+  }
 }

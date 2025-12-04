@@ -15,13 +15,19 @@ import {
   FormInput,
   CheckSquare,
   Database,
+  Wand2,
 } from "lucide-react";
 import { PropertyInput, PropertySelect, PropertySwitch, PropertyCustomId , PropertySection, PropertyDataBinding, type DataBindingValue } from '../../common';
 import { PropertyEditorProps } from "../types/editorTypes";
 import { iconProps } from "../../../../utils/ui/uiConstants";
 import { PROPERTY_LABELS } from "../../../../utils/ui/labels";
 import { useStore } from "../../../stores";
+import { useDataTables } from "../../../stores/data";
 import { useCollectionItemManager } from "../../../hooks/useCollectionItemManager";
+import { ElementUtils } from "../../../../utils/element/elementUtils";
+import { generateCustomId } from "../../../utils/idGeneration";
+import { getDB } from "../../../../lib/db";
+import type { Element } from "../../../../types/core/store.types";
 
 export const ListBoxEditor = memo(function ListBoxEditor({
   elementId,
@@ -51,6 +57,154 @@ export const ListBoxEditor = memo(function ListBoxEditor({
     const element = useStore.getState().elementsMap.get(elementId);
     return element?.customId || '';
   }, [elementId]);
+
+  // Store 접근
+  const { addElement, currentPageId } = useStore();
+  const storeElements = useStore((state) => state.elements);
+  const dataTables = useDataTables();
+
+  // DataBinding에서 선택된 DataTable의 schema 가져오기
+  const selectedSchema = useMemo(() => {
+    const dataBinding = currentProps.dataBinding as DataBindingValue | undefined;
+    if (!dataBinding || dataBinding.source !== 'dataTable' || !dataBinding.name) {
+      return null;
+    }
+    const table = dataTables.find(dt => dt.name === dataBinding.name);
+    return table?.schema || null;
+  }, [currentProps.dataBinding, dataTables]);
+
+  // 첫 번째 ListBoxItem (템플릿용) 찾기
+  const templateItem = useMemo(() => {
+    return storeElements.find(
+      (el) => el.parent_id === elementId && el.tag === 'ListBoxItem'
+    );
+  }, [storeElements, elementId]);
+
+  // 템플릿 아이템의 기존 Field 자식들 찾기
+  const existingFields = useMemo(() => {
+    if (!templateItem) return [];
+    return storeElements
+      .filter((el) => el.parent_id === templateItem.id && el.tag === 'Field')
+      .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+  }, [storeElements, templateItem]);
+
+  // Field 타입 추론 함수
+  const inferFieldType = useCallback((key: string, schemaType: string): string => {
+    // key 이름 기반 추론
+    const keyLower = key.toLowerCase();
+    if (keyLower.includes('email')) return 'email';
+    if (keyLower.includes('url') || keyLower.includes('link') || keyLower.includes('website')) return 'url';
+    if (keyLower.includes('avatar') || keyLower.includes('image') || keyLower.includes('photo') || keyLower.includes('picture')) return 'image';
+    if (keyLower.includes('date') || keyLower.includes('created') || keyLower.includes('updated') || keyLower.includes('time')) return 'date';
+
+    // schema type 기반
+    if (schemaType === 'boolean') return 'boolean';
+    if (schemaType === 'number') return 'number';
+    if (schemaType === 'date' || schemaType === 'datetime') return 'date';
+    if (schemaType === 'email') return 'email';
+    if (schemaType === 'url') return 'url';
+    if (schemaType === 'image') return 'image';
+
+    return 'string';
+  }, []);
+
+  // Auto-Generate Fields 핸들러
+  const handleAutoGenerateFields = useCallback(async () => {
+    if (!selectedSchema || selectedSchema.length === 0) {
+      alert('DataTable을 먼저 선택해주세요.');
+      return;
+    }
+
+    const pageIdToUse = currentPageId;
+    if (!pageIdToUse) {
+      alert('페이지 ID를 찾을 수 없습니다. 페이지를 새로고침해주세요.');
+      return;
+    }
+
+    let targetItemId = templateItem?.id;
+
+    // 템플릿 아이템이 없으면 새로 생성
+    if (!targetItemId) {
+      const { elements } = useStore.getState();
+      const maxOrderNum = Math.max(0, ...children.map((el) => el.order_num || 0));
+
+      const newItem: Element = {
+        id: ElementUtils.generateId(),
+        customId: generateCustomId('ListBoxItem', elements),
+        page_id: pageIdToUse,
+        tag: 'ListBoxItem',
+        props: {
+          style: {},
+          className: '',
+        },
+        parent_id: elementId,
+        order_num: maxOrderNum + 1,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+
+      try {
+        const db = await getDB();
+        const inserted = await db.elements.insert(newItem);
+        addElement(inserted);
+        targetItemId = inserted.id;
+        console.log('✅ [IndexedDB] ListBoxItem created for auto-generate');
+      } catch (err) {
+        console.error('❌ [IndexedDB] Failed to create ListBoxItem:', err);
+        alert('ListBoxItem 생성 중 오류가 발생했습니다.');
+        return;
+      }
+    }
+
+    // 기존 Field 삭제 확인
+    if (existingFields.length > 0) {
+      const confirm = window.confirm(
+        `기존 ${existingFields.length}개의 Field가 있습니다. 새로 생성하면 기존 Field는 유지됩니다.\n계속하시겠습니까?`
+      );
+      if (!confirm) return;
+    }
+
+    // Schema 기반 Field 생성
+    const { elements } = useStore.getState();
+    const db = await getDB();
+    let orderNum = existingFields.length > 0
+      ? Math.max(...existingFields.map(f => f.order_num || 0)) + 1
+      : 1;
+
+    for (const field of selectedSchema) {
+      const fieldType = inferFieldType(field.key, field.type);
+
+      const newField: Element = {
+        id: ElementUtils.generateId(),
+        customId: generateCustomId('Field', elements),
+        page_id: pageIdToUse,
+        tag: 'Field',
+        props: {
+          key: field.key,
+          label: field.label || field.key,
+          type: fieldType,
+          showLabel: true,
+          visible: true,
+          style: {},
+          className: '',
+        },
+        parent_id: targetItemId,
+        order_num: orderNum++,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+
+      try {
+        const inserted = await db.elements.insert(newField);
+        addElement(inserted);
+      } catch (err) {
+        console.error(`❌ [IndexedDB] Failed to create Field for ${field.key}:`, err);
+      }
+    }
+
+    console.log(`✅ [Auto-Generate] ${selectedSchema.length}개의 Field가 생성되었습니다.`);
+    alert(`${selectedSchema.length}개의 Field가 자동 생성되었습니다!`);
+  }, [selectedSchema, currentPageId, templateItem, existingFields, children, elementId, addElement, inferFieldType]);
 
   useEffect(() => {
     // 아이템 선택 상태 초기화
@@ -309,9 +463,52 @@ export const ListBoxEditor = memo(function ListBoxEditor({
           value={currentProps.dataBinding as DataBindingValue | undefined}
           onChange={handleDataBindingChange}
         />
+
+        {/* Schema 정보 표시 및 Auto-Generate 버튼 */}
+        {selectedSchema && selectedSchema.length > 0 && (
+          <div className="auto-generate-section">
+            <div className="schema-info">
+              <p className="tab-overview-text">
+                📋 {selectedSchema.length}개의 컬럼이 감지되었습니다
+              </p>
+              <div className="schema-columns">
+                {selectedSchema.slice(0, 5).map((field) => (
+                  <span key={field.key} className="schema-column-tag">
+                    {field.label || field.key} ({field.type})
+                  </span>
+                ))}
+                {selectedSchema.length > 5 && (
+                  <span className="schema-column-more">
+                    +{selectedSchema.length - 5}개 더
+                  </span>
+                )}
+              </div>
+            </div>
+
+            <div className="tab-actions">
+              <button
+                className="control-button add"
+                onClick={handleAutoGenerateFields}
+              >
+                <Wand2
+                  color={iconProps.color}
+                  strokeWidth={iconProps.stroke}
+                  size={iconProps.size}
+                />
+                Field 자동 생성
+              </button>
+            </div>
+
+            {existingFields.length > 0 && (
+              <p className="tab-overview-help">
+                ✅ 현재 {existingFields.length}개의 Field가 있습니다
+              </p>
+            )}
+          </div>
+        )}
       </PropertySection>
     ),
-    [currentProps.dataBinding, handleDataBindingChange]
+    [currentProps.dataBinding, handleDataBindingChange, selectedSchema, existingFields, handleAutoGenerateFields]
   );
 
   const accessibilitySection = useMemo(
