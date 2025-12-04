@@ -160,21 +160,6 @@ const MATRIX_VERTEX_SHADER = `
     // 최종 위치: 비 위치와 타겟 위치 사이를 보간
     vec3 finalPos = mix(rainPos + noiseOffset, currentTarget, easedMorph);
 
-    // 형태 유지 시 미세한 움직임 (호흡 효과)
-    if (morphProgress > 0.8) {
-      float aliveIntensity = (morphProgress - 0.8) * 5.0;
-      float breathe = sin(time * 1.5 + columnIndex * 0.5 + posInColumn * 0.3) * 2.0;
-      finalPos += normalize(currentTarget) * breathe * aliveIntensity * 0.3;
-
-      // 잔물결
-      vec3 ripple = vec3(
-        snoise(currentTarget * 0.03 + vec3(time * 0.4, 0.0, 0.0)),
-        snoise(currentTarget * 0.03 + vec3(0.0, time * 0.4, 0.0)),
-        0.0
-      ) * 2.0;
-      finalPos += ripple * aliveIntensity;
-    }
-
     // 밝기 조정: 모핑 시 전체적으로 밝아짐
     float finalBrightness = brightness;
     if (morphProgress > 0.5) {
