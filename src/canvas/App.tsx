@@ -563,8 +563,6 @@ export function App() {
       setIsInitialized(true);
     });
 
-    console.log('[Preview App] Initialized and ready');
-
     return () => {
       window.removeEventListener('message', handleMessage);
     };

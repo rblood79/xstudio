@@ -95,8 +95,6 @@ function initCanvasRuntime() {
   // - 에디터 Overlay는 Builder 측(iframe 바깥)에서 처리되므로 충돌 없음
   const reactRoot = createRoot(document.body);
   reactRoot.render(<App />);
-
-  console.log('[Canvas Runtime] Initialized - React mounted directly on document.body');
 }
 
 // ============================================
