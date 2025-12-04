@@ -58,35 +58,47 @@ export const ListBoxEditor = memo(function ListBoxEditor({
     return element?.customId || '';
   }, [elementId]);
 
-  // Store 접근
-  const { addElement, currentPageId } = useStore();
-  const storeElements = useStore((state) => state.elements);
-  const dataTables = useDataTables();
+  // ⭐ 최적화: 개별 selector로 분리 (CLAUDE.md Anti-pattern 방지)
+  const addElement = useStore((state) => state.addElement);
+  const currentPageId = useStore((state) => state.currentPageId);
 
-  // DataBinding에서 선택된 DataTable의 schema 가져오기
-  const selectedSchema = useMemo(() => {
+  // ⭐ 최적화: DataBinding에서 필요한 테이블 이름만 추출
+  const dataBindingTableName = useMemo(() => {
     const dataBinding = currentProps.dataBinding as DataBindingValue | undefined;
     if (!dataBinding || dataBinding.source !== 'dataTable' || !dataBinding.name) {
       return null;
     }
-    const table = dataTables.find(dt => dt.name === dataBinding.name);
-    return table?.schema || null;
-  }, [currentProps.dataBinding, dataTables]);
+    return dataBinding.name;
+  }, [currentProps.dataBinding]);
 
-  // 첫 번째 ListBoxItem (템플릿용) 찾기
+  // ⭐ 최적화: 필요한 테이블만 구독 (전체 dataTables 구독 방지)
+  const dataTables = useDataTables();
+  const selectedTable = useMemo(() => {
+    if (!dataBindingTableName) return null;
+    return dataTables.find(dt => dt.name === dataBindingTableName) || null;
+  }, [dataTables, dataBindingTableName]);
+
+  // ⭐ 최적화: schema만 추출 (테이블 객체 전체가 아닌)
+  const selectedSchema = selectedTable?.schema || null;
+
+  // ⭐ 최적화: 자식 요소 조회 (getState로 구독 없이 조회)
+  const getChildElements = useCallback(() => {
+    return useStore.getState().elements.filter(el => el.parent_id === elementId);
+  }, [elementId]);
+
+  // 첫 번째 ListBoxItem (템플릿용) 찾기 - 렌더링 시점에 조회
   const templateItem = useMemo(() => {
-    return storeElements.find(
-      (el) => el.parent_id === elementId && el.tag === 'ListBoxItem'
-    );
-  }, [storeElements, elementId]);
+    const childElements = getChildElements();
+    return childElements.find((el) => el.tag === 'ListBoxItem');
+  }, [getChildElements, children]); // children 변경 시 재계산
 
-  // 템플릿 아이템의 기존 Field 자식들 찾기
+  // ⭐ 최적화: Field 자식들 조회 (getState로 구독 없이 조회)
   const existingFields = useMemo(() => {
-    if (!templateItem) return [];
-    return storeElements
+    if (!templateItem?.id) return [];
+    return useStore.getState().elements
       .filter((el) => el.parent_id === templateItem.id && el.tag === 'Field')
       .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
-  }, [storeElements, templateItem]);
+  }, [templateItem?.id, children]); // children 변경 시 재계산
 
   // Field 타입 추론 함수
   const inferFieldType = useCallback((key: string, schemaType: string): string => {
