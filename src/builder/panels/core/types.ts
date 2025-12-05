@@ -20,10 +20,11 @@ export type PanelCategory = 'navigation' | 'editor' | 'tool' | 'system';
 /**
  * 패널 위치
  */
-export type PanelSide = 'left' | 'right';
+export type PanelSide = 'left' | 'right' | 'bottom';
 
 /**
- * 패널 ID (12개 패널)
+ * 패널 ID (11개 패널)
+ * Note: 'data' 패널은 제거되었습니다. 데이터 바인딩은 Dataset 패널과 컴포넌트 Property Editor를 통해 관리합니다.
  */
 export type PanelId =
   // Navigation panels
@@ -41,8 +42,9 @@ export type PanelId =
   // Editor panels
   | 'properties'
   | 'styles'
-  | 'data'
-  | 'events';
+  | 'events'
+  // Bottom panels
+  | 'monitor';
 
 /**
  * 패널 설정
@@ -123,6 +125,18 @@ export interface PanelLayoutState {
 
   /** 우측 인스펙터 표시 여부 */
   showRight: boolean;
+
+  /** 하단 패널에 배치된 패널 ID 배열 */
+  bottomPanels: PanelId[];
+
+  /** 하단에서 현재 활성화된 패널 ID 배열 */
+  activeBottomPanels: PanelId[];
+
+  /** 하단 패널 표시 여부 */
+  showBottom: boolean;
+
+  /** 하단 패널 높이 (px) */
+  bottomHeight: number;
 }
 
 /**
@@ -143,13 +157,17 @@ export const DEFAULT_PANEL_LAYOUT: PanelLayoutState = {
   rightPanels: [
     'properties',
     'styles',
-    'data',
     'events',
   ],
   activeLeftPanels: ['nodes'], // Multi toggle 지원: 배열
   activeRightPanels: ['properties'], // Multi toggle 지원: 배열
   showLeft: true,
   showRight: true,
+  // Bottom panel defaults
+  bottomPanels: ['monitor'],
+  activeBottomPanels: [], // 기본 닫힘
+  showBottom: false,
+  bottomHeight: 200,
 };
 
 /**
@@ -170,6 +188,15 @@ export interface PanelLayoutActions {
 
   /** 레이아웃 전체 설정 */
   setLayout: (layout: PanelLayoutState) => void;
+
+  /** 하단 패널 토글 */
+  toggleBottomPanel: (panelId: PanelId) => void;
+
+  /** 하단 패널 높이 설정 */
+  setBottomHeight: (height: number) => void;
+
+  /** 하단 패널 닫기 */
+  closeBottomPanel: () => void;
 }
 
 /**

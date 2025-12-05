@@ -14,6 +14,7 @@ import {
   sandPreset,
 } from "./particle";
 import type { MorphContent } from "./particle";
+import "./ParticleButton.css";
 
 // ==================== Re-exports for backward compatibility ====================
 export { ParticleBackgroundProvider, useParticleBackground };

@@ -2,21 +2,16 @@
  * DataTableCreator Styles
  *
  * 패널 형태의 DataTable 생성 UI
+ * 공통 list-group 스타일: ../../common/list-group.css
  */
 
-.datatable-creator {
-  display: flex;
-  flex-direction: column;
-  background: var(--color-surface);
-}
-
-/* NOTE: creator-header styles removed - now using PanelHeader component */
+@import "../../common/list-group.css";
 
 /* ============================================
-   Mode Selection
+   Panel Selection
    ============================================ */
 
-.creator-mode-selection {
+.panel-selection {
   display: flex;
   gap: var(--spacing-lg);
   padding: var(--spacing-xs) var(--spacing-sm);
@@ -25,36 +20,24 @@
   height: var(--header-height);
 }
 
-.creator-mode-option {
+.panel-option {
   display: flex;
   align-items: center;
   gap: var(--spacing-sm);
   cursor: pointer;
+  font-size: var(--text-xs);
+  color: var(--color-text-primary);
 }
 
-.creator-mode-option input[type="radio"] {
+.panel-option input[type="radio"] {
   width: 14px;
   height: 14px;
   accent-color: var(--color-primary-500);
 }
 
-.creator-mode-label {
-  font-size: var(--text-xs);
-  color: var(--color-text-primary);
-}
-
 /* ============================================
-   Content
+   Empty Table Form
    ============================================ */
-
-.creator-content {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-/* Empty Table Form */
 .creator-empty-form {
   padding: var(--spacing-md);
 }
@@ -129,7 +112,7 @@
 }
 
 /* ============================================
-   Preset Grid - 표준화된 list-group 구조
+   Preset Grid - extends common list-group
    ============================================ */
 
 .section[data-section-id="table-creator"] .section-content {
@@ -138,83 +121,19 @@
 }
 
 .section[data-section-id="table-creator"] .list-group {
-  display: grid;
   grid-template-columns: repeat(auto-fill, minmax(128px, 1fr));
-  gap: var(--spacing-sm);
 }
 
-/* Preset Card - list-item 확장 */
-.section[data-section-id="table-creator"] button.list-item.preset-card {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: var(--spacing-xs);
-  padding: var(--spacing-sm);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  background: var(--color-surface);
-  cursor: pointer;
-  transition: all 150ms;
-  aspect-ratio: 1 / 1;
-}
-
-.section[data-section-id="table-creator"] button.list-item.preset-card:hover {
-  border-color: var(--primary-hover);
-  background: var(--primary-container);
-}
-
-.section[data-section-id="table-creator"]
-  button.list-item.preset-card.selected {
+/* Preset Card selected state extension */
+.section[data-section-id="table-creator"] .list-item.selected {
   border-color: var(--primary-pressed);
   background: var(--primary);
   color: var(--on-primary);
   box-shadow: var(--shadow-sm);
 }
 
-.section[data-section-id="table-creator"] .list-item-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: var(--radius-md);
-  background: var(--color-surface-100);
-  color: var(--color-primary-600);
-  padding: var(--spacing-sm);
-}
-
-.section[data-section-id="table-creator"]
-  button.list-item.preset-card.selected
-  .list-item-icon {
-  background: var(--color-primary-100);
-  color: var(--color-primary-700);
-}
-
-.section[data-section-id="table-creator"] .list-item-name {
-  font-size: var(--text-sm);
-  font-weight: 600;
-  color: var(--primary);
-  text-align: center;
-}
-
-.section[data-section-id="table-creator"]
-  button.list-item.preset-card.selected
-  .list-item-name {
+.section[data-section-id="table-creator"] .list-item.selected .list-item-name {
   color: var(--on-primary);
-}
-
-.section[data-section-id="table-creator"] .list-item-desc {
-  font-size: var(--text-xs);
-  color: var(--color-text-secondary);
-  text-align: center;
-  line-height: 1.3;
-}
-
-.section[data-section-id="table-creator"] .list-item-meta {
-  font-size: 10px;
-  color: var(--color-text-tertiary);
-  padding: 2px 6px;
-  background: var(--color-surface);
-  border-radius: var(--radius-xs);
 }
 
 /* ============================================

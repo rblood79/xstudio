@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, memo } from "react";
-import { Type, Tag, SquarePlus, Trash, PointerOff, FileText, AlertTriangle, PenOff, MousePointer, ToggleLeft, ToggleRight, Layout, PencilRuler, Hash, FormInput, CheckSquare, Database } from 'lucide-react';
+import { Type, Tag, SquarePlus, Trash, PointerOff, FileText, AlertTriangle, PenOff, MousePointer, ToggleLeft, ToggleRight, Layout, PencilRuler, Hash, FormInput, CheckSquare, Database, Search } from 'lucide-react';
 import { PropertyInput, PropertySwitch, PropertySelect, PropertyCustomId, PropertySection, PropertyDataBinding, type DataBindingValue } from '../../common';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { iconProps } from '../../../../utils/ui/uiConstants';
@@ -171,6 +171,31 @@ export const TagGroupEditor = memo(function TagGroupEditor({ elementId, currentP
                 />
             </PropertySection>
 
+            {/* Filtering Section */}
+            <PropertySection title="Filtering">
+                <PropertyInput
+                    label="Filter Text"
+                    value={String(currentProps.filterText || '')}
+                    onChange={(value) => updateProp('filterText', value || undefined)}
+                    placeholder="Search..."
+                    icon={Search}
+                />
+
+                <PropertyInput
+                    label="Filter Fields"
+                    value={String((currentProps.filterFields as string[] || []).join(', '))}
+                    onChange={(value) => {
+                        const fields = value.split(',').map((f: string) => f.trim()).filter(Boolean);
+                        updateProp('filterFields', fields.length > 0 ? fields : undefined);
+                    }}
+                    placeholder="label, name, title"
+                    icon={FileText}
+                />
+                <p className="property-help">
+                    💡 쉼표로 구분하여 검색할 필드 지정 (기본: label, name, title)
+                </p>
+            </PropertySection>
+
             {/* Design Section */}
             <PropertySection title="Design">
 
@@ -320,7 +345,7 @@ export const TagGroupEditor = memo(function TagGroupEditor({ elementId, currentP
                 />
             </PropertySection>
 
-            <PropertySection title="{PROPERTY_LABELS.TAG_MANAGEMENT}">
+            <PropertySection title={PROPERTY_LABELS.TAG_MANAGEMENT}>
 
                 <div className='tab-overview'>
                     <p className='tab-overview-text'>

@@ -1,6 +1,6 @@
 import { memo, useMemo } from "react";
-import { CalendarDays, Tag, PointerOff, PenOff, CheckSquare, AlertTriangle, Globe, Focus, FileText, Type, Hash } from 'lucide-react';
-import { PropertyInput, PropertySwitch, PropertyCustomId , PropertySection} from '../../common';
+import { CalendarDays, Tag, PointerOff, PenOff, CheckSquare, AlertTriangle, Globe, Focus, FileText, Type, Hash, Calendar } from 'lucide-react';
+import { PropertyInput, PropertySwitch, PropertyCustomId, PropertySection, PropertySelect } from '../../common';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { PROPERTY_LABELS } from '../../../../utils/ui/labels';
 import { useStore } from '../../../stores';
@@ -122,6 +122,23 @@ export const DateRangePickerEditor = memo(function DateRangePickerEditor({ eleme
 
             {/* Options Section */}
             <PropertySection title="Options">
+
+                <PropertySelect
+                    label="First Day of Week"
+                    value={String(currentProps.firstDayOfWeek || '')}
+                    onChange={(value) => updateProp('firstDayOfWeek', value || undefined)}
+                    options={[
+                        { value: '', label: 'Default (Locale)' },
+                        { value: 'sun', label: 'Sunday' },
+                        { value: 'mon', label: 'Monday' },
+                        { value: 'tue', label: 'Tuesday' },
+                        { value: 'wed', label: 'Wednesday' },
+                        { value: 'thu', label: 'Thursday' },
+                        { value: 'fri', label: 'Friday' },
+                        { value: 'sat', label: 'Saturday' }
+                    ]}
+                    icon={Calendar}
+                />
 
                 <PropertySwitch
                     label="Show Week Numbers"

@@ -1,4 +1,4 @@
-import { JSX } from 'react';
+import React, { JSX } from 'react';
 import {
   Button,
   Label,
@@ -45,6 +45,21 @@ export interface TagGroupProps<T>
   // Tag 스타일 제어
   variant?: 'default' | 'primary' | 'secondary' | 'surface';
   size?: 'sm' | 'md' | 'lg';
+  /**
+   * React Aria 1.13.0: 커스텀 필터 함수
+   * @example filter={(item) => item.status === 'active'}
+   */
+  filter?: (item: T) => boolean;
+  /**
+   * React Aria 1.13.0: 텍스트 기반 필터링
+   * @example filterText="search query"
+   */
+  filterText?: string;
+  /**
+   * React Aria 1.13.0: 필터링 대상 필드 목록
+   * @default ['label', 'name', 'title']
+   */
+  filterFields?: (keyof T)[];
 }
 
 export function TagGroup<T extends object>(
@@ -68,6 +83,9 @@ export function TagGroup<T extends object>(
     removedItemIds = [],
     variant = 'default',
     size = 'md',
+    filter,
+    filterText,
+    filterFields = ['label', 'name', 'title'] as (keyof T)[],
     ...props
   }: TagGroupProps<T>
 ): JSX.Element {
@@ -87,6 +105,29 @@ export function TagGroup<T extends object>(
       { id: 2, name: 'Tag 2', label: 'Tag 2' },
     ],
   });
+
+  // React Aria 1.13.0: 필터링 로직
+  const filteredData = React.useMemo(() => {
+    let result = [...boundData];
+
+    // 커스텀 필터 적용
+    if (filter) {
+      result = result.filter((item) => filter(item as unknown as T));
+    }
+
+    // 텍스트 필터 적용
+    if (filterText && filterText.trim()) {
+      const searchText = filterText.toLowerCase().trim();
+      result = result.filter((item) =>
+        filterFields.some((field) => {
+          const value = item[field as string];
+          return value && String(value).toLowerCase().includes(searchText);
+        })
+      );
+    }
+
+    return result;
+  }, [boundData, filter, filterText, filterFields]);
 
   // DataBinding이 있고 데이터가 로드되었을 때 동적 아이템 생성
   // PropertyDataBinding 형식 (source, name) 또는 DataBinding 형식 (type: "collection") 둘 다 지원
@@ -148,9 +189,9 @@ export function TagGroup<T extends object>(
     }
 
     // 데이터가 있을 때: items prop 사용
-    if (boundData.length > 0) {
+    if (filteredData.length > 0) {
       // removedItemIds로 필터링 (map 전에 필터링)
-      const tagItems = boundData
+      const tagItems = filteredData
         .filter((item, index) => {
           // 원본 데이터의 id를 문자열로 변환하여 비교
           const itemId = String(item.id ?? index);
@@ -173,7 +214,7 @@ export function TagGroup<T extends object>(
         })) as T[];
 
       console.log('✅ TagGroup with columnMapping - items:', {
-        totalItems: boundData.length,
+        totalItems: filteredData.length,
         removedItemIds,
         filteredItems: tagItems.length,
         tagItems: tagItems.map(item => String((item as { id: string | number }).id)),
@@ -277,8 +318,8 @@ export function TagGroup<T extends object>(
     }
 
     // 데이터가 로드되었을 때
-    if (boundData.length > 0) {
-      const tagItems = boundData.map((item, index) => ({
+    if (filteredData.length > 0) {
+      const tagItems = filteredData.map((item, index) => ({
         id: String(item.id || index),
         label: String(
           item.name || item.title || item.label || `Tag ${index + 1}`

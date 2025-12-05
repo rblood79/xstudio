@@ -38,6 +38,44 @@
     }
   }
 
+  /* ========== React Aria 1.13.0: SelectionIndicator ========== */
+  /* SelectionIndicator는 각 Tab 내부에 위치 */
+  .react-aria-Tab .react-aria-SelectionIndicator {
+    position: absolute;
+    background: var(--primary);
+    border-radius: var(--radius-full);
+    pointer-events: none;
+    transition:
+      translate 200ms cubic-bezier(0.16, 1, 0.3, 1),
+      width 200ms cubic-bezier(0.16, 1, 0.3, 1),
+      height 200ms cubic-bezier(0.16, 1, 0.3, 1);
+
+    @media (prefers-reduced-motion: reduce) {
+      transition: none;
+    }
+  }
+
+  /* Horizontal orientation: bottom indicator bar */
+  .react-aria-TabList[data-orientation="horizontal"] .react-aria-Tab .react-aria-SelectionIndicator {
+    left: 0;
+    bottom: 0;
+    width: 100%;
+    height: 3px;
+  }
+
+  /* Vertical orientation: right-side indicator bar */
+  .react-aria-TabList[data-orientation="vertical"] .react-aria-Tab .react-aria-SelectionIndicator {
+    top: 0;
+    right: 0;
+    height: 100%;
+    width: 3px;
+  }
+
+  /* Hide static ::before when SelectionIndicator is present */
+  .react-aria-TabList[data-show-indicator="true"] .react-aria-Tab::before {
+    display: none;
+  }
+
   /* ========== Base Tab ========== */
   .react-aria-Tab {
     position: relative;
@@ -160,6 +198,10 @@
         outline-color: var(--primary);
       }
     }
+
+    .react-aria-Tab .react-aria-SelectionIndicator {
+      background: var(--primary);
+    }
   }
 
   /* ===== Secondary Variant ===== */
@@ -181,6 +223,10 @@
 
       &[data-focus-visible]::after {
         outline-color: var(--secondary);
+      }
+
+      .react-aria-SelectionIndicator {
+        background: var(--secondary);
       }
     }
   }
@@ -205,6 +251,14 @@
       &[data-focus-visible]::after {
         outline-color: var(--tertiary);
       }
+
+      .react-aria-SelectionIndicator {
+        background: var(--tertiary);
+      }
+    }
+
+    .react-aria-SelectionIndicator {
+      background: var(--tertiary);
     }
   }
 
@@ -227,6 +281,14 @@
     .react-aria-TabPanel {
       padding: var(--spacing-md);
     }
+
+    &[data-orientation="horizontal"] .react-aria-Tab .react-aria-SelectionIndicator {
+      height: 2px;
+    }
+
+    &[data-orientation="vertical"] .react-aria-Tab .react-aria-SelectionIndicator {
+      width: 2px;
+    }
   }
 
   /* ===== Medium Size (Default) ===== */
@@ -248,6 +310,14 @@
     .react-aria-TabPanel {
       padding: var(--spacing-lg);
     }
+
+    &[data-orientation="horizontal"] .react-aria-Tab .react-aria-SelectionIndicator {
+      height: 3px;
+    }
+
+    &[data-orientation="vertical"] .react-aria-Tab .react-aria-SelectionIndicator {
+      width: 3px;
+    }
   }
 
   /* ===== Large Size ===== */
@@ -268,6 +338,14 @@
 
     .react-aria-TabPanel {
       padding: var(--spacing-xl);
+    }
+
+    &[data-orientation="horizontal"] .react-aria-Tab .react-aria-SelectionIndicator {
+      height: 4px;
+    }
+
+    &[data-orientation="vertical"] .react-aria-Tab .react-aria-SelectionIndicator {
+      width: 4px;
     }
   }
 

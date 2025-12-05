@@ -628,7 +628,7 @@ export const ListBoxEditor = memo(function ListBoxEditor({
 
   const itemManagementSection = useMemo(
     () => (
-      <PropertySection title="{PROPERTY_LABELS.ITEM_MANAGEMENT}">
+      <PropertySection title={PROPERTY_LABELS.ITEM_MANAGEMENT}>
         <div className="tab-overview">
           <p className="tab-overview-text">
             Total items: {children.length || 0}

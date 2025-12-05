@@ -1,0 +1,49 @@
+/**
+ * MemoryActions Component
+ *
+ * 메모리 최적화 버튼 및 권장사항 표시
+ */
+
+import { Trash2, RefreshCw } from "lucide-react";
+import { Button } from "react-aria-components";
+
+interface MemoryActionsProps {
+  /** 최적화 실행 핸들러 */
+  onOptimize: () => void;
+  /** 권장사항 메시지 */
+  recommendation: string;
+  /** 최적화 진행 중 여부 */
+  isOptimizing?: boolean;
+}
+
+export function MemoryActions({
+  onOptimize,
+  recommendation,
+  isOptimizing = false,
+}: MemoryActionsProps) {
+  return (
+    <div className="memory-actions">
+      <div className="recommendation">
+        <span className="recommendation-text">{recommendation}</span>
+      </div>
+      <Button
+        className="optimize-button"
+        onPress={onOptimize}
+        isDisabled={isOptimizing}
+        aria-label="Optimize memory"
+      >
+        {isOptimizing ? (
+          <>
+            <RefreshCw size={14} className="spinning" />
+            <span>Optimizing...</span>
+          </>
+        ) : (
+          <>
+            <Trash2 size={14} />
+            <span>Optimize</span>
+          </>
+        )}
+      </Button>
+    </div>
+  );
+}

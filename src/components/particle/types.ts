@@ -1,7 +1,7 @@
 import type { ReactNode, MutableRefObject } from "react";
 
 // ==================== Effect Types ====================
-export type EffectType = "sand" | "curl";
+export type EffectType = "sand" | "curl" | "matrix";
 
 // ==================== Content Types ====================
 export type MorphContent =

@@ -69,6 +69,20 @@ function loadLayoutFromStorage(): import('../panels/core/types').PanelLayoutStat
         result.activeRightPanels = DEFAULT_PANEL_LAYOUT.activeRightPanels;
       }
 
+      // Bottom panel 마이그레이션 (Phase 2에서 추가)
+      if (!Array.isArray(result.bottomPanels)) {
+        result.bottomPanels = DEFAULT_PANEL_LAYOUT.bottomPanels;
+      }
+      if (!Array.isArray(result.activeBottomPanels)) {
+        result.activeBottomPanels = DEFAULT_PANEL_LAYOUT.activeBottomPanels;
+      }
+      if (typeof result.showBottom !== 'boolean') {
+        result.showBottom = DEFAULT_PANEL_LAYOUT.showBottom;
+      }
+      if (typeof result.bottomHeight !== 'number') {
+        result.bottomHeight = DEFAULT_PANEL_LAYOUT.bottomHeight;
+      }
+
       // 마이그레이션: datasetEditor가 leftPanels에 없으면 추가
       if (Array.isArray(result.leftPanels) && !result.leftPanels.includes('datasetEditor')) {
         const datasetIndex = result.leftPanels.indexOf('dataset');
@@ -79,6 +93,26 @@ function loadLayoutFromStorage(): import('../panels/core/types').PanelLayoutStat
           // dataset이 없으면 맨 뒤에 추가
           result.leftPanels.push('datasetEditor');
         }
+      }
+
+      // 마이그레이션: 제거된 'data' 패널 제거
+      if (Array.isArray(result.rightPanels)) {
+        result.rightPanels = result.rightPanels.filter((id) => id !== 'data');
+      }
+      if (Array.isArray(result.activeRightPanels)) {
+        result.activeRightPanels = result.activeRightPanels.filter((id) => id !== 'data');
+      }
+      if (Array.isArray(result.leftPanels)) {
+        result.leftPanels = result.leftPanels.filter((id) => id !== 'data');
+      }
+      if (Array.isArray(result.activeLeftPanels)) {
+        result.activeLeftPanels = result.activeLeftPanels.filter((id) => id !== 'data');
+      }
+      if (Array.isArray(result.bottomPanels)) {
+        result.bottomPanels = result.bottomPanels.filter((id) => id !== 'data');
+      }
+      if (Array.isArray(result.activeBottomPanels)) {
+        result.activeBottomPanels = result.activeBottomPanels.filter((id) => id !== 'data');
       }
 
       // 🔧 임시 수정: 너무 많은 패널이 활성화된 경우 기본값으로 리셋

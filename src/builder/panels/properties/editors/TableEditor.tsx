@@ -606,7 +606,7 @@ export const TableEditor = memo(function TableEditor({
         />
       </div>
 
-      <PropertySection title="{PROPERTY_LABELS.COLUMN_MANAGEMENT}">
+      <PropertySection title={PROPERTY_LABELS.COLUMN_MANAGEMENT}>
 
         {/* 컬럼 개수 표시 */}
         <div className="tab-overview">

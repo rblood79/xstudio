@@ -20,6 +20,17 @@ export const useValidation = (): UseValidationReturn => {
         }, {} as Record<string, Element[]>);
 
         Object.entries(groups).forEach(([, children]) => {
+            // Tabs 하위 요소(Tab/Panel)인지 확인
+            // Tabs 하위 요소는 tabId 기반 매칭이므로 order_num 중복이 정상일 수 있음
+            const parentId = children[0]?.parent_id;
+            const parentElement = parentId ? elements.find((el) => el.id === parentId) : null;
+            const isTabsChildren = parentElement?.tag === 'Tabs';
+
+            // Tabs 하위 요소는 order_num 중복 검사 제외
+            if (isTabsChildren) {
+                return;
+            }
+
             // order_num으로 정렬
             const sorted = children.sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
 

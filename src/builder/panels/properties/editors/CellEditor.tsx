@@ -67,7 +67,7 @@ export const CellEditor = memo(function CellEditor({ elementId, currentProps, on
                 />
             </PropertySection>
 
-            <PropertySection title="{PROPERTY_LABELS.TEXT_ALIGNMENT}">
+            <PropertySection title={PROPERTY_LABELS.TEXT_ALIGNMENT}>
 
                 {/* Text Alignment */}
                 <PropertySelect
@@ -96,7 +96,7 @@ export const CellEditor = memo(function CellEditor({ elementId, currentProps, on
                 />
             </PropertySection>
 
-            <PropertySection title="{PROPERTY_LABELS.STYLING}">
+            <PropertySection title={PROPERTY_LABELS.STYLING}>
 
                 {/* Background Color */}
                 <PropertyInput

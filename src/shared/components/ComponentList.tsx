@@ -174,7 +174,7 @@ const ComponentItem = ({
         <component.icon strokeWidth={1.5} width={16} height={16} />
       </div>
       {isRecent && count > 0 && <Badge>{count}</Badge>}
-      <span className="item-text">{component.label}</span>
+      <span className="list-item-name">{component.label}</span>
     </button>
   );
 };

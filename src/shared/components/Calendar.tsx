@@ -71,6 +71,14 @@ export interface CalendarProps<T extends DateValue>
    * @example "2024-12-31"
    */
   maxDate?: string | DateValue;
+  /**
+   * React Aria 1.13.0: 선택된 날짜의 정렬 방식
+   * - 'start': 선택된 날짜가 visible range의 시작에 오도록 스크롤
+   * - 'center': 선택된 날짜가 visible range의 중앙에 오도록 스크롤
+   * - 'end': 선택된 날짜가 visible range의 끝에 오도록 스크롤
+   * @default 'center'
+   */
+  selectionAlignment?: 'start' | 'center' | 'end';
 }
 
 /**
@@ -101,6 +109,7 @@ export function Calendar<T extends DateValue>(
     defaultToday = false,
     minDate,
     maxDate,
+    selectionAlignment = 'center',
     ...props
   }: CalendarProps<T>
 ) {
@@ -135,6 +144,7 @@ export function Calendar<T extends DateValue>(
       defaultValue={defaultValue}
       minValue={minValue as T | undefined}
       maxValue={maxValue as T | undefined}
+      selectionAlignment={selectionAlignment}
     >
       <header>
         <Button slot="previous">

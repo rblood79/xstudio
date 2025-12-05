@@ -338,7 +338,7 @@ export const CheckboxGroupEditor = memo(function CheckboxGroupEditor({ elementId
                 />
             </PropertySection>
 
-            <PropertySection title="{PROPERTY_LABELS.CHECKBOX_MANAGEMENT}">
+            <PropertySection title={PROPERTY_LABELS.CHECKBOX_MANAGEMENT}>
 
                 {/* 체크박스 개수 표시 */}
                 <div className='tab-overview'>

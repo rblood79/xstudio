@@ -73,7 +73,7 @@ export function DataTableList({
               <div
                 key={table.id}
                 role="listitem"
-                className={`list-item-card ${editingId === table.id ? "selected" : ""}`}
+                className={`list-item ${editingId === table.id ? "selected" : ""}`}
                 onClick={() => onEditingChange(table.id)}
               >
                 <div className="list-item-icon">
