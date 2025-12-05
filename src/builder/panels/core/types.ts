@@ -23,7 +23,8 @@ export type PanelCategory = 'navigation' | 'editor' | 'tool' | 'system';
 export type PanelSide = 'left' | 'right' | 'bottom';
 
 /**
- * 패널 ID (12개 패널)
+ * 패널 ID (11개 패널)
+ * Note: 'data' 패널은 제거되었습니다. 데이터 바인딩은 Dataset 패널과 컴포넌트 Property Editor를 통해 관리합니다.
  */
 export type PanelId =
   // Navigation panels
@@ -41,7 +42,6 @@ export type PanelId =
   // Editor panels
   | 'properties'
   | 'styles'
-  | 'data'
   | 'events'
   // Bottom panels
   | 'monitor';
@@ -157,7 +157,6 @@ export const DEFAULT_PANEL_LAYOUT: PanelLayoutState = {
   rightPanels: [
     'properties',
     'styles',
-    'data',
     'events',
   ],
   activeLeftPanels: ['nodes'], // Multi toggle 지원: 배열
