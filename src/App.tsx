@@ -108,6 +108,8 @@ function App() {
   // 회오리 이동 (마우스 무브)
   const handleVortexMove = useCallback(
     (e: React.MouseEvent) => {
+      // 버튼 위에서는 회오리 이동 안함
+      if ((e.target as HTMLElement).closest("button")) return;
       if (!vortexRef.current.active) return;
 
       const { x, y } = screenToWorld(e.clientX, e.clientY);

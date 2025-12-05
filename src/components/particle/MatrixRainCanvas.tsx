@@ -19,12 +19,17 @@ import { generatePointsFromContent } from "./canvasUtils";
 import { PARTICLE_COUNT, MORPH_IN_SPEED, MORPH_OUT_SPEED } from "./constants";
 
 // ==================== Constants ====================
-const CHAR_COUNT = Math.min(PARTICLE_COUNT, 3000); // 성능을 위해 제한
+const CHAR_COUNT = Math.min(PARTICLE_COUNT, Math.floor(3000 * 1.5)); // 50% 증가: 3000 -> 4500
 const COLUMN_COUNT = 50;
-const CHAR_SIZE = 1.2; // 3D 월드 단위
+const CHARS_PER_COLUMN_MIN = 48; // 한 열당 최소 문자 개수
+const CHARS_PER_COLUMN_MAX = 86; // 한 열당 최대 문자 개수
+const CHAR_SIZE_BASE = 1.2; // 기본 3D 월드 단위
+const CHAR_SIZE_MIN = 0.6; // 최소 크기
+const CHAR_SIZE_MAX = 2.0; // 최대 크기
 const TEXTURE_CHAR_SIZE = 128; // 텍스처 해상도
 const DEPTH_RANGE = 150; // Z축 깊이 범위
 const TRANSITION_SPEED = 0.02;
+const DEPTH_SPEED_MULTIPLIER = 2.0; // 가까운 것(작은 depth)이 더 빨리 내려오는 배율
 
 // 매트릭스 문자셋
 const MATRIX_CHARS =
@@ -84,12 +89,14 @@ const MATRIX_INSTANCE_VERTEX = `
   attribute float instanceBrightness;
   attribute float instanceDepth;
   attribute float instanceSpeed;
+  attribute float instanceSize;
 
   uniform float time;
   uniform float morphProgress;
   uniform sampler2D targetPositions;
   uniform vec2 targetSize;
   uniform float screenHeight;
+  uniform float depthSpeedMultiplier;
 
   varying vec2 vUv;
   varying float vBrightness;
@@ -121,14 +128,18 @@ const MATRIX_INSTANCE_VERTEX = `
     if (collision > 0.1) {
       // 타겟 위치로 끌어당김
       pos.xy = mix(pos.xy, targetPos.xy, collision * 0.8);
-      // 아래로 더 천천히 흐름
-      pos.y -= collision * time * instanceSpeed * 0.3;
+      // 깊이 기반 속도 조정: 가까운 것(작은 depth)이 더 빨리 내려옴
+      float depthSpeedFactor = 1.0 + (1.0 - instanceDepth) * depthSpeedMultiplier;
+      pos.y -= collision * time * instanceSpeed * depthSpeedFactor * 0.3;
       // 약간 옆으로 흘러내림
       pos.x += sin(time * 2.0 + float(gl_InstanceID) * 0.1) * collision * 2.0;
     }
 
     // 깊이에 따른 스케일 (원근감)
     float depthScale = 1.0 - instanceDepth * 0.4;
+    
+    // 랜덤 크기 적용
+    float finalSize = instanceSize * depthScale;
 
     // 밝기 (머리는 밝게, 깊이에 따라 어둡게)
     vBrightness = instanceBrightness * (1.0 - instanceDepth * 0.5);
@@ -136,12 +147,12 @@ const MATRIX_INSTANCE_VERTEX = `
     // 충돌 시 더 밝게
     vBrightness += collision * 0.5;
 
-    // 인스턴스 위치에 로컬 버텍스 추가
-    vec3 transformed = position * ${CHAR_SIZE.toFixed(1)} * depthScale + pos;
+    // 인스턴스 위치에 로컬 버텍스 추가 (랜덤 크기 적용)
+    vec3 transformed = position * finalSize + pos;
 
     // Billboard: 항상 카메라를 향하도록
     vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
-    mvPosition.xyz += position * ${CHAR_SIZE.toFixed(1)} * depthScale;
+    mvPosition.xyz += position * finalSize;
 
     gl_Position = projectionMatrix * mvPosition;
   }
@@ -316,9 +327,11 @@ export function MatrixRainCanvas({
     const instanceBrightnesses = new Float32Array(CHAR_COUNT);
     const instanceDepths = new Float32Array(CHAR_COUNT);
     const instanceSpeeds = new Float32Array(CHAR_COUNT);
+    const instanceSizes = new Float32Array(CHAR_COUNT); // 랜덤 크기
 
-    // 열 설정
-    const charsPerColumn = Math.ceil(CHAR_COUNT / COLUMN_COUNT);
+    // 열 설정 (48-86개 범위로 제한)
+    const baseCharsPerColumn = Math.ceil(CHAR_COUNT / COLUMN_COUNT);
+    const charsPerColumn = Math.max(CHARS_PER_COLUMN_MIN, Math.min(CHARS_PER_COLUMN_MAX, baseCharsPerColumn));
     const columnWidth = (frustumWidth * 1.2) / COLUMN_COUNT;
 
     // 열별 데이터
@@ -327,6 +340,7 @@ export function MatrixRainCanvas({
       length: number;
       depth: number;
       headY: number;
+      charCount: number; // 각 열의 문자 개수 (48-86)
     }[] = [];
 
     for (let col = 0; col < COLUMN_COUNT; col++) {
@@ -335,6 +349,7 @@ export function MatrixRainCanvas({
         length: 8 + Math.floor(Math.random() * 20),
         depth: Math.random(), // 0~1 깊이
         headY: halfHeight + Math.random() * halfHeight * 2,
+        charCount: CHARS_PER_COLUMN_MIN + Math.floor(Math.random() * (CHARS_PER_COLUMN_MAX - CHARS_PER_COLUMN_MIN + 1)),
       });
     }
 
@@ -344,12 +359,14 @@ export function MatrixRainCanvas({
       const colData = columnData[col];
       const columnX = -halfWidth * 1.1 + col * columnWidth + columnWidth / 2;
 
-      for (let row = 0; row < charsPerColumn && instanceIndex < CHAR_COUNT; row++) {
+      for (let row = 0; row < colData.charCount && instanceIndex < CHAR_COUNT; row++) {
         const i3 = instanceIndex * 3;
 
         // 위치
         instancePositions[i3] = columnX + (Math.random() - 0.5) * 2;
-        instancePositions[i3 + 1] = colData.headY - row * CHAR_SIZE * 1.5;
+        // 랜덤 크기를 먼저 생성하여 간격 계산과 렌더링에 동일하게 사용
+        const randomSize = CHAR_SIZE_MIN + Math.random() * (CHAR_SIZE_MAX - CHAR_SIZE_MIN);
+        instancePositions[i3 + 1] = colData.headY - row * randomSize * 1.5;
         instancePositions[i3 + 2] = -colData.depth * DEPTH_RANGE;
 
         // 문자 인덱스
@@ -363,8 +380,12 @@ export function MatrixRainCanvas({
         // 깊이
         instanceDepths[instanceIndex] = colData.depth;
 
-        // 속도
-        instanceSpeeds[instanceIndex] = colData.speed;
+        // 속도 (깊이 기반 조정: 가까운 것(작은 depth)이 더 빠름)
+        const depthSpeedFactor = 1.0 + (1.0 - colData.depth) * DEPTH_SPEED_MULTIPLIER;
+        instanceSpeeds[instanceIndex] = colData.speed * depthSpeedFactor;
+
+        // 랜덤 크기 (위치 계산에 사용한 것과 동일한 값 사용)
+        instanceSizes[instanceIndex] = randomSize;
 
         instanceIndex++;
       }
@@ -377,6 +398,7 @@ export function MatrixRainCanvas({
     instancedGeo.setAttribute("instanceBrightness", new THREE.InstancedBufferAttribute(instanceBrightnesses, 1));
     instancedGeo.setAttribute("instanceDepth", new THREE.InstancedBufferAttribute(instanceDepths, 1));
     instancedGeo.setAttribute("instanceSpeed", new THREE.InstancedBufferAttribute(instanceSpeeds, 1));
+    instancedGeo.setAttribute("instanceSize", new THREE.InstancedBufferAttribute(instanceSizes, 1));
 
     const material = new THREE.ShaderMaterial({
       uniforms: {
@@ -388,6 +410,7 @@ export function MatrixRainCanvas({
         targetPositions: { value: targetTexture },
         targetSize: { value: new THREE.Vector2(textureSize, textureSize) },
         screenHeight: { value: frustumHeight },
+        depthSpeedMultiplier: { value: DEPTH_SPEED_MULTIPLIER },
       },
       vertexShader: MATRIX_INSTANCE_VERTEX,
       fragmentShader: MATRIX_INSTANCE_FRAGMENT,
@@ -451,20 +474,30 @@ export function MatrixRainCanvas({
       const charAttr = instancedGeo.getAttribute("instanceCharIndex") as THREE.InstancedBufferAttribute;
       const brightAttr = instancedGeo.getAttribute("instanceBrightness") as THREE.InstancedBufferAttribute;
       const depthAttr = instancedGeo.getAttribute("instanceDepth") as THREE.InstancedBufferAttribute;
+      const sizeAttr = instancedGeo.getAttribute("instanceSize") as THREE.InstancedBufferAttribute;
+      const speedAttr = instancedGeo.getAttribute("instanceSpeed") as THREE.InstancedBufferAttribute;
 
-      let charIndex = 0;
-      for (let col = 0; col < COLUMN_COUNT && charIndex < CHAR_COUNT; col++) {
+      // 각 열의 시작 인덱스 계산
+      const columnStartIndices: number[] = [];
+      let currentIndex = 0;
+      for (let col = 0; col < COLUMN_COUNT; col++) {
+        columnStartIndices[col] = currentIndex;
+        currentIndex += columnData[col].charCount;
+      }
+
+      for (let col = 0; col < COLUMN_COUNT; col++) {
         const colData = columnData[col];
         const columnX = -halfWidth * 1.1 + col * columnWidth + columnWidth / 2;
+        const startIdx = columnStartIndices[col];
 
-        // 깊이에 따른 속도 조절 (뒤쪽이 느림)
-        const depthSpeedFactor = 1.0 - colData.depth * 0.5;
+        // 깊이에 따른 속도 조절: 가까운 것(작은 depth)이 더 빠르게
+        const depthSpeedFactor = 1.0 + (1.0 - colData.depth) * DEPTH_SPEED_MULTIPLIER;
         const moveAmount = colData.speed * depthSpeedFactor * delta * 30;
 
         let headY = -Infinity;
 
-        for (let row = 0; row < charsPerColumn && charIndex < CHAR_COUNT; row++) {
-          const idx = charIndex;
+        for (let row = 0; row < colData.charCount && startIdx + row < CHAR_COUNT; row++) {
+          const idx = startIdx + row;
           const i3 = idx * 3;
 
           // Y 이동
@@ -482,13 +515,10 @@ export function MatrixRainCanvas({
             charAttr.array[idx] = Math.floor(Math.random() * MATRIX_CHARS.length);
             charChangeTimers[idx] = isHead ? (2 + Math.random() * 5) : (8 + Math.random() * 25);
           }
-
-          charIndex++;
         }
 
         // 리셋
         if (headY < -halfHeight - 30) {
-          const startIdx = col * charsPerColumn;
           const newHeadY = halfHeight + 30 + Math.random() * 60;
           const newLength = 8 + Math.floor(Math.random() * 20);
           const newDepth = Math.random();
@@ -497,13 +527,16 @@ export function MatrixRainCanvas({
           colData.length = newLength;
           colData.depth = newDepth;
           colData.speed = (0.3 + Math.random() * 0.7) * speedMultiplier;
+          // charCount는 초기화 시에만 설정하고 리셋 시에는 변경하지 않음 (인덱스 범위 유지)
 
-          for (let row = 0; row < charsPerColumn && startIdx + row < CHAR_COUNT; row++) {
+          for (let row = 0; row < colData.charCount && startIdx + row < CHAR_COUNT; row++) {
             const idx = startIdx + row;
             const i3 = idx * 3;
 
             posAttr.array[i3] = columnX + (Math.random() - 0.5) * 2;
-            posAttr.array[i3 + 1] = newHeadY - row * CHAR_SIZE * 1.5;
+            // 랜덤 크기를 생성하여 간격 계산과 렌더링에 동일하게 사용
+            const randomSize = CHAR_SIZE_MIN + Math.random() * (CHAR_SIZE_MAX - CHAR_SIZE_MIN);
+            posAttr.array[i3 + 1] = newHeadY - row * randomSize * 1.5;
             posAttr.array[i3 + 2] = -newDepth * DEPTH_RANGE;
 
             charAttr.array[idx] = Math.floor(Math.random() * MATRIX_CHARS.length);
@@ -513,7 +546,17 @@ export function MatrixRainCanvas({
             brightAttr.array[idx] = brightness;
 
             depthAttr.array[idx] = newDepth;
+            
+            // 속도도 깊이 기반으로 재조정
+            const depthSpeedFactor = 1.0 + (1.0 - newDepth) * DEPTH_SPEED_MULTIPLIER;
+            speedAttr.array[idx] = colData.speed * depthSpeedFactor;
+            
+            // 랜덤 크기 (위치 계산에 사용한 것과 동일한 값 사용)
+            sizeAttr.array[idx] = randomSize;
           }
+          
+          // 속도 속성 업데이트 플래그 설정
+          speedAttr.needsUpdate = true;
         }
       }
 
@@ -521,6 +564,7 @@ export function MatrixRainCanvas({
       charAttr.needsUpdate = true;
       brightAttr.needsUpdate = true;
       depthAttr.needsUpdate = true;
+      sizeAttr.needsUpdate = true;
 
       composer.render();
       animationFrameId = requestAnimationFrame(animate);

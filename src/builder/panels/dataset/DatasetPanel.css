@@ -128,9 +128,10 @@
   justify-content: center;
   width: 32px;
   height: 32px;
-  background: var(--color-surface);
+  border: 1px solid var(--outline-variant);
+  background: var(--secondary-container);
   border-radius: var(--radius-sm);
-  color: var(--color-text-secondary);
+  stroke: var(--on-surface-variant);
 }
 
 .dataset-panel .list-item-content {

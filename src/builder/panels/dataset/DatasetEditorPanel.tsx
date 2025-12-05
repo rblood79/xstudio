@@ -203,24 +203,24 @@ function EditorContent({ mode, close }: EditorContentProps) {
 
       case "table-create":
         return (
-          <div className="creator-mode-selection">
-            <label className="creator-mode-option">
+          <div className="panel-selection">
+            <label className="panel-option">
               <input
                 type="radio"
                 name="creatorMode"
                 checked={creatorMode === "empty"}
                 onChange={() => setCreatorMode("empty")}
               />
-              <span className="creator-mode-label">빈 테이블로 시작</span>
+              빈 테이블로 시작
             </label>
-            <label className="creator-mode-option">
+            <label className="panel-option">
               <input
                 type="radio"
                 name="creatorMode"
                 checked={creatorMode === "preset"}
                 onChange={() => setCreatorMode("preset")}
               />
-              <span className="creator-mode-label">Preset에서 선택</span>
+              Preset에서 선택
             </label>
           </div>
         );

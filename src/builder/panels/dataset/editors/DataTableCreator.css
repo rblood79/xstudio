@@ -4,19 +4,11 @@
  * 패널 형태의 DataTable 생성 UI
  */
 
-.datatable-creator {
-  display: flex;
-  flex-direction: column;
-  background: var(--color-surface);
-}
-
-/* NOTE: creator-header styles removed - now using PanelHeader component */
-
 /* ============================================
-   Mode Selection
+   Panel Selection
    ============================================ */
 
-.creator-mode-selection {
+.panel-selection {
   display: flex;
   gap: var(--spacing-lg);
   padding: var(--spacing-xs) var(--spacing-sm);
@@ -25,36 +17,24 @@
   height: var(--header-height);
 }
 
-.creator-mode-option {
+.panel-option {
   display: flex;
   align-items: center;
   gap: var(--spacing-sm);
   cursor: pointer;
+  font-size: var(--text-xs);
+  color: var(--color-text-primary);
 }
 
-.creator-mode-option input[type="radio"] {
+.panel-option input[type="radio"] {
   width: 14px;
   height: 14px;
   accent-color: var(--color-primary-500);
 }
 
-.creator-mode-label {
-  font-size: var(--text-xs);
-  color: var(--color-text-primary);
-}
-
 /* ============================================
-   Content
+   Empty Table Form
    ============================================ */
-
-.creator-content {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-/* Empty Table Form */
 .creator-empty-form {
   padding: var(--spacing-md);
 }
@@ -144,7 +124,7 @@
 }
 
 /* Preset Card - list-item 확장 */
-.section[data-section-id="table-creator"] button.list-item.preset-card {
+.section[data-section-id="table-creator"] .list-item.preset-card {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -159,13 +139,12 @@
   aspect-ratio: 1 / 1;
 }
 
-.section[data-section-id="table-creator"] button.list-item.preset-card:hover {
+.section[data-section-id="table-creator"] .list-item.preset-card:hover {
   border-color: var(--primary-hover);
   background: var(--primary-container);
 }
 
-.section[data-section-id="table-creator"]
-  button.list-item.preset-card.selected {
+.section[data-section-id="table-creator"] .list-item.preset-card.selected {
   border-color: var(--primary-pressed);
   background: var(--primary);
   color: var(--on-primary);
@@ -173,18 +152,22 @@
 }
 
 .section[data-section-id="table-creator"] .list-item-icon {
+  position: relative;
+  border: none;
+  border: 1px solid var(--outline-variant);
+  background: var(--secondary-container);
+  padding: var(--spacing-sm);
+  cursor: pointer;
+  z-index: 1;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: var(--radius-md);
-  background: var(--outline-variant);
-  color: var(--color-primary-600);
-  padding: var(--spacing-sm);
+  transition: all 0.2s ease;
+  stroke: var(--on-surface-variant);
+  border-radius: var(--spacing-sm);
 }
 
-.section[data-section-id="table-creator"]
-  button.list-item.preset-card.selected
-  .list-item-icon {
+.section[data-section-id="table-creator"] .list-item.preset-card.selected .list-item-icon {
   background: var(--color-primary-100);
   color: var(--on-surface-variant);
 }
@@ -196,9 +179,7 @@
   text-align: center;
 }
 
-.section[data-section-id="table-creator"]
-  button.list-item.preset-card.selected
-  .list-item-name {
+.section[data-section-id="table-creator"] .list-item.preset-card.selected .list-item-name {
   color: var(--on-primary);
 }
 
