@@ -7,9 +7,14 @@
  * Virtualization: 대용량 데이터 성능 최적화 (enableVirtualization=true)
  * - @tanstack/react-virtual 사용
  * - 10,000+ 아이템 원활 처리 가능
+ *
+ * React Aria 1.13.0: 필터링 기능 추가
+ * - filter: 커스텀 필터 함수
+ * - filterText: 텍스트 기반 필터링
+ * - filterFields: 필터링 대상 필드
  */
 
-import { useRef, useCallback, useMemo, useEffect, useState } from "react";
+import React, { useRef, useCallback, useMemo, useEffect, useState } from "react";
 import {
   ListBox as AriaListBox,
   ListBoxItem as AriaListBoxItem,
@@ -49,6 +54,21 @@ interface ExtendedListBoxProps<T extends object> extends ListBoxProps<T> {
   enableVirtualization?: boolean;
   height?: number; // 컨테이너 높이 (px), default: 300
   overscan?: number; // 뷰포트 외 추가 렌더 아이템 수, default: 5
+  /**
+   * React Aria 1.13.0: 커스텀 필터 함수
+   * @example filter={(item) => item.status === 'active'}
+   */
+  filter?: (item: T) => boolean;
+  /**
+   * React Aria 1.13.0: 텍스트 기반 필터링
+   * @example filterText="search query"
+   */
+  filterText?: string;
+  /**
+   * React Aria 1.13.0: 필터링 대상 필드 목록
+   * @default ['label', 'name', 'title']
+   */
+  filterFields?: (keyof T)[];
 }
 
 const listBoxStyles = tv({
@@ -83,6 +103,9 @@ export function ListBox<T extends object>({
   enableVirtualization = false,
   height = 300,
   overscan = 5,
+  filter,
+  filterText,
+  filterFields = ['label', 'name', 'title'] as (keyof T)[],
   ...props
 }: ExtendedListBoxProps<T>) {
   // Refs for virtualization
@@ -105,6 +128,29 @@ export function ListBox<T extends object>({
 
   // 아이템 높이 (사이즈 기반)
   const itemHeight = ITEM_HEIGHTS[size];
+
+  // React Aria 1.13.0: 필터링 로직
+  const filteredData = React.useMemo(() => {
+    let result = [...boundData];
+
+    // 커스텀 필터 적용
+    if (filter) {
+      result = result.filter((item) => filter(item as unknown as T));
+    }
+
+    // 텍스트 필터 적용
+    if (filterText && filterText.trim()) {
+      const searchText = filterText.toLowerCase().trim();
+      result = result.filter((item) =>
+        filterFields.some((field) => {
+          const value = item[field as string];
+          return value && String(value).toLowerCase().includes(searchText);
+        })
+      );
+    }
+
+    return result;
+  }, [boundData, filter, filterText, filterFields]);
 
   // DataBinding이 있고 데이터가 로드되었을 때 동적 아이템 생성
   // PropertyDataBinding 형식 (source, name) 또는 DataBinding 형식 (type: "collection") 둘 다 지원
@@ -131,15 +177,15 @@ export function ListBox<T extends object>({
       });
     });
 
-  // 가상화용 아이템 배열 (메모이제이션)
+  // 가상화용 아이템 배열 (메모이제이션) - filteredData 사용
   const virtualItems = useMemo(() => {
-    if (!hasDataBinding || boundData.length === 0) return [];
-    return boundData.map((item, index) => ({
+    if (!hasDataBinding || filteredData.length === 0) return [];
+    return filteredData.map((item, index) => ({
       id: String(item.id || index),
       label: String(item.name || item.title || item.label || `Item ${index + 1}`),
       ...item,
     }));
-  }, [hasDataBinding, boundData]);
+  }, [hasDataBinding, filteredData]);
 
   // useVirtualizer 설정
   const virtualizer = useVirtualizer({
@@ -318,7 +364,7 @@ export function ListBox<T extends object>({
     console.log("🎯 ListBox: columnMapping 감지 - 데이터로 아이템 렌더링", {
       columnMapping,
       hasChildren: !!children,
-      dataCount: boundData.length,
+      dataCount: filteredData.length,
     });
 
     // Loading 상태
@@ -360,8 +406,8 @@ export function ListBox<T extends object>({
     }
 
     // 데이터가 있을 때: items prop 사용
-    if (boundData.length > 0) {
-      const items = boundData.map((item, index) => ({
+    if (filteredData.length > 0) {
+      const items = filteredData.map((item, index) => ({
         id: String(item.id || index),
         ...item,
       })) as T[];
@@ -428,8 +474,8 @@ export function ListBox<T extends object>({
     }
 
     // 데이터가 로드되었을 때
-    if (boundData.length > 0) {
-      const items = boundData.map((item, index) => ({
+    if (filteredData.length > 0) {
+      const items = filteredData.map((item, index) => ({
         id: String(item.id || index),
         label: String(
           item.name || item.title || item.label || `Item ${index + 1}`
@@ -479,7 +525,7 @@ export function ListBox<T extends object>({
     }
 
     // 데이터가 비어있을 때도 children 함수인 경우 처리
-    console.log("⚠️ ListBox: boundData가 비어있음, hasDataBinding:", hasDataBinding, "isPropertyBinding:", isPropertyBinding);
+    console.log("⚠️ ListBox: filteredData가 비어있음, hasDataBinding:", hasDataBinding, "isPropertyBinding:", isPropertyBinding);
   }
 
   // Static Children (기존 방식)
