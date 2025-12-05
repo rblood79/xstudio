@@ -107,7 +107,7 @@ export function ApiEndpointList({ projectId }: ApiEndpointListProps) {
               <div
                 key={endpoint.id}
                 role="listitem"
-                className={`list-item-card ${selectedId === endpoint.id ? "selected" : ""} ${editingApiId === endpoint.id ? "editing" : ""}`}
+                className={`list-item ${selectedId === endpoint.id ? "selected" : ""} ${editingApiId === endpoint.id ? "editing" : ""}`}
                 onClick={() => setSelectedId(endpoint.id)}
               >
                 <div className="list-item-icon">

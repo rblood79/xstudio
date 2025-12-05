@@ -536,9 +536,84 @@ export function ToggleButtonGroup({
 | **번들 크기** | 커스텀 로직 포함 | 라이브러리 공유 |
 | **유지보수** | 직접 관리 | 라이브러리 업데이트 자동 반영 |
 
+### 4.3 3x3 Grid (Flex Alignment) SelectionIndicator 지원
+
+**파일**: `src/builder/panels/common/index.css`
+
+**현재 구현**:
+- `.flex-alignment` 클래스에서 3x3 grid 레이아웃 사용
+- `LayoutSection.tsx`에서 9개 ToggleButton으로 flex alignment 선택
+- 현재 custom indicator 사용 중
+
+**SelectionIndicator 2D Grid 지원**:
+
+React Aria의 SelectionIndicator는 선택된 요소의 `getBoundingClientRect()`를 기반으로 위치를 계산하므로, **CSS 커스터마이징만으로 X, Y 양축 이동을 지원**합니다.
+
+**CSS 추가** (`src/builder/panels/common/index.css`):
+```css
+/* 3x3 Grid용 SelectionIndicator 커스터마이징 */
+.flex-alignment .react-aria-ToggleButtonGroup {
+  display: grid;
+  grid-template-columns: repeat(3, var(--spacing-xl));
+  grid-template-rows: repeat(3, var(--spacing-xl));
+  gap: 4px;
+  position: relative;  /* SelectionIndicator 절대 위치 기준 */
+}
+
+.flex-alignment .react-aria-SelectionIndicator {
+  position: absolute;
+  z-index: 0;
+  border-radius: var(--radius-sm);
+  background: var(--primary);
+  pointer-events: none;
+
+  /* X, Y 양축 transition - 대각선 이동도 자연스럽게 */
+  transition:
+    transform 200ms ease-out,
+    width 200ms ease-out,
+    height 200ms ease-out;
+
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+  }
+}
+```
+
+**동작 원리**:
+
+| 선택 변경 | SelectionIndicator 동작 |
+|----------|------------------------|
+| (0,0) → (2,0) | X축만 이동 (기존 horizontal) |
+| (0,0) → (0,2) | Y축만 이동 (vertical 지원) |
+| (0,0) → (2,2) | X, Y 동시 이동 (대각선) |
+| (1,1) → (0,2) | 대각선 반대 방향 이동 |
+
+**React Aria SelectionIndicator 내부 동작**:
+```
+1. 선택된 버튼의 getBoundingClientRect() 계산
+2. 부모 컨테이너 기준 상대 위치 계산
+3. CSS transform으로 위치 이동
+4. transition 속성으로 애니메이션 적용
+```
+
+**3x3 Grid 테스트 케이스**:
+
+| 테스트 항목 | 확인 사항 |
+|------------|----------|
+| 수평 이동 | leftTop → rightTop 이동 시 X축 애니메이션 |
+| 수직 이동 | leftTop → leftBottom 이동 시 Y축 애니메이션 |
+| 대각선 이동 | leftTop → rightBottom 이동 시 X, Y 동시 애니메이션 |
+| 중앙 선택 | centerCenter 선택 시 정확한 위치 |
+| Reduced motion | 애니메이션 즉시 이동 |
+
+**결론**: React Aria SelectionIndicator는 **2D Grid를 기본 지원**하며, CSS transition 설정만으로 양축 이동 애니메이션을 구현할 수 있습니다. 별도의 커스텀 구현 불필요.
+
 ### 검증 체크리스트
 - [ ] Tabs 인디케이터 슬라이딩 애니메이션 동작
-- [ ] ToggleButtonGroup 인디케이터 동작
+- [ ] ToggleButtonGroup 인디케이터 동작 (horizontal)
+- [ ] ToggleButtonGroup 인디케이터 동작 (vertical)
+- [ ] **3x3 Grid (flex-alignment) 인디케이터 X, Y 양축 이동**
+- [ ] **3x3 Grid 대각선 이동 애니메이션**
 - [ ] 선택 없을 때 인디케이터 숨김 처리
 - [ ] orientation (horizontal/vertical) 대응
 - [ ] 기존 동작과 시각적 일관성 유지
@@ -647,12 +722,13 @@ const filteredItems = useMemo(() => {
 | Phase 3 | 로직 변경 | Phase 2 완료 |
 | Phase 4 | 컴포넌트 교체 | Phase 1 완료 |
 | Phase 5 | 기능 추가 | Phase 2 완료 |
+| Phase 6 | Props 추가 | Phase 1, 2, 3 완료 |
 
-**권장 순서**: Phase 1 → Phase 2 → Phase 4 → Phase 3 → Phase 5
+**권장 순서**: Phase 1 → Phase 2 → Phase 4 → Phase 3 → Phase 5 → Phase 6
 
 ---
 
-## 수정 대상 파일 요약 (Editor 포함)
+## 수정 대상 파일 요약 (총 28개: shared 18 + panels/common 3 + Editor 7)
 
 ### Phase 1 (CSS 애니메이션) - Editor 변경 없음
 | 파일 | 작업 내용 |
@@ -689,8 +765,10 @@ const filteredItems = useMemo(() => {
 | **`src/builder/panels/properties/editors/TabsEditor.tsx`** | `showIndicator` 스위치 추가 |
 | `src/shared/components/ToggleButtonGroup.tsx` | **자체 구현 → SelectionIndicator 교체** |
 | `src/shared/components/styles/ToggleButtonGroup.css` | **::before 제거, SelectionIndicator 스타일로 교체** |
+| `src/builder/panels/common/index.css` | **3x3 Grid용 SelectionIndicator 2D 커스터마이징** |
 
 > ToggleButtonGroupEditor는 이미 `indicator` 스위치 구현되어 있음 (라인 203-210)
+> 3x3 Grid (flex-alignment)는 CSS 커스터마이징만으로 X, Y 양축 이동 지원
 
 ### Phase 5 (Filtering) - Editor 2개 수정
 | 파일 | 작업 내용 |
@@ -699,6 +777,14 @@ const filteredItems = useMemo(() => {
 | `src/shared/components/TagGroup.tsx` | `filter`, `filterText` props 추가 |
 | **`src/builder/panels/properties/editors/GridListEditor.tsx`** | `filterText` 입력, `filterFields` 설정 UI |
 | **`src/builder/panels/properties/editors/TagGroupEditor.tsx`** | `filterText` 입력, `filterFields` 설정 UI |
+
+### Phase 6 (Builder Property 컴포넌트) - panels/common 2개 수정
+| 파일 | 작업 내용 |
+|-----|----------|
+| `src/builder/panels/common/PropertySelect.tsx` | `multiple`, `selectedKeys`, `onMultiChange` props 추가 |
+| `src/builder/panels/common/PropertyUnitInput.tsx` | `onAddCustomUnit`, `customUnits` props + `onAction` 지원 |
+
+> Phase 1 Popover.css 적용 시 PropertySelect, PropertyDataBinding, PropertyUnitInput에 애니메이션 자동 적용
 
 ---
 
@@ -820,22 +906,193 @@ const filteredItems = useMemo(() => {
 
 ---
 
+## Phase 6: Builder Property 컴포넌트 (난이도: 🟢 낮음)
+
+### 목표
+`src/builder/panels/common` 파생 컴포넌트에 React Aria 1.13.0 기능 적용
+
+### 대상 컴포넌트 분석
+
+| 파일 | 사용 React Aria | 업데이트 영향 |
+|------|----------------|--------------|
+| **PropertySelect.tsx** | Select, Popover, ListBox | Phase 1 (Popover 애니메이션), Phase 3 (Multi-Selection) |
+| **PropertyDataBinding.tsx** | Select, Popover, ListBox | Phase 1 (Popover 애니메이션) |
+| **PropertyUnitInput.tsx** | ComboBox, Popover, ListBox | Phase 1 (Popover 애니메이션), Phase 2 (onAction) |
+| **PropertySlider.tsx** | Slider, SliderTrack, SliderThumb | 변경 없음 |
+| **PropertySwitch.tsx** | Switch | 변경 없음 |
+| **PropertyCheckbox.tsx** | Checkbox (shared) | 변경 없음 |
+| **SelectionFilter.tsx** | PropertySelect 사용 | 간접 영향 |
+
+### 6.1 PropertySelect Multi-Selection 지원
+
+**파일**: `src/builder/panels/common/PropertySelect.tsx`
+
+**현재 상태**:
+```tsx
+// 단일 선택만 지원
+<AriaSelect
+  selectedKey={value}
+  onSelectionChange={handleChange}
+>
+```
+
+**작업 내용**:
+1. `multiple` prop 추가
+2. 다중 선택 시 체크박스 표시
+3. 선택 카운트 표시
+
+**예상 변경**:
+```tsx
+interface PropertySelectProps {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  options: Array<{ value: string; label: string }>;
+  icon?: React.ComponentType<{...}>;
+  className?: string;
+  /**
+   * 다중 선택 모드
+   * @default false
+   */
+  multiple?: boolean;
+  /**
+   * 다중 선택 시 값 배열
+   */
+  selectedKeys?: string[];
+  /**
+   * 다중 선택 변경 핸들러
+   */
+  onMultiChange?: (values: string[]) => void;
+}
+
+// 다중 선택 시 표시
+{multiple ? (
+  <SelectValue>
+    {selectedKeys?.length || 0}개 선택됨
+  </SelectValue>
+) : (
+  <SelectValue />
+)}
+
+// ListBox selectionMode 조건부 적용
+<ListBox
+  className="react-aria-ListBox"
+  selectionMode={multiple ? "multiple" : "single"}
+>
+```
+
+**활용 시나리오**:
+- 여러 variant 동시 적용
+- 다중 태그 선택
+- 복수 옵션 필터
+
+### 6.2 PropertyUnitInput ComboBox onAction
+
+**파일**: `src/builder/panels/common/PropertyUnitInput.tsx`
+
+**현재 상태**: 고정된 단위 목록만 지원 (`px`, `%`, `rem`, `em`, `vh`, `vw`, `reset`)
+
+**작업 내용**:
+1. `onAddCustomUnit` prop 추가
+2. "커스텀 단위 추가" 옵션에 `onAction` 적용
+
+**예상 변경**:
+```tsx
+interface PropertyUnitInputProps {
+  // ... 기존 props
+  /**
+   * 커스텀 단위 추가 액션
+   */
+  onAddCustomUnit?: (unit: string) => void;
+  /**
+   * 커스텀 단위 목록
+   */
+  customUnits?: string[];
+}
+
+// 단위 목록에 커스텀 단위 추가 옵션
+<ListBox className="react-aria-ListBox">
+  {units.map((u) => (
+    <ListBoxItem key={u} id={u} className="react-aria-ListBoxItem">
+      {u}
+    </ListBoxItem>
+  ))}
+  {onAddCustomUnit && (
+    <ListBoxItem
+      key="add-custom"
+      id="add-custom"
+      className="react-aria-ListBoxItem add-custom"
+      onAction={() => {
+        // 커스텀 단위 추가 UI 표시
+        onAddCustomUnit(inputValue);
+      }}
+    >
+      + 커스텀 단위 추가
+    </ListBoxItem>
+  )}
+</ListBox>
+```
+
+**활용 시나리오**:
+- CSS 변수 단위 (`var(--spacing)`)
+- calc() 표현식 (`calc(100% - 20px)`)
+- 프로젝트별 커스텀 단위
+
+### 6.3 Popover 애니메이션 자동 적용
+
+**파일**: Phase 1 CSS 적용 시 자동 적용
+
+**영향 받는 컴포넌트**:
+- `PropertySelect.tsx`
+- `PropertyDataBinding.tsx`
+- `PropertyUnitInput.tsx`
+
+**동작 원리**:
+```css
+/* src/shared/components/styles/Popover.css에 추가하면 */
+.react-aria-Popover {
+  transform-origin: var(--origin-x) var(--origin-y);
+}
+
+.react-aria-Popover[data-entering] {
+  animation: popover-enter 200ms ease-out;
+}
+
+/* 모든 .react-aria-Popover 클래스 사용 컴포넌트에 자동 적용 */
+```
+
+**효과**:
+- 별도 수정 없이 Phase 1 CSS만 적용하면 자동으로 모든 Popover에 origin-aware 애니메이션 적용
+- PropertySelect, PropertyDataBinding, PropertyUnitInput 드롭다운 열릴 때 부드러운 애니메이션
+
+### 검증 체크리스트
+- [ ] PropertySelect 다중 선택 모드 동작 확인
+- [ ] PropertySelect 다중 선택 시 카운트 표시 확인
+- [ ] PropertyUnitInput 커스텀 단위 추가 onAction 동작 확인
+- [ ] Phase 1 적용 후 모든 Popover 애니메이션 동작 확인
+- [ ] 기존 단일 선택 동작 regression 없음 확인
+
+---
+
 ## 최종 요약
 
-### 총 수정 파일: 24개 (Component 18 + Editor 6)
+### 총 수정 파일: 28개 (shared 18 + panels/common 3 + Editor 7)
 
-| Phase | 난이도 | Component | Editor | 핵심 변경 |
-|-------|--------|-----------|--------|----------|
-| Phase 1 | 낮음 | 3 | 0 | CSS only |
-| Phase 2 | 낮음 | 4 | **3** | Props 추가 + Editor UI |
-| Phase 3 | 중간 | 3 | **1** | Select Multi-Selection + Editor |
-| Phase 4 | 중간 | 4 | **1** | Indicator 마이그레이션 + Tabs Editor |
-| Phase 5 | 중간 | 4 | **2** | Filtering + Editor UI |
+| Phase | 난이도 | shared | panels/common | Editor | 핵심 변경 |
+|-------|--------|--------|---------------|--------|----------|
+| Phase 1 | 낮음 | 3 | (자동 적용) | 0 | CSS only |
+| Phase 2 | 낮음 | 4 | 0 | 3 | Props 추가 + Editor UI |
+| Phase 3 | 중간 | 3 | 0 | 1 | Select Multi-Selection + Editor |
+| Phase 4 | 중간 | 4 | **1** | 1 | Indicator 마이그레이션 + **3x3 Grid 2D 지원** |
+| Phase 5 | 중간 | 4 | 0 | 2 | Filtering + Editor UI |
+| **Phase 6** | 낮음 | 0 | **2** | 0 | Property 컴포넌트 기능 확장 |
 
 ### 권장 실행 순서
 ```
-Phase 1 → Phase 2 → Phase 4 → Phase 3 → Phase 5
+Phase 1 → Phase 2 → Phase 4 → Phase 3 → Phase 5 → Phase 6
 ```
+
+> Phase 6는 Phase 1, 2, 3 완료 후 진행 권장 (의존성: Popover CSS, onAction, Multi-Selection)
 
 ### 이미 구현된 항목
 - `CalendarEditor`: `firstDayOfWeek`, `selectionAlignment` UI
@@ -866,3 +1123,93 @@ Phase 1 → Phase 2 → Phase 4 → Phase 3 → Phase 5
 - `.react-aria-SelectionIndicator` CSS 스타일
 
 **결과**: JS 코드 98% 감소, React Aria 라이브러리 통합
+
+### 3x3 Grid (Flex Alignment) SelectionIndicator 지원
+
+**핵심**: React Aria SelectionIndicator는 `getBoundingClientRect()` 기반으로 위치 계산 → **CSS transition만으로 X, Y 양축 이동 자동 지원**
+
+```css
+.flex-alignment .react-aria-SelectionIndicator {
+  transition:
+    transform 200ms ease-out,
+    width 200ms ease-out,
+    height 200ms ease-out;
+}
+```
+
+| 이동 방향 | 지원 여부 |
+|----------|----------|
+| X축 (horizontal) | ✅ 기본 지원 |
+| Y축 (vertical) | ✅ CSS transition 적용 |
+| 대각선 (diagonal) | ✅ X, Y 동시 transition |
+
+**결론**: 별도 커스텀 구현 불필요, CSS 커스터마이징만으로 2D Grid 완전 지원
+
+### Phase 6 수정 대상 파일
+
+| 파일 | 작업 내용 |
+|-----|----------|
+| `src/builder/panels/common/PropertySelect.tsx` | `multiple`, `selectedKeys`, `onMultiChange` props 추가 |
+| `src/builder/panels/common/PropertyUnitInput.tsx` | `onAddCustomUnit`, `customUnits` props + onAction 지원 |
+
+> Phase 1 CSS (Popover.css) 적용 시 PropertySelect, PropertyDataBinding, PropertyUnitInput에 애니메이션 자동 적용
+
+### Phase 6 기대효과
+
+| 컴포넌트 | Before | After |
+|----------|--------|-------|
+| **PropertySelect** | 단일 선택만 가능 | 다중 선택 지원 → Editor UI 유연성 향상 |
+| **PropertyUnitInput** | 고정 단위 목록 | 커스텀 단위 추가 → CSS 변수/calc() 지원 |
+| **모든 Property Popover** | 즉시 표시 | 부드러운 애니메이션 → Builder UX 개선 |
+
+---
+
+## 추가 발견: src/builder/ 직접 RAC 사용 파일
+
+### 자동 적용 (Phase 1 CSS)
+
+Phase 1에서 `Popover.css` 업데이트 시 `.react-aria-Popover` 클래스를 사용하는 모든 컴포넌트에 자동 적용:
+
+| 파일 | 사용 컴포넌트 | Phase 1 영향 |
+|-----|-------------|-------------|
+| `src/builder/events/pickers/ActionTypePicker.tsx` | Select, Popover, ListBox | ✅ 자동 적용 |
+| `src/builder/events/pickers/EventTypePicker.tsx` | Select, Popover, ListBox | ✅ 자동 적용 |
+| `src/builder/events/components/ComponentSelector.tsx` | Select, Popover, ListBox | ✅ 자동 적용 |
+
+### 선택적 업데이트 (Phase 4)
+
+| 파일 | 현재 상태 | 권장 조치 |
+|-----|----------|----------|
+| `src/builder/panels/themes/components/ThemePreview.tsx` | RAC Tabs 직접 사용 | **옵션 1**: shared/components/Tabs로 교체 (권장)<br>**옵션 2**: SelectionIndicator 직접 추가 |
+
+**ThemePreview.tsx 권장 조치**:
+```tsx
+// Before: RAC 직접 사용
+import { Tabs, TabList, Tab, TabPanel } from 'react-aria-components';
+
+// After: shared 래퍼 사용 (권장)
+import { Tabs, TabList, Tab, TabPanel } from '../../../../shared/components/Tabs';
+```
+
+### 영향 없음 (변경 불필요)
+
+| 파일 | 사용 컴포넌트 | 사유 |
+|-----|-------------|-----|
+| `src/builder/panels/dataset/presets/DataTablePresetSelector.tsx` | Dialog, Modal, Button | 업데이트 대상 아님 |
+| `src/builder/panels/dataset/editors/DataTableCreator.tsx` | Button | 업데이트 대상 아님 |
+| `src/builder/panels/monitor/*.tsx` | Button | 업데이트 대상 아님 |
+| `src/builder/panels/settings/SettingsPanel.tsx` | Button | 업데이트 대상 아님 |
+| `src/canvas/renderers/FormRenderers.tsx` | parseColor (유틸) | 업데이트 대상 아님 |
+
+### 최종 수정 파일 요약 (업데이트)
+
+**총 28개 (변경 없음)**:
+- shared: 18개
+- panels/common: 3개 (index.css 포함)
+- Editor: 7개
+
+**자동 적용 (추가 작업 불필요)**: 3개
+- ActionTypePicker.tsx, EventTypePicker.tsx, ComponentSelector.tsx
+
+**선택적 리팩토링 권장**: 1개
+- ThemePreview.tsx → shared/components/Tabs 사용으로 변경

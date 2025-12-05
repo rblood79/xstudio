@@ -69,7 +69,7 @@ export function VariableList({ projectId }: VariableListProps) {
     <div
       key={variable.id}
       role="listitem"
-      className={`list-item-card ${editingVariableId === variable.id ? "editing" : ""}`}
+      className={`list-item ${editingVariableId === variable.id ? "editing" : ""}`}
       onClick={() => openVariableEditor(variable.id)}
     >
       <div className="list-item-icon">
