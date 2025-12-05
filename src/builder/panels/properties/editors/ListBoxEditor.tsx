@@ -19,6 +19,8 @@ import {
   Zap,
   Ruler,
   Rows,
+  Search,
+  Filter,
 } from "lucide-react";
 import { PropertyInput, PropertySelect, PropertySwitch, PropertyCustomId , PropertySection, PropertyDataBinding, type DataBindingValue } from '../../common';
 import { PropertyEditorProps } from "../types/editorTypes";
@@ -302,6 +304,20 @@ export const ListBoxEditor = memo(function ListBoxEditor({
     }
   }, [currentProps, onUpdate]);
 
+  // 필터링 관련 핸들러 (React Aria 1.13.0)
+  const handleFilterTextChange = useCallback((value: string) => {
+    onUpdate({ ...currentProps, filterText: value || undefined });
+  }, [currentProps, onUpdate]);
+
+  const handleFilterFieldsChange = useCallback((value: string) => {
+    // 콤마로 구분된 필드 목록을 배열로 변환
+    const fields = value
+      .split(',')
+      .map(f => f.trim())
+      .filter(f => f.length > 0);
+    onUpdate({ ...currentProps, filterFields: fields.length > 0 ? fields : undefined });
+  }, [currentProps, onUpdate]);
+
   const updateCustomId = useCallback((newCustomId: string) => {
     const updateElement = useStore.getState().updateElement;
     if (updateElement && elementId) {
@@ -501,6 +517,41 @@ export const ListBoxEditor = memo(function ListBoxEditor({
       handleEnableVirtualizationChange,
       handleVirtualHeightChange,
       handleOverscanChange,
+    ]
+  );
+
+  // 필터링 섹션 (React Aria 1.13.0)
+  const filteringSection = useMemo(
+    () => (
+      <PropertySection title="Filtering" icon={Filter}>
+        <PropertyInput
+          label="필터 텍스트"
+          value={String(currentProps.filterText || "")}
+          onChange={handleFilterTextChange}
+          icon={Search}
+          placeholder="검색어 입력..."
+        />
+
+        <PropertyInput
+          label="필터 대상 필드"
+          value={Array.isArray(currentProps.filterFields)
+            ? currentProps.filterFields.join(', ')
+            : ''}
+          onChange={handleFilterFieldsChange}
+          icon={Filter}
+          placeholder="label, name, title"
+        />
+
+        <p className="tab-overview-help">
+          💡 필터 대상 필드가 비어있으면 기본값 (label, name, title) 사용
+        </p>
+      </PropertySection>
+    ),
+    [
+      currentProps.filterText,
+      currentProps.filterFields,
+      handleFilterTextChange,
+      handleFilterFieldsChange,
     ]
   );
 
@@ -746,6 +797,7 @@ export const ListBoxEditor = memo(function ListBoxEditor({
       {contentSection}
       {dataBindingSection}
       {performanceSection}
+      {filteringSection}
       {stateSection}
       {behaviorSection}
       {formIntegrationSection}
