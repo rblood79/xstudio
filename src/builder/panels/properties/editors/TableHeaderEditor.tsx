@@ -162,7 +162,7 @@ export const TableHeaderEditor = memo(function TableHeaderEditor({ elementId, cu
 
     return (
         <div className="component-props">
-            <PropertySection title="{PROPERTY_LABELS.TABLE_HEADER_PROPERTIES}">
+            <PropertySection title={PROPERTY_LABELS.TABLE_HEADER_PROPERTIES}>
 
                 {/* Custom ID */}
                 <PropertyCustomId
@@ -209,7 +209,7 @@ export const TableHeaderEditor = memo(function TableHeaderEditor({ elementId, cu
                 />
             </PropertySection>
 
-            <PropertySection title="{PROPERTY_LABELS.COLUMN_MANAGEMENT}">
+            <PropertySection title={PROPERTY_LABELS.COLUMN_MANAGEMENT}>
 
                 {/* 컬럼 개수 표시 */}
                 <div className='tab-overview'>

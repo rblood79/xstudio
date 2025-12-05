@@ -37,7 +37,7 @@ export const ColumnEditor = memo(function ColumnEditor({ elementId, currentProps
 
     return (
         <div className="component-props">
-            <PropertySection title="{PROPERTY_LABELS.COLUMN_CONTENT}">
+            <PropertySection title={PROPERTY_LABELS.COLUMN_CONTENT}>
 
                 {/* Custom ID */}
                 <PropertyCustomId
@@ -88,7 +88,7 @@ export const ColumnEditor = memo(function ColumnEditor({ elementId, currentProps
                 />
             </PropertySection>
 
-            <PropertySection title="{PROPERTY_LABELS.COLUMN_SIZING}">
+            <PropertySection title={PROPERTY_LABELS.COLUMN_SIZING}>
 
                 {/* Enable Resizing */}
                 <PropertySwitch

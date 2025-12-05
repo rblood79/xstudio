@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback, memo, useMemo } from "react";
-import { Tag, Binary, FileText, PointerOff, Type, Hash } from 'lucide-react';
+import { Tag, Binary, FileText, PointerOff, Type, Hash, Play } from 'lucide-react';
 import { PropertyInput } from '../../common/PropertyInput';
 import { PropertySwitch } from '../../common/PropertySwitch';
 import { PropertyCustomId , PropertySection} from '../../common';
@@ -111,6 +111,20 @@ export const ComboBoxItemEditor = memo(function ComboBoxItemEditor({ elementId, 
                     onChange={(checked) => handlePropertyChange('isDisabled', checked)}
                     icon={PointerOff}
                 />
+            </PropertySection>
+
+            {/* Actions Section */}
+            <PropertySection title="Actions">
+                <PropertyInput
+                    label="On Action"
+                    value={String(localProps.onAction || '')}
+                    onChange={(value) => handlePropertyChange('onAction', value || undefined)}
+                    placeholder="handleCreateItem"
+                    icon={Play}
+                />
+                <p className="property-help">
+                    💡 "Create" 옵션 구현 시 사용 (검색 결과 없을 때 새 항목 생성)
+                </p>
             </PropertySection>
 
             {/* Accessibility Section */}

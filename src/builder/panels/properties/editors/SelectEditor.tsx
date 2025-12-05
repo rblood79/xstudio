@@ -1,5 +1,5 @@
 import { useEffect, memo, useCallback, useMemo } from "react";
-import { Tag, SquarePlus, Trash, PointerOff, AlertTriangle, Hash, Focus, CheckSquare, PenOff, Menu, SquareX, SpellCheck2, FileText, Binary, Type, FormInput, Database } from 'lucide-react';
+import { Tag, SquarePlus, Trash, PointerOff, AlertTriangle, Hash, Focus, CheckSquare, PenOff, Menu, SquareX, SpellCheck2, FileText, Binary, Type, FormInput, Database, List, LayoutList } from 'lucide-react';
 import { PropertyInput, PropertySelect, PropertySwitch, PropertyCustomId, PropertySection, PropertyDataBinding, type DataBindingValue } from '../../common';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { iconProps } from '../../../../utils/ui/uiConstants';
@@ -109,6 +109,14 @@ export const SelectEditor = memo(function SelectEditor({ elementId, currentProps
 
   const handleDataBindingChange = useCallback((binding: DataBindingValue | null) => {
     onUpdate({ ...currentProps, dataBinding: binding || undefined });
+  }, [currentProps, onUpdate]);
+
+  const handleSelectionModeChange = useCallback((value: string) => {
+    onUpdate({ ...currentProps, selectionMode: value as 'single' | 'multiple' });
+  }, [currentProps, onUpdate]);
+
+  const handleMultipleDisplayModeChange = useCallback((value: string) => {
+    onUpdate({ ...currentProps, multipleDisplayMode: value as 'count' | 'list' | 'custom' });
   }, [currentProps, onUpdate]);
 
   // ⭐ 최적화: 옵션 편집 핸들러들
@@ -222,6 +230,31 @@ export const SelectEditor = memo(function SelectEditor({ elementId, currentProps
   const stateSection = useMemo(
     () => (
       <PropertySection title="State">
+        <PropertySelect
+          label="Selection Mode"
+          value={String(currentProps.selectionMode || 'single')}
+          onChange={handleSelectionModeChange}
+          options={[
+            { value: 'single', label: 'Single' },
+            { value: 'multiple', label: 'Multiple' }
+          ]}
+          icon={List}
+        />
+
+        {currentProps.selectionMode === 'multiple' && (
+          <PropertySelect
+            label="Display Mode"
+            value={String(currentProps.multipleDisplayMode || 'count')}
+            onChange={handleMultipleDisplayModeChange}
+            options={[
+              { value: 'count', label: 'Count (e.g., "3 selected")' },
+              { value: 'list', label: 'List (e.g., "A, B, C")' },
+              { value: 'custom', label: 'Custom' }
+            ]}
+            icon={LayoutList}
+          />
+        )}
+
         <PropertyInput
           label={PROPERTY_LABELS.VALUE}
           value={String(currentProps.selectedValue || '')}
@@ -252,10 +285,14 @@ export const SelectEditor = memo(function SelectEditor({ elementId, currentProps
       </PropertySection>
     ),
     [
+      currentProps.selectionMode,
+      currentProps.multipleDisplayMode,
       currentProps.selectedValue,
       currentProps.defaultSelectedKey,
       currentProps.disallowEmptySelection,
       currentProps.isRequired,
+      handleSelectionModeChange,
+      handleMultipleDisplayModeChange,
       handleSelectedValueChange,
       handleDefaultSelectedKeyChange,
       handleDisallowEmptySelectionChange,
@@ -392,7 +429,7 @@ export const SelectEditor = memo(function SelectEditor({ elementId, currentProps
 
   const itemManagementSection = useMemo(
     () => (
-      <PropertySection title="{PROPERTY_LABELS.ITEM_MANAGEMENT}">
+      <PropertySection title={PROPERTY_LABELS.ITEM_MANAGEMENT}>
         <div className='tab-overview'>
           <p className='tab-overview-text'>
             Total items: {children.length || 0}

@@ -19,10 +19,10 @@ import { generatePointsFromContent } from "./canvasUtils";
 import { PARTICLE_COUNT, MORPH_IN_SPEED, MORPH_OUT_SPEED } from "./constants";
 
 // ==================== Constants ====================
-const CHAR_COUNT = Math.min(PARTICLE_COUNT, Math.floor(3000 * 1.5)); // 50% 증가: 3000 -> 4500
+const CHAR_COUNT = Math.min(PARTICLE_COUNT, 10000); // 긴 꼬리를 위해 10000개로 증가
 const COLUMN_COUNT = 50;
-const CHARS_PER_COLUMN_MIN = 48; // 한 열당 최소 문자 개수
-const CHARS_PER_COLUMN_MAX = 86; // 한 열당 최대 문자 개수
+const CHARS_PER_COLUMN_MIN = 168; // 한 열당 최소 문자 개수
+const CHARS_PER_COLUMN_MAX = 200; // 한 열당 최대 문자 개수
 const CHAR_SIZE_BASE = 1.2; // 기본 3D 월드 단위
 const CHAR_SIZE_MIN = 0.6; // 최소 크기
 const CHAR_SIZE_MAX = 2.0; // 최대 크기
@@ -30,6 +30,9 @@ const TEXTURE_CHAR_SIZE = 128; // 텍스처 해상도
 const DEPTH_RANGE = 150; // Z축 깊이 범위
 const TRANSITION_SPEED = 0.02;
 const DEPTH_SPEED_MULTIPLIER = 2.0; // 가까운 것(작은 depth)이 더 빨리 내려오는 배율
+const CHAR_SPAWN_INTERVAL = 0.15; // 한 글자씩 생성되는 간격 (초) - 더 느리게
+const TAIL_LENGTH_MIN = 168; // 꼬리 최소 길이
+const TAIL_LENGTH_MAX = 198; // 꼬리 최대 길이
 
 // 매트릭스 문자셋
 const MATRIX_CHARS =
@@ -90,6 +93,7 @@ const MATRIX_INSTANCE_VERTEX = `
   attribute float instanceDepth;
   attribute float instanceSpeed;
   attribute float instanceSize;
+  attribute float instanceSpawnTime;
 
   uniform float time;
   uniform float morphProgress;
@@ -103,11 +107,24 @@ const MATRIX_INSTANCE_VERTEX = `
   varying float vCharIndex;
   varying float vDepth;
   varying float vCollision;
+  varying float vVisible;
 
   void main() {
     vUv = uv;
     vCharIndex = instanceCharIndex;
     vDepth = instanceDepth;
+
+    // 스폰 시간 체크: 아직 생성되지 않은 문자는 숨김
+    float spawnProgress = step(instanceSpawnTime, time);
+    vVisible = spawnProgress;
+
+    // 아직 스폰되지 않은 경우 화면 밖으로 이동
+    if (spawnProgress < 0.5) {
+      gl_Position = vec4(0.0, 0.0, -1000.0, 1.0);
+      vBrightness = 0.0;
+      vCollision = 0.0;
+      return;
+    }
 
     vec3 pos = instancePosition;
 
@@ -137,7 +154,7 @@ const MATRIX_INSTANCE_VERTEX = `
 
     // 깊이에 따른 스케일 (원근감)
     float depthScale = 1.0 - instanceDepth * 0.4;
-    
+
     // 랜덤 크기 적용
     float finalSize = instanceSize * depthScale;
 
@@ -170,8 +187,11 @@ const MATRIX_INSTANCE_FRAGMENT = `
   varying float vCharIndex;
   varying float vDepth;
   varying float vCollision;
+  varying float vVisible;
 
   void main() {
+    // 아직 스폰되지 않은 문자는 렌더링하지 않음
+    if (vVisible < 0.5) discard;
     // 아틀라스에서 문자 UV 계산
     float charIdx = floor(vCharIndex);
     float col = mod(charIdx, charsPerRow);
@@ -260,8 +280,11 @@ export function MatrixRainCanvas({
       data[i4 + 3] = 1;
     }
 
-    targetTextureRef.current.image.data.set(data);
-    targetTextureRef.current.needsUpdate = true;
+    const imageData = targetTextureRef.current.image?.data;
+    if (imageData) {
+      imageData.set(data);
+      targetTextureRef.current.needsUpdate = true;
+    }
   }, [contentVersion, contentRef]);
 
   useEffect(() => {
@@ -328,10 +351,9 @@ export function MatrixRainCanvas({
     const instanceDepths = new Float32Array(CHAR_COUNT);
     const instanceSpeeds = new Float32Array(CHAR_COUNT);
     const instanceSizes = new Float32Array(CHAR_COUNT); // 랜덤 크기
+    const instanceSpawnTimes = new Float32Array(CHAR_COUNT); // 스폰 시간
 
-    // 열 설정 (48-86개 범위로 제한)
-    const baseCharsPerColumn = Math.ceil(CHAR_COUNT / COLUMN_COUNT);
-    const charsPerColumn = Math.max(CHARS_PER_COLUMN_MIN, Math.min(CHARS_PER_COLUMN_MAX, baseCharsPerColumn));
+    // 열 설정
     const columnWidth = (frustumWidth * 1.2) / COLUMN_COUNT;
 
     // 열별 데이터
@@ -341,15 +363,21 @@ export function MatrixRainCanvas({
       depth: number;
       headY: number;
       charCount: number; // 각 열의 문자 개수 (48-86)
+      startDelay: number; // 열 시작 지연 시간
+      spawnedCount: number; // 현재까지 스폰된 문자 개수
+      lastSpawnTime: number; // 마지막 스폰 시간
     }[] = [];
 
     for (let col = 0; col < COLUMN_COUNT; col++) {
       columnData.push({
         speed: (0.3 + Math.random() * 0.7) * speedMultiplier,
-        length: 8 + Math.floor(Math.random() * 20),
+        length: TAIL_LENGTH_MIN + Math.floor(Math.random() * (TAIL_LENGTH_MAX - TAIL_LENGTH_MIN + 1)),
         depth: Math.random(), // 0~1 깊이
         headY: halfHeight + Math.random() * halfHeight * 2,
         charCount: CHARS_PER_COLUMN_MIN + Math.floor(Math.random() * (CHARS_PER_COLUMN_MAX - CHARS_PER_COLUMN_MIN + 1)),
+        startDelay: Math.random() * 2.0, // 0~2초 랜덤 시작 지연
+        spawnedCount: 0,
+        lastSpawnTime: 0,
       });
     }
 
@@ -362,11 +390,12 @@ export function MatrixRainCanvas({
       for (let row = 0; row < colData.charCount && instanceIndex < CHAR_COUNT; row++) {
         const i3 = instanceIndex * 3;
 
-        // 위치
+        // 위치: 처음에는 화면 상단 위에 대기
         instancePositions[i3] = columnX + (Math.random() - 0.5) * 2;
         // 랜덤 크기를 먼저 생성하여 간격 계산과 렌더링에 동일하게 사용
         const randomSize = CHAR_SIZE_MIN + Math.random() * (CHAR_SIZE_MAX - CHAR_SIZE_MIN);
-        instancePositions[i3 + 1] = colData.headY - row * randomSize * 1.5;
+        // 모든 문자가 머리 위치에서 시작 (스폰될 때 순차적으로 나타남)
+        instancePositions[i3 + 1] = colData.headY;
         instancePositions[i3 + 2] = -colData.depth * DEPTH_RANGE;
 
         // 문자 인덱스
@@ -387,6 +416,10 @@ export function MatrixRainCanvas({
         // 랜덤 크기 (위치 계산에 사용한 것과 동일한 값 사용)
         instanceSizes[instanceIndex] = randomSize;
 
+        // 스폰 시간: 열 시작 지연 + row * 간격
+        // 각 문자가 순차적으로 나타나도록 설정
+        instanceSpawnTimes[instanceIndex] = colData.startDelay + row * CHAR_SPAWN_INTERVAL;
+
         instanceIndex++;
       }
     }
@@ -399,6 +432,7 @@ export function MatrixRainCanvas({
     instancedGeo.setAttribute("instanceDepth", new THREE.InstancedBufferAttribute(instanceDepths, 1));
     instancedGeo.setAttribute("instanceSpeed", new THREE.InstancedBufferAttribute(instanceSpeeds, 1));
     instancedGeo.setAttribute("instanceSize", new THREE.InstancedBufferAttribute(instanceSizes, 1));
+    instancedGeo.setAttribute("instanceSpawnTime", new THREE.InstancedBufferAttribute(instanceSpawnTimes, 1));
 
     const material = new THREE.ShaderMaterial({
       uniforms: {
@@ -476,6 +510,7 @@ export function MatrixRainCanvas({
       const depthAttr = instancedGeo.getAttribute("instanceDepth") as THREE.InstancedBufferAttribute;
       const sizeAttr = instancedGeo.getAttribute("instanceSize") as THREE.InstancedBufferAttribute;
       const speedAttr = instancedGeo.getAttribute("instanceSpeed") as THREE.InstancedBufferAttribute;
+      const spawnAttr = instancedGeo.getAttribute("instanceSpawnTime") as THREE.InstancedBufferAttribute;
 
       // 각 열의 시작 인덱스 계산
       const columnStartIndices: number[] = [];
@@ -495,32 +530,43 @@ export function MatrixRainCanvas({
         const moveAmount = colData.speed * depthSpeedFactor * delta * 30;
 
         let headY = -Infinity;
+        let lastSpawnedY = colData.headY; // 마지막으로 스폰된 문자의 Y 위치 추적
 
         for (let row = 0; row < colData.charCount && startIdx + row < CHAR_COUNT; row++) {
           const idx = startIdx + row;
           const i3 = idx * 3;
+          const spawnTime = spawnAttr.array[idx];
+          const isSpawned = time >= spawnTime;
 
-          // Y 이동
-          const newY = posAttr.array[i3 + 1] - moveAmount;
-          posAttr.array[i3 + 1] = newY;
+          if (isSpawned) {
+            // 스폰된 문자만 Y 이동
+            const newY = posAttr.array[i3 + 1] - moveAmount;
+            posAttr.array[i3 + 1] = newY;
 
-          if (row === 0) {
-            headY = newY;
-          }
+            if (row === 0) {
+              headY = newY;
+            }
+            lastSpawnedY = newY;
 
-          // 문자 변경 (머리는 더 빈번)
-          const isHead = row === 0;
-          charChangeTimers[idx] -= delta * 60 * (isHead ? 4 : 1);
-          if (charChangeTimers[idx] <= 0) {
-            charAttr.array[idx] = Math.floor(Math.random() * MATRIX_CHARS.length);
-            charChangeTimers[idx] = isHead ? (2 + Math.random() * 5) : (8 + Math.random() * 25);
+            // 문자 변경 (머리는 더 빈번)
+            const isHead = row === 0;
+            charChangeTimers[idx] -= delta * 60 * (isHead ? 4 : 1);
+            if (charChangeTimers[idx] <= 0) {
+              charAttr.array[idx] = Math.floor(Math.random() * MATRIX_CHARS.length);
+              charChangeTimers[idx] = isHead ? (2 + Math.random() * 5) : (8 + Math.random() * 25);
+            }
+          } else {
+            // 아직 스폰되지 않은 문자는 마지막 스폰된 문자 바로 위에 대기
+            // 스폰될 때 자연스럽게 연결되도록
+            const charSize = sizeAttr.array[idx];
+            posAttr.array[i3 + 1] = lastSpawnedY + charSize * 1.5;
           }
         }
 
         // 리셋
         if (headY < -halfHeight - 30) {
           const newHeadY = halfHeight + 30 + Math.random() * 60;
-          const newLength = 8 + Math.floor(Math.random() * 20);
+          const newLength = TAIL_LENGTH_MIN + Math.floor(Math.random() * (TAIL_LENGTH_MAX - TAIL_LENGTH_MIN + 1));
           const newDepth = Math.random();
 
           colData.headY = newHeadY;
@@ -536,7 +582,8 @@ export function MatrixRainCanvas({
             posAttr.array[i3] = columnX + (Math.random() - 0.5) * 2;
             // 랜덤 크기를 생성하여 간격 계산과 렌더링에 동일하게 사용
             const randomSize = CHAR_SIZE_MIN + Math.random() * (CHAR_SIZE_MAX - CHAR_SIZE_MIN);
-            posAttr.array[i3 + 1] = newHeadY - row * randomSize * 1.5;
+            // 모든 문자가 머리 위치에서 시작 (스폰될 때 순차적으로 나타남)
+            posAttr.array[i3 + 1] = newHeadY;
             posAttr.array[i3 + 2] = -newDepth * DEPTH_RANGE;
 
             charAttr.array[idx] = Math.floor(Math.random() * MATRIX_CHARS.length);
@@ -546,17 +593,21 @@ export function MatrixRainCanvas({
             brightAttr.array[idx] = brightness;
 
             depthAttr.array[idx] = newDepth;
-            
+
             // 속도도 깊이 기반으로 재조정
             const depthSpeedFactor = 1.0 + (1.0 - newDepth) * DEPTH_SPEED_MULTIPLIER;
             speedAttr.array[idx] = colData.speed * depthSpeedFactor;
-            
+
             // 랜덤 크기 (위치 계산에 사용한 것과 동일한 값 사용)
             sizeAttr.array[idx] = randomSize;
+
+            // 스폰 시간 재설정: 현재 시간 + row * 간격
+            spawnAttr.array[idx] = time + row * CHAR_SPAWN_INTERVAL;
           }
-          
-          // 속도 속성 업데이트 플래그 설정
+
+          // 속성 업데이트 플래그 설정
           speedAttr.needsUpdate = true;
+          spawnAttr.needsUpdate = true;
         }
       }
 

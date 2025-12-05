@@ -127,6 +127,7 @@ export function StylesPanel({ isActive }: PanelProps) {
     <div className="panel">
           <div className="panel-header">
             <ToggleButtonGroup
+              indicator
               aria-label="Style filter"
               selectionMode="single"
               selectedKeys={[filter]}

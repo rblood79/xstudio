@@ -43,6 +43,23 @@ export interface SelectProps<T extends object>
   // M3 props
   variant?: SelectVariant;
   size?: ComponentSize;
+  /**
+   * React Aria 1.13.0: 선택 모드
+   * @default 'single'
+   */
+  selectionMode?: 'single' | 'multiple';
+  /**
+   * 다중 선택 시 표시 형식
+   * - 'count': "3개 선택됨"
+   * - 'list': "항목1, 항목2, 항목3"
+   * - 'custom': renderMultipleValue 사용
+   * @default 'count'
+   */
+  multipleDisplayMode?: 'count' | 'list' | 'custom';
+  /**
+   * 다중 선택 시 커스텀 렌더러
+   */
+  renderMultipleValue?: (selectedItems: T[]) => React.ReactNode;
 }
 
 const selectStyles = tv({
@@ -78,6 +95,9 @@ export function Select<T extends object>({
   columnMapping,
   variant = 'primary',
   size = 'md',
+  selectionMode = 'single',
+  multipleDisplayMode = 'count',
+  renderMultipleValue,
   ...props
 }: SelectProps<T>) {
   // useCollectionData Hook으로 데이터 가져오기 (Static, API, Supabase 통합)
@@ -222,6 +242,7 @@ export function Select<T extends object>({
       aria-label={ariaLabel}
       placeholder={placeholder}
       isDisabled={hasDataBinding && (loading || !!error)}
+      data-selection-mode={selectionMode}
     >
       {hasVisibleLabel && (
         <Label className="react-aria-Label">{String(label)}</Label>
@@ -267,7 +288,7 @@ export function Select<T extends object>({
         <ListBox
           items={selectItems}
           className="react-aria-ListBox"
-          selectionMode="single"
+          selectionMode={selectionMode}
         >
           {listBoxContent}
         </ListBox>

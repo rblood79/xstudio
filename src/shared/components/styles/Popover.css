@@ -9,25 +9,26 @@
 
 @layer components {
   /* ========== Animations ========== */
+  /* React Aria 1.13.0: Origin-aware scale animation */
   @keyframes popover-enter {
     from {
       opacity: 0;
-      transform: translate3d(0, -8px, 0);
+      transform: scale(0.95) translate3d(0, var(--popover-offset-y, -8px), 0);
     }
     to {
       opacity: 1;
-      transform: translate3d(0, 0, 0);
+      transform: scale(1) translate3d(0, 0, 0);
     }
   }
 
   @keyframes popover-exit {
     from {
       opacity: 1;
-      transform: translate3d(0, 0, 0);
+      transform: scale(1) translate3d(0, 0, 0);
     }
     to {
       opacity: 0;
-      transform: translate3d(0, -8px, 0);
+      transform: scale(0.95) translate3d(0, var(--popover-offset-y, -8px), 0);
     }
   }
 
@@ -46,6 +47,11 @@
     transform: translate3d(0, 0, 0);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+
+    /* React Aria 1.13.0: Origin-aware transform-origin */
+    --popover-origin-x: 50%;
+    --popover-origin-y: 0%;
+    transform-origin: var(--popover-origin-x) var(--popover-origin-y);
 
     .react-aria-OverlayArrow svg {
       display: block;
@@ -67,9 +73,12 @@
       opacity: 1;
     }
 
-    /* ===== Placement Variants ===== */
+    /* ===== Placement Variants with Origin-Aware Animation ===== */
     &[data-placement='top'] {
       --origin: translateY(8px);
+      --popover-offset-y: 8px;
+      --popover-origin-x: 50%;
+      --popover-origin-y: 100%;
 
       &:has(.react-aria-OverlayArrow) {
         margin-bottom: 6px;
@@ -78,6 +87,9 @@
 
     &[data-placement='bottom'] {
       --origin: translateY(-8px);
+      --popover-offset-y: -8px;
+      --popover-origin-x: 50%;
+      --popover-origin-y: 0%;
 
       &:has(.react-aria-OverlayArrow) {
         margin-top: 6px;
@@ -90,6 +102,9 @@
 
     &[data-placement='right'] {
       --origin: translateX(-8px);
+      --popover-offset-y: 0;
+      --popover-origin-x: 0%;
+      --popover-origin-y: 50%;
 
       &:has(.react-aria-OverlayArrow) {
         margin-left: 6px;
@@ -102,6 +117,9 @@
 
     &[data-placement='left'] {
       --origin: translateX(8px);
+      --popover-offset-y: 0;
+      --popover-origin-x: 100%;
+      --popover-origin-y: 50%;
 
       &:has(.react-aria-OverlayArrow) {
         margin-right: 6px;
@@ -110,6 +128,14 @@
       .react-aria-OverlayArrow svg {
         transform: rotate(-90deg);
       }
+    }
+  }
+
+  /* ========== Reduced Motion Support ========== */
+  @media (prefers-reduced-motion: reduce) {
+    .react-aria-Popover {
+      animation: none !important;
+      transition: none !important;
     }
   }
 

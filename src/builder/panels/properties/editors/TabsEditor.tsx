@@ -1,5 +1,5 @@
 import { useMemo, useState, useEffect, useCallback, memo } from "react";
-import { AppWindow, Plus, Ratio, PointerOff, Type, Hash } from "lucide-react";
+import { AppWindow, Plus, Ratio, PointerOff, Type, Hash, MousePointer2 } from "lucide-react";
 import {
   PropertyInput,
   PropertySelect,
@@ -122,6 +122,13 @@ export const TabsEditor = memo(
     const handleOrientationChange = useCallback(
       (value: string) => {
         onUpdate({ ...currentProps, orientation: value });
+      },
+      [currentProps, onUpdate]
+    );
+
+    const handleShowIndicatorChange = useCallback(
+      (checked: boolean) => {
+        onUpdate({ ...currentProps, showIndicator: checked });
       },
       [currentProps, onUpdate]
     );
@@ -254,9 +261,15 @@ export const TabsEditor = memo(
             options={ORIENTATIONS}
             icon={Ratio}
           />
+          <PropertySwitch
+            label="Show Indicator"
+            isSelected={Boolean(currentProps.showIndicator)}
+            onChange={handleShowIndicatorChange}
+            icon={MousePointer2}
+          />
         </PropertySection>
       ),
-      [currentProps.orientation, handleOrientationChange]
+      [currentProps.orientation, currentProps.showIndicator, handleOrientationChange, handleShowIndicatorChange]
     );
 
     const accessibilitySection = useMemo(
@@ -297,7 +310,7 @@ export const TabsEditor = memo(
 
     const tabManagementSection = useMemo(
       () => (
-        <PropertySection title="{PROPERTY_LABELS.TAB_MANAGEMENT}">
+        <PropertySection title={PROPERTY_LABELS.TAB_MANAGEMENT}>
           <div className="tab-overview">
             <p className="tab-overview-text">
               Total tabs: {tabChildren.length || 0}

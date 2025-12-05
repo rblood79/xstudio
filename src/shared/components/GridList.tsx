@@ -5,6 +5,7 @@
  * Sizes: sm, md, lg
  */
 
+import React from 'react';
 import {
   Button,
   GridList as AriaGridList,
@@ -28,6 +29,21 @@ interface ExtendedGridListProps<T extends object> extends GridListProps<T> {
   // M3 props
   variant?: GridListVariant;
   size?: ComponentSize;
+  /**
+   * React Aria 1.13.0: 커스텀 필터 함수
+   * @example filter={(item) => item.status === 'active'}
+   */
+  filter?: (item: T) => boolean;
+  /**
+   * React Aria 1.13.0: 텍스트 기반 필터링
+   * @example filterText="search query"
+   */
+  filterText?: string;
+  /**
+   * React Aria 1.13.0: 필터링 대상 필드 목록
+   * @default ['label', 'name', 'title']
+   */
+  filterFields?: (keyof T)[];
 }
 
 const gridListStyles = tv({
@@ -58,6 +74,9 @@ export function GridList<T extends object>({
   columnMapping,
   variant = 'primary',
   size = 'md',
+  filter,
+  filterText,
+  filterFields = ['label', 'name', 'title'] as (keyof T)[],
   ...props
 }: ExtendedGridListProps<T>) {
   // useCollectionData Hook으로 데이터 가져오기 (Static, API, Supabase 통합)
@@ -73,6 +92,29 @@ export function GridList<T extends object>({
       { id: 2, name: 'Item 2', description: 'Description 2' },
     ],
   });
+
+  // React Aria 1.13.0: 필터링 로직
+  const filteredData = React.useMemo(() => {
+    let result = [...boundData];
+
+    // 커스텀 필터 적용
+    if (filter) {
+      result = result.filter((item) => filter(item as unknown as T));
+    }
+
+    // 텍스트 필터 적용
+    if (filterText && filterText.trim()) {
+      const searchText = filterText.toLowerCase().trim();
+      result = result.filter((item) =>
+        filterFields.some((field) => {
+          const value = item[field as string];
+          return value && String(value).toLowerCase().includes(searchText);
+        })
+      );
+    }
+
+    return result;
+  }, [boundData, filter, filterText, filterFields]);
 
   // DataBinding이 있고 데이터가 로드되었을 때 동적 아이템 생성
   // PropertyDataBinding 형식 (source, name) 또는 DataBinding 형식 (type: "collection") 둘 다 지원
@@ -110,7 +152,7 @@ export function GridList<T extends object>({
       hasChildren: !!children,
       childrenType: typeof children,
       isChildrenFunction: typeof children === 'function',
-      dataCount: boundData.length,
+      dataCount: filteredData.length,
       loading,
       error,
     });
@@ -162,8 +204,8 @@ export function GridList<T extends object>({
     }
 
     // 데이터가 있을 때: items prop 사용
-    if (boundData.length > 0) {
-      const items = boundData.map((item, index) => ({
+    if (filteredData.length > 0) {
+      const items = filteredData.map((item, index) => ({
         id: String(item.id || index),
         ...item,
       })) as T[];
@@ -234,8 +276,8 @@ export function GridList<T extends object>({
     }
 
     // 데이터가 로드되었을 때
-    if (boundData.length > 0) {
-      const items = boundData.map((item, index) => ({
+    if (filteredData.length > 0) {
+      const items = filteredData.map((item, index) => ({
         id: String(item.id || index),
         label: String(
           item.name || item.title || item.label || `Item ${index + 1}`

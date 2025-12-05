@@ -422,7 +422,7 @@ export const RadioGroupEditor = memo(function RadioGroupEditor({ elementId, curr
 
   const radioManagementSection = useMemo(
     () => (
-      <PropertySection title="{PROPERTY_LABELS.RADIO_MANAGEMENT}">
+      <PropertySection title={PROPERTY_LABELS.RADIO_MANAGEMENT}>
         <div className='tab-overview'>
           <p className='tab-overview-text'>
             Total radio options: {radioChildren.length || 0}
