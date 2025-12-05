@@ -13,6 +13,10 @@
       ]
     },
 
+    /* JSON Module Support */
+    "resolveJsonModule": true,
+    "esModuleInterop": true,
+
     /* Bundler mode */
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
