@@ -29,21 +29,15 @@
     }
 
     &[data-indicator="true"] {
-      position: relative;
-      background: var(--surface-container);
-      width: fit-content;
-      padding: 0px;
-      border-radius: var(--border-radius);
-      box-shadow: var(--inset-shadow-sm);
-      outline: 1px solid var(--border-color);
-      outline-offset: -1px;
-
       /* React Aria 1.13.0: SelectionIndicator 스타일 (ToggleButton 내부에 위치) */
       .react-aria-ToggleButton .react-aria-SelectionIndicator {
         position: absolute;
+        /*width: calc(100% + 2px);
+        height: calc(18px + 2px);
+        transform: translate(-1px, -1px);*/
         inset: 0;
         z-index: -1;
-        border-radius: var(--border-radius);
+        border-radius: var(--radius-sm);
         background: var(--surface-container-high);
         box-shadow: var(--shadow-sm);
         pointer-events: none;

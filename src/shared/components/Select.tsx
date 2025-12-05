@@ -19,12 +19,18 @@ import {
   SelectValue,
   Text,
   ValidationResult,
-  composeRenderProps
+  composeRenderProps,
 } from "react-aria-components";
-import { tv } from 'tailwind-variants';
+import { tv } from "tailwind-variants";
 import { ChevronDown } from "lucide-react";
-import type { SelectVariant, ComponentSize } from '../../types/componentVariants';
-import type { DataBinding, ColumnMapping } from "../../types/builder/unified.types";
+import type {
+  SelectVariant,
+  ComponentSize,
+} from "../../types/componentVariants";
+import type {
+  DataBinding,
+  ColumnMapping,
+} from "../../types/builder/unified.types";
 import type { DataBindingValue } from "../../builder/panels/common/PropertyDataBinding";
 import { useCollectionData } from "../../builder/hooks/useCollectionData";
 import "./styles/Select.css";
@@ -47,7 +53,7 @@ export interface SelectProps<T extends object>
    * React Aria 1.13.0: 선택 모드
    * @default 'single'
    */
-  selectionMode?: 'single' | 'multiple';
+  selectionMode?: "single" | "multiple";
   /**
    * 다중 선택 시 표시 형식
    * - 'count': "3개 선택됨"
@@ -55,7 +61,7 @@ export interface SelectProps<T extends object>
    * - 'custom': renderMultipleValue 사용
    * @default 'count'
    */
-  multipleDisplayMode?: 'count' | 'list' | 'custom';
+  multipleDisplayMode?: "count" | "list" | "custom";
   /**
    * 다중 선택 시 커스텀 렌더러
    */
@@ -63,24 +69,24 @@ export interface SelectProps<T extends object>
 }
 
 const selectStyles = tv({
-  base: 'react-aria-Select',
+  base: "react-aria-Select",
   variants: {
     variant: {
-      primary: 'primary',
-      secondary: 'secondary',
-      tertiary: 'tertiary',
-      error: 'error',
-      filled: 'filled',
+      primary: "primary",
+      secondary: "secondary",
+      tertiary: "tertiary",
+      error: "error",
+      filled: "filled",
     },
     size: {
-      sm: 'sm',
-      md: 'md',
-      lg: 'lg',
+      sm: "sm",
+      md: "md",
+      lg: "lg",
     },
   },
   defaultVariants: {
-    variant: 'primary',
-    size: 'md',
+    variant: "primary",
+    size: "md",
   },
 });
 
@@ -93,10 +99,10 @@ export function Select<T extends object>({
   placeholder,
   dataBinding,
   columnMapping,
-  variant = 'primary',
-  size = 'md',
-  selectionMode = 'single',
-  multipleDisplayMode = 'count',
+  variant = "primary",
+  size = "md",
+  selectionMode = "single",
+  multipleDisplayMode = "count",
   renderMultipleValue,
   ...props
 }: SelectProps<T>) {
@@ -148,21 +154,26 @@ export function Select<T extends object>({
     }
 
     if (boundData.length > 0) {
-      const config = (dataBinding as { config?: Record<string, unknown> })?.config as {
-        columnMapping?: {
-          id: string;
-          label: string;
-        };
-        dataMapping?: {
-          idField: string;
-          labelField: string;
-        };
-      } | undefined;
+      const config = (dataBinding as { config?: Record<string, unknown> })
+        ?.config as
+        | {
+            columnMapping?: {
+              id: string;
+              label: string;
+            };
+            dataMapping?: {
+              idField: string;
+              labelField: string;
+            };
+          }
+        | undefined;
 
       const idField =
         config?.columnMapping?.id || config?.dataMapping?.idField || "id";
       const labelField =
-        config?.columnMapping?.label || config?.dataMapping?.labelField || "label";
+        config?.columnMapping?.label ||
+        config?.dataMapping?.labelField ||
+        "label";
 
       return boundData.map((item, index) => ({
         id: String(item[idField] || item.id || index),
@@ -174,55 +185,125 @@ export function Select<T extends object>({
     }
 
     return items;
-  }, [hasDataBinding, loading, error, boundData, columnMapping, dataBinding, items]);
+  }, [
+    hasDataBinding,
+    loading,
+    error,
+    boundData,
+    columnMapping,
+    dataBinding,
+    items,
+  ]);
+
+  // 다중 선택 모드일 때 선택된 값 표시 로직
+  const renderMultipleSelectValue = React.useCallback(
+    (
+      selectedKeys: React.Key[] | "all" | null,
+      selectedItems: Iterable<T> | null
+    ) => {
+      if (
+        selectionMode !== "multiple" ||
+        !selectedKeys ||
+        selectedKeys === "all" ||
+        (Array.isArray(selectedKeys) && selectedKeys.length === 0)
+      ) {
+        return null;
+      }
+
+      const selectedItemsArray = selectedItems ? Array.from(selectedItems) : [];
+      const keyCount = Array.isArray(selectedKeys) ? selectedKeys.length : 0;
+
+      if (keyCount === 0) {
+        return null;
+      }
+
+      switch (multipleDisplayMode) {
+        case "count":
+          return `${keyCount}개 선택됨`;
+        case "list": {
+          const labels = selectedItemsArray
+            .map((item) => {
+              const itemRecord = item as Record<string, unknown>;
+              return String(
+                itemRecord.label || itemRecord.name || itemRecord.id || ""
+              );
+            })
+            .filter(Boolean);
+          return labels.length > 0 ? labels.join(", ") : `${keyCount}개 선택됨`;
+        }
+        case "custom":
+          return renderMultipleValue
+            ? renderMultipleValue(selectedItemsArray)
+            : `${keyCount}개 선택됨`;
+        default:
+          return `${keyCount}개 선택됨`;
+      }
+    },
+    [selectionMode, multipleDisplayMode, renderMultipleValue]
+  );
 
   // Render ListBox content based on state - memoized to prevent unnecessary re-renders
-  const listBoxContent: React.ReactNode | ((item: T) => React.ReactNode) = React.useMemo(() => {
-    // Loading state
-    if (hasDataBinding && loading) {
-      return (
-        <ListBoxItem key="loading" textValue="Loading" className="react-aria-ListBoxItem">
-          ⏳ 데이터 로딩 중...
-        </ListBoxItem>
-      );
-    }
-
-    // Error state
-    if (hasDataBinding && error) {
-      return (
-        <ListBoxItem key="error" textValue="Error" className="react-aria-ListBoxItem">
-          ❌ 오류: {error}
-        </ListBoxItem>
-      );
-    }
-
-    // ColumnMapping mode with children (Field-based rendering)
-    if (hasDataBinding && columnMapping && boundData.length > 0) {
-      return children;
-    }
-
-    // Dynamic collection without columnMapping
-    if (hasDataBinding && !columnMapping && boundData.length > 0) {
-      return ((item: Record<string, unknown>) => {
-        const itemId = item.id !== undefined && item.id !== null ? String(item.id) : undefined;
-        const itemLabel = item.label !== undefined && item.label !== null ? String(item.label) : undefined;
-
+  const listBoxContent: React.ReactNode | ((item: T) => React.ReactNode) =
+    React.useMemo(() => {
+      // Loading state
+      if (hasDataBinding && loading) {
         return (
           <ListBoxItem
-            key={itemId}
-            id={itemId}
-            textValue={itemLabel}
+            key="loading"
+            textValue="Loading"
             className="react-aria-ListBoxItem"
           >
-            {itemLabel}
+            ⏳ 데이터 로딩 중...
           </ListBoxItem>
         );
-      }) as (item: T) => React.ReactNode;
-    }
+      }
 
-    // Static children
-    return children;
-  }, [hasDataBinding, loading, error, columnMapping, boundData, children]);
+      // Error state
+      if (hasDataBinding && error) {
+        return (
+          <ListBoxItem
+            key="error"
+            textValue="Error"
+            className="react-aria-ListBoxItem"
+          >
+            ❌ 오류: {error}
+          </ListBoxItem>
+        );
+      }
+
+      // ColumnMapping mode with children (Field-based rendering)
+      if (hasDataBinding && columnMapping && boundData.length > 0) {
+        return children;
+      }
+
+      // Dynamic collection without columnMapping
+      if (hasDataBinding && !columnMapping && boundData.length > 0) {
+        return ((item: Record<string, unknown>) => {
+          const itemId =
+            item.id !== undefined && item.id !== null
+              ? String(item.id)
+              : undefined;
+          const itemLabel =
+            item.label !== undefined && item.label !== null
+              ? String(item.label)
+              : undefined;
+
+          return (
+            <ListBoxItem
+              key={itemId}
+              id={itemId}
+              textValue={itemLabel}
+              className="react-aria-ListBoxItem"
+            >
+              {itemLabel}
+            </ListBoxItem>
+          );
+        }) as (item: T) => React.ReactNode;
+      }
+
+      // Static children
+      return children;
+    }, [hasDataBinding, loading, error, columnMapping, boundData, children]);
 
   // Single unified return structure - prevents popover remounting
   return (
@@ -243,56 +324,79 @@ export function Select<T extends object>({
       placeholder={placeholder}
       isDisabled={hasDataBinding && (loading || !!error)}
       data-selection-mode={selectionMode}
+      selectionMode={selectionMode}
     >
-      {hasVisibleLabel && (
-        <Label className="react-aria-Label">{String(label)}</Label>
+      {(renderProps) => (
+        <>
+          {hasVisibleLabel && (
+            <Label className="react-aria-Label">{String(label)}</Label>
+          )}
+
+          <Button className="react-aria-Button">
+            {selectionMode === "multiple" ? (
+              (() => {
+                const customValue = renderMultipleSelectValue(
+                  renderProps.selectedKeys,
+                  renderProps.selectedItems
+                );
+                return customValue ? (
+                  <SelectValue>{customValue}</SelectValue>
+                ) : (
+                  <SelectValue />
+                );
+              })()
+            ) : (
+              <SelectValue />
+            )}
+            <span aria-hidden="true" className="select-chevron">
+              <ChevronDown size={16} />
+            </span>
+          </Button>
+
+          {description && String(description).trim() && (
+            <Text slot="description" className="react-aria-Description">
+              {String(description)}
+            </Text>
+          )}
+
+          {/* Show loading message */}
+          {hasDataBinding && loading && (
+            <Text slot="description" className="react-aria-Description">
+              ⏳ 데이터 로딩 중...
+            </Text>
+          )}
+
+          {/* Show error message */}
+          {hasDataBinding && error && (
+            <FieldError className="react-aria-FieldError">
+              ❌ 오류: {error}
+            </FieldError>
+          )}
+
+          {/* Show validation error */}
+          {errorMessage && !error && (
+            <FieldError className="react-aria-FieldError">
+              {typeof errorMessage === "function"
+                ? errorMessage({ isInvalid: true } as ValidationResult)
+                : String(errorMessage)}
+            </FieldError>
+          )}
+
+          <Popover
+            className="react-aria-Popover"
+            placement="bottom start"
+            offset={4}
+          >
+            <ListBox
+              items={selectItems}
+              className="react-aria-ListBox"
+              selectionMode={selectionMode}
+            >
+              {listBoxContent}
+            </ListBox>
+          </Popover>
+        </>
       )}
-
-      <Button className="react-aria-Button">
-        <SelectValue />
-        <span aria-hidden="true" className="select-chevron">
-          <ChevronDown size={16} />
-        </span>
-      </Button>
-
-      {description && String(description).trim() && (
-        <Text slot="description" className="react-aria-Description">
-          {String(description)}
-        </Text>
-      )}
-
-      {/* Show loading message */}
-      {hasDataBinding && loading && (
-        <Text slot="description" className="react-aria-Description">
-          ⏳ 데이터 로딩 중...
-        </Text>
-      )}
-
-      {/* Show error message */}
-      {hasDataBinding && error && (
-        <FieldError className="react-aria-FieldError">
-          ❌ 오류: {error}
-        </FieldError>
-      )}
-
-      {/* Show validation error */}
-      {errorMessage && !error && (
-        <FieldError className="react-aria-FieldError">
-          {typeof errorMessage === "function"
-            ? errorMessage({ isInvalid: true } as ValidationResult)
-            : String(errorMessage)}
-        </FieldError>
-      )}
-
-      <Popover className="react-aria-Popover" placement="bottom start" offset={4}>
-        <ListBox
-          items={selectItems}
-          className="react-aria-ListBox"
-          selectionMode={selectionMode}
-        >
-          {listBoxContent}
-        </ListBox>
-      </Popover>
     </AriaSelect>
   );
 }

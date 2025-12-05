@@ -23,12 +23,10 @@ const CHAR_COUNT = Math.min(PARTICLE_COUNT, 10000); // 긴 꼬리를 위해 1000
 const COLUMN_COUNT = 50;
 const CHARS_PER_COLUMN_MIN = 168; // 한 열당 최소 문자 개수
 const CHARS_PER_COLUMN_MAX = 200; // 한 열당 최대 문자 개수
-const CHAR_SIZE_BASE = 1.2; // 기본 3D 월드 단위
 const CHAR_SIZE_MIN = 0.6; // 최소 크기
 const CHAR_SIZE_MAX = 2.0; // 최대 크기
 const TEXTURE_CHAR_SIZE = 128; // 텍스처 해상도
 const DEPTH_RANGE = 150; // Z축 깊이 범위
-const TRANSITION_SPEED = 0.02;
 const DEPTH_SPEED_MULTIPLIER = 2.0; // 가까운 것(작은 depth)이 더 빨리 내려오는 배율
 const CHAR_SPAWN_INTERVAL = 0.15; // 한 글자씩 생성되는 간격 (초) - 더 느리게
 const TAIL_LENGTH_MIN = 168; // 꼬리 최소 길이
@@ -56,7 +54,9 @@ function createCharacterAtlas(): THREE.CanvasTexture {
   ctx.clearRect(0, 0, atlasWidth, atlasHeight);
 
   // 폰트 설정 - 선명한 렌더링
-  ctx.font = `bold ${TEXTURE_CHAR_SIZE * 0.75}px "MS Gothic", "Meiryo", "Hiragino Kaku Gothic Pro", monospace`;
+  ctx.font = `bold ${
+    TEXTURE_CHAR_SIZE * 0.75
+  }px "MS Gothic", "Meiryo", "Hiragino Kaku Gothic Pro", monospace`;
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
 
@@ -258,7 +258,8 @@ export function MatrixRainCanvas({
   speedMultiplier = 1.0,
 }: MatrixRainCanvasProps) {
   const mountRef = useRef<HTMLDivElement>(null);
-  const { targetMorphRef, contentRef, contentVersion } = useParticleBackground();
+  const { targetMorphRef, contentRef, contentVersion } =
+    useParticleBackground();
   const morphProgressRef = useRef(0);
   const targetTextureRef = useRef<THREE.DataTexture | null>(null);
   const materialRef = useRef<THREE.ShaderMaterial | null>(null);
@@ -371,10 +372,16 @@ export function MatrixRainCanvas({
     for (let col = 0; col < COLUMN_COUNT; col++) {
       columnData.push({
         speed: (0.3 + Math.random() * 0.7) * speedMultiplier,
-        length: TAIL_LENGTH_MIN + Math.floor(Math.random() * (TAIL_LENGTH_MAX - TAIL_LENGTH_MIN + 1)),
+        length:
+          TAIL_LENGTH_MIN +
+          Math.floor(Math.random() * (TAIL_LENGTH_MAX - TAIL_LENGTH_MIN + 1)),
         depth: Math.random(), // 0~1 깊이
         headY: halfHeight + Math.random() * halfHeight * 2,
-        charCount: CHARS_PER_COLUMN_MIN + Math.floor(Math.random() * (CHARS_PER_COLUMN_MAX - CHARS_PER_COLUMN_MIN + 1)),
+        charCount:
+          CHARS_PER_COLUMN_MIN +
+          Math.floor(
+            Math.random() * (CHARS_PER_COLUMN_MAX - CHARS_PER_COLUMN_MIN + 1)
+          ),
         startDelay: Math.random() * 2.0, // 0~2초 랜덤 시작 지연
         spawnedCount: 0,
         lastSpawnTime: 0,
@@ -387,30 +394,42 @@ export function MatrixRainCanvas({
       const colData = columnData[col];
       const columnX = -halfWidth * 1.1 + col * columnWidth + columnWidth / 2;
 
-      for (let row = 0; row < colData.charCount && instanceIndex < CHAR_COUNT; row++) {
+      for (
+        let row = 0;
+        row < colData.charCount && instanceIndex < CHAR_COUNT;
+        row++
+      ) {
         const i3 = instanceIndex * 3;
 
         // 위치: 처음에는 화면 상단 위에 대기
         instancePositions[i3] = columnX + (Math.random() - 0.5) * 2;
         // 랜덤 크기를 먼저 생성하여 간격 계산과 렌더링에 동일하게 사용
-        const randomSize = CHAR_SIZE_MIN + Math.random() * (CHAR_SIZE_MAX - CHAR_SIZE_MIN);
+        const randomSize =
+          CHAR_SIZE_MIN + Math.random() * (CHAR_SIZE_MAX - CHAR_SIZE_MIN);
         // 모든 문자가 머리 위치에서 시작 (스폰될 때 순차적으로 나타남)
         instancePositions[i3 + 1] = colData.headY;
         instancePositions[i3 + 2] = -colData.depth * DEPTH_RANGE;
 
         // 문자 인덱스
-        instanceCharIndices[instanceIndex] = Math.floor(Math.random() * MATRIX_CHARS.length);
+        instanceCharIndices[instanceIndex] = Math.floor(
+          Math.random() * MATRIX_CHARS.length
+        );
 
         // 밝기: 머리는 1.0, 꼬리로 갈수록 감소
-        const brightness = row === 0 ? 1.0 :
-          (row < colData.length ? Math.max(0.1, 1.0 - (row / colData.length) * 0.9) : 0.05);
+        const brightness =
+          row === 0
+            ? 1.0
+            : row < colData.length
+            ? Math.max(0.1, 1.0 - (row / colData.length) * 0.9)
+            : 0.05;
         instanceBrightnesses[instanceIndex] = brightness;
 
         // 깊이
         instanceDepths[instanceIndex] = colData.depth;
 
         // 속도 (깊이 기반 조정: 가까운 것(작은 depth)이 더 빠름)
-        const depthSpeedFactor = 1.0 + (1.0 - colData.depth) * DEPTH_SPEED_MULTIPLIER;
+        const depthSpeedFactor =
+          1.0 + (1.0 - colData.depth) * DEPTH_SPEED_MULTIPLIER;
         instanceSpeeds[instanceIndex] = colData.speed * depthSpeedFactor;
 
         // 랜덤 크기 (위치 계산에 사용한 것과 동일한 값 사용)
@@ -418,7 +437,8 @@ export function MatrixRainCanvas({
 
         // 스폰 시간: 열 시작 지연 + row * 간격
         // 각 문자가 순차적으로 나타나도록 설정
-        instanceSpawnTimes[instanceIndex] = colData.startDelay + row * CHAR_SPAWN_INTERVAL;
+        instanceSpawnTimes[instanceIndex] =
+          colData.startDelay + row * CHAR_SPAWN_INTERVAL;
 
         instanceIndex++;
       }
@@ -426,13 +446,34 @@ export function MatrixRainCanvas({
 
     // ========== Instanced Mesh ==========
     const instancedGeo = planeGeo.clone();
-    instancedGeo.setAttribute("instancePosition", new THREE.InstancedBufferAttribute(instancePositions, 3));
-    instancedGeo.setAttribute("instanceCharIndex", new THREE.InstancedBufferAttribute(instanceCharIndices, 1));
-    instancedGeo.setAttribute("instanceBrightness", new THREE.InstancedBufferAttribute(instanceBrightnesses, 1));
-    instancedGeo.setAttribute("instanceDepth", new THREE.InstancedBufferAttribute(instanceDepths, 1));
-    instancedGeo.setAttribute("instanceSpeed", new THREE.InstancedBufferAttribute(instanceSpeeds, 1));
-    instancedGeo.setAttribute("instanceSize", new THREE.InstancedBufferAttribute(instanceSizes, 1));
-    instancedGeo.setAttribute("instanceSpawnTime", new THREE.InstancedBufferAttribute(instanceSpawnTimes, 1));
+    instancedGeo.setAttribute(
+      "instancePosition",
+      new THREE.InstancedBufferAttribute(instancePositions, 3)
+    );
+    instancedGeo.setAttribute(
+      "instanceCharIndex",
+      new THREE.InstancedBufferAttribute(instanceCharIndices, 1)
+    );
+    instancedGeo.setAttribute(
+      "instanceBrightness",
+      new THREE.InstancedBufferAttribute(instanceBrightnesses, 1)
+    );
+    instancedGeo.setAttribute(
+      "instanceDepth",
+      new THREE.InstancedBufferAttribute(instanceDepths, 1)
+    );
+    instancedGeo.setAttribute(
+      "instanceSpeed",
+      new THREE.InstancedBufferAttribute(instanceSpeeds, 1)
+    );
+    instancedGeo.setAttribute(
+      "instanceSize",
+      new THREE.InstancedBufferAttribute(instanceSizes, 1)
+    );
+    instancedGeo.setAttribute(
+      "instanceSpawnTime",
+      new THREE.InstancedBufferAttribute(instanceSpawnTimes, 1)
+    );
 
     const material = new THREE.ShaderMaterial({
       uniforms: {
@@ -499,18 +540,36 @@ export function MatrixRainCanvas({
       material.uniforms.time.value = time;
 
       // 모핑 진행도
-      const morphSpeed = targetMorphRef.current > morphProgressRef.current ? MORPH_IN_SPEED : MORPH_OUT_SPEED;
-      morphProgressRef.current += (targetMorphRef.current - morphProgressRef.current) * morphSpeed;
+      const morphSpeed =
+        targetMorphRef.current > morphProgressRef.current
+          ? MORPH_IN_SPEED
+          : MORPH_OUT_SPEED;
+      morphProgressRef.current +=
+        (targetMorphRef.current - morphProgressRef.current) * morphSpeed;
       material.uniforms.morphProgress.value = morphProgressRef.current;
 
       // 인스턴스 속성 업데이트
-      const posAttr = instancedGeo.getAttribute("instancePosition") as THREE.InstancedBufferAttribute;
-      const charAttr = instancedGeo.getAttribute("instanceCharIndex") as THREE.InstancedBufferAttribute;
-      const brightAttr = instancedGeo.getAttribute("instanceBrightness") as THREE.InstancedBufferAttribute;
-      const depthAttr = instancedGeo.getAttribute("instanceDepth") as THREE.InstancedBufferAttribute;
-      const sizeAttr = instancedGeo.getAttribute("instanceSize") as THREE.InstancedBufferAttribute;
-      const speedAttr = instancedGeo.getAttribute("instanceSpeed") as THREE.InstancedBufferAttribute;
-      const spawnAttr = instancedGeo.getAttribute("instanceSpawnTime") as THREE.InstancedBufferAttribute;
+      const posAttr = instancedGeo.getAttribute(
+        "instancePosition"
+      ) as THREE.InstancedBufferAttribute;
+      const charAttr = instancedGeo.getAttribute(
+        "instanceCharIndex"
+      ) as THREE.InstancedBufferAttribute;
+      const brightAttr = instancedGeo.getAttribute(
+        "instanceBrightness"
+      ) as THREE.InstancedBufferAttribute;
+      const depthAttr = instancedGeo.getAttribute(
+        "instanceDepth"
+      ) as THREE.InstancedBufferAttribute;
+      const sizeAttr = instancedGeo.getAttribute(
+        "instanceSize"
+      ) as THREE.InstancedBufferAttribute;
+      const speedAttr = instancedGeo.getAttribute(
+        "instanceSpeed"
+      ) as THREE.InstancedBufferAttribute;
+      const spawnAttr = instancedGeo.getAttribute(
+        "instanceSpawnTime"
+      ) as THREE.InstancedBufferAttribute;
 
       // 각 열의 시작 인덱스 계산
       const columnStartIndices: number[] = [];
@@ -526,13 +585,18 @@ export function MatrixRainCanvas({
         const startIdx = columnStartIndices[col];
 
         // 깊이에 따른 속도 조절: 가까운 것(작은 depth)이 더 빠르게
-        const depthSpeedFactor = 1.0 + (1.0 - colData.depth) * DEPTH_SPEED_MULTIPLIER;
+        const depthSpeedFactor =
+          1.0 + (1.0 - colData.depth) * DEPTH_SPEED_MULTIPLIER;
         const moveAmount = colData.speed * depthSpeedFactor * delta * 30;
 
         let headY = -Infinity;
         let lastSpawnedY = colData.headY; // 마지막으로 스폰된 문자의 Y 위치 추적
 
-        for (let row = 0; row < colData.charCount && startIdx + row < CHAR_COUNT; row++) {
+        for (
+          let row = 0;
+          row < colData.charCount && startIdx + row < CHAR_COUNT;
+          row++
+        ) {
           const idx = startIdx + row;
           const i3 = idx * 3;
           const spawnTime = spawnAttr.array[idx];
@@ -552,8 +616,12 @@ export function MatrixRainCanvas({
             const isHead = row === 0;
             charChangeTimers[idx] -= delta * 60 * (isHead ? 4 : 1);
             if (charChangeTimers[idx] <= 0) {
-              charAttr.array[idx] = Math.floor(Math.random() * MATRIX_CHARS.length);
-              charChangeTimers[idx] = isHead ? (2 + Math.random() * 5) : (8 + Math.random() * 25);
+              charAttr.array[idx] = Math.floor(
+                Math.random() * MATRIX_CHARS.length
+              );
+              charChangeTimers[idx] = isHead
+                ? 2 + Math.random() * 5
+                : 8 + Math.random() * 25;
             }
           } else {
             // 아직 스폰되지 않은 문자는 마지막 스폰된 문자 바로 위에 대기
@@ -566,7 +634,9 @@ export function MatrixRainCanvas({
         // 리셋
         if (headY < -halfHeight - 30) {
           const newHeadY = halfHeight + 30 + Math.random() * 60;
-          const newLength = TAIL_LENGTH_MIN + Math.floor(Math.random() * (TAIL_LENGTH_MAX - TAIL_LENGTH_MIN + 1));
+          const newLength =
+            TAIL_LENGTH_MIN +
+            Math.floor(Math.random() * (TAIL_LENGTH_MAX - TAIL_LENGTH_MIN + 1));
           const newDepth = Math.random();
 
           colData.headY = newHeadY;
@@ -575,27 +645,39 @@ export function MatrixRainCanvas({
           colData.speed = (0.3 + Math.random() * 0.7) * speedMultiplier;
           // charCount는 초기화 시에만 설정하고 리셋 시에는 변경하지 않음 (인덱스 범위 유지)
 
-          for (let row = 0; row < colData.charCount && startIdx + row < CHAR_COUNT; row++) {
+          for (
+            let row = 0;
+            row < colData.charCount && startIdx + row < CHAR_COUNT;
+            row++
+          ) {
             const idx = startIdx + row;
             const i3 = idx * 3;
 
             posAttr.array[i3] = columnX + (Math.random() - 0.5) * 2;
             // 랜덤 크기를 생성하여 간격 계산과 렌더링에 동일하게 사용
-            const randomSize = CHAR_SIZE_MIN + Math.random() * (CHAR_SIZE_MAX - CHAR_SIZE_MIN);
+            const randomSize =
+              CHAR_SIZE_MIN + Math.random() * (CHAR_SIZE_MAX - CHAR_SIZE_MIN);
             // 모든 문자가 머리 위치에서 시작 (스폰될 때 순차적으로 나타남)
             posAttr.array[i3 + 1] = newHeadY;
             posAttr.array[i3 + 2] = -newDepth * DEPTH_RANGE;
 
-            charAttr.array[idx] = Math.floor(Math.random() * MATRIX_CHARS.length);
+            charAttr.array[idx] = Math.floor(
+              Math.random() * MATRIX_CHARS.length
+            );
 
-            const brightness = row === 0 ? 1.0 :
-              (row < newLength ? Math.max(0.1, 1.0 - (row / newLength) * 0.9) : 0.05);
+            const brightness =
+              row === 0
+                ? 1.0
+                : row < newLength
+                ? Math.max(0.1, 1.0 - (row / newLength) * 0.9)
+                : 0.05;
             brightAttr.array[idx] = brightness;
 
             depthAttr.array[idx] = newDepth;
 
             // 속도도 깊이 기반으로 재조정
-            const depthSpeedFactor = 1.0 + (1.0 - newDepth) * DEPTH_SPEED_MULTIPLIER;
+            const depthSpeedFactor =
+              1.0 + (1.0 - newDepth) * DEPTH_SPEED_MULTIPLIER;
             speedAttr.array[idx] = colData.speed * depthSpeedFactor;
 
             // 랜덤 크기 (위치 계산에 사용한 것과 동일한 값 사용)
@@ -647,7 +729,14 @@ export function MatrixRainCanvas({
       composer.dispose();
       renderer.dispose();
     };
-  }, [targetMorphRef, contentRef, bloomStrength, bloomRadius, bloomThreshold, speedMultiplier]);
+  }, [
+    targetMorphRef,
+    contentRef,
+    bloomStrength,
+    bloomRadius,
+    bloomThreshold,
+    speedMultiplier,
+  ]);
 
   return (
     <div

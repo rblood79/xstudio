@@ -12,7 +12,11 @@ import "../../panels/common/index.css";
 import { useState, useMemo, useCallback } from "react";
 import type { PanelProps } from "../core/types";
 import { useInspectorState } from "../../inspector/hooks/useInspectorState";
-import { ToggleButtonGroup, ToggleButton, Button } from "../../../shared/components";
+import {
+  ToggleButtonGroup,
+  ToggleButton,
+  Button,
+} from "../../../shared/components";
 import { Copy, ClipboardPaste } from "lucide-react";
 import { iconProps } from "../../../utils/ui/uiConstants";
 import { EmptyState } from "../common";
@@ -27,6 +31,7 @@ import { getModifiedProperties } from "./hooks/useStyleSource";
 import { useSectionCollapse } from "./hooks/useSectionCollapse";
 import { useStyleActions } from "./hooks/useStyleActions";
 import { useKeyboardShortcutsRegistry } from "../../hooks/useKeyboardShortcutsRegistry";
+import "./StylesPanel.css";
 
 export function StylesPanel({ isActive }: PanelProps) {
   const selectedElement = useInspectorState((state) => state.selectedElement);
@@ -125,59 +130,58 @@ export function StylesPanel({ isActive }: PanelProps) {
 
   return (
     <div className="panel">
-          <div className="panel-header">
-            <ToggleButtonGroup
-              indicator
-              aria-label="Style filter"
-              selectionMode="single"
-              selectedKeys={[filter]}
-              onSelectionChange={(keys) => {
-                const selectedFilter = Array.from(keys)[0] as "all" | "modified";
-                setFilter(selectedFilter);
-              }}
-            >
-              <ToggleButton id="all">Style</ToggleButton>
-              <ToggleButton id="modified">
-              modify {modifiedCount > 0 && `(${modifiedCount})`}
-              </ToggleButton>
-            </ToggleButtonGroup>
+      <div className="panel-header">
+        <ToggleButtonGroup
+          indicator
+          aria-label="Style filter"
+          selectionMode="single"
+          selectedKeys={[filter]}
+          onSelectionChange={(keys) => {
+            const selectedFilter = Array.from(keys)[0] as "all" | "modified";
+            setFilter(selectedFilter);
+          }}
+        >
+          <ToggleButton id="all">Style</ToggleButton>
+          <ToggleButton id="modified">
+            modify {modifiedCount > 0 && `(${modifiedCount})`}
+          </ToggleButton>
+        </ToggleButtonGroup>
 
-            {/* Copy/Paste buttons */}
-            <div className="panel-actions">
-              <Button
-                variant="ghost"
-                className="iconButton"
-                onPress={handleCopyStyles}
-                aria-label="Copy styles"
-                isDisabled={
-                  !selectedElement?.style ||
-                  Object.keys(selectedElement.style).length === 0
-                }
-              >
-                <Copy
-                  color={iconProps.color}
-                  size={iconProps.size}
-                  strokeWidth={iconProps.stroke}
-                />
-              </Button>
-              <Button
-                variant="ghost"
-                className="iconButton"
-                onPress={handlePasteStyles}
-                aria-label="Paste styles"
-              >
-                <ClipboardPaste
-                  color={iconProps.color}
-                  size={iconProps.size}
-                  strokeWidth={iconProps.stroke}
-                />
-              </Button>
-            </div>
+        {/* Copy/Paste buttons */}
+        <div className="panel-actions">
+          <Button
+            variant="ghost"
+            className="iconButton"
+            onPress={handleCopyStyles}
+            aria-label="Copy styles"
+            isDisabled={
+              !selectedElement?.style ||
+              Object.keys(selectedElement.style).length === 0
+            }
+          >
+            <Copy
+              color={iconProps.color}
+              size={iconProps.size}
+              strokeWidth={iconProps.stroke}
+            />
+          </Button>
+          <Button
+            variant="ghost"
+            className="iconButton"
+            onPress={handlePasteStyles}
+            aria-label="Paste styles"
+          >
+            <ClipboardPaste
+              color={iconProps.color}
+              size={iconProps.size}
+              strokeWidth={iconProps.stroke}
+            />
+          </Button>
+        </div>
 
-            {/* Focus Mode indicator */}
-            {focusMode && <div className="focus-mode-indicator">Focus Mode</div>}
-          </div>
-      
+        {/* Focus Mode indicator */}
+        {focusMode && <div className="focus-mode-indicator">Focus Mode</div>}
+      </div>
 
       {/* Sections */}
       {/* ⭐ key prop으로 요소 변경 시 섹션 리마운트 (로컬 상태 초기화) */}

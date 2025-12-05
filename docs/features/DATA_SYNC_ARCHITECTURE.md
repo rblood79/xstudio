@@ -15,11 +15,12 @@
 4. [현재 구현 상태 상세 분석](#현재-구현-상태-상세-분석) 🆕
 5. [Builder 루틴 체크 (UX 관점)](#builder-루틴-체크-ux-관점)
 6. [즉시 해결 필요 사항 (Hotfix)](#즉시-해결-필요-사항-hotfix) 🆕
-7. [제안 아키텍처](#제안-아키텍처)
-8. [구현 계획](#구현-계획)
-9. [API 설계](#api-설계)
-10. [파일 구조](#파일-구조)
-11. [마이그레이션 가이드](#마이그레이션-가이드)
+7. [구현 로드맵](#구현-로드맵) 🆕
+8. [제안 아키텍처](#제안-아키텍처)
+9. [구현 계획](#구현-계획)
+10. [API 설계](#api-설계)
+11. [파일 구조](#파일-구조)
+12. [마이그레이션 가이드](#마이그레이션-가이드)
 
 ---
 
@@ -353,13 +354,25 @@ if (dataTableData && dataTableData.length > 0) {
 
 ## 즉시 해결 필요 사항 (Hotfix)
 
+> ⚠️ **주의**: Hotfix는 시스템 관점 설계(Mapper, Schema 버전 관리 등)와 정합성을 유지하도록 설계됨
+
+### 단기 vs 장기 정합성 검토
+
+| 영역 | Hotfix (단기) | 시스템 설계 (장기) | 정합성 |
+|------|--------------|------------------|--------|
+| API→DataTable 저장 | Field Mapping 적용 + 메타데이터 | Mapper 레이어 분리 | ✅ 확장 가능 |
+| 스키마 관리 | Column Detection 유지 | Schema-first + 버전 관리 | ✅ 메타데이터로 대비 |
+| Canvas 동기화 | postMessage 직접 전송 | DataSyncManager 중앙화 | ✅ 확장 가능 |
+| 오류 복구 | Phase 2에서 추가 | 임시 테이블 생성 + 로그 | ✅ 별도 Phase |
+
 ### Hotfix 1: API 결과 → targetDataTable 자동 저장
 
-**우선순위**: 🔴 Critical
+**우선순위**: 🔴 Critical (Phase 1)
 **영향 파일**: `src/builder/stores/utils/dataActions.ts`
+**선행 조건**: Hotfix 2, 3 완료
 
 ```typescript
-// executeApiEndpoint 확장
+// executeApiEndpoint 확장 (Mapper 확장 고려 버전)
 export const createExecuteApiEndpointAction = (set, get) =>
   async (id: string): Promise<unknown> => {
     const endpoint = get().apiEndpoints.get(id);
@@ -367,15 +380,30 @@ export const createExecuteApiEndpointAction = (set, get) =>
 
     // 🆕 targetDataTable이 있으면 자동 저장
     if (endpoint.targetDataTable) {
-      const data = extractDataPath(result, endpoint.responseMapping?.dataPath);
+      // 1. Data Path 추출
+      const rawData = extractDataPath(result, endpoint.responseMapping?.dataPath);
 
-      // runtimeData 업데이트
-      const dataTable = get().dataTables.get(endpoint.targetDataTable);
+      // 2. Field Mapping 적용 (현재 구조 활용, 향후 Mapper 분리 대비)
+      const mappedData = applyFieldMapping(rawData, endpoint.responseMapping?.fieldMapping);
+
+      // 3. 메타데이터 포함 (라인리지 대비)
+      const metadata = {
+        sourceEndpoint: endpoint.id,
+        sourceEndpointName: endpoint.name,
+        lastUpdatedAt: Date.now(),
+        mapperVersion: 1,  // 향후 Mapper 버전 관리 대비
+      };
+
+      // 4. runtimeData 업데이트
+      const dataTable = findDataTableByName(get().dataTables, endpoint.targetDataTable);
       if (dataTable) {
+        const finalData = Array.isArray(mappedData) ? mappedData : [mappedData];
+
         set((state) => ({
           dataTables: new Map(state.dataTables).set(dataTable.id, {
             ...dataTable,
-            runtimeData: Array.isArray(data) ? data : [data],
+            runtimeData: finalData,
+            metadata: { ...dataTable.metadata, ...metadata },  // 메타데이터 병합
           }),
         }));
 
@@ -383,39 +411,71 @@ export const createExecuteApiEndpointAction = (set, get) =>
         window.postMessage({
           type: 'UPDATE_DATA_TABLE_RUNTIME',
           dataTableName: endpoint.targetDataTable,
-          data: Array.isArray(data) ? data : [data],
+          data: finalData,
+          metadata,
         }, '*');
       }
     }
 
     return result;
   };
+
+// Field Mapping 적용 헬퍼 (향후 Mapper로 분리 예정)
+function applyFieldMapping(
+  data: unknown[],
+  fieldMapping?: Record<string, string>
+): Record<string, unknown>[] {
+  if (!fieldMapping || Object.keys(fieldMapping).length === 0) {
+    return data as Record<string, unknown>[];
+  }
+
+  return (data as Record<string, unknown>[]).map(item => {
+    const mapped: Record<string, unknown> = {};
+    for (const [apiField, tableField] of Object.entries(fieldMapping)) {
+      mapped[tableField] = item[apiField];
+    }
+    return mapped;
+  });
+}
+
+// DataTable 이름으로 찾기 헬퍼
+function findDataTableByName(
+  dataTables: Map<string, DataTable>,
+  name: string
+): DataTable | undefined {
+  return Array.from(dataTables.values()).find(dt => dt.name === name);
+}
 ```
 
 ### Hotfix 2: DataTable 생성 시 Canvas 동기화
 
-**우선순위**: 🔴 Critical
+**우선순위**: 🔴 Critical (Phase 0)
 **영향 파일**: `src/builder/stores/utils/dataActions.ts`
+**선행 조건**: 없음 (가장 먼저 구현)
 
 ```typescript
 // createDataTable 확장
 export const createCreateDataTableAction = (set, get) =>
   async (data: CreateDataTableInput): Promise<DataTable> => {
-    // ... 기존 로직
+    // ... 기존 로직 (DB 저장 등)
 
-    // 🆕 Canvas에 동기화
-    const allDataTables = Array.from(get().dataTables.values());
-    window.postMessage({
-      type: 'SYNC_DATA_TABLES',
-      dataTables: allDataTables.map(dt => ({
-        id: dt.id,
-        name: dt.name,
-        schema: dt.schema,
-        mockData: dt.mockData,
-        runtimeData: dt.runtimeData,
-        useMockData: dt.useMockData,
-      })),
-    }, '*');
+    // 🆕 Canvas에 동기화 (iframe이 존재할 때만)
+    const iframe = document.querySelector('iframe[data-canvas]') as HTMLIFrameElement;
+    if (iframe?.contentWindow) {
+      const allDataTables = Array.from(get().dataTables.values());
+      iframe.contentWindow.postMessage({
+        type: 'SYNC_DATA_TABLES',
+        dataTables: allDataTables.map(dt => ({
+          id: dt.id,
+          name: dt.name,
+          schema: dt.schema,
+          mockData: dt.mockData,
+          runtimeData: dt.runtimeData,
+          useMockData: dt.useMockData,
+          metadata: dt.metadata,  // 라인리지 메타데이터 포함
+        })),
+      }, '*');
+    }
 
     return newDataTable;
   };
@@ -423,21 +483,162 @@ export const createCreateDataTableAction = (set, get) =>
 
 ### Hotfix 3: Canvas messageHandler 확장
 
-**우선순위**: 🔴 Critical
+**우선순위**: 🔴 Critical (Phase 0)
 **영향 파일**: `src/canvas/messaging/messageHandler.ts`
+**선행 조건**: 없음 (Hotfix 2와 함께)
 
 ```typescript
 // 새 메시지 타입 처리
 case 'SYNC_DATA_TABLES':
   useRuntimeStore.getState().setDataTables(message.dataTables);
+  console.log('📦 Canvas: DataTables 동기화 완료', message.dataTables.length, '개');
   break;
 
 case 'UPDATE_DATA_TABLE_RUNTIME':
   useRuntimeStore.getState().updateDataTableRuntime(
     message.dataTableName,
-    message.data
+    message.data,
+    message.metadata  // 메타데이터 전달
   );
+  console.log('🔄 Canvas: DataTable 런타임 데이터 업데이트', message.dataTableName);
   break;
+```
+
+### Hotfix 4: runtimeStore 확장 (신규)
+
+**우선순위**: 🔴 Critical (Phase 0)
+**영향 파일**: `src/canvas/store/runtimeStore.ts`
+**선행 조건**: 없음
+
+```typescript
+// runtimeStore에 DataTable 관련 액션 추가
+interface RuntimeStoreActions {
+  // ... 기존 액션
+
+  // 🆕 DataTable 동기화
+  setDataTables: (dataTables: RuntimeDataTable[]) => void;
+  updateDataTableRuntime: (
+    name: string,
+    data: Record<string, unknown>[],
+    metadata?: DataTableMetadata
+  ) => void;
+}
+
+// 구현
+setDataTables: (dataTables) => {
+  set({ dataTables });
+},
+
+updateDataTableRuntime: (name, data, metadata) => {
+  set((state) => ({
+    dataTables: state.dataTables.map(dt =>
+      dt.name === name
+        ? { ...dt, runtimeData: data, metadata: { ...dt.metadata, ...metadata } }
+        : dt
+    ),
+  }));
+},
+```
+
+---
+
+## 구현 로드맵
+
+### 실행 가능성 평가
+
+| 설계 항목 | 실행 가능성 | 선행 조건 | 예상 공수 |
+|-----------|------------|----------|-----------|
+| Canvas 동기화 (Hotfix 2-4) | 🟢 낮은 복잡도 | 없음 | 0.5일 |
+| API→DataTable 저장 (Hotfix 1) | 🟢 낮은 복잡도 | Hotfix 2-4 | 0.5일 |
+| 데이터 라인리지 메타데이터 | 🟢 낮은 복잡도 | Hotfix 1 | 0.5일 |
+| 오류 복구 전략 | 🟡 중간 | Hotfix 1-4 | 1-2일 |
+| Schema 버전 관리 | 🟡 중간 | JSON Schema 라이브러리 | 2-3일 |
+| Base URL Registry | 🟡 중간 | 새 엔티티, UI | 2-3일 |
+| 캐시/동기화 정책 | 🟡 중간 | DataSyncManager | 2-3일 |
+| Mapper 분리 | 🔴 높은 복잡도 | 새 엔티티, 마이그레이션 | 1-2주 |
+| 테스트 하네스 | 🔴 높은 복잡도 | 테스트 인프라 | 1-2주 |
+
+### Phase 구분
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│ Phase 0 (즉시, 0.5일)                                                    │
+│ ─────────────────────                                                    │
+│ ✅ Hotfix 2: createDataTable Canvas 동기화                               │
+│ ✅ Hotfix 3: Canvas messageHandler 확장                                  │
+│ ✅ Hotfix 4: runtimeStore 확장                                           │
+│                                                                          │
+│ 결과: "DataTable을 찾을 수 없습니다" 오류 해결                            │
+└─────────────────────────────────────────────────────────────────────────┘
+                                    ↓
+┌─────────────────────────────────────────────────────────────────────────┐
+│ Phase 1 (0.5일)                                                          │
+│ ─────────────────                                                        │
+│ ✅ Hotfix 1: executeApiEndpoint → targetDataTable 자동 저장              │
+│ ✅ applyFieldMapping 헬퍼 함수                                           │
+│ ✅ 라인리지 메타데이터 (sourceEndpoint, lastUpdatedAt, mapperVersion)    │
+│                                                                          │
+│ 결과: API 호출 → DataTable 자동 저장 워크플로우 완성                      │
+└─────────────────────────────────────────────────────────────────────────┘
+                                    ↓
+┌─────────────────────────────────────────────────────────────────────────┐
+│ Phase 2 (1-2일)                                                          │
+│ ─────────────────                                                        │
+│ □ 오류 복구 전략: 임시 DataTable 생성 + 로그                             │
+│ □ Schema diff UI: 스키마 변경 시 사용자 승인                             │
+│                                                                          │
+│ 결과: 안정적인 오류 처리 + 스키마 변경 관리                               │
+└─────────────────────────────────────────────────────────────────────────┘
+                                    ↓
+┌─────────────────────────────────────────────────────────────────────────┐
+│ Phase 3 (2-3일)                                                          │
+│ ─────────────────                                                        │
+│ □ Base URL Registry 엔티티                                               │
+│ □ ApiEndpoint.baseUrlId 참조 방식                                        │
+│ □ Registry 선택 UI                                                       │
+│                                                                          │
+│ 결과: 환경별 Base URL 관리                                               │
+└─────────────────────────────────────────────────────────────────────────┘
+                                    ↓
+┌─────────────────────────────────────────────────────────────────────────┐
+│ Phase 4 (2-3일)                                                          │
+│ ─────────────────                                                        │
+│ □ DataSyncManager 구현                                                   │
+│ □ refreshMode (manual/onMount/interval)                                  │
+│ □ cacheTTL, forceReload 플래그                                           │
+│                                                                          │
+│ 결과: 선언적 데이터 갱신 정책                                             │
+└─────────────────────────────────────────────────────────────────────────┘
+                                    ↓
+┌─────────────────────────────────────────────────────────────────────────┐
+│ Phase 5 (장기, 1-2주)                                                    │
+│ ─────────────────────                                                    │
+│ □ Mapper 엔티티 분리                                                     │
+│ □ 순수 함수 기반 변환                                                    │
+│ □ Mapper 버전 관리 + 마이그레이션                                        │
+│ □ 테스트 하네스 (샘플 응답 → 검증 리포트)                                │
+│                                                                          │
+│ 결과: 완전한 데이터 파이프라인 분리                                       │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+### Phase 간 의존성
+
+```
+Phase 0 ──────────────────────────────────────────────────────────────┐
+    │                                                                  │
+    ▼                                                                  │
+Phase 1 ───────────────────────────────────────┐                      │
+    │                                          │                      │
+    ▼                                          ▼                      ▼
+Phase 2                                    Phase 3              (병렬 가능)
+    │                                          │
+    └──────────────┬───────────────────────────┘
+                   ▼
+               Phase 4
+                   │
+                   ▼
+               Phase 5
 ```
 
 ---
@@ -509,6 +710,24 @@ case 'UPDATE_DATA_TABLE_RUNTIME':
 4) 이벤트·동기화 라우팅
 - apiCall 성공 시 `saveToDataTable`로 runtimeData 갱신 → 같은 DataTable을 쓰는 컴포넌트에 syncComponent 브로드캐스트.
 - loadDataset/syncComponent 액션으로 특정 컴포넌트, DataTable, Dataset 단위로 리로드를 지시.
+
+### 시스템 관점 대안/보강 설계 아이디어
+- **Schema-first 파이프라인**: Response → JSON Schema 추출 → DataTable 스키마 생성 → 컬럼/타입 고정. 스키마와 데이터는 버전을 분리해 스키마 변동 시 diff를 사용자에게 표시하고 승인 후 적용.
+- **Mapper 레이어 분리**: API 응답을 DataTable에 적재하는 Mapper를 별도 엔티티로 두고, Mapper를 바꾸더라도 DataTable 소비자는 영향 최소화. Mapper는 결과 미리보기 + 단위 테스트(샘플 응답 기반) 지원.
+- **Dataset Template & Mock**: Base URL+Endpoint 조합으로 Dataset Template을 만들고, 스키마가 확정되면 mockData를 자동 생성(예: 5행 샘플). 컴포넌트는 mockData로 빠른 프리뷰, runtimeData는 실행 시 주입.
+- **에러/회복 모드**: DataTable 없을 때 “임시 테이블 생성 후 바인딩 유지”를 기본 전략으로, 실패 원인(미생성/삭제/권한)과 조치 로그를 함께 노출. Mapper 오류는 해당 변환만 건너뛰고 원본 응답을 로그에 보존.
+- **Base URL Registry + Policy**: Base URL을 팀/환경별로 그룹화하고, Endpoint는 Registry 참조만 허용해 오타/권한 이슈를 줄임. 동일 Endpoint라도 Base 전환을 정책 기반으로 제한(예: prod 호출은 승인 필요).
+- **데이터 라인리지**: DataTable에 lastUpdatedAt, sourceEndpoint, mapperVersion을 메타데이터로 저장. 컴포넌트는 이를 표시해 “어느 API/버전 결과인지” 투명하게 알 수 있게 함.
+- **테스트 하네스**: API/Mapper/Binding을 한 번에 검증하는 “Dataset test run”을 제공. 샘플 응답 주입 → Mapper 변환 → DataTable 스키마 적합성 검사 → 컴포넌트 바인딩 필드 존재 여부 확인까지 자동 리포트.
+- **캐싱/동기화 정책 분리**: DataTable 캐싱 정책(Time-To-Live, mergeMode)을 설정하고, syncComponent는 캐시 무시 여부를 플래그로 전달(`forceReload`). interval 모드와 캐시를 조합해 불필요한 호출을 줄임.
+
+### 시스템 관점 최적 설계(실행안)
+- **스키마 관리**: JSON Schema 기반 `schemaVersion`을 도입하고, Mapper는 `mapperVersion`을 갖는다. DataTable 메타데이터에 `schemaVersion/mapperVersion/sourceEndpoint/lastUpdatedAt`을 저장해 라인리지를 추적한다.
+- **Mapper 계약**: Mapper는 `(response) => rows` 순수 함수로 정의하고, 샘플 응답 테스트를 통과해야만 배포된다. Mapper 변경 시 diff 요약(추가/삭제 컬럼)과 안전한 마이그레이션 옵션(자동 컬럼 추가, 삭제는 보류)을 제공한다.
+- **Base URL 레지스트리**: Base URL은 환경/팀 단위로 관리되고 Endpoint는 레지스트리 참조만 허용한다. 프로덕션 Base는 승인된 액션에서만 호출하도록 정책화하고, 동일 Endpoint라도 Base 전환은 정책에 따라 제한/승인 흐름을 둔다.
+- **캐시/동기화 정책**: DataTable 단위로 `cacheTTL`, `mergeMode(replace|append|prepend)`, `forceReload` 플래그를 설정한다. interval 갱신은 캐시 만료와 조합해 불필요 호출을 줄이고, syncComponent는 `forceReload`를 옵션으로 받아 캐시를 무시할 수 있다.
+- **복구 전략**: DataTable 누락/삭제 시 Data Path 재추론 → 임시 테이블 생성 → 바인딩 유지. Mapper 실패 시 원본 응답을 로그에 남기고 변환만 스킵, 사용자는 “원본 유지/임시 스키마 생성/재시도”를 선택한다.
+- **테스트 하네스**: “Dataset test run”에서 샘플 응답을 주입하여 Mapper → DataTable 스키마 검증 → 바인딩 필드 존재 여부까지 자동 리포트한다. 실패 원인은 UI에 바로 표시해 편집-재테스트 루프를 빠르게 한다.
 
 ### 핵심 개념
 

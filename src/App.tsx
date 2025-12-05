@@ -29,7 +29,7 @@ function App() {
 
   // 이펙트 순환 핸들러 (sand → curl → matrix → sand)
   const handleEffectCycle = useCallback(() => {
-    setEffectType((current) => {
+    setEffectType((current: "sand" | "curl" | "matrix") => {
       if (current === "sand") return "curl";
       if (current === "curl") return "matrix";
       return "sand";
@@ -46,7 +46,10 @@ function App() {
 
   // 테마 변경 시 document에 적용
   useEffect(() => {
-    document.documentElement.setAttribute("data-theme", isDarkMode ? "dark" : "light");
+    document.documentElement.setAttribute(
+      "data-theme",
+      isDarkMode ? "dark" : "light"
+    );
     localStorage.setItem("theme", isDarkMode ? "dark" : "light");
   }, [isDarkMode]);
 
