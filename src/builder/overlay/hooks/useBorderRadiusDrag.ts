@@ -10,7 +10,7 @@
  * - 드래그 오버레이로 iframe 이벤트 캡처 문제 해결
  */
 
-import { useCallback } from 'react';
+import { useCallback, useEffect } from 'react';
 import { useInspectorState } from '../../inspector/hooks/useInspectorState';
 import { MessageService } from '../../../utils/messaging';
 import { useStore } from '../../stores';
@@ -175,6 +175,46 @@ function createStyleProps(radius: number, corner: CornerPosition, shiftKey: bool
   }
 }
 
+/**
+ * 드래그 강제 취소 (blur, ESC 등)
+ */
+function cancelDrag() {
+  if (!isDragging) return;
+
+  document.removeEventListener('mousemove', handleMouseMove);
+  document.removeEventListener('mouseup', handleMouseUp);
+  document.removeEventListener('keydown', handleKeyDown);
+  window.removeEventListener('blur', handleWindowBlur);
+
+  // 원래 값으로 복원
+  const selectedElementId = useStore.getState().selectedElementId;
+  if (selectedElementId && activeCorner) {
+    const styleProps = createStyleProps(initialRadius, activeCorner, false);
+    sendStyleToCanvas(selectedElementId, styleProps);
+  }
+
+  resetDragState();
+}
+
+/**
+ * ESC 키 핸들러
+ */
+function handleKeyDown(e: KeyboardEvent) {
+  if (e.key === 'Escape' && isDragging) {
+    e.preventDefault();
+    cancelDrag();
+  }
+}
+
+/**
+ * 윈도우 블러 핸들러 (포커스 손실 시 드래그 취소)
+ */
+function handleWindowBlur() {
+  if (isDragging) {
+    cancelDrag();
+  }
+}
+
 // ⚡ Module-level 이벤트 핸들러 (항상 같은 참조)
 function handleMouseMove(e: MouseEvent) {
   if (!isDragging || !activeCorner) return;
@@ -209,9 +249,11 @@ function handleMouseMove(e: MouseEvent) {
 function handleMouseUp(e: MouseEvent) {
   if (!isDragging || !activeCorner) return;
 
-  // ⚡ 즉시 이벤트 리스너 제거
+  // ⚡ 즉시 모든 이벤트 리스너 제거
   document.removeEventListener('mousemove', handleMouseMove);
   document.removeEventListener('mouseup', handleMouseUp);
+  document.removeEventListener('keydown', handleKeyDown);
+  window.removeEventListener('blur', handleWindowBlur);
 
   // 값 저장 후 상태 초기화
   const corner = activeCorner;
@@ -252,6 +294,19 @@ export function useBorderRadiusDrag(
 ) {
   const { onDragStart } = options;
 
+  // ⚡ 컴포넌트 언마운트 시 정리
+  useEffect(() => {
+    return () => {
+      if (isDragging) {
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+        document.removeEventListener('keydown', handleKeyDown);
+        window.removeEventListener('blur', handleWindowBlur);
+        resetDragState();
+      }
+    };
+  }, []);
+
   const handleDragStart = useCallback(
     (corner: CornerPosition, e: React.MouseEvent) => {
       e.preventDefault();
@@ -263,6 +318,8 @@ export function useBorderRadiusDrag(
       if (isDragging) {
         document.removeEventListener('mousemove', handleMouseMove);
         document.removeEventListener('mouseup', handleMouseUp);
+        document.removeEventListener('keydown', handleKeyDown);
+        window.removeEventListener('blur', handleWindowBlur);
         resetDragState();
       }
 
@@ -280,9 +337,11 @@ export function useBorderRadiusDrag(
 
       onDragStart?.();
 
-      // 이벤트 리스너 등록
+      // 모든 이벤트 리스너 등록
       document.addEventListener('mousemove', handleMouseMove);
       document.addEventListener('mouseup', handleMouseUp);
+      document.addEventListener('keydown', handleKeyDown);
+      window.addEventListener('blur', handleWindowBlur);
     },
     [rect, currentBorderRadius, onDragStart]
   );
