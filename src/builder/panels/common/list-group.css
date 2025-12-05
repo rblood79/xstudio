@@ -26,7 +26,6 @@
   }
 }
 
-
 /* Grid Layout Modifier */
 .list-group--grid {
   display: grid;
@@ -39,9 +38,10 @@
    ============================================ */
 
 .list-item {
+  width: 100%;
   position: relative;
   display: flex;
-  flex:1;
+  flex: 1;
   flex-direction: column;
   align-items: center;
   gap: var(--spacing-sm);
@@ -71,7 +71,8 @@
 }
 
 /* Focus */
-.list-item:focus, .list-item:focus-visible {
+.list-item:focus,
+.list-item:focus-visible {
   outline: 2px solid var(--focus-ring-color);
   outline-offset: -2px;
 }

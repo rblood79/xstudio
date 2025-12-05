@@ -1,7 +1,8 @@
 # Data Sync Architecture
 
-> **Status**: 📋 Planning Phase
+> **Status**: 📋 Planning Phase → 🔍 Analysis Complete
 > **Created**: 2025-12-05
+> **Updated**: 2025-12-06 (현재 구현 상태 분석 추가)
 > **Related**: [DATA_PANEL_SYSTEM.md](DATA_PANEL_SYSTEM.md), [useAsyncList](https://react-spectrum.adobe.com/react-stately/useAsyncList.html)
 
 ---
@@ -11,11 +12,14 @@
 1. [Overview](#overview)
 2. [현재 아키텍처 분석](#현재-아키텍처-분석)
 3. [문제점 및 요구사항](#문제점-및-요구사항)
-4. [제안 아키텍처](#제안-아키텍처)
-5. [구현 계획](#구현-계획)
-6. [API 설계](#api-설계)
-7. [파일 구조](#파일-구조)
-8. [마이그레이션 가이드](#마이그레이션-가이드)
+4. [현재 구현 상태 상세 분석](#현재-구현-상태-상세-분석) 🆕
+5. [Builder 루틴 체크 (UX 관점)](#builder-루틴-체크-ux-관점)
+6. [즉시 해결 필요 사항 (Hotfix)](#즉시-해결-필요-사항-hotfix) 🆕
+7. [제안 아키텍처](#제안-아키텍처)
+8. [구현 계획](#구현-계획)
+9. [API 설계](#api-설계)
+10. [파일 구조](#파일-구조)
+11. [마이그레이션 가이드](#마이그레이션-가이드)
 
 ---
 
@@ -193,6 +197,251 @@ interface PropertyDataBinding {
 
 ---
 
+## 현재 구현 상태 상세 분석
+
+> **분석일**: 2025-12-06
+> **분석 대상**: Pokemon API (`https://pokeapi.co/api/v2/pokemon`) 워크플로우
+
+### 워크플로우별 현재 상태
+
+#### 1. API 호출 → DataTable 저장 워크플로우
+
+```
+기대 워크플로우 (자동):
+Dataset Panel > API 추가 > Response 설정 > Target DataTable 지정 > 자동 저장
+
+현재 워크플로우 (수동):
+Dataset Panel > API 추가 > Test 실행 > Success > Column 선택 > "Import to DataTable" 버튼 클릭
+```
+
+| 단계 | 현재 상태 | 코드 위치 | 문제점 |
+|------|----------|-----------|--------|
+| API 호출 | ✅ 성공 | `executeApiEndpoint()` | - |
+| Response → Data Path | ✅ 가능 | `responseMapping.dataPath` | - |
+| Target DataTable 필드 | ⚠️ UI만 있음 | `ApiEndpointEditor.tsx:594-602` | 저장 로직 미구현 |
+| Field Mapping | ⚠️ 수동만 가능 | `FieldMappingEditor` | 자동 매핑 없음 |
+| DataTable 생성 | ⚠️ Test 탭 수동 | `handleImport()` :200-248 | 자동화 없음 |
+
+**핵심 문제**: `targetDataTable` 필드는 Response 탭에 존재하지만, `executeApiEndpoint()`가 결과를 해당 DataTable에 저장하는 로직이 **없음**.
+
+#### 2. Component 데이터 바인딩 워크플로우
+
+```
+기대 워크플로우:
+Component 선택 > Data Binding > DataTable 선택 > 필드 자동 생성
+
+현재 워크플로우:
+Component 선택 > Data Binding > DataTable 선택 > (수동으로 Field 추가 필요)
+```
+
+| 단계 | 현재 상태 | 코드 위치 | 문제점 |
+|------|----------|-----------|--------|
+| DataTable 선택 | ✅ 가능 | `PropertyDataBinding.tsx` | - |
+| 스키마 조회 | ✅ 가능 | `useCollectionData.ts:336-341` | `schema` 반환됨 |
+| Field 자동 생성 | ❌ 미구현 | - | 수동 추가 필요 |
+
+**핵심 문제**: `useCollectionData`가 `schema`를 반환하지만, 이를 기반으로 Field 컴포넌트를 자동 생성하는 로직이 **없음**.
+
+### 오류 분석: "DataTable을 찾을 수 없습니다"
+
+**발생 위치**: `useCollectionData.ts:343`
+
+```typescript
+const table = dataTables.find(dt => dt.name === binding.name);
+if (!table) {
+  console.warn(`⚠️ ${componentName}: DataTable '${binding.name}'을 찾을 수 없습니다`);
+}
+```
+
+**원인 분석**:
+
+| 원인 | 설명 | 발생 조건 |
+|------|------|----------|
+| **Canvas 동기화 지연** | Builder에서 DataTable 생성 후 Canvas에 전파 안됨 | DataTable 생성 직후 Preview 확인 시 |
+| **postMessage 누락** | `createDataTable` 시 Canvas로 메시지 미전송 | 항상 |
+| **이름 불일치** | API Import 테이블명 ≠ PropertyDataBinding 선택 이름 | 수동 입력 오류 |
+| **Store 미초기화** | Canvas `runtimeStore.dataTables`가 빈 배열 | 페이지 새로고침 후 |
+
+**현재 동기화 흐름**:
+```
+Builder Store (useDataStore)
+├─ dataTables: Map<string, DataTable>  ← 여기에 저장됨
+│
+│   ❌ postMessage 없음!
+│
+Canvas Runtime Store (runtimeStore)
+├─ dataTables: RuntimeDataTable[]      ← 비어있음
+```
+
+### 코드 레벨 분석
+
+#### ApiEndpointEditor.tsx - 핵심 함수
+
+```typescript
+// :141-189 - handleTest: API 호출 + Column Detection
+const handleTest = useCallback(async () => {
+  const result = await executeApiEndpoint(endpoint.id);
+  setTestResult({ success: true, data: result });
+
+  // Column 자동 감지
+  const columns = detectColumns(dataToAnalyze);
+  setDetectedColumns(columns);
+  // ⚠️ 여기서 끝남. targetDataTable에 저장하지 않음!
+}, [...]);
+
+// :200-248 - handleImport: 수동 DataTable 생성
+const handleImport = useCallback(async (columns, tableName) => {
+  const schema = columnsToSchema(columns);
+  const mockData = extractSelectedData(dataToImport, selectedKeys);
+
+  await createDataTable({
+    name: tableName,
+    schema,
+    mockData,
+    useMockData: false,  // API 데이터이므로 false
+  });
+  // ⚠️ "Import to DataTable" 버튼 클릭 시에만 실행됨
+}, [...]);
+```
+
+#### useCollectionData.ts - 데이터 소스 우선순위
+
+```typescript
+// :514-529 - 데이터 소스 우선순위
+if (dataTableData && dataTableData.length > 0) {
+  sourceData = dataTableData;  // 1순위: DataTable (동기)
+} else if (apiEndpointData && apiEndpointData.length > 0) {
+  sourceData = apiEndpointData;  // 2순위: API Endpoint (비동기)
+} else if (datasetId && datasetState) {
+  sourceData = datasetState.data;  // 3순위: Dataset
+} else {
+  sourceData = list.items;  // 4순위: AsyncList
+}
+```
+
+---
+
+## Builder 루틴 체크 (UX 관점)
+
+### 1) Dataset > API 추가 → Response → DataTable 매핑 (자동화)
+- Base URL 저장 후 Endpoint 경로만 교체할 수 있도록 API 모델을 분리합니다. (예: Base `https://pokeapi.co/api/v2`, Endpoint `/pokemon`)
+- API 테스트 성공 시 Response에서 Data Path를 지정하면 Target DataTable이 자동 생성/선택되고 스키마 필드가 추출됩니다.
+  - 데이터 타입 추론 + Field Mapping 자동 생성 (데이터가 배열이면 첫 요소를 기준으로 컬럼 자동 감지)
+  - 기존 DataTable과 이름이 충돌하면 `api_<endpoint>` 같은 규칙으로 신규 생성
+- 매핑 완료 후 `saveToDataTable`까지 한 번에 설정되어 재호출 시 바로 DataTable을 갱신합니다.
+
+### 2) 컴포넌트(ListBox 등) 데이터 바인딩 자동 필드 생성
+- DataTable에 스키마/컬럼이 존재하면 컬렉션 컴포넌트에서 dataBinding 설정 시 컬럼 옵션을 자동 노출합니다.
+- 새로 생성된 DataTable이라도 API 응답 기반 스키마가 저장되면 즉시 바인딩 필드가 채워집니다. (mockData 없이도 컬럼 감지)
+
+### 3) 오류: "DataTable을 찾을 수 없습니다" 방지
+- DataPath까지 설정했는데 DataTable 미생성/삭제로 오류가 나는 경우 자동 복구 루틴을 둡니다.
+  - DataPath로부터 재추론해 임시 DataTable을 생성하고 컬럼을 다시 매핑
+  - 동일 이름의 DataTable이 존재하지만 runtimeData만 없는 경우 스키마는 유지하되 mockData/runtimeData를 빈 배열로 초기화
+  - 예외 발생 시에도 builder 패널에서 원인(미생성/삭제/권한)과 자동 조치 로그를 바로 표시
+
+### 4) Base URL 유지 + Endpoint 교체 흐름
+- Dataset API 편집 UI에 Base URL과 Endpoint를 분리해 관리하며, Endpoint만 바꿔도 기존 DataTable 매핑을 재사용합니다.
+- Response Data Path가 동일하면 스키마 재생성 없이 runtimeData만 교체하고, 달라지면 새 스키마 후보를 diff로 제안하여 선택적으로 갱신합니다.
+
+### 5) Base URL이 여러 개인 경우
+- API 엔드포인트를 Base URL 그룹 단위로 관리하고, DataTable 매핑은 `(baseGroup, endpoint)` 키로 보존합니다.
+- 동일한 DataTable을 여러 Base URL이 공유할 수 있도록 `targetDataTable`을 분리 저장하고, 충돌 시 별도 DataTable로 분기할 수 있는 옵션을 제공합니다. (예: `pokemon_default`, `pokemon_alt1`)
+- 이벤트 액션에서 Base URL 그룹을 선택할 수 있게 해 동일 Endpoint라도 다른 Base를 호출하는 시나리오를 대비합니다.
+
+---
+
+## 즉시 해결 필요 사항 (Hotfix)
+
+### Hotfix 1: API 결과 → targetDataTable 자동 저장
+
+**우선순위**: 🔴 Critical
+**영향 파일**: `src/builder/stores/utils/dataActions.ts`
+
+```typescript
+// executeApiEndpoint 확장
+export const createExecuteApiEndpointAction = (set, get) =>
+  async (id: string): Promise<unknown> => {
+    const endpoint = get().apiEndpoints.get(id);
+    const result = await fetchApi(endpoint);
+
+    // 🆕 targetDataTable이 있으면 자동 저장
+    if (endpoint.targetDataTable) {
+      const data = extractDataPath(result, endpoint.responseMapping?.dataPath);
+
+      // runtimeData 업데이트
+      const dataTable = get().dataTables.get(endpoint.targetDataTable);
+      if (dataTable) {
+        set((state) => ({
+          dataTables: new Map(state.dataTables).set(dataTable.id, {
+            ...dataTable,
+            runtimeData: Array.isArray(data) ? data : [data],
+          }),
+        }));
+
+        // Canvas에 동기화
+        window.postMessage({
+          type: 'UPDATE_DATA_TABLE_RUNTIME',
+          dataTableName: endpoint.targetDataTable,
+          data: Array.isArray(data) ? data : [data],
+        }, '*');
+      }
+    }
+
+    return result;
+  };
+```
+
+### Hotfix 2: DataTable 생성 시 Canvas 동기화
+
+**우선순위**: 🔴 Critical
+**영향 파일**: `src/builder/stores/utils/dataActions.ts`
+
+```typescript
+// createDataTable 확장
+export const createCreateDataTableAction = (set, get) =>
+  async (data: CreateDataTableInput): Promise<DataTable> => {
+    // ... 기존 로직
+
+    // 🆕 Canvas에 동기화
+    const allDataTables = Array.from(get().dataTables.values());
+    window.postMessage({
+      type: 'SYNC_DATA_TABLES',
+      dataTables: allDataTables.map(dt => ({
+        id: dt.id,
+        name: dt.name,
+        schema: dt.schema,
+        mockData: dt.mockData,
+        runtimeData: dt.runtimeData,
+        useMockData: dt.useMockData,
+      })),
+    }, '*');
+
+    return newDataTable;
+  };
+```
+
+### Hotfix 3: Canvas messageHandler 확장
+
+**우선순위**: 🔴 Critical
+**영향 파일**: `src/canvas/messaging/messageHandler.ts`
+
+```typescript
+// 새 메시지 타입 처리
+case 'SYNC_DATA_TABLES':
+  useRuntimeStore.getState().setDataTables(message.dataTables);
+  break;
+
+case 'UPDATE_DATA_TABLE_RUNTIME':
+  useRuntimeStore.getState().updateDataTableRuntime(
+    message.dataTableName,
+    message.data
+  );
+  break;
+```
+
+---
+
 ## 제안 아키텍처
 
 ### 통합 데이터 Sync 아키텍처
@@ -241,6 +490,25 @@ interface PropertyDataBinding {
 │                                                                       │
 └──────────────────────────────────────────────────────────────────────┘
 ```
+
+### Builder 플로우 반영 (API → DataTable → 컴포넌트)
+
+1) DatasetPanel에서 API 등록
+- Base URL과 Endpoint를 분리 저장하여 Base는 고정, Endpoint만 교체 가능.
+- API 테스트 성공 시 Response Data Path 선택 → Target DataTable 자동 생성/선택 + 필드 매핑 자동 추출(배열이면 첫 요소 기준).
+- 동일 이름 충돌 시 규칙적 네이밍(`api_<endpoint>`)으로 신규 생성, runtimeData는 빈 배열로 초기화.
+
+2) 다중 Base URL 대비
+- Base URL 그룹을 관리하고 `(baseGroup, endpoint)`로 매핑을 보관.
+- 동일 Endpoint라도 다른 Base로 호출 가능하며, DataTable을 공유하거나 분기(`pokemon_default`, `pokemon_alt1`)할 옵션 제공.
+
+3) 컴포넌트 데이터 바인딩
+- DataTable 스키마를 즉시 반영해 ListBox 등 컬렉션 컴포넌트의 데이터 바인딩 필드 옵션을 자동 노출.
+- DataTable이 삭제/누락되면 Data Path로 재추론해 임시 DataTable 생성 후 바인딩 유지(사용자에게 자동 조치 로그 표시).
+
+4) 이벤트·동기화 라우팅
+- apiCall 성공 시 `saveToDataTable`로 runtimeData 갱신 → 같은 DataTable을 쓰는 컴포넌트에 syncComponent 브로드캐스트.
+- loadDataset/syncComponent 액션으로 특정 컴포넌트, DataTable, Dataset 단위로 리로드를 지시.
 
 ### 핵심 개념
 
