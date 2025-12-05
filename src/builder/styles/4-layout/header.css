@@ -115,6 +115,7 @@
         }
 
         &[data-selected] {
+          box-shadow: var(--shadow-sm);
           background: transparent;
           border-color: transparent;
           color: var(--surface);
