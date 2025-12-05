@@ -42,13 +42,12 @@
       .react-aria-ToggleButton .react-aria-SelectionIndicator {
         position: absolute;
         inset: 0;
-        z-index: 0;
+        z-index: -1;
         border-radius: var(--border-radius);
         background: var(--primary);
         box-shadow: var(--shadow-sm);
         pointer-events: none;
-        transition:
-          translate 200ms cubic-bezier(0.16, 1, 0.3, 1),
+        transition: translate 200ms cubic-bezier(0.16, 1, 0.3, 1),
           width 200ms cubic-bezier(0.16, 1, 0.3, 1),
           height 200ms cubic-bezier(0.16, 1, 0.3, 1);
 
@@ -58,27 +57,37 @@
       }
 
       /* Primary variant indicator */
-      &[data-togglebutton-variant="primary"] .react-aria-ToggleButton .react-aria-SelectionIndicator {
+      &[data-togglebutton-variant="primary"]
+        .react-aria-ToggleButton
+        .react-aria-SelectionIndicator {
         background: var(--primary);
       }
 
       /* Secondary variant indicator */
-      &[data-togglebutton-variant="secondary"] .react-aria-ToggleButton .react-aria-SelectionIndicator {
+      &[data-togglebutton-variant="secondary"]
+        .react-aria-ToggleButton
+        .react-aria-SelectionIndicator {
         background: var(--secondary);
       }
 
       /* Tertiary variant indicator */
-      &[data-togglebutton-variant="tertiary"] .react-aria-ToggleButton .react-aria-SelectionIndicator {
+      &[data-togglebutton-variant="tertiary"]
+        .react-aria-ToggleButton
+        .react-aria-SelectionIndicator {
         background: var(--tertiary);
       }
 
       /* Error variant indicator */
-      &[data-togglebutton-variant="error"] .react-aria-ToggleButton .react-aria-SelectionIndicator {
+      &[data-togglebutton-variant="error"]
+        .react-aria-ToggleButton
+        .react-aria-SelectionIndicator {
         background: var(--error);
       }
 
       /* Surface variant indicator */
-      &[data-togglebutton-variant="surface"] .react-aria-ToggleButton .react-aria-SelectionIndicator {
+      &[data-togglebutton-variant="surface"]
+        .react-aria-ToggleButton
+        .react-aria-SelectionIndicator {
         background: var(--surface-container-highest);
       }
 
@@ -107,27 +116,32 @@
       }
 
       /* Primary variant - selected button text */
-      &[data-togglebutton-variant="primary"] .react-aria-ToggleButton[data-selected] {
+      &[data-togglebutton-variant="primary"]
+        .react-aria-ToggleButton[data-selected] {
         color: var(--on-primary);
       }
 
       /* Secondary variant - selected button text */
-      &[data-togglebutton-variant="secondary"] .react-aria-ToggleButton[data-selected] {
+      &[data-togglebutton-variant="secondary"]
+        .react-aria-ToggleButton[data-selected] {
         color: var(--on-secondary);
       }
 
       /* Tertiary variant - selected button text */
-      &[data-togglebutton-variant="tertiary"] .react-aria-ToggleButton[data-selected] {
+      &[data-togglebutton-variant="tertiary"]
+        .react-aria-ToggleButton[data-selected] {
         color: var(--on-tertiary);
       }
 
       /* Error variant - selected button text */
-      &[data-togglebutton-variant="error"] .react-aria-ToggleButton[data-selected] {
+      &[data-togglebutton-variant="error"]
+        .react-aria-ToggleButton[data-selected] {
         color: var(--on-error);
       }
 
       /* Surface variant - selected button text */
-      &[data-togglebutton-variant="surface"] .react-aria-ToggleButton[data-selected] {
+      &[data-togglebutton-variant="surface"]
+        .react-aria-ToggleButton[data-selected] {
         color: var(--on-surface);
       }
     }

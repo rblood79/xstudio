@@ -6,7 +6,10 @@ import {
   composeRenderProps,
 } from "react-aria-components";
 import { tv } from "tailwind-variants";
-import type { DataBinding, ColumnMapping } from "../../types/builder/unified.types";
+import type {
+  DataBinding,
+  ColumnMapping,
+} from "../../types/builder/unified.types";
 import type { DataBindingValue } from "../../builder/panels/common/PropertyDataBinding";
 import type {
   ComponentSizeSubset,
