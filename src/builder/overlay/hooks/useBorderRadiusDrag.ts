@@ -4,11 +4,13 @@
  * Adobe XD 스타일의 코너 포인트 드래그로 border-radius 조절
  *
  * 성능 최적화:
+ * - Module-level 상태로 확실한 드래그 제어
  * - 드래그 중: Canvas에 직접 postMessage (즉시 렌더링)
  * - 드래그 종료: Inspector state 업데이트 (store 저장)
+ * - 드래그 오버레이로 iframe 이벤트 캡처 문제 해결
  */
 
-import { useCallback, useRef, useEffect, useState } from "react";
+import { useCallback, useEffect } from "react";
 import { useInspectorState } from "../../inspector/hooks/useInspectorState";
 import { MessageService } from "../../../utils/messaging";
 import { useStore } from "../../stores";
@@ -19,15 +21,16 @@ export type CornerPosition =
   | "bottomLeft"
   | "bottomRight";
 
-interface DragState {
-  isDragging: boolean;
-  corner: CornerPosition | null;
-  initialRadius: number;
-  initialMouseX: number;
-  initialMouseY: number;
-  maxRadius: number;
-  lastRadius: number; // 마지막으로 적용된 radius (중복 업데이트 방지)
-}
+// ⚡ Module-level 드래그 상태 (React 외부에서 확실한 제어)
+let isDragging = false;
+let activeCorner: CornerPosition | null = null;
+let initialRadius = 0;
+let initialMouseX = 0;
+let initialMouseY = 0;
+let maxRadius = 0;
+let lastRadius = -1;
+let rafId: number | null = null;
+let dragOverlay: HTMLDivElement | null = null;
 
 interface UseBorderRadiusDragOptions {
   onDragStart?: () => void;
@@ -105,157 +108,224 @@ function sendStyleToCanvas(
   }
 }
 
+/**
+ * 코너별 커서 스타일
+ */
+function getCornerCursor(corner: CornerPosition): string {
+  switch (corner) {
+    case "topLeft":
+    case "bottomRight":
+      return "nwse-resize";
+    case "topRight":
+    case "bottomLeft":
+      return "nesw-resize";
+    default:
+      return "nwse-resize";
+  }
+}
+
+/**
+ * 드래그 오버레이 생성 (iframe 위에서 이벤트 캡처)
+ */
+function createDragOverlay(): void {
+  if (dragOverlay) return;
+
+  const cursor = activeCorner ? getCornerCursor(activeCorner) : "nwse-resize";
+
+  dragOverlay = document.createElement("div");
+  dragOverlay.style.cssText = `
+    position: fixed;
+    inset: 0;
+    z-index: 99999;
+    cursor: ${cursor};
+  `;
+  document.body.appendChild(dragOverlay);
+}
+
+/**
+ * 드래그 오버레이 제거
+ */
+function removeDragOverlay(): void {
+  if (dragOverlay) {
+    dragOverlay.remove();
+    dragOverlay = null;
+  }
+}
+
+/**
+ * 드래그 상태 초기화
+ */
+function resetDragState() {
+  isDragging = false;
+  activeCorner = null;
+  initialRadius = 0;
+  initialMouseX = 0;
+  initialMouseY = 0;
+  maxRadius = 0;
+  lastRadius = -1;
+
+  if (rafId !== null) {
+    cancelAnimationFrame(rafId);
+    rafId = null;
+  }
+
+  removeDragOverlay();
+}
+
+/**
+ * 스타일 객체 생성
+ */
+function createStyleProps(
+  radius: number,
+  corner: CornerPosition,
+  shiftKey: boolean
+): Record<string, string> {
+  if (shiftKey) {
+    return {
+      borderTopLeftRadius: `${radius}px`,
+      borderTopRightRadius: `${radius}px`,
+      borderBottomLeftRadius: `${radius}px`,
+      borderBottomRightRadius: `${radius}px`,
+      borderRadius: `${radius}px`,
+    };
+  } else {
+    const property = cornerPropertyMap[corner];
+    return { [property]: `${radius}px` };
+  }
+}
+
+/**
+ * 드래그 강제 취소 (blur, ESC 등)
+ */
+function cancelDrag() {
+  if (!isDragging) return;
+
+  document.removeEventListener("mousemove", handleMouseMove);
+  document.removeEventListener("mouseup", handleMouseUp);
+  document.removeEventListener("keydown", handleKeyDown);
+  window.removeEventListener("blur", handleWindowBlur);
+
+  // 원래 값으로 복원
+  const selectedElementId = useStore.getState().selectedElementId;
+  if (selectedElementId && activeCorner) {
+    const styleProps = createStyleProps(initialRadius, activeCorner, false);
+    sendStyleToCanvas(selectedElementId, styleProps);
+  }
+
+  resetDragState();
+}
+
+/**
+ * ESC 키 핸들러
+ */
+function handleKeyDown(e: KeyboardEvent) {
+  if (e.key === "Escape" && isDragging) {
+    e.preventDefault();
+    cancelDrag();
+  }
+}
+
+/**
+ * 윈도우 블러 핸들러 (포커스 손실 시 드래그 취소)
+ */
+function handleWindowBlur() {
+  if (isDragging) {
+    cancelDrag();
+  }
+}
+
+// ⚡ Module-level 이벤트 핸들러 (항상 같은 참조)
+function handleMouseMove(e: MouseEvent) {
+  if (!isDragging || !activeCorner) return;
+
+  const deltaX = e.clientX - initialMouseX;
+  const deltaY = e.clientY - initialMouseY;
+  const diagonalDistance = calculateDiagonalDistance(
+    activeCorner,
+    deltaX,
+    deltaY
+  );
+
+  let newRadius = Math.round(initialRadius + diagonalDistance);
+  newRadius = Math.max(0, Math.min(maxRadius, newRadius));
+
+  // 같은 값이면 스킵
+  if (newRadius === lastRadius) return;
+  lastRadius = newRadius;
+
+  // 선택된 요소 ID
+  const selectedElementId = useStore.getState().selectedElementId;
+  if (!selectedElementId) return;
+
+  // ⚡ RAF throttle
+  if (rafId === null) {
+    rafId = requestAnimationFrame(() => {
+      rafId = null;
+      if (!isDragging || !activeCorner) return;
+
+      const styleProps = createStyleProps(lastRadius, activeCorner, e.shiftKey);
+      sendStyleToCanvas(selectedElementId, styleProps);
+    });
+  }
+}
+
+function handleMouseUp(e: MouseEvent) {
+  if (!isDragging || !activeCorner) return;
+
+  // ⚡ 즉시 모든 이벤트 리스너 제거
+  document.removeEventListener("mousemove", handleMouseMove);
+  document.removeEventListener("mouseup", handleMouseUp);
+  document.removeEventListener("keydown", handleKeyDown);
+  window.removeEventListener("blur", handleWindowBlur);
+
+  // 값 저장 후 상태 초기화
+  const corner = activeCorner;
+  const deltaX = e.clientX - initialMouseX;
+  const deltaY = e.clientY - initialMouseY;
+  const diagonalDistance = calculateDiagonalDistance(corner, deltaX, deltaY);
+  let finalRadius = Math.round(initialRadius + diagonalDistance);
+  finalRadius = Math.max(0, Math.min(maxRadius, finalRadius));
+  const shiftKey = e.shiftKey;
+
+  // 상태 초기화
+  resetDragState();
+
+  // 선택된 요소 ID
+  const selectedElementId = useStore.getState().selectedElementId;
+  if (!selectedElementId) return;
+
+  // Canvas에 최종 값 전송
+  const styleProps = createStyleProps(finalRadius, corner, shiftKey);
+  sendStyleToCanvas(selectedElementId, styleProps);
+
+  // Inspector state 업데이트 (store 저장)
+  const updateInlineStyle = useInspectorState.getState().updateInlineStyle;
+  const updateInlineStyles = useInspectorState.getState().updateInlineStyles;
+
+  if (shiftKey) {
+    updateInlineStyles(styleProps);
+  } else {
+    const property = cornerPropertyMap[corner];
+    updateInlineStyle(property, `${finalRadius}px`);
+  }
+}
+
 export function useBorderRadiusDrag(
   rect: { width: number; height: number } | null,
   currentBorderRadius: string | undefined,
   options: UseBorderRadiusDragOptions = {}
 ) {
-  const { onDragStart, onDrag, onDragEnd } = options;
+  const { onDragStart } = options;
 
-  // 렌더링에 사용되는 상태는 useState로 관리 (ref는 render 중 접근 불가)
-  const [isDragging, setIsDragging] = useState(false);
-  const [activeCorner, setActiveCorner] = useState<CornerPosition | null>(null);
-
-  const dragStateRef = useRef<DragState>({
-    isDragging: false,
-    corner: null,
-    initialRadius: 0,
-    initialMouseX: 0,
-    initialMouseY: 0,
-    maxRadius: 0,
-    lastRadius: -1,
-  });
-
-  const optionsRef = useRef({ onDrag, onDragEnd });
-
-  // ref 업데이트는 useEffect에서 수행 (render 중 접근 방지)
+  // ⚡ 컴포넌트 언마운트 시 정리
   useEffect(() => {
-    optionsRef.current = { onDrag, onDragEnd };
-  });
-
-  const handlersRef = useRef<{
-    handleMouseMove: (e: MouseEvent) => void;
-    handleMouseUp: (e: MouseEvent) => void;
-  } | null>(null);
-
-  useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      const state = dragStateRef.current;
-      if (!state.isDragging || !state.corner) return;
-
-      const deltaX = e.clientX - state.initialMouseX;
-      const deltaY = e.clientY - state.initialMouseY;
-      const diagonalDistance = calculateDiagonalDistance(
-        state.corner,
-        deltaX,
-        deltaY
-      );
-
-      let newRadius = Math.round(state.initialRadius + diagonalDistance);
-      newRadius = Math.max(0, Math.min(state.maxRadius, newRadius));
-
-      // 같은 값이면 스킵 (성능 최적화)
-      if (newRadius === state.lastRadius) return;
-      state.lastRadius = newRadius;
-
-      // 선택된 요소 ID 가져오기
-      const selectedElementId = useStore.getState().selectedElementId;
-      if (!selectedElementId) return;
-
-      // 스타일 객체 생성
-      let styleProps: Record<string, string>;
-
-      if (e.shiftKey) {
-        // Shift+드래그: 모든 코너 동시 조절
-        styleProps = {
-          borderTopLeftRadius: `${newRadius}px`,
-          borderTopRightRadius: `${newRadius}px`,
-          borderBottomLeftRadius: `${newRadius}px`,
-          borderBottomRightRadius: `${newRadius}px`,
-          borderRadius: `${newRadius}px`,
-        };
-      } else {
-        // 기본: 개별 코너 조절
-        const property = cornerPropertyMap[state.corner];
-        styleProps = { [property]: `${newRadius}px` };
-      }
-
-      // ⚡ Canvas에 직접 전송 (즉시 렌더링)
-      sendStyleToCanvas(selectedElementId, styleProps);
-
-      optionsRef.current.onDrag?.(newRadius, state.corner);
-    };
-
-    const handleMouseUp = (e: MouseEvent) => {
-      const state = dragStateRef.current;
-      if (!state.isDragging || !state.corner) return;
-
-      const deltaX = e.clientX - state.initialMouseX;
-      const deltaY = e.clientY - state.initialMouseY;
-      const diagonalDistance = calculateDiagonalDistance(
-        state.corner,
-        deltaX,
-        deltaY
-      );
-      let finalRadius = Math.round(state.initialRadius + diagonalDistance);
-      finalRadius = Math.max(0, Math.min(state.maxRadius, finalRadius));
-
-      const corner = state.corner;
-      const shiftKey = e.shiftKey;
-
-      // 상태 초기화 (ref + state 모두 업데이트)
-      dragStateRef.current = {
-        isDragging: false,
-        corner: null,
-        initialRadius: 0,
-        initialMouseX: 0,
-        initialMouseY: 0,
-        maxRadius: 0,
-        lastRadius: -1,
-      };
-      setIsDragging(false);
-      setActiveCorner(null);
-
-      const currentHandlers = handlersRef.current;
-      if (currentHandlers) {
-        document.removeEventListener(
-          "mousemove",
-          currentHandlers.handleMouseMove
-        );
-        document.removeEventListener("mouseup", currentHandlers.handleMouseUp);
-      }
-
-      // ⚡ 드래그 종료 시에만 Inspector state 업데이트 (store 저장)
-      const updateInlineStyle = useInspectorState.getState().updateInlineStyle;
-      const updateInlineStyles =
-        useInspectorState.getState().updateInlineStyles;
-
-      if (shiftKey) {
-        updateInlineStyles({
-          borderTopLeftRadius: `${finalRadius}px`,
-          borderTopRightRadius: `${finalRadius}px`,
-          borderBottomLeftRadius: `${finalRadius}px`,
-          borderBottomRightRadius: `${finalRadius}px`,
-          borderRadius: `${finalRadius}px`,
-        });
-      } else {
-        const property = cornerPropertyMap[corner];
-        updateInlineStyle(property, `${finalRadius}px`);
-      }
-
-      optionsRef.current.onDragEnd?.(finalRadius, corner);
-    };
-
-    handlersRef.current = { handleMouseMove, handleMouseUp };
-
     return () => {
-      const currentHandlers = handlersRef.current;
-      if (currentHandlers) {
-        document.removeEventListener(
-          "mousemove",
-          currentHandlers.handleMouseMove
-        );
-        document.removeEventListener("mouseup", currentHandlers.handleMouseUp);
+      if (isDragging) {
+        document.removeEventListener("mousemove", handleMouseMove);
+        document.removeEventListener("mouseup", handleMouseUp);
+        document.removeEventListener("keydown", handleKeyDown);
+        window.removeEventListener("blur", handleWindowBlur);
+        resetDragState();
       }
     };
   }, []);
@@ -265,31 +335,36 @@ export function useBorderRadiusDrag(
       e.preventDefault();
       e.stopPropagation();
 
-      if (!rect || !handlersRef.current) return;
+      if (!rect) return;
 
-      const initialRadius = parseBorderRadius(currentBorderRadius);
-      const maxRadius = Math.min(rect.width, rect.height) / 2;
+      // 이전 드래그가 남아있으면 정리
+      if (isDragging) {
+        document.removeEventListener("mousemove", handleMouseMove);
+        document.removeEventListener("mouseup", handleMouseUp);
+        document.removeEventListener("keydown", handleKeyDown);
+        window.removeEventListener("blur", handleWindowBlur);
+        resetDragState();
+      }
 
-      // ref + state 모두 업데이트
-      dragStateRef.current = {
-        isDragging: true,
-        corner,
-        initialRadius,
-        initialMouseX: e.clientX,
-        initialMouseY: e.clientY,
-        maxRadius,
-        lastRadius: initialRadius,
-      };
-      setIsDragging(true);
-      setActiveCorner(corner);
+      // 새 드래그 시작
+      isDragging = true;
+      activeCorner = corner;
+      initialRadius = parseBorderRadius(currentBorderRadius);
+      initialMouseX = e.clientX;
+      initialMouseY = e.clientY;
+      maxRadius = Math.min(rect.width, rect.height) / 2;
+      lastRadius = initialRadius;
+
+      // ⚡ 드래그 오버레이 생성 (iframe 위에서 mouseup 캡처)
+      createDragOverlay();
 
       onDragStart?.();
 
-      document.addEventListener(
-        "mousemove",
-        handlersRef.current.handleMouseMove
-      );
-      document.addEventListener("mouseup", handlersRef.current.handleMouseUp);
+      // 모든 이벤트 리스너 등록
+      document.addEventListener("mousemove", handleMouseMove);
+      document.addEventListener("mouseup", handleMouseUp);
+      document.addEventListener("keydown", handleKeyDown);
+      window.addEventListener("blur", handleWindowBlur);
     },
     [rect, currentBorderRadius, onDragStart]
   );
