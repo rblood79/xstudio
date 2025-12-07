@@ -292,8 +292,6 @@ export function ListBox<T extends object>({
     const virtualRows = virtualizer.getVirtualItems();
     const totalSize = virtualizer.getTotalSize();
 
-    console.log(`🚀 ListBox Virtualization: ${virtualItems.length} items, rendering ${virtualRows.length} visible`);
-
     return (
       <div
         ref={parentRef}
@@ -363,12 +361,6 @@ export function ListBox<T extends object>({
   // ColumnMapping이 있으면 각 데이터 항목마다 ListBoxItem 렌더링
   // Table과 동일한 패턴: Element tree의 ListBoxItem 템플릿 + Field 자식 사용
   if (hasDataBinding && columnMapping) {
-    console.log("🎯 ListBox: columnMapping 감지 - 데이터로 아이템 렌더링", {
-      columnMapping,
-      hasChildren: !!children,
-      dataCount: filteredData.length,
-    });
-
     // Loading 상태
     if (loading) {
       return (
@@ -413,8 +405,6 @@ export function ListBox<T extends object>({
         id: String(item.id || index),
         ...item,
       })) as T[];
-
-      console.log("✅ ListBox with columnMapping - items:", items);
 
       return (
         <AriaListBox
@@ -485,12 +475,9 @@ export function ListBox<T extends object>({
         ...item,
       })) as T[];
 
-      console.log("✅ ListBox Dynamic Collection - items:", items, "children type:", typeof children);
-
       // children이 함수(render function)이면 그것을 사용
       // 이는 renderListBox에서 Field 자식들을 포함한 템플릿 렌더 함수를 전달받는 경우
       if (typeof children === "function") {
-        console.log("🔄 ListBox: children render function 사용, items:", items);
         return (
           <AriaListBox
             {...props}
@@ -525,9 +512,6 @@ export function ListBox<T extends object>({
         </AriaListBox>
       );
     }
-
-    // 데이터가 비어있을 때도 children 함수인 경우 처리
-    console.log("⚠️ ListBox: filteredData가 비어있음, hasDataBinding:", hasDataBinding, "isPropertyBinding:", isPropertyBinding);
   }
 
   // Static Children (기존 방식)

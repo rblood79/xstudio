@@ -101,21 +101,18 @@ class CollectionDataCache {
     const entry = this.cache.get(key);
 
     if (!entry) {
-      console.log(`💨 Cache MISS: ${key}`);
       return undefined;
     }
 
     // TTL 확인
     const now = Date.now();
     if (now - entry.createdAt > entry.ttl) {
-      console.log(`⏰ Cache EXPIRED: ${key}`);
       this.cache.delete(key);
       return undefined;
     }
 
     // LRU: 마지막 접근 시간 업데이트
     entry.lastAccessedAt = now;
-    console.log(`✅ Cache HIT: ${key}`);
 
     return entry.data as T;
   }
@@ -136,18 +133,13 @@ class CollectionDataCache {
       lastAccessedAt: now,
       ttl: ttl || this.ttl,
     });
-
-    console.log(`📦 Cache SET: ${key} (TTL: ${ttl || this.ttl}ms)`);
   }
 
   /**
    * 특정 키의 캐시 무효화
    */
   invalidate(key: string): void {
-    const deleted = this.cache.delete(key);
-    if (deleted) {
-      console.log(`🗑️ Cache INVALIDATED: ${key}`);
-    }
+    this.cache.delete(key);
   }
 
   /**
@@ -157,25 +149,19 @@ class CollectionDataCache {
    */
   invalidateMatching(pattern: string | RegExp): void {
     const regex = typeof pattern === 'string' ? new RegExp(pattern) : pattern;
-    let count = 0;
 
     for (const key of this.cache.keys()) {
       if (regex.test(key)) {
         this.cache.delete(key);
-        count++;
       }
     }
-
-    console.log(`🗑️ Cache INVALIDATED ${count} entries matching: ${pattern}`);
   }
 
   /**
    * 모든 캐시 삭제
    */
   clear(): void {
-    const size = this.cache.size;
     this.cache.clear();
-    console.log(`🧹 Cache CLEARED: ${size} entries`);
   }
 
   /**
@@ -207,7 +193,6 @@ class CollectionDataCache {
 
     if (oldestKey) {
       this.cache.delete(oldestKey);
-      console.log(`♻️ Cache LRU EVICTED: ${oldestKey}`);
     }
   }
 }
