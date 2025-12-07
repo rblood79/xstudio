@@ -34,6 +34,7 @@ import type {
 } from "../../types/builder/unified.types";
 import type { DataBindingValue } from "../../builder/panels/common/PropertyDataBinding";
 import { useCollectionData } from "../../builder/hooks/useCollectionData";
+import { CollectionLoadingState, CollectionErrorDisplay } from "./CollectionErrorState";
 
 import "./styles/ListBox.css";
 
@@ -117,6 +118,7 @@ export function ListBox<T extends object>({
     data: boundData,
     loading,
     error,
+    reload,
   } = useCollectionData({
     dataBinding: dataBinding as DataBinding,
     componentName: "ListBox",
@@ -270,7 +272,7 @@ export function ListBox<T extends object>({
           className={`react-aria-ListBox virtualized ${variant} ${size}`}
           style={{ height }}
         >
-          <div className="virtualized-loading">⏳ 데이터 로딩 중...</div>
+          <CollectionLoadingState size={size} variant={variant} height={height} />
         </div>
       );
     }
@@ -282,7 +284,7 @@ export function ListBox<T extends object>({
           className={`react-aria-ListBox virtualized ${variant} ${size}`}
           style={{ height }}
         >
-          <div className="virtualized-error">❌ 오류: {error}</div>
+          <CollectionErrorDisplay error={error} onRetry={reload} size={size} variant={variant} height={height} />
         </div>
       );
     }

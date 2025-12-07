@@ -5,6 +5,7 @@ import type { AsyncListLoadOptions } from "../../types/builder/stately.types";
 import { useDatasetStore } from "../stores/dataset";
 import { useDataTables, useApiEndpoints, useDataStore } from "../stores/data";
 import { useRuntimeStore } from "../../canvas/store/runtimeStore";
+import { collectionDataCache, createCacheKey } from "./useCollectionDataCache";
 
 /**
  * Collection 데이터 바인딩을 위한 공통 Hook
@@ -48,6 +49,8 @@ export interface UseCollectionDataResult {
   error: string | null;
   /** 데이터 재로드 */
   reload: () => void;
+  /** 캐시 삭제 (이 바인딩의 캐시만 삭제) */
+  clearCache: () => void;
   /** DataTable 스키마 정보 (Field 자동 생성용) */
   schema?: SchemaField[];
   /** 정렬 함수 */
@@ -324,6 +327,23 @@ export function useCollectionData({
     'name' in stableDataBinding &&
     !('type' in stableDataBinding);
 
+  // Auto-refresh 설정 추출
+  const refreshMode = useMemo(() => {
+    if (propertyBindingFormat) {
+      const binding = stableDataBinding as unknown as { refreshMode?: string };
+      return binding.refreshMode || 'manual';
+    }
+    return 'manual';
+  }, [propertyBindingFormat, stableDataBinding]);
+
+  const refreshInterval = useMemo(() => {
+    if (propertyBindingFormat) {
+      const binding = stableDataBinding as unknown as { refreshInterval?: number };
+      return binding.refreshInterval || 5000;
+    }
+    return 5000;
+  }, [propertyBindingFormat, stableDataBinding]);
+
   // DataTable 바인딩인 경우 mockData와 schema 직접 반환
   const dataTableResult = useMemo(() => {
     // 🔍 DEBUG: 상세 로깅
@@ -373,12 +393,11 @@ export function useCollectionData({
   const [apiEndpointData, setApiEndpointData] = useState<Record<string, unknown>[] | null>(null);
   const [apiEndpointLoading, setApiEndpointLoading] = useState(false);
   const [apiEndpointError, setApiEndpointError] = useState<string | null>(null);
+  // 재로드 트리거 (값이 바뀌면 useEffect 재실행)
+  const [reloadTrigger, setReloadTrigger] = useState(0);
 
-  // API Endpoint 바인딩인 경우 데이터 로드
+  // API Endpoint 바인딩인 경우 데이터 로드 (캐시 지원)
   useEffect(() => {
-    // ⭐ 불필요한 로그 제거 (리렌더링 시 혼란 방지)
-    // console.log(`🔍 ${componentName}: useCollectionData useEffect`, { propertyBindingFormat });
-
     if (!propertyBindingFormat) return;
 
     const binding = stableDataBinding as unknown as { source: string; name: string };
@@ -390,6 +409,21 @@ export function useCollectionData({
       console.warn(`⚠️ ${componentName}: API Endpoint '${binding.name}'을 찾을 수 없습니다`);
       setApiEndpointError(`API Endpoint '${binding.name}'을 찾을 수 없습니다`);
       return;
+    }
+
+    // ⭐ 캐시 키 생성
+    const cacheKey = createCacheKey(stableDataBinding);
+
+    // ⭐ reloadTrigger가 0이면 캐시 확인 (수동 재로드 시에는 캐시 스킵)
+    if (reloadTrigger === 0 && cacheKey) {
+      const cachedData = collectionDataCache.get<Record<string, unknown>[]>(cacheKey);
+      if (cachedData) {
+        console.log(`✅ ${componentName}: 캐시에서 데이터 로드`);
+        setApiEndpointData(cachedData);
+        setApiEndpointLoading(false);
+        setApiEndpointError(null);
+        return;
+      }
     }
 
     console.log(`🌐 ${componentName}: API Endpoint '${binding.name}' 데이터 로드 시작 [isCanvas: ${isCanvasContext}]`, endpoint);
@@ -444,6 +478,11 @@ export function useCollectionData({
           }
         }
 
+        // ⭐ 캐시에 저장
+        if (cacheKey) {
+          collectionDataCache.set(cacheKey, items);
+        }
+
         setApiEndpointData(items);
         setApiEndpointLoading(false);
       } catch (error) {
@@ -454,7 +493,7 @@ export function useCollectionData({
     };
 
     fetchData();
-  }, [propertyBindingFormat, dataBindingKey, apiEndpoints, executeApiEndpoint, componentName, isCanvasContext]); // ⭐ dataBinding → dataBindingKey
+  }, [propertyBindingFormat, dataBindingKey, apiEndpoints, executeApiEndpoint, componentName, isCanvasContext, reloadTrigger, stableDataBinding]);
 
   const list = useAsyncList<Record<string, unknown>>({
     async load({ signal }: AsyncListLoadOptions) {
@@ -591,10 +630,57 @@ export function useCollectionData({
   const reload = useCallback(() => {
     if (datasetId) {
       loadDataset(datasetId);
+    } else if (propertyBindingFormat) {
+      // PropertyDataBinding API의 경우 수동 재로드
+      const binding = stableDataBinding as unknown as { source: string; name: string };
+      if (binding.source === 'api' && binding.name) {
+        console.log(`🔄 ${componentName}: API Endpoint 재로드 트리거`);
+
+        // ⭐ 캐시 무효화
+        const cacheKey = createCacheKey(stableDataBinding);
+        if (cacheKey) {
+          collectionDataCache.invalidate(cacheKey);
+        }
+
+        // reloadTrigger를 증가시켜 useEffect 재실행
+        setReloadTrigger((prev) => prev + 1);
+      }
     } else {
       list.reload();
     }
-  }, [datasetId, loadDataset, list]);
+  }, [datasetId, loadDataset, list, propertyBindingFormat, stableDataBinding, componentName]);
+
+  // ⭐ Auto-refresh 기능
+  // onMount: 마운트 시 1회 갱신
+  // interval: 설정된 간격으로 자동 갱신
+  useEffect(() => {
+    // DataTable은 reactive하므로 별도 갱신 불필요, API만 처리
+    const isApiBinding = propertyBindingFormat &&
+      (stableDataBinding as unknown as { source: string }).source === 'api';
+
+    if (!isApiBinding) return;
+
+    // onMount 모드: 마운트 시 1회 실행 (이미 useEffect로 처리됨)
+    if (refreshMode === 'onMount') {
+      console.log(`🔄 ${componentName}: onMount 모드 - 마운트 시 자동 갱신`);
+      // 이미 위의 useEffect에서 API 호출이 일어남
+    }
+
+    // interval 모드: 주기적 갱신
+    if (refreshMode === 'interval' && refreshInterval > 0) {
+      console.log(`⏰ ${componentName}: interval 모드 - ${refreshInterval}ms 간격으로 자동 갱신 시작`);
+
+      const intervalId = setInterval(() => {
+        console.log(`🔄 ${componentName}: 주기적 자동 갱신 실행`);
+        reload();
+      }, refreshInterval);
+
+      return () => {
+        console.log(`⏰ ${componentName}: interval 모드 정리`);
+        clearInterval(intervalId);
+      };
+    }
+  }, [refreshMode, refreshInterval, propertyBindingFormat, stableDataBinding, reload, componentName]);
 
   // 로딩/에러 상태: datasetId가 있으면 Dataset Store에서, 아니면 useAsyncList에서
   // 로딩/에러 상태: DataTable > API Endpoint > Dataset > AsyncList
@@ -615,11 +701,21 @@ export function useCollectionData({
       ? datasetState?.error || null
       : list.error ? list.error.message : null;
 
+  // ⭐ 캐시 삭제 함수
+  const clearCache = useCallback(() => {
+    const cacheKey = createCacheKey(stableDataBinding);
+    if (cacheKey) {
+      collectionDataCache.invalidate(cacheKey);
+      console.log(`🧹 ${componentName}: 캐시 삭제됨`);
+    }
+  }, [stableDataBinding, componentName]);
+
   return {
     data: processedData,
     loading,
     error,
     reload,
+    clearCache,
     schema: dataTableSchema,
     sort,
     filterText,
@@ -628,3 +724,6 @@ export function useCollectionData({
     hasMore,
   };
 }
+
+// ⭐ 캐시 인스턴스 및 유틸리티 export (전역 캐시 관리용)
+export { collectionDataCache, createCacheKey };

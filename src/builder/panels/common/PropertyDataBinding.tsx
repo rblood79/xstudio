@@ -25,14 +25,27 @@ import {
   ListBox,
   ListBoxItem,
 } from 'react-aria-components';
-import { ChevronDown, Database, Globe, Variable, Link2, X } from 'lucide-react';
+import { ChevronDown, Database, Globe, Variable, Link2, X, RefreshCw } from 'lucide-react';
 import { PropertyFieldset } from './PropertyFieldset';
 import { useDataTables, useApiEndpoints, useVariables } from '../../stores/data';
 import './PropertyDataBinding.css';
 
 // ============================================
+// Constants
+// ============================================
+
+const REFRESH_MODE_OPTIONS = [
+  { value: 'manual', label: '수동 갱신', description: '직접 갱신 호출 시에만 새로고침' },
+  { value: 'onMount', label: '마운트 시', description: '컴포넌트 마운트 시 1회 갱신' },
+  { value: 'interval', label: '주기적', description: '설정된 간격으로 자동 갱신' },
+] as const;
+
+// ============================================
 // Types
 // ============================================
+
+/** 데이터 갱신 모드 */
+export type RefreshMode = 'manual' | 'onMount' | 'interval';
 
 export interface DataBindingValue {
   /** 바인딩 소스 타입 */
@@ -43,6 +56,10 @@ export interface DataBindingValue {
   path?: string;
   /** 기본값 */
   defaultValue?: unknown;
+  /** 갱신 모드 (기본: manual) */
+  refreshMode?: RefreshMode;
+  /** 갱신 간격 (ms, interval 모드에서 사용) */
+  refreshInterval?: number;
 }
 
 interface PropertyDataBindingProps {
@@ -89,6 +106,8 @@ export const PropertyDataBinding = memo(function PropertyDataBinding({
   const source = value?.source || '';
   const name = value?.name || '';
   const path = value?.path || '';
+  const refreshMode = value?.refreshMode || 'manual';
+  const refreshInterval = value?.refreshInterval || 5000;
 
 
   // 소스 타입별 이름 옵션 가져오기
@@ -140,10 +159,16 @@ export const PropertyDataBinding = memo(function PropertyDataBinding({
       const newName = key as string;
       if (source) {
         console.log(`🔗 PropertyDataBinding: ${source} 소스에서 "${newName}" 선택됨`);
-        onChange({ source: source as DataBindingValue['source'], name: newName, path });
+        onChange({
+          source: source as DataBindingValue['source'],
+          name: newName,
+          path,
+          refreshMode: value?.refreshMode,
+          refreshInterval: value?.refreshInterval,
+        });
       }
     },
-    [source, path, onChange]
+    [source, path, value?.refreshMode, value?.refreshInterval, onChange]
   );
 
   // 경로 변경 (blur 시 저장)
@@ -151,10 +176,50 @@ export const PropertyDataBinding = memo(function PropertyDataBinding({
     (e: React.FocusEvent<HTMLInputElement>) => {
       const newPath = e.target.value;
       if (source && name) {
-        onChange({ source: source as DataBindingValue['source'], name, path: newPath || undefined });
+        onChange({
+          source: source as DataBindingValue['source'],
+          name,
+          path: newPath || undefined,
+          refreshMode: value?.refreshMode,
+          refreshInterval: value?.refreshInterval,
+        });
       }
     },
-    [source, name, onChange]
+    [source, name, value?.refreshMode, value?.refreshInterval, onChange]
+  );
+
+  // 갱신 모드 변경
+  const handleRefreshModeChange = useCallback(
+    (key: React.Key | null) => {
+      const newMode = key as RefreshMode;
+      if (source && name) {
+        onChange({
+          source: source as DataBindingValue['source'],
+          name,
+          path: value?.path,
+          refreshMode: newMode,
+          refreshInterval: newMode === 'interval' ? (value?.refreshInterval || 5000) : undefined,
+        });
+      }
+    },
+    [source, name, value?.path, value?.refreshInterval, onChange]
+  );
+
+  // 갱신 간격 변경
+  const handleRefreshIntervalBlur = useCallback(
+    (e: React.FocusEvent<HTMLInputElement>) => {
+      const newInterval = parseInt(e.target.value, 10);
+      if (source && name && !isNaN(newInterval) && newInterval > 0) {
+        onChange({
+          source: source as DataBindingValue['source'],
+          name,
+          path: value?.path,
+          refreshMode: 'interval',
+          refreshInterval: newInterval,
+        });
+      }
+    },
+    [source, name, value?.path, onChange]
   );
 
   // 바인딩 제거
@@ -302,6 +367,76 @@ export const PropertyDataBinding = memo(function PropertyDataBinding({
               disabled={disabled}
             />
           </div>
+        )}
+
+        {/* 갱신 설정 (api, dataTable만 해당) */}
+        {source && name && (source === 'api' || source === 'dataTable') && (
+          <>
+            <div className="binding-row binding-refresh-row">
+              <label className="binding-row-label">
+                <RefreshCw size={14} />
+                <span>갱신 모드</span>
+              </label>
+              <AriaSelect
+                className="react-aria-Select binding-refresh-select"
+                selectedKey={refreshMode}
+                onSelectionChange={handleRefreshModeChange}
+                aria-label="갱신 모드"
+                isDisabled={disabled}
+              >
+                <Button className="react-aria-Button">
+                  <SelectValue />
+                  <span aria-hidden="true" className="select-chevron">
+                    <ChevronDown size={16} />
+                  </span>
+                </Button>
+                <Popover className="react-aria-Popover">
+                  <ListBox className="react-aria-ListBox">
+                    {REFRESH_MODE_OPTIONS.map((option) => (
+                      <ListBoxItem
+                        key={option.value}
+                        id={option.value}
+                        className="react-aria-ListBoxItem"
+                        textValue={option.label}
+                      >
+                        <div className="binding-option">
+                          <span className="binding-option-label">
+                            {option.label}
+                          </span>
+                          <span className="binding-option-desc">
+                            {option.description}
+                          </span>
+                        </div>
+                      </ListBoxItem>
+                    ))}
+                  </ListBox>
+                </Popover>
+              </AriaSelect>
+            </div>
+
+            {/* 갱신 간격 (interval 모드에서만) */}
+            {refreshMode === 'interval' && (
+              <div className="binding-row binding-interval-row">
+                <label className="binding-row-label">
+                  <span>갱신 간격</span>
+                </label>
+                <div className="binding-interval-input">
+                  <input
+                    className="react-aria-Input"
+                    type="number"
+                    min="1000"
+                    step="1000"
+                    key={`interval-${value?.source || ''}-${value?.name || ''}`}
+                    defaultValue={refreshInterval}
+                    onBlur={handleRefreshIntervalBlur}
+                    placeholder="5000"
+                    disabled={disabled}
+                  />
+                  <span className="binding-interval-unit">ms</span>
+                </div>
+              </div>
+            )}
+          </>
         )}
       </div>
     </PropertyFieldset>
