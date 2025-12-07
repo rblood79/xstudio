@@ -260,7 +260,7 @@
   font-size: var(--text-sm);
   font-weight: 500;
   color: white;
-  background: var(--color-primary-600);
+  background: var(--primary);
   border: none;
   border-radius: var(--radius-sm);
   cursor: pointer;

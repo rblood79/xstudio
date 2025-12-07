@@ -79,7 +79,7 @@ export function TransformerList({ projectId }: TransformerListProps) {
   return (
     <div className="section">
       <SectionHeader
-        title="Transformers"
+        title="Transformer List"
         actions={
           <span className="dataset-list-count">{transformers.length}개</span>
         }

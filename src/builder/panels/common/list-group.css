@@ -21,6 +21,7 @@
 
 .panel-wrapper[data-panel="dataset"] .list-group {
   display: flex;
+  flex-direction: column;
   .list-item {
     flex-direction: row;
   }

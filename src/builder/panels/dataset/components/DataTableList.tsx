@@ -6,9 +6,9 @@
  * @see docs/features/DATATABLE_PRESET_SYSTEM.md
  */
 
-import { Table2, Plus, Trash2, Edit2 } from "lucide-react";
+import { Table2, Plus, Trash2, Edit2, Link } from "lucide-react";
 import { Button } from "react-aria-components";
-import { useDataStore, useDataTables } from "../../../stores/data";
+import { useDataStore, useDataTables, useApiEndpoints } from "../../../stores/data";
 import { SectionHeader } from "../../common/SectionHeader";
 
 interface DataTableListProps {
@@ -25,10 +25,16 @@ export function DataTableList({
   onCreateClick,
 }: DataTableListProps) {
   const dataTables = useDataTables();
+  const apiEndpoints = useApiEndpoints();
   const deleteDataTable = useDataStore((state) => state.deleteDataTable);
 
   // Silence unused variable warning
   void projectId;
+
+  // DataTable 이름으로 연결된 API Endpoint 찾기
+  const getLinkedApi = (tableName: string) => {
+    return apiEndpoints.find((api) => api.targetDataTable === tableName);
+  };
 
   const handleDelete = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -52,7 +58,7 @@ export function DataTableList({
   return (
     <div className="section">
       <SectionHeader
-        title="DataTables"
+        title="Table List"
         actions={
           <span className="dataset-list-count">{dataTables.length}개</span>
         }
@@ -69,7 +75,9 @@ export function DataTableList({
           </div>
         ) : (
           <div className="list-group" role="list">
-            {dataTables.map((table) => (
+            {dataTables.map((table) => {
+              const linkedApi = getLinkedApi(table.name);
+              return (
               <div
                 key={table.id}
                 role="listitem"
@@ -84,12 +92,17 @@ export function DataTableList({
                   <div className="list-item-meta">
                     {table.schema.length}개 필드 ·{" "}
                     {table.mockData?.length || 0}개 행
+                    {linkedApi && (
+                      <>
+                        {" "}· <Link size={10} className="linked-api-icon" /> {linkedApi.name}
+                      </>
+                    )}
                   </div>
                 </div>
                 <span
-                  className={`list-item-badge ${table.useMockData ? "mock" : "live"}`}
+                  className={`list-item-badge ${linkedApi ? "api" : "local"}`}
                 >
-                  {table.useMockData ? "Mock" : "Live"}
+                  {linkedApi ? "API" : "Local"}
                 </span>
                 <div className="list-item-actions">
                   <button
@@ -110,13 +123,14 @@ export function DataTableList({
                   </button>
                 </div>
               </div>
-            ))}
+            );
+            })}
           </div>
         )}
 
         <Button className="dataset-add-btn" onPress={onCreateClick}>
           <Plus size={16} />
-          <span>DataTable 추가</span>
+          <span>Table 추가</span>
         </Button>
       </div>
     </div>

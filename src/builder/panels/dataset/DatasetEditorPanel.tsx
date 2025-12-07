@@ -69,7 +69,7 @@ const API_TABS: TabConfig<ApiEditorTab>[] = [
   { id: "headers", label: "Headers", icon: Code },
   { id: "body", label: "Body", icon: FileJson },
   { id: "response", label: "Response", icon: FileJson },
-  { id: "test", label: "Test", icon: Play },
+  { id: "run", label: "Run", icon: Play },
 ];
 
 const VARIABLE_TABS: TabConfig<VariableEditorTab>[] = [

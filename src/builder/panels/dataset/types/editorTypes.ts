@@ -26,7 +26,7 @@ export type DatasetEditorMode =
  * 에디터 탭 타입들
  */
 export type TableEditorTab = "schema" | "data" | "settings";
-export type ApiEditorTab = "basic" | "headers" | "body" | "response" | "test";
+export type ApiEditorTab = "basic" | "headers" | "body" | "response" | "run";
 export type VariableEditorTab = "basic" | "validation" | "transform";
 export type TransformerEditorTab = "config" | "code" | "test";
 

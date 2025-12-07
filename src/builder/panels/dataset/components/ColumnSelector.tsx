@@ -19,6 +19,8 @@ interface ColumnSelectorProps {
   onColumnsChange: (columns: DetectedColumn[]) => void;
   onImport: (columns: DetectedColumn[], tableName: string) => void;
   isImporting?: boolean;
+  /** Response 탭에서 설정한 Target DataTable 이름 (기본값으로 사용) */
+  defaultTableName?: string;
 }
 
 export function ColumnSelector({
@@ -26,8 +28,10 @@ export function ColumnSelector({
   onColumnsChange,
   onImport,
   isImporting = false,
+  defaultTableName = "",
 }: ColumnSelectorProps) {
-  const [tableName, setTableName] = useState("");
+  // defaultTableName이 있으면 기본값으로 사용
+  const [tableName, setTableName] = useState(defaultTableName);
 
   const selectedCount = columns.filter((c) => c.selected).length;
   const allSelected = selectedCount === columns.length;

@@ -17,6 +17,7 @@ import {
   ChevronDown,
   ChevronRight,
   Play,
+  Wand2,
 } from "lucide-react";
 import type { ApiEditorTab } from "../types/editorTypes";
 import { useDataStore } from "../../../stores/data";
@@ -167,6 +168,14 @@ export function ApiEndpointEditor({ endpoint, onClose, activeTab }: ApiEndpointE
           if (Array.isArray(fieldValue) && fieldValue.length > 0) {
             console.log(`🔍 Auto-detected array field: "${field}" with ${fieldValue.length} items`);
             dataToAnalyze = fieldValue;
+
+            // 🆕 dataPath가 비어있으면 자동 설정
+            if (!endpoint.responseMapping?.dataPath) {
+              console.log(`📝 Auto-setting dataPath to "${field}"`);
+              onUpdate({
+                responseMapping: { ...endpoint.responseMapping, dataPath: field },
+              });
+            }
             break;
           }
         }
@@ -188,9 +197,9 @@ export function ApiEndpointEditor({ endpoint, onClose, activeTab }: ApiEndpointE
     }
   }, [endpoint.id, endpoint.responseMapping?.dataPath, executeApiEndpoint]);
 
-  // activeTab="test"로 열렸을 때 자동으로 테스트 실행 (초기 1회만)
+  // activeTab="run"으로 열렸을 때 자동으로 API 실행 (초기 1회만)
   useEffect(() => {
-    if (activeTab === "test" && !hasAutoTriggeredTest.current && !isExecuting) {
+    if (activeTab === "run" && !hasAutoTriggeredTest.current && !isExecuting) {
       hasAutoTriggeredTest.current = true;
       handleTest();
     }
@@ -205,22 +214,42 @@ export function ApiEndpointEditor({ endpoint, onClose, activeTab }: ApiEndpointE
         const schema = columnsToSchema(columns);
         const selectedKeys = columns.filter((c) => c.selected).map((c) => c.key);
 
-        // 데이터 추출 (dataPath 적용)
+        // 데이터 추출
+        // ⚠️ 주의: executeApiEndpoint이 이미 dataPath를 적용하여 반환하므로
+        // testResult.data는 이미 추출된 배열입니다.
+        // 따라서 dataPath를 다시 적용하지 않습니다.
         let dataToImport = testResult?.data;
-        if (endpoint.responseMapping?.dataPath) {
-          const paths = endpoint.responseMapping.dataPath.split(".");
-          for (const path of paths) {
-            if (dataToImport && typeof dataToImport === "object") {
-              dataToImport = (dataToImport as Record<string, unknown>)[path];
+
+        // 만약 데이터가 아직 배열이 아니고 객체인 경우에만 배열 필드 찾기
+        // (handleTest에서 자동 감지했지만, 여기서 한번 더 확인)
+        if (!Array.isArray(dataToImport) && typeof dataToImport === "object" && dataToImport !== null) {
+          const commonArrayFields = ["results", "data", "items", "records", "list", "rows", "entries"];
+          for (const field of commonArrayFields) {
+            const fieldValue = (dataToImport as Record<string, unknown>)[field];
+            if (Array.isArray(fieldValue) && fieldValue.length > 0) {
+              console.log(`🔍 handleImport: Auto-detected array field "${field}"`);
+              dataToImport = fieldValue;
+              break;
             }
           }
         }
+
+        console.log(`🔍 handleImport: dataToImport`, {
+          isArray: Array.isArray(dataToImport),
+          length: Array.isArray(dataToImport) ? dataToImport.length : 0,
+          selectedKeys,
+        });
 
         // 선택된 컬럼만 추출
         const mockData = extractSelectedData(
           dataToImport as unknown[],
           selectedKeys
         );
+
+        console.log(`🔍 handleImport: mockData extracted`, {
+          mockDataLength: mockData.length,
+          firstItem: mockData[0],
+        });
 
         // DataTable 생성
         await createDataTable({
@@ -245,7 +274,7 @@ export function ApiEndpointEditor({ endpoint, onClose, activeTab }: ApiEndpointE
         setIsImporting(false);
       }
     },
-    [testResult?.data, endpoint.responseMapping?.dataPath, endpoint.project_id, createDataTable]
+    [testResult?.data, endpoint.project_id, createDataTable]
   );
 
   const toggleSection = (section: string) => {
@@ -300,7 +329,7 @@ export function ApiEndpointEditor({ endpoint, onClose, activeTab }: ApiEndpointE
         />
       )}
 
-      {activeTab === "test" && (
+      {activeTab === "run" && (
         <TestEditor
           endpoint={endpoint}
           testResult={testResult}
@@ -575,30 +604,87 @@ interface ResponseEditorProps {
 }
 
 function ResponseEditor({ endpoint, onUpdate }: ResponseEditorProps) {
+  const executeApiEndpoint = useDataStore((state) => state.executeApiEndpoint);
+  const [isDetecting, setIsDetecting] = useState(false);
+  const [detectResult, setDetectResult] = useState<string | null>(null);
+
+  // Data Path 자동 감지
+  const handleAutoDetect = async () => {
+    setIsDetecting(true);
+    setDetectResult(null);
+
+    try {
+      // API 실행 (dataPath 없이)
+      const result = await executeApiEndpoint(endpoint.id);
+
+      // 응답에서 배열 필드 찾기
+      if (result && typeof result === "object" && !Array.isArray(result)) {
+        const commonArrayFields = ["results", "data", "items", "records", "list", "rows", "entries", "content", "hits"];
+        for (const field of commonArrayFields) {
+          const fieldValue = (result as Record<string, unknown>)[field];
+          if (Array.isArray(fieldValue) && fieldValue.length > 0) {
+            onUpdate({
+              responseMapping: { ...endpoint.responseMapping, dataPath: field },
+            });
+            setDetectResult(`✓ "${field}" 감지됨 (${fieldValue.length}개 항목)`);
+            return;
+          }
+        }
+        setDetectResult("⚠ 배열 필드를 찾을 수 없습니다");
+      } else if (Array.isArray(result)) {
+        // 이미 배열인 경우 dataPath 불필요
+        setDetectResult("✓ 응답이 이미 배열입니다 (dataPath 불필요)");
+      } else {
+        setDetectResult("⚠ 응답 형식을 인식할 수 없습니다");
+      }
+    } catch (error) {
+      setDetectResult(`✗ API 호출 실패: ${(error as Error).message}`);
+    } finally {
+      setIsDetecting(false);
+    }
+  };
+
   return (
     <div className="response-editor">
-      <PropertyInput
-        label="Data Path"
-        value={endpoint.responseMapping?.dataPath || ""}
-        onChange={(value) =>
-          onUpdate({
-            responseMapping: { ...endpoint.responseMapping, dataPath: value },
-          })
-        }
-        placeholder="data.items"
-      />
+      <div className="field-with-action">
+        <PropertyInput
+          label="Data Path"
+          value={endpoint.responseMapping?.dataPath || ""}
+          onChange={(value) =>
+            onUpdate({
+              responseMapping: { ...endpoint.responseMapping, dataPath: value },
+            })
+          }
+          placeholder="results, data.items"
+        />
+        <button
+          type="button"
+          className="auto-detect-btn"
+          onClick={handleAutoDetect}
+          disabled={isDetecting}
+          title="API를 호출하여 배열 필드를 자동 감지합니다"
+        >
+          <Wand2 size={14} />
+          {isDetecting ? "감지 중..." : "자동 감지"}
+        </button>
+      </div>
+      {detectResult && (
+        <p className={`detect-result ${detectResult.startsWith("✓") ? "success" : detectResult.startsWith("⚠") ? "warning" : "error"}`}>
+          {detectResult}
+        </p>
+      )}
       <p className="field-description">
-        응답 JSON에서 데이터를 추출할 경로입니다. (예: data.items, result.users)
+        응답 JSON에서 데이터 배열을 추출할 경로입니다. (예: results, data.items)
       </p>
 
       <PropertyInput
         label="Target DataTable"
         value={endpoint.targetDataTable || ""}
         onChange={(value) => onUpdate({ targetDataTable: value })}
-        placeholder="users"
+        placeholder="pokemon_list"
       />
       <p className="field-description">
-        API 응답을 저장할 DataTable 이름입니다.
+        API 응답 데이터를 저장할 DataTable 이름입니다. Test 탭에서 Import 시 기본값으로 사용됩니다.
       </p>
 
       <div className="section-divider" />
@@ -767,6 +853,7 @@ function TestEditor({
           onColumnsChange={onColumnsChange}
           onImport={onImport}
           isImporting={isImporting}
+          defaultTableName={endpoint.targetDataTable || ""}
         />
       )}
     </div>

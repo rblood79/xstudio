@@ -326,12 +326,29 @@ export function useCollectionData({
 
   // DataTable 바인딩인 경우 mockData와 schema 직접 반환
   const dataTableResult = useMemo(() => {
+    // 🔍 DEBUG: 상세 로깅
+    console.log(`🔍 [${componentName}] useCollectionData 실행:`, {
+      isCanvasContext,
+      propertyBindingFormat,
+      dataTablesCount: dataTables.length,
+      dataTablesNames: dataTables.map(dt => dt.name),
+      stableDataBinding,
+    });
+
     if (propertyBindingFormat) {
       const binding = stableDataBinding as unknown as { source: string; name: string };
       if (binding.source === 'dataTable' && binding.name) {
+        console.log(`🔍 [${componentName}] DataTable 바인딩 검색: "${binding.name}"`);
         const table = dataTables.find(dt => dt.name === binding.name);
         if (table) {
           const data = table.useMockData ? table.mockData : (table.runtimeData || table.mockData);
+          console.log(`✅ [${componentName}] DataTable 찾음:`, {
+            name: table.name,
+            useMockData: table.useMockData,
+            mockDataCount: table.mockData?.length || 0,
+            runtimeDataCount: table.runtimeData?.length || 0,
+            resolvedDataCount: data?.length || 0,
+          });
           // schema를 SchemaField 형식으로 변환
           const schema: SchemaField[] = (table.schema || []).map(field => ({
             key: field.key,
@@ -341,11 +358,12 @@ export function useCollectionData({
           return { data, schema };
         } else {
           console.warn(`⚠️ ${componentName}: DataTable '${binding.name}'을 찾을 수 없습니다`);
+          console.warn(`⚠️ [${componentName}] 사용 가능한 DataTables:`, dataTables.map(dt => dt.name));
         }
       }
     }
     return null;
-  }, [propertyBindingFormat, dataBindingKey, dataTables, componentName]);
+  }, [propertyBindingFormat, dataBindingKey, dataTables, componentName, isCanvasContext]);
 
   // 하위 호환성을 위해 dataTableData 유지
   const dataTableData = dataTableResult?.data || null;

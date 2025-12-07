@@ -109,7 +109,7 @@ export function VariableList({ projectId }: VariableListProps) {
   return (
     <div className="section">
       <SectionHeader
-        title="Variables"
+        title="Variable List"
         actions={
           <span className="dataset-list-count">{variables.length}개</span>
         }

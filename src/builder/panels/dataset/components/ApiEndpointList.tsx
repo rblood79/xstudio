@@ -74,8 +74,8 @@ export function ApiEndpointList({ projectId }: ApiEndpointListProps) {
 
   const handleExecute = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    // Editor의 Test 탭으로 이동 (컬럼 자동 감지 기능 포함)
-    openApiEditor(id, "test");
+    // Editor의 Run 탭으로 이동 (컬럼 자동 감지 기능 포함)
+    openApiEditor(id, "run");
   };
 
   const handleEdit = (id: string, e: React.MouseEvent) => {
@@ -86,7 +86,7 @@ export function ApiEndpointList({ projectId }: ApiEndpointListProps) {
   return (
     <div className="section">
       <SectionHeader
-        title="API Endpoints"
+        title="API List"
         actions={
           <span className="dataset-list-count">{apiEndpoints.length}개</span>
         }
@@ -160,7 +160,7 @@ export function ApiEndpointList({ projectId }: ApiEndpointListProps) {
           onClick={handleCreate}
         >
           <Plus size={16} />
-          <span>API Endpoint 추가</span>
+          <span>API 추가</span>
         </button>
       </div>
     </div>
