@@ -1,7 +1,8 @@
 # Events Panel 재설계 문서
 
-> **상태**: 설계 검토 대기중
+> **상태**: ✅ Phase 5 완료 (블록 기반 UI + Navigate 액션 수정)
 > **작성일**: 2025-12-07
+> **최종 수정**: 2025-12-08
 > **관련 이슈**: Dataset Table DataBinding 기능 점검 후 진행
 
 ---
@@ -1286,9 +1287,46 @@ export function ThenElseBlock({
 
 ---
 
-### Phase 5: 고급 기능 + 테스트/로그 (1주)
+### Phase 5: 블록 기반 UI 구현 ✅ (2025-12-08 완료)
 
-**목표**: 코드 미리보기 + 미니맵 + 테스트/디버그
+**목표**: WHEN → IF → THEN/ELSE 블록 UI + Navigate 액션 수정
+
+#### ✅ 완료된 작업
+
+**블록 기반 UI 컴포넌트:**
+- [x] `WhenBlock.tsx` - 이벤트 트리거 블록 (파란색)
+- [x] `IfBlock.tsx` - 조건 블록 (노란색, 선택적)
+- [x] `ThenElseBlock.tsx` - 액션 분기 블록 (초록/빨강)
+- [x] `ActionBlock.tsx` - 개별 액션 표시
+- [x] `BlockConnector.tsx` - 블록 간 연결선
+- [x] `BlockActionEditor.tsx` - 액션 편집 어댑터
+
+**EventEngine 수정:**
+- [x] `getActionConfig<T>` 헬퍼 추가 - `config` 또는 `value` 필드 지원
+- [x] 19개+ 액션 핸들러 업데이트
+- [x] 비활성 액션 스킵 시 경고 메시지 추가
+- [x] customFunction 빈 코드 처리 (에러 → 경고로 변경)
+
+**Navigate 액션 수정:**
+- [x] `enabled: false` 액션 스킵 경고 추가
+- [x] EventsPanel에서 `enabled` 기본값 `true` 보장
+- [x] 경로 정규화 (`/page-2` 형식 표준화)
+- [x] NavigateActionEditor에서 자동 `/` 접두사 추가
+- [x] BuilderCore에서 slug 비교 시 양방향 정규화
+
+**수정된 파일:**
+- `src/builder/panels/events/EventsPanel.tsx`
+- `src/builder/panels/events/blocks/WhenBlock.tsx`
+- `src/builder/panels/events/blocks/IfBlock.tsx`
+- `src/builder/panels/events/blocks/ThenElseBlock.tsx`
+- `src/builder/panels/events/blocks/ActionBlock.tsx`
+- `src/builder/panels/events/blocks/BlockConnector.tsx`
+- `src/builder/panels/events/editors/BlockActionEditor.tsx`
+- `src/utils/events/eventEngine.ts`
+- `src/builder/events/actions/NavigateActionEditor.tsx`
+- `src/builder/main/BuilderCore.tsx`
+
+#### 🔄 향후 작업
 
 - [ ] **코드 프리뷰 패널** (lazy 생성으로 성능 최적화)
 - [ ] 템플릿 시스템
@@ -1355,8 +1393,8 @@ export function ThenElseBlock({
 
 ---
 
-**문서 버전**: 1.4.0
-**최종 수정**: 2025-12-07
+**문서 버전**: 1.5.0
+**최종 수정**: 2025-12-08
 **작성자**: Claude Code
 
 ---
@@ -1370,3 +1408,4 @@ export function ThenElseBlock({
 | 1.2.0 | 2025-12-07 | 5.1 DOM 구조 및 클래스 네이밍 패턴 섹션 추가, Phase 1에 DOM 구조 표준화 반영 |
 | 1.3.0 | 2025-12-07 | 레거시 코드 폐기 결정 반영: V2 접미사 제거, Phase 6 삭제, 마이그레이션 섹션 제거, 총 6 Phase로 단축 |
 | 1.4.0 | 2025-12-07 | 3.2 React Aria Components 이벤트 최적화 섹션 추가: usePress, useHover, useLongPress, useMove 훅 활용, PressEvent/MoveEvent 조건 체크, Phase별 이벤트 추가 계획 |
+| 1.5.0 | 2025-12-08 | **Phase 5 완료**: 블록 기반 UI 구현 (WhenBlock, IfBlock, ThenElseBlock, ActionBlock, BlockConnector, BlockActionEditor), EventEngine `getActionConfig<T>` 헬퍼 추가, Navigate 액션 경로 정규화 수정 |

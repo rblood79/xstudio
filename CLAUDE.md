@@ -269,12 +269,16 @@ The project includes a comprehensive Mock Data API system for component testing 
 
 The Event System enables visual programming through a drag-and-drop event handler and action configuration interface.
 
-**Status**: ✅ Phase 1-5 Complete (2025-11-11)
+**Status**: ✅ Phase 1-5 Complete (2025-12-08)
 
-**Location**: `src/builder/inspector/events/`
+**Locations**:
+- `src/builder/inspector/events/` - Legacy event editor and action editors
+- `src/builder/panels/events/` - **NEW** Block-based Events Panel UI
+- `src/builder/events/` - Shared event components (pickers, actions)
 
 **Architecture**:
 - **React Stately**: useListData-based state management for handlers and actions
+- **Block-based UI**: WHEN → IF → THEN/ELSE visual pattern (Phase 5)
 - **Three View Modes**: List (editing), Simple Flow (visualization), ReactFlow (advanced diagram)
 - **Type System**: Inspector-specific types (camelCase) with EventEngine compatibility (snake_case)
 
@@ -303,11 +307,16 @@ The Event System enables visual programming through a drag-and-drop event handle
 - ActionNode.tsx - Action visualization
 - FlowConnector.tsx - Connection logic
 
-**Phase 5: Data Persistence** ✅
+**Phase 5: Block-Based UI & Data Persistence** ✅
+- Block-based visual editor: WHEN → IF → THEN/ELSE pattern
+- WhenBlock, IfBlock, ThenElseBlock components
+- BlockActionEditor for unified action configuration
 - Fixed data deletion on re-entry (initial mount detection)
 - Fixed actions disappearing on handler click (removed dependency)
 - Component remounting via key prop for clean state
 - JSON comparison for actual content change detection
+- Navigate action path normalization (auto "/" prefix)
+- EventEngine warning for disabled actions
 
 #### Key Architectural Decisions
 
@@ -363,6 +372,21 @@ const actionData = action as {
 const config = (actionData.config || actionData.value || {}) as ActionConfig;
 ```
 
+**5. Path Normalization (Navigate Action)**
+```typescript
+// NavigateActionEditor - Always normalize path with "/" prefix
+function normalizePath(path: string): string {
+  if (!path) return '/';
+  const trimmed = path.trim();
+  return trimmed.startsWith('/') ? trimmed : `/${trimmed}`;
+}
+
+// BuilderCore - Normalize both path and slug for comparison
+const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+const normalizedSlug = pageSlug.startsWith('/') ? pageSlug : `/${pageSlug}`;
+return normalizedSlug === normalizedPath;
+```
+
 #### Event System Files
 
 **State Management**:
@@ -375,13 +399,32 @@ const config = (actionData.config || actionData.value || {}) as ActionConfig;
 - `src/builder/inspector/events/EventEditor.tsx` - Legacy event editor
 - `src/builder/inspector/events/EventList.tsx` - Event list view
 
+**Block-Based UI (Events Panel)**: `src/builder/panels/events/`
+- `EventsPanel.tsx` - Main panel with block-based UI, WHEN → IF → THEN/ELSE pattern
+- `blocks/WhenBlock.tsx` - Event trigger block (onClick, onChange, etc.)
+- `blocks/IfBlock.tsx` - Conditional execution block with ConditionGroup editor
+- `blocks/ThenElseBlock.tsx` - Action execution blocks with add/edit/delete
+- `editors/BlockActionEditor.tsx` - Unified action config editor for all 21 action types
+
+**Shared Event Components**: `src/builder/events/`
+- `actions/NavigateActionEditor.tsx` - Page navigation with path normalization (auto "/" prefix)
+- `pickers/EventTypePicker.tsx` - Event type selection (DialogTrigger + Popover + ListBox)
+- `pickers/ActionTypePicker.tsx` - Action type selection with categories
+- `components/DebounceThrottleEditor.tsx` - Timing controls for handlers
+- `state/useEventHandlers.ts` - Handler list management with useListData
+- `state/useActions.ts` - Action list management with useListData
+- `state/useEventSelection.ts` - Handler selection state
+- `types/eventTypes.ts` - Event type definitions
+- `types/eventBlockTypes.ts` - Block UI type definitions
+- `utils/normalizeEventTypes.ts` - snake_case → camelCase normalization
+
 **Action Editors** (21 editors):
 - `src/builder/inspector/events/actions/ActionEditor.tsx` - Base action editor wrapper
 - `src/builder/inspector/events/actions/CustomFunctionActionEditor.tsx` - Code editor with Monaco
 - `src/builder/inspector/events/actions/SetStateActionEditor.tsx` - Global state updates
 - `src/builder/inspector/events/actions/SetComponentStateActionEditor.tsx` - Component-specific state
 - `src/builder/inspector/events/actions/UpdateStateActionEditor.tsx` - State modifications
-- `src/builder/inspector/events/actions/NavigateActionEditor.tsx` - Page navigation
+- `src/builder/inspector/events/actions/NavigateActionEditor.tsx` - Page navigation (legacy, use shared)
 - `src/builder/inspector/events/actions/ShowModalActionEditor.tsx` - Modal show control
 - `src/builder/inspector/events/actions/HideModalActionEditor.tsx` - Modal hide control
 - `src/builder/inspector/events/actions/ShowToastActionEditor.tsx` - Toast notifications
@@ -449,6 +492,11 @@ const config = (actionData.config || actionData.value || {}) as ActionConfig;
 
 **Event Engine** (Preview):
 - `src/utils/eventEngine.ts` - Event execution engine with dual-field support
+  - `getActionConfig<T>()` - Type-safe config extraction helper
+  - Warning logs for disabled actions (`enabled: false`)
+  - Navigate action sends `NAVIGATE_TO_PAGE` postMessage to Builder
+- `src/builder/main/BuilderCore.tsx` - Handles `NAVIGATE_TO_PAGE` message
+  - Bidirectional path/slug normalization (handles "/" prefix)
 
 #### Key Features
 

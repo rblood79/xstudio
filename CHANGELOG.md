@@ -7,6 +7,67 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added - Events Panel Block-Based UI (2025-12-08)
+
+#### Phase 5: Block-Based UI Implementation
+
+**New Block Components:**
+
+- `src/builder/panels/events/blocks/WhenBlock.tsx`
+  - Event trigger block (onClick, onChange, etc.)
+  - Visual indicator with "WHEN" label
+  - EventTypePicker integration for changing trigger
+
+- `src/builder/panels/events/blocks/IfBlock.tsx`
+  - Conditional execution block
+  - ConditionGroup editor integration
+  - Optional block (can be removed)
+
+- `src/builder/panels/events/blocks/ThenElseBlock.tsx`
+  - Action execution blocks
+  - Action list with add/edit/delete
+  - Toggle enabled/disabled per action
+
+- `src/builder/panels/events/editors/BlockActionEditor.tsx`
+  - Unified action config editor
+  - Supports all 21 action types
+  - Type-safe config handling
+
+**Modified Files:**
+
+- `src/builder/panels/events/EventsPanel.tsx`
+  - Refactored to use block-based components
+  - WHEN → IF → THEN/ELSE visual pattern
+  - Added `enabled` safeguard (defaults to `true`)
+  - Debug logging for action updates
+
+- `src/builder/events/actions/NavigateActionEditor.tsx`
+  - Added `normalizePath()` function
+  - Auto-adds "/" prefix to all paths
+  - Consistent URL path format
+
+- `src/builder/main/BuilderCore.tsx`
+  - Fixed NAVIGATE_TO_PAGE message handler
+  - Bidirectional path/slug normalization
+  - Handles both "/page" and "page" formats
+
+- `src/utils/events/eventEngine.ts`
+  - Added warning for disabled actions
+  - `getActionConfig<T>()` helper function
+  - Dual-field support (config/value)
+
+**Bug Fixes:**
+
+- Fixed navigate action not executing due to `enabled: false`
+- Fixed page navigation failing due to slug mismatch
+- Fixed path comparison without "/" prefix normalization
+
+**Results:**
+- ✅ Block-based visual event editor
+- ✅ Navigate action works correctly
+- ✅ Path format standardized with "/" prefix
+- ✅ All 21 action types supported
+
 ### Added - Panel System Refactoring (2025-11-16)
 
 #### Phase 1: Stability Improvements
