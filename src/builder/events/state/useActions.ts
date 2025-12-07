@@ -3,11 +3,30 @@
  *
  * useListData를 사용하여 Action 목록 CRUD 및 재정렬 자동화
  * Phase 1: Inspector Events React Stately 전환
+ *
+ * ⚠️ 주의: useListData의 initialItems는 초기 마운트 시에만 적용됨
+ * initialActions 변경 시 리셋을 위해 useEffect로 동기화 필요
  */
 
+import { useEffect, useRef } from 'react';
 import { useListData } from 'react-stately';
 import type { Key } from 'react-stately';
 import type { EventAction, ActionType } from '../types/eventTypes';
+
+/**
+ * 두 액션 배열의 ID 세트가 동일한지 비교
+ * JSON.stringify 대신 ID 기반 비교로 성능 개선
+ */
+function areActionIdsEqual(a: EventAction[], b: EventAction[]): boolean {
+  if (a.length !== b.length) return false;
+  const aIds = new Set(a.map((action) => action.id));
+  const bIds = new Set(b.map((action) => action.id));
+  if (aIds.size !== bIds.size) return false;
+  for (const id of aIds) {
+    if (!bIds.has(id)) return false;
+  }
+  return true;
+}
 
 /**
  * Action 목록 관리 훅
@@ -29,10 +48,30 @@ import type { EventAction, ActionType } from '../types/eventTypes';
  * duplicateAction(actionId);
  */
 export function useActions(initialActions: EventAction[]) {
+  // 이전 initialActions 참조 저장
+  const prevInitialActionsRef = useRef<EventAction[]>(initialActions);
+
   const list = useListData({
     initialItems: initialActions,
     getKey: (item) => item.id || '',
   });
+
+  // ⚡ initialActions 변경 시 리스트 리셋
+  useEffect(() => {
+    // ID 기반 비교로 실제 변경 감지
+    if (!areActionIdsEqual(prevInitialActionsRef.current, initialActions)) {
+      // 기존 아이템 모두 제거
+      list.items.forEach((item) => {
+        if (item.id) list.remove(item.id);
+      });
+      // 새 아이템 추가
+      initialActions.forEach((action) => {
+        list.append(action);
+      });
+      // 참조 업데이트
+      prevInitialActionsRef.current = initialActions;
+    }
+  }, [initialActions, list]);
 
   /**
    * 새 액션 추가

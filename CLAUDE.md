@@ -529,6 +529,112 @@ AI-powered event recommendations based on:
 **Issue**: Events stored in props.events, not element.events
 **Solution**: Read from `(builderElement?.props as any)?.events`
 
+### Events Panel (Block-based UI)
+
+The Events Panel provides a visual block-based event editor inspired by Airtable and n8n.
+
+**Status**: ✅ Phase 0-5 Complete (2025-12)
+
+**Location**: `src/builder/panels/events/`
+
+**Architecture**:
+- **Block Pattern**: WHEN → IF → THEN/ELSE visual flow
+- **Variable Binding**: `{{variable}}` syntax with autocomplete
+- **Lazy Code Generation**: Performance-optimized JavaScript preview
+- **Minimap**: SVG-based handler visualization
+
+#### Phase Completion Summary
+
+**Phase 0: Bug Fixes** ✅
+- Fixed EventTypePicker rendering issues
+- Fixed TypeScript compilation errors
+
+**Phase 1: Type System + Block Components** ✅
+- `eventBlockTypes.ts` - Block-based type definitions
+- `WhenBlock.tsx` - Event trigger block
+- `IfBlock.tsx` - Condition block with AND/OR logic
+- `ActionBlock.tsx` - Individual action display
+
+**Phase 2: Condition System + Search** ✅
+- `ConditionRow.tsx` - Single condition editor
+- `OperatorPicker.tsx` - Comparison operator selection
+- `ElementPicker.tsx` - Element reference picker
+- Event type search with ComboBox
+
+**Phase 3: THEN/ELSE + Dataset Actions** ✅
+- `ThenElseBlock.tsx` - Branch container with collapse
+- `ActionList.tsx` - Action list with reorder buttons
+- `BlockActionEditor.tsx` - Adapter for 21 action editors
+- 3 new Dataset actions: loadDataset, syncComponent, saveToDataset
+
+**Phase 4: Variable Binding + Validation** ✅
+- `variableParser.ts` - `{{variable}}` syntax parser
+- `VariableBindingEditor.tsx` - Editor with autocomplete
+- `useVariableSchema.ts` - Schema for autocomplete (event, state, dataset)
+- `bindingValidator.ts` - Validation with Levenshtein suggestions
+
+**Phase 5: Preview + Debug** ✅
+- `CodePreviewPanel.tsx` - Lazy JavaScript code generation
+- `EventMinimap.tsx` - SVG visualization of handler flow
+- `EventDebugger.tsx` - Inline test execution with step results
+
+#### Key Files
+
+**Block Components** (`src/builder/panels/events/blocks/`):
+- `WhenBlock.tsx` - Event trigger (onClick, onChange, etc.)
+- `IfBlock.tsx` - Condition group with AND/OR
+- `ThenElseBlock.tsx` - Action branch container
+- `ActionBlock.tsx` - Single action display
+- `ActionList.tsx` - Reorderable action list
+- `BlockConnector.tsx` - Visual connector between blocks
+
+**Editor Components** (`src/builder/panels/events/editors/`):
+- `ConditionRow.tsx` - Condition: left op right
+- `OperatorToggle.tsx` - AND/OR toggle
+- `OperatorPicker.tsx` - Comparison operators
+- `ElementPicker.tsx` - Element ID picker
+- `BlockActionEditor.tsx` - Action editor adapter
+- `VariableBindingEditor.tsx` - Variable autocomplete
+
+**Preview Components** (`src/builder/panels/events/preview/`):
+- `CodePreviewPanel.tsx` - JavaScript code preview
+- `EventMinimap.tsx` - Handler flow minimap
+- `EventDebugger.tsx` - Test execution debugger
+
+**Hooks** (`src/builder/events/hooks/`):
+- `useVariableSchema.ts` - Variable schema provider
+- `useEventSearch.ts` - Event/action search
+- `useApplyTemplate.ts` - Template application
+- `useCopyPasteActions.ts` - Action clipboard
+- `useEventFlow.ts` - Flow diagram state
+
+**Utils** (`src/builder/events/utils/`):
+- `variableParser.ts` - `{{var}}` parsing
+- `bindingValidator.ts` - Binding validation
+- `normalizeEventTypes.ts` - Type normalization
+- `actionHelpers.ts` - Action utilities
+
+#### CSS Architecture
+
+All styles in `src/builder/panels/events/EventsPanel.css` (~1870 lines):
+
+**Block Colors**:
+```css
+--block-trigger-color: var(--color-blue-500);     /* WHEN */
+--block-condition-color: var(--color-amber-500);  /* IF */
+--block-success-color: var(--color-green-500);    /* THEN */
+--block-fallback-color: var(--color-red-500);     /* ELSE */
+```
+
+**Key Class Patterns**:
+- `.event-block` - Base block container
+- `.event-block-header` - Block header with icon
+- `.event-block-content` - Block body content
+- `.block-connector` - Visual flow connector
+- `.condition-row` - Single condition editor
+- `.binding-editor` - Variable binding input
+- `.debugger-step` - Test execution step
+
 ## Critical Coding Rules
 
 ### CSS Architecture

@@ -11,5 +11,10 @@ export {
 export { useApplyTemplate, generateEventHandlerIds } from "./useApplyTemplate";
 export { useCopyPasteActions, useActionKeyboardShortcuts } from "./useCopyPasteActions";
 export { useEventFlow } from "./useEventFlow";
+export {
+  useVariableSchema,
+  getEventPayloadSchema,
+  createDataTableSchema,
+} from "./useVariableSchema";
 export type { RecommendedEvent } from "./useRecommendedEvents";
 export type { ApplyTemplateOptions } from "./useApplyTemplate";

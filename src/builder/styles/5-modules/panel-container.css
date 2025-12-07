@@ -90,7 +90,7 @@
     /* ✅ 동적 넓이: CSS 변수로 패널마다 다른 넓이 지원 */
     width: var(--panel-width, 233px);
     min-width: var(--panel-width, 233px);
-    height: 100%;
+    height: calc(100vh - 48px);
     flex-shrink: 0;
     display: flex;
     flex-direction: row;
