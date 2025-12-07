@@ -394,6 +394,156 @@ IF [This: Instagram photo] THEN [That: Save to Dropbox]
 
 ---
 
+## 3.2 React Aria Components 이벤트 최적화
+
+> **참조**: [React Aria Interactions](https://react-spectrum.adobe.com/react-aria/interactions.html)
+>
+> React Aria Components는 기본 DOM 이벤트보다 더 최적화된 이벤트 시스템을 제공합니다.
+> Events Panel은 이를 활용하여 접근성과 크로스 플랫폼 호환성을 향상시킵니다.
+
+### 3.2.1 React Aria 이벤트 훅 목록
+
+| 훅 | 이벤트 핸들러 | 용도 |
+|---|---|---|
+| **[usePress](https://react-spectrum.adobe.com/react-aria/usePress.html)** | `onPress`, `onPressStart`, `onPressEnd`, `onPressChange` | 통합 클릭/터치/키보드 |
+| **[useHover](https://react-spectrum.adobe.com/react-aria/useHover.html)** | `onHoverStart`, `onHoverEnd`, `onHoverChange` | 안전한 호버 감지 |
+| **[useLongPress](https://react-spectrum.adobe.com/react-aria/useLongPress.html)** | `onLongPress`, `onLongPressStart`, `onLongPressEnd` | 길게 누르기 (500ms) |
+| **[useFocus](https://react-spectrum.adobe.com/react-aria/useFocus.html)** | `onFocus`, `onBlur`, `onFocusChange` | 포커스 추적 |
+| **[useFocusWithin](https://react-spectrum.adobe.com/react-aria/useFocusWithin.html)** | `onFocusWithin`, `onBlurWithin`, `onFocusWithinChange` | 컨테이너 포커스 |
+| **[useKeyboard](https://react-spectrum.adobe.com/react-aria/useKeyboard.html)** | `onKeyDown`, `onKeyUp` | 키보드 이벤트 |
+| **[useMove](https://react-spectrum.adobe.com/react-aria/useMove.html)** | `onMoveStart`, `onMove`, `onMoveEnd` | 드래그/이동 |
+
+### 3.2.2 이벤트 타입 마이그레이션
+
+기존 DOM 이벤트를 React Aria 이벤트로 교체하여 최적화:
+
+| 기존 이벤트 | React Aria 대체 | 개선점 |
+|------------|----------------|--------|
+| `onClick` | **`onPress`** | ✅ mouse/touch/keyboard/screen reader 통합 |
+| `onMouseEnter` | **`onHoverStart`** | ✅ 터치 기기에서 안전하게 무시 |
+| `onMouseLeave` | **`onHoverEnd`** | ✅ pointerType으로 입력 장치 구분 |
+| *(신규)* | **`onLongPress`** | 🆕 모바일 컨텍스트 메뉴, 삭제 확인 |
+| *(신규)* | **`onMove`** | 🆕 슬라이더, 리사이즈, 드래그 |
+| *(신규)* | **`onFocusWithin`** | 🆕 폼 그룹 포커스 추적 |
+
+### 3.2.3 PressEvent 속성 (조건 체크에 활용)
+
+```typescript
+interface PressEvent {
+  type: 'pressstart' | 'pressend' | 'pressup' | 'press';
+
+  // 🎯 입력 장치 구분 - 조건 분기에 활용
+  pointerType: 'mouse' | 'pen' | 'touch' | 'keyboard' | 'virtual';
+
+  // 🎯 수정키 - 단축키 조합에 활용
+  shiftKey: boolean;
+  ctrlKey: boolean;
+  metaKey: boolean;
+  altKey: boolean;
+
+  // 🎯 위치 - 영역별 분기에 활용
+  x: number;  // target 기준 상대 좌표
+  y: number;
+
+  target: Element;
+  continuePropagation(): void;
+}
+```
+
+### 3.2.4 조건 표현식 예시
+
+```typescript
+// IF 블록에서 사용 가능한 조건들
+
+// 입력 장치별 분기
+"event.pointerType === 'touch'"        // 터치 전용 동작
+"event.pointerType === 'keyboard'"     // 키보드 접근성 전용
+
+// 수정키 조합
+"event.shiftKey === true"              // Shift+클릭: 범위 선택
+"event.metaKey === true"               // Cmd+클릭: 다중 선택
+"event.ctrlKey && event.shiftKey"      // Ctrl+Shift: 특수 동작
+
+// 위치 기반 분기
+"event.x < 50"                         // 왼쪽 영역 클릭
+"event.y > target.height - 20"         // 하단 영역 클릭
+```
+
+### 3.2.5 업데이트된 이벤트 레지스트리
+
+```typescript
+// src/types/events/events.registry.ts 업데이트 필요
+
+export const IMPLEMENTED_EVENT_TYPES = [
+  // === React Aria Press Events (권장) ===
+  "onPress",              // onClick 대체 (mouse/touch/keyboard 통합)
+  "onPressStart",         // 누르기 시작
+  "onPressEnd",           // 누르기 종료
+
+  // === React Aria Hover Events ===
+  "onHoverStart",         // onMouseEnter 대체
+  "onHoverEnd",           // onMouseLeave 대체
+
+  // === React Aria Long Press ===
+  "onLongPress",          // 🆕 길게 누르기 (500ms)
+
+  // === React Aria Move Events ===
+  "onMoveStart",          // 🆕 이동 시작
+  "onMove",               // 🆕 이동 중 (deltaX, deltaY)
+  "onMoveEnd",            // 🆕 이동 종료
+
+  // === Focus Events (유지) ===
+  "onFocus",
+  "onBlur",
+  "onFocusWithin",        // 🆕 컨테이너 포커스
+
+  // === Form Events (유지) ===
+  "onChange",
+  "onSubmit",
+
+  // === Keyboard Events (유지) ===
+  "onKeyDown",
+  "onKeyUp",
+
+  // === Legacy (하위 호환, deprecated) ===
+  "onClick",              // ⚠️ onPress 사용 권장
+  "onMouseEnter",         // ⚠️ onHoverStart 사용 권장
+  "onMouseLeave",         // ⚠️ onHoverEnd 사용 권장
+] as const;
+```
+
+### 3.2.6 MoveEvent 활용 (드래그 인터랙션)
+
+```typescript
+interface MoveEvent {
+  type: 'movestart' | 'move' | 'moveend';
+  pointerType: 'mouse' | 'pen' | 'touch' | 'keyboard' | 'virtual';
+
+  // 🎯 이동량 - 슬라이더, 리사이즈에 활용
+  deltaX: number;  // X축 이동량
+  deltaY: number;  // Y축 이동량
+
+  shiftKey: boolean;
+  ctrlKey: boolean;
+  metaKey: boolean;
+  altKey: boolean;
+}
+
+// 활용 예시: 슬라이더 값 조정
+// WHEN: onMove
+// THEN: updateState({ volume: state.volume + event.deltaX })
+```
+
+### 3.2.7 구현 로드맵 반영
+
+| Phase | 이벤트 타입 추가 |
+|-------|-----------------|
+| **Phase 1** | `onPress`, `onHoverStart`, `onHoverEnd` (기본) |
+| **Phase 2** | `onLongPress`, `onFocusWithin` (조건 시스템과 연계) |
+| **Phase 3** | `onMoveStart`, `onMove`, `onMoveEnd` (드래그 액션) |
+
+---
+
 ## 4. 데이터 모델 재설계
 
 ### 4.1 새로운 EventHandler 타입
@@ -1205,7 +1355,7 @@ export function ThenElseBlock({
 
 ---
 
-**문서 버전**: 1.3.0
+**문서 버전**: 1.4.0
 **최종 수정**: 2025-12-07
 **작성자**: Claude Code
 
@@ -1219,3 +1369,4 @@ export function ThenElseBlock({
 | 1.1.0 | 2025-12-07 | 3.1.1~3.1.3 테이블 정리, 로드맵 전면 개편, 3.1.3 항목 Phase별 반영 |
 | 1.2.0 | 2025-12-07 | 5.1 DOM 구조 및 클래스 네이밍 패턴 섹션 추가, Phase 1에 DOM 구조 표준화 반영 |
 | 1.3.0 | 2025-12-07 | 레거시 코드 폐기 결정 반영: V2 접미사 제거, Phase 6 삭제, 마이그레이션 섹션 제거, 총 6 Phase로 단축 |
+| 1.4.0 | 2025-12-07 | 3.2 React Aria Components 이벤트 최적화 섹션 추가: usePress, useHover, useLongPress, useMove 훅 활용, PressEvent/MoveEvent 조건 체크, Phase별 이벤트 추가 계획 |
