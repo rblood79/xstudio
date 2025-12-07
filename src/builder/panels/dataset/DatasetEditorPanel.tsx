@@ -14,7 +14,7 @@
  *    (useEffect에서 setState 호출하는 안티패턴 제거)
  */
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import {
   Database,
   Table2,
@@ -28,12 +28,7 @@ import {
 } from "lucide-react";
 import type { PanelProps } from "../core/types";
 import { useDatasetEditorStore } from "./stores/datasetEditorStore";
-import {
-  useDataTables,
-  useApiEndpoints,
-  useVariables,
-  useTransformers,
-} from "../../stores/data";
+import { useDataStore } from "../../stores/data";
 import {
   DataTableCreator,
   DataTableEditor,
@@ -104,11 +99,28 @@ function EditorContent({ mode, close }: EditorContentProps) {
   // DataTableCreator 모드 상태 (empty/preset) - key로 자동 초기화
   const [creatorMode, setCreatorMode] = useState<CreatorMode>("preset");
 
-  // 데이터 조회
-  const dataTables = useDataTables();
-  const apiEndpoints = useApiEndpoints();
-  const variables = useVariables();
-  const transformers = useTransformers();
+  // 데이터 조회 - 개별 selector + useMemo로 리렌더링 최적화
+  const dataTablesMap = useDataStore((state) => state.dataTables);
+  const apiEndpointsMap = useDataStore((state) => state.apiEndpoints);
+  const variablesMap = useDataStore((state) => state.variables);
+  const transformersMap = useDataStore((state) => state.transformers);
+
+  const dataTables = useMemo(
+    () => Array.from(dataTablesMap.values()),
+    [dataTablesMap]
+  );
+  const apiEndpoints = useMemo(
+    () => Array.from(apiEndpointsMap.values()),
+    [apiEndpointsMap]
+  );
+  const variables = useMemo(
+    () => Array.from(variablesMap.values()),
+    [variablesMap]
+  );
+  const transformers = useMemo(
+    () => Array.from(transformersMap.values()),
+    [transformersMap]
+  );
 
   // 모드에 따른 헤더 제목 결정
   const getHeaderTitle = (): string => {

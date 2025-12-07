@@ -533,7 +533,138 @@ function migrateEventHandler(old: EventHandler): EventHandlerV2 {
 
 ## 5. 컴포넌트 설계
 
-### 5.1 새로운 컴포넌트 구조
+### 5.1 DOM 구조 및 클래스 네이밍 패턴
+
+> **⚠️ 중요**: EventsPanel의 DOM 구조와 클래스 네이밍은 다른 패널들의 표준 구조를 **반드시** 따라야 합니다.
+> 참조: `src/builder/panels/common/index.css` (Panel System 섹션)
+
+#### 5.1.1 표준 패널 DOM 구조
+
+```html
+<!-- 모든 패널이 따르는 공통 구조 -->
+<div class="panel">
+  <div class="panel-header">
+    <span class="panel-title">Events</span>
+    <div class="panel-actions">
+      <!-- 헤더 액션 버튼들 -->
+    </div>
+  </div>
+
+  <div class="panel-contents">
+    <!-- 섹션 반복 -->
+    <div class="section" data-section-id="handlers">
+      <div class="section-header">
+        <span class="section-title">Event Handlers</span>
+        <div class="section-actions">
+          <!-- 섹션 액션 버튼들 -->
+        </div>
+      </div>
+
+      <div class="section-content">
+        <div class="list-group">
+          <div class="list-item"><!-- 핸들러 아이템 --></div>
+          <div class="list-item"><!-- 핸들러 아이템 --></div>
+        </div>
+      </div>
+
+      <div class="section-footer">
+        <!-- 선택적 푸터 -->
+      </div>
+    </div>
+
+    <div class="section" data-section-id="actions">
+      <!-- 다른 섹션... -->
+    </div>
+  </div>
+</div>
+```
+
+#### 5.1.2 클래스 네이밍 규칙
+
+| 레벨 | 클래스명 | 설명 |
+|------|----------|------|
+| **패널** | `.panel` | 패널 최상위 컨테이너 |
+| | `.panel-header` | 패널 헤더 영역 |
+| | `.panel-title` | 패널 제목 |
+| | `.panel-actions` | 패널 헤더 액션 버튼 그룹 |
+| | `.panel-contents` | 패널 콘텐츠 영역 (복수형 주의) |
+| **섹션** | `.section` | 섹션 컨테이너 |
+| | `.section-header` | 섹션 헤더 |
+| | `.section-title` | 섹션 제목 |
+| | `.section-actions` | 섹션 액션 버튼 그룹 |
+| | `.section-content` | 섹션 콘텐츠 영역 |
+| | `.section-footer` | 섹션 푸터 (선택적) |
+| **리스트** | `.list-group` | 리스트 그룹 컨테이너 |
+| | `.list-item` | 개별 리스트 아이템 |
+
+#### 5.1.3 EventsPanel 적용 예시
+
+```html
+<div class="events-panel panel">
+  <div class="panel-header">
+    <span class="panel-title">
+      <SquareMousePointer /> Events
+    </span>
+    <div class="panel-actions">
+      <EventTypePicker />
+    </div>
+  </div>
+
+  <div class="panel-contents">
+    <!-- 핸들러 목록 섹션 -->
+    <div class="section" data-section-id="handlers-list">
+      <div class="section-header">
+        <span class="section-title">Event Handlers</span>
+      </div>
+      <div class="section-content">
+        <div class="list-group handlers-list">
+          <button class="list-item handler-item">
+            <Zap /> onClick
+            <span class="handler-action-count">2 actions</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 선택된 핸들러 상세 섹션 -->
+    <div class="section" data-section-id="handler-detail">
+      <div class="section-header">
+        <Button class="back-button"><ChevronLeft /></Button>
+        <span class="section-title">onClick</span>
+        <div class="section-actions">
+          <Button><Trash /></Button>
+        </div>
+      </div>
+
+      <div class="section-content">
+        <!-- WHEN/IF/THEN 블록들 -->
+        <div class="event-block when-block">...</div>
+        <div class="event-block if-block">...</div>
+        <div class="event-block then-block">...</div>
+      </div>
+    </div>
+  </div>
+</div>
+```
+
+#### 5.1.4 블록 UI 전용 클래스
+
+블록 UI는 `.section-content` 내부에서 사용되며, 별도의 네임스페이스를 갖습니다:
+
+| 클래스명 | 설명 |
+|----------|------|
+| `.event-block` | 모든 블록의 기본 클래스 |
+| `.when-block` | WHEN 트리거 블록 (파란색) |
+| `.if-block` | IF 조건 블록 (노란색) |
+| `.then-block` | THEN 성공 블록 (초록색) |
+| `.else-block` | ELSE 실패 블록 (빨간색) |
+| `.block-header` | 블록 헤더 영역 |
+| `.block-content` | 블록 콘텐츠 영역 |
+| `.block-connector` | 블록 간 연결선 |
+
+---
+
+### 5.2 새로운 컴포넌트 구조
 
 ```
 src/builder/panels/events/
@@ -968,10 +1099,14 @@ export function ThenElseBlock({
 
 ### Phase 1: 기반 작업 (1주)
 
-**목표**: 타입 시스템 + 블록 기본 구조 + 접근성
+**목표**: 타입 시스템 + 블록 기본 구조 + 접근성 + DOM 구조 표준화
 
 - [ ] 새 타입 시스템 정의 (`eventTypesV2.ts`)
 - [ ] 색상 토큰 및 CSS 변수 설정 (3.3 컬러 시스템)
+- [ ] **DOM 구조 표준화** *(5.1)*: 다른 패널과 동일한 DOM/클래스 구조 준수
+  - `.panel` > `.panel-header` > `.panel-contents` > `.section` 패턴
+  - `data-section-id` 속성으로 섹션 식별
+  - `.list-group` > `.list-item` 패턴 사용
 - [ ] 블록 기본 컴포넌트 생성 (WhenBlock, ActionBlock)
 - [ ] 기존 EventsPanel과 병행 가능한 구조 설계
 - [ ] **접근성/키보드** *(3.1.3)*: 핵심 포커스 이동 + 단축키 (Tab, Enter, Esc)
@@ -1058,15 +1193,15 @@ export function ThenElseBlock({
 
 ### 로드맵 요약 테이블
 
-| Phase | 핵심 목표 | 3.1.3 항목 | 기간 |
-|-------|----------|-----------|------|
-| **0** | 현행 버그 수정 | - | 선행 |
-| **1** | 타입 + 블록 기반 | 접근성/키보드 | 1주 |
-| **2** | 조건 시스템 + 선택기 | 단일 실행, 즐겨찾기 | 1주 |
-| **3** | THEN/ELSE + Dataset | 타이밍, 캐시 토글 | 1주 |
-| **4** | 변수 바인딩 | - | 1주 |
-| **5** | 테스트/로그 + 미리보기 | 미니맵, 히스토리 스냅샷 | 1주 |
-| **6** | 마이그레이션 | - | 1주 |
+| Phase | 핵심 목표 | 3.1.3 항목 | 참조 | 기간 |
+|-------|----------|-----------|------|------|
+| **0** | 현행 버그 수정 | - | 3.1.1 | 선행 |
+| **1** | 타입 + 블록 + DOM 구조 | 접근성/키보드 | 5.1 | 1주 |
+| **2** | 조건 시스템 + 선택기 | 단일 실행, 즐겨찾기 | - | 1주 |
+| **3** | THEN/ELSE + Dataset | 타이밍, 캐시 토글 | - | 1주 |
+| **4** | 변수 바인딩 | - | - | 1주 |
+| **5** | 테스트/로그 + 미리보기 | 미니맵, 히스토리 스냅샷 | - | 1주 |
+| **6** | 마이그레이션 | - | - | 1주 |
 
 ---
 
@@ -1108,7 +1243,7 @@ export function ThenElseBlock({
 
 ---
 
-**문서 버전**: 1.1.0
+**문서 버전**: 1.2.0
 **최종 수정**: 2025-12-07
 **작성자**: Claude Code
 
@@ -1120,3 +1255,4 @@ export function ThenElseBlock({
 |------|------|----------|
 | 1.0.0 | 2025-12-07 | 초안 작성 - 현재 상태 분석, 경쟁사 조사, 기본 설계 |
 | 1.1.0 | 2025-12-07 | 3.1.1~3.1.3 테이블 정리, 로드맵 전면 개편, 3.1.3 항목 Phase별 반영 |
+| 1.2.0 | 2025-12-07 | 5.1 DOM 구조 및 클래스 네이밍 패턴 섹션 추가, Phase 1에 DOM 구조 표준화 반영 |

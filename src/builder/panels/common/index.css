@@ -134,7 +134,7 @@
               width: var(--text-xl);
               height: var(--text-xl);
               background-color: transparent;
-              border-color: transparent;
+              border-width: 0;
               display: flex;
               align-items: center;
               justify-content: center;
@@ -469,6 +469,11 @@
       justify-content: space-between;
       align-items: center;
       padding: var(--spacing);
+      background: var(--outline-variant);
+      box-shadow: var(--inset-shadow-sm);
+      outline: 1px solid var(--border-color);
+      outline-offset: -1px;
+      border-radius: var(--radius-md);
 
       &::before {
         top: 0px;
@@ -481,21 +486,22 @@
 
       .react-aria-ToggleButton {
         background-color: transparent;
-        border-color: transparent;
+        border-width: 0;
         max-width: var(--text-xl);
         height: var(--text-xl);
-        padding: 0;
+        padding: var(--spacing-xs);
+        display: flex;
+        align-items: center;
+        justify-content: center;
 
         &[data-pressed] {
           background: transparent;
-          border-color: transparent;
           color: var(--on-surface);
         }
 
         &[data-selected] {
           box-shadow: var(--shadow-sm);
           background: transparent;
-          border-color: transparent;
           color: var(--surface);
           svg {
             stroke: var(--on-surface);
@@ -503,7 +509,6 @@
 
           &[data-pressed] {
             background: transparent;
-            border-color: transparent;
             color: var(--surface);
           }
         }
@@ -870,7 +875,7 @@
       outline-offset: -2px;
     }
 
-    .react-aria-ToggleButtonGroup {
+    .react-aria-ToggleButtonGroup:not([data-indicator="true"]) {
       width: 100%;
       background-color: var(--outline-variant);
       border-radius: var(--radius-md);

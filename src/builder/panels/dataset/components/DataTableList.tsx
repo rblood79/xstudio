@@ -6,9 +6,10 @@
  * @see docs/features/DATATABLE_PRESET_SYSTEM.md
  */
 
+import { useMemo } from "react";
 import { Table2, Plus, Trash2, Edit2, Link } from "lucide-react";
 import { Button } from "react-aria-components";
-import { useDataStore, useDataTables, useApiEndpoints } from "../../../stores/data";
+import { useDataStore } from "../../../stores/data";
 import { SectionHeader } from "../../common/SectionHeader";
 
 interface DataTableListProps {
@@ -24,17 +25,31 @@ export function DataTableList({
   onEditingChange,
   onCreateClick,
 }: DataTableListProps) {
-  const dataTables = useDataTables();
-  const apiEndpoints = useApiEndpoints();
+  // 개별 selector로 Map 직접 구독 (리렌더링 최적화)
+  const dataTablesMap = useDataStore((state) => state.dataTables);
+  const apiEndpointsMap = useDataStore((state) => state.apiEndpoints);
   const deleteDataTable = useDataStore((state) => state.deleteDataTable);
+
+  // useMemo로 배열 변환 캐싱 (Map 참조가 변경될 때만 재계산)
+  const dataTables = useMemo(
+    () => Array.from(dataTablesMap.values()),
+    [dataTablesMap]
+  );
+  const apiEndpoints = useMemo(
+    () => Array.from(apiEndpointsMap.values()),
+    [apiEndpointsMap]
+  );
 
   // Silence unused variable warning
   void projectId;
 
   // DataTable 이름으로 연결된 API Endpoint 찾기
-  const getLinkedApi = (tableName: string) => {
-    return apiEndpoints.find((api) => api.targetDataTable === tableName);
-  };
+  const getLinkedApi = useMemo(
+    () => (tableName: string) => {
+      return apiEndpoints.find((api) => api.targetDataTable === tableName);
+    },
+    [apiEndpoints]
+  );
 
   const handleDelete = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();

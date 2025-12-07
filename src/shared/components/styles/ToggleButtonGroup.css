@@ -88,22 +88,19 @@
       .react-aria-ToggleButton {
         position: relative;
         background-color: transparent;
-        border-color: transparent;
+        border-width: 0;
 
         &[data-pressed] {
           background: transparent;
-          border-color: transparent;
           color: var(--text-color);
         }
 
         &[data-selected] {
           background: transparent;
-          border-color: transparent;
           color: var(--on-primary);
 
           &[data-pressed] {
             background: transparent;
-            border-color: transparent;
             color: var(--text-color);
           }
         }

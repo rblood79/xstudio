@@ -117,12 +117,10 @@
         &[data-selected] {
           box-shadow: var(--shadow-sm);
           background: transparent;
-          border-color: transparent;
           color: var(--surface);
 
           &[data-pressed] {
             background: transparent;
-            border-color: transparent;
             color: var(--surface);
           }
         }

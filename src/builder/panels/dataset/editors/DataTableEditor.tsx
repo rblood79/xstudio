@@ -725,6 +725,9 @@ function SettingsEditor({
   onNameChange,
   onUseMockDataChange,
 }: SettingsEditorProps) {
+  // 로컬 상태로 관리하여 타이핑 중 불필요한 리렌더링 방지
+  const [localName, setLocalName] = useState(name);
+
   return (
     <div className="settings-editor">
       <div className="settings-field">
@@ -732,8 +735,13 @@ function SettingsEditor({
         <input
           type="text"
           className="settings-input"
-          value={name}
-          onChange={(e) => onNameChange(e.target.value)}
+          value={localName}
+          onChange={(e) => setLocalName(e.target.value)}
+          onBlur={() => {
+            if (localName !== name) {
+              onNameChange(localName);
+            }
+          }}
         />
       </div>
       <PropertySwitch

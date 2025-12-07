@@ -164,12 +164,12 @@ export const createCreateDataTableAction =
 
 /**
  * DataTable을 업데이트하는 액션
+ *
+ * ⚡ 개별 업데이트는 isLoading 표시 안함 (빠른 작업이므로)
  */
 export const createUpdateDataTableAction =
   (set: SetState, get: GetState) =>
   async (id: string, updates: DataTableUpdate): Promise<void> => {
-    set({ isLoading: true });
-
     try {
       const db = await getDB();
       await (db as unknown as {
@@ -199,7 +199,7 @@ export const createUpdateDataTableAction =
         }
       }
 
-      set({ dataTables: newMap, isLoading: false });
+      set({ dataTables: newMap });
 
       // 🆕 Canvas에 동기화
       syncDataTablesToCanvas(newMap);
@@ -208,7 +208,7 @@ export const createUpdateDataTableAction =
       set((state) => {
         const newErrors = new Map(state.errors);
         newErrors.set("updateDataTable", error as Error);
-        return { errors: newErrors, isLoading: false };
+        return { errors: newErrors };
       });
       throw error;
     }
@@ -408,12 +408,12 @@ export const createCreateApiEndpointAction =
 
 /**
  * ApiEndpoint을 업데이트하는 액션
+ *
+ * ⚡ 개별 업데이트는 isLoading 표시 안함 (빠른 작업이므로)
  */
 export const createUpdateApiEndpointAction =
   (set: SetState, get: GetState) =>
   async (id: string, updates: ApiEndpointUpdate): Promise<void> => {
-    set({ isLoading: true });
-
     try {
       const db = await getDB();
       await (db as unknown as {
@@ -443,13 +443,13 @@ export const createUpdateApiEndpointAction =
         }
       }
 
-      set({ apiEndpoints: newMap, isLoading: false });
+      set({ apiEndpoints: newMap });
     } catch (error) {
       console.error("❌ ApiEndpoint 업데이트 실패:", error);
       set((state) => {
         const newErrors = new Map(state.errors);
         newErrors.set("updateApiEndpoint", error as Error);
-        return { errors: newErrors, isLoading: false };
+        return { errors: newErrors };
       });
       throw error;
     }
@@ -729,12 +729,12 @@ export const createCreateVariableAction =
 
 /**
  * Variable을 업데이트하는 액션
+ *
+ * ⚡ 개별 업데이트는 isLoading 표시 안함 (빠른 작업이므로)
  */
 export const createUpdateVariableAction =
   (set: SetState, get: GetState) =>
   async (id: string, updates: VariableUpdate): Promise<void> => {
-    set({ isLoading: true });
-
     try {
       const db = await getDB();
       await (db as unknown as {
@@ -764,13 +764,13 @@ export const createUpdateVariableAction =
         }
       }
 
-      set({ variables: newMap, isLoading: false });
+      set({ variables: newMap });
     } catch (error) {
       console.error("❌ Variable 업데이트 실패:", error);
       set((state) => {
         const newErrors = new Map(state.errors);
         newErrors.set("updateVariable", error as Error);
-        return { errors: newErrors, isLoading: false };
+        return { errors: newErrors };
       });
       throw error;
     }
