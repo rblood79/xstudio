@@ -128,6 +128,12 @@
             outline: 1px solid var(--border-color);
             outline-offset: -1px;
 
+            /* ⭐ 그룹 전체에 focus-within 스타일 적용 */
+            &:focus-within {
+              outline: 2px solid var(--focus-ring-color);
+              outline-offset: -2px;
+            }
+
             .react-aria-ToggleButton {
               position: relative;
               margin-inline-start: 0;
@@ -474,6 +480,12 @@
       outline: 1px solid var(--border-color);
       outline-offset: -1px;
       border-radius: var(--radius-md);
+
+      /* ⭐ 그룹 전체에 focus-within 스타일 적용 */
+      &:focus-within {
+        outline: 2px solid var(--focus-ring-color);
+        outline-offset: -2px;
+      }
 
       &::before {
         top: 0px;
