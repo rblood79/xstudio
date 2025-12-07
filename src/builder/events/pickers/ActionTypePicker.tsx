@@ -1,21 +1,20 @@
 /**
  * ActionTypePicker - 액션 타입 선택 컴포넌트
  *
- * ComboBox 기반 검색 가능한 액션 선택기
- * React Aria ComboBox를 사용하여 검색 기능 제공
+ * DialogTrigger + Popover 기반 검색 가능한 액션 선택기
+ * React Aria Components를 사용하여 검색 기능 제공
  *
  * Phase 3: Events Panel 재설계 - 검색 기능 추가
  */
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import {
-  ComboBox,
-  Input,
+  DialogTrigger,
   Button,
-  Popover,
   ListBox,
   ListBoxItem,
 } from 'react-aria-components';
+import { Popover } from '@/shared/components/Popover';
 import { CirclePlus, Search, ChevronDown } from 'lucide-react';
 import type { ActionType } from '@/types/events/events.types';
 import { ACTION_TYPE_LABELS, REGISTRY_ACTION_CATEGORIES } from '@/types/events/events.types';
@@ -106,117 +105,87 @@ export function ActionTypePicker({
     return groups;
   }, [filteredActionTypes, showCategories]);
 
-  const handleSelectionChange = (key: React.Key | null) => {
-    if (key) {
-      onSelect(key as ActionType);
+  // 액션 선택 핸들러
+  const handleSelect = (actionType: ActionType) => {
+    onSelect(actionType);
+    setSearchValue('');
+    setIsOpen(false);
+  };
+
+  // 검색 입력 ref
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  // Popover가 열릴 때 검색 입력에 포커스
+  const handleOpenChange = (open: boolean) => {
+    setIsOpen(open);
+    if (open) {
+      setTimeout(() => {
+        searchInputRef.current?.focus();
+      }, 50);
+    } else {
       setSearchValue('');
-      setIsOpen(false);
     }
   };
 
   // 인라인 모드: 검색 입력 필드
   if (inline) {
     return (
-      <ComboBox
-        className="action-type-picker-inline"
-        inputValue={searchValue}
-        onInputChange={setSearchValue}
-        onSelectionChange={handleSelectionChange}
-        selectedKey={selectedType}
-        isDisabled={isDisabled}
-        aria-label="액션 타입 선택"
-        onOpenChange={setIsOpen}
-      >
-        <div className="action-picker-input-wrapper">
-          <Input
-            className="action-picker-input"
-            placeholder={placeholder}
-          />
-          <Button className="action-picker-button">
-            <ChevronDown size={14} />
-          </Button>
-        </div>
+      <DialogTrigger isOpen={isOpen} onOpenChange={handleOpenChange}>
+        <Button
+          className="action-picker-inline-trigger"
+          isDisabled={isDisabled}
+          aria-label="액션 타입 선택"
+        >
+          <span className="action-picker-value">
+            {selectedType ? ACTION_TYPE_LABELS[selectedType] || selectedType : placeholder}
+          </span>
+          <ChevronDown size={14} />
+        </Button>
 
         <Popover
-          className="action-picker-popover"
           placement="bottom start"
           offset={4}
+          className="action-picker-popover"
+          showArrow={false}
         >
-          <ListBox className="action-picker-list">
+          <div className="action-picker-search">
+            <Search size={14} color={iconProps.color} />
+            <input
+              ref={searchInputRef}
+              className="action-picker-search-input"
+              placeholder={placeholder}
+              value={searchValue}
+              onChange={(e) => setSearchValue(e.target.value)}
+            />
+          </div>
+
+          <ListBox
+            className="action-picker-list"
+            aria-label="액션 타입 목록"
+            selectionMode="single"
+            onSelectionChange={(keys) => {
+              const selected = Array.from(keys)[0] as ActionType;
+              if (selected) handleSelect(selected);
+            }}
+          >
             {filteredActionTypes.length === 0 ? (
-              <div className="action-picker-empty">
-                <Search size={16} color={iconProps.color} />
-                <span>No actions found</span>
-              </div>
-            ) : (
-              groupedActionTypes.map((group) => (
-                <div key={group.category} className="action-group">
-                  <div className="action-group-label">{group.category}</div>
-                  {group.actions.map((actionType) => (
-                    <ListBoxItem
-                      key={actionType}
-                      id={actionType}
-                      className="action-item"
-                      textValue={ACTION_TYPE_LABELS[actionType] || actionType}
-                    >
-                      <span className="action-name">
-                        {ACTION_TYPE_LABELS[actionType] || actionType}
-                      </span>
-                      <span className="action-type-code">{actionType}</span>
-                    </ListBoxItem>
-                  ))}
+              <ListBoxItem id="empty" textValue="No actions found">
+                <div className="action-picker-empty">
+                  <Search size={16} color={iconProps.color} />
+                  <span>No actions found</span>
                 </div>
-              ))
-            )}
-          </ListBox>
-        </Popover>
-      </ComboBox>
-    );
-  }
-
-  // 버튼 모드: 헤더에서 + 버튼 클릭
-  return (
-    <ComboBox
-      className="action-type-picker"
-      inputValue={searchValue}
-      onInputChange={setSearchValue}
-      onSelectionChange={handleSelectionChange}
-      isDisabled={isDisabled || availableActionTypes.length === 0}
-      aria-label="액션 타입 선택"
-      onOpenChange={setIsOpen}
-      menuTrigger="focus"
-    >
-      <Button className="iconButton" aria-label="액션 추가">
-        <CirclePlus
-          color={iconProps.color}
-          strokeWidth={iconProps.stroke}
-          size={iconProps.size}
-        />
-      </Button>
-
-      <Popover
-        className="action-picker-popover"
-        placement="bottom end"
-        offset={4}
-      >
-        <div className="action-picker-search">
-          <Search size={14} color={iconProps.color} />
-          <Input
-            className="action-picker-search-input"
-            placeholder={placeholder}
-          />
-        </div>
-
-        <ListBox className="action-picker-list">
-          {filteredActionTypes.length === 0 ? (
-            <div className="action-picker-empty">
-              <span>No actions found</span>
-            </div>
-          ) : (
-            groupedActionTypes.map((group) => (
-              <div key={group.category} className="action-group">
-                <div className="action-group-label">{group.category}</div>
-                {group.actions.map((actionType) => (
+              </ListBoxItem>
+            ) : (
+              groupedActionTypes.flatMap((group) => [
+                <ListBoxItem
+                  key={`label-${group.category}`}
+                  id={`label-${group.category}`}
+                  textValue={group.category}
+                  className="action-group-label-item"
+                >
+                  <div className="action-group-label">{group.category}</div>
+                </ListBoxItem>,
+                ...group.actions.map((actionType) => (
                   <ListBoxItem
                     key={actionType}
                     id={actionType}
@@ -228,12 +197,89 @@ export function ActionTypePicker({
                     </span>
                     <span className="action-type-code">{actionType}</span>
                   </ListBoxItem>
-                ))}
+                )),
+              ])
+            )}
+          </ListBox>
+        </Popover>
+      </DialogTrigger>
+    );
+  }
+
+  // 버튼 모드: 헤더에서 + 버튼 클릭
+  return (
+    <DialogTrigger isOpen={isOpen} onOpenChange={handleOpenChange}>
+      <Button
+        className="iconButton"
+        isDisabled={isDisabled || availableActionTypes.length === 0}
+        aria-label="액션 추가"
+      >
+        <CirclePlus
+          color={iconProps.color}
+          strokeWidth={iconProps.stroke}
+          size={iconProps.size}
+        />
+      </Button>
+
+      <Popover
+        placement="bottom end"
+        offset={4}
+        className="action-picker-popover"
+        showArrow={false}
+      >
+        <div className="action-picker-search">
+          <Search size={14} color={iconProps.color} />
+          <input
+            ref={searchInputRef}
+            className="action-picker-search-input"
+            placeholder={placeholder}
+            value={searchValue}
+            onChange={(e) => setSearchValue(e.target.value)}
+          />
+        </div>
+
+        <ListBox
+          className="action-picker-list"
+          aria-label="액션 타입 목록"
+          selectionMode="single"
+          onSelectionChange={(keys) => {
+            const selected = Array.from(keys)[0] as ActionType;
+            if (selected) handleSelect(selected);
+          }}
+        >
+          {filteredActionTypes.length === 0 ? (
+            <ListBoxItem id="empty" textValue="No actions found">
+              <div className="action-picker-empty">
+                <span>No actions found</span>
               </div>
-            ))
+            </ListBoxItem>
+          ) : (
+            groupedActionTypes.flatMap((group) => [
+              <ListBoxItem
+                key={`label-${group.category}`}
+                id={`label-${group.category}`}
+                textValue={group.category}
+                className="action-group-label-item"
+              >
+                <div className="action-group-label">{group.category}</div>
+              </ListBoxItem>,
+              ...group.actions.map((actionType) => (
+                <ListBoxItem
+                  key={actionType}
+                  id={actionType}
+                  className="action-item"
+                  textValue={ACTION_TYPE_LABELS[actionType] || actionType}
+                >
+                  <span className="action-name">
+                    {ACTION_TYPE_LABELS[actionType] || actionType}
+                  </span>
+                  <span className="action-type-code">{actionType}</span>
+                </ListBoxItem>
+              )),
+            ])
           )}
         </ListBox>
       </Popover>
-    </ComboBox>
+    </DialogTrigger>
   );
 }

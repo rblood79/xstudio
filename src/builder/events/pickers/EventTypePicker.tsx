@@ -1,22 +1,21 @@
 /**
  * EventTypePicker - 이벤트 타입 선택 컴포넌트
  *
- * ComboBox 기반 검색 가능한 이벤트 선택기
- * React Aria ComboBox를 사용하여 검색 기능 제공
+ * DialogTrigger + Popover 기반 검색 가능한 이벤트 선택기
+ * React Aria Components를 사용하여 검색 기능 제공
  *
  * Phase 2: Events Panel 재설계 - 검색 기능 추가
  */
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import {
-  ComboBox,
+  DialogTrigger,
   Input,
   Button,
-  Popover,
   ListBox,
   ListBoxItem,
-  Label,
 } from 'react-aria-components';
+import { Popover } from '@/shared/components/Popover';
 import { CirclePlus, Search, ChevronDown } from 'lucide-react';
 import type { EventType } from '@/types/events/events.types';
 import { EVENT_TYPE_LABELS, EVENT_CATEGORIES } from '@/types/events/events.types';
@@ -103,117 +102,88 @@ export function EventTypePicker({
     return groups;
   }, [filteredEventTypes]);
 
-  const handleSelectionChange = (key: React.Key | null) => {
-    if (key) {
-      onSelect(key as EventType);
+  // 이벤트 선택 핸들러
+  const handleSelect = (eventType: EventType) => {
+    onSelect(eventType);
+    setSearchValue('');
+    setIsOpen(false);
+  };
+
+  // 검색 입력 ref
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  // Popover가 열릴 때 검색 입력에 포커스
+  const handleOpenChange = (open: boolean) => {
+    setIsOpen(open);
+    if (open) {
+      // 약간의 지연 후 포커스
+      setTimeout(() => {
+        searchInputRef.current?.focus();
+      }, 50);
+    } else {
       setSearchValue('');
-      setIsOpen(false);
     }
   };
 
   // 인라인 모드: 검색 입력 필드
   if (inline) {
     return (
-      <ComboBox
-        className="event-type-picker-inline"
-        inputValue={searchValue}
-        onInputChange={setSearchValue}
-        onSelectionChange={handleSelectionChange}
-        selectedKey={selectedType}
-        isDisabled={isDisabled}
-        aria-label="이벤트 타입 선택"
-        onOpenChange={setIsOpen}
-      >
-        <div className="event-picker-input-wrapper">
-          <Input
-            className="event-picker-input"
-            placeholder="Search events..."
-          />
-          <Button className="event-picker-button">
-            <ChevronDown size={14} />
-          </Button>
-        </div>
+      <DialogTrigger isOpen={isOpen} onOpenChange={handleOpenChange}>
+        <Button
+          className="event-picker-inline-trigger"
+          isDisabled={isDisabled}
+          aria-label="이벤트 타입 선택"
+        >
+          <span className="event-picker-value">
+            {selectedType ? EVENT_TYPE_LABELS[selectedType] || selectedType : 'Select event...'}
+          </span>
+          <ChevronDown size={14} />
+        </Button>
 
         <Popover
-          className="event-picker-popover"
           placement="bottom start"
           offset={4}
+          className="event-picker-popover"
+          showArrow={false}
         >
-          <ListBox className="event-picker-list">
+          <div className="event-picker-search">
+            <Search size={14} color={iconProps.color} />
+            <input
+              ref={searchInputRef}
+              className="event-picker-search-input"
+              placeholder="Search events..."
+              value={searchValue}
+              onChange={(e) => setSearchValue(e.target.value)}
+            />
+          </div>
+
+          <ListBox
+            className="event-picker-list"
+            aria-label="이벤트 타입 목록"
+            selectionMode="single"
+            onSelectionChange={(keys) => {
+              const selected = Array.from(keys)[0] as EventType;
+              if (selected) handleSelect(selected);
+            }}
+          >
             {filteredEventTypes.length === 0 ? (
-              <div className="event-picker-empty">
-                <Search size={16} color={iconProps.color} />
-                <span>No events found</span>
-              </div>
-            ) : (
-              groupedEventTypes.map((group) => (
-                <div key={group.category} className="event-group">
-                  <div className="event-group-label">{group.category}</div>
-                  {group.events.map((eventType) => (
-                    <ListBoxItem
-                      key={eventType}
-                      id={eventType}
-                      className="event-item"
-                      textValue={EVENT_TYPE_LABELS[eventType] || eventType}
-                    >
-                      <span className="event-name">
-                        {EVENT_TYPE_LABELS[eventType] || eventType}
-                      </span>
-                      <span className="event-type-code">{eventType}</span>
-                    </ListBoxItem>
-                  ))}
+              <ListBoxItem id="empty" textValue="No events found">
+                <div className="event-picker-empty">
+                  <Search size={16} color={iconProps.color} />
+                  <span>No events found</span>
                 </div>
-              ))
-            )}
-          </ListBox>
-        </Popover>
-      </ComboBox>
-    );
-  }
-
-  // 버튼 모드: 헤더에서 + 버튼 클릭
-  return (
-    <ComboBox
-      className="event-type-picker"
-      inputValue={searchValue}
-      onInputChange={setSearchValue}
-      onSelectionChange={handleSelectionChange}
-      isDisabled={isDisabled || availableEventTypes.length === 0}
-      aria-label="이벤트 타입 선택"
-      onOpenChange={setIsOpen}
-      menuTrigger="focus"
-    >
-      <Button className="iconButton" aria-label="이벤트 추가">
-        <CirclePlus
-          color={iconProps.color}
-          strokeWidth={iconProps.stroke}
-          size={iconProps.size}
-        />
-      </Button>
-
-      <Popover
-        className="event-picker-popover"
-        placement="bottom end"
-        offset={4}
-      >
-        <div className="event-picker-search">
-          <Search size={14} color={iconProps.color} />
-          <Input
-            className="event-picker-search-input"
-            placeholder="Search events..."
-          />
-        </div>
-
-        <ListBox className="event-picker-list">
-          {filteredEventTypes.length === 0 ? (
-            <div className="event-picker-empty">
-              <span>No events found</span>
-            </div>
-          ) : (
-            groupedEventTypes.map((group) => (
-              <div key={group.category} className="event-group">
-                <div className="event-group-label">{group.category}</div>
-                {group.events.map((eventType) => (
+              </ListBoxItem>
+            ) : (
+              groupedEventTypes.flatMap((group) => [
+                <ListBoxItem
+                  key={`label-${group.category}`}
+                  id={`label-${group.category}`}
+                  textValue={group.category}
+                  className="event-group-label-item"
+                >
+                  <div className="event-group-label">{group.category}</div>
+                </ListBoxItem>,
+                ...group.events.map((eventType) => (
                   <ListBoxItem
                     key={eventType}
                     id={eventType}
@@ -225,12 +195,89 @@ export function EventTypePicker({
                     </span>
                     <span className="event-type-code">{eventType}</span>
                   </ListBoxItem>
-                ))}
+                )),
+              ])
+            )}
+          </ListBox>
+        </Popover>
+      </DialogTrigger>
+    );
+  }
+
+  // 버튼 모드: 헤더에서 + 버튼 클릭
+  return (
+    <DialogTrigger isOpen={isOpen} onOpenChange={handleOpenChange}>
+      <Button
+        className="iconButton"
+        isDisabled={isDisabled || availableEventTypes.length === 0}
+        aria-label="이벤트 추가"
+      >
+        <CirclePlus
+          color={iconProps.color}
+          strokeWidth={iconProps.stroke}
+          size={iconProps.size}
+        />
+      </Button>
+
+      <Popover
+        placement="bottom end"
+        offset={4}
+        className="event-picker-popover"
+        showArrow={false}
+      >
+        <div className="event-picker-search">
+          <Search size={14} color={iconProps.color} />
+          <input
+            ref={searchInputRef}
+            className="event-picker-search-input"
+            placeholder="Search events..."
+            value={searchValue}
+            onChange={(e) => setSearchValue(e.target.value)}
+          />
+        </div>
+
+        <ListBox
+          className="event-picker-list"
+          aria-label="이벤트 타입 목록"
+          selectionMode="single"
+          onSelectionChange={(keys) => {
+            const selected = Array.from(keys)[0] as EventType;
+            if (selected) handleSelect(selected);
+          }}
+        >
+          {filteredEventTypes.length === 0 ? (
+            <ListBoxItem id="empty" textValue="No events found">
+              <div className="event-picker-empty">
+                <span>No events found</span>
               </div>
-            ))
+            </ListBoxItem>
+          ) : (
+            groupedEventTypes.flatMap((group) => [
+              <ListBoxItem
+                key={`label-${group.category}`}
+                id={`label-${group.category}`}
+                textValue={group.category}
+                className="event-group-label-item"
+              >
+                <div className="event-group-label">{group.category}</div>
+              </ListBoxItem>,
+              ...group.events.map((eventType) => (
+                <ListBoxItem
+                  key={eventType}
+                  id={eventType}
+                  className="event-item"
+                  textValue={EVENT_TYPE_LABELS[eventType] || eventType}
+                >
+                  <span className="event-name">
+                    {EVENT_TYPE_LABELS[eventType] || eventType}
+                  </span>
+                  <span className="event-type-code">{eventType}</span>
+                </ListBoxItem>
+              )),
+            ])
           )}
         </ListBox>
       </Popover>
-    </ComboBox>
+    </DialogTrigger>
   );
 }

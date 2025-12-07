@@ -6,6 +6,16 @@ export interface NavigateActionEditorProps {
   onChange: (config: NavigateConfig) => void;
 }
 
+/**
+ * 경로를 정규화하여 항상 "/"로 시작하도록 함
+ * 표준 URL 경로 형식: /page-name
+ */
+function normalizePath(path: string): string {
+  if (!path) return '/';
+  const trimmed = path.trim();
+  return trimmed.startsWith('/') ? trimmed : `/${trimmed}`;
+}
+
 export function NavigateActionEditor({
   config,
   onChange,
@@ -14,7 +24,12 @@ export function NavigateActionEditor({
     field: keyof NavigateConfig,
     value: string | boolean
   ) => {
-    onChange({ ...config, [field]: value });
+    // path 필드는 정규화하여 항상 "/"로 시작하도록 함
+    if (field === 'path' && typeof value === 'string') {
+      onChange({ ...config, [field]: normalizePath(value) });
+    } else {
+      onChange({ ...config, [field]: value });
+    }
   };
 
   return (
@@ -25,7 +40,7 @@ export function NavigateActionEditor({
           className="field-input"
           value={config.path}
           onChange={(e) => updateField("path", e.target.value)}
-          placeholder="/dashboard"
+          placeholder="/page-name"
         />
       </TextField>
 

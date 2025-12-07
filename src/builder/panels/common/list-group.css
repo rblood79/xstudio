@@ -111,16 +111,36 @@
    ============================================ */
 
 .list-item-icon {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  width: 32px;
-  height: 32px;
+  padding: var(--spacing-sm);
   border: 1px solid var(--outline-variant);
   background: var(--secondary-container);
   border-radius: var(--radius-sm);
   color: var(--on-surface-variant);
+}
+
+.list-item-index {
+  position: absolute;
+  top: 0;
+  right: 0;
+  translate: 33% -33%;
+  background-color: var(--error);
+  color: var(--on-error);
+  border-radius: 48px;
+  font-size: var(--text-xs);
+  aspect-ratio: 1;
+  font-family: var(--font-pixel);
+  font-weight: var(--font-weight-normal);
+  padding: var(--spacing-2xs);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
 }
 
 /* Card 레이아웃에서 아이콘 */

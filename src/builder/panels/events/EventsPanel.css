@@ -99,7 +99,6 @@
 .events-panel .panel-contents {
   flex: 1;
   overflow-y: auto;
-  padding: var(--spacing-sm);
 }
 
 /* ============================================================================
@@ -136,6 +135,7 @@
 
 .handler-info {
   display: flex;
+  flex-direction: row;
   align-items: center;
   gap: var(--spacing-sm);
 }
@@ -417,8 +417,7 @@
 }
 
 .action-item .action-type {
-  font-size: var(--text-sm);
-  font-weight: 500;
+  font-size: var(--text-xs);
 }
 
 .action-item .action-summary {
@@ -1002,7 +1001,7 @@
 }
 
 .action-picker-list {
-  padding: var(--spacing-xs);
+  padding: 0;
 }
 
 .action-picker-empty {
@@ -1053,7 +1052,7 @@
 }
 
 .action-picker-list .action-name {
-  font-size: var(--text-sm);
+  font-size: var(--text-xs);
   color: var(--color-text-primary);
 }
 
@@ -1498,7 +1497,7 @@
 .code-preview-code {
   margin: 0;
   padding: var(--spacing-md);
-  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-family: "SF Mono", "Fira Code", monospace;
   font-size: var(--text-xs);
   line-height: 1.6;
   white-space: pre;
@@ -1607,7 +1606,7 @@
 .mock-event-input {
   width: 100%;
   padding: var(--spacing-sm);
-  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-family: "SF Mono", "Fira Code", monospace;
   font-size: var(--text-xs);
   line-height: 1.5;
   border: 1px solid var(--color-border);
@@ -1738,8 +1737,12 @@
 }
 
 @keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .step-name {
@@ -1782,7 +1785,7 @@
 .io-value {
   margin: 0;
   padding: var(--spacing-xs);
-  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-family: "SF Mono", "Fira Code", monospace;
   font-size: 10px;
   line-height: 1.4;
   background: var(--color-surface);
@@ -1857,7 +1860,7 @@
 
 .log-time {
   flex-shrink: 0;
-  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-family: "SF Mono", "Fira Code", monospace;
   color: var(--color-text-muted);
 }
 
@@ -1867,7 +1870,7 @@
 
 .log-duration {
   flex-shrink: 0;
-  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-family: "SF Mono", "Fira Code", monospace;
 }
 
 /* ==========================================================================
@@ -1877,14 +1880,13 @@
 .section.block-view {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-md);
 }
 
 .block-editor {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-md);
-  padding: var(--spacing-md);
+  padding: var(--spacing-sm);
   background: var(--color-surface-50);
   border-radius: var(--radius-md);
   position: relative;
@@ -1953,4 +1955,61 @@
   overflow-y: auto;
   border: none;
   border-radius: 0;
+}
+
+/* ==========================================================================
+   Picker Inline Trigger Styles
+   ========================================================================== */
+
+.event-picker-inline-trigger,
+.action-picker-inline-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  min-width: 140px;
+  background: var(--color-white);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
+  color: var(--color-text-primary);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+[data-theme="dark"] .event-picker-inline-trigger,
+[data-theme="dark"] .action-picker-inline-trigger {
+  background: var(--color-surface-200);
+}
+
+.event-picker-inline-trigger:hover,
+.action-picker-inline-trigger:hover {
+  border-color: var(--color-primary-400);
+}
+
+.event-picker-inline-trigger:focus,
+.action-picker-inline-trigger:focus {
+  outline: none;
+  border-color: var(--color-primary-500);
+  box-shadow: 0 0 0 2px var(--color-primary-100);
+}
+
+.event-picker-value,
+.action-picker-value {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Group label items (non-selectable) */
+.event-group-label-item,
+.action-group-label-item {
+  cursor: default;
+  pointer-events: none;
+}
+
+.event-group-label-item[data-focused],
+.action-group-label-item[data-focused] {
+  background: transparent;
 }

@@ -224,7 +224,24 @@ function EventsPanelContent({
     (actionId: string, updates: Partial<BlockEventAction>) => {
       const action = actions.find((a) => a.id === actionId);
       if (action) {
-        const updatedAction = { ...action, ...updates };
+        // ⚠️ enabled가 undefined면 true로 기본값 설정
+        const updatedAction = {
+          ...action,
+          ...updates,
+          // updates에 enabled가 명시적으로 있으면 사용, 아니면 action의 값 또는 true
+          enabled: updates.enabled !== undefined ? updates.enabled : (action.enabled ?? true)
+        };
+
+        // Debug: enabled 값 추적
+        if (import.meta.env.DEV) {
+          console.log('[EventsPanel] handleUpdateAction:', {
+            actionId,
+            actionEnabled: action.enabled,
+            updatesEnabled: updates.enabled,
+            resultEnabled: updatedAction.enabled
+          });
+        }
+
         const updatedActions = actions.map((a) =>
           a.id === actionId ? updatedAction : a
         );

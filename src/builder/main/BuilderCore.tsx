@@ -321,13 +321,21 @@ export const BuilderCore: React.FC = () => {
       if (event.data?.type !== "NAVIGATE_TO_PAGE") return;
 
       const { path } = event.data.payload as { path: string; replace?: boolean };
-      console.log("[BuilderCore] Received NAVIGATE_TO_PAGE:", path);
+
+      // 경로 정규화: 항상 "/"로 시작하도록 통일
+      const normalizedPath = path.startsWith('/') ? path : `/${path}`;
 
       // pages 배열에서 slug 기반으로 pageId 조회
-      const targetPage = pages.find((p) => p.slug === path);
+      // slug와 path 모두 "/"로 시작하는 형식으로 통일하여 비교
+      const targetPage = pages.find((p) => {
+        const pageSlug = p.slug || '/';
+        // slug도 정규화 (DB에 "/" 없이 저장된 경우 대비)
+        const normalizedSlug = pageSlug.startsWith('/') ? pageSlug : `/${pageSlug}`;
+        return normalizedSlug === normalizedPath;
+      });
 
       if (targetPage) {
-        console.log("[BuilderCore] Navigating to page:", targetPage.title, targetPage.id);
+        console.log("[BuilderCore] Navigating to:", targetPage.name, normalizedPath);
         // 페이지 elements 로드
         const result = await fetchElements(targetPage.id);
         if (!result.success) {

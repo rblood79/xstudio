@@ -561,7 +561,7 @@
       display: flex;
     }
 
-    .section-header .section-actions .iconButton {
+    .section-header .iconButton {
       padding: var(--spacing-sm);
     }
 

@@ -5,7 +5,7 @@
  * 드래그 앤 드롭 정렬, 편집, 삭제 지원
  */
 
-import { Button } from 'react-aria-components';
+import { Button } from "react-aria-components";
 import {
   GripVertical,
   Trash,
@@ -21,11 +21,11 @@ import {
   MousePointer,
   ClipboardCopy,
   ArrowDown,
-} from 'lucide-react';
-import type { BlockEventAction } from '../../../events/types/eventBlockTypes';
-import type { ActionType } from '../../../events/types/eventTypes';
-import { ACTION_TYPE_LABELS } from '../../../events/types/eventTypes';
-import { iconProps } from '../../../../utils/ui/uiConstants';
+} from "lucide-react";
+import type { BlockEventAction } from "../../../events/types/eventBlockTypes";
+import type { ActionType } from "../../../events/types/eventTypes";
+import { ACTION_TYPE_LABELS } from "../../../events/types/eventTypes";
+import { iconProps } from "../../../../utils/ui/uiConstants";
 
 interface ActionBlockProps {
   /** 액션 데이터 */
@@ -53,7 +53,10 @@ interface ActionBlockProps {
 /**
  * 액션 타입별 아이콘 매핑
  */
-const ACTION_ICONS: Record<ActionType, React.ComponentType<{ size?: number; className?: string }>> = {
+const ACTION_ICONS: Record<
+  ActionType,
+  React.ComponentType<{ size?: number; className?: string }>
+> = {
   navigate: Navigation,
   scrollTo: ArrowDown,
   setState: Database,
@@ -83,24 +86,24 @@ function getActionSummary(action: BlockEventAction): string {
   const config = action.config as Record<string, unknown>;
 
   switch (action.type) {
-    case 'navigate':
-      return config.path as string || '';
-    case 'apiCall':
-      return `${config.method || 'GET'} ${config.endpoint || ''}`;
-    case 'showToast':
-      return config.message as string || '';
-    case 'setState':
-    case 'updateState':
-      return config.storePath as string || '';
-    case 'showModal':
-    case 'hideModal':
-      return config.modalId as string || '';
-    case 'toggleVisibility':
-      return config.elementId as string || '';
-    case 'customFunction':
-      return config.code ? '(custom code)' : '';
+    case "navigate":
+      return (config.path as string) || "";
+    case "apiCall":
+      return `${config.method || "GET"} ${config.endpoint || ""}`;
+    case "showToast":
+      return (config.message as string) || "";
+    case "setState":
+    case "updateState":
+      return (config.storePath as string) || "";
+    case "showModal":
+    case "hideModal":
+      return (config.modalId as string) || "";
+    case "toggleVisibility":
+      return (config.elementId as string) || "";
+    case "customFunction":
+      return config.code ? "(custom code)" : "";
     default:
-      return '';
+      return "";
   }
 }
 
@@ -130,7 +133,7 @@ export function ActionBlock({
 
   return (
     <div
-      className={`action-item ${action.enabled === false ? 'disabled' : ''}`}
+      className={`action-item ${action.enabled === false ? "disabled" : ""}`}
       role="listitem"
       aria-label={`Action ${index}: ${label}`}
       data-action-id={action.id}
@@ -144,12 +147,12 @@ export function ActionBlock({
         />
       </div>
 
-      {/* Action Number */}
-      <span className="action-number">{index}</span>
-
       {/* Action Icon */}
-      <IconComponent size={14} className="action-icon" />
-
+      <div className="list-item-icon">
+        <IconComponent size={16} />
+        {/* Action Number */}
+        <span className="list-item-index">{index}</span>
+      </div>
       {/* Action Info (clickable) */}
       <button
         type="button"
@@ -168,13 +171,21 @@ export function ActionBlock({
           <Button
             className="iconButton"
             onPress={onToggleExpand}
-            aria-label={isExpanded ? 'Collapse' : 'Expand'}
+            aria-label={isExpanded ? "Collapse" : "Expand"}
             aria-expanded={isExpanded}
           >
             {isExpanded ? (
-              <ChevronDown size={14} color={iconProps.color} strokeWidth={iconProps.stroke} />
+              <ChevronDown
+                size={14}
+                color={iconProps.color}
+                strokeWidth={iconProps.stroke}
+              />
             ) : (
-              <ChevronRight size={14} color={iconProps.color} strokeWidth={iconProps.stroke} />
+              <ChevronRight
+                size={14}
+                color={iconProps.color}
+                strokeWidth={iconProps.stroke}
+              />
             )}
           </Button>
         )}
