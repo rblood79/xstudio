@@ -400,11 +400,10 @@ IF [This: Instagram photo] THEN [That: Save to Dropbox]
 
 ```typescript
 /**
- * 새로운 이벤트 핸들러 구조
+ * 이벤트 핸들러 구조 (새 설계)
  */
-interface EventHandlerV2 {
+interface EventHandler {
   id: string;
-  version: 2;
 
   // WHEN 블록
   trigger: {
@@ -421,10 +420,10 @@ interface EventHandlerV2 {
   conditions?: ConditionGroup;
 
   // THEN 블록 (조건 만족 시)
-  thenActions: ActionV2[];
+  thenActions: EventAction[];
 
   // ELSE 블록 (조건 불만족 시, 선택적)
-  elseActions?: ActionV2[];
+  elseActions?: EventAction[];
 
   // 메타데이터
   enabled: boolean;
@@ -471,9 +470,9 @@ interface Condition {
 }
 
 /**
- * 액션 V2
+ * 이벤트 액션
  */
-interface ActionV2 {
+interface EventAction {
   id: string;
   type: ActionType;
 
@@ -489,7 +488,7 @@ interface ActionV2 {
   enabled?: boolean;
 
   // 에러 핸들링
-  onError?: 'continue' | 'stop' | ActionV2[];
+  onError?: 'continue' | 'stop' | EventAction[];
 
   // 액션 설명
   label?: string;
@@ -503,29 +502,6 @@ interface VariableBinding {
   type: 'state' | 'element' | 'event' | 'api_response' | 'literal';
   path: string;
   transform?: string;  // JavaScript 변환 표현식
-}
-```
-
-### 4.2 마이그레이션 전략
-
-```typescript
-// 기존 EventHandler → EventHandlerV2 변환
-function migrateEventHandler(old: EventHandler): EventHandlerV2 {
-  return {
-    id: old.id,
-    version: 2,
-    trigger: {
-      event: old.event,
-      target: 'self',
-    },
-    conditions: old.condition ? parseConditionString(old.condition) : undefined,
-    thenActions: old.actions.map(migrateAction),
-    elseActions: undefined,  // 기존에 없던 기능
-    enabled: old.enabled ?? true,
-    description: old.description,
-    debounce: old.debounce,
-    throttle: old.throttle,
-  };
 }
 ```
 
@@ -664,12 +640,12 @@ function migrateEventHandler(old: EventHandler): EventHandlerV2 {
 
 ---
 
-### 5.2 새로운 컴포넌트 구조
+### 5.2 컴포넌트 구조
 
 ```
 src/builder/panels/events/
-├── EventsPanel.tsx              # 메인 패널 (리팩토링)
-├── EventsPanelV2.tsx            # 새 버전 (점진적 마이그레이션)
+├── EventsPanel.tsx              # 메인 패널
+├── EventsPanel.css              # 스타일 (CSS Variables)
 │
 ├── blocks/                      # 블록 UI 컴포넌트
 │   ├── WhenBlock.tsx            # WHEN 트리거 블록
@@ -680,13 +656,13 @@ src/builder/panels/events/
 │
 ├── editors/                     # 블록 내부 에디터
 │   ├── TriggerEditor.tsx        # 트리거 이벤트 선택
-│   ├── ConditionEditor.tsx      # 조건 편집기 (개선)
+│   ├── ConditionEditor.tsx      # 조건 편집기
 │   ├── ConditionRow.tsx         # 단일 조건 행
 │   └── ActionConfigEditor.tsx   # 액션 설정 편집
 │
 ├── pickers/                     # 선택기 컴포넌트
-│   ├── EventTypePicker.tsx      # 이벤트 타입 선택 (개선)
-│   ├── ActionTypePicker.tsx     # 액션 타입 선택 (개선)
+│   ├── EventTypePicker.tsx      # 이벤트 타입 선택
+│   ├── ActionTypePicker.tsx     # 액션 타입 선택
 │   ├── ElementPicker.tsx        # 요소 참조 선택
 │   ├── StatePicker.tsx          # 상태 변수 선택
 │   └── OperatorPicker.tsx       # 조건 연산자 선택
@@ -702,25 +678,22 @@ src/builder/panels/events/
 │   └── TemplateCard.tsx         # 템플릿 카드
 │
 ├── state/                       # 상태 관리
-│   ├── useEventHandlersV2.ts    # 새 핸들러 훅
+│   ├── useEventHandlers.ts      # 핸들러 관리 훅
 │   ├── useConditions.ts         # 조건 관리 훅
 │   └── useBlockDrag.ts          # 블록 드래그 훅
 │
-├── styles/
-│   └── EventsPanel.css          # 스타일 (CSS Variables)
-│
 └── types/
-    └── eventTypesV2.ts          # 새 타입 정의
+    └── eventTypes.ts            # 타입 정의
 ```
 
-### 5.2 WhenBlock 컴포넌트
+### 5.3 WhenBlock 컴포넌트
 
 ```tsx
 // src/builder/panels/events/blocks/WhenBlock.tsx
 
 interface WhenBlockProps {
-  trigger: EventHandlerV2['trigger'];
-  onChange: (trigger: EventHandlerV2['trigger']) => void;
+  trigger: EventHandler['trigger'];
+  onChange: (trigger: EventHandler['trigger']) => void;
   availableEvents: EventType[];
 }
 
@@ -840,11 +813,11 @@ export function IfBlock({ conditions, onChange, onRemove }: IfBlockProps) {
 // src/builder/panels/events/blocks/ThenElseBlock.tsx
 
 interface ThenElseBlockProps {
-  thenActions: ActionV2[];
-  elseActions?: ActionV2[];
+  thenActions: EventAction[];
+  elseActions?: EventAction[];
   hasCondition: boolean;
-  onThenChange: (actions: ActionV2[]) => void;
-  onElseChange: (actions?: ActionV2[]) => void;
+  onThenChange: (actions: EventAction[]) => void;
+  onElseChange: (actions?: EventAction[]) => void;
 }
 
 export function ThenElseBlock({
@@ -1078,9 +1051,11 @@ export function ThenElseBlock({
 
 ## 7. 구현 로드맵
 
-> **총 7 Phase** (Phase 0 선행 + 6주)
+> **총 6 Phase** (Phase 0 선행 + 5주)
 >
 > 📋 3.1.1 이슈 대응 → 📋 3.1.3 단순성 유지 요소 → 전체 반영됨
+>
+> ⚠️ **레거시 코드 완전 폐기** - 마이그레이션 불필요, 새 설계로 직접 구현
 
 ---
 
@@ -1101,14 +1076,13 @@ export function ThenElseBlock({
 
 **목표**: 타입 시스템 + 블록 기본 구조 + 접근성 + DOM 구조 표준화
 
-- [ ] 새 타입 시스템 정의 (`eventTypesV2.ts`)
+- [ ] 새 타입 시스템 정의 (`eventTypes.ts`)
 - [ ] 색상 토큰 및 CSS 변수 설정 (3.3 컬러 시스템)
 - [ ] **DOM 구조 표준화** *(5.1)*: 다른 패널과 동일한 DOM/클래스 구조 준수
   - `.panel` > `.panel-header` > `.panel-contents` > `.section` 패턴
   - `data-section-id` 속성으로 섹션 식별
   - `.list-group` > `.list-item` 패턴 사용
 - [ ] 블록 기본 컴포넌트 생성 (WhenBlock, ActionBlock)
-- [ ] 기존 EventsPanel과 병행 가능한 구조 설계
 - [ ] **접근성/키보드** *(3.1.3)*: 핵심 포커스 이동 + 단축키 (Tab, Enter, Esc)
 
 ---
@@ -1176,18 +1150,8 @@ export function ThenElseBlock({
 - [ ] **실행 히스토리 스냅샷** *(3.1.3)*: 각 단계 입력/출력 + 재시도 (UI 단순 유지)
 - [ ] **실행 로그**: History 탭에 실행 시간/결과/에러 기록
 - [ ] **디버그 모드**: 조건 평가 결과 시각화
-
----
-
-### Phase 6: 마이그레이션 + 정리 (1주)
-
-**목표**: 레거시 변환 + 정리 + 문서화
-
-- [ ] 기존 데이터 마이그레이션 스크립트
-- [ ] **레거시 자동 변환**: 기존 액션 체인 → THEN(+빈 ELSE) 변환 토글
-- [ ] A/B 전환 토글 (V1 ↔ V2)
-- [ ] 레거시 코드 제거 (`src/builder/events/index.tsx` 623줄)
-- [ ] 문서화 (CLAUDE.md Event System 섹션 업데이트)
+- [ ] **문서화**: CLAUDE.md Event System 섹션 업데이트
+- [ ] **레거시 코드 삭제**: `src/builder/events/index.tsx` (623줄) 완전 제거
 
 ---
 
@@ -1200,8 +1164,7 @@ export function ThenElseBlock({
 | **2** | 조건 시스템 + 선택기 | 단일 실행, 즐겨찾기 | - | 1주 |
 | **3** | THEN/ELSE + Dataset | 타이밍, 캐시 토글 | - | 1주 |
 | **4** | 변수 바인딩 | - | - | 1주 |
-| **5** | 테스트/로그 + 미리보기 | 미니맵, 히스토리 스냅샷 | - | 1주 |
-| **6** | 마이그레이션 | - | - | 1주 |
+| **5** | 테스트/로그 + 정리 | 미니맵, 히스토리 스냅샷 | - | 1주 |
 
 ---
 
@@ -1232,7 +1195,6 @@ export function ThenElseBlock({
 1. **블록 vs 노드 UI**: Airtable 스타일(블록) vs n8n 스타일(노드 연결)?
 2. **코드 프리뷰**: 항상 표시 vs 토글 vs 별도 탭?
 3. **템플릿 범위**: 사전 정의 템플릿만 vs 사용자 정의 템플릿 저장?
-4. **기존 데이터 마이그레이션**: 자동 vs 수동 확인?
 
 ### 9.2 기술적 결정
 
@@ -1243,7 +1205,7 @@ export function ThenElseBlock({
 
 ---
 
-**문서 버전**: 1.2.0
+**문서 버전**: 1.3.0
 **최종 수정**: 2025-12-07
 **작성자**: Claude Code
 
@@ -1256,3 +1218,4 @@ export function ThenElseBlock({
 | 1.0.0 | 2025-12-07 | 초안 작성 - 현재 상태 분석, 경쟁사 조사, 기본 설계 |
 | 1.1.0 | 2025-12-07 | 3.1.1~3.1.3 테이블 정리, 로드맵 전면 개편, 3.1.3 항목 Phase별 반영 |
 | 1.2.0 | 2025-12-07 | 5.1 DOM 구조 및 클래스 네이밍 패턴 섹션 추가, Phase 1에 DOM 구조 표준화 반영 |
+| 1.3.0 | 2025-12-07 | 레거시 코드 폐기 결정 반영: V2 접미사 제거, Phase 6 삭제, 마이그레이션 섹션 제거, 총 6 Phase로 단축 |
