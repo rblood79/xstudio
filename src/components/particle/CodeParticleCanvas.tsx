@@ -411,14 +411,14 @@ const CODE_VERTEX_SHADER = `
     float glowPhase1 = random * 50.0 + time * 0.5;
     float glowPhase2 = random * 30.0 + time * 0.3;
     float glowNoise = sin(glowPhase1) * cos(glowPhase2) + sin(glowPhase1 * 0.7) * 0.5; // -1.5 ~ 1.5
-    float glowThreshold = 0.7; // 상위 20% 정도만 발광
+    float glowThreshold = 0.9; // 상위 20% 발광 (glowNoise 범위 -1.5~1.5, 총 3.0 중 0.6)
 
     // 발광 여부 결정 (시간에 따라 변함)
     bool isGlowing = glowNoise > glowThreshold;
 
     if (isGlowing) {
       // 발광 파티클: 가까우면 더 밝게 (1.5 ~ 3.0)
-      float glowStrength = (glowNoise - glowThreshold) / (1.0 - glowThreshold); // 0 ~ 1
+      float glowStrength = (glowNoise - glowThreshold) / (1.5 - glowThreshold); // 0 ~ 1
       vGlowIntensity = (1.5 + depthFactor * 1.5) * (0.7 + glowStrength * 0.3);
     } else {
       // 일반 파티클: 가까우면 0.5, 멀면 0.15
@@ -592,8 +592,8 @@ export function CodeParticleCanvas({
       const heightRandom = Math.random();
       heightLayers[i] = heightRandom * heightRandom;
 
-      const baseSize = 30 + Math.random() * 10; // 1/6 크기로 축소 (180-240 → 30-40)
-      particleSizes[i] = baseSize * (1.0 - heightLayers[i] * 0.4);
+      const baseSize = 12 + Math.random() * 8; // 목표: 8px~24px, 평균 16px
+      particleSizes[i] = baseSize * (1.0 - heightLayers[i] * 0.3);
 
       // 발광 여부 플래그: 15% 확률로 발광 파티클 (1.0 이상), 나머지는 일반 (1.0 미만)
       // 실제 밝기는 Vertex Shader에서 실시간 원근감 기반으로 계산

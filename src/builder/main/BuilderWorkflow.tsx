@@ -36,54 +36,55 @@ function useWorkflowSync() {
 
   // Sync pages
   useEffect(() => {
-    if (pages.length > 0) {
-      const workflowPages: WorkflowPage[] = pages.map((p) => ({
-        id: p.id,
-        title: p.name,
-        slug: p.slug,
-        project_id: p.project_id || '',
-        parent_id: p.parent_id,
-        order_num: p.order_num,
-        layout_id: p.layout_id,
-      }));
-      setPages(workflowPages);
+    const workflowPages: WorkflowPage[] = pages.map((p) => ({
+      id: p.id,
+      title: p.name,
+      // 슬러그 앞의 "/"를 제거해 표시/매칭 시 중복 슬래시 방지
+      slug: p.slug?.replace(/^\/+/, '') || '',
+      project_id: p.project_id || '',
+      parent_id: p.parent_id,
+      order_num: p.order_num,
+      layout_id: p.layout_id,
+    }));
+    setPages(workflowPages);
 
-      if (!initializedRef.current) {
-        initializedRef.current = true;
-        setLoading(false);
-      }
+    // 최초 동기화 시점에 로딩 해제 (페이지가 0개여도 로딩에서 빠져야 함)
+    if (!initializedRef.current) {
+      initializedRef.current = true;
+      setLoading(false);
     }
   }, [pages, setPages, setLoading]);
 
   // Sync layouts
   useEffect(() => {
-    if (layouts.length > 0) {
-      const workflowLayouts: WorkflowLayout[] = layouts.map((l) => ({
-        id: l.id,
-        name: l.name,
-        project_id: l.project_id || '',
-        description: l.description,
-      }));
-      setLayouts(workflowLayouts);
-    }
+    const workflowLayouts: WorkflowLayout[] = layouts.map((l) => ({
+      id: l.id,
+      name: l.name,
+      project_id: l.project_id || '',
+      description: l.description,
+    }));
+    setLayouts(workflowLayouts);
   }, [layouts, setLayouts]);
 
   // Sync elements
   useEffect(() => {
-    if (elements.length > 0) {
-      const workflowElements: WorkflowElement[] = elements.map((el) => ({
-        id: el.id,
-        tag: el.tag,
-        props: el.props as Record<string, unknown>,
-        parent_id: el.parent_id,
-        page_id: el.page_id,
-        layout_id: el.layout_id,
-        order_num: el.order_num,
-        events: el.events as WorkflowElement['events'],
-        dataBinding: el.dataBinding as WorkflowElement['dataBinding'],
-      }));
-      setElements(workflowElements);
-    }
+    const workflowElements: WorkflowElement[] = elements.map((el) => ({
+      id: el.id,
+      tag: el.tag,
+      props: el.props as Record<string, unknown>,
+      parent_id: el.parent_id,
+      page_id: el.page_id,
+      layout_id: el.layout_id,
+      order_num: el.order_num,
+      // Events는 props.events에 저장되는 경우가 있으므로 우선 사용
+      events:
+        ((el.props as { events?: unknown }).events as WorkflowElement['events']) ||
+        (el.events as WorkflowElement['events']),
+      dataBinding:
+        ((el.props as { dataBinding?: unknown }).dataBinding as WorkflowElement['dataBinding']) ||
+        (el.dataBinding as WorkflowElement['dataBinding']),
+    }));
+    setElements(workflowElements);
   }, [elements, setElements]);
 
   // Set project ID from current page
@@ -140,12 +141,6 @@ function WorkflowContent() {
 // ============================================
 
 export const BuilderWorkflow: React.FC = () => {
-  // Initialize workflow store
-  useEffect(() => {
-    const store = useWorkflowStore.getState();
-    store.setLoading(true);
-  }, []);
-
   return (
     <ReactFlowProvider>
       <div className="workflow-app builder-workflow">
