@@ -37,6 +37,7 @@ import {
 import { useThemes } from "../../../hooks/theme/useThemes";
 import { ThemeService } from "../../../services/theme";
 import { useThemeMessenger } from "../../hooks/useThemeMessenger";
+import { ThemeSelector } from "../../themes";
 
 function SettingsContent() {
   const { projectId } = useParams<{ projectId: string }>();
@@ -277,12 +278,17 @@ function SettingsContent() {
           />
         </PropertySection>
 
-        {/* Theme Settings Section */}
-        <PropertySection title="Theme & Appearance">
-          {/* Theme Select */}
+        {/* Builder Theme Section */}
+        <PropertySection title="Builder Theme">
+          <ThemeSelector compact />
+        </PropertySection>
+
+        {/* Preview Theme Section */}
+        <PropertySection title="Preview Theme">
+          {/* Preview Theme Select */}
           {projectId && themes.length > 0 && (
             <PropertySelect
-              label="Theme Select"
+              label="Theme"
               value={activeTheme?.id || ""}
               onChange={handleThemeChange}
               options={themes.map((theme) => ({
@@ -294,13 +300,16 @@ function SettingsContent() {
           )}
 
           <PropertySelect
-            label="Theme Mode"
+            label="Color Mode"
             value={themeMode}
             onChange={handleThemeModeChange}
             options={themeModeOptions}
             icon={getThemeModeIcon()}
           />
+        </PropertySection>
 
+        {/* UI Settings Section */}
+        <PropertySection title="UI Settings">
           <PropertySelect
             label="UI Scale"
             value={String(uiScale)}
