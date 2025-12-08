@@ -290,8 +290,11 @@ const CODE_VERTEX_SHADER = `
     float clusterPhase = pos.x * clusterScale * 80.0 + pos.y * clusterScale * 60.0 + time * 0.15 + random * 10.0;
     float cluster = sin(clusterPhase) * clusterStrength * 1.5;
 
-    // 최종 드리프트: curl flow + float + wave + cluster
-    vec3 driftOffset = flowOffset + floatOffset + vec3(wave, cluster, 0.0);
+    // 모핑 시 drift 효과 감소 (형태 정확도 유지)
+    float driftReduction = 1.0 - morphProgress * morphProgress * 0.95; // 모핑 시 95% 감소
+
+    // 최종 드리프트: curl flow + float + wave + cluster (모핑 시 약화)
+    vec3 driftOffset = (flowOffset + floatOffset + vec3(wave, cluster, 0.0)) * driftReduction;
 
     // ===== 형성/모핑 효과 =====
     float formIntensity = morphProgress * formIntensityMultiplier;
@@ -300,36 +303,41 @@ const CODE_VERTEX_SHADER = `
     float dist = length(toTarget);
     vec3 dir = normalize(toTarget + vec3(0.001));
 
-    // 거리 기반 수렴
-    float pullStrength = convergenceForce * formIntensity * (1.0 + dist * 0.01);
-    vec3 convergence = dir * pullStrength * 15.0;
+    // 거리 기반 수렴 (강화: 더 강한 수렴력)
+    float pullStrength = convergenceForce * formIntensity * (1.0 + dist * 0.02);
+    vec3 convergence = dir * pullStrength * 25.0; // 15.0 → 25.0 증가
 
-    // 난류 (sin 기반 근사 - 퍼포먼스 최적화)
+    // 형태 정확도를 위한 추가 보정력 (morphProgress가 높을수록 타겟에 강하게 끌림)
+    float accuracyBoost = morphProgress * morphProgress * morphProgress; // 3차 곡선
+    vec3 accuracyCorrection = toTarget * accuracyBoost * 0.15;
+
+    // 난류 (sin 기반 근사 - 퍼포먼스 최적화) - 형태 유지 시 약화
+    float turbReduction = 1.0 - morphProgress * 0.8; // 모핑 시 80% 감소
     float turbPhase = pos.x * 0.02 + pos.y * 0.015 + time * 0.3 + random * 6.28;
-    float turbNoise = sin(turbPhase) * cos(turbPhase * 1.3) * turbulence * formIntensity;
+    float turbNoise = sin(turbPhase) * cos(turbPhase * 1.3) * turbulence * formIntensity * turbReduction;
     vec3 turbulenceOffset = vec3(turbNoise, turbNoise * 0.8, turbNoise * 0.5);
 
-    // 돌풍
+    // 돌풍 - 형태 유지 시 약화
     float gustPhase = time * gustFrequency + random * 6.28;
     float gustMask = smoothstep(0.7, 1.0, sin(gustPhase));
     vec3 gustOffset = vec3(
       sin(gustPhase * 2.3) * gustStrength,
       cos(gustPhase * 1.7) * gustStrength * 0.6,
       0.0
-    ) * gustMask * formIntensity * 0.3;
+    ) * gustMask * formIntensity * 0.3 * turbReduction;
 
-    // 숨쉬는 효과
-    float breath = sin(time * 1.5 + random * 6.28) * aliveBreathScale * morphProgress;
+    // 숨쉬는 효과 - 형태 유지 시 약화
+    float breath = sin(time * 1.5 + random * 6.28) * aliveBreathScale * morphProgress * (1.0 - morphProgress * 0.7);
     vec3 breathOffset = dir * breath;
 
-    // 미세 진동 (sin 기반 근사 - 퍼포먼스 최적화)
+    // 미세 진동 (sin 기반 근사 - 퍼포먼스 최적화) - 형태 유지 시 약화
     float vibPhaseX = pos.x * 0.1 + pos.y * 0.08 + time * 3.0;
     float vibPhaseY = pos.x * 0.08 + pos.y * 0.1 + time * 3.0 + 1.57;
     vec3 vibration = vec3(
       sin(vibPhaseX) * cos(vibPhaseX * 0.5),
       sin(vibPhaseY) * cos(vibPhaseY * 0.5),
       0.0
-    ) * vibrationScale * morphProgress;
+    ) * vibrationScale * morphProgress * turbReduction;
 
     // ===== 회오리 효과 =====
     vec3 vortexOffset = vec3(0.0);
@@ -365,15 +373,15 @@ const CODE_VERTEX_SHADER = `
     // ===== 최종 위치 =====
     vec3 alivePos = pos + driftOffset;
 
-    // 형태 유지 시 오프셋 대폭 감소 (morphProgress가 높을수록 타겟에 가깝게)
-    float formStability = morphProgress * morphProgress; // 비선형 감소
-    float offsetScale = 1.0 - formStability * 0.9; // morphProgress=1일 때 10%만 적용
+    // 형태 유지: morphProgress가 높을수록 정확히 타겟 위치로
+    // 미세한 진동만 허용 (형태 인식 가능하도록)
+    float microVib = sin(time * 2.0 + random * 6.28) * 0.5 * (1.0 - morphProgress * 0.8);
+    vec3 formedPos = currentTarget + vec3(microVib, microVib * 0.7, 0.0);
 
-    vec3 formedPos = currentTarget + (turbulenceOffset + gustOffset + breathOffset + vibration) * offsetScale * 0.3;
+    // 단순 블렌딩: morphProgress에 따라 alivePos → formedPos
     vec3 blendedPos = mix(alivePos, formedPos, morphProgress);
 
-    // 수렴력: morphProgress가 높을 때 더 강하게 타겟으로
-    blendedPos += convergence * (1.0 - morphProgress * 0.9);
+    // 회오리 효과만 추가 (모핑 중에도 적용)
     blendedPos += vortexOffset;
 
     // ===== 알파 계산 =====
