@@ -466,21 +466,34 @@ export class EventEngine {
         return value.replace(/([ !"#$%&'()*+,./:;<=>?@[\\\]^`{|}~])/g, '\\$1');
     }
 
+    /**
+     * Normalize element ID by stripping leading # prefix
+     * ElementPicker returns "#customId" format, but DOM uses "customId"
+     */
+    private normalizeElementId(targetId: string): string {
+        return targetId.startsWith('#') ? targetId.slice(1) : targetId;
+    }
+
     private findElementByAny(targetId?: string): HTMLElement | null {
         if (!targetId) {
             return null;
         }
 
-        const byId = document.getElementById(targetId);
+        // Strip # prefix if present (ElementPicker returns #customId format)
+        const normalizedId = this.normalizeElementId(targetId);
+
+        // 1. Try native DOM id attribute (matches customId set via id={element.customId})
+        const byId = document.getElementById(normalizedId);
         if (byId) {
             return byId;
         }
 
-        const safeId = this.escapeSelector(targetId);
+        // 2. Try data attributes
+        const safeId = this.escapeSelector(normalizedId);
         const selectors = [
-            `[data-element-id="${safeId}"]`,
-            `[data-custom-id="${safeId}"]`,
-            `[data-modal-id="${safeId}"]`,
+            `[data-element-id="${safeId}"]`,      // UUID lookup
+            `[data-custom-id="${safeId}"]`,       // customId lookup
+            `[data-modal-id="${safeId}"]`,        // Modal-specific lookup
         ];
 
         for (const selector of selectors) {
@@ -490,6 +503,8 @@ export class EventEngine {
             }
         }
 
+        // 3. Log warning for debugging
+        console.warn(`[EventEngine] Element not found for ID: "${targetId}" (normalized: "${normalizedId}")`);
         return null;
     }
 
@@ -498,12 +513,15 @@ export class EventEngine {
             return null;
         }
 
-        const byId = document.getElementById(modalId);
+        // Strip # prefix if present
+        const normalizedId = this.normalizeElementId(modalId);
+
+        const byId = document.getElementById(normalizedId);
         if (byId) {
-            return { element: byId, resolvedId: byId.id || modalId };
+            return { element: byId, resolvedId: byId.id || normalizedId };
         }
 
-        const safeId = this.escapeSelector(modalId);
+        const safeId = this.escapeSelector(normalizedId);
         const selectors = [
             `[data-element-id="${safeId}"]`,
             `[data-modal-id="${safeId}"]`,
@@ -518,11 +536,12 @@ export class EventEngine {
                     candidate.getAttribute('data-element-id') ||
                     candidate.getAttribute('data-modal-id') ||
                     candidate.getAttribute('data-custom-id') ||
-                    modalId;
+                    normalizedId;
                 return { element: candidate, resolvedId };
             }
         }
 
+        console.warn(`[EventEngine] Modal not found for ID: "${modalId}" (normalized: "${normalizedId}")`);
         return null;
     }
 
@@ -591,12 +610,19 @@ export class EventEngine {
     }
 
     private async executeScrollToAction(action: EventAction): Promise<void> {
-        const config = this.getActionConfig<{ elementId: string; behavior?: ScrollBehavior }>(action);
-        const { elementId, behavior = 'smooth' } = config;
-        const element = document.querySelector(`[data-element-id="${elementId}"]`);
+        const config = this.getActionConfig<{ elementId: string; behavior?: ScrollBehavior; position?: 'start' | 'center' | 'end' | 'nearest'; offset?: number }>(action);
+        const { elementId, behavior = 'smooth', position = 'start', offset = 0 } = config;
+
+        // Use findElementByAny for consistent element lookup (supports #customId, UUID, data attributes)
+        const element = this.findElementByAny(elementId);
 
         if (element) {
-            element.scrollIntoView({ behavior });
+            element.scrollIntoView({ behavior, block: position });
+
+            // Apply offset if specified
+            if (offset !== 0) {
+                window.scrollBy({ top: -offset, behavior });
+            }
         }
     }
 
@@ -624,7 +650,8 @@ export class EventEngine {
             throw new Error('Invalid form ID');
         }
 
-        const form = document.getElementById(formId) as HTMLFormElement;
+        // Use findElementByAny for consistent element lookup (supports #customId, UUID)
+        const form = this.findElementByAny(formId) as HTMLFormElement;
         if (!form) {
             throw new Error(`Form with ID "${formId}" not found`);
         }
@@ -716,7 +743,9 @@ export class EventEngine {
     private async executeResetFormAction(action: EventAction): Promise<void> {
         const config = this.getActionConfig<{ formId: string }>(action);
         const { formId } = config;
-        const form = document.getElementById(formId) as HTMLFormElement;
+
+        // Use findElementByAny for consistent element lookup (supports #customId, UUID)
+        const form = this.findElementByAny(formId) as HTMLFormElement;
 
         if (form) {
             form.reset();
@@ -725,7 +754,9 @@ export class EventEngine {
 
     private async executeSubmitFormAction(action: EventAction): Promise<void> {
         const config = this.getActionConfig<{ formId: string }>(action);
-        const form = document.getElementById(config.formId) as HTMLFormElement;
+
+        // Use findElementByAny for consistent element lookup (supports #customId, UUID)
+        const form = this.findElementByAny(config.formId) as HTMLFormElement;
 
         if (form) {
             form.requestSubmit();
@@ -812,7 +843,8 @@ export class EventEngine {
         let field: HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement | null = null;
 
         if (config.formId) {
-            const form = document.getElementById(config.formId) as HTMLFormElement;
+            // Use findElementByAny for consistent element lookup (supports #customId, UUID)
+            const form = this.findElementByAny(config.formId) as HTMLFormElement;
             if (form) {
                 field = form.querySelector(`[name="${config.fieldName}"]`);
             }

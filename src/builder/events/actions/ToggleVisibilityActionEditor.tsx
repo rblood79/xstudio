@@ -10,6 +10,7 @@ import {
   Popover,
 } from "react-aria-components";
 import type { ToggleVisibilityConfig } from "../types/eventTypes";
+import { ElementPicker } from "../../panels/events/editors/ElementPicker";
 
 export interface ToggleVisibilityActionEditorProps {
   config: ToggleVisibilityConfig;
@@ -43,15 +44,12 @@ export function ToggleVisibilityActionEditor({
 
   return (
     <div className="togglevisibility-action-editor">
-      <TextField className="field">
-        <Label className="field-label">Element ID</Label>
-        <Input
-          className="field-input"
-          value={config.elementId}
-          onChange={(e) => updateField("elementId", e.target.value)}
-          placeholder="sidebar"
-        />
-      </TextField>
+      <ElementPicker
+        label="Element ID"
+        value={config.elementId || ""}
+        onChange={(value) => updateField("elementId", value)}
+        placeholder="Select element..."
+      />
 
       <div className="field">
         <Label className="field-label">Action</Label>

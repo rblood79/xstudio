@@ -11,6 +11,7 @@ import {
   Checkbox,
 } from "react-aria-components";
 import type { ScrollToConfig } from "../types/eventTypes";
+import { ElementPicker } from "../../panels/events/editors/ElementPicker";
 
 export interface ScrollToActionEditorProps {
   config: ScrollToConfig;
@@ -36,15 +37,12 @@ export function ScrollToActionEditor({
 
   return (
     <div className="scrollto-action-editor">
-      <TextField className="field">
-        <Label className="field-label">Element ID</Label>
-        <Input
-          className="field-input"
-          value={config.elementId || ""}
-          onChange={(e) => updateField("elementId", e.target.value || undefined)}
-          placeholder="element-id"
-        />
-      </TextField>
+      <ElementPicker
+        label="Element ID"
+        value={config.elementId || ""}
+        onChange={(value) => updateField("elementId", value || undefined)}
+        placeholder="Select element..."
+      />
 
       <div className="field">
         <Label className="field-label">Position</Label>
