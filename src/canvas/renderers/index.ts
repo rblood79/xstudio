@@ -87,7 +87,7 @@ export const rendererMap: Record<
   Cell: TableRenderer.renderCell,
 
   // Data 컴포넌트
-  Dataset: DataRenderers.renderDataset,
+  DataTable: DataRenderers.renderDataTable,
 };
 
 export {

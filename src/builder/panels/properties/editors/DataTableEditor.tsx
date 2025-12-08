@@ -1,10 +1,10 @@
 /**
- * Dataset Editor
+ * DataTable Editor
  *
- * Dataset 컴포넌트의 속성 편집기
+ * DataTable 컴포넌트의 속성 편집기
  * 데이터 소스 설정 및 새로고침 옵션을 관리
  *
- * @see docs/PLANNED_FEATURES.md - Dataset Component Architecture
+ * @see docs/PLANNED_FEATURES.md - DataTable Component Architecture
  */
 
 import { memo, useCallback, useMemo } from "react";
@@ -28,9 +28,9 @@ import {
 } from "../../common";
 import { PropertyEditorProps } from "../types/editorTypes";
 import { useStore } from "../../../stores";
-import { useDatasetStore } from "../../../stores/dataset";
+import { useDataTableStore } from "../../../stores/datatable";
 
-export const DatasetEditor = memo(function DatasetEditor({
+export const DataTableEditor = memo(function DataTableEditor({
   elementId,
   currentProps,
   onUpdate,
@@ -41,13 +41,13 @@ export const DatasetEditor = memo(function DatasetEditor({
     return element?.customId || "";
   }, [elementId]);
 
-  // Dataset Store에서 현재 Dataset 상태 가져오기
-  const datasetId = String(currentProps.id || "");
-  const datasetState = useDatasetStore((state) =>
-    datasetId ? state.datasetStates.get(datasetId) : undefined
+  // DataTable Store에서 현재 DataTable 상태 가져오기
+  const dataTableId = String(currentProps.id || "");
+  const dataTableState = useDataTableStore((state) =>
+    dataTableId ? state.dataTableStates.get(dataTableId) : undefined
   );
-  const loadDataset = useDatasetStore((state) => state.loadDataset);
-  const refreshDataset = useDatasetStore((state) => state.refreshDataset);
+  const loadDataTable = useDataTableStore((state) => state.loadDataTable);
+  const refreshDataTable = useDataTableStore((state) => state.refreshDataTable);
 
   // Update prop helper
   const updateProp = useCallback(
@@ -79,23 +79,23 @@ export const DatasetEditor = memo(function DatasetEditor({
 
   // Refresh handler
   const handleRefresh = useCallback(() => {
-    if (datasetId) {
-      refreshDataset(datasetId);
+    if (dataTableId) {
+      refreshDataTable(dataTableId);
     }
-  }, [datasetId, refreshDataset]);
+  }, [dataTableId, refreshDataTable]);
 
   // Load handler
   const handleLoad = useCallback(() => {
-    if (datasetId) {
-      loadDataset(datasetId);
+    if (dataTableId) {
+      loadDataTable(dataTableId);
     }
-  }, [datasetId, loadDataset]);
+  }, [dataTableId, loadDataTable]);
 
   // Status icon renderer
   const renderStatusIcon = () => {
-    if (!datasetState) return null;
+    if (!dataTableState) return null;
 
-    switch (datasetState.status) {
+    switch (dataTableState.status) {
       case "loading":
         return <Loader2 size={14} className="spin" />;
       case "success":
@@ -116,19 +116,19 @@ export const DatasetEditor = memo(function DatasetEditor({
           value={customId}
           elementId={elementId}
           onChange={updateCustomId}
-          placeholder="dataset_1"
+          placeholder="datatable_1"
         />
       </PropertySection>
 
-      {/* Dataset Settings Section */}
-      <PropertySection title="Dataset Settings" icon={Database}>
+      {/* DataTable Settings Section */}
+      <PropertySection title="DataTable Settings" icon={Database}>
         <PropertyInput
-          label="Dataset ID"
+          label="DataTable ID"
           value={String(currentProps.id || "")}
           onChange={(value) => updateProp("id", value || "")}
-          placeholder="users-dataset"
+          placeholder="users-datatable"
           icon={Database}
-          description="Unique identifier for this dataset"
+          description="Unique identifier for this datatable"
         />
 
         <PropertyInput
@@ -137,7 +137,7 @@ export const DatasetEditor = memo(function DatasetEditor({
           onChange={(value) => updateProp("name", value || "")}
           placeholder="Users Data"
           icon={FileText}
-          description="Display name for this dataset"
+          description="Display name for this datatable"
         />
 
         <PropertyInput
@@ -182,59 +182,59 @@ export const DatasetEditor = memo(function DatasetEditor({
         />
       </PropertySection>
 
-      {/* Dataset Status Section */}
-      <PropertySection title="Dataset Status" icon={Eye}>
-        <div className="dataset-status-preview">
-          <div className="dataset-status-row">
-            <span className="dataset-status-label">Status:</span>
-            <span className="dataset-status-value">
+      {/* DataTable Status Section */}
+      <PropertySection title="DataTable Status" icon={Eye}>
+        <div className="datatable-status-preview">
+          <div className="datatable-status-row">
+            <span className="datatable-status-label">Status:</span>
+            <span className="datatable-status-value">
               {renderStatusIcon()}
-              {datasetState?.status || "Not registered"}
+              {dataTableState?.status || "Not registered"}
             </span>
           </div>
 
-          {datasetState?.data && (
-            <div className="dataset-status-row">
-              <span className="dataset-status-label">Items:</span>
-              <span className="dataset-status-value">
-                {datasetState.data.length}
+          {dataTableState?.data && (
+            <div className="datatable-status-row">
+              <span className="datatable-status-label">Items:</span>
+              <span className="datatable-status-value">
+                {dataTableState.data.length}
               </span>
             </div>
           )}
 
-          {datasetState?.error && (
-            <div className="dataset-status-row error">
-              <span className="dataset-status-label">Error:</span>
-              <span className="dataset-status-value text-error">
-                {datasetState.error}
+          {dataTableState?.error && (
+            <div className="datatable-status-row error">
+              <span className="datatable-status-label">Error:</span>
+              <span className="datatable-status-value text-error">
+                {dataTableState.error}
               </span>
             </div>
           )}
 
-          {datasetState?.lastLoadedAt && (
-            <div className="dataset-status-row">
-              <span className="dataset-status-label">Last loaded:</span>
-              <span className="dataset-status-value">
-                {new Date(datasetState.lastLoadedAt).toLocaleTimeString()}
+          {dataTableState?.lastLoadedAt && (
+            <div className="datatable-status-row">
+              <span className="datatable-status-label">Last loaded:</span>
+              <span className="datatable-status-value">
+                {new Date(dataTableState.lastLoadedAt).toLocaleTimeString()}
               </span>
             </div>
           )}
 
-          {datasetState?.consumers && datasetState.consumers.length > 0 && (
-            <div className="dataset-status-row">
-              <span className="dataset-status-label">Consumers:</span>
-              <span className="dataset-status-value">
-                {datasetState.consumers.length} component(s)
+          {dataTableState?.consumers && dataTableState.consumers.length > 0 && (
+            <div className="datatable-status-row">
+              <span className="datatable-status-label">Consumers:</span>
+              <span className="datatable-status-value">
+                {dataTableState.consumers.length} component(s)
               </span>
             </div>
           )}
         </div>
 
-        <div className="dataset-actions">
+        <div className="datatable-actions">
           <button
             className="control-button secondary"
             onClick={handleLoad}
-            disabled={!datasetId || datasetState?.status === "loading"}
+            disabled={!dataTableId || dataTableState?.status === "loading"}
           >
             <Database size={14} />
             Load Data
@@ -243,7 +243,7 @@ export const DatasetEditor = memo(function DatasetEditor({
           <button
             className="control-button secondary"
             onClick={handleRefresh}
-            disabled={!datasetId || datasetState?.status === "loading"}
+            disabled={!dataTableId || dataTableState?.status === "loading"}
           >
             <RefreshCw size={14} />
             Refresh
@@ -253,21 +253,21 @@ export const DatasetEditor = memo(function DatasetEditor({
 
       {/* Usage Info Section */}
       <PropertySection title="Usage Info">
-        <div className="dataset-editor-info">
-          <p className="dataset-editor-info-text">
-            Dataset provides centralized data management. Other components can
-            reference this dataset using its ID.
+        <div className="datatable-editor-info">
+          <p className="datatable-editor-info-text">
+            DataTable provides centralized data management. Other components can
+            reference this datatable using its ID.
           </p>
-          <ul className="dataset-editor-info-list">
+          <ul className="datatable-editor-info-list">
             <li>
-              Set a unique Dataset ID (e.g., "users-dataset", "products-api")
+              Set a unique DataTable ID (e.g., "users-datatable", "products-api")
             </li>
             <li>Configure data source using Data Binding</li>
             <li>
               Reference in ListBox, Select, ComboBox with{" "}
-              <code>datasetId</code> prop
+              <code>dataTableId</code> prop
             </li>
-            <li>Multiple components can share the same dataset</li>
+            <li>Multiple components can share the same datatable</li>
           </ul>
         </div>
       </PropertySection>
@@ -275,4 +275,4 @@ export const DatasetEditor = memo(function DatasetEditor({
   );
 });
 
-export default DatasetEditor;
+export default DataTableEditor;

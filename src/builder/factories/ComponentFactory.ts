@@ -37,7 +37,7 @@ import {
   createColumnGroup,
 } from "./definitions/TableComponents";
 import {
-  createDatasetDefinition,
+  createDataTableDefinition,
   createSlotDefinition,
 } from "./definitions/DataComponents";
 
@@ -66,7 +66,7 @@ export class ComponentFactory {
     GridList: ComponentFactory.createGridList,
     Table: ComponentFactory.createTable,
     // ⭐ Data Components
-    Dataset: ComponentFactory.createDataset,
+    DataTable: ComponentFactory.createDataTable,
     Slot: ComponentFactory.createSlot,
   };
 
@@ -221,12 +221,12 @@ export class ComponentFactory {
   // ==================== Data Components ====================
 
   /**
-   * Dataset 컴포넌트 (비시각적, 데이터 관리용)
+   * DataTable 컴포넌트 (비시각적, 데이터 관리용)
    */
-  private static async createDataset(
+  private static async createDataTable(
     context: ComponentCreationContext
   ): Promise<ComponentCreationResult> {
-    return this.createComponent(createDatasetDefinition, context);
+    return this.createComponent(createDataTableDefinition, context);
   }
 
   /**

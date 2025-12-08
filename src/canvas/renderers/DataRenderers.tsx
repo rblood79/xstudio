@@ -1,8 +1,8 @@
 /**
  * Data Component Renderers
  *
- * Dataset 등 데이터 관리 컴포넌트 렌더러
- * Dataset은 비시각적 컴포넌트로, UI를 렌더링하지 않고
+ * DataTable 등 데이터 관리 컴포넌트 렌더러
+ * DataTable은 비시각적 컴포넌트로, UI를 렌더링하지 않고
  * 데이터를 로드하여 다른 컴포넌트가 참조할 수 있도록 합니다.
  */
 
@@ -12,9 +12,9 @@ import { useRuntimeStore } from '../store';
 import type { DataBinding } from '../../types/builder/unified.types';
 
 /**
- * 데이터 로드 함수 (Dataset Store의 로직 재사용)
+ * 데이터 로드 함수 (DataTable Store의 로직 재사용)
  */
-async function fetchDatasetData(
+async function fetchDataTableData(
   dataBinding: DataBinding,
   signal?: AbortSignal
 ): Promise<Record<string, unknown>[]> {
@@ -107,12 +107,12 @@ async function fetchDatasetData(
 }
 
 /**
- * Dataset 컴포넌트 (비시각적)
+ * DataTable 컴포넌트 (비시각적)
  *
  * 데이터를 로드하고 Runtime Store에 저장합니다.
- * 다른 컴포넌트는 datasetId를 통해 이 데이터를 참조할 수 있습니다.
+ * 다른 컴포넌트는 dataTableId를 통해 이 데이터를 참조할 수 있습니다.
  */
-function DatasetComponent({ element }: { element: PreviewElement }) {
+function DataTableComponent({ element }: { element: PreviewElement }) {
   const setDataState = useRuntimeStore((s) => s.setDataState);
   const abortControllerRef = useRef<AbortController | null>(null);
 
@@ -123,7 +123,7 @@ function DatasetComponent({ element }: { element: PreviewElement }) {
     refreshInterval?: number;
   };
 
-  const datasetId = props.id || element.id;
+  const dataTableId = props.id || element.id;
   const autoLoad = props.autoLoad !== false;
   const refreshInterval = props.refreshInterval;
   const dataBinding = element.dataBinding as DataBinding | undefined;
@@ -143,41 +143,41 @@ function DatasetComponent({ element }: { element: PreviewElement }) {
     abortControllerRef.current = abortController;
 
     // 로딩 상태 설정
-    setDataState(datasetId, {
+    setDataState(dataTableId, {
       loading: true,
       data: null,
       error: null,
     });
 
-    console.log(`📊 [Canvas] Dataset loading: ${datasetId}`);
+    console.log(`📊 [Canvas] DataTable loading: ${dataTableId}`);
 
-    fetchDatasetData(dataBinding, abortController.signal)
+    fetchDataTableData(dataBinding, abortController.signal)
       .then((data) => {
         if (!abortController.signal.aborted) {
-          setDataState(datasetId, {
+          setDataState(dataTableId, {
             loading: false,
             data,
             error: null,
           });
-          console.log(`✅ [Canvas] Dataset loaded: ${datasetId} (${data.length} items)`);
+          console.log(`✅ [Canvas] DataTable loaded: ${dataTableId} (${data.length} items)`);
         }
       })
       .catch((error) => {
         if (!abortController.signal.aborted) {
           const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-          setDataState(datasetId, {
+          setDataState(dataTableId, {
             loading: false,
             data: null,
             error: errorMessage,
           });
-          console.error(`❌ [Canvas] Dataset error: ${datasetId}`, errorMessage);
+          console.error(`❌ [Canvas] DataTable error: ${dataTableId}`, errorMessage);
         }
       });
 
     return () => {
       abortController.abort();
     };
-  }, [datasetId, dataBinding, autoLoad, setDataState]);
+  }, [dataTableId, dataBinding, autoLoad, setDataState]);
 
   // 자동 새로고침
   useEffect(() => {
@@ -185,7 +185,7 @@ function DatasetComponent({ element }: { element: PreviewElement }) {
       return;
     }
 
-    console.log(`⏱️ [Canvas] Dataset auto-refresh: ${datasetId} every ${refreshInterval}ms`);
+    console.log(`⏱️ [Canvas] DataTable auto-refresh: ${dataTableId} every ${refreshInterval}ms`);
 
     const intervalId = setInterval(() => {
       // 이전 요청 취소
@@ -196,10 +196,10 @@ function DatasetComponent({ element }: { element: PreviewElement }) {
       const abortController = new AbortController();
       abortControllerRef.current = abortController;
 
-      fetchDatasetData(dataBinding, abortController.signal)
+      fetchDataTableData(dataBinding, abortController.signal)
         .then((data) => {
           if (!abortController.signal.aborted) {
-            setDataState(datasetId, {
+            setDataState(dataTableId, {
               loading: false,
               data,
               error: null,
@@ -209,7 +209,7 @@ function DatasetComponent({ element }: { element: PreviewElement }) {
         .catch((error) => {
           if (!abortController.signal.aborted) {
             const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-            setDataState(datasetId, {
+            setDataState(dataTableId, {
               loading: false,
               data: null,
               error: errorMessage,
@@ -221,20 +221,20 @@ function DatasetComponent({ element }: { element: PreviewElement }) {
     return () => {
       clearInterval(intervalId);
     };
-  }, [datasetId, dataBinding, autoLoad, refreshInterval, setDataState]);
+  }, [dataTableId, dataBinding, autoLoad, refreshInterval, setDataState]);
 
   // 비시각적 컴포넌트 - UI 렌더링 없음
   return null;
 }
 
 /**
- * Dataset 렌더러
+ * DataTable 렌더러
  */
-export function renderDataset(
+export function renderDataTable(
   element: PreviewElement,
   context: RenderContext
 ): React.ReactNode {
   // context is required for rendererMap type consistency but not used in this renderer
   void context;
-  return <DatasetComponent key={element.id} element={element} />;
+  return <DataTableComponent key={element.id} element={element} />;
 }
