@@ -19,7 +19,6 @@ import {
   Save,
   Moon,
   Sun,
-  Monitor,
   Settings,
 } from "lucide-react";
 import { Button } from "react-aria-components";
@@ -38,10 +37,7 @@ import {
 import { useThemes } from "../../../hooks/theme/useThemes";
 import { ThemeService } from "../../../services/theme";
 import { useThemeMessenger } from "../../hooks/useThemeMessenger";
-import {
-  useBuilderThemeStore,
-  useBuilderThemeList,
-} from "../../themes";
+import { ThemeSelector } from "../../themes";
 
 function SettingsContent() {
   const { projectId } = useParams<{ projectId: string }>();
@@ -115,11 +111,6 @@ function SettingsContent() {
     }
   };
 
-  // Builder Theme (VS Code style)
-  const builderThemeId = useBuilderThemeStore((state) => state.activeThemeId);
-  const setBuilderTheme = useBuilderThemeStore((state) => state.setTheme);
-  const builderThemes = useBuilderThemeList();
-
   // Theme Mode에 따른 아이콘 결정
   const getThemeModeIcon = () => {
     if (themeMode === "dark") return Moon;
@@ -129,10 +120,6 @@ function SettingsContent() {
       "(prefers-color-scheme: dark)"
     ).matches;
     return prefersDark ? Moon : Sun;
-  };
-
-  const handleBuilderThemeChange = (value: string) => {
-    setBuilderTheme(value);
   };
 
   const themeModeOptions = [
@@ -293,16 +280,7 @@ function SettingsContent() {
 
         {/* Builder Theme Section */}
         <PropertySection title="Builder Theme">
-          <PropertySelect
-            label="Color Theme"
-            value={builderThemeId}
-            onChange={handleBuilderThemeChange}
-            options={builderThemes.map((theme) => ({
-              value: theme.id,
-              label: `${theme.name}${theme.type === "dark" ? " (Dark)" : " (Light)"}`,
-            }))}
-            icon={Monitor}
-          />
+          <ThemeSelector compact />
         </PropertySection>
 
         {/* Preview Theme Section */}
