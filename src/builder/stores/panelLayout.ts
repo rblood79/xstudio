@@ -83,15 +83,27 @@ function loadLayoutFromStorage(): import('../panels/core/types').PanelLayoutStat
         result.bottomHeight = DEFAULT_PANEL_LAYOUT.bottomHeight;
       }
 
-      // 마이그레이션: datasetEditor가 leftPanels에 없으면 추가
-      if (Array.isArray(result.leftPanels) && !result.leftPanels.includes('datasetEditor')) {
-        const datasetIndex = result.leftPanels.indexOf('dataset');
-        if (datasetIndex >= 0) {
-          // dataset 바로 뒤에 삽입
-          result.leftPanels.splice(datasetIndex + 1, 0, 'datasetEditor');
+      // 마이그레이션: dataset → datatable 리네이밍
+      if (Array.isArray(result.leftPanels)) {
+        result.leftPanels = result.leftPanels.map((id) =>
+          id === 'dataset' ? 'datatable' : id === 'datasetEditor' ? 'datatableEditor' : id
+        );
+      }
+      if (Array.isArray(result.activeLeftPanels)) {
+        result.activeLeftPanels = result.activeLeftPanels.map((id) =>
+          id === 'dataset' ? 'datatable' : id === 'datasetEditor' ? 'datatableEditor' : id
+        );
+      }
+
+      // 마이그레이션: datatableEditor가 leftPanels에 없으면 추가
+      if (Array.isArray(result.leftPanels) && !result.leftPanels.includes('datatableEditor')) {
+        const datatableIndex = result.leftPanels.indexOf('datatable');
+        if (datatableIndex >= 0) {
+          // datatable 바로 뒤에 삽입
+          result.leftPanels.splice(datatableIndex + 1, 0, 'datatableEditor');
         } else {
-          // dataset이 없으면 맨 뒤에 추가
-          result.leftPanels.push('datasetEditor');
+          // datatable이 없으면 맨 뒤에 추가
+          result.leftPanels.push('datatableEditor');
         }
       }
 

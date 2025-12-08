@@ -2,13 +2,13 @@
  * ApiEndpointList - API Endpoint 목록 컴포넌트
  *
  * API Endpoint CRUD 및 목록 표시
- * 편집 UI는 DatasetEditorPanel에서 처리
+ * 편집 UI는 DataTableEditorPanel에서 처리
  */
 
 import { useState } from "react";
 import { Globe, Plus, Trash2, Edit2, Play } from "lucide-react";
 import { useDataStore, useApiEndpoints } from "../../../stores/data";
-import { useDatasetEditorStore } from "../stores/datasetEditorStore";
+import { useDataTableEditorStore } from "../stores/dataTableEditorStore";
 import { SectionHeader } from "../../common/SectionHeader";
 
 interface ApiEndpointListProps {
@@ -22,8 +22,8 @@ export function ApiEndpointList({ projectId }: ApiEndpointListProps) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
   // Editor Store 액션
-  const editorMode = useDatasetEditorStore((state) => state.mode);
-  const openApiEditor = useDatasetEditorStore((state) => state.openApiEditor);
+  const editorMode = useDataTableEditorStore((state) => state.mode);
+  const openApiEditor = useDataTableEditorStore((state) => state.openApiEditor);
 
   // 현재 편집 중인 API ID (하이라이트용)
   const editingApiId = editorMode?.type === "api-edit" ? editorMode.endpointId : null;
@@ -88,14 +88,14 @@ export function ApiEndpointList({ projectId }: ApiEndpointListProps) {
       <SectionHeader
         title="API List"
         actions={
-          <span className="dataset-list-count">{apiEndpoints.length}개</span>
+          <span className="datatable-list-count">{apiEndpoints.length}개</span>
         }
       />
       <div className="section-content">
         {apiEndpoints.length === 0 ? (
-          <div className="dataset-empty">
-            <Globe size={32} className="dataset-empty-icon" />
-            <p className="dataset-empty-text">
+          <div className="datatable-empty">
+            <Globe size={32} className="datatable-empty-icon" />
+            <p className="datatable-empty-text">
               API Endpoint가 없습니다.
               <br />
               새 API를 추가하세요.
@@ -156,7 +156,7 @@ export function ApiEndpointList({ projectId }: ApiEndpointListProps) {
 
         <button
           type="button"
-          className="dataset-add-btn"
+          className="datatable-add-btn"
           onClick={handleCreate}
         >
           <Plus size={16} />

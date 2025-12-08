@@ -1,12 +1,12 @@
 /**
- * DatasetEditorPanel Store
+ * DataTableEditorPanel Store
  *
  * 에디터 모드 상태 관리 및 패널 자동 활성화/비활성화
  */
 
 import { create } from "zustand";
 import type {
-  DatasetEditorStore,
+  DataTableEditorStore,
   ApiEditorTab,
 } from "../types/editorTypes";
 import { useStore } from "../../../stores";
@@ -16,10 +16,10 @@ import { useStore } from "../../../stores";
  */
 function activateEditorPanel() {
   const { panelLayout, setPanelLayout } = useStore.getState();
-  if (!panelLayout.activeLeftPanels.includes("datasetEditor")) {
+  if (!panelLayout.activeLeftPanels.includes("datatableEditor")) {
     setPanelLayout({
       ...panelLayout,
-      activeLeftPanels: [...panelLayout.activeLeftPanels, "datasetEditor"],
+      activeLeftPanels: [...panelLayout.activeLeftPanels, "datatableEditor"],
     });
   }
 }
@@ -29,20 +29,20 @@ function activateEditorPanel() {
  */
 function deactivateEditorPanel() {
   const { panelLayout, setPanelLayout } = useStore.getState();
-  if (panelLayout.activeLeftPanels.includes("datasetEditor")) {
+  if (panelLayout.activeLeftPanels.includes("datatableEditor")) {
     setPanelLayout({
       ...panelLayout,
       activeLeftPanels: panelLayout.activeLeftPanels.filter(
-        (id) => id !== "datasetEditor"
+        (id) => id !== "datatableEditor"
       ),
     });
   }
 }
 
 /**
- * DatasetEditorStore
+ * DataTableEditorStore
  */
-export const useDatasetEditorStore = create<DatasetEditorStore>((set) => ({
+export const useDataTableEditorStore = create<DataTableEditorStore>((set) => ({
   // State
   mode: null,
 
@@ -100,11 +100,11 @@ export const useDatasetEditorStore = create<DatasetEditorStore>((set) => ({
 /**
  * 선택자 훅들
  */
-export const useDatasetEditorMode = () =>
-  useDatasetEditorStore((state) => state.mode);
+export const useDataTableEditorMode = () =>
+  useDataTableEditorStore((state) => state.mode);
 
-export const useDatasetEditorActions = () =>
-  useDatasetEditorStore((state) => ({
+export const useDataTableEditorActions = () =>
+  useDataTableEditorStore((state) => ({
     openTableCreator: state.openTableCreator,
     openTableEditor: state.openTableEditor,
     openApiCreator: state.openApiCreator,

@@ -148,8 +148,8 @@ export const DEFAULT_PANEL_LAYOUT: PanelLayoutState = {
   leftPanels: [
     'nodes',
     'components',
-    'dataset',
-    'datasetEditor',  // Dataset 에디터 (dataset과 함께 사용)
+    'datatable',
+    'datatableEditor',  // DataTable 에디터 (datatable과 함께 사용)
     'theme',
     'ai',
     'settings',
