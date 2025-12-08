@@ -5,15 +5,17 @@
  */
 
 import { useWorkflowStore } from '../store';
-import { Layout, ArrowRightLeft, Link as LinkIcon } from 'lucide-react';
+import { Layout, ArrowRightLeft, Link as LinkIcon, Zap } from 'lucide-react';
 
 export function WorkflowToolbar() {
   // Individual selectors to prevent infinite loops
   const showLayouts = useWorkflowStore((s) => s.showLayouts);
   const showNavigationEdges = useWorkflowStore((s) => s.showNavigationEdges);
+  const showEventLinks = useWorkflowStore((s) => s.showEventLinks);
   const showLayoutEdges = useWorkflowStore((s) => s.showLayoutEdges);
   const toggleShowLayouts = useWorkflowStore((s) => s.toggleShowLayouts);
   const toggleShowNavigationEdges = useWorkflowStore((s) => s.toggleShowNavigationEdges);
+  const toggleShowEventLinks = useWorkflowStore((s) => s.toggleShowEventLinks);
   const toggleShowLayoutEdges = useWorkflowStore((s) => s.toggleShowLayoutEdges);
 
   return (
@@ -31,14 +33,24 @@ export function WorkflowToolbar() {
           <span>Layouts</span>
         </button>
 
-        {/* Show Navigation Edges Toggle */}
+        {/* Show Navigation Edges Toggle (Link 요소) */}
         <button
           className={`workflow-toolbar-btn ${showNavigationEdges ? 'active' : ''}`}
           onClick={toggleShowNavigationEdges}
-          title="Show Navigation Links"
+          title="Show Link Navigation"
         >
           <ArrowRightLeft size={16} />
-          <span>Navigation</span>
+          <span>Links</span>
+        </button>
+
+        {/* Show Event Links Toggle (Event 기반 navigate) */}
+        <button
+          className={`workflow-toolbar-btn ${showEventLinks ? 'active' : ''}`}
+          onClick={toggleShowEventLinks}
+          title="Show Event Navigation (onClick, onSubmit, etc.)"
+        >
+          <Zap size={16} />
+          <span>Events</span>
         </button>
 
         {/* Show Layout Edges Toggle */}

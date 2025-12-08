@@ -23,6 +23,7 @@ import type {
   WorkflowEdge,
   PageNodeData,
   LayoutNodeData,
+  EventNavigationInfo,
 } from '../types';
 
 // ============================================
@@ -48,6 +49,7 @@ const initialState: WorkflowState = {
   // View Settings
   showLayouts: true,
   showNavigationEdges: true,
+  showEventLinks: true,
   showLayoutEdges: true,
 };
 
@@ -95,6 +97,77 @@ function countLayoutSlots(layoutId: string, elements: WorkflowElement[]): number
 }
 
 /**
+ * 페이지 내 Element의 events에서 navigate 액션 추출
+ * - onClick, onSubmit 등의 이벤트에서 navigate 액션을 찾음
+ * - path를 slug로 변환하여 target pageId 반환
+ */
+function extractNavigationFromEvents(
+  pageId: string,
+  elements: WorkflowElement[],
+  pages: WorkflowPage[]
+): EventNavigationInfo[] {
+  const pageElements = elements.filter((el) => el.page_id === pageId);
+  const navigationInfos: EventNavigationInfo[] = [];
+
+  // slug → pageId 매핑
+  const pageSlugs = new Map(pages.map((p) => [p.slug, p.id]));
+  // '/' 없이도 매칭할 수 있도록
+  const pageSlugsByPath = new Map<string, string>();
+  pages.forEach((p) => {
+    pageSlugsByPath.set(p.slug, p.id);
+    pageSlugsByPath.set(`/${p.slug}`, p.id);
+    // home 페이지의 경우 '/' 경로도 매칭
+    if (p.slug === 'home' || p.slug === '') {
+      pageSlugsByPath.set('/', p.id);
+    }
+  });
+
+  pageElements.forEach((el) => {
+    // Element에 events가 없으면 skip
+    if (!el.events || !Array.isArray(el.events)) return;
+
+    el.events.forEach((event) => {
+      // 비활성화된 이벤트는 skip
+      if (!event.enabled) return;
+
+      event.actions.forEach((action) => {
+        // navigate 액션만 처리
+        if (action.type !== 'navigate') return;
+        // 비활성화된 액션은 skip
+        if (action.enabled === false) return;
+
+        const path = action.value?.path;
+        if (!path) return;
+
+        // 외부 링크는 skip
+        if (path.startsWith('http') || path.startsWith('#')) return;
+
+        // path를 정규화
+        const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+        const cleanPath = normalizedPath === '/' ? '/' : normalizedPath.replace(/^\//, '');
+
+        // pageId 찾기
+        let targetPageId = pageSlugsByPath.get(normalizedPath) || pageSlugs.get(cleanPath);
+
+        // 찾지 못하면 skip
+        if (!targetPageId || targetPageId === pageId) return;
+
+        navigationInfos.push({
+          sourceElementId: el.id,
+          sourceElementTag: el.tag,
+          eventType: event.event_type,
+          targetPageId,
+          condition: action.condition,
+        });
+      });
+    });
+  });
+
+  // 동일한 target에 대한 중복 제거 (같은 페이지로 가는 여러 이벤트는 유지)
+  return navigationInfos;
+}
+
+/**
  * 페이지/레이아웃 데이터를 ReactFlow 노드/엣지로 변환
  */
 function buildGraph(
@@ -103,6 +176,7 @@ function buildGraph(
   elements: WorkflowElement[],
   showLayouts: boolean,
   showNavigationEdges: boolean,
+  showEventLinks: boolean,
   showLayoutEdges: boolean
 ): { nodes: WorkflowNode[]; edges: WorkflowEdge[] } {
   const nodes: WorkflowNode[] = [];
@@ -137,6 +211,7 @@ function buildGraph(
   // Layout이 없는 페이지들
   pagesWithoutLayout.forEach((page, index) => {
     const outgoingLinks = extractNavigationLinks(page.id, elements, pages);
+    const outgoingEventLinks = extractNavigationFromEvents(page.id, elements, pages);
     const elementCount = elements.filter((el) => el.page_id === page.id).length;
 
     const pageNode: WorkflowNode = {
@@ -147,6 +222,7 @@ function buildGraph(
         type: 'page',
         page,
         outgoingLinks,
+        outgoingEventLinks,
         layoutId: null,
         elementCount,
       } as PageNodeData,
@@ -168,6 +244,7 @@ function buildGraph(
   layoutGroups.forEach((groupPages, layoutId) => {
     groupPages.forEach((page, pageIndex) => {
       const outgoingLinks = extractNavigationLinks(page.id, elements, pages);
+      const outgoingEventLinks = extractNavigationFromEvents(page.id, elements, pages);
       const elementCount = elements.filter((el) => el.page_id === page.id).length;
 
       const pageNode: WorkflowNode = {
@@ -181,6 +258,7 @@ function buildGraph(
           type: 'page',
           page,
           outgoingLinks,
+          outgoingEventLinks,
           layoutId,
           elementCount,
         } as PageNodeData,
@@ -203,7 +281,7 @@ function buildGraph(
     layoutGroupIndex++;
   });
 
-  // Navigation 엣지 생성
+  // Navigation 엣지 생성 (Link 요소 기반)
   if (showNavigationEdges) {
     pages.forEach((page) => {
       const outgoingLinks = extractNavigationLinks(page.id, elements, pages);
@@ -216,7 +294,41 @@ function buildGraph(
           animated: true,
           style: { stroke: 'var(--color-primary-500)' },
           markerEnd: { type: MarkerType.ArrowClosed },
-          data: { type: 'navigation', label: 'navigates to' },
+          data: { type: 'navigation', label: 'Link' },
+        });
+      });
+    });
+  }
+
+  // Event 기반 Navigation 엣지 생성
+  if (showEventLinks) {
+    pages.forEach((page) => {
+      const eventNavigations = extractNavigationFromEvents(page.id, elements, pages);
+      eventNavigations.forEach((navInfo, index) => {
+        // 이미 동일한 source-target 엣지가 있는지 확인
+        const edgeExists = edges.some(
+          (e) =>
+            e.source === `page-${page.id}` &&
+            e.target === `page-${navInfo.targetPageId}`
+        );
+
+        edges.push({
+          id: `edge-event-${page.id}-${navInfo.targetPageId}-${index}`,
+          source: `page-${page.id}`,
+          target: `page-${navInfo.targetPageId}`,
+          type: 'smoothstep',
+          animated: true,
+          style: {
+            stroke: 'var(--color-secondary-500)',
+            strokeDasharray: '5,5',
+          },
+          markerEnd: { type: MarkerType.ArrowClosed },
+          data: {
+            type: 'event-navigation' as const,
+            label: `${navInfo.eventType}${navInfo.condition ? ' (조건부)' : ''}`,
+          },
+          // 기존 Link 엣지가 있으면 약간 오프셋
+          ...(edgeExists && { labelBgPadding: [8, 4] }),
         });
       });
     });
@@ -282,6 +394,11 @@ export const useWorkflowStore = create<WorkflowStore>((set, get) => ({
     get().buildWorkflowGraph();
   },
 
+  toggleShowEventLinks: () => {
+    set({ showEventLinks: !get().showEventLinks });
+    get().buildWorkflowGraph();
+  },
+
   toggleShowLayoutEdges: () => {
     set({ showLayoutEdges: !get().showLayoutEdges });
     get().buildWorkflowGraph();
@@ -289,7 +406,7 @@ export const useWorkflowStore = create<WorkflowStore>((set, get) => ({
 
   // Build Graph
   buildWorkflowGraph: () => {
-    const { pages, layouts, elements, showLayouts, showNavigationEdges, showLayoutEdges } = get();
+    const { pages, layouts, elements, showLayouts, showNavigationEdges, showEventLinks, showLayoutEdges } = get();
 
     if (pages.length === 0) {
       set({ nodes: [], edges: [] });
@@ -302,6 +419,7 @@ export const useWorkflowStore = create<WorkflowStore>((set, get) => ({
       elements,
       showLayouts,
       showNavigationEdges,
+      showEventLinks,
       showLayoutEdges
     );
 

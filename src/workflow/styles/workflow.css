@@ -334,3 +334,77 @@
     stroke-dashoffset: 10;
   }
 }
+
+/* ============================================
+   Edge Type Styles
+   ============================================ */
+
+/* Navigation (Link 요소) - 실선, primary 색상 */
+.react-flow__edge[data-edge-type="navigation"] .react-flow__edge-path {
+  stroke: var(--workflow-primary);
+  stroke-width: 2;
+}
+
+/* Event Navigation - 점선, secondary 색상 */
+.react-flow__edge[data-edge-type="event-navigation"] .react-flow__edge-path {
+  stroke: var(--workflow-secondary);
+  stroke-width: 2;
+  stroke-dasharray: 5, 5;
+}
+
+/* Layout Usage - 점선, 연한 색상 */
+.react-flow__edge[data-edge-type="layout-usage"] .react-flow__edge-path {
+  stroke: var(--workflow-text-muted);
+  stroke-width: 1.5;
+  stroke-dasharray: 5, 5;
+}
+
+/* ============================================
+   Edge Legend (Toolbar 하단)
+   ============================================ */
+
+.workflow-legend {
+  display: flex;
+  gap: 16px;
+  padding: 8px 16px;
+  background: var(--workflow-bg);
+  border-top: 1px solid var(--workflow-border);
+  font-size: 11px;
+  color: var(--workflow-text-muted);
+}
+
+.workflow-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.workflow-legend-line {
+  width: 24px;
+  height: 2px;
+}
+
+.workflow-legend-line.link {
+  background: var(--workflow-primary);
+}
+
+.workflow-legend-line.event {
+  background: var(--workflow-secondary);
+  background-image: repeating-linear-gradient(
+    90deg,
+    var(--workflow-secondary) 0px,
+    var(--workflow-secondary) 5px,
+    transparent 5px,
+    transparent 10px
+  );
+}
+
+.workflow-legend-line.layout {
+  background-image: repeating-linear-gradient(
+    90deg,
+    var(--workflow-text-muted) 0px,
+    var(--workflow-text-muted) 5px,
+    transparent 5px,
+    transparent 10px
+  );
+}

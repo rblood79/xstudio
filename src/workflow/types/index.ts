@@ -39,6 +39,49 @@ export interface WorkflowElement {
   page_id?: string | null;
   layout_id?: string | null;
   order_num?: number;
+  /** Element events (for navigate action analysis) */
+  events?: WorkflowElementEvent[];
+}
+
+// ============================================
+// Event Types (for navigation analysis)
+// ============================================
+
+export interface WorkflowEventAction {
+  id: string;
+  type: string;
+  target?: string;
+  value?: {
+    path?: string;
+    openInNewTab?: boolean;
+    replace?: boolean;
+    [key: string]: unknown;
+  };
+  delay?: number;
+  condition?: string;
+  enabled?: boolean;
+}
+
+export interface WorkflowElementEvent {
+  id: string;
+  event_type: string;
+  actions: WorkflowEventAction[];
+  enabled: boolean;
+  description?: string;
+}
+
+/** Information about event-based navigation */
+export interface EventNavigationInfo {
+  /** Source element ID */
+  sourceElementId: string;
+  /** Source element tag */
+  sourceElementTag: string;
+  /** Event type that triggers navigation */
+  eventType: string;
+  /** Target page ID */
+  targetPageId: string;
+  /** Action condition (if any) */
+  condition?: string;
 }
 
 // ============================================
@@ -48,8 +91,10 @@ export interface WorkflowElement {
 export interface PageNodeData {
   type: 'page';
   page: WorkflowPage;
-  /** 페이지 내 링크 목록 (다른 페이지로의 네비게이션) */
+  /** 페이지 내 Link 요소 기반 네비게이션 목록 */
   outgoingLinks: string[];
+  /** 페이지 내 Event 기반 네비게이션 목록 */
+  outgoingEventLinks: EventNavigationInfo[];
   /** 이 페이지를 사용하는 Layout ID */
   layoutId?: string | null;
   /** 썸네일 이미지 URL (선택적) */
@@ -79,7 +124,7 @@ export type WorkflowNode = PageNode | LayoutNode;
 // Edge Types
 // ============================================
 
-export type EdgeType = 'navigation' | 'layout-usage' | 'parent-child';
+export type EdgeType = 'navigation' | 'event-navigation' | 'layout-usage' | 'parent-child';
 
 export interface WorkflowEdgeData {
   type: EdgeType;
@@ -111,6 +156,7 @@ export interface WorkflowState {
   // View Settings
   showLayouts: boolean;
   showNavigationEdges: boolean;
+  showEventLinks: boolean;
   showLayoutEdges: boolean;
 }
 
@@ -135,6 +181,7 @@ export interface WorkflowActions {
   // View Settings Actions
   toggleShowLayouts: () => void;
   toggleShowNavigationEdges: () => void;
+  toggleShowEventLinks: () => void;
   toggleShowLayoutEdges: () => void;
 
   // Computed Actions
