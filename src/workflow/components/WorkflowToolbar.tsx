@@ -5,7 +5,7 @@
  */
 
 import { useWorkflowStore } from '../store';
-import { Layout, ArrowRightLeft, Link as LinkIcon, Zap } from 'lucide-react';
+import { Layout, ArrowRightLeft, Link as LinkIcon, Zap, Database } from 'lucide-react';
 
 export function WorkflowToolbar() {
   // Individual selectors to prevent infinite loops
@@ -13,10 +13,12 @@ export function WorkflowToolbar() {
   const showNavigationEdges = useWorkflowStore((s) => s.showNavigationEdges);
   const showEventLinks = useWorkflowStore((s) => s.showEventLinks);
   const showLayoutEdges = useWorkflowStore((s) => s.showLayoutEdges);
+  const showDataSources = useWorkflowStore((s) => s.showDataSources);
   const toggleShowLayouts = useWorkflowStore((s) => s.toggleShowLayouts);
   const toggleShowNavigationEdges = useWorkflowStore((s) => s.toggleShowNavigationEdges);
   const toggleShowEventLinks = useWorkflowStore((s) => s.toggleShowEventLinks);
   const toggleShowLayoutEdges = useWorkflowStore((s) => s.toggleShowLayoutEdges);
+  const toggleShowDataSources = useWorkflowStore((s) => s.toggleShowDataSources);
 
   return (
     <div className="workflow-toolbar">
@@ -62,6 +64,16 @@ export function WorkflowToolbar() {
         >
           <LinkIcon size={16} />
           <span>Layout Links</span>
+        </button>
+
+        {/* Show Data Sources Toggle */}
+        <button
+          className={`workflow-toolbar-btn ${showDataSources ? 'active' : ''}`}
+          onClick={toggleShowDataSources}
+          title="Show Data Sources (DataTable, API, etc.)"
+        >
+          <Database size={16} />
+          <span>Data</span>
         </button>
       </div>
     </div>

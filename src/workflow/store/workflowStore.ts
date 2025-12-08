@@ -23,7 +23,9 @@ import type {
   WorkflowEdge,
   PageNodeData,
   LayoutNodeData,
+  DataSourceNodeData,
   EventNavigationInfo,
+  DataSourceInfo,
 } from '../types';
 
 // ============================================
@@ -51,6 +53,7 @@ const initialState: WorkflowState = {
   showNavigationEdges: true,
   showEventLinks: true,
   showLayoutEdges: true,
+  showDataSources: true,
 };
 
 // ============================================
@@ -168,6 +171,82 @@ function extractNavigationFromEvents(
 }
 
 /**
+ * Element의 dataBinding에서 데이터 소스 정보 추출
+ * - dataTable, api, supabase 등의 소스를 찾아서 그룹화
+ */
+function extractDataSources(elements: WorkflowElement[]): DataSourceInfo[] {
+  const dataSourceMap = new Map<string, DataSourceInfo>();
+
+  elements.forEach((el) => {
+    // dataBinding이 없으면 skip
+    if (!el.dataBinding) return;
+
+    const binding = el.dataBinding;
+    let sourceType: DataSourceInfo['sourceType'] | null = null;
+    let name = '';
+    let id = '';
+
+    // PropertyDataBinding 형식 (Inspector에서 설정)
+    if ('source' in binding && 'name' in binding && binding.name) {
+      if (binding.source === 'dataTable') {
+        sourceType = 'dataTable';
+        name = binding.name;
+        id = `dataTable-${name}`;
+      } else if (binding.source === 'api') {
+        sourceType = 'api';
+        name = binding.name;
+        id = `api-${name}`;
+      }
+    }
+
+    // DataBinding 형식 (프로그래매틱)
+    if ('type' in binding && binding.config) {
+      const config = binding.config;
+
+      if (config.baseUrl === 'MOCK_DATA') {
+        sourceType = 'mock';
+        name = config.endpoint as string || 'Mock Data';
+        id = `mock-${name}`;
+      } else if (binding.source === 'supabase' && config.tableName) {
+        sourceType = 'supabase';
+        name = config.tableName;
+        id = `supabase-${name}`;
+      } else if (binding.source === 'api' && config.endpoint) {
+        sourceType = 'api';
+        name = config.endpoint;
+        id = `api-${name}`;
+      }
+    }
+
+    // 유효한 데이터 소스가 아니면 skip
+    if (!sourceType || !name) return;
+
+    // 기존 데이터 소스에 추가하거나 새로 생성
+    if (dataSourceMap.has(id)) {
+      const existing = dataSourceMap.get(id)!;
+      existing.boundElements.push({
+        elementId: el.id,
+        elementTag: el.tag,
+        pageId: el.page_id || '',
+      });
+    } else {
+      dataSourceMap.set(id, {
+        id,
+        sourceType,
+        name,
+        boundElements: [{
+          elementId: el.id,
+          elementTag: el.tag,
+          pageId: el.page_id || '',
+        }],
+      });
+    }
+  });
+
+  return Array.from(dataSourceMap.values());
+}
+
+/**
  * 페이지/레이아웃 데이터를 ReactFlow 노드/엣지로 변환
  */
 function buildGraph(
@@ -177,10 +256,37 @@ function buildGraph(
   showLayouts: boolean,
   showNavigationEdges: boolean,
   showEventLinks: boolean,
-  showLayoutEdges: boolean
+  showLayoutEdges: boolean,
+  showDataSources: boolean
 ): { nodes: WorkflowNode[]; edges: WorkflowEdge[] } {
   const nodes: WorkflowNode[] = [];
   const edges: WorkflowEdge[] = [];
+
+  // 데이터 소스 추출
+  const dataSources = extractDataSources(elements);
+
+  // Y 오프셋 계산 (데이터 소스가 있으면 상단에 배치)
+  const dataSourceYOffset = showDataSources && dataSources.length > 0 ? 150 : 0;
+
+  // DataSource 노드 생성 (최상단에 배치)
+  if (showDataSources && dataSources.length > 0) {
+    dataSources.forEach((dataSource, index) => {
+      // 이 데이터 소스를 사용하는 페이지 ID 목록
+      const pageIds = [...new Set(dataSource.boundElements.map((be) => be.pageId).filter(Boolean))];
+
+      const dataSourceNode: WorkflowNode = {
+        id: `datasource-${dataSource.id}`,
+        type: 'dataSource',
+        position: { x: 100 + index * 200, y: 0 },
+        data: {
+          type: 'dataSource',
+          dataSource,
+          pageIds,
+        } as DataSourceNodeData,
+      };
+      nodes.push(dataSourceNode);
+    });
+  }
 
   // Layout 노드 생성 (상단에 배치)
   if (showLayouts) {
@@ -192,7 +298,7 @@ function buildGraph(
       const layoutNode: WorkflowNode = {
         id: `layout-${layout.id}`,
         type: 'layout',
-        position: { x: 100 + index * 300, y: 50 },
+        position: { x: 100 + index * 300, y: 50 + dataSourceYOffset },
         data: {
           type: 'layout',
           layout,
@@ -217,7 +323,7 @@ function buildGraph(
     const pageNode: WorkflowNode = {
       id: `page-${page.id}`,
       type: 'page',
-      position: { x: 100 + index * 250, y: showLayouts ? 250 : 100 },
+      position: { x: 100 + index * 250, y: (showLayouts ? 250 : 100) + dataSourceYOffset },
       data: {
         type: 'page',
         page,
@@ -252,7 +358,7 @@ function buildGraph(
         type: 'page',
         position: {
           x: 100 + layoutGroupIndex * 300 + pageIndex * 50,
-          y: showLayouts ? 400 + pageIndex * 150 : 250 + pageIndex * 150,
+          y: (showLayouts ? 400 + pageIndex * 150 : 250 + pageIndex * 150) + dataSourceYOffset,
         },
         data: {
           type: 'page',
@@ -334,6 +440,32 @@ function buildGraph(
     });
   }
 
+  // DataSource → Page 엣지 생성
+  if (showDataSources && dataSources.length > 0) {
+    dataSources.forEach((dataSource) => {
+      // 이 데이터 소스를 사용하는 페이지들
+      const pageIds = [...new Set(dataSource.boundElements.map((be) => be.pageId).filter(Boolean))];
+
+      pageIds.forEach((pageId) => {
+        edges.push({
+          id: `edge-data-${dataSource.id}-page-${pageId}`,
+          source: `datasource-${dataSource.id}`,
+          target: `page-${pageId}`,
+          type: 'smoothstep',
+          animated: false,
+          style: {
+            stroke: 'var(--color-success-500)',
+            strokeDasharray: '3,3',
+          },
+          data: {
+            type: 'data-binding' as const,
+            label: dataSource.name,
+          },
+        });
+      });
+    });
+  }
+
   return { nodes, edges };
 }
 
@@ -404,9 +536,14 @@ export const useWorkflowStore = create<WorkflowStore>((set, get) => ({
     get().buildWorkflowGraph();
   },
 
+  toggleShowDataSources: () => {
+    set({ showDataSources: !get().showDataSources });
+    get().buildWorkflowGraph();
+  },
+
   // Build Graph
   buildWorkflowGraph: () => {
-    const { pages, layouts, elements, showLayouts, showNavigationEdges, showEventLinks, showLayoutEdges } = get();
+    const { pages, layouts, elements, showLayouts, showNavigationEdges, showEventLinks, showLayoutEdges, showDataSources } = get();
 
     if (pages.length === 0) {
       set({ nodes: [], edges: [] });
@@ -420,7 +557,8 @@ export const useWorkflowStore = create<WorkflowStore>((set, get) => ({
       showLayouts,
       showNavigationEdges,
       showEventLinks,
-      showLayoutEdges
+      showLayoutEdges,
+      showDataSources
     );
 
     set({ nodes, edges });
