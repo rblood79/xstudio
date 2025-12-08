@@ -374,9 +374,11 @@ const CODE_VERTEX_SHADER = `
     vec3 alivePos = pos + driftOffset;
 
     // 형태 유지: morphProgress가 높을수록 정확히 타겟 위치로
-    // 미세한 진동만 허용 (형태 인식 가능하도록)
-    float microVib = sin(time * 2.0 + random * 6.28) * 0.5 * (1.0 - morphProgress * 0.8);
-    vec3 formedPos = currentTarget + vec3(microVib, microVib * 0.7, 0.0);
+    // 살아있는 느낌의 미세 진동 (형태 유지하면서 움직임 부여)
+    float vibX = sin(time * 2.5 + random * 6.28) * 1.5;
+    float vibY = cos(time * 2.0 + random * 5.0) * 1.2;
+    float vibZ = sin(time * 1.5 + random * 4.0) * 0.8;
+    vec3 formedPos = currentTarget + vec3(vibX, vibY, vibZ);
 
     // 단순 블렌딩: morphProgress에 따라 alivePos → formedPos
     vec3 blendedPos = mix(alivePos, formedPos, morphProgress);
