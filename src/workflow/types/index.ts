@@ -39,6 +39,87 @@ export interface WorkflowElement {
   page_id?: string | null;
   layout_id?: string | null;
   order_num?: number;
+  /** Element events (for navigate action analysis) */
+  events?: WorkflowElementEvent[];
+  /** DataBinding configuration */
+  dataBinding?: WorkflowDataBinding;
+}
+
+// ============================================
+// DataBinding Types
+// ============================================
+
+export interface WorkflowDataBinding {
+  /** Binding type */
+  type?: 'collection' | 'single' | 'field';
+  /** Data source type */
+  source?: 'static' | 'api' | 'supabase' | 'dataTable';
+  /** Data source name (for dataTable/api) */
+  name?: string;
+  /** Configuration */
+  config?: {
+    endpoint?: string;
+    baseUrl?: string;
+    tableName?: string;
+    [key: string]: unknown;
+  };
+}
+
+/** Extracted data source information */
+export interface DataSourceInfo {
+  /** Unique identifier for this data source */
+  id: string;
+  /** Data source type */
+  sourceType: 'dataTable' | 'api' | 'supabase' | 'mock';
+  /** Name of the data source */
+  name: string;
+  /** Elements using this data source */
+  boundElements: Array<{
+    elementId: string;
+    elementTag: string;
+    pageId: string;
+  }>;
+}
+
+// ============================================
+// Event Types (for navigation analysis)
+// ============================================
+
+export interface WorkflowEventAction {
+  id: string;
+  type: string;
+  target?: string;
+  value?: {
+    path?: string;
+    openInNewTab?: boolean;
+    replace?: boolean;
+    [key: string]: unknown;
+  };
+  delay?: number;
+  condition?: string;
+  enabled?: boolean;
+}
+
+export interface WorkflowElementEvent {
+  id: string;
+  event_type: string;
+  actions: WorkflowEventAction[];
+  enabled: boolean;
+  description?: string;
+}
+
+/** Information about event-based navigation */
+export interface EventNavigationInfo {
+  /** Source element ID */
+  sourceElementId: string;
+  /** Source element tag */
+  sourceElementTag: string;
+  /** Event type that triggers navigation */
+  eventType: string;
+  /** Target page ID */
+  targetPageId: string;
+  /** Action condition (if any) */
+  condition?: string;
 }
 
 // ============================================
@@ -48,8 +129,10 @@ export interface WorkflowElement {
 export interface PageNodeData {
   type: 'page';
   page: WorkflowPage;
-  /** 페이지 내 링크 목록 (다른 페이지로의 네비게이션) */
+  /** 페이지 내 Link 요소 기반 네비게이션 목록 */
   outgoingLinks: string[];
+  /** 페이지 내 Event 기반 네비게이션 목록 */
+  outgoingEventLinks: EventNavigationInfo[];
   /** 이 페이지를 사용하는 Layout ID */
   layoutId?: string | null;
   /** 썸네일 이미지 URL (선택적) */
@@ -67,19 +150,27 @@ export interface LayoutNodeData {
   slotCount: number;
 }
 
+export interface DataSourceNodeData {
+  type: 'dataSource';
+  dataSource: DataSourceInfo;
+  /** 이 데이터 소스를 사용하는 페이지 ID 목록 */
+  pageIds: string[];
+}
+
 // ============================================
 // ReactFlow Node Types
 // ============================================
 
 export type PageNode = Node<PageNodeData, 'page'>;
 export type LayoutNode = Node<LayoutNodeData, 'layout'>;
-export type WorkflowNode = PageNode | LayoutNode;
+export type DataSourceNode = Node<DataSourceNodeData, 'dataSource'>;
+export type WorkflowNode = PageNode | LayoutNode | DataSourceNode;
 
 // ============================================
 // Edge Types
 // ============================================
 
-export type EdgeType = 'navigation' | 'layout-usage' | 'parent-child';
+export type EdgeType = 'navigation' | 'event-navigation' | 'layout-usage' | 'data-binding' | 'parent-child';
 
 export interface WorkflowEdgeData {
   type: EdgeType;
@@ -111,7 +202,9 @@ export interface WorkflowState {
   // View Settings
   showLayouts: boolean;
   showNavigationEdges: boolean;
+  showEventLinks: boolean;
   showLayoutEdges: boolean;
+  showDataSources: boolean;
 }
 
 export interface WorkflowActions {
@@ -135,7 +228,9 @@ export interface WorkflowActions {
   // View Settings Actions
   toggleShowLayouts: () => void;
   toggleShowNavigationEdges: () => void;
+  toggleShowEventLinks: () => void;
   toggleShowLayoutEdges: () => void;
+  toggleShowDataSources: () => void;
 
   // Computed Actions
   buildWorkflowGraph: () => void;

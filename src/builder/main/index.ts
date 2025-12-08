@@ -1,6 +1,7 @@
 export { BuilderCore } from './BuilderCore';
 export { BuilderHeader } from './BuilderHeader';
 export { BuilderCanvas } from './BuilderCanvas';
+export { BuilderWorkflow } from './BuilderWorkflow';
 export { BuilderViewport } from './BuilderViewport';
 export type { Breakpoint, BuilderHeaderProps } from './BuilderHeader';
 export type { BuilderCanvasProps } from './BuilderCanvas';

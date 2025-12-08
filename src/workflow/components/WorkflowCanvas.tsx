@@ -20,6 +20,7 @@ import 'reactflow/dist/style.css';
 import { useWorkflowStore } from '../store';
 import { PageNode } from '../nodes/PageNode';
 import { LayoutNode } from '../nodes/LayoutNode';
+import { DataSourceNode } from '../nodes/DataSourceNode';
 
 // ============================================
 // Node Types
@@ -28,6 +29,7 @@ import { LayoutNode } from '../nodes/LayoutNode';
 const nodeTypes: NodeTypes = {
   page: PageNode,
   layout: LayoutNode,
+  dataSource: DataSourceNode,
 };
 
 // ============================================
@@ -80,6 +82,9 @@ export function WorkflowCanvas() {
   const nodeColor = useCallback((node: { type?: string }) => {
     if (node.type === 'layout') {
       return 'var(--color-secondary-500)';
+    }
+    if (node.type === 'dataSource') {
+      return 'var(--color-success-500)';
     }
     return 'var(--color-primary-500)';
   }, []);

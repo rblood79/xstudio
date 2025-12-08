@@ -23,6 +23,9 @@ import type {
   WorkflowEdge,
   PageNodeData,
   LayoutNodeData,
+  DataSourceNodeData,
+  EventNavigationInfo,
+  DataSourceInfo,
 } from '../types';
 
 // ============================================
@@ -48,7 +51,9 @@ const initialState: WorkflowState = {
   // View Settings
   showLayouts: true,
   showNavigationEdges: true,
+  showEventLinks: true,
   showLayoutEdges: true,
+  showDataSources: true,
 };
 
 // ============================================
@@ -95,6 +100,153 @@ function countLayoutSlots(layoutId: string, elements: WorkflowElement[]): number
 }
 
 /**
+ * 페이지 내 Element의 events에서 navigate 액션 추출
+ * - onClick, onSubmit 등의 이벤트에서 navigate 액션을 찾음
+ * - path를 slug로 변환하여 target pageId 반환
+ */
+function extractNavigationFromEvents(
+  pageId: string,
+  elements: WorkflowElement[],
+  pages: WorkflowPage[]
+): EventNavigationInfo[] {
+  const pageElements = elements.filter((el) => el.page_id === pageId);
+  const navigationInfos: EventNavigationInfo[] = [];
+
+  // slug → pageId 매핑
+  const pageSlugs = new Map(pages.map((p) => [p.slug, p.id]));
+  // '/' 없이도 매칭할 수 있도록
+  const pageSlugsByPath = new Map<string, string>();
+  pages.forEach((p) => {
+    pageSlugsByPath.set(p.slug, p.id);
+    pageSlugsByPath.set(`/${p.slug}`, p.id);
+    // home 페이지의 경우 '/' 경로도 매칭
+    if (p.slug === 'home' || p.slug === '') {
+      pageSlugsByPath.set('/', p.id);
+    }
+  });
+
+  pageElements.forEach((el) => {
+    // Element에 events가 없으면 skip
+    if (!el.events || !Array.isArray(el.events)) return;
+
+    el.events.forEach((event) => {
+      // 비활성화된 이벤트는 skip
+      if (!event.enabled) return;
+
+      event.actions.forEach((action) => {
+        // navigate 액션만 처리
+        if (action.type !== 'navigate') return;
+        // 비활성화된 액션은 skip
+        if (action.enabled === false) return;
+
+        const path = action.value?.path;
+        if (!path) return;
+
+        // 외부 링크는 skip
+        if (path.startsWith('http') || path.startsWith('#')) return;
+
+        // path를 정규화
+        const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+        const cleanPath = normalizedPath === '/' ? '/' : normalizedPath.replace(/^\//, '');
+
+        // pageId 찾기
+        let targetPageId = pageSlugsByPath.get(normalizedPath) || pageSlugs.get(cleanPath);
+
+        // 찾지 못하면 skip
+        if (!targetPageId || targetPageId === pageId) return;
+
+        navigationInfos.push({
+          sourceElementId: el.id,
+          sourceElementTag: el.tag,
+          eventType: event.event_type,
+          targetPageId,
+          condition: action.condition,
+        });
+      });
+    });
+  });
+
+  // 동일한 target에 대한 중복 제거 (같은 페이지로 가는 여러 이벤트는 유지)
+  return navigationInfos;
+}
+
+/**
+ * Element의 dataBinding에서 데이터 소스 정보 추출
+ * - dataTable, api, supabase 등의 소스를 찾아서 그룹화
+ */
+function extractDataSources(elements: WorkflowElement[]): DataSourceInfo[] {
+  const dataSourceMap = new Map<string, DataSourceInfo>();
+
+  elements.forEach((el) => {
+    // dataBinding이 없으면 skip
+    if (!el.dataBinding) return;
+
+    const binding = el.dataBinding;
+    let sourceType: DataSourceInfo['sourceType'] | null = null;
+    let name = '';
+    let id = '';
+
+    // PropertyDataBinding 형식 (Inspector에서 설정)
+    if ('source' in binding && 'name' in binding && binding.name) {
+      if (binding.source === 'dataTable') {
+        sourceType = 'dataTable';
+        name = binding.name;
+        id = `dataTable-${name}`;
+      } else if (binding.source === 'api') {
+        sourceType = 'api';
+        name = binding.name;
+        id = `api-${name}`;
+      }
+    }
+
+    // DataBinding 형식 (프로그래매틱)
+    if ('type' in binding && binding.config) {
+      const config = binding.config;
+
+      if (config.baseUrl === 'MOCK_DATA') {
+        sourceType = 'mock';
+        name = config.endpoint as string || 'Mock Data';
+        id = `mock-${name}`;
+      } else if (binding.source === 'supabase' && config.tableName) {
+        sourceType = 'supabase';
+        name = config.tableName;
+        id = `supabase-${name}`;
+      } else if (binding.source === 'api' && config.endpoint) {
+        sourceType = 'api';
+        name = config.endpoint;
+        id = `api-${name}`;
+      }
+    }
+
+    // 유효한 데이터 소스가 아니면 skip
+    if (!sourceType || !name) return;
+
+    // 기존 데이터 소스에 추가하거나 새로 생성
+    if (dataSourceMap.has(id)) {
+      const existing = dataSourceMap.get(id)!;
+      existing.boundElements.push({
+        elementId: el.id,
+        elementTag: el.tag,
+        pageId: el.page_id || '',
+      });
+    } else {
+      dataSourceMap.set(id, {
+        id,
+        sourceType,
+        name,
+        boundElements: [{
+          elementId: el.id,
+          elementTag: el.tag,
+          pageId: el.page_id || '',
+        }],
+      });
+    }
+  });
+
+  return Array.from(dataSourceMap.values());
+}
+
+/**
  * 페이지/레이아웃 데이터를 ReactFlow 노드/엣지로 변환
  */
 function buildGraph(
@@ -103,10 +255,38 @@ function buildGraph(
   elements: WorkflowElement[],
   showLayouts: boolean,
   showNavigationEdges: boolean,
-  showLayoutEdges: boolean
+  showEventLinks: boolean,
+  showLayoutEdges: boolean,
+  showDataSources: boolean
 ): { nodes: WorkflowNode[]; edges: WorkflowEdge[] } {
   const nodes: WorkflowNode[] = [];
   const edges: WorkflowEdge[] = [];
+
+  // 데이터 소스 추출
+  const dataSources = extractDataSources(elements);
+
+  // Y 오프셋 계산 (데이터 소스가 있으면 상단에 배치)
+  const dataSourceYOffset = showDataSources && dataSources.length > 0 ? 150 : 0;
+
+  // DataSource 노드 생성 (최상단에 배치)
+  if (showDataSources && dataSources.length > 0) {
+    dataSources.forEach((dataSource, index) => {
+      // 이 데이터 소스를 사용하는 페이지 ID 목록
+      const pageIds = [...new Set(dataSource.boundElements.map((be) => be.pageId).filter(Boolean))];
+
+      const dataSourceNode: WorkflowNode = {
+        id: `datasource-${dataSource.id}`,
+        type: 'dataSource',
+        position: { x: 100 + index * 200, y: 0 },
+        data: {
+          type: 'dataSource',
+          dataSource,
+          pageIds,
+        } as DataSourceNodeData,
+      };
+      nodes.push(dataSourceNode);
+    });
+  }
 
   // Layout 노드 생성 (상단에 배치)
   if (showLayouts) {
@@ -118,7 +298,7 @@ function buildGraph(
       const layoutNode: WorkflowNode = {
         id: `layout-${layout.id}`,
         type: 'layout',
-        position: { x: 100 + index * 300, y: 50 },
+        position: { x: 100 + index * 300, y: 50 + dataSourceYOffset },
         data: {
           type: 'layout',
           layout,
@@ -137,16 +317,18 @@ function buildGraph(
   // Layout이 없는 페이지들
   pagesWithoutLayout.forEach((page, index) => {
     const outgoingLinks = extractNavigationLinks(page.id, elements, pages);
+    const outgoingEventLinks = extractNavigationFromEvents(page.id, elements, pages);
     const elementCount = elements.filter((el) => el.page_id === page.id).length;
 
     const pageNode: WorkflowNode = {
       id: `page-${page.id}`,
       type: 'page',
-      position: { x: 100 + index * 250, y: showLayouts ? 250 : 100 },
+      position: { x: 100 + index * 250, y: (showLayouts ? 250 : 100) + dataSourceYOffset },
       data: {
         type: 'page',
         page,
         outgoingLinks,
+        outgoingEventLinks,
         layoutId: null,
         elementCount,
       } as PageNodeData,
@@ -168,6 +350,7 @@ function buildGraph(
   layoutGroups.forEach((groupPages, layoutId) => {
     groupPages.forEach((page, pageIndex) => {
       const outgoingLinks = extractNavigationLinks(page.id, elements, pages);
+      const outgoingEventLinks = extractNavigationFromEvents(page.id, elements, pages);
       const elementCount = elements.filter((el) => el.page_id === page.id).length;
 
       const pageNode: WorkflowNode = {
@@ -175,12 +358,13 @@ function buildGraph(
         type: 'page',
         position: {
           x: 100 + layoutGroupIndex * 300 + pageIndex * 50,
-          y: showLayouts ? 400 + pageIndex * 150 : 250 + pageIndex * 150,
+          y: (showLayouts ? 400 + pageIndex * 150 : 250 + pageIndex * 150) + dataSourceYOffset,
         },
         data: {
           type: 'page',
           page,
           outgoingLinks,
+          outgoingEventLinks,
           layoutId,
           elementCount,
         } as PageNodeData,
@@ -203,7 +387,7 @@ function buildGraph(
     layoutGroupIndex++;
   });
 
-  // Navigation 엣지 생성
+  // Navigation 엣지 생성 (Link 요소 기반)
   if (showNavigationEdges) {
     pages.forEach((page) => {
       const outgoingLinks = extractNavigationLinks(page.id, elements, pages);
@@ -216,7 +400,67 @@ function buildGraph(
           animated: true,
           style: { stroke: 'var(--color-primary-500)' },
           markerEnd: { type: MarkerType.ArrowClosed },
-          data: { type: 'navigation', label: 'navigates to' },
+          data: { type: 'navigation', label: 'Link' },
+        });
+      });
+    });
+  }
+
+  // Event 기반 Navigation 엣지 생성
+  if (showEventLinks) {
+    pages.forEach((page) => {
+      const eventNavigations = extractNavigationFromEvents(page.id, elements, pages);
+      eventNavigations.forEach((navInfo, index) => {
+        // 이미 동일한 source-target 엣지가 있는지 확인
+        const edgeExists = edges.some(
+          (e) =>
+            e.source === `page-${page.id}` &&
+            e.target === `page-${navInfo.targetPageId}`
+        );
+
+        edges.push({
+          id: `edge-event-${page.id}-${navInfo.targetPageId}-${index}`,
+          source: `page-${page.id}`,
+          target: `page-${navInfo.targetPageId}`,
+          type: 'smoothstep',
+          animated: true,
+          style: {
+            stroke: 'var(--color-secondary-500)',
+            strokeDasharray: '5,5',
+          },
+          markerEnd: { type: MarkerType.ArrowClosed },
+          data: {
+            type: 'event-navigation' as const,
+            label: `${navInfo.eventType}${navInfo.condition ? ' (조건부)' : ''}`,
+          },
+          // 기존 Link 엣지가 있으면 약간 오프셋
+          ...(edgeExists && { labelBgPadding: [8, 4] }),
+        });
+      });
+    });
+  }
+
+  // DataSource → Page 엣지 생성
+  if (showDataSources && dataSources.length > 0) {
+    dataSources.forEach((dataSource) => {
+      // 이 데이터 소스를 사용하는 페이지들
+      const pageIds = [...new Set(dataSource.boundElements.map((be) => be.pageId).filter(Boolean))];
+
+      pageIds.forEach((pageId) => {
+        edges.push({
+          id: `edge-data-${dataSource.id}-page-${pageId}`,
+          source: `datasource-${dataSource.id}`,
+          target: `page-${pageId}`,
+          type: 'smoothstep',
+          animated: false,
+          style: {
+            stroke: 'var(--color-success-500)',
+            strokeDasharray: '3,3',
+          },
+          data: {
+            type: 'data-binding' as const,
+            label: dataSource.name,
+          },
         });
       });
     });
@@ -282,14 +526,24 @@ export const useWorkflowStore = create<WorkflowStore>((set, get) => ({
     get().buildWorkflowGraph();
   },
 
+  toggleShowEventLinks: () => {
+    set({ showEventLinks: !get().showEventLinks });
+    get().buildWorkflowGraph();
+  },
+
   toggleShowLayoutEdges: () => {
     set({ showLayoutEdges: !get().showLayoutEdges });
     get().buildWorkflowGraph();
   },
 
+  toggleShowDataSources: () => {
+    set({ showDataSources: !get().showDataSources });
+    get().buildWorkflowGraph();
+  },
+
   // Build Graph
   buildWorkflowGraph: () => {
-    const { pages, layouts, elements, showLayouts, showNavigationEdges, showLayoutEdges } = get();
+    const { pages, layouts, elements, showLayouts, showNavigationEdges, showEventLinks, showLayoutEdges, showDataSources } = get();
 
     if (pages.length === 0) {
       set({ nodes: [], edges: [] });
@@ -302,7 +556,9 @@ export const useWorkflowStore = create<WorkflowStore>((set, get) => ({
       elements,
       showLayouts,
       showNavigationEdges,
-      showLayoutEdges
+      showEventLinks,
+      showLayoutEdges,
+      showDataSources
     );
 
     set({ nodes, edges });
