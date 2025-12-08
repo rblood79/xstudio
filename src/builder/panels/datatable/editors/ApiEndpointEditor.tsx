@@ -289,7 +289,7 @@ export function ApiEndpointEditor({ endpoint, onClose, activeTab }: ApiEndpointE
     });
   };
 
-  // Note: onClose is handled by parent DatasetEditorPanel
+  // Note: onClose is handled by parent DataTableEditorPanel
   void onClose;
 
   return (

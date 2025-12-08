@@ -7,7 +7,7 @@
  * - 유효성 검사 규칙
  * - 변환 함수
  *
- * Note: 탭 상태는 DatasetEditorPanel에서 관리됨
+ * Note: 탭 상태는 DataTableEditorPanel에서 관리됨
  */
 
 import { useState, useCallback } from "react";
@@ -80,10 +80,10 @@ export function VariableEditor({ variable, onClose, activeTab }: VariableEditorP
     });
   };
 
-  // Note: onClose is handled by parent DatasetEditorPanel
+  // Note: onClose is handled by parent DataTableEditorPanel
   void onClose;
 
-  // 탭은 DatasetEditorPanel에서 렌더링됨
+  // 탭은 DataTableEditorPanel에서 렌더링됨
   return (
     <>
       {activeTab === "basic" && (

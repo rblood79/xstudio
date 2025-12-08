@@ -81,33 +81,33 @@ export function TransformerList({ projectId }: TransformerListProps) {
       <SectionHeader
         title="Transformer List"
         actions={
-          <span className="dataset-list-count">{transformers.length}개</span>
+          <span className="datatable-list-count">{transformers.length}개</span>
         }
       />
       <div className="section-content">
         {transformers.length === 0 ? (
-          <div className="dataset-empty">
-            <Workflow size={32} className="dataset-empty-icon" />
-            <p className="dataset-empty-text">
+          <div className="datatable-empty">
+            <Workflow size={32} className="datatable-empty-icon" />
+            <p className="datatable-empty-text">
               Transformer가 없습니다.
               <br />
               새 Transformer를 추가하세요.
             </p>
           </div>
         ) : (
-          <div className="dataset-list">
+          <div className="datatable-list">
             {transformers.map((transformer) => (
               <div
                 key={transformer.id}
-                className={`dataset-item ${selectedId === transformer.id ? "selected" : ""}`}
+                className={`datatable-item ${selectedId === transformer.id ? "selected" : ""}`}
                 onClick={() => setSelectedId(transformer.id)}
               >
-                <div className="dataset-item-icon">
+                <div className="datatable-item-icon">
                   <Workflow size={16} />
                 </div>
-                <div className="dataset-item-info">
-                  <div className="dataset-item-name">{transformer.name}</div>
-                  <div className="dataset-item-meta">
+                <div className="datatable-item-info">
+                  <div className="datatable-item-name">{transformer.name}</div>
+                  <div className="datatable-item-meta">
                     {transformer.inputDataTable && `${transformer.inputDataTable} → `}
                     {transformer.outputDataTable || "output"}
                     {!transformer.enabled && " · 비활성"}
@@ -116,7 +116,7 @@ export function TransformerList({ projectId }: TransformerListProps) {
                 <span className={`level-badge ${LEVEL_CLASSES[transformer.level]}`}>
                   {LEVEL_LABELS[transformer.level]}
                 </span>
-                <div className="dataset-item-actions">
+                <div className="datatable-item-actions">
                   <button
                     type="button"
                     className="iconButton"
@@ -153,7 +153,7 @@ export function TransformerList({ projectId }: TransformerListProps) {
 
         <button
           type="button"
-          className="dataset-add-btn"
+          className="datatable-add-btn"
           onClick={handleCreate}
         >
           <Plus size={16} />
