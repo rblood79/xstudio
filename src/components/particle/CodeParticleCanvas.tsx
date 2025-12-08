@@ -26,7 +26,7 @@ import {
 import { sandPreset } from "./presets";
 
 // ==================== Constants ====================
-const CODE_PARTICLE_COUNT = Math.min(PARTICLE_COUNT, 10000);
+const CODE_PARTICLE_COUNT = Math.min(PARTICLE_COUNT, 15000);
 const TEXTURE_CHAR_SIZE = 24; // 텍스처 해상도
 
 // 코드 문자셋 (프로그래밍 + 카타카나 + 한글 - Matrix 스타일)
@@ -51,13 +51,23 @@ const KOREAN_SYLLABLES = (() => {
 const HIRAGANA = "あいうえおかきくけこさしすせそたちつてとなにぬねのはひふへほまみむめもやゆよらりるれろわをん";
 const KATAKANA = "アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン";
 
+// 그리스 문자
+const GREEK = "αβγδεζηθικλμνξοπρστυφχψωΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡΣΤΥΦΧΨΩ";
+
+// 키릴 문자 (러시아어)
+const CYRILLIC = "абвгдежзийклмнопрстуфхцчшщъыьэюяАБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ";
+
+// 수학 기호
+const MATH_SYMBOLS = "∀∂∃∅∇∈∉∋∏∑√∝∞∠∧∨∩∪∫≈≠≡≤≥⊂⊃⊆⊇⊕⊗";
+
 const CODE_CHARS =
   "0123456789" +
   "ABCDEFGHIJKLMNOPQRSTUVWXYZ" +
   "abcdefghijklmnopqrstuvwxyz" +
   "{}[]()<>+-*/=!?;:.,@#$%^&|~`_\\\"'" +
   HIRAGANA + KATAKANA +
-  KOREAN_CONSONANTS + KOREAN_VOWELS + KOREAN_SYLLABLES;
+  KOREAN_CONSONANTS + KOREAN_VOWELS + KOREAN_SYLLABLES +
+  GREEK + CYRILLIC + MATH_SYMBOLS;
 
 // ==================== Character Texture Atlas ====================
 function createCodeCharacterAtlas(): THREE.CanvasTexture {
@@ -110,6 +120,7 @@ const CODE_VERTEX_SHADER = `
   attribute float random;
   attribute float heightLayer;
   attribute float particleSize;
+  attribute float glowIntensity;
   attribute vec3 targetPos;
   attribute vec3 prevTargetPos;
 
@@ -157,6 +168,7 @@ const CODE_VERTEX_SHADER = `
   varying float vCharIndex;
   varying float vAlpha;
   varying float vMorphProgress;
+  varying float vGlowIntensity;
 
   // 심플렉스 노이즈 함수
   vec3 mod289(vec3 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
@@ -216,24 +228,70 @@ const CODE_VERTEX_SHADER = `
     vec3 currentTarget = mix(prevTargetPos, targetPos, transitionProgress);
     vec3 pos = position;
 
-    // ===== 부유/바람 효과 =====
+    // ===== Curl Noise 스타일 플로우 효과 (sin/cos 근사 - 퍼포먼스 최적화) =====
+    // CurlNoiseCanvas와 유사한 역동적인 움직임
+
     float layerEffect = mix(
       mix(lowLayerEffect, midLayerEffect, heightLayer),
       highLayerEffect,
       heightLayer * heightLayer
     );
 
-    // 기본 바람
-    float windX = sin(time * primarySpeed + pos.y * 0.02) * layerEffect * 3.0 * primaryDirection;
-    float windY = cos(time * primarySpeed * 0.7 + pos.x * 0.015) * layerEffect * 1.5;
+    // Curl noise 근사: 발산 없는 벡터장 시뮬레이션
+    // curl(f) = (df/dy, -df/dx) 패턴을 sin/cos로 근사
+    float noiseScale = 0.008; // 노이즈 스케일
+    float flowSpeed = time * 0.4; // 플로우 속도
 
-    // 큰 파동
-    float wave = snoise(vec3(pos.xy * waveScale, time * waveSpeed)) * layerEffect * 8.0;
+    // 다층 curl 노이즈 근사 (3개 옥타브)
+    float px1 = pos.x * noiseScale + flowSpeed;
+    float py1 = pos.y * noiseScale + flowSpeed * 0.7;
+    float pz1 = pos.z * noiseScale * 0.5;
 
-    // 군집 효과
-    float cluster = snoise(vec3(pos.xy * clusterScale + time * 0.1, random * 10.0)) * clusterStrength;
+    // 첫 번째 옥타브 (가장 큰 움직임)
+    float curl1x = sin(py1 * 2.0 + pz1) * cos(px1 * 1.3) - sin(pz1 * 1.5 + px1) * cos(py1 * 0.8);
+    float curl1y = sin(pz1 * 2.0 + px1) * cos(py1 * 1.3) - sin(px1 * 1.5 + py1) * cos(pz1 * 0.8);
+    float curl1z = sin(px1 * 2.0 + py1) * cos(pz1 * 1.3) - sin(py1 * 1.5 + pz1) * cos(px1 * 0.8);
 
-    vec3 driftOffset = vec3(windX + wave, windY + cluster, 0.0);
+    // 두 번째 옥타브 (중간 디테일)
+    float px2 = pos.x * noiseScale * 2.0 + flowSpeed * 1.3;
+    float py2 = pos.y * noiseScale * 2.0 + flowSpeed * 0.9;
+    float curl2x = sin(py2 * 2.5 + random * 3.0) * cos(px2 * 1.8) * 0.5;
+    float curl2y = sin(px2 * 2.5 + random * 2.0) * cos(py2 * 1.8) * 0.5;
+
+    // 세 번째 옥타브 (미세 디테일)
+    float px3 = pos.x * noiseScale * 4.0 + flowSpeed * 2.0;
+    float py3 = pos.y * noiseScale * 4.0 + flowSpeed * 1.5;
+    float curl3x = sin(py3 * 3.0) * cos(px3 * 2.5) * 0.25;
+    float curl3y = sin(px3 * 3.0) * cos(py3 * 2.5) * 0.25;
+
+    // 합성된 curl 벡터
+    vec3 curlFlow = vec3(
+      curl1x + curl2x + curl3x,
+      curl1y + curl2y + curl3y,
+      curl1z * 0.3 // z축은 약하게
+    );
+
+    // 플로우 강도 (CurlNoiseCanvas의 flowStrength = 25.0 참고)
+    float flowStrength = 20.0 * (0.6 + heightLayer * 0.4); // 높이에 따라 다르게
+    vec3 flowOffset = normalize(curlFlow + vec3(0.001)) * flowStrength;
+
+    // Float 움직임 (CurlNoiseCanvas 스타일 - 더 강한 amplitude)
+    float floatPhase = time * 0.3 + random * 6.28;
+    float floatY = sin(floatPhase) * 8.0; // Y축 amplitude 8.0
+    float floatX = cos(time * 0.2 + random * 4.0) * 6.0; // X축 amplitude 6.0
+    float floatZ = sin(time * 0.15 + random * 5.0) * 4.0; // Z축 amplitude 4.0
+    vec3 floatOffset = vec3(floatX, floatY, floatZ);
+
+    // 큰 파동 (추가적인 물결 효과)
+    float wavePhase = pos.x * waveScale * 50.0 + pos.y * waveScale * 30.0 + time * waveSpeed;
+    float wave = (sin(wavePhase) + cos(wavePhase * 0.7)) * 0.5 * layerEffect * 5.0;
+
+    // 군집 효과 (파티클 그룹핑)
+    float clusterPhase = pos.x * clusterScale * 80.0 + pos.y * clusterScale * 60.0 + time * 0.15 + random * 10.0;
+    float cluster = sin(clusterPhase) * clusterStrength * 1.5;
+
+    // 최종 드리프트: curl flow + float + wave + cluster
+    vec3 driftOffset = flowOffset + floatOffset + vec3(wave, cluster, 0.0);
 
     // ===== 형성/모핑 효과 =====
     float formIntensity = morphProgress * formIntensityMultiplier;
@@ -246,8 +304,9 @@ const CODE_VERTEX_SHADER = `
     float pullStrength = convergenceForce * formIntensity * (1.0 + dist * 0.01);
     vec3 convergence = dir * pullStrength * 15.0;
 
-    // 난류
-    float turbNoise = snoise(pos * 0.02 + vec3(time * 0.3, time * 0.2, random)) * turbulence * formIntensity;
+    // 난류 (sin 기반 근사 - 퍼포먼스 최적화)
+    float turbPhase = pos.x * 0.02 + pos.y * 0.015 + time * 0.3 + random * 6.28;
+    float turbNoise = sin(turbPhase) * cos(turbPhase * 1.3) * turbulence * formIntensity;
     vec3 turbulenceOffset = vec3(turbNoise, turbNoise * 0.8, turbNoise * 0.5);
 
     // 돌풍
@@ -263,10 +322,12 @@ const CODE_VERTEX_SHADER = `
     float breath = sin(time * 1.5 + random * 6.28) * aliveBreathScale * morphProgress;
     vec3 breathOffset = dir * breath;
 
-    // 미세 진동
+    // 미세 진동 (sin 기반 근사 - 퍼포먼스 최적화)
+    float vibPhaseX = pos.x * 0.1 + pos.y * 0.08 + time * 3.0;
+    float vibPhaseY = pos.x * 0.08 + pos.y * 0.1 + time * 3.0 + 1.57;
     vec3 vibration = vec3(
-      snoise(pos * 0.1 + vec3(0.0, 0.0, time * 3.0)),
-      snoise(pos * 0.1 + vec3(100.0, 100.0, time * 3.0)),
+      sin(vibPhaseX) * cos(vibPhaseX * 0.5),
+      sin(vibPhaseY) * cos(vibPhaseY * 0.5),
       0.0
     ) * vibrationScale * morphProgress;
 
@@ -328,6 +389,31 @@ const CODE_VERTEX_SHADER = `
     // 문자 크기 조정
     float sizeMod = 1.0 + morphProgress * 0.3;
     gl_PointSize = particleSize * sizeMod * (200.0 / -mvPosition.z);
+
+    // ===== 실시간 원근감 기반 발광 강도 =====
+    // 카메라 거리 기반: 가까울수록 밝게 (mvPosition.z가 작을수록 가까움)
+    // mvPosition.z 범위: 약 -250 ~ -150 (카메라 z=200 기준)
+    float depthNormalized = clamp((-mvPosition.z - 150.0) / 100.0, 0.0, 1.0); // 0(가까이) ~ 1(멀리)
+    float depthFactor = 1.0 - depthNormalized; // 0(멀리) ~ 1(가까이)
+
+    // ===== 시간 기반 랜덤 발광 (sin 기반 근사 - 퍼포먼스 최적화) =====
+    // 각 파티클마다 다른 타이밍으로 발광 (random 값을 시드로 사용)
+    float glowPhase1 = random * 50.0 + time * 0.5;
+    float glowPhase2 = random * 30.0 + time * 0.3;
+    float glowNoise = sin(glowPhase1) * cos(glowPhase2) + sin(glowPhase1 * 0.7) * 0.5; // -1.5 ~ 1.5
+    float glowThreshold = 0.7; // 상위 20% 정도만 발광
+
+    // 발광 여부 결정 (시간에 따라 변함)
+    bool isGlowing = glowNoise > glowThreshold;
+
+    if (isGlowing) {
+      // 발광 파티클: 가까우면 더 밝게 (1.5 ~ 3.0)
+      float glowStrength = (glowNoise - glowThreshold) / (1.0 - glowThreshold); // 0 ~ 1
+      vGlowIntensity = (1.5 + depthFactor * 1.5) * (0.7 + glowStrength * 0.3);
+    } else {
+      // 일반 파티클: 가까우면 0.5, 멀면 0.15
+      vGlowIntensity = 0.15 + depthFactor * 0.35;
+    }
   }
 `;
 
@@ -346,6 +432,7 @@ const CODE_FRAGMENT_SHADER = `
   varying float vCharIndex;
   varying float vAlpha;
   varying float vMorphProgress;
+  varying float vGlowIntensity;
 
   void main() {
     // 포인트 UV 계산
@@ -372,6 +459,10 @@ const CODE_FRAGMENT_SHADER = `
     // 깜빡임 효과
     float flicker = 0.9 + 0.1 * sin(time * 8.0 + vCharIndex * 1.5);
     baseColor *= flicker;
+
+    // 발광 파티클: 밝기 증폭 (bloom threshold를 넘어 발광 효과 발생)
+    // vGlowIntensity가 높을수록 더 밝게 (1.0 = 일반, 2.0+ = 발광)
+    baseColor *= vGlowIntensity;
 
     // 최종 알파
     float alpha = texColor.a * vAlpha;
@@ -471,6 +562,10 @@ export function CodeParticleCanvas({
     const randoms = new Float32Array(CODE_PARTICLE_COUNT);
     const heightLayers = new Float32Array(CODE_PARTICLE_COUNT);
     const particleSizes = new Float32Array(CODE_PARTICLE_COUNT);
+    const glowIntensities = new Float32Array(CODE_PARTICLE_COUNT);
+
+    // 발광 파티클 비율 (15%)
+    const GLOW_PROBABILITY = 0.15;
 
     for (let i = 0; i < CODE_PARTICLE_COUNT; i++) {
       const i3 = i * 3;
@@ -489,6 +584,14 @@ export function CodeParticleCanvas({
 
       const baseSize = 30 + Math.random() * 10; // 1/6 크기로 축소 (180-240 → 30-40)
       particleSizes[i] = baseSize * (1.0 - heightLayers[i] * 0.4);
+
+      // 발광 여부 플래그: 15% 확률로 발광 파티클 (1.0 이상), 나머지는 일반 (1.0 미만)
+      // 실제 밝기는 Vertex Shader에서 실시간 원근감 기반으로 계산
+      if (Math.random() < GLOW_PROBABILITY) {
+        glowIntensities[i] = 1.0; // 발광 파티클 플래그
+      } else {
+        glowIntensities[i] = 0.0; // 일반 파티클 플래그
+      }
     }
 
     const initialPoints = generatePointsFromContent(contentRef.current);
@@ -497,6 +600,7 @@ export function CodeParticleCanvas({
     geometry.setAttribute("random", new THREE.BufferAttribute(randoms, 1));
     geometry.setAttribute("heightLayer", new THREE.BufferAttribute(heightLayers, 1));
     geometry.setAttribute("particleSize", new THREE.BufferAttribute(particleSizes, 1));
+    geometry.setAttribute("glowIntensity", new THREE.BufferAttribute(glowIntensities, 1));
     geometry.setAttribute("targetPos", new THREE.BufferAttribute(initialPoints, 3));
     geometry.setAttribute(
       "prevTargetPos",
@@ -589,10 +693,10 @@ export function CodeParticleCanvas({
     composer.addPass(bloomPass);
     composer.addPass(new OutputPass());
 
-    // 문자 변경 타이머
+    // 문자 변경 타이머 (주기 늘림 - 퍼포먼스 최적화)
     const charChangeTimers = new Float32Array(CODE_PARTICLE_COUNT);
     for (let i = 0; i < CODE_PARTICLE_COUNT; i++) {
-      charChangeTimers[i] = Math.random() * 60;
+      charChangeTimers[i] = Math.random() * 180; // 초기 지연 분산
     }
 
     // 애니메이션 루프
@@ -634,16 +738,24 @@ export function CodeParticleCanvas({
       material.uniforms.vortexRadius.value = vortex.radius;
       material.uniforms.vortexHeight.value = vortex.height;
 
-      // 문자 랜덤 변경 (코드 깜빡임 효과)
+      // 문자 랜덤 변경 (코드 깜빡임 효과) - 주기 늘림 & 배치 처리로 퍼포먼스 최적화
       const charAttr = geometry.getAttribute("charIndex") as THREE.BufferAttribute;
-      for (let i = 0; i < CODE_PARTICLE_COUNT; i++) {
-        charChangeTimers[i] -= delta * 60;
+      let needsUpdate = false;
+      const batchSize = Math.ceil(CODE_PARTICLE_COUNT / 10); // 10% 씩만 체크
+      const startIdx = Math.floor(Math.random() * CODE_PARTICLE_COUNT);
+
+      for (let j = 0; j < batchSize; j++) {
+        const i = (startIdx + j) % CODE_PARTICLE_COUNT;
+        charChangeTimers[i] -= delta * 60 * 10; // 10배 빠르게 감소 (배치 보정)
         if (charChangeTimers[i] <= 0) {
           charAttr.array[i] = Math.floor(Math.random() * CODE_CHARS.length);
-          charChangeTimers[i] = 30 + Math.random() * 60; // 0.5~1.5초마다 변경
+          charChangeTimers[i] = 120 + Math.random() * 180; // 2~5초마다 변경 (기존 0.5~1.5초)
+          needsUpdate = true;
         }
       }
-      charAttr.needsUpdate = true;
+      if (needsUpdate) {
+        charAttr.needsUpdate = true;
+      }
 
       composer.render();
       animationFrameId = requestAnimationFrame(animate);
