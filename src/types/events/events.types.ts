@@ -314,10 +314,10 @@ export const ACTION_TYPE_LABELS: Partial<Record<ActionType, string>> = {
     executeApi: 'API 실행',
     setVariable: '변수 설정',
     getVariable: '변수 조회',
-    // Dataset Actions (Phase 3)
-    loadDataset: 'Dataset 로드',
+    // DataTable Actions (Phase 3)
+    loadDataTable: 'DataTable 로드',
     syncComponent: '컴포넌트 동기화',
-    saveToDataset: 'Dataset에 저장',
+    saveToDataTable: 'DataTable에 저장',
     // 구현 예정:
     // update_props: '속성 업데이트',
     // trigger_animation: '애니메이션 실행',

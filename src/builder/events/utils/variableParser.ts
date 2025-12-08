@@ -27,7 +27,7 @@ export interface VariableBinding {
 export type VariableType =
   | 'state'      // 글로벌 상태 (state.xxx)
   | 'event'      // 이벤트 페이로드 (event.xxx)
-  | 'dataset'    // DataTable 데이터 (dataset.xxx)
+  | 'datatable'  // DataTable 데이터 (datatable.xxx)
   | 'response'   // API 응답 (response.xxx)
   | 'element'    // 요소 참조 (element.xxx)
   | 'variable'   // 변수 (variable.xxx)
@@ -76,9 +76,9 @@ function inferVariableType(path: string): VariableType {
       return 'state';
     case 'event':
       return 'event';
-    case 'dataset':
+    case 'datatable':
     case 'data':
-      return 'dataset';
+      return 'datatable';
     case 'response':
     case 'result':
       return 'response';

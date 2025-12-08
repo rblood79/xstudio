@@ -211,9 +211,10 @@ function getDefaultConfigForType(type: string): Record<string, unknown> {
     clearSelection: { targetId: '' },
     copyToClipboard: { text: '', source: 'static' },
     customFunction: { code: '', params: {} },
-    // Dataset Actions (Phase 3)
-    loadDataset: { datasetName: '', forceRefresh: false },
+    // DataTable Actions (Phase 3)
+    loadDataTable: { dataTableName: '', forceRefresh: false },
     syncComponent: { sourceId: '', targetId: '', syncMode: 'replace' },
+    saveToDataTable: { dataTableName: '', source: 'response', saveMode: 'replace' },
   };
 
   return defaults[type] || {};

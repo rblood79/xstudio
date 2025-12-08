@@ -213,14 +213,14 @@ function generateActionCode(
     case 'customFunction':
       return `// Custom function\n${indent}${config.code || '// No code provided'}`;
 
-    case 'loadDataset':
-      return `await loadDataset('${config.datasetName}', { forceRefresh: ${config.forceRefresh ?? false} });`;
+    case 'loadDataTable':
+      return `await loadDataTable('${config.dataTableName}', { forceRefresh: ${config.forceRefresh ?? false} });`;
 
     case 'syncComponent':
       return `await syncComponent('${config.sourceId}', '${config.targetId}', { mode: '${config.syncMode || 'replace'}' });`;
 
-    case 'saveToDataset':
-      return `await saveToDataset('${config.datasetName}', ${config.source}, { mode: '${config.saveMode || 'replace'}' });`;
+    case 'saveToDataTable':
+      return `await saveToDataTable('${config.dataTableName}', ${config.source}, { mode: '${config.saveMode || 'replace'}' });`;
 
     default:
       return `// ${action.type}: ${JSON.stringify(config)}`;

@@ -52,7 +52,7 @@ export interface VariableSchema {
   /** 이벤트 페이로드 스키마 */
   event?: Record<string, SchemaNode>;
   /** DataTable 스키마 */
-  dataset?: Record<string, SchemaNode>;
+  datatable?: Record<string, SchemaNode>;
   /** API 응답 스키마 */
   response?: Record<string, SchemaNode>;
   /** 요소 참조 스키마 */
@@ -136,7 +136,7 @@ function getSuggestionsFromSchema(
     const rootTypes: Array<{ key: keyof VariableSchema; type: VariableType; label: string }> = [
       { key: 'state', type: 'state', label: 'State' },
       { key: 'event', type: 'event', label: 'Event' },
-      { key: 'dataset', type: 'dataset', label: 'Dataset' },
+      { key: 'datatable', type: 'datatable', label: 'DataTable' },
       { key: 'response', type: 'response', label: 'Response' },
       { key: 'element', type: 'element', label: 'Element' },
       { key: 'variable', type: 'variable', label: 'Variable' },

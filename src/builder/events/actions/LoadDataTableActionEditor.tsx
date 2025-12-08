@@ -1,5 +1,5 @@
 /**
- * LoadDatasetActionEditor - Dataset 로드 액션 에디터
+ * LoadDataTableActionEditor - DataTable 로드 액션 에디터
  *
  * DataTable을 로드하거나 리프레시하는 액션 설정
  * Phase 3: Events Panel 재설계
@@ -7,9 +7,9 @@
 
 import { TextField, Input, Label, Switch } from 'react-aria-components';
 
-export interface LoadDatasetConfig {
+export interface LoadDataTableConfig {
   /** 로드할 DataTable 이름 */
-  datasetName: string;
+  dataTableName: string;
   /** 강제 새로고침 여부 */
   forceRefresh?: boolean;
   /** 캐시 TTL (초) */
@@ -18,22 +18,22 @@ export interface LoadDatasetConfig {
   targetVariable?: string;
 }
 
-interface LoadDatasetActionEditorProps {
-  config: LoadDatasetConfig;
-  onChange: (config: LoadDatasetConfig) => void;
+interface LoadDataTableActionEditorProps {
+  config: LoadDataTableConfig;
+  onChange: (config: LoadDataTableConfig) => void;
 }
 
-export function LoadDatasetActionEditor({
+export function LoadDataTableActionEditor({
   config,
   onChange,
-}: LoadDatasetActionEditorProps) {
+}: LoadDataTableActionEditorProps) {
   return (
     <div className="action-editor-fields">
       <TextField
-        value={config.datasetName}
-        onChange={(value) => onChange({ ...config, datasetName: value })}
+        value={config.dataTableName}
+        onChange={(value) => onChange({ ...config, dataTableName: value })}
       >
-        <Label className="field-label">Dataset Name</Label>
+        <Label className="field-label">DataTable Name</Label>
         <Input className="field-input" placeholder="e.g., users, products" />
       </TextField>
 

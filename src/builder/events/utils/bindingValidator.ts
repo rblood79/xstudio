@@ -95,10 +95,10 @@ function resolvePath(
       type = 'event';
       currentSchema = schema.event;
       break;
-    case 'dataset':
+    case 'datatable':
     case 'data':
-      type = 'dataset';
-      currentSchema = schema.dataset;
+      type = 'datatable';
+      currentSchema = schema.datatable;
       break;
     case 'response':
     case 'result':
@@ -208,7 +208,7 @@ export function validateBindings(
         message: validation.warning,
         path: binding.path,
         type: 'unknown_root',
-        suggestion: 'Use state, event, dataset, response, element, or variable as root',
+        suggestion: 'Use state, event, datatable, response, element, or variable as root',
       });
     }
     // 속성 존재 확인
@@ -269,7 +269,7 @@ export function getSuggestions(
 
   // 루트 레벨 제안
   if (parts.length === 1) {
-    const roots = ['state', 'event', 'dataset', 'response', 'element', 'variable'];
+    const roots = ['state', 'event', 'datatable', 'response', 'element', 'variable'];
     const input = parts[0].toLowerCase();
 
     for (const root of roots) {
