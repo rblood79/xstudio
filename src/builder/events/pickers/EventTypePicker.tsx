@@ -10,7 +10,6 @@
 import { useState, useMemo, useRef } from 'react';
 import {
   DialogTrigger,
-  Input,
   Button,
   ListBox,
   ListBoxItem,

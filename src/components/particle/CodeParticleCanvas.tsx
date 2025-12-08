@@ -502,9 +502,14 @@ export function CodeParticleCanvas({
   const { targetMorphRef, contentRef, contentVersion, vortexRef } =
     useParticleBackground();
   // 마운트 시 현재 targetMorphRef 값으로 초기화 (효과 모드 전환 시 형태 유지)
-  const morphProgressRef = useRef(targetMorphRef.current);
+  const morphProgressRef = useRef(0);
   const transitionProgressRef = useRef(1);
   const geometryRef = useRef<THREE.BufferGeometry | null>(null);
+
+  // 마운트 시 targetMorphRef 값으로 morphProgressRef 동기화
+  useEffect(() => {
+    morphProgressRef.current = targetMorphRef.current;
+  }, [targetMorphRef]);
 
   const preset = sandPreset; // Sand 모드 기반
 

@@ -280,7 +280,7 @@ export function getSuggestions(
   }
   // 속성 레벨 제안
   else {
-    const { node, type } = resolvePath(schema, parts.slice(0, -1).join('.'));
+    const { node } = resolvePath(schema, parts.slice(0, -1).join('.'));
     const input = parts[parts.length - 1].toLowerCase();
 
     if (node?.type === 'object' && node.properties) {

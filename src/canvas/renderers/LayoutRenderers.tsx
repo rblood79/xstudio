@@ -16,6 +16,8 @@ import {
   Breadcrumbs,
   Breadcrumb,
   Group,
+  Dialog,
+  Modal,
 } from "../../shared/components/list";
 import { Slot } from "../../shared/components/Slot";
 import { PreviewElement, RenderContext } from "../types";
@@ -448,6 +450,48 @@ export const renderGroup = (
     >
       {children.map((child) => renderElement(child, child.id))}
     </Group>
+  );
+};
+
+/**
+ * Modal 렌더링
+ */
+export const renderModal = (
+  element: PreviewElement,
+  context: RenderContext
+): React.ReactNode => {
+  const { elements, renderElement, eventEngine, projectId } = context;
+  const eventHandlers = createEventHandlerMap(element, eventEngine, projectId);
+
+  const children = elements
+    .filter((child) => child.parent_id === element.id)
+    .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+
+  const resolvedId = element.customId || element.id;
+  const mergedStyle = {
+    ...(element.props.style || {}),
+    display:
+      element.props.isOpen === false
+        ? "none"
+        : (element.props.style as React.CSSProperties | undefined)?.display,
+  };
+
+  return (
+    <div
+      key={element.id}
+      id={resolvedId}
+      data-element-id={element.id}
+      data-custom-id={element.customId}
+      role="dialog"
+      aria-modal="true"
+      className={element.props.className}
+      style={mergedStyle}
+      onClick={eventHandlers.onClick as unknown as () => void}
+    >
+      {children.length === 0 && typeof element.props.children === "string"
+        ? element.props.children
+        : children.map((child) => renderElement(child, child.id))}
+    </div>
   );
 };
 

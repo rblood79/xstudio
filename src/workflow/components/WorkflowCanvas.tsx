@@ -27,11 +27,10 @@ import { DataSourceNode } from '../nodes/DataSourceNode';
 // Node Types
 // ============================================
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const nodeTypes: NodeTypes = {
-  page: PageNode as any,
-  layout: LayoutNode as any,
-  dataSource: DataSourceNode as any,
+  page: PageNode as NodeTypes[string],
+  layout: LayoutNode as NodeTypes[string],
+  dataSource: DataSourceNode as NodeTypes[string],
 };
 
 // ============================================

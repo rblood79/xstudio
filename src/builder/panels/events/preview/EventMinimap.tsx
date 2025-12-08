@@ -66,7 +66,6 @@ function generateMinimapData(handlers: BlockEventHandler[]) {
 
   for (const handler of handlers) {
     let currentX = PADDING;
-    const handlerStartY = currentY;
 
     // WHEN 블록 (Trigger)
     const triggerBlock: MinimapBlock = {

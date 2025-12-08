@@ -63,8 +63,6 @@ export function ThenElseBlock({
   onAddAction,
   onActionClick,
   onRemoveAction,
-  onReorderActions,
-  onUpdateAction,
   showConnector = true,
   isDisabled = false,
   defaultCollapsed = false,

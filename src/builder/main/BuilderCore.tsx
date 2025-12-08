@@ -30,8 +30,10 @@ import { useUnifiedThemeStore } from "../../stores/themeStore";
 import { getDB } from "../../lib/db";
 import { useEditModeStore } from "../stores/editMode";
 import { useLayoutsStore } from "../stores/layouts";
+import { useDataTableStore } from "../stores/datatable";
 
 import { MessageService } from "../../utils/messaging";
+import { getValueByPath, upsertData, appendData, mergeData, safeJsonParse } from "../../utils/dataHelpers";
 
 export const BuilderCore: React.FC = () => {
   const { projectId } = useParams<{ projectId: string }>();
@@ -357,6 +359,253 @@ export const BuilderCore: React.FC = () => {
       window.removeEventListener("message", handleNavigateMessage);
     };
   }, [pages, fetchElements, handleError]);
+
+  // ===== Data Panel Integration Message Handlers (Phase 5) =====
+  useEffect(() => {
+    const handleDataMessage = async (event: MessageEvent) => {
+      const { type, payload } = event.data || {};
+
+      switch (type) {
+        case "LOAD_DATA_TABLE":
+          await handleLoadDataTable(payload);
+          break;
+        case "SYNC_COMPONENT":
+          await handleSyncComponent(payload);
+          break;
+        case "SAVE_TO_DATA_TABLE":
+          await handleSaveToDataTable(payload);
+          break;
+      }
+    };
+
+    /**
+     * DataTable 로드 핸들러
+     */
+    async function handleLoadDataTable(payload: {
+      dataTableName: string;
+      forceRefresh?: boolean;
+      cacheTTL?: number;
+      targetVariable?: string;
+    }) {
+      const { dataTableName, forceRefresh } = payload;
+      const { dataTables, loadDataTable, refreshDataTable } = useDataTableStore.getState();
+
+      // DataTable을 이름으로 검색
+      let targetDataTableId: string | null = null;
+      dataTables.forEach((config, id) => {
+        if (config.name === dataTableName) {
+          targetDataTableId = id;
+        }
+      });
+
+      if (!targetDataTableId) {
+        console.warn(`[BuilderCore] DataTable '${dataTableName}' not found`);
+        return;
+      }
+
+      // DataTable 로드 또는 새로고침
+      if (forceRefresh) {
+        await refreshDataTable(targetDataTableId);
+      } else {
+        await loadDataTable(targetDataTableId);
+      }
+
+      console.log(`[BuilderCore] DataTable '${dataTableName}' loaded successfully`);
+
+      // TODO: Canvas iframe에 업데이트된 데이터 전송
+      // sendDataTablesToIframe();
+    }
+
+    /**
+     * 컴포넌트 동기화 핸들러
+     */
+    async function handleSyncComponent(payload: {
+      sourceId: string;
+      targetId: string;
+      syncMode: "replace" | "merge" | "append";
+      dataPath?: string;
+    }) {
+      const { sourceId, targetId, syncMode, dataPath } = payload;
+      const { elements, updateElementProps } = useStore.getState();
+
+      // 소스 컴포넌트 찾기 (customId 또는 id)
+      const sourceElement = elements.find(
+        (el) => el.customId === sourceId || el.id === sourceId
+      );
+
+      if (!sourceElement) {
+        console.warn(`[BuilderCore] Source element '${sourceId}' not found`);
+        return;
+      }
+
+      // 타겟 컴포넌트 찾기
+      const targetElement = elements.find(
+        (el) => el.customId === targetId || el.id === targetId
+      );
+
+      if (!targetElement) {
+        console.warn(`[BuilderCore] Target element '${targetId}' not found`);
+        return;
+      }
+
+      // 소스에서 데이터 추출 (selectedKeys, value 등)
+      const sourceProps = sourceElement.props as Record<string, unknown>;
+      let sourceData = sourceProps.selectedKeys || sourceProps.value || sourceProps.items;
+
+      // dataPath가 있으면 경로로 값 추출
+      if (dataPath && sourceData) {
+        sourceData = getValueByPath(sourceData, dataPath);
+      }
+
+      // syncMode에 따라 타겟 업데이트
+      const targetProps = targetElement.props as Record<string, unknown>;
+      const targetValue = targetProps.value || targetProps.items || [];
+      let newValue: unknown;
+
+      switch (syncMode) {
+        case "replace":
+          newValue = sourceData;
+          break;
+        case "merge":
+          if (typeof targetValue === 'object' && !Array.isArray(targetValue)) {
+            newValue = mergeData(
+              targetValue as Record<string, unknown>,
+              sourceData
+            );
+          } else {
+            newValue = sourceData;
+          }
+          break;
+        case "append":
+          if (Array.isArray(targetValue)) {
+            newValue = appendData(
+              targetValue as Record<string, unknown>[],
+              sourceData
+            );
+          } else {
+            newValue = sourceData;
+          }
+          break;
+        default:
+          newValue = sourceData;
+      }
+
+      // 타겟 엘리먼트 업데이트
+      await updateElementProps(targetElement.id, { value: newValue });
+
+      console.log(`[BuilderCore] Synced '${sourceId}' → '${targetId}' (${syncMode})`);
+    }
+
+    /**
+     * DataTable에 데이터 저장 핸들러
+     */
+    async function handleSaveToDataTable(payload: {
+      dataTableName: string;
+      source: "response" | "variable" | "static";
+      sourcePath?: string;
+      saveMode: "replace" | "merge" | "append" | "upsert";
+      keyField?: string;
+      transform?: string;
+    }) {
+      const { dataTableName, source, sourcePath, saveMode, keyField, transform } = payload;
+      const { dataTables, dataTableStates } = useDataTableStore.getState();
+
+      // DataTable을 이름으로 검색
+      let targetDataTableId: string | null = null;
+      let targetConfig = null;
+      dataTables.forEach((config, id) => {
+        if (config.name === dataTableName) {
+          targetDataTableId = id;
+          targetConfig = config;
+        }
+      });
+
+      if (!targetDataTableId || !targetConfig) {
+        console.warn(`[BuilderCore] DataTable '${dataTableName}' not found`);
+        return;
+      }
+
+      // 소스에서 데이터 가져오기
+      let data: unknown;
+      switch (source) {
+        case "response":
+          // 마지막 API 응답에서 가져오기 (현재는 상태에서 가져옴)
+          // TODO: lastApiResponse 상태 관리 필요
+          data = useStore.getState().lastApiResponse;
+          break;
+        case "variable":
+          // 변수에서 가져오기
+          if (sourcePath) {
+            data = getValueByPath(useStore.getState(), sourcePath);
+          }
+          break;
+        case "static":
+          // 정적 값 파싱
+          data = safeJsonParse(sourcePath || "[]", []);
+          break;
+      }
+
+      // Transform 적용 (선택사항)
+      if (transform) {
+        try {
+          const transformFn = new Function("data", `return ${transform}`);
+          data = transformFn(data);
+        } catch (err) {
+          console.warn("[BuilderCore] Transform failed:", err);
+        }
+      }
+
+      // 현재 DataTable 데이터
+      const currentState = dataTableStates.get(targetDataTableId);
+      const currentData = currentState?.data || [];
+      let newData: Record<string, unknown>[];
+
+      // saveMode에 따라 DataTable 업데이트
+      switch (saveMode) {
+        case "replace":
+          newData = Array.isArray(data) ? data as Record<string, unknown>[] : [data as Record<string, unknown>];
+          break;
+        case "merge":
+          newData = currentData.map((item, i) => ({
+            ...item,
+            ...(Array.isArray(data) ? (data as Record<string, unknown>[])[i] : data as Record<string, unknown>)
+          }));
+          break;
+        case "append":
+          newData = appendData(currentData, data);
+          break;
+        case "upsert":
+          newData = upsertData(currentData, data, keyField || "id");
+          break;
+        default:
+          newData = currentData;
+      }
+
+      // DataTable 상태 업데이트 (직접 상태 업데이트)
+      useDataTableStore.setState((state) => {
+        const newDataTableStates = new Map(state.dataTableStates);
+        const existingState = newDataTableStates.get(targetDataTableId!);
+
+        if (existingState) {
+          newDataTableStates.set(targetDataTableId!, {
+            ...existingState,
+            data: newData,
+            lastLoadedAt: Date.now(),
+          });
+        }
+
+        return { dataTableStates: newDataTableStates };
+      });
+
+      console.log(`[BuilderCore] Saved to DataTable '${dataTableName}' (${saveMode})`);
+    }
+
+    window.addEventListener("message", handleDataMessage);
+
+    return () => {
+      window.removeEventListener("message", handleDataMessage);
+    };
+  }, []); // 의존성 없음 - 핸들러 내부에서 최신 상태 직접 접근
 
   // 페이지 추가 핸들러 (사용하지 않음 - 주석 처리)
   // const handleAddPage = useCallback(async () => {

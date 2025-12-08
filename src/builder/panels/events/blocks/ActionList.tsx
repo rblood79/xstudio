@@ -63,7 +63,6 @@ export function ActionList({
   onActionClick,
   onRemoveAction,
   onReorderActions,
-  onUpdateAction,
   onAddAction,
   expandedActionId,
   onToggleActionExpand,

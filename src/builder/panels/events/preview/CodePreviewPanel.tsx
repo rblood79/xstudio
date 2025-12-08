@@ -7,7 +7,7 @@
  * Phase 5: Events Panel 재설계
  */
 
-import { useState, useMemo, useCallback, lazy, Suspense } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { Button } from 'react-aria-components';
 import { Copy, Check, Code, ChevronDown, ChevronRight } from 'lucide-react';
 import type { BlockEventHandler } from '../../../events/types/eventBlockTypes';
@@ -35,7 +35,7 @@ function generateHandlerCode(handler: BlockEventHandler): string {
 
   // 조건 체크 (IF 블록)
   if (handler.conditions && handler.conditions.conditions.length > 0) {
-    const conditionCode = generateConditionCode(handler.conditions, indent);
+    const conditionCode = generateConditionCode(handler.conditions);
     lines.push(`${indent}// Condition check`);
     lines.push(`${indent}if (!(${conditionCode})) {`);
     lines.push(`${indent}${indent}return;`);
@@ -92,8 +92,7 @@ function generateHandlerCode(handler: BlockEventHandler): string {
  * 조건 그룹을 코드로 변환
  */
 function generateConditionCode(
-  group: BlockEventHandler['conditions'],
-  indent: string
+  group: BlockEventHandler['conditions']
 ): string {
   if (!group || group.conditions.length === 0) return 'true';
 

@@ -255,7 +255,7 @@ export function interpolate(
  * getRootVariable("state.items[0].id") // "state"
  */
 export function getRootVariable(path: string): string {
-  return path.split(/[.\[]/)[0];
+  return path.split(/[.[]/)[0];
 }
 
 /**

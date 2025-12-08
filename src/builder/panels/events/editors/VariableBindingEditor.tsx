@@ -21,11 +21,8 @@ import {
   parseVariables,
   getPathPrefix,
   getCurrentInput,
-  type VariableBinding,
-  type ParseError,
   type VariableType,
 } from '../../../events/utils/variableParser';
-import { iconProps } from '../../../../utils/ui/uiConstants';
 
 /**
  * 자동완성 제안 항목
@@ -209,7 +206,6 @@ export function VariableBindingEditor({
   label,
   placeholder = '{{variable}} or static value',
   schema = DEFAULT_SCHEMA,
-  singleVariable = false,
   isDisabled = false,
   showErrors = true,
 }: VariableBindingEditorProps) {

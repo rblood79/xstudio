@@ -8,7 +8,7 @@
 import { Button, TextField, Input } from 'react-aria-components';
 import { Trash, GripVertical } from 'lucide-react';
 import type { Condition, ConditionOperand, ConditionOperator } from '../../../events/types/eventBlockTypes';
-import { CONDITION_OPERATOR_META, isUnaryOperator } from '../../../events/types/eventBlockTypes';
+import { isUnaryOperator } from '../../../events/types/eventBlockTypes';
 import { iconProps } from '../../../../utils/ui/uiConstants';
 import { OperatorPicker } from './OperatorPicker';
 
@@ -43,15 +43,6 @@ export function ConditionRow({
   dragHandleProps = {},
 }: ConditionRowProps) {
   const isUnary = isUnaryOperator(condition.operator);
-
-  // 좌변 변경
-  const handleLeftChange = (value: string) => {
-    const newLeft: ConditionOperand = {
-      ...condition.left,
-      value,
-    };
-    onChange({ ...condition, left: newLeft });
-  };
 
   // 좌변 타입 추론 (입력 값에 따라)
   const inferLeftType = (value: string): ConditionOperand['type'] => {

@@ -72,8 +72,7 @@ export interface UseCollectionDataResult {
  * Static 데이터 로드 함수
  */
 async function loadStaticData(
-  dataBinding: DataBinding,
-  _componentName: string
+  dataBinding: DataBinding
 ): Promise<Record<string, unknown>[]> {
   const staticConfig = dataBinding.config as { data?: unknown[] };
   const staticData = staticConfig.data;
@@ -470,7 +469,7 @@ export function useCollectionData({
 
         // Static Collection 처리
         if (dataBinding.source === "static") {
-          items = await loadStaticData(dataBinding, componentName);
+          items = await loadStaticData(dataBinding);
         }
         // API Collection 처리
         else if (dataBinding.source === "api") {

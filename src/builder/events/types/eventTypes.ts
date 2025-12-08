@@ -109,6 +109,11 @@ export type ActionType =
   | "selectItem"
   | "clearSelection"
 
+  // Data Panel Integration (NEW)
+  | "loadDataTable"
+  | "syncComponent"
+  | "saveToDataTable"
+
   // Utilities
   | "copyToClipboard"
   | "customFunction";
@@ -133,7 +138,11 @@ export type ActionConfig =
   | UpdateFormFieldConfig
   | FilterCollectionConfig
   | SelectItemConfig
-  | ClearSelectionConfig;
+  | ClearSelectionConfig
+  // Data Panel Integration (NEW)
+  | LoadDataTableConfig
+  | SyncComponentConfig
+  | SaveToDataTableConfig;
 
 /**
  * Navigate 액션 설정
@@ -301,6 +310,52 @@ export interface ClearSelectionConfig {
 }
 
 /**
+ * Load DataTable 액션 설정
+ */
+export interface LoadDataTableConfig {
+  /** 로드할 DataTable 이름 */
+  dataTableName: string;
+  /** 캐시 무시하고 강제 새로고침 */
+  forceRefresh?: boolean;
+  /** 캐시 TTL (초) */
+  cacheTTL?: number;
+  /** 결과를 저장할 변수명 (선택사항) */
+  targetVariable?: string;
+}
+
+/**
+ * Sync Component 액션 설정
+ */
+export interface SyncComponentConfig {
+  /** 소스 컴포넌트 ID (customId 또는 element ID) */
+  sourceId: string;
+  /** 타겟 컴포넌트 ID */
+  targetId: string;
+  /** 동기화 모드 */
+  syncMode: "replace" | "merge" | "append";
+  /** 데이터 경로 (선택사항) */
+  dataPath?: string;
+}
+
+/**
+ * Save to DataTable 액션 설정
+ */
+export interface SaveToDataTableConfig {
+  /** 저장할 DataTable 이름 */
+  dataTableName: string;
+  /** 데이터 소스 */
+  source: "response" | "variable" | "static";
+  /** 소스 경로 (source에 따라 의미가 다름) */
+  sourcePath?: string;
+  /** 저장 모드 */
+  saveMode: "replace" | "merge" | "append" | "upsert";
+  /** Upsert 시 키 필드 */
+  keyField?: string;
+  /** 데이터 변환 표현식 (선택사항) */
+  transform?: string;
+}
+
+/**
  * 이벤트 카테고리
  */
 export interface EventCategory {
@@ -431,6 +486,10 @@ export const ACTION_TYPE_LABELS: Record<ActionType, string> = {
   filterCollection: "컬렉션 필터링",
   selectItem: "아이템 선택",
   clearSelection: "선택 해제",
+  // Data Panel Integration (NEW)
+  loadDataTable: "DataTable 로드",
+  syncComponent: "컴포넌트 동기화",
+  saveToDataTable: "DataTable 저장",
   copyToClipboard: "클립보드 복사",
   customFunction: "커스텀 함수"
 };

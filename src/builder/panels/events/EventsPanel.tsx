@@ -75,22 +75,6 @@ function actionsToBlockActions(
   }));
 }
 
-/**
- * BlockEventAction[] → EventHandler.actions 변환
- */
-function blockActionsToActions(
-  blockActions: BlockEventAction[]
-): EventHandler["actions"] {
-  return blockActions.map((action) => ({
-    id: action.id,
-    type: action.type,
-    config: action.config,
-    delay: action.delay,
-    condition: action.condition,
-    enabled: action.enabled,
-    label: action.label,
-  }));
-}
 
 export function EventsPanel({ isActive }: PanelProps) {
   // Inspector 상태에서 이벤트 가져오기

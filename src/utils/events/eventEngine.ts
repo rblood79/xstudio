@@ -12,6 +12,9 @@ export class EventEngine {
     private state: Record<string, unknown> = {};
     private actionHandlers: Record<string, (action: EventAction, context: EventContext) => unknown> = {};
     private executionTimeouts = new Map<string, NodeJS.Timeout>();
+    private lastShownModalId?: string;
+    private modalBackdrops = new Map<string, string>();
+    private shownModalIds = new Set<string>();
 
     static getInstance(): EventEngine {
         if (!EventEngine.instance) {
@@ -61,6 +64,11 @@ export class EventEngine {
             'filterCollection': this.executeFilterCollectionAction.bind(this),
             'selectItem': this.executeSelectItemAction.bind(this),
             'clearSelection': this.executeClearSelectionAction.bind(this),
+
+            // Data Panel Integration (Phase 5)
+            'loadDataTable': this.executeLoadDataTableAction.bind(this),
+            'syncComponent': this.executeSyncComponentAction.bind(this),
+            'saveToDataTable': this.executeSaveToDataTableAction.bind(this),
         };
     }
 
@@ -378,35 +386,163 @@ export class EventEngine {
     private async executeToggleVisibilityAction(action: EventAction, context: EventContext): Promise<void> {
         const config = this.getActionConfig<{ show?: boolean; elementId?: string }>(action);
         const targetId = config.elementId || context.elementId;
-        const element = document.querySelector(`[data-element-id="${targetId}"]`) as HTMLElement;
+        const element = this.findElementByAny(targetId) || context.element;
 
-        if (element) {
-            element.style.display = config.show === false ? 'none' : 'block';
+        if (!element) {
+            console.warn(`[EventEngine] Toggle visibility: element not found for id "${targetId}"`);
+            return;
         }
+
+        element.style.display = config.show === false ? 'none' : 'block';
     }
 
     private async executeShowModalAction(action: EventAction): Promise<void> {
         const config = this.getActionConfig<{ modalId: string; backdrop?: boolean }>(action);
-        const { modalId, backdrop = true } = config;
+        const modalId = typeof config.modalId === 'string' ? config.modalId.trim() : '';
+        const backdrop = config.backdrop ?? true;
 
         // 보안 검증: modalId가 유효한지 확인
-        if (!modalId || typeof modalId !== 'string') {
+        if (!modalId) {
             throw new Error('Invalid modal ID');
         }
 
-        const modal = document.getElementById(modalId);
-        if (!modal) {
+        const found = this.findModalElement(modalId);
+        if (!found) {
             throw new Error(`Modal with ID "${modalId}" not found`);
         }
+        const { element: modal, resolvedId } = found;
 
         modal.style.display = 'block';
         modal.setAttribute('aria-hidden', 'false');
+        this.lastShownModalId = resolvedId;
+        this.shownModalIds.add(resolvedId);
 
         if (backdrop) {
-            // 백드롭 생성 및 관리
-            const backdropElement = document.createElement('div');
-            backdropElement.className = 'modal-backdrop';
-            backdropElement.style.cssText = `
+            const backdropId = this.ensureModalBackdrop(resolvedId);
+            modal.setAttribute('data-backdrop-id', backdropId);
+        }
+    }
+
+    private async executeHideModalAction(action: EventAction): Promise<void> {
+        const config = this.getActionConfig<{ modalId?: string }>(action);
+        const modalId = typeof config.modalId === 'string' ? config.modalId.trim() : '';
+        const targetModalIds = this.getModalIdsToHide(modalId);
+
+        if (!targetModalIds.length) {
+            console.warn('[EventEngine] No modal IDs to hide');
+            return;
+        }
+
+        for (const id of targetModalIds) {
+            this.hideModalById(id);
+        }
+    }
+
+    private getModalIdsToHide(requestedId: string): string[] {
+        if (requestedId) {
+            return [requestedId];
+        }
+
+        if (this.lastShownModalId) {
+            return [this.lastShownModalId];
+        }
+
+        if (this.shownModalIds.size) {
+            return [...this.shownModalIds];
+        }
+
+        if (this.modalBackdrops.size) {
+            return [...this.modalBackdrops.keys()];
+        }
+
+        return [];
+    }
+
+    private escapeSelector(value: string): string {
+        if (window.CSS && typeof window.CSS.escape === 'function') {
+            return CSS.escape(value);
+        }
+
+        return value.replace(/([ !"#$%&'()*+,./:;<=>?@[\\\]^`{|}~])/g, '\\$1');
+    }
+
+    private findElementByAny(targetId?: string): HTMLElement | null {
+        if (!targetId) {
+            return null;
+        }
+
+        const byId = document.getElementById(targetId);
+        if (byId) {
+            return byId;
+        }
+
+        const safeId = this.escapeSelector(targetId);
+        const selectors = [
+            `[data-element-id="${safeId}"]`,
+            `[data-custom-id="${safeId}"]`,
+            `[data-modal-id="${safeId}"]`,
+        ];
+
+        for (const selector of selectors) {
+            const el = document.querySelector(selector) as HTMLElement | null;
+            if (el) {
+                return el;
+            }
+        }
+
+        return null;
+    }
+
+    private findModalElement(modalId: string): { element: HTMLElement; resolvedId: string } | null {
+        if (!modalId) {
+            return null;
+        }
+
+        const byId = document.getElementById(modalId);
+        if (byId) {
+            return { element: byId, resolvedId: byId.id || modalId };
+        }
+
+        const safeId = this.escapeSelector(modalId);
+        const selectors = [
+            `[data-element-id="${safeId}"]`,
+            `[data-modal-id="${safeId}"]`,
+            `[data-custom-id="${safeId}"]`,
+        ];
+
+        for (const selector of selectors) {
+            const candidate = document.querySelector(selector) as HTMLElement | null;
+            if (candidate) {
+                const resolvedId =
+                    candidate.id ||
+                    candidate.getAttribute('data-element-id') ||
+                    candidate.getAttribute('data-modal-id') ||
+                    candidate.getAttribute('data-custom-id') ||
+                    modalId;
+                return { element: candidate, resolvedId };
+            }
+        }
+
+        return null;
+    }
+
+    private ensureModalBackdrop(modalId: string): string {
+        const existingId = this.modalBackdrops.get(modalId);
+        if (existingId) {
+            const existing = document.getElementById(existingId);
+            if (existing) {
+                return existingId;
+            }
+        }
+
+        const backdropId = `modal-backdrop-${modalId}`;
+        let backdrop = document.getElementById(backdropId);
+
+        if (!backdrop) {
+            backdrop = document.createElement('div');
+            backdrop.id = backdropId;
+            backdrop.className = 'modal-backdrop';
+            backdrop.style.cssText = `
                 position: fixed;
                 top: 0;
                 left: 0;
@@ -416,39 +552,41 @@ export class EventEngine {
                 z-index: 999;
             `;
 
-            backdropElement.addEventListener('click', () => {
-                this.executeHideModalAction(action);
+            backdrop.addEventListener('click', () => {
+                this.hideModalById(modalId);
             });
 
-            document.body.appendChild(backdropElement);
-            modal.setAttribute('data-backdrop-id', backdropElement.id || 'backdrop');
+            document.body.appendChild(backdrop);
         }
+
+        this.modalBackdrops.set(modalId, backdropId);
+        return backdropId;
     }
 
-    private async executeHideModalAction(action: EventAction): Promise<void> {
-        const config = this.getActionConfig<{ modalId: string }>(action);
-        const { modalId } = config;
-
-        if (!modalId || typeof modalId !== 'string') {
-            throw new Error('Invalid modal ID');
-        }
-
-        const modal = document.getElementById(modalId);
-        if (!modal) {
+    private hideModalById(modalId: string) {
+        const found = this.findModalElement(modalId);
+        if (!found) {
             console.warn(`Modal with ID "${modalId}" not found`);
             return;
         }
+        const { element: modal, resolvedId } = found;
 
         modal.style.display = 'none';
         modal.setAttribute('aria-hidden', 'true');
 
-        // 백드롭 제거
-        const backdropId = modal.getAttribute('data-backdrop-id');
+        const backdropId = modal.getAttribute('data-backdrop-id') || this.modalBackdrops.get(resolvedId);
         if (backdropId) {
             const backdrop = document.getElementById(backdropId);
             if (backdrop) {
                 backdrop.remove();
             }
+            this.modalBackdrops.delete(resolvedId);
+        }
+
+        this.shownModalIds.delete(resolvedId);
+
+        if (this.lastShownModalId === resolvedId) {
+            this.lastShownModalId = undefined;
         }
     }
 
@@ -747,6 +885,109 @@ export class EventEngine {
         }
     }
 
+    // ===== Phase 5: Data Panel Integration Actions =====
+
+    /**
+     * DataTable 로드 액션
+     * DataTable을 로드하거나 강제 새로고침합니다.
+     */
+    private async executeLoadDataTableAction(action: EventAction): Promise<void> {
+        const config = this.getActionConfig<{
+            dataTableName: string;
+            forceRefresh?: boolean;
+            cacheTTL?: number;
+            targetVariable?: string;
+        }>(action);
+
+        if (!config.dataTableName) {
+            console.warn('[EventEngine] loadDataTable: dataTableName is required');
+            return;
+        }
+
+        // Builder 모드에서만 실행 (Canvas → Builder 통신)
+        if (this.isBuilderMode()) {
+            window.parent.postMessage({
+                type: 'LOAD_DATA_TABLE',
+                payload: {
+                    dataTableName: config.dataTableName,
+                    forceRefresh: config.forceRefresh ?? false,
+                    cacheTTL: config.cacheTTL,
+                    targetVariable: config.targetVariable,
+                }
+            }, '*');
+        } else {
+            console.warn('[EventEngine] loadDataTable in published mode not yet implemented');
+        }
+    }
+
+    /**
+     * 컴포넌트 간 데이터 동기화 액션
+     * 소스 컴포넌트의 데이터를 타겟 컴포넌트로 동기화합니다.
+     */
+    private async executeSyncComponentAction(action: EventAction): Promise<void> {
+        const config = this.getActionConfig<{
+            sourceId: string;
+            targetId: string;
+            syncMode: 'replace' | 'merge' | 'append';
+            dataPath?: string;
+        }>(action);
+
+        if (!config.sourceId || !config.targetId) {
+            console.warn('[EventEngine] syncComponent: sourceId and targetId are required');
+            return;
+        }
+
+        if (this.isBuilderMode()) {
+            window.parent.postMessage({
+                type: 'SYNC_COMPONENT',
+                payload: {
+                    sourceId: config.sourceId,
+                    targetId: config.targetId,
+                    syncMode: config.syncMode || 'replace',
+                    dataPath: config.dataPath,
+                }
+            }, '*');
+        } else {
+            console.warn('[EventEngine] syncComponent in published mode not yet implemented');
+        }
+    }
+
+    /**
+     * DataTable에 데이터 저장 액션
+     * API 응답이나 변수의 데이터를 DataTable에 저장합니다.
+     */
+    private async executeSaveToDataTableAction(action: EventAction): Promise<void> {
+        const config = this.getActionConfig<{
+            dataTableName: string;
+            source: 'response' | 'variable' | 'static';
+            sourcePath?: string;
+            saveMode: 'replace' | 'merge' | 'append' | 'upsert';
+            keyField?: string;
+            transform?: string;
+        }>(action);
+
+        if (!config.dataTableName) {
+            console.warn('[EventEngine] saveToDataTable: dataTableName is required');
+            return;
+        }
+
+        if (this.isBuilderMode()) {
+            window.parent.postMessage({
+                type: 'SAVE_TO_DATA_TABLE',
+                payload: {
+                    dataTableName: config.dataTableName,
+                    source: config.source || 'response',
+                    sourcePath: config.sourcePath,
+                    saveMode: config.saveMode || 'replace',
+                    keyField: config.keyField,
+                    transform: config.transform,
+                }
+            }, '*');
+        } else {
+            console.warn('[EventEngine] saveToDataTable in published mode not yet implemented');
+        }
+    }
+
     // 정리 메서드
     cleanup() {
         this.executionTimeouts.forEach(timeout => clearTimeout(timeout));
@@ -754,6 +995,17 @@ export class EventEngine {
 
         // 상태 정리
         this.state = {};
+
+        // 모달 상태 정리
+        this.modalBackdrops.forEach(id => {
+            const backdrop = document.getElementById(id);
+            if (backdrop) {
+                backdrop.remove();
+            }
+        });
+        this.modalBackdrops.clear();
+        this.shownModalIds.clear();
+        this.lastShownModalId = undefined;
 
         // 액션 핸들러 정리
         this.actionHandlers = {};

@@ -12,10 +12,9 @@ import { useEventFlow } from "../../hooks/useEventFlow";
 import { TriggerNode } from "./TriggerNode";
 import { ActionNode } from "./ActionNode";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const nodeTypes: NodeTypes = {
-  trigger: TriggerNode as any,
-  action: ActionNode as any
+  trigger: TriggerNode as NodeTypes[string],
+  action: ActionNode as NodeTypes[string]
 };
 
 export interface ReactFlowCanvasProps {

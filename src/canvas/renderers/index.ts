@@ -54,6 +54,7 @@ export const rendererMap: Record<
   Meter: LayoutRenderers.renderMeter,
   Separator: LayoutRenderers.renderSeparator,
   Group: LayoutRenderers.renderGroup,
+  Modal: LayoutRenderers.renderModal,
   Breadcrumbs: LayoutRenderers.renderBreadcrumbs,
   Breadcrumb: LayoutRenderers.renderBreadcrumb,
   Link: LayoutRenderers.renderLink,

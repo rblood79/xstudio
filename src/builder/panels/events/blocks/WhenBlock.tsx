@@ -8,7 +8,7 @@
 import { Button } from 'react-aria-components';
 import { Zap, Settings } from 'lucide-react';
 import type { EventTrigger } from '../../../events/types/eventBlockTypes';
-import type { EventType } from '../../../events/types/eventTypes';
+import type { EventType } from '@/types/events/events.types';
 import { iconProps } from '../../../../utils/ui/uiConstants';
 import { BlockConnector } from './BlockConnector';
 import { EventTypePicker } from '../../../events/pickers/EventTypePicker';

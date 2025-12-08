@@ -4,7 +4,7 @@
  * DataTable, API, Supabase, Mock 데이터 소스 표시
  */
 
-import { memo } from 'react';
+import { memo, useMemo } from 'react';
 import { Handle, Position } from '@xyflow/react';
 import { Database, Globe, Cloud, TestTube } from 'lucide-react';
 import type { DataSourceNodeData } from '../types';
@@ -14,20 +14,12 @@ interface DataSourceNodeProps {
   selected?: boolean;
 }
 
-const getSourceIcon = (sourceType: string) => {
-  switch (sourceType) {
-    case 'dataTable':
-      return Database;
-    case 'api':
-      return Globe;
-    case 'supabase':
-      return Cloud;
-    case 'mock':
-      return TestTube;
-    default:
-      return Database;
-  }
-};
+const SOURCE_ICONS = {
+  dataTable: Database,
+  api: Globe,
+  supabase: Cloud,
+  mock: TestTube,
+} as const;
 
 const getSourceLabel = (sourceType: string) => {
   switch (sourceType) {
@@ -49,7 +41,10 @@ export const DataSourceNode = memo(function DataSourceNode({
   selected,
 }: DataSourceNodeProps) {
   const { dataSource, pageIds } = data;
-  const Icon = getSourceIcon(dataSource.sourceType);
+  const Icon = useMemo(() =>
+    SOURCE_ICONS[dataSource.sourceType as keyof typeof SOURCE_ICONS] || Database,
+    [dataSource.sourceType]
+  );
 
   return (
     <div

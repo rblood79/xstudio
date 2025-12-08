@@ -6,10 +6,9 @@
  */
 
 import { useState, useCallback, useMemo } from 'react';
-import { Button, TextField, Input, Label } from 'react-aria-components';
+import { Button, Label } from 'react-aria-components';
 import {
   Play,
-  Pause,
   SkipForward,
   RefreshCw,
   CheckCircle,
@@ -19,8 +18,7 @@ import {
   ChevronRight,
   AlertTriangle,
 } from 'lucide-react';
-import type { BlockEventHandler, BlockEventAction } from '../../../events/types/eventBlockTypes';
-import { iconProps } from '../../../../utils/ui/uiConstants';
+import type { BlockEventHandler } from '../../../events/types/eventBlockTypes';
 
 /**
  * 실행 상태
@@ -189,8 +187,6 @@ function getNestedValue(obj: unknown, path: string): unknown {
 export function EventDebugger({
   handler,
   mockState = {},
-  mockDataTable = {},
-  debugMode = true,
 }: EventDebuggerProps) {
   const [status, setStatus] = useState<ExecutionStatus>('idle');
   const [steps, setSteps] = useState<StepResult[]>([]);
@@ -198,6 +194,18 @@ export function EventDebugger({
   const [logs, setLogs] = useState<ExecutionLog[]>([]);
   const [mockEventData, setMockEventData] = useState<string>('{\n  "target": {\n    "value": "test"\n  }\n}');
   const [expandedSteps, setExpandedSteps] = useState<Set<string>>(new Set());
+
+  // 로그 추가 (runTest에서 사용하므로 먼저 선언)
+  const addLog = useCallback((log: Omit<ExecutionLog, 'id' | 'timestamp'>) => {
+    setLogs((prev) => [
+      {
+        ...log,
+        id: `log-${Date.now()}`,
+        timestamp: Date.now(),
+      },
+      ...prev.slice(0, 9), // 최근 10개만 유지
+    ]);
+  }, []);
 
   // 단계 목록 생성
   const allSteps = useMemo((): StepResult[] => {
@@ -378,19 +386,7 @@ export function EventDebugger({
         steps: newSteps,
       });
     }
-  }, [handler, allSteps, mockEventData, mockState]);
-
-  // 로그 추가
-  const addLog = useCallback((log: Omit<ExecutionLog, 'id' | 'timestamp'>) => {
-    setLogs((prev) => [
-      {
-        ...log,
-        id: `log-${Date.now()}`,
-        timestamp: Date.now(),
-      },
-      ...prev.slice(0, 9), // 최근 10개만 유지
-    ]);
-  }, []);
+  }, [handler, allSteps, mockEventData, mockState, addLog]);
 
   // 리셋
   const reset = useCallback(() => {
