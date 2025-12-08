@@ -137,6 +137,6 @@ export * from "./actions/ClearSelectionActionEditor";
 export * from "./actions/TriggerComponentActionEditor";
 export * from "./actions/CopyToClipboardActionEditor";
 export * from "./actions/CustomFunctionActionEditor";
-export * from "./actions/LoadDatasetActionEditor";
+export * from "./actions/LoadDataTableActionEditor";
 export * from "./actions/SyncComponentActionEditor";
-export * from "./actions/SaveToDatasetActionEditor";
+export * from "./actions/SaveToDataTableActionEditor";

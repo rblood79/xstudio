@@ -1,5 +1,5 @@
 /**
- * DatasetPanel Styles
+ * DataTablePanel Styles
  *
  * 프로젝트 레벨 데이터 관리 패널 스타일
  * 공통 list-group 스타일: ../common/list-group.css
@@ -7,7 +7,7 @@
 
 @import "../common/list-group.css";
 
-.dataset-panel {
+.datatable-panel {
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -50,14 +50,14 @@
   color: var(--on-primary);
 }
 
-/* Dataset-specific list count */
-.dataset-list-count {
+/* DataTable-specific list count */
+.datatable-list-count {
   font-size: var(--text-xs);
   color: var(--color-text-tertiary);
 }
 
-/* Dataset Section Content */
-.dataset-panel .section-content {
+/* DataTable Section Content */
+.datatable-panel .section-content {
   padding: var(--spacing-sm);
   display: flex;
   flex-direction: column;
@@ -65,24 +65,24 @@
 }
 
 /* Subgroup header extension */
-.dataset-panel .list-subgroup-header {
+.datatable-panel .list-subgroup-header {
   justify-content: space-between;
   padding: var(--spacing-xs) 0;
 }
 
-.dataset-panel .list-subgroup-count {
+.datatable-panel .list-subgroup-count {
   font-size: var(--text-xs);
   color: var(--color-text-tertiary);
 }
 
 /* Item Card extension */
-.dataset-panel .list-item.editing {
+.datatable-panel .list-item.editing {
   background: var(--color-primary-100);
   border-color: var(--color-primary-500);
 }
 
 /* Add Button */
-.dataset-add-btn {
+.datatable-add-btn {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -99,13 +99,13 @@
   transition: all 150ms ease;
 }
 
-.dataset-add-btn:hover {
+.datatable-add-btn:hover {
   background: var(--color-primary-50);
   border-color: var(--color-primary-300);
 }
 
 /* Empty State */
-.dataset-empty {
+.datatable-empty {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -114,72 +114,72 @@
   text-align: center;
 }
 
-.dataset-empty-icon {
+.datatable-empty-icon {
   color: var(--color-text-tertiary);
   margin-bottom: var(--spacing-sm);
 }
 
-.dataset-empty-text {
+.datatable-empty-text {
   font-size: var(--text-sm);
   color: var(--color-text-secondary);
   margin-bottom: var(--spacing-md);
 }
 
 /* Badge Variants (extends common .list-item-badge) */
-.dataset-panel .list-item-badge.global {
+.datatable-panel .list-item-badge.global {
   background: var(--color-primary-100);
   color: var(--color-primary-700);
 }
 
-.dataset-panel .list-item-badge.page {
+.datatable-panel .list-item-badge.page {
   background: var(--color-secondary-100);
   color: var(--color-secondary-700);
 }
 
 /* Method Badge */
-.dataset-panel .list-item-badge.method {
+.datatable-panel .list-item-badge.method {
   font-weight: 600;
   font-family: var(--font-mono);
 }
 
-.dataset-panel .list-item-badge.GET {
+.datatable-panel .list-item-badge.GET {
   background: var(--color-success-100);
   color: var(--color-success-700);
 }
 
-.dataset-panel .list-item-badge.POST {
+.datatable-panel .list-item-badge.POST {
   background: var(--color-primary-100);
   color: var(--color-primary-700);
 }
 
-.dataset-panel .list-item-badge.PUT {
+.datatable-panel .list-item-badge.PUT {
   background: var(--color-warning-100);
   color: var(--color-warning-700);
 }
 
-.dataset-panel .list-item-badge.DELETE {
+.datatable-panel .list-item-badge.DELETE {
   background: var(--color-error-100);
   color: var(--color-error-700);
 }
 
-.dataset-panel .list-item-badge.PATCH {
+.datatable-panel .list-item-badge.PATCH {
   background: var(--color-secondary-100);
   color: var(--color-secondary-700);
 }
 
 /* DataTable Source Badge */
-.dataset-panel .list-item-badge.local {
+.datatable-panel .list-item-badge.local {
   background: var(--color-surface-200);
   color: var(--color-text-secondary);
 }
 
-.dataset-panel .list-item-badge.api {
+.datatable-panel .list-item-badge.api {
   background: var(--color-primary-100);
   color: var(--color-primary-700);
 }
 
 /* Linked API Icon */
-.dataset-panel .linked-api-icon {
+.datatable-panel .linked-api-icon {
   vertical-align: middle;
   opacity: 0.7;
 }
@@ -210,11 +210,11 @@
 }
 
 /* Loading Overlay (리스트 위에 반투명 표시) */
-.dataset-panel .panel-contents {
+.datatable-panel .panel-contents {
   position: relative;
 }
 
-.dataset-loading-overlay {
+.datatable-loading-overlay {
   position: absolute;
   inset: 0;
   display: flex;

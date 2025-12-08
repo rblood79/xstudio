@@ -1,12 +1,12 @@
 /**
- * Dataset Component
+ * DataTable Component
  *
  * 중앙 집중식 데이터 관리를 위한 비시각적 컴포넌트
  * Layer Tree에는 표시되지만 Preview에서는 렌더링되지 않음
  *
  * 사용 예:
- * <Dataset
- *   id="users-dataset"
+ * <DataTable
+ *   id="users-datatable"
  *   name="Users"
  *   dataBinding={{
  *     type: "collection",
@@ -20,53 +20,53 @@
  * />
  *
  * 다른 컴포넌트에서 참조:
- * <ListBox datasetId="users-dataset" />
- * <Select datasetId="users-dataset" />
+ * <ListBox dataTableId="users-datatable" />
+ * <Select dataTableId="users-datatable" />
  *
- * @see docs/PLANNED_FEATURES.md - Dataset Component Architecture
+ * @see docs/PLANNED_FEATURES.md - DataTable Component Architecture
  */
 
 import { memo, useEffect, useRef } from 'react';
-import type { DatasetProps } from '../../types/dataset.types';
-import { useDatasetStore } from '../stores/dataset';
+import type { DataTableProps } from '../../types/datatable.types';
+import { useDataTableStore } from '../stores/datatable';
 
 /**
- * Dataset 컴포넌트
+ * DataTable 컴포넌트
  *
  * 데이터 소스를 중앙에서 관리하고 여러 컴포넌트가 공유할 수 있도록 함
  * 이 컴포넌트는 UI를 렌더링하지 않음 (null 반환)
  */
-export const Dataset = memo(function Dataset({
+export const DataTable = memo(function DataTable({
   id,
   name,
   dataBinding,
   description,
   refreshInterval,
   autoLoad = true,
-}: DatasetProps) {
-  const registerDataset = useDatasetStore((state) => state.registerDataset);
-  const unregisterDataset = useDatasetStore((state) => state.unregisterDataset);
-  const loadDataset = useDatasetStore((state) => state.loadDataset);
-  const updateDatasetConfig = useDatasetStore((state) => state.updateDatasetConfig);
+}: DataTableProps) {
+  const registerDataTable = useDataTableStore((state) => state.registerDataTable);
+  const unregisterDataTable = useDataTableStore((state) => state.unregisterDataTable);
+  const loadDataTable = useDataTableStore((state) => state.loadDataTable);
+  const updateDataTableConfig = useDataTableStore((state) => state.updateDataTableConfig);
 
   // 이전 값 추적
   const prevDataBindingRef = useRef<typeof dataBinding>(undefined);
   const isInitialMount = useRef(true);
 
-  // Dataset 등록 (마운트 시)
+  // DataTable 등록 (마운트 시)
   useEffect(() => {
     if (!id) {
-      console.warn('⚠️ Dataset: id prop is required');
+      console.warn('⚠️ DataTable: id prop is required');
       return;
     }
 
     if (!dataBinding) {
-      console.warn(`⚠️ Dataset ${id}: dataBinding prop is required`);
+      console.warn(`⚠️ DataTable ${id}: dataBinding prop is required`);
       return;
     }
 
-    // Dataset 설정 등록
-    registerDataset({
+    // DataTable 설정 등록
+    registerDataTable({
       id,
       name: name || id,
       dataBinding,
@@ -78,12 +78,12 @@ export const Dataset = memo(function Dataset({
 
     // 자동 로드
     if (autoLoad) {
-      loadDataset(id);
+      loadDataTable(id);
     }
 
-    // 언마운트 시 Dataset 제거
+    // 언마운트 시 DataTable 제거
     return () => {
-      unregisterDataset(id);
+      unregisterDataTable(id);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]); // id만 의존성으로 - 마운트/언마운트 시에만 실행 (의도적으로 다른 의존성 제외)
@@ -101,17 +101,17 @@ export const Dataset = memo(function Dataset({
     const currentJson = JSON.stringify(dataBinding);
 
     if (prevJson !== currentJson && dataBinding) {
-      console.log(`🔄 Dataset ${id}: dataBinding changed, updating...`);
-      updateDatasetConfig(id, { dataBinding });
+      console.log(`🔄 DataTable ${id}: dataBinding changed, updating...`);
+      updateDataTableConfig(id, { dataBinding });
 
       // 데이터 다시 로드
       if (autoLoad) {
-        loadDataset(id);
+        loadDataTable(id);
       }
 
       prevDataBindingRef.current = dataBinding;
     }
-  }, [dataBinding, id, autoLoad, updateDatasetConfig, loadDataset]);
+  }, [dataBinding, id, autoLoad, updateDataTableConfig, loadDataTable]);
 
   // 자동 새로고침 설정
   useEffect(() => {
@@ -119,28 +119,28 @@ export const Dataset = memo(function Dataset({
       return;
     }
 
-    console.log(`⏱️ Dataset ${id}: Auto-refresh every ${refreshInterval}ms`);
+    console.log(`⏱️ DataTable ${id}: Auto-refresh every ${refreshInterval}ms`);
 
     const intervalId = setInterval(() => {
-      loadDataset(id);
+      loadDataTable(id);
     }, refreshInterval);
 
     return () => {
       clearInterval(intervalId);
     };
-  }, [id, refreshInterval, loadDataset]);
+  }, [id, refreshInterval, loadDataTable]);
 
   // 비시각적 컴포넌트 - UI 렌더링 없음
   return null;
 });
 
 /**
- * Dataset 컴포넌트 메타데이터
+ * DataTable 컴포넌트 메타데이터
  * Builder에서 사용
  */
-export const DatasetMetadata = {
-  name: 'Dataset',
-  displayName: '데이터셋',
+export const DataTableMetadata = {
+  name: 'DataTable',
+  displayName: '데이터테이블',
   category: 'Data',
   description: '중앙 집중식 데이터 관리 컴포넌트',
   icon: 'Database',
@@ -153,7 +153,7 @@ export const DatasetMetadata = {
   propDefinitions: {
     id: {
       type: 'string',
-      label: 'Dataset ID',
+      label: 'DataTable ID',
       description: '다른 컴포넌트에서 참조할 고유 ID',
       required: true,
     },
@@ -165,7 +165,7 @@ export const DatasetMetadata = {
     description: {
       type: 'string',
       label: '설명',
-      description: '데이터셋 용도 설명',
+      description: '데이터테이블 용도 설명',
     },
     autoLoad: {
       type: 'boolean',
@@ -181,4 +181,4 @@ export const DatasetMetadata = {
   },
 };
 
-export default Dataset;
+export default DataTable;

@@ -2,12 +2,12 @@
  * VariableList - Variable 목록 컴포넌트
  *
  * 전역/페이지 변수 CRUD 및 목록 표시
- * 편집 UI는 DatasetEditorPanel에서 처리
+ * 편집 UI는 DataTableEditorPanel에서 처리
  */
 
 import { Variable, Plus, Trash2, Edit2 } from "lucide-react";
 import { useDataStore, useVariables } from "../../../stores/data";
-import { useDatasetEditorStore } from "../stores/datasetEditorStore";
+import { useDataTableEditorStore } from "../stores/dataTableEditorStore";
 import { SectionHeader } from "../../common/SectionHeader";
 import type { Variable as VariableType } from "../../../../types/builder/data.types";
 
@@ -21,8 +21,8 @@ export function VariableList({ projectId }: VariableListProps) {
   const deleteVariable = useDataStore((state) => state.deleteVariable);
 
   // Editor Store 액션
-  const editorMode = useDatasetEditorStore((state) => state.mode);
-  const openVariableEditor = useDatasetEditorStore((state) => state.openVariableEditor);
+  const editorMode = useDataTableEditorStore((state) => state.mode);
+  const openVariableEditor = useDataTableEditorStore((state) => state.openVariableEditor);
 
   // 현재 편집 중인 Variable ID (하이라이트용)
   const editingVariableId = editorMode?.type === "variable-edit" ? editorMode.variableId : null;
@@ -111,14 +111,14 @@ export function VariableList({ projectId }: VariableListProps) {
       <SectionHeader
         title="Variable List"
         actions={
-          <span className="dataset-list-count">{variables.length}개</span>
+          <span className="datatable-list-count">{variables.length}개</span>
         }
       />
       <div className="section-content">
         {variables.length === 0 ? (
-          <div className="dataset-empty">
-            <Variable size={32} className="dataset-empty-icon" />
-            <p className="dataset-empty-text">
+          <div className="datatable-empty">
+            <Variable size={32} className="datatable-empty-icon" />
+            <p className="datatable-empty-text">
               변수가 없습니다.
               <br />
               새 변수를 추가하세요.
@@ -156,7 +156,7 @@ export function VariableList({ projectId }: VariableListProps) {
 
         <button
           type="button"
-          className="dataset-add-btn"
+          className="datatable-add-btn"
           onClick={handleCreate}
         >
           <Plus size={16} />

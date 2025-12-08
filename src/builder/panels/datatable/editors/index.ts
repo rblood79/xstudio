@@ -1,5 +1,5 @@
 /**
- * Dataset Editors Exports
+ * DataTable Editors Exports
  */
 
 export { DataTableEditor } from "./DataTableEditor";

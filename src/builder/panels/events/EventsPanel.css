@@ -1387,7 +1387,7 @@
   color: var(--color-purple-700);
 }
 
-.binding-tag.binding-dataset {
+.binding-tag.binding-datatable {
   background: var(--color-green-100);
   color: var(--color-green-700);
 }
@@ -1422,7 +1422,7 @@
   color: var(--color-purple-300);
 }
 
-[data-theme="dark"] .binding-tag.binding-dataset {
+[data-theme="dark"] .binding-tag.binding-datatable {
   background: var(--color-green-900);
   color: var(--color-green-300);
 }

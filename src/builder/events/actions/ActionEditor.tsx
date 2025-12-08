@@ -49,9 +49,9 @@ import { UpdateFormFieldActionEditor } from "./UpdateFormFieldActionEditor";
 import { FilterCollectionActionEditor } from "./FilterCollectionActionEditor";
 import { SelectItemActionEditor } from "./SelectItemActionEditor";
 import { ClearSelectionActionEditor } from "./ClearSelectionActionEditor";
-import { LoadDatasetActionEditor, type LoadDatasetConfig } from "./LoadDatasetActionEditor";
+import { LoadDataTableActionEditor, type LoadDataTableConfig } from "./LoadDataTableActionEditor";
 import { SyncComponentActionEditor, type SyncComponentConfig } from "./SyncComponentActionEditor";
-import { SaveToDatasetActionEditor, type SaveToDatasetConfig } from "./SaveToDatasetActionEditor";
+import { SaveToDataTableActionEditor, type SaveToDataTableConfig } from "./SaveToDataTableActionEditor";
 import { ConditionEditor } from "../components/ConditionEditor";
 import { ActionDelayEditor } from "../components/ActionDelayEditor";
 
@@ -82,10 +82,10 @@ export function ActionEditor({ action, onChange }: ActionEditorProps) {
     { value: "clearSelection", label: "Clear Selection" },
     { value: "copyToClipboard", label: "Copy to Clipboard" },
     { value: "customFunction", label: "Custom Function" },
-    // Dataset Actions (Phase 3)
-    { value: "loadDataset", label: "Load Dataset" },
+    // DataTable Actions (Phase 3)
+    { value: "loadDataTable", label: "Load DataTable" },
     { value: "syncComponent", label: "Sync Component" },
-    { value: "saveToDataset", label: "Save to Dataset" },
+    { value: "saveToDataTable", label: "Save to DataTable" },
   ];
 
   const handleTypeChange = (newType: string) => {
@@ -110,10 +110,10 @@ export function ActionEditor({ action, onChange }: ActionEditorProps) {
       clearSelection: { targetId: "" },
       copyToClipboard: { text: "", source: "static" },
       customFunction: { code: "", params: {} },
-      // Dataset Actions (Phase 3)
-      loadDataset: { datasetName: "", forceRefresh: false },
+      // DataTable Actions (Phase 3)
+      loadDataTable: { dataTableName: "", forceRefresh: false },
       syncComponent: { sourceId: "", targetId: "", syncMode: "replace" },
-      saveToDataset: { datasetName: "", source: "response", saveMode: "replace" },
+      saveToDataTable: { dataTableName: "", source: "response", saveMode: "replace" },
     };
 
     onChange({
@@ -286,10 +286,10 @@ export function ActionEditor({ action, onChange }: ActionEditorProps) {
           />
         )}
 
-        {/* Dataset Actions (Phase 3) */}
-        {action.type === "loadDataset" && (
-          <LoadDatasetActionEditor
-            config={action.config as LoadDatasetConfig}
+        {/* DataTable Actions (Phase 3) */}
+        {action.type === "loadDataTable" && (
+          <LoadDataTableActionEditor
+            config={action.config as LoadDataTableConfig}
             onChange={(config) => onChange({ ...action, config })}
           />
         )}
@@ -301,9 +301,9 @@ export function ActionEditor({ action, onChange }: ActionEditorProps) {
           />
         )}
 
-        {action.type === "saveToDataset" && (
-          <SaveToDatasetActionEditor
-            config={action.config as SaveToDatasetConfig}
+        {action.type === "saveToDataTable" && (
+          <SaveToDataTableActionEditor
+            config={action.config as SaveToDataTableConfig}
             onChange={(config) => onChange({ ...action, config })}
           />
         )}

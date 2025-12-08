@@ -1,14 +1,14 @@
 /**
- * DatasetEditorPanel - 데이터셋 에디터 패널
+ * DataTableEditorPanel - 데이터테이블 에디터 패널
  *
- * DatasetPanel과 함께 사용되는 에디터 패널
+ * DataTablePanel과 함께 사용되는 에디터 패널
  * - DataTable 생성/편집
  * - API Endpoint 편집
  * - Variable 편집
  * - Transformer 편집
  *
  * Store 기반으로 모드에 따라 에디터 컴포넌트를 렌더링
- * 탭은 패널 레벨에서 관리 (DatasetPanel과 동일한 구조)
+ * 탭은 패널 레벨에서 관리 (DataTablePanel과 동일한 구조)
  *
  * ⚡ React 권장 패턴: key prop으로 모드 변경 시 EditorContent 전체 리마운트
  *    (useEffect에서 setState 호출하는 안티패턴 제거)
@@ -27,7 +27,7 @@ import {
   X,
 } from "lucide-react";
 import type { PanelProps } from "../core/types";
-import { useDatasetEditorStore } from "./stores/datasetEditorStore";
+import { useDataTableEditorStore } from "./stores/dataTableEditorStore";
 import { useDataStore } from "../../stores/data";
 import {
   DataTableCreator,
@@ -41,9 +41,9 @@ import type {
   TableEditorTab,
   ApiEditorTab,
   VariableEditorTab,
-  DatasetEditorMode,
+  DataTableEditorMode,
 } from "./types/editorTypes";
-import "./DatasetEditorPanel.css";
+import "./DataTableEditorPanel.css";
 
 // 탭 설정 타입
 interface TabConfig<T extends string> {
@@ -83,7 +83,7 @@ type CreatorMode = "empty" | "preset";
  * (useEffect에서 setState 호출하는 안티패턴 제거)
  */
 interface EditorContentProps {
-  mode: DatasetEditorMode;
+  mode: DataTableEditorMode;
   close: () => void;
 }
 
@@ -330,7 +330,7 @@ function EditorContent({ mode, close }: EditorContentProps) {
   };
 
   return (
-    <div className="dataset-editor-panel">
+    <div className="datatable-editor-panel">
       <PanelHeader
         icon={<FileEdit size={16} />}
         title={getHeaderTitle()}
@@ -360,7 +360,7 @@ function EditorContent({ mode, close }: EditorContentProps) {
  * - api-edit: type + endpointId
  * - etc.
  */
-function getModeKey(mode: DatasetEditorMode): string {
+function getModeKey(mode: DataTableEditorMode): string {
   switch (mode.type) {
     case "table-create":
       return `table-create-${mode.projectId}`;
@@ -383,16 +383,16 @@ function getModeKey(mode: DatasetEditorMode): string {
   }
 }
 
-export function DatasetEditorPanel({ isActive }: PanelProps) {
-  const mode = useDatasetEditorStore((state) => state.mode);
-  const close = useDatasetEditorStore((state) => state.close);
+export function DataTableEditorPanel({ isActive }: PanelProps) {
+  const mode = useDataTableEditorStore((state) => state.mode);
+  const close = useDataTableEditorStore((state) => state.close);
 
   if (!isActive) return null;
 
   // 에디터가 열리지 않은 상태
   if (!mode) {
     return (
-      <div className="dataset-editor-panel">
+      <div className="datatable-editor-panel">
         <PanelHeader icon={<FileEdit size={16} />} title="Editor" />
         <div className="panel-contents">
           <EmptyState message="편집할 항목을 선택하세요" />

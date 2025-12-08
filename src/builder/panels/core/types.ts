@@ -24,15 +24,15 @@ export type PanelSide = 'left' | 'right' | 'bottom';
 
 /**
  * 패널 ID (11개 패널)
- * Note: 'data' 패널은 제거되었습니다. 데이터 바인딩은 Dataset 패널과 컴포넌트 Property Editor를 통해 관리합니다.
+ * Note: 'data' 패널은 제거되었습니다. 데이터 바인딩은 DataTable 패널과 컴포넌트 Property Editor를 통해 관리합니다.
  */
 export type PanelId =
   // Navigation panels
   | 'nodes'
   | 'components'
   | 'library'
-  | 'dataset'
-  | 'datasetEditor'  // Dataset 에디터 패널 (DatasetPanel과 함께 사용)
+  | 'datatable'
+  | 'datatableEditor'  // DataTable 에디터 패널 (DataTablePanel과 함께 사용)
   // Tool panels
   | 'theme'
   | 'ai'
@@ -148,8 +148,8 @@ export const DEFAULT_PANEL_LAYOUT: PanelLayoutState = {
   leftPanels: [
     'nodes',
     'components',
-    'dataset',
-    'datasetEditor',  // Dataset 에디터 (dataset과 함께 사용)
+    'datatable',
+    'datatableEditor',  // DataTable 에디터 (datatable과 함께 사용)
     'theme',
     'ai',
     'settings',

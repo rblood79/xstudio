@@ -609,16 +609,16 @@ The Events Panel provides a visual block-based event editor inspired by Airtable
 - `ElementPicker.tsx` - Element reference picker
 - Event type search with ComboBox
 
-**Phase 3: THEN/ELSE + Dataset Actions** ✅
+**Phase 3: THEN/ELSE + DataTable Actions** ✅
 - `ThenElseBlock.tsx` - Branch container with collapse
 - `ActionList.tsx` - Action list with reorder buttons
 - `BlockActionEditor.tsx` - Adapter for 21 action editors
-- 3 new Dataset actions: loadDataset, syncComponent, saveToDataset
+- 3 new DataTable actions: loadDataTable, syncComponent, saveToDataTable
 
 **Phase 4: Variable Binding + Validation** ✅
 - `variableParser.ts` - `{{variable}}` syntax parser
 - `VariableBindingEditor.tsx` - Editor with autocomplete
-- `useVariableSchema.ts` - Schema for autocomplete (event, state, dataset)
+- `useVariableSchema.ts` - Schema for autocomplete (event, state, datatable)
 - `bindingValidator.ts` - Validation with Levenshtein suggestions
 
 **Phase 5: Preview + Debug** ✅
@@ -2341,7 +2341,7 @@ Copilot learns from code patterns. Tips:
 18. ✅ **Panel Standardization** - Consistent naming, hooks compliance, unified styles
 19. ✅ **Layout Preset System** - Body editor separation, 9 presets, Slot auto-creation ([상세](docs/features/LAYOUT_PRESET_SYSTEM.md))
 20. ✅ **Canvas Runtime Isolation** - srcdoc iframe, 독립 runtimeStore, postMessage 통신 ([상세](docs/features/CANVAS_RUNTIME_ISOLATION.md))
-21. ✅ **Dataset Component** - Phase 1-6 완료: Store, Component, Editor, Factory, Preview, Transform, Cache ([상세](docs/PLANNED_FEATURES.md#-dataset-component-architecture))
+21. ✅ **DataTable Component** - Phase 1-6 완료: Store, Component, Editor, Factory, Preview, Transform, Cache ([상세](docs/PLANNED_FEATURES.md#-datatable-component-architecture))
 
 **Key Achievements**:
 - Zero TypeScript errors
@@ -2360,7 +2360,7 @@ Copilot learns from code patterns. Tips:
 | 기능 | 상태 | 우선순위 |
 |------|------|----------|
 | **Context Menu System** | 📋 Planning | High |
-| **Dataset Component** | ✅ Complete | - |
+| **DataTable Component** | ✅ Complete | - |
 | **SlotEditor** | ✅ Complete | - |
 | **Grid/Flex 시각적 편집** | 📋 Planning | Medium |
 | **프리셋 커스터마이징** | 📋 Planning | Low |

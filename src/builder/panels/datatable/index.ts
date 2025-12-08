@@ -1,8 +1,8 @@
 /**
- * Dataset Panel Exports
+ * DataTable Panel Exports
  */
 
-export { DatasetPanel } from "./DatasetPanel";
+export { DataTablePanel } from "./DataTablePanel";
 export { DataTableList } from "./components/DataTableList";
 export { ApiEndpointList } from "./components/ApiEndpointList";
 export { VariableList } from "./components/VariableList";

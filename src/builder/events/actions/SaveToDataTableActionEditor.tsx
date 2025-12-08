@@ -1,5 +1,5 @@
 /**
- * SaveToDatasetActionEditor - Dataset에 저장 액션 에디터
+ * SaveToDataTableActionEditor - DataTable에 저장 액션 에디터
  *
  * API 응답이나 데이터를 DataTable에 저장하는 액션 설정
  * Phase 3: Events Panel 재설계
@@ -17,9 +17,9 @@ import {
   ListBoxItem,
 } from 'react-aria-components';
 
-export interface SaveToDatasetConfig {
+export interface SaveToDataTableConfig {
   /** 저장할 DataTable 이름 */
-  datasetName: string;
+  dataTableName: string;
   /** 데이터 소스 */
   source: 'response' | 'variable' | 'static';
   /** 소스 경로 (response.data, variable 이름 등) */
@@ -32,15 +32,15 @@ export interface SaveToDatasetConfig {
   transform?: string;
 }
 
-interface SaveToDatasetActionEditorProps {
-  config: SaveToDatasetConfig;
-  onChange: (config: SaveToDatasetConfig) => void;
+interface SaveToDataTableActionEditorProps {
+  config: SaveToDataTableConfig;
+  onChange: (config: SaveToDataTableConfig) => void;
 }
 
-export function SaveToDatasetActionEditor({
+export function SaveToDataTableActionEditor({
   config,
   onChange,
-}: SaveToDatasetActionEditorProps) {
+}: SaveToDataTableActionEditorProps) {
   const sources = [
     { value: 'response', label: 'API Response' },
     { value: 'variable', label: 'Variable' },
@@ -57,10 +57,10 @@ export function SaveToDatasetActionEditor({
   return (
     <div className="action-editor-fields">
       <TextField
-        value={config.datasetName}
-        onChange={(value) => onChange({ ...config, datasetName: value })}
+        value={config.dataTableName}
+        onChange={(value) => onChange({ ...config, dataTableName: value })}
       >
-        <Label className="field-label">Dataset Name</Label>
+        <Label className="field-label">DataTable Name</Label>
         <Input
           className="field-input"
           placeholder="e.g., users, orders"
@@ -72,7 +72,7 @@ export function SaveToDatasetActionEditor({
         <Select
           selectedKey={config.source}
           onSelectionChange={(key) =>
-            onChange({ ...config, source: key as SaveToDatasetConfig['source'] })
+            onChange({ ...config, source: key as SaveToDataTableConfig['source'] })
           }
         >
           <Button className="select-trigger">
@@ -120,7 +120,7 @@ export function SaveToDatasetActionEditor({
         <Select
           selectedKey={config.saveMode}
           onSelectionChange={(key) =>
-            onChange({ ...config, saveMode: key as SaveToDatasetConfig['saveMode'] })
+            onChange({ ...config, saveMode: key as SaveToDataTableConfig['saveMode'] })
           }
         >
           <Button className="select-trigger">

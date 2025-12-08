@@ -113,10 +113,10 @@ export const IMPLEMENTED_ACTION_TYPES = [
   "setVariable",         // Variable 값 설정
   "getVariable",         // Variable 값 가져오기
 
-  // Dataset Actions (Phase 3 추가)
-  "loadDataset",         // DataTable 로드 (alias for fetchDataTable with options)
+  // DataTable Actions (Phase 3 추가)
+  "loadDataTable",       // DataTable 로드 (alias for fetchDataTable with options)
   "syncComponent",       // 컴포넌트 간 데이터 동기화
-  "saveToDataset",       // API 응답을 DataTable에 저장
+  "saveToDataTable",     // API 응답을 DataTable에 저장
 
   // 향후 구현 예정:
   // 'update_props',        // 요소 props 업데이트
@@ -207,7 +207,7 @@ export const ACTION_CATEGORIES = {
   },
   dataPanel: {
     label: "Data Panel",
-    actions: ["fetchDataTable", "refreshDataTable", "executeApi", "setVariable", "getVariable", "loadDataset", "syncComponent", "saveToDataset"] as const,
+    actions: ["fetchDataTable", "refreshDataTable", "executeApi", "setVariable", "getVariable", "loadDataTable", "syncComponent", "saveToDataTable"] as const,
   },
   custom: {
     label: "Custom",

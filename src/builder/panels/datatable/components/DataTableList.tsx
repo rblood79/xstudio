@@ -75,14 +75,14 @@ export function DataTableList({
       <SectionHeader
         title="Table List"
         actions={
-          <span className="dataset-list-count">{dataTables.length}개</span>
+          <span className="datatable-list-count">{dataTables.length}개</span>
         }
       />
       <div className="section-content">
         {dataTables.length === 0 ? (
-          <div className="dataset-empty">
-            <Table2 size={32} className="dataset-empty-icon" />
-            <p className="dataset-empty-text">
+          <div className="datatable-empty">
+            <Table2 size={32} className="datatable-empty-icon" />
+            <p className="datatable-empty-text">
               데이터 테이블이 없습니다.
               <br />
               새 테이블을 추가하세요.
@@ -143,7 +143,7 @@ export function DataTableList({
           </div>
         )}
 
-        <Button className="dataset-add-btn" onPress={onCreateClick}>
+        <Button className="datatable-add-btn" onPress={onCreateClick}>
           <Plus size={16} />
           <span>Table 추가</span>
         </Button>

@@ -175,7 +175,7 @@ export function DataTableCreator({
     );
   };
 
-  // mode-selection은 DatasetEditorPanel에서 렌더링됨
+  // mode-selection은 DataTableEditorPanel에서 렌더링됨
   return (
     <>
       {/* Content */}

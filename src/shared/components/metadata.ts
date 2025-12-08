@@ -745,13 +745,13 @@ export const componentMetadata: ComponentMeta[] = [
 
   // Data Management
   {
-    type: "Dataset",
-    label: "Dataset",
+    type: "DataTable",
+    label: "DataTable",
     category: "Data",
     icon: "📊",
     inspector: {
       hasCustomEditor: true,
-      editorName: "DatasetEditor",
+      editorName: "DataTableEditor",
       dataBindingType: "collection",
       supportedEvents: ["onLoad", "onError", "onRefresh"],
     },

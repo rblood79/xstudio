@@ -271,7 +271,7 @@ export function useVariableSchema(options: UseVariableSchemaOptions = {}): Varia
       : {};
 
     // DataTable 스키마 생성
-    const datasetSchema: Record<string, SchemaNode> = {};
+    const datatableSchema: Record<string, SchemaNode> = {};
     for (const table of dataTables) {
       const columnProps: Record<string, SchemaNode> = {};
       for (const col of table.columns) {
@@ -281,7 +281,7 @@ export function useVariableSchema(options: UseVariableSchemaOptions = {}): Varia
         };
       }
 
-      datasetSchema[table.name] = {
+      datatableSchema[table.name] = {
         type: 'array',
         description: `${table.name} DataTable`,
         items: {
@@ -302,7 +302,7 @@ export function useVariableSchema(options: UseVariableSchemaOptions = {}): Varia
     return {
       state: { ...DEFAULT_STATE_SCHEMA, ...additionalState },
       event: eventSchema as Record<string, SchemaNode>,
-      dataset: datasetSchema,
+      datatable: datatableSchema,
       response: apiResponseSchema,
       element: DEFAULT_ELEMENT_SCHEMA,
       variable: additionalVariables,

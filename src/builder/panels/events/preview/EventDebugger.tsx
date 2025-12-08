@@ -76,8 +76,8 @@ interface EventDebuggerProps {
   handler: BlockEventHandler;
   /** 모의 상태 데이터 */
   mockState?: Record<string, unknown>;
-  /** 모의 데이터셋 */
-  mockDataset?: Record<string, unknown[]>;
+  /** 모의 DataTable 데이터 */
+  mockDataTable?: Record<string, unknown[]>;
   /** 디버그 모드 */
   debugMode?: boolean;
 }
@@ -189,7 +189,7 @@ function getNestedValue(obj: unknown, path: string): unknown {
 export function EventDebugger({
   handler,
   mockState = {},
-  mockDataset = {},
+  mockDataTable = {},
   debugMode = true,
 }: EventDebuggerProps) {
   const [status, setStatus] = useState<ExecutionStatus>('idle');

@@ -175,7 +175,7 @@ export function DataTableEditor({
     [dataTable.id, updateDataTable]
   );
 
-  // Note: onClose is handled by parent DatasetEditorPanel
+  // Note: onClose is handled by parent DataTableEditorPanel
   void onClose;
 
   return (

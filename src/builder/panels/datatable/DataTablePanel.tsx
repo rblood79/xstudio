@@ -1,5 +1,5 @@
 /**
- * DatasetPanel - 프로젝트 레벨 데이터 관리 패널
+ * DataTablePanel - 프로젝트 레벨 데이터 관리 패널
  *
  * 4개 탭 구성:
  * - DataTables: 스키마 + Mock 데이터 관리
@@ -7,7 +7,7 @@
  * - Variables: 전역/페이지 상태 관리
  * - Transformers: 데이터 변환 시스템
  *
- * 편집 UI는 DatasetEditorPanel에서 처리
+ * 편집 UI는 DataTableEditorPanel에서 처리
  *
  * @see docs/features/DATA_PANEL_SYSTEM.md
  */
@@ -24,7 +24,7 @@ import {
 } from "lucide-react";
 import type { PanelProps } from "../core/types";
 import { useDataStore } from "../../stores/data";
-import { useDatasetEditorStore } from "./stores/datasetEditorStore";
+import { useDataTableEditorStore } from "./stores/dataTableEditorStore";
 import { PanelHeader } from "../common/PanelHeader";
 import { EmptyState } from "../common/EmptyState";
 import { LoadingSpinner } from "../common/LoadingSpinner";
@@ -32,12 +32,12 @@ import { DataTableList } from "./components/DataTableList";
 import { ApiEndpointList } from "./components/ApiEndpointList";
 import { VariableList } from "./components/VariableList";
 import { TransformerList } from "./components/TransformerList";
-import "./DatasetPanel.css";
+import "./DataTablePanel.css";
 
-type DatasetTab = "tables" | "endpoints" | "variables" | "transformers";
+type DataTableTab = "tables" | "endpoints" | "variables" | "transformers";
 
 interface TabConfig {
-  id: DatasetTab;
+  id: DataTableTab;
   label: string;
   icon: typeof Table2;
 }
@@ -49,8 +49,8 @@ const TABS: TabConfig[] = [
   { id: "transformers", label: "Transformers", icon: Workflow },
 ];
 
-export function DatasetPanel({ isActive }: PanelProps) {
-  const [activeTab, setActiveTab] = useState<DatasetTab>("tables");
+export function DataTablePanel({ isActive }: PanelProps) {
+  const [activeTab, setActiveTab] = useState<DataTableTab>("tables");
 
   // Get projectId from URL params
   const { projectId: currentProjectId } = useParams<{ projectId: string }>();
@@ -61,10 +61,10 @@ export function DatasetPanel({ isActive }: PanelProps) {
   const fetchTransformers = useDataStore((state) => state.fetchTransformers);
 
   // Editor Store 액션
-  const editorMode = useDatasetEditorStore((state) => state.mode);
-  const openTableCreator = useDatasetEditorStore((state) => state.openTableCreator);
-  const openTableEditor = useDatasetEditorStore((state) => state.openTableEditor);
-  const closeEditor = useDatasetEditorStore((state) => state.close);
+  const editorMode = useDataTableEditorStore((state) => state.mode);
+  const openTableCreator = useDataTableEditorStore((state) => state.openTableCreator);
+  const openTableEditor = useDataTableEditorStore((state) => state.openTableEditor);
+  const closeEditor = useDataTableEditorStore((state) => state.close);
 
   // 현재 편집 중인 테이블 ID (하이라이트용)
   const editingTableId = editorMode?.type === "table-edit" ? editorMode.tableId : null;
@@ -94,8 +94,8 @@ export function DatasetPanel({ isActive }: PanelProps) {
   // No project selected
   if (!currentProjectId) {
     return (
-      <div className="dataset-panel">
-        <PanelHeader icon={<Database size={16} />} title="Dataset" />
+      <div className="datatable-panel">
+        <PanelHeader icon={<Database size={16} />} title="DataTable" />
         <EmptyState message="프로젝트를 선택하세요" />
       </div>
     );
@@ -121,10 +121,10 @@ export function DatasetPanel({ isActive }: PanelProps) {
   };
 
   return (
-    <div className="dataset-panel">
+    <div className="datatable-panel">
       <PanelHeader
         icon={<Database size={16} />}
-        title="Dataset"
+        title="DataTable"
         actions={
           <button
             className="iconButton"
@@ -164,7 +164,7 @@ export function DatasetPanel({ isActive }: PanelProps) {
       <div className="panel-contents">
         {/* 로딩 중에도 리스트 유지 (에디터가 닫히는 것 방지) */}
         {isLoading && (
-          <div className="dataset-loading-overlay">
+          <div className="datatable-loading-overlay">
             <LoadingSpinner />
           </div>
         )}

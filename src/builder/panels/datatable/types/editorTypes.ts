@@ -1,7 +1,7 @@
 /**
- * DatasetEditorPanel 타입 정의
+ * DataTableEditorPanel 타입 정의
  *
- * DatasetPanel과 함께 사용되는 에디터 패널의 모드 및 상태 타입
+ * DataTablePanel과 함께 사용되는 에디터 패널의 모드 및 상태 타입
  */
 
 /**
@@ -11,7 +11,7 @@
  * - variable: Variable 생성/편집
  * - transformer: Transformer 생성/편집
  */
-export type DatasetEditorMode =
+export type DataTableEditorMode =
   | { type: "table-create"; projectId: string }
   | { type: "table-edit"; tableId: string }
   | { type: "api-create"; projectId: string }
@@ -33,15 +33,15 @@ export type TransformerEditorTab = "config" | "code" | "test";
 /**
  * 에디터 상태 인터페이스
  */
-export interface DatasetEditorState {
+export interface DataTableEditorState {
   /** 현재 에디터 모드 */
-  mode: DatasetEditorMode;
+  mode: DataTableEditorMode;
 }
 
 /**
  * 에디터 액션 인터페이스
  */
-export interface DatasetEditorActions {
+export interface DataTableEditorActions {
   // Table
   openTableCreator: (projectId: string) => void;
   openTableEditor: (tableId: string) => void;
@@ -65,4 +65,4 @@ export interface DatasetEditorActions {
 /**
  * 에디터 Store 전체 타입
  */
-export type DatasetEditorStore = DatasetEditorState & DatasetEditorActions;
+export type DataTableEditorStore = DataTableEditorState & DataTableEditorActions;
