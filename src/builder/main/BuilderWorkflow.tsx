@@ -6,7 +6,7 @@
  */
 
 import { useEffect, useRef } from 'react';
-import { ReactFlowProvider } from 'reactflow';
+import { ReactFlowProvider } from '@xyflow/react';
 import { useStore } from '../stores';
 import { useLayoutsStore } from '../stores/layouts';
 import { useWorkflowStore } from '../../workflow/store';

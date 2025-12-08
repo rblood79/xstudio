@@ -12,7 +12,7 @@ import {
   type NodeChange,
   type EdgeChange,
   type Node,
-} from 'reactflow';
+} from '@xyflow/react';
 import type {
   WorkflowStore,
   WorkflowState,
@@ -613,7 +613,7 @@ export const useWorkflowStore = create<WorkflowStore>((set, get) => ({
 
   onEdgesChange: (changes) => {
     set({
-      edges: applyEdgeChanges(changes as EdgeChange[], get().edges),
+      edges: applyEdgeChanges(changes as EdgeChange[], get().edges as unknown as import('@xyflow/react').Edge[]) as unknown as WorkflowEdge[],
     });
   },
 

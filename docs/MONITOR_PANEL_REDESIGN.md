@@ -82,7 +82,7 @@ ESLint: 0 errors ✅
 
 | 라이브러리 | 버전 | 용도 | 추천 활용처 |
 |-----------|------|------|-------------|
-| **reactflow** | 11.11.4 | 플로우 다이어그램 | 히스토리 플로우 시각화, 의존성 그래프 |
+| **@xyflow/react** | 12.10.0 | 플로우 다이어그램 | 히스토리 플로우 시각화, 의존성 그래프 |
 | **three** | 0.181.2 | 3D 그래픽 | 고급 메모리 시각화 (선택적) |
 | **@tanstack/react-virtual** | 3.13.12 | 가상 스크롤링 | 긴 히스토리 목록 렌더링 |
 | **lucide-react** | 0.553.0 | 아이콘 | UI 아이콘 |
@@ -1171,20 +1171,21 @@ function formatBytes(bytes: number): string {
 
 #### Option B: ReactFlow 기반 히스토리 플로우 (고급 기능)
 
-히스토리 변화를 플로우 다이어그램으로 시각화하려면 이미 설치된 **reactflow**를 활용할 수 있습니다.
+히스토리 변화를 플로우 다이어그램으로 시각화하려면 이미 설치된 **@xyflow/react**를 활용할 수 있습니다.
 
 **파일**: `src/builder/panels/monitor/components/HistoryFlowChart.tsx`
 
 ```typescript
 import React, { useMemo } from 'react';
-import ReactFlow, {
-  Node,
-  Edge,
+import {
+  ReactFlow,
+  type Node,
+  type Edge,
   Background,
   BackgroundVariant,
   MiniMap,
-} from 'reactflow';
-import 'reactflow/dist/style.css';
+} from '@xyflow/react';
+import '@xyflow/react/dist/style.css';
 
 interface HistoryEntry {
   id: string;
@@ -1561,17 +1562,18 @@ function formatTime(timestamp: number): string {
 
 ```typescript
 import React, { useMemo, useCallback } from 'react';
-import ReactFlow, {
-  Node,
-  Edge,
+import {
+  ReactFlow,
+  type Node,
+  type Edge,
   Background,
   BackgroundVariant,
   MiniMap,
   Controls,
   useNodesState,
   useEdgesState,
-} from 'reactflow';
-import 'reactflow/dist/style.css';
+} from '@xyflow/react';
+import '@xyflow/react/dist/style.css';
 
 interface HistoryEntry {
   id: string;

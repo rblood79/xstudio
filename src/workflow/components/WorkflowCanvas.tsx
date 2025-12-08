@@ -5,7 +5,8 @@
  */
 
 import { useCallback, useMemo } from 'react';
-import ReactFlow, {
+import {
+  ReactFlow,
   Background,
   Controls,
   MiniMap,
@@ -14,8 +15,8 @@ import ReactFlow, {
   type OnEdgesChange,
   type Node,
   BackgroundVariant,
-} from 'reactflow';
-import 'reactflow/dist/style.css';
+} from '@xyflow/react';
+import '@xyflow/react/dist/style.css';
 
 import { useWorkflowStore } from '../store';
 import { PageNode } from '../nodes/PageNode';
@@ -26,10 +27,11 @@ import { DataSourceNode } from '../nodes/DataSourceNode';
 // Node Types
 // ============================================
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const nodeTypes: NodeTypes = {
-  page: PageNode,
-  layout: LayoutNode,
-  dataSource: DataSourceNode,
+  page: PageNode as any,
+  layout: LayoutNode as any,
+  dataSource: DataSourceNode as any,
 };
 
 // ============================================
@@ -106,8 +108,6 @@ export function WorkflowCanvas() {
         fitViewOptions={{ padding: 0.2 }}
         minZoom={0.1}
         maxZoom={2}
-        attributionPosition="bottom-left"
-        proOptions={{ hideAttribution: true }}
       >
         <Background
           variant={BackgroundVariant.Dots}
