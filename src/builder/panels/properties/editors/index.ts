@@ -65,4 +65,4 @@ export { PopoverEditor } from './PopoverEditor';
 export { SlotEditor } from './SlotEditor';
 export { LayoutSlugEditor } from './LayoutSlugEditor';
 // ⭐ Data 관련
-export { DatasetEditor } from './DatasetEditor';
+export { DataTableEditor } from './DataTableEditor';

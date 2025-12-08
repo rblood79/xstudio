@@ -187,7 +187,7 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
         // 현재 dataTables 가져오기
         const currentDataTables = dataTables;
 
-        // RuntimeDataTable 형태로 변환 (id, name, mockData, useMockData, schema 전송)
+        // RuntimeDataTable 형태로 변환 (id, name, mockData, runtimeData, useMockData, schema 전송)
         // ⭐ mockData의 키는 schema의 key를 그대로 유지 (label 변환 제거)
         const runtimeDataTables = currentDataTables.map((dt) => {
             return {
@@ -195,6 +195,7 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
                 name: dt.name,
                 schema: dt.schema, // schema도 함께 전송
                 mockData: dt.mockData || [],
+                runtimeData: dt.runtimeData || [], // ⭐ runtimeData도 전송 (API 데이터)
                 useMockData: dt.useMockData,
             };
         });

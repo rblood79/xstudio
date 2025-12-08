@@ -26,8 +26,8 @@ import { ComponentsPanel } from "../components/ComponentsPanel";
 import { ThemesPanel } from "../themes/ThemesPanel";
 import { AIPanel } from "../ai/AIPanel";
 import { SettingsPanel } from "../settings/SettingsPanel";
-import { DatasetPanel } from "../dataset/DatasetPanel";
-import { DatasetEditorPanel } from "../dataset/DatasetEditorPanel";
+import { DataTablePanel } from "../datatable/DataTablePanel";
+import { DataTableEditorPanel } from "../datatable/DataTableEditorPanel";
 
 // Editor panels
 import { PropertiesPanel } from "../properties/PropertiesPanel";
@@ -69,11 +69,11 @@ export const PANEL_CONFIGS: PanelConfig[] = [
     shortcut: "Ctrl+Shift+C",
   },
   {
-    id: "dataset",
-    name: "데이터셋",
-    nameEn: "Dataset",
+    id: "datatable",
+    name: "데이터테이블",
+    nameEn: "DataTable",
     icon: Database,
-    component: DatasetPanel,
+    component: DataTablePanel,
     category: "navigation",
     defaultPosition: "left",
     minWidth: 337,
@@ -82,11 +82,11 @@ export const PANEL_CONFIGS: PanelConfig[] = [
     shortcut: "Ctrl+Shift+T",
   },
   {
-    id: "datasetEditor",
-    name: "데이터셋 에디터",
-    nameEn: "Dataset Editor",
+    id: "datatableEditor",
+    name: "데이터테이블 에디터",
+    nameEn: "DataTable Editor",
     icon: FileEdit,
-    component: DatasetEditorPanel,
+    component: DataTableEditorPanel,
     category: "editor",
     defaultPosition: "left",
     minWidth: 490,

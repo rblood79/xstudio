@@ -54,7 +54,7 @@ export const TableBodyEditor = memo(function TableBodyEditor({ elementId, curren
 
     return (
         <div className="component-props">
-            <PropertySection title="{PROPERTY_LABELS.TABLE_BODY_PROPERTIES}">
+            <PropertySection title={PROPERTY_LABELS.TABLE_BODY_PROPERTIES}>
 
                 {/* Custom ID */}
                 <PropertyCustomId

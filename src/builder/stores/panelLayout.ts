@@ -83,16 +83,36 @@ function loadLayoutFromStorage(): import('../panels/core/types').PanelLayoutStat
         result.bottomHeight = DEFAULT_PANEL_LAYOUT.bottomHeight;
       }
 
-      // 마이그레이션: datasetEditor가 leftPanels에 없으면 추가
-      if (Array.isArray(result.leftPanels) && !result.leftPanels.includes('datasetEditor')) {
-        const datasetIndex = result.leftPanels.indexOf('dataset');
-        if (datasetIndex >= 0) {
-          // dataset 바로 뒤에 삽입
-          result.leftPanels.splice(datasetIndex + 1, 0, 'datasetEditor');
+      // datatableEditor가 leftPanels에 없으면 추가
+      if (Array.isArray(result.leftPanels) && !result.leftPanels.includes('datatableEditor')) {
+        const datatableIndex = result.leftPanels.indexOf('datatable');
+        if (datatableIndex >= 0) {
+          // datatable 바로 뒤에 삽입
+          result.leftPanels.splice(datatableIndex + 1, 0, 'datatableEditor');
         } else {
-          // dataset이 없으면 맨 뒤에 추가
-          result.leftPanels.push('datasetEditor');
+          // datatable이 없으면 맨 뒤에 추가
+          result.leftPanels.push('datatableEditor');
         }
+      }
+
+      // 마이그레이션: 제거된 'data' 패널 제거
+      if (Array.isArray(result.rightPanels)) {
+        result.rightPanels = result.rightPanels.filter((id) => id !== 'data');
+      }
+      if (Array.isArray(result.activeRightPanels)) {
+        result.activeRightPanels = result.activeRightPanels.filter((id) => id !== 'data');
+      }
+      if (Array.isArray(result.leftPanels)) {
+        result.leftPanels = result.leftPanels.filter((id) => id !== 'data');
+      }
+      if (Array.isArray(result.activeLeftPanels)) {
+        result.activeLeftPanels = result.activeLeftPanels.filter((id) => id !== 'data');
+      }
+      if (Array.isArray(result.bottomPanels)) {
+        result.bottomPanels = result.bottomPanels.filter((id) => id !== 'data');
+      }
+      if (Array.isArray(result.activeBottomPanels)) {
+        result.activeBottomPanels = result.activeBottomPanels.filter((id) => id !== 'data');
       }
 
       // 🔧 임시 수정: 너무 많은 패널이 활성화된 경우 기본값으로 리셋

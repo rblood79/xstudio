@@ -5,7 +5,7 @@
  * 싱글톤 패턴으로 구현
  */
 
-import type { PanelConfig, PanelId, PanelCategory, PanelFilter } from './types';
+import type { PanelConfig, PanelId, PanelCategory, PanelFilter } from "./types";
 
 /**
  * PanelRegistry 클래스
@@ -21,7 +21,9 @@ class PanelRegistryClass {
    */
   register(config: PanelConfig): void {
     if (this.panels.has(config.id)) {
-      console.warn(`[PanelRegistry] Panel "${config.id}" is already registered. Overwriting.`);
+      console.warn(
+        `[PanelRegistry] Panel "${config.id}" is already registered. Overwriting.`
+      );
     }
     this.panels.set(config.id, config);
   }
@@ -64,8 +66,10 @@ class PanelRegistryClass {
   /**
    * 기본 위치별 패널 조회
    */
-  getPanelsByDefaultPosition(position: 'left' | 'right'): PanelConfig[] {
-    return this.getAllPanels().filter((panel) => panel.defaultPosition === position);
+  getPanelsByDefaultPosition(position: "left" | "right"): PanelConfig[] {
+    return this.getAllPanels().filter(
+      (panel) => panel.defaultPosition === position
+    );
   }
 
   /**
@@ -119,8 +123,11 @@ class PanelRegistryClass {
     this.initialized = true;
 
     if (import.meta.env.DEV) {
-      console.log(`[PanelRegistry] Initialized with ${this.count} panels:`,
-        this.getAllPanels().map(p => p.id).join(', ')
+      console.log(
+        `[PanelRegistry] Initialized with ${this.count} panels:`,
+        this.getAllPanels()
+          .map((p) => p.id)
+          .join(", ")
       );
     }
   }
@@ -137,20 +144,35 @@ class PanelRegistryClass {
    * 디버그 정보 출력
    */
   debug(): void {
-    console.group('[PanelRegistry] Debug Info');
-    console.log('Total panels:', this.count);
-    console.log('Initialized:', this.initialized);
-    console.log('Panels by category:');
+    console.group("[PanelRegistry] Debug Info");
+    console.log("Total panels:", this.count);
+    console.log("Initialized:", this.initialized);
+    console.log("Panels by category:");
 
-    const categories: PanelCategory[] = ['navigation', 'editor', 'tool', 'system'];
+    const categories: PanelCategory[] = [
+      "navigation",
+      "editor",
+      "tool",
+      "system",
+    ];
     categories.forEach((category) => {
       const panels = this.getPanelsByCategory(category);
-      console.log(`  ${category}:`, panels.map(p => p.id).join(', '));
+      console.log(`  ${category}:`, panels.map((p) => p.id).join(", "));
     });
 
-    console.log('Panels by default position:');
-    console.log('  left:', this.getPanelsByDefaultPosition('left').map(p => p.id).join(', '));
-    console.log('  right:', this.getPanelsByDefaultPosition('right').map(p => p.id).join(', '));
+    console.log("Panels by default position:");
+    console.log(
+      "  left:",
+      this.getPanelsByDefaultPosition("left")
+        .map((p) => p.id)
+        .join(", ")
+    );
+    console.log(
+      "  right:",
+      this.getPanelsByDefaultPosition("right")
+        .map((p) => p.id)
+        .join(", ")
+    );
 
     console.groupEnd();
   }
@@ -164,7 +186,12 @@ export const PanelRegistry = new PanelRegistryClass();
 /**
  * 개발 모드에서 전역 접근 허용 (디버깅용)
  */
+declare global {
+  interface Window {
+    PanelRegistry?: PanelRegistryClass;
+  }
+}
+
 if (import.meta.env.DEV) {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  (window as any).PanelRegistry = PanelRegistry;
+  window.PanelRegistry = PanelRegistry;
 }

@@ -314,6 +314,13 @@ export class MessageHandler {
 
   private handleUpdateDataTables(data: UpdateDataTablesMessage): void {
     const dataTables = data.dataTables || [];
+    console.log('📦 [Canvas] UPDATE_DATA_TABLES 수신:', dataTables.length, '개');
+    console.log('📦 [Canvas] 수신된 테이블:', dataTables.map(dt => ({
+      name: dt.name,
+      mockDataCount: dt.mockData?.length || 0,
+      runtimeDataCount: dt.runtimeData?.length || 0,
+      useMockData: dt.useMockData,
+    })));
     this.store.setDataTables(dataTables);
   }
 

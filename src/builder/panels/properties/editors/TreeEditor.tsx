@@ -255,7 +255,7 @@ export const TreeEditor = memo(function TreeEditor({ elementId, currentProps, on
             </PropertySection>
 
             {/* Tree Items Section */}
-            <PropertySection title="{PROPERTY_LABELS.TREE_ITEMS}">
+            <PropertySection title={PROPERTY_LABELS.TREE_ITEMS}>
 
                 <div className='tree-overview'>
                     <p className='tree-overview-text'>

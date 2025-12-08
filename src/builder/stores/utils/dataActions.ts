@@ -35,6 +35,46 @@ type SetState = Parameters<StateCreator<DataStore>>[0];
 type GetState = Parameters<StateCreator<DataStore>>[1];
 
 // ============================================
+// Canvas Sync Helper
+// ============================================
+
+/**
+ * DataTables를 Canvas iframe에 동기화
+ * UPDATE_DATA_TABLES 메시지를 통해 전체 DataTables 전송
+ */
+function syncDataTablesToCanvas(dataTables: Map<string, DataTable>): void {
+  try {
+    // previewFrame ID로 Canvas iframe 찾기
+    const iframe = document.getElementById('previewFrame') as HTMLIFrameElement;
+    if (iframe?.contentWindow) {
+      const dataTablesArray = Array.from(dataTables.values()).map(dt => ({
+        id: dt.id,
+        name: dt.name,
+        schema: dt.schema,
+        mockData: dt.mockData,
+        runtimeData: dt.runtimeData,
+        useMockData: dt.useMockData,
+      }));
+
+      iframe.contentWindow.postMessage({
+        type: 'UPDATE_DATA_TABLES',
+        dataTables: dataTablesArray,
+      }, '*');
+
+      console.log('📦 [Builder] DataTables Canvas 동기화:', dataTablesArray.length, '개');
+      console.log('📦 [Builder] 동기화된 테이블:', dataTablesArray.map(dt => ({
+        name: dt.name,
+        mockDataCount: dt.mockData?.length || 0,
+        runtimeDataCount: dt.runtimeData?.length || 0,
+        useMockData: dt.useMockData,
+      })));
+    }
+  } catch (error) {
+    console.warn('⚠️ Canvas 동기화 실패:', error);
+  }
+}
+
+// ============================================
 // DataTable Actions
 // ============================================
 
@@ -62,6 +102,9 @@ export const createFetchDataTablesAction =
         isLoading: false,
         errors: new Map(state.errors),
       }));
+
+      // 🆕 Canvas에 동기화 (기존 DataTable도 Canvas에 전송)
+      syncDataTablesToCanvas(dataTablesMap);
     } catch (error) {
       console.error("❌ DataTable 목록 조회 실패:", error);
       set((state) => {
@@ -104,6 +147,9 @@ export const createCreateDataTableAction =
 
       set({ dataTables: newMap, isLoading: false });
 
+      // 🆕 Canvas에 동기화 (UPDATE_DATA_TABLES)
+      syncDataTablesToCanvas(newMap);
+
       return newDataTable;
     } catch (error) {
       console.error("❌ DataTable 생성 실패:", error);
@@ -118,12 +164,12 @@ export const createCreateDataTableAction =
 
 /**
  * DataTable을 업데이트하는 액션
+ *
+ * ⚡ 개별 업데이트는 isLoading 표시 안함 (빠른 작업이므로)
  */
 export const createUpdateDataTableAction =
   (set: SetState, get: GetState) =>
   async (id: string, updates: DataTableUpdate): Promise<void> => {
-    set({ isLoading: true });
-
     try {
       const db = await getDB();
       await (db as unknown as {
@@ -153,13 +199,16 @@ export const createUpdateDataTableAction =
         }
       }
 
-      set({ dataTables: newMap, isLoading: false });
+      set({ dataTables: newMap });
+
+      // 🆕 Canvas에 동기화
+      syncDataTablesToCanvas(newMap);
     } catch (error) {
       console.error("❌ DataTable 업데이트 실패:", error);
       set((state) => {
         const newErrors = new Map(state.errors);
         newErrors.set("updateDataTable", error as Error);
-        return { errors: newErrors, isLoading: false };
+        return { errors: newErrors };
       });
       throw error;
     }
@@ -173,22 +222,42 @@ export const createDeleteDataTableAction =
   async (id: string): Promise<void> => {
     set({ isLoading: true });
 
+    console.log(`🗑️ [DataTable] 삭제 시작: id="${id}"`);
+
     try {
       const db = await getDB();
-      await (db as unknown as {
+
+      // ⚠️ Optional chaining 제거하고 명시적 호출
+      const dataTablesStore = (db as unknown as {
         data_tables: { delete: (id: string) => Promise<void> }
-      }).data_tables?.delete(id);
+      }).data_tables;
+
+      if (!dataTablesStore) {
+        throw new Error('data_tables store not found in database');
+      }
+
+      await dataTablesStore.delete(id);
+      console.log(`✅ [IndexedDB] DataTable 삭제 완료: id="${id}"`);
 
       // 메모리 상태 업데이트
       const { dataTables } = get();
       const newMap = new Map(dataTables);
 
       // ID로 DataTable 찾아서 삭제
+      let deletedName: string | null = null;
       dataTables.forEach((dt, key) => {
-        if (dt.id === id) newMap.delete(key);
+        if (dt.id === id) {
+          deletedName = key;
+          newMap.delete(key);
+        }
       });
 
+      console.log(`✅ [Memory] DataTable "${deletedName}" 삭제 완료, 남은 테이블: ${newMap.size}개`);
+
       set({ dataTables: newMap, isLoading: false });
+
+      // 🆕 Canvas에도 동기화 (삭제된 상태 반영)
+      syncDataTablesToCanvas(newMap);
     } catch (error) {
       console.error("❌ DataTable 삭제 실패:", error);
       set((state) => {
@@ -240,6 +309,9 @@ export const createSetRuntimeDataAction =
     newMap.set(name, { ...dataTable, runtimeData: data });
 
     set({ dataTables: newMap });
+
+    // 🆕 Canvas에 동기화
+    syncDataTablesToCanvas(newMap);
   };
 
 // ============================================
@@ -336,12 +408,12 @@ export const createCreateApiEndpointAction =
 
 /**
  * ApiEndpoint을 업데이트하는 액션
+ *
+ * ⚡ 개별 업데이트는 isLoading 표시 안함 (빠른 작업이므로)
  */
 export const createUpdateApiEndpointAction =
   (set: SetState, get: GetState) =>
   async (id: string, updates: ApiEndpointUpdate): Promise<void> => {
-    set({ isLoading: true });
-
     try {
       const db = await getDB();
       await (db as unknown as {
@@ -371,13 +443,13 @@ export const createUpdateApiEndpointAction =
         }
       }
 
-      set({ apiEndpoints: newMap, isLoading: false });
+      set({ apiEndpoints: newMap });
     } catch (error) {
       console.error("❌ ApiEndpoint 업데이트 실패:", error);
       set((state) => {
         const newErrors = new Map(state.errors);
         newErrors.set("updateApiEndpoint", error as Error);
-        return { errors: newErrors, isLoading: false };
+        return { errors: newErrors };
       });
       throw error;
     }
@@ -546,6 +618,10 @@ export const createExecuteApiEndpointAction =
             runtimeData: Array.isArray(mappedData) ? mappedData : [mappedData],
           });
           set({ dataTables: newDataTables });
+
+          // 🆕 Canvas에 동기화
+          syncDataTablesToCanvas(newDataTables);
+          console.log(`✅ API "${endpoint.name}" → DataTable "${endpoint.targetDataTable}" 저장 완료`);
         }
       }
 
@@ -653,12 +729,12 @@ export const createCreateVariableAction =
 
 /**
  * Variable을 업데이트하는 액션
+ *
+ * ⚡ 개별 업데이트는 isLoading 표시 안함 (빠른 작업이므로)
  */
 export const createUpdateVariableAction =
   (set: SetState, get: GetState) =>
   async (id: string, updates: VariableUpdate): Promise<void> => {
-    set({ isLoading: true });
-
     try {
       const db = await getDB();
       await (db as unknown as {
@@ -688,13 +764,13 @@ export const createUpdateVariableAction =
         }
       }
 
-      set({ variables: newMap, isLoading: false });
+      set({ variables: newMap });
     } catch (error) {
       console.error("❌ Variable 업데이트 실패:", error);
       set((state) => {
         const newErrors = new Map(state.errors);
         newErrors.set("updateVariable", error as Error);
-        return { errors: newErrors, isLoading: false };
+        return { errors: newErrors };
       });
       throw error;
     }

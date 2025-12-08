@@ -1,5 +1,5 @@
 import { memo } from "react";
-import { Handle, Position, type NodeProps } from "reactflow";
+import { Handle, Position } from "@xyflow/react";
 import type { EventAction, ActionConfig } from "../../types/eventTypes";
 import { ACTION_METADATA } from "../../data/actionMetadata";
 
@@ -19,19 +19,24 @@ function getConfigValue(config: ActionConfig | undefined, key: string): string {
 export interface ActionNodeData {
   action: EventAction;
   index: number;
+  [key: string]: unknown;
+}
+
+interface ActionNodeProps {
+  data: ActionNodeData;
 }
 
 /**
  * ReactFlow Custom Node: Action Execution
  */
-export const ActionNode = memo(({ data }: NodeProps<ActionNodeData>) => {
+export const ActionNode = memo(({ data }: ActionNodeProps) => {
   const metadata = ACTION_METADATA[data.action.type];
 
   // Fallback for missing metadata
   if (!metadata) {
     console.warn(`⚠️ Missing ACTION_METADATA for action type: ${data.action.type}`);
     return (
-      <div className="reactflow-action-node">
+      <div className="event-flow-action-node">
         <Handle type="target" position={Position.Top} id="action-in" />
         <div className="node-header">
           <span className="node-icon">⚙️</span>
@@ -47,7 +52,7 @@ export const ActionNode = memo(({ data }: NodeProps<ActionNodeData>) => {
   const configSummary = generateActionSummary(data.action);
 
   return (
-    <div className="reactflow-action-node">
+    <div className="event-flow-action-node">
       <Handle type="target" position={Position.Top} id="action-in" />
       <div className="node-header">
         <span className="node-icon">{metadata.icon}</span>

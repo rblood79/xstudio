@@ -389,6 +389,26 @@ export function ComboBox<T extends object>({
   );
 }
 
-export function ComboBoxItem(props: ListBoxItemProps) {
-  return <ListBoxItem {...props} />;
+/**
+ * ComboBoxItem Props
+ * React Aria 1.13.0: onAction 지원으로 "Create new item" 패턴 구현 가능
+ */
+export interface ComboBoxItemProps extends ListBoxItemProps {
+  /**
+   * React Aria 1.13.0: 아이템 클릭 시 실행되는 액션
+   * "Create" 옵션 구현에 유용 (예: 검색 결과 없을 때 새 항목 생성)
+   * @example
+   * <ComboBoxItem
+   *   id="create-new"
+   *   textValue="Create new item"
+   *   onAction={() => handleCreateItem(inputValue)}
+   * >
+   *   + Create "{inputValue}"
+   * </ComboBoxItem>
+   */
+  onAction?: () => void;
+}
+
+export function ComboBoxItem({ onAction, ...props }: ComboBoxItemProps) {
+  return <ListBoxItem {...props} onAction={onAction} />;
 }

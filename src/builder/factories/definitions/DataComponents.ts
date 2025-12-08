@@ -1,9 +1,9 @@
 /**
  * Data Components Factory Definitions
  *
- * Dataset 등 데이터 관리 컴포넌트 팩토리 정의
+ * DataTable 등 데이터 관리 컴포넌트 팩토리 정의
  *
- * @see docs/PLANNED_FEATURES.md - Dataset Component Architecture
+ * @see docs/PLANNED_FEATURES.md - DataTable Component Architecture
  */
 
 import { ComponentElementProps } from "../../../types/core/store.types";
@@ -11,14 +11,14 @@ import { HierarchyManager } from "../../utils/HierarchyManager";
 import { ComponentDefinition, ComponentCreationContext } from "../types";
 
 /**
- * Dataset 컴포넌트 정의
+ * DataTable 컴포넌트 정의
  *
- * Dataset은 비시각적 컴포넌트로, 데이터를 중앙에서 관리하고
+ * DataTable은 비시각적 컴포넌트로, 데이터를 중앙에서 관리하고
  * 여러 Collection 컴포넌트가 공유할 수 있도록 합니다.
  *
  * Layer Tree에는 표시되지만 Preview에서는 렌더링되지 않습니다.
  */
-export function createDatasetDefinition(
+export function createDataTableDefinition(
   context: ComponentCreationContext
 ): ComponentDefinition {
   const { parentElement, pageId, elements, layoutId } = context;
@@ -30,16 +30,16 @@ export function createDatasetDefinition(
     ? { page_id: null, layout_id: layoutId }
     : { page_id: pageId, layout_id: null };
 
-  // 고유 Dataset ID 생성 (사용자가 나중에 변경 가능)
-  const datasetId = `dataset-${Date.now()}`;
+  // 고유 DataTable ID 생성 (사용자가 나중에 변경 가능)
+  const dataTableId = `datatable-${Date.now()}`;
 
   return {
-    tag: "Dataset",
+    tag: "DataTable",
     parent: {
-      tag: "Dataset",
+      tag: "DataTable",
       props: {
-        id: datasetId,
-        name: "New Dataset",
+        id: dataTableId,
+        name: "New DataTable",
         autoLoad: true,
         // 기본 dataBinding 설정 (사용자가 Inspector에서 변경)
         dataBinding: {
@@ -60,7 +60,7 @@ export function createDatasetDefinition(
       parent_id: parentId,
       order_num: orderNum,
     },
-    // Dataset은 자식 요소가 없음
+    // DataTable은 자식 요소가 없음
     children: [],
   };
 }

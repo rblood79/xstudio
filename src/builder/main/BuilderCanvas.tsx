@@ -110,7 +110,7 @@ export const BuilderCanvas: React.FC<BuilderCanvasProps> = ({
   }, [showElementBorders, showElementLabels]);
 
   return (
-    <main>
+    <main className="workSpace">
       <div
         className="canvas"
         data-max-width={currentBreakpoint?.max_width?.toString() || "100%"}

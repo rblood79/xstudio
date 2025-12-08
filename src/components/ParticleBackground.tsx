@@ -12,6 +12,7 @@ import {
   ParticleCanvas,
   CurlNoiseCanvas,
   MatrixRainCanvas,
+  CodeParticleCanvas,
   sandPreset,
 } from "./particle";
 import type { MorphContent, EffectType } from "./particle";
@@ -31,6 +32,17 @@ export function ParticleBackground() {
         bloomRadius={0.5}      // 발광 퍼짐
         bloomThreshold={0.2}   // 낮은 임계값으로 더 많은 글로우
         speedMultiplier={1.0}  // 낙하 속도
+      />
+    );
+  }
+
+  if (effectType === "code") {
+    return (
+      <CodeParticleCanvas
+        afterImageDamp={0.5}   // 잔상 효과
+        bloomStrength={0.6}    // 발광 강도
+        bloomRadius={0.5}      // 발광 퍼짐
+        bloomThreshold={0.4}   // 발광 임계값
       />
     );
   }

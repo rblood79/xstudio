@@ -166,7 +166,7 @@ export function LayoutSection({ selectedElement }: LayoutSectionProps) {
               handleFlexDirection(value);
             }}
           >
-            <ToggleButton id="reset">
+            <ToggleButton id="block">
               <Square
                 color={iconProps.color}
                 size={iconProps.size}

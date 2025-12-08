@@ -1,5 +1,5 @@
 import { useEffect, memo } from "react";
-import { Tag, SquarePlus, Trash, PointerOff, AlertTriangle, Grid, MoveHorizontal, FileText, Menu, SquareX, Focus, Square, Binary, Type, Hash, FormInput, CheckSquare, Database } from 'lucide-react';
+import { Tag, SquarePlus, Trash, PointerOff, AlertTriangle, Grid, MoveHorizontal, FileText, Menu, SquareX, Focus, Square, Binary, Type, Hash, FormInput, CheckSquare, Database, Search } from 'lucide-react';
 import { PropertyInput, PropertySelect, PropertySwitch, PropertyCustomId, PropertySection, PropertyDataBinding, type DataBindingValue } from '../../common';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { iconProps } from '../../../../utils/ui/uiConstants';
@@ -69,7 +69,7 @@ export const GridListEditor = memo(function GridListEditor({ elementId, currentP
 
         return (
         <>
-                <PropertySection title="{PROPERTY_LABELS.ITEM_PROPERTIES}">
+                <PropertySection title={PROPERTY_LABELS.ITEM_PROPERTIES}>
 
                     {/* 아이템 라벨 편집 */}
                     <PropertyInput
@@ -219,6 +219,31 @@ export const GridListEditor = memo(function GridListEditor({ elementId, currentP
                 />
             </PropertySection>
 
+            {/* Filtering Section */}
+            <PropertySection title="Filtering">
+                <PropertyInput
+                    label="Filter Text"
+                    value={String(currentProps.filterText || '')}
+                    onChange={(value) => updateProp('filterText', value || undefined)}
+                    placeholder="Search..."
+                    icon={Search}
+                />
+
+                <PropertyInput
+                    label="Filter Fields"
+                    value={String((currentProps.filterFields as string[] || []).join(', '))}
+                    onChange={(value) => {
+                        const fields = value.split(',').map((f: string) => f.trim()).filter(Boolean);
+                        updateProp('filterFields', fields.length > 0 ? fields : undefined);
+                    }}
+                    placeholder="label, name, title"
+                    icon={FileText}
+                />
+                <p className="property-help">
+                    💡 쉼표로 구분하여 검색할 필드 지정 (기본: label, name, title)
+                </p>
+            </PropertySection>
+
             {/* State Section */}
             <PropertySection title="State">
 
@@ -342,7 +367,7 @@ export const GridListEditor = memo(function GridListEditor({ elementId, currentP
             </PropertySection>
 
             {/* Item Management Section */}
-            <PropertySection title="{PROPERTY_LABELS.ITEM_MANAGEMENT}">
+            <PropertySection title={PROPERTY_LABELS.ITEM_MANAGEMENT}>
 
                 <div className='tab-overview'>
                     <p className='tab-overview-text'>

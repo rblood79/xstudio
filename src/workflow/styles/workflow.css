@@ -251,6 +251,70 @@
 }
 
 /* ============================================
+   DataSource Node Specific
+   ============================================ */
+
+.workflow-datasource-node {
+  min-width: 160px;
+  border-color: var(--color-success-500, #22c55e);
+}
+
+.workflow-datasource-node .workflow-node-header {
+  background: var(--color-success-500, #22c55e);
+}
+
+.workflow-datasource-node .workflow-handle {
+  background: var(--color-success-500, #22c55e) !important;
+}
+
+.workflow-datasource-node .workflow-node-type {
+  font-size: 10px;
+  color: var(--workflow-text-muted);
+  margin-bottom: 4px;
+}
+
+/* DataSource type variants */
+.workflow-datasource-dataTable .workflow-node-header {
+  background: var(--color-success-600, #16a34a);
+}
+
+.workflow-datasource-api .workflow-node-header {
+  background: var(--color-warning-500, #f59e0b);
+}
+
+.workflow-datasource-api {
+  border-color: var(--color-warning-500, #f59e0b);
+}
+
+.workflow-datasource-api .workflow-handle {
+  background: var(--color-warning-500, #f59e0b) !important;
+}
+
+.workflow-datasource-supabase .workflow-node-header {
+  background: var(--color-primary-600, #4f46e5);
+}
+
+.workflow-datasource-supabase {
+  border-color: var(--color-primary-600, #4f46e5);
+}
+
+.workflow-datasource-supabase .workflow-handle {
+  background: var(--color-primary-600, #4f46e5) !important;
+}
+
+.workflow-datasource-mock .workflow-node-header {
+  background: var(--color-gray-500, #6b7280);
+}
+
+.workflow-datasource-mock {
+  border-color: var(--color-gray-500, #6b7280);
+}
+
+.workflow-datasource-mock .workflow-handle {
+  background: var(--color-gray-500, #6b7280) !important;
+}
+
+/* ============================================
    Loading / Error / Empty States
    ============================================ */
 
@@ -333,4 +397,95 @@
   from {
     stroke-dashoffset: 10;
   }
+}
+
+/* ============================================
+   Edge Type Styles
+   ============================================ */
+
+/* Navigation (Link 요소) - 실선, primary 색상 */
+.react-flow__edge[data-edge-type="navigation"] .react-flow__edge-path {
+  stroke: var(--workflow-primary);
+  stroke-width: 2;
+}
+
+/* Event Navigation - 점선, secondary 색상 */
+.react-flow__edge[data-edge-type="event-navigation"] .react-flow__edge-path {
+  stroke: var(--workflow-secondary);
+  stroke-width: 2;
+  stroke-dasharray: 5, 5;
+}
+
+/* Layout Usage - 점선, 연한 색상 */
+.react-flow__edge[data-edge-type="layout-usage"] .react-flow__edge-path {
+  stroke: var(--workflow-text-muted);
+  stroke-width: 1.5;
+  stroke-dasharray: 5, 5;
+}
+
+/* Data Binding - 점선, success 색상 */
+.react-flow__edge[data-edge-type="data-binding"] .react-flow__edge-path {
+  stroke: var(--workflow-success);
+  stroke-width: 2;
+  stroke-dasharray: 3, 3;
+}
+
+/* ============================================
+   Edge Legend (Toolbar 하단)
+   ============================================ */
+
+.workflow-legend {
+  display: flex;
+  gap: 16px;
+  padding: 8px 16px;
+  background: var(--workflow-bg);
+  border-top: 1px solid var(--workflow-border);
+  font-size: 11px;
+  color: var(--workflow-text-muted);
+}
+
+.workflow-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.workflow-legend-line {
+  width: 24px;
+  height: 2px;
+}
+
+.workflow-legend-line.link {
+  background: var(--workflow-primary);
+}
+
+.workflow-legend-line.event {
+  background: var(--workflow-secondary);
+  background-image: repeating-linear-gradient(
+    90deg,
+    var(--workflow-secondary) 0px,
+    var(--workflow-secondary) 5px,
+    transparent 5px,
+    transparent 10px
+  );
+}
+
+.workflow-legend-line.layout {
+  background-image: repeating-linear-gradient(
+    90deg,
+    var(--workflow-text-muted) 0px,
+    var(--workflow-text-muted) 5px,
+    transparent 5px,
+    transparent 10px
+  );
+}
+
+.workflow-legend-line.data {
+  background-image: repeating-linear-gradient(
+    90deg,
+    var(--workflow-success) 0px,
+    var(--workflow-success) 3px,
+    transparent 3px,
+    transparent 6px
+  );
 }

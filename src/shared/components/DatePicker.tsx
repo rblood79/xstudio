@@ -101,6 +101,13 @@ export interface DatePickerProps<T extends DateValue>
    * @example "2024-12-31" or parseDate("2024-12-31")
    */
   maxDate?: string | DateValue;
+  /**
+   * React Aria 1.13.0: 주의 첫 번째 요일
+   * 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+   * 기본값은 locale에 따라 자동 설정
+   * @example 1 (월요일 시작)
+   */
+  firstDayOfWeek?: 0 | 1 | 2 | 3 | 4 | 5 | 6;
 }
 
 /**

@@ -7,6 +7,140 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added - DATA_SYNC_ARCHITECTURE Phase 8-10 (2025-12-07)
+
+#### Phase 8: Auto Refresh 기능
+PropertyDataBinding에 자동 갱신 기능 추가
+
+**새 타입:**
+```typescript
+export type RefreshMode = 'manual' | 'onMount' | 'interval';
+
+export interface DataBindingValue {
+  source: 'dataTable' | 'api' | 'variable' | 'route';
+  name: string;
+  path?: string;
+  defaultValue?: unknown;
+  refreshMode?: RefreshMode;      // 새로 추가
+  refreshInterval?: number;        // 새로 추가 (ms)
+}
+```
+
+**UI 추가:**
+- 갱신 모드 선택 (수동/마운트 시/주기적)
+- 주기적 갱신 시 간격 설정 입력
+
+**파일 수정:**
+- `src/builder/panels/common/PropertyDataBinding.tsx`
+- `src/builder/panels/common/PropertyDataBinding.css`
+- `src/builder/hooks/useCollectionData.ts`
+
+#### Phase 9: Error Handling UI 개선
+Collection 컴포넌트용 로딩/에러/빈 상태 UI 컴포넌트 추가
+
+**새 컴포넌트:**
+- `CollectionLoadingState` - 로딩 스피너
+- `CollectionErrorDisplay` - 에러 메시지 + 재시도 버튼
+- `CollectionEmptyState` - 빈 데이터 표시
+- `CollectionState` - 통합 상태 컴포넌트
+
+**파일 추가:**
+- `src/shared/components/CollectionErrorState.tsx`
+- `src/shared/components/CollectionErrorState.css`
+
+**ListBox 업데이트:**
+- 가상화 렌더링에 로딩/에러 상태 통합
+- 재시도 버튼 연동
+
+#### Phase 10: Cache System 구현
+API 호출 결과 캐싱으로 중복 요청 방지 및 성능 향상
+
+**새 파일:** `src/builder/hooks/useCollectionDataCache.ts`
+
+**기능:**
+- TTL(Time-to-Live) 기반 자동 만료 (기본 5분)
+- LRU(Least Recently Used) 정리
+- 최대 100개 캐시 항목 제한
+- 캐시 키 생성 (`createCacheKey`)
+- 수동 캐시 무효화 (`invalidate`, `invalidateMatching`, `clear`)
+
+**API:**
+```typescript
+const cache = new CollectionDataCache({ ttl: 60000, maxEntries: 100 });
+cache.set('key', data);
+cache.get<T>('key');
+cache.invalidate('key');
+cache.invalidateMatching(/pattern/);
+cache.clear();
+```
+
+**useCollectionData 통합:**
+- API 요청 전 캐시 확인
+- 응답 데이터 캐시 저장
+- `reload()` 시 캐시 무효화
+- `clearCache()` 함수 제공
+
+---
+
+### Fixed - useCollectionData 과다 로깅 및 Hooks 순서 오류 (2025-12-07)
+
+#### 문제 1: 과다 콘솔 로깅
+**증상:** 컴포넌트 렌더링마다 수백 개의 `🔍 [ComponentName] useCollectionData 실행:` 로그 출력
+
+**원인:** `useMemo` 내부의 디버그 로그가 의존성 변경 시마다 실행
+
+**해결:** 모든 불필요한 `console.log` 제거
+
+**정리된 파일:**
+- `src/builder/hooks/useCollectionData.ts` - 15개+ 로그 제거
+- `src/builder/hooks/useCollectionDataCache.ts` - 8개 로그 제거
+- `src/shared/components/ListBox.tsx` - 6개 로그 제거
+
+#### 문제 2: React Hooks 순서 오류
+**증상:** Hot reload 시 "React has detected a change in the order of Hooks" 에러
+
+**원인:** `clearCache` useCallback 추가로 인한 hooks 개수 변경
+
+**해결:**
+- `isCanvasContext`를 useMemo 의존성 배열에 추가
+- 불필요한 `componentName` 의존성 제거
+
+---
+
+### Fixed - ListBox DataTable 데이터 미표시 버그 (2025-12-07)
+
+#### 문제
+DataTable 바인딩된 ListBox에서 데이터가 표시되지 않음
+
+**증상:**
+```
+[DEBUG] DataTable found: poke {useMockData: false, mockDataLength: 20, runtimeDataLength: 0, resolvedDataLength: 0}
+```
+
+#### 원인
+`runtimeData`가 빈 배열 `[]`일 때 `mockData`로 fallback되지 않음
+
+```typescript
+// 문제 코드
+const data = table.useMockData ? table.mockData : (table.runtimeData || table.mockData);
+// [] || mockData = [] (빈 배열은 JavaScript에서 truthy)
+```
+
+#### 해결
+빈 배열 체크 로직 추가
+
+```typescript
+// 수정된 코드
+const hasRuntimeData = table.runtimeData && table.runtimeData.length > 0;
+const data = table.useMockData
+  ? table.mockData
+  : (hasRuntimeData ? table.runtimeData : table.mockData);
+```
+
+**파일:** `src/builder/hooks/useCollectionData.ts:327-333`
+
+---
+
 ### Changed - DatasetEditorPanel Tab Management Refactoring (2025-12-03)
 
 #### State Lifting Pattern

@@ -49,6 +49,9 @@ import { UpdateFormFieldActionEditor } from "./UpdateFormFieldActionEditor";
 import { FilterCollectionActionEditor } from "./FilterCollectionActionEditor";
 import { SelectItemActionEditor } from "./SelectItemActionEditor";
 import { ClearSelectionActionEditor } from "./ClearSelectionActionEditor";
+import { LoadDataTableActionEditor, type LoadDataTableConfig } from "./LoadDataTableActionEditor";
+import { SyncComponentActionEditor, type SyncComponentConfig } from "./SyncComponentActionEditor";
+import { SaveToDataTableActionEditor, type SaveToDataTableConfig } from "./SaveToDataTableActionEditor";
 import { ConditionEditor } from "../components/ConditionEditor";
 import { ActionDelayEditor } from "../components/ActionDelayEditor";
 
@@ -79,6 +82,10 @@ export function ActionEditor({ action, onChange }: ActionEditorProps) {
     { value: "clearSelection", label: "Clear Selection" },
     { value: "copyToClipboard", label: "Copy to Clipboard" },
     { value: "customFunction", label: "Custom Function" },
+    // DataTable Actions (Phase 3)
+    { value: "loadDataTable", label: "Load DataTable" },
+    { value: "syncComponent", label: "Sync Component" },
+    { value: "saveToDataTable", label: "Save to DataTable" },
   ];
 
   const handleTypeChange = (newType: string) => {
@@ -103,6 +110,10 @@ export function ActionEditor({ action, onChange }: ActionEditorProps) {
       clearSelection: { targetId: "" },
       copyToClipboard: { text: "", source: "static" },
       customFunction: { code: "", params: {} },
+      // DataTable Actions (Phase 3)
+      loadDataTable: { dataTableName: "", forceRefresh: false },
+      syncComponent: { sourceId: "", targetId: "", syncMode: "replace" },
+      saveToDataTable: { dataTableName: "", source: "response", saveMode: "replace" },
     };
 
     onChange({
@@ -271,6 +282,28 @@ export function ActionEditor({ action, onChange }: ActionEditorProps) {
         {action.type === "clearSelection" && (
           <ClearSelectionActionEditor
             config={action.config as ClearSelectionConfig}
+            onChange={(config) => onChange({ ...action, config })}
+          />
+        )}
+
+        {/* DataTable Actions (Phase 3) */}
+        {action.type === "loadDataTable" && (
+          <LoadDataTableActionEditor
+            config={action.config as LoadDataTableConfig}
+            onChange={(config) => onChange({ ...action, config })}
+          />
+        )}
+
+        {action.type === "syncComponent" && (
+          <SyncComponentActionEditor
+            config={action.config as SyncComponentConfig}
+            onChange={(config) => onChange({ ...action, config })}
+          />
+        )}
+
+        {action.type === "saveToDataTable" && (
+          <SaveToDataTableActionEditor
+            config={action.config as SaveToDataTableConfig}
             onChange={(config) => onChange({ ...action, config })}
           />
         )}

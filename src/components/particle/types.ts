@@ -1,7 +1,12 @@
-import type { ReactNode, MutableRefObject } from "react";
+import type {
+  ReactNode,
+  MutableRefObject,
+  Dispatch,
+  SetStateAction,
+} from "react";
 
 // ==================== Effect Types ====================
-export type EffectType = "sand" | "curl" | "matrix";
+export type EffectType = "sand" | "curl" | "matrix" | "code";
 
 // ==================== Content Types ====================
 export type MorphContent =
@@ -26,7 +31,7 @@ export interface ParticleBackgroundContextValue {
   contentVersion: number;
   vortexRef: MutableRefObject<VortexState>;
   effectType: EffectType;
-  setEffectType: (type: EffectType) => void;
+  setEffectType: Dispatch<SetStateAction<EffectType>>;
 }
 
 // ==================== Color Types ====================

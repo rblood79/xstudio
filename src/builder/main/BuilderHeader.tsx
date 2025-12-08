@@ -10,6 +10,8 @@ import {
   Smartphone,
   Asterisk,
   Activity,
+  LayoutGrid,
+  GitBranch,
 } from "lucide-react";
 import { Key } from "react-aria-components";
 import { ToggleButtonGroup } from "../../shared/components/ToggleButtonGroup";
@@ -44,6 +46,8 @@ export interface BuilderHeaderProps {
   onPreview: () => void;
   onPlay: () => void;
   onPublish: () => void;
+  viewMode: 'canvas' | 'workflow';
+  onViewModeToggle: () => void;
 }
 
 export const BuilderHeader: React.FC<BuilderHeaderProps> = ({
@@ -60,6 +64,8 @@ export const BuilderHeader: React.FC<BuilderHeaderProps> = ({
   onPreview,
   onPlay,
   onPublish,
+  viewMode,
+  onViewModeToggle,
 }) => {
   const { layout, toggleBottomPanel } = usePanelLayout();
   const isMonitorOpen = layout.showBottom && layout.activeBottomPanels.includes("monitor");
@@ -173,6 +179,26 @@ export const BuilderHeader: React.FC<BuilderHeaderProps> = ({
             strokeWidth={iconProps.stroke}
             size={iconProps.size}
           />
+        </button>
+        <button
+          aria-label={viewMode === 'canvas' ? 'Switch to Workflow' : 'Switch to Canvas'}
+          onClick={onViewModeToggle}
+          className={viewMode === 'workflow' ? "active" : ""}
+          title={viewMode === 'canvas' ? 'Switch to Workflow View' : 'Switch to Canvas View'}
+        >
+          {viewMode === 'canvas' ? (
+            <GitBranch
+              color={iconProps.color}
+              strokeWidth={iconProps.stroke}
+              size={iconProps.size}
+            />
+          ) : (
+            <LayoutGrid
+              color={iconProps.activeColor || iconProps.color}
+              strokeWidth={iconProps.stroke}
+              size={iconProps.size}
+            />
+          )}
         </button>
         <button aria-label="Preview" onClick={onPreview}>
           <Eye

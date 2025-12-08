@@ -407,7 +407,7 @@ export const ComboBoxEditor = memo(function ComboBoxEditor({ elementId, currentP
 
   const itemManagementSection = useMemo(
     () => (
-      <PropertySection title="{PROPERTY_LABELS.ADD_OPTION}">
+      <PropertySection title={PROPERTY_LABELS.ADD_OPTION}>
         {children.length > 0 ? (
           <div className="tabs-list">
             {children.map((item, index) => (

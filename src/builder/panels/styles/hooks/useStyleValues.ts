@@ -132,9 +132,15 @@ export function getHorizontalAlignmentKeys(element: SelectedElement | null): str
 export function getFlexAlignmentKeys(element: SelectedElement | null): string[] {
   if (!element) return [];
 
+  const display = getStyleValue(element, 'display', '');
   const justifyContent = getStyleValue(element, 'justifyContent', '');
   const alignItems = getStyleValue(element, 'alignItems', '');
   const flexDirection = getStyleValue(element, 'flexDirection', 'row');
+
+  // display: flex가 아니면 alignment 선택 없음
+  if (display !== 'flex') {
+    return [];
+  }
 
   // Exclude spacing values (space-around, space-between, space-evenly)
   const spacingValues = ['space-around', 'space-between', 'space-evenly'];
@@ -183,16 +189,24 @@ export function getFlexAlignmentKeys(element: SelectedElement | null): string[] 
 
 /**
  * Helper: Get selected flex direction button ID
+ * - 'block': display: block (or not flex)
+ * - 'row': display: flex + flex-direction: row
+ * - 'column': display: flex + flex-direction: column
  */
 export function getFlexDirectionKeys(element: SelectedElement | null): string[] {
-  if (!element) return ['reset'];
+  if (!element) return ['block'];
 
+  const display = getStyleValue(element, 'display', '');
   const flexDirection = getStyleValue(element, 'flexDirection', '');
 
-  if (flexDirection === 'row') return ['row'];
+  // display: flex가 아니면 block 선택
+  if (display !== 'flex') return ['block'];
+
+  // display: flex일 때 direction 확인
   if (flexDirection === 'column') return ['column'];
 
-  return ['reset'];
+  // flex + row (기본값) 또는 flexDirection 없음
+  return ['row'];
 }
 
 /**
@@ -201,7 +215,13 @@ export function getFlexDirectionKeys(element: SelectedElement | null): string[] 
 export function getJustifyContentSpacingKeys(element: SelectedElement | null): string[] {
   if (!element) return [];
 
+  const display = getStyleValue(element, 'display', '');
   const justifyContent = getStyleValue(element, 'justifyContent', '');
+
+  // display: flex가 아니면 spacing 선택 없음
+  if (display !== 'flex') {
+    return [];
+  }
 
   if (justifyContent === 'space-around') return ['space-around'];
   if (justifyContent === 'space-between') return ['space-between'];
@@ -214,13 +234,19 @@ export function getJustifyContentSpacingKeys(element: SelectedElement | null): s
  * Helper: Get selected flex wrap button ID
  */
 export function getFlexWrapKeys(element: SelectedElement | null): string[] {
-  if (!element) return ['nowrap'];
+  if (!element) return [];
 
+  const display = getStyleValue(element, 'display', '');
   const flexWrap = getStyleValue(element, 'flexWrap', '');
+
+  // display: flex가 아니면 wrap 선택 없음
+  if (display !== 'flex') {
+    return [];
+  }
 
   if (flexWrap === 'wrap') return ['wrap'];
   if (flexWrap === 'wrap-reverse') return ['wrap-reverse'];
-  if (flexWrap === 'nowrap') return ['nowrap'];
 
+  // 기본값 또는 nowrap
   return ['nowrap'];
 }

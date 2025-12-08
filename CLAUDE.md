@@ -269,12 +269,16 @@ The project includes a comprehensive Mock Data API system for component testing 
 
 The Event System enables visual programming through a drag-and-drop event handler and action configuration interface.
 
-**Status**: ✅ Phase 1-5 Complete (2025-11-11)
+**Status**: ✅ Phase 1-5 Complete (2025-12-08)
 
-**Location**: `src/builder/inspector/events/`
+**Locations**:
+- `src/builder/inspector/events/` - Legacy event editor and action editors
+- `src/builder/panels/events/` - **NEW** Block-based Events Panel UI
+- `src/builder/events/` - Shared event components (pickers, actions)
 
 **Architecture**:
 - **React Stately**: useListData-based state management for handlers and actions
+- **Block-based UI**: WHEN → IF → THEN/ELSE visual pattern (Phase 5)
 - **Three View Modes**: List (editing), Simple Flow (visualization), ReactFlow (advanced diagram)
 - **Type System**: Inspector-specific types (camelCase) with EventEngine compatibility (snake_case)
 
@@ -303,11 +307,16 @@ The Event System enables visual programming through a drag-and-drop event handle
 - ActionNode.tsx - Action visualization
 - FlowConnector.tsx - Connection logic
 
-**Phase 5: Data Persistence** ✅
+**Phase 5: Block-Based UI & Data Persistence** ✅
+- Block-based visual editor: WHEN → IF → THEN/ELSE pattern
+- WhenBlock, IfBlock, ThenElseBlock components
+- BlockActionEditor for unified action configuration
 - Fixed data deletion on re-entry (initial mount detection)
 - Fixed actions disappearing on handler click (removed dependency)
 - Component remounting via key prop for clean state
 - JSON comparison for actual content change detection
+- Navigate action path normalization (auto "/" prefix)
+- EventEngine warning for disabled actions
 
 #### Key Architectural Decisions
 
@@ -363,6 +372,21 @@ const actionData = action as {
 const config = (actionData.config || actionData.value || {}) as ActionConfig;
 ```
 
+**5. Path Normalization (Navigate Action)**
+```typescript
+// NavigateActionEditor - Always normalize path with "/" prefix
+function normalizePath(path: string): string {
+  if (!path) return '/';
+  const trimmed = path.trim();
+  return trimmed.startsWith('/') ? trimmed : `/${trimmed}`;
+}
+
+// BuilderCore - Normalize both path and slug for comparison
+const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+const normalizedSlug = pageSlug.startsWith('/') ? pageSlug : `/${pageSlug}`;
+return normalizedSlug === normalizedPath;
+```
+
 #### Event System Files
 
 **State Management**:
@@ -375,13 +399,32 @@ const config = (actionData.config || actionData.value || {}) as ActionConfig;
 - `src/builder/inspector/events/EventEditor.tsx` - Legacy event editor
 - `src/builder/inspector/events/EventList.tsx` - Event list view
 
+**Block-Based UI (Events Panel)**: `src/builder/panels/events/`
+- `EventsPanel.tsx` - Main panel with block-based UI, WHEN → IF → THEN/ELSE pattern
+- `blocks/WhenBlock.tsx` - Event trigger block (onClick, onChange, etc.)
+- `blocks/IfBlock.tsx` - Conditional execution block with ConditionGroup editor
+- `blocks/ThenElseBlock.tsx` - Action execution blocks with add/edit/delete
+- `editors/BlockActionEditor.tsx` - Unified action config editor for all 21 action types
+
+**Shared Event Components**: `src/builder/events/`
+- `actions/NavigateActionEditor.tsx` - Page navigation with path normalization (auto "/" prefix)
+- `pickers/EventTypePicker.tsx` - Event type selection (DialogTrigger + Popover + ListBox)
+- `pickers/ActionTypePicker.tsx` - Action type selection with categories
+- `components/DebounceThrottleEditor.tsx` - Timing controls for handlers
+- `state/useEventHandlers.ts` - Handler list management with useListData
+- `state/useActions.ts` - Action list management with useListData
+- `state/useEventSelection.ts` - Handler selection state
+- `types/eventTypes.ts` - Event type definitions
+- `types/eventBlockTypes.ts` - Block UI type definitions
+- `utils/normalizeEventTypes.ts` - snake_case → camelCase normalization
+
 **Action Editors** (21 editors):
 - `src/builder/inspector/events/actions/ActionEditor.tsx` - Base action editor wrapper
 - `src/builder/inspector/events/actions/CustomFunctionActionEditor.tsx` - Code editor with Monaco
 - `src/builder/inspector/events/actions/SetStateActionEditor.tsx` - Global state updates
 - `src/builder/inspector/events/actions/SetComponentStateActionEditor.tsx` - Component-specific state
 - `src/builder/inspector/events/actions/UpdateStateActionEditor.tsx` - State modifications
-- `src/builder/inspector/events/actions/NavigateActionEditor.tsx` - Page navigation
+- `src/builder/inspector/events/actions/NavigateActionEditor.tsx` - Page navigation (legacy, use shared)
 - `src/builder/inspector/events/actions/ShowModalActionEditor.tsx` - Modal show control
 - `src/builder/inspector/events/actions/HideModalActionEditor.tsx` - Modal hide control
 - `src/builder/inspector/events/actions/ShowToastActionEditor.tsx` - Toast notifications
@@ -449,6 +492,11 @@ const config = (actionData.config || actionData.value || {}) as ActionConfig;
 
 **Event Engine** (Preview):
 - `src/utils/eventEngine.ts` - Event execution engine with dual-field support
+  - `getActionConfig<T>()` - Type-safe config extraction helper
+  - Warning logs for disabled actions (`enabled: false`)
+  - Navigate action sends `NAVIGATE_TO_PAGE` postMessage to Builder
+- `src/builder/main/BuilderCore.tsx` - Handles `NAVIGATE_TO_PAGE` message
+  - Bidirectional path/slug normalization (handles "/" prefix)
 
 #### Key Features
 
@@ -528,6 +576,112 @@ AI-powered event recommendations based on:
 
 **Issue**: Events stored in props.events, not element.events
 **Solution**: Read from `(builderElement?.props as any)?.events`
+
+### Events Panel (Block-based UI)
+
+The Events Panel provides a visual block-based event editor inspired by Airtable and n8n.
+
+**Status**: ✅ Phase 0-5 Complete (2025-12)
+
+**Location**: `src/builder/panels/events/`
+
+**Architecture**:
+- **Block Pattern**: WHEN → IF → THEN/ELSE visual flow
+- **Variable Binding**: `{{variable}}` syntax with autocomplete
+- **Lazy Code Generation**: Performance-optimized JavaScript preview
+- **Minimap**: SVG-based handler visualization
+
+#### Phase Completion Summary
+
+**Phase 0: Bug Fixes** ✅
+- Fixed EventTypePicker rendering issues
+- Fixed TypeScript compilation errors
+
+**Phase 1: Type System + Block Components** ✅
+- `eventBlockTypes.ts` - Block-based type definitions
+- `WhenBlock.tsx` - Event trigger block
+- `IfBlock.tsx` - Condition block with AND/OR logic
+- `ActionBlock.tsx` - Individual action display
+
+**Phase 2: Condition System + Search** ✅
+- `ConditionRow.tsx` - Single condition editor
+- `OperatorPicker.tsx` - Comparison operator selection
+- `ElementPicker.tsx` - Element reference picker
+- Event type search with ComboBox
+
+**Phase 3: THEN/ELSE + DataTable Actions** ✅
+- `ThenElseBlock.tsx` - Branch container with collapse
+- `ActionList.tsx` - Action list with reorder buttons
+- `BlockActionEditor.tsx` - Adapter for 21 action editors
+- 3 new DataTable actions: loadDataTable, syncComponent, saveToDataTable
+
+**Phase 4: Variable Binding + Validation** ✅
+- `variableParser.ts` - `{{variable}}` syntax parser
+- `VariableBindingEditor.tsx` - Editor with autocomplete
+- `useVariableSchema.ts` - Schema for autocomplete (event, state, datatable)
+- `bindingValidator.ts` - Validation with Levenshtein suggestions
+
+**Phase 5: Preview + Debug** ✅
+- `CodePreviewPanel.tsx` - Lazy JavaScript code generation
+- `EventMinimap.tsx` - SVG visualization of handler flow
+- `EventDebugger.tsx` - Inline test execution with step results
+
+#### Key Files
+
+**Block Components** (`src/builder/panels/events/blocks/`):
+- `WhenBlock.tsx` - Event trigger (onClick, onChange, etc.)
+- `IfBlock.tsx` - Condition group with AND/OR
+- `ThenElseBlock.tsx` - Action branch container
+- `ActionBlock.tsx` - Single action display
+- `ActionList.tsx` - Reorderable action list
+- `BlockConnector.tsx` - Visual connector between blocks
+
+**Editor Components** (`src/builder/panels/events/editors/`):
+- `ConditionRow.tsx` - Condition: left op right
+- `OperatorToggle.tsx` - AND/OR toggle
+- `OperatorPicker.tsx` - Comparison operators
+- `ElementPicker.tsx` - Element ID picker
+- `BlockActionEditor.tsx` - Action editor adapter
+- `VariableBindingEditor.tsx` - Variable autocomplete
+
+**Preview Components** (`src/builder/panels/events/preview/`):
+- `CodePreviewPanel.tsx` - JavaScript code preview
+- `EventMinimap.tsx` - Handler flow minimap
+- `EventDebugger.tsx` - Test execution debugger
+
+**Hooks** (`src/builder/events/hooks/`):
+- `useVariableSchema.ts` - Variable schema provider
+- `useEventSearch.ts` - Event/action search
+- `useApplyTemplate.ts` - Template application
+- `useCopyPasteActions.ts` - Action clipboard
+- `useEventFlow.ts` - Flow diagram state
+
+**Utils** (`src/builder/events/utils/`):
+- `variableParser.ts` - `{{var}}` parsing
+- `bindingValidator.ts` - Binding validation
+- `normalizeEventTypes.ts` - Type normalization
+- `actionHelpers.ts` - Action utilities
+
+#### CSS Architecture
+
+All styles in `src/builder/panels/events/EventsPanel.css` (~1870 lines):
+
+**Block Colors**:
+```css
+--block-trigger-color: var(--color-blue-500);     /* WHEN */
+--block-condition-color: var(--color-amber-500);  /* IF */
+--block-success-color: var(--color-green-500);    /* THEN */
+--block-fallback-color: var(--color-red-500);     /* ELSE */
+```
+
+**Key Class Patterns**:
+- `.event-block` - Base block container
+- `.event-block-header` - Block header with icon
+- `.event-block-content` - Block body content
+- `.block-connector` - Visual flow connector
+- `.condition-row` - Single condition editor
+- `.binding-editor` - Variable binding input
+- `.debugger-step` - Test execution step
 
 ## Critical Coding Rules
 
@@ -2187,7 +2341,7 @@ Copilot learns from code patterns. Tips:
 18. ✅ **Panel Standardization** - Consistent naming, hooks compliance, unified styles
 19. ✅ **Layout Preset System** - Body editor separation, 9 presets, Slot auto-creation ([상세](docs/features/LAYOUT_PRESET_SYSTEM.md))
 20. ✅ **Canvas Runtime Isolation** - srcdoc iframe, 독립 runtimeStore, postMessage 통신 ([상세](docs/features/CANVAS_RUNTIME_ISOLATION.md))
-21. ✅ **Dataset Component** - Phase 1-6 완료: Store, Component, Editor, Factory, Preview, Transform, Cache ([상세](docs/PLANNED_FEATURES.md#-dataset-component-architecture))
+21. ✅ **DataTable Component** - Phase 1-6 완료: Store, Component, Editor, Factory, Preview, Transform, Cache ([상세](docs/PLANNED_FEATURES.md#-datatable-component-architecture))
 
 **Key Achievements**:
 - Zero TypeScript errors
@@ -2206,7 +2360,7 @@ Copilot learns from code patterns. Tips:
 | 기능 | 상태 | 우선순위 |
 |------|------|----------|
 | **Context Menu System** | 📋 Planning | High |
-| **Dataset Component** | ✅ Complete | - |
+| **DataTable Component** | ✅ Complete | - |
 | **SlotEditor** | ✅ Complete | - |
 | **Grid/Flex 시각적 편집** | 📋 Planning | Medium |
 | **프리셋 커스터마이징** | 📋 Planning | Low |

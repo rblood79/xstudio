@@ -12,6 +12,9 @@ export interface HistoryInfo {
  * 빌더 환경 설정 관리
  */
 export interface SettingsState {
+  /** 빌더 뷰 모드 (기본값: 'canvas') */
+  viewMode: 'canvas' | 'workflow';
+
   /** Selection Overlay 표시 여부 (기본값: true) */
   showOverlay: boolean;
 
@@ -71,12 +74,19 @@ export interface SettingsState {
 
   /** History 정보 업데이트 */
   setHistoryInfo: (info: HistoryInfo) => void;
+
+  /** 뷰 모드 설정 */
+  setViewMode: (mode: 'canvas' | 'workflow') => void;
+
+  /** 뷰 모드 토글 */
+  toggleViewMode: () => void;
 }
 
 /**
  * Settings Slice 생성
  */
-export const createSettingsSlice: StateCreator<SettingsState> = (set) => ({
+export const createSettingsSlice: StateCreator<SettingsState> = (set, get) => ({
+  viewMode: 'canvas',
   showOverlay: true,
   showGrid: false,
   snapToGrid: false,
@@ -161,5 +171,20 @@ export const createSettingsSlice: StateCreator<SettingsState> = (set) => ({
    */
   setHistoryInfo: (info: HistoryInfo) => {
     set({ historyInfo: info });
+  },
+
+  /**
+   * 뷰 모드 설정
+   */
+  setViewMode: (mode: 'canvas' | 'workflow') => {
+    set({ viewMode: mode });
+  },
+
+  /**
+   * 뷰 모드 토글
+   */
+  toggleViewMode: () => {
+    const current = get().viewMode;
+    set({ viewMode: current === 'canvas' ? 'workflow' : 'canvas' });
   },
 });

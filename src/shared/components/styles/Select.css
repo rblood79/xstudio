@@ -360,6 +360,72 @@
     }
   }
 
+  /* ========== React Aria 1.13.0: Multi-Selection Mode ========== */
+  .react-aria-Select[data-selection-mode="multiple"] {
+    .react-aria-ListBox .react-aria-ListBoxItem {
+      /* Add padding for checkbox */
+      padding-left: calc(var(--spacing-md) + 20px);
+      position: relative;
+
+      /* Checkbox indicator */
+      &::before {
+        content: '';
+        position: absolute;
+        left: var(--spacing-md);
+        top: 50%;
+        transform: translateY(-50%);
+        width: 16px;
+        height: 16px;
+        border: 2px solid var(--outline);
+        border-radius: var(--radius-xs);
+        background: transparent;
+        transition: all 150ms ease;
+      }
+
+      /* Selected state - checkmark */
+      &[data-selected] {
+        &::before {
+          background: var(--primary);
+          border-color: var(--primary);
+        }
+
+        &::after {
+          content: '';
+          position: absolute;
+          left: calc(var(--spacing-md) + 3px);
+          top: 50%;
+          transform: translateY(-60%) rotate(45deg);
+          width: 5px;
+          height: 9px;
+          border: solid var(--on-primary);
+          border-width: 0 2px 2px 0;
+        }
+      }
+
+      /* Hover state */
+      &[data-hovered]::before {
+        border-color: var(--primary);
+      }
+    }
+  }
+
+  /* Multi-selection variant colors */
+  .react-aria-Select.primary[data-selection-mode="multiple"],
+  .react-aria-Select.secondary[data-selection-mode="multiple"],
+  .react-aria-Select.tertiary[data-selection-mode="multiple"],
+  .react-aria-Select.error[data-selection-mode="multiple"] {
+    .react-aria-ListBox .react-aria-ListBoxItem {
+      &[data-selected]::before {
+        background: var(--select-accent);
+        border-color: var(--select-accent);
+      }
+
+      &[data-hovered]::before {
+        border-color: var(--select-accent);
+      }
+    }
+  }
+
   /* ========== Invalid State Override ========== */
   /* Invalid state overrides all color variants */
   .react-aria-Select[data-invalid] {

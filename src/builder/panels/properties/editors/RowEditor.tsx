@@ -48,7 +48,7 @@ export const RowEditor = memo(function RowEditor({ elementId, currentProps, onUp
 
     return (
         <div className="component-props">
-            <PropertySection title="{PROPERTY_LABELS.ROW_INFORMATION}">
+            <PropertySection title={PROPERTY_LABELS.ROW_INFORMATION}>
 
                 {/* Custom ID */}
                 <PropertyCustomId
@@ -100,7 +100,7 @@ export const RowEditor = memo(function RowEditor({ elementId, currentProps, onUp
                 />
             </PropertySection>
 
-            <PropertySection title="{PROPERTY_LABELS.CELL_OVERVIEW}">
+            <PropertySection title={PROPERTY_LABELS.CELL_OVERVIEW}>
 
                 {/* 셀 목록 */}
                 {rowCells.length > 0 && (

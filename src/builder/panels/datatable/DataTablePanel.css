@@ -1,0 +1,225 @@
+/**
+ * DataTablePanel Styles
+ *
+ * 프로젝트 레벨 데이터 관리 패널 스타일
+ * 공통 list-group 스타일: ../common/list-group.css
+ */
+
+@import "../common/list-group.css";
+
+.datatable-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--color-surface);
+  max-width: var(--panel-width);
+  min-width: var(--panel-width);
+}
+
+/* Tab Bar */
+.panel-tabs {
+  display: flex;
+  gap: 0;
+  padding: var(--spacing-2xs) var(--spacing-sm);
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface-alt);
+  height: var(--header-height);
+}
+
+.panel-tab {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  font-size: var(--text-xs);
+  color: var(--color-text-secondary);
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 150ms ease;
+}
+
+.panel-tab:hover {
+  background: var(--color-surface-hover);
+  color: var(--color-text);
+}
+
+.panel-tab.active {
+  background: var(--primary);
+  color: var(--on-primary);
+}
+
+/* DataTable-specific list count */
+.datatable-list-count {
+  font-size: var(--text-xs);
+  color: var(--color-text-tertiary);
+}
+
+/* DataTable Section Content */
+.datatable-panel .section-content {
+  padding: var(--spacing-sm);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+/* Subgroup header extension */
+.datatable-panel .list-subgroup-header {
+  justify-content: space-between;
+  padding: var(--spacing-xs) 0;
+}
+
+.datatable-panel .list-subgroup-count {
+  font-size: var(--text-xs);
+  color: var(--color-text-tertiary);
+}
+
+/* Item Card extension */
+.datatable-panel .list-item.editing {
+  background: var(--color-primary-100);
+  border-color: var(--color-primary-500);
+}
+
+/* Add Button */
+.datatable-add-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-xs);
+  width: 100%;
+  padding: var(--spacing-sm);
+  margin-top: var(--spacing-sm);
+  font-size: var(--text-sm);
+  color: var(--color-primary-600);
+  background: transparent;
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all 150ms ease;
+}
+
+.datatable-add-btn:hover {
+  background: var(--color-primary-50);
+  border-color: var(--color-primary-300);
+}
+
+/* Empty State */
+.datatable-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-xl);
+  text-align: center;
+}
+
+.datatable-empty-icon {
+  color: var(--color-text-tertiary);
+  margin-bottom: var(--spacing-sm);
+}
+
+.datatable-empty-text {
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+  margin-bottom: var(--spacing-md);
+}
+
+/* Badge Variants (extends common .list-item-badge) */
+.datatable-panel .list-item-badge.global {
+  background: var(--color-primary-100);
+  color: var(--color-primary-700);
+}
+
+.datatable-panel .list-item-badge.page {
+  background: var(--color-secondary-100);
+  color: var(--color-secondary-700);
+}
+
+/* Method Badge */
+.datatable-panel .list-item-badge.method {
+  font-weight: 600;
+  font-family: var(--font-mono);
+}
+
+.datatable-panel .list-item-badge.GET {
+  background: var(--color-success-100);
+  color: var(--color-success-700);
+}
+
+.datatable-panel .list-item-badge.POST {
+  background: var(--color-primary-100);
+  color: var(--color-primary-700);
+}
+
+.datatable-panel .list-item-badge.PUT {
+  background: var(--color-warning-100);
+  color: var(--color-warning-700);
+}
+
+.datatable-panel .list-item-badge.DELETE {
+  background: var(--color-error-100);
+  color: var(--color-error-700);
+}
+
+.datatable-panel .list-item-badge.PATCH {
+  background: var(--color-secondary-100);
+  color: var(--color-secondary-700);
+}
+
+/* DataTable Source Badge */
+.datatable-panel .list-item-badge.local {
+  background: var(--color-surface-200);
+  color: var(--color-text-secondary);
+}
+
+.datatable-panel .list-item-badge.api {
+  background: var(--color-primary-100);
+  color: var(--color-primary-700);
+}
+
+/* Linked API Icon */
+.datatable-panel .linked-api-icon {
+  vertical-align: middle;
+  opacity: 0.7;
+}
+
+/* Level Badge */
+.level-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 6px;
+  font-size: 10px;
+  font-weight: 500;
+  border-radius: var(--radius-sm);
+}
+
+.level-badge.level1 {
+  background: var(--color-success-100);
+  color: var(--color-success-700);
+}
+
+.level-badge.level2 {
+  background: var(--color-warning-100);
+  color: var(--color-warning-700);
+}
+
+.level-badge.level3 {
+  background: var(--color-error-100);
+  color: var(--color-error-700);
+}
+
+/* Loading Overlay (리스트 위에 반투명 표시) */
+.datatable-panel .panel-contents {
+  position: relative;
+}
+
+.datatable-loading-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.7);
+  z-index: 10;
+}

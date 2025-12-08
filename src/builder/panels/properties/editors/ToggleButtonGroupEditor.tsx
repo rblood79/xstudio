@@ -297,7 +297,7 @@ export const ToggleButtonGroupEditor = memo(function ToggleButtonGroupEditor({ e
                 />
             </PropertySection>
 
-            <PropertySection title="{PROPERTY_LABELS.BUTTON_MANAGEMENT}">
+            <PropertySection title={PROPERTY_LABELS.BUTTON_MANAGEMENT}>
 
                 {/* 버튼 개수 표시 */}
                 <div className='tab-overview'>

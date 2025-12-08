@@ -118,9 +118,20 @@ export class EventEngine {
             data?: unknown;
         }>
     ): Promise<void> {
+        console.log('[EventEngine] executeEventActions - event:', event);
+        console.log('[EventEngine] executeEventActions - actions count:', event.actions?.length || 0);
+
         for (const action of event.actions) {
+            console.log('[EventEngine] Processing action:', {
+                type: action.type,
+                id: action.id,
+                enabled: action.enabled,
+                config: (action as unknown as { config?: unknown }).config,
+                value: (action as unknown as { value?: unknown }).value,
+            });
             // enabled가 명시적으로 false인 경우만 스킵 (undefined는 true로 간주)
             if (action.enabled === false) {
+                console.warn(`[EventEngine] ⚠️ Skipping disabled action: ${action.type} (id: ${action.id})`);
                 continue;
             }
 
@@ -187,12 +198,13 @@ export class EventEngine {
 
     // 보안 강화된 custom_function 실행
     private async executeCustomFunctionAction(action: EventAction, context: EventContext): Promise<unknown> {
-        const actionData = action as { config?: Record<string, unknown>; value?: Record<string, unknown> };
-        const config = (actionData.config || actionData.value || {}) as { code: string; params?: Record<string, unknown> };
+        const config = this.getActionConfig<{ code: string; params?: Record<string, unknown> }>(action);
         const code = config.code;
 
-        if (!code) {
-            throw new Error('Custom function code is required');
+        // 코드가 없으면 조용히 스킵 (사용자가 아직 코드를 입력하지 않은 경우)
+        if (!code || !code.trim()) {
+            console.warn('[EventEngine] Custom function has no code, skipping execution');
+            return undefined;
         }
 
         // 코드 검증
@@ -261,35 +273,52 @@ export class EventEngine {
         return !dangerousPatterns.some(pattern => pattern.test(code));
     }
 
+    /**
+     * 액션 설정 가져오기 (config 또는 value 필드 지원)
+     * Inspector에서는 config 필드를, 레거시 시스템에서는 value 필드를 사용
+     */
+    private getActionConfig<T>(action: EventAction): T {
+        const actionData = action as { config?: unknown; value?: unknown };
+        return (actionData.config || actionData.value || {}) as T;
+    }
+
     // 나머지 액션 핸들러들...
     private async executeUpdateStateAction(action: EventAction): Promise<void> {
-        const { key, value } = action.value as { key: string; value: unknown };
+        const config = this.getActionConfig<{ key?: string; storePath?: string; value: unknown }>(action);
+        const key = config.key || config.storePath; // storePath도 지원 (Inspector 호환)
         if (key && typeof key === 'string') {
-            this.setState(key, value);
+            this.setState(key, config.value);
         }
     }
 
     private async executeNavigateAction(action: EventAction): Promise<void> {
-        // 두 가지 타입 시스템 지원:
-        // 1. 기존: action.value
-        // 2. 새로운: action.config
-        const actionData = action as { config?: Record<string, unknown>; value?: Record<string, unknown> };
-        const value = (actionData.config || actionData.value || {}) as {
+        console.log('[EventEngine] executeNavigateAction called:', {
+            action,
+            type: action.type,
+            config: (action as unknown as { config?: unknown }).config,
+            value: (action as unknown as { value?: unknown }).value,
+        });
+
+        const config = this.getActionConfig<{
             path?: string;
             url?: string; // 하위 호환성
             openInNewTab?: boolean;
             newTab?: boolean; // 하위 호환성
             replace?: boolean;
-        };
+        }>(action);
+
+        console.log('[EventEngine] Navigate config after getActionConfig:', config);
 
         // path 또는 url (하위 호환)
-        const path = value.path || value.url;
+        const path = config.path || config.url;
         // openInNewTab 또는 newTab (하위 호환)
-        const openInNewTab = value.openInNewTab || value.newTab;
-        const replace = value.replace;
+        const openInNewTab = config.openInNewTab || config.newTab;
+        const replace = config.replace;
 
-        if (!path || typeof path !== 'string') {
-            throw new Error('Invalid path');
+        // 경로가 없으면 조용히 스킵 (사용자가 아직 경로를 입력하지 않은 경우)
+        if (!path || typeof path !== 'string' || !path.trim()) {
+            console.warn('[EventEngine] Navigate action has no path, skipping execution. Config was:', config);
+            return;
         }
 
         // 새 탭에서 열기
@@ -304,6 +333,7 @@ export class EventEngine {
         if (isInternalPage) {
             // 빌더 모드 (iframe 안)에서 실행 중인지 확인
             if (this.isBuilderMode()) {
+                console.log('[EventEngine] Sending NAVIGATE_TO_PAGE:', { path, replace });
                 // postMessage로 부모에게 페이지 전환 요청
                 window.parent.postMessage({
                     type: 'NAVIGATE_TO_PAGE',
@@ -346,17 +376,18 @@ export class EventEngine {
 
     // 누락된 메서드들 추가
     private async executeToggleVisibilityAction(action: EventAction, context: EventContext): Promise<void> {
-        const { show, elementId } = action.value as { show?: boolean; elementId?: string };
-        const targetId = elementId || context.elementId;
+        const config = this.getActionConfig<{ show?: boolean; elementId?: string }>(action);
+        const targetId = config.elementId || context.elementId;
         const element = document.querySelector(`[data-element-id="${targetId}"]`) as HTMLElement;
 
         if (element) {
-            element.style.display = show === false ? 'none' : 'block';
+            element.style.display = config.show === false ? 'none' : 'block';
         }
     }
 
     private async executeShowModalAction(action: EventAction): Promise<void> {
-        const { modalId, backdrop = true } = action.value as { modalId: string; backdrop?: boolean };
+        const config = this.getActionConfig<{ modalId: string; backdrop?: boolean }>(action);
+        const { modalId, backdrop = true } = config;
 
         // 보안 검증: modalId가 유효한지 확인
         if (!modalId || typeof modalId !== 'string') {
@@ -395,7 +426,8 @@ export class EventEngine {
     }
 
     private async executeHideModalAction(action: EventAction): Promise<void> {
-        const { modalId } = action.value as { modalId: string };
+        const config = this.getActionConfig<{ modalId: string }>(action);
+        const { modalId } = config;
 
         if (!modalId || typeof modalId !== 'string') {
             throw new Error('Invalid modal ID');
@@ -421,7 +453,8 @@ export class EventEngine {
     }
 
     private async executeScrollToAction(action: EventAction): Promise<void> {
-        const { elementId, behavior = 'smooth' } = action.value as { elementId: string; behavior?: ScrollBehavior };
+        const config = this.getActionConfig<{ elementId: string; behavior?: ScrollBehavior }>(action);
+        const { elementId, behavior = 'smooth' } = config;
         const element = document.querySelector(`[data-element-id="${elementId}"]`);
 
         if (element) {
@@ -430,7 +463,8 @@ export class EventEngine {
     }
 
     private async executeCopyToClipboardAction(action: EventAction): Promise<void> {
-        const { text } = action.value as { text: string };
+        const config = this.getActionConfig<{ text: string }>(action);
+        const { text } = config;
         if (navigator.clipboard) {
             await navigator.clipboard.writeText(text);
         } else {
@@ -445,7 +479,8 @@ export class EventEngine {
     }
 
     private async executeValidateFormAction(action: EventAction): Promise<boolean> {
-        const { formId, rules = [] } = action.value as { formId: string; rules: unknown[] };
+        const config = this.getActionConfig<{ formId: string; rules?: unknown[] }>(action);
+        const { formId, rules = [] } = config;
 
         if (!formId || typeof formId !== 'string') {
             throw new Error('Invalid form ID');
@@ -541,7 +576,8 @@ export class EventEngine {
     }
 
     private async executeResetFormAction(action: EventAction): Promise<void> {
-        const { formId } = action.value as { formId: string };
+        const config = this.getActionConfig<{ formId: string }>(action);
+        const { formId } = config;
         const form = document.getElementById(formId) as HTMLFormElement;
 
         if (form) {
@@ -550,8 +586,7 @@ export class EventEngine {
     }
 
     private async executeSubmitFormAction(action: EventAction): Promise<void> {
-        const actionData = action as { config?: Record<string, unknown>; value?: Record<string, unknown> };
-        const config = (actionData.config || actionData.value || {}) as { formId: string };
+        const config = this.getActionConfig<{ formId: string }>(action);
         const form = document.getElementById(config.formId) as HTMLFormElement;
 
         if (form) {
@@ -560,12 +595,11 @@ export class EventEngine {
     }
 
     private async executeShowToastAction(action: EventAction): Promise<void> {
-        const actionData = action as { config?: Record<string, unknown>; value?: Record<string, unknown> };
-        const config = (actionData.config || actionData.value || {}) as {
+        const config = this.getActionConfig<{
             message: string;
             variant?: 'info' | 'success' | 'warning' | 'error';
             duration?: number;
-        };
+        }>(action);
 
         // postMessage로 Builder에 토스트 표시 요청
         if (this.isBuilderMode()) {
@@ -579,13 +613,12 @@ export class EventEngine {
     }
 
     private async executeAPICallAction(action: EventAction): Promise<unknown> {
-        const actionData = action as { config?: Record<string, unknown>; value?: Record<string, unknown> };
-        const config = (actionData.config || actionData.value || {}) as {
+        const config = this.getActionConfig<{
             endpoint: string;
             method?: string;
             headers?: Record<string, string>;
             body?: unknown;
-        };
+        }>(action);
 
         try {
             const response = await fetch(config.endpoint, {
@@ -608,7 +641,7 @@ export class EventEngine {
     // ===== Phase 3: Component Interaction Actions =====
 
     private async executeSetComponentStateAction(action: EventAction): Promise<void> {
-        const config = action.value as { targetId: string; statePath: string; value: unknown };
+        const config = this.getActionConfig<{ targetId: string; statePath: string; value: unknown }>(action);
 
         // postMessage로 Preview에 상태 변경 요청
         if (this.isBuilderMode()) {
@@ -622,7 +655,7 @@ export class EventEngine {
     }
 
     private async executeTriggerComponentActionAction(action: EventAction): Promise<void> {
-        const config = action.value as { targetId: string; action: string; params?: Record<string, unknown> };
+        const config = this.getActionConfig<{ targetId: string; action: string; params?: Record<string, unknown> }>(action);
 
         // postMessage로 Preview에 액션 실행 요청
         if (this.isBuilderMode()) {
@@ -636,7 +669,7 @@ export class EventEngine {
     }
 
     private async executeUpdateFormFieldAction(action: EventAction): Promise<void> {
-        const config = action.value as { formId?: string; fieldName: string; value: unknown };
+        const config = this.getActionConfig<{ formId?: string; fieldName: string; value: unknown }>(action);
 
         let field: HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement | null = null;
 
@@ -661,14 +694,14 @@ export class EventEngine {
     // ===== Phase 4: Collection Interaction Actions =====
 
     private async executeFilterCollectionAction(action: EventAction): Promise<void> {
-        const config = action.value as {
+        const config = this.getActionConfig<{
             targetId: string;
             filterMode: 'text' | 'function' | 'field';
             query?: string;
             filterFn?: string;
             fieldName?: string;
             fieldValue?: unknown;
-        };
+        }>(action);
 
         // postMessage로 Preview에 필터링 요청
         if (this.isBuilderMode()) {
@@ -682,12 +715,12 @@ export class EventEngine {
     }
 
     private async executeSelectItemAction(action: EventAction): Promise<void> {
-        const config = action.value as {
+        const config = this.getActionConfig<{
             targetId: string;
             itemId?: string;
             itemIndex?: number;
             behavior: 'replace' | 'add' | 'toggle';
-        };
+        }>(action);
 
         // postMessage로 Preview에 선택 요청
         if (this.isBuilderMode()) {
@@ -701,7 +734,7 @@ export class EventEngine {
     }
 
     private async executeClearSelectionAction(action: EventAction): Promise<void> {
-        const config = action.value as { targetId: string };
+        const config = this.getActionConfig<{ targetId: string }>(action);
 
         // postMessage로 Preview에 선택 해제 요청
         if (this.isBuilderMode()) {

@@ -7,8 +7,6 @@ import { useState, useEffect } from 'react';
 import { tv } from 'tailwind-variants';
 import { useThemes, useActiveTheme } from '../../../hooks/theme';
 import { Moon, Sun } from 'lucide-react';
-import '../../../shared/components/index.css';
-import './styles/ThemeStudio.css';
 
 // 하위 컴포넌트 import
 import { AIThemeGenerator } from './components/AIThemeGenerator';

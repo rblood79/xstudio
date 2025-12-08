@@ -5,14 +5,19 @@
  */
 
 import { memo } from 'react';
-import { Handle, Position, type NodeProps } from 'reactflow';
+import { Handle, Position } from '@xyflow/react';
 import { FileText, Link as LinkIcon, Layers } from 'lucide-react';
 import type { PageNodeData } from '../types';
+
+interface PageNodeProps {
+  data: PageNodeData;
+  selected?: boolean;
+}
 
 export const PageNode = memo(function PageNode({
   data,
   selected,
-}: NodeProps<PageNodeData>) {
+}: PageNodeProps) {
   const { page, outgoingLinks, layoutId, elementCount } = data;
 
   return (

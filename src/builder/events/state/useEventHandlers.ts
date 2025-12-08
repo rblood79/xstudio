@@ -3,11 +3,30 @@
  *
  * useListData를 사용하여 EventHandler 목록 CRUD 자동화
  * Phase 1: Inspector Events React Stately 전환
+ *
+ * ⚠️ 주의: useListData의 initialItems는 초기 마운트 시에만 적용됨
+ * initialEvents 변경 시 리셋을 위해 useEffect로 동기화 필요
  */
 
+import { useEffect, useRef } from 'react';
 import { useListData } from 'react-stately';
 import type { Key } from 'react-stately';
 import type { EventType, EventHandler } from '../types/eventTypes';
+
+/**
+ * 두 핸들러 배열의 ID 세트가 동일한지 비교
+ * JSON.stringify 대신 ID 기반 비교로 성능 개선
+ */
+function areHandlerIdsEqual(a: EventHandler[], b: EventHandler[]): boolean {
+  if (a.length !== b.length) return false;
+  const aIds = new Set(a.map((handler) => handler.id));
+  const bIds = new Set(b.map((handler) => handler.id));
+  if (aIds.size !== bIds.size) return false;
+  for (const id of aIds) {
+    if (!bIds.has(id)) return false;
+  }
+  return true;
+}
 
 /**
  * EventHandler 목록 관리 훅
@@ -35,10 +54,30 @@ export function useEventHandlers(initialEvents: EventHandler[]) {
     actions: event.actions || [],
   }));
 
+  // 이전 initialEvents 참조 저장
+  const prevInitialEventsRef = useRef<EventHandler[]>(sanitizedEvents);
+
   const list = useListData({
     initialItems: sanitizedEvents,
     getKey: (item) => item.id,
   });
+
+  // ⚡ initialEvents 변경 시 리스트 리셋
+  useEffect(() => {
+    // ID 기반 비교로 실제 변경 감지
+    if (!areHandlerIdsEqual(prevInitialEventsRef.current, sanitizedEvents)) {
+      // 기존 아이템 모두 제거
+      list.items.forEach((item) => {
+        list.remove(item.id);
+      });
+      // 새 아이템 추가
+      sanitizedEvents.forEach((handler) => {
+        list.append(handler);
+      });
+      // 참조 업데이트
+      prevInitialEventsRef.current = sanitizedEvents;
+    }
+  }, [sanitizedEvents, list]);
 
   /**
    * 새 이벤트 핸들러 추가

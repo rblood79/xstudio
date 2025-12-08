@@ -35,7 +35,6 @@ import {
 } from "./components/ThresholdSettings";
 import { useToast } from "../../hooks/useToast";
 import { ToastContainer } from "../../components/ToastContainer";
-import "./monitor-panel.css";
 
 const MAX_HISTORY_POINTS = 60; // 최대 60개 데이터 포인트 (10분)
 

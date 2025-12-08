@@ -21,7 +21,7 @@ export function getSharedCanvas(): {
     sharedCanvas = document.createElement("canvas");
     sharedCanvas.width = CANVAS_WIDTH;
     sharedCanvas.height = CANVAS_HEIGHT;
-    sharedCtx = sharedCanvas.getContext("2d")!;
+    sharedCtx = sharedCanvas.getContext("2d", { willReadFrequently: true })!;
   }
   return { canvas: sharedCanvas, ctx: sharedCtx! };
 }

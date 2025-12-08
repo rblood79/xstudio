@@ -1,3 +1,4 @@
+import { createContext, useContext } from 'react';
 import {
   Tabs as RACTabs,
   TabsProps,
@@ -7,6 +8,8 @@ import {
   TabProps,
   TabPanel as RACTabPanel,
   TabPanelProps,
+  SelectionIndicator,
+  SharedElementTransition,
   composeRenderProps,
 } from 'react-aria-components';
 import { tv } from 'tailwind-variants';
@@ -48,6 +51,11 @@ export interface TabListExtendedProps<T extends object> extends TabListProps<T> 
    * @default 'md'
    */
   size?: ComponentSize;
+  /**
+   * React Aria 1.13.0: 선택된 탭을 표시하는 애니메이션 인디케이터
+   * @default false
+   */
+  showIndicator?: boolean;
 }
 
 const tabsStyles = tv({
@@ -243,20 +251,58 @@ export function Tabs({
   return <RACTabs {...props} className={tabsClassName}>{children}</RACTabs>;
 }
 
+// TabList용 Context - showIndicator 상태 공유
+const TabListIndicatorContext = createContext(false);
+
 export function TabList<T extends object>({
   variant = 'primary',
   size = 'md',
+  showIndicator = false,
+  children,
   ...props
 }: TabListExtendedProps<T>) {
   const tabListClassName = composeRenderProps(props.className, (className, renderProps) => {
     return tabListStyles({ ...renderProps, variant, size, className });
   });
 
-  return <RACTabList {...props} className={tabListClassName} />;
+  // showIndicator가 true면 SharedElementTransition으로 감싸기
+  // SelectionIndicator는 각 Tab 내부에서 렌더링됨
+  if (showIndicator) {
+    return (
+      <RACTabList {...props} className={tabListClassName} data-show-indicator="true">
+        <SharedElementTransition>
+          <TabListIndicatorContext.Provider value={true}>
+            {children}
+          </TabListIndicatorContext.Provider>
+        </SharedElementTransition>
+      </RACTabList>
+    );
+  }
+
+  // 기본: CSS ::before 기반 인디케이터
+  return (
+    <RACTabList {...props} className={tabListClassName}>
+      <TabListIndicatorContext.Provider value={false}>
+        {children}
+      </TabListIndicatorContext.Provider>
+    </RACTabList>
+  );
 }
 
-export function Tab(props: TabProps) {
-  return <RACTab {...props} className="react-aria-Tab" />;
+// Tab에서 showIndicator 컨텍스트 사용
+export function useTabListIndicator() {
+  return useContext(TabListIndicatorContext);
+}
+
+export function Tab({ children, ...props }: TabProps) {
+  const showIndicator = useTabListIndicator();
+
+  return (
+    <RACTab {...props} className="react-aria-Tab">
+      {showIndicator && <SelectionIndicator />}
+      {children}
+    </RACTab>
+  );
 }
 
 export function TabPanel(props: TabPanelProps) {

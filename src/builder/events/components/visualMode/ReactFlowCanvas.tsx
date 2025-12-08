@@ -1,19 +1,21 @@
 import { useCallback } from "react";
-import ReactFlow, {
+import {
+  ReactFlow,
   Background,
   Controls,
   MiniMap,
   type NodeTypes
-} from "reactflow";
-import "reactflow/dist/style.css";
+} from "@xyflow/react";
+import "@xyflow/react/dist/style.css";
 import type { EventHandler } from "../../types/eventTypes";
 import { useEventFlow } from "../../hooks/useEventFlow";
 import { TriggerNode } from "./TriggerNode";
 import { ActionNode } from "./ActionNode";
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const nodeTypes: NodeTypes = {
-  trigger: TriggerNode,
-  action: ActionNode
+  trigger: TriggerNode as any,
+  action: ActionNode as any
 };
 
 export interface ReactFlowCanvasProps {
@@ -41,7 +43,7 @@ export function ReactFlowCanvas({
   );
 
   return (
-    <div className="reactflow-canvas" style={{ height: "600px", width: "100%" }}>
+    <div className="event-flow-canvas" style={{ height: "600px", width: "100%" }}>
       <ReactFlow
         nodes={initialNodes}
         edges={edges}

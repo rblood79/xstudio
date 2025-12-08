@@ -34,7 +34,7 @@ export interface PanelHeaderProps {
  * // 아이콘이 있는 패널 헤더
  * <PanelHeader
  *   icon={<Database size={16} />}
- *   title="Dataset"
+ *   title="DataTable"
  * />
  * ```
  *

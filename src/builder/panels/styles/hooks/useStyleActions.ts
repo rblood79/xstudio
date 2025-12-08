@@ -87,12 +87,22 @@ export function useStyleActions() {
 
   /**
    * Flex direction 버튼 선택 핸들러
+   * - 'block': display: block (flex 속성 제거)
+   * - 'row': display: flex + flex-direction: row
+   * - 'column': display: flex + flex-direction: column
    */
   const handleFlexDirection = useCallback(
     (value: string) => {
-      if (value === 'reset') {
-        // Remove flex-direction (or set to default)
-        useInspectorState.getState().updateInlineStyle('flexDirection', '');
+      if (value === 'block') {
+        // display: block으로 전환, flex 관련 속성 제거
+        useInspectorState.getState().updateInlineStyles({
+          display: 'block',
+          flexDirection: '',
+          justifyContent: '',
+          alignItems: '',
+          flexWrap: '',
+          gap: '',
+        });
       } else if (value === 'row') {
         useInspectorState.getState().updateInlineStyles({
           display: 'flex',

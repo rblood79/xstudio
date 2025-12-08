@@ -3,8 +3,18 @@
  *
  * M3 Variants: primary, secondary, tertiary, error, filled
  * Sizes: sm, md, lg
+ *
+ * Virtualization: 대용량 데이터 성능 최적화 (enableVirtualization=true)
+ * - @tanstack/react-virtual 사용
+ * - 10,000+ 아이템 원활 처리 가능
+ *
+ * React Aria 1.13.0: 필터링 기능 추가
+ * - filter: 커스텀 필터 함수
+ * - filterText: 텍스트 기반 필터링
+ * - filterFields: 필터링 대상 필드
  */
 
+import React, { useRef, useCallback, useMemo, useEffect, useState } from "react";
 import {
   ListBox as AriaListBox,
   ListBoxItem as AriaListBoxItem,
@@ -12,6 +22,7 @@ import {
   ListBoxProps,
   composeRenderProps,
 } from "react-aria-components";
+import { useVirtualizer } from "@tanstack/react-virtual";
 import { tv } from "tailwind-variants";
 import type {
   ListBoxVariant,
@@ -23,8 +34,16 @@ import type {
 } from "../../types/builder/unified.types";
 import type { DataBindingValue } from "../../builder/panels/common/PropertyDataBinding";
 import { useCollectionData } from "../../builder/hooks/useCollectionData";
+import { CollectionLoadingState, CollectionErrorDisplay } from "./CollectionErrorState";
 
 import "./styles/ListBox.css";
+
+// 사이즈별 아이템 높이 (CSS와 동기화)
+const ITEM_HEIGHTS: Record<ComponentSize, number> = {
+  sm: 32,
+  md: 40,
+  lg: 48,
+};
 
 interface ExtendedListBoxProps<T extends object> extends ListBoxProps<T> {
   dataBinding?: DataBinding | DataBindingValue;
@@ -32,6 +51,25 @@ interface ExtendedListBoxProps<T extends object> extends ListBoxProps<T> {
   // M3 props
   variant?: ListBoxVariant;
   size?: ComponentSize;
+  // Virtualization props
+  enableVirtualization?: boolean;
+  height?: number; // 컨테이너 높이 (px), default: 300
+  overscan?: number; // 뷰포트 외 추가 렌더 아이템 수, default: 5
+  /**
+   * React Aria 1.13.0: 커스텀 필터 함수
+   * @example filter={(item) => item.status === 'active'}
+   */
+  filter?: (item: T) => boolean;
+  /**
+   * React Aria 1.13.0: 텍스트 기반 필터링
+   * @example filterText="search query"
+   */
+  filterText?: string;
+  /**
+   * React Aria 1.13.0: 필터링 대상 필드 목록
+   * @default ['label', 'name', 'title']
+   */
+  filterFields?: (keyof T)[];
 }
 
 const listBoxStyles = tv({
@@ -63,13 +101,24 @@ export function ListBox<T extends object>({
   columnMapping,
   variant = "primary",
   size = "md",
+  enableVirtualization = false,
+  height = 300,
+  overscan = 5,
+  filter,
+  filterText,
+  filterFields = ['label', 'name', 'title'] as (keyof T)[],
   ...props
 }: ExtendedListBoxProps<T>) {
+  // Refs for virtualization
+  const parentRef = useRef<HTMLDivElement>(null);
+  const [focusedIndex, setFocusedIndex] = useState<number>(-1);
+
   // useCollectionData Hook으로 데이터 가져오기 (Static, API, Supabase 통합)
   const {
     data: boundData,
     loading,
     error,
+    reload,
   } = useCollectionData({
     dataBinding: dataBinding as DataBinding,
     componentName: "ListBox",
@@ -78,6 +127,32 @@ export function ListBox<T extends object>({
       { id: 2, name: "User 2", email: "user2@example.com", role: "User" },
     ],
   });
+
+  // 아이템 높이 (사이즈 기반)
+  const itemHeight = ITEM_HEIGHTS[size];
+
+  // React Aria 1.13.0: 필터링 로직
+  const filteredData = React.useMemo(() => {
+    let result = [...boundData];
+
+    // 커스텀 필터 적용
+    if (filter) {
+      result = result.filter((item) => filter(item as unknown as T));
+    }
+
+    // 텍스트 필터 적용
+    if (filterText && filterText.trim()) {
+      const searchText = filterText.toLowerCase().trim();
+      result = result.filter((item) =>
+        filterFields.some((field) => {
+          const value = item[field as string];
+          return value && String(value).toLowerCase().includes(searchText);
+        })
+      );
+    }
+
+    return result;
+  }, [boundData, filter, filterText, filterFields]);
 
   // DataBinding이 있고 데이터가 로드되었을 때 동적 아이템 생성
   // PropertyDataBinding 형식 (source, name) 또는 DataBinding 형식 (type: "collection") 둘 다 지원
@@ -104,15 +179,188 @@ export function ListBox<T extends object>({
       });
     });
 
+  // 가상화용 아이템 배열 (메모이제이션) - filteredData 사용
+  const virtualItems = useMemo(() => {
+    if (!hasDataBinding || filteredData.length === 0) return [];
+    return filteredData.map((item, index) => ({
+      id: String(item.id || index),
+      label: String(item.name || item.title || item.label || `Item ${index + 1}`),
+      ...item,
+    }));
+  }, [hasDataBinding, filteredData]);
+
+  // useVirtualizer 설정
+  const virtualizer = useVirtualizer({
+    count: enableVirtualization ? virtualItems.length : 0,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => itemHeight,
+    overscan,
+    enabled: enableVirtualization && virtualItems.length > 0,
+  });
+
+  // 선택된 아이템으로 스크롤
+  useEffect(() => {
+    if (!enableVirtualization || !props.selectedKeys) return;
+
+    const selectedKeys = props.selectedKeys as Iterable<string | number>;
+    const firstKey = Array.from(selectedKeys)[0];
+    if (firstKey !== undefined) {
+      const index = virtualItems.findIndex((item) => item.id === String(firstKey));
+      if (index !== -1) {
+        virtualizer.scrollToIndex(index, { align: "auto" });
+        setFocusedIndex(index);
+      }
+    }
+  }, [enableVirtualization, props.selectedKeys, virtualItems, virtualizer]);
+
+  // 키보드 네비게이션 핸들러
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLDivElement>) => {
+      if (!enableVirtualization) return;
+
+      const count = virtualItems.length;
+      if (count === 0) return;
+
+      let newIndex = focusedIndex;
+      let handled = false;
+
+      switch (e.key) {
+        case "ArrowDown":
+          newIndex = Math.min(focusedIndex + 1, count - 1);
+          handled = true;
+          break;
+        case "ArrowUp":
+          newIndex = Math.max(focusedIndex - 1, 0);
+          handled = true;
+          break;
+        case "Home":
+          newIndex = 0;
+          handled = true;
+          break;
+        case "End":
+          newIndex = count - 1;
+          handled = true;
+          break;
+        case "Enter":
+        case " ":
+          if (focusedIndex >= 0 && focusedIndex < count && props.onSelectionChange) {
+            const item = virtualItems[focusedIndex];
+            props.onSelectionChange(new Set([item.id]));
+            handled = true;
+          }
+          break;
+      }
+
+      if (handled) {
+        e.preventDefault();
+        e.stopPropagation();
+        if (newIndex !== focusedIndex) {
+          setFocusedIndex(newIndex);
+          virtualizer.scrollToIndex(newIndex, { align: "auto" });
+        }
+      }
+    },
+    [enableVirtualization, focusedIndex, virtualItems, virtualizer, props.onSelectionChange]
+  );
+
+  // ========== 가상화 렌더링 ==========
+  if (enableVirtualization && hasDataBinding && virtualItems.length > 0) {
+    // Loading 상태
+    if (loading) {
+      return (
+        <div
+          className={`react-aria-ListBox virtualized ${variant} ${size}`}
+          style={{ height }}
+        >
+          <CollectionLoadingState size={size} variant={variant} height={height} />
+        </div>
+      );
+    }
+
+    // Error 상태
+    if (error) {
+      return (
+        <div
+          className={`react-aria-ListBox virtualized ${variant} ${size}`}
+          style={{ height }}
+        >
+          <CollectionErrorDisplay error={error} onRetry={reload} size={size} variant={variant} height={height} />
+        </div>
+      );
+    }
+
+    const virtualRows = virtualizer.getVirtualItems();
+    const totalSize = virtualizer.getTotalSize();
+
+    return (
+      <div
+        ref={parentRef}
+        role="listbox"
+        aria-label={props["aria-label"] || "List"}
+        tabIndex={0}
+        onKeyDown={handleKeyDown}
+        className={`react-aria-ListBox virtualized ${variant} ${size}`}
+        style={{
+          height,
+          overflow: "auto",
+          position: "relative",
+        }}
+      >
+        <div
+          style={{
+            height: totalSize,
+            width: "100%",
+            position: "relative",
+          }}
+        >
+          {virtualRows.map((virtualRow) => {
+            const item = virtualItems[virtualRow.index];
+            if (!item) return null;
+
+            const isSelected = props.selectedKeys
+              ? Array.from(props.selectedKeys as Iterable<string | number>).includes(item.id)
+              : false;
+            const isFocused = focusedIndex === virtualRow.index;
+
+            return (
+              <div
+                key={item.id}
+                role="option"
+                aria-selected={isSelected}
+                data-selected={isSelected || undefined}
+                data-focused={isFocused || undefined}
+                data-focus-visible={isFocused || undefined}
+                className="react-aria-ListBoxItem"
+                style={{
+                  position: "absolute",
+                  top: 0,
+                  left: 0,
+                  width: "100%",
+                  height: virtualRow.size,
+                  transform: `translateY(${virtualRow.start}px)`,
+                }}
+                onClick={() => {
+                  setFocusedIndex(virtualRow.index);
+                  if (props.onSelectionChange) {
+                    props.onSelectionChange(new Set([item.id]));
+                  }
+                }}
+              >
+                {/* children이 render function이면 사용, 아니면 기본 label */}
+                {typeof children === "function"
+                  ? (children as (item: T) => React.ReactNode)(item as unknown as T)
+                  : item.label}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+
   // ColumnMapping이 있으면 각 데이터 항목마다 ListBoxItem 렌더링
   // Table과 동일한 패턴: Element tree의 ListBoxItem 템플릿 + Field 자식 사용
   if (hasDataBinding && columnMapping) {
-    console.log("🎯 ListBox: columnMapping 감지 - 데이터로 아이템 렌더링", {
-      columnMapping,
-      hasChildren: !!children,
-      dataCount: boundData.length,
-    });
-
     // Loading 상태
     if (loading) {
       return (
@@ -152,13 +400,11 @@ export function ListBox<T extends object>({
     }
 
     // 데이터가 있을 때: items prop 사용
-    if (boundData.length > 0) {
-      const items = boundData.map((item, index) => ({
+    if (filteredData.length > 0) {
+      const items = filteredData.map((item, index) => ({
         id: String(item.id || index),
         ...item,
       })) as T[];
-
-      console.log("✅ ListBox with columnMapping - items:", items);
 
       return (
         <AriaListBox
@@ -220,8 +466,8 @@ export function ListBox<T extends object>({
     }
 
     // 데이터가 로드되었을 때
-    if (boundData.length > 0) {
-      const items = boundData.map((item, index) => ({
+    if (filteredData.length > 0) {
+      const items = filteredData.map((item, index) => ({
         id: String(item.id || index),
         label: String(
           item.name || item.title || item.label || `Item ${index + 1}`
@@ -229,12 +475,9 @@ export function ListBox<T extends object>({
         ...item,
       })) as T[];
 
-      console.log("✅ ListBox Dynamic Collection - items:", items, "children type:", typeof children);
-
       // children이 함수(render function)이면 그것을 사용
       // 이는 renderListBox에서 Field 자식들을 포함한 템플릿 렌더 함수를 전달받는 경우
       if (typeof children === "function") {
-        console.log("🔄 ListBox: children render function 사용, items:", items);
         return (
           <AriaListBox
             {...props}
@@ -269,9 +512,6 @@ export function ListBox<T extends object>({
         </AriaListBox>
       );
     }
-
-    // 데이터가 비어있을 때도 children 함수인 경우 처리
-    console.log("⚠️ ListBox: boundData가 비어있음, hasDataBinding:", hasDataBinding, "isPropertyBinding:", isPropertyBinding);
   }
 
   // Static Children (기존 방식)

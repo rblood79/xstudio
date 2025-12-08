@@ -113,7 +113,7 @@
         .flex-alignment {
           grid-area: flex-alignment;
 
-          /* 3x3 alignment grid */
+          /* 3x3 alignment grid with indicator support */
           .react-aria-ToggleButtonGroup {
             display: grid;
             grid-template-columns: repeat(3, var(--spacing-xl));
@@ -122,20 +122,59 @@
             justify-items: center;
             border-radius: var(--radius-md);
             padding: var(--spacing-2xs);
+            position: relative;
+            background: var(--outline-variant);
+            box-shadow: var(--inset-shadow-sm);
+            outline: 1px solid var(--border-color);
+            outline-offset: -1px;
+
+            /* ⭐ 그룹 전체에 focus-within 스타일 적용 */
+            &:focus-within {
+              outline: 2px solid var(--focus-ring-color);
+              outline-offset: -2px;
+            }
 
             .react-aria-ToggleButton {
+              position: relative;
               margin-inline-start: 0;
               width: var(--text-xl);
               height: var(--text-xl);
+              background-color: transparent;
+              border-width: 0;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+
+              /* React Aria 1.13.0: SelectionIndicator inside each button */
+              .react-aria-SelectionIndicator {
+                position: absolute;
+                inset: 0;
+                z-index: -1;
+                border-radius: var(--radius-sm);
+                background: var(--primary);
+                box-shadow: var(--shadow-sm);
+                pointer-events: none;
+                transition: translate 200ms cubic-bezier(0.16, 1, 0.3, 1),
+                  width 200ms cubic-bezier(0.16, 1, 0.3, 1),
+                  height 200ms cubic-bezier(0.16, 1, 0.3, 1);
+
+                @media (prefers-reduced-motion: reduce) {
+                  transition: none;
+                }
+              }
 
               .alignment-dot {
+                position: relative;
+                z-index: 1;
                 width: var(--spacing);
                 height: var(--spacing);
                 background-color: var(--color-gray-400);
+                border-radius: 50%;
               }
+
               &[data-selected] {
                 .alignment-dot {
-                  background-color: var(--on-surface);
+                  background-color: var(--on-primary);
                 }
               }
             }
@@ -436,6 +475,17 @@
       justify-content: space-between;
       align-items: center;
       padding: var(--spacing);
+      background: var(--outline-variant);
+      box-shadow: var(--inset-shadow-sm);
+      outline: 1px solid var(--border-color);
+      outline-offset: -1px;
+      border-radius: var(--radius-md);
+
+      /* ⭐ 그룹 전체에 focus-within 스타일 적용 */
+      &:focus-within {
+        outline: 2px solid var(--focus-ring-color);
+        outline-offset: -2px;
+      }
 
       &::before {
         top: 0px;
@@ -448,20 +498,22 @@
 
       .react-aria-ToggleButton {
         background-color: transparent;
-        border-color: transparent;
+        border-width: 0;
         max-width: var(--text-xl);
         height: var(--text-xl);
-        padding: 0;
+        padding: var(--spacing-xs);
+        display: flex;
+        align-items: center;
+        justify-content: center;
 
         &[data-pressed] {
           background: transparent;
-          border-color: transparent;
           color: var(--on-surface);
         }
 
         &[data-selected] {
+          box-shadow: var(--shadow-sm);
           background: transparent;
-          border-color: transparent;
           color: var(--surface);
           svg {
             stroke: var(--on-surface);
@@ -469,7 +521,6 @@
 
           &[data-pressed] {
             background: transparent;
-            border-color: transparent;
             color: var(--surface);
           }
         }
@@ -510,7 +561,7 @@
       display: flex;
     }
 
-    .section-header .section-actions .iconButton {
+    .section-header .iconButton {
       padding: var(--spacing-sm);
     }
 
@@ -581,6 +632,18 @@
             grid-template-rows: repeat(3, 1fr);
             gap: 3px;
             border-radius: var(--radius-md);
+
+            /* React Aria 1.13.0: 3x3 Grid SelectionIndicator for 2D movement */
+            .react-aria-SelectionIndicator {
+              border-radius: var(--radius-sm);
+              transition: transform 200ms cubic-bezier(0.16, 1, 0.3, 1),
+                width 200ms cubic-bezier(0.16, 1, 0.3, 1),
+                height 200ms cubic-bezier(0.16, 1, 0.3, 1);
+
+              @media (prefers-reduced-motion: reduce) {
+                transition: none;
+              }
+            }
 
             .react-aria-ToggleButton {
               margin-inline-start: 0;
@@ -824,7 +887,7 @@
       outline-offset: -2px;
     }
 
-    .react-aria-ToggleButtonGroup {
+    .react-aria-ToggleButtonGroup:not([data-indicator="true"]) {
       width: 100%;
       background-color: var(--outline-variant);
       border-radius: var(--radius-md);
@@ -1960,11 +2023,11 @@
   }
 
   /* ========================================
-   * DatasetEditor Styles
-   * Dataset 편집기 전용 스타일
+   * DataTableEditor Styles
+   * DataTable 편집기 전용 스타일
    * ======================================== */
 
-  .dataset-status-preview {
+  .datatable-status-preview {
     display: flex;
     flex-direction: column;
     gap: var(--spacing-xs);
@@ -1973,7 +2036,7 @@
     border-radius: var(--radius-sm);
   }
 
-  .dataset-status-row {
+  .datatable-status-row {
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -1986,11 +2049,11 @@
     }
   }
 
-  .dataset-status-label {
+  .datatable-status-label {
     color: var(--on-surface-variant);
   }
 
-  .dataset-status-value {
+  .datatable-status-value {
     display: flex;
     align-items: center;
     gap: var(--spacing-xs);
@@ -2006,13 +2069,13 @@
     }
   }
 
-  .dataset-actions {
+  .datatable-actions {
     display: flex;
     gap: var(--spacing-sm);
     margin-top: var(--spacing-sm);
   }
 
-  .dataset-editor-info {
+  .datatable-editor-info {
     padding: var(--spacing-sm);
     background: var(--surface-container);
     border-radius: var(--radius-sm);
@@ -2020,12 +2083,12 @@
     color: var(--on-surface-variant);
   }
 
-  .dataset-editor-info-text {
+  .datatable-editor-info-text {
     margin: 0 0 var(--spacing-sm) 0;
     line-height: var(--text-xs--line-height);
   }
 
-  .dataset-editor-info-list {
+  .datatable-editor-info-list {
     margin: 0;
     padding-left: var(--spacing-md);
 
@@ -2059,5 +2122,49 @@
     to {
       transform: rotate(360deg);
     }
+  }
+
+  /* ========================================
+   * Auto-Generate Fields Section
+   * DataBinding 후 Field 자동 생성 UI
+   * ======================================== */
+  .auto-generate-section {
+    margin-top: var(--spacing-md);
+    padding: var(--spacing-md);
+    background: var(--surface-container);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--outline-variant);
+  }
+
+  .schema-info {
+    margin-bottom: var(--spacing-sm);
+  }
+
+  .schema-columns {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-xs);
+    margin-top: var(--spacing-xs);
+  }
+
+  .schema-column-tag {
+    display: inline-flex;
+    align-items: center;
+    padding: var(--spacing-xs) var(--spacing-sm);
+    background: var(--surface-container-high);
+    border-radius: var(--radius-sm);
+    font-size: var(--text-2xs);
+    color: var(--on-surface-variant);
+  }
+
+  .schema-column-more {
+    display: inline-flex;
+    align-items: center;
+    padding: var(--spacing-xs) var(--spacing-sm);
+    background: var(--primary-container);
+    color: var(--on-primary-container);
+    border-radius: var(--radius-sm);
+    font-size: var(--text-2xs);
+    font-weight: 500;
   }
 }

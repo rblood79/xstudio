@@ -79,7 +79,7 @@ export const renderTabs = (
         updateElementProps(element.id, updatedProps);
       }}
     >
-      <TabList>
+      <TabList showIndicator={Boolean(element.props.showIndicator)}>
         {tabChildren.map((tab) => (
           <Tab key={tab.id} id={tab.id}>
             {tab.props.title}

@@ -7,6 +7,7 @@
     --tb-selected-border-pressed: var(--primary-pressed);
     --tb-selected-text: var(--on-primary);
 
+    box-sizing: border-box;
     color: var(--on-surface);
     background: var(--surface-container-high);
     border: 1px solid var(--outline-variant);

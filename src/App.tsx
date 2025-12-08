@@ -27,11 +27,12 @@ function App() {
   const { vortexRef, effectType, setEffectType } = useParticleBackground();
   const vortexIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // 이펙트 순환 핸들러 (sand → curl → matrix → sand)
+  // 이펙트 순환 핸들러 (sand → curl → matrix → code → sand)
   const handleEffectCycle = useCallback(() => {
-    setEffectType((current) => {
+    setEffectType((current: "sand" | "curl" | "matrix" | "code") => {
       if (current === "sand") return "curl";
       if (current === "curl") return "matrix";
+      if (current === "matrix") return "code";
       return "sand";
     });
   }, [setEffectType]);
@@ -46,7 +47,10 @@ function App() {
 
   // 테마 변경 시 document에 적용
   useEffect(() => {
-    document.documentElement.setAttribute("data-theme", isDarkMode ? "dark" : "light");
+    document.documentElement.setAttribute(
+      "data-theme",
+      isDarkMode ? "dark" : "light"
+    );
     localStorage.setItem("theme", isDarkMode ? "dark" : "light");
   }, [isDarkMode]);
 
@@ -108,6 +112,8 @@ function App() {
   // 회오리 이동 (마우스 무브)
   const handleVortexMove = useCallback(
     (e: React.MouseEvent) => {
+      // 버튼 위에서는 회오리 이동 안함
+      if ((e.target as HTMLElement).closest("button")) return;
       if (!vortexRef.current.active) return;
 
       const { x, y } = screenToWorld(e.clientX, e.clientY);
@@ -193,7 +199,7 @@ function App() {
         <ToggleButton
           id="effect"
           className="toggle-button"
-          isSelected={effectType === "matrix"}
+          isSelected={effectType === "matrix" || effectType === "code"}
           onChange={handleEffectCycle}
         >
           {effectType.toUpperCase()}
