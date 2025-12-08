@@ -22,7 +22,7 @@ export const TriggerNode = memo(({ data }: TriggerNodeProps) => {
   if (!metadata) {
     console.warn(`⚠️ Missing EVENT_METADATA for event type: ${data.eventType}`);
     return (
-      <div className="reactflow-trigger-node">
+      <div className="event-flow-trigger-node">
         <div className="node-header">
           <span className="node-icon">⚡</span>
           <span className="node-title">Trigger</span>
@@ -36,7 +36,7 @@ export const TriggerNode = memo(({ data }: TriggerNodeProps) => {
   }
 
   return (
-    <div className="reactflow-trigger-node">
+    <div className="event-flow-trigger-node">
       <div className="node-header">
         <span className="node-icon">⚡</span>
         <span className="node-title">Trigger</span>

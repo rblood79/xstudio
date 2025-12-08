@@ -36,7 +36,7 @@ export const ActionNode = memo(({ data }: ActionNodeProps) => {
   if (!metadata) {
     console.warn(`⚠️ Missing ACTION_METADATA for action type: ${data.action.type}`);
     return (
-      <div className="reactflow-action-node">
+      <div className="event-flow-action-node">
         <Handle type="target" position={Position.Top} id="action-in" />
         <div className="node-header">
           <span className="node-icon">⚙️</span>
@@ -52,7 +52,7 @@ export const ActionNode = memo(({ data }: ActionNodeProps) => {
   const configSummary = generateActionSummary(data.action);
 
   return (
-    <div className="reactflow-action-node">
+    <div className="event-flow-action-node">
       <Handle type="target" position={Position.Top} id="action-in" />
       <div className="node-header">
         <span className="node-icon">{metadata.icon}</span>

@@ -43,7 +43,7 @@ export function ReactFlowCanvas({
   );
 
   return (
-    <div className="reactflow-canvas" style={{ height: "600px", width: "100%" }}>
+    <div className="event-flow-canvas" style={{ height: "600px", width: "100%" }}>
       <ReactFlow
         nodes={initialNodes}
         edges={edges}

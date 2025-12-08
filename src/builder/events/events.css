@@ -847,17 +847,17 @@
   margin: 0;
 }
 
-/* ===== ReactFlow Styles ===== */
+/* ===== Event Flow Visual Styles ===== */
 
-.reactflow-canvas {
+.event-flow-canvas {
   border: 1px solid var(--outline-variant);
   border-radius: var(--radius-md);
   overflow: hidden;
   background: var(--surface);
 }
 
-.reactflow-trigger-node,
-.reactflow-action-node {
+.event-flow-trigger-node,
+.event-flow-action-node {
   min-width: 200px;
   padding: var(--spacing-md);
   background: var(--surface);
@@ -866,7 +866,7 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
-.reactflow-trigger-node {
+.event-flow-trigger-node {
   background: linear-gradient(
     135deg,
     var(--surface-container-low) 0%,
@@ -875,13 +875,13 @@
   border-color: var(--focus-ring-color);
 }
 
-.reactflow-action-node:hover {
+.event-flow-action-node:hover {
   border-color: var(--focus-ring-color);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
-.reactflow-trigger-node .node-header,
-.reactflow-action-node .node-header {
+.event-flow-trigger-node .node-header,
+.event-flow-action-node .node-header {
   display: flex;
   align-items: center;
   gap: var(--spacing-sm);
@@ -889,20 +889,20 @@
   border-bottom: 1px solid var(--outline-variant);
 }
 
-.reactflow-trigger-node .node-icon,
-.reactflow-action-node .node-icon {
+.event-flow-trigger-node .node-icon,
+.event-flow-action-node .node-icon {
   font-size: var(--font-size-lg);
 }
 
-.reactflow-trigger-node .node-title,
-.reactflow-action-node .node-title {
+.event-flow-trigger-node .node-title,
+.event-flow-action-node .node-title {
   font-size: var(--font-size-sm);
   font-weight: 600;
   color: var(--on-surface);
   flex: 1;
 }
 
-.reactflow-action-node .node-index {
+.event-flow-action-node .node-index {
   font-size: var(--font-size-xs);
   font-weight: 500;
   color: var(--on-surface-variant);
@@ -911,24 +911,24 @@
   border-radius: var(--radius-sm);
 }
 
-.reactflow-trigger-node .node-content,
-.reactflow-action-node .node-content {
+.event-flow-trigger-node .node-content,
+.event-flow-action-node .node-content {
   padding-top: var(--spacing-sm);
 }
 
-.reactflow-trigger-node .trigger-event-type {
+.event-flow-trigger-node .trigger-event-type {
   font-size: var(--font-size-sm);
   font-weight: 500;
   color: var(--on-surface);
   margin-bottom: var(--spacing-2xs);
 }
 
-.reactflow-trigger-node .trigger-description {
+.event-flow-trigger-node .trigger-description {
   font-size: var(--font-size-xs);
   color: var(--on-surface-variant);
 }
 
-.reactflow-action-node .action-config-summary {
+.event-flow-action-node .action-config-summary {
   font-size: var(--font-size-xs);
   font-family: "Monaco", "Menlo", "Courier New", monospace;
   color: var(--on-surface-variant);
