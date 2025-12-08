@@ -5,9 +5,14 @@
  */
 
 import { memo } from 'react';
-import { Handle, Position, type NodeProps } from 'reactflow';
+import { Handle, Position } from '@xyflow/react';
 import { Database, Globe, Cloud, TestTube } from 'lucide-react';
 import type { DataSourceNodeData } from '../types';
+
+interface DataSourceNodeProps {
+  data: DataSourceNodeData;
+  selected?: boolean;
+}
 
 const getSourceIcon = (sourceType: string) => {
   switch (sourceType) {
@@ -42,7 +47,7 @@ const getSourceLabel = (sourceType: string) => {
 export const DataSourceNode = memo(function DataSourceNode({
   data,
   selected,
-}: NodeProps<DataSourceNodeData>) {
+}: DataSourceNodeProps) {
   const { dataSource, pageIds } = data;
   const Icon = getSourceIcon(dataSource.sourceType);
 

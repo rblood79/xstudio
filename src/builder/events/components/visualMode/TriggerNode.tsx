@@ -1,16 +1,21 @@
 import { memo } from "react";
-import { Handle, Position, type NodeProps } from "reactflow";
+import { Handle, Position } from "@xyflow/react";
 import type { EventType } from "../../types/eventTypes";
 import { EVENT_METADATA } from "../../data/eventCategories";
 
 export interface TriggerNodeData {
   eventType: EventType;
+  [key: string]: unknown;
+}
+
+interface TriggerNodeProps {
+  data: TriggerNodeData;
 }
 
 /**
  * ReactFlow Custom Node: Event Trigger
  */
-export const TriggerNode = memo(({ data }: NodeProps<TriggerNodeData>) => {
+export const TriggerNode = memo(({ data }: TriggerNodeProps) => {
   const metadata = EVENT_METADATA[data.eventType];
 
   // Fallback for missing metadata

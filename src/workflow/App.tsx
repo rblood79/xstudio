@@ -5,7 +5,7 @@
  */
 
 import { useEffect, useCallback, useState, useRef } from 'react';
-import { ReactFlowProvider } from 'reactflow';
+import { ReactFlowProvider } from '@xyflow/react';
 import { useWorkflowStore, getWorkflowStore } from './store';
 import { WorkflowCanvas, WorkflowToolbar } from './components';
 import type { WorkflowMessage, WorkflowPage, WorkflowLayout, WorkflowElement } from './types';

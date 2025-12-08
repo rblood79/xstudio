@@ -5,14 +5,19 @@
  */
 
 import { memo } from 'react';
-import { Handle, Position, type NodeProps } from 'reactflow';
+import { Handle, Position } from '@xyflow/react';
 import { Layout, FileStack, Box } from 'lucide-react';
 import type { LayoutNodeData } from '../types';
+
+interface LayoutNodeProps {
+  data: LayoutNodeData;
+  selected?: boolean;
+}
 
 export const LayoutNode = memo(function LayoutNode({
   data,
   selected,
-}: NodeProps<LayoutNodeData>) {
+}: LayoutNodeProps) {
   const { layout, pageIds, slotCount } = data;
 
   return (

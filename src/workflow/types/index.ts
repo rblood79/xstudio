@@ -4,7 +4,7 @@
  * ReactFlow 기반 프로젝트 워크플로우 시각화를 위한 타입 정의
  */
 
-import type { Node, Edge } from 'reactflow';
+import type { Node, Edge } from '@xyflow/react';
 
 // ============================================
 // Page & Layout Types (from Builder)
@@ -89,8 +89,20 @@ export interface WorkflowEventAction {
   id: string;
   type: string;
   target?: string;
+  /** Config field (new block editor format) */
+  config?: {
+    path?: string;
+    href?: string;
+    to?: string;
+    url?: string;
+    [key: string]: unknown;
+  };
+  /** Value field (legacy format) */
   value?: {
     path?: string;
+    href?: string;
+    to?: string;
+    url?: string;
     openInNewTab?: boolean;
     replace?: boolean;
     [key: string]: unknown;
@@ -139,6 +151,8 @@ export interface PageNodeData {
   thumbnail?: string;
   /** 페이지 요소 개수 */
   elementCount: number;
+  /** Index signature for @xyflow/react v12 compatibility */
+  [key: string]: unknown;
 }
 
 export interface LayoutNodeData {
@@ -148,6 +162,8 @@ export interface LayoutNodeData {
   pageIds: string[];
   /** Slot 개수 */
   slotCount: number;
+  /** Index signature for @xyflow/react v12 compatibility */
+  [key: string]: unknown;
 }
 
 export interface DataSourceNodeData {
@@ -155,6 +171,8 @@ export interface DataSourceNodeData {
   dataSource: DataSourceInfo;
   /** 이 데이터 소스를 사용하는 페이지 ID 목록 */
   pageIds: string[];
+  /** Index signature for @xyflow/react v12 compatibility */
+  [key: string]: unknown;
 }
 
 // ============================================
@@ -175,6 +193,8 @@ export type EdgeType = 'navigation' | 'event-navigation' | 'layout-usage' | 'dat
 export interface WorkflowEdgeData {
   type: EdgeType;
   label?: string;
+  /** Index signature for @xyflow/react v12 compatibility */
+  [key: string]: unknown;
 }
 
 export type WorkflowEdge = Edge<WorkflowEdgeData>;

@@ -1,5 +1,5 @@
 import { memo } from "react";
-import { Handle, Position, type NodeProps } from "reactflow";
+import { Handle, Position } from "@xyflow/react";
 import type { EventAction, ActionConfig } from "../../types/eventTypes";
 import { ACTION_METADATA } from "../../data/actionMetadata";
 
@@ -19,12 +19,17 @@ function getConfigValue(config: ActionConfig | undefined, key: string): string {
 export interface ActionNodeData {
   action: EventAction;
   index: number;
+  [key: string]: unknown;
+}
+
+interface ActionNodeProps {
+  data: ActionNodeData;
 }
 
 /**
  * ReactFlow Custom Node: Action Execution
  */
-export const ActionNode = memo(({ data }: NodeProps<ActionNodeData>) => {
+export const ActionNode = memo(({ data }: ActionNodeProps) => {
   const metadata = ACTION_METADATA[data.action.type];
 
   // Fallback for missing metadata
