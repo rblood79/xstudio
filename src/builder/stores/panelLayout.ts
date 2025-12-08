@@ -83,19 +83,7 @@ function loadLayoutFromStorage(): import('../panels/core/types').PanelLayoutStat
         result.bottomHeight = DEFAULT_PANEL_LAYOUT.bottomHeight;
       }
 
-      // 마이그레이션: dataset → datatable 리네이밍
-      if (Array.isArray(result.leftPanels)) {
-        result.leftPanels = result.leftPanels.map((id) =>
-          id === 'dataset' ? 'datatable' : id === 'datasetEditor' ? 'datatableEditor' : id
-        );
-      }
-      if (Array.isArray(result.activeLeftPanels)) {
-        result.activeLeftPanels = result.activeLeftPanels.map((id) =>
-          id === 'dataset' ? 'datatable' : id === 'datasetEditor' ? 'datatableEditor' : id
-        );
-      }
-
-      // 마이그레이션: datatableEditor가 leftPanels에 없으면 추가
+      // datatableEditor가 leftPanels에 없으면 추가
       if (Array.isArray(result.leftPanels) && !result.leftPanels.includes('datatableEditor')) {
         const datatableIndex = result.leftPanels.indexOf('datatable');
         if (datatableIndex >= 0) {
