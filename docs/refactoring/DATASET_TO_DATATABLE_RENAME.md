@@ -417,7 +417,20 @@ export { DataTablePanel } from "./DataTablePanel";
 - [ ] import 경로 변경
 - [ ] 관련 타입 참조 변경
 
-#### 2.8 검증
+#### 2.8 types/editorTypes.ts 변경
+
+**파일**: `src/builder/panels/datatable/types/editorTypes.ts`
+
+- [ ] import 경로 변경 (`dataset.types` → `datatable.types`)
+- [ ] 타입 참조 변경
+
+#### 2.9 editors/index.ts 변경
+
+**파일**: `src/builder/panels/datatable/editors/index.ts`
+
+- [ ] export 문 변경
+
+#### 2.10 검증
 - [ ] Panel 렌더링 확인
 - [ ] Panel 전환 동작 확인
 
@@ -508,8 +521,8 @@ export { DataTablePanel } from "./DataTablePanel";
 
 **파일**: `src/types/events/events.registry.ts`
 
-- [ ] `loadDataTable`, `saveToDataTable` 추가 (이미 Phase 0에서 완료)
-- [ ] `loadDataset`, `saveToDataset`에 `@deprecated` 주석
+- [ ] `loadDataset` → `loadDataTable`
+- [ ] `saveToDataset` → `saveToDataTable`
 - [ ] `ACTION_CATEGORIES.dataPanel.actions` 배열 업데이트
 
 #### 4.2 Action Editor 파일 변경
@@ -528,8 +541,16 @@ mv SaveToDatasetActionEditor.tsx SaveToDataTableActionEditor.tsx
 
 **파일**: `src/builder/events/actions/ActionEditor.tsx`
 
-- [ ] import 변경
-- [ ] case 문 추가/변경 (신규 + deprecated 호환)
+- [ ] import 변경: `LoadDatasetActionEditor` → `LoadDataTableActionEditor`
+- [ ] import 변경: `SaveToDatasetActionEditor` → `SaveToDataTableActionEditor`
+- [ ] import 타입 변경: `LoadDatasetConfig` → `LoadDataTableConfig`
+- [ ] import 타입 변경: `SaveToDatasetConfig` → `SaveToDataTableConfig`
+- [ ] options 배열: `{ value: "loadDataset", label: "Load Dataset" }` → `{ value: "loadDataTable", label: "Load DataTable" }`
+- [ ] options 배열: `{ value: "saveToDataset", label: "Save to Dataset" }` → `{ value: "saveToDataTable", label: "Save to DataTable" }`
+- [ ] defaultConfigs: `loadDataset: { datasetName: "" }` → `loadDataTable: { dataTableName: "" }`
+- [ ] defaultConfigs: `saveToDataset: { datasetName: "" }` → `saveToDataTable: { dataTableName: "" }`
+- [ ] case 문: `action.type === "loadDataset"` → `action.type === "loadDataTable"`
+- [ ] case 문: `action.type === "saveToDataset"` → `action.type === "saveToDataTable"`
 
 #### 4.4 events/index.ts 변경
 
@@ -666,11 +687,13 @@ mv SaveToDatasetActionEditor.tsx SaveToDataTableActionEditor.tsx
 - [ ] `.binding-tag.binding-dataset` → `.binding-tag.binding-datatable`
 - [ ] `[data-theme="dark"] .binding-tag.binding-dataset` → `[data-theme="dark"] .binding-tag.binding-datatable`
 
-#### 6.6 기타 Editor CSS 주석 변경
+#### 6.6 Panel 내부 Editor CSS 주석 변경
 
-- [ ] `ApiEndpointEditor.css` - 주석 내 `DatasetPanel` → `DataTablePanel`
+**파일들** (`src/builder/panels/datatable/editors/`):
+- [ ] `ApiEndpointEditor.css` - 주석 내 `DatasetPanel` → `DataTablePanel`, `DatasetEditorPanel` → `DataTableEditorPanel`
 - [ ] `VariableEditor.css` - 주석 내 `DatasetPanel` → `DataTablePanel`
 - [ ] `DataTableEditor.css` - 주석 내 `DatasetPanel` → `DataTablePanel`
+- [ ] `DataTableCreator.css` - 주석 확인 및 변경
 
 #### 6.7 TSX 파일 className 변경
 
@@ -832,6 +855,7 @@ npm run test:e2e
 - [ ] `common/index.css` 클래스명 변경 (8개)
 - [ ] `list-group.css` data-* 속성 변경 (1개)
 - [ ] `EventsPanel.css` 클래스명 변경 (2개)
+- [ ] Panel 내부 Editor CSS 주석 변경 (4개 파일)
 - [ ] TSX 파일 className 변경
 
 **Phase 7: 문서**
@@ -902,6 +926,6 @@ git revert <commit-hash>
 
 ---
 
-**문서 버전**: 3.1
+**문서 버전**: 3.2
 **작성자**: Claude
 **검토자**: -
