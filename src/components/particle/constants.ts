@@ -9,7 +9,7 @@ export const BASE_FONT_SIZE = 260;
 
 // ==================== 애니메이션 속도 ====================
 export const MORPH_IN_SPEED = 0.08;
-export const MORPH_OUT_SPEED = 0.015;
+export const MORPH_OUT_SPEED = 0.024;
 export const TRANSITION_SPEED = 0.045;
 export const VORTEX_FADE_SPEED = 0.015;
 

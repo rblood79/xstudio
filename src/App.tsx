@@ -27,11 +27,12 @@ function App() {
   const { vortexRef, effectType, setEffectType } = useParticleBackground();
   const vortexIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // 이펙트 순환 핸들러 (sand → curl → matrix → sand)
+  // 이펙트 순환 핸들러 (sand → curl → matrix → code → sand)
   const handleEffectCycle = useCallback(() => {
-    setEffectType((current: "sand" | "curl" | "matrix") => {
+    setEffectType((current: "sand" | "curl" | "matrix" | "code") => {
       if (current === "sand") return "curl";
       if (current === "curl") return "matrix";
+      if (current === "matrix") return "code";
       return "sand";
     });
   }, [setEffectType]);
@@ -198,7 +199,7 @@ function App() {
         <ToggleButton
           id="effect"
           className="toggle-button"
-          isSelected={effectType === "matrix"}
+          isSelected={effectType === "matrix" || effectType === "code"}
           onChange={handleEffectCycle}
         >
           {effectType.toUpperCase()}
