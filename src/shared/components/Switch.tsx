@@ -14,6 +14,7 @@ import { tv } from 'tailwind-variants';
 import { useFocusRing } from '@react-aria/focus';
 import { mergeProps } from '@react-aria/utils';
 import type { ComponentSizeSubset, SwitchVariant } from '../../types/builder/componentVariants.types';
+import { Skeleton } from './Skeleton';
 
 import './styles/Switch.css';
 
@@ -29,6 +30,11 @@ export interface SwitchProps extends Omit<AriaSwitchProps, 'children'> {
    * @default 'md'
    */
   size?: ComponentSizeSubset;
+  /**
+   * Show loading skeleton instead of switch
+   * @default false
+   */
+  isLoading?: boolean;
 }
 
 const switchStyles = tv({
@@ -56,8 +62,18 @@ const switchStyles = tv({
   },
 });
 
-export function Switch({ children, variant = 'default', size = 'md', ...props }: SwitchProps) {
+export function Switch({ children, variant = 'default', size = 'md', isLoading, ...props }: SwitchProps) {
   const { focusProps, isFocusVisible } = useFocusRing();
+
+  if (isLoading) {
+    return (
+      <Skeleton
+        componentVariant="switch"
+        size={size}
+        aria-label="Loading switch..."
+      />
+    );
+  }
 
   return (
     <AriaSwitch

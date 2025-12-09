@@ -15,6 +15,7 @@ import { tv } from 'tailwind-variants';
 import { useFocusRing } from '@react-aria/focus';
 import { mergeProps } from '@react-aria/utils';
 import type { ComponentSizeSubset, CheckboxVariant } from '../../types/builder/componentVariants.types';
+import { Skeleton } from './Skeleton';
 
 import './styles/Checkbox.css';
 
@@ -31,6 +32,11 @@ export interface CheckboxProps extends Omit<AriaCheckboxProps, 'children'> {
    * @default 'md'
    */
   size?: ComponentSizeSubset;
+  /**
+   * Show loading skeleton instead of checkbox
+   * @default false
+   */
+  isLoading?: boolean;
 }
 
 const checkboxStyles = tv({
@@ -59,8 +65,18 @@ const checkboxStyles = tv({
 });
 
 export function MyCheckbox(props: CheckboxProps) {
-  const { children, isTreeItemChild = false, variant = 'default', size = 'md', ...restProps } = props;
+  const { children, isTreeItemChild = false, variant = 'default', size = 'md', isLoading, ...restProps } = props;
   const { focusProps, isFocusVisible } = useFocusRing();
+
+  if (isLoading) {
+    return (
+      <Skeleton
+        componentVariant="checkbox"
+        size={size}
+        aria-label="Loading checkbox..."
+      />
+    );
+  }
 
   // TreeItem 내부에서 사용될 때는 slot을 설정하지 않음
   const checkboxProps = isTreeItemChild

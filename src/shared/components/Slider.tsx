@@ -10,6 +10,7 @@ import {
 import { tv } from 'tailwind-variants';
 import type { ComponentSizeSubset, SliderVariant } from '../../types/builder/componentVariants.types';
 import { formatNumber, formatPercent, formatUnit } from '../../utils/core/numberUtils';
+import { Skeleton } from './Skeleton';
 
 import './styles/Slider.css';
 
@@ -54,6 +55,11 @@ export interface SliderProps<T> extends AriaSliderProps<T> {
      * @default true
      */
     showValue?: boolean;
+    /**
+     * Show loading skeleton instead of slider
+     * @default false
+     */
+    isLoading?: boolean;
 }
 
 const sliderStyles = tv({
@@ -87,8 +93,20 @@ export function Slider<T extends number | number[]>({
     unit,
     customFormatter,
     showValue = true,
+    isLoading,
     ...props
 }: SliderProps<T>) {
+    if (isLoading) {
+        return (
+            <Skeleton
+                componentVariant="slider"
+                size={size}
+                className={props.className as string}
+                aria-label="Loading slider..."
+            />
+        );
+    }
+
     const sliderClassName = composeRenderProps(
         props.className,
         (className) => sliderStyles({ variant, size, className })
