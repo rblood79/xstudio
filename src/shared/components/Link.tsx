@@ -7,6 +7,7 @@ import { tv } from "tailwind-variants";
 import { useFocusRing } from "@react-aria/focus";
 import { mergeProps } from "@react-aria/utils";
 import type { LinkVariant, ComponentSize } from "../../types/componentVariants";
+import { Skeleton } from "./Skeleton";
 import "./styles/Link.css";
 
 export interface LinkProps extends RACLinkProps {
@@ -30,6 +31,11 @@ export interface LinkProps extends RACLinkProps {
    * @default true (when isExternal is true)
    */
   showExternalIcon?: boolean;
+  /**
+   * Show loading skeleton instead of content
+   * @default false
+   */
+  isLoading?: boolean;
 }
 
 const link = tv({
@@ -79,7 +85,18 @@ const link = tv({
  */
 export function Link(props: LinkProps) {
   const { focusProps, isFocusVisible } = useFocusRing();
-  const { isExternal, showExternalIcon = true, ...restProps } = props;
+  const { isExternal, showExternalIcon = true, isLoading, ...restProps } = props;
+
+  // Show skeleton when loading
+  if (isLoading) {
+    return (
+      <Skeleton
+        componentVariant="link"
+        className={props.className as string}
+        aria-label="Loading link..."
+      />
+    );
+  }
 
   // External link security: automatically add rel="noopener noreferrer"
   const externalProps = isExternal
