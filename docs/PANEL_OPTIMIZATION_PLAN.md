@@ -28,11 +28,11 @@
 | 패널 | 상태 | 주요 문제 | 우선순위 |
 |------|------|----------|----------|
 | **MonitorPanel** | 🔴 Critical | RAF 기반 모니터링, 비활성 시 계속 실행 | **P0** |
-| **DataTablePanel** | 🔴 Critical | 4개 API 동시 호출, 캐시 없음 | **P0** |
-| **NodesPanel** | 🟠 High | 8개 훅/selector 구독, 비활성 시에도 실행 | **P1** |
+| **DataTablePanel** | 🟠 Medium | 4개 API 호출 (캐시 없음, but useEffect 내 isActive 체크) | **P2** |
+| **NodesPanel** | ✅ OK | Virtual Scrolling 이미 적용됨 (VirtualizedLayerTree, VirtualizedTree) | - |
 | **PropertiesPanel** | 🟠 High | 5개 selector 구독, Inspector 연동 | **P1** |
 | **StylesPanel** | 🟠 Medium | 4개 훅 구독, localStorage 접근 | **P2** |
-| **EventsPanel** | 🟡 Medium | 2개 selector 구독 | **P2** |
+| **EventsPanel** | ✅ OK | Early return 패턴 적용됨 (Line 126-129) | - |
 | **ComponentsPanel** | 🟡 Low | 5개 selector 구독 | **P3** |
 | AIPanel | ✅ OK | 컴포넌트 분리 패턴 적용됨 | - |
 | SettingsPanel | ✅ OK | 컴포넌트 분리 패턴 적용됨 | - |
@@ -1296,91 +1296,35 @@ class PerformanceMonitor {
 export const performanceMonitor = new PerformanceMonitor();
 ```
 
-#### 3.4 Virtual Scrolling 적용 (NodesPanel)
+#### 3.4 Virtual Scrolling (NodesPanel) - ✅ 이미 적용됨
 
-**파일**: `src/builder/panels/nodes/components/VirtualElementList.tsx`
+> **상태**: 구현 완료 (추가 작업 불필요)
 
+NodesPanel의 Virtual Scrolling은 **이미 Sidebar 컴포넌트에 구현**되어 있습니다:
+
+**기존 구현 파일**:
+- `src/builder/sidebar/VirtualizedLayerTree.tsx` - Layer Tree용 가상 스크롤링
+- `src/builder/sidebar/components/VirtualizedTree.tsx` - 일반 Tree용 가상 스크롤링
+
+**주요 특징**:
 ```typescript
-import { useRef, useMemo } from 'react';
-import { useVirtualizer } from '@tanstack/react-virtual';
-import type { Element } from '../../../../types/core/store.types';
+// VirtualizedLayerTree.tsx (Line 422-427)
+const virtualizer = useVirtualizer({
+  count: flattenedItems.length,
+  getScrollElement: () => parentRef.current,
+  estimateSize: () => 28,  // 각 아이템의 예상 높이 (px)
+  overscan: 5,             // 화면 밖에 미리 렌더링할 아이템 수
+});
 
-interface VirtualElementListProps {
-  elements: Element[];
-  selectedElementId: string | null;
-  onSelectElement: (id: string) => void;
-  itemHeight?: number;
-}
-
-/**
- * 가상화된 요소 목록
- *
- * 대량의 요소가 있어도 렌더링 성능 유지
- */
-export function VirtualElementList({
-  elements,
-  selectedElementId,
-  onSelectElement,
-  itemHeight = 32,
-}: VirtualElementListProps) {
-  const parentRef = useRef<HTMLDivElement>(null);
-
-  // 가상화 설정
-  const virtualizer = useVirtualizer({
-    count: elements.length,
-    getScrollElement: () => parentRef.current,
-    estimateSize: () => itemHeight,
-    overscan: 5,  // 위아래로 5개씩 추가 렌더링
-  });
-
-  const virtualItems = virtualizer.getVirtualItems();
-
-  return (
-    <div
-      ref={parentRef}
-      className="element-list-container"
-      style={{ height: '100%', overflow: 'auto' }}
-    >
-      <div
-        style={{
-          height: `${virtualizer.getTotalSize()}px`,
-          width: '100%',
-          position: 'relative',
-        }}
-      >
-        {virtualItems.map((virtualItem) => {
-          const element = elements[virtualItem.index];
-
-          return (
-            <div
-              key={virtualItem.key}
-              data-index={virtualItem.index}
-              ref={virtualizer.measureElement}
-              className={`element-list-item ${
-                element.id === selectedElementId ? 'selected' : ''
-              }`}
-              style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                width: '100%',
-                height: `${itemHeight}px`,
-                transform: `translateY(${virtualItem.start}px)`,
-              }}
-              onClick={() => onSelectElement(element.id)}
-            >
-              <span className="element-tag">{element.tag}</span>
-              {element.customId && (
-                <span className="element-custom-id">#{element.customId}</span>
-              )}
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
+// 50개 미만은 일반 렌더링 (오버헤드 방지)
+if (flattenedItems.length < 50) {
+  return <>{/* 일반 렌더링 */}</>;
 }
 ```
+
+**추가 최적화 포인트** (선택적):
+- `VirtualizedTree.tsx`에 keyboard navigation, ARIA 지원 이미 포함
+- `TreeItemRow`가 React.memo로 메모이제이션됨
 
 ---
 
@@ -1498,7 +1442,7 @@ export const idleScheduler = new IdleScheduler();
 | `src/builder/panels/monitor/hooks/useMemoryStats.ts` | enabled 추가, CircularBuffer | Phase 3 |
 | `src/builder/panels/monitor/hooks/useWebVitals.ts` | enabled 파라미터 추가 | Phase 3 |
 | `src/builder/panels/datatable/DataTablePanel.tsx` | Gateway 패턴, React Query | Phase 1, 2 |
-| `src/builder/panels/nodes/NodesPanel.tsx` | Gateway 패턴, Virtual Scrolling | Phase 1, 3 |
+| `src/builder/panels/nodes/NodesPanel.tsx` | ✅ Virtual Scrolling 이미 적용 (Gateway 패턴만 검토) | Phase 1 |
 | `src/builder/panels/properties/PropertiesPanel.tsx` | Gateway 패턴, selector 최적화 | Phase 1, 2 |
 | `src/builder/panels/styles/StylesPanel.tsx` | Gateway 패턴 | Phase 1 |
 | `src/builder/panels/events/EventsPanel.tsx` | Gateway 패턴 | Phase 1 |
