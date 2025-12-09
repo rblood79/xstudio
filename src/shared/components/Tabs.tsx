@@ -17,6 +17,7 @@ import type { TabsVariant, ComponentSize } from '../../types/componentVariants';
 import type { DataBinding, ColumnMapping } from '../../types/builder/unified.types';
 import type { DataBindingValue } from '../../builder/panels/common/PropertyDataBinding';
 import { useCollectionData } from '../../builder/hooks/useCollectionData';
+import { Skeleton } from './Skeleton';
 import './styles/Tabs.css';
 
 export interface TabsExtendedProps extends TabsProps {
@@ -38,6 +39,16 @@ export interface TabsExtendedProps extends TabsProps {
    * Column mapping for data binding
    */
   columnMapping?: ColumnMapping;
+  /**
+   * Show loading skeleton instead of tabs
+   * @default false
+   */
+  isLoading?: boolean;
+  /**
+   * Number of skeleton tabs to show when loading
+   * @default 3
+   */
+  skeletonTabCount?: number;
 }
 
 export interface TabListExtendedProps<T extends object> extends TabListProps<T> {
@@ -128,9 +139,31 @@ export function Tabs({
   size = 'md',
   dataBinding,
   columnMapping,
+  isLoading: externalLoading,
+  skeletonTabCount = 3,
   children,
   ...props
 }: TabsExtendedProps) {
+  // External loading state - show skeleton tabs
+  if (externalLoading) {
+    return (
+      <div
+        className={tabsStyles({ variant, size, className: props.className as string })}
+        role="tablist"
+        aria-busy="true"
+        aria-label="Loading tabs..."
+      >
+        <div className="react-aria-TabList" style={{ display: 'flex', gap: '4px' }}>
+          {Array.from({ length: skeletonTabCount }).map((_, i) => (
+            <Skeleton key={i} componentVariant="tab" size={size} index={i} />
+          ))}
+        </div>
+        <div className="react-aria-TabPanel" style={{ padding: '16px' }}>
+          <Skeleton variant="text" lines={3} />
+        </div>
+      </div>
+    );
+  }
   // useCollectionData Hook으로 데이터 가져오기 (PropertyDataBinding 형식 지원)
   const {
     data: boundData,

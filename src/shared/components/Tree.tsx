@@ -16,6 +16,7 @@ import { MyCheckbox } from "./Checkbox";
 import type { DataBinding } from "../../types/builder/unified.types";
 import type { TreeVariant, ComponentSize } from "../../types/componentVariants";
 import { useCollectionData } from "../../builder/hooks/useCollectionData";
+import { Skeleton } from "./Skeleton";
 
 import "./styles/Tree.css";
 
@@ -34,6 +35,16 @@ export interface MyTreeProps<T extends object> extends TreeProps<T> {
    * Data binding configuration
    */
   dataBinding?: DataBinding;
+  /**
+   * Show loading skeleton instead of tree
+   * @default false
+   */
+  isLoading?: boolean;
+  /**
+   * Number of skeleton tree nodes to show when loading
+   * @default 3
+   */
+  skeletonNodeCount?: number;
 }
 
 const treeStyles = tv({
@@ -81,7 +92,25 @@ const treeStyles = tv({
  * </Tree>
  */
 export function Tree<T extends object>(props: MyTreeProps<T>) {
-  const { variant = 'primary', size = 'md', dataBinding, children, ...restProps } = props;
+  const { variant = 'primary', size = 'md', dataBinding, isLoading: externalLoading, skeletonNodeCount = 3, children, ...restProps } = props;
+
+  // External loading state - show skeleton tree
+  if (externalLoading) {
+    return (
+      <div
+        className={treeStyles({ variant, size, className: restProps.className as string })}
+        role="tree"
+        aria-busy="true"
+        aria-label="Loading tree..."
+      >
+        {Array.from({ length: skeletonNodeCount }).map((_, i) => (
+          <div key={i} className="react-aria-TreeItem" style={{ paddingLeft: i === 1 ? '24px' : i === 2 ? '48px' : '0' }}>
+            <Skeleton componentVariant="tree-node" size={size} index={i} />
+          </div>
+        ))}
+      </div>
+    );
+  }
 
   // useCollectionData Hook으로 데이터 가져오기 (Static, API, Supabase 통합)
   const {

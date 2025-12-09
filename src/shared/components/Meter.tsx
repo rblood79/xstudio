@@ -14,6 +14,7 @@ import {
 import { tv } from 'tailwind-variants';
 import type { ComponentSizeSubset, MeterVariant } from '../../types/builder/componentVariants.types';
 import { formatPercent, formatNumber } from '../../utils/core/numberUtils';
+import { Skeleton } from './Skeleton';
 
 import './styles/Meter.css';
 
@@ -51,6 +52,11 @@ export interface MeterProps extends AriaMeterProps {
    * 커스텀 포맷터 함수
    */
   customFormatter?: (value: number) => string;
+  /**
+   * Show loading skeleton instead of meter
+   * @default false
+   */
+  isLoading?: boolean;
 }
 
 const meter = tv({
@@ -82,8 +88,19 @@ export function Meter({
   valueFormat = 'percent',
   showValue = true,
   customFormatter,
+  isLoading,
   ...props
 }: MeterProps) {
+  if (isLoading) {
+    return (
+      <Skeleton
+        componentVariant="meter"
+        size={size}
+        className={props.className as string}
+        aria-label="Loading meter..."
+      />
+    );
+  }
   // 값 포맷팅 함수
   const formatValue = (value: number): string => {
     if (customFormatter) {

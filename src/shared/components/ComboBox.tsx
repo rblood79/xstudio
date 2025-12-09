@@ -27,6 +27,7 @@ import type { ComboBoxVariant, ComponentSize } from '../../types/componentVarian
 import type { DataBinding, ColumnMapping } from '../../types/builder/unified.types';
 import type { DataBindingValue } from '../../builder/panels/common/PropertyDataBinding';
 import { useCollectionData } from '../../builder/hooks/useCollectionData';
+import { Skeleton } from './Skeleton';
 import './styles/ComboBox.css';
 
 export interface ComboBoxProps<T extends object>
@@ -44,6 +45,11 @@ export interface ComboBoxProps<T extends object>
   // M3 props
   variant?: ComboBoxVariant;
   size?: ComponentSize;
+  /**
+   * Show loading skeleton instead of combobox
+   * @default false
+   */
+  isLoading?: boolean;
 }
 
 const comboBoxStyles = tv({
@@ -81,8 +87,20 @@ export function ComboBox<T extends object>({
   popoverClassName,
   variant = 'primary',
   size = 'md',
+  isLoading: externalLoading,
   ...props
 }: ComboBoxProps<T>) {
+  // External loading state (from isLoading prop) - show skeleton
+  if (externalLoading) {
+    return (
+      <Skeleton
+        componentVariant="input"
+        size={size}
+        className={props.className as string}
+        aria-label="Loading combobox..."
+      />
+    );
+  }
   // useCollectionData Hook으로 데이터 가져오기 (Static, API, Supabase 통합)
   const {
     data: boundData,

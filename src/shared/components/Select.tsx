@@ -33,6 +33,7 @@ import type {
 } from "../../types/builder/unified.types";
 import type { DataBindingValue } from "../../builder/panels/common/PropertyDataBinding";
 import { useCollectionData } from "../../builder/hooks/useCollectionData";
+import { Skeleton } from "./Skeleton";
 import "./styles/Select.css";
 
 export interface SelectProps<T extends object>
@@ -66,6 +67,11 @@ export interface SelectProps<T extends object>
    * 다중 선택 시 커스텀 렌더러
    */
   renderMultipleValue?: (selectedItems: T[]) => React.ReactNode;
+  /**
+   * Show loading skeleton instead of select
+   * @default false
+   */
+  isLoading?: boolean;
 }
 
 const selectStyles = tv({
@@ -104,8 +110,21 @@ export function Select<T extends object>({
   selectionMode = "single",
   multipleDisplayMode = "count",
   renderMultipleValue,
+  isLoading: externalLoading,
   ...props
 }: SelectProps<T>) {
+  // External isLoading prop - shows skeleton immediately
+  if (externalLoading) {
+    return (
+      <Skeleton
+        componentVariant="input"
+        size={size}
+        className={props.className as string}
+        aria-label="Loading select..."
+      />
+    );
+  }
+
   // useCollectionData Hook으로 데이터 가져오기 (Static, API, Supabase 통합)
   const {
     data: boundData,

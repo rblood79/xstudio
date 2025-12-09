@@ -15,6 +15,7 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { getLocalTimeZone, today } from '@internationalized/date';
 import { safeParseDateString } from '../../utils/core/dateUtils';
 import type { CalendarVariant, ComponentSize } from '../../types/componentVariants';
+import { Skeleton } from './Skeleton';
 
 import './styles/Calendar.css';
 
@@ -79,6 +80,11 @@ export interface CalendarProps<T extends DateValue>
    * @default 'center'
    */
   selectionAlignment?: 'start' | 'center' | 'end';
+  /**
+   * Show loading skeleton instead of calendar
+   * @default false
+   */
+  isLoading?: boolean;
 }
 
 /**
@@ -110,9 +116,20 @@ export function Calendar<T extends DateValue>(
     minDate,
     maxDate,
     selectionAlignment = 'center',
+    isLoading,
     ...props
   }: CalendarProps<T>
 ) {
+  if (isLoading) {
+    return (
+      <Skeleton
+        componentVariant="calendar"
+        size={size}
+        className={props.className as string}
+        aria-label="Loading calendar..."
+      />
+    );
+  }
   // 타임존 설정
   const effectiveTimezone = timezone || getLocalTimeZone();
 
