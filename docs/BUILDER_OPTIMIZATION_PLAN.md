@@ -1,8 +1,23 @@
 # XStudio Builder 통합 최적화 계획
 
 > **작성일**: 2025-12-09
-> **목표**: 엔터프라이즈급 5,000개+ 요소, 24시간 안정 사용
-> **범위**: Panel 시스템, Store 아키텍처, History, Canvas 통신, 메모리 관리
+> **최종 수정**: 2025-12-09 (검토 피드백 반영)
+> **목표**: 엔터프라이즈급 5,000개+ 요소, 12시간 안정 사용
+> **범위**: Panel 시스템, Store 아키텍처, History, Canvas 통신, 메모리 관리, 네트워크 정책
+
+---
+
+## 검토 피드백 반영 사항
+
+| 피드백 | 반영 위치 | 상태 |
+|--------|----------|------|
+| 지표·예산 정의 필요 | 섹션 2.3 SLO 정의 | ✅ |
+| 스토어 구독 가드 강화 | 섹션 4.5 공통 HOC/훅 | ✅ |
+| 네트워크 호출 스로틀·캐싱 | 섹션 6.4 네트워크 정책 | ✅ |
+| 캔버스 연계 안정성 | 섹션 7.5 Backpressure 정책 | ✅ |
+| 에러/복구 시나리오 | 섹션 10.3 Error Boundary | ✅ |
+| 검증·자동화 | 섹션 11 CI 자동화 | ✅ |
+| 오픈 질문 | 섹션 14 결정 사항 | ✅ |
 
 ---
 
@@ -18,8 +33,10 @@
 8. [Phase 5: Lazy Loading + LRU 캐시](#8-phase-5-lazy-loading--lru-캐시)
 9. [Phase 6: React Query 서버 상태](#9-phase-6-react-query-서버-상태)
 10. [Phase 7: 성능 모니터링 + 자동 복구](#10-phase-7-성능-모니터링--자동-복구)
-11. [구현 순서 및 예상 소요](#11-구현-순서-및-예상-소요)
-12. [기대 효과](#12-기대-효과)
+11. [Phase 8: CI 자동화 + 장시간 테스트](#11-phase-8-ci-자동화--장시간-테스트)
+12. [구현 순서 및 예상 소요](#12-구현-순서-및-예상-소요)
+13. [기대 효과](#13-기대-효과)
+14. [결정 사항 (오픈 질문 해결)](#14-결정-사항-오픈-질문-해결)
 
 ---
 
@@ -95,6 +112,132 @@
 | 대시보드 | 100-150 | 중형 (15 pages) | 1,500-2,250 |
 | SaaS 앱 | 100-200 | 대형 (30 pages) | 3,000-6,000 |
 | 엔터프라이즈 | 150-300 | 초대형 (50 pages) | 7,500-15,000 |
+
+### 2.3 SLO (Service Level Objectives) 정의
+
+> **검토 피드백 반영**: 측정 기준 및 목표치 정량화
+
+#### 2.3.1 메모리 SLO
+
+| 지표 | 초기 (0h) | 4시간 | 8시간 | 12시간 | 경고 임계값 | 위험 임계값 |
+|------|----------|-------|-------|--------|------------|------------|
+| **JS Heap Used** | < 150MB | < 200MB | < 250MB | < 300MB | 350MB | 450MB |
+| **Heap 증가율** | - | < 15MB/h | < 10MB/h | < 8MB/h | > 20MB/h | > 30MB/h |
+| **Store 메모리** | < 50MB | < 60MB | < 70MB | < 80MB | 100MB | 150MB |
+| **History 메모리** | < 5MB | < 8MB | < 10MB | < 15MB | 20MB | 30MB |
+
+#### 2.3.2 상호작용 지연 SLO
+
+| 작업 | P50 목표 | P95 목표 | P99 목표 | 측정 방법 |
+|------|---------|---------|---------|----------|
+| **요소 선택** | < 16ms | < 30ms | < 50ms | `performance.measure()` |
+| **패널 전환** | < 50ms | < 100ms | < 150ms | Panel mount 시간 |
+| **속성 변경** | < 30ms | < 50ms | < 100ms | Store update → render |
+| **Undo/Redo** | < 50ms | < 100ms | < 200ms | History apply 시간 |
+| **페이지 전환** | < 100ms | < 200ms | < 400ms | Lazy load + render |
+| **Canvas 동기화** | < 32ms | < 50ms | < 100ms | postMessage 왕복 |
+
+#### 2.3.3 프레임률 SLO
+
+| 상황 | 최소 FPS | 목표 FPS | 측정 조건 |
+|------|---------|---------|----------|
+| **유휴 상태** | 30 | 60 | 아무 작업 없음 |
+| **드래그 중** | 45 | 60 | 요소 드래그 |
+| **스크롤 중** | 45 | 60 | 패널 스크롤 |
+| **대량 작업** | 30 | 45 | 100개 요소 동시 업데이트 |
+
+#### 2.3.4 네트워크 SLO
+
+| 작업 | 최대 호출 수 | 캐시 히트율 | 재시도 정책 |
+|------|------------|------------|------------|
+| **패널 전환** | 0회 (캐시) | > 90% | - |
+| **프로젝트 로드** | 3회 (pages, elements, settings) | - | 3회, 지수 백오프 |
+| **요소 저장** | 배치 (5초 debounce) | - | 3회, 지수 백오프 |
+| **실시간 동기화** | Supabase Realtime | - | 자동 재연결 |
+
+#### 2.3.5 SLO 모니터링 구현
+
+```typescript
+// src/builder/utils/sloMonitor.ts
+interface SLOMetrics {
+  memory: {
+    heapUsed: number;
+    heapGrowthRate: number;
+    storeMemory: number;
+    historyMemory: number;
+  };
+  latency: {
+    elementSelect: PercentileStats;
+    panelSwitch: PercentileStats;
+    propertyChange: PercentileStats;
+    undoRedo: PercentileStats;
+  };
+  fps: {
+    current: number;
+    min: number;
+    avg: number;
+  };
+}
+
+interface PercentileStats {
+  p50: number;
+  p95: number;
+  p99: number;
+  samples: number[];
+}
+
+class SLOMonitor {
+  private metrics: SLOMetrics;
+  private violations: SLOViolation[] = [];
+
+  /**
+   * 상호작용 지연 측정
+   */
+  measureLatency(operation: string, fn: () => void): void {
+    const start = performance.now();
+    fn();
+    const duration = performance.now() - start;
+
+    this.recordLatency(operation, duration);
+    this.checkSLOViolation(operation, duration);
+  }
+
+  /**
+   * SLO 위반 체크
+   */
+  private checkSLOViolation(operation: string, value: number): void {
+    const thresholds = SLO_THRESHOLDS[operation];
+    if (!thresholds) return;
+
+    if (value > thresholds.p99) {
+      this.violations.push({
+        type: 'latency',
+        operation,
+        value,
+        threshold: thresholds.p99,
+        severity: 'critical',
+        timestamp: Date.now(),
+      });
+
+      console.warn(`[SLO Violation] ${operation}: ${value}ms > ${thresholds.p99}ms (P99)`);
+    }
+  }
+
+  /**
+   * 12시간 회귀 테스트용 리포트
+   */
+  generateReport(): SLOReport {
+    return {
+      duration: this.getSessionDuration(),
+      metrics: this.metrics,
+      violations: this.violations,
+      passed: this.violations.filter(v => v.severity === 'critical').length === 0,
+    };
+  }
+}
+
+export const sloMonitor = new SLOMonitor();
+```
 
 ---
 
@@ -282,6 +425,254 @@ export function useMemoryStats(options: UseMemoryStatsOptions = {}) {
 | PropertiesPanel | Gateway 패턴 적용 |
 | StylesPanel | Gateway 패턴 적용 |
 | ComponentsPanel | Gateway 패턴 적용 |
+
+### 4.5 공통 Panel Guard HOC/훅
+
+> **검토 피드백 반영**: `isActive`/`isVisible` 조건부 구독을 모든 패널에 일괄 적용하는 공통 훅 또는 HOC
+
+#### 4.5.1 PanelShell HOC
+
+**파일**: `src/builder/panels/common/PanelShell.tsx`
+
+```tsx
+import { ComponentType, Suspense } from 'react';
+import { ErrorBoundary } from 'react-error-boundary';
+import { PanelFallback } from './PanelFallback';
+import { PanelErrorFallback } from './PanelErrorFallback';
+
+interface PanelShellOptions {
+  /** 패널 이름 (디버깅용) */
+  name: string;
+  /** Suspense fallback 사용 여부 */
+  suspense?: boolean;
+  /** Error Boundary 사용 여부 */
+  errorBoundary?: boolean;
+}
+
+interface PanelProps {
+  isActive: boolean;
+  [key: string]: unknown;
+}
+
+/**
+ * 모든 패널에 일괄 적용하는 Gateway HOC
+ *
+ * 기능:
+ * 1. isActive 가드 (비활성 시 null 반환)
+ * 2. Error Boundary (에러 격리)
+ * 3. Suspense (로딩 상태)
+ * 4. 성능 측정 (SLO 모니터링)
+ */
+export function withPanelShell<P extends PanelProps>(
+  PanelContent: ComponentType<Omit<P, 'isActive'>>,
+  options: PanelShellOptions
+) {
+  const { name, suspense = true, errorBoundary = true } = options;
+
+  function PanelShell(props: P) {
+    const { isActive, ...contentProps } = props;
+
+    // 🛡️ Gateway 가드: 비활성 시 즉시 반환
+    if (!isActive) {
+      return null;
+    }
+
+    // 성능 측정 시작
+    const measureStart = performance.now();
+
+    let content = (
+      <PanelContent
+        {...(contentProps as Omit<P, 'isActive'>)}
+        onMount={() => {
+          // SLO 측정: 패널 마운트 시간
+          const mountTime = performance.now() - measureStart;
+          sloMonitor.recordLatency('panelSwitch', mountTime);
+        }}
+      />
+    );
+
+    // Suspense 래핑
+    if (suspense) {
+      content = (
+        <Suspense fallback={<PanelFallback name={name} />}>
+          {content}
+        </Suspense>
+      );
+    }
+
+    // Error Boundary 래핑
+    if (errorBoundary) {
+      content = (
+        <ErrorBoundary
+          FallbackComponent={({ error, resetErrorBoundary }) => (
+            <PanelErrorFallback
+              name={name}
+              error={error}
+              onRetry={resetErrorBoundary}
+            />
+          )}
+          onError={(error) => {
+            console.error(`[PanelError] ${name}:`, error);
+            // 에러 리포팅
+          }}
+        >
+          {content}
+        </ErrorBoundary>
+      );
+    }
+
+    return content;
+  }
+
+  PanelShell.displayName = `PanelShell(${name})`;
+  return PanelShell;
+}
+```
+
+#### 4.5.2 사용 예시
+
+```tsx
+// Before: 각 패널마다 수동으로 isActive 체크
+export function MonitorPanel({ isActive }: PanelProps) {
+  const { stats } = useMemoryStats();  // ❌ 항상 실행
+  if (!isActive) return null;
+  return <div>...</div>;
+}
+
+// After: HOC로 일괄 적용
+function MonitorPanelContent() {
+  const { stats } = useMemoryStats({ enabled: true });  // ✅ 활성화 시에만 실행
+  return <div>...</div>;
+}
+
+export const MonitorPanel = withPanelShell(MonitorPanelContent, {
+  name: 'MonitorPanel',
+  suspense: true,
+  errorBoundary: true,
+});
+```
+
+#### 4.5.3 조건부 구독 훅
+
+**파일**: `src/builder/hooks/useConditionalSubscription.ts`
+
+```typescript
+import { useEffect, useRef } from 'react';
+import { StoreApi, UseBoundStore } from 'zustand';
+
+interface ConditionalSubscriptionOptions<T> {
+  /** 구독 활성화 조건 */
+  enabled: boolean;
+  /** 구독할 selector */
+  selector: (state: T) => unknown;
+  /** 변경 시 콜백 */
+  onChange?: (value: unknown) => void;
+  /** 비활성화 시 초기값으로 리셋 여부 */
+  resetOnDisable?: boolean;
+}
+
+/**
+ * 조건부 Store 구독 훅
+ *
+ * isActive=false 시 구독을 완전히 해제하여 불필요한 리렌더링 방지
+ */
+export function useConditionalSubscription<T>(
+  store: UseBoundStore<StoreApi<T>>,
+  options: ConditionalSubscriptionOptions<T>
+) {
+  const { enabled, selector, onChange, resetOnDisable = false } = options;
+  const unsubscribeRef = useRef<(() => void) | null>(null);
+  const lastValueRef = useRef<unknown>(null);
+
+  useEffect(() => {
+    if (!enabled) {
+      // 비활성 시 구독 해제
+      if (unsubscribeRef.current) {
+        unsubscribeRef.current();
+        unsubscribeRef.current = null;
+      }
+
+      if (resetOnDisable) {
+        lastValueRef.current = null;
+      }
+      return;
+    }
+
+    // 활성 시 구독 등록
+    unsubscribeRef.current = store.subscribe((state) => {
+      const newValue = selector(state);
+      if (newValue !== lastValueRef.current) {
+        lastValueRef.current = newValue;
+        onChange?.(newValue);
+      }
+    });
+
+    // 초기값 설정
+    lastValueRef.current = selector(store.getState());
+
+    return () => {
+      if (unsubscribeRef.current) {
+        unsubscribeRef.current();
+        unsubscribeRef.current = null;
+      }
+    };
+  }, [enabled, store, selector, onChange, resetOnDisable]);
+
+  return lastValueRef.current;
+}
+```
+
+#### 4.5.4 PanelSlot 레이어 적용
+
+**파일**: `src/builder/layout/PanelSlot.tsx`
+
+```tsx
+import { ReactNode, useMemo } from 'react';
+import { usePanelStore } from '../stores/panelStore';
+
+interface PanelSlotProps {
+  /** 패널 슬롯 ID */
+  slotId: string;
+  /** 최소 너비 */
+  minWidth?: number;
+  /** 리사이즈 가능 여부 */
+  resizable?: boolean;
+  children: ReactNode;
+}
+
+/**
+ * 패널 슬롯 컴포넌트
+ *
+ * PanelShell과 함께 사용하여 isActive 상태를 자동으로 주입
+ */
+export function PanelSlot({ slotId, minWidth, resizable, children }: PanelSlotProps) {
+  // 현재 슬롯의 활성 패널 ID
+  const activePanelId = usePanelStore((state) => state.activePanel[slotId]);
+
+  // 패널에 isActive 주입
+  const enhancedChildren = useMemo(() => {
+    return React.Children.map(children, (child) => {
+      if (!React.isValidElement(child)) return child;
+
+      const panelId = child.props.panelId;
+      const isActive = panelId === activePanelId;
+
+      return React.cloneElement(child, { isActive });
+    });
+  }, [children, activePanelId]);
+
+  return (
+    <div
+      className="panel-slot"
+      style={{ minWidth }}
+      data-slot-id={slotId}
+      data-resizable={resizable}
+    >
+      {enhancedChildren}
+    </div>
+  );
+}
+```
 
 ---
 
@@ -796,6 +1187,308 @@ export function useDeltaReceiver() {
 | 연속 10회 변경 | ~20KB | ~1KB | **95%** |
 | 페이지 전환 | ~200KB | ~200KB | 동일 |
 
+### 7.5 메시지 큐 Backpressure 정책
+
+> **검토 피드백 반영**: 메시지 큐 포화 시나리오 정의, backpressure 정책, dangling listener 제거
+
+#### 7.5.1 Backpressure 설계
+
+```typescript
+// src/builder/hooks/useCanvasMessenger.ts
+interface MessageQueueConfig {
+  /** 최대 큐 크기 */
+  maxQueueSize: number;
+  /** 큐 포화 시 정책 */
+  overflowPolicy: 'drop-oldest' | 'drop-newest' | 'debounce';
+  /** debounce 간격 (ms) */
+  debounceMs?: number;
+  /** 경고 임계값 (%) */
+  warningThreshold: number;
+}
+
+interface CanvasMessage {
+  id: string;
+  type: string;
+  payload: unknown;
+  timestamp: number;
+  priority: 'high' | 'normal' | 'low';
+}
+
+/**
+ * Canvas 메시지 큐 관리자 (Backpressure 적용)
+ */
+class CanvasMessageQueue {
+  private queue: CanvasMessage[] = [];
+  private config: MessageQueueConfig = {
+    maxQueueSize: 100,
+    overflowPolicy: 'drop-oldest',
+    debounceMs: 16,  // ~60fps
+    warningThreshold: 80,
+  };
+
+  private flushScheduled = false;
+  private iframeRef: HTMLIFrameElement | null = null;
+
+  /**
+   * 메시지 추가 (with backpressure)
+   */
+  enqueue(message: Omit<CanvasMessage, 'id' | 'timestamp'>): void {
+    const fullMessage: CanvasMessage = {
+      ...message,
+      id: crypto.randomUUID(),
+      timestamp: Date.now(),
+    };
+
+    // Backpressure 체크
+    if (this.queue.length >= this.config.maxQueueSize) {
+      this.handleOverflow(fullMessage);
+      return;
+    }
+
+    // 경고 임계값 체크
+    const usage = (this.queue.length / this.config.maxQueueSize) * 100;
+    if (usage >= this.config.warningThreshold) {
+      console.warn(`[CanvasQueue] Queue at ${usage.toFixed(0)}% capacity`);
+      sloMonitor.recordWarning('canvasQueueNearFull', usage);
+    }
+
+    this.queue.push(fullMessage);
+    this.scheduleFlush();
+  }
+
+  /**
+   * 오버플로우 처리
+   */
+  private handleOverflow(message: CanvasMessage): void {
+    switch (this.config.overflowPolicy) {
+      case 'drop-oldest':
+        // 가장 오래된 low priority 메시지 제거
+        const oldestLowIdx = this.queue.findIndex(m => m.priority === 'low');
+        if (oldestLowIdx !== -1) {
+          this.queue.splice(oldestLowIdx, 1);
+          this.queue.push(message);
+        } else if (message.priority === 'high') {
+          // high priority면 oldest normal 제거
+          this.queue.shift();
+          this.queue.push(message);
+        }
+        // low priority 메시지는 드롭
+        break;
+
+      case 'drop-newest':
+        // 새 메시지 드롭 (high priority 제외)
+        if (message.priority === 'high') {
+          this.queue.shift();
+          this.queue.push(message);
+        }
+        break;
+
+      case 'debounce':
+        // 같은 타입의 메시지 병합
+        const existingIdx = this.queue.findIndex(m => m.type === message.type);
+        if (existingIdx !== -1) {
+          this.queue[existingIdx] = message;
+        }
+        break;
+    }
+
+    sloMonitor.recordWarning('canvasQueueOverflow', {
+      policy: this.config.overflowPolicy,
+      messageType: message.type,
+    });
+  }
+
+  /**
+   * RAF 기반 배치 전송
+   */
+  private scheduleFlush(): void {
+    if (this.flushScheduled || !this.iframeRef?.contentWindow) return;
+
+    this.flushScheduled = true;
+    requestAnimationFrame(() => {
+      this.flush();
+      this.flushScheduled = false;
+    });
+  }
+
+  /**
+   * 큐 전송
+   */
+  private flush(): void {
+    if (this.queue.length === 0 || !this.iframeRef?.contentWindow) return;
+
+    // Priority 정렬 (high → normal → low)
+    const sorted = [...this.queue].sort((a, b) => {
+      const priority = { high: 0, normal: 1, low: 2 };
+      return priority[a.priority] - priority[b.priority];
+    });
+
+    try {
+      this.iframeRef.contentWindow.postMessage({
+        type: 'BATCH_MESSAGES',
+        messages: sorted,
+      }, '*');
+
+      this.queue = [];
+    } catch (error) {
+      console.error('[CanvasQueue] Failed to post message:', error);
+    }
+  }
+
+  /**
+   * iframe 참조 설정
+   */
+  setIframe(iframe: HTMLIFrameElement | null): void {
+    this.iframeRef = iframe;
+  }
+
+  /**
+   * 큐 클리어 (페이지 전환 시)
+   */
+  clear(): void {
+    this.queue = [];
+    this.flushScheduled = false;
+  }
+
+  /**
+   * 큐 상태 조회
+   */
+  getStatus(): { size: number; capacity: number; usage: number } {
+    return {
+      size: this.queue.length,
+      capacity: this.config.maxQueueSize,
+      usage: (this.queue.length / this.config.maxQueueSize) * 100,
+    };
+  }
+}
+
+export const canvasMessageQueue = new CanvasMessageQueue();
+```
+
+#### 7.5.2 Dangling Listener 제거 체크리스트
+
+```typescript
+// src/builder/hooks/useCanvasListenerCleanup.ts
+import { useEffect, useRef } from 'react';
+
+interface ListenerRecord {
+  type: string;
+  handler: EventListener;
+  target: EventTarget;
+  timestamp: number;
+}
+
+/**
+ * Canvas 관련 리스너 클린업 훅
+ *
+ * 체크 항목:
+ * 1. iframe message 리스너
+ * 2. resize observer
+ * 3. mutation observer
+ * 4. postMessage 응답 리스너
+ */
+export function useCanvasListenerCleanup() {
+  const listenersRef = useRef<ListenerRecord[]>([]);
+
+  /**
+   * 리스너 등록 (추적용)
+   */
+  const trackListener = (
+    target: EventTarget,
+    type: string,
+    handler: EventListener
+  ) => {
+    target.addEventListener(type, handler);
+    listenersRef.current.push({
+      type,
+      handler,
+      target,
+      timestamp: Date.now(),
+    });
+  };
+
+  /**
+   * 모든 리스너 제거
+   */
+  const cleanupAllListeners = () => {
+    listenersRef.current.forEach(({ target, type, handler }) => {
+      target.removeEventListener(type, handler);
+    });
+    listenersRef.current = [];
+  };
+
+  /**
+   * 컴포넌트 언마운트 시 정리
+   */
+  useEffect(() => {
+    return () => {
+      cleanupAllListeners();
+
+      // 추가 정리
+      canvasMessageQueue.clear();
+    };
+  }, []);
+
+  return { trackListener, cleanupAllListeners };
+}
+```
+
+#### 7.5.3 iframe 재로딩/프로젝트 전환 체크리스트
+
+```typescript
+// src/builder/hooks/useCanvasLifecycle.ts
+export function useCanvasLifecycle(projectId: string, pageId: string) {
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+  const { cleanupAllListeners, trackListener } = useCanvasListenerCleanup();
+
+  /**
+   * 프로젝트/페이지 전환 시 정리
+   */
+  useEffect(() => {
+    return () => {
+      // 1. 메시지 큐 클리어
+      canvasMessageQueue.clear();
+
+      // 2. pending 요청 취소
+      requestManager.abortByPattern(/^canvas:/);
+
+      // 3. 리스너 정리
+      cleanupAllListeners();
+
+      // 4. iframe 상태 리셋
+      if (iframeRef.current) {
+        iframeRef.current.src = 'about:blank';
+      }
+    };
+  }, [projectId, pageId]);
+
+  /**
+   * iframe 로드 완료 핸들러
+   */
+  const handleIframeLoad = useCallback(() => {
+    if (!iframeRef.current?.contentWindow) return;
+
+    // 메시지 큐에 iframe 참조 설정
+    canvasMessageQueue.setIframe(iframeRef.current);
+
+    // 응답 리스너 등록 (추적)
+    trackListener(window, 'message', handleCanvasMessage);
+  }, []);
+
+  return { iframeRef, handleIframeLoad };
+}
+```
+
+#### 7.5.4 Backpressure 정책 요약
+
+| 시나리오 | 큐 상태 | 정책 | 동작 |
+|----------|--------|------|------|
+| 정상 | < 80% | - | 메시지 정상 추가 |
+| 경고 | 80-99% | 경고 로그 | SLO 모니터에 기록 |
+| 포화 | 100% | drop-oldest | 오래된 low priority 제거 |
+| 포화 + high | 100% | 우선 처리 | oldest normal 제거 후 추가 |
+| 연속 동일 | 100% | debounce | 같은 타입 병합 |
+
 ---
 
 ## 8. Phase 5: Lazy Loading + LRU 캐시
@@ -1037,13 +1730,271 @@ function DataTablePanelContent({ projectId }: { projectId: string }) {
 }
 ```
 
-### 9.4 효과
+### 9.4 네트워크 정책 (Request Deduplication + Abort)
+
+> **검토 피드백 반영**: request deduplication(in-flight map)과 메모리 캐시 TTL, AbortController 적용
+
+#### 9.4.1 Request Manager
+
+**파일**: `src/services/api/RequestManager.ts`
+
+```typescript
+interface RequestConfig {
+  /** 요청 식별자 */
+  key: string;
+  /** AbortController (선택) */
+  signal?: AbortSignal;
+  /** 재시도 횟수 */
+  retries?: number;
+  /** 백오프 설정 (ms) */
+  backoff?: number[];
+  /** 캐시 TTL (ms) */
+  cacheTTL?: number;
+}
+
+interface InFlightRequest {
+  promise: Promise<unknown>;
+  controller: AbortController;
+  timestamp: number;
+}
+
+/**
+ * Request Deduplication + Abort 관리자
+ *
+ * 기능:
+ * 1. 동일 요청 중복 방지 (in-flight deduplication)
+ * 2. 미사용 요청 취소 (AbortController)
+ * 3. 지수 백오프 재시도
+ * 4. 메모리 캐시 + TTL
+ */
+class RequestManager {
+  private inFlight: Map<string, InFlightRequest> = new Map();
+  private cache: Map<string, { data: unknown; expiry: number }> = new Map();
+  private defaultBackoff = [1000, 2000, 4000]; // 1s, 2s, 4s
+
+  /**
+   * 요청 실행 (deduplication + cache)
+   */
+  async execute<T>(
+    key: string,
+    fetcher: (signal: AbortSignal) => Promise<T>,
+    config: Partial<RequestConfig> = {}
+  ): Promise<T> {
+    const { retries = 3, backoff = this.defaultBackoff, cacheTTL } = config;
+
+    // 1. 캐시 확인
+    if (cacheTTL) {
+      const cached = this.cache.get(key);
+      if (cached && cached.expiry > Date.now()) {
+        return cached.data as T;
+      }
+    }
+
+    // 2. In-flight 요청 확인 (deduplication)
+    const existing = this.inFlight.get(key);
+    if (existing) {
+      return existing.promise as Promise<T>;
+    }
+
+    // 3. 새 요청 생성
+    const controller = new AbortController();
+    const promise = this.executeWithRetry(fetcher, controller.signal, retries, backoff);
+
+    this.inFlight.set(key, {
+      promise,
+      controller,
+      timestamp: Date.now(),
+    });
+
+    try {
+      const result = await promise;
+
+      // 4. 캐시 저장
+      if (cacheTTL) {
+        this.cache.set(key, {
+          data: result,
+          expiry: Date.now() + cacheTTL,
+        });
+      }
+
+      return result;
+    } finally {
+      this.inFlight.delete(key);
+    }
+  }
+
+  /**
+   * 지수 백오프 재시도
+   */
+  private async executeWithRetry<T>(
+    fetcher: (signal: AbortSignal) => Promise<T>,
+    signal: AbortSignal,
+    retries: number,
+    backoff: number[]
+  ): Promise<T> {
+    let lastError: Error | null = null;
+
+    for (let attempt = 0; attempt <= retries; attempt++) {
+      try {
+        return await fetcher(signal);
+      } catch (error) {
+        if (signal.aborted) {
+          throw new Error('Request aborted');
+        }
+
+        lastError = error as Error;
+
+        if (attempt < retries) {
+          const delay = backoff[Math.min(attempt, backoff.length - 1)];
+          await new Promise((resolve) => setTimeout(resolve, delay));
+        }
+      }
+    }
+
+    throw lastError;
+  }
+
+  /**
+   * 특정 키의 요청 취소
+   */
+  abort(key: string): void {
+    const request = this.inFlight.get(key);
+    if (request) {
+      request.controller.abort();
+      this.inFlight.delete(key);
+    }
+  }
+
+  /**
+   * 특정 패턴의 요청 모두 취소 (패널 전환 시)
+   */
+  abortByPattern(pattern: string | RegExp): void {
+    this.inFlight.forEach((request, key) => {
+      const matches = typeof pattern === 'string'
+        ? key.includes(pattern)
+        : pattern.test(key);
+
+      if (matches) {
+        request.controller.abort();
+        this.inFlight.delete(key);
+      }
+    });
+  }
+
+  /**
+   * 캐시 무효화
+   */
+  invalidateCache(key?: string): void {
+    if (key) {
+      this.cache.delete(key);
+    } else {
+      this.cache.clear();
+    }
+  }
+
+  /**
+   * 만료된 캐시 정리
+   */
+  cleanExpiredCache(): void {
+    const now = Date.now();
+    this.cache.forEach((value, key) => {
+      if (value.expiry < now) {
+        this.cache.delete(key);
+      }
+    });
+  }
+}
+
+export const requestManager = new RequestManager();
+```
+
+#### 9.4.2 패널 전환 시 요청 취소
+
+```typescript
+// src/builder/panels/datatable/DataTablePanel.tsx
+import { useEffect } from 'react';
+import { requestManager } from '../../../services/api/RequestManager';
+
+function DataTablePanelContent({ projectId }: { projectId: string }) {
+  // 패널 언마운트 시 미완료 요청 취소
+  useEffect(() => {
+    return () => {
+      // DataTable 관련 모든 요청 취소
+      requestManager.abortByPattern(/^dataTable:/);
+    };
+  }, []);
+
+  // React Query with AbortController
+  const { data: dataTables } = useQuery({
+    queryKey: ['dataTables', projectId],
+    queryFn: ({ signal }) => requestManager.execute(
+      `dataTable:tables:${projectId}`,
+      (sig) => fetchDataTables(projectId, sig),
+      { cacheTTL: 5 * 60 * 1000 }  // 5분 캐시
+    ),
+  });
+
+  // ...
+}
+```
+
+#### 9.4.3 Supabase 호출 표준화
+
+```typescript
+// src/services/api/SupabaseService.ts
+import { supabase } from '../../lib/supabase';
+import { requestManager } from './RequestManager';
+
+export const SupabaseService = {
+  /**
+   * 요소 로드 (with deduplication + retry)
+   */
+  async loadElements(pageId: string, signal?: AbortSignal) {
+    return requestManager.execute(
+      `elements:${pageId}`,
+      async (sig) => {
+        const { data, error } = await supabase
+          .from('elements')
+          .select('*')
+          .eq('page_id', pageId)
+          .order('order_num')
+          .abortSignal(sig);
+
+        if (error) throw error;
+        return data;
+      },
+      { retries: 3, cacheTTL: 0 }  // 캐시 없음 (실시간 동기화)
+    );
+  },
+
+  /**
+   * 요소 저장 (with debounce)
+   */
+  async saveElements(elements: Element[]) {
+    return requestManager.execute(
+      `save:elements`,
+      async () => {
+        const { error } = await supabase
+          .from('elements')
+          .upsert(elements);
+
+        if (error) throw error;
+      },
+      { retries: 3 }
+    );
+  },
+};
+```
+
+### 9.5 효과
 
 | 항목 | Before | After |
 |------|--------|-------|
 | 패널 전환 시 API | 4회 호출 | 0회 (캐시) |
 | 캐시 히트율 | 0% | 90%+ |
-| 에러 재시도 | 수동 | 자동 |
+| 에러 재시도 | 수동 | 자동 (지수 백오프) |
+| 중복 요청 | 발생 | 방지 (deduplication) |
+| 미사용 요청 | 지속 | 취소 (AbortController) |
 
 ---
 
@@ -1200,28 +2151,747 @@ function useAutoRecovery() {
 }
 ```
 
+### 10.3 Scoped Error Boundary + Fail-soft UI
+
+> **검토 피드백 반영**: 패널 단위 오류 시 빌더 전체로 전파되지 않도록 에러 격리 및 복구 UI
+
+#### 10.3.1 Scoped Error Boundary
+
+**파일**: `src/builder/components/ScopedErrorBoundary.tsx`
+
+```tsx
+import { Component, ReactNode } from 'react';
+
+interface ErrorBoundaryProps {
+  /** 컴포넌트 이름 (에러 리포팅용) */
+  name: string;
+  /** 에러 발생 시 표시할 fallback UI */
+  fallback?: ReactNode | ((props: { error: Error; reset: () => void }) => ReactNode);
+  /** 에러 발생 시 콜백 */
+  onError?: (error: Error, errorInfo: React.ErrorInfo) => void;
+  /** 복구 시도 최대 횟수 */
+  maxRetries?: number;
+  /** 자동 복구 시도 여부 */
+  autoRecover?: boolean;
+  children: ReactNode;
+}
+
+interface ErrorBoundaryState {
+  hasError: boolean;
+  error: Error | null;
+  retryCount: number;
+}
+
+/**
+ * 스코프 기반 에러 바운더리
+ *
+ * 특징:
+ * 1. 패널/컴포넌트 단위 에러 격리
+ * 2. 자동 복구 시도
+ * 3. 에러 리포팅
+ * 4. 사용자 친화적 fallback UI
+ */
+export class ScopedErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  static defaultProps = {
+    maxRetries: 3,
+    autoRecover: true,
+  };
+
+  constructor(props: ErrorBoundaryProps) {
+    super(props);
+    this.state = {
+      hasError: false,
+      error: null,
+      retryCount: 0,
+    };
+  }
+
+  static getDerivedStateFromError(error: Error): Partial<ErrorBoundaryState> {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo): void {
+    const { name, onError } = this.props;
+
+    // 에러 로깅
+    console.error(`[ErrorBoundary:${name}]`, error, errorInfo);
+
+    // 에러 리포팅 (Sentry 등)
+    onError?.(error, errorInfo);
+
+    // SLO 기록
+    sloMonitor.recordError('componentError', {
+      component: name,
+      error: error.message,
+      stack: errorInfo.componentStack,
+    });
+
+    // 자동 복구 시도
+    if (this.props.autoRecover && this.state.retryCount < (this.props.maxRetries ?? 3)) {
+      setTimeout(() => {
+        this.setState((state) => ({
+          hasError: false,
+          error: null,
+          retryCount: state.retryCount + 1,
+        }));
+      }, 1000 * Math.pow(2, this.state.retryCount)); // 지수 백오프
+    }
+  }
+
+  handleReset = (): void => {
+    this.setState({
+      hasError: false,
+      error: null,
+      retryCount: 0,
+    });
+  };
+
+  render(): ReactNode {
+    const { hasError, error } = this.state;
+    const { children, fallback, name } = this.props;
+
+    if (hasError && error) {
+      // 커스텀 fallback
+      if (typeof fallback === 'function') {
+        return fallback({ error, reset: this.handleReset });
+      }
+
+      if (fallback) {
+        return fallback;
+      }
+
+      // 기본 fallback
+      return (
+        <FailSoftUI
+          name={name}
+          error={error}
+          onRetry={this.handleReset}
+          retryCount={this.state.retryCount}
+          maxRetries={this.props.maxRetries ?? 3}
+        />
+      );
+    }
+
+    return children;
+  }
+}
+```
+
+#### 10.3.2 Fail-soft UI
+
+**파일**: `src/builder/components/FailSoftUI.tsx`
+
+```tsx
+import { AlertTriangle, RefreshCw } from 'lucide-react';
+import { Button } from '@/builder/components/Button';
+
+interface FailSoftUIProps {
+  name: string;
+  error: Error;
+  onRetry: () => void;
+  retryCount: number;
+  maxRetries: number;
+}
+
+/**
+ * 에러 발생 시 표시되는 Fail-soft UI
+ *
+ * 특징:
+ * 1. 사용자 친화적 메시지
+ * 2. 재시도 버튼
+ * 3. 에러 세부정보 (개발 모드)
+ * 4. 빌더 전체 동작은 유지
+ */
+export function FailSoftUI({
+  name,
+  error,
+  onRetry,
+  retryCount,
+  maxRetries,
+}: FailSoftUIProps) {
+  const canRetry = retryCount < maxRetries;
+
+  return (
+    <div className="fail-soft-container">
+      <div className="fail-soft-content">
+        <AlertTriangle className="fail-soft-icon" />
+
+        <h3 className="fail-soft-title">
+          {name} 로딩 중 문제가 발생했습니다
+        </h3>
+
+        <p className="fail-soft-message">
+          일시적인 오류입니다. 재시도하거나 페이지를 새로고침해 주세요.
+        </p>
+
+        {canRetry && (
+          <Button
+            variant="primary"
+            onPress={onRetry}
+            className="fail-soft-retry"
+          >
+            <RefreshCw className="icon" />
+            재시도 ({retryCount}/{maxRetries})
+          </Button>
+        )}
+
+        {!canRetry && (
+          <p className="fail-soft-exhausted">
+            재시도 횟수를 초과했습니다. 페이지를 새로고침해 주세요.
+          </p>
+        )}
+
+        {/* 개발 모드: 에러 세부정보 */}
+        {import.meta.env.DEV && (
+          <details className="fail-soft-details">
+            <summary>에러 세부정보</summary>
+            <pre>{error.message}</pre>
+            <pre>{error.stack}</pre>
+          </details>
+        )}
+      </div>
+    </div>
+  );
+}
+```
+
+#### 10.3.3 저장 실패 복구 UI
+
+**파일**: `src/builder/components/SaveFailureRecovery.tsx`
+
+```tsx
+import { useState, useCallback } from 'react';
+import { AlertCircle, Save, Download } from 'lucide-react';
+import { Button } from '@/builder/components/Button';
+
+interface SaveFailureRecoveryProps {
+  error: Error;
+  pendingChanges: unknown[];
+  onRetry: () => Promise<void>;
+  onDownloadBackup: () => void;
+}
+
+/**
+ * 저장 실패 시 복구 UI
+ *
+ * 기능:
+ * 1. 재시도 버튼 (지수 백오프)
+ * 2. 로컬 백업 다운로드
+ * 3. 변경사항 개수 표시
+ * 4. 오프라인 감지
+ */
+export function SaveFailureRecovery({
+  error,
+  pendingChanges,
+  onRetry,
+  onDownloadBackup,
+}: SaveFailureRecoveryProps) {
+  const [isRetrying, setIsRetrying] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
+
+  const handleRetry = useCallback(async () => {
+    setIsRetrying(true);
+    try {
+      await onRetry();
+      setRetryCount(0);
+    } catch {
+      setRetryCount((c) => c + 1);
+    } finally {
+      setIsRetrying(false);
+    }
+  }, [onRetry]);
+
+  const isOffline = !navigator.onLine;
+
+  return (
+    <div className="save-failure-container">
+      <div className="save-failure-header">
+        <AlertCircle className="save-failure-icon" />
+        <span>저장 실패</span>
+      </div>
+
+      <p className="save-failure-message">
+        {isOffline
+          ? '오프라인 상태입니다. 인터넷 연결을 확인해 주세요.'
+          : '변경사항을 저장하지 못했습니다.'}
+      </p>
+
+      <p className="save-failure-count">
+        미저장 변경사항: <strong>{pendingChanges.length}개</strong>
+      </p>
+
+      <div className="save-failure-actions">
+        <Button
+          variant="primary"
+          onPress={handleRetry}
+          isDisabled={isRetrying || isOffline}
+        >
+          {isRetrying ? (
+            <>저장 중...</>
+          ) : (
+            <>
+              <Save className="icon" />
+              재시도 {retryCount > 0 && `(${retryCount})`}
+            </>
+          )}
+        </Button>
+
+        <Button
+          variant="secondary"
+          onPress={onDownloadBackup}
+        >
+          <Download className="icon" />
+          백업 다운로드
+        </Button>
+      </div>
+
+      {import.meta.env.DEV && (
+        <details className="save-failure-details">
+          <summary>에러 세부정보</summary>
+          <pre>{error.message}</pre>
+        </details>
+      )}
+    </div>
+  );
+}
+```
+
+#### 10.3.4 적용 범위
+
+| 컴포넌트 | Error Boundary | Fail-soft | 복구 정책 |
+|----------|---------------|-----------|----------|
+| **패널** | PanelShell HOC | ✅ | 자동 3회 재시도 |
+| **Canvas** | 별도 Boundary | Canvas 재로드 | 전체 동기화 |
+| **Inspector** | PanelShell HOC | ✅ | 선택 해제 |
+| **Header** | 별도 Boundary | 최소 UI | 새로고침 유도 |
+| **저장** | 별도 처리 | SaveFailureRecovery | 백업 + 재시도 |
+
 ---
 
-## 11. 구현 순서 및 예상 소요
+## 11. Phase 8: CI 자동화 + 장시간 테스트
 
-| Phase | 작업 | 예상 소요 | 누적 효과 |
-|-------|------|----------|----------|
+> **검토 피드백 반영**: 장시간 시뮬레이션 스크립트, CI 아티팩트, 회귀 검출
+
+### 11.1 장시간 시뮬레이션 스크립트
+
+**파일**: `scripts/long-session-test.ts`
+
+```typescript
+import puppeteer from 'puppeteer';
+
+interface SimulationConfig {
+  /** 시뮬레이션 시간 (ms) */
+  duration: number;
+  /** 요소 수 */
+  elementCount: number;
+  /** 페이지 수 */
+  pageCount: number;
+  /** 메트릭 수집 간격 (ms) */
+  metricsInterval: number;
+  /** 스냅샷 저장 간격 (ms) */
+  snapshotInterval: number;
+}
+
+interface SimulationResult {
+  duration: number;
+  metrics: PerformanceSnapshot[];
+  sloViolations: SLOViolation[];
+  passed: boolean;
+}
+
+/**
+ * 장시간 세션 시뮬레이션
+ */
+async function runLongSessionSimulation(
+  config: SimulationConfig
+): Promise<SimulationResult> {
+  const browser = await puppeteer.launch({
+    headless: true,
+    args: ['--enable-precise-memory-info'],
+  });
+
+  const page = await browser.newPage();
+  const metrics: PerformanceSnapshot[] = [];
+  const sloViolations: SLOViolation[] = [];
+
+  try {
+    // 1. 빌더 로드
+    await page.goto('http://localhost:5173/builder/test-project');
+    await page.waitForSelector('[data-testid="builder-ready"]');
+
+    // 2. 테스트 데이터 생성
+    await createTestElements(page, config.elementCount, config.pageCount);
+
+    // 3. 시뮬레이션 루프
+    const startTime = Date.now();
+    let snapshotCount = 0;
+
+    while (Date.now() - startTime < config.duration) {
+      // 랜덤 작업 수행
+      await performRandomAction(page);
+
+      // 메트릭 수집
+      if ((Date.now() - startTime) % config.metricsInterval < 100) {
+        const snapshot = await collectMetrics(page);
+        metrics.push(snapshot);
+
+        // SLO 체크
+        const violations = checkSLOViolations(snapshot);
+        sloViolations.push(...violations);
+      }
+
+      // 힙 스냅샷 (선택적)
+      if ((Date.now() - startTime) % config.snapshotInterval < 100) {
+        await saveHeapSnapshot(page, `snapshot-${snapshotCount++}.heapsnapshot`);
+      }
+
+      // 짧은 대기
+      await page.waitForTimeout(100);
+    }
+
+    return {
+      duration: Date.now() - startTime,
+      metrics,
+      sloViolations,
+      passed: sloViolations.filter(v => v.severity === 'critical').length === 0,
+    };
+  } finally {
+    await browser.close();
+  }
+}
+
+/**
+ * 랜덤 작업 수행
+ */
+async function performRandomAction(page: puppeteer.Page): Promise<void> {
+  const actions = [
+    // 요소 선택
+    async () => {
+      const elements = await page.$$('[data-element-id]');
+      if (elements.length > 0) {
+        const randomEl = elements[Math.floor(Math.random() * elements.length)];
+        await randomEl.click();
+      }
+    },
+    // 패널 전환
+    async () => {
+      const tabs = await page.$$('[data-panel-tab]');
+      if (tabs.length > 0) {
+        const randomTab = tabs[Math.floor(Math.random() * tabs.length)];
+        await randomTab.click();
+      }
+    },
+    // 속성 변경
+    async () => {
+      const inputs = await page.$$('[data-property-input]');
+      if (inputs.length > 0) {
+        const randomInput = inputs[Math.floor(Math.random() * inputs.length)];
+        await randomInput.type('test', { delay: 50 });
+      }
+    },
+    // Undo/Redo
+    async () => {
+      await page.keyboard.down('Meta');
+      await page.keyboard.press(Math.random() > 0.5 ? 'z' : 'y');
+      await page.keyboard.up('Meta');
+    },
+    // 페이지 전환
+    async () => {
+      const pages = await page.$$('[data-page-item]');
+      if (pages.length > 0) {
+        const randomPage = pages[Math.floor(Math.random() * pages.length)];
+        await randomPage.click();
+      }
+    },
+  ];
+
+  const action = actions[Math.floor(Math.random() * actions.length)];
+  await action();
+}
+
+/**
+ * 메트릭 수집
+ */
+async function collectMetrics(page: puppeteer.Page): Promise<PerformanceSnapshot> {
+  return await page.evaluate(() => {
+    const memory = (performance as any).memory;
+    return {
+      timestamp: Date.now(),
+      heapUsed: memory?.usedJSHeapSize ?? 0,
+      heapTotal: memory?.totalJSHeapSize ?? 0,
+      heapLimit: memory?.jsHeapSizeLimit ?? 0,
+      fps: window.__builderMetrics?.fps ?? 0,
+      renderTime: window.__builderMetrics?.lastRenderTime ?? 0,
+      elementCount: window.__builderMetrics?.elementCount ?? 0,
+    };
+  });
+}
+
+// 실행
+runLongSessionSimulation({
+  duration: 12 * 60 * 60 * 1000, // 12시간
+  elementCount: 5000,
+  pageCount: 50,
+  metricsInterval: 60 * 1000, // 1분
+  snapshotInterval: 30 * 60 * 1000, // 30분
+}).then(result => {
+  console.log('Simulation complete:', result.passed ? 'PASSED' : 'FAILED');
+  console.log(`Duration: ${result.duration / 1000 / 60} minutes`);
+  console.log(`Metrics collected: ${result.metrics.length}`);
+  console.log(`SLO violations: ${result.sloViolations.length}`);
+
+  // 결과 저장
+  fs.writeFileSync(
+    'test-results/long-session-result.json',
+    JSON.stringify(result, null, 2)
+  );
+
+  process.exit(result.passed ? 0 : 1);
+});
+```
+
+### 11.2 CI 파이프라인 설정
+
+**파일**: `.github/workflows/performance-test.yml`
+
+```yaml
+name: Performance Test
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+  schedule:
+    # 매일 새벽 2시 실행
+    - cron: '0 2 * * *'
+
+jobs:
+  performance-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180 # 3시간
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Start server
+        run: npm run preview &
+        env:
+          PORT: 5173
+
+      - name: Wait for server
+        run: npx wait-on http://localhost:5173
+
+      - name: Run short performance test (PR)
+        if: github.event_name == 'pull_request'
+        run: npm run test:perf:short
+        # 30분 시뮬레이션
+
+      - name: Run long performance test (Nightly)
+        if: github.event_name == 'schedule'
+        run: npm run test:perf:long
+        # 12시간 시뮬레이션
+
+      - name: Upload metrics artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: performance-metrics
+          path: test-results/
+          retention-days: 30
+
+      - name: Comment PR with results
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const result = JSON.parse(fs.readFileSync('test-results/perf-summary.json'));
+
+            const body = `## Performance Test Results
+
+            | Metric | Value | Status |
+            |--------|-------|--------|
+            | Duration | ${result.duration}min | - |
+            | Memory Growth | ${result.memoryGrowth}MB/h | ${result.memoryGrowth < 20 ? '✅' : '⚠️'} |
+            | Avg Render Time | ${result.avgRenderTime}ms | ${result.avgRenderTime < 50 ? '✅' : '⚠️'} |
+            | SLO Violations | ${result.sloViolations} | ${result.sloViolations === 0 ? '✅' : '❌'} |
+
+            **Result: ${result.passed ? '✅ PASSED' : '❌ FAILED'}**
+            `;
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: body
+            });
+
+      - name: Fail if SLO violated
+        run: |
+          if [ -f "test-results/perf-summary.json" ]; then
+            PASSED=$(jq '.passed' test-results/perf-summary.json)
+            if [ "$PASSED" != "true" ]; then
+              echo "Performance test failed"
+              exit 1
+            fi
+          fi
+```
+
+### 11.3 메트릭 추세 추적
+
+**파일**: `scripts/track-metrics.ts`
+
+```typescript
+import { Octokit } from '@octokit/rest';
+
+interface MetricTrend {
+  date: string;
+  commit: string;
+  memoryGrowth: number;
+  avgRenderTime: number;
+  sloViolations: number;
+}
+
+/**
+ * 메트릭 추세 추적 및 알림
+ */
+async function trackMetrics(): Promise<void> {
+  const octokit = new Octokit({ auth: process.env.GITHUB_TOKEN });
+
+  // 최근 30일 아티팩트에서 메트릭 수집
+  const artifacts = await octokit.rest.actions.listArtifactsForRepo({
+    owner: 'your-org',
+    repo: 'xstudio',
+    per_page: 30,
+    name: 'performance-metrics',
+  });
+
+  const trends: MetricTrend[] = [];
+
+  for (const artifact of artifacts.data.artifacts) {
+    // 아티팩트 다운로드 및 파싱
+    const data = await downloadAndParseArtifact(artifact);
+    trends.push(data);
+  }
+
+  // 추세 분석
+  const analysis = analyzeTrends(trends);
+
+  // 회귀 감지
+  if (analysis.regression) {
+    await sendSlackAlert({
+      title: '⚠️ Performance Regression Detected',
+      message: analysis.regressionDetails,
+      severity: 'warning',
+    });
+  }
+
+  // 대시보드 업데이트
+  await updateDashboard(trends, analysis);
+}
+
+/**
+ * 추세 분석
+ */
+function analyzeTrends(trends: MetricTrend[]): TrendAnalysis {
+  const recentTrends = trends.slice(0, 7); // 최근 7일
+  const oldTrends = trends.slice(7, 14); // 이전 7일
+
+  const recentAvg = {
+    memoryGrowth: average(recentTrends.map(t => t.memoryGrowth)),
+    renderTime: average(recentTrends.map(t => t.avgRenderTime)),
+  };
+
+  const oldAvg = {
+    memoryGrowth: average(oldTrends.map(t => t.memoryGrowth)),
+    renderTime: average(oldTrends.map(t => t.avgRenderTime)),
+  };
+
+  // 20% 이상 악화 시 회귀로 판단
+  const regression =
+    recentAvg.memoryGrowth > oldAvg.memoryGrowth * 1.2 ||
+    recentAvg.renderTime > oldAvg.renderTime * 1.2;
+
+  return {
+    regression,
+    regressionDetails: regression
+      ? `Memory: ${oldAvg.memoryGrowth} → ${recentAvg.memoryGrowth} MB/h, Render: ${oldAvg.renderTime} → ${recentAvg.renderTime} ms`
+      : null,
+    recentAvg,
+    oldAvg,
+  };
+}
+```
+
+---
+
+## 12. 구현 순서 및 예상 소요
+
+> **검토 피드백 반영**: P0 → P2 우선순위 재정렬
+
+### 12.1 P0 우선 작업 (즉시 시작)
+
+| Phase | 작업 | 예상 소요 | 효과 |
+|-------|------|----------|------|
 | **1** | Panel Gateway + MonitorPanel | 6시간 | CPU 70% ↓ |
+| **1** | PanelShell HOC 표준화 | 2시간 | 코드 일관성 |
+| **6** | Request Deduplication + Abort | 4시간 | 네트워크 안정화 |
+| **4** | Canvas Backpressure 설계 | 3시간 | 메시지 큐 안정화 |
+
+**P0 소요: 15시간 (약 2일)**
+
+### 12.2 P1 핵심 최적화
+
+| Phase | 작업 | 예상 소요 | 효과 |
+|-------|------|----------|------|
 | **2** | Store 인덱스 시스템 | 8시간 | 조회 200x ↑ |
 | **3** | History Diff + IndexedDB | 8시간 | 메모리 97% ↓ |
-| **4** | Canvas Delta + Batch | 6시간 | 전송량 95% ↓ |
-| **5** | Lazy Loading + LRU | 6시간 | 초기로드 70% ↓ |
-| **6** | React Query 서버 상태 | 4시간 | API 캐시 90% ↑ |
+| **7** | Error Boundary 스코프 적용 | 3시간 | 에러 격리 |
 | **7** | 성능 모니터링 + 자동복구 | 4시간 | 안정성 확보 |
-| **8** | 문서화 + 테스트 | 4시간 | 유지보수성 |
 
-**총 예상 소요: 46시간 (약 6일)**
+**P1 소요: 23시간 (약 3일)**
+
+### 12.3 P2 대규모 최적화 + CI
+
+| Phase | 작업 | 예상 소요 | 효과 |
+|-------|------|----------|------|
+| **4** | Canvas Delta + Batch | 4시간 | 전송량 95% ↓ |
+| **5** | Lazy Loading + LRU | 6시간 | 초기로드 70% ↓ |
+| **6** | React Query 전체 적용 | 4시간 | API 캐시 90% ↑ |
+| **8** | 장시간 시뮬레이션 CI | 6시간 | 회귀 검출 |
+
+**P2 소요: 20시간 (약 2.5일)**
+
+### 12.4 총 소요 예상
+
+| 우선순위 | 예상 소요 | 누적 |
+|----------|----------|------|
+| P0 | 15시간 | 15시간 |
+| P1 | 23시간 | 38시간 |
+| P2 | 20시간 | **58시간 (~7.5일)** |
+
+**권장 실행 순서**:
+1. P0 완료 후 성능 측정 (CPU, 네트워크 안정화 검증)
+2. P1 완료 후 12시간 시뮬레이션 테스트
+3. P2 완료 후 24시간 Nightly 테스트 도입
 
 ---
 
-## 12. 기대 효과
+## 13. 기대 효과
 
-### 12.1 성능 개선 요약
+### 13.1 성능 개선 요약
 
 | 지표 | 현재 | 최적화 후 | 개선율 |
 |------|------|----------|--------|
@@ -1232,7 +2902,7 @@ function useAutoRecovery() {
 | **CPU (유휴)** | 15-25% | < 5% | **80%** |
 | **API 호출** | 매번 | 캐시 히트 | **90%** |
 
-### 12.2 안정성 목표 달성
+### 13.2 안정성 목표 달성
 
 ```
 현재:
@@ -1246,7 +2916,7 @@ function useAutoRecovery() {
 성능  100% → 98% → 96% → 95% → 94% → 92%
 ```
 
-### 12.3 지원 규모
+### 13.3 지원 규모
 
 | 규모 | 현재 | 최적화 후 |
 |------|------|----------|
@@ -1753,3 +3423,103 @@ function useAutoRecovery() {
 // 3. Record 중지
 // 4. Commit별 렌더링 시간 확인
 ```
+
+---
+
+## 부록 E: 결정 사항 (오픈 질문 해결)
+
+> **검토 피드백 반영**: 오픈 질문에 대한 명확한 결정 사항
+
+### E.1 장시간 세션 기준
+
+**결정**: **12시간** 기준 적용
+
+| 기준 | 값 | 근거 |
+|------|---|------|
+| **Primary Target** | 12시간 | 엔터프라이즈 업무일 기준 (오전 9시 ~ 오후 9시) |
+| **Extended Target** | 24시간 | 야간 작업 시나리오 대응 |
+| **SLO 측정 시점** | 0h, 4h, 8h, 12h | 4시간 간격 체크포인트 |
+| **자동 복구 트리거** | healthScore < 30 | 성능 저하 시 자동 대응 |
+
+**멀티 프로젝트 전환**:
+- 측정 **포함** (프로젝트 전환 시 메모리 누수 감지 필요)
+- 전환 시 이전 프로젝트 리소스 정리 검증
+
+### E.2 브라우저별 분리 추적
+
+**결정**: **Chrome (Chromium) 우선**, 점진적 확대
+
+| 브라우저 | 우선순위 | 테스트 범위 |
+|----------|---------|------------|
+| **Chrome** | P0 | 12시간 Nightly, PR 30분 |
+| **Firefox** | P1 | Weekly Nightly (선택적) |
+| **Safari** | P2 | Manual 검증 |
+| **Edge** | - | Chrome과 동일 (Chromium) |
+
+**근거**:
+- Chrome이 엔터프라이즈 환경에서 90%+ 점유율
+- `performance.memory` API가 Chromium에서만 정확
+- Firefox/Safari는 메모리 측정 제한적
+
+### E.3 Supabase 캐싱 위치
+
+**결정**: **클라이언트 캐싱 (React Query)** 우선
+
+| 레이어 | 캐시 적용 | 근거 |
+|--------|----------|------|
+| **클라이언트** | ✅ React Query | 즉시 적용 가능, 백엔드 변경 없음 |
+| **엣지 함수** | ❌ 미적용 | 추후 백엔드 아키텍처와 통합 검토 |
+| **Supabase DB** | RLS만 | 기존 구조 유지 |
+
+**React Query 캐시 정책**:
+```typescript
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000,   // 5분
+      gcTime: 30 * 60 * 1000,     // 30분 (GC)
+      refetchOnWindowFocus: false,
+      retry: 3,
+    },
+  },
+});
+```
+
+**향후 백엔드 통합 시 고려사항**:
+- 엣지 함수 캐싱은 Vercel/Cloudflare 도입 시 재검토
+- Supabase Realtime과의 캐시 무효화 전략 필요
+- 현재 클라이언트 캐싱으로 90%+ 요청 감소 예상
+
+### E.4 우선순위 재정의 (P0 → P2)
+
+> **검토 피드백 반영**: 실행 우선순위 제안 통합
+
+| 우선순위 | 작업 | Phase | 영향도 |
+|----------|------|-------|--------|
+| **P0** | MonitorPanel Gateway + enabled | 1 | CPU 70% ↓ |
+| **P0** | Request Deduplication + Abort | 6 | 네트워크 안정화 |
+| **P0** | Canvas Backpressure 설계 | 4 | 메시지 큐 안정화 |
+| **P1** | PanelShell HOC 표준화 | 1 | 코드 일관성 |
+| **P1** | Error Boundary 스코프 적용 | 7 | 에러 격리 |
+| **P1** | Store 인덱스 시스템 | 2 | 조회 성능 |
+| **P1** | History Diff 시스템 | 3 | 메모리 절감 |
+| **P2** | 장시간 시뮬레이션 CI | 8 | 회귀 검출 |
+| **P2** | LRU 페이지 언로드 | 5 | 대규모 최적화 |
+
+### E.5 추가 결정 사항
+
+**가상 스크롤 keep-alive 정책**:
+- NodesPanel: 이미 VirtualizedLayerTree 적용됨
+- 메모리 잔존 비용: 허용 (실측 후 필요 시 파셜 언마운트)
+- 측정 방법: Phase 7 성능 모니터에서 추적
+
+**Re-render 방지 기준**:
+- Selector 분리 필수 (`local/no-zustand-grouped-selectors` ESLint 규칙)
+- `useMemo`/`useCallback`: 복잡한 계산 또는 이벤트 핸들러만
+- Micro-benchmark 기준: 노드 트리 클릭 1,000회 시 5초 미만
+
+---
+
+> **문서 작성**: Claude AI
+> **최종 수정**: 2025-12-09 (검토 피드백 반영)
+> **다음 단계**: P0 작업 우선 시작 (MonitorPanel + RequestManager)
