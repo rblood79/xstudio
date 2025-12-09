@@ -1,4 +1,4 @@
-import { TextField, Input, Label } from "react-aria-components";
+import { ElementPicker } from "../../panels/events/editors/ElementPicker";
 
 export interface SubmitFormConfig {
   formId: string;
@@ -19,15 +19,13 @@ export function SubmitFormActionEditor({
 
   return (
     <div className="submitform-action-editor">
-      <TextField className="field">
-        <Label className="field-label">Form ID</Label>
-        <Input
-          className="field-input"
-          value={config.formId}
-          onChange={(e) => updateFormId(e.target.value)}
-          placeholder="signup-form"
-        />
-      </TextField>
+      <ElementPicker
+        label="Form ID"
+        value={config.formId || ""}
+        onChange={updateFormId}
+        placeholder="Select form..."
+        filter={(el) => el.tag === "Form"}
+      />
 
       <p className="field-hint">
         Triggers form submission (typically used with API call actions)

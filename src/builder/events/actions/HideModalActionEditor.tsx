@@ -1,5 +1,5 @@
-import { TextField, Input, Label } from "react-aria-components";
 import type { HideModalConfig } from "../types/eventTypes";
+import { ElementPicker } from "../../panels/events/editors/ElementPicker";
 
 export interface HideModalActionEditorProps {
   config: HideModalConfig;
@@ -16,15 +16,13 @@ export function HideModalActionEditor({
 
   return (
     <div className="hidemodal-action-editor">
-      <TextField className="field">
-        <Label className="field-label">Modal ID (empty = close all)</Label>
-        <Input
-          className="field-input"
-          value={config.modalId || ""}
-          onChange={(e) => updateModalId(e.target.value)}
-          placeholder="confirmDialog"
-        />
-      </TextField>
+      <ElementPicker
+        label="Modal ID (empty = close all)"
+        value={config.modalId || ""}
+        onChange={updateModalId}
+        placeholder="Select modal..."
+        filter={(el) => el.tag === "Modal"}
+      />
 
       <p className="field-hint">
         Leave empty to close all open modals

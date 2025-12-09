@@ -10,6 +10,7 @@ import {
   Popover,
 } from "react-aria-components";
 import type { CopyToClipboardConfig } from "../types/eventTypes";
+import { ElementPicker } from "../../panels/events/editors/ElementPicker";
 
 export interface CopyToClipboardActionEditorProps {
   config: CopyToClipboardConfig;
@@ -73,15 +74,12 @@ export function CopyToClipboardActionEditor({
       )}
 
       {source === "element" && (
-        <TextField className="field">
-          <Label className="field-label">Element ID</Label>
-          <Input
-            className="field-input"
-            value={config.elementId || ""}
-            onChange={(e) => updateField("elementId", e.target.value)}
-            placeholder="element-id"
-          />
-        </TextField>
+        <ElementPicker
+          label="Element ID"
+          value={config.elementId || ""}
+          onChange={(value) => updateField("elementId", value)}
+          placeholder="Select element..."
+        />
       )}
 
       {source === "state" && (

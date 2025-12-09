@@ -12,6 +12,7 @@ import {
 } from "react-aria-components";
 import { useState } from "react";
 import type { UpdateFormFieldConfig } from "../types/eventTypes";
+import { ElementPicker } from "../../panels/events/editors/ElementPicker";
 
 export interface UpdateFormFieldActionEditorProps {
   config: UpdateFormFieldConfig;
@@ -56,15 +57,13 @@ export function UpdateFormFieldActionEditor({
 
   return (
     <div className="updateformfield-action-editor">
-      <TextField className="field">
-        <Label className="field-label">Form ID (optional)</Label>
-        <Input
-          className="field-input"
-          value={config.formId || ""}
-          onChange={(e) => updateField("formId", e.target.value || undefined)}
-          placeholder="signup-form"
-        />
-      </TextField>
+      <ElementPicker
+        label="Form ID (optional)"
+        value={config.formId || ""}
+        onChange={(value) => updateField("formId", value || undefined)}
+        placeholder="Select form..."
+        filter={(el) => el.tag === "Form"}
+      />
 
       <TextField className="field">
         <Label className="field-label">Field Name</Label>

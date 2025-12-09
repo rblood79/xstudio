@@ -1,6 +1,7 @@
 import { TextField, Input, Label, TextArea } from "react-aria-components";
 import { useState } from "react";
 import type { ShowModalConfig } from "../types/eventTypes";
+import { ElementPicker } from "../../panels/events/editors/ElementPicker";
 
 export interface ShowModalActionEditorProps {
   config: ShowModalConfig;
@@ -32,15 +33,13 @@ export function ShowModalActionEditor({
 
   return (
     <div className="showmodal-action-editor">
-      <TextField className="field">
-        <Label className="field-label">Modal ID</Label>
-        <Input
-          className="field-input"
-          value={config.modalId}
-          onChange={(e) => updateModalId(e.target.value)}
-          placeholder="confirmDialog"
-        />
-      </TextField>
+      <ElementPicker
+        label="Modal ID"
+        value={config.modalId || ""}
+        onChange={updateModalId}
+        placeholder="Select modal..."
+        filter={(el) => el.tag === "Modal"}
+      />
 
       <TextField className="field">
         <Label className="field-label">Props (JSON)</Label>
