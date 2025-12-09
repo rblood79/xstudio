@@ -1,10 +1,24 @@
 import { produce } from "immer";
 import type { StateCreator } from "zustand";
-import { ComponentElementProps } from "../../../types/core/store.types";
+import { ComponentElementProps, Element } from "../../../types/core/store.types";
 import { historyManager } from "../history";
 import { getElementById, findElementById, createCompleteProps } from "./elementHelpers";
 import type { ElementsState } from "../elements";
 import { getDB } from "../../../lib/db";
+
+// ============================================
+// Types for Batch Operations
+// ============================================
+
+export interface BatchElementUpdate {
+  elementId: string;
+  updates: Partial<Element>;
+}
+
+export interface BatchPropsUpdate {
+  elementId: string;
+  props: ComponentElementProps;
+}
 
 type SetState = Parameters<StateCreator<ElementsState>>[0];
 type GetState = Parameters<StateCreator<ElementsState>>[1];
@@ -209,5 +223,218 @@ export const createUpdateElementAction =
     } catch (error) {
       console.warn("⚠️ [IndexedDB] 요소 저장 중 오류 (메모리는 정상):", error);
       // IndexedDB 저장 실패해도 메모리 상태는 유지 (오프라인 작업 지속)
+    }
+  };
+
+// ============================================
+// 🚀 Batch Operations (100+ 요소 최적화)
+// ============================================
+
+/**
+ * BatchUpdateElementProps 액션 생성 팩토리
+ *
+ * 여러 요소의 props를 한 번에 업데이트합니다.
+ * 100개 이상의 요소를 동시에 업데이트할 때 성능 최적화됨.
+ *
+ * 최적화 포인트:
+ * - 단일 Zustand 상태 업데이트 (N번 → 1번)
+ * - 단일 히스토리 엔트리 (batch 타입)
+ * - 단일 인덱스 재구축 (N번 → 1번)
+ * - IndexedDB 병렬 저장 (Promise.all)
+ *
+ * @param set - Zustand setState 함수
+ * @param get - Zustand getState 함수
+ * @returns batchUpdateElementProps 액션 함수
+ */
+export const createBatchUpdateElementPropsAction =
+  (set: SetState, get: GetState) =>
+  async (updates: BatchPropsUpdate[]) => {
+    if (updates.length === 0) return;
+
+    const state = get();
+    const validUpdates = updates.filter(
+      (u) => getElementById(state.elementsMap, u.elementId) !== undefined
+    );
+
+    if (validUpdates.length === 0) return;
+
+    if (process.env.NODE_ENV === 'development') {
+      console.log("🚀 batchUpdateElementProps 호출:", {
+        totalUpdates: updates.length,
+        validUpdates: validUpdates.length,
+      });
+    }
+
+    // 히스토리용 이전 상태 저장
+    const prevStates: Array<{
+      elementId: string;
+      prevProps: ComponentElementProps;
+      prevElement: Element;
+    }> = [];
+
+    // 1. 단일 메모리 상태 업데이트
+    set(
+      produce((state: ElementsState) => {
+        for (const { elementId, props } of validUpdates) {
+          const element = findElementById(state.elements, elementId);
+          if (!element) continue;
+
+          // 히스토리용 이전 상태 저장 (Immer proxy 해제)
+          prevStates.push({
+            elementId,
+            prevProps: JSON.parse(JSON.stringify(element.props)),
+            prevElement: JSON.parse(JSON.stringify(element)),
+          });
+
+          // 요소 업데이트
+          element.props = { ...element.props, ...props };
+
+          // 선택된 요소 props 업데이트
+          if (state.selectedElementId === elementId) {
+            state.selectedElementProps = createCompleteProps(element, props);
+          }
+        }
+      })
+    );
+
+    // 2. 단일 히스토리 엔트리 추가 (batch 타입)
+    const currentPageId = get().currentPageId;
+    if (currentPageId && prevStates.length > 0) {
+      historyManager.addEntry({
+        type: "batch",
+        elementId: prevStates[0].elementId, // 대표 요소
+        data: {
+          batchUpdates: validUpdates.map((u, i) => ({
+            elementId: u.elementId,
+            props: JSON.parse(JSON.stringify(u.props)),
+            prevProps: prevStates[i]?.prevProps,
+            prevElement: prevStates[i]?.prevElement,
+          })),
+        },
+      });
+    }
+
+    // 3. 단일 인덱스 재구축
+    get()._rebuildIndexes();
+
+    // 4. IndexedDB 병렬 저장
+    try {
+      const db = await getDB();
+      await Promise.all(
+        validUpdates.map(({ elementId, props }) =>
+          db.elements.update(elementId, { props })
+        )
+      );
+
+      if (process.env.NODE_ENV === 'development') {
+        console.log("✅ [IndexedDB] 배치 props 저장 완료:", validUpdates.length);
+      }
+    } catch (error) {
+      console.warn("⚠️ [IndexedDB] 배치 저장 중 오류 (메모리는 정상):", error);
+    }
+  };
+
+/**
+ * BatchUpdateElements 액션 생성 팩토리
+ *
+ * 여러 요소의 전체 속성을 한 번에 업데이트합니다.
+ * props, dataBinding 등 모든 필드 지원.
+ *
+ * @param set - Zustand setState 함수
+ * @param get - Zustand getState 함수
+ * @returns batchUpdateElements 액션 함수
+ */
+export const createBatchUpdateElementsAction =
+  (set: SetState, get: GetState) =>
+  async (updates: BatchElementUpdate[]) => {
+    if (updates.length === 0) return;
+
+    const state = get();
+    const validUpdates = updates.filter(
+      (u) => getElementById(state.elementsMap, u.elementId) !== undefined
+    );
+
+    if (validUpdates.length === 0) return;
+
+    if (process.env.NODE_ENV === 'development') {
+      console.log("🚀 batchUpdateElements 호출:", {
+        totalUpdates: updates.length,
+        validUpdates: validUpdates.length,
+      });
+    }
+
+    // 히스토리용 이전 상태 저장
+    const prevStates: Array<{
+      elementId: string;
+      prevProps: ComponentElementProps;
+      prevElement: Element;
+    }> = [];
+
+    // 1. 단일 메모리 상태 업데이트
+    set(
+      produce((state: ElementsState) => {
+        for (const { elementId, updates: elementUpdates } of validUpdates) {
+          const element = findElementById(state.elements, elementId);
+          if (!element) continue;
+
+          // 히스토리용 이전 상태 저장 (props 변경 시에만)
+          if (elementUpdates.props) {
+            prevStates.push({
+              elementId,
+              prevProps: JSON.parse(JSON.stringify(element.props)),
+              prevElement: JSON.parse(JSON.stringify(element)),
+            });
+          }
+
+          // 요소 업데이트
+          Object.assign(element, elementUpdates);
+
+          // 선택된 요소 props 업데이트
+          if (state.selectedElementId === elementId && elementUpdates.props) {
+            state.selectedElementProps = createCompleteProps(
+              element,
+              elementUpdates.props
+            );
+          }
+        }
+      })
+    );
+
+    // 2. 단일 히스토리 엔트리 추가 (batch 타입)
+    const currentPageId = get().currentPageId;
+    if (currentPageId && prevStates.length > 0) {
+      historyManager.addEntry({
+        type: "batch",
+        elementId: prevStates[0].elementId,
+        data: {
+          batchUpdates: prevStates.map((ps, i) => ({
+            elementId: ps.elementId,
+            props: validUpdates[i]?.updates.props
+              ? JSON.parse(JSON.stringify(validUpdates[i].updates.props))
+              : undefined,
+            prevProps: ps.prevProps,
+            prevElement: ps.prevElement,
+          })),
+        },
+      });
+    }
+
+    // 3. 단일 인덱스 재구축
+    get()._rebuildIndexes();
+
+    // 4. IndexedDB 병렬 저장
+    try {
+      const db = await getDB();
+      await Promise.all(
+        validUpdates.map(({ elementId, updates: elementUpdates }) =>
+          db.elements.update(elementId, elementUpdates)
+        )
+      );
+
+      if (process.env.NODE_ENV === 'development') {
+        console.log("✅ [IndexedDB] 배치 요소 저장 완료:", validUpdates.length);
+      }
+    } catch (error) {
+      console.warn("⚠️ [IndexedDB] 배치 저장 중 오류 (메모리는 정상):", error);
     }
   };

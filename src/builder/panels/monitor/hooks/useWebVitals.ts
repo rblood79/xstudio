@@ -17,7 +17,13 @@ export interface WebVitals {
   ttfb: number | null; // Time to First Byte (ms)
 }
 
-export function useWebVitals() {
+interface UseWebVitalsOptions {
+  /** 훅 활성화 여부 (비활성 시 listener 해제) */
+  enabled?: boolean;
+}
+
+export function useWebVitals(options: UseWebVitalsOptions = {}) {
+  const { enabled = true } = options;
   const [vitals, setVitals] = useState<WebVitals>({
     lcp: null,
     fid: null,
@@ -25,8 +31,11 @@ export function useWebVitals() {
     ttfb: null,
   });
 
-  // Canvas iframe으로부터 메시지 수신
+  // Canvas iframe으로부터 메시지 수신 (enabled 가드 적용)
   useEffect(() => {
+    // 🛡️ enabled=false 시 listener 등록 안함
+    if (!enabled) return;
+
     const handleMessage = (event: MessageEvent) => {
       if (event.data.type === "WEB_VITALS_UPDATE") {
         setVitals(event.data.vitals);
@@ -35,7 +44,7 @@ export function useWebVitals() {
 
     window.addEventListener("message", handleMessage);
     return () => window.removeEventListener("message", handleMessage);
-  }, []);
+  }, [enabled]);
 
   // Canvas에 Web Vitals 수집 요청
   const requestVitals = useCallback(() => {

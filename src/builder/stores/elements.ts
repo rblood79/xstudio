@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { create } from "zustand";
 import { produce } from "immer";
 import { StateCreator } from "zustand";
@@ -17,9 +18,19 @@ import {
 import {
   createUpdateElementPropsAction,
   createUpdateElementAction,
+  createBatchUpdateElementPropsAction,
+  createBatchUpdateElementsAction,
+  type BatchElementUpdate,
+  type BatchPropsUpdate,
 } from "./utils/elementUpdate";
 import { ElementUtils } from "../../utils/element/elementUtils";
 import { elementsApi } from "../../services/api";
+import {
+  type PageElementIndex,
+  createEmptyPageIndex,
+  rebuildPageIndex,
+  getPageElements as getPageElementsFromIndex,
+} from "./utils/elementIndexer";
 
 interface Page {
   id: string;
@@ -34,6 +45,8 @@ export interface ElementsState {
   // 성능 최적화: O(1) 조회를 위한 Map 인덱스
   elementsMap: Map<string, Element>;
   childrenMap: Map<string, Element[]>;
+  // 🆕 Phase 2: 페이지별 인덱스 (O(1) 페이지 요소 조회)
+  pageIndex: PageElementIndex;
   selectedElementId: string | null;
   selectedElementProps: ComponentElementProps;
   selectedTab: { parentId: string; tabIndex: number } | null;
@@ -46,6 +59,9 @@ export interface ElementsState {
 
   // 내부 헬퍼: 인덱스 재구축
   _rebuildIndexes: () => void;
+
+  // 🆕 Phase 2: O(1) 페이지 요소 조회
+  getPageElements: (pageId: string) => Element[];
 
   setElements: (elements: Element[]) => void;
   loadPageElements: (elements: Element[], pageId: string) => void;
@@ -84,6 +100,10 @@ export interface ElementsState {
   // 다중 선택 관련 액션
   toggleElementInSelection: (elementId: string) => void;
   setSelectedElements: (elementIds: string[]) => void;
+
+  // 🚀 배치 업데이트 (100+ 요소 최적화)
+  batchUpdateElementProps: (updates: BatchPropsUpdate[]) => Promise<void>;
+  batchUpdateElements: (updates: BatchElementUpdate[]) => Promise<void>;
 }
 
 export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
@@ -102,7 +122,11 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
   const updateElementProps = createUpdateElementPropsAction(set, get);
   const updateElement = createUpdateElementAction(set, get);
 
-  // 인덱스 재구축 함수
+  // 🚀 배치 업데이트 함수 생성 (100+ 요소 최적화)
+  const batchUpdateElementProps = createBatchUpdateElementPropsAction(set, get);
+  const batchUpdateElements = createBatchUpdateElementsAction(set, get);
+
+  // 인덱스 재구축 함수 (Phase 2: 페이지 인덱스 포함)
   const _rebuildIndexes = () => {
     const { elements } = get();
     const elementsMap = new Map<string, Element>();
@@ -120,13 +144,24 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
       childrenMap.get(parentId)!.push(el);
     });
 
-    set({ elementsMap, childrenMap });
+    // 🆕 Phase 2: 페이지 인덱스 재구축
+    const pageIndex = rebuildPageIndex(elements, elementsMap);
+
+    set({ elementsMap, childrenMap, pageIndex });
+  };
+
+  // 🆕 Phase 2: O(1) 페이지 요소 조회 함수
+  const getPageElements = (pageId: string): Element[] => {
+    const { pageIndex, elementsMap } = get();
+    return getPageElementsFromIndex(pageIndex, pageId, elementsMap);
   };
 
   return {
     elements: [],
     elementsMap: new Map(),
     childrenMap: new Map(),
+    // 🆕 Phase 2: 페이지 인덱스 초기값
+    pageIndex: createEmptyPageIndex(),
     selectedElementId: null,
     selectedElementProps: {},
     selectedTab: null,
@@ -138,6 +173,7 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
     multiSelectMode: false,
 
     _rebuildIndexes,
+    getPageElements,
 
   setElements: (elements) => {
     set(
@@ -357,6 +393,10 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
         }
       })
     ),
+
+  // 🚀 배치 업데이트 (Factory 함수로 생성)
+  batchUpdateElementProps,
+  batchUpdateElements,
   };
 };
 
@@ -367,32 +407,32 @@ export const useStore = create<ElementsState>(createElementsSlice);
 // 🚀 Performance Optimized Selectors
 // ============================================
 
+// 안정적인 빈 배열 참조 (새 배열 생성 방지)
+const EMPTY_ELEMENTS: Element[] = [];
+
 /**
  * 현재 페이지의 요소만 반환하는 선택적 selector
  *
- * 🎯 최적화 효과:
- * - 다른 페이지의 요소 변경에 재렌더되지 않음
- * - Sidebar에서 전체 elements 대신 사용
+ * 🎯 Phase 2 최적화:
+ * - 안정적인 참조: elements 배열이 변경될 때만 재계산
+ * - 개별 구독: currentPageId와 elements 분리 구독
+ * - 무한 루프 방지: getSnapshot 결과 캐싱
  *
  * @example
  * ```tsx
- * // ❌ 기존: 모든 elements 구독 (불필요한 재렌더 발생)
- * const elements = useStore((state) => state.elements);
- * const currentPageElements = useMemo(() =>
- *   elements.filter(el => el.page_id === currentPageId),
- *   [elements, currentPageId]
- * );
- *
- * // ✅ 개선: 현재 페이지 요소만 구독
  * const currentPageElements = useCurrentPageElements();
  * ```
  */
 export const useCurrentPageElements = (): Element[] => {
-  return useStore((state) => {
-    const { elements, currentPageId } = state;
-    if (!currentPageId) return [];
-    return elements.filter((el) => el.page_id === currentPageId);
-  });
+  // 개별 구독으로 무한 루프 방지
+  const currentPageId = useStore((state) => state.currentPageId);
+  const elements = useStore((state) => state.elements);
+
+  // useMemo로 안정적인 참조 유지 (elements/currentPageId가 변경될 때만 재계산)
+  return useMemo(() => {
+    if (!currentPageId) return EMPTY_ELEMENTS;
+    return elements.filter(el => el.page_id === currentPageId);
+  }, [elements, currentPageId]);
 };
 
 /**
@@ -417,18 +457,22 @@ export const useElementById = (elementId: string | null): Element | undefined =>
 export const useChildElements = (parentId: string | null): Element[] => {
   return useStore((state) => {
     const key = parentId || 'root';
-    return state.childrenMap.get(key) || [];
+    // 안정적인 빈 배열 참조 반환 (새 배열 생성 방지)
+    return state.childrenMap.get(key) ?? EMPTY_ELEMENTS;
   });
 };
 
 /**
  * 현재 페이지의 요소 개수만 반환 (가벼운 조회용)
  * 트리 노드 개수 표시 등에 사용
+ *
+ * 🆕 Phase 2: O(1) 인덱스 기반 카운트
  */
 export const useCurrentPageElementCount = (): number => {
   return useStore((state) => {
-    const { elements, currentPageId } = state;
+    const { pageIndex, currentPageId } = state;
     if (!currentPageId) return 0;
-    return elements.filter((el) => el.page_id === currentPageId).length;
+    // O(1) 인덱스 기반 카운트
+    return pageIndex.elementsByPage.get(currentPageId)?.size ?? 0;
   });
 };

@@ -16,8 +16,6 @@ import {
   Breadcrumbs,
   Breadcrumb,
   Group,
-  Dialog,
-  Modal,
 } from "../../shared/components/list";
 import { Slot } from "../../shared/components/Slot";
 import { PreviewElement, RenderContext } from "../types";

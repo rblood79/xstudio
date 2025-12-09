@@ -8,6 +8,8 @@ import {
   useParams,
   useLocation,
 } from "react-router";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 
 // Single CSS entry point - all imports handled in index.css via @import
 import "./index.css";
@@ -91,12 +93,38 @@ function AppLayout() {
   );
 }
 
+/**
+ * React Query Client 설정
+ *
+ * 🚀 Phase 6: 서버 상태 관리 및 API 캐싱
+ *
+ * - staleTime: 5분 (데이터가 stale로 간주되기까지의 시간)
+ * - gcTime: 30분 (캐시에서 제거되기까지의 시간, 구 cacheTime)
+ * - retry: 2회 (실패 시 재시도)
+ * - refetchOnWindowFocus: false (창 포커스 시 자동 refetch 비활성화)
+ *
+ * @since 2025-12-10 Phase 6 React Query
+ */
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000, // 5분
+      gcTime: 30 * 60 * 1000, // 30분 (구 cacheTime)
+      retry: 2,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
+
 const root = document.getElementById("root");
 
 ReactDOM.createRoot(root!).render(
-  <BrowserRouter>
-    <ParticleBackgroundProvider>
-      <AppLayout />
-    </ParticleBackgroundProvider>
-  </BrowserRouter>
+  <QueryClientProvider client={queryClient}>
+    <BrowserRouter>
+      <ParticleBackgroundProvider>
+        <AppLayout />
+      </ParticleBackgroundProvider>
+    </BrowserRouter>
+    {import.meta.env.DEV && <ReactQueryDevtools initialIsOpen={false} />}
+  </QueryClientProvider>
 );

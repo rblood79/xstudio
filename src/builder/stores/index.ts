@@ -1,10 +1,11 @@
 import { useMemo } from "react";
 import { create, type StoreApi, type UseBoundStore } from "zustand";
 import { createSelectionSlice, SelectionState } from "./selection";
-import { createElementsSlice, ElementsState } from "./elements";
+import { createElementsSlice, ElementsState, type Element } from "./elements";
 import { createSaveModeSlice, SaveModeState } from "./saveMode";
 import { createSettingsSlice, SettingsState } from "./settings";
 import { createPanelLayoutSlice, PanelLayoutSlice } from "./panelLayout";
+import { createElementLoaderSlice, ElementLoaderSlice } from "./elementLoader";
 
 // ✅ ThemeState removed - now using unified theme store (themeStore.unified.ts)
 
@@ -14,7 +15,8 @@ interface Store
     SelectionState,
     SaveModeState,
     SettingsState,
-    PanelLayoutSlice {}
+    PanelLayoutSlice,
+    ElementLoaderSlice {}
 
 type UseStoreType = UseBoundStore<StoreApi<Store>>;
 
@@ -43,6 +45,7 @@ if (hasExistingStore) {
     ...createSaveModeSlice(...args),
     ...createSettingsSlice(...args),
     ...createPanelLayoutSlice(...args),
+    ...createElementLoaderSlice(...args),
   }));
 
   if (typeof window !== "undefined") {
@@ -90,23 +93,26 @@ export const usePages = () => useStore((state) => state.pages);
 // 🚀 Performance Optimized Selectors (Phase 1)
 // ============================================
 
+// 안정적인 빈 배열 참조 (새 배열 생성 방지)
+const EMPTY_ELEMENTS: Element[] = [];
+
 /**
  * 현재 페이지의 요소만 반환하는 선택적 selector
  *
- * 🎯 최적화 효과:
- * - 다른 페이지의 요소 변경에 재렌더되지 않음
- * - Sidebar에서 전체 elements 대신 사용
- *
- * ⚠️ 중요: useMemo를 사용하여 필터링 결과를 캐시합니다.
- * .filter()는 항상 새 배열을 반환하므로, useMemo 없이는 무한 루프가 발생합니다.
+ * 🎯 Phase 2 최적화:
+ * - 안정적인 참조: elements 배열이 변경될 때만 재계산
+ * - 개별 구독: currentPageId와 elements 분리 구독
+ * - 무한 루프 방지: useMemo로 getSnapshot 결과 캐싱
  */
-export const useCurrentPageElements = () => {
-  const elements = useStore((state) => state.elements);
+export const useCurrentPageElements = (): Element[] => {
+  // 개별 구독으로 무한 루프 방지
   const currentPageId = useStore((state) => state.currentPageId);
+  const elements = useStore((state) => state.elements);
 
+  // useMemo로 안정적인 참조 유지 (elements/currentPageId가 변경될 때만 재계산)
   return useMemo(() => {
-    if (!currentPageId) return [];
-    return elements.filter((el) => el.page_id === currentPageId);
+    if (!currentPageId) return EMPTY_ELEMENTS;
+    return elements.filter(el => el.page_id === currentPageId);
   }, [elements, currentPageId]);
 };
 
@@ -122,26 +128,24 @@ export const useElementById = (elementId: string | null) =>
 /**
  * childrenMap을 활용한 O(1) 자식 요소 조회 selector
  */
-export const useChildElements = (parentId: string | null) =>
+export const useChildElements = (parentId: string | null): Element[] =>
   useStore((state) => {
     const key = parentId || "root";
-    return state.childrenMap.get(key) || [];
+    // 안정적인 빈 배열 참조 반환 (새 배열 생성 방지)
+    return state.childrenMap.get(key) ?? EMPTY_ELEMENTS;
   });
 
 /**
  * 현재 페이지의 요소 개수만 반환 (가벼운 조회용)
  *
- * ⚠️ 참고: 이 selector는 primitive 값(number)을 반환하므로 useMemo가 필요 없습니다.
- * Zustand는 primitive 값의 변경만 감지하여 재렌더합니다.
+ * 🆕 Phase 2: O(1) 인덱스 기반 카운트
  */
 export const useCurrentPageElementCount = () => {
-  const elements = useStore((state) => state.elements);
-  const currentPageId = useStore((state) => state.currentPageId);
-
-  return useMemo(() => {
+  return useStore((state) => {
+    const { pageIndex, currentPageId } = state;
     if (!currentPageId) return 0;
-    return elements.filter((el) => el.page_id === currentPageId).length;
-  }, [elements, currentPageId]);
+    return pageIndex.elementsByPage.get(currentPageId)?.size ?? 0;
+  });
 };
 
 // 액션 선택기들
@@ -174,6 +178,27 @@ export const usePanelLayoutActions = () =>
     savePanelLayoutToStorage: state.savePanelLayoutToStorage,
     loadPanelLayoutFromStorage: state.loadPanelLayoutFromStorage,
   }));
+
+// 🚀 Phase 5: Lazy Loading 선택기들
+export const useLazyLoaderActions = () =>
+  useStore((state) => ({
+    lazyLoadPageElements: state.lazyLoadPageElements,
+    unloadPage: state.unloadPage,
+    isPageLoaded: state.isPageLoaded,
+    isPageLoading: state.isPageLoading,
+    preloadPage: state.preloadPage,
+    getLRUStats: state.getLRUStats,
+    setLazyLoadingEnabled: state.setLazyLoadingEnabled,
+  }));
+
+export const usePageLoadingStatus = (pageId: string | null) =>
+  useStore((state) => {
+    if (!pageId) return { isLoading: false, isLoaded: false };
+    return {
+      isLoading: state.loadingPages.has(pageId),
+      isLoaded: state.loadedPages.has(pageId),
+    };
+  });
 /* eslint-enable local/no-zustand-grouped-selectors */
 
 // ✅ useThemeActions removed - use unified theme store instead

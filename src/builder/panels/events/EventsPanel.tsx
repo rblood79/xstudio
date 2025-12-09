@@ -41,7 +41,32 @@ import {
 import { iconProps } from "../../../utils/ui/uiConstants";
 import { PanelHeader, PropertySection, EmptyState } from "../common";
 import { useInitialMountDetection } from "../../hooks/useInitialMountDetection";
+import { useComponentMeta } from "../../inspector/hooks/useComponentMeta";
 import "./EventsPanel.css";
+
+// 우선 선택 이벤트 우선순위 (press → action → selection → change → open)
+const EVENT_PRIORITY: EventType[] = [
+  "onPress",
+  "onAction",
+  "onRowAction",
+  "onSelectionChange",
+  "onChange",
+  "onInputChange",
+  "onOpenChange",
+  "onChangeEnd",
+  "onSubmit",
+  "onInput",
+  "onFocusChange",
+  "onFocus",
+  "onBlur",
+];
+
+function pickPreferredEvent(events: EventType[]): EventType | undefined {
+  for (const type of EVENT_PRIORITY) {
+    if (events.includes(type)) return type;
+  }
+  return events[0];
+}
 
 // ============================================================================
 // Helper Functions: EventHandler ↔ Block Types Conversion
@@ -161,6 +186,10 @@ function EventsPanelContent({
   selectedElement,
   updateEvents,
 }: EventsPanelContentProps) {
+  const componentMeta = useComponentMeta(selectedElement?.type);
+  const supportedEvents = (componentMeta?.inspector.supportedEvents ||
+    []) as EventType[];
+
   // ⭐ showAddAction을 컴포넌트 내부로 이동
   // key={selectedElement.id}로 인해 요소 변경 시 자동으로 false로 리셋됨
   const [showAddAction, setShowAddAction] = useState<'then' | 'else' | false>(false);
@@ -198,6 +227,11 @@ function EventsPanelContent({
     .map((h) => h.event)
     .filter((event): event is EventType => isImplementedEventType(event));
 
+  // 등록되지 않은 지원 이벤트 목록 (빠른 추가용)
+  const availableSupportedEvents = supportedEvents.filter(
+    (event) => !registeredEventTypes.includes(event)
+  );
+
   // THEN Actions 변경 시 Handler 업데이트 (초기 마운트 감지 적용)
   useInitialMountDetection({
     data: actions,
@@ -231,6 +265,9 @@ function EventsPanelContent({
 
   // 새 이벤트 추가
   const handleAddEvent = (eventType: EventType) => {
+    if (registeredEventTypes.includes(eventType)) {
+      return;
+    }
     const newHandler = addHandler(eventType);
     selectHandler(newHandler.id);
   };
@@ -378,10 +415,44 @@ function EventsPanelContent({
         icon={<SquareMousePointer size={16} />}
         title="Events"
         actions={
-          <EventTypePicker
-            onSelect={handleAddEvent}
-            registeredTypes={registeredEventTypes}
-          />
+          availableSupportedEvents.length === 1 ? (
+            <Button
+              className="iconButton"
+              onPress={() => handleAddEvent(availableSupportedEvents[0])}
+              aria-label={`Add ${availableSupportedEvents[0]}`}
+            >
+              <Zap
+                size={iconProps.size}
+                color={iconProps.color}
+                strokeWidth={iconProps.stroke}
+              />
+            </Button>
+          ) : (
+            <div className="panel-action-group">
+              {availableSupportedEvents.length > 0 && (
+                <Button
+                  className="iconButton"
+                  onPress={() => {
+                    const preferred = pickPreferredEvent(availableSupportedEvents);
+                    if (preferred) handleAddEvent(preferred);
+                  }}
+                  aria-label="Add preferred event"
+                >
+                  <Zap
+                    size={iconProps.size}
+                    color={iconProps.color}
+                    strokeWidth={iconProps.stroke}
+                  />
+                </Button>
+              )}
+              <EventTypePicker
+                onSelect={handleAddEvent}
+                registeredTypes={registeredEventTypes}
+                allowedTypes={supportedEvents}
+                isDisabled={availableSupportedEvents.length === 0 && supportedEvents.length === 0}
+              />
+            </div>
+          )
         }
       />
 
@@ -440,6 +511,7 @@ function EventsPanelContent({
                 registeredEventTypes={registeredEventTypes.filter(
                   (t) => t !== selectedHandler.event
                 )}
+                allowedEventTypes={supportedEvents}
                 showConnector={true}
               />
 

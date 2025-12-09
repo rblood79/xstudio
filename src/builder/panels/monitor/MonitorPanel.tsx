@@ -5,6 +5,10 @@
  * - Memory Tab: 메모리 사용량 차트 및 통계
  * - Realtime Tab: 실시간 모니터링 (FPS, Web Vitals)
  * - 리사이즈 가능한 Bottom Panel에서 렌더링
+ *
+ * 🛡️ Gateway 패턴 적용 (2025-12-10)
+ * - isActive 체크를 최상단에서 수행
+ * - Content 컴포넌트 분리로 비활성 시 훅 실행 방지
  */
 
 import { useState, useEffect, useCallback, useRef } from "react";
@@ -38,19 +42,38 @@ import { ToastContainer } from "../../components/ToastContainer";
 
 const MAX_HISTORY_POINTS = 60; // 최대 60개 데이터 포인트 (10분)
 
+/**
+ * MonitorPanel - Gateway 컴포넌트
+ * 🛡️ isActive 체크 후 Content 렌더링
+ */
 export function MonitorPanel({ isActive }: PanelProps) {
-  const { stats, statusMessage, optimize, isOptimizing } = useMemoryStats();
-  const [memoryHistory, setMemoryHistory] = useState<number[]>([]);
+  // 🛡️ Gateway: 비활성 시 즉시 반환 (훅 실행 방지)
+  if (!isActive) {
+    return null;
+  }
+
+  return <MonitorPanelContent />;
+}
+
+/**
+ * MonitorPanelContent - 실제 콘텐츠 컴포넌트
+ * 훅은 여기서만 실행됨 (isActive=true일 때만)
+ */
+function MonitorPanelContent() {
   const [activeTab, setActiveTab] = useState<string>("memory");
+  const [memoryHistory, setMemoryHistory] = useState<number[]>([]);
   const [thresholdConfig, setThresholdConfig] = useState<ThresholdConfig>(
     loadThresholdConfig
   );
-  const prevStatsRef = useRef<typeof stats>(null);
+  const prevStatsRef = useRef<ReturnType<typeof useMemoryStats>["stats"]>(null);
   const { toasts, showToast, dismissToast } = useToast();
 
-  // Phase 5: Real-time monitoring hooks
-  const { fps } = useFPSMonitor({ enabled: isActive && activeTab === "realtime" });
-  const { vitals, collectLocalVitals } = useWebVitals();
+  // 🆕 enabled 파라미터 적용
+  const { stats, statusMessage, optimize, isOptimizing } = useMemoryStats({ enabled: true });
+
+  // Phase 5: Real-time monitoring hooks (이미 enabled 지원)
+  const { fps } = useFPSMonitor({ enabled: activeTab === "realtime" });
+  const { vitals, collectLocalVitals } = useWebVitals({ enabled: activeTab === "realtime" });
 
   // Time series data for realtime chart
   const getStatsForTimeSeries = useCallback(() => {
@@ -64,7 +87,7 @@ export function MonitorPanel({ isActive }: PanelProps) {
   }, [stats]);
 
   const { data: timeSeriesData } = useTimeSeriesData(getStatsForTimeSeries, {
-    enabled: isActive && activeTab === "realtime",
+    enabled: activeTab === "realtime",
     maxPoints: 60,
     intervalMs: 1000,
   });
@@ -72,9 +95,10 @@ export function MonitorPanel({ isActive }: PanelProps) {
   // 브라우저 메모리 사용량 백분율 계산
   const memoryPercent = stats?.browserMemory?.usagePercent ?? 0;
 
-  // Threshold 경고 알림
+  // Threshold 경고 알림 (activeTab이 memory일 때만)
   useEffect(() => {
     if (!stats?.browserMemory) return;
+    if (activeTab !== "memory") return; // 🛡️ 탭 가드 추가
 
     const percent = stats.browserMemory.usagePercent;
 
@@ -83,11 +107,12 @@ export function MonitorPanel({ isActive }: PanelProps) {
     } else if (percent >= 60) {
       showToast("warning", `메모리 사용량이 높습니다 (${percent.toFixed(1)}%)`);
     }
-  }, [stats?.browserMemory?.usagePercent, showToast]);
+  }, [stats?.browserMemory?.usagePercent, activeTab, showToast]);
 
-  // 메모리 히스토리 수집
+  // 메모리 히스토리 수집 (memory 탭에서만)
   useEffect(() => {
     if (!stats) return;
+    if (activeTab !== "memory") return; // 🛡️ 탭 가드 추가
 
     // 이전 값과 비교하여 실제로 변경된 경우에만 업데이트
     const prevValue = prevStatsRef.current?.commandStoreStats?.estimatedMemoryUsage;
@@ -109,7 +134,7 @@ export function MonitorPanel({ isActive }: PanelProps) {
         });
       });
     }
-  }, [stats]);
+  }, [stats, activeTab]);
 
   // 최적화 핸들러
   const handleOptimize = useCallback(() => {
@@ -117,10 +142,6 @@ export function MonitorPanel({ isActive }: PanelProps) {
     // 최적화 후 히스토리 리셋
     setMemoryHistory([]);
   }, [optimize]);
-
-  if (!isActive) {
-    return null;
-  }
 
   return (
     <div className="monitor-panel">

@@ -1,4 +1,4 @@
-import { TextField, Input, Label, TextArea } from "react-aria-components";
+import { TextField, Label, TextArea } from "react-aria-components";
 import { useState } from "react";
 import type { ShowModalConfig } from "../types/eventTypes";
 import { ElementPicker } from "../../panels/events/editors/ElementPicker";

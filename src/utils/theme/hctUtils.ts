@@ -416,8 +416,7 @@ export function getHctContrastRatio(color1Hex: string, color2Hex: string): numbe
  * Returns tone that ensures WCAG AA contrast (4.5:1)
  */
 export function findAccessibleTone(
-  backgroundHex: string,
-  targetChroma: number = 16
+  backgroundHex: string
 ): { lightTone: number; darkTone: number } {
   const bgHct = hctFromHex(backgroundHex);
 

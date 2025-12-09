@@ -27,6 +27,8 @@ interface EventTypePickerProps {
   registeredTypes?: EventType[];
   /** 현재 선택된 이벤트 타입 (WhenBlock에서 사용) */
   selectedType?: EventType;
+  /** 허용된 이벤트 타입만 노출 (컴포넌트 지원 이벤트 제한용) */
+  allowedTypes?: EventType[];
   /** 비활성화 여부 */
   isDisabled?: boolean;
   /** 인라인 모드 (버튼 대신 입력 필드 표시) */
@@ -54,18 +56,34 @@ export function EventTypePicker({
   onSelect,
   registeredTypes = [],
   selectedType,
+  allowedTypes,
   isDisabled = false,
   inline = false,
 }: EventTypePickerProps) {
   const [searchValue, setSearchValue] = useState('');
   const [isOpen, setIsOpen] = useState(false);
 
+  // 기본 이벤트 목록: allowedTypes가 있으면 그것을 우선 사용하고, 없으면 전체
+  const baseEventTypes = useMemo(() => {
+    const base =
+      allowedTypes && allowedTypes.length > 0
+        ? allowedTypes
+        : (Object.keys(EVENT_TYPE_LABELS) as EventType[]);
+
+    // 현재 선택된 타입이 목록에 없으면 포함시켜 편집 시 보존
+    if (selectedType && !base.includes(selectedType)) {
+      return Array.from(new Set([...base, selectedType]));
+    }
+
+    return base;
+  }, [allowedTypes, selectedType]);
+
   // 사용 가능한 이벤트 타입 목록 (이미 등록된 타입 제외)
   const availableEventTypes = useMemo(() => {
-    return (Object.keys(EVENT_TYPE_LABELS) as EventType[]).filter(
+    return baseEventTypes.filter(
       (type) => !registeredTypes.includes(type) || type === selectedType
     );
-  }, [registeredTypes, selectedType]);
+  }, [baseEventTypes, registeredTypes, selectedType]);
 
   // 검색 필터링된 목록
   const filteredEventTypes = useMemo(() => {
@@ -81,6 +99,7 @@ export function EventTypePicker({
   // 카테고리별 그룹화
   const groupedEventTypes = useMemo(() => {
     const groups: { category: string; events: EventType[] }[] = [];
+    const added = new Set<EventType>();
 
     // EVENT_CATEGORIES가 있으면 사용, 없으면 단일 그룹
     if (typeof EVENT_CATEGORIES !== 'undefined') {
@@ -92,10 +111,17 @@ export function EventTypePicker({
         );
         if (filtered.length > 0) {
           groups.push({ category: categoryInfo.label, events: filtered });
+          filtered.forEach((e) => added.add(e));
         }
       });
     } else {
       groups.push({ category: 'Events', events: filteredEventTypes });
+    }
+
+    // 카테고리에서 누락된 타입이 있다면 기본 그룹으로 추가
+    const leftovers = filteredEventTypes.filter((e) => !added.has(e));
+    if (leftovers.length > 0 && typeof EVENT_CATEGORIES !== 'undefined') {
+      groups.push({ category: 'Events', events: leftovers });
     }
 
     return groups;

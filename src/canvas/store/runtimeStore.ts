@@ -22,6 +22,60 @@ export const createRuntimeStore = () => create<RuntimeStoreState>((set, get) => 
     }));
   },
 
+  // 🚀 Phase 4: Delta Update Actions
+  /**
+   * 단일 요소 추가 (Delta)
+   */
+  addElement: (element: RuntimeElement) => {
+    set((state) => ({
+      elements: [...state.elements, element],
+    }));
+  },
+
+  /**
+   * 다수 요소 추가 (Delta batch)
+   */
+  addElements: (newElements: RuntimeElement[]) => {
+    set((state) => ({
+      elements: [...state.elements, ...newElements],
+    }));
+  },
+
+  /**
+   * 단일 요소 삭제 (Delta)
+   */
+  removeElement: (elementId: string) => {
+    set((state) => ({
+      elements: state.elements.filter((el) => el.id !== elementId),
+    }));
+  },
+
+  /**
+   * 다수 요소 삭제 (Delta batch)
+   */
+  removeElements: (elementIds: string[]) => {
+    const idSet = new Set(elementIds);
+    set((state) => ({
+      elements: state.elements.filter((el) => !idSet.has(el.id)),
+    }));
+  },
+
+  /**
+   * 요소 부분 업데이트 (Delta - props, parentId, orderNum)
+   */
+  updateElement: (elementId: string, updates: Partial<RuntimeElement>) => {
+    set((state) => ({
+      elements: state.elements.map((el) =>
+        el.id === elementId ? { ...el, ...updates } : el
+      ),
+    }));
+  },
+
+  /**
+   * 요소 배열 반환 (messageHandler에서 사용)
+   */
+  getElements: () => get().elements,
+
   // ============================================
   // Pages
   // ============================================

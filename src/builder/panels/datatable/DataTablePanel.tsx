@@ -9,10 +9,16 @@
  *
  * 편집 UI는 DataTableEditorPanel에서 처리
  *
+ * 🚀 Phase 6: React Query로 서버 상태 관리
+ * - 자동 캐싱 (5분 staleTime)
+ * - 중복 요청 방지
+ * - enabled 옵션으로 조건부 fetching
+ *
  * @see docs/features/DATA_PANEL_SYSTEM.md
+ * @since 2025-12-10 Phase 6 React Query
  */
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useParams } from "react-router-dom";
 import {
   Table2,
@@ -25,6 +31,7 @@ import {
 import type { PanelProps } from "../core/types";
 import { useDataStore } from "../../stores/data";
 import { useDataTableEditorStore } from "./stores/dataTableEditorStore";
+import { useDataPanelQuery } from "../../hooks/useDataQueries";
 import { PanelHeader } from "../common/PanelHeader";
 import { EmptyState } from "../common/EmptyState";
 import { LoadingSpinner } from "../common/LoadingSpinner";
@@ -54,7 +61,19 @@ export function DataTablePanel({ isActive }: PanelProps) {
 
   // Get projectId from URL params
   const { projectId: currentProjectId } = useParams<{ projectId: string }>();
-  const isLoading = useDataStore((state) => state.isLoading);
+
+  // 🚀 Phase 6: React Query로 데이터 fetching
+  // - enabled: isActive && !!currentProjectId → 패널 비활성 시 fetching 안함
+  // - staleTime: 5분 캐싱 → 중복 요청 방지
+  // - 자동 dedupe → 같은 요청 동시 발생 시 1회만 실행
+  const {
+    isLoading,
+    refetch,
+  } = useDataPanelQuery(currentProjectId, {
+    enabled: isActive,
+  });
+
+  // Zustand Store는 여전히 사용 (mutations 및 Canvas 동기화)
   const fetchDataTables = useDataStore((state) => state.fetchDataTables);
   const fetchApiEndpoints = useDataStore((state) => state.fetchApiEndpoints);
   const fetchVariables = useDataStore((state) => state.fetchVariables);
@@ -68,23 +87,6 @@ export function DataTablePanel({ isActive }: PanelProps) {
 
   // 현재 편집 중인 테이블 ID (하이라이트용)
   const editingTableId = editorMode?.type === "table-edit" ? editorMode.tableId : null;
-
-  // Fetch data when panel becomes active or project changes
-  useEffect(() => {
-    if (isActive && currentProjectId) {
-      fetchDataTables(currentProjectId);
-      fetchApiEndpoints(currentProjectId);
-      fetchVariables(currentProjectId);
-      fetchTransformers(currentProjectId);
-    }
-  }, [
-    isActive,
-    currentProjectId,
-    fetchDataTables,
-    fetchApiEndpoints,
-    fetchVariables,
-    fetchTransformers,
-  ]);
 
   // Performance: Don't render if not active
   if (!isActive) {
@@ -103,6 +105,9 @@ export function DataTablePanel({ isActive }: PanelProps) {
 
   const handleRefresh = () => {
     if (currentProjectId) {
+      // 🚀 Phase 6: React Query refetch + Zustand store 동기화
+      refetch();
+      // Zustand Store도 업데이트 (Canvas 동기화용)
       fetchDataTables(currentProjectId);
       fetchApiEndpoints(currentProjectId);
       fetchVariables(currentProjectId);

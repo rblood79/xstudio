@@ -40,10 +40,18 @@ interface PerformanceWithMemory extends Performance {
   memory?: PerformanceMemory;
 }
 
+interface UseMemoryStatsOptions {
+  /** 훅 활성화 여부 (비활성 시 interval 중지) */
+  enabled?: boolean;
+  /** 수집 간격 (ms) */
+  interval?: number;
+}
+
 /**
  * 메모리 통계 수집 훅
  */
-export function useMemoryStats() {
+export function useMemoryStats(options: UseMemoryStatsOptions = {}) {
+  const { enabled = true, interval = 10000 } = options;
   const [stats, setStats] = useState<MemoryStats | null>(null);
   const [statusMessage, setStatusMessage] = useState<string>("");
   const [isOptimizing, setIsOptimizing] = useState(false);
@@ -90,8 +98,17 @@ export function useMemoryStats() {
     }
   }, []);
 
-  // 통계 수집 시작
+  // 통계 수집 시작 (enabled 가드 적용)
   useEffect(() => {
+    // 🛡️ enabled=false 시 interval 정리 및 조기 반환
+    if (!enabled) {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+      return;
+    }
+
     // 초기 수집
     if ("requestIdleCallback" in window) {
       (window as Window).requestIdleCallback(() => {
@@ -101,7 +118,7 @@ export function useMemoryStats() {
       setTimeout(collectStats, 0);
     }
 
-    // 주기적 수집 (10초마다)
+    // 주기적 수집
     intervalRef.current = window.setInterval(() => {
       if ("requestIdleCallback" in window) {
         (window as Window).requestIdleCallback(() => {
@@ -110,14 +127,15 @@ export function useMemoryStats() {
       } else {
         collectStats();
       }
-    }, 10000);
+    }, interval);
 
     return () => {
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
+        intervalRef.current = null;
       }
     };
-  }, [collectStats]);
+  }, [enabled, interval, collectStats]);
 
   // 메모리 최적화 함수
   const optimize = useCallback(async () => {

@@ -130,6 +130,14 @@ export interface RuntimeStoreState extends StateHierarchy {
   setElements: (elements: RuntimeElement[]) => void;
   updateElementProps: (id: string, props: Record<string, unknown>) => void;
 
+  // 🚀 Phase 4: Delta Update Actions
+  addElement: (element: RuntimeElement) => void;
+  addElements: (elements: RuntimeElement[]) => void;
+  removeElement: (elementId: string) => void;
+  removeElements: (elementIds: string[]) => void;
+  updateElement: (elementId: string, updates: Partial<RuntimeElement>) => void;
+  getElements: () => RuntimeElement[];
+
   // Pages
   pages: RuntimePage[];
   setPages: (pages: RuntimePage[]) => void;

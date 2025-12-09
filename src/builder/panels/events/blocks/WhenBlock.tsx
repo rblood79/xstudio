@@ -23,6 +23,9 @@ interface WhenBlockProps {
   /** 이미 등록된 이벤트 타입 목록 (중복 방지) */
   registeredEventTypes?: EventType[];
 
+  /** 현재 컴포넌트가 지원하는 이벤트 타입 목록 */
+  allowedEventTypes?: EventType[];
+
   /** 옵션 버튼 클릭 핸들러 */
   onOptionsClick?: () => void;
 
@@ -44,6 +47,7 @@ export function WhenBlock({
   trigger,
   onChange,
   registeredEventTypes = [],
+  allowedEventTypes = [],
   onOptionsClick,
   showConnector = true,
 }: WhenBlockProps) {
@@ -71,6 +75,7 @@ export function WhenBlock({
             onSelect={handleEventChange}
             registeredTypes={registeredEventTypes}
             selectedType={trigger.event}
+            allowedTypes={allowedEventTypes}
           />
 
           {/* Target */}
