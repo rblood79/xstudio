@@ -5,6 +5,7 @@ import type { BreadcrumbsVariant, ComponentSize } from '../../types/componentVar
 import type { DataBinding, ColumnMapping } from '../../types/builder/unified.types';
 import type { DataBindingValue } from '../../builder/panels/common/PropertyDataBinding';
 import { useCollectionData } from '../../builder/hooks/useCollectionData';
+import { Skeleton } from './Skeleton';
 import './styles/Breadcrumbs.css';
 
 export interface BreadcrumbsExtendedProps<T extends object> extends BreadcrumbsProps<T> {
@@ -26,6 +27,16 @@ export interface BreadcrumbsExtendedProps<T extends object> extends BreadcrumbsP
    * Column mapping for data binding
    */
   columnMapping?: ColumnMapping;
+  /**
+   * Show loading skeleton instead of breadcrumbs
+   * @default false
+   */
+  isLoading?: boolean;
+  /**
+   * Number of skeleton items to show when loading
+   * @default 3
+   */
+  skeletonCount?: number;
 }
 
 const breadcrumbsStyles = tv({
@@ -77,9 +88,30 @@ export function Breadcrumbs<T extends object>({
   size = 'md',
   dataBinding,
   columnMapping,
+  isLoading: externalLoading,
+  skeletonCount = 3,
   children,
   ...props
 }: BreadcrumbsExtendedProps<T>) {
+  // External loading state - show skeleton breadcrumbs
+  if (externalLoading) {
+    return (
+      <nav
+        className={breadcrumbsStyles({ variant, size, className: props.className as string })}
+        aria-busy="true"
+        aria-label="Loading breadcrumbs..."
+      >
+        <ol style={{ display: 'flex', alignItems: 'center', gap: '8px', listStyle: 'none', padding: 0, margin: 0 }}>
+          {Array.from({ length: skeletonCount }).map((_, i) => (
+            <li key={i} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Skeleton componentVariant="breadcrumb" size={size} index={i} />
+              {i < skeletonCount - 1 && <span style={{ color: 'var(--color-gray-400)' }}>/</span>}
+            </li>
+          ))}
+        </ol>
+      </nav>
+    );
+  }
   // useCollectionData Hook으로 데이터 가져오기 (PropertyDataBinding 형식 지원)
   const {
     data: boundData,

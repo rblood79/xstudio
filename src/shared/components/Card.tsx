@@ -1,6 +1,7 @@
 import React from "react";
 import { tv } from "tailwind-variants";
 import type { CardVariant, ComponentSizeSubset } from "../../types/builder/componentVariants.types";
+import { Skeleton } from "./Skeleton";
 import './styles/Card.css';
 
 export type CardAssetType = 'file' | 'folder' | 'image' | 'video' | 'audio';
@@ -51,6 +52,12 @@ export interface CardProps {
   'aria-labelledby'?: string;
   'aria-describedby'?: string;
   role?: string;
+
+  // Loading
+  /** Show loading skeleton instead of content */
+  isLoading?: boolean;
+  /** Skeleton layout variant */
+  skeletonLayout?: 'default' | 'gallery' | 'horizontal';
 }
 
 const card = tv({
@@ -139,8 +146,29 @@ export function Card({
   href,
   target,
   role,
+  isLoading = false,
+  skeletonLayout,
   ...props
 }: CardProps) {
+  // Determine skeleton variant based on orientation or explicit layout
+  const getSkeletonVariant = () => {
+    if (skeletonLayout) return skeletonLayout === 'default' ? 'card' : `card-${skeletonLayout}`;
+    if (variant === 'gallery') return 'card-gallery';
+    if (orientation === 'horizontal') return 'card-horizontal';
+    return 'card';
+  };
+
+  if (isLoading) {
+    return (
+      <Skeleton
+        componentVariant={getSkeletonVariant() as "card" | "card-gallery" | "card-horizontal"}
+        size={size}
+        className={className}
+        aria-label="Loading card..."
+      />
+    );
+  }
+
   const handleClick = () => {
     if (isDisabled) return;
 

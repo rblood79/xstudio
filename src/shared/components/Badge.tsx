@@ -1,6 +1,7 @@
 import React from "react";
 import { tv } from "tailwind-variants";
 import type { BadgeVariant, ComponentSize } from "../../types/componentVariants";
+import { Skeleton } from "./Skeleton";
 import "./styles/Badge.css";
 
 export interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
@@ -28,6 +29,11 @@ export interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
    * @default false
    */
   isPulsing?: boolean;
+  /**
+   * Show loading skeleton instead of content
+   * @default false
+   */
+  isLoading?: boolean;
 }
 
 const badge = tv({
@@ -86,6 +92,7 @@ export function Badge({
   size = "sm",
   isDot = false,
   isPulsing = false,
+  isLoading = false,
   className,
   children,
   ...props
@@ -97,6 +104,17 @@ export function Badge({
     isPulsing,
     className,
   });
+
+  if (isLoading) {
+    return (
+      <Skeleton
+        componentVariant="badge"
+        size={size}
+        className={className}
+        aria-label="Loading badge..."
+      />
+    );
+  }
 
   return (
     <span {...props} className={badgeClassName} data-badge>

@@ -14,6 +14,7 @@ import {
 import { tv } from 'tailwind-variants';
 import type { ComponentSizeSubset, ProgressBarVariant } from '../../types/builder/componentVariants.types';
 import { formatPercent, formatNumber } from '../../utils/core/numberUtils';
+import { Skeleton } from './Skeleton';
 
 import './styles/ProgressBar.css';
 
@@ -51,6 +52,11 @@ export interface ProgressBarProps extends AriaProgressBarProps {
    * 커스텀 포맷터 함수
    */
   customFormatter?: (value: number) => string;
+  /**
+   * Show loading skeleton instead of progress bar
+   * @default false
+   */
+  isLoading?: boolean;
 }
 
 const progressBar = tv({
@@ -82,8 +88,19 @@ export function ProgressBar({
   valueFormat = 'percent',
   showValue = true,
   customFormatter,
+  isLoading,
   ...props
 }: ProgressBarProps) {
+  if (isLoading) {
+    return (
+      <Skeleton
+        componentVariant="progress"
+        size={size}
+        className={props.className as string}
+        aria-label="Loading progress bar..."
+      />
+    );
+  }
   // 값 포맷팅 함수
   const formatValue = (value: number): string => {
     if (customFormatter) {

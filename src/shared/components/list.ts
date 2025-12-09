@@ -42,6 +42,7 @@ export * from "./Badge";
 export * from "./Dialog";
 export * from "./Modal";
 export * from "./Popover";
+export * from "./Skeleton";
 export * from "./types";
 export type { Key } from "react-aria-components";
 

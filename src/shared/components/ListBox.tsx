@@ -35,6 +35,7 @@ import type {
 import type { DataBindingValue } from "../../builder/panels/common/PropertyDataBinding";
 import { useCollectionData } from "../../builder/hooks/useCollectionData";
 import { CollectionLoadingState, CollectionErrorDisplay } from "./CollectionErrorState";
+import { Skeleton } from "./Skeleton";
 
 import "./styles/ListBox.css";
 
@@ -70,6 +71,17 @@ interface ExtendedListBoxProps<T extends object> extends ListBoxProps<T> {
    * @default ['label', 'name', 'title']
    */
   filterFields?: (keyof T)[];
+  /**
+   * Show loading skeleton instead of list
+   * Overrides internal loading state
+   * @default false
+   */
+  isLoading?: boolean;
+  /**
+   * Number of skeleton items to show when loading
+   * @default 5
+   */
+  skeletonCount?: number;
 }
 
 const listBoxStyles = tv({
@@ -107,11 +119,34 @@ export function ListBox<T extends object>({
   filter,
   filterText,
   filterFields = ['label', 'name', 'title'] as (keyof T)[],
+  isLoading: externalLoading,
+  skeletonCount = 5,
   ...props
 }: ExtendedListBoxProps<T>) {
   // Refs for virtualization
   const parentRef = useRef<HTMLDivElement>(null);
   const [focusedIndex, setFocusedIndex] = useState<number>(-1);
+
+  // External isLoading prop - shows skeleton immediately
+  if (externalLoading) {
+    return (
+      <div
+        className={`react-aria-ListBox ${variant} ${size}`}
+        role="listbox"
+        aria-busy="true"
+        aria-label="Loading list..."
+      >
+        {Array.from({ length: skeletonCount }).map((_, i) => (
+          <Skeleton
+            key={i}
+            componentVariant="list-item"
+            size={size}
+            index={i}
+          />
+        ))}
+      </div>
+    );
+  }
 
   // useCollectionData Hook으로 데이터 가져오기 (Static, API, Supabase 통합)
   const {

@@ -17,6 +17,7 @@ import {
 } from 'react-aria-components';
 import { tv } from 'tailwind-variants';
 import type { TextFieldVariant, ComponentSize } from '../../types/componentVariants';
+import { Skeleton } from './Skeleton';
 
 import './styles/TextField.css';
 
@@ -34,6 +35,8 @@ export interface TextFieldProps extends AriaTextFieldProps {
   // M3 props
   variant?: TextFieldVariant;
   size?: ComponentSize;
+  /** Show loading skeleton instead of input */
+  isLoading?: boolean;
 }
 
 const textFieldStyles = tv({
@@ -71,8 +74,20 @@ export function TextField({
   isReadOnly,
   variant = 'primary',
   size = 'md',
+  isLoading,
   ...props
 }: TextFieldProps) {
+  if (isLoading) {
+    return (
+      <Skeleton
+        componentVariant="input"
+        size={size}
+        className={props.className as string}
+        aria-label="Loading text field..."
+      />
+    );
+  }
+
   return (
     <AriaTextField
       {...props}
