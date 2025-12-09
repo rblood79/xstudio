@@ -10,6 +10,7 @@ import { Moon, Sun } from 'lucide-react';
 
 // 하위 컴포넌트 import
 import { AIThemeGenerator } from './components/AIThemeGenerator';
+import { HctThemeGenerator } from './components/HctThemeGenerator';
 import { FigmaImporter } from './components/FigmaImporter';
 import { TokenEditor } from './components/TokenEditor';
 import { ThemeExporter } from './components/ThemeExporter';
@@ -31,7 +32,7 @@ interface ThemeStudioProps {
   projectId: string;
 }
 
-type ThemeStudioView = 'tokens' | 'ai-generator' | 'figma-import' | 'dark-mode' | 'figma-plugin' | 'settings';
+type ThemeStudioView = 'tokens' | 'ai-generator' | 'hct-generator' | 'figma-import' | 'dark-mode' | 'figma-plugin' | 'settings';
 
 export function ThemeStudio({ projectId }: ThemeStudioProps) {
   const styles = themeStudioStyles();
@@ -126,6 +127,12 @@ export function ThemeStudio({ projectId }: ThemeStudioProps) {
             AI 생성
           </button>
           <button
+            className={currentView === 'hct-generator' ? 'active' : ''}
+            onClick={() => setCurrentView('hct-generator')}
+          >
+            HCT (M3)
+          </button>
+          <button
             className={currentView === 'figma-import' ? 'active' : ''}
             onClick={() => setCurrentView('figma-import')}
           >
@@ -214,6 +221,18 @@ export function ThemeStudio({ projectId }: ThemeStudioProps) {
           {currentView === 'ai-generator' && (
             <div className="ai-generator-view">
               <AIThemeGenerator
+                projectId={projectId}
+                onThemeGenerated={(themeId) => {
+                  handleActivateTheme(themeId);
+                  setCurrentView('tokens');
+                }}
+              />
+            </div>
+          )}
+
+          {currentView === 'hct-generator' && (
+            <div className="hct-generator-view">
+              <HctThemeGenerator
                 projectId={projectId}
                 onThemeGenerated={(themeId) => {
                   handleActivateTheme(themeId);
