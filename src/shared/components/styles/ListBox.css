@@ -44,7 +44,7 @@
     justify-content: center;
     padding: var(--spacing) var(--spacing-md);
     border-radius: var(--radius-xs);
-    min-height: 40px;
+    min-height: 20px;
     color: var(--on-surface);
     cursor: pointer;
     outline: none;
@@ -372,7 +372,7 @@
     --lb-header-size: var(--text-sm);
     --lb-header-padding: 0 var(--spacing-md);
     --lb-item-padding: var(--spacing) var(--spacing-md);
-    --lb-item-min-height: 40px;
+    --lb-item-min-height: 20px;
     --lb-item-size: var(--text-sm);
     --lb-desc-size: var(--text-xs);
   }
@@ -384,7 +384,7 @@
     --lb-header-size: var(--text-xs);
     --lb-header-padding: 0 var(--spacing);
     --lb-item-padding: var(--spacing-sm) var(--spacing);
-    --lb-item-min-height: 32px;
+    --lb-item-min-height: 20px;
     --lb-item-size: var(--text-xs);
     --lb-desc-size: 10px;
   }
@@ -395,7 +395,7 @@
     --lb-header-size: var(--text-sm);
     --lb-header-padding: 0 var(--spacing-md);
     --lb-item-padding: var(--spacing) var(--spacing-md);
-    --lb-item-min-height: 40px;
+    --lb-item-min-height: 20px;
     --lb-item-size: var(--text-sm);
     --lb-desc-size: var(--text-xs);
   }
@@ -406,7 +406,7 @@
     --lb-header-size: var(--text-base);
     --lb-header-padding: 0 var(--spacing-lg);
     --lb-item-padding: var(--spacing-md) var(--spacing-lg);
-    --lb-item-min-height: 48px;
+    --lb-item-min-height: 20px;
     --lb-item-size: var(--text-base);
     --lb-desc-size: var(--text-sm);
   }

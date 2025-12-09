@@ -52,6 +52,7 @@ import { ClearSelectionActionEditor } from "./ClearSelectionActionEditor";
 import { LoadDataTableActionEditor, type LoadDataTableConfig } from "./LoadDataTableActionEditor";
 import { SyncComponentActionEditor, type SyncComponentConfig } from "./SyncComponentActionEditor";
 import { SaveToDataTableActionEditor, type SaveToDataTableConfig } from "./SaveToDataTableActionEditor";
+import { SetVariableActionEditor, type SetVariableConfig } from "./SetVariableActionEditor";
 import { ConditionEditor } from "../components/ConditionEditor";
 import { ActionDelayEditor } from "../components/ActionDelayEditor";
 
@@ -86,6 +87,8 @@ export function ActionEditor({ action, onChange }: ActionEditorProps) {
     { value: "loadDataTable", label: "Load DataTable" },
     { value: "syncComponent", label: "Sync Component" },
     { value: "saveToDataTable", label: "Save to DataTable" },
+    // Variable Actions
+    { value: "setVariable", label: "Set Variable" },
   ];
 
   const handleTypeChange = (newType: string) => {
@@ -114,6 +117,8 @@ export function ActionEditor({ action, onChange }: ActionEditorProps) {
       loadDataTable: { dataTableName: "", forceRefresh: false },
       syncComponent: { sourceId: "", targetId: "", syncMode: "replace" },
       saveToDataTable: { dataTableName: "", source: "response", saveMode: "replace" },
+      // Variable Actions
+      setVariable: { variableName: "", value: "", persist: false },
     };
 
     onChange({
@@ -304,6 +309,14 @@ export function ActionEditor({ action, onChange }: ActionEditorProps) {
         {action.type === "saveToDataTable" && (
           <SaveToDataTableActionEditor
             config={action.config as SaveToDataTableConfig}
+            onChange={(config) => onChange({ ...action, config })}
+          />
+        )}
+
+        {/* Variable Actions */}
+        {action.type === "setVariable" && (
+          <SetVariableActionEditor
+            config={action.config as SetVariableConfig}
             onChange={(config) => onChange({ ...action, config })}
           />
         )}

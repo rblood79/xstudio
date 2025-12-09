@@ -45,7 +45,8 @@ export type EventType =
 export interface EventHandler {
   id: string;
   event: EventType;
-  actions: EventAction[];
+  actions: EventAction[];       // THEN 액션 (조건 만족 시)
+  elseActions?: EventAction[];  // ELSE 액션 (조건 불만족 시)
 
   // 선택적 고급 기능
   enabled?: boolean;

@@ -1,5 +1,5 @@
 import { useAsyncList } from "react-stately";
-import { useMemo, useState, useCallback, useEffect, useRef } from "react";
+import { useMemo, useState, useCallback, useEffect } from "react";
 import type { DataBinding } from "../../types/builder/unified.types";
 import type { AsyncListLoadOptions } from "../../types/builder/stately.types";
 import { useDataTableStore } from "../stores/datatable";
@@ -274,8 +274,7 @@ export function useCollectionData({
   // 필터 상태
   const [filterText, setFilterText] = useState<string>("");
 
-  // ⭐ dataBinding 안정화: 참조 변경 방지 (리렌더링 시 불필요한 재계산 방지)
-  const dataBindingRef = useRef(dataBinding);
+  // ⭐ dataBinding 안정화: 내용 기반으로 메모이제이션 (참조 변경 시 불필요한 재계산 방지)
   const dataBindingKey = useMemo(() => {
     if (!dataBinding) return '';
     // JSON 직렬화로 내용 기반 키 생성
@@ -286,13 +285,9 @@ export function useCollectionData({
     }
   }, [dataBinding]);
 
-  // 내용이 변경된 경우에만 ref 업데이트
-  useEffect(() => {
-    dataBindingRef.current = dataBinding;
-  }, [dataBindingKey]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // 안정화된 dataBinding 사용
-  const stableDataBinding = dataBindingRef.current;
+  // ⭐ FIX: useMemo로 안정화 (useEffect + ref는 렌더링 후 업데이트되어 변경 감지 지연 발생)
+  // dataBindingKey가 변경될 때만 새 dataBinding 반환
+  const stableDataBinding = useMemo(() => dataBinding, [dataBindingKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // PropertyDataBinding 형식 감지 (source: 'dataTable', name: 'xxx')
   const propertyBindingFormat = stableDataBinding &&
@@ -619,16 +614,22 @@ export function useCollectionData({
   const isApiBinding = propertyBindingFormat &&
     (stableDataBinding as unknown as { source: string }).source === 'api';
 
+  // ⭐ DataTable 바인딩: dataTables가 아직 로드되지 않았으면 로딩 상태
+  const isDataTableBinding = propertyBindingFormat &&
+    (stableDataBinding as unknown as { source: string }).source === 'dataTable';
+  const isDataTablePending = isDataTableBinding && dataTables.length === 0;
+
   const loading = propertyBindingFormat
-    ? (isApiBinding ? apiEndpointLoading : false)  // API는 비동기, DataTable은 동기
+    ? (isApiBinding ? apiEndpointLoading : isDataTablePending)  // DataTable도 비동기로 로드됨
     : datatableId
       ? datatableState?.status === "loading"
       : list.isLoading;
 
+  // ⭐ DataTable 에러: dataTables가 로드된 후에도 테이블을 찾지 못할 때만 에러
   const error = propertyBindingFormat
     ? (isApiBinding
         ? apiEndpointError
-        : (dataTableData === null && stableDataBinding ? `DataTable을 찾을 수 없습니다` : null))
+        : (dataTableData === null && stableDataBinding && !isDataTablePending ? `DataTable을 찾을 수 없습니다` : null))
     : datatableId
       ? datatableState?.error || null
       : list.error ? list.error.message : null;

@@ -69,6 +69,13 @@ export class EventEngine {
             'loadDataTable': this.executeLoadDataTableAction.bind(this),
             'syncComponent': this.executeSyncComponentAction.bind(this),
             'saveToDataTable': this.executeSaveToDataTableAction.bind(this),
+
+            // Variable Actions
+            'setVariable': this.executeSetVariableAction.bind(this),
+            'getVariable': this.executeGetVariableAction.bind(this),
+            'fetchDataTable': this.executeFetchDataTableAction.bind(this),
+            'refreshDataTable': this.executeRefreshDataTableAction.bind(this),
+            'executeApi': this.executeApiAction.bind(this),
         };
     }
 
@@ -78,6 +85,16 @@ export class EventEngine {
 
     getState() {
         return { ...this.state };
+    }
+
+    /**
+     * 외부에서 variables를 주입 (Canvas에서 runtimeStore의 variables 전달)
+     */
+    syncVariables(variables: Array<{ name: string; defaultValue?: unknown }>) {
+        variables.forEach((variable) => {
+            this.state[variable.name] = variable.defaultValue;
+        });
+        console.log('[EventEngine] syncVariables - synced:', Object.keys(this.state));
     }
 
     async executeEvent(event: ElementEvent, context: EventContext): Promise<EventExecutionResult> {
@@ -1017,6 +1034,147 @@ export class EventEngine {
             }, '*');
         } else {
             console.warn('[EventEngine] saveToDataTable in published mode not yet implemented');
+        }
+    }
+
+    // ===== Variable Actions =====
+
+    /**
+     * Variable 값 설정 액션
+     * Global/Page 변수의 값을 설정합니다.
+     */
+    private async executeSetVariableAction(action: EventAction): Promise<void> {
+        const config = this.getActionConfig<{
+            variableName: string;
+            value: unknown;
+            persist?: boolean;
+        }>(action);
+
+        if (!config.variableName) {
+            console.warn('[EventEngine] setVariable: variableName is required');
+            return;
+        }
+
+        // 로컬 상태에도 저장 (Canvas 내에서 즉시 사용 가능)
+        this.setState(config.variableName, config.value);
+        console.log(`[EventEngine] setVariable: ${config.variableName} = `, config.value);
+
+        // Builder에 변경 사항 알림 (persist:true인 경우 DB에 저장)
+        if (this.isBuilderMode()) {
+            window.parent.postMessage({
+                type: 'SET_VARIABLE',
+                payload: {
+                    variableName: config.variableName,
+                    value: config.value,
+                    persist: config.persist ?? false,
+                }
+            }, '*');
+        }
+    }
+
+    /**
+     * Variable 값 가져오기 액션
+     * Global/Page 변수의 값을 가져와 지정된 상태에 저장합니다.
+     */
+    private async executeGetVariableAction(action: EventAction): Promise<unknown> {
+        const config = this.getActionConfig<{
+            variableName: string;
+            targetStatePath?: string;
+        }>(action);
+
+        if (!config.variableName) {
+            console.warn('[EventEngine] getVariable: variableName is required');
+            return undefined;
+        }
+
+        const value = this.state[config.variableName];
+
+        // targetStatePath가 있으면 해당 경로에 저장
+        if (config.targetStatePath) {
+            this.setState(config.targetStatePath, value);
+        }
+
+        return value;
+    }
+
+    /**
+     * DataTable 데이터 fetch 액션
+     */
+    private async executeFetchDataTableAction(action: EventAction): Promise<void> {
+        const config = this.getActionConfig<{
+            dataTableName: string;
+            targetVariable?: string;
+        }>(action);
+
+        if (!config.dataTableName) {
+            console.warn('[EventEngine] fetchDataTable: dataTableName is required');
+            return;
+        }
+
+        if (this.isBuilderMode()) {
+            window.parent.postMessage({
+                type: 'FETCH_DATA_TABLE',
+                payload: {
+                    dataTableName: config.dataTableName,
+                    targetVariable: config.targetVariable,
+                }
+            }, '*');
+        } else {
+            console.warn('[EventEngine] fetchDataTable in published mode not yet implemented');
+        }
+    }
+
+    /**
+     * DataTable 새로고침 액션
+     */
+    private async executeRefreshDataTableAction(action: EventAction): Promise<void> {
+        const config = this.getActionConfig<{
+            dataTableName: string;
+        }>(action);
+
+        if (!config.dataTableName) {
+            console.warn('[EventEngine] refreshDataTable: dataTableName is required');
+            return;
+        }
+
+        if (this.isBuilderMode()) {
+            window.parent.postMessage({
+                type: 'REFRESH_DATA_TABLE',
+                payload: {
+                    dataTableName: config.dataTableName,
+                }
+            }, '*');
+        } else {
+            console.warn('[EventEngine] refreshDataTable in published mode not yet implemented');
+        }
+    }
+
+    /**
+     * API 실행 액션 (ApiEndpoint 기반)
+     */
+    private async executeApiAction(action: EventAction): Promise<void> {
+        const config = this.getActionConfig<{
+            endpointName: string;
+            params?: Record<string, unknown>;
+            targetVariable?: string;
+        }>(action);
+
+        if (!config.endpointName) {
+            console.warn('[EventEngine] executeApi: endpointName is required');
+            return;
+        }
+
+        if (this.isBuilderMode()) {
+            window.parent.postMessage({
+                type: 'EXECUTE_API',
+                payload: {
+                    endpointName: config.endpointName,
+                    params: config.params,
+                    targetVariable: config.targetVariable,
+                }
+            }, '*');
+        } else {
+            console.warn('[EventEngine] executeApi in published mode not yet implemented');
         }
     }
 

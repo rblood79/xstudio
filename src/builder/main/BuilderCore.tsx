@@ -31,6 +31,7 @@ import { getDB } from "../../lib/db";
 import { useEditModeStore } from "../stores/editMode";
 import { useLayoutsStore } from "../stores/layouts";
 import { useDataTableStore } from "../stores/datatable";
+import { useDataStore } from "../stores/data";
 
 import { MessageService } from "../../utils/messaging";
 import { getValueByPath, upsertData, appendData, mergeData, safeJsonParse } from "../../utils/dataHelpers";
@@ -242,6 +243,9 @@ export const BuilderCore: React.FC = () => {
           // ⭐ Layouts 목록도 로드 (LayoutsTab이 마운트되기 전에 필요)
           const { fetchLayouts } = useLayoutsStore.getState();
           await fetchLayouts(projectId);
+
+          // ⭐ DataStore 초기화 (Variables, DataTables, ApiEndpoints, Transformers)
+          await useDataStore.getState().initializeForProject(projectId);
         } catch (error) {
           console.error('[BuilderCore] Layout 요소 로드 실패:', error);
         }

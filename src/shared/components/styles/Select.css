@@ -77,6 +77,7 @@
       font-size: var(--text-sm);
       color: var(--on-surface);
       flex: 1;
+      display: flex;
 
       &[data-placeholder] {
         font-style: italic;
@@ -147,6 +148,10 @@
         outline: none;
         transition: all 150ms ease;
         transform: translate3d(0, 0, 0);
+        display: flex;
+        flex-direction: row;
+        align-self: center;
+        justify-content: flex-start;
 
         /* Hover State */
         &[data-hovered] {

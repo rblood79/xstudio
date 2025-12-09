@@ -152,15 +152,18 @@ type StoreActions = Pick<
 export class MessageHandler {
   private store: StoreActions;
   private onElementSelected?: (elementId: string) => void;
+  private onVariablesUpdated?: (variables: RuntimeVariable[]) => void;
 
   constructor(
     store: StoreActions,
     options?: {
       onElementSelected?: (elementId: string) => void;
+      onVariablesUpdated?: (variables: RuntimeVariable[]) => void;
     }
   ) {
     this.store = store;
     this.onElementSelected = options?.onElementSelected;
+    this.onVariablesUpdated = options?.onVariablesUpdated;
   }
 
   /**
@@ -331,7 +334,13 @@ export class MessageHandler {
 
   private handleUpdateVariables(data: UpdateVariablesMessage): void {
     const variables = data.variables || [];
+    console.log('📦 [Canvas] UPDATE_VARIABLES 수신:', variables.length, '개');
+    console.log('📦 [Canvas] 수신된 변수:', variables);
     this.store.setVariables(variables);
+    // EventEngine에 variables 동기화
+    if (this.onVariablesUpdated) {
+      this.onVariablesUpdated(variables);
+    }
   }
 
   private handleUpdateAuthContext(data: UpdateAuthContextMessage): void {

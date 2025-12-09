@@ -65,6 +65,7 @@ export const ListBoxEditor = memo(function ListBoxEditor({
 
   // ⭐ 최적화: 개별 selector로 분리 (CLAUDE.md Anti-pattern 방지)
   const addElement = useStore((state) => state.addElement);
+  const removeElement = useStore((state) => state.removeElement);
   const currentPageId = useStore((state) => state.currentPageId);
 
   // ⭐ 최적화: DataBinding에서 필요한 테이블 이름만 추출
@@ -281,9 +282,33 @@ export const ListBoxEditor = memo(function ListBoxEditor({
     onUpdate({ ...currentProps, "aria-describedby": value || undefined });
   }, [currentProps, onUpdate]);
 
-  const handleDataBindingChange = useCallback((binding: DataBindingValue | null) => {
+  const handleDataBindingChange = useCallback(async (binding: DataBindingValue | null) => {
+    // 이전 DataTable과 새 DataTable 비교
+    const prevBinding = currentProps.dataBinding as DataBindingValue | undefined;
+    const prevTableName = prevBinding?.source === 'dataTable' ? prevBinding.name : null;
+    const newTableName = binding?.source === 'dataTable' ? binding.name : null;
+
+    // DataTable이 변경되었고 기존 Field가 있으면 삭제 확인
+    if (prevTableName && newTableName && prevTableName !== newTableName && existingFields.length > 0) {
+      const shouldReset = window.confirm(
+        `DataTable이 "${prevTableName}"에서 "${newTableName}"으로 변경되었습니다.\n` +
+        `기존 ${existingFields.length}개의 Field를 삭제하시겠습니까?\n\n` +
+        `[확인]: Field 삭제 후 새 DataTable 적용\n` +
+        `[취소]: Field 유지하고 DataTable만 변경`
+      );
+
+      if (shouldReset) {
+        // 기존 Field들 삭제
+        for (const field of existingFields) {
+          await removeElement(field.id);
+        }
+        console.log(`🗑️ [DataBinding] ${existingFields.length}개의 Field가 삭제되었습니다.`);
+      }
+    }
+
+    // dataBinding 업데이트
     onUpdate({ ...currentProps, dataBinding: binding || undefined });
-  }, [currentProps, onUpdate]);
+  }, [currentProps, onUpdate, existingFields, removeElement]);
 
   // 가상화 관련 핸들러
   const handleEnableVirtualizationChange = useCallback((checked: boolean) => {

@@ -4,11 +4,24 @@
  * DataTable, ApiEndpoint, Variable, Transformer 관리
  * Factory Pattern으로 액션을 분리하여 코드 재사용성 향상
  *
+ * ## 아키텍처 설계
+ *
+ * 1. **Source of Truth**: Supabase (persist 미들웨어 사용 안함)
+ *    - 앱 시작 시 Supabase에서 로드
+ *    - 변경 시 Supabase에 저장 + 메모리 업데이트
+ *
+ * 2. **Runtime Values**: 메모리에서만 관리
+ *    - Variable.persist: true인 경우 localStorage에 값만 저장
+ *    - 런타임 중 변경된 값은 runtimeValues Map에서 관리
+ *
+ * 3. **Canvas 동기화**: subscribe로 자동 전송
+ *    - variables/dataTables/apiEndpoints 변경 시 자동으로 iframe에 전송
+ *
  * @see docs/features/DATA_PANEL_SYSTEM.md
  */
 
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
+import { subscribeWithSelector } from "zustand/middleware";
 import type { StateCreator } from "zustand";
 import type {
   DataTable,
@@ -51,10 +64,64 @@ import {
 } from "./utils/dataActions";
 
 // ============================================
+// Extended State (Runtime Values)
+// ============================================
+
+interface DataStoreExtended extends DataStoreState, DataStoreActions {
+  // Runtime variable values (메모리 + localStorage for persist:true)
+  runtimeValues: Map<string, unknown>;
+  setRuntimeValue: (name: string, value: unknown) => void;
+  getRuntimeValue: (name: string) => unknown;
+
+  // 초기화 상태
+  isInitialized: boolean;
+  currentProjectId: string | null;
+
+  // 초기화 액션
+  initializeForProject: (projectId: string) => Promise<void>;
+}
+
+// ============================================
 // Store Type
 // ============================================
 
-type DataStore = DataStoreState & DataStoreActions;
+type DataStore = DataStoreExtended;
+
+// ============================================
+// LocalStorage helpers for persist:true variables
+// ============================================
+
+const RUNTIME_VALUES_KEY = "xstudio-runtime-values";
+
+function loadPersistedRuntimeValues(): Map<string, unknown> {
+  try {
+    const stored = localStorage.getItem(RUNTIME_VALUES_KEY);
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      return new Map(Object.entries(parsed));
+    }
+  } catch (e) {
+    console.warn("[DataStore] Failed to load persisted runtime values:", e);
+  }
+  return new Map();
+}
+
+function savePersistedRuntimeValues(
+  runtimeValues: Map<string, unknown>,
+  variables: Map<string, Variable>
+) {
+  try {
+    const toSave: Record<string, unknown> = {};
+    variables.forEach((variable, name) => {
+      if (variable.persist && runtimeValues.has(name)) {
+        toSave[name] = runtimeValues.get(name);
+      }
+    });
+    localStorage.setItem(RUNTIME_VALUES_KEY, JSON.stringify(toSave));
+  } catch (e) {
+    console.warn("[DataStore] Failed to save persisted runtime values:", e);
+  }
+}
 
 // ============================================
 // Store Slice Creator
@@ -97,6 +164,84 @@ export const createDataSlice: StateCreator<DataStore> = (set, get) => {
   const clearErrors = createClearErrorsAction(set);
   const reset = createResetAction(set);
 
+  // ============================================
+  // Runtime Value Actions
+  // ============================================
+
+  const setRuntimeValue = (name: string, value: unknown) => {
+    const { runtimeValues, variables } = get();
+    const newRuntimeValues = new Map(runtimeValues);
+    newRuntimeValues.set(name, value);
+    set({ runtimeValues: newRuntimeValues });
+
+    // persist:true인 경우 localStorage에도 저장
+    savePersistedRuntimeValues(newRuntimeValues, variables);
+  };
+
+  const getRuntimeValue = (name: string): unknown => {
+    const { runtimeValues, variables } = get();
+
+    // 1. 런타임 값이 있으면 반환
+    if (runtimeValues.has(name)) {
+      return runtimeValues.get(name);
+    }
+
+    // 2. Variable의 defaultValue 반환
+    const variable = variables.get(name);
+    return variable?.defaultValue;
+  };
+
+  // ============================================
+  // Project Initialization
+  // ============================================
+
+  const initializeForProject = async (projectId: string) => {
+    const { currentProjectId, isInitialized } = get();
+
+    // 이미 같은 프로젝트로 초기화됨
+    if (isInitialized && currentProjectId === projectId) {
+      console.log(`[DataStore] Already initialized for project: ${projectId}`);
+      return;
+    }
+
+    console.log(`[DataStore] Initializing for project: ${projectId}`);
+    set({ isLoading: true, currentProjectId: projectId });
+
+    try {
+      // Supabase에서 병렬로 로드
+      await Promise.all([
+        fetchVariables(projectId),
+        fetchDataTables(projectId),
+        fetchApiEndpoints(projectId),
+        fetchTransformers(projectId),
+      ]);
+
+      // persist:true인 Variable들의 런타임 값 복원
+      const persistedValues = loadPersistedRuntimeValues();
+      const { variables } = get();
+      const runtimeValues = new Map<string, unknown>();
+
+      variables.forEach((variable, name) => {
+        if (variable.persist && persistedValues.has(name)) {
+          runtimeValues.set(name, persistedValues.get(name));
+        }
+      });
+
+      set({
+        isInitialized: true,
+        isLoading: false,
+        runtimeValues,
+      });
+
+      console.log(`[DataStore] Initialized: ${variables.size} variables, ${get().dataTables.size} tables`);
+
+    } catch (error) {
+      console.error("[DataStore] Initialization failed:", error);
+      set({ isLoading: false });
+      throw error;
+    }
+  };
+
   return {
     // ============================================
     // State
@@ -108,6 +253,11 @@ export const createDataSlice: StateCreator<DataStore> = (set, get) => {
     loadingApis: new Set<string>(),
     errors: new Map<string, Error>(),
     isLoading: false,
+
+    // Extended State
+    runtimeValues: new Map<string, unknown>(),
+    isInitialized: false,
+    currentProjectId: null,
 
     // ============================================
     // Actions
@@ -143,6 +293,13 @@ export const createDataSlice: StateCreator<DataStore> = (set, get) => {
     deleteTransformer,
     executeTransformer,
 
+    // Runtime Values
+    setRuntimeValue,
+    getRuntimeValue,
+
+    // Initialization
+    initializeForProject,
+
     // Utilities
     clearErrors,
     reset,
@@ -150,38 +307,11 @@ export const createDataSlice: StateCreator<DataStore> = (set, get) => {
 };
 
 // ============================================
-// Store Instance
+// Store Instance (with subscribeWithSelector)
 // ============================================
 
 export const useDataStore = create<DataStore>()(
-  persist(createDataSlice, {
-    name: "xstudio-data",
-    // Variables의 persist 설정된 값만 저장 (나머지는 IndexedDB에서 로드)
-    partialize: (state) => {
-      // persist: true인 Variable 값들만 저장
-      const persistedVariables: Record<string, unknown> = {};
-      state.variables.forEach((v, key) => {
-        if (v.persist) {
-          persistedVariables[key] = v.defaultValue;
-        }
-      });
-      return { persistedVariables };
-    },
-    // Map/Set은 직렬화가 안 되므로 변환
-    storage: {
-      getItem: (name) => {
-        const str = localStorage.getItem(name);
-        if (!str) return null;
-        return JSON.parse(str);
-      },
-      setItem: (name, value) => {
-        localStorage.setItem(name, JSON.stringify(value));
-      },
-      removeItem: (name) => {
-        localStorage.removeItem(name);
-      },
-    },
-  })
+  subscribeWithSelector(createDataSlice)
 );
 
 // ============================================
@@ -237,6 +367,14 @@ export const useVariable = (name: string): Variable | undefined => {
 };
 
 /**
+ * Variable 런타임 값 가져오기 (defaultValue 포함)
+ */
+export const useVariableValue = (name: string): unknown => {
+  const getRuntimeValue = useDataStore((state) => state.getRuntimeValue);
+  return getRuntimeValue(name);
+};
+
+/**
  * 모든 Transformer 목록 가져오기
  */
 export const useTransformers = (): Transformer[] => {
@@ -252,32 +390,22 @@ export const useTransformer = (name: string): Transformer | undefined => {
   return transformers.get(name);
 };
 
-/**
- * API 로딩 상태 확인
- */
-export const useIsApiLoading = (apiId: string): boolean => {
-  const loadingApis = useDataStore((state) => state.loadingApis);
-  return loadingApis.has(apiId);
-};
+// ============================================
+// Canvas Sync Utilities
+// ============================================
 
 /**
- * 전체 로딩 상태 가져오기
+ * Variables를 Canvas RuntimeVariable 형태로 변환
  */
-export const useDataLoading = (): boolean => {
-  return useDataStore((state) => state.isLoading);
-};
-
-/**
- * 에러 상태 가져오기
- */
-export const useDataErrors = (): Map<string, Error> => {
-  return useDataStore((state) => state.errors);
-};
-
-/**
- * 특정 에러 가져오기
- */
-export const useDataError = (key: string): Error | undefined => {
-  const errors = useDataStore((state) => state.errors);
-  return errors.get(key);
+export const getVariablesForCanvas = () => {
+  const { variables, getRuntimeValue } = useDataStore.getState();
+  return Array.from(variables.values()).map((v) => ({
+    id: v.id,
+    name: v.name,
+    type: v.type,
+    defaultValue: getRuntimeValue(v.name), // 런타임 값 포함
+    persist: v.persist,
+    scope: v.scope,
+    page_id: v.page_id,
+  }));
 };

@@ -261,19 +261,39 @@ export const renderListBoxItem = (
     .filter((child) => child.parent_id === element.id && child.tag === "Field")
     .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
 
+  // 스켈레톤 플레이스홀더 체크
+  const isSkeleton = Boolean(element.props.isSkeleton);
+  const className = isSkeleton
+    ? `skeleton ${element.props.className || ""}`.trim()
+    : element.props.className;
+
+  // 스켈레톤 콘텐츠 렌더링
+  const renderContent = () => {
+    if (isSkeleton) {
+      return (
+        <>
+          <div className="skeleton-line title" />
+          <div className="skeleton-line desc" />
+        </>
+      );
+    }
+    if (fieldChildren.length > 0) {
+      return fieldChildren.map((child) => context.renderElement(child));
+    }
+    return String(element.props.label || "");
+  };
+
   return (
     <ListBoxItem
       key={element.id}
       id={element.customId}
       data-element-id={element.id}
       value={element.props.value as object}
-      isDisabled={Boolean(element.props.isDisabled)}
+      isDisabled={Boolean(element.props.isDisabled) || isSkeleton}
       style={element.props.style}
-      className={element.props.className}
+      className={className}
     >
-      {fieldChildren.length > 0
-        ? fieldChildren.map((child) => context.renderElement(child))
-        : String(element.props.label || "")}
+      {renderContent()}
     </ListBoxItem>
   );
 };
@@ -524,19 +544,39 @@ export const renderGridListItem = (
     .filter((child) => child.parent_id === element.id && child.tag === "Field")
     .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
 
+  // 스켈레톤 플레이스홀더 체크
+  const isSkeleton = Boolean(element.props.isSkeleton);
+  const className = isSkeleton
+    ? `skeleton ${element.props.className || ""}`.trim()
+    : element.props.className;
+
+  // 스켈레톤 콘텐츠 렌더링
+  const renderContent = () => {
+    if (isSkeleton) {
+      return (
+        <>
+          <div className="skeleton-line title" />
+          <div className="skeleton-line desc" />
+        </>
+      );
+    }
+    if (fieldChildren.length > 0) {
+      return fieldChildren.map((child) => context.renderElement(child));
+    }
+    return String(element.props.label || "");
+  };
+
   return (
     <GridListItem
       key={element.id}
       id={element.customId}
       data-element-id={element.id}
       value={element.props.value as object}
-      isDisabled={Boolean(element.props.isDisabled)}
+      isDisabled={Boolean(element.props.isDisabled) || isSkeleton}
       style={element.props.style}
-      className={element.props.className}
+      className={className}
     >
-      {fieldChildren.length > 0
-        ? fieldChildren.map((child) => context.renderElement(child))
-        : String(element.props.label || "")}
+      {renderContent()}
     </GridListItem>
   );
 };

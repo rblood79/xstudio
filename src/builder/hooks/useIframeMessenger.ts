@@ -3,7 +3,7 @@ import { debounce, DebouncedFunc } from 'lodash';
 import { useStore } from '../stores';
 import { useEditModeStore } from '../stores/editMode';
 import { useLayoutsStore } from '../stores/layouts';
-import { useDataTables, useApiEndpoints, useVariables } from '../stores/data';
+import { useDataTables, useApiEndpoints, useVariables, getVariablesForCanvas } from '../stores/data';
 // useZundoActions는 제거됨 - 기존 시스템 사용
 import type { ElementProps } from '../../types/integrations/supabase.types';
 import { Element } from '../../types/core/store.types';
@@ -263,19 +263,8 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
         // 🔧 FIX: Ref를 사용하여 최신 상태 확인
         const currentReadyState = iframeReadyStateRef.current;
 
-        // 현재 variables 가져오기
-        const currentVariables = variables;
-
-        // RuntimeVariable 형태로 변환
-        const runtimeVariables = currentVariables.map((v) => ({
-            id: v.id,
-            name: v.name,
-            type: v.type,
-            defaultValue: v.defaultValue,
-            persist: v.persist,
-            scope: v.scope,
-            page_id: v.page_id,
-        }));
+        // ⭐ getVariablesForCanvas 사용 - 런타임 값 포함
+        const runtimeVariables = getVariablesForCanvas();
 
         const message = {
             type: "UPDATE_VARIABLES",
@@ -839,11 +828,6 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
     const lastSentDataTablesRef = useRef<string>('');
 
     useEffect(() => {
-        // iframe이 준비되지 않았으면 스킵
-        if (iframeReadyStateRef.current !== 'ready') {
-            return;
-        }
-
         // JSON 문자열로 비교 (mockData 변경 감지 포함)
         const dataTablesJson = JSON.stringify(dataTables.map(dt => ({
             id: dt.id,
@@ -857,20 +841,17 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
             return;
         }
 
-        // 값 저장 후 전송
+        // 값 저장 후 전송 (sendDataTablesToIframe 내부에서 iframe 준비 상태에 따라 큐잉 또는 직접 전송)
         lastSentDataTablesRef.current = dataTablesJson;
         sendDataTablesToIframe();
+
+        console.log('📦 [Builder] DataTables changed, sending to iframe:', dataTables.length, 'tables');
     }, [dataTables, sendDataTablesToIframe]);
 
     // ⭐ ApiEndpoints가 변경될 때마다 iframe에 전송 (PropertyDataBinding용)
     const lastSentApiEndpointsRef = useRef<string>('');
 
     useEffect(() => {
-        // iframe이 준비되지 않았으면 스킵
-        if (iframeReadyStateRef.current !== 'ready') {
-            return;
-        }
-
         // JSON 문자열로 비교
         const apiEndpointsJson = JSON.stringify(apiEndpoints.map(ep => ({
             id: ep.id,
@@ -885,20 +866,17 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
             return;
         }
 
-        // 값 저장 후 전송
+        // 값 저장 후 전송 (sendApiEndpointsToIframe 내부에서 iframe 준비 상태에 따라 큐잉 또는 직접 전송)
         lastSentApiEndpointsRef.current = apiEndpointsJson;
         sendApiEndpointsToIframe();
+
+        console.log('📦 [Builder] ApiEndpoints changed, sending to iframe:', apiEndpoints.length, 'endpoints');
     }, [apiEndpoints, sendApiEndpointsToIframe]);
 
     // ⭐ Variables가 변경될 때마다 iframe에 전송 (PropertyDataBinding용)
     const lastSentVariablesRef = useRef<string>('');
 
     useEffect(() => {
-        // iframe이 준비되지 않았으면 스킵
-        if (iframeReadyStateRef.current !== 'ready') {
-            return;
-        }
-
         // JSON 문자열로 비교
         const variablesJson = JSON.stringify(variables.map(v => ({
             id: v.id,
@@ -914,9 +892,10 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
             return;
         }
 
-        // 값 저장 후 전송
+        // 값 저장 후 전송 (sendVariablesToIframe 내부에서 iframe 준비 상태에 따라 큐잉 또는 직접 전송)
         lastSentVariablesRef.current = variablesJson;
         sendVariablesToIframe();
+
         console.log('📦 [Builder] Variables changed, sending to iframe:', variables.length, 'variables');
     }, [variables, sendVariablesToIframe]);
 

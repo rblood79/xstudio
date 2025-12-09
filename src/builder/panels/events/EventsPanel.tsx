@@ -75,6 +75,48 @@ function actionsToBlockActions(
   }));
 }
 
+/**
+ * condition 문자열 → ConditionGroup 파싱
+ *
+ * handleConditionsChange에서 생성한 형식을 역변환:
+ * "left operator right && left2 operator2 right2" → ConditionGroup
+ */
+function parseConditionString(condition: string | undefined): ConditionGroup | undefined {
+  if (!condition || condition.trim() === '') return undefined;
+
+  // AND/OR 연산자 감지
+  const hasOr = condition.includes(' || ');
+  const hasAnd = condition.includes(' && ');
+  const operator: 'AND' | 'OR' = hasOr && !hasAnd ? 'OR' : 'AND';
+  const separator = operator === 'OR' ? ' || ' : ' && ';
+
+  // 조건 문자열 파싱
+  const conditionStrings = condition.split(separator);
+  const conditions = conditionStrings.map((str, index) => {
+    const trimmed = str.trim();
+    // 간단한 파싱: "left operator right" 또는 전체를 left로 사용
+    const parts = trimmed.split(/\s+/);
+
+    return {
+      id: `cond-parsed-${index}-${Date.now()}`,
+      left: {
+        type: 'literal' as const,
+        value: parts[0] || trimmed
+      },
+      operator: (parts[1] as 'equals' | 'is_not_empty') || 'is_not_empty',
+      right: parts[2] ? {
+        type: 'literal' as const,
+        value: parts[2]
+      } : undefined,
+    };
+  });
+
+  return {
+    operator,
+    conditions,
+  };
+}
+
 
 export function EventsPanel({ isActive }: PanelProps) {
   // Inspector 상태에서 이벤트 가져오기
@@ -121,12 +163,14 @@ function EventsPanelContent({
 }: EventsPanelContentProps) {
   // ⭐ showAddAction을 컴포넌트 내부로 이동
   // key={selectedElement.id}로 인해 요소 변경 시 자동으로 false로 리셋됨
-  const [showAddAction, setShowAddAction] = useState(false);
+  const [showAddAction, setShowAddAction] = useState<'then' | 'else' | false>(false);
 
   // 선택된 액션 (편집 모드)
   const [selectedAction, setSelectedAction] = useState<BlockEventAction | null>(
     null
   );
+  // THEN vs ELSE 액션 구분 (편집 모드에서 사용)
+  const [selectedActionBranch, setSelectedActionBranch] = useState<'then' | 'else'>('then');
   // ⭐ selectedElement.events에 이미 매핑된 이벤트 사용
   // elementMapper.ts에서 element.props.events → selectedElement.events로 매핑됨
   const eventsFromElement = selectedElement?.events || [];
@@ -143,20 +187,35 @@ function EventsPanelContent({
   const { selectedHandler, selectHandler, selectAfterDelete } =
     useEventSelection(handlers);
 
-  // Actions 관리 (선택된 핸들러의 액션만)
+  // Actions 관리 (선택된 핸들러의 THEN 액션)
   const { actions, addAction } = useActions(selectedHandler?.actions || []);
+
+  // ELSE Actions 관리 (선택된 핸들러의 ELSE 액션)
+  const { actions: elseActions, addAction: addElseAction } = useActions(selectedHandler?.elseActions || []);
 
   // 등록된 이벤트 타입 목록 (중복 방지용)
   const registeredEventTypes: EventType[] = handlers
     .map((h) => h.event)
     .filter((event): event is EventType => isImplementedEventType(event));
 
-  // Actions 변경 시 Handler 업데이트 (초기 마운트 감지 적용)
+  // THEN Actions 변경 시 Handler 업데이트 (초기 마운트 감지 적용)
   useInitialMountDetection({
     data: actions,
     onUpdate: (updatedActions) => {
       if (selectedHandler) {
         const updatedHandler = { ...selectedHandler, actions: updatedActions };
+        updateHandler(selectedHandler.id, updatedHandler);
+      }
+    },
+    resetKey: selectedHandler?.id,
+  });
+
+  // ELSE Actions 변경 시 Handler 업데이트 (초기 마운트 감지 적용)
+  useInitialMountDetection({
+    data: elseActions,
+    onUpdate: (updatedElseActions) => {
+      if (selectedHandler) {
+        const updatedHandler = { ...selectedHandler, elseActions: updatedElseActions };
         updateHandler(selectedHandler.id, updatedHandler);
       }
     },
@@ -182,15 +241,19 @@ function EventsPanelContent({
     selectAfterDelete(handlerId);
   };
 
-  // 액션 추가
-  const handleAddAction = (actionType: ActionType) => {
+  // 액션 추가 (THEN/ELSE 구분)
+  const handleAddAction = (actionType: ActionType, branch: 'then' | 'else' = 'then') => {
     // ⭐ 중앙화된 정규화 유틸 사용 (snake_case → camelCase)
     const normalizedActionType = normalizeToInspectorAction(actionType);
-    addAction(normalizedActionType, {});
+    if (branch === 'else') {
+      addElseAction(normalizedActionType, {});
+    } else {
+      addAction(normalizedActionType, {});
+    }
     setShowAddAction(false);
   };
 
-  // 액션 삭제
+  // 액션 삭제 (THEN)
   const handleRemoveAction = useCallback(
     (actionId: string) => {
       const updatedActions = actions.filter((a) => a.id !== actionId);
@@ -203,7 +266,20 @@ function EventsPanelContent({
     [actions, selectedHandler, updateHandler]
   );
 
-  // 액션 업데이트
+  // 액션 삭제 (ELSE)
+  const handleRemoveElseAction = useCallback(
+    (actionId: string) => {
+      const updatedElseActions = elseActions.filter((a) => a.id !== actionId);
+      const updatedHandler = {
+        ...selectedHandler!,
+        elseActions: updatedElseActions,
+      };
+      updateHandler(selectedHandler!.id, updatedHandler);
+    },
+    [elseActions, selectedHandler, updateHandler]
+  );
+
+  // 액션 업데이트 (THEN)
   const handleUpdateAction = useCallback(
     (actionId: string, updates: Partial<BlockEventAction>) => {
       const action = actions.find((a) => a.id === actionId);
@@ -212,19 +288,8 @@ function EventsPanelContent({
         const updatedAction = {
           ...action,
           ...updates,
-          // updates에 enabled가 명시적으로 있으면 사용, 아니면 action의 값 또는 true
           enabled: updates.enabled !== undefined ? updates.enabled : (action.enabled ?? true)
         };
-
-        // Debug: enabled 값 추적
-        if (import.meta.env.DEV) {
-          console.log('[EventsPanel] handleUpdateAction:', {
-            actionId,
-            actionEnabled: action.enabled,
-            updatesEnabled: updates.enabled,
-            resultEnabled: updatedAction.enabled
-          });
-        }
 
         const updatedActions = actions.map((a) =>
           a.id === actionId ? updatedAction : a
@@ -237,6 +302,30 @@ function EventsPanelContent({
       }
     },
     [actions, selectedHandler, updateHandler]
+  );
+
+  // 액션 업데이트 (ELSE)
+  const handleUpdateElseAction = useCallback(
+    (actionId: string, updates: Partial<BlockEventAction>) => {
+      const action = elseActions.find((a) => a.id === actionId);
+      if (action) {
+        const updatedAction = {
+          ...action,
+          ...updates,
+          enabled: updates.enabled !== undefined ? updates.enabled : (action.enabled ?? true)
+        };
+
+        const updatedElseActions = elseActions.map((a) =>
+          a.id === actionId ? updatedAction : a
+        );
+        const updatedHandler = {
+          ...selectedHandler!,
+          elseActions: updatedElseActions,
+        };
+        updateHandler(selectedHandler!.id, updatedHandler);
+      }
+    },
+    [elseActions, selectedHandler, updateHandler]
   );
 
   // 트리거 변경
@@ -275,6 +364,13 @@ function EventsPanelContent({
 
   // 블록 액션 데이터 변환
   const blockActions = actionsToBlockActions(selectedHandler?.actions || []);
+  const blockElseActions = actionsToBlockActions(selectedHandler?.elseActions || []);
+
+  // condition 문자열 → ConditionGroup 파싱
+  const parsedConditions = parseConditionString(selectedHandler?.condition);
+
+  // 조건이 있는지 여부 (ELSE 블록 표시 조건)
+  const hasCondition = Boolean(selectedHandler?.condition);
 
   return (
     <div className="events-panel">
@@ -349,29 +445,51 @@ function EventsPanelContent({
 
               {/* IF 블록 - 조건 (선택적) */}
               <IfBlock
-                conditions={undefined} // TODO: condition 문자열 → ConditionGroup 파싱
+                conditions={parsedConditions}
                 onChange={handleConditionsChange}
                 onRemove={handleRemoveConditions}
-                showSplitConnector={false}
+                showSplitConnector={hasCondition}
               />
 
-              {/* THEN 블록 - 액션 목록 */}
+              {/* THEN 블록 - 조건 만족 시 액션 목록 */}
               <ThenElseBlock
                 type="then"
                 actions={blockActions}
-                onAddAction={() => setShowAddAction(true)}
-                onActionClick={(action) => setSelectedAction(action)}
+                onAddAction={() => setShowAddAction('then')}
+                onActionClick={(action) => {
+                  setSelectedAction(action);
+                  setSelectedActionBranch('then');
+                }}
                 onRemoveAction={handleRemoveAction}
                 onUpdateAction={handleUpdateAction}
                 showConnector={true}
               />
 
+              {/* ELSE 블록 - 조건 불만족 시 액션 목록 (조건이 있을 때만 표시) */}
+              {hasCondition && (
+                <ThenElseBlock
+                  type="else"
+                  actions={blockElseActions}
+                  onAddAction={() => setShowAddAction('else')}
+                  onActionClick={(action) => {
+                    setSelectedAction(action);
+                    setSelectedActionBranch('else');
+                  }}
+                  onRemoveAction={handleRemoveElseAction}
+                  onUpdateAction={handleUpdateElseAction}
+                  showConnector={true}
+                />
+              )}
+
               {/* 액션 추가 피커 */}
               {showAddAction && (
                 <div className="action-picker-overlay">
+                  <div className="action-picker-header">
+                    <span>Add Action to {showAddAction.toUpperCase()}</span>
+                  </div>
                   <ActionTypePicker
                     onSelect={(actionType) =>
-                      handleAddAction(actionType as ActionType)
+                      handleAddAction(actionType as ActionType, showAddAction)
                     }
                     showCategories={true}
                   />
@@ -400,13 +518,17 @@ function EventsPanelContent({
                       />
                     </Button>
                     <span className="action-editor-title">
-                      {selectedAction.type}
+                      {selectedAction.type} ({selectedActionBranch.toUpperCase()})
                     </span>
                   </div>
                   <BlockActionEditor
                     action={selectedAction}
                     onChange={(updates) => {
-                      handleUpdateAction(selectedAction.id, updates);
+                      if (selectedActionBranch === 'else') {
+                        handleUpdateElseAction(selectedAction.id, updates);
+                      } else {
+                        handleUpdateAction(selectedAction.id, updates);
+                      }
                       setSelectedAction({ ...selectedAction, ...updates });
                     }}
                   />

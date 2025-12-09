@@ -16,6 +16,20 @@ import type { RuntimeElement } from './store/types';
 import { EventEngine } from '../utils/events/eventEngine';
 
 // ============================================
+// Module-level EventEngine Singleton
+// ============================================
+
+// ⭐ EventEngine을 모듈 레벨 싱글톤으로 관리 (App과 CanvasContent 모두 접근 가능)
+let eventEngineInstance: EventEngine | null = null;
+
+function getEventEngine(): EventEngine {
+  if (!eventEngineInstance) {
+    eventEngineInstance = new EventEngine();
+  }
+  return eventEngineInstance;
+}
+
+// ============================================
 // Canvas Content Component
 // ============================================
 
@@ -27,12 +41,8 @@ function CanvasContent() {
   const currentPageId = useRuntimeStore((s) => s.currentPageId);
   const navigate = useNavigate();
 
-  // EventEngine 인스턴스 (싱글톤)
-  const eventEngineRef = useRef<EventEngine | null>(null);
-  // eslint-disable-next-line react-hooks/refs -- 싱글톤 패턴, 의도적인 render 중 ref 접근
-  if (!eventEngineRef.current) {
-    eventEngineRef.current = new EventEngine();
-  }
+  // ⭐ 모듈 레벨 싱글톤 EventEngine 사용
+  const eventEngine = getEventEngine();
 
   // ⭐ 순환 의존성 해결을 위한 render 함수 refs
   const renderElementInternalRef = useRef<(el: PreviewElement, key?: string) => React.ReactNode>(() => null);
@@ -270,9 +280,9 @@ function CanvasContent() {
     setElements: (newElements: PreviewElement[]) => {
       setElements(newElements as RuntimeElement[]);
     },
-    eventEngine: eventEngineRef.current!,
+    eventEngine,
     renderElement: (el: PreviewElement, key?: string) => renderElementInternalRef.current(el, key),
-  }), [elements, updateElementProps, setElements]);
+  }), [elements, updateElementProps, setElements, eventEngine]);
   /* eslint-enable react-hooks/refs */
 
   // Element 렌더링 함수 (내부)
@@ -532,22 +542,31 @@ export function App() {
   useEffect(() => {
     const storeState = store.getState();
 
-    messageHandlerRef.current = new MessageHandler({
-      setElements: storeState.setElements,
-      updateElementProps: storeState.updateElementProps,
-      setThemeVars: storeState.setThemeVars,
-      setDarkMode: storeState.setDarkMode,
-      setCurrentPageId: storeState.setCurrentPageId,
-      setCurrentLayoutId: storeState.setCurrentLayoutId,
-      setPages: storeState.setPages,
-      setLayouts: storeState.setLayouts,
-      setDataSources: storeState.setDataSources,
-      setDataTables: storeState.setDataTables,
-      setApiEndpoints: storeState.setApiEndpoints,
-      setVariables: storeState.setVariables,
-      setAuthToken: storeState.setAuthToken,
-      setReady: storeState.setReady,
-    });
+    messageHandlerRef.current = new MessageHandler(
+      {
+        setElements: storeState.setElements,
+        updateElementProps: storeState.updateElementProps,
+        setThemeVars: storeState.setThemeVars,
+        setDarkMode: storeState.setDarkMode,
+        setCurrentPageId: storeState.setCurrentPageId,
+        setCurrentLayoutId: storeState.setCurrentLayoutId,
+        setPages: storeState.setPages,
+        setLayouts: storeState.setLayouts,
+        setDataSources: storeState.setDataSources,
+        setDataTables: storeState.setDataTables,
+        setApiEndpoints: storeState.setApiEndpoints,
+        setVariables: storeState.setVariables,
+        setAuthToken: storeState.setAuthToken,
+        setReady: storeState.setReady,
+      },
+      {
+        // Variables 업데이트 시 EventEngine에 동기화
+        onVariablesUpdated: (variables) => {
+          const engine = getEventEngine();
+          engine.syncVariables(variables);
+        },
+      }
+    );
 
     // postMessage 리스너 등록
     const handleMessage = (event: MessageEvent) => {
@@ -563,8 +582,21 @@ export function App() {
       setIsInitialized(true);
     });
 
+    // ⭐ runtimeStore variables 변경 구독 → EventEngine 동기화
+    let prevVariablesLength = 0;
+    const unsubscribeVariables = store.subscribe((state) => {
+      const variables = state.variables;
+      if (variables.length > 0 && variables.length !== prevVariablesLength) {
+        prevVariablesLength = variables.length;
+        const engine = getEventEngine();
+        engine.syncVariables(variables);
+        console.log('[Canvas] Variables synced to EventEngine:', variables.length);
+      }
+    });
+
     return () => {
       window.removeEventListener('message', handleMessage);
+      unsubscribeVariables();
     };
   }, [store]);
 
