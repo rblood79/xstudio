@@ -374,11 +374,19 @@ interface UseMemoryStatsOptions {
 export function useMemoryStats(options: UseMemoryStatsOptions = {}) {
   const { enabled = true, interval = 10000 } = options;
   const [stats, setStats] = useState<MemoryStats | null>(null);
-  const intervalRef = useRef<number | null>(null);
+  // 🆕 Fix: Cross-platform timer type (ReturnType<typeof setInterval>)
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  // 🆕 Fix: requestIdleCallback handle for proper cancellation
+  const idleCallbackRef = useRef<number | null>(null);
 
+  // 🆕 Fix: Ref pattern to avoid stale closure and infinite loop
   const collectStats = useCallback(() => {
     // ... 기존 로직
   }, []);
+
+  // 🆕 Ref to access latest collectStats without triggering useEffect
+  const collectStatsRef = useRef(collectStats);
+  collectStatsRef.current = collectStats;
 
   useEffect(() => {
     // 🆕 enabled 체크
@@ -387,22 +395,29 @@ export function useMemoryStats(options: UseMemoryStatsOptions = {}) {
         clearInterval(intervalRef.current);
         intervalRef.current = null;
       }
+      if (idleCallbackRef.current && 'cancelIdleCallback' in window) {
+        cancelIdleCallback(idleCallbackRef.current);
+        idleCallbackRef.current = null;
+      }
       return;
     }
 
+    // 🆕 Wrapper function using ref to access latest collectStats
+    const runCollect = () => collectStatsRef.current();
+
     // 초기 수집
     if ("requestIdleCallback" in window) {
-      requestIdleCallback(collectStats);
+      idleCallbackRef.current = requestIdleCallback(runCollect);
     } else {
-      collectStats();
+      runCollect();
     }
 
     // 주기적 수집
-    intervalRef.current = window.setInterval(() => {
+    intervalRef.current = setInterval(() => {
       if ("requestIdleCallback" in window) {
-        requestIdleCallback(collectStats);
+        requestIdleCallback(runCollect);
       } else {
-        collectStats();
+        runCollect();
       }
     }, interval);
 
@@ -410,8 +425,11 @@ export function useMemoryStats(options: UseMemoryStatsOptions = {}) {
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
       }
+      if (idleCallbackRef.current && 'cancelIdleCallback' in window) {
+        cancelIdleCallback(idleCallbackRef.current);
+      }
     };
-  }, [enabled, interval, collectStats]);
+  }, [enabled, interval]); // 🆕 Fix: collectStats removed from deps (uses ref instead)
 
   return { stats, /* ... */ };
 }
@@ -1673,8 +1691,8 @@ import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 5 * 60 * 1000, // 5분
-      gcTime: 30 * 60 * 1000,   // 30분 (구 cacheTime)
+      staleTime: 5 * 60 * 1000, // 5분 - 데이터가 신선한 것으로 간주되는 시간
+      gcTime: 30 * 60 * 1000,   // 30분 - 비활성 쿼리가 캐시에서 제거되기까지의 시간 (React Query v5: cacheTime → gcTime 변경)
       retry: 2,
       refetchOnWindowFocus: false,
     },
@@ -2120,7 +2138,8 @@ export const performanceMonitor = new PerformanceMonitor();
  */
 function useAutoRecovery() {
   useEffect(() => {
-    const interval = setInterval(() => {
+    // 🆕 Fix: Cross-platform timer type
+    const interval: ReturnType<typeof setInterval> = setInterval(() => {
       const metrics = performanceMonitor.collect();
 
       // 심각한 성능 저하 감지
@@ -2140,8 +2159,9 @@ function useAutoRecovery() {
         clearCaches();
 
         // 4. 가비지 컬렉션 힌트
-        if ('gc' in window) {
-          (window as any).gc?.();
+        // 🆕 Fix: Type-safe gc() call using globalThis
+        if (typeof (globalThis as { gc?: () => void }).gc === 'function') {
+          (globalThis as { gc: () => void }).gc();
         }
       }
     }, 30000); // 30초마다 체크
@@ -3476,8 +3496,8 @@ function analyzeTrends(trends: MetricTrend[]): TrendAnalysis {
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 5 * 60 * 1000,   // 5분
-      gcTime: 30 * 60 * 1000,     // 30분 (GC)
+      staleTime: 5 * 60 * 1000,   // 5분 - 데이터가 신선한 것으로 간주되는 시간
+      gcTime: 30 * 60 * 1000,     // 30분 - 비활성 쿼리 캐시 GC 대기 시간
       refetchOnWindowFocus: false,
       retry: 3,
     },
