@@ -30,6 +30,7 @@ import {
   syncProjectToCloud,
   downloadProjectFromCloud,
 } from '../utils/projectSync';
+import { historyIndexedDB } from '../builder/stores/history/historyIndexedDB';
 import { useSettingsStore } from '../stores/settingsStore';
 import { SettingsPanel } from './SettingsPanel';
 import type { ProjectListItem, ProjectFilter } from '../types/dashboard.types';
@@ -230,8 +231,11 @@ function Dashboard() {
             await db.elements.delete(element.id);
           }
 
-          // 페이지의 히스토리 삭제
+          // 페이지의 히스토리 삭제 (xstudio IndexedDB)
           await db.history.clear(page.id);
+
+          // 페이지의 히스토리 삭제 (xstudio-history IndexedDB)
+          await historyIndexedDB.clearPageHistory(page.id);
         }
 
         // 3. 페이지 삭제
@@ -273,7 +277,32 @@ function Dashboard() {
           await db.layouts.delete(layout.id);
         }
 
-        // 6. 프로젝트 삭제 (IndexedDB)
+        // 6. Data Panel 테이블들 삭제 (data_tables, api_endpoints, variables, transformers)
+        const dataTables = await db.data_tables.getByProject(id);
+        for (const dataTable of dataTables) {
+          await db.data_tables.delete(dataTable.id);
+        }
+        console.log(`[Dashboard] DataTables ${dataTables.length}개 삭제 완료`);
+
+        const apiEndpoints = await db.api_endpoints.getByProject(id);
+        for (const endpoint of apiEndpoints) {
+          await db.api_endpoints.delete(endpoint.id);
+        }
+        console.log(`[Dashboard] API Endpoints ${apiEndpoints.length}개 삭제 완료`);
+
+        const variables = await db.variables.getByProject(id);
+        for (const variable of variables) {
+          await db.variables.delete(variable.id);
+        }
+        console.log(`[Dashboard] Variables ${variables.length}개 삭제 완료`);
+
+        const transformers = await db.transformers.getByProject(id);
+        for (const transformer of transformers) {
+          await db.transformers.delete(transformer.id);
+        }
+        console.log(`[Dashboard] Transformers ${transformers.length}개 삭제 완료`);
+
+        // 7. 프로젝트 삭제 (IndexedDB)
         await db.projects.delete(id);
         console.log('✅ [Dashboard] 로컬 프로젝트 삭제 완료');
       }
