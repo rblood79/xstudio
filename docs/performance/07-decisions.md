@@ -53,16 +53,25 @@
 | **영속화**     | ✅ IndexedDB   | 새로고침 후에도 캐시 유지 (Offline-first) |
 | **동기화**     | ✅ Realtime    | 서버 변경사항 수신 시 캐시 무효화         |
 
-**3.1 영속화 설정 (PersistQueryClient)**:
+**3.1 영속화 설정 (PersistQueryClient, IndexedDB 우선)**:
 
 ```typescript
 import { persistQueryClient } from "@tanstack/react-query-persist-client";
+import { createAsyncStoragePersister } from "@tanstack/query-async-storage-persister";
 import { createSyncStoragePersister } from "@tanstack/query-sync-storage-persister";
+import localforage from "localforage"; // IndexedDB 기반 스토리지
 
-// IndexedDB나 LocalStorage 어댑터 사용
+const idbPersister = createAsyncStoragePersister({
+  storage: localforage, // IndexedDB → 새로고침/오프라인 복구
+});
+
+const fallbackPersister = createSyncStoragePersister({
+  storage: window.localStorage, // IndexedDB 불가 환경 fallback
+});
+
 persistQueryClient({
   queryClient,
-  persister: createSyncStoragePersister({ storage: window.localStorage }),
+  persister: idbPersister ?? fallbackPersister,
 });
 ```
 

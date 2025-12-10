@@ -284,6 +284,7 @@
 - [ ] `scripts/generate-large-project.ts` 생성
   - [ ] `faker.seed(12345)` 고정 시드 적용
   - [ ] 5,000개 요소 생성 로직 (Depth 10+)
+- [ ] **실행 가이드 추가**: `node scripts/generate-large-project.ts --elements 5000 --pages 50 --seed 12345 --out test-data/perf/seed-12345.json`
 - [ ] 데이터 준비 체크리스트 작성
 
 #### 8.2 시뮬레이션 스크립트 (2시간)

@@ -399,6 +399,7 @@ class PerformanceMonitor {
    * 건강 점수 계산 (0-100) 및 SLO 위반 감지
    */
   private checkSLO(metrics: PerformanceMetrics) {
+    // BASELINE_P99: 이전 Nightly 아티팩트(test-results/performance/baseline.json)에서 로드
     // P99 20% 악화 시 Fail
     if (metrics.p99RenderTime > BASELINE_P99 * 1.2) {
       this.reportFailure("SLO_RENDER_DEGRADATION", metrics.p99RenderTime);
@@ -502,6 +503,13 @@ export function generateLargeProject(elementCount = 5000) {
 }
 ```
 
+**실행 예시**:
+
+```bash
+# 5,000 요소, 50 페이지, 고정 시드 12345 → 테스트 픽스처 생성
+node scripts/generate-large-project.ts --elements 5000 --pages 50 --seed 12345 --out test-data/perf/seed-12345.json
+```
+
 **데이터 준비 체크리스트**:
 
 1.  [ ] 요소 수: 5,000개 (Depth 10 이상)
@@ -563,7 +571,7 @@ async function runLongSessionSimulation(
 }
 ```
 
-### 8.2 GitHub Actions Workflow
+### 8.3 GitHub Actions Workflow
 
 **파일**: `.github/workflows/performance.yml`
 
@@ -614,7 +622,7 @@ jobs:
             test-results/heap-snapshots/
 ```
 
-### 8.3 회귀 검출
+### 8.4 회귀 검출
 
 ```typescript
 /**
@@ -658,7 +666,7 @@ function detectRegressions(
 }
 ```
 
-### 8.4 체크리스트
+### 8.5 체크리스트
 
 - [ ] 12시간 세션 안정성 테스트 통과
 - [ ] 5,000개 요소 시나리오 테스트 통과
