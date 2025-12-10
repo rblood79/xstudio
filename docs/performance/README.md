@@ -128,6 +128,24 @@ xstudio/
 | **CSS Containment**   | 하     | 렌더링 성능 ↑ (`content-visibility: auto`)     |
 | **Selection Overlay** | 상     | 선택 반응성 ↑ (0개 요소 리렌더링)              |
 
+## 리뷰 코멘트 및 추가 제안
+
+1. **WebGL/Pixi 전환 리스크 완화**
+   - Phase 10에서 DOM → WebGL 전환 시 접근성·포커스 처리가 Publish App으로 이관되는 만큼, Builder 내부에서도 키보드 포커스 경로를 Dev 도구용으로 유지하거나 최소한 포커스 트랩 여부를 테스트 체크리스트에 포함하는 것이 필요합니다.
+   - Pixi 레이어와 React DOM 패널 사이의 상태 동기화에서 프레임 지연이 발생할 수 있으므로, Zustand 스토어에 `frameTick` 또는 `renderVersion` 같은 단일 넘버형 시퀀스를 두고 렌더-스토어 불일치 탐지 로그를 남기는 것을 권장합니다.
+
+2. **Migration 단계 세분화**
+   - 10.2~10.5의 Canvas 기능들이 상호 의존적이라 완전 전환까지 긴 시간이 걸릴 수 있습니다. 기존 iframe Canvas를 “Fallback” 모드로 유지하면서 Pixi 전환 완료 여부를 플래그로 관리하는 **이중 렌더 경로**를 일시적으로 두면, 기능별 완료도를 높게 가시화할 수 있습니다.
+   - Fallback 모드와 Pixi 모드의 상태 구조가 달라질 수 있으므로, `packages/shared`에 **공통 Scene 스키마**(Element, Transform, Styling)를 정의해 모드 간 직렬화/역직렬화를 표준화하는 것이 좋습니다.
+
+3. **장시간 안정성 검증 강화**
+   - Phase 7/8의 자동 복구·CI 항목과 연결해, 24시간 스트레스 테스트 스크립트를 `npm run soak:webgl`처럼 명시적으로 추가하고 GPU 메모리/텍스처 누수를 로깅하는 지표를 CI 아티팩트로 남기면 회귀 탐지가 수월합니다.
+   - Asset 로더의 캐시/LRU 정책이 WebGL 텍스처에 어떻게 적용되는지(예: 비동기 해제, `destroy(true)` 여부)를 문서에 추가하면, 대규모 프로젝트의 VRAM 예산 계산이 명확해집니다.
+
+4. **퍼블리시 앱 분리 후 경량 번들 전략**
+   - Publish App을 분리할 때, SEO/SSR을 목표로 하면 React 19 Server Components나 Partial Hydration 도입 여부를 검토해 렌더 비용을 낮출 수 있습니다.
+   - 빌더와 공유하는 타입·훅을 `packages/shared`에서 가져올 때 tree-shaking이 깨지는지 점검하고, 필요하면 `exports` 필드를 모듈 단위로 쪼개는 번들 전략을 문서에 남겨주세요.
+
 ## 구현 완료 항목
 
 ### Phase 6: DataTablePanel (2025-12-10) ✅
