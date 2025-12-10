@@ -1,81 +1,185 @@
 # Performance Optimization Tasks
 
-> **Last Updated:** 2025-12-10 (Phase 1-3, 5-6 코드 검증 완료)
+> **Last Updated:** 2025-12-10 (심도 깊은 코드 검증 완료)
 
 ## Summary
 
-| Phase | 완료율 | 상태 |
-|-------|--------|------|
-| Phase 1 | 1/5 (20%) | 🔄 부분 완료 |
-| Phase 2 | 3/4 (75%) | 🔄 부분 완료 |
-| Phase 3 | 3/3 (100%) | ✅ 완료 |
-| Phase 4 | 0/4 (0%) | ❌ 미착수 |
-| Phase 5 | 3/3 (100%) | ✅ 완료 |
-| Phase 6 | 2/4 (50%) | 🔄 부분 완료 |
-| Phase 7 | 0/4 (0%) | ❌ 미착수 |
-| Phase 8 | 0/3 (0%) | ❌ 미착수 |
-| Phase 9 | 1/5 (20%) | 🔄 부분 완료 |
+| Phase | 구현 | 통합/사용 | 실제 완료율 | 상태 |
+|-------|------|----------|------------|------|
+| Phase 1 | 1/5 | 1/5 | **20%** | 🔴 부분 완료 |
+| Phase 2 | 3/4 | 0/4 | **0%** | 🔴 미사용 |
+| Phase 3 | 3/3 | 3/3 | **100%** | ✅ 완료 |
+| Phase 4 | 4/4 | 0/4 | **0%** | 🟡 구현만 완료 |
+| Phase 5 | 3/3 | 0/3 | **0%** | 🟡 구현만 완료 |
+| Phase 6 | 2/4 | 1/4 | **25%** | 🔴 부분 완료 |
+| Phase 7 | 4/4 | 0/4 | **0%** | 🟡 구현만 완료 |
+| Phase 8 | 0/3 | 0/3 | **0%** | ❌ 미착수 |
+| Phase 9 | 3/5 | 3/5 | **60%** | 🔄 부분 완료 |
+
+### 범례
+- ✅ **완료**: 구현 + 실제 사용
+- 🟡 **구현만 완료**: 코드 존재하지만 실제 사용 안 함
+- 🔴 **부분 완료**: 일부만 구현 또는 사용
+- ❌ **미착수**: 구현 없음
 
 ---
 
-- [x] **Phase 1: Panel Gateway Pattern** (1/5 완료)
+## Phase 1: Panel Gateway Pattern (🔴 20%)
 
-  - [x] MonitorPanel Gateway + `enabled` parameter <!-- id: 0 --> ✅ 2025-12-10 (`MonitorPanel.tsx:49-56`, `useMemoryStats.ts:54`, `useWebVitals.ts:26`, `useFPSMonitor.ts:26`)
-  - [ ] PropertiesPanel Gateway Pattern <!-- id: 1 --> (isActive 체크만 있음, Content 분리 필요)
-  - [ ] StylesPanel Gateway Pattern <!-- id: 2 --> (isActive 체크만 있음, Content 분리 필요)
-  - [ ] ComponentsPanel Gateway Pattern <!-- id: 3 --> (isActive 체크만 있음, Content 분리 필요)
-  - [ ] PanelShell HOC Standardization <!-- id: 4 --> (미구현)
+**문제점**: PropertiesPanel, StylesPanel, ComponentsPanel 모두 `isActive` 체크 전에 훅이 호출됨
 
-- [x] **Phase 2: Store Indexing System** (3/4 완료)
+| 항목 | 구현 | 사용 | 파일 위치 |
+|------|------|------|----------|
+| MonitorPanel Gateway | ✅ | ✅ | `MonitorPanel.tsx:49-56` Content 분리 |
+| useMemoryStats enabled | ✅ | ✅ | `useMemoryStats.ts:54` |
+| useWebVitals enabled | ✅ | ✅ | `useWebVitals.ts:26` |
+| useFPSMonitor enabled | ✅ | ✅ | `useFPSMonitor.ts:26` |
+| PropertiesPanel Gateway | ❌ | ❌ | 훅이 isActive 전에 호출 (line 236 vs 937) |
+| StylesPanel Gateway | ❌ | ❌ | 훅이 isActive 전에 호출 (line 37 vs 122) |
+| ComponentsPanel Gateway | ❌ | ❌ | 훅이 isActive 전에 호출 (line 20 vs 85) |
+| PanelShell HOC | ❌ | ❌ | 미구현 |
 
-  - [x] Type Definitions (ElementIndexes) <!-- id: 5 --> ✅ 2025-12-10 (`elementIndexer.ts:22-31` PageElementIndex)
-  - [x] Indexer Utility (`elementIndexer.ts`) <!-- id: 6 --> ✅ 2025-12-10 (`src/builder/stores/utils/elementIndexer.ts` 281줄)
-  - [x] Store Integration (`elements.ts`) <!-- id: 7 --> ✅ 2025-12-10 (`elements.ts:51` pageIndex, `elements.ts:156-159` getPageElements)
-  - [ ] Migration (`.filter` refactoring) <!-- id: 8 --> (일부만 완료, 전체 코드베이스 검색 필요)
+---
 
-- [x] **Phase 3: History Diff System** (3/3 완료) ✅
+## Phase 2: Store Indexing System (🔴 0% 사용)
 
-  - [x] Command Pattern Implementation <!-- id: 9 --> ✅ 2025-12-10 (`commandDataStore.ts`)
-  - [x] DiffHistoryManager Implementation (`diffHistory.ts`) <!-- id: 10 --> ✅ 2025-12-10 (`elementDiff.ts` 497줄, `history.ts`에서 diff 사용)
-  - [x] Store Integration & Memory Optimization <!-- id: 11 --> ✅ 2025-12-10 (`historyIndexedDB.ts` 533줄, Hot/Cold 캐시 구현)
+**문제점**: `getPageElements` 정의만 있고 실제 사용하지 않음. `.filter(el => el.page_id)` 여전히 10곳에서 사용
 
-- [ ] **Phase 4: Canvas Delta Sync** (0/4)
+| 항목 | 구현 | 사용 | 파일 위치 |
+|------|------|------|----------|
+| Type Definitions | ✅ | ❌ | `elementIndexer.ts:22-31` PageElementIndex |
+| Indexer Utility | ✅ | ❌ | `elementIndexer.ts` (281줄) |
+| Store Integration | ✅ | ❌ | `elements.ts:51,156-159` getPageElements 정의됨 |
+| Migration | ❌ | ❌ | **10곳에서 `.filter(page_id)` 여전히 사용** |
 
-  - [ ] Delta Message Types & Queue <!-- id: 12 -->
-  - [ ] `useCanvasDeltaSync` Hook <!-- id: 13 -->
-  - [ ] Canvas Runtime Receiver (`useDeltaReceiver`) <!-- id: 14 -->
-  - [ ] Backpressure & Full Sync Reservation <!-- id: 15 -->
+**Migration 필요한 파일:**
+- `stores/index.ts:115`
+- `stores/elements.ts:436` (useCurrentPageElements)
+- `panels/events/editors/ElementPicker.tsx:72`
+- `panels/nodes/NodesPanel.tsx:99`
+- `panels/properties/PropertiesPanel.tsx:258,523`
+- `stores/utils/elementReorder.ts:42`
+- `panels/components/ComponentsPanel.tsx:78`
 
-- [x] **Phase 5: Lazy Loading & LRU** (3/3 완료) ✅
+---
 
-  - [x] LRU Page Cache Implementation <!-- id: 16 --> ✅ 2025-12-10 (`src/builder/utils/LRUPageCache.ts`)
-  - [x] Element Loader Service <!-- id: 17 --> ✅ 2025-12-10 (`src/builder/stores/elementLoader.ts` 502줄)
-  - [x] Store Integration (Load/Unload Logic) <!-- id: 18 --> ✅ 2025-12-10 (`elementLoader.ts` slice + preloadPage)
+## Phase 3: History Diff System (✅ 100%)
 
-- [x] **Phase 6: React Query Integration** (2/4 완료)
+| 항목 | 구현 | 사용 | 파일 위치 |
+|------|------|------|----------|
+| Element Diff Utility | ✅ | ✅ | `elementDiff.ts` (497줄) |
+| History IndexedDB | ✅ | ✅ | `historyIndexedDB.ts` (533줄) |
+| History Integration | ✅ | ✅ | `history.ts:273,282,361,363,659` diff 사용 확인 |
+| Command Data Store | ✅ | ✅ | `commandDataStore.ts` |
 
-  - [x] Setup & Provider <!-- id: 19 --> ✅
-  - [x] DataTablePanel Implementation (Double Layer) <!-- id: 20 --> ✅
-  - [ ] Request Manager (Deduplication + Abort) <!-- id: 21 -->
-  - [ ] Persister & Realtime Invalidation <!-- id: 22 -->
-  - 추가 완료: `useAsyncAction.ts`, `useAsyncData.ts`, `useAsyncQuery.ts`, `useAsyncMutation.ts`
+---
 
-- [ ] **Phase 7: Performance Monitoring & SLO** (0/4)
+## Phase 4: Canvas Delta Sync (🟡 구현만 완료)
 
-  - [ ] PerformanceMonitor Implementation <!-- id: 23 -->
-  - [ ] Trace Hooks (Select, Drag, Panel Switch) <!-- id: 24 -->
-  - [ ] Auto Recovery Logic <!-- id: 25 -->
-  - [ ] Scoped Error Boundary <!-- id: 26 -->
+**문제점**: 코드는 완벽하게 구현되어 있으나 BuilderCore나 다른 컴포넌트에서 **사용하지 않음**
 
-- [ ] **Phase 8: CI & Large Scale Testing** (0/3)
+| 항목 | 구현 | 사용 | 파일 위치 |
+|------|------|------|----------|
+| Delta Message Types | ✅ | ❌ | `canvasDeltaMessenger.ts:19-53` |
+| useDeltaMessenger Hook | ✅ | ❌ | `useDeltaMessenger.ts` (346줄) |
+| Canvas Receiver | ✅ | ❌ | `messageHandler.ts:323-336,457-558` |
+| Backpressure | ✅ | ❌ | `canvasDeltaMessenger.ts` shouldUseDelta |
 
-  - [ ] Fixed Seed Generator (`generate-large-project.ts`) <!-- id: 27 -->
-  - [ ] Long Session Simulation Script <!-- id: 28 -->
-  - [ ] SLO Verification Logic <!-- id: 29 -->
+**통합 필요:**
+- `BuilderCore.tsx`에서 `useDeltaMessenger` 사용
+- `sendElementsToIframe` 대신 `sendOptimalUpdate` 사용
 
-- [ ] **Phase 9: Supplement & Additional Ideas** (1/5 완료)
-  - [ ] Canvas Virtualization (P0) - `react-virtual` + Hitbox <!-- id: 30 -->
-  - [ ] Web Worker Offloading (P1) - Comlink + Fallback <!-- id: 31 -->
-  - [x] CSS Containment (P0) <!-- id: 32 --> (부분: `ListBox.css:253` content-visibility)
-  - [ ] Event Delegation (P1) <!-- id: 33 -->
-  - [ ] Selection Overlay Isolation (P2) <!-- id: 34 -->
+---
+
+## Phase 5: Lazy Loading & LRU (🟡 구현만 완료)
+
+**문제점**: elementLoader가 Store에 통합되어 있으나 `usePageLoader` 훅이 **사용되지 않음**
+
+| 항목 | 구현 | 사용 | 파일 위치 |
+|------|------|------|----------|
+| LRU Page Cache | ✅ | ✅ | `LRUPageCache.ts` (pageCache 사용됨) |
+| Element Loader Slice | ✅ | ❌ | `elementLoader.ts` (502줄), `stores/index.ts:8,48` |
+| usePageLoader Hook | ✅ | ❌ | `usePageLoader.ts` - tsx에서 사용 안 함 |
+| Auto-preload | ✅ | ❌ | `usePageLoader.ts:137-159` useAdjacentPagePreloader |
+
+**통합 필요:**
+- 페이지 전환 시 `loadPageIfNeeded()` 호출
+- `BuilderCore`나 `PageManager`에서 `usePageLoader` 사용
+
+---
+
+## Phase 6: React Query Integration (🔴 25%)
+
+| 항목 | 구현 | 사용 | 파일 위치 |
+|------|------|------|----------|
+| useAsyncAction | ✅ | ✅ | `useAsyncAction.ts` (재시도 로직 포함) |
+| useAsyncData | ✅ | ❓ | `useAsyncData.ts` |
+| useAsyncQuery | ✅ | ❓ | `useAsyncQuery.ts` |
+| useAsyncMutation | ✅ | ❓ | `useAsyncMutation.ts` |
+| Request Manager (Deduplication) | ❌ | ❌ | AbortController는 있으나 전용 관리자 없음 |
+| Persister | ❌ | ❌ | 미구현 |
+
+---
+
+## Phase 7: Performance Monitoring & SLO (🟡 구현만 완료)
+
+**문제점**: 모두 구현되어 있으나 **실제 사용하지 않음**
+
+| 항목 | 구현 | 사용 | 파일 위치 |
+|------|------|------|----------|
+| PerformanceMonitor Class | ✅ | ❌ | `performanceMonitor.ts` (370줄+) |
+| useAutoRecovery Hook | ✅ | ❌ | `useAutoRecovery.ts` - tsx에서 사용 안 함 |
+| Health Score | ✅ | ❌ | `performanceMonitor.ts:43-46` |
+| Auto Recovery Logic | ✅ | ❌ | `useAutoRecovery.ts:150-185` |
+
+**통합 필요:**
+- `BuilderApp.tsx`나 `BuilderCore.tsx`에서 `useAutoRecovery()` 호출
+
+---
+
+## Phase 8: CI & Large Scale Testing (❌ 0%)
+
+| 항목 | 구현 | 사용 | 파일 위치 |
+|------|------|------|----------|
+| Fixed Seed Generator | ❌ | ❌ | 미구현 |
+| Long Session Simulation | ❌ | ❌ | 미구현 |
+| SLO Verification | ❌ | ❌ | 미구현 |
+
+---
+
+## Phase 9: Supplement & Additional Ideas (🔄 60%)
+
+| 항목 | 구현 | 사용 | 파일 위치 |
+|------|------|------|----------|
+| Canvas Virtualization | ✅ | ✅ | `VirtualizedTree.tsx`, `VirtualizedLayerTree.tsx` |
+| Web Worker Offloading | ❌ | ❌ | 미구현 |
+| CSS Containment | ✅ | ✅ | 여러 CSS 파일 (`contain:`, `content-visibility`) |
+| Event Delegation | ❌ | ❌ | 미구현 |
+| Selection Overlay Isolation | ❌ | ❌ | 미구현 |
+
+**CSS Containment 적용 위치:**
+- `Menu.css:218,247` - `contain: layout style paint`
+- `ListBox.css:253` - `content-visibility: auto`
+- `ListBox.css:487,496` - `contain: strict`, `contain: content`
+- `ComboBox.css:150`, `Select.css:132`, `DatePicker.css:51`, `DateRangePicker.css:85`
+
+---
+
+## 우선순위별 TODO
+
+### P0 (Critical)
+1. **Phase 1**: 3개 패널 Gateway 패턴 적용 (PropertiesPanel, StylesPanel, ComponentsPanel)
+2. **Phase 4**: `useDeltaMessenger`를 BuilderCore에 통합
+3. **Phase 5**: `usePageLoader`를 페이지 전환에 통합
+
+### P1 (High)
+4. **Phase 2**: `.filter(page_id)` → `getPageElements()` 마이그레이션 (10곳)
+5. **Phase 7**: `useAutoRecovery`를 BuilderApp에 통합
+
+### P2 (Medium)
+6. **Phase 6**: Request Manager (Deduplication + Abort) 구현
+7. **Phase 9**: Event Delegation 구현
+
+### P3 (Low)
+8. **Phase 8**: CI 자동화 테스트
+9. **Phase 9**: Web Worker, Selection Overlay Isolation
