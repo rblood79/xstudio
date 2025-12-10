@@ -351,7 +351,7 @@ export const TagGroupEditor = memo(function TagGroupEditor({ elementId, currentP
                     <p className='tab-overview-text'>
                         Total tags: {tagChildren.length || 0}
                     </p>
-                    <p className='tab-overview-help'>
+                    <p className='section-overview-help'>
                         💡 Select individual tags from list to edit text and state
                     </p>
                 </div>

@@ -528,7 +528,7 @@ export const ListBoxEditor = memo(function ListBoxEditor({
               placeholder="5"
             />
 
-            <p className="tab-overview-help">
+            <p className="section-overview-help">
               💡 가상화 활성화 시 10,000+ 아이템도 원활하게 처리됩니다
             </p>
           </>
@@ -567,7 +567,7 @@ export const ListBoxEditor = memo(function ListBoxEditor({
           placeholder="label, name, title"
         />
 
-        <p className="tab-overview-help">
+        <p className="section-overview-help">
           💡 필터 대상 필드가 비어있으면 기본값 (label, name, title) 사용
         </p>
       </PropertySection>
@@ -655,7 +655,7 @@ export const ListBoxEditor = memo(function ListBoxEditor({
             </div>
 
             {existingFields.length > 0 && (
-              <p className="tab-overview-help">
+              <p className="section-overview-help">
                 ✅ 현재 {existingFields.length}개의 Field가 있습니다
               </p>
             )}
@@ -709,7 +709,7 @@ export const ListBoxEditor = memo(function ListBoxEditor({
           <p className="tab-overview-text">
             Total items: {children.length || 0}
           </p>
-          <p className="tab-overview-help">
+          <p className="section-overview-help">
             💡 Select individual items from list to edit label, value, and state
           </p>
         </div>

@@ -144,7 +144,7 @@ export const BreadcrumbsEditor = memo(function BreadcrumbsEditor({ elementId, cu
                     <p className='tab-overview-text'>
                         Total breadcrumbs: {breadcrumbChildren.length || 0}
                     </p>
-                    <p className='tab-overview-help'>
+                    <p className='section-overview-help'>
                         💡 Click on individual breadcrumbs to edit text and href
                     </p>
                 </div>

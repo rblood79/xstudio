@@ -16,7 +16,7 @@ import {
   PropertyInput,
   EmptyState,
 } from '../common';
-import { Button } from '../../../shared/components';
+import { Button } from 'react-aria-components';
 import './ThemesPanel.css';
 
 function ThemesContent() {
@@ -84,12 +84,10 @@ function ThemesContent() {
           title="Themes"
           actions={
             <Button
-              size="sm"
-              variant="secondary"
               onPress={handleOpenThemeStudio}
+              className="iconButton"
             >
-              <Palette size={14} />
-              Open Theme Studio
+              <Palette size={16} />
             </Button>
           }
         />
@@ -108,8 +106,8 @@ function ThemesContent() {
         title="Themes"
         actions={
           <Button
-            size="sm"
             onPress={handleOpenThemeStudio}
+            className="iconButton"
           >
             <Palette size={16} />
           </Button>
@@ -150,12 +148,9 @@ function ThemesContent() {
             description="Create tokens in Theme Studio to customize your theme"
           />
           <Button
-            variant="primary"
             onPress={handleOpenThemeStudio}
-            className="theme-studio-action-button"
           >
             <Palette size={16} />
-            Open Theme Studio
           </Button>
         </PropertySection>
       ) : (
@@ -178,9 +173,8 @@ function ThemesContent() {
           {/* Theme Studio button at the end */}
           <PropertySection title="Advanced Editing">
             <Button
-              variant="primary"
               onPress={handleOpenThemeStudio}
-              className="theme-studio-action-button"
+              className="iconButton"
             >
               <Palette size={16} />
               Manage All Tokens in Theme Studio

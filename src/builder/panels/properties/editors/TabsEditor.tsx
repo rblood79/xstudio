@@ -315,7 +315,7 @@ export const TabsEditor = memo(
             <p className="tab-overview-text">
               Total tabs: {tabChildren.length || 0}
             </p>
-            <p className="tab-overview-help">
+            <p className="section-overview-help">
               💡 Select individual tabs from layer tree to edit their properties
             </p>
           </div>

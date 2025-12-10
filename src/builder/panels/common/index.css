@@ -94,6 +94,18 @@
       min-height: 200px;
     }
 
+    .section-overview-help{
+      font-size: var(--text-xs);
+      color: var(--on-surface-variant);
+      padding: var(--spacing-sm);
+      background: var(--surface-variant);
+      border-radius: var(--radius-md);
+      border: 1px solid var(--outline-variant);
+      box-shadow: var(--inset-shadow-sm);
+      outline: 1px solid var(--border-color);
+      outline-offset: -1px;
+    }
+
     /* Styles Panel - Section-specific layouts */
     &[data-section-id="layout"] .section-content {
       .layout-direction {

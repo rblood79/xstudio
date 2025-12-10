@@ -304,7 +304,7 @@ export const ToggleButtonGroupEditor = memo(function ToggleButtonGroupEditor({ e
                     <p className='tab-overview-text'>
                         Total buttons: {toggleButtonChildren.length || 0}
                     </p>
-                    <p className='tab-overview-help'>
+                    <p className='section-overview-help'>
                         💡 Select individual buttons from list to edit text and state
                     </p>
                 </div>

@@ -66,7 +66,7 @@ export const ListBoxItemEditor = memo(function ListBoxItemEditor({
             <p className="tab-overview-text">
               Total fields: {fieldChildren.length}
             </p>
-            <p className="tab-overview-help">
+            <p className="section-overview-help">
               💡 This ListBoxItem uses Field elements for dynamic data rendering
             </p>
           </div>
@@ -179,7 +179,7 @@ export const ListBoxItemEditor = memo(function ListBoxItemEditor({
       </PropertySection>
 
       <PropertySection title="Static Item Properties">
-        <p className="tab-overview-help">
+        <p className="section-overview-help">
           💡 This is a static ListBoxItem. Add Field elements to enable dynamic
           data rendering.
         </p>
@@ -264,7 +264,7 @@ export const ListBoxItemEditor = memo(function ListBoxItemEditor({
         </legend>
 
         <div className="tab-overview">
-          <p className="tab-overview-help">
+          <p className="section-overview-help">
             💡 Add Field elements to display dynamic data from API/Database
           </p>
         </div>

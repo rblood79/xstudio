@@ -373,7 +373,7 @@ export const GridListEditor = memo(function GridListEditor({ elementId, currentP
                     <p className='tab-overview-text'>
                         Total items: {children.length || 0}
                     </p>
-                    <p className='tab-overview-help'>
+                    <p className='section-overview-help'>
                         💡 Select individual items from list to edit label, value, description, and state
                     </p>
                 </div>

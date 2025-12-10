@@ -613,7 +613,7 @@ export const TableEditor = memo(function TableEditor({
           <p className="tab-overview-text">
             Total columns: {actualColumns.length || 0}
           </p>
-          <p className="tab-overview-help">
+          <p className="section-overview-help">
             💡 Select <strong>TableHeader</strong> to add/remove columns
           </p>
         </div>
@@ -662,7 +662,7 @@ export const TableEditor = memo(function TableEditor({
 
         {actualColumns.length === 0 && (
           <div className="tab-overview">
-            <p className="tab-overview-help">
+            <p className="section-overview-help">
               ⚠️ 컬럼이 없습니다. <strong>Layers</strong>에서{" "}
               <strong>TableHeader</strong>를 선택하고 컬럼을 추가하세요.
             </p>
@@ -678,7 +678,7 @@ export const TableEditor = memo(function TableEditor({
           <p className="tab-overview-text">
             Total groups: {actualColumnGroups.length || 0}
           </p>
-          <p className="tab-overview-help">
+          <p className="section-overview-help">
             💡 Column Group을 사용하여 관련 컬럼들을 그룹화하고 멀티레벨 헤더를
             만들 수 있습니다
           </p>
@@ -725,7 +725,7 @@ export const TableEditor = memo(function TableEditor({
 
         {actualColumnGroups.length === 0 && (
           <div className="tab-overview">
-            <p className="tab-overview-help">
+            <p className="section-overview-help">
               📋 Column Group이 없습니다. 아래 버튼을 클릭하여 그룹을
               추가하세요.
             </p>
@@ -746,7 +746,7 @@ export const TableEditor = memo(function TableEditor({
 
         {/* Column Group 사용법 안내 */}
         <div className="tab-overview">
-          <p className="tab-overview-help">
+          <p className="section-overview-help">
             <strong>💡 Column Group 사용법:</strong>
             <br />
             • Column Group은 여러 컬럼을 하나의 헤더로 그룹화합니다
@@ -762,7 +762,7 @@ export const TableEditor = memo(function TableEditor({
         {/* 행 개수 표시 */}
         <div className="tab-overview">
           <p className="tab-overview-text">Total rows: {rows.length || 0}</p>
-          <p className="tab-overview-help">
+          <p className="section-overview-help">
             💡 Manage table rows and their cells
           </p>
         </div>

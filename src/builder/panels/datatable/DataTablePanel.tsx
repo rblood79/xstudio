@@ -18,7 +18,7 @@
  * @since 2025-12-10 Phase 6 React Query
  */
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams } from "react-router-dom";
 import {
   Table2,
@@ -62,6 +62,9 @@ export function DataTablePanel({ isActive }: PanelProps) {
   // Get projectId from URL params
   const { projectId: currentProjectId } = useParams<{ projectId: string }>();
 
+  // 초기 로딩 트래킹 - 프로젝트별로 한 번만 로드
+  const initialLoadedRef = useRef<string | null>(null);
+
   // 🚀 Phase 6: React Query로 데이터 fetching
   // - enabled: isActive && !!currentProjectId → 패널 비활성 시 fetching 안함
   // - staleTime: 5분 캐싱 → 중복 요청 방지
@@ -78,6 +81,27 @@ export function DataTablePanel({ isActive }: PanelProps) {
   const fetchApiEndpoints = useDataStore((state) => state.fetchApiEndpoints);
   const fetchVariables = useDataStore((state) => state.fetchVariables);
   const fetchTransformers = useDataStore((state) => state.fetchTransformers);
+
+  // 🆕 패널 활성화 시 IndexedDB에서 Zustand Store로 데이터 동기화
+  // React Query 캐시와 별개로, Zustand Store도 초기화해야 DataTableList에서 보임
+  useEffect(() => {
+    if (isActive && currentProjectId && initialLoadedRef.current !== currentProjectId) {
+      console.log(`📥 [DataTablePanel] 초기 로딩: projectId=${currentProjectId}`);
+      initialLoadedRef.current = currentProjectId;
+
+      // Zustand Store에 데이터 로드 (IndexedDB → Memory)
+      Promise.all([
+        fetchDataTables(currentProjectId),
+        fetchApiEndpoints(currentProjectId),
+        fetchVariables(currentProjectId),
+        fetchTransformers(currentProjectId),
+      ]).then(() => {
+        console.log(`✅ [DataTablePanel] Zustand Store 초기화 완료`);
+      }).catch((error) => {
+        console.error(`❌ [DataTablePanel] 초기화 실패:`, error);
+      });
+    }
+  }, [isActive, currentProjectId, fetchDataTables, fetchApiEndpoints, fetchVariables, fetchTransformers]);
 
   // Editor Store 액션
   const editorMode = useDataTableEditorStore((state) => state.mode);

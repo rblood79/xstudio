@@ -177,7 +177,7 @@ export const TableHeaderEditor = memo(function TableHeaderEditor({ elementId, cu
                     <p className='tab-overview-text'>
                         Total columns: {columns.length || 0}
                     </p>
-                    <p className='tab-overview-help'>
+                    <p className='section-overview-help'>
                         💡 Configure table header appearance and behavior
                     </p>
                 </div>
@@ -216,7 +216,7 @@ export const TableHeaderEditor = memo(function TableHeaderEditor({ elementId, cu
                     <p className='tab-overview-text'>
                         Total columns: {columns.length || 0}
                     </p>
-                    <p className='tab-overview-help'>
+                    <p className='section-overview-help'>
                         💡 Add, edit, and manage table columns
                     </p>
                 </div>

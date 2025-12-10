@@ -345,7 +345,7 @@ export const CheckboxGroupEditor = memo(function CheckboxGroupEditor({ elementId
                     <p className='tab-overview-text'>
                         Total checkboxes: {checkboxChildren.length || 0}
                     </p>
-                    <p className='tab-overview-help'>
+                    <p className='section-overview-help'>
                         💡 Select individual checkboxes from list to edit label, value, and state
                     </p>
                 </div>

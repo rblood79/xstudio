@@ -63,7 +63,7 @@ export const RowEditor = memo(function RowEditor({ elementId, currentProps, onUp
                     <p className='tab-overview-text'>
                         Cells: {rowCells.length || 0} | Position: #{(element.order_num || 0) + 1}
                     </p>
-                    <p className='tab-overview-help'>
+                    <p className='section-overview-help'>
                         💡 Configure row appearance and dimensions
                     </p>
                 </div>
@@ -120,7 +120,7 @@ export const RowEditor = memo(function RowEditor({ elementId, currentProps, onUp
 
                 {rowCells.length === 0 && (
                     <div className='tab-overview'>
-                        <p className='tab-overview-help'>
+                        <p className='section-overview-help'>
                             셀이 없습니다. Table 편집기에서 컬럼을 추가하세요.
                         </p>
                     </div>

@@ -387,6 +387,7 @@
 .action-item {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: var(--spacing-sm);
   padding: var(--spacing-sm);
   background: var(--color-white);
@@ -813,7 +814,7 @@
 
 .branch-block {
   position: relative;
-  margin-left: var(--spacing-lg);
+  /* margin-left: var(--spacing-lg); */
 }
 
 .branch-block .block-container {
@@ -827,9 +828,9 @@
 }
 
 /* THEN Block Colors */
-.then-block .block-container {
+/*.then-block .block-container {
   border-left: 3px solid var(--event-success-color);
-}
+}*/
 
 .then-block .block-header {
   background: var(--event-success-bg);

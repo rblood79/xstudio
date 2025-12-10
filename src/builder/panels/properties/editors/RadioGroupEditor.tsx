@@ -427,7 +427,7 @@ export const RadioGroupEditor = memo(function RadioGroupEditor({ elementId, curr
           <p className='tab-overview-text'>
             Total radio options: {radioChildren.length || 0}
           </p>
-          <p className='tab-overview-help'>
+          <p className='section-overview-help'>
             💡 Select individual radio options from list to edit label, value, and state
           </p>
         </div>

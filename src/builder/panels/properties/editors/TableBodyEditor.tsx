@@ -69,7 +69,7 @@ export const TableBodyEditor = memo(function TableBodyEditor({ elementId, curren
                     <p className='tab-overview-text'>
                         Total rows: {rows.length || 0} | Total cells: {totalCells || 0}
                     </p>
-                    <p className='tab-overview-help'>
+                    <p className='section-overview-help'>
                         💡 Configure table body appearance and row behavior
                     </p>
                 </div>
@@ -127,7 +127,7 @@ export const TableBodyEditor = memo(function TableBodyEditor({ elementId, curren
 
                 {rows.length === 0 && (
                     <div className='tab-overview'>
-                        <p className='tab-overview-help'>
+                        <p className='section-overview-help'>
                             No rows found. Add rows from the Table editor.
                         </p>
                     </div>

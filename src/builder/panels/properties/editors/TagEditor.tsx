@@ -48,7 +48,7 @@ export const TagEditor = memo(function TagEditor({ elementId, currentProps, onUp
                         <p className="tab-overview-text">
                             Total fields: {fieldChildren.length}
                         </p>
-                        <p className="tab-overview-help">
+                        <p className="section-overview-help">
                             💡 This Tag uses Field elements for dynamic data rendering
                         </p>
                     </div>
@@ -161,7 +161,7 @@ export const TagEditor = memo(function TagEditor({ elementId, currentProps, onUp
             </PropertySection>
 
             <PropertySection title="Static Item Properties">
-                <p className="tab-overview-help">
+                <p className="section-overview-help">
                     💡 This is a static Tag. Add Field elements to enable dynamic data rendering.
                 </p>
             </PropertySection>
@@ -228,7 +228,7 @@ export const TagEditor = memo(function TagEditor({ elementId, currentProps, onUp
                 </legend>
 
                 <div className="tab-overview">
-                    <p className="tab-overview-help">
+                    <p className="section-overview-help">
                         💡 Add Field elements to display dynamic data from DataTable
                     </p>
                 </div>
