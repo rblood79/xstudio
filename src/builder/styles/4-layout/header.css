@@ -264,7 +264,19 @@
   .header_contents:last-child button:not(.publish) {
     border-radius: var(--radius-md);
     background-color: var(--on-primary);
-    padding: var(--spacing-sm);
+    padding: var(--spacing-xs);
+  }
+
+  .header_contents:last-child .react-aria-ToggleButtonGroup[data-indicator="true"] {
+    background-color: var(--outline-variant);
+    box-shadow: var(--inset-shadow-sm);
+    border-radius: var(--radius-lg);
+    gap: var(--spacing-xs);
+    padding: var(--spacing-xs);
+  }
+
+  .header_contents:last-child .react-aria-ToggleButtonGroup[data-indicator="true"] .react-aria-ToggleButton[data-selected] svg {
+    stroke: var(--on-surface);
   }
 
   .header_contents:last-child button:disabled {
@@ -274,19 +286,13 @@
 
   /* Publish Button */
   .header_contents .publish {
-    background: linear-gradient(
-          var(--surface-container),
-          var(--outline-variant)
-        )
-        padding-box,
-      linear-gradient(
-          82.77deg,
-          var(--info) 11.87%,
-          var(--info) 38.42%,
-          var(--on-surface-variant) 64.19%,
-          var(--error) 89.96%
-        )
-        border-box;
+    background: linear-gradient(var(--surface-container),
+        var(--outline-variant)) padding-box,
+      linear-gradient(82.77deg,
+        var(--info) 11.87%,
+        var(--info) 38.42%,
+        var(--on-surface-variant) 64.19%,
+        var(--error) 89.96%) border-box;
     border: 2px solid transparent;
     border-radius: var(--radius-md);
     color: var(--on-surface);

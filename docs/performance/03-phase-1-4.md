@@ -1,7 +1,6 @@
 # Phase 1-4: Panel, Store, History, Canvas
 
-> **관련 문서**: [02-architecture.md](./02-architecture.md) | [04-phase-5-8.md](./04-phase-5-8.md)
-> **최종 수정**: 2025-12-10
+> **관련 문서**: [02-architecture.md](./02-architecture.md) | [04-phase-5-8.md](./04-phase-5-8.md) > **최종 수정**: 2025-12-10
 
 ---
 
@@ -37,10 +36,10 @@ function PanelContent() {
 ```tsx
 // ❌ Before
 export function MonitorPanel({ isActive }: PanelProps) {
-  const { stats } = useMemoryStats();  // 항상 실행
-  const { vitals } = useWebVitals();   // 항상 실행
+  const { stats } = useMemoryStats(); // 항상 실행
+  const { vitals } = useWebVitals(); // 항상 실행
 
-  if (!isActive) return null;  // 너무 늦음
+  if (!isActive) return null; // 너무 늦음
   return <div>...</div>;
 }
 
@@ -114,26 +113,26 @@ export function useMemoryStats(options: UseMemoryStatsOptions = {}) {
     };
   }, [enabled, interval, collectStats]);
 
-  return { stats, /* ... */ };
+  return { stats /* ... */ };
 }
 ```
 
 ### 1.4 적용 대상 패널
 
-| 패널 | 수정 내용 |
-|------|----------|
-| MonitorPanel | Gateway 패턴 + 훅 enabled 파라미터 |
-| PropertiesPanel | Gateway 패턴 적용 |
-| StylesPanel | Gateway 패턴 적용 |
-| ComponentsPanel | Gateway 패턴 적용 |
+| 패널            | 수정 내용                          |
+| --------------- | ---------------------------------- |
+| MonitorPanel    | Gateway 패턴 + 훅 enabled 파라미터 |
+| PropertiesPanel | Gateway 패턴 적용                  |
+| StylesPanel     | Gateway 패턴 적용                  |
+| ComponentsPanel | Gateway 패턴 적용                  |
 
 ### 1.5 공통 Panel Guard HOC
 
 **파일**: `src/builder/panels/common/PanelShell.tsx`
 
 ```tsx
-import { ComponentType, Suspense } from 'react';
-import { ErrorBoundary } from 'react-error-boundary';
+import { ComponentType, Suspense } from "react";
+import { ErrorBoundary } from "react-error-boundary";
 
 interface PanelShellOptions {
   name: string;
@@ -142,7 +141,7 @@ interface PanelShellOptions {
 }
 
 export function withPanelShell<P extends { isActive: boolean }>(
-  PanelContent: ComponentType<Omit<P, 'isActive'>>,
+  PanelContent: ComponentType<Omit<P, "isActive">>,
   options: PanelShellOptions
 ) {
   const { name, suspense = true, errorBoundary = true } = options;
@@ -155,13 +154,11 @@ export function withPanelShell<P extends { isActive: boolean }>(
       return null;
     }
 
-    let content = <PanelContent {...(contentProps as Omit<P, 'isActive'>)} />;
+    let content = <PanelContent {...(contentProps as Omit<P, "isActive">)} />;
 
     if (suspense) {
       content = (
-        <Suspense fallback={<PanelFallback name={name} />}>
-          {content}
-        </Suspense>
+        <Suspense fallback={<PanelFallback name={name} />}>{content}</Suspense>
       );
     }
 
@@ -191,7 +188,7 @@ function MonitorPanelContent() {
 }
 
 export const MonitorPanel = withPanelShell(MonitorPanelContent, {
-  name: 'MonitorPanel',
+  name: "MonitorPanel",
   suspense: true,
   errorBoundary: true,
 });
@@ -205,7 +202,9 @@ export const MonitorPanel = withPanelShell(MonitorPanelContent, {
 
 ```typescript
 // 현재: O(n) 필터링 매번 실행
-const currentPageElements = elements.filter(el => el.page_id === currentPageId);
+const currentPageElements = elements.filter(
+  (el) => el.page_id === currentPageId
+);
 // 5,000개 요소 → 매 렌더링마다 5,000번 순회
 ```
 
@@ -220,13 +219,13 @@ interface ElementsState {
   elementsMap: Map<string, Element>;
 
   // 🆕 인덱스 시스템
-  elementsByPage: Map<string, Set<string>>;      // pageId → elementIds
-  elementsByParent: Map<string, string[]>;       // parentId → childIds (순서 유지)
-  rootElementsByPage: Map<string, string[]>;     // pageId → root elementIds
+  elementsByPage: Map<string, Set<string>>; // pageId → elementIds
+  elementsByParent: Map<string, string[]>; // parentId → childIds (순서 유지)
+  rootElementsByPage: Map<string, string[]>; // pageId → root elementIds
 
   // 🆕 캐시
-  pageElementsCache: Map<string, Element[]>;     // pageId → elements (computed)
-  cacheVersion: Map<string, number>;             // 캐시 무효화용
+  pageElementsCache: Map<string, Element[]>; // pageId → elements (computed)
+  cacheVersion: Map<string, number>; // 캐시 무효화용
 }
 
 interface ElementsActions {
@@ -247,7 +246,6 @@ interface ElementsActions {
 
 ```typescript
 export function createElementIndexer(set: SetState, get: GetState) {
-
   /**
    * 요소 추가 시 인덱스 업데이트
    */
@@ -263,7 +261,7 @@ export function createElementIndexer(set: SetState, get: GetState) {
     if (element.parent_id) {
       const siblings = state.elementsByParent.get(element.parent_id) ?? [];
       // order_num 기준 정렬 삽입
-      const insertIndex = siblings.findIndex(id => {
+      const insertIndex = siblings.findIndex((id) => {
         const sibling = state.elementsMap.get(id);
         return sibling && sibling.order_num > element.order_num;
       });
@@ -299,7 +297,7 @@ export function createElementIndexer(set: SetState, get: GetState) {
     if (!elementIds || elementIds.size === 0) return [];
 
     const elements = Array.from(elementIds)
-      .map(id => state.elementsMap.get(id))
+      .map((id) => state.elementsMap.get(id))
       .filter((el): el is Element => el !== undefined)
       .sort((a, b) => a.order_num - b.order_num);
 
@@ -315,12 +313,12 @@ export function createElementIndexer(set: SetState, get: GetState) {
 
 ### 2.4 성능 비교
 
-| 연산 | 현재 O(n) | 인덱스 후 | 개선율 |
-|------|----------|----------|--------|
-| 페이지 요소 조회 | 2ms (5,000개) | 0.01ms | **200x** |
-| 자식 요소 조회 | 2ms | 0.01ms | **200x** |
-| 요소 추가 | 0.1ms | 0.2ms | 2x 느림 (허용) |
-| 요소 삭제 | 2ms | 0.1ms | **20x** |
+| 연산             | 현재 O(n)     | 인덱스 후 | 개선율         |
+| ---------------- | ------------- | --------- | -------------- |
+| 페이지 요소 조회 | 2ms (5,000개) | 0.01ms    | **200x**       |
+| 자식 요소 조회   | 2ms           | 0.01ms    | **200x**       |
+| 요소 추가        | 0.1ms         | 0.2ms     | 2x 느림 (허용) |
+| 요소 삭제        | 2ms           | 0.1ms     | **20x**        |
 
 ---
 
@@ -331,8 +329,8 @@ export function createElementIndexer(set: SetState, get: GetState) {
 ```typescript
 // 현재: 전체 스냅샷 저장
 historyManager.push({
-  elements: [...allElements],  // 5,000개 복사 = ~10MB
-  timestamp: Date.now()
+  elements: [...allElements], // 5,000개 복사 = ~10MB
+  timestamp: Date.now(),
 });
 
 // 50회 Undo = 50 × 10MB = 500MB 메모리 사용!
@@ -344,11 +342,11 @@ historyManager.push({
 
 ```typescript
 type CommandType =
-  | 'ADD_ELEMENT'
-  | 'UPDATE_ELEMENT'
-  | 'DELETE_ELEMENT'
-  | 'MOVE_ELEMENT'
-  | 'BATCH';
+  | "ADD_ELEMENT"
+  | "UPDATE_ELEMENT"
+  | "DELETE_ELEMENT"
+  | "MOVE_ELEMENT"
+  | "BATCH";
 
 interface Command {
   id: string;
@@ -394,7 +392,7 @@ export class DiffHistoryManager {
 
     this.push({
       id: crypto.randomUUID(),
-      type: 'UPDATE_ELEMENT',
+      type: "UPDATE_ELEMENT",
       timestamp: Date.now(),
       pageId,
       undo: { elementId, after: diff.original },
@@ -423,11 +421,11 @@ export class DiffHistoryManager {
 
 ### 3.3 메모리 비교
 
-| 시나리오 | 현재 (스냅샷) | Diff 기반 | 절감률 |
-|----------|-------------|-----------|--------|
-| 5,000요소 × 100회 | ~500MB | ~3MB | **99.4%** |
-| props 1개 변경 | ~10KB | ~300B | **97%** |
-| 요소 이동 | ~10KB | ~200B | **98%** |
+| 시나리오          | 현재 (스냅샷) | Diff 기반 | 절감률    |
+| ----------------- | ------------- | --------- | --------- |
+| 5,000요소 × 100회 | ~500MB        | ~3MB      | **99.4%** |
+| props 1개 변경    | ~10KB         | ~300B     | **97%**   |
+| 요소 이동         | ~10KB         | ~200B     | **98%**   |
 
 ---
 
@@ -438,8 +436,8 @@ export class DiffHistoryManager {
 ```typescript
 // 현재: 변경마다 전체 요소 전송
 postMessage({
-  type: 'SET_ELEMENTS',
-  elements: allPageElements  // 100개 × 2KB = 200KB
+  type: "SET_ELEMENTS",
+  elements: allPageElements, // 100개 × 2KB = 200KB
 });
 ```
 
@@ -449,11 +447,11 @@ postMessage({
 
 ```typescript
 type DeltaType =
-  | 'ELEMENT_ADD'
-  | 'ELEMENT_UPDATE'
-  | 'ELEMENT_DELETE'
-  | 'BATCH_DELTA'
-  | 'FULL_SYNC';
+  | "ELEMENT_ADD"
+  | "ELEMENT_UPDATE"
+  | "ELEMENT_DELETE"
+  | "BATCH_DELTA"
+  | "FULL_SYNC";
 
 interface DeltaMessage {
   type: DeltaType;
@@ -473,16 +471,16 @@ export function useCanvasDeltaSync() {
   /**
    * 단일 요소 업데이트 (변경분만)
    */
-  const sendElementUpdate = useCallback((
-    elementId: string,
-    changes: Partial<Element>
-  ) => {
-    pendingDeltas.current.push({
-      type: 'ELEMENT_UPDATE',
-      payload: { elementId, changes }
-    });
-    scheduleFlush();
-  }, []);
+  const sendElementUpdate = useCallback(
+    (elementId: string, changes: Partial<Element>) => {
+      pendingDeltas.current.push({
+        type: "ELEMENT_UPDATE",
+        payload: { elementId, changes },
+      });
+      scheduleFlush();
+    },
+    []
+  );
 
   /**
    * RAF 기반 배치 전송
@@ -498,10 +496,13 @@ export function useCanvasDeltaSync() {
 
       if (deltas.length === 0) return;
 
-      iframeRef.current?.contentWindow?.postMessage({
-        type: 'BATCH_DELTA',
-        deltas
-      }, '*');
+      iframeRef.current?.contentWindow?.postMessage(
+        {
+          type: "BATCH_DELTA",
+          deltas,
+        },
+        "*"
+      );
     });
   }, []);
 
@@ -510,7 +511,7 @@ export function useCanvasDeltaSync() {
     sendElementUpdate,
     sendElementAdd,
     sendElementDelete,
-    sendFullSync
+    sendFullSync,
   };
 }
 ```
@@ -521,59 +522,79 @@ export function useCanvasDeltaSync() {
 
 ```typescript
 export function useDeltaReceiver() {
-  const { updateElement, addElement, removeElement, setElements } = useRuntimeStore();
+  const { updateElement, addElement, removeElement, setElements } =
+    useRuntimeStore();
 
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
       const { type, deltas, elements } = event.data;
 
       switch (type) {
-        case 'BATCH_DELTA':
+        case "BATCH_DELTA":
           deltas.forEach((delta: DeltaMessage) => {
             switch (delta.type) {
-              case 'ELEMENT_UPDATE':
+              case "ELEMENT_UPDATE":
                 updateElement(delta.payload.elementId!, delta.payload.changes!);
                 break;
-              case 'ELEMENT_ADD':
+              case "ELEMENT_ADD":
                 addElement(delta.payload.element!);
                 break;
-              case 'ELEMENT_DELETE':
+              case "ELEMENT_DELETE":
                 removeElement(delta.payload.elementId!);
                 break;
             }
           });
           break;
 
-        case 'FULL_SYNC':
+        case "FULL_SYNC":
           setElements(elements);
           break;
       }
     };
 
-    window.addEventListener('message', handleMessage);
-    return () => window.removeEventListener('message', handleMessage);
+    window.addEventListener("message", handleMessage);
+    return () => window.removeEventListener("message", handleMessage);
   }, []);
 }
 ```
 
 ### 4.4 전송량 비교
 
-| 작업 | 현재 | Delta | 절감률 |
-|------|------|-------|--------|
-| props 변경 | ~2KB | ~100B | **95%** |
-| 요소 이동 | ~2KB | ~50B | **97%** |
-| 연속 10회 변경 | ~20KB | ~1KB | **95%** |
-| 페이지 전환 | ~200KB | ~200KB | 동일 |
+| 작업           | 현재   | Delta  | 절감률  |
+| -------------- | ------ | ------ | ------- |
+| props 변경     | ~2KB   | ~100B  | **95%** |
+| 요소 이동      | ~2KB   | ~50B   | **97%** |
+| 연속 10회 변경 | ~20KB  | ~1KB   | **95%** |
+| 페이지 전환    | ~200KB | ~200KB | 동일    |
 
-### 4.5 Backpressure 정책
+### 4.5 Backpressure & Reliability (보강)
 
-| 시나리오 | 큐 상태 | 정책 | 동작 |
-|----------|--------|------|------|
-| 정상 | < 80% | - | 메시지 정상 추가 |
-| 경고 | 80-99% | 경고 로그 | SLO 모니터에 기록 |
-| 포화 | 100% | drop-oldest | 오래된 low priority 제거 |
-| 포화 + high | 100% | 우선 처리 | oldest normal 제거 후 추가 |
-| 연속 동일 | 100% | debounce | 같은 타입 병합 |
+Backpressure는 단순한 유량 제어를 넘어 데이터 정합성(Consistency)을 유지하는 핵심 장치입니다.
+
+#### Backpressure 정책 (Reliability 강화)
+
+| 큐 상태 (size)    | 정책            | 동작 상세                        | 복구 전략                                   |
+| ----------------- | --------------- | -------------------------------- | ------------------------------------------- |
+| **정상 (< 50)**   | Pass            | 메시지 즉시 큐잉                 | -                                           |
+| **경고 (50-98)**  | Warning         | 경고 로그/메트릭 기록            | -                                           |
+| **포화 (99-100)** | **Drop & Mark** | 오래된 메시지 제거 (Drop-Oldest) | **Full Sync 예약** (`needsFullSync = true`) |
+| **재전송 실패**   | **Force Sync**  | ACK 미수신 N회 이상              | **강제 Full Sync 호출**                     |
+
+#### 상세 구현 로직
+
+1. **Full Sync 예약 시스템**:
+
+   - 메시지가 Drop되는 순간, 해당 클라이언트는 '오염된 상태(Tainted State)'로 간주합니다.
+   - 다음 `scheduleFlush`는 무조건 `FULL_SYNC` 메시지로 대체되어 전송됩니다.
+   - 이를 통해 "일부 메시지 유실로 인한 영구적인 화면 불일치"를 원천 차단합니다.
+
+2. **ACK 메커니즘 (선택적 구현)**:
+
+   - 중요 변경(Delete, Move)은 수신 측의 ACK가 필요합니다.
+   - 일정 시간(5초) 내 ACK 미도착 시, 델타 재전송이 아닌 **전체 동기화**를 트리거합니다. (복잡한 상태 추적 비용보다 전체 동기화 비용이 더 저렴한 경우가 많음)
+
+3. **로그/메트릭**:
+   - `queue_size_max`, `drop_count`, `full_sync_trigger_count` 지표를 수집하여 병목 구간을 시각화합니다.
 
 ---
 

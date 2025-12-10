@@ -27,6 +27,7 @@ import type {
   EventNavigationInfo,
   DataSourceInfo,
 } from '../types';
+import { getLayoutedElements, type LayoutDirection } from '../utils';
 
 // ============================================
 // Initial State
@@ -646,6 +647,20 @@ export const useWorkflowStore = create<WorkflowStore>((set, get) => ({
   toggleShowDataSources: () => {
     set({ showDataSources: !get().showDataSources });
     get().buildWorkflowGraph();
+  },
+
+  // Layout Actions
+  autoLayout: (direction: LayoutDirection = 'TB') => {
+    const { nodes, edges } = get();
+    if (nodes.length === 0) return;
+
+    const { nodes: layoutedNodes } = getLayoutedElements(nodes, edges, {
+      direction,
+      nodeSpacing: 80,
+      rankSpacing: 120,
+    });
+
+    set({ nodes: layoutedNodes });
   },
 
   // Build Graph

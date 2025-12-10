@@ -5,6 +5,7 @@
  * React Aria Components를 사용하여 검색 기능 제공
  *
  * Phase 2: Events Panel 재설계 - 검색 기능 추가
+ * Phase 6: 추천 이벤트 섹션 추가 (컴포넌트별 최적 이벤트 빠른 추가)
  */
 
 import { useState, useMemo, useRef } from 'react';
@@ -15,10 +16,24 @@ import {
   ListBoxItem,
 } from 'react-aria-components';
 import { Popover } from '@/shared/components/Popover';
-import { CirclePlus, Search, ChevronDown } from 'lucide-react';
+import { CirclePlus, Search, ChevronDown, Zap } from 'lucide-react';
 import type { EventType } from '@/types/events/events.types';
 import { EVENT_TYPE_LABELS, EVENT_CATEGORIES } from '@/types/events/events.types';
 import { iconProps } from '@/utils/ui/uiConstants';
+
+// 추천 이벤트 우선순위 (컴포넌트별 가장 많이 사용되는 이벤트 순서)
+// ⚠️ 순서 중요: 사용자 상호작용 → 값 변경 → 포커스 순
+const EVENT_PRIORITY: EventType[] = [
+  'onClick',          // 가장 일반적인 클릭 이벤트 (Button, Link 등)
+  'onChange',         // 값 변경 이벤트 (TextField, Select, Checkbox 등)
+  'onSubmit',         // 폼 제출 이벤트 (Form)
+  'onKeyDown',        // 키보드 이벤트 (TextField, NumberField 등)
+  'onKeyUp',          // 키보드 이벤트
+  'onMouseEnter',     // 마우스 진입
+  'onMouseLeave',     // 마우스 나감
+  'onFocus',          // 포커스 (낮은 우선순위)
+  'onBlur',           // 블러 (낮은 우선순위)
+];
 
 interface EventTypePickerProps {
   /** 이벤트 선택 시 호출되는 콜백 */
@@ -84,6 +99,18 @@ export function EventTypePicker({
       (type) => !registeredTypes.includes(type) || type === selectedType
     );
   }, [baseEventTypes, registeredTypes, selectedType]);
+
+  // 추천 이벤트 목록 (우선순위 기반, 최대 3개)
+  const recommendedEvents = useMemo(() => {
+    const recommendations: EventType[] = [];
+    for (const type of EVENT_PRIORITY) {
+      if (availableEventTypes.includes(type) && type !== selectedType) {
+        recommendations.push(type);
+        if (recommendations.length >= 3) break;
+      }
+    }
+    return recommendations;
+  }, [availableEventTypes, selectedType]);
 
   // 검색 필터링된 목록
   const filteredEventTypes = useMemo(() => {
@@ -250,6 +277,30 @@ export function EventTypePicker({
         className="event-picker-popover"
         showArrow={false}
       >
+        {/* 추천 이벤트 섹션 - 검색어가 없고 추천 이벤트가 있을 때만 표시 */}
+        {!searchValue && recommendedEvents.length > 0 && (
+          <div className="event-picker-recommended">
+            <div className="event-picker-recommended-header">
+              <Zap size={12} color={iconProps.color} />
+              <span>Recommended</span>
+            </div>
+            <div className="event-picker-recommended-list">
+              {recommendedEvents.map((eventType) => (
+                <button
+                  key={eventType}
+                  type="button"
+                  className="event-picker-recommended-item"
+                  onClick={() => handleSelect(eventType)}
+                >
+                  <span className="event-name">
+                    {EVENT_TYPE_LABELS[eventType] || eventType}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
         <div className="event-picker-search">
           <Search size={14} color={iconProps.color} />
           <input

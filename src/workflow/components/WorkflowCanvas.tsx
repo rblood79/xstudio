@@ -4,12 +4,13 @@
  * 프로젝트의 페이지/레이아웃 흐름을 시각화
  */
 
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useEffect, useRef } from 'react';
 import {
   ReactFlow,
   Background,
   Controls,
   MiniMap,
+  useReactFlow,
   type NodeTypes,
   type OnNodesChange,
   type OnEdgesChange,
@@ -38,12 +39,30 @@ const nodeTypes: NodeTypes = {
 // ============================================
 
 export function WorkflowCanvas() {
+  const { fitView } = useReactFlow();
+
   // Store selectors - individual selectors to prevent infinite loops
   const nodes = useWorkflowStore((s) => s.nodes);
   const edges = useWorkflowStore((s) => s.edges);
   const onNodesChange = useWorkflowStore((s) => s.onNodesChange);
   const onEdgesChange = useWorkflowStore((s) => s.onEdgesChange);
   const setSelectedNodeId = useWorkflowStore((s) => s.setSelectedNodeId);
+
+  // Track previous node positions to detect auto-layout changes
+  const prevNodesRef = useRef<string>('');
+
+  // fitView after nodes change (e.g., after autoLayout)
+  useEffect(() => {
+    const currentPositions = JSON.stringify(nodes.map(n => ({ id: n.id, x: n.position.x, y: n.position.y })));
+    if (prevNodesRef.current && prevNodesRef.current !== currentPositions) {
+      // Positions changed, trigger fitView with delay for smooth transition
+      const timer = setTimeout(() => {
+        fitView({ padding: 0.2, duration: 300 });
+      }, 50);
+      return () => clearTimeout(timer);
+    }
+    prevNodesRef.current = currentPositions;
+  }, [nodes, fitView]);
 
   // Handlers
   const handleNodesChange: OnNodesChange = useCallback(

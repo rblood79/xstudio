@@ -36,7 +36,8 @@ export const componentMetadata: ComponentMeta[] = [
       hasCustomEditor: true,
       editorName: "ButtonEditor",
       dataBindingType: null,
-      supportedEvents: ["onPress", "onClick"],
+      // React Aria: onPress, onClick, onFocus, onBlur, onFocusChange, onKeyDown, onKeyUp, onHoverStart, onHoverEnd
+      supportedEvents: ["onPress", "onClick", "onMouseEnter", "onMouseLeave", "onFocus", "onBlur", "onKeyDown", "onKeyUp"],
     },
   },
   {
@@ -48,7 +49,8 @@ export const componentMetadata: ComponentMeta[] = [
       hasCustomEditor: true,
       editorName: "ToggleButtonEditor",
       dataBindingType: null,
-      supportedEvents: ["onChange", "onPress"],
+      // React Aria: onChange, onPress, onClick, onFocus, onBlur, onFocusChange, onKeyDown, onKeyUp, onHoverStart, onHoverEnd
+      supportedEvents: ["onChange", "onPress", "onClick", "onMouseEnter", "onMouseLeave", "onFocus", "onBlur", "onKeyDown", "onKeyUp"],
     },
   },
   {
@@ -60,7 +62,8 @@ export const componentMetadata: ComponentMeta[] = [
       hasCustomEditor: true,
       editorName: "ToggleButtonGroupEditor",
       dataBindingType: "collection",
-      supportedEvents: ["onChange"],
+      // React Aria: onChange, onFocus, onBlur
+      supportedEvents: ["onChange", "onFocus", "onBlur"],
     },
   },
   {
@@ -72,7 +75,8 @@ export const componentMetadata: ComponentMeta[] = [
       hasCustomEditor: true,
       editorName: "MenuEditor",
       dataBindingType: "collection",
-      supportedEvents: ["onAction", "onOpenChange"],
+      // React Aria: onAction, onSelectionChange, onClose, onOpenChange
+      supportedEvents: ["onAction", "onSelectionChange", "onOpenChange", "onFocus", "onBlur"],
     },
   },
   {
@@ -84,7 +88,8 @@ export const componentMetadata: ComponentMeta[] = [
       hasCustomEditor: true,
       editorName: "ToolbarEditor",
       dataBindingType: null,
-      supportedEvents: [],
+      // React Aria: onFocus, onBlur
+      supportedEvents: ["onFocus", "onBlur"],
     },
   },
   {
@@ -96,7 +101,8 @@ export const componentMetadata: ComponentMeta[] = [
       hasCustomEditor: true,
       editorName: "LinkEditor",
       dataBindingType: null,
-      supportedEvents: ["onPress", "onClick"],
+      // React Aria: onPress, onClick, onFocus, onBlur, onFocusChange, onKeyDown, onKeyUp, onHoverStart, onHoverEnd
+      supportedEvents: ["onPress", "onClick", "onMouseEnter", "onMouseLeave", "onFocus", "onBlur", "onKeyDown", "onKeyUp"],
     },
   },
 
@@ -110,7 +116,8 @@ export const componentMetadata: ComponentMeta[] = [
       hasCustomEditor: true,
       editorName: "TextFieldEditor",
       dataBindingType: "value",
-      supportedEvents: ["onChange", "onBlur", "onFocus", "onKeyDown"],
+      // React Aria: onChange, onFocus, onBlur, onFocusChange, onKeyDown, onKeyUp
+      supportedEvents: ["onChange", "onFocus", "onBlur", "onKeyDown", "onKeyUp"],
     },
   },
   {
@@ -122,7 +129,8 @@ export const componentMetadata: ComponentMeta[] = [
       hasCustomEditor: true,
       editorName: "NumberFieldEditor",
       dataBindingType: "value",
-      supportedEvents: ["onChange", "onBlur", "onFocus"],
+      // React Aria: onChange, onFocus, onBlur, onFocusChange, onKeyDown, onKeyUp
+      supportedEvents: ["onChange", "onFocus", "onBlur", "onKeyDown", "onKeyUp"],
     },
   },
   {
@@ -134,7 +142,8 @@ export const componentMetadata: ComponentMeta[] = [
       hasCustomEditor: true,
       editorName: "SearchFieldEditor",
       dataBindingType: "value",
-      supportedEvents: ["onChange", "onSubmit", "onClear"],
+      // React Aria: onChange, onSubmit, onClear, onFocus, onBlur, onFocusChange, onKeyDown, onKeyUp
+      supportedEvents: ["onChange", "onSubmit", "onFocus", "onBlur", "onKeyDown", "onKeyUp"],
     },
   },
   {
@@ -146,7 +155,8 @@ export const componentMetadata: ComponentMeta[] = [
       hasCustomEditor: true,
       editorName: "CheckboxEditor",
       dataBindingType: "value",
-      supportedEvents: ["onChange"],
+      // React Aria: onChange, onPress, onFocus, onBlur, onFocusChange, onKeyDown, onKeyUp, onHoverStart, onHoverEnd
+      supportedEvents: ["onChange", "onFocus", "onBlur", "onKeyDown", "onKeyUp", "onMouseEnter", "onMouseLeave"],
     },
   },
   {
@@ -158,7 +168,8 @@ export const componentMetadata: ComponentMeta[] = [
       hasCustomEditor: true,
       editorName: "CheckboxGroupEditor",
       dataBindingType: "collection",
-      supportedEvents: ["onChange"],
+      // React Aria: onChange, onFocus, onBlur, onFocusChange
+      supportedEvents: ["onChange", "onFocus", "onBlur"],
     },
   },
   {
@@ -170,7 +181,8 @@ export const componentMetadata: ComponentMeta[] = [
       hasCustomEditor: true,
       editorName: "RadioEditor",
       dataBindingType: "value",
-      supportedEvents: ["onChange"],
+      // React Aria: onPress, onFocus, onBlur, onFocusChange, onKeyDown, onKeyUp, onHoverStart, onHoverEnd
+      supportedEvents: ["onFocus", "onBlur", "onKeyDown", "onKeyUp", "onMouseEnter", "onMouseLeave"],
     },
   },
   {
@@ -182,7 +194,8 @@ export const componentMetadata: ComponentMeta[] = [
       hasCustomEditor: true,
       editorName: "RadioGroupEditor",
       dataBindingType: "collection",
-      supportedEvents: ["onChange"],
+      // React Aria: onChange, onFocus, onBlur, onFocusChange
+      supportedEvents: ["onChange", "onFocus", "onBlur"],
     },
   },
   {
@@ -194,7 +207,8 @@ export const componentMetadata: ComponentMeta[] = [
       hasCustomEditor: true,
       editorName: "SelectEditor",
       dataBindingType: "collection",
-      supportedEvents: ["onSelectionChange", "onOpenChange"],
+      // React Aria: onSelectionChange, onOpenChange, onFocus, onBlur, onFocusChange, onKeyDown, onKeyUp
+      supportedEvents: ["onSelectionChange", "onOpenChange", "onFocus", "onBlur", "onKeyDown", "onKeyUp"],
     },
   },
   {
@@ -206,7 +220,8 @@ export const componentMetadata: ComponentMeta[] = [
       hasCustomEditor: true,
       editorName: "ComboBoxEditor",
       dataBindingType: "collection",
-      supportedEvents: ["onSelectionChange", "onInputChange"],
+      // React Aria: onSelectionChange, onInputChange, onOpenChange, onFocus, onBlur, onFocusChange, onKeyDown, onKeyUp
+      supportedEvents: ["onSelectionChange", "onOpenChange", "onFocus", "onBlur", "onKeyDown", "onKeyUp"],
     },
   },
   {
@@ -218,7 +233,8 @@ export const componentMetadata: ComponentMeta[] = [
       hasCustomEditor: true,
       editorName: "SwitchEditor",
       dataBindingType: "value",
-      supportedEvents: ["onChange"],
+      // React Aria: onChange, onFocus, onBlur, onFocusChange, onKeyDown, onKeyUp, onHoverStart, onHoverEnd
+      supportedEvents: ["onChange", "onFocus", "onBlur", "onKeyDown", "onKeyUp", "onMouseEnter", "onMouseLeave"],
     },
   },
   {
@@ -230,7 +246,8 @@ export const componentMetadata: ComponentMeta[] = [
       hasCustomEditor: true,
       editorName: "SliderEditor",
       dataBindingType: "value",
-      supportedEvents: ["onChange", "onChangeEnd"],
+      // React Aria: onChange, onChangeEnd, onFocus, onBlur, onFocusChange, onKeyDown, onKeyUp, onHoverStart, onHoverEnd
+      supportedEvents: ["onChange", "onFocus", "onBlur", "onKeyDown", "onKeyUp", "onMouseEnter", "onMouseLeave"],
     },
   },
   {
@@ -242,7 +259,8 @@ export const componentMetadata: ComponentMeta[] = [
       hasCustomEditor: true,
       editorName: "TailSwatchEditor",
       dataBindingType: "value",
-      supportedEvents: ["onChange"],
+      // Custom component: onChange, onFocus, onBlur
+      supportedEvents: ["onChange", "onFocus", "onBlur"],
     },
   },
 
@@ -256,7 +274,8 @@ export const componentMetadata: ComponentMeta[] = [
       hasCustomEditor: true,
       editorName: "TableEditor",
       dataBindingType: "collection",
-      supportedEvents: ["onRowAction", "onSelectionChange", "onSortChange"],
+      // React Aria: onRowAction, onSelectionChange, onSortChange, onFocus, onBlur
+      supportedEvents: ["onSelectionChange", "onAction", "onFocus", "onBlur"],
     },
   },
   {
@@ -268,7 +287,8 @@ export const componentMetadata: ComponentMeta[] = [
       hasCustomEditor: true,
       editorName: "ListBoxEditor",
       dataBindingType: "collection",
-      supportedEvents: ["onSelectionChange", "onAction"],
+      // React Aria: onSelectionChange, onAction, onFocus, onBlur, onFocusChange
+      supportedEvents: ["onSelectionChange", "onAction", "onFocus", "onBlur"],
     },
   },
   {
@@ -280,7 +300,8 @@ export const componentMetadata: ComponentMeta[] = [
       hasCustomEditor: true,
       editorName: "GridListEditor",
       dataBindingType: "collection",
-      supportedEvents: ["onSelectionChange", "onAction"],
+      // React Aria: onSelectionChange, onAction, onFocus, onBlur
+      supportedEvents: ["onSelectionChange", "onAction", "onFocus", "onBlur"],
     },
   },
   {
@@ -292,7 +313,8 @@ export const componentMetadata: ComponentMeta[] = [
       hasCustomEditor: true,
       editorName: "TreeEditor",
       dataBindingType: "collection",
-      supportedEvents: ["onSelectionChange", "onExpandedChange"],
+      // React Aria: onSelectionChange, onExpandedChange, onFocus, onBlur
+      supportedEvents: ["onSelectionChange", "onFocus", "onBlur"],
     },
   },
   {
@@ -304,7 +326,8 @@ export const componentMetadata: ComponentMeta[] = [
       hasCustomEditor: true,
       editorName: "TagGroupEditor",
       dataBindingType: "collection",
-      supportedEvents: ["onRemove"],
+      // React Aria: onRemove, onSelectionChange, onFocus, onBlur
+      supportedEvents: ["onSelectionChange", "onFocus", "onBlur"],
     },
   },
 
@@ -318,7 +341,8 @@ export const componentMetadata: ComponentMeta[] = [
       hasCustomEditor: true,
       editorName: "TooltipEditor",
       dataBindingType: null,
-      supportedEvents: ["onOpenChange"],
+      // React Aria: onOpenChange (tooltip trigger)
+      supportedEvents: ["onOpenChange", "onMouseEnter", "onMouseLeave"],
     },
   },
   {
@@ -368,7 +392,8 @@ export const componentMetadata: ComponentMeta[] = [
       hasCustomEditor: true,
       editorName: "PanelEditor",
       dataBindingType: null,
-      supportedEvents: ["onPress"],
+      // Custom container - supports basic mouse events
+      supportedEvents: ["onClick", "onMouseEnter", "onMouseLeave", "onFocus", "onBlur"],
     },
   },
   {
@@ -380,7 +405,8 @@ export const componentMetadata: ComponentMeta[] = [
       hasCustomEditor: true,
       editorName: "CardEditor",
       dataBindingType: null,
-      supportedEvents: ["onPress"],
+      // Custom container - supports basic mouse events
+      supportedEvents: ["onClick", "onMouseEnter", "onMouseLeave", "onFocus", "onBlur"],
     },
   },
   {
@@ -392,7 +418,8 @@ export const componentMetadata: ComponentMeta[] = [
       hasCustomEditor: true,
       editorName: "TabsEditor",
       dataBindingType: null,
-      supportedEvents: ["onSelectionChange"],
+      // React Aria: onSelectionChange
+      supportedEvents: ["onSelectionChange", "onFocus", "onBlur"],
     },
   },
   {
@@ -404,7 +431,8 @@ export const componentMetadata: ComponentMeta[] = [
       hasCustomEditor: true,
       editorName: "BreadcrumbsEditor",
       dataBindingType: null,
-      supportedEvents: ["onAction"],
+      // React Aria: onAction, onFocus, onBlur
+      supportedEvents: ["onAction", "onFocus", "onBlur"],
     },
   },
   {
@@ -416,6 +444,7 @@ export const componentMetadata: ComponentMeta[] = [
       hasCustomEditor: true,
       editorName: "SeparatorEditor",
       dataBindingType: null,
+      // Static element - no events
       supportedEvents: [],
     },
   },
@@ -428,7 +457,8 @@ export const componentMetadata: ComponentMeta[] = [
       hasCustomEditor: true,
       editorName: "GroupEditor",
       dataBindingType: null,
-      supportedEvents: [],
+      // React Aria: onFocus, onBlur (for keyboard navigation)
+      supportedEvents: ["onFocus", "onBlur"],
     },
   },
   {
@@ -469,7 +499,8 @@ export const componentMetadata: ComponentMeta[] = [
       hasCustomEditor: true,
       editorName: "DialogEditor",
       dataBindingType: null,
-      supportedEvents: ["onOpenChange"],
+      // React Aria: onOpenChange, onFocus, onBlur
+      supportedEvents: ["onOpenChange", "onFocus", "onBlur"],
     },
   },
   {
@@ -481,6 +512,7 @@ export const componentMetadata: ComponentMeta[] = [
       hasCustomEditor: true,
       editorName: "ModalEditor",
       dataBindingType: null,
+      // React Aria: onOpenChange
       supportedEvents: ["onOpenChange"],
     },
   },
@@ -493,6 +525,7 @@ export const componentMetadata: ComponentMeta[] = [
       hasCustomEditor: true,
       editorName: "PopoverEditor",
       dataBindingType: null,
+      // React Aria: onOpenChange
       supportedEvents: ["onOpenChange"],
     },
   },
@@ -507,7 +540,8 @@ export const componentMetadata: ComponentMeta[] = [
       hasCustomEditor: true,
       editorName: "CalendarEditor",
       dataBindingType: "value",
-      supportedEvents: ["onChange", "onFocusChange"],
+      // React Aria: onChange, onFocusChange, onFocus, onBlur
+      supportedEvents: ["onChange", "onFocus", "onBlur"],
     },
   },
   {
@@ -519,7 +553,8 @@ export const componentMetadata: ComponentMeta[] = [
       hasCustomEditor: true,
       editorName: "DatePickerEditor",
       dataBindingType: "value",
-      supportedEvents: ["onChange", "onOpenChange"],
+      // React Aria: onChange, onOpenChange, onFocus, onBlur
+      supportedEvents: ["onChange", "onOpenChange", "onFocus", "onBlur"],
     },
   },
   {
@@ -531,7 +566,8 @@ export const componentMetadata: ComponentMeta[] = [
       hasCustomEditor: true,
       editorName: "DateRangePickerEditor",
       dataBindingType: "value",
-      supportedEvents: ["onChange", "onOpenChange"],
+      // React Aria: onChange, onOpenChange, onFocus, onBlur
+      supportedEvents: ["onChange", "onOpenChange", "onFocus", "onBlur"],
     },
   },
   {
@@ -543,7 +579,8 @@ export const componentMetadata: ComponentMeta[] = [
       hasCustomEditor: true,
       editorName: "TimeFieldEditor",
       dataBindingType: "value",
-      supportedEvents: ["onChange", "onFocusChange"],
+      // React Aria: onChange, onFocus, onBlur, onFocusChange
+      supportedEvents: ["onChange", "onFocus", "onBlur"],
     },
   },
 
@@ -557,7 +594,8 @@ export const componentMetadata: ComponentMeta[] = [
       hasCustomEditor: true,
       editorName: "MenuItemEditor",
       dataBindingType: null,
-      supportedEvents: ["onAction"],
+      // React Aria: onAction, onHoverStart, onHoverEnd, onPress
+      supportedEvents: ["onAction", "onMouseEnter", "onMouseLeave"],
     },
   },
   {
@@ -569,7 +607,8 @@ export const componentMetadata: ComponentMeta[] = [
       hasCustomEditor: true,
       editorName: "SelectItemEditor",
       dataBindingType: null,
-      supportedEvents: [],
+      // React Aria: onHoverStart, onHoverEnd
+      supportedEvents: ["onMouseEnter", "onMouseLeave"],
     },
   },
   {
@@ -581,7 +620,8 @@ export const componentMetadata: ComponentMeta[] = [
       hasCustomEditor: true,
       editorName: "ComboBoxItemEditor",
       dataBindingType: null,
-      supportedEvents: [],
+      // React Aria: onHoverStart, onHoverEnd
+      supportedEvents: ["onMouseEnter", "onMouseLeave"],
     },
   },
   {
@@ -593,7 +633,8 @@ export const componentMetadata: ComponentMeta[] = [
       hasCustomEditor: true,
       editorName: "ListBoxItemEditor",
       dataBindingType: null,
-      supportedEvents: ["onAction"],
+      // React Aria: onAction, onHoverStart, onHoverEnd, onPress
+      supportedEvents: ["onAction", "onMouseEnter", "onMouseLeave"],
     },
   },
   {
@@ -605,7 +646,8 @@ export const componentMetadata: ComponentMeta[] = [
       hasCustomEditor: true,
       editorName: "GridListItemEditor",
       dataBindingType: null,
-      supportedEvents: ["onAction"],
+      // React Aria: onAction, onHoverStart, onHoverEnd, onPress
+      supportedEvents: ["onAction", "onMouseEnter", "onMouseLeave"],
     },
   },
   {
@@ -617,7 +659,8 @@ export const componentMetadata: ComponentMeta[] = [
       hasCustomEditor: true,
       editorName: "TreeItemEditor",
       dataBindingType: null,
-      supportedEvents: [],
+      // React Aria: onAction, onHoverStart, onHoverEnd
+      supportedEvents: ["onAction", "onMouseEnter", "onMouseLeave"],
     },
   },
   {
@@ -629,7 +672,8 @@ export const componentMetadata: ComponentMeta[] = [
       hasCustomEditor: true,
       editorName: "TagEditor",
       dataBindingType: null,
-      supportedEvents: [],
+      // React Aria: onHoverStart, onHoverEnd
+      supportedEvents: ["onMouseEnter", "onMouseLeave"],
     },
   },
   {
@@ -641,7 +685,8 @@ export const componentMetadata: ComponentMeta[] = [
       hasCustomEditor: true,
       editorName: "TabEditor",
       dataBindingType: null,
-      supportedEvents: [],
+      // React Aria: onHoverStart, onHoverEnd, onPress
+      supportedEvents: ["onMouseEnter", "onMouseLeave"],
     },
   },
   {
@@ -653,7 +698,8 @@ export const componentMetadata: ComponentMeta[] = [
       hasCustomEditor: true,
       editorName: "BreadcrumbEditor",
       dataBindingType: null,
-      supportedEvents: [],
+      // React Aria: onPress, onHoverStart, onHoverEnd
+      supportedEvents: ["onClick", "onMouseEnter", "onMouseLeave"],
     },
   },
 
@@ -715,7 +761,8 @@ export const componentMetadata: ComponentMeta[] = [
       hasCustomEditor: true,
       editorName: "RowEditor",
       dataBindingType: null,
-      supportedEvents: ["onAction"],
+      // React Aria: onAction, onHoverStart, onHoverEnd, onPress
+      supportedEvents: ["onAction", "onMouseEnter", "onMouseLeave"],
     },
   },
   {

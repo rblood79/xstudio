@@ -168,45 +168,64 @@ export const BuilderHeader: React.FC<BuilderHeaderProps> = ({
             size={iconProps.size}
           />
         </button>
-        <button
-          aria-label="Monitor"
-          onClick={() => toggleBottomPanel("monitor")}
-          className={isMonitorOpen ? "active" : ""}
-          title="Toggle Monitor Panel"
+        <ToggleButtonGroup
+          selectionMode="multiple"
+          selectedKeys={new Set([
+            ...(isMonitorOpen ? ["monitor"] : []),
+            ...(viewMode === "workflow" ? ["workflow"] : []),
+          ])}
+          indicator={true}
+          onSelectionChange={(keys) => {
+            const selectedKeys = new Set(keys);
+            const wasMonitorOpen = isMonitorOpen;
+            const isMonitorNowSelected = selectedKeys.has("monitor");
+            const wasWorkflow = viewMode === "workflow";
+            const isWorkflowNowSelected = selectedKeys.has("workflow");
+
+            // Monitor 토글
+            if (wasMonitorOpen !== isMonitorNowSelected) {
+              toggleBottomPanel("monitor");
+            }
+            // Workflow 토글
+            if (wasWorkflow !== isWorkflowNowSelected) {
+              onViewModeToggle();
+            }
+          }}
+          aria-label="View options"
         >
-          <Activity
-            color={isMonitorOpen ? iconProps.activeColor || iconProps.color : iconProps.color}
-            strokeWidth={iconProps.stroke}
-            size={iconProps.size}
-          />
-        </button>
-        <button
-          aria-label={viewMode === 'canvas' ? 'Switch to Workflow' : 'Switch to Canvas'}
-          onClick={onViewModeToggle}
-          className={viewMode === 'workflow' ? "active" : ""}
-          title={viewMode === 'canvas' ? 'Switch to Workflow View' : 'Switch to Canvas View'}
-        >
-          {viewMode === 'canvas' ? (
-            <GitBranch
+          <ToggleButton id="monitor" aria-label="Toggle Monitor Panel">
+            <Activity
+              color={isMonitorOpen ? "var(--color-white)" : iconProps.color}
+              strokeWidth={iconProps.stroke}
+              size={iconProps.size}
+            />
+          </ToggleButton>
+          <ToggleButton
+            id="workflow"
+            aria-label={viewMode === "canvas" ? "Switch to Workflow" : "Switch to Canvas"}
+          >
+            {viewMode === "canvas" ? (
+              <GitBranch
+                color={iconProps.color}
+                strokeWidth={iconProps.stroke}
+                size={iconProps.size}
+              />
+            ) : (
+              <LayoutGrid
+                color="var(--color-white)"
+                strokeWidth={iconProps.stroke}
+                size={iconProps.size}
+              />
+            )}
+          </ToggleButton>
+          <ToggleButton id="preview" aria-label="Preview" onPress={onPreview}>
+            <Eye
               color={iconProps.color}
               strokeWidth={iconProps.stroke}
               size={iconProps.size}
             />
-          ) : (
-            <LayoutGrid
-              color={iconProps.activeColor || iconProps.color}
-              strokeWidth={iconProps.stroke}
-              size={iconProps.size}
-            />
-          )}
-        </button>
-        <button aria-label="Preview" onClick={onPreview}>
-          <Eye
-            color={iconProps.color}
-            strokeWidth={iconProps.stroke}
-            size={iconProps.size}
-          />
-        </button>
+          </ToggleButton>
+        </ToggleButtonGroup>
         <button aria-label="Play" onClick={onPlay}>
           <Play
             color={iconProps.color}

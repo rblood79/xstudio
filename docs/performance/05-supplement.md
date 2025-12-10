@@ -1,7 +1,6 @@
 # 보완 제안 (추가 검토 결과)
 
-> **관련 문서**: [04-phase-5-8.md](./04-phase-5-8.md) | [06-implementation.md](./06-implementation.md)
-> **작성자**: Antigravity AI
+> **관련 문서**: [04-phase-5-8.md](./04-phase-5-8.md) | [06-implementation.md](./06-implementation.md) > **작성자**: Antigravity AI
 > **최종 수정**: 2025-12-10
 
 본 문서는 기존 최적화 계획에서 식별된 공백을 보완하기 위한 추가 제안 사항입니다.
@@ -32,7 +31,7 @@
 - 스크롤 컨테이너의 높이를 계산하고, 현재 스크롤 위치에 해당하는 아이템만 렌더링
 
 ```typescript
-import { useVirtualizer } from '@tanstack/react-virtual';
+import { useVirtualizer } from "@tanstack/react-virtual";
 
 function VirtualizedContainer({ children, parentRef }: Props) {
   const virtualizer = useVirtualizer({
@@ -43,12 +42,17 @@ function VirtualizedContainer({ children, parentRef }: Props) {
   });
 
   return (
-    <div style={{ height: `${virtualizer.getTotalSize()}px`, position: 'relative' }}>
+    <div
+      style={{
+        height: `${virtualizer.getTotalSize()}px`,
+        position: "relative",
+      }}
+    >
       {virtualizer.getVirtualItems().map((virtualItem) => (
         <div
           key={virtualItem.key}
           style={{
-            position: 'absolute',
+            position: "absolute",
             top: virtualItem.start,
             height: virtualItem.size,
           }}
@@ -63,14 +67,27 @@ function VirtualizedContainer({ children, parentRef }: Props) {
 
 #### Viewport Culling (자유 배치형)
 
-- Absolute Positioning을 사용하는 캔버스의 경우, `IntersectionObserver` 또는 좌표 기반 계산을 통해 뷰포트 영역과 겹치는 요소만 필터링하여 렌더링
+- Absolute Positioning을 사용하는 캔버스의 경우, 단순 리스트 가상화로는 부족합니다.
+- **문제**: 요소가 화면 밖으로 나가서 언마운트되면(Virtualization), 해당 요소의 존재 자체가 DOM에서 사라져 **드래그 앤 드롭 타겟(Hitbox)**이 상실되는 치명적 문제가 발생합니다.
+
+**해결 전략: 가상화 + Hitbox Layer 분리**
+
+1.  **Visual Layer**: `IntersectionObserver`로 뷰포트 교차 판정. 화면 내 요소만 '무거운' 컴포넌트 렌더링.
+2.  **Interaction Layer (Hitbox)**: 모든 요소의 위치에 투명하고 가벼운 `div` (Hitbox)는 항상 유지하거나, 혹은 드래그가 시작될 때만 Hitbox를 전역에 생성합니다.
+3.  **Overlay & Markers**: 선택 테두리(Selection Overlay)나 각종 마커는 **실제 DOM 요소가 아닌 데이터 좌표(x, y, w, h)**를 기준으로 별도 레이어에 그립니다. (DOM 의존성 제거)
+
+**성능 측정 가드레일**:
+
+- Layout Thrashing 감지: `updateRects` 호출 시 강제 리플로우 발생 여부 모니터링
+- FPS 유지: 스크롤/드래그 시 `requestAnimationFrame` 단일 플러시 보장
 
 ### 1.4 리스크 및 완화
 
-| 리스크 | 완화 방안 |
-|--------|----------|
-| 깜빡임(Flicker) | `overscan` 옵션을 충분히 주어 스크롤 방향의 요소를 미리 렌더링 |
+| 리스크                | 완화 방안                                                      |
+| --------------------- | -------------------------------------------------------------- |
+| 깜빡임(Flicker)       | `overscan` 옵션을 충분히 주어 스크롤 방향의 요소를 미리 렌더링 |
 | 동적 높이 계산 어려움 | `estimateSize`를 보수적으로 설정, `measureElement`로 동적 측정 |
+| **드래그 타겟 소실**  | **Hitbox Layer 별도 관리** 또는 **Overlay 좌표 기반 인터랙션** |
 
 ---
 
@@ -90,13 +107,16 @@ Phase 2(인덱싱)와 Phase 3(History Diff)는 대량의 데이터 연산을 필
 
 ### 2.3 상세 구현 방안
 
-#### Worker 모듈 분리
+#### Worker 모듈 분리 및 번들링
 
 **파일**: `src/workers/data.worker.ts`
 
+- **Vite 설정**: `worker: { format: 'es' }` 설정을 통해 모듈 임포트 지원
+- **Comlink**: RPC 스타일 통신으로 복잡성 은폐
+
 ```typescript
 // Diff 알고리즘, 인덱스 구축 로직, 대용량 JSON 파싱 로직을 Worker로 이동
-import { expose } from 'comlink';
+import { expose } from "comlink";
 
 const workerApi = {
   calculateDiff(prev: Element[], next: Element[]) {
@@ -116,7 +136,7 @@ const workerApi = {
   parseJson(jsonString: string) {
     // Heavy JSON parsing
     return JSON.parse(jsonString);
-  }
+  },
 };
 
 expose(workerApi);
@@ -127,21 +147,31 @@ expose(workerApi);
 `comlink` 라이브러리를 도입하여 Worker 통신을 비동기 함수 호출처럼 추상화 (RPC 스타일):
 
 ```typescript
-import { wrap } from 'comlink';
+import { wrap } from "comlink";
 
-const worker = new Worker(new URL('./data.worker.ts', import.meta.url));
-const workerApi = wrap<typeof import('./data.worker').workerApi>(worker);
+const worker = new Worker(new URL("./data.worker.ts", import.meta.url));
+const workerApi = wrap<typeof import("./data.worker").workerApi>(worker);
 
 // 사용: 일반 async 함수처럼 호출
 const diff = await workerApi.calculateDiff(prevElements, nextElements);
 ```
 
+#### 실행 전략 및 Fallback (중요)
+
+워커는 환경에 따라 실패할 수 있으므로(보안 정책, 리소스 부족), 반드시 **메인 스레드 Fallback** 경로를 확보해야 합니다.
+
+**초기화 전략**:
+
+- **Lazy Initialization**: 앱 부팅 시가 아닌, 무거운 패널(데이터 패널 등)이 열릴 때 워커를 생성하여 초기 부하 분산
+- **Fallback**: 워커 로드 실패 시 또는 `typeof Worker === 'undefined'` 일 경우, 동일한 인터페이스(`workerApi`)를 구현한 메인 스레드 모듈을 사용하도록 투명하게 분기 처리 (`Dependency Injection`)
+
 ### 2.4 리스크 및 완화
 
-| 리스크 | 완화 방안 |
-|--------|----------|
-| 직렬화 오버헤드 | `SharedArrayBuffer` 고려, Delta 패턴 유지 |
-| 디버깅 복잡도 | 개발 모드에서는 메인 스레드 동작 설정 |
+| 리스크             | 완화 방안                                                                                      |
+| ------------------ | ---------------------------------------------------------------------------------------------- |
+| 직렬화 오버헤드    | `SharedArrayBuffer` 고려, Delta 패턴 유지                                                      |
+| 디버깅 복잡도      | 개발 모드(`import.meta.env.DEV`)에서는 강제로 메인 스레드 Fallback 사용하여 디버깅 용이성 확보 |
+| 워커 에러/타임아웃 | 5초 이상 응답 없으면 워커 재시작 및 해당 작업 메인 스레드에서 재시도                           |
 
 ---
 
@@ -173,8 +203,8 @@ function ImageRenderer({ element }: RendererProps) {
     <img
       src={src}
       alt={alt}
-      loading="lazy"      // Native lazy loading
-      decoding="async"    // Async decoding
+      loading="lazy" // Native lazy loading
+      decoding="async" // Async decoding
       {...rest}
     />
   );
@@ -208,19 +238,19 @@ function LazyImage({ src, alt, ...rest }: ImageProps) {
 
 ### 3.4 리스크 및 완화
 
-| 리스크 | 완화 방안 |
-|--------|----------|
+| 리스크                | 완화 방안                                                   |
+| --------------------- | ----------------------------------------------------------- |
 | 스크롤 시 이미지 지연 | `IntersectionObserver`의 `rootMargin`을 크게 주어 미리 로딩 |
 
 ---
 
 ## 4. 종합 우선순위 제안
 
-| 우선순위 | 항목 | 구현 난이도 | 예상 효과 | 비고 |
-|:---------|:-----|:-----------|:---------|:-----|
-| **P0 (필수)** | **캔버스 가상화** | 상 | **렌더링 성능 해결의 유일한 열쇠** | 미적용 시 5,000개 요소 렌더링 불가 |
-| **P1 (권장)** | **웹 워커** | 상 | UX 반응성(Responsiveness) 확보 | 드래그 등 인터랙션 품질 결정 |
-| **P2 (보통)** | **에셋 최적화** | 하 | 초기 로딩 속도 개선 | 구현 비용 대비 효과 좋음 |
+| 우선순위      | 항목              | 구현 난이도 | 예상 효과                          | 비고                               |
+| :------------ | :---------------- | :---------- | :--------------------------------- | :--------------------------------- |
+| **P0 (필수)** | **캔버스 가상화** | 상          | **렌더링 성능 해결의 유일한 열쇠** | 미적용 시 5,000개 요소 렌더링 불가 |
+| **P1 (권장)** | **웹 워커**       | 상          | UX 반응성(Responsiveness) 확보     | 드래그 등 인터랙션 품질 결정       |
+| **P2 (보통)** | **에셋 최적화**   | 하          | 초기 로딩 속도 개선                | 구현 비용 대비 효과 좋음           |
 
 ---
 

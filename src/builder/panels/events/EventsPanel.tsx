@@ -7,12 +7,14 @@
  * - DOM 구조: .events-panel > PanelHeader > .panel-contents > blocks
  */
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { Button } from "react-aria-components";
+import { Search, X } from "lucide-react";
 import type { PanelProps } from "../core/types";
 import type { SelectedElement } from "../../inspector/types";
-import type { EventType, ActionType } from "@/types/events/events.types";
-import type { EventHandler } from "../../events/types/eventTypes";
+import type { ActionType, EventType as RegistryEventType } from "@/types/events/events.types";
+import { ACTION_TYPE_LABELS, REGISTRY_ACTION_CATEGORIES } from "@/types/events/events.types";
+import type { EventHandler, EventType } from "../../events/types/eventTypes";
 import type {
   BlockEventAction,
   ConditionGroup,
@@ -22,7 +24,6 @@ import { normalizeToInspectorAction } from "../../events/utils/normalizeEventTyp
 import { isImplementedEventType } from "@/types/events/events.types";
 import { useInspectorState } from "../../inspector/hooks/useInspectorState";
 import { EventTypePicker } from "../../events/pickers/EventTypePicker";
-import { ActionTypePicker } from "../../events/pickers/ActionTypePicker";
 import { useEventHandlers } from "../../events/state/useEventHandlers";
 import { useActions } from "../../events/state/useActions";
 import { useEventSelection } from "../../events/state/useEventSelection";
@@ -44,21 +45,19 @@ import { useInitialMountDetection } from "../../hooks/useInitialMountDetection";
 import { useComponentMeta } from "../../inspector/hooks/useComponentMeta";
 import "./EventsPanel.css";
 
-// 우선 선택 이벤트 우선순위 (press → action → selection → change → open)
+// 우선 선택 이벤트 우선순위 (click → change → submit → keyboard → mouse → focus)
+// ⚠️ 순서 중요: 사용자 상호작용 → 값 변경 → 포커스 순
+// Note: onPress, onAction 등 React Aria 전용 이벤트는 아직 IMPLEMENTED_EVENT_TYPES에 없음
 const EVENT_PRIORITY: EventType[] = [
-  "onPress",
-  "onAction",
-  "onRowAction",
-  "onSelectionChange",
-  "onChange",
-  "onInputChange",
-  "onOpenChange",
-  "onChangeEnd",
-  "onSubmit",
-  "onInput",
-  "onFocusChange",
-  "onFocus",
-  "onBlur",
+  "onClick",          // 가장 일반적인 클릭 이벤트 (Button, Link 등)
+  "onChange",         // 값 변경 이벤트 (TextField, Select, Checkbox 등)
+  "onSubmit",         // 폼 제출 이벤트 (Form)
+  "onKeyDown",        // 키보드 이벤트 (TextField, NumberField 등)
+  "onKeyUp",          // 키보드 이벤트
+  "onMouseEnter",     // 마우스 진입
+  "onMouseLeave",     // 마우스 나감
+  "onFocus",          // 포커스 (낮은 우선순위)
+  "onBlur",           // 블러 (낮은 우선순위)
 ];
 
 function pickPreferredEvent(events: EventType[]): EventType | undefined {
@@ -89,14 +88,13 @@ function actionsToBlockActions(
   actions: EventHandler["actions"]
 ): BlockEventAction[] {
   if (!actions) return [];
-  return actions.map((action) => ({
-    id: action.id,
+  return actions.map((action, index) => ({
+    id: action.id || `action-${index}-${Date.now()}`,
     type: action.type,
     config: action.config || {},
     delay: action.delay,
     condition: action.condition,
     enabled: action.enabled !== false,
-    label: action.label,
   }));
 }
 
@@ -142,6 +140,111 @@ function parseConditionString(condition: string | undefined): ConditionGroup | u
   };
 }
 
+/**
+ * ActionPickerOverlay - 액션 타입 선택 오버레이
+ *
+ * 버튼 목록으로 액션을 직접 표시 (ListBox 대신 버튼 사용)
+ */
+interface ActionPickerOverlayProps {
+  branch: 'then' | 'else';
+  onSelect: (actionType: ActionType) => void;
+  onClose: () => void;
+}
+
+function ActionPickerOverlay({ branch, onSelect, onClose }: ActionPickerOverlayProps) {
+  const [searchValue, setSearchValue] = useState('');
+
+  // 사용 가능한 액션 타입 목록
+  const availableActionTypes = useMemo(() => {
+    return Object.keys(ACTION_TYPE_LABELS) as ActionType[];
+  }, []);
+
+  // 검색 필터링된 목록
+  const filteredActionTypes = useMemo(() => {
+    if (!searchValue) return availableActionTypes;
+
+    const searchLower = searchValue.toLowerCase();
+    return availableActionTypes.filter((type) => {
+      const label = ACTION_TYPE_LABELS[type]?.toLowerCase() || '';
+      return type.toLowerCase().includes(searchLower) || label.includes(searchLower);
+    });
+  }, [availableActionTypes, searchValue]);
+
+  // 카테고리별 그룹화
+  const groupedActionTypes = useMemo(() => {
+    const groups: { category: string; actions: ActionType[] }[] = [];
+
+    Object.entries(REGISTRY_ACTION_CATEGORIES).forEach(([, categoryData]) => {
+      const categoryInfo = categoryData as { label: string; actions: readonly string[] };
+      const filtered = (categoryInfo.actions as unknown as ActionType[]).filter((a) =>
+        filteredActionTypes.includes(a)
+      );
+      if (filtered.length > 0) {
+        groups.push({ category: categoryInfo.label, actions: filtered });
+      }
+    });
+
+    return groups;
+  }, [filteredActionTypes]);
+
+  return (
+    <div className="action-picker-overlay">
+      <div className="action-picker-header">
+        <span>Add Action to {branch.toUpperCase()}</span>
+        <Button
+          className="iconButton"
+          onPress={onClose}
+          aria-label="Close"
+        >
+          <X
+            color={iconProps.color}
+            strokeWidth={iconProps.stroke}
+            size={iconProps.size}
+          />
+        </Button>
+      </div>
+
+      <div className="action-picker-search">
+        <Search size={14} color={iconProps.color} />
+        <input
+          className="action-picker-search-input"
+          placeholder="Search actions..."
+          value={searchValue}
+          onChange={(e) => setSearchValue(e.target.value)}
+          autoFocus
+        />
+      </div>
+
+      <div className="action-picker-list" role="listbox" aria-label="액션 타입 목록">
+        {filteredActionTypes.length === 0 ? (
+          <div className="action-picker-empty">
+            <Search size={16} color={iconProps.color} />
+            <span>No actions found</span>
+          </div>
+        ) : (
+          groupedActionTypes.map((group) => (
+            <div key={group.category} className="action-group">
+              <div className="action-group-label">{group.category}</div>
+              {group.actions.map((actionType) => (
+                <button
+                  key={actionType}
+                  type="button"
+                  className="action-item"
+                  onClick={() => onSelect(actionType)}
+                >
+                  <span className="action-name">
+                    {ACTION_TYPE_LABELS[actionType] || actionType}
+                  </span>
+                  <span className="action-type-code">{actionType}</span>
+                </button>
+              ))}
+            </div>
+          ))
+        )}
+      </div>
+    </div>
+  );
+}
 
 export function EventsPanel({ isActive }: PanelProps) {
   // Inspector 상태에서 이벤트 가져오기
@@ -187,8 +290,13 @@ function EventsPanelContent({
   updateEvents,
 }: EventsPanelContentProps) {
   const componentMeta = useComponentMeta(selectedElement?.type);
-  const supportedEvents = (componentMeta?.inspector.supportedEvents ||
+  // 컴포넌트가 지원하는 이벤트 타입 (내부용: 넓은 EventType)
+  const supportedEventsRaw = (componentMeta?.inspector.supportedEvents ||
     []) as EventType[];
+  // Registry에 구현된 이벤트만 필터링 (UI 컴포넌트용: RegistryEventType)
+  const supportedEvents = supportedEventsRaw.filter(
+    (event): event is RegistryEventType => isImplementedEventType(event)
+  );
 
   // ⭐ showAddAction을 컴포넌트 내부로 이동
   // key={selectedElement.id}로 인해 요소 변경 시 자동으로 false로 리셋됨
@@ -223,13 +331,15 @@ function EventsPanelContent({
   const { actions: elseActions, addAction: addElseAction } = useActions(selectedHandler?.elseActions || []);
 
   // 등록된 이벤트 타입 목록 (중복 방지용)
-  const registeredEventTypes: EventType[] = handlers
+  // Registry 타입으로 필터링된 등록된 이벤트 목록
+  const registeredEventTypes = handlers
     .map((h) => h.event)
-    .filter((event): event is EventType => isImplementedEventType(event));
+    .filter((event): event is RegistryEventType => isImplementedEventType(event));
 
   // 등록되지 않은 지원 이벤트 목록 (빠른 추가용)
+  // string[]로 캐스팅하여 EventType과 RegistryEventType 간의 includes 비교 허용
   const availableSupportedEvents = supportedEvents.filter(
-    (event) => !registeredEventTypes.includes(event)
+    (event) => !(registeredEventTypes as string[]).includes(event)
   );
 
   // THEN Actions 변경 시 Handler 업데이트 (초기 마운트 감지 적용)
@@ -256,16 +366,22 @@ function EventsPanelContent({
     resetKey: selectedHandler?.id,
   });
 
+  // Handlers → Inspector 동기화 콜백 (안정화)
+  const handleHandlersUpdate = useCallback((updatedHandlers: EventHandler[]) => {
+    updateEvents(updatedHandlers);
+  }, [updateEvents]);
+
   // Handlers 변경 시 Inspector 동기화 (초기 마운트 감지 적용)
   useInitialMountDetection({
     data: handlers,
-    onUpdate: updateEvents,
+    onUpdate: handleHandlersUpdate,
     resetKey: selectedElement?.id,
   });
 
   // 새 이벤트 추가
   const handleAddEvent = (eventType: EventType) => {
-    if (registeredEventTypes.includes(eventType)) {
+    // string[]로 캐스팅하여 EventType과 RegistryEventType 간의 includes 비교 허용
+    if ((registeredEventTypes as string[]).includes(eventType)) {
       return;
     }
     const newHandler = addHandler(eventType);
@@ -416,10 +532,12 @@ function EventsPanelContent({
         title="Events"
         actions={
           availableSupportedEvents.length === 1 ? (
+            // 지원 이벤트가 1개뿐일 때: 단일 버튼으로 바로 추가
             <Button
               className="iconButton"
               onPress={() => handleAddEvent(availableSupportedEvents[0])}
               aria-label={`Add ${availableSupportedEvents[0]}`}
+              title={`Add ${availableSupportedEvents[0]}`}
             >
               <Zap
                 size={iconProps.size}
@@ -428,30 +546,13 @@ function EventsPanelContent({
               />
             </Button>
           ) : (
-            <div className="panel-action-group">
-              {availableSupportedEvents.length > 0 && (
-                <Button
-                  className="iconButton"
-                  onPress={() => {
-                    const preferred = pickPreferredEvent(availableSupportedEvents);
-                    if (preferred) handleAddEvent(preferred);
-                  }}
-                  aria-label="Add preferred event"
-                >
-                  <Zap
-                    size={iconProps.size}
-                    color={iconProps.color}
-                    strokeWidth={iconProps.stroke}
-                  />
-                </Button>
-              )}
-              <EventTypePicker
-                onSelect={handleAddEvent}
-                registeredTypes={registeredEventTypes}
-                allowedTypes={supportedEvents}
-                isDisabled={availableSupportedEvents.length === 0 && supportedEvents.length === 0}
-              />
-            </div>
+            // 지원 이벤트가 여러 개일 때: 추천 버튼 + 전체 선택 피커
+            <EventTypePicker
+              onSelect={handleAddEvent}
+              registeredTypes={registeredEventTypes}
+              allowedTypes={supportedEvents}
+              isDisabled={availableSupportedEvents.length === 0 && supportedEvents.length === 0}
+            />
           )
         }
       />
@@ -553,25 +654,13 @@ function EventsPanelContent({
                 />
               )}
 
-              {/* 액션 추가 피커 */}
+              {/* 액션 추가 피커 - 직접 ListBox 렌더링 */}
               {showAddAction && (
-                <div className="action-picker-overlay">
-                  <div className="action-picker-header">
-                    <span>Add Action to {showAddAction.toUpperCase()}</span>
-                  </div>
-                  <ActionTypePicker
-                    onSelect={(actionType) =>
-                      handleAddAction(actionType as ActionType, showAddAction)
-                    }
-                    showCategories={true}
-                  />
-                  <Button
-                    className="react-aria-Button secondary"
-                    onPress={() => setShowAddAction(false)}
-                  >
-                    Cancel
-                  </Button>
-                </div>
+                <ActionPickerOverlay
+                  branch={showAddAction}
+                  onSelect={(actionType) => handleAddAction(actionType, showAddAction)}
+                  onClose={() => setShowAddAction(false)}
+                />
               )}
 
               {/* 선택된 액션 에디터 */}

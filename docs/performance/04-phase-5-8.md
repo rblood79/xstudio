@@ -1,7 +1,6 @@
 # Phase 5-8: Lazy Loading, React Query, 모니터링, CI
 
-> **관련 문서**: [03-phase-1-4.md](./03-phase-1-4.md) | [05-supplement.md](./05-supplement.md)
-> **최종 수정**: 2025-12-10
+> **관련 문서**: [03-phase-1-4.md](./03-phase-1-4.md) | [05-supplement.md](./05-supplement.md) > **최종 수정**: 2025-12-10
 
 ---
 
@@ -34,17 +33,17 @@ export function createElementLoader(set: SetState, get: GetState) {
 
     // Supabase에서 해당 페이지 요소만 로드
     const { data, error } = await supabase
-      .from('elements')
-      .select('*')
-      .eq('page_id', pageId)
-      .order('order_num');
+      .from("elements")
+      .select("*")
+      .eq("page_id", pageId)
+      .order("order_num");
 
     if (error) throw error;
 
     // Store에 추가
     if (data) {
       const { indexElement } = get();
-      data.forEach(element => {
+      data.forEach((element) => {
         state.elementsMap.set(element.id, element as Element);
         indexElement(element as Element);
       });
@@ -56,7 +55,7 @@ export function createElementLoader(set: SetState, get: GetState) {
       unloadPage(evictPageId);
     }
 
-    return data as Element[] ?? [];
+    return (data as Element[]) ?? [];
   };
 
   /**
@@ -72,7 +71,7 @@ export function createElementLoader(set: SetState, get: GetState) {
     if (!elementIds) return;
 
     // 요소 제거
-    elementIds.forEach(id => {
+    elementIds.forEach((id) => {
       const element = state.elementsMap.get(id);
       if (element) {
         state.unindexElement(element);
@@ -104,7 +103,7 @@ export class LRUPageCache {
    */
   access(pageId: string): string | null {
     // 기존 위치에서 제거
-    this.accessOrder = this.accessOrder.filter(id => id !== pageId);
+    this.accessOrder = this.accessOrder.filter((id) => id !== pageId);
     // 맨 앞에 추가
     this.accessOrder.unshift(pageId);
 
@@ -124,10 +123,10 @@ export class LRUPageCache {
 
 ### 5.3 메모리 관리 효과
 
-| 시나리오 | 전체 로드 | LRU (5 pages) | 절감률 |
-|----------|----------|---------------|--------|
-| 50페이지 × 100요소 | ~100MB | ~10MB | **90%** |
-| 페이지 전환 | 즉시 | ~50ms 로드 | 허용 |
+| 시나리오           | 전체 로드 | LRU (5 pages) | 절감률  |
+| ------------------ | --------- | ------------- | ------- |
+| 50페이지 × 100요소 | ~100MB    | ~10MB         | **90%** |
+| 페이지 전환        | 즉시      | ~50ms 로드    | 허용    |
 
 ---
 
@@ -145,14 +144,14 @@ npm install -D @tanstack/react-query-devtools
 **파일**: `src/main.tsx`
 
 ```typescript
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       staleTime: 5 * 60 * 1000, // 5분
-      gcTime: 30 * 60 * 1000,   // 30분
+      gcTime: 30 * 60 * 1000, // 30분
       retry: 2,
       refetchOnWindowFocus: false,
     },
@@ -230,7 +229,14 @@ export function DataTablePanel({ isActive }: PanelProps) {
         console.log(`✅ [DataTablePanel] Zustand Store 초기화 완료`);
       });
     }
-  }, [isActive, projectId, fetchDataTables, fetchApiEndpoints, fetchVariables, fetchTransformers]);
+  }, [
+    isActive,
+    projectId,
+    fetchDataTables,
+    fetchApiEndpoints,
+    fetchVariables,
+    fetchTransformers,
+  ]);
 
   if (!isActive) return null;
   // ...
@@ -272,7 +278,12 @@ class RequestManager {
 
     // 3. 새 요청 생성
     const controller = new AbortController();
-    const promise = this.executeWithRetry(fetcher, controller.signal, retries, backoff);
+    const promise = this.executeWithRetry(
+      fetcher,
+      controller.signal,
+      retries,
+      backoff
+    );
 
     this.inFlight.set(key, { promise, controller, timestamp: Date.now() });
 
@@ -292,9 +303,8 @@ class RequestManager {
    */
   abortByPattern(pattern: string | RegExp): void {
     this.inFlight.forEach((request, key) => {
-      const matches = typeof pattern === 'string'
-        ? key.includes(pattern)
-        : pattern.test(key);
+      const matches =
+        typeof pattern === "string" ? key.includes(pattern) : pattern.test(key);
 
       if (matches) {
         request.controller.abort();
@@ -309,19 +319,31 @@ export const requestManager = new RequestManager();
 
 ### 6.5 효과
 
-| 항목 | Before | After |
-|------|--------|-------|
-| 패널 전환 시 API | 4회 호출 | 0회 (캐시) |
-| 캐시 히트율 | 0% | 90%+ |
-| 에러 재시도 | 수동 | 자동 (지수 백오프) |
-| 중복 요청 | 발생 | 방지 (deduplication) |
-| 미사용 요청 | 지속 | 취소 (AbortController) |
+| 항목             | Before   | After                  |
+| ---------------- | -------- | ---------------------- |
+| 패널 전환 시 API | 4회 호출 | 0회 (캐시)             |
+| 캐시 히트율      | 0%       | 90%+                   |
+| 에러 재시도      | 수동     | 자동 (지수 백오프)     |
+| 중복 요청        | 발생     | 방지 (deduplication)   |
+| 미사용 요청      | 지속     | 취소 (AbortController) |
 
 ---
 
 ## Phase 7: 성능 모니터링 + 자동 복구
 
-### 7.1 성능 메트릭 수집
+### 7.1 성능 메트릭 수집 및 SLO (보강)
+
+성능 측정은 단순한 수치 수집을 넘어, 사용자 경험에 직접 영향을 주는 Critical Path에 집중해야 합니다.
+
+#### 측정 포인트 (Trace Hooks)
+
+| Trace Point           | 측정 구간                     | 목표 SLO (P99) |
+| --------------------- | ----------------------------- | -------------- |
+| `interaction.select`  | 클릭 → Selection Overlay 표시 | < 50ms         |
+| `interaction.drag`    | 드래그 → 위치 업데이트 (rAF)  | < 16ms         |
+| `panel.switch`        | 탭 클릭 → 패널 컨텐츠 로드    | < 200ms        |
+| `data.history_undo`   | Undo 단축키 → Canvas 반영     | < 100ms        |
+| `net.delta_roundtrip` | 변경 발생 → Iframe 수신       | < 30ms         |
 
 **파일**: `src/builder/utils/performanceMonitor.ts`
 
@@ -345,7 +367,7 @@ interface PerformanceMetrics {
   fps: number;
 
   // 상태
-  healthScore: number;  // 0-100
+  healthScore: number; // 0-100
   warnings: string[];
 }
 
@@ -357,7 +379,8 @@ class PerformanceMonitor {
     let score = 100;
 
     // 메모리 사용량
-    const heapPercent = this.metrics.browserHeapUsed / this.metrics.browserHeapLimit;
+    const heapPercent =
+      this.metrics.browserHeapUsed / this.metrics.browserHeapLimit;
     if (heapPercent > 0.8) score -= 30;
     else if (heapPercent > 0.6) score -= 15;
 
@@ -370,6 +393,18 @@ class PerformanceMonitor {
     else if (this.metrics.fps < 50) score -= 10;
 
     return Math.max(0, score);
+  }
+
+  /**
+   * 건강 점수 계산 (0-100) 및 SLO 위반 감지
+   */
+  private checkSLO(metrics: PerformanceMetrics) {
+    // P99 20% 악화 시 Fail
+    if (metrics.p99RenderTime > BASELINE_P99 * 1.2) {
+      this.reportFailure("SLO_RENDER_DEGRADATION", metrics.p99RenderTime);
+    }
+
+    // ...
   }
 }
 ```
@@ -384,7 +419,7 @@ function useAutoRecovery() {
 
       // 심각한 성능 저하 감지
       if (metrics.healthScore < 30) {
-        console.warn('[AutoRecovery] Critical performance detected');
+        console.warn("[AutoRecovery] Critical performance detected");
 
         // 1. 비활성 페이지 언로드
         const { unloadInactivePages } = useStore.getState();
@@ -408,7 +443,10 @@ function useAutoRecovery() {
 ### 7.3 Scoped Error Boundary
 
 ```tsx
-export class ScopedErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
+export class ScopedErrorBoundary extends Component<
+  ErrorBoundaryProps,
+  ErrorBoundaryState
+> {
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo): void {
     const { name, onError } = this.props;
 
@@ -416,7 +454,10 @@ export class ScopedErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoun
     onError?.(error, errorInfo);
 
     // 자동 복구 시도
-    if (this.props.autoRecover && this.state.retryCount < (this.props.maxRetries ?? 3)) {
+    if (
+      this.props.autoRecover &&
+      this.state.retryCount < (this.props.maxRetries ?? 3)
+    ) {
       setTimeout(() => {
         this.setState((state) => ({
           hasError: false,
@@ -431,28 +472,53 @@ export class ScopedErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoun
 
 ### 7.4 적용 범위
 
-| 컴포넌트 | Error Boundary | Fail-soft | 복구 정책 |
-|----------|---------------|-----------|----------|
-| **패널** | PanelShell HOC | ✅ | 자동 3회 재시도 |
-| **Canvas** | 별도 Boundary | Canvas 재로드 | 전체 동기화 |
-| **Inspector** | PanelShell HOC | ✅ | 선택 해제 |
-| **Header** | 별도 Boundary | 최소 UI | 새로고침 유도 |
-| **저장** | 별도 처리 | SaveFailureRecovery | 백업 + 재시도 |
+| 컴포넌트      | Error Boundary | Fail-soft           | 복구 정책       |
+| ------------- | -------------- | ------------------- | --------------- |
+| **패널**      | PanelShell HOC | ✅                  | 자동 3회 재시도 |
+| **Canvas**    | 별도 Boundary  | Canvas 재로드       | 전체 동기화     |
+| **Inspector** | PanelShell HOC | ✅                  | 선택 해제       |
+| **Header**    | 별도 Boundary  | 최소 UI             | 새로고침 유도   |
+| **저장**      | 별도 처리      | SaveFailureRecovery | 백업 + 재시도   |
 
 ---
 
-## Phase 8: CI 자동화 + 장시간 테스트
+## Phase 8: CI 자동화 + 대규모 테스트 재현성 (보강)
 
-### 8.1 장시간 시뮬레이션 스크립트
+### 8.1 시뮬레이션 환경 (대규모 데이터)
+
+테스트의 신뢰성을 위해 5,000개 요소를 매번 동일하게 생성하는 **고정 시드(Fixed Seed)** 스크립트가 필수적입니다.
+
+**파일**: `scripts/generate-large-project.ts`
+
+```typescript
+import { faker } from "@faker-js/faker";
+
+// 랜덤 시드 고정
+faker.seed(12345);
+
+export function generateLargeProject(elementCount = 5000) {
+  // 항상 동일한 구조의 5000개 요소 생성
+  // ...
+}
+```
+
+**데이터 준비 체크리스트**:
+
+1.  [ ] 요소 수: 5,000개 (Depth 10 이상)
+2.  [ ] 에셋: 외부 이미지 500개 (3MB+ 고용량 포함)
+3.  [ ] 이벤트: 50% 요소에 이벤트 핸들러 부착
+4.  [ ] 스타일: Flex/Grid 중첩 구조 포함
+
+### 8.2 장시간 시뮬레이션 스크립트
 
 **파일**: `scripts/long-session-test.ts`
 
 ```typescript
 interface SimulationConfig {
-  duration: number;       // 시뮬레이션 시간 (ms)
-  elementCount: number;   // 요소 수
-  pageCount: number;      // 페이지 수
-  metricsInterval: number;// 메트릭 수집 간격 (ms)
+  duration: number; // 시뮬레이션 시간 (ms)
+  elementCount: number; // 요소 수
+  pageCount: number; // 페이지 수
+  metricsInterval: number; // 메트릭 수집 간격 (ms)
 }
 
 async function runLongSessionSimulation(
@@ -460,7 +526,7 @@ async function runLongSessionSimulation(
 ): Promise<SimulationResult> {
   const browser = await puppeteer.launch({
     headless: true,
-    args: ['--enable-precise-memory-info'],
+    args: ["--enable-precise-memory-info"],
   });
 
   const page = await browser.newPage();
@@ -468,7 +534,7 @@ async function runLongSessionSimulation(
   const sloViolations: SLOViolation[] = [];
 
   try {
-    await page.goto('http://localhost:5173/builder/test-project');
+    await page.goto("http://localhost:5173/builder/test-project");
     await createTestElements(page, config.elementCount, config.pageCount);
 
     const startTime = Date.now();
@@ -488,7 +554,8 @@ async function runLongSessionSimulation(
       duration: Date.now() - startTime,
       metrics,
       sloViolations,
-      passed: sloViolations.filter(v => v.severity === 'critical').length === 0,
+      passed:
+        sloViolations.filter((v) => v.severity === "critical").length === 0,
     };
   } finally {
     await browser.close();
@@ -509,7 +576,7 @@ on:
   pull_request:
     branches: [main]
   schedule:
-    - cron: '0 2 * * *'  # 매일 새벽 2시 (주간 장시간 테스트)
+    - cron: "0 2 * * *" # 매일 새벽 2시 (주간 장시간 테스트)
 
 jobs:
   # PR 테스트 (빠른 버전)
@@ -520,8 +587,8 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'npm'
+          node-version: "20"
+          cache: "npm"
       - run: npm ci
       - run: npm run build
       - name: Run Quick Performance Test
@@ -531,7 +598,7 @@ jobs:
   long-session:
     if: github.event_name == 'schedule'
     runs-on: ubuntu-latest
-    timeout-minutes: 780  # 13시간
+    timeout-minutes: 780 # 13시간
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -561,26 +628,29 @@ function detectRegressions(
   const threshold = 0.2; // 20% 이상 악화 시 회귀로 판정
 
   // 메모리 회귀
-  const memoryDiff = (current.browserHeapUsed - baseline.browserHeapUsed) / baseline.browserHeapUsed;
+  const memoryDiff =
+    (current.browserHeapUsed - baseline.browserHeapUsed) /
+    baseline.browserHeapUsed;
   if (memoryDiff > threshold) {
     regressions.push({
-      metric: 'memory',
+      metric: "memory",
       baseline: baseline.browserHeapUsed,
       current: current.browserHeapUsed,
       change: memoryDiff,
-      severity: memoryDiff > 0.5 ? 'critical' : 'warning',
+      severity: memoryDiff > 0.5 ? "critical" : "warning",
     });
   }
 
   // 렌더링 시간 회귀
-  const renderDiff = (current.avgRenderTime - baseline.avgRenderTime) / baseline.avgRenderTime;
+  const renderDiff =
+    (current.avgRenderTime - baseline.avgRenderTime) / baseline.avgRenderTime;
   if (renderDiff > threshold) {
     regressions.push({
-      metric: 'renderTime',
+      metric: "renderTime",
       baseline: baseline.avgRenderTime,
       current: current.avgRenderTime,
       change: renderDiff,
-      severity: renderDiff > 0.5 ? 'critical' : 'warning',
+      severity: renderDiff > 0.5 ? "critical" : "warning",
     });
   }
 

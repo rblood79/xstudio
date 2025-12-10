@@ -90,6 +90,13 @@
   cursor: not-allowed;
 }
 
+.workflow-toolbar-separator {
+  width: 1px;
+  height: 24px;
+  background: var(--workflow-border);
+  margin: 0 4px;
+}
+
 /* ============================================
    Workflow Canvas
    ============================================ */
@@ -107,7 +114,7 @@
 .workflow-node {
   min-width: 180px;
   background: white;
-  border: 2px solid var(--workflow-border);
+  border: 1px solid var(--workflow-border);
   border-radius: 8px;
   box-shadow: var(--workflow-shadow);
   transition: all 0.15s ease;

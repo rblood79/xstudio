@@ -252,6 +252,9 @@ export interface WorkflowActions {
   toggleShowLayoutEdges: () => void;
   toggleShowDataSources: () => void;
 
+  // Layout Actions
+  autoLayout: (direction?: 'TB' | 'LR' | 'BT' | 'RL') => void;
+
   // Computed Actions
   buildWorkflowGraph: () => void;
 }

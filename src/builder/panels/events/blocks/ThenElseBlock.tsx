@@ -82,7 +82,7 @@ export function ThenElseBlock({
   return (
     <div className={`branch-block ${blockClass}`}>
       {/* Connector from IF block */}
-      {showConnector && <BlockConnector type={isThen ? 'success' : 'fallback'} />}
+      {showConnector && <BlockConnector direction="down" className={isThen ? 'success' : 'fallback'} />}
 
       {/* Block Container */}
       <div
@@ -100,9 +100,9 @@ export function ThenElseBlock({
             aria-label={isCollapsed ? `Expand ${label} block` : `Collapse ${label} block`}
           >
             {isCollapsed ? (
-              <ChevronRight size={14} color={iconProps.color} strokeWidth={iconProps.stroke} />
+              <ChevronRight size={16} color={iconProps.color} strokeWidth={iconProps.stroke} />
             ) : (
-              <ChevronDown size={14} color={iconProps.color} strokeWidth={iconProps.stroke} />
+              <ChevronDown size={16} color={iconProps.color} strokeWidth={iconProps.stroke} />
             )}
           </Button>
 
@@ -116,12 +116,12 @@ export function ThenElseBlock({
 
           {/* Add Action Button */}
           <Button
-            className="iconButton"
+            className="iconButton block-collapse-btn"
             onPress={onAddAction}
             isDisabled={isDisabled}
             aria-label={`Add action to ${label}`}
           >
-            <Plus size={14} color={iconProps.color} strokeWidth={iconProps.stroke} />
+            <Plus size={16} color={iconProps.color} strokeWidth={iconProps.stroke} />
           </Button>
         </div>
 

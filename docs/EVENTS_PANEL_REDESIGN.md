@@ -1399,6 +1399,132 @@ export function ThenElseBlock({
 
 ---
 
+## 10. 컴포넌트별 지원 이벤트 레퍼런스
+
+> **참조**: `src/shared/components/metadata.ts`
+> **기준**: React Aria Components 공식 문서 (2025-12)
+
+### 10.1 Actions 컴포넌트
+
+| 컴포넌트 | 지원 이벤트 | 비고 |
+|---------|-----------|------|
+| **Button** | `onPress`, `onClick`, `onMouseEnter`, `onMouseLeave`, `onFocus`, `onBlur`, `onKeyDown`, `onKeyUp` | React Aria usePress 기반 |
+| **ToggleButton** | `onChange`, `onPress`, `onClick`, `onMouseEnter`, `onMouseLeave`, `onFocus`, `onBlur`, `onKeyDown`, `onKeyUp` | 토글 상태 변경 포함 |
+| **ToggleButtonGroup** | `onChange`, `onFocus`, `onBlur` | 그룹 선택 변경 |
+| **Link** | `onPress`, `onClick`, `onMouseEnter`, `onMouseLeave`, `onFocus`, `onBlur`, `onKeyDown`, `onKeyUp` | 네비게이션 요소 |
+| **Menu** | `onAction`, `onSelectionChange`, `onOpenChange`, `onFocus`, `onBlur` | 메뉴 아이템 액션 |
+| **Toolbar** | `onFocus`, `onBlur` | 키보드 탐색 지원 |
+
+### 10.2 Inputs 컴포넌트
+
+| 컴포넌트 | 지원 이벤트 | 비고 |
+|---------|-----------|------|
+| **TextField** | `onChange`, `onFocus`, `onBlur`, `onKeyDown`, `onKeyUp` | 텍스트 입력 |
+| **NumberField** | `onChange`, `onFocus`, `onBlur`, `onKeyDown`, `onKeyUp` | 숫자 입력 |
+| **SearchField** | `onChange`, `onSubmit`, `onFocus`, `onBlur`, `onKeyDown`, `onKeyUp` | 검색 폼 제출 |
+| **Checkbox** | `onChange`, `onFocus`, `onBlur`, `onKeyDown`, `onKeyUp`, `onMouseEnter`, `onMouseLeave` | 체크박스 |
+| **CheckboxGroup** | `onChange`, `onFocus`, `onBlur` | 다중 선택 그룹 |
+| **Radio** | `onFocus`, `onBlur`, `onKeyDown`, `onKeyUp`, `onMouseEnter`, `onMouseLeave` | 라디오 (개별) |
+| **RadioGroup** | `onChange`, `onFocus`, `onBlur` | 단일 선택 그룹 |
+| **Select** | `onSelectionChange`, `onOpenChange`, `onFocus`, `onBlur`, `onKeyDown`, `onKeyUp` | 드롭다운 선택 |
+| **ComboBox** | `onSelectionChange`, `onOpenChange`, `onFocus`, `onBlur`, `onKeyDown`, `onKeyUp` | 자동완성 |
+| **Switch** | `onChange`, `onFocus`, `onBlur`, `onKeyDown`, `onKeyUp`, `onMouseEnter`, `onMouseLeave` | 토글 스위치 |
+| **Slider** | `onChange`, `onFocus`, `onBlur`, `onKeyDown`, `onKeyUp`, `onMouseEnter`, `onMouseLeave` | 슬라이더 |
+| **TailSwatch** | `onChange`, `onFocus`, `onBlur` | 커스텀 컬러 피커 |
+
+### 10.3 Data Display 컴포넌트
+
+| 컴포넌트 | 지원 이벤트 | 비고 |
+|---------|-----------|------|
+| **Table** | `onSelectionChange`, `onAction`, `onFocus`, `onBlur` | 테이블 행 선택/액션 |
+| **ListBox** | `onSelectionChange`, `onAction`, `onFocus`, `onBlur` | 리스트 선택 |
+| **GridList** | `onSelectionChange`, `onAction`, `onFocus`, `onBlur` | 그리드 선택 |
+| **Tree** | `onSelectionChange`, `onFocus`, `onBlur` | 트리 노드 선택 |
+| **TagGroup** | `onSelectionChange`, `onFocus`, `onBlur` | 태그 선택 |
+
+### 10.4 Feedback 컴포넌트
+
+| 컴포넌트 | 지원 이벤트 | 비고 |
+|---------|-----------|------|
+| **Tooltip** | `onOpenChange`, `onMouseEnter`, `onMouseLeave` | 툴팁 열림/닫힘 |
+| **ProgressBar** | - | 상태 표시 전용 |
+| **Meter** | - | 상태 표시 전용 |
+| **Badge** | - | 상태 표시 전용 |
+
+### 10.5 Layout 컴포넌트
+
+| 컴포넌트 | 지원 이벤트 | 비고 |
+|---------|-----------|------|
+| **Panel** | `onClick`, `onMouseEnter`, `onMouseLeave`, `onFocus`, `onBlur` | 커스텀 컨테이너 |
+| **Card** | `onClick`, `onMouseEnter`, `onMouseLeave`, `onFocus`, `onBlur` | 커스텀 컨테이너 |
+| **Tabs** | `onSelectionChange`, `onFocus`, `onBlur` | 탭 전환 |
+| **Breadcrumbs** | `onAction`, `onFocus`, `onBlur` | 네비게이션 |
+| **Separator** | - | 정적 요소 |
+| **Group** | `onFocus`, `onBlur` | 키보드 탐색 |
+| **body** | - | 페이지 루트 |
+| **Slot** | - | 레이아웃 슬롯 |
+
+### 10.6 Overlays 컴포넌트
+
+| 컴포넌트 | 지원 이벤트 | 비고 |
+|---------|-----------|------|
+| **Dialog** | `onOpenChange`, `onFocus`, `onBlur` | 다이얼로그 |
+| **Modal** | `onOpenChange` | 모달 오버레이 |
+| **Popover** | `onOpenChange` | 팝오버 |
+
+### 10.7 Date & Time 컴포넌트
+
+| 컴포넌트 | 지원 이벤트 | 비고 |
+|---------|-----------|------|
+| **Calendar** | `onChange`, `onFocus`, `onBlur` | 달력 선택 |
+| **DatePicker** | `onChange`, `onOpenChange`, `onFocus`, `onBlur` | 날짜 선택기 |
+| **DateRangePicker** | `onChange`, `onOpenChange`, `onFocus`, `onBlur` | 날짜 범위 |
+| **TimeField** | `onChange`, `onFocus`, `onBlur` | 시간 입력 |
+
+### 10.8 Item 컴포넌트 (Collection Children)
+
+| 컴포넌트 | 지원 이벤트 | 비고 |
+|---------|-----------|------|
+| **MenuItem** | `onAction`, `onMouseEnter`, `onMouseLeave` | 메뉴 아이템 |
+| **SelectItem** | `onMouseEnter`, `onMouseLeave` | 선택 아이템 |
+| **ComboBoxItem** | `onMouseEnter`, `onMouseLeave` | 콤보박스 아이템 |
+| **ListBoxItem** | `onAction`, `onMouseEnter`, `onMouseLeave` | 리스트 아이템 |
+| **GridListItem** | `onAction`, `onMouseEnter`, `onMouseLeave` | 그리드 아이템 |
+| **TreeItem** | `onAction`, `onMouseEnter`, `onMouseLeave` | 트리 아이템 |
+| **Tag** | `onMouseEnter`, `onMouseLeave` | 태그 |
+| **Tab** | `onMouseEnter`, `onMouseLeave` | 탭 |
+| **Breadcrumb** | `onClick`, `onMouseEnter`, `onMouseLeave` | 브레드크럼 |
+| **Row** | `onAction`, `onMouseEnter`, `onMouseLeave` | 테이블 행 |
+
+### 10.9 이벤트 타입 레지스트리
+
+> **참조**: `src/types/events/events.registry.ts`
+
+**현재 구현된 이벤트 (IMPLEMENTED_EVENT_TYPES):**
+
+| 이벤트 | 설명 | 카테고리 |
+|--------|------|----------|
+| `onClick` | 클릭 이벤트 | Mouse |
+| `onMouseEnter` | 마우스 진입 | Mouse |
+| `onMouseLeave` | 마우스 이탈 | Mouse |
+| `onChange` | 값 변경 | Form |
+| `onSubmit` | 폼 제출 | Form |
+| `onFocus` | 포커스 획득 | Form |
+| `onBlur` | 포커스 해제 | Form |
+| `onKeyDown` | 키 누름 | Keyboard |
+| `onKeyUp` | 키 뗌 | Keyboard |
+
+**React Aria 전용 이벤트:**
+
+| 이벤트 | 설명 | 컴포넌트 |
+|--------|------|----------|
+| `onPress` | 통합 클릭/터치/키보드 | Button, Link, ToggleButton |
+| `onSelectionChange` | 선택 변경 | Select, ComboBox, ListBox, Table, Tree |
+| `onAction` | 아이템 액션 | Menu, ListBox, GridList, Table, Breadcrumbs |
+| `onOpenChange` | 열림/닫힘 상태 | Select, ComboBox, Dialog, Modal, Popover, DatePicker |
+
+---
+
 ## 변경 이력
 
 | 버전 | 날짜 | 변경 내용 |
@@ -1409,3 +1535,4 @@ export function ThenElseBlock({
 | 1.3.0 | 2025-12-07 | 레거시 코드 폐기 결정 반영: V2 접미사 제거, Phase 6 삭제, 마이그레이션 섹션 제거, 총 6 Phase로 단축 |
 | 1.4.0 | 2025-12-07 | 3.2 React Aria Components 이벤트 최적화 섹션 추가: usePress, useHover, useLongPress, useMove 훅 활용, PressEvent/MoveEvent 조건 체크, Phase별 이벤트 추가 계획 |
 | 1.5.0 | 2025-12-08 | **Phase 5 완료**: 블록 기반 UI 구현 (WhenBlock, IfBlock, ThenElseBlock, ActionBlock, BlockConnector, BlockActionEditor), EventEngine `getActionConfig<T>` 헬퍼 추가, Navigate 액션 경로 정규화 수정 |
+| 1.6.0 | 2025-12-10 | **섹션 10 추가**: 컴포넌트별 지원 이벤트 레퍼런스 테이블 - React Aria 공식 문서 기반, Actions/Inputs/DataDisplay/Feedback/Layout/Overlays/DateTime/Items 카테고리별 정리 |

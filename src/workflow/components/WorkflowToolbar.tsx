@@ -5,7 +5,7 @@
  */
 
 import { useWorkflowStore } from '../store';
-import { Layout, ArrowRightLeft, Link as LinkIcon, Zap, Database } from 'lucide-react';
+import { Layout, ArrowRightLeft, Link as LinkIcon, Zap, Database, AlignVerticalSpaceAround } from 'lucide-react';
 
 export function WorkflowToolbar() {
   // Individual selectors to prevent infinite loops
@@ -19,10 +19,22 @@ export function WorkflowToolbar() {
   const toggleShowEventLinks = useWorkflowStore((s) => s.toggleShowEventLinks);
   const toggleShowLayoutEdges = useWorkflowStore((s) => s.toggleShowLayoutEdges);
   const toggleShowDataSources = useWorkflowStore((s) => s.toggleShowDataSources);
+  const autoLayout = useWorkflowStore((s) => s.autoLayout);
 
   return (
     <div className="workflow-toolbar">
       <div className="workflow-toolbar-actions">
+        {/* Auto Layout Button */}
+        <button
+          className="workflow-toolbar-btn"
+          onClick={() => autoLayout('TB')}
+          title="Auto Layout (Top to Bottom)"
+        >
+          <AlignVerticalSpaceAround size={16} />
+          <span>Auto Layout</span>
+        </button>
+
+        <div className="workflow-toolbar-separator" />
         {/* Show Layouts Toggle */}
         <button
           className={`workflow-toolbar-btn ${showLayouts ? 'active' : ''}`}

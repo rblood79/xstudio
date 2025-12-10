@@ -41,12 +41,14 @@
 
 ### 1.4 총 소요 예상
 
-| 우선순위       | 예상 소요 | 누적                |
-| -------------- | --------- | ------------------- |
-| P0             | 15시간    | 15시간              |
-| P1             | 23시간    | 38시간              |
-| P2             | 20시간    | 58시간              |
-| **Supplement** | **8시간** | **66시간 (~8.5일)** |
+| 우선순위       | 예상 소요  | 누적                |
+| -------------- | ---------- | ------------------- |
+| P0             | 15시간     | 15시간              |
+| P1             | 23시간     | 38시간              |
+| P2             | 20시간     | 58시간              |
+| **Supplement** | **10시간** | **68시간 (~8.5일)** |
+
+> **Phase 9 상세**: 캔버스 가상화 4h + 웹 워커 2h + 추가 아이디어 4h = 10시간
 
 ---
 
@@ -275,23 +277,28 @@
 
 ---
 
-### Phase 8: CI 자동화 + 장시간 테스트 (6시간)
+### Phase 8: CI 자동화 + 대규모 테스트 (6시간)
 
-#### 8.1 시뮬레이션 스크립트 (3시간)
+#### 8.1 시뮬레이션 환경 구축 (2시간)
 
-- [ ] 테스트 데이터 생성 함수
-- [ ] 랜덤 작업 수행 함수
-- [ ] 메트릭 수집 함수
-- [ ] SLO 검증 함수
+- [ ] `scripts/generate-large-project.ts` 생성
+  - [ ] `faker.seed(12345)` 고정 시드 적용
+  - [ ] 5,000개 요소 생성 로직 (Depth 10+)
+- [ ] 데이터 준비 체크리스트 작성
 
-#### 8.2 GitHub Actions 설정 (2시간)
+#### 8.2 시뮬레이션 스크립트 (2시간)
 
-- [ ] PR용 단시간 테스트 (30분)
+- [ ] 랜덤 작업 수행 함수(드래그, 선택, 수정) 구현
+- [ ] 메트릭 수집 함수 구현
+- [ ] SLO 위반 감지(P99) 로직
+
+#### 8.3 GitHub Actions 설정 (2시간)
+
+- [ ] PR용 단시간 테스트
 - [ ] Nightly 장시간 테스트 (12시간)
 - [ ] 아티팩트 업로드
-- [ ] PR 코멘트 자동화
 
-#### 8.3 Phase 8 검증 (1시간)
+#### 8.4 Phase 8 검증 (1시간)
 
 - [ ] CI 파이프라인 테스트
 - [ ] 리포트 생성 확인
@@ -304,21 +311,38 @@
 
 #### 9.1 캔버스 가상화 (P0, 4시간)
 
-- [ ] `@tanstack/react-virtual` 도입
-- [ ] `LayoutRenderers` 가상화 적용
+- [ ] `@tanstack/react-virtual` + `LayoutRenderers` 가상화 도입
+- [ ] **Hitbox Layer 분리**: 가상화된 요소의 드래그 타겟 유지
 - [ ] `VirtualizedContainer` 컴포넌트 구현
+- [ ] 가시성 판단(Viewport Culling) 로직 구현
 
 #### 9.2 웹 워커 오프로딩 (P1, 2시간)
 
-- [ ] `data.worker.ts` 생성
-- [ ] `comlink` 설정
+- [ ] `data.worker.ts` 생성 및 Comlink 설정
+- [ ] **Worker Fallback**: 초기화 실패/미지원 시 메인 스레드 실행 경로 구현
 - [ ] Diff/Index 로직 이관
 
-#### 9.3 추가 아이디어 적용 (P2, 2시간)
+#### 9.3 추가 아이디어 적용 (4시간)
+
+> **상세 문서**: [08-additional-ideas.md](./08-additional-ideas.md)
+
+**P0 즉시 적용 (0.5시간)**
 
 - [ ] **CSS Containment**: 주요 컨테이너에 `content-visibility: auto` 적용
+  - 파일: 기존 CSS 파일에 추가
+  - 이미 `ListBox.css`에서 부분 사용 중
+
+**P1 권장 (2시간)**
+
 - [ ] **Event Delegation**: Canvas Root 리스너 단일화
-- [ ] **Selection Overlay**: 선택 렌더링 분리
+  - 파일: `src/canvas/utils/delegatedEventHandler.ts` (신규)
+  - 리스너 10,000개 → 10개로 감소
+
+**P2 추후 (1.5시간)**
+
+- [ ] **Selection Overlay**: Preview 측 선택 렌더링 분리
+  - 파일: `src/canvas/components/PreviewSelectionOverlay.tsx` (신규)
+  - Builder는 이미 `src/builder/overlay/index.tsx`에서 구현됨
 
 ---
 
