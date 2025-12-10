@@ -5,15 +5,19 @@
  * Builder stores에서 데이터를 직접 가져와 workflow store에 동기화
  */
 
-import { useEffect, useRef } from 'react';
-import { ReactFlowProvider } from '@xyflow/react';
-import { useStore } from '../stores';
-import { useLayoutsStore } from '../stores/layouts';
-import { useWorkflowStore } from '../../workflow/store';
-import { WorkflowCanvas, WorkflowToolbar } from '../../workflow/components';
-import type { WorkflowPage, WorkflowLayout, WorkflowElement } from '../../workflow/types';
+import { useEffect, useRef } from "react";
+import { ReactFlowProvider } from "@xyflow/react";
+import { useStore } from "../stores";
+import { useLayoutsStore } from "../stores/layouts";
+import { useWorkflowStore } from "../../workflow/store";
+import { WorkflowCanvas, WorkflowToolbar } from "../../workflow/components";
+import type {
+  WorkflowPage,
+  WorkflowLayout,
+  WorkflowElement,
+} from "../../workflow/types";
 
-import '../../workflow/styles/workflow.css';
+import "../../workflow/styles/workflow.css";
 
 // ============================================
 // Data Sync Hook
@@ -40,8 +44,8 @@ function useWorkflowSync() {
       id: p.id,
       title: p.name,
       // 슬러그 앞의 "/"를 제거해 표시/매칭 시 중복 슬래시 방지
-      slug: p.slug?.replace(/^\/+/, '') || '',
-      project_id: p.project_id || '',
+      slug: p.slug?.replace(/^\/+/, "") || "",
+      project_id: p.project_id || "",
       parent_id: p.parent_id,
       order_num: p.order_num,
       layout_id: p.layout_id,
@@ -60,7 +64,7 @@ function useWorkflowSync() {
     const workflowLayouts: WorkflowLayout[] = layouts.map((l) => ({
       id: l.id,
       name: l.name,
-      project_id: l.project_id || '',
+      project_id: l.project_id || "",
       description: l.description,
     }));
     setLayouts(workflowLayouts);
@@ -78,11 +82,13 @@ function useWorkflowSync() {
       order_num: el.order_num,
       // Events는 props.events에 저장되는 경우가 있으므로 우선 사용
       events:
-        ((el.props as { events?: unknown }).events as WorkflowElement['events']) ||
-        (el.events as WorkflowElement['events']),
+        ((el.props as { events?: unknown })
+          .events as WorkflowElement["events"]) ||
+        (el.events as WorkflowElement["events"]),
       dataBinding:
-        ((el.props as { dataBinding?: unknown }).dataBinding as WorkflowElement['dataBinding']) ||
-        (el.dataBinding as WorkflowElement['dataBinding']),
+        ((el.props as { dataBinding?: unknown })
+          .dataBinding as WorkflowElement["dataBinding"]) ||
+        (el.dataBinding as WorkflowElement["dataBinding"]),
     }));
     setElements(workflowElements);
   }, [elements, setElements]);
@@ -143,7 +149,7 @@ function WorkflowContent() {
 export const BuilderWorkflow: React.FC = () => {
   return (
     <ReactFlowProvider>
-      <main className="workflow-app builder-workflow">
+      <main className="workflow-app">
         <WorkflowToolbar />
         <WorkflowContent />
       </main>
