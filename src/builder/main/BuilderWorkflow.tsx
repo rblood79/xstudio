@@ -143,10 +143,10 @@ function WorkflowContent() {
 export const BuilderWorkflow: React.FC = () => {
   return (
     <ReactFlowProvider>
-      <div className="workflow-app builder-workflow">
+      <main className="workflow-app builder-workflow">
         <WorkflowToolbar />
         <WorkflowContent />
-      </div>
+      </main>
     </ReactFlowProvider>
   );
 };

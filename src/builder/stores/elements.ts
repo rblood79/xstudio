@@ -38,6 +38,8 @@ interface Page {
   slug: string;
   parent_id?: string | null;
   order_num?: number;
+  project_id?: string;
+  layout_id?: string | null;
 }
 
 export interface ElementsState {

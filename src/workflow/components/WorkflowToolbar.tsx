@@ -22,8 +22,6 @@ export function WorkflowToolbar() {
 
   return (
     <div className="workflow-toolbar">
-      <div className="workflow-toolbar-title">Project Workflow</div>
-
       <div className="workflow-toolbar-actions">
         {/* Show Layouts Toggle */}
         <button

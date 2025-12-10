@@ -95,6 +95,10 @@
     --breakpoint-2xl: 96rem;
 
     /* Container sizes - Tailwind v4 표준 (고정값, AI 생성 불필요) */
+    --container-7xs: 8rem;
+    --container-6xs: 10rem;
+    --container-5xs: 12rem;
+    --container-4xs: 14rem;
     --container-3xs: 16rem;
     --container-2xs: 18rem;
     --container-xs: 20rem;

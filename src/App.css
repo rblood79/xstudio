@@ -282,6 +282,10 @@
   --breakpoint-lg: 64rem;
   --breakpoint-xl: 80rem;
   --breakpoint-2xl: 96rem;
+  --container-7xs: 8rem;
+  --container-6xs: 10rem;
+  --container-5xs: 12rem;
+  --container-4xs: 14rem;
   --container-3xs: 16rem;
   --container-2xs: 18rem;
   --container-xs: 20rem;

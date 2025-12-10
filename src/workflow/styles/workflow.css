@@ -10,17 +10,17 @@
    ============================================ */
 
 :root {
-  --workflow-bg: #f8fafc;
-  --workflow-border: #e2e8f0;
-  --workflow-text: #1e293b;
-  --workflow-text-muted: #64748b;
-  --workflow-primary: #3b82f6;
-  --workflow-primary-light: #eff6ff;
-  --workflow-secondary: #8b5cf6;
-  --workflow-secondary-light: #f5f3ff;
-  --workflow-success: #22c55e;
-  --workflow-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  --workflow-shadow-lg: 0 4px 12px rgba(0, 0, 0, 0.15);
+  --workflow-bg: var(--background-color);
+  --workflow-border: var(--border-color);
+  --workflow-text: var(--text-color);
+  --workflow-text-muted: var(--text-color-placeholder);
+  --workflow-primary: var(--primary);
+  --workflow-primary-light: var(--primary-container);
+  --workflow-secondary: var(--secondary);
+  --workflow-secondary-light: var(--secondary-container);
+  --workflow-success: var(--success);
+  --workflow-shadow: var(--shadow-sm);
+  --workflow-shadow-lg: var(--shadow-lg);
 }
 
 /* ============================================
@@ -43,10 +43,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 16px;
-  background: white;
-  border-bottom: 1px solid var(--workflow-border);
-  box-shadow: var(--workflow-shadow);
+  padding: var(--spacing-sm);
   z-index: 10;
 }
 
@@ -132,11 +129,11 @@
 .workflow-node-header {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 10px 12px;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm);
   background: var(--workflow-primary-light);
   border-bottom: 1px solid var(--workflow-border);
-  border-radius: 6px 6px 0 0;
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
 }
 
 .workflow-layout-header {
@@ -153,8 +150,8 @@
 }
 
 .workflow-node-title {
-  font-size: 13px;
-  font-weight: 600;
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-medium);
   color: var(--workflow-text);
   white-space: nowrap;
   overflow: hidden;
@@ -166,33 +163,33 @@
    ============================================ */
 
 .workflow-node-content {
-  padding: 10px 12px;
+  padding: var(--spacing-sm);
 }
 
 .workflow-node-slug {
-  font-size: 11px;
+  font-size: var(--text-xs);
   font-family: 'SF Mono', Monaco, 'Consolas', monospace;
   color: var(--workflow-text-muted);
-  margin-bottom: 8px;
+  margin-bottom: var(--spacing-xs);
 }
 
 .workflow-node-description {
-  font-size: 11px;
+  font-size: var(--text-xs);
   color: var(--workflow-text-muted);
-  margin-bottom: 8px;
-  line-height: 1.4;
+  margin-bottom: var(--spacing-xs);
+  line-height: var(--text-xs--line-height);
 }
 
 .workflow-node-stats {
   display: flex;
-  gap: 12px;
+  gap: var(--spacing-sm);
 }
 
 .workflow-stat {
   display: flex;
   align-items: center;
   gap: 4px;
-  font-size: 11px;
+  font-size: var(--text-xs);
   color: var(--workflow-text-muted);
 }
 
@@ -206,11 +203,11 @@
 
 .workflow-node-badge {
   display: inline-block;
-  margin-top: 8px;
-  padding: 2px 8px;
-  font-size: 10px;
+  margin-top: var(--spacing-xs);
+  padding: var(--spacing-2xs) var(--spacing-sm);
+  font-size: var(--text-xs);
   font-weight: 500;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
 }
 
 .workflow-badge-layout {
@@ -243,7 +240,7 @@
    ============================================ */
 
 .workflow-layout-node {
-  min-width: 200px;
+  min-height: var(--container-4xs);
 }
 
 .workflow-layout-node .workflow-handle {
@@ -255,7 +252,7 @@
    ============================================ */
 
 .workflow-datasource-node {
-  min-width: 160px;
+  min-width: var(--container-4xs);
   border-color: var(--color-success-500, #22c55e);
 }
 
@@ -268,9 +265,9 @@
 }
 
 .workflow-datasource-node .workflow-node-type {
-  font-size: 10px;
+  font-size: var(--text-xs);
   color: var(--workflow-text-muted);
-  margin-bottom: 4px;
+  margin-bottom: var(--spacing-2xs);
 }
 
 /* DataSource type variants */
@@ -326,16 +323,16 @@
   align-items: center;
   justify-content: center;
   height: 100%;
-  gap: 12px;
+  gap: var(--spacing-sm);
   color: var(--workflow-text-muted);
 }
 
 .workflow-loading-spinner {
-  width: 32px;
-  height: 32px;
+  width: var(--icon-size);
+  height: var(--icon-size);
   border: 3px solid var(--workflow-border);
   border-top-color: var(--workflow-primary);
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   animation: spin 1s linear infinite;
 }
 
@@ -350,12 +347,12 @@
 }
 
 .workflow-empty span {
-  font-size: 14px;
+  font-size: var(--text-sm);
   font-weight: 500;
 }
 
 .workflow-empty p {
-  font-size: 12px;
+  font-size: var(--text-xs);
   margin: 0;
 }
 
@@ -365,7 +362,7 @@
 
 .react-flow__controls {
   box-shadow: var(--workflow-shadow) !important;
-  border-radius: 8px !important;
+  border-radius: var(--radius-md) !important;
   overflow: hidden;
 }
 
@@ -380,22 +377,22 @@
 
 .react-flow__minimap {
   background: white !important;
-  border-radius: 8px !important;
-  box-shadow: var(--workflow-shadow) !important;
+  border-radius: var(--radius-md) !important;
+  box-shadow: var(--shadow-sm) !important;
 }
 
 .react-flow__edge-path {
-  stroke-width: 2;
+  stroke-width: var(--border-width-sm);
 }
 
 .react-flow__edge.animated path {
-  stroke-dasharray: 5;
+  stroke-dasharray: var(--border-width-sm);
   animation: dashdraw 0.5s linear infinite;
 }
 
 @keyframes dashdraw {
   from {
-    stroke-dashoffset: 10;
+    stroke-dashoffset: var(--border-width-sm);
   }
 }
 
