@@ -1,6 +1,6 @@
 # Performance Optimization Tasks
 
-> **Last Updated:** 2025-12-10 (심도 깊은 코드 검증 완료)
+> **Last Updated:** 2025-12-11 (모노레포 구조 확정, 80hr)
 
 ## Summary
 
@@ -9,18 +9,61 @@
 | Phase 1 | 1/5 | 1/5 | **20%** | 🔴 부분 완료 |
 | Phase 2 | 3/4 | 0/4 | **0%** | 🔴 미사용 |
 | Phase 3 | 3/3 | 3/3 | **100%** | ✅ 완료 |
-| Phase 4 | 4/4 | 0/4 | **0%** | 🟡 구현만 완료 |
+| ~~Phase 4~~ | ~~4/4~~ | ~~0/4~~ | - | ⚠️ **Phase 10으로 대체** |
 | Phase 5 | 3/3 | 0/3 | **0%** | 🟡 구현만 완료 |
 | Phase 6 | 2/4 | 1/4 | **25%** | 🔴 부분 완료 |
 | Phase 7 | 4/4 | 0/4 | **0%** | 🟡 구현만 완료 |
 | Phase 8 | 0/3 | 0/3 | **0%** | ❌ 미착수 |
 | Phase 9 | 3/5 | 3/5 | **60%** | 🔄 부분 완료 |
+| **🚀 Phase 10** | **0/7** | **0/7** | **0%** | **🆕 계획** |
 
 ### 범례
 - ✅ **완료**: 구현 + 실제 사용
 - 🟡 **구현만 완료**: 코드 존재하지만 실제 사용 안 함
 - 🔴 **부분 완료**: 일부만 구현 또는 사용
 - ❌ **미착수**: 구현 없음
+- ⚠️ **대체됨**: 다른 Phase로 대체
+
+### 🚀 Phase 10: WebGL Builder 아키텍처 (NEW)
+
+> **상세 문서**: [10-webgl-builder-architecture.md](./10-webgl-builder-architecture.md)
+
+**목표**: Builder를 @pixi/react 기반 WebGL로 재구축, Publish App 분리
+
+**모노레포 구조 (확정)**:
+```
+xstudio/
+├── packages/
+│   ├── builder/                 ← 현재 src/ 이전
+│   │   └── workspace/
+│   │       ├── canvas/          ← WebGL (PixiJS)
+│   │       └── overlay/         ← DOM 오버레이
+│   ├── publish/                 ← Publish App
+│   └── shared/                  ← 공통 코드
+└── pnpm-workspace.yaml
+```
+
+| Sub-Phase | 작업 | 디렉토리 | 시간 | 우선순위 | 상태 |
+|-----------|------|----------|------|----------|------|
+| 10.1 | @pixi/react v8 설정 | `packages/builder/workspace/` | 8hr | P0 | 📋 |
+| 10.2 | ElementSprite 시스템 | `packages/builder/workspace/canvas/sprites/` | 16hr | P0 | 📋 |
+| 10.3 | Selection + Transform | `packages/builder/workspace/canvas/selection/` | 12hr | P1 | 📋 |
+| 10.4 | Zoom/Pan + Grid | `packages/builder/workspace/canvas/grid/` | 8hr | P1 | 📋 |
+| 10.5 | Text Input 하이브리드 | `packages/builder/workspace/overlay/` | 12hr | P1 | 📋 |
+| 10.7 | Publish App 분리 | `packages/publish/` | 16hr | P0 | 📋 |
+| 10.8 | Migration 완료 | `src/` → `packages/` | 8hr | P2 | 📋 |
+
+**총 예상 시간**: 80hr (~10일)
+
+> **10.6 (접근성 레이어) 제거 이유**:
+> - 빌더는 **시각적 디자인 도구** (Figma, Canva도 빌더 접근성 미지원)
+> - **Publish App은 React DOM 기반이므로 접근성 자동 지원**
+
+**기대 효과**:
+- 5,000개 요소 60fps 렌더링 (현재 불가능)
+- 10,000개 요소 30fps 렌더링
+- 줌/팬 반응 < 16ms
+- postMessage 오버헤드 제거
 
 ---
 
