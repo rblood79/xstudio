@@ -94,7 +94,7 @@
       min-height: 200px;
     }
 
-    .section-overview-help{
+    .section-overview-help {
       font-size: var(--text-xs);
       color: var(--on-surface-variant);
       padding: var(--spacing-sm);
@@ -1768,16 +1768,12 @@
     flex-direction: column;
     align-items: flex-end;
     gap: var(--spacing-2xs);
-    font-family: var(--font-pixel);
+    font-family: var(--font-mono);
     font-weight: var(--font-weight-normal);
     font-size: var(--text-xs);
     text-transform: uppercase;
     padding: var(--spacing) var(--spacing-sm);
     cursor: default;
-    -webkit-font-smoothing: none;
-    -moz-osx-font-smoothing: unset;
-    font-smooth: never;
-    text-rendering: optimizeSpeed;
   }
 
   .history-label {

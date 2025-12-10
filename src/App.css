@@ -3,27 +3,12 @@
  * All rules are wrapped in @layer to allow proper @import ordering
  */
 
-/* @font-face must be in a file that's imported, not inline with other @imports */
-@font-face {
-  font-family: "Pixeboy";
-  src: url("/fonts/pixeboy.woff") format("woff");
-  font-size: 8px;
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-  -webkit-font-smoothing: none;
-  -moz-osx-font-smoothing: unset;
-  font-smooth: never;
-  text-rendering: optimizeSpeed;
-}
-
 :root {
   --font-inter: "Pretendard";
   --font-plex-mono: "Pretendard";
   --font-sans: var(--font-inter), system-ui;
   --font-mono: var(--font-plex-mono), monospace;
   --font-serif: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
-  --font-pixel: "Pixeboy", monospace;
 
   --color-red-50: oklch(97.1% 0.013 17.38);
   --color-red-100: oklch(93.6% 0.032 17.717);

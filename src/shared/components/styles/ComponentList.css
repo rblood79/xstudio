@@ -1,8 +1,6 @@
 @layer components {
-
   /* Components Panel 전용 스타일 */
   .panel-wrapper[data-panel="components"] {
-
     /* 카테고리 헤더 스타일 */
     .category-info {
       display: flex;
@@ -94,17 +92,14 @@
         color: var(--on-error);
         border-radius: 48px;
         font-size: var(--text-xs);
+        line-height: var(--text-xs--line-height);
         aspect-ratio: 1;
-        font-family: var(--font-pixel);
+        font-family: var(--font-mono);
         font-weight: var(--font-weight-normal);
         padding: var(--spacing-2xs);
         display: flex;
         align-items: center;
         justify-content: center;
-        -webkit-font-smoothing: none;
-        -moz-osx-font-smoothing: unset;
-        font-smooth: never;
-        text-rendering: optimizeSpeed;
       }
 
       &:hover {

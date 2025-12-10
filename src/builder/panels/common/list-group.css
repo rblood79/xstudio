@@ -133,7 +133,7 @@
   border-radius: 48px;
   font-size: var(--text-xs);
   aspect-ratio: 1;
-  font-family: var(--font-pixel);
+  font-family: var(--font-mono);
   font-weight: var(--font-weight-normal);
   padding: var(--spacing-2xs);
   display: flex;
