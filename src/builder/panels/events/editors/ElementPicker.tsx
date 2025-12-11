@@ -63,13 +63,15 @@ export function ElementPicker({
 }: ElementPickerProps) {
   const [inputValue, setInputValue] = useState(value);
 
-  // 현재 페이지의 요소들 가져오기
-  const elements = useStore((state) => state.elements);
+  // 현재 페이지의 요소들 가져오기 (🆕 O(1) 인덱스 기반)
   const currentPageId = useStore((state) => state.currentPageId);
+  const getPageElements = useStore((state) => state.getPageElements);
 
   // 현재 페이지의 요소만 필터링하고 옵션 생성
   const options: ElementOption[] = useMemo(() => {
-    const pageElements = elements.filter((el) => el.page_id === currentPageId);
+    if (!currentPageId) return [];
+    // 🆕 O(1) 인덱스 기반 조회
+    const pageElements = getPageElements(currentPageId);
 
     let filteredElements = pageElements;
     if (filter) {
@@ -84,7 +86,7 @@ export function ElementPicker({
       customId: el.customId,
       displayName: el.customId ? `#${el.customId}` : `${el.tag} (${el.id.slice(0, 8)})`,
     }));
-  }, [elements, currentPageId, filter]);
+  }, [currentPageId, getPageElements, filter]);
 
   // 검색 필터링된 옵션
   const filteredOptions = useMemo(() => {

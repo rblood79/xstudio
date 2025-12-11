@@ -87,20 +87,23 @@ persistQueryClient({
 
 ## 4. 우선순위 재정의 (P0 → P2)
 
-| 우선순위 | 작업                           | Phase | 영향도              |
-| -------- | ------------------------------ | ----- | ------------------- |
-| **P0**   | MonitorPanel Gateway + enabled | 1     | CPU 70% ↓           |
-| **P0**   | Request Deduplication + Abort  | 6     | 네트워크 안정화     |
-| **P0**   | Canvas Backpressure 설계       | 4     | 메시지 큐 안정화    |
-| **P0**   | **캔버스 가상화**              | 보완  | 5,000개 렌더링 필수 |
-| **P1**   | PanelShell HOC 표준화          | 1     | 코드 일관성         |
-| **P1**   | Error Boundary 스코프 적용     | 7     | 에러 격리           |
-| **P1**   | Store 인덱스 시스템            | 2     | 조회 성능           |
-| **P1**   | History Diff 시스템            | 3     | 메모리 절감         |
-| **P1**   | **웹 워커 오프로딩**           | 보완  | UX 반응성           |
-| **P2**   | 장시간 시뮬레이션 CI           | 8     | 회귀 검출           |
-| **P2**   | LRU 페이지 언로드              | 5     | 대규모 최적화       |
-| **P2**   | **에셋 최적화**                | 보완  | 초기 로딩           |
+> **⚠️ Phase 10 (WebGL Builder) 결정 반영됨** - Phase 4 폐기, DOM 최적화 → Publish App 전용
+
+| 우선순위 | 작업                           | Phase | 영향도              | 비고 |
+| -------- | ------------------------------ | ----- | ------------------- | ---- |
+| **P0**   | MonitorPanel Gateway + enabled | 1     | CPU 70% ↓           | ✅ 완료 |
+| **P0**   | Request Deduplication + Abort  | 6     | 네트워크 안정화     | |
+| ~~P0~~   | ~~Canvas Backpressure 설계~~   | ~~4~~ | ~~메시지 큐 안정화~~ | ⚠️ Phase 10으로 대체 |
+| **P0**   | **🚀 WebGL Builder 전환**      | 10    | 10x 성능 향상       | 🆕 |
+| 📦       | **캔버스 가상화**              | 보완  | 5,000개 렌더링      | Publish App 전용 |
+| **P1**   | PanelShell HOC 표준화          | 1     | 코드 일관성         | |
+| **P1**   | Error Boundary 스코프 적용     | 7     | 에러 격리           | |
+| **P1**   | Store 인덱스 시스템            | 2     | 조회 성능           | |
+| **P1**   | History Diff 시스템            | 3     | 메모리 절감         | ✅ 완료 |
+| **P1**   | **웹 워커 오프로딩**           | 보완  | UX 반응성           | Builder + Publish |
+| **P2**   | 장시간 시뮬레이션 CI           | 8     | 회귀 검출           | |
+| **P2**   | LRU 페이지 언로드              | 5     | 대규모 최적화       | |
+| 📦       | **에셋 최적화**                | 보완  | 초기 로딩           | Publish App 전용 |
 
 ---
 

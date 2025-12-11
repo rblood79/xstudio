@@ -3,8 +3,12 @@
  *
  * PanelProps 인터페이스를 구현하여 패널 시스템과 통합
  * 요소별 속성 에디터를 동적으로 로드하여 표시
- * 
+ *
  * ⭐ 최적화: PropertyEditorWrapper로 Editor 렌더링 분리
+ *
+ * 🛡️ Gateway 패턴 적용 (2025-12-11)
+ * - isActive 체크를 최상단에서 수행
+ * - Content 컴포넌트 분리로 비활성 시 훅 실행 방지
  */
 
 import { useEffect, useState, useCallback, useMemo, memo } from "react";
@@ -230,7 +234,24 @@ const PropertyEditorWrapper = memo(function PropertyEditorWrapper({
  *    ```
  */
 
+/**
+ * PropertiesPanel - Gateway 컴포넌트
+ * 🛡️ isActive 체크 후 Content 렌더링
+ */
 export function PropertiesPanel({ isActive }: PanelProps) {
+  // 🛡️ Gateway: 비활성 시 즉시 반환 (훅 실행 방지)
+  if (!isActive) {
+    return null;
+  }
+
+  return <PropertiesPanelContent />;
+}
+
+/**
+ * PropertiesPanelContent - 실제 콘텐츠 컴포넌트
+ * 훅은 여기서만 실행됨 (isActive=true일 때만)
+ */
+function PropertiesPanelContent() {
   // ⭐ CRITICAL: Only subscribe to selectedElement (like StylesPanel)
   // Any other useStore subscription causes unnecessary re-renders!
   const selectedElement = useInspectorState((state) => state.selectedElement);
@@ -245,17 +266,19 @@ export function PropertiesPanel({ isActive }: PanelProps) {
 
   // ⭐ Optimized: Get state without subscribing (prevents re-renders)
   const getElementsMap = useCallback(() => useStore.getState().elementsMap, []);
-  const getElements = useCallback(() => useStore.getState().elements, []);
+  // 🆕 getElements 제거 - getPageElements 사용으로 대체
   const getCurrentPageId = useCallback(() => useStore.getState().currentPageId, []);
   const getSelectedElementIds = useCallback(() => useStore.getState().selectedElementIds || [], []);
   const getMultiSelectMode = useCallback(() => useStore.getState().multiSelectMode || false, []);
 
   // ⭐ Get current page elements (only recalculate when selectedElement changes)
+  // 🆕 O(1) 인덱스 기반 조회
   const currentPageElements = useMemo(() => {
     if (!selectedElement) return [];
-    const elements = useStore.getState().elements;
     const currentPageId = useStore.getState().currentPageId;
-    return elements.filter((el) => el.page_id === currentPageId);
+    if (!currentPageId) return [];
+    const getPageElements = useStore.getState().getPageElements;
+    return getPageElements(currentPageId);
   }, [selectedElement]);
 
   // ⭐ Get selected elements array for BatchPropertyEditor
@@ -265,13 +288,13 @@ export function PropertiesPanel({ isActive }: PanelProps) {
     return currentPageElements.filter((el) => selectedElementIds.includes(el.id));
   }, [selectedElement, currentPageElements]);
 
-  // ⭐ Get multiSelectMode, selectedElementIds, currentPageId, elements for JSX
+  // ⭐ Get multiSelectMode, selectedElementIds, currentPageId for JSX
   // 🎯 Zustand 구독 패턴 사용 - 상태 변경 즉시 반영
+  // 🆕 elements 구독 제거 - currentPageElements (O(1) 인덱스 기반) 사용
   const multiSelectMode = useStore((state) => state.multiSelectMode) || false;
   const rawSelectedElementIds = useStore((state) => state.selectedElementIds);
   const selectedElementIds = useMemo(() => rawSelectedElementIds || [], [rawSelectedElementIds]);
   const currentPageId = useStore((state) => state.currentPageId);
-  const elements = useStore((state) => state.elements);
 
   const [showKeyboardHelp, setShowKeyboardHelp] = useState(false);
 
@@ -510,28 +533,29 @@ export function PropertiesPanel({ isActive }: PanelProps) {
 
   // ⭐ Phase 3: Advanced Selection - Select All (Cmd+A)
   const handleSelectAll = useCallback(() => {
-    const elements = getElements();
     const currentPageId = getCurrentPageId();
 
-    if (!currentPageId || elements.length === 0) {
-      console.warn('[SelectAll] No elements to select');
+    if (!currentPageId) {
+      console.warn('[SelectAll] No page selected');
       return;
     }
 
-    // Get all element IDs from current page
-    const allElementIds = elements
-      .filter((el) => el.page_id === currentPageId)
-      .map((el) => el.id);
+    // 🆕 O(1) 인덱스 기반 조회
+    const getPageElements = useStore.getState().getPageElements;
+    const pageElements = getPageElements(currentPageId);
 
-    if (allElementIds.length === 0) {
+    if (pageElements.length === 0) {
       console.warn('[SelectAll] No elements on current page');
       return;
     }
 
+    // Get all element IDs from current page
+    const allElementIds = pageElements.map((el) => el.id);
+
     // Use store's setSelectedElements
     setSelectedElements(allElementIds);
     console.log(`✅ [SelectAll] Selected ${allElementIds.length} elements`);
-  }, [getCurrentPageId, getElements, setSelectedElements]);
+  }, [getCurrentPageId, setSelectedElements]);
 
   // ⭐ Phase 3: Advanced Selection - Clear Selection (Esc)
   const handleEscapeClearSelection = useCallback(() => {
@@ -933,11 +957,6 @@ export function PropertiesPanel({ isActive }: PanelProps) {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [handleTabNavigation]); // multiSelectMode, selectedElementIds 제거 (함수 내부에서 가져옴)
 
-  // 활성 상태가 아니면 렌더링하지 않음 (성능 최적화)
-  if (!isActive) {
-    return null;
-  }
-
   // 선택된 요소가 없으면 빈 상태 표시
   if (!selectedElement) {
     return <EmptyState message="요소를 선택하세요" />;
@@ -1024,8 +1043,9 @@ export function PropertiesPanel({ isActive }: PanelProps) {
                 onSelect={(elementIds) => {
                   setSelectedElements(elementIds);
                   // Track in selection memory
+                  // 🆕 currentPageElements 사용 (elements 구독 제거)
                   if (currentPageId) {
-                    selectionMemory.addSelection(elementIds, elements, currentPageId);
+                    selectionMemory.addSelection(elementIds, currentPageElements, currentPageId);
                   }
                 }}
               />

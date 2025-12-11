@@ -1,7 +1,7 @@
 # Phase 10: WebGL Builder Architecture
 
 > **작성일**: 2025-12-11
-> **최종 수정**: 2025-12-11 (모노레포 구조 + 디렉토리 네이밍 확정)
+> **최종 수정**: 2025-12-11 (리뷰 체크리스트 반영: 동기화 시퀀스, Scene 스키마, Context Lost, 텍스처 캐시)
 > **상태**: 계획 (Plan)
 > **관련 문서**: [02-architecture.md](./02-architecture.md) | [task.md](./task.md)
 
@@ -66,7 +66,16 @@
 └─────────────────────────────────────────────────────────────┘
 ```
 
-### 1.3 모노레포 구조 (확정)
+### 1.3 모노레포 구조 (제안 - 미확정)
+
+> **⚠️ 현재 상태**: npm 단일 패키지 구조
+>
+> **전제 조건** (마이그레이션 전 필수):
+> - [ ] pnpm 도입 및 workspace 설정
+> - [ ] 패키지 분리 (builder/publish/shared)
+> - [ ] CI/CD 파이프라인 수정 (빌드/테스트/배포 분리)
+> - [ ] 의존성 호이스팅 정책 결정
+> - [ ] 기존 import 경로 마이그레이션 스크립트 작성
 
 ```
 xstudio/
@@ -100,12 +109,81 @@ xstudio/
 │   └── shared/                  ← 공통 코드
 │       ├── components/          ← React Aria Components
 │       └── types/
+│           └── scene.ts         ← 공통 Scene 스키마 (Element, Transform, Styling)
 │
 ├── package.json
 └── pnpm-workspace.yaml
 ```
 
-### 1.4 DOM 구조 매핑
+### 1.4 전제 조건 (Prerequisites)
+
+> **⚠️ Phase 10 착수 전 반드시 확인 필요**
+
+#### 기술 전제 조건
+
+| 전제 조건 | 현재 상태 | 필요 작업 | 리스크 |
+|----------|----------|----------|-------|
+| **React 19 호환성** | ✅ 사용 중 | @pixi/react가 React 19 지원 확인 | 낮음 |
+| **@pixi/react v8 안정성** | ❓ 미확인 | v8 RC/Stable 릴리즈 대기 또는 v7 사용 검토 | 중간 |
+| **빌드 도구 변경** | Vite | WebGL 번들링, Worker 설정 확인 | 낮음 |
+| **pnpm workspace 전환** | npm 단일 | pnpm 도입 + workspace 설정 | 중간 |
+
+#### 데이터/테스트 전제 조건
+
+| 전제 조건 | 설명 | 확인 방법 |
+|----------|-----|----------|
+| **Scene 스키마 호환성** | Builder/Publish 간 데이터 교차 테스트 | E2E 테스트 작성 |
+| **기존 프로젝트 마이그레이션** | DB 스키마 변경 없이 로드 가능 확인 | 마이그레이션 스크립트 |
+| **성능 베이스라인** | Phase 10 전/후 비교를 위한 실측값 | `scripts/perf-benchmark.ts` |
+
+### 1.5 롤백 시나리오
+
+> **Critical**: WebGL 전환 실패 시 즉시 복구 가능해야 함
+
+#### Feature Flag 기반 점진적 전환
+
+```typescript
+// src/config/featureFlags.ts
+export const FEATURE_FLAGS = {
+  USE_WEBGL_CANVAS: import.meta.env.VITE_USE_WEBGL_CANVAS === 'true',
+  // 환경변수로 제어, 배포 없이 전환 가능
+};
+
+// BuilderCanvas.tsx
+function BuilderCanvas() {
+  if (FEATURE_FLAGS.USE_WEBGL_CANVAS) {
+    return <PixiCanvas />;  // WebGL
+  }
+  return <IframeCanvas />;  // 기존 DOM (Fallback)
+}
+```
+
+#### 롤백 체크리스트
+
+| 단계 | 롤백 조건 | 롤백 액션 |
+|------|----------|----------|
+| 10.1 | @pixi/react 설정 실패 | Feature Flag OFF, 기존 iframe 유지 |
+| 10.2 | ElementSprite 렌더링 불안정 | Flag OFF, 성능 로그 수집 후 재시도 |
+| 10.3-10.5 | Selection/Transform 버그 | 해당 기능만 DOM Overlay로 대체 |
+| 10.7 | Publish App 분리 실패 | 기존 Canvas iframe 유지 (빌드 분리만) |
+
+#### 최악의 시나리오 대응
+
+```
+문제: @pixi/react v8이 React 19와 호환되지 않음
+대응:
+  1. @pixi/react v7 (Pixi.js v7) 사용으로 다운그레이드
+  2. 또는 React 18로 일시 다운그레이드
+  3. 또는 vanilla Pixi.js + 수동 React 통합
+
+문제: WebGL 성능이 DOM보다 나쁨 (드문 케이스)
+대응:
+  1. GPU 프로파일링 (WebGL Inspector, Spector.js)
+  2. Sprite 배칭, 텍스처 아틀라스 최적화
+  3. Feature Flag OFF로 즉시 롤백
+```
+
+### 1.6 DOM 구조 매핑
 
 디렉토리 구조는 DOM 계층과 일치하도록 설계:
 
@@ -236,10 +314,87 @@ xstudio/
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-### 3.3 WebGL Canvas 컴포넌트 구조
+### 3.3 Pixi↔React DOM 동기화 시퀀스
+
+Pixi 레이어와 React DOM 패널 사이의 상태 동기화에서 프레임 지연이 발생할 수 있으므로, 렌더-스토어 불일치 탐지용 시퀀스를 사용합니다.
+
+```typescript
+// packages/builder/stores/canvasSync.ts
+interface CanvasSyncState {
+  renderVersion: number;
+  lastPixiRenderVersion: number;
+  incrementRenderVersion: () => void;
+  syncPixiVersion: (version: number) => void;
+}
+
+export const useCanvasSyncStore = create<CanvasSyncState>((set) => ({
+  renderVersion: 0,
+  lastPixiRenderVersion: 0,
+
+  incrementRenderVersion: () =>
+    set((state) => ({ renderVersion: state.renderVersion + 1 })),
+
+  syncPixiVersion: (version) =>
+    set({ lastPixiRenderVersion: version }),
+}));
+
+// 불일치 탐지 로그
+function detectSyncMismatch() {
+  const { renderVersion, lastPixiRenderVersion } = useCanvasSyncStore.getState();
+  if (renderVersion - lastPixiRenderVersion > 2) {
+    console.warn(`[CanvasSync] Mismatch detected: store=${renderVersion}, pixi=${lastPixiRenderVersion}`);
+  }
+}
+```
+
+### 3.4 공통 Scene 스키마
+
+`packages/shared/types/scene.ts`에 Builder와 Publish App 간 공유되는 Scene 스키마를 정의합니다.
+
+```typescript
+// packages/shared/types/scene.ts
+export interface SceneElement {
+  id: string;
+  tag: string;
+  transform: Transform;
+  styling: Styling;
+  props?: Record<string, unknown>;
+  children?: SceneElement[];
+}
+
+export interface Transform {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  rotation?: number;
+  scale?: { x: number; y: number };
+}
+
+export interface Styling {
+  backgroundColor?: string;
+  borderRadius?: number;
+  borderWidth?: number;
+  borderColor?: string;
+  opacity?: number;
+  boxShadow?: string;
+}
+
+// 직렬화/역직렬화 유틸
+export function serializeScene(elements: Element[]): SceneElement[] {
+  // Element → SceneElement 변환
+}
+
+export function deserializeScene(scene: SceneElement[]): Element[] {
+  // SceneElement → Element 변환
+}
+```
+
+### 3.5 WebGL Canvas 컴포넌트 구조
 
 ```typescript
 // packages/builder/workspace/canvas/BuilderCanvas.tsx
+import { useCanvasSyncStore } from '../../stores/canvasSync';
 import { Application, Container } from '@pixi/react';
 import { useStore } from '../../stores';
 
@@ -280,7 +435,7 @@ export function BuilderCanvas() {
 }
 ```
 
-### 3.4 Element Sprite 렌더링 전략
+### 3.6 Element Sprite 렌더링 전략
 
 ```typescript
 // packages/builder/workspace/canvas/sprites/ElementSprite.tsx
@@ -563,6 +718,8 @@ export function PageRenderer({ page, elements }) {
 - [ ] `packages/builder/workspace/Workspace.tsx` 컨테이너 생성
 - [ ] 기존 BuilderCore에 Workspace 마운트
 - [ ] DevTools 연동 (PixiJS DevTools 확장)
+- [ ] GPU 프로파일링 설정 (`@pixi/stats` 또는 자체 VRAM 모니터)
+- [ ] `canvasSync.ts` 스토어 생성 (renderVersion 동기화)
 
 #### Phase 10.2: ElementSprite 시스템 (16hr)
 - [ ] `packages/builder/workspace/canvas/sprites/` 디렉토리 생성
@@ -607,18 +764,25 @@ export function PageRenderer({ page, elements }) {
 - [ ] 모노레포 구조 설정 (pnpm workspace)
 - [ ] `packages/publish/` 프로젝트 scaffolding
 - [ ] `packages/shared/` 공통 코드 분리
+- [ ] `packages/shared/types/scene.ts` 공통 Scene 스키마 정의
 - [ ] ComponentRegistry 생성 (`src/canvas/renderers/*` → `packages/publish/components/`)
 - [ ] PageRenderer 구현
 - [ ] JSON Export 기능 (Builder → Publish)
 - [ ] Static Site Generation (Vite SSG)
 - [ ] Hosting 설정 (Vercel, Netlify)
+- [ ] Tree-shaking 점검 (`packages/shared` import 시 번들 비대화 방지)
+- [ ] `exports` 필드 모듈 분리 (types, hooks, utils)
 
-#### Phase 10.8: 마이그레이션 (8hr)
+#### Phase 10.8: 마이그레이션 + 안정성 검증 (8hr)
 - [ ] `src/` → `packages/builder/` 코드 이전
 - [ ] postMessage 로직 제거
 - [ ] useIframeMessenger → Direct Zustand 전환
 - [ ] useDeltaMessenger 제거 (불필요)
 - [ ] 기존 `src/canvas/` iframe 코드 정리/삭제
+- [ ] `npm run soak:webgl` 스크립트 추가 (24시간 스트레스 테스트)
+- [ ] GPU 메모리/텍스처 누수 로깅 (CI 아티팩트)
+- [ ] 텍스처 캐시/LRU 정책 문서화
+- [ ] 포커스 트랩 테스트 체크리스트 작성
 - [ ] 통합 테스트
 
 ---
@@ -681,6 +845,75 @@ P2 (Medium):
 1. **WebGL 미지원 브라우저**: Canvas 2D 폴백 (PixiJS 자동 처리)
 2. **텍스트 렌더링 품질**: Canvas 2D 텍스트 또는 DOM 오버레이
 3. **복잡한 컴포넌트**: DOM Preview 모드 토글 (기존 iframe 유지)
+
+**WebGL 미지원 브라우저 상세:**
+- Safari 구버전 (15.x 이하): WebGL 2.0 미지원 가능
+- 대응: PixiJS는 자동으로 Canvas 2D fallback 제공
+- 사용자 알림: "최적 성능을 위해 최신 브라우저를 권장합니다" 배너 표시
+
+### 8.3 WebGL Context Lost 처리
+
+GPU 리소스 부족 시 브라우저가 WebGL 컨텍스트를 강제 해제할 수 있습니다.
+
+```typescript
+// packages/builder/workspace/canvas/utils/contextRecovery.ts
+export function setupContextRecovery(canvas: HTMLCanvasElement) {
+  canvas.addEventListener('webglcontextlost', (e) => {
+    e.preventDefault();
+    console.warn('[WebGL] Context lost - preparing recovery');
+
+    // 사용자 알림
+    showToast({ type: 'warning', message: 'GPU 리소스 복구 중...' });
+
+    // 복구 준비 (텍스처/셰이더 재로드 예약)
+    scheduleRecovery();
+  });
+
+  canvas.addEventListener('webglcontextrestored', () => {
+    console.log('[WebGL] Context restored - reloading assets');
+
+    // 텍스처/셰이더 재로드
+    reloadAllTextures();
+    reloadShaders();
+
+    // 씬 재렌더링
+    forceRerender();
+
+    showToast({ type: 'success', message: '복구 완료' });
+  });
+}
+```
+
+### 8.4 텍스처 캐시/LRU 정책
+
+VRAM 예산 관리를 위한 텍스처 캐시 정책:
+
+| 항목 | 정책 |
+|------|------|
+| **캐시 크기** | 최대 256MB VRAM |
+| **LRU Eviction** | 30초 미사용 텍스처 해제 |
+| **destroy() 호출** | `texture.destroy(true)` - 소스 이미지까지 해제 |
+| **비동기 해제** | `requestIdleCallback` 사용으로 프레임 드롭 방지 |
+
+```typescript
+// packages/builder/workspace/canvas/utils/textureCache.ts
+class TextureLRUCache {
+  private maxVRAM = 256 * 1024 * 1024; // 256MB
+  private ttl = 30000; // 30초
+
+  evictStale() {
+    const now = Date.now();
+    this.cache.forEach((entry, key) => {
+      if (now - entry.lastAccess > this.ttl) {
+        requestIdleCallback(() => {
+          entry.texture.destroy(true);
+          this.cache.delete(key);
+        });
+      }
+    });
+  }
+}
+```
 
 ---
 

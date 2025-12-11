@@ -35,6 +35,8 @@ export interface UsePageManagerReturn {
     addPage: (projectId: string) => Promise<ApiResult<ApiPage>>;
     addPageWithParams: (params: AddPageParams) => Promise<ApiResult<ApiPage>>;
     initializeProject: (projectId: string) => Promise<ApiResult<ApiPage[]>>;
+    /** 🚀 Phase 5: 페이지가 로드되지 않았으면 로드 */
+    loadPageIfNeeded: (pageId: string) => Promise<void>;
     // 직접 접근 (필요시)
     pageList: ReturnType<typeof useListData<ApiPage>>;
 }
@@ -77,6 +79,10 @@ export const usePageManager = ({ requestAutoSelectAfterUpdate }: UsePageManagerP
 
     const setCurrentPageId = useStore((state) => state.setCurrentPageId);
     const setPages = useStore((state) => state.setPages);
+
+    // 🚀 Phase 5: Lazy Loading 관련 상태
+    const lazyLoadPageElements = useStore((state) => state.lazyLoadPageElements);
+    const isPageLoaded = useStore((state) => state.isPageLoaded);
 
     /**
      * fetchElements - 페이지 요소 로드
@@ -399,6 +405,26 @@ export const usePageManager = ({ requestAutoSelectAfterUpdate }: UsePageManagerP
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [fetchElements]);
 
+    /**
+     * loadPageIfNeeded - 페이지가 로드되지 않았으면 로드
+     * 🚀 Phase 5: Lazy Loading 통합
+     *
+     * @param pageId - 로드할 페이지 ID
+     */
+    const loadPageIfNeeded = useCallback(async (pageId: string): Promise<void> => {
+        if (!pageId) return;
+
+        // 이미 로드됨 - 스킵
+        if (isPageLoaded(pageId)) {
+            console.log(`📦 [loadPageIfNeeded] Page already loaded: ${pageId.slice(0, 8)}`);
+            return;
+        }
+
+        // Lazy Load 실행
+        console.log(`🔄 [loadPageIfNeeded] Loading page: ${pageId.slice(0, 8)}`);
+        await lazyLoadPageElements(pageId);
+    }, [isPageLoaded, lazyLoadPageElements]);
+
     return {
         pages: pageList.items,
         selectedPageId,
@@ -407,6 +433,7 @@ export const usePageManager = ({ requestAutoSelectAfterUpdate }: UsePageManagerP
         addPage,
         addPageWithParams,
         initializeProject,
+        loadPageIfNeeded,
         pageList, // 직접 접근 (필요시)
     };
 };

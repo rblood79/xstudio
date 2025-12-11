@@ -1,7 +1,7 @@
 # 현재 문제 분석 및 목표 성능 지표
 
 > **관련 문서**: [README.md](./README.md) | [02-architecture.md](./02-architecture.md)
-> **최종 수정**: 2025-12-10
+> **최종 수정**: 2025-12-11 (A1.1 Panel Gateway 완료: Properties/Styles/Components)
 
 ---
 
@@ -11,10 +11,10 @@
 
 | 패널 | 상태 | 주요 문제 | 우선순위 |
 |------|------|----------|----------|
-| **MonitorPanel** | 🔴 Critical | RAF/interval이 비활성 시에도 실행, enabled 파라미터 없음 | **P0** |
-| **PropertiesPanel** | 🟠 High | 5개 selector 구독, isActive 체크 전 실행 | **P1** |
-| **StylesPanel** | 🟠 Medium | 4개 훅 구독, isActive 체크 전 실행 | **P2** |
-| **ComponentsPanel** | 🟡 Medium | 6개 selector 구독, isActive 체크 전 실행 | **P2** |
+| **MonitorPanel** | ✅ Fixed | Gateway 패턴 + enabled 파라미터 적용 완료 (2025-12-11) | - |
+| **PropertiesPanel** | ✅ Fixed | Gateway 패턴 적용 완료 (2025-12-11) | - |
+| **StylesPanel** | ✅ Fixed | Gateway 패턴 적용 완료 (2025-12-11) | - |
+| **ComponentsPanel** | ✅ Fixed | Gateway 패턴 적용 완료 (2025-12-11) | - |
 | **DataTablePanel** | ✅ Fixed | React Query + Zustand Store 동기화 구현 (2025-12-10) | - |
 | **NodesPanel** | ✅ OK | Virtual Scrolling 이미 적용 (VirtualizedLayerTree) | - |
 | **EventsPanel** | ✅ OK | Early return 패턴 적용됨 | - |
@@ -24,19 +24,20 @@
 | **DataTableEditorPanel** | ✅ OK | 컴포넌트 분리 패턴 적용됨 | - |
 | **CodePreviewPanel** | ✅ OK | Props 기반, Lazy 코드 생성 | - |
 
-### 1.2 MonitorPanel 상세 분석 (가장 심각)
+### 1.2 MonitorPanel 상세 분석 (✅ 해결됨)
 
 **파일**: `src/builder/panels/monitor/MonitorPanel.tsx`
 
-| Line | 코드 | 문제 |
-|------|------|------|
-| 42 | `useMemoryStats()` | ❌ `enabled` 파라미터 없음 → 10초 interval 항상 실행 |
-| 53 | `useWebVitals()` | ❌ `enabled` 파라미터 없음 → message listener 항상 등록 |
-| 76-86 | Toast warning useEffect | ❌ isActive 가드 없음 |
-| 88-112 | Memory history RAF | ❌ isActive 가드 없음 |
-| 121 | `if (!isActive) return null` | ❌ 너무 늦음 (훅 이미 실행됨) |
+> **✅ 2025-12-11 수정 완료**: Gateway 패턴 + enabled 파라미터 적용
 
-**영향**: 패널이 숨겨져 있어도 CPU 지속 사용, 메모리 누적 증가
+| Line | 코드 | 상태 |
+|------|------|------|
+| 49-56 | `MonitorPanelContent` 분리 | ✅ Gateway 패턴 적용 |
+| 54 | `useMemoryStats({ enabled: true })` | ✅ enabled 파라미터 지원 |
+| 26 | `useWebVitals({ enabled })` | ✅ enabled 파라미터 지원 |
+| 26 | `useFPSMonitor({ enabled })` | ✅ enabled 파라미터 지원 |
+
+**현재 상태**: 패널 비활성 시 모든 훅이 정지됨
 
 ### 1.3 대규모 요소 처리 문제
 
@@ -118,10 +119,87 @@
 | **요소 저장** | 배치 (5초 debounce) | - | 3회, 지수 백오프 |
 | **실시간 동기화** | Supabase Realtime | - | 자동 재연결 |
 
-#### 2.3.5 SLO 모니터링 구현
+#### 2.3.5 측정 환경 및 기준값
+
+> **⚠️ 아래 기준값은 측정 전 추정치입니다. 실측 후 업데이트 필요**
+
+**측정 환경 (기준)**:
+- **하드웨어**: MacBook Pro M1/M2, 16GB RAM
+- **브라우저**: Chrome 120+, Firefox 120+
+- **프로젝트 규모**: 1,000개 요소 / 10페이지
+- **측정 도구**: Chrome DevTools Performance, `performance.measure()`
+
+**현재 실측치** (TODO: 실측 후 업데이트):
+| 작업 | 현재 P50 | 현재 P99 | 샘플 수 | 측정일 |
+|------|---------|---------|--------|-------|
+| 요소 선택 | TBD | TBD | - | - |
+| 패널 전환 | TBD | TBD | - | - |
+| 속성 변경 | TBD | TBD | - | - |
+
+**측정 스크립트 위치**: `scripts/perf-benchmark.ts` (TODO: 작성 필요)
+
+#### 2.3.6 Phase 7 모니터링 적용 위치
+
+> **현재 상태**: 🟡 구현만 완료, 실사용 안 함 ([task.md](./task.md) 참조)
+
+**구현된 파일**:
+- `src/builder/utils/performanceMonitor.ts` (370줄+)
+- `src/builder/hooks/useAutoRecovery.ts` (185줄)
+
+**적용 필요 위치**: `src/builder/main/BuilderCore.tsx:39` (BuilderCore 컴포넌트 내부)
+
+```typescript
+// src/builder/main/BuilderCore.tsx
+import { useAutoRecovery } from '../hooks/useAutoRecovery';
+
+export const BuilderCore: React.FC = () => {
+  const { projectId } = useParams<{ projectId: string }>();
+
+  // 🆕 Phase 7: 성능 모니터링 + 자동 복구 (line ~44)
+  useAutoRecovery();
+
+  // ... 기존 Store 상태들
+}
+```
+
+**삽입 위치 상세**:
+- 파일: `src/builder/main/BuilderCore.tsx`
+- 위치: `const { projectId }` 선언 바로 다음 (약 line 44)
+- 이유: BuilderCore가 모든 패널/캔버스의 최상위 컴포넌트
+
+**측정 포인트 추가 예시**:
+```typescript
+// 요소 선택 측정
+import { sloMonitor } from '../utils/sloMonitor';
+
+const handleElementSelect = async (elementId: string) => {
+  await sloMonitor.measureLatencyAsync('elementSelect', async () => {
+    await selectElement(elementId);
+  });
+};
+```
+
+#### 2.3.7 SLO 모니터링 구현
 
 ```typescript
 // src/builder/utils/sloMonitor.ts
+
+/**
+ * SLO 임계값 정의 (단위: ms)
+ * 2.3.2 상호작용 지연 SLO 기준
+ */
+const SLO_THRESHOLDS: Record<string, { p50: number; p95: number; p99: number }> = {
+  elementSelect: { p50: 16, p95: 30, p99: 50 },
+  panelSwitch: { p50: 50, p95: 100, p99: 150 },
+  propertyChange: { p50: 30, p95: 50, p99: 100 },
+  undoRedo: { p50: 50, p95: 100, p99: 200 },
+  pageSwitch: { p50: 100, p95: 200, p99: 400 },
+  canvasSync: { p50: 32, p95: 50, p99: 100 },
+  // Phase 10 WebGL 전용 메트릭
+  webglRender: { p50: 8, p95: 12, p99: 16 },
+  vramUsage: { p50: 128, p95: 192, p99: 256 }, // MB 단위
+};
+
 interface SLOMetrics {
   memory: {
     heapUsed: number;
@@ -154,7 +232,7 @@ class SLOMonitor {
   private violations: SLOViolation[] = [];
 
   /**
-   * 상호작용 지연 측정
+   * 동기 함수 지연 측정
    */
   measureLatency(operation: string, fn: () => void): void {
     const start = performance.now();
@@ -163,6 +241,25 @@ class SLOMonitor {
 
     this.recordLatency(operation, duration);
     this.checkSLOViolation(operation, duration);
+  }
+
+  /**
+   * 비동기 함수 지연 측정 (API 호출, postMessage 등)
+   */
+  async measureLatencyAsync<T>(operation: string, fn: () => Promise<T>): Promise<T> {
+    const start = performance.now();
+    try {
+      const result = await fn();
+      const duration = performance.now() - start;
+      this.recordLatency(operation, duration);
+      this.checkSLOViolation(operation, duration);
+      return result;
+    } catch (error) {
+      const duration = performance.now() - start;
+      this.recordLatency(operation, duration);
+      this.checkSLOViolation(operation, duration);
+      throw error;
+    }
   }
 
   /**

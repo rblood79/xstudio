@@ -4,15 +4,15 @@ import { useNavigate } from "react-router-dom";
 import "./App.css";
 import "./hero.css";
 import {
-  SquarePlus,
+  CirclePlus,
+  SquareFunction,
   CloudUpload,
-  Brain,
+  SwatchBook,
   Box,
   Play,
   BotMessageSquare,
-  CircleDivide,
-  CirclePercent,
-  Pyramid,
+  ChartLine,
+  Database,
 } from "lucide-react";
 import { useParticleBackground } from "./components/ParticleBackground";
 import { ParticleButton } from "./components/ParticleButton";
@@ -148,11 +148,8 @@ function App() {
           </div>
           <div className="header-container">
             <div className="landing-header">
-              <h1 className="landing-header-title">Experience of BESPOKE</h1>
-              <p className="landing-header-subtitle">
-                Unleash your creativity and bring your ideas to life with our
-                cutting-edge platform.
-              </p>
+              <h1 className="landing-header-title">COMPOSITION</h1>
+              <p className="landing-header-subtitle">Bespoke by design, cutting-edge platform.</p>
             </div>
           </div>
           <div className="landing-cta">
@@ -166,28 +163,28 @@ function App() {
           </div>
           <div className="landing-features">
             <ParticleButton size="sm" variant="ghost">
-              <SquarePlus />
+              <CirclePlus />
             </ParticleButton>
             <ParticleButton size="sm" variant="ghost">
-              <CloudUpload />
+              <SquareFunction />
             </ParticleButton>
             <ParticleButton size="sm" variant="ghost">
-              <Box />
+              <ChartLine />
             </ParticleButton>
             <ParticleButton size="sm" variant="ghost">
-              <CircleDivide />
-            </ParticleButton>
-            <ParticleButton size="sm" variant="ghost">
-              <Brain />
+              <Database />
             </ParticleButton>
             <ParticleButton size="sm" variant="ghost">
               <BotMessageSquare />
             </ParticleButton>
             <ParticleButton size="sm" variant="ghost">
-              <CirclePercent />
+              <Box />
             </ParticleButton>
             <ParticleButton size="sm" variant="ghost">
-              <Pyramid />
+              <CloudUpload />
+            </ParticleButton>
+            <ParticleButton size="sm" variant="ghost">
+              <SwatchBook />
             </ParticleButton>
             <ParticleButton size="sm" variant="ghost">
               <Play />

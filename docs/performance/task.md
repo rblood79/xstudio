@@ -1,228 +1,292 @@
 # Performance Optimization Tasks
 
-> **Last Updated:** 2025-12-11 (모노레포 구조 확정, 80hr)
+> **Last Updated:** 2025-12-11 (Track A 완료: A1 미사용 코드 통합 + A2 네트워크 최적화)
+> **📌 단일 진실 소스**: 이 문서가 Phase 진행 현황의 기준입니다
 
-## Summary
+---
 
-| Phase | 구현 | 통합/사용 | 실제 완료율 | 상태 |
-|-------|------|----------|------------|------|
-| Phase 1 | 1/5 | 1/5 | **20%** | 🔴 부분 완료 |
-| Phase 2 | 3/4 | 0/4 | **0%** | 🔴 미사용 |
-| Phase 3 | 3/3 | 3/3 | **100%** | ✅ 완료 |
-| ~~Phase 4~~ | ~~4/4~~ | ~~0/4~~ | - | ⚠️ **Phase 10으로 대체** |
-| Phase 5 | 3/3 | 0/3 | **0%** | 🟡 구현만 완료 |
-| Phase 6 | 2/4 | 1/4 | **25%** | 🔴 부분 완료 |
-| Phase 7 | 4/4 | 0/4 | **0%** | 🟡 구현만 완료 |
-| Phase 8 | 0/3 | 0/3 | **0%** | ❌ 미착수 |
-| Phase 9 | 3/5 | 3/5 | **60%** | 🔄 부분 완료 |
-| **🚀 Phase 10** | **0/7** | **0/7** | **0%** | **🆕 계획** |
+## Executive Summary
 
-### 범례
-- ✅ **완료**: 구현 + 실제 사용
-- 🟡 **구현만 완료**: 코드 존재하지만 실제 사용 안 함
-- 🔴 **부분 완료**: 일부만 구현 또는 사용
-- ❌ **미착수**: 구현 없음
-- ⚠️ **대체됨**: 다른 Phase로 대체
+### 새로운 Phase 구조
 
-### 🚀 Phase 10: WebGL Builder 아키텍처 (NEW)
+기존 10개 Phase를 **3개 Track**으로 재조정:
 
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    Performance Optimization                  │
+├─────────────────────────────────────────────────────────────┤
+│                                                              │
+│  Track A: 즉시 실행 (전제조건 없음)                            │
+│  ├── A1. 미사용 코드 통합 (Phase 1,2,5,7)                      │
+│  └── A2. 네트워크 최적화 (Phase 6)                             │
+│                                                              │
+│  Track B: WebGL Builder (Phase 10)                           │
+│  ├── B0. 전제조건 충족                                        │
+│  ├── B1. WebGL Canvas 구축                                   │
+│  └── B2. Publish App 분리                                    │
+│                                                              │
+│  Track C: 검증 및 CI (Phase 8)                                │
+│  └── 장시간 시뮬레이션, SLO 검증                               │
+│                                                              │
+│  완료됨: Phase 3 (History Diff), Phase 9 부분 (CSS Containment)│
+│  폐기됨: Phase 4 (Delta Sync → Phase 10으로 대체)              │
+│                                                              │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### 실행 순서 요약
+
+| 순서 | Track | 작업 | 예상 시간 | 우선순위 |
+|------|-------|------|----------|----------|
+| **1** | A1 | 미사용 코드 통합 | 8hr | 🔴 P0 |
+| **2** | A2 | 네트워크 최적화 | 4hr | 🟡 P1 |
+| **3** | B0 | Phase 10 전제조건 | 8hr | 🔴 P0 |
+| **4** | B1 | WebGL Canvas 구축 | 56hr | 🔴 P0 |
+| **5** | B2 | Publish App 분리 | 24hr | 🟡 P1 |
+| **6** | C | CI 자동화 | 8hr | 🟢 P2 |
+
+**총 예상 시간**: 108hr (~13.5일)
+
+---
+
+## Track A: 즉시 실행 (전제조건 없음)
+
+> **목표**: 이미 구현된 코드를 실제 사용하도록 통합
+> **예상 시간**: 12hr (~1.5일)
+
+### A1. 미사용 코드 통합 (8hr)
+
+기존 Phase 1, 2, 5, 7의 "구현만 완료" 상태를 "실제 사용"으로 전환
+
+| # | 작업 | 파일 | 시간 | 상태 |
+|---|------|------|------|------|
+| A1.1 | **Panel Gateway 적용** (3개 패널) | | 3hr | ✅ |
+| | - PropertiesPanel Gateway | `PropertiesPanel.tsx` | 1hr | ✅ |
+| | - StylesPanel Gateway | `StylesPanel.tsx` | 1hr | ✅ |
+| | - ComponentsPanel Gateway | `ComponentsPanel.tsx` | 1hr | ✅ |
+| A1.2 | **Store Index Migration** (7곳) | | 2hr | ✅ |
+| | - `.filter(page_id)` → `getPageElements()` | 7개 파일 | 2hr | ✅ |
+| A1.3 | **usePageLoader 통합** | | 1.5hr | ✅ |
+| | - BuilderCore에 usePageLoader 호출 | `BuilderCore.tsx` | 1hr | ✅ |
+| | - 페이지 전환 시 loadPageIfNeeded() | `usePageManager.ts` | 0.5hr | ✅ |
+| A1.4 | **useAutoRecovery 통합** | | 1.5hr | ✅ |
+| | - BuilderCore에 useAutoRecovery 호출 | `BuilderCore.tsx` | 0.5hr | ✅ |
+| | - Toast 알림 연동 | `BuilderCore.tsx` | 1hr | ✅ |
+
+**완료 기준**:
+- [ ] 모든 패널 비활성 시 CPU < 5%
+- [ ] `getPageElements()` 호출로 O(1) 조회
+- [ ] 성능 저하 시 자동 복구 Toast 표시
+
+**상세 파일 목록** (A1.2 Store Index Migration):
+```
+stores/index.ts:115
+stores/elements.ts:436 (useCurrentPageElements)
+panels/events/editors/ElementPicker.tsx:72
+panels/nodes/NodesPanel.tsx:99
+panels/properties/PropertiesPanel.tsx:258,523
+stores/utils/elementReorder.ts:42
+panels/components/ComponentsPanel.tsx:78
+```
+
+---
+
+### A2. 네트워크 최적화 (4hr)
+
+기존 Phase 6의 남은 작업
+
+| # | 작업 | 파일 | 시간 | 상태 |
+|---|------|------|------|------|
+| A2.1 | Request Manager 구현 | `RequestManager.ts` | 2hr | ✅ |
+| | - Deduplication 로직 | | | ✅ |
+| | - AbortController 통합 | | | ✅ |
+| A2.2 | 패널 전환 시 요청 취소 | `useRequestManager` hook | 1hr | ✅ |
+| A2.3 | Persister 구현 (IndexedDB) | `QueryPersister.ts` | 1hr | ✅ |
+
+**완료 기준**:
+- [ ] 패널 전환 시 네트워크 요청 0회 (캐시 히트)
+- [ ] 중복 요청 방지
+- [ ] 새로고침 후 캐시 복원
+
+---
+
+## Track B: WebGL Builder (Phase 10)
+
+> **목표**: Builder Canvas를 WebGL로 전환, Publish App 분리
+> **예상 시간**: 88hr (~11일)
 > **상세 문서**: [10-webgl-builder-architecture.md](./10-webgl-builder-architecture.md)
 
-**목표**: Builder를 @pixi/react 기반 WebGL로 재구축, Publish App 분리
+### B0. 전제조건 충족 (8hr)
 
-**모노레포 구조 (확정)**:
+**⚠️ B1/B2 착수 전 필수 완료**
+
+| # | 전제조건 | 시간 | 상태 | 완료 기준 |
+|---|----------|------|------|----------|
+| B0.1 | @pixi/react v8 호환성 확인 | 2hr | ❓ | npm 설치 + 기본 렌더링 테스트 |
+| B0.2 | Feature Flag 설정 | 1hr | ❌ | `VITE_USE_WEBGL_CANVAS` 환경변수 |
+| B0.3 | 성능 베이스라인 측정 | 2hr | 🔄 | `scripts/perf-benchmark.ts` 실측 |
+| B0.4 | pnpm workspace 전환 | 2hr | ❌ | 기존 빌드 통과 |
+| B0.5 | CI/CD 파이프라인 수정 | 1hr | ❌ | packages/* 분리 빌드 |
+
+**롤백 전략**: Feature Flag OFF → 기존 iframe Canvas로 즉시 복구
+
+---
+
+### B1. WebGL Canvas 구축 (56hr)
+
+| Sub-Phase | 작업 | 시간 | 의존성 | 상태 |
+|-----------|------|------|--------|------|
+| **B1.1** | @pixi/react 설정 + 기본 캔버스 | 8hr | B0 완료 | 📋 |
+| **B1.2** | ElementSprite 렌더링 시스템 | 16hr | B1.1 | 📋 |
+| **B1.3** | Selection + Transform 핸들 | 12hr | B1.2 | 📋 |
+| **B1.4** | Zoom/Pan + Grid | 8hr | B1.2 | 📋 |
+| **B1.5** | Text Input 하이브리드 | 12hr | B1.2 | 📋 |
+
+**B1.1 상세 체크리스트**:
+- [ ] `packages/builder/workspace/` 디렉토리 구조 생성
+- [ ] `BuilderCanvas.tsx` 생성
+- [ ] `canvasSync.ts` 스토어 생성
+- [ ] GPU 프로파일링 설정
+
+**B1.2 상세 체크리스트**:
+- [ ] `sprites/` 디렉토리 생성
+- [ ] BoxSprite, TextSprite, ImageSprite 구현
+- [ ] Style → PixiJS 속성 변환 유틸리티
+
+---
+
+### B2. Publish App 분리 (24hr)
+
+| Sub-Phase | 작업 | 시간 | 의존성 | 상태 |
+|-----------|------|------|--------|------|
+| **B2.1** | 모노레포 설정 | 4hr | B0.4 | 📋 |
+| **B2.2** | `packages/shared/` 공통 코드 | 4hr | B2.1 | 📋 |
+| **B2.3** | `packages/publish/` 앱 생성 | 8hr | B2.2 | 📋 |
+| **B2.4** | postMessage 제거 + 마이그레이션 | 8hr | B1 완료 | 📋 |
+
+**B2.3 상세 체크리스트**:
+- [ ] ComponentRegistry 생성 (`src/canvas/renderers/*` 이전)
+- [ ] PageRenderer 구현
+- [ ] JSON Export 기능
+- [ ] 접근성 테스트
+
+---
+
+## Track C: 검증 및 CI (Phase 8)
+
+> **목표**: 장시간 안정성 검증
+> **예상 시간**: 8hr (~1일)
+> **의존성**: Track A 완료 후 실행 권장
+
+| # | 작업 | 시간 | 상태 |
+|---|------|------|------|
+| C1 | Fixed Seed Generator | 2hr | ❌ |
+| C2 | Long Session Simulation (12hr) | 3hr | ❌ |
+| C3 | GitHub Actions Workflow | 2hr | ❌ |
+| C4 | SLO Verification 자동화 | 1hr | ❌ |
+
+**완료 기준**:
+- [ ] 12시간 세션 안정성 테스트 통과
+- [ ] 5,000개 요소 시나리오 통과
+- [ ] 메모리 증가율 < 8MB/h
+- [ ] SLO 위반 0건
+
+---
+
+## 완료된 항목
+
+### ✅ Phase 3: History Diff System (100%)
+
+| 항목 | 파일 위치 |
+|------|----------|
+| Element Diff Utility | `elementDiff.ts` (497줄) |
+| History IndexedDB | `historyIndexedDB.ts` (533줄) |
+| History Integration | `history.ts:273,282,361,363,659` |
+| Command Data Store | `commandDataStore.ts` |
+
+### ✅ Phase 9 부분: CSS Containment (60%)
+
+| 항목 | 파일 위치 |
+|------|----------|
+| CSS Containment | `Menu.css`, `ListBox.css`, `ComboBox.css` 등 |
+| Canvas Virtualization | `VirtualizedTree.tsx`, `VirtualizedLayerTree.tsx` |
+
+---
+
+## 폐기된 항목
+
+### ⚠️ Phase 4: Canvas Delta Sync
+
+> **폐기 이유**: Phase 10 (WebGL Builder)에서 postMessage 자체가 제거됨
+> **대체**: Direct Zustand State (WebGL → Store 직접 접근)
+
+<details>
+<summary>📦 기존 구현 (참고용)</summary>
+
+| 항목 | 파일 위치 |
+|------|----------|
+| Delta Message Types | `canvasDeltaMessenger.ts:19-53` |
+| useDeltaMessenger Hook | `useDeltaMessenger.ts` (346줄) |
+| Canvas Receiver | `messageHandler.ts:323-336,457-558` |
+| Backpressure | `canvasDeltaMessenger.ts` |
+
+</details>
+
+---
+
+## 실행 가이드
+
+### Step 1: Track A 실행 (즉시 시작 가능)
+
+```bash
+# 1. A1.1 Panel Gateway 적용
+# PropertiesPanel.tsx, StylesPanel.tsx, ComponentsPanel.tsx 수정
+
+# 2. A1.2 Store Index Migration
+# 10곳의 .filter(page_id) → getPageElements() 변경
+
+# 3. A1.4 useAutoRecovery 통합
+# BuilderCore.tsx에 useAutoRecovery() 추가
+
+# 4. 검증
+npm run type-check
+npm run dev  # CPU 사용량 확인
 ```
-xstudio/
-├── packages/
-│   ├── builder/                 ← 현재 src/ 이전
-│   │   └── workspace/
-│   │       ├── canvas/          ← WebGL (PixiJS)
-│   │       └── overlay/         ← DOM 오버레이
-│   ├── publish/                 ← Publish App
-│   └── shared/                  ← 공통 코드
-└── pnpm-workspace.yaml
+
+### Step 2: Track B0 전제조건 확인
+
+```bash
+# 1. @pixi/react 호환성 테스트
+npm install @pixi/react@latest pixi.js@latest --save-dev
+# 기본 렌더링 테스트 작성
+
+# 2. Feature Flag 설정
+echo "VITE_USE_WEBGL_CANVAS=false" >> .env.local
+
+# 3. 성능 베이스라인 측정
+npx tsx scripts/perf-benchmark.ts --elements=1000 --output=baseline.json
 ```
 
-| Sub-Phase | 작업 | 디렉토리 | 시간 | 우선순위 | 상태 |
-|-----------|------|----------|------|----------|------|
-| 10.1 | @pixi/react v8 설정 | `packages/builder/workspace/` | 8hr | P0 | 📋 |
-| 10.2 | ElementSprite 시스템 | `packages/builder/workspace/canvas/sprites/` | 16hr | P0 | 📋 |
-| 10.3 | Selection + Transform | `packages/builder/workspace/canvas/selection/` | 12hr | P1 | 📋 |
-| 10.4 | Zoom/Pan + Grid | `packages/builder/workspace/canvas/grid/` | 8hr | P1 | 📋 |
-| 10.5 | Text Input 하이브리드 | `packages/builder/workspace/overlay/` | 12hr | P1 | 📋 |
-| 10.7 | Publish App 분리 | `packages/publish/` | 16hr | P0 | 📋 |
-| 10.8 | Migration 완료 | `src/` → `packages/` | 8hr | P2 | 📋 |
+### Step 3: Track B1 WebGL 구축 (B0 완료 후)
 
-**총 예상 시간**: 80hr (~10일)
-
-> **10.6 (접근성 레이어) 제거 이유**:
-> - 빌더는 **시각적 디자인 도구** (Figma, Canva도 빌더 접근성 미지원)
-> - **Publish App은 React DOM 기반이므로 접근성 자동 지원**
-
-**기대 효과**:
-- 5,000개 요소 60fps 렌더링 (현재 불가능)
-- 10,000개 요소 30fps 렌더링
-- 줌/팬 반응 < 16ms
-- postMessage 오버헤드 제거
+```bash
+# Feature Flag ON으로 점진적 전환
+VITE_USE_WEBGL_CANVAS=true npm run dev
+```
 
 ---
 
-## Phase 1: Panel Gateway Pattern (🔴 20%)
+## 진행 현황 Summary
 
-**문제점**: PropertiesPanel, StylesPanel, ComponentsPanel 모두 `isActive` 체크 전에 훅이 호출됨
-
-| 항목 | 구현 | 사용 | 파일 위치 |
-|------|------|------|----------|
-| MonitorPanel Gateway | ✅ | ✅ | `MonitorPanel.tsx:49-56` Content 분리 |
-| useMemoryStats enabled | ✅ | ✅ | `useMemoryStats.ts:54` |
-| useWebVitals enabled | ✅ | ✅ | `useWebVitals.ts:26` |
-| useFPSMonitor enabled | ✅ | ✅ | `useFPSMonitor.ts:26` |
-| PropertiesPanel Gateway | ❌ | ❌ | 훅이 isActive 전에 호출 (line 236 vs 937) |
-| StylesPanel Gateway | ❌ | ❌ | 훅이 isActive 전에 호출 (line 37 vs 122) |
-| ComponentsPanel Gateway | ❌ | ❌ | 훅이 isActive 전에 호출 (line 20 vs 85) |
-| PanelShell HOC | ❌ | ❌ | 미구현 |
+| Track | 완료율 | 다음 작업 |
+|-------|--------|----------|
+| **A (즉시 실행)** | 100% | ✅ 완료 |
+| **B0 (전제조건)** | 20% | B0.1 @pixi/react 호환성 확인 |
+| **B1 (WebGL)** | 0% | B0 완료 대기 |
+| **B2 (Publish)** | 0% | B1 완료 대기 |
+| **C (CI)** | 0% | A 완료 후 시작 권장 |
 
 ---
 
-## Phase 2: Store Indexing System (🔴 0% 사용)
-
-**문제점**: `getPageElements` 정의만 있고 실제 사용하지 않음. `.filter(el => el.page_id)` 여전히 10곳에서 사용
-
-| 항목 | 구현 | 사용 | 파일 위치 |
-|------|------|------|----------|
-| Type Definitions | ✅ | ❌ | `elementIndexer.ts:22-31` PageElementIndex |
-| Indexer Utility | ✅ | ❌ | `elementIndexer.ts` (281줄) |
-| Store Integration | ✅ | ❌ | `elements.ts:51,156-159` getPageElements 정의됨 |
-| Migration | ❌ | ❌ | **10곳에서 `.filter(page_id)` 여전히 사용** |
-
-**Migration 필요한 파일:**
-- `stores/index.ts:115`
-- `stores/elements.ts:436` (useCurrentPageElements)
-- `panels/events/editors/ElementPicker.tsx:72`
-- `panels/nodes/NodesPanel.tsx:99`
-- `panels/properties/PropertiesPanel.tsx:258,523`
-- `stores/utils/elementReorder.ts:42`
-- `panels/components/ComponentsPanel.tsx:78`
-
----
-
-## Phase 3: History Diff System (✅ 100%)
-
-| 항목 | 구현 | 사용 | 파일 위치 |
-|------|------|------|----------|
-| Element Diff Utility | ✅ | ✅ | `elementDiff.ts` (497줄) |
-| History IndexedDB | ✅ | ✅ | `historyIndexedDB.ts` (533줄) |
-| History Integration | ✅ | ✅ | `history.ts:273,282,361,363,659` diff 사용 확인 |
-| Command Data Store | ✅ | ✅ | `commandDataStore.ts` |
-
----
-
-## Phase 4: Canvas Delta Sync (🟡 구현만 완료)
-
-**문제점**: 코드는 완벽하게 구현되어 있으나 BuilderCore나 다른 컴포넌트에서 **사용하지 않음**
-
-| 항목 | 구현 | 사용 | 파일 위치 |
-|------|------|------|----------|
-| Delta Message Types | ✅ | ❌ | `canvasDeltaMessenger.ts:19-53` |
-| useDeltaMessenger Hook | ✅ | ❌ | `useDeltaMessenger.ts` (346줄) |
-| Canvas Receiver | ✅ | ❌ | `messageHandler.ts:323-336,457-558` |
-| Backpressure | ✅ | ❌ | `canvasDeltaMessenger.ts` shouldUseDelta |
-
-**통합 필요:**
-- `BuilderCore.tsx`에서 `useDeltaMessenger` 사용
-- `sendElementsToIframe` 대신 `sendOptimalUpdate` 사용
-
----
-
-## Phase 5: Lazy Loading & LRU (🟡 구현만 완료)
-
-**문제점**: elementLoader가 Store에 통합되어 있으나 `usePageLoader` 훅이 **사용되지 않음**
-
-| 항목 | 구현 | 사용 | 파일 위치 |
-|------|------|------|----------|
-| LRU Page Cache | ✅ | ✅ | `LRUPageCache.ts` (pageCache 사용됨) |
-| Element Loader Slice | ✅ | ❌ | `elementLoader.ts` (502줄), `stores/index.ts:8,48` |
-| usePageLoader Hook | ✅ | ❌ | `usePageLoader.ts` - tsx에서 사용 안 함 |
-| Auto-preload | ✅ | ❌ | `usePageLoader.ts:137-159` useAdjacentPagePreloader |
-
-**통합 필요:**
-- 페이지 전환 시 `loadPageIfNeeded()` 호출
-- `BuilderCore`나 `PageManager`에서 `usePageLoader` 사용
-
----
-
-## Phase 6: React Query Integration (🔴 25%)
-
-| 항목 | 구현 | 사용 | 파일 위치 |
-|------|------|------|----------|
-| useAsyncAction | ✅ | ✅ | `useAsyncAction.ts` (재시도 로직 포함) |
-| useAsyncData | ✅ | ❓ | `useAsyncData.ts` |
-| useAsyncQuery | ✅ | ❓ | `useAsyncQuery.ts` |
-| useAsyncMutation | ✅ | ❓ | `useAsyncMutation.ts` |
-| Request Manager (Deduplication) | ❌ | ❌ | AbortController는 있으나 전용 관리자 없음 |
-| Persister | ❌ | ❌ | 미구현 |
-
----
-
-## Phase 7: Performance Monitoring & SLO (🟡 구현만 완료)
-
-**문제점**: 모두 구현되어 있으나 **실제 사용하지 않음**
-
-| 항목 | 구현 | 사용 | 파일 위치 |
-|------|------|------|----------|
-| PerformanceMonitor Class | ✅ | ❌ | `performanceMonitor.ts` (370줄+) |
-| useAutoRecovery Hook | ✅ | ❌ | `useAutoRecovery.ts` - tsx에서 사용 안 함 |
-| Health Score | ✅ | ❌ | `performanceMonitor.ts:43-46` |
-| Auto Recovery Logic | ✅ | ❌ | `useAutoRecovery.ts:150-185` |
-
-**통합 필요:**
-- `BuilderApp.tsx`나 `BuilderCore.tsx`에서 `useAutoRecovery()` 호출
-
----
-
-## Phase 8: CI & Large Scale Testing (❌ 0%)
-
-| 항목 | 구현 | 사용 | 파일 위치 |
-|------|------|------|----------|
-| Fixed Seed Generator | ❌ | ❌ | 미구현 |
-| Long Session Simulation | ❌ | ❌ | 미구현 |
-| SLO Verification | ❌ | ❌ | 미구현 |
-
----
-
-## Phase 9: Supplement & Additional Ideas (🔄 60%)
-
-| 항목 | 구현 | 사용 | 파일 위치 |
-|------|------|------|----------|
-| Canvas Virtualization | ✅ | ✅ | `VirtualizedTree.tsx`, `VirtualizedLayerTree.tsx` |
-| Web Worker Offloading | ❌ | ❌ | 미구현 |
-| CSS Containment | ✅ | ✅ | 여러 CSS 파일 (`contain:`, `content-visibility`) |
-| Event Delegation | ❌ | ❌ | 미구현 |
-| Selection Overlay Isolation | ❌ | ❌ | 미구현 |
-
-**CSS Containment 적용 위치:**
-- `Menu.css:218,247` - `contain: layout style paint`
-- `ListBox.css:253` - `content-visibility: auto`
-- `ListBox.css:487,496` - `contain: strict`, `contain: content`
-- `ComboBox.css:150`, `Select.css:132`, `DatePicker.css:51`, `DateRangePicker.css:85`
-
----
-
-## 우선순위별 TODO
-
-### P0 (Critical)
-1. **Phase 1**: 3개 패널 Gateway 패턴 적용 (PropertiesPanel, StylesPanel, ComponentsPanel)
-2. **Phase 4**: `useDeltaMessenger`를 BuilderCore에 통합
-3. **Phase 5**: `usePageLoader`를 페이지 전환에 통합
-
-### P1 (High)
-4. **Phase 2**: `.filter(page_id)` → `getPageElements()` 마이그레이션 (10곳)
-5. **Phase 7**: `useAutoRecovery`를 BuilderApp에 통합
-
-### P2 (Medium)
-6. **Phase 6**: Request Manager (Deduplication + Abort) 구현
-7. **Phase 9**: Event Delegation 구현
-
-### P3 (Low)
-8. **Phase 8**: CI 자동화 테스트
-9. **Phase 9**: Web Worker, Selection Overlay Isolation
+> **다음 단계**: Track B0 (Phase 10 전제조건) 또는 Track C (CI 자동화) 시작
+> **담당자 배정 필요**: 각 Track별 담당자 지정

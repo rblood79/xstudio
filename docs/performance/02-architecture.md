@@ -1,7 +1,7 @@
 # 아키텍처 설계
 
 > **관련 문서**: [01-problem-analysis.md](./01-problem-analysis.md) | [03-phase-1-4.md](./03-phase-1-4.md)
-> **최종 수정**: 2025-12-10
+> **작성일**: 초안(2025-12-09) | **최종 수정**: 2025-12-11
 
 ---
 
@@ -139,7 +139,12 @@ const pageElementsCache = new LRUCache<string, Element[]>(5);
 
 ### 3.3 Sync Layer
 
-**Delta 업데이트 흐름:**
+> **⚠️ Phase 10 (WebGL Builder) 결정에 따른 변경**
+> - **Builder**: WebGL 전환 시 postMessage/Delta Sync 폐기 (Direct State 사용)
+> - **Publish App**: 아래 Delta 패턴은 Publish App 전용으로 보존 가능
+> - 상세: [10-webgl-builder-architecture.md](./10-webgl-builder-architecture.md)
+
+**Delta 업데이트 흐름 (📦 Publish App 전용):**
 
 ```typescript
 interface DeltaUpdate {

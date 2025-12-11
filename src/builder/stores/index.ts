@@ -6,6 +6,7 @@ import { createSaveModeSlice, SaveModeState } from "./saveMode";
 import { createSettingsSlice, SettingsState } from "./settings";
 import { createPanelLayoutSlice, PanelLayoutSlice } from "./panelLayout";
 import { createElementLoaderSlice, ElementLoaderSlice } from "./elementLoader";
+import { getPageElements } from "./utils/elementIndexer";
 
 // ✅ ThemeState removed - now using unified theme store (themeStore.unified.ts)
 
@@ -100,20 +101,23 @@ const EMPTY_ELEMENTS: Element[] = [];
  * 현재 페이지의 요소만 반환하는 선택적 selector
  *
  * 🎯 Phase 2 최적화:
- * - 안정적인 참조: elements 배열이 변경될 때만 재계산
- * - 개별 구독: currentPageId와 elements 분리 구독
+ * - O(1) 조회: pageIndex 기반 인덱스 사용 (filter O(n) → getPageElements O(1))
+ * - 안정적인 참조: pageIndex 캐시 활용
+ * - 개별 구독: currentPageId, pageIndex, elementsMap 분리 구독
  * - 무한 루프 방지: useMemo로 getSnapshot 결과 캐싱
  */
 export const useCurrentPageElements = (): Element[] => {
   // 개별 구독으로 무한 루프 방지
   const currentPageId = useStore((state) => state.currentPageId);
-  const elements = useStore((state) => state.elements);
+  const pageIndex = useStore((state) => state.pageIndex);
+  const elementsMap = useStore((state) => state.elementsMap);
 
-  // useMemo로 안정적인 참조 유지 (elements/currentPageId가 변경될 때만 재계산)
+  // useMemo로 안정적인 참조 유지 (pageIndex/elementsMap/currentPageId가 변경될 때만 재계산)
   return useMemo(() => {
     if (!currentPageId) return EMPTY_ELEMENTS;
-    return elements.filter(el => el.page_id === currentPageId);
-  }, [elements, currentPageId]);
+    // 🆕 O(1) 인덱스 기반 조회 (캐시 포함)
+    return getPageElements(pageIndex, currentPageId, elementsMap);
+  }, [pageIndex, elementsMap, currentPageId]);
 };
 
 /**

@@ -31,6 +31,9 @@ function getTextContent(props: ComponentElementProps | Record<string, unknown>):
  * - Tabs: Tab-Panel 쌍을 tabId 기반으로 정렬
  * - Collection 컴포넌트: 아이템을 order_num, 텍스트 순으로 정렬
  * - TableHeader: ColumnGroup을 order_num, label 순으로 정렬
+ *
+ * 🎯 성능 참고: 내부적으로 pageId로 filter하므로, 호출자는 전체 elements를 전달해도 됨.
+ * 향후 최적화 시 호출자가 getPageElements(pageId)로 페이지 요소만 전달하는 것이 더 효율적.
  */
 export const reorderElements = async (
   elements: Element[],

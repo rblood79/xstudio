@@ -18,16 +18,15 @@ import type { Element } from "../../../types/core/store.types";
 
 /**
  * 페이지별 요소 인덱스
+ *
+ * ⚠️ 주의: 이 인덱스는 Zustand 상태에 저장되므로 Immer에 의해 frozen됩니다.
+ * 런타임 캐싱은 React useMemo 또는 호출자 측에서 처리해야 합니다.
  */
 export interface PageElementIndex {
   /** pageId → Set<elementId> */
   elementsByPage: Map<string, Set<string>>;
   /** pageId → rootElementIds[] (parent_id가 null이거나 body인 요소) */
   rootsByPage: Map<string, string[]>;
-  /** pageId → Element[] (캐시, 필요시 재계산) */
-  pageElementsCache: Map<string, Element[]>;
-  /** 캐시 버전 (무효화 트래킹) */
-  cacheVersion: Map<string, number>;
 }
 
 /**
@@ -37,8 +36,6 @@ export function createEmptyPageIndex(): PageElementIndex {
   return {
     elementsByPage: new Map(),
     rootsByPage: new Map(),
-    pageElementsCache: new Map(),
-    cacheVersion: new Map(),
   };
 }
 
@@ -94,9 +91,6 @@ export function indexElement(
       roots.push(id);
     }
   }
-
-  // 3. 캐시 무효화
-  invalidatePageCache(index, page_id);
 }
 
 /**
@@ -133,25 +127,14 @@ export function unindexElement(
       index.rootsByPage.delete(page_id);
     }
   }
-
-  // 3. 캐시 무효화
-  invalidatePageCache(index, page_id);
 }
 
 /**
- * 페이지 캐시 무효화
- */
-export function invalidatePageCache(
-  index: PageElementIndex,
-  pageId: string
-): void {
-  index.pageElementsCache.delete(pageId);
-  const version = index.cacheVersion.get(pageId) ?? 0;
-  index.cacheVersion.set(pageId, version + 1);
-}
-
-/**
- * 페이지의 모든 요소 조회 (O(1) + 캐시)
+ * 페이지의 모든 요소 조회 (O(1) 인덱스 기반)
+ *
+ * ⚠️ 주의: pageIndex가 Zustand/Immer에 의해 frozen될 수 있으므로
+ * 이 함수는 순수 함수로 동작하며 index를 변경하지 않습니다.
+ * 캐싱은 호출자 측에서 useMemo 등을 통해 처리해야 합니다.
  *
  * @param index 페이지 인덱스
  * @param pageId 페이지 ID
@@ -163,12 +146,6 @@ export function getPageElements(
   pageId: string,
   elementsMap: Map<string, Element>
 ): Element[] {
-  // 캐시 확인
-  const cached = index.pageElementsCache.get(pageId);
-  if (cached) {
-    return cached;
-  }
-
   // 인덱스에서 조회
   const elementIds = index.elementsByPage.get(pageId);
   if (!elementIds || elementIds.size === 0) {
@@ -186,9 +163,6 @@ export function getPageElements(
 
   // order_num 기준 정렬
   elements.sort((a, b) => (a.order_num ?? 0) - (b.order_num ?? 0));
-
-  // 캐시 저장
-  index.pageElementsCache.set(pageId, elements);
 
   return elements;
 }
@@ -274,7 +248,4 @@ export function updateElementParent(
   } else {
     index.rootsByPage.delete(page_id);
   }
-
-  // 캐시 무효화
-  invalidatePageCache(index, page_id);
 }

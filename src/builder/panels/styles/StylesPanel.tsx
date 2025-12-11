@@ -6,6 +6,10 @@
  * Phase 9b 완료: @modified 필터 추가
  * Phase 8a 완료: Accordion (섹션 접기/펴기 + localStorage 저장)
  * Phase 5 완료: Copy/Paste styles (Cmd+Shift+C/V)
+ *
+ * 🛡️ Gateway 패턴 적용 (2025-12-11)
+ * - isActive 체크를 최상단에서 수행
+ * - Content 컴포넌트 분리로 비활성 시 훅 실행 방지
  */
 
 import "../../panels/common/index.css";
@@ -33,7 +37,24 @@ import { useStyleActions } from "./hooks/useStyleActions";
 import { useKeyboardShortcutsRegistry } from "../../hooks/useKeyboardShortcutsRegistry";
 import "./StylesPanel.css";
 
+/**
+ * StylesPanel - Gateway 컴포넌트
+ * 🛡️ isActive 체크 후 Content 렌더링
+ */
 export function StylesPanel({ isActive }: PanelProps) {
+  // 🛡️ Gateway: 비활성 시 즉시 반환 (훅 실행 방지)
+  if (!isActive) {
+    return null;
+  }
+
+  return <StylesPanelContent />;
+}
+
+/**
+ * StylesPanelContent - 실제 콘텐츠 컴포넌트
+ * 훅은 여기서만 실행됨 (isActive=true일 때만)
+ */
+function StylesPanelContent() {
   const selectedElement = useInspectorState((state) => state.selectedElement);
   const [filter, setFilter] = useState<"all" | "modified">("all");
   const {
@@ -117,11 +138,6 @@ export function StylesPanel({ isActive }: PanelProps) {
     expandAll,
     collapseAll,
   ]);
-
-  // 활성 상태가 아니면 렌더링하지 않음 (성능 최적화)
-  if (!isActive) {
-    return null;
-  }
 
   // 선택된 요소가 없으면 빈 상태 표시
   if (!selectedElement) {

@@ -19,8 +19,8 @@ import { generatePointsFromContent } from "./canvasUtils";
 import { PARTICLE_COUNT, MORPH_IN_SPEED, MORPH_OUT_SPEED } from "./constants";
 
 // ==================== Constants ====================
-const CHAR_COUNT = Math.min(PARTICLE_COUNT, 10000); // 긴 꼬리를 위해 10000개로 증가
-const COLUMN_COUNT = 50;
+const CHAR_COUNT = Math.min(PARTICLE_COUNT, 20000); // 100열을 위해 20000개로 증가
+const COLUMN_COUNT = 100;
 const CHARS_PER_COLUMN_MIN = 168; // 한 열당 최소 문자 개수
 const CHARS_PER_COLUMN_MAX = 200; // 한 열당 최대 문자 개수
 const CHAR_SIZE_MIN = 0.6; // 최소 크기
@@ -28,15 +28,49 @@ const CHAR_SIZE_MAX = 2.0; // 최대 크기
 const TEXTURE_CHAR_SIZE = 128; // 텍스처 해상도
 const DEPTH_RANGE = 150; // Z축 깊이 범위
 const DEPTH_SPEED_MULTIPLIER = 2.0; // 가까운 것(작은 depth)이 더 빨리 내려오는 배율
-const CHAR_SPAWN_INTERVAL = 0.15; // 한 글자씩 생성되는 간격 (초) - 더 느리게
+const CHAR_SPAWN_INTERVAL = 0.05; // 문자 생성 간격 (초)
 const TAIL_LENGTH_MIN = 168; // 꼬리 최소 길이
 const TAIL_LENGTH_MAX = 198; // 꼬리 최대 길이
 
-// 매트릭스 문자셋
+// 매트릭스 문자셋 (Code 모드와 동일)
+// 한글: 자음(14) + 모음(10) + 조합글자
+const KOREAN_CONSONANTS = "ㄱㄴㄷㄹㅁㅂㅅㅇㅈㅊㅋㅌㅍㅎ";
+const KOREAN_VOWELS = "ㅏㅓㅗㅜㅡㅣㅐㅔㅑㅕ";
+const KOREAN_SYLLABLES = (() => {
+  let result = "";
+  for (const c of KOREAN_CONSONANTS) {
+    for (const v of KOREAN_VOWELS) {
+      // 초성(자음) + 중성(모음) 조합으로 한글 음절 생성
+      const code = 0xac00 + (c.charCodeAt(0) - 0x3131) * 588 + (v.charCodeAt(0) - 0x314f) * 28;
+      if (code >= 0xac00 && code <= 0xd7a3) {
+        result += String.fromCharCode(code);
+      }
+    }
+  }
+  return result;
+})();
+
+// 일본어: 히라가나 + 카타카나
+const HIRAGANA = "あいうえおかきくけこさしすせそたちつてとなにぬねのはひふへほまみむめもやゆよらりるれろわをん";
+const KATAKANA = "アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン";
+
+// 그리스 문자
+const GREEK = "αβγδεζηθικλμνξοπρστυφχψωΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡΣΤΥΦΧΨΩ";
+
+// 키릴 문자 (러시아어)
+const CYRILLIC = "абвгдежзийклмнопрстуфхцчшщъыьэюяАБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ";
+
+// 수학 기호
+const MATH_SYMBOLS = "∀∂∃∅∇∈∉∋∏∑√∝∞∠∧∨∩∪∫≈≠≡≤≥⊂⊃⊆⊇⊕⊗";
+
 const MATRIX_CHARS =
-  "アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン" +
-  "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ" +
-  "ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜﾝ";
+  "0123456789" +
+  "ABCDEFGHIJKLMNOPQRSTUVWXYZ" +
+  "abcdefghijklmnopqrstuvwxyz" +
+  "{}[]()<>+-*/=!?;:.,@#$%^&|~`_\\\"'" +
+  HIRAGANA + KATAKANA +
+  KOREAN_CONSONANTS + KOREAN_VOWELS + KOREAN_SYLLABLES +
+  GREEK + CYRILLIC + MATH_SYMBOLS;
 
 // ==================== Character Texture Atlas ====================
 function createCharacterAtlas(): THREE.CanvasTexture {
@@ -101,6 +135,8 @@ const MATRIX_INSTANCE_VERTEX = `
   uniform vec2 targetSize;
   uniform float screenHeight;
   uniform float depthSpeedMultiplier;
+  uniform float mouseWorldY;
+  uniform float mouseActive;
 
   varying vec2 vUv;
   varying float vBrightness;
@@ -128,6 +164,9 @@ const MATRIX_INSTANCE_VERTEX = `
 
     vec3 pos = instancePosition;
 
+    // Matrix 모드: 회오리 효과 비활성화
+    float vortexEffect = 0.0;
+
     // 타겟 위치 가져오기 (충돌 검사용)
     float instanceId = float(gl_InstanceID);
     vec2 targetUV = vec2(mod(instanceId, targetSize.x) / targetSize.x,
@@ -139,7 +178,7 @@ const MATRIX_INSTANCE_VERTEX = `
     float distToTarget = length(pos.xy - targetPos.xy);
     float collisionRadius = 8.0;
     float collision = smoothstep(collisionRadius, 0.0, distToTarget) * morphProgress;
-    vCollision = collision;
+    vCollision = max(collision, vortexEffect); // 회오리 효과도 collision으로 전달
 
     // 충돌 시: 타겟 위치에서 잠시 머물다가 옆으로 흘러내림
     if (collision > 0.1) {
@@ -155,14 +194,25 @@ const MATRIX_INSTANCE_VERTEX = `
     // 깊이에 따른 스케일 (원근감)
     float depthScale = 1.0 - instanceDepth * 0.4;
 
-    // 랜덤 크기 적용
-    float finalSize = instanceSize * depthScale;
+    // 마우스 Y 위치 근처 문자 크기 2배 (hover 시에만)
+    float mouseProximity = 1.0 - smoothstep(0.0, 15.0, abs(pos.y - mouseWorldY));
+    float mouseSizeMultiplier = 1.0 + mouseProximity * mouseActive * 1.0; // 최대 2배
 
-    // 밝기 (머리는 밝게, 깊이에 따라 어둡게)
-    vBrightness = instanceBrightness * (1.0 - instanceDepth * 0.5);
+    // 랜덤 크기 적용 + 마우스 효과
+    float finalSize = instanceSize * depthScale * mouseSizeMultiplier;
 
-    // 충돌 시 더 밝게
-    vBrightness += collision * 0.5;
+    // 스폰된 이후 경과 시간 기반 밝기 계산
+    // 방금 스폰됨 = 1.0 (머리, 가장 밝음)
+    // 시간이 지남 = 점점 어두워짐 (꼬리)
+    float age = time - instanceSpawnTime;
+    float fadeTime = 8.0; // 완전히 어두워지는데 걸리는 시간 (초)
+    float ageBrightness = max(0.05, 1.0 - age / fadeTime);
+
+    // 밝기: 스폰 경과 시간 + 깊이 보정
+    vBrightness = ageBrightness * (1.0 - instanceDepth * 0.3);
+
+    // 충돌/회오리 시 더 밝게
+    vBrightness += vCollision * 0.5;
 
     // 인스턴스 위치에 로컬 버텍스 추가 (랜덤 크기 적용)
     vec3 transformed = position * finalSize + pos;
@@ -394,6 +444,11 @@ export function MatrixRainCanvas({
       const colData = columnData[col];
       const columnX = -halfWidth * 1.1 + col * columnWidth + columnWidth / 2;
 
+      // 열의 고정 X 위치 (모든 문자가 같은 X)
+      const columnFixedX = columnX + (Math.random() - 0.5) * 0.3;
+      // 문자 간격 (크기 기반)
+      const charSpacing = (CHAR_SIZE_MIN + CHAR_SIZE_MAX) / 2 * 1.2;
+
       for (
         let row = 0;
         row < colData.charCount && instanceIndex < CHAR_COUNT;
@@ -401,13 +456,13 @@ export function MatrixRainCanvas({
       ) {
         const i3 = instanceIndex * 3;
 
-        // 위치: 처음에는 화면 상단 위에 대기
-        instancePositions[i3] = columnX + (Math.random() - 0.5) * 2;
+        // 위치: 모든 문자가 같은 X, row에 따라 Y가 아래로 오프셋
+        instancePositions[i3] = columnFixedX;
         // 랜덤 크기를 먼저 생성하여 간격 계산과 렌더링에 동일하게 사용
         const randomSize =
           CHAR_SIZE_MIN + Math.random() * (CHAR_SIZE_MAX - CHAR_SIZE_MIN);
-        // 모든 문자가 머리 위치에서 시작 (스폰될 때 순차적으로 나타남)
-        instancePositions[i3 + 1] = colData.headY;
+        // row 0 = 머리(가장 위, 밝음), row 1, 2, ... = 꼬리(아래쪽으로 연결, 어두움)
+        instancePositions[i3 + 1] = colData.headY - row * charSpacing;
         instancePositions[i3 + 2] = -colData.depth * DEPTH_RANGE;
 
         // 문자 인덱스
@@ -435,10 +490,8 @@ export function MatrixRainCanvas({
         // 랜덤 크기 (위치 계산에 사용한 것과 동일한 값 사용)
         instanceSizes[instanceIndex] = randomSize;
 
-        // 스폰 시간: 열 시작 지연 + row * 간격
-        // 각 문자가 순차적으로 나타나도록 설정
-        instanceSpawnTimes[instanceIndex] =
-          colData.startDelay + row * CHAR_SPAWN_INTERVAL;
+        // 스폰 시간: 열 시작 지연 + row * 간격 (머리가 먼저, 꼬리가 순차적으로)
+        instanceSpawnTimes[instanceIndex] = colData.startDelay + row * CHAR_SPAWN_INTERVAL;
 
         instanceIndex++;
       }
@@ -486,6 +539,8 @@ export function MatrixRainCanvas({
         targetSize: { value: new THREE.Vector2(textureSize, textureSize) },
         screenHeight: { value: frustumHeight },
         depthSpeedMultiplier: { value: DEPTH_SPEED_MULTIPLIER },
+        mouseWorldY: { value: 0 },
+        mouseActive: { value: 0 },
       },
       vertexShader: MATRIX_INSTANCE_VERTEX,
       fragmentShader: MATRIX_INSTANCE_FRAGMENT,
@@ -534,10 +589,36 @@ export function MatrixRainCanvas({
       charChangeTimers[i] = Math.random() * 30;
     }
 
+    // 마우스 위치 추적
+    let mouseWorldY = 0;
+    let mouseActive = 0;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      // 화면 좌표를 월드 좌표로 변환
+      const ndcY = -((e.clientY / window.innerHeight) * 2 - 1);
+      mouseWorldY = ndcY * halfHeight;
+      mouseActive = 1;
+    };
+
+    const handleMouseLeave = () => {
+      mouseActive = 0;
+    };
+
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseleave", handleMouseLeave);
+
     const animate = () => {
       const delta = clock.getDelta();
       const time = clock.getElapsedTime();
       material.uniforms.time.value = time;
+
+      // 마우스 위치 uniform 업데이트
+      material.uniforms.mouseWorldY.value = mouseWorldY;
+      material.uniforms.mouseActive.value = mouseActive;
+
+      // 버튼 hover 시 (morphProgress > 0.1) 속도를 1/10로 감소
+      const isSlowMode = morphProgressRef.current > 0.1;
+      const slowFactor = isSlowMode ? 0.1 : 1.0;
 
       // 모핑 진행도
       const morphSpeed =
@@ -585,11 +666,12 @@ export function MatrixRainCanvas({
         const startIdx = columnStartIndices[col];
 
         // 깊이에 따른 속도 조절: 가까운 것(작은 depth)이 더 빠르게
+        // slowFactor 적용: hover 시 1/10 속도
         const depthSpeedFactor =
           1.0 + (1.0 - colData.depth) * DEPTH_SPEED_MULTIPLIER;
-        const moveAmount = colData.speed * depthSpeedFactor * delta * 30;
+        const moveAmount = colData.speed * depthSpeedFactor * delta * 30 * slowFactor;
 
-        let headY = -Infinity;
+        let tailY = Infinity; // 꼬리(가장 아래 스폰된 문자)의 Y 위치
         let lastSpawnedY = colData.headY; // 마지막으로 스폰된 문자의 Y 위치 추적
 
         for (
@@ -607,9 +689,8 @@ export function MatrixRainCanvas({
             const newY = posAttr.array[i3 + 1] - moveAmount;
             posAttr.array[i3 + 1] = newY;
 
-            if (row === 0) {
-              headY = newY;
-            }
+            // 스폰된 문자 중 가장 아래(가장 작은 Y)를 tailY로 추적
+            tailY = newY;
             lastSpawnedY = newY;
 
             // 문자 변경 (머리는 더 빈번)
@@ -631,8 +712,9 @@ export function MatrixRainCanvas({
           }
         }
 
-        // 리셋
-        if (headY < -halfHeight - 30) {
+        // 리셋: 꼬리의 끝(tailY)이 화면 하단을 벗어나면 리셋
+        // tailY가 Infinity면 아직 스폰된 문자 없음 - 리셋하지 않음
+        if (tailY !== Infinity && tailY < -halfHeight - 30) {
           const newHeadY = halfHeight + 30 + Math.random() * 60;
           const newLength =
             TAIL_LENGTH_MIN +
@@ -645,6 +727,11 @@ export function MatrixRainCanvas({
           colData.speed = (0.3 + Math.random() * 0.7) * speedMultiplier;
           // charCount는 초기화 시에만 설정하고 리셋 시에는 변경하지 않음 (인덱스 범위 유지)
 
+          // 열의 고정 X 위치 (모든 문자가 같은 X)
+          const resetColumnFixedX = columnX + (Math.random() - 0.5) * 0.3;
+          // 문자 간격
+          const charSpacing = (CHAR_SIZE_MIN + CHAR_SIZE_MAX) / 2 * 1.2;
+
           for (
             let row = 0;
             row < colData.charCount && startIdx + row < CHAR_COUNT;
@@ -653,12 +740,13 @@ export function MatrixRainCanvas({
             const idx = startIdx + row;
             const i3 = idx * 3;
 
-            posAttr.array[i3] = columnX + (Math.random() - 0.5) * 2;
+            // 모든 문자가 같은 X
+            posAttr.array[i3] = resetColumnFixedX;
             // 랜덤 크기를 생성하여 간격 계산과 렌더링에 동일하게 사용
             const randomSize =
               CHAR_SIZE_MIN + Math.random() * (CHAR_SIZE_MAX - CHAR_SIZE_MIN);
-            // 모든 문자가 머리 위치에서 시작 (스폰될 때 순차적으로 나타남)
-            posAttr.array[i3 + 1] = newHeadY;
+            // row 0 = 머리(가장 위, 밝음), row 1, 2, ... = 꼬리(아래쪽으로 연결, 어두움)
+            posAttr.array[i3 + 1] = newHeadY - row * charSpacing;
             posAttr.array[i3 + 2] = -newDepth * DEPTH_RANGE;
 
             charAttr.array[idx] = Math.floor(
@@ -683,7 +771,7 @@ export function MatrixRainCanvas({
             // 랜덤 크기 (위치 계산에 사용한 것과 동일한 값 사용)
             sizeAttr.array[idx] = randomSize;
 
-            // 스폰 시간 재설정: 현재 시간 + row * 간격
+            // 스폰 시간: 현재 시간 + row * 간격 (머리가 먼저, 꼬리가 순차적으로)
             spawnAttr.array[idx] = time + row * CHAR_SPAWN_INTERVAL;
           }
 
@@ -720,6 +808,8 @@ export function MatrixRainCanvas({
       materialRef.current = null;
       cancelAnimationFrame(animationFrameId);
       window.removeEventListener("resize", onResize);
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseleave", handleMouseLeave);
       mountElement.removeChild(renderer.domElement);
       instancedGeo.dispose();
       planeGeo.dispose();

@@ -1,6 +1,7 @@
 # Phase 5-8: Lazy Loading, React Query, 모니터링, CI
 
-> **관련 문서**: [03-phase-1-4.md](./03-phase-1-4.md) | [05-supplement.md](./05-supplement.md) > **최종 수정**: 2025-12-10
+> **관련 문서**: [03-phase-1-4.md](./03-phase-1-4.md) | [05-supplement.md](./05-supplement.md)
+> **작성일**: 초안(2025-12-09) | **최종 수정**: 2025-12-11
 
 ---
 

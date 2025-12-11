@@ -1,6 +1,7 @@
 # Phase 1-4: Panel, Store, History, Canvas
 
-> **관련 문서**: [02-architecture.md](./02-architecture.md) | [04-phase-5-8.md](./04-phase-5-8.md) > **최종 수정**: 2025-12-10
+> **관련 문서**: [02-architecture.md](./02-architecture.md) | [04-phase-5-8.md](./04-phase-5-8.md)
+> **최종 수정**: 2025-12-11 (Phase 4 폐기 - Phase 10으로 대체)
 
 ---
 
@@ -429,7 +430,14 @@ export class DiffHistoryManager {
 
 ---
 
-## Phase 4: Canvas Delta 업데이트
+## ~~Phase 4: Canvas Delta 업데이트~~ ⚠️ 폐기됨
+
+> **⚠️ Phase 10 (WebGL Builder)으로 대체됨**
+> - WebGL 전환 시 postMessage 자체가 제거되므로 Delta Sync 불필요
+> - 상세: [10-webgl-builder-architecture.md](./10-webgl-builder-architecture.md)
+
+<details>
+<summary>기존 설계 (참고용)</summary>
 
 ### 4.1 현재 문제
 
@@ -595,6 +603,8 @@ Backpressure는 단순한 유량 제어를 넘어 데이터 정합성(Consistenc
 
 3. **로그/메트릭**:
    - `queue_size_max`, `drop_count`, `full_sync_trigger_count` 지표를 수집하여 병목 구간을 시각화합니다.
+
+</details>
 
 ---
 

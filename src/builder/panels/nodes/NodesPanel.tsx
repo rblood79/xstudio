@@ -26,7 +26,7 @@ export function NodesPanel({ isActive }: PanelProps) {
   // Store state
   const currentPageId = useStore((state) => state.currentPageId);
   const pages = useStore((state) => state.pages);
-  const elements = useStore((state) => state.elements);
+  // 🆕 elements 구독 제거 - 콜백 내에서 getState()로 가져옴 (불필요한 리렌더링 방지)
 
   // Edit Mode state
   const editMode = useEditModeStore((state) => state.mode);
@@ -75,6 +75,10 @@ export function NodesPanel({ isActive }: PanelProps) {
   // EditMode에 따라 Page 또는 Layout에 element 추가
   const handleAddElementWrapper = useCallback(
     async (tag: string) => {
+      // 🆕 콜백 실행 시점에 최신 elements 가져오기 (구독 대신 getState 사용)
+      const currentElements = useStore.getState().elements;
+      const getPageElements = useStore.getState().getPageElements;
+
       // Layout 모드인 경우
       if (editMode === "layout" && currentLayoutId) {
         console.log(`🏗️ Layout 모드: ${tag}를 Layout ${currentLayoutId}에 추가`);
@@ -82,7 +86,7 @@ export function NodesPanel({ isActive }: PanelProps) {
           tag,
           "", // currentPageId - layout 모드에서는 사용 안함
           null, // selectedElementId
-          elements.filter(el => el.layout_id === currentLayoutId), // 현재 레이아웃의 elements만
+          currentElements.filter(el => el.layout_id === currentLayoutId), // 현재 레이아웃의 elements만
           storeAddElement,
           () => {}, // sendElementsToIframe - not used here
           currentLayoutId // layoutId 전달
@@ -92,16 +96,18 @@ export function NodesPanel({ isActive }: PanelProps) {
 
       // Page 모드인 경우
       if (!currentPageId) return;
+      // 🆕 O(1) 인덱스 기반 조회
+      const pageElements = getPageElements(currentPageId);
       await handleAddElement(
         tag,
         currentPageId,
         null, // selectedElementId
-        elements.filter(el => el.page_id === currentPageId), // 현재 페이지의 elements만
+        pageElements,
         storeAddElement,
         () => {} // sendElementsToIframe - not used here
       );
     },
-    [currentPageId, currentLayoutId, editMode, elements, handleAddElement]
+    [currentPageId, currentLayoutId, editMode, handleAddElement]
   );
 
   // Force nodes tab to be active

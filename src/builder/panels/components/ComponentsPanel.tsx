@@ -5,6 +5,10 @@
  * 내부적으로 Components 컴포넌트를 사용하여 기존 로직 유지
  *
  * ⭐ Layout/Slot System: Page 모드와 Layout 모드 모두 지원
+ *
+ * 🛡️ Gateway 패턴 적용 (2025-12-11)
+ * - isActive 체크를 최상단에서 수행
+ * - Content 컴포넌트 분리로 비활성 시 훅 실행 방지
  */
 
 import { useCallback } from "react";
@@ -16,7 +20,24 @@ import { useLayoutsStore } from "../../stores/layouts";
 import { useElementCreator } from "../../hooks/useElementCreator";
 import { useIframeMessenger } from "../../hooks/useIframeMessenger";
 
+/**
+ * ComponentsPanel - Gateway 컴포넌트
+ * 🛡️ isActive 체크 후 Content 렌더링
+ */
 export function ComponentsPanel({ isActive }: PanelProps) {
+  // 🛡️ Gateway: 비활성 시 즉시 반환 (훅 실행 방지)
+  if (!isActive) {
+    return null;
+  }
+
+  return <ComponentsPanelContent />;
+}
+
+/**
+ * ComponentsPanelContent - 실제 콘텐츠 컴포넌트
+ * 훅은 여기서만 실행됨 (isActive=true일 때만)
+ */
+function ComponentsPanelContent() {
   const selectedElementId = useStore((state) => state.selectedElementId);
   const currentPageId = useStore((state) => state.currentPageId);
   // ⚠️ elements 구독 제거 - 콜백 내에서 직접 getState()로 가져옴 (불필요한 리렌더링 방지)
@@ -32,8 +53,9 @@ export function ComponentsPanel({ isActive }: PanelProps) {
   // handleAddElement wrapper - 필요한 모든 데이터 자동 전달
   // ⭐ Layout/Slot System: Page 모드와 Layout 모드 분기 처리
   const handleAddElement = useCallback(async (tag: string, parentId?: string) => {
-    // elements는 콜백 실행 시점에 최신 값을 가져옴 (구독 대신 getState 사용)
+    // 🆕 콜백 실행 시점에 최신 값을 가져옴 (구독 대신 getState 사용)
     const elements = useStore.getState().elements;
+    const getPageElements = useStore.getState().getPageElements;
 
     // Layout 모드인 경우
     if (editMode === "layout" && currentLayoutId) {
@@ -71,20 +93,17 @@ export function ComponentsPanel({ isActive }: PanelProps) {
       return;
     }
 
+    // 🆕 O(1) 인덱스 기반 조회
+    const pageElements = getPageElements(currentPageId);
     await rawHandleAddElement(
       tag,
       currentPageId,
       parentId || selectedElementId,
-      elements.filter((el) => el.page_id === currentPageId), // 현재 페이지의 elements만
+      pageElements,
       addElement,
       sendElementsToIframe
     );
   }, [currentPageId, currentLayoutId, editMode, selectedElementId, addElement, rawHandleAddElement, sendElementsToIframe]);
-
-  // 활성 상태가 아니면 렌더링하지 않음 (성능 최적화)
-  if (!isActive) {
-    return null;
-  }
 
   return (
     <Components

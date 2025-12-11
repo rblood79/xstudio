@@ -16,10 +16,14 @@ import SelectionOverlay from "../overlay";
 import Grid from "../grid";
 import { PanelSlot, BottomPanelSlot } from "../layout";
 import { InspectorSync } from "../inspector/InspectorSync";
+import { ToastContainer } from "../components/ToastContainer";
 
 import { useErrorHandler } from "../hooks/useErrorHandler";
 // import { useElementCreator } from "../hooks/useElementCreator";  // 사용하지 않음
 import { usePageManager } from "../hooks/usePageManager";
+import { usePageLoader, useAdjacentPagePreload } from "../hooks/usePageLoader";
+import { useAutoRecovery } from "../hooks/useAutoRecovery";
+import { useToast } from "../hooks/useToast";
 import { useIframeMessenger } from "../hooks/useIframeMessenger";
 import { useThemeManager } from "../hooks/useThemeManager";
 import { useValidation } from "../hooks/useValidation";
@@ -147,6 +151,35 @@ export const BuilderCore: React.FC = () => {
   const { applyThemeTokens, loadProjectTheme } = useThemeManager();
   const { validateOrderNumbers } = useValidation();
   const { sendThemeTokens } = useThemeMessenger();
+
+  // 🚀 Phase 5: 페이지 Lazy Loading 통합
+  const { isLoading: isPageLoading, stats: pageLoaderStats } = usePageLoader();
+  // 인접 페이지 프리로드 (백그라운드)
+  useAdjacentPagePreload();
+
+  // 🚀 Phase 7: Toast 알림
+  const { toasts, showToast, dismissToast } = useToast();
+
+  // 🚀 Phase 7: 자동 복구 통합
+  const { stats: recoveryStats } = useAutoRecovery({
+    onRecovery: useCallback((reason: string) => {
+      showToast('info', `성능 자동 복구 완료: ${reason}`, 8000);
+      console.log('🔧 [AutoRecovery] Recovery complete:', reason);
+    }, [showToast]),
+    onWarning: useCallback((metrics) => {
+      showToast('warning', `성능 경고: Health ${metrics.healthScore}%`, 5000);
+    }, [showToast]),
+  });
+
+  // Dev 모드에서 복구 통계 로깅
+  if (process.env.NODE_ENV === 'development' && recoveryStats.totalRecoveries > 0) {
+    console.log('📊 [AutoRecovery] Stats:', recoveryStats);
+  }
+
+  // Dev 모드에서 페이지 로더 통계 로깅
+  if (process.env.NODE_ENV === 'development' && pageLoaderStats.loadedPages > 0) {
+    console.log('📊 [PageLoader] Stats:', pageLoaderStats);
+  }
 
   // Local 상태
   const [breakpoint, setBreakpoint] = useState<Set<Key>>(() => {
@@ -720,10 +753,12 @@ export const BuilderCore: React.FC = () => {
         </div>
       )}
 
-      {/* 로딩 표시 */}
-      {isLoading && (
+      {/* 로딩 표시 (초기화 또는 페이지 로딩) */}
+      {(isLoading || isPageLoading) && (
         <div className="loading-overlay">
-          <div className="loading-spinner">Loading...</div>
+          <div className="loading-spinner">
+            {isLoading ? 'Initializing...' : 'Loading page...'}
+          </div>
         </div>
       )}
 
@@ -776,6 +811,9 @@ export const BuilderCore: React.FC = () => {
 
       {/* Bottom Panel (Monitor, etc.) */}
       <BottomPanelSlot />
+
+      {/* 🚀 Phase 7: Toast 알림 컨테이너 */}
+      <ToastContainer toasts={toasts} onDismiss={dismissToast} />
     </BuilderViewport>
   );
 };
