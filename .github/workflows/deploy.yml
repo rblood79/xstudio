@@ -7,7 +7,7 @@ on:
 
 # GitHub Pages 배포를 위한 권한 설정
 permissions:
-  contents: write  # gh-pages 브랜치에 푸시하기 위해 필요
+  contents: write # gh-pages 브랜치에 푸시하기 위해 필요
 
 # 동시 배포 방지
 concurrency:
@@ -39,6 +39,9 @@ jobs:
 
       - name: Build project
         run: pnpm vite build
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
 
       - name: Deploy to gh-pages
         uses: peaceiris/actions-gh-pages@v3
@@ -46,5 +49,5 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./dist
           publish_branch: gh-pages
-          user_name: 'github-actions[bot]'
-          user_email: 'github-actions[bot]@users.noreply.github.com'
+          user_name: "github-actions[bot]"
+          user_email: "github-actions[bot]@users.noreply.github.com"
