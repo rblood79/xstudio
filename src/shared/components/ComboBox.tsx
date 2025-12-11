@@ -90,18 +90,7 @@ export function ComboBox<T extends object>({
   isLoading: externalLoading,
   ...props
 }: ComboBoxProps<T>) {
-  // External loading state (from isLoading prop) - show skeleton
-  if (externalLoading) {
-    return (
-      <Skeleton
-        componentVariant="input"
-        size={size}
-        className={props.className as string}
-        aria-label="Loading combobox..."
-      />
-    );
-  }
-  // useCollectionData Hook으로 데이터 가져오기 (Static, API, Supabase 통합)
+  // useCollectionData Hook - 항상 최상단에서 호출 (Rules of Hooks)
   const {
     data: boundData,
     loading,
@@ -114,6 +103,18 @@ export function ComboBox<T extends object>({
       { id: 2, name: 'Option 2', value: 'option-2' },
     ],
   });
+
+  // External loading state (from isLoading prop) - show skeleton
+  if (externalLoading) {
+    return (
+      <Skeleton
+        componentVariant="input"
+        size={size}
+        className={props.className as string}
+        aria-label="Loading combobox..."
+      />
+    );
+  }
 
   // Label 처리
   const hasVisibleLabel = label && String(label).trim();

@@ -13,7 +13,6 @@
  */
 
 import { useCallback, useMemo, memo } from 'react';
-import { Container } from '@pixi/react';
 import { useStore } from '../../../stores';
 import { SelectionBox } from './SelectionBox';
 import { LassoSelection, getLassoBounds } from './LassoSelection';

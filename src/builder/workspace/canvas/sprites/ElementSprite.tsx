@@ -54,8 +54,10 @@ const IMAGE_TAGS = new Set(['Image', 'Avatar', 'Logo', 'Icon', 'Thumbnail']);
 /**
  * 박스/컨테이너 관련 태그들 (기본값)
  * 명시적으로 나열하지 않은 모든 태그는 BoxSprite로 렌더링
+ * Note: BOX_TAGS는 현재 미사용 - 추후 태그별 렌더링 분기에 사용 예정
  */
-const BOX_TAGS = new Set([
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const _BOX_TAGS = new Set([
   'Box',
   'Flex',
   'Grid',

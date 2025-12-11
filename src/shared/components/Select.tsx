@@ -114,19 +114,7 @@ export function Select<T extends object>({
   isLoading: externalLoading,
   ...props
 }: SelectProps<T>) {
-  // External isLoading prop - shows skeleton immediately
-  if (externalLoading) {
-    return (
-      <Skeleton
-        componentVariant="input"
-        size={size}
-        className={props.className as string}
-        aria-label="Loading select..."
-      />
-    );
-  }
-
-  // useCollectionData Hook으로 데이터 가져오기 (Static, API, Supabase 통합)
+  // useCollectionData Hook - 항상 최상단에서 호출 (Rules of Hooks)
   const {
     data: boundData,
     loading,
@@ -139,6 +127,18 @@ export function Select<T extends object>({
       { id: 2, name: "Option 2", value: "option-2" },
     ],
   });
+
+  // External isLoading prop - shows skeleton immediately
+  if (externalLoading) {
+    return (
+      <Skeleton
+        componentVariant="input"
+        size={size}
+        className={props.className as string}
+        aria-label="Loading select..."
+      />
+    );
+  }
 
   // Label 및 ARIA 처리
   const hasVisibleLabel = label && String(label).trim();

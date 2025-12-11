@@ -7,7 +7,6 @@
  */
 
 import { useCallback, memo } from 'react';
-import { Container } from '@pixi/react';
 import { Graphics as PixiGraphics } from 'pixi.js';
 import { TransformHandle } from './TransformHandle';
 import type { BoundingBox, HandlePosition, CursorStyle } from './types';

@@ -184,6 +184,13 @@ export default React.memo(function Table<T extends { id: string | number }>(
     skeletonRowCount = 5,
   } = props;
 
+  // useCollectionData Hook - 항상 최상단에서 호출 (Rules of Hooks)
+  const { data: boundData } = useCollectionData({
+    dataBinding: dataBinding as DataBinding,
+    componentName: "Table",
+    fallbackData: [],
+  });
+
   // External loading state - show skeleton table
   if (externalLoading) {
     const skeletonColumns = columns.length > 0 ? columns : [
@@ -229,13 +236,6 @@ export default React.memo(function Table<T extends { id: string | number }>(
       </div>
     );
   }
-
-  // useCollectionData Hook으로 데이터 가져오기 (PropertyDataBinding 형식 지원)
-  const { data: boundData } = useCollectionData({
-    dataBinding: dataBinding as DataBinding,
-    componentName: "Table",
-    fallbackData: [],
-  });
 
   // PropertyDataBinding 형식 감지
   const isPropertyBinding =

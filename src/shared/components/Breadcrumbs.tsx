@@ -93,6 +93,21 @@ export function Breadcrumbs<T extends object>({
   children,
   ...props
 }: BreadcrumbsExtendedProps<T>) {
+  // useCollectionData Hook - 항상 최상단에서 호출 (Rules of Hooks)
+  const {
+    data: boundData,
+    loading,
+    error,
+  } = useCollectionData({
+    dataBinding: dataBinding as DataBinding,
+    componentName: 'Breadcrumbs',
+    fallbackData: [
+      { id: 1, name: 'Home', href: '/' },
+      { id: 2, name: 'Products', href: '/products' },
+      { id: 3, name: 'Current', href: '' },
+    ],
+  });
+
   // External loading state - show skeleton breadcrumbs
   if (externalLoading) {
     return (
@@ -112,20 +127,6 @@ export function Breadcrumbs<T extends object>({
       </nav>
     );
   }
-  // useCollectionData Hook으로 데이터 가져오기 (PropertyDataBinding 형식 지원)
-  const {
-    data: boundData,
-    loading,
-    error,
-  } = useCollectionData({
-    dataBinding: dataBinding as DataBinding,
-    componentName: 'Breadcrumbs',
-    fallbackData: [
-      { id: 1, name: 'Home', href: '/' },
-      { id: 2, name: 'Products', href: '/products' },
-      { id: 3, name: 'Current', href: '' },
-    ],
-  });
 
   // PropertyDataBinding 형식 감지
   const isPropertyBinding =

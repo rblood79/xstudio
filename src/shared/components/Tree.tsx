@@ -94,6 +94,17 @@ const treeStyles = tv({
 export function Tree<T extends object>(props: MyTreeProps<T>) {
   const { variant = 'primary', size = 'md', dataBinding, isLoading: externalLoading, skeletonNodeCount = 3, children, ...restProps } = props;
 
+  // useCollectionData Hook - 항상 최상단에서 호출 (Rules of Hooks)
+  const {
+    data: treeData,
+    loading,
+    // error, // TODO: Add error handling UI
+  } = useCollectionData({
+    dataBinding,
+    componentName: "Tree",
+    fallbackData: [],
+  });
+
   // External loading state - show skeleton tree
   if (externalLoading) {
     return (
@@ -111,17 +122,6 @@ export function Tree<T extends object>(props: MyTreeProps<T>) {
       </div>
     );
   }
-
-  // useCollectionData Hook으로 데이터 가져오기 (Static, API, Supabase 통합)
-  const {
-    data: treeData,
-    loading,
-    // error, // TODO: Add error handling UI
-  } = useCollectionData({
-    dataBinding,
-    componentName: "Tree",
-    fallbackData: [],
-  });
 
   const treeClassName = composeRenderProps(
     restProps.className,

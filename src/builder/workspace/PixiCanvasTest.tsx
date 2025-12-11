@@ -13,7 +13,7 @@
  */
 
 import { useRef, useEffect, useState } from 'react';
-import { Application, extend, Graphics, Sprite, Container } from '@pixi/react';
+import { Application, extend } from '@pixi/react';
 import { Graphics as PixiGraphics, Sprite as PixiSprite, Container as PixiContainer } from 'pixi.js';
 
 // Extend PixiJS with the components we want to use

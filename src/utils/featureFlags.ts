@@ -81,8 +81,8 @@ export function enableDebugLogs(): boolean {
  */
 export function getFeatureFlags(): FeatureFlags {
   return {
-    useWebGLCanvas: useWebGLCanvas(),
-    enableDebugLogs: enableDebugLogs(),
+    useWebGLCanvas: parseBoolean(import.meta.env.VITE_USE_WEBGL_CANVAS, false),
+    enableDebugLogs: parseBoolean(import.meta.env.VITE_ENABLE_DEBUG_LOGS, false),
   };
 }
 

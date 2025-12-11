@@ -123,30 +123,13 @@ export function ListBox<T extends object>({
   skeletonCount = 5,
   ...props
 }: ExtendedListBoxProps<T>) {
+  // ================================================================
+  // Hooks - 항상 최상단에서 무조건 호출 (Rules of Hooks)
+  // ================================================================
+
   // Refs for virtualization
   const parentRef = useRef<HTMLDivElement>(null);
   const [focusedIndex, setFocusedIndex] = useState<number>(-1);
-
-  // External isLoading prop - shows skeleton immediately
-  if (externalLoading) {
-    return (
-      <div
-        className={`react-aria-ListBox ${variant} ${size}`}
-        role="listbox"
-        aria-busy="true"
-        aria-label="Loading list..."
-      >
-        {Array.from({ length: skeletonCount }).map((_, i) => (
-          <Skeleton
-            key={i}
-            componentVariant="list-item"
-            size={size}
-            index={i}
-          />
-        ))}
-      </div>
-    );
-  }
 
   // useCollectionData Hook으로 데이터 가져오기 (Static, API, Supabase 통합)
   const {
@@ -297,6 +280,31 @@ export function ListBox<T extends object>({
     },
     [enableVirtualization, focusedIndex, virtualItems, virtualizer, props.onSelectionChange]
   );
+
+  // ================================================================
+  // Early Returns (모든 Hooks 호출 후)
+  // ================================================================
+
+  // External isLoading prop - shows skeleton immediately
+  if (externalLoading) {
+    return (
+      <div
+        className={`react-aria-ListBox ${variant} ${size}`}
+        role="listbox"
+        aria-busy="true"
+        aria-label="Loading list..."
+      >
+        {Array.from({ length: skeletonCount }).map((_, i) => (
+          <Skeleton
+            key={i}
+            componentVariant="list-item"
+            size={size}
+            index={i}
+          />
+        ))}
+      </div>
+    );
+  }
 
   // ========== 가상화 렌더링 ==========
   if (enableVirtualization && hasDataBinding && virtualItems.length > 0) {

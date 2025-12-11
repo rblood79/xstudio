@@ -144,6 +144,20 @@ export function Tabs({
   children,
   ...props
 }: TabsExtendedProps) {
+  // useCollectionData Hook - 항상 최상단에서 호출 (Rules of Hooks)
+  const {
+    data: boundData,
+    loading,
+    error,
+  } = useCollectionData({
+    dataBinding: dataBinding as DataBinding,
+    componentName: 'Tabs',
+    fallbackData: [
+      { id: 'tab-1', title: 'Tab 1', content: 'Content 1' },
+      { id: 'tab-2', title: 'Tab 2', content: 'Content 2' },
+    ],
+  });
+
   // External loading state - show skeleton tabs
   if (externalLoading) {
     return (
@@ -164,19 +178,6 @@ export function Tabs({
       </div>
     );
   }
-  // useCollectionData Hook으로 데이터 가져오기 (PropertyDataBinding 형식 지원)
-  const {
-    data: boundData,
-    loading,
-    error,
-  } = useCollectionData({
-    dataBinding: dataBinding as DataBinding,
-    componentName: 'Tabs',
-    fallbackData: [
-      { id: 'tab-1', title: 'Tab 1', content: 'Content 1' },
-      { id: 'tab-2', title: 'Tab 2', content: 'Content 2' },
-    ],
-  });
 
   // PropertyDataBinding 형식 감지
   const isPropertyBinding =

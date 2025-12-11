@@ -10,7 +10,7 @@ import { useCallback, useMemo, useState, useEffect } from 'react';
 import { Container, Sprite } from '@pixi/react';
 import { Graphics as PixiGraphics, Texture, Assets } from 'pixi.js';
 import type { Element } from '../../../../types/core/store.types';
-import { convertStyle, type CSSStyle, cssColorToHex } from './styleConverter';
+import { convertStyle, type CSSStyle } from './styleConverter';
 
 // ============================================
 // Types

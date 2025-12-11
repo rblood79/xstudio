@@ -303,11 +303,14 @@ export function Skeleton({
 
 /**
  * Render component-specific skeleton content
+ * Note: size and animation params reserved for future variant-specific styling
  */
 function renderComponentVariant(
   componentVariant: ComponentSkeletonVariant,
-  size: ComponentSize,
-  animation: SkeletonAnimation
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  _size: ComponentSize,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  _animation: SkeletonAnimation
 ) {
   switch (componentVariant) {
     case "button":

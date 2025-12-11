@@ -12,7 +12,7 @@
  */
 
 import { useState, useCallback, useRef } from 'react';
-import type { DragState, HandlePosition, BoundingBox, DragOperation } from './types';
+import type { DragState, HandlePosition, BoundingBox } from './types';
 
 // ============================================
 // Initial State

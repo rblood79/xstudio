@@ -342,7 +342,6 @@ export function useUpdateDataTableMutation() {
 
   return useMutation({
     mutationFn: async ({
-      projectId,
       tableId,
       updates,
     }: {
@@ -376,7 +375,6 @@ export function useDeleteDataTableMutation() {
 
   return useMutation({
     mutationFn: async ({
-      projectId,
       tableId,
     }: {
       projectId: string;

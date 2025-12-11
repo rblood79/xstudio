@@ -252,6 +252,8 @@ const overlayStyle: CSSProperties = {
  * GPU 메트릭 디버그 오버레이
  */
 export function GPUDebugOverlay() {
+  // setVisible reserved for future toggle functionality
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [visible, setVisible] = useState(process.env.NODE_ENV === 'development');
   const gpuMetrics = useCanvasSyncStore((state) => state.gpuMetrics);
 

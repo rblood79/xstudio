@@ -14,7 +14,8 @@ import type { PanelProps } from "../core/types";
 import type { SelectedElement } from "../../inspector/types";
 import type { ActionType, EventType as RegistryEventType } from "@/types/events/events.types";
 import { ACTION_TYPE_LABELS, REGISTRY_ACTION_CATEGORIES } from "@/types/events/events.types";
-import type { EventHandler, EventType } from "../../events/types/eventTypes";
+import type { EventHandler } from "../../events/types/eventTypes";
+import type { EventType } from "@/types/events/events.types";
 import type {
   BlockEventAction,
   ConditionGroup,
@@ -48,24 +49,17 @@ import "./EventsPanel.css";
 // 우선 선택 이벤트 우선순위 (click → change → submit → keyboard → mouse → focus)
 // ⚠️ 순서 중요: 사용자 상호작용 → 값 변경 → 포커스 순
 // Note: onPress, onAction 등 React Aria 전용 이벤트는 아직 IMPLEMENTED_EVENT_TYPES에 없음
-const EVENT_PRIORITY: EventType[] = [
-  "onClick",          // 가장 일반적인 클릭 이벤트 (Button, Link 등)
-  "onChange",         // 값 변경 이벤트 (TextField, Select, Checkbox 등)
-  "onSubmit",         // 폼 제출 이벤트 (Form)
-  "onKeyDown",        // 키보드 이벤트 (TextField, NumberField 등)
-  "onKeyUp",          // 키보드 이벤트
-  "onMouseEnter",     // 마우스 진입
-  "onMouseLeave",     // 마우스 나감
-  "onFocus",          // 포커스 (낮은 우선순위)
-  "onBlur",           // 블러 (낮은 우선순위)
-];
-
-function pickPreferredEvent(events: EventType[]): EventType | undefined {
-  for (const type of EVENT_PRIORITY) {
-    if (events.includes(type)) return type;
-  }
-  return events[0];
-}
+// EVENT_PRIORITY and pickPreferredEvent are reserved for future auto-select feature
+// const EVENT_PRIORITY: EventType[] = [
+//   "onClick", "onChange", "onSubmit", "onKeyDown", "onKeyUp",
+//   "onMouseEnter", "onMouseLeave", "onFocus", "onBlur"
+// ];
+// function pickPreferredEvent(events: EventType[]): EventType | undefined {
+//   for (const type of EVENT_PRIORITY) {
+//     if (events.includes(type)) return type;
+//   }
+//   return events[0];
+// }
 
 // ============================================================================
 // Helper Functions: EventHandler ↔ Block Types Conversion

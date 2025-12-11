@@ -18,10 +18,6 @@ import { useCallback, useEffect, useRef, useMemo } from 'react';
 import {
   Application,
   extend,
-  Container,
-  Graphics,
-  Sprite,
-  Text,
 } from '@pixi/react';
 import {
   Container as PixiContainer,
@@ -41,7 +37,6 @@ import {
   type HandlePosition,
   type BoundingBox,
   type CursorStyle,
-  calculateBounds,
 } from './selection';
 import { GridLayer, useZoomPan } from './grid';
 import { TextEditOverlay, useTextEdit } from '../overlay';
@@ -169,8 +164,8 @@ export function BuilderCanvas({
   const syncPixiVersion = useCanvasSyncStore((state) => state.syncPixiVersion);
   const renderVersion = useCanvasSyncStore((state) => state.renderVersion);
 
-  // Zoom/Pan 인터랙션
-  const { screenToCanvas, canvasToScreen, resetZoom, fitToScreen, zoomIn, zoomOut } = useZoomPan({
+  // Zoom/Pan 인터랙션 - 현재 미사용, 추후 구현 예정
+  useZoomPan({
     containerRef,
     minZoom: 0.1,
     maxZoom: 5,
@@ -197,14 +192,14 @@ export function BuilderCanvas({
     [pageElements]
   );
 
-  // 드래그 인터랙션
+  // 드래그 인터랙션 - startLasso, updateDrag, endDrag는 추후 구현 예정
   const {
     dragState,
     startMove,
     startResize,
-    startLasso,
-    updateDrag,
-    endDrag,
+    // startLasso,
+    // updateDrag,
+    // endDrag,
   } = useDragInteraction({
     onMoveEnd: useCallback(
       (elementId: string, delta: { x: number; y: number }) => {

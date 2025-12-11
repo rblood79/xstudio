@@ -6,7 +6,7 @@
  * @since 2025-12-11 Phase 10 B1.5
  */
 
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback } from 'react';
 import { useStore } from '../../stores';
 import type { Element } from '../../../types/core/store.types';
 import type { TextStyleConfig } from './TextEditOverlay';
@@ -116,6 +116,8 @@ export function useTextEdit(): UseTextEditReturn {
   const updateElementProps = useStore((state) => state.updateElementProps);
 
   const [editState, setEditState] = useState<TextEditState | null>(null);
+  // originalValue is set but not read - prepared for future undo/cancel functionality
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [originalValue, setOriginalValue] = useState<string>('');
 
   // 편집 시작
