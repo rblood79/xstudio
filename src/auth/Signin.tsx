@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router';
-import { useAsyncMutation } from '../builder/hooks/useAsyncMutation';
-import { supabase } from '../env/supabase.client';
-import { TextField, Button } from '../shared/components/list';
-import './index.css';
-import '../builder/styles/1-theme/builder-system.css';
+import React, { useState } from "react";
+import { useNavigate } from "react-router";
+import { useAsyncMutation } from "../builder/hooks/useAsyncMutation";
+import { supabase } from "../env/supabase.client";
+import { TextField, Button } from "../shared/components/list";
+import "./index.css";
+import "../builder/styles/1-theme/builder-system.css";
 
 interface AuthCredentials {
   email: string;
@@ -14,8 +14,8 @@ interface AuthCredentials {
 const Signin = () => {
   const navigate = useNavigate();
   const [isSignUp, setIsSignUp] = useState(false);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
 
   // Sign Up mutation
   const signUpMutation = useAsyncMutation<string, AuthCredentials>(
@@ -26,12 +26,12 @@ const Signin = () => {
         throw error;
       }
 
-      return '회원가입이 완료되었습니다. 이메일을 확인해주세요.';
+      return "회원가입이 완료되었습니다. 이메일을 확인해주세요.";
     },
     {
       onSuccess: () => {
-        setEmail('');
-        setPassword('');
+        setEmail("");
+        setPassword("");
       },
     }
   );
@@ -39,7 +39,10 @@ const Signin = () => {
   // Sign In mutation
   const signInMutation = useAsyncMutation<void, AuthCredentials>(
     async ({ email, password }) => {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
 
       if (error) {
         throw error;
@@ -47,7 +50,7 @@ const Signin = () => {
     },
     {
       onSuccess: () => {
-        navigate('/dashboard');
+        navigate("/dashboard");
       },
     }
   );
@@ -69,7 +72,7 @@ const Signin = () => {
       }
     } catch (err) {
       // 에러는 mutation.error에 자동 저장됨
-      console.error('[Signin] Auth failed:', err);
+      console.error("[Signin] Auth failed:", err);
     }
   };
 
@@ -77,19 +80,17 @@ const Signin = () => {
     setIsSignUp(!isSignUp);
     signUpMutation.reset();
     signInMutation.reset();
-    setEmail('');
-    setPassword('');
+    setEmail("");
+    setPassword("");
   };
 
   return (
     <main className="auth-container">
       <div className="auth-card">
         <div className="auth-header">
-          <h1 className="auth-title">
-            {isSignUp ? 'Sign Up' : 'Sign In'}
-          </h1>
+          <h1 className="auth-title">{isSignUp ? "Sign Up" : "Sign In"}</h1>
           <p className="auth-subtitle">
-            {isSignUp ? 'Create a new account' : 'Log in to your account'}
+            {isSignUp ? "Create a new account" : "Log in to your account"}
           </p>
         </div>
 
@@ -112,13 +113,15 @@ const Signin = () => {
             value={password}
             onChange={setPassword}
             isRequired={true}
-            description={isSignUp ? "Enter a secure password with at least 8 characters." : "Enter your account password."}
+            description={
+              isSignUp
+                ? "Enter a secure password with at least 8 characters."
+                : "Enter your account password."
+            }
           />
           {message && (
             <div className="success-message">
-              <p className="success-text">
-                {message}
-              </p>
+              <p className="success-text">{message}</p>
             </div>
           )}
 
@@ -126,32 +129,32 @@ const Signin = () => {
             type="submit"
             variant="primary"
             isDisabled={loading}
-            children={loading
-              ? (isSignUp ? 'Signing Up...' : 'Signing In...')
-              : (isSignUp ? 'Sign Up' : 'Sign In')
+            children={
+              loading
+                ? isSignUp
+                  ? "Signing Up..."
+                  : "Signing In..."
+                : isSignUp
+                ? "Sign Up"
+                : "Sign In"
             }
           />
 
           <div className="helper-text">
-
             <Button
               variant="ghost"
               onClick={toggleMode}
-              children={isSignUp ? 'Log In' : 'Sign Up'}
+              children={isSignUp ? "Log In" : "Sign Up"}
             />
             {!isSignUp ? (
               <Button
                 variant="ghost"
-                onClick={() => navigate('/forgot-password')}
+                onClick={() => navigate("/forgot-password")}
                 children="Forgot Password?"
               />
             ) : null}
           </div>
-
-
         </form>
-
-
       </div>
     </main>
   );

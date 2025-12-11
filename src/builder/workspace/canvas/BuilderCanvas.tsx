@@ -14,7 +14,7 @@
  * @updated 2025-12-11 Phase 10 B1.2 - ElementSprite 통합
  */
 
-import { useCallback, useEffect, useRef, useMemo } from 'react';
+import { useCallback, useEffect, useRef, useMemo, useState } from 'react';
 import {
   Application,
   extend,
@@ -55,10 +55,10 @@ extend({
 // ============================================
 
 export interface BuilderCanvasProps {
-  /** 캔버스 너비 */
-  width?: number;
-  /** 캔버스 높이 */
-  height?: number;
+  /** 페이지 영역 너비 (breakpoint 크기) */
+  pageWidth?: number;
+  /** 페이지 영역 높이 (breakpoint 크기) */
+  pageHeight?: number;
   /** 배경색 */
   backgroundColor?: number;
 }
@@ -80,13 +80,13 @@ const DEFAULT_BACKGROUND = 0xf8fafc; // slate-50
 /**
  * 캔버스 경계 표시
  */
-function CanvasBounds() {
+function CanvasBounds({ width, height }: { width: number; height: number }) {
   const draw = useCallback((g: PixiGraphics) => {
     g.clear();
     g.setStrokeStyle({ width: 2, color: 0x3b82f6, alpha: 0.5 });
-    g.rect(0, 0, DEFAULT_WIDTH, DEFAULT_HEIGHT);
+    g.rect(0, 0, width, height);
     g.stroke();
-  }, []);
+  }, [width, height]);
 
   return <pixiGraphics draw={draw} />;
 }
@@ -113,8 +113,8 @@ function ElementsLayer({
   // 현재 페이지의 요소만 필터링 (Body 제외, 실제 렌더링 대상만)
   const pageElements = elements.filter((el) => {
     if (el.page_id !== currentPageId) return false;
-    // Body 태그는 캔버스 전체를 의미하므로 렌더링에서 제외
-    if (el.tag === 'Body') return false;
+    // Body 태그는 캔버스 전체를 의미하므로 렌더링에서 제외 (대소문자 무시)
+    if (el.tag.toLowerCase() === 'body') return false;
     return true;
   });
 
@@ -124,7 +124,7 @@ function ElementsLayer({
   );
 
   return (
-    <pixiContainer>
+    <pixiContainer eventMode="static" interactiveChildren={true}>
       {sortedElements.map((element) => (
         <ElementSprite
           key={element.id}
@@ -143,16 +143,38 @@ function ElementsLayer({
 // ============================================
 
 export function BuilderCanvas({
-  width = DEFAULT_WIDTH,
-  height = DEFAULT_HEIGHT,
+  pageWidth = DEFAULT_WIDTH,
+  pageHeight = DEFAULT_HEIGHT,
   backgroundColor = DEFAULT_BACKGROUND,
 }: BuilderCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const [canvasSize, setCanvasSize] = useState({ width: 800, height: 600 });
+
+  // 컨테이너 크기 추적 (Canvas는 항상 100%)
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const updateSize = () => {
+      setCanvasSize({
+        width: container.clientWidth,
+        height: container.clientHeight,
+      });
+    };
+
+    updateSize();
+
+    const resizeObserver = new ResizeObserver(updateSize);
+    resizeObserver.observe(container);
+
+    return () => resizeObserver.disconnect();
+  }, []);
 
   // Store state
   const elements = useStore((state) => state.elements);
   const selectedElementIds = useStore((state) => state.selectedElementIds);
-  const setSelectedElementIds = useStore((state) => state.setSelectedElementIds);
+  const setSelectedElement = useStore((state) => state.setSelectedElement);
+  const setSelectedElements = useStore((state) => state.setSelectedElements);
   const updateElementProps = useStore((state) => state.updateElementProps);
   const currentPageId = useStore((state) => state.currentPageId);
   const zoom = useCanvasSyncStore((state) => state.zoom);
@@ -242,10 +264,10 @@ export function BuilderCanvas({
     onLassoEnd: useCallback(
       (selectedIds: string[]) => {
         if (selectedIds.length > 0) {
-          setSelectedElementIds(selectedIds);
+          setSelectedElements(selectedIds);
         }
       },
-      [setSelectedElementIds]
+      [setSelectedElements]
     ),
     findElementsInLasso: findElementsInLassoArea,
   });
@@ -290,9 +312,9 @@ export function BuilderCanvas({
     (elementId: string) => {
       // 텍스트 편집 중이면 클릭 무시
       if (isEditing) return;
-      setSelectedElementIds([elementId]);
+      setSelectedElement(elementId);
     },
-    [setSelectedElementIds, isEditing]
+    [setSelectedElement, isEditing]
   );
 
   // Element double click handler (텍스트 편집 시작)
@@ -350,8 +372,8 @@ export function BuilderCanvas({
       }}
     >
       <Application
-        width={width}
-        height={height}
+        width={canvasSize.width}
+        height={canvasSize.height}
         background={backgroundColor}
         antialias={true}
         resolution={window.devicePixelRatio}
@@ -362,17 +384,19 @@ export function BuilderCanvas({
           x={panOffset.x}
           y={panOffset.y}
           scale={zoom}
+          eventMode="static"
+          interactiveChildren={true}
         >
           {/* Grid Layer (최하단) */}
           <GridLayer
-            width={width}
-            height={height}
+            width={pageWidth}
+            height={pageHeight}
             zoom={zoom}
             showGrid={true}
           />
 
-          {/* Canvas Bounds */}
-          <CanvasBounds />
+          {/* Page Bounds (breakpoint 크기) */}
+          <CanvasBounds width={pageWidth} height={pageHeight} />
 
           {/* Elements Layer (ElementSprite 기반) */}
           <ElementsLayer

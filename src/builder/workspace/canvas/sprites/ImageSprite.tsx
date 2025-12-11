@@ -7,7 +7,6 @@
  */
 
 import { useCallback, useMemo, useState, useEffect } from 'react';
-import { Container, Sprite } from '@pixi/react';
 import { Graphics as PixiGraphics, Texture, Assets } from 'pixi.js';
 import type { Element } from '../../../../types/core/store.types';
 import { convertStyle, type CSSStyle } from './styleConverter';
@@ -153,25 +152,30 @@ export function ImageSprite({ element, isSelected, onClick }: ImageSpriteProps) 
   }, [element.id, onClick]);
 
   return (
-    <Container
+    <pixiContainer
       x={transform.x}
       y={transform.y}
-      eventMode="static"
-      cursor="pointer"
-      onclick={handleClick}
     >
-      {/* Image or Placeholder */}
+      {/* Image or Placeholder - clickable */}
       {texture && !hasError ? (
         <>
-          <Sprite
+          <pixiSprite
             texture={texture}
             width={transform.width}
             height={transform.height}
+            eventMode="static"
+            cursor="pointer"
+            onPointerDown={handleClick}
           />
           <pixiGraphics draw={drawOverlay} />
         </>
       ) : (
-        <pixiGraphics draw={drawPlaceholder} />
+        <pixiGraphics
+          draw={drawPlaceholder}
+          eventMode="static"
+          cursor="pointer"
+          onPointerDown={handleClick}
+        />
       )}
 
       {/* Loading indicator */}
@@ -186,7 +190,7 @@ export function ImageSprite({ element, isSelected, onClick }: ImageSpriteProps) 
           }}
         />
       )}
-    </Container>
+    </pixiContainer>
   );
 }
 

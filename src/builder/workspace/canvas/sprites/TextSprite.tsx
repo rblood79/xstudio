@@ -7,7 +7,6 @@
  */
 
 import { useCallback, useMemo } from 'react';
-import { Container, Text } from '@pixi/react';
 import { Graphics as PixiGraphics, TextStyle } from 'pixi.js';
 import type { Element } from '../../../../types/core/store.types';
 import { convertStyle, type CSSStyle } from './styleConverter';
@@ -122,25 +121,26 @@ export function TextSprite({
   }, [style]);
 
   return (
-    <Container
+    <pixiContainer
       x={transform.x}
       y={transform.y}
-      eventMode="static"
-      cursor="text"
-      onclick={handleClick}
-      ondblclick={handleDoubleClick}
     >
-      {/* Background */}
-      <pixiGraphics draw={drawBackground} />
+      {/* Background - clickable */}
+      <pixiGraphics
+        draw={drawBackground}
+        eventMode="static"
+        cursor="text"
+        onPointerDown={handleClick}
+      />
 
       {/* Text */}
-      <Text
+      <pixiText
         text={textContent}
         style={pixiTextStyle}
         x={paddingLeft}
         y={paddingTop}
       />
-    </Container>
+    </pixiContainer>
   );
 }
 

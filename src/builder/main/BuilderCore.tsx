@@ -14,6 +14,8 @@ import { BuilderWorkflow } from "./BuilderWorkflow";
 import { BuilderViewport } from "./BuilderViewport";
 import SelectionOverlay from "../overlay";
 import Grid from "../grid";
+import { Workspace } from "../workspace";
+import { useWebGLCanvas } from "../../utils/featureFlags";
 import { PanelSlot, BottomPanelSlot } from "../layout";
 import { InspectorSync } from "../inspector/InspectorSync";
 import { ToastContainer } from "../components/ToastContainer";
@@ -43,6 +45,9 @@ import { getValueByPath, upsertData, appendData, mergeData, safeJsonParse } from
 export const BuilderCore: React.FC = () => {
   const { projectId } = useParams<{ projectId: string }>();
   const [projectInfo, setProjectInfo] = useState<Project | null>(null);
+
+  // Feature Flag: WebGL Canvas 사용 여부
+  const useWebGL = useWebGLCanvas();
 
   // Store 상태
   const elements = useStore((state) => state.elements);
@@ -787,16 +792,37 @@ export const BuilderCore: React.FC = () => {
       />
 
       {viewMode === 'canvas' ? (
-        <BuilderCanvas
-          projectId={projectId}
-          breakpoint={new Set(Array.from(breakpoint).map(String))}
-          breakpoints={breakpoints}
-          onIframeLoad={handleIframeLoad}
-          onMessage={handleMessage}
-        >
-          <Grid />
-          {showOverlay && <SelectionOverlay />}
-        </BuilderCanvas>
+        useWebGL ? (
+          /* WebGL Canvas (Phase 10) */
+          <Workspace
+            breakpoint={breakpoint}
+            breakpoints={breakpoints}
+            fallbackCanvas={
+              <BuilderCanvas
+                projectId={projectId}
+                breakpoint={new Set(Array.from(breakpoint).map(String))}
+                breakpoints={breakpoints}
+                onIframeLoad={handleIframeLoad}
+                onMessage={handleMessage}
+              >
+                <Grid />
+                {showOverlay && <SelectionOverlay />}
+              </BuilderCanvas>
+            }
+          />
+        ) : (
+          /* iframe Canvas (기존) */
+          <BuilderCanvas
+            projectId={projectId}
+            breakpoint={new Set(Array.from(breakpoint).map(String))}
+            breakpoints={breakpoints}
+            onIframeLoad={handleIframeLoad}
+            onMessage={handleMessage}
+          >
+            <Grid />
+            {showOverlay && <SelectionOverlay />}
+          </BuilderCanvas>
+        )
       ) : (
         <BuilderWorkflow />
       )}

@@ -7,10 +7,9 @@
  */
 
 import { useCallback, useMemo } from 'react';
-import { Container } from '@pixi/react';
-import { Graphics as PixiGraphics } from 'pixi.js';
+import { Graphics as PixiGraphics, TextStyle } from 'pixi.js';
 import type { Element } from '../../../../types/core/store.types';
-import { convertStyle, type CSSStyle } from './styleConverter';
+import { convertStyle, cssColorToHex, type CSSStyle } from './styleConverter';
 
 // ============================================
 // Types
@@ -32,42 +31,51 @@ export function BoxSprite({ element, isSelected, onClick }: BoxSpriteProps) {
 
   const { transform, fill, stroke, borderRadius } = converted;
 
-  // Draw function
+  // 텍스트 내용 (children, text, label 등)
+  const textContent = useMemo(() => {
+    const props = element.props as Record<string, unknown> | undefined;
+    const content = props?.children || props?.text || props?.label;
+    return content ? String(content) : '';
+  }, [element.props]);
+
+  // 텍스트 스타일
+  const textStyle = useMemo(() => {
+    return new TextStyle({
+      fontFamily: style?.fontFamily || 'Pretendard, sans-serif',
+      fontSize: typeof style?.fontSize === 'number' ? style.fontSize : 14,
+      fontWeight: (style?.fontWeight as 'normal' | 'bold') || 'normal',
+      fill: cssColorToHex(style?.color, 0x000000),
+      align: 'center',
+    });
+  }, [style]);
+
+  // Draw function (PixiJS v8 API)
   const draw = useCallback(
     (g: PixiGraphics) => {
       g.clear();
 
-      // Fill
-      g.fill({ color: fill.color, alpha: fill.alpha });
-
-      // Shape (rounded rect if borderRadius > 0)
+      // Shape + Fill (PixiJS v8: rect 먼저, fill 한번)
       if (borderRadius && typeof borderRadius === 'number' && borderRadius > 0) {
         g.roundRect(0, 0, transform.width, transform.height, borderRadius);
       } else {
         g.rect(0, 0, transform.width, transform.height);
       }
-      g.fill();
+      g.fill({ color: fill.color, alpha: fill.alpha });
 
       // Stroke
       if (stroke) {
-        g.setStrokeStyle({
-          width: stroke.width,
-          color: stroke.color,
-          alpha: stroke.alpha,
-        });
         if (borderRadius && typeof borderRadius === 'number' && borderRadius > 0) {
           g.roundRect(0, 0, transform.width, transform.height, borderRadius);
         } else {
           g.rect(0, 0, transform.width, transform.height);
         }
-        g.stroke();
+        g.stroke({ width: stroke.width, color: stroke.color, alpha: stroke.alpha });
       }
 
       // Selection highlight
       if (isSelected) {
-        g.setStrokeStyle({ width: 2, color: 0x3b82f6, alpha: 1 });
         g.rect(-1, -1, transform.width + 2, transform.height + 2);
-        g.stroke();
+        g.stroke({ width: 2, color: 0x3b82f6, alpha: 1 });
       }
     },
     [transform, fill, stroke, borderRadius, isSelected]
@@ -77,16 +85,28 @@ export function BoxSprite({ element, isSelected, onClick }: BoxSpriteProps) {
     onClick?.(element.id);
   }, [element.id, onClick]);
 
+  // 텍스트 위치 (중앙 정렬)
+  const textX = transform.width / 2;
+  const textY = transform.height / 2;
+
   return (
-    <Container
-      x={transform.x}
-      y={transform.y}
-      eventMode="static"
-      cursor="pointer"
-      onclick={handleClick}
-    >
-      <pixiGraphics draw={draw} />
-    </Container>
+    <pixiContainer x={transform.x} y={transform.y}>
+      <pixiGraphics
+        draw={draw}
+        eventMode="static"
+        cursor="pointer"
+        onPointerDown={handleClick}
+      />
+      {textContent && (
+        <pixiText
+          text={textContent}
+          style={textStyle}
+          x={textX}
+          y={textY}
+          anchor={0.5}
+        />
+      )}
+    </pixiContainer>
   );
 }
 

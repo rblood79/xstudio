@@ -15,7 +15,8 @@
  * @since 2025-12-11 Phase 10 B1.1
  */
 
-import { useRef, useCallback, useState, useEffect } from 'react';
+import { useRef, useCallback, useState, useEffect, useMemo } from 'react';
+import { Key } from 'react-aria-components';
 import { BuilderCanvas } from './canvas/BuilderCanvas';
 import { useCanvasSyncStore } from './canvas/canvasSync';
 import { useWebGLCanvas } from '../../utils/featureFlags';
@@ -24,7 +25,18 @@ import { useWebGLCanvas } from '../../utils/featureFlags';
 // Types
 // ============================================
 
+export interface Breakpoint {
+  id: string;
+  label: string;
+  max_width: string | number;
+  max_height: string | number;
+}
+
 export interface WorkspaceProps {
+  /** 현재 선택된 breakpoint */
+  breakpoint?: Set<Key>;
+  /** breakpoint 목록 */
+  breakpoints?: Breakpoint[];
   /** 기존 iframe 캔버스 (Feature Flag OFF 시 사용) */
   fallbackCanvas?: React.ReactNode;
 }
@@ -41,12 +53,52 @@ const ZOOM_STEP = 0.1;
 // Main Component
 // ============================================
 
-export function Workspace({ fallbackCanvas }: WorkspaceProps) {
+export function Workspace({ breakpoint, breakpoints, fallbackCanvas }: WorkspaceProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
 
   // Feature flag
   const useWebGL = useWebGLCanvas();
+
+  // ============================================
+  // Canvas Size from Breakpoint
+  // ============================================
+
+  const canvasSize = useMemo(() => {
+    if (!breakpoint || !breakpoints || breakpoints.length === 0) {
+      return { width: 1920, height: 1080 }; // Default fallback
+    }
+
+    // Get selected breakpoint ID
+    const selectedId = Array.from(breakpoint)[0] as string;
+    const selectedBreakpoint = breakpoints.find((bp) => bp.id === selectedId);
+
+    if (!selectedBreakpoint) {
+      return { width: 1920, height: 1080 };
+    }
+
+    // Parse width and height from breakpoint
+    // Handle percentage values ("100%") by using container size
+    const parseSize = (value: string | number, containerDimension: number): number => {
+      if (typeof value === 'number') return value;
+      const strValue = String(value);
+      // Handle percentage values
+      if (strValue.includes('%')) {
+        const percent = parseFloat(strValue) / 100;
+        return containerDimension > 0 ? Math.floor(containerDimension * percent) : 1920;
+      }
+      const numValue = parseInt(strValue, 10);
+      return isNaN(numValue) ? 1920 : numValue;
+    };
+
+    const size = {
+      width: parseSize(selectedBreakpoint.max_width, containerSize.width),
+      height: parseSize(selectedBreakpoint.max_height, containerSize.height),
+    };
+
+    console.log('[Workspace] Canvas size:', size, 'Breakpoint:', selectedId);
+    return size;
+  }, [breakpoint, breakpoints, containerSize]);
 
   // Canvas sync store
   const zoom = useCanvasSyncStore((state) => state.zoom);
@@ -55,6 +107,22 @@ export function Workspace({ fallbackCanvas }: WorkspaceProps) {
   const setPanOffset = useCanvasSyncStore((state) => state.setPanOffset);
   const isCanvasReady = useCanvasSyncStore((state) => state.isCanvasReady);
   const isContextLost = useCanvasSyncStore((state) => state.isContextLost);
+
+  // Center canvas when breakpoint changes
+  useEffect(() => {
+    if (containerSize.width > 0 && containerSize.height > 0) {
+      // Center the canvas
+      const scaleX = containerSize.width / canvasSize.width;
+      const scaleY = containerSize.height / canvasSize.height;
+      const fitZoom = Math.min(scaleX, scaleY) * 0.9;
+
+      setZoom(fitZoom);
+      setPanOffset({
+        x: (containerSize.width - canvasSize.width * fitZoom) / 2,
+        y: (containerSize.height - canvasSize.height * fitZoom) / 2,
+      });
+    }
+  }, [canvasSize.width, canvasSize.height, containerSize.width, containerSize.height, setZoom, setPanOffset]);
 
   // ============================================
   // Container Size Tracking
@@ -145,18 +213,16 @@ export function Workspace({ fallbackCanvas }: WorkspaceProps) {
   const zoomToFit = useCallback(() => {
     if (containerSize.width === 0 || containerSize.height === 0) return;
 
-    const canvasWidth = 1920;
-    const canvasHeight = 1080;
-    const scaleX = containerSize.width / canvasWidth;
-    const scaleY = containerSize.height / canvasHeight;
+    const scaleX = containerSize.width / canvasSize.width;
+    const scaleY = containerSize.height / canvasSize.height;
     const fitZoom = Math.min(scaleX, scaleY) * 0.9; // 10% 여백
 
     setZoom(fitZoom);
     setPanOffset({
-      x: (containerSize.width - canvasWidth * fitZoom) / 2,
-      y: (containerSize.height - canvasHeight * fitZoom) / 2,
+      x: (containerSize.width - canvasSize.width * fitZoom) / 2,
+      y: (containerSize.height - canvasSize.height * fitZoom) / 2,
     });
-  }, [containerSize, setZoom, setPanOffset]);
+  }, [containerSize, canvasSize, setZoom, setPanOffset]);
 
   // ============================================
   // Render
@@ -204,7 +270,10 @@ export function Workspace({ fallbackCanvas }: WorkspaceProps) {
           inset: 0,
         }}
       >
-        <BuilderCanvas />
+        <BuilderCanvas
+          pageWidth={canvasSize.width}
+          pageHeight={canvasSize.height}
+        />
       </div>
 
       {/* DOM Overlay Layer (B1.5에서 구현) */}
