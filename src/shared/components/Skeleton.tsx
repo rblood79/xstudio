@@ -248,7 +248,7 @@ export function Skeleton({
         aria-busy="true"
         data-testid={testId}
       >
-        {renderComponentVariant(componentVariant, size, animation)}
+        {renderComponentVariant(componentVariant)}
       </div>
     );
   }
@@ -303,15 +303,8 @@ export function Skeleton({
 
 /**
  * Render component-specific skeleton content
- * Note: size and animation params reserved for future variant-specific styling
  */
-function renderComponentVariant(
-  componentVariant: ComponentSkeletonVariant,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  _size: ComponentSize,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  _animation: SkeletonAnimation
-) {
+function renderComponentVariant(componentVariant: ComponentSkeletonVariant) {
   switch (componentVariant) {
     case "button":
       return <span className="skeleton-content" />;

@@ -116,9 +116,6 @@ export function useTextEdit(): UseTextEditReturn {
   const updateElementProps = useStore((state) => state.updateElementProps);
 
   const [editState, setEditState] = useState<TextEditState | null>(null);
-  // originalValue is set but not read - prepared for future undo/cancel functionality
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [originalValue, setOriginalValue] = useState<string>('');
 
   // 편집 시작
   const startEdit = useCallback(
@@ -133,7 +130,6 @@ export function useTextEdit(): UseTextEditReturn {
       }
 
       const text = extractText(element);
-      setOriginalValue(text);
 
       setEditState({
         elementId,
@@ -183,7 +179,6 @@ export function useTextEdit(): UseTextEditReturn {
 
       updateElementProps(elementId, updatedProps);
       setEditState(null);
-      setOriginalValue('');
     },
     [editState, elements, updateElementProps]
   );
@@ -193,9 +188,8 @@ export function useTextEdit(): UseTextEditReturn {
     (elementId: string) => {
       if (!editState || editState.elementId !== elementId) return;
 
-      // 원래 값으로 복원 (실제로는 저장하지 않았으므로 그냥 닫기만 함)
+      // 편집 상태 초기화 (저장하지 않고 닫기)
       setEditState(null);
-      setOriginalValue('');
     },
     [editState]
   );

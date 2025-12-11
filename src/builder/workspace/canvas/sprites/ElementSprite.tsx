@@ -51,56 +51,7 @@ const TEXT_TAGS = new Set([
  */
 const IMAGE_TAGS = new Set(['Image', 'Avatar', 'Logo', 'Icon', 'Thumbnail']);
 
-/**
- * 박스/컨테이너 관련 태그들 (기본값)
- * 명시적으로 나열하지 않은 모든 태그는 BoxSprite로 렌더링
- * Note: BOX_TAGS는 현재 미사용 - 추후 태그별 렌더링 분기에 사용 예정
- */
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const _BOX_TAGS = new Set([
-  'Box',
-  'Flex',
-  'Grid',
-  'Container',
-  'Card',
-  'Panel',
-  'Section',
-  'Article',
-  'Header',
-  'Footer',
-  'Main',
-  'Nav',
-  'Aside',
-  'Div',
-  // React Aria Components (컨테이너)
-  'Button',
-  'ToggleButton',
-  'Checkbox',
-  'Radio',
-  'Switch',
-  'Slider',
-  'ProgressBar',
-  'Meter',
-  'Calendar',
-  'DatePicker',
-  'TimePicker',
-  'ComboBox',
-  'Select',
-  'ListBox',
-  'Menu',
-  'Tabs',
-  'Table',
-  'Tree',
-  'TagGroup',
-  'Breadcrumbs',
-  'Dialog',
-  'Popover',
-  'Tooltip',
-  'Form',
-  'TextField',
-  'NumberField',
-  'SearchField',
-]);
+// Note: TEXT_TAGS, IMAGE_TAGS에 포함되지 않은 모든 태그는 BoxSprite로 렌더링됨
 
 // ============================================
 // Sprite Type Detection

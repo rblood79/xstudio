@@ -232,7 +232,7 @@ export function useGPUProfiler(enabled = true): void {
 // Debug Overlay Component
 // ============================================
 
-import { useState, type CSSProperties } from 'react';
+import { type CSSProperties } from 'react';
 
 const overlayStyle: CSSProperties = {
   position: 'absolute',
@@ -250,14 +250,13 @@ const overlayStyle: CSSProperties = {
 
 /**
  * GPU 메트릭 디버그 오버레이
+ * 개발 환경에서만 표시
  */
 export function GPUDebugOverlay() {
-  // setVisible reserved for future toggle functionality
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [visible, setVisible] = useState(process.env.NODE_ENV === 'development');
   const gpuMetrics = useCanvasSyncStore((state) => state.gpuMetrics);
 
-  if (!visible) return null;
+  // 개발 환경에서만 표시
+  if (process.env.NODE_ENV !== 'development') return null;
 
   return (
     <div style={overlayStyle}>

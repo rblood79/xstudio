@@ -1,12 +1,17 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router';
-import { projectsApi, pagesApi, elementsApi, type Project } from '../services/api';
-import { getDB } from '../lib/db';
-import { ElementProps } from '../types/integrations/supabase.types';
-import { ElementUtils } from '../utils/element/elementUtils';
-import { Button, TextField } from '../shared/components/list';
-import { useAsyncQuery } from '../builder/hooks/useAsyncQuery';
-import { useAsyncMutation } from '../builder/hooks/useAsyncMutation';
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router";
+import {
+  projectsApi,
+  pagesApi,
+  elementsApi,
+  type Project,
+} from "../services/api";
+import { getDB } from "../lib/db";
+import { ElementProps } from "../types/integrations/supabase.types";
+import { ElementUtils } from "../utils/element/elementUtils";
+import { Button, TextField } from "../shared/components/list";
+import { useAsyncQuery } from "../builder/hooks/useAsyncQuery";
+import { useAsyncMutation } from "../builder/hooks/useAsyncMutation";
 import {
   SquarePlus,
   Cloud,
@@ -25,15 +30,15 @@ import {
   getStorageBadge,
   getAvailableActions,
   formatRelativeTime,
-} from '../utils/projectMerger';
+} from "../utils/projectMerger";
 import {
   syncProjectToCloud,
   downloadProjectFromCloud,
-} from '../utils/projectSync';
-import { historyIndexedDB } from '../builder/stores/history/historyIndexedDB';
-import { useSettingsStore } from '../stores/settingsStore';
-import { SettingsPanel } from './SettingsPanel';
-import type { ProjectListItem, ProjectFilter } from '../types/dashboard.types';
+} from "../utils/projectSync";
+import { historyIndexedDB } from "../builder/stores/history/historyIndexedDB";
+import { useSettingsStore } from "../stores/settingsStore";
+import { SettingsPanel } from "./SettingsPanel";
+import type { ProjectListItem, ProjectFilter } from "../types/dashboard.types";
 import "./index.css";
 
 interface CreateProjectRequest {
@@ -43,7 +48,7 @@ interface CreateProjectRequest {
 function Dashboard() {
   const navigate = useNavigate();
   const [newProjectName, setNewProjectName] = useState("");
-  const [filter, setFilter] = useState<ProjectFilter>('all');
+  const [filter, setFilter] = useState<ProjectFilter>("all");
   const [mergedProjects, setMergedProjects] = useState<ProjectListItem[]>([]);
   const [showSettings, setShowSettings] = useState(false);
 
@@ -67,25 +72,25 @@ function Dashboard() {
         const localProjects: Project[] = localProjectsRaw.map((p) => ({
           id: p.id,
           name: p.name,
-          created_by: p.created_by || '', // optional → required
+          created_by: p.created_by || "", // optional → required
           created_at: p.created_at || new Date().toISOString(),
           updated_at: p.updated_at || new Date().toISOString(),
         }));
 
-        console.log('[Dashboard] 로컬 프로젝트 로드:', localProjects.length);
+        console.log("[Dashboard] 로컬 프로젝트 로드:", localProjects.length);
 
         // 2. 클라우드 프로젝트 (이미 useAsyncQuery로 로드됨)
         const cloudProjects = cloudProjectsQuery.data || [];
 
-        console.log('[Dashboard] 클라우드 프로젝트:', cloudProjects.length);
+        console.log("[Dashboard] 클라우드 프로젝트:", cloudProjects.length);
 
         // 3. 병합
         const merged = mergeProjects(localProjects, cloudProjects);
         setMergedProjects(merged);
 
-        console.log('[Dashboard] 병합 완료:', merged.length);
+        console.log("[Dashboard] 병합 완료:", merged.length);
       } catch (error) {
-        console.error('[Dashboard] 프로젝트 로드 실패:', error);
+        console.error("[Dashboard] 프로젝트 로드 실패:", error);
       }
     };
 
@@ -103,7 +108,7 @@ function Dashboard() {
       // 프로젝트 생성 모드에 따라 처리
       let newProject: Project;
 
-      if (projectCreation === 'local') {
+      if (projectCreation === "local") {
         // 1️⃣ 로컬(IndexedDB)에만 생성
         newProject = {
           id: ElementUtils.generateId(),
@@ -114,22 +119,22 @@ function Dashboard() {
         };
 
         await db.projects.insert(newProject);
-        console.log('[Dashboard] 로컬 프로젝트 생성:', newProject.id);
-      } else if (projectCreation === 'cloud') {
+        console.log("[Dashboard] 로컬 프로젝트 생성:", newProject.id);
+      } else if (projectCreation === "cloud") {
         // 2️⃣ 클라우드(Supabase)에만 생성
         newProject = await projectsApi.createProject({
           name: name.trim(),
-          created_by: user.id
+          created_by: user.id,
         });
-        console.log('[Dashboard] 클라우드 프로젝트 생성:', newProject.id);
+        console.log("[Dashboard] 클라우드 프로젝트 생성:", newProject.id);
       } else {
         // 3️⃣ 양쪽 모두 생성 (both)
         newProject = await projectsApi.createProject({
           name: name.trim(),
-          created_by: user.id
+          created_by: user.id,
         });
         await db.projects.insert(newProject);
-        console.log('[Dashboard] 로컬+클라우드 프로젝트 생성:', newProject.id);
+        console.log("[Dashboard] 로컬+클라우드 프로젝트 생성:", newProject.id);
       }
 
       // 기본 페이지 생성
@@ -148,7 +153,7 @@ function Dashboard() {
       // 기본 body 요소 생성
       const bodyElement = {
         id: ElementUtils.generateId(),
-        tag: 'body',
+        tag: "body",
         props: {} as ElementProps,
         parent_id: null,
         page_id: homePageId,
@@ -158,18 +163,18 @@ function Dashboard() {
       };
 
       // 설정에 따라 저장
-      if (projectCreation === 'local') {
+      if (projectCreation === "local") {
         // 로컬에만 저장
         await db.pages.insert(homePage);
         await db.elements.insert(bodyElement);
-      } else if (projectCreation === 'cloud') {
+      } else if (projectCreation === "cloud") {
         // 클라우드에만 저장
         await pagesApi.createPage({
           id: homePageId,
           project_id: newProject.id,
           title: "Home", // API uses 'title'
           slug: "/",
-          order_num: 0
+          order_num: 0,
         });
         await elementsApi.createElement(bodyElement);
       } else {
@@ -181,7 +186,7 @@ function Dashboard() {
           project_id: newProject.id,
           title: "Home",
           slug: "/",
-          order_num: 0
+          order_num: 0,
         });
         await elementsApi.createElement(bodyElement);
       }
@@ -201,31 +206,36 @@ function Dashboard() {
   const deleteProjectMutation = useAsyncMutation<void, string>(
     async (id) => {
       // 필터에 따라 삭제 범위 결정
-      let deleteLocation: 'local' | 'cloud' | 'both';
+      let deleteLocation: "local" | "cloud" | "both";
 
-      if (filter === 'local') {
-        deleteLocation = 'local';
-        console.log('[Dashboard] 로컬 프로젝트만 삭제:', id);
-      } else if (filter === 'cloud') {
-        deleteLocation = 'cloud';
-        console.log('[Dashboard] 클라우드 프로젝트만 삭제:', id);
+      if (filter === "local") {
+        deleteLocation = "local";
+        console.log("[Dashboard] 로컬 프로젝트만 삭제:", id);
+      } else if (filter === "cloud") {
+        deleteLocation = "cloud";
+        console.log("[Dashboard] 클라우드 프로젝트만 삭제:", id);
       } else {
-        deleteLocation = 'both';
-        console.log('[Dashboard] 로컬 + 클라우드 프로젝트 삭제:', id);
+        deleteLocation = "both";
+        console.log("[Dashboard] 로컬 + 클라우드 프로젝트 삭제:", id);
       }
 
       // 로컬 삭제 (local 또는 both)
-      if (deleteLocation === 'local' || deleteLocation === 'both') {
+      if (deleteLocation === "local" || deleteLocation === "both") {
         const db = await getDB();
 
         // 1. 프로젝트의 모든 페이지 찾기
         const pages = await db.pages.getByProject(id);
-        console.log('[Dashboard] 삭제할 페이지:', pages.length);
+        console.log("[Dashboard] 삭제할 페이지:", pages.length);
 
         // 2. 각 페이지의 요소들과 히스토리 삭제
         for (const page of pages) {
           const elements = await db.elements.getByPage(page.id);
-          console.log('[Dashboard] 페이지', page.title, '의 요소:', elements.length);
+          console.log(
+            "[Dashboard] 페이지",
+            page.title,
+            "의 요소:",
+            elements.length
+          );
 
           for (const element of elements) {
             await db.elements.delete(element.id);
@@ -242,11 +252,11 @@ function Dashboard() {
         for (const page of pages) {
           await db.pages.delete(page.id);
         }
-        console.log('[Dashboard] 페이지 및 히스토리 삭제 완료');
+        console.log("[Dashboard] 페이지 및 히스토리 삭제 완료");
 
         // 4. 프로젝트의 디자인 토큰 삭제
         const tokens = await db.designTokens.getByProject(id);
-        console.log('[Dashboard] 삭제할 디자인 토큰:', tokens.length);
+        console.log("[Dashboard] 삭제할 디자인 토큰:", tokens.length);
 
         for (const token of tokens) {
           await db.designTokens.delete(token.id);
@@ -254,7 +264,7 @@ function Dashboard() {
 
         // 4-1. 프로젝트의 디자인 테마 삭제
         const themes = await db.themes.getByProject(id);
-        console.log('[Dashboard] 삭제할 디자인 테마:', themes.length);
+        console.log("[Dashboard] 삭제할 디자인 테마:", themes.length);
 
         for (const theme of themes) {
           await db.themes.delete(theme.id as string);
@@ -262,12 +272,17 @@ function Dashboard() {
 
         // ⭐ 5. Layout/Slot System: 프로젝트의 레이아웃과 레이아웃 요소 삭제
         const layouts = await db.layouts.getByProject(id);
-        console.log('[Dashboard] 삭제할 레이아웃:', layouts.length);
+        console.log("[Dashboard] 삭제할 레이아웃:", layouts.length);
 
         for (const layout of layouts) {
           // 레이아웃의 요소들 삭제 (layout_id로 조회)
           const layoutElements = await db.elements.getByLayout(layout.id);
-          console.log('[Dashboard] 레이아웃', layout.name, '의 요소:', layoutElements.length);
+          console.log(
+            "[Dashboard] 레이아웃",
+            layout.name,
+            "의 요소:",
+            layoutElements.length
+          );
 
           for (const element of layoutElements) {
             await db.elements.delete(element.id);
@@ -288,7 +303,9 @@ function Dashboard() {
         for (const endpoint of apiEndpoints) {
           await db.api_endpoints.delete(endpoint.id);
         }
-        console.log(`[Dashboard] API Endpoints ${apiEndpoints.length}개 삭제 완료`);
+        console.log(
+          `[Dashboard] API Endpoints ${apiEndpoints.length}개 삭제 완료`
+        );
 
         const variables = await db.variables.getByProject(id);
         for (const variable of variables) {
@@ -300,20 +317,25 @@ function Dashboard() {
         for (const transformer of transformers) {
           await db.transformers.delete(transformer.id);
         }
-        console.log(`[Dashboard] Transformers ${transformers.length}개 삭제 완료`);
+        console.log(
+          `[Dashboard] Transformers ${transformers.length}개 삭제 완료`
+        );
 
         // 7. 프로젝트 삭제 (IndexedDB)
         await db.projects.delete(id);
-        console.log('✅ [Dashboard] 로컬 프로젝트 삭제 완료');
+        console.log("✅ [Dashboard] 로컬 프로젝트 삭제 완료");
       }
 
       // 클라우드 삭제 (cloud 또는 both)
-      if (deleteLocation === 'cloud' || deleteLocation === 'both') {
+      if (deleteLocation === "cloud" || deleteLocation === "both") {
         try {
           await projectsApi.deleteProject(id);
-          console.log('✅ [Dashboard] 클라우드 프로젝트 삭제 완료');
+          console.log("✅ [Dashboard] 클라우드 프로젝트 삭제 완료");
         } catch (error) {
-          console.warn('[Dashboard] Supabase 삭제 실패 (프로젝트가 클라우드에 없을 수 있음):', error);
+          console.warn(
+            "[Dashboard] Supabase 삭제 실패 (프로젝트가 클라우드에 없을 수 있음):",
+            error
+          );
         }
       }
 
@@ -330,7 +352,7 @@ function Dashboard() {
   const syncProjectMutation = useAsyncMutation<void, string>(
     async (projectId) => {
       await syncProjectToCloud(projectId);
-      console.log('[Dashboard] 프로젝트 동기화 완료:', projectId);
+      console.log("[Dashboard] 프로젝트 동기화 완료:", projectId);
     },
     {
       onSuccess: () => {
@@ -343,7 +365,7 @@ function Dashboard() {
   const downloadProjectMutation = useAsyncMutation<void, string>(
     async (projectId) => {
       await downloadProjectFromCloud(projectId);
-      console.log('[Dashboard] 프로젝트 다운로드 완료:', projectId);
+      console.log("[Dashboard] 프로젝트 다운로드 완료:", projectId);
     },
     {
       onSuccess: () => {
@@ -369,7 +391,7 @@ function Dashboard() {
   };
 
   const handleDeleteProject = async (id: string) => {
-    if (!confirm('정말로 이 프로젝트를 삭제하시겠습니까?')) {
+    if (!confirm("정말로 이 프로젝트를 삭제하시겠습니까?")) {
       return;
     }
 
@@ -382,13 +404,23 @@ function Dashboard() {
 
   // 필터링된 프로젝트 목록
   const filteredProjects = mergedProjects.filter((project) => {
-    if (filter === 'local') return project.storage.local;
-    if (filter === 'cloud') return project.storage.cloud;
+    if (filter === "local") return project.storage.local;
+    if (filter === "cloud") return project.storage.cloud;
     return true; // 'all'
   });
 
-  const loading = cloudProjectsQuery.isLoading || createProjectMutation.isLoading || deleteProjectMutation.isLoading || syncProjectMutation.isLoading || downloadProjectMutation.isLoading;
-  const error = cloudProjectsQuery.error || createProjectMutation.error || deleteProjectMutation.error || syncProjectMutation.error || downloadProjectMutation.error;
+  const loading =
+    cloudProjectsQuery.isLoading ||
+    createProjectMutation.isLoading ||
+    deleteProjectMutation.isLoading ||
+    syncProjectMutation.isLoading ||
+    downloadProjectMutation.isLoading;
+  const error =
+    cloudProjectsQuery.error ||
+    createProjectMutation.error ||
+    deleteProjectMutation.error ||
+    syncProjectMutation.error ||
+    downloadProjectMutation.error;
 
   if (cloudProjectsQuery.isLoading && mergedProjects.length === 0) {
     return (
@@ -411,25 +443,25 @@ function Dashboard() {
         <h1>XStudio Dashboard</h1>
 
         {/* 필터 버튼 + Settings */}
-        <div className="filters">
+        <div className="filter">
           <Button
-            variant={filter === 'all' ? 'primary' : 'default'}
+            variant={filter === "all" ? "primary" : "default"}
             size="sm"
-            onPress={() => setFilter('all')}
+            onPress={() => setFilter("all")}
           >
             All ({counts.all})
           </Button>
           <Button
-            variant={filter === 'local' ? 'primary' : 'default'}
+            variant={filter === "local" ? "primary" : "default"}
             size="sm"
-            onPress={() => setFilter('local')}
+            onPress={() => setFilter("local")}
           >
             <HardDrive size={14} /> Local ({counts.local})
           </Button>
           <Button
-            variant={filter === 'cloud' ? 'primary' : 'default'}
+            variant={filter === "cloud" ? "primary" : "default"}
             size="sm"
-            onPress={() => setFilter('cloud')}
+            onPress={() => setFilter("cloud")}
           >
             <Cloud size={14} /> Cloud ({counts.cloud})
           </Button>
@@ -446,11 +478,7 @@ function Dashboard() {
         </div>
       </header>
 
-      {error && (
-        <div className="error-message">
-          {error.message}
-        </div>
-      )}
+      {error && <div className="error-message">{error.message}</div>}
 
       <main className="main">
         <form onSubmit={handleAddProject} className="add-project-form">
@@ -466,7 +494,13 @@ function Dashboard() {
             size="sm"
             className="add-project-button"
             isDisabled={loading || !newProjectName.trim()}
-            children={createProjectMutation.isLoading ? 'Creating...' : <Plus size={16} />}
+            children={
+              createProjectMutation.isLoading ? (
+                "Creating..."
+              ) : (
+                <Plus size={16} />
+              )
+            }
           />
         </form>
 
@@ -520,14 +554,22 @@ function Dashboard() {
                       onPress={async () => {
                         try {
                           await syncProjectMutation.execute(project.id);
-                          alert('✅ 동기화 완료! 프로젝트가 클라우드에 업로드되었습니다.');
+                          alert(
+                            "✅ 동기화 완료! 프로젝트가 클라우드에 업로드되었습니다."
+                          );
                         } catch (err) {
-                          console.error('[Dashboard] Sync 에러:', err);
-                          alert('❌ 동기화 실패: ' + (err as Error).message);
+                          console.error("[Dashboard] Sync 에러:", err);
+                          alert("❌ 동기화 실패: " + (err as Error).message);
                         }
                       }}
                       isDisabled={loading}
-                      children={syncProjectMutation.isLoading ? <CloudAlert size={16} /> : <CloudUpload size={16} />}
+                      children={
+                        syncProjectMutation.isLoading ? (
+                          <CloudAlert size={16} />
+                        ) : (
+                          <CloudUpload size={16} />
+                        )
+                      }
                     />
                   )}
 
@@ -537,17 +579,22 @@ function Dashboard() {
                       onPress={async () => {
                         try {
                           await downloadProjectMutation.execute(project.id);
-                          alert('✅ 다운로드 완료! 프로젝트가 로컬에 저장되었습니다.');
+                          alert(
+                            "✅ 다운로드 완료! 프로젝트가 로컬에 저장되었습니다."
+                          );
                         } catch (err) {
-                          console.error('[Dashboard] Download 에러:', err);
-                          alert('❌ 다운로드 실패: ' + (err as Error).message);
+                          console.error("[Dashboard] Download 에러:", err);
+                          alert("❌ 다운로드 실패: " + (err as Error).message);
                         }
                       }}
                       isDisabled={loading}
                       variant="secondary"
                       size="sm"
                     >
-                      <Download size={14} /> {downloadProjectMutation.isLoading ? 'Downloading...' : 'Download'}
+                      <Download size={14} />{" "}
+                      {downloadProjectMutation.isLoading
+                        ? "Downloading..."
+                        : "Download"}
                     </Button>
                   )}
 
@@ -588,7 +635,10 @@ function Dashboard() {
       </footer>
 
       {/* Settings Panel */}
-      <SettingsPanel isOpen={showSettings} onClose={() => setShowSettings(false)} />
+      <SettingsPanel
+        isOpen={showSettings}
+        onClose={() => setShowSettings(false)}
+      />
     </div>
   );
 }

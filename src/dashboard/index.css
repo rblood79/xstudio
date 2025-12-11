@@ -149,7 +149,7 @@
         margin: 0;
       }
 
-      .filters {
+      .filter {
         display: flex;
         flex-direction: row;
         gap: var(--spacing-xs);
@@ -167,6 +167,7 @@
       width: 100%;
       display: flex;
       align-items: center;
+      justify-content: center;
       flex-direction: column;
       max-width: var(--container-6xl);
       min-width: var(--container-3xl);
@@ -288,7 +289,8 @@
             flex-shrink: 0;
 
             button {
-              padding: var(--spacing) var(--spacing-sm);
+              padding: var(--spacing-sm);
+              border: none;
             }
           }
         }
