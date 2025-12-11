@@ -175,7 +175,7 @@ export class PerformanceMonitor {
    * @param queryKey - 쿼리 키
    * @param responseTime - 응답 시간 (ms)
    */
-  recordCacheHit(queryKey: string, responseTime: number = 0): void {
+  recordCacheHit(_queryKey: string, responseTime: number = 0): void {
     this.cacheMetrics.totalRequests++;
     this.cacheMetrics.hits++;
     this.cacheMetrics.totalResponseTime += responseTime;
@@ -193,7 +193,7 @@ export class PerformanceMonitor {
    * @param queryKey - 쿼리 키
    * @param responseTime - 응답 시간 (ms)
    */
-  recordCacheMiss(queryKey: string, responseTime: number = 0): void {
+  recordCacheMiss(_queryKey: string, responseTime: number = 0): void {
     this.cacheMetrics.totalRequests++;
     this.cacheMetrics.misses++;
     this.cacheMetrics.totalResponseTime += responseTime;

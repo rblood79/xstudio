@@ -107,6 +107,12 @@ export type TableVariant = 'primary' | 'secondary';
 export type DialogVariant = 'primary' | 'error';
 
 /**
+ * Modal Variants
+ * Same as Dialog for consistency
+ */
+export type ModalVariant = 'primary' | 'secondary' | 'surface';
+
+/**
  * Popover Variants
  * Primary, secondary, surface for floating content
  */

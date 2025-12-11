@@ -471,7 +471,7 @@ export const componentMetadata: ComponentMeta[] = [
       // ⭐ Phase 6: editorName은 registry.ts에서 context 기반으로 결정
       // - Page body → PageBodyEditor
       // - Layout body → LayoutBodyEditor
-      editorName: null,
+      editorName: undefined,
       dataBindingType: null,
       supportedEvents: [],
     },

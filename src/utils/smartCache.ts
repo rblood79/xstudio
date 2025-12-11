@@ -98,7 +98,9 @@ export class SmartCache<K, V> {
       // Map.keys()는 삽입 순서대로 반환
       // 첫 번째 항목 = 가장 오래된 항목
       const firstKey = this.cache.keys().next().value;
-      this.cache.delete(firstKey);
+      if (firstKey !== undefined) {
+        this.cache.delete(firstKey);
+      }
     }
 
     // 새 항목 추가 (맨 뒤)

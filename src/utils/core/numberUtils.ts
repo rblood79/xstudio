@@ -10,7 +10,7 @@
  * - Number parsing from localized strings
  */
 
-import { NumberFormatter } from '@internationalized/number';
+import { NumberFormatter, NumberParser } from '@internationalized/number';
 
 // ============================================================================
 // Type Definitions
@@ -477,8 +477,8 @@ export const parseLocalizedNumber = (
   value: string,
   locale: string = DEFAULT_LOCALE
 ): number => {
-  const formatter = new NumberFormatter(locale);
-  const parsed = formatter.parse(value);
+  const parser = new NumberParser(locale);
+  const parsed = parser.parse(value);
   return parsed ?? NaN;
 };
 

@@ -249,11 +249,12 @@ export function getResponsiveValueWithCascade<T>(
   }
 
   // Cascade: 더 큰 Breakpoint에서 값 찾기
-  const cascadeOrder: BreakpointName[] = {
+  const cascadeOrderMap: Record<BreakpointName, BreakpointName[]> = {
     desktop: [],
     tablet: ["desktop"],
     mobile: ["tablet", "desktop"],
-  }[breakpoint];
+  };
+  const cascadeOrder = cascadeOrderMap[breakpoint];
 
   for (const fallbackBreakpoint of cascadeOrder) {
     if (value[fallbackBreakpoint] !== undefined) {
