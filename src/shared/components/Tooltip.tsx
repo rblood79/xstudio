@@ -32,6 +32,7 @@ const tooltipStyles = tv({
       tertiary: 'tertiary',
       error: 'error',
       filled: 'filled',
+      surface: 'surface',
     },
     size: {
       sm: 'sm',

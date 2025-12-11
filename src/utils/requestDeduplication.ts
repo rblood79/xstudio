@@ -38,7 +38,7 @@ export class RequestDeduplicator {
   async deduplicate<T>(key: string, fn: () => Promise<T>): Promise<T> {
     // 이미 진행 중인 요청이 있으면 그 Promise 반환
     if (this.pendingRequests.has(key)) {
-      return this.pendingRequests.get(key)!;
+      return this.pendingRequests.get(key) as Promise<T>;
     }
 
     // 새 요청 생성
