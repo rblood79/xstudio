@@ -19,6 +19,11 @@ on:
           - short
           - medium
           - long
+      seed:
+        description: 'Random seed for reproducible tests (default: 20251211)'
+        required: false
+        default: '20251211'
+        type: string
 
 jobs:
   performance-test:
@@ -29,44 +34,49 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'npm'
+          node-version: '22'
+          cache: 'pnpm'
 
       - name: Install dependencies
-        run: npm ci
+        run: pnpm install --frozen-lockfile
 
       - name: Build
-        run: npm run build
+        run: pnpm run build
 
       - name: Start server
         run: |
-          npm run preview &
+          pnpm run preview &
           echo $! > server.pid
         env:
           PORT: 5173
 
       - name: Wait for server
-        run: npx wait-on http://localhost:4173 -t 60000
+        run: pnpm exec wait-on http://localhost:4173 -t 60000
 
       # PR용 짧은 테스트 (30분)
       - name: Run short performance test (PR)
         if: github.event_name == 'pull_request'
-        run: npm run test:perf:short
+        run: pnpm run test:perf:short --seed=${{ github.event.inputs.seed || '20251211' }}
         continue-on-error: true
 
       # Push용 중간 테스트 (2시간)
       - name: Run medium performance test (Push)
         if: github.event_name == 'push' && github.event.inputs.test_mode != 'long'
-        run: npm run test:perf:medium
+        run: pnpm run test:perf:medium --seed=${{ github.event.inputs.seed || '20251211' }}
         continue-on-error: true
 
       # Nightly 장시간 테스트 (12시간)
       - name: Run long performance test (Nightly)
         if: github.event_name == 'schedule' || github.event.inputs.test_mode == 'long'
-        run: npm run test:perf:long
+        run: pnpm run test:perf:long --seed=${{ github.event.inputs.seed || '20251211' }}
         continue-on-error: true
 
       - name: Stop server
@@ -148,23 +158,25 @@ jobs:
               body: body
             });
 
-      # 테스트 실패 시 워크플로우 실패 처리
-      - name: Check test results
+      # SLO 검증 자동화
+      - name: Verify SLO
         run: |
           if [ -f "test-results/perf-summary.json" ]; then
-            PASSED=$(jq '.passed' test-results/perf-summary.json)
-            CRITICAL=$(jq '.criticalViolations' test-results/perf-summary.json)
-
-            echo "Test passed: $PASSED"
-            echo "Critical violations: $CRITICAL"
-
-            if [ "$PASSED" != "true" ]; then
-              echo "::error::Performance test failed with critical SLO violations"
-              exit 1
-            fi
+            npx tsx scripts/verify-slo.ts --ci --verbose test-results/perf-summary.json
           else
             echo "::warning::Performance results not found"
           fi
+
+      # 베이스라인과 비교 (main 브랜치에서만)
+      - name: Compare with baseline
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          if [ -f "test-results/performance/baseline.json" ] && [ -f "test-results/perf-summary.json" ]; then
+            npx tsx scripts/verify-slo.ts --compare test-results/performance/baseline.json test-results/perf-summary.json
+          else
+            echo "Baseline not available for comparison"
+          fi
+        continue-on-error: true
 
   # 메트릭 추세 추적 (Nightly만)
   track-metrics:
@@ -176,11 +188,16 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'npm'
+          node-version: '22'
+          cache: 'pnpm'
 
       - name: Download current metrics
         uses: actions/download-artifact@v4
@@ -192,7 +209,7 @@ jobs:
         run: |
           echo "📈 Analyzing performance trends..."
           # 추세 분석 스크립트 (추후 구현)
-          # npm run analyze:perf-trends
+          # pnpm run analyze:perf-trends
 
       - name: Send Slack notification on regression
         if: failure()

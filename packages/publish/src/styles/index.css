@@ -1,0 +1,119 @@
+/**
+ * Publish App Styles
+ *
+ * 🚀 Phase 10 B2.3: Publish 앱 기본 스타일
+ *
+ * @since 2025-12-11 Phase 10 B2.3
+ */
+
+/* ============================================
+   CSS Reset
+   ============================================ */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+* {
+  margin: 0;
+}
+
+body {
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+img,
+picture,
+video,
+canvas,
+svg {
+  display: block;
+  max-width: 100%;
+}
+
+input,
+button,
+textarea,
+select {
+  font: inherit;
+}
+
+p,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  overflow-wrap: break-word;
+}
+
+/* ============================================
+   Base Styles
+   ============================================ */
+
+:root {
+  font-family:
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Roboto,
+    'Helvetica Neue',
+    Arial,
+    sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+  color: #333;
+  background-color: #fff;
+}
+
+html,
+body {
+  min-height: 100%;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+/* ============================================
+   Publish App Styles
+   ============================================ */
+
+.publish-app {
+  min-height: 100vh;
+}
+
+.publish-page {
+  min-height: 100vh;
+}
+
+.publish-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  font-size: 1.25rem;
+  color: #666;
+}
+
+.publish-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  gap: 1rem;
+  color: #e53e3e;
+}
+
+.publish-error h1 {
+  font-size: 2rem;
+}
+
+.publish-error p {
+  font-size: 1rem;
+}

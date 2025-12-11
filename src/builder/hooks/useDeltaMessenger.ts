@@ -1,13 +1,19 @@
 /**
  * Delta Messenger Hook
  *
+ * @deprecated 🚀 Phase 10 B2.4: WebGL Canvas로 마이그레이션으로 인해 폐기됨
+ *
  * 🚀 Phase 4: Canvas에 Delta 업데이트를 전송하는 훅
  *
  * 성능 비교:
  * - Before: 전체 elements 배열 전송 → O(n) 직렬화 + 전송
  * - After: 변경된 요소만 전송 → O(1) 직렬화 + 전송
  *
+ * WebGL Canvas는 Zustand 스토어에서 직접 읽으므로 Delta 전송이 필요 없습니다.
+ *
  * @since 2025-12-10 Phase 4 Canvas Delta Updates
+ * @deprecated 2025-12-11 Phase 10 B2.4 - WebGL Canvas로 대체
+ * @see src/builder/workspace/canvas/store/canvasStore.ts
  */
 
 import { useCallback, useRef, useEffect } from 'react';

@@ -1,0 +1,285 @@
+/**
+ * Workspace Container
+ *
+ * 🚀 Phase 10 B1.1: 캔버스와 오버레이를 포함하는 메인 워크스페이스
+ *
+ * 구조:
+ * ```
+ * <Workspace>
+ *   ├── <BuilderCanvas />       (WebGL Layer)
+ *   └── <Overlay>               (DOM Layer - B1.5에서 구현)
+ *       └── <TextEditOverlay />
+ * </Workspace>
+ * ```
+ *
+ * @since 2025-12-11 Phase 10 B1.1
+ */
+
+import { useRef, useCallback, useState, useEffect } from 'react';
+import { BuilderCanvas } from './canvas/BuilderCanvas';
+import { useCanvasSyncStore } from './canvas/canvasSync';
+import { useWebGLCanvas } from '../../utils/featureFlags';
+
+// ============================================
+// Types
+// ============================================
+
+export interface WorkspaceProps {
+  /** 기존 iframe 캔버스 (Feature Flag OFF 시 사용) */
+  fallbackCanvas?: React.ReactNode;
+}
+
+// ============================================
+// Constants
+// ============================================
+
+const MIN_ZOOM = 0.1;
+const MAX_ZOOM = 5;
+const ZOOM_STEP = 0.1;
+
+// ============================================
+// Main Component
+// ============================================
+
+export function Workspace({ fallbackCanvas }: WorkspaceProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
+
+  // Feature flag
+  const useWebGL = useWebGLCanvas();
+
+  // Canvas sync store
+  const zoom = useCanvasSyncStore((state) => state.zoom);
+  const panOffset = useCanvasSyncStore((state) => state.panOffset);
+  const setZoom = useCanvasSyncStore((state) => state.setZoom);
+  const setPanOffset = useCanvasSyncStore((state) => state.setPanOffset);
+  const isCanvasReady = useCanvasSyncStore((state) => state.isCanvasReady);
+  const isContextLost = useCanvasSyncStore((state) => state.isContextLost);
+
+  // ============================================
+  // Container Size Tracking
+  // ============================================
+
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const updateSize = () => {
+      setContainerSize({
+        width: container.clientWidth,
+        height: container.clientHeight,
+      });
+    };
+
+    updateSize();
+
+    const resizeObserver = new ResizeObserver(updateSize);
+    resizeObserver.observe(container);
+
+    return () => resizeObserver.disconnect();
+  }, []);
+
+  // ============================================
+  // Zoom Controls
+  // ============================================
+
+  const handleWheel = useCallback(
+    (e: React.WheelEvent) => {
+      if (!e.ctrlKey && !e.metaKey) return;
+
+      e.preventDefault();
+
+      const delta = e.deltaY > 0 ? -ZOOM_STEP : ZOOM_STEP;
+      const newZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, zoom + delta));
+      setZoom(newZoom);
+    },
+    [zoom, setZoom]
+  );
+
+  // ============================================
+  // Pan Controls (Space + Drag)
+  // ============================================
+
+  const [isPanning, setIsPanning] = useState(false);
+  const [panStart, setPanStart] = useState({ x: 0, y: 0 });
+
+  const handleMouseDown = useCallback(
+    (e: React.MouseEvent) => {
+      // Space 키 + 마우스 클릭으로 팬 시작
+      if (e.button === 1 || (e.button === 0 && e.altKey)) {
+        setIsPanning(true);
+        setPanStart({ x: e.clientX - panOffset.x, y: e.clientY - panOffset.y });
+        e.preventDefault();
+      }
+    },
+    [panOffset]
+  );
+
+  const handleMouseMove = useCallback(
+    (e: React.MouseEvent) => {
+      if (!isPanning) return;
+
+      setPanOffset({
+        x: e.clientX - panStart.x,
+        y: e.clientY - panStart.y,
+      });
+    },
+    [isPanning, panStart, setPanOffset]
+  );
+
+  const handleMouseUp = useCallback(() => {
+    setIsPanning(false);
+  }, []);
+
+  // ============================================
+  // Zoom Presets
+  // ============================================
+
+  const zoomTo = useCallback(
+    (level: number) => {
+      setZoom(level);
+    },
+    [setZoom]
+  );
+
+  const zoomToFit = useCallback(() => {
+    if (containerSize.width === 0 || containerSize.height === 0) return;
+
+    const canvasWidth = 1920;
+    const canvasHeight = 1080;
+    const scaleX = containerSize.width / canvasWidth;
+    const scaleY = containerSize.height / canvasHeight;
+    const fitZoom = Math.min(scaleX, scaleY) * 0.9; // 10% 여백
+
+    setZoom(fitZoom);
+    setPanOffset({
+      x: (containerSize.width - canvasWidth * fitZoom) / 2,
+      y: (containerSize.height - canvasHeight * fitZoom) / 2,
+    });
+  }, [containerSize, setZoom, setPanOffset]);
+
+  // ============================================
+  // Render
+  // ============================================
+
+  // Feature Flag OFF: 기존 iframe 캔버스 사용
+  if (!useWebGL && fallbackCanvas) {
+    return (
+      <div
+        ref={containerRef}
+        className="workspace"
+        style={{
+          position: 'relative',
+          width: '100%',
+          height: '100%',
+          overflow: 'hidden',
+        }}
+      >
+        {fallbackCanvas}
+      </div>
+    );
+  }
+
+  return (
+    <div
+      ref={containerRef}
+      className="workspace"
+      style={{
+        position: 'relative',
+        width: '100%',
+        height: '100%',
+        overflow: 'hidden',
+        cursor: isPanning ? 'grabbing' : 'default',
+      }}
+      onWheel={handleWheel}
+      onMouseDown={handleMouseDown}
+      onMouseMove={handleMouseMove}
+      onMouseUp={handleMouseUp}
+      onMouseLeave={handleMouseUp}
+    >
+      {/* WebGL Canvas Layer */}
+      <div
+        style={{
+          position: 'absolute',
+          inset: 0,
+        }}
+      >
+        <BuilderCanvas />
+      </div>
+
+      {/* DOM Overlay Layer (B1.5에서 구현) */}
+      <div
+        className="workspace-overlay"
+        style={{
+          position: 'absolute',
+          inset: 0,
+          pointerEvents: 'none', // 캔버스 이벤트 통과
+        }}
+      >
+        {/* TextEditOverlay will be added in B1.5 */}
+      </div>
+
+      {/* Zoom Controls */}
+      <div
+        className="workspace-zoom-controls"
+        style={{
+          position: 'absolute',
+          bottom: 16,
+          right: 16,
+          display: 'flex',
+          gap: 8,
+          backgroundColor: 'white',
+          padding: '8px 12px',
+          borderRadius: 8,
+          boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+          pointerEvents: 'auto',
+        }}
+      >
+        <button
+          onClick={() => zoomTo(zoom - ZOOM_STEP)}
+          disabled={zoom <= MIN_ZOOM}
+          style={{ padding: '4px 8px', cursor: 'pointer' }}
+        >
+          −
+        </button>
+        <span style={{ minWidth: 50, textAlign: 'center' }}>
+          {Math.round(zoom * 100)}%
+        </span>
+        <button
+          onClick={() => zoomTo(zoom + ZOOM_STEP)}
+          disabled={zoom >= MAX_ZOOM}
+          style={{ padding: '4px 8px', cursor: 'pointer' }}
+        >
+          +
+        </button>
+        <button
+          onClick={zoomToFit}
+          style={{ padding: '4px 8px', cursor: 'pointer', marginLeft: 8 }}
+        >
+          Fit
+        </button>
+      </div>
+
+      {/* Status Indicator */}
+      {(isContextLost || !isCanvasReady) && (
+        <div
+          style={{
+            position: 'absolute',
+            top: 16,
+            left: '50%',
+            transform: 'translateX(-50%)',
+            backgroundColor: isContextLost ? '#fef2f2' : '#fefce8',
+            color: isContextLost ? '#991b1b' : '#854d0e',
+            padding: '8px 16px',
+            borderRadius: 8,
+            fontSize: 14,
+          }}
+        >
+          {isContextLost ? '⚠️ GPU 리소스 복구 중...' : '🔄 캔버스 초기화 중...'}
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default Workspace;

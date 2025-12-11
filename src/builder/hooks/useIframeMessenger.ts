@@ -1,3 +1,19 @@
+/**
+ * useIframeMessenger - iframe 기반 Preview 통신 훅
+ *
+ * @deprecated 🚀 Phase 10 B2.4: WebGL Canvas로 마이그레이션 중
+ *
+ * 이 훅은 iframe + postMessage 패턴을 사용합니다.
+ * WebGL Canvas (VITE_USE_WEBGL_CANVAS=true)에서는 더 이상 필요하지 않습니다.
+ *
+ * 마이그레이션 가이드:
+ * - 요소 가져오기: useCanvasElements() 사용
+ * - 선택 요소: useCanvasSelectedElement() 사용
+ * - 요소 업데이트: useCanvasUpdateElement() 사용
+ *
+ * @see src/builder/workspace/canvas/store/canvasStore.ts
+ */
+
 import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { debounce, DebouncedFunc } from 'lodash';
 import { useStore } from '../stores';

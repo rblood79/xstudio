@@ -1,8 +1,15 @@
 /**
  * Message Handler - postMessage 수신 처리
  *
+ * @deprecated 🚀 Phase 10 B2.4: WebGL Canvas로 마이그레이션 중
+ *
  * Builder로부터 전달받는 메시지를 처리합니다.
  * Preview Runtime은 이 핸들러를 통해서만 데이터를 수신합니다.
+ *
+ * 이 파일은 iframe 기반 Preview를 위한 것입니다.
+ * WebGL Canvas (VITE_USE_WEBGL_CANVAS=true)에서는 사용되지 않습니다.
+ *
+ * @see src/builder/workspace/canvas/store/canvasStore.ts - 직접 스토어 접근 방식
  */
 
 import type { PreviewStoreState, PreviewElement, PreviewPage, PreviewLayout, ThemeVar, DataSource, RuntimeDataTable, RuntimeApiEndpoint, RuntimeVariable } from '../store/types';

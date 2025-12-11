@@ -4,15 +4,18 @@
  * 성능 베이스라인 측정 및 SLO 검증
  *
  * 사용법:
- *   npx tsx scripts/perf-benchmark.ts [--elements=1000] [--output=baseline.json]
+ *   npx tsx scripts/perf-benchmark.ts [--elements=1000] [--output=baseline.json] [--seed=12345]
  *
  * Phase 10 전제조건 0.4 충족을 위한 최소 구현
+ * Phase 8 C1: Fixed Seed Generator 적용으로 재현 가능한 테스트 지원
  *
  * @since 2025-12-11 Phase 10 Prerequisites
+ * @updated 2025-12-11 Phase 8 C1 - Seeded Random
  */
 
 import * as fs from 'fs';
 import * as path from 'path';
+import { createSeededRandom, DEFAULT_TEST_SEED, type SeededRandom } from './lib/seedRandom';
 
 // ============================================
 // Types
@@ -29,6 +32,7 @@ interface SLOThresholds {
 
 interface BenchmarkResult {
   timestamp: string;
+  seed: number; // 재현 가능한 시드
   environment: {
     nodeVersion: string;
     platform: string;
@@ -70,10 +74,11 @@ const SLO_THRESHOLDS: SLOThresholds = {
 // Utility Functions
 // ============================================
 
-function parseArgs(): { elements: number; output: string } {
+function parseArgs(): { elements: number; output: string; seed: number } {
   const args = process.argv.slice(2);
   let elements = 1000;
   let output = 'test-results/performance/baseline.json';
+  let seed = DEFAULT_TEST_SEED;
 
   for (const arg of args) {
     if (arg.startsWith('--elements=')) {
@@ -82,9 +87,12 @@ function parseArgs(): { elements: number; output: string } {
     if (arg.startsWith('--output=')) {
       output = arg.split('=')[1];
     }
+    if (arg.startsWith('--seed=')) {
+      seed = parseInt(arg.split('=')[1], 10);
+    }
   }
 
-  return { elements, output };
+  return { elements, output, seed };
 }
 
 function percentile(arr: number[], p: number): number {
@@ -104,10 +112,12 @@ function mean(arr: number[]): number {
 // ============================================
 
 /**
- * 시뮬레이션된 성능 샘플 생성
+ * 시뮬레이션된 성능 샘플 생성 (Seeded Random 사용)
  * 실제 환경에서는 Puppeteer로 Builder를 실행하고 측정
+ *
+ * @param rng - Seeded Random Generator (재현 가능)
  */
-function generateMockSamples(operation: string, count: number): number[] {
+function generateMockSamples(rng: SeededRandom, operation: string, count: number): number[] {
   const baseLatencies: Record<string, { base: number; variance: number }> = {
     elementSelect: { base: 12, variance: 20 },
     panelSwitch: { base: 40, variance: 30 },
@@ -121,11 +131,8 @@ function generateMockSamples(operation: string, count: number): number[] {
   const samples: number[] = [];
 
   for (let i = 0; i < count; i++) {
-    // 정규 분포 근사 (Box-Muller transform)
-    const u1 = Math.random();
-    const u2 = Math.random();
-    const z = Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
-    const value = config.base + z * (config.variance / 3);
+    // 정규 분포 근사 (Seeded Random 사용)
+    const value = rng.gaussian(config.base, config.variance / 3);
     samples.push(Math.max(1, value));
   }
 
@@ -137,19 +144,23 @@ function generateMockSamples(operation: string, count: number): number[] {
 // ============================================
 
 async function runBenchmark(): Promise<BenchmarkResult> {
-  const { elements, output } = parseArgs();
+  const { elements, output, seed } = parseArgs();
   const operations = Object.keys(SLO_THRESHOLDS);
   const sampleCount = 100;
 
+  // Fixed Seed Generator 생성
+  const rng = createSeededRandom(seed);
+
   console.log(`\n🚀 Performance Benchmark`);
   console.log(`   Elements: ${elements}`);
+  console.log(`   Seed: ${seed} (재현 가능)`);
   console.log(`   Output: ${output}\n`);
 
   const metrics: BenchmarkResult['metrics'] = [];
   const sloViolations: BenchmarkResult['sloViolations'] = [];
 
   for (const operation of operations) {
-    const samples = generateMockSamples(operation, sampleCount);
+    const samples = generateMockSamples(rng, operation, sampleCount);
     const p50 = percentile(samples, 50);
     const p95 = percentile(samples, 95);
     const p99 = percentile(samples, 99);
@@ -188,6 +199,7 @@ async function runBenchmark(): Promise<BenchmarkResult> {
 
   const result: BenchmarkResult = {
     timestamp: new Date().toISOString(),
+    seed, // 재현 가능한 시드 저장
     environment: {
       nodeVersion: process.version,
       platform: process.platform,

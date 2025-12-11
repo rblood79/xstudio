@@ -7,7 +7,7 @@
  * - 장시간 세션 시뮬레이션 (12시간+)
  * - 메트릭 수집 및 SLO 검증
  * - 힙 스냅샷 저장
- * - 랜덤 사용자 액션 시뮬레이션
+ * - 재현 가능한 랜덤 사용자 액션 시뮬레이션 (Fixed Seed)
  *
  * 사용법:
  * ```bash
@@ -16,14 +16,19 @@
  *
  * # 12시간 장시간 테스트
  * npm run test:perf:long
+ *
+ * # 특정 시드로 재현
+ * npx tsx scripts/long-session-test.ts short --seed=12345
  * ```
  *
  * @since 2025-12-10 Phase 8 CI Automation
+ * @updated 2025-12-11 Phase 8 C1 - Fixed Seed Generator
  */
 
 import puppeteer, { Browser, Page } from 'puppeteer';
 import * as fs from 'fs';
 import * as path from 'path';
+import { createSeededRandom, DEFAULT_TEST_SEED, type SeededRandom } from './lib/seedRandom';
 
 // ============================================
 // Types
@@ -44,6 +49,8 @@ interface SimulationConfig {
   builderUrl: string;
   /** 결과 저장 경로 */
   outputDir: string;
+  /** 재현 가능한 시드 */
+  seed: number;
 }
 
 interface PerformanceSnapshot {
@@ -115,10 +122,14 @@ const SLO_THRESHOLDS = {
 async function runLongSessionSimulation(
   config: SimulationConfig
 ): Promise<SimulationResult> {
+  // Fixed Seed Generator 생성
+  const rng = createSeededRandom(config.seed);
+
   console.log('🚀 Starting long session simulation...');
   console.log(`  Duration: ${config.duration / 1000 / 60} minutes`);
   console.log(`  Elements: ${config.elementCount}`);
   console.log(`  Pages: ${config.pageCount}`);
+  console.log(`  Seed: ${config.seed} (재현 가능)`);
 
   // 결과 디렉토리 생성
   if (!fs.existsSync(config.outputDir)) {
@@ -164,8 +175,8 @@ async function runLongSessionSimulation(
     while (Date.now() - startTime < config.duration) {
       const elapsed = Date.now() - startTime;
 
-      // 랜덤 작업 수행
-      await performRandomAction(page);
+      // 랜덤 작업 수행 (Seeded Random 사용)
+      await performRandomAction(page, rng);
       actionCount++;
 
       // 메트릭 수집
@@ -259,63 +270,70 @@ async function createTestElements(
 // ============================================
 
 /**
- * 랜덤 작업 수행
+ * 랜덤 작업 수행 (Seeded Random 사용)
  */
-async function performRandomAction(page: Page): Promise<void> {
-  const actions = [
-    // 요소 선택
-    async () => {
-      const elements = await page.$$('[data-element-id]');
-      if (elements.length > 0) {
-        const randomEl = elements[Math.floor(Math.random() * elements.length)];
-        await randomEl.click().catch(() => {});
-      }
-    },
-    // 패널 전환
-    async () => {
-      const tabs = await page.$$('[data-panel-tab]');
-      if (tabs.length > 0) {
-        const randomTab = tabs[Math.floor(Math.random() * tabs.length)];
-        await randomTab.click().catch(() => {});
-      }
-    },
-    // 속성 변경
-    async () => {
-      const inputs = await page.$$('input[data-property-input]');
-      if (inputs.length > 0) {
-        const randomInput = inputs[Math.floor(Math.random() * inputs.length)];
-        await randomInput.type('test', { delay: 50 }).catch(() => {});
-      }
-    },
-    // Undo/Redo
-    async () => {
-      await page.keyboard.down('Meta');
-      await page.keyboard.press(Math.random() > 0.5 ? 'z' : 'y');
-      await page.keyboard.up('Meta');
-    },
-    // 페이지 전환
-    async () => {
-      const pages = await page.$$('[data-page-item]');
-      if (pages.length > 0) {
-        const randomPage = pages[Math.floor(Math.random() * pages.length)];
-        await randomPage.click().catch(() => {});
-      }
-    },
-    // 스크롤
-    async () => {
-      await page.evaluate(() => {
-        const panels = document.querySelectorAll('[data-panel-content]');
-        if (panels.length > 0) {
-          const panel = panels[Math.floor(Math.random() * panels.length)];
-          panel.scrollTop = Math.random() * panel.scrollHeight;
-        }
-      });
-    },
-  ];
+async function performRandomAction(page: Page, rng: SeededRandom): Promise<void> {
+  const actionIndex = rng.nextInt(6);
 
-  const action = actions[Math.floor(Math.random() * actions.length)];
   try {
-    await action();
+    switch (actionIndex) {
+      case 0: {
+        // 요소 선택
+        const elements = await page.$$('[data-element-id]');
+        if (elements.length > 0) {
+          const randomIndex = rng.nextInt(elements.length);
+          await elements[randomIndex].click().catch(() => {});
+        }
+        break;
+      }
+      case 1: {
+        // 패널 전환
+        const tabs = await page.$$('[data-panel-tab]');
+        if (tabs.length > 0) {
+          const randomIndex = rng.nextInt(tabs.length);
+          await tabs[randomIndex].click().catch(() => {});
+        }
+        break;
+      }
+      case 2: {
+        // 속성 변경
+        const inputs = await page.$$('input[data-property-input]');
+        if (inputs.length > 0) {
+          const randomIndex = rng.nextInt(inputs.length);
+          await inputs[randomIndex].type('test', { delay: 50 }).catch(() => {});
+        }
+        break;
+      }
+      case 3: {
+        // Undo/Redo
+        await page.keyboard.down('Meta');
+        await page.keyboard.press(rng.chance(0.5) ? 'z' : 'y');
+        await page.keyboard.up('Meta');
+        break;
+      }
+      case 4: {
+        // 페이지 전환
+        const pageItems = await page.$$('[data-page-item]');
+        if (pageItems.length > 0) {
+          const randomIndex = rng.nextInt(pageItems.length);
+          await pageItems[randomIndex].click().catch(() => {});
+        }
+        break;
+      }
+      case 5: {
+        // 스크롤
+        const scrollY = rng.next();
+        const panelIndex = rng.nextInt(10);
+        await page.evaluate(({ scrollY, panelIndex }) => {
+          const panels = document.querySelectorAll('[data-panel-content]');
+          if (panels.length > 0) {
+            const panel = panels[panelIndex % panels.length];
+            panel.scrollTop = scrollY * panel.scrollHeight;
+          }
+        }, { scrollY, panelIndex });
+        break;
+      }
+    }
   } catch {
     // Ignore action failures
   }
@@ -578,6 +596,14 @@ function delay(ms: number): Promise<void> {
 const args = process.argv.slice(2);
 const mode = args[0] || 'short';
 
+// --seed=12345 형식으로 시드 파싱
+let customSeed: number | undefined;
+for (const arg of args) {
+  if (arg.startsWith('--seed=')) {
+    customSeed = parseInt(arg.split('=')[1], 10);
+  }
+}
+
 const configs: Record<string, SimulationConfig> = {
   short: {
     duration: 30 * 60 * 1000, // 30분
@@ -587,6 +613,7 @@ const configs: Record<string, SimulationConfig> = {
     snapshotInterval: 10 * 60 * 1000, // 10분
     builderUrl: 'http://localhost:5173/builder/test-project',
     outputDir: 'test-results',
+    seed: DEFAULT_TEST_SEED,
   },
   medium: {
     duration: 2 * 60 * 60 * 1000, // 2시간
@@ -596,6 +623,7 @@ const configs: Record<string, SimulationConfig> = {
     snapshotInterval: 30 * 60 * 1000, // 30분
     builderUrl: 'http://localhost:5173/builder/test-project',
     outputDir: 'test-results',
+    seed: DEFAULT_TEST_SEED,
   },
   long: {
     duration: 12 * 60 * 60 * 1000, // 12시간
@@ -605,10 +633,15 @@ const configs: Record<string, SimulationConfig> = {
     snapshotInterval: 30 * 60 * 1000, // 30분
     builderUrl: 'http://localhost:5173/builder/test-project',
     outputDir: 'test-results',
+    seed: DEFAULT_TEST_SEED,
   },
 };
 
-const config = configs[mode] || configs.short;
+const config = { ...configs[mode] || configs.short };
+// 커스텀 시드가 있으면 덮어쓰기
+if (customSeed !== undefined) {
+  config.seed = customSeed;
+}
 
 console.log(`
 ╔════════════════════════════════════════════╗
@@ -618,6 +651,7 @@ console.log(`
 ║   Duration: ${(config.duration / 1000 / 60).toString().padEnd(31)}min ║
 ║   Elements: ${config.elementCount.toString().padEnd(31)}║
 ║   Pages: ${config.pageCount.toString().padEnd(34)}║
+║   Seed: ${config.seed.toString().padEnd(35)}║
 ╚════════════════════════════════════════════╝
 `);
 
