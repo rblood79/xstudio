@@ -1,16 +1,18 @@
 /**
  * Pixi Button
  *
- * 🚀 Phase 11 B2.4: @pixi/ui Button 래퍼
+ * 🚀 Phase 11 B2.4: @pixi/layout 기반 Button
  *
- * xstudio Element를 @pixi/ui Button으로 렌더링합니다.
+ * @pixi/layout의 LayoutContainer를 사용하여 CSS 스타일 직접 적용
  *
  * @since 2025-12-11 Phase 11 B2.4
+ * @updated 2025-12-11 - @pixi/layout LayoutContainer 기반으로 리팩토링
  */
 
-import { memo, useCallback, useMemo, useEffect, useRef } from 'react';
-import { Button as PixiUIButton } from '@pixi/ui';
-import { Graphics, Text, TextStyle, Container as PixiContainer } from 'pixi.js';
+// @pixi/layout React 통합 활성화
+import '@pixi/layout/dist/react';
+
+import { memo, useCallback, useMemo } from 'react';
 import type { Element } from '../../../../types/core/store.types';
 import type { CSSStyle } from '../sprites/styleConverter';
 import { cssColorToHex, parseCSSSize } from '../sprites/styleConverter';
@@ -25,90 +27,55 @@ export interface PixiButtonProps {
   onClick?: (elementId: string) => void;
 }
 
-interface ButtonStyle {
-  width: number;
-  height: number;
-  backgroundColor: number;
-  hoverColor: number;
-  pressedColor: number;
-  borderRadius: number;
-  borderWidth: number;
-  borderColor: number;
-  textColor: number;
-  fontSize: number;
-  fontFamily: string;
-}
-
 // ============================================
-// Utility Functions
+// Style Conversion
 // ============================================
 
 /**
- * CSS 스타일을 Button 스타일로 변환
+ * CSS 스타일을 @pixi/layout 형식으로 변환
  */
-function convertToButtonStyle(style: CSSStyle | undefined, props: Record<string, unknown> | undefined): ButtonStyle {
-  const backgroundColor = cssColorToHex(style?.backgroundColor, 0x3b82f6);
-
-  // 호버/프레스 색상 (배경색 기반으로 자동 계산)
-  const hoverColor = adjustBrightness(backgroundColor, -20);
-  const pressedColor = adjustBrightness(backgroundColor, -40);
+function convertToLayoutStyle(style: CSSStyle | undefined) {
+  if (!style) {
+    return {
+      width: 120,
+      height: 40,
+      backgroundColor: 0x3b82f6,
+      borderRadius: 8,
+      justifyContent: 'center' as const,
+      alignItems: 'center' as const,
+    };
+  }
 
   return {
-    width: parseCSSSize(style?.width, undefined, 120),
-    height: parseCSSSize(style?.height, undefined, 40),
-    backgroundColor,
-    hoverColor,
-    pressedColor,
-    borderRadius: parseCSSSize(style?.borderRadius, undefined, 8),
-    borderWidth: parseCSSSize(style?.borderWidth, undefined, 0),
-    borderColor: cssColorToHex(style?.borderColor, 0x000000),
-    textColor: cssColorToHex(style?.color, 0xffffff),
-    fontSize: parseCSSSize(style?.fontSize, undefined, 14),
-    fontFamily: style?.fontFamily || 'Pretendard, sans-serif',
+    // 위치
+    left: parseCSSSize(style.left, undefined, 0),
+    top: parseCSSSize(style.top, undefined, 0),
+    // 크기
+    width: parseCSSSize(style.width, undefined, 120),
+    height: parseCSSSize(style.height, undefined, 40),
+    // 배경 & 테두리 (CSS 스타일 직접 적용!)
+    backgroundColor: cssColorToHex(style.backgroundColor, 0x3b82f6),
+    borderRadius: parseCSSSize(style.borderRadius, undefined, 8),
+    // Flex 정렬 (버튼 텍스트 중앙)
+    justifyContent: 'center' as const,
+    alignItems: 'center' as const,
+    // 패딩
+    paddingLeft: parseCSSSize(style.paddingLeft || style.padding, undefined, 16),
+    paddingRight: parseCSSSize(style.paddingRight || style.padding, undefined, 16),
+    paddingTop: parseCSSSize(style.paddingTop || style.padding, undefined, 8),
+    paddingBottom: parseCSSSize(style.paddingBottom || style.padding, undefined, 8),
   };
 }
 
 /**
- * 색상 밝기 조절
+ * 텍스트 스타일 변환
  */
-function adjustBrightness(color: number, amount: number): number {
-  const r = Math.max(0, Math.min(255, ((color >> 16) & 0xff) + amount));
-  const g = Math.max(0, Math.min(255, ((color >> 8) & 0xff) + amount));
-  const b = Math.max(0, Math.min(255, (color & 0xff) + amount));
-  return (r << 16) | (g << 8) | b;
-}
-
-/**
- * 버튼 배경 Graphics 생성
- */
-function createButtonGraphics(
-  style: ButtonStyle,
-  state: 'default' | 'hover' | 'pressed'
-): Graphics {
-  const graphics = new Graphics();
-
-  const color =
-    state === 'pressed' ? style.pressedColor :
-    state === 'hover' ? style.hoverColor :
-    style.backgroundColor;
-
-  if (style.borderRadius > 0) {
-    graphics.roundRect(0, 0, style.width, style.height, style.borderRadius);
-  } else {
-    graphics.rect(0, 0, style.width, style.height);
-  }
-  graphics.fill({ color });
-
-  if (style.borderWidth > 0) {
-    if (style.borderRadius > 0) {
-      graphics.roundRect(0, 0, style.width, style.height, style.borderRadius);
-    } else {
-      graphics.rect(0, 0, style.width, style.height);
-    }
-    graphics.stroke({ width: style.borderWidth, color: style.borderColor });
-  }
-
-  return graphics;
+function convertToTextLayout(style: CSSStyle | undefined) {
+  return {
+    fill: cssColorToHex(style?.color, 0xffffff),
+    fontSize: parseCSSSize(style?.fontSize, undefined, 14),
+    fontFamily: style?.fontFamily || 'Pretendard, sans-serif',
+  };
 }
 
 // ============================================
@@ -118,7 +85,8 @@ function createButtonGraphics(
 /**
  * PixiButton
  *
- * @pixi/ui Button을 사용하여 인터랙티브 버튼을 렌더링합니다.
+ * @pixi/layout의 LayoutContainer를 사용하여 버튼 렌더링
+ * CSS 스타일(backgroundColor, borderRadius)이 직접 적용됨
  *
  * @example
  * <PixiButton element={buttonElement} onClick={handleClick} />
@@ -128,9 +96,6 @@ export const PixiButton = memo(function PixiButton({
   isSelected,
   onClick,
 }: PixiButtonProps) {
-  const containerRef = useRef<PixiContainer | null>(null);
-  const buttonRef = useRef<PixiUIButton | null>(null);
-
   const style = element.props?.style as CSSStyle | undefined;
   const props = element.props as Record<string, unknown> | undefined;
 
@@ -139,96 +104,77 @@ export const PixiButton = memo(function PixiButton({
     return String(props?.children || props?.text || props?.label || 'Button');
   }, [props]);
 
-  // 버튼 스타일
-  const buttonStyle = useMemo(() => {
-    return convertToButtonStyle(style, props);
-  }, [style, props]);
+  // @pixi/layout 스타일
+  const layoutStyle = useMemo(() => convertToLayoutStyle(style), [style]);
+  const textStyle = useMemo(() => convertToTextLayout(style), [style]);
 
-  // 위치 계산
-  const position = useMemo(() => {
+  // 클릭 핸들러
+  const handlePointerDown = useCallback(() => {
+    onClick?.(element.id);
+  }, [element.id, onClick]);
+
+  // 선택 테두리 (별도 Graphics로 표시)
+  const selectionStyle = useMemo(() => {
+    if (!isSelected) return null;
     return {
-      x: parseCSSSize(style?.left, undefined, 0),
-      y: parseCSSSize(style?.top, undefined, 0),
+      position: 'absolute' as const,
+      left: -2,
+      top: -2,
+      width: layoutStyle.width + 4,
+      height: layoutStyle.height + 4,
+      borderColor: 0x3b82f6,
+      borderWidth: 2,
+      borderRadius: layoutStyle.borderRadius + 2,
     };
-  }, [style]);
-
-  // 버튼 생성/업데이트
-  useEffect(() => {
-    if (!containerRef.current) return;
-
-    // 기존 버튼 제거
-    if (buttonRef.current) {
-      containerRef.current.removeChild(buttonRef.current.view);
-      buttonRef.current = null;
-    }
-
-    // Graphics 생성
-    const defaultView = createButtonGraphics(buttonStyle, 'default');
-    const hoverView = createButtonGraphics(buttonStyle, 'hover');
-    const pressedView = createButtonGraphics(buttonStyle, 'pressed');
-
-    // Button 생성
-    const button = new PixiUIButton({
-      defaultView,
-      hoverView,
-      pressedView,
-    });
-
-    // 텍스트 추가
-    const textStyle = new TextStyle({
-      fontFamily: buttonStyle.fontFamily,
-      fontSize: buttonStyle.fontSize,
-      fill: buttonStyle.textColor,
-      align: 'center',
-    });
-
-    const text = new Text({ text: buttonText, style: textStyle });
-    text.anchor.set(0.5);
-    text.x = buttonStyle.width / 2;
-    text.y = buttonStyle.height / 2;
-    button.view.addChild(text);
-
-    // 클릭 이벤트
-    button.onPress.connect(() => {
-      onClick?.(element.id);
-    });
-
-    // 컨테이너에 추가
-    containerRef.current.addChild(button.view);
-    buttonRef.current = button;
-
-    return () => {
-      if (buttonRef.current && containerRef.current) {
-        containerRef.current.removeChild(buttonRef.current.view);
-        buttonRef.current = null;
-      }
-    };
-  }, [buttonStyle, buttonText, element.id, onClick]);
-
-  // 선택 하이라이트 그리기
-  const drawSelection = useCallback(
-    (g: Graphics) => {
-      if (!isSelected) {
-        g.clear();
-        return;
-      }
-      g.clear();
-      g.rect(-2, -2, buttonStyle.width + 4, buttonStyle.height + 4);
-      g.stroke({ width: 2, color: 0x3b82f6 });
-    },
-    [isSelected, buttonStyle]
-  );
+  }, [isSelected, layoutStyle]);
 
   return (
-    <pixiContainer
-      x={position.x}
-      y={position.y}
-      ref={(container: PixiContainer | null) => {
-        containerRef.current = container;
+    <layoutContainer
+      x={layoutStyle.left}
+      y={layoutStyle.top}
+      layout={{
+        width: layoutStyle.width,
+        height: layoutStyle.height,
+        backgroundColor: layoutStyle.backgroundColor,
+        borderRadius: layoutStyle.borderRadius,
+        justifyContent: layoutStyle.justifyContent,
+        alignItems: layoutStyle.alignItems,
+        paddingLeft: layoutStyle.paddingLeft,
+        paddingRight: layoutStyle.paddingRight,
+        paddingTop: layoutStyle.paddingTop,
+        paddingBottom: layoutStyle.paddingBottom,
       }}
+      eventMode="static"
+      cursor="pointer"
+      onPointerDown={handlePointerDown}
     >
-      <pixiGraphics draw={drawSelection} />
-    </pixiContainer>
+      {/* 버튼 텍스트 */}
+      <layoutText
+        text={buttonText}
+        style={{
+          fill: textStyle.fill,
+          fontSize: textStyle.fontSize,
+          fontFamily: textStyle.fontFamily,
+        }}
+        layout={true}
+      />
+
+      {/* 선택 표시 (오버레이) */}
+      {selectionStyle && (
+        <layoutContainer
+          layout={{
+            position: 'absolute',
+            left: selectionStyle.left,
+            top: selectionStyle.top,
+            width: selectionStyle.width,
+            height: selectionStyle.height,
+            borderColor: selectionStyle.borderColor,
+            borderWidth: selectionStyle.borderWidth,
+            borderRadius: selectionStyle.borderRadius,
+          }}
+        />
+      )}
+    </layoutContainer>
   );
 });
 

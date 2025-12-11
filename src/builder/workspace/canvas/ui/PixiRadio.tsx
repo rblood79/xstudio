@@ -1,16 +1,18 @@
 /**
  * Pixi Radio
  *
- * 🚀 Phase 11 B2.4: @pixi/ui RadioGroup 래퍼
+ * 🚀 Phase 11 B2.4: @pixi/layout 기반 RadioGroup
  *
- * xstudio Element를 @pixi/ui RadioGroup으로 렌더링합니다.
+ * @pixi/layout의 LayoutContainer를 사용하여 CSS 스타일 직접 적용
  *
  * @since 2025-12-11 Phase 11 B2.4
+ * @updated 2025-12-11 - @pixi/layout LayoutContainer 기반으로 리팩토링
  */
 
-import { memo, useCallback, useMemo, useEffect, useRef } from 'react';
-import { RadioGroup as PixiUIRadioGroup } from '@pixi/ui';
-import { Graphics, Text, TextStyle, Container as PixiContainer } from 'pixi.js';
+// @pixi/layout React 통합 활성화
+import '@pixi/layout/dist/react';
+
+import { memo, useCallback, useMemo } from 'react';
 import type { Element } from '../../../../types/core/store.types';
 import type { CSSStyle } from '../sprites/styleConverter';
 import { cssColorToHex, parseCSSSize } from '../sprites/styleConverter';
@@ -31,80 +33,42 @@ interface RadioOption {
   label: string;
 }
 
-interface RadioStyle {
-  size: number;
-  backgroundColor: number;
-  selectedColor: number;
-  borderColor: number;
-  borderWidth: number;
-  dotColor: number;
-  labelColor: number;
-  fontSize: number;
-  fontFamily: string;
-  gap: number;
-  itemGap: number;
-}
-
 // ============================================
-// Utility Functions
+// Style Conversion
 // ============================================
 
-/**
- * CSS 스타일을 Radio 스타일로 변환
- */
-function convertToRadioStyle(style: CSSStyle | undefined): RadioStyle {
+function convertToRadioLayout(style: CSSStyle | undefined, isItemSelected: boolean) {
+  const size = 20;
+  const primaryColor = cssColorToHex(style?.backgroundColor, 0x3b82f6);
+
   return {
-    size: 20,
-    backgroundColor: cssColorToHex(style?.backgroundColor, 0xffffff),
-    selectedColor: cssColorToHex(style?.backgroundColor, 0x3b82f6),
-    borderColor: cssColorToHex(style?.borderColor, 0xd1d5db),
-    borderWidth: parseCSSSize(style?.borderWidth, undefined, 2),
-    dotColor: 0xffffff,
-    labelColor: cssColorToHex(style?.color, 0x000000),
-    fontSize: parseCSSSize(style?.fontSize, undefined, 14),
-    fontFamily: style?.fontFamily || 'Pretendard, sans-serif',
-    gap: 8, // 라디오 버튼과 라벨 사이 간격
-    itemGap: 16, // 라디오 아이템 사이 간격
+    circle: {
+      width: size,
+      height: size,
+      backgroundColor: isItemSelected ? primaryColor : 0xffffff,
+      borderRadius: size / 2, // 원형
+      borderWidth: 2,
+      borderColor: isItemSelected ? primaryColor : 0xd1d5db,
+      justifyContent: 'center' as const,
+      alignItems: 'center' as const,
+    },
+    dot: {
+      width: size * 0.4,
+      height: size * 0.4,
+      backgroundColor: 0xffffff,
+      borderRadius: (size * 0.4) / 2,
+    },
+    label: {
+      fill: cssColorToHex(style?.color, 0x000000),
+      fontSize: parseCSSSize(style?.fontSize, undefined, 14),
+      fontFamily: style?.fontFamily || 'Pretendard, sans-serif',
+    },
   };
 }
 
-/**
- * 라디오 버튼 Graphics 생성
- */
-function createRadioGraphics(
-  style: RadioStyle,
-  selected: boolean
-): Graphics {
-  const graphics = new Graphics();
-  const radius = style.size / 2;
-
-  // 외부 원
-  graphics.circle(radius, radius, radius);
-  graphics.fill({ color: selected ? style.selectedColor : style.backgroundColor });
-
-  // Border
-  if (style.borderWidth > 0) {
-    graphics.circle(radius, radius, radius);
-    graphics.stroke({ width: style.borderWidth, color: style.borderColor });
-  }
-
-  // 내부 dot (선택됨)
-  if (selected) {
-    const dotRadius = radius * 0.4;
-    graphics.circle(radius, radius, dotRadius);
-    graphics.fill({ color: style.dotColor });
-  }
-
-  return graphics;
-}
-
-/**
- * 라디오 옵션 파싱
- */
 function parseRadioOptions(props: Record<string, unknown> | undefined): RadioOption[] {
   if (!props) return [];
 
-  // options 배열이 있는 경우
   if (Array.isArray(props.options)) {
     return props.options.map((opt: unknown, index: number) => {
       if (typeof opt === 'string') {
@@ -121,20 +85,6 @@ function parseRadioOptions(props: Record<string, unknown> | undefined): RadioOpt
     });
   }
 
-  // children에서 파싱 (Radio 자식 요소)
-  if (Array.isArray(props.children)) {
-    return props.children.map((child: unknown, index: number) => {
-      if (typeof child === 'object' && child !== null) {
-        const childObj = child as Record<string, unknown>;
-        return {
-          value: String(childObj.value || index),
-          label: String(childObj.label || childObj.children || ''),
-        };
-      }
-      return { value: String(index), label: String(child) };
-    });
-  }
-
   return [];
 }
 
@@ -142,169 +92,127 @@ function parseRadioOptions(props: Record<string, unknown> | undefined): RadioOpt
 // Component
 // ============================================
 
-/**
- * PixiRadio
- *
- * @pixi/ui RadioGroup을 사용하여 라디오 버튼 그룹을 렌더링합니다.
- *
- * @example
- * <PixiRadio element={radioGroupElement} onChange={handleChange} />
- */
 export const PixiRadio = memo(function PixiRadio({
   element,
   isSelected,
   onChange,
   onClick,
 }: PixiRadioProps) {
-  const containerRef = useRef<PixiContainer | null>(null);
-  const radioGroupRef = useRef<PixiUIRadioGroup | null>(null);
-
   const style = element.props?.style as CSSStyle | undefined;
   const props = element.props as Record<string, unknown> | undefined;
 
   // 라디오 옵션
-  const options = useMemo(() => {
-    return parseRadioOptions(props);
-  }, [props]);
+  const options = useMemo(() => parseRadioOptions(props), [props]);
 
   // 선택된 값
   const selectedValue = useMemo(() => {
     return String(props?.value || props?.selectedValue || props?.defaultValue || '');
   }, [props]);
 
-  // 라디오 스타일
-  const radioStyle = useMemo(() => {
-    return convertToRadioStyle(style);
-  }, [style]);
-
-  // 위치 계산
-  const position = useMemo(() => {
-    return {
-      x: parseCSSSize(style?.left, undefined, 0),
-      y: parseCSSSize(style?.top, undefined, 0),
-    };
-  }, [style]);
-
   // 방향
-  const orientation = useMemo(() => {
+  const isHorizontal = useMemo(() => {
     const flexDirection = (style as Record<string, unknown>)?.flexDirection;
-    return flexDirection === 'row' ? 'horizontal' : 'vertical';
+    return flexDirection === 'row';
   }, [style]);
 
-  // 라디오 그룹 생성/업데이트
-  useEffect(() => {
-    if (!containerRef.current || options.length === 0) return;
+  // 위치
+  const position = useMemo(() => ({
+    x: parseCSSSize(style?.left, undefined, 0),
+    y: parseCSSSize(style?.top, undefined, 0),
+  }), [style]);
 
-    // 기존 컨텐츠 제거
-    if (containerRef.current.children.length > 1) {
-      while (containerRef.current.children.length > 1) {
-        containerRef.current.removeChildAt(1);
-      }
-    }
-
-    // 각 라디오 아이템 생성
-    const items: PixiContainer[] = [];
-    let currentX = 0;
-    let currentY = 0;
-
-    options.forEach((option, index) => {
-      const isOptionSelected = option.value === selectedValue;
-
-      // 라디오 아이템 컨테이너
-      const itemContainer = new PixiContainer();
-
-      // 라디오 버튼 그래픽
-      const radioGraphics = createRadioGraphics(radioStyle, isOptionSelected);
-      itemContainer.addChild(radioGraphics);
-
-      // 라벨 텍스트
-      const textStyle = new TextStyle({
-        fontFamily: radioStyle.fontFamily,
-        fontSize: radioStyle.fontSize,
-        fill: radioStyle.labelColor,
-      });
-
-      const labelText = new Text({ text: option.label, style: textStyle });
-      labelText.x = radioStyle.size + radioStyle.gap;
-      labelText.y = (radioStyle.size - labelText.height) / 2;
-      itemContainer.addChild(labelText);
-
-      // 위치 설정
-      if (orientation === 'horizontal') {
-        itemContainer.x = currentX;
-        currentX += radioStyle.size + radioStyle.gap + labelText.width + radioStyle.itemGap;
-      } else {
-        itemContainer.y = currentY;
-        currentY += radioStyle.size + radioStyle.itemGap;
-      }
-
-      // 인터랙션
-      itemContainer.eventMode = 'static';
-      itemContainer.cursor = 'pointer';
-      itemContainer.on('pointerdown', () => {
-        onChange?.(element.id, option.value);
-      });
-
-      items.push(itemContainer);
-      containerRef.current?.addChild(itemContainer);
-    });
-
-    return () => {
-      if (containerRef.current) {
-        while (containerRef.current.children.length > 1) {
-          containerRef.current.removeChildAt(1);
-        }
-      }
-    };
-  }, [options, selectedValue, radioStyle, orientation, element.id, onChange]);
-
-  // 선택 하이라이트 그리기
-  const drawSelection = useCallback(
-    (g: Graphics) => {
-      if (!isSelected) {
-        g.clear();
-        return;
-      }
-      g.clear();
-
-      // 전체 영역 계산
-      let totalWidth = 0;
-      let totalHeight = 0;
-
-      if (orientation === 'horizontal') {
-        options.forEach((opt) => {
-          totalWidth += radioStyle.size + radioStyle.gap + opt.label.length * radioStyle.fontSize * 0.6 + radioStyle.itemGap;
-        });
-        totalHeight = radioStyle.size;
-      } else {
-        totalWidth = Math.max(...options.map((opt) =>
-          radioStyle.size + radioStyle.gap + opt.label.length * radioStyle.fontSize * 0.6
-        ));
-        totalHeight = options.length * (radioStyle.size + radioStyle.itemGap) - radioStyle.itemGap;
-      }
-
-      g.rect(-2, -2, totalWidth + 4, totalHeight + 4);
-      g.stroke({ width: 2, color: 0x3b82f6 });
-    },
-    [isSelected, radioStyle, options, orientation]
-  );
-
+  // 클릭 핸들러
   const handleClick = useCallback(() => {
     onClick?.(element.id);
   }, [element.id, onClick]);
 
+  const handleOptionClick = useCallback((optionValue: string) => {
+    onChange?.(element.id, optionValue);
+  }, [element.id, onChange]);
+
   return (
-    <pixiContainer
+    <layoutContainer
       x={position.x}
       y={position.y}
+      layout={{
+        flexDirection: isHorizontal ? 'row' : 'column',
+        gap: 12,
+      }}
       eventMode="static"
       onPointerDown={handleClick}
-      ref={(container: PixiContainer | null) => {
-        containerRef.current = container;
-      }}
     >
-      <pixiGraphics draw={drawSelection} />
-    </pixiContainer>
+      {options.map((option) => {
+        const isOptionSelected = option.value === selectedValue;
+        const layoutStyles = convertToRadioLayout(style, isOptionSelected);
+
+        return (
+          <layoutContainer
+            key={option.value}
+            layout={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: 8,
+            }}
+            eventMode="static"
+            cursor="pointer"
+            onPointerDown={() => handleOptionClick(option.value)}
+          >
+            {/* 라디오 원 */}
+            <layoutContainer
+              layout={{
+                width: layoutStyles.circle.width,
+                height: layoutStyles.circle.height,
+                backgroundColor: layoutStyles.circle.backgroundColor,
+                borderRadius: layoutStyles.circle.borderRadius,
+                borderWidth: layoutStyles.circle.borderWidth,
+                borderColor: layoutStyles.circle.borderColor,
+                justifyContent: layoutStyles.circle.justifyContent,
+                alignItems: layoutStyles.circle.alignItems,
+              }}
+            >
+              {/* 내부 dot */}
+              {isOptionSelected && (
+                <layoutContainer
+                  layout={{
+                    width: layoutStyles.dot.width,
+                    height: layoutStyles.dot.height,
+                    backgroundColor: layoutStyles.dot.backgroundColor,
+                    borderRadius: layoutStyles.dot.borderRadius,
+                  }}
+                />
+              )}
+            </layoutContainer>
+
+            {/* 라벨 */}
+            <layoutText
+              text={option.label}
+              style={{
+                fill: layoutStyles.label.fill,
+                fontSize: layoutStyles.label.fontSize,
+                fontFamily: layoutStyles.label.fontFamily,
+              }}
+              layout={true}
+            />
+          </layoutContainer>
+        );
+      })}
+
+      {/* 선택 표시 */}
+      {isSelected && (
+        <layoutContainer
+          layout={{
+            position: 'absolute',
+            left: -2,
+            top: -2,
+            width: isHorizontal ? options.length * 100 : 100,
+            height: isHorizontal ? 24 : options.length * 28,
+            borderColor: 0x3b82f6,
+            borderWidth: 2,
+            borderRadius: 4,
+          }}
+        />
+      )}
+    </layoutContainer>
   );
 });
 

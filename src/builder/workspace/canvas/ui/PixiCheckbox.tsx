@@ -1,16 +1,18 @@
 /**
  * Pixi Checkbox
  *
- * 🚀 Phase 11 B2.4: @pixi/ui CheckBox 래퍼
+ * 🚀 Phase 11 B2.4: @pixi/layout 기반 Checkbox
  *
- * xstudio Element를 @pixi/ui CheckBox로 렌더링합니다.
+ * @pixi/layout의 LayoutContainer를 사용하여 CSS 스타일 직접 적용
  *
  * @since 2025-12-11 Phase 11 B2.4
+ * @updated 2025-12-11 - @pixi/layout LayoutContainer 기반으로 리팩토링
  */
 
-import { memo, useCallback, useMemo, useEffect, useRef } from 'react';
-import { CheckBox as PixiUICheckBox } from '@pixi/ui';
-import { Graphics, Text, TextStyle, Container as PixiContainer } from 'pixi.js';
+// @pixi/layout React 통합 활성화
+import '@pixi/layout/dist/react';
+
+import { memo, useCallback, useMemo } from 'react';
 import type { Element } from '../../../../types/core/store.types';
 import type { CSSStyle } from '../sprites/styleConverter';
 import { cssColorToHex, parseCSSSize } from '../sprites/styleConverter';
@@ -26,106 +28,54 @@ export interface PixiCheckboxProps {
   onClick?: (elementId: string) => void;
 }
 
-interface CheckboxStyle {
-  size: number;
-  backgroundColor: number;
-  checkedColor: number;
-  borderColor: number;
-  borderWidth: number;
-  borderRadius: number;
-  checkColor: number;
-  labelColor: number;
-  fontSize: number;
-  fontFamily: string;
-  gap: number;
-}
-
 // ============================================
-// Utility Functions
+// Style Conversion
 // ============================================
 
-/**
- * CSS 스타일을 Checkbox 스타일로 변환
- */
-function convertToCheckboxStyle(style: CSSStyle | undefined): CheckboxStyle {
+function convertToCheckboxLayout(style: CSSStyle | undefined, isChecked: boolean) {
+  const size = parseCSSSize(style?.width, undefined, 20);
+  const primaryColor = cssColorToHex(style?.backgroundColor, 0x3b82f6);
+
   return {
-    size: parseCSSSize(style?.width, undefined, 20),
-    backgroundColor: cssColorToHex(style?.backgroundColor, 0xffffff),
-    checkedColor: cssColorToHex(style?.backgroundColor, 0x3b82f6),
-    borderColor: cssColorToHex(style?.borderColor, 0xd1d5db),
-    borderWidth: parseCSSSize(style?.borderWidth, undefined, 2),
-    borderRadius: parseCSSSize(style?.borderRadius, undefined, 4),
-    checkColor: 0xffffff,
-    labelColor: cssColorToHex(style?.color, 0x000000),
-    fontSize: parseCSSSize(style?.fontSize, undefined, 14),
-    fontFamily: style?.fontFamily || 'Pretendard, sans-serif',
-    gap: 8,
+    box: {
+      width: size,
+      height: size,
+      backgroundColor: isChecked ? primaryColor : 0xffffff,
+      borderRadius: parseCSSSize(style?.borderRadius, undefined, 4),
+      borderWidth: 2,
+      borderColor: isChecked ? primaryColor : 0xd1d5db,
+      justifyContent: 'center' as const,
+      alignItems: 'center' as const,
+    },
+    container: {
+      left: parseCSSSize(style?.left, undefined, 0),
+      top: parseCSSSize(style?.top, undefined, 0),
+      flexDirection: 'row' as const,
+      alignItems: 'center' as const,
+      gap: 8,
+    },
+    label: {
+      fill: cssColorToHex(style?.color, 0x000000),
+      fontSize: parseCSSSize(style?.fontSize, undefined, 14),
+      fontFamily: style?.fontFamily || 'Pretendard, sans-serif',
+    },
+    checkmark: {
+      fill: 0xffffff,
+      fontSize: size * 0.7,
+    },
   };
-}
-
-/**
- * 체크박스 배경 Graphics 생성
- */
-function createCheckboxBackground(
-  style: CheckboxStyle,
-  checked: boolean
-): Graphics {
-  const graphics = new Graphics();
-
-  const bgColor = checked ? style.checkedColor : style.backgroundColor;
-
-  if (style.borderRadius > 0) {
-    graphics.roundRect(0, 0, style.size, style.size, style.borderRadius);
-  } else {
-    graphics.rect(0, 0, style.size, style.size);
-  }
-  graphics.fill({ color: bgColor });
-
-  // Border
-  if (style.borderWidth > 0) {
-    if (style.borderRadius > 0) {
-      graphics.roundRect(0, 0, style.size, style.size, style.borderRadius);
-    } else {
-      graphics.rect(0, 0, style.size, style.size);
-    }
-    graphics.stroke({ width: style.borderWidth, color: style.borderColor });
-  }
-
-  // Checkmark
-  if (checked) {
-    const padding = style.size * 0.25;
-    const checkSize = style.size - padding * 2;
-
-    graphics.moveTo(padding, style.size / 2);
-    graphics.lineTo(padding + checkSize * 0.35, style.size - padding);
-    graphics.lineTo(style.size - padding, padding);
-    graphics.stroke({ width: 2, color: style.checkColor });
-  }
-
-  return graphics;
 }
 
 // ============================================
 // Component
 // ============================================
 
-/**
- * PixiCheckbox
- *
- * @pixi/ui CheckBox를 사용하여 체크박스를 렌더링합니다.
- *
- * @example
- * <PixiCheckbox element={checkboxElement} onChange={handleChange} />
- */
 export const PixiCheckbox = memo(function PixiCheckbox({
   element,
   isSelected,
   onChange,
   onClick,
 }: PixiCheckboxProps) {
-  const containerRef = useRef<PixiContainer | null>(null);
-  const checkboxRef = useRef<PixiUICheckBox | null>(null);
-
   const style = element.props?.style as CSSStyle | undefined;
   const props = element.props as Record<string, unknown> | undefined;
 
@@ -139,106 +89,87 @@ export const PixiCheckbox = memo(function PixiCheckbox({
     return String(props?.children || props?.label || props?.text || '');
   }, [props]);
 
-  // 체크박스 스타일
-  const checkboxStyle = useMemo(() => {
-    return convertToCheckboxStyle(style);
-  }, [style]);
-
-  // 위치 계산
-  const position = useMemo(() => {
-    return {
-      x: parseCSSSize(style?.left, undefined, 0),
-      y: parseCSSSize(style?.top, undefined, 0),
-    };
-  }, [style]);
-
-  // 체크박스 생성/업데이트
-  useEffect(() => {
-    if (!containerRef.current) return;
-
-    // 기존 체크박스 제거
-    if (checkboxRef.current) {
-      containerRef.current.removeChild(checkboxRef.current.view);
-      checkboxRef.current = null;
-    }
-
-    // Graphics 생성
-    const uncheckedView = createCheckboxBackground(checkboxStyle, false);
-    const checkedView = createCheckboxBackground(checkboxStyle, true);
-
-    // CheckBox 생성
-    const checkbox = new PixiUICheckBox({
-      checked: isChecked,
-      style: {
-        unchecked: uncheckedView,
-        checked: checkedView,
-      },
-    });
-
-    // 체크 상태 변경 이벤트
-    checkbox.onChange.connect((checked: boolean) => {
-      onChange?.(element.id, checked);
-    });
-
-    // 컨테이너에 추가
-    containerRef.current.addChild(checkbox.view);
-    checkboxRef.current = checkbox;
-
-    // 라벨 텍스트 추가
-    if (labelText) {
-      const textStyle = new TextStyle({
-        fontFamily: checkboxStyle.fontFamily,
-        fontSize: checkboxStyle.fontSize,
-        fill: checkboxStyle.labelColor,
-      });
-
-      const text = new Text({ text: labelText, style: textStyle });
-      text.x = checkboxStyle.size + checkboxStyle.gap;
-      text.y = (checkboxStyle.size - text.height) / 2;
-      containerRef.current.addChild(text);
-    }
-
-    return () => {
-      if (checkboxRef.current && containerRef.current) {
-        containerRef.current.removeChildren();
-        checkboxRef.current = null;
-      }
-    };
-  }, [checkboxStyle, isChecked, labelText, element.id, onChange]);
-
-  // 선택 하이라이트 그리기
-  const drawSelection = useCallback(
-    (g: Graphics) => {
-      if (!isSelected) {
-        g.clear();
-        return;
-      }
-      g.clear();
-      const totalWidth = labelText
-        ? checkboxStyle.size + checkboxStyle.gap + labelText.length * checkboxStyle.fontSize * 0.6
-        : checkboxStyle.size;
-      g.rect(-2, -2, totalWidth + 4, checkboxStyle.size + 4);
-      g.stroke({ width: 2, color: 0x3b82f6 });
-    },
-    [isSelected, checkboxStyle, labelText]
+  // @pixi/layout 스타일
+  const layoutStyles = useMemo(
+    () => convertToCheckboxLayout(style, isChecked),
+    [style, isChecked]
   );
 
-  const handleClick = useCallback(() => {
+  // 클릭 핸들러
+  const handlePointerDown = useCallback(() => {
     onClick?.(element.id);
-  }, [element.id, onClick]);
+    onChange?.(element.id, !isChecked);
+  }, [element.id, onClick, onChange, isChecked]);
 
   return (
-    <pixiContainer
-      x={position.x}
-      y={position.y}
-      eventMode="static"
-      onPointerDown={handleClick}
-      ref={(container: PixiContainer | null) => {
-        containerRef.current = container;
+    <layoutContainer
+      x={layoutStyles.container.left}
+      y={layoutStyles.container.top}
+      layout={{
+        flexDirection: layoutStyles.container.flexDirection,
+        alignItems: layoutStyles.container.alignItems,
+        gap: layoutStyles.container.gap,
       }}
+      eventMode="static"
+      cursor="pointer"
+      onPointerDown={handlePointerDown}
     >
-      <pixiGraphics draw={drawSelection} />
-    </pixiContainer>
+      {/* 체크박스 박스 */}
+      <layoutContainer
+        layout={{
+          width: layoutStyles.box.width,
+          height: layoutStyles.box.height,
+          backgroundColor: layoutStyles.box.backgroundColor,
+          borderRadius: layoutStyles.box.borderRadius,
+          borderWidth: layoutStyles.box.borderWidth,
+          borderColor: layoutStyles.box.borderColor,
+          justifyContent: layoutStyles.box.justifyContent,
+          alignItems: layoutStyles.box.alignItems,
+        }}
+      >
+        {/* 체크마크 */}
+        {isChecked && (
+          <layoutText
+            text="✓"
+            style={{
+              fill: layoutStyles.checkmark.fill,
+              fontSize: layoutStyles.checkmark.fontSize,
+              fontFamily: 'sans-serif',
+            }}
+            layout={true}
+          />
+        )}
+      </layoutContainer>
+
+      {/* 라벨 */}
+      {labelText && (
+        <layoutText
+          text={labelText}
+          style={{
+            fill: layoutStyles.label.fill,
+            fontSize: layoutStyles.label.fontSize,
+            fontFamily: layoutStyles.label.fontFamily,
+          }}
+          layout={true}
+        />
+      )}
+
+      {/* 선택 표시 */}
+      {isSelected && (
+        <layoutContainer
+          layout={{
+            position: 'absolute',
+            left: -2,
+            top: -2,
+            width: layoutStyles.box.width + (labelText ? 100 : 4),
+            height: layoutStyles.box.height + 4,
+            borderColor: 0x3b82f6,
+            borderWidth: 2,
+            borderRadius: 4,
+          }}
+        />
+      )}
+    </layoutContainer>
   );
 });
 
