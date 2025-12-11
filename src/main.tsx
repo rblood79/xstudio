@@ -118,9 +118,12 @@ const queryClient = new QueryClient({
 
 const root = document.getElementById("root");
 
+// GitHub Pages 배포 시 /xstudio/ 경로 사용
+const basename = import.meta.env.PROD ? "/xstudio" : "/";
+
 ReactDOM.createRoot(root!).render(
   <QueryClientProvider client={queryClient}>
-    <BrowserRouter>
+    <BrowserRouter basename={basename}>
       <ParticleBackgroundProvider>
         <AppLayout />
       </ParticleBackgroundProvider>
