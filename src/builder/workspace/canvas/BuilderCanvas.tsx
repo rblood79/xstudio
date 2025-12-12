@@ -416,7 +416,7 @@ export function BuilderCanvas({
   return (
     <div
       ref={setContainerNode}
-      className="builder-canvas-container"
+      className="canvas-container"
     >
       {containerEl && (
         <Application
