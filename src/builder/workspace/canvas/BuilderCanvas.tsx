@@ -14,15 +14,15 @@
  * @updated 2025-12-11 Phase 10 B1.2 - ElementSprite 통합
  */
 
-import { useCallback, useEffect, useRef, useMemo, useState } from 'react';
-import { Application, extend, useApplication } from '@pixi/react';
+import { useCallback, useEffect, useRef, useMemo, useState } from "react";
+import { Application, extend, useApplication } from "@pixi/react";
 import {
   Container as PixiContainer,
   Graphics as PixiGraphics,
   Text as PixiText,
   TextStyle as PixiTextStyle,
-} from 'pixi.js';
-import { useStore } from '../../stores';
+} from "pixi.js";
+import { useStore } from "../../stores";
 
 // 기본 PixiJS 컴포넌트만 extend (layoutContainer 제외)
 extend({
@@ -31,9 +31,9 @@ extend({
   Text: PixiText,
   TextStyle: PixiTextStyle,
 });
-import { useCanvasSyncStore } from './canvasSync';
-import { useWebGLCanvas } from '../../../utils/featureFlags';
-import { ElementSprite } from './sprites';
+import { useCanvasSyncStore } from "./canvasSync";
+import { useWebGLCanvas } from "../../../utils/featureFlags";
+import { ElementSprite } from "./sprites";
 import {
   SelectionLayer,
   useDragInteraction,
@@ -41,12 +41,12 @@ import {
   type HandlePosition,
   type BoundingBox,
   type CursorStyle,
-} from './selection';
-import { GridLayer } from './grid';
-import { ViewportControlBridge } from './viewport';
-import { BodyLayer } from './layers';
-import { TextEditOverlay, useTextEdit } from '../overlay';
-import { calculateLayout, type LayoutResult } from './layout';
+} from "./selection";
+import { GridLayer } from "./grid";
+import { ViewportControlBridge } from "./viewport";
+import { BodyLayer } from "./layers";
+import { TextEditOverlay, useTextEdit } from "../overlay";
+import { calculateLayout, type LayoutResult } from "./layout";
 
 // ============================================
 // Types
@@ -80,30 +80,77 @@ const DEFAULT_BACKGROUND = 0xf8fafc; // slate-50
  * 캔버스 경계 표시
  */
 function CanvasBounds({ width, height }: { width: number; height: number }) {
-  const draw = useCallback((g: PixiGraphics) => {
-    g.clear();
-    g.setStrokeStyle({ width: 2, color: 0x3b82f6, alpha: 0.5 });
-    g.rect(0, 0, width, height);
-    g.stroke();
-  }, [width, height]);
+  const draw = useCallback(
+    (g: PixiGraphics) => {
+      g.clear();
+      g.setStrokeStyle({ width: 2, color: 0x3b82f6, alpha: 0.5 });
+      g.rect(0, 0, width, height);
+      g.stroke();
+    },
+    [width, height]
+  );
 
   return <pixiGraphics draw={draw} />;
 }
 
 /**
  * 클릭 가능한 백그라운드 (빈 영역 클릭 감지용)
- * app.screen에서 크기를 자동으로 획득 (resizeTo 연동)
+ * renderer.screen에서 크기를 자동으로 획득 (resizeTo 연동)
  */
 function ClickableBackground({ onClick }: { onClick?: () => void }) {
   const { app } = useApplication();
+  const [screenSize, setScreenSize] = useState<{
+    width: number;
+    height: number;
+  } | null>(null);
 
-  const draw = useCallback((g: PixiGraphics) => {
-    if (!app?.screen) return;
-    g.clear();
-    // 투명한 영역 (클릭 감지용)
-    g.rect(0, 0, app.screen.width, app.screen.height);
-    g.fill({ color: 0xffffff, alpha: 0 });
-  }, [app?.screen.width, app?.screen.height]);
+  useEffect(() => {
+    if (!app) return;
+
+    let rafId = 0;
+    let detach: (() => void) | null = null;
+    let canceled = false;
+
+    const attach = () => {
+      if (canceled) return;
+
+      const renderer = app.renderer;
+      if (!renderer) {
+        rafId = window.requestAnimationFrame(attach);
+        return;
+      }
+
+      const update = () => {
+        setScreenSize({
+          width: renderer.screen.width,
+          height: renderer.screen.height,
+        });
+      };
+
+      update();
+      renderer.on("resize", update);
+      detach = () => renderer.off("resize", update);
+    };
+
+    attach();
+
+    return () => {
+      canceled = true;
+      if (rafId) window.cancelAnimationFrame(rafId);
+      detach?.();
+    };
+  }, [app]);
+
+  const draw = useCallback(
+    (g: PixiGraphics) => {
+      g.clear();
+      if (!screenSize) return;
+      // 투명한 영역 (클릭 감지용)
+      g.rect(0, 0, screenSize.width, screenSize.height);
+      g.fill({ color: 0xffffff, alpha: 0 });
+    },
+    [screenSize]
+  );
 
   return (
     <pixiGraphics
@@ -137,7 +184,10 @@ function ElementsLayer({
   const elements = useStore((state) => state.elements);
   const currentPageId = useStore((state) => state.currentPageId);
 
-  const elementById = useMemo(() => new Map(elements.map((el) => [el.id, el])), [elements]);
+  const elementById = useMemo(
+    () => new Map(elements.map((el) => [el.id, el])),
+    [elements]
+  );
 
   // 깊이 맵을 한 번 계산하여 정렬 비용 감소
   const depthMap = useMemo(() => {
@@ -149,12 +199,12 @@ function ElementsLayer({
       if (cached !== undefined) return cached;
 
       const el = elementById.get(id);
-      if (!el || el.tag.toLowerCase() === 'body') {
+      if (!el || el.tag.toLowerCase() === "body") {
         cache.set(id, 0);
         return 0;
       }
 
-      const depth = 1 + computeDepth(el.parent_id);
+      const depth = 1 + computeDepth(el.parent_id as string | null);
       cache.set(id, depth);
       return depth;
     };
@@ -170,7 +220,7 @@ function ElementsLayer({
   const pageElements = elements.filter((el) => {
     if (el.page_id !== currentPageId) return false;
     // Body 태그는 캔버스 전체를 의미하므로 렌더링에서 제외 (대소문자 무시)
-    if (el.tag.toLowerCase() === 'body') return false;
+    if (el.tag.toLowerCase() === "body") return false;
     return true;
   });
 
@@ -188,7 +238,11 @@ function ElementsLayer({
   });
 
   return (
-    <pixiContainer label="ElementsLayer" eventMode="static" interactiveChildren={true}>
+    <pixiContainer
+      label="ElementsLayer"
+      eventMode="static"
+      interactiveChildren={true}
+    >
       {sortedElements.map((element) => (
         <ElementSprite
           key={element.id}
@@ -250,7 +304,9 @@ export function BuilderCanvas({
 
   // 현재 페이지 요소 필터링 (라쏘 선택용)
   const pageElements = useMemo(() => {
-    return elements.filter((el) => el.page_id === currentPageId && el.tag !== 'Body');
+    return elements.filter(
+      (el) => el.page_id === currentPageId && el.tag !== "Body"
+    );
   }, [elements, currentPageId]);
 
   // 라쏘 선택 영역 내 요소 찾기
@@ -282,7 +338,9 @@ export function BuilderCanvas({
         const element = elements.find((el) => el.id === elementId);
         if (!element) return;
 
-        const style = element.props?.style as Record<string, unknown> | undefined;
+        const style = element.props?.style as
+          | Record<string, unknown>
+          | undefined;
         const currentX = Number(style?.left) || 0;
         const currentY = Number(style?.top) || 0;
 
@@ -301,7 +359,9 @@ export function BuilderCanvas({
         const element = elements.find((el) => el.id === elementId);
         if (!element) return;
 
-        const style = element.props?.style as Record<string, unknown> | undefined;
+        const style = element.props?.style as
+          | Record<string, unknown>
+          | undefined;
 
         updateElementProps(elementId, {
           style: {
@@ -381,7 +441,7 @@ export function BuilderCanvas({
 
   // WebGL context recovery
   useEffect(() => {
-    const canvas = containerRef.current?.querySelector('canvas');
+    const canvas = containerRef.current?.querySelector("canvas");
     if (!canvas) return;
 
     const handleContextLost = (e: Event) => {
@@ -393,12 +453,12 @@ export function BuilderCanvas({
       setContextLost(false);
     };
 
-    canvas.addEventListener('webglcontextlost', handleContextLost);
-    canvas.addEventListener('webglcontextrestored', handleContextRestored);
+    canvas.addEventListener("webglcontextlost", handleContextLost);
+    canvas.addEventListener("webglcontextrestored", handleContextRestored);
 
     return () => {
-      canvas.removeEventListener('webglcontextlost', handleContextLost);
-      canvas.removeEventListener('webglcontextrestored', handleContextRestored);
+      canvas.removeEventListener("webglcontextlost", handleContextLost);
+      canvas.removeEventListener("webglcontextrestored", handleContextRestored);
     };
   }, [setContextLost]);
 
@@ -414,10 +474,7 @@ export function BuilderCanvas({
   }, [setCanvasReady]);
 
   return (
-    <div
-      ref={setContainerNode}
-      className="canvas-container"
-    >
+    <div ref={setContainerNode} className="canvas-container">
       {containerEl && (
         <Application
           resizeTo={containerEl}
@@ -426,60 +483,60 @@ export function BuilderCanvas({
           resolution={window.devicePixelRatio || 1}
           autoDensity={true}
         >
-        {/* ViewportControlBridge: Camera Container 직접 조작 (React re-render 최소화) */}
-        <ViewportControlBridge
-          containerEl={containerEl}
-          cameraLabel="Camera"
-          minZoom={0.1}
-          maxZoom={5}
-        />
-
-        {/* 전체 Canvas 영역 클릭 → 선택 해제 (Camera 바깥, zoom/pan 영향 안 받음) */}
-        <ClickableBackground onClick={clearSelection} />
-
-        {/* Camera/Viewport - x, y, scale은 ViewportController가 직접 조작 */}
-        <pixiContainer
-          label="Camera"
-          eventMode="static"
-          interactiveChildren={true}
-        >
-          {/* Grid Layer (최하단) */}
-          <GridLayer
-            width={pageWidth}
-            height={pageHeight}
-            zoom={zoom}
-            showGrid={true}
+          {/* ViewportControlBridge: Camera Container 직접 조작 (React re-render 최소화) */}
+          <ViewportControlBridge
+            containerEl={containerEl}
+            cameraLabel="Camera"
+            minZoom={0.1}
+            maxZoom={5}
           />
 
-          {/* Body Layer (Body 요소의 배경색, 테두리 등) */}
-          <BodyLayer
-            pageWidth={pageWidth}
-            pageHeight={pageHeight}
-            onClick={handleElementClick}
-          />
+          {/* 전체 Canvas 영역 클릭 → 선택 해제 (Camera 바깥, zoom/pan 영향 안 받음) */}
+          <ClickableBackground onClick={clearSelection} />
 
-          {/* Page Bounds (breakpoint 경계선) */}
-          <CanvasBounds width={pageWidth} height={pageHeight} />
+          {/* Camera/Viewport - x, y, scale은 ViewportController가 직접 조작 */}
+          <pixiContainer
+            label="Camera"
+            eventMode="static"
+            interactiveChildren={true}
+          >
+            {/* Grid Layer (최하단) */}
+            <GridLayer
+              width={pageWidth}
+              height={pageHeight}
+              zoom={zoom}
+              showGrid={true}
+            />
 
-          {/* Elements Layer (ElementSprite 기반) */}
-          <ElementsLayer
-            selectedIds={selectedElementIds}
-            layoutResult={layoutResult}
-            onClick={handleElementClick}
-            onDoubleClick={handleElementDoubleClick}
-          />
+            {/* Body Layer (Body 요소의 배경색, 테두리 등) */}
+            <BodyLayer
+              pageWidth={pageWidth}
+              pageHeight={pageHeight}
+              onClick={handleElementClick}
+            />
 
-          {/* Selection Layer (최상단) */}
-          <SelectionLayer
-            dragState={dragState}
-            pageWidth={pageWidth}
-            pageHeight={pageHeight}
-            layoutResult={layoutResult}
-            onResizeStart={handleResizeStart}
-            onMoveStart={handleMoveStart}
-            onCursorChange={handleCursorChange}
-          />
-        </pixiContainer>
+            {/* Page Bounds (breakpoint 경계선) */}
+            <CanvasBounds width={pageWidth} height={pageHeight} />
+
+            {/* Elements Layer (ElementSprite 기반) */}
+            <ElementsLayer
+              selectedIds={selectedElementIds}
+              layoutResult={layoutResult}
+              onClick={handleElementClick}
+              onDoubleClick={handleElementDoubleClick}
+            />
+
+            {/* Selection Layer (최상단) */}
+            <SelectionLayer
+              dragState={dragState}
+              pageWidth={pageWidth}
+              pageHeight={pageHeight}
+              layoutResult={layoutResult}
+              onResizeStart={handleResizeStart}
+              onMoveStart={handleMoveStart}
+              onCursorChange={handleCursorChange}
+            />
+          </pixiContainer>
         </Application>
       )}
 

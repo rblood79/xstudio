@@ -101,6 +101,7 @@ export class PerformanceMonitor {
   private autoCollectInterval: ReturnType<typeof setInterval> | null = null;
   private rafId: number | null = null;
   private lastFrameTime = 0;
+  private enableLogs = false;
 
   private thresholds: PerformanceThresholds = {
     memoryWarning: 60,
@@ -224,7 +225,7 @@ export class PerformanceMonitor {
       this.collect();
     }, intervalMs);
 
-    if (process.env.NODE_ENV === 'development') {
+    if (this.enableLogs) {
       console.log(`📊 [Monitor] Auto-collect started (${intervalMs}ms interval)`);
     }
   }
@@ -240,7 +241,7 @@ export class PerformanceMonitor {
 
     this.stopFPSMeasurement();
 
-    if (process.env.NODE_ENV === 'development') {
+    if (this.enableLogs) {
       console.log('📊 [Monitor] Auto-collect stopped');
     }
   }
@@ -279,6 +280,21 @@ export class PerformanceMonitor {
    */
   getThresholds(): PerformanceThresholds {
     return { ...this.thresholds };
+  }
+
+  /**
+   * 로그 출력 활성화/비활성화
+   * Monitor Panel이 활성화될 때 true로 설정
+   */
+  setLogsEnabled(enabled: boolean): void {
+    this.enableLogs = enabled;
+  }
+
+  /**
+   * 로그 출력 상태 조회
+   */
+  isLogsEnabled(): boolean {
+    return this.enableLogs;
   }
 
   /**
@@ -358,7 +374,7 @@ export class PerformanceMonitor {
   private getHistoryMemory(): number {
     try {
       const stats = historyManager.getMemoryStats();
-      return stats.totalSize ?? 0;
+      return stats.commandStoreStats?.estimatedMemoryUsage ?? 0;
     } catch {
       return 0;
     }

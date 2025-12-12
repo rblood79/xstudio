@@ -19,6 +19,7 @@ import {
   TabPanel,
 } from "react-aria-components";
 import { Activity, Database, Cpu, Zap, BarChart3 } from "lucide-react";
+import { performanceMonitor } from "../../utils/performanceMonitor";
 import type { PanelProps } from "../core/types";
 import { useMemoryStats, formatBytes } from "./hooks/useMemoryStats";
 import { useTimeSeriesData } from "./hooks/useTimeSeriesData";
@@ -67,6 +68,14 @@ function MonitorPanelContent() {
   );
   const prevStatsRef = useRef<ReturnType<typeof useMemoryStats>["stats"]>(null);
   const { toasts, showToast, dismissToast } = useToast();
+
+  // Monitor Panel 활성화 시 로그 출력 활성화
+  useEffect(() => {
+    performanceMonitor.setLogsEnabled(true);
+    return () => {
+      performanceMonitor.setLogsEnabled(false);
+    };
+  }, []);
 
   // 🆕 enabled 파라미터 적용
   const { stats, statusMessage, optimize, isOptimizing } = useMemoryStats({ enabled: true });
