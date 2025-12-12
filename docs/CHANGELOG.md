@@ -7,6 +7,51 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Updated - WebGL Canvas Phase 12 (2025-12-12)
+
+- **레이아웃 안전성**: `MAX_LAYOUT_DEPTH`와 `visited` 가드로 순환 트리 무한 재귀 방지, 페이지 단위 레이아웃 캐싱으로 Elements/Selection 중복 계산 제거.
+- **선택/정렬 성능**: 깊이 맵 메모이즈로 O(n²) 정렬 제거, SelectionLayer가 전달 레이아웃을 재사용.
+- **팬/줌 입력 최적화**: 팬 드래그를 `requestAnimationFrame`으로 스로틀링 후 종료 시 플러시, 휠 줌 로그 스팸 제거.
+
+### Added - WebGL Canvas Phase 12 (2025-12-12)
+
+#### B3.1 DOM-like Layout Calculator
+Canvas에서 DOM 레이아웃 방식 재현:
+
+- **Block Layout**: 수직 스택, margin/padding, position: relative/absolute
+- **Flexbox Layout**: flexDirection, justifyContent, alignItems, gap
+- 안전 기능: MAX_LAYOUT_DEPTH, 순환 참조 감지
+
+**파일:** `src/builder/workspace/canvas/layout/layoutCalculator.ts`
+
+#### B3.2 Canvas Resize Handler (Figma-style)
+패널 열기/닫기 시 캔버스 깜빡임 문제 해결:
+
+| 방식 | 깜빡임 | 성능 |
+|------|--------|------|
+| key prop remount | ❌ 검은 화면 | 느림 |
+| 직접 resize | ❌ 깜빡임 | 빠름 |
+| CSS Transform + Debounce | ✅ 없음 | 빠름 |
+
+```typescript
+// 애니메이션 중: CSS transform scale (즉시)
+canvas.style.transform = `scale(${scaleX}, ${scaleY})`;
+
+// 150ms debounce 후: 실제 WebGL resize
+app.renderer.resize(width, height);
+```
+
+**파일:** `src/builder/workspace/canvas/BuilderCanvas.tsx:77-146`
+
+#### B3.3 Selection System 개선
+- SelectionBox: 컨테이너 요소도 테두리 표시
+- Transform 핸들: 단일 선택 시 항상 표시 (컨테이너 포함)
+- Move 영역: 컨테이너는 비활성화 (자식 클릭 허용)
+
+**파일:** `src/builder/workspace/canvas/selection/SelectionLayer.tsx`
+
+---
+
 ### Added - Performance Optimization Track A/B/C Complete (2025-12-11)
 
 엔터프라이즈급 10,000개+ 요소, 24시간+ 안정 사용을 위한 성능 최적화 완료.

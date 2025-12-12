@@ -148,7 +148,7 @@ function App() {
           </div>
           <div className="header-container">
             <div className="landing-header">
-              <h1 className="landing-header-title">COMPOSITION</h1>
+              <h1 className="landing-header-title">COMPOSE</h1>
               <p className="landing-header-subtitle">Bespoke by design, cutting-edge platform.</p>
             </div>
           </div>

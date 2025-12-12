@@ -227,6 +227,14 @@ const lastPanPointRef = useRef<{ x: number; y: number } | null>(null);
 - `containerEl` (상태)을 dependency로 사용하여 DOM 준비 후 이벤트 등록
 - `capture: true`로 이벤트를 먼저 가로채 PixiJS와의 충돌 방지
 
+### 팬 드래그 스로틀링 (Phase 12)
+
+- 팬 이동은 `requestAnimationFrame`으로 스케줄링하여 `mousemove` 폭주 시에도 프레임당 1회만 상태 업데이트.
+- 드래그 종료 시 보류된 pan을 플러시해 최종 위치를 보장.
+- 휠 줌/팬 로그는 기본 비활성화해 입력 시 콘솔 스팸을 제거.
+
+> 대안 비교: 드래그 종료 시점에만 pan을 동기화하면 FPS는 좋지만 선택 박스/오버레이 위치가 드래그 중 맞지 않는 리스크가 있어, rAF 스로틀 방식을 유지합니다.
+
 ## 트러블슈팅
 
 ### 줌이 left-top 기준으로 동작
@@ -251,10 +259,104 @@ const lastPanPointRef = useRef<{ x: number; y: number } | null>(null);
 1. `containerEl`을 dependency로 사용하여 DOM 준비 후 등록
 2. `capture: true`로 이벤트 먼저 가로채기
 
+## 레이아웃 시스템
+
+### Layout Calculator
+
+`src/builder/workspace/canvas/layout/layoutCalculator.ts`
+
+캔버스에서 DOM의 레이아웃 방식을 재현합니다.
+
+#### 지원 레이아웃
+
+| 레이아웃 | display 값 | 설명 |
+|----------|------------|------|
+| Block | `block` (기본) | 수직 스택, margin/padding |
+| Flex | `flex` | flexDirection, justifyContent, alignItems, gap |
+| Absolute | position: `absolute` | 부모 기준 절대 위치 |
+
+#### Flexbox 속성
+
+```typescript
+interface FlexStyle {
+  display: 'flex';
+  flexDirection: 'row' | 'row-reverse' | 'column' | 'column-reverse';
+  justifyContent: 'flex-start' | 'center' | 'flex-end' | 'space-between' | 'space-around' | 'space-evenly';
+  alignItems: 'flex-start' | 'center' | 'flex-end' | 'stretch';
+  gap: number;
+}
+```
+
+#### 안전 기능
+
+- `MAX_LAYOUT_DEPTH = 1000` - 무한 재귀 방지
+- `visited Set` - 순환 참조 감지 및 경고
+
+### StylesPanel 연동
+
+Inspector의 StylesPanel 변경 → Canvas 레이아웃 자동 재계산:
+
+```
+StylesPanel → useStyleActions → useInspectorState
+                                      ↓
+                              useSyncWithBuilder
+                                      ↓
+                              useStore (elements)
+                                      ↓
+                          BuilderCanvas (layoutResult)
+```
+
+## Canvas Resize (Figma-style)
+
+### 문제
+
+패널 열기/닫기 시 `<canvas>` 크기가 부모 컨테이너를 따라가지 않음
+
+### 해결: CSS Transform + Debounce
+
+```typescript
+function CanvasResizeHandler({ width, height }) {
+  const { app } = useApplication();
+
+  // 1. 애니메이션 중: CSS transform scale (즉시, 깜빡임 없음)
+  const scaleX = width / baseSize.current.width;
+  canvas.style.transform = `scale(${scaleX}, ${scaleY})`;
+
+  // 2. 150ms debounce 후: 실제 WebGL resize
+  debounceTimer.current = setTimeout(() => {
+    canvas.style.transform = '';
+    app.renderer.resize(width, height);
+  }, 150);
+}
+```
+
+### 동작 흐름
+
+```
+패널 열기/닫기 시작
+  ↓
+1200px → CSS scale(1200/1400) 적용 (즉시)
+1180px → CSS scale(1180/1400) 업데이트
+1160px → CSS scale(1160/1400) 업데이트
+  ↓
+150ms 동안 변화 없음
+  ↓
+CSS transform 제거 + WebGL resize(1160px)
+```
+
+### 방식 비교
+
+| 방식 | 깜빡임 | 성능 | WebGL 상태 |
+|------|--------|------|------------|
+| key prop remount | ❌ 검은 화면 | 느림 | 재생성 |
+| 직접 renderer.resize | ❌ 깜빡임 | 빠름 | 유지 |
+| CSS Transform + Debounce | ✅ 없음 | 빠름 | 유지 |
+
 ---
 
 **관련 문서:**
 - [CANVAS_RUNTIME_ISOLATION.md](./CANVAS_RUNTIME_ISOLATION.md) - 캔버스 런타임 격리
+- [PIXI_WEBGL_INTEGRATION.md](../PIXI_WEBGL_INTEGRATION.md) - PixiJS WebGL 통합
 - [Phase 10 B1.4](../phases/PHASE_10.md) - 줌/팬 구현 스펙
 
 **최종 업데이트:** 2025-12-12

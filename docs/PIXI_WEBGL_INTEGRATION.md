@@ -176,6 +176,14 @@ function getSpriteType(element: Element): SpriteType {
 }
 ```
 
+## Phase 12: 안정화 (B3.1~B3.3)
+
+- **B3.1 레이아웃 가드/캐싱**: `layoutCalculator`에 `MAX_LAYOUT_DEPTH`와 `visited` 감시를 추가해 순환 트리로 인한 무한 재귀를 차단하고, 페이지 단위 레이아웃을 한 번만 계산해 Selection/Elements 레이어에서 공유.
+- **B3.2 선택/정렬 최적화**: Element 정렬 시 깊이 맵을 메모이즈해 O(n²) 탐색 제거, SelectionLayer가 전달된 레이아웃을 그대로 사용하도록 통합.
+- **B3.3 팬/줌 인터랙션 성능**: 팬 드래그를 `requestAnimationFrame`으로 스로틀링하고 드래그 종료 시 플러시하여 상태 업데이트 폭주를 방지. 휠 줌 로그 스팸 제거.
+
+> 메소드 선택: 팬을 드래그 종료 시점에만 동기화하는 방식은 FPS는 높지만 드래그 중 상태 의존 UI(선택 박스 등)와 어긋날 수 있어, rAF 스로틀로 프레임당 업데이트를 유지하는 방식을 채택했습니다.
+
 ## 사용 예시
 
 ### 기본 캔버스
@@ -285,6 +293,85 @@ const useWebGL = useWebGLCanvas();
 // false: 기존 iframe 캔버스 사용
 ```
 
+## Phase 12: Layout Calculator & Canvas Resize (완료)
+
+### B3.1 DOM-like Layout Calculator
+
+`src/builder/workspace/canvas/layout/layoutCalculator.ts`
+
+캔버스에서 DOM의 레이아웃 방식을 재현합니다:
+
+#### Block Layout (display: block)
+- 수직 스택 배치
+- margin, padding 지원
+- position: relative/absolute 지원
+
+#### Flexbox Layout (display: flex)
+```typescript
+// 지원 속성
+interface FlexStyle {
+  display: 'flex';
+  flexDirection: 'row' | 'row-reverse' | 'column' | 'column-reverse';
+  flexWrap: 'nowrap' | 'wrap' | 'wrap-reverse';
+  justifyContent: 'flex-start' | 'center' | 'flex-end' | 'space-between' | 'space-around' | 'space-evenly';
+  alignItems: 'flex-start' | 'center' | 'flex-end' | 'stretch';
+  gap: number;
+}
+```
+
+#### 안전 기능
+- `MAX_LAYOUT_DEPTH = 1000` - 무한 재귀 방지
+- `visited Set` - 순환 참조 감지
+
+### B3.2 Canvas Resize Handler (Figma-style)
+
+패널 열기/닫기 시 캔버스 크기 조절 문제 해결:
+
+```typescript
+/**
+ * 전략:
+ * 1. 애니메이션 중: CSS transform scale (즉시, 깜빡임 없음)
+ * 2. 애니메이션 종료 후 (150ms debounce): 실제 WebGL resize
+ * 3. resize 완료 후 CSS transform 제거
+ */
+function CanvasResizeHandler({ width, height }) {
+  const { app } = useApplication();
+
+  // 애니메이션 중: CSS transform으로 즉시 스케일 조절
+  const scaleX = width / baseSize.current.width;
+  canvas.style.transform = `scale(${scaleX}, ${scaleY})`;
+
+  // 150ms debounce 후: 실제 WebGL resize
+  debounceTimer.current = setTimeout(() => {
+    canvas.style.transform = '';
+    app.renderer.resize(width, height);
+  }, 150);
+}
+```
+
+#### 비교
+
+| 방식 | 깜빡임 | 성능 | 상태 유지 |
+|------|--------|------|-----------|
+| key prop remount | ❌ 있음 | 느림 | ❌ 전체 재생성 |
+| 직접 resize | ❌ 있음 | 빠름 | ✅ 유지 |
+| CSS Transform + Debounce | ✅ 없음 | 빠름 | ✅ 유지 |
+
+### B3.3 Selection System 개선
+
+#### SelectionBox (컨테이너 요소)
+- 자식이 있는 요소도 SelectionBox 테두리 표시
+- Transform 핸들: 단일 선택 시 항상 표시 (컨테이너 포함)
+- Move 영역: 컨테이너는 비활성화 (자식 요소 클릭 허용)
+
+```tsx
+<SelectionBox
+  bounds={selectionBounds}
+  showHandles={isSingleSelection}        // 컨테이너도 핸들 표시
+  enableMoveArea={!isContainerSelected}  // 컨테이너는 이동 영역 비활성화
+/>
+```
+
 ## 성능 최적화
 
 ### 권장 사항
@@ -293,6 +380,7 @@ const useWebGL = useWebGLCanvas();
 2. **RequestAnimationFrame**: 애니메이션에 RAF 사용
 3. **요소 수 제한**: 1000+ 요소 시 가상 스크롤 고려
 4. **텍스처 캐싱**: 반복 사용 이미지 캐싱
+5. **CSS Transform Resize**: 패널 애니메이션 중 CSS transform 사용
 
 ### 성능 모니터링
 
