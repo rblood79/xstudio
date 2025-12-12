@@ -46,6 +46,11 @@ interface CSSStyle {
   paddingLeft?: string | number;
   paddingRight?: string | number;
   gap?: string | number;
+  // Flexbox properties
+  flexDirection?: string;
+  flexWrap?: string;
+  alignItems?: string;
+  justifyContent?: string;
 }
 
 // ============================================
@@ -149,21 +154,232 @@ export function calculateLayout(
 
     // Body의 자식 요소들 레이아웃 계산
     const bodyPadding = getElementPadding(bodyElement);
-    calculateChildrenLayout(
-      pageElements,
-      bodyElement.id,
-      bodyPadding.left,
-      bodyPadding.top,
-      pageWidth - bodyPadding.left - bodyPadding.right,
-      positions
-    );
+    const bodyFlexStyle = getParentFlexStyle(bodyElement);
+
+    if (bodyFlexStyle.display === 'flex') {
+      calculateFlexLayout(
+        pageElements,
+        bodyElement.id,
+        bodyPadding.left,
+        bodyPadding.top,
+        pageWidth - bodyPadding.left - bodyPadding.right,
+        pageHeight - bodyPadding.top - bodyPadding.bottom,
+        bodyFlexStyle,
+        positions
+      );
+    } else {
+      calculateChildrenLayout(
+        pageElements,
+        bodyElement.id,
+        bodyPadding.left,
+        bodyPadding.top,
+        pageWidth - bodyPadding.left - bodyPadding.right,
+        pageHeight - bodyPadding.top - bodyPadding.bottom,
+        positions
+      );
+    }
   }
 
   return { positions };
 }
 
 /**
- * 자식 요소들의 레이아웃 계산 (재귀)
+ * 부모 요소의 Flex 스타일 추출
+ */
+function getParentFlexStyle(element: Element): {
+  display: string;
+  flexDirection: string;
+  flexWrap: string;
+  alignItems: string;
+  justifyContent: string;
+  gap: number;
+} {
+  const style = element.props?.style as CSSStyle | undefined;
+  return {
+    display: style?.display || 'block',
+    flexDirection: style?.flexDirection || 'row',
+    flexWrap: style?.flexWrap || 'nowrap',
+    alignItems: style?.alignItems || 'stretch',
+    justifyContent: style?.justifyContent || 'flex-start',
+    gap: parseCSSValue(style?.gap, 0),
+  };
+}
+
+/**
+ * Flexbox 레이아웃 계산
+ */
+function calculateFlexLayout(
+  elements: Element[],
+  parentId: string,
+  parentX: number,
+  parentY: number,
+  parentWidth: number,
+  parentHeight: number,
+  flexStyle: ReturnType<typeof getParentFlexStyle>,
+  positions: Map<string, LayoutPosition>
+): void {
+  const children = elements
+    .filter((el) => el.parent_id === parentId)
+    .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+
+  if (children.length === 0) return;
+
+  const { flexDirection, alignItems, justifyContent, gap } = flexStyle;
+  const isRow = flexDirection === 'row' || flexDirection === 'row-reverse';
+  const isReverse = flexDirection === 'row-reverse' || flexDirection === 'column-reverse';
+
+  // 자식 크기 계산
+  const childSizes = children.map((child) => {
+    const size = getElementSize(child, isRow ? 100 : parentWidth, isRow ? parentHeight : 40);
+    const margin = getElementMargin(child);
+    return {
+      element: child,
+      width: size.width,
+      height: size.height,
+      margin,
+      totalWidth: size.width + margin.left + margin.right,
+      totalHeight: size.height + margin.top + margin.bottom,
+    };
+  });
+
+  // 전체 콘텐츠 크기 계산
+  const totalGap = gap * (children.length - 1);
+  const totalContentSize = isRow
+    ? childSizes.reduce((sum, c) => sum + c.totalWidth, 0) + totalGap
+    : childSizes.reduce((sum, c) => sum + c.totalHeight, 0) + totalGap;
+
+  // Main axis 시작 위치 계산 (justifyContent)
+  const availableSpace = isRow ? parentWidth : parentHeight;
+  const freeSpace = Math.max(0, availableSpace - totalContentSize);
+
+  let mainStart: number;
+  let itemGap = gap;
+
+  switch (justifyContent) {
+    case 'center':
+      mainStart = freeSpace / 2;
+      break;
+    case 'flex-end':
+      mainStart = freeSpace;
+      break;
+    case 'space-between':
+      mainStart = 0;
+      itemGap = children.length > 1 ? freeSpace / (children.length - 1) : 0;
+      break;
+    case 'space-around':
+      itemGap = children.length > 0 ? freeSpace / children.length : 0;
+      mainStart = itemGap / 2;
+      break;
+    case 'space-evenly':
+      itemGap = children.length > 0 ? freeSpace / (children.length + 1) : 0;
+      mainStart = itemGap;
+      break;
+    case 'flex-start':
+    default:
+      mainStart = 0;
+      break;
+  }
+
+  // 자식 위치 계산
+  let currentMain = mainStart;
+  const orderedChildren = isReverse ? [...childSizes].reverse() : childSizes;
+
+  for (const childSize of orderedChildren) {
+    const { element: child, width, height, margin } = childSize;
+    const style = child.props?.style as CSSStyle | undefined;
+    const position = style?.position || 'relative';
+
+    // position: absolute는 flex에서 제외
+    if (position === 'absolute') {
+      const offset = getPositionOffset(child);
+      positions.set(child.id, {
+        x: parentX + offset.left,
+        y: parentY + offset.top,
+        width,
+        height,
+      });
+      continue;
+    }
+
+    let x: number;
+    let y: number;
+
+    if (isRow) {
+      // Row direction
+      x = parentX + currentMain + margin.left;
+
+      // Cross axis alignment (alignItems)
+      switch (alignItems) {
+        case 'center':
+          y = parentY + (parentHeight - height) / 2;
+          break;
+        case 'flex-end':
+          y = parentY + parentHeight - height - margin.bottom;
+          break;
+        case 'flex-start':
+        case 'stretch':
+        default:
+          y = parentY + margin.top;
+          break;
+      }
+
+      currentMain += childSize.totalWidth + itemGap;
+    } else {
+      // Column direction
+      y = parentY + currentMain + margin.top;
+
+      // Cross axis alignment (alignItems)
+      switch (alignItems) {
+        case 'center':
+          x = parentX + (parentWidth - width) / 2;
+          break;
+        case 'flex-end':
+          x = parentX + parentWidth - width - margin.right;
+          break;
+        case 'flex-start':
+        case 'stretch':
+        default:
+          x = parentX + margin.left;
+          break;
+      }
+
+      currentMain += childSize.totalHeight + itemGap;
+    }
+
+    // 위치 저장
+    positions.set(child.id, { x, y, width, height });
+
+    // 자식 요소들 재귀 처리
+    const childPadding = getElementPadding(child);
+    const childFlexStyle = getParentFlexStyle(child);
+
+    if (childFlexStyle.display === 'flex') {
+      calculateFlexLayout(
+        elements,
+        child.id,
+        x + childPadding.left,
+        y + childPadding.top,
+        width - childPadding.left - childPadding.right,
+        height - childPadding.top - childPadding.bottom,
+        childFlexStyle,
+        positions
+      );
+    } else {
+      calculateChildrenLayout(
+        elements,
+        child.id,
+        x + childPadding.left,
+        y + childPadding.top,
+        width - childPadding.left - childPadding.right,
+        height - childPadding.top - childPadding.bottom,
+        positions
+      );
+    }
+  }
+}
+
+/**
+ * 자식 요소들의 레이아웃 계산 (재귀) - Block 레이아웃
  */
 function calculateChildrenLayout(
   elements: Element[],
@@ -171,8 +387,28 @@ function calculateChildrenLayout(
   parentX: number,
   parentY: number,
   parentWidth: number,
+  parentHeight: number,
   positions: Map<string, LayoutPosition>
 ): void {
+  // 부모 요소 찾기
+  const parentElement = elements.find((el) => el.id === parentId);
+  if (parentElement) {
+    const flexStyle = getParentFlexStyle(parentElement);
+    if (flexStyle.display === 'flex') {
+      calculateFlexLayout(
+        elements,
+        parentId,
+        parentX,
+        parentY,
+        parentWidth,
+        parentHeight,
+        flexStyle,
+        positions
+      );
+      return;
+    }
+  }
+
   // 부모의 직접 자식 요소들 찾기 (order_num으로 정렬)
   const children = elements
     .filter((el) => el.parent_id === parentId)
@@ -227,14 +463,30 @@ function calculateChildrenLayout(
 
     // 자식 요소들 재귀 처리
     const childPadding = getElementPadding(child);
-    calculateChildrenLayout(
-      elements,
-      child.id,
-      x + childPadding.left,
-      y + childPadding.top,
-      size.width - childPadding.left - childPadding.right,
-      positions
-    );
+    const childFlexStyle = getParentFlexStyle(child);
+
+    if (childFlexStyle.display === 'flex') {
+      calculateFlexLayout(
+        elements,
+        child.id,
+        x + childPadding.left,
+        y + childPadding.top,
+        size.width - childPadding.left - childPadding.right,
+        size.height - childPadding.top - childPadding.bottom,
+        childFlexStyle,
+        positions
+      );
+    } else {
+      calculateChildrenLayout(
+        elements,
+        child.id,
+        x + childPadding.left,
+        y + childPadding.top,
+        size.width - childPadding.left - childPadding.right,
+        size.height - childPadding.top - childPadding.bottom,
+        positions
+      );
+    }
   }
 }
 
