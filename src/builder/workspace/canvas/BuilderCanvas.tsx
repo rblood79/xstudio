@@ -139,21 +139,6 @@ function CanvasResizeHandler({ width, height }: { width: number; height: number 
         clearTimeout(debounceTimer.current);
         debounceTimer.current = 0;
       }
-
-      // Cleanup 시 CSS transform 리셋 (애니메이션 중 props 변경 또는 언마운트 시)
-      // 이렇게 하지 않으면 canvas가 transform된 상태로 남아 시각적 버그 발생
-      if (canvas) {
-        canvas.style.transform = '';
-        canvas.style.transformOrigin = '';
-      }
-
-      // baseSize를 현재 renderer 크기로 동기화 (stale 계산 방지)
-      if (app?.renderer) {
-        baseSize.current = {
-          width: app.renderer.width,
-          height: app.renderer.height,
-        };
-      }
     };
   }, [app, width, height]);
 
