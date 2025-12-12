@@ -83,12 +83,16 @@
    * Sidebar
    * ======================================== */
 
-  .app aside {
-    z-index: 2;
-  }
-
   .app aside.sidebar {
     grid-area: sidebar;
+    height: 100%;
+    display: flex;
+    position: relative;
+    overflow: auto;
+  }
+
+  .app aside.inspector {
+    grid-area: inspector;
     height: 100%;
     display: flex;
     position: relative;
