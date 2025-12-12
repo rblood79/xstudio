@@ -15,13 +15,13 @@
  * @since 2025-12-11 Phase 10 B1.1
  */
 
-import { useRef, useCallback, useState, useEffect, useMemo } from 'react';
-import { Key } from 'react-aria-components';
-import { BuilderCanvas } from './canvas/BuilderCanvas';
-import { useCanvasSyncStore } from './canvas/canvasSync';
-import { useWebGLCanvas } from '../../utils/featureFlags';
-import { CircleMinus, CirclePlus,Fullscreen } from 'lucide-react';
-import './Workspace.css';
+import { useRef, useCallback, useState, useEffect, useMemo } from "react";
+import { Key } from "react-aria-components";
+import { BuilderCanvas } from "./canvas/BuilderCanvas";
+import { useCanvasSyncStore } from "./canvas/canvasSync";
+import { useWebGLCanvas } from "../../utils/featureFlags";
+import { Minus, Plus, Scan } from "lucide-react";
+import "./Workspace.css";
 // ============================================
 // Types
 // ============================================
@@ -54,7 +54,11 @@ const ZOOM_STEP = 0.1;
 // Main Component
 // ============================================
 
-export function Workspace({ breakpoint, breakpoints, fallbackCanvas }: WorkspaceProps) {
+export function Workspace({
+  breakpoint,
+  breakpoints,
+  fallbackCanvas,
+}: WorkspaceProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
 
@@ -80,13 +84,18 @@ export function Workspace({ breakpoint, breakpoints, fallbackCanvas }: Workspace
 
     // Parse width and height from breakpoint
     // Handle percentage values ("100%") by using container size
-    const parseSize = (value: string | number, containerDimension: number): number => {
-      if (typeof value === 'number') return value;
+    const parseSize = (
+      value: string | number,
+      containerDimension: number
+    ): number => {
+      if (typeof value === "number") return value;
       const strValue = String(value);
       // Handle percentage values
-      if (strValue.includes('%')) {
+      if (strValue.includes("%")) {
         const percent = parseFloat(strValue) / 100;
-        return containerDimension > 0 ? Math.floor(containerDimension * percent) : 1920;
+        return containerDimension > 0
+          ? Math.floor(containerDimension * percent)
+          : 1920;
       }
       const numValue = parseInt(strValue, 10);
       return isNaN(numValue) ? 1920 : numValue;
@@ -97,7 +106,7 @@ export function Workspace({ breakpoint, breakpoints, fallbackCanvas }: Workspace
       height: parseSize(selectedBreakpoint.max_height, containerSize.height),
     };
 
-    console.log('[Workspace] Canvas size:', size, 'Breakpoint:', selectedId);
+    console.log("[Workspace] Canvas size:", size, "Breakpoint:", selectedId);
     return size;
   }, [breakpoint, breakpoints, containerSize]);
 
@@ -123,7 +132,14 @@ export function Workspace({ breakpoint, breakpoints, fallbackCanvas }: Workspace
         y: (containerSize.height - canvasSize.height * fitZoom) / 2,
       });
     }
-  }, [canvasSize.width, canvasSize.height, containerSize.width, containerSize.height, setZoom, setPanOffset]);
+  }, [
+    canvasSize.width,
+    canvasSize.height,
+    containerSize.width,
+    containerSize.height,
+    setZoom,
+    setPanOffset,
+  ]);
 
   // ============================================
   // Container Size Tracking
@@ -212,20 +228,14 @@ export function Workspace({ breakpoint, breakpoints, fallbackCanvas }: Workspace
   // Feature Flag OFF: 기존 iframe 캔버스 사용
   if (!useWebGL && fallbackCanvas) {
     return (
-      <div
-        ref={containerRef}
-        className="workspace"
-      >
+      <div ref={containerRef} className="workspace">
         {fallbackCanvas}
       </div>
     );
   }
 
   return (
-    <div
-      ref={containerRef}
-      className="workspace"
-    >
+    <div ref={containerRef} className="workspace">
       {/* WebGL Canvas (DOM depth 최소화: .workspace → .builder-canvas-container → canvas) */}
       <BuilderCanvas
         pageWidth={canvasSize.width}
@@ -244,32 +254,27 @@ export function Workspace({ breakpoint, breakpoints, fallbackCanvas }: Workspace
           onClick={() => zoomTo(zoom - ZOOM_STEP)}
           disabled={zoom <= MIN_ZOOM}
         >
-          <CircleMinus size={16} />
+          <Minus size={16} />
         </button>
-        <span className="zoom-control-text">
-          {Math.round(zoom * 100)}%
-        </span>
+        <span className="zoom-control-text">{Math.round(zoom * 100)}%</span>
         <button
           className="zoom-control-button"
           onClick={() => zoomTo(zoom + ZOOM_STEP)}
           disabled={zoom >= MAX_ZOOM}
         >
-          <CirclePlus size={16} />
+          <Plus size={16} />
         </button>
-        <button
-          className="zoom-control-button"
-          onClick={zoomToFit}
-        >
-          <Fullscreen size={16} />
+        <button className="zoom-control-button" onClick={zoomToFit}>
+          <Scan size={16} />
         </button>
       </div>
 
       {/* Status Indicator */}
       {(isContextLost || !isCanvasReady) && (
-        <div
-          className="workspace-status-indicator"
-        >
-          {isContextLost ? '⚠️ GPU 리소스 복구 중...' : '🔄 캔버스 초기화 중...'}
+        <div className="workspace-status-indicator">
+          {isContextLost
+            ? "⚠️ GPU 리소스 복구 중..."
+            : "🔄 캔버스 초기화 중..."}
         </div>
       )}
     </div>

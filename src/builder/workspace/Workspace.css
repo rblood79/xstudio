@@ -1,51 +1,51 @@
 .workspace {
-    grid-area: main;
-    position: relative;
-    width: 100%;
-    height: 100%;
-    overflow: hidden;
+  grid-area: main;
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
 }
 
 .canvas-container {
-    position: absolute;
-    inset: 0;
+  position: absolute;
+  inset: 0;
 }
 
 .workspace-overlay {
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
 }
 
 .workspace-status-indicator {
-    position: absolute;
-    top: 16px;
-    left: 50%;
-    transform: translateX(-50%);
-    background-color: #fef2f2;
-    color: #991b1b;
-    padding: 8px 16px;
-    border-radius: 8px;
-    font-size: 14px;
+  position: absolute;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: #fef2f2;
+  color: #991b1b;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 14px;
 }
 
 .workspace-zoom-controls {
-    position: absolute;
-    bottom: 16px;
-    right: 16px;
-    display: flex;
-    background-color: white;
-    padding: var(--spacing-2xs);
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-sm);
-    pointer-events: auto;
+  position: absolute;
+  bottom: 16px;
+  right: 16px;
+  display: flex;
+  background-color: white;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  pointer-events: auto;
 }
 .zoom-control-text {
-    font-size: var(--text-xs);    min-width: 60px;
-    padding: var(--spacing-sm);
-    text-align: center;
+  font-size: var(--text-xs);
+  min-width: 48px;
+  padding: var(--spacing-xs);
+  text-align: center;
 }
 .zoom-control-button {
-    padding: var(--spacing-sm);
-    cursor: pointer;
+  padding: var(--spacing-xs);
+  cursor: pointer;
 }

@@ -162,6 +162,101 @@ function ClickableBackground({ onClick }: { onClick?: () => void }) {
   );
 }
 
+/**
+ * 패널 애니메이션 중에는 캔버스를 CSS 사이즈로만 부드럽게 따라가게 하고,
+ * 크기 변화가 멈춘 뒤에만 renderer.resize를 1회 수행해 선명도를 복구합니다.
+ */
+function CanvasSmoothResizeBridge({ containerEl }: { containerEl: HTMLElement }) {
+  const { app } = useApplication();
+  const lastSizeRef = useRef<{ width: number; height: number } | null>(null);
+  const settleTimeoutIdRef = useRef<number>(0);
+  const throttleTimeoutIdRef = useRef<number>(0);
+  const lastQueuedAtRef = useRef(0);
+
+  useEffect(() => {
+    if (!app) return;
+
+    let canceled = false;
+    let observer: ResizeObserver | null = null;
+
+    const attach = () => {
+      if (canceled) return;
+
+      const renderer = app.renderer;
+      if (!renderer) {
+        window.requestAnimationFrame(attach);
+        return;
+      }
+
+      const throttleMs = 80;
+      const queueResizeThrottled = () => {
+        if (typeof window === "undefined") return;
+
+        const now = typeof performance !== "undefined" ? performance.now() : Date.now();
+        const elapsed = now - lastQueuedAtRef.current;
+
+        if (elapsed >= throttleMs) {
+          lastQueuedAtRef.current = now;
+          app.queueResize();
+          return;
+        }
+
+        if (throttleTimeoutIdRef.current) return;
+        throttleTimeoutIdRef.current = window.setTimeout(() => {
+          throttleTimeoutIdRef.current = 0;
+          lastQueuedAtRef.current =
+            typeof performance !== "undefined" ? performance.now() : Date.now();
+          app.queueResize();
+        }, Math.max(0, throttleMs - elapsed));
+      };
+
+      const scheduleSettleResize = () => {
+        if (settleTimeoutIdRef.current) {
+          window.clearTimeout(settleTimeoutIdRef.current);
+        }
+        settleTimeoutIdRef.current = window.setTimeout(() => {
+          settleTimeoutIdRef.current = 0;
+          app.resize();
+        }, 350); // CSS transition(300ms) + 여유 50ms
+      };
+
+      const updateFromRect = (rect: DOMRectReadOnly | DOMRect) => {
+        if (rect.width <= 0 || rect.height <= 0) return;
+        const next = { width: rect.width, height: rect.height };
+        const prev = lastSizeRef.current;
+        lastSizeRef.current = next;
+
+        // 애니메이션 중에는 과도한 리사이즈를 피하면서도 계속 따라가도록 스로틀
+        if (!prev || prev.width !== next.width || prev.height !== next.height) {
+          queueResizeThrottled();
+        }
+        scheduleSettleResize();
+      };
+
+      // 초기 동기화: 첫 렌더는 resizeTo 기준으로 선명하게 맞춤
+      app.resize();
+
+      observer = new ResizeObserver((entries) => {
+        const entry = entries[0];
+        if (!entry) return;
+        updateFromRect(entry.contentRect);
+      });
+      observer.observe(containerEl);
+    };
+
+    attach();
+
+    return () => {
+      canceled = true;
+      if (settleTimeoutIdRef.current) window.clearTimeout(settleTimeoutIdRef.current);
+      if (throttleTimeoutIdRef.current) window.clearTimeout(throttleTimeoutIdRef.current);
+      observer?.disconnect();
+    };
+  }, [app, containerEl]);
+
+  return null;
+}
+
 // SelectionOverlay는 SelectionLayer로 대체됨 (B1.3)
 
 /**
@@ -275,7 +370,7 @@ export function BuilderCanvas({
     setContainerEl(node);
   }, []);
 
-  // Container 크기는 PixiJS resizeTo가 자동 감지 (ResizeObserver 삭제됨)
+  // Canvas는 컨테이너 크기에 맞춰 자동 동기화 (CSS → 종료 시 renderer.resize)
 
   // Store state
   const elements = useStore((state) => state.elements);
@@ -483,6 +578,8 @@ export function BuilderCanvas({
           resolution={window.devicePixelRatio || 1}
           autoDensity={true}
         >
+          <CanvasSmoothResizeBridge containerEl={containerEl} />
+
           {/* ViewportControlBridge: Camera Container 직접 조작 (React re-render 최소화) */}
           <ViewportControlBridge
             containerEl={containerEl}
