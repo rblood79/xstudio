@@ -14,7 +14,7 @@
  * @updated 2025-12-11 Phase 10 B1.2 - ElementSprite 통합
  */
 
-import { useCallback, useEffect, useRef, useMemo, useState, useLayoutEffect } from 'react';
+import { useCallback, useEffect, useRef, useMemo, useState } from 'react';
 import { Application, extend, useApplication } from '@pixi/react';
 import {
   Container as PixiContainer,
@@ -73,77 +73,7 @@ const DEFAULT_BACKGROUND = 0xf8fafc; // slate-50
 // ============================================
 
 // GridLayer는 ./grid/GridLayer.tsx로 이동됨 (B1.4)
-
-/**
- * Canvas Resize Handler (Figma-style with CSS Transform)
- *
- * 전략:
- * 1. 애니메이션 중: CSS transform scale로 즉시 시각적 크기 조절 (깜빡임 없음)
- * 2. 애니메이션 종료 후 (150ms debounce): 실제 WebGL resize 수행
- * 3. resize 완료 후 CSS transform 제거
- *
- * 이렇게 하면 패널 열기/닫기 애니메이션 중 검은 화면이 보이지 않습니다.
- */
-function CanvasResizeHandler({ width, height }: { width: number; height: number }) {
-  const { app } = useApplication();
-  const debounceTimer = useRef<number>(0);
-  const baseSize = useRef<{ width: number; height: number }>({ width, height });
-  const isFirstRender = useRef(true);
-
-  useEffect(() => {
-    if (!app?.renderer) return;
-
-    const canvas = app.canvas as HTMLCanvasElement;
-    if (!canvas) return;
-
-    // 첫 렌더링: 즉시 resize (초기화)
-    if (isFirstRender.current) {
-      isFirstRender.current = false;
-      app.renderer.resize(width, height);
-      baseSize.current = { width, height };
-      return;
-    }
-
-    // 크기가 동일하면 skip
-    if (baseSize.current.width === width && baseSize.current.height === height) {
-      return;
-    }
-
-    // 애니메이션 중: CSS transform으로 즉시 스케일 조절
-    const scaleX = width / baseSize.current.width;
-    const scaleY = height / baseSize.current.height;
-    canvas.style.transformOrigin = '0 0';
-    canvas.style.transform = `scale(${scaleX}, ${scaleY})`;
-
-    // 이전 debounce timer 취소
-    if (debounceTimer.current) {
-      clearTimeout(debounceTimer.current);
-    }
-
-    // 애니메이션 종료 후 (150ms 동안 변화 없으면): 실제 resize
-    debounceTimer.current = window.setTimeout(() => {
-      if (app.renderer) {
-        // CSS transform 제거
-        canvas.style.transform = '';
-        canvas.style.transformOrigin = '';
-
-        // 실제 WebGL resize
-        app.renderer.resize(width, height);
-        baseSize.current = { width, height };
-      }
-      debounceTimer.current = 0;
-    }, 150);
-
-    return () => {
-      if (debounceTimer.current) {
-        clearTimeout(debounceTimer.current);
-        debounceTimer.current = 0;
-      }
-    };
-  }, [app, width, height]);
-
-  return null;
-}
+// CanvasResizeHandler 삭제됨 - resizeTo 옵션으로 대체 (Phase 12 B3.2)
 
 /**
  * 캔버스 경계 표시
@@ -161,22 +91,18 @@ function CanvasBounds({ width, height }: { width: number; height: number }) {
 
 /**
  * 클릭 가능한 백그라운드 (빈 영역 클릭 감지용)
+ * app.screen에서 크기를 자동으로 획득 (resizeTo 연동)
  */
-function ClickableBackground({
-  width,
-  height,
-  onClick,
-}: {
-  width: number;
-  height: number;
-  onClick?: () => void;
-}) {
+function ClickableBackground({ onClick }: { onClick?: () => void }) {
+  const { app } = useApplication();
+
   const draw = useCallback((g: PixiGraphics) => {
+    if (!app?.screen) return;
     g.clear();
     // 투명한 영역 (클릭 감지용)
-    g.rect(0, 0, width, height);
+    g.rect(0, 0, app.screen.width, app.screen.height);
     g.fill({ color: 0xffffff, alpha: 0 });
-  }, [width, height]);
+  }, [app?.screen.width, app?.screen.height]);
 
   return (
     <pixiGraphics
@@ -287,7 +213,6 @@ export function BuilderCanvas({
 }: BuilderCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerEl, setContainerEl] = useState<HTMLDivElement | null>(null);
-  const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
 
   // 컨테이너 ref 콜백: 마운트 시점에 DOM 노드를 안전하게 확보
   const setContainerNode = useCallback((node: HTMLDivElement | null) => {
@@ -295,24 +220,7 @@ export function BuilderCanvas({
     setContainerEl(node);
   }, []);
 
-  // Container 크기 감지 (ResizeObserver)
-  useLayoutEffect(() => {
-    if (!containerEl) return;
-
-    const updateSize = () => {
-      setContainerSize({
-        width: containerEl.clientWidth,
-        height: containerEl.clientHeight,
-      });
-    };
-
-    updateSize();
-
-    const resizeObserver = new ResizeObserver(updateSize);
-    resizeObserver.observe(containerEl);
-
-    return () => resizeObserver.disconnect();
-  }, [containerEl]);
+  // Container 크기는 PixiJS resizeTo가 자동 감지 (ResizeObserver 삭제됨)
 
   // Store state
   const elements = useStore((state) => state.elements);
@@ -515,24 +423,16 @@ export function BuilderCanvas({
       ref={setContainerNode}
       className="builder-canvas-container"
     >
-      {containerEl && containerSize.width > 0 && containerSize.height > 0 && (
+      {containerEl && (
         <Application
-          width={containerSize.width}
-          height={containerSize.height}
+          resizeTo={containerEl}
           background={backgroundColor}
           antialias={true}
-          resolution={window.devicePixelRatio}
+          resolution={window.devicePixelRatio || 1}
           autoDensity={true}
         >
-        {/* Canvas Resize Handler - renderer 직접 resize */}
-        <CanvasResizeHandler width={containerSize.width} height={containerSize.height} />
-
         {/* 전체 Canvas 영역 클릭 → 선택 해제 (Camera 바깥, zoom/pan 영향 안 받음) */}
-        <ClickableBackground
-          width={containerSize.width}
-          height={containerSize.height}
-          onClick={clearSelection}
-        />
+        <ClickableBackground onClick={clearSelection} />
 
         {/* Camera/Viewport */}
         <pixiContainer
