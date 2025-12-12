@@ -143,7 +143,7 @@ export const HANDLE_CONFIGS: HandleConfig[] = [
 // ============================================
 
 /** 핸들 크기 */
-export const HANDLE_SIZE = 8;
+export const HANDLE_SIZE = 6;
 
 /** 선택 박스 테두리 색상 */
 export const SELECTION_COLOR = 0x3b82f6; // blue-500
@@ -165,16 +165,28 @@ export const LASSO_FILL_ALPHA = 0.1;
 // ============================================
 
 /**
+ * CSS 값 파싱 (px, %, 숫자 등)
+ */
+function parseCSSValue(value: unknown, defaultValue: number = 0): number {
+  if (typeof value === 'number') return value;
+  if (typeof value === 'string') {
+    const parsed = parseFloat(value);
+    return isNaN(parsed) ? defaultValue : parsed;
+  }
+  return defaultValue;
+}
+
+/**
  * 요소의 바운딩 박스 계산
  */
 export function calculateBounds(
   style: Record<string, unknown> | undefined
 ): BoundingBox {
   return {
-    x: Number(style?.left) || 0,
-    y: Number(style?.top) || 0,
-    width: Number(style?.width) || 100,
-    height: Number(style?.height) || 100,
+    x: parseCSSValue(style?.left, 0),
+    y: parseCSSValue(style?.top, 0),
+    width: parseCSSValue(style?.width, 100),
+    height: parseCSSValue(style?.height, 100),
   };
 }
 

@@ -14,12 +14,23 @@
  * @updated 2025-12-11 Phase 10 B1.2 - ElementSprite 통합
  */
 
-import { useCallback, useEffect, useRef, useMemo, useState } from 'react';
-import { Application } from '@pixi/react';
-import { Graphics as PixiGraphics } from 'pixi.js';
-// @pixi/layout 컴포넌트 extend (JSX 사용 전 필수)
-import './pixiSetup';
+import { useCallback, useEffect, useRef, useMemo, useState, useLayoutEffect } from 'react';
+import { Application, extend } from '@pixi/react';
+import {
+  Container as PixiContainer,
+  Graphics as PixiGraphics,
+  Text as PixiText,
+  TextStyle as PixiTextStyle,
+} from 'pixi.js';
 import { useStore } from '../../stores';
+
+// 기본 PixiJS 컴포넌트만 extend (layoutContainer 제외)
+extend({
+  Container: PixiContainer,
+  Graphics: PixiGraphics,
+  Text: PixiText,
+  TextStyle: PixiTextStyle,
+});
 import { useCanvasSyncStore } from './canvasSync';
 import { useWebGLCanvas } from '../../../utils/featureFlags';
 import { ElementSprite } from './sprites';
@@ -32,7 +43,9 @@ import {
   type CursorStyle,
 } from './selection';
 import { GridLayer, useZoomPan } from './grid';
+import { BodyLayer } from './layers';
 import { TextEditOverlay, useTextEdit } from '../overlay';
+import { calculateLayout } from './layout';
 
 // ============================================
 // Types
@@ -75,24 +88,64 @@ function CanvasBounds({ width, height }: { width: number; height: number }) {
   return <pixiGraphics draw={draw} />;
 }
 
+/**
+ * 클릭 가능한 백그라운드 (빈 영역 클릭 감지용)
+ */
+function ClickableBackground({
+  width,
+  height,
+  onClick,
+}: {
+  width: number;
+  height: number;
+  onClick?: () => void;
+}) {
+  const draw = useCallback((g: PixiGraphics) => {
+    g.clear();
+    // 투명한 영역 (클릭 감지용)
+    g.rect(0, 0, width, height);
+    g.fill({ color: 0xffffff, alpha: 0 });
+  }, [width, height]);
+
+  return (
+    <pixiGraphics
+      draw={draw}
+      eventMode="static"
+      cursor="default"
+      onPointerDown={onClick}
+    />
+  );
+}
+
 // SelectionOverlay는 SelectionLayer로 대체됨 (B1.3)
 
 /**
  * 요소 레이어 (ElementSprite 사용)
  *
  * 현재 페이지의 모든 요소를 ElementSprite로 렌더링합니다.
+ * DOM 레이아웃 방식 (display: block, position: relative)을 재현합니다.
  */
 function ElementsLayer({
   selectedIds,
+  pageWidth,
+  pageHeight,
   onClick,
   onDoubleClick,
 }: {
   selectedIds: string[];
+  pageWidth: number;
+  pageHeight: number;
   onClick?: (elementId: string) => void;
   onDoubleClick?: (elementId: string) => void;
 }) {
   const elements = useStore((state) => state.elements);
   const currentPageId = useStore((state) => state.currentPageId);
+
+  // 레이아웃 계산 (DOM 방식: block + relative)
+  const layoutResult = useMemo(() => {
+    if (!currentPageId) return { positions: new Map() };
+    return calculateLayout(elements, currentPageId, pageWidth, pageHeight);
+  }, [elements, currentPageId, pageWidth, pageHeight]);
 
   // 현재 페이지의 요소만 필터링 (Body 제외, 실제 렌더링 대상만)
   const pageElements = elements.filter((el) => {
@@ -108,12 +161,13 @@ function ElementsLayer({
   );
 
   return (
-    <pixiContainer eventMode="static" interactiveChildren={true}>
+    <pixiContainer label="ElementsLayer" eventMode="static" interactiveChildren={true}>
       {sortedElements.map((element) => (
         <ElementSprite
           key={element.id}
           element={element}
           isSelected={selectedIds.includes(element.id)}
+          layoutPosition={layoutResult.positions.get(element.id)}
           onClick={onClick}
           onDoubleClick={onDoubleClick}
         />
@@ -133,6 +187,7 @@ export function BuilderCanvas({
 }: BuilderCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerEl, setContainerEl] = useState<HTMLDivElement | null>(null);
+  const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
 
   // 컨테이너 ref 콜백: 마운트 시점에 DOM 노드를 안전하게 확보
   const setContainerNode = useCallback((node: HTMLDivElement | null) => {
@@ -140,11 +195,31 @@ export function BuilderCanvas({
     setContainerEl(node);
   }, []);
 
+  // Container 크기 감지 (ResizeObserver)
+  useLayoutEffect(() => {
+    if (!containerEl) return;
+
+    const updateSize = () => {
+      setContainerSize({
+        width: containerEl.clientWidth,
+        height: containerEl.clientHeight,
+      });
+    };
+
+    updateSize();
+
+    const resizeObserver = new ResizeObserver(updateSize);
+    resizeObserver.observe(containerEl);
+
+    return () => resizeObserver.disconnect();
+  }, [containerEl]);
+
   // Store state
   const elements = useStore((state) => state.elements);
   const selectedElementIds = useStore((state) => state.selectedElementIds);
   const setSelectedElement = useStore((state) => state.setSelectedElement);
   const setSelectedElements = useStore((state) => state.setSelectedElements);
+  const clearSelection = useStore((state) => state.clearSelection);
   const updateElementProps = useStore((state) => state.updateElementProps);
   const currentPageId = useStore((state) => state.currentPageId);
   const zoom = useCanvasSyncStore((state) => state.zoom);
@@ -333,13 +408,6 @@ export function BuilderCanvas({
     <div
       ref={setContainerNode}
       className="builder-canvas-container"
-      style={{
-        position: 'relative',
-        width: '100%',
-        height: '100%',
-        overflow: 'hidden',
-        backgroundColor: '#f1f5f9',
-      }}
     >
       {containerEl && (
         <Application
@@ -349,8 +417,16 @@ export function BuilderCanvas({
           resolution={window.devicePixelRatio}
           autoDensity={true}
         >
+        {/* 전체 Canvas 영역 클릭 → 선택 해제 (Camera 바깥, zoom/pan 영향 안 받음) */}
+        <ClickableBackground
+          width={containerSize.width}
+          height={containerSize.height}
+          onClick={clearSelection}
+        />
+
         {/* Camera/Viewport */}
         <pixiContainer
+          label="Camera"
           x={panOffset.x}
           y={panOffset.y}
           scale={zoom}
@@ -365,12 +441,21 @@ export function BuilderCanvas({
             showGrid={true}
           />
 
-          {/* Page Bounds (breakpoint 크기) */}
+          {/* Body Layer (Body 요소의 배경색, 테두리 등) */}
+          <BodyLayer
+            pageWidth={pageWidth}
+            pageHeight={pageHeight}
+            onClick={handleElementClick}
+          />
+
+          {/* Page Bounds (breakpoint 경계선) */}
           <CanvasBounds width={pageWidth} height={pageHeight} />
 
           {/* Elements Layer (ElementSprite 기반) */}
           <ElementsLayer
             selectedIds={selectedElementIds}
+            pageWidth={pageWidth}
+            pageHeight={pageHeight}
             onClick={handleElementClick}
             onDoubleClick={handleElementDoubleClick}
           />
@@ -378,6 +463,8 @@ export function BuilderCanvas({
           {/* Selection Layer (최상단) */}
           <SelectionLayer
             dragState={dragState}
+            pageWidth={pageWidth}
+            pageHeight={pageHeight}
             onResizeStart={handleResizeStart}
             onMoveStart={handleMoveStart}
             onCursorChange={handleCursorChange}

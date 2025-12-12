@@ -20,7 +20,7 @@ import { Key } from 'react-aria-components';
 import { BuilderCanvas } from './canvas/BuilderCanvas';
 import { useCanvasSyncStore } from './canvas/canvasSync';
 import { useWebGLCanvas } from '../../utils/featureFlags';
-
+import './Workspace.css';
 // ============================================
 // Types
 // ============================================
@@ -152,39 +152,8 @@ export function Workspace({ breakpoint, breakpoints, fallbackCanvas }: Workspace
   // ============================================
 
   // ============================================
-  // Pan Controls (Space + Drag)
+  // Pan Controls (useZoomPan에서 처리)
   // ============================================
-
-  const [isPanning, setIsPanning] = useState(false);
-  const [panStart, setPanStart] = useState({ x: 0, y: 0 });
-
-  const handleMouseDown = useCallback(
-    (e: React.MouseEvent) => {
-      // Space 키 + 마우스 클릭으로 팬 시작
-      if (e.button === 1 || (e.button === 0 && e.altKey)) {
-        setIsPanning(true);
-        setPanStart({ x: e.clientX - panOffset.x, y: e.clientY - panOffset.y });
-        e.preventDefault();
-      }
-    },
-    [panOffset]
-  );
-
-  const handleMouseMove = useCallback(
-    (e: React.MouseEvent) => {
-      if (!isPanning) return;
-
-      setPanOffset({
-        x: e.clientX - panStart.x,
-        y: e.clientY - panStart.y,
-      });
-    },
-    [isPanning, panStart, setPanOffset]
-  );
-
-  const handleMouseUp = useCallback(() => {
-    setIsPanning(false);
-  }, []);
 
   // ============================================
   // Zoom Presets (중앙 기준 줌)
@@ -245,12 +214,6 @@ export function Workspace({ breakpoint, breakpoints, fallbackCanvas }: Workspace
       <div
         ref={containerRef}
         className="workspace"
-        style={{
-          position: 'relative',
-          width: '100%',
-          height: '100%',
-          overflow: 'hidden',
-        }}
       >
         {fallbackCanvas}
       </div>
@@ -261,24 +224,10 @@ export function Workspace({ breakpoint, breakpoints, fallbackCanvas }: Workspace
     <div
       ref={containerRef}
       className="workspace"
-      style={{
-        position: 'relative',
-        width: '100%',
-        height: '100%',
-        overflow: 'hidden',
-        cursor: isPanning ? 'grabbing' : 'default',
-      }}
-      onMouseDown={handleMouseDown}
-      onMouseMove={handleMouseMove}
-      onMouseUp={handleMouseUp}
-      onMouseLeave={handleMouseUp}
     >
       {/* WebGL Canvas Layer */}
       <div
-        style={{
-          position: 'absolute',
-          inset: 0,
-        }}
+        className="workspace-canvas"
       >
         <BuilderCanvas
           pageWidth={canvasSize.width}
@@ -287,53 +236,32 @@ export function Workspace({ breakpoint, breakpoints, fallbackCanvas }: Workspace
       </div>
 
       {/* DOM Overlay Layer (B1.5에서 구현) */}
-      <div
-        className="workspace-overlay"
-        style={{
-          position: 'absolute',
-          inset: 0,
-          pointerEvents: 'none', // 캔버스 이벤트 통과
-        }}
-      >
+      <div className="workspace-overlay">
         {/* TextEditOverlay will be added in B1.5 */}
       </div>
 
       {/* Zoom Controls */}
-      <div
-        className="workspace-zoom-controls"
-        style={{
-          position: 'absolute',
-          bottom: 16,
-          right: 16,
-          display: 'flex',
-          gap: 8,
-          backgroundColor: 'white',
-          padding: '8px 12px',
-          borderRadius: 8,
-          boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-          pointerEvents: 'auto',
-        }}
-      >
+      <div className="workspace-zoom-controls">
         <button
+          className="zoom-control-button"
           onClick={() => zoomTo(zoom - ZOOM_STEP)}
           disabled={zoom <= MIN_ZOOM}
-          style={{ padding: '4px 8px', cursor: 'pointer' }}
         >
           −
         </button>
-        <span style={{ minWidth: 50, textAlign: 'center' }}>
+        <span className="zoom-control-text">
           {Math.round(zoom * 100)}%
         </span>
         <button
+          className="zoom-control-button"
           onClick={() => zoomTo(zoom + ZOOM_STEP)}
           disabled={zoom >= MAX_ZOOM}
-          style={{ padding: '4px 8px', cursor: 'pointer' }}
         >
           +
         </button>
         <button
+          className="zoom-control-button"
           onClick={zoomToFit}
-          style={{ padding: '4px 8px', cursor: 'pointer', marginLeft: 8 }}
         >
           Fit
         </button>
@@ -342,17 +270,7 @@ export function Workspace({ breakpoint, breakpoints, fallbackCanvas }: Workspace
       {/* Status Indicator */}
       {(isContextLost || !isCanvasReady) && (
         <div
-          style={{
-            position: 'absolute',
-            top: 16,
-            left: '50%',
-            transform: 'translateX(-50%)',
-            backgroundColor: isContextLost ? '#fef2f2' : '#fefce8',
-            color: isContextLost ? '#991b1b' : '#854d0e',
-            padding: '8px 16px',
-            borderRadius: 8,
-            fontSize: 14,
-          }}
+          className="workspace-status-indicator"
         >
           {isContextLost ? '⚠️ GPU 리소스 복구 중...' : '🔄 캔버스 초기화 중...'}
         </div>

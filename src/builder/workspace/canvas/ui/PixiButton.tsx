@@ -145,6 +145,7 @@ export const PixiButton = memo(function PixiButton({
         paddingRight: layoutStyle.paddingRight,
         paddingTop: layoutStyle.paddingTop,
         paddingBottom: layoutStyle.paddingBottom,
+        debug: false,
       }}
       eventMode="static"
       cursor="pointer"

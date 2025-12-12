@@ -17,7 +17,8 @@ import { useStore } from '../../../stores';
 import { SelectionBox } from './SelectionBox';
 import { LassoSelection, getLassoBounds } from './LassoSelection';
 import type { BoundingBox, HandlePosition, CursorStyle, DragState } from './types';
-import { calculateBounds, calculateCombinedBounds, boxesIntersect } from './types';
+import { calculateCombinedBounds, boxesIntersect } from './types';
+import { calculateLayout } from '../layout';
 
 // ============================================
 // Types
@@ -26,6 +27,10 @@ import { calculateBounds, calculateCombinedBounds, boxesIntersect } from './type
 export interface SelectionLayerProps {
   /** 드래그 상태 */
   dragState: DragState;
+  /** 페이지 너비 (Body 선택용) */
+  pageWidth?: number;
+  /** 페이지 높이 (Body 선택용) */
+  pageHeight?: number;
   /** 드래그 시작 콜백 */
   onResizeStart?: (elementId: string, handle: HandlePosition, bounds: BoundingBox) => void;
   /** 이동 시작 콜백 */
@@ -45,6 +50,8 @@ export interface SelectionLayerProps {
  */
 export const SelectionLayer = memo(function SelectionLayer({
   dragState,
+  pageWidth = 1920,
+  pageHeight = 1080,
   onResizeStart,
   onMoveStart,
   onCursorChange,
@@ -54,26 +61,49 @@ export const SelectionLayer = memo(function SelectionLayer({
   const selectedElementIds = useStore((state) => state.selectedElementIds);
   const currentPageId = useStore((state) => state.currentPageId);
 
-  // 선택된 요소들
+  // 선택된 요소들 (Body 포함)
   const selectedElements = useMemo(() => {
     return elements.filter(
-      (el) => selectedElementIds.includes(el.id) && el.page_id === currentPageId
+      (el) =>
+        selectedElementIds.includes(el.id) &&
+        el.page_id === currentPageId
     );
   }, [elements, selectedElementIds, currentPageId]);
+
+  // 레이아웃 계산 (DOM 방식)
+  const layoutResult = useMemo(() => {
+    if (!currentPageId) return { positions: new Map() };
+    return calculateLayout(elements, currentPageId, pageWidth, pageHeight);
+  }, [elements, currentPageId, pageWidth, pageHeight]);
 
   // 선택된 요소들의 바운딩 박스
   const selectionBounds = useMemo(() => {
     if (selectedElements.length === 0) return null;
 
-    const boxes = selectedElements.map((el) =>
-      calculateBounds(el.props?.style as Record<string, unknown> | undefined)
-    );
+    const boxes = selectedElements.map((el) => {
+      // Body 요소는 페이지 전체 크기로 설정
+      if (el.tag.toLowerCase() === 'body') {
+        return { x: 0, y: 0, width: pageWidth, height: pageHeight };
+      }
+      // 레이아웃 계산된 위치 사용
+      const layoutPos = layoutResult.positions.get(el.id);
+      if (layoutPos) {
+        return { x: layoutPos.x, y: layoutPos.y, width: layoutPos.width, height: layoutPos.height };
+      }
+      // fallback: 기본값
+      return { x: 0, y: 0, width: 100, height: 40 };
+    });
 
     return calculateCombinedBounds(boxes);
-  }, [selectedElements]);
+  }, [selectedElements, pageWidth, pageHeight, layoutResult]);
 
   // 단일 선택 여부
   const isSingleSelection = selectedElements.length === 1;
+
+  // Body 선택 여부 (Body 선택 시 이동 영역 비활성화 - 자식 요소 클릭 허용)
+  const isBodySelected = selectedElements.some(
+    (el) => el.tag.toLowerCase() === 'body'
+  );
 
   // 핸들 드래그 시작
   const handleResizeStart = useCallback(
@@ -107,12 +137,13 @@ export const SelectionLayer = memo(function SelectionLayer({
   );
 
   return (
-    <pixiContainer>
+    <pixiContainer label="SelectionLayer">
       {/* 선택 박스 (선택된 요소가 있을 때) */}
       {selectionBounds && (
         <SelectionBox
           bounds={selectionBounds}
-          showHandles={isSingleSelection}
+          showHandles={isSingleSelection && !isBodySelected}
+          enableMoveArea={!isBodySelected}
           onDragStart={handleResizeStart}
           onMoveStart={handleMoveStart}
           onCursorChange={handleCursorChange}

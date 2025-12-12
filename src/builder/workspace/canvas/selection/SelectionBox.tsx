@@ -21,6 +21,8 @@ export interface SelectionBoxProps {
   bounds: BoundingBox;
   /** 핸들 표시 여부 */
   showHandles?: boolean;
+  /** 이동 영역 활성화 여부 (false면 클릭 투과) */
+  enableMoveArea?: boolean;
   /** 드래그 시작 콜백 */
   onDragStart?: (handle: HandlePosition) => void;
   /** 이동 드래그 시작 콜백 */
@@ -41,6 +43,7 @@ export interface SelectionBoxProps {
 export const SelectionBox = memo(function SelectionBox({
   bounds,
   showHandles = true,
+  enableMoveArea = true,
   onDragStart,
   onMoveStart,
   onCursorChange,
@@ -109,15 +112,17 @@ export const SelectionBox = memo(function SelectionBox({
 
   return (
     <pixiContainer x={x} y={y}>
-      {/* 이동 영역 (배경) */}
-      <pixiGraphics
-        draw={drawMoveArea}
-        eventMode="static"
-        cursor="move"
-        onpointerdown={handleMovePointerDown}
-        onpointerover={handleMovePointerOver}
-        onpointerout={handleMovePointerOut}
-      />
+      {/* 이동 영역 (배경) - enableMoveArea가 false면 클릭 투과 */}
+      {enableMoveArea && (
+        <pixiGraphics
+          draw={drawMoveArea}
+          eventMode="static"
+          cursor="move"
+          onpointerdown={handleMovePointerDown}
+          onpointerover={handleMovePointerOver}
+          onpointerout={handleMovePointerOut}
+        />
+      )}
 
       {/* 선택 테두리 */}
       <pixiGraphics draw={drawBorder} />

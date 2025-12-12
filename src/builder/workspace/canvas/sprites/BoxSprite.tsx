@@ -72,13 +72,9 @@ export function BoxSprite({ element, isSelected, onClick }: BoxSpriteProps) {
         g.stroke({ width: stroke.width, color: stroke.color, alpha: stroke.alpha });
       }
 
-      // Selection highlight
-      if (isSelected) {
-        g.rect(-1, -1, transform.width + 2, transform.height + 2);
-        g.stroke({ width: 2, color: 0x3b82f6, alpha: 1 });
-      }
+      // Selection highlight는 SelectionLayer에서 처리
     },
-    [transform, fill, stroke, borderRadius, isSelected]
+    [transform, fill, stroke, borderRadius]
   );
 
   const handleClick = useCallback(() => {

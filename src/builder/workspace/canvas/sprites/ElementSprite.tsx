@@ -10,7 +10,7 @@
  * @updated 2025-12-11 Phase 11 B2.5 - Layout/UI 확장
  */
 
-import { memo } from 'react';
+import { memo, useMemo } from 'react';
 import type { Element } from '../../../../types/core/store.types';
 import { BoxSprite } from './BoxSprite';
 import { TextSprite } from './TextSprite';
@@ -23,9 +23,18 @@ import type { CSSStyle } from './styleConverter';
 // Types
 // ============================================
 
+export interface LayoutPosition {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
 export interface ElementSpriteProps {
   element: Element;
   isSelected?: boolean;
+  /** 레이아웃 계산된 위치 (있으면 style보다 우선) */
+  layoutPosition?: LayoutPosition;
   onClick?: (elementId: string) => void;
   onDoubleClick?: (elementId: string) => void;
   onChange?: (elementId: string, value: unknown) => void;
@@ -113,18 +122,40 @@ function getSpriteType(element: Element): SpriteType {
 export const ElementSprite = memo(function ElementSprite({
   element,
   isSelected,
+  layoutPosition,
   onClick,
   onDoubleClick,
   onChange,
 }: ElementSpriteProps) {
-  const spriteType = getSpriteType(element);
+  // layoutPosition이 있으면 style을 오버라이드한 새 element 생성
+  const effectiveElement = useMemo(() => {
+    if (!layoutPosition) return element;
+
+    const currentStyle = (element.props?.style || {}) as Record<string, unknown>;
+    return {
+      ...element,
+      props: {
+        ...element.props,
+        style: {
+          ...currentStyle,
+          left: layoutPosition.x,
+          top: layoutPosition.y,
+          width: layoutPosition.width,
+          height: layoutPosition.height,
+        },
+      },
+    };
+  }, [element, layoutPosition]);
+
+  const spriteType = getSpriteType(effectiveElement);
 
   switch (spriteType) {
     // UI 컴포넌트 (Phase 11 B2.4)
+    // TODO: @pixi/layout layoutContainer 이벤트 문제로 임시 BoxSprite 사용
     case 'button':
       return (
-        <PixiButton
-          element={element}
+        <BoxSprite
+          element={effectiveElement}
           isSelected={isSelected}
           onClick={onClick}
         />
@@ -133,7 +164,7 @@ export const ElementSprite = memo(function ElementSprite({
     case 'checkbox':
       return (
         <PixiCheckbox
-          element={element}
+          element={effectiveElement}
           isSelected={isSelected}
           onClick={onClick}
           onChange={onChange ? (id, checked) => onChange(id, checked) : undefined}
@@ -143,7 +174,7 @@ export const ElementSprite = memo(function ElementSprite({
     case 'radio':
       return (
         <PixiRadio
-          element={element}
+          element={effectiveElement}
           isSelected={isSelected}
           onClick={onClick}
           onChange={onChange ? (id, value) => onChange(id, value) : undefined}
@@ -155,13 +186,13 @@ export const ElementSprite = memo(function ElementSprite({
     // 실제 레이아웃 계산은 BuilderCanvas에서 @pixi/layout으로 처리
     case 'flex':
     case 'grid':
-      return <BoxSprite element={element} isSelected={isSelected} onClick={onClick} />;
+      return <BoxSprite element={effectiveElement} isSelected={isSelected} onClick={onClick} />;
 
     // 기본 타입
     case 'text':
       return (
         <TextSprite
-          element={element}
+          element={effectiveElement}
           isSelected={isSelected}
           onClick={onClick}
           onDoubleClick={onDoubleClick}
@@ -169,11 +200,11 @@ export const ElementSprite = memo(function ElementSprite({
       );
 
     case 'image':
-      return <ImageSprite element={element} isSelected={isSelected} onClick={onClick} />;
+      return <ImageSprite element={effectiveElement} isSelected={isSelected} onClick={onClick} />;
 
     case 'box':
     default:
-      return <BoxSprite element={element} isSelected={isSelected} onClick={onClick} />;
+      return <BoxSprite element={effectiveElement} isSelected={isSelected} onClick={onClick} />;
   }
 });
 
