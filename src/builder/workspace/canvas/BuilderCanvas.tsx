@@ -155,10 +155,26 @@ function ElementsLayer({
     return true;
   });
 
-  // order_num 기준으로 정렬 (낮은 순서가 먼저 렌더링)
-  const sortedElements = [...pageElements].sort(
-    (a, b) => (a.order_num || 0) - (b.order_num || 0)
-  );
+  // 트리 깊이(depth) 계산 함수
+  const getDepth = (elementId: string | null, depth = 0): number => {
+    if (!elementId) return depth;
+    const el = elements.find((e) => e.id === elementId);
+    if (!el || el.tag.toLowerCase() === 'body') return depth;
+    return getDepth(el.parent_id, depth + 1);
+  };
+
+  // 깊이 + order_num 기준으로 정렬 (부모 먼저 → 자식 나중에 렌더링)
+  // DOM 방식: 자식이 부모 위에 표시됨
+  const sortedElements = [...pageElements].sort((a, b) => {
+    const depthA = getDepth(a.parent_id);
+    const depthB = getDepth(b.parent_id);
+
+    // 깊이가 다르면 깊이 순서 (낮은 것 먼저 = 부모 먼저)
+    if (depthA !== depthB) return depthA - depthB;
+
+    // 같은 깊이면 order_num 순서
+    return (a.order_num || 0) - (b.order_num || 0);
+  });
 
   return (
     <pixiContainer label="ElementsLayer" eventMode="static" interactiveChildren={true}>

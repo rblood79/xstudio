@@ -55,7 +55,7 @@ export const SelectionBox = memo(function SelectionBox({
     (g: PixiGraphics) => {
       g.clear();
 
-      // 선택 테두리 (점선 효과는 PixiJS에서 복잡하므로 실선 사용)
+      // 선택 테두리
       g.setStrokeStyle({ width: 1, color: SELECTION_COLOR, alpha: 1 });
       g.rect(0, 0, width, height);
       g.stroke();

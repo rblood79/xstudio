@@ -87,6 +87,7 @@ export const SelectionLayer = memo(function SelectionLayer({
       }
       // 레이아웃 계산된 위치 사용
       const layoutPos = layoutResult.positions.get(el.id);
+
       if (layoutPos) {
         return { x: layoutPos.x, y: layoutPos.y, width: layoutPos.width, height: layoutPos.height };
       }
@@ -100,10 +101,22 @@ export const SelectionLayer = memo(function SelectionLayer({
   // 단일 선택 여부
   const isSingleSelection = selectedElements.length === 1;
 
-  // Body 선택 여부 (Body 선택 시 이동 영역 비활성화 - 자식 요소 클릭 허용)
-  const isBodySelected = selectedElements.some(
-    (el) => el.tag.toLowerCase() === 'body'
-  );
+  // 컨테이너 요소 선택 여부 (자식이 있는 요소 선택 시 이동 영역 비활성화 - 자식 요소 클릭 허용)
+  const isContainerSelected = useMemo(() => {
+    if (selectedElements.length === 0) return false;
+
+    // 선택된 요소 중 자식 요소가 있는 컨테이너가 있는지 확인
+    return selectedElements.some((selectedEl) => {
+      // Body는 항상 컨테이너
+      if (selectedEl.tag.toLowerCase() === 'body') return true;
+
+      // 선택된 요소를 부모로 가진 자식이 있는지 확인
+      const hasChildren = elements.some(
+        (el) => el.parent_id === selectedEl.id && el.page_id === currentPageId
+      );
+      return hasChildren;
+    });
+  }, [selectedElements, elements, currentPageId]);
 
   // 핸들 드래그 시작
   const handleResizeStart = useCallback(
@@ -142,8 +155,8 @@ export const SelectionLayer = memo(function SelectionLayer({
       {selectionBounds && (
         <SelectionBox
           bounds={selectionBounds}
-          showHandles={isSingleSelection && !isBodySelected}
-          enableMoveArea={!isBodySelected}
+          showHandles={isSingleSelection}
+          enableMoveArea={!isContainerSelected}
           onDragStart={handleResizeStart}
           onMoveStart={handleMoveStart}
           onCursorChange={handleCursorChange}
