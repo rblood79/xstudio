@@ -42,7 +42,8 @@ import {
   type BoundingBox,
   type CursorStyle,
 } from './selection';
-import { GridLayer, useZoomPan } from './grid';
+import { GridLayer } from './grid';
+import { ViewportControlBridge } from './viewport';
 import { BodyLayer } from './layers';
 import { TextEditOverlay, useTextEdit } from '../overlay';
 import { calculateLayout, type LayoutResult } from './layout';
@@ -245,13 +246,7 @@ export function BuilderCanvas({
     return calculateLayout(elements, currentPageId, pageWidth, pageHeight);
   }, [elements, currentPageId, pageWidth, pageHeight]);
 
-  // Zoom/Pan 인터랙션
-  useZoomPan({
-    containerEl,
-    minZoom: 0.1,
-    maxZoom: 5,
-    zoomStep: 0.1,
-  });
+  // Zoom/Pan은 ViewportControlBridge에서 처리 (Application 내부에서 Container 직접 조작)
 
   // 현재 페이지 요소 필터링 (라쏘 선택용)
   const pageElements = useMemo(() => {
@@ -431,15 +426,20 @@ export function BuilderCanvas({
           resolution={window.devicePixelRatio || 1}
           autoDensity={true}
         >
+        {/* ViewportControlBridge: Camera Container 직접 조작 (React re-render 최소화) */}
+        <ViewportControlBridge
+          containerEl={containerEl}
+          cameraLabel="Camera"
+          minZoom={0.1}
+          maxZoom={5}
+        />
+
         {/* 전체 Canvas 영역 클릭 → 선택 해제 (Camera 바깥, zoom/pan 영향 안 받음) */}
         <ClickableBackground onClick={clearSelection} />
 
-        {/* Camera/Viewport */}
+        {/* Camera/Viewport - x, y, scale은 ViewportController가 직접 조작 */}
         <pixiContainer
           label="Camera"
-          x={panOffset.x}
-          y={panOffset.y}
-          scale={zoom}
           eventMode="static"
           interactiveChildren={true}
         >
