@@ -46,9 +46,14 @@ src/builder/workspace/canvas/
 │   ├── SelectionBox.tsx
 │   ├── TransformHandle.tsx
 │   └── ...
+├── viewport/               # 뷰포트 컨트롤 (Phase 12 B3.2)
+│   ├── ViewportController.ts   # Container 직접 조작
+│   ├── useViewportControl.ts   # React hook
+│   ├── ViewportControlBridge.tsx
+│   └── index.ts
 └── grid/                   # 그리드/줌 시스템
     ├── GridLayer.tsx
-    ├── useZoomPan.ts
+    ├── useZoomPan.ts       # (레거시, ViewportController로 대체)
     └── index.ts
 ```
 
@@ -323,39 +328,88 @@ interface FlexStyle {
 - `MAX_LAYOUT_DEPTH = 1000` - 무한 재귀 방지
 - `visited Set` - 순환 참조 감지
 
-### B3.2 Canvas Resize Handler (Figma-style)
+### B3.2 Canvas Resize & Viewport (PixiJS 권장 방식)
 
-패널 열기/닫기 시 캔버스 크기 조절 문제 해결:
+#### DOM 구조 (최소화)
+
+```
+.workspace
+└── .canvas-container     ← resizeTo 타겟
+    └── canvas            ← PixiJS 생성
+```
+
+#### 1. resizeTo 옵션 (자동 리사이즈)
+
+PixiJS 권장 방식으로 `resizeTo` 옵션 사용:
+
+```tsx
+// BuilderCanvas.tsx
+<Application
+  resizeTo={containerEl}     // 컨테이너 크기 자동 추적
+  background={backgroundColor}
+  antialias={true}
+  resolution={window.devicePixelRatio || 1}
+  autoDensity={true}
+>
+```
+
+**장점:**
+- ResizeObserver 불필요 (PixiJS 내부 처리)
+- CSS transform 해킹 불필요
+- 패널 애니메이션 중에도 매끄러운 리사이즈
+
+#### 2. ViewportController (직접 Container 조작)
+
+React 리렌더 없이 팬/줌 처리:
+
+```
+src/builder/workspace/canvas/viewport/
+├── ViewportController.ts      # 핵심 클래스
+├── useViewportControl.ts      # React hook
+├── ViewportControlBridge.tsx  # Application 내부 브릿지
+└── index.ts
+```
 
 ```typescript
-/**
- * 전략:
- * 1. 애니메이션 중: CSS transform scale (즉시, 깜빡임 없음)
- * 2. 애니메이션 종료 후 (150ms debounce): 실제 WebGL resize
- * 3. resize 완료 후 CSS transform 제거
- */
-function CanvasResizeHandler({ width, height }) {
-  const { app } = useApplication();
+// ViewportController.ts
+class ViewportController {
+  private container: Container | null = null;
 
-  // 애니메이션 중: CSS transform으로 즉시 스케일 조절
-  const scaleX = width / baseSize.current.width;
-  canvas.style.transform = `scale(${scaleX}, ${scaleY})`;
+  // 팬 중: Container 직접 조작 (React state 변경 없음)
+  updatePan(clientX: number, clientY: number): void {
+    this.container.x += deltaX;
+    this.container.y += deltaY;
+  }
 
-  // 150ms debounce 후: 실제 WebGL resize
-  debounceTimer.current = setTimeout(() => {
-    canvas.style.transform = '';
-    app.renderer.resize(width, height);
-  }, 150);
+  // 팬 종료: React state 동기화
+  endPan(): void {
+    this.options.onStateSync(this.currentState);
+  }
 }
 ```
 
-#### 비교
+```tsx
+// BuilderCanvas.tsx
+<Application resizeTo={containerEl}>
+  <ViewportControlBridge containerEl={containerEl} />
 
-| 방식 | 깜빡임 | 성능 | 상태 유지 |
-|------|--------|------|-----------|
-| key prop remount | ❌ 있음 | 느림 | ❌ 전체 재생성 |
-| 직접 resize | ❌ 있음 | 빠름 | ✅ 유지 |
-| CSS Transform + Debounce | ✅ 없음 | 빠름 | ✅ 유지 |
+  {/* Camera - x, y, scale props 제거 (ViewportController가 직접 조작) */}
+  <pixiContainer label="Camera" eventMode="static">
+    <GridLayer />
+    <ElementsLayer />
+    <SelectionLayer />
+  </pixiContainer>
+</Application>
+```
+
+#### 성능 비교
+
+| 항목 | useZoomPan (이전) | ViewportController (현재) |
+|------|-------------------|---------------------------|
+| 팬 중 React 리렌더 | 매 RAF | 없음 |
+| 줌 중 React 리렌더 | 매 RAF | 종료 시 1회 |
+| Container 업데이트 | React props | 직접 조작 |
+| ResizeObserver | 필요 | 불필요 (resizeTo) |
 
 ### B3.3 Selection System 개선
 
