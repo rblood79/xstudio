@@ -53,6 +53,9 @@ interface CSSStyle {
   justifyContent?: string;
 }
 
+// 무한 재귀 및 스택 오버플로 방지를 위한 최대 허용 깊이
+const MAX_LAYOUT_DEPTH = 1000;
+
 // ============================================
 // Utility Functions
 // ============================================
@@ -155,6 +158,7 @@ export function calculateLayout(
     // Body의 자식 요소들 레이아웃 계산
     const bodyPadding = getElementPadding(bodyElement);
     const bodyFlexStyle = getParentFlexStyle(bodyElement);
+    const visited = new Set<string>([bodyElement.id]);
 
     if (bodyFlexStyle.display === 'flex') {
       calculateFlexLayout(
@@ -165,7 +169,9 @@ export function calculateLayout(
         pageWidth - bodyPadding.left - bodyPadding.right,
         pageHeight - bodyPadding.top - bodyPadding.bottom,
         bodyFlexStyle,
-        positions
+        positions,
+        visited,
+        0
       );
     } else {
       calculateChildrenLayout(
@@ -175,7 +181,9 @@ export function calculateLayout(
         bodyPadding.top,
         pageWidth - bodyPadding.left - bodyPadding.right,
         pageHeight - bodyPadding.top - bodyPadding.bottom,
-        positions
+        positions,
+        visited,
+        0
       );
     }
   }
@@ -216,8 +224,17 @@ function calculateFlexLayout(
   parentWidth: number,
   parentHeight: number,
   flexStyle: ReturnType<typeof getParentFlexStyle>,
-  positions: Map<string, LayoutPosition>
+  positions: Map<string, LayoutPosition>,
+  visited: Set<string>,
+  depth: number
 ): void {
+  if (depth > MAX_LAYOUT_DEPTH) {
+    if (process.env.NODE_ENV === 'development') {
+      console.warn('[LayoutCalculator] Max depth reached in flex layout, aborting to prevent overflow');
+    }
+    return;
+  }
+
   const children = elements
     .filter((el) => el.parent_id === parentId)
     .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
@@ -286,6 +303,16 @@ function calculateFlexLayout(
 
   for (const childSize of orderedChildren) {
     const { element: child, width, height, margin } = childSize;
+
+    if (visited.has(child.id)) {
+      if (process.env.NODE_ENV === 'development') {
+        console.warn('[LayoutCalculator] Detected cyclic parent chain, skipping:', child.id);
+      }
+      continue;
+    }
+
+    const nextVisited = new Set(visited);
+    nextVisited.add(child.id);
     const style = child.props?.style as CSSStyle | undefined;
     const position = style?.position || 'relative';
 
@@ -362,7 +389,9 @@ function calculateFlexLayout(
         width - childPadding.left - childPadding.right,
         height - childPadding.top - childPadding.bottom,
         childFlexStyle,
-        positions
+        positions,
+        nextVisited,
+        depth + 1
       );
     } else {
       calculateChildrenLayout(
@@ -372,7 +401,9 @@ function calculateFlexLayout(
         y + childPadding.top,
         width - childPadding.left - childPadding.right,
         height - childPadding.top - childPadding.bottom,
-        positions
+        positions,
+        nextVisited,
+        depth + 1
       );
     }
   }
@@ -388,8 +419,17 @@ function calculateChildrenLayout(
   parentY: number,
   parentWidth: number,
   parentHeight: number,
-  positions: Map<string, LayoutPosition>
+  positions: Map<string, LayoutPosition>,
+  visited: Set<string>,
+  depth: number
 ): void {
+  if (depth > MAX_LAYOUT_DEPTH) {
+    if (process.env.NODE_ENV === 'development') {
+      console.warn('[LayoutCalculator] Max depth reached in block layout, aborting to prevent overflow');
+    }
+    return;
+  }
+
   // 부모 요소 찾기
   const parentElement = elements.find((el) => el.id === parentId);
   if (parentElement) {
@@ -403,7 +443,9 @@ function calculateChildrenLayout(
         parentWidth,
         parentHeight,
         flexStyle,
-        positions
+        positions,
+        visited,
+        depth
       );
       return;
     }
@@ -417,6 +459,15 @@ function calculateChildrenLayout(
   let currentY = parentY; // 현재 Y 위치 (수직 스택용)
 
   for (const child of children) {
+    if (visited.has(child.id)) {
+      if (process.env.NODE_ENV === 'development') {
+        console.warn('[LayoutCalculator] Detected cyclic parent chain, skipping:', child.id);
+      }
+      continue;
+    }
+
+    const nextVisited = new Set(visited);
+    nextVisited.add(child.id);
     const style = child.props?.style as CSSStyle | undefined;
     const display = style?.display || 'block';
     const position = style?.position || 'relative';
@@ -474,7 +525,9 @@ function calculateChildrenLayout(
         size.width - childPadding.left - childPadding.right,
         size.height - childPadding.top - childPadding.bottom,
         childFlexStyle,
-        positions
+        positions,
+        nextVisited,
+        depth + 1
       );
     } else {
       calculateChildrenLayout(
@@ -484,7 +537,9 @@ function calculateChildrenLayout(
         y + childPadding.top,
         size.width - childPadding.left - childPadding.right,
         size.height - childPadding.top - childPadding.bottom,
-        positions
+        positions,
+        nextVisited,
+        depth + 1
       );
     }
   }

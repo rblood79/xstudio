@@ -15,7 +15,7 @@
  */
 
 import { useCallback, useEffect, useRef, useMemo, useState, useLayoutEffect } from 'react';
-import { Application, extend } from '@pixi/react';
+import { Application, extend, useApplication } from '@pixi/react';
 import {
   Container as PixiContainer,
   Graphics as PixiGraphics,
@@ -45,7 +45,7 @@ import {
 import { GridLayer, useZoomPan } from './grid';
 import { BodyLayer } from './layers';
 import { TextEditOverlay, useTextEdit } from '../overlay';
-import { calculateLayout } from './layout';
+import { calculateLayout, type LayoutResult } from './layout';
 
 // ============================================
 // Types
@@ -73,6 +73,77 @@ const DEFAULT_BACKGROUND = 0xf8fafc; // slate-50
 // ============================================
 
 // GridLayer는 ./grid/GridLayer.tsx로 이동됨 (B1.4)
+
+/**
+ * Canvas Resize Handler (Figma-style with CSS Transform)
+ *
+ * 전략:
+ * 1. 애니메이션 중: CSS transform scale로 즉시 시각적 크기 조절 (깜빡임 없음)
+ * 2. 애니메이션 종료 후 (150ms debounce): 실제 WebGL resize 수행
+ * 3. resize 완료 후 CSS transform 제거
+ *
+ * 이렇게 하면 패널 열기/닫기 애니메이션 중 검은 화면이 보이지 않습니다.
+ */
+function CanvasResizeHandler({ width, height }: { width: number; height: number }) {
+  const { app } = useApplication();
+  const debounceTimer = useRef<number>(0);
+  const baseSize = useRef<{ width: number; height: number }>({ width, height });
+  const isFirstRender = useRef(true);
+
+  useEffect(() => {
+    if (!app?.renderer) return;
+
+    const canvas = app.canvas as HTMLCanvasElement;
+    if (!canvas) return;
+
+    // 첫 렌더링: 즉시 resize (초기화)
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      app.renderer.resize(width, height);
+      baseSize.current = { width, height };
+      return;
+    }
+
+    // 크기가 동일하면 skip
+    if (baseSize.current.width === width && baseSize.current.height === height) {
+      return;
+    }
+
+    // 애니메이션 중: CSS transform으로 즉시 스케일 조절
+    const scaleX = width / baseSize.current.width;
+    const scaleY = height / baseSize.current.height;
+    canvas.style.transformOrigin = '0 0';
+    canvas.style.transform = `scale(${scaleX}, ${scaleY})`;
+
+    // 이전 debounce timer 취소
+    if (debounceTimer.current) {
+      clearTimeout(debounceTimer.current);
+    }
+
+    // 애니메이션 종료 후 (150ms 동안 변화 없으면): 실제 resize
+    debounceTimer.current = window.setTimeout(() => {
+      if (app.renderer) {
+        // CSS transform 제거
+        canvas.style.transform = '';
+        canvas.style.transformOrigin = '';
+
+        // 실제 WebGL resize
+        app.renderer.resize(width, height);
+        baseSize.current = { width, height };
+      }
+      debounceTimer.current = 0;
+    }, 150);
+
+    return () => {
+      if (debounceTimer.current) {
+        clearTimeout(debounceTimer.current);
+        debounceTimer.current = 0;
+      }
+    };
+  }, [app, width, height]);
+
+  return null;
+}
 
 /**
  * 캔버스 경계 표시
@@ -127,25 +198,46 @@ function ClickableBackground({
  */
 function ElementsLayer({
   selectedIds,
-  pageWidth,
-  pageHeight,
+  layoutResult,
   onClick,
   onDoubleClick,
 }: {
   selectedIds: string[];
-  pageWidth: number;
-  pageHeight: number;
+  layoutResult: LayoutResult;
   onClick?: (elementId: string) => void;
   onDoubleClick?: (elementId: string) => void;
 }) {
   const elements = useStore((state) => state.elements);
   const currentPageId = useStore((state) => state.currentPageId);
 
-  // 레이아웃 계산 (DOM 방식: block + relative)
-  const layoutResult = useMemo(() => {
-    if (!currentPageId) return { positions: new Map() };
-    return calculateLayout(elements, currentPageId, pageWidth, pageHeight);
-  }, [elements, currentPageId, pageWidth, pageHeight]);
+  const elementById = useMemo(() => new Map(elements.map((el) => [el.id, el])), [elements]);
+
+  // 깊이 맵을 한 번 계산하여 정렬 비용 감소
+  const depthMap = useMemo(() => {
+    const cache = new Map<string, number>();
+
+    const computeDepth = (id: string | null): number => {
+      if (!id) return 0;
+      const cached = cache.get(id);
+      if (cached !== undefined) return cached;
+
+      const el = elementById.get(id);
+      if (!el || el.tag.toLowerCase() === 'body') {
+        cache.set(id, 0);
+        return 0;
+      }
+
+      const depth = 1 + computeDepth(el.parent_id);
+      cache.set(id, depth);
+      return depth;
+    };
+
+    elements.forEach((el) => {
+      cache.set(el.id, computeDepth(el.id));
+    });
+
+    return cache;
+  }, [elements, elementById]);
 
   // 현재 페이지의 요소만 필터링 (Body 제외, 실제 렌더링 대상만)
   const pageElements = elements.filter((el) => {
@@ -155,19 +247,11 @@ function ElementsLayer({
     return true;
   });
 
-  // 트리 깊이(depth) 계산 함수
-  const getDepth = (elementId: string | null, depth = 0): number => {
-    if (!elementId) return depth;
-    const el = elements.find((e) => e.id === elementId);
-    if (!el || el.tag.toLowerCase() === 'body') return depth;
-    return getDepth(el.parent_id, depth + 1);
-  };
-
   // 깊이 + order_num 기준으로 정렬 (부모 먼저 → 자식 나중에 렌더링)
   // DOM 방식: 자식이 부모 위에 표시됨
   const sortedElements = [...pageElements].sort((a, b) => {
-    const depthA = getDepth(a.parent_id);
-    const depthB = getDepth(b.parent_id);
+    const depthA = depthMap.get(a.id) ?? 0;
+    const depthB = depthMap.get(b.id) ?? 0;
 
     // 깊이가 다르면 깊이 순서 (낮은 것 먼저 = 부모 먼저)
     if (depthA !== depthB) return depthA - depthB;
@@ -246,6 +330,12 @@ export function BuilderCanvas({
   const setContextLost = useCanvasSyncStore((state) => state.setContextLost);
   const syncPixiVersion = useCanvasSyncStore((state) => state.syncPixiVersion);
   const renderVersion = useCanvasSyncStore((state) => state.renderVersion);
+
+  // 페이지 단위 레이아웃 계산 (재사용)
+  const layoutResult = useMemo(() => {
+    if (!currentPageId) return { positions: new Map() };
+    return calculateLayout(elements, currentPageId, pageWidth, pageHeight);
+  }, [elements, currentPageId, pageWidth, pageHeight]);
 
   // Zoom/Pan 인터랙션
   useZoomPan({
@@ -425,14 +515,18 @@ export function BuilderCanvas({
       ref={setContainerNode}
       className="builder-canvas-container"
     >
-      {containerEl && (
+      {containerEl && containerSize.width > 0 && containerSize.height > 0 && (
         <Application
-          resizeTo={containerEl}
+          width={containerSize.width}
+          height={containerSize.height}
           background={backgroundColor}
           antialias={true}
           resolution={window.devicePixelRatio}
           autoDensity={true}
         >
+        {/* Canvas Resize Handler - renderer 직접 resize */}
+        <CanvasResizeHandler width={containerSize.width} height={containerSize.height} />
+
         {/* 전체 Canvas 영역 클릭 → 선택 해제 (Camera 바깥, zoom/pan 영향 안 받음) */}
         <ClickableBackground
           width={containerSize.width}
@@ -470,8 +564,7 @@ export function BuilderCanvas({
           {/* Elements Layer (ElementSprite 기반) */}
           <ElementsLayer
             selectedIds={selectedElementIds}
-            pageWidth={pageWidth}
-            pageHeight={pageHeight}
+            layoutResult={layoutResult}
             onClick={handleElementClick}
             onDoubleClick={handleElementDoubleClick}
           />
@@ -481,6 +574,7 @@ export function BuilderCanvas({
             dragState={dragState}
             pageWidth={pageWidth}
             pageHeight={pageHeight}
+            layoutResult={layoutResult}
             onResizeStart={handleResizeStart}
             onMoveStart={handleMoveStart}
             onCursorChange={handleCursorChange}

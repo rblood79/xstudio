@@ -1,4 +1,5 @@
 .workspace {
+    grid-area: main;
     position: relative;
     width: 100%;
     height: 100%;
@@ -41,19 +42,18 @@
     bottom: 16px;
     right: 16px;
     display: flex;
-    gap: 8px;
     background-color: white;
-    padding: 8px 12px;
-    border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    padding: var(--spacing-2xs);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
     pointer-events: auto;
 }
 .zoom-control-text {
-    min-width: 50px;
-    padding: 4px 8px;
+    font-size: var(--text-xs);    min-width: 60px;
+    padding: var(--spacing-sm);
     text-align: center;
 }
 .zoom-control-button {
-    padding: 4px 8px;
+    padding: var(--spacing-sm);
     cursor: pointer;
 }

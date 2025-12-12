@@ -18,7 +18,7 @@ import { SelectionBox } from './SelectionBox';
 import { LassoSelection, getLassoBounds } from './LassoSelection';
 import type { BoundingBox, HandlePosition, CursorStyle, DragState } from './types';
 import { calculateCombinedBounds, boxesIntersect } from './types';
-import { calculateLayout } from '../layout';
+import type { LayoutResult } from '../layout';
 
 // ============================================
 // Types
@@ -31,6 +31,8 @@ export interface SelectionLayerProps {
   pageWidth?: number;
   /** 페이지 높이 (Body 선택용) */
   pageHeight?: number;
+  /** 계산된 레이아웃 결과 (부모에서 재사용) */
+  layoutResult: LayoutResult;
   /** 드래그 시작 콜백 */
   onResizeStart?: (elementId: string, handle: HandlePosition, bounds: BoundingBox) => void;
   /** 이동 시작 콜백 */
@@ -52,6 +54,7 @@ export const SelectionLayer = memo(function SelectionLayer({
   dragState,
   pageWidth = 1920,
   pageHeight = 1080,
+  layoutResult,
   onResizeStart,
   onMoveStart,
   onCursorChange,
@@ -69,12 +72,6 @@ export const SelectionLayer = memo(function SelectionLayer({
         el.page_id === currentPageId
     );
   }, [elements, selectedElementIds, currentPageId]);
-
-  // 레이아웃 계산 (DOM 방식)
-  const layoutResult = useMemo(() => {
-    if (!currentPageId) return { positions: new Map() };
-    return calculateLayout(elements, currentPageId, pageWidth, pageHeight);
-  }, [elements, currentPageId, pageWidth, pageHeight]);
 
   // 선택된 요소들의 바운딩 박스
   const selectionBounds = useMemo(() => {

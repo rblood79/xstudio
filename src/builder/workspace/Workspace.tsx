@@ -20,6 +20,7 @@ import { Key } from 'react-aria-components';
 import { BuilderCanvas } from './canvas/BuilderCanvas';
 import { useCanvasSyncStore } from './canvas/canvasSync';
 import { useWebGLCanvas } from '../../utils/featureFlags';
+import { CircleMinus, CirclePlus,Fullscreen } from 'lucide-react';
 import './Workspace.css';
 // ============================================
 // Types
@@ -247,7 +248,7 @@ export function Workspace({ breakpoint, breakpoints, fallbackCanvas }: Workspace
           onClick={() => zoomTo(zoom - ZOOM_STEP)}
           disabled={zoom <= MIN_ZOOM}
         >
-          −
+          <CircleMinus size={16} />
         </button>
         <span className="zoom-control-text">
           {Math.round(zoom * 100)}%
@@ -257,13 +258,13 @@ export function Workspace({ breakpoint, breakpoints, fallbackCanvas }: Workspace
           onClick={() => zoomTo(zoom + ZOOM_STEP)}
           disabled={zoom >= MAX_ZOOM}
         >
-          +
+          <CirclePlus size={16} />
         </button>
         <button
           className="zoom-control-button"
           onClick={zoomToFit}
         >
-          Fit
+          <Fullscreen size={16} />
         </button>
       </div>
 

@@ -229,12 +229,6 @@ export function useZoomPan(options: UseZoomPanOptions): UseZoomPanReturn {
         const newPanX = relativeX - (relativeX - currentPanOffset.x) * zoomRatio;
         const newPanY = relativeY - (relativeY - currentPanOffset.y) * zoomRatio;
 
-        console.log('[ZoomPan] wheel zoom:', {
-          cursor: { x: relativeX, y: relativeY },
-          zoom: { from: currentZoom, to: newZoom, ratio: zoomRatio },
-          pan: { from: currentPanOffset, to: { x: newPanX, y: newPanY } },
-        });
-
         setZoom(newZoom);
         setPanOffset({ x: newPanX, y: newPanY });
       }
@@ -252,6 +246,33 @@ export function useZoomPan(options: UseZoomPanOptions): UseZoomPanReturn {
   useEffect(() => {
     if (!containerEl) return;
 
+    const panRafRef = { current: null as number | null };
+    const pendingPanRef = { current: null as { x: number; y: number } | null };
+
+    const schedulePanUpdate = (nextPan: { x: number; y: number }) => {
+      pendingPanRef.current = nextPan;
+      if (panRafRef.current === null) {
+        panRafRef.current = requestAnimationFrame(() => {
+          if (pendingPanRef.current) {
+            setPanOffset(pendingPanRef.current);
+            pendingPanRef.current = null;
+          }
+          panRafRef.current = null;
+        });
+      }
+    };
+
+    const flushPendingPan = () => {
+      if (panRafRef.current !== null) {
+        cancelAnimationFrame(panRafRef.current);
+        panRafRef.current = null;
+      }
+      if (pendingPanRef.current) {
+        setPanOffset(pendingPanRef.current);
+        pendingPanRef.current = null;
+      }
+    };
+
     const handleMouseDown = (e: MouseEvent) => {
       // Alt + 클릭 또는 중간 버튼 = 팬 시작
       if ((e.altKey && e.button === 0) || e.button === 1) {
@@ -266,14 +287,14 @@ export function useZoomPan(options: UseZoomPanOptions): UseZoomPanReturn {
       if (!isPanningRef.current || !lastPanPointRef.current) return;
 
       // Store에서 현재 panOffset 직접 읽기 (stale closure 방지)
-      const { panOffset: currentPanOffset } = useCanvasSyncStore.getState();
+      const basePan = pendingPanRef.current ?? useCanvasSyncStore.getState().panOffset;
 
       const deltaX = (e.clientX - lastPanPointRef.current.x) * panSpeed;
       const deltaY = (e.clientY - lastPanPointRef.current.y) * panSpeed;
 
-      setPanOffset({
-        x: currentPanOffset.x + deltaX,
-        y: currentPanOffset.y + deltaY,
+      schedulePanUpdate({
+        x: basePan.x + deltaX,
+        y: basePan.y + deltaY,
       });
 
       lastPanPointRef.current = { x: e.clientX, y: e.clientY };
@@ -283,6 +304,7 @@ export function useZoomPan(options: UseZoomPanOptions): UseZoomPanReturn {
       if (isPanningRef.current) {
         isPanningRef.current = false;
         lastPanPointRef.current = null;
+        flushPendingPan();
         containerEl.style.cursor = '';
       }
     };
@@ -295,6 +317,7 @@ export function useZoomPan(options: UseZoomPanOptions): UseZoomPanReturn {
       containerEl.removeEventListener('mousedown', handleMouseDown);
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleMouseUp);
+      flushPendingPan();
     };
   }, [panSpeed, setPanOffset, containerEl]);
 
