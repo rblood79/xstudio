@@ -15,17 +15,10 @@
  */
 
 import { useCallback, useEffect, useRef, useMemo, useState } from 'react';
-import {
-  Application,
-  extend,
-} from '@pixi/react';
-import {
-  Container as PixiContainer,
-  Graphics as PixiGraphics,
-  Sprite as PixiSprite,
-  Text as PixiText,
-  TextStyle as PixiTextStyle,
-} from 'pixi.js';
+import { Application } from '@pixi/react';
+import { Graphics as PixiGraphics } from 'pixi.js';
+// @pixi/layout 컴포넌트 extend (JSX 사용 전 필수)
+import './pixiSetup';
 import { useStore } from '../../stores';
 import { useCanvasSyncStore } from './canvasSync';
 import { useWebGLCanvas } from '../../../utils/featureFlags';
@@ -40,15 +33,6 @@ import {
 } from './selection';
 import { GridLayer, useZoomPan } from './grid';
 import { TextEditOverlay, useTextEdit } from '../overlay';
-
-// Extend PixiJS with required components
-extend({
-  Container: PixiContainer,
-  Graphics: PixiGraphics,
-  Sprite: PixiSprite,
-  Text: PixiText,
-  TextStyle: PixiTextStyle,
-});
 
 // ============================================
 // Types
@@ -148,26 +132,12 @@ export function BuilderCanvas({
   backgroundColor = DEFAULT_BACKGROUND,
 }: BuilderCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const [canvasSize, setCanvasSize] = useState({ width: 800, height: 600 });
+  const [containerEl, setContainerEl] = useState<HTMLDivElement | null>(null);
 
-  // 컨테이너 크기 추적 (Canvas는 항상 100%)
-  useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
-
-    const updateSize = () => {
-      setCanvasSize({
-        width: container.clientWidth,
-        height: container.clientHeight,
-      });
-    };
-
-    updateSize();
-
-    const resizeObserver = new ResizeObserver(updateSize);
-    resizeObserver.observe(container);
-
-    return () => resizeObserver.disconnect();
+  // 컨테이너 ref 콜백: 마운트 시점에 DOM 노드를 안전하게 확보
+  const setContainerNode = useCallback((node: HTMLDivElement | null) => {
+    containerRef.current = node;
+    setContainerEl(node);
   }, []);
 
   // Store state
@@ -186,9 +156,9 @@ export function BuilderCanvas({
   const syncPixiVersion = useCanvasSyncStore((state) => state.syncPixiVersion);
   const renderVersion = useCanvasSyncStore((state) => state.renderVersion);
 
-  // Zoom/Pan 인터랙션 - 현재 미사용, 추후 구현 예정
+  // Zoom/Pan 인터랙션
   useZoomPan({
-    containerRef,
+    containerEl,
     minZoom: 0.1,
     maxZoom: 5,
     zoomStep: 0.1,
@@ -361,7 +331,7 @@ export function BuilderCanvas({
 
   return (
     <div
-      ref={containerRef}
+      ref={setContainerNode}
       className="builder-canvas-container"
       style={{
         position: 'relative',
@@ -371,14 +341,14 @@ export function BuilderCanvas({
         backgroundColor: '#f1f5f9',
       }}
     >
-      <Application
-        width={canvasSize.width}
-        height={canvasSize.height}
-        background={backgroundColor}
-        antialias={true}
-        resolution={window.devicePixelRatio}
-        autoDensity={true}
-      >
+      {containerEl && (
+        <Application
+          resizeTo={containerEl}
+          background={backgroundColor}
+          antialias={true}
+          resolution={window.devicePixelRatio}
+          autoDensity={true}
+        >
         {/* Camera/Viewport */}
         <pixiContainer
           x={panOffset.x}
@@ -413,7 +383,8 @@ export function BuilderCanvas({
             onCursorChange={handleCursorChange}
           />
         </pixiContainer>
-      </Application>
+        </Application>
+      )}
 
       {/* 텍스트 편집 오버레이 (B1.5) */}
       {editState && editState.elementId && (

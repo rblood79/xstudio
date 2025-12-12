@@ -9,8 +9,10 @@
  * @updated 2025-12-11 - @pixi/layout LayoutContainer 기반으로 리팩토링
  */
 
-// @pixi/layout React 통합 활성화
-import '@pixi/layout/dist/react';
+// @pixi/layout 컴포넌트 extend (JSX 사용 전 필수)
+import '../pixiSetup';
+// @pixi/layout React 타입 선언
+import '@pixi/layout/react';
 
 import { memo, useCallback, useMemo } from 'react';
 import type { Element } from '../../../../types/core/store.types';

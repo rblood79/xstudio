@@ -148,21 +148,8 @@ export function Workspace({ breakpoint, breakpoints, fallbackCanvas }: Workspace
   }, []);
 
   // ============================================
-  // Zoom Controls
+  // Zoom Controls (휠 줌은 useZoomPan에서 처리)
   // ============================================
-
-  const handleWheel = useCallback(
-    (e: React.WheelEvent) => {
-      if (!e.ctrlKey && !e.metaKey) return;
-
-      e.preventDefault();
-
-      const delta = e.deltaY > 0 ? -ZOOM_STEP : ZOOM_STEP;
-      const newZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, zoom + delta));
-      setZoom(newZoom);
-    },
-    [zoom, setZoom]
-  );
 
   // ============================================
   // Pan Controls (Space + Drag)
@@ -200,14 +187,38 @@ export function Workspace({ breakpoint, breakpoints, fallbackCanvas }: Workspace
   }, []);
 
   // ============================================
-  // Zoom Presets
+  // Zoom Presets (중앙 기준 줌)
   // ============================================
 
   const zoomTo = useCallback(
     (level: number) => {
-      setZoom(level);
+      if (containerSize.width === 0 || containerSize.height === 0) {
+        setZoom(level);
+        return;
+      }
+
+      // 뷰포트 중앙 좌표
+      const centerX = containerSize.width / 2;
+      const centerY = containerSize.height / 2;
+
+      // 현재 zoom과 panOffset
+      const currentZoom = zoom;
+      const currentPanOffset = panOffset;
+
+      // 새 줌 레벨
+      const newZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, level));
+
+      // 줌 비율
+      const zoomRatio = newZoom / currentZoom;
+
+      // 중앙 기준 panOffset 계산
+      const newPanX = centerX - (centerX - currentPanOffset.x) * zoomRatio;
+      const newPanY = centerY - (centerY - currentPanOffset.y) * zoomRatio;
+
+      setZoom(newZoom);
+      setPanOffset({ x: newPanX, y: newPanY });
     },
-    [setZoom]
+    [containerSize, zoom, panOffset, setZoom, setPanOffset]
   );
 
   const zoomToFit = useCallback(() => {
@@ -257,7 +268,6 @@ export function Workspace({ breakpoint, breakpoints, fallbackCanvas }: Workspace
         overflow: 'hidden',
         cursor: isPanning ? 'grabbing' : 'default',
       }}
-      onWheel={handleWheel}
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
