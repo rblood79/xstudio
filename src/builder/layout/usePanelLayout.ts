@@ -96,17 +96,6 @@ export function usePanelLayout(): UsePanelLayoutReturn {
       // 패널을 닫을 때는 사이드바 상태 유지 (다른 패널이 열려있을 수 있으므로)
       const newShow = isActive ? layout[showKey] : true;
 
-      // 🔍 디버깅: toggle 동작 로그
-      if (import.meta.env.DEV) {
-        console.log(`[togglePanel ${side}]`, {
-          panelId,
-          isActive,
-          before: currentActive,
-          after: newActive,
-          show: newShow,
-        });
-      }
-
       setPanelLayout({
         ...layout,
         [activeKey]: newActive,

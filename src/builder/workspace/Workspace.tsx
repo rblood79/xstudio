@@ -106,7 +106,6 @@ export function Workspace({
       height: parseSize(selectedBreakpoint.max_height, containerSize.height),
     };
 
-    console.log("[Workspace] Canvas size:", size, "Breakpoint:", selectedId);
     return size;
   }, [breakpoint, breakpoints, containerSize]);
 

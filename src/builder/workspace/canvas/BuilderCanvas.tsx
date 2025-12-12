@@ -166,6 +166,10 @@ function ClickableBackground({ onClick }: { onClick?: () => void }) {
  * 패널 애니메이션 중에는 캔버스를 CSS 사이즈로만 부드럽게 따라가게 하고,
  * 크기 변화가 멈춘 뒤에만 renderer.resize를 1회 수행해 선명도를 복구합니다.
  */
+// 리사이즈 타이밍 상수 (panel-container.css transition: 0.3s와 동기화)
+const RESIZE_THROTTLE_MS = 80;
+const RESIZE_SETTLE_MS = 350; // CSS transition(300ms) + 여유 50ms
+
 function CanvasSmoothResizeBridge({ containerEl }: { containerEl: HTMLElement }) {
   const { app } = useApplication();
   const lastSizeRef = useRef<{ width: number; height: number } | null>(null);
@@ -188,14 +192,13 @@ function CanvasSmoothResizeBridge({ containerEl }: { containerEl: HTMLElement })
         return;
       }
 
-      const throttleMs = 80;
       const queueResizeThrottled = () => {
         if (typeof window === "undefined") return;
 
         const now = typeof performance !== "undefined" ? performance.now() : Date.now();
         const elapsed = now - lastQueuedAtRef.current;
 
-        if (elapsed >= throttleMs) {
+        if (elapsed >= RESIZE_THROTTLE_MS) {
           lastQueuedAtRef.current = now;
           app.queueResize();
           return;
@@ -207,7 +210,7 @@ function CanvasSmoothResizeBridge({ containerEl }: { containerEl: HTMLElement })
           lastQueuedAtRef.current =
             typeof performance !== "undefined" ? performance.now() : Date.now();
           app.queueResize();
-        }, Math.max(0, throttleMs - elapsed));
+        }, Math.max(0, RESIZE_THROTTLE_MS - elapsed));
       };
 
       const scheduleSettleResize = () => {
@@ -217,7 +220,7 @@ function CanvasSmoothResizeBridge({ containerEl }: { containerEl: HTMLElement })
         settleTimeoutIdRef.current = window.setTimeout(() => {
           settleTimeoutIdRef.current = 0;
           app.resize();
-        }, 350); // CSS transition(300ms) + 여유 50ms
+        }, RESIZE_SETTLE_MS);
       };
 
       const updateFromRect = (rect: DOMRectReadOnly | DOMRect) => {
