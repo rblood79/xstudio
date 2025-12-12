@@ -226,15 +226,11 @@ export function Workspace({ breakpoint, breakpoints, fallbackCanvas }: Workspace
       ref={containerRef}
       className="workspace"
     >
-      {/* WebGL Canvas Layer */}
-      <div
-        className="workspace-canvas"
-      >
-        <BuilderCanvas
-          pageWidth={canvasSize.width}
-          pageHeight={canvasSize.height}
-        />
-      </div>
+      {/* WebGL Canvas (DOM depth 최소화: .workspace → .builder-canvas-container → canvas) */}
+      <BuilderCanvas
+        pageWidth={canvasSize.width}
+        pageHeight={canvasSize.height}
+      />
 
       {/* DOM Overlay Layer (B1.5에서 구현) */}
       <div className="workspace-overlay">
