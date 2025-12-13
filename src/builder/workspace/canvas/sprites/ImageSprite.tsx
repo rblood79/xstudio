@@ -83,25 +83,21 @@ export function ImageSprite({ element, isSelected, onClick }: ImageSpriteProps) 
     (g: PixiGraphics) => {
       g.clear();
 
-      // Background
-      g.fill({ color: PLACEHOLDER_COLOR, alpha: 1 });
-
+      // Background - v8 Pattern: shape → fill
       if (borderRadius && typeof borderRadius === 'number' && borderRadius > 0) {
         g.roundRect(0, 0, transform.width, transform.height, borderRadius);
       } else {
         g.rect(0, 0, transform.width, transform.height);
       }
-      g.fill();
+      g.fill({ color: PLACEHOLDER_COLOR, alpha: 1 });
 
       // Icon (simple image placeholder)
       const iconSize = Math.min(transform.width, transform.height) * 0.3;
       const iconX = (transform.width - iconSize) / 2;
       const iconY = (transform.height - iconSize) / 2;
 
-      g.fill({ color: 0x9ca3af, alpha: 1 }); // gray-400
-
       if (hasError) {
-        // X mark for error
+        // X mark for error - v8 Pattern: shape → stroke
         g.setStrokeStyle({ width: 3, color: 0xef4444 }); // red-500
         g.moveTo(iconX, iconY);
         g.lineTo(iconX + iconSize, iconY + iconSize);
@@ -109,18 +105,18 @@ export function ImageSprite({ element, isSelected, onClick }: ImageSpriteProps) 
         g.lineTo(iconX, iconY + iconSize);
         g.stroke();
       } else {
-        // Mountain/sun icon for placeholder
+        // Mountain/sun icon for placeholder - v8 Pattern: shape → fill
         g.moveTo(iconX, iconY + iconSize);
         g.lineTo(iconX + iconSize * 0.3, iconY + iconSize * 0.5);
         g.lineTo(iconX + iconSize * 0.5, iconY + iconSize * 0.7);
         g.lineTo(iconX + iconSize * 0.7, iconY + iconSize * 0.3);
         g.lineTo(iconX + iconSize, iconY + iconSize);
         g.closePath();
-        g.fill();
+        g.fill({ color: 0x9ca3af, alpha: 1 }); // gray-400
 
-        // Sun
+        // Sun - v8 Pattern: shape → fill
         g.circle(iconX + iconSize * 0.7, iconY + iconSize * 0.25, iconSize * 0.1);
-        g.fill();
+        g.fill({ color: 0x9ca3af, alpha: 1 }); // gray-400
       }
 
       // Selection highlight
@@ -178,15 +174,14 @@ export function ImageSprite({ element, isSelected, onClick }: ImageSpriteProps) 
         />
       )}
 
-      {/* Loading indicator */}
+      {/* Loading indicator - v8 Pattern: shape → fill */}
       {isLoading && (
         <pixiGraphics
           draw={(g) => {
             g.clear();
-            g.fill({ color: 0x3b82f6, alpha: 0.3 });
             const size = Math.min(transform.width, transform.height) * 0.2;
             g.circle(transform.width / 2, transform.height / 2, size);
-            g.fill();
+            g.fill({ color: 0x3b82f6, alpha: 0.3 });
           }}
         />
       )}

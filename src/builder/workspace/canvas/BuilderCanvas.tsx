@@ -15,22 +15,12 @@
  */
 
 import { useCallback, useEffect, useRef, useMemo, useState } from "react";
-import { Application, extend, useApplication } from "@pixi/react";
-import {
-  Container as PixiContainer,
-  Graphics as PixiGraphics,
-  Text as PixiText,
-  TextStyle as PixiTextStyle,
-} from "pixi.js";
+import { Application, useApplication } from "@pixi/react";
+import { Graphics as PixiGraphics } from "pixi.js";
 import { useStore } from "../../stores";
 
-// 기본 PixiJS 컴포넌트만 extend (layoutContainer 제외)
-extend({
-  Container: PixiContainer,
-  Graphics: PixiGraphics,
-  Text: PixiText,
-  TextStyle: PixiTextStyle,
-});
+// extend()는 pixiSetup.ts에서 중앙 관리 (중복 호출 불필요)
+import "./pixiSetup";
 import { useCanvasSyncStore } from "./canvasSync";
 import { useWebGLCanvas } from "../../../utils/featureFlags";
 import { ElementSprite } from "./sprites";

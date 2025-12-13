@@ -70,12 +70,11 @@ export const TransformHandle = memo(function TransformHandle({
     (g: PixiGraphics) => {
       g.clear();
 
-      // 배경 (흰색)
-      g.fill({ color: HANDLE_FILL_COLOR, alpha: 1 });
+      // 배경 (흰색) - v8 Pattern: shape → fill
       g.rect(0, 0, HANDLE_SIZE, HANDLE_SIZE);
-      g.fill();
+      g.fill({ color: HANDLE_FILL_COLOR, alpha: 1 });
 
-      // 테두리 (파란색)
+      // 테두리 (파란색) - v8 Pattern: shape → stroke
       g.setStrokeStyle({ width: 1, color: HANDLE_STROKE_COLOR, alpha: 1 });
       g.rect(0, 0, HANDLE_SIZE, HANDLE_SIZE);
       g.stroke();
@@ -103,9 +102,9 @@ export const TransformHandle = memo(function TransformHandle({
       y={handleY}
       eventMode="static"
       cursor={config.cursor}
-      onpointerdown={handlePointerDown}
-      onpointerover={handlePointerOver}
-      onpointerout={handlePointerOut}
+      onPointerDown={handlePointerDown}
+      onPointerOver={handlePointerOver}
+      onPointerOut={handlePointerOut}
     />
   );
 });
