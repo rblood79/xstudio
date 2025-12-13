@@ -1074,7 +1074,7 @@ const filters = shadowStyle ? [
 | **7.5** | verticalAlign | TextSprite.tsx, BoxSprite.tsx | 🟡 Medium | P1 | 텍스트 높이 계산 필요 |
 | **7.6** | textTransform | TextSprite.tsx, BoxSprite.tsx | 🟢 Easy | P2 | 렌더링 전 문자열 변환 |
 | **7.7** | textDecoration | TextSprite.tsx | 🟡 Medium | P2 | Graphics 선 그리기 |
-| **7.8** | flexWrap | layoutCalculator.ts | 🔴 Hard | P2 | 멀티라인 레이아웃 |
+| **7.8** | flexWrap | LayoutEngine.ts (Yoga) | ✅ 완료 | P2 | Yoga 기반 리팩토링 |
 | **7.9** | borderStyle | BoxSprite.tsx, TextSprite.tsx | 🟡 Medium | P3 | 점선/대시선 커스텀 |
 
 **향후 확장 (UI 추가 시):**
@@ -1091,7 +1091,7 @@ const filters = shadowStyle ? [
 | `styleConverter.ts` | PixiTextStyle 확장 (fontStyle, letterSpacing, leading) | 7.2-7.4 |
 | `TextSprite.tsx` | 텍스트 스타일 적용 + textDecoration Graphics | 7.2-7.7 |
 | `BoxSprite.tsx` | verticalAlign, textTransform, borderStyle | 7.5-7.6, 7.9 |
-| `layoutCalculator.ts` | flexWrap 멀티라인 로직 | 7.8 |
+| `LayoutEngine.ts` | Yoga 기반 레이아웃 (flexWrap 포함) | 7.8 ✅ |
 
 ### 커밋 메시지 (예시)
 
@@ -1112,11 +1112,13 @@ feat(canvas): add typography style support - fontStyle, letterSpacing (P7.2-7.3)
 ```
 
 ```
-feat(canvas): add flexWrap support to layout calculator (P7.8)
+feat(canvas): implement Yoga-based layout engine with flexWrap (P7.8)
 
-- Implement calculateMultiLineLayout for wrap/wrap-reverse
-- Add line break logic based on container width/height
-- Support alignContent for multi-line flex containers
+- Replace layoutCalculator.ts with LayoutEngine.ts (Yoga-based)
+- Add yoga-layout v3.0.0 as direct dependency
+- Support full CSS Flexbox spec: flexWrap, alignContent, gap
+- Delete unused FlexLayout.tsx component
+- Add async initYoga() initialization in BuilderCanvas
 ```
 
 ---
@@ -1140,7 +1142,10 @@ feat(canvas): add flexWrap support to layout calculator (P7.8)
 ### ✅ 완료 (P7.7-P7.9)
 
 - [x] **Phase 7.7**: textDecoration 구현 (🟡 Medium) ✅ **완료** (2025-12-13)
-- [ ] **Phase 7.8**: flexWrap 구현 (🔴 Hard) - **선택적/추후**
+- [x] **Phase 7.8**: flexWrap 구현 (🔴 Hard) ✅ **완료** (2025-12-13)
+  - Yoga 기반 LayoutEngine.ts로 리팩토링
+  - layoutCalculator.ts, FlexLayout.tsx 삭제
+  - yoga-layout v3.0.0 직접 사용
 - [x] **Phase 7.9**: borderStyle 구현 (🟡 Medium) ✅ **완료** (2025-12-13)
 
 ---
