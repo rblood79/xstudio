@@ -1,18 +1,23 @@
 /**
  * PixiJS Setup
  *
- * @pixi/react와 @pixi/layout 컴포넌트를 PIXI namespace에 등록합니다.
- * 이 파일을 import하면 모든 @pixi/layout JSX 컴포넌트를 사용할 수 있습니다.
+ * @pixi/react와 @pixi/layout 컴포넌트 카탈로그를 정의합니다.
+ * useExtend() 훅과 함께 사용하여 메모이제이션된 컴포넌트 등록을 수행합니다.
  *
  * @example
  * // 컴포넌트 파일에서
- * import '../pixiSetup'; // extend() 실행 보장
- * import '@pixi/layout/react'; // TypeScript 타입
+ * import { useExtend } from '@pixi/react';
+ * import { PIXI_COMPONENTS } from './pixiSetup';
+ *
+ * function MyComponent() {
+ *   useExtend(PIXI_COMPONENTS); // 메모이제이션됨
+ *   return <pixiContainer>...</pixiContainer>;
+ * }
  *
  * @since 2025-12-12
+ * @updated 2025-12-13 P4: useExtend 훅 도입
  */
 
-import { extend } from '@pixi/react';
 import {
   Container as PixiContainer,
   Graphics as PixiGraphics,
@@ -24,11 +29,14 @@ import {
   LayoutText,
 } from '@pixi/layout/components';
 
-// Extend PixiJS with all required components
-// extend()는 여러 번 호출해도 안전합니다 (이미 등록된 컴포넌트는 무시됨)
-// NOTE: TextStyle은 DisplayObject가 아니므로 extend() 불필요 (직접 import하여 사용)
-// NOTE: LayoutGraphics, LayoutSprite는 미사용으로 제거됨
-extend({
+/**
+ * PixiJS 컴포넌트 카탈로그
+ *
+ * useExtend() 훅과 함께 사용합니다.
+ * NOTE: TextStyle은 DisplayObject가 아니므로 제외 (직접 import하여 사용)
+ * NOTE: LayoutGraphics, LayoutSprite는 미사용으로 제거됨
+ */
+export const PIXI_COMPONENTS = {
   // 기본 PixiJS 컴포넌트 (DisplayObjects만)
   Container: PixiContainer,
   Graphics: PixiGraphics,
@@ -37,7 +45,7 @@ extend({
   // @pixi/layout 컴포넌트 (layoutContainer, layoutText 등 JSX 태그로 사용)
   LayoutContainer,
   LayoutText,
-});
+};
 
 // Re-export for convenience
-export { extend } from '@pixi/react';
+export { extend, useExtend } from '@pixi/react';

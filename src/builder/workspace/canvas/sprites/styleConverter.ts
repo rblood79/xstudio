@@ -2,8 +2,10 @@
  * Style Converter
  *
  * 🚀 Phase 10 B1.2: CSS Style → PixiJS 속성 변환
+ * 🚀 P7: StylePanel ↔ Canvas 스타일 동기화 확장
  *
  * @since 2025-12-11 Phase 10 B1.2
+ * @updated 2025-12-13 P7.2-P7.6 - 타이포그래피 속성 확장
  */
 
 // ============================================
@@ -25,7 +27,13 @@ export interface CSSStyle {
   fontSize?: number | string;
   fontWeight?: string | number;
   fontFamily?: string;
+  fontStyle?: string; // P7.2: italic, oblique
   textAlign?: string;
+  lineHeight?: number | string; // P7.4: 줄 간격
+  letterSpacing?: number | string; // P7.3: 자간
+  textDecoration?: string; // P7.7: underline, line-through
+  textTransform?: string; // P7.6: uppercase, lowercase
+  verticalAlign?: string; // P7.5: top, middle, bottom
   padding?: number | string;
   paddingTop?: number | string;
   paddingRight?: number | string;
@@ -59,8 +67,11 @@ export interface PixiTextStyle {
   fontFamily: string;
   fontSize: number;
   fontWeight: string;
+  fontStyle: 'normal' | 'italic' | 'oblique'; // P7.2
   fill: number;
   align: 'left' | 'center' | 'right';
+  letterSpacing: number; // P7.3
+  leading: number; // P7.4: lineHeight → leading
   wordWrap: boolean;
   wordWrapWidth: number;
 }
@@ -230,20 +241,86 @@ export function convertToStrokeStyle(style: CSSStyle | undefined): PixiStrokeSty
 
 /**
  * CSS 스타일을 PixiJS Text 스타일로 변환
+ * P7.2-P7.4: fontStyle, letterSpacing, lineHeight (leading) 추가
  */
 export function convertToTextStyle(
   style: CSSStyle | undefined,
   containerWidth = 100
 ): PixiTextStyle {
+  const fontSize = parseCSSSize(style?.fontSize, undefined, 16);
+
+  // P7.4: lineHeight → leading 변환
+  // CSS lineHeight가 배수(1.5)이면 (배수 - 1) * fontSize
+  // 픽셀 값이면 fontSize를 뺌
+  let leading = 0;
+  if (style?.lineHeight) {
+    const lh = parseCSSSize(style.lineHeight, undefined, 0);
+    if (typeof style.lineHeight === 'number' && lh < 10) {
+      // 배수 값 (예: 1.5)
+      leading = (lh - 1) * fontSize;
+    } else {
+      // 픽셀 값
+      leading = Math.max(0, lh - fontSize);
+    }
+  }
+
   return {
     fontFamily: style?.fontFamily || 'Pretendard, sans-serif',
-    fontSize: parseCSSSize(style?.fontSize, undefined, 16),
+    fontSize,
     fontWeight: String(style?.fontWeight || 'normal'),
+    fontStyle: (style?.fontStyle as 'normal' | 'italic' | 'oblique') || 'normal', // P7.2
     fill: cssColorToHex(style?.color, 0x000000),
     align: (style?.textAlign as 'left' | 'center' | 'right') || 'left',
+    letterSpacing: parseCSSSize(style?.letterSpacing, undefined, 0), // P7.3
+    leading, // P7.4
     wordWrap: true,
     wordWrapWidth: containerWidth,
   };
+}
+
+// ============================================
+// P7.5-P7.6: Text Transform Utilities
+// ============================================
+
+/**
+ * P7.6: CSS textTransform 적용
+ */
+export function applyTextTransform(text: string, transform: string | undefined): string {
+  if (!transform || transform === 'none') return text;
+
+  switch (transform.toLowerCase()) {
+    case 'uppercase':
+      return text.toUpperCase();
+    case 'lowercase':
+      return text.toLowerCase();
+    case 'capitalize':
+      return text.replace(/\b\w/g, (c) => c.toUpperCase());
+    default:
+      return text;
+  }
+}
+
+/**
+ * P7.5: CSS verticalAlign을 기반으로 텍스트 Y 위치 계산
+ */
+export function calculateTextY(
+  containerHeight: number,
+  textHeight: number,
+  verticalAlign: string | undefined,
+  paddingTop = 0,
+  paddingBottom = 0
+): number {
+  const contentHeight = containerHeight - paddingTop - paddingBottom;
+
+  switch (verticalAlign?.toLowerCase()) {
+    case 'top':
+      return paddingTop;
+    case 'bottom':
+      return containerHeight - textHeight - paddingBottom;
+    case 'middle':
+    default:
+      return paddingTop + (contentHeight - textHeight) / 2;
+  }
 }
 
 /**

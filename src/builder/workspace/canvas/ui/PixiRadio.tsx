@@ -7,6 +7,7 @@
  *
  * @since 2025-12-11 Phase 11 B2.4
  * @updated 2025-12-11 - @pixi/layout LayoutContainer 기반으로 리팩토링
+ * @updated 2025-12-13 P5: pixiContainer 래퍼로 이벤트 처리 (GitHub #126 workaround)
  */
 
 // @pixi/layout 컴포넌트 extend (JSX 사용 전 필수)
@@ -132,89 +133,96 @@ export const PixiRadio = memo(function PixiRadio({
     onChange?.(element.id, optionValue);
   }, [element.id, onChange]);
 
+  // P5 Workaround: pixiContainer로 이벤트 처리 (GitHub #126)
   return (
-    <layoutContainer
+    <pixiContainer
       x={position.x}
       y={position.y}
-      layout={{
-        flexDirection: isHorizontal ? 'row' : 'column',
-        gap: 12,
-      }}
       eventMode="static"
       onPointerDown={handleClick}
     >
-      {options.map((option) => {
-        const isOptionSelected = option.value === selectedValue;
-        const layoutStyles = convertToRadioLayout(style, isOptionSelected);
+      <layoutContainer
+        layout={{
+          flexDirection: isHorizontal ? 'row' : 'column',
+          gap: 12,
+        }}
+      >
+        {options.map((option) => {
+          const isOptionSelected = option.value === selectedValue;
+          const layoutStyles = convertToRadioLayout(style, isOptionSelected);
 
-        return (
-          <layoutContainer
-            key={option.value}
-            layout={{
-              flexDirection: 'row',
-              alignItems: 'center',
-              gap: 8,
-            }}
-            eventMode="static"
-            cursor="pointer"
-            onPointerDown={() => handleOptionClick(option.value)}
-          >
-            {/* 라디오 원 */}
-            <layoutContainer
-              layout={{
-                width: layoutStyles.circle.width,
-                height: layoutStyles.circle.height,
-                backgroundColor: layoutStyles.circle.backgroundColor,
-                borderRadius: layoutStyles.circle.borderRadius,
-                borderWidth: layoutStyles.circle.borderWidth,
-                borderColor: layoutStyles.circle.borderColor,
-                justifyContent: layoutStyles.circle.justifyContent,
-                alignItems: layoutStyles.circle.alignItems,
-              }}
+          return (
+            <pixiContainer
+              key={option.value}
+              eventMode="static"
+              cursor="pointer"
+              onPointerDown={() => handleOptionClick(option.value)}
             >
-              {/* 내부 dot */}
-              {isOptionSelected && (
+              <layoutContainer
+                layout={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: 8,
+                }}
+              >
+                {/* 라디오 원 */}
                 <layoutContainer
                   layout={{
-                    width: layoutStyles.dot.width,
-                    height: layoutStyles.dot.height,
-                    backgroundColor: layoutStyles.dot.backgroundColor,
-                    borderRadius: layoutStyles.dot.borderRadius,
+                    width: layoutStyles.circle.width,
+                    height: layoutStyles.circle.height,
+                    backgroundColor: layoutStyles.circle.backgroundColor,
+                    borderRadius: layoutStyles.circle.borderRadius,
+                    borderWidth: layoutStyles.circle.borderWidth,
+                    borderColor: layoutStyles.circle.borderColor,
+                    justifyContent: layoutStyles.circle.justifyContent,
+                    alignItems: layoutStyles.circle.alignItems,
                   }}
+                >
+                  {/* 내부 dot */}
+                  {isOptionSelected && (
+                    <layoutContainer
+                      layout={{
+                        width: layoutStyles.dot.width,
+                        height: layoutStyles.dot.height,
+                        backgroundColor: layoutStyles.dot.backgroundColor,
+                        borderRadius: layoutStyles.dot.borderRadius,
+                      }}
+                    />
+                  )}
+                </layoutContainer>
+
+                {/* 라벨 */}
+                <layoutText
+                  text={option.label}
+                  style={{
+                    fill: layoutStyles.label.fill,
+                    fontSize: layoutStyles.label.fontSize,
+                    fontFamily: layoutStyles.label.fontFamily,
+                  }}
+                  layout={true}
                 />
-              )}
-            </layoutContainer>
+              </layoutContainer>
+            </pixiContainer>
+          );
+        })}
 
-            {/* 라벨 */}
-            <layoutText
-              text={option.label}
-              style={{
-                fill: layoutStyles.label.fill,
-                fontSize: layoutStyles.label.fontSize,
-                fontFamily: layoutStyles.label.fontFamily,
-              }}
-              layout={true}
-            />
-          </layoutContainer>
-        );
-      })}
-
-      {/* 선택 표시 */}
-      {isSelected && (
-        <layoutContainer
-          layout={{
-            position: 'absolute',
-            left: -2,
-            top: -2,
-            width: isHorizontal ? options.length * 100 : 100,
-            height: isHorizontal ? 24 : options.length * 28,
-            borderColor: 0x3b82f6,
-            borderWidth: 2,
-            borderRadius: 4,
-          }}
-        />
-      )}
-    </layoutContainer>
+        {/* 선택 표시 */}
+        {isSelected && (
+          <layoutContainer
+            layout={{
+              position: 'absolute',
+              left: -2,
+              top: -2,
+              width: isHorizontal ? options.length * 100 : 100,
+              height: isHorizontal ? 24 : options.length * 28,
+              borderColor: 0x3b82f6,
+              borderWidth: 2,
+              borderRadius: 4,
+            }}
+          />
+        )}
+      </layoutContainer>
+    </pixiContainer>
   );
 });
 

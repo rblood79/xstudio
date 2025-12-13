@@ -15,7 +15,7 @@ import type { Element } from '../../../../types/core/store.types';
 import { BoxSprite } from './BoxSprite';
 import { TextSprite } from './TextSprite';
 import { ImageSprite } from './ImageSprite';
-import { PixiButton, PixiCheckbox, PixiRadio } from '../ui';
+import { PixiButton, PixiFancyButton, PixiCheckbox, PixiRadio, PixiSlider, PixiInput, PixiSelect, PixiProgressBar, PixiSwitcher, PixiScrollBox, PixiList, PixiMaskedFrame } from '../ui';
 import { isFlexContainer, isGridContainer } from '../layout';
 import type { CSSStyle } from './styleConverter';
 
@@ -69,9 +69,22 @@ const IMAGE_TAGS = new Set(['Image', 'Avatar', 'Logo', 'Icon', 'Thumbnail']);
 /**
  * UI 컴포넌트 태그들 (Phase 11 B2.4)
  */
-const UI_BUTTON_TAGS = new Set(['Button', 'FancyButton', 'SubmitButton']);
+const UI_BUTTON_TAGS = new Set(['Button', 'SubmitButton']);
+const UI_FANCYBUTTON_TAGS = new Set(['FancyButton']);
 const UI_CHECKBOX_TAGS = new Set(['Checkbox', 'CheckBox', 'Switch', 'Toggle']);
 const UI_RADIO_TAGS = new Set(['RadioGroup', 'Radio']);
+
+/**
+ * UI 컴포넌트 태그들 (Phase 6)
+ */
+const UI_SLIDER_TAGS = new Set(['Slider', 'RangeSlider']);
+const UI_INPUT_TAGS = new Set(['Input', 'TextField', 'TextInput', 'SearchField']);
+const UI_SELECT_TAGS = new Set(['Select', 'Dropdown', 'ComboBox']);
+const UI_PROGRESS_TAGS = new Set(['ProgressBar', 'Progress', 'LoadingBar']);
+const UI_SWITCHER_TAGS = new Set(['Switcher', 'SegmentedControl', 'TabBar']);
+const UI_SCROLLBOX_TAGS = new Set(['ScrollBox', 'ScrollContainer', 'ScrollView']);
+const UI_LIST_TAGS = new Set(['List', 'ItemList', 'VirtualList']);
+const UI_MASKEDFRAME_TAGS = new Set(['MaskedFrame', 'ClippedImage', 'MaskedImage', 'AvatarImage']);
 
 // Note: TEXT_TAGS, IMAGE_TAGS, UI_*_TAGS에 포함되지 않은 모든 태그는 BoxSprite로 렌더링됨
 
@@ -79,16 +92,25 @@ const UI_RADIO_TAGS = new Set(['RadioGroup', 'Radio']);
 // Sprite Type Detection
 // ============================================
 
-type SpriteType = 'box' | 'text' | 'image' | 'button' | 'checkbox' | 'radio' | 'flex' | 'grid';
+type SpriteType = 'box' | 'text' | 'image' | 'button' | 'fancyButton' | 'checkbox' | 'radio' | 'slider' | 'input' | 'select' | 'progressBar' | 'switcher' | 'scrollBox' | 'list' | 'maskedFrame' | 'flex' | 'grid';
 
 function getSpriteType(element: Element): SpriteType {
   const tag = element.tag;
   const style = element.props?.style as CSSStyle | undefined;
 
-  // UI 컴포넌트 우선 체크 (Phase 11 B2.4)
+  // UI 컴포넌트 우선 체크 (Phase 11 B2.4 + Phase 6)
   if (UI_BUTTON_TAGS.has(tag)) return 'button';
+  if (UI_FANCYBUTTON_TAGS.has(tag)) return 'fancyButton';
   if (UI_CHECKBOX_TAGS.has(tag)) return 'checkbox';
   if (UI_RADIO_TAGS.has(tag)) return 'radio';
+  if (UI_SLIDER_TAGS.has(tag)) return 'slider';
+  if (UI_INPUT_TAGS.has(tag)) return 'input';
+  if (UI_SELECT_TAGS.has(tag)) return 'select';
+  if (UI_PROGRESS_TAGS.has(tag)) return 'progressBar';
+  if (UI_SWITCHER_TAGS.has(tag)) return 'switcher';
+  if (UI_SCROLLBOX_TAGS.has(tag)) return 'scrollBox';
+  if (UI_LIST_TAGS.has(tag)) return 'list';
+  if (UI_MASKEDFRAME_TAGS.has(tag)) return 'maskedFrame';
 
   // 레이아웃 컨테이너 체크 (Phase 11 B2.5)
   // display: flex/grid인 경우에도 현재는 BoxSprite로 렌더링
@@ -151,10 +173,19 @@ export const ElementSprite = memo(function ElementSprite({
 
   switch (spriteType) {
     // UI 컴포넌트 (Phase 11 B2.4)
-    // TODO: @pixi/layout layoutContainer 이벤트 문제로 임시 BoxSprite 사용
+    // P5: PixiButton 활성화 (pixiContainer 래퍼로 이벤트 처리)
     case 'button':
       return (
-        <BoxSprite
+        <PixiButton
+          element={effectiveElement}
+          isSelected={isSelected}
+          onClick={onClick}
+        />
+      );
+
+    case 'fancyButton':
+      return (
+        <PixiFancyButton
           element={effectiveElement}
           isSelected={isSelected}
           onClick={onClick}
@@ -178,6 +209,83 @@ export const ElementSprite = memo(function ElementSprite({
           isSelected={isSelected}
           onClick={onClick}
           onChange={onChange ? (id, value) => onChange(id, value) : undefined}
+        />
+      );
+
+    // Phase 6: @pixi/ui 컴포넌트
+    case 'slider':
+      return (
+        <PixiSlider
+          element={effectiveElement}
+          isSelected={isSelected}
+          onClick={onClick}
+          onChange={onChange ? (id, value) => onChange(id, value) : undefined}
+        />
+      );
+
+    case 'input':
+      return (
+        <PixiInput
+          element={effectiveElement}
+          isSelected={isSelected}
+          onClick={onClick}
+          onChange={onChange ? (id, value) => onChange(id, value) : undefined}
+        />
+      );
+
+    case 'select':
+      return (
+        <PixiSelect
+          element={effectiveElement}
+          isSelected={isSelected}
+          onClick={onClick}
+          onChange={onChange ? (id, value) => onChange(id, value) : undefined}
+        />
+      );
+
+    case 'progressBar':
+      return (
+        <PixiProgressBar
+          element={effectiveElement}
+          isSelected={isSelected}
+          onClick={onClick}
+        />
+      );
+
+    case 'switcher':
+      return (
+        <PixiSwitcher
+          element={effectiveElement}
+          isSelected={isSelected}
+          onClick={onClick}
+          onChange={onChange ? (id, value) => onChange(id, value) : undefined}
+        />
+      );
+
+    case 'scrollBox':
+      return (
+        <PixiScrollBox
+          element={effectiveElement}
+          isSelected={isSelected}
+          onClick={onClick}
+        />
+      );
+
+    case 'list':
+      return (
+        <PixiList
+          element={effectiveElement}
+          isSelected={isSelected}
+          onClick={onClick}
+        />
+      );
+
+    case 'maskedFrame':
+      return (
+        <PixiMaskedFrame
+          element={effectiveElement}
+          isSelected={isSelected}
+          onClick={onClick}
         />
       );
 

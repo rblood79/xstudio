@@ -19,8 +19,8 @@ import { Application, useApplication } from "@pixi/react";
 import { Graphics as PixiGraphics } from "pixi.js";
 import { useStore } from "../../stores";
 
-// extend()는 pixiSetup.ts에서 중앙 관리 (중복 호출 불필요)
-import "./pixiSetup";
+// P4: useExtend 훅으로 메모이제이션된 컴포넌트 등록
+import { useExtend, PIXI_COMPONENTS } from "./pixiSetup";
 import { useCanvasSyncStore } from "./canvasSync";
 import { useWebGLCanvas } from "../../../utils/featureFlags";
 import { ElementSprite } from "./sprites";
@@ -65,6 +65,17 @@ const DEFAULT_BACKGROUND = 0xf8fafc; // slate-50
 
 // GridLayer는 ./grid/GridLayer.tsx로 이동됨 (B1.4)
 // CanvasResizeHandler 삭제됨 - resizeTo 옵션으로 대체 (Phase 12 B3.2)
+
+/**
+ * P4: PixiJS 컴포넌트 등록 브릿지
+ *
+ * useExtend 훅을 사용하여 메모이제이션된 컴포넌트 등록을 수행합니다.
+ * Application 내부 첫 번째 자식으로 배치해야 합니다.
+ */
+function PixiExtendBridge() {
+  useExtend(PIXI_COMPONENTS);
+  return null;
+}
 
 /**
  * 캔버스 경계 표시
@@ -571,6 +582,9 @@ export function BuilderCanvas({
           resolution={window.devicePixelRatio || 1}
           autoDensity={true}
         >
+          {/* P4: 메모이제이션된 컴포넌트 등록 (첫 번째 자식) */}
+          <PixiExtendBridge />
+
           <CanvasSmoothResizeBridge containerEl={containerEl} />
 
           {/* ViewportControlBridge: Camera Container 직접 조작 (React re-render 최소화) */}

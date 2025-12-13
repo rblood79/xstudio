@@ -1,0 +1,244 @@
+/**
+ * Pixi Slider
+ *
+ * 🚀 Phase 6.1: @pixi/ui Slider 래퍼
+ *
+ * @pixi/ui의 Slider 컴포넌트를 xstudio Element 시스템과 통합
+ *
+ * @since 2025-12-13 Phase 6.1
+ */
+
+import { memo, useCallback, useEffect, useMemo, useRef } from 'react';
+import { useApplication } from '@pixi/react';
+import { Slider } from '@pixi/ui';
+import { Container, Graphics } from 'pixi.js';
+import type { Element } from '../../../../types/core/store.types';
+import type { CSSStyle } from '../sprites/styleConverter';
+import { cssColorToHex, parseCSSSize } from '../sprites/styleConverter';
+
+// ============================================
+// Types
+// ============================================
+
+export interface PixiSliderProps {
+  element: Element;
+  isSelected?: boolean;
+  onClick?: (elementId: string) => void;
+  onChange?: (elementId: string, value: number) => void;
+}
+
+// ============================================
+// Style Conversion
+// ============================================
+
+interface SliderLayoutStyle {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  trackColor: number;
+  fillColor: number;
+  handleColor: number;
+  trackHeight: number;
+  handleSize: number;
+}
+
+function convertToSliderStyle(style: CSSStyle | undefined): SliderLayoutStyle {
+  const primaryColor = cssColorToHex(style?.backgroundColor, 0x3b82f6);
+  const trackColor = cssColorToHex(style?.borderColor, 0xe5e7eb);
+
+  return {
+    x: parseCSSSize(style?.left, undefined, 0),
+    y: parseCSSSize(style?.top, undefined, 0),
+    width: parseCSSSize(style?.width, undefined, 200),
+    height: parseCSSSize(style?.height, undefined, 24),
+    trackColor,
+    fillColor: primaryColor,
+    handleColor: primaryColor,
+    trackHeight: 6,
+    handleSize: 16,
+  };
+}
+
+// ============================================
+// Graphics Creation
+// ============================================
+
+/**
+ * 슬라이더 배경(트랙) 생성
+ */
+function createTrackGraphics(width: number, height: number, color: number): Graphics {
+  const g = new Graphics();
+  g.roundRect(0, 0, width, height, height / 2);
+  g.fill({ color, alpha: 1 });
+  return g;
+}
+
+/**
+ * 슬라이더 채우기(fill) 생성
+ */
+function createFillGraphics(width: number, height: number, color: number): Graphics {
+  const g = new Graphics();
+  g.roundRect(0, 0, width, height, height / 2);
+  g.fill({ color, alpha: 1 });
+  return g;
+}
+
+/**
+ * 슬라이더 핸들 생성
+ */
+function createHandleGraphics(size: number, color: number): Graphics {
+  const g = new Graphics();
+  g.circle(0, 0, size / 2);
+  g.fill({ color, alpha: 1 });
+  // 핸들 테두리
+  g.circle(0, 0, size / 2);
+  g.stroke({ width: 2, color: 0xffffff, alpha: 1 });
+  return g;
+}
+
+// ============================================
+// Component
+// ============================================
+
+/**
+ * PixiSlider
+ *
+ * @pixi/ui의 Slider를 사용하여 슬라이더 렌더링
+ *
+ * @example
+ * <PixiSlider
+ *   element={sliderElement}
+ *   onChange={(id, value) => handleValueChange(id, value)}
+ * />
+ */
+export const PixiSlider = memo(function PixiSlider({
+  element,
+  isSelected,
+  onClick,
+  onChange,
+}: PixiSliderProps) {
+  const { app } = useApplication();
+  const containerRef = useRef<Container | null>(null);
+  const sliderRef = useRef<Slider | null>(null);
+
+  const style = element.props?.style as CSSStyle | undefined;
+  const props = element.props as Record<string, unknown> | undefined;
+
+  // 슬라이더 스타일
+  const layoutStyle = useMemo(() => convertToSliderStyle(style), [style]);
+
+  // 슬라이더 값 설정
+  const min = useMemo(() => Number(props?.min ?? 0), [props?.min]);
+  const max = useMemo(() => Number(props?.max ?? 100), [props?.max]);
+  const step = useMemo(() => Number(props?.step ?? 1), [props?.step]);
+  const value = useMemo(() => Number(props?.value ?? 50), [props?.value]);
+
+  // 이벤트 핸들러
+  const handleUpdate = useCallback(
+    (newValue: number) => {
+      onChange?.(element.id, newValue);
+    },
+    [element.id, onChange]
+  );
+
+  const handleClick = useCallback(() => {
+    onClick?.(element.id);
+  }, [element.id, onClick]);
+
+  // 슬라이더 생성 및 관리
+  useEffect(() => {
+    if (!app?.stage) return;
+
+    // 컨테이너 생성
+    const container = new Container();
+    container.x = layoutStyle.x;
+    container.y = layoutStyle.y;
+    container.eventMode = 'static';
+    container.cursor = 'pointer';
+    container.on('pointerdown', handleClick);
+
+    // 슬라이더 그래픽 생성
+    const bgGraphics = createTrackGraphics(
+      layoutStyle.width,
+      layoutStyle.trackHeight,
+      layoutStyle.trackColor
+    );
+    const fillGraphics = createFillGraphics(
+      layoutStyle.width,
+      layoutStyle.trackHeight,
+      layoutStyle.fillColor
+    );
+    const handleGraphics = createHandleGraphics(
+      layoutStyle.handleSize,
+      layoutStyle.handleColor
+    );
+
+    // @pixi/ui Slider 생성
+    const slider = new Slider({
+      bg: bgGraphics,
+      fill: fillGraphics,
+      slider: handleGraphics,
+      min,
+      max,
+      step,
+      value,
+    });
+
+    // 슬라이더 위치 조정 (수직 중앙)
+    slider.y = (layoutStyle.height - layoutStyle.trackHeight) / 2;
+
+    // 이벤트 연결
+    slider.onUpdate.connect(handleUpdate);
+
+    // 컨테이너에 추가
+    container.addChild(slider);
+
+    // Stage에 추가
+    app.stage.addChild(container);
+
+    containerRef.current = container;
+    sliderRef.current = slider;
+
+    return () => {
+      slider.onUpdate.disconnectAll();
+      app.stage.removeChild(container);
+      container.destroy({ children: true });
+      containerRef.current = null;
+      sliderRef.current = null;
+    };
+  }, [app, layoutStyle, min, max, step, handleClick, handleUpdate]);
+
+  // 값 동기화
+  useEffect(() => {
+    if (sliderRef.current && sliderRef.current.value !== value) {
+      sliderRef.current.value = value;
+    }
+  }, [value]);
+
+  // 선택 표시
+  useEffect(() => {
+    if (!containerRef.current) return;
+
+    // 기존 선택 표시 제거
+    const existingSelection = containerRef.current.getChildByName('selection');
+    if (existingSelection) {
+      containerRef.current.removeChild(existingSelection);
+      existingSelection.destroy();
+    }
+
+    // 선택 상태이면 테두리 추가
+    if (isSelected) {
+      const selection = new Graphics();
+      selection.name = 'selection';
+      selection.roundRect(-4, -4, layoutStyle.width + 8, layoutStyle.height + 8, 4);
+      selection.stroke({ width: 2, color: 0x3b82f6, alpha: 1 });
+      containerRef.current.addChildAt(selection, 0);
+    }
+  }, [isSelected, layoutStyle.width, layoutStyle.height]);
+
+  // @pixi/ui는 imperative이므로 JSX 반환 없음
+  return null;
+});
+
+export default PixiSlider;
