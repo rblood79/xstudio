@@ -29,7 +29,7 @@
 | **P4** | Medium | useExtend 훅 도입 | 📋 계획됨 (선택적 최적화) |
 | **P5** | Medium | PixiButton layoutContainer 이슈 해결 | 📋 계획됨 (조사 필요) |
 | **P6** | High | @pixi/ui 전체 컴포넌트 지원 | 📋 계획됨 (신규) |
-| **P7** | High | StylePanel ↔ Canvas 스타일 동기화 | 📋 계획됨 (10개 속성 미구현) |
+| **P7** | High | StylePanel ↔ Canvas 스타일 동기화 | 📋 계획됨 (11개 속성 미구현/부분) |
 
 ---
 
@@ -672,7 +672,7 @@ feat(workspace): add @pixi/ui Slider component wrapper
 | | alignItems | layoutCalculator | ✅ 구현됨 | flex-start/center/end/stretch |
 | | justifyContent | layoutCalculator | ✅ 구현됨 | 모든 값 지원 |
 | | gap | layoutCalculator | ✅ 구현됨 | |
-| | padding* | layoutCalculator | ✅ 구현됨 | 4방향 지원 |
+| | **padding*** | layoutCalculator | ⚠️ 부분 | 레이아웃 계산만, 스프라이트 내부 미적용 |
 | | margin* | layoutCalculator | ✅ 구현됨 | 4방향 지원 |
 | | **flexWrap** | - | ❌ 미구현 | wrap/nowrap 미지원 |
 | **TypographySection** | | | | |
@@ -822,9 +822,34 @@ function calculateTextY(
 }
 ```
 
-#### 7.2 LayoutSection 미구현 (1개 속성)
+#### 7.2 LayoutSection 미구현 (2개 속성)
 
-**7.2.1 flexWrap**
+**7.2.1 padding (스프라이트 내부)**
+
+```typescript
+// 현재: layoutCalculator에서 자식 배치에만 사용
+// 문제: BoxSprite, TextSprite 내부에서 padding이 시각적으로 미적용
+
+// BoxSprite.tsx 현재 코드 (padding 미사용)
+const textX = transform.width / 2;  // 중앙 고정
+const textY = transform.height / 2;
+
+// 변경 후 - padding 적용
+const paddingLeft = parseCSSSize(style?.paddingLeft || style?.padding, undefined, 0);
+const paddingTop = parseCSSSize(style?.paddingTop || style?.padding, undefined, 0);
+const paddingRight = parseCSSSize(style?.paddingRight || style?.padding, undefined, 0);
+const paddingBottom = parseCSSSize(style?.paddingBottom || style?.padding, undefined, 0);
+
+// 텍스트 영역 계산 (padding 제외)
+const contentWidth = transform.width - paddingLeft - paddingRight;
+const contentHeight = transform.height - paddingTop - paddingBottom;
+
+// 텍스트 위치 (content 영역 중앙)
+const textX = paddingLeft + contentWidth / 2;
+const textY = paddingTop + contentHeight / 2;
+```
+
+**7.2.2 flexWrap**
 
 ```typescript
 // layoutCalculator.ts 수정 필요
@@ -1015,23 +1040,24 @@ const filters = shadowStyle ? [
 | Sub-Phase | 속성 | 난이도 | 우선순위 | 의존성 |
 |-----------|------|--------|----------|--------|
 | **7.1** | opacity (전체) | 🟢 Easy | P0 | 없음 |
-| **7.2** | fontStyle | 🟢 Easy | P1 | 없음 |
-| **7.3** | letterSpacing | 🟢 Easy | P1 | 없음 |
-| **7.4** | lineHeight (leading) | 🟡 Medium | P1 | fontSize 계산 필요 |
-| **7.5** | verticalAlign | 🟡 Medium | P1 | 텍스트 높이 계산 필요 |
-| **7.6** | textTransform | 🟢 Easy | P2 | 없음 |
-| **7.7** | textDecoration | 🟡 Medium | P2 | Graphics 그리기 |
-| **7.8** | flexWrap | 🔴 Hard | P2 | 레이아웃 전면 수정 |
-| **7.9** | borderStyle | 🟡 Medium | P3 | 커스텀 선 그리기 |
-| **7.10** | boxShadow | 🔴 Hard | P3 | @pixi/filter 또는 커스텀 |
+| **7.2** | padding (스프라이트 내부) | 🟢 Easy | P0 | 없음 |
+| **7.3** | fontStyle | 🟢 Easy | P1 | 없음 |
+| **7.4** | letterSpacing | 🟢 Easy | P1 | 없음 |
+| **7.5** | lineHeight (leading) | 🟡 Medium | P1 | fontSize 계산 필요 |
+| **7.6** | verticalAlign | 🟡 Medium | P1 | 텍스트 높이 계산 필요 |
+| **7.7** | textTransform | 🟢 Easy | P2 | 없음 |
+| **7.8** | textDecoration | 🟡 Medium | P2 | Graphics 그리기 |
+| **7.9** | flexWrap | 🔴 Hard | P2 | 레이아웃 전면 수정 |
+| **7.10** | borderStyle | 🟡 Medium | P3 | 커스텀 선 그리기 |
+| **7.11** | boxShadow | 🔴 Hard | P3 | @pixi/filter 또는 커스텀 |
 
 ### 파일 수정 계획
 
 | 파일 | 수정 내용 | Sub-Phase |
 |------|----------|-----------|
-| `styleConverter.ts` | CSSStyle, PixiTextStyle 확장 | 7.1-7.6 |
-| `TextSprite.tsx` | 텍스트 스타일 적용 로직 | 7.2-7.7 |
-| `BoxSprite.tsx` | opacity, borderStyle 적용 | 7.1, 7.9 |
+| `styleConverter.ts` | CSSStyle, PixiTextStyle 확장 | 7.1-7.7 |
+| `TextSprite.tsx` | 텍스트 스타일 + padding 적용 | 7.2-7.8 |
+| `BoxSprite.tsx` | opacity, padding, borderStyle 적용 | 7.1, 7.2, 7.10 |
 | `ImageSprite.tsx` | opacity 적용 | 7.1 |
 | `layoutCalculator.ts` | flexWrap 로직 추가 | 7.8 |
 | `index.ts` (sprites) | 필터 export | 7.10 |
