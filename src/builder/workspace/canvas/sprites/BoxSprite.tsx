@@ -2,8 +2,10 @@
  * Box Sprite
  *
  * 🚀 Phase 10 B1.2: Box, Flex, Grid 컨테이너 스프라이트
+ * 🚀 P7.1: Padding 지원 추가 (TextSprite와 일관성)
  *
  * @since 2025-12-11 Phase 10 B1.2
+ * @updated 2025-12-13 P7.1 - padding 속성 지원
  */
 
 import { useCallback, useMemo } from 'react';
@@ -49,6 +51,27 @@ export function BoxSprite({ element, isSelected, onClick }: BoxSpriteProps) {
     });
   }, [style]);
 
+  // P7.1: Padding 파싱 (TextSprite와 동일한 패턴)
+  const paddingLeft = useMemo(() => {
+    const p = style?.paddingLeft || style?.padding;
+    return typeof p === 'number' ? p : parseInt(String(p) || '0', 10);
+  }, [style?.paddingLeft, style?.padding]);
+
+  const paddingRight = useMemo(() => {
+    const p = style?.paddingRight || style?.padding;
+    return typeof p === 'number' ? p : parseInt(String(p) || '0', 10);
+  }, [style?.paddingRight, style?.padding]);
+
+  const paddingTop = useMemo(() => {
+    const p = style?.paddingTop || style?.padding;
+    return typeof p === 'number' ? p : parseInt(String(p) || '0', 10);
+  }, [style?.paddingTop, style?.padding]);
+
+  const paddingBottom = useMemo(() => {
+    const p = style?.paddingBottom || style?.padding;
+    return typeof p === 'number' ? p : parseInt(String(p) || '0', 10);
+  }, [style?.paddingBottom, style?.padding]);
+
   // Draw function (PixiJS v8 API)
   const draw = useCallback(
     (g: PixiGraphics) => {
@@ -81,9 +104,11 @@ export function BoxSprite({ element, isSelected, onClick }: BoxSpriteProps) {
     onClick?.(element.id);
   }, [element.id, onClick]);
 
-  // 텍스트 위치 (중앙 정렬)
-  const textX = transform.width / 2;
-  const textY = transform.height / 2;
+  // P7.1: 텍스트 위치 (padding 적용 후 콘텐츠 영역 중앙)
+  const contentWidth = transform.width - paddingLeft - paddingRight;
+  const contentHeight = transform.height - paddingTop - paddingBottom;
+  const textX = paddingLeft + contentWidth / 2;
+  const textY = paddingTop + contentHeight / 2;
 
   return (
     <pixiContainer x={transform.x} y={transform.y}>
