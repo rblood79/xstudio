@@ -67,14 +67,13 @@ export function TextSprite({
         return;
       }
 
-      g.fill({ color: fill.color, alpha: fill.alpha });
-
+      // v8 Pattern: shape → fill (shape first, then apply fill with style)
       if (borderRadius && typeof borderRadius === 'number' && borderRadius > 0) {
         g.roundRect(0, 0, transform.width, transform.height, borderRadius);
       } else {
         g.rect(0, 0, transform.width, transform.height);
       }
-      g.fill();
+      g.fill({ color: fill.color, alpha: fill.alpha });
 
       // Stroke
       if (stroke) {

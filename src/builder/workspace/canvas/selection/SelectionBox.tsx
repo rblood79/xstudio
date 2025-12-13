@@ -67,10 +67,9 @@ export const SelectionBox = memo(function SelectionBox({
   const drawMoveArea = useCallback(
     (g: PixiGraphics) => {
       g.clear();
-      // 투명 영역 (이벤트 감지용)
-      g.fill({ color: 0x000000, alpha: 0.001 });
+      // 투명 영역 (이벤트 감지용) - v8 Pattern: shape → fill
       g.rect(0, 0, width, height);
-      g.fill();
+      g.fill({ color: 0x000000, alpha: 0.001 });
     },
     [width, height]
   );
@@ -118,9 +117,9 @@ export const SelectionBox = memo(function SelectionBox({
           draw={drawMoveArea}
           eventMode="static"
           cursor="move"
-          onpointerdown={handleMovePointerDown}
-          onpointerover={handleMovePointerOver}
-          onpointerout={handleMovePointerOut}
+          onPointerDown={handleMovePointerDown}
+          onPointerOver={handleMovePointerOver}
+          onPointerOut={handleMovePointerOut}
         />
       )}
 

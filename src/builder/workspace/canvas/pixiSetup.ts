@@ -18,29 +18,25 @@ import {
   Graphics as PixiGraphics,
   Sprite as PixiSprite,
   Text as PixiText,
-  TextStyle as PixiTextStyle,
 } from 'pixi.js';
 import {
   LayoutContainer,
   LayoutText,
-  LayoutGraphics,
-  LayoutSprite,
 } from '@pixi/layout/components';
 
 // Extend PixiJS with all required components
 // extend()는 여러 번 호출해도 안전합니다 (이미 등록된 컴포넌트는 무시됨)
+// NOTE: TextStyle은 DisplayObject가 아니므로 extend() 불필요 (직접 import하여 사용)
+// NOTE: LayoutGraphics, LayoutSprite는 미사용으로 제거됨
 extend({
-  // 기본 PixiJS 컴포넌트
+  // 기본 PixiJS 컴포넌트 (DisplayObjects만)
   Container: PixiContainer,
   Graphics: PixiGraphics,
   Sprite: PixiSprite,
   Text: PixiText,
-  TextStyle: PixiTextStyle,
   // @pixi/layout 컴포넌트 (layoutContainer, layoutText 등 JSX 태그로 사용)
   LayoutContainer,
   LayoutText,
-  LayoutGraphics,
-  LayoutSprite,
 });
 
 // Re-export for convenience

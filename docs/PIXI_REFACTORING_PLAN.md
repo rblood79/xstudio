@@ -1,9 +1,10 @@
 # Pixi.js 사용 개선 Phase Plan
 
 > **생성일**: 2025-12-13
-> **최종 검증일**: 2025-12-13
+> **최종 적용일**: 2025-12-13
 > **기반**: Pixi.js 생태계 라이브러리 사용 감사 보고서 + 공식 레퍼런스 교차 검증
 > **목표**: 공식 레퍼런스 준수, 코드 품질 향상, 성능 최적화
+> **P1-P3 적용 완료**: TransformHandle, SelectionBox, TextSprite, ImageSprite, pixiSetup, BuilderCanvas
 
 ---
 
@@ -20,14 +21,15 @@
 
 ### Phase 요약
 
-| Phase | 우선순위 | 작업 내용 | 검증 상태 |
+| Phase | 우선순위 | 작업 내용 | 상태 |
 |-------|---------|----------|----------|
-| **P1** | High | 이벤트 핸들러 일관성 통일 | ⚠️ 프로젝트 일관성 기준 |
-| **P2** | High | extend() 중복 제거 | ✅ 검증됨 |
-| **P3** | Critical | Graphics fill()/stroke() 순서 수정 | ✅ 공식 문서 확인 |
-| **P4** | Medium | useExtend 훅 도입 | ✅ 선택적 최적화 |
-| **P5** | Medium | PixiButton layoutContainer 이슈 해결 | 조사 필요 |
-| **P6** | High | @pixi/ui 전체 컴포넌트 지원 | 신규 |
+| **P1** | High | 이벤트 핸들러 일관성 통일 | ✅ **적용됨** (2025-12-13) |
+| **P2** | High | extend() 중복 제거 | ✅ **적용됨** (2025-12-13) |
+| **P3** | Critical | Graphics fill()/stroke() 순서 수정 | ✅ **적용됨** (2025-12-13) |
+| **P4** | Medium | useExtend 훅 도입 | 📋 계획됨 (선택적 최적화) |
+| **P5** | Medium | PixiButton layoutContainer 이슈 해결 | 📋 계획됨 (조사 필요) |
+| **P6** | High | @pixi/ui 전체 컴포넌트 지원 | 📋 계획됨 (신규) |
+| **P7** | High | StylePanel ↔ Canvas 스타일 동기화 | 📋 계획됨 (12개 속성 미구현/부분/불일치) |
 
 ---
 
@@ -646,19 +648,511 @@ feat(workspace): add @pixi/ui Slider component wrapper
 
 ---
 
+## Phase 7: StylePanel ↔ Canvas 스타일 속성 동기화
+
+### 현재 분석
+
+#### 구현 현황 매트릭스
+
+**파일 위치:**
+- **StylePanel 섹션**: `src/builder/panels/styles/sections/`
+- **Canvas 스타일 변환**: `src/builder/workspace/canvas/sprites/styleConverter.ts`
+- **Canvas 레이아웃 계산**: `src/builder/workspace/canvas/layout/layoutCalculator.ts`
+
+| 섹션 | 속성 | Canvas 구현 | 상태 | 비고 |
+|------|------|-------------|------|------|
+| **TransformSection** | | | | |
+| | width | styleConverter | ✅ 구현됨 | parseCSSSize() |
+| | height | styleConverter | ✅ 구현됨 | parseCSSSize() |
+| | left | styleConverter | ✅ 구현됨 | position offset |
+| | top | styleConverter | ✅ 구현됨 | position offset |
+| **LayoutSection** | | | | |
+| | display | layoutCalculator | ✅ 구현됨 | flex, block 지원 |
+| | flexDirection | layoutCalculator | ✅ 구현됨 | row, column, *-reverse |
+| | alignItems | layoutCalculator | ✅ 구현됨 | flex-start/center/end/stretch |
+| | justifyContent | layoutCalculator | ✅ 구현됨 | 모든 값 지원 |
+| | gap | layoutCalculator | ✅ 구현됨 | |
+| | **padding*** | 불일치 | ⚠️ 불일치 | TextSprite ✅, BoxSprite ❌ (아래 상세) |
+| | margin* | layoutCalculator | ✅ 구현됨 | 4방향 지원 |
+| | **flexWrap** | - | ❌ 미구현 | wrap/nowrap 미지원 |
+| **TypographySection** | | | | |
+| | fontFamily | styleConverter | ✅ 구현됨 | PixiTextStyle |
+| | fontSize | styleConverter | ✅ 구현됨 | PixiTextStyle |
+| | fontWeight | styleConverter | ✅ 구현됨 | PixiTextStyle |
+| | color | styleConverter | ✅ 구현됨 | → fill 변환 |
+| | textAlign | styleConverter | ✅ 구현됨 | → align 변환 |
+| | **fontStyle** | - | ❌ 미구현 | italic, oblique |
+| | **lineHeight** | - | ❌ 미구현 | 줄 간격 (PixiJS leading 지원) |
+| | **letterSpacing** | - | ❌ 미구현 | 자간 (PixiJS 직접 지원) |
+| | **textDecoration** | - | ❌ 미구현 | underline, line-through (Graphics 필요) |
+| | **textTransform** | - | ❌ 미구현 | uppercase, lowercase |
+| | **verticalAlign** | - | ❌ 미구현 | top, middle, bottom |
+| **AppearanceSection** | | | | |
+| | backgroundColor | styleConverter | ✅ 구현됨 | cssColorToHex() |
+| | borderRadius | styleConverter | ✅ 구현됨 | roundRect() |
+| | borderWidth | styleConverter | ✅ 구현됨 | PixiStrokeStyle |
+| | borderColor | styleConverter | ✅ 구현됨 | PixiStrokeStyle |
+| | **borderStyle** | - | ❌ 미구현 | dashed, dotted 등 (커스텀 필요) |
+| | **opacity** | styleConverter | ⚠️ 부분 | fill alpha만, Container.alpha 미적용 |
+| | **boxShadow** | - | ❌ 미구현 | @pixi/filter 또는 커스텀 필요 |
+
+### ⚠️ padding 불일치 상세 분석
+
+**현재 상태:**
+- **TextSprite.tsx** (lines 111-120): ✅ **구현됨** - paddingLeft, paddingTop을 텍스트 위치에 적용
+- **BoxSprite.tsx** (lines 84-86): ❌ **미구현** - 텍스트가 항상 중앙 고정 (padding 무시)
+- **PixiButton.tsx**: ✅ **구현됨** - @pixi/layout의 layout.padding* 사용
+
+**문제:**
+```typescript
+// TextSprite.tsx - padding 적용됨 ✅
+const paddingLeft = useMemo(() => {
+  const p = style?.paddingLeft || style?.padding;
+  return typeof p === 'number' ? p : parseInt(String(p) || '0', 10);
+}, [style]);
+<pixiText x={paddingLeft} y={paddingTop} ... />
+
+// BoxSprite.tsx - padding 무시됨 ❌
+const textX = transform.width / 2;  // 항상 중앙
+const textY = transform.height / 2;
+```
+
+**해결 방안:** BoxSprite에 TextSprite와 동일한 padding 로직 추가
+
+### 미구현 항목 상세 분석
+
+#### 7.1 TypographySection 미구현 (6개 속성)
+
+**7.1.1 fontStyle (italic, oblique)**
+
+```typescript
+// 현재 PixiTextStyle (styleConverter.ts:58-66)
+export interface PixiTextStyle {
+  fontFamily: string;
+  fontSize: number;
+  fontWeight: string;
+  fill: number;
+  align: 'left' | 'center' | 'right';
+  wordWrap: boolean;
+  wordWrapWidth: number;
+  // fontStyle 없음 ❌
+}
+
+// 변경 후
+export interface PixiTextStyle {
+  fontFamily: string;
+  fontSize: number;
+  fontWeight: string;
+  fontStyle: 'normal' | 'italic' | 'oblique';  // ✅ 추가
+  fill: number;
+  // ...
+}
+
+// convertToTextStyle 수정
+export function convertToTextStyle(style: CSSStyle | undefined): PixiTextStyle {
+  return {
+    // ...
+    fontStyle: (style?.fontStyle as 'normal' | 'italic' | 'oblique') || 'normal',
+  };
+}
+```
+
+**7.1.2 lineHeight**
+
+```typescript
+// PixiJS TextStyle 지원 확인 (v8)
+// PixiJS에서는 leading으로 지원됨
+
+export interface PixiTextStyle {
+  // ...
+  leading: number;  // ✅ 줄 간격 (line-height 대응)
+}
+
+// CSS lineHeight → PixiJS leading 변환
+const lineHeight = parseCSSSize(style?.lineHeight, undefined, 1.2);
+const leading = (lineHeight - 1) * fontSize;  // 배수 기반 계산
+```
+
+**7.1.3 letterSpacing**
+
+```typescript
+// PixiJS TextStyle에서 직접 지원됨
+export interface PixiTextStyle {
+  // ...
+  letterSpacing: number;  // ✅ 직접 지원
+}
+```
+
+**7.1.4 textDecoration (underline, line-through, overline)**
+
+```typescript
+// PixiJS에서 직접 지원하지 않음 → Graphics로 직접 그리기 필요
+
+// TextSprite.tsx 수정 필요
+function drawTextDecoration(g: PixiGraphics, text: PixiText, decoration: string) {
+  if (decoration === 'none') return;
+
+  const { x, y, width } = text.getBounds();
+  const lineY = decoration === 'underline'
+    ? y + text.height
+    : decoration === 'line-through'
+      ? y + text.height / 2
+      : y;  // overline
+
+  g.setStrokeStyle({ width: 1, color: text.style.fill });
+  g.moveTo(x, lineY);
+  g.lineTo(x + width, lineY);
+  g.stroke();
+}
+```
+
+**7.1.5 textTransform**
+
+```typescript
+// CSS textTransform은 실제 텍스트 변환이므로 render 전 적용
+
+function applyTextTransform(text: string, transform: string): string {
+  switch (transform) {
+    case 'uppercase': return text.toUpperCase();
+    case 'lowercase': return text.toLowerCase();
+    case 'capitalize': return text.replace(/\b\w/g, c => c.toUpperCase());
+    default: return text;
+  }
+}
+
+// TextSprite에서 사용
+const transformedText = applyTextTransform(textContent, style?.textTransform || 'none');
+```
+
+**7.1.6 verticalAlign**
+
+```typescript
+// 컨테이너 내 텍스트 수직 정렬
+// 현재 paddingTop으로만 처리됨 → 개선 필요
+
+function calculateTextY(
+  containerHeight: number,
+  textHeight: number,
+  verticalAlign: string,
+  paddingTop: number
+): number {
+  switch (verticalAlign) {
+    case 'top': return paddingTop;
+    case 'middle': return (containerHeight - textHeight) / 2;
+    case 'bottom': return containerHeight - textHeight - paddingTop;
+    default: return paddingTop;  // baseline
+  }
+}
+```
+
+#### 7.2 LayoutSection 미구현/불일치 (2개 속성)
+
+**7.2.1 padding (BoxSprite 불일치 해결)**
+
+> **Note:** TextSprite에서는 이미 구현됨 (lines 111-120). BoxSprite만 수정 필요.
+
+```typescript
+// BoxSprite.tsx 현재 코드 (padding 미사용) ❌
+const textX = transform.width / 2;  // 중앙 고정
+const textY = transform.height / 2;
+
+// 변경 후 - TextSprite와 동일한 padding 로직 적용 ✅
+const paddingLeft = useMemo(() => {
+  const p = style?.paddingLeft || style?.padding;
+  return typeof p === 'number' ? p : parseInt(String(p) || '0', 10);
+}, [style]);
+
+const paddingTop = useMemo(() => {
+  const p = style?.paddingTop || style?.padding;
+  return typeof p === 'number' ? p : parseInt(String(p) || '0', 10);
+}, [style]);
+
+const paddingRight = useMemo(() => {
+  const p = style?.paddingRight || style?.padding;
+  return typeof p === 'number' ? p : parseInt(String(p) || '0', 10);
+}, [style]);
+
+const paddingBottom = useMemo(() => {
+  const p = style?.paddingBottom || style?.padding;
+  return typeof p === 'number' ? p : parseInt(String(p) || '0', 10);
+}, [style]);
+
+// 텍스트 영역 계산 (padding 제외)
+const contentWidth = transform.width - paddingLeft - paddingRight;
+const contentHeight = transform.height - paddingTop - paddingBottom;
+
+// 텍스트 위치 (content 영역 중앙) - TextSprite와 달리 BoxSprite는 중앙 정렬 유지
+const textX = paddingLeft + contentWidth / 2;
+const textY = paddingTop + contentHeight / 2;
+```
+
+**7.2.2 flexWrap**
+
+```typescript
+// layoutCalculator.ts 수정 필요
+
+function calculateFlexLayout(
+  // ...
+  flexStyle: { flexWrap: string; /* ... */ }
+) {
+  const { flexDirection, flexWrap, alignItems, justifyContent, gap } = flexStyle;
+  const isRow = flexDirection.startsWith('row');
+
+  if (flexWrap === 'nowrap') {
+    // 현재 구현 (단일 라인)
+    calculateSingleLineLayout(/* ... */);
+  } else {
+    // ✅ 추가 필요: wrap/wrap-reverse
+    calculateMultiLineLayout(/* ... */);
+  }
+}
+
+function calculateMultiLineLayout(
+  children: ChildSize[],
+  isRow: boolean,
+  parentWidth: number,
+  parentHeight: number,
+  gap: number,
+  isWrapReverse: boolean
+): LayoutPosition[] {
+  const lines: ChildSize[][] = [];
+  let currentLine: ChildSize[] = [];
+  let lineSize = 0;
+  const maxSize = isRow ? parentWidth : parentHeight;
+
+  // 라인별로 분할
+  for (const child of children) {
+    const childSize = isRow ? child.totalWidth : child.totalHeight;
+    if (lineSize + childSize > maxSize && currentLine.length > 0) {
+      lines.push(currentLine);
+      currentLine = [child];
+      lineSize = childSize + gap;
+    } else {
+      currentLine.push(child);
+      lineSize += childSize + gap;
+    }
+  }
+  if (currentLine.length > 0) lines.push(currentLine);
+
+  // wrap-reverse: 라인 순서 반전
+  if (isWrapReverse) lines.reverse();
+
+  // 각 라인별 위치 계산
+  // ...
+}
+```
+
+#### 7.3 AppearanceSection 미구현 (3개 속성)
+
+**7.3.1 borderStyle (dashed, dotted 등)**
+
+```typescript
+// PixiJS v8 Graphics에서 직접 지원하지 않음
+// 대안 1: 커스텀 점선 그리기
+// 대안 2: @pixi/graphics-extras 사용
+
+// 대안 1: 커스텀 점선 그리기
+function drawDashedRect(
+  g: PixiGraphics,
+  x: number, y: number, w: number, h: number,
+  borderStyle: string,
+  strokeStyle: PixiStrokeStyle
+) {
+  g.setStrokeStyle(strokeStyle);
+
+  if (borderStyle === 'dashed') {
+    const dashLength = 6;
+    const gapLength = 4;
+    drawDashedLine(g, x, y, x + w, y, dashLength, gapLength);
+    drawDashedLine(g, x + w, y, x + w, y + h, dashLength, gapLength);
+    drawDashedLine(g, x + w, y + h, x, y + h, dashLength, gapLength);
+    drawDashedLine(g, x, y + h, x, y, dashLength, gapLength);
+  } else if (borderStyle === 'dotted') {
+    // 1px 점선
+    drawDottedLine(g, x, y, x + w, y);
+    // ...
+  } else {
+    // solid (기본)
+    g.rect(x, y, w, h);
+    g.stroke();
+  }
+}
+
+function drawDashedLine(
+  g: PixiGraphics,
+  x1: number, y1: number, x2: number, y2: number,
+  dashLen: number, gapLen: number
+) {
+  const dx = x2 - x1;
+  const dy = y2 - y1;
+  const len = Math.hypot(dx, dy);
+  const nx = dx / len;
+  const ny = dy / len;
+
+  let drawn = 0;
+  let isDash = true;
+
+  while (drawn < len) {
+    const segLen = isDash ? dashLen : gapLen;
+    const endDraw = Math.min(drawn + segLen, len);
+
+    if (isDash) {
+      g.moveTo(x1 + nx * drawn, y1 + ny * drawn);
+      g.lineTo(x1 + nx * endDraw, y1 + ny * endDraw);
+    }
+
+    drawn = endDraw;
+    isDash = !isDash;
+  }
+  g.stroke();
+}
+```
+
+**7.3.2 opacity (전체 요소)**
+
+```typescript
+// 현재: fill alpha만 적용
+// 개선: Container.alpha로 전체 요소 투명도 적용
+
+// BoxSprite.tsx, TextSprite.tsx 등에서
+<pixiContainer
+  x={transform.x}
+  y={transform.y}
+  alpha={parseCSSSize(style?.opacity, undefined, 1)}  // ✅ 추가
+>
+  {/* children */}
+</pixiContainer>
+```
+
+**7.3.3 boxShadow**
+
+```typescript
+// PixiJS에서 직접 지원하지 않음
+// 대안: DropShadowFilter 사용 (@pixi/filter-drop-shadow)
+// 또는 Graphics로 그림자 시뮬레이션
+
+import { DropShadowFilter } from '@pixi/filter-drop-shadow';
+
+// styleConverter.ts 확장
+export interface PixiShadowStyle {
+  offsetX: number;
+  offsetY: number;
+  blur: number;
+  color: number;
+  alpha: number;
+}
+
+export function parseBoxShadow(boxShadow: string): PixiShadowStyle | null {
+  if (!boxShadow || boxShadow === 'none') return null;
+
+  // CSS boxShadow 파싱: "2px 4px 8px rgba(0,0,0,0.3)"
+  const match = boxShadow.match(/(-?\d+)px\s+(-?\d+)px\s+(\d+)px\s+(.+)/);
+  if (!match) return null;
+
+  return {
+    offsetX: parseInt(match[1]),
+    offsetY: parseInt(match[2]),
+    blur: parseInt(match[3]),
+    color: cssColorToHex(match[4]),
+    alpha: cssColorToAlpha(match[4]),
+  };
+}
+
+// 스프라이트에서 필터 적용
+const shadowStyle = parseBoxShadow(style?.boxShadow);
+const filters = shadowStyle ? [
+  new DropShadowFilter({
+    offset: { x: shadowStyle.offsetX, y: shadowStyle.offsetY },
+    blur: shadowStyle.blur,
+    color: shadowStyle.color,
+    alpha: shadowStyle.alpha,
+  })
+] : [];
+
+<pixiContainer filters={filters}>
+```
+
+### 구현 우선순위
+
+> **Note:** opacity, boxShadow는 CSSStyle 인터페이스에 정의되어 있지만 AppearanceSection UI에는 아직 노출되지 않음.
+> 아래 표는 **StylePanel UI에 존재하지만 Canvas에서 미구현인 항목**만 포함.
+
+| Sub-Phase | 속성 | 대상 파일 | 난이도 | 우선순위 | 비고 |
+|-----------|------|----------|--------|----------|------|
+| **7.1** | padding (BoxSprite) | BoxSprite.tsx | 🟢 Easy | P0 | TextSprite와 일관성 맞춤 |
+| **7.2** | fontStyle | styleConverter.ts, TextSprite.tsx | 🟢 Easy | P1 | italic, oblique |
+| **7.3** | letterSpacing | styleConverter.ts, TextSprite.tsx | 🟢 Easy | P1 | PixiJS 직접 지원 |
+| **7.4** | lineHeight (leading) | styleConverter.ts, TextSprite.tsx | 🟡 Medium | P1 | fontSize 계산 필요 |
+| **7.5** | verticalAlign | TextSprite.tsx, BoxSprite.tsx | 🟡 Medium | P1 | 텍스트 높이 계산 필요 |
+| **7.6** | textTransform | TextSprite.tsx, BoxSprite.tsx | 🟢 Easy | P2 | 렌더링 전 문자열 변환 |
+| **7.7** | textDecoration | TextSprite.tsx | 🟡 Medium | P2 | Graphics 선 그리기 |
+| **7.8** | flexWrap | layoutCalculator.ts | 🔴 Hard | P2 | 멀티라인 레이아웃 |
+| **7.9** | borderStyle | BoxSprite.tsx, TextSprite.tsx | 🟡 Medium | P3 | 점선/대시선 커스텀 |
+
+**향후 확장 (UI 추가 시):**
+| 속성 | CSSStyle 정의 | UI 노출 | Canvas 구현 |
+|------|--------------|---------|-------------|
+| opacity | ✅ (line 23) | ❌ 미노출 | ⚠️ fill alpha만 |
+| boxShadow | ✅ (line 34) | ❌ 미노출 | ❌ 미구현 |
+
+### 파일 수정 계획
+
+| 파일 | 수정 내용 | Sub-Phase |
+|------|----------|-----------|
+| `BoxSprite.tsx` | padding 로직 추가 (TextSprite와 동일) | 7.1 |
+| `styleConverter.ts` | PixiTextStyle 확장 (fontStyle, letterSpacing, leading) | 7.2-7.4 |
+| `TextSprite.tsx` | 텍스트 스타일 적용 + textDecoration Graphics | 7.2-7.7 |
+| `BoxSprite.tsx` | verticalAlign, textTransform, borderStyle | 7.5-7.6, 7.9 |
+| `layoutCalculator.ts` | flexWrap 멀티라인 로직 | 7.8 |
+
+### 커밋 메시지 (예시)
+
+```
+feat(canvas): add full opacity support to all sprites (P7.1)
+
+- Add alpha prop to pixiContainer in BoxSprite, TextSprite, ImageSprite
+- Parse CSS opacity value in styleConverter
+- Opacity now affects entire element, not just fill
+```
+
+```
+feat(canvas): add typography style support - fontStyle, letterSpacing (P7.2-7.3)
+
+- Extend PixiTextStyle interface with fontStyle and letterSpacing
+- Update convertToTextStyle to extract these properties
+- TextSprite now renders italic/oblique text correctly
+```
+
+```
+feat(canvas): add flexWrap support to layout calculator (P7.8)
+
+- Implement calculateMultiLineLayout for wrap/wrap-reverse
+- Add line break logic based on container width/height
+- Support alignContent for multi-line flex containers
+```
+
+---
+
 ## 실행 계획
+
+### ✅ 완료 (2025-12-13)
+
+- [x] Phase Plan 문서 작성
+- [x] **Phase 1**: 이벤트 핸들러 camelCase 통일 (2파일, 6줄)
+- [x] **Phase 2**: extend() 정리 (2파일)
+- [x] **Phase 3**: Graphics fill() 순서 수정 (4파일) ⚠️ Critical
 
 ### 즉시 실행 (Day 1-2)
 
-- [x] Phase Plan 문서 작성
-- [ ] **Phase 1**: 이벤트 핸들러 camelCase 통일 (2파일, 6줄)
-- [ ] **Phase 2**: extend() 정리 (2파일)
-- [ ] **Phase 3**: Graphics fill() 순서 수정 (2파일) ⚠️ Critical
+- [ ] **Phase 7.1**: BoxSprite padding 일관성 수정 (🟢 Easy, P0)
+- [ ] **Phase 7.2-7.3**: fontStyle, letterSpacing 구현 (🟢 Easy, P1)
+- [ ] **Phase 7.4-7.5**: lineHeight (leading), verticalAlign 구현 (🟡 Medium, P1)
 
 ### 단기 (Week 1)
 
 - [ ] **Phase 4**: useExtend 훅 도입 (선택적)
 - [ ] **Phase 5**: PixiButton layoutContainer 이슈 조사
+- [ ] **Phase 7.6-7.7**: textTransform, textDecoration 구현 (P2)
 
 ### 중기 (Week 2-4)
 
@@ -666,10 +1160,13 @@ feat(workspace): add @pixi/ui Slider component wrapper
 - [ ] **Phase 6.2**: PixiInput 구현
 - [ ] **Phase 6.3**: PixiSelect 구현
 - [ ] **Phase 6.4**: PixiProgressBar 구현
+- [ ] **Phase 7.8**: flexWrap 구현 (🔴 Hard, P2)
 
 ### 장기 (Month 2+)
 
 - [ ] **Phase 6.5-6.9**: 나머지 @pixi/ui 컴포넌트
+- [ ] **Phase 7.9**: borderStyle 구현 (🟡 Medium, P3)
+- [ ] **AppearanceSection UI 확장**: opacity, boxShadow 노출 + Canvas 구현
 
 ---
 
