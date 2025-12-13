@@ -7,6 +7,7 @@
  *
  * @since 2025-12-11 Phase 11 B2.4
  * @updated 2025-12-11 - @pixi/layout LayoutContainer 기반으로 리팩토링
+ * @updated 2025-12-13 P5: pixiContainer 래퍼로 이벤트 처리 (GitHub #126 workaround)
  */
 
 // @pixi/layout 컴포넌트 extend (JSX 사용 전 필수)
@@ -103,75 +104,79 @@ export const PixiCheckbox = memo(function PixiCheckbox({
     onChange?.(element.id, !isChecked);
   }, [element.id, onClick, onChange, isChecked]);
 
+  // P5 Workaround: pixiContainer로 이벤트 처리 (GitHub #126)
   return (
-    <layoutContainer
+    <pixiContainer
       x={layoutStyles.container.left}
       y={layoutStyles.container.top}
-      layout={{
-        flexDirection: layoutStyles.container.flexDirection,
-        alignItems: layoutStyles.container.alignItems,
-        gap: layoutStyles.container.gap,
-      }}
       eventMode="static"
       cursor="pointer"
       onPointerDown={handlePointerDown}
     >
-      {/* 체크박스 박스 */}
       <layoutContainer
         layout={{
-          width: layoutStyles.box.width,
-          height: layoutStyles.box.height,
-          backgroundColor: layoutStyles.box.backgroundColor,
-          borderRadius: layoutStyles.box.borderRadius,
-          borderWidth: layoutStyles.box.borderWidth,
-          borderColor: layoutStyles.box.borderColor,
-          justifyContent: layoutStyles.box.justifyContent,
-          alignItems: layoutStyles.box.alignItems,
+          flexDirection: layoutStyles.container.flexDirection,
+          alignItems: layoutStyles.container.alignItems,
+          gap: layoutStyles.container.gap,
         }}
       >
-        {/* 체크마크 */}
-        {isChecked && (
+        {/* 체크박스 박스 */}
+        <layoutContainer
+          layout={{
+            width: layoutStyles.box.width,
+            height: layoutStyles.box.height,
+            backgroundColor: layoutStyles.box.backgroundColor,
+            borderRadius: layoutStyles.box.borderRadius,
+            borderWidth: layoutStyles.box.borderWidth,
+            borderColor: layoutStyles.box.borderColor,
+            justifyContent: layoutStyles.box.justifyContent,
+            alignItems: layoutStyles.box.alignItems,
+          }}
+        >
+          {/* 체크마크 */}
+          {isChecked && (
+            <layoutText
+              text="✓"
+              style={{
+                fill: layoutStyles.checkmark.fill,
+                fontSize: layoutStyles.checkmark.fontSize,
+                fontFamily: 'sans-serif',
+              }}
+              layout={true}
+            />
+          )}
+        </layoutContainer>
+
+        {/* 라벨 */}
+        {labelText && (
           <layoutText
-            text="✓"
+            text={labelText}
             style={{
-              fill: layoutStyles.checkmark.fill,
-              fontSize: layoutStyles.checkmark.fontSize,
-              fontFamily: 'sans-serif',
+              fill: layoutStyles.label.fill,
+              fontSize: layoutStyles.label.fontSize,
+              fontFamily: layoutStyles.label.fontFamily,
             }}
             layout={true}
           />
         )}
+
+        {/* 선택 표시 */}
+        {isSelected && (
+          <layoutContainer
+            layout={{
+              position: 'absolute',
+              left: -2,
+              top: -2,
+              width: layoutStyles.box.width + (labelText ? 100 : 4),
+              height: layoutStyles.box.height + 4,
+              borderColor: 0x3b82f6,
+              borderWidth: 2,
+              borderRadius: 4,
+            }}
+          />
+        )}
       </layoutContainer>
-
-      {/* 라벨 */}
-      {labelText && (
-        <layoutText
-          text={labelText}
-          style={{
-            fill: layoutStyles.label.fill,
-            fontSize: layoutStyles.label.fontSize,
-            fontFamily: layoutStyles.label.fontFamily,
-          }}
-          layout={true}
-        />
-      )}
-
-      {/* 선택 표시 */}
-      {isSelected && (
-        <layoutContainer
-          layout={{
-            position: 'absolute',
-            left: -2,
-            top: -2,
-            width: layoutStyles.box.width + (labelText ? 100 : 4),
-            height: layoutStyles.box.height + 4,
-            borderColor: 0x3b82f6,
-            borderWidth: 2,
-            borderRadius: 4,
-          }}
-        />
-      )}
-    </layoutContainer>
+    </pixiContainer>
   );
 });
 

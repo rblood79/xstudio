@@ -151,10 +151,10 @@ export const ElementSprite = memo(function ElementSprite({
 
   switch (spriteType) {
     // UI 컴포넌트 (Phase 11 B2.4)
-    // TODO: @pixi/layout layoutContainer 이벤트 문제로 임시 BoxSprite 사용
+    // P5: PixiButton 활성화 (pixiContainer 래퍼로 이벤트 처리)
     case 'button':
       return (
-        <BoxSprite
+        <PixiButton
           element={effectiveElement}
           isSelected={isSelected}
           onClick={onClick}

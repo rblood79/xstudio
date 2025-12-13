@@ -7,6 +7,7 @@
  *
  * @since 2025-12-11 Phase 11 B2.4
  * @updated 2025-12-11 - @pixi/layout LayoutContainer 기반으로 리팩토링
+ * @updated 2025-12-13 P5: pixiContainer 래퍼로 이벤트 처리 (GitHub #126 workaround)
  */
 
 // @pixi/layout 컴포넌트 extend (JSX 사용 전 필수)
@@ -130,54 +131,59 @@ export const PixiButton = memo(function PixiButton({
     };
   }, [isSelected, layoutStyle]);
 
+  // P5 Workaround: pixiContainer로 이벤트 처리 (GitHub #126)
+  // @pixi/layout v3.2.0 LayoutContainer가 eventMode를 무시하는 버그 회피
   return (
-    <layoutContainer
+    <pixiContainer
       x={layoutStyle.left}
       y={layoutStyle.top}
-      layout={{
-        width: layoutStyle.width,
-        height: layoutStyle.height,
-        backgroundColor: layoutStyle.backgroundColor,
-        borderRadius: layoutStyle.borderRadius,
-        justifyContent: layoutStyle.justifyContent,
-        alignItems: layoutStyle.alignItems,
-        paddingLeft: layoutStyle.paddingLeft,
-        paddingRight: layoutStyle.paddingRight,
-        paddingTop: layoutStyle.paddingTop,
-        paddingBottom: layoutStyle.paddingBottom,
-        debug: false,
-      }}
       eventMode="static"
       cursor="pointer"
       onPointerDown={handlePointerDown}
     >
-      {/* 버튼 텍스트 */}
-      <layoutText
-        text={buttonText}
-        style={{
-          fill: textStyle.fill,
-          fontSize: textStyle.fontSize,
-          fontFamily: textStyle.fontFamily,
+      <layoutContainer
+        layout={{
+          width: layoutStyle.width,
+          height: layoutStyle.height,
+          backgroundColor: layoutStyle.backgroundColor,
+          borderRadius: layoutStyle.borderRadius,
+          justifyContent: layoutStyle.justifyContent,
+          alignItems: layoutStyle.alignItems,
+          paddingLeft: layoutStyle.paddingLeft,
+          paddingRight: layoutStyle.paddingRight,
+          paddingTop: layoutStyle.paddingTop,
+          paddingBottom: layoutStyle.paddingBottom,
+          debug: false,
         }}
-        layout={true}
-      />
-
-      {/* 선택 표시 (오버레이) */}
-      {selectionStyle && (
-        <layoutContainer
-          layout={{
-            position: 'absolute',
-            left: selectionStyle.left,
-            top: selectionStyle.top,
-            width: selectionStyle.width,
-            height: selectionStyle.height,
-            borderColor: selectionStyle.borderColor,
-            borderWidth: selectionStyle.borderWidth,
-            borderRadius: selectionStyle.borderRadius,
+      >
+        {/* 버튼 텍스트 */}
+        <layoutText
+          text={buttonText}
+          style={{
+            fill: textStyle.fill,
+            fontSize: textStyle.fontSize,
+            fontFamily: textStyle.fontFamily,
           }}
+          layout={true}
         />
-      )}
-    </layoutContainer>
+
+        {/* 선택 표시 (오버레이) */}
+        {selectionStyle && (
+          <layoutContainer
+            layout={{
+              position: 'absolute',
+              left: selectionStyle.left,
+              top: selectionStyle.top,
+              width: selectionStyle.width,
+              height: selectionStyle.height,
+              borderColor: selectionStyle.borderColor,
+              borderWidth: selectionStyle.borderWidth,
+              borderRadius: selectionStyle.borderRadius,
+            }}
+          />
+        )}
+      </layoutContainer>
+    </pixiContainer>
   );
 });
 

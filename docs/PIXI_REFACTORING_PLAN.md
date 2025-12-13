@@ -26,8 +26,8 @@
 | **P1** | High | 이벤트 핸들러 일관성 통일 | ✅ **적용됨** (2025-12-13) |
 | **P2** | High | extend() 중복 제거 | ✅ **적용됨** (2025-12-13) |
 | **P3** | Critical | Graphics fill()/stroke() 순서 수정 | ✅ **적용됨** (2025-12-13) |
-| **P4** | Medium | useExtend 훅 도입 | 📋 계획됨 (선택적 최적화) |
-| **P5** | Medium | PixiButton layoutContainer 이슈 해결 | 📋 계획됨 (조사 필요) |
+| **P4** | Medium | useExtend 훅 도입 | ✅ **적용됨** (2025-12-13) |
+| **P5** | Medium | PixiButton layoutContainer 이슈 해결 | ✅ **적용됨** (2025-12-13) |
 | **P6** | High | @pixi/ui 전체 컴포넌트 지원 | 📋 계획됨 (신규) |
 | **P7** | High | StylePanel ↔ Canvas 스타일 동기화 | 📋 계획됨 (12개 속성 미구현/부분/불일치) |
 
@@ -364,59 +364,47 @@ refactor(workspace): adopt useExtend hook for memoized registration
 
 ## Phase 5: PixiButton layoutContainer 이벤트 해결
 
-### 현재 문제점
+### ✅ 해결됨 (2025-12-13)
 
-**@pixi/layout layoutContainer의 이벤트 전파 이슈**로 PixiButton이 비활성화됨:
+**GitHub Issue #126**: LayoutContainer가 eventMode 파라미터를 무시하고 항상 'static'으로 설정하는 버그
+- 링크: https://github.com/pixijs/layout/issues/126
+- 영향 버전: @pixi/layout v3.2.0 + PixiJS 8.13.2+
 
-```tsx
-// ElementSprite.tsx:154-162
-// TODO: @pixi/layout layoutContainer 이벤트 문제로 임시 BoxSprite 사용
-case 'button':
-  return (
-    <BoxSprite ... />  // ❌ PixiButton 대신 BoxSprite 사용 중
-  );
-```
+### Workaround 적용
 
-**PixiButton.tsx는 구현되어 있지만 실제 렌더링에서 사용되지 않음.**
-
-### 변경 방안
-
-**이슈 조사 후 해결책 적용**
+**pixiContainer 래퍼로 이벤트 처리** - layoutContainer 대신 pixiContainer에서 이벤트 핸들러 설정
 
 ```tsx
-// 해결 후 ElementSprite.tsx
-case 'button':
-  return (
-    <PixiButton    // ✅ PixiButton 활성화
-      element={effectiveElement}
-      isSelected={isSelected}
-      onClick={onClick}
-    />
-  );
+// 변경 전 (이벤트 동작 안 함)
+<layoutContainer eventMode="static" onPointerDown={handleClick}>
+  ...
+</layoutContainer>
+
+// 변경 후 (workaround)
+<pixiContainer eventMode="static" onPointerDown={handleClick}>
+  <layoutContainer layout={{...}}>
+    ...
+  </layoutContainer>
+</pixiContainer>
 ```
 
-### 조사 항목
-
-- [ ] @pixi/layout GitHub Issues에서 이벤트 관련 이슈 검색
-- [ ] layoutContainer eventMode 설정 테스트
-- [ ] 이벤트 버블링/캡처링 동작 확인
-- [ ] @pixi/layout v3.2.0 릴리즈 노트 확인
-
-### 대상 파일
+### 수정 파일
 
 | 파일 | 변경 내용 |
 |------|----------|
-| `ui/PixiButton.tsx` | 이벤트 처리 수정 (조사 후 결정) |
-| `sprites/ElementSprite.tsx` | PixiButton 활성화 (154-162) |
+| `ui/PixiButton.tsx` | pixiContainer 래퍼로 이벤트 처리 |
+| `ui/PixiCheckbox.tsx` | pixiContainer 래퍼로 이벤트 처리 |
+| `ui/PixiRadio.tsx` | pixiContainer 래퍼로 이벤트 처리 (그룹 + 개별 옵션) |
+| `sprites/ElementSprite.tsx` | PixiButton 활성화 (BoxSprite fallback 제거) |
 
 ### 커밋 메시지
 
 ```
-fix(workspace): resolve layoutContainer event issue and enable PixiButton
+fix(canvas): apply pixiContainer wrapper workaround for layoutContainer event issue (P5)
 
-- Fix eventMode configuration for @pixi/layout
-- Enable PixiButton in ElementSprite dispatcher
-- Remove BoxSprite fallback for button type
+- Workaround for @pixi/layout GitHub #126 (eventMode ignored)
+- PixiButton, PixiCheckbox, PixiRadio: wrap layoutContainer in pixiContainer for events
+- Enable PixiButton in ElementSprite (remove BoxSprite fallback)
 ```
 
 ---
