@@ -29,7 +29,7 @@
 | **P4** | Medium | useExtend 훅 도입 | 📋 계획됨 (선택적 최적화) |
 | **P5** | Medium | PixiButton layoutContainer 이슈 해결 | 📋 계획됨 (조사 필요) |
 | **P6** | High | @pixi/ui 전체 컴포넌트 지원 | 📋 계획됨 (신규) |
-| **P7** | High | StylePanel ↔ Canvas 스타일 동기화 | 📋 계획됨 (11개 속성 미구현/부분) |
+| **P7** | High | StylePanel ↔ Canvas 스타일 동기화 | 📋 계획됨 (12개 속성 미구현/부분/불일치) |
 
 ---
 
@@ -672,7 +672,7 @@ feat(workspace): add @pixi/ui Slider component wrapper
 | | alignItems | layoutCalculator | ✅ 구현됨 | flex-start/center/end/stretch |
 | | justifyContent | layoutCalculator | ✅ 구현됨 | 모든 값 지원 |
 | | gap | layoutCalculator | ✅ 구현됨 | |
-| | **padding*** | layoutCalculator | ⚠️ 부분 | 레이아웃 계산만, 스프라이트 내부 미적용 |
+| | **padding*** | 불일치 | ⚠️ 불일치 | TextSprite ✅, BoxSprite ❌ (아래 상세) |
 | | margin* | layoutCalculator | ✅ 구현됨 | 4방향 지원 |
 | | **flexWrap** | - | ❌ 미구현 | wrap/nowrap 미지원 |
 | **TypographySection** | | | | |
@@ -682,9 +682,9 @@ feat(workspace): add @pixi/ui Slider component wrapper
 | | color | styleConverter | ✅ 구현됨 | → fill 변환 |
 | | textAlign | styleConverter | ✅ 구현됨 | → align 변환 |
 | | **fontStyle** | - | ❌ 미구현 | italic, oblique |
-| | **lineHeight** | - | ❌ 미구현 | 줄 간격 |
-| | **letterSpacing** | - | ❌ 미구현 | 자간 |
-| | **textDecoration** | - | ❌ 미구현 | underline, line-through |
+| | **lineHeight** | - | ❌ 미구현 | 줄 간격 (PixiJS leading 지원) |
+| | **letterSpacing** | - | ❌ 미구현 | 자간 (PixiJS 직접 지원) |
+| | **textDecoration** | - | ❌ 미구현 | underline, line-through (Graphics 필요) |
 | | **textTransform** | - | ❌ 미구현 | uppercase, lowercase |
 | | **verticalAlign** | - | ❌ 미구현 | top, middle, bottom |
 | **AppearanceSection** | | | | |
@@ -692,9 +692,32 @@ feat(workspace): add @pixi/ui Slider component wrapper
 | | borderRadius | styleConverter | ✅ 구현됨 | roundRect() |
 | | borderWidth | styleConverter | ✅ 구현됨 | PixiStrokeStyle |
 | | borderColor | styleConverter | ✅ 구현됨 | PixiStrokeStyle |
-| | **borderStyle** | - | ❌ 미구현 | dashed, dotted 등 |
-| | **opacity** | styleConverter | ⚠️ 부분 | fill alpha만 적용 |
-| | **boxShadow** | - | ❌ 미구현 | CSSStyle에 정의됨 |
+| | **borderStyle** | - | ❌ 미구현 | dashed, dotted 등 (커스텀 필요) |
+| | **opacity** | styleConverter | ⚠️ 부분 | fill alpha만, Container.alpha 미적용 |
+| | **boxShadow** | - | ❌ 미구현 | @pixi/filter 또는 커스텀 필요 |
+
+### ⚠️ padding 불일치 상세 분석
+
+**현재 상태:**
+- **TextSprite.tsx** (lines 111-120): ✅ **구현됨** - paddingLeft, paddingTop을 텍스트 위치에 적용
+- **BoxSprite.tsx** (lines 84-86): ❌ **미구현** - 텍스트가 항상 중앙 고정 (padding 무시)
+- **PixiButton.tsx**: ✅ **구현됨** - @pixi/layout의 layout.padding* 사용
+
+**문제:**
+```typescript
+// TextSprite.tsx - padding 적용됨 ✅
+const paddingLeft = useMemo(() => {
+  const p = style?.paddingLeft || style?.padding;
+  return typeof p === 'number' ? p : parseInt(String(p) || '0', 10);
+}, [style]);
+<pixiText x={paddingLeft} y={paddingTop} ... />
+
+// BoxSprite.tsx - padding 무시됨 ❌
+const textX = transform.width / 2;  // 항상 중앙
+const textY = transform.height / 2;
+```
+
+**해결 방안:** BoxSprite에 TextSprite와 동일한 padding 로직 추가
 
 ### 미구현 항목 상세 분석
 
@@ -822,29 +845,43 @@ function calculateTextY(
 }
 ```
 
-#### 7.2 LayoutSection 미구현 (2개 속성)
+#### 7.2 LayoutSection 미구현/불일치 (2개 속성)
 
-**7.2.1 padding (스프라이트 내부)**
+**7.2.1 padding (BoxSprite 불일치 해결)**
+
+> **Note:** TextSprite에서는 이미 구현됨 (lines 111-120). BoxSprite만 수정 필요.
 
 ```typescript
-// 현재: layoutCalculator에서 자식 배치에만 사용
-// 문제: BoxSprite, TextSprite 내부에서 padding이 시각적으로 미적용
-
-// BoxSprite.tsx 현재 코드 (padding 미사용)
+// BoxSprite.tsx 현재 코드 (padding 미사용) ❌
 const textX = transform.width / 2;  // 중앙 고정
 const textY = transform.height / 2;
 
-// 변경 후 - padding 적용
-const paddingLeft = parseCSSSize(style?.paddingLeft || style?.padding, undefined, 0);
-const paddingTop = parseCSSSize(style?.paddingTop || style?.padding, undefined, 0);
-const paddingRight = parseCSSSize(style?.paddingRight || style?.padding, undefined, 0);
-const paddingBottom = parseCSSSize(style?.paddingBottom || style?.padding, undefined, 0);
+// 변경 후 - TextSprite와 동일한 padding 로직 적용 ✅
+const paddingLeft = useMemo(() => {
+  const p = style?.paddingLeft || style?.padding;
+  return typeof p === 'number' ? p : parseInt(String(p) || '0', 10);
+}, [style]);
+
+const paddingTop = useMemo(() => {
+  const p = style?.paddingTop || style?.padding;
+  return typeof p === 'number' ? p : parseInt(String(p) || '0', 10);
+}, [style]);
+
+const paddingRight = useMemo(() => {
+  const p = style?.paddingRight || style?.padding;
+  return typeof p === 'number' ? p : parseInt(String(p) || '0', 10);
+}, [style]);
+
+const paddingBottom = useMemo(() => {
+  const p = style?.paddingBottom || style?.padding;
+  return typeof p === 'number' ? p : parseInt(String(p) || '0', 10);
+}, [style]);
 
 // 텍스트 영역 계산 (padding 제외)
 const contentWidth = transform.width - paddingLeft - paddingRight;
 const contentHeight = transform.height - paddingTop - paddingBottom;
 
-// 텍스트 위치 (content 영역 중앙)
+// 텍스트 위치 (content 영역 중앙) - TextSprite와 달리 BoxSprite는 중앙 정렬 유지
 const textX = paddingLeft + contentWidth / 2;
 const textY = paddingTop + contentHeight / 2;
 ```
@@ -1037,30 +1074,36 @@ const filters = shadowStyle ? [
 
 ### 구현 우선순위
 
-| Sub-Phase | 속성 | 난이도 | 우선순위 | 의존성 |
-|-----------|------|--------|----------|--------|
-| **7.1** | opacity (전체) | 🟢 Easy | P0 | 없음 |
-| **7.2** | padding (스프라이트 내부) | 🟢 Easy | P0 | 없음 |
-| **7.3** | fontStyle | 🟢 Easy | P1 | 없음 |
-| **7.4** | letterSpacing | 🟢 Easy | P1 | 없음 |
-| **7.5** | lineHeight (leading) | 🟡 Medium | P1 | fontSize 계산 필요 |
-| **7.6** | verticalAlign | 🟡 Medium | P1 | 텍스트 높이 계산 필요 |
-| **7.7** | textTransform | 🟢 Easy | P2 | 없음 |
-| **7.8** | textDecoration | 🟡 Medium | P2 | Graphics 그리기 |
-| **7.9** | flexWrap | 🔴 Hard | P2 | 레이아웃 전면 수정 |
-| **7.10** | borderStyle | 🟡 Medium | P3 | 커스텀 선 그리기 |
-| **7.11** | boxShadow | 🔴 Hard | P3 | @pixi/filter 또는 커스텀 |
+> **Note:** opacity, boxShadow는 CSSStyle 인터페이스에 정의되어 있지만 AppearanceSection UI에는 아직 노출되지 않음.
+> 아래 표는 **StylePanel UI에 존재하지만 Canvas에서 미구현인 항목**만 포함.
+
+| Sub-Phase | 속성 | 대상 파일 | 난이도 | 우선순위 | 비고 |
+|-----------|------|----------|--------|----------|------|
+| **7.1** | padding (BoxSprite) | BoxSprite.tsx | 🟢 Easy | P0 | TextSprite와 일관성 맞춤 |
+| **7.2** | fontStyle | styleConverter.ts, TextSprite.tsx | 🟢 Easy | P1 | italic, oblique |
+| **7.3** | letterSpacing | styleConverter.ts, TextSprite.tsx | 🟢 Easy | P1 | PixiJS 직접 지원 |
+| **7.4** | lineHeight (leading) | styleConverter.ts, TextSprite.tsx | 🟡 Medium | P1 | fontSize 계산 필요 |
+| **7.5** | verticalAlign | TextSprite.tsx, BoxSprite.tsx | 🟡 Medium | P1 | 텍스트 높이 계산 필요 |
+| **7.6** | textTransform | TextSprite.tsx, BoxSprite.tsx | 🟢 Easy | P2 | 렌더링 전 문자열 변환 |
+| **7.7** | textDecoration | TextSprite.tsx | 🟡 Medium | P2 | Graphics 선 그리기 |
+| **7.8** | flexWrap | layoutCalculator.ts | 🔴 Hard | P2 | 멀티라인 레이아웃 |
+| **7.9** | borderStyle | BoxSprite.tsx, TextSprite.tsx | 🟡 Medium | P3 | 점선/대시선 커스텀 |
+
+**향후 확장 (UI 추가 시):**
+| 속성 | CSSStyle 정의 | UI 노출 | Canvas 구현 |
+|------|--------------|---------|-------------|
+| opacity | ✅ (line 23) | ❌ 미노출 | ⚠️ fill alpha만 |
+| boxShadow | ✅ (line 34) | ❌ 미노출 | ❌ 미구현 |
 
 ### 파일 수정 계획
 
 | 파일 | 수정 내용 | Sub-Phase |
 |------|----------|-----------|
-| `styleConverter.ts` | CSSStyle, PixiTextStyle 확장 | 7.1-7.7 |
-| `TextSprite.tsx` | 텍스트 스타일 + padding 적용 | 7.2-7.8 |
-| `BoxSprite.tsx` | opacity, padding, borderStyle 적용 | 7.1, 7.2, 7.10 |
-| `ImageSprite.tsx` | opacity 적용 | 7.1 |
-| `layoutCalculator.ts` | flexWrap 로직 추가 | 7.8 |
-| `index.ts` (sprites) | 필터 export | 7.10 |
+| `BoxSprite.tsx` | padding 로직 추가 (TextSprite와 동일) | 7.1 |
+| `styleConverter.ts` | PixiTextStyle 확장 (fontStyle, letterSpacing, leading) | 7.2-7.4 |
+| `TextSprite.tsx` | 텍스트 스타일 적용 + textDecoration Graphics | 7.2-7.7 |
+| `BoxSprite.tsx` | verticalAlign, textTransform, borderStyle | 7.5-7.6, 7.9 |
+| `layoutCalculator.ts` | flexWrap 멀티라인 로직 | 7.8 |
 
 ### 커밋 메시지 (예시)
 
@@ -1101,15 +1144,15 @@ feat(canvas): add flexWrap support to layout calculator (P7.8)
 
 ### 즉시 실행 (Day 1-2)
 
-- [ ] **Phase 7.1**: opacity 전체 요소 적용 (🟢 Easy)
-- [ ] **Phase 7.2-7.3**: fontStyle, letterSpacing 구현 (🟢 Easy)
-- [ ] **Phase 7.4-7.5**: lineHeight, verticalAlign 구현 (🟡 Medium)
+- [ ] **Phase 7.1**: BoxSprite padding 일관성 수정 (🟢 Easy, P0)
+- [ ] **Phase 7.2-7.3**: fontStyle, letterSpacing 구현 (🟢 Easy, P1)
+- [ ] **Phase 7.4-7.5**: lineHeight (leading), verticalAlign 구현 (🟡 Medium, P1)
 
 ### 단기 (Week 1)
 
 - [ ] **Phase 4**: useExtend 훅 도입 (선택적)
 - [ ] **Phase 5**: PixiButton layoutContainer 이슈 조사
-- [ ] **Phase 7.6-7.7**: textTransform, textDecoration 구현
+- [ ] **Phase 7.6-7.7**: textTransform, textDecoration 구현 (P2)
 
 ### 중기 (Week 2-4)
 
@@ -1117,12 +1160,13 @@ feat(canvas): add flexWrap support to layout calculator (P7.8)
 - [ ] **Phase 6.2**: PixiInput 구현
 - [ ] **Phase 6.3**: PixiSelect 구현
 - [ ] **Phase 6.4**: PixiProgressBar 구현
-- [ ] **Phase 7.8**: flexWrap 구현 (🔴 Hard)
+- [ ] **Phase 7.8**: flexWrap 구현 (🔴 Hard, P2)
 
 ### 장기 (Month 2+)
 
 - [ ] **Phase 6.5-6.9**: 나머지 @pixi/ui 컴포넌트
-- [ ] **Phase 7.9-7.10**: borderStyle, boxShadow 구현
+- [ ] **Phase 7.9**: borderStyle 구현 (🟡 Medium, P3)
+- [ ] **AppearanceSection UI 확장**: opacity, boxShadow 노출 + Canvas 구현
 
 ---
 
