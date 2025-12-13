@@ -15,6 +15,7 @@
  * @updated 2025-12-13 Phase 6.6 - PixiSwitcher 추가
  * @updated 2025-12-13 Phase 6.7 - PixiScrollBox 추가
  * @updated 2025-12-13 Phase 6.8 - PixiList 추가
+ * @updated 2025-12-13 Phase 6.9 - PixiMaskedFrame 추가
  */
 
 export { PixiButton, type PixiButtonProps } from './PixiButton';
@@ -28,3 +29,4 @@ export { PixiProgressBar, type PixiProgressBarProps } from './PixiProgressBar';
 export { PixiSwitcher, type PixiSwitcherProps } from './PixiSwitcher';
 export { PixiScrollBox, type PixiScrollBoxProps } from './PixiScrollBox';
 export { PixiList, type PixiListProps } from './PixiList';
+export { PixiMaskedFrame, type PixiMaskedFrameProps } from './PixiMaskedFrame';

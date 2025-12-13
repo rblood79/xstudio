@@ -15,7 +15,7 @@ import type { Element } from '../../../../types/core/store.types';
 import { BoxSprite } from './BoxSprite';
 import { TextSprite } from './TextSprite';
 import { ImageSprite } from './ImageSprite';
-import { PixiButton, PixiFancyButton, PixiCheckbox, PixiRadio, PixiSlider, PixiInput, PixiSelect, PixiProgressBar, PixiSwitcher, PixiScrollBox, PixiList } from '../ui';
+import { PixiButton, PixiFancyButton, PixiCheckbox, PixiRadio, PixiSlider, PixiInput, PixiSelect, PixiProgressBar, PixiSwitcher, PixiScrollBox, PixiList, PixiMaskedFrame } from '../ui';
 import { isFlexContainer, isGridContainer } from '../layout';
 import type { CSSStyle } from './styleConverter';
 
@@ -84,6 +84,7 @@ const UI_PROGRESS_TAGS = new Set(['ProgressBar', 'Progress', 'LoadingBar']);
 const UI_SWITCHER_TAGS = new Set(['Switcher', 'SegmentedControl', 'TabBar']);
 const UI_SCROLLBOX_TAGS = new Set(['ScrollBox', 'ScrollContainer', 'ScrollView']);
 const UI_LIST_TAGS = new Set(['List', 'ItemList', 'VirtualList']);
+const UI_MASKEDFRAME_TAGS = new Set(['MaskedFrame', 'ClippedImage', 'MaskedImage', 'AvatarImage']);
 
 // Note: TEXT_TAGS, IMAGE_TAGS, UI_*_TAGS에 포함되지 않은 모든 태그는 BoxSprite로 렌더링됨
 
@@ -91,7 +92,7 @@ const UI_LIST_TAGS = new Set(['List', 'ItemList', 'VirtualList']);
 // Sprite Type Detection
 // ============================================
 
-type SpriteType = 'box' | 'text' | 'image' | 'button' | 'fancyButton' | 'checkbox' | 'radio' | 'slider' | 'input' | 'select' | 'progressBar' | 'switcher' | 'scrollBox' | 'list' | 'flex' | 'grid';
+type SpriteType = 'box' | 'text' | 'image' | 'button' | 'fancyButton' | 'checkbox' | 'radio' | 'slider' | 'input' | 'select' | 'progressBar' | 'switcher' | 'scrollBox' | 'list' | 'maskedFrame' | 'flex' | 'grid';
 
 function getSpriteType(element: Element): SpriteType {
   const tag = element.tag;
@@ -109,6 +110,7 @@ function getSpriteType(element: Element): SpriteType {
   if (UI_SWITCHER_TAGS.has(tag)) return 'switcher';
   if (UI_SCROLLBOX_TAGS.has(tag)) return 'scrollBox';
   if (UI_LIST_TAGS.has(tag)) return 'list';
+  if (UI_MASKEDFRAME_TAGS.has(tag)) return 'maskedFrame';
 
   // 레이아웃 컨테이너 체크 (Phase 11 B2.5)
   // display: flex/grid인 경우에도 현재는 BoxSprite로 렌더링
@@ -272,6 +274,15 @@ export const ElementSprite = memo(function ElementSprite({
     case 'list':
       return (
         <PixiList
+          element={effectiveElement}
+          isSelected={isSelected}
+          onClick={onClick}
+        />
+      );
+
+    case 'maskedFrame':
+      return (
+        <PixiMaskedFrame
           element={effectiveElement}
           isSelected={isSelected}
           onClick={onClick}
