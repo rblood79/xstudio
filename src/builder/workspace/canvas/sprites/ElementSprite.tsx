@@ -15,7 +15,7 @@ import type { Element } from '../../../../types/core/store.types';
 import { BoxSprite } from './BoxSprite';
 import { TextSprite } from './TextSprite';
 import { ImageSprite } from './ImageSprite';
-import { PixiButton, PixiFancyButton, PixiCheckbox, PixiRadio, PixiSlider, PixiInput, PixiSelect, PixiProgressBar } from '../ui';
+import { PixiButton, PixiFancyButton, PixiCheckbox, PixiRadio, PixiSlider, PixiInput, PixiSelect, PixiProgressBar, PixiSwitcher } from '../ui';
 import { isFlexContainer, isGridContainer } from '../layout';
 import type { CSSStyle } from './styleConverter';
 
@@ -81,6 +81,7 @@ const UI_SLIDER_TAGS = new Set(['Slider', 'RangeSlider']);
 const UI_INPUT_TAGS = new Set(['Input', 'TextField', 'TextInput', 'SearchField']);
 const UI_SELECT_TAGS = new Set(['Select', 'Dropdown', 'ComboBox']);
 const UI_PROGRESS_TAGS = new Set(['ProgressBar', 'Progress', 'LoadingBar']);
+const UI_SWITCHER_TAGS = new Set(['Switcher', 'SegmentedControl', 'TabBar']);
 
 // Note: TEXT_TAGS, IMAGE_TAGS, UI_*_TAGS에 포함되지 않은 모든 태그는 BoxSprite로 렌더링됨
 
@@ -88,7 +89,7 @@ const UI_PROGRESS_TAGS = new Set(['ProgressBar', 'Progress', 'LoadingBar']);
 // Sprite Type Detection
 // ============================================
 
-type SpriteType = 'box' | 'text' | 'image' | 'button' | 'fancyButton' | 'checkbox' | 'radio' | 'slider' | 'input' | 'select' | 'progressBar' | 'flex' | 'grid';
+type SpriteType = 'box' | 'text' | 'image' | 'button' | 'fancyButton' | 'checkbox' | 'radio' | 'slider' | 'input' | 'select' | 'progressBar' | 'switcher' | 'flex' | 'grid';
 
 function getSpriteType(element: Element): SpriteType {
   const tag = element.tag;
@@ -103,6 +104,7 @@ function getSpriteType(element: Element): SpriteType {
   if (UI_INPUT_TAGS.has(tag)) return 'input';
   if (UI_SELECT_TAGS.has(tag)) return 'select';
   if (UI_PROGRESS_TAGS.has(tag)) return 'progressBar';
+  if (UI_SWITCHER_TAGS.has(tag)) return 'switcher';
 
   // 레이아웃 컨테이너 체크 (Phase 11 B2.5)
   // display: flex/grid인 경우에도 현재는 BoxSprite로 렌더링
@@ -241,6 +243,16 @@ export const ElementSprite = memo(function ElementSprite({
           element={effectiveElement}
           isSelected={isSelected}
           onClick={onClick}
+        />
+      );
+
+    case 'switcher':
+      return (
+        <PixiSwitcher
+          element={effectiveElement}
+          isSelected={isSelected}
+          onClick={onClick}
+          onChange={onChange ? (id, value) => onChange(id, value) : undefined}
         />
       );
 
