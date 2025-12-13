@@ -36,7 +36,7 @@ import { GridLayer } from "./grid";
 import { ViewportControlBridge } from "./viewport";
 import { BodyLayer } from "./layers";
 import { TextEditOverlay, useTextEdit } from "../overlay";
-import { calculateLayout, type LayoutResult } from "./layout";
+import { initYoga, calculateLayout, type LayoutResult } from "./layout";
 
 // ============================================
 // Types
@@ -367,6 +367,14 @@ export function BuilderCanvas({
 }: BuilderCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerEl, setContainerEl] = useState<HTMLDivElement | null>(null);
+  const [yogaReady, setYogaReady] = useState(false);
+
+  // P7.8: Yoga 엔진 초기화
+  useEffect(() => {
+    initYoga().then(() => {
+      setYogaReady(true);
+    });
+  }, []);
 
   // 컨테이너 ref 콜백: 마운트 시점에 DOM 노드를 안전하게 확보
   const setContainerNode = useCallback((node: HTMLDivElement | null) => {
@@ -394,10 +402,11 @@ export function BuilderCanvas({
   const renderVersion = useCanvasSyncStore((state) => state.renderVersion);
 
   // 페이지 단위 레이아웃 계산 (재사용)
+  // P7.8: yogaReady 후에만 실제 레이아웃 계산 수행
   const layoutResult = useMemo(() => {
-    if (!currentPageId) return { positions: new Map() };
+    if (!currentPageId || !yogaReady) return { positions: new Map() };
     return calculateLayout(elements, currentPageId, pageWidth, pageHeight);
-  }, [elements, currentPageId, pageWidth, pageHeight]);
+  }, [elements, currentPageId, pageWidth, pageHeight, yogaReady]);
 
   // Zoom/Pan은 ViewportControlBridge에서 처리 (Application 내부에서 Container 직접 조작)
 

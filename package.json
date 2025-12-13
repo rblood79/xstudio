@@ -67,6 +67,7 @@
     "tailwindcss-react-aria-components": "^2.0.1",
     "three": "^0.181.2",
     "uuid": "^13.0.0",
+    "yoga-layout": "^3.0.0",
     "zod": "^4.1.13",
     "zustand": "^5.0.9"
   },

@@ -4,7 +4,7 @@
 > **최종 적용일**: 2025-12-13
 > **기반**: Pixi.js 생태계 라이브러리 사용 감사 보고서 + 공식 레퍼런스 교차 검증
 > **목표**: 공식 레퍼런스 준수, 코드 품질 향상, 성능 최적화
-> **P1-P3 적용 완료**: TransformHandle, SelectionBox, TextSprite, ImageSprite, pixiSetup, BuilderCanvas
+> **상태**: ✅ **P1-P7.9 전체 완료**
 
 ---
 
@@ -16,8 +16,9 @@
 |--------|------|------|
 | `pixi.js` | ^8.14.3 | Core 2D WebGL 렌더링 엔진 |
 | `@pixi/react` | ^8.0.5 | React 바인딩 (JSX 컴포넌트) |
-| `@pixi/layout` | ^3.2.0 | Yoga 기반 Flexbox 레이아웃 |
+| `@pixi/layout` | ^3.2.0 | UI 컴포넌트 내부 레이아웃 |
 | `@pixi/ui` | ^2.3.2 | UI 컴포넌트 라이브러리 |
+| `yoga-layout` | ^3.0.0 | **P7.8**: Flexbox 레이아웃 엔진 (직접 사용) |
 
 ### Phase 요약
 
@@ -1074,7 +1075,7 @@ const filters = shadowStyle ? [
 | **7.5** | verticalAlign | TextSprite.tsx, BoxSprite.tsx | 🟡 Medium | P1 | 텍스트 높이 계산 필요 |
 | **7.6** | textTransform | TextSprite.tsx, BoxSprite.tsx | 🟢 Easy | P2 | 렌더링 전 문자열 변환 |
 | **7.7** | textDecoration | TextSprite.tsx | 🟡 Medium | P2 | Graphics 선 그리기 |
-| **7.8** | flexWrap | layoutCalculator.ts | 🔴 Hard | P2 | 멀티라인 레이아웃 |
+| **7.8** | flexWrap | LayoutEngine.ts (Yoga) | ✅ 완료 | P2 | Yoga 기반 리팩토링 |
 | **7.9** | borderStyle | BoxSprite.tsx, TextSprite.tsx | 🟡 Medium | P3 | 점선/대시선 커스텀 |
 
 **향후 확장 (UI 추가 시):**
@@ -1091,7 +1092,7 @@ const filters = shadowStyle ? [
 | `styleConverter.ts` | PixiTextStyle 확장 (fontStyle, letterSpacing, leading) | 7.2-7.4 |
 | `TextSprite.tsx` | 텍스트 스타일 적용 + textDecoration Graphics | 7.2-7.7 |
 | `BoxSprite.tsx` | verticalAlign, textTransform, borderStyle | 7.5-7.6, 7.9 |
-| `layoutCalculator.ts` | flexWrap 멀티라인 로직 | 7.8 |
+| `LayoutEngine.ts` | Yoga 기반 레이아웃 (flexWrap 포함) | 7.8 ✅ |
 
 ### 커밋 메시지 (예시)
 
@@ -1112,11 +1113,13 @@ feat(canvas): add typography style support - fontStyle, letterSpacing (P7.2-7.3)
 ```
 
 ```
-feat(canvas): add flexWrap support to layout calculator (P7.8)
+feat(canvas): implement Yoga-based layout engine with flexWrap (P7.8)
 
-- Implement calculateMultiLineLayout for wrap/wrap-reverse
-- Add line break logic based on container width/height
-- Support alignContent for multi-line flex containers
+- Replace layoutCalculator.ts with LayoutEngine.ts (Yoga-based)
+- Add yoga-layout v3.0.0 as direct dependency
+- Support full CSS Flexbox spec: flexWrap, alignContent, gap
+- Delete unused FlexLayout.tsx component
+- Add async initYoga() initialization in BuilderCanvas
 ```
 
 ---
@@ -1140,7 +1143,10 @@ feat(canvas): add flexWrap support to layout calculator (P7.8)
 ### ✅ 완료 (P7.7-P7.9)
 
 - [x] **Phase 7.7**: textDecoration 구현 (🟡 Medium) ✅ **완료** (2025-12-13)
-- [ ] **Phase 7.8**: flexWrap 구현 (🔴 Hard) - **선택적/추후**
+- [x] **Phase 7.8**: flexWrap 구현 (🔴 Hard) ✅ **완료** (2025-12-13)
+  - Yoga 기반 LayoutEngine.ts로 리팩토링
+  - layoutCalculator.ts, FlexLayout.tsx 삭제
+  - yoga-layout v3.0.0 직접 사용
 - [x] **Phase 7.9**: borderStyle 구현 (🟡 Medium) ✅ **완료** (2025-12-13)
 
 ---
@@ -1212,69 +1218,70 @@ feat(canvas): add textDecoration support (underline, line-through, overline) (P7
 
 ---
 
-## Phase 7.8: flexWrap 구현 상세 계획 (선택적)
+## Phase 7.8: flexWrap 구현 ✅ 완료
 
 ### 목표
 
 CSS `flexWrap` 속성 (wrap, wrap-reverse, nowrap)을 Canvas 레이아웃에서 지원
 
-### 복잡도 분석
+### 구현 결과
 
-🔴 **Hard** - 멀티라인 레이아웃 계산이 필요하며, 현재 @pixi/layout이 이를 처리해야 함
+✅ **Yoga 기반 LayoutEngine으로 완전 리팩토링** (2025-12-13)
 
-### 구현 방식
+기존 수동 구현(`layoutCalculator.ts`)을 삭제하고, yoga-layout v3를 직접 사용하는 `LayoutEngine.ts`로 교체했습니다.
 
-**옵션 A: @pixi/layout 활용** (권장)
-- @pixi/layout의 Yoga 엔진이 flexWrap을 지원하는지 확인
-- 지원한다면 layout 속성에 flexWrap 전달
+### 변경 사항
 
-**옵션 B: 커스텀 구현**
+| 작업 | 내용 |
+|------|------|
+| **삭제** | `layoutCalculator.ts` (수동 구현, 549줄) |
+| **삭제** | `FlexLayout.tsx` (미사용 컴포넌트, 248줄) |
+| **신규** | `LayoutEngine.ts` (Yoga 기반, 455줄) |
+| **의존성** | `yoga-layout: ^3.0.0` 추가 |
+
+### 지원 속성 (전체)
+
 ```typescript
-// layoutCalculator.ts에 추가
-function calculateMultiLineLayout(
-  children: ChildSize[],
-  container: { width: number; height: number },
-  flexStyle: { flexDirection: string; flexWrap: string; gap: number }
-): LayoutPosition[] {
-  const isRow = flexStyle.flexDirection.startsWith('row');
-  const maxSize = isRow ? container.width : container.height;
+// Flexbox Container
+flexDirection: 'row' | 'row-reverse' | 'column' | 'column-reverse'
+flexWrap: 'nowrap' | 'wrap' | 'wrap-reverse'  // ✅ 신규
+justifyContent: 'flex-start' | 'flex-end' | 'center' | 'space-between' | 'space-around' | 'space-evenly'
+alignItems: 'flex-start' | 'flex-end' | 'center' | 'stretch' | 'baseline'
+alignContent: 'flex-start' | 'flex-end' | 'center' | 'stretch' | 'space-between' | 'space-around'  // ✅ 신규
+gap, rowGap, columnGap  // ✅ 신규
 
-  // 라인별로 분할
-  const lines: ChildSize[][] = [];
-  let currentLine: ChildSize[] = [];
-  let lineSize = 0;
-
-  for (const child of children) {
-    const childSize = isRow ? child.width : child.height;
-    if (lineSize + childSize > maxSize && currentLine.length > 0) {
-      lines.push(currentLine);
-      currentLine = [child];
-      lineSize = childSize + flexStyle.gap;
-    } else {
-      currentLine.push(child);
-      lineSize += childSize + flexStyle.gap;
-    }
-  }
-  if (currentLine.length > 0) lines.push(currentLine);
-
-  // wrap-reverse
-  if (flexStyle.flexWrap === 'wrap-reverse') lines.reverse();
-
-  // 각 라인별 위치 계산...
-  return calculatePositions(lines, container, flexStyle);
-}
+// Flexbox Item
+flex, flexGrow, flexShrink, flexBasis, alignSelf
 ```
 
-### 수정 파일
+### 아키텍처
 
-| 파일 | 변경 내용 |
-|------|----------|
-| `layoutCalculator.ts` | calculateMultiLineLayout() 함수 추가 |
-| `styleConverter.ts` | CSSStyle에 flexWrap 타입 추가 필요 |
+```
+Before:
+├── layoutCalculator.ts  (수동 JS, 549줄) ❌ 삭제
+├── FlexLayout.tsx       (미사용, 248줄) ❌ 삭제
+└── @pixi/layout         (UI 컴포넌트 내부만)
 
-### 우선순위
+After:
+├── LayoutEngine.ts      (Yoga 기반, 455줄) ✅
+└── yoga-layout v3       (Facebook Yoga 직접 사용) ✅
+```
 
-P2 (선택적) - @pixi/layout이 flexWrap을 지원하면 별도 구현 불필요
+### 초기화 방식
+
+```typescript
+// BuilderCanvas.tsx
+const [yogaReady, setYogaReady] = useState(false);
+
+useEffect(() => {
+  initYoga().then(() => setYogaReady(true));
+}, []);
+
+const layoutResult = useMemo(() => {
+  if (!currentPageId || !yogaReady) return { positions: new Map() };
+  return calculateLayout(elements, currentPageId, pageWidth, pageHeight);
+}, [elements, currentPageId, pageWidth, pageHeight, yogaReady]);
+```
 
 ---
 
@@ -1380,6 +1387,83 @@ feat(canvas): add borderStyle support (dashed, dotted, double) (P7.9)
 - Implement drawDashedLine() for dashed/dotted borders
 - Support solid, dashed, dotted, double border styles
 ```
+
+---
+
+## 최종 아키텍처 요약
+
+### Canvas 폴더 구조 (P1-P7.9 완료 후)
+
+```
+src/builder/workspace/canvas/
+├── pixiSetup.ts              # P2,P4: PIXI_COMPONENTS 카탈로그 + useExtend
+├── BuilderCanvas.tsx         # P7.8: initYoga() 초기화
+├── canvasSync.ts             # Canvas 상태 동기화
+│
+├── layout/
+│   ├── index.ts              # 레이아웃 모듈 exports
+│   ├── LayoutEngine.ts       # P7.8: Yoga 기반 Flexbox 레이아웃
+│   └── GridLayout.tsx        # CSS Grid 지원
+│
+├── sprites/
+│   ├── index.ts              # 스프라이트 모듈 exports
+│   ├── ElementSprite.tsx     # 요소 렌더링 라우터
+│   ├── BoxSprite.tsx         # P7.5,P7.6,P7.9: Box 요소 (verticalAlign, borderStyle)
+│   ├── TextSprite.tsx        # P7.2-P7.7: 텍스트 (fontStyle, letterSpacing, textDecoration)
+│   ├── ImageSprite.tsx       # 이미지 렌더링
+│   └── styleConverter.ts     # CSS → PixiJS 스타일 변환
+│
+├── selection/
+│   ├── SelectionLayer.tsx    # P1,P3: 선택 오버레이
+│   ├── SelectionBox.tsx      # P1,P3: camelCase 이벤트
+│   └── TransformHandle.tsx   # P1,P3: camelCase 이벤트
+│
+├── ui/                       # P5,P6: @pixi/ui 컴포넌트
+│   ├── PixiButton.tsx        # P5: layoutContainer 래퍼
+│   ├── PixiSlider.tsx        # P6.1
+│   ├── PixiInput.tsx         # P6.2
+│   ├── PixiSelect.tsx        # P6.3
+│   ├── PixiProgressBar.tsx   # P6.4
+│   ├── PixiFancyButton.tsx   # P6.5
+│   ├── PixiSwitcher.tsx      # P6.6
+│   ├── PixiScrollBox.tsx     # P6.7
+│   ├── PixiList.tsx          # P6.8
+│   └── PixiMaskedFrame.tsx   # P6.9
+│
+├── grid/                     # 그리드 레이어
+├── viewport/                 # 뷰포트 컨트롤
+└── layers/                   # 레이어 관리
+```
+
+### 의존성 정리
+
+| 패키지 | 버전 | 용도 |
+|--------|------|------|
+| `pixi.js` | ^8.14.3 | Core WebGL 렌더링 |
+| `@pixi/react` | ^8.0.5 | React JSX 바인딩 |
+| `@pixi/ui` | ^2.3.2 | UI 컴포넌트 (P6) |
+| `@pixi/layout` | ^3.2.0 | UI 내부 레이아웃 |
+| `yoga-layout` | ^3.0.0 | **Flexbox 엔진 (P7.8)** |
+
+### 코드 변경 통계
+
+| 항목 | Before | After | 변화 |
+|------|--------|-------|------|
+| layoutCalculator.ts | 549줄 | 삭제 | -549 |
+| FlexLayout.tsx | 248줄 | 삭제 | -248 |
+| LayoutEngine.ts | 없음 | 455줄 | +455 |
+| **총 레이아웃 코드** | 797줄 | 455줄 | **-43%** |
+
+### API 패턴 준수 현황
+
+| 패턴 | 준수 | 적용 위치 |
+|------|------|----------|
+| camelCase 이벤트 | ✅ | P1: TransformHandle, SelectionBox |
+| extend() 중앙 집중 | ✅ | P2: pixiSetup.ts |
+| fill() → stroke() 순서 | ✅ | P3: 모든 Graphics 컴포넌트 |
+| useExtend 훅 | ✅ | P4: PixiExtendBridge |
+| @pixi/ui imperative | ✅ | P5-P6: 모든 UI 컴포넌트 |
+| yoga-layout 직접 사용 | ✅ | P7.8: LayoutEngine.ts |
 
 ---
 
