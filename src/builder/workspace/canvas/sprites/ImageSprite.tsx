@@ -15,10 +15,17 @@ import { convertStyle, type CSSStyle } from './styleConverter';
 // Types
 // ============================================
 
+/** Modifier keys for multi-select */
+interface ClickModifiers {
+  metaKey: boolean;
+  shiftKey: boolean;
+  ctrlKey: boolean;
+}
+
 export interface ImageSpriteProps {
   element: Element;
   isSelected?: boolean;
-  onClick?: (elementId: string) => void;
+  onClick?: (elementId: string, modifiers?: ClickModifiers) => void;
 }
 
 // ============================================
@@ -143,8 +150,12 @@ export function ImageSprite({ element, isSelected, onClick }: ImageSpriteProps) 
     [transform, isSelected]
   );
 
-  const handleClick = useCallback(() => {
-    onClick?.(element.id);
+  const handleClick = useCallback((e: { metaKey?: boolean; shiftKey?: boolean; ctrlKey?: boolean }) => {
+    onClick?.(element.id, {
+      metaKey: e.metaKey ?? false,
+      shiftKey: e.shiftKey ?? false,
+      ctrlKey: e.ctrlKey ?? false,
+    });
   }, [element.id, onClick]);
 
   return (
