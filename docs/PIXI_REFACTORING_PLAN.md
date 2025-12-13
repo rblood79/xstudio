@@ -1129,32 +1129,257 @@ feat(canvas): add flexWrap support to layout calculator (P7.8)
 - [x] **Phase 1**: 이벤트 핸들러 camelCase 통일 (2파일, 6줄)
 - [x] **Phase 2**: extend() 정리 (2파일)
 - [x] **Phase 3**: Graphics fill() 순서 수정 (4파일) ⚠️ Critical
+- [x] **Phase 4**: useExtend 훅 도입
+- [x] **Phase 5**: PixiButton layoutContainer 이슈 해결 (pixiContainer 래퍼)
+- [x] **Phase 6.1-6.9**: @pixi/ui 컴포넌트 9개 구현
+  - PixiSlider, PixiInput, PixiSelect, PixiProgressBar
+  - PixiFancyButton, PixiSwitcher, PixiScrollBox, PixiList, PixiMaskedFrame
+- [x] **Phase 7.1-7.6**: StylePanel ↔ Canvas 동기화 (타이포그래피)
+  - BoxSprite padding, fontStyle, letterSpacing, lineHeight, verticalAlign, textTransform
 
-### 즉시 실행 (Day 1-2)
+### 🔄 진행 중 (P7.7-P7.9)
 
-- [ ] **Phase 7.1**: BoxSprite padding 일관성 수정 (🟢 Easy, P0)
-- [ ] **Phase 7.2-7.3**: fontStyle, letterSpacing 구현 (🟢 Easy, P1)
-- [ ] **Phase 7.4-7.5**: lineHeight (leading), verticalAlign 구현 (🟡 Medium, P1)
+- [ ] **Phase 7.7**: textDecoration 구현 (🟡 Medium)
+- [ ] **Phase 7.8**: flexWrap 구현 (🔴 Hard) - 선택적
+- [ ] **Phase 7.9**: borderStyle 구현 (🟡 Medium)
 
-### 단기 (Week 1)
+---
 
-- [ ] **Phase 4**: useExtend 훅 도입 (선택적)
-- [ ] **Phase 5**: PixiButton layoutContainer 이슈 조사
-- [ ] **Phase 7.6-7.7**: textTransform, textDecoration 구현 (P2)
+## Phase 7.7: textDecoration 구현 상세 계획
 
-### 중기 (Week 2-4)
+### 목표
 
-- [ ] **Phase 6.1**: PixiSlider 구현
-- [ ] **Phase 6.2**: PixiInput 구현
-- [ ] **Phase 6.3**: PixiSelect 구현
-- [ ] **Phase 6.4**: PixiProgressBar 구현
-- [ ] **Phase 7.8**: flexWrap 구현 (🔴 Hard, P2)
+CSS `textDecoration` 속성 (underline, line-through, overline)을 Canvas에서 지원
 
-### 장기 (Month 2+)
+### 구현 방식
 
-- [ ] **Phase 6.5-6.9**: 나머지 @pixi/ui 컴포넌트
-- [ ] **Phase 7.9**: borderStyle 구현 (🟡 Medium, P3)
-- [ ] **AppearanceSection UI 확장**: opacity, boxShadow 노출 + Canvas 구현
+PixiJS TextStyle은 textDecoration을 직접 지원하지 않으므로 **Graphics로 선 그리기** 필요
+
+```typescript
+// TextSprite.tsx에 추가할 함수
+function drawTextDecoration(
+  g: PixiGraphics,
+  textBounds: { x: number; y: number; width: number; height: number },
+  decoration: string,
+  color: number,
+  fontSize: number
+): void {
+  if (!decoration || decoration === 'none') return;
+
+  const decorations = decoration.split(/\s+/);
+  const lineWidth = Math.max(1, fontSize / 12);
+
+  decorations.forEach((dec) => {
+    let lineY: number;
+    switch (dec) {
+      case 'underline':
+        lineY = textBounds.y + textBounds.height + 2;
+        break;
+      case 'line-through':
+        lineY = textBounds.y + textBounds.height / 2;
+        break;
+      case 'overline':
+        lineY = textBounds.y - 2;
+        break;
+      default:
+        return;
+    }
+
+    g.moveTo(textBounds.x, lineY);
+    g.lineTo(textBounds.x + textBounds.width, lineY);
+    g.stroke({ width: lineWidth, color, alpha: 1 });
+  });
+}
+```
+
+### 수정 파일
+
+| 파일 | 변경 내용 |
+|------|----------|
+| `styleConverter.ts` | textDecoration 타입 이미 CSSStyle에 정의됨 ✅ |
+| `TextSprite.tsx` | drawTextDecoration() 함수 추가, 렌더링 로직에 적용 |
+| `BoxSprite.tsx` | (선택적) 텍스트가 있는 경우 동일하게 적용 |
+
+### 커밋 메시지
+
+```
+feat(canvas): add textDecoration support (underline, line-through, overline) (P7.7)
+
+- Add drawTextDecoration() helper in TextSprite
+- Support multiple decorations (e.g., "underline line-through")
+- Calculate line position based on text bounds and decoration type
+```
+
+---
+
+## Phase 7.8: flexWrap 구현 상세 계획 (선택적)
+
+### 목표
+
+CSS `flexWrap` 속성 (wrap, wrap-reverse, nowrap)을 Canvas 레이아웃에서 지원
+
+### 복잡도 분석
+
+🔴 **Hard** - 멀티라인 레이아웃 계산이 필요하며, 현재 @pixi/layout이 이를 처리해야 함
+
+### 구현 방식
+
+**옵션 A: @pixi/layout 활용** (권장)
+- @pixi/layout의 Yoga 엔진이 flexWrap을 지원하는지 확인
+- 지원한다면 layout 속성에 flexWrap 전달
+
+**옵션 B: 커스텀 구현**
+```typescript
+// layoutCalculator.ts에 추가
+function calculateMultiLineLayout(
+  children: ChildSize[],
+  container: { width: number; height: number },
+  flexStyle: { flexDirection: string; flexWrap: string; gap: number }
+): LayoutPosition[] {
+  const isRow = flexStyle.flexDirection.startsWith('row');
+  const maxSize = isRow ? container.width : container.height;
+
+  // 라인별로 분할
+  const lines: ChildSize[][] = [];
+  let currentLine: ChildSize[] = [];
+  let lineSize = 0;
+
+  for (const child of children) {
+    const childSize = isRow ? child.width : child.height;
+    if (lineSize + childSize > maxSize && currentLine.length > 0) {
+      lines.push(currentLine);
+      currentLine = [child];
+      lineSize = childSize + flexStyle.gap;
+    } else {
+      currentLine.push(child);
+      lineSize += childSize + flexStyle.gap;
+    }
+  }
+  if (currentLine.length > 0) lines.push(currentLine);
+
+  // wrap-reverse
+  if (flexStyle.flexWrap === 'wrap-reverse') lines.reverse();
+
+  // 각 라인별 위치 계산...
+  return calculatePositions(lines, container, flexStyle);
+}
+```
+
+### 수정 파일
+
+| 파일 | 변경 내용 |
+|------|----------|
+| `layoutCalculator.ts` | calculateMultiLineLayout() 함수 추가 |
+| `styleConverter.ts` | CSSStyle에 flexWrap 타입 추가 필요 |
+
+### 우선순위
+
+P2 (선택적) - @pixi/layout이 flexWrap을 지원하면 별도 구현 불필요
+
+---
+
+## Phase 7.9: borderStyle 구현 상세 계획
+
+### 목표
+
+CSS `borderStyle` 속성 (solid, dashed, dotted, double)을 Canvas에서 지원
+
+### 구현 방식
+
+PixiJS Graphics는 점선/대시선을 직접 지원하지 않으므로 **커스텀 그리기** 필요
+
+```typescript
+// styleConverter.ts 또는 BoxSprite.tsx에 추가
+function drawStyledBorder(
+  g: PixiGraphics,
+  x: number, y: number, width: number, height: number,
+  borderStyle: string,
+  strokeStyle: { width: number; color: number; alpha: number },
+  borderRadius: number
+): void {
+  g.setStrokeStyle(strokeStyle);
+
+  switch (borderStyle) {
+    case 'dashed':
+      drawDashedRect(g, x, y, width, height, 8, 4, borderRadius);
+      break;
+    case 'dotted':
+      drawDottedRect(g, x, y, width, height, borderRadius);
+      break;
+    case 'double':
+      drawDoubleRect(g, x, y, width, height, strokeStyle.width, borderRadius);
+      break;
+    case 'solid':
+    default:
+      if (borderRadius > 0) {
+        g.roundRect(x, y, width, height, borderRadius);
+      } else {
+        g.rect(x, y, width, height);
+      }
+      g.stroke();
+      break;
+  }
+}
+
+function drawDashedRect(
+  g: PixiGraphics,
+  x: number, y: number, w: number, h: number,
+  dashLen: number, gapLen: number, radius: number
+): void {
+  // 4개 변을 점선으로 그리기
+  drawDashedLine(g, x, y, x + w, y, dashLen, gapLen);           // Top
+  drawDashedLine(g, x + w, y, x + w, y + h, dashLen, gapLen);   // Right
+  drawDashedLine(g, x + w, y + h, x, y + h, dashLen, gapLen);   // Bottom
+  drawDashedLine(g, x, y + h, x, y, dashLen, gapLen);           // Left
+}
+
+function drawDashedLine(
+  g: PixiGraphics,
+  x1: number, y1: number, x2: number, y2: number,
+  dashLen: number, gapLen: number
+): void {
+  const dx = x2 - x1;
+  const dy = y2 - y1;
+  const len = Math.hypot(dx, dy);
+  const nx = dx / len;
+  const ny = dy / len;
+
+  let drawn = 0;
+  let isDash = true;
+
+  while (drawn < len) {
+    const segLen = isDash ? dashLen : gapLen;
+    const endDraw = Math.min(drawn + segLen, len);
+
+    if (isDash) {
+      g.moveTo(x1 + nx * drawn, y1 + ny * drawn);
+      g.lineTo(x1 + nx * endDraw, y1 + ny * endDraw);
+      g.stroke();
+    }
+
+    drawn = endDraw;
+    isDash = !isDash;
+  }
+}
+```
+
+### 수정 파일
+
+| 파일 | 변경 내용 |
+|------|----------|
+| `styleConverter.ts` | borderStyle 타입 이미 CSSStyle에 정의됨 ✅, drawStyledBorder() 추가 |
+| `BoxSprite.tsx` | stroke 로직을 drawStyledBorder()로 교체 |
+| `TextSprite.tsx` | 동일하게 적용 |
+
+### 커밋 메시지
+
+```
+feat(canvas): add borderStyle support (dashed, dotted, double) (P7.9)
+
+- Add drawStyledBorder() helper function
+- Implement drawDashedLine() for dashed/dotted borders
+- Support solid, dashed, dotted, double border styles
+```
 
 ---
 
