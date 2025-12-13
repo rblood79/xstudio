@@ -30,12 +30,19 @@ export interface LayoutPosition {
   height: number;
 }
 
+/** Modifier keys for multi-select */
+export interface ClickModifiers {
+  metaKey: boolean;
+  shiftKey: boolean;
+  ctrlKey: boolean;
+}
+
 export interface ElementSpriteProps {
   element: Element;
   isSelected?: boolean;
   /** 레이아웃 계산된 위치 (있으면 style보다 우선) */
   layoutPosition?: LayoutPosition;
-  onClick?: (elementId: string) => void;
+  onClick?: (elementId: string, modifiers?: ClickModifiers) => void;
   onDoubleClick?: (elementId: string) => void;
   onChange?: (elementId: string, value: unknown) => void;
 }

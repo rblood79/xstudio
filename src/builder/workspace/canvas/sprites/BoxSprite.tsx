@@ -159,7 +159,8 @@ function drawDoubleBorder(
 export interface BoxSpriteProps {
   element: Element;
   isSelected?: boolean;
-  onClick?: (elementId: string) => void;
+  /** onClick callback with modifier keys for multi-select */
+  onClick?: (elementId: string, modifiers?: { metaKey: boolean; shiftKey: boolean; ctrlKey: boolean }) => void;
 }
 
 // ============================================
@@ -286,8 +287,12 @@ export function BoxSprite({ element, isSelected, onClick }: BoxSpriteProps) {
     [transform, fill, stroke, borderRadius, borderStyle]
   );
 
-  const handleClick = useCallback(() => {
-    onClick?.(element.id);
+  const handleClick = useCallback((e: { metaKey?: boolean; shiftKey?: boolean; ctrlKey?: boolean }) => {
+    onClick?.(element.id, {
+      metaKey: e.metaKey ?? false,
+      shiftKey: e.shiftKey ?? false,
+      ctrlKey: e.ctrlKey ?? false,
+    });
   }, [element.id, onClick]);
 
   // P7.1: 텍스트 위치 (padding 적용 후 콘텐츠 영역 중앙)

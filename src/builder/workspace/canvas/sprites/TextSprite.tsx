@@ -17,10 +17,17 @@ import { convertStyle, applyTextTransform, type CSSStyle } from './styleConverte
 // Types
 // ============================================
 
+/** Modifier keys for multi-select */
+interface ClickModifiers {
+  metaKey: boolean;
+  shiftKey: boolean;
+  ctrlKey: boolean;
+}
+
 export interface TextSpriteProps {
   element: Element;
   isSelected?: boolean;
-  onClick?: (elementId: string) => void;
+  onClick?: (elementId: string, modifiers?: ClickModifiers) => void;
   onDoubleClick?: (elementId: string) => void;
 }
 
@@ -189,8 +196,12 @@ export function TextSprite({
     [style, fill, stroke, transform, borderRadius, isSelected]
   );
 
-  const handleClick = useCallback(() => {
-    onClick?.(element.id);
+  const handleClick = useCallback((e: { metaKey?: boolean; shiftKey?: boolean; ctrlKey?: boolean }) => {
+    onClick?.(element.id, {
+      metaKey: e.metaKey ?? false,
+      shiftKey: e.shiftKey ?? false,
+      ctrlKey: e.ctrlKey ?? false,
+    });
   }, [element.id, onClick]);
 
   const handleDoubleClick = useCallback(() => {

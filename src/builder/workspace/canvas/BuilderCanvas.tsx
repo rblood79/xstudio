@@ -95,10 +95,17 @@ function CanvasBounds({ width, height }: { width: number; height: number }) {
 }
 
 /**
- * 클릭 가능한 백그라운드 (빈 영역 클릭 감지용)
+ * 클릭 가능한 백그라운드 (빈 영역 클릭 감지용 + 라쏘 선택)
  * renderer.screen에서 크기를 자동으로 획득 (resizeTo 연동)
  */
-function ClickableBackground({ onClick }: { onClick?: () => void }) {
+interface ClickableBackgroundProps {
+  onClick?: () => void;
+  onLassoStart?: (position: { x: number; y: number }) => void;
+  onLassoDrag?: (position: { x: number; y: number }) => void;
+  onLassoEnd?: () => void;
+}
+
+function ClickableBackground({ onClick, onLassoStart, onLassoDrag, onLassoEnd }: ClickableBackgroundProps) {
   const { app } = useApplication();
   const [screenSize, setScreenSize] = useState<{
     width: number;
@@ -153,12 +160,39 @@ function ClickableBackground({ onClick }: { onClick?: () => void }) {
     [screenSize]
   );
 
+  // 라쏘 드래그 상태
+  const isDragging = useRef(false);
+
+  const handlePointerDown = useCallback((e: { global: { x: number; y: number } }) => {
+    isDragging.current = true;
+    onLassoStart?.({ x: e.global.x, y: e.global.y });
+  }, [onLassoStart]);
+
+  const handlePointerMove = useCallback((e: { global: { x: number; y: number } }) => {
+    if (isDragging.current) {
+      onLassoDrag?.({ x: e.global.x, y: e.global.y });
+    }
+  }, [onLassoDrag]);
+
+  const handlePointerUp = useCallback(() => {
+    if (isDragging.current) {
+      isDragging.current = false;
+      onLassoEnd?.();
+    } else {
+      // 드래그 없이 클릭만 했으면 clearSelection
+      onClick?.();
+    }
+  }, [onClick, onLassoEnd]);
+
   return (
     <pixiGraphics
       draw={draw}
       eventMode="static"
-      cursor="default"
-      onPointerDown={onClick}
+      cursor="crosshair"
+      onPointerDown={handlePointerDown}
+      onGlobalPointerMove={handlePointerMove}
+      onPointerUp={handlePointerUp}
+      onPointerUpOutside={handlePointerUp}
     />
   );
 }
@@ -392,6 +426,11 @@ export function BuilderCanvas({
   const clearSelection = useStore((state) => state.clearSelection);
   const updateElementProps = useStore((state) => state.updateElementProps);
   const currentPageId = useStore((state) => state.currentPageId);
+
+  // Settings state (SettingsPanel 연동)
+  const showGrid = useStore((state) => state.showGrid);
+  const gridSize = useStore((state) => state.gridSize);
+
   const zoom = useCanvasSyncStore((state) => state.zoom);
   const panOffset = useCanvasSyncStore((state) => state.panOffset);
 
@@ -432,14 +471,14 @@ export function BuilderCanvas({
     [pageElements]
   );
 
-  // 드래그 인터랙션 - startLasso, updateDrag, endDrag는 추후 구현 예정
+  // 드래그 인터랙션 - Lasso 선택 포함
   const {
     dragState,
     startMove,
     startResize,
-    // startLasso,
-    // updateDrag,
-    // endDrag,
+    startLasso,
+    updateDrag,
+    endDrag,
   } = useDragInteraction({
     onMoveEnd: useCallback(
       (elementId: string, delta: { x: number; y: number }) => {
@@ -529,14 +568,36 @@ export function BuilderCanvas({
     isEditing,
   } = useTextEdit();
 
-  // Element click handler
+  // Element click handler with multi-select support
   const handleElementClick = useCallback(
-    (elementId: string) => {
+    (elementId: string, modifiers?: { metaKey: boolean; shiftKey: boolean; ctrlKey: boolean }) => {
       // 텍스트 편집 중이면 클릭 무시
       if (isEditing) return;
-      setSelectedElement(elementId);
+
+      // Cmd+Click (Mac) or Ctrl+Click (Windows) for multi-select
+      const isMultiSelectKey = modifiers?.metaKey || modifiers?.ctrlKey;
+
+      if (isMultiSelectKey) {
+        // 다중 선택: 이미 선택된 요소면 제거, 아니면 추가
+        const isAlreadySelected = selectedElementIds.includes(elementId);
+        if (isAlreadySelected) {
+          // 선택 해제
+          const newSelection = selectedElementIds.filter((id) => id !== elementId);
+          if (newSelection.length > 0) {
+            setSelectedElements(newSelection);
+          } else {
+            clearSelection();
+          }
+        } else {
+          // 선택에 추가
+          setSelectedElements([...selectedElementIds, elementId]);
+        }
+      } else {
+        // 단일 선택
+        setSelectedElement(elementId);
+      }
     },
-    [setSelectedElement, isEditing]
+    [setSelectedElement, setSelectedElements, clearSelection, selectedElementIds, isEditing]
   );
 
   // Element double click handler (텍스트 편집 시작)
@@ -604,8 +665,13 @@ export function BuilderCanvas({
             maxZoom={5}
           />
 
-          {/* 전체 Canvas 영역 클릭 → 선택 해제 (Camera 바깥, zoom/pan 영향 안 받음) */}
-          <ClickableBackground onClick={clearSelection} />
+          {/* 전체 Canvas 영역 클릭 → 선택 해제 + 라쏘 선택 시작 */}
+          <ClickableBackground
+            onClick={clearSelection}
+            onLassoStart={startLasso}
+            onLassoDrag={updateDrag}
+            onLassoEnd={endDrag}
+          />
 
           {/* Camera/Viewport - x, y, scale은 ViewportController가 직접 조작 */}
           <pixiContainer
@@ -613,12 +679,13 @@ export function BuilderCanvas({
             eventMode="static"
             interactiveChildren={true}
           >
-            {/* Grid Layer (최하단) */}
+            {/* Grid Layer (최하단) - SettingsPanel 연동 */}
             <GridLayer
               width={pageWidth}
               height={pageHeight}
               zoom={zoom}
-              showGrid={true}
+              showGrid={showGrid}
+              gridSize={gridSize}
             />
 
             {/* Body Layer (Body 요소의 배경색, 테두리 등) */}
