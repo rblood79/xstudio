@@ -29,7 +29,7 @@
 | **P4** | Medium | useExtend 훅 도입 | ✅ **적용됨** (2025-12-13) |
 | **P5** | Medium | PixiButton layoutContainer 이슈 해결 | ✅ **적용됨** (2025-12-13) |
 | **P6** | High | @pixi/ui 전체 컴포넌트 지원 | ✅ **완료** (9개 컴포넌트, 2025-12-13) |
-| **P7** | High | StylePanel ↔ Canvas 스타일 동기화 | ✅ **부분완료** (P7.1-P7.6, 2025-12-13) |
+| **P7** | High | StylePanel ↔ Canvas 스타일 동기화 | ✅ **완료** (P7.1-P7.9, 2025-12-13) |
 
 ---
 
@@ -1137,11 +1137,11 @@ feat(canvas): add flexWrap support to layout calculator (P7.8)
 - [x] **Phase 7.1-7.6**: StylePanel ↔ Canvas 동기화 (타이포그래피)
   - BoxSprite padding, fontStyle, letterSpacing, lineHeight, verticalAlign, textTransform
 
-### 🔄 진행 중 (P7.7-P7.9)
+### ✅ 완료 (P7.7-P7.9)
 
-- [ ] **Phase 7.7**: textDecoration 구현 (🟡 Medium)
-- [ ] **Phase 7.8**: flexWrap 구현 (🔴 Hard) - 선택적
-- [ ] **Phase 7.9**: borderStyle 구현 (🟡 Medium)
+- [x] **Phase 7.7**: textDecoration 구현 (🟡 Medium) ✅ **완료** (2025-12-13)
+- [ ] **Phase 7.8**: flexWrap 구현 (🔴 Hard) - **선택적/추후**
+- [x] **Phase 7.9**: borderStyle 구현 (🟡 Medium) ✅ **완료** (2025-12-13)
 
 ---
 
