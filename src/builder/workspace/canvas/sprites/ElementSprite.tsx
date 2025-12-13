@@ -15,7 +15,7 @@ import type { Element } from '../../../../types/core/store.types';
 import { BoxSprite } from './BoxSprite';
 import { TextSprite } from './TextSprite';
 import { ImageSprite } from './ImageSprite';
-import { PixiButton, PixiCheckbox, PixiRadio, PixiSlider, PixiInput, PixiSelect, PixiProgressBar } from '../ui';
+import { PixiButton, PixiFancyButton, PixiCheckbox, PixiRadio, PixiSlider, PixiInput, PixiSelect, PixiProgressBar } from '../ui';
 import { isFlexContainer, isGridContainer } from '../layout';
 import type { CSSStyle } from './styleConverter';
 
@@ -69,7 +69,8 @@ const IMAGE_TAGS = new Set(['Image', 'Avatar', 'Logo', 'Icon', 'Thumbnail']);
 /**
  * UI 컴포넌트 태그들 (Phase 11 B2.4)
  */
-const UI_BUTTON_TAGS = new Set(['Button', 'FancyButton', 'SubmitButton']);
+const UI_BUTTON_TAGS = new Set(['Button', 'SubmitButton']);
+const UI_FANCYBUTTON_TAGS = new Set(['FancyButton']);
 const UI_CHECKBOX_TAGS = new Set(['Checkbox', 'CheckBox', 'Switch', 'Toggle']);
 const UI_RADIO_TAGS = new Set(['RadioGroup', 'Radio']);
 
@@ -87,7 +88,7 @@ const UI_PROGRESS_TAGS = new Set(['ProgressBar', 'Progress', 'LoadingBar']);
 // Sprite Type Detection
 // ============================================
 
-type SpriteType = 'box' | 'text' | 'image' | 'button' | 'checkbox' | 'radio' | 'slider' | 'input' | 'select' | 'progressBar' | 'flex' | 'grid';
+type SpriteType = 'box' | 'text' | 'image' | 'button' | 'fancyButton' | 'checkbox' | 'radio' | 'slider' | 'input' | 'select' | 'progressBar' | 'flex' | 'grid';
 
 function getSpriteType(element: Element): SpriteType {
   const tag = element.tag;
@@ -95,6 +96,7 @@ function getSpriteType(element: Element): SpriteType {
 
   // UI 컴포넌트 우선 체크 (Phase 11 B2.4 + Phase 6)
   if (UI_BUTTON_TAGS.has(tag)) return 'button';
+  if (UI_FANCYBUTTON_TAGS.has(tag)) return 'fancyButton';
   if (UI_CHECKBOX_TAGS.has(tag)) return 'checkbox';
   if (UI_RADIO_TAGS.has(tag)) return 'radio';
   if (UI_SLIDER_TAGS.has(tag)) return 'slider';
@@ -167,6 +169,15 @@ export const ElementSprite = memo(function ElementSprite({
     case 'button':
       return (
         <PixiButton
+          element={effectiveElement}
+          isSelected={isSelected}
+          onClick={onClick}
+        />
+      );
+
+    case 'fancyButton':
+      return (
+        <PixiFancyButton
           element={effectiveElement}
           isSelected={isSelected}
           onClick={onClick}

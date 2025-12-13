@@ -11,9 +11,11 @@
  * @updated 2025-12-13 Phase 6.2 - PixiInput 추가
  * @updated 2025-12-13 Phase 6.3 - PixiSelect 추가
  * @updated 2025-12-13 Phase 6.4 - PixiProgressBar 추가
+ * @updated 2025-12-13 Phase 6.5 - PixiFancyButton 추가
  */
 
 export { PixiButton, type PixiButtonProps } from './PixiButton';
+export { PixiFancyButton, type PixiFancyButtonProps } from './PixiFancyButton';
 export { PixiCheckbox, type PixiCheckboxProps } from './PixiCheckbox';
 export { PixiRadio, type PixiRadioProps } from './PixiRadio';
 export { PixiSlider, type PixiSliderProps } from './PixiSlider';
