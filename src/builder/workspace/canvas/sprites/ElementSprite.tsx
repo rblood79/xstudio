@@ -15,7 +15,7 @@ import type { Element } from '../../../../types/core/store.types';
 import { BoxSprite } from './BoxSprite';
 import { TextSprite } from './TextSprite';
 import { ImageSprite } from './ImageSprite';
-import { PixiButton, PixiCheckbox, PixiRadio } from '../ui';
+import { PixiButton, PixiCheckbox, PixiRadio, PixiSlider } from '../ui';
 import { isFlexContainer, isGridContainer } from '../layout';
 import type { CSSStyle } from './styleConverter';
 
@@ -73,22 +73,28 @@ const UI_BUTTON_TAGS = new Set(['Button', 'FancyButton', 'SubmitButton']);
 const UI_CHECKBOX_TAGS = new Set(['Checkbox', 'CheckBox', 'Switch', 'Toggle']);
 const UI_RADIO_TAGS = new Set(['RadioGroup', 'Radio']);
 
+/**
+ * UI 컴포넌트 태그들 (Phase 6)
+ */
+const UI_SLIDER_TAGS = new Set(['Slider', 'RangeSlider']);
+
 // Note: TEXT_TAGS, IMAGE_TAGS, UI_*_TAGS에 포함되지 않은 모든 태그는 BoxSprite로 렌더링됨
 
 // ============================================
 // Sprite Type Detection
 // ============================================
 
-type SpriteType = 'box' | 'text' | 'image' | 'button' | 'checkbox' | 'radio' | 'flex' | 'grid';
+type SpriteType = 'box' | 'text' | 'image' | 'button' | 'checkbox' | 'radio' | 'slider' | 'flex' | 'grid';
 
 function getSpriteType(element: Element): SpriteType {
   const tag = element.tag;
   const style = element.props?.style as CSSStyle | undefined;
 
-  // UI 컴포넌트 우선 체크 (Phase 11 B2.4)
+  // UI 컴포넌트 우선 체크 (Phase 11 B2.4 + Phase 6)
   if (UI_BUTTON_TAGS.has(tag)) return 'button';
   if (UI_CHECKBOX_TAGS.has(tag)) return 'checkbox';
   if (UI_RADIO_TAGS.has(tag)) return 'radio';
+  if (UI_SLIDER_TAGS.has(tag)) return 'slider';
 
   // 레이아웃 컨테이너 체크 (Phase 11 B2.5)
   // display: flex/grid인 경우에도 현재는 BoxSprite로 렌더링
@@ -174,6 +180,17 @@ export const ElementSprite = memo(function ElementSprite({
     case 'radio':
       return (
         <PixiRadio
+          element={effectiveElement}
+          isSelected={isSelected}
+          onClick={onClick}
+          onChange={onChange ? (id, value) => onChange(id, value) : undefined}
+        />
+      );
+
+    // Phase 6: @pixi/ui 컴포넌트
+    case 'slider':
+      return (
+        <PixiSlider
           element={effectiveElement}
           isSelected={isSelected}
           onClick={onClick}
