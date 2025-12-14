@@ -103,9 +103,13 @@ interface ClickableBackgroundProps {
   onLassoStart?: (position: { x: number; y: number }) => void;
   onLassoDrag?: (position: { x: number; y: number }) => void;
   onLassoEnd?: () => void;
+  /** Zoom level for coordinate transformation */
+  zoom: number;
+  /** Pan offset for coordinate transformation */
+  panOffset: { x: number; y: number };
 }
 
-function ClickableBackground({ onClick, onLassoStart, onLassoDrag, onLassoEnd }: ClickableBackgroundProps) {
+function ClickableBackground({ onClick, onLassoStart, onLassoDrag, onLassoEnd, zoom, panOffset }: ClickableBackgroundProps) {
   const { app } = useApplication();
   const [screenSize, setScreenSize] = useState<{
     width: number;
@@ -163,16 +167,26 @@ function ClickableBackground({ onClick, onLassoStart, onLassoDrag, onLassoEnd }:
   // 라쏘 드래그 상태
   const isDragging = useRef(false);
 
+  // 화면 좌표를 캔버스 좌표로 변환
+  const screenToCanvas = useCallback((screenX: number, screenY: number) => {
+    return {
+      x: (screenX - panOffset.x) / zoom,
+      y: (screenY - panOffset.y) / zoom,
+    };
+  }, [zoom, panOffset]);
+
   const handlePointerDown = useCallback((e: { global: { x: number; y: number } }) => {
     isDragging.current = true;
-    onLassoStart?.({ x: e.global.x, y: e.global.y });
-  }, [onLassoStart]);
+    const canvasPos = screenToCanvas(e.global.x, e.global.y);
+    onLassoStart?.(canvasPos);
+  }, [onLassoStart, screenToCanvas]);
 
   const handlePointerMove = useCallback((e: { global: { x: number; y: number } }) => {
     if (isDragging.current) {
-      onLassoDrag?.({ x: e.global.x, y: e.global.y });
+      const canvasPos = screenToCanvas(e.global.x, e.global.y);
+      onLassoDrag?.(canvasPos);
     }
-  }, [onLassoDrag]);
+  }, [onLassoDrag, screenToCanvas]);
 
   const handlePointerUp = useCallback(() => {
     if (isDragging.current) {
@@ -672,6 +686,8 @@ export function BuilderCanvas({
             onLassoStart={startLasso}
             onLassoDrag={updateDrag}
             onLassoEnd={endDrag}
+            zoom={zoom}
+            panOffset={panOffset}
           />
 
           {/* Camera/Viewport - x, y, scale은 ViewportController가 직접 조작 */}

@@ -17,7 +17,7 @@ import { useStore } from '../../../stores';
 import { SelectionBox } from './SelectionBox';
 import { LassoSelection, getLassoBounds } from './LassoSelection';
 import type { BoundingBox, HandlePosition, CursorStyle, DragState } from './types';
-import { calculateCombinedBounds, boxesIntersect } from './types';
+import { calculateBounds, calculateCombinedBounds, boxesIntersect } from './types';
 import type { LayoutResult } from '../layout';
 
 // ============================================
