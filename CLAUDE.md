@@ -9,7 +9,7 @@ This file provides guidance to AI coding assistants (Claude Code, Cursor AI, Git
 XStudio is a web-based UI builder/design studio built with React 19, TypeScript, React Aria Components, Zustand, Tailwind v4, and Supabase. It enables users to create websites through an intuitive drag-and-drop interface with real-time preview.
 
 **Key Features:**
-- Drag-and-drop visual builder with iframe-based real-time preview
+- Drag-and-drop visual builder with dual canvas system (PixiJS WebGL + iframe Preview)
 - Accessibility-first components using React Aria Components
 - Design system with design tokens and theme management
 - Real-time collaboration via Supabase
@@ -55,7 +55,7 @@ The builder consists of four main areas:
 
 1. **BuilderHeader** - Top toolbar with save/undo/redo controls
 2. **Sidebar** - Page tree and element hierarchy navigation
-3. **Canvas** - iframe-based real-time canvas for editing (BuilderCanvas component)
+3. **Canvas** - Dual canvas system: PixiJS/WebGL for editing, iframe for preview
 4. **Inspector** - Property editor for selected elements with inline style management
 
 ### State Management (Zustand)
@@ -103,7 +103,138 @@ User Action → Zustand Store → Supabase API → Real-time Update
 2. Send postMessage to iframe (for preview sync)
 3. Save to Supabase (async, failures don't break memory state)
 
-### Canvas Runtime (iframe)
+### Builder Canvas (PixiJS/WebGL)
+
+> **Status:** ✅ Phase 1-7.9 Complete (2025-12-14)
+
+The builder uses a PixiJS/WebGL-based canvas for high-performance editing with Feature Flag toggle support.
+
+**Location:** `src/builder/workspace/canvas/`
+
+**Technology Stack:**
+- `pixi.js` v8.14.3 - WebGL rendering
+- `@pixi/react` v8.0.5 - React integration
+- `@pixi/ui` v2.3.2 - UI components
+- `yoga-layout` v3.2.1 - Flexbox layout engine
+
+**Architecture:**
+```
+canvas/
+├── BuilderCanvas.tsx              # Main entry (Yoga init, Application setup)
+├── pixiSetup.ts                   # PIXI_COMPONENTS catalog + useExtend
+├── canvasSync.ts                  # Zustand sync state management
+├── layout/
+│   ├── LayoutEngine.ts            # Yoga v3 Flexbox engine (455 lines)
+│   └── GridLayout.tsx             # CSS Grid manual implementation
+├── sprites/
+│   ├── ElementSprite.tsx          # Element type router/dispatcher
+│   ├── BoxSprite.tsx              # Container rendering + borderStyle
+│   ├── TextSprite.tsx             # Text + decoration/transform
+│   ├── ImageSprite.tsx            # Image + loading states
+│   ├── styleConverter.ts          # CSS → PixiJS style conversion
+│   └── paddingUtils.ts            # Padding parsing utilities
+├── ui/                            # 12 @pixi/ui component wrappers
+│   ├── PixiButton.tsx             # FancyButton wrapper
+│   ├── PixiSlider.tsx
+│   ├── PixiInput.tsx
+│   ├── PixiSelect.tsx
+│   └── ... (8 more)
+├── selection/                     # Selection system
+│   ├── SelectionLayer.tsx
+│   └── LassoSelection.tsx
+├── viewport/                      # Pan/Zoom control
+│   ├── useViewportControl.ts
+│   └── ViewportControlBridge.tsx
+└── grid/, layers/, utils/
+```
+
+**Feature Flag:**
+```bash
+# .env.local
+VITE_USE_WEBGL_CANVAS=true   # Enable PixiJS canvas
+VITE_USE_WEBGL_CANVAS=false  # Use iframe canvas (default)
+```
+
+**Rendering Pipeline:**
+```
+BuilderCanvas.tsx
+  │
+  ├─→ initYoga()                    (Yoga WASM initialization)
+  │
+  ├─→ calculateLayout()             (Flexbox layout calculation)
+  │   └─→ Yoga.Node tree build
+  │   └─→ calculateLayout() call
+  │   └─→ positions Map return
+  │
+  ├─→ ElementsLayer                 (Element rendering)
+  │   └─→ ElementSprite (per element)
+  │       └─→ BoxSprite / TextSprite / ImageSprite / PixiButton / ...
+  │
+  ├─→ SelectionLayer                (Selection UI)
+  │   └─→ SelectionBox + ResizeHandles
+  │
+  └─→ TextEditOverlay (HTML)        (Text editing)
+```
+
+**Supported CSS Properties (via Yoga):**
+- **Display:** `flex`, `grid` (manual), `position: absolute`
+- **Sizing:** `width`, `height`, `min/maxWidth`, `min/maxHeight`
+- **Spacing:** `margin*`, `padding*`, `gap`, `rowGap`, `columnGap`
+- **Flexbox:** `flexDirection`, `flexWrap`, `justifyContent`, `alignItems`, `alignContent`
+- **Border:** `borderRadius`, `borderWidth`, `borderColor`, `borderStyle` (solid/dashed/dotted/double)
+- **Text:** `fontStyle`, `letterSpacing`, `lineHeight`, `textDecoration`, `textTransform`
+
+**@pixi/ui Components (12):**
+PixiButton, PixiFancyButton, PixiCheckbox, PixiRadio, PixiSlider, PixiInput, PixiSelect, PixiProgressBar, PixiSwitcher, PixiScrollBox, PixiList, PixiMaskedFrame
+
+**Key Implementation Patterns:**
+
+1. **Yoga Integration:**
+```typescript
+// LayoutEngine.ts
+import { loadYoga } from 'yoga-layout/load';
+import { setYoga } from '@pixi/layout';
+
+export async function initYoga(): Promise<YogaInstance> {
+  const yogaInstance = await loadYoga();
+  setYoga(yogaInstance);  // For @pixi/layout
+  return yogaInstance;
+}
+```
+
+2. **Padding Utilities:**
+```typescript
+// paddingUtils.ts
+parsePadding(style)           // CSS shorthand → {top, right, bottom, left}
+getContentBounds(w, h, pad)   // Container → content area
+```
+
+3. **@pixi/ui Imperative Pattern:**
+```typescript
+// Use imperative API (not JSX) for @pixi/ui components
+useEffect(() => {
+  const button = new FancyButton({
+    text: 'Click',
+    defaultView: createBackground(),
+  });
+  containerRef.current?.addChild(button);
+  return () => containerRef.current?.removeChild(button);
+}, []);
+```
+
+**Completed Phases:**
+| Phase | Description | Status |
+|-------|-------------|--------|
+| P1 | camelCase event handlers | ✅ |
+| P2 | extend() centralization | ✅ |
+| P3 | Graphics fill()/stroke() order | ✅ |
+| P4 | useExtend hook | ✅ |
+| P5-P6 | @pixi/ui 12 components | ✅ |
+| P7.1-P7.7 | Typography & spacing styles | ✅ |
+| P7.8 | Yoga v3.2.1 layout engine | ✅ |
+| P7.9 | borderStyle (dashed/dotted/double) | ✅ |
+
+### Preview Runtime (iframe)
 
 The canvas runs in an isolated srcdoc iframe with its own React application (`src/canvas/index.tsx`):
 
