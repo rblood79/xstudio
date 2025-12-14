@@ -40,10 +40,12 @@ export type { SelectionBoxProps } from './SelectionBox';
 export { TransformHandle } from './TransformHandle';
 export type { TransformHandleProps } from './TransformHandle';
 
-export { LassoSelection, getLassoBounds } from './LassoSelection';
+export { LassoSelection } from './LassoSelection';
+export { getLassoBounds } from './LassoSelection.utils';
 export type { LassoSelectionProps } from './LassoSelection';
 
-export { SelectionLayer, findElementsInLasso } from './SelectionLayer';
+export { SelectionLayer } from './SelectionLayer';
+export { findElementsInLasso } from './SelectionLayer.utils';
 export type { SelectionLayerProps } from './SelectionLayer';
 
 // Hooks

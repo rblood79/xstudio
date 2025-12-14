@@ -15,9 +15,9 @@
 import { useCallback, useMemo, memo } from 'react';
 import { useStore } from '../../../stores';
 import { SelectionBox } from './SelectionBox';
-import { LassoSelection, getLassoBounds } from './LassoSelection';
+import { LassoSelection } from './LassoSelection';
 import type { BoundingBox, HandlePosition, CursorStyle, DragState } from './types';
-import { calculateBounds, calculateCombinedBounds, boxesIntersect } from './types';
+import { calculateCombinedBounds } from './types';
 import type { LayoutResult } from '../layout';
 
 // ============================================
@@ -173,27 +173,5 @@ export const SelectionLayer = memo(function SelectionLayer({
     </pixiContainer>
   );
 });
-
-// ============================================
-// Helper Hooks
-// ============================================
-
-/**
- * 라쏘 선택 영역과 교차하는 요소 찾기
- */
-export function findElementsInLasso(
-  elements: { id: string; props?: { style?: Record<string, unknown> } }[],
-  lassoStart: { x: number; y: number },
-  lassoCurrent: { x: number; y: number }
-): string[] {
-  const lassoBounds = getLassoBounds(lassoStart, lassoCurrent);
-
-  return elements
-    .filter((el) => {
-      const elementBounds = calculateBounds(el.props?.style);
-      return boxesIntersect(lassoBounds, elementBounds);
-    })
-    .map((el) => el.id);
-}
 
 export default SelectionLayer;

@@ -19,11 +19,12 @@ export * from './canvas/store'; // B2.4: Direct Zustand Access
 export {
   gpuProfiler,
   useGPUProfiler,
-  GPUDebugOverlay,
   updateTextureCount,
   updateSpriteCount,
   updateVRAMUsage,
-} from './canvas/utils/gpuProfiler';
+} from './canvas/utils/gpuProfilerCore';
+
+export { GPUDebugOverlay } from './canvas/utils/GPUDebugOverlay';
 
 // Sprites (B1.2)
 export * from './canvas/sprites';

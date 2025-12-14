@@ -22,6 +22,9 @@ export {
 // Grid Layout (Custom)
 export {
   GridLayout,
+} from './GridLayout';
+
+export {
   isGridContainer,
   parseGridTemplate,
   parseGap,
@@ -33,4 +36,4 @@ export {
   type GridTrack,
   type GridCellBounds,
   type GridLayoutProps,
-} from './GridLayout';
+} from './GridLayout.utils';
