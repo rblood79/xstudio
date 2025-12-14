@@ -16,6 +16,8 @@ interface ImportMetaEnv {
   readonly VITE_ENABLE_DEBUG_LOGS?: string;
   /** 🚀 Phase 10: WebGL Canvas 활성화 Feature Flag */
   readonly VITE_USE_WEBGL_CANVAS?: string;
+  /** 캔버스 비교 모드 (iframe + PixiJS 동시 표시) */
+  readonly VITE_CANVAS_COMPARE_MODE?: string;
 }
 
 interface ImportMeta {

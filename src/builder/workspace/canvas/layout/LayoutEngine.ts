@@ -10,6 +10,7 @@
  */
 
 import type { Element } from '../../../../types/core/store.types';
+import { parsePadding } from '../sprites/paddingUtils';
 
 // yoga-layout v3.2.1: enums are directly exported from 'yoga-layout/load'
 import {
@@ -61,6 +62,7 @@ interface CSSStyle {
   marginBottom?: string | number;
   marginLeft?: string | number;
   marginRight?: string | number;
+  padding?: string | number;  // shorthand: "20px" or "10px 20px" etc.
   paddingTop?: string | number;
   paddingBottom?: string | number;
   paddingLeft?: string | number;
@@ -254,11 +256,12 @@ function createYogaNode(
   if (style?.marginBottom) node.setMargin(Edge.Bottom, parseCSSValue(style.marginBottom));
   if (style?.marginLeft) node.setMargin(Edge.Left, parseCSSValue(style.marginLeft));
 
-  // Padding
-  if (style?.paddingTop) node.setPadding(Edge.Top, parseCSSValue(style.paddingTop));
-  if (style?.paddingRight) node.setPadding(Edge.Right, parseCSSValue(style.paddingRight));
-  if (style?.paddingBottom) node.setPadding(Edge.Bottom, parseCSSValue(style.paddingBottom));
-  if (style?.paddingLeft) node.setPadding(Edge.Left, parseCSSValue(style.paddingLeft));
+  // Padding (shorthand + 개별 값 모두 지원)
+  const padding = parsePadding(style as import('../sprites/styleConverter').CSSStyle | undefined);
+  if (padding.top > 0) node.setPadding(Edge.Top, padding.top);
+  if (padding.right > 0) node.setPadding(Edge.Right, padding.right);
+  if (padding.bottom > 0) node.setPadding(Edge.Bottom, padding.bottom);
+  if (padding.left > 0) node.setPadding(Edge.Left, padding.left);
 
   // Flexbox Container 속성
   if (style?.display === 'flex') {
@@ -437,11 +440,12 @@ export function calculateLayout(
     if (bodyStyle.gap) rootNode.setGap(Gutter.All, parseCSSValue(bodyStyle.gap));
   }
 
-  // Padding 적용
-  if (bodyStyle?.paddingTop) rootNode.setPadding(Edge.Top, parseCSSValue(bodyStyle.paddingTop));
-  if (bodyStyle?.paddingRight) rootNode.setPadding(Edge.Right, parseCSSValue(bodyStyle.paddingRight));
-  if (bodyStyle?.paddingBottom) rootNode.setPadding(Edge.Bottom, parseCSSValue(bodyStyle.paddingBottom));
-  if (bodyStyle?.paddingLeft) rootNode.setPadding(Edge.Left, parseCSSValue(bodyStyle.paddingLeft));
+  // Padding 적용 (shorthand + 개별 값 모두 지원)
+  const bodyPadding = parsePadding(bodyStyle as import('../sprites/styleConverter').CSSStyle | undefined);
+  if (bodyPadding.top > 0) rootNode.setPadding(Edge.Top, bodyPadding.top);
+  if (bodyPadding.right > 0) rootNode.setPadding(Edge.Right, bodyPadding.right);
+  if (bodyPadding.bottom > 0) rootNode.setPadding(Edge.Bottom, bodyPadding.bottom);
+  if (bodyPadding.left > 0) rootNode.setPadding(Edge.Left, bodyPadding.left);
 
   // 노드 맵 생성
   const nodeMap = new Map<string, YogaNode>();

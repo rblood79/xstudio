@@ -20,6 +20,8 @@ export interface FeatureFlags {
   useWebGLCanvas: boolean;
   /** 디버그 로그 활성화 */
   enableDebugLogs: boolean;
+  /** 캔버스 비교 모드 (iframe + PixiJS 동시 표시) */
+  canvasCompareMode: boolean;
 }
 
 // ============================================
@@ -68,6 +70,24 @@ export function enableDebugLogs(): boolean {
 }
 
 /**
+ * 캔버스 비교 모드 활성화 여부
+ *
+ * iframe과 PixiJS 캔버스를 동시에 표시하여 교차검증
+ *
+ * @returns true if compare mode should be enabled
+ *
+ * @example
+ * ```typescript
+ * if (useCanvasCompareMode()) {
+ *   return <SplitView left={<IframeCanvas />} right={<WebGLCanvas />} />;
+ * }
+ * ```
+ */
+export function useCanvasCompareMode(): boolean {
+  return parseBoolean(import.meta.env.VITE_CANVAS_COMPARE_MODE, false);
+}
+
+/**
  * 모든 Feature Flags 조회
  *
  * @returns 현재 Feature Flags 상태
@@ -83,6 +103,7 @@ export function getFeatureFlags(): FeatureFlags {
   return {
     useWebGLCanvas: parseBoolean(import.meta.env.VITE_USE_WEBGL_CANVAS, false),
     enableDebugLogs: parseBoolean(import.meta.env.VITE_ENABLE_DEBUG_LOGS, false),
+    canvasCompareMode: parseBoolean(import.meta.env.VITE_CANVAS_COMPARE_MODE, false),
   };
 }
 

@@ -19,7 +19,7 @@ import { useRef, useCallback, useState, useEffect, useMemo } from "react";
 import { Key } from "react-aria-components";
 import { BuilderCanvas } from "./canvas/BuilderCanvas";
 import { useCanvasSyncStore } from "./canvas/canvasSync";
-import { useWebGLCanvas } from "../../utils/featureFlags";
+import { useWebGLCanvas, useCanvasCompareMode } from "../../utils/featureFlags";
 import { Minus, Plus, Scan } from "lucide-react";
 import "./Workspace.css";
 // ============================================
@@ -62,8 +62,9 @@ export function Workspace({
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
 
-  // Feature flag
+  // Feature flags
   const useWebGL = useWebGLCanvas();
+  const compareMode = useCanvasCompareMode();
 
   // ============================================
   // Canvas Size from Breakpoint
@@ -223,6 +224,63 @@ export function Workspace({
   // ============================================
   // Render
   // ============================================
+
+  // 비교 모드: iframe + PixiJS 동시 표시
+  if (compareMode && fallbackCanvas) {
+    return (
+      <div ref={containerRef} className="workspace workspace--compare-mode">
+        {/* 왼쪽: iframe Canvas */}
+        <div className="workspace-compare-panel workspace-compare-panel--left">
+          <div className="workspace-compare-label">iframe Preview</div>
+          <div className="workspace-compare-content">
+            {fallbackCanvas}
+          </div>
+        </div>
+
+        {/* 오른쪽: PixiJS Canvas */}
+        <div className="workspace-compare-panel workspace-compare-panel--right">
+          <div className="workspace-compare-label">PixiJS Canvas</div>
+          <div className="workspace-compare-content">
+            <BuilderCanvas
+              pageWidth={canvasSize.width}
+              pageHeight={canvasSize.height}
+            />
+          </div>
+        </div>
+
+        {/* Zoom Controls (PixiJS용) */}
+        <div className="workspace-zoom-controls">
+          <button
+            className="zoom-control-button"
+            onClick={() => zoomTo(zoom - ZOOM_STEP)}
+            disabled={zoom <= MIN_ZOOM}
+          >
+            <Minus size={16} />
+          </button>
+          <span className="zoom-control-text">{Math.round(zoom * 100)}%</span>
+          <button
+            className="zoom-control-button"
+            onClick={() => zoomTo(zoom + ZOOM_STEP)}
+            disabled={zoom >= MAX_ZOOM}
+          >
+            <Plus size={16} />
+          </button>
+          <button className="zoom-control-button" onClick={zoomToFit}>
+            <Scan size={16} />
+          </button>
+        </div>
+
+        {/* Status Indicator */}
+        {(isContextLost || !isCanvasReady) && (
+          <div className="workspace-status-indicator">
+            {isContextLost
+              ? "⚠️ GPU 리소스 복구 중..."
+              : "🔄 캔버스 초기화 중..."}
+          </div>
+        )}
+      </div>
+    );
+  }
 
   // Feature Flag OFF: 기존 iframe 캔버스 사용
   if (!useWebGL && fallbackCanvas) {
