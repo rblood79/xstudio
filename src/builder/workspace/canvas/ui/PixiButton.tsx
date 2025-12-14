@@ -42,10 +42,17 @@ const MIN_BUTTON_HEIGHT = 24;
 // Types
 // ============================================
 
+/** Modifier keys for multi-select */
+interface ClickModifiers {
+  metaKey: boolean;
+  shiftKey: boolean;
+  ctrlKey: boolean;
+}
+
 export interface PixiButtonProps {
   element: Element;
   isSelected?: boolean;
-  onClick?: (elementId: string) => void;
+  onClick?: (elementId: string, modifiers?: ClickModifiers) => void;
 }
 
 // ============================================
@@ -224,6 +231,8 @@ export const PixiButton = memo(function PixiButton({
     });
 
     // FancyButton 생성 (text에 PixiText 객체 전달)
+    // Note: onPress는 사용하지 않음 - modifier 키를 전달할 수 없기 때문
+    // 대신 투명 히트 영역(pixiGraphics)에서 클릭 이벤트 처리
     const button = new FancyButton({
       defaultView,
       hoverView,
@@ -236,11 +245,8 @@ export const PixiButton = memo(function PixiButton({
     button.x = layout.width / 2;
     button.y = layout.height / 2;
 
-    // 클릭 이벤트
-    button.onPress.connect(() => {
-      console.log('[PixiButton] onPress:', element.id);
-      onClick?.(element.id);
-    });
+    // FancyButton의 이벤트 모드를 none으로 설정하여 클릭이 히트 영역으로 전달되도록 함
+    button.eventMode = 'none';
 
     // Container에 추가
     container.addChild(button);
@@ -263,8 +269,6 @@ export const PixiButton = memo(function PixiButton({
     layout.fontSize,
     layout.fontFamily,
     buttonText,
-    element.id,
-    onClick,
   ]);
 
   // 선택 테두리 Graphics draw
@@ -276,6 +280,23 @@ export const PixiButton = memo(function PixiButton({
     }
   }, [isSelected, layout.width, layout.height, layout.borderRadius]);
 
+  // 투명 히트 영역 (modifier 키 감지용)
+  const drawHitArea = useCallback((g: PixiGraphicsClass) => {
+    g.clear();
+    g.rect(0, 0, layout.width, layout.height);
+    g.fill({ color: 0xffffff, alpha: 0 });
+  }, [layout.width, layout.height]);
+
+  // 클릭 핸들러 (modifier 키 전달)
+  const handleClick = useCallback((e: { nativeEvent?: MouseEvent | PointerEvent }) => {
+    const native = e.nativeEvent;
+    onClick?.(element.id, {
+      metaKey: native?.metaKey ?? false,
+      shiftKey: native?.shiftKey ?? false,
+      ctrlKey: native?.ctrlKey ?? false,
+    });
+  }, [element.id, onClick]);
+
   return (
     <pixiContainer
       x={layout.left}
@@ -285,6 +306,14 @@ export const PixiButton = memo(function PixiButton({
       }}
     >
       {/* FancyButton은 useEffect에서 명령형으로 추가됨 */}
+
+      {/* 투명 히트 영역 (modifier 키 감지용) */}
+      <pixiGraphics
+        draw={drawHitArea}
+        eventMode="static"
+        cursor="pointer"
+        onPointerDown={handleClick}
+      />
 
       {/* 선택 테두리 */}
       {isSelected && (

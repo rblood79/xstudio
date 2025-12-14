@@ -154,11 +154,12 @@ export function ImageSprite({ element, isSelected, onClick }: ImageSpriteProps) 
     [transform, isSelected]
   );
 
-  const handleClick = useCallback((e: { metaKey?: boolean; shiftKey?: boolean; ctrlKey?: boolean }) => {
+  const handleClick = useCallback((e: { nativeEvent?: MouseEvent | PointerEvent }) => {
+    const native = e.nativeEvent;
     onClick?.(element.id, {
-      metaKey: e.metaKey ?? false,
-      shiftKey: e.shiftKey ?? false,
-      ctrlKey: e.ctrlKey ?? false,
+      metaKey: native?.metaKey ?? false,
+      shiftKey: native?.shiftKey ?? false,
+      ctrlKey: native?.ctrlKey ?? false,
     });
   }, [element.id, onClick]);
 

@@ -16,13 +16,20 @@ import type { CSSStyle } from '../sprites/styleConverter';
 // Types
 // ============================================
 
+/** Modifier keys for multi-select */
+interface ClickModifiers {
+  metaKey: boolean;
+  shiftKey: boolean;
+  ctrlKey: boolean;
+}
+
 export interface BodyLayerProps {
   /** 페이지 너비 */
   pageWidth: number;
   /** 페이지 높이 */
   pageHeight: number;
   /** 클릭 핸들러 */
-  onClick?: (elementId: string) => void;
+  onClick?: (elementId: string, modifiers?: ClickModifiers) => void;
 }
 
 // ============================================
@@ -105,10 +112,15 @@ export const BodyLayer = memo(function BodyLayer({
     [pageWidth, pageHeight, backgroundColor, backgroundAlpha, borderRadius, borderWidth, borderColor]
   );
 
-  // 클릭 핸들러
-  const handleClick = useCallback(() => {
+  // 클릭 핸들러 (modifier 키 전달)
+  const handleClick = useCallback((e: { nativeEvent?: MouseEvent | PointerEvent }) => {
     if (bodyElement && onClick) {
-      onClick(bodyElement.id);
+      const native = e.nativeEvent;
+      onClick(bodyElement.id, {
+        metaKey: native?.metaKey ?? false,
+        shiftKey: native?.shiftKey ?? false,
+        ctrlKey: native?.ctrlKey ?? false,
+      });
     }
   }, [bodyElement, onClick]);
 

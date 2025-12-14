@@ -197,16 +197,17 @@ export function TextSprite({
     [style, fill, stroke, transform, borderRadius, isSelected]
   );
 
-  const handleClick = useCallback((e: { metaKey?: boolean; shiftKey?: boolean; ctrlKey?: boolean }) => {
+  const handleClick = useCallback((e: { nativeEvent?: MouseEvent | PointerEvent }) => {
+    const native = e.nativeEvent;
     onClick?.(element.id, {
-      metaKey: e.metaKey ?? false,
-      shiftKey: e.shiftKey ?? false,
-      ctrlKey: e.ctrlKey ?? false,
+      metaKey: native?.metaKey ?? false,
+      shiftKey: native?.shiftKey ?? false,
+      ctrlKey: native?.ctrlKey ?? false,
     });
   }, [element.id, onClick]);
 
   const lastPointerDownAtRef = useRef(0);
-  const handlePointerDown = useCallback((e: { metaKey?: boolean; shiftKey?: boolean; ctrlKey?: boolean }) => {
+  const handlePointerDown = useCallback((e: { nativeEvent?: MouseEvent | PointerEvent }) => {
     const now = Date.now();
     const isDoubleClick = Boolean(onDoubleClick) && now - lastPointerDownAtRef.current < 300;
     lastPointerDownAtRef.current = now;

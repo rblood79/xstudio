@@ -268,12 +268,26 @@ export function BoxSprite({ element, onClick }: BoxSpriteProps) {
     [transform, fill, stroke, borderRadius, borderStyle]
   );
 
-  const handleClick = useCallback((e: { metaKey?: boolean; shiftKey?: boolean; ctrlKey?: boolean }) => {
-    onClick?.(element.id, {
-      metaKey: e.metaKey ?? false,
-      shiftKey: e.shiftKey ?? false,
-      ctrlKey: e.ctrlKey ?? false,
-    });
+  const handleClick = useCallback((e: unknown) => {
+    // Debug: PixiJS event structure
+    console.log('[BoxSprite] click event:', e);
+
+    // PixiJS FederatedPointerEvent has modifier keys directly
+    const pixiEvent = e as {
+      metaKey?: boolean;
+      shiftKey?: boolean;
+      ctrlKey?: boolean;
+      nativeEvent?: MouseEvent | PointerEvent;
+    };
+
+    // Try direct properties first (PixiJS v8), fallback to nativeEvent
+    const metaKey = pixiEvent?.metaKey ?? pixiEvent?.nativeEvent?.metaKey ?? false;
+    const shiftKey = pixiEvent?.shiftKey ?? pixiEvent?.nativeEvent?.shiftKey ?? false;
+    const ctrlKey = pixiEvent?.ctrlKey ?? pixiEvent?.nativeEvent?.ctrlKey ?? false;
+
+    console.log('[BoxSprite] modifiers:', { metaKey, shiftKey, ctrlKey });
+
+    onClick?.(element.id, { metaKey, shiftKey, ctrlKey });
   }, [element.id, onClick]);
 
   // P7.1: 텍스트 위치 (padding 적용 후 콘텐츠 영역 중앙)
