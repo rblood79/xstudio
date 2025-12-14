@@ -12,6 +12,7 @@ import { Button } from 'react-aria-components';
 import { Copy, Check, Code, ChevronDown, ChevronRight } from 'lucide-react';
 import type { BlockEventHandler } from '../../../events/types/eventBlockTypes';
 import { iconProps } from '../../../../utils/ui/uiConstants';
+import { useCopyPaste } from '../../../hooks/useCopyPaste';
 
 interface CodePreviewPanelProps {
   /** 이벤트 핸들러 목록 */
@@ -242,6 +243,10 @@ export function CodePreviewPanel({
   onToggleCollapse,
 }: CodePreviewPanelProps) {
   const [copied, setCopied] = useState(false);
+  const { copyText } = useCopyPaste({
+    name: 'code',
+    onPaste: () => {},
+  });
 
   // Lazy 코드 생성 (성능 최적화)
   const generatedCode = useMemo(() => {
@@ -265,13 +270,13 @@ const getElement = (id) => document.querySelector(id.startsWith('#') ? id : \`[d
   // 클립보드 복사
   const handleCopy = useCallback(async () => {
     try {
-      await navigator.clipboard.writeText(generatedCode);
+      await copyText(generatedCode);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch (err) {
       console.error('Failed to copy code:', err);
     }
-  }, [generatedCode]);
+  }, [generatedCode, copyText]);
 
   return (
     <div className="code-preview-panel">

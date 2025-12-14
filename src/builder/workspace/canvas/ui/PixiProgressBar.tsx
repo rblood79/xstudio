@@ -164,7 +164,6 @@ export const PixiProgressBar = memo(function PixiProgressBar({
     const progressBar = new ProgressBar({
       bg: bgGraphics,
       fill: fillGraphics,
-      progress: value,
     });
 
     // 크기 설정

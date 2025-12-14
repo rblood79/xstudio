@@ -419,6 +419,7 @@ export const VirtualizedLayerTree = React.memo(function VirtualizedLayerTree({
   );
 
   // Virtualizer 설정
+  // eslint-disable-next-line react-hooks/incompatible-library -- useVirtualizer()는 React Compiler에서 memoize 불가
   const virtualizer = useVirtualizer({
     count: flattenedItems.length,
     getScrollElement: () => parentRef.current,

@@ -103,20 +103,21 @@ function MonitorPanelContent() {
 
   // 브라우저 메모리 사용량 백분율 계산
   const memoryPercent = stats?.browserMemory?.usagePercent ?? 0;
+  const browserMemoryUsagePercent = stats?.browserMemory?.usagePercent;
 
   // Threshold 경고 알림 (activeTab이 memory일 때만)
   useEffect(() => {
-    if (!stats?.browserMemory) return;
+    if (browserMemoryUsagePercent === undefined) return;
     if (activeTab !== "memory") return; // 🛡️ 탭 가드 추가
 
-    const percent = stats.browserMemory.usagePercent;
+    const percent = browserMemoryUsagePercent;
 
     if (percent >= 75) {
       showToast("error", `메모리 사용량이 위험 수준입니다 (${percent.toFixed(1)}%)`);
     } else if (percent >= 60) {
       showToast("warning", `메모리 사용량이 높습니다 (${percent.toFixed(1)}%)`);
     }
-  }, [stats?.browserMemory?.usagePercent, activeTab, showToast]);
+  }, [browserMemoryUsagePercent, activeTab, showToast]);
 
   // 메모리 히스토리 수집 (memory 탭에서만)
   useEffect(() => {

@@ -34,8 +34,14 @@ export interface UseCopyPasteReturn {
   /** 클립보드에 데이터 복사 */
   copy: (data: Record<string, unknown>) => Promise<boolean>;
 
+  /** 클립보드에 텍스트 복사 */
+  copyText: (text: string) => Promise<boolean>;
+
   /** 클립보드에서 데이터 붙여넣기 */
   paste: () => Promise<boolean>;
+
+  /** 클립보드에서 텍스트 읽기 */
+  pasteText: () => Promise<string | null>;
 }
 
 /**
@@ -60,6 +66,25 @@ export function useCopyPaste({
       } catch (error) {
         if (import.meta.env.DEV) {
           console.error(`[useCopyPaste] Failed to copy ${name}:`, error);
+        }
+        return false;
+      }
+    },
+    [name]
+  );
+
+  /**
+   * 텍스트를 클립보드에 복사
+   */
+  const copyText = useCallback(
+    async (text: string): Promise<boolean> => {
+      try {
+        // eslint-disable-next-line local/prefer-copy-paste-hook
+        await navigator.clipboard.writeText(text);
+        return true;
+      } catch (error) {
+        if (import.meta.env.DEV) {
+          console.error(`[useCopyPaste] Failed to copy text (${name}):`, error);
         }
         return false;
       }
@@ -100,5 +125,17 @@ export function useCopyPaste({
     }
   }, [name, onPaste, validate, transform]);
 
-  return { copy, paste };
+  const pasteText = useCallback(async (): Promise<string | null> => {
+    try {
+      // eslint-disable-next-line local/prefer-copy-paste-hook
+      return await navigator.clipboard.readText();
+    } catch (error) {
+      if (import.meta.env.DEV) {
+        console.error(`[useCopyPaste] Failed to read text (${name}):`, error);
+      }
+      return null;
+    }
+  }, [name]);
+
+  return { copy, copyText, paste, pasteText };
 }

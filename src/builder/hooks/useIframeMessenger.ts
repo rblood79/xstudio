@@ -297,7 +297,7 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
         }
 
         iframe.contentWindow.postMessage(message, window.location.origin);
-    }, [variables]); // variables 변경 시 갱신
+    }, []); // variables 변경은 별도 useEffect에서 처리
 
     // 요소 선택 시 iframe에 메시지 전송
     const sendElementSelectedMessage = useCallback((elementId: string, props?: ElementProps) => {

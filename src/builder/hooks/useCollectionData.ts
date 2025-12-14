@@ -336,7 +336,7 @@ export function useCollectionData({
       }
     }
     return null;
-  }, [propertyBindingFormat, dataBindingKey, dataTables, stableDataBinding, isCanvasContext]);
+  }, [propertyBindingFormat, dataTables, stableDataBinding]);
 
   // 하위 호환성을 위해 dataTableData 유지
   const dataTableData = dataTableResult?.data || null;

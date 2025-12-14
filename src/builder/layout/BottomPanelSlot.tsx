@@ -12,6 +12,7 @@ import { memo, useCallback, useEffect, useRef, useState } from "react";
 import { X, GripHorizontal } from "lucide-react";
 import { usePanelLayout } from "./usePanelLayout";
 import { PanelRegistry } from "../panels/core/PanelRegistry";
+import { useKeyboardShortcutsRegistry } from "../hooks/useKeyboardShortcutsRegistry";
 
 const MIN_HEIGHT = 150;
 const MAX_HEIGHT = 600;
@@ -30,19 +31,19 @@ export const BottomPanelSlot = memo(function BottomPanelSlot() {
   const dragStartY = useRef(0);
   const dragStartHeight = useRef(bottomHeight);
 
-  // ESC 키로 패널 닫기
-  useEffect(() => {
-    if (!showBottom) return;
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        closeBottomPanel();
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [showBottom, closeBottomPanel]);
+  useKeyboardShortcutsRegistry(
+    [
+      {
+        key: "Escape",
+        modifier: "none",
+        preventDefault: false,
+        disabled: !showBottom,
+        handler: closeBottomPanel,
+        description: "Close bottom panel",
+      },
+    ],
+    [showBottom, closeBottomPanel]
+  );
 
   // Resize 드래그 핸들러
   const handleMouseDown = useCallback((e: React.MouseEvent) => {

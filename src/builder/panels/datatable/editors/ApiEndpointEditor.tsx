@@ -140,6 +140,7 @@ export function ApiEndpointEditor({ endpoint, onClose, activeTab }: ApiEndpointE
 
   // 테스트 실행
   const handleTest = useCallback(async () => {
+    const responseMapping = endpoint.responseMapping;
     setIsExecuting(true);
     setTestResult(null);
     setDetectedColumns([]);
@@ -170,10 +171,10 @@ export function ApiEndpointEditor({ endpoint, onClose, activeTab }: ApiEndpointE
             dataToAnalyze = fieldValue;
 
             // 🆕 dataPath가 비어있으면 자동 설정
-            if (!endpoint.responseMapping?.dataPath) {
+            if (!responseMapping?.dataPath) {
               console.log(`📝 Auto-setting dataPath to "${field}"`);
-              onUpdate({
-                responseMapping: { ...endpoint.responseMapping, dataPath: field },
+              handleBasicUpdate({
+                responseMapping: { ...responseMapping, dataPath: field },
               });
             }
             break;
@@ -195,7 +196,7 @@ export function ApiEndpointEditor({ endpoint, onClose, activeTab }: ApiEndpointE
     } finally {
       setIsExecuting(false);
     }
-  }, [endpoint.id, endpoint.responseMapping?.dataPath, executeApiEndpoint]);
+  }, [endpoint.id, endpoint.responseMapping, executeApiEndpoint, handleBasicUpdate]);
 
   // activeTab="run"으로 열렸을 때 자동으로 API 실행 (초기 1회만)
   useEffect(() => {

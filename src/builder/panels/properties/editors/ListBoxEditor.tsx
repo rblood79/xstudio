@@ -93,18 +93,18 @@ export const ListBoxEditor = memo(function ListBoxEditor({
   }, [elementId]);
 
   // 첫 번째 ListBoxItem (템플릿용) 찾기 - 렌더링 시점에 조회
-  const templateItem = useMemo(() => {
+  const templateItem = (() => {
     const childElements = getChildElements();
     return childElements.find((el) => el.tag === 'ListBoxItem');
-  }, [getChildElements, children]); // children 변경 시 재계산
+  })();
 
   // ⭐ 최적화: Field 자식들 조회 (getState로 구독 없이 조회)
-  const existingFields = useMemo(() => {
+  const existingFields = (() => {
     if (!templateItem?.id) return [];
     return useStore.getState().elements
       .filter((el) => el.parent_id === templateItem.id && el.tag === 'Field')
       .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
-  }, [templateItem?.id, children]); // children 변경 시 재계산
+  })();
 
   // Field 타입 추론 함수
   const inferFieldType = useCallback((key: string, schemaType: string): string => {

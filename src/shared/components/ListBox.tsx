@@ -127,6 +127,8 @@ export function ListBox<T extends object>({
   // Hooks - 항상 최상단에서 무조건 호출 (Rules of Hooks)
   // ================================================================
 
+  const { onSelectionChange, selectedKeys } = props;
+
   // Refs for virtualization
   const parentRef = useRef<HTMLDivElement>(null);
   const [focusedIndex, setFocusedIndex] = useState<number>(-1);
@@ -208,6 +210,7 @@ export function ListBox<T extends object>({
   }, [hasDataBinding, filteredData]);
 
   // useVirtualizer 설정
+  // eslint-disable-next-line react-hooks/incompatible-library -- useVirtualizer()는 React Compiler에서 memoize 불가
   const virtualizer = useVirtualizer({
     count: enableVirtualization ? virtualItems.length : 0,
     getScrollElement: () => parentRef.current,
@@ -218,10 +221,10 @@ export function ListBox<T extends object>({
 
   // 선택된 아이템으로 스크롤
   useEffect(() => {
-    if (!enableVirtualization || !props.selectedKeys) return;
+    if (!enableVirtualization || !selectedKeys) return;
 
-    const selectedKeys = props.selectedKeys as Iterable<string | number>;
-    const firstKey = Array.from(selectedKeys)[0];
+    const keys = selectedKeys as Iterable<string | number>;
+    const firstKey = Array.from(keys)[0];
     if (firstKey !== undefined) {
       const index = virtualItems.findIndex((item) => item.id === String(firstKey));
       if (index !== -1) {
@@ -229,7 +232,7 @@ export function ListBox<T extends object>({
         setFocusedIndex(index);
       }
     }
-  }, [enableVirtualization, props.selectedKeys, virtualItems, virtualizer]);
+  }, [enableVirtualization, selectedKeys, virtualItems, virtualizer]);
 
   // 키보드 네비게이션 핸들러
   const handleKeyDown = useCallback(
@@ -261,9 +264,9 @@ export function ListBox<T extends object>({
           break;
         case "Enter":
         case " ":
-          if (focusedIndex >= 0 && focusedIndex < count && props.onSelectionChange) {
+          if (focusedIndex >= 0 && focusedIndex < count && onSelectionChange) {
             const item = virtualItems[focusedIndex];
-            props.onSelectionChange(new Set([item.id]));
+            onSelectionChange(new Set([item.id]));
             handled = true;
           }
           break;
@@ -278,7 +281,7 @@ export function ListBox<T extends object>({
         }
       }
     },
-    [enableVirtualization, focusedIndex, virtualItems, virtualizer, props.onSelectionChange]
+    [enableVirtualization, focusedIndex, virtualItems, virtualizer, onSelectionChange]
   );
 
   // ================================================================

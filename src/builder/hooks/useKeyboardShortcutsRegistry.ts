@@ -34,11 +34,17 @@ export interface KeyboardShortcut {
   /** 키 (예: 'c', 'v', 's', 'Enter') */
   key: string;
 
+  /** KeyboardEvent.code 매칭용 (예: 'Space') */
+  code?: string;
+
   /** Modifier 키 조합 */
   modifier: KeyboardModifier;
 
   /** 실행할 핸들러 함수 */
   handler: () => void;
+
+  /** event.preventDefault() 호출 여부 (기본: true) */
+  preventDefault?: boolean;
 
   /** 설명 (선택사항, 디버깅용) */
   description?: string;
@@ -57,8 +63,13 @@ function matchesShortcut(
   // 비활성화된 단축키는 무시
   if (shortcut.disabled) return false;
 
+  // code 일치 확인 (우선)
+  if (shortcut.code && event.code !== shortcut.code) {
+    return false;
+  }
+
   // 키 일치 확인 (대소문자 구분 안 함)
-  if (event.key.toLowerCase() !== shortcut.key.toLowerCase()) {
+  if (!shortcut.code && event.key.toLowerCase() !== shortcut.key.toLowerCase()) {
     return false;
   }
 
@@ -92,10 +103,11 @@ function matchesShortcut(
  */
 export function useKeyboardShortcutsRegistry(
   shortcuts: KeyboardShortcut[],
-  deps: React.DependencyList = []
+  deps: React.DependencyList = [],
+  eventType: 'keydown' | 'keyup' = 'keydown'
 ): void {
   useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
+    const handleKeyEvent = (event: KeyboardEvent) => {
       // 입력 필드에서는 단축키 비활성화
       const target = event.target as HTMLElement;
       if (
@@ -109,16 +121,17 @@ export function useKeyboardShortcutsRegistry(
       // 등록된 단축키 중 일치하는 것 찾기
       for (const shortcut of shortcuts) {
         if (matchesShortcut(event, shortcut)) {
-          event.preventDefault();
+          if (shortcut.preventDefault !== false) {
+            event.preventDefault();
+          }
           shortcut.handler();
           break; // 첫 번째 매치만 실행
         }
       }
     };
 
-    // eslint-disable-next-line local/prefer-keyboard-shortcuts-registry
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener(eventType, handleKeyEvent);
+    return () => window.removeEventListener(eventType, handleKeyEvent);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [...deps]);
 }

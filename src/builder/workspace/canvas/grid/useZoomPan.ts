@@ -14,6 +14,7 @@
 
 import { useCallback, useEffect, useRef } from 'react';
 import { useCanvasSyncStore } from '../canvasSync';
+import { useKeyboardShortcutsRegistry } from '../../../hooks/useKeyboardShortcutsRegistry';
 
 // ============================================
 // Types
@@ -77,7 +78,13 @@ export function useZoomPan(options: UseZoomPanOptions): UseZoomPanReturn {
 
   // 팬 드래그 상태
   const isPanningRef = useRef(false);
+  const isSpacePressedRef = useRef(false);
   const lastPanPointRef = useRef<{ x: number; y: number } | null>(null);
+  const containerElRef = useRef<HTMLElement | null>(null);
+
+  useEffect(() => {
+    containerElRef.current = containerEl ?? null;
+  }, [containerEl]);
 
   // 화면 좌표 → 캔버스 좌표
   const screenToCanvas = useCallback(
@@ -321,36 +328,47 @@ export function useZoomPan(options: UseZoomPanOptions): UseZoomPanReturn {
     };
   }, [panSpeed, setPanOffset, containerEl]);
 
-  // 키보드 이벤트 핸들러 (스페이스바 팬)
-  useEffect(() => {
-    if (!containerEl) return;
+  // 스페이스바 팬 모드 (cursor만 변경)
+  useKeyboardShortcutsRegistry(
+    [
+      {
+        key: 'Space',
+        code: 'Space',
+        modifier: 'none',
+        preventDefault: false,
+        disabled: !containerEl,
+        handler: () => {
+          const el = containerElRef.current;
+          if (!el || isSpacePressedRef.current) return;
+          isSpacePressedRef.current = true;
+          el.style.cursor = 'grab';
+        },
+      },
+    ],
+    [containerEl]
+  );
 
-    let isSpacePressed = false;
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.code === 'Space' && !isSpacePressed) {
-        isSpacePressed = true;
-        containerEl.style.cursor = 'grab';
-      }
-    };
-
-    const handleKeyUp = (e: KeyboardEvent) => {
-      if (e.code === 'Space') {
-        isSpacePressed = false;
-        if (!isPanningRef.current) {
-          containerEl.style.cursor = '';
-        }
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    window.addEventListener('keyup', handleKeyUp);
-
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-      window.removeEventListener('keyup', handleKeyUp);
-    };
-  }, [containerEl]);
+  useKeyboardShortcutsRegistry(
+    [
+      {
+        key: 'Space',
+        code: 'Space',
+        modifier: 'none',
+        preventDefault: false,
+        disabled: !containerEl,
+        handler: () => {
+          isSpacePressedRef.current = false;
+          const el = containerElRef.current;
+          if (!el) return;
+          if (!isPanningRef.current) {
+            el.style.cursor = '';
+          }
+        },
+      },
+    ],
+    [containerEl],
+    'keyup'
+  );
 
   return {
     screenToCanvas,

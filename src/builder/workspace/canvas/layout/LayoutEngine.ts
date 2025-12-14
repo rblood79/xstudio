@@ -221,16 +221,32 @@ function setNodeMinMaxSize(
 
   switch (type) {
     case 'minWidth':
-      isPercent ? node.setMinWidthPercent(numValue) : node.setMinWidth(numValue);
+      if (isPercent) {
+        node.setMinWidthPercent(numValue);
+      } else {
+        node.setMinWidth(numValue);
+      }
       break;
     case 'minHeight':
-      isPercent ? node.setMinHeightPercent(numValue) : node.setMinHeight(numValue);
+      if (isPercent) {
+        node.setMinHeightPercent(numValue);
+      } else {
+        node.setMinHeight(numValue);
+      }
       break;
     case 'maxWidth':
-      isPercent ? node.setMaxWidthPercent(numValue) : node.setMaxWidth(numValue);
+      if (isPercent) {
+        node.setMaxWidthPercent(numValue);
+      } else {
+        node.setMaxWidth(numValue);
+      }
       break;
     case 'maxHeight':
-      isPercent ? node.setMaxHeightPercent(numValue) : node.setMaxHeight(numValue);
+      if (isPercent) {
+        node.setMaxHeightPercent(numValue);
+      } else {
+        node.setMaxHeight(numValue);
+      }
       break;
   }
 }

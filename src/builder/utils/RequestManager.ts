@@ -415,8 +415,9 @@ export function useRequestManager(groupId: string): {
 
   // 언마운트 시 요청 취소
   useEffect(() => {
+    const groupIdAtMount = groupIdRef.current;
     return () => {
-      requestManager.cancelGroup(groupIdRef.current);
+      requestManager.cancelGroup(groupIdAtMount);
     };
   }, []);
 

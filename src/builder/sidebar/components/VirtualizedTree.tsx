@@ -318,6 +318,7 @@ export const VirtualizedTree = memo(function VirtualizedTree({
   }, [elements, expandedKeys]);
 
   // 가상화 설정
+  // eslint-disable-next-line react-hooks/incompatible-library -- useVirtualizer()는 React Compiler에서 memoize 불가
   const virtualizer = useVirtualizer({
     count: flattenedNodes.length,
     getScrollElement: () => parentRef.current,

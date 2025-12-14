@@ -182,7 +182,6 @@ export const PixiSlider = memo(function PixiSlider({
       min,
       max,
       step,
-      value,
     });
 
     // 슬라이더 위치 조정 (수직 중앙)

@@ -16,6 +16,7 @@ import { useApplication } from '@pixi/react';
 import type { Container } from 'pixi.js';
 import { ViewportController, type ViewportState } from './ViewportController';
 import { useCanvasSyncStore } from '../canvasSync';
+import { useKeyboardShortcutsRegistry } from '../../../hooks/useKeyboardShortcutsRegistry';
 
 // ============================================
 // Types
@@ -53,6 +54,7 @@ export function useViewportControl(options: UseViewportControlOptions): UseViewp
 
   const { app } = useApplication();
   const isPanningRef = useRef(false);
+  const isSpacePressedRef = useRef(false);
 
   // Zustand store actions
   const setZoom = useCanvasSyncStore((state) => state.setZoom);
@@ -75,6 +77,11 @@ export function useViewportControl(options: UseViewportControlOptions): UseViewp
       onStateSync: handleStateSync,
     });
   }, [app, minZoom, maxZoom, handleStateSync]);
+
+  const containerElRef = useRef<HTMLElement | null>(null);
+  useEffect(() => {
+    containerElRef.current = containerEl ?? null;
+  }, [containerEl]);
 
   // Controller 생성 및 Container 연결
   useEffect(() => {
@@ -190,36 +197,47 @@ export function useViewportControl(options: UseViewportControlOptions): UseViewp
     return unsubscribe;
   }, [controller]);
 
-  // 스페이스바 팬 모드
-  useEffect(() => {
-    if (!containerEl) return;
+  // 스페이스바 팬 모드 (cursor만 변경)
+  useKeyboardShortcutsRegistry(
+    [
+      {
+        key: 'Space',
+        code: 'Space',
+        modifier: 'none',
+        preventDefault: false,
+        disabled: !containerEl,
+        handler: () => {
+          const el = containerElRef.current;
+          if (!el || isSpacePressedRef.current) return;
+          isSpacePressedRef.current = true;
+          el.style.cursor = 'grab';
+        },
+      },
+    ],
+    [containerEl]
+  );
 
-    let isSpacePressed = false;
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.code === 'Space' && !isSpacePressed) {
-        isSpacePressed = true;
-        containerEl.style.cursor = 'grab';
-      }
-    };
-
-    const handleKeyUp = (e: KeyboardEvent) => {
-      if (e.code === 'Space') {
-        isSpacePressed = false;
-        if (!isPanningRef.current) {
-          containerEl.style.cursor = '';
-        }
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    window.addEventListener('keyup', handleKeyUp);
-
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-      window.removeEventListener('keyup', handleKeyUp);
-    };
-  }, [containerEl]);
+  useKeyboardShortcutsRegistry(
+    [
+      {
+        key: 'Space',
+        code: 'Space',
+        modifier: 'none',
+        preventDefault: false,
+        disabled: !containerEl,
+        handler: () => {
+          isSpacePressedRef.current = false;
+          const el = containerElRef.current;
+          if (!el) return;
+          if (!isPanningRef.current) {
+            el.style.cursor = '';
+          }
+        },
+      },
+    ],
+    [containerEl],
+    'keyup'
+  );
 
   return {
     controller,

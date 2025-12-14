@@ -175,7 +175,6 @@ export const PixiInput = memo(function PixiInput({
       bg,
       textStyle,
       placeholder,
-      value,
       padding: [0, layoutStyle.paddingRight, 0, layoutStyle.paddingLeft],
     });
 

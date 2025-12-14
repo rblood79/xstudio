@@ -273,7 +273,6 @@ function CanvasContent() {
   }, [handleLinkClick]);
 
   // RenderContext 생성
-  /* eslint-disable react-hooks/refs -- 순환 의존성 해결 패턴, 의도적인 ref 접근 */
   const renderContext: RenderContext = useMemo(() => ({
     elements,
     updateElementProps,
@@ -283,7 +282,6 @@ function CanvasContent() {
     eventEngine,
     renderElement: (el: PreviewElement, key?: string) => renderElementInternalRef.current(el, key),
   }), [elements, updateElementProps, setElements, eventEngine]);
-  /* eslint-enable react-hooks/refs */
 
   // Element 렌더링 함수 (내부)
   const renderElementInternal = useCallback((el: PreviewElement, key?: string): React.ReactNode => {
