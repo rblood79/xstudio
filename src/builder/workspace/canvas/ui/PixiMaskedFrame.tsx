@@ -114,9 +114,7 @@ function createMaskGraphics(
  */
 function createPlaceholderGraphics(
   width: number,
-  height: number,
-  shape: MaskShape,
-  borderRadius: number
+  height: number
 ): Graphics {
   const g = new Graphics();
 
@@ -206,9 +204,7 @@ export const PixiMaskedFrame = memo(function PixiMaskedFrame({
       // 플레이스홀더
       target = createPlaceholderGraphics(
         layoutStyle.width,
-        layoutStyle.height,
-        layoutStyle.maskShape,
-        layoutStyle.borderRadius
+        layoutStyle.height
       );
     }
 

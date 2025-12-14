@@ -412,8 +412,6 @@ export function useGridLayout(
  */
 export const GridLayout = memo(function GridLayout({
   element,
-  containerWidth,
-  containerHeight,
   children,
 }: GridLayoutProps) {
   const style = element.props?.style as CSSStyle | undefined;
@@ -428,10 +426,7 @@ export const GridLayout = memo(function GridLayout({
   }, [style?.left, style?.top]);
 
   // Grid 레이아웃 계산
-  const gridLayout = useGridLayout(element, containerWidth, containerHeight);
-
-  // 자식에게 gridLayout context 전달 (React Context 사용 권장)
-  // 현재는 props로 전달하지 않고, 자식이 직접 계산하도록 함
+  // Note: grid layout 계산은 현재 children에 전달하지 않음 (children이 직접 계산)
 
   return (
     <pixiContainer

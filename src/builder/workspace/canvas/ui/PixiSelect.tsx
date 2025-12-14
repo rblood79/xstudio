@@ -12,7 +12,7 @@
 import { memo, useCallback, useEffect, useMemo, useRef } from 'react';
 import { useApplication } from '@pixi/react';
 import { Select } from '@pixi/ui';
-import { Container, Graphics, Text, TextStyle } from 'pixi.js';
+import { Container, Graphics, TextStyle } from 'pixi.js';
 import type { Element } from '../../../../types/core/store.types';
 import type { CSSStyle } from '../sprites/styleConverter';
 import { cssColorToHex, parseCSSSize } from '../sprites/styleConverter';
@@ -121,24 +121,6 @@ function createSelectBackground(
   return g;
 }
 
-/**
- * 드롭다운 화살표 생성
- */
-function createDropdownArrow(height: number, color: number): Graphics {
-  const g = new Graphics();
-  const arrowSize = 6;
-  const centerY = height / 2;
-
-  // 삼각형 화살표
-  g.moveTo(0, centerY - arrowSize / 2);
-  g.lineTo(arrowSize, centerY - arrowSize / 2);
-  g.lineTo(arrowSize / 2, centerY + arrowSize / 2);
-  g.closePath();
-  g.fill({ color, alpha: 1 });
-
-  return g;
-}
-
 // ============================================
 // Component
 // ============================================
@@ -209,41 +191,6 @@ export const PixiSelect = memo(function PixiSelect({
       fontFamily: layoutStyle.fontFamily,
       fill: layoutStyle.textColor,
     });
-
-    // 아이템 생성 함수
-    const createItem = (label: string, isButton: boolean = false): Container => {
-      const itemContainer = new Container();
-
-      // 배경
-      const bg = createSelectBackground(
-        layoutStyle.width,
-        layoutStyle.height,
-        isButton ? layoutStyle.backgroundColor : 0xf9fafb,
-        layoutStyle.borderColor,
-        isButton ? layoutStyle.borderWidth : 0,
-        isButton ? layoutStyle.borderRadius : 0
-      );
-      itemContainer.addChild(bg);
-
-      // 텍스트
-      const text = new Text({ text: label, style: textStyle });
-      text.x = layoutStyle.paddingLeft;
-      text.y = (layoutStyle.height - text.height) / 2;
-      itemContainer.addChild(text);
-
-      // 버튼인 경우 화살표 추가
-      if (isButton) {
-        const arrow = createDropdownArrow(layoutStyle.height, layoutStyle.textColor);
-        arrow.x = layoutStyle.width - layoutStyle.paddingRight - 6;
-        itemContainer.addChild(arrow);
-      }
-
-      return itemContainer;
-    };
-
-    // 선택된 라벨 찾기
-    const selectedOption = options.find((opt) => opt.value === selectedValue);
-    const selectedLabel = selectedOption?.label || options[0]?.label || 'Select...';
 
     // @pixi/ui Select 생성
     const select = new Select({

@@ -12,6 +12,7 @@ import { useCallback, useMemo, useRef } from 'react';
 import { Graphics as PixiGraphics, TextStyle, Text } from 'pixi.js';
 import type { Element } from '../../../../types/core/store.types';
 import { convertStyle, applyTextTransform, type CSSStyle } from './styleConverter';
+import { parsePadding } from './paddingUtils';
 
 // ============================================
 // Types
@@ -204,20 +205,20 @@ export function TextSprite({
     });
   }, [element.id, onClick]);
 
-  const handleDoubleClick = useCallback(() => {
-    onDoubleClick?.(element.id);
-  }, [element.id, onDoubleClick]);
+  const lastPointerDownAtRef = useRef(0);
+  const handlePointerDown = useCallback((e: { metaKey?: boolean; shiftKey?: boolean; ctrlKey?: boolean }) => {
+    const now = Date.now();
+    const isDoubleClick = Boolean(onDoubleClick) && now - lastPointerDownAtRef.current < 300;
+    lastPointerDownAtRef.current = now;
 
-  // Padding
-  const paddingLeft = useMemo(() => {
-    const p = style?.paddingLeft || style?.padding;
-    return typeof p === 'number' ? p : parseInt(String(p) || '0', 10);
-  }, [style]);
+    handleClick(e);
+    if (isDoubleClick) {
+      onDoubleClick?.(element.id);
+    }
+  }, [element.id, handleClick, onDoubleClick]);
 
-  const paddingTop = useMemo(() => {
-    const p = style?.paddingTop || style?.padding;
-    return typeof p === 'number' ? p : parseInt(String(p) || '0', 10);
-  }, [style]);
+  // Padding (paddingUtils 사용)
+  const padding = useMemo(() => parsePadding(style), [style]);
 
   // Ref callback to capture Text instance
   const textRefCallback = useCallback((text: Text | null) => {
@@ -234,7 +235,7 @@ export function TextSprite({
         draw={drawBackground}
         eventMode="static"
         cursor="text"
-        onPointerDown={handleClick}
+        onPointerDown={handlePointerDown}
       />
 
       {/* Text with ref for decoration measurement */}
@@ -242,16 +243,16 @@ export function TextSprite({
         ref={textRefCallback}
         text={textContent}
         style={pixiTextStyle}
-        x={paddingLeft}
-        y={paddingTop}
+        x={padding.left}
+        y={padding.top}
       />
 
       {/* P7.7: Text decoration lines (underline, line-through, overline) */}
       {hasDecoration && (
         <pixiGraphics
           draw={drawTextDecoration}
-          x={paddingLeft}
-          y={paddingTop}
+          x={padding.left}
+          y={padding.top}
         />
       )}
     </pixiContainer>

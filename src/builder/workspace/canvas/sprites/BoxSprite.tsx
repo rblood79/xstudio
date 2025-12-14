@@ -14,6 +14,7 @@ import { useCallback, useMemo } from 'react';
 import { Graphics as PixiGraphics, TextStyle } from 'pixi.js';
 import type { Element } from '../../../../types/core/store.types';
 import { convertStyle, cssColorToHex, type CSSStyle } from './styleConverter';
+import { parsePadding, getContentBounds } from './paddingUtils';
 
 // ============================================
 // P7.9: Border Style Types
@@ -90,8 +91,7 @@ function drawDottedBorder(
   height: number,
   strokeWidth: number,
   strokeColor: number,
-  strokeAlpha: number,
-  borderRadius: number
+  strokeAlpha: number
 ): void {
   const dotRadius = strokeWidth / 2;
   const gap = strokeWidth * 2;
@@ -167,7 +167,7 @@ export interface BoxSpriteProps {
 // Component
 // ============================================
 
-export function BoxSprite({ element, isSelected, onClick }: BoxSpriteProps) {
+export function BoxSprite({ element, onClick }: BoxSpriteProps) {
   const style = element.props?.style as CSSStyle | undefined;
   const converted = useMemo(() => convertStyle(style), [style]);
 
@@ -197,26 +197,8 @@ export function BoxSprite({ element, isSelected, onClick }: BoxSpriteProps) {
     });
   }, [style]);
 
-  // P7.1: Padding 파싱 (TextSprite와 동일한 패턴)
-  const paddingLeft = useMemo(() => {
-    const p = style?.paddingLeft || style?.padding;
-    return typeof p === 'number' ? p : parseInt(String(p) || '0', 10);
-  }, [style?.paddingLeft, style?.padding]);
-
-  const paddingRight = useMemo(() => {
-    const p = style?.paddingRight || style?.padding;
-    return typeof p === 'number' ? p : parseInt(String(p) || '0', 10);
-  }, [style?.paddingRight, style?.padding]);
-
-  const paddingTop = useMemo(() => {
-    const p = style?.paddingTop || style?.padding;
-    return typeof p === 'number' ? p : parseInt(String(p) || '0', 10);
-  }, [style?.paddingTop, style?.padding]);
-
-  const paddingBottom = useMemo(() => {
-    const p = style?.paddingBottom || style?.padding;
-    return typeof p === 'number' ? p : parseInt(String(p) || '0', 10);
-  }, [style?.paddingBottom, style?.padding]);
+  // P7.1: Padding 파싱 (paddingUtils 사용)
+  const padding = useMemo(() => parsePadding(style), [style]);
 
   // Draw function (PixiJS v8 API) with P7.9 borderStyle support
   const draw = useCallback(
@@ -254,8 +236,7 @@ export function BoxSprite({ element, isSelected, onClick }: BoxSpriteProps) {
               transform.height,
               stroke.width,
               stroke.color,
-              stroke.alpha,
-              radius
+              stroke.alpha
             );
             break;
           case 'double':
@@ -296,10 +277,12 @@ export function BoxSprite({ element, isSelected, onClick }: BoxSpriteProps) {
   }, [element.id, onClick]);
 
   // P7.1: 텍스트 위치 (padding 적용 후 콘텐츠 영역 중앙)
-  const contentWidth = transform.width - paddingLeft - paddingRight;
-  const contentHeight = transform.height - paddingTop - paddingBottom;
-  const textX = paddingLeft + contentWidth / 2;
-  const textY = paddingTop + contentHeight / 2;
+  const contentBounds = useMemo(
+    () => getContentBounds(transform.width, transform.height, padding),
+    [transform.width, transform.height, padding]
+  );
+  const textX = contentBounds.x + contentBounds.width / 2;
+  const textY = contentBounds.y + contentBounds.height / 2;
 
   return (
     <pixiContainer x={transform.x} y={transform.y}>

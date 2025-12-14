@@ -128,18 +128,6 @@ export function Select<T extends object>({
     ],
   });
 
-  // External isLoading prop - shows skeleton immediately
-  if (externalLoading) {
-    return (
-      <Skeleton
-        componentVariant="input"
-        size={size}
-        className={props.className as string}
-        aria-label="Loading select..."
-      />
-    );
-  }
-
   // Label 및 ARIA 처리
   const hasVisibleLabel = label && String(label).trim();
   const ariaLabel = hasVisibleLabel
@@ -326,6 +314,17 @@ export function Select<T extends object>({
     }, [hasDataBinding, loading, error, columnMapping, boundData, children]);
 
   // Single unified return structure - prevents popover remounting
+  if (externalLoading) {
+    return (
+      <Skeleton
+        componentVariant="input"
+        size={size}
+        className={props.className as string}
+        aria-label="Loading select..."
+      />
+    );
+  }
+
   return (
     <AriaSelect
       {...props}

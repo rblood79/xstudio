@@ -10,6 +10,7 @@ import { useCallback, useMemo, useState, useEffect } from 'react';
 import { Graphics as PixiGraphics, Texture, Assets } from 'pixi.js';
 import type { Element } from '../../../../types/core/store.types';
 import { convertStyle, type CSSStyle } from './styleConverter';
+import { parsePadding, getContentBounds } from './paddingUtils';
 
 // ============================================
 // Types
@@ -43,6 +44,13 @@ export function ImageSprite({ element, isSelected, onClick }: ImageSpriteProps) 
   const converted = useMemo(() => convertStyle(style), [style]);
   const { transform, borderRadius } = converted;
 
+  // Padding (paddingUtils 사용)
+  const padding = useMemo(() => parsePadding(style), [style]);
+  const contentBounds = useMemo(
+    () => getContentBounds(transform.width, transform.height, padding),
+    [transform.width, transform.height, padding]
+  );
+
   // Image source
   const src = useMemo(() => {
     const props = element.props as Record<string, unknown> | undefined;
@@ -50,34 +58,26 @@ export function ImageSprite({ element, isSelected, onClick }: ImageSpriteProps) 
   }, [element.props]);
 
   // Texture state
-  const [texture, setTexture] = useState<Texture | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [hasError, setHasError] = useState(false);
+  const [loaded, setLoaded] = useState<{ src: string; texture: Texture } | null>(null);
+  const [errorSrc, setErrorSrc] = useState<string | null>(null);
 
   // Load texture
   useEffect(() => {
-    if (!src) {
-      setTexture(null);
-      return;
-    }
+    if (!src) return;
 
     let cancelled = false;
-    setIsLoading(true);
-    setHasError(false);
 
     Assets.load(src)
       .then((loadedTexture: Texture) => {
-        if (!cancelled) {
-          setTexture(loadedTexture);
-          setIsLoading(false);
-        }
+        if (cancelled) return;
+        setLoaded({ src, texture: loadedTexture });
+        setErrorSrc(null);
       })
       .catch((error) => {
-        if (!cancelled) {
-          console.warn(`[ImageSprite] Failed to load: ${src}`, error);
-          setHasError(true);
-          setIsLoading(false);
-        }
+        if (cancelled) return;
+        console.warn(`[ImageSprite] Failed to load: ${src}`, error);
+        setErrorSrc(src);
+        setLoaded(null);
       });
 
     return () => {
@@ -85,7 +85,11 @@ export function ImageSprite({ element, isSelected, onClick }: ImageSpriteProps) 
     };
   }, [src]);
 
-  // Draw placeholder/error state
+  const activeTexture = loaded?.src === src ? loaded.texture : null;
+  const errorState = errorSrc === src;
+  const loadingState = Boolean(src) && !activeTexture && !errorState;
+
+  // Draw placeholder/error state (padding 적용)
   const drawPlaceholder = useCallback(
     (g: PixiGraphics) => {
       g.clear();
@@ -98,12 +102,12 @@ export function ImageSprite({ element, isSelected, onClick }: ImageSpriteProps) 
       }
       g.fill({ color: PLACEHOLDER_COLOR, alpha: 1 });
 
-      // Icon (simple image placeholder)
-      const iconSize = Math.min(transform.width, transform.height) * 0.3;
-      const iconX = (transform.width - iconSize) / 2;
-      const iconY = (transform.height - iconSize) / 2;
+      // Icon (simple image placeholder) - contentBounds 내에 배치
+      const iconSize = Math.min(contentBounds.width, contentBounds.height) * 0.3;
+      const iconX = contentBounds.x + (contentBounds.width - iconSize) / 2;
+      const iconY = contentBounds.y + (contentBounds.height - iconSize) / 2;
 
-      if (hasError) {
+      if (errorState) {
         // X mark for error - v8 Pattern: shape → stroke
         g.setStrokeStyle({ width: 3, color: 0xef4444 }); // red-500
         g.moveTo(iconX, iconY);
@@ -133,7 +137,7 @@ export function ImageSprite({ element, isSelected, onClick }: ImageSpriteProps) 
         g.stroke();
       }
     },
-    [transform, borderRadius, hasError, isSelected]
+    [transform, borderRadius, errorState, isSelected, contentBounds]
   );
 
   // Draw border/selection for loaded image
@@ -163,13 +167,15 @@ export function ImageSprite({ element, isSelected, onClick }: ImageSpriteProps) 
       x={transform.x}
       y={transform.y}
     >
-      {/* Image or Placeholder - clickable */}
-      {texture && !hasError ? (
+      {/* Image or Placeholder - clickable (padding 적용) */}
+      {activeTexture && !errorState ? (
         <>
           <pixiSprite
-            texture={texture}
-            width={transform.width}
-            height={transform.height}
+            texture={activeTexture}
+            x={contentBounds.x}
+            y={contentBounds.y}
+            width={contentBounds.width}
+            height={contentBounds.height}
             eventMode="static"
             cursor="pointer"
             onPointerDown={handleClick}
@@ -185,13 +191,15 @@ export function ImageSprite({ element, isSelected, onClick }: ImageSpriteProps) 
         />
       )}
 
-      {/* Loading indicator - v8 Pattern: shape → fill */}
-      {isLoading && (
+      {/* Loading indicator - v8 Pattern: shape → fill (padding 적용) */}
+      {loadingState && (
         <pixiGraphics
           draw={(g) => {
             g.clear();
-            const size = Math.min(transform.width, transform.height) * 0.2;
-            g.circle(transform.width / 2, transform.height / 2, size);
+            const size = Math.min(contentBounds.width, contentBounds.height) * 0.2;
+            const centerX = contentBounds.x + contentBounds.width / 2;
+            const centerY = contentBounds.y + contentBounds.height / 2;
+            g.circle(centerX, centerY, size);
             g.fill({ color: 0x3b82f6, alpha: 0.3 });
           }}
         />

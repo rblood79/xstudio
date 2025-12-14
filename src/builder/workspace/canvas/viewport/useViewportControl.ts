@@ -11,7 +11,7 @@
  * @since 2025-12-12 Phase 12 B3.2
  */
 
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef, useCallback, useMemo, type RefObject } from 'react';
 import { useApplication } from '@pixi/react';
 import type { Container } from 'pixi.js';
 import { ViewportController, type ViewportState } from './ViewportController';
@@ -35,8 +35,8 @@ export interface UseViewportControlOptions {
 export interface UseViewportControlReturn {
   /** 현재 ViewportController 인스턴스 */
   controller: ViewportController | null;
-  /** 팬 중인지 여부 */
-  isPanning: boolean;
+  /** 팬 중인지 여부 (render 중 access 금지) */
+  isPanningRef: RefObject<boolean>;
 }
 
 // ============================================
@@ -52,7 +52,6 @@ export function useViewportControl(options: UseViewportControlOptions): UseViewp
   } = options;
 
   const { app } = useApplication();
-  const controllerRef = useRef<ViewportController | null>(null);
   const isPanningRef = useRef(false);
 
   // Zustand store actions
@@ -68,9 +67,18 @@ export function useViewportControl(options: UseViewportControlOptions): UseViewp
     [setZoom, setPanOffset]
   );
 
+  const controller = useMemo(() => {
+    if (!app?.stage) return null;
+    return new ViewportController({
+      minZoom,
+      maxZoom,
+      onStateSync: handleStateSync,
+    });
+  }, [app, minZoom, maxZoom, handleStateSync]);
+
   // Controller 생성 및 Container 연결
   useEffect(() => {
-    if (!app?.stage) return;
+    if (!app?.stage || !controller) return;
 
     // Camera Container 찾기
     const cameraContainer = app.stage.children.find(
@@ -82,15 +90,7 @@ export function useViewportControl(options: UseViewportControlOptions): UseViewp
       return;
     }
 
-    // ViewportController 생성
-    const controller = new ViewportController({
-      minZoom,
-      maxZoom,
-      onStateSync: handleStateSync,
-    });
-
     controller.attach(cameraContainer);
-    controllerRef.current = controller;
 
     // 초기 상태 적용 (Zustand에서 읽어서 Container에 적용)
     const { zoom, panOffset } = useCanvasSyncStore.getState();
@@ -99,15 +99,12 @@ export function useViewportControl(options: UseViewportControlOptions): UseViewp
 
     return () => {
       controller.detach();
-      controllerRef.current = null;
     };
-  }, [app, cameraLabel, minZoom, maxZoom, handleStateSync]);
+  }, [app, cameraLabel, controller]);
 
   // 마우스 이벤트 핸들러
   useEffect(() => {
-    if (!containerEl || !controllerRef.current) return;
-
-    const controller = controllerRef.current;
+    if (!containerEl || !controller) return;
 
     const handleMouseDown = (e: MouseEvent) => {
       // Alt + 클릭 또는 중간 버튼 = 팬 시작
@@ -141,13 +138,11 @@ export function useViewportControl(options: UseViewportControlOptions): UseViewp
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [containerEl]);
+  }, [containerEl, controller]);
 
   // 휠 이벤트 핸들러 (줌)
   useEffect(() => {
-    if (!containerEl || !controllerRef.current) return;
-
-    const controller = controllerRef.current;
+    if (!containerEl || !controller) return;
 
     const handleWheel = (e: WheelEvent) => {
       // Ctrl + wheel = Zoom
@@ -167,21 +162,21 @@ export function useViewportControl(options: UseViewportControlOptions): UseViewp
     return () => {
       containerEl.removeEventListener('wheel', handleWheel, { capture: true });
     };
-  }, [containerEl]);
+  }, [containerEl, controller]);
 
   // 외부 React state 변경 시 Controller에 반영
   useEffect(() => {
-    const controller = controllerRef.current;
     if (!controller || controller.isPanningActive()) return;
 
     const { zoom, panOffset } = useCanvasSyncStore.getState();
     controller.setPosition(panOffset.x, panOffset.y, zoom);
-  }, []);
+  }, [controller]);
 
   // Zustand store 변경 구독 (외부에서 줌/팬 변경 시)
   useEffect(() => {
+    if (!controller) return;
+
     const unsubscribe = useCanvasSyncStore.subscribe((state, prevState) => {
-      const controller = controllerRef.current;
       if (!controller || controller.isPanningActive()) return;
 
       // 외부에서 상태가 변경된 경우에만 동기화
@@ -193,7 +188,7 @@ export function useViewportControl(options: UseViewportControlOptions): UseViewp
     });
 
     return unsubscribe;
-  }, []);
+  }, [controller]);
 
   // 스페이스바 팬 모드
   useEffect(() => {
@@ -227,8 +222,8 @@ export function useViewportControl(options: UseViewportControlOptions): UseViewp
   }, [containerEl]);
 
   return {
-    controller: controllerRef.current,
-    isPanning: isPanningRef.current,
+    controller,
+    isPanningRef,
   };
 }
 

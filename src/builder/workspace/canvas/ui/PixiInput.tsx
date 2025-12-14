@@ -12,7 +12,7 @@
 import { memo, useCallback, useEffect, useMemo, useRef } from 'react';
 import { useApplication } from '@pixi/react';
 import { Input } from '@pixi/ui';
-import { Container, Graphics, Text, TextStyle } from 'pixi.js';
+import { Container, Graphics, TextStyle } from 'pixi.js';
 import type { Element } from '../../../../types/core/store.types';
 import type { CSSStyle } from '../sprites/styleConverter';
 import { cssColorToHex, parseCSSSize } from '../sprites/styleConverter';

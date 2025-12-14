@@ -17,7 +17,6 @@ import { TextSprite } from './TextSprite';
 import { ImageSprite } from './ImageSprite';
 import { PixiButton, PixiFancyButton, PixiCheckbox, PixiRadio, PixiSlider, PixiInput, PixiSelect, PixiProgressBar, PixiSwitcher, PixiScrollBox, PixiList, PixiMaskedFrame } from '../ui';
 import { isFlexContainer, isGridContainer } from '../layout';
-import type { CSSStyle } from './styleConverter';
 
 // ============================================
 // Types
@@ -103,7 +102,6 @@ type SpriteType = 'box' | 'text' | 'image' | 'button' | 'fancyButton' | 'checkbo
 
 function getSpriteType(element: Element): SpriteType {
   const tag = element.tag;
-  const style = element.props?.style as CSSStyle | undefined;
 
   // UI 컴포넌트 우선 체크 (Phase 11 B2.4 + Phase 6)
   if (UI_BUTTON_TAGS.has(tag)) return 'button';

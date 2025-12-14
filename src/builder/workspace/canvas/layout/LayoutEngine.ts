@@ -230,9 +230,7 @@ function toYogaAlignContent(value: string | undefined): Align {
  */
 function createYogaNode(
   yoga: YogaInstance,
-  element: Element,
-  _parentWidth: number,
-  _parentHeight: number
+  element: Element
 ): YogaNode {
   const node = yoga.Node.create();
   const style = element.props?.style as CSSStyle | undefined;
@@ -330,7 +328,7 @@ function buildYogaTree(
 
     visited.add(child.id);
 
-    const childNode = createYogaNode(yoga, child, parentWidth, parentHeight);
+    const childNode = createYogaNode(yoga, child);
     parentNode.insertChild(childNode, i);
     nodeMap.set(child.id, childNode);
 

@@ -191,52 +191,6 @@ export default React.memo(function Table<T extends { id: string | number }>(
     fallbackData: [],
   });
 
-  // External loading state - show skeleton table
-  if (externalLoading) {
-    const skeletonColumns = columns.length > 0 ? columns : [
-      { key: 'col1', label: 'Column 1' },
-      { key: 'col2', label: 'Column 2' },
-      { key: 'col3', label: 'Column 3' },
-    ];
-    return (
-      <div
-        className={tableStyles({ variant, size, className })}
-        role="grid"
-        aria-busy="true"
-        aria-label="Loading table..."
-      >
-        <div className="react-aria-TableVirtualizer" style={{ height: height, overflow: 'hidden' }}>
-          <table style={{ display: 'grid', width: '100%' }}>
-            <thead className="react-aria-TableHeader" style={{ display: 'grid' }}>
-              <tr className="react-aria-Row" style={{ display: 'flex', width: '100%' }}>
-                {skeletonColumns.map((col, i) => (
-                  <th key={i} className="react-aria-Column" style={{ flex: 1, padding: '8px 12px' }}>
-                    <Skeleton variant="text" width="60%" height={16} />
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="react-aria-TableBody" style={{ display: 'grid' }}>
-              {Array.from({ length: skeletonRowCount }).map((_, rowIndex) => (
-                <tr key={rowIndex} className="react-aria-Row" style={{ display: 'flex', width: '100%' }}>
-                  {skeletonColumns.map((_, colIndex) => (
-                    <td key={colIndex} className="react-aria-Cell" style={{ flex: 1, padding: '8px 12px' }}>
-                      <Skeleton
-                        componentVariant="table-cell"
-                        size={size}
-                        index={rowIndex}
-                      />
-                    </td>
-                  ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    );
-  }
-
   // PropertyDataBinding 형식 감지
   const isPropertyBinding =
     dataBinding &&
@@ -1122,6 +1076,58 @@ export default React.memo(function Table<T extends { id: string | number }>(
   );
 
   // ---------- 렌더 ----------
+  if (externalLoading) {
+    const skeletonColumnCount = Math.max(columns.length, 3);
+    return (
+      <div
+        className={tableStyles({ variant, size, className })}
+        role="grid"
+        aria-busy="true"
+        aria-label="Loading table..."
+      >
+        <div
+          className="react-aria-TableVirtualizer"
+          style={{ height: calculatedHeight, overflow: "hidden" }}
+        >
+          <table style={{ display: "grid", width: "100%" }}>
+            <thead className="react-aria-TableHeader" style={{ display: "grid" }}>
+              <tr className="react-aria-Row" style={{ display: "flex", width: "100%" }}>
+                {Array.from({ length: skeletonColumnCount }).map((_, i) => (
+                  <th
+                    key={i}
+                    className="react-aria-Column"
+                    style={{ flex: 1, padding: "8px 12px" }}
+                  >
+                    <Skeleton variant="text" width="60%" height={16} />
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody className="react-aria-TableBody" style={{ display: "grid" }}>
+              {Array.from({ length: skeletonRowCount }).map((_, rowIndex) => (
+                <tr
+                  key={rowIndex}
+                  className="react-aria-Row"
+                  style={{ display: "flex", width: "100%" }}
+                >
+                  {Array.from({ length: skeletonColumnCount }).map((_, colIndex) => (
+                    <td
+                      key={colIndex}
+                      className="react-aria-Cell"
+                      style={{ flex: 1, padding: "8px 12px" }}
+                    >
+                      <Skeleton componentVariant="table-cell" size={size} index={rowIndex} />
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <>
       <div

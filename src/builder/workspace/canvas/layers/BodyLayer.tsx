@@ -55,16 +55,17 @@ export const BodyLayer = memo(function BodyLayer({
 
   // Body 스타일
   const bodyStyle = bodyElement?.props?.style as CSSStyle | undefined;
+  const backgroundColorCss = bodyStyle?.backgroundColor;
 
   // 스타일 값 추출
   const backgroundColor = useMemo(() => {
-    return cssColorToHex(bodyStyle?.backgroundColor, 0xffffff);
-  }, [bodyStyle?.backgroundColor]);
+    return cssColorToHex(backgroundColorCss, 0xffffff);
+  }, [backgroundColorCss]);
 
   const backgroundAlpha = useMemo(() => {
-    if (!bodyStyle?.backgroundColor) return 1;
-    return cssColorToAlpha(bodyStyle.backgroundColor);
-  }, [bodyStyle?.backgroundColor]);
+    if (!backgroundColorCss) return 1;
+    return cssColorToAlpha(backgroundColorCss);
+  }, [backgroundColorCss]);
 
   const borderRadius = useMemo(() => {
     return parseCSSSize(bodyStyle?.borderRadius, undefined, 0);
