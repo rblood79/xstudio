@@ -431,14 +431,15 @@ function createYogaNode(
   }
 
   // Flex Item 속성
+  // CSS 기본값과 일치시키기 위해 flexShrink 기본값을 1로 설정
+  // (Yoga 기본값은 0이지만, CSS 기본값은 1)
+  node.setFlexShrink(style?.flexShrink !== undefined ? style.flexShrink : 1);
+
   if (style?.flex !== undefined) {
     node.setFlex(parseCSSValue(style.flex, 0));
   }
   if (style?.flexGrow !== undefined) {
     node.setFlexGrow(style.flexGrow);
-  }
-  if (style?.flexShrink !== undefined) {
-    node.setFlexShrink(style.flexShrink);
   }
   if (style?.flexBasis !== undefined) {
     node.setFlexBasis(parseCSSValue(style.flexBasis));
