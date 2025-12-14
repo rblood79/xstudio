@@ -79,7 +79,6 @@
   font-weight: 600;
   color: white;
   border-radius: var(--radius-md);
-  pointer-events: none;
 }
 
 .workspace-compare-panel--left .workspace-compare-label {

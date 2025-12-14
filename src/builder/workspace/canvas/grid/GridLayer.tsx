@@ -107,70 +107,54 @@ export const GridLayer = memo(function GridLayer({
 
       if (!showGrid) return;
 
-      // === 일반 그리드 ===
-      g.setStrokeStyle({ width: 1, color: GRID_COLOR, alpha: GRID_ALPHA });
+      // PixiJS v8: 각 라인을 rect로 그리기 (moveTo/lineTo 대신)
+      const drawLine = (x1: number, y1: number, x2: number, y2: number, lineWidth: number, color: number, alpha: number) => {
+        if (x1 === x2) {
+          // 수직선
+          g.rect(x1 - lineWidth / 2, Math.min(y1, y2), lineWidth, Math.abs(y2 - y1));
+        } else {
+          // 수평선
+          g.rect(Math.min(x1, x2), y1 - lineWidth / 2, Math.abs(x2 - x1), lineWidth);
+        }
+        g.fill({ color, alpha });
+      };
 
+      // === 일반 그리드 ===
       // 수직선
       for (let x = 0; x <= width; x += gridInterval) {
-        // 메이저 그리드 라인 건너뛰기 (별도 렌더링)
         if (x % majorGridInterval === 0) continue;
-
-        g.moveTo(x, 0);
-        g.lineTo(x, height);
+        drawLine(x, 0, x, height, 1, GRID_COLOR, GRID_ALPHA);
       }
 
       // 수평선
       for (let y = 0; y <= height; y += gridInterval) {
         if (y % majorGridInterval === 0) continue;
-
-        g.moveTo(0, y);
-        g.lineTo(width, y);
+        drawLine(0, y, width, y, 1, GRID_COLOR, GRID_ALPHA);
       }
 
-      g.stroke();
-
       // === 메이저 그리드 (더 진한 색상) ===
-      g.setStrokeStyle({ width: 1, color: MAJOR_GRID_COLOR, alpha: MAJOR_GRID_ALPHA });
-
       // 수직선
       for (let x = 0; x <= width; x += majorGridInterval) {
-        g.moveTo(x, 0);
-        g.lineTo(x, height);
+        drawLine(x, 0, x, height, 1, MAJOR_GRID_COLOR, MAJOR_GRID_ALPHA);
       }
 
       // 수평선
       for (let y = 0; y <= height; y += majorGridInterval) {
-        g.moveTo(0, y);
-        g.lineTo(width, y);
+        drawLine(0, y, width, y, 1, MAJOR_GRID_COLOR, MAJOR_GRID_ALPHA);
       }
 
-      g.stroke();
-
       // === 중앙선 강조 ===
-      g.setStrokeStyle({ width: CENTER_LINE_WIDTH, color: CENTER_LINE_COLOR, alpha: CENTER_LINE_ALPHA });
-
-      // 수직 중앙선
-      g.moveTo(width / 2, 0);
-      g.lineTo(width / 2, height);
-
-      // 수평 중앙선
-      g.moveTo(0, height / 2);
-      g.lineTo(width, height / 2);
-
-      g.stroke();
+      drawLine(width / 2, 0, width / 2, height, CENTER_LINE_WIDTH, CENTER_LINE_COLOR, CENTER_LINE_ALPHA);
+      drawLine(0, height / 2, width, height / 2, CENTER_LINE_WIDTH, CENTER_LINE_COLOR, CENTER_LINE_ALPHA);
 
       // === 스냅 그리드 (선택적) ===
       if (showSnapGrid && snapSize !== gridInterval) {
-        g.setStrokeStyle({ width: 1, color: SNAP_GRID_COLOR, alpha: SNAP_GRID_ALPHA });
-
-        // 스냅 포인트 표시 (작은 점)
         for (let x = 0; x <= width; x += snapSize) {
           for (let y = 0; y <= height; y += snapSize) {
             g.circle(x, y, 1);
+            g.fill({ color: SNAP_GRID_COLOR, alpha: SNAP_GRID_ALPHA });
           }
         }
-
-        g.fill({ color: SNAP_GRID_COLOR, alpha: SNAP_GRID_ALPHA });
       }
     },
     [width, height, gridInterval, majorGridInterval, showGrid, showSnapGrid, snapSize]

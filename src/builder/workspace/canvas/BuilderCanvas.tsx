@@ -696,20 +696,20 @@ export function BuilderCanvas({
             eventMode="static"
             interactiveChildren={true}
           >
-            {/* Grid Layer (최하단) - SettingsPanel 연동 */}
+            {/* Body Layer (Body 요소의 배경색, 테두리 등) - 최하단 */}
+            <BodyLayer
+              pageWidth={pageWidth}
+              pageHeight={pageHeight}
+              onClick={handleElementClick}
+            />
+
+            {/* Grid Layer - Body 위에 렌더링 */}
             <GridLayer
               width={pageWidth}
               height={pageHeight}
               zoom={zoom}
               showGrid={showGrid}
               gridSize={gridSize}
-            />
-
-            {/* Body Layer (Body 요소의 배경색, 테두리 등) */}
-            <BodyLayer
-              pageWidth={pageWidth}
-              pageHeight={pageHeight}
-              onClick={handleElementClick}
             />
 
             {/* Page Bounds (breakpoint 경계선) */}
