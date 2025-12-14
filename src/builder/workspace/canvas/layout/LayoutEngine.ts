@@ -422,7 +422,8 @@ function createYogaNode(
     node.setFlexWrap(toYogaWrap(style.flexWrap));
     node.setJustifyContent(toYogaJustify(style.justifyContent));
     node.setAlignItems(toYogaAlign(style.alignItems));
-    node.setAlignContent(toYogaAlignContent(style.alignContent));
+    // align-content: CSS 기본값 stretch 명시 (Yoga 기본값은 flex-start)
+    node.setAlignContent(toYogaAlignContent(style.alignContent || 'stretch'));
 
     // Gap
     if (style.gap) node.setGap(Gutter.All, parseCSSValue(style.gap));
