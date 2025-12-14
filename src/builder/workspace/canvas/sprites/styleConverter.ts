@@ -177,6 +177,17 @@ export function parseCSSSize(
     return parseFloat(value);
   }
 
+  // rem 단위 (기본 16px 기준)
+  if (value.endsWith('rem')) {
+    return parseFloat(value) * 16;
+  }
+
+  // em 단위 (parentSize가 있으면 사용, 없으면 16px)
+  if (value.endsWith('em')) {
+    const base = parentSize !== undefined ? parentSize : 16;
+    return parseFloat(value) * base;
+  }
+
   // Percentage
   if (value.endsWith('%') && parentSize !== undefined) {
     return (parseFloat(value) / 100) * parentSize;

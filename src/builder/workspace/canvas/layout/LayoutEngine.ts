@@ -11,6 +11,21 @@
 
 import type { Element } from '../../../../types/core/store.types';
 
+// yoga-layout v3.2.1: enums are directly exported from 'yoga-layout/load'
+import {
+  FlexDirection,
+  Wrap,
+  Justify,
+  Align,
+  Edge,
+  Gutter,
+  Direction,
+  PositionType,
+} from 'yoga-layout/load';
+
+// @pixi/layout requires yoga instance to be set via setYoga()
+import { setYoga } from '@pixi/layout';
+
 // ============================================
 // Types
 // ============================================
@@ -67,7 +82,8 @@ interface CSSStyle {
 }
 
 // Yoga 타입 (동적 로딩)
-type YogaInstance = Awaited<typeof import('yoga-layout')>;
+// yoga-layout v3.2.1: loadYoga() is exported from 'yoga-layout/load'
+type YogaInstance = Awaited<ReturnType<typeof import('yoga-layout/load').loadYoga>>;
 type YogaNode = ReturnType<YogaInstance['Node']['create']>;
 
 // ============================================
@@ -79,15 +95,32 @@ let yogaLoadPromise: Promise<YogaInstance> | null = null;
 
 /**
  * Yoga 엔진 초기화 (싱글톤)
+ * yoga-layout v3.2.1: loadYoga() must be imported from 'yoga-layout/load'
+ *
+ * Also sets the yoga instance for @pixi/layout via setYoga()
  */
 export async function initYoga(): Promise<YogaInstance> {
   if (Yoga) return Yoga;
 
   if (!yogaLoadPromise) {
-    yogaLoadPromise = import('yoga-layout').then((module) => {
-      Yoga = module;
-      return module;
-    });
+    yogaLoadPromise = import('yoga-layout/load')
+      .then(async (module) => {
+        // yoga-layout v3.2.1: loadYoga() returns the Yoga instance
+        const yogaInstance = await module.loadYoga();
+        Yoga = yogaInstance;
+
+        // Set yoga instance for @pixi/layout
+        // This is required for LayoutText, LayoutContainer to work
+        setYoga(yogaInstance);
+
+        console.log('[LayoutEngine] Yoga initialized successfully (also set for @pixi/layout)');
+        return yogaInstance;
+      })
+      .catch((error) => {
+        console.error('[LayoutEngine] Failed to initialize Yoga:', error);
+        yogaLoadPromise = null; // Reset so it can be retried
+        throw error;
+      });
   }
 
   return yogaLoadPromise;
@@ -122,69 +155,69 @@ function parseCSSValue(value: unknown, defaultValue = 0): number {
 /**
  * CSS flexDirection을 Yoga FlexDirection으로 변환
  */
-function toYogaFlexDirection(yoga: YogaInstance, value: string | undefined): number {
+function toYogaFlexDirection(value: string | undefined): FlexDirection {
   switch (value) {
-    case 'row': return yoga.FlexDirection.Row;
-    case 'row-reverse': return yoga.FlexDirection.RowReverse;
-    case 'column': return yoga.FlexDirection.Column;
-    case 'column-reverse': return yoga.FlexDirection.ColumnReverse;
-    default: return yoga.FlexDirection.Row;
+    case 'row': return FlexDirection.Row;
+    case 'row-reverse': return FlexDirection.RowReverse;
+    case 'column': return FlexDirection.Column;
+    case 'column-reverse': return FlexDirection.ColumnReverse;
+    default: return FlexDirection.Row;
   }
 }
 
 /**
  * CSS flexWrap을 Yoga Wrap으로 변환
  */
-function toYogaWrap(yoga: YogaInstance, value: string | undefined): number {
+function toYogaWrap(value: string | undefined): Wrap {
   switch (value) {
-    case 'wrap': return yoga.Wrap.Wrap;
-    case 'wrap-reverse': return yoga.Wrap.WrapReverse;
+    case 'wrap': return Wrap.Wrap;
+    case 'wrap-reverse': return Wrap.WrapReverse;
     case 'nowrap':
-    default: return yoga.Wrap.NoWrap;
+    default: return Wrap.NoWrap;
   }
 }
 
 /**
  * CSS justifyContent를 Yoga Justify로 변환
  */
-function toYogaJustify(yoga: YogaInstance, value: string | undefined): number {
+function toYogaJustify(value: string | undefined): Justify {
   switch (value) {
-    case 'flex-start': return yoga.Justify.FlexStart;
-    case 'flex-end': return yoga.Justify.FlexEnd;
-    case 'center': return yoga.Justify.Center;
-    case 'space-between': return yoga.Justify.SpaceBetween;
-    case 'space-around': return yoga.Justify.SpaceAround;
-    case 'space-evenly': return yoga.Justify.SpaceEvenly;
-    default: return yoga.Justify.FlexStart;
+    case 'flex-start': return Justify.FlexStart;
+    case 'flex-end': return Justify.FlexEnd;
+    case 'center': return Justify.Center;
+    case 'space-between': return Justify.SpaceBetween;
+    case 'space-around': return Justify.SpaceAround;
+    case 'space-evenly': return Justify.SpaceEvenly;
+    default: return Justify.FlexStart;
   }
 }
 
 /**
  * CSS alignItems를 Yoga Align으로 변환
  */
-function toYogaAlign(yoga: YogaInstance, value: string | undefined): number {
+function toYogaAlign(value: string | undefined): Align {
   switch (value) {
-    case 'flex-start': return yoga.Align.FlexStart;
-    case 'flex-end': return yoga.Align.FlexEnd;
-    case 'center': return yoga.Align.Center;
-    case 'stretch': return yoga.Align.Stretch;
-    case 'baseline': return yoga.Align.Baseline;
-    default: return yoga.Align.Stretch;
+    case 'flex-start': return Align.FlexStart;
+    case 'flex-end': return Align.FlexEnd;
+    case 'center': return Align.Center;
+    case 'stretch': return Align.Stretch;
+    case 'baseline': return Align.Baseline;
+    default: return Align.Stretch;
   }
 }
 
 /**
  * CSS alignContent를 Yoga Align으로 변환
  */
-function toYogaAlignContent(yoga: YogaInstance, value: string | undefined): number {
+function toYogaAlignContent(value: string | undefined): Align {
   switch (value) {
-    case 'flex-start': return yoga.Align.FlexStart;
-    case 'flex-end': return yoga.Align.FlexEnd;
-    case 'center': return yoga.Align.Center;
-    case 'stretch': return yoga.Align.Stretch;
-    case 'space-between': return yoga.Align.SpaceBetween;
-    case 'space-around': return yoga.Align.SpaceAround;
-    default: return yoga.Align.Stretch;
+    case 'flex-start': return Align.FlexStart;
+    case 'flex-end': return Align.FlexEnd;
+    case 'center': return Align.Center;
+    case 'stretch': return Align.Stretch;
+    case 'space-between': return Align.SpaceBetween;
+    case 'space-around': return Align.SpaceAround;
+    default: return Align.Stretch;
   }
 }
 
@@ -198,8 +231,8 @@ function toYogaAlignContent(yoga: YogaInstance, value: string | undefined): numb
 function createYogaNode(
   yoga: YogaInstance,
   element: Element,
-  parentWidth: number,
-  parentHeight: number
+  _parentWidth: number,
+  _parentHeight: number
 ): YogaNode {
   const node = yoga.Node.create();
   const style = element.props?.style as CSSStyle | undefined;
@@ -218,29 +251,29 @@ function createYogaNode(
   if (style?.maxHeight) node.setMaxHeight(parseCSSValue(style.maxHeight));
 
   // Margin
-  if (style?.marginTop) node.setMargin(yoga.Edge.Top, parseCSSValue(style.marginTop));
-  if (style?.marginRight) node.setMargin(yoga.Edge.Right, parseCSSValue(style.marginRight));
-  if (style?.marginBottom) node.setMargin(yoga.Edge.Bottom, parseCSSValue(style.marginBottom));
-  if (style?.marginLeft) node.setMargin(yoga.Edge.Left, parseCSSValue(style.marginLeft));
+  if (style?.marginTop) node.setMargin(Edge.Top, parseCSSValue(style.marginTop));
+  if (style?.marginRight) node.setMargin(Edge.Right, parseCSSValue(style.marginRight));
+  if (style?.marginBottom) node.setMargin(Edge.Bottom, parseCSSValue(style.marginBottom));
+  if (style?.marginLeft) node.setMargin(Edge.Left, parseCSSValue(style.marginLeft));
 
   // Padding
-  if (style?.paddingTop) node.setPadding(yoga.Edge.Top, parseCSSValue(style.paddingTop));
-  if (style?.paddingRight) node.setPadding(yoga.Edge.Right, parseCSSValue(style.paddingRight));
-  if (style?.paddingBottom) node.setPadding(yoga.Edge.Bottom, parseCSSValue(style.paddingBottom));
-  if (style?.paddingLeft) node.setPadding(yoga.Edge.Left, parseCSSValue(style.paddingLeft));
+  if (style?.paddingTop) node.setPadding(Edge.Top, parseCSSValue(style.paddingTop));
+  if (style?.paddingRight) node.setPadding(Edge.Right, parseCSSValue(style.paddingRight));
+  if (style?.paddingBottom) node.setPadding(Edge.Bottom, parseCSSValue(style.paddingBottom));
+  if (style?.paddingLeft) node.setPadding(Edge.Left, parseCSSValue(style.paddingLeft));
 
   // Flexbox Container 속성
   if (style?.display === 'flex') {
-    node.setFlexDirection(toYogaFlexDirection(yoga, style.flexDirection));
-    node.setFlexWrap(toYogaWrap(yoga, style.flexWrap));
-    node.setJustifyContent(toYogaJustify(yoga, style.justifyContent));
-    node.setAlignItems(toYogaAlign(yoga, style.alignItems));
-    node.setAlignContent(toYogaAlignContent(yoga, style.alignContent));
+    node.setFlexDirection(toYogaFlexDirection(style.flexDirection));
+    node.setFlexWrap(toYogaWrap(style.flexWrap));
+    node.setJustifyContent(toYogaJustify(style.justifyContent));
+    node.setAlignItems(toYogaAlign(style.alignItems));
+    node.setAlignContent(toYogaAlignContent(style.alignContent));
 
     // Gap
-    if (style.gap) node.setGap(yoga.Gutter.All, parseCSSValue(style.gap));
-    if (style.rowGap) node.setGap(yoga.Gutter.Row, parseCSSValue(style.rowGap));
-    if (style.columnGap) node.setGap(yoga.Gutter.Column, parseCSSValue(style.columnGap));
+    if (style.gap) node.setGap(Gutter.All, parseCSSValue(style.gap));
+    if (style.rowGap) node.setGap(Gutter.Row, parseCSSValue(style.rowGap));
+    if (style.columnGap) node.setGap(Gutter.Column, parseCSSValue(style.columnGap));
   }
 
   // Flex Item 속성
@@ -257,14 +290,14 @@ function createYogaNode(
     node.setFlexBasis(parseCSSValue(style.flexBasis));
   }
   if (style?.alignSelf) {
-    node.setAlignSelf(toYogaAlign(yoga, style.alignSelf));
+    node.setAlignSelf(toYogaAlign(style.alignSelf));
   }
 
   // Position
   if (style?.position === 'absolute') {
-    node.setPositionType(yoga.PositionType.Absolute);
-    if (style.left !== undefined) node.setPosition(yoga.Edge.Left, parseCSSValue(style.left));
-    if (style.top !== undefined) node.setPosition(yoga.Edge.Top, parseCSSValue(style.top));
+    node.setPositionType(PositionType.Absolute);
+    if (style.left !== undefined) node.setPosition(Edge.Left, parseCSSValue(style.left));
+    if (style.top !== undefined) node.setPosition(Edge.Top, parseCSSValue(style.top));
   }
 
   return node;
@@ -372,6 +405,12 @@ export function calculateLayout(
 
   const yoga = getYoga();
 
+  // Yoga.Node가 존재하는지 확인
+  if (!yoga.Node) {
+    console.error('[LayoutEngine] Yoga.Node is not available');
+    return { positions };
+  }
+
   // 현재 페이지의 요소만 필터링
   const pageElements = elements.filter((el) => el.page_id === pageId);
 
@@ -386,25 +425,25 @@ export function calculateLayout(
   const rootNode = yoga.Node.create();
   rootNode.setWidth(pageWidth);
   rootNode.setHeight(pageHeight);
-  rootNode.setFlexDirection(yoga.FlexDirection.Column);
+  rootNode.setFlexDirection(FlexDirection.Column);
 
   // Body 스타일 적용
   const bodyStyle = bodyElement.props?.style as CSSStyle | undefined;
   if (bodyStyle?.display === 'flex') {
-    rootNode.setFlexDirection(toYogaFlexDirection(yoga, bodyStyle.flexDirection));
-    rootNode.setFlexWrap(toYogaWrap(yoga, bodyStyle.flexWrap));
-    rootNode.setJustifyContent(toYogaJustify(yoga, bodyStyle.justifyContent));
-    rootNode.setAlignItems(toYogaAlign(yoga, bodyStyle.alignItems));
-    rootNode.setAlignContent(toYogaAlignContent(yoga, bodyStyle.alignContent));
+    rootNode.setFlexDirection(toYogaFlexDirection(bodyStyle.flexDirection));
+    rootNode.setFlexWrap(toYogaWrap(bodyStyle.flexWrap));
+    rootNode.setJustifyContent(toYogaJustify(bodyStyle.justifyContent));
+    rootNode.setAlignItems(toYogaAlign(bodyStyle.alignItems));
+    rootNode.setAlignContent(toYogaAlignContent(bodyStyle.alignContent));
 
-    if (bodyStyle.gap) rootNode.setGap(yoga.Gutter.All, parseCSSValue(bodyStyle.gap));
+    if (bodyStyle.gap) rootNode.setGap(Gutter.All, parseCSSValue(bodyStyle.gap));
   }
 
   // Padding 적용
-  if (bodyStyle?.paddingTop) rootNode.setPadding(yoga.Edge.Top, parseCSSValue(bodyStyle.paddingTop));
-  if (bodyStyle?.paddingRight) rootNode.setPadding(yoga.Edge.Right, parseCSSValue(bodyStyle.paddingRight));
-  if (bodyStyle?.paddingBottom) rootNode.setPadding(yoga.Edge.Bottom, parseCSSValue(bodyStyle.paddingBottom));
-  if (bodyStyle?.paddingLeft) rootNode.setPadding(yoga.Edge.Left, parseCSSValue(bodyStyle.paddingLeft));
+  if (bodyStyle?.paddingTop) rootNode.setPadding(Edge.Top, parseCSSValue(bodyStyle.paddingTop));
+  if (bodyStyle?.paddingRight) rootNode.setPadding(Edge.Right, parseCSSValue(bodyStyle.paddingRight));
+  if (bodyStyle?.paddingBottom) rootNode.setPadding(Edge.Bottom, parseCSSValue(bodyStyle.paddingBottom));
+  if (bodyStyle?.paddingLeft) rootNode.setPadding(Edge.Left, parseCSSValue(bodyStyle.paddingLeft));
 
   // 노드 맵 생성
   const nodeMap = new Map<string, YogaNode>();
@@ -414,7 +453,7 @@ export function calculateLayout(
   buildYogaTree(yoga, pageElements, bodyElement.id, rootNode, pageWidth, pageHeight, nodeMap, visited);
 
   // 레이아웃 계산
-  rootNode.calculateLayout(pageWidth, pageHeight, yoga.Direction.LTR);
+  rootNode.calculateLayout(pageWidth, pageHeight, Direction.LTR);
 
   // Body 위치 설정
   positions.set(bodyElement.id, {

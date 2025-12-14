@@ -644,7 +644,8 @@ export function BuilderCanvas({
 
   return (
     <div ref={setContainerNode} className="canvas-container">
-      {containerEl && (
+      {/* Wait for both container and yoga to be ready before rendering PixiJS */}
+      {containerEl && yogaReady && (
         <Application
           resizeTo={containerEl}
           background={backgroundColor}

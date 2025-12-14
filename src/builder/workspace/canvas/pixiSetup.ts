@@ -28,6 +28,7 @@ import {
   LayoutContainer,
   LayoutText,
 } from '@pixi/layout/components';
+import { FancyButton } from '@pixi/ui';
 
 /**
  * PixiJS 컴포넌트 카탈로그
@@ -45,6 +46,8 @@ export const PIXI_COMPONENTS = {
   // @pixi/layout 컴포넌트 (layoutContainer, layoutText 등 JSX 태그로 사용)
   LayoutContainer,
   LayoutText,
+  // @pixi/ui 컴포넌트 (fancyButton 등 JSX 태그로 사용)
+  FancyButton,
 };
 
 // Re-export for convenience

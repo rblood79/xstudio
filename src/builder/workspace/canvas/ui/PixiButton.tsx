@@ -1,24 +1,42 @@
 /**
  * Pixi Button
  *
- * 🚀 Phase 11 B2.4: @pixi/layout 기반 Button
+ * 🚀 Phase 11 B2.4: @pixi/ui FancyButton 기반 Button
  *
- * @pixi/layout의 LayoutContainer를 사용하여 CSS 스타일 직접 적용
+ * @pixi/ui의 FancyButton을 명령형으로 생성하여 Container에 추가
+ * - JSX 방식은 @pixi/react v8에서 제한적이므로 useEffect로 직접 생성
+ *
+ * @see https://pixijs.io/ui/storybook/?path=/story/fancybutton--simple
+ * @see https://github.com/pixijs/ui/blob/main/src/FancyButton.ts
  *
  * @since 2025-12-11 Phase 11 B2.4
- * @updated 2025-12-11 - @pixi/layout LayoutContainer 기반으로 리팩토링
- * @updated 2025-12-13 P5: pixiContainer 래퍼로 이벤트 처리 (GitHub #126 workaround)
+ * @updated 2025-12-14 P8: useEffect 명령형 FancyButton 생성
  */
 
-// @pixi/layout 컴포넌트 extend (JSX 사용 전 필수)
-import '../pixiSetup';
-// @pixi/layout React 타입 선언
-import '@pixi/layout/react';
-
-import { memo, useCallback, useMemo } from 'react';
+import { memo, useCallback, useRef, useEffect } from 'react';
+import { Container as PixiContainer, Graphics as PixiGraphicsClass, Text as PixiText, TextStyle, CanvasTextMetrics } from 'pixi.js';
+import { FancyButton } from '@pixi/ui';
 import type { Element } from '../../../../types/core/store.types';
 import type { CSSStyle } from '../sprites/styleConverter';
 import { cssColorToHex, parseCSSSize } from '../sprites/styleConverter';
+
+// ============================================
+// Constants (CSS 브라우저 기본값 기반)
+// ============================================
+
+/**
+ * HTML Button 기본 패딩 (브라우저 기본값 참고)
+ * Chrome/Safari: 약 1px 6px ~ 2px 6px
+ * 여기서는 좀 더 여유있는 패딩 사용
+ */
+const DEFAULT_PADDING_X = 16; // 좌우 패딩
+const DEFAULT_PADDING_Y = 8;  // 상하 패딩
+
+/**
+ * 최소 버튼 크기 (너무 작아지는 것 방지)
+ */
+const MIN_BUTTON_WIDTH = 32;
+const MIN_BUTTON_HEIGHT = 24;
 
 // ============================================
 // Types
@@ -35,50 +53,94 @@ export interface PixiButtonProps {
 // ============================================
 
 /**
- * CSS 스타일을 @pixi/layout 형식으로 변환
+ * CSS 스타일에서 버튼 레이아웃 정보 추출
+ *
+ * width/height가 'auto' 또는 undefined일 때 텍스트 크기 기반으로 계산
+ *
+ * HTML/CSS 버튼 크기 계산 공식:
+ * - width = paddingLeft + borderLeft + textWidth + borderRight + paddingRight
+ * - height = paddingTop + borderTop + lineHeight + borderBottom + paddingBottom
  */
-function convertToLayoutStyle(style: CSSStyle | undefined) {
-  if (!style) {
-    return {
-      width: 120,
-      height: 40,
-      backgroundColor: 0x3b82f6,
-      borderRadius: 8,
-      justifyContent: 'center' as const,
-      alignItems: 'center' as const,
-    };
+function getButtonLayout(style: CSSStyle | undefined, buttonText: string) {
+  const fontSize = parseCSSSize(style?.fontSize, undefined, 14);
+  const fontFamily = style?.fontFamily || 'Pretendard, sans-serif';
+
+  // 패딩 추출 (CSS padding 값 사용, 없으면 기본값)
+  const paddingTop = parseCSSSize(style?.paddingTop, undefined, DEFAULT_PADDING_Y);
+  const paddingRight = parseCSSSize(style?.paddingRight, undefined, DEFAULT_PADDING_X);
+  const paddingBottom = parseCSSSize(style?.paddingBottom, undefined, DEFAULT_PADDING_Y);
+  const paddingLeft = parseCSSSize(style?.paddingLeft, undefined, DEFAULT_PADDING_X);
+
+  // 테두리 너비 (있으면 사용)
+  const borderWidth = parseCSSSize(style?.borderWidth, undefined, 0);
+
+  // width/height가 'auto'인지 확인
+  const isWidthAuto = style?.width === 'auto' || style?.width === undefined;
+  const isHeightAuto = style?.height === 'auto' || style?.height === undefined;
+
+  let width: number;
+  let height: number;
+
+  if (isWidthAuto || isHeightAuto) {
+    // TextStyle 생성하여 텍스트 크기 측정
+    const textStyle = new TextStyle({
+      fontSize,
+      fontFamily,
+    });
+
+    // CanvasTextMetrics로 텍스트 크기 측정
+    const metrics = CanvasTextMetrics.measureText(buttonText, textStyle);
+    const textWidth = metrics.width;
+    const textHeight = metrics.height;
+
+    // auto일 때 콘텐츠 기반 크기 계산
+    if (isWidthAuto) {
+      width = paddingLeft + borderWidth + textWidth + borderWidth + paddingRight;
+      width = Math.max(width, MIN_BUTTON_WIDTH);
+    } else {
+      width = parseCSSSize(style?.width, undefined, 120);
+    }
+
+    if (isHeightAuto) {
+      height = paddingTop + borderWidth + textHeight + borderWidth + paddingBottom;
+      height = Math.max(height, MIN_BUTTON_HEIGHT);
+    } else {
+      height = parseCSSSize(style?.height, undefined, 40);
+    }
+  } else {
+    width = parseCSSSize(style?.width, undefined, 120);
+    height = parseCSSSize(style?.height, undefined, 40);
   }
 
   return {
-    // 위치
-    left: parseCSSSize(style.left, undefined, 0),
-    top: parseCSSSize(style.top, undefined, 0),
-    // 크기
-    width: parseCSSSize(style.width, undefined, 120),
-    height: parseCSSSize(style.height, undefined, 40),
-    // 배경 & 테두리 (CSS 스타일 직접 적용!)
-    backgroundColor: cssColorToHex(style.backgroundColor, 0x3b82f6),
-    borderRadius: parseCSSSize(style.borderRadius, undefined, 8),
-    // Flex 정렬 (버튼 텍스트 중앙)
-    justifyContent: 'center' as const,
-    alignItems: 'center' as const,
-    // 패딩
-    paddingLeft: parseCSSSize(style.paddingLeft || style.padding, undefined, 16),
-    paddingRight: parseCSSSize(style.paddingRight || style.padding, undefined, 16),
-    paddingTop: parseCSSSize(style.paddingTop || style.padding, undefined, 8),
-    paddingBottom: parseCSSSize(style.paddingBottom || style.padding, undefined, 8),
+    left: parseCSSSize(style?.left, undefined, 0),
+    top: parseCSSSize(style?.top, undefined, 0),
+    width,
+    height,
+    backgroundColor: cssColorToHex(style?.backgroundColor, 0x3b82f6),
+    borderRadius: parseCSSSize(style?.borderRadius, undefined, 8),
+    textColor: cssColorToHex(style?.color, 0xffffff),
+    fontSize,
+    fontFamily,
+    // 패딩 정보도 반환 (FancyButton padding 설정용)
+    paddingX: (paddingLeft + paddingRight) / 2,
+    paddingY: (paddingTop + paddingBottom) / 2,
   };
 }
 
 /**
- * 텍스트 스타일 변환
+ * 버튼 배경 Graphics 생성
  */
-function convertToTextLayout(style: CSSStyle | undefined) {
-  return {
-    fill: cssColorToHex(style?.color, 0xffffff),
-    fontSize: parseCSSSize(style?.fontSize, undefined, 14),
-    fontFamily: style?.fontFamily || 'Pretendard, sans-serif',
-  };
+function createButtonGraphics(
+  width: number,
+  height: number,
+  backgroundColor: number,
+  borderRadius: number
+): PixiGraphicsClass {
+  const graphics = new PixiGraphicsClass();
+  graphics.roundRect(0, 0, width, height, borderRadius);
+  graphics.fill({ color: backgroundColor });
+  return graphics;
 }
 
 // ============================================
@@ -88,8 +150,7 @@ function convertToTextLayout(style: CSSStyle | undefined) {
 /**
  * PixiButton
  *
- * @pixi/layout의 LayoutContainer를 사용하여 버튼 렌더링
- * CSS 스타일(backgroundColor, borderRadius)이 직접 적용됨
+ * @pixi/ui FancyButton을 명령형으로 생성
  *
  * @example
  * <PixiButton element={buttonElement} onClick={handleClick} />
@@ -103,86 +164,132 @@ export const PixiButton = memo(function PixiButton({
   const props = element.props as Record<string, unknown> | undefined;
 
   // 버튼 텍스트
-  const buttonText = useMemo(() => {
-    return String(props?.children || props?.text || props?.label || 'Button');
-  }, [props]);
+  const buttonText = String(props?.children || props?.text || props?.label || 'Button');
 
-  // @pixi/layout 스타일
-  const layoutStyle = useMemo(() => convertToLayoutStyle(style), [style]);
-  const textStyle = useMemo(() => convertToTextLayout(style), [style]);
+  // 레이아웃 스타일 (buttonText 필요 - auto 크기 계산용)
+  const layout = getButtonLayout(style, buttonText);
 
-  // 클릭 핸들러
-  const handlePointerDown = useCallback(() => {
-    onClick?.(element.id);
-  }, [element.id, onClick]);
+  // Container ref
+  const containerRef = useRef<PixiContainer | null>(null);
+  const buttonRef = useRef<FancyButton | null>(null);
 
-  // 선택 테두리 (별도 Graphics로 표시)
-  const selectionStyle = useMemo(() => {
-    if (!isSelected) return null;
-    return {
-      position: 'absolute' as const,
-      left: -2,
-      top: -2,
-      width: layoutStyle.width + 4,
-      height: layoutStyle.height + 4,
-      borderColor: 0x3b82f6,
-      borderWidth: 2,
-      borderRadius: layoutStyle.borderRadius + 2,
+  // FancyButton 생성 및 업데이트
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    // 기존 버튼 제거
+    if (buttonRef.current) {
+      container.removeChild(buttonRef.current);
+      buttonRef.current.destroy();
+      buttonRef.current = null;
+    }
+
+    // 배경 Graphics 생성
+    const defaultView = createButtonGraphics(
+      layout.width,
+      layout.height,
+      layout.backgroundColor,
+      layout.borderRadius
+    );
+
+    const hoverColor = Math.min(layout.backgroundColor + 0x202020, 0xffffff);
+    const hoverView = createButtonGraphics(
+      layout.width,
+      layout.height,
+      hoverColor,
+      layout.borderRadius
+    );
+
+    const pressedColor = Math.max(layout.backgroundColor - 0x202020, 0x000000);
+    const pressedView = createButtonGraphics(
+      layout.width,
+      layout.height,
+      pressedColor,
+      layout.borderRadius
+    );
+
+    // TextStyle 및 Text 객체 생성 (FancyButton은 textStyle을 직접 받지 않음)
+    console.log('[PixiButton] fontSize:', layout.fontSize);
+    const textStyle = new TextStyle({
+      fill: layout.textColor,
+      fontSize: layout.fontSize,
+      fontFamily: layout.fontFamily,
+      align: 'center',
+    });
+
+    const textView = new PixiText({
+      text: buttonText,
+      style: textStyle,
+    });
+
+    // FancyButton 생성 (text에 PixiText 객체 전달)
+    const button = new FancyButton({
+      defaultView,
+      hoverView,
+      pressedView,
+      text: textView,
+      anchor: 0.5,
+    });
+
+    // 버튼 위치 조정 (anchor 0.5이므로 중앙 기준)
+    button.x = layout.width / 2;
+    button.y = layout.height / 2;
+
+    // 클릭 이벤트
+    button.onPress.connect(() => {
+      console.log('[PixiButton] onPress:', element.id);
+      onClick?.(element.id);
+    });
+
+    // Container에 추가
+    container.addChild(button);
+    buttonRef.current = button;
+
+    // Cleanup
+    return () => {
+      if (buttonRef.current && container.children.includes(buttonRef.current)) {
+        container.removeChild(buttonRef.current);
+        buttonRef.current.destroy();
+        buttonRef.current = null;
+      }
     };
-  }, [isSelected, layoutStyle]);
+  }, [
+    layout.width,
+    layout.height,
+    layout.backgroundColor,
+    layout.borderRadius,
+    layout.textColor,
+    layout.fontSize,
+    layout.fontFamily,
+    buttonText,
+    element.id,
+    onClick,
+  ]);
 
-  // P5 Workaround: pixiContainer로 이벤트 처리 (GitHub #126)
-  // @pixi/layout v3.2.0 LayoutContainer가 eventMode를 무시하는 버그 회피
+  // 선택 테두리 Graphics draw
+  const drawSelection = useCallback((g: PixiGraphicsClass) => {
+    g.clear();
+    if (isSelected) {
+      g.roundRect(-2, -2, layout.width + 4, layout.height + 4, layout.borderRadius + 2);
+      g.stroke({ color: 0x3b82f6, width: 2 });
+    }
+  }, [isSelected, layout.width, layout.height, layout.borderRadius]);
+
   return (
     <pixiContainer
-      x={layoutStyle.left}
-      y={layoutStyle.top}
-      eventMode="static"
-      cursor="pointer"
-      onPointerDown={handlePointerDown}
+      x={layout.left}
+      y={layout.top}
+      ref={(c: PixiContainer | null) => {
+        containerRef.current = c;
+      }}
     >
-      <layoutContainer
-        layout={{
-          width: layoutStyle.width,
-          height: layoutStyle.height,
-          backgroundColor: layoutStyle.backgroundColor,
-          borderRadius: layoutStyle.borderRadius,
-          justifyContent: layoutStyle.justifyContent,
-          alignItems: layoutStyle.alignItems,
-          paddingLeft: layoutStyle.paddingLeft,
-          paddingRight: layoutStyle.paddingRight,
-          paddingTop: layoutStyle.paddingTop,
-          paddingBottom: layoutStyle.paddingBottom,
-          debug: false,
-        }}
-      >
-        {/* 버튼 텍스트 */}
-        <layoutText
-          text={buttonText}
-          style={{
-            fill: textStyle.fill,
-            fontSize: textStyle.fontSize,
-            fontFamily: textStyle.fontFamily,
-          }}
-          layout={true}
-        />
+      {/* FancyButton은 useEffect에서 명령형으로 추가됨 */}
 
-        {/* 선택 표시 (오버레이) */}
-        {selectionStyle && (
-          <layoutContainer
-            layout={{
-              position: 'absolute',
-              left: selectionStyle.left,
-              top: selectionStyle.top,
-              width: selectionStyle.width,
-              height: selectionStyle.height,
-              borderColor: selectionStyle.borderColor,
-              borderWidth: selectionStyle.borderWidth,
-              borderRadius: selectionStyle.borderRadius,
-            }}
-          />
-        )}
-      </layoutContainer>
+      {/* 선택 테두리 */}
+      {isSelected && (
+        <pixiGraphics draw={drawSelection} />
+      )}
     </pixiContainer>
   );
 });
