@@ -189,6 +189,78 @@ function getSpriteType(element: Element): SpriteType {
 
 > 메소드 선택: 팬을 드래그 종료 시점에만 동기화하는 방식은 FPS는 높지만 드래그 중 상태 의존 UI(선택 박스 등)와 어긋날 수 있어, rAF 스로틀로 프레임당 업데이트를 유지하는 방식을 채택했습니다.
 
+## 이벤트 처리 패턴 (2025-12-14)
+
+### Modifier 키 처리 (Cmd/Ctrl+클릭)
+
+PixiJS v8의 `FederatedPointerEvent`에서 modifier 키를 추출하는 표준 패턴:
+
+```typescript
+const handleClick = useCallback((e: unknown) => {
+  // PixiJS FederatedPointerEvent has modifier keys directly
+  const pixiEvent = e as {
+    metaKey?: boolean;
+    shiftKey?: boolean;
+    ctrlKey?: boolean;
+    nativeEvent?: MouseEvent | PointerEvent;
+  };
+
+  // PixiJS v8: 직접 속성 우선, nativeEvent 폴백
+  const metaKey = pixiEvent?.metaKey ?? pixiEvent?.nativeEvent?.metaKey ?? false;
+  const shiftKey = pixiEvent?.shiftKey ?? pixiEvent?.nativeEvent?.shiftKey ?? false;
+  const ctrlKey = pixiEvent?.ctrlKey ?? pixiEvent?.nativeEvent?.ctrlKey ?? false;
+
+  onClick?.(element.id, { metaKey, shiftKey, ctrlKey });
+}, [element.id, onClick]);
+```
+
+**적용 파일:**
+- `BoxSprite.tsx`, `TextSprite.tsx`, `ImageSprite.tsx`
+- `PixiButton.tsx`, `BodyLayer.tsx`
+
+### @pixi/ui FancyButton 클릭 처리
+
+`FancyButton.onPress.connect()`는 modifier 키를 제공하지 않습니다. 대신 투명 히트 영역을 사용:
+
+```typescript
+// FancyButton 생성 후 이벤트 모드 비활성화
+button.eventMode = 'none';
+
+// 투명 히트 영역으로 클릭 처리
+const drawHitArea = useCallback((g: PixiGraphicsClass) => {
+  g.clear();
+  g.rect(0, 0, width, height);
+  g.fill({ color: 0xffffff, alpha: 0 });
+}, [width, height]);
+
+<pixiGraphics
+  draw={drawHitArea}
+  eventMode="static"
+  cursor="pointer"
+  onPointerDown={handleClick}
+/>
+```
+
+### 좌표 변환 (Screen → Canvas)
+
+줌/팬 상태에서 라쏘 선택 등의 좌표 변환:
+
+```typescript
+// BuilderCanvas.tsx - ClickableBackground
+const screenToCanvas = useCallback((screenX: number, screenY: number) => {
+  return {
+    x: (screenX - panOffset.x) / zoom,
+    y: (screenY - panOffset.y) / zoom,
+  };
+}, [zoom, panOffset]);
+
+// 사용
+const handlePointerDown = useCallback((e: { global: { x: number; y: number } }) => {
+  const canvasPos = screenToCanvas(e.global.x, e.global.y);
+  onLassoStart?.(canvasPos);
+}, [onLassoStart, screenToCanvas]);
+```
+
 ## 사용 예시
 
 ### 기본 캔버스

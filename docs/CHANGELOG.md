@@ -7,6 +7,58 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed - WebGL Canvas Selection System (2025-12-14)
+
+#### 라쏘 선택 좌표 수정
+- **문제**: Shift+드래그 라쏘 선택 시 마우스 위치와 선택 영역 불일치
+- **원인**: 화면 좌표를 줌/팬 변환 없이 직접 사용
+- **해결**: `screenToCanvas()` 좌표 변환 함수 추가
+
+```typescript
+// BuilderCanvas.tsx - ClickableBackground
+const screenToCanvas = useCallback((screenX: number, screenY: number) => {
+  return {
+    x: (screenX - panOffset.x) / zoom,
+    y: (screenY - panOffset.y) / zoom,
+  };
+}, [zoom, panOffset]);
+```
+
+#### Cmd+클릭 다중 선택 지원
+- **문제**: PixiJS 이벤트에서 modifier 키(metaKey, ctrlKey, shiftKey) 전달 안됨
+- **해결**: PixiJS v8 FederatedPointerEvent 구조에 맞춰 modifier 키 추출
+
+```typescript
+// 모든 Sprite 컴포넌트에 적용된 패턴
+const handleClick = useCallback((e: unknown) => {
+  const pixiEvent = e as {
+    metaKey?: boolean;
+    shiftKey?: boolean;
+    ctrlKey?: boolean;
+    nativeEvent?: MouseEvent | PointerEvent;
+  };
+
+  // PixiJS v8: 직접 속성 우선, nativeEvent 폴백
+  const metaKey = pixiEvent?.metaKey ?? pixiEvent?.nativeEvent?.metaKey ?? false;
+  const shiftKey = pixiEvent?.shiftKey ?? pixiEvent?.nativeEvent?.shiftKey ?? false;
+  const ctrlKey = pixiEvent?.ctrlKey ?? pixiEvent?.nativeEvent?.ctrlKey ?? false;
+
+  onClick?.(element.id, { metaKey, shiftKey, ctrlKey });
+}, [element.id, onClick]);
+```
+
+#### PixiButton 이벤트 처리 개선
+- **문제**: `FancyButton.onPress.connect()`가 modifier 키를 제공하지 않음
+- **해결**: `FancyButton.eventMode = 'none'` 설정 + 투명 히트 영역으로 클릭 처리
+
+**수정된 파일:**
+- `BuilderCanvas.tsx` - 라쏘 좌표 변환
+- `BoxSprite.tsx`, `TextSprite.tsx`, `ImageSprite.tsx` - modifier 키 지원
+- `PixiButton.tsx` - 투명 히트 영역 + eventMode 설정
+- `BodyLayer.tsx` - modifier 키 지원
+
+---
+
 ### Updated - WebGL Canvas Phase 12 (2025-12-12)
 
 - **레이아웃 안전성**: `MAX_LAYOUT_DEPTH`와 `visited` 가드로 순환 트리 무한 재귀 방지, 페이지 단위 레이아웃 캐싱으로 Elements/Selection 중복 계산 제거.
