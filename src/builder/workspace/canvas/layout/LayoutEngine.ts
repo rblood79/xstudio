@@ -143,7 +143,15 @@ function getYoga(): YogaInstance {
 // ============================================
 
 /**
+ * CSS 값이 퍼센트 단위인지 확인
+ */
+function isPercentValue(value: unknown): boolean {
+  return typeof value === 'string' && value.trim().endsWith('%');
+}
+
+/**
  * CSS 값 파싱 (px, %, 숫자 등)
+ * 퍼센트 값도 숫자로 반환 (50% → 50)
  */
 function parseCSSValue(value: unknown, defaultValue = 0): number {
   if (typeof value === 'number') return value;
@@ -152,6 +160,71 @@ function parseCSSValue(value: unknown, defaultValue = 0): number {
     return isNaN(parsed) ? defaultValue : parsed;
   }
   return defaultValue;
+}
+
+/**
+ * 크기 값 설정 (px 또는 % 단위 지원)
+ */
+function setNodeSize(
+  node: YogaNode,
+  dimension: 'width' | 'height',
+  value: unknown
+): void {
+  if (value === undefined || value === null || value === '' || value === 'auto') {
+    return;
+  }
+
+  const numValue = parseCSSValue(value, 0);
+  if (numValue <= 0) return;
+
+  if (isPercentValue(value)) {
+    // 퍼센트 값
+    if (dimension === 'width') {
+      node.setWidthPercent(numValue);
+    } else {
+      node.setHeightPercent(numValue);
+    }
+  } else {
+    // 픽셀 값
+    if (dimension === 'width') {
+      node.setWidth(numValue);
+    } else {
+      node.setHeight(numValue);
+    }
+  }
+}
+
+/**
+ * Min/Max 크기 값 설정 (px 또는 % 단위 지원)
+ */
+function setNodeMinMaxSize(
+  node: YogaNode,
+  type: 'minWidth' | 'minHeight' | 'maxWidth' | 'maxHeight',
+  value: unknown
+): void {
+  if (value === undefined || value === null || value === '') {
+    return;
+  }
+
+  const numValue = parseCSSValue(value, 0);
+  if (numValue <= 0) return;
+
+  const isPercent = isPercentValue(value);
+
+  switch (type) {
+    case 'minWidth':
+      isPercent ? node.setMinWidthPercent(numValue) : node.setMinWidth(numValue);
+      break;
+    case 'minHeight':
+      isPercent ? node.setMinHeightPercent(numValue) : node.setMinHeight(numValue);
+      break;
+    case 'maxWidth':
+      isPercent ? node.setMaxWidthPercent(numValue) : node.setMaxWidth(numValue);
+      break;
+    case 'maxHeight':
+      isPercent ? node.setMaxHeightPercent(numValue) : node.setMaxHeight(numValue);
+      break;
+  }
 }
 
 /**
@@ -237,18 +310,15 @@ function createYogaNode(
   const node = yoga.Node.create();
   const style = element.props?.style as CSSStyle | undefined;
 
-  // 크기 설정
-  const width = parseCSSValue(style?.width, 0);
-  const height = parseCSSValue(style?.height, 0);
+  // 크기 설정 (px 및 % 단위 지원)
+  setNodeSize(node, 'width', style?.width);
+  setNodeSize(node, 'height', style?.height);
 
-  if (width > 0) node.setWidth(width);
-  if (height > 0) node.setHeight(height);
-
-  // Min/Max 크기
-  if (style?.minWidth) node.setMinWidth(parseCSSValue(style.minWidth));
-  if (style?.minHeight) node.setMinHeight(parseCSSValue(style.minHeight));
-  if (style?.maxWidth) node.setMaxWidth(parseCSSValue(style.maxWidth));
-  if (style?.maxHeight) node.setMaxHeight(parseCSSValue(style.maxHeight));
+  // Min/Max 크기 (px 및 % 단위 지원)
+  setNodeMinMaxSize(node, 'minWidth', style?.minWidth);
+  setNodeMinMaxSize(node, 'minHeight', style?.minHeight);
+  setNodeMinMaxSize(node, 'maxWidth', style?.maxWidth);
+  setNodeMinMaxSize(node, 'maxHeight', style?.maxHeight);
 
   // Margin
   if (style?.marginTop) node.setMargin(Edge.Top, parseCSSValue(style.marginTop));
