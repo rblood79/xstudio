@@ -51,11 +51,28 @@ const handleClick = useCallback((e: unknown) => {
 - **문제**: `FancyButton.onPress.connect()`가 modifier 키를 제공하지 않음
 - **해결**: `FancyButton.eventMode = 'none'` 설정 + 투명 히트 영역으로 클릭 처리
 
+#### GridLayer 렌더 순서 수정
+- **문제**: 그리드가 표시되지 않음 (showGrid: true 상태에서도)
+- **원인**: GridLayer가 BodyLayer보다 먼저 렌더링되어 불투명 배경에 가려짐
+- **해결**: 렌더 순서 변경 - BodyLayer → GridLayer (그리드가 배경 위에 표시)
+
+```typescript
+// BuilderCanvas.tsx - Camera Container 렌더 순서
+<pixiContainer label="Camera">
+  <BodyLayer ... />      {/* 1. Body 배경 (최하단) */}
+  <GridLayer ... />      {/* 2. 그리드 (배경 위) */}
+  <CanvasBounds ... />   {/* 3. 경계선 */}
+  <ElementsLayer ... />  {/* 4. 요소들 */}
+  <SelectionLayer ... /> {/* 5. 선택 (최상단) */}
+</pixiContainer>
+```
+
 **수정된 파일:**
-- `BuilderCanvas.tsx` - 라쏘 좌표 변환
+- `BuilderCanvas.tsx` - 라쏘 좌표 변환, GridLayer/BodyLayer 렌더 순서 변경
 - `BoxSprite.tsx`, `TextSprite.tsx`, `ImageSprite.tsx` - modifier 키 지원
 - `PixiButton.tsx` - 투명 히트 영역 + eventMode 설정
 - `BodyLayer.tsx` - modifier 키 지원
+- `GridLayer.tsx` - PixiJS v8 rect+fill 방식으로 그리드 렌더링
 
 ---
 
