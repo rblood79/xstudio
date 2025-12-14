@@ -197,17 +197,25 @@ export function TextSprite({
     [style, fill, stroke, transform, borderRadius, isSelected]
   );
 
-  const handleClick = useCallback((e: { nativeEvent?: MouseEvent | PointerEvent }) => {
-    const native = e.nativeEvent;
-    onClick?.(element.id, {
-      metaKey: native?.metaKey ?? false,
-      shiftKey: native?.shiftKey ?? false,
-      ctrlKey: native?.ctrlKey ?? false,
-    });
+  const handleClick = useCallback((e: unknown) => {
+    // PixiJS FederatedPointerEvent has modifier keys directly
+    const pixiEvent = e as {
+      metaKey?: boolean;
+      shiftKey?: boolean;
+      ctrlKey?: boolean;
+      nativeEvent?: MouseEvent | PointerEvent;
+    };
+
+    // Try direct properties first (PixiJS v8), fallback to nativeEvent
+    const metaKey = pixiEvent?.metaKey ?? pixiEvent?.nativeEvent?.metaKey ?? false;
+    const shiftKey = pixiEvent?.shiftKey ?? pixiEvent?.nativeEvent?.shiftKey ?? false;
+    const ctrlKey = pixiEvent?.ctrlKey ?? pixiEvent?.nativeEvent?.ctrlKey ?? false;
+
+    onClick?.(element.id, { metaKey, shiftKey, ctrlKey });
   }, [element.id, onClick]);
 
   const lastPointerDownAtRef = useRef(0);
-  const handlePointerDown = useCallback((e: { nativeEvent?: MouseEvent | PointerEvent }) => {
+  const handlePointerDown = useCallback((e: unknown) => {
     const now = Date.now();
     const isDoubleClick = Boolean(onDoubleClick) && now - lastPointerDownAtRef.current < 300;
     lastPointerDownAtRef.current = now;

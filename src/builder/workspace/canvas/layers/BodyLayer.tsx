@@ -113,14 +113,22 @@ export const BodyLayer = memo(function BodyLayer({
   );
 
   // 클릭 핸들러 (modifier 키 전달)
-  const handleClick = useCallback((e: { nativeEvent?: MouseEvent | PointerEvent }) => {
+  const handleClick = useCallback((e: unknown) => {
     if (bodyElement && onClick) {
-      const native = e.nativeEvent;
-      onClick(bodyElement.id, {
-        metaKey: native?.metaKey ?? false,
-        shiftKey: native?.shiftKey ?? false,
-        ctrlKey: native?.ctrlKey ?? false,
-      });
+      // PixiJS FederatedPointerEvent has modifier keys directly
+      const pixiEvent = e as {
+        metaKey?: boolean;
+        shiftKey?: boolean;
+        ctrlKey?: boolean;
+        nativeEvent?: MouseEvent | PointerEvent;
+      };
+
+      // Try direct properties first (PixiJS v8), fallback to nativeEvent
+      const metaKey = pixiEvent?.metaKey ?? pixiEvent?.nativeEvent?.metaKey ?? false;
+      const shiftKey = pixiEvent?.shiftKey ?? pixiEvent?.nativeEvent?.shiftKey ?? false;
+      const ctrlKey = pixiEvent?.ctrlKey ?? pixiEvent?.nativeEvent?.ctrlKey ?? false;
+
+      onClick(bodyElement.id, { metaKey, shiftKey, ctrlKey });
     }
   }, [bodyElement, onClick]);
 

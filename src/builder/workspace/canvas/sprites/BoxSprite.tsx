@@ -269,9 +269,6 @@ export function BoxSprite({ element, onClick }: BoxSpriteProps) {
   );
 
   const handleClick = useCallback((e: unknown) => {
-    // Debug: PixiJS event structure
-    console.log('[BoxSprite] click event:', e);
-
     // PixiJS FederatedPointerEvent has modifier keys directly
     const pixiEvent = e as {
       metaKey?: boolean;
@@ -284,8 +281,6 @@ export function BoxSprite({ element, onClick }: BoxSpriteProps) {
     const metaKey = pixiEvent?.metaKey ?? pixiEvent?.nativeEvent?.metaKey ?? false;
     const shiftKey = pixiEvent?.shiftKey ?? pixiEvent?.nativeEvent?.shiftKey ?? false;
     const ctrlKey = pixiEvent?.ctrlKey ?? pixiEvent?.nativeEvent?.ctrlKey ?? false;
-
-    console.log('[BoxSprite] modifiers:', { metaKey, shiftKey, ctrlKey });
 
     onClick?.(element.id, { metaKey, shiftKey, ctrlKey });
   }, [element.id, onClick]);

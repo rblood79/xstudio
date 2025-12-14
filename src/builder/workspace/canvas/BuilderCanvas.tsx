@@ -585,15 +585,11 @@ export function BuilderCanvas({
   // Element click handler with multi-select support
   const handleElementClick = useCallback(
     (elementId: string, modifiers?: { metaKey: boolean; shiftKey: boolean; ctrlKey: boolean }) => {
-      // Debug
-      console.log('[BuilderCanvas] handleElementClick:', elementId, modifiers);
-
       // 텍스트 편집 중이면 클릭 무시
       if (isEditing) return;
 
       // Cmd+Click (Mac) or Ctrl+Click (Windows) for multi-select
       const isMultiSelectKey = modifiers?.metaKey || modifiers?.ctrlKey;
-      console.log('[BuilderCanvas] isMultiSelectKey:', isMultiSelectKey);
 
       if (isMultiSelectKey) {
         // 다중 선택: 이미 선택된 요소면 제거, 아니면 추가

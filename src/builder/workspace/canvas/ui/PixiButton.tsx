@@ -217,7 +217,6 @@ export const PixiButton = memo(function PixiButton({
     );
 
     // TextStyle 및 Text 객체 생성 (FancyButton은 textStyle을 직접 받지 않음)
-    console.log('[PixiButton] fontSize:', layout.fontSize);
     const textStyle = new TextStyle({
       fill: layout.textColor,
       fontSize: layout.fontSize,
@@ -288,13 +287,21 @@ export const PixiButton = memo(function PixiButton({
   }, [layout.width, layout.height]);
 
   // 클릭 핸들러 (modifier 키 전달)
-  const handleClick = useCallback((e: { nativeEvent?: MouseEvent | PointerEvent }) => {
-    const native = e.nativeEvent;
-    onClick?.(element.id, {
-      metaKey: native?.metaKey ?? false,
-      shiftKey: native?.shiftKey ?? false,
-      ctrlKey: native?.ctrlKey ?? false,
-    });
+  const handleClick = useCallback((e: unknown) => {
+    // PixiJS FederatedPointerEvent has modifier keys directly
+    const pixiEvent = e as {
+      metaKey?: boolean;
+      shiftKey?: boolean;
+      ctrlKey?: boolean;
+      nativeEvent?: MouseEvent | PointerEvent;
+    };
+
+    // Try direct properties first (PixiJS v8), fallback to nativeEvent
+    const metaKey = pixiEvent?.metaKey ?? pixiEvent?.nativeEvent?.metaKey ?? false;
+    const shiftKey = pixiEvent?.shiftKey ?? pixiEvent?.nativeEvent?.shiftKey ?? false;
+    const ctrlKey = pixiEvent?.ctrlKey ?? pixiEvent?.nativeEvent?.ctrlKey ?? false;
+
+    onClick?.(element.id, { metaKey, shiftKey, ctrlKey });
   }, [element.id, onClick]);
 
   return (
