@@ -11,6 +11,7 @@
 
 import type { Element } from '../../../../types/core/store.types';
 import { parsePadding } from '../sprites/paddingUtils';
+import { CanvasTextMetrics, TextStyle } from 'pixi.js';
 
 // yoga-layout v3.2.1: enums are directly exported from 'yoga-layout/load'
 import {
@@ -81,6 +82,13 @@ interface CSSStyle {
   flexShrink?: number;
   flexBasis?: string | number;
   alignSelf?: string;
+  // Typography properties (P7.10)
+  fontFamily?: string;
+  fontSize?: string | number;
+  fontWeight?: string | number;
+  fontStyle?: string;
+  letterSpacing?: string | number;
+  lineHeight?: string | number;
 }
 
 // Yoga 타입 (동적 로딩)
@@ -227,6 +235,60 @@ function setNodeMinMaxSize(
   }
 }
 
+// ============================================
+// Text Measurement (P7.10)
+// ============================================
+
+/** 텍스트 기반 요소 태그 목록 */
+const TEXT_ELEMENT_TAGS = new Set([
+  'Text', 'Heading', 'Label', 'Badge', 'Link',
+  'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'span', 'a'
+]);
+
+/**
+ * 요소가 텍스트 기반인지 확인
+ */
+function isTextElement(element: Element): boolean {
+  return TEXT_ELEMENT_TAGS.has(element.tag);
+}
+
+/**
+ * PixiJS CanvasTextMetrics를 사용하여 텍스트 크기 측정 (v8)
+ */
+function measureTextSize(
+  element: Element,
+  style: CSSStyle | undefined
+): { width: number; height: number } | null {
+  const props = element.props as Record<string, unknown> | undefined;
+  const textContent = String(props?.children || props?.text || props?.label || '');
+
+  if (!textContent) {
+    return null;
+  }
+
+  // PixiJS TextStyle 생성
+  const textStyle = new TextStyle({
+    fontFamily: (style?.fontFamily as string) || 'Arial',
+    fontSize: parseCSSValue(style?.fontSize, 16),
+    fontWeight: (style?.fontWeight as string) || 'normal',
+    fontStyle: (style?.fontStyle as 'normal' | 'italic' | 'oblique') || 'normal',
+    letterSpacing: parseCSSValue(style?.letterSpacing, 0),
+  });
+
+  // CanvasTextMetrics로 크기 측정 (PixiJS v8)
+  const metrics = CanvasTextMetrics.measureText(textContent, textStyle);
+
+  // padding 고려
+  const padding = parsePadding(style);
+  const totalWidth = metrics.width + padding.left + padding.right;
+  const totalHeight = metrics.height + padding.top + padding.bottom;
+
+  return {
+    width: Math.ceil(totalWidth),
+    height: Math.ceil(totalHeight),
+  };
+}
+
 /**
  * CSS flexDirection을 Yoga FlexDirection으로 변환
  */
@@ -311,8 +373,29 @@ function createYogaNode(
   const style = element.props?.style as CSSStyle | undefined;
 
   // 크기 설정 (px 및 % 단위 지원)
-  setNodeSize(node, 'width', style?.width);
-  setNodeSize(node, 'height', style?.height);
+  const hasExplicitWidth = style?.width !== undefined && style.width !== '' && style.width !== 'auto';
+  const hasExplicitHeight = style?.height !== undefined && style.height !== '' && style.height !== 'auto';
+
+  if (hasExplicitWidth) {
+    setNodeSize(node, 'width', style?.width);
+  }
+  if (hasExplicitHeight) {
+    setNodeSize(node, 'height', style?.height);
+  }
+
+  // P7.10: 텍스트 요소의 intrinsic size 측정
+  // 명시적 크기가 없는 텍스트 요소는 콘텐츠 기반으로 크기 계산
+  if (isTextElement(element) && (!hasExplicitWidth || !hasExplicitHeight)) {
+    const measuredSize = measureTextSize(element, style);
+    if (measuredSize) {
+      if (!hasExplicitWidth) {
+        node.setWidth(measuredSize.width);
+      }
+      if (!hasExplicitHeight) {
+        node.setHeight(measuredSize.height);
+      }
+    }
+  }
 
   // Min/Max 크기 (px 및 % 단위 지원)
   setNodeMinMaxSize(node, 'minWidth', style?.minWidth);
