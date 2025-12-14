@@ -239,10 +239,16 @@ function setNodeMinMaxSize(
 // Text Measurement (P7.10)
 // ============================================
 
-/** 텍스트 기반 요소 태그 목록 */
+/** 텍스트 기반 요소 태그 목록 (intrinsic size 측정 대상) */
 const TEXT_ELEMENT_TAGS = new Set([
-  'Text', 'Heading', 'Label', 'Badge', 'Link',
-  'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'span', 'a'
+  // 순수 텍스트 요소
+  'Text', 'Heading', 'Label', 'Badge',
+  'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'span',
+  // 텍스트 포함 인터랙티브 요소
+  'Button', 'Link', 'a',
+  'Tab', 'Tag', 'Breadcrumb',
+  // 폼 요소 (label/placeholder 텍스트)
+  'Checkbox', 'Radio', 'Switch', 'ToggleButton'
 ]);
 
 /**
