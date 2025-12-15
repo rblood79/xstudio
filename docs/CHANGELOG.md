@@ -7,6 +7,185 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added - Zoom ComboBox 컨트롤러 (2025-12-15)
+
+#### 개요
+줌 컨트롤러의 `<span>비율%</span>`을 React Aria ComboBox로 변경하여 프리셋 선택 및 커스텀 입력 지원
+
+#### 변경 내용
+- **ZOOM_PRESETS**: 25%, 50%, 75%, 100%, 125%, 150%, 200%, 300%, 400%, 500%
+- **ComboBox 기능**:
+  - 프리셋 선택 (드롭다운)
+  - 커스텀 값 입력 (숫자 직접 입력)
+  - Enter 키로 적용
+  - Blur 시 자동 적용
+
+**수정된 파일:**
+- `src/builder/workspace/Workspace.tsx` - Zoom ComboBox 구현
+- `src/builder/workspace/Workspace.css` - ComboBox 스타일
+
+---
+
+### Changed - 캔버스 페이지 경계선 개선 (2025-12-15)
+
+#### 개요
+캔버스 페이지 외곽선을 iframe Preview와 동일한 스타일로 통일
+
+#### 변경 내용
+- **선 두께**: 2px → 1px
+- **색상**: 하드코딩 → `--outline-variant` CSS 변수 사용
+- **테마 연동**: MutationObserver로 테마 변경 시 실시간 반영
+
+**신규 함수:**
+- `getOutlineVariantColor()` in `cssVariableReader.ts`
+
+**수정된 파일:**
+- `src/builder/workspace/canvas/BuilderCanvas.tsx` - CanvasBounds 컴포넌트
+- `src/builder/workspace/canvas/utils/cssVariableReader.ts` - 색상 함수 추가
+
+---
+
+### Refactored - 선택 테두리 통합 (SelectionBox) (2025-12-15)
+
+#### 개요
+14개 UI 컴포넌트에서 중복된 선택 테두리 코드를 제거하고 공통 SelectionBox로 통합
+
+#### 문제
+- 각 컴포넌트가 자체 선택 테두리 구현 (스타일 불일치)
+- Button: roundRect, width 2, offset -2
+- SelectionBox: rect, width 1, offset 0
+
+#### 해결
+모든 컴포넌트에서 자체 선택 테두리 코드 제거, SelectionBox 단일 사용
+
+**제거된 코드 (14개 파일):**
+- `PixiButton.tsx` - drawSelection 콜백 및 JSX
+- `PixiFancyButton.tsx` - selection useEffect
+- `PixiInput.tsx` - selection useEffect
+- `PixiList.tsx` - selection useEffect
+- `PixiMaskedFrame.tsx` - selection useEffect
+- `PixiProgressBar.tsx` - selection useEffect
+- `PixiScrollBox.tsx` - selection useEffect
+- `PixiSelect.tsx` - selection useEffect
+- `PixiSlider.tsx` - selection useEffect
+- `PixiSwitcher.tsx` - selection useEffect
+- `PixiCheckbox.tsx` - selection layoutContainer
+- `PixiRadio.tsx` - selection layoutContainer
+- `TextSprite.tsx` - isSelected from drawBackground
+- `ImageSprite.tsx` - isSelected from drawBackground/drawOverlay
+
+---
+
+### Added - Figma 스타일 줌 독립적 UI (2025-12-15)
+
+#### 개요
+Figma처럼 줌에 관계없이 선택 박스, 핸들, 라쏘, 경계선이 화면상 일정한 크기 유지
+
+#### 문제
+- 줌 200%: 선택 테두리가 2px로 보임 (두꺼움)
+- 줌 50%: 선택 테두리가 0.5px로 보임 (희미함)
+- Transform 핸들도 줌에 따라 크기 변동
+
+#### 해결
+역-스케일링 방식 적용 (`1/zoom`)
+
+```typescript
+// 줌 200%일 때: 캔버스 단위 0.5px → 화면상 1px
+// 줌 50%일 때: 캔버스 단위 2px → 화면상 1px
+const strokeWidth = 1 / zoom;
+
+// 핸들 크기도 동일하게 적용
+const adjustedSize = HANDLE_SIZE / zoom;  // HANDLE_SIZE = 6px
+```
+
+#### pixelLine vs 역-스케일링
+
+| 방식 | 장점 | 단점 |
+|------|------|------|
+| **pixelLine** (v8.6.0+) | 내장 옵션 | 모든 상황에서 완벽하지 않음 |
+| **역-스케일링** | 수학적 정확, 핸들 크기에도 적용 가능 | 수동 계산 필요 |
+
+→ 역-스케일링 방식 채택
+
+**적용 대상:**
+| 요소 | 줌 50% | 줌 100% | 줌 200% |
+|------|--------|---------|---------|
+| 선택 테두리 | 1px | 1px | 1px |
+| Transform 핸들 | 6px | 6px | 6px |
+| 라쏘 테두리 | 1px | 1px | 1px |
+| 페이지 경계 | 1px | 1px | 1px |
+
+**수정된 파일:**
+- `src/builder/workspace/canvas/selection/SelectionLayer.tsx` - zoom prop 추가
+- `src/builder/workspace/canvas/selection/SelectionBox.tsx` - zoom prop, strokeWidth 계산
+- `src/builder/workspace/canvas/selection/TransformHandle.tsx` - zoom prop, adjustedSize 계산
+- `src/builder/workspace/canvas/selection/LassoSelection.tsx` - zoom prop, strokeWidth 계산
+- `src/builder/workspace/canvas/BuilderCanvas.tsx` - CanvasBounds, SelectionLayer에 zoom 전달
+
+---
+
+### Refactored - PixiCheckbox Graphics 기반 (2025-12-15)
+
+#### 개요
+`@pixi/layout` 기반에서 Graphics 직접 렌더링으로 변경
+
+#### 문제
+- `layoutContainer`의 `borderWidth`, `borderColor` 등 CSS 속성이 제대로 렌더링되지 않음
+- 체크박스가 사각형만 보이고 체크마크가 표시되지 않음
+
+#### 해결
+Graphics로 직접 그리기 (PixiButton 패턴 적용)
+
+```typescript
+// 체크마크 - 선으로 직접 그리기
+g.setStrokeStyle({ width: 2.5, color: 0xffffff, cap: 'round', join: 'round' });
+g.moveTo(checkStartX, checkStartY);
+g.lineTo(checkMidX, checkMidY);
+g.lineTo(checkEndX, checkEndY);
+g.stroke();
+```
+
+**개선사항:**
+- 체크마크를 "✓" 텍스트 대신 선으로 직접 그리기 (더 선명)
+- 테두리, 배경색, 체크마크 모두 Graphics로 렌더링
+- 라벨 텍스트는 pixiText 사용
+
+**수정된 파일:**
+- `src/builder/workspace/canvas/ui/PixiCheckbox.tsx` - 전체 리팩토링
+
+---
+
+### Refactored - PixiRadio Graphics 기반 (2025-12-15)
+
+#### 개요
+`@pixi/layout` 기반에서 Graphics 직접 렌더링으로 변경
+
+#### 문제
+- `props.options` 배열이 없으면 아무것도 렌더링되지 않음
+- `layoutContainer` 렌더링 이슈
+
+#### 해결
+Graphics로 직접 그리기 + 기본 옵션 추가
+
+```typescript
+// 기본 옵션 (options가 없을 때 placeholder)
+const DEFAULT_OPTIONS: RadioOption[] = [
+  { value: 'option1', label: 'Option 1' },
+  { value: 'option2', label: 'Option 2' },
+];
+```
+
+**개선사항:**
+- Graphics로 라디오 원 직접 그리기
+- 선택 시 내부 dot 표시
+- RadioItem 서브컴포넌트로 분리 (메모이제이션 최적화)
+- 기본 옵션으로 항상 무언가 표시됨
+
+**수정된 파일:**
+- `src/builder/workspace/canvas/ui/PixiRadio.tsx` - 전체 리팩토링
+
+---
+
 ### Added - WebGL Canvas 텍스트 선명도 개선 (2025-12-15)
 
 #### 개요

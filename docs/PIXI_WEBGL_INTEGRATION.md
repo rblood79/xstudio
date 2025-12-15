@@ -29,10 +29,10 @@ src/builder/workspace/canvas/
 │   ├── FlexLayout.tsx      # @pixi/layout Flexbox
 │   ├── GridLayout.tsx      # 커스텀 CSS Grid
 │   └── index.ts
-├── ui/                     # UI 컴포넌트 래퍼
-│   ├── PixiButton.tsx      # @pixi/ui Button
-│   ├── PixiCheckbox.tsx    # @pixi/ui CheckBox
-│   ├── PixiRadio.tsx       # @pixi/ui RadioGroup
+├── ui/                     # UI 컴포넌트 (Graphics 기반)
+│   ├── PixiButton.tsx      # FancyButton + 투명 히트 영역
+│   ├── PixiCheckbox.tsx    # Graphics 직접 그리기
+│   ├── PixiRadio.tsx       # Graphics 직접 그리기
 │   └── index.ts
 ├── sprites/                # 스프라이트 렌더러
 │   ├── ElementSprite.tsx   # 메인 디스패처
@@ -136,18 +136,20 @@ const areas = parseGridTemplateAreas('"header header" "sidebar main"');
 
 ### B2.4 PixiUI 컴포넌트
 
-@pixi/ui 래퍼 컴포넌트:
+Graphics 기반 UI 컴포넌트 (순수 PixiJS 렌더링):
+
+> **Note**: 초기에는 @pixi/ui를 사용했으나, 렌더링 문제(Checkbox 체크마크 미표시, RadioGroup 빈 화면)로 인해 순수 PixiJS Graphics 기반으로 리팩토링되었습니다. (2025-12-15)
 
 ```tsx
 import { PixiButton, PixiCheckbox, PixiRadio } from './ui';
 
-// Button
+// Button - FancyButton 기반 + 투명 히트 영역
 <PixiButton element={buttonElement} onClick={handleClick} />
 
-// Checkbox
+// Checkbox - Graphics 기반 (roundRect + 체크마크 path)
 <PixiCheckbox element={checkboxElement} onChange={handleChange} />
 
-// RadioGroup
+// RadioGroup - Graphics 기반 (circle + dot)
 <PixiRadio element={radioGroupElement} onChange={handleChange} />
 ```
 
@@ -155,6 +157,11 @@ import { PixiButton, PixiCheckbox, PixiRadio } from './ui';
 - Button: `Button`, `FancyButton`, `SubmitButton`
 - Checkbox: `Checkbox`, `CheckBox`, `Switch`, `Toggle`
 - Radio: `RadioGroup`, `Radio`
+
+**렌더링 패턴:**
+- **PixiButton**: @pixi/ui FancyButton + 투명 히트 영역 (modifier 키 지원)
+- **PixiCheckbox**: Graphics 직접 그리기 (roundRect, lineTo for checkmark)
+- **PixiRadio**: Graphics 직접 그리기 (circle, dot) + DEFAULT_OPTIONS placeholder
 
 ### B2.5 ElementSprite 확장
 
@@ -391,11 +398,15 @@ function getButtonLayout(style, buttonProps, buttonText, variantColors) {
 
 ---
 
-## Phase 12: 안정화 (B3.1~B3.3)
+## Phase 12: 안정화 (B3.1~B3.4)
 
 - **B3.1 레이아웃 가드/캐싱**: `layoutCalculator`에 `MAX_LAYOUT_DEPTH`와 `visited` 감시를 추가해 순환 트리로 인한 무한 재귀를 차단하고, 페이지 단위 레이아웃을 한 번만 계산해 Selection/Elements 레이어에서 공유.
 - **B3.2 선택/정렬 최적화**: Element 정렬 시 깊이 맵을 메모이즈해 O(n²) 탐색 제거, SelectionLayer가 전달된 레이아웃을 그대로 사용하도록 통합.
 - **B3.3 팬/줌 인터랙션 성능**: 팬 드래그를 `requestAnimationFrame`으로 스로틀링하고 드래그 종료 시 플러시하여 상태 업데이트 폭주를 방지. 휠 줌 로그 스팸 제거.
+- **B3.4 Figma-style Zoom-Independent UI** (2025-12-15):
+  - Selection Box, Transform Handle, Lasso Selection, Canvas Bounds가 zoom에 관계없이 화면상 동일한 크기 유지
+  - Inverse-scaling 기법: `strokeWidth = 1 / zoom`, `handleSize = HANDLE_SIZE / zoom`
+  - 14개 컴포넌트에서 개별 선택 테두리 코드 제거, SelectionBox 공통 컴포넌트로 통합
 
 > 메소드 선택: 팬을 드래그 종료 시점에만 동기화하는 방식은 FPS는 높지만 드래그 중 상태 의존 UI(선택 박스 등)와 어긋날 수 있어, rAF 스로틀로 프레임당 업데이트를 유지하는 방식을 채택했습니다.
 
@@ -706,6 +717,266 @@ class ViewportController {
   showHandles={isSingleSelection}        // 컨테이너도 핸들 표시
   enableMoveArea={!isContainerSelected}  // 컨테이너는 이동 영역 비활성화
 />
+```
+
+## Figma-style Zoom-Independent UI (2025-12-15)
+
+### 개요
+
+Figma처럼 줌 레벨에 관계없이 Selection Box, Transform Handle, Lasso Selection, Canvas Bounds가 화면상 동일한 크기를 유지합니다.
+
+### Inverse-Scaling 기법
+
+```typescript
+// zoom 레벨의 역수를 사용하여 화면상 일정한 크기 유지
+const strokeWidth = 1 / zoom;      // 화면상 항상 1px
+const handleSize = 8 / zoom;       // 화면상 항상 8px
+```
+
+### 적용 컴포넌트
+
+#### SelectionBox.tsx
+
+```typescript
+export const SelectionBox = memo(function SelectionBox({
+  bounds,
+  zoom = 1,
+  // ...
+}: SelectionBoxProps) {
+  // 줌에 독립적인 선 두께 (화면상 항상 1px)
+  const strokeWidth = 1 / zoom;
+
+  const drawBorder = useCallback((g: PixiGraphics) => {
+    g.clear();
+    g.setStrokeStyle({ width: strokeWidth, color: SELECTION_COLOR, alpha: 1 });
+    g.rect(0, 0, width, height);
+    g.stroke();
+  }, [width, height, strokeWidth]);
+
+  // TransformHandle에 zoom 전달
+  return (
+    <>
+      <pixiGraphics draw={drawBorder} />
+      {showHandles && HANDLES.map((config) => (
+        <TransformHandle key={config.position} zoom={zoom} ... />
+      ))}
+    </>
+  );
+});
+```
+
+#### TransformHandle.tsx
+
+```typescript
+const HANDLE_SIZE = 8;
+
+export const TransformHandle = memo(function TransformHandle({
+  config,
+  boundsX, boundsY, boundsWidth, boundsHeight,
+  zoom = 1,
+  // ...
+}: TransformHandleProps) {
+  // 줌에 독립적인 핸들 크기 (화면상 항상 8px)
+  const adjustedSize = HANDLE_SIZE / zoom;
+  const strokeWidth = 1 / zoom;
+
+  // 핸들 위치 계산 (조정된 크기 기준)
+  const handleX = boundsX + boundsWidth * config.relativeX - adjustedSize / 2;
+  const handleY = boundsY + boundsHeight * config.relativeY - adjustedSize / 2;
+
+  const draw = useCallback((g: PixiGraphics) => {
+    g.clear();
+    g.rect(0, 0, adjustedSize, adjustedSize);
+    g.fill({ color: HANDLE_FILL_COLOR, alpha: 1 });
+    g.setStrokeStyle({ width: strokeWidth, color: HANDLE_STROKE_COLOR, alpha: 1 });
+    g.rect(0, 0, adjustedSize, adjustedSize);
+    g.stroke();
+  }, [adjustedSize, strokeWidth]);
+});
+```
+
+#### LassoSelection.tsx
+
+```typescript
+export const LassoSelection = memo(function LassoSelection({
+  start, current, zoom = 1,
+}: LassoSelectionProps) {
+  const strokeWidth = 1 / zoom;
+
+  const draw = useCallback((g: PixiGraphics) => {
+    g.clear();
+    g.fill({ color: LASSO_COLOR, alpha: LASSO_FILL_ALPHA });
+    g.rect(rect.x, rect.y, rect.width, rect.height);
+    g.fill();
+    g.setStrokeStyle({ width: strokeWidth, color: LASSO_COLOR, alpha: 0.8 });
+    g.rect(rect.x, rect.y, rect.width, rect.height);
+    g.stroke();
+  }, [rect, strokeWidth]);
+});
+```
+
+#### CanvasBounds (BuilderCanvas.tsx)
+
+```typescript
+function CanvasBounds({ width, height, zoom = 1 }) {
+  useThemeColors();  // 테마 변경 감지
+  const strokeWidth = 1 / zoom;
+
+  const draw = useCallback((g: PixiGraphics) => {
+    g.clear();
+    const outlineColor = getOutlineVariantColor();  // CSS 변수 --outline-variant
+    g.setStrokeStyle({ width: strokeWidth, color: outlineColor });
+    g.rect(0, 0, w, h);
+    g.stroke();
+  }, [w, h, strokeWidth]);
+}
+```
+
+### zoom prop 전달 체인
+
+```
+BuilderCanvas
+├── CanvasBounds       zoom={zoom}
+└── SelectionLayer     zoom={zoom}
+    ├── SelectionBox   zoom={zoom}
+    │   └── TransformHandle  zoom={zoom}
+    └── LassoSelection zoom={zoom}
+```
+
+### 선택 테두리 통합 (14개 컴포넌트)
+
+기존에 각 UI 컴포넌트(PixiButton, BoxSprite, TextSprite 등)에서 개별적으로 그리던 선택 테두리를 제거하고 SelectionBox 공통 컴포넌트로 통합했습니다.
+
+**제거된 선택 테두리 코드 컴포넌트:**
+- BoxSprite.tsx
+- TextSprite.tsx
+- ImageSprite.tsx
+- PixiButton.tsx
+- PixiCheckbox.tsx
+- PixiRadio.tsx
+- PixiInput.tsx
+- PixiSlider.tsx
+- PixiSwitch.tsx
+- PixiProgressBar.tsx
+- PixiMeter.tsx
+- PixiLink.tsx
+- PixiTabs.tsx
+- PixiToggleButton.tsx
+
+## Graphics 기반 UI 컴포넌트 리팩토링 (2025-12-15)
+
+### 배경
+
+@pixi/ui 및 @pixi/layout 기반 컴포넌트에서 렌더링 문제가 발생:
+- **Checkbox**: 사각형만 표시되고 체크마크가 안 보임
+- **RadioGroup**: 아무것도 표시되지 않음 (빈 화면)
+
+### 해결책
+
+PixiButton과 동일한 패턴으로 순수 PixiJS Graphics를 사용하여 직접 그리는 방식으로 리팩토링.
+
+### PixiCheckbox (Graphics 기반)
+
+```typescript
+export const PixiCheckbox = memo(function PixiCheckbox({
+  element, isSelected, onChange, onClick,
+}: PixiCheckboxProps) {
+  const drawBox = useCallback((g: PixiGraphics) => {
+    g.clear();
+
+    // 배경 (둥근 사각형)
+    g.roundRect(0, 0, boxSize, boxSize, borderRadius);
+    g.fill({ color: backgroundColor, alpha: 1 });
+
+    // 테두리
+    g.roundRect(0, 0, boxSize, boxSize, borderRadius);
+    g.stroke({ width: 2, color: borderColor, alpha: 1 });
+
+    // 체크마크 (체크된 경우)
+    if (isChecked) {
+      const checkPadding = boxSize * 0.2;
+      const checkStartX = checkPadding;
+      const checkStartY = boxSize * 0.5;
+      const checkMidX = boxSize * 0.4;
+      const checkMidY = boxSize - checkPadding;
+      const checkEndX = boxSize - checkPadding;
+      const checkEndY = checkPadding;
+
+      g.setStrokeStyle({ width: 2.5, color: 0xffffff, cap: 'round', join: 'round' });
+      g.moveTo(checkStartX, checkStartY);
+      g.lineTo(checkMidX, checkMidY);
+      g.lineTo(checkEndX, checkEndY);
+      g.stroke();
+    }
+  }, [boxSize, borderRadius, backgroundColor, borderColor, isChecked]);
+
+  return (
+    <pixiContainer x={posX} y={posY}>
+      <pixiGraphics draw={drawBox} eventMode="static" cursor="pointer" onPointerDown={handlePointerDown} />
+      {labelText && (
+        <pixiText text={labelText} style={textStyle} x={boxSize + 8} y={(boxSize - fontSize) / 2} />
+      )}
+    </pixiContainer>
+  );
+});
+```
+
+### PixiRadio (Graphics 기반)
+
+```typescript
+// 기본 옵션 (options가 없을 때 placeholder로 표시)
+const DEFAULT_OPTIONS: RadioOption[] = [
+  { value: 'option1', label: 'Option 1' },
+  { value: 'option2', label: 'Option 2' },
+];
+
+const RadioItem = memo(function RadioItem({
+  option, isOptionSelected, x, y, radioSize, primaryColor, textColor, fontSize, fontFamily, onSelect,
+}: RadioItemProps) {
+  const drawRadio = useCallback((g: PixiGraphics) => {
+    g.clear();
+    const radius = radioSize / 2;
+    const centerX = radius;
+    const centerY = radius;
+
+    // 외부 원 (배경)
+    g.circle(centerX, centerY, radius);
+    g.fill({ color: backgroundColor, alpha: 1 });
+
+    // 테두리
+    g.circle(centerX, centerY, radius);
+    g.stroke({ width: 2, color: borderColor, alpha: 1 });
+
+    // 내부 dot (선택된 경우)
+    if (isOptionSelected) {
+      const dotRadius = radioSize * 0.2;
+      g.circle(centerX, centerY, dotRadius);
+      g.fill({ color: 0xffffff, alpha: 1 });
+    }
+  }, [radioSize, backgroundColor, borderColor, isOptionSelected]);
+
+  return (
+    <pixiContainer x={x} y={y}>
+      <pixiGraphics draw={drawRadio} eventMode="static" cursor="pointer" onPointerDown={handlePointerDown} />
+      <pixiText text={option.label} style={textStyle} x={radioSize + LABEL_GAP} y={(radioSize - fontSize) / 2} />
+    </pixiContainer>
+  );
+});
+```
+
+### cssVariableReader.ts 확장
+
+Canvas 페이지 테두리용 `--outline-variant` CSS 변수 읽기 함수 추가:
+
+```typescript
+// src/builder/workspace/canvas/sprites/cssVariableReader.ts
+
+const FALLBACK_OUTLINE_VARIANT = 0xcad4de;  // --outline-variant 기본값
+
+export function getOutlineVariantColor(): number {
+  const value = getCSSVariable('--outline-variant');
+  return cssColorToHex(value, FALLBACK_OUTLINE_VARIANT);
+}
 ```
 
 ## 성능 최적화
