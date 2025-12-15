@@ -135,8 +135,14 @@ const MATRIX_INSTANCE_VERTEX = `
   uniform vec2 targetSize;
   uniform float screenHeight;
   uniform float depthSpeedMultiplier;
+  uniform float mouseWorldX;
   uniform float mouseWorldY;
   uniform float mouseActive;
+
+  // 회피 상수 (범위 1/2로 축소)
+  const float AVOID_RADIUS = 18.0;      // 회피 시작 반경
+  const float AVOID_STRENGTH = 15.0;    // 최대 밀림 거리
+  const float RETURN_DISTANCE = 30.0;   // 복귀 시작 거리
 
   varying vec2 vUv;
   varying float vBrightness;
@@ -194,12 +200,47 @@ const MATRIX_INSTANCE_VERTEX = `
     // 깊이에 따른 스케일 (원근감)
     float depthScale = 1.0 - instanceDepth * 0.4;
 
-    // 마우스 Y 위치 근처 문자 크기 2배 (hover 시에만)
-    float mouseProximity = 1.0 - smoothstep(0.0, 15.0, abs(pos.y - mouseWorldY));
-    float mouseSizeMultiplier = 1.0 + mouseProximity * mouseActive * 1.0; // 최대 2배
+    // ========== 마우스 회피 효과 ==========
+    // 마우스와의 거리 계산
+    float distToMouseX = pos.x - mouseWorldX;
+    float distToMouseY = pos.y - mouseWorldY;
+    float distToMouse = length(vec2(distToMouseX, distToMouseY));
 
-    // 랜덤 크기 적용 + 마우스 효과
-    float finalSize = instanceSize * depthScale * mouseSizeMultiplier;
+    // 회피 효과 계산 (마우스 활성화 시에만)
+    float avoidOffset = 0.0;
+    if (mouseActive > 0.5) {
+      // X 방향 회피 강도 (마우스에 가까울수록 강함)
+      float xProximity = 1.0 - smoothstep(0.0, AVOID_RADIUS, abs(distToMouseX));
+
+      // Y 위치에 따른 회피 강도 조절
+      float yFactor = 0.0;
+      if (distToMouseY > 0.0) {
+        // 마우스 위: 접근하면서 회피 시작 (부드럽게)
+        yFactor = smoothstep(AVOID_RADIUS * 2.0, 0.0, distToMouseY);
+      } else {
+        // 마우스 아래: 점진적 복귀
+        yFactor = smoothstep(-RETURN_DISTANCE, 0.0, distToMouseY);
+      }
+
+      // 밀림 방향 결정 (마우스 반대 방향)
+      float pushDir = sign(distToMouseX);
+      // 마우스 바로 위/아래면 인스턴스 ID 기반 방향
+      if (abs(distToMouseX) < 3.0) {
+        pushDir = (mod(float(gl_InstanceID), 2.0) * 2.0 - 1.0);
+      }
+
+      // 최종 회피량 계산
+      avoidOffset = pushDir * xProximity * yFactor * AVOID_STRENGTH;
+    }
+
+    // 회피 오프셋 적용
+    pos.x += avoidOffset;
+
+    // 마우스 근처 문자 밝기 증가 효과 (회피 중인 문자)
+    float mouseGlow = smoothstep(AVOID_RADIUS * 1.5, 0.0, distToMouse) * mouseActive * 0.3;
+
+    // 랜덤 크기 적용 (마우스 크기 효과 제거, 회피로 대체)
+    float finalSize = instanceSize * depthScale;
 
     // 스폰된 이후 경과 시간 기반 밝기 계산
     // 방금 스폰됨 = 1.0 (머리, 가장 밝음)
@@ -213,6 +254,9 @@ const MATRIX_INSTANCE_VERTEX = `
 
     // 충돌/회오리 시 더 밝게
     vBrightness += vCollision * 0.5;
+
+    // 마우스 근처 회피 중인 문자 밝기 증가
+    vBrightness += mouseGlow;
 
     // 인스턴스 위치에 로컬 버텍스 추가 (랜덤 크기 적용)
     vec3 transformed = position * finalSize + pos;
@@ -539,6 +583,7 @@ export function MatrixRainCanvas({
         targetSize: { value: new THREE.Vector2(textureSize, textureSize) },
         screenHeight: { value: frustumHeight },
         depthSpeedMultiplier: { value: DEPTH_SPEED_MULTIPLIER },
+        mouseWorldX: { value: 0 },
         mouseWorldY: { value: 0 },
         mouseActive: { value: 0 },
       },
@@ -589,14 +634,20 @@ export function MatrixRainCanvas({
       charChangeTimers[i] = Math.random() * 30;
     }
 
-    // 마우스 위치 추적
+    // 마우스 위치 추적 (lerp를 위한 타겟과 현재값 분리)
+    let mouseTargetX = 0;
+    let mouseTargetY = 0;
+    let mouseWorldX = 0;
     let mouseWorldY = 0;
     let mouseActive = 0;
+    const MOUSE_LERP_SPEED = 0.08; // lerp 속도 (낮을수록 부드러움)
 
     const handleMouseMove = (e: MouseEvent) => {
-      // 화면 좌표를 월드 좌표로 변환
+      // 화면 좌표를 월드 좌표로 변환 (타겟 위치로 저장)
+      const ndcX = (e.clientX / window.innerWidth) * 2 - 1;
       const ndcY = -((e.clientY / window.innerHeight) * 2 - 1);
-      mouseWorldY = ndcY * halfHeight;
+      mouseTargetX = ndcX * halfWidth;
+      mouseTargetY = ndcY * halfHeight;
       mouseActive = 1;
     };
 
@@ -612,7 +663,12 @@ export function MatrixRainCanvas({
       const time = clock.getElapsedTime();
       material.uniforms.time.value = time;
 
+      // 마우스 위치 lerp 적용 (부드러운 추적)
+      mouseWorldX += (mouseTargetX - mouseWorldX) * MOUSE_LERP_SPEED;
+      mouseWorldY += (mouseTargetY - mouseWorldY) * MOUSE_LERP_SPEED;
+
       // 마우스 위치 uniform 업데이트
+      material.uniforms.mouseWorldX.value = mouseWorldX;
       material.uniforms.mouseWorldY.value = mouseWorldY;
       material.uniforms.mouseActive.value = mouseActive;
 

@@ -7,6 +7,79 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added - WebGL Canvas 텍스트 선명도 개선 (2025-12-15)
+
+#### 개요
+Figma와 유사하게 줌 레벨에 따라 텍스트를 재래스터라이즈하여 선명도 개선
+
+#### 문제
+- PixiJS Canvas 텍스트가 Figma 대비 흐릿하게 렌더링됨
+- 줌 인 시 텍스트가 스케일되어 픽셀화 발생
+- `roundPixels`, `resolution` 설정만으로는 부족
+
+#### 해결 (다층 접근)
+
+**1. Application 설정 개선**
+```typescript
+<Application
+  resolution={Math.max(window.devicePixelRatio || 1, 2)}  // 최소 2배
+  roundPixels={true}  // 서브픽셀 흐림 방지
+  // ...
+/>
+```
+
+**2. 동적 폰트 크기 조절 (Figma 방식)**
+```typescript
+// useCrispText.ts - 줌 레벨에 따른 해상도 배율
+function calculateMultiplier(zoom: number): number {
+  if (zoom <= 1) return 1;
+  if (zoom <= 2) return 2;
+  if (zoom <= 3) return 3;
+  return 4; // 최대 4x
+}
+
+// TextSprite/PixiButton에서 사용
+const { textScale, multiplier } = useCrispText(baseFontSize);
+
+// fontSize를 높이고, scale을 낮춰 시각적 크기 유지
+const scaledFontSize = baseFontSize * multiplier;
+textView.scale.set(textScale); // 1 / multiplier
+```
+
+#### 동작 원리
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    동적 폰트 크기 조절                        │
+├─────────────────────────────────────────────────────────────┤
+│  줌 1x: fontSize 16px × 1 = 16px, scale 1.0                 │
+│  줌 2x: fontSize 16px × 2 = 32px, scale 0.5                 │
+│  줌 3x: fontSize 16px × 3 = 48px, scale 0.33                │
+├─────────────────────────────────────────────────────────────┤
+│  결과: 텍스트가 항상 현재 줌에 맞는 해상도로 렌더링            │
+│  → 확대해도 픽셀화 없이 선명함                               │
+└─────────────────────────────────────────────────────────────┘
+```
+
+#### PixiJS 공식 권장 사항 준수
+
+| 권장 | 적용 |
+|------|------|
+| `roundPixels={true}` | ✅ |
+| `resolution` 2배 이상 | ✅ |
+| 스케일 업 금지, fontSize 조절 | ✅ |
+| BitmapText + SDF | 미적용 (필요시 추가 가능) |
+
+**신규 파일:**
+- `src/builder/workspace/canvas/hooks/useCrispText.ts`
+
+**수정된 파일:**
+- `src/builder/workspace/canvas/BuilderCanvas.tsx` - resolution, roundPixels 설정
+- `src/builder/workspace/canvas/sprites/TextSprite.tsx` - 동적 폰트 크기
+- `src/builder/workspace/canvas/ui/PixiButton.tsx` - 동적 폰트 크기
+
+---
+
 ### Added - WebGL Canvas 동적 테마 색상 지원 (2025-12-15)
 
 #### 개요

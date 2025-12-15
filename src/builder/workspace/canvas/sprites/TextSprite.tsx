@@ -3,16 +3,19 @@
  *
  * 🚀 Phase 10 B1.2: Text, Heading, Label 텍스트 스프라이트
  * 🚀 P7.7: textDecoration (underline, line-through, overline) 지원
+ * 🚀 P13: 줌 레벨 기반 동적 폰트 크기 조절 (선명도 개선)
  *
  * @since 2025-12-11 Phase 10 B1.2
  * @updated 2025-12-13 P7.7 - textDecoration 속성 지원
+ * @updated 2025-12-15 P13 - 동적 폰트 크기 조절로 선명도 개선
  */
 
-import { useCallback, useMemo, useRef } from 'react';
-import { Graphics as PixiGraphics, TextStyle, Text } from 'pixi.js';
+import { useCallback, useMemo, useRef, useEffect } from 'react';
+import { Graphics as PixiGraphics, TextStyle, Text, Container } from 'pixi.js';
 import type { Element } from '../../../../types/core/store.types';
 import { convertStyle, applyTextTransform, type CSSStyle } from './styleConverter';
 import { parsePadding } from './paddingUtils';
+import { useCrispText, scaledTextStyle } from '../hooks/useCrispText';
 
 // ============================================
 // Types
@@ -92,36 +95,58 @@ export function TextSprite({
 
   // Text ref for measuring bounds
   const textRef = useRef<Text | null>(null);
+  // P13: Text container ref for scale application
+  const textContainerRef = useRef<Container | null>(null);
 
-  // PixiJS TextStyle (P7.2-P7.4 extended)
-  const pixiTextStyle = useMemo(
-    () =>
-      new TextStyle({
-        fontFamily: textStyle.fontFamily,
+  // P13: 줌 레벨 기반 동적 폰트 크기 (선명도 개선)
+  const { textScale, multiplier } = useCrispText(textStyle.fontSize);
+
+  // P13: 명령형으로 scale 적용 (props보다 안정적)
+  useEffect(() => {
+    if (textContainerRef.current) {
+      textContainerRef.current.scale.set(textScale);
+    }
+  }, [textScale]);
+
+  // PixiJS TextStyle (P7.2-P7.4 extended, P13 crisp text)
+  const pixiTextStyle = useMemo(() => {
+    // P13: 줌에 따른 스케일 적용
+    const scaled = scaledTextStyle(
+      {
         fontSize: textStyle.fontSize,
-        fontWeight: textStyle.fontWeight as 'normal' | 'bold',
-        fontStyle: textStyle.fontStyle, // P7.2: italic, oblique
-        fill: textStyle.fill,
-        align: textStyle.align,
-        letterSpacing: textStyle.letterSpacing, // P7.3
-        leading: textStyle.leading, // P7.4: line height
-        wordWrap: textStyle.wordWrap,
+        letterSpacing: textStyle.letterSpacing,
+        leading: textStyle.leading,
         wordWrapWidth: textStyle.wordWrapWidth || transform.width,
-      }),
-    [textStyle, transform.width]
-  );
+      },
+      multiplier
+    );
 
-  // P7.7: Draw text decoration lines
+    return new TextStyle({
+      fontFamily: textStyle.fontFamily,
+      fontSize: scaled.fontSize,
+      fontWeight: textStyle.fontWeight as 'normal' | 'bold',
+      fontStyle: textStyle.fontStyle, // P7.2: italic, oblique
+      fill: textStyle.fill,
+      align: textStyle.align,
+      letterSpacing: scaled.letterSpacing, // P7.3
+      leading: scaled.leading, // P7.4: line height
+      wordWrap: textStyle.wordWrap,
+      wordWrapWidth: scaled.wordWrapWidth,
+    });
+  }, [textStyle, transform.width, multiplier]);
+
+  // P7.7: Draw text decoration lines (P13: 스케일 적용)
   const drawTextDecoration = useCallback(
     (g: PixiGraphics) => {
       g.clear();
 
       if (!hasDecoration || !textRef.current) return;
 
+      // P13: getBounds()는 scale 적용 후 크기 반환, 원본 크기로 변환 필요
       const textBounds = textRef.current.getBounds();
       const textWidth = textBounds.width;
       const textHeight = textBounds.height;
-      const fontSize = textStyle.fontSize;
+      const fontSize = textStyle.fontSize; // 원본 폰트 크기 사용
       const lineColor = textStyle.fill; // Use text color
       const lineThickness = Math.max(1, Math.floor(fontSize / 12)); // Proportional to font size
 
@@ -248,22 +273,23 @@ export function TextSprite({
       />
 
       {/* Text with ref for decoration measurement */}
-      <pixiText
-        ref={textRefCallback}
-        text={textContent}
-        style={pixiTextStyle}
+      {/* P13: Container로 감싸서 scale 적용 (선명도 향상) - 명령형 적용 */}
+      <pixiContainer
+        ref={(c: Container | null) => { textContainerRef.current = c; }}
         x={padding.left}
         y={padding.top}
-      />
-
-      {/* P7.7: Text decoration lines (underline, line-through, overline) */}
-      {hasDecoration && (
-        <pixiGraphics
-          draw={drawTextDecoration}
-          x={padding.left}
-          y={padding.top}
+      >
+        <pixiText
+          ref={textRefCallback}
+          text={textContent}
+          style={pixiTextStyle}
         />
-      )}
+
+        {/* P7.7: Text decoration lines (underline, line-through, overline) */}
+        {hasDecoration && (
+          <pixiGraphics draw={drawTextDecoration} />
+        )}
+      </pixiContainer>
     </pixiContainer>
   );
 }
