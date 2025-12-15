@@ -15,6 +15,7 @@ import { Graphics as PixiGraphics, TextStyle } from 'pixi.js';
 import type { Element } from '../../../../types/core/store.types';
 import type { CSSStyle } from '../sprites/styleConverter';
 import { cssColorToHex, parseCSSSize } from '../sprites/styleConverter';
+import { drawBox } from '../utils';
 
 // ============================================
 // Types
@@ -61,7 +62,22 @@ export const PixiCheckbox = memo(function PixiCheckbox({
   }, [props]);
 
   // 스타일 계산
-  const boxSize = parseCSSSize(style?.width, undefined, DEFAULT_SIZE);
+  // 체크박스 박스 크기는 props.size 또는 DEFAULT_SIZE (width는 전체 컴포넌트 영역)
+  const boxSize = useMemo(() => {
+    // size prop이 있으면 사용, 아니면 기본값
+    if (props?.size) {
+      const size = String(props.size);
+      // sm, md, lg 등의 프리셋 지원
+      if (size === 'sm') return 16;
+      if (size === 'md') return 20;
+      if (size === 'lg') return 24;
+      // 숫자값이면 파싱
+      const parsed = parseInt(size, 10);
+      if (!isNaN(parsed)) return parsed;
+    }
+    return DEFAULT_SIZE;
+  }, [props?.size]);
+
   const borderRadius = parseCSSSize(style?.borderRadius, undefined, DEFAULT_BORDER_RADIUS);
   const primaryColor = cssColorToHex(style?.backgroundColor, DEFAULT_PRIMARY_COLOR);
   const borderColor = isChecked ? primaryColor : DEFAULT_BORDER_COLOR;
@@ -74,17 +90,24 @@ export const PixiCheckbox = memo(function PixiCheckbox({
   const posY = parseCSSSize(style?.top, undefined, 0);
 
   // 체크박스 박스 그리기
-  const drawBox = useCallback(
+  // 🚀 Border-Box v2: drawBox 유틸리티 사용
+  const drawCheckboxBox = useCallback(
     (g: PixiGraphics) => {
-      g.clear();
-
-      // 배경
-      g.roundRect(0, 0, boxSize, boxSize, borderRadius);
-      g.fill({ color: backgroundColor, alpha: 1 });
-
-      // 테두리
-      g.roundRect(0, 0, boxSize, boxSize, borderRadius);
-      g.stroke({ width: 2, color: borderColor, alpha: 1 });
+      // Border-Box v2: drawBox 유틸리티로 배경 + 테두리 그리기
+      drawBox(g, {
+        width: boxSize,
+        height: boxSize,
+        backgroundColor,
+        backgroundAlpha: 1,
+        borderRadius,
+        border: {
+          width: 2,
+          color: borderColor,
+          alpha: 1,
+          style: 'solid',
+          radius: borderRadius,
+        },
+      });
 
       // 체크마크 (체크된 경우)
       if (isChecked) {
@@ -123,26 +146,51 @@ export const PixiCheckbox = memo(function PixiCheckbox({
     onChange?.(element.id, !isChecked);
   }, [element.id, onClick, onChange, isChecked]);
 
+  // 전체 히트 영역 (박스 + gap + 텍스트 영역)
+  // 텍스트 너비는 대략 fontSize * 글자수로 추정, 최소 50px 확보
+  const estimatedTextWidth = labelText ? Math.max(labelText.length * fontSize * 0.6, 50) : 0;
+  const hitAreaWidth = boxSize + (labelText ? 8 + estimatedTextWidth : 0);
+  const hitAreaHeight = Math.max(boxSize, fontSize + 4);
+
+  // 수직 중앙 정렬을 위한 오프셋
+  const boxOffsetY = (hitAreaHeight - boxSize) / 2;
+  const textOffsetY = (hitAreaHeight - fontSize) / 2;
+
+  // 투명 히트 영역 그리기
+  const drawHitArea = useCallback(
+    (g: PixiGraphics) => {
+      g.clear();
+      g.rect(0, 0, hitAreaWidth, hitAreaHeight);
+      g.fill({ color: 0xffffff, alpha: 0 }); // 완전 투명
+    },
+    [hitAreaWidth, hitAreaHeight]
+  );
+
   return (
     <pixiContainer x={posX} y={posY}>
-      {/* 체크박스 박스 */}
+      {/* 투명 히트 영역 (전체 클릭 가능) */}
       <pixiGraphics
-        draw={drawBox}
+        draw={drawHitArea}
         eventMode="static"
         cursor="pointer"
         onPointerDown={handlePointerDown}
       />
 
-      {/* 라벨 텍스트 */}
+      {/* 체크박스 박스 (시각적 요소만) - 수직 중앙 정렬 */}
+      <pixiGraphics
+        draw={drawCheckboxBox}
+        y={boxOffsetY}
+        eventMode="none"
+      />
+
+      {/* 라벨 텍스트 (시각적 요소만) - 수직 중앙 정렬 */}
       {labelText && (
         <pixiText
           text={labelText}
           style={textStyle}
           x={boxSize + 8}
-          y={(boxSize - fontSize) / 2}
-          eventMode="static"
-          cursor="pointer"
-          onPointerDown={handlePointerDown}
+          y={textOffsetY}
+          eventMode="none"
         />
       )}
     </pixiContainer>

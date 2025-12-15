@@ -7,6 +7,97 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added - CheckboxGroup/RadioGroup Selection Area 및 Label 지원 (2025-12-16)
+
+#### 개요
+CheckboxGroup 및 RadioGroup 컴포넌트의 선택 영역과 그룹 라벨을 지원하여 선택/편집 UX 개선
+
+#### 문제
+1. **RadioGroup 크기 미측정**: RadioGroup이 width/height 값이 없어 선택 영역이 표시되지 않음
+2. **CheckboxGroup 라벨 미지원**: RadioGroup은 그룹 라벨을 지원하지만 CheckboxGroup은 미지원
+3. **렌더링 중복**: CheckboxGroup과 자식 Checkbox가 각각 별도로 렌더링되어 겹침 발생
+4. **자식 아이템 선택 영역 불일치**: CheckboxGroup/RadioGroup 내부 자식 아이템의 위치/크기가 정상적이지 않음
+5. **Selected 상태 미반영**: 자식 아이템의 `isSelected` 프로퍼티 변경 시 시각적 상태가 업데이트되지 않음
+
+#### 해결
+
+**1. LayoutEngine 확장**
+```typescript
+// CHECKBOX_RADIO_TAGS 수정: Radio → RadioGroup
+const CHECKBOX_RADIO_TAGS = new Set(['Checkbox', 'CheckboxGroup', 'RadioGroup']);
+
+// 새 함수 추가
+function isCheckboxItemElement(element, elements): boolean  // CheckboxGroup 자식 판별
+function measureCheckboxItemSize(element, elements): { width, height }  // 자식 아이템 크기 측정
+function measureCheckboxGroupSize(element, elements): { width, height }  // 그룹 크기 측정 (라벨 포함)
+function calculateCheckboxItemPositions(pageElements, positions): void  // 자식 위치 계산
+```
+
+**2. PixiCheckboxGroup 신규 생성**
+- PixiRadio 패턴 기반으로 전체 구현
+- 그룹 라벨 지원 (상단에 bold 텍스트)
+- props.options 또는 자식 Checkbox 요소에서 옵션 파싱
+- 선택된 값 배열 관리
+
+**3. PixiCheckboxItem 신규 생성**
+- CheckboxGroup 자식 Checkbox용 투명 hit area 컴포넌트
+- 시각적 렌더링은 부모 CheckboxGroup이 담당
+- 선택을 위한 이벤트 영역만 제공 (`eventMode="static"`, `alpha: 0`)
+
+**4. ElementSprite 분기 처리**
+```typescript
+// 태그 분리
+const UI_CHECKBOX_GROUP_TAGS = new Set(['CheckboxGroup']);
+const UI_CHECKBOX_ITEM_TAGS = new Set(['Checkbox', 'CheckBox', 'Switch', 'Toggle']);
+
+// 조건부 렌더링
+case 'checkboxItem':
+  if (isCheckboxInGroup) {
+    return <PixiCheckboxItem ... />;  // 투명 hit area
+  }
+  return <PixiCheckbox ... />;  // 독립 체크박스
+```
+
+**5. Selected 상태 연동**
+```typescript
+// PixiRadio.tsx - 자식 Radio의 isSelected 확인
+const selectedChild = childRadios.find((radio) => {
+  const radioProps = radio.props as Record<string, unknown> | undefined;
+  return Boolean(radioProps?.isSelected || radioProps?.checked || radioProps?.defaultSelected);
+});
+
+// PixiCheckboxGroup.tsx - 자식 Checkbox의 isSelected 확인
+const selectedFromChildren = childCheckboxes
+  .filter((checkbox) => {
+    const checkboxProps = checkbox.props as Record<string, unknown> | undefined;
+    return Boolean(checkboxProps?.isSelected || checkboxProps?.checked || checkboxProps?.defaultSelected);
+  })
+  .map((checkbox) => String(checkboxProps?.value || checkbox.id));
+```
+
+#### 아키텍처 패턴
+
+**투명 Hit Area 패턴:**
+- 부모 컴포넌트(CheckboxGroup/RadioGroup)가 시각적 렌더링 담당
+- 자식 아이템(PixiCheckboxItem/PixiRadioItem)은 투명 hit area만 제공
+- 레이아웃 엔진이 자식 위치 계산하여 `layoutPosition` 전달
+
+**Selected 상태 우선순위:**
+1. 그룹 props의 `value`/`selectedValue`/`selectedValues`
+2. 자식 아이템의 `isSelected`/`checked`/`defaultSelected`
+3. options 배열의 `checked` 필드
+
+**신규/수정 파일:**
+- `src/builder/workspace/canvas/ui/PixiCheckboxGroup.tsx` - 신규 생성
+- `src/builder/workspace/canvas/ui/PixiCheckboxItem.tsx` - 신규 생성
+- `src/builder/workspace/canvas/ui/PixiRadio.tsx` - selectedValue 로직 수정
+- `src/builder/workspace/canvas/ui/index.ts` - export 추가
+- `src/builder/workspace/canvas/sprites/ElementSprite.tsx` - 분기 처리 추가
+- `src/builder/workspace/canvas/layout/LayoutEngine.ts` - 크기/위치 계산 함수 추가
+- `src/builder/workspace/canvas/BuilderCanvas.tsx` - 필터 로직 수정
+
+---
+
 ### Added - Zoom ComboBox 컨트롤러 (2025-12-15)
 
 #### 개요

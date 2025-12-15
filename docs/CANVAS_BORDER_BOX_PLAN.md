@@ -368,18 +368,35 @@ const draw = useCallback((g: PixiGraphics) => {
 
 ## Phase 3: @pixi/ui 컴포넌트 적용
 
-### 3.1 적용 대상 (8개)
+### 3.1 적용 대상 (11개)
 
 | 파일 | 현재 방식 | 수정 방향 |
 |------|-----------|-----------|
 | `PixiButton.tsx` | `createButtonGraphics()` | `drawBox()` 사용 |
 | `PixiCheckbox.tsx` | 직접 Graphics | `drawBox()` 사용 |
-| `PixiRadio.tsx` | 직접 Graphics (circle) | `drawCircle()` 추가 필요 |
+| `PixiCheckboxGroup.tsx` | 직접 Graphics (신규) | `drawBox()` 사용 - 그룹 라벨 및 자식 체크박스 렌더링 |
+| `PixiCheckboxItem.tsx` | 투명 hit area (신규) | 시각적 렌더링 없음 (부모가 담당) |
+| `PixiRadio.tsx` | 직접 Graphics (circle) | `drawCircle()` 추가 필요 - RadioGroup 역할 |
+| `PixiRadioItem.tsx` | 투명 hit area | 시각적 렌더링 없음 (부모가 담당) |
 | `PixiInput.tsx` | 직접 Graphics | `drawBox()` 사용 |
 | `PixiSelect.tsx` | 직접 Graphics | `drawBox()` 사용 |
 | `PixiList.tsx` | 직접 Graphics | `drawBox()` 사용 |
 | `PixiScrollBox.tsx` | 직접 Graphics | `drawBox()` 사용 |
 | `PixiSlider.tsx` | 핸들 (circle) | `drawCircle()` 사용 |
+
+### 3.1.1 Group Component 패턴 (CheckboxGroup/RadioGroup)
+
+**투명 Hit Area 패턴:**
+- 부모 컴포넌트(PixiCheckboxGroup/PixiRadio)가 시각적 렌더링 담당
+- 자식 아이템(PixiCheckboxItem/PixiRadioItem)은 투명 hit area만 제공
+- LayoutEngine이 자식 위치 계산하여 `layoutPosition` 전달
+- `drawBox()` 적용은 부모 컴포넌트에만 필요
+
+**LayoutEngine 함수:**
+- `measureCheckboxGroupSize()` - 그룹 라벨 포함 크기 측정
+- `measureCheckboxItemSize()` - 자식 아이템 개별 크기 측정
+- `calculateCheckboxItemPositions()` - 자식 위치 계산
+- `calculateRadioItemPositions()` - Radio 자식 위치 계산
 
 ### 3.2 Circle 유틸리티 추가
 
@@ -554,8 +571,12 @@ export function calculateAutoSize(options: AutoSizeOptions): { width: number; he
 ### Phase 3 검증
 - [ ] PixiButton variant별 정상 렌더링
 - [ ] PixiCheckbox 체크 상태 정상
-- [ ] PixiRadio 선택 상태 정상
+- [x] PixiCheckboxGroup 그룹 라벨 및 자식 체크박스 렌더링 정상 (2025-12-16)
+- [x] PixiCheckboxItem 투명 hit area로 선택 영역 정상 (2025-12-16)
+- [x] PixiRadio(RadioGroup) 선택 상태 정상 (2025-12-16)
+- [x] PixiRadioItem 투명 hit area로 선택 영역 정상
 - [ ] PixiSlider 핸들 크기 정상
+- [x] CheckboxGroup/RadioGroup 자식 아이템 isSelected 프로퍼티 반영 (2025-12-16)
 
 ### 회귀 테스트
 - [ ] 기존 저장된 프로젝트 열기 테스트
@@ -568,10 +589,14 @@ export function calculateAutoSize(options: AutoSizeOptions): { width: number; he
 
 | 구분 | 파일 수 | 내용 |
 |------|---------|------|
-| 신규 | 3 | `borderUtils.ts`, `graphicsUtils.ts`, `textMeasure.ts` |
-| 수정 | 12 | sprites(4), ui(8) |
+| 신규 | 5 | `borderUtils.ts`, `graphicsUtils.ts`, `textMeasure.ts`, `PixiCheckboxGroup.tsx`, `PixiCheckboxItem.tsx` |
+| 수정 | 14 | sprites(4), ui(8), LayoutEngine(1), BuilderCanvas(1) |
 | 이동 | 0 | ❌ 파일 이동 없음 (호환성) |
 | 테스트 | 3 | 각 유틸리티 테스트 파일 |
+
+### 2025-12-16 신규 추가 파일
+- `src/builder/workspace/canvas/ui/PixiCheckboxGroup.tsx` - CheckboxGroup 시각적 렌더링
+- `src/builder/workspace/canvas/ui/PixiCheckboxItem.tsx` - Checkbox 투명 hit area
 
 ---
 

@@ -15,6 +15,7 @@ import { Container, Graphics } from 'pixi.js';
 import type { Element } from '../../../../types/core/store.types';
 import type { CSSStyle } from '../sprites/styleConverter';
 import { cssColorToHex, parseCSSSize } from '../sprites/styleConverter';
+import { drawBox, drawCircle } from '../utils';
 
 // ============================================
 // Types
@@ -66,34 +67,54 @@ function convertToSliderStyle(style: CSSStyle | undefined): SliderLayoutStyle {
 
 /**
  * 슬라이더 배경(트랙) 생성
+ * 🚀 Border-Box v2: drawBox 유틸리티 사용
  */
 function createTrackGraphics(width: number, height: number, color: number): Graphics {
   const g = new Graphics();
-  g.roundRect(0, 0, width, height, height / 2);
-  g.fill({ color, alpha: 1 });
+  drawBox(g, {
+    width,
+    height,
+    backgroundColor: color,
+    backgroundAlpha: 1,
+    borderRadius: height / 2,
+  });
   return g;
 }
 
 /**
  * 슬라이더 채우기(fill) 생성
+ * 🚀 Border-Box v2: drawBox 유틸리티 사용
  */
 function createFillGraphics(width: number, height: number, color: number): Graphics {
   const g = new Graphics();
-  g.roundRect(0, 0, width, height, height / 2);
-  g.fill({ color, alpha: 1 });
+  drawBox(g, {
+    width,
+    height,
+    backgroundColor: color,
+    backgroundAlpha: 1,
+    borderRadius: height / 2,
+  });
   return g;
 }
 
 /**
  * 슬라이더 핸들 생성
+ * 🚀 Border-Box v2: drawCircle 유틸리티 사용
  */
 function createHandleGraphics(size: number, color: number): Graphics {
   const g = new Graphics();
-  g.circle(0, 0, size / 2);
-  g.fill({ color, alpha: 1 });
-  // 핸들 테두리
-  g.circle(0, 0, size / 2);
-  g.stroke({ width: 2, color: 0xffffff, alpha: 1 });
+  drawCircle(g, {
+    x: 0,
+    y: 0,
+    radius: size / 2,
+    backgroundColor: color,
+    backgroundAlpha: 1,
+    border: {
+      width: 2,
+      color: 0xffffff,
+      alpha: 1,
+    },
+  });
   return g;
 }
 

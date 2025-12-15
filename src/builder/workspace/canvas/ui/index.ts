@@ -21,7 +21,10 @@
 export { PixiButton, type PixiButtonProps } from './PixiButton';
 export { PixiFancyButton, type PixiFancyButtonProps } from './PixiFancyButton';
 export { PixiCheckbox, type PixiCheckboxProps } from './PixiCheckbox';
+export { PixiCheckboxGroup, type PixiCheckboxGroupProps } from './PixiCheckboxGroup';
+export { PixiCheckboxItem, type PixiCheckboxItemProps } from './PixiCheckboxItem';
 export { PixiRadio, type PixiRadioProps } from './PixiRadio';
+export { PixiRadioItem, type PixiRadioItemProps } from './PixiRadioItem';
 export { PixiSlider, type PixiSliderProps } from './PixiSlider';
 export { PixiInput, type PixiInputProps } from './PixiInput';
 export { PixiSelect, type PixiSelectProps } from './PixiSelect';

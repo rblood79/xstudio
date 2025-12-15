@@ -16,6 +16,7 @@ import { Container, Graphics, Text, TextStyle } from 'pixi.js';
 import type { Element } from '../../../../types/core/store.types';
 import type { CSSStyle } from '../sprites/styleConverter';
 import { cssColorToHex, parseCSSSize } from '../sprites/styleConverter';
+import { drawBox } from '../utils';
 
 // ============================================
 // Types
@@ -67,6 +68,7 @@ function convertToScrollBoxStyle(style: CSSStyle | undefined): ScrollBoxLayoutSt
 
 /**
  * ScrollBox 배경 생성
+ * 🚀 Border-Box v2: drawBox 유틸리티 사용
  */
 function createScrollBoxBackground(
   width: number,
@@ -78,15 +80,21 @@ function createScrollBoxBackground(
 ): Graphics {
   const g = new Graphics();
 
-  // 배경
-  g.roundRect(0, 0, width, height, borderRadius);
-  g.fill({ color: backgroundColor, alpha: 1 });
-
-  // 테두리
-  if (borderWidth > 0) {
-    g.roundRect(0, 0, width, height, borderRadius);
-    g.stroke({ width: borderWidth, color: borderColor, alpha: 1 });
-  }
+  // Border-Box v2: drawBox 유틸리티 사용
+  drawBox(g, {
+    width,
+    height,
+    backgroundColor,
+    backgroundAlpha: 1,
+    borderRadius,
+    border: borderWidth > 0 ? {
+      width: borderWidth,
+      color: borderColor,
+      alpha: 1,
+      style: 'solid',
+      radius: borderRadius,
+    } : null,
+  });
 
   return g;
 }

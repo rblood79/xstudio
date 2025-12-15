@@ -32,6 +32,7 @@ import type {
 } from "../../../../types/builder/componentVariants.types";
 import { useThemeColors } from "../hooks/useThemeColors";
 import { getVariantColors } from "../utils/cssVariableReader";
+import { drawBox } from "../utils";
 
 // ============================================
 // Constants (CSS 브라우저 기본값 기반)
@@ -298,6 +299,7 @@ function getButtonLayout(
 
 /**
  * 버튼 배경 Graphics 생성
+ * 🚀 Border-Box v2: drawBox 유틸리티 사용
  */
 function createButtonGraphics(
   width: number,
@@ -315,22 +317,28 @@ function createButtonGraphics(
   const borderColor = options?.borderColor;
   const borderWidth = options?.borderWidth ?? 1;
 
-  graphics.roundRect(0, 0, width, height, borderRadius);
-
-  if (alpha > 0) {
-    graphics.fill({ color: backgroundColor, alpha });
-  }
-
-  if (borderColor !== null && borderColor !== undefined) {
-    graphics.roundRect(0, 0, width, height, borderRadius);
-    graphics.stroke({ color: borderColor, width: borderWidth });
-  }
+  // Border-Box v2: drawBox 유틸리티 사용
+  drawBox(graphics, {
+    width,
+    height,
+    backgroundColor,
+    backgroundAlpha: alpha,
+    borderRadius,
+    border: borderColor !== null && borderColor !== undefined ? {
+      width: borderWidth,
+      color: borderColor,
+      alpha: 1,
+      style: 'solid',
+      radius: borderRadius,
+    } : null,
+  });
 
   return graphics;
 }
 
 /**
  * 비활성화 오버레이 Graphics 생성
+ * 🚀 Border-Box v2: drawBox 유틸리티 사용
  */
 function createDisabledOverlay(
   width: number,
@@ -338,8 +346,13 @@ function createDisabledOverlay(
   borderRadius: number
 ): PixiGraphicsClass {
   const graphics = new PixiGraphicsClass();
-  graphics.roundRect(0, 0, width, height, borderRadius);
-  graphics.fill({ color: 0xffffff, alpha: 0.5 });
+  drawBox(graphics, {
+    width,
+    height,
+    backgroundColor: 0xffffff,
+    backgroundAlpha: 0.5,
+    borderRadius,
+  });
   return graphics;
 }
 

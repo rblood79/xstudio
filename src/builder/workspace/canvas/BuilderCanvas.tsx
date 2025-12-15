@@ -382,6 +382,7 @@ function ElementsLayer({
     if (el.page_id !== currentPageId) return false;
     // Body 태그는 캔버스 전체를 의미하므로 렌더링에서 제외 (대소문자 무시)
     if (el.tag.toLowerCase() === "body") return false;
+    // CheckboxGroup의 자식 Checkbox는 투명 hit area로 렌더링 (필터하지 않음)
     return true;
   });
 

@@ -264,8 +264,34 @@ const TEXT_ELEMENT_TAGS = new Set([
   'Button', 'Link', 'a',
   'Tab', 'Tag', 'Breadcrumb',
   // 폼 요소 (label/placeholder 텍스트)
-  'Checkbox', 'Radio', 'Switch', 'ToggleButton'
+  'Switch', 'ToggleButton'
 ]);
+
+/** Checkbox/RadioGroup 요소 (box + gap + text 크기 측정 필요) */
+const CHECKBOX_RADIO_TAGS = new Set(['Checkbox', 'CheckboxGroup', 'RadioGroup']);
+
+// ============================================
+// Checkbox/Radio Size Presets (PixiCheckbox.tsx, PixiRadio.tsx와 동기화)
+// ============================================
+
+interface CheckboxRadioSizePreset {
+  boxSize: number;
+  gap: number;  // box와 text 사이 간격
+}
+
+/**
+ * Checkbox/Radio size prop에 따른 크기 프리셋
+ * - sm: 16px box
+ * - md: 20px box (default)
+ * - lg: 24px box
+ */
+const CHECKBOX_RADIO_SIZE_PRESETS: Record<string, CheckboxRadioSizePreset> = {
+  sm: { boxSize: 16, gap: 8 },
+  md: { boxSize: 20, gap: 8 },
+  lg: { boxSize: 24, gap: 8 },
+};
+
+const DEFAULT_CHECKBOX_RADIO_PRESET = CHECKBOX_RADIO_SIZE_PRESETS.md;
 
 // ============================================
 // Button Size Presets (PixiButton.tsx와 동기화)
@@ -400,6 +426,377 @@ function measureTextSize(
 }
 
 /**
+ * Checkbox 요소의 intrinsic size 측정
+ * = boxSize + gap + textWidth (라벨이 있는 경우)
+ *
+ * 🚀 Phase 11 B2.4: PixiCheckbox와 동일한 크기 계산
+ */
+function measureCheckboxSize(
+  element: Element,
+  style: CSSStyle | undefined
+): { width: number; height: number } | null {
+  const props = element.props as Record<string, unknown> | undefined;
+
+  // size prop에서 preset 가져오기
+  const sizeKey = (props?.size as string) || 'md';
+  const preset = CHECKBOX_RADIO_SIZE_PRESETS[sizeKey] || DEFAULT_CHECKBOX_RADIO_PRESET;
+  const { boxSize, gap } = preset;
+
+  // 라벨 텍스트
+  const labelText = String(props?.children || props?.label || props?.text || '');
+
+  // 텍스트가 없으면 box 크기만 반환
+  if (!labelText) {
+    return {
+      width: boxSize,
+      height: boxSize,
+    };
+  }
+
+  // 폰트 크기 (style에서 가져오거나 기본값 14)
+  const fontSize = parseCSSValue(style?.fontSize, 14);
+
+  // PixiJS TextStyle 생성
+  const textStyle = new TextStyle({
+    fontFamily: (style?.fontFamily as string) || 'Pretendard, sans-serif',
+    fontSize,
+    fontWeight: (style?.fontWeight as string) || 'normal',
+    fontStyle: (style?.fontStyle as 'normal' | 'italic' | 'oblique') || 'normal',
+    letterSpacing: parseCSSValue(style?.letterSpacing, 0),
+  });
+
+  // CanvasTextMetrics로 텍스트 크기 측정 (PixiJS v8)
+  const metrics = CanvasTextMetrics.measureText(labelText, textStyle);
+
+  // 전체 크기: boxSize + gap + textWidth
+  const totalWidth = boxSize + gap + metrics.width;
+  const totalHeight = Math.max(boxSize, metrics.height);
+
+  return {
+    width: Math.ceil(totalWidth),
+    height: Math.ceil(totalHeight),
+  };
+}
+
+/**
+ * CheckboxGroup 요소의 intrinsic size 측정
+ * = 라벨 높이 + 모든 옵션의 (checkboxSize + gap + textWidth)를 레이아웃 방향에 따라 계산
+ *
+ * 🚀 PixiCheckboxGroup과 동일한 크기 계산
+ * 🚀 자식 Checkbox 요소들을 우선적으로 사용하여 크기 계산
+ */
+function measureCheckboxGroupSize(
+  element: Element,
+  style: CSSStyle | undefined,
+  elements: Element[]
+): { width: number; height: number } | null {
+  const props = element.props as Record<string, unknown> | undefined;
+
+  // size prop에서 preset 가져오기
+  const sizeKey = (props?.size as string) || 'md';
+  const preset = CHECKBOX_RADIO_SIZE_PRESETS[sizeKey] || DEFAULT_CHECKBOX_RADIO_PRESET;
+  const { boxSize, gap } = preset;
+
+  // 폰트 크기
+  const fontSize = parseCSSValue(style?.fontSize, 14);
+
+  // CheckboxGroup 라벨
+  const groupLabel = String(props?.label || props?.children || props?.text || '');
+  const labelHeight = groupLabel ? fontSize + 8 : 0;
+
+  // 방향 (horizontal or vertical)
+  const isHorizontal = style?.flexDirection === 'row';
+
+  // 1. 자식 Checkbox 요소들 먼저 확인
+  const childCheckboxes = elements
+    .filter((el) => el.parent_id === element.id && (el.tag === 'Checkbox' || el.tag === 'CheckBox'))
+    .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+
+  // 옵션들: 자식 Checkbox > props.options > 기본값
+  const defaultOptions = [
+    { value: 'option1', label: 'Option 1' },
+    { value: 'option2', label: 'Option 2' },
+  ];
+
+  let options: Array<{ label?: string; name?: string; value?: string }>;
+  if (childCheckboxes.length > 0) {
+    // 자식 Checkbox 요소들에서 옵션 생성
+    options = childCheckboxes.map((checkbox) => {
+      const checkboxProps = checkbox.props as Record<string, unknown> | undefined;
+      return {
+        value: String(checkboxProps?.value || checkbox.id),
+        label: String(checkboxProps?.children || checkboxProps?.label || checkboxProps?.text || ''),
+      };
+    });
+  } else if (Array.isArray(props?.options) && props.options.length > 0) {
+    options = props.options as Array<{ label?: string; name?: string; value?: string }>;
+  } else {
+    options = defaultOptions;
+  }
+
+  // 옵션 간 간격 (PixiCheckboxGroup.tsx와 동기화)
+  const OPTION_GAP = 12;
+  const HORIZONTAL_ITEM_WIDTH = 120;
+
+  // PixiJS TextStyle 생성
+  const textStyle = new TextStyle({
+    fontFamily: (style?.fontFamily as string) || 'Pretendard, sans-serif',
+    fontSize,
+    fontWeight: (style?.fontWeight as string) || 'normal',
+    fontStyle: (style?.fontStyle as 'normal' | 'italic' | 'oblique') || 'normal',
+    letterSpacing: parseCSSValue(style?.letterSpacing, 0),
+  });
+
+  // 라벨 너비 측정 (라벨이 있는 경우)
+  let labelWidth = 0;
+  if (groupLabel) {
+    const labelMetrics = CanvasTextMetrics.measureText(groupLabel, textStyle);
+    labelWidth = labelMetrics.width;
+  }
+
+  // 각 옵션 크기 측정
+  const itemSizes = options.map((opt) => {
+    const labelText = String(opt.label || opt.name || opt.value || '');
+    if (!labelText) {
+      return { width: boxSize, height: boxSize };
+    }
+
+    const metrics = CanvasTextMetrics.measureText(labelText, textStyle);
+    return {
+      width: boxSize + gap + metrics.width,
+      height: Math.max(boxSize, metrics.height),
+    };
+  });
+
+  if (isHorizontal) {
+    // 가로 배치
+    const optionsWidth = options.length * HORIZONTAL_ITEM_WIDTH;
+    const totalWidth = Math.max(optionsWidth, labelWidth);
+    const maxHeight = Math.max(...itemSizes.map((s) => s.height), boxSize);
+    return {
+      width: Math.ceil(totalWidth),
+      height: Math.ceil(labelHeight + maxHeight),
+    };
+  } else {
+    // 세로 배치
+    const maxOptionWidth = Math.max(...itemSizes.map((s) => s.width), boxSize);
+    const totalWidth = Math.max(maxOptionWidth, labelWidth);
+    const optionsHeight = options.length * (boxSize + OPTION_GAP) - OPTION_GAP;
+    return {
+      width: Math.ceil(totalWidth),
+      height: Math.ceil(labelHeight + optionsHeight),
+    };
+  }
+}
+
+/**
+ * Radio(RadioGroup) 요소의 intrinsic size 측정
+ * = 라벨 높이 + 모든 옵션의 (radioSize + gap + textWidth)를 레이아웃 방향에 따라 계산
+ *
+ * 🚀 Phase 11 B2.4: PixiRadio(RadioGroup)와 동일한 크기 계산
+ * 🚀 자식 Radio 요소들을 우선적으로 사용하여 크기 계산
+ */
+function measureRadioSize(
+  element: Element,
+  style: CSSStyle | undefined,
+  elements: Element[]
+): { width: number; height: number } | null {
+  const props = element.props as Record<string, unknown> | undefined;
+
+  // size prop에서 preset 가져오기
+  const sizeKey = (props?.size as string) || 'md';
+  const preset = CHECKBOX_RADIO_SIZE_PRESETS[sizeKey] || DEFAULT_CHECKBOX_RADIO_PRESET;
+  const { boxSize, gap } = preset;
+
+  // 폰트 크기
+  const fontSize = parseCSSValue(style?.fontSize, 14);
+
+  // RadioGroup 라벨
+  const groupLabel = String(props?.label || props?.children || props?.text || '');
+  const labelHeight = groupLabel ? fontSize + 8 : 0;
+
+  // 방향 (horizontal or vertical)
+  const isHorizontal = style?.flexDirection === 'row';
+
+  // 1. 자식 Radio 요소들 먼저 확인
+  const childRadios = elements
+    .filter((el) => el.parent_id === element.id && el.tag === 'Radio')
+    .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+
+  // 옵션들: 자식 Radio > props.options > 기본값
+  const defaultOptions = [
+    { value: 'option1', label: 'Option 1' },
+    { value: 'option2', label: 'Option 2' },
+  ];
+
+  let options: Array<{ label?: string; name?: string; value?: string }>;
+  if (childRadios.length > 0) {
+    // 자식 Radio 요소들에서 옵션 생성
+    options = childRadios.map((radio) => {
+      const radioProps = radio.props as Record<string, unknown> | undefined;
+      return {
+        value: String(radioProps?.value || radio.id),
+        label: String(radioProps?.children || radioProps?.label || radioProps?.text || ''),
+      };
+    });
+  } else if (Array.isArray(props?.options) && props.options.length > 0) {
+    options = props.options as Array<{ label?: string; name?: string; value?: string }>;
+  } else {
+    options = defaultOptions;
+  }
+
+  // 옵션 간 간격 (PixiRadio.tsx의 DEFAULT_GAP = 12, horizontal width = 120)
+  const OPTION_GAP = 12;
+  const HORIZONTAL_ITEM_WIDTH = 120;
+
+  // PixiJS TextStyle 생성
+  const textStyle = new TextStyle({
+    fontFamily: (style?.fontFamily as string) || 'Pretendard, sans-serif',
+    fontSize,
+    fontWeight: (style?.fontWeight as string) || 'normal',
+    fontStyle: (style?.fontStyle as 'normal' | 'italic' | 'oblique') || 'normal',
+    letterSpacing: parseCSSValue(style?.letterSpacing, 0),
+  });
+
+  // 라벨 너비 측정 (라벨이 있는 경우)
+  let labelWidth = 0;
+  if (groupLabel) {
+    const labelMetrics = CanvasTextMetrics.measureText(groupLabel, textStyle);
+    labelWidth = labelMetrics.width;
+  }
+
+  // 각 옵션 크기 측정
+  const itemSizes = options.map((opt) => {
+    const labelText = String(opt.label || opt.name || opt.value || '');
+    if (!labelText) {
+      return { width: boxSize, height: boxSize };
+    }
+
+    const metrics = CanvasTextMetrics.measureText(labelText, textStyle);
+    return {
+      width: boxSize + gap + metrics.width,
+      height: Math.max(boxSize, metrics.height),
+    };
+  });
+
+  if (isHorizontal) {
+    // 가로 배치: 각 아이템 너비 = HORIZONTAL_ITEM_WIDTH (PixiRadio.tsx와 동기화)
+    const optionsWidth = options.length * HORIZONTAL_ITEM_WIDTH;
+    const totalWidth = Math.max(optionsWidth, labelWidth);
+    const maxHeight = Math.max(...itemSizes.map((s) => s.height), boxSize);
+    return {
+      width: Math.ceil(totalWidth),
+      height: Math.ceil(labelHeight + maxHeight),
+    };
+  } else {
+    // 세로 배치: 최대 너비, 높이 합산
+    const maxOptionWidth = Math.max(...itemSizes.map((s) => s.width), boxSize);
+    const totalWidth = Math.max(maxOptionWidth, labelWidth);
+    const optionsHeight = options.length * (boxSize + OPTION_GAP) - OPTION_GAP;
+    return {
+      width: Math.ceil(totalWidth),
+      height: Math.ceil(labelHeight + optionsHeight),
+    };
+  }
+}
+
+/**
+ * 요소가 Checkbox/RadioGroup인지 확인
+ */
+function isCheckboxRadioElement(element: Element): boolean {
+  return CHECKBOX_RADIO_TAGS.has(element.tag);
+}
+
+/**
+ * 요소가 Radio 아이템인지 확인
+ */
+function isRadioItemElement(element: Element): boolean {
+  return element.tag === 'Radio';
+}
+
+/**
+ * 요소가 Checkbox 아이템인지 확인 (CheckboxGroup의 자식)
+ */
+function isCheckboxItemElement(element: Element, elements: Element[]): boolean {
+  if (element.tag !== 'Checkbox' && element.tag !== 'CheckBox') {
+    return false;
+  }
+  // 부모가 CheckboxGroup인지 확인
+  const parent = elements.find((el) => el.id === element.parent_id);
+  return parent?.tag === 'CheckboxGroup';
+}
+
+/**
+ * Checkbox 아이템의 intrinsic size 측정
+ * = checkboxSize + gap + textWidth
+ */
+function measureCheckboxItemSize(
+  element: Element,
+  style: CSSStyle | undefined
+): { width: number; height: number } {
+  const props = element.props as Record<string, unknown> | undefined;
+
+  const sizeKey = (props?.size as string) || 'md';
+  const preset = CHECKBOX_RADIO_SIZE_PRESETS[sizeKey] || DEFAULT_CHECKBOX_RADIO_PRESET;
+  const { boxSize, gap } = preset;
+
+  const labelText = String(props?.children || props?.label || props?.text || '');
+
+  if (!labelText) {
+    return { width: boxSize, height: boxSize };
+  }
+
+  const fontSize = parseCSSValue(style?.fontSize, 14);
+
+  const textStyle = new TextStyle({
+    fontFamily: (style?.fontFamily as string) || 'Pretendard, sans-serif',
+    fontSize,
+  });
+
+  const metrics = CanvasTextMetrics.measureText(labelText, textStyle);
+
+  return {
+    width: Math.ceil(boxSize + gap + metrics.width),
+    height: Math.ceil(Math.max(boxSize, metrics.height)),
+  };
+}
+
+/**
+ * Radio 아이템의 intrinsic size 측정
+ * = radioSize + gap + textWidth
+ */
+function measureRadioItemSize(
+  element: Element,
+  style: CSSStyle | undefined
+): { width: number; height: number } {
+  const props = element.props as Record<string, unknown> | undefined;
+
+  const sizeKey = (props?.size as string) || 'md';
+  const preset = CHECKBOX_RADIO_SIZE_PRESETS[sizeKey] || DEFAULT_CHECKBOX_RADIO_PRESET;
+  const { boxSize, gap } = preset;
+
+  const labelText = String(props?.children || props?.label || props?.text || '');
+
+  if (!labelText) {
+    return { width: boxSize, height: boxSize };
+  }
+
+  const fontSize = parseCSSValue(style?.fontSize, 14);
+
+  const textStyle = new TextStyle({
+    fontFamily: (style?.fontFamily as string) || 'Pretendard, sans-serif',
+    fontSize,
+  });
+
+  const metrics = CanvasTextMetrics.measureText(labelText, textStyle);
+
+  return {
+    width: Math.ceil(boxSize + gap + metrics.width),
+    height: Math.ceil(Math.max(boxSize, metrics.height)),
+  };
+}
+
+/**
  * CSS flexDirection을 Yoga FlexDirection으로 변환
  */
 function toYogaFlexDirection(value: string | undefined): FlexDirection {
@@ -477,7 +874,8 @@ function toYogaAlignContent(value: string | undefined): Align {
  */
 function createYogaNode(
   yoga: YogaInstance,
-  element: Element
+  element: Element,
+  elements: Element[]
 ): YogaNode {
   const node = yoga.Node.create();
   const style = element.props?.style as CSSStyle | undefined;
@@ -497,6 +895,33 @@ function createYogaNode(
   // 명시적 크기가 없는 텍스트 요소는 콘텐츠 기반으로 크기 계산
   if (isTextElement(element) && (!hasExplicitWidth || !hasExplicitHeight)) {
     const measuredSize = measureTextSize(element, style);
+    if (measuredSize) {
+      if (!hasExplicitWidth) {
+        node.setWidth(measuredSize.width);
+      }
+      if (!hasExplicitHeight) {
+        node.setHeight(measuredSize.height);
+      }
+    }
+  }
+
+  // 🚀 Phase 11 B2.4: Checkbox/Radio 요소의 intrinsic size 측정
+  // boxSize + gap + textWidth로 전체 컴포넌트 크기 계산
+  if (isCheckboxRadioElement(element) && (!hasExplicitWidth || !hasExplicitHeight)) {
+    // Checkbox, CheckboxGroup, RadioGroup 각각 다른 측정 함수 사용
+    let measuredSize: { width: number; height: number } | null = null;
+
+    if (element.tag === 'Checkbox') {
+      // 개별 Checkbox
+      measuredSize = measureCheckboxSize(element, style);
+    } else if (element.tag === 'CheckboxGroup') {
+      // CheckboxGroup (자식 Checkbox 요소들 고려)
+      measuredSize = measureCheckboxGroupSize(element, style, elements);
+    } else if (element.tag === 'RadioGroup') {
+      // RadioGroup (자식 Radio 요소들 고려)
+      measuredSize = measureRadioSize(element, style, elements);
+    }
+
     if (measuredSize) {
       if (!hasExplicitWidth) {
         node.setWidth(measuredSize.width);
@@ -586,6 +1011,7 @@ function buildYogaTree(
     .filter((el) => el.parent_id === parentId)
     .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
 
+  let insertIndex = 0;
   for (let i = 0; i < children.length; i++) {
     const child = children[i];
 
@@ -594,10 +1020,22 @@ function buildYogaTree(
       continue;
     }
 
+    // Radio 아이템은 Yoga 트리에서 제외 (RadioGroup에서 수동으로 위치 계산)
+    if (isRadioItemElement(child)) {
+      visited.add(child.id);
+      continue;
+    }
+
+    // CheckboxGroup의 자식 Checkbox는 Yoga 트리에서 제외 (CheckboxGroup에서 렌더링)
+    if (isCheckboxItemElement(child, elements)) {
+      visited.add(child.id);
+      continue;
+    }
+
     visited.add(child.id);
 
-    const childNode = createYogaNode(yoga, child);
-    parentNode.insertChild(childNode, i);
+    const childNode = createYogaNode(yoga, child, elements);
+    parentNode.insertChild(childNode, insertIndex++);
     nodeMap.set(child.id, childNode);
 
     // 재귀적으로 자식 처리
@@ -641,6 +1079,134 @@ function extractPositions(
   }
 
   return positions;
+}
+
+/**
+ * Radio 아이템 위치 계산 (RadioGroup 기준)
+ *
+ * RadioGroup의 위치를 기준으로 각 Radio 아이템의 위치를 계산합니다.
+ * - 라벨 높이 고려
+ * - 가로/세로 배치 고려
+ * - 아이템 간격 고려
+ */
+function calculateRadioItemPositions(
+  elements: Element[],
+  positions: Map<string, LayoutPosition>
+): void {
+  // RadioGroup 요소들 찾기
+  const radioGroups = elements.filter((el) => el.tag === 'RadioGroup');
+
+  for (const radioGroup of radioGroups) {
+    const groupPosition = positions.get(radioGroup.id);
+    if (!groupPosition) continue;
+
+    // RadioGroup의 자식 Radio 아이템들
+    const radioItems = elements
+      .filter((el) => el.parent_id === radioGroup.id && el.tag === 'Radio')
+      .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+
+    if (radioItems.length === 0) continue;
+
+    // RadioGroup 스타일
+    const groupStyle = radioGroup.props?.style as CSSStyle | undefined;
+    const groupProps = radioGroup.props as Record<string, unknown> | undefined;
+    const fontSize = parseCSSValue(groupStyle?.fontSize, 14);
+
+    // 라벨 높이 계산
+    const groupLabel = String(groupProps?.label || groupProps?.children || groupProps?.text || '');
+    const labelHeight = groupLabel ? fontSize + 8 : 0;
+
+    // 방향 (가로 또는 세로)
+    const isHorizontal = groupStyle?.flexDirection === 'row';
+
+    // 아이템 간격 (PixiRadio.tsx와 동기화)
+    const OPTION_GAP = 12;
+    const HORIZONTAL_ITEM_WIDTH = 120;
+    const boxSize = 20; // DEFAULT_RADIO_SIZE
+
+    // 각 Radio 아이템 위치 계산
+    for (let i = 0; i < radioItems.length; i++) {
+      const radioItem = radioItems[i];
+      const itemStyle = radioItem.props?.style as CSSStyle | undefined;
+      const itemSize = measureRadioItemSize(radioItem, itemStyle);
+
+      // 위치 계산 (RadioGroup 기준 상대 위치)
+      const itemX = isHorizontal ? i * HORIZONTAL_ITEM_WIDTH : 0;
+      const itemY = labelHeight + (isHorizontal ? 0 : i * (boxSize + OPTION_GAP));
+
+      // 절대 위치로 변환
+      positions.set(radioItem.id, {
+        x: groupPosition.x + itemX,
+        y: groupPosition.y + itemY,
+        width: itemSize.width,
+        height: itemSize.height,
+      });
+    }
+  }
+}
+
+/**
+ * Checkbox 아이템 위치 계산 (CheckboxGroup 기준)
+ *
+ * CheckboxGroup의 위치를 기준으로 각 Checkbox 아이템의 위치를 계산합니다.
+ * - 라벨 높이 고려
+ * - 가로/세로 배치 고려
+ * - 아이템 간격 고려
+ */
+function calculateCheckboxItemPositions(
+  elements: Element[],
+  positions: Map<string, LayoutPosition>
+): void {
+  // CheckboxGroup 요소들 찾기
+  const checkboxGroups = elements.filter((el) => el.tag === 'CheckboxGroup');
+
+  for (const checkboxGroup of checkboxGroups) {
+    const groupPosition = positions.get(checkboxGroup.id);
+    if (!groupPosition) continue;
+
+    // CheckboxGroup의 자식 Checkbox 아이템들
+    const checkboxItems = elements
+      .filter((el) => el.parent_id === checkboxGroup.id && (el.tag === 'Checkbox' || el.tag === 'CheckBox'))
+      .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+
+    if (checkboxItems.length === 0) continue;
+
+    // CheckboxGroup 스타일
+    const groupStyle = checkboxGroup.props?.style as CSSStyle | undefined;
+    const groupProps = checkboxGroup.props as Record<string, unknown> | undefined;
+    const fontSize = parseCSSValue(groupStyle?.fontSize, 14);
+
+    // 라벨 높이 계산
+    const groupLabel = String(groupProps?.label || groupProps?.children || groupProps?.text || '');
+    const labelHeight = groupLabel ? fontSize + 8 : 0;
+
+    // 방향 (가로 또는 세로)
+    const isHorizontal = groupStyle?.flexDirection === 'row';
+
+    // 아이템 간격 (PixiCheckboxGroup.tsx와 동기화)
+    const OPTION_GAP = 12;
+    const HORIZONTAL_ITEM_WIDTH = 120;
+    const boxSize = 20; // DEFAULT_CHECKBOX_SIZE
+
+    // 각 Checkbox 아이템 위치 계산
+    for (let i = 0; i < checkboxItems.length; i++) {
+      const checkboxItem = checkboxItems[i];
+      const itemStyle = checkboxItem.props?.style as CSSStyle | undefined;
+      const itemSize = measureCheckboxItemSize(checkboxItem, itemStyle);
+
+      // 위치 계산 (CheckboxGroup 기준 상대 위치)
+      const itemX = isHorizontal ? i * HORIZONTAL_ITEM_WIDTH : 0;
+      const itemY = labelHeight + (isHorizontal ? 0 : i * (boxSize + OPTION_GAP));
+
+      // 절대 위치로 변환
+      positions.set(checkboxItem.id, {
+        x: groupPosition.x + itemX,
+        y: groupPosition.y + itemY,
+        width: itemSize.width,
+        height: itemSize.height,
+      });
+    }
+  }
 }
 
 // ============================================
@@ -738,6 +1304,12 @@ export function calculateLayout(
   for (const [id, pos] of childPositions) {
     positions.set(id, pos);
   }
+
+  // Radio 아이템 위치 계산 (RadioGroup 기준 상대 위치)
+  calculateRadioItemPositions(pageElements, positions);
+
+  // Checkbox 아이템 위치 계산 (CheckboxGroup 기준 상대 위치)
+  calculateCheckboxItemPositions(pageElements, positions);
 
   // Yoga 노드 정리 (메모리 해제)
   rootNode.freeRecursive();

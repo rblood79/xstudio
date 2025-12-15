@@ -16,6 +16,7 @@ import { Container, Graphics, Text, TextStyle } from 'pixi.js';
 import type { Element } from '../../../../types/core/store.types';
 import type { CSSStyle } from '../sprites/styleConverter';
 import { cssColorToHex, parseCSSSize } from '../sprites/styleConverter';
+import { drawBox } from '../utils';
 
 // ============================================
 // Types
@@ -108,6 +109,7 @@ function parseListItems(props: Record<string, unknown> | undefined): ListItem[] 
 
 /**
  * 리스트 아이템 뷰 생성
+ * 🚀 Border-Box v2: drawBox 유틸리티 사용
  */
 function createListItemView(
   width: number,
@@ -117,10 +119,15 @@ function createListItemView(
 ): Container {
   const container = new Container();
 
-  // 배경
+  // 배경 - Border-Box v2: drawBox 유틸리티 사용
   const bg = new Graphics();
-  bg.roundRect(0, 0, width, height, 4);
-  bg.fill({ color: style.itemBackgroundColor, alpha: 1 });
+  drawBox(bg, {
+    width,
+    height,
+    backgroundColor: style.itemBackgroundColor,
+    backgroundAlpha: 1,
+    borderRadius: 4,
+  });
   container.addChild(bg);
 
   // 텍스트
@@ -138,17 +145,25 @@ function createListItemView(
   container.eventMode = 'static';
   container.cursor = 'pointer';
 
-  // 호버 효과
+  // 호버 효과 - Border-Box v2: drawBox 유틸리티 사용
   container.on('pointerover', () => {
-    bg.clear();
-    bg.roundRect(0, 0, width, height, 4);
-    bg.fill({ color: style.itemHoverColor, alpha: 1 });
+    drawBox(bg, {
+      width,
+      height,
+      backgroundColor: style.itemHoverColor,
+      backgroundAlpha: 1,
+      borderRadius: 4,
+    });
   });
 
   container.on('pointerout', () => {
-    bg.clear();
-    bg.roundRect(0, 0, width, height, 4);
-    bg.fill({ color: style.itemBackgroundColor, alpha: 1 });
+    drawBox(bg, {
+      width,
+      height,
+      backgroundColor: style.itemBackgroundColor,
+      backgroundAlpha: 1,
+      borderRadius: 4,
+    });
   });
 
   return container;
@@ -156,6 +171,7 @@ function createListItemView(
 
 /**
  * 리스트 배경 생성
+ * 🚀 Border-Box v2: drawBox 유틸리티 사용
  */
 function createListBackground(
   width: number,
@@ -164,10 +180,23 @@ function createListBackground(
   borderRadius: number
 ): Graphics {
   const g = new Graphics();
-  g.roundRect(0, 0, width, height, borderRadius);
-  g.fill({ color, alpha: 1 });
-  g.roundRect(0, 0, width, height, borderRadius);
-  g.stroke({ width: 1, color: 0xe5e7eb, alpha: 1 });
+
+  // Border-Box v2: drawBox 유틸리티 사용
+  drawBox(g, {
+    width,
+    height,
+    backgroundColor: color,
+    backgroundAlpha: 1,
+    borderRadius,
+    border: {
+      width: 1,
+      color: 0xe5e7eb,
+      alpha: 1,
+      style: 'solid',
+      radius: borderRadius,
+    },
+  });
+
   return g;
 }
 

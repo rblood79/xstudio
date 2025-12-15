@@ -16,6 +16,7 @@ import { Container, Graphics, TextStyle } from 'pixi.js';
 import type { Element } from '../../../../types/core/store.types';
 import type { CSSStyle } from '../sprites/styleConverter';
 import { cssColorToHex, parseCSSSize } from '../sprites/styleConverter';
+import { drawBox } from '../utils';
 
 // ============================================
 // Types
@@ -99,6 +100,7 @@ function parseSelectOptions(props: Record<string, unknown> | undefined): SelectO
 
 /**
  * Select 버튼 배경 생성
+ * 🚀 Border-Box v2: drawBox 유틸리티 사용
  */
 function createSelectBackground(
   width: number,
@@ -110,13 +112,21 @@ function createSelectBackground(
 ): Graphics {
   const g = new Graphics();
 
-  // 배경
-  g.roundRect(0, 0, width, height, borderRadius);
-  g.fill({ color: backgroundColor, alpha: 1 });
-
-  // 테두리
-  g.roundRect(0, 0, width, height, borderRadius);
-  g.stroke({ width: borderWidth, color: borderColor, alpha: 1 });
+  // Border-Box v2: drawBox 유틸리티 사용
+  drawBox(g, {
+    width,
+    height,
+    backgroundColor,
+    backgroundAlpha: 1,
+    borderRadius,
+    border: {
+      width: borderWidth,
+      color: borderColor,
+      alpha: 1,
+      style: 'solid',
+      radius: borderRadius,
+    },
+  });
 
   return g;
 }

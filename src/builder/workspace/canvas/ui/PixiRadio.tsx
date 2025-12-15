@@ -16,6 +16,8 @@ import { Graphics as PixiGraphics, TextStyle } from 'pixi.js';
 import type { Element } from '../../../../types/core/store.types';
 import type { CSSStyle } from '../sprites/styleConverter';
 import { cssColorToHex, parseCSSSize } from '../sprites/styleConverter';
+import { drawCircle } from '../utils';
+import { useStore } from '../../../stores';
 
 // ============================================
 // Types
@@ -54,8 +56,11 @@ const DEFAULT_OPTIONS: RadioOption[] = [
 // Helper Functions
 // ============================================
 
-function parseRadioOptions(props: Record<string, unknown> | undefined): RadioOption[] {
-  if (!props) return DEFAULT_OPTIONS;
+/**
+ * props.options에서 라디오 옵션 파싱
+ */
+function parseRadioOptionsFromProps(props: Record<string, unknown> | undefined): RadioOption[] | null {
+  if (!props) return null;
 
   if (Array.isArray(props.options) && props.options.length > 0) {
     return props.options.map((opt: unknown, index: number) => {
@@ -73,7 +78,24 @@ function parseRadioOptions(props: Record<string, unknown> | undefined): RadioOpt
     });
   }
 
-  return DEFAULT_OPTIONS;
+  return null;
+}
+
+/**
+ * 자식 Radio 요소들에서 옵션 파싱
+ */
+function parseRadioOptionsFromChildren(childRadios: Element[]): RadioOption[] | null {
+  if (childRadios.length === 0) return null;
+
+  return childRadios
+    .sort((a, b) => (a.order_num || 0) - (b.order_num || 0))
+    .map((radio, index) => {
+      const props = radio.props as Record<string, unknown> | undefined;
+      return {
+        value: String(props?.value || props?.id || radio.id || index),
+        label: String(props?.children || props?.label || props?.text || `Option ${index + 1}`),
+      };
+    });
 }
 
 // ============================================
@@ -109,6 +131,7 @@ const RadioItem = memo(function RadioItem({
   const backgroundColor = isOptionSelected ? primaryColor : 0xffffff;
 
   // 라디오 원 그리기
+  // 🚀 Border-Box v2: drawCircle 유틸리티 사용
   const drawRadio = useCallback(
     (g: PixiGraphics) => {
       g.clear();
@@ -117,13 +140,19 @@ const RadioItem = memo(function RadioItem({
       const centerX = radius;
       const centerY = radius;
 
-      // 외부 원 (배경)
-      g.circle(centerX, centerY, radius);
-      g.fill({ color: backgroundColor, alpha: 1 });
-
-      // 테두리
-      g.circle(centerX, centerY, radius);
-      g.stroke({ width: 2, color: borderColor, alpha: 1 });
+      // Border-Box v2: drawCircle 유틸리티로 배경 + 테두리 그리기
+      drawCircle(g, {
+        x: centerX,
+        y: centerY,
+        radius,
+        backgroundColor,
+        backgroundAlpha: 1,
+        border: {
+          width: 2,
+          color: borderColor,
+          alpha: 1,
+        },
+      });
 
       // 내부 dot (선택된 경우)
       if (isOptionSelected) {
@@ -188,12 +217,52 @@ export const PixiRadio = memo(function PixiRadio({
   const style = element.props?.style as CSSStyle | undefined;
   const props = element.props as Record<string, unknown> | undefined;
 
-  // 라디오 옵션
-  const options = useMemo(() => parseRadioOptions(props), [props]);
+  // Store에서 자식 Radio 요소들 가져오기
+  const elements = useStore((state) => state.elements);
+  const childRadios = useMemo(() => {
+    return elements.filter(
+      (el) => el.parent_id === element.id && el.tag === 'Radio'
+    );
+  }, [elements, element.id]);
 
-  // 선택된 값
+  // 라디오 옵션: 자식 Radio 요소들 > props.options > 기본값
+  const options = useMemo(() => {
+    // 1. 자식 Radio 요소들이 있으면 사용
+    const fromChildren = parseRadioOptionsFromChildren(childRadios);
+    if (fromChildren) return fromChildren;
+
+    // 2. props.options가 있으면 사용
+    const fromProps = parseRadioOptionsFromProps(props);
+    if (fromProps) return fromProps;
+
+    // 3. 기본값
+    return DEFAULT_OPTIONS;
+  }, [childRadios, props]);
+
+  // 선택된 값: RadioGroup props > 자식 Radio의 isSelected > 없음
   const selectedValue = useMemo(() => {
-    return String(props?.value || props?.selectedValue || props?.defaultValue || '');
+    // 1. RadioGroup의 value/selectedValue 우선
+    if (props?.value || props?.selectedValue || props?.defaultValue) {
+      return String(props.value || props.selectedValue || props.defaultValue);
+    }
+
+    // 2. 자식 Radio 중 isSelected/checked가 true인 항목 찾기
+    const selectedChild = childRadios.find((radio) => {
+      const radioProps = radio.props as Record<string, unknown> | undefined;
+      return Boolean(radioProps?.isSelected || radioProps?.checked || radioProps?.defaultSelected);
+    });
+
+    if (selectedChild) {
+      const radioProps = selectedChild.props as Record<string, unknown> | undefined;
+      return String(radioProps?.value || selectedChild.id);
+    }
+
+    return '';
+  }, [props, childRadios]);
+
+  // RadioGroup 라벨
+  const groupLabel = useMemo(() => {
+    return String(props?.label || props?.children || props?.text || '');
   }, [props]);
 
   // 방향
@@ -212,6 +281,21 @@ export const PixiRadio = memo(function PixiRadio({
   // 위치
   const posX = parseCSSSize(style?.left, undefined, 0);
   const posY = parseCSSSize(style?.top, undefined, 0);
+
+  // 라벨이 있으면 옵션들의 Y 오프셋 추가
+  const labelHeight = groupLabel ? fontSize + 8 : 0;
+
+  // 라벨 텍스트 스타일
+  const labelTextStyle = useMemo(
+    () =>
+      new TextStyle({
+        fontFamily,
+        fontSize,
+        fontWeight: 'bold',
+        fill: textColor,
+      }),
+    [fontFamily, fontSize, textColor]
+  );
 
   // 클릭 핸들러
   const handleClick = useCallback(() => {
@@ -233,12 +317,24 @@ export const PixiRadio = memo(function PixiRadio({
       eventMode="static"
       onPointerDown={handleClick}
     >
+      {/* RadioGroup 라벨 */}
+      {groupLabel && (
+        <pixiText
+          text={groupLabel}
+          style={labelTextStyle}
+          x={0}
+          y={0}
+          eventMode="none"
+        />
+      )}
+
+      {/* Radio 옵션들 */}
       {options.map((option, index) => {
         const isOptionSelected = option.value === selectedValue;
 
-        // 위치 계산
+        // 위치 계산 (라벨이 있으면 Y 오프셋 추가)
         const itemX = isHorizontal ? index * 120 : 0;
-        const itemY = isHorizontal ? 0 : index * (radioSize + DEFAULT_GAP);
+        const itemY = labelHeight + (isHorizontal ? 0 : index * (radioSize + DEFAULT_GAP));
 
         return (
           <RadioItem

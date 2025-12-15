@@ -15,7 +15,8 @@ import type { Element } from '../../../../types/core/store.types';
 import { BoxSprite } from './BoxSprite';
 import { TextSprite } from './TextSprite';
 import { ImageSprite } from './ImageSprite';
-import { PixiButton, PixiFancyButton, PixiCheckbox, PixiRadio, PixiSlider, PixiInput, PixiSelect, PixiProgressBar, PixiSwitcher, PixiScrollBox, PixiList, PixiMaskedFrame } from '../ui';
+import { PixiButton, PixiFancyButton, PixiCheckbox, PixiCheckboxGroup, PixiCheckboxItem, PixiRadio, PixiRadioItem, PixiSlider, PixiInput, PixiSelect, PixiProgressBar, PixiSwitcher, PixiScrollBox, PixiList, PixiMaskedFrame } from '../ui';
+import { useStore } from '../../../stores';
 import { isFlexContainer, isGridContainer } from '../layout';
 
 // ============================================
@@ -77,8 +78,10 @@ const IMAGE_TAGS = new Set(['Image', 'Avatar', 'Logo', 'Icon', 'Thumbnail']);
  */
 const UI_BUTTON_TAGS = new Set(['Button', 'SubmitButton']);
 const UI_FANCYBUTTON_TAGS = new Set(['FancyButton']);
-const UI_CHECKBOX_TAGS = new Set(['Checkbox', 'CheckBox', 'Switch', 'Toggle']);
-const UI_RADIO_TAGS = new Set(['RadioGroup', 'Radio']);
+const UI_CHECKBOX_GROUP_TAGS = new Set(['CheckboxGroup']);  // CheckboxGroup 컨테이너
+const UI_CHECKBOX_ITEM_TAGS = new Set(['Checkbox', 'CheckBox', 'Switch', 'Toggle']);  // Checkbox 개별 아이템
+const UI_RADIO_GROUP_TAGS = new Set(['RadioGroup']);  // RadioGroup 컨테이너
+const UI_RADIO_ITEM_TAGS = new Set(['Radio']);  // Radio 개별 아이템 (투명 hit area만)
 
 /**
  * UI 컴포넌트 태그들 (Phase 6)
@@ -98,7 +101,7 @@ const UI_MASKEDFRAME_TAGS = new Set(['MaskedFrame', 'ClippedImage', 'MaskedImage
 // Sprite Type Detection
 // ============================================
 
-type SpriteType = 'box' | 'text' | 'image' | 'button' | 'fancyButton' | 'checkbox' | 'radio' | 'slider' | 'input' | 'select' | 'progressBar' | 'switcher' | 'scrollBox' | 'list' | 'maskedFrame' | 'flex' | 'grid';
+type SpriteType = 'box' | 'text' | 'image' | 'button' | 'fancyButton' | 'checkboxGroup' | 'checkboxItem' | 'radioGroup' | 'radioItem' | 'slider' | 'input' | 'select' | 'progressBar' | 'switcher' | 'scrollBox' | 'list' | 'maskedFrame' | 'flex' | 'grid';
 
 function getSpriteType(element: Element): SpriteType {
   const tag = element.tag;
@@ -106,8 +109,10 @@ function getSpriteType(element: Element): SpriteType {
   // UI 컴포넌트 우선 체크 (Phase 11 B2.4 + Phase 6)
   if (UI_BUTTON_TAGS.has(tag)) return 'button';
   if (UI_FANCYBUTTON_TAGS.has(tag)) return 'fancyButton';
-  if (UI_CHECKBOX_TAGS.has(tag)) return 'checkbox';
-  if (UI_RADIO_TAGS.has(tag)) return 'radio';
+  if (UI_CHECKBOX_GROUP_TAGS.has(tag)) return 'checkboxGroup';
+  if (UI_CHECKBOX_ITEM_TAGS.has(tag)) return 'checkboxItem';
+  if (UI_RADIO_GROUP_TAGS.has(tag)) return 'radioGroup';
+  if (UI_RADIO_ITEM_TAGS.has(tag)) return 'radioItem';
   if (UI_SLIDER_TAGS.has(tag)) return 'slider';
   if (UI_INPUT_TAGS.has(tag)) return 'input';
   if (UI_SELECT_TAGS.has(tag)) return 'select';
@@ -154,6 +159,13 @@ export const ElementSprite = memo(function ElementSprite({
   onDoubleClick,
   onChange,
 }: ElementSpriteProps) {
+  // 부모 요소 확인 (CheckboxGroup 자식 여부 판단용)
+  const elements = useStore((state) => state.elements);
+  const parentElement = useMemo(() => {
+    if (!element.parent_id) return null;
+    return elements.find((el) => el.id === element.parent_id);
+  }, [elements, element.parent_id]);
+
   // layoutPosition이 있으면 style을 오버라이드한 새 element 생성
   const effectiveElement = useMemo(() => {
     if (!layoutPosition) return element;
@@ -176,6 +188,9 @@ export const ElementSprite = memo(function ElementSprite({
 
   const spriteType = getSpriteType(effectiveElement);
 
+  // CheckboxGroup의 자식 Checkbox인지 확인
+  const isCheckboxInGroup = spriteType === 'checkboxItem' && parentElement?.tag === 'CheckboxGroup';
+
   switch (spriteType) {
     // UI 컴포넌트 (Phase 11 B2.4)
     // P5: PixiButton 활성화 (pixiContainer 래퍼로 이벤트 처리)
@@ -197,7 +212,28 @@ export const ElementSprite = memo(function ElementSprite({
         />
       );
 
-    case 'checkbox':
+    case 'checkboxGroup':
+      return (
+        <PixiCheckboxGroup
+          element={effectiveElement}
+          isSelected={isSelected}
+          onClick={onClick}
+          onChange={onChange ? (id, values) => onChange(id, values) : undefined}
+        />
+      );
+
+    case 'checkboxItem':
+      // CheckboxGroup의 자식이면 투명 hit area만 렌더링
+      if (isCheckboxInGroup) {
+        return (
+          <PixiCheckboxItem
+            element={effectiveElement}
+            isSelected={isSelected}
+            onClick={onClick}
+          />
+        );
+      }
+      // 독립 Checkbox는 전체 렌더링
       return (
         <PixiCheckbox
           element={effectiveElement}
@@ -207,13 +243,22 @@ export const ElementSprite = memo(function ElementSprite({
         />
       );
 
-    case 'radio':
+    case 'radioGroup':
       return (
         <PixiRadio
           element={effectiveElement}
           isSelected={isSelected}
           onClick={onClick}
           onChange={onChange ? (id, value) => onChange(id, value) : undefined}
+        />
+      );
+
+    case 'radioItem':
+      return (
+        <PixiRadioItem
+          element={effectiveElement}
+          isSelected={isSelected}
+          onClick={onClick}
         />
       );
 

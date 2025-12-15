@@ -184,8 +184,14 @@ BuilderCanvas.tsx
 - **Border:** `borderRadius`, `borderWidth`, `borderColor`, `borderStyle` (solid/dashed/dotted/double)
 - **Text:** `fontStyle`, `letterSpacing`, `lineHeight`, `textDecoration`, `textTransform`
 
-**@pixi/ui Components (12):**
-PixiButton, PixiFancyButton, PixiCheckbox, PixiRadio, PixiSlider, PixiInput, PixiSelect, PixiProgressBar, PixiSwitcher, PixiScrollBox, PixiList, PixiMaskedFrame
+**@pixi/ui Components (15):**
+PixiButton, PixiFancyButton, PixiCheckbox, PixiCheckboxGroup, PixiCheckboxItem, PixiRadio (RadioGroup), PixiRadioItem, PixiSlider, PixiInput, PixiSelect, PixiProgressBar, PixiSwitcher, PixiScrollBox, PixiList, PixiMaskedFrame
+
+**Group Component Pattern (CheckboxGroup/RadioGroup):**
+- Parent component (PixiCheckboxGroup/PixiRadio) handles visual rendering
+- Child items (PixiCheckboxItem/PixiRadioItem) render as transparent hit areas for selection
+- LayoutEngine calculates child positions via `calculateCheckboxItemPositions()`/`calculateRadioItemPositions()`
+- Selected state reads from: group props → child item `isSelected`/`checked` → options `checked`
 
 **Key Implementation Patterns:**
 
