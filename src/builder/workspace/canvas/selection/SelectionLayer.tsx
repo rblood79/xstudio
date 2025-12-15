@@ -33,6 +33,8 @@ export interface SelectionLayerProps {
   pageHeight?: number;
   /** 계산된 레이아웃 결과 (부모에서 재사용) */
   layoutResult: LayoutResult;
+  /** 현재 줌 레벨 (핸들 크기 유지용) */
+  zoom?: number;
   /** 드래그 시작 콜백 */
   onResizeStart?: (elementId: string, handle: HandlePosition, bounds: BoundingBox) => void;
   /** 이동 시작 콜백 */
@@ -55,6 +57,7 @@ export const SelectionLayer = memo(function SelectionLayer({
   pageWidth = 1920,
   pageHeight = 1080,
   layoutResult,
+  zoom = 1,
   onResizeStart,
   onMoveStart,
   onCursorChange,
@@ -154,6 +157,7 @@ export const SelectionLayer = memo(function SelectionLayer({
           bounds={selectionBounds}
           showHandles={isSingleSelection}
           enableMoveArea={!isContainerSelected}
+          zoom={zoom}
           onDragStart={handleResizeStart}
           onMoveStart={handleMoveStart}
           onCursorChange={handleCursorChange}
@@ -168,6 +172,7 @@ export const SelectionLayer = memo(function SelectionLayer({
           <LassoSelection
             start={dragState.startPosition}
             current={dragState.currentPosition}
+            zoom={zoom}
           />
         )}
     </pixiContainer>

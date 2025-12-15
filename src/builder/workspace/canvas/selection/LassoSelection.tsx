@@ -20,6 +20,8 @@ export interface LassoSelectionProps {
   start: { x: number; y: number };
   /** 현재 위치 */
   current: { x: number; y: number };
+  /** 현재 줌 레벨 (테두리 크기 유지용) */
+  zoom?: number;
 }
 
 // ============================================
@@ -34,8 +36,12 @@ export interface LassoSelectionProps {
 export const LassoSelection = memo(function LassoSelection({
   start,
   current,
+  zoom = 1,
 }: LassoSelectionProps) {
   const rect = getLassoBounds(start, current);
+
+  // 줌에 독립적인 선 두께 (화면상 항상 1px)
+  const strokeWidth = 1 / zoom;
 
   const draw = useCallback(
     (g: PixiGraphics) => {
@@ -46,12 +52,12 @@ export const LassoSelection = memo(function LassoSelection({
       g.rect(rect.x, rect.y, rect.width, rect.height);
       g.fill();
 
-      // 테두리 (점선 효과)
-      g.setStrokeStyle({ width: 1, color: LASSO_COLOR, alpha: 0.8 });
+      // 테두리 - 줌에 관계없이 화면상 1px 유지
+      g.setStrokeStyle({ width: strokeWidth, color: LASSO_COLOR, alpha: 0.8 });
       g.rect(rect.x, rect.y, rect.width, rect.height);
       g.stroke();
     },
-    [rect]
+    [rect, strokeWidth]
   );
 
   return <pixiGraphics draw={draw} />;

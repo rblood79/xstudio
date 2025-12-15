@@ -82,19 +82,27 @@ function PixiExtendBridge() {
 /**
  * 캔버스 경계 표시
  */
-function CanvasBounds({ width, height }: { width: number; height: number }) {
+function CanvasBounds({ width, height, zoom = 1 }: { width: number; height: number; zoom?: number }) {
   // 테마 변경 감지 (MutationObserver 기반)
   useThemeColors();
+
+  // 서브픽셀 렌더링 방지
+  const w = Math.round(width);
+  const h = Math.round(height);
+
+  // 줌에 독립적인 선 두께 (화면상 항상 1px)
+  const strokeWidth = 1 / zoom;
 
   const draw = useCallback(
     (g: PixiGraphics) => {
       g.clear();
       const outlineColor = getOutlineVariantColor();
-      g.setStrokeStyle({ width: 1, color: outlineColor });
-      g.rect(0, 0, width, height);
+      // 줌에 관계없이 화면상 1px 유지
+      g.setStrokeStyle({ width: strokeWidth, color: outlineColor });
+      g.rect(0, 0, w, h);
       g.stroke();
     },
-    [width, height]
+    [w, h, strokeWidth]
   );
 
   return <pixiGraphics draw={draw} />;
@@ -720,7 +728,7 @@ export function BuilderCanvas({
             />
 
             {/* Page Bounds (breakpoint 경계선) */}
-            <CanvasBounds width={pageWidth} height={pageHeight} />
+            <CanvasBounds width={pageWidth} height={pageHeight} zoom={zoom} />
 
             {/* Elements Layer (ElementSprite 기반) */}
             <ElementsLayer
@@ -736,6 +744,7 @@ export function BuilderCanvas({
               pageWidth={pageWidth}
               pageHeight={pageHeight}
               layoutResult={layoutResult}
+              zoom={zoom}
               onResizeStart={handleResizeStart}
               onMoveStart={handleMoveStart}
               onCursorChange={handleCursorChange}

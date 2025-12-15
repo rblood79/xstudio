@@ -34,6 +34,8 @@ export interface TransformHandleProps {
   boundsWidth: number;
   /** 바운딩 박스 높이 */
   boundsHeight: number;
+  /** 현재 줌 레벨 (핸들 크기 유지용) */
+  zoom?: number;
   /** 드래그 시작 콜백 */
   onDragStart?: (position: HandlePosition) => void;
   /** 호버 시작 콜백 */
@@ -57,13 +59,18 @@ export const TransformHandle = memo(function TransformHandle({
   boundsY,
   boundsWidth,
   boundsHeight,
+  zoom = 1,
   onDragStart,
   onHoverStart,
   onHoverEnd,
 }: TransformHandleProps) {
+  // 줌에 독립적인 핸들 크기 (화면상 항상 동일 크기)
+  const adjustedSize = HANDLE_SIZE / zoom;
+  const strokeWidth = 1 / zoom;
+
   // 핸들 중심 좌표 계산
-  const handleX = boundsX + boundsWidth * config.relativeX - HANDLE_SIZE / 2;
-  const handleY = boundsY + boundsHeight * config.relativeY - HANDLE_SIZE / 2;
+  const handleX = boundsX + boundsWidth * config.relativeX - adjustedSize / 2;
+  const handleY = boundsY + boundsHeight * config.relativeY - adjustedSize / 2;
 
   // 핸들 그리기
   const draw = useCallback(
@@ -71,15 +78,15 @@ export const TransformHandle = memo(function TransformHandle({
       g.clear();
 
       // 배경 (흰색) - v8 Pattern: shape → fill
-      g.rect(0, 0, HANDLE_SIZE, HANDLE_SIZE);
+      g.rect(0, 0, adjustedSize, adjustedSize);
       g.fill({ color: HANDLE_FILL_COLOR, alpha: 1 });
 
-      // 테두리 (파란색) - v8 Pattern: shape → stroke
-      g.setStrokeStyle({ width: 1, color: HANDLE_STROKE_COLOR, alpha: 1 });
-      g.rect(0, 0, HANDLE_SIZE, HANDLE_SIZE);
+      // 테두리 (파란색) - 줌에 관계없이 화면상 1px 유지
+      g.setStrokeStyle({ width: strokeWidth, color: HANDLE_STROKE_COLOR, alpha: 1 });
+      g.rect(0, 0, adjustedSize, adjustedSize);
       g.stroke();
     },
-    []
+    [adjustedSize, strokeWidth]
   );
 
   // 이벤트 핸들러

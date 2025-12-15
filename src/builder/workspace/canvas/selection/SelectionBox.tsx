@@ -23,6 +23,8 @@ export interface SelectionBoxProps {
   showHandles?: boolean;
   /** 이동 영역 활성화 여부 (false면 클릭 투과) */
   enableMoveArea?: boolean;
+  /** 현재 줌 레벨 (핸들/테두리 크기 유지용) */
+  zoom?: number;
   /** 드래그 시작 콜백 */
   onDragStart?: (handle: HandlePosition) => void;
   /** 이동 드래그 시작 콜백 */
@@ -44,23 +46,31 @@ export const SelectionBox = memo(function SelectionBox({
   bounds,
   showHandles = true,
   enableMoveArea = true,
+  zoom = 1,
   onDragStart,
   onMoveStart,
   onCursorChange,
 }: SelectionBoxProps) {
-  const { x, y, width, height } = bounds;
+  // 서브픽셀 렌더링 방지: 좌표와 크기를 정수로 반올림
+  const x = Math.round(bounds.x);
+  const y = Math.round(bounds.y);
+  const width = Math.round(bounds.width);
+  const height = Math.round(bounds.height);
+
+  // 줌에 독립적인 선 두께 (화면상 항상 1px)
+  const strokeWidth = 1 / zoom;
 
   // 선택 박스 테두리 그리기
   const drawBorder = useCallback(
     (g: PixiGraphics) => {
       g.clear();
 
-      // 선택 테두리
-      g.setStrokeStyle({ width: 1, color: SELECTION_COLOR, alpha: 1 });
+      // 줌에 관계없이 화면상 1px 유지
+      g.setStrokeStyle({ width: strokeWidth, color: SELECTION_COLOR, alpha: 1 });
       g.rect(0, 0, width, height);
       g.stroke();
     },
-    [width, height]
+    [width, height, strokeWidth]
   );
 
   // 이동 영역 (배경 - 투명하지만 이벤트 감지)
@@ -136,6 +146,7 @@ export const SelectionBox = memo(function SelectionBox({
             boundsY={0}
             boundsWidth={width}
             boundsHeight={height}
+            zoom={zoom}
             onDragStart={handleDragStart}
             onHoverStart={handleHoverStart}
             onHoverEnd={handleHoverEnd}

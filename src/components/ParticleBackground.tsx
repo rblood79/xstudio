@@ -13,6 +13,7 @@ import {
   CurlNoiseCanvas,
   MatrixRainCanvas,
   CodeParticleCanvas,
+  MondrianArtCanvas,
   sandPreset,
 } from "./particle";
 import type { MorphContent, EffectType } from "./particle";
@@ -43,6 +44,16 @@ export function ParticleBackground() {
         bloomStrength={0.6}    // 발광 강도
         bloomRadius={0.5}      // 발광 퍼짐
         bloomThreshold={0.4}   // 발광 임계값
+      />
+    );
+  }
+
+  if (effectType === "art") {
+    return (
+      <MondrianArtCanvas
+        bloomStrength={0.15}   // 약한 블룸 (미니멀)
+        bloomRadius={0.3}      // 발광 퍼짐
+        bloomThreshold={0.9}   // 높은 임계값
       />
     );
   }
