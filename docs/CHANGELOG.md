@@ -7,6 +7,208 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added - WebGL Canvas 동적 테마 색상 지원 (2025-12-15)
+
+#### 개요
+WebGL Canvas의 PixiButton이 테마 변경에 실시간으로 반응하도록 개선
+
+#### 문제
+- 기존 PixiButton은 하드코딩된 색상 사용 (`VARIANT_COLORS` 상수)
+- 테마 변경 시 (Light ↔ Dark) WebGL 버튼 색상이 변하지 않음
+- iframe Preview는 CSS 변수로 테마 변경 적용되지만 WebGL은 불변
+
+#### 해결
+CSS 변수를 런타임에 읽어 PixiJS hex 값으로 변환하는 시스템 구현
+
+**1. cssVariableReader.ts (신규)**
+```typescript
+// CSS 변수에서 M3 토큰 읽기
+export function getM3ButtonColors(): M3ButtonColors {
+  const primary = cssColorToHex(getCSSVariable('--primary'), FALLBACK_COLORS.primary);
+  // ... 모든 M3 색상 토큰 읽기
+  return {
+    primaryBg: primary,
+    primaryBgHover: mixWithBlack(primary, 92),  // M3 hover = 92% original + 8% black
+    primaryBgPressed: mixWithBlack(primary, 88), // M3 pressed = 88% original + 12% black
+    // ...
+  };
+}
+
+// variant별 색상 매핑
+export function getVariantColors(variant: string, colors: M3ButtonColors) {
+  switch (variant) {
+    case 'primary': return { bg: colors.primaryBg, bgHover: colors.primaryBgHover, ... };
+    // outline/ghost는 bgAlpha: 0 (투명 배경)
+  }
+}
+```
+
+**2. useThemeColors.ts (신규)**
+```typescript
+// MutationObserver로 테마 변경 감지
+export function useThemeColors(): M3ButtonColors {
+  const [colors, setColors] = useState(() => getM3ButtonColors());
+
+  useEffect(() => {
+    const observer = new MutationObserver(() => {
+      requestAnimationFrame(() => setColors(getM3ButtonColors()));
+    });
+
+    // data-theme, data-builder-theme, class 속성 감시
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['data-theme', 'data-builder-theme', 'class'],
+    });
+
+    // prefers-color-scheme 미디어 쿼리도 감시
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    mediaQuery.addEventListener('change', handleMediaChange);
+
+    return () => { observer.disconnect(); mediaQuery.removeEventListener(...); };
+  }, []);
+
+  return colors;
+}
+```
+
+**3. PixiButton.tsx 수정**
+```typescript
+// 기존: 하드코딩된 색상
+const VARIANT_COLORS = { primary: { bg: 0x6750a4, ... }, ... }; // 제거
+
+// 변경: 동적 테마 색상
+const themeColors = useThemeColors();
+const variantColors = useMemo(() => {
+  return getVariantColors(props?.variant || 'default', themeColors);
+}, [props?.variant, themeColors]);
+```
+
+#### 동작 방식
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    테마 변경 플로우                           │
+├─────────────────────────────────────────────────────────────┤
+│  1. 테마 토글 클릭                                           │
+│     ↓                                                       │
+│  2. document.documentElement에 data-theme="dark" 설정       │
+│     ↓                                                       │
+│  3. MutationObserver 감지 (useThemeColors)                  │
+│     ↓                                                       │
+│  4. getM3ButtonColors() 호출 → CSS 변수 다시 읽기            │
+│     ↓                                                       │
+│  5. React state 업데이트 → PixiButton 리렌더링               │
+│     ↓                                                       │
+│  6. FancyButton Graphics 재생성 (새 색상 적용)               │
+└─────────────────────────────────────────────────────────────┘
+```
+
+#### M3 Hover/Pressed 색상 계산
+
+```typescript
+// M3 Design System 표준
+// Hover: 원본 색상 92% + black 8%
+function mixWithBlack(color: number, percent: number): number {
+  const ratio = percent / 100;
+  const r = Math.round(((color >> 16) & 0xff) * ratio);
+  const g = Math.round(((color >> 8) & 0xff) * ratio);
+  const b = Math.round((color & 0xff) * ratio);
+  return (r << 16) | (g << 8) | b;
+}
+
+// Outline/Ghost Hover: primary 8% + white 92%
+function mixWithWhite(color: number, percent: number): number {
+  const whiteRatio = 1 - (percent / 100);
+  // ...
+}
+```
+
+**신규 파일:**
+- `src/builder/workspace/canvas/utils/cssVariableReader.ts`
+- `src/builder/workspace/canvas/hooks/useThemeColors.ts`
+
+**수정된 파일:**
+- `src/builder/workspace/canvas/ui/PixiButton.tsx`
+
+---
+
+### Fixed - WebGL Canvas Button Size Props (2025-12-15)
+
+#### 문제
+- Button 컴포넌트의 `size` prop (xs, sm, md, lg, xl)이 WebGL Canvas에서 적용되지 않음
+- 폰트 크기는 변경되지만 버튼 크기(패딩)가 변하지 않음
+- Text 컴포넌트는 정상 작동
+
+#### 원인 분석
+**아키텍처 설계**: XStudio는 `variant`/`size`로 일관성을, `style:{}`로 커스터마이징을 담당
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    XStudio 스타일 시스템                      │
+├──────────────────────┬──────────────────────────────────────┤
+│   일관성 (Semantic)   │   커스터마이징 (Inline)               │
+│   variant, size      │   style: { ... }                     │
+├──────────────────────┼──────────────────────────────────────┤
+│   디자인 시스템 준수    │   개별 요소 세부 조정                 │
+│   브랜드 일관성 유지    │   특수 케이스 대응                    │
+├──────────────────────┴──────────────────────────────────────┤
+│              우선순위: style > variant/size                  │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**문제 흐름:**
+1. `LayoutEngine`이 Button 크기 계산 시 `parsePadding(style)`만 사용
+2. `style`에 padding이 없으면 (size prop으로 결정되기 때문) 0으로 계산
+3. `layoutPosition`이 ElementSprite로 전달되어 `style.width/height` 오버라이드
+4. PixiButton의 auto 크기 계산이 무시됨
+
+**결론:** 라이브러리 버그 아님, **우리 코드의 semantic props 미처리**
+
+#### 해결
+
+**LayoutEngine.ts 수정:**
+
+```typescript
+// 1. Button Size Presets 추가 (Button.css와 동기화)
+const BUTTON_SIZE_PRESETS: Record<string, ButtonSizePreset> = {
+  xs: { fontSize: 10, paddingX: 8,  paddingY: 2 },
+  sm: { fontSize: 14, paddingX: 12, paddingY: 4 },
+  md: { fontSize: 16, paddingX: 24, paddingY: 8 },
+  lg: { fontSize: 18, paddingX: 32, paddingY: 12 },
+  xl: { fontSize: 20, paddingX: 40, paddingY: 16 },
+};
+
+// 2. measureTextSize() 함수에서 Button size prop 처리
+function measureTextSize(element, style) {
+  const isButton = element.tag === 'Button' || element.tag === 'SubmitButton';
+  const buttonSize = isButton ? getButtonSizePadding(element) : null;
+
+  // fontSize: inline style > size preset > 기본값
+  const fontSize = parseCSSValue(style?.fontSize, buttonSize?.fontSize ?? 16);
+
+  // padding: inline style 있으면 우선, 없으면 size preset 사용
+  if (buttonSize && !hasInlinePadding) {
+    paddingLeft = buttonSize.paddingX;
+    paddingRight = buttonSize.paddingX;
+    paddingTop = buttonSize.paddingY;
+    paddingBottom = buttonSize.paddingY;
+  }
+}
+```
+
+#### 우선순위 동작
+
+| 설정 | 적용되는 패딩 | 담당 |
+|------|-------------|------|
+| `size="md"` | 8px 24px | 일관성 (semantic) |
+| `size="md"` + `style: { padding: '20px' }` | 20px | 커스터마이징 (inline) |
+| `size="lg"` | 12px 32px | 일관성 (semantic) |
+
+**수정된 파일:**
+- `src/builder/workspace/canvas/layout/LayoutEngine.ts` - Button size prop 지원
+
+---
+
 ### Fixed - WebGL Canvas Selection System (2025-12-14)
 
 #### 라쏘 선택 좌표 수정

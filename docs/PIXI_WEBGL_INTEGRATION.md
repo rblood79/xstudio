@@ -181,6 +181,216 @@ function getSpriteType(element: Element): SpriteType {
 }
 ```
 
+## 스타일 시스템 아키텍처
+
+XStudio의 WebGL 캔버스는 **일관성**과 **커스터마이징**을 분리하는 이중 스타일 시스템을 사용합니다.
+
+### 설계 철학
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    XStudio 스타일 시스템                      │
+├──────────────────────┬──────────────────────────────────────┤
+│   일관성 (Semantic)   │   커스터마이징 (Inline)               │
+│   variant, size      │   style: { ... }                     │
+├──────────────────────┼──────────────────────────────────────┤
+│   디자인 시스템 준수    │   개별 요소 세부 조정                 │
+│   브랜드 일관성 유지    │   특수 케이스 대응                    │
+├──────────────────────┴──────────────────────────────────────┤
+│              우선순위: style > variant/size                  │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Props vs Style 분리
+
+```typescript
+// Element 데이터 구조
+interface Element {
+  props: {
+    // Semantic Props (일관성)
+    variant: 'primary' | 'secondary' | 'outline' | ...;  // 디자인 시스템
+    size: 'xs' | 'sm' | 'md' | 'lg' | 'xl';               // 크기 프리셋
+
+    // Inline Style (커스터마이징)
+    style: {
+      backgroundColor: '#custom',  // variant 오버라이드 가능
+      padding: '20px',             // size 오버라이드 가능
+      ...
+    }
+  }
+}
+```
+
+### LayoutEngine의 Semantic Props 처리
+
+Button 등 UI 컴포넌트는 `size` prop에 따른 preset을 사용합니다:
+
+```typescript
+// LayoutEngine.ts - Button Size Presets (Button.css와 동기화)
+const BUTTON_SIZE_PRESETS: Record<string, ButtonSizePreset> = {
+  xs: { fontSize: 10, paddingX: 8,  paddingY: 2 },
+  sm: { fontSize: 14, paddingX: 12, paddingY: 4 },
+  md: { fontSize: 16, paddingX: 24, paddingY: 8 },
+  lg: { fontSize: 18, paddingX: 32, paddingY: 12 },
+  xl: { fontSize: 20, paddingX: 40, paddingY: 16 },
+};
+
+// measureTextSize()에서 우선순위 적용
+function measureTextSize(element, style) {
+  const isButton = element.tag === 'Button' || element.tag === 'SubmitButton';
+  const buttonSize = isButton ? getButtonSizePadding(element) : null;
+
+  // fontSize: inline style > size preset > 기본값
+  const fontSize = parseCSSValue(style?.fontSize, buttonSize?.fontSize ?? 16);
+
+  // padding: inline style 우선, 없으면 size preset
+  if (buttonSize && !hasInlinePadding) {
+    paddingX = buttonSize.paddingX;
+    paddingY = buttonSize.paddingY;
+  }
+}
+```
+
+### 우선순위 동작 예시
+
+| 설정 | 적용되는 패딩 | 담당 |
+|------|-------------|------|
+| `size="md"` | 8px 24px | 일관성 (semantic) |
+| `size="md"` + `style: { padding: '20px' }` | 20px | 커스터마이징 (inline) |
+| `size="lg"` | 12px 32px | 일관성 (semantic) |
+| `size="lg"` + `style: { paddingLeft: '50px' }` | 12px 32px 12px 50px | 혼합 |
+
+### PixiButton의 Variant 처리 (동적 테마 색상)
+
+기존 하드코딩된 `VARIANT_COLORS`는 테마 변경에 반응하지 않는 문제가 있었습니다.
+**2025-12-15 업데이트**: CSS 변수를 동적으로 읽어 테마 변경에 실시간 반응하도록 개선.
+
+#### 아키텍처
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    동적 테마 색상 시스템                       │
+├─────────────────────────────────────────────────────────────┤
+│  CSS 변수                    → cssVariableReader.ts          │
+│  (--primary, --secondary)   → hex 숫자 변환                  │
+├─────────────────────────────────────────────────────────────┤
+│  MutationObserver           → useThemeColors.ts             │
+│  (data-theme 변경 감지)      → state 업데이트                 │
+├─────────────────────────────────────────────────────────────┤
+│  React Component            → PixiButton.tsx                │
+│  (useThemeColors hook)      → FancyButton 재생성             │
+└─────────────────────────────────────────────────────────────┘
+```
+
+#### cssVariableReader.ts
+
+```typescript
+// CSS 변수를 런타임에 읽어 PixiJS hex로 변환
+export function getM3ButtonColors(): M3ButtonColors {
+  const primary = cssColorToHex(getCSSVariable('--primary'), FALLBACK_COLORS.primary);
+  const onPrimary = cssColorToHex(getCSSVariable('--on-primary'), FALLBACK_COLORS.onPrimary);
+  // ... 모든 M3 토큰
+
+  return {
+    primaryBg: primary,
+    primaryBgHover: mixWithBlack(primary, 92),   // M3 Hover = 92% + 8% black
+    primaryBgPressed: mixWithBlack(primary, 88), // M3 Pressed = 88% + 12% black
+    primaryText: onPrimary,
+    // outline/ghost는 bgAlpha: 0 (투명 배경)
+    outlineBg: 0xffffff,
+    outlineBgHover: mixWithWhite(primary, 8),    // 8% primary + 92% white
+    ghostBgAlpha: 0,
+    // ...
+  };
+}
+
+// variant별 색상 매핑
+export function getVariantColors(variant: string, colors: M3ButtonColors) {
+  switch (variant) {
+    case 'primary': return { bg: colors.primaryBg, bgHover: colors.primaryBgHover, ... };
+    case 'outline': return { bg: colors.outlineBg, bgAlpha: 0, border: colors.outlineBorder, ... };
+    // ...
+  }
+}
+```
+
+#### useThemeColors.ts
+
+```typescript
+// MutationObserver로 테마 변경 감지
+export function useThemeColors(): M3ButtonColors {
+  const [colors, setColors] = useState(() => getM3ButtonColors());
+
+  useEffect(() => {
+    const observer = new MutationObserver((mutations) => {
+      for (const mutation of mutations) {
+        if (mutation.attributeName === 'data-theme' ||
+            mutation.attributeName === 'data-builder-theme') {
+          requestAnimationFrame(() => setColors(getM3ButtonColors()));
+          break;
+        }
+      }
+    });
+
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['data-theme', 'data-builder-theme', 'class'],
+    });
+
+    // prefers-color-scheme 미디어 쿼리도 감시
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    mediaQuery.addEventListener('change', handleMediaChange);
+
+    return () => { observer.disconnect(); mediaQuery.removeEventListener(...); };
+  }, []);
+
+  return colors;
+}
+```
+
+#### PixiButton.tsx
+
+```typescript
+// 동적 테마 색상 사용
+const themeColors = useThemeColors();
+
+const variantColors = useMemo(() => {
+  const variant = props?.variant || 'default';
+  return getVariantColors(variant, themeColors);
+}, [props?.variant, themeColors]);
+
+// getButtonLayout()에서 우선순위 적용
+const layout = useMemo(() => {
+  return getButtonLayout(style, props || {}, buttonText, variantColors);
+}, [style, props, buttonText, variantColors]);
+
+function getButtonLayout(style, buttonProps, buttonText, variantColors) {
+  // 색상: inline style > variant (동적)
+  const hasInlineBg = style?.backgroundColor !== undefined;
+  const backgroundColor = hasInlineBg
+    ? cssColorToHex(style?.backgroundColor)
+    : variantColors.bg;
+}
+```
+
+#### 테마 변경 흐름
+
+1. 사용자가 테마 토글 클릭
+2. `document.documentElement`에 `data-theme="dark"` 설정
+3. `MutationObserver`가 변경 감지 (`useThemeColors`)
+4. `getM3ButtonColors()` 호출 → CSS 변수 다시 읽기
+5. React state 업데이트 → PixiButton 리렌더링
+6. `FancyButton` Graphics 재생성 (새 색상 적용)
+
+### 핵심 원칙
+
+1. **Semantic Props (`variant`, `size`)**: 디자인 시스템 토큰 적용, 일관성 보장
+2. **Inline Style (`style: {}`)**: 개별 커스터마이징, Semantic Props 오버라이드 가능
+3. **우선순위**: `style > semantic props > 기본값`
+4. **동기화**: `LayoutEngine.ts`, `PixiButton.tsx`, `Button.css` 간 값 동기화 유지
+
+---
+
 ## Phase 12: 안정화 (B3.1~B3.3)
 
 - **B3.1 레이아웃 가드/캐싱**: `layoutCalculator`에 `MAX_LAYOUT_DEPTH`와 `visited` 감시를 추가해 순환 트리로 인한 무한 재귀를 차단하고, 페이지 단위 레이아웃을 한 번만 계산해 Selection/Elements 레이어에서 공유.

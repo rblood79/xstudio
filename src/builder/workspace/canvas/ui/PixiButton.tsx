@@ -21,6 +21,8 @@ import type { Element } from '../../../../types/core/store.types';
 import type { CSSStyle } from '../sprites/styleConverter';
 import { cssColorToHex, parseCSSSize } from '../sprites/styleConverter';
 import type { ButtonVariant, ComponentSize } from '../../../../types/builder/componentVariants.types';
+import { useThemeColors } from '../hooks/useThemeColors';
+import { getVariantColors } from '../utils/cssVariableReader';
 
 // ============================================
 // Constants (CSS 브라우저 기본값 기반)
@@ -33,7 +35,7 @@ const MIN_BUTTON_WIDTH = 32;
 const MIN_BUTTON_HEIGHT = 24;
 
 // ============================================
-// Variant Color Mapping (Button.css와 동기화)
+// Variant Color Types
 // ============================================
 
 interface VariantColors {
@@ -45,61 +47,8 @@ interface VariantColors {
   bgAlpha?: number;
 }
 
-/**
- * variant별 색상 매핑 (Button.css의 Action Token System과 동기화)
- */
-const VARIANT_COLORS: Record<string, VariantColors> = {
-  default: {
-    bg: 0xe5e7eb,       // gray-200
-    bgHover: 0xd1d5db,  // gray-300
-    bgPressed: 0x9ca3af, // gray-400
-    text: 0x1f2937,     // gray-800
-  },
-  primary: {
-    bg: 0x3b82f6,       // blue-500 (--action-primary-bg)
-    bgHover: 0x2563eb,  // blue-600
-    bgPressed: 0x1d4ed8, // blue-700
-    text: 0xffffff,
-  },
-  secondary: {
-    bg: 0x8b5cf6,       // violet-500 (--action-secondary-bg)
-    bgHover: 0x7c3aed,  // violet-600
-    bgPressed: 0x6d28d9, // violet-700
-    text: 0xffffff,
-  },
-  tertiary: {
-    bg: 0x6b7280,       // gray-500
-    bgHover: 0x4b5563,  // gray-600
-    bgPressed: 0x374151, // gray-700
-    text: 0xffffff,
-  },
-  error: {
-    bg: 0xef4444,       // red-500
-    bgHover: 0xdc2626,  // red-600
-    bgPressed: 0xb91c1c, // red-700
-    text: 0xffffff,
-  },
-  surface: {
-    bg: 0x64748b,       // slate-500 (--action-surface-bg)
-    bgHover: 0x475569,  // slate-600
-    bgPressed: 0x334155, // slate-700
-    text: 0xffffff,
-  },
-  outline: {
-    bg: 0xffffff,
-    bgHover: 0xf1f5f9,  // slate-100
-    bgPressed: 0xe2e8f0, // slate-200
-    text: 0x3b82f6,     // blue-500
-    border: 0x3b82f6,
-  },
-  ghost: {
-    bg: 0xffffff,
-    bgHover: 0xf1f5f9,  // slate-100
-    bgPressed: 0xe2e8f0, // slate-200
-    text: 0x1f2937,     // gray-800
-    bgAlpha: 0,
-  },
-};
+// Note: VARIANT_COLORS는 더 이상 하드코딩하지 않음
+// useThemeColors() + getVariantColors()로 동적으로 가져옴
 
 // ============================================
 // Size Presets (Button.css와 동기화)
@@ -194,20 +143,19 @@ interface ButtonLayoutResult {
  * 1. inline style (props.style) - 최우선
  * 2. variant/size props - 차선
  * 3. 기본값 - 최후
+ *
+ * @param variantColors - 테마에서 동적으로 가져온 색상
  */
 function getButtonLayout(
   style: CSSStyle | undefined,
   buttonProps: ButtonElementProps,
-  buttonText: string
+  buttonText: string,
+  variantColors: VariantColors
 ): ButtonLayoutResult {
   // variant와 size 추출
-  const variant = buttonProps.variant || 'default';
   const size = buttonProps.size || 'sm';
   const isDisabled = Boolean(buttonProps.isDisabled);
   const isLoading = Boolean(buttonProps.isLoading);
-
-  // variant 색상 가져오기
-  const variantColors = VARIANT_COLORS[variant] || VARIANT_COLORS.default;
 
   // size 프리셋 가져오기
   const sizePreset = SIZE_PRESETS[size] || DEFAULT_SIZE_PRESET;
@@ -399,6 +347,15 @@ export const PixiButton = memo(function PixiButton({
   const style = element.props?.style as CSSStyle | undefined;
   const props = element.props as ButtonElementProps | undefined;
 
+  // 테마 색상 (동적으로 CSS 변수에서 읽어옴)
+  const themeColors = useThemeColors();
+
+  // variant에 맞는 색상 가져오기
+  const variantColors = useMemo(() => {
+    const variant = props?.variant || 'default';
+    return getVariantColors(variant, themeColors) as VariantColors;
+  }, [props?.variant, themeColors]);
+
   // 버튼 텍스트 (isLoading일 때는 빈 문자열)
   const buttonText = useMemo(() => {
     if (props?.isLoading) return '';
@@ -407,8 +364,8 @@ export const PixiButton = memo(function PixiButton({
 
   // 레이아웃 스타일 (buttonText 필요 - auto 크기 계산용)
   const layout = useMemo(() => {
-    return getButtonLayout(style, props || {}, buttonText || 'Button');
-  }, [style, props, buttonText]);
+    return getButtonLayout(style, props || {}, buttonText || 'Button', variantColors);
+  }, [style, props, buttonText, variantColors]);
 
   // Container ref
   const containerRef = useRef<PixiContainer | null>(null);
