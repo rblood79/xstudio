@@ -23,7 +23,6 @@ import { cssColorToHex, parseCSSSize } from '../sprites/styleConverter';
 import type { ButtonVariant, ComponentSize } from '../../../../types/builder/componentVariants.types';
 import { useThemeColors } from '../hooks/useThemeColors';
 import { getVariantColors } from '../utils/cssVariableReader';
-import { useCrispText } from '../hooks/useCrispText';
 
 // ============================================
 // Constants (CSS 브라우저 기본값 기반)
@@ -368,9 +367,6 @@ export const PixiButton = memo(function PixiButton({
     return getButtonLayout(style, props || {}, buttonText || 'Button', variantColors);
   }, [style, props, buttonText, variantColors]);
 
-  // P13: 줌 레벨 기반 동적 폰트 크기 (선명도 개선)
-  const { textScale, multiplier } = useCrispText(layout.fontSize);
-
   // Container ref
   const containerRef = useRef<PixiContainer | null>(null);
   const buttonRef = useRef<FancyButton | null>(null);
@@ -431,11 +427,10 @@ export const PixiButton = memo(function PixiButton({
       graphicsOptions
     );
 
-    // TextStyle 및 Text 객체 생성 (P13: 줌 기반 선명도 개선)
-    const scaledFontSize = layout.fontSize * multiplier;
+    // TextStyle 및 Text 객체 생성
     const textStyle = new TextStyle({
       fill: layout.textColor,
-      fontSize: scaledFontSize,
+      fontSize: layout.fontSize,
       fontFamily: layout.fontFamily,
       align: 'center',
     });
@@ -444,9 +439,6 @@ export const PixiButton = memo(function PixiButton({
       text: buttonText,
       style: textStyle,
     });
-
-    // P13: 시각적 크기 유지를 위한 스케일 조정
-    textView.scale.set(textScale);
 
     // FancyButton 생성
     const button = new FancyButton({
@@ -519,8 +511,6 @@ export const PixiButton = memo(function PixiButton({
     layout.isDisabled,
     layout.isLoading,
     buttonText,
-    multiplier,
-    textScale,
   ]);
 
   // 선택 테두리 Graphics draw

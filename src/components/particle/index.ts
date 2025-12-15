@@ -57,3 +57,4 @@ export { SmokeCanvas } from "./SmokeCanvas";
 export { CurlNoiseCanvas } from "./CurlNoiseCanvas";
 export { MatrixRainCanvas } from "./MatrixRainCanvas";
 export { CodeParticleCanvas } from "./CodeParticleCanvas";
+export { PortalCanvas } from "./PortalCanvas";

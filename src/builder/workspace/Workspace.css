@@ -39,15 +39,86 @@
   box-shadow: var(--shadow-sm);
   pointer-events: auto;
 }
-.zoom-control-text {
-  font-size: var(--text-xs);
-  min-width: 48px;
-  padding: var(--spacing-xs);
-  text-align: center;
-}
 .zoom-control-button {
   padding: var(--spacing-xs);
   cursor: pointer;
+}
+
+/* ============================================
+ * Zoom ComboBox
+ * ============================================ */
+
+.zoom-combobox {
+  position: relative;
+}
+
+.zoom-combobox-container {
+  display: flex;
+  align-items: center;
+  background: transparent;
+}
+
+.zoom-combobox-input {
+  width: 48px;
+  padding: var(--spacing-xs);
+  font-size: var(--text-xs);
+  text-align: center;
+  border: none;
+  background: transparent;
+  outline: none;
+}
+
+.zoom-combobox-input:focus {
+  background: var(--color-gray-100);
+  border-radius: var(--radius-sm);
+}
+
+.zoom-combobox-button {
+  padding: 2px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  color: var(--color-gray-500);
+}
+
+.zoom-combobox-button:hover {
+  color: var(--color-gray-700);
+}
+
+.zoom-combobox-popover {
+  background: white;
+  border: 1px solid var(--color-gray-200);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+  z-index: 1000;
+  overflow: hidden;
+}
+
+.zoom-combobox-listbox {
+  padding: var(--spacing-xs);
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.zoom-combobox-item {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  font-size: var(--text-xs);
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  text-align: center;
+}
+
+.zoom-combobox-item[data-focused],
+.zoom-combobox-item:hover {
+  background: var(--color-gray-100);
+}
+
+.zoom-combobox-item[data-selected] {
+  background: var(--color-primary-100);
+  color: var(--color-primary-700);
 }
 
 /* ============================================

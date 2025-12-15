@@ -16,11 +16,19 @@
  */
 
 import { useRef, useCallback, useState, useEffect, useMemo } from "react";
-import { Key } from "react-aria-components";
+import {
+  Key,
+  ComboBox,
+  Input,
+  Button,
+  Popover,
+  ListBox,
+  ListBoxItem,
+} from "react-aria-components";
 import { BuilderCanvas } from "./canvas/BuilderCanvas";
 import { useCanvasSyncStore } from "./canvas/canvasSync";
 import { useWebGLCanvas, useCanvasCompareMode } from "../../utils/featureFlags";
-import { Minus, Plus, Scan } from "lucide-react";
+import { Minus, Plus, Scan, ChevronDown } from "lucide-react";
 import "./Workspace.css";
 // ============================================
 // Types
@@ -49,6 +57,9 @@ export interface WorkspaceProps {
 const MIN_ZOOM = 0.1;
 const MAX_ZOOM = 5;
 const ZOOM_STEP = 0.1;
+
+/** 줌 프리셋 옵션 (%) */
+const ZOOM_PRESETS = [25, 50, 75, 100, 125, 150, 200, 300, 400, 500];
 
 // ============================================
 // Main Component
@@ -222,6 +233,61 @@ export function Workspace({
   }, [containerSize, canvasSize, setZoom, setPanOffset]);
 
   // ============================================
+  // Zoom ComboBox
+  // ============================================
+
+  const [zoomInputValue, setZoomInputValue] = useState("");
+
+  // zoom 값 변경 시 입력 값 동기화
+  useEffect(() => {
+    setZoomInputValue(`${Math.round(zoom * 100)}%`);
+  }, [zoom]);
+
+  const handleZoomInputChange = useCallback((value: string) => {
+    setZoomInputValue(value);
+  }, []);
+
+  const handleZoomSelectionChange = useCallback(
+    (key: Key | null) => {
+      if (key === null) return;
+      const percent = Number(key);
+      if (!isNaN(percent)) {
+        zoomTo(percent / 100);
+      }
+    },
+    [zoomTo]
+  );
+
+  const handleZoomInputKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        const trimmed = zoomInputValue.replace("%", "").trim();
+        const percent = parseFloat(trimmed);
+        if (!isNaN(percent) && percent >= 10 && percent <= 500) {
+          zoomTo(percent / 100);
+        } else {
+          // 유효하지 않으면 현재 값으로 복원
+          setZoomInputValue(`${Math.round(zoom * 100)}%`);
+        }
+        (e.target as HTMLInputElement).blur();
+      }
+    },
+    [zoomInputValue, zoomTo, zoom]
+  );
+
+  const handleZoomInputBlur = useCallback(() => {
+    const trimmed = zoomInputValue.replace("%", "").trim();
+    const percent = parseFloat(trimmed);
+    if (!isNaN(percent) && percent >= 10 && percent <= 500) {
+      zoomTo(percent / 100);
+    } else {
+      // 유효하지 않으면 현재 값으로 복원
+      setZoomInputValue(`${Math.round(zoom * 100)}%`);
+    }
+  }, [zoomInputValue, zoomTo, zoom]);
+
+  // ============================================
   // Render
   // ============================================
 
@@ -257,7 +323,38 @@ export function Workspace({
           >
             <Minus size={16} />
           </button>
-          <span className="zoom-control-text">{Math.round(zoom * 100)}%</span>
+          <ComboBox
+            className="zoom-combobox"
+            inputValue={zoomInputValue}
+            onInputChange={handleZoomInputChange}
+            onSelectionChange={handleZoomSelectionChange}
+            aria-label="Zoom level"
+            allowsCustomValue
+          >
+            <div className="zoom-combobox-container">
+              <Input
+                className="zoom-combobox-input"
+                onKeyDown={handleZoomInputKeyDown}
+                onBlur={handleZoomInputBlur}
+              />
+              <Button className="zoom-combobox-button">
+                <ChevronDown size={12} />
+              </Button>
+            </div>
+            <Popover className="zoom-combobox-popover">
+              <ListBox className="zoom-combobox-listbox">
+                {ZOOM_PRESETS.map((preset) => (
+                  <ListBoxItem
+                    key={preset}
+                    id={preset}
+                    className="zoom-combobox-item"
+                  >
+                    {preset}%
+                  </ListBoxItem>
+                ))}
+              </ListBox>
+            </Popover>
+          </ComboBox>
           <button
             className="zoom-control-button"
             onClick={() => zoomTo(zoom + ZOOM_STEP)}
@@ -313,7 +410,38 @@ export function Workspace({
         >
           <Minus size={16} />
         </button>
-        <span className="zoom-control-text">{Math.round(zoom * 100)}%</span>
+        <ComboBox
+          className="zoom-combobox"
+          inputValue={zoomInputValue}
+          onInputChange={handleZoomInputChange}
+          onSelectionChange={handleZoomSelectionChange}
+          aria-label="Zoom level"
+          allowsCustomValue
+        >
+          <div className="zoom-combobox-container">
+            <Input
+              className="zoom-combobox-input"
+              onKeyDown={handleZoomInputKeyDown}
+              onBlur={handleZoomInputBlur}
+            />
+            <Button className="zoom-combobox-button">
+              <ChevronDown size={12} />
+            </Button>
+          </div>
+          <Popover className="zoom-combobox-popover">
+            <ListBox className="zoom-combobox-listbox">
+              {ZOOM_PRESETS.map((preset) => (
+                <ListBoxItem
+                  key={preset}
+                  id={preset}
+                  className="zoom-combobox-item"
+                >
+                  {preset}%
+                </ListBoxItem>
+              ))}
+            </ListBox>
+          </Popover>
+        </ComboBox>
         <button
           className="zoom-control-button"
           onClick={() => zoomTo(zoom + ZOOM_STEP)}
