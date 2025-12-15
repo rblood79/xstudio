@@ -14,15 +14,24 @@
  * @updated 2025-12-15 P9: variant, size, isDisabled, isLoading 지원 추가
  */
 
-import { memo, useCallback, useRef, useEffect, useMemo } from 'react';
-import { Container as PixiContainer, Graphics as PixiGraphicsClass, Text as PixiText, TextStyle, CanvasTextMetrics } from 'pixi.js';
-import { FancyButton } from '@pixi/ui';
-import type { Element } from '../../../../types/core/store.types';
-import type { CSSStyle } from '../sprites/styleConverter';
-import { cssColorToHex, parseCSSSize } from '../sprites/styleConverter';
-import type { ButtonVariant, ComponentSize } from '../../../../types/builder/componentVariants.types';
-import { useThemeColors } from '../hooks/useThemeColors';
-import { getVariantColors } from '../utils/cssVariableReader';
+import { memo, useCallback, useRef, useEffect, useMemo } from "react";
+import {
+  Container as PixiContainer,
+  Graphics as PixiGraphicsClass,
+  Text as PixiText,
+  TextStyle,
+  CanvasTextMetrics,
+} from "pixi.js";
+import { FancyButton } from "@pixi/ui";
+import type { Element } from "../../../../types/core/store.types";
+import type { CSSStyle } from "../sprites/styleConverter";
+import { cssColorToHex, parseCSSSize } from "../sprites/styleConverter";
+import type {
+  ButtonVariant,
+  ComponentSize,
+} from "../../../../types/builder/componentVariants.types";
+import { useThemeColors } from "../hooks/useThemeColors";
+import { getVariantColors } from "../utils/cssVariableReader";
 
 // ============================================
 // Constants (CSS 브라우저 기본값 기반)
@@ -56,8 +65,8 @@ interface VariantColors {
 
 interface SizePreset {
   fontSize: number;
-  paddingX: number;  // 좌우 padding (CSS: padding-right, padding-left)
-  paddingY: number;  // 상하 padding (CSS: padding-top, padding-bottom)
+  paddingX: number; // 좌우 padding (CSS: padding-right, padding-left)
+  paddingY: number; // 상하 padding (CSS: padding-top, padding-bottom)
   borderRadius: number;
 }
 
@@ -72,9 +81,9 @@ interface SizePreset {
  * - xl: padding: var(--spacing-lg) var(--spacing-3xl)  = 16px 40px, font-size: 20px
  */
 const SIZE_PRESETS: Record<string, SizePreset> = {
-  xs: { fontSize: 10, paddingX: 8,  paddingY: 2,  borderRadius: 4 },
-  sm: { fontSize: 14, paddingX: 12, paddingY: 4,  borderRadius: 4 },
-  md: { fontSize: 16, paddingX: 24, paddingY: 8,  borderRadius: 6 },
+  xs: { fontSize: 10, paddingX: 8, paddingY: 2, borderRadius: 4 },
+  sm: { fontSize: 14, paddingX: 12, paddingY: 4, borderRadius: 4 },
+  md: { fontSize: 16, paddingX: 24, paddingY: 8, borderRadius: 6 },
   lg: { fontSize: 18, paddingX: 32, paddingY: 12, borderRadius: 8 },
   xl: { fontSize: 20, paddingX: 40, paddingY: 16, borderRadius: 8 },
 };
@@ -99,7 +108,7 @@ interface ButtonElementProps {
   label?: string;
   variant?: ButtonVariant;
   size?: ComponentSize;
-  type?: 'button' | 'submit' | 'reset';
+  type?: "button" | "submit" | "reset";
   isDisabled?: boolean;
   isLoading?: boolean;
   className?: string;
@@ -153,7 +162,7 @@ function getButtonLayout(
   variantColors: VariantColors
 ): ButtonLayoutResult {
   // variant와 size 추출
-  const size = buttonProps.size || 'sm';
+  const size = buttonProps.size || "sm";
   const isDisabled = Boolean(buttonProps.isDisabled);
   const isLoading = Boolean(buttonProps.isLoading);
 
@@ -161,20 +170,48 @@ function getButtonLayout(
   const sizePreset = SIZE_PRESETS[size] || DEFAULT_SIZE_PRESET;
 
   // 폰트 설정 (inline style > size preset)
-  const fontSize = parseCSSSize(style?.fontSize, undefined, sizePreset.fontSize);
-  const fontFamily = style?.fontFamily || 'Pretendard, sans-serif';
+  const fontSize = parseCSSSize(
+    style?.fontSize,
+    undefined,
+    sizePreset.fontSize
+  );
+  const fontFamily = style?.fontFamily || "Pretendard, sans-serif";
 
   // 패딩 (inline style > size preset)
-  const paddingTop = parseCSSSize(style?.paddingTop, undefined, sizePreset.paddingY);
-  const paddingRight = parseCSSSize(style?.paddingRight, undefined, sizePreset.paddingX);
-  const paddingBottom = parseCSSSize(style?.paddingBottom, undefined, sizePreset.paddingY);
-  const paddingLeft = parseCSSSize(style?.paddingLeft, undefined, sizePreset.paddingX);
+  const paddingTop = parseCSSSize(
+    style?.paddingTop,
+    undefined,
+    sizePreset.paddingY
+  );
+  const paddingRight = parseCSSSize(
+    style?.paddingRight,
+    undefined,
+    sizePreset.paddingX
+  );
+  const paddingBottom = parseCSSSize(
+    style?.paddingBottom,
+    undefined,
+    sizePreset.paddingY
+  );
+  const paddingLeft = parseCSSSize(
+    style?.paddingLeft,
+    undefined,
+    sizePreset.paddingX
+  );
 
   // 테두리 반경 (inline style > size preset)
-  const borderRadius = parseCSSSize(style?.borderRadius, undefined, sizePreset.borderRadius);
+  const borderRadius = parseCSSSize(
+    style?.borderRadius,
+    undefined,
+    sizePreset.borderRadius
+  );
 
   // 테두리 너비
-  const borderWidth = parseCSSSize(style?.borderWidth, undefined, variantColors.border ? 1 : 0);
+  const borderWidth = parseCSSSize(
+    style?.borderWidth,
+    undefined,
+    variantColors.border ? 1 : 0
+  );
 
   // 색상 (inline style > variant)
   const hasInlineBg = style?.backgroundColor !== undefined;
@@ -184,7 +221,8 @@ function getButtonLayout(
     ? cssColorToHex(style?.backgroundColor, variantColors.bg)
     : variantColors.bg;
 
-  const backgroundAlpha = variantColors.bgAlpha !== undefined ? variantColors.bgAlpha : 1;
+  const backgroundAlpha =
+    variantColors.bgAlpha !== undefined ? variantColors.bgAlpha : 1;
 
   const textColor = hasInlineColor
     ? cssColorToHex(style?.color, variantColors.text)
@@ -208,8 +246,8 @@ function getButtonLayout(
   // 크기 계산
   // width/height가 없거나 'auto'면 텍스트 + padding 기반으로 자동 계산
   // falsy 값 (undefined, null, '', 0) 모두 auto로 처리
-  const isWidthAuto = !style?.width || style?.width === 'auto';
-  const isHeightAuto = !style?.height || style?.height === 'auto';
+  const isWidthAuto = !style?.width || style?.width === "auto";
+  const isHeightAuto = !style?.height || style?.height === "auto";
 
   let width: number;
   let height: number;
@@ -231,7 +269,8 @@ function getButtonLayout(
 
   if (isHeightAuto) {
     // auto: 텍스트 + 패딩 + 테두리 기반 계산
-    height = paddingTop + borderWidth + textHeight + borderWidth + paddingBottom;
+    height =
+      paddingTop + borderWidth + textHeight + borderWidth + paddingBottom;
     height = Math.max(height, MIN_BUTTON_HEIGHT);
   } else {
     // 명시적 height 사용
@@ -341,7 +380,7 @@ function createLoadingIndicator(
  */
 export const PixiButton = memo(function PixiButton({
   element,
-  isSelected,
+  //isSelected,
   onClick,
 }: PixiButtonProps) {
   const style = element.props?.style as CSSStyle | undefined;
@@ -352,19 +391,24 @@ export const PixiButton = memo(function PixiButton({
 
   // variant에 맞는 색상 가져오기
   const variantColors = useMemo(() => {
-    const variant = props?.variant || 'default';
+    const variant = props?.variant || "default";
     return getVariantColors(variant, themeColors) as VariantColors;
   }, [props?.variant, themeColors]);
 
   // 버튼 텍스트 (isLoading일 때는 빈 문자열)
   const buttonText = useMemo(() => {
-    if (props?.isLoading) return '';
-    return String(props?.children || props?.text || props?.label || 'Button');
+    if (props?.isLoading) return "";
+    return String(props?.children || props?.text || props?.label || "Button");
   }, [props?.children, props?.text, props?.label, props?.isLoading]);
 
   // 레이아웃 스타일 (buttonText 필요 - auto 크기 계산용)
   const layout = useMemo(() => {
-    return getButtonLayout(style, props || {}, buttonText || 'Button', variantColors);
+    return getButtonLayout(
+      style,
+      props || {},
+      buttonText || "Button",
+      variantColors
+    );
   }, [style, props, buttonText, variantColors]);
 
   // Container ref
@@ -432,7 +476,7 @@ export const PixiButton = memo(function PixiButton({
       fill: layout.textColor,
       fontSize: layout.fontSize,
       fontFamily: layout.fontFamily,
-      align: 'center',
+      align: "center",
     });
 
     const textView = new PixiText({
@@ -454,7 +498,7 @@ export const PixiButton = memo(function PixiButton({
     button.y = layout.height / 2;
 
     // FancyButton의 이벤트 모드를 none으로 설정
-    button.eventMode = 'none';
+    button.eventMode = "none";
 
     // Container에 추가
     container.addChild(button);
@@ -473,7 +517,10 @@ export const PixiButton = memo(function PixiButton({
 
     // 로딩 인디케이터 추가
     if (layout.isLoading) {
-      const loadingIndicator = createLoadingIndicator(layout.width, layout.height);
+      const loadingIndicator = createLoadingIndicator(
+        layout.width,
+        layout.height
+      );
       container.addChild(loadingIndicator);
       loadingIndicatorRef.current = loadingIndicator;
     }
@@ -485,64 +532,65 @@ export const PixiButton = memo(function PixiButton({
         buttonRef.current.destroy();
         buttonRef.current = null;
       }
-      if (disabledOverlayRef.current && container.children.includes(disabledOverlayRef.current)) {
+      if (
+        disabledOverlayRef.current &&
+        container.children.includes(disabledOverlayRef.current)
+      ) {
         container.removeChild(disabledOverlayRef.current);
         disabledOverlayRef.current.destroy();
         disabledOverlayRef.current = null;
       }
-      if (loadingIndicatorRef.current && container.children.includes(loadingIndicatorRef.current)) {
+      if (
+        loadingIndicatorRef.current &&
+        container.children.includes(loadingIndicatorRef.current)
+      ) {
         container.removeChild(loadingIndicatorRef.current);
         loadingIndicatorRef.current.destroy();
         loadingIndicatorRef.current = null;
       }
     };
-  }, [
-    layout.width,
-    layout.height,
-    layout.backgroundColor,
-    layout.backgroundAlpha,
-    layout.hoverColor,
-    layout.pressedColor,
-    layout.borderColor,
-    layout.borderRadius,
-    layout.textColor,
-    layout.fontSize,
-    layout.fontFamily,
-    layout.isDisabled,
-    layout.isLoading,
-    buttonText,
-  ]);
+  }, [layout.width, layout.height, layout.backgroundColor, layout.backgroundAlpha, layout.hoverColor, layout.pressedColor, layout.borderColor, layout.borderRadius, layout.textColor, layout.fontSize, layout.fontFamily, layout.isDisabled, layout.isLoading, buttonText]);
 
   // 투명 히트 영역 (modifier 키 감지용)
-  const drawHitArea = useCallback((g: PixiGraphicsClass) => {
-    g.clear();
-    g.rect(0, 0, layout.width, layout.height);
-    g.fill({ color: 0xffffff, alpha: 0 });
-  }, [layout.width, layout.height]);
+  const drawHitArea = useCallback(
+    (g: PixiGraphicsClass) => {
+      g.clear();
+      g.rect(0, 0, layout.width, layout.height);
+      g.fill({ color: 0xffffff, alpha: 0 });
+    },
+    [layout.width, layout.height]
+  );
 
   // 클릭 핸들러 (modifier 키 전달)
-  const handleClick = useCallback((e: unknown) => {
-    // 비활성화 또는 로딩 중이면 클릭 무시
-    if (layout.isDisabled || layout.isLoading) return;
+  const handleClick = useCallback(
+    (e: unknown) => {
+      // 비활성화 또는 로딩 중이면 클릭 무시
+      if (layout.isDisabled || layout.isLoading) return;
 
-    // PixiJS FederatedPointerEvent has modifier keys directly
-    const pixiEvent = e as {
-      metaKey?: boolean;
-      shiftKey?: boolean;
-      ctrlKey?: boolean;
-      nativeEvent?: MouseEvent | PointerEvent;
-    };
+      // PixiJS FederatedPointerEvent has modifier keys directly
+      const pixiEvent = e as {
+        metaKey?: boolean;
+        shiftKey?: boolean;
+        ctrlKey?: boolean;
+        nativeEvent?: MouseEvent | PointerEvent;
+      };
 
-    // Try direct properties first (PixiJS v8), fallback to nativeEvent
-    const metaKey = pixiEvent?.metaKey ?? pixiEvent?.nativeEvent?.metaKey ?? false;
-    const shiftKey = pixiEvent?.shiftKey ?? pixiEvent?.nativeEvent?.shiftKey ?? false;
-    const ctrlKey = pixiEvent?.ctrlKey ?? pixiEvent?.nativeEvent?.ctrlKey ?? false;
+      // Try direct properties first (PixiJS v8), fallback to nativeEvent
+      const metaKey =
+        pixiEvent?.metaKey ?? pixiEvent?.nativeEvent?.metaKey ?? false;
+      const shiftKey =
+        pixiEvent?.shiftKey ?? pixiEvent?.nativeEvent?.shiftKey ?? false;
+      const ctrlKey =
+        pixiEvent?.ctrlKey ?? pixiEvent?.nativeEvent?.ctrlKey ?? false;
 
-    onClick?.(element.id, { metaKey, shiftKey, ctrlKey });
-  }, [element.id, onClick, layout.isDisabled, layout.isLoading]);
+      onClick?.(element.id, { metaKey, shiftKey, ctrlKey });
+    },
+    [element.id, onClick, layout.isDisabled, layout.isLoading]
+  );
 
   // 커서 스타일 (비활성화 시 not-allowed)
-  const cursorStyle = layout.isDisabled || layout.isLoading ? 'not-allowed' : 'pointer';
+  const cursorStyle =
+    layout.isDisabled || layout.isLoading ? "not-allowed" : "pointer";
 
   return (
     <pixiContainer

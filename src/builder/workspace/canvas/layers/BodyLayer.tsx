@@ -2,8 +2,10 @@
  * Body Layer
  *
  * Body 요소의 스타일 (배경색, 패딩, 테두리 등)을 렌더링합니다.
+ * 🚀 Border-Box v2: border-box 방식 렌더링
  *
  * @since 2025-12-12
+ * @updated 2025-12-15 Border-Box v2 - drawBox 유틸리티 적용
  */
 
 import { useCallback, useMemo, memo } from 'react';
@@ -11,6 +13,7 @@ import { Graphics as PixiGraphics } from 'pixi.js';
 import { useStore } from '../../../stores';
 import { cssColorToHex, cssColorToAlpha, parseCSSSize } from '../sprites/styleConverter';
 import type { CSSStyle } from '../sprites/styleConverter';
+import { drawBox, parseBorderConfig } from '../utils';
 
 // ============================================
 // Types
@@ -74,42 +77,27 @@ export const BodyLayer = memo(function BodyLayer({
     return cssColorToAlpha(backgroundColorCss);
   }, [backgroundColorCss]);
 
+  // Border-Box v2: parseBorderConfig로 border 정보 추출
+  const borderConfig = useMemo(() => parseBorderConfig(bodyStyle), [bodyStyle]);
+
+  // Border-Box v2: borderRadius 파싱 (border와 독립적으로 적용)
   const borderRadius = useMemo(() => {
     return parseCSSSize(bodyStyle?.borderRadius, undefined, 0);
   }, [bodyStyle?.borderRadius]);
 
-  const borderWidth = useMemo(() => {
-    return parseCSSSize(bodyStyle?.borderWidth, undefined, 0);
-  }, [bodyStyle?.borderWidth]);
-
-  const borderColor = useMemo(() => {
-    return cssColorToHex(bodyStyle?.borderColor, 0x000000);
-  }, [bodyStyle?.borderColor]);
-
-  // Draw function
+  // Border-Box v2: drawBox 유틸리티 사용
   const draw = useCallback(
     (g: PixiGraphics) => {
-      g.clear();
-
-      // 배경
-      if (borderRadius > 0) {
-        g.roundRect(0, 0, pageWidth, pageHeight, borderRadius);
-      } else {
-        g.rect(0, 0, pageWidth, pageHeight);
-      }
-      g.fill({ color: backgroundColor, alpha: backgroundAlpha });
-
-      // 테두리
-      if (borderWidth > 0) {
-        if (borderRadius > 0) {
-          g.roundRect(0, 0, pageWidth, pageHeight, borderRadius);
-        } else {
-          g.rect(0, 0, pageWidth, pageHeight);
-        }
-        g.stroke({ width: borderWidth, color: borderColor, alpha: 1 });
-      }
+      drawBox(g, {
+        width: pageWidth,
+        height: pageHeight,
+        backgroundColor,
+        backgroundAlpha,
+        borderRadius,
+        border: borderConfig,
+      });
     },
-    [pageWidth, pageHeight, backgroundColor, backgroundAlpha, borderRadius, borderWidth, borderColor]
+    [pageWidth, pageHeight, backgroundColor, backgroundAlpha, borderRadius, borderConfig]
   );
 
   // 클릭 핸들러 (modifier 키 전달)

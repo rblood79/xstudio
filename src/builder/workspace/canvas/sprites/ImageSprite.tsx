@@ -2,8 +2,10 @@
  * Image Sprite
  *
  * 🚀 Phase 10 B1.2: Image 이미지 스프라이트
+ * 🚀 Border-Box v2: border-box 방식 렌더링 대비
  *
  * @since 2025-12-11 Phase 10 B1.2
+ * @updated 2025-12-15 Border-Box v2 - drawBox 유틸리티 적용
  */
 
 import { useCallback, useMemo, useState, useEffect } from 'react';
@@ -11,6 +13,7 @@ import { Graphics as PixiGraphics, Texture, Assets } from 'pixi.js';
 import type { Element } from '../../../../types/core/store.types';
 import { convertStyle, type CSSStyle } from './styleConverter';
 import { parsePadding, getContentBounds } from './paddingUtils';
+import { drawBox, parseBorderConfig } from '../utils';
 
 // ============================================
 // Types
@@ -43,6 +46,10 @@ export function ImageSprite({ element, isSelected, onClick }: ImageSpriteProps) 
   const style = element.props?.style as CSSStyle | undefined;
   const converted = useMemo(() => convertStyle(style), [style]);
   const { transform, borderRadius } = converted;
+
+  // Border-Box v2: border 지원 대비
+  const borderConfig = useMemo(() => parseBorderConfig(style), [style]);
+  const effectiveBorderRadius = typeof borderRadius === 'number' ? borderRadius : borderRadius?.[0] ?? 0;
 
   // Padding (paddingUtils 사용)
   const padding = useMemo(() => parsePadding(style), [style]);
@@ -89,18 +96,18 @@ export function ImageSprite({ element, isSelected, onClick }: ImageSpriteProps) 
   const errorState = errorSrc === src;
   const loadingState = Boolean(src) && !activeTexture && !errorState;
 
-  // Draw placeholder/error state (padding 적용)
+  // Border-Box v2: Draw placeholder/error state with drawBox
   const drawPlaceholder = useCallback(
     (g: PixiGraphics) => {
-      g.clear();
-
-      // Background - v8 Pattern: shape → fill
-      if (borderRadius && typeof borderRadius === 'number' && borderRadius > 0) {
-        g.roundRect(0, 0, transform.width, transform.height, borderRadius);
-      } else {
-        g.rect(0, 0, transform.width, transform.height);
-      }
-      g.fill({ color: PLACEHOLDER_COLOR, alpha: 1 });
+      // Background with border-box support
+      drawBox(g, {
+        width: transform.width,
+        height: transform.height,
+        backgroundColor: PLACEHOLDER_COLOR,
+        backgroundAlpha: 1,
+        borderRadius: effectiveBorderRadius,
+        border: borderConfig,
+      });
 
       // Icon (simple image placeholder) - contentBounds 내에 배치
       const iconSize = Math.min(contentBounds.width, contentBounds.height) * 0.3;
@@ -130,7 +137,7 @@ export function ImageSprite({ element, isSelected, onClick }: ImageSpriteProps) 
         g.fill({ color: 0x9ca3af, alpha: 1 }); // gray-400
       }
     },
-    [transform, borderRadius, errorState, contentBounds]
+    [transform.width, transform.height, effectiveBorderRadius, borderConfig, errorState, contentBounds]
   );
 
   // Draw border for loaded image (selection handled by SelectionBox)

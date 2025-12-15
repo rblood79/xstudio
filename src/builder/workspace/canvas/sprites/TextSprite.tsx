@@ -3,9 +3,11 @@
  *
  * 🚀 Phase 10 B1.2: Text, Heading, Label 텍스트 스프라이트
  * 🚀 P7.7: textDecoration (underline, line-through, overline) 지원
+ * 🚀 Border-Box v2: border-box 방식 렌더링
  *
  * @since 2025-12-11 Phase 10 B1.2
  * @updated 2025-12-13 P7.7 - textDecoration 속성 지원
+ * @updated 2025-12-15 Border-Box v2 - drawBox 유틸리티 적용
  */
 
 import { useCallback, useMemo, useRef } from 'react';
@@ -13,6 +15,7 @@ import { Graphics as PixiGraphics, TextStyle, Text } from 'pixi.js';
 import type { Element } from '../../../../types/core/store.types';
 import { convertStyle, applyTextTransform, type CSSStyle } from './styleConverter';
 import { parsePadding } from './paddingUtils';
+import { drawBox, parseBorderConfig } from '../utils';
 
 // ============================================
 // Types
@@ -73,7 +76,10 @@ export function TextSprite({
 }: TextSpriteProps) {
   const style = element.props?.style as CSSStyle | undefined;
   const converted = useMemo(() => convertStyle(style), [style]);
-  const { transform, fill, stroke, text: textStyle, borderRadius } = converted;
+  const { transform, fill, text: textStyle, borderRadius } = converted;
+
+  // Border-Box v2: parseBorderConfig로 border 정보 추출
+  const borderConfig = useMemo(() => parseBorderConfig(style), [style]);
 
   // Text content with P7.6 textTransform applied
   const textContent = useMemo(() => {
@@ -154,40 +160,26 @@ export function TextSprite({
     [hasDecoration, textStyle.fontSize, textStyle.fill, textDecoration]
   );
 
-  // Background draw
+  // Border-Box v2: drawBox 유틸리티 사용
+  const effectiveBorderRadius = typeof borderRadius === 'number' ? borderRadius : borderRadius?.[0] ?? 0;
   const drawBackground = useCallback(
     (g: PixiGraphics) => {
-      g.clear();
-
-      // Only draw if there's a background color
-      if (!style?.backgroundColor || style.backgroundColor === 'transparent') {
+      // Only draw if there's a background color, border, or borderRadius
+      if ((!style?.backgroundColor || style.backgroundColor === 'transparent') && !borderConfig && !effectiveBorderRadius) {
+        g.clear();
         return;
       }
 
-      // v8 Pattern: shape → fill (shape first, then apply fill with style)
-      if (borderRadius && typeof borderRadius === 'number' && borderRadius > 0) {
-        g.roundRect(0, 0, transform.width, transform.height, borderRadius);
-      } else {
-        g.rect(0, 0, transform.width, transform.height);
-      }
-      g.fill({ color: fill.color, alpha: fill.alpha });
-
-      // Stroke
-      if (stroke) {
-        g.setStrokeStyle({
-          width: stroke.width,
-          color: stroke.color,
-          alpha: stroke.alpha,
-        });
-        if (borderRadius && typeof borderRadius === 'number' && borderRadius > 0) {
-          g.roundRect(0, 0, transform.width, transform.height, borderRadius);
-        } else {
-          g.rect(0, 0, transform.width, transform.height);
-        }
-        g.stroke();
-      }
+      drawBox(g, {
+        width: transform.width,
+        height: transform.height,
+        backgroundColor: fill.color,
+        backgroundAlpha: fill.alpha,
+        borderRadius: effectiveBorderRadius,
+        border: borderConfig,
+      });
     },
-    [style, fill, stroke, transform, borderRadius]
+    [style?.backgroundColor, transform.width, transform.height, fill.color, fill.alpha, effectiveBorderRadius, borderConfig]
   );
 
   const handleClick = useCallback((e: unknown) => {
