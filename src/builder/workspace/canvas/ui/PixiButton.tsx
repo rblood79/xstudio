@@ -11,32 +11,126 @@
  *
  * @since 2025-12-11 Phase 11 B2.4
  * @updated 2025-12-14 P8: useEffect 명령형 FancyButton 생성
+ * @updated 2025-12-15 P9: variant, size, isDisabled, isLoading 지원 추가
  */
 
-import { memo, useCallback, useRef, useEffect } from 'react';
+import { memo, useCallback, useRef, useEffect, useMemo } from 'react';
 import { Container as PixiContainer, Graphics as PixiGraphicsClass, Text as PixiText, TextStyle, CanvasTextMetrics } from 'pixi.js';
 import { FancyButton } from '@pixi/ui';
 import type { Element } from '../../../../types/core/store.types';
 import type { CSSStyle } from '../sprites/styleConverter';
 import { cssColorToHex, parseCSSSize } from '../sprites/styleConverter';
+import type { ButtonVariant, ComponentSize } from '../../../../types/builder/componentVariants.types';
 
 // ============================================
 // Constants (CSS 브라우저 기본값 기반)
 // ============================================
 
 /**
- * HTML Button 기본 패딩 (브라우저 기본값 참고)
- * Chrome/Safari: 약 1px 6px ~ 2px 6px
- * 여기서는 좀 더 여유있는 패딩 사용
- */
-const DEFAULT_PADDING_X = 16; // 좌우 패딩
-const DEFAULT_PADDING_Y = 8;  // 상하 패딩
-
-/**
  * 최소 버튼 크기 (너무 작아지는 것 방지)
  */
 const MIN_BUTTON_WIDTH = 32;
 const MIN_BUTTON_HEIGHT = 24;
+
+// ============================================
+// Variant Color Mapping (Button.css와 동기화)
+// ============================================
+
+interface VariantColors {
+  bg: number;
+  bgHover: number;
+  bgPressed: number;
+  text: number;
+  border?: number;
+  bgAlpha?: number;
+}
+
+/**
+ * variant별 색상 매핑 (Button.css의 Action Token System과 동기화)
+ */
+const VARIANT_COLORS: Record<string, VariantColors> = {
+  default: {
+    bg: 0xe5e7eb,       // gray-200
+    bgHover: 0xd1d5db,  // gray-300
+    bgPressed: 0x9ca3af, // gray-400
+    text: 0x1f2937,     // gray-800
+  },
+  primary: {
+    bg: 0x3b82f6,       // blue-500 (--action-primary-bg)
+    bgHover: 0x2563eb,  // blue-600
+    bgPressed: 0x1d4ed8, // blue-700
+    text: 0xffffff,
+  },
+  secondary: {
+    bg: 0x8b5cf6,       // violet-500 (--action-secondary-bg)
+    bgHover: 0x7c3aed,  // violet-600
+    bgPressed: 0x6d28d9, // violet-700
+    text: 0xffffff,
+  },
+  tertiary: {
+    bg: 0x6b7280,       // gray-500
+    bgHover: 0x4b5563,  // gray-600
+    bgPressed: 0x374151, // gray-700
+    text: 0xffffff,
+  },
+  error: {
+    bg: 0xef4444,       // red-500
+    bgHover: 0xdc2626,  // red-600
+    bgPressed: 0xb91c1c, // red-700
+    text: 0xffffff,
+  },
+  surface: {
+    bg: 0x64748b,       // slate-500 (--action-surface-bg)
+    bgHover: 0x475569,  // slate-600
+    bgPressed: 0x334155, // slate-700
+    text: 0xffffff,
+  },
+  outline: {
+    bg: 0xffffff,
+    bgHover: 0xf1f5f9,  // slate-100
+    bgPressed: 0xe2e8f0, // slate-200
+    text: 0x3b82f6,     // blue-500
+    border: 0x3b82f6,
+  },
+  ghost: {
+    bg: 0xffffff,
+    bgHover: 0xf1f5f9,  // slate-100
+    bgPressed: 0xe2e8f0, // slate-200
+    text: 0x1f2937,     // gray-800
+    bgAlpha: 0,
+  },
+};
+
+// ============================================
+// Size Presets (Button.css와 동기화)
+// ============================================
+
+interface SizePreset {
+  fontSize: number;
+  paddingX: number;  // 좌우 padding (CSS: padding-right, padding-left)
+  paddingY: number;  // 상하 padding (CSS: padding-top, padding-bottom)
+  borderRadius: number;
+}
+
+/**
+ * size별 크기/패딩 프리셋 (Button.css와 정확히 동기화)
+ *
+ * Button.css 값:
+ * - xs: padding: var(--spacing-2xs) var(--spacing-sm)  = 2px 8px,  font-size: 10px
+ * - sm: padding: var(--spacing) var(--spacing-md)      = 4px 12px, font-size: 14px
+ * - md: padding: var(--spacing-sm) var(--spacing-xl)   = 8px 24px, font-size: 16px
+ * - lg: padding: var(--spacing-md) var(--spacing-2xl)  = 12px 32px, font-size: 18px
+ * - xl: padding: var(--spacing-lg) var(--spacing-3xl)  = 16px 40px, font-size: 20px
+ */
+const SIZE_PRESETS: Record<string, SizePreset> = {
+  xs: { fontSize: 10, paddingX: 8,  paddingY: 2,  borderRadius: 4 },
+  sm: { fontSize: 14, paddingX: 12, paddingY: 4,  borderRadius: 4 },
+  md: { fontSize: 16, paddingX: 24, paddingY: 8,  borderRadius: 6 },
+  lg: { fontSize: 18, paddingX: 32, paddingY: 12, borderRadius: 8 },
+  xl: { fontSize: 20, paddingX: 40, paddingY: 16, borderRadius: 8 },
+};
+
+const DEFAULT_SIZE_PRESET = SIZE_PRESETS.sm;
 
 // ============================================
 // Types
@@ -49,6 +143,20 @@ interface ClickModifiers {
   ctrlKey: boolean;
 }
 
+/** Button props from element.props */
+interface ButtonElementProps {
+  children?: string;
+  text?: string;
+  label?: string;
+  variant?: ButtonVariant;
+  size?: ComponentSize;
+  type?: 'button' | 'submit' | 'reset';
+  isDisabled?: boolean;
+  isLoading?: boolean;
+  className?: string;
+  style?: CSSStyle;
+}
+
 export interface PixiButtonProps {
   element: Element;
   isSelected?: boolean;
@@ -59,63 +167,126 @@ export interface PixiButtonProps {
 // Style Conversion
 // ============================================
 
+interface ButtonLayoutResult {
+  left: number;
+  top: number;
+  width: number;
+  height: number;
+  // Colors (from variant or inline style)
+  backgroundColor: number;
+  backgroundAlpha: number;
+  hoverColor: number;
+  pressedColor: number;
+  textColor: number;
+  borderColor: number | null;
+  borderRadius: number;
+  fontSize: number;
+  fontFamily: string;
+  // State
+  isDisabled: boolean;
+  isLoading: boolean;
+}
+
 /**
- * CSS 스타일에서 버튼 레이아웃 정보 추출
+ * CSS 스타일과 variant/size에서 버튼 레이아웃 정보 추출
  *
- * width/height가 'auto' 또는 undefined일 때 텍스트 크기 기반으로 계산
- *
- * HTML/CSS 버튼 크기 계산 공식:
- * - width = paddingLeft + borderLeft + textWidth + borderRight + paddingRight
- * - height = paddingTop + borderTop + lineHeight + borderBottom + paddingBottom
+ * 우선순위:
+ * 1. inline style (props.style) - 최우선
+ * 2. variant/size props - 차선
+ * 3. 기본값 - 최후
  */
-function getButtonLayout(style: CSSStyle | undefined, buttonText: string) {
-  const fontSize = parseCSSSize(style?.fontSize, undefined, 14);
+function getButtonLayout(
+  style: CSSStyle | undefined,
+  buttonProps: ButtonElementProps,
+  buttonText: string
+): ButtonLayoutResult {
+  // variant와 size 추출
+  const variant = buttonProps.variant || 'default';
+  const size = buttonProps.size || 'sm';
+  const isDisabled = Boolean(buttonProps.isDisabled);
+  const isLoading = Boolean(buttonProps.isLoading);
+
+  // variant 색상 가져오기
+  const variantColors = VARIANT_COLORS[variant] || VARIANT_COLORS.default;
+
+  // size 프리셋 가져오기
+  const sizePreset = SIZE_PRESETS[size] || DEFAULT_SIZE_PRESET;
+
+  // 폰트 설정 (inline style > size preset)
+  const fontSize = parseCSSSize(style?.fontSize, undefined, sizePreset.fontSize);
   const fontFamily = style?.fontFamily || 'Pretendard, sans-serif';
 
-  // 패딩 추출 (CSS padding 값 사용, 없으면 기본값)
-  const paddingTop = parseCSSSize(style?.paddingTop, undefined, DEFAULT_PADDING_Y);
-  const paddingRight = parseCSSSize(style?.paddingRight, undefined, DEFAULT_PADDING_X);
-  const paddingBottom = parseCSSSize(style?.paddingBottom, undefined, DEFAULT_PADDING_Y);
-  const paddingLeft = parseCSSSize(style?.paddingLeft, undefined, DEFAULT_PADDING_X);
+  // 패딩 (inline style > size preset)
+  const paddingTop = parseCSSSize(style?.paddingTop, undefined, sizePreset.paddingY);
+  const paddingRight = parseCSSSize(style?.paddingRight, undefined, sizePreset.paddingX);
+  const paddingBottom = parseCSSSize(style?.paddingBottom, undefined, sizePreset.paddingY);
+  const paddingLeft = parseCSSSize(style?.paddingLeft, undefined, sizePreset.paddingX);
 
-  // 테두리 너비 (있으면 사용)
-  const borderWidth = parseCSSSize(style?.borderWidth, undefined, 0);
+  // 테두리 반경 (inline style > size preset)
+  const borderRadius = parseCSSSize(style?.borderRadius, undefined, sizePreset.borderRadius);
 
-  // width/height가 'auto'인지 확인
-  const isWidthAuto = style?.width === 'auto' || style?.width === undefined;
-  const isHeightAuto = style?.height === 'auto' || style?.height === undefined;
+  // 테두리 너비
+  const borderWidth = parseCSSSize(style?.borderWidth, undefined, variantColors.border ? 1 : 0);
+
+  // 색상 (inline style > variant)
+  const hasInlineBg = style?.backgroundColor !== undefined;
+  const hasInlineColor = style?.color !== undefined;
+
+  const backgroundColor = hasInlineBg
+    ? cssColorToHex(style?.backgroundColor, variantColors.bg)
+    : variantColors.bg;
+
+  const backgroundAlpha = variantColors.bgAlpha !== undefined ? variantColors.bgAlpha : 1;
+
+  const textColor = hasInlineColor
+    ? cssColorToHex(style?.color, variantColors.text)
+    : variantColors.text;
+
+  // Hover/Pressed 색상 (inline style일 경우 밝기 조절, 아니면 variant)
+  let hoverColor: number;
+  let pressedColor: number;
+
+  if (hasInlineBg) {
+    hoverColor = Math.min(backgroundColor + 0x151515, 0xffffff);
+    pressedColor = Math.max(backgroundColor - 0x151515, 0x000000);
+  } else {
+    hoverColor = variantColors.bgHover;
+    pressedColor = variantColors.bgPressed;
+  }
+
+  // Border 색상 (outline variant)
+  const borderColor = variantColors.border ?? null;
+
+  // 크기 계산
+  // width/height가 없거나 'auto'면 텍스트 + padding 기반으로 자동 계산
+  // falsy 값 (undefined, null, '', 0) 모두 auto로 처리
+  const isWidthAuto = !style?.width || style?.width === 'auto';
+  const isHeightAuto = !style?.height || style?.height === 'auto';
 
   let width: number;
   let height: number;
 
-  if (isWidthAuto || isHeightAuto) {
-    // TextStyle 생성하여 텍스트 크기 측정
-    const textStyle = new TextStyle({
-      fontSize,
-      fontFamily,
-    });
+  // 텍스트 크기 측정 (항상 필요 - auto 크기 계산용)
+  const textStyle = new TextStyle({ fontSize, fontFamily });
+  const metrics = CanvasTextMetrics.measureText(buttonText, textStyle);
+  const textWidth = metrics.width;
+  const textHeight = metrics.height;
 
-    // CanvasTextMetrics로 텍스트 크기 측정
-    const metrics = CanvasTextMetrics.measureText(buttonText, textStyle);
-    const textWidth = metrics.width;
-    const textHeight = metrics.height;
-
-    // auto일 때 콘텐츠 기반 크기 계산
-    if (isWidthAuto) {
-      width = paddingLeft + borderWidth + textWidth + borderWidth + paddingRight;
-      width = Math.max(width, MIN_BUTTON_WIDTH);
-    } else {
-      width = parseCSSSize(style?.width, undefined, 120);
-    }
-
-    if (isHeightAuto) {
-      height = paddingTop + borderWidth + textHeight + borderWidth + paddingBottom;
-      height = Math.max(height, MIN_BUTTON_HEIGHT);
-    } else {
-      height = parseCSSSize(style?.height, undefined, 40);
-    }
+  if (isWidthAuto) {
+    // auto: 텍스트 + 패딩 + 테두리 기반 계산
+    width = paddingLeft + borderWidth + textWidth + borderWidth + paddingRight;
+    width = Math.max(width, MIN_BUTTON_WIDTH);
   } else {
+    // 명시적 width 사용
     width = parseCSSSize(style?.width, undefined, 120);
+  }
+
+  if (isHeightAuto) {
+    // auto: 텍스트 + 패딩 + 테두리 기반 계산
+    height = paddingTop + borderWidth + textHeight + borderWidth + paddingBottom;
+    height = Math.max(height, MIN_BUTTON_HEIGHT);
+  } else {
+    // 명시적 height 사용
     height = parseCSSSize(style?.height, undefined, 40);
   }
 
@@ -124,14 +295,17 @@ function getButtonLayout(style: CSSStyle | undefined, buttonText: string) {
     top: parseCSSSize(style?.top, undefined, 0),
     width,
     height,
-    backgroundColor: cssColorToHex(style?.backgroundColor, 0x3b82f6),
-    borderRadius: parseCSSSize(style?.borderRadius, undefined, 8),
-    textColor: cssColorToHex(style?.color, 0xffffff),
+    backgroundColor,
+    backgroundAlpha,
+    hoverColor,
+    pressedColor,
+    textColor,
+    borderColor,
+    borderRadius,
     fontSize,
     fontFamily,
-    // 패딩 정보도 반환 (FancyButton padding 설정용)
-    paddingX: (paddingLeft + paddingRight) / 2,
-    paddingY: (paddingTop + paddingBottom) / 2,
+    isDisabled,
+    isLoading,
   };
 }
 
@@ -142,11 +316,65 @@ function createButtonGraphics(
   width: number,
   height: number,
   backgroundColor: number,
+  borderRadius: number,
+  options?: {
+    alpha?: number;
+    borderColor?: number | null;
+    borderWidth?: number;
+  }
+): PixiGraphicsClass {
+  const graphics = new PixiGraphicsClass();
+  const alpha = options?.alpha ?? 1;
+  const borderColor = options?.borderColor;
+  const borderWidth = options?.borderWidth ?? 1;
+
+  graphics.roundRect(0, 0, width, height, borderRadius);
+
+  if (alpha > 0) {
+    graphics.fill({ color: backgroundColor, alpha });
+  }
+
+  if (borderColor !== null && borderColor !== undefined) {
+    graphics.roundRect(0, 0, width, height, borderRadius);
+    graphics.stroke({ color: borderColor, width: borderWidth });
+  }
+
+  return graphics;
+}
+
+/**
+ * 비활성화 오버레이 Graphics 생성
+ */
+function createDisabledOverlay(
+  width: number,
+  height: number,
   borderRadius: number
 ): PixiGraphicsClass {
   const graphics = new PixiGraphicsClass();
   graphics.roundRect(0, 0, width, height, borderRadius);
-  graphics.fill({ color: backgroundColor });
+  graphics.fill({ color: 0xffffff, alpha: 0.5 });
+  return graphics;
+}
+
+/**
+ * 로딩 인디케이터 (점 3개 애니메이션용 - 간단한 버전)
+ */
+function createLoadingIndicator(
+  width: number,
+  height: number
+): PixiGraphicsClass {
+  const graphics = new PixiGraphicsClass();
+  const dotRadius = 3;
+  const spacing = 8;
+  const centerX = width / 2;
+  const centerY = height / 2;
+
+  // 3개의 점 그리기
+  for (let i = -1; i <= 1; i++) {
+    graphics.circle(centerX + i * spacing, centerY, dotRadius);
+  }
+  graphics.fill({ color: 0xffffff, alpha: 0.8 });
+
   return graphics;
 }
 
@@ -158,6 +386,7 @@ function createButtonGraphics(
  * PixiButton
  *
  * @pixi/ui FancyButton을 명령형으로 생성
+ * variant, size, isDisabled, isLoading 지원
  *
  * @example
  * <PixiButton element={buttonElement} onClick={handleClick} />
@@ -168,55 +397,80 @@ export const PixiButton = memo(function PixiButton({
   onClick,
 }: PixiButtonProps) {
   const style = element.props?.style as CSSStyle | undefined;
-  const props = element.props as Record<string, unknown> | undefined;
+  const props = element.props as ButtonElementProps | undefined;
 
-  // 버튼 텍스트
-  const buttonText = String(props?.children || props?.text || props?.label || 'Button');
+  // 버튼 텍스트 (isLoading일 때는 빈 문자열)
+  const buttonText = useMemo(() => {
+    if (props?.isLoading) return '';
+    return String(props?.children || props?.text || props?.label || 'Button');
+  }, [props?.children, props?.text, props?.label, props?.isLoading]);
 
   // 레이아웃 스타일 (buttonText 필요 - auto 크기 계산용)
-  const layout = getButtonLayout(style, buttonText);
+  const layout = useMemo(() => {
+    return getButtonLayout(style, props || {}, buttonText || 'Button');
+  }, [style, props, buttonText]);
 
   // Container ref
   const containerRef = useRef<PixiContainer | null>(null);
   const buttonRef = useRef<FancyButton | null>(null);
+  const disabledOverlayRef = useRef<PixiGraphicsClass | null>(null);
+  const loadingIndicatorRef = useRef<PixiGraphicsClass | null>(null);
 
   // FancyButton 생성 및 업데이트
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
 
-    // 기존 버튼 제거
+    // 기존 요소들 제거
     if (buttonRef.current) {
       container.removeChild(buttonRef.current);
       buttonRef.current.destroy();
       buttonRef.current = null;
     }
+    if (disabledOverlayRef.current) {
+      container.removeChild(disabledOverlayRef.current);
+      disabledOverlayRef.current.destroy();
+      disabledOverlayRef.current = null;
+    }
+    if (loadingIndicatorRef.current) {
+      container.removeChild(loadingIndicatorRef.current);
+      loadingIndicatorRef.current.destroy();
+      loadingIndicatorRef.current = null;
+    }
+
+    // Graphics 옵션 (alpha, border)
+    const graphicsOptions = {
+      alpha: layout.backgroundAlpha,
+      borderColor: layout.borderColor,
+      borderWidth: 1,
+    };
 
     // 배경 Graphics 생성
     const defaultView = createButtonGraphics(
       layout.width,
       layout.height,
       layout.backgroundColor,
-      layout.borderRadius
+      layout.borderRadius,
+      graphicsOptions
     );
 
-    const hoverColor = Math.min(layout.backgroundColor + 0x202020, 0xffffff);
     const hoverView = createButtonGraphics(
       layout.width,
       layout.height,
-      hoverColor,
-      layout.borderRadius
+      layout.hoverColor,
+      layout.borderRadius,
+      graphicsOptions
     );
 
-    const pressedColor = Math.max(layout.backgroundColor - 0x202020, 0x000000);
     const pressedView = createButtonGraphics(
       layout.width,
       layout.height,
-      pressedColor,
-      layout.borderRadius
+      layout.pressedColor,
+      layout.borderRadius,
+      graphicsOptions
     );
 
-    // TextStyle 및 Text 객체 생성 (FancyButton은 textStyle을 직접 받지 않음)
+    // TextStyle 및 Text 객체 생성
     const textStyle = new TextStyle({
       fill: layout.textColor,
       fontSize: layout.fontSize,
@@ -229,14 +483,12 @@ export const PixiButton = memo(function PixiButton({
       style: textStyle,
     });
 
-    // FancyButton 생성 (text에 PixiText 객체 전달)
-    // Note: onPress는 사용하지 않음 - modifier 키를 전달할 수 없기 때문
-    // 대신 투명 히트 영역(pixiGraphics)에서 클릭 이벤트 처리
+    // FancyButton 생성
     const button = new FancyButton({
       defaultView,
       hoverView,
       pressedView,
-      text: textView,
+      text: layout.isLoading ? undefined : textView,
       anchor: 0.5,
     });
 
@@ -244,12 +496,30 @@ export const PixiButton = memo(function PixiButton({
     button.x = layout.width / 2;
     button.y = layout.height / 2;
 
-    // FancyButton의 이벤트 모드를 none으로 설정하여 클릭이 히트 영역으로 전달되도록 함
+    // FancyButton의 이벤트 모드를 none으로 설정
     button.eventMode = 'none';
 
     // Container에 추가
     container.addChild(button);
     buttonRef.current = button;
+
+    // 비활성화 오버레이 추가
+    if (layout.isDisabled || layout.isLoading) {
+      const disabledOverlay = createDisabledOverlay(
+        layout.width,
+        layout.height,
+        layout.borderRadius
+      );
+      container.addChild(disabledOverlay);
+      disabledOverlayRef.current = disabledOverlay;
+    }
+
+    // 로딩 인디케이터 추가
+    if (layout.isLoading) {
+      const loadingIndicator = createLoadingIndicator(layout.width, layout.height);
+      container.addChild(loadingIndicator);
+      loadingIndicatorRef.current = loadingIndicator;
+    }
 
     // Cleanup
     return () => {
@@ -258,15 +528,31 @@ export const PixiButton = memo(function PixiButton({
         buttonRef.current.destroy();
         buttonRef.current = null;
       }
+      if (disabledOverlayRef.current && container.children.includes(disabledOverlayRef.current)) {
+        container.removeChild(disabledOverlayRef.current);
+        disabledOverlayRef.current.destroy();
+        disabledOverlayRef.current = null;
+      }
+      if (loadingIndicatorRef.current && container.children.includes(loadingIndicatorRef.current)) {
+        container.removeChild(loadingIndicatorRef.current);
+        loadingIndicatorRef.current.destroy();
+        loadingIndicatorRef.current = null;
+      }
     };
   }, [
     layout.width,
     layout.height,
     layout.backgroundColor,
+    layout.backgroundAlpha,
+    layout.hoverColor,
+    layout.pressedColor,
+    layout.borderColor,
     layout.borderRadius,
     layout.textColor,
     layout.fontSize,
     layout.fontFamily,
+    layout.isDisabled,
+    layout.isLoading,
     buttonText,
   ]);
 
@@ -288,6 +574,9 @@ export const PixiButton = memo(function PixiButton({
 
   // 클릭 핸들러 (modifier 키 전달)
   const handleClick = useCallback((e: unknown) => {
+    // 비활성화 또는 로딩 중이면 클릭 무시
+    if (layout.isDisabled || layout.isLoading) return;
+
     // PixiJS FederatedPointerEvent has modifier keys directly
     const pixiEvent = e as {
       metaKey?: boolean;
@@ -302,7 +591,10 @@ export const PixiButton = memo(function PixiButton({
     const ctrlKey = pixiEvent?.ctrlKey ?? pixiEvent?.nativeEvent?.ctrlKey ?? false;
 
     onClick?.(element.id, { metaKey, shiftKey, ctrlKey });
-  }, [element.id, onClick]);
+  }, [element.id, onClick, layout.isDisabled, layout.isLoading]);
+
+  // 커서 스타일 (비활성화 시 not-allowed)
+  const cursorStyle = layout.isDisabled || layout.isLoading ? 'not-allowed' : 'pointer';
 
   return (
     <pixiContainer
@@ -312,13 +604,13 @@ export const PixiButton = memo(function PixiButton({
         containerRef.current = c;
       }}
     >
-      {/* FancyButton은 useEffect에서 명령형으로 추가됨 */}
+      {/* FancyButton, disabled overlay, loading indicator는 useEffect에서 명령형으로 추가됨 */}
 
       {/* 투명 히트 영역 (modifier 키 감지용) */}
       <pixiGraphics
         draw={drawHitArea}
         eventMode="static"
-        cursor="pointer"
+        cursor={cursorStyle}
         onPointerDown={handleClick}
       />
 

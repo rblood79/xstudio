@@ -267,6 +267,36 @@ const TEXT_ELEMENT_TAGS = new Set([
   'Checkbox', 'Radio', 'Switch', 'ToggleButton'
 ]);
 
+// ============================================
+// Button Size Presets (PixiButton.tsx와 동기화)
+// ============================================
+
+interface ButtonSizePreset {
+  fontSize: number;
+  paddingX: number;  // 좌우 padding
+  paddingY: number;  // 상하 padding
+}
+
+/**
+ * Button size prop에 따른 크기 프리셋 (Button.css와 동기화)
+ *
+ * Button.css 값:
+ * - xs: padding: 2px 8px,  font-size: 10px
+ * - sm: padding: 4px 12px, font-size: 14px
+ * - md: padding: 8px 24px, font-size: 16px
+ * - lg: padding: 12px 32px, font-size: 18px
+ * - xl: padding: 16px 40px, font-size: 20px
+ */
+const BUTTON_SIZE_PRESETS: Record<string, ButtonSizePreset> = {
+  xs: { fontSize: 10, paddingX: 8,  paddingY: 2 },
+  sm: { fontSize: 14, paddingX: 12, paddingY: 4 },
+  md: { fontSize: 16, paddingX: 24, paddingY: 8 },
+  lg: { fontSize: 18, paddingX: 32, paddingY: 12 },
+  xl: { fontSize: 20, paddingX: 40, paddingY: 16 },
+};
+
+const DEFAULT_BUTTON_SIZE_PRESET = BUTTON_SIZE_PRESETS.sm;
+
 /**
  * 요소가 텍스트 기반인지 확인
  */
@@ -275,7 +305,25 @@ function isTextElement(element: Element): boolean {
 }
 
 /**
+ * Button 요소의 size prop에서 패딩 가져오기
+ */
+function getButtonSizePadding(
+  element: Element
+): { paddingX: number; paddingY: number; fontSize: number } {
+  const props = element.props as Record<string, unknown> | undefined;
+  const size = (props?.size as string) || 'sm';
+  const preset = BUTTON_SIZE_PRESETS[size] || DEFAULT_BUTTON_SIZE_PRESET;
+  return {
+    paddingX: preset.paddingX,
+    paddingY: preset.paddingY,
+    fontSize: preset.fontSize,
+  };
+}
+
+/**
  * PixiJS CanvasTextMetrics를 사용하여 텍스트 크기 측정 (v8)
+ *
+ * Button 요소의 경우 size prop에 따른 preset 패딩 사용
  */
 function measureTextSize(
   element: Element,
@@ -288,10 +336,20 @@ function measureTextSize(
     return null;
   }
 
+  // Button 요소인 경우 size prop에서 패딩/폰트 크기 가져오기
+  const isButton = element.tag === 'Button' || element.tag === 'SubmitButton';
+  const buttonSize = isButton ? getButtonSizePadding(element) : null;
+
+  // fontSize: inline style > size preset > 기본값
+  const fontSize = parseCSSValue(
+    style?.fontSize,
+    buttonSize?.fontSize ?? 16
+  );
+
   // PixiJS TextStyle 생성
   const textStyle = new TextStyle({
     fontFamily: (style?.fontFamily as string) || 'Arial',
-    fontSize: parseCSSValue(style?.fontSize, 16),
+    fontSize,
     fontWeight: (style?.fontWeight as string) || 'normal',
     fontStyle: (style?.fontStyle as 'normal' | 'italic' | 'oblique') || 'normal',
     letterSpacing: parseCSSValue(style?.letterSpacing, 0),
@@ -300,10 +358,40 @@ function measureTextSize(
   // CanvasTextMetrics로 크기 측정 (PixiJS v8)
   const metrics = CanvasTextMetrics.measureText(textContent, textStyle);
 
-  // padding 고려
-  const padding = parsePadding(style);
-  const totalWidth = metrics.width + padding.left + padding.right;
-  const totalHeight = metrics.height + padding.top + padding.bottom;
+  // padding 계산: Button인 경우 size preset 사용, 아니면 style에서 파싱
+  let paddingLeft: number;
+  let paddingRight: number;
+  let paddingTop: number;
+  let paddingBottom: number;
+
+  if (buttonSize) {
+    // Button: inline style이 있으면 우선, 없으면 size preset 사용
+    const stylePadding = parsePadding(style);
+    const hasInlinePadding = style?.padding || style?.paddingTop || style?.paddingRight ||
+                             style?.paddingBottom || style?.paddingLeft;
+
+    if (hasInlinePadding) {
+      paddingLeft = stylePadding.left;
+      paddingRight = stylePadding.right;
+      paddingTop = stylePadding.top;
+      paddingBottom = stylePadding.bottom;
+    } else {
+      paddingLeft = buttonSize.paddingX;
+      paddingRight = buttonSize.paddingX;
+      paddingTop = buttonSize.paddingY;
+      paddingBottom = buttonSize.paddingY;
+    }
+  } else {
+    // 일반 텍스트 요소: style에서 파싱
+    const stylePadding = parsePadding(style);
+    paddingLeft = stylePadding.left;
+    paddingRight = stylePadding.right;
+    paddingTop = stylePadding.top;
+    paddingBottom = stylePadding.bottom;
+  }
+
+  const totalWidth = metrics.width + paddingLeft + paddingRight;
+  const totalHeight = metrics.height + paddingTop + paddingBottom;
 
   return {
     width: Math.ceil(totalWidth),
