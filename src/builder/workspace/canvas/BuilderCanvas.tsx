@@ -664,8 +664,9 @@ export function BuilderCanvas({
           resizeTo={containerEl}
           background={backgroundColor}
           antialias={true}
-          resolution={window.devicePixelRatio || 1}
+          resolution={Math.max(window.devicePixelRatio || 1, 2)}
           autoDensity={true}
+          roundPixels={true}
         >
           {/* P4: 메모이제이션된 컴포넌트 등록 (첫 번째 자식) */}
           <PixiExtendBridge />
