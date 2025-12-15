@@ -6,7 +6,7 @@ import type {
 } from "react";
 
 // ==================== Effect Types ====================
-export type EffectType = "sand" | "curl" | "matrix" | "code" | "portal";
+export type EffectType = "sand" | "curl" | "matrix" | "code";
 
 // ==================== Content Types ====================
 export type MorphContent =

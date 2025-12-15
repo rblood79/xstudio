@@ -129,29 +129,17 @@ export function ImageSprite({ element, isSelected, onClick }: ImageSpriteProps) 
         g.circle(iconX + iconSize * 0.7, iconY + iconSize * 0.25, iconSize * 0.1);
         g.fill({ color: 0x9ca3af, alpha: 1 }); // gray-400
       }
-
-      // Selection highlight
-      if (isSelected) {
-        g.setStrokeStyle({ width: 2, color: 0x3b82f6, alpha: 1 });
-        g.rect(-1, -1, transform.width + 2, transform.height + 2);
-        g.stroke();
-      }
     },
-    [transform, borderRadius, errorState, isSelected, contentBounds]
+    [transform, borderRadius, errorState, contentBounds]
   );
 
-  // Draw border/selection for loaded image
+  // Draw border for loaded image (selection handled by SelectionBox)
   const drawOverlay = useCallback(
     (g: PixiGraphics) => {
       g.clear();
-
-      if (isSelected) {
-        g.setStrokeStyle({ width: 2, color: 0x3b82f6, alpha: 1 });
-        g.rect(-1, -1, transform.width + 2, transform.height + 2);
-        g.stroke();
-      }
+      // Border or other overlay effects can be added here if needed
     },
-    [transform, isSelected]
+    [transform]
   );
 
   const handleClick = useCallback((e: unknown) => {

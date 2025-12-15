@@ -186,15 +186,8 @@ export function TextSprite({
         }
         g.stroke();
       }
-
-      // Selection highlight
-      if (isSelected) {
-        g.setStrokeStyle({ width: 2, color: 0x3b82f6, alpha: 1 });
-        g.rect(-1, -1, transform.width + 2, transform.height + 2);
-        g.stroke();
-      }
     },
-    [style, fill, stroke, transform, borderRadius, isSelected]
+    [style, fill, stroke, transform, borderRadius]
   );
 
   const handleClick = useCallback((e: unknown) => {

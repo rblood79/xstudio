@@ -254,6 +254,13 @@ export function getM3ButtonColors(): M3ButtonColors {
 }
 
 /**
+ * --outline-variant 색상 가져오기 (캔버스 경계선 등)
+ */
+export function getOutlineVariantColor(): number {
+  return cssColorToHex(getCSSVariable('--outline-variant'), FALLBACK_COLORS.outlineVariant);
+}
+
+/**
  * variant 이름으로 색상 가져오기
  */
 export function getVariantColors(

@@ -37,6 +37,8 @@ import { ViewportControlBridge } from "./viewport";
 import { BodyLayer } from "./layers";
 import { TextEditOverlay, useTextEdit } from "../overlay";
 import { initYoga, calculateLayout, type LayoutResult } from "./layout";
+import { getOutlineVariantColor } from "./utils/cssVariableReader";
+import { useThemeColors } from "./hooks/useThemeColors";
 
 // ============================================
 // Types
@@ -81,10 +83,14 @@ function PixiExtendBridge() {
  * 캔버스 경계 표시
  */
 function CanvasBounds({ width, height }: { width: number; height: number }) {
+  // 테마 변경 감지 (MutationObserver 기반)
+  useThemeColors();
+
   const draw = useCallback(
     (g: PixiGraphics) => {
       g.clear();
-      g.setStrokeStyle({ width: 2, color: 0x3b82f6, alpha: 0.5 });
+      const outlineColor = getOutlineVariantColor();
+      g.setStrokeStyle({ width: 1, color: outlineColor });
       g.rect(0, 0, width, height);
       g.stroke();
     },

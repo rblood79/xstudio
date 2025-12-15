@@ -513,15 +513,6 @@ export const PixiButton = memo(function PixiButton({
     buttonText,
   ]);
 
-  // 선택 테두리 Graphics draw
-  const drawSelection = useCallback((g: PixiGraphicsClass) => {
-    g.clear();
-    if (isSelected) {
-      g.roundRect(-2, -2, layout.width + 4, layout.height + 4, layout.borderRadius + 2);
-      g.stroke({ color: 0x3b82f6, width: 2 });
-    }
-  }, [isSelected, layout.width, layout.height, layout.borderRadius]);
-
   // 투명 히트 영역 (modifier 키 감지용)
   const drawHitArea = useCallback((g: PixiGraphicsClass) => {
     g.clear();
@@ -570,11 +561,6 @@ export const PixiButton = memo(function PixiButton({
         cursor={cursorStyle}
         onPointerDown={handleClick}
       />
-
-      {/* 선택 테두리 */}
-      {isSelected && (
-        <pixiGraphics draw={drawSelection} />
-      )}
     </pixiContainer>
   );
 });

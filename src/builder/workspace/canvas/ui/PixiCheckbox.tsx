@@ -160,21 +160,6 @@ export const PixiCheckbox = memo(function PixiCheckbox({
           />
         )}
 
-        {/* 선택 표시 */}
-        {isSelected && (
-          <layoutContainer
-            layout={{
-              position: 'absolute',
-              left: -2,
-              top: -2,
-              width: layoutStyles.box.width + (labelText ? 100 : 4),
-              height: layoutStyles.box.height + 4,
-              borderColor: 0x3b82f6,
-              borderWidth: 2,
-              borderRadius: 4,
-            }}
-          />
-        )}
       </layoutContainer>
     </pixiContainer>
   );

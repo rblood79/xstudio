@@ -233,49 +233,6 @@ export const PixiMaskedFrame = memo(function PixiMaskedFrame({
     };
   }, [app, layoutStyle, imageUrl, handleClick]);
 
-  // 선택 표시
-  useEffect(() => {
-    if (!containerRef.current) return;
-
-    // 기존 선택 표시 제거
-    const existingSelection = containerRef.current.getChildByName('selection');
-    if (existingSelection) {
-      containerRef.current.removeChild(existingSelection);
-      existingSelection.destroy();
-    }
-
-    // 선택 상태이면 테두리 추가
-    if (isSelected) {
-      const selection = new Graphics();
-      selection.name = 'selection';
-
-      // 마스크 모양에 따른 선택 테두리
-      switch (layoutStyle.maskShape) {
-        case 'circle': {
-          const radius = Math.min(layoutStyle.width, layoutStyle.height) / 2 + 4;
-          selection.circle(layoutStyle.width / 2, layoutStyle.height / 2, radius);
-          break;
-        }
-        case 'ellipse': {
-          selection.ellipse(
-            layoutStyle.width / 2,
-            layoutStyle.height / 2,
-            layoutStyle.width / 2 + 4,
-            layoutStyle.height / 2 + 4
-          );
-          break;
-        }
-        default: {
-          selection.roundRect(-4, -4, layoutStyle.width + 8, layoutStyle.height + 8, layoutStyle.borderRadius + 2);
-          break;
-        }
-      }
-
-      selection.stroke({ width: 2, color: 0x3b82f6, alpha: 1 });
-      containerRef.current.addChildAt(selection, 0);
-    }
-  }, [isSelected, layoutStyle.width, layoutStyle.height, layoutStyle.maskShape, layoutStyle.borderRadius]);
-
   // @pixi/ui는 imperative이므로 JSX 반환 없음
   return null;
 });

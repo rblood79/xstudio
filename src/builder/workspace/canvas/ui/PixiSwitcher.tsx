@@ -279,27 +279,6 @@ export const PixiSwitcher = memo(function PixiSwitcher({
     };
   }, [app, layoutStyle, items, activeIndex, handleClick, handleChange]);
 
-  // 선택 표시
-  useEffect(() => {
-    if (!containerRef.current) return;
-
-    // 기존 선택 표시 제거
-    const existingSelection = containerRef.current.getChildByName('selection');
-    if (existingSelection) {
-      containerRef.current.removeChild(existingSelection);
-      existingSelection.destroy();
-    }
-
-    // 선택 상태이면 테두리 추가
-    if (isSelected) {
-      const selection = new Graphics();
-      selection.name = 'selection';
-      selection.roundRect(-4, -4, layoutStyle.width + 8, layoutStyle.height + 8, 4);
-      selection.stroke({ width: 2, color: 0x3b82f6, alpha: 1 });
-      containerRef.current.addChildAt(selection, 0);
-    }
-  }, [isSelected, layoutStyle.width, layoutStyle.height]);
-
   // @pixi/ui는 imperative이므로 JSX 반환 없음
   return null;
 });

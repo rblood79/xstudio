@@ -13,7 +13,6 @@ import {
   CurlNoiseCanvas,
   MatrixRainCanvas,
   CodeParticleCanvas,
-  PortalCanvas,
   sandPreset,
 } from "./particle";
 import type { MorphContent, EffectType } from "./particle";
@@ -44,16 +43,6 @@ export function ParticleBackground() {
         bloomStrength={0.6}    // 발광 강도
         bloomRadius={0.5}      // 발광 퍼짐
         bloomThreshold={0.4}   // 발광 임계값
-      />
-    );
-  }
-
-  if (effectType === "portal") {
-    return (
-      <PortalCanvas
-        bloomStrength={1.8}    // 강한 발광 (포털 글로우)
-        bloomRadius={0.6}      // 발광 퍼짐
-        bloomThreshold={0.1}   // 낮은 임계값
       />
     );
   }

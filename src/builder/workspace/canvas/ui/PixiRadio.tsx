@@ -206,21 +206,6 @@ export const PixiRadio = memo(function PixiRadio({
           );
         })}
 
-        {/* 선택 표시 */}
-        {isSelected && (
-          <layoutContainer
-            layout={{
-              position: 'absolute',
-              left: -2,
-              top: -2,
-              width: isHorizontal ? options.length * 100 : 100,
-              height: isHorizontal ? 24 : options.length * 28,
-              borderColor: 0x3b82f6,
-              borderWidth: 2,
-              borderRadius: 4,
-            }}
-          />
-        )}
       </layoutContainer>
     </pixiContainer>
   );
