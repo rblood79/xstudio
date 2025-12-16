@@ -105,7 +105,7 @@ User Action → Zustand Store → Supabase API → Real-time Update
 
 ### Builder Canvas (PixiJS/WebGL)
 
-> **Status:** ✅ Phase 1-7.9 Complete (2025-12-14)
+> **Status:** ✅ Phase 1-8 Complete (2025-12-16) - **62 WebGL Components**
 
 The builder uses a PixiJS/WebGL-based canvas for high-performance editing with Feature Flag toggle support.
 
@@ -127,18 +127,18 @@ canvas/
 │   ├── LayoutEngine.ts            # Yoga v3 Flexbox engine (455 lines)
 │   └── GridLayout.tsx             # CSS Grid manual implementation
 ├── sprites/
-│   ├── ElementSprite.tsx          # Element type router/dispatcher
+│   ├── ElementSprite.tsx          # Element type router/dispatcher (62 component types)
 │   ├── BoxSprite.tsx              # Container rendering + borderStyle
 │   ├── TextSprite.tsx             # Text + decoration/transform
 │   ├── ImageSprite.tsx            # Image + loading states
 │   ├── styleConverter.ts          # CSS → PixiJS style conversion
 │   └── paddingUtils.ts            # Padding parsing utilities
-├── ui/                            # 12 @pixi/ui component wrappers
-│   ├── PixiButton.tsx             # FancyButton wrapper
-│   ├── PixiSlider.tsx
-│   ├── PixiInput.tsx
-│   ├── PixiSelect.tsx
-│   └── ... (8 more)
+├── ui/                            # 62 WebGL component wrappers
+│   ├── PixiButton.tsx             # Button component
+│   ├── PixiSlider.tsx             # Slider component
+│   ├── PixiInput.tsx              # Input component
+│   ├── PixiSelect.tsx             # Select component
+│   └── ... (58 more - see Component List below)
 ├── selection/                     # Selection system
 │   ├── SelectionLayer.tsx
 │   └── LassoSelection.tsx
@@ -184,8 +184,19 @@ BuilderCanvas.tsx
 - **Border:** `borderRadius`, `borderWidth`, `borderColor`, `borderStyle` (solid/dashed/dotted/double)
 - **Text:** `fontStyle`, `letterSpacing`, `lineHeight`, `textDecoration`, `textTransform`
 
-**@pixi/ui Components (15):**
-PixiButton, PixiFancyButton, PixiCheckbox, PixiCheckboxGroup, PixiCheckboxItem, PixiRadio (RadioGroup), PixiRadioItem, PixiSlider, PixiInput, PixiSelect, PixiProgressBar, PixiSwitcher, PixiScrollBox, PixiList, PixiMaskedFrame
+**WebGL Components (62 total):**
+
+| Phase | Components | Count |
+|-------|------------|-------|
+| **Base** | Button, FancyButton, Checkbox, CheckboxGroup, CheckboxItem, Radio, RadioItem, Slider, Input, Select, ProgressBar, Switcher, ScrollBox, List, MaskedFrame | 15 |
+| **P1** | ToggleButton, ToggleButtonGroup, ListBox, Badge, Meter | 5 |
+| **P2** | Separator, Link, Breadcrumbs, Card, Menu, Tabs | 6 |
+| **P3** | NumberField, SearchField, ComboBox | 3 |
+| **P4** | GridList, TagGroup, Tree, Table | 4 |
+| **P5** | Disclosure, DisclosureGroup, Tooltip, Popover, Dialog | 5 |
+| **P6** | ColorSwatch, ColorSlider, TimeField, DateField, ColorArea, Calendar, ColorWheel, DatePicker, ColorPicker, DateRangePicker | 10 |
+| **P7** | TextField, Switch, TextArea, Form, Toolbar, FileTrigger, DropZone, Skeleton | 8 |
+| **P8** | Toast, Pagination, ColorField, ColorSwatchPicker, Group, Slot | 6 |
 
 **Group Component Pattern (CheckboxGroup/RadioGroup):**
 - Parent component (PixiCheckboxGroup/PixiRadio) handles visual rendering
@@ -235,10 +246,19 @@ useEffect(() => {
 | P2 | extend() centralization | ✅ |
 | P3 | Graphics fill()/stroke() order | ✅ |
 | P4 | useExtend hook | ✅ |
-| P5-P6 | @pixi/ui 12 components | ✅ |
+| P5-P6 | @pixi/ui 15 base components | ✅ |
 | P7.1-P7.7 | Typography & spacing styles | ✅ |
 | P7.8 | Yoga v3.2.1 layout engine | ✅ |
 | P7.9 | borderStyle (dashed/dotted/double) | ✅ |
+| **WebGL Migration Phases:** | | |
+| Phase 1 | ToggleButton, ToggleButtonGroup, ListBox, Badge, Meter (5) | ✅ |
+| Phase 2 | Separator, Link, Breadcrumbs, Card, Menu, Tabs (6) | ✅ |
+| Phase 3 | NumberField, SearchField, ComboBox (3) | ✅ |
+| Phase 4 | GridList, TagGroup, Tree, Table (4) | ✅ |
+| Phase 5 | Disclosure, DisclosureGroup, Tooltip, Popover, Dialog (5) | ✅ |
+| Phase 6 | Date/Color Components - 10 components | ✅ |
+| Phase 7 | Form & Utility Components - 8 components | ✅ |
+| Phase 8 | Notification & Color Utility - 6 components | ✅ |
 
 ### Preview Runtime (iframe)
 
@@ -2451,9 +2471,9 @@ Copilot learns from code patterns. Tips:
 > **Note**: This section has been moved to a dedicated document for better organization.
 > See **[COMPLETED_FEATURES.md](docs/COMPLETED_FEATURES.md)** for full implementation details of all completed features.
 
-### Summary of Completed Features (2025-11-30)
+### Summary of Completed Features (2025-12-16)
 
-**Total Features Completed**: 21 major features
+**Total Features Completed**: 22 major features
 **Code Reduction**: 37-88% in refactored areas
 **Performance Improvements**: 30-50% reduction in CPU/Memory usage
 
@@ -2479,12 +2499,14 @@ Copilot learns from code patterns. Tips:
 19. ✅ **Layout Preset System** - Body editor separation, 9 presets, Slot auto-creation ([상세](docs/features/LAYOUT_PRESET_SYSTEM.md))
 20. ✅ **Canvas Runtime Isolation** - srcdoc iframe, 독립 runtimeStore, postMessage 통신 ([상세](docs/features/CANVAS_RUNTIME_ISOLATION.md))
 21. ✅ **DataTable Component** - Phase 1-6 완료: Store, Component, Editor, Factory, Preview, Transform, Cache ([상세](docs/PLANNED_FEATURES.md#-datatable-component-architecture))
+22. ✅ **WebGL Canvas Migration** - Phase 1-8 완료: 62개 React Aria 컴포넌트의 PixiJS WebGL 구현 (WYSIWYG 편집)
 
 **Key Achievements**:
 - Zero TypeScript errors
 - Zero hardcoded colors (100% CSS variables)
 - 5 custom ESLint rules for anti-pattern prevention
-- Comprehensive documentation (21 feature docs)
+- Comprehensive documentation (22 feature docs)
+- 62 WebGL components for WYSIWYG canvas editing
 
 **Next**: See [PLANNED_FEATURES.md](docs/PLANNED_FEATURES.md) for upcoming implementations.
 
@@ -2496,6 +2518,7 @@ Copilot learns from code patterns. Tips:
 
 | 기능 | 상태 | 우선순위 |
 |------|------|----------|
+| **WebGL Canvas Migration** | ✅ Complete (Phase 1-8, 62 components) | - |
 | **Context Menu System** | 📋 Planning | High |
 | **DataTable Component** | ✅ Complete | - |
 | **SlotEditor** | ✅ Complete | - |
