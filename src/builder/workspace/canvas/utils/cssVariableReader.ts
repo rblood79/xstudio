@@ -824,3 +824,455 @@ export function getSwitchSizePreset(size: string): SwitchSizePreset {
     gap,
   };
 }
+
+// ============================================
+// ToggleButton Size Preset
+// ============================================
+
+/**
+ * ToggleButton 사이즈 프리셋
+ *
+ * CSS에서 읽어오는 값:
+ * - sm: fontSize: var(--text-sm), paddingY: var(--spacing), paddingX: var(--spacing-md)
+ * - md: fontSize: var(--text-base), paddingY: var(--spacing-sm), paddingX: var(--spacing-xl)
+ * - lg: fontSize: var(--text-lg), paddingY: var(--spacing-md), paddingX: var(--spacing-2xl)
+ */
+export interface ToggleButtonSizePreset {
+  fontSize: number;
+  paddingY: number;
+  paddingX: number;
+  borderRadius: number;
+}
+
+const TOGGLE_BUTTON_SIZE_MAPPING: Record<string, { fontSize: string; paddingY: string; paddingX: string }> = {
+  sm: { fontSize: '--text-sm', paddingY: '--spacing', paddingX: '--spacing-md' },
+  md: { fontSize: '--text-base', paddingY: '--spacing-sm', paddingX: '--spacing-xl' },
+  lg: { fontSize: '--text-lg', paddingY: '--spacing-md', paddingX: '--spacing-2xl' },
+};
+
+const TOGGLE_BUTTON_FALLBACKS: Record<string, ToggleButtonSizePreset> = {
+  sm: { fontSize: 14, paddingY: 4, paddingX: 12, borderRadius: 6 },
+  md: { fontSize: 16, paddingY: 8, paddingX: 20, borderRadius: 8 },
+  lg: { fontSize: 18, paddingY: 12, paddingX: 24, borderRadius: 10 },
+};
+
+/**
+ * ToggleButton 사이즈 프리셋 읽기
+ */
+export function getToggleButtonSizePreset(size: string): ToggleButtonSizePreset {
+  const mapping = TOGGLE_BUTTON_SIZE_MAPPING[size];
+  const fallback = TOGGLE_BUTTON_FALLBACKS[size] || TOGGLE_BUTTON_FALLBACKS.md;
+
+  if (!mapping) {
+    return fallback;
+  }
+
+  const fontSize = parseCSSValue(getCSSVariable(mapping.fontSize), fallback.fontSize);
+  const paddingY = parseCSSValue(getCSSVariable(mapping.paddingY), fallback.paddingY);
+  const paddingX = parseCSSValue(getCSSVariable(mapping.paddingX), fallback.paddingX);
+  const borderRadius = parseCSSValue(getCSSVariable('--radius-md'), fallback.borderRadius);
+
+  return {
+    fontSize,
+    paddingY,
+    paddingX,
+    borderRadius,
+  };
+}
+
+// ============================================
+// ToggleButton Color Preset
+// ============================================
+
+/**
+ * ToggleButton 색상 프리셋
+ *
+ * CSS에서 읽어오는 값 (variant별):
+ * - default/unselected: bg=transparent, border=--color-gray-300, text=--color-gray-700
+ * - selected (per variant): bg/border/text from CSS variables
+ */
+export interface ToggleButtonColorPreset {
+  background: number;
+  border: number;
+  text: number;
+  selectedBackground: number;
+  selectedBorder: number;
+  selectedText: number;
+  hoverBackground: number;
+  pressedBackground: number;
+}
+
+const TOGGLE_BUTTON_COLOR_FALLBACKS: Record<string, ToggleButtonColorPreset> = {
+  default: {
+    background: 0xffffff,
+    border: 0xd1d5db,
+    text: 0x374151,
+    selectedBackground: 0x3b82f6,
+    selectedBorder: 0x3b82f6,
+    selectedText: 0xffffff,
+    hoverBackground: 0xf3f4f6,
+    pressedBackground: 0xe5e7eb,
+  },
+  primary: {
+    background: 0xffffff,
+    border: 0xd1d5db,
+    text: 0x374151,
+    selectedBackground: 0x3b82f6,
+    selectedBorder: 0x3b82f6,
+    selectedText: 0xffffff,
+    hoverBackground: 0xdbeafe,
+    pressedBackground: 0xbfdbfe,
+  },
+  secondary: {
+    background: 0xffffff,
+    border: 0xd1d5db,
+    text: 0x374151,
+    selectedBackground: 0x6366f1,
+    selectedBorder: 0x6366f1,
+    selectedText: 0xffffff,
+    hoverBackground: 0xe0e7ff,
+    pressedBackground: 0xc7d2fe,
+  },
+  surface: {
+    background: 0xffffff,
+    border: 0xd1d5db,
+    text: 0x374151,
+    selectedBackground: 0x6b7280,
+    selectedBorder: 0x6b7280,
+    selectedText: 0xffffff,
+    hoverBackground: 0xf3f4f6,
+    pressedBackground: 0xe5e7eb,
+  },
+};
+
+/**
+ * ToggleButton 색상 프리셋 읽기
+ */
+export function getToggleButtonColorPreset(variant: string): ToggleButtonColorPreset {
+  const fallback = TOGGLE_BUTTON_COLOR_FALLBACKS[variant] || TOGGLE_BUTTON_COLOR_FALLBACKS.default;
+
+  // CSS 변수에서 색상 읽기 시도 (fallback 사용)
+  // ToggleButton CSS에서는 --tb-selected-bg 등의 변수 사용
+  return {
+    background: cssColorToHex(getCSSVariable('--color-white'), fallback.background),
+    border: cssColorToHex(getCSSVariable('--color-gray-300'), fallback.border),
+    text: cssColorToHex(getCSSVariable('--color-gray-700'), fallback.text),
+    selectedBackground: fallback.selectedBackground,
+    selectedBorder: fallback.selectedBorder,
+    selectedText: fallback.selectedText,
+    hoverBackground: fallback.hoverBackground,
+    pressedBackground: fallback.pressedBackground,
+  };
+}
+
+// ============================================
+// ListBox Size Preset
+// ============================================
+
+/**
+ * ListBox 사이즈 프리셋
+ *
+ * CSS에서 읽어오는 값:
+ * - sm: fontSize: var(--text-xs), itemPaddingY: var(--spacing-sm), itemPaddingX: var(--spacing), itemHeight: 32px
+ * - md: fontSize: var(--text-sm), itemPaddingY: var(--spacing), itemPaddingX: var(--spacing-md), itemHeight: 40px
+ * - lg: fontSize: var(--text-base), itemPaddingY: var(--spacing-md), itemPaddingX: var(--spacing-lg), itemHeight: 48px
+ */
+export interface ListBoxSizePreset {
+  fontSize: number;
+  itemPaddingY: number;
+  itemPaddingX: number;
+  itemHeight: number;
+  borderRadius: number;
+  containerPadding: number;
+  gap: number;
+}
+
+const LISTBOX_SIZE_MAPPING: Record<string, { fontSize: string; paddingY: string; paddingX: string }> = {
+  sm: { fontSize: '--text-xs', paddingY: '--spacing-sm', paddingX: '--spacing' },
+  md: { fontSize: '--text-sm', paddingY: '--spacing', paddingX: '--spacing-md' },
+  lg: { fontSize: '--text-base', paddingY: '--spacing-md', paddingX: '--spacing-lg' },
+};
+
+const LISTBOX_FALLBACKS: Record<string, ListBoxSizePreset> = {
+  sm: { fontSize: 12, itemPaddingY: 8, itemPaddingX: 4, itemHeight: 32, borderRadius: 4, containerPadding: 2, gap: 2 },
+  md: { fontSize: 14, itemPaddingY: 4, itemPaddingX: 12, itemHeight: 40, borderRadius: 8, containerPadding: 4, gap: 4 },
+  lg: { fontSize: 16, itemPaddingY: 12, itemPaddingX: 16, itemHeight: 48, borderRadius: 8, containerPadding: 8, gap: 6 },
+};
+
+/**
+ * ListBox 사이즈 프리셋 읽기
+ */
+export function getListBoxSizePreset(size: string): ListBoxSizePreset {
+  const mapping = LISTBOX_SIZE_MAPPING[size];
+  const fallback = LISTBOX_FALLBACKS[size] || LISTBOX_FALLBACKS.md;
+
+  if (!mapping) {
+    return fallback;
+  }
+
+  const fontSize = parseCSSValue(getCSSVariable(mapping.fontSize), fallback.fontSize);
+  const itemPaddingY = parseCSSValue(getCSSVariable(mapping.paddingY), fallback.itemPaddingY);
+  const itemPaddingX = parseCSSValue(getCSSVariable(mapping.paddingX), fallback.itemPaddingX);
+  const borderRadius = parseCSSValue(getCSSVariable('--radius-xs'), fallback.borderRadius);
+
+  return {
+    fontSize,
+    itemPaddingY,
+    itemPaddingX,
+    itemHeight: fontSize + itemPaddingY * 2 + 4, // 계산된 높이
+    borderRadius,
+    containerPadding: fallback.containerPadding,
+    gap: fallback.gap,
+  };
+}
+
+// ============================================
+// ListBox Color Preset
+// ============================================
+
+/**
+ * ListBox 색상 프리셋
+ */
+export interface ListBoxColorPreset {
+  containerBackground: number;
+  containerBorder: number;
+  itemBackground: number;
+  itemHoverBackground: number;
+  itemSelectedBackground: number;
+  textColor: number;
+  selectedTextColor: number;
+}
+
+const LISTBOX_COLOR_FALLBACKS: Record<string, ListBoxColorPreset> = {
+  primary: {
+    containerBackground: 0xffffff,
+    containerBorder: 0xe5e7eb,
+    itemBackground: 0xffffff,
+    itemHoverBackground: 0xf3f4f6,
+    itemSelectedBackground: 0xdbeafe,
+    textColor: 0x374151,
+    selectedTextColor: 0x1e40af,
+  },
+  secondary: {
+    containerBackground: 0xffffff,
+    containerBorder: 0xe5e7eb,
+    itemBackground: 0xffffff,
+    itemHoverBackground: 0xf3f4f6,
+    itemSelectedBackground: 0xe0e7ff,
+    textColor: 0x374151,
+    selectedTextColor: 0x3730a3,
+  },
+  tertiary: {
+    containerBackground: 0xffffff,
+    containerBorder: 0xe5e7eb,
+    itemBackground: 0xffffff,
+    itemHoverBackground: 0xf3f4f6,
+    itemSelectedBackground: 0xfce7f3,
+    textColor: 0x374151,
+    selectedTextColor: 0x9d174d,
+  },
+  error: {
+    containerBackground: 0xffffff,
+    containerBorder: 0xfca5a5,
+    itemBackground: 0xffffff,
+    itemHoverBackground: 0xfef2f2,
+    itemSelectedBackground: 0xfee2e2,
+    textColor: 0x374151,
+    selectedTextColor: 0xb91c1c,
+  },
+  filled: {
+    containerBackground: 0xf3f4f6,
+    containerBorder: 0xf3f4f6,
+    itemBackground: 0xf3f4f6,
+    itemHoverBackground: 0xe5e7eb,
+    itemSelectedBackground: 0xdbeafe,
+    textColor: 0x374151,
+    selectedTextColor: 0x1e40af,
+  },
+  surface: {
+    containerBackground: 0xffffff,
+    containerBorder: 0xe5e7eb,
+    itemBackground: 0xffffff,
+    itemHoverBackground: 0xf3f4f6,
+    itemSelectedBackground: 0xf3f4f6,
+    textColor: 0x374151,
+    selectedTextColor: 0x111827,
+  },
+};
+
+/**
+ * ListBox 색상 프리셋 읽기
+ */
+export function getListBoxColorPreset(variant: string): ListBoxColorPreset {
+  return LISTBOX_COLOR_FALLBACKS[variant] || LISTBOX_COLOR_FALLBACKS.primary;
+}
+
+// ============================================
+// Badge Size Preset
+// ============================================
+
+/**
+ * Badge 사이즈 프리셋
+ *
+ * CSS에서 읽어오는 값:
+ * - sm: fontSize: var(--text-sm), paddingY: 2px, paddingX: var(--spacing-md), height: 20px
+ * - md: fontSize: var(--text-base), paddingY: var(--spacing-sm), paddingX: var(--spacing-md), height: 24px
+ * - lg: fontSize: var(--text-lg), paddingY: var(--spacing-sm), paddingX: var(--spacing-lg), height: 28px
+ */
+export interface BadgeSizePreset {
+  fontSize: number;
+  paddingY: number;
+  paddingX: number;
+  height: number;
+  minWidth: number;
+  dotSize: number;
+}
+
+const BADGE_SIZE_MAPPING: Record<string, { fontSize: string; paddingX: string }> = {
+  sm: { fontSize: '--text-sm', paddingX: '--spacing-md' },
+  md: { fontSize: '--text-base', paddingX: '--spacing-md' },
+  lg: { fontSize: '--text-lg', paddingX: '--spacing-lg' },
+};
+
+const BADGE_FALLBACKS: Record<string, BadgeSizePreset> = {
+  sm: { fontSize: 14, paddingY: 2, paddingX: 12, height: 20, minWidth: 20, dotSize: 8 },
+  md: { fontSize: 16, paddingY: 8, paddingX: 12, height: 24, minWidth: 24, dotSize: 10 },
+  lg: { fontSize: 18, paddingY: 8, paddingX: 16, height: 28, minWidth: 28, dotSize: 12 },
+};
+
+/**
+ * Badge 사이즈 프리셋 읽기
+ */
+export function getBadgeSizePreset(size: string): BadgeSizePreset {
+  const mapping = BADGE_SIZE_MAPPING[size];
+  const fallback = BADGE_FALLBACKS[size] || BADGE_FALLBACKS.md;
+
+  if (!mapping) {
+    return fallback;
+  }
+
+  const fontSize = parseCSSValue(getCSSVariable(mapping.fontSize), fallback.fontSize);
+  const paddingX = parseCSSValue(getCSSVariable(mapping.paddingX), fallback.paddingX);
+
+  return {
+    fontSize,
+    paddingY: fallback.paddingY,
+    paddingX,
+    height: fallback.height,
+    minWidth: fallback.minWidth,
+    dotSize: fallback.dotSize,
+  };
+}
+
+// ============================================
+// Badge Color Preset
+// ============================================
+
+/**
+ * Badge 색상 프리셋
+ */
+export interface BadgeColorPreset {
+  background: number;
+  text: number;
+}
+
+const BADGE_COLOR_FALLBACKS: Record<string, BadgeColorPreset> = {
+  default: { background: 0xe5e7eb, text: 0x6b7280 },
+  primary: { background: 0x3b82f6, text: 0xffffff },
+  secondary: { background: 0x6366f1, text: 0xffffff },
+  tertiary: { background: 0xec4899, text: 0xffffff },
+  error: { background: 0xef4444, text: 0xffffff },
+  surface: { background: 0xf3f4f6, text: 0x374151 },
+};
+
+/**
+ * Badge 색상 프리셋 읽기
+ */
+export function getBadgeColorPreset(variant: string): BadgeColorPreset {
+  return BADGE_COLOR_FALLBACKS[variant] || BADGE_COLOR_FALLBACKS.default;
+}
+
+// ============================================
+// Meter Size Preset
+// ============================================
+
+/**
+ * Meter 사이즈 프리셋
+ *
+ * CSS에서 읽어오는 값:
+ * - sm: width: 200px, barHeight: 6px, fontSize: var(--text-sm)
+ * - md: width: 250px, barHeight: 10px, fontSize: var(--text-base)
+ * - lg: width: 300px, barHeight: 14px, fontSize: var(--text-lg)
+ */
+export interface MeterSizePreset {
+  width: number;
+  barHeight: number;
+  borderRadius: number;
+  fontSize: number;
+  gap: number;
+}
+
+const METER_SIZE_MAPPING: Record<string, { fontSize: string; borderRadius: string }> = {
+  sm: { fontSize: '--text-sm', borderRadius: '--radius-sm' },
+  md: { fontSize: '--text-base', borderRadius: '--radius-md' },
+  lg: { fontSize: '--text-lg', borderRadius: '--radius-lg' },
+};
+
+const METER_FALLBACKS: Record<string, MeterSizePreset> = {
+  sm: { width: 200, barHeight: 6, borderRadius: 4, fontSize: 14, gap: 4 },
+  md: { width: 250, barHeight: 10, borderRadius: 8, fontSize: 16, gap: 4 },
+  lg: { width: 300, barHeight: 14, borderRadius: 12, fontSize: 18, gap: 4 },
+};
+
+/**
+ * Meter 사이즈 프리셋 읽기
+ */
+export function getMeterSizePreset(size: string): MeterSizePreset {
+  const mapping = METER_SIZE_MAPPING[size];
+  const fallback = METER_FALLBACKS[size] || METER_FALLBACKS.md;
+
+  if (!mapping) {
+    return fallback;
+  }
+
+  const fontSize = parseCSSValue(getCSSVariable(mapping.fontSize), fallback.fontSize);
+  const borderRadius = parseCSSValue(getCSSVariable(mapping.borderRadius), fallback.borderRadius);
+
+  return {
+    width: fallback.width,
+    barHeight: fallback.barHeight,
+    borderRadius,
+    fontSize,
+    gap: fallback.gap,
+  };
+}
+
+// ============================================
+// Meter Color Preset
+// ============================================
+
+/**
+ * Meter 색상 프리셋
+ */
+export interface MeterColorPreset {
+  trackColor: number;
+  fillColor: number;
+  labelColor: number;
+  valueColor: number;
+}
+
+const METER_COLOR_FALLBACKS: Record<string, MeterColorPreset> = {
+  default: { trackColor: 0xe5e7eb, fillColor: 0x3b82f6, labelColor: 0x374151, valueColor: 0x6b7280 },
+  primary: { trackColor: 0xe5e7eb, fillColor: 0x3b82f6, labelColor: 0x374151, valueColor: 0x6b7280 },
+  secondary: { trackColor: 0xe5e7eb, fillColor: 0x6366f1, labelColor: 0x374151, valueColor: 0x6b7280 },
+  tertiary: { trackColor: 0xe5e7eb, fillColor: 0xec4899, labelColor: 0x374151, valueColor: 0x6b7280 },
+  error: { trackColor: 0xe5e7eb, fillColor: 0xef4444, labelColor: 0x374151, valueColor: 0x6b7280 },
+  surface: { trackColor: 0xe5e7eb, fillColor: 0x6b7280, labelColor: 0x374151, valueColor: 0x6b7280 },
+};
+
+/**
+ * Meter 색상 프리셋 읽기
+ */
+export function getMeterColorPreset(variant: string): MeterColorPreset {
+  return METER_COLOR_FALLBACKS[variant] || METER_COLOR_FALLBACKS.primary;
+}

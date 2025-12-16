@@ -15,7 +15,29 @@ import type { Element } from '../../../../types/core/store.types';
 import { BoxSprite } from './BoxSprite';
 import { TextSprite } from './TextSprite';
 import { ImageSprite } from './ImageSprite';
-import { PixiButton, PixiFancyButton, PixiCheckbox, PixiCheckboxGroup, PixiCheckboxItem, PixiRadio, PixiRadioItem, PixiSlider, PixiInput, PixiSelect, PixiProgressBar, PixiSwitcher, PixiScrollBox, PixiList, PixiMaskedFrame } from '../ui';
+import {
+  PixiButton,
+  PixiFancyButton,
+  PixiCheckbox,
+  PixiCheckboxGroup,
+  PixiCheckboxItem,
+  PixiRadio,
+  PixiRadioItem,
+  PixiSlider,
+  PixiInput,
+  PixiSelect,
+  PixiProgressBar,
+  PixiSwitcher,
+  PixiScrollBox,
+  PixiList,
+  PixiMaskedFrame,
+  // Phase 1 WebGL Migration Components
+  PixiToggleButton,
+  PixiToggleButtonGroup,
+  PixiListBox,
+  PixiBadge,
+  PixiMeter,
+} from '../ui';
 import { useStore } from '../../../stores';
 import { isFlexContainer, isGridContainer } from '../layout';
 
@@ -95,13 +117,22 @@ const UI_SCROLLBOX_TAGS = new Set(['ScrollBox', 'ScrollContainer', 'ScrollView']
 const UI_LIST_TAGS = new Set(['List', 'ItemList', 'VirtualList']);
 const UI_MASKEDFRAME_TAGS = new Set(['MaskedFrame', 'ClippedImage', 'MaskedImage', 'AvatarImage']);
 
+/**
+ * Phase 1 WebGL Migration 컴포넌트 태그들
+ */
+const UI_TOGGLEBUTTON_TAGS = new Set(['ToggleButton']);
+const UI_TOGGLEBUTTONGROUP_TAGS = new Set(['ToggleButtonGroup']);
+const UI_LISTBOX_TAGS = new Set(['ListBox']);
+const UI_BADGE_TAGS = new Set(['Badge', 'Tag', 'Chip']);
+const UI_METER_TAGS = new Set(['Meter', 'Gauge']);
+
 // Note: TEXT_TAGS, IMAGE_TAGS, UI_*_TAGS에 포함되지 않은 모든 태그는 BoxSprite로 렌더링됨
 
 // ============================================
 // Sprite Type Detection
 // ============================================
 
-type SpriteType = 'box' | 'text' | 'image' | 'button' | 'fancyButton' | 'checkboxGroup' | 'checkboxItem' | 'radioGroup' | 'radioItem' | 'slider' | 'input' | 'select' | 'progressBar' | 'switcher' | 'scrollBox' | 'list' | 'maskedFrame' | 'flex' | 'grid';
+type SpriteType = 'box' | 'text' | 'image' | 'button' | 'fancyButton' | 'checkboxGroup' | 'checkboxItem' | 'radioGroup' | 'radioItem' | 'slider' | 'input' | 'select' | 'progressBar' | 'switcher' | 'scrollBox' | 'list' | 'maskedFrame' | 'flex' | 'grid' | 'toggleButton' | 'toggleButtonGroup' | 'listBox' | 'badge' | 'meter';
 
 function getSpriteType(element: Element): SpriteType {
   const tag = element.tag;
@@ -121,6 +152,13 @@ function getSpriteType(element: Element): SpriteType {
   if (UI_SCROLLBOX_TAGS.has(tag)) return 'scrollBox';
   if (UI_LIST_TAGS.has(tag)) return 'list';
   if (UI_MASKEDFRAME_TAGS.has(tag)) return 'maskedFrame';
+
+  // Phase 1 WebGL Migration 컴포넌트
+  if (UI_TOGGLEBUTTON_TAGS.has(tag)) return 'toggleButton';
+  if (UI_TOGGLEBUTTONGROUP_TAGS.has(tag)) return 'toggleButtonGroup';
+  if (UI_LISTBOX_TAGS.has(tag)) return 'listBox';
+  if (UI_BADGE_TAGS.has(tag)) return 'badge';
+  if (UI_METER_TAGS.has(tag)) return 'meter';
 
   // 레이아웃 컨테이너 체크 (Phase 11 B2.5)
   // display: flex/grid인 경우에도 현재는 BoxSprite로 렌더링
@@ -333,6 +371,54 @@ export const ElementSprite = memo(function ElementSprite({
     case 'maskedFrame':
       return (
         <PixiMaskedFrame
+          element={effectiveElement}
+          isSelected={isSelected}
+          onClick={onClick}
+        />
+      );
+
+    // Phase 1 WebGL Migration 컴포넌트
+    case 'toggleButton':
+      return (
+        <PixiToggleButton
+          element={effectiveElement}
+          isSelected={isSelected}
+          onClick={onClick}
+        />
+      );
+
+    case 'toggleButtonGroup':
+      return (
+        <PixiToggleButtonGroup
+          element={effectiveElement}
+          isSelected={isSelected}
+          onClick={onClick}
+          onChange={onChange ? (id, keys) => onChange(id, keys) : undefined}
+        />
+      );
+
+    case 'listBox':
+      return (
+        <PixiListBox
+          element={effectiveElement}
+          isSelected={isSelected}
+          onClick={onClick}
+          onChange={onChange ? (id, keys) => onChange(id, keys) : undefined}
+        />
+      );
+
+    case 'badge':
+      return (
+        <PixiBadge
+          element={effectiveElement}
+          isSelected={isSelected}
+          onClick={onClick}
+        />
+      );
+
+    case 'meter':
+      return (
+        <PixiMeter
           element={effectiveElement}
           isSelected={isSelected}
           onClick={onClick}

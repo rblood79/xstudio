@@ -3,6 +3,7 @@
  *
  * 🚀 Phase 11 B2.4: @pixi/ui 래퍼 컴포넌트
  * 🚀 Phase 6: @pixi/ui 컴포넌트 확장
+ * 🚀 Phase 1: Core UI Components (WebGL Migration)
  *
  * xstudio Element를 @pixi/ui 컴포넌트로 렌더링
  *
@@ -16,6 +17,7 @@
  * @updated 2025-12-13 Phase 6.7 - PixiScrollBox 추가
  * @updated 2025-12-13 Phase 6.8 - PixiList 추가
  * @updated 2025-12-13 Phase 6.9 - PixiMaskedFrame 추가
+ * @updated 2025-12-16 Phase 1 - PixiToggleButton, PixiToggleButtonGroup, PixiListBox, PixiBadge, PixiMeter 추가
  */
 
 export { PixiButton, type PixiButtonProps } from './PixiButton';
@@ -33,3 +35,10 @@ export { PixiSwitcher, type PixiSwitcherProps } from './PixiSwitcher';
 export { PixiScrollBox, type PixiScrollBoxProps } from './PixiScrollBox';
 export { PixiList, type PixiListProps } from './PixiList';
 export { PixiMaskedFrame, type PixiMaskedFrameProps } from './PixiMaskedFrame';
+
+// Phase 1: Core UI Components (WebGL Migration)
+export { PixiToggleButton, type PixiToggleButtonProps } from './PixiToggleButton';
+export { PixiToggleButtonGroup, type PixiToggleButtonGroupProps } from './PixiToggleButtonGroup';
+export { PixiListBox, type PixiListBoxProps } from './PixiListBox';
+export { PixiBadge, type PixiBadgeProps } from './PixiBadge';
+export { PixiMeter, type PixiMeterProps } from './PixiMeter';
