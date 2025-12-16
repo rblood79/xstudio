@@ -14,6 +14,8 @@ import { useExtend } from '@pixi/react';
 import { PIXI_COMPONENTS } from '../pixiSetup';
 import type { Graphics as PixiGraphics, TextStyle } from 'pixi.js';
 import type { Element } from '@/types/core/store.types';
+import type { CSSStyle } from '../sprites/styleConverter';
+import { parseCSSSize } from '../sprites/styleConverter';
 import {
   getTextFieldSizePreset,
   getTextFieldColorPreset,
@@ -36,6 +38,7 @@ export function PixiTextField({
 }: PixiTextFieldProps) {
   useExtend(PIXI_COMPONENTS);
   const props = element.props || {};
+  const style = props.style as CSSStyle | undefined;
   const variant = (props.variant as string) || 'default';
   const size = (props.size as string) || 'md';
   const label = (props.label as string) || '';
@@ -45,6 +48,10 @@ export function PixiTextField({
   const isDisabled = (props.isDisabled as boolean) || false;
   const isInvalid = (props.isInvalid as boolean) || false;
   const errorMessage = (props.errorMessage as string) || '';
+
+  // 위치 계산
+  const posX = parseCSSSize(style?.left, undefined, 0);
+  const posY = parseCSSSize(style?.top, undefined, 0);
 
   // Get presets from CSS
   const sizePreset = useMemo(() => getTextFieldSizePreset(size), [size]);
@@ -124,13 +131,15 @@ export function PixiTextField({
 
   return (
     <pixiContainer
+      x={posX}
+      y={posY}
       eventMode="static"
       cursor="pointer"
-      onpointertap={() => onClick?.(element.id)}
+      onPointerDown={() => onClick?.(element.id)}
     >
       {/* Label */}
       {label && (
-        <Text
+        <pixiText
           text={label}
           style={labelStyle}
           x={0}
@@ -141,7 +150,7 @@ export function PixiTextField({
       {/* Input field */}
       <pixiContainer y={labelHeight}>
         <pixiGraphics draw={drawField} />
-        <Text
+        <pixiText
           text={displayText}
           style={inputStyle}
           x={sizePreset.paddingX}
@@ -151,7 +160,7 @@ export function PixiTextField({
 
       {/* Description / Error message */}
       {descriptionText && (
-        <Text
+        <pixiText
           text={descriptionText}
           style={descriptionStyle}
           x={0}

@@ -7,6 +7,123 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed - @pixi/react v8 컴포넌트 등록 및 TextField 위치 동기화 (2025-12-17)
+
+#### 개요
+@pixi/react v8 공식 패턴으로 컴포넌트 등록 방식을 개선하고, CheckboxGroup/RadioGroup의 orientation 속성 및 TextField의 레이아웃 동기화 문제를 해결
+
+#### 문제
+1. **Graphics namespace 오류**: "Graphics is not part of the PIXI namespace" 런타임 오류 발생
+2. **Orientation 미작동**: CheckboxGroup/RadioGroup의 orientation (vertical/horizontal) 속성이 동작하지 않음
+3. **RadioGroup 너비 불일치**: 세로 모드에서 RadioGroup의 selection 영역 너비가 PixiRadio와 다름
+4. **가로 모드 너비 과대 계산**: 가로 모드에서 selection 영역이 실제 렌더링보다 넓게 설정됨
+5. **TextField 위치 불일치**: TextField의 input 컨테이너가 TextField 컴포넌트와 위치가 다름
+6. **TextField 크기 미측정**: LayoutEngine에 TextField용 크기 측정 함수 부재
+
+#### 해결
+
+**1. pixiSetup.ts - 컴포넌트 등록 개선**
+```typescript
+export const PIXI_COMPONENTS = {
+  // pixi 접두사 컴포넌트 (JSX용)
+  pixiContainer: PixiContainer,
+  pixiGraphics: PixiGraphics,
+  pixiSprite: PixiSprite,
+  pixiText: PixiText,
+  // 클래스 이름으로도 등록 (@pixi/react 내부 lookup 지원)
+  Container: PixiContainer,
+  Graphics: PixiGraphics,
+  Sprite: PixiSprite,
+  Text: PixiText,
+  // ... other components
+};
+
+// 모듈 로드 시점에 즉시 등록 (렌더링 전 보장)
+extend(PIXI_COMPONENTS);
+```
+
+**2. PixiCheckboxGroup/PixiRadio - Orientation 지원**
+```typescript
+// props.orientation 우선 체크, style.flexDirection fallback
+const isHorizontal = useMemo(() => {
+  const orientation = props?.orientation;
+  if (orientation === 'horizontal') return true;
+  if (orientation === 'vertical') return false;
+  const flexDirection = (style as Record<string, unknown>)?.flexDirection;
+  return flexDirection === 'row';
+}, [props?.orientation, style]);
+```
+
+**3. LayoutEngine - Orientation 및 크기 계산 동기화**
+```typescript
+// measureCheckboxGroupSize(), measureRadioSize() - orientation 지원 추가
+// calculateRadioItemPositions(), calculateCheckboxItemPositions() - orientation 지원 추가
+
+// RadioGroup: PixiRadio와 동일한 getRadioSizePreset() 사용
+const sizeKey = (groupProps?.size as string) || 'md';
+const radioPreset = getRadioSizePreset(sizeKey);
+const boxSize = radioPreset.radioSize;
+const OPTION_GAP = radioPreset.gap;
+
+// 가로 모드 너비: 마지막 아이템 위치 + 너비로 정확히 계산
+if (isHorizontal) {
+  const lastIndex = itemSizes.length - 1;
+  const lastItemX = lastIndex * HORIZONTAL_ITEM_WIDTH;
+  const lastItemWidth = itemSizes[lastIndex]?.width || boxSize;
+  const optionsWidth = lastItemX + lastItemWidth;
+  // ...
+}
+```
+
+**4. PixiTextField - pixi 접두사 컴포넌트 사용 및 위치 수정**
+```typescript
+// 잘못된 사용 (수정 전)
+<Text text={label} ... />
+
+// 올바른 사용 (수정 후)
+<pixiText text={label} style={labelStyle} x={0} y={0} />
+
+// 위치 계산 추가
+const posX = parseCSSSize(style?.left, undefined, 0);
+const posY = parseCSSSize(style?.top, undefined, 0);
+
+// 루트 컨테이너에 위치 적용
+<pixiContainer x={posX} y={posY} ... >
+```
+
+**5. LayoutEngine - TextField 크기 측정 함수 추가**
+```typescript
+const TEXT_FIELD_TAGS = new Set(['TextField', 'TextInput']);
+
+function isTextFieldElement(element: Element): boolean {
+  return TEXT_FIELD_TAGS.has(element.tag);
+}
+
+function measureTextFieldSize(element, _style): { width, height } | null {
+  const preset = getTextFieldSizePreset(sizeKey);
+  const width = (props?.width as number) || 240;
+  const labelHeight = label ? preset.labelFontSize + preset.gap : 0;
+  const descriptionHeight = hasDescription ? preset.descriptionFontSize + preset.gap : 0;
+  const totalHeight = labelHeight + preset.height + descriptionHeight;
+  return { width, height: totalHeight };
+}
+
+// createYogaNode에서 호출
+if (isTextFieldElement(element) && (!hasExplicitWidth || !hasExplicitHeight)) {
+  const measuredSize = measureTextFieldSize(element, style);
+  // ...
+}
+```
+
+#### 수정된 파일
+- `src/builder/workspace/canvas/pixiSetup.ts` - 클래스 이름 등록 + 모듈 레벨 extend()
+- `src/builder/workspace/canvas/ui/PixiCheckboxGroup.tsx` - orientation 지원
+- `src/builder/workspace/canvas/ui/PixiRadio.tsx` - orientation 지원
+- `src/builder/workspace/canvas/ui/PixiTextField.tsx` - pixi 접두사 컴포넌트 + 위치 수정
+- `src/builder/workspace/canvas/layout/LayoutEngine.ts` - orientation 동기화 + TextField 측정
+
+---
+
 ### Added - CheckboxGroup/RadioGroup Selection Area 및 Label 지원 (2025-12-16)
 
 #### 개요

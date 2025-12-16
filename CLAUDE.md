@@ -105,7 +105,7 @@ User Action → Zustand Store → Supabase API → Real-time Update
 
 ### Builder Canvas (PixiJS/WebGL)
 
-> **Status:** ✅ Phase 1-8 Complete (2025-12-16) - **62 WebGL Components**
+> **Status:** ✅ Phase 1-8 Complete (2025-12-17) - **62 WebGL Components** (TextField 검증 완료)
 
 The builder uses a PixiJS/WebGL-based canvas for high-performance editing with Feature Flag toggle support.
 
@@ -206,7 +206,28 @@ BuilderCanvas.tsx
 
 **Key Implementation Patterns:**
 
-1. **Yoga Integration:**
+1. **@pixi/react v8 Component Registration (CRITICAL):**
+```typescript
+// pixiSetup.ts - PIXI_COMPONENTS catalog
+// MUST include both prefixed keys (for JSX) AND class name keys (for @pixi/react internal)
+export const PIXI_COMPONENTS = {
+  // Prefixed keys for JSX: <pixiGraphics />, <pixiContainer />
+  pixiGraphics: Graphics,
+  pixiContainer: Container,
+  pixiText: Text,
+  pixiSprite: Sprite,
+  // Class name keys for @pixi/react internal lookups
+  Graphics,
+  Container,
+  Text,
+  Sprite,
+};
+
+// Module-level extend() call - guarantees registration before any render
+extend(PIXI_COMPONENTS);
+```
+
+2. **Yoga Integration:**
 ```typescript
 // LayoutEngine.ts
 import { loadYoga } from 'yoga-layout/load';
@@ -219,14 +240,14 @@ export async function initYoga(): Promise<YogaInstance> {
 }
 ```
 
-2. **Padding Utilities:**
+3. **Padding Utilities:**
 ```typescript
 // paddingUtils.ts
 parsePadding(style)           // CSS shorthand → {top, right, bottom, left}
 getContentBounds(w, h, pad)   // Container → content area
 ```
 
-3. **@pixi/ui Imperative Pattern:**
+4. **@pixi/ui Imperative Pattern:**
 ```typescript
 // Use imperative API (not JSX) for @pixi/ui components
 useEffect(() => {
@@ -237,6 +258,21 @@ useEffect(() => {
   containerRef.current?.addChild(button);
   return () => containerRef.current?.removeChild(button);
 }, []);
+```
+
+5. **Orientation Support (CheckboxGroup/RadioGroup):**
+```typescript
+// LayoutEngine.ts - orientation prop takes precedence over style.flexDirection
+const isHorizontal = useMemo(() => {
+  // 1. Check orientation prop first (horizontal/vertical)
+  const orientation = props?.orientation;
+  if (orientation === 'horizontal') return true;
+  if (orientation === 'vertical') return false;
+
+  // 2. Fallback to style.flexDirection (row/column)
+  const flexDirection = style?.flexDirection;
+  return flexDirection === 'row';
+}, [props?.orientation, style?.flexDirection]);
 ```
 
 **Completed Phases:**

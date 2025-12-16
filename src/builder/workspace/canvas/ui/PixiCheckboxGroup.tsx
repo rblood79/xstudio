@@ -287,11 +287,17 @@ export const PixiCheckboxGroup = memo(function PixiCheckboxGroup({
     return String(props?.label || props?.children || props?.text || '');
   }, [props]);
 
-  // 방향
+  // 방향: props.orientation > style.flexDirection
   const isHorizontal = useMemo(() => {
+    // 1. orientation prop 확인 (vertical/horizontal)
+    const orientation = props?.orientation;
+    if (orientation === 'horizontal') return true;
+    if (orientation === 'vertical') return false;
+
+    // 2. style.flexDirection 확인 (row/column)
     const flexDirection = (style as Record<string, unknown>)?.flexDirection;
     return flexDirection === 'row';
-  }, [style]);
+  }, [props?.orientation, style]);
 
   // 스타일
   const checkboxSize = DEFAULT_CHECKBOX_SIZE;

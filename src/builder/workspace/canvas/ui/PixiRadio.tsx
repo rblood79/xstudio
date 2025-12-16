@@ -268,11 +268,17 @@ export const PixiRadio = memo(function PixiRadio({
     return String(props?.label || props?.children || props?.text || '');
   }, [props]);
 
-  // 방향
+  // 방향: props.orientation > style.flexDirection
   const isHorizontal = useMemo(() => {
+    // 1. orientation prop 확인 (vertical/horizontal)
+    const orientation = props?.orientation;
+    if (orientation === 'horizontal') return true;
+    if (orientation === 'vertical') return false;
+
+    // 2. style.flexDirection 확인 (row/column)
     const flexDirection = (style as Record<string, unknown>)?.flexDirection;
     return flexDirection === 'row';
-  }, [style]);
+  }, [props?.orientation, style]);
 
   // 🚀 Phase 0: CSS 동기화 - size prop에서 사이즈 프리셋 적용
   const size = useMemo(() => String(props?.size || 'md'), [props?.size]);

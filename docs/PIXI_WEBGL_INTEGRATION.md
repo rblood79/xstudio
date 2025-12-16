@@ -32,7 +32,9 @@ src/builder/workspace/canvas/
 ├── ui/                     # UI 컴포넌트 (Graphics 기반)
 │   ├── PixiButton.tsx      # FancyButton + 투명 히트 영역
 │   ├── PixiCheckbox.tsx    # Graphics 직접 그리기
-│   ├── PixiRadio.tsx       # Graphics 직접 그리기
+│   ├── PixiCheckboxGroup.tsx  # CheckboxGroup (orientation 지원)
+│   ├── PixiRadio.tsx       # RadioGroup (orientation 지원)
+│   ├── PixiTextField.tsx   # TextField (label + input + description) ✅
 │   └── index.ts
 ├── sprites/                # 스프라이트 렌더러
 │   ├── ElementSprite.tsx   # 메인 디스패처
@@ -862,6 +864,119 @@ BuilderCanvas
 - PixiLink.tsx
 - PixiTabs.tsx
 - PixiToggleButton.tsx
+
+## @pixi/react v8 컴포넌트 등록 패턴 (2025-12-17)
+
+### 배경
+
+@pixi/react v8에서 `Graphics is not part of the PIXI namespace!` 오류 발생. 원인은 JSX 태그용 prefixed 키(`pixiGraphics`)만 등록하고 클래스 이름 키(`Graphics`)를 등록하지 않았기 때문.
+
+### 해결책: 이중 키 등록
+
+```typescript
+// pixiSetup.ts
+import { extend } from '@pixi/react';
+import { Graphics, Container, Text, Sprite } from 'pixi.js';
+
+// MUST include BOTH prefixed keys (for JSX) AND class name keys (for @pixi/react internal)
+export const PIXI_COMPONENTS = {
+  // Prefixed keys for JSX: <pixiGraphics />, <pixiContainer />
+  pixiGraphics: Graphics,
+  pixiContainer: Container,
+  pixiText: Text,
+  pixiSprite: Sprite,
+  // Class name keys for @pixi/react internal lookups
+  Graphics,
+  Container,
+  Text,
+  Sprite,
+};
+
+// Module-level extend() call - guarantees registration before any render
+extend(PIXI_COMPONENTS);
+```
+
+### 핵심 원칙
+
+1. **이중 키 등록 필수**: JSX용 prefixed 키 + 내부 조회용 클래스 이름 키
+2. **모듈 레벨 extend()**: 렌더링 전에 등록 보장
+3. **각 컴포넌트에서 useExtend()**: 런타임 확인용 (중복 방지됨)
+
+---
+
+## TextField 컴포넌트 통합 (2025-12-17)
+
+### PixiTextField
+
+Label, Input, Description을 포함하는 복합 텍스트 필드 컴포넌트.
+
+**파일:** `src/builder/workspace/canvas/ui/PixiTextField.tsx`
+
+```typescript
+// CSS preset 동기화
+const sizePreset = getTextFieldSizePreset(size);  // fontSize, height, padding, borderRadius
+const colorPreset = getTextFieldColorPreset(variant);  // backgroundColor, borderColor, textColor
+
+// 높이 계산
+const labelHeight = label ? sizePreset.labelFontSize + sizePreset.gap : 0;
+const descriptionHeight = (description || errorMessage) ? sizePreset.descriptionFontSize + sizePreset.gap : 0;
+const totalHeight = labelHeight + sizePreset.height + descriptionHeight;
+```
+
+### LayoutEngine 통합
+
+TextField의 intrinsic size를 LayoutEngine에서 측정하여 Selection area가 정확히 일치하도록 함:
+
+```typescript
+// LayoutEngine.ts
+const TEXT_FIELD_TAGS = new Set(['TextField', 'TextInput']);
+
+function measureTextFieldSize(element: Element, style: CSSStyle | undefined): { width: number; height: number } | null {
+  const props = element.props;
+  const sizeKey = props?.size || 'md';
+  const preset = getTextFieldSizePreset(sizeKey);
+  const width = props?.width || 240;
+
+  // Label, input, description 높이 계산
+  const labelHeight = props?.label ? preset.labelFontSize + preset.gap : 0;
+  const hasDescription = props?.description || (props?.isInvalid && props?.errorMessage);
+  const descriptionHeight = hasDescription ? preset.descriptionFontSize + preset.gap : 0;
+  const totalHeight = labelHeight + preset.height + descriptionHeight;
+
+  return { width, height: totalHeight };
+}
+```
+
+---
+
+## orientation 속성 지원 (2025-12-17)
+
+### CheckboxGroup / RadioGroup
+
+`orientation` prop이 `style.flexDirection`보다 우선합니다.
+
+```typescript
+// LayoutEngine.ts - calculateCheckboxItemPositions(), calculateRadioItemPositions()
+const isHorizontal = (() => {
+  // 1. orientation prop 우선 (horizontal/vertical)
+  const orientation = props?.orientation;
+  if (orientation === 'horizontal') return true;
+  if (orientation === 'vertical') return false;
+
+  // 2. style.flexDirection 폴백 (row/column)
+  const flexDirection = style?.flexDirection;
+  return flexDirection === 'row';
+})();
+```
+
+### 적용 함수 (4개)
+
+- `calculateCheckboxItemPositions()` - CheckboxGroup 자식 위치
+- `calculateCheckboxGroupSize()` - CheckboxGroup 전체 크기
+- `calculateRadioItemPositions()` - RadioGroup 자식 위치
+- `calculateRadioGroupSize()` - RadioGroup 전체 크기
+
+---
 
 ## Graphics 기반 UI 컴포넌트 리팩토링 (2025-12-15)
 

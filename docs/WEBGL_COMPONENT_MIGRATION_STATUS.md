@@ -1,13 +1,13 @@
 # WebGL Canvas Component Migration Status
 
-> **Last Updated**: 2025-12-16
+> **Last Updated**: 2025-12-17
 > **Branch**: claude/migrate-panel-components-webgl-96QYI
 
 ## Overview
 
 This document tracks the migration progress of React Aria Components from the iframe preview system (`src/canvas/`) to the WebGL-based canvas system (`src/builder/workspace/canvas/ui/`).
 
-⚠️ **검증 현황**: 실제 WebGL 캔버스에서 확인된 항목은 `Button`, `Checkbox`, `CheckboxGroup`, `RadioGroup`뿐입니다. 아래 표의 나머지 항목들은 구현 여부가 미확인 상태이며, 화면 렌더링·동작 검증이 필요합니다.
+⚠️ **검증 현황**: 실제 WebGL 캔버스에서 확인된 항목은 `Button`, `Checkbox`, `CheckboxGroup`, `RadioGroup`, `TextField`입니다. 아래 표의 나머지 항목들은 구현 여부가 미확인 상태이며, 화면 렌더링·동작 검증이 필요합니다.
 
 ### Architecture Comparison
 
@@ -27,7 +27,7 @@ This document tracks the migration progress of React Aria Components from the if
 | Category | Total | Verified | Pending | Progress |
 |----------|-------|----------|---------|----------|
 | **Basic UI** | 8 | 1 | 7 | 12.5% |
-| **Form Controls** | 10 | 1 | 9 | 10.0% |
+| **Form Controls** | 10 | 2 | 8 | 20.0% |
 | **Selection/Collection** | 12 | 2 | 10 | 16.7% |
 | **Layout Components** | 6 | 0 | 6 | 0.0% |
 | **Date/Time** | 5 | 0 | 5 | 0.0% |
@@ -35,20 +35,21 @@ This document tracks the migration progress of React Aria Components from the if
 | **Overlay/Modal** | 4 | 0 | 4 | 0.0% |
 | **Data Display** | 5 | 0 | 5 | 0.0% |
 | **Primitives** | 3 | 0 | 3 | 0.0% |
-| **Total** | **57** | **4** | **53** | **7.0%** |
+| **Total** | **57** | **5** | **52** | **8.8%** |
 
 ---
 
 ## Detailed Migration Status
 
-### ✅ WebGL에서 확인 완료된 컴포넌트 (4)
+### ✅ WebGL에서 확인 완료된 컴포넌트 (5)
 
 | Category | React Aria | WebGL Implementation | Verification |
 |----------|------------|---------------------|--------------|
 | Basic UI | Button | `PixiButton.tsx` | 렌더링 및 동작 확인 완료 |
 | Form Controls | Checkbox | `PixiCheckbox.tsx` | 렌더링 및 동작 확인 완료 |
-| Selection/Collection | CheckboxGroup | `PixiCheckboxGroup.tsx` | 렌더링 및 동작 확인 완료 |
-| Selection/Collection | RadioGroup | `PixiRadio.tsx` | 렌더링 및 동작 확인 완료 |
+| Form Controls | TextField | `PixiTextField.tsx` | 렌더링, 위치, 크기 동기화 확인 완료 (2025-12-17) |
+| Selection/Collection | CheckboxGroup | `PixiCheckboxGroup.tsx` | 렌더링, orientation 지원 확인 완료 (2025-12-17) |
+| Selection/Collection | RadioGroup | `PixiRadio.tsx` | 렌더링, orientation 지원 확인 완료 (2025-12-17) |
 
 ### ❔ 미확인 상태 (검증 필요)
 
@@ -269,6 +270,7 @@ src/builder/workspace/canvas/ui/
 ├── PixiRadioItem.tsx       # Radio in group
 ├── PixiSlider.tsx          # Range slider
 ├── PixiInput.tsx           # Text input
+├── PixiTextField.tsx       # Text field with label/description ✅
 ├── PixiSelect.tsx          # Dropdown select
 ├── PixiProgressBar.tsx     # Progress indicator
 ├── PixiSwitcher.tsx        # Toggle switch

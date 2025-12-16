@@ -13,6 +13,9 @@ import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer
 import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPass.js";
 import { OutputPass } from "three/examples/jsm/postprocessing/OutputPass.js";
+import { useParticleBackground } from "./ParticleContext";
+import { generatePointsFromContent } from "./canvasUtils";
+import { MORPH_IN_SPEED, MORPH_OUT_SPEED, PARTICLE_COUNT } from "./constants";
 
 // ==================== 상수 ====================
 const PHI = 1.618033988749895; // 황금비
@@ -196,6 +199,83 @@ function generateMondrianGrid(
   }
 }
 
+// 모핑 타겟 스케일 (화면에 더 크게 표시)
+const MORPH_SCALE = 3.5;
+
+// 모핑 타겟 포인트를 그리드 기반으로 재배치 (겹침 방지)
+function redistributePointsToGrid(
+  sourcePoints: Float32Array,
+  particleCount: number
+): Float32Array {
+  // 소스 포인트에서 유효한 포인트만 추출 (0,0,0이 아닌 것)
+  const validPoints: { x: number; y: number; z: number }[] = [];
+  for (let i = 0; i < sourcePoints.length; i += 3) {
+    const x = sourcePoints[i] * MORPH_SCALE;
+    const y = sourcePoints[i + 1] * MORPH_SCALE;
+    const z = sourcePoints[i + 2];
+    if (x !== 0 || y !== 0) {
+      validPoints.push({ x, y, z });
+    }
+  }
+
+  if (validPoints.length === 0) {
+    return new Float32Array(particleCount * 3);
+  }
+
+  // 바운딩 박스 계산
+  let minX = Infinity, maxX = -Infinity;
+  let minY = Infinity, maxY = -Infinity;
+  for (const p of validPoints) {
+    minX = Math.min(minX, p.x);
+    maxX = Math.max(maxX, p.x);
+    minY = Math.min(minY, p.y);
+    maxY = Math.max(maxY, p.y);
+  }
+
+  const width = maxX - minX;
+  const height = maxY - minY;
+
+  // 그리드 크기 계산 (겹침 방지)
+  const gridSpacing = PARTICLE_SPACING;
+  const cols = Math.max(1, Math.floor(width / gridSpacing));
+  const rows = Math.max(1, Math.floor(height / gridSpacing));
+
+  // 그리드 셀에 포인트가 있는지 확인
+  const gridOccupancy = new Map<string, boolean>();
+  for (const p of validPoints) {
+    const col = Math.floor((p.x - minX) / gridSpacing);
+    const row = Math.floor((p.y - minY) / gridSpacing);
+    gridOccupancy.set(`${col},${row}`, true);
+  }
+
+  // 결과 배열 생성
+  const result = new Float32Array(particleCount * 3);
+  let outputIndex = 0;
+
+  // 그리드 셀 순회하며 점유된 셀만 파티클 배치
+  const occupiedCells: { col: number; row: number }[] = [];
+  for (let row = 0; row <= rows; row++) {
+    for (let col = 0; col <= cols; col++) {
+      if (gridOccupancy.has(`${col},${row}`)) {
+        occupiedCells.push({ col, row });
+      }
+    }
+  }
+
+  // 파티클 수만큼 배치
+  for (let i = 0; i < particleCount && outputIndex < particleCount * 3; i++) {
+    const cell = occupiedCells[i % occupiedCells.length];
+    if (cell) {
+      result[outputIndex] = minX + cell.col * gridSpacing + gridSpacing / 2;
+      result[outputIndex + 1] = minY + cell.row * gridSpacing + gridSpacing / 2;
+      result[outputIndex + 2] = (Math.random() - 0.5) * 5;
+    }
+    outputIndex += 3;
+  }
+
+  return result;
+}
+
 // 사각형 영역 내에 파티클 위치 생성 (그리드 기반, 겹침 방지)
 function generateParticlesForRectangles(
   rectangles: Rectangle[],
@@ -266,12 +346,16 @@ const MONDRIAN_VERTEX_SHADER = `
   attribute vec3 targetColor;
   attribute float targetCharIndex;
   attribute float moveDelay;
+  attribute vec3 morphTargetPos;
+  attribute vec3 prevMorphTargetPos;
 
   uniform float morphProgress;
   uniform float time;
   uniform float charsPerRow;
   uniform float maxDelay;
   uniform float transitionDuration;
+  uniform float hoverMorphProgress;
+  uniform float morphTransitionProgress;
 
   varying vec3 vColor;
   varying float vOpacity;
@@ -291,23 +375,71 @@ const MONDRIAN_VERTEX_SHADER = `
       ? 2.0 * localProgress * localProgress
       : 1.0 - pow(-2.0 * localProgress + 2.0, 2.0) / 2.0;
 
-    // 수직/수평 이동 (대각선 금지)
-    // 먼저 X 이동, 그 다음 Y 이동
-    vec3 pos;
+    // 기본 위치 계산 (수직/수평 이동)
+    vec3 basePos;
     vec3 diff = targetPosition - position;
 
     if (easedProgress < 0.5) {
       // 전반부: X축 이동만
       float xProgress = easedProgress * 2.0;
-      pos.x = position.x + diff.x * xProgress;
-      pos.y = position.y;
-      pos.z = position.z;
+      basePos.x = position.x + diff.x * xProgress;
+      basePos.y = position.y;
+      basePos.z = position.z;
     } else {
       // 후반부: Y축 이동만
       float yProgress = (easedProgress - 0.5) * 2.0;
-      pos.x = targetPosition.x;
-      pos.y = position.y + diff.y * yProgress;
-      pos.z = position.z;
+      basePos.x = targetPosition.x;
+      basePos.y = position.y + diff.y * yProgress;
+      basePos.z = position.z;
+    }
+
+    // 모핑 타겟 전환 (이전 타겟 → 현재 타겟)
+    // 개별 파티클마다 랜덤 딜레이 적용
+    float morphTransStart = moveDelay / totalDuration;
+    float morphTransEnd = (moveDelay + transitionDuration) / totalDuration;
+    float localMorphTransProgress = clamp(
+      (morphTransitionProgress - morphTransStart) / (morphTransEnd - morphTransStart),
+      0.0, 1.0
+    );
+
+    // easeInOutQuad for smooth transition
+    float easedMorphTransProgress = localMorphTransProgress < 0.5
+      ? 2.0 * localMorphTransProgress * localMorphTransProgress
+      : 1.0 - pow(-2.0 * localMorphTransProgress + 2.0, 2.0) / 2.0;
+
+    vec3 currentMorphTarget;
+    vec3 morphTransDiff = morphTargetPos - prevMorphTargetPos;
+
+    if (easedMorphTransProgress < 0.5) {
+      // 전반부: X축 이동만
+      float xTransProgress = easedMorphTransProgress * 2.0;
+      currentMorphTarget.x = prevMorphTargetPos.x + morphTransDiff.x * xTransProgress;
+      currentMorphTarget.y = prevMorphTargetPos.y;
+      currentMorphTarget.z = prevMorphTargetPos.z;
+    } else {
+      // 후반부: Y축 이동만
+      float yTransProgress = (easedMorphTransProgress - 0.5) * 2.0;
+      currentMorphTarget.x = morphTargetPos.x;
+      currentMorphTarget.y = prevMorphTargetPos.y + morphTransDiff.y * yTransProgress;
+      currentMorphTarget.z = prevMorphTargetPos.z + morphTransDiff.z * yTransProgress;
+    }
+
+    // 호버 모핑 적용 (수직/수평 이동, 대각선 금지)
+    vec3 pos;
+    vec3 morphDiff = currentMorphTarget - basePos;
+
+    if (hoverMorphProgress < 0.5) {
+      // 전반부: X축 이동만
+      float xMorphProgress = hoverMorphProgress * 2.0;
+      pos.x = basePos.x + morphDiff.x * xMorphProgress;
+      pos.y = basePos.y;
+      pos.z = basePos.z;
+    } else {
+      // 후반부: Y축 이동만
+      float yMorphProgress = (hoverMorphProgress - 0.5) * 2.0;
+      pos.x = currentMorphTarget.x;
+      pos.y = basePos.y + morphDiff.y * yMorphProgress;
+      pos.z = basePos.z + morphDiff.z * yMorphProgress;
     }
 
     // 색상 전환 (이동 완료 시점에)
@@ -363,6 +495,42 @@ export function MondrianArtCanvas({
   bloomThreshold = 0.9,
 }: MondrianArtCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const { targetMorphRef, contentRef, contentVersion } = useParticleBackground();
+  const geometryRef = useRef<THREE.BufferGeometry | null>(null);
+  const materialRef = useRef<THREE.ShaderMaterial | null>(null);
+  const hoverMorphProgressRef = useRef(0);
+  const morphTransitionProgressRef = useRef(1); // 1 = 전환 완료 상태
+
+  // Content 변경 시 morphTargetPos 업데이트 (이전 위치 저장 후 새 위치로 전환)
+  useEffect(() => {
+    const geometry = geometryRef.current;
+    const material = materialRef.current;
+    if (!geometry || !material) return;
+
+    const currentAttr = geometry.getAttribute("morphTargetPos") as THREE.BufferAttribute;
+    const prevAttr = geometry.getAttribute("prevMorphTargetPos") as THREE.BufferAttribute;
+    if (!currentAttr || !prevAttr) return;
+
+    // 현재 morphTargetPos를 prevMorphTargetPos로 복사
+    for (let i = 0; i < currentAttr.array.length; i++) {
+      (prevAttr.array as Float32Array)[i] = (currentAttr.array as Float32Array)[i];
+    }
+    prevAttr.needsUpdate = true;
+
+    // 새로운 morphTargetPos 계산
+    const rawPoints = generatePointsFromContent(contentRef.current);
+    const particleCount = currentAttr.array.length / 3;
+    const gridPoints = redistributePointsToGrid(rawPoints, particleCount);
+
+    // 새 위치로 업데이트
+    for (let i = 0; i < gridPoints.length; i++) {
+      (currentAttr.array as Float32Array)[i] = gridPoints[i];
+    }
+    currentAttr.needsUpdate = true;
+
+    // 전환 시작 (0에서 1로 애니메이션)
+    morphTransitionProgressRef.current = 0;
+  }, [contentVersion, contentRef]);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -424,15 +592,20 @@ export function MondrianArtCanvas({
     // Geometry 생성
     const geometry = new THREE.BufferGeometry();
 
-    const positions = new Float32Array(maxParticles * 3);
-    const colors = new Float32Array(maxParticles * 3);
-    const opacities = new Float32Array(maxParticles);
-    const sizes = new Float32Array(maxParticles);
-    const charIndices = new Float32Array(maxParticles);
-    const targetPositions = new Float32Array(maxParticles * 3);
-    const targetColors = new Float32Array(maxParticles * 3);
-    const targetCharIndices = new Float32Array(maxParticles);
-    const moveDelays = new Float32Array(maxParticles);
+    // 모핑용 파티클 수는 PARTICLE_COUNT와 maxParticles 중 큰 값 사용
+    const totalParticles = Math.max(maxParticles, PARTICLE_COUNT);
+
+    const positions = new Float32Array(totalParticles * 3);
+    const colors = new Float32Array(totalParticles * 3);
+    const opacities = new Float32Array(totalParticles);
+    const sizes = new Float32Array(totalParticles);
+    const charIndices = new Float32Array(totalParticles);
+    const targetPositions = new Float32Array(totalParticles * 3);
+    const targetColors = new Float32Array(totalParticles * 3);
+    const targetCharIndices = new Float32Array(totalParticles);
+    const moveDelays = new Float32Array(totalParticles);
+    const morphTargetPositions = new Float32Array(totalParticles * 3);
+    const prevMorphTargetPositions = new Float32Array(totalParticles * 3);
 
     // 초기 데이터 복사
     positions.set(currentData.positions);
@@ -447,6 +620,13 @@ export function MondrianArtCanvas({
     targetColors.set(currentData.colors);
     targetCharIndices.set(currentData.charIndices);
 
+    // 초기 morphTargetPos (hover content용) - 그리드 기반 재배치
+    const rawMorphPoints = generatePointsFromContent(contentRef.current);
+    const gridMorphPoints = redistributePointsToGrid(rawMorphPoints, totalParticles);
+    morphTargetPositions.set(gridMorphPoints);
+    // 초기에는 prev와 current가 동일
+    prevMorphTargetPositions.set(gridMorphPoints);
+
     geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
     geometry.setAttribute("color", new THREE.BufferAttribute(colors, 3));
     geometry.setAttribute("opacity", new THREE.BufferAttribute(opacities, 1));
@@ -456,8 +636,11 @@ export function MondrianArtCanvas({
     geometry.setAttribute("targetColor", new THREE.BufferAttribute(targetColors, 3));
     geometry.setAttribute("targetCharIndex", new THREE.BufferAttribute(targetCharIndices, 1));
     geometry.setAttribute("moveDelay", new THREE.BufferAttribute(moveDelays, 1));
+    geometry.setAttribute("morphTargetPos", new THREE.BufferAttribute(morphTargetPositions, 3));
+    geometry.setAttribute("prevMorphTargetPos", new THREE.BufferAttribute(prevMorphTargetPositions, 3));
 
     geometry.setDrawRange(0, currentData.count);
+    geometryRef.current = geometry;
 
     const material = new THREE.ShaderMaterial({
       uniforms: {
@@ -468,12 +651,15 @@ export function MondrianArtCanvas({
         charRows: { value: charRows },
         maxDelay: { value: MAX_DELAY },
         transitionDuration: { value: TRANSITION_DURATION },
+        hoverMorphProgress: { value: 0 },
+        morphTransitionProgress: { value: 1 },
       },
       vertexShader: MONDRIAN_VERTEX_SHADER,
       fragmentShader: MONDRIAN_FRAGMENT_SHADER,
       transparent: true,
       depthWrite: false,
     });
+    materialRef.current = material;
 
     const points = new THREE.Points(geometry, material);
     scene.add(points);
@@ -492,6 +678,23 @@ export function MondrianArtCanvas({
       const time = clock.getElapsedTime();
       const elapsedMs = time * 1000;
       material.uniforms.time.value = time;
+
+      // 호버 모핑 진행도 업데이트
+      const hoverMorphSpeed =
+        targetMorphRef.current > hoverMorphProgressRef.current
+          ? MORPH_IN_SPEED
+          : MORPH_OUT_SPEED;
+      hoverMorphProgressRef.current +=
+        (targetMorphRef.current - hoverMorphProgressRef.current) * hoverMorphSpeed;
+      material.uniforms.hoverMorphProgress.value = hoverMorphProgressRef.current;
+
+      // 모핑 타겟 전환 진행도 업데이트 (버튼 간 이동 시 부드러운 전환)
+      // 개별 딜레이를 고려해서 전체 기간 동안 선형으로 진행
+      const morphTransitionSpeed = 0.008; // 느리게 진행
+      if (morphTransitionProgressRef.current < 1) {
+        morphTransitionProgressRef.current = Math.min(1, morphTransitionProgressRef.current + morphTransitionSpeed);
+        material.uniforms.morphTransitionProgress.value = morphTransitionProgressRef.current;
+      }
 
       // 전환 애니메이션 (전체 지속시간 = 전환시간 + 최대 딜레이)
       const totalDuration = TRANSITION_DURATION + MAX_DELAY;
@@ -600,6 +803,8 @@ export function MondrianArtCanvas({
 
     // ==================== 클린업 ====================
     return () => {
+      geometryRef.current = null;
+      materialRef.current = null;
       cancelAnimationFrame(animationFrameId);
       window.removeEventListener("resize", handleResize);
 
@@ -614,7 +819,7 @@ export function MondrianArtCanvas({
         container.removeChild(renderer.domElement);
       }
     };
-  }, [bloomStrength, bloomRadius, bloomThreshold]);
+  }, [bloomStrength, bloomRadius, bloomThreshold, targetMorphRef, contentRef]);
 
   return (
     <div

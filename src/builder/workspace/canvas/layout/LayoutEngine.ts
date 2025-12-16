@@ -12,6 +12,7 @@
 import type { Element } from '../../../../types/core/store.types';
 import { parsePadding } from '../sprites/paddingUtils';
 import { CanvasTextMetrics, TextStyle } from 'pixi.js';
+import { getRadioSizePreset, getTextFieldSizePreset } from '../utils/cssVariableReader';
 
 // yoga-layout v3.2.1: enums are directly exported from 'yoga-layout/load'
 import {
@@ -504,8 +505,12 @@ function measureCheckboxGroupSize(
   const groupLabel = String(props?.label || props?.children || props?.text || '');
   const labelHeight = groupLabel ? fontSize + 8 : 0;
 
-  // 방향 (horizontal or vertical)
-  const isHorizontal = style?.flexDirection === 'row';
+  // 방향: props.orientation > style.flexDirection
+  const orientation = props?.orientation;
+  const isHorizontal =
+    orientation === 'horizontal' ? true :
+    orientation === 'vertical' ? false :
+    style?.flexDirection === 'row';
 
   // 1. 자식 Checkbox 요소들 먼저 확인
   const childCheckboxes = elements
@@ -569,8 +574,11 @@ function measureCheckboxGroupSize(
   });
 
   if (isHorizontal) {
-    // 가로 배치
-    const optionsWidth = options.length * HORIZONTAL_ITEM_WIDTH;
+    // 가로 배치: 마지막 아이템 X + 마지막 아이템 너비
+    const lastIndex = itemSizes.length - 1;
+    const lastItemX = lastIndex * HORIZONTAL_ITEM_WIDTH;
+    const lastItemWidth = itemSizes[lastIndex]?.width || boxSize;
+    const optionsWidth = lastItemX + lastItemWidth;
     const totalWidth = Math.max(optionsWidth, labelWidth);
     const maxHeight = Math.max(...itemSizes.map((s) => s.height), boxSize);
     return {
@@ -603,20 +611,25 @@ function measureRadioSize(
 ): { width: number; height: number } | null {
   const props = element.props as Record<string, unknown> | undefined;
 
-  // size prop에서 preset 가져오기
+  // size prop에서 preset 가져오기 (PixiRadio와 동일한 getRadioSizePreset 사용)
   const sizeKey = (props?.size as string) || 'md';
-  const preset = CHECKBOX_RADIO_SIZE_PRESETS[sizeKey] || DEFAULT_CHECKBOX_RADIO_PRESET;
-  const { boxSize, gap } = preset;
+  const radioPreset = getRadioSizePreset(sizeKey);
+  const boxSize = radioPreset.radioSize;
+  const gap = radioPreset.gap;
 
-  // 폰트 크기
-  const fontSize = parseCSSValue(style?.fontSize, 14);
+  // 폰트 크기 (radioPreset에서 가져오기)
+  const fontSize = parseCSSValue(style?.fontSize, radioPreset.fontSize);
 
   // RadioGroup 라벨
   const groupLabel = String(props?.label || props?.children || props?.text || '');
   const labelHeight = groupLabel ? fontSize + 8 : 0;
 
-  // 방향 (horizontal or vertical)
-  const isHorizontal = style?.flexDirection === 'row';
+  // 방향: props.orientation > style.flexDirection
+  const orientation = props?.orientation;
+  const isHorizontal =
+    orientation === 'horizontal' ? true :
+    orientation === 'vertical' ? false :
+    style?.flexDirection === 'row';
 
   // 1. 자식 Radio 요소들 먼저 확인
   const childRadios = elements
@@ -680,8 +693,11 @@ function measureRadioSize(
   });
 
   if (isHorizontal) {
-    // 가로 배치: 각 아이템 너비 = HORIZONTAL_ITEM_WIDTH (PixiRadio.tsx와 동기화)
-    const optionsWidth = options.length * HORIZONTAL_ITEM_WIDTH;
+    // 가로 배치: 마지막 아이템 X + 마지막 아이템 너비
+    const lastIndex = itemSizes.length - 1;
+    const lastItemX = lastIndex * HORIZONTAL_ITEM_WIDTH;
+    const lastItemWidth = itemSizes[lastIndex]?.width || boxSize;
+    const optionsWidth = lastItemX + lastItemWidth;
     const totalWidth = Math.max(optionsWidth, labelWidth);
     const maxHeight = Math.max(...itemSizes.map((s) => s.height), boxSize);
     return {
@@ -705,6 +721,56 @@ function measureRadioSize(
  */
 function isCheckboxRadioElement(element: Element): boolean {
   return CHECKBOX_RADIO_TAGS.has(element.tag);
+}
+
+/**
+ * TextField 관련 태그들
+ */
+const TEXT_FIELD_TAGS = new Set(['TextField', 'TextInput']);
+
+/**
+ * 요소가 TextField인지 확인
+ */
+function isTextFieldElement(element: Element): boolean {
+  return TEXT_FIELD_TAGS.has(element.tag);
+}
+
+/**
+ * TextField의 intrinsic size 측정
+ * = PixiTextField와 동일한 계산 로직
+ * = width: props.width || 240
+ * = height: labelHeight + inputHeight + descriptionHeight
+ */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+function measureTextFieldSize(
+  element: Element,
+  _style: CSSStyle | undefined
+): { width: number; height: number } | null {
+  const props = element.props as Record<string, unknown> | undefined;
+
+  // size prop에서 프리셋 가져오기
+  const sizeKey = (props?.size as string) || 'md';
+  const preset = getTextFieldSizePreset(sizeKey);
+
+  // 너비: PixiTextField와 동일하게 props.width 우선, 없으면 240
+  // (style.width는 무시 - PixiTextField 구현과 일치)
+  const width = (props?.width as number) || 240;
+
+  // 라벨 높이: 라벨이 있으면 labelFontSize + gap, 없으면 0
+  const label = (props?.label as string) || '';
+  const labelHeight = label ? preset.labelFontSize + preset.gap : 0;
+
+  // 설명 높이: 설명 또는 에러메시지가 있으면 descriptionFontSize + gap, 없으면 0
+  const description = (props?.description as string) || '';
+  const errorMessage = (props?.errorMessage as string) || '';
+  const isInvalid = (props?.isInvalid as boolean) || false;
+  const hasDescription = description || (isInvalid && errorMessage);
+  const descriptionHeight = hasDescription ? preset.descriptionFontSize + preset.gap : 0;
+
+  // 전체 높이: 라벨 + 입력 필드 + 설명
+  const totalHeight = labelHeight + preset.height + descriptionHeight;
+
+  return { width, height: totalHeight };
 }
 
 /**
@@ -932,6 +998,20 @@ function createYogaNode(
     }
   }
 
+  // 🚀 Phase 7: TextField 요소의 intrinsic size 측정
+  // PixiTextField와 동일한 크기 계산 (label + input + description)
+  if (isTextFieldElement(element) && (!hasExplicitWidth || !hasExplicitHeight)) {
+    const measuredSize = measureTextFieldSize(element, style);
+    if (measuredSize) {
+      if (!hasExplicitWidth) {
+        node.setWidth(measuredSize.width);
+      }
+      if (!hasExplicitHeight) {
+        node.setHeight(measuredSize.height);
+      }
+    }
+  }
+
   // Min/Max 크기 (px 및 % 단위 지원)
   setNodeMinMaxSize(node, 'minWidth', style?.minWidth);
   setNodeMinMaxSize(node, 'minHeight', style?.minHeight);
@@ -1116,13 +1196,19 @@ function calculateRadioItemPositions(
     const groupLabel = String(groupProps?.label || groupProps?.children || groupProps?.text || '');
     const labelHeight = groupLabel ? fontSize + 8 : 0;
 
-    // 방향 (가로 또는 세로)
-    const isHorizontal = groupStyle?.flexDirection === 'row';
+    // 방향: props.orientation > style.flexDirection
+    const orientation = groupProps?.orientation;
+    const isHorizontal =
+      orientation === 'horizontal' ? true :
+      orientation === 'vertical' ? false :
+      groupStyle?.flexDirection === 'row';
 
-    // 아이템 간격 (PixiRadio.tsx와 동기화)
-    const OPTION_GAP = 12;
+    // 아이템 크기/간격 (PixiRadio와 동일한 getRadioSizePreset 사용)
+    const sizeKey = (groupProps?.size as string) || 'md';
+    const radioPreset = getRadioSizePreset(sizeKey);
+    const boxSize = radioPreset.radioSize;
+    const OPTION_GAP = radioPreset.gap;
     const HORIZONTAL_ITEM_WIDTH = 120;
-    const boxSize = 20; // DEFAULT_RADIO_SIZE
 
     // 각 Radio 아이템 위치 계산
     for (let i = 0; i < radioItems.length; i++) {
@@ -1180,8 +1266,12 @@ function calculateCheckboxItemPositions(
     const groupLabel = String(groupProps?.label || groupProps?.children || groupProps?.text || '');
     const labelHeight = groupLabel ? fontSize + 8 : 0;
 
-    // 방향 (가로 또는 세로)
-    const isHorizontal = groupStyle?.flexDirection === 'row';
+    // 방향: props.orientation > style.flexDirection
+    const orientation = groupProps?.orientation;
+    const isHorizontal =
+      orientation === 'horizontal' ? true :
+      orientation === 'vertical' ? false :
+      groupStyle?.flexDirection === 'row';
 
     // 아이템 간격 (PixiCheckboxGroup.tsx와 동기화)
     const OPTION_GAP = 12;
