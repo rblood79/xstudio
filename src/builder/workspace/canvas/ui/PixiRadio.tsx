@@ -18,6 +18,7 @@ import type { CSSStyle } from '../sprites/styleConverter';
 import { cssColorToHex, parseCSSSize } from '../sprites/styleConverter';
 import { drawCircle } from '../utils';
 import { useStore } from '../../../stores';
+import { getRadioSizePreset } from '../utils/cssVariableReader';
 
 // ============================================
 // Types
@@ -39,11 +40,10 @@ interface RadioOption {
 // Constants
 // ============================================
 
-const DEFAULT_RADIO_SIZE = 20;
+// 🚀 Phase 0: CSS 동기화 - 하드코딩된 상수 대신 getRadioSizePreset() 사용
 const DEFAULT_PRIMARY_COLOR = 0x3b82f6; // blue-500
 const DEFAULT_BORDER_COLOR = 0xd1d5db; // gray-300
 const DEFAULT_TEXT_COLOR = 0x374151; // gray-700
-const DEFAULT_GAP = 12;
 const LABEL_GAP = 8;
 
 // 기본 옵션 (options가 없을 때 placeholder로 표시)
@@ -271,11 +271,16 @@ export const PixiRadio = memo(function PixiRadio({
     return flexDirection === 'row';
   }, [style]);
 
-  // 스타일
-  const radioSize = DEFAULT_RADIO_SIZE;
+  // 🚀 Phase 0: CSS 동기화 - size prop에서 사이즈 프리셋 적용
+  const size = useMemo(() => String(props?.size || 'md'), [props?.size]);
+  const sizePreset = useMemo(() => getRadioSizePreset(size), [size]);
+
+  // 스타일 (CSS 사이즈 프리셋 적용)
+  const radioSize = sizePreset.radioSize;
+  const gap = sizePreset.gap;
   const primaryColor = cssColorToHex(style?.backgroundColor, DEFAULT_PRIMARY_COLOR);
   const textColor = cssColorToHex(style?.color, DEFAULT_TEXT_COLOR);
-  const fontSize = parseCSSSize(style?.fontSize, undefined, 14);
+  const fontSize = parseCSSSize(style?.fontSize, undefined, sizePreset.fontSize);
   const fontFamily = style?.fontFamily || 'Pretendard, sans-serif';
 
   // 위치
@@ -333,8 +338,9 @@ export const PixiRadio = memo(function PixiRadio({
         const isOptionSelected = option.value === selectedValue;
 
         // 위치 계산 (라벨이 있으면 Y 오프셋 추가)
+        // 🚀 Phase 0: CSS 사이즈 프리셋의 gap 값 사용
         const itemX = isHorizontal ? index * 120 : 0;
-        const itemY = labelHeight + (isHorizontal ? 0 : index * (radioSize + DEFAULT_GAP));
+        const itemY = labelHeight + (isHorizontal ? 0 : index * (radioSize + gap));
 
         return (
           <RadioItem

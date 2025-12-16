@@ -496,3 +496,331 @@ export function getCheckboxSizePreset(size: string): CheckboxSizePreset {
 
   return { boxSize, fontSize, gap };
 }
+
+// ============================================
+// Slider Size Preset
+// ============================================
+
+/**
+ * Slider 컴포넌트용 사이즈 프리셋
+ *
+ * CSS 정의 (Slider.css):
+ * - sm: trackHeight: 24px, trackWidth: 1px, thumbSize: var(--text-xl)
+ * - md: trackHeight: 30px, trackWidth: 2px, thumbSize: var(--text-2xl)
+ * - lg: trackHeight: 36px, trackWidth: 3px, thumbSize: var(--text-3xl)
+ */
+export interface SliderSizePreset {
+  trackHeight: number;
+  trackWidth: number;
+  thumbSize: number;
+}
+
+const SLIDER_SIZE_MAPPING: Record<string, { thumbSize: string }> = {
+  sm: { thumbSize: '--text-xl' },   // 20px
+  md: { thumbSize: '--text-2xl' },  // 24px
+  lg: { thumbSize: '--text-3xl' },  // 30px
+};
+
+const SLIDER_FALLBACKS: Record<string, SliderSizePreset> = {
+  sm: { trackHeight: 24, trackWidth: 1, thumbSize: 20 },
+  md: { trackHeight: 30, trackWidth: 2, thumbSize: 24 },
+  lg: { trackHeight: 36, trackWidth: 3, thumbSize: 30 },
+};
+
+/**
+ * Slider 사이즈 프리셋 읽기
+ */
+export function getSliderSizePreset(size: string): SliderSizePreset {
+  const mapping = SLIDER_SIZE_MAPPING[size];
+  const fallback = SLIDER_FALLBACKS[size] || SLIDER_FALLBACKS.md;
+
+  if (!mapping) {
+    return fallback;
+  }
+
+  const thumbSize = parseCSSValue(getCSSVariable(mapping.thumbSize), fallback.thumbSize);
+
+  // trackHeight와 trackWidth는 CSS에서 하드코딩됨
+  return {
+    trackHeight: fallback.trackHeight,
+    trackWidth: fallback.trackWidth,
+    thumbSize,
+  };
+}
+
+// ============================================
+// Radio Size Preset
+// ============================================
+
+/**
+ * Radio 컴포넌트용 사이즈 프리셋
+ *
+ * CSS 정의 (Radio.css):
+ * - sm: radioSize: var(--text-lg), fontSize: var(--text-sm), selectedBorderWidth: 5px
+ * - md: radioSize: var(--text-xl), fontSize: var(--text-base), selectedBorderWidth: ~10px
+ * - lg: radioSize: var(--text-2xl), fontSize: var(--text-lg), selectedBorderWidth: 6px
+ */
+export interface RadioSizePreset {
+  radioSize: number;
+  fontSize: number;
+  selectedBorderWidth: number;
+  gap: number;
+}
+
+const RADIO_SIZE_MAPPING: Record<string, { radioSize: string; fontSize: string }> = {
+  sm: { radioSize: '--text-lg', fontSize: '--text-sm' },
+  md: { radioSize: '--text-xl', fontSize: '--text-base' },
+  lg: { radioSize: '--text-2xl', fontSize: '--text-lg' },
+};
+
+const RADIO_FALLBACKS: Record<string, RadioSizePreset> = {
+  sm: { radioSize: 18, fontSize: 14, selectedBorderWidth: 5, gap: 8 },
+  md: { radioSize: 20, fontSize: 16, selectedBorderWidth: 6, gap: 8 },
+  lg: { radioSize: 24, fontSize: 18, selectedBorderWidth: 7, gap: 10 },
+};
+
+/**
+ * Radio 사이즈 프리셋 읽기
+ */
+export function getRadioSizePreset(size: string): RadioSizePreset {
+  const mapping = RADIO_SIZE_MAPPING[size];
+  const fallback = RADIO_FALLBACKS[size] || RADIO_FALLBACKS.md;
+
+  if (!mapping) {
+    return fallback;
+  }
+
+  const radioSize = parseCSSValue(getCSSVariable(mapping.radioSize), fallback.radioSize);
+  const fontSize = parseCSSValue(getCSSVariable(mapping.fontSize), fallback.fontSize);
+  const gap = parseCSSValue(getCSSVariable('--spacing-sm'), fallback.gap);
+
+  return {
+    radioSize,
+    fontSize,
+    selectedBorderWidth: fallback.selectedBorderWidth,
+    gap,
+  };
+}
+
+// ============================================
+// ProgressBar Size Preset
+// ============================================
+
+/**
+ * ProgressBar 컴포넌트용 사이즈 프리셋
+ *
+ * CSS 정의 (ProgressBar.css):
+ * - sm: width: 200px, barHeight: 6px, fontSize: var(--text-sm), borderRadius: var(--radius-sm)
+ * - md: width: 250px, barHeight: 10px, fontSize: var(--text-base), borderRadius: var(--radius-md)
+ * - lg: width: 300px, barHeight: 14px, fontSize: var(--text-lg), borderRadius: var(--radius-lg)
+ */
+export interface ProgressBarSizePreset {
+  width: number;
+  barHeight: number;
+  fontSize: number;
+  borderRadius: number;
+}
+
+const PROGRESSBAR_SIZE_MAPPING: Record<string, { fontSize: string; borderRadius: string }> = {
+  sm: { fontSize: '--text-sm', borderRadius: '--radius-sm' },
+  md: { fontSize: '--text-base', borderRadius: '--radius-md' },
+  lg: { fontSize: '--text-lg', borderRadius: '--radius-lg' },
+};
+
+const PROGRESSBAR_FALLBACKS: Record<string, ProgressBarSizePreset> = {
+  sm: { width: 200, barHeight: 6, fontSize: 14, borderRadius: 4 },
+  md: { width: 250, barHeight: 10, fontSize: 16, borderRadius: 6 },
+  lg: { width: 300, barHeight: 14, fontSize: 18, borderRadius: 8 },
+};
+
+/**
+ * ProgressBar 사이즈 프리셋 읽기
+ */
+export function getProgressBarSizePreset(size: string): ProgressBarSizePreset {
+  const mapping = PROGRESSBAR_SIZE_MAPPING[size];
+  const fallback = PROGRESSBAR_FALLBACKS[size] || PROGRESSBAR_FALLBACKS.md;
+
+  if (!mapping) {
+    return fallback;
+  }
+
+  const fontSize = parseCSSValue(getCSSVariable(mapping.fontSize), fallback.fontSize);
+  const borderRadius = parseCSSValue(getCSSVariable(mapping.borderRadius), fallback.borderRadius);
+
+  return {
+    width: fallback.width,
+    barHeight: fallback.barHeight,
+    fontSize,
+    borderRadius,
+  };
+}
+
+// ============================================
+// Input (TextField) Size Preset
+// ============================================
+
+/**
+ * Input/TextField 컴포넌트용 사이즈 프리셋
+ *
+ * CSS 정의 (TextField.css):
+ * - sm: labelSize: var(--text-xs), paddingY: var(--spacing-sm), paddingX: var(--spacing), fontSize: var(--text-xs)
+ * - md: labelSize: var(--text-sm), paddingY: var(--spacing), paddingX: var(--spacing-md), fontSize: var(--text-sm)
+ * - lg: labelSize: var(--text-base), paddingY: var(--spacing-md), paddingX: var(--spacing-lg), fontSize: var(--text-base)
+ */
+export interface InputSizePreset {
+  fontSize: number;
+  labelSize: number;
+  paddingX: number;
+  paddingY: number;
+  borderRadius: number;
+}
+
+const INPUT_SIZE_MAPPING: Record<string, { labelSize: string; fontSize: string; paddingY: string; paddingX: string }> = {
+  sm: { labelSize: '--text-xs', fontSize: '--text-xs', paddingY: '--spacing-sm', paddingX: '--spacing' },
+  md: { labelSize: '--text-sm', fontSize: '--text-sm', paddingY: '--spacing', paddingX: '--spacing-md' },
+  lg: { labelSize: '--text-base', fontSize: '--text-base', paddingY: '--spacing-md', paddingX: '--spacing-lg' },
+};
+
+const INPUT_FALLBACKS: Record<string, InputSizePreset> = {
+  sm: { fontSize: 12, labelSize: 12, paddingX: 8, paddingY: 6, borderRadius: 6 },
+  md: { fontSize: 14, labelSize: 14, paddingX: 12, paddingY: 8, borderRadius: 6 },
+  lg: { fontSize: 16, labelSize: 16, paddingX: 16, paddingY: 12, borderRadius: 6 },
+};
+
+/**
+ * Input 사이즈 프리셋 읽기
+ */
+export function getInputSizePreset(size: string): InputSizePreset {
+  const mapping = INPUT_SIZE_MAPPING[size];
+  const fallback = INPUT_FALLBACKS[size] || INPUT_FALLBACKS.md;
+
+  if (!mapping) {
+    return fallback;
+  }
+
+  const fontSize = parseCSSValue(getCSSVariable(mapping.fontSize), fallback.fontSize);
+  const labelSize = parseCSSValue(getCSSVariable(mapping.labelSize), fallback.labelSize);
+  const paddingX = parseCSSValue(getCSSVariable(mapping.paddingX), fallback.paddingX);
+  const paddingY = parseCSSValue(getCSSVariable(mapping.paddingY), fallback.paddingY);
+  const borderRadius = parseCSSValue(getCSSVariable('--border-radius'), fallback.borderRadius);
+
+  return { fontSize, labelSize, paddingX, paddingY, borderRadius };
+}
+
+// ============================================
+// Select Size Preset
+// ============================================
+
+/**
+ * Select 컴포넌트용 사이즈 프리셋
+ *
+ * CSS 정의 (Select.css):
+ * - sm: labelSize: var(--text-xs), paddingY: var(--spacing-sm), paddingX: var(--spacing), fontSize: var(--text-xs), chevronSize: 20px
+ * - md: labelSize: var(--text-sm), paddingY: var(--spacing), paddingX: var(--spacing-md), fontSize: var(--text-sm), chevronSize: 24px
+ * - lg: labelSize: var(--text-base), paddingY: var(--spacing-md), paddingX: var(--spacing-lg), fontSize: var(--text-base), chevronSize: 28px
+ */
+export interface SelectSizePreset {
+  fontSize: number;
+  labelSize: number;
+  paddingX: number;
+  paddingY: number;
+  chevronSize: number;
+  borderRadius: number;
+}
+
+const SELECT_SIZE_MAPPING: Record<string, { labelSize: string; fontSize: string; paddingY: string; paddingX: string }> = {
+  sm: { labelSize: '--text-xs', fontSize: '--text-xs', paddingY: '--spacing-sm', paddingX: '--spacing' },
+  md: { labelSize: '--text-sm', fontSize: '--text-sm', paddingY: '--spacing', paddingX: '--spacing-md' },
+  lg: { labelSize: '--text-base', fontSize: '--text-base', paddingY: '--spacing-md', paddingX: '--spacing-lg' },
+};
+
+const SELECT_FALLBACKS: Record<string, SelectSizePreset> = {
+  sm: { fontSize: 12, labelSize: 12, paddingX: 8, paddingY: 6, chevronSize: 20, borderRadius: 6 },
+  md: { fontSize: 14, labelSize: 14, paddingX: 12, paddingY: 8, chevronSize: 24, borderRadius: 6 },
+  lg: { fontSize: 16, labelSize: 16, paddingX: 16, paddingY: 12, chevronSize: 28, borderRadius: 6 },
+};
+
+/**
+ * Select 사이즈 프리셋 읽기
+ */
+export function getSelectSizePreset(size: string): SelectSizePreset {
+  const mapping = SELECT_SIZE_MAPPING[size];
+  const fallback = SELECT_FALLBACKS[size] || SELECT_FALLBACKS.md;
+
+  if (!mapping) {
+    return fallback;
+  }
+
+  const fontSize = parseCSSValue(getCSSVariable(mapping.fontSize), fallback.fontSize);
+  const labelSize = parseCSSValue(getCSSVariable(mapping.labelSize), fallback.labelSize);
+  const paddingX = parseCSSValue(getCSSVariable(mapping.paddingX), fallback.paddingX);
+  const paddingY = parseCSSValue(getCSSVariable(mapping.paddingY), fallback.paddingY);
+  const borderRadius = parseCSSValue(getCSSVariable('--border-radius'), fallback.borderRadius);
+
+  return {
+    fontSize,
+    labelSize,
+    paddingX,
+    paddingY,
+    chevronSize: fallback.chevronSize,
+    borderRadius,
+  };
+}
+
+// ============================================
+// Switch Size Preset
+// ============================================
+
+/**
+ * Switch 컴포넌트용 사이즈 프리셋
+ *
+ * CSS 정의 (Switch.css):
+ * - sm: indicatorWidth: calc(var(--text-4xl) + 4px), indicatorHeight: calc(var(--text-lg) + 2px), thumbSize: var(--text-lg), fontSize: var(--text-sm)
+ * - md: indicatorWidth: calc(var(--text-4xl) + 8px), indicatorHeight: calc(var(--text-xl) + 4px), thumbSize: var(--text-xl), fontSize: var(--text-base)
+ * - lg: indicatorWidth: 52px, indicatorHeight: 28px, thumbSize: 24px, fontSize: var(--text-lg)
+ */
+export interface SwitchSizePreset {
+  indicatorWidth: number;
+  indicatorHeight: number;
+  thumbSize: number;
+  fontSize: number;
+  gap: number;
+}
+
+const SWITCH_SIZE_MAPPING: Record<string, { fontSize: string; thumbSize: string }> = {
+  sm: { fontSize: '--text-sm', thumbSize: '--text-lg' },
+  md: { fontSize: '--text-base', thumbSize: '--text-xl' },
+  lg: { fontSize: '--text-lg', thumbSize: '--text-2xl' },
+};
+
+const SWITCH_FALLBACKS: Record<string, SwitchSizePreset> = {
+  sm: { indicatorWidth: 40, indicatorHeight: 20, thumbSize: 18, fontSize: 14, gap: 8 },
+  md: { indicatorWidth: 44, indicatorHeight: 24, thumbSize: 20, fontSize: 16, gap: 8 },
+  lg: { indicatorWidth: 52, indicatorHeight: 28, thumbSize: 24, fontSize: 18, gap: 10 },
+};
+
+/**
+ * Switch 사이즈 프리셋 읽기
+ */
+export function getSwitchSizePreset(size: string): SwitchSizePreset {
+  const mapping = SWITCH_SIZE_MAPPING[size];
+  const fallback = SWITCH_FALLBACKS[size] || SWITCH_FALLBACKS.md;
+
+  if (!mapping) {
+    return fallback;
+  }
+
+  const fontSize = parseCSSValue(getCSSVariable(mapping.fontSize), fallback.fontSize);
+  const thumbSize = parseCSSValue(getCSSVariable(mapping.thumbSize), fallback.thumbSize);
+  const gap = parseCSSValue(getCSSVariable('--gap'), fallback.gap);
+
+  // indicatorWidth와 indicatorHeight는 계산이 복잡하므로 fallback 사용
+  // 실제 CSS에서 calc()를 사용하기 때문
+  return {
+    indicatorWidth: fallback.indicatorWidth,
+    indicatorHeight: fallback.indicatorHeight,
+    thumbSize,
+    fontSize,
+    gap,
+  };
+}

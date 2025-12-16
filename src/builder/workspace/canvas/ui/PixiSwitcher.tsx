@@ -16,6 +16,7 @@ import { Container, Graphics, Text, TextStyle } from 'pixi.js';
 import type { Element } from '../../../../types/core/store.types';
 import type { CSSStyle } from '../sprites/styleConverter';
 import { cssColorToHex, parseCSSSize } from '../sprites/styleConverter';
+import { getSwitchSizePreset } from '../utils/cssVariableReader';
 
 // ============================================
 // Types
@@ -52,20 +53,31 @@ interface SwitcherLayoutStyle {
   itemWidth: number;
 }
 
-function convertToSwitcherStyle(style: CSSStyle | undefined, itemCount: number): SwitcherLayoutStyle {
+/**
+ * CSS 스타일을 Switcher 레이아웃 스타일로 변환
+ * 🚀 Phase 0: CSS 동기화 - getSwitchSizePreset() 사용
+ */
+function convertToSwitcherStyle(style: CSSStyle | undefined, itemCount: number, size: string): SwitcherLayoutStyle {
   const width = parseCSSSize(style?.width, undefined, 240);
+
+  // 🚀 CSS에서 사이즈 프리셋 읽기
+  const sizePreset = getSwitchSizePreset(size);
+
+  // Switcher 높이는 Switch indicator 높이와 유사하게 설정
+  const defaultHeight = sizePreset.indicatorHeight + 8; // 약간의 패딩 추가
+
   return {
     x: parseCSSSize(style?.left, undefined, 0),
     y: parseCSSSize(style?.top, undefined, 0),
     width,
-    height: parseCSSSize(style?.height, undefined, 36),
+    height: parseCSSSize(style?.height, undefined, defaultHeight),
     backgroundColor: cssColorToHex(style?.backgroundColor, 0xe5e7eb),
     activeColor: cssColorToHex(style?.borderColor, 0x3b82f6),
     textColor: cssColorToHex(style?.color, 0x6b7280),
     activeTextColor: 0xffffff,
-    fontSize: parseCSSSize(style?.fontSize, undefined, 14),
+    fontSize: parseCSSSize(style?.fontSize, undefined, sizePreset.fontSize),
     fontFamily: style?.fontFamily || 'Pretendard, sans-serif',
-    borderRadius: parseCSSSize(style?.borderRadius, undefined, 6),
+    borderRadius: parseCSSSize(style?.borderRadius, undefined, sizePreset.indicatorHeight / 2),
     itemWidth: itemCount > 0 ? width / itemCount : width,
   };
 }
@@ -187,8 +199,11 @@ export const PixiSwitcher = memo(function PixiSwitcher({
   // 아이템들
   const items = useMemo(() => parseSwitcherItems(props), [props]);
 
-  // Switcher 스타일
-  const layoutStyle = useMemo(() => convertToSwitcherStyle(style, items.length), [style, items.length]);
+  // 🚀 Phase 0: size prop 추출 (기본값: 'md')
+  const size = useMemo(() => String(props?.size || 'md'), [props?.size]);
+
+  // Switcher 스타일 (CSS 사이즈 프리셋 적용)
+  const layoutStyle = useMemo(() => convertToSwitcherStyle(style, items.length, size), [style, items.length, size]);
 
   // 활성 인덱스
   const activeIndex = useMemo(() => {

@@ -16,6 +16,7 @@ import { Container, Graphics } from 'pixi.js';
 import type { Element } from '../../../../types/core/store.types';
 import type { CSSStyle } from '../sprites/styleConverter';
 import { cssColorToHex, parseCSSSize } from '../sprites/styleConverter';
+import { getProgressBarSizePreset } from '../utils/cssVariableReader';
 
 // ============================================
 // Types
@@ -43,20 +44,27 @@ interface ProgressBarLayoutStyle {
   borderRadius: number;
 }
 
-function convertToProgressBarStyle(style: CSSStyle | undefined): ProgressBarLayoutStyle {
+/**
+ * CSS 스타일을 ProgressBar 레이아웃 스타일로 변환
+ * 🚀 Phase 0: CSS 동기화 - getProgressBarSizePreset() 사용
+ */
+function convertToProgressBarStyle(style: CSSStyle | undefined, size: string): ProgressBarLayoutStyle {
   const primaryColor = cssColorToHex(style?.backgroundColor, 0x3b82f6);
   const trackColor = cssColorToHex(style?.borderColor, 0xe5e7eb);
+
+  // 🚀 CSS에서 사이즈 프리셋 읽기
+  const sizePreset = getProgressBarSizePreset(size);
 
   return {
     x: parseCSSSize(style?.left, undefined, 0),
     y: parseCSSSize(style?.top, undefined, 0),
-    width: parseCSSSize(style?.width, undefined, 200),
-    height: parseCSSSize(style?.height, undefined, 8),
+    width: parseCSSSize(style?.width, undefined, sizePreset.width),
+    height: parseCSSSize(style?.height, undefined, sizePreset.barHeight),
     backgroundColor: trackColor,
     fillColor: primaryColor,
     borderColor: trackColor,
     borderWidth: 0,
-    borderRadius: parseCSSSize(style?.borderRadius, undefined, 4),
+    borderRadius: parseCSSSize(style?.borderRadius, undefined, sizePreset.borderRadius),
   };
 }
 
@@ -120,8 +128,11 @@ export const PixiProgressBar = memo(function PixiProgressBar({
   const style = element.props?.style as CSSStyle | undefined;
   const props = element.props as Record<string, unknown> | undefined;
 
-  // 프로그레스바 스타일
-  const layoutStyle = useMemo(() => convertToProgressBarStyle(style), [style]);
+  // 🚀 Phase 0: size prop 추출 (기본값: 'md')
+  const size = useMemo(() => String(props?.size || 'md'), [props?.size]);
+
+  // 프로그레스바 스타일 (CSS 사이즈 프리셋 적용)
+  const layoutStyle = useMemo(() => convertToProgressBarStyle(style, size), [style, size]);
 
   // 프로그레스바 값 설정
   const value = useMemo(() => {
