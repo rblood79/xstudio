@@ -681,19 +681,322 @@ const boxSize = sizePreset.boxSize;
 
 ---
 
-## 11. 다음 단계
+## 11. 마스터 플랜: 최종 완료까지의 로드맵
 
-### 11.1 Phase 1 완료 필요 항목
+### 11.0 전체 구조
 
-| 컴포넌트 | 작업 내용 | 예상 시간 |
-|----------|-----------|-----------|
-| PixiSlider | `getSliderSizePreset()` 추가 | 1시간 |
-| PixiRadio | `getRadioSizePreset()` 추가 | 1시간 |
-| PixiProgressBar | `getProgressBarSizePreset()` 추가 | 1시간 |
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         WebGL Component Migration                            │
+│                              Master Plan                                     │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  Phase 0: 기반 시스템                                                        │
+│  ━━━━━━━━━━━━━━━━━━━                                                        │
+│  cssVariableReader.ts 완성 (모든 컴포넌트용 프리셋 함수)                      │
+│                          │                                                  │
+│                          ▼                                                  │
+│  Phase 1: 기존 컴포넌트 동기화                                               │
+│  ━━━━━━━━━━━━━━━━━━━━━━━━━━                                                  │
+│  Slider, Radio, ProgressBar, Input, Select 등 Size 동기화                   │
+│                          │                                                  │
+│                          ▼                                                  │
+│  Phase 2: 신규 컴포넌트 (Selection)                                          │
+│  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━                                            │
+│  ToggleButton, ToggleButtonGroup, ListBox, GridList                         │
+│                          │                                                  │
+│                          ▼                                                  │
+│  Phase 3: 신규 컴포넌트 (Layout)                                             │
+│  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━                                               │
+│  Tabs, Menu, Breadcrumbs                                                    │
+│                          │                                                  │
+│                          ▼                                                  │
+│  Phase 4: 고급 컴포넌트                                                      │
+│  ━━━━━━━━━━━━━━━━━━━━━                                                       │
+│  Tree, Table, ComboBox, DatePicker                                          │
+│                          │                                                  │
+│                          ▼                                                  │
+│  Phase 5: 검증 및 최적화                                                     │
+│  ━━━━━━━━━━━━━━━━━━━━━━━                                                     │
+│  시각적 동일성 테스트, 성능 최적화, 문서화                                    │
+│                          │                                                  │
+│                          ▼                                                  │
+│  ✅ 완료: WYSIWYG 달성                                                       │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
 
-### 11.2 Phase 2 시작 조건
+---
 
-Phase 1의 모든 컴포넌트가 Color + Size 동기화 완료되면:
-1. PixiToggleButton 구현 시작
-2. PixiToggleButtonGroup 구현 시작
-3. PixiListBox 구현 시작
+### 11.1 Phase 0: 기반 시스템 완성
+
+> **목표**: cssVariableReader.ts를 모든 컴포넌트가 사용할 수 있도록 확장
+
+#### 작업 내역
+
+| 작업 | 설명 | 상태 |
+|------|------|------|
+| `getCSSVariable()` | CSS 변수 읽기 기본 함수 | ✅ 완료 |
+| `parseCSSValue()` | rem/px → 숫자 변환 | ✅ 완료 |
+| `getVariantColors()` | M3 색상 프리셋 | ✅ 완료 |
+| `getSizePreset()` | Button 크기 | ✅ 완료 |
+| `getCheckboxSizePreset()` | Checkbox 크기 | ✅ 완료 |
+| `getSliderSizePreset()` | Slider 크기 | ⬜ 예정 |
+| `getRadioSizePreset()` | Radio 크기 | ⬜ 예정 |
+| `getProgressBarSizePreset()` | ProgressBar 크기 | ⬜ 예정 |
+| `getInputSizePreset()` | Input 크기 | ⬜ 예정 |
+| `getToggleButtonSizePreset()` | ToggleButton 크기 | ⬜ 예정 |
+
+#### 완료 조건
+
+- [ ] 모든 프리셋 함수가 해당 CSS 파일의 변수와 1:1 매핑
+- [ ] TypeScript 타입 정의 완료
+- [ ] 단위 테스트 (선택적)
+
+---
+
+### 11.2 Phase 1: 기존 컴포넌트 CSS 동기화
+
+> **목표**: 이미 구현된 WebGL 컴포넌트들의 하드코딩 제거, CSS 동기화 완성
+
+#### 대상 컴포넌트
+
+| 컴포넌트 | Color | Size | 작업 내용 |
+|----------|-------|------|-----------|
+| PixiButton | ✅ | ✅ | 완료 |
+| PixiCheckbox | ✅ | ✅ | 완료 |
+| PixiCheckboxGroup | ✅ | ⬜ | Size 프리셋 적용 |
+| PixiRadio | ✅ | ⬜ | Size 프리셋 적용 |
+| PixiSlider | ✅ | ⬜ | Size 프리셋 적용 |
+| PixiProgressBar | ✅ | ⬜ | Size 프리셋 적용 |
+| PixiInput | ⬜ | ⬜ | Color + Size 프리셋 적용 |
+| PixiSelect | ⬜ | ⬜ | Color + Size 프리셋 적용 |
+
+#### 각 컴포넌트 작업 순서
+
+```
+1. CSS 파일 분석 (src/shared/components/styles/{Component}.css)
+2. cssVariableReader.ts에 프리셋 함수 추가
+3. PixiComponent에서 프리셋 사용하도록 수정
+4. 하드코딩된 값 제거
+5. TypeScript 컴파일 확인
+```
+
+#### 완료 조건
+
+- [ ] 모든 기존 컴포넌트에서 하드코딩된 색상/크기 값 제거
+- [ ] 모든 variant/size 조합이 CSS 변수에서 동적으로 읽힘
+
+---
+
+### 11.3 Phase 2: Selection 컴포넌트 마이그레이션
+
+> **목표**: 선택 관련 신규 컴포넌트 구현
+
+#### 대상 컴포넌트
+
+| 컴포넌트 | 패턴 | CSS 파일 | 복잡도 |
+|----------|------|----------|--------|
+| PixiToggleButton | A | ToggleButton.css | 낮음 |
+| PixiToggleButtonGroup | C | ToggleButton.css | 중간 |
+| PixiListBox | C | ListBox.css | 중간 |
+| PixiGridList | C | GridList.css | 중간 |
+
+#### 구현 순서
+
+```
+1. ToggleButton (Pattern A - 가장 단순)
+   ├── CSS 분석
+   ├── getToggleButtonSizePreset() 추가
+   ├── PixiToggleButton.tsx 생성
+   └── ElementSprite.tsx에 등록
+
+2. ToggleButtonGroup (Pattern C - ToggleButton 기반)
+   ├── Store에서 자식 요소 읽기
+   ├── ToggleButton 자식 렌더링
+   └── 그룹 variant/size 전달
+
+3. ListBox (Pattern C - 스크롤 필요)
+   ├── ScrollBox 연동
+   ├── ListBoxItem 렌더링
+   └── 선택 상태 관리
+
+4. GridList (ListBox 확장)
+   ├── 그리드 레이아웃 계산
+   └── columns prop 지원
+```
+
+#### 완료 조건
+
+- [ ] 모든 Selection 컴포넌트가 iframe과 동일하게 렌더링
+- [ ] 선택/해제 상태가 정상 동작
+- [ ] 그룹 컴포넌트의 자식 렌더링 정상
+
+---
+
+### 11.4 Phase 3: Layout 컴포넌트 마이그레이션
+
+> **목표**: 레이아웃/네비게이션 컴포넌트 구현
+
+#### 대상 컴포넌트
+
+| 컴포넌트 | 패턴 | CSS 파일 | 복잡도 |
+|----------|------|----------|--------|
+| PixiTabs | C | Tabs.css | 높음 |
+| PixiMenu | C | Menu.css | 높음 |
+| PixiBreadcrumbs | C | Breadcrumbs.css | 중간 |
+
+#### 구현 순서
+
+```
+1. Breadcrumbs (가장 단순한 Layout)
+   ├── 아이템 가로 배열
+   ├── 구분자 (/) 렌더링
+   └── 현재 위치 표시
+
+2. Menu (중첩 구조)
+   ├── MenuItem 렌더링
+   ├── 하위 메뉴 지원
+   └── hover/선택 상태
+
+3. Tabs (가장 복잡)
+   ├── TabList (탭 버튼들)
+   ├── TabPanel (콘텐츠 영역)
+   ├── Tab-Panel 매칭 (tabId)
+   └── 선택된 탭만 Panel 표시
+```
+
+#### 완료 조건
+
+- [ ] Tab 선택 시 해당 Panel 표시
+- [ ] Menu 아이템 클릭 정상 동작
+- [ ] Breadcrumbs 네비게이션 정상
+
+---
+
+### 11.5 Phase 4: 고급 컴포넌트 마이그레이션
+
+> **목표**: 복잡한 고급 컴포넌트 구현
+
+#### 대상 컴포넌트
+
+| 컴포넌트 | 패턴 | CSS 파일 | 복잡도 |
+|----------|------|----------|--------|
+| PixiTree | C + 재귀 | Tree.css | 높음 |
+| PixiTable | C + 복잡 | Table.css | 매우 높음 |
+| PixiComboBox | B + C | ComboBox.css | 높음 |
+| PixiDatePicker | B + C | DatePicker.css | 매우 높음 |
+
+#### 구현 순서
+
+```
+1. Tree (재귀 렌더링)
+   ├── TreeItem 재귀 렌더링
+   ├── 펼침/접기 상태
+   ├── 들여쓰기 계산
+   └── 화살표 아이콘
+
+2. Table (가장 복잡)
+   ├── Column 헤더 렌더링
+   ├── Row/Cell 렌더링
+   ├── 정렬/필터 상태
+   └── 가상 스크롤 (선택적)
+
+3. ComboBox (입력 + 드롭다운)
+   ├── Input 컴포넌트 연동
+   ├── ListBox 드롭다운
+   └── 필터링 로직
+
+4. DatePicker (최고 복잡도)
+   ├── Calendar 그리드
+   ├── 월/년 네비게이션
+   └── 날짜 선택 로직
+```
+
+#### 완료 조건
+
+- [ ] Tree 펼침/접기 정상
+- [ ] Table 데이터 렌더링 및 정렬
+- [ ] ComboBox 필터링 및 선택
+- [ ] DatePicker 날짜 선택
+
+---
+
+### 11.6 Phase 5: 검증 및 최적화
+
+> **목표**: 시각적 동일성 검증, 성능 최적화, 문서화
+
+#### 5.1 시각적 동일성 검증
+
+```
+각 컴포넌트에 대해:
+┌─────────────────────────────────────────────────────────┐
+│  1. iframe에서 렌더링                                   │
+│  2. WebGL에서 렌더링                                    │
+│  3. 스크린샷 비교                                       │
+│  4. 차이점 수정                                         │
+│  5. 모든 variant/size 조합 테스트                       │
+└─────────────────────────────────────────────────────────┘
+```
+
+| 검증 항목 | 체크리스트 |
+|-----------|-----------|
+| 색상 동일성 | ☐ default, primary, secondary, surface 등 |
+| 크기 동일성 | ☐ xs, sm, md, lg, xl |
+| 상태 동일성 | ☐ hover, pressed, disabled, selected |
+| 간격 동일성 | ☐ padding, margin, gap |
+| 폰트 동일성 | ☐ fontSize, fontWeight, lineHeight |
+| 테두리 동일성 | ☐ borderWidth, borderColor, borderRadius |
+
+#### 5.2 성능 최적화
+
+| 최적화 항목 | 목표 |
+|-------------|------|
+| 60fps 유지 | 100개 컴포넌트 렌더링 시 |
+| 메모리 누수 없음 | cleanup 함수 확인 |
+| 불필요한 리렌더링 없음 | useMemo/useCallback 최적화 |
+
+#### 5.3 문서화
+
+- [ ] 각 컴포넌트별 CSS 매핑 테이블 완성
+- [ ] 신규 컴포넌트 추가 가이드
+- [ ] 트러블슈팅 가이드
+
+---
+
+### 11.7 전체 진행률 추적
+
+```
+Phase 0: 기반 시스템      [████████░░] 80%  (5/6 함수)
+Phase 1: 기존 동기화      [████░░░░░░] 40%  (2/5 컴포넌트)
+Phase 2: Selection        [░░░░░░░░░░] 0%   (0/4 컴포넌트)
+Phase 3: Layout           [░░░░░░░░░░] 0%   (0/3 컴포넌트)
+Phase 4: 고급             [░░░░░░░░░░] 0%   (0/4 컴포넌트)
+Phase 5: 검증             [░░░░░░░░░░] 0%   (대기)
+─────────────────────────────────────────────────────────
+전체 진행률              [██░░░░░░░░] 20%
+```
+
+---
+
+### 11.8 다음 즉시 실행 항목
+
+**우선순위 1**: Phase 0 완성
+```
+1. Slider.css 분석 → getSliderSizePreset() 구현
+2. Radio.css 분석 → getRadioSizePreset() 구현
+3. ProgressBar.css 분석 → getProgressBarSizePreset() 구현
+```
+
+**우선순위 2**: Phase 1 완성
+```
+4. PixiSlider에 Size 프리셋 적용
+5. PixiRadio에 Size 프리셋 적용
+6. PixiProgressBar에 Size 프리셋 적용
+```
+
+**우선순위 3**: Phase 2 시작
+```
+7. PixiToggleButton 구현
+8. PixiToggleButtonGroup 구현
+```
