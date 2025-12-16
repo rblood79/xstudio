@@ -82,3 +82,13 @@ export { PixiColorWheel, type PixiColorWheelProps } from './PixiColorWheel';
 export { PixiDatePicker, type PixiDatePickerProps } from './PixiDatePicker';
 export { PixiColorPicker, type PixiColorPickerProps } from './PixiColorPicker';
 export { PixiDateRangePicker, type PixiDateRangePickerProps } from './PixiDateRangePicker';
+
+// Phase 7: Form & Utility Components (WebGL Migration)
+export { PixiTextField, type PixiTextFieldProps } from './PixiTextField';
+export { PixiSwitch, type PixiSwitchProps } from './PixiSwitch';
+export { PixiTextArea, type PixiTextAreaProps } from './PixiTextArea';
+export { PixiForm, type PixiFormProps } from './PixiForm';
+export { PixiToolbar, type PixiToolbarProps } from './PixiToolbar';
+export { PixiFileTrigger, type PixiFileTriggerProps } from './PixiFileTrigger';
+export { PixiDropZone, type PixiDropZoneProps } from './PixiDropZone';
+export { PixiSkeleton, type PixiSkeletonProps } from './PixiSkeleton';

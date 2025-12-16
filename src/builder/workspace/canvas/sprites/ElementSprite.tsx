@@ -70,6 +70,15 @@ import {
   PixiDatePicker,
   PixiColorPicker,
   PixiDateRangePicker,
+  // Phase 7 WebGL Migration Components
+  PixiTextField,
+  PixiSwitch,
+  PixiTextArea,
+  PixiForm,
+  PixiToolbar,
+  PixiFileTrigger,
+  PixiDropZone,
+  PixiSkeleton,
 } from '../ui';
 import { useStore } from '../../../stores';
 import { isFlexContainer, isGridContainer } from '../layout';
@@ -207,13 +216,25 @@ const UI_DATEPICKER_TAGS = new Set(['DatePicker']);
 const UI_COLORPICKER_TAGS = new Set(['ColorPicker']);
 const UI_DATERANGEPICKER_TAGS = new Set(['DateRangePicker']);
 
+/**
+ * Phase 7 WebGL Migration 컴포넌트 태그들 - Form & Utility Components
+ */
+const UI_TEXTFIELD_TAGS = new Set(['TextField', 'TextInput']);
+const UI_SWITCH_TAGS = new Set(['Switch']);
+const UI_TEXTAREA_TAGS = new Set(['TextArea', 'Textarea']);
+const UI_FORM_TAGS = new Set(['Form']);
+const UI_TOOLBAR_TAGS = new Set(['Toolbar']);
+const UI_FILETRIGGER_TAGS = new Set(['FileTrigger', 'FileUpload', 'FileInput']);
+const UI_DROPZONE_TAGS = new Set(['DropZone', 'FileDropZone']);
+const UI_SKELETON_TAGS = new Set(['Skeleton', 'SkeletonLoader']);
+
 // Note: TEXT_TAGS, IMAGE_TAGS, UI_*_TAGS에 포함되지 않은 모든 태그는 BoxSprite로 렌더링됨
 
 // ============================================
 // Sprite Type Detection
 // ============================================
 
-type SpriteType = 'box' | 'text' | 'image' | 'button' | 'fancyButton' | 'checkboxGroup' | 'checkboxItem' | 'radioGroup' | 'radioItem' | 'slider' | 'input' | 'select' | 'progressBar' | 'switcher' | 'scrollBox' | 'list' | 'maskedFrame' | 'flex' | 'grid' | 'toggleButton' | 'toggleButtonGroup' | 'listBox' | 'badge' | 'meter' | 'separator' | 'link' | 'breadcrumbs' | 'card' | 'menu' | 'tabs' | 'numberField' | 'searchField' | 'comboBox' | 'gridList' | 'tagGroup' | 'tree' | 'table' | 'disclosure' | 'disclosureGroup' | 'tooltip' | 'popover' | 'dialog' | 'colorSwatch' | 'colorSlider' | 'timeField' | 'dateField' | 'colorArea' | 'calendar' | 'colorWheel' | 'datePicker' | 'colorPicker' | 'dateRangePicker';
+type SpriteType = 'box' | 'text' | 'image' | 'button' | 'fancyButton' | 'checkboxGroup' | 'checkboxItem' | 'radioGroup' | 'radioItem' | 'slider' | 'input' | 'select' | 'progressBar' | 'switcher' | 'scrollBox' | 'list' | 'maskedFrame' | 'flex' | 'grid' | 'toggleButton' | 'toggleButtonGroup' | 'listBox' | 'badge' | 'meter' | 'separator' | 'link' | 'breadcrumbs' | 'card' | 'menu' | 'tabs' | 'numberField' | 'searchField' | 'comboBox' | 'gridList' | 'tagGroup' | 'tree' | 'table' | 'disclosure' | 'disclosureGroup' | 'tooltip' | 'popover' | 'dialog' | 'colorSwatch' | 'colorSlider' | 'timeField' | 'dateField' | 'colorArea' | 'calendar' | 'colorWheel' | 'datePicker' | 'colorPicker' | 'dateRangePicker' | 'textField' | 'switch' | 'textArea' | 'form' | 'toolbar' | 'fileTrigger' | 'dropZone' | 'skeleton';
 
 function getSpriteType(element: Element): SpriteType {
   const tag = element.tag;
@@ -278,6 +299,16 @@ function getSpriteType(element: Element): SpriteType {
   if (UI_DATEPICKER_TAGS.has(tag)) return 'datePicker';
   if (UI_COLORPICKER_TAGS.has(tag)) return 'colorPicker';
   if (UI_DATERANGEPICKER_TAGS.has(tag)) return 'dateRangePicker';
+
+  // Phase 7 WebGL Migration 컴포넌트 - Form & Utility Components
+  if (UI_TEXTFIELD_TAGS.has(tag)) return 'textField';
+  if (UI_SWITCH_TAGS.has(tag)) return 'switch';
+  if (UI_TEXTAREA_TAGS.has(tag)) return 'textArea';
+  if (UI_FORM_TAGS.has(tag)) return 'form';
+  if (UI_TOOLBAR_TAGS.has(tag)) return 'toolbar';
+  if (UI_FILETRIGGER_TAGS.has(tag)) return 'fileTrigger';
+  if (UI_DROPZONE_TAGS.has(tag)) return 'dropZone';
+  if (UI_SKELETON_TAGS.has(tag)) return 'skeleton';
 
   // 레이아웃 컨테이너 체크 (Phase 11 B2.5)
   // display: flex/grid인 경우에도 현재는 BoxSprite로 렌더링
@@ -806,6 +837,79 @@ export const ElementSprite = memo(function ElementSprite({
     case 'dateRangePicker':
       return (
         <PixiDateRangePicker
+          element={effectiveElement}
+          isSelected={isSelected}
+          onClick={onClick}
+        />
+      );
+
+    // Phase 7 WebGL Migration 컴포넌트 - Form & Utility Components
+    case 'textField':
+      return (
+        <PixiTextField
+          element={effectiveElement}
+          isSelected={isSelected}
+          onClick={onClick}
+        />
+      );
+
+    case 'switch':
+      return (
+        <PixiSwitch
+          element={effectiveElement}
+          isSelected={isSelected}
+          onClick={onClick}
+        />
+      );
+
+    case 'textArea':
+      return (
+        <PixiTextArea
+          element={effectiveElement}
+          isSelected={isSelected}
+          onClick={onClick}
+        />
+      );
+
+    case 'form':
+      return (
+        <PixiForm
+          element={effectiveElement}
+          isSelected={isSelected}
+          onClick={onClick}
+        />
+      );
+
+    case 'toolbar':
+      return (
+        <PixiToolbar
+          element={effectiveElement}
+          isSelected={isSelected}
+          onClick={onClick}
+        />
+      );
+
+    case 'fileTrigger':
+      return (
+        <PixiFileTrigger
+          element={effectiveElement}
+          isSelected={isSelected}
+          onClick={onClick}
+        />
+      );
+
+    case 'dropZone':
+      return (
+        <PixiDropZone
+          element={effectiveElement}
+          isSelected={isSelected}
+          onClick={onClick}
+        />
+      );
+
+    case 'skeleton':
+      return (
+        <PixiSkeleton
           element={effectiveElement}
           isSelected={isSelected}
           onClick={onClick}

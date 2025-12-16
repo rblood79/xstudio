@@ -3375,3 +3375,413 @@ const DATE_RANGE_PICKER_COLOR_FALLBACKS: Record<string, DateRangePickerColorPres
 export function getDateRangePickerColorPreset(variant: string): DateRangePickerColorPreset {
   return DATE_RANGE_PICKER_COLOR_FALLBACKS[variant] || DATE_RANGE_PICKER_COLOR_FALLBACKS.default;
 }
+
+// ============================================================================
+// Phase 7: Form & Utility Components
+// ============================================================================
+
+/**
+ * TextField 사이즈 프리셋
+ */
+export interface TextFieldSizePreset {
+  fontSize: number;
+  height: number;
+  padding: number;
+  paddingX: number;
+  borderRadius: number;
+  labelFontSize: number;
+  descriptionFontSize: number;
+  gap: number;
+}
+
+const TEXT_FIELD_FALLBACKS: Record<string, TextFieldSizePreset> = {
+  sm: { fontSize: 12, height: 32, padding: 6, paddingX: 10, borderRadius: 6, labelFontSize: 12, descriptionFontSize: 11, gap: 4 },
+  md: { fontSize: 14, height: 40, padding: 8, paddingX: 12, borderRadius: 8, labelFontSize: 14, descriptionFontSize: 12, gap: 6 },
+  lg: { fontSize: 16, height: 48, padding: 10, paddingX: 14, borderRadius: 10, labelFontSize: 16, descriptionFontSize: 14, gap: 8 },
+};
+
+export function getTextFieldSizePreset(size: string): TextFieldSizePreset {
+  return TEXT_FIELD_FALLBACKS[size] || TEXT_FIELD_FALLBACKS.md;
+}
+
+/**
+ * TextField 색상 프리셋
+ */
+export interface TextFieldColorPreset {
+  backgroundColor: number;
+  borderColor: number;
+  textColor: number;
+  placeholderColor: number;
+  labelColor: number;
+  descriptionColor: number;
+  focusBorderColor: number;
+  errorBorderColor: number;
+  errorTextColor: number;
+  disabledBackgroundColor: number;
+  disabledTextColor: number;
+}
+
+const TEXT_FIELD_COLOR_FALLBACKS: Record<string, TextFieldColorPreset> = {
+  default: {
+    backgroundColor: 0xffffff, borderColor: 0xcad3dc, textColor: 0x374151,
+    placeholderColor: 0x9ca3af, labelColor: 0x374151, descriptionColor: 0x6b7280,
+    focusBorderColor: 0x3b82f6, errorBorderColor: 0xef4444, errorTextColor: 0xef4444,
+    disabledBackgroundColor: 0xf3f4f6, disabledTextColor: 0x9ca3af
+  },
+  primary: {
+    backgroundColor: 0xffffff, borderColor: 0x3b82f6, textColor: 0x374151,
+    placeholderColor: 0x9ca3af, labelColor: 0x3b82f6, descriptionColor: 0x6b7280,
+    focusBorderColor: 0x2563eb, errorBorderColor: 0xef4444, errorTextColor: 0xef4444,
+    disabledBackgroundColor: 0xf3f4f6, disabledTextColor: 0x9ca3af
+  },
+  secondary: {
+    backgroundColor: 0xffffff, borderColor: 0x6366f1, textColor: 0x374151,
+    placeholderColor: 0x9ca3af, labelColor: 0x6366f1, descriptionColor: 0x6b7280,
+    focusBorderColor: 0x4f46e5, errorBorderColor: 0xef4444, errorTextColor: 0xef4444,
+    disabledBackgroundColor: 0xf3f4f6, disabledTextColor: 0x9ca3af
+  },
+  filled: {
+    backgroundColor: 0xf3f4f6, borderColor: 0x00000000, textColor: 0x374151,
+    placeholderColor: 0x9ca3af, labelColor: 0x374151, descriptionColor: 0x6b7280,
+    focusBorderColor: 0x3b82f6, errorBorderColor: 0xef4444, errorTextColor: 0xef4444,
+    disabledBackgroundColor: 0xe5e7eb, disabledTextColor: 0x9ca3af
+  },
+};
+
+export function getTextFieldColorPreset(variant: string): TextFieldColorPreset {
+  return TEXT_FIELD_COLOR_FALLBACKS[variant] || TEXT_FIELD_COLOR_FALLBACKS.default;
+}
+
+/**
+ * Switch 사이즈 프리셋
+ */
+export interface SwitchSizePreset {
+  trackWidth: number;
+  trackHeight: number;
+  thumbSize: number;
+  thumbOffset: number;
+  borderRadius: number;
+  labelFontSize: number;
+  gap: number;
+}
+
+const SWITCH_FALLBACKS: Record<string, SwitchSizePreset> = {
+  sm: { trackWidth: 36, trackHeight: 20, thumbSize: 16, thumbOffset: 2, borderRadius: 10, labelFontSize: 12, gap: 8 },
+  md: { trackWidth: 44, trackHeight: 24, thumbSize: 20, thumbOffset: 2, borderRadius: 12, labelFontSize: 14, gap: 10 },
+  lg: { trackWidth: 52, trackHeight: 28, thumbSize: 24, thumbOffset: 2, borderRadius: 14, labelFontSize: 16, gap: 12 },
+};
+
+export function getSwitchSizePreset(size: string): SwitchSizePreset {
+  return SWITCH_FALLBACKS[size] || SWITCH_FALLBACKS.md;
+}
+
+/**
+ * Switch 색상 프리셋
+ */
+export interface SwitchColorPreset {
+  trackColor: number;
+  trackSelectedColor: number;
+  thumbColor: number;
+  thumbBorderColor: number;
+  labelColor: number;
+  focusRingColor: number;
+  disabledTrackColor: number;
+  disabledThumbColor: number;
+}
+
+const SWITCH_COLOR_FALLBACKS: Record<string, SwitchColorPreset> = {
+  default: {
+    trackColor: 0xe5e7eb, trackSelectedColor: 0x3b82f6, thumbColor: 0xffffff,
+    thumbBorderColor: 0xcad3dc, labelColor: 0x374151, focusRingColor: 0x3b82f6,
+    disabledTrackColor: 0xf3f4f6, disabledThumbColor: 0xe5e7eb
+  },
+  primary: {
+    trackColor: 0xe5e7eb, trackSelectedColor: 0x3b82f6, thumbColor: 0xffffff,
+    thumbBorderColor: 0xcad3dc, labelColor: 0x374151, focusRingColor: 0x3b82f6,
+    disabledTrackColor: 0xf3f4f6, disabledThumbColor: 0xe5e7eb
+  },
+  secondary: {
+    trackColor: 0xe5e7eb, trackSelectedColor: 0x6366f1, thumbColor: 0xffffff,
+    thumbBorderColor: 0xcad3dc, labelColor: 0x374151, focusRingColor: 0x6366f1,
+    disabledTrackColor: 0xf3f4f6, disabledThumbColor: 0xe5e7eb
+  },
+  tertiary: {
+    trackColor: 0xe5e7eb, trackSelectedColor: 0xec4899, thumbColor: 0xffffff,
+    thumbBorderColor: 0xcad3dc, labelColor: 0x374151, focusRingColor: 0xec4899,
+    disabledTrackColor: 0xf3f4f6, disabledThumbColor: 0xe5e7eb
+  },
+  error: {
+    trackColor: 0xe5e7eb, trackSelectedColor: 0xef4444, thumbColor: 0xffffff,
+    thumbBorderColor: 0xcad3dc, labelColor: 0x374151, focusRingColor: 0xef4444,
+    disabledTrackColor: 0xf3f4f6, disabledThumbColor: 0xe5e7eb
+  },
+};
+
+export function getSwitchColorPreset(variant: string): SwitchColorPreset {
+  return SWITCH_COLOR_FALLBACKS[variant] || SWITCH_COLOR_FALLBACKS.default;
+}
+
+/**
+ * TextArea 사이즈 프리셋
+ */
+export interface TextAreaSizePreset {
+  fontSize: number;
+  minHeight: number;
+  padding: number;
+  paddingX: number;
+  borderRadius: number;
+  labelFontSize: number;
+  descriptionFontSize: number;
+  gap: number;
+  lineHeight: number;
+}
+
+const TEXT_AREA_FALLBACKS: Record<string, TextAreaSizePreset> = {
+  sm: { fontSize: 12, minHeight: 64, padding: 8, paddingX: 10, borderRadius: 6, labelFontSize: 12, descriptionFontSize: 11, gap: 4, lineHeight: 1.4 },
+  md: { fontSize: 14, minHeight: 80, padding: 10, paddingX: 12, borderRadius: 8, labelFontSize: 14, descriptionFontSize: 12, gap: 6, lineHeight: 1.5 },
+  lg: { fontSize: 16, minHeight: 96, padding: 12, paddingX: 14, borderRadius: 10, labelFontSize: 16, descriptionFontSize: 14, gap: 8, lineHeight: 1.6 },
+};
+
+export function getTextAreaSizePreset(size: string): TextAreaSizePreset {
+  return TEXT_AREA_FALLBACKS[size] || TEXT_AREA_FALLBACKS.md;
+}
+
+/**
+ * TextArea 색상 프리셋 (TextField와 동일한 구조)
+ */
+export function getTextAreaColorPreset(variant: string): TextFieldColorPreset {
+  return TEXT_FIELD_COLOR_FALLBACKS[variant] || TEXT_FIELD_COLOR_FALLBACKS.default;
+}
+
+/**
+ * Form 사이즈 프리셋
+ */
+export interface FormSizePreset {
+  padding: number;
+  gap: number;
+  borderRadius: number;
+  labelFontSize: number;
+  sectionGap: number;
+}
+
+const FORM_FALLBACKS: Record<string, FormSizePreset> = {
+  sm: { padding: 12, gap: 12, borderRadius: 8, labelFontSize: 12, sectionGap: 16 },
+  md: { padding: 16, gap: 16, borderRadius: 10, labelFontSize: 14, sectionGap: 24 },
+  lg: { padding: 20, gap: 20, borderRadius: 12, labelFontSize: 16, sectionGap: 32 },
+};
+
+export function getFormSizePreset(size: string): FormSizePreset {
+  return FORM_FALLBACKS[size] || FORM_FALLBACKS.md;
+}
+
+/**
+ * Form 색상 프리셋
+ */
+export interface FormColorPreset {
+  backgroundColor: number;
+  borderColor: number;
+  labelColor: number;
+  separatorColor: number;
+}
+
+const FORM_COLOR_FALLBACKS: Record<string, FormColorPreset> = {
+  default: { backgroundColor: 0xffffff, borderColor: 0xcad3dc, labelColor: 0x374151, separatorColor: 0xe5e7eb },
+  primary: { backgroundColor: 0xffffff, borderColor: 0x3b82f6, labelColor: 0x3b82f6, separatorColor: 0xeff6ff },
+  secondary: { backgroundColor: 0xffffff, borderColor: 0x6366f1, labelColor: 0x6366f1, separatorColor: 0xeef2ff },
+  filled: { backgroundColor: 0xf9fafb, borderColor: 0x00000000, labelColor: 0x374151, separatorColor: 0xe5e7eb },
+};
+
+export function getFormColorPreset(variant: string): FormColorPreset {
+  return FORM_COLOR_FALLBACKS[variant] || FORM_COLOR_FALLBACKS.default;
+}
+
+/**
+ * Toolbar 사이즈 프리셋
+ */
+export interface ToolbarSizePreset {
+  height: number;
+  padding: number;
+  gap: number;
+  borderRadius: number;
+  separatorWidth: number;
+  separatorHeight: number;
+}
+
+const TOOLBAR_FALLBACKS: Record<string, ToolbarSizePreset> = {
+  sm: { height: 36, padding: 6, gap: 4, borderRadius: 6, separatorWidth: 1, separatorHeight: 20 },
+  md: { height: 44, padding: 8, gap: 6, borderRadius: 8, separatorWidth: 1, separatorHeight: 24 },
+  lg: { height: 52, padding: 10, gap: 8, borderRadius: 10, separatorWidth: 1, separatorHeight: 28 },
+};
+
+export function getToolbarSizePreset(size: string): ToolbarSizePreset {
+  return TOOLBAR_FALLBACKS[size] || TOOLBAR_FALLBACKS.md;
+}
+
+/**
+ * Toolbar 색상 프리셋
+ */
+export interface ToolbarColorPreset {
+  backgroundColor: number;
+  borderColor: number;
+  separatorColor: number;
+  iconColor: number;
+  hoverBackgroundColor: number;
+}
+
+const TOOLBAR_COLOR_FALLBACKS: Record<string, ToolbarColorPreset> = {
+  default: { backgroundColor: 0xffffff, borderColor: 0xcad3dc, separatorColor: 0xe5e7eb, iconColor: 0x374151, hoverBackgroundColor: 0xf3f4f6 },
+  primary: { backgroundColor: 0xeff6ff, borderColor: 0x3b82f6, separatorColor: 0xbfdbfe, iconColor: 0x3b82f6, hoverBackgroundColor: 0xdbeafe },
+  secondary: { backgroundColor: 0xeef2ff, borderColor: 0x6366f1, separatorColor: 0xc7d2fe, iconColor: 0x6366f1, hoverBackgroundColor: 0xe0e7ff },
+  filled: { backgroundColor: 0xf3f4f6, borderColor: 0x00000000, separatorColor: 0xe5e7eb, iconColor: 0x374151, hoverBackgroundColor: 0xe5e7eb },
+};
+
+export function getToolbarColorPreset(variant: string): ToolbarColorPreset {
+  return TOOLBAR_COLOR_FALLBACKS[variant] || TOOLBAR_COLOR_FALLBACKS.default;
+}
+
+/**
+ * FileTrigger 사이즈 프리셋
+ */
+export interface FileTriggerSizePreset {
+  fontSize: number;
+  height: number;
+  padding: number;
+  paddingX: number;
+  borderRadius: number;
+  iconSize: number;
+  gap: number;
+}
+
+const FILE_TRIGGER_FALLBACKS: Record<string, FileTriggerSizePreset> = {
+  sm: { fontSize: 12, height: 32, padding: 6, paddingX: 12, borderRadius: 6, iconSize: 14, gap: 6 },
+  md: { fontSize: 14, height: 40, padding: 8, paddingX: 16, borderRadius: 8, iconSize: 16, gap: 8 },
+  lg: { fontSize: 16, height: 48, padding: 10, paddingX: 20, borderRadius: 10, iconSize: 18, gap: 10 },
+};
+
+export function getFileTriggerSizePreset(size: string): FileTriggerSizePreset {
+  return FILE_TRIGGER_FALLBACKS[size] || FILE_TRIGGER_FALLBACKS.md;
+}
+
+/**
+ * FileTrigger 색상 프리셋
+ */
+export interface FileTriggerColorPreset {
+  backgroundColor: number;
+  borderColor: number;
+  textColor: number;
+  iconColor: number;
+  hoverBackgroundColor: number;
+  focusRingColor: number;
+}
+
+const FILE_TRIGGER_COLOR_FALLBACKS: Record<string, FileTriggerColorPreset> = {
+  default: { backgroundColor: 0xffffff, borderColor: 0xcad3dc, textColor: 0x374151, iconColor: 0x6b7280, hoverBackgroundColor: 0xf3f4f6, focusRingColor: 0x3b82f6 },
+  primary: { backgroundColor: 0x3b82f6, borderColor: 0x3b82f6, textColor: 0xffffff, iconColor: 0xffffff, hoverBackgroundColor: 0x2563eb, focusRingColor: 0x3b82f6 },
+  secondary: { backgroundColor: 0x6366f1, borderColor: 0x6366f1, textColor: 0xffffff, iconColor: 0xffffff, hoverBackgroundColor: 0x4f46e5, focusRingColor: 0x6366f1 },
+  surface: { backgroundColor: 0xf3f4f6, borderColor: 0x00000000, textColor: 0x374151, iconColor: 0x6b7280, hoverBackgroundColor: 0xe5e7eb, focusRingColor: 0x3b82f6 },
+};
+
+export function getFileTriggerColorPreset(variant: string): FileTriggerColorPreset {
+  return FILE_TRIGGER_COLOR_FALLBACKS[variant] || FILE_TRIGGER_COLOR_FALLBACKS.default;
+}
+
+/**
+ * DropZone 사이즈 프리셋
+ */
+export interface DropZoneSizePreset {
+  minHeight: number;
+  padding: number;
+  borderRadius: number;
+  borderWidth: number;
+  iconSize: number;
+  fontSize: number;
+  labelFontSize: number;
+  gap: number;
+}
+
+const DROP_ZONE_FALLBACKS: Record<string, DropZoneSizePreset> = {
+  sm: { minHeight: 80, padding: 16, borderRadius: 8, borderWidth: 2, iconSize: 24, fontSize: 12, labelFontSize: 14, gap: 8 },
+  md: { minHeight: 120, padding: 24, borderRadius: 10, borderWidth: 2, iconSize: 32, fontSize: 14, labelFontSize: 16, gap: 12 },
+  lg: { minHeight: 160, padding: 32, borderRadius: 12, borderWidth: 2, iconSize: 40, fontSize: 16, labelFontSize: 18, gap: 16 },
+};
+
+export function getDropZoneSizePreset(size: string): DropZoneSizePreset {
+  return DROP_ZONE_FALLBACKS[size] || DROP_ZONE_FALLBACKS.md;
+}
+
+/**
+ * DropZone 색상 프리셋
+ */
+export interface DropZoneColorPreset {
+  backgroundColor: number;
+  borderColor: number;
+  textColor: number;
+  labelColor: number;
+  iconColor: number;
+  hoverBackgroundColor: number;
+  hoverBorderColor: number;
+  dropTargetBackgroundColor: number;
+  dropTargetBorderColor: number;
+}
+
+const DROP_ZONE_COLOR_FALLBACKS: Record<string, DropZoneColorPreset> = {
+  default: {
+    backgroundColor: 0xfafafa, borderColor: 0xcad3dc, textColor: 0x6b7280, labelColor: 0x374151,
+    iconColor: 0x9ca3af, hoverBackgroundColor: 0xf3f4f6, hoverBorderColor: 0x9ca3af,
+    dropTargetBackgroundColor: 0xeff6ff, dropTargetBorderColor: 0x3b82f6
+  },
+  primary: {
+    backgroundColor: 0xeff6ff, borderColor: 0x93c5fd, textColor: 0x3b82f6, labelColor: 0x1d4ed8,
+    iconColor: 0x60a5fa, hoverBackgroundColor: 0xdbeafe, hoverBorderColor: 0x3b82f6,
+    dropTargetBackgroundColor: 0xdbeafe, dropTargetBorderColor: 0x2563eb
+  },
+  secondary: {
+    backgroundColor: 0xeef2ff, borderColor: 0xa5b4fc, textColor: 0x6366f1, labelColor: 0x4338ca,
+    iconColor: 0x818cf8, hoverBackgroundColor: 0xe0e7ff, hoverBorderColor: 0x6366f1,
+    dropTargetBackgroundColor: 0xe0e7ff, dropTargetBorderColor: 0x4f46e5
+  },
+};
+
+export function getDropZoneColorPreset(variant: string): DropZoneColorPreset {
+  return DROP_ZONE_COLOR_FALLBACKS[variant] || DROP_ZONE_COLOR_FALLBACKS.default;
+}
+
+/**
+ * Skeleton 사이즈 프리셋
+ */
+export interface SkeletonSizePreset {
+  height: number;
+  borderRadius: number;
+  avatarSize: number;
+  lineHeight: number;
+  lineGap: number;
+}
+
+const SKELETON_FALLBACKS: Record<string, SkeletonSizePreset> = {
+  sm: { height: 16, borderRadius: 4, avatarSize: 32, lineHeight: 12, lineGap: 8 },
+  md: { height: 20, borderRadius: 6, avatarSize: 40, lineHeight: 16, lineGap: 10 },
+  lg: { height: 24, borderRadius: 8, avatarSize: 48, lineHeight: 20, lineGap: 12 },
+};
+
+export function getSkeletonSizePreset(size: string): SkeletonSizePreset {
+  return SKELETON_FALLBACKS[size] || SKELETON_FALLBACKS.md;
+}
+
+/**
+ * Skeleton 색상 프리셋
+ */
+export interface SkeletonColorPreset {
+  baseColor: number;
+  shimmerColor: number;
+  borderRadius: number;
+}
+
+const SKELETON_COLOR_FALLBACKS: Record<string, SkeletonColorPreset> = {
+  default: { baseColor: 0xe5e7eb, shimmerColor: 0xf3f4f6, borderRadius: 6 },
+  primary: { baseColor: 0xdbeafe, shimmerColor: 0xeff6ff, borderRadius: 6 },
+  secondary: { baseColor: 0xe0e7ff, shimmerColor: 0xeef2ff, borderRadius: 6 },
+};
+
+export function getSkeletonColorPreset(variant: string): SkeletonColorPreset {
+  return SKELETON_COLOR_FALLBACKS[variant] || SKELETON_COLOR_FALLBACKS.default;
+}
