@@ -15,6 +15,7 @@ import { Graphics as PixiGraphics, TextStyle } from 'pixi.js';
 import type { Element } from '../../../../types/core/store.types';
 import type { CSSStyle } from '../sprites/styleConverter';
 import { cssColorToHex, parseCSSSize } from '../sprites/styleConverter';
+import { getCheckboxSizePreset } from '../utils/cssVariableReader';
 import { drawBox } from '../utils';
 
 // ============================================
@@ -63,27 +64,21 @@ export const PixiCheckbox = memo(function PixiCheckbox({
 
   // 스타일 계산
   // 체크박스 박스 크기는 props.size 또는 DEFAULT_SIZE (width는 전체 컴포넌트 영역)
-  const boxSize = useMemo(() => {
-    // size prop이 있으면 사용, 아니면 기본값
-    if (props?.size) {
-      const size = String(props.size);
-      // sm, md, lg 등의 프리셋 지원
-      if (size === 'sm') return 16;
-      if (size === 'md') return 20;
-      if (size === 'lg') return 24;
-      // 숫자값이면 파싱
-      const parsed = parseInt(size, 10);
-      if (!isNaN(parsed)) return parsed;
-    }
-    return DEFAULT_SIZE;
+  // 🚀 CSS 변수에서 동적으로 읽어옴
+  const sizePreset = useMemo(() => {
+    const size = props?.size ? String(props.size) : 'md';
+    return getCheckboxSizePreset(size);
   }, [props?.size]);
+
+  const boxSize = sizePreset.boxSize;
 
   const borderRadius = parseCSSSize(style?.borderRadius, undefined, DEFAULT_BORDER_RADIUS);
   const primaryColor = cssColorToHex(style?.backgroundColor, DEFAULT_PRIMARY_COLOR);
   const borderColor = isChecked ? primaryColor : DEFAULT_BORDER_COLOR;
   const backgroundColor = isChecked ? primaryColor : 0xffffff;
   const textColor = cssColorToHex(style?.color, DEFAULT_TEXT_COLOR);
-  const fontSize = parseCSSSize(style?.fontSize, undefined, 14);
+  // fontSize도 CSS 변수 프리셋에서 가져옴 (style에 명시적 값이 없으면)
+  const fontSize = parseCSSSize(style?.fontSize, undefined, sizePreset.fontSize);
 
   // 위치
   const posX = parseCSSSize(style?.left, undefined, 0);
