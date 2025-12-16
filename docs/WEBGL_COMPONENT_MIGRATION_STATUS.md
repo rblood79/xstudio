@@ -7,6 +7,8 @@
 
 This document tracks the migration progress of React Aria Components from the iframe preview system (`src/canvas/`) to the WebGL-based canvas system (`src/builder/workspace/canvas/ui/`).
 
+⚠️ **검증 현황**: 실제 WebGL 캔버스에서 확인된 항목은 `Button`, `Checkbox`, `CheckboxGroup`, `RadioGroup`뿐입니다. 아래 표의 나머지 항목들은 구현 여부가 미확인 상태이며, 화면 렌더링·동작 검증이 필요합니다.
+
 ### Architecture Comparison
 
 | Aspect | iframe Preview | WebGL Canvas |
@@ -20,72 +22,55 @@ This document tracks the migration progress of React Aria Components from the if
 
 ## Migration Progress Summary
 
-### Overall Stats
+### Verified Stats (WebGL에서 렌더링 확인 완료)
 
-| Category | Total | Migrated | Pending | Progress |
+| Category | Total | Verified | Pending | Progress |
 |----------|-------|----------|---------|----------|
-| **Basic UI** | 8 | 5 | 3 | 62.5% |
-| **Form Controls** | 10 | 3 | 7 | 30.0% |
-| **Selection/Collection** | 12 | 5 | 7 | 41.7% |
+| **Basic UI** | 8 | 1 | 7 | 12.5% |
+| **Form Controls** | 10 | 1 | 9 | 10.0% |
+| **Selection/Collection** | 12 | 2 | 10 | 16.7% |
 | **Layout Components** | 6 | 0 | 6 | 0.0% |
 | **Date/Time** | 5 | 0 | 5 | 0.0% |
 | **Navigation** | 4 | 0 | 4 | 0.0% |
 | **Overlay/Modal** | 4 | 0 | 4 | 0.0% |
-| **Data Display** | 5 | 1 | 4 | 20.0% |
-| **Primitives** | 3 | 3 | 0 | 100.0% |
-| **Total** | **57** | **17** | **40** | **29.8%** |
+| **Data Display** | 5 | 0 | 5 | 0.0% |
+| **Primitives** | 3 | 0 | 3 | 0.0% |
+| **Total** | **57** | **4** | **53** | **7.0%** |
 
 ---
 
 ## Detailed Migration Status
 
-### ✅ Completed (17 components)
+### ✅ WebGL에서 확인 완료된 컴포넌트 (4)
 
-#### Core Sprites (Primitives)
-| Component | WebGL Implementation | Status | Notes |
-|-----------|---------------------|--------|-------|
-| Box/Container | `BoxSprite.tsx` | ✅ Complete | borderStyle support |
-| Text | `TextSprite.tsx` | ✅ Complete | textDecoration, textTransform |
-| Image | `ImageSprite.tsx` | ✅ Complete | Loading states |
+| Category | React Aria | WebGL Implementation | Verification |
+|----------|------------|---------------------|--------------|
+| Basic UI | Button | `PixiButton.tsx` | 렌더링 및 동작 확인 완료 |
+| Form Controls | Checkbox | `PixiCheckbox.tsx` | 렌더링 및 동작 확인 완료 |
+| Selection/Collection | CheckboxGroup | `PixiCheckboxGroup.tsx` | 렌더링 및 동작 확인 완료 |
+| Selection/Collection | RadioGroup | `PixiRadio.tsx` | 렌더링 및 동작 확인 완료 |
 
-#### Basic UI Components
-| React Aria | WebGL Implementation | Status | Notes |
-|------------|---------------------|--------|-------|
-| Button | `PixiButton.tsx` | ✅ Complete | FancyButton wrapper |
-| FancyButton | `PixiFancyButton.tsx` | ✅ Complete | Enhanced button |
-| ProgressBar | `PixiProgressBar.tsx` | ✅ Complete | |
-| Slider | `PixiSlider.tsx` | ✅ Complete | |
-| Switch | `PixiSwitcher.tsx` | ✅ Complete | @pixi/ui Switcher |
+### ❔ 미확인 상태 (검증 필요)
 
-#### Form Controls
-| React Aria | WebGL Implementation | Status | Notes |
-|------------|---------------------|--------|-------|
-| Input/TextField | `PixiInput.tsx` | ✅ Complete | Text input handling |
-| Select | `PixiSelect.tsx` | ✅ Complete | Dropdown |
-| Checkbox | `PixiCheckbox.tsx` | ✅ Complete | Standalone checkbox |
+#### 이전에 "완료"로 표기되었으나 실제 확인이 필요함
+| Category | React Aria | WebGL Implementation(기록) | Status | Notes |
+|----------|------------|----------------------------|--------|-------|
+| Primitives | Box/Container | `BoxSprite.tsx` | 미확인 | 렌더링/기능 검증 필요 |
+| Primitives | Text | `TextSprite.tsx` | 미확인 | 렌더링/기능 검증 필요 |
+| Primitives | Image | `ImageSprite.tsx` | 미확인 | 렌더링/기능 검증 필요 |
+| Basic UI | FancyButton | `PixiFancyButton.tsx` | 미확인 | Wrapper 동작 검증 필요 |
+| Basic UI | ProgressBar | `PixiProgressBar.tsx` | 미확인 | 시각/상태 연동 검증 필요 |
+| Basic UI | Slider | `PixiSlider.tsx` | 미확인 | 입력·핸들 이동 검증 필요 |
+| Basic UI | Switch | `PixiSwitcher.tsx` | 미확인 | 토글 상태 검증 필요 |
+| Form Controls | Input/TextField | `PixiInput.tsx` | 미확인 | 포커스·입력 검증 필요 |
+| Form Controls | Select | `PixiSelect.tsx` | 미확인 | 드롭다운 렌더 검증 필요 |
+| Selection/Collection | CheckboxItem | `PixiCheckboxItem.tsx` | 미확인 | 그룹 내 히트 영역 검증 필요 |
+| Selection/Collection | RadioItem | `PixiRadioItem.tsx` | 미확인 | 그룹 내 히트 영역 검증 필요 |
+| Selection/Collection | List | `PixiList.tsx` | 미확인 | 가상 스크롤/선택 검증 필요 |
+| Data Display | MaskedFrame | `PixiMaskedFrame.tsx` | 미확인 | 클리핑 렌더 검증 필요 |
+| Containers | ScrollBox | `PixiScrollBox.tsx` | 미확인 | 스크롤 동작 검증 필요 |
 
-#### Selection/Collection
-| React Aria | WebGL Implementation | Status | Notes |
-|------------|---------------------|--------|-------|
-| CheckboxGroup | `PixiCheckboxGroup.tsx` | ✅ Complete | Visual rendering |
-| CheckboxItem | `PixiCheckboxItem.tsx` | ✅ Complete | Hit area for group |
-| RadioGroup | `PixiRadio.tsx` | ✅ Complete | Group container |
-| RadioItem | `PixiRadioItem.tsx` | ✅ Complete | Hit area only |
-| List | `PixiList.tsx` | ✅ Complete | Virtual list |
-
-#### Data Display
-| React Aria | WebGL Implementation | Status | Notes |
-|------------|---------------------|--------|-------|
-| MaskedFrame | `PixiMaskedFrame.tsx` | ✅ Complete | Clipped image |
-
-#### Containers
-| React Aria | WebGL Implementation | Status | Notes |
-|------------|---------------------|--------|-------|
-| ScrollBox | `PixiScrollBox.tsx` | ✅ Complete | Scroll container |
-
----
-
-### 🔄 Pending Migration (40 components)
+### 🔄 Pending Migration or Verification (53 components)
 
 #### Basic UI Components (3 remaining)
 | Component | Priority | Complexity | Notes |
@@ -203,6 +188,8 @@ This document tracks the migration progress of React Aria Components from the if
 
 ## Implementation Patterns
 
+> 아래 예시는 기존 기록을 유지한 것이며, 실제 적용 여부는 각 컴포넌트 검증 이후 재확인해야 합니다.
+
 ### Standard Component Structure
 
 ```tsx
@@ -267,7 +254,9 @@ export const PixiComponent = memo(function PixiComponent({
 
 ## Files Reference
 
-### Completed Components
+> 아래 목록은 기록된 구현 경로이며, 실제 사용 여부는 "검증 필요" 섹션을 참고하세요.
+
+### Recorded WebGL Components
 ```
 src/builder/workspace/canvas/ui/
 ├── index.ts                # Module exports
