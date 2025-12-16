@@ -105,7 +105,9 @@ User Action → Zustand Store → Supabase API → Real-time Update
 
 ### Builder Canvas (PixiJS/WebGL)
 
-> **Status:** ✅ Phase 1-8 Complete (2025-12-17) - **62 WebGL Components** (TextField 검증 완료)
+> **Status:** ✅ Phase 1-8 Complete (2025-12-17) - **62 WebGL Components** implemented
+>
+> **Verification Status:** 5 components fully verified (Button, Checkbox, CheckboxGroup, RadioGroup, TextField). Remaining 57 components are implemented but require rendering/interaction verification in the WebGL canvas. See `docs/WEBGL_COMPONENT_MIGRATION_STATUS.md` for details.
 
 The builder uses a PixiJS/WebGL-based canvas for high-performance editing with Feature Flag toggle support.
 
@@ -207,24 +209,36 @@ BuilderCanvas.tsx
 **Key Implementation Patterns:**
 
 1. **@pixi/react v8 Component Registration (CRITICAL):**
+
+> **⚠️ Fixed 2025-12-17**: The component registration pattern was updated to resolve "Graphics is not part of the PIXI namespace" runtime errors.
+
 ```typescript
 // pixiSetup.ts - PIXI_COMPONENTS catalog
 // MUST include both prefixed keys (for JSX) AND class name keys (for @pixi/react internal)
 export const PIXI_COMPONENTS = {
   // Prefixed keys for JSX: <pixiGraphics />, <pixiContainer />
-  pixiGraphics: Graphics,
-  pixiContainer: Container,
-  pixiText: Text,
-  pixiSprite: Sprite,
-  // Class name keys for @pixi/react internal lookups
-  Graphics,
-  Container,
-  Text,
-  Sprite,
+  pixiGraphics: PixiGraphics,  // Use imported aliases
+  pixiContainer: PixiContainer,
+  pixiText: PixiText,
+  pixiSprite: PixiSprite,
+  // Class name keys for @pixi/react internal lookups (REQUIRED!)
+  Graphics: PixiGraphics,
+  Container: PixiContainer,
+  Text: PixiText,
+  Sprite: PixiSprite,
 };
 
 // Module-level extend() call - guarantees registration before any render
 extend(PIXI_COMPONENTS);
+```
+
+**Common Mistakes:**
+```typescript
+// ❌ WRONG - Using Text directly without pixi prefix
+<Text text={label} style={labelStyle} />
+
+// ✅ CORRECT - Use pixi prefixed component
+<pixiText text={label} style={labelStyle} x={0} y={0} />
 ```
 
 2. **Yoga Integration:**
@@ -295,6 +309,59 @@ const isHorizontal = useMemo(() => {
 | Phase 6 | Date/Color Components - 10 components | ✅ |
 | Phase 7 | Form & Utility Components - 8 components | ✅ |
 | Phase 8 | Notification & Color Utility - 6 components | ✅ |
+
+**CSS Variable Reader (M3 Theming for WebGL):**
+
+The `cssVariableReader.ts` utility enables M3 (Material Design 3) color theming in WebGL components by reading CSS variables at runtime.
+
+**Location:** `src/builder/workspace/canvas/utils/cssVariableReader.ts`
+
+**Key Features:**
+- Reads CSS variables from `document.documentElement`
+- Converts CSS colors (#hex, rgb(), rgba(), color-mix()) to PixiJS hex numbers
+- Provides M3 color variants for all button states (default, hover, pressed)
+- Supports all M3 color roles (primary, secondary, tertiary, error, surface, outline, ghost)
+- Automatic fallback to M3 Light Mode defaults
+
+**API:**
+```typescript
+// Get M3 button colors for WebGL rendering
+import { getM3ButtonColors, type M3ButtonColors } from '../utils/cssVariableReader';
+
+const colors = getM3ButtonColors();
+// colors.primaryBg, colors.primaryBgHover, colors.primaryBgPressed
+// colors.secondaryBg, colors.errorBg, colors.surfaceBg, etc.
+```
+
+**Color Mixing:**
+```typescript
+// Darken colors (mix with black)
+mixWithBlack(color: number, percent: number): number
+// e.g., mixWithBlack(primary, 92) = 92% primary + 8% black
+
+// Lighten colors (mix with white)
+mixWithWhite(color: number, percent: number): number
+// e.g., mixWithWhite(primary, 8) = 8% primary + 92% white
+```
+
+**Usage in PixiJS Components:**
+```typescript
+// Example: PixiButton.tsx
+const colors = useMemo(() => getM3ButtonColors(), []);
+
+const getBgColor = () => {
+  if (isPressed) return colors.primaryBgPressed;
+  if (isHovered) return colors.primaryBgHover;
+  return colors.primaryBg;
+};
+
+<pixiGraphics draw={(g) => {
+  g.clear();
+  g.beginFill(getBgColor());
+  g.drawRoundedRect(0, 0, width, height, borderRadius);
+  g.endFill();
+}} />
+```
 
 ### Preview Runtime (iframe)
 
@@ -2452,6 +2519,46 @@ import type { EventType } from "@/types/events/events.types";
 **ESLint Rule:** `local/no-eventtype-legacy-import` (error)
 **Reference:** See CHANGELOG.md "Anti-Patterns Discovered"
 
+❌ **PixiJS Component Registration Missing Class Names (CRITICAL):**
+```tsx
+// REJECT - Only prefixed keys, missing class name keys
+export const PIXI_COMPONENTS = {
+  pixiGraphics: Graphics,
+  pixiContainer: Container,
+  // Missing: Graphics, Container (class name keys)
+};
+
+// ✅ CORRECT - Both prefixed AND class name keys
+export const PIXI_COMPONENTS = {
+  pixiGraphics: Graphics,    // JSX: <pixiGraphics />
+  pixiContainer: Container,
+  Graphics,                   // @pixi/react internal lookup
+  Container,
+};
+```
+**Error:** "Graphics is not part of the PIXI namespace"
+**Reference:** See `src/builder/workspace/canvas/pixiSetup.ts`
+
+❌ **Wrong JSX Element Names in PixiJS:**
+```tsx
+// REJECT - Using class names directly causes "not part of namespace" error
+<Text text="Hello" />
+<Container>...</Container>
+
+// ✅ CORRECT - Use pixi-prefixed element names
+<pixiText text="Hello" />
+<pixiContainer>...</pixiContainer>
+```
+
+❌ **Missing Position Props in PixiJS Components:**
+```tsx
+// REJECT - PixiJS needs explicit positioning (no CSS layout)
+<pixiText text={label} />
+
+// ✅ CORRECT - Always include x, y position
+<pixiText text={label} x={0} y={0} />
+```
+
 ### Quick Reference for AI Assistants
 
 | Task | Correct Approach | File Location |
@@ -2484,6 +2591,11 @@ import type { EventType } from "@/types/events/events.types";
 | Prevent initial mount data overwrite | Use `useInitialMountDetection` hook with resetKey | `src/builder/hooks/useInitialMountDetection.ts` |
 | Add keyboard shortcuts | Use `useKeyboardShortcutsRegistry` with declarative shortcuts array | `src/builder/hooks/useKeyboardShortcutsRegistry.ts` |
 | Add copy/paste functionality | Use `useCopyPaste` hook with validation and transform | `src/builder/hooks/useCopyPaste.ts` |
+| Add new PixiJS WebGL component | Create `Pixi<Component>.tsx` in `canvas/ui/`, export in `index.ts` | `src/builder/workspace/canvas/ui/` |
+| Get M3 colors in WebGL | Use `getM3ButtonColors()` from cssVariableReader | `src/builder/workspace/canvas/utils/cssVariableReader.ts` |
+| Register PixiJS component | Add to `PIXI_COMPONENTS` with both prefix and class name keys | `src/builder/workspace/canvas/pixiSetup.ts` |
+| Add component to ElementSprite | Import in ElementSprite.tsx, add case in dispatcher switch | `src/builder/workspace/canvas/sprites/ElementSprite.tsx` |
+| Measure component size in Yoga | Add measurement function to LayoutEngine | `src/builder/workspace/canvas/layout/LayoutEngine.ts` |
 
 ### For Cursor AI
 
@@ -2507,7 +2619,7 @@ Copilot learns from code patterns. Tips:
 > **Note**: This section has been moved to a dedicated document for better organization.
 > See **[COMPLETED_FEATURES.md](docs/COMPLETED_FEATURES.md)** for full implementation details of all completed features.
 
-### Summary of Completed Features (2025-12-16)
+### Summary of Completed Features (2025-12-17)
 
 **Total Features Completed**: 22 major features
 **Code Reduction**: 37-88% in refactored areas
@@ -2542,7 +2654,12 @@ Copilot learns from code patterns. Tips:
 - Zero hardcoded colors (100% CSS variables)
 - 5 custom ESLint rules for anti-pattern prevention
 - Comprehensive documentation (22 feature docs)
-- 62 WebGL components for WYSIWYG canvas editing
+- 62 WebGL components for WYSIWYG canvas editing (5 verified, 57 pending verification)
+
+**WebGL Documentation**:
+- [WEBGL_COMPONENT_MIGRATION_STATUS.md](docs/WEBGL_COMPONENT_MIGRATION_STATUS.md) - Migration progress and verification status
+- [WEBGL_MIGRATION_IMPLEMENTATION_PLAN.md](docs/WEBGL_MIGRATION_IMPLEMENTATION_PLAN.md) - Implementation details and architecture
+- [PIXI_WEBGL_INTEGRATION.md](docs/PIXI_WEBGL_INTEGRATION.md) - PixiJS integration guide
 
 **Next**: See [PLANNED_FEATURES.md](docs/PLANNED_FEATURES.md) for upcoming implementations.
 
