@@ -52,6 +52,97 @@
 - [ ] size (sm, md, lg) 적용 시 동일한 크기
 - [ ] hover, pressed, disabled 상태 시 동일한 시각적 피드백
 
+### 1.4 iframe 컴포넌트 렌더링 구조
+
+#### 컴포넌트 파일 구조
+
+```
+src/shared/components/
+├── Button.tsx              # React Aria + tv() 래퍼
+├── Checkbox.tsx
+├── Slider.tsx
+├── ...
+└── styles/
+    ├── Button.css          # 컴포넌트 CSS (CSS 변수 사용)
+    ├── Checkbox.css
+    └── ...
+```
+
+#### tv() (tailwind-variants) 패턴
+
+모든 컴포넌트는 `tv()`를 사용하여 className을 동적으로 생성:
+
+```typescript
+// src/shared/components/Button.tsx
+import { tv } from 'tailwind-variants';
+
+const button = tv({
+  base: 'react-aria-Button',      // 기본 클래스
+  variants: {
+    variant: {
+      default: '',
+      primary: 'primary',         // 추가 클래스
+      secondary: 'secondary',
+      // ...
+    },
+    size: {
+      sm: 'sm',
+      md: 'md',
+      lg: 'lg',
+    },
+  },
+  defaultVariants: {
+    variant: 'default',
+    size: 'sm',
+  },
+});
+
+// 사용
+className={button({ variant: 'primary', size: 'md' })}
+// 결과: "react-aria-Button primary md"
+```
+
+#### className → CSS 매칭
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│  Button.tsx                                                             │
+│  button({ variant: 'primary', size: 'md' })                            │
+│  → className="react-aria-Button primary md"                            │
+└─────────────────────────────────┬───────────────────────────────────────┘
+                                  │
+                                  ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│  Button.css                                                             │
+│                                                                         │
+│  .react-aria-Button {              ← base 스타일                        │
+│    font-size: var(--text-sm);                                          │
+│    padding: var(--spacing) var(--spacing-md);                          │
+│  }                                                                      │
+│                                                                         │
+│  .react-aria-Button.primary {      ← variant 스타일                     │
+│    background: var(--primary);                                         │
+│    color: var(--on-primary);                                           │
+│  }                                                                      │
+│                                                                         │
+│  .react-aria-Button.md {           ← size 스타일                        │
+│    padding: var(--spacing-sm) var(--spacing-xl);                       │
+│    font-size: var(--text-base);                                        │
+│  }                                                                      │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+#### WebGL 컴포넌트가 해야 할 일
+
+iframe에서 CSS가 자동으로 적용하는 것을 WebGL에서는 수동으로 구현해야 함:
+
+| iframe (자동) | WebGL (수동 구현) |
+|---------------|-------------------|
+| `.primary { background: var(--primary) }` | `getVariantColors('primary').bg` |
+| `.md { font-size: var(--text-base) }` | `getSizePreset('md').fontSize` |
+| `.md { padding: var(--spacing-sm) }` | `getSizePreset('md').paddingY` |
+| `:hover { background: var(--primary-hover) }` | `onPointerEnter` → `variantColors.bgHover` |
+
 ---
 
 ## 2. CSS 동기화 시스템 (핵심)
