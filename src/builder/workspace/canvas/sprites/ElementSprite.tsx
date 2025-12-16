@@ -15,7 +15,78 @@ import type { Element } from '../../../../types/core/store.types';
 import { BoxSprite } from './BoxSprite';
 import { TextSprite } from './TextSprite';
 import { ImageSprite } from './ImageSprite';
-import { PixiButton, PixiFancyButton, PixiCheckbox, PixiCheckboxGroup, PixiCheckboxItem, PixiRadio, PixiRadioItem, PixiSlider, PixiInput, PixiSelect, PixiProgressBar, PixiSwitcher, PixiScrollBox, PixiList, PixiMaskedFrame } from '../ui';
+import {
+  PixiButton,
+  PixiFancyButton,
+  PixiCheckbox,
+  PixiCheckboxGroup,
+  PixiCheckboxItem,
+  PixiRadio,
+  PixiRadioItem,
+  PixiSlider,
+  PixiInput,
+  PixiSelect,
+  PixiProgressBar,
+  PixiSwitcher,
+  PixiScrollBox,
+  PixiList,
+  PixiMaskedFrame,
+  // Phase 1 WebGL Migration Components
+  PixiToggleButton,
+  PixiToggleButtonGroup,
+  PixiListBox,
+  PixiBadge,
+  PixiMeter,
+  // Phase 2 WebGL Migration Components
+  PixiSeparator,
+  PixiLink,
+  PixiBreadcrumbs,
+  PixiCard,
+  PixiMenu,
+  PixiTabs,
+  // Phase 3 WebGL Migration Components
+  PixiNumberField,
+  PixiSearchField,
+  PixiComboBox,
+  // Phase 4 WebGL Migration Components
+  PixiGridList,
+  PixiTagGroup,
+  PixiTree,
+  PixiTable,
+  // Phase 5 WebGL Migration Components
+  PixiDisclosure,
+  PixiDisclosureGroup,
+  PixiTooltip,
+  PixiPopover,
+  PixiDialog,
+  // Phase 6 WebGL Migration Components
+  PixiColorSwatch,
+  PixiColorSlider,
+  PixiTimeField,
+  PixiDateField,
+  PixiColorArea,
+  PixiCalendar,
+  PixiColorWheel,
+  PixiDatePicker,
+  PixiColorPicker,
+  PixiDateRangePicker,
+  // Phase 7 WebGL Migration Components
+  PixiTextField,
+  PixiSwitch,
+  PixiTextArea,
+  PixiForm,
+  PixiToolbar,
+  PixiFileTrigger,
+  PixiDropZone,
+  PixiSkeleton,
+  // Phase 8 WebGL Migration Components
+  PixiToast,
+  PixiPagination,
+  PixiColorField,
+  PixiColorSwatchPicker,
+  PixiGroup,
+  PixiSlot,
+} from '../ui';
 import { useStore } from '../../../stores';
 import { isFlexContainer, isGridContainer } from '../layout';
 
@@ -95,13 +166,92 @@ const UI_SCROLLBOX_TAGS = new Set(['ScrollBox', 'ScrollContainer', 'ScrollView']
 const UI_LIST_TAGS = new Set(['List', 'ItemList', 'VirtualList']);
 const UI_MASKEDFRAME_TAGS = new Set(['MaskedFrame', 'ClippedImage', 'MaskedImage', 'AvatarImage']);
 
+/**
+ * Phase 1 WebGL Migration 컴포넌트 태그들
+ */
+const UI_TOGGLEBUTTON_TAGS = new Set(['ToggleButton']);
+const UI_TOGGLEBUTTONGROUP_TAGS = new Set(['ToggleButtonGroup']);
+const UI_LISTBOX_TAGS = new Set(['ListBox']);
+const UI_BADGE_TAGS = new Set(['Badge', 'Tag', 'Chip']);
+const UI_METER_TAGS = new Set(['Meter', 'Gauge']);
+
+/**
+ * Phase 2 WebGL Migration 컴포넌트 태그들
+ */
+const UI_SEPARATOR_TAGS = new Set(['Separator', 'Divider', 'Hr']);
+const UI_LINK_TAGS = new Set(['Link', 'Anchor', 'A']);
+const UI_BREADCRUMBS_TAGS = new Set(['Breadcrumbs']);
+const UI_CARD_TAGS = new Set(['Card', 'Panel', 'Box']);
+const UI_MENU_TAGS = new Set(['Menu', 'ContextMenu', 'DropdownMenu']);
+const UI_TABS_TAGS = new Set(['Tabs', 'TabList']);
+
+/**
+ * Phase 3 WebGL Migration 컴포넌트 태그들
+ */
+const UI_NUMBERFIELD_TAGS = new Set(['NumberField']);
+const UI_SEARCHFIELD_TAGS = new Set(['SearchField']);
+const UI_COMBOBOX_TAGS = new Set(['ComboBox']);
+
+/**
+ * Phase 4 WebGL Migration 컴포넌트 태그들
+ */
+const UI_GRIDLIST_TAGS = new Set(['GridList']);
+const UI_TAGGROUP_TAGS = new Set(['TagGroup', 'TagList']);
+const UI_TREE_TAGS = new Set(['Tree', 'TreeView']);
+const UI_TABLE_TAGS = new Set(['Table', 'DataTable', 'DataGrid']);
+
+/**
+ * Phase 5 WebGL Migration 컴포넌트 태그들
+ */
+const UI_DISCLOSURE_TAGS = new Set(['Disclosure']);
+const UI_DISCLOSUREGROUP_TAGS = new Set(['DisclosureGroup', 'Accordion']);
+const UI_TOOLTIP_TAGS = new Set(['Tooltip']);
+const UI_POPOVER_TAGS = new Set(['Popover']);
+const UI_DIALOG_TAGS = new Set(['Dialog', 'Modal', 'AlertDialog']);
+
+/**
+ * Phase 6 WebGL Migration 컴포넌트 태그들 - Date/Color Components
+ */
+const UI_COLORSWATCH_TAGS = new Set(['ColorSwatch']);
+const UI_COLORSLIDER_TAGS = new Set(['ColorSlider']);
+const UI_TIMEFIELD_TAGS = new Set(['TimeField']);
+const UI_DATEFIELD_TAGS = new Set(['DateField']);
+const UI_COLORAREA_TAGS = new Set(['ColorArea']);
+const UI_CALENDAR_TAGS = new Set(['Calendar', 'RangeCalendar']);
+const UI_COLORWHEEL_TAGS = new Set(['ColorWheel']);
+const UI_DATEPICKER_TAGS = new Set(['DatePicker']);
+const UI_COLORPICKER_TAGS = new Set(['ColorPicker']);
+const UI_DATERANGEPICKER_TAGS = new Set(['DateRangePicker']);
+
+/**
+ * Phase 7 WebGL Migration 컴포넌트 태그들 - Form & Utility Components
+ */
+const UI_TEXTFIELD_TAGS = new Set(['TextField', 'TextInput']);
+const UI_SWITCH_TAGS = new Set(['Switch']);
+const UI_TEXTAREA_TAGS = new Set(['TextArea', 'Textarea']);
+const UI_FORM_TAGS = new Set(['Form']);
+const UI_TOOLBAR_TAGS = new Set(['Toolbar']);
+const UI_FILETRIGGER_TAGS = new Set(['FileTrigger', 'FileUpload', 'FileInput']);
+const UI_DROPZONE_TAGS = new Set(['DropZone', 'FileDropZone']);
+const UI_SKELETON_TAGS = new Set(['Skeleton', 'SkeletonLoader']);
+
+/**
+ * Phase 8 WebGL Migration 컴포넌트 태그들 - Notification & Color Utility Components
+ */
+const UI_TOAST_TAGS = new Set(['Toast']);
+const UI_PAGINATION_TAGS = new Set(['Pagination']);
+const UI_COLORFIELD_TAGS = new Set(['ColorField']);
+const UI_COLORSWATCHPICKER_TAGS = new Set(['ColorSwatchPicker']);
+const UI_GROUP_TAGS = new Set(['Group']);
+const UI_SLOT_TAGS = new Set(['Slot']);
+
 // Note: TEXT_TAGS, IMAGE_TAGS, UI_*_TAGS에 포함되지 않은 모든 태그는 BoxSprite로 렌더링됨
 
 // ============================================
 // Sprite Type Detection
 // ============================================
 
-type SpriteType = 'box' | 'text' | 'image' | 'button' | 'fancyButton' | 'checkboxGroup' | 'checkboxItem' | 'radioGroup' | 'radioItem' | 'slider' | 'input' | 'select' | 'progressBar' | 'switcher' | 'scrollBox' | 'list' | 'maskedFrame' | 'flex' | 'grid';
+type SpriteType = 'box' | 'text' | 'image' | 'button' | 'fancyButton' | 'checkboxGroup' | 'checkboxItem' | 'radioGroup' | 'radioItem' | 'slider' | 'input' | 'select' | 'progressBar' | 'switcher' | 'scrollBox' | 'list' | 'maskedFrame' | 'flex' | 'grid' | 'toggleButton' | 'toggleButtonGroup' | 'listBox' | 'badge' | 'meter' | 'separator' | 'link' | 'breadcrumbs' | 'card' | 'menu' | 'tabs' | 'numberField' | 'searchField' | 'comboBox' | 'gridList' | 'tagGroup' | 'tree' | 'table' | 'disclosure' | 'disclosureGroup' | 'tooltip' | 'popover' | 'dialog' | 'colorSwatch' | 'colorSlider' | 'timeField' | 'dateField' | 'colorArea' | 'calendar' | 'colorWheel' | 'datePicker' | 'colorPicker' | 'dateRangePicker' | 'textField' | 'switch' | 'textArea' | 'form' | 'toolbar' | 'fileTrigger' | 'dropZone' | 'skeleton' | 'toast' | 'pagination' | 'colorField' | 'colorSwatchPicker' | 'group' | 'slot';
 
 function getSpriteType(element: Element): SpriteType {
   const tag = element.tag;
@@ -121,6 +271,69 @@ function getSpriteType(element: Element): SpriteType {
   if (UI_SCROLLBOX_TAGS.has(tag)) return 'scrollBox';
   if (UI_LIST_TAGS.has(tag)) return 'list';
   if (UI_MASKEDFRAME_TAGS.has(tag)) return 'maskedFrame';
+
+  // Phase 1 WebGL Migration 컴포넌트
+  if (UI_TOGGLEBUTTON_TAGS.has(tag)) return 'toggleButton';
+  if (UI_TOGGLEBUTTONGROUP_TAGS.has(tag)) return 'toggleButtonGroup';
+  if (UI_LISTBOX_TAGS.has(tag)) return 'listBox';
+  if (UI_BADGE_TAGS.has(tag)) return 'badge';
+  if (UI_METER_TAGS.has(tag)) return 'meter';
+
+  // Phase 2 WebGL Migration 컴포넌트
+  if (UI_SEPARATOR_TAGS.has(tag)) return 'separator';
+  if (UI_LINK_TAGS.has(tag)) return 'link';
+  if (UI_BREADCRUMBS_TAGS.has(tag)) return 'breadcrumbs';
+  if (UI_CARD_TAGS.has(tag)) return 'card';
+  if (UI_MENU_TAGS.has(tag)) return 'menu';
+  if (UI_TABS_TAGS.has(tag)) return 'tabs';
+
+  // Phase 3 WebGL Migration 컴포넌트
+  if (UI_NUMBERFIELD_TAGS.has(tag)) return 'numberField';
+  if (UI_SEARCHFIELD_TAGS.has(tag)) return 'searchField';
+  if (UI_COMBOBOX_TAGS.has(tag)) return 'comboBox';
+
+  // Phase 4 WebGL Migration 컴포넌트
+  if (UI_GRIDLIST_TAGS.has(tag)) return 'gridList';
+  if (UI_TAGGROUP_TAGS.has(tag)) return 'tagGroup';
+  if (UI_TREE_TAGS.has(tag)) return 'tree';
+  if (UI_TABLE_TAGS.has(tag)) return 'table';
+
+  // Phase 5 WebGL Migration 컴포넌트
+  if (UI_DISCLOSURE_TAGS.has(tag)) return 'disclosure';
+  if (UI_DISCLOSUREGROUP_TAGS.has(tag)) return 'disclosureGroup';
+  if (UI_TOOLTIP_TAGS.has(tag)) return 'tooltip';
+  if (UI_POPOVER_TAGS.has(tag)) return 'popover';
+  if (UI_DIALOG_TAGS.has(tag)) return 'dialog';
+
+  // Phase 6 WebGL Migration 컴포넌트 - Date/Color Components
+  if (UI_COLORSWATCH_TAGS.has(tag)) return 'colorSwatch';
+  if (UI_COLORSLIDER_TAGS.has(tag)) return 'colorSlider';
+  if (UI_TIMEFIELD_TAGS.has(tag)) return 'timeField';
+  if (UI_DATEFIELD_TAGS.has(tag)) return 'dateField';
+  if (UI_COLORAREA_TAGS.has(tag)) return 'colorArea';
+  if (UI_CALENDAR_TAGS.has(tag)) return 'calendar';
+  if (UI_COLORWHEEL_TAGS.has(tag)) return 'colorWheel';
+  if (UI_DATEPICKER_TAGS.has(tag)) return 'datePicker';
+  if (UI_COLORPICKER_TAGS.has(tag)) return 'colorPicker';
+  if (UI_DATERANGEPICKER_TAGS.has(tag)) return 'dateRangePicker';
+
+  // Phase 7 WebGL Migration 컴포넌트 - Form & Utility Components
+  if (UI_TEXTFIELD_TAGS.has(tag)) return 'textField';
+  if (UI_SWITCH_TAGS.has(tag)) return 'switch';
+  if (UI_TEXTAREA_TAGS.has(tag)) return 'textArea';
+  if (UI_FORM_TAGS.has(tag)) return 'form';
+  if (UI_TOOLBAR_TAGS.has(tag)) return 'toolbar';
+  if (UI_FILETRIGGER_TAGS.has(tag)) return 'fileTrigger';
+  if (UI_DROPZONE_TAGS.has(tag)) return 'dropZone';
+  if (UI_SKELETON_TAGS.has(tag)) return 'skeleton';
+
+  // Phase 8 WebGL Migration 컴포넌트 - Notification & Color Utility Components
+  if (UI_TOAST_TAGS.has(tag)) return 'toast';
+  if (UI_PAGINATION_TAGS.has(tag)) return 'pagination';
+  if (UI_COLORFIELD_TAGS.has(tag)) return 'colorField';
+  if (UI_COLORSWATCHPICKER_TAGS.has(tag)) return 'colorSwatchPicker';
+  if (UI_GROUP_TAGS.has(tag)) return 'group';
+  if (UI_SLOT_TAGS.has(tag)) return 'slot';
 
   // 레이아웃 컨테이너 체크 (Phase 11 B2.5)
   // display: flex/grid인 경우에도 현재는 BoxSprite로 렌더링
@@ -333,6 +546,451 @@ export const ElementSprite = memo(function ElementSprite({
     case 'maskedFrame':
       return (
         <PixiMaskedFrame
+          element={effectiveElement}
+          isSelected={isSelected}
+          onClick={onClick}
+        />
+      );
+
+    // Phase 1 WebGL Migration 컴포넌트
+    case 'toggleButton':
+      return (
+        <PixiToggleButton
+          element={effectiveElement}
+          isSelected={isSelected}
+          onClick={onClick}
+        />
+      );
+
+    case 'toggleButtonGroup':
+      return (
+        <PixiToggleButtonGroup
+          element={effectiveElement}
+          isSelected={isSelected}
+          onClick={onClick}
+          onChange={onChange ? (id, keys) => onChange(id, keys) : undefined}
+        />
+      );
+
+    case 'listBox':
+      return (
+        <PixiListBox
+          element={effectiveElement}
+          isSelected={isSelected}
+          onClick={onClick}
+          onChange={onChange ? (id, keys) => onChange(id, keys) : undefined}
+        />
+      );
+
+    case 'badge':
+      return (
+        <PixiBadge
+          element={effectiveElement}
+          isSelected={isSelected}
+          onClick={onClick}
+        />
+      );
+
+    case 'meter':
+      return (
+        <PixiMeter
+          element={effectiveElement}
+          isSelected={isSelected}
+          onClick={onClick}
+        />
+      );
+
+    // Phase 2 WebGL Migration 컴포넌트
+    case 'separator':
+      return (
+        <PixiSeparator
+          element={effectiveElement}
+          isSelected={isSelected}
+          onClick={onClick}
+        />
+      );
+
+    case 'link':
+      return (
+        <PixiLink
+          element={effectiveElement}
+          isSelected={isSelected}
+          onClick={onClick}
+        />
+      );
+
+    case 'breadcrumbs':
+      return (
+        <PixiBreadcrumbs
+          element={effectiveElement}
+          isSelected={isSelected}
+          onClick={onClick}
+        />
+      );
+
+    case 'card':
+      return (
+        <PixiCard
+          element={effectiveElement}
+          isSelected={isSelected}
+          onClick={onClick}
+        />
+      );
+
+    case 'menu':
+      return (
+        <PixiMenu
+          element={effectiveElement}
+          isSelected={isSelected}
+          onClick={onClick}
+        />
+      );
+
+    case 'tabs':
+      return (
+        <PixiTabs
+          element={effectiveElement}
+          isSelected={isSelected}
+          onClick={onClick}
+        />
+      );
+
+    // Phase 3 WebGL Migration 컴포넌트
+    case 'numberField':
+      return (
+        <PixiNumberField
+          element={effectiveElement}
+          isSelected={isSelected}
+          onClick={onClick}
+        />
+      );
+
+    case 'searchField':
+      return (
+        <PixiSearchField
+          element={effectiveElement}
+          isSelected={isSelected}
+          onClick={onClick}
+        />
+      );
+
+    case 'comboBox':
+      return (
+        <PixiComboBox
+          element={effectiveElement}
+          isSelected={isSelected}
+          onClick={onClick}
+          onChange={onChange ? (id, value) => onChange(id, value) : undefined}
+        />
+      );
+
+    // Phase 4 WebGL Migration 컴포넌트
+    case 'gridList':
+      return (
+        <PixiGridList
+          element={effectiveElement}
+          isSelected={isSelected}
+          onClick={onClick}
+          onChange={onChange ? (id, value) => onChange(id, value) : undefined}
+        />
+      );
+
+    case 'tagGroup':
+      return (
+        <PixiTagGroup
+          element={effectiveElement}
+          isSelected={isSelected}
+          onClick={onClick}
+          onChange={onChange ? (id, value) => onChange(id, value) : undefined}
+        />
+      );
+
+    case 'tree':
+      return (
+        <PixiTree
+          element={effectiveElement}
+          isSelected={isSelected}
+          onClick={onClick}
+          onChange={onChange ? (id, value) => onChange(id, value) : undefined}
+        />
+      );
+
+    case 'table':
+      return (
+        <PixiTable
+          element={effectiveElement}
+          isSelected={isSelected}
+          onClick={onClick}
+          onChange={onChange ? (id, value) => onChange(id, value) : undefined}
+        />
+      );
+
+    // Phase 5 WebGL Migration 컴포넌트
+    case 'disclosure':
+      return (
+        <PixiDisclosure
+          element={effectiveElement}
+          isSelected={isSelected}
+          onClick={onClick}
+          onChange={onChange ? (id, value) => onChange(id, value) : undefined}
+        />
+      );
+
+    case 'disclosureGroup':
+      return (
+        <PixiDisclosureGroup
+          element={effectiveElement}
+          isSelected={isSelected}
+          onClick={onClick}
+          onChange={onChange ? (id, value) => onChange(id, value) : undefined}
+        />
+      );
+
+    case 'tooltip':
+      return (
+        <PixiTooltip
+          element={effectiveElement}
+          isSelected={isSelected}
+          onClick={onClick}
+          onChange={onChange ? (id, value) => onChange(id, value) : undefined}
+        />
+      );
+
+    case 'popover':
+      return (
+        <PixiPopover
+          element={effectiveElement}
+          isSelected={isSelected}
+          onClick={onClick}
+          onChange={onChange ? (id, value) => onChange(id, value) : undefined}
+        />
+      );
+
+    case 'dialog':
+      return (
+        <PixiDialog
+          element={effectiveElement}
+          isSelected={isSelected}
+          onClick={onClick}
+          onChange={onChange ? (id, value) => onChange(id, value) : undefined}
+        />
+      );
+
+    // Phase 6 WebGL Migration 컴포넌트 - Date/Color Components
+    case 'colorSwatch':
+      return (
+        <PixiColorSwatch
+          element={effectiveElement}
+          isSelected={isSelected}
+          onClick={onClick}
+        />
+      );
+
+    case 'colorSlider':
+      return (
+        <PixiColorSlider
+          element={effectiveElement}
+          isSelected={isSelected}
+          onClick={onClick}
+        />
+      );
+
+    case 'timeField':
+      return (
+        <PixiTimeField
+          element={effectiveElement}
+          isSelected={isSelected}
+          onClick={onClick}
+        />
+      );
+
+    case 'dateField':
+      return (
+        <PixiDateField
+          element={effectiveElement}
+          isSelected={isSelected}
+          onClick={onClick}
+        />
+      );
+
+    case 'colorArea':
+      return (
+        <PixiColorArea
+          element={effectiveElement}
+          isSelected={isSelected}
+          onClick={onClick}
+        />
+      );
+
+    case 'calendar':
+      return (
+        <PixiCalendar
+          element={effectiveElement}
+          isSelected={isSelected}
+          onClick={onClick}
+          onChange={onChange ? (id, value) => onChange(id, value) : undefined}
+        />
+      );
+
+    case 'colorWheel':
+      return (
+        <PixiColorWheel
+          element={effectiveElement}
+          isSelected={isSelected}
+          onClick={onClick}
+        />
+      );
+
+    case 'datePicker':
+      return (
+        <PixiDatePicker
+          element={effectiveElement}
+          isSelected={isSelected}
+          onClick={onClick}
+        />
+      );
+
+    case 'colorPicker':
+      return (
+        <PixiColorPicker
+          element={effectiveElement}
+          isSelected={isSelected}
+          onClick={onClick}
+        />
+      );
+
+    case 'dateRangePicker':
+      return (
+        <PixiDateRangePicker
+          element={effectiveElement}
+          isSelected={isSelected}
+          onClick={onClick}
+        />
+      );
+
+    // Phase 7 WebGL Migration 컴포넌트 - Form & Utility Components
+    case 'textField':
+      return (
+        <PixiTextField
+          element={effectiveElement}
+          isSelected={isSelected}
+          onClick={onClick}
+        />
+      );
+
+    case 'switch':
+      return (
+        <PixiSwitch
+          element={effectiveElement}
+          isSelected={isSelected}
+          onClick={onClick}
+        />
+      );
+
+    case 'textArea':
+      return (
+        <PixiTextArea
+          element={effectiveElement}
+          isSelected={isSelected}
+          onClick={onClick}
+        />
+      );
+
+    case 'form':
+      return (
+        <PixiForm
+          element={effectiveElement}
+          isSelected={isSelected}
+          onClick={onClick}
+        />
+      );
+
+    case 'toolbar':
+      return (
+        <PixiToolbar
+          element={effectiveElement}
+          isSelected={isSelected}
+          onClick={onClick}
+        />
+      );
+
+    case 'fileTrigger':
+      return (
+        <PixiFileTrigger
+          element={effectiveElement}
+          isSelected={isSelected}
+          onClick={onClick}
+        />
+      );
+
+    case 'dropZone':
+      return (
+        <PixiDropZone
+          element={effectiveElement}
+          isSelected={isSelected}
+          onClick={onClick}
+        />
+      );
+
+    case 'skeleton':
+      return (
+        <PixiSkeleton
+          element={effectiveElement}
+          isSelected={isSelected}
+          onClick={onClick}
+        />
+      );
+
+    // Phase 8 WebGL Migration 컴포넌트 - Notification & Color Utility Components
+    case 'toast':
+      return (
+        <PixiToast
+          element={effectiveElement}
+          isSelected={isSelected}
+          onClick={onClick}
+        />
+      );
+
+    case 'pagination':
+      return (
+        <PixiPagination
+          element={effectiveElement}
+          isSelected={isSelected}
+          onClick={onClick}
+          onChange={onChange ? (id, value) => onChange(id, value) : undefined}
+        />
+      );
+
+    case 'colorField':
+      return (
+        <PixiColorField
+          element={effectiveElement}
+          isSelected={isSelected}
+          onClick={onClick}
+        />
+      );
+
+    case 'colorSwatchPicker':
+      return (
+        <PixiColorSwatchPicker
+          element={effectiveElement}
+          isSelected={isSelected}
+          onClick={onClick}
+        />
+      );
+
+    case 'group':
+      return (
+        <PixiGroup
+          element={effectiveElement}
+          isSelected={isSelected}
+          onClick={onClick}
+        />
+      );
+
+    case 'slot':
+      return (
+        <PixiSlot
           element={effectiveElement}
           isSelected={isSelected}
           onClick={onClick}

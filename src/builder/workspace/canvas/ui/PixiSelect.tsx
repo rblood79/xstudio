@@ -17,6 +17,7 @@ import type { Element } from '../../../../types/core/store.types';
 import type { CSSStyle } from '../sprites/styleConverter';
 import { cssColorToHex, parseCSSSize } from '../sprites/styleConverter';
 import { drawBox } from '../utils';
+import { getSelectSizePreset } from '../utils/cssVariableReader';
 
 // ============================================
 // Types
@@ -52,23 +53,35 @@ interface SelectLayoutStyle {
   fontFamily: string;
   paddingLeft: number;
   paddingRight: number;
+  chevronSize: number;
 }
 
-function convertToSelectStyle(style: CSSStyle | undefined): SelectLayoutStyle {
+/**
+ * CSS 스타일을 Select 레이아웃 스타일로 변환
+ * 🚀 Phase 0: CSS 동기화 - getSelectSizePreset() 사용
+ */
+function convertToSelectStyle(style: CSSStyle | undefined, size: string): SelectLayoutStyle {
+  // 🚀 CSS에서 사이즈 프리셋 읽기
+  const sizePreset = getSelectSizePreset(size);
+
+  // 높이 계산: fontSize + paddingY * 2 + border (대략적 추정)
+  const defaultHeight = sizePreset.fontSize + sizePreset.paddingY * 2 + 8;
+
   return {
     x: parseCSSSize(style?.left, undefined, 0),
     y: parseCSSSize(style?.top, undefined, 0),
     width: parseCSSSize(style?.width, undefined, 200),
-    height: parseCSSSize(style?.height, undefined, 36),
+    height: parseCSSSize(style?.height, undefined, defaultHeight),
     backgroundColor: cssColorToHex(style?.backgroundColor, 0xffffff),
     borderColor: cssColorToHex(style?.borderColor, 0xd1d5db),
     borderWidth: parseCSSSize(style?.borderWidth, undefined, 1),
-    borderRadius: parseCSSSize(style?.borderRadius, undefined, 6),
+    borderRadius: parseCSSSize(style?.borderRadius, undefined, sizePreset.borderRadius),
     textColor: cssColorToHex(style?.color, 0x000000),
-    fontSize: parseCSSSize(style?.fontSize, undefined, 14),
+    fontSize: parseCSSSize(style?.fontSize, undefined, sizePreset.fontSize),
     fontFamily: style?.fontFamily || 'Pretendard, sans-serif',
-    paddingLeft: parseCSSSize(style?.paddingLeft || style?.padding, undefined, 12),
-    paddingRight: parseCSSSize(style?.paddingRight || style?.padding, undefined, 12),
+    paddingLeft: parseCSSSize(style?.paddingLeft || style?.padding, undefined, sizePreset.paddingX),
+    paddingRight: parseCSSSize(style?.paddingRight || style?.padding, undefined, sizePreset.paddingX),
+    chevronSize: sizePreset.chevronSize,
   };
 }
 
@@ -159,8 +172,11 @@ export const PixiSelect = memo(function PixiSelect({
   const style = element.props?.style as CSSStyle | undefined;
   const props = element.props as Record<string, unknown> | undefined;
 
-  // Select 스타일
-  const layoutStyle = useMemo(() => convertToSelectStyle(style), [style]);
+  // 🚀 Phase 0: size prop 추출 (기본값: 'md')
+  const size = useMemo(() => String(props?.size || 'md'), [props?.size]);
+
+  // Select 스타일 (CSS 사이즈 프리셋 적용)
+  const layoutStyle = useMemo(() => convertToSelectStyle(style, size), [style, size]);
 
   // 옵션들
   const options = useMemo(() => parseSelectOptions(props), [props]);

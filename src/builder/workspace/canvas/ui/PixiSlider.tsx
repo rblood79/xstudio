@@ -16,6 +16,7 @@ import type { Element } from '../../../../types/core/store.types';
 import type { CSSStyle } from '../sprites/styleConverter';
 import { cssColorToHex, parseCSSSize } from '../sprites/styleConverter';
 import { drawBox, drawCircle } from '../utils';
+import { getSliderSizePreset } from '../utils/cssVariableReader';
 
 // ============================================
 // Types
@@ -44,20 +45,27 @@ interface SliderLayoutStyle {
   handleSize: number;
 }
 
-function convertToSliderStyle(style: CSSStyle | undefined): SliderLayoutStyle {
+/**
+ * CSS 스타일을 Slider 레이아웃 스타일로 변환
+ * 🚀 Phase 0: CSS 동기화 - getSliderSizePreset() 사용
+ */
+function convertToSliderStyle(style: CSSStyle | undefined, size: string): SliderLayoutStyle {
   const primaryColor = cssColorToHex(style?.backgroundColor, 0x3b82f6);
   const trackColor = cssColorToHex(style?.borderColor, 0xe5e7eb);
+
+  // 🚀 CSS에서 사이즈 프리셋 읽기
+  const sizePreset = getSliderSizePreset(size);
 
   return {
     x: parseCSSSize(style?.left, undefined, 0),
     y: parseCSSSize(style?.top, undefined, 0),
     width: parseCSSSize(style?.width, undefined, 200),
-    height: parseCSSSize(style?.height, undefined, 24),
+    height: parseCSSSize(style?.height, undefined, sizePreset.trackHeight),
     trackColor,
     fillColor: primaryColor,
     handleColor: primaryColor,
-    trackHeight: 6,
-    handleSize: 16,
+    trackHeight: sizePreset.trackWidth, // CSS의 track width가 실제 track height
+    handleSize: sizePreset.thumbSize,
   };
 }
 
@@ -146,8 +154,11 @@ export const PixiSlider = memo(function PixiSlider({
   const style = element.props?.style as CSSStyle | undefined;
   const props = element.props as Record<string, unknown> | undefined;
 
-  // 슬라이더 스타일
-  const layoutStyle = useMemo(() => convertToSliderStyle(style), [style]);
+  // 🚀 Phase 0: size prop 추출 (기본값: 'md')
+  const size = useMemo(() => String(props?.size || 'md'), [props?.size]);
+
+  // 슬라이더 스타일 (CSS 사이즈 프리셋 적용)
+  const layoutStyle = useMemo(() => convertToSliderStyle(style, size), [style, size]);
 
   // 슬라이더 값 설정
   const min = useMemo(() => Number(props?.min ?? 0), [props?.min]);
