@@ -70,3 +70,15 @@ export { PixiDisclosureGroup, type PixiDisclosureGroupProps } from './PixiDisclo
 export { PixiTooltip, type PixiTooltipProps } from './PixiTooltip';
 export { PixiPopover, type PixiPopoverProps } from './PixiPopover';
 export { PixiDialog, type PixiDialogProps } from './PixiDialog';
+
+// Phase 6: Date/Color Components (WebGL Migration)
+export { PixiColorSwatch, type PixiColorSwatchProps } from './PixiColorSwatch';
+export { PixiColorSlider, type PixiColorSliderProps } from './PixiColorSlider';
+export { PixiTimeField, type PixiTimeFieldProps } from './PixiTimeField';
+export { PixiDateField, type PixiDateFieldProps } from './PixiDateField';
+export { PixiColorArea, type PixiColorAreaProps } from './PixiColorArea';
+export { PixiCalendar, type PixiCalendarProps } from './PixiCalendar';
+export { PixiColorWheel, type PixiColorWheelProps } from './PixiColorWheel';
+export { PixiDatePicker, type PixiDatePickerProps } from './PixiDatePicker';
+export { PixiColorPicker, type PixiColorPickerProps } from './PixiColorPicker';
+export { PixiDateRangePicker, type PixiDateRangePickerProps } from './PixiDateRangePicker';

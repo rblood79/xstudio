@@ -59,6 +59,17 @@ import {
   PixiTooltip,
   PixiPopover,
   PixiDialog,
+  // Phase 6 WebGL Migration Components
+  PixiColorSwatch,
+  PixiColorSlider,
+  PixiTimeField,
+  PixiDateField,
+  PixiColorArea,
+  PixiCalendar,
+  PixiColorWheel,
+  PixiDatePicker,
+  PixiColorPicker,
+  PixiDateRangePicker,
 } from '../ui';
 import { useStore } from '../../../stores';
 import { isFlexContainer, isGridContainer } from '../layout';
@@ -182,13 +193,27 @@ const UI_TOOLTIP_TAGS = new Set(['Tooltip']);
 const UI_POPOVER_TAGS = new Set(['Popover']);
 const UI_DIALOG_TAGS = new Set(['Dialog', 'Modal', 'AlertDialog']);
 
+/**
+ * Phase 6 WebGL Migration 컴포넌트 태그들 - Date/Color Components
+ */
+const UI_COLORSWATCH_TAGS = new Set(['ColorSwatch']);
+const UI_COLORSLIDER_TAGS = new Set(['ColorSlider']);
+const UI_TIMEFIELD_TAGS = new Set(['TimeField']);
+const UI_DATEFIELD_TAGS = new Set(['DateField']);
+const UI_COLORAREA_TAGS = new Set(['ColorArea']);
+const UI_CALENDAR_TAGS = new Set(['Calendar', 'RangeCalendar']);
+const UI_COLORWHEEL_TAGS = new Set(['ColorWheel']);
+const UI_DATEPICKER_TAGS = new Set(['DatePicker']);
+const UI_COLORPICKER_TAGS = new Set(['ColorPicker']);
+const UI_DATERANGEPICKER_TAGS = new Set(['DateRangePicker']);
+
 // Note: TEXT_TAGS, IMAGE_TAGS, UI_*_TAGS에 포함되지 않은 모든 태그는 BoxSprite로 렌더링됨
 
 // ============================================
 // Sprite Type Detection
 // ============================================
 
-type SpriteType = 'box' | 'text' | 'image' | 'button' | 'fancyButton' | 'checkboxGroup' | 'checkboxItem' | 'radioGroup' | 'radioItem' | 'slider' | 'input' | 'select' | 'progressBar' | 'switcher' | 'scrollBox' | 'list' | 'maskedFrame' | 'flex' | 'grid' | 'toggleButton' | 'toggleButtonGroup' | 'listBox' | 'badge' | 'meter' | 'separator' | 'link' | 'breadcrumbs' | 'card' | 'menu' | 'tabs' | 'numberField' | 'searchField' | 'comboBox' | 'gridList' | 'tagGroup' | 'tree' | 'table' | 'disclosure' | 'disclosureGroup' | 'tooltip' | 'popover' | 'dialog';
+type SpriteType = 'box' | 'text' | 'image' | 'button' | 'fancyButton' | 'checkboxGroup' | 'checkboxItem' | 'radioGroup' | 'radioItem' | 'slider' | 'input' | 'select' | 'progressBar' | 'switcher' | 'scrollBox' | 'list' | 'maskedFrame' | 'flex' | 'grid' | 'toggleButton' | 'toggleButtonGroup' | 'listBox' | 'badge' | 'meter' | 'separator' | 'link' | 'breadcrumbs' | 'card' | 'menu' | 'tabs' | 'numberField' | 'searchField' | 'comboBox' | 'gridList' | 'tagGroup' | 'tree' | 'table' | 'disclosure' | 'disclosureGroup' | 'tooltip' | 'popover' | 'dialog' | 'colorSwatch' | 'colorSlider' | 'timeField' | 'dateField' | 'colorArea' | 'calendar' | 'colorWheel' | 'datePicker' | 'colorPicker' | 'dateRangePicker';
 
 function getSpriteType(element: Element): SpriteType {
   const tag = element.tag;
@@ -241,6 +266,18 @@ function getSpriteType(element: Element): SpriteType {
   if (UI_TOOLTIP_TAGS.has(tag)) return 'tooltip';
   if (UI_POPOVER_TAGS.has(tag)) return 'popover';
   if (UI_DIALOG_TAGS.has(tag)) return 'dialog';
+
+  // Phase 6 WebGL Migration 컴포넌트 - Date/Color Components
+  if (UI_COLORSWATCH_TAGS.has(tag)) return 'colorSwatch';
+  if (UI_COLORSLIDER_TAGS.has(tag)) return 'colorSlider';
+  if (UI_TIMEFIELD_TAGS.has(tag)) return 'timeField';
+  if (UI_DATEFIELD_TAGS.has(tag)) return 'dateField';
+  if (UI_COLORAREA_TAGS.has(tag)) return 'colorArea';
+  if (UI_CALENDAR_TAGS.has(tag)) return 'calendar';
+  if (UI_COLORWHEEL_TAGS.has(tag)) return 'colorWheel';
+  if (UI_DATEPICKER_TAGS.has(tag)) return 'datePicker';
+  if (UI_COLORPICKER_TAGS.has(tag)) return 'colorPicker';
+  if (UI_DATERANGEPICKER_TAGS.has(tag)) return 'dateRangePicker';
 
   // 레이아웃 컨테이너 체크 (Phase 11 B2.5)
   // display: flex/grid인 경우에도 현재는 BoxSprite로 렌더링
@@ -680,6 +717,98 @@ export const ElementSprite = memo(function ElementSprite({
           isSelected={isSelected}
           onClick={onClick}
           onChange={onChange ? (id, value) => onChange(id, value) : undefined}
+        />
+      );
+
+    // Phase 6 WebGL Migration 컴포넌트 - Date/Color Components
+    case 'colorSwatch':
+      return (
+        <PixiColorSwatch
+          element={effectiveElement}
+          isSelected={isSelected}
+          onClick={onClick}
+        />
+      );
+
+    case 'colorSlider':
+      return (
+        <PixiColorSlider
+          element={effectiveElement}
+          isSelected={isSelected}
+          onClick={onClick}
+        />
+      );
+
+    case 'timeField':
+      return (
+        <PixiTimeField
+          element={effectiveElement}
+          isSelected={isSelected}
+          onClick={onClick}
+        />
+      );
+
+    case 'dateField':
+      return (
+        <PixiDateField
+          element={effectiveElement}
+          isSelected={isSelected}
+          onClick={onClick}
+        />
+      );
+
+    case 'colorArea':
+      return (
+        <PixiColorArea
+          element={effectiveElement}
+          isSelected={isSelected}
+          onClick={onClick}
+        />
+      );
+
+    case 'calendar':
+      return (
+        <PixiCalendar
+          element={effectiveElement}
+          isSelected={isSelected}
+          onClick={onClick}
+          onChange={onChange ? (id, value) => onChange(id, value) : undefined}
+        />
+      );
+
+    case 'colorWheel':
+      return (
+        <PixiColorWheel
+          element={effectiveElement}
+          isSelected={isSelected}
+          onClick={onClick}
+        />
+      );
+
+    case 'datePicker':
+      return (
+        <PixiDatePicker
+          element={effectiveElement}
+          isSelected={isSelected}
+          onClick={onClick}
+        />
+      );
+
+    case 'colorPicker':
+      return (
+        <PixiColorPicker
+          element={effectiveElement}
+          isSelected={isSelected}
+          onClick={onClick}
+        />
+      );
+
+    case 'dateRangePicker':
+      return (
+        <PixiDateRangePicker
+          element={effectiveElement}
+          isSelected={isSelected}
+          onClick={onClick}
         />
       );
 

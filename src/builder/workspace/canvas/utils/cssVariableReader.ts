@@ -2609,3 +2609,769 @@ const DIALOG_COLOR_FALLBACKS: Record<string, DialogColorPreset> = {
 export function getDialogColorPreset(variant: string): DialogColorPreset {
   return DIALOG_COLOR_FALLBACKS[variant] || DIALOG_COLOR_FALLBACKS.default;
 }
+
+// ============================================
+// Phase 6: Date/Color Components
+// ============================================
+
+// ============================================
+// Phase 6: ColorSwatch Size/Color Preset
+// ============================================
+
+/**
+ * ColorSwatch 사이즈 프리셋
+ */
+export interface ColorSwatchSizePreset {
+  width: number;
+  height: number;
+  borderRadius: number;
+  borderWidth: number;
+}
+
+const COLOR_SWATCH_SIZE_MAPPING: Record<string, { size: string }> = {
+  sm: { size: '--text-sm' },
+  md: { size: '--text-lg' },
+  lg: { size: '--text-2xl' },
+};
+
+const COLOR_SWATCH_FALLBACKS: Record<string, ColorSwatchSizePreset> = {
+  sm: { width: 14, height: 14, borderRadius: 4, borderWidth: 1 },
+  md: { width: 18, height: 18, borderRadius: 6, borderWidth: 1 },
+  lg: { width: 24, height: 24, borderRadius: 8, borderWidth: 2 },
+};
+
+/**
+ * ColorSwatch 사이즈 프리셋 읽기
+ */
+export function getColorSwatchSizePreset(size: string): ColorSwatchSizePreset {
+  const mapping = COLOR_SWATCH_SIZE_MAPPING[size];
+  const fallback = COLOR_SWATCH_FALLBACKS[size] || COLOR_SWATCH_FALLBACKS.md;
+
+  if (!mapping) {
+    return fallback;
+  }
+
+  const dimension = parseCSSValue(getCSSVariable(mapping.size), fallback.width);
+  return {
+    width: dimension,
+    height: dimension,
+    borderRadius: fallback.borderRadius,
+    borderWidth: fallback.borderWidth,
+  };
+}
+
+/**
+ * ColorSwatch 색상 프리셋
+ */
+export interface ColorSwatchColorPreset {
+  borderColor: number;
+  checkerColor: number;
+  selectedBorderColor: number;
+}
+
+const COLOR_SWATCH_COLOR_FALLBACKS: Record<string, ColorSwatchColorPreset> = {
+  default: { borderColor: 0xcad3dc, checkerColor: 0xe5e7eb, selectedBorderColor: 0x3b82f6 },
+  primary: { borderColor: 0x3b82f6, checkerColor: 0xe5e7eb, selectedBorderColor: 0x3b82f6 },
+  secondary: { borderColor: 0x6366f1, checkerColor: 0xe5e7eb, selectedBorderColor: 0x6366f1 },
+  tertiary: { borderColor: 0xec4899, checkerColor: 0xe5e7eb, selectedBorderColor: 0xec4899 },
+  error: { borderColor: 0xef4444, checkerColor: 0xe5e7eb, selectedBorderColor: 0xef4444 },
+};
+
+/**
+ * ColorSwatch 색상 프리셋 읽기
+ */
+export function getColorSwatchColorPreset(variant: string): ColorSwatchColorPreset {
+  return COLOR_SWATCH_COLOR_FALLBACKS[variant] || COLOR_SWATCH_COLOR_FALLBACKS.default;
+}
+
+// ============================================
+// Phase 6: ColorSlider Size/Color Preset
+// ============================================
+
+/**
+ * ColorSlider 사이즈 프리셋
+ */
+export interface ColorSliderSizePreset {
+  trackWidth: number;
+  trackHeight: number;
+  thumbSize: number;
+  thumbBorderWidth: number;
+  borderRadius: number;
+}
+
+const COLOR_SLIDER_FALLBACKS: Record<string, ColorSliderSizePreset> = {
+  sm: { trackWidth: 160, trackHeight: 20, thumbSize: 16, thumbBorderWidth: 2, borderRadius: 10 },
+  md: { trackWidth: 192, trackHeight: 28, thumbSize: 20, thumbBorderWidth: 2, borderRadius: 14 },
+  lg: { trackWidth: 240, trackHeight: 36, thumbSize: 24, thumbBorderWidth: 3, borderRadius: 18 },
+};
+
+/**
+ * ColorSlider 사이즈 프리셋 읽기
+ */
+export function getColorSliderSizePreset(size: string): ColorSliderSizePreset {
+  return COLOR_SLIDER_FALLBACKS[size] || COLOR_SLIDER_FALLBACKS.md;
+}
+
+/**
+ * ColorSlider 색상 프리셋
+ */
+export interface ColorSliderColorPreset {
+  thumbBorderColor: number;
+  thumbInnerBorderColor: number;
+  focusRingColor: number;
+}
+
+const COLOR_SLIDER_COLOR_FALLBACKS: Record<string, ColorSliderColorPreset> = {
+  default: { thumbBorderColor: 0xffffff, thumbInnerBorderColor: 0x00000033, focusRingColor: 0x3b82f6 },
+  primary: { thumbBorderColor: 0xffffff, thumbInnerBorderColor: 0x3b82f633, focusRingColor: 0x3b82f6 },
+  secondary: { thumbBorderColor: 0xffffff, thumbInnerBorderColor: 0x6366f133, focusRingColor: 0x6366f1 },
+  tertiary: { thumbBorderColor: 0xffffff, thumbInnerBorderColor: 0xec489933, focusRingColor: 0xec4899 },
+  error: { thumbBorderColor: 0xffffff, thumbInnerBorderColor: 0xef444433, focusRingColor: 0xef4444 },
+};
+
+/**
+ * ColorSlider 색상 프리셋 읽기
+ */
+export function getColorSliderColorPreset(variant: string): ColorSliderColorPreset {
+  return COLOR_SLIDER_COLOR_FALLBACKS[variant] || COLOR_SLIDER_COLOR_FALLBACKS.default;
+}
+
+// ============================================
+// Phase 6: TimeField Size/Color Preset
+// ============================================
+
+/**
+ * TimeField 사이즈 프리셋
+ */
+export interface TimeFieldSizePreset {
+  fontSize: number;
+  height: number;
+  padding: number;
+  gap: number;
+  borderRadius: number;
+  segmentPadding: number;
+}
+
+const TIME_FIELD_SIZE_MAPPING: Record<string, { fontSize: string; height: string; padding: string }> = {
+  sm: { fontSize: '--text-sm', height: '--spacing-xl', padding: '--spacing-xs' },
+  md: { fontSize: '--text-base', height: '--spacing-2xl', padding: '--spacing-sm' },
+  lg: { fontSize: '--text-lg', height: '--spacing-3xl', padding: '--spacing-md' },
+};
+
+const TIME_FIELD_FALLBACKS: Record<string, TimeFieldSizePreset> = {
+  sm: { fontSize: 14, height: 32, padding: 4, gap: 2, borderRadius: 6, segmentPadding: 2 },
+  md: { fontSize: 16, height: 40, padding: 8, gap: 4, borderRadius: 8, segmentPadding: 4 },
+  lg: { fontSize: 18, height: 48, padding: 12, gap: 6, borderRadius: 10, segmentPadding: 6 },
+};
+
+/**
+ * TimeField 사이즈 프리셋 읽기
+ */
+export function getTimeFieldSizePreset(size: string): TimeFieldSizePreset {
+  const mapping = TIME_FIELD_SIZE_MAPPING[size];
+  const fallback = TIME_FIELD_FALLBACKS[size] || TIME_FIELD_FALLBACKS.md;
+
+  if (!mapping) {
+    return fallback;
+  }
+
+  return {
+    fontSize: parseCSSValue(getCSSVariable(mapping.fontSize), fallback.fontSize),
+    height: parseCSSValue(getCSSVariable(mapping.height), fallback.height),
+    padding: parseCSSValue(getCSSVariable(mapping.padding), fallback.padding),
+    gap: fallback.gap,
+    borderRadius: fallback.borderRadius,
+    segmentPadding: fallback.segmentPadding,
+  };
+}
+
+/**
+ * TimeField 색상 프리셋
+ */
+export interface TimeFieldColorPreset {
+  backgroundColor: number;
+  borderColor: number;
+  textColor: number;
+  placeholderColor: number;
+  focusBorderColor: number;
+  segmentSelectedBg: number;
+  segmentSelectedText: number;
+}
+
+const TIME_FIELD_COLOR_FALLBACKS: Record<string, TimeFieldColorPreset> = {
+  default: { backgroundColor: 0xffffff, borderColor: 0xcad3dc, textColor: 0x374151, placeholderColor: 0x9ca3af, focusBorderColor: 0x3b82f6, segmentSelectedBg: 0x3b82f6, segmentSelectedText: 0xffffff },
+  primary: { backgroundColor: 0xffffff, borderColor: 0x3b82f6, textColor: 0x374151, placeholderColor: 0x9ca3af, focusBorderColor: 0x3b82f6, segmentSelectedBg: 0x3b82f6, segmentSelectedText: 0xffffff },
+  secondary: { backgroundColor: 0xffffff, borderColor: 0x6366f1, textColor: 0x374151, placeholderColor: 0x9ca3af, focusBorderColor: 0x6366f1, segmentSelectedBg: 0x6366f1, segmentSelectedText: 0xffffff },
+  tertiary: { backgroundColor: 0xffffff, borderColor: 0xec4899, textColor: 0x374151, placeholderColor: 0x9ca3af, focusBorderColor: 0xec4899, segmentSelectedBg: 0xec4899, segmentSelectedText: 0xffffff },
+  error: { backgroundColor: 0xffffff, borderColor: 0xef4444, textColor: 0x374151, placeholderColor: 0x9ca3af, focusBorderColor: 0xef4444, segmentSelectedBg: 0xef4444, segmentSelectedText: 0xffffff },
+  filled: { backgroundColor: 0xf3f4f6, borderColor: 0x00000000, textColor: 0x374151, placeholderColor: 0x9ca3af, focusBorderColor: 0x3b82f6, segmentSelectedBg: 0x3b82f6, segmentSelectedText: 0xffffff },
+};
+
+/**
+ * TimeField 색상 프리셋 읽기
+ */
+export function getTimeFieldColorPreset(variant: string): TimeFieldColorPreset {
+  return TIME_FIELD_COLOR_FALLBACKS[variant] || TIME_FIELD_COLOR_FALLBACKS.default;
+}
+
+// ============================================
+// Phase 6: DateField Size/Color Preset
+// ============================================
+
+/**
+ * DateField 사이즈 프리셋
+ */
+export interface DateFieldSizePreset {
+  fontSize: number;
+  height: number;
+  padding: number;
+  gap: number;
+  borderRadius: number;
+  segmentPadding: number;
+}
+
+const DATE_FIELD_SIZE_MAPPING: Record<string, { fontSize: string; height: string; padding: string }> = {
+  sm: { fontSize: '--text-sm', height: '--spacing-xl', padding: '--spacing-xs' },
+  md: { fontSize: '--text-base', height: '--spacing-2xl', padding: '--spacing-sm' },
+  lg: { fontSize: '--text-lg', height: '--spacing-3xl', padding: '--spacing-md' },
+};
+
+const DATE_FIELD_FALLBACKS: Record<string, DateFieldSizePreset> = {
+  sm: { fontSize: 14, height: 32, padding: 4, gap: 2, borderRadius: 6, segmentPadding: 2 },
+  md: { fontSize: 16, height: 40, padding: 8, gap: 4, borderRadius: 8, segmentPadding: 4 },
+  lg: { fontSize: 18, height: 48, padding: 12, gap: 6, borderRadius: 10, segmentPadding: 6 },
+};
+
+/**
+ * DateField 사이즈 프리셋 읽기
+ */
+export function getDateFieldSizePreset(size: string): DateFieldSizePreset {
+  const mapping = DATE_FIELD_SIZE_MAPPING[size];
+  const fallback = DATE_FIELD_FALLBACKS[size] || DATE_FIELD_FALLBACKS.md;
+
+  if (!mapping) {
+    return fallback;
+  }
+
+  return {
+    fontSize: parseCSSValue(getCSSVariable(mapping.fontSize), fallback.fontSize),
+    height: parseCSSValue(getCSSVariable(mapping.height), fallback.height),
+    padding: parseCSSValue(getCSSVariable(mapping.padding), fallback.padding),
+    gap: fallback.gap,
+    borderRadius: fallback.borderRadius,
+    segmentPadding: fallback.segmentPadding,
+  };
+}
+
+/**
+ * DateField 색상 프리셋
+ */
+export interface DateFieldColorPreset {
+  backgroundColor: number;
+  borderColor: number;
+  textColor: number;
+  placeholderColor: number;
+  focusBorderColor: number;
+  segmentSelectedBg: number;
+  segmentSelectedText: number;
+}
+
+const DATE_FIELD_COLOR_FALLBACKS: Record<string, DateFieldColorPreset> = {
+  default: { backgroundColor: 0xffffff, borderColor: 0xcad3dc, textColor: 0x374151, placeholderColor: 0x9ca3af, focusBorderColor: 0x3b82f6, segmentSelectedBg: 0x3b82f6, segmentSelectedText: 0xffffff },
+  primary: { backgroundColor: 0xffffff, borderColor: 0x3b82f6, textColor: 0x374151, placeholderColor: 0x9ca3af, focusBorderColor: 0x3b82f6, segmentSelectedBg: 0x3b82f6, segmentSelectedText: 0xffffff },
+  secondary: { backgroundColor: 0xffffff, borderColor: 0x6366f1, textColor: 0x374151, placeholderColor: 0x9ca3af, focusBorderColor: 0x6366f1, segmentSelectedBg: 0x6366f1, segmentSelectedText: 0xffffff },
+  tertiary: { backgroundColor: 0xffffff, borderColor: 0xec4899, textColor: 0x374151, placeholderColor: 0x9ca3af, focusBorderColor: 0xec4899, segmentSelectedBg: 0xec4899, segmentSelectedText: 0xffffff },
+  error: { backgroundColor: 0xffffff, borderColor: 0xef4444, textColor: 0x374151, placeholderColor: 0x9ca3af, focusBorderColor: 0xef4444, segmentSelectedBg: 0xef4444, segmentSelectedText: 0xffffff },
+  filled: { backgroundColor: 0xf3f4f6, borderColor: 0x00000000, textColor: 0x374151, placeholderColor: 0x9ca3af, focusBorderColor: 0x3b82f6, segmentSelectedBg: 0x3b82f6, segmentSelectedText: 0xffffff },
+};
+
+/**
+ * DateField 색상 프리셋 읽기
+ */
+export function getDateFieldColorPreset(variant: string): DateFieldColorPreset {
+  return DATE_FIELD_COLOR_FALLBACKS[variant] || DATE_FIELD_COLOR_FALLBACKS.default;
+}
+
+// ============================================
+// Phase 6: ColorArea Size/Color Preset
+// ============================================
+
+/**
+ * ColorArea 사이즈 프리셋
+ */
+export interface ColorAreaSizePreset {
+  width: number;
+  height: number;
+  thumbSize: number;
+  thumbBorderWidth: number;
+  borderRadius: number;
+}
+
+const COLOR_AREA_FALLBACKS: Record<string, ColorAreaSizePreset> = {
+  sm: { width: 144, height: 144, thumbSize: 16, thumbBorderWidth: 2, borderRadius: 8 },
+  md: { width: 192, height: 192, thumbSize: 20, thumbBorderWidth: 2, borderRadius: 10 },
+  lg: { width: 256, height: 256, thumbSize: 24, thumbBorderWidth: 3, borderRadius: 12 },
+};
+
+/**
+ * ColorArea 사이즈 프리셋 읽기
+ */
+export function getColorAreaSizePreset(size: string): ColorAreaSizePreset {
+  return COLOR_AREA_FALLBACKS[size] || COLOR_AREA_FALLBACKS.md;
+}
+
+/**
+ * ColorArea 색상 프리셋
+ */
+export interface ColorAreaColorPreset {
+  borderColor: number;
+  thumbBorderColor: number;
+  thumbInnerBorderColor: number;
+  focusRingColor: number;
+}
+
+const COLOR_AREA_COLOR_FALLBACKS: Record<string, ColorAreaColorPreset> = {
+  default: { borderColor: 0xcad3dc, thumbBorderColor: 0xffffff, thumbInnerBorderColor: 0x00000033, focusRingColor: 0x3b82f6 },
+  primary: { borderColor: 0x3b82f6, thumbBorderColor: 0xffffff, thumbInnerBorderColor: 0x3b82f633, focusRingColor: 0x3b82f6 },
+  secondary: { borderColor: 0x6366f1, thumbBorderColor: 0xffffff, thumbInnerBorderColor: 0x6366f133, focusRingColor: 0x6366f1 },
+  tertiary: { borderColor: 0xec4899, thumbBorderColor: 0xffffff, thumbInnerBorderColor: 0xec489933, focusRingColor: 0xec4899 },
+  error: { borderColor: 0xef4444, thumbBorderColor: 0xffffff, thumbInnerBorderColor: 0xef444433, focusRingColor: 0xef4444 },
+};
+
+/**
+ * ColorArea 색상 프리셋 읽기
+ */
+export function getColorAreaColorPreset(variant: string): ColorAreaColorPreset {
+  return COLOR_AREA_COLOR_FALLBACKS[variant] || COLOR_AREA_COLOR_FALLBACKS.default;
+}
+
+// ============================================
+// Phase 6: Calendar Size/Color Preset
+// ============================================
+
+/**
+ * Calendar 사이즈 프리셋
+ */
+export interface CalendarSizePreset {
+  fontSize: number;
+  headerFontSize: number;
+  cellSize: number;
+  padding: number;
+  gap: number;
+  borderRadius: number;
+  buttonSize: number;
+}
+
+const CALENDAR_SIZE_MAPPING: Record<string, { fontSize: string; headerFontSize: string }> = {
+  sm: { fontSize: '--text-sm', headerFontSize: '--text-base' },
+  md: { fontSize: '--text-base', headerFontSize: '--text-lg' },
+  lg: { fontSize: '--text-lg', headerFontSize: '--text-xl' },
+};
+
+const CALENDAR_FALLBACKS: Record<string, CalendarSizePreset> = {
+  sm: { fontSize: 14, headerFontSize: 16, cellSize: 28, padding: 8, gap: 2, borderRadius: 8, buttonSize: 24 },
+  md: { fontSize: 16, headerFontSize: 18, cellSize: 36, padding: 12, gap: 4, borderRadius: 10, buttonSize: 28 },
+  lg: { fontSize: 18, headerFontSize: 20, cellSize: 44, padding: 16, gap: 6, borderRadius: 12, buttonSize: 32 },
+};
+
+/**
+ * Calendar 사이즈 프리셋 읽기
+ */
+export function getCalendarSizePreset(size: string): CalendarSizePreset {
+  const mapping = CALENDAR_SIZE_MAPPING[size];
+  const fallback = CALENDAR_FALLBACKS[size] || CALENDAR_FALLBACKS.md;
+
+  if (!mapping) {
+    return fallback;
+  }
+
+  return {
+    fontSize: parseCSSValue(getCSSVariable(mapping.fontSize), fallback.fontSize),
+    headerFontSize: parseCSSValue(getCSSVariable(mapping.headerFontSize), fallback.headerFontSize),
+    cellSize: fallback.cellSize,
+    padding: fallback.padding,
+    gap: fallback.gap,
+    borderRadius: fallback.borderRadius,
+    buttonSize: fallback.buttonSize,
+  };
+}
+
+/**
+ * Calendar 색상 프리셋
+ */
+export interface CalendarColorPreset {
+  backgroundColor: number;
+  borderColor: number;
+  headerColor: number;
+  textColor: number;
+  weekdayColor: number;
+  disabledColor: number;
+  todayBorderColor: number;
+  selectedBgColor: number;
+  selectedTextColor: number;
+  hoverBgColor: number;
+  outsideMonthColor: number;
+}
+
+const CALENDAR_COLOR_FALLBACKS: Record<string, CalendarColorPreset> = {
+  default: {
+    backgroundColor: 0xffffff, borderColor: 0xcad3dc, headerColor: 0x374151, textColor: 0x374151,
+    weekdayColor: 0x6b7280, disabledColor: 0xd1d5db, todayBorderColor: 0x3b82f6,
+    selectedBgColor: 0x3b82f6, selectedTextColor: 0xffffff, hoverBgColor: 0xf3f4f6, outsideMonthColor: 0x9ca3af
+  },
+  primary: {
+    backgroundColor: 0xffffff, borderColor: 0x3b82f6, headerColor: 0x3b82f6, textColor: 0x374151,
+    weekdayColor: 0x6b7280, disabledColor: 0xd1d5db, todayBorderColor: 0x3b82f6,
+    selectedBgColor: 0x3b82f6, selectedTextColor: 0xffffff, hoverBgColor: 0xeff6ff, outsideMonthColor: 0x9ca3af
+  },
+  secondary: {
+    backgroundColor: 0xffffff, borderColor: 0x6366f1, headerColor: 0x6366f1, textColor: 0x374151,
+    weekdayColor: 0x6b7280, disabledColor: 0xd1d5db, todayBorderColor: 0x6366f1,
+    selectedBgColor: 0x6366f1, selectedTextColor: 0xffffff, hoverBgColor: 0xeef2ff, outsideMonthColor: 0x9ca3af
+  },
+  tertiary: {
+    backgroundColor: 0xffffff, borderColor: 0xec4899, headerColor: 0xec4899, textColor: 0x374151,
+    weekdayColor: 0x6b7280, disabledColor: 0xd1d5db, todayBorderColor: 0xec4899,
+    selectedBgColor: 0xec4899, selectedTextColor: 0xffffff, hoverBgColor: 0xfdf2f8, outsideMonthColor: 0x9ca3af
+  },
+  error: {
+    backgroundColor: 0xffffff, borderColor: 0xef4444, headerColor: 0xef4444, textColor: 0x374151,
+    weekdayColor: 0x6b7280, disabledColor: 0xd1d5db, todayBorderColor: 0xef4444,
+    selectedBgColor: 0xef4444, selectedTextColor: 0xffffff, hoverBgColor: 0xfef2f2, outsideMonthColor: 0x9ca3af
+  },
+  filled: {
+    backgroundColor: 0xf9fafb, borderColor: 0x00000000, headerColor: 0x374151, textColor: 0x374151,
+    weekdayColor: 0x6b7280, disabledColor: 0xd1d5db, todayBorderColor: 0x3b82f6,
+    selectedBgColor: 0x3b82f6, selectedTextColor: 0xffffff, hoverBgColor: 0xf3f4f6, outsideMonthColor: 0x9ca3af
+  },
+};
+
+/**
+ * Calendar 색상 프리셋 읽기
+ */
+export function getCalendarColorPreset(variant: string): CalendarColorPreset {
+  return CALENDAR_COLOR_FALLBACKS[variant] || CALENDAR_COLOR_FALLBACKS.default;
+}
+
+// ============================================
+// Phase 6: ColorWheel Size/Color Preset
+// ============================================
+
+/**
+ * ColorWheel 사이즈 프리셋
+ */
+export interface ColorWheelSizePreset {
+  outerRadius: number;
+  innerRadius: number;
+  thumbSize: number;
+  thumbBorderWidth: number;
+}
+
+const COLOR_WHEEL_FALLBACKS: Record<string, ColorWheelSizePreset> = {
+  sm: { outerRadius: 72, innerRadius: 56, thumbSize: 16, thumbBorderWidth: 2 },
+  md: { outerRadius: 96, innerRadius: 72, thumbSize: 20, thumbBorderWidth: 2 },
+  lg: { outerRadius: 128, innerRadius: 96, thumbSize: 24, thumbBorderWidth: 3 },
+};
+
+/**
+ * ColorWheel 사이즈 프리셋 읽기
+ */
+export function getColorWheelSizePreset(size: string): ColorWheelSizePreset {
+  return COLOR_WHEEL_FALLBACKS[size] || COLOR_WHEEL_FALLBACKS.md;
+}
+
+/**
+ * ColorWheel 색상 프리셋
+ */
+export interface ColorWheelColorPreset {
+  thumbBorderColor: number;
+  thumbInnerBorderColor: number;
+  focusRingColor: number;
+}
+
+const COLOR_WHEEL_COLOR_FALLBACKS: Record<string, ColorWheelColorPreset> = {
+  default: { thumbBorderColor: 0xffffff, thumbInnerBorderColor: 0x00000033, focusRingColor: 0x3b82f6 },
+  primary: { thumbBorderColor: 0xffffff, thumbInnerBorderColor: 0x3b82f633, focusRingColor: 0x3b82f6 },
+  secondary: { thumbBorderColor: 0xffffff, thumbInnerBorderColor: 0x6366f133, focusRingColor: 0x6366f1 },
+  tertiary: { thumbBorderColor: 0xffffff, thumbInnerBorderColor: 0xec489933, focusRingColor: 0xec4899 },
+  error: { thumbBorderColor: 0xffffff, thumbInnerBorderColor: 0xef444433, focusRingColor: 0xef4444 },
+};
+
+/**
+ * ColorWheel 색상 프리셋 읽기
+ */
+export function getColorWheelColorPreset(variant: string): ColorWheelColorPreset {
+  return COLOR_WHEEL_COLOR_FALLBACKS[variant] || COLOR_WHEEL_COLOR_FALLBACKS.default;
+}
+
+// ============================================
+// Phase 6: DatePicker Size/Color Preset
+// ============================================
+
+/**
+ * DatePicker 사이즈 프리셋 (DateField + Calendar 조합)
+ */
+export interface DatePickerSizePreset {
+  fieldHeight: number;
+  fieldPadding: number;
+  fieldFontSize: number;
+  fieldBorderRadius: number;
+  buttonSize: number;
+  calendarWidth: number;
+  calendarCellSize: number;
+  gap: number;
+}
+
+const DATE_PICKER_SIZE_MAPPING: Record<string, { fontSize: string }> = {
+  sm: { fontSize: '--text-sm' },
+  md: { fontSize: '--text-base' },
+  lg: { fontSize: '--text-lg' },
+};
+
+const DATE_PICKER_FALLBACKS: Record<string, DatePickerSizePreset> = {
+  sm: { fieldHeight: 32, fieldPadding: 8, fieldFontSize: 14, fieldBorderRadius: 6, buttonSize: 28, calendarWidth: 260, calendarCellSize: 28, gap: 8 },
+  md: { fieldHeight: 40, fieldPadding: 12, fieldFontSize: 16, fieldBorderRadius: 8, buttonSize: 32, calendarWidth: 300, calendarCellSize: 36, gap: 12 },
+  lg: { fieldHeight: 48, fieldPadding: 16, fieldFontSize: 18, fieldBorderRadius: 10, buttonSize: 40, calendarWidth: 360, calendarCellSize: 44, gap: 16 },
+};
+
+/**
+ * DatePicker 사이즈 프리셋 읽기
+ */
+export function getDatePickerSizePreset(size: string): DatePickerSizePreset {
+  const mapping = DATE_PICKER_SIZE_MAPPING[size];
+  const fallback = DATE_PICKER_FALLBACKS[size] || DATE_PICKER_FALLBACKS.md;
+
+  if (!mapping) {
+    return fallback;
+  }
+
+  return {
+    ...fallback,
+    fieldFontSize: parseCSSValue(getCSSVariable(mapping.fontSize), fallback.fieldFontSize),
+  };
+}
+
+/**
+ * DatePicker 색상 프리셋
+ */
+export interface DatePickerColorPreset {
+  fieldBackgroundColor: number;
+  fieldBorderColor: number;
+  fieldTextColor: number;
+  fieldPlaceholderColor: number;
+  buttonBackgroundColor: number;
+  buttonIconColor: number;
+  focusBorderColor: number;
+  popoverBackgroundColor: number;
+  popoverBorderColor: number;
+}
+
+const DATE_PICKER_COLOR_FALLBACKS: Record<string, DatePickerColorPreset> = {
+  default: {
+    fieldBackgroundColor: 0xffffff, fieldBorderColor: 0xcad3dc, fieldTextColor: 0x374151,
+    fieldPlaceholderColor: 0x9ca3af, buttonBackgroundColor: 0xf3f4f6, buttonIconColor: 0x374151,
+    focusBorderColor: 0x3b82f6, popoverBackgroundColor: 0xffffff, popoverBorderColor: 0xcad3dc
+  },
+  primary: {
+    fieldBackgroundColor: 0xffffff, fieldBorderColor: 0x3b82f6, fieldTextColor: 0x374151,
+    fieldPlaceholderColor: 0x9ca3af, buttonBackgroundColor: 0xeff6ff, buttonIconColor: 0x3b82f6,
+    focusBorderColor: 0x3b82f6, popoverBackgroundColor: 0xffffff, popoverBorderColor: 0x3b82f6
+  },
+  secondary: {
+    fieldBackgroundColor: 0xffffff, fieldBorderColor: 0x6366f1, fieldTextColor: 0x374151,
+    fieldPlaceholderColor: 0x9ca3af, buttonBackgroundColor: 0xeef2ff, buttonIconColor: 0x6366f1,
+    focusBorderColor: 0x6366f1, popoverBackgroundColor: 0xffffff, popoverBorderColor: 0x6366f1
+  },
+  tertiary: {
+    fieldBackgroundColor: 0xffffff, fieldBorderColor: 0xec4899, fieldTextColor: 0x374151,
+    fieldPlaceholderColor: 0x9ca3af, buttonBackgroundColor: 0xfdf2f8, buttonIconColor: 0xec4899,
+    focusBorderColor: 0xec4899, popoverBackgroundColor: 0xffffff, popoverBorderColor: 0xec4899
+  },
+  error: {
+    fieldBackgroundColor: 0xffffff, fieldBorderColor: 0xef4444, fieldTextColor: 0x374151,
+    fieldPlaceholderColor: 0x9ca3af, buttonBackgroundColor: 0xfef2f2, buttonIconColor: 0xef4444,
+    focusBorderColor: 0xef4444, popoverBackgroundColor: 0xffffff, popoverBorderColor: 0xef4444
+  },
+  filled: {
+    fieldBackgroundColor: 0xf3f4f6, fieldBorderColor: 0x00000000, fieldTextColor: 0x374151,
+    fieldPlaceholderColor: 0x9ca3af, buttonBackgroundColor: 0xe5e7eb, buttonIconColor: 0x374151,
+    focusBorderColor: 0x3b82f6, popoverBackgroundColor: 0xffffff, popoverBorderColor: 0xcad3dc
+  },
+};
+
+/**
+ * DatePicker 색상 프리셋 읽기
+ */
+export function getDatePickerColorPreset(variant: string): DatePickerColorPreset {
+  return DATE_PICKER_COLOR_FALLBACKS[variant] || DATE_PICKER_COLOR_FALLBACKS.default;
+}
+
+// ============================================
+// Phase 6: ColorPicker Size/Color Preset
+// ============================================
+
+/**
+ * ColorPicker 사이즈 프리셋 (ColorArea + ColorSlider + ColorSwatch 조합)
+ */
+export interface ColorPickerSizePreset {
+  areaSize: number;
+  sliderWidth: number;
+  sliderHeight: number;
+  swatchSize: number;
+  thumbSize: number;
+  padding: number;
+  gap: number;
+  borderRadius: number;
+}
+
+const COLOR_PICKER_FALLBACKS: Record<string, ColorPickerSizePreset> = {
+  sm: { areaSize: 144, sliderWidth: 144, sliderHeight: 20, swatchSize: 20, thumbSize: 16, padding: 8, gap: 8, borderRadius: 8 },
+  md: { areaSize: 192, sliderWidth: 192, sliderHeight: 28, swatchSize: 24, thumbSize: 20, padding: 12, gap: 12, borderRadius: 10 },
+  lg: { areaSize: 256, sliderWidth: 256, sliderHeight: 36, swatchSize: 32, thumbSize: 24, padding: 16, gap: 16, borderRadius: 12 },
+};
+
+/**
+ * ColorPicker 사이즈 프리셋 읽기
+ */
+export function getColorPickerSizePreset(size: string): ColorPickerSizePreset {
+  return COLOR_PICKER_FALLBACKS[size] || COLOR_PICKER_FALLBACKS.md;
+}
+
+/**
+ * ColorPicker 색상 프리셋
+ */
+export interface ColorPickerColorPreset {
+  backgroundColor: number;
+  borderColor: number;
+  thumbBorderColor: number;
+  thumbInnerBorderColor: number;
+  focusRingColor: number;
+  labelColor: number;
+}
+
+const COLOR_PICKER_COLOR_FALLBACKS: Record<string, ColorPickerColorPreset> = {
+  default: { backgroundColor: 0xffffff, borderColor: 0xcad3dc, thumbBorderColor: 0xffffff, thumbInnerBorderColor: 0x00000033, focusRingColor: 0x3b82f6, labelColor: 0x374151 },
+  primary: { backgroundColor: 0xffffff, borderColor: 0x3b82f6, thumbBorderColor: 0xffffff, thumbInnerBorderColor: 0x3b82f633, focusRingColor: 0x3b82f6, labelColor: 0x374151 },
+  secondary: { backgroundColor: 0xffffff, borderColor: 0x6366f1, thumbBorderColor: 0xffffff, thumbInnerBorderColor: 0x6366f133, focusRingColor: 0x6366f1, labelColor: 0x374151 },
+  tertiary: { backgroundColor: 0xffffff, borderColor: 0xec4899, thumbBorderColor: 0xffffff, thumbInnerBorderColor: 0xec489933, focusRingColor: 0xec4899, labelColor: 0x374151 },
+  error: { backgroundColor: 0xffffff, borderColor: 0xef4444, thumbBorderColor: 0xffffff, thumbInnerBorderColor: 0xef444433, focusRingColor: 0xef4444, labelColor: 0x374151 },
+};
+
+/**
+ * ColorPicker 색상 프리셋 읽기
+ */
+export function getColorPickerColorPreset(variant: string): ColorPickerColorPreset {
+  return COLOR_PICKER_COLOR_FALLBACKS[variant] || COLOR_PICKER_COLOR_FALLBACKS.default;
+}
+
+// ============================================
+// Phase 6: DateRangePicker Size/Color Preset
+// ============================================
+
+/**
+ * DateRangePicker 사이즈 프리셋 (DateField x 2 + Calendar 조합)
+ */
+export interface DateRangePickerSizePreset {
+  fieldHeight: number;
+  fieldPadding: number;
+  fieldFontSize: number;
+  fieldBorderRadius: number;
+  buttonSize: number;
+  calendarWidth: number;
+  calendarCellSize: number;
+  gap: number;
+  separatorWidth: number;
+}
+
+const DATE_RANGE_PICKER_SIZE_MAPPING: Record<string, { fontSize: string }> = {
+  sm: { fontSize: '--text-sm' },
+  md: { fontSize: '--text-base' },
+  lg: { fontSize: '--text-lg' },
+};
+
+const DATE_RANGE_PICKER_FALLBACKS: Record<string, DateRangePickerSizePreset> = {
+  sm: { fieldHeight: 32, fieldPadding: 8, fieldFontSize: 14, fieldBorderRadius: 6, buttonSize: 28, calendarWidth: 520, calendarCellSize: 28, gap: 8, separatorWidth: 16 },
+  md: { fieldHeight: 40, fieldPadding: 12, fieldFontSize: 16, fieldBorderRadius: 8, buttonSize: 32, calendarWidth: 600, calendarCellSize: 36, gap: 12, separatorWidth: 24 },
+  lg: { fieldHeight: 48, fieldPadding: 16, fieldFontSize: 18, fieldBorderRadius: 10, buttonSize: 40, calendarWidth: 720, calendarCellSize: 44, gap: 16, separatorWidth: 32 },
+};
+
+/**
+ * DateRangePicker 사이즈 프리셋 읽기
+ */
+export function getDateRangePickerSizePreset(size: string): DateRangePickerSizePreset {
+  const mapping = DATE_RANGE_PICKER_SIZE_MAPPING[size];
+  const fallback = DATE_RANGE_PICKER_FALLBACKS[size] || DATE_RANGE_PICKER_FALLBACKS.md;
+
+  if (!mapping) {
+    return fallback;
+  }
+
+  return {
+    ...fallback,
+    fieldFontSize: parseCSSValue(getCSSVariable(mapping.fontSize), fallback.fieldFontSize),
+  };
+}
+
+/**
+ * DateRangePicker 색상 프리셋
+ */
+export interface DateRangePickerColorPreset {
+  fieldBackgroundColor: number;
+  fieldBorderColor: number;
+  fieldTextColor: number;
+  fieldPlaceholderColor: number;
+  buttonBackgroundColor: number;
+  buttonIconColor: number;
+  focusBorderColor: number;
+  popoverBackgroundColor: number;
+  popoverBorderColor: number;
+  rangeBgColor: number;
+  rangeTextColor: number;
+  separatorColor: number;
+}
+
+const DATE_RANGE_PICKER_COLOR_FALLBACKS: Record<string, DateRangePickerColorPreset> = {
+  default: {
+    fieldBackgroundColor: 0xffffff, fieldBorderColor: 0xcad3dc, fieldTextColor: 0x374151,
+    fieldPlaceholderColor: 0x9ca3af, buttonBackgroundColor: 0xf3f4f6, buttonIconColor: 0x374151,
+    focusBorderColor: 0x3b82f6, popoverBackgroundColor: 0xffffff, popoverBorderColor: 0xcad3dc,
+    rangeBgColor: 0xeff6ff, rangeTextColor: 0x374151, separatorColor: 0x9ca3af
+  },
+  primary: {
+    fieldBackgroundColor: 0xffffff, fieldBorderColor: 0x3b82f6, fieldTextColor: 0x374151,
+    fieldPlaceholderColor: 0x9ca3af, buttonBackgroundColor: 0xeff6ff, buttonIconColor: 0x3b82f6,
+    focusBorderColor: 0x3b82f6, popoverBackgroundColor: 0xffffff, popoverBorderColor: 0x3b82f6,
+    rangeBgColor: 0xeff6ff, rangeTextColor: 0x374151, separatorColor: 0x3b82f6
+  },
+  secondary: {
+    fieldBackgroundColor: 0xffffff, fieldBorderColor: 0x6366f1, fieldTextColor: 0x374151,
+    fieldPlaceholderColor: 0x9ca3af, buttonBackgroundColor: 0xeef2ff, buttonIconColor: 0x6366f1,
+    focusBorderColor: 0x6366f1, popoverBackgroundColor: 0xffffff, popoverBorderColor: 0x6366f1,
+    rangeBgColor: 0xeef2ff, rangeTextColor: 0x374151, separatorColor: 0x6366f1
+  },
+  tertiary: {
+    fieldBackgroundColor: 0xffffff, fieldBorderColor: 0xec4899, fieldTextColor: 0x374151,
+    fieldPlaceholderColor: 0x9ca3af, buttonBackgroundColor: 0xfdf2f8, buttonIconColor: 0xec4899,
+    focusBorderColor: 0xec4899, popoverBackgroundColor: 0xffffff, popoverBorderColor: 0xec4899,
+    rangeBgColor: 0xfdf2f8, rangeTextColor: 0x374151, separatorColor: 0xec4899
+  },
+  error: {
+    fieldBackgroundColor: 0xffffff, fieldBorderColor: 0xef4444, fieldTextColor: 0x374151,
+    fieldPlaceholderColor: 0x9ca3af, buttonBackgroundColor: 0xfef2f2, buttonIconColor: 0xef4444,
+    focusBorderColor: 0xef4444, popoverBackgroundColor: 0xffffff, popoverBorderColor: 0xef4444,
+    rangeBgColor: 0xfef2f2, rangeTextColor: 0x374151, separatorColor: 0xef4444
+  },
+  filled: {
+    fieldBackgroundColor: 0xf3f4f6, fieldBorderColor: 0x00000000, fieldTextColor: 0x374151,
+    fieldPlaceholderColor: 0x9ca3af, buttonBackgroundColor: 0xe5e7eb, buttonIconColor: 0x374151,
+    focusBorderColor: 0x3b82f6, popoverBackgroundColor: 0xffffff, popoverBorderColor: 0xcad3dc,
+    rangeBgColor: 0xeff6ff, rangeTextColor: 0x374151, separatorColor: 0x9ca3af
+  },
+};
+
+/**
+ * DateRangePicker 색상 프리셋 읽기
+ */
+export function getDateRangePickerColorPreset(variant: string): DateRangePickerColorPreset {
+  return DATE_RANGE_PICKER_COLOR_FALLBACKS[variant] || DATE_RANGE_PICKER_COLOR_FALLBACKS.default;
+}
