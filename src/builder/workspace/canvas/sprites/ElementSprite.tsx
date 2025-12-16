@@ -37,6 +37,13 @@ import {
   PixiListBox,
   PixiBadge,
   PixiMeter,
+  // Phase 2 WebGL Migration Components
+  PixiSeparator,
+  PixiLink,
+  PixiBreadcrumbs,
+  PixiCard,
+  PixiMenu,
+  PixiTabs,
 } from '../ui';
 import { useStore } from '../../../stores';
 import { isFlexContainer, isGridContainer } from '../layout';
@@ -126,13 +133,23 @@ const UI_LISTBOX_TAGS = new Set(['ListBox']);
 const UI_BADGE_TAGS = new Set(['Badge', 'Tag', 'Chip']);
 const UI_METER_TAGS = new Set(['Meter', 'Gauge']);
 
+/**
+ * Phase 2 WebGL Migration 컴포넌트 태그들
+ */
+const UI_SEPARATOR_TAGS = new Set(['Separator', 'Divider', 'Hr']);
+const UI_LINK_TAGS = new Set(['Link', 'Anchor', 'A']);
+const UI_BREADCRUMBS_TAGS = new Set(['Breadcrumbs']);
+const UI_CARD_TAGS = new Set(['Card', 'Panel', 'Box']);
+const UI_MENU_TAGS = new Set(['Menu', 'ContextMenu', 'DropdownMenu']);
+const UI_TABS_TAGS = new Set(['Tabs', 'TabList']);
+
 // Note: TEXT_TAGS, IMAGE_TAGS, UI_*_TAGS에 포함되지 않은 모든 태그는 BoxSprite로 렌더링됨
 
 // ============================================
 // Sprite Type Detection
 // ============================================
 
-type SpriteType = 'box' | 'text' | 'image' | 'button' | 'fancyButton' | 'checkboxGroup' | 'checkboxItem' | 'radioGroup' | 'radioItem' | 'slider' | 'input' | 'select' | 'progressBar' | 'switcher' | 'scrollBox' | 'list' | 'maskedFrame' | 'flex' | 'grid' | 'toggleButton' | 'toggleButtonGroup' | 'listBox' | 'badge' | 'meter';
+type SpriteType = 'box' | 'text' | 'image' | 'button' | 'fancyButton' | 'checkboxGroup' | 'checkboxItem' | 'radioGroup' | 'radioItem' | 'slider' | 'input' | 'select' | 'progressBar' | 'switcher' | 'scrollBox' | 'list' | 'maskedFrame' | 'flex' | 'grid' | 'toggleButton' | 'toggleButtonGroup' | 'listBox' | 'badge' | 'meter' | 'separator' | 'link' | 'breadcrumbs' | 'card' | 'menu' | 'tabs';
 
 function getSpriteType(element: Element): SpriteType {
   const tag = element.tag;
@@ -159,6 +176,14 @@ function getSpriteType(element: Element): SpriteType {
   if (UI_LISTBOX_TAGS.has(tag)) return 'listBox';
   if (UI_BADGE_TAGS.has(tag)) return 'badge';
   if (UI_METER_TAGS.has(tag)) return 'meter';
+
+  // Phase 2 WebGL Migration 컴포넌트
+  if (UI_SEPARATOR_TAGS.has(tag)) return 'separator';
+  if (UI_LINK_TAGS.has(tag)) return 'link';
+  if (UI_BREADCRUMBS_TAGS.has(tag)) return 'breadcrumbs';
+  if (UI_CARD_TAGS.has(tag)) return 'card';
+  if (UI_MENU_TAGS.has(tag)) return 'menu';
+  if (UI_TABS_TAGS.has(tag)) return 'tabs';
 
   // 레이아웃 컨테이너 체크 (Phase 11 B2.5)
   // display: flex/grid인 경우에도 현재는 BoxSprite로 렌더링
@@ -419,6 +444,61 @@ export const ElementSprite = memo(function ElementSprite({
     case 'meter':
       return (
         <PixiMeter
+          element={effectiveElement}
+          isSelected={isSelected}
+          onClick={onClick}
+        />
+      );
+
+    // Phase 2 WebGL Migration 컴포넌트
+    case 'separator':
+      return (
+        <PixiSeparator
+          element={effectiveElement}
+          isSelected={isSelected}
+          onClick={onClick}
+        />
+      );
+
+    case 'link':
+      return (
+        <PixiLink
+          element={effectiveElement}
+          isSelected={isSelected}
+          onClick={onClick}
+        />
+      );
+
+    case 'breadcrumbs':
+      return (
+        <PixiBreadcrumbs
+          element={effectiveElement}
+          isSelected={isSelected}
+          onClick={onClick}
+        />
+      );
+
+    case 'card':
+      return (
+        <PixiCard
+          element={effectiveElement}
+          isSelected={isSelected}
+          onClick={onClick}
+        />
+      );
+
+    case 'menu':
+      return (
+        <PixiMenu
+          element={effectiveElement}
+          isSelected={isSelected}
+          onClick={onClick}
+        />
+      );
+
+    case 'tabs':
+      return (
+        <PixiTabs
           element={effectiveElement}
           isSelected={isSelected}
           onClick={onClick}

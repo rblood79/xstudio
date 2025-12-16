@@ -1276,3 +1276,437 @@ const METER_COLOR_FALLBACKS: Record<string, MeterColorPreset> = {
 export function getMeterColorPreset(variant: string): MeterColorPreset {
   return METER_COLOR_FALLBACKS[variant] || METER_COLOR_FALLBACKS.primary;
 }
+
+// ============================================
+// Phase 2: Separator Size Preset
+// ============================================
+
+/**
+ * Separator 사이즈 프리셋
+ *
+ * CSS에서 읽어오는 값:
+ * - sm: thickness: 1px, margin: var(--spacing-2)
+ * - md: thickness: 1px, margin: var(--spacing-4)
+ * - lg: thickness: 2px, margin: var(--spacing-6)
+ */
+export interface SeparatorSizePreset {
+  thickness: number;
+  margin: number;
+}
+
+const SEPARATOR_SIZE_MAPPING: Record<string, { margin: string }> = {
+  sm: { margin: '--spacing-2' },
+  md: { margin: '--spacing-4' },
+  lg: { margin: '--spacing-6' },
+};
+
+const SEPARATOR_FALLBACKS: Record<string, SeparatorSizePreset> = {
+  sm: { thickness: 1, margin: 4 },
+  md: { thickness: 1, margin: 8 },
+  lg: { thickness: 2, margin: 12 },
+};
+
+/**
+ * Separator 사이즈 프리셋 읽기
+ */
+export function getSeparatorSizePreset(size: string): SeparatorSizePreset {
+  const mapping = SEPARATOR_SIZE_MAPPING[size];
+  const fallback = SEPARATOR_FALLBACKS[size] || SEPARATOR_FALLBACKS.md;
+
+  if (!mapping) {
+    return fallback;
+  }
+
+  const margin = parseCSSValue(getCSSVariable(mapping.margin), fallback.margin);
+
+  return {
+    thickness: fallback.thickness,
+    margin,
+  };
+}
+
+/**
+ * Separator 색상 프리셋
+ */
+export interface SeparatorColorPreset {
+  color: number;
+}
+
+const SEPARATOR_COLOR_FALLBACKS: Record<string, SeparatorColorPreset> = {
+  default: { color: 0xcad3dc },
+  primary: { color: 0x3b82f6 },
+  secondary: { color: 0x6366f1 },
+  surface: { color: 0x9ca3af },
+};
+
+/**
+ * Separator 색상 프리셋 읽기
+ */
+export function getSeparatorColorPreset(variant: string): SeparatorColorPreset {
+  return SEPARATOR_COLOR_FALLBACKS[variant] || SEPARATOR_COLOR_FALLBACKS.default;
+}
+
+// ============================================
+// Phase 2: Link Size Preset
+// ============================================
+
+/**
+ * Link 사이즈 프리셋
+ *
+ * CSS에서 읽어오는 값:
+ * - sm: fontSize: var(--text-sm)
+ * - md: fontSize: var(--text-base)
+ * - lg: fontSize: var(--text-lg)
+ */
+export interface LinkSizePreset {
+  fontSize: number;
+}
+
+const LINK_SIZE_MAPPING: Record<string, { fontSize: string }> = {
+  sm: { fontSize: '--text-sm' },
+  md: { fontSize: '--text-base' },
+  lg: { fontSize: '--text-lg' },
+};
+
+const LINK_FALLBACKS: Record<string, LinkSizePreset> = {
+  sm: { fontSize: 14 },
+  md: { fontSize: 16 },
+  lg: { fontSize: 18 },
+};
+
+/**
+ * Link 사이즈 프리셋 읽기
+ */
+export function getLinkSizePreset(size: string): LinkSizePreset {
+  const mapping = LINK_SIZE_MAPPING[size];
+  const fallback = LINK_FALLBACKS[size] || LINK_FALLBACKS.md;
+
+  if (!mapping) {
+    return fallback;
+  }
+
+  const fontSize = parseCSSValue(getCSSVariable(mapping.fontSize), fallback.fontSize);
+
+  return {
+    fontSize,
+  };
+}
+
+/**
+ * Link 색상 프리셋
+ */
+export interface LinkColorPreset {
+  color: number;
+  hoverColor: number;
+  pressedColor: number;
+}
+
+const LINK_COLOR_FALLBACKS: Record<string, LinkColorPreset> = {
+  default: { color: 0x3b82f6, hoverColor: 0x2563eb, pressedColor: 0x1d4ed8 },
+  primary: { color: 0x3b82f6, hoverColor: 0x2563eb, pressedColor: 0x1d4ed8 },
+  secondary: { color: 0x6366f1, hoverColor: 0x4f46e5, pressedColor: 0x4338ca },
+};
+
+/**
+ * Link 색상 프리셋 읽기
+ */
+export function getLinkColorPreset(variant: string): LinkColorPreset {
+  return LINK_COLOR_FALLBACKS[variant] || LINK_COLOR_FALLBACKS.primary;
+}
+
+// ============================================
+// Phase 2: Breadcrumbs Size Preset
+// ============================================
+
+/**
+ * Breadcrumbs 사이즈 프리셋
+ */
+export interface BreadcrumbsSizePreset {
+  fontSize: number;
+  gap: number;
+  padding: number;
+}
+
+const BREADCRUMBS_SIZE_MAPPING: Record<string, { fontSize: string; gap: string }> = {
+  sm: { fontSize: '--text-xs', gap: '--spacing-xs' },
+  md: { fontSize: '--text-sm', gap: '--spacing' },
+  lg: { fontSize: '--text-base', gap: '--spacing-sm' },
+};
+
+const BREADCRUMBS_FALLBACKS: Record<string, BreadcrumbsSizePreset> = {
+  sm: { fontSize: 12, gap: 4, padding: 4 },
+  md: { fontSize: 14, gap: 8, padding: 8 },
+  lg: { fontSize: 16, gap: 10, padding: 12 },
+};
+
+/**
+ * Breadcrumbs 사이즈 프리셋 읽기
+ */
+export function getBreadcrumbsSizePreset(size: string): BreadcrumbsSizePreset {
+  const mapping = BREADCRUMBS_SIZE_MAPPING[size];
+  const fallback = BREADCRUMBS_FALLBACKS[size] || BREADCRUMBS_FALLBACKS.md;
+
+  if (!mapping) {
+    return fallback;
+  }
+
+  const fontSize = parseCSSValue(getCSSVariable(mapping.fontSize), fallback.fontSize);
+  const gap = parseCSSValue(getCSSVariable(mapping.gap), fallback.gap);
+
+  return {
+    fontSize,
+    gap,
+    padding: fallback.padding,
+  };
+}
+
+/**
+ * Breadcrumbs 색상 프리셋
+ */
+export interface BreadcrumbsColorPreset {
+  textColor: number;
+  currentColor: number;
+  separatorColor: number;
+}
+
+const BREADCRUMBS_COLOR_FALLBACKS: Record<string, BreadcrumbsColorPreset> = {
+  default: { textColor: 0x6b7280, currentColor: 0x374151, separatorColor: 0x9ca3af },
+  primary: { textColor: 0x6b7280, currentColor: 0x3b82f6, separatorColor: 0x9ca3af },
+  secondary: { textColor: 0x6b7280, currentColor: 0x6366f1, separatorColor: 0x9ca3af },
+  tertiary: { textColor: 0x6b7280, currentColor: 0xec4899, separatorColor: 0x9ca3af },
+  error: { textColor: 0x6b7280, currentColor: 0xef4444, separatorColor: 0x9ca3af },
+};
+
+/**
+ * Breadcrumbs 색상 프리셋 읽기
+ */
+export function getBreadcrumbsColorPreset(variant: string): BreadcrumbsColorPreset {
+  return BREADCRUMBS_COLOR_FALLBACKS[variant] || BREADCRUMBS_COLOR_FALLBACKS.default;
+}
+
+// ============================================
+// Phase 2: Card Size Preset
+// ============================================
+
+/**
+ * Card 사이즈 프리셋
+ */
+export interface CardSizePreset {
+  padding: number;
+  borderRadius: number;
+}
+
+const CARD_SIZE_MAPPING: Record<string, { padding: string; borderRadius: string }> = {
+  sm: { padding: '--spacing-sm', borderRadius: '--radius-md' },
+  md: { padding: '--spacing-md', borderRadius: '--radius-lg' },
+  lg: { padding: '--spacing-lg', borderRadius: '--radius-xl' },
+};
+
+const CARD_FALLBACKS: Record<string, CardSizePreset> = {
+  sm: { padding: 8, borderRadius: 8 },
+  md: { padding: 12, borderRadius: 12 },
+  lg: { padding: 16, borderRadius: 16 },
+};
+
+/**
+ * Card 사이즈 프리셋 읽기
+ */
+export function getCardSizePreset(size: string): CardSizePreset {
+  const mapping = CARD_SIZE_MAPPING[size];
+  const fallback = CARD_FALLBACKS[size] || CARD_FALLBACKS.md;
+
+  if (!mapping) {
+    return fallback;
+  }
+
+  const padding = parseCSSValue(getCSSVariable(mapping.padding), fallback.padding);
+  const borderRadius = parseCSSValue(getCSSVariable(mapping.borderRadius), fallback.borderRadius);
+
+  return {
+    padding,
+    borderRadius,
+  };
+}
+
+/**
+ * Card 색상 프리셋
+ */
+export interface CardColorPreset {
+  backgroundColor: number;
+  borderColor: number;
+  textColor: number;
+  hoverBgColor: number;
+}
+
+const CARD_COLOR_FALLBACKS: Record<string, CardColorPreset> = {
+  default: { backgroundColor: 0xf3f4f6, borderColor: 0xcad3dc, textColor: 0x374151, hoverBgColor: 0xe5e7eb },
+  primary: { backgroundColor: 0x3b82f6, borderColor: 0x3b82f6, textColor: 0xffffff, hoverBgColor: 0x2563eb },
+  secondary: { backgroundColor: 0x6366f1, borderColor: 0x6366f1, textColor: 0xffffff, hoverBgColor: 0x4f46e5 },
+  surface: { backgroundColor: 0xf9fafb, borderColor: 0xcad3dc, textColor: 0x374151, hoverBgColor: 0xf3f4f6 },
+  elevated: { backgroundColor: 0xffffff, borderColor: 0x00000000, textColor: 0x374151, hoverBgColor: 0xf9fafb },
+  outlined: { backgroundColor: 0xffffff, borderColor: 0x9ca3af, textColor: 0x374151, hoverBgColor: 0xf9fafb },
+};
+
+/**
+ * Card 색상 프리셋 읽기
+ */
+export function getCardColorPreset(variant: string): CardColorPreset {
+  return CARD_COLOR_FALLBACKS[variant] || CARD_COLOR_FALLBACKS.default;
+}
+
+// ============================================
+// Phase 2: Menu Size Preset
+// ============================================
+
+/**
+ * Menu 사이즈 프리셋
+ */
+export interface MenuSizePreset {
+  fontSize: number;
+  itemPaddingX: number;
+  itemPaddingY: number;
+  containerPadding: number;
+  minWidth: number;
+  borderRadius: number;
+}
+
+const MENU_SIZE_MAPPING: Record<string, { fontSize: string; paddingX: string; paddingY: string }> = {
+  sm: { fontSize: '--text-xs', paddingX: '--spacing', paddingY: '--spacing-sm' },
+  md: { fontSize: '--text-sm', paddingX: '--spacing-md', paddingY: '--spacing' },
+  lg: { fontSize: '--text-base', paddingX: '--spacing-lg', paddingY: '--spacing-md' },
+};
+
+const MENU_FALLBACKS: Record<string, MenuSizePreset> = {
+  sm: { fontSize: 12, itemPaddingX: 8, itemPaddingY: 6, containerPadding: 6, minWidth: 120, borderRadius: 6 },
+  md: { fontSize: 14, itemPaddingX: 12, itemPaddingY: 8, containerPadding: 8, minWidth: 150, borderRadius: 8 },
+  lg: { fontSize: 16, itemPaddingX: 16, itemPaddingY: 12, containerPadding: 12, minWidth: 180, borderRadius: 10 },
+};
+
+/**
+ * Menu 사이즈 프리셋 읽기
+ */
+export function getMenuSizePreset(size: string): MenuSizePreset {
+  const mapping = MENU_SIZE_MAPPING[size];
+  const fallback = MENU_FALLBACKS[size] || MENU_FALLBACKS.md;
+
+  if (!mapping) {
+    return fallback;
+  }
+
+  const fontSize = parseCSSValue(getCSSVariable(mapping.fontSize), fallback.fontSize);
+  const itemPaddingX = parseCSSValue(getCSSVariable(mapping.paddingX), fallback.itemPaddingX);
+  const itemPaddingY = parseCSSValue(getCSSVariable(mapping.paddingY), fallback.itemPaddingY);
+
+  return {
+    fontSize,
+    itemPaddingX,
+    itemPaddingY,
+    containerPadding: fallback.containerPadding,
+    minWidth: fallback.minWidth,
+    borderRadius: fallback.borderRadius,
+  };
+}
+
+/**
+ * Menu 색상 프리셋
+ */
+export interface MenuColorPreset {
+  backgroundColor: number;
+  borderColor: number;
+  textColor: number;
+  hoverBgColor: number;
+  hoverTextColor: number;
+  separatorColor: number;
+}
+
+const MENU_COLOR_FALLBACKS: Record<string, MenuColorPreset> = {
+  default: { backgroundColor: 0xf3f4f6, borderColor: 0xcad3dc, textColor: 0x374151, hoverBgColor: 0xdbeafe, hoverTextColor: 0x1e40af, separatorColor: 0xcad3dc },
+  primary: { backgroundColor: 0xf3f4f6, borderColor: 0x3b82f6, textColor: 0x374151, hoverBgColor: 0xdbeafe, hoverTextColor: 0x1e40af, separatorColor: 0x3b82f6 },
+  secondary: { backgroundColor: 0xf3f4f6, borderColor: 0x6366f1, textColor: 0x374151, hoverBgColor: 0xe0e7ff, hoverTextColor: 0x3730a3, separatorColor: 0x6366f1 },
+  tertiary: { backgroundColor: 0xf3f4f6, borderColor: 0xec4899, textColor: 0x374151, hoverBgColor: 0xfce7f3, hoverTextColor: 0x9d174d, separatorColor: 0xec4899 },
+  error: { backgroundColor: 0xf3f4f6, borderColor: 0xef4444, textColor: 0x374151, hoverBgColor: 0xfee2e2, hoverTextColor: 0x991b1b, separatorColor: 0xef4444 },
+  filled: { backgroundColor: 0xf9fafb, borderColor: 0x00000000, textColor: 0x374151, hoverBgColor: 0xe5e7eb, hoverTextColor: 0x374151, separatorColor: 0x9ca3af },
+};
+
+/**
+ * Menu 색상 프리셋 읽기
+ */
+export function getMenuColorPreset(variant: string): MenuColorPreset {
+  return MENU_COLOR_FALLBACKS[variant] || MENU_COLOR_FALLBACKS.default;
+}
+
+// ============================================
+// Phase 2: Tabs Size Preset
+// ============================================
+
+/**
+ * Tabs 사이즈 프리셋
+ */
+export interface TabsSizePreset {
+  fontSize: number;
+  tabPaddingX: number;
+  tabPaddingY: number;
+  indicatorHeight: number;
+  panelPadding: number;
+}
+
+const TABS_SIZE_MAPPING: Record<string, { fontSize: string; paddingX: string; paddingY: string }> = {
+  sm: { fontSize: '--text-xs', paddingX: '--spacing-md', paddingY: '--spacing-sm' },
+  md: { fontSize: '--text-sm', paddingX: '--spacing-lg', paddingY: '--spacing' },
+  lg: { fontSize: '--text-base', paddingX: '--spacing-xl', paddingY: '--spacing-md' },
+};
+
+const TABS_FALLBACKS: Record<string, TabsSizePreset> = {
+  sm: { fontSize: 12, tabPaddingX: 12, tabPaddingY: 6, indicatorHeight: 2, panelPadding: 12 },
+  md: { fontSize: 14, tabPaddingX: 16, tabPaddingY: 8, indicatorHeight: 3, panelPadding: 16 },
+  lg: { fontSize: 16, tabPaddingX: 20, tabPaddingY: 12, indicatorHeight: 4, panelPadding: 20 },
+};
+
+/**
+ * Tabs 사이즈 프리셋 읽기
+ */
+export function getTabsSizePreset(size: string): TabsSizePreset {
+  const mapping = TABS_SIZE_MAPPING[size];
+  const fallback = TABS_FALLBACKS[size] || TABS_FALLBACKS.md;
+
+  if (!mapping) {
+    return fallback;
+  }
+
+  const fontSize = parseCSSValue(getCSSVariable(mapping.fontSize), fallback.fontSize);
+  const tabPaddingX = parseCSSValue(getCSSVariable(mapping.paddingX), fallback.tabPaddingX);
+  const tabPaddingY = parseCSSValue(getCSSVariable(mapping.paddingY), fallback.tabPaddingY);
+
+  return {
+    fontSize,
+    tabPaddingX,
+    tabPaddingY,
+    indicatorHeight: fallback.indicatorHeight,
+    panelPadding: fallback.panelPadding,
+  };
+}
+
+/**
+ * Tabs 색상 프리셋
+ */
+export interface TabsColorPreset {
+  textColor: number;
+  selectedTextColor: number;
+  indicatorColor: number;
+  hoverBgColor: number;
+  borderColor: number;
+}
+
+const TABS_COLOR_FALLBACKS: Record<string, TabsColorPreset> = {
+  default: { textColor: 0x6b7280, selectedTextColor: 0x374151, indicatorColor: 0x3b82f6, hoverBgColor: 0x00000014, borderColor: 0xcad3dc },
+  primary: { textColor: 0x6b7280, selectedTextColor: 0x3b82f6, indicatorColor: 0x3b82f6, hoverBgColor: 0x3b82f614, borderColor: 0xcad3dc },
+  secondary: { textColor: 0x6b7280, selectedTextColor: 0x6366f1, indicatorColor: 0x6366f1, hoverBgColor: 0x6366f114, borderColor: 0xcad3dc },
+  tertiary: { textColor: 0x6b7280, selectedTextColor: 0xec4899, indicatorColor: 0xec4899, hoverBgColor: 0xec489914, borderColor: 0xcad3dc },
+};
+
+/**
+ * Tabs 색상 프리셋 읽기
+ */
+export function getTabsColorPreset(variant: string): TabsColorPreset {
+  return TABS_COLOR_FALLBACKS[variant] || TABS_COLOR_FALLBACKS.default;
+}
