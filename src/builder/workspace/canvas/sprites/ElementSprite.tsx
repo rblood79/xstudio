@@ -48,6 +48,11 @@ import {
   PixiNumberField,
   PixiSearchField,
   PixiComboBox,
+  // Phase 4 WebGL Migration Components
+  PixiGridList,
+  PixiTagGroup,
+  PixiTree,
+  PixiTable,
 } from '../ui';
 import { useStore } from '../../../stores';
 import { isFlexContainer, isGridContainer } from '../layout';
@@ -154,13 +159,21 @@ const UI_NUMBERFIELD_TAGS = new Set(['NumberField']);
 const UI_SEARCHFIELD_TAGS = new Set(['SearchField']);
 const UI_COMBOBOX_TAGS = new Set(['ComboBox']);
 
+/**
+ * Phase 4 WebGL Migration 컴포넌트 태그들
+ */
+const UI_GRIDLIST_TAGS = new Set(['GridList']);
+const UI_TAGGROUP_TAGS = new Set(['TagGroup', 'TagList']);
+const UI_TREE_TAGS = new Set(['Tree', 'TreeView']);
+const UI_TABLE_TAGS = new Set(['Table', 'DataTable', 'DataGrid']);
+
 // Note: TEXT_TAGS, IMAGE_TAGS, UI_*_TAGS에 포함되지 않은 모든 태그는 BoxSprite로 렌더링됨
 
 // ============================================
 // Sprite Type Detection
 // ============================================
 
-type SpriteType = 'box' | 'text' | 'image' | 'button' | 'fancyButton' | 'checkboxGroup' | 'checkboxItem' | 'radioGroup' | 'radioItem' | 'slider' | 'input' | 'select' | 'progressBar' | 'switcher' | 'scrollBox' | 'list' | 'maskedFrame' | 'flex' | 'grid' | 'toggleButton' | 'toggleButtonGroup' | 'listBox' | 'badge' | 'meter' | 'separator' | 'link' | 'breadcrumbs' | 'card' | 'menu' | 'tabs' | 'numberField' | 'searchField' | 'comboBox';
+type SpriteType = 'box' | 'text' | 'image' | 'button' | 'fancyButton' | 'checkboxGroup' | 'checkboxItem' | 'radioGroup' | 'radioItem' | 'slider' | 'input' | 'select' | 'progressBar' | 'switcher' | 'scrollBox' | 'list' | 'maskedFrame' | 'flex' | 'grid' | 'toggleButton' | 'toggleButtonGroup' | 'listBox' | 'badge' | 'meter' | 'separator' | 'link' | 'breadcrumbs' | 'card' | 'menu' | 'tabs' | 'numberField' | 'searchField' | 'comboBox' | 'gridList' | 'tagGroup' | 'tree' | 'table';
 
 function getSpriteType(element: Element): SpriteType {
   const tag = element.tag;
@@ -200,6 +213,12 @@ function getSpriteType(element: Element): SpriteType {
   if (UI_NUMBERFIELD_TAGS.has(tag)) return 'numberField';
   if (UI_SEARCHFIELD_TAGS.has(tag)) return 'searchField';
   if (UI_COMBOBOX_TAGS.has(tag)) return 'comboBox';
+
+  // Phase 4 WebGL Migration 컴포넌트
+  if (UI_GRIDLIST_TAGS.has(tag)) return 'gridList';
+  if (UI_TAGGROUP_TAGS.has(tag)) return 'tagGroup';
+  if (UI_TREE_TAGS.has(tag)) return 'tree';
+  if (UI_TABLE_TAGS.has(tag)) return 'table';
 
   // 레이아웃 컨테이너 체크 (Phase 11 B2.5)
   // display: flex/grid인 경우에도 현재는 BoxSprite로 렌더링
@@ -543,6 +562,47 @@ export const ElementSprite = memo(function ElementSprite({
     case 'comboBox':
       return (
         <PixiComboBox
+          element={effectiveElement}
+          isSelected={isSelected}
+          onClick={onClick}
+          onChange={onChange ? (id, value) => onChange(id, value) : undefined}
+        />
+      );
+
+    // Phase 4 WebGL Migration 컴포넌트
+    case 'gridList':
+      return (
+        <PixiGridList
+          element={effectiveElement}
+          isSelected={isSelected}
+          onClick={onClick}
+          onChange={onChange ? (id, value) => onChange(id, value) : undefined}
+        />
+      );
+
+    case 'tagGroup':
+      return (
+        <PixiTagGroup
+          element={effectiveElement}
+          isSelected={isSelected}
+          onClick={onClick}
+          onChange={onChange ? (id, value) => onChange(id, value) : undefined}
+        />
+      );
+
+    case 'tree':
+      return (
+        <PixiTree
+          element={effectiveElement}
+          isSelected={isSelected}
+          onClick={onClick}
+          onChange={onChange ? (id, value) => onChange(id, value) : undefined}
+        />
+      );
+
+    case 'table':
+      return (
+        <PixiTable
           element={effectiveElement}
           isSelected={isSelected}
           onClick={onClick}

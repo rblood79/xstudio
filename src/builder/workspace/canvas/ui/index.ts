@@ -57,3 +57,9 @@ export { PixiTabs, type PixiTabsProps } from './PixiTabs';
 export { PixiNumberField, type PixiNumberFieldProps } from './PixiNumberField';
 export { PixiSearchField, type PixiSearchFieldProps } from './PixiSearchField';
 export { PixiComboBox, type PixiComboBoxProps } from './PixiComboBox';
+
+// Phase 4: Complex Data Components (WebGL Migration)
+export { PixiGridList, type PixiGridListProps } from './PixiGridList';
+export { PixiTagGroup, type PixiTagGroupProps } from './PixiTagGroup';
+export { PixiTree, type PixiTreeProps } from './PixiTree';
+export { PixiTable, type PixiTableProps } from './PixiTable';

@@ -1977,3 +1977,341 @@ const COMBOBOX_COLOR_FALLBACKS: Record<string, ComboBoxColorPreset> = {
 export function getComboBoxColorPreset(variant: string): ComboBoxColorPreset {
   return COMBOBOX_COLOR_FALLBACKS[variant] || COMBOBOX_COLOR_FALLBACKS.default;
 }
+
+// ============================================
+// Phase 4: GridList Size Preset
+// ============================================
+
+/**
+ * GridList 사이즈 프리셋
+ */
+export interface GridListSizePreset {
+  fontSize: number;
+  itemMinHeight: number;
+  itemPaddingX: number;
+  itemPaddingY: number;
+  listPadding: number;
+  listGap: number;
+  borderRadius: number;
+}
+
+const GRIDLIST_SIZE_MAPPING: Record<string, { fontSize: string; itemPaddingY: string; itemPaddingX: string; listPadding: string; listGap: string }> = {
+  sm: { fontSize: '--text-xs', itemPaddingY: '--spacing-sm', itemPaddingX: '--spacing', listPadding: '--spacing-2xs', listGap: '--spacing-3xs' },
+  md: { fontSize: '--text-sm', itemPaddingY: '--spacing', itemPaddingX: '--spacing-md', listPadding: '--spacing-xs', listGap: '--spacing-2xs' },
+  lg: { fontSize: '--text-base', itemPaddingY: '--spacing-md', itemPaddingX: '--spacing-lg', listPadding: '--spacing-sm', listGap: '--spacing-xs' },
+};
+
+const GRIDLIST_FALLBACKS: Record<string, GridListSizePreset> = {
+  sm: { fontSize: 12, itemMinHeight: 32, itemPaddingX: 8, itemPaddingY: 6, listPadding: 4, listGap: 2, borderRadius: 6 },
+  md: { fontSize: 14, itemMinHeight: 40, itemPaddingX: 12, itemPaddingY: 8, listPadding: 6, listGap: 4, borderRadius: 6 },
+  lg: { fontSize: 16, itemMinHeight: 48, itemPaddingX: 16, itemPaddingY: 12, listPadding: 8, listGap: 6, borderRadius: 8 },
+};
+
+/**
+ * GridList 사이즈 프리셋 읽기
+ */
+export function getGridListSizePreset(size: string): GridListSizePreset {
+  const mapping = GRIDLIST_SIZE_MAPPING[size];
+  const fallback = GRIDLIST_FALLBACKS[size] || GRIDLIST_FALLBACKS.md;
+
+  if (!mapping) {
+    return fallback;
+  }
+
+  const fontSize = parseCSSValue(getCSSVariable(mapping.fontSize), fallback.fontSize);
+  const itemPaddingX = parseCSSValue(getCSSVariable(mapping.itemPaddingX), fallback.itemPaddingX);
+  const itemPaddingY = parseCSSValue(getCSSVariable(mapping.itemPaddingY), fallback.itemPaddingY);
+  const listPadding = parseCSSValue(getCSSVariable(mapping.listPadding), fallback.listPadding);
+  const listGap = parseCSSValue(getCSSVariable(mapping.listGap), fallback.listGap);
+
+  return {
+    fontSize,
+    itemMinHeight: fallback.itemMinHeight,
+    itemPaddingX,
+    itemPaddingY,
+    listPadding,
+    listGap,
+    borderRadius: fallback.borderRadius,
+  };
+}
+
+/**
+ * GridList 색상 프리셋
+ */
+export interface GridListColorPreset {
+  backgroundColor: number;
+  borderColor: number;
+  textColor: number;
+  itemHoverBgColor: number;
+  itemSelectedBgColor: number;
+  itemSelectedTextColor: number;
+  focusColor: number;
+}
+
+const GRIDLIST_COLOR_FALLBACKS: Record<string, GridListColorPreset> = {
+  default: { backgroundColor: 0xf3f4f6, borderColor: 0xcad3dc, textColor: 0x374151, itemHoverBgColor: 0xe5e7eb, itemSelectedBgColor: 0xdbeafe, itemSelectedTextColor: 0x1e40af, focusColor: 0x3b82f6 },
+  primary: { backgroundColor: 0xf3f4f6, borderColor: 0x3b82f6, textColor: 0x374151, itemHoverBgColor: 0xdbeafe, itemSelectedBgColor: 0xbfdbfe, itemSelectedTextColor: 0x1e40af, focusColor: 0x3b82f6 },
+  secondary: { backgroundColor: 0xf3f4f6, borderColor: 0x6366f1, textColor: 0x374151, itemHoverBgColor: 0xe0e7ff, itemSelectedBgColor: 0xc7d2fe, itemSelectedTextColor: 0x3730a3, focusColor: 0x6366f1 },
+  tertiary: { backgroundColor: 0xf3f4f6, borderColor: 0xec4899, textColor: 0x374151, itemHoverBgColor: 0xfce7f3, itemSelectedBgColor: 0xfbcfe8, itemSelectedTextColor: 0x9d174d, focusColor: 0xec4899 },
+  error: { backgroundColor: 0xf3f4f6, borderColor: 0xef4444, textColor: 0x374151, itemHoverBgColor: 0xfee2e2, itemSelectedBgColor: 0xfecaca, itemSelectedTextColor: 0x991b1b, focusColor: 0xef4444 },
+  filled: { backgroundColor: 0xf9fafb, borderColor: 0x00000000, textColor: 0x374151, itemHoverBgColor: 0xe5e7eb, itemSelectedBgColor: 0xdbeafe, itemSelectedTextColor: 0x1e40af, focusColor: 0x3b82f6 },
+};
+
+/**
+ * GridList 색상 프리셋 읽기
+ */
+export function getGridListColorPreset(variant: string): GridListColorPreset {
+  return GRIDLIST_COLOR_FALLBACKS[variant] || GRIDLIST_COLOR_FALLBACKS.default;
+}
+
+// ============================================
+// Phase 4: TagGroup Size Preset
+// ============================================
+
+/**
+ * TagGroup 사이즈 프리셋
+ */
+export interface TagGroupSizePreset {
+  fontSize: number;
+  tagPaddingX: number;
+  tagPaddingY: number;
+  tagGap: number;
+  borderRadius: number;
+}
+
+const TAGGROUP_SIZE_MAPPING: Record<string, { fontSize: string; paddingY: string; paddingX: string }> = {
+  sm: { fontSize: '--text-sm', paddingY: '--spacing-2xs', paddingX: '--spacing-sm' },
+  md: { fontSize: '--text-base', paddingY: '--spacing-xs', paddingX: '--spacing-md' },
+  lg: { fontSize: '--text-lg', paddingY: '--spacing-sm', paddingX: '--spacing-lg' },
+};
+
+const TAGGROUP_FALLBACKS: Record<string, TagGroupSizePreset> = {
+  sm: { fontSize: 14, tagPaddingX: 8, tagPaddingY: 4, tagGap: 4, borderRadius: 4 },
+  md: { fontSize: 16, tagPaddingX: 12, tagPaddingY: 6, tagGap: 4, borderRadius: 6 },
+  lg: { fontSize: 18, tagPaddingX: 16, tagPaddingY: 8, tagGap: 6, borderRadius: 8 },
+};
+
+/**
+ * TagGroup 사이즈 프리셋 읽기
+ */
+export function getTagGroupSizePreset(size: string): TagGroupSizePreset {
+  const mapping = TAGGROUP_SIZE_MAPPING[size];
+  const fallback = TAGGROUP_FALLBACKS[size] || TAGGROUP_FALLBACKS.md;
+
+  if (!mapping) {
+    return fallback;
+  }
+
+  const fontSize = parseCSSValue(getCSSVariable(mapping.fontSize), fallback.fontSize);
+  const tagPaddingX = parseCSSValue(getCSSVariable(mapping.paddingX), fallback.tagPaddingX);
+  const tagPaddingY = parseCSSValue(getCSSVariable(mapping.paddingY), fallback.tagPaddingY);
+
+  return {
+    fontSize,
+    tagPaddingX,
+    tagPaddingY,
+    tagGap: fallback.tagGap,
+    borderRadius: fallback.borderRadius,
+  };
+}
+
+/**
+ * TagGroup 색상 프리셋
+ */
+export interface TagGroupColorPreset {
+  backgroundColor: number;
+  borderColor: number;
+  textColor: number;
+  hoverBgColor: number;
+  selectedBgColor: number;
+  selectedTextColor: number;
+  removeButtonColor: number;
+}
+
+const TAGGROUP_COLOR_FALLBACKS: Record<string, TagGroupColorPreset> = {
+  default: { backgroundColor: 0xe5e7eb, borderColor: 0xcad3dc, textColor: 0x374151, hoverBgColor: 0xd1d5db, selectedBgColor: 0x3b82f6, selectedTextColor: 0xffffff, removeButtonColor: 0x6b7280 },
+  primary: { backgroundColor: 0x3b82f6, borderColor: 0x3b82f6, textColor: 0xffffff, hoverBgColor: 0x2563eb, selectedBgColor: 0x1d4ed8, selectedTextColor: 0xffffff, removeButtonColor: 0xffffff },
+  secondary: { backgroundColor: 0x6366f1, borderColor: 0x6366f1, textColor: 0xffffff, hoverBgColor: 0x4f46e5, selectedBgColor: 0x4338ca, selectedTextColor: 0xffffff, removeButtonColor: 0xffffff },
+  tertiary: { backgroundColor: 0xec4899, borderColor: 0xec4899, textColor: 0xffffff, hoverBgColor: 0xdb2777, selectedBgColor: 0xbe185d, selectedTextColor: 0xffffff, removeButtonColor: 0xffffff },
+  error: { backgroundColor: 0xef4444, borderColor: 0xef4444, textColor: 0xffffff, hoverBgColor: 0xdc2626, selectedBgColor: 0xb91c1c, selectedTextColor: 0xffffff, removeButtonColor: 0xffffff },
+  surface: { backgroundColor: 0xf9fafb, borderColor: 0xcad3dc, textColor: 0x374151, hoverBgColor: 0xe5e7eb, selectedBgColor: 0xd1d5db, selectedTextColor: 0x374151, removeButtonColor: 0x6b7280 },
+};
+
+/**
+ * TagGroup 색상 프리셋 읽기
+ */
+export function getTagGroupColorPreset(variant: string): TagGroupColorPreset {
+  return TAGGROUP_COLOR_FALLBACKS[variant] || TAGGROUP_COLOR_FALLBACKS.default;
+}
+
+// ============================================
+// Phase 4: Tree Size Preset
+// ============================================
+
+/**
+ * Tree 사이즈 프리셋
+ */
+export interface TreeSizePreset {
+  fontSize: number;
+  itemMinHeight: number;
+  itemPaddingX: number;
+  itemPaddingY: number;
+  treePadding: number;
+  treeGap: number;
+  chevronSize: number;
+  indentSize: number;
+  borderRadius: number;
+}
+
+const TREE_SIZE_MAPPING: Record<string, { fontSize: string; itemPaddingY: string; itemPaddingX: string; treePadding: string }> = {
+  sm: { fontSize: '--text-xs', itemPaddingY: '--spacing-2xs', itemPaddingX: '--spacing-xs', treePadding: '--spacing-sm' },
+  md: { fontSize: '--text-sm', itemPaddingY: '--spacing-xs', itemPaddingX: '--spacing-sm', treePadding: '--spacing' },
+  lg: { fontSize: '--text-base', itemPaddingY: '--spacing-sm', itemPaddingX: '--spacing', treePadding: '--spacing-md' },
+};
+
+const TREE_FALLBACKS: Record<string, TreeSizePreset> = {
+  sm: { fontSize: 12, itemMinHeight: 28, itemPaddingX: 6, itemPaddingY: 4, treePadding: 8, treeGap: 1, chevronSize: 12, indentSize: 16, borderRadius: 4 },
+  md: { fontSize: 14, itemMinHeight: 32, itemPaddingX: 8, itemPaddingY: 6, treePadding: 8, treeGap: 4, chevronSize: 16, indentSize: 20, borderRadius: 4 },
+  lg: { fontSize: 16, itemMinHeight: 40, itemPaddingX: 12, itemPaddingY: 8, treePadding: 12, treeGap: 6, chevronSize: 20, indentSize: 24, borderRadius: 6 },
+};
+
+/**
+ * Tree 사이즈 프리셋 읽기
+ */
+export function getTreeSizePreset(size: string): TreeSizePreset {
+  const mapping = TREE_SIZE_MAPPING[size];
+  const fallback = TREE_FALLBACKS[size] || TREE_FALLBACKS.md;
+
+  if (!mapping) {
+    return fallback;
+  }
+
+  const fontSize = parseCSSValue(getCSSVariable(mapping.fontSize), fallback.fontSize);
+  const itemPaddingX = parseCSSValue(getCSSVariable(mapping.itemPaddingX), fallback.itemPaddingX);
+  const itemPaddingY = parseCSSValue(getCSSVariable(mapping.itemPaddingY), fallback.itemPaddingY);
+  const treePadding = parseCSSValue(getCSSVariable(mapping.treePadding), fallback.treePadding);
+
+  return {
+    fontSize,
+    itemMinHeight: fallback.itemMinHeight,
+    itemPaddingX,
+    itemPaddingY,
+    treePadding,
+    treeGap: fallback.treeGap,
+    chevronSize: fallback.chevronSize,
+    indentSize: fallback.indentSize,
+    borderRadius: fallback.borderRadius,
+  };
+}
+
+/**
+ * Tree 색상 프리셋
+ */
+export interface TreeColorPreset {
+  backgroundColor: number;
+  borderColor: number;
+  textColor: number;
+  itemHoverBgColor: number;
+  itemSelectedBgColor: number;
+  itemSelectedTextColor: number;
+  chevronColor: number;
+  focusColor: number;
+}
+
+const TREE_COLOR_FALLBACKS: Record<string, TreeColorPreset> = {
+  default: { backgroundColor: 0xf3f4f6, borderColor: 0xcad3dc, textColor: 0x374151, itemHoverBgColor: 0x00000014, itemSelectedBgColor: 0xdbeafe, itemSelectedTextColor: 0x1e40af, chevronColor: 0x6b7280, focusColor: 0x3b82f6 },
+  primary: { backgroundColor: 0xf3f4f6, borderColor: 0xcad3dc, textColor: 0x374151, itemHoverBgColor: 0x00000014, itemSelectedBgColor: 0xdbeafe, itemSelectedTextColor: 0x1e40af, chevronColor: 0x6b7280, focusColor: 0x3b82f6 },
+  secondary: { backgroundColor: 0xf3f4f6, borderColor: 0xcad3dc, textColor: 0x374151, itemHoverBgColor: 0x00000014, itemSelectedBgColor: 0xe0e7ff, itemSelectedTextColor: 0x3730a3, chevronColor: 0x6b7280, focusColor: 0x6366f1 },
+  tertiary: { backgroundColor: 0xf3f4f6, borderColor: 0xcad3dc, textColor: 0x374151, itemHoverBgColor: 0x00000014, itemSelectedBgColor: 0xfce7f3, itemSelectedTextColor: 0x9d174d, chevronColor: 0x6b7280, focusColor: 0xec4899 },
+};
+
+/**
+ * Tree 색상 프리셋 읽기
+ */
+export function getTreeColorPreset(variant: string): TreeColorPreset {
+  return TREE_COLOR_FALLBACKS[variant] || TREE_COLOR_FALLBACKS.default;
+}
+
+// ============================================
+// Phase 4: Table Size Preset
+// ============================================
+
+/**
+ * Table 사이즈 프리셋
+ */
+export interface TableSizePreset {
+  fontSize: number;
+  headerFontSize: number;
+  cellPaddingX: number;
+  cellPaddingY: number;
+  rowMinHeight: number;
+  borderRadius: number;
+}
+
+const TABLE_SIZE_MAPPING: Record<string, { fontSize: string; cellPaddingY: string; cellPaddingX: string }> = {
+  sm: { fontSize: '--text-xs', cellPaddingY: '--spacing-sm', cellPaddingX: '--spacing' },
+  md: { fontSize: '--text-sm', cellPaddingY: '--spacing', cellPaddingX: '--spacing-md' },
+  lg: { fontSize: '--text-base', cellPaddingY: '--spacing-md', cellPaddingX: '--spacing-lg' },
+};
+
+const TABLE_FALLBACKS: Record<string, TableSizePreset> = {
+  sm: { fontSize: 12, headerFontSize: 12, cellPaddingX: 8, cellPaddingY: 6, rowMinHeight: 32, borderRadius: 6 },
+  md: { fontSize: 14, headerFontSize: 14, cellPaddingX: 12, cellPaddingY: 8, rowMinHeight: 40, borderRadius: 6 },
+  lg: { fontSize: 16, headerFontSize: 16, cellPaddingX: 16, cellPaddingY: 12, rowMinHeight: 48, borderRadius: 8 },
+};
+
+/**
+ * Table 사이즈 프리셋 읽기
+ */
+export function getTableSizePreset(size: string): TableSizePreset {
+  const mapping = TABLE_SIZE_MAPPING[size];
+  const fallback = TABLE_FALLBACKS[size] || TABLE_FALLBACKS.md;
+
+  if (!mapping) {
+    return fallback;
+  }
+
+  const fontSize = parseCSSValue(getCSSVariable(mapping.fontSize), fallback.fontSize);
+  const cellPaddingX = parseCSSValue(getCSSVariable(mapping.cellPaddingX), fallback.cellPaddingX);
+  const cellPaddingY = parseCSSValue(getCSSVariable(mapping.cellPaddingY), fallback.cellPaddingY);
+
+  return {
+    fontSize,
+    headerFontSize: fontSize,
+    cellPaddingX,
+    cellPaddingY,
+    rowMinHeight: fallback.rowMinHeight,
+    borderRadius: fallback.borderRadius,
+  };
+}
+
+/**
+ * Table 색상 프리셋
+ */
+export interface TableColorPreset {
+  backgroundColor: number;
+  borderColor: number;
+  headerBgColor: number;
+  headerTextColor: number;
+  textColor: number;
+  rowHoverBgColor: number;
+  rowSelectedBgColor: number;
+  rowSelectedTextColor: number;
+  focusColor: number;
+}
+
+const TABLE_COLOR_FALLBACKS: Record<string, TableColorPreset> = {
+  default: { backgroundColor: 0xf3f4f6, borderColor: 0xcad3dc, headerBgColor: 0xf3f4f6, headerTextColor: 0x6b7280, textColor: 0x374151, rowHoverBgColor: 0xe5e7eb, rowSelectedBgColor: 0xdbeafe, rowSelectedTextColor: 0x1e40af, focusColor: 0x3b82f6 },
+  primary: { backgroundColor: 0xf3f4f6, borderColor: 0x3b82f6, headerBgColor: 0xf3f4f6, headerTextColor: 0x6b7280, textColor: 0x374151, rowHoverBgColor: 0xe5e7eb, rowSelectedBgColor: 0xdbeafe, rowSelectedTextColor: 0x1e40af, focusColor: 0x3b82f6 },
+  secondary: { backgroundColor: 0xf3f4f6, borderColor: 0x6366f1, headerBgColor: 0xf3f4f6, headerTextColor: 0x6b7280, textColor: 0x374151, rowHoverBgColor: 0xe5e7eb, rowSelectedBgColor: 0xe0e7ff, rowSelectedTextColor: 0x3730a3, focusColor: 0x6366f1 },
+  tertiary: { backgroundColor: 0xf3f4f6, borderColor: 0xec4899, headerBgColor: 0xf3f4f6, headerTextColor: 0x6b7280, textColor: 0x374151, rowHoverBgColor: 0xe5e7eb, rowSelectedBgColor: 0xfce7f3, rowSelectedTextColor: 0x9d174d, focusColor: 0xec4899 },
+  error: { backgroundColor: 0xf3f4f6, borderColor: 0xef4444, headerBgColor: 0xf3f4f6, headerTextColor: 0x6b7280, textColor: 0x374151, rowHoverBgColor: 0xe5e7eb, rowSelectedBgColor: 0xfee2e2, rowSelectedTextColor: 0x991b1b, focusColor: 0xef4444 },
+  filled: { backgroundColor: 0xf9fafb, borderColor: 0x00000000, headerBgColor: 0xf9fafb, headerTextColor: 0x6b7280, textColor: 0x374151, rowHoverBgColor: 0xe5e7eb, rowSelectedBgColor: 0xdbeafe, rowSelectedTextColor: 0x1e40af, focusColor: 0x3b82f6 },
+};
+
+/**
+ * Table 색상 프리셋 읽기
+ */
+export function getTableColorPreset(variant: string): TableColorPreset {
+  return TABLE_COLOR_FALLBACKS[variant] || TABLE_COLOR_FALLBACKS.default;
+}
