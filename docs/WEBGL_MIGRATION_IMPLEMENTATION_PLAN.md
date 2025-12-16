@@ -1,821 +1,475 @@
 # WebGL Component Migration Implementation Plan
 
 > **Created**: 2025-12-16
-> **Based on**: PixiButton, PixiRadio, PixiCheckbox, PixiCheckboxGroup, PixiSlider 분석
-
-## 1. 구현 패턴 분석
-
-### 1.1 컴포넌트 유형별 패턴
-
-분석 결과, 세 가지 주요 구현 패턴이 존재합니다:
-
-| 패턴 | 설명 | 예시 | 사용 시점 |
-|------|------|------|----------|
-| **Pattern A** | JSX + Graphics.draw() | PixiCheckbox, PixiRadio | 단순 도형 + 텍스트 |
-| **Pattern B** | useEffect + @pixi/ui | PixiButton, PixiSlider | @pixi/ui 컴포넌트 활용 |
-| **Pattern C** | Group + Children | PixiCheckboxGroup, PixiRadio | 자식 요소 렌더링 |
+> **Updated**: 2025-12-16
+> **Status**: In Progress
 
 ---
 
-## 2. Pattern A: JSX + Graphics.draw()
+## 1. 핵심 목적
 
-### 2.1 구조
+### 1.1 Goal: iframe Preview ≡ WebGL Canvas
+
 ```
-┌─────────────────────────────────────────────────────────┐
-│ pixiContainer (x, y, eventMode)                         │
-│ ├── pixiGraphics (draw={drawHitArea}, onPointerDown)   │ ← 투명 히트 영역
-│ ├── pixiGraphics (draw={drawVisual}, eventMode="none") │ ← 시각적 요소
-│ └── pixiText (text, style, eventMode="none")           │ ← 텍스트 라벨
-└─────────────────────────────────────────────────────────┘
-```
-
-### 2.2 코드 템플릿
-```tsx
-import { memo, useCallback, useMemo } from 'react';
-import { Graphics as PixiGraphics, TextStyle } from 'pixi.js';
-import type { Element } from '../../../../types/core/store.types';
-import type { CSSStyle } from '../sprites/styleConverter';
-import { cssColorToHex, parseCSSSize } from '../sprites/styleConverter';
-import { drawBox, drawCircle } from '../utils';
-
-// ============================================
-// Types
-// ============================================
-
-export interface PixiComponentProps {
-  element: Element;
-  isSelected?: boolean;
-  onChange?: (elementId: string, value: unknown) => void;
-  onClick?: (elementId: string) => void;
-}
-
-// ============================================
-// Constants
-// ============================================
-
-const DEFAULT_SIZE = 20;
-const DEFAULT_PRIMARY_COLOR = 0x3b82f6;
-const DEFAULT_TEXT_COLOR = 0x374151;
-
-// ============================================
-// Component
-// ============================================
-
-export const PixiComponent = memo(function PixiComponent({
-  element,
-  isSelected,
-  onChange,
-  onClick,
-}: PixiComponentProps) {
-  const style = element.props?.style as CSSStyle | undefined;
-  const props = element.props as Record<string, unknown> | undefined;
-
-  // 1. 상태 계산 (useMemo)
-  const state = useMemo(() => {
-    return Boolean(props?.isSelected || props?.checked);
-  }, [props]);
-
-  // 2. 스타일 계산
-  const primaryColor = cssColorToHex(style?.backgroundColor, DEFAULT_PRIMARY_COLOR);
-  const textColor = cssColorToHex(style?.color, DEFAULT_TEXT_COLOR);
-  const posX = parseCSSSize(style?.left, undefined, 0);
-  const posY = parseCSSSize(style?.top, undefined, 0);
-
-  // 3. 시각적 요소 그리기 (useCallback)
-  const drawVisual = useCallback(
-    (g: PixiGraphics) => {
-      drawBox(g, {
-        width: DEFAULT_SIZE,
-        height: DEFAULT_SIZE,
-        backgroundColor: state ? primaryColor : 0xffffff,
-        border: { width: 2, color: state ? primaryColor : 0xd1d5db, style: 'solid' },
-      });
-    },
-    [state, primaryColor]
-  );
-
-  // 4. 히트 영역 (투명)
-  const drawHitArea = useCallback(
-    (g: PixiGraphics) => {
-      g.clear();
-      g.rect(0, 0, 100, DEFAULT_SIZE);
-      g.fill({ color: 0xffffff, alpha: 0 });
-    },
-    []
-  );
-
-  // 5. 이벤트 핸들러
-  const handlePointerDown = useCallback(() => {
-    onClick?.(element.id);
-    onChange?.(element.id, !state);
-  }, [element.id, onClick, onChange, state]);
-
-  // 6. 텍스트 스타일
-  const textStyle = useMemo(
-    () => new TextStyle({ fontSize: 14, fill: textColor }),
-    [textColor]
-  );
-
-  return (
-    <pixiContainer x={posX} y={posY}>
-      {/* 투명 히트 영역 */}
-      <pixiGraphics
-        draw={drawHitArea}
-        eventMode="static"
-        cursor="pointer"
-        onPointerDown={handlePointerDown}
-      />
-      {/* 시각적 요소 */}
-      <pixiGraphics draw={drawVisual} eventMode="none" />
-      {/* 텍스트 라벨 */}
-      <pixiText
-        text="Label"
-        style={textStyle}
-        x={DEFAULT_SIZE + 8}
-        y={0}
-        eventMode="none"
-      />
-    </pixiContainer>
-  );
-});
+┌─────────────────────────────────────────────────────────────────────────┐
+│                        CSS Stylesheet (Single Source of Truth)          │
+│                                                                         │
+│   src/shared/components/styles/Button.css                               │
+│   src/shared/components/styles/Checkbox.css                             │
+│   src/builder/styles/1-theme/shared-tokens.css                          │
+│                                                                         │
+│   Variables: --primary, --text-sm, --spacing-md, --border-radius, etc.  │
+└───────────────────────────────┬─────────────────────────────────────────┘
+                                │
+                ┌───────────────┴───────────────┐
+                │                               │
+                ▼                               ▼
+┌───────────────────────────┐     ┌───────────────────────────┐
+│     iframe Preview        │  ≡  │      WebGL Canvas         │
+│   (React Aria Components) │     │    (PixiJS Components)    │
+│                           │     │                           │
+│ - CSS 직접 적용           │     │ - cssVariableReader로     │
+│ - 브라우저 렌더링         │     │   CSS 변수 읽어서 적용    │
+│                           │     │ - PixiJS Graphics로 렌더링│
+└───────────────────────────┘     └───────────────────────────┘
+                │                               │
+                └───────────── 동일 ────────────┘
 ```
 
-### 2.3 적용 대상 컴포넌트
-- [x] PixiCheckbox ✅
-- [ ] PixiToggleButton
-- [ ] PixiBadge
-- [ ] PixiMeter
-- [ ] PixiSeparator
+### 1.2 핵심 원칙
+
+| 원칙 | 설명 |
+|------|------|
+| **Single Source of Truth** | 모든 스타일 값은 CSS 파일에서 정의 |
+| **No Hardcoding** | WebGL 컴포넌트에 색상/크기 하드코딩 금지 |
+| **Dynamic Reading** | `cssVariableReader.ts`를 통해 런타임에 CSS 변수 읽기 |
+| **Visual Parity** | 스타일시트 변경 시 양쪽 모두 동일하게 반영 |
+
+### 1.3 성공 기준
+
+- [ ] CSS 변수 변경 시 iframe과 WebGL이 동일하게 업데이트
+- [ ] variant (primary, secondary, etc.) 적용 시 동일한 색상
+- [ ] size (sm, md, lg) 적용 시 동일한 크기
+- [ ] hover, pressed, disabled 상태 시 동일한 시각적 피드백
 
 ---
 
-## 3. Pattern B: useEffect + @pixi/ui
+## 2. CSS 동기화 시스템 (핵심)
 
-### 3.1 구조
+### 2.1 아키텍처
+
 ```
-┌─────────────────────────────────────────────────────────┐
-│ pixiContainer (ref, x, y)                               │
-│ ├── [useEffect에서 생성] @pixi/ui Component            │
-│ │   ├── defaultView (Graphics)                         │
-│ │   ├── hoverView (Graphics)                           │
-│ │   └── pressedView (Graphics)                         │
-│ └── pixiGraphics (투명 히트 영역 for modifier keys)     │
-└─────────────────────────────────────────────────────────┘
-```
-
-### 3.2 코드 템플릿
-```tsx
-import { memo, useCallback, useRef, useEffect, useMemo } from 'react';
-import { Container as PixiContainer, Graphics as PixiGraphicsClass } from 'pixi.js';
-import { FancyButton, Slider, Input } from '@pixi/ui';
-import type { Element } from '../../../../types/core/store.types';
-
-export interface PixiUIComponentProps {
-  element: Element;
-  isSelected?: boolean;
-  onClick?: (elementId: string, modifiers?: ClickModifiers) => void;
-  onChange?: (elementId: string, value: unknown) => void;
-}
-
-interface ClickModifiers {
-  metaKey: boolean;
-  shiftKey: boolean;
-  ctrlKey: boolean;
-}
-
-export const PixiUIComponent = memo(function PixiUIComponent({
-  element,
-  onClick,
-  onChange,
-}: PixiUIComponentProps) {
-  const containerRef = useRef<PixiContainer | null>(null);
-  const componentRef = useRef<FancyButton | Slider | null>(null);
-
-  const style = element.props?.style as Record<string, unknown> | undefined;
-  const props = element.props as Record<string, unknown> | undefined;
-
-  // 1. 레이아웃 계산 (useMemo)
-  const layout = useMemo(() => ({
-    x: Number(style?.left || 0),
-    y: Number(style?.top || 0),
-    width: Number(style?.width || 200),
-    height: Number(style?.height || 40),
-  }), [style]);
-
-  // 2. @pixi/ui 컴포넌트 생성 (useEffect)
-  useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
-
-    // 기존 요소 정리
-    if (componentRef.current) {
-      container.removeChild(componentRef.current);
-      componentRef.current.destroy();
-      componentRef.current = null;
-    }
-
-    // Graphics 생성
-    const defaultView = createGraphics(layout.width, layout.height, 0x3b82f6);
-    const hoverView = createGraphics(layout.width, layout.height, 0x2563eb);
-    const pressedView = createGraphics(layout.width, layout.height, 0x1d4ed8);
-
-    // @pixi/ui 컴포넌트 생성
-    const component = new FancyButton({
-      defaultView,
-      hoverView,
-      pressedView,
-      anchor: 0.5,
-    });
-
-    component.x = layout.width / 2;
-    component.y = layout.height / 2;
-    component.eventMode = 'none'; // 이벤트는 히트 영역에서 처리
-
-    container.addChild(component);
-    componentRef.current = component;
-
-    return () => {
-      if (componentRef.current && container.children.includes(componentRef.current)) {
-        container.removeChild(componentRef.current);
-        componentRef.current.destroy();
-        componentRef.current = null;
-      }
-    };
-  }, [layout]);
-
-  // 3. 투명 히트 영역 (modifier 키 감지)
-  const drawHitArea = useCallback(
-    (g: PixiGraphicsClass) => {
-      g.clear();
-      g.rect(0, 0, layout.width, layout.height);
-      g.fill({ color: 0xffffff, alpha: 0 });
-    },
-    [layout.width, layout.height]
-  );
-
-  // 4. 클릭 핸들러 (modifier 키 전달)
-  const handleClick = useCallback(
-    (e: unknown) => {
-      const pixiEvent = e as { metaKey?: boolean; shiftKey?: boolean; ctrlKey?: boolean };
-      onClick?.(element.id, {
-        metaKey: pixiEvent?.metaKey ?? false,
-        shiftKey: pixiEvent?.shiftKey ?? false,
-        ctrlKey: pixiEvent?.ctrlKey ?? false,
-      });
-    },
-    [element.id, onClick]
-  );
-
-  return (
-    <pixiContainer
-      x={layout.x}
-      y={layout.y}
-      ref={(c: PixiContainer | null) => { containerRef.current = c; }}
-    >
-      {/* @pixi/ui 컴포넌트는 useEffect에서 추가됨 */}
-      <pixiGraphics
-        draw={drawHitArea}
-        eventMode="static"
-        cursor="pointer"
-        onPointerDown={handleClick}
-      />
-    </pixiContainer>
-  );
-});
-
-// Helper: Graphics 생성
-function createGraphics(width: number, height: number, color: number): PixiGraphicsClass {
-  const g = new PixiGraphicsClass();
-  g.roundRect(0, 0, width, height, 6);
-  g.fill({ color, alpha: 1 });
-  return g;
-}
-```
-
-### 3.3 적용 대상 컴포넌트
-- [x] PixiButton ✅
-- [x] PixiSlider ✅
-- [x] PixiInput ✅
-- [x] PixiSelect ✅
-- [ ] PixiNumberField
-- [ ] PixiSearchField
-
----
-
-## 4. Pattern C: Group + Children (Store 연동)
-
-### 4.1 구조
-```
-┌─────────────────────────────────────────────────────────────┐
-│ pixiContainer (group)                                       │
-│ ├── pixiText (그룹 라벨)                                    │
-│ └── {options.map()} → ItemComponent                        │
-│     ├── pixiGraphics (아이템 시각적 요소)                   │
-│     └── pixiText (아이템 라벨)                              │
+┌─────────────────────────────────────────────────────────────────┐
+│                    cssVariableReader.ts                         │
+│               (src/builder/workspace/canvas/utils/)             │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  ┌─────────────────┐  ┌─────────────────┐  ┌────────────────┐  │
+│  │ getCSSVariable()│  │ parseCSSValue() │  │ getVariant     │  │
+│  │                 │  │                 │  │ Colors()       │  │
+│  │ CSS 변수 읽기   │  │ rem→px 변환    │  │ M3 색상 조회   │  │
+│  └────────┬────────┘  └────────┬────────┘  └───────┬────────┘  │
+│           │                    │                   │            │
+│           └────────────────────┼───────────────────┘            │
+│                                │                                │
+│  ┌─────────────────────────────▼─────────────────────────────┐  │
+│  │              Component-specific Preset Functions           │  │
+│  │                                                            │  │
+│  │  getSizePreset()          → Button 크기                    │  │
+│  │  getCheckboxSizePreset()  → Checkbox 크기                  │  │
+│  │  getSliderSizePreset()    → Slider 크기 (예정)             │  │
+│  │  getRadioSizePreset()     → Radio 크기 (예정)              │  │
+│  └────────────────────────────────────────────────────────────┘  │
+│                                                                 │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-### 4.2 코드 템플릿
-```tsx
-import { memo, useCallback, useMemo } from 'react';
-import { Graphics as PixiGraphics, TextStyle } from 'pixi.js';
-import type { Element } from '../../../../types/core/store.types';
-import { useStore } from '../../../stores';
+### 2.2 CSS 변수 → WebGL 매핑
 
-// ============================================
-// Types
-// ============================================
+#### M3 Color Variables
 
-interface Option {
-  value: string;
-  label: string;
-  checked?: boolean;
-}
+| CSS Variable | 용도 | WebGL 함수 |
+|--------------|------|------------|
+| `--primary` | Primary 배경색 | `getVariantColors('primary').bg` |
+| `--primary-hover` | Primary hover 색상 | `getVariantColors('primary').bgHover` |
+| `--primary-pressed` | Primary pressed 색상 | `getVariantColors('primary').bgPressed` |
+| `--on-primary` | Primary 텍스트 색상 | `getVariantColors('primary').text` |
+| `--secondary`, `--tertiary`, `--error`, `--surface` | 동일 패턴 | 동일 패턴 |
 
-export interface PixiGroupComponentProps {
-  element: Element;
-  isSelected?: boolean;
-  onChange?: (elementId: string, selectedValues: string[]) => void;
-  onClick?: (elementId: string) => void;
-}
+#### Size/Spacing Variables
 
-// ============================================
-// Sub-Component: Item
-// ============================================
+| CSS Variable | 값 (px) | WebGL 함수 |
+|--------------|---------|------------|
+| `--text-2xs` | 10px | `parseCSSValue()` |
+| `--text-sm` | 14px | `parseCSSValue()` |
+| `--text-base` | 16px | `parseCSSValue()` |
+| `--text-lg` | 18px | `parseCSSValue()` |
+| `--text-xl` | 20px | `parseCSSValue()` |
+| `--spacing` | 8px | `parseCSSValue()` |
+| `--spacing-sm` | 8px | `parseCSSValue()` |
+| `--spacing-md` | 12px | `parseCSSValue()` |
+| `--spacing-lg` | 16px | `parseCSSValue()` |
+| `--border-radius` | 6px | `parseCSSValue()` |
 
-interface ItemProps {
-  option: Option;
-  isOptionSelected: boolean;
-  x: number;
-  y: number;
-  onSelect: (value: string) => void;
-  // ... style props
-}
+### 2.3 컴포넌트별 CSS 파일 매핑
 
-const Item = memo(function Item({ option, isOptionSelected, x, y, onSelect }: ItemProps) {
-  const drawItem = useCallback((g: PixiGraphics) => {
-    // 아이템 시각적 요소 그리기
-  }, [isOptionSelected]);
-
-  const handlePointerDown = useCallback(() => {
-    onSelect(option.value);
-  }, [option.value, onSelect]);
-
-  return (
-    <pixiContainer x={x} y={y}>
-      <pixiGraphics draw={drawItem} eventMode="static" cursor="pointer" onPointerDown={handlePointerDown} />
-      <pixiText text={option.label} x={24} y={0} />
-    </pixiContainer>
-  );
-});
-
-// ============================================
-// Main Component
-// ============================================
-
-export const PixiGroupComponent = memo(function PixiGroupComponent({
-  element,
-  onChange,
-  onClick,
-}: PixiGroupComponentProps) {
-  // 1. Store에서 자식 요소들 가져오기
-  const elements = useStore((state) => state.elements);
-  const childItems = useMemo(() => {
-    return elements.filter((el) => el.parent_id === element.id && el.tag === 'ItemTag');
-  }, [elements, element.id]);
-
-  // 2. 옵션 파싱 (자식 요소 > props.options > 기본값)
-  const options = useMemo(() => {
-    // 자식 요소 우선
-    if (childItems.length > 0) {
-      return childItems.map((item) => ({
-        value: String(item.props?.value || item.id),
-        label: String(item.props?.children || item.props?.label || ''),
-      }));
-    }
-    // props.options
-    if (Array.isArray(element.props?.options)) {
-      return element.props.options.map((opt: unknown) => ({
-        value: String((opt as Record<string, unknown>).value || ''),
-        label: String((opt as Record<string, unknown>).label || ''),
-      }));
-    }
-    // 기본값
-    return [{ value: 'option1', label: 'Option 1' }];
-  }, [childItems, element.props]);
-
-  // 3. 선택 상태 계산
-  const selectedValues = useMemo(() => {
-    // ... 선택 상태 로직
-    return [];
-  }, [element.props, childItems]);
-
-  // 4. 이벤트 핸들러
-  const handleOptionSelect = useCallback((optionValue: string) => {
-    onClick?.(element.id);
-    // 선택 로직 (single/multiple)
-    onChange?.(element.id, [...selectedValues, optionValue]);
-  }, [element.id, onClick, onChange, selectedValues]);
-
-  // 5. 레이아웃 계산
-  const isHorizontal = element.props?.style?.flexDirection === 'row';
-
-  return (
-    <pixiContainer x={0} y={0}>
-      {/* 그룹 라벨 */}
-      {element.props?.label && (
-        <pixiText text={String(element.props.label)} x={0} y={0} />
-      )}
-
-      {/* 아이템들 */}
-      {options.map((option, index) => {
-        const itemX = isHorizontal ? index * 120 : 0;
-        const itemY = isHorizontal ? 0 : index * 32;
-
-        return (
-          <Item
-            key={option.value}
-            option={option}
-            isOptionSelected={selectedValues.includes(option.value)}
-            x={itemX}
-            y={itemY}
-            onSelect={handleOptionSelect}
-          />
-        );
-      })}
-    </pixiContainer>
-  );
-});
-```
-
-### 4.3 적용 대상 컴포넌트
-- [x] PixiCheckboxGroup ✅
-- [x] PixiRadio (RadioGroup) ✅
-- [ ] PixiToggleButtonGroup
-- [ ] PixiListBox
-- [ ] PixiMenu
-- [ ] PixiTabs
+| React Aria CSS | WebGL 컴포넌트 | CSS 동기화 상태 |
+|----------------|----------------|-----------------|
+| `Button.css` | `PixiButton.tsx` | ✅ Color + Size |
+| `Checkbox.css` | `PixiCheckbox.tsx` | ✅ Color + Size |
+| `CheckboxGroup.css` | `PixiCheckboxGroup.tsx` | ✅ Color |
+| `Radio.css` | `PixiRadio.tsx` | ✅ Color |
+| `Slider.css` | `PixiSlider.tsx` | ✅ Color |
+| `ProgressBar.css` | `PixiProgressBar.tsx` | ✅ Color |
+| `Select.css` | `PixiSelect.tsx` | ⬜ 예정 |
+| `Input.css` | `PixiInput.tsx` | ⬜ 예정 |
+| `ToggleButton.css` | `PixiToggleButton.tsx` | ⬜ 미구현 |
+| `ListBox.css` | `PixiListBox.tsx` | ⬜ 미구현 |
+| `Menu.css` | `PixiMenu.tsx` | ⬜ 미구현 |
+| `Tabs.css` | `PixiTabs.tsx` | ⬜ 미구현 |
 
 ---
 
-## 5. 핵심 유틸리티 함수
+## 3. 구현 워크플로우
 
-### 5.1 Drawing Utilities (`src/builder/workspace/canvas/utils/`)
+### 3.1 새 컴포넌트 마이그레이션 단계
 
+```
+Step 1: CSS 파일 분석
+────────────────────
+src/shared/components/styles/{Component}.css 분석
+  - variant 클래스 (.primary, .secondary, etc.)
+  - size 클래스 (.sm, .md, .lg)
+  - 사용된 CSS 변수 목록 추출
+
+Step 2: cssVariableReader.ts 확장
+─────────────────────────────────
+  - 필요한 경우 새 프리셋 함수 추가
+  - CSS 변수 매핑 정의
+  - TypeScript 인터페이스 정의
+
+Step 3: PixiComponent 구현
+──────────────────────────
+  - 프리셋 함수 import
+  - useMemo로 동적 스타일 계산
+  - Graphics.draw()에서 계산된 값 사용
+
+Step 4: 검증
+────────────
+  - iframe과 WebGL 시각적 비교
+  - CSS 변수 변경 후 양쪽 동일 반영 확인
+  - 모든 variant/size 조합 테스트
+```
+
+### 3.2 구현 예시: Button
+
+**Step 1: Button.css 분석**
+```css
+/* src/shared/components/styles/Button.css */
+.react-aria-Button {
+  font-size: var(--text-sm);
+  padding: var(--spacing) var(--spacing-md);
+  border-radius: var(--border-radius);
+}
+
+.react-aria-Button.primary {
+  background: var(--primary);
+  color: var(--on-primary);
+}
+
+.react-aria-Button.sm {
+  padding: var(--spacing) var(--spacing-md);
+  font-size: var(--text-sm);
+}
+
+.react-aria-Button.md {
+  padding: var(--spacing-sm) var(--spacing-xl);
+  font-size: var(--text-base);
+}
+```
+
+**Step 2: cssVariableReader.ts 매핑**
 ```typescript
-// drawBox: 사각형 (border-box 방식)
-drawBox(g, {
-  width: 100,
-  height: 40,
-  backgroundColor: 0x3b82f6,
-  backgroundAlpha: 1,
-  borderRadius: 6,
-  border: {
-    width: 2,
-    color: 0x000000,
-    alpha: 1,
-    style: 'solid', // 'solid' | 'dashed' | 'dotted' | 'double'
-    radius: 6,
+// src/builder/workspace/canvas/utils/cssVariableReader.ts
+
+const SIZE_CSS_MAPPING = {
+  sm: {
+    fontSize: '--text-sm',      // var(--text-sm)
+    paddingY: '--spacing',      // var(--spacing)
+    paddingX: '--spacing-md',   // var(--spacing-md)
+    borderRadius: '--radius-sm'
   },
+  md: {
+    fontSize: '--text-base',    // var(--text-base)
+    paddingY: '--spacing-sm',   // var(--spacing-sm)
+    paddingX: '--spacing-xl',   // var(--spacing-xl)
+    borderRadius: '--radius-md'
+  },
+  // ...
+};
+
+export function getSizePreset(size: string): SizePreset {
+  const mapping = SIZE_CSS_MAPPING[size];
+  return {
+    fontSize: parseCSSValue(getCSSVariable(mapping.fontSize), fallback),
+    paddingX: parseCSSValue(getCSSVariable(mapping.paddingX), fallback),
+    paddingY: parseCSSValue(getCSSVariable(mapping.paddingY), fallback),
+    borderRadius: parseCSSValue(getCSSVariable(mapping.borderRadius), fallback),
+  };
+}
+```
+
+**Step 3: PixiButton.tsx 사용**
+```typescript
+// src/builder/workspace/canvas/ui/PixiButton.tsx
+import { getSizePreset, getVariantColors } from '../utils/cssVariableReader';
+
+const sizePreset = getSizePreset(size);        // CSS에서 동적으로
+const variantColors = getVariantColors(variant); // CSS에서 동적으로
+
+// Graphics 렌더링에 사용
+drawBox(g, {
+  width: calculatedWidth,
+  height: sizePreset.paddingY * 2 + sizePreset.fontSize,
+  backgroundColor: variantColors.bg,
+  borderRadius: sizePreset.borderRadius,
 });
+```
 
-// drawCircle: 원형 (border-box 방식)
-drawCircle(g, {
-  x: 10,
-  y: 10,
-  radius: 10,
-  backgroundColor: 0x3b82f6,
-  border: { width: 2, color: 0x000000, alpha: 1 },
+---
+
+## 4. 검증 체크리스트
+
+### 4.1 시각적 동일성 검증
+
+각 컴포넌트에 대해 다음 항목을 검증:
+
+| 검증 항목 | iframe | WebGL | 동일 |
+|-----------|--------|-------|------|
+| **Default 상태** | | | ☐ |
+| **Hover 상태** | | | ☐ |
+| **Pressed 상태** | | | ☐ |
+| **Disabled 상태** | | | ☐ |
+| **Primary variant** | | | ☐ |
+| **Secondary variant** | | | ☐ |
+| **Size: sm** | | | ☐ |
+| **Size: md** | | | ☐ |
+| **Size: lg** | | | ☐ |
+
+### 4.2 동적 변경 검증
+
+```bash
+# 테스트 시나리오
+1. shared-tokens.css에서 --text-sm 값 변경 (14px → 16px)
+2. iframe Preview 확인: 변경 반영됨
+3. WebGL Canvas 확인: 변경 반영됨 (동일해야 함)
+4. 원복
+```
+
+### 4.3 자동화 테스트 (향후)
+
+```typescript
+// 시각적 회귀 테스트 예시
+describe('Visual Parity', () => {
+  it('Button should look identical in iframe and WebGL', async () => {
+    const iframeSnapshot = await captureIframeButton();
+    const webglSnapshot = await captureWebGLButton();
+    expect(iframeSnapshot).toMatchVisually(webglSnapshot);
+  });
 });
 ```
 
-### 5.2 Style Conversion (`src/builder/workspace/canvas/sprites/styleConverter.ts`)
+---
 
-```typescript
-// CSS 색상 → PixiJS hex
-cssColorToHex('#3b82f6')           // 0x3b82f6
-cssColorToHex('rgb(59, 130, 246)') // 0x3b82f6
+## 5. 구현 패턴
 
-// CSS 크기 → 숫자
-parseCSSSize('100px', undefined, 0) // 100
-parseCSSSize('50%', 200, 0)         // 100
-parseCSSSize(undefined, undefined, 50) // 50 (default)
+### 5.1 패턴 요약
+
+| 패턴 | 설명 | 사용 컴포넌트 |
+|------|------|---------------|
+| **Pattern A** | JSX + Graphics.draw() | Checkbox, Radio, Badge, Meter |
+| **Pattern B** | useEffect + @pixi/ui | Button, Slider, Input, Select |
+| **Pattern C** | Group + Children (Store) | CheckboxGroup, RadioGroup, ListBox |
+
+### 5.2 Pattern A: JSX + Graphics.draw()
+
+단순한 도형 + 텍스트 조합의 컴포넌트
+
+```tsx
+// 핵심: CSS 변수에서 스타일 읽기
+const sizePreset = useMemo(() => getComponentSizePreset(size), [size]);
+const variantColors = getVariantColors(variant);
+
+const drawVisual = useCallback((g: PixiGraphics) => {
+  drawBox(g, {
+    width: sizePreset.boxSize,
+    height: sizePreset.boxSize,
+    backgroundColor: isSelected ? variantColors.bg : 0xffffff,
+    border: { width: 2, color: variantColors.bg },
+  });
+}, [sizePreset, variantColors, isSelected]);
 ```
 
-### 5.3 Theme Colors (`src/builder/workspace/canvas/hooks/useThemeColors.ts`)
+### 5.3 Pattern B: useEffect + @pixi/ui
 
-```typescript
-const themeColors = useThemeColors();
-const variantColors = getVariantColors('primary', themeColors);
-// { bg: 0x3b82f6, bgHover: 0x2563eb, bgPressed: 0x1d4ed8, text: 0xffffff }
+@pixi/ui 컴포넌트 활용
+
+```tsx
+// 핵심: CSS 변수에서 스타일 읽기
+const sizePreset = useMemo(() => getSizePreset(size), [size]);
+const variantColors = getVariantColors(variant);
+
+useEffect(() => {
+  const defaultView = createGraphics(width, height, variantColors.bg);
+  const hoverView = createGraphics(width, height, variantColors.bgHover);
+  const pressedView = createGraphics(width, height, variantColors.bgPressed);
+
+  const button = new FancyButton({ defaultView, hoverView, pressedView });
+  // ...
+}, [variantColors, sizePreset]);
+```
+
+### 5.4 Pattern C: Group + Children
+
+Store에서 자식 요소를 읽어 렌더링
+
+```tsx
+// 핵심: 그룹의 variant/size를 자식에게 전달
+const groupVariant = element.props?.variant || 'default';
+const groupSize = element.props?.size || 'md';
+
+return (
+  <pixiContainer>
+    {childItems.map((item) => (
+      <ChildComponent
+        key={item.id}
+        variant={groupVariant}  // 그룹에서 상속
+        size={groupSize}        // 그룹에서 상속
+      />
+    ))}
+  </pixiContainer>
+);
 ```
 
 ---
 
-## 6. 컴포넌트별 상세 구현 계획
+## 6. 컴포넌트별 CSS 매핑 상세
 
-### 6.1 Phase 1: Selection Components (높은 우선순위)
+### 6.1 Button
 
-#### PixiToggleButton
-- **패턴**: Pattern A (JSX + Graphics)
-- **참고**: PixiCheckbox
-- **핵심 로직**:
-  ```typescript
-  // selected 상태에 따른 배경색 변경
-  const backgroundColor = isSelected ? primaryColor : 0xffffff;
-  const textColor = isSelected ? 0xffffff : 0x374151;
-  ```
+**CSS 파일**: `src/shared/components/styles/Button.css`
 
-#### PixiToggleButtonGroup
-- **패턴**: Pattern C (Group + Children)
-- **참고**: PixiCheckboxGroup, PixiRadio
-- **핵심 로직**:
-  - selectionMode: 'single' | 'multiple'
-  - orientation: 'horizontal' | 'vertical'
-  - indicator 애니메이션 (선택적)
+| CSS 속성 | CSS 변수 | WebGL 매핑 |
+|----------|----------|------------|
+| `font-size` | `--text-sm` ~ `--text-xl` | `sizePreset.fontSize` |
+| `padding` | `--spacing` ~ `--spacing-3xl` | `sizePreset.paddingX/Y` |
+| `border-radius` | `--border-radius` | `sizePreset.borderRadius` |
+| `background` | `--primary`, `--secondary`, etc. | `variantColors.bg` |
+| `color` | `--on-primary`, etc. | `variantColors.text` |
 
-#### PixiListBox
-- **패턴**: Pattern C + Pattern B (ScrollBox 연동)
-- **참고**: PixiRadio (옵션 렌더링), PixiScrollBox
-- **구조**:
-  ```
-  PixiListBox
-  ├── pixiContainer (wrapper)
-  │   └── {items.map()} → ListBoxItem
-  │       ├── pixiGraphics (배경 + hover)
-  │       └── pixiText (라벨)
-  ```
+### 6.2 Checkbox
 
-#### PixiGridList
-- **패턴**: Pattern C + Grid Layout
-- **참고**: PixiListBox
-- **핵심 로직**:
-  - columns prop으로 그리드 열 수 지정
-  - 아이템 위치 계산: `x = (index % columns) * itemWidth`
+**CSS 파일**: `src/shared/components/styles/Checkbox.css`
 
-### 6.2 Phase 2: Layout Components
+| CSS 속성 | CSS 변수 | WebGL 매핑 |
+|----------|----------|------------|
+| `width/height (.checkbox)` | `--cb-box-size` → `--text-lg` ~ `--text-2xl` | `sizePreset.boxSize` |
+| `font-size` | `--cb-font-size` → `--text-sm` ~ `--text-lg` | `sizePreset.fontSize` |
+| `gap` | `--gap` | `sizePreset.gap` |
+| `background (selected)` | `--selected-color` → `--primary`, etc. | `variantColors.bg` |
+| `stroke (checkmark)` | `--checkmark-color` → `--on-primary` | `variantColors.text` |
 
-#### PixiTabs
-- **패턴**: Pattern C (복잡)
-- **구조**:
-  ```
-  PixiTabs
-  ├── TabList (가로 배열)
-  │   └── {tabs.map()} → Tab
-  │       ├── pixiGraphics (탭 배경)
-  │       ├── pixiText (탭 제목)
-  │       └── indicator (선택된 탭 표시)
-  └── TabPanels
-      └── {panels.map()} → Panel (visible={selectedTabId === panel.tabId})
-  ```
-- **핵심 로직**:
-  - Tab과 Panel의 tabId 매칭
-  - 선택된 탭만 Panel 렌더링
+### 6.3 Slider (예정)
 
-#### PixiTree
-- **패턴**: Pattern C + 재귀 렌더링
-- **구조**:
-  ```
-  PixiTree
-  └── {items.map()} → TreeItem (재귀)
-      ├── pixiGraphics (들여쓰기 + 화살표)
-      ├── pixiText (라벨)
-      └── {item.children?.map()} → TreeItem (재귀)
-  ```
-- **핵심 로직**:
-  - depth에 따른 들여쓰기
-  - 펼침/접기 상태 관리
+**CSS 파일**: `src/shared/components/styles/Slider.css`
 
-### 6.3 Phase 3: Form Components
-
-#### PixiNumberField
-- **패턴**: Pattern B (@pixi/ui Input 확장)
-- **참고**: PixiInput
-- **구조**:
-  ```
-  PixiNumberField
-  ├── Input (숫자 입력)
-  └── Stepper
-      ├── pixiGraphics (+ 버튼)
-      └── pixiGraphics (- 버튼)
-  ```
-
-#### PixiMeter
-- **패턴**: Pattern A (Graphics)
-- **구조**:
-  ```
-  PixiMeter
-  ├── pixiGraphics (배경 트랙)
-  ├── pixiGraphics (채우기 - value에 따라 너비 계산)
-  └── pixiText (값 표시, showValue=true일 때)
-  ```
-- **핵심 로직**:
-  ```typescript
-  const fillWidth = (value / max) * trackWidth;
-  ```
+| CSS 속성 | CSS 변수 | WebGL 매핑 (예정) |
+|----------|----------|------------------|
+| `height (track)` | `--track-height` | `sliderPreset.trackHeight` |
+| `width/height (thumb)` | `--thumb-size` | `sliderPreset.thumbSize` |
+| `background (track)` | `--surface-container` | `variantColors.trackBg` |
+| `background (fill)` | `--primary` | `variantColors.fillBg` |
 
 ---
 
-## 7. 테스트 체크리스트
+## 7. 구현 우선순위
 
-### 7.1 각 컴포넌트 테스트 항목
+### 7.1 Phase 1: CSS 동기화 완성 (현재)
 
-- [ ] **렌더링**: 기본 렌더링 확인
-- [ ] **스타일 적용**: CSS style prop 반영 확인
-- [ ] **이벤트**: onClick, onChange 동작 확인
-- [ ] **선택 상태**: isSelected 시각적 피드백
-- [ ] **비활성화**: isDisabled 상태 처리
-- [ ] **자식 요소**: Store에서 자식 요소 읽기/렌더링
-- [ ] **Modifier 키**: Cmd+Click, Shift+Click 동작
+이미 구현된 컴포넌트의 CSS 동기화 완성
 
-### 7.2 성능 테스트
+| 컴포넌트 | Color | Size | 상태 |
+|----------|-------|------|------|
+| PixiButton | ✅ | ✅ | 완료 |
+| PixiCheckbox | ✅ | ✅ | 완료 |
+| PixiSlider | ✅ | ⬜ | Size 추가 필요 |
+| PixiRadio | ✅ | ⬜ | Size 추가 필요 |
+| PixiProgressBar | ✅ | ⬜ | Size 추가 필요 |
 
-- [ ] 100개 아이템 렌더링 시 60fps 유지
-- [ ] 메모리 누수 없음 (cleanup 확인)
-- [ ] 불필요한 리렌더링 없음 (React DevTools)
+### 7.2 Phase 2: 신규 컴포넌트 (CSS 동기화 필수)
+
+새로 마이그레이션할 컴포넌트
+
+| 컴포넌트 | 복잡도 | CSS 파일 | 우선순위 |
+|----------|--------|----------|----------|
+| PixiToggleButton | 낮음 | ToggleButton.css | 🔴 1순위 |
+| PixiToggleButtonGroup | 중간 | ToggleButton.css | 🔴 1순위 |
+| PixiListBox | 중간 | ListBox.css | 🔴 1순위 |
+| PixiMeter | 낮음 | Meter.css | 🟡 2순위 |
+| PixiMenu | 높음 | Menu.css | 🟡 2순위 |
+| PixiTabs | 높음 | Tabs.css | 🟢 3순위 |
+
+### 7.3 Phase 3: 고급 컴포넌트
+
+| 컴포넌트 | 복잡도 | CSS 파일 | 우선순위 |
+|----------|--------|----------|----------|
+| PixiTree | 높음 | Tree.css | 🟢 3순위 |
+| PixiTable | 높음 | Table.css | 🟢 3순위 |
+| PixiComboBox | 높음 | ComboBox.css | 🟢 3순위 |
 
 ---
 
-## 8. 파일 명명 규칙
+## 8. 파일 구조
 
 ```
-src/builder/workspace/canvas/ui/
-├── Pixi{ComponentName}.tsx    # 컴포넌트 파일
-├── index.ts                   # export 모듈
-└── types.ts                   # 공통 타입 (선택적)
-```
-
-### export 추가 예시 (index.ts)
-```typescript
-export { PixiToggleButton, type PixiToggleButtonProps } from './PixiToggleButton';
-export { PixiToggleButtonGroup, type PixiToggleButtonGroupProps } from './PixiToggleButtonGroup';
-```
-
-### ElementSprite.tsx 등록 예시
-```typescript
-// 1. Tag Set 추가
-const UI_TOGGLEBUTTON_TAGS = new Set(['ToggleButton']);
-const UI_TOGGLEBUTTONGROUP_TAGS = new Set(['ToggleButtonGroup']);
-
-// 2. SpriteType 추가
-type SpriteType = ... | 'toggleButton' | 'toggleButtonGroup';
-
-// 3. getSpriteType 분기 추가
-if (UI_TOGGLEBUTTON_TAGS.has(tag)) return 'toggleButton';
-if (UI_TOGGLEBUTTONGROUP_TAGS.has(tag)) return 'toggleButtonGroup';
-
-// 4. switch 문 추가
-case 'toggleButton':
-  return <PixiToggleButton element={effectiveElement} ... />;
-case 'toggleButtonGroup':
-  return <PixiToggleButtonGroup element={effectiveElement} ... />;
+src/builder/workspace/canvas/
+├── utils/
+│   └── cssVariableReader.ts    # 🔑 CSS 동기화 핵심
+│       ├── getCSSVariable()
+│       ├── parseCSSValue()
+│       ├── getVariantColors()
+│       ├── getSizePreset()          # Button
+│       ├── getCheckboxSizePreset()  # Checkbox
+│       ├── getSliderSizePreset()    # (예정)
+│       └── getRadioSizePreset()     # (예정)
+│
+├── ui/
+│   ├── PixiButton.tsx          # ✅ CSS 동기화 완료
+│   ├── PixiCheckbox.tsx        # ✅ CSS 동기화 완료
+│   ├── PixiCheckboxGroup.tsx
+│   ├── PixiRadio.tsx
+│   ├── PixiSlider.tsx
+│   └── ...
+│
+└── sprites/
+    └── styleConverter.ts       # CSS 값 파싱 유틸리티
 ```
 
 ---
 
-## 9. 구현 우선순위 매트릭스
+## 9. 참고 자료
 
-| 컴포넌트 | 복잡도 | 사용 빈도 | 우선순위 | 예상 시간 |
-|----------|--------|----------|----------|-----------|
-| PixiToggleButton | 낮음 | 높음 | 🔴 1순위 | 2시간 |
-| PixiToggleButtonGroup | 중간 | 높음 | 🔴 1순위 | 3시간 |
-| PixiListBox | 중간 | 높음 | 🔴 1순위 | 4시간 |
-| PixiGridList | 중간 | 중간 | 🟡 2순위 | 4시간 |
-| PixiTabs | 높음 | 높음 | 🟡 2순위 | 6시간 |
-| PixiMenu | 높음 | 중간 | 🟡 2순위 | 5시간 |
-| PixiTree | 높음 | 낮음 | 🟢 3순위 | 6시간 |
-| PixiMeter | 낮음 | 낮음 | 🟢 3순위 | 2시간 |
-| PixiBadge | 낮음 | 낮음 | 🟢 3순위 | 1시간 |
-| PixiSeparator | 낮음 | 낮음 | 🟢 3순위 | 1시간 |
+### CSS 파일 위치
+- **React Aria 컴포넌트 CSS**: `src/shared/components/styles/`
+- **공통 토큰**: `src/builder/styles/1-theme/shared-tokens.css`
+- **M3 색상**: `src/builder/styles/1-theme/m3-tokens.css`
 
----
-
-## 10. 참고 자료
-
-### 소스 코드 위치
-- **기존 구현체**: `src/builder/workspace/canvas/ui/`
+### WebGL 구현체
+- **PixiJS 컴포넌트**: `src/builder/workspace/canvas/ui/`
+- **CSS 변수 리더**: `src/builder/workspace/canvas/utils/cssVariableReader.ts`
 - **Drawing 유틸**: `src/builder/workspace/canvas/utils/graphicsUtils.ts`
-- **스타일 변환**: `src/builder/workspace/canvas/sprites/styleConverter.ts`
-- **테마 색상**: `src/builder/workspace/canvas/hooks/useThemeColors.ts`
-- **ElementSprite**: `src/builder/workspace/canvas/sprites/ElementSprite.tsx`
 
 ### @pixi/ui 문서
 - [FancyButton](https://pixijs.io/ui/storybook/?path=/story/fancybutton--simple)
 - [Slider](https://pixijs.io/ui/storybook/?path=/story/slider--single)
 - [Input](https://pixijs.io/ui/storybook/?path=/story/input--single)
-- [ScrollBox](https://pixijs.io/ui/storybook/?path=/story/scrollbox--single)
-
----
-
-## 11. CSS 변수 동기화 시스템
-
-> **Updated**: 2025-12-16
-> **구현 완료**: PixiButton, PixiCheckbox
-
-### 11.1 개요
-
-WebGL 컴포넌트가 CSS 스타일시트의 변경사항을 자동으로 반영하도록 구현되었습니다.
-CSS 변수(--text-sm, --spacing-md 등)가 변경되면 WebGL 컴포넌트의 크기/스타일도 동적으로 업데이트됩니다.
-
-### 11.2 구현 파일
-
-**핵심 유틸리티**: `src/builder/workspace/canvas/utils/cssVariableReader.ts`
-
-```typescript
-// CSS 변수 읽기
-export function getCSSVariable(varName: string): string;
-
-// rem → px 변환
-export function parseCSSValue(value: string | undefined, fallback: number): number;
-
-// Button 크기 프리셋 (CSS에서 동적으로 읽음)
-export function getSizePreset(size: string): SizePreset;
-// → Returns: { fontSize, paddingX, paddingY, borderRadius }
-
-// Checkbox 크기 프리셋
-export function getCheckboxSizePreset(size: string): CheckboxSizePreset;
-// → Returns: { boxSize, fontSize, gap, strokeWidth }
-
-// 테마 색상 (기존)
-export function getVariantColors(variant: string): VariantColors;
-```
-
-### 11.3 CSS 변수 매핑
-
-#### Button 크기 매핑
-| Size | fontSize CSS | paddingY CSS | paddingX CSS | borderRadius CSS |
-|------|-------------|--------------|--------------|------------------|
-| xs | --text-2xs | --spacing-2xs | --spacing-sm | --radius-sm |
-| sm | --text-sm | --spacing | --spacing-md | --radius-sm |
-| md | --text-base | --spacing-sm | --spacing-xl | --radius-md |
-| lg | --text-lg | --spacing-md | --spacing-2xl | --radius-lg |
-| xl | --text-xl | --spacing-lg | --spacing-3xl | --radius-lg |
-
-#### Checkbox 크기 매핑
-| Size | boxSize CSS | fontSize CSS |
-|------|-------------|--------------|
-| sm | 16px | --text-sm |
-| md | 20px | --text-base |
-| lg | 24px | --text-lg |
-
-### 11.4 사용 예시
-
-```typescript
-// PixiButton.tsx
-import { getSizePreset } from '../utils/cssVariableReader';
-
-const sizePreset = getSizePreset(size); // 'sm' | 'md' | 'lg' | 'xl' | 'xs'
-// → { fontSize: 14, paddingX: 12, paddingY: 8, borderRadius: 4 }
-
-// PixiCheckbox.tsx
-import { getCheckboxSizePreset } from '../utils/cssVariableReader';
-
-const sizePreset = getCheckboxSizePreset(size);
-// → { boxSize: 20, fontSize: 16, gap: 8, strokeWidth: 2.5 }
-```
-
-### 11.5 동작 원리
-
-1. **런타임 CSS 읽기**: `getComputedStyle(document.documentElement).getPropertyValue()`
-2. **단위 변환**: rem → px (1rem = 16px 기준)
-3. **폴백 값**: CSS 변수를 읽지 못할 경우 하드코딩된 기본값 사용
-4. **캐싱 없음**: 매 호출 시 최신 CSS 값 반영 (테마 변경 즉시 적용)
-
-### 11.6 새 컴포넌트에 적용하기
-
-1. `cssVariableReader.ts`에 새 프리셋 함수 추가
-2. CSS 매핑 정의 (해당 컴포넌트의 CSS 파일 참조)
-3. 컴포넌트에서 프리셋 함수 import 및 사용
-
-```typescript
-// 1. cssVariableReader.ts에 추가
-const NEWCOMPONENT_SIZE_MAPPING = {
-  sm: { fontSize: '--text-sm', padding: '--spacing-sm' },
-  md: { fontSize: '--text-base', padding: '--spacing-md' },
-  lg: { fontSize: '--text-lg', padding: '--spacing-lg' },
-};
-
-export function getNewComponentSizePreset(size: string): NewComponentSizePreset {
-  const mapping = NEWCOMPONENT_SIZE_MAPPING[size];
-  // ... parseCSSValue로 변환
-}
-
-// 2. PixiNewComponent.tsx에서 사용
-import { getNewComponentSizePreset } from '../utils/cssVariableReader';
-
-const sizePreset = useMemo(() => {
-  return getNewComponentSizePreset(props?.size || 'md');
-}, [props?.size]);
-```
-
-### 11.7 마이그레이션 상태
-
-| 컴포넌트 | Color 동기화 | Size 동기화 |
-|----------|-------------|-------------|
-| PixiButton | ✅ | ✅ |
-| PixiCheckbox | ✅ | ✅ |
-| PixiSlider | ✅ | ⬜ (예정) |
-| PixiRadio | ✅ | ⬜ (예정) |
-| PixiProgressBar | ✅ | ⬜ (예정) |
-| PixiInput | ⬜ | ⬜ |
-| 기타 | ⬜ | ⬜ |
