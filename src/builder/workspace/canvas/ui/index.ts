@@ -19,6 +19,7 @@
  * @updated 2025-12-13 Phase 6.9 - PixiMaskedFrame 추가
  * @updated 2025-12-16 Phase 1 - PixiToggleButton, PixiToggleButtonGroup, PixiListBox, PixiBadge, PixiMeter 추가
  * @updated 2025-12-16 Phase 2 - PixiSeparator, PixiLink, PixiBreadcrumbs, PixiCard, PixiMenu, PixiTabs 추가
+ * @updated 2025-12-16 Phase 3 - PixiNumberField, PixiSearchField, PixiComboBox 추가
  */
 
 export { PixiButton, type PixiButtonProps } from './PixiButton';
@@ -51,3 +52,8 @@ export { PixiBreadcrumbs, type PixiBreadcrumbsProps } from './PixiBreadcrumbs';
 export { PixiCard, type PixiCardProps } from './PixiCard';
 export { PixiMenu, type PixiMenuProps } from './PixiMenu';
 export { PixiTabs, type PixiTabsProps } from './PixiTabs';
+
+// Phase 3: Advanced Input Components (WebGL Migration)
+export { PixiNumberField, type PixiNumberFieldProps } from './PixiNumberField';
+export { PixiSearchField, type PixiSearchFieldProps } from './PixiSearchField';
+export { PixiComboBox, type PixiComboBoxProps } from './PixiComboBox';

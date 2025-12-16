@@ -1710,3 +1710,270 @@ const TABS_COLOR_FALLBACKS: Record<string, TabsColorPreset> = {
 export function getTabsColorPreset(variant: string): TabsColorPreset {
   return TABS_COLOR_FALLBACKS[variant] || TABS_COLOR_FALLBACKS.default;
 }
+
+// ============================================
+// Phase 3: NumberField Size Preset
+// ============================================
+
+/**
+ * NumberField 사이즈 프리셋
+ */
+export interface NumberFieldSizePreset {
+  fontSize: number;
+  labelFontSize: number;
+  buttonWidth: number;
+  inputWidth: number;
+  paddingX: number;
+  paddingY: number;
+  borderRadius: number;
+}
+
+const NUMBERFIELD_SIZE_MAPPING: Record<string, { fontSize: string; labelSize: string; paddingY: string; paddingX: string }> = {
+  sm: { fontSize: '--text-xs', labelSize: '--text-xs', paddingY: '--spacing-sm', paddingX: '--spacing' },
+  md: { fontSize: '--text-sm', labelSize: '--text-sm', paddingY: '--spacing', paddingX: '--spacing-md' },
+  lg: { fontSize: '--text-base', labelSize: '--text-base', paddingY: '--spacing-md', paddingX: '--spacing-lg' },
+};
+
+const NUMBERFIELD_FALLBACKS: Record<string, NumberFieldSizePreset> = {
+  sm: { fontSize: 12, labelFontSize: 12, buttonWidth: 28, inputWidth: 80, paddingX: 8, paddingY: 6, borderRadius: 6 },
+  md: { fontSize: 14, labelFontSize: 14, buttonWidth: 32, inputWidth: 120, paddingX: 12, paddingY: 8, borderRadius: 6 },
+  lg: { fontSize: 16, labelFontSize: 16, buttonWidth: 40, inputWidth: 160, paddingX: 16, paddingY: 12, borderRadius: 8 },
+};
+
+/**
+ * NumberField 사이즈 프리셋 읽기
+ */
+export function getNumberFieldSizePreset(size: string): NumberFieldSizePreset {
+  const mapping = NUMBERFIELD_SIZE_MAPPING[size];
+  const fallback = NUMBERFIELD_FALLBACKS[size] || NUMBERFIELD_FALLBACKS.md;
+
+  if (!mapping) {
+    return fallback;
+  }
+
+  const fontSize = parseCSSValue(getCSSVariable(mapping.fontSize), fallback.fontSize);
+  const labelFontSize = parseCSSValue(getCSSVariable(mapping.labelSize), fallback.labelFontSize);
+  const paddingX = parseCSSValue(getCSSVariable(mapping.paddingX), fallback.paddingX);
+  const paddingY = parseCSSValue(getCSSVariable(mapping.paddingY), fallback.paddingY);
+
+  return {
+    fontSize,
+    labelFontSize,
+    buttonWidth: fallback.buttonWidth,
+    inputWidth: fallback.inputWidth,
+    paddingX,
+    paddingY,
+    borderRadius: fallback.borderRadius,
+  };
+}
+
+/**
+ * NumberField 색상 프리셋
+ */
+export interface NumberFieldColorPreset {
+  backgroundColor: number;
+  borderColor: number;
+  textColor: number;
+  labelColor: number;
+  buttonBgColor: number;
+  buttonHoverBgColor: number;
+  focusColor: number;
+}
+
+const NUMBERFIELD_COLOR_FALLBACKS: Record<string, NumberFieldColorPreset> = {
+  default: { backgroundColor: 0xf3f4f6, borderColor: 0xcad3dc, textColor: 0x374151, labelColor: 0x374151, buttonBgColor: 0xe5e7eb, buttonHoverBgColor: 0xd1d5db, focusColor: 0x3b82f6 },
+  primary: { backgroundColor: 0xf3f4f6, borderColor: 0x3b82f6, textColor: 0x374151, labelColor: 0x3b82f6, buttonBgColor: 0xdbeafe, buttonHoverBgColor: 0xbfdbfe, focusColor: 0x3b82f6 },
+  secondary: { backgroundColor: 0xf3f4f6, borderColor: 0x6366f1, textColor: 0x374151, labelColor: 0x6366f1, buttonBgColor: 0xe0e7ff, buttonHoverBgColor: 0xc7d2fe, focusColor: 0x6366f1 },
+  tertiary: { backgroundColor: 0xf3f4f6, borderColor: 0xec4899, textColor: 0x374151, labelColor: 0xec4899, buttonBgColor: 0xfce7f3, buttonHoverBgColor: 0xfbcfe8, focusColor: 0xec4899 },
+  error: { backgroundColor: 0xf3f4f6, borderColor: 0xef4444, textColor: 0x374151, labelColor: 0xef4444, buttonBgColor: 0xfee2e2, buttonHoverBgColor: 0xfecaca, focusColor: 0xef4444 },
+  filled: { backgroundColor: 0xf9fafb, borderColor: 0xcad3dc, textColor: 0x374151, labelColor: 0x374151, buttonBgColor: 0xe5e7eb, buttonHoverBgColor: 0xd1d5db, focusColor: 0x3b82f6 },
+};
+
+/**
+ * NumberField 색상 프리셋 읽기
+ */
+export function getNumberFieldColorPreset(variant: string): NumberFieldColorPreset {
+  return NUMBERFIELD_COLOR_FALLBACKS[variant] || NUMBERFIELD_COLOR_FALLBACKS.default;
+}
+
+// ============================================
+// Phase 3: SearchField Size Preset
+// ============================================
+
+/**
+ * SearchField 사이즈 프리셋
+ */
+export interface SearchFieldSizePreset {
+  fontSize: number;
+  labelFontSize: number;
+  inputWidth: number;
+  paddingX: number;
+  paddingY: number;
+  clearButtonSize: number;
+  borderRadius: number;
+}
+
+const SEARCHFIELD_SIZE_MAPPING: Record<string, { fontSize: string; labelSize: string; paddingY: string; paddingX: string }> = {
+  sm: { fontSize: '--text-xs', labelSize: '--text-xs', paddingY: '--spacing-sm', paddingX: '--spacing' },
+  md: { fontSize: '--text-sm', labelSize: '--text-sm', paddingY: '--spacing', paddingX: '--spacing-md' },
+  lg: { fontSize: '--text-base', labelSize: '--text-base', paddingY: '--spacing-md', paddingX: '--spacing-lg' },
+};
+
+const SEARCHFIELD_FALLBACKS: Record<string, SearchFieldSizePreset> = {
+  sm: { fontSize: 12, labelFontSize: 12, inputWidth: 160, paddingX: 8, paddingY: 6, clearButtonSize: 20, borderRadius: 6 },
+  md: { fontSize: 14, labelFontSize: 14, inputWidth: 200, paddingX: 12, paddingY: 8, clearButtonSize: 24, borderRadius: 6 },
+  lg: { fontSize: 16, labelFontSize: 16, inputWidth: 240, paddingX: 16, paddingY: 12, clearButtonSize: 28, borderRadius: 8 },
+};
+
+/**
+ * SearchField 사이즈 프리셋 읽기
+ */
+export function getSearchFieldSizePreset(size: string): SearchFieldSizePreset {
+  const mapping = SEARCHFIELD_SIZE_MAPPING[size];
+  const fallback = SEARCHFIELD_FALLBACKS[size] || SEARCHFIELD_FALLBACKS.md;
+
+  if (!mapping) {
+    return fallback;
+  }
+
+  const fontSize = parseCSSValue(getCSSVariable(mapping.fontSize), fallback.fontSize);
+  const labelFontSize = parseCSSValue(getCSSVariable(mapping.labelSize), fallback.labelFontSize);
+  const paddingX = parseCSSValue(getCSSVariable(mapping.paddingX), fallback.paddingX);
+  const paddingY = parseCSSValue(getCSSVariable(mapping.paddingY), fallback.paddingY);
+
+  return {
+    fontSize,
+    labelFontSize,
+    inputWidth: fallback.inputWidth,
+    paddingX,
+    paddingY,
+    clearButtonSize: fallback.clearButtonSize,
+    borderRadius: fallback.borderRadius,
+  };
+}
+
+/**
+ * SearchField 색상 프리셋
+ */
+export interface SearchFieldColorPreset {
+  backgroundColor: number;
+  borderColor: number;
+  textColor: number;
+  labelColor: number;
+  placeholderColor: number;
+  clearButtonBgColor: number;
+  clearButtonHoverBgColor: number;
+  focusColor: number;
+}
+
+const SEARCHFIELD_COLOR_FALLBACKS: Record<string, SearchFieldColorPreset> = {
+  default: { backgroundColor: 0xf3f4f6, borderColor: 0xcad3dc, textColor: 0x374151, labelColor: 0x374151, placeholderColor: 0x9ca3af, clearButtonBgColor: 0xe5e7eb, clearButtonHoverBgColor: 0xd1d5db, focusColor: 0x3b82f6 },
+  primary: { backgroundColor: 0xf3f4f6, borderColor: 0x3b82f6, textColor: 0x374151, labelColor: 0x3b82f6, placeholderColor: 0x9ca3af, clearButtonBgColor: 0xdbeafe, clearButtonHoverBgColor: 0xbfdbfe, focusColor: 0x3b82f6 },
+  secondary: { backgroundColor: 0xf3f4f6, borderColor: 0x6366f1, textColor: 0x374151, labelColor: 0x6366f1, placeholderColor: 0x9ca3af, clearButtonBgColor: 0xe0e7ff, clearButtonHoverBgColor: 0xc7d2fe, focusColor: 0x6366f1 },
+  tertiary: { backgroundColor: 0xf3f4f6, borderColor: 0xec4899, textColor: 0x374151, labelColor: 0xec4899, placeholderColor: 0x9ca3af, clearButtonBgColor: 0xfce7f3, clearButtonHoverBgColor: 0xfbcfe8, focusColor: 0xec4899 },
+  error: { backgroundColor: 0xf3f4f6, borderColor: 0xef4444, textColor: 0x374151, labelColor: 0xef4444, placeholderColor: 0x9ca3af, clearButtonBgColor: 0xfee2e2, clearButtonHoverBgColor: 0xfecaca, focusColor: 0xef4444 },
+  filled: { backgroundColor: 0xf9fafb, borderColor: 0xcad3dc, textColor: 0x374151, labelColor: 0x374151, placeholderColor: 0x9ca3af, clearButtonBgColor: 0xe5e7eb, clearButtonHoverBgColor: 0xd1d5db, focusColor: 0x3b82f6 },
+};
+
+/**
+ * SearchField 색상 프리셋 읽기
+ */
+export function getSearchFieldColorPreset(variant: string): SearchFieldColorPreset {
+  return SEARCHFIELD_COLOR_FALLBACKS[variant] || SEARCHFIELD_COLOR_FALLBACKS.default;
+}
+
+// ============================================
+// Phase 3: ComboBox Size Preset
+// ============================================
+
+/**
+ * ComboBox 사이즈 프리셋
+ */
+export interface ComboBoxSizePreset {
+  fontSize: number;
+  labelFontSize: number;
+  inputWidth: number;
+  paddingX: number;
+  paddingY: number;
+  buttonSize: number;
+  itemPaddingX: number;
+  itemPaddingY: number;
+  borderRadius: number;
+}
+
+const COMBOBOX_SIZE_MAPPING: Record<string, { fontSize: string; labelSize: string; paddingY: string; paddingX: string; itemPaddingY: string; itemPaddingX: string }> = {
+  sm: { fontSize: '--text-xs', labelSize: '--text-xs', paddingY: '--spacing-sm', paddingX: '--spacing', itemPaddingY: '--spacing-sm', itemPaddingX: '--spacing' },
+  md: { fontSize: '--text-sm', labelSize: '--text-sm', paddingY: '--spacing', paddingX: '--spacing-md', itemPaddingY: '--spacing', itemPaddingX: '--spacing-md' },
+  lg: { fontSize: '--text-base', labelSize: '--text-base', paddingY: '--spacing-md', paddingX: '--spacing-lg', itemPaddingY: '--spacing-md', itemPaddingX: '--spacing-lg' },
+};
+
+const COMBOBOX_FALLBACKS: Record<string, ComboBoxSizePreset> = {
+  sm: { fontSize: 12, labelFontSize: 12, inputWidth: 160, paddingX: 8, paddingY: 6, buttonSize: 20, itemPaddingX: 8, itemPaddingY: 6, borderRadius: 6 },
+  md: { fontSize: 14, labelFontSize: 14, inputWidth: 200, paddingX: 12, paddingY: 8, buttonSize: 24, itemPaddingX: 12, itemPaddingY: 8, borderRadius: 6 },
+  lg: { fontSize: 16, labelFontSize: 16, inputWidth: 240, paddingX: 16, paddingY: 12, buttonSize: 28, itemPaddingX: 16, itemPaddingY: 12, borderRadius: 8 },
+};
+
+/**
+ * ComboBox 사이즈 프리셋 읽기
+ */
+export function getComboBoxSizePreset(size: string): ComboBoxSizePreset {
+  const mapping = COMBOBOX_SIZE_MAPPING[size];
+  const fallback = COMBOBOX_FALLBACKS[size] || COMBOBOX_FALLBACKS.md;
+
+  if (!mapping) {
+    return fallback;
+  }
+
+  const fontSize = parseCSSValue(getCSSVariable(mapping.fontSize), fallback.fontSize);
+  const labelFontSize = parseCSSValue(getCSSVariable(mapping.labelSize), fallback.labelFontSize);
+  const paddingX = parseCSSValue(getCSSVariable(mapping.paddingX), fallback.paddingX);
+  const paddingY = parseCSSValue(getCSSVariable(mapping.paddingY), fallback.paddingY);
+  const itemPaddingX = parseCSSValue(getCSSVariable(mapping.itemPaddingX), fallback.itemPaddingX);
+  const itemPaddingY = parseCSSValue(getCSSVariable(mapping.itemPaddingY), fallback.itemPaddingY);
+
+  return {
+    fontSize,
+    labelFontSize,
+    inputWidth: fallback.inputWidth,
+    paddingX,
+    paddingY,
+    buttonSize: fallback.buttonSize,
+    itemPaddingX,
+    itemPaddingY,
+    borderRadius: fallback.borderRadius,
+  };
+}
+
+/**
+ * ComboBox 색상 프리셋
+ */
+export interface ComboBoxColorPreset {
+  backgroundColor: number;
+  borderColor: number;
+  textColor: number;
+  labelColor: number;
+  placeholderColor: number;
+  buttonBgColor: number;
+  buttonHoverBgColor: number;
+  dropdownBgColor: number;
+  itemHoverBgColor: number;
+  itemSelectedBgColor: number;
+  itemSelectedTextColor: number;
+  focusColor: number;
+}
+
+const COMBOBOX_COLOR_FALLBACKS: Record<string, ComboBoxColorPreset> = {
+  default: { backgroundColor: 0xf3f4f6, borderColor: 0xcad3dc, textColor: 0x374151, labelColor: 0x374151, placeholderColor: 0x9ca3af, buttonBgColor: 0xe5e7eb, buttonHoverBgColor: 0xd1d5db, dropdownBgColor: 0xf3f4f6, itemHoverBgColor: 0xe5e7eb, itemSelectedBgColor: 0xdbeafe, itemSelectedTextColor: 0x1e40af, focusColor: 0x3b82f6 },
+  primary: { backgroundColor: 0xf3f4f6, borderColor: 0x3b82f6, textColor: 0x374151, labelColor: 0x3b82f6, placeholderColor: 0x9ca3af, buttonBgColor: 0xdbeafe, buttonHoverBgColor: 0xbfdbfe, dropdownBgColor: 0xf3f4f6, itemHoverBgColor: 0xdbeafe, itemSelectedBgColor: 0xbfdbfe, itemSelectedTextColor: 0x1e40af, focusColor: 0x3b82f6 },
+  secondary: { backgroundColor: 0xf3f4f6, borderColor: 0x6366f1, textColor: 0x374151, labelColor: 0x6366f1, placeholderColor: 0x9ca3af, buttonBgColor: 0xe0e7ff, buttonHoverBgColor: 0xc7d2fe, dropdownBgColor: 0xf3f4f6, itemHoverBgColor: 0xe0e7ff, itemSelectedBgColor: 0xc7d2fe, itemSelectedTextColor: 0x3730a3, focusColor: 0x6366f1 },
+  tertiary: { backgroundColor: 0xf3f4f6, borderColor: 0xec4899, textColor: 0x374151, labelColor: 0xec4899, placeholderColor: 0x9ca3af, buttonBgColor: 0xfce7f3, buttonHoverBgColor: 0xfbcfe8, dropdownBgColor: 0xf3f4f6, itemHoverBgColor: 0xfce7f3, itemSelectedBgColor: 0xfbcfe8, itemSelectedTextColor: 0x9d174d, focusColor: 0xec4899 },
+  error: { backgroundColor: 0xf3f4f6, borderColor: 0xef4444, textColor: 0x374151, labelColor: 0xef4444, placeholderColor: 0x9ca3af, buttonBgColor: 0xfee2e2, buttonHoverBgColor: 0xfecaca, dropdownBgColor: 0xf3f4f6, itemHoverBgColor: 0xfee2e2, itemSelectedBgColor: 0xfecaca, itemSelectedTextColor: 0x991b1b, focusColor: 0xef4444 },
+  filled: { backgroundColor: 0xf9fafb, borderColor: 0xcad3dc, textColor: 0x374151, labelColor: 0x374151, placeholderColor: 0x9ca3af, buttonBgColor: 0xe5e7eb, buttonHoverBgColor: 0xd1d5db, dropdownBgColor: 0xf9fafb, itemHoverBgColor: 0xe5e7eb, itemSelectedBgColor: 0xdbeafe, itemSelectedTextColor: 0x1e40af, focusColor: 0x3b82f6 },
+};
+
+/**
+ * ComboBox 색상 프리셋 읽기
+ */
+export function getComboBoxColorPreset(variant: string): ComboBoxColorPreset {
+  return COMBOBOX_COLOR_FALLBACKS[variant] || COMBOBOX_COLOR_FALLBACKS.default;
+}

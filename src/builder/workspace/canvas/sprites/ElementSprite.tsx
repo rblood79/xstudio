@@ -44,6 +44,10 @@ import {
   PixiCard,
   PixiMenu,
   PixiTabs,
+  // Phase 3 WebGL Migration Components
+  PixiNumberField,
+  PixiSearchField,
+  PixiComboBox,
 } from '../ui';
 import { useStore } from '../../../stores';
 import { isFlexContainer, isGridContainer } from '../layout';
@@ -143,13 +147,20 @@ const UI_CARD_TAGS = new Set(['Card', 'Panel', 'Box']);
 const UI_MENU_TAGS = new Set(['Menu', 'ContextMenu', 'DropdownMenu']);
 const UI_TABS_TAGS = new Set(['Tabs', 'TabList']);
 
+/**
+ * Phase 3 WebGL Migration 컴포넌트 태그들
+ */
+const UI_NUMBERFIELD_TAGS = new Set(['NumberField']);
+const UI_SEARCHFIELD_TAGS = new Set(['SearchField']);
+const UI_COMBOBOX_TAGS = new Set(['ComboBox']);
+
 // Note: TEXT_TAGS, IMAGE_TAGS, UI_*_TAGS에 포함되지 않은 모든 태그는 BoxSprite로 렌더링됨
 
 // ============================================
 // Sprite Type Detection
 // ============================================
 
-type SpriteType = 'box' | 'text' | 'image' | 'button' | 'fancyButton' | 'checkboxGroup' | 'checkboxItem' | 'radioGroup' | 'radioItem' | 'slider' | 'input' | 'select' | 'progressBar' | 'switcher' | 'scrollBox' | 'list' | 'maskedFrame' | 'flex' | 'grid' | 'toggleButton' | 'toggleButtonGroup' | 'listBox' | 'badge' | 'meter' | 'separator' | 'link' | 'breadcrumbs' | 'card' | 'menu' | 'tabs';
+type SpriteType = 'box' | 'text' | 'image' | 'button' | 'fancyButton' | 'checkboxGroup' | 'checkboxItem' | 'radioGroup' | 'radioItem' | 'slider' | 'input' | 'select' | 'progressBar' | 'switcher' | 'scrollBox' | 'list' | 'maskedFrame' | 'flex' | 'grid' | 'toggleButton' | 'toggleButtonGroup' | 'listBox' | 'badge' | 'meter' | 'separator' | 'link' | 'breadcrumbs' | 'card' | 'menu' | 'tabs' | 'numberField' | 'searchField' | 'comboBox';
 
 function getSpriteType(element: Element): SpriteType {
   const tag = element.tag;
@@ -184,6 +195,11 @@ function getSpriteType(element: Element): SpriteType {
   if (UI_CARD_TAGS.has(tag)) return 'card';
   if (UI_MENU_TAGS.has(tag)) return 'menu';
   if (UI_TABS_TAGS.has(tag)) return 'tabs';
+
+  // Phase 3 WebGL Migration 컴포넌트
+  if (UI_NUMBERFIELD_TAGS.has(tag)) return 'numberField';
+  if (UI_SEARCHFIELD_TAGS.has(tag)) return 'searchField';
+  if (UI_COMBOBOX_TAGS.has(tag)) return 'comboBox';
 
   // 레이아웃 컨테이너 체크 (Phase 11 B2.5)
   // display: flex/grid인 경우에도 현재는 BoxSprite로 렌더링
@@ -502,6 +518,35 @@ export const ElementSprite = memo(function ElementSprite({
           element={effectiveElement}
           isSelected={isSelected}
           onClick={onClick}
+        />
+      );
+
+    // Phase 3 WebGL Migration 컴포넌트
+    case 'numberField':
+      return (
+        <PixiNumberField
+          element={effectiveElement}
+          isSelected={isSelected}
+          onClick={onClick}
+        />
+      );
+
+    case 'searchField':
+      return (
+        <PixiSearchField
+          element={effectiveElement}
+          isSelected={isSelected}
+          onClick={onClick}
+        />
+      );
+
+    case 'comboBox':
+      return (
+        <PixiComboBox
+          element={effectiveElement}
+          isSelected={isSelected}
+          onClick={onClick}
+          onChange={onChange ? (id, value) => onChange(id, value) : undefined}
         />
       );
 
