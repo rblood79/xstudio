@@ -79,6 +79,13 @@ import {
   PixiFileTrigger,
   PixiDropZone,
   PixiSkeleton,
+  // Phase 8 WebGL Migration Components
+  PixiToast,
+  PixiPagination,
+  PixiColorField,
+  PixiColorSwatchPicker,
+  PixiGroup,
+  PixiSlot,
 } from '../ui';
 import { useStore } from '../../../stores';
 import { isFlexContainer, isGridContainer } from '../layout';
@@ -228,13 +235,23 @@ const UI_FILETRIGGER_TAGS = new Set(['FileTrigger', 'FileUpload', 'FileInput']);
 const UI_DROPZONE_TAGS = new Set(['DropZone', 'FileDropZone']);
 const UI_SKELETON_TAGS = new Set(['Skeleton', 'SkeletonLoader']);
 
+/**
+ * Phase 8 WebGL Migration 컴포넌트 태그들 - Notification & Color Utility Components
+ */
+const UI_TOAST_TAGS = new Set(['Toast']);
+const UI_PAGINATION_TAGS = new Set(['Pagination']);
+const UI_COLORFIELD_TAGS = new Set(['ColorField']);
+const UI_COLORSWATCHPICKER_TAGS = new Set(['ColorSwatchPicker']);
+const UI_GROUP_TAGS = new Set(['Group']);
+const UI_SLOT_TAGS = new Set(['Slot']);
+
 // Note: TEXT_TAGS, IMAGE_TAGS, UI_*_TAGS에 포함되지 않은 모든 태그는 BoxSprite로 렌더링됨
 
 // ============================================
 // Sprite Type Detection
 // ============================================
 
-type SpriteType = 'box' | 'text' | 'image' | 'button' | 'fancyButton' | 'checkboxGroup' | 'checkboxItem' | 'radioGroup' | 'radioItem' | 'slider' | 'input' | 'select' | 'progressBar' | 'switcher' | 'scrollBox' | 'list' | 'maskedFrame' | 'flex' | 'grid' | 'toggleButton' | 'toggleButtonGroup' | 'listBox' | 'badge' | 'meter' | 'separator' | 'link' | 'breadcrumbs' | 'card' | 'menu' | 'tabs' | 'numberField' | 'searchField' | 'comboBox' | 'gridList' | 'tagGroup' | 'tree' | 'table' | 'disclosure' | 'disclosureGroup' | 'tooltip' | 'popover' | 'dialog' | 'colorSwatch' | 'colorSlider' | 'timeField' | 'dateField' | 'colorArea' | 'calendar' | 'colorWheel' | 'datePicker' | 'colorPicker' | 'dateRangePicker' | 'textField' | 'switch' | 'textArea' | 'form' | 'toolbar' | 'fileTrigger' | 'dropZone' | 'skeleton';
+type SpriteType = 'box' | 'text' | 'image' | 'button' | 'fancyButton' | 'checkboxGroup' | 'checkboxItem' | 'radioGroup' | 'radioItem' | 'slider' | 'input' | 'select' | 'progressBar' | 'switcher' | 'scrollBox' | 'list' | 'maskedFrame' | 'flex' | 'grid' | 'toggleButton' | 'toggleButtonGroup' | 'listBox' | 'badge' | 'meter' | 'separator' | 'link' | 'breadcrumbs' | 'card' | 'menu' | 'tabs' | 'numberField' | 'searchField' | 'comboBox' | 'gridList' | 'tagGroup' | 'tree' | 'table' | 'disclosure' | 'disclosureGroup' | 'tooltip' | 'popover' | 'dialog' | 'colorSwatch' | 'colorSlider' | 'timeField' | 'dateField' | 'colorArea' | 'calendar' | 'colorWheel' | 'datePicker' | 'colorPicker' | 'dateRangePicker' | 'textField' | 'switch' | 'textArea' | 'form' | 'toolbar' | 'fileTrigger' | 'dropZone' | 'skeleton' | 'toast' | 'pagination' | 'colorField' | 'colorSwatchPicker' | 'group' | 'slot';
 
 function getSpriteType(element: Element): SpriteType {
   const tag = element.tag;
@@ -309,6 +326,14 @@ function getSpriteType(element: Element): SpriteType {
   if (UI_FILETRIGGER_TAGS.has(tag)) return 'fileTrigger';
   if (UI_DROPZONE_TAGS.has(tag)) return 'dropZone';
   if (UI_SKELETON_TAGS.has(tag)) return 'skeleton';
+
+  // Phase 8 WebGL Migration 컴포넌트 - Notification & Color Utility Components
+  if (UI_TOAST_TAGS.has(tag)) return 'toast';
+  if (UI_PAGINATION_TAGS.has(tag)) return 'pagination';
+  if (UI_COLORFIELD_TAGS.has(tag)) return 'colorField';
+  if (UI_COLORSWATCHPICKER_TAGS.has(tag)) return 'colorSwatchPicker';
+  if (UI_GROUP_TAGS.has(tag)) return 'group';
+  if (UI_SLOT_TAGS.has(tag)) return 'slot';
 
   // 레이아웃 컨테이너 체크 (Phase 11 B2.5)
   // display: flex/grid인 경우에도 현재는 BoxSprite로 렌더링
@@ -910,6 +935,62 @@ export const ElementSprite = memo(function ElementSprite({
     case 'skeleton':
       return (
         <PixiSkeleton
+          element={effectiveElement}
+          isSelected={isSelected}
+          onClick={onClick}
+        />
+      );
+
+    // Phase 8 WebGL Migration 컴포넌트 - Notification & Color Utility Components
+    case 'toast':
+      return (
+        <PixiToast
+          element={effectiveElement}
+          isSelected={isSelected}
+          onClick={onClick}
+        />
+      );
+
+    case 'pagination':
+      return (
+        <PixiPagination
+          element={effectiveElement}
+          isSelected={isSelected}
+          onClick={onClick}
+          onChange={onChange ? (id, value) => onChange(id, value) : undefined}
+        />
+      );
+
+    case 'colorField':
+      return (
+        <PixiColorField
+          element={effectiveElement}
+          isSelected={isSelected}
+          onClick={onClick}
+        />
+      );
+
+    case 'colorSwatchPicker':
+      return (
+        <PixiColorSwatchPicker
+          element={effectiveElement}
+          isSelected={isSelected}
+          onClick={onClick}
+        />
+      );
+
+    case 'group':
+      return (
+        <PixiGroup
+          element={effectiveElement}
+          isSelected={isSelected}
+          onClick={onClick}
+        />
+      );
+
+    case 'slot':
+      return (
+        <PixiSlot
           element={effectiveElement}
           isSelected={isSelected}
           onClick={onClick}

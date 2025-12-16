@@ -92,3 +92,11 @@ export { PixiToolbar, type PixiToolbarProps } from './PixiToolbar';
 export { PixiFileTrigger, type PixiFileTriggerProps } from './PixiFileTrigger';
 export { PixiDropZone, type PixiDropZoneProps } from './PixiDropZone';
 export { PixiSkeleton, type PixiSkeletonProps } from './PixiSkeleton';
+
+// Phase 8: Notification & Color Utility Components (WebGL Migration)
+export { PixiToast, type PixiToastProps } from './PixiToast';
+export { PixiPagination, type PixiPaginationProps } from './PixiPagination';
+export { PixiColorField, type PixiColorFieldProps } from './PixiColorField';
+export { PixiColorSwatchPicker, type PixiColorSwatchPickerProps } from './PixiColorSwatchPicker';
+export { PixiGroup, type PixiGroupProps } from './PixiGroup';
+export { PixiSlot, type PixiSlotProps } from './PixiSlot';

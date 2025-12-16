@@ -3785,3 +3785,308 @@ const SKELETON_COLOR_FALLBACKS: Record<string, SkeletonColorPreset> = {
 export function getSkeletonColorPreset(variant: string): SkeletonColorPreset {
   return SKELETON_COLOR_FALLBACKS[variant] || SKELETON_COLOR_FALLBACKS.default;
 }
+
+// ============================================================================
+// Phase 8: Notification & Color Utility Components
+// ============================================================================
+
+/**
+ * Toast 사이즈 프리셋
+ */
+export interface ToastSizePreset {
+  fontSize: number;
+  padding: number;
+  paddingX: number;
+  borderRadius: number;
+  iconSize: number;
+  gap: number;
+  maxWidth: number;
+  dismissButtonSize: number;
+}
+
+const TOAST_FALLBACKS: Record<string, ToastSizePreset> = {
+  sm: { fontSize: 12, padding: 8, paddingX: 12, borderRadius: 6, iconSize: 16, gap: 8, maxWidth: 320, dismissButtonSize: 20 },
+  md: { fontSize: 14, padding: 10, paddingX: 14, borderRadius: 8, iconSize: 18, gap: 10, maxWidth: 400, dismissButtonSize: 24 },
+  lg: { fontSize: 16, padding: 12, paddingX: 16, borderRadius: 10, iconSize: 20, gap: 12, maxWidth: 480, dismissButtonSize: 28 },
+};
+
+export function getToastSizePreset(size: string): ToastSizePreset {
+  return TOAST_FALLBACKS[size] || TOAST_FALLBACKS.md;
+}
+
+/**
+ * Toast 색상 프리셋
+ */
+export interface ToastColorPreset {
+  backgroundColor: number;
+  borderColor: number;
+  textColor: number;
+  accentColor: number;
+  iconColor: number;
+  dismissButtonColor: number;
+  shadowColor: number;
+}
+
+const TOAST_COLOR_FALLBACKS: Record<string, ToastColorPreset> = {
+  info: { backgroundColor: 0xffffff, borderColor: 0x3b82f6, textColor: 0x374151, accentColor: 0x3b82f6, iconColor: 0x3b82f6, dismissButtonColor: 0x6b7280, shadowColor: 0x000000 },
+  success: { backgroundColor: 0xffffff, borderColor: 0x22c55e, textColor: 0x374151, accentColor: 0x22c55e, iconColor: 0x22c55e, dismissButtonColor: 0x6b7280, shadowColor: 0x000000 },
+  warning: { backgroundColor: 0xffffff, borderColor: 0xeab308, textColor: 0x374151, accentColor: 0xeab308, iconColor: 0xeab308, dismissButtonColor: 0x6b7280, shadowColor: 0x000000 },
+  error: { backgroundColor: 0xffffff, borderColor: 0xef4444, textColor: 0x374151, accentColor: 0xef4444, iconColor: 0xef4444, dismissButtonColor: 0x6b7280, shadowColor: 0x000000 },
+};
+
+export function getToastColorPreset(type: string): ToastColorPreset {
+  return TOAST_COLOR_FALLBACKS[type] || TOAST_COLOR_FALLBACKS.info;
+}
+
+/**
+ * Pagination 사이즈 프리셋
+ */
+export interface PaginationSizePreset {
+  fontSize: number;
+  buttonSize: number;
+  padding: number;
+  gap: number;
+  borderRadius: number;
+}
+
+const PAGINATION_FALLBACKS: Record<string, PaginationSizePreset> = {
+  sm: { fontSize: 12, buttonSize: 28, padding: 4, gap: 4, borderRadius: 4 },
+  md: { fontSize: 14, buttonSize: 32, padding: 6, gap: 6, borderRadius: 6 },
+  lg: { fontSize: 16, buttonSize: 40, padding: 8, gap: 8, borderRadius: 8 },
+};
+
+export function getPaginationSizePreset(size: string): PaginationSizePreset {
+  return PAGINATION_FALLBACKS[size] || PAGINATION_FALLBACKS.md;
+}
+
+/**
+ * Pagination 색상 프리셋
+ */
+export interface PaginationColorPreset {
+  backgroundColor: number;
+  textColor: number;
+  currentBackgroundColor: number;
+  currentTextColor: number;
+  hoverBackgroundColor: number;
+  disabledTextColor: number;
+  borderColor: number;
+  ellipsisColor: number;
+}
+
+const PAGINATION_COLOR_FALLBACKS: Record<string, PaginationColorPreset> = {
+  default: {
+    backgroundColor: 0xf3f4f6, textColor: 0x374151, currentBackgroundColor: 0x3b82f6,
+    currentTextColor: 0xffffff, hoverBackgroundColor: 0xe5e7eb, disabledTextColor: 0x9ca3af,
+    borderColor: 0xcad3dc, ellipsisColor: 0x6b7280
+  },
+  primary: {
+    backgroundColor: 0xeff6ff, textColor: 0x374151, currentBackgroundColor: 0x3b82f6,
+    currentTextColor: 0xffffff, hoverBackgroundColor: 0xdbeafe, disabledTextColor: 0x9ca3af,
+    borderColor: 0x93c5fd, ellipsisColor: 0x3b82f6
+  },
+  secondary: {
+    backgroundColor: 0xeef2ff, textColor: 0x374151, currentBackgroundColor: 0x6366f1,
+    currentTextColor: 0xffffff, hoverBackgroundColor: 0xe0e7ff, disabledTextColor: 0x9ca3af,
+    borderColor: 0xa5b4fc, ellipsisColor: 0x6366f1
+  },
+};
+
+export function getPaginationColorPreset(variant: string): PaginationColorPreset {
+  return PAGINATION_COLOR_FALLBACKS[variant] || PAGINATION_COLOR_FALLBACKS.default;
+}
+
+/**
+ * ColorField 사이즈 프리셋
+ */
+export interface ColorFieldSizePreset {
+  fontSize: number;
+  height: number;
+  padding: number;
+  borderRadius: number;
+  maxWidth: number;
+  labelFontSize: number;
+  gap: number;
+}
+
+const COLOR_FIELD_FALLBACKS: Record<string, ColorFieldSizePreset> = {
+  sm: { fontSize: 12, height: 28, padding: 6, borderRadius: 4, maxWidth: 100, labelFontSize: 11, gap: 4 },
+  md: { fontSize: 14, height: 32, padding: 8, borderRadius: 6, maxWidth: 120, labelFontSize: 12, gap: 6 },
+  lg: { fontSize: 16, height: 40, padding: 10, borderRadius: 8, maxWidth: 140, labelFontSize: 14, gap: 8 },
+};
+
+export function getColorFieldSizePreset(size: string): ColorFieldSizePreset {
+  return COLOR_FIELD_FALLBACKS[size] || COLOR_FIELD_FALLBACKS.md;
+}
+
+/**
+ * ColorField 색상 프리셋
+ */
+export interface ColorFieldColorPreset {
+  backgroundColor: number;
+  borderColor: number;
+  textColor: number;
+  labelColor: number;
+  focusBorderColor: number;
+  errorBorderColor: number;
+  disabledBackgroundColor: number;
+}
+
+const COLOR_FIELD_COLOR_FALLBACKS: Record<string, ColorFieldColorPreset> = {
+  default: { backgroundColor: 0xffffff, borderColor: 0xcad3dc, textColor: 0x374151, labelColor: 0x374151, focusBorderColor: 0x3b82f6, errorBorderColor: 0xef4444, disabledBackgroundColor: 0xf3f4f6 },
+  primary: { backgroundColor: 0xffffff, borderColor: 0x3b82f6, textColor: 0x374151, labelColor: 0x3b82f6, focusBorderColor: 0x2563eb, errorBorderColor: 0xef4444, disabledBackgroundColor: 0xf3f4f6 },
+  secondary: { backgroundColor: 0xffffff, borderColor: 0x6366f1, textColor: 0x374151, labelColor: 0x6366f1, focusBorderColor: 0x4f46e5, errorBorderColor: 0xef4444, disabledBackgroundColor: 0xf3f4f6 },
+  filled: { backgroundColor: 0xf3f4f6, borderColor: 0x00000000, textColor: 0x374151, labelColor: 0x374151, focusBorderColor: 0x3b82f6, errorBorderColor: 0xef4444, disabledBackgroundColor: 0xe5e7eb },
+};
+
+export function getColorFieldColorPreset(variant: string): ColorFieldColorPreset {
+  return COLOR_FIELD_COLOR_FALLBACKS[variant] || COLOR_FIELD_COLOR_FALLBACKS.default;
+}
+
+/**
+ * ColorSwatchPicker 사이즈 프리셋
+ */
+export interface ColorSwatchPickerSizePreset {
+  swatchSize: number;
+  gap: number;
+  borderRadius: number;
+  selectionBorderWidth: number;
+}
+
+const COLOR_SWATCH_PICKER_FALLBACKS: Record<string, ColorSwatchPickerSizePreset> = {
+  sm: { swatchSize: 24, gap: 6, borderRadius: 4, selectionBorderWidth: 2 },
+  md: { swatchSize: 32, gap: 8, borderRadius: 4, selectionBorderWidth: 2 },
+  lg: { swatchSize: 40, gap: 10, borderRadius: 6, selectionBorderWidth: 3 },
+};
+
+export function getColorSwatchPickerSizePreset(size: string): ColorSwatchPickerSizePreset {
+  return COLOR_SWATCH_PICKER_FALLBACKS[size] || COLOR_SWATCH_PICKER_FALLBACKS.md;
+}
+
+/**
+ * ColorSwatchPicker 색상 프리셋
+ */
+export interface ColorSwatchPickerColorPreset {
+  selectionOuterColor: number;
+  selectionInnerColor: number;
+  focusRingColor: number;
+  disabledOpacity: number;
+}
+
+const COLOR_SWATCH_PICKER_COLOR_FALLBACKS: Record<string, ColorSwatchPickerColorPreset> = {
+  default: { selectionOuterColor: 0x000000, selectionInnerColor: 0xffffff, focusRingColor: 0x3b82f6, disabledOpacity: 0.2 },
+  primary: { selectionOuterColor: 0x3b82f6, selectionInnerColor: 0xffffff, focusRingColor: 0x3b82f6, disabledOpacity: 0.2 },
+  secondary: { selectionOuterColor: 0x6366f1, selectionInnerColor: 0xffffff, focusRingColor: 0x6366f1, disabledOpacity: 0.2 },
+};
+
+export function getColorSwatchPickerColorPreset(variant: string): ColorSwatchPickerColorPreset {
+  return COLOR_SWATCH_PICKER_COLOR_FALLBACKS[variant] || COLOR_SWATCH_PICKER_COLOR_FALLBACKS.default;
+}
+
+/**
+ * Group 사이즈 프리셋
+ */
+export interface GroupSizePreset {
+  padding: number;
+  gap: number;
+  borderRadius: number;
+  labelFontSize: number;
+  labelPadding: number;
+}
+
+const GROUP_FALLBACKS: Record<string, GroupSizePreset> = {
+  sm: { padding: 8, gap: 6, borderRadius: 4, labelFontSize: 10, labelPadding: 4 },
+  md: { padding: 12, gap: 8, borderRadius: 6, labelFontSize: 12, labelPadding: 6 },
+  lg: { padding: 16, gap: 10, borderRadius: 8, labelFontSize: 14, labelPadding: 8 },
+};
+
+export function getGroupSizePreset(size: string): GroupSizePreset {
+  return GROUP_FALLBACKS[size] || GROUP_FALLBACKS.md;
+}
+
+/**
+ * Group 색상 프리셋
+ */
+export interface GroupColorPreset {
+  borderColor: number;
+  hoverBorderColor: number;
+  focusBorderColor: number;
+  labelBackgroundColor: number;
+  labelTextColor: number;
+  disabledOpacity: number;
+}
+
+const GROUP_COLOR_FALLBACKS: Record<string, GroupColorPreset> = {
+  default: { borderColor: 0xcad3dc, hoverBorderColor: 0x3b82f680, focusBorderColor: 0x3b82f6, labelBackgroundColor: 0xffffff, labelTextColor: 0x6b7280, disabledOpacity: 0.5 },
+  primary: { borderColor: 0x93c5fd, hoverBorderColor: 0x3b82f6, focusBorderColor: 0x2563eb, labelBackgroundColor: 0xffffff, labelTextColor: 0x3b82f6, disabledOpacity: 0.5 },
+  secondary: { borderColor: 0xa5b4fc, hoverBorderColor: 0x6366f1, focusBorderColor: 0x4f46e5, labelBackgroundColor: 0xffffff, labelTextColor: 0x6366f1, disabledOpacity: 0.5 },
+};
+
+export function getGroupColorPreset(variant: string): GroupColorPreset {
+  return GROUP_COLOR_FALLBACKS[variant] || GROUP_COLOR_FALLBACKS.default;
+}
+
+/**
+ * Slot 사이즈 프리셋
+ */
+export interface SlotSizePreset {
+  minHeight: number;
+  padding: number;
+  borderWidth: number;
+  borderRadius: number;
+  iconSize: number;
+  labelFontSize: number;
+  descriptionFontSize: number;
+  gap: number;
+}
+
+const SLOT_FALLBACKS: Record<string, SlotSizePreset> = {
+  sm: { minHeight: 60, padding: 12, borderWidth: 2, borderRadius: 6, iconSize: 32, labelFontSize: 12, descriptionFontSize: 10, gap: 8 },
+  md: { minHeight: 80, padding: 16, borderWidth: 2, borderRadius: 8, iconSize: 48, labelFontSize: 14, descriptionFontSize: 12, gap: 10 },
+  lg: { minHeight: 100, padding: 20, borderWidth: 2, borderRadius: 10, iconSize: 56, labelFontSize: 16, descriptionFontSize: 14, gap: 12 },
+};
+
+export function getSlotSizePreset(size: string): SlotSizePreset {
+  return SLOT_FALLBACKS[size] || SLOT_FALLBACKS.md;
+}
+
+/**
+ * Slot 색상 프리셋
+ */
+export interface SlotColorPreset {
+  backgroundColor: number;
+  borderColor: number;
+  emptyBorderColor: number;
+  textColor: number;
+  iconBackgroundColor: number;
+  iconColor: number;
+  hoverBorderColor: number;
+  selectedBorderColor: number;
+  requiredBorderColor: number;
+  requiredBadgeBackgroundColor: number;
+  requiredBadgeTextColor: number;
+}
+
+const SLOT_COLOR_FALLBACKS: Record<string, SlotColorPreset> = {
+  default: {
+    backgroundColor: 0xfafafa, borderColor: 0xcad3dc, emptyBorderColor: 0x9ca3af,
+    textColor: 0x6b7280, iconBackgroundColor: 0xe5e7eb, iconColor: 0x9ca3af,
+    hoverBorderColor: 0x3b82f6, selectedBorderColor: 0x3b82f6,
+    requiredBorderColor: 0xeab308, requiredBadgeBackgroundColor: 0xfef3c7, requiredBadgeTextColor: 0xb45309
+  },
+  primary: {
+    backgroundColor: 0xeff6ff, borderColor: 0x93c5fd, emptyBorderColor: 0x60a5fa,
+    textColor: 0x3b82f6, iconBackgroundColor: 0xdbeafe, iconColor: 0x60a5fa,
+    hoverBorderColor: 0x3b82f6, selectedBorderColor: 0x2563eb,
+    requiredBorderColor: 0xeab308, requiredBadgeBackgroundColor: 0xfef3c7, requiredBadgeTextColor: 0xb45309
+  },
+  secondary: {
+    backgroundColor: 0xeef2ff, borderColor: 0xa5b4fc, emptyBorderColor: 0x818cf8,
+    textColor: 0x6366f1, iconBackgroundColor: 0xe0e7ff, iconColor: 0x818cf8,
+    hoverBorderColor: 0x6366f1, selectedBorderColor: 0x4f46e5,
+    requiredBorderColor: 0xeab308, requiredBadgeBackgroundColor: 0xfef3c7, requiredBadgeTextColor: 0xb45309
+  },
+};
+
+export function getSlotColorPreset(variant: string): SlotColorPreset {
+  return SLOT_COLOR_FALLBACKS[variant] || SLOT_COLOR_FALLBACKS.default;
+}
