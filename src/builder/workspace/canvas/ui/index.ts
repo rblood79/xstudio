@@ -63,3 +63,10 @@ export { PixiGridList, type PixiGridListProps } from './PixiGridList';
 export { PixiTagGroup, type PixiTagGroupProps } from './PixiTagGroup';
 export { PixiTree, type PixiTreeProps } from './PixiTree';
 export { PixiTable, type PixiTableProps } from './PixiTable';
+
+// Phase 5: Overlay & Special Components (WebGL Migration)
+export { PixiDisclosure, type PixiDisclosureProps } from './PixiDisclosure';
+export { PixiDisclosureGroup, type PixiDisclosureGroupProps } from './PixiDisclosureGroup';
+export { PixiTooltip, type PixiTooltipProps } from './PixiTooltip';
+export { PixiPopover, type PixiPopoverProps } from './PixiPopover';
+export { PixiDialog, type PixiDialogProps } from './PixiDialog';

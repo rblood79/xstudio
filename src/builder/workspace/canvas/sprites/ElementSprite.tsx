@@ -53,6 +53,12 @@ import {
   PixiTagGroup,
   PixiTree,
   PixiTable,
+  // Phase 5 WebGL Migration Components
+  PixiDisclosure,
+  PixiDisclosureGroup,
+  PixiTooltip,
+  PixiPopover,
+  PixiDialog,
 } from '../ui';
 import { useStore } from '../../../stores';
 import { isFlexContainer, isGridContainer } from '../layout';
@@ -167,13 +173,22 @@ const UI_TAGGROUP_TAGS = new Set(['TagGroup', 'TagList']);
 const UI_TREE_TAGS = new Set(['Tree', 'TreeView']);
 const UI_TABLE_TAGS = new Set(['Table', 'DataTable', 'DataGrid']);
 
+/**
+ * Phase 5 WebGL Migration 컴포넌트 태그들
+ */
+const UI_DISCLOSURE_TAGS = new Set(['Disclosure']);
+const UI_DISCLOSUREGROUP_TAGS = new Set(['DisclosureGroup', 'Accordion']);
+const UI_TOOLTIP_TAGS = new Set(['Tooltip']);
+const UI_POPOVER_TAGS = new Set(['Popover']);
+const UI_DIALOG_TAGS = new Set(['Dialog', 'Modal', 'AlertDialog']);
+
 // Note: TEXT_TAGS, IMAGE_TAGS, UI_*_TAGS에 포함되지 않은 모든 태그는 BoxSprite로 렌더링됨
 
 // ============================================
 // Sprite Type Detection
 // ============================================
 
-type SpriteType = 'box' | 'text' | 'image' | 'button' | 'fancyButton' | 'checkboxGroup' | 'checkboxItem' | 'radioGroup' | 'radioItem' | 'slider' | 'input' | 'select' | 'progressBar' | 'switcher' | 'scrollBox' | 'list' | 'maskedFrame' | 'flex' | 'grid' | 'toggleButton' | 'toggleButtonGroup' | 'listBox' | 'badge' | 'meter' | 'separator' | 'link' | 'breadcrumbs' | 'card' | 'menu' | 'tabs' | 'numberField' | 'searchField' | 'comboBox' | 'gridList' | 'tagGroup' | 'tree' | 'table';
+type SpriteType = 'box' | 'text' | 'image' | 'button' | 'fancyButton' | 'checkboxGroup' | 'checkboxItem' | 'radioGroup' | 'radioItem' | 'slider' | 'input' | 'select' | 'progressBar' | 'switcher' | 'scrollBox' | 'list' | 'maskedFrame' | 'flex' | 'grid' | 'toggleButton' | 'toggleButtonGroup' | 'listBox' | 'badge' | 'meter' | 'separator' | 'link' | 'breadcrumbs' | 'card' | 'menu' | 'tabs' | 'numberField' | 'searchField' | 'comboBox' | 'gridList' | 'tagGroup' | 'tree' | 'table' | 'disclosure' | 'disclosureGroup' | 'tooltip' | 'popover' | 'dialog';
 
 function getSpriteType(element: Element): SpriteType {
   const tag = element.tag;
@@ -219,6 +234,13 @@ function getSpriteType(element: Element): SpriteType {
   if (UI_TAGGROUP_TAGS.has(tag)) return 'tagGroup';
   if (UI_TREE_TAGS.has(tag)) return 'tree';
   if (UI_TABLE_TAGS.has(tag)) return 'table';
+
+  // Phase 5 WebGL Migration 컴포넌트
+  if (UI_DISCLOSURE_TAGS.has(tag)) return 'disclosure';
+  if (UI_DISCLOSUREGROUP_TAGS.has(tag)) return 'disclosureGroup';
+  if (UI_TOOLTIP_TAGS.has(tag)) return 'tooltip';
+  if (UI_POPOVER_TAGS.has(tag)) return 'popover';
+  if (UI_DIALOG_TAGS.has(tag)) return 'dialog';
 
   // 레이아웃 컨테이너 체크 (Phase 11 B2.5)
   // display: flex/grid인 경우에도 현재는 BoxSprite로 렌더링
@@ -603,6 +625,57 @@ export const ElementSprite = memo(function ElementSprite({
     case 'table':
       return (
         <PixiTable
+          element={effectiveElement}
+          isSelected={isSelected}
+          onClick={onClick}
+          onChange={onChange ? (id, value) => onChange(id, value) : undefined}
+        />
+      );
+
+    // Phase 5 WebGL Migration 컴포넌트
+    case 'disclosure':
+      return (
+        <PixiDisclosure
+          element={effectiveElement}
+          isSelected={isSelected}
+          onClick={onClick}
+          onChange={onChange ? (id, value) => onChange(id, value) : undefined}
+        />
+      );
+
+    case 'disclosureGroup':
+      return (
+        <PixiDisclosureGroup
+          element={effectiveElement}
+          isSelected={isSelected}
+          onClick={onClick}
+          onChange={onChange ? (id, value) => onChange(id, value) : undefined}
+        />
+      );
+
+    case 'tooltip':
+      return (
+        <PixiTooltip
+          element={effectiveElement}
+          isSelected={isSelected}
+          onClick={onClick}
+          onChange={onChange ? (id, value) => onChange(id, value) : undefined}
+        />
+      );
+
+    case 'popover':
+      return (
+        <PixiPopover
+          element={effectiveElement}
+          isSelected={isSelected}
+          onClick={onClick}
+          onChange={onChange ? (id, value) => onChange(id, value) : undefined}
+        />
+      );
+
+    case 'dialog':
+      return (
+        <PixiDialog
           element={effectiveElement}
           isSelected={isSelected}
           onClick={onClick}

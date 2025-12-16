@@ -2315,3 +2315,297 @@ const TABLE_COLOR_FALLBACKS: Record<string, TableColorPreset> = {
 export function getTableColorPreset(variant: string): TableColorPreset {
   return TABLE_COLOR_FALLBACKS[variant] || TABLE_COLOR_FALLBACKS.default;
 }
+
+// ============================================
+// Phase 5: Disclosure Size Preset
+// ============================================
+
+/**
+ * Disclosure 사이즈 프리셋
+ */
+export interface DisclosureSizePreset {
+  fontSize: number;
+  padding: number;
+  gap: number;
+  chevronSize: number;
+  panelIndent: number;
+  borderRadius: number;
+}
+
+const DISCLOSURE_SIZE_MAPPING: Record<string, { fontSize: string; padding: string; gap: string }> = {
+  sm: { fontSize: '--text-sm', padding: '--spacing-xs', gap: '--spacing-xs' },
+  md: { fontSize: '--text-base', padding: '--spacing-sm', gap: '--spacing-sm' },
+  lg: { fontSize: '--text-lg', padding: '--spacing', gap: '--spacing' },
+};
+
+const DISCLOSURE_FALLBACKS: Record<string, DisclosureSizePreset> = {
+  sm: { fontSize: 14, padding: 4, gap: 4, chevronSize: 12, panelIndent: 20, borderRadius: 4 },
+  md: { fontSize: 16, padding: 8, gap: 8, chevronSize: 16, panelIndent: 32, borderRadius: 6 },
+  lg: { fontSize: 18, padding: 8, gap: 8, chevronSize: 20, panelIndent: 44, borderRadius: 8 },
+};
+
+/**
+ * Disclosure 사이즈 프리셋 읽기
+ */
+export function getDisclosureSizePreset(size: string): DisclosureSizePreset {
+  const mapping = DISCLOSURE_SIZE_MAPPING[size];
+  const fallback = DISCLOSURE_FALLBACKS[size] || DISCLOSURE_FALLBACKS.md;
+
+  if (!mapping) {
+    return fallback;
+  }
+
+  return {
+    fontSize: parseCSSValue(getCSSVariable(mapping.fontSize), fallback.fontSize),
+    padding: parseCSSValue(getCSSVariable(mapping.padding), fallback.padding),
+    gap: parseCSSValue(getCSSVariable(mapping.gap), fallback.gap),
+    chevronSize: fallback.chevronSize,
+    panelIndent: fallback.panelIndent,
+    borderRadius: fallback.borderRadius,
+  };
+}
+
+/**
+ * Disclosure 색상 프리셋
+ */
+export interface DisclosureColorPreset {
+  backgroundColor: number;
+  borderColor: number;
+  textColor: number;
+  triggerHoverBgColor: number;
+  expandedBgColor: number;
+  panelTextColor: number;
+  focusColor: number;
+}
+
+const DISCLOSURE_COLOR_FALLBACKS: Record<string, DisclosureColorPreset> = {
+  default: { backgroundColor: 0xf3f4f6, borderColor: 0xcad3dc, textColor: 0x374151, triggerHoverBgColor: 0x00000014, expandedBgColor: 0xf3f4f6, panelTextColor: 0x6b7280, focusColor: 0x3b82f6 },
+  primary: { backgroundColor: 0xf3f4f6, borderColor: 0x3b82f6, textColor: 0x3b82f6, triggerHoverBgColor: 0x3b82f614, expandedBgColor: 0x3b82f60a, panelTextColor: 0x6b7280, focusColor: 0x3b82f6 },
+  secondary: { backgroundColor: 0xf3f4f6, borderColor: 0x6366f1, textColor: 0x6366f1, triggerHoverBgColor: 0x6366f114, expandedBgColor: 0x6366f10a, panelTextColor: 0x6b7280, focusColor: 0x6366f1 },
+};
+
+/**
+ * Disclosure 색상 프리셋 읽기
+ */
+export function getDisclosureColorPreset(variant: string): DisclosureColorPreset {
+  return DISCLOSURE_COLOR_FALLBACKS[variant] || DISCLOSURE_COLOR_FALLBACKS.default;
+}
+
+// ============================================
+// Phase 5: Tooltip Size Preset
+// ============================================
+
+/**
+ * Tooltip 사이즈 프리셋
+ */
+export interface TooltipSizePreset {
+  fontSize: number;
+  paddingX: number;
+  paddingY: number;
+  maxWidth: number;
+  borderRadius: number;
+}
+
+const TOOLTIP_SIZE_MAPPING: Record<string, { fontSize: string; paddingX: string; paddingY: string }> = {
+  sm: { fontSize: '--text-2xs', paddingX: '--spacing-xs', paddingY: '--spacing-2xs' },
+  md: { fontSize: '--text-xs', paddingX: '--spacing', paddingY: '--spacing-xs' },
+  lg: { fontSize: '--text-sm', paddingX: '--spacing-sm', paddingY: '--spacing-xs' },
+};
+
+const TOOLTIP_FALLBACKS: Record<string, TooltipSizePreset> = {
+  sm: { fontSize: 10, paddingX: 4, paddingY: 2, maxWidth: 120, borderRadius: 4 },
+  md: { fontSize: 12, paddingX: 8, paddingY: 4, maxWidth: 150, borderRadius: 4 },
+  lg: { fontSize: 14, paddingX: 8, paddingY: 4, maxWidth: 200, borderRadius: 4 },
+};
+
+/**
+ * Tooltip 사이즈 프리셋 읽기
+ */
+export function getTooltipSizePreset(size: string): TooltipSizePreset {
+  const mapping = TOOLTIP_SIZE_MAPPING[size];
+  const fallback = TOOLTIP_FALLBACKS[size] || TOOLTIP_FALLBACKS.md;
+
+  if (!mapping) {
+    return fallback;
+  }
+
+  return {
+    fontSize: parseCSSValue(getCSSVariable(mapping.fontSize), fallback.fontSize),
+    paddingX: parseCSSValue(getCSSVariable(mapping.paddingX), fallback.paddingX),
+    paddingY: parseCSSValue(getCSSVariable(mapping.paddingY), fallback.paddingY),
+    maxWidth: fallback.maxWidth,
+    borderRadius: fallback.borderRadius,
+  };
+}
+
+/**
+ * Tooltip 색상 프리셋
+ */
+export interface TooltipColorPreset {
+  backgroundColor: number;
+  textColor: number;
+  arrowColor: number;
+}
+
+const TOOLTIP_COLOR_FALLBACKS: Record<string, TooltipColorPreset> = {
+  default: { backgroundColor: 0x374151, textColor: 0xffffff, arrowColor: 0x374151 },
+  primary: { backgroundColor: 0x3b82f6, textColor: 0xffffff, arrowColor: 0x3b82f6 },
+  secondary: { backgroundColor: 0x6366f1, textColor: 0xffffff, arrowColor: 0x6366f1 },
+  tertiary: { backgroundColor: 0xec4899, textColor: 0xffffff, arrowColor: 0xec4899 },
+  error: { backgroundColor: 0xef4444, textColor: 0xffffff, arrowColor: 0xef4444 },
+  filled: { backgroundColor: 0xf9fafb, textColor: 0x374151, arrowColor: 0xf9fafb },
+};
+
+/**
+ * Tooltip 색상 프리셋 읽기
+ */
+export function getTooltipColorPreset(variant: string): TooltipColorPreset {
+  return TOOLTIP_COLOR_FALLBACKS[variant] || TOOLTIP_COLOR_FALLBACKS.default;
+}
+
+// ============================================
+// Phase 5: Popover Size Preset
+// ============================================
+
+/**
+ * Popover 사이즈 프리셋
+ */
+export interface PopoverSizePreset {
+  fontSize: number;
+  maxWidth: number;
+  borderRadius: number;
+  padding: number;
+}
+
+const POPOVER_SIZE_MAPPING: Record<string, { fontSize: string }> = {
+  sm: { fontSize: '--text-sm' },
+  md: { fontSize: '--text-base' },
+  lg: { fontSize: '--text-lg' },
+};
+
+const POPOVER_FALLBACKS: Record<string, PopoverSizePreset> = {
+  sm: { fontSize: 14, maxWidth: 200, borderRadius: 8, padding: 12 },
+  md: { fontSize: 16, maxWidth: 250, borderRadius: 12, padding: 16 },
+  lg: { fontSize: 18, maxWidth: 320, borderRadius: 16, padding: 20 },
+};
+
+/**
+ * Popover 사이즈 프리셋 읽기
+ */
+export function getPopoverSizePreset(size: string): PopoverSizePreset {
+  const mapping = POPOVER_SIZE_MAPPING[size];
+  const fallback = POPOVER_FALLBACKS[size] || POPOVER_FALLBACKS.md;
+
+  if (!mapping) {
+    return fallback;
+  }
+
+  return {
+    fontSize: parseCSSValue(getCSSVariable(mapping.fontSize), fallback.fontSize),
+    maxWidth: fallback.maxWidth,
+    borderRadius: fallback.borderRadius,
+    padding: fallback.padding,
+  };
+}
+
+/**
+ * Popover 색상 프리셋
+ */
+export interface PopoverColorPreset {
+  backgroundColor: number;
+  borderColor: number;
+  textColor: number;
+  arrowFillColor: number;
+  arrowStrokeColor: number;
+  shadowColor: number;
+}
+
+const POPOVER_COLOR_FALLBACKS: Record<string, PopoverColorPreset> = {
+  default: { backgroundColor: 0xf3f4f6, borderColor: 0xcad3dc, textColor: 0x374151, arrowFillColor: 0xf3f4f6, arrowStrokeColor: 0xcad3dc, shadowColor: 0x00000026 },
+  primary: { backgroundColor: 0xf3f4f6, borderColor: 0x3b82f6, textColor: 0x374151, arrowFillColor: 0xf3f4f6, arrowStrokeColor: 0x3b82f6, shadowColor: 0x00000026 },
+  secondary: { backgroundColor: 0xf3f4f6, borderColor: 0x6366f1, textColor: 0x374151, arrowFillColor: 0xf3f4f6, arrowStrokeColor: 0x6366f1, shadowColor: 0x00000026 },
+  tertiary: { backgroundColor: 0xf3f4f6, borderColor: 0xec4899, textColor: 0x374151, arrowFillColor: 0xf3f4f6, arrowStrokeColor: 0xec4899, shadowColor: 0x00000026 },
+  error: { backgroundColor: 0xf3f4f6, borderColor: 0xef4444, textColor: 0x374151, arrowFillColor: 0xf3f4f6, arrowStrokeColor: 0xef4444, shadowColor: 0x00000026 },
+  filled: { backgroundColor: 0xf9fafb, borderColor: 0x00000000, textColor: 0x374151, arrowFillColor: 0xf9fafb, arrowStrokeColor: 0x00000000, shadowColor: 0x00000026 },
+};
+
+/**
+ * Popover 색상 프리셋 읽기
+ */
+export function getPopoverColorPreset(variant: string): PopoverColorPreset {
+  return POPOVER_COLOR_FALLBACKS[variant] || POPOVER_COLOR_FALLBACKS.default;
+}
+
+// ============================================
+// Phase 5: Dialog Size Preset
+// ============================================
+
+/**
+ * Dialog 사이즈 프리셋
+ */
+export interface DialogSizePreset {
+  fontSize: number;
+  titleFontSize: number;
+  padding: number;
+  borderRadius: number;
+  minWidth: number;
+}
+
+const DIALOG_SIZE_MAPPING: Record<string, { fontSize: string; titleFontSize: string; padding: string }> = {
+  sm: { fontSize: '--text-sm', titleFontSize: '--text-lg', padding: '--spacing-md' },
+  md: { fontSize: '--text-base', titleFontSize: '--text-xl', padding: '--spacing-lg' },
+  lg: { fontSize: '--text-lg', titleFontSize: '--text-2xl', padding: '--spacing-xl' },
+};
+
+const DIALOG_FALLBACKS: Record<string, DialogSizePreset> = {
+  sm: { fontSize: 14, titleFontSize: 18, padding: 12, borderRadius: 12, minWidth: 280 },
+  md: { fontSize: 16, titleFontSize: 20, padding: 16, borderRadius: 16, minWidth: 320 },
+  lg: { fontSize: 18, titleFontSize: 24, padding: 24, borderRadius: 20, minWidth: 400 },
+};
+
+/**
+ * Dialog 사이즈 프리셋 읽기
+ */
+export function getDialogSizePreset(size: string): DialogSizePreset {
+  const mapping = DIALOG_SIZE_MAPPING[size];
+  const fallback = DIALOG_FALLBACKS[size] || DIALOG_FALLBACKS.md;
+
+  if (!mapping) {
+    return fallback;
+  }
+
+  return {
+    fontSize: parseCSSValue(getCSSVariable(mapping.fontSize), fallback.fontSize),
+    titleFontSize: parseCSSValue(getCSSVariable(mapping.titleFontSize), fallback.titleFontSize),
+    padding: parseCSSValue(getCSSVariable(mapping.padding), fallback.padding),
+    borderRadius: fallback.borderRadius,
+    minWidth: fallback.minWidth,
+  };
+}
+
+/**
+ * Dialog 색상 프리셋
+ */
+export interface DialogColorPreset {
+  backgroundColor: number;
+  borderColor: number;
+  titleColor: number;
+  textColor: number;
+  backdropColor: number;
+}
+
+const DIALOG_COLOR_FALLBACKS: Record<string, DialogColorPreset> = {
+  default: { backgroundColor: 0xf3f4f6, borderColor: 0x00000000, titleColor: 0x374151, textColor: 0x374151, backdropColor: 0x00000080 },
+  primary: { backgroundColor: 0xf3f4f6, borderColor: 0x3b82f6, titleColor: 0x3b82f6, textColor: 0x374151, backdropColor: 0x00000080 },
+  secondary: { backgroundColor: 0xf3f4f6, borderColor: 0x6366f1, titleColor: 0x6366f1, textColor: 0x374151, backdropColor: 0x00000080 },
+  tertiary: { backgroundColor: 0xf3f4f6, borderColor: 0xec4899, titleColor: 0xec4899, textColor: 0x374151, backdropColor: 0x00000080 },
+  error: { backgroundColor: 0xf3f4f6, borderColor: 0xef4444, titleColor: 0xef4444, textColor: 0x374151, backdropColor: 0x00000080 },
+  filled: { backgroundColor: 0xf9fafb, borderColor: 0x00000000, titleColor: 0x374151, textColor: 0x374151, backdropColor: 0x00000080 },
+};
+
+/**
+ * Dialog 색상 프리셋 읽기
+ */
+export function getDialogColorPreset(variant: string): DialogColorPreset {
+  return DIALOG_COLOR_FALLBACKS[variant] || DIALOG_COLOR_FALLBACKS.default;
+}
