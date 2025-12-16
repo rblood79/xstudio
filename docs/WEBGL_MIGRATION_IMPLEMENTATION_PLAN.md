@@ -588,3 +588,112 @@ src/builder/workspace/canvas/
 - [FancyButton](https://pixijs.io/ui/storybook/?path=/story/fancybutton--simple)
 - [Slider](https://pixijs.io/ui/storybook/?path=/story/slider--single)
 - [Input](https://pixijs.io/ui/storybook/?path=/story/input--single)
+
+---
+
+## 10. 구현 완료 내역
+
+### 10.1 2025-12-16: CSS 동기화 시스템 구축
+
+#### 핵심 유틸리티 구현
+
+**파일**: `src/builder/workspace/canvas/utils/cssVariableReader.ts`
+
+| 함수 | 설명 | 상태 |
+|------|------|------|
+| `getCSSVariable(varName)` | CSS 변수 값 읽기 | ✅ |
+| `parseCSSValue(value, fallback)` | rem/px → 숫자 변환 | ✅ |
+| `getVariantColors(variant)` | M3 색상 프리셋 | ✅ |
+| `getSizePreset(size)` | Button 크기 프리셋 | ✅ |
+| `getCheckboxSizePreset(size)` | Checkbox 크기 프리셋 | ✅ |
+
+#### PixiButton 업데이트
+
+**파일**: `src/builder/workspace/canvas/ui/PixiButton.tsx`
+
+- ❌ 기존: 하드코딩된 `SIZE_PRESETS` 상수
+- ✅ 변경: `getSizePreset(size)` 사용으로 CSS 변수 동적 읽기
+
+```typescript
+// Before (하드코딩)
+const SIZE_PRESETS = {
+  sm: { fontSize: 14, paddingX: 12, paddingY: 8 },
+  md: { fontSize: 16, paddingX: 20, paddingY: 10 },
+};
+
+// After (CSS 변수 동적 읽기)
+const sizePreset = getSizePreset(size);
+```
+
+#### PixiCheckbox 업데이트
+
+**파일**: `src/builder/workspace/canvas/ui/PixiCheckbox.tsx`
+
+- ❌ 기존: 하드코딩된 boxSize 계산
+- ✅ 변경: `getCheckboxSizePreset(size)` 사용
+
+```typescript
+// Before (하드코딩)
+if (size === 'sm') return 16;
+if (size === 'md') return 20;
+if (size === 'lg') return 24;
+
+// After (CSS 변수 동적 읽기)
+const sizePreset = getCheckboxSizePreset(size);
+const boxSize = sizePreset.boxSize;
+```
+
+### 10.2 CSS 변수 매핑 테이블
+
+#### Button Size 매핑
+
+| Size | fontSize | paddingY | paddingX | borderRadius |
+|------|----------|----------|----------|--------------|
+| xs | `--text-2xs` | `--spacing-2xs` | `--spacing-sm` | `--radius-sm` |
+| sm | `--text-sm` | `--spacing` | `--spacing-md` | `--radius-sm` |
+| md | `--text-base` | `--spacing-sm` | `--spacing-xl` | `--radius-md` |
+| lg | `--text-lg` | `--spacing-md` | `--spacing-2xl` | `--radius-lg` |
+| xl | `--text-xl` | `--spacing-lg` | `--spacing-3xl` | `--radius-lg` |
+
+#### Checkbox Size 매핑
+
+| Size | boxSize | fontSize | gap | strokeWidth |
+|------|---------|----------|-----|-------------|
+| sm | 16px | `--text-sm` | 6px | 2px |
+| md | 20px | `--text-base` | 8px | 2.5px |
+| lg | 24px | `--text-lg` | 10px | 3px |
+
+### 10.3 검증 결과
+
+- [x] TypeScript 컴파일 성공 (`npx tsc --noEmit`)
+- [x] PixiButton: CSS 변수에서 동적으로 크기 읽기 확인
+- [x] PixiCheckbox: CSS 변수에서 동적으로 크기 읽기 확인
+- [ ] 시각적 동일성 테스트 (iframe vs WebGL) - 수동 검증 필요
+
+### 10.4 Git 커밋 기록
+
+| 커밋 | 메시지 |
+|------|--------|
+| `be9f4d8` | feat(canvas): implement dynamic CSS variable reading for WebGL component sizes |
+| `2642f9e` | docs: restructure WebGL migration plan with core objective |
+| `8cdccd9` | docs: add iframe component rendering structure to migration plan |
+| `44807b5` | docs: add WYSIWYG rationale to migration plan |
+
+---
+
+## 11. 다음 단계
+
+### 11.1 Phase 1 완료 필요 항목
+
+| 컴포넌트 | 작업 내용 | 예상 시간 |
+|----------|-----------|-----------|
+| PixiSlider | `getSliderSizePreset()` 추가 | 1시간 |
+| PixiRadio | `getRadioSizePreset()` 추가 | 1시간 |
+| PixiProgressBar | `getProgressBarSizePreset()` 추가 | 1시간 |
+
+### 11.2 Phase 2 시작 조건
+
+Phase 1의 모든 컴포넌트가 Color + Size 동기화 완료되면:
+1. PixiToggleButton 구현 시작
+2. PixiToggleButtonGroup 구현 시작
+3. PixiListBox 구현 시작
