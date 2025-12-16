@@ -31,7 +31,7 @@ import type {
   ComponentSize,
 } from "../../../../types/builder/componentVariants.types";
 import { useThemeColors } from "../hooks/useThemeColors";
-import { getVariantColors } from "../utils/cssVariableReader";
+import { getVariantColors, getSizePreset, type SizePreset } from "../utils/cssVariableReader";
 import { drawBox } from "../utils";
 
 // ============================================
@@ -61,35 +61,13 @@ interface VariantColors {
 // useThemeColors() + getVariantColors()로 동적으로 가져옴
 
 // ============================================
-// Size Presets (Button.css와 동기화)
+// Size Presets - 동적 CSS 변수 읽기
 // ============================================
+// Note: SIZE_PRESETS는 더 이상 하드코딩하지 않음
+// getSizePreset()으로 CSS 변수에서 동적으로 읽어옴
+// → CSS 스타일시트 값 변경 시 WebGL 컴포넌트에도 자동 반영
 
-interface SizePreset {
-  fontSize: number;
-  paddingX: number; // 좌우 padding (CSS: padding-right, padding-left)
-  paddingY: number; // 상하 padding (CSS: padding-top, padding-bottom)
-  borderRadius: number;
-}
-
-/**
- * size별 크기/패딩 프리셋 (Button.css와 정확히 동기화)
- *
- * Button.css 값:
- * - xs: padding: var(--spacing-2xs) var(--spacing-sm)  = 2px 8px,  font-size: 10px
- * - sm: padding: var(--spacing) var(--spacing-md)      = 4px 12px, font-size: 14px
- * - md: padding: var(--spacing-sm) var(--spacing-xl)   = 8px 24px, font-size: 16px
- * - lg: padding: var(--spacing-md) var(--spacing-2xl)  = 12px 32px, font-size: 18px
- * - xl: padding: var(--spacing-lg) var(--spacing-3xl)  = 16px 40px, font-size: 20px
- */
-const SIZE_PRESETS: Record<string, SizePreset> = {
-  xs: { fontSize: 10, paddingX: 8, paddingY: 2, borderRadius: 4 },
-  sm: { fontSize: 14, paddingX: 12, paddingY: 4, borderRadius: 4 },
-  md: { fontSize: 16, paddingX: 24, paddingY: 8, borderRadius: 6 },
-  lg: { fontSize: 18, paddingX: 32, paddingY: 12, borderRadius: 8 },
-  xl: { fontSize: 20, paddingX: 40, paddingY: 16, borderRadius: 8 },
-};
-
-const DEFAULT_SIZE_PRESET = SIZE_PRESETS.sm;
+const DEFAULT_SIZE_PRESET: SizePreset = { fontSize: 14, paddingX: 12, paddingY: 4, borderRadius: 4 };
 
 // ============================================
 // Types
@@ -167,8 +145,8 @@ function getButtonLayout(
   const isDisabled = Boolean(buttonProps.isDisabled);
   const isLoading = Boolean(buttonProps.isLoading);
 
-  // size 프리셋 가져오기
-  const sizePreset = SIZE_PRESETS[size] || DEFAULT_SIZE_PRESET;
+  // size 프리셋 가져오기 (CSS 변수에서 동적으로 읽어옴)
+  const sizePreset = getSizePreset(size) || DEFAULT_SIZE_PRESET;
 
   // 폰트 설정 (inline style > size preset)
   const fontSize = parseCSSSize(

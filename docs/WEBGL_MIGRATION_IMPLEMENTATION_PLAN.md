@@ -704,3 +704,118 @@ case 'toggleButtonGroup':
 - [Slider](https://pixijs.io/ui/storybook/?path=/story/slider--single)
 - [Input](https://pixijs.io/ui/storybook/?path=/story/input--single)
 - [ScrollBox](https://pixijs.io/ui/storybook/?path=/story/scrollbox--single)
+
+---
+
+## 11. CSS 변수 동기화 시스템
+
+> **Updated**: 2025-12-16
+> **구현 완료**: PixiButton, PixiCheckbox
+
+### 11.1 개요
+
+WebGL 컴포넌트가 CSS 스타일시트의 변경사항을 자동으로 반영하도록 구현되었습니다.
+CSS 변수(--text-sm, --spacing-md 등)가 변경되면 WebGL 컴포넌트의 크기/스타일도 동적으로 업데이트됩니다.
+
+### 11.2 구현 파일
+
+**핵심 유틸리티**: `src/builder/workspace/canvas/utils/cssVariableReader.ts`
+
+```typescript
+// CSS 변수 읽기
+export function getCSSVariable(varName: string): string;
+
+// rem → px 변환
+export function parseCSSValue(value: string | undefined, fallback: number): number;
+
+// Button 크기 프리셋 (CSS에서 동적으로 읽음)
+export function getSizePreset(size: string): SizePreset;
+// → Returns: { fontSize, paddingX, paddingY, borderRadius }
+
+// Checkbox 크기 프리셋
+export function getCheckboxSizePreset(size: string): CheckboxSizePreset;
+// → Returns: { boxSize, fontSize, gap, strokeWidth }
+
+// 테마 색상 (기존)
+export function getVariantColors(variant: string): VariantColors;
+```
+
+### 11.3 CSS 변수 매핑
+
+#### Button 크기 매핑
+| Size | fontSize CSS | paddingY CSS | paddingX CSS | borderRadius CSS |
+|------|-------------|--------------|--------------|------------------|
+| xs | --text-2xs | --spacing-2xs | --spacing-sm | --radius-sm |
+| sm | --text-sm | --spacing | --spacing-md | --radius-sm |
+| md | --text-base | --spacing-sm | --spacing-xl | --radius-md |
+| lg | --text-lg | --spacing-md | --spacing-2xl | --radius-lg |
+| xl | --text-xl | --spacing-lg | --spacing-3xl | --radius-lg |
+
+#### Checkbox 크기 매핑
+| Size | boxSize CSS | fontSize CSS |
+|------|-------------|--------------|
+| sm | 16px | --text-sm |
+| md | 20px | --text-base |
+| lg | 24px | --text-lg |
+
+### 11.4 사용 예시
+
+```typescript
+// PixiButton.tsx
+import { getSizePreset } from '../utils/cssVariableReader';
+
+const sizePreset = getSizePreset(size); // 'sm' | 'md' | 'lg' | 'xl' | 'xs'
+// → { fontSize: 14, paddingX: 12, paddingY: 8, borderRadius: 4 }
+
+// PixiCheckbox.tsx
+import { getCheckboxSizePreset } from '../utils/cssVariableReader';
+
+const sizePreset = getCheckboxSizePreset(size);
+// → { boxSize: 20, fontSize: 16, gap: 8, strokeWidth: 2.5 }
+```
+
+### 11.5 동작 원리
+
+1. **런타임 CSS 읽기**: `getComputedStyle(document.documentElement).getPropertyValue()`
+2. **단위 변환**: rem → px (1rem = 16px 기준)
+3. **폴백 값**: CSS 변수를 읽지 못할 경우 하드코딩된 기본값 사용
+4. **캐싱 없음**: 매 호출 시 최신 CSS 값 반영 (테마 변경 즉시 적용)
+
+### 11.6 새 컴포넌트에 적용하기
+
+1. `cssVariableReader.ts`에 새 프리셋 함수 추가
+2. CSS 매핑 정의 (해당 컴포넌트의 CSS 파일 참조)
+3. 컴포넌트에서 프리셋 함수 import 및 사용
+
+```typescript
+// 1. cssVariableReader.ts에 추가
+const NEWCOMPONENT_SIZE_MAPPING = {
+  sm: { fontSize: '--text-sm', padding: '--spacing-sm' },
+  md: { fontSize: '--text-base', padding: '--spacing-md' },
+  lg: { fontSize: '--text-lg', padding: '--spacing-lg' },
+};
+
+export function getNewComponentSizePreset(size: string): NewComponentSizePreset {
+  const mapping = NEWCOMPONENT_SIZE_MAPPING[size];
+  // ... parseCSSValue로 변환
+}
+
+// 2. PixiNewComponent.tsx에서 사용
+import { getNewComponentSizePreset } from '../utils/cssVariableReader';
+
+const sizePreset = useMemo(() => {
+  return getNewComponentSizePreset(props?.size || 'md');
+}, [props?.size]);
+```
+
+### 11.7 마이그레이션 상태
+
+| 컴포넌트 | Color 동기화 | Size 동기화 |
+|----------|-------------|-------------|
+| PixiButton | ✅ | ✅ |
+| PixiCheckbox | ✅ | ✅ |
+| PixiSlider | ✅ | ⬜ (예정) |
+| PixiRadio | ✅ | ⬜ (예정) |
+| PixiProgressBar | ✅ | ⬜ (예정) |
+| PixiInput | ⬜ | ⬜ |
+| 기타 | ⬜ | ⬜ |

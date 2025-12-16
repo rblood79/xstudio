@@ -339,3 +339,160 @@ export function getVariantColors(
       };
   }
 }
+
+// ============================================
+// Size Preset Reading (Dynamic CSS Variables)
+// ============================================
+
+/**
+ * Button/Component 사이즈 프리셋 타입
+ */
+export interface SizePreset {
+  fontSize: number;
+  paddingX: number;
+  paddingY: number;
+  borderRadius: number;
+}
+
+/**
+ * CSS 변수에서 px 값 파싱
+ * rem → px 변환 (1rem = 16px 기준)
+ */
+function parseCSSValue(value: string, fallback: number): number {
+  if (!value) return fallback;
+
+  const trimmed = value.trim();
+
+  // px 값
+  if (trimmed.endsWith('px')) {
+    return parseFloat(trimmed) || fallback;
+  }
+
+  // rem 값 → px 변환 (1rem = 16px)
+  if (trimmed.endsWith('rem')) {
+    const remValue = parseFloat(trimmed);
+    return remValue ? remValue * 16 : fallback;
+  }
+
+  // 숫자만 있는 경우
+  const num = parseFloat(trimmed);
+  return isNaN(num) ? fallback : num;
+}
+
+/**
+ * Button.css 사이즈별 CSS 변수 매핑
+ *
+ * CSS 정의:
+ * - xs: font-size: var(--text-2xs), padding: var(--spacing-2xs) var(--spacing-sm)
+ * - sm: font-size: var(--text-sm),  padding: var(--spacing) var(--spacing-md)
+ * - md: font-size: var(--text-base), padding: var(--spacing-sm) var(--spacing-xl)
+ * - lg: font-size: var(--text-lg),  padding: var(--spacing-md) var(--spacing-2xl)
+ * - xl: font-size: var(--text-xl),  padding: var(--spacing-lg) var(--spacing-3xl)
+ */
+const SIZE_CSS_MAPPING: Record<string, { fontSize: string; paddingY: string; paddingX: string; borderRadius: string }> = {
+  xs: { fontSize: '--text-2xs', paddingY: '--spacing-2xs', paddingX: '--spacing-sm', borderRadius: '--radius-sm' },
+  sm: { fontSize: '--text-sm', paddingY: '--spacing', paddingX: '--spacing-md', borderRadius: '--radius-sm' },
+  md: { fontSize: '--text-base', paddingY: '--spacing-sm', paddingX: '--spacing-xl', borderRadius: '--radius-md' },
+  lg: { fontSize: '--text-lg', paddingY: '--spacing-md', paddingX: '--spacing-2xl', borderRadius: '--radius-lg' },
+  xl: { fontSize: '--text-xl', paddingY: '--spacing-lg', paddingX: '--spacing-3xl', borderRadius: '--radius-lg' },
+};
+
+/**
+ * Fallback 값 (CSS 변수 읽기 실패 시)
+ * shared-tokens.css와 동기화
+ */
+const SIZE_FALLBACKS: Record<string, SizePreset> = {
+  xs: { fontSize: 10, paddingX: 8, paddingY: 2, borderRadius: 4 },
+  sm: { fontSize: 14, paddingX: 12, paddingY: 4, borderRadius: 4 },
+  md: { fontSize: 16, paddingX: 24, paddingY: 8, borderRadius: 6 },
+  lg: { fontSize: 18, paddingX: 32, paddingY: 12, borderRadius: 8 },
+  xl: { fontSize: 20, paddingX: 40, paddingY: 16, borderRadius: 8 },
+};
+
+/**
+ * 사이즈별 프리셋을 CSS 변수에서 동적으로 읽어옴
+ *
+ * CSS 스타일시트 값 변경 시 WebGL 컴포넌트에도 자동 반영
+ *
+ * @param size - 'xs' | 'sm' | 'md' | 'lg' | 'xl'
+ * @returns SizePreset with fontSize, paddingX, paddingY, borderRadius
+ *
+ * @example
+ * const preset = getSizePreset('md');
+ * // { fontSize: 16, paddingX: 24, paddingY: 8, borderRadius: 6 }
+ */
+export function getSizePreset(size: string): SizePreset {
+  const mapping = SIZE_CSS_MAPPING[size];
+  const fallback = SIZE_FALLBACKS[size] || SIZE_FALLBACKS.sm;
+
+  if (!mapping) {
+    return fallback;
+  }
+
+  // CSS 변수에서 값 읽기
+  const fontSize = parseCSSValue(getCSSVariable(mapping.fontSize), fallback.fontSize);
+  const paddingX = parseCSSValue(getCSSVariable(mapping.paddingX), fallback.paddingX);
+  const paddingY = parseCSSValue(getCSSVariable(mapping.paddingY), fallback.paddingY);
+  const borderRadius = parseCSSValue(getCSSVariable(mapping.borderRadius), fallback.borderRadius);
+
+  return { fontSize, paddingX, paddingY, borderRadius };
+}
+
+/**
+ * 모든 사이즈 프리셋을 한번에 읽어옴
+ * 컴포넌트 초기화 시 사용
+ *
+ * @returns Record<string, SizePreset>
+ */
+export function getAllSizePresets(): Record<string, SizePreset> {
+  return {
+    xs: getSizePreset('xs'),
+    sm: getSizePreset('sm'),
+    md: getSizePreset('md'),
+    lg: getSizePreset('lg'),
+    xl: getSizePreset('xl'),
+  };
+}
+
+/**
+ * Checkbox/Radio 등 컴포넌트용 사이즈 프리셋
+ * 체크박스 박스 크기만 다름
+ */
+export interface CheckboxSizePreset {
+  boxSize: number;
+  fontSize: number;
+  gap: number;
+}
+
+const CHECKBOX_SIZE_MAPPING: Record<string, { boxSize: string; fontSize: string }> = {
+  sm: { boxSize: '--spacing-lg', fontSize: '--text-sm' },       // 16px box
+  md: { boxSize: '--spacing-xl', fontSize: '--text-sm' },       // 24px box → 실제 20px 원함
+  lg: { boxSize: '--spacing-xl', fontSize: '--text-base' },     // 24px box
+};
+
+const CHECKBOX_FALLBACKS: Record<string, CheckboxSizePreset> = {
+  sm: { boxSize: 16, fontSize: 14, gap: 8 },
+  md: { boxSize: 20, fontSize: 14, gap: 8 },
+  lg: { boxSize: 24, fontSize: 16, gap: 8 },
+};
+
+/**
+ * Checkbox/Radio 사이즈 프리셋 읽기
+ */
+export function getCheckboxSizePreset(size: string): CheckboxSizePreset {
+  const mapping = CHECKBOX_SIZE_MAPPING[size];
+  const fallback = CHECKBOX_FALLBACKS[size] || CHECKBOX_FALLBACKS.md;
+
+  if (!mapping) {
+    return fallback;
+  }
+
+  // CSS 변수에서 읽되, md의 경우 특수 처리 (20px 고정)
+  const boxSize = size === 'md'
+    ? 20
+    : parseCSSValue(getCSSVariable(mapping.boxSize), fallback.boxSize);
+  const fontSize = parseCSSValue(getCSSVariable(mapping.fontSize), fallback.fontSize);
+  const gap = parseCSSValue(getCSSVariable('--spacing-sm'), fallback.gap);
+
+  return { boxSize, fontSize, gap };
+}
