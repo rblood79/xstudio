@@ -10,6 +10,8 @@
  * @updated 2025-12-15 Border-Box v2 - drawBox 유틸리티 적용
  */
 
+import { useExtend } from '@pixi/react';
+import { PIXI_COMPONENTS } from '../pixiSetup';
 import { useCallback, useMemo, useRef } from 'react';
 import { Graphics as PixiGraphics, TextStyle, Text } from 'pixi.js';
 import type { Element } from '../../../../types/core/store.types';
@@ -74,6 +76,7 @@ export function TextSprite({
   onClick,
   onDoubleClick,
 }: TextSpriteProps) {
+  useExtend(PIXI_COMPONENTS);
   const style = element.props?.style as CSSStyle | undefined;
   const converted = useMemo(() => convertStyle(style), [style]);
   const { transform, fill, text: textStyle, borderRadius } = converted;
@@ -97,7 +100,7 @@ export function TextSprite({
   const hasDecoration = textDecoration.underline || textDecoration.lineThrough || textDecoration.overline;
 
   // Text ref for measuring bounds
-  const textRef = useRef<Text | null>(null);
+  const textRef = useRef<pixiText | null>(null);
 
   // PixiJS TextStyle (P7.2-P7.4 extended)
   const pixiTextStyle = useMemo(

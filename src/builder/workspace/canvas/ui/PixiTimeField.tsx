@@ -10,7 +10,8 @@
  */
 
 import { useCallback, useMemo } from 'react';
-import { Container, Graphics, Text } from '@pixi/react';
+import { useExtend } from '@pixi/react';
+import { PIXI_COMPONENTS } from '../pixiSetup';
 import type { Graphics as PixiGraphics, TextStyle } from 'pixi.js';
 import type { Element } from '@/types/core/store.types';
 import {
@@ -33,6 +34,7 @@ export function PixiTimeField({
   isSelected = false,
   onClick,
 }: PixiTimeFieldProps) {
+  useExtend(PIXI_COMPONENTS);
   const props = element.props || {};
   const variant = (props.variant as string) || 'default';
   const size = (props.size as string) || 'md';
@@ -150,13 +152,13 @@ export function PixiTimeField({
   }
 
   return (
-    <Container
+    <pixiContainer
       eventMode="static"
       cursor="text"
       onpointertap={() => onClick?.(element.id)}
     >
       {/* Container background */}
-      <Graphics draw={drawContainer} />
+      <pixiGraphics draw={drawContainer} />
 
       {/* Time segments */}
       {segments.map((segment, index) => (
@@ -168,6 +170,6 @@ export function PixiTimeField({
           y={centerY}
         />
       ))}
-    </Container>
+    </pixiContainer>
   );
 }

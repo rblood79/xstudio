@@ -11,6 +11,8 @@
  * @since 2025-12-16 Phase 1 WebGL Migration
  */
 
+import { useExtend } from '@pixi/react';
+import { PIXI_COMPONENTS } from '../pixiSetup';
 import { memo, useCallback, useRef, useEffect, useMemo } from "react";
 import {
   Container as PixiContainer,
@@ -273,6 +275,7 @@ export const PixiToggleButton = memo(function PixiToggleButton({
   onClick,
   onToggle,
 }: PixiToggleButtonProps) {
+  useExtend(PIXI_COMPONENTS);
   const style = element.props?.style as CSSStyle | undefined;
   const props = element.props as ToggleButtonElementProps | undefined;
 

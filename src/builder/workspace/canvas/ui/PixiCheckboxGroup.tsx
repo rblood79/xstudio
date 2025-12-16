@@ -11,6 +11,8 @@
  * @since 2025-12-15
  */
 
+import { useExtend } from '@pixi/react';
+import { PIXI_COMPONENTS } from '../pixiSetup';
 import { memo, useCallback, useMemo } from 'react';
 import { Graphics as PixiGraphics, TextStyle } from 'pixi.js';
 import type { Element } from '../../../../types/core/store.types';
@@ -227,6 +229,7 @@ export const PixiCheckboxGroup = memo(function PixiCheckboxGroup({
   onChange,
   onClick,
 }: PixiCheckboxGroupProps) {
+  useExtend(PIXI_COMPONENTS);
   const style = element.props?.style as CSSStyle | undefined;
   const props = element.props as Record<string, unknown> | undefined;
 

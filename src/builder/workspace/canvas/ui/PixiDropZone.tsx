@@ -10,7 +10,8 @@
  */
 
 import { useCallback, useMemo } from 'react';
-import { Container, Graphics, Text } from '@pixi/react';
+import { useExtend } from '@pixi/react';
+import { PIXI_COMPONENTS } from '../pixiSetup';
 import type { Graphics as PixiGraphics, TextStyle } from 'pixi.js';
 import type { Element } from '@/types/core/store.types';
 import {
@@ -33,6 +34,7 @@ export function PixiDropZone({
   isSelected = false,
   onClick,
 }: PixiDropZoneProps) {
+  useExtend(PIXI_COMPONENTS);
   const props = element.props || {};
   const variant = (props.variant as string) || 'default';
   const size = (props.size as string) || 'md';
@@ -131,16 +133,16 @@ export function PixiDropZone({
   const contentY = (zoneHeight - sizePreset.iconSize - sizePreset.gap * 2 - sizePreset.labelFontSize - sizePreset.fontSize) / 2;
 
   return (
-    <Container
+    <pixiContainer
       eventMode="static"
       cursor="pointer"
       onpointertap={() => onClick?.(element.id)}
     >
       {/* Drop zone container */}
-      <Graphics draw={drawContainer} />
+      <pixiGraphics draw={drawContainer} />
 
       {/* Upload icon */}
-      <Graphics
+      <pixiGraphics
         draw={drawIcon}
         x={(zoneWidth - sizePreset.iconSize) / 2}
         y={contentY}
@@ -163,7 +165,7 @@ export function PixiDropZone({
         y={contentY + sizePreset.iconSize + sizePreset.gap + sizePreset.labelFontSize + sizePreset.gap / 2}
         anchor={{ x: 0.5, y: 0 }}
       />
-    </Container>
+    </pixiContainer>
   );
 }
 

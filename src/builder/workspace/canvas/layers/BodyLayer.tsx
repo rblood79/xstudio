@@ -10,6 +10,8 @@
 
 import { useCallback, useMemo, memo } from 'react';
 import { Graphics as PixiGraphics } from 'pixi.js';
+import { useExtend } from '@pixi/react';
+import { PIXI_COMPONENTS } from '../pixiSetup';
 import { useStore } from '../../../stores';
 import { cssColorToHex, cssColorToAlpha, parseCSSSize } from '../sprites/styleConverter';
 import type { CSSStyle } from '../sprites/styleConverter';
@@ -53,6 +55,7 @@ export const BodyLayer = memo(function BodyLayer({
   pageHeight,
   onClick,
 }: BodyLayerProps) {
+  useExtend(PIXI_COMPONENTS);
   const elements = useStore((state) => state.elements);
   const currentPageId = useStore((state) => state.currentPageId);
 
@@ -125,7 +128,7 @@ export const BodyLayer = memo(function BodyLayer({
       label="BodyLayer"
       draw={draw}
       eventMode="static"
-      cursor="pointer"
+      cursor="default"
       onPointerDown={handleClick}
     />
   );

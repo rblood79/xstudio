@@ -10,7 +10,8 @@
  */
 
 import { useCallback, useMemo } from 'react';
-import { Container, Graphics, Text } from '@pixi/react';
+import { useExtend } from '@pixi/react';
+import { PIXI_COMPONENTS } from '../pixiSetup';
 import type { Graphics as PixiGraphics, TextStyle } from 'pixi.js';
 import type { Element } from '@/types/core/store.types';
 import {
@@ -33,6 +34,7 @@ export function PixiColorPicker({
   isSelected = false,
   onClick,
 }: PixiColorPickerProps) {
+  useExtend(PIXI_COMPONENTS);
   const props = element.props || {};
   const variant = (props.variant as string) || 'default';
   const size = (props.size as string) || 'md';
@@ -225,43 +227,43 @@ export function PixiColorPicker({
   const alphaThumbX = areaX + alpha * sizePreset.sliderWidth;
 
   return (
-    <Container
+    <pixiContainer
       eventMode="static"
       cursor="pointer"
       onpointertap={() => onClick?.(element.id)}
     >
       {/* Container */}
-      <Graphics draw={drawContainer} />
+      <pixiGraphics draw={drawContainer} />
 
       {/* Color area */}
-      <Container x={areaX} y={areaY}>
-        <Graphics draw={drawColorArea} />
-        <Graphics draw={drawAreaThumb} x={saturation * sizePreset.areaSize} y={(1 - brightness) * sizePreset.areaSize} />
-      </Container>
+      <pixiContainer x={areaX} y={areaY}>
+        <pixiGraphics draw={drawColorArea} />
+        <pixiGraphics draw={drawAreaThumb} x={saturation * sizePreset.areaSize} y={(1 - brightness) * sizePreset.areaSize} />
+      </pixiContainer>
 
       {/* Hue slider */}
-      <Container x={areaX} y={hueSliderY}>
-        <Graphics draw={drawHueSlider} />
-        <Graphics draw={(g) => drawSliderThumb(g, hsbToHex(hue, 1, 1))} x={(hue / 360) * sizePreset.sliderWidth} />
-      </Container>
+      <pixiContainer x={areaX} y={hueSliderY}>
+        <pixiGraphics draw={drawHueSlider} />
+        <pixiGraphics draw={(g) => drawSliderThumb(g, hsbToHex(hue, 1, 1))} x={(hue / 360) * sizePreset.sliderWidth} />
+      </pixiContainer>
 
       {/* Alpha slider */}
-      <Container x={areaX} y={alphaSliderY}>
-        <Graphics draw={drawAlphaSlider} />
-        <Graphics draw={(g) => drawSliderThumb(g, currentColor)} x={alpha * sizePreset.sliderWidth} />
-      </Container>
+      <pixiContainer x={areaX} y={alphaSliderY}>
+        <pixiGraphics draw={drawAlphaSlider} />
+        <pixiGraphics draw={(g) => drawSliderThumb(g, currentColor)} x={alpha * sizePreset.sliderWidth} />
+      </pixiContainer>
 
       {/* Color swatch and hex value */}
-      <Container x={areaX} y={swatchY}>
-        <Graphics draw={drawSwatch} />
+      <pixiContainer x={areaX} y={swatchY}>
+        <pixiGraphics draw={drawSwatch} />
         <Text
           text={`#${currentColor.toString(16).padStart(6, '0').toUpperCase()}`}
           style={labelStyle}
           x={sizePreset.swatchSize + sizePreset.gap}
           y={sizePreset.swatchSize / 2 - 6}
         />
-      </Container>
-    </Container>
+      </pixiContainer>
+    </pixiContainer>
   );
 }
 

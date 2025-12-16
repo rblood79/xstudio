@@ -10,7 +10,8 @@
  */
 
 import { useCallback, useMemo, useState } from 'react';
-import { Container, Graphics, Text } from '@pixi/react';
+import { useExtend } from '@pixi/react';
+import { PIXI_COMPONENTS } from '../pixiSetup';
 import type { Graphics as PixiGraphics, TextStyle } from 'pixi.js';
 import type { Element } from '@/types/core/store.types';
 import { useStore } from '@/builder/stores';
@@ -42,6 +43,7 @@ export function PixiDisclosureGroup({
   onClick,
   onChange,
 }: PixiDisclosureGroupProps) {
+  useExtend(PIXI_COMPONENTS);
   const props = element.props || {};
   const variant = (props.variant as string) || 'default';
   const size = (props.size as string) || 'md';
@@ -168,12 +170,12 @@ export function PixiDisclosureGroup({
     };
 
     return (
-      <Container
+      <pixiContainer
         eventMode="static"
         cursor="pointer"
         onpointertap={() => onClick?.(element.id)}
       >
-        <Graphics draw={drawContainer} />
+        <pixiGraphics draw={drawContainer} />
         <Text
           text="No items"
           style={emptyStyle}
@@ -181,7 +183,7 @@ export function PixiDisclosureGroup({
           y={totalHeight / 2}
           anchor={0.5}
         />
-      </Container>
+      </pixiContainer>
     );
   }
 
@@ -189,9 +191,9 @@ export function PixiDisclosureGroup({
   let currentY = sizePreset.padding;
 
   return (
-    <Container>
+    <pixiContainer>
       {/* Container background */}
-      <Graphics draw={drawContainer} />
+      <pixiGraphics draw={drawContainer} />
 
       {/* Disclosure items */}
       {childItems.map((item, index) => {
@@ -261,7 +263,7 @@ export function PixiDisclosureGroup({
         };
 
         return (
-          <Container
+          <pixiContainer
             key={item.id}
             y={itemY}
             eventMode="static"
@@ -271,7 +273,7 @@ export function PixiDisclosureGroup({
             onpointertap={() => handleItemClick(item.id)}
           >
             {/* Item trigger */}
-            <Graphics draw={drawItemTrigger} />
+            <pixiGraphics draw={drawItemTrigger} />
 
             {/* Title */}
             <Text
@@ -290,9 +292,9 @@ export function PixiDisclosureGroup({
                 y={triggerHeight + sizePreset.gap}
               />
             )}
-          </Container>
+          </pixiContainer>
         );
       })}
-    </Container>
+    </pixiContainer>
   );
 }

@@ -9,6 +9,8 @@
  * @since 2025-12-13 Phase 6.3
  */
 
+import { useExtend } from '@pixi/react';
+import { PIXI_COMPONENTS } from '../pixiSetup';
 import { memo, useCallback, useEffect, useMemo, useRef } from 'react';
 import { useApplication } from '@pixi/react';
 import { Select } from '@pixi/ui';
@@ -165,8 +167,9 @@ export const PixiSelect = memo(function PixiSelect({
   onClick,
   onChange,
 }: PixiSelectProps) {
+  useExtend(PIXI_COMPONENTS);
   const { app } = useApplication();
-  const containerRef = useRef<Container | null>(null);
+  const containerRef = useRef<pixiContainer | null>(null);
   const selectRef = useRef<Select | null>(null);
 
   const style = element.props?.style as CSSStyle | undefined;

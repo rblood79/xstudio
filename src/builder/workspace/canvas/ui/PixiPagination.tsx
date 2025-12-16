@@ -10,7 +10,8 @@
  */
 
 import { useCallback, useMemo } from 'react';
-import { Container, Graphics, Text } from '@pixi/react';
+import { useExtend } from '@pixi/react';
+import { PIXI_COMPONENTS } from '../pixiSetup';
 import type { Graphics as PixiGraphics, TextStyle } from 'pixi.js';
 import type { Element } from '@/types/core/store.types';
 import {
@@ -33,6 +34,7 @@ export function PixiPagination({
   isSelected = false,
   onClick,
 }: PixiPaginationProps) {
+  useExtend(PIXI_COMPONENTS);
   const props = element.props || {};
   const variant = (props.variant as string) || 'default';
   const size = (props.size as string) || 'md';
@@ -159,16 +161,16 @@ export function PixiPagination({
   let currentX = 0;
 
   return (
-    <Container
+    <pixiContainer
       eventMode="static"
       cursor="pointer"
       onpointertap={() => onClick?.(element.id)}
     >
       {/* Selection indicator */}
-      <Graphics draw={drawSelection} />
+      <pixiGraphics draw={drawSelection} />
 
       {/* Previous button */}
-      <Graphics draw={(g) => drawNavButton(g, currentPage === 1, false)} x={currentX} y={0} />
+      <pixiGraphics draw={(g) => drawNavButton(g, currentPage === 1, false)} x={currentX} y={0} />
       {(() => { currentX += sizePreset.buttonSize + sizePreset.gap; return null; })()}
 
       {/* Page buttons */}
@@ -190,8 +192,8 @@ export function PixiPagination({
 
         const isCurrent = page === currentPage;
         return (
-          <Container key={page} x={x} y={0}>
-            <Graphics draw={(g) => drawPageButton(g, isCurrent)} />
+          <pixiContainer key={page} x={x} y={0}>
+            <pixiGraphics draw={(g) => drawPageButton(g, isCurrent)} />
             <Text
               text={String(page)}
               style={pageTextStyle(isCurrent)}
@@ -199,12 +201,12 @@ export function PixiPagination({
               y={sizePreset.buttonSize / 2}
               anchor={{ x: 0.5, y: 0.5 }}
             />
-          </Container>
+          </pixiContainer>
         );
       })}
 
       {/* Next button */}
-      <Graphics draw={(g) => drawNavButton(g, currentPage === totalPages, true)} x={currentX} y={0} />
+      <pixiGraphics draw={(g) => drawNavButton(g, currentPage === totalPages, true)} x={currentX} y={0} />
 
       {/* Page info */}
       {showInfo && (
@@ -216,6 +218,6 @@ export function PixiPagination({
           anchor={{ x: 0.5, y: 0 }}
         />
       )}
-    </Container>
+    </pixiContainer>
   );
 }

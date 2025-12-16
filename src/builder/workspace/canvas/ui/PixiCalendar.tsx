@@ -10,7 +10,8 @@
  */
 
 import { useCallback, useMemo, useState } from 'react';
-import { Container, Graphics, Text } from '@pixi/react';
+import { useExtend } from '@pixi/react';
+import { PIXI_COMPONENTS } from '../pixiSetup';
 import type { Graphics as PixiGraphics, TextStyle } from 'pixi.js';
 import type { Element } from '@/types/core/store.types';
 import {
@@ -38,6 +39,7 @@ export function PixiCalendar({
   onClick,
   onChange,
 }: PixiCalendarProps) {
+  useExtend(PIXI_COMPONENTS);
   const props = element.props || {};
   const variant = (props.variant as string) || 'default';
   const size = (props.size as string) || 'md';
@@ -247,37 +249,37 @@ export function PixiCalendar({
           : colorPreset.outsideMonthColor;
 
       return (
-        <Container key={index} x={x} y={y}>
-          <Graphics draw={drawCell} />
+        <pixiContainer key={index} x={x} y={y}>
+          <pixiGraphics draw={drawCell} />
           <Text
             text={String(dayInfo.day)}
             style={{ ...dayStyle, fill: textColor }}
             anchor={0.5}
           />
-        </Container>
+        </pixiContainer>
       );
     });
   }, [daysInMonth, sizePreset, colorPreset, cellSize, headerHeight, weekdayHeight, dayStyle]);
 
   return (
-    <Container
+    <pixiContainer
       eventMode="static"
       cursor="pointer"
       onpointertap={() => onClick?.(element.id)}
     >
       {/* Container background */}
-      <Graphics draw={drawContainer} />
+      <pixiGraphics draw={drawContainer} />
 
       {/* Navigation: Previous month */}
-      <Container
+      <pixiContainer
         x={sizePreset.padding}
         y={sizePreset.padding}
         eventMode="static"
         cursor="pointer"
         onpointertap={handlePrevMonth}
       >
-        <Graphics draw={(g) => drawNavButton(g, true)} />
-      </Container>
+        <pixiGraphics draw={(g) => drawNavButton(g, true)} />
+      </pixiContainer>
 
       {/* Header: Month Year */}
       <Text
@@ -289,15 +291,15 @@ export function PixiCalendar({
       />
 
       {/* Navigation: Next month */}
-      <Container
+      <pixiContainer
         x={calendarWidth - sizePreset.padding - sizePreset.buttonSize}
         y={sizePreset.padding}
         eventMode="static"
         cursor="pointer"
         onpointertap={handleNextMonth}
       >
-        <Graphics draw={(g) => drawNavButton(g, false)} />
-      </Container>
+        <pixiGraphics draw={(g) => drawNavButton(g, false)} />
+      </pixiContainer>
 
       {/* Weekday headers */}
       {WEEKDAYS.map((day, index) => (
@@ -313,6 +315,6 @@ export function PixiCalendar({
 
       {/* Day cells */}
       {renderDays}
-    </Container>
+    </pixiContainer>
   );
 }

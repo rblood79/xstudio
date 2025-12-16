@@ -10,7 +10,8 @@
  */
 
 import { useCallback, useMemo } from 'react';
-import { Container, Graphics } from '@pixi/react';
+import { useExtend } from '@pixi/react';
+import { PIXI_COMPONENTS } from '../pixiSetup';
 import type { Graphics as PixiGraphics } from 'pixi.js';
 import type { Element } from '@/types/core/store.types';
 import {
@@ -33,6 +34,7 @@ export function PixiColorArea({
   isSelected = false,
   onClick,
 }: PixiColorAreaProps) {
+  useExtend(PIXI_COMPONENTS);
   const props = element.props || {};
   const variant = (props.variant as string) || 'default';
   const size = (props.size as string) || 'md';
@@ -104,17 +106,17 @@ export function PixiColorArea({
   );
 
   return (
-    <Container
+    <pixiContainer
       eventMode="static"
       cursor="crosshair"
       onpointertap={() => onClick?.(element.id)}
     >
       {/* Color gradient area */}
-      <Graphics draw={drawArea} />
+      <pixiGraphics draw={drawArea} />
 
       {/* Thumb */}
-      <Graphics draw={drawThumb} x={thumbX} y={thumbY} />
-    </Container>
+      <pixiGraphics draw={drawThumb} x={thumbX} y={thumbY} />
+    </pixiContainer>
   );
 }
 

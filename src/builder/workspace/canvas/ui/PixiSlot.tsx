@@ -10,7 +10,8 @@
  */
 
 import { useCallback, useMemo } from 'react';
-import { Container, Graphics, Text } from '@pixi/react';
+import { useExtend } from '@pixi/react';
+import { PIXI_COMPONENTS } from '../pixiSetup';
 import type { Graphics as PixiGraphics, TextStyle } from 'pixi.js';
 import type { Element } from '@/types/core/store.types';
 import {
@@ -33,6 +34,7 @@ export function PixiSlot({
   isSelected = false,
   onClick,
 }: PixiSlotProps) {
+  useExtend(PIXI_COMPONENTS);
   const props = element.props || {};
   const variant = (props.variant as string) || 'default';
   const size = (props.size as string) || 'md';
@@ -161,26 +163,26 @@ export function PixiSlot({
   const startY = (slotHeight - contentHeight) / 2;
 
   return (
-    <Container
+    <pixiContainer
       eventMode="static"
       cursor="pointer"
       onpointertap={() => onClick?.(element.id)}
     >
       {/* Slot container */}
-      <Graphics draw={drawContainer} />
+      <pixiGraphics draw={drawContainer} />
 
       {/* Empty state content */}
       {isEmpty && (
-        <Container>
+        <pixiContainer>
           {/* Icon */}
-          <Graphics
+          <pixiGraphics
             draw={drawIcon}
             x={(slotWidth - sizePreset.iconSize) / 2}
             y={startY}
           />
 
           {/* Name with optional required badge */}
-          <Container y={startY + sizePreset.iconSize + sizePreset.gap}>
+          <pixiContainer y={startY + sizePreset.iconSize + sizePreset.gap}>
             <Text
               text={name}
               style={nameStyle}
@@ -189,17 +191,17 @@ export function PixiSlot({
               anchor={{ x: 0.5, y: 0 }}
             />
             {isRequired && (
-              <Container x={slotWidth / 2 + 40} y={-2}>
-                <Graphics draw={drawRequiredBadge} />
+              <pixiContainer x={slotWidth / 2 + 40} y={-2}>
+                <pixiGraphics draw={drawRequiredBadge} />
                 <Text
                   text="Required"
                   style={requiredStyle}
                   x={8}
                   y={2}
                 />
-              </Container>
+              </pixiContainer>
             )}
-          </Container>
+          </pixiContainer>
 
           {/* Description */}
           <Text
@@ -209,9 +211,9 @@ export function PixiSlot({
             y={startY + sizePreset.iconSize + sizePreset.gap + sizePreset.labelFontSize + sizePreset.gap / 2}
             anchor={{ x: 0.5, y: 0 }}
           />
-        </Container>
+        </pixiContainer>
       )}
-    </Container>
+    </pixiContainer>
   );
 }
 

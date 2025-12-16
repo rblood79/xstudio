@@ -2,7 +2,14 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router";
 import { useAsyncMutation } from "../builder/hooks/useAsyncMutation";
 import { supabase } from "../env/supabase.client";
-import { TextField, Button } from "../shared/components/list";
+import {
+  TextField,
+  Input,
+  Label,
+  Text,
+  FieldError,
+  Button,
+} from "react-aria-components";
 import "./index.css";
 import "../builder/styles/1-theme/builder-system.css";
 
@@ -97,28 +104,34 @@ const Signin = () => {
         <form onSubmit={handleSubmit} className="auth-form">
           <TextField
             className="auth-form-field"
-            label="Email Address"
-            type="email"
             value={email}
             onChange={setEmail}
             isRequired={true}
-            //description="로그인에 사용할 이메일 주소입니다."
-            errorMessage={error ? error.message : undefined}
-          />
+            isInvalid={!!error}
+            validationBehavior="aria"
+          >
+            <Label>Email Address</Label>
+            <Input type="email" />
+            {error && <FieldError>{error.message}</FieldError>}
+          </TextField>
 
           <TextField
             className="auth-form-field"
-            label="Password"
-            type="password"
             value={password}
             onChange={setPassword}
             isRequired={true}
-            description={
-              isSignUp
-                ? "Enter a secure password with at least 8 characters."
-                : "Enter your account password."
-            }
-          />
+          >
+            <Label>Password</Label>
+            <Input type="password" />
+            {isSignUp && (
+              <Text slot="description">
+                Enter a secure password with at least 8 characters.
+              </Text>
+            )}
+            {!isSignUp && (
+              <Text slot="description">Enter your account password.</Text>
+            )}
+          </TextField>
           {message && (
             <div className="success-message">
               <p className="success-text">{message}</p>
@@ -127,31 +140,29 @@ const Signin = () => {
 
           <Button
             type="submit"
-            variant="primary"
+            className="react-aria-Button primary"
             isDisabled={loading}
-            children={
-              loading
-                ? isSignUp
-                  ? "Signing Up..."
-                  : "Signing In..."
-                : isSignUp
-                ? "Sign Up"
-                : "Sign In"
-            }
-          />
+          >
+            {loading
+              ? isSignUp
+                ? "Signing Up..."
+                : "Signing In..."
+              : isSignUp
+              ? "Sign Up"
+              : "Sign In"}
+          </Button>
 
           <div className="helper-text">
-            <Button
-              variant="ghost"
-              onClick={toggleMode}
-              children={isSignUp ? "Log In" : "Sign Up"}
-            />
+            <Button className="react-aria-Button ghost" onPress={toggleMode}>
+              {isSignUp ? "Log In" : "Sign Up"}
+            </Button>
             {!isSignUp ? (
               <Button
-                variant="ghost"
-                onClick={() => navigate("/forgot-password")}
-                children="Forgot Password?"
-              />
+                className="react-aria-Button ghost"
+                onPress={() => navigate("/forgot-password")}
+              >
+                Forgot Password?
+              </Button>
             ) : null}
           </div>
         </form>

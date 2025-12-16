@@ -14,6 +14,8 @@
 
 import { useCallback, useMemo, memo } from 'react';
 import { Graphics as PixiGraphics } from 'pixi.js';
+import { useExtend } from '@pixi/react';
+import { PIXI_COMPONENTS } from '../pixiSetup';
 
 // ============================================
 // Types
@@ -95,6 +97,8 @@ export const GridLayer = memo(function GridLayer({
   gridSize = 20,
   snapSize = 10,
 }: GridLayerProps) {
+  useExtend(PIXI_COMPONENTS);
+
   // 줌 레벨에 따른 그리드 간격 계산
   const gridInterval = useMemo(() => calculateGridInterval(gridSize, zoom), [gridSize, zoom]);
 

@@ -12,6 +12,8 @@
  * @since 2025-12-16 Phase 2 WebGL Migration
  */
 
+import { useExtend } from '@pixi/react';
+import { PIXI_COMPONENTS } from '../pixiSetup';
 import { memo, useCallback, useMemo, useState } from "react";
 import {
   Graphics as PixiGraphics,
@@ -64,6 +66,7 @@ export const PixiTabs = memo(function PixiTabs({
   element,
   onClick,
 }: PixiTabsProps) {
+  useExtend(PIXI_COMPONENTS);
   const style = element.props?.style as CSSStyle | undefined;
   const props = element.props as TabsElementProps | undefined;
 

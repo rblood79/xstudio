@@ -8,7 +8,8 @@
  */
 
 import { useCallback, useMemo, useState } from 'react';
-import { Container, Graphics, Text } from '@pixi/react';
+import { useExtend } from '@pixi/react';
+import { PIXI_COMPONENTS } from '../pixiSetup';
 import { Graphics as PixiGraphics, TextStyle } from 'pixi.js';
 import { getTableSizePreset, getTableColorPreset } from '../utils/cssVariableReader';
 import type { Element } from '@/types/core';
@@ -39,6 +40,7 @@ export function PixiTable({
   onClick,
   onChange,
 }: PixiTableProps) {
+  useExtend(PIXI_COMPONENTS);
   const props = element.props || {};
   const variant = (props.variant as string) || 'default';
   const size = (props.size as string) || 'md';
@@ -263,26 +265,26 @@ export function PixiTable({
   }, [element.id, onClick]);
 
   return (
-    <Container
+    <pixiContainer
       eventMode="static"
       cursor="pointer"
       pointerdown={handleContainerClick}
     >
       {/* Container */}
-      <Graphics draw={drawContainer} />
+      <pixiGraphics draw={drawContainer} />
 
       {/* Header */}
-      <Container y={0}>
-        <Graphics draw={drawHeaderBg} />
+      <pixiContainer y={0}>
+        <pixiGraphics draw={drawHeaderBg} />
 
         {/* Header cells */}
         {columns.map((col, colIndex) => {
           const x = columns.slice(0, colIndex).reduce((sum, c) => sum + c.width, 0);
 
           return (
-            <Container key={col.id} x={x}>
+            <pixiContainer key={col.id} x={x}>
               {/* Column separator */}
-              {colIndex > 0 && <Graphics draw={(g) => drawColumnSeparator(g, headerHeight)} />}
+              {colIndex > 0 && <pixiGraphics draw={(g) => drawColumnSeparator(g, headerHeight)} />}
 
               {/* Header text */}
               <Text
@@ -291,10 +293,10 @@ export function PixiTable({
                 x={sizePreset.cellPaddingX}
                 y={(headerHeight - sizePreset.headerFontSize) / 2}
               />
-            </Container>
+            </pixiContainer>
           );
         })}
-      </Container>
+      </pixiContainer>
 
       {/* Rows */}
       {rows.map((row, rowIndex) => {
@@ -302,7 +304,7 @@ export function PixiTable({
         const isHovered = hoveredRowId === row.id;
 
         return (
-          <Container
+          <pixiContainer
             key={row.id}
             y={rowY}
             eventMode="static"
@@ -315,7 +317,7 @@ export function PixiTable({
             }}
           >
             {/* Row background */}
-            <Graphics
+            <pixiGraphics
               draw={(g) =>
                 drawRowBg(g, totalWidth, sizePreset.rowMinHeight, isHovered, row.isSelected || false)
               }
@@ -327,10 +329,10 @@ export function PixiTable({
               const cellValue = row.cells[colIndex]?.value || '';
 
               return (
-                <Container key={`${row.id}-${col.id}`} x={x}>
+                <pixiContainer key={`${row.id}-${col.id}`} x={x}>
                   {/* Column separator */}
                   {colIndex > 0 && (
-                    <Graphics draw={(g) => drawColumnSeparator(g, sizePreset.rowMinHeight)} />
+                    <pixiGraphics draw={(g) => drawColumnSeparator(g, sizePreset.rowMinHeight)} />
                   )}
 
                   {/* Cell text */}
@@ -340,10 +342,10 @@ export function PixiTable({
                     x={sizePreset.cellPaddingX}
                     y={(sizePreset.rowMinHeight - sizePreset.fontSize) / 2}
                   />
-                </Container>
+                </pixiContainer>
               );
             })}
-          </Container>
+          </pixiContainer>
         );
       })}
 
@@ -364,7 +366,7 @@ export function PixiTable({
           anchor={{ x: 0.5, y: 0 }}
         />
       )}
-    </Container>
+    </pixiContainer>
   );
 }
 

@@ -10,7 +10,8 @@
  */
 
 import { useCallback, useMemo } from 'react';
-import { Container, Graphics, Text } from '@pixi/react';
+import { useExtend } from '@pixi/react';
+import { PIXI_COMPONENTS } from '../pixiSetup';
 import type { Graphics as PixiGraphics, TextStyle } from 'pixi.js';
 import type { Element } from '@/types/core/store.types';
 import {
@@ -33,6 +34,7 @@ export function PixiSwitch({
   isSelected = false,
   onClick,
 }: PixiSwitchProps) {
+  useExtend(PIXI_COMPONENTS);
   const props = element.props || {};
   const variant = (props.variant as string) || 'default';
   const size = (props.size as string) || 'md';
@@ -104,16 +106,16 @@ export function PixiSwitch({
   );
 
   return (
-    <Container
+    <pixiContainer
       eventMode="static"
       cursor={isDisabled ? 'not-allowed' : 'pointer'}
       onpointertap={() => !isDisabled && onClick?.(element.id)}
     >
       {/* Track */}
-      <Graphics draw={drawTrack} />
+      <pixiGraphics draw={drawTrack} />
 
       {/* Thumb */}
-      <Graphics draw={drawThumb} x={thumbX} y={thumbY} />
+      <pixiGraphics draw={drawThumb} x={thumbX} y={thumbY} />
 
       {/* Label */}
       {label && (
@@ -124,6 +126,6 @@ export function PixiSwitch({
           y={(sizePreset.trackHeight - sizePreset.labelFontSize) / 2}
         />
       )}
-    </Container>
+    </pixiContainer>
   );
 }

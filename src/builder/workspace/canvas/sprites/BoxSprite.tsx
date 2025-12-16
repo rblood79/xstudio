@@ -12,6 +12,8 @@
  * @updated 2025-12-15 Border-Box v2 - drawBox 유틸리티 적용
  */
 
+import { useExtend } from '@pixi/react';
+import { PIXI_COMPONENTS } from '../pixiSetup';
 import { useCallback, useMemo } from 'react';
 import { Graphics as PixiGraphics, TextStyle } from 'pixi.js';
 import type { Element } from '../../../../types/core/store.types';
@@ -35,6 +37,7 @@ export interface BoxSpriteProps {
 // ============================================
 
 export function BoxSprite({ element, onClick }: BoxSpriteProps) {
+  useExtend(PIXI_COMPONENTS);
   const style = element.props?.style as CSSStyle | undefined;
   const converted = useMemo(() => convertStyle(style), [style]);
 

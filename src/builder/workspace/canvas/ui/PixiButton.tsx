@@ -14,6 +14,8 @@
  * @updated 2025-12-15 P9: variant, size, isDisabled, isLoading 지원 추가
  */
 
+import { useExtend } from '@pixi/react';
+import { PIXI_COMPONENTS } from '../pixiSetup';
 import { memo, useCallback, useRef, useEffect, useMemo } from "react";
 import {
   Container as PixiContainer,
@@ -374,6 +376,7 @@ export const PixiButton = memo(function PixiButton({
   //isSelected,
   onClick,
 }: PixiButtonProps) {
+  useExtend(PIXI_COMPONENTS);
   const style = element.props?.style as CSSStyle | undefined;
   const props = element.props as ButtonElementProps | undefined;
 

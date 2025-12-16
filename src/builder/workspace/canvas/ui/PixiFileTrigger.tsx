@@ -10,7 +10,8 @@
  */
 
 import { useCallback, useMemo } from 'react';
-import { Container, Graphics, Text } from '@pixi/react';
+import { useExtend } from '@pixi/react';
+import { PIXI_COMPONENTS } from '../pixiSetup';
 import type { Graphics as PixiGraphics, TextStyle } from 'pixi.js';
 import type { Element } from '@/types/core/store.types';
 import {
@@ -33,6 +34,7 @@ export function PixiFileTrigger({
   isSelected = false,
   onClick,
 }: PixiFileTriggerProps) {
+  useExtend(PIXI_COMPONENTS);
   const props = element.props || {};
   const variant = (props.variant as string) || 'default';
   const size = (props.size as string) || 'md';
@@ -112,16 +114,16 @@ export function PixiFileTrigger({
   const textY = (sizePreset.height - sizePreset.fontSize) / 2;
 
   return (
-    <Container
+    <pixiContainer
       eventMode="static"
       cursor="pointer"
       onpointertap={() => onClick?.(element.id)}
     >
       {/* Button background */}
-      <Graphics draw={drawButton} />
+      <pixiGraphics draw={drawButton} />
 
       {/* Upload icon */}
-      <Graphics draw={drawIcon} x={iconX} y={iconY} />
+      <pixiGraphics draw={drawIcon} x={iconX} y={iconY} />
 
       {/* Label */}
       <Text
@@ -130,6 +132,6 @@ export function PixiFileTrigger({
         x={textX}
         y={textY}
       />
-    </Container>
+    </pixiContainer>
   );
 }

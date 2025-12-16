@@ -10,6 +10,8 @@
  */
 
 import { memo, useMemo } from 'react';
+import { useExtend } from '@pixi/react';
+import { PIXI_COMPONENTS } from '../pixiSetup';
 import type { CSSStyle } from '../sprites/styleConverter';
 import type { GridLayoutProps } from './GridLayout.utils';
 
@@ -19,6 +21,7 @@ import type { GridLayoutProps } from './GridLayout.utils';
  * CSS Grid 속성을 파싱하여 자식 요소의 위치를 계산합니다.
  */
 export const GridLayout = memo(function GridLayout({ element, children }: GridLayoutProps) {
+  useExtend(PIXI_COMPONENTS);
   const style = element.props?.style as CSSStyle | undefined;
 
   const position = useMemo(() => {

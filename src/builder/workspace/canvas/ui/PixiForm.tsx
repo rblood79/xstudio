@@ -10,7 +10,8 @@
  */
 
 import { useCallback, useMemo } from 'react';
-import { Container, Graphics, Text } from '@pixi/react';
+import { useExtend } from '@pixi/react';
+import { PIXI_COMPONENTS } from '../pixiSetup';
 import type { Graphics as PixiGraphics, TextStyle } from 'pixi.js';
 import type { Element } from '@/types/core/store.types';
 import {
@@ -33,6 +34,7 @@ export function PixiForm({
   isSelected = false,
   onClick,
 }: PixiFormProps) {
+  useExtend(PIXI_COMPONENTS);
   const props = element.props || {};
   const variant = (props.variant as string) || 'default';
   const size = (props.size as string) || 'md';
@@ -102,16 +104,16 @@ export function PixiForm({
   );
 
   return (
-    <Container
+    <pixiContainer
       eventMode="static"
       cursor="pointer"
       onpointertap={() => onClick?.(element.id)}
     >
       {/* Form container */}
-      <Graphics draw={drawContainer} />
+      <pixiGraphics draw={drawContainer} />
 
       {/* Form field placeholders */}
-      <Graphics draw={drawFormIcon} />
+      <pixiGraphics draw={drawFormIcon} />
 
       {/* Form label indicator */}
       <Text
@@ -121,6 +123,6 @@ export function PixiForm({
         y={sizePreset.padding}
         alpha={0.5}
       />
-    </Container>
+    </pixiContainer>
   );
 }

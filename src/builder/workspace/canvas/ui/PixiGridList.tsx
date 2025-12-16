@@ -8,7 +8,8 @@
  */
 
 import { useCallback, useMemo, useState } from 'react';
-import { Container, Graphics, Text } from '@pixi/react';
+import { useExtend } from '@pixi/react';
+import { PIXI_COMPONENTS } from '../pixiSetup';
 import { Graphics as PixiGraphics, TextStyle } from 'pixi.js';
 import { getGridListSizePreset, getGridListColorPreset } from '../utils/cssVariableReader';
 import type { Element } from '@/types/core';
@@ -33,6 +34,7 @@ export function PixiGridList({
   onClick,
   onChange,
 }: PixiGridListProps) {
+  useExtend(PIXI_COMPONENTS);
   const props = element.props || {};
   const variant = (props.variant as string) || 'default';
   const size = (props.size as string) || 'md';
@@ -150,13 +152,13 @@ export function PixiGridList({
   const itemWidth = listWidth - sizePreset.listPadding * 2;
 
   return (
-    <Container
+    <pixiContainer
       eventMode="static"
       cursor="pointer"
       pointerdown={handleContainerClick}
     >
       {/* List Container */}
-      <Graphics draw={drawContainer} />
+      <pixiGraphics draw={drawContainer} />
 
       {/* List Items */}
       {childItems.map((item, index) => {
@@ -167,7 +169,7 @@ export function PixiGridList({
         const isItemSelected = item.isSelected;
 
         return (
-          <Container
+          <pixiContainer
             key={item.id}
             x={sizePreset.listPadding}
             y={itemY}
@@ -180,7 +182,7 @@ export function PixiGridList({
               handleItemClick(item.id);
             }}
           >
-            <Graphics
+            <pixiGraphics
               draw={(g) =>
                 drawItemBg(g, itemWidth, sizePreset.itemMinHeight, isHovered, isItemSelected)
               }
@@ -191,7 +193,7 @@ export function PixiGridList({
               x={sizePreset.itemPaddingX}
               y={(sizePreset.itemMinHeight - sizePreset.fontSize) / 2}
             />
-          </Container>
+          </pixiContainer>
         );
       })}
 
@@ -212,7 +214,7 @@ export function PixiGridList({
           anchor={0.5}
         />
       )}
-    </Container>
+    </pixiContainer>
   );
 }
 

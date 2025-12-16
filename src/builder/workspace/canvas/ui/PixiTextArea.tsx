@@ -10,7 +10,8 @@
  */
 
 import { useCallback, useMemo } from 'react';
-import { Container, Graphics, Text } from '@pixi/react';
+import { useExtend } from '@pixi/react';
+import { PIXI_COMPONENTS } from '../pixiSetup';
 import type { Graphics as PixiGraphics, TextStyle } from 'pixi.js';
 import type { Element } from '@/types/core/store.types';
 import {
@@ -33,6 +34,7 @@ export function PixiTextArea({
   isSelected = false,
   onClick,
 }: PixiTextAreaProps) {
+  useExtend(PIXI_COMPONENTS);
   const props = element.props || {};
   const variant = (props.variant as string) || 'default';
   const size = (props.size as string) || 'md';
@@ -125,7 +127,7 @@ export function PixiTextArea({
   const descriptionText = isInvalid && errorMessage ? errorMessage : description;
 
   return (
-    <Container
+    <pixiContainer
       eventMode="static"
       cursor="pointer"
       onpointertap={() => onClick?.(element.id)}
@@ -141,15 +143,15 @@ export function PixiTextArea({
       )}
 
       {/* TextArea field */}
-      <Container y={labelHeight}>
-        <Graphics draw={drawField} />
+      <pixiContainer y={labelHeight}>
+        <pixiGraphics draw={drawField} />
         <Text
           text={displayText}
           style={inputStyle}
           x={sizePreset.paddingX}
           y={sizePreset.padding}
         />
-      </Container>
+      </pixiContainer>
 
       {/* Description / Error message */}
       {descriptionText && (
@@ -160,6 +162,6 @@ export function PixiTextArea({
           y={labelHeight + fieldHeight + sizePreset.gap}
         />
       )}
-    </Container>
+    </pixiContainer>
   );
 }

@@ -10,6 +10,8 @@
  * @updated 2025-12-15 P10: Graphics 기반으로 리팩토링
  */
 
+import { useExtend } from '@pixi/react';
+import { PIXI_COMPONENTS } from '../pixiSetup';
 import { memo, useCallback, useMemo } from 'react';
 import { Graphics as PixiGraphics, TextStyle } from 'pixi.js';
 import type { Element } from '../../../../types/core/store.types';
@@ -49,6 +51,7 @@ export const PixiCheckbox = memo(function PixiCheckbox({
   onChange,
   onClick,
 }: PixiCheckboxProps) {
+  useExtend(PIXI_COMPONENTS);
   const style = element.props?.style as CSSStyle | undefined;
   const props = element.props as Record<string, unknown> | undefined;
 

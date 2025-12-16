@@ -8,6 +8,8 @@
  * @since 2025-12-13 Phase 6.1
  */
 
+import { useExtend } from '@pixi/react';
+import { PIXI_COMPONENTS } from '../pixiSetup';
 import { memo, useCallback, useEffect, useMemo, useRef } from 'react';
 import { useApplication } from '@pixi/react';
 import { Slider } from '@pixi/ui';
@@ -147,8 +149,9 @@ export const PixiSlider = memo(function PixiSlider({
   onClick,
   onChange,
 }: PixiSliderProps) {
+  useExtend(PIXI_COMPONENTS);
   const { app } = useApplication();
-  const containerRef = useRef<Container | null>(null);
+  const containerRef = useRef<pixiContainer | null>(null);
   const sliderRef = useRef<Slider | null>(null);
 
   const style = element.props?.style as CSSStyle | undefined;

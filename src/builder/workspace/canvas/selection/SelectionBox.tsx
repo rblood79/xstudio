@@ -8,6 +8,8 @@
 
 import { useCallback, memo } from 'react';
 import { Graphics as PixiGraphics } from 'pixi.js';
+import { useExtend } from '@pixi/react';
+import { PIXI_COMPONENTS } from '../pixiSetup';
 import { TransformHandle } from './TransformHandle';
 import type { BoundingBox, HandlePosition, CursorStyle } from './types';
 import { SELECTION_COLOR, HANDLE_CONFIGS } from './types';
@@ -51,6 +53,7 @@ export const SelectionBox = memo(function SelectionBox({
   onMoveStart,
   onCursorChange,
 }: SelectionBoxProps) {
+  useExtend(PIXI_COMPONENTS);
   // 서브픽셀 렌더링 방지: 좌표와 크기를 정수로 반올림
   const x = Math.round(bounds.x);
   const y = Math.round(bounds.y);

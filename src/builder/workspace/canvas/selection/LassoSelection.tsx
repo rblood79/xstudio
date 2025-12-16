@@ -8,6 +8,8 @@
 
 import { useCallback, memo } from 'react';
 import { Graphics as PixiGraphics } from 'pixi.js';
+import { useExtend } from '@pixi/react';
+import { PIXI_COMPONENTS } from '../pixiSetup';
 import { LASSO_COLOR, LASSO_FILL_ALPHA } from './types';
 import { getLassoBounds } from './LassoSelection.utils';
 
@@ -38,6 +40,7 @@ export const LassoSelection = memo(function LassoSelection({
   current,
   zoom = 1,
 }: LassoSelectionProps) {
+  useExtend(PIXI_COMPONENTS);
   const rect = getLassoBounds(start, current);
 
   // 줌에 독립적인 선 두께 (화면상 항상 1px)

@@ -13,6 +13,8 @@
  */
 
 import { useCallback, useMemo, memo } from 'react';
+import { useExtend } from '@pixi/react';
+import { PIXI_COMPONENTS } from '../pixiSetup';
 import { useStore } from '../../../stores';
 import { SelectionBox } from './SelectionBox';
 import { LassoSelection } from './LassoSelection';
@@ -62,6 +64,8 @@ export const SelectionLayer = memo(function SelectionLayer({
   onMoveStart,
   onCursorChange,
 }: SelectionLayerProps) {
+  useExtend(PIXI_COMPONENTS);
+
   // Store state
   const elements = useStore((state) => state.elements);
   const selectedElementIds = useStore((state) => state.selectedElementIds);

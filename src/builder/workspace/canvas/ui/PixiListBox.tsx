@@ -12,6 +12,8 @@
  * @since 2025-12-16 Phase 1 WebGL Migration
  */
 
+import { useExtend } from '@pixi/react';
+import { PIXI_COMPONENTS } from '../pixiSetup';
 import { memo, useCallback, useMemo, useRef, useEffect } from "react";
 import {
   Graphics as PixiGraphics,
@@ -264,6 +266,7 @@ export const PixiListBox = memo(function PixiListBox({
   onClick,
   onChange,
 }: PixiListBoxProps) {
+  useExtend(PIXI_COMPONENTS);
   const style = element.props?.style as CSSStyle | undefined;
   const props = element.props as Record<string, unknown> | undefined;
 

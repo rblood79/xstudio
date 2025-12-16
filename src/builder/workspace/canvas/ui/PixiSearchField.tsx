@@ -11,6 +11,8 @@
  * @since 2025-12-16 Phase 3 WebGL Migration
  */
 
+import { useExtend } from '@pixi/react';
+import { PIXI_COMPONENTS } from '../pixiSetup';
 import { memo, useCallback, useMemo, useState } from "react";
 import { Graphics as PixiGraphics, TextStyle } from "pixi.js";
 import type { Element } from "../../../../types/core/store.types";
@@ -49,6 +51,7 @@ export const PixiSearchField = memo(function PixiSearchField({
   element,
   onClick,
 }: PixiSearchFieldProps) {
+  useExtend(PIXI_COMPONENTS);
   const style = element.props?.style as CSSStyle | undefined;
   const props = element.props as SearchFieldElementProps | undefined;
 

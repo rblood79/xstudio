@@ -8,6 +8,8 @@
  * @updated 2025-12-15 Border-Box v2 - drawBox 유틸리티 적용
  */
 
+import { useExtend } from '@pixi/react';
+import { PIXI_COMPONENTS } from '../pixiSetup';
 import { useCallback, useMemo, useState, useEffect } from 'react';
 import { Graphics as PixiGraphics, Texture, Assets } from 'pixi.js';
 import type { Element } from '../../../../types/core/store.types';
@@ -43,6 +45,7 @@ const PLACEHOLDER_COLOR = 0xe5e7eb; // gray-200
 // ============================================
 
 export function ImageSprite({ element, isSelected, onClick }: ImageSpriteProps) {
+  useExtend(PIXI_COMPONENTS);
   const style = element.props?.style as CSSStyle | undefined;
   const converted = useMemo(() => convertStyle(style), [style]);
   const { transform, borderRadius } = converted;

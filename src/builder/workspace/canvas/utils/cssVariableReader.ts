@@ -768,64 +768,6 @@ export function getSelectSizePreset(size: string): SelectSizePreset {
 }
 
 // ============================================
-// Switch Size Preset
-// ============================================
-
-/**
- * Switch 컴포넌트용 사이즈 프리셋
- *
- * CSS 정의 (Switch.css):
- * - sm: indicatorWidth: calc(var(--text-4xl) + 4px), indicatorHeight: calc(var(--text-lg) + 2px), thumbSize: var(--text-lg), fontSize: var(--text-sm)
- * - md: indicatorWidth: calc(var(--text-4xl) + 8px), indicatorHeight: calc(var(--text-xl) + 4px), thumbSize: var(--text-xl), fontSize: var(--text-base)
- * - lg: indicatorWidth: 52px, indicatorHeight: 28px, thumbSize: 24px, fontSize: var(--text-lg)
- */
-export interface SwitchSizePreset {
-  indicatorWidth: number;
-  indicatorHeight: number;
-  thumbSize: number;
-  fontSize: number;
-  gap: number;
-}
-
-const SWITCH_SIZE_MAPPING: Record<string, { fontSize: string; thumbSize: string }> = {
-  sm: { fontSize: '--text-sm', thumbSize: '--text-lg' },
-  md: { fontSize: '--text-base', thumbSize: '--text-xl' },
-  lg: { fontSize: '--text-lg', thumbSize: '--text-2xl' },
-};
-
-const SWITCH_FALLBACKS: Record<string, SwitchSizePreset> = {
-  sm: { indicatorWidth: 40, indicatorHeight: 20, thumbSize: 18, fontSize: 14, gap: 8 },
-  md: { indicatorWidth: 44, indicatorHeight: 24, thumbSize: 20, fontSize: 16, gap: 8 },
-  lg: { indicatorWidth: 52, indicatorHeight: 28, thumbSize: 24, fontSize: 18, gap: 10 },
-};
-
-/**
- * Switch 사이즈 프리셋 읽기
- */
-export function getSwitchSizePreset(size: string): SwitchSizePreset {
-  const mapping = SWITCH_SIZE_MAPPING[size];
-  const fallback = SWITCH_FALLBACKS[size] || SWITCH_FALLBACKS.md;
-
-  if (!mapping) {
-    return fallback;
-  }
-
-  const fontSize = parseCSSValue(getCSSVariable(mapping.fontSize), fallback.fontSize);
-  const thumbSize = parseCSSValue(getCSSVariable(mapping.thumbSize), fallback.thumbSize);
-  const gap = parseCSSValue(getCSSVariable('--gap'), fallback.gap);
-
-  // indicatorWidth와 indicatorHeight는 계산이 복잡하므로 fallback 사용
-  // 실제 CSS에서 calc()를 사용하기 때문
-  return {
-    indicatorWidth: fallback.indicatorWidth,
-    indicatorHeight: fallback.indicatorHeight,
-    thumbSize,
-    fontSize,
-    gap,
-  };
-}
-
-// ============================================
 // ToggleButton Size Preset
 // ============================================
 

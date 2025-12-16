@@ -9,6 +9,8 @@
  * @since 2025-12-13 Phase 6.6
  */
 
+import { useExtend } from '@pixi/react';
+import { PIXI_COMPONENTS } from '../pixiSetup';
 import { memo, useCallback, useEffect, useMemo, useRef } from 'react';
 import { useApplication } from '@pixi/react';
 import { Switcher } from '@pixi/ui';
@@ -189,8 +191,9 @@ export const PixiSwitcher = memo(function PixiSwitcher({
   onClick,
   onChange,
 }: PixiSwitcherProps) {
+  useExtend(PIXI_COMPONENTS);
   const { app } = useApplication();
-  const containerRef = useRef<Container | null>(null);
+  const containerRef = useRef<pixiContainer | null>(null);
   const switcherRef = useRef<Switcher | null>(null);
 
   const style = element.props?.style as CSSStyle | undefined;

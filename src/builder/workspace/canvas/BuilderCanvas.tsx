@@ -83,6 +83,7 @@ function PixiExtendBridge() {
  * 캔버스 경계 표시
  */
 function CanvasBounds({ width, height, zoom = 1 }: { width: number; height: number; zoom?: number }) {
+  useExtend(PIXI_COMPONENTS);
   // 테마 변경 감지 (MutationObserver 기반)
   useThemeColors();
 
@@ -124,11 +125,38 @@ interface ClickableBackgroundProps {
 }
 
 function ClickableBackground({ onClick, onLassoStart, onLassoDrag, onLassoEnd, zoom, panOffset }: ClickableBackgroundProps) {
+  useExtend(PIXI_COMPONENTS);
   const { app } = useApplication();
   const [screenSize, setScreenSize] = useState<{
     width: number;
     height: number;
   } | null>(null);
+
+  // Shift 키 상태 추적 (Lasso 모드) - canvas cursor 직접 변경
+  useEffect(() => {
+    if (!app?.canvas) return;
+
+    const canvas = app.canvas as HTMLCanvasElement;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Shift') {
+        canvas.style.cursor = 'crosshair';
+      }
+    };
+    const handleKeyUp = (e: KeyboardEvent) => {
+      if (e.key === 'Shift') {
+        canvas.style.cursor = 'default';
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+    };
+  }, [app]);
 
   useEffect(() => {
     if (!app) return;
@@ -216,7 +244,7 @@ function ClickableBackground({ onClick, onLassoStart, onLassoDrag, onLassoEnd, z
     <pixiGraphics
       draw={draw}
       eventMode="static"
-      cursor="crosshair"
+      cursor="default"
       onPointerDown={handlePointerDown}
       onGlobalPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}

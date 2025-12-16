@@ -10,7 +10,8 @@
  */
 
 import { useCallback, useMemo, useState } from 'react';
-import { Container, Graphics, Text } from '@pixi/react';
+import { useExtend } from '@pixi/react';
+import { PIXI_COMPONENTS } from '../pixiSetup';
 import type { Graphics as PixiGraphics, TextStyle } from 'pixi.js';
 import type { Element } from '@/types/core/store.types';
 import {
@@ -39,6 +40,7 @@ export function PixiDatePicker({
   isSelected = false,
   onClick,
 }: PixiDatePickerProps) {
+  useExtend(PIXI_COMPONENTS);
   const props = element.props || {};
   const variant = (props.variant as string) || 'default';
   const size = (props.size as string) || 'md';
@@ -181,13 +183,13 @@ export function PixiDatePicker({
   );
 
   return (
-    <Container
+    <pixiContainer
       eventMode="static"
       cursor="pointer"
       onpointertap={() => onClick?.(element.id)}
     >
       {/* Date field */}
-      <Graphics draw={drawField} />
+      <pixiGraphics draw={drawField} />
       <Text
         text={displayText}
         style={fieldTextStyle}
@@ -197,8 +199,8 @@ export function PixiDatePicker({
 
       {/* Calendar popup (shown in builder) */}
       {isOpen && (
-        <Container y={sizePreset.fieldHeight + sizePreset.gap}>
-          <Graphics draw={drawCalendar} />
+        <pixiContainer y={sizePreset.fieldHeight + sizePreset.gap}>
+          <pixiGraphics draw={drawCalendar} />
 
           {/* Month/Year header */}
           <Text
@@ -246,14 +248,14 @@ export function PixiDatePicker({
                 : calendarColorPreset.outsideMonthColor;
 
             return (
-              <Container key={index} x={x} y={y}>
-                <Graphics draw={drawCell} />
-                <Text text={String(dayInfo.day)} style={{ ...calendarDayStyle, fill: textColor }} anchor={0.5} />
-              </Container>
+              <pixiContainer key={index} x={x} y={y}>
+                <pixiGraphics draw={drawCell} />
+                <pixiText text={String(dayInfo.day)} style={{ ...calendarDayStyle, fill: textColor }} anchor={0.5} />
+              </pixiContainer>
             );
           })}
-        </Container>
+        </pixiContainer>
       )}
-    </Container>
+    </pixiContainer>
   );
 }

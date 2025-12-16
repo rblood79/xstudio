@@ -10,7 +10,8 @@
  */
 
 import { useCallback, useMemo, useState } from 'react';
-import { Container, Graphics, Text } from '@pixi/react';
+import { useExtend } from '@pixi/react';
+import { PIXI_COMPONENTS } from '../pixiSetup';
 import type { Graphics as PixiGraphics, TextStyle } from 'pixi.js';
 import type { Element } from '@/types/core/store.types';
 import {
@@ -34,6 +35,7 @@ export function PixiDisclosure({
   onClick,
   onChange,
 }: PixiDisclosureProps) {
+  useExtend(PIXI_COMPONENTS);
   const props = element.props || {};
   const variant = (props.variant as string) || 'default';
   const size = (props.size as string) || 'md';
@@ -157,7 +159,7 @@ export function PixiDisclosure({
   }, [element.id, isExpanded, onClick, onChange]);
 
   return (
-    <Container
+    <pixiContainer
       eventMode="static"
       cursor="pointer"
       onpointerenter={() => setIsHovered(true)}
@@ -165,10 +167,10 @@ export function PixiDisclosure({
       onpointertap={handleClick}
     >
       {/* Container background */}
-      <Graphics draw={drawContainer} />
+      <pixiGraphics draw={drawContainer} />
 
       {/* Trigger button */}
-      <Graphics draw={drawTrigger} />
+      <pixiGraphics draw={drawTrigger} />
 
       {/* Title text */}
       <Text
@@ -180,16 +182,16 @@ export function PixiDisclosure({
 
       {/* Panel content (only when expanded) */}
       {isExpanded && (
-        <Container y={triggerHeight + sizePreset.gap}>
-          <Graphics draw={drawPanel} />
+        <pixiContainer y={triggerHeight + sizePreset.gap}>
+          <pixiGraphics draw={drawPanel} />
           <Text
             text={content}
             style={contentStyle}
             x={sizePreset.panelIndent}
             y={sizePreset.padding}
           />
-        </Container>
+        </pixiContainer>
       )}
-    </Container>
+    </pixiContainer>
   );
 }

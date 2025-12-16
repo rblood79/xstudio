@@ -11,6 +11,8 @@
  * @since 2025-12-16 Phase 2 WebGL Migration
  */
 
+import { useExtend } from '@pixi/react';
+import { PIXI_COMPONENTS } from '../pixiSetup';
 import { memo, useCallback, useMemo, useState } from "react";
 import { TextStyle, CanvasTextMetrics, Graphics as PixiGraphics } from "pixi.js";
 import type { Element } from "../../../../types/core/store.types";
@@ -47,6 +49,7 @@ export const PixiBreadcrumbs = memo(function PixiBreadcrumbs({
   element,
   onClick,
 }: PixiBreadcrumbsProps) {
+  useExtend(PIXI_COMPONENTS);
   const style = element.props?.style as CSSStyle | undefined;
   const props = element.props as BreadcrumbsElementProps | undefined;
 

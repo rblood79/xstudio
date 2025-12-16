@@ -9,6 +9,8 @@
  * @since 2025-12-13 Phase 6.5
  */
 
+import { useExtend } from '@pixi/react';
+import { PIXI_COMPONENTS } from '../pixiSetup';
 import { memo, useCallback, useEffect, useMemo, useRef } from 'react';
 import { useApplication } from '@pixi/react';
 import { FancyButton } from '@pixi/ui';
@@ -123,8 +125,9 @@ export const PixiFancyButton = memo(function PixiFancyButton({
   isSelected,
   onClick,
 }: PixiFancyButtonProps) {
+  useExtend(PIXI_COMPONENTS);
   const { app } = useApplication();
-  const containerRef = useRef<Container | null>(null);
+  const containerRef = useRef<pixiContainer | null>(null);
   const buttonRef = useRef<FancyButton | null>(null);
 
   const style = element.props?.style as CSSStyle | undefined;

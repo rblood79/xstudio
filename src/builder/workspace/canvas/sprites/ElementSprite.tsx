@@ -10,6 +10,8 @@
  * @updated 2025-12-11 Phase 11 B2.5 - Layout/UI 확장
  */
 
+import { useExtend } from '@pixi/react';
+import { PIXI_COMPONENTS } from '../pixiSetup';
 import { memo, useMemo } from 'react';
 import type { Element } from '../../../../types/core/store.types';
 import { BoxSprite } from './BoxSprite';
@@ -372,6 +374,7 @@ export const ElementSprite = memo(function ElementSprite({
   onDoubleClick,
   onChange,
 }: ElementSpriteProps) {
+  useExtend(PIXI_COMPONENTS);
   // 부모 요소 확인 (CheckboxGroup 자식 여부 판단용)
   const elements = useStore((state) => state.elements);
   const parentElement = useMemo(() => {

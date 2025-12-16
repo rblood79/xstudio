@@ -1,10 +1,10 @@
 /**
- * MondrianArtCanvas - 몬드리안 Composition A 스타일 이펙트
+ * MondrianArtCanvas - 몬드리안 Composition 텍스트 파티클 스타일
  *
- * 황금비율 기반 격자 분할과 원색 팔레트로 몬드리안 작품을 오마주합니다.
- * - 황금비 (φ = 1.618...) 기반 재귀적 분할
- * - 빨강, 파랑, 노랑 원색 + 흰색, 검정 무채색
- * - 선 없이 순수한 면의 조합
+ * 텍스트 문자 파티클이 몬드리안 스타일의 사각형 영역을 채워 그림을 표현합니다.
+ * - 황금비 기반 재귀적 분할
+ * - 빨강, 파랑, 노랑, 흰색, 검정 색상의 문자 파티클
+ * - Code 모드와 동일한 문자셋 사용
  */
 
 import { useEffect, useRef } from "react";
@@ -16,25 +16,60 @@ import { OutputPass } from "three/examples/jsm/postprocessing/OutputPass.js";
 
 // ==================== 상수 ====================
 const PHI = 1.618033988749895; // 황금비
-const DEFAULT_DEPTH = 8; // 기본 분할 깊이
-const MIN_CELL_SIZE = 40; // 최소 셀 크기 (px)
-const REGENERATE_INTERVAL = 12000; // 격자 재생성 주기 (ms)
-const TRANSITION_DURATION = 1500; // 전환 애니메이션 시간 (ms)
+const DEFAULT_DEPTH = 6; // 분할 깊이
+const MIN_CELL_SIZE = 60; // 최소 셀 크기 (px)
+const PARTICLE_SIZE = 12.0; // 파티클 크기 (겹침 방지를 위해 고정)
+const PARTICLE_SPACING = 14.0; // 파티클 간격 (겹침 방지)
+const REGENERATE_INTERVAL = 12000; // 재생성 주기 (ms)
+const TRANSITION_DURATION = 3000; // 전환 시간 (ms)
+const MAX_DELAY = 1500; // 최대 랜덤 딜레이 (ms)
+const LINE_WIDTH = 4; // 검정 선 두께
+const TEXTURE_CHAR_SIZE = 64; // 텍스처 해상도
+
+// ==================== 문자셋 (Code 모드와 동일) ====================
+const KOREAN_CONSONANTS = "ㄱㄴㄷㄹㅁㅂㅅㅇㅈㅊㅋㅌㅍㅎ";
+const KOREAN_VOWELS = "ㅏㅓㅗㅜㅡㅣㅐㅔㅑㅕ";
+const KOREAN_SYLLABLES = (() => {
+  let result = "";
+  for (const c of KOREAN_CONSONANTS) {
+    for (const v of KOREAN_VOWELS) {
+      const code = 0xac00 + (c.charCodeAt(0) - 0x3131) * 588 + (v.charCodeAt(0) - 0x314f) * 28;
+      if (code >= 0xac00 && code <= 0xd7a3) {
+        result += String.fromCharCode(code);
+      }
+    }
+  }
+  return result;
+})();
+
+const HIRAGANA = "あいうえおかきくけこさしすせそたちつてとなにぬねのはひふへほまみむめもやゆよらりるれろわをん";
+const KATAKANA = "アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン";
+const GREEK = "αβγδεζηθικλμνξοπρστυφχψωΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡΣΤΥΦΧΨΩ";
+const CYRILLIC = "абвгдежзийклмнопрстуфхцчшщъыьэюяАБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ";
+const MATH_SYMBOLS = "∀∂∃∅∇∈∉∋∏∑√∝∞∠∧∨∩∪∫≈≠≡≤≥⊂⊃⊆⊇⊕⊗";
+
+const CODE_CHARS =
+  "0123456789" +
+  "ABCDEFGHIJKLMNOPQRSTUVWXYZ" +
+  "abcdefghijklmnopqrstuvwxyz" +
+  "{}[]()<>+-*/=!?;:.,@#$%^&|~`_\\\"'" +
+  HIRAGANA + KATAKANA +
+  KOREAN_CONSONANTS + KOREAN_VOWELS + KOREAN_SYLLABLES +
+  GREEK + CYRILLIC + MATH_SYMBOLS;
 
 // ==================== 색상 팔레트 ====================
 const MONDRIAN_COLORS = {
-  red: new THREE.Color(0xcc2222), // 빨강
-  blue: new THREE.Color(0x1a1acc), // 파랑
-  yellow: new THREE.Color(0xe8d820), // 노랑
-  white: new THREE.Color(0xf5f5f0), // 흰색 (약간 따뜻한)
-  black: new THREE.Color(0x1a1a1a), // 검정 (셀 배경용)
+  red: new THREE.Color(0xcc2222),
+  blue: new THREE.Color(0x1a1acc),
+  yellow: new THREE.Color(0xe8d820),
+  white: new THREE.Color(0xf5f5f0),
+  black: new THREE.Color(0x1a1a1a),
 };
 
-// 색상 가중치 (흰색 많이, 원색 적게 - 원작 스타일)
 const COLOR_WEIGHTS = [
-  { color: "white", weight: 0.52 },
-  { color: "red", weight: 0.14 },
-  { color: "blue", weight: 0.14 },
+  { color: "white", weight: 0.50 },
+  { color: "red", weight: 0.15 },
+  { color: "blue", weight: 0.15 },
   { color: "yellow", weight: 0.14 },
   { color: "black", weight: 0.06 },
 ];
@@ -52,6 +87,48 @@ interface MondrianArtCanvasProps {
   bloomStrength?: number;
   bloomRadius?: number;
   bloomThreshold?: number;
+}
+
+// ==================== 문자 텍스처 아틀라스 생성 ====================
+function createCharacterAtlas(): THREE.CanvasTexture {
+  const charsPerRow = 16;
+  const rows = Math.ceil(CODE_CHARS.length / charsPerRow);
+  const atlasWidth = charsPerRow * TEXTURE_CHAR_SIZE;
+  const atlasHeight = rows * TEXTURE_CHAR_SIZE;
+
+  const canvas = document.createElement("canvas");
+  canvas.width = atlasWidth;
+  canvas.height = atlasHeight;
+  const ctx = canvas.getContext("2d")!;
+
+  ctx.clearRect(0, 0, atlasWidth, atlasHeight);
+
+  ctx.font = `bold ${TEXTURE_CHAR_SIZE * 0.7}px "Fira Code", "Source Code Pro", "Consolas", monospace`;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+
+  for (let i = 0; i < CODE_CHARS.length; i++) {
+    const col = i % charsPerRow;
+    const row = Math.floor(i / charsPerRow);
+    const x = col * TEXTURE_CHAR_SIZE + TEXTURE_CHAR_SIZE / 2;
+    const y = row * TEXTURE_CHAR_SIZE + TEXTURE_CHAR_SIZE / 2;
+
+    // 흰색으로 렌더링 (셰이더에서 색상 적용)
+    ctx.shadowColor = "rgba(255, 255, 255, 0.5)";
+    ctx.shadowBlur = 2;
+    ctx.fillStyle = "#ffffff";
+    ctx.fillText(CODE_CHARS[i], x, y);
+
+    ctx.shadowBlur = 0;
+    ctx.fillText(CODE_CHARS[i], x, y);
+  }
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.minFilter = THREE.LinearFilter;
+  texture.magFilter = THREE.LinearFilter;
+  texture.needsUpdate = true;
+
+  return texture;
 }
 
 // ==================== 유틸리티 함수 ====================
@@ -77,142 +154,205 @@ function generateMondrianGrid(
   depth: number,
   minSize: number = MIN_CELL_SIZE
 ): Rectangle[] {
-  // 최소 크기 도달 시 종료
   if (depth === 0 || width < minSize * 1.5 || height < minSize * 1.5) {
-    return [
-      {
-        x,
-        y,
-        width,
-        height,
-        color: pickWeightedColor(),
-      },
-    ];
+    return [{ x, y, width, height, color: pickWeightedColor() }];
   }
 
-  // 분할하지 않을 확률 (깊이가 깊을수록 증가)
-  const skipProbability = Math.max(0, (DEFAULT_DEPTH - depth) * 0.08);
+  const skipProbability = Math.max(0, (DEFAULT_DEPTH - depth) * 0.1);
   if (Math.random() < skipProbability) {
-    return [
-      {
-        x,
-        y,
-        width,
-        height,
-        color: pickWeightedColor(),
-      },
-    ];
+    return [{ x, y, width, height, color: pickWeightedColor() }];
   }
 
-  // 가로/세로 비율에 따른 분할 방향 결정
   const aspectRatio = width / height;
   const vertical =
     aspectRatio > 1.2
-      ? Math.random() > 0.2 // 넓으면 세로 분할 우세
+      ? Math.random() > 0.2
       : aspectRatio < 0.8
-        ? Math.random() > 0.8 // 높으면 가로 분할 우세
-        : Math.random() > 0.5; // 정사각형에 가까우면 랜덤
+        ? Math.random() > 0.8
+        : Math.random() > 0.5;
 
   if (vertical) {
-    // 황금비 또는 랜덤 비율로 분할
     const useGoldenRatio = Math.random() > 0.4;
     const ratio = useGoldenRatio
-      ? Math.random() > 0.5
-        ? 1 / PHI
-        : 1 - 1 / PHI
+      ? Math.random() > 0.5 ? 1 / PHI : 1 - 1 / PHI
       : Math.random() * 0.4 + 0.3;
     const split = width * ratio;
 
     return [
-      ...generateMondrianGrid(x, y, split, height, depth - 1, minSize),
-      ...generateMondrianGrid(
-        x + split,
-        y,
-        width - split,
-        height,
-        depth - 1,
-        minSize
-      ),
+      ...generateMondrianGrid(x, y, split - LINE_WIDTH / 2, height, depth - 1, minSize),
+      ...generateMondrianGrid(x + split + LINE_WIDTH / 2, y, width - split - LINE_WIDTH / 2, height, depth - 1, minSize),
     ];
   } else {
     const useGoldenRatio = Math.random() > 0.4;
     const ratio = useGoldenRatio
-      ? Math.random() > 0.5
-        ? 1 / PHI
-        : 1 - 1 / PHI
+      ? Math.random() > 0.5 ? 1 / PHI : 1 - 1 / PHI
       : Math.random() * 0.4 + 0.3;
     const split = height * ratio;
 
     return [
-      ...generateMondrianGrid(x, y, width, split, depth - 1, minSize),
-      ...generateMondrianGrid(
-        x,
-        y + split,
-        width,
-        height - split,
-        depth - 1,
-        minSize
-      ),
+      ...generateMondrianGrid(x, y, width, split - LINE_WIDTH / 2, depth - 1, minSize),
+      ...generateMondrianGrid(x, y + split + LINE_WIDTH / 2, width, height - split - LINE_WIDTH / 2, depth - 1, minSize),
     ];
   }
 }
 
+// 사각형 영역 내에 파티클 위치 생성 (그리드 기반, 겹침 방지)
+function generateParticlesForRectangles(
+  rectangles: Rectangle[],
+  screenWidth: number,
+  screenHeight: number
+): { positions: Float32Array; colors: Float32Array; charIndices: Float32Array; count: number } {
+  const allParticles: { x: number; y: number; color: THREE.Color; charIndex: number }[] = [];
+
+  for (const rect of rectangles) {
+    const padding = LINE_WIDTH + PARTICLE_SIZE / 2;
+    const availableWidth = rect.width - padding * 2;
+    const availableHeight = rect.height - padding * 2;
+
+    if (availableWidth < PARTICLE_SPACING || availableHeight < PARTICLE_SPACING) continue;
+
+    // 그리드 기반 배치 (겹침 방지)
+    const cols = Math.floor(availableWidth / PARTICLE_SPACING);
+    const rows = Math.floor(availableHeight / PARTICLE_SPACING);
+
+    // 실제 간격 계산 (영역에 맞게 균등 분배)
+    const actualSpacingX = availableWidth / Math.max(1, cols);
+    const actualSpacingY = availableHeight / Math.max(1, rows);
+
+    for (let row = 0; row < rows; row++) {
+      for (let col = 0; col < cols; col++) {
+        // 그리드 위치 (회전 없이 고정)
+        const px = rect.x + padding + col * actualSpacingX + actualSpacingX / 2;
+        const py = rect.y + padding + row * actualSpacingY + actualSpacingY / 2;
+
+        const x = px - screenWidth / 2;
+        const y = -(py - screenHeight / 2);
+
+        const charIndex = Math.floor(Math.random() * CODE_CHARS.length);
+
+        allParticles.push({ x, y, color: rect.color, charIndex });
+      }
+    }
+  }
+
+  const count = allParticles.length;
+  const positions = new Float32Array(count * 3);
+  const colors = new Float32Array(count * 3);
+  const charIndices = new Float32Array(count);
+
+  for (let i = 0; i < count; i++) {
+    const p = allParticles[i];
+    positions[i * 3] = p.x;
+    positions[i * 3 + 1] = p.y;
+    positions[i * 3 + 2] = 0;
+
+    colors[i * 3] = p.color.r;
+    colors[i * 3 + 1] = p.color.g;
+    colors[i * 3 + 2] = p.color.b;
+
+    charIndices[i] = p.charIndex;
+  }
+
+  return { positions, colors, charIndices, count };
+}
+
 // ==================== Shader ====================
 const MONDRIAN_VERTEX_SHADER = `
-  attribute vec3 instanceColor;
-  attribute float instanceOpacity;
-  attribute vec2 instanceCellSize;
+  attribute vec3 color;
+  attribute float opacity;
+  attribute float size;
+  attribute float charIndex;
+  attribute vec3 targetPosition;
+  attribute vec3 targetColor;
+  attribute float targetCharIndex;
+  attribute float moveDelay;
+
+  uniform float morphProgress;
+  uniform float time;
+  uniform float charsPerRow;
+  uniform float maxDelay;
+  uniform float transitionDuration;
 
   varying vec3 vColor;
-  varying vec2 vUv;
   varying float vOpacity;
-  varying vec2 vCellSize;
+  varying float vCharIndex;
 
   void main() {
-    vColor = instanceColor;
-    vUv = uv;
-    vOpacity = instanceOpacity;
-    vCellSize = instanceCellSize;
+    // 개별 파티클의 딜레이를 고려한 진행도 계산
+    float totalDuration = transitionDuration + maxDelay;
+    float particleStart = moveDelay / totalDuration;
+    float particleEnd = (moveDelay + transitionDuration) / totalDuration;
 
-    gl_Position = projectionMatrix * modelViewMatrix * instanceMatrix * vec4(position, 1.0);
+    // 이 파티클의 실제 진행도 (0~1)
+    float localProgress = clamp((morphProgress - particleStart) / (particleEnd - particleStart), 0.0, 1.0);
+
+    // easeInOutQuad
+    float easedProgress = localProgress < 0.5
+      ? 2.0 * localProgress * localProgress
+      : 1.0 - pow(-2.0 * localProgress + 2.0, 2.0) / 2.0;
+
+    // 수직/수평 이동 (대각선 금지)
+    // 먼저 X 이동, 그 다음 Y 이동
+    vec3 pos;
+    vec3 diff = targetPosition - position;
+
+    if (easedProgress < 0.5) {
+      // 전반부: X축 이동만
+      float xProgress = easedProgress * 2.0;
+      pos.x = position.x + diff.x * xProgress;
+      pos.y = position.y;
+      pos.z = position.z;
+    } else {
+      // 후반부: Y축 이동만
+      float yProgress = (easedProgress - 0.5) * 2.0;
+      pos.x = targetPosition.x;
+      pos.y = position.y + diff.y * yProgress;
+      pos.z = position.z;
+    }
+
+    // 색상 전환 (이동 완료 시점에)
+    vColor = mix(color, targetColor, step(0.9, localProgress));
+    vOpacity = opacity;
+    vCharIndex = mix(charIndex, targetCharIndex, step(0.9, localProgress));
+
+    vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
+    gl_Position = projectionMatrix * mvPosition;
+    gl_PointSize = size * (300.0 / -mvPosition.z);
   }
 `;
 
 const MONDRIAN_FRAGMENT_SHADER = `
+  uniform sampler2D charAtlas;
+  uniform float charsPerRow;
+  uniform float charRows;
   uniform float time;
 
   varying vec3 vColor;
-  varying vec2 vUv;
   varying float vOpacity;
-  varying vec2 vCellSize;
+  varying float vCharIndex;
 
   void main() {
-    // 1px 선 두께 계산 (셀 크기 기반)
-    float lineWidthX = 1.0 / vCellSize.x;
-    float lineWidthY = 1.0 / vCellSize.y;
+    // 아틀라스에서 문자 UV 계산
+    float charIdx = floor(vCharIndex);
+    float col = mod(charIdx, charsPerRow);
+    float row = floor(charIdx / charsPerRow);
 
-    // 모서리 감지 (1px 선)
-    float edgeX = min(
-      smoothstep(0.0, lineWidthX, vUv.x),
-      smoothstep(1.0, 1.0 - lineWidthX, vUv.x)
+    vec2 charUV = vec2(
+      (col + gl_PointCoord.x) / charsPerRow,
+      (row + (1.0 - gl_PointCoord.y)) / charRows
     );
-    float edgeY = min(
-      smoothstep(0.0, lineWidthY, vUv.y),
-      smoothstep(1.0, 1.0 - lineWidthY, vUv.y)
-    );
-    float edge = edgeX * edgeY;
 
-    // 검정선 색상
-    vec3 lineColor = vec3(0.08);
+    vec4 texColor = texture2D(charAtlas, charUV);
 
-    // 색상: 모서리는 검정, 내부는 instanceColor
-    vec3 color = mix(lineColor, vColor, edge);
+    // 텍스처 알파를 사용하여 문자 모양 추출
+    float alpha = texColor.a * vOpacity;
 
-    // 약간의 노이즈/텍스처 효과 (캔버스 느낌)
-    float noise = fract(sin(dot(vUv * 100.0, vec2(12.9898, 78.233))) * 43758.5453);
-    color += (noise - 0.5) * 0.012;
+    if (alpha < 0.1) discard;
 
-    gl_FragColor = vec4(color, vOpacity);
+    // 약간의 깜빡임
+    float flicker = 0.95 + 0.05 * sin(time * 3.0 + vCharIndex * 0.5);
+
+    gl_FragColor = vec4(vColor * flicker, alpha);
   }
 `;
 
@@ -233,7 +373,7 @@ export function MondrianArtCanvas({
 
     // ==================== Three.js 설정 ====================
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0xf5f5f0); // 따뜻한 흰색 배경
+    scene.background = new THREE.Color(0x1a1a1a);
 
     const camera = new THREE.OrthographicCamera(
       -width / 2,
@@ -253,6 +393,11 @@ export function MondrianArtCanvas({
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     container.appendChild(renderer.domElement);
 
+    // ==================== 문자 아틀라스 ====================
+    const charAtlas = createCharacterAtlas();
+    const charsPerRow = 16;
+    const charRows = Math.ceil(CODE_CHARS.length / charsPerRow);
+
     // ==================== EffectComposer ====================
     const composer = new EffectComposer(renderer);
     composer.addPass(new RenderPass(scene, camera));
@@ -266,103 +411,80 @@ export function MondrianArtCanvas({
     composer.addPass(bloomPass);
     composer.addPass(new OutputPass());
 
-    // ==================== Geometry & Material ====================
-    const planeGeometry = new THREE.PlaneGeometry(1, 1);
+    // ==================== 초기 격자 및 파티클 생성 ====================
+    let currentRectangles = generateMondrianGrid(0, 0, width, height, DEFAULT_DEPTH);
+    let currentData = generateParticlesForRectangles(currentRectangles, width, height);
+
+    let targetRectangles: Rectangle[] = [];
+    let targetData: { positions: Float32Array; colors: Float32Array; charIndices: Float32Array; count: number } | null = null;
+
+    // 그리드 기반 최대 파티클 수 계산
+    const maxParticles = Math.floor((width / PARTICLE_SPACING) * (height / PARTICLE_SPACING) * 1.5);
+
+    // Geometry 생성
+    const geometry = new THREE.BufferGeometry();
+
+    const positions = new Float32Array(maxParticles * 3);
+    const colors = new Float32Array(maxParticles * 3);
+    const opacities = new Float32Array(maxParticles);
+    const sizes = new Float32Array(maxParticles);
+    const charIndices = new Float32Array(maxParticles);
+    const targetPositions = new Float32Array(maxParticles * 3);
+    const targetColors = new Float32Array(maxParticles * 3);
+    const targetCharIndices = new Float32Array(maxParticles);
+    const moveDelays = new Float32Array(maxParticles);
+
+    // 초기 데이터 복사
+    positions.set(currentData.positions);
+    colors.set(currentData.colors);
+    charIndices.set(currentData.charIndices);
+    for (let i = 0; i < currentData.count; i++) {
+      opacities[i] = 0.95;
+      sizes[i] = PARTICLE_SIZE;
+      moveDelays[i] = Math.random() * MAX_DELAY; // 랜덤 딜레이
+    }
+    targetPositions.set(currentData.positions);
+    targetColors.set(currentData.colors);
+    targetCharIndices.set(currentData.charIndices);
+
+    geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+    geometry.setAttribute("color", new THREE.BufferAttribute(colors, 3));
+    geometry.setAttribute("opacity", new THREE.BufferAttribute(opacities, 1));
+    geometry.setAttribute("size", new THREE.BufferAttribute(sizes, 1));
+    geometry.setAttribute("charIndex", new THREE.BufferAttribute(charIndices, 1));
+    geometry.setAttribute("targetPosition", new THREE.BufferAttribute(targetPositions, 3));
+    geometry.setAttribute("targetColor", new THREE.BufferAttribute(targetColors, 3));
+    geometry.setAttribute("targetCharIndex", new THREE.BufferAttribute(targetCharIndices, 1));
+    geometry.setAttribute("moveDelay", new THREE.BufferAttribute(moveDelays, 1));
+
+    geometry.setDrawRange(0, currentData.count);
 
     const material = new THREE.ShaderMaterial({
       uniforms: {
+        morphProgress: { value: 1.0 },
         time: { value: 0 },
+        charAtlas: { value: charAtlas },
+        charsPerRow: { value: charsPerRow },
+        charRows: { value: charRows },
+        maxDelay: { value: MAX_DELAY },
+        transitionDuration: { value: TRANSITION_DURATION },
       },
       vertexShader: MONDRIAN_VERTEX_SHADER,
       fragmentShader: MONDRIAN_FRAGMENT_SHADER,
       transparent: true,
-      side: THREE.DoubleSide,
+      depthWrite: false,
     });
 
-    // ==================== 격자 생성 및 메시 설정 ====================
-    let currentRectangles = generateMondrianGrid(
-      0,
-      0,
-      width,
-      height,
-      DEFAULT_DEPTH
-    );
-    let targetRectangles: Rectangle[] = [];
-    let transitionProgress = 1;
-    let transitionStartTime = 0;
-
-    // 최대 셀 개수 (재생성 시 변동 대비)
-    const maxInstances = 200;
-    const mesh = new THREE.InstancedMesh(planeGeometry, material, maxInstances);
-    mesh.count = currentRectangles.length;
-    scene.add(mesh);
-
-    // 인스턴스 속성 버퍼
-    const instanceColors = new Float32Array(maxInstances * 3);
-    const instanceOpacities = new Float32Array(maxInstances);
-    const instanceCellSizes = new Float32Array(maxInstances * 2);
-
-    planeGeometry.setAttribute(
-      "instanceColor",
-      new THREE.InstancedBufferAttribute(instanceColors, 3)
-    );
-    planeGeometry.setAttribute(
-      "instanceOpacity",
-      new THREE.InstancedBufferAttribute(instanceOpacities, 1)
-    );
-    planeGeometry.setAttribute(
-      "instanceCellSize",
-      new THREE.InstancedBufferAttribute(instanceCellSizes, 2)
-    );
-
-    const dummy = new THREE.Object3D();
-
-    function updateMesh(rectangles: Rectangle[], opacity: number = 1) {
-      mesh.count = rectangles.length;
-
-      rectangles.forEach((rect, i) => {
-        // 위치 및 크기 설정
-        dummy.position.set(
-          rect.x + rect.width / 2 - width / 2,
-          -(rect.y + rect.height / 2 - height / 2), // Y 반전
-          0
-        );
-        dummy.scale.set(rect.width, rect.height, 1);
-        dummy.updateMatrix();
-        mesh.setMatrixAt(i, dummy.matrix);
-
-        // 색상 설정
-        instanceColors[i * 3] = rect.color.r;
-        instanceColors[i * 3 + 1] = rect.color.g;
-        instanceColors[i * 3 + 2] = rect.color.b;
-
-        // 불투명도
-        instanceOpacities[i] = opacity;
-
-        // 셀 크기 (1px 선 계산용)
-        instanceCellSizes[i * 2] = rect.width;
-        instanceCellSizes[i * 2 + 1] = rect.height;
-      });
-
-      mesh.instanceMatrix.needsUpdate = true;
-      (
-        planeGeometry.getAttribute("instanceColor") as THREE.BufferAttribute
-      ).needsUpdate = true;
-      (
-        planeGeometry.getAttribute("instanceOpacity") as THREE.BufferAttribute
-      ).needsUpdate = true;
-      (
-        planeGeometry.getAttribute("instanceCellSize") as THREE.BufferAttribute
-      ).needsUpdate = true;
-    }
-
-    // 초기 메시 설정
-    updateMesh(currentRectangles);
+    const points = new THREE.Points(geometry, material);
+    scene.add(points);
 
     // ==================== 애니메이션 ====================
     const clock = new THREE.Clock();
     let animationFrameId: number;
     let lastRegenerateTime = 0;
+    let morphProgress = 1.0;
+    let transitionStartTime = 0;
+    let isTransitioning = false;
 
     const animate = () => {
       animationFrameId = requestAnimationFrame(animate);
@@ -371,48 +493,86 @@ export function MondrianArtCanvas({
       const elapsedMs = time * 1000;
       material.uniforms.time.value = time;
 
-      // 전환 애니메이션
-      if (transitionProgress < 1) {
+      // 전환 애니메이션 (전체 지속시간 = 전환시간 + 최대 딜레이)
+      const totalDuration = TRANSITION_DURATION + MAX_DELAY;
+      if (isTransitioning && targetData) {
         const elapsed = elapsedMs - transitionStartTime;
-        transitionProgress = Math.min(1, elapsed / TRANSITION_DURATION);
+        morphProgress = Math.min(1, elapsed / totalDuration);
 
-        // easeInOutCubic
-        const eased =
-          transitionProgress < 0.5
-            ? 4 * transitionProgress * transitionProgress * transitionProgress
-            : 1 -
-              Math.pow(-2 * transitionProgress + 2, 3) / 2;
+        // morphProgress는 0~1 사이 값으로 셰이더에 전달
+        // 셰이더에서 각 파티클의 딜레이를 고려하여 개별 진행도 계산
+        material.uniforms.morphProgress.value = morphProgress;
 
-        // 페이드 전환
-        if (eased < 0.5) {
-          // 페이드 아웃
-          updateMesh(currentRectangles, 1 - eased * 2);
-        } else {
-          // 페이드 인
-          updateMesh(targetRectangles, (eased - 0.5) * 2);
-        }
-
-        if (transitionProgress >= 1) {
+        if (morphProgress >= 1) {
+          isTransitioning = false;
           currentRectangles = targetRectangles;
-          updateMesh(currentRectangles, 1);
+          currentData = targetData;
+
+          const posAttr = geometry.getAttribute("position") as THREE.BufferAttribute;
+          const colorAttr = geometry.getAttribute("color") as THREE.BufferAttribute;
+          const charAttr = geometry.getAttribute("charIndex") as THREE.BufferAttribute;
+          posAttr.array.set(targetData.positions);
+          colorAttr.array.set(targetData.colors);
+          charAttr.array.set(targetData.charIndices);
+          posAttr.needsUpdate = true;
+          colorAttr.needsUpdate = true;
+          charAttr.needsUpdate = true;
+
+          geometry.setDrawRange(0, currentData.count);
         }
       }
 
       // 주기적 재생성
-      if (
-        elapsedMs - lastRegenerateTime > REGENERATE_INTERVAL &&
-        transitionProgress >= 1
-      ) {
+      if (elapsedMs - lastRegenerateTime > REGENERATE_INTERVAL && !isTransitioning) {
         lastRegenerateTime = elapsedMs;
-        targetRectangles = generateMondrianGrid(
-          0,
-          0,
-          width,
-          height,
-          DEFAULT_DEPTH
-        );
-        transitionProgress = 0;
+
+        targetRectangles = generateMondrianGrid(0, 0, width, height, DEFAULT_DEPTH);
+        targetData = generateParticlesForRectangles(targetRectangles, width, height);
+
+        const targetPosAttr = geometry.getAttribute("targetPosition") as THREE.BufferAttribute;
+        const targetColorAttr = geometry.getAttribute("targetColor") as THREE.BufferAttribute;
+        const targetCharAttr = geometry.getAttribute("targetCharIndex") as THREE.BufferAttribute;
+        const moveDelayAttr = geometry.getAttribute("moveDelay") as THREE.BufferAttribute;
+
+        const maxCount = Math.max(currentData.count, targetData.count);
+        geometry.setDrawRange(0, maxCount);
+
+        for (let i = 0; i < maxCount; i++) {
+          const i3 = i * 3;
+          // 각 파티클에 새로운 랜덤 딜레이 할당
+          moveDelayAttr.array[i] = Math.random() * MAX_DELAY;
+
+          if (i < targetData.count) {
+            targetPosAttr.array[i3] = targetData.positions[i3];
+            targetPosAttr.array[i3 + 1] = targetData.positions[i3 + 1];
+            targetPosAttr.array[i3 + 2] = targetData.positions[i3 + 2];
+            targetColorAttr.array[i3] = targetData.colors[i3];
+            targetColorAttr.array[i3 + 1] = targetData.colors[i3 + 1];
+            targetColorAttr.array[i3 + 2] = targetData.colors[i3 + 2];
+            targetCharAttr.array[i] = targetData.charIndices[i];
+            opacities[i] = 0.95;
+          } else {
+            targetPosAttr.array[i3] = (Math.random() - 0.5) * width;
+            targetPosAttr.array[i3 + 1] = (Math.random() - 0.5) * height;
+            targetPosAttr.array[i3 + 2] = 0;
+            targetColorAttr.array[i3] = 0;
+            targetColorAttr.array[i3 + 1] = 0;
+            targetColorAttr.array[i3 + 2] = 0;
+            targetCharAttr.array[i] = 0;
+            opacities[i] = 0;
+          }
+        }
+
+        targetPosAttr.needsUpdate = true;
+        targetColorAttr.needsUpdate = true;
+        targetCharAttr.needsUpdate = true;
+        moveDelayAttr.needsUpdate = true;
+        (geometry.getAttribute("opacity") as THREE.BufferAttribute).needsUpdate = true;
+
+        isTransitioning = true;
         transitionStartTime = elapsedMs;
+        morphProgress = 0;
+        material.uniforms.morphProgress.value = 0;
       }
 
       composer.render();
@@ -434,16 +594,6 @@ export function MondrianArtCanvas({
       renderer.setSize(newWidth, newHeight);
       composer.setSize(newWidth, newHeight);
       bloomPass.setSize(newWidth, newHeight);
-
-      // 새 크기로 격자 재생성
-      currentRectangles = generateMondrianGrid(
-        0,
-        0,
-        newWidth,
-        newHeight,
-        DEFAULT_DEPTH
-      );
-      updateMesh(currentRectangles);
     };
 
     window.addEventListener("resize", handleResize);
@@ -453,9 +603,10 @@ export function MondrianArtCanvas({
       cancelAnimationFrame(animationFrameId);
       window.removeEventListener("resize", handleResize);
 
-      scene.remove(mesh);
-      planeGeometry.dispose();
+      scene.remove(points);
+      geometry.dispose();
       material.dispose();
+      charAtlas.dispose();
       renderer.dispose();
       composer.dispose();
 

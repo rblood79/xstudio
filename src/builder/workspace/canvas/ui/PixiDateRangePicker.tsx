@@ -10,7 +10,8 @@
  */
 
 import { useCallback, useMemo, useState } from 'react';
-import { Container, Graphics, Text } from '@pixi/react';
+import { useExtend } from '@pixi/react';
+import { PIXI_COMPONENTS } from '../pixiSetup';
 import type { Graphics as PixiGraphics, TextStyle } from 'pixi.js';
 import type { Element } from '@/types/core/store.types';
 import {
@@ -39,6 +40,7 @@ export function PixiDateRangePicker({
   isSelected = false,
   onClick,
 }: PixiDateRangePickerProps) {
+  useExtend(PIXI_COMPONENTS);
   const props = element.props || {};
   const variant = (props.variant as string) || 'default';
   const size = (props.size as string) || 'md';
@@ -208,36 +210,36 @@ export function PixiDateRangePicker({
           : calendarColorPreset.outsideMonthColor;
 
       return (
-        <Container key={index} x={x} y={y}>
-          <Graphics draw={drawCell} />
-          <Text text={String(dayInfo.day)} style={{ ...calendarDayStyle, fill: textColor }} anchor={0.5} />
-        </Container>
+        <pixiContainer key={index} x={x} y={y}>
+          <pixiGraphics draw={drawCell} />
+          <pixiText text={String(dayInfo.day)} style={{ ...calendarDayStyle, fill: textColor }} anchor={0.5} />
+        </pixiContainer>
       );
     });
   };
 
   return (
-    <Container
+    <pixiContainer
       eventMode="static"
       cursor="pointer"
       onpointertap={() => onClick?.(element.id)}
     >
       {/* Start field */}
-      <Graphics draw={(g) => drawField(g, fieldWidth)} />
-      <Text text={startText} style={fieldTextStyle} x={sizePreset.fieldPadding} y={sizePreset.fieldHeight / 2 - sizePreset.fieldFontSize / 2} />
+      <pixiGraphics draw={(g) => drawField(g, fieldWidth)} />
+      <pixiText text={startText} style={fieldTextStyle} x={sizePreset.fieldPadding} y={sizePreset.fieldHeight / 2 - sizePreset.fieldFontSize / 2} />
 
       {/* Separator */}
-      <Text text="→" style={separatorStyle} x={fieldWidth + sizePreset.gap + sizePreset.separatorWidth / 2} y={sizePreset.fieldHeight / 2} anchor={0.5} />
+      <pixiText text="→" style={separatorStyle} x={fieldWidth + sizePreset.gap + sizePreset.separatorWidth / 2} y={sizePreset.fieldHeight / 2} anchor={0.5} />
 
       {/* End field */}
-      <Container x={fieldWidth + sizePreset.separatorWidth + sizePreset.gap * 2}>
-        <Graphics draw={(g) => drawField(g, fieldWidth)} />
-        <Text text={endText} style={fieldTextStyle} x={sizePreset.fieldPadding} y={sizePreset.fieldHeight / 2 - sizePreset.fieldFontSize / 2} />
-      </Container>
+      <pixiContainer x={fieldWidth + sizePreset.separatorWidth + sizePreset.gap * 2}>
+        <pixiGraphics draw={(g) => drawField(g, fieldWidth)} />
+        <pixiText text={endText} style={fieldTextStyle} x={sizePreset.fieldPadding} y={sizePreset.fieldHeight / 2 - sizePreset.fieldFontSize / 2} />
+      </pixiContainer>
 
       {/* Selection indicator */}
       {isSelected && (
-        <Graphics draw={(g) => {
+        <pixiGraphics draw={(g) => {
           g.clear();
           g.roundRect(-2, -2, totalFieldWidth + 4, sizePreset.fieldHeight + 4, sizePreset.fieldBorderRadius + 2);
           g.stroke({ color: colorPreset.focusBorderColor, width: 2 });
@@ -246,8 +248,8 @@ export function PixiDateRangePicker({
 
       {/* Dual calendar popup */}
       {isOpen && (
-        <Container y={sizePreset.fieldHeight + sizePreset.gap}>
-          <Graphics draw={drawCalendar} />
+        <pixiContainer y={sizePreset.fieldHeight + sizePreset.gap}>
+          <pixiGraphics draw={drawCalendar} />
 
           {/* Left calendar header */}
           <Text
@@ -296,8 +298,8 @@ export function PixiDateRangePicker({
 
           {/* Right calendar days */}
           {renderCalendarDays(rightMonthDays, singleCalendarWidth + sizePreset.gap)}
-        </Container>
+        </pixiContainer>
       )}
-    </Container>
+    </pixiContainer>
   );
 }

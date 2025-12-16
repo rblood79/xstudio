@@ -10,7 +10,8 @@
  */
 
 import { useCallback, useMemo } from 'react';
-import { Container, Graphics } from '@pixi/react';
+import { useExtend } from '@pixi/react';
+import { PIXI_COMPONENTS } from '../pixiSetup';
 import type { Graphics as PixiGraphics } from 'pixi.js';
 import type { Element } from '@/types/core/store.types';
 import {
@@ -39,6 +40,7 @@ export function PixiColorSwatchPicker({
   isSelected = false,
   onClick,
 }: PixiColorSwatchPickerProps) {
+  useExtend(PIXI_COMPONENTS);
   const props = element.props || {};
   const variant = (props.variant as string) || 'default';
   const size = (props.size as string) || 'md';
@@ -107,13 +109,13 @@ export function PixiColorSwatchPicker({
   );
 
   return (
-    <Container
+    <pixiContainer
       eventMode="static"
       cursor="pointer"
       onpointertap={() => onClick?.(element.id)}
     >
       {/* Selection indicator */}
-      <Graphics draw={drawSelection} />
+      <pixiGraphics draw={drawSelection} />
 
       {/* Color swatches */}
       {colors.map((color, index) => {
@@ -125,7 +127,7 @@ export function PixiColorSwatchPicker({
         const isSwatchSelected = color.toLowerCase() === selectedColor.toLowerCase();
 
         return (
-          <Graphics
+          <pixiGraphics
             key={`swatch-${index}`}
             draw={(g) => drawSwatch(g, colorNum, isSwatchSelected)}
             x={x}
@@ -133,6 +135,6 @@ export function PixiColorSwatchPicker({
           />
         );
       })}
-    </Container>
+    </pixiContainer>
   );
 }

@@ -13,7 +13,8 @@
  */
 
 import { useCallback, useMemo, useState } from 'react';
-import { Container, Graphics, Text } from '@pixi/react';
+import { useExtend } from '@pixi/react';
+import { PIXI_COMPONENTS } from '../pixiSetup';
 import type { Graphics as PixiGraphics, TextStyle } from 'pixi.js';
 import type { Element } from '@/types/core/store.types';
 import {
@@ -36,6 +37,7 @@ export function PixiPopover({
   isSelected = false,
   onClick,
 }: PixiPopoverProps) {
+  useExtend(PIXI_COMPONENTS);
   const props = element.props || {};
   const variant = (props.variant as string) || 'default';
   const size = (props.size as string) || 'md';
@@ -164,7 +166,7 @@ export function PixiPopover({
   );
 
   return (
-    <Container
+    <pixiContainer
       eventMode="static"
       cursor="pointer"
       onpointerenter={() => setIsHovered(true)}
@@ -172,7 +174,7 @@ export function PixiPopover({
       onpointertap={() => onClick?.(element.id)}
     >
       {/* Popover background with arrow */}
-      <Graphics draw={drawPopover} />
+      <pixiGraphics draw={drawPopover} />
 
       {/* Title (optional) */}
       {title && (
@@ -191,6 +193,6 @@ export function PixiPopover({
         x={sizePreset.padding}
         y={sizePreset.padding + titleHeight}
       />
-    </Container>
+    </pixiContainer>
   );
 }

@@ -12,6 +12,8 @@
  * @since 2025-12-16 Phase 1 WebGL Migration
  */
 
+import { useExtend } from '@pixi/react';
+import { PIXI_COMPONENTS } from '../pixiSetup';
 import { memo, useCallback, useMemo, useEffect, useRef } from "react";
 import {
   Graphics as PixiGraphics,
@@ -58,6 +60,7 @@ export const PixiBadge = memo(function PixiBadge({
   element,
   onClick,
 }: PixiBadgeProps) {
+  useExtend(PIXI_COMPONENTS);
   const style = element.props?.style as CSSStyle | undefined;
   const props = element.props as BadgeElementProps | undefined;
 

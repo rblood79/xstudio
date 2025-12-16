@@ -8,6 +8,8 @@
 
 import { useCallback, memo } from 'react';
 import { Graphics as PixiGraphics } from 'pixi.js';
+import { useExtend } from '@pixi/react';
+import { PIXI_COMPONENTS } from '../pixiSetup';
 import type {
   HandlePosition,
   HandleConfig,
@@ -64,6 +66,8 @@ export const TransformHandle = memo(function TransformHandle({
   onHoverStart,
   onHoverEnd,
 }: TransformHandleProps) {
+  useExtend(PIXI_COMPONENTS);
+
   // 줌에 독립적인 핸들 크기 (화면상 항상 동일 크기)
   const adjustedSize = HANDLE_SIZE / zoom;
   const strokeWidth = 1 / zoom;

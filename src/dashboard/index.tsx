@@ -9,7 +9,7 @@ import {
 import { getDB } from "../lib/db";
 import { ElementProps } from "../types/integrations/supabase.types";
 import { ElementUtils } from "../utils/element/elementUtils";
-import { Button, TextField } from "../shared/components/list";
+import { Button, TextField, Input } from "react-aria-components";
 import { useAsyncQuery } from "../builder/hooks/useAsyncQuery";
 import { useAsyncMutation } from "../builder/hooks/useAsyncMutation";
 import {
@@ -445,22 +445,25 @@ function Dashboard() {
         {/* 필터 버튼 + Settings */}
         <div className="filter">
           <Button
-            variant={filter === "all" ? "primary" : "default"}
-            size="sm"
+            className={`react-aria-Button ${
+              filter === "all" ? "primary" : "default"
+            }`}
             onPress={() => setFilter("all")}
           >
             All ({counts.all})
           </Button>
           <Button
-            variant={filter === "local" ? "primary" : "default"}
-            size="sm"
+            className={`react-aria-Button ${
+              filter === "local" ? "primary" : "default"
+            }`}
             onPress={() => setFilter("local")}
           >
             <HardDrive size={14} /> Local ({counts.local})
           </Button>
           <Button
-            variant={filter === "cloud" ? "primary" : "default"}
-            size="sm"
+            className={`react-aria-Button ${
+              filter === "cloud" ? "primary" : "default"
+            }`}
             onPress={() => setFilter("cloud")}
           >
             <Cloud size={14} /> Cloud ({counts.cloud})
@@ -468,8 +471,7 @@ function Dashboard() {
 
           {/* Settings 버튼 */}
           <Button
-            variant="ghost"
-            size="sm"
+            className="react-aria-Button ghost"
             onPress={() => setShowSettings(true)}
             aria-label="Open settings"
           >
@@ -483,25 +485,23 @@ function Dashboard() {
       <main className="main">
         <form onSubmit={handleAddProject} className="add-project-form">
           <TextField
-            type="text"
             value={newProjectName}
             onChange={(value) => setNewProjectName(value)}
-            placeholder="New Project"
             isDisabled={loading}
-          />
+          >
+            <Input type="text" placeholder="New Project" />
+          </TextField>
           <Button
             type="submit"
-            size="sm"
-            className="add-project-button"
+            className="react-aria-Button primary add-project-button"
             isDisabled={loading || !newProjectName.trim()}
-            children={
-              createProjectMutation.isLoading ? (
-                "Creating..."
-              ) : (
-                <Plus size={16} />
-              )
-            }
-          />
+          >
+            {createProjectMutation.isLoading ? (
+              "Creating..."
+            ) : (
+              <Plus size={16} />
+            )}
+          </Button>
         </form>
 
         <div className="projects-grid">
@@ -540,17 +540,18 @@ function Dashboard() {
                   {/* Open 버튼 */}
                   {actions.canOpen && (
                     <Button
+                      className="react-aria-Button primary"
                       onPress={() => navigate(`/builder/${project.id}`)}
                       isDisabled={loading}
-                      children={<Package size={16} />}
-                      variant="primary"
-                      size="sm"
-                    />
+                    >
+                      <Package size={16} />
+                    </Button>
                   )}
 
                   {/* Sync 버튼 */}
                   {actions.canSync && (
                     <Button
+                      className="react-aria-Button default"
                       onPress={async () => {
                         try {
                           await syncProjectMutation.execute(project.id);
@@ -563,19 +564,19 @@ function Dashboard() {
                         }
                       }}
                       isDisabled={loading}
-                      children={
-                        syncProjectMutation.isLoading ? (
-                          <CloudAlert size={16} />
-                        ) : (
-                          <CloudUpload size={16} />
-                        )
-                      }
-                    />
+                    >
+                      {syncProjectMutation.isLoading ? (
+                        <CloudAlert size={16} />
+                      ) : (
+                        <CloudUpload size={16} />
+                      )}
+                    </Button>
                   )}
 
                   {/* Download 버튼 */}
                   {actions.canDownload && (
                     <Button
+                      className="react-aria-Button secondary"
                       onPress={async () => {
                         try {
                           await downloadProjectMutation.execute(project.id);
@@ -588,8 +589,6 @@ function Dashboard() {
                         }
                       }}
                       isDisabled={loading}
-                      variant="secondary"
-                      size="sm"
                     >
                       <Download size={14} />{" "}
                       {downloadProjectMutation.isLoading
@@ -600,21 +599,21 @@ function Dashboard() {
 
                   {/* Theme 버튼 */}
                   <Button
+                    className="react-aria-Button default"
                     onPress={() => navigate(`/theme/${project.id}`)}
                     isDisabled={loading}
-                    children={<SwatchBook size={16} />}
-                    variant="default"
-                    size="sm"
-                  />
+                  >
+                    <SwatchBook size={16} />
+                  </Button>
 
                   {/* Delete 버튼 */}
                   <Button
+                    className="react-aria-Button default"
                     onPress={() => handleDeleteProject(project.id)}
                     isDisabled={loading}
-                    children={<Trash size={16} />}
-                    variant="default"
-                    size="sm"
-                  />
+                  >
+                    <Trash size={16} />
+                  </Button>
                 </div>
               </div>
             );

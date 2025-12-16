@@ -13,7 +13,8 @@
  */
 
 import { useCallback, useMemo } from 'react';
-import { Container, Graphics, Text } from '@pixi/react';
+import { useExtend } from '@pixi/react';
+import { PIXI_COMPONENTS } from '../pixiSetup';
 import type { Graphics as PixiGraphics, TextStyle } from 'pixi.js';
 import type { Element } from '@/types/core/store.types';
 import {
@@ -36,6 +37,7 @@ export function PixiTooltip({
   isSelected = false,
   onClick,
 }: PixiTooltipProps) {
+  useExtend(PIXI_COMPONENTS);
   const props = element.props || {};
   const variant = (props.variant as string) || 'default';
   const size = (props.size as string) || 'md';
@@ -120,13 +122,13 @@ export function PixiTooltip({
   );
 
   return (
-    <Container
+    <pixiContainer
       eventMode="static"
       cursor="pointer"
       onpointertap={() => onClick?.(element.id)}
     >
       {/* Tooltip background with arrow */}
-      <Graphics draw={drawTooltip} />
+      <pixiGraphics draw={drawTooltip} />
 
       {/* Tooltip text */}
       <Text
@@ -135,6 +137,6 @@ export function PixiTooltip({
         x={sizePreset.paddingX}
         y={sizePreset.paddingY}
       />
-    </Container>
+    </pixiContainer>
   );
 }

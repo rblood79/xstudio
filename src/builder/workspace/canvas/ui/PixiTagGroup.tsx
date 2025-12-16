@@ -8,7 +8,8 @@
  */
 
 import { useCallback, useMemo, useState } from 'react';
-import { Container, Graphics, Text } from '@pixi/react';
+import { useExtend } from '@pixi/react';
+import { PIXI_COMPONENTS } from '../pixiSetup';
 import { Graphics as PixiGraphics, TextStyle } from 'pixi.js';
 import { getTagGroupSizePreset, getTagGroupColorPreset } from '../utils/cssVariableReader';
 import type { Element } from '@/types/core';
@@ -34,6 +35,7 @@ export function PixiTagGroup({
   onClick,
   onChange,
 }: PixiTagGroupProps) {
+  useExtend(PIXI_COMPONENTS);
   const props = element.props || {};
   const variant = (props.variant as string) || 'default';
   const size = (props.size as string) || 'md';
@@ -197,16 +199,16 @@ export function PixiTagGroup({
   }, [element.id, onClick]);
 
   return (
-    <Container
+    <pixiContainer
       eventMode="static"
       cursor="pointer"
       pointerdown={handleContainerClick}
     >
       {/* Selection indicator */}
-      <Graphics draw={drawSelection} />
+      <pixiGraphics draw={drawSelection} />
 
       {/* Label */}
-      {label && <Text text={label} style={labelStyle} x={0} y={0} />}
+      {label && <pixiText text={label} style={labelStyle} x={0} y={0} />}
 
       {/* Tags */}
       {tagItems.map((tag, index) => {
@@ -221,7 +223,7 @@ export function PixiTagGroup({
             : colorPreset.textColor;
 
         return (
-          <Container
+          <pixiContainer
             key={tag.id}
             x={pos.x}
             y={pos.y}
@@ -234,7 +236,7 @@ export function PixiTagGroup({
               handleTagClick(tag.id);
             }}
           >
-            <Graphics
+            <pixiGraphics
               draw={(g) => drawTag(g, pos.width, isHovered, tag.isSelected || false)}
             />
             <Text
@@ -252,17 +254,17 @@ export function PixiTagGroup({
 
             {/* Remove button */}
             {tag.isRemovable && (
-              <Container
+              <pixiContainer
                 x={pos.width - 18}
                 y={(tagHeight - 14) / 2}
                 eventMode="static"
                 cursor="pointer"
                 pointerdown={(e) => handleRemoveClick(tag.id, e)}
               >
-                <Graphics draw={(g) => drawRemoveButton(g, isHovered)} />
-              </Container>
+                <pixiGraphics draw={(g) => drawRemoveButton(g, isHovered)} />
+              </pixiContainer>
             )}
-          </Container>
+          </pixiContainer>
         );
       })}
 
@@ -282,7 +284,7 @@ export function PixiTagGroup({
           y={label ? sizePreset.fontSize + 8 : 0}
         />
       )}
-    </Container>
+    </pixiContainer>
   );
 }
 

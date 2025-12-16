@@ -10,7 +10,8 @@
  */
 
 import { useCallback, useMemo } from 'react';
-import { Container, Graphics, Text } from '@pixi/react';
+import { useExtend } from '@pixi/react';
+import { PIXI_COMPONENTS } from '../pixiSetup';
 import type { Graphics as PixiGraphics, TextStyle } from 'pixi.js';
 import type { Element } from '@/types/core/store.types';
 import {
@@ -33,6 +34,7 @@ export function PixiToast({
   isSelected = false,
   onClick,
 }: PixiToastProps) {
+  useExtend(PIXI_COMPONENTS);
   const props = element.props || {};
   const toastType = (props.type as string) || 'info'; // info, success, warning, error
   const size = (props.size as string) || 'md';
@@ -185,16 +187,16 @@ export function PixiToast({
   const dismissY = (toastHeight - sizePreset.dismissButtonSize) / 2;
 
   return (
-    <Container
+    <pixiContainer
       eventMode="static"
       cursor="pointer"
       onpointertap={() => onClick?.(element.id)}
     >
       {/* Toast container */}
-      <Graphics draw={drawContainer} />
+      <pixiGraphics draw={drawContainer} />
 
       {/* Icon */}
-      <Graphics draw={drawIcon} x={iconX} y={iconY} />
+      <pixiGraphics draw={drawIcon} x={iconX} y={iconY} />
 
       {/* Message */}
       <Text
@@ -205,7 +207,7 @@ export function PixiToast({
       />
 
       {/* Dismiss button */}
-      <Graphics draw={drawDismissButton} x={dismissX} y={dismissY} />
-    </Container>
+      <pixiGraphics draw={drawDismissButton} x={dismissX} y={dismissY} />
+    </pixiContainer>
   );
 }

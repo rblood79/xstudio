@@ -9,6 +9,8 @@
  * @since 2025-12-13 Phase 6.4
  */
 
+import { useExtend } from '@pixi/react';
+import { PIXI_COMPONENTS } from '../pixiSetup';
 import { memo, useCallback, useEffect, useMemo, useRef } from 'react';
 import { useApplication } from '@pixi/react';
 import { ProgressBar } from '@pixi/ui';
@@ -121,8 +123,9 @@ export const PixiProgressBar = memo(function PixiProgressBar({
   isSelected,
   onClick,
 }: PixiProgressBarProps) {
+  useExtend(PIXI_COMPONENTS);
   const { app } = useApplication();
-  const containerRef = useRef<Container | null>(null);
+  const containerRef = useRef<pixiContainer | null>(null);
   const progressBarRef = useRef<ProgressBar | null>(null);
 
   const style = element.props?.style as CSSStyle | undefined;

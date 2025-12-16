@@ -8,7 +8,8 @@
  */
 
 import { useCallback, useMemo, useState } from 'react';
-import { Container, Graphics, Text } from '@pixi/react';
+import { useExtend } from '@pixi/react';
+import { PIXI_COMPONENTS } from '../pixiSetup';
 import { Graphics as PixiGraphics, TextStyle } from 'pixi.js';
 import { getTreeSizePreset, getTreeColorPreset } from '../utils/cssVariableReader';
 import type { Element } from '@/types/core';
@@ -37,6 +38,7 @@ export function PixiTree({
   onClick,
   onChange,
 }: PixiTreeProps) {
+  useExtend(PIXI_COMPONENTS);
   const props = element.props || {};
   const variant = (props.variant as string) || 'default';
   const size = (props.size as string) || 'md';
@@ -231,13 +233,13 @@ export function PixiTree({
   const itemWidth = treeWidth - sizePreset.treePadding * 2;
 
   return (
-    <Container
+    <pixiContainer
       eventMode="static"
       cursor="pointer"
       pointerdown={handleContainerClick}
     >
       {/* Container */}
-      <Graphics draw={drawContainer} />
+      <pixiGraphics draw={drawContainer} />
 
       {/* Tree Items */}
       {treeItems.map((item, index) => {
@@ -248,7 +250,7 @@ export function PixiTree({
         const isHovered = hoveredItemId === item.id;
 
         return (
-          <Container
+          <pixiContainer
             key={item.id}
             x={sizePreset.treePadding}
             y={itemY}
@@ -262,7 +264,7 @@ export function PixiTree({
             }}
           >
             {/* Item background */}
-            <Graphics
+            <pixiGraphics
               draw={(g) =>
                 drawItemBg(g, itemWidth, sizePreset.itemMinHeight, isHovered, item.isSelected || false)
               }
@@ -270,7 +272,7 @@ export function PixiTree({
 
             {/* Chevron (for expandable items) */}
             {item.hasChildren && (
-              <Container
+              <pixiContainer
                 x={indent}
                 y={(sizePreset.itemMinHeight - sizePreset.chevronSize) / 2}
                 eventMode="static"
@@ -280,10 +282,10 @@ export function PixiTree({
                   toggleExpand(item.id);
                 }}
               >
-                <Graphics
+                <pixiGraphics
                   draw={(g) => drawChevron(g, item.isExpanded, item.hasChildren)}
                 />
-              </Container>
+              </pixiContainer>
             )}
 
             {/* Item text */}
@@ -293,7 +295,7 @@ export function PixiTree({
               x={indent + sizePreset.chevronSize + 4}
               y={(sizePreset.itemMinHeight - sizePreset.fontSize) / 2}
             />
-          </Container>
+          </pixiContainer>
         );
       })}
 
@@ -314,7 +316,7 @@ export function PixiTree({
           anchor={0.5}
         />
       )}
-    </Container>
+    </pixiContainer>
   );
 }
 
