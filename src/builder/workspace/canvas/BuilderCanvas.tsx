@@ -373,6 +373,8 @@ function ElementsLayer({
   const elements = useStore((state) => state.elements);
   const currentPageId = useStore((state) => state.currentPageId);
 
+  const selectedIdSet = useMemo(() => new Set(selectedIds), [selectedIds]);
+
   const elementById = useMemo(
     () => new Map(elements.map((el) => [el.id, el])),
     [elements]
@@ -406,26 +408,31 @@ function ElementsLayer({
   }, [elements, elementById]);
 
   // 현재 페이지의 요소만 필터링 (Body 제외, 실제 렌더링 대상만)
-  const pageElements = elements.filter((el) => {
-    if (el.page_id !== currentPageId) return false;
-    // Body 태그는 캔버스 전체를 의미하므로 렌더링에서 제외 (대소문자 무시)
-    if (el.tag.toLowerCase() === "body") return false;
-    // CheckboxGroup의 자식 Checkbox는 투명 hit area로 렌더링 (필터하지 않음)
-    return true;
-  });
+  // 선택 변경으로 인한 리렌더에서도 재계산/정렬 비용을 피하기 위해 memoize
+  const pageElements = useMemo(() => {
+    return elements.filter((el) => {
+      if (el.page_id !== currentPageId) return false;
+      // Body 태그는 캔버스 전체를 의미하므로 렌더링에서 제외 (대소문자 무시)
+      if (el.tag.toLowerCase() === "body") return false;
+      // CheckboxGroup의 자식 Checkbox는 투명 hit area로 렌더링 (필터하지 않음)
+      return true;
+    });
+  }, [elements, currentPageId]);
 
   // 깊이 + order_num 기준으로 정렬 (부모 먼저 → 자식 나중에 렌더링)
   // DOM 방식: 자식이 부모 위에 표시됨
-  const sortedElements = [...pageElements].sort((a, b) => {
-    const depthA = depthMap.get(a.id) ?? 0;
-    const depthB = depthMap.get(b.id) ?? 0;
+  const sortedElements = useMemo(() => {
+    return [...pageElements].sort((a, b) => {
+      const depthA = depthMap.get(a.id) ?? 0;
+      const depthB = depthMap.get(b.id) ?? 0;
 
-    // 깊이가 다르면 깊이 순서 (낮은 것 먼저 = 부모 먼저)
-    if (depthA !== depthB) return depthA - depthB;
+      // 깊이가 다르면 깊이 순서 (낮은 것 먼저 = 부모 먼저)
+      if (depthA !== depthB) return depthA - depthB;
 
-    // 같은 깊이면 order_num 순서
-    return (a.order_num || 0) - (b.order_num || 0);
-  });
+      // 같은 깊이면 order_num 순서
+      return (a.order_num || 0) - (b.order_num || 0);
+    });
+  }, [pageElements, depthMap]);
 
   return (
     <pixiContainer
@@ -437,7 +444,7 @@ function ElementsLayer({
         <ElementSprite
           key={element.id}
           element={element}
-          isSelected={selectedIds.includes(element.id)}
+          isSelected={selectedIdSet.has(element.id)}
           layoutPosition={layoutResult.positions.get(element.id)}
           onClick={onClick}
           onDoubleClick={onDoubleClick}
@@ -626,6 +633,8 @@ export function BuilderCanvas({
   } = useTextEdit();
 
   // Element click handler with multi-select support
+  // 🚀 최적화: selectedElementIds를 deps에서 제거하고 getState()로 읽어서
+  // 선택 변경 시 handleElementClick 재생성 방지 → 모든 ElementSprite 리렌더링 방지
   const handleElementClick = useCallback(
     (elementId: string, modifiers?: { metaKey: boolean; shiftKey: boolean; ctrlKey: boolean }) => {
       // 텍스트 편집 중이면 클릭 무시
@@ -635,11 +644,14 @@ export function BuilderCanvas({
       const isMultiSelectKey = modifiers?.metaKey || modifiers?.ctrlKey;
 
       if (isMultiSelectKey) {
+        // 🚀 getState()로 현재 selectedElementIds 읽기 (stale closure 방지)
+        const currentSelectedIds = useStore.getState().selectedElementIds;
+
         // 다중 선택: 이미 선택된 요소면 제거, 아니면 추가
-        const isAlreadySelected = selectedElementIds.includes(elementId);
+        const isAlreadySelected = currentSelectedIds.includes(elementId);
         if (isAlreadySelected) {
           // 선택 해제
-          const newSelection = selectedElementIds.filter((id) => id !== elementId);
+          const newSelection = currentSelectedIds.filter((id) => id !== elementId);
           if (newSelection.length > 0) {
             setSelectedElements(newSelection);
           } else {
@@ -647,14 +659,14 @@ export function BuilderCanvas({
           }
         } else {
           // 선택에 추가
-          setSelectedElements([...selectedElementIds, elementId]);
+          setSelectedElements([...currentSelectedIds, elementId]);
         }
       } else {
         // 단일 선택
         setSelectedElement(elementId);
       }
     },
-    [setSelectedElement, setSelectedElements, clearSelection, selectedElementIds, isEditing]
+    [setSelectedElement, setSelectedElements, clearSelection, isEditing]
   );
 
   // Element double click handler (텍스트 편집 시작)

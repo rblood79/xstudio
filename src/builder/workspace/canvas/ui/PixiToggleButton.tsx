@@ -25,10 +25,8 @@ import { FancyButton } from "@pixi/ui";
 import type { Element } from "../../../../types/core/store.types";
 import type { CSSStyle } from "../sprites/styleConverter";
 import { cssColorToHex, parseCSSSize } from "../sprites/styleConverter";
-import {
-  getToggleButtonSizePreset,
-  getToggleButtonColorPreset,
-} from "../utils/cssVariableReader";
+import { getSizePreset, getVariantColors, type SizePreset } from "../utils/cssVariableReader";
+import { useThemeColors } from "../hooks/useThemeColors";
 import { drawBox } from "../utils";
 
 // ============================================
@@ -42,18 +40,29 @@ const MIN_BUTTON_HEIGHT = 24;
 // Types
 // ============================================
 
+/** Modifier keys for multi-select */
 interface ClickModifiers {
   metaKey: boolean;
   shiftKey: boolean;
   ctrlKey: boolean;
 }
 
+/** Variant colors from theme */
+interface VariantColors {
+  bg: number;
+  bgHover: number;
+  bgPressed: number;
+  text: number;
+  border?: number;
+  bgAlpha?: number;
+}
+
 interface ToggleButtonElementProps {
   children?: string;
   text?: string;
   label?: string;
-  variant?: "default" | "primary" | "secondary" | "surface";
-  size?: "sm" | "md" | "lg";
+  variant?: "default" | "primary" | "secondary" | "tertiary" | "error" | "surface";
+  size?: "xs" | "sm" | "md" | "lg" | "xl";
   isSelected?: boolean;
   isDisabled?: boolean;
   className?: string;
@@ -71,6 +80,9 @@ export interface PixiToggleButtonProps {
 // Style Conversion
 // ============================================
 
+// Size preset fallback
+const DEFAULT_SIZE_PRESET: SizePreset = { fontSize: 14, paddingX: 12, paddingY: 8, borderRadius: 6 };
+
 interface ToggleButtonLayoutResult {
   left: number;
   top: number;
@@ -82,7 +94,7 @@ interface ToggleButtonLayoutResult {
   pressedColor: number;
   textColor: number;
   borderColor: number;
-  // Selected colors
+  // Selected colors (from variant)
   selectedBackgroundColor: number;
   selectedHoverColor: number;
   selectedPressedColor: number;
@@ -99,86 +111,113 @@ interface ToggleButtonLayoutResult {
 
 /**
  * CSS 스타일과 variant/size에서 토글 버튼 레이아웃 정보 추출
+ *
+ * 우선순위:
+ * 1. inline style (props.style) - 최우선
+ * 2. variant/size props - 차선
+ * 3. 기본값 - 최후
+ *
+ * @param unselectedColors - 테마에서 동적으로 가져온 unselected 상태 색상
+ * @param selectedColors - 테마에서 동적으로 가져온 selected 상태 색상 (variant별)
  */
 function getToggleButtonLayout(
   style: CSSStyle | undefined,
   buttonProps: ToggleButtonElementProps,
-  buttonText: string
+  buttonText: string,
+  unselectedColors: VariantColors,
+  selectedColors: VariantColors
 ): ToggleButtonLayoutResult {
-  const variant = buttonProps.variant || "default";
-  const size = buttonProps.size || "md";
+  const size = buttonProps.size || "sm";
   const isToggleSelected = Boolean(buttonProps.isSelected);
   const isDisabled = Boolean(buttonProps.isDisabled);
 
-  // 🚀 CSS에서 사이즈 프리셋 읽기
-  const sizePreset = getToggleButtonSizePreset(size);
-  const colorPreset = getToggleButtonColorPreset(variant);
+  // 🚀 CSS에서 사이즈 프리셋 읽기 (Button과 동일한 패턴)
+  const sizePreset = getSizePreset(size) || DEFAULT_SIZE_PRESET;
 
   // 폰트 설정 (inline style > size preset)
   const fontSize = parseCSSSize(style?.fontSize, undefined, sizePreset.fontSize);
   const fontFamily = style?.fontFamily || "Pretendard, sans-serif";
 
   // 패딩 (inline style > size preset)
-  const paddingY = parseCSSSize(style?.paddingTop, undefined, sizePreset.paddingY);
-  const paddingX = parseCSSSize(style?.paddingLeft, undefined, sizePreset.paddingX);
+  const paddingTop = parseCSSSize(style?.paddingTop, undefined, sizePreset.paddingY);
+  const paddingRight = parseCSSSize(style?.paddingRight, undefined, sizePreset.paddingX);
+  const paddingBottom = parseCSSSize(style?.paddingBottom, undefined, sizePreset.paddingY);
+  const paddingLeft = parseCSSSize(style?.paddingLeft, undefined, sizePreset.paddingX);
 
   // 테두리 반경 (inline style > size preset)
   const borderRadius = parseCSSSize(style?.borderRadius, undefined, sizePreset.borderRadius);
 
-  // 색상 (inline style이 있으면 우선)
+  // 테두리 너비
+  const borderWidth = parseCSSSize(style?.borderWidth, undefined, 1);
+
+  // 색상 (inline style > theme)
   const hasInlineBg = style?.backgroundColor !== undefined;
   const hasInlineColor = style?.color !== undefined;
-  const hasInlineBorder = style?.borderColor !== undefined;
 
   // Unselected 색상
   const backgroundColor = hasInlineBg
-    ? cssColorToHex(style?.backgroundColor, colorPreset.background)
-    : colorPreset.background;
+    ? cssColorToHex(style?.backgroundColor, unselectedColors.bg)
+    : unselectedColors.bg;
   const textColor = hasInlineColor
-    ? cssColorToHex(style?.color, colorPreset.text)
-    : colorPreset.text;
-  const borderColor = hasInlineBorder
-    ? cssColorToHex(style?.borderColor, colorPreset.border)
-    : colorPreset.border;
+    ? cssColorToHex(style?.color, unselectedColors.text)
+    : unselectedColors.text;
+  const borderColor = unselectedColors.border ?? 0xd1d5db;
 
-  // Selected 색상 (항상 preset에서)
-  const selectedBackgroundColor = colorPreset.selectedBackground;
-  const selectedTextColor = colorPreset.selectedText;
-  const selectedBorderColor = colorPreset.selectedBorder;
+  // Hover/Pressed 색상 (unselected 상태)
+  let hoverColor: number;
+  let pressedColor: number;
 
-  // Hover/Pressed 색상
-  const hoverColor = colorPreset.hoverBackground;
-  const pressedColor = colorPreset.pressedBackground;
+  if (hasInlineBg) {
+    hoverColor = Math.min(backgroundColor + 0x151515, 0xffffff);
+    pressedColor = Math.max(backgroundColor - 0x151515, 0x000000);
+  } else {
+    hoverColor = unselectedColors.bgHover;
+    pressedColor = unselectedColors.bgPressed;
+  }
+
+  // Selected 색상 (variant에서)
+  const selectedBackgroundColor = selectedColors.bg;
+  const selectedTextColor = selectedColors.text;
+  const selectedBorderColor = selectedColors.border ?? selectedColors.bg;
 
   // Selected hover/pressed (selected 상태에서의 hover)
-  const selectedHoverColor = Math.max(selectedBackgroundColor - 0x101010, 0x000000);
-  const selectedPressedColor = Math.max(selectedBackgroundColor - 0x202020, 0x000000);
+  const selectedHoverColor = selectedColors.bgHover;
+  const selectedPressedColor = selectedColors.bgPressed;
 
-  // 크기 계산
-  const isWidthAuto = !style?.width || style?.width === "auto";
-  const isHeightAuto = !style?.height || style?.height === "auto";
-
-  let width: number;
-  let height: number;
-
-  // 텍스트 크기 측정
+  // 텍스트 크기 측정 (먼저 측정해야 최소 크기 계산 가능)
   const textStyle = new TextStyle({ fontSize, fontFamily });
   const metrics = CanvasTextMetrics.measureText(buttonText, textStyle);
   const textWidth = metrics.width;
   const textHeight = metrics.height;
 
+  // 최소 필요 크기 계산 (padding + text)
+  // Note: border-box 모델에서 border는 총 크기 안에 포함되므로 별도로 더하지 않음
+  const minRequiredWidth = paddingLeft + textWidth + paddingRight;
+  const minRequiredHeight = paddingTop + textHeight + paddingBottom;
+
+  // 크기 계산
+  // 🚀 Fix: 명시적 크기가 최소 필요 크기보다 작으면 auto로 처리
+  const explicitWidth = parseCSSSize(style?.width, undefined, 0);
+  const explicitHeight = parseCSSSize(style?.height, undefined, 0);
+
+  const isWidthAuto = !style?.width || style?.width === "auto" || explicitWidth < minRequiredWidth;
+  const isHeightAuto = !style?.height || style?.height === "auto" || explicitHeight < minRequiredHeight;
+
+  let width: number;
+  let height: number;
+
   if (isWidthAuto) {
-    width = paddingX * 2 + textWidth;
+    width = minRequiredWidth;
     width = Math.max(width, MIN_BUTTON_WIDTH);
   } else {
-    width = parseCSSSize(style?.width, undefined, 120);
+    width = explicitWidth;
   }
 
   if (isHeightAuto) {
-    height = paddingY * 2 + textHeight;
+    height = minRequiredHeight;
     height = Math.max(height, MIN_BUTTON_HEIGHT);
   } else {
-    height = parseCSSSize(style?.height, undefined, 40);
+    height = explicitHeight;
   }
 
   return {
@@ -263,6 +302,10 @@ function createDisabledOverlay(
  * WebGL 기반 토글 버튼 컴포넌트
  * isSelected 상태에 따라 다른 색상 렌더링
  *
+ * 🚀 Button과 동일한 패턴 적용:
+ * - useThemeColors()로 CSS 변수에서 동적 색상 읽기
+ * - getVariantColors()로 variant별 색상 적용
+ *
  * @example
  * <PixiToggleButton
  *   element={toggleButtonElement}
@@ -279,6 +322,20 @@ export const PixiToggleButton = memo(function PixiToggleButton({
   const style = element.props?.style as CSSStyle | undefined;
   const props = element.props as ToggleButtonElementProps | undefined;
 
+  // 테마 색상 (동적으로 CSS 변수에서 읽어옴)
+  const themeColors = useThemeColors();
+
+  // Unselected 상태 색상 (항상 default - surface-container-high)
+  const unselectedColors = useMemo(() => {
+    return getVariantColors("default", themeColors) as VariantColors;
+  }, [themeColors]);
+
+  // Selected 상태 색상 (variant에 맞게)
+  const selectedColors = useMemo(() => {
+    const variant = props?.variant || "primary"; // ToggleButton의 기본은 primary
+    return getVariantColors(variant, themeColors) as VariantColors;
+  }, [props?.variant, themeColors]);
+
   // 버튼 텍스트
   const buttonText = useMemo(() => {
     return String(props?.children || props?.text || props?.label || "Toggle");
@@ -286,8 +343,8 @@ export const PixiToggleButton = memo(function PixiToggleButton({
 
   // 레이아웃 스타일
   const layout = useMemo(() => {
-    return getToggleButtonLayout(style, props || {}, buttonText);
-  }, [style, props, buttonText]);
+    return getToggleButtonLayout(style, props || {}, buttonText, unselectedColors, selectedColors);
+  }, [style, props, buttonText, unselectedColors, selectedColors]);
 
   // Container ref
   const containerRef = useRef<PixiContainer | null>(null);
@@ -367,12 +424,14 @@ export const PixiToggleButton = memo(function PixiToggleButton({
     });
 
     // FancyButton 생성
+    // Note: FancyButton은 text를 중앙에 배치하며, padding은 Graphics 크기에 이미 반영됨
     const button = new FancyButton({
       defaultView,
       hoverView,
       pressedView,
       text: textView,
       anchor: 0.5,
+      padding: 0, // 명시적으로 0 설정 (Graphics에 padding이 포함됨)
     });
 
     // 버튼 위치 조정

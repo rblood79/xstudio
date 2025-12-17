@@ -376,11 +376,13 @@ export const ElementSprite = memo(function ElementSprite({
 }: ElementSpriteProps) {
   useExtend(PIXI_COMPONENTS);
   // 부모 요소 확인 (CheckboxGroup 자식 여부 판단용)
-  const elements = useStore((state) => state.elements);
-  const parentElement = useMemo(() => {
+  // 🚀 최적화: elements 배열 대신 elementsMap 사용 (O(1) 조회)
+  // elements 배열 전체 구독 → 다른 요소 변경 시에도 리렌더링 발생
+  // elementsMap.get() → 해당 부모 요소만 조회, 불필요한 리렌더링 방지
+  const parentElement = useStore((state) => {
     if (!element.parent_id) return null;
-    return elements.find((el) => el.id === element.parent_id);
-  }, [elements, element.parent_id]);
+    return state.elementsMap.get(element.parent_id) ?? null;
+  });
 
   // layoutPosition이 있으면 style을 오버라이드한 새 element 생성
   const effectiveElement = useMemo(() => {

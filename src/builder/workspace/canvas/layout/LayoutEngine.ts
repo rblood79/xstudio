@@ -363,8 +363,9 @@ function measureTextSize(
     return null;
   }
 
-  // Button 요소인 경우 size prop에서 패딩/폰트 크기 가져오기
-  const isButton = element.tag === 'Button' || element.tag === 'SubmitButton';
+  // Button/ToggleButton 요소인 경우 size prop에서 패딩/폰트 크기 가져오기
+  // 🚀 ToggleButton도 Button과 동일한 size preset 사용
+  const isButton = element.tag === 'Button' || element.tag === 'SubmitButton' || element.tag === 'ToggleButton';
   const buttonSize = isButton ? getButtonSizePadding(element) : null;
 
   // fontSize: inline style > size preset > 기본값

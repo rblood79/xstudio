@@ -224,38 +224,40 @@ function getButtonLayout(
   // Border 색상 (outline variant)
   const borderColor = variantColors.border ?? null;
 
-  // 크기 계산
-  // width/height가 없거나 'auto'면 텍스트 + padding 기반으로 자동 계산
-  // falsy 값 (undefined, null, '', 0) 모두 auto로 처리
-  const isWidthAuto = !style?.width || style?.width === "auto";
-  const isHeightAuto = !style?.height || style?.height === "auto";
-
-  let width: number;
-  let height: number;
-
-  // 텍스트 크기 측정 (항상 필요 - auto 크기 계산용)
+  // 텍스트 크기 측정 (먼저 측정해야 최소 크기 계산 가능)
   const textStyle = new TextStyle({ fontSize, fontFamily });
   const metrics = CanvasTextMetrics.measureText(buttonText, textStyle);
   const textWidth = metrics.width;
   const textHeight = metrics.height;
 
+  // 최소 필요 크기 계산 (padding + text)
+  // Note: border-box 모델에서 border는 총 크기 안에 포함되므로 별도로 더하지 않음
+  const minRequiredWidth = paddingLeft + textWidth + paddingRight;
+  const minRequiredHeight = paddingTop + textHeight + paddingBottom;
+
+  // 크기 계산
+  // 🚀 Fix: 명시적 크기가 최소 필요 크기보다 작으면 auto로 처리
+  const explicitWidth = parseCSSSize(style?.width, undefined, 0);
+  const explicitHeight = parseCSSSize(style?.height, undefined, 0);
+
+  const isWidthAuto = !style?.width || style?.width === "auto" || explicitWidth < minRequiredWidth;
+  const isHeightAuto = !style?.height || style?.height === "auto" || explicitHeight < minRequiredHeight;
+
+  let width: number;
+  let height: number;
+
   if (isWidthAuto) {
-    // auto: 텍스트 + 패딩 + 테두리 기반 계산
-    width = paddingLeft + borderWidth + textWidth + borderWidth + paddingRight;
+    width = minRequiredWidth;
     width = Math.max(width, MIN_BUTTON_WIDTH);
   } else {
-    // 명시적 width 사용
-    width = parseCSSSize(style?.width, undefined, 120);
+    width = explicitWidth;
   }
 
   if (isHeightAuto) {
-    // auto: 텍스트 + 패딩 + 테두리 기반 계산
-    height =
-      paddingTop + borderWidth + textHeight + borderWidth + paddingBottom;
+    height = minRequiredHeight;
     height = Math.max(height, MIN_BUTTON_HEIGHT);
   } else {
-    // 명시적 height 사용
-    height = parseCSSSize(style?.height, undefined, 40);
+    height = explicitHeight;
   }
 
   return {
@@ -479,12 +481,14 @@ export const PixiButton = memo(function PixiButton({
     });
 
     // FancyButton 생성
+    // Note: FancyButton은 text를 중앙에 배치하며, padding은 Graphics 크기에 이미 반영됨
     const button = new FancyButton({
       defaultView,
       hoverView,
       pressedView,
       text: layout.isLoading ? undefined : textView,
       anchor: 0.5,
+      padding: 0, // 명시적으로 0 설정 (Graphics에 padding이 포함됨)
     });
 
     // 버튼 위치 조정 (anchor 0.5이므로 중앙 기준)
