@@ -1348,3 +1348,97 @@ git revert --no-commit HEAD~N..HEAD  # N개 커밋 되돌리기
 # 또는
 git checkout perf-phase1-immer-removal  # 특정 체크포인트로
 ```
+
+---
+
+# Phase 10: 패널 리사이즈 → Canvas 영역 성능 최적화
+
+## 현황 분석
+
+패널(Sidebar, Inspector) 리사이즈 시 `grid-area: main` 영역이 변경되며 Canvas가 리사이즈됩니다.
+
+### 현재 구현된 최적화
+
+```typescript
+// BuilderCanvas.tsx:260-262 - 이미 적용됨
+const RESIZE_THROTTLE_MS = 80;   // 리사이즈 중 80ms 간격으로 스로틀
+const RESIZE_SETTLE_MS = 350;    // CSS transition(300ms) + 50ms 후 최종 resize
+```
+
+- `CanvasSmoothResizeBridge`: ResizeObserver + 스로틀 + settle 타이밍 조절
+- CSS `will-change: transform`: GPU 레이어 힌트
+- `app.queueResize()`: 스로틀된 리사이즈 큐잉
+
+### iframe vs WebGL 성능 비교
+
+| 영향 영역 | iframe | WebGL (PixiJS) | 상대적 비용 |
+|----------|--------|----------------|------------|
+| **Reflow/Repaint** | 🔴 30-80ms | 🟢 ~5ms | iframe 6-16배 높음 |
+| **Layout 재계산** | 🔴 CSS Layout | 🟡 Yoga (10-30ms) | iframe 2-3배 높음 |
+| **Element Re-render** | 🔴 Full reconcile | 🟢 memo 적용 | iframe 2-4배 높음 |
+| **Canvas Resize** | N/A | 🟡 renderer.resize | WebGL만 해당 |
+
+### 리사이즈 1회당 예상 비용
+
+```
+패널 드래그 리사이즈 (60fps 시 ~300ms 동안):
+├── iframe 방식: 40-110ms/frame × 18 frames = 720-1980ms 총 작업량
+└── WebGL 방식: 15-35ms/frame × 18 frames = 270-630ms 총 작업량
+```
+
+**결론**: WebGL 방식이 iframe 대비 **2.6-3.1배 효율적**
+
+## 추가 최적화 가능 영역
+
+### 10.1 리사이즈 중 Yoga 레이아웃 스킵 (선택적)
+
+#### 현행 → 제안 → 검증 표
+
+| 상황 | 현행 | 제안 | 예상 개선 |
+|------|------|------|----------|
+| 리사이즈 중 | 매 프레임 Yoga calculateLayout | 스킵 (bounds만 업데이트) | 10-30ms/frame |
+| 리사이즈 완료 후 | 동일 | 1회 최종 레이아웃 계산 | - |
+
+#### 구현 방안
+
+```typescript
+// useCanvasSyncStore에 isResizing 상태 추가
+const isResizing = useCanvasSyncStore((state) => state.isResizing);
+
+// 리사이즈 중에는 레이아웃 계산 스킵
+const layoutResult = useMemo(() => {
+  if (isResizing) {
+    // 리사이즈 중에는 이전 레이아웃 재사용
+    return previousLayoutRef.current;
+  }
+  return calculateLayout(elements, currentPageId, pageWidth, pageHeight);
+}, [elements, currentPageId, pageWidth, pageHeight, isResizing, yogaReady]);
+```
+
+### 10.2 iframe 전용: 리사이즈 중 렌더링 최소화 (선택적)
+
+```css
+/* 리사이즈 중 iframe 렌더링 최소화 */
+.panel-container--resizing iframe {
+  pointer-events: none;
+  visibility: hidden; /* 또는 opacity: 0.5 */
+}
+```
+
+## Phase 10 체크리스트
+
+- [ ] 리사이즈 중 Yoga 레이아웃 스킵 구현 (WebGL)
+- [ ] `isResizing` 상태 canvasSync store에 추가
+- [ ] iframe 리사이즈 최적화 CSS 적용 (선택적)
+- [ ] 리사이즈 완료 후 최종 레이아웃 계산 보장
+- [ ] FPS 드롭 없이 60fps 유지 확인
+
+## 우선순위 판단
+
+| 조건 | 권장 |
+|------|------|
+| WebGL 캔버스 사용 중 | 🟢 **현재 상태로 충분** (이미 최적화됨) |
+| iframe 캔버스 사용 중 | 🟠 Phase 10 적용 권장 |
+| 요소 수 > 100개 | 🟡 Phase 10 적용 고려 |
+
+**현재 WebGL 캔버스 성능**: ✅ 양호 (추가 최적화 선택적)
