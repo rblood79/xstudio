@@ -49,6 +49,7 @@ export default function SelectionOverlay() {
 
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
   const rafIdRef = useRef<number | null>(null);
+  const multiRafIdRef = useRef<number | null>(null);
 
   // ⭐ Border Radius 구독 (리액티브 업데이트) - 조건부 return 전에 선언
   const borderRadiusFromInspector = useInspectorState((state) => {
@@ -92,7 +93,6 @@ export default function SelectionOverlay() {
             // 실제 <body> 태그에서 찾기
             if (iframe.contentDocument.body.getAttribute("data-element-id")) {
               element = iframe.contentDocument.body;
-              console.log(`🔄 [Overlay] body element → 실제 <body> 태그 사용`);
             }
           }
         }
@@ -182,6 +182,16 @@ export default function SelectionOverlay() {
     setMultiOverlays(newOverlays);
   }, [selectedElementIds]); // 🚀 Performance: elementsMap 의존성 제거
 
+  const scheduleMultiOverlayUpdate = useCallback(() => {
+    if (multiRafIdRef.current !== null) {
+      cancelAnimationFrame(multiRafIdRef.current);
+    }
+    multiRafIdRef.current = requestAnimationFrame(() => {
+      multiRafIdRef.current = null;
+      updateMultiOverlays();
+    });
+  }, [updateMultiOverlays]);
+
   // ⭐ Convert multiOverlays to VisibleOverlayData format for virtual scrolling
   const overlaysForVirtualScrolling = useMemo((): VisibleOverlayData[] => {
     return Array.from(multiOverlays.entries()).map(
@@ -209,12 +219,9 @@ export default function SelectionOverlay() {
   // ⭐ Multi-select mode: Update overlays when selectedElementIds changes
   useEffect(() => {
     if (multiSelectMode && selectedElementIds.length > 0) {
-      // Call updateMultiOverlays via RAF to avoid triggering during render
-      requestAnimationFrame(() => {
-        updateMultiOverlays();
-      });
+      scheduleMultiOverlayUpdate();
     }
-  }, [multiSelectMode, selectedElementIds, updateMultiOverlays]);
+  }, [multiSelectMode, selectedElementIds, scheduleMultiOverlayUpdate]);
 
   // 선택된 요소의 크기 변경 감지 (ResizeObserver만 사용)
   useEffect(() => {
@@ -262,7 +269,7 @@ export default function SelectionOverlay() {
         }
       } else if (event.data.type === "ELEMENTS_DRAG_SELECTED") {
         // ⭐ Multi-select: Update all overlay positions
-        updateMultiOverlays();
+        scheduleMultiOverlayUpdate();
       } else if (event.data.type === "UPDATE_ELEMENT_PROPS") {
         // Props 업데이트 시 overlay 위치 동기화
         if (event.data.payload?.rect) {
@@ -272,7 +279,7 @@ export default function SelectionOverlay() {
         } else {
           // rect가 없는 경우: DOM에서 직접 재계산
           if (multiSelectMode) {
-            updateMultiOverlays();
+            scheduleMultiOverlayUpdate();
           } else {
             updatePosition();
           }
@@ -291,7 +298,7 @@ export default function SelectionOverlay() {
     // ⭐ Handle scroll/resize for both single and multi-select
     const handleScrollResize = () => {
       if (multiSelectMode) {
-        updateMultiOverlays();
+        scheduleMultiOverlayUpdate();
       } else {
         updatePosition();
       }
@@ -300,14 +307,11 @@ export default function SelectionOverlay() {
     window.addEventListener("message", handleMessage);
 
     if (selectedElementId && iframe?.contentWindow) {
-      // ⭐ RAF로 초기 위치 업데이트 - effect body에서 직접 setState 호출 방지
-      requestAnimationFrame(() => {
-        if (multiSelectMode) {
-          updateMultiOverlays();
-        } else {
-          updatePosition();
-        }
-      });
+      if (multiSelectMode) {
+        scheduleMultiOverlayUpdate();
+      } else {
+        updatePosition();
+      }
       iframe.contentWindow.addEventListener("scroll", handleScrollResize);
       window.addEventListener("resize", handleScrollResize);
       window.addEventListener("scroll", handleScrollResize);
@@ -326,8 +330,12 @@ export default function SelectionOverlay() {
         cancelAnimationFrame(rafIdRef.current);
         rafIdRef.current = null;
       }
+      if (multiRafIdRef.current !== null) {
+        cancelAnimationFrame(multiRafIdRef.current);
+        multiRafIdRef.current = null;
+      }
     };
-  }, [selectedElementId, multiSelectMode, updatePosition, updateMultiOverlays]);
+  }, [selectedElementId, multiSelectMode, updatePosition, scheduleMultiOverlayUpdate]);
 
   // ⭐ Multi-select mode: Render multiple overlays (with virtual scrolling)
   if (multiSelectMode && multiOverlays.size > 0) {

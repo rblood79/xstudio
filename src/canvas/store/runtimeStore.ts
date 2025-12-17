@@ -8,6 +8,16 @@
 import { create } from 'zustand';
 import type { RuntimeStoreState, RuntimeElement, RuntimePage, RuntimeLayout, ThemeVar, DataSource, DataState, RuntimeDataTable, RuntimeApiEndpoint, RuntimeVariable } from './types';
 
+function hasShallowPatchChanges(
+  prev: Record<string, unknown>,
+  patch: Record<string, unknown>
+): boolean {
+  for (const key of Object.keys(patch)) {
+    if (prev[key] !== patch[key]) return true;
+  }
+  return false;
+}
+
 export const createRuntimeStore = () => create<RuntimeStoreState>((set, get) => ({
   // ============================================
   // Elements
@@ -15,11 +25,27 @@ export const createRuntimeStore = () => create<RuntimeStoreState>((set, get) => 
   elements: [],
   setElements: (elements: RuntimeElement[]) => set({ elements }),
   updateElementProps: (id: string, props: Record<string, unknown>) => {
-    set((state) => ({
-      elements: state.elements.map((el) =>
-        el.id === id ? { ...el, props: { ...el.props, ...props } } : el
-      ),
-    }));
+    const patch = props ?? {};
+    if (Object.keys(patch).length === 0) return;
+
+    set((state) => {
+      const index = state.elements.findIndex((el) => el.id === id);
+      if (index < 0) return state;
+
+      const current = state.elements[index];
+      const currentProps = (current.props ?? {}) as Record<string, unknown>;
+      if (!hasShallowPatchChanges(currentProps, patch)) return state;
+
+      const nextElement: RuntimeElement = {
+        ...current,
+        props: { ...currentProps, ...patch },
+      };
+
+      const nextElements = state.elements.slice();
+      nextElements[index] = nextElement;
+
+      return { elements: nextElements };
+    });
   },
 
   // 🚀 Phase 4: Delta Update Actions

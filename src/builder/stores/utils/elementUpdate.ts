@@ -23,6 +23,33 @@ export interface BatchPropsUpdate {
 type SetState = Parameters<StateCreator<ElementsState>>[0];
 type GetState = Parameters<StateCreator<ElementsState>>[1];
 
+function cloneForHistory<T>(value: T): T {
+  try {
+    if (typeof structuredClone === "function") {
+      return structuredClone(value);
+    }
+  } catch {
+    // structuredClone 실패 시 JSON fallback
+  }
+  try {
+    const json = JSON.stringify(value);
+    if (json === undefined) return value;
+    return JSON.parse(json) as T;
+  } catch {
+    return value;
+  }
+}
+
+function hasShallowPatchChanges(
+  prev: Record<string, unknown>,
+  patch: Record<string, unknown>
+): boolean {
+  for (const key of Object.keys(patch)) {
+    if (prev[key] !== patch[key]) return true;
+  }
+  return false;
+}
+
 /**
  * UpdateElementProps 액션 생성 팩토리
  *
@@ -41,43 +68,29 @@ type GetState = Parameters<StateCreator<ElementsState>>[1];
 export const createUpdateElementPropsAction =
   (set: SetState, get: GetState) =>
   async (elementId: string, props: ComponentElementProps) => {
-    const state = get();
+    const currentState = get();
     // produce 외부에서는 elementsMap 사용 가능
-    const element = getElementById(state.elementsMap, elementId);
+    const element = getElementById(currentState.elementsMap, elementId);
     if (!element) return;
 
-    // Phase 3.3 최적화: stack trace 캡처 제거 (비용 절감)
-    if (process.env.NODE_ENV === 'development') {
-      console.log("🔧 updateElementProps 호출:", {
-        elementId,
-        elementTag: element.tag,
-        변경props: props,
-      });
-    }
+    const patch = (props ?? {}) as Record<string, unknown>;
+    if (Object.keys(patch).length === 0) return;
+    if (!hasShallowPatchChanges(element.props as Record<string, unknown>, patch)) return;
+
+    const shouldRecordHistory = Boolean(currentState.currentPageId);
+    const prevPropsClone = shouldRecordHistory ? cloneForHistory(element.props) : null;
+    const newPropsClone = shouldRecordHistory ? cloneForHistory(props) : null;
+    const prevElementClone = shouldRecordHistory ? cloneForHistory(element) : null;
 
     // 1. 메모리 상태 업데이트 (우선)
     set(
-      produce((state: ElementsState) => {
+      produce((draftState: ElementsState) => {
         // produce 내부에서는 배열 순회 사용 (elementsMap은 아직 재구축 전)
-        const element = findElementById(state.elements, elementId);
+        const element = findElementById(draftState.elements, elementId);
         if (!element) return;
 
         // 히스토리 추가
-        if (state.currentPageId) {
-          // Immer proxy 문제 방지: 깊은 복사로 순수 객체 생성
-          const prevPropsClone = JSON.parse(JSON.stringify(element.props));
-          const newPropsClone = JSON.parse(JSON.stringify(props));
-          const prevElementClone = JSON.parse(JSON.stringify(element));
-
-          // Phase 3.3 최적화: dev 모드에서만 로깅
-          if (process.env.NODE_ENV === 'development') {
-            console.log("📝 Props 변경 히스토리 추가:", {
-              elementId,
-              elementTag: element.tag,
-              prevProps: prevPropsClone,
-              newProps: newPropsClone,
-            });
-          }
+        if (draftState.currentPageId && prevPropsClone && newPropsClone && prevElementClone) {
           historyManager.addEntry({
             type: "update",
             elementId: elementId,
@@ -93,8 +106,8 @@ export const createUpdateElementPropsAction =
         element.props = { ...element.props, ...props };
 
         // 선택된 요소가 업데이트된 경우 selectedElementProps도 업데이트
-        if (state.selectedElementId === elementId) {
-          state.selectedElementProps = createCompleteProps(element, props);
+        if (draftState.selectedElementId === elementId) {
+          draftState.selectedElementProps = createCompleteProps(element, props);
         }
       })
     );
@@ -109,10 +122,6 @@ export const createUpdateElementPropsAction =
     try {
       const db = await getDB();
       await db.elements.update(elementId, { props });
-
-      if (process.env.NODE_ENV === 'development') {
-        console.log("✅ [IndexedDB] 요소 props 저장 완료:", elementId);
-      }
     } catch (error) {
       console.warn("⚠️ [IndexedDB] 요소 저장 중 오류 (메모리는 정상):", error);
       // IndexedDB 저장 실패해도 메모리 상태는 유지 (오프라인 작업 지속)
@@ -136,54 +145,30 @@ export const createUpdateElementPropsAction =
 export const createUpdateElementAction =
   (set: SetState, get: GetState) =>
   async (elementId: string, updates: Partial<import("../../../types/core/store.types").Element>) => {
-    const state = get();
+    if (Object.keys(updates).length === 0) return;
+
+    const currentState = get();
     // produce 외부에서는 elementsMap 사용 가능
-    const element = getElementById(state.elementsMap, elementId);
+    const element = getElementById(currentState.elementsMap, elementId);
     if (!element) return;
 
-    // Phase 3.3 최적화: dev 모드에서만 로깅
-    if (process.env.NODE_ENV === 'development') {
-      console.log("🔄 updateElement 호출:", {
-        elementId,
-        elementTag: element.tag,
-        updates,
-        hasDataBinding: !!updates.dataBinding,
-        hasPropsDataBinding: !!(updates.props as Record<string, unknown>)?.dataBinding,
-      });
-
-      // 🔍 DEBUG: props.dataBinding 저장 추적
-      if ((updates.props as Record<string, unknown>)?.dataBinding) {
-        console.log("💾 [updateElement] props.dataBinding 저장 중:", {
-          elementId,
-          elementTag: element.tag,
-          propsDataBinding: (updates.props as Record<string, unknown>).dataBinding,
-        });
-      }
-    }
+    const shouldRecordHistory = Boolean(currentState.currentPageId) && Boolean(updates.props);
+    const prevPropsClone =
+      shouldRecordHistory ? cloneForHistory(element.props) : null;
+    const newPropsClone =
+      shouldRecordHistory ? cloneForHistory(updates.props) : null;
+    const prevElementClone =
+      shouldRecordHistory ? cloneForHistory(element) : null;
 
     // 1. 메모리 상태 업데이트
     set(
-      produce((state: ElementsState) => {
+      produce((draftState: ElementsState) => {
         // produce 내부에서는 배열 순회 사용 (elementsMap은 아직 재구축 전)
-        const element = findElementById(state.elements, elementId);
+        const element = findElementById(draftState.elements, elementId);
         if (!element) return;
 
         // 히스토리 추가 (updateElementProps와 동일한 로직)
-        if (state.currentPageId && updates.props) {
-          // Immer proxy 문제 방지: 깊은 복사로 순수 객체 생성
-          const prevPropsClone = JSON.parse(JSON.stringify(element.props));
-          const newPropsClone = JSON.parse(JSON.stringify(updates.props));
-          const prevElementClone = JSON.parse(JSON.stringify(element));
-
-          // Phase 3.3 최적화: dev 모드에서만 로깅
-          if (process.env.NODE_ENV === 'development') {
-            console.log("📝 Element 변경 히스토리 추가:", {
-              elementId,
-              elementTag: element.tag,
-              prevProps: prevPropsClone,
-              newProps: newPropsClone,
-            });
-          }
+        if (draftState.currentPageId && updates.props && prevPropsClone && newPropsClone && prevElementClone) {
           historyManager.addEntry({
             type: "update",
             elementId: elementId,
@@ -199,8 +184,8 @@ export const createUpdateElementAction =
         Object.assign(element, updates);
 
         // 선택된 요소가 업데이트된 경우 props도 업데이트
-        if (state.selectedElementId === elementId && updates.props) {
-          state.selectedElementProps = createCompleteProps(
+        if (draftState.selectedElementId === elementId && updates.props) {
+          draftState.selectedElementProps = createCompleteProps(
             element,
             updates.props
           );
@@ -216,10 +201,6 @@ export const createUpdateElementAction =
     try {
       const db = await getDB();
       await db.elements.update(elementId, updates);
-
-      if (process.env.NODE_ENV === 'development') {
-        console.log("✅ [IndexedDB] 요소 전체 저장 완료:", elementId);
-      }
     } catch (error) {
       console.warn("⚠️ [IndexedDB] 요소 저장 중 오류 (메모리는 정상):", error);
       // IndexedDB 저장 실패해도 메모리 상태는 유지 (오프라인 작업 지속)
@@ -258,13 +239,6 @@ export const createBatchUpdateElementPropsAction =
 
     if (validUpdates.length === 0) return;
 
-    if (process.env.NODE_ENV === 'development') {
-      console.log("🚀 batchUpdateElementProps 호출:", {
-        totalUpdates: updates.length,
-        validUpdates: validUpdates.length,
-      });
-    }
-
     // 히스토리용 이전 상태 저장
     const prevStates: Array<{
       elementId: string;
@@ -282,8 +256,8 @@ export const createBatchUpdateElementPropsAction =
           // 히스토리용 이전 상태 저장 (Immer proxy 해제)
           prevStates.push({
             elementId,
-            prevProps: JSON.parse(JSON.stringify(element.props)),
-            prevElement: JSON.parse(JSON.stringify(element)),
+            prevProps: cloneForHistory(element.props),
+            prevElement: cloneForHistory(element),
           });
 
           // 요소 업데이트
@@ -306,7 +280,7 @@ export const createBatchUpdateElementPropsAction =
         data: {
           batchUpdates: validUpdates.map((u, i) => ({
             elementId: u.elementId,
-            props: JSON.parse(JSON.stringify(u.props)),
+            props: cloneForHistory(u.props),
             prevProps: prevStates[i]?.prevProps,
             prevElement: prevStates[i]?.prevElement,
           })),
@@ -325,10 +299,6 @@ export const createBatchUpdateElementPropsAction =
           db.elements.update(elementId, { props })
         )
       );
-
-      if (process.env.NODE_ENV === 'development') {
-        console.log("✅ [IndexedDB] 배치 props 저장 완료:", validUpdates.length);
-      }
     } catch (error) {
       console.warn("⚠️ [IndexedDB] 배치 저장 중 오류 (메모리는 정상):", error);
     }
@@ -356,13 +326,6 @@ export const createBatchUpdateElementsAction =
 
     if (validUpdates.length === 0) return;
 
-    if (process.env.NODE_ENV === 'development') {
-      console.log("🚀 batchUpdateElements 호출:", {
-        totalUpdates: updates.length,
-        validUpdates: validUpdates.length,
-      });
-    }
-
     // 히스토리용 이전 상태 저장
     const prevStates: Array<{
       elementId: string;
@@ -381,8 +344,8 @@ export const createBatchUpdateElementsAction =
           if (elementUpdates.props) {
             prevStates.push({
               elementId,
-              prevProps: JSON.parse(JSON.stringify(element.props)),
-              prevElement: JSON.parse(JSON.stringify(element)),
+              prevProps: cloneForHistory(element.props),
+              prevElement: cloneForHistory(element),
             });
           }
 
@@ -410,7 +373,7 @@ export const createBatchUpdateElementsAction =
           batchUpdates: prevStates.map((ps, i) => ({
             elementId: ps.elementId,
             props: validUpdates[i]?.updates.props
-              ? JSON.parse(JSON.stringify(validUpdates[i].updates.props))
+              ? cloneForHistory(validUpdates[i].updates.props)
               : undefined,
             prevProps: ps.prevProps,
             prevElement: ps.prevElement,
@@ -430,10 +393,6 @@ export const createBatchUpdateElementsAction =
           db.elements.update(elementId, elementUpdates)
         )
       );
-
-      if (process.env.NODE_ENV === 'development') {
-        console.log("✅ [IndexedDB] 배치 요소 저장 완료:", validUpdates.length);
-      }
     } catch (error) {
       console.warn("⚠️ [IndexedDB] 배치 저장 중 오류 (메모리는 정상):", error);
     }

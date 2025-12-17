@@ -14,7 +14,7 @@
  * @see src/builder/workspace/canvas/store/canvasStore.ts
  */
 
-import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { debounce, DebouncedFunc } from 'lodash';
 import { useStore } from '../stores';
 import { useEditModeStore } from '../stores/editMode';
@@ -28,7 +28,7 @@ import { MessageService } from '../../utils/messaging';
 import { elementsApi } from '../../services/api';
 import { useInspectorState } from '../inspector/hooks/useInspectorState';
 // 🚀 Delta Update
-import { canvasDeltaMessenger, shouldUseDelta } from '../utils/canvasDeltaMessenger';
+import { canvasDeltaMessenger } from '../utils/canvasDeltaMessenger';
 
 export type IframeReadyState = 'not_initialized' | 'loading' | 'ready' | 'error';
 
@@ -72,10 +72,6 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
     // ⭐ Layout/Slot System: Page 정보 구독
     const currentPageId = useStore((state) => state.currentPageId);
     const pages = useStore((state) => state.pages);
-
-    // ⭐ Layout/Slot System: Edit Mode 구독
-    const editMode = useEditModeStore((state) => state.mode);
-    const currentLayoutId = useLayoutsStore((state) => state.currentLayoutId);
 
     // ⭐ Nested Routes & Slug System: Layouts 구독
     const layouts = useLayoutsStore((state) => state.layouts);
@@ -633,16 +629,6 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
         if (event.data.type === "element-props-update" && event.data.elementId) {
             const { updateElementProps } = useStore.getState();
             updateElementProps(event.data.elementId, event.data.props);
-
-            // 업데이트된 요소 정보를 프리뷰에 다시 전송
-            const iframe = MessageService.getIframe();
-            if (iframe?.contentWindow) {
-                const updatedElements = useStore.getState().elements;
-                iframe.contentWindow.postMessage(
-                    { type: "UPDATE_ELEMENTS", elements: updatedElements },
-                    window.location.origin
-                );
-            }
         }
 
         // 프리뷰에서 보내는 element-click 메시지 처리
