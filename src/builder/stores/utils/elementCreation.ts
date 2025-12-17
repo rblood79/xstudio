@@ -1,4 +1,5 @@
-import { produce } from "immer";
+// 🚀 Phase 1: Immer 제거 - 함수형 업데이트로 전환
+// import { produce } from "immer"; // REMOVED
 import type { StateCreator } from "zustand";
 import { Element } from "../../../types/core/store.types";
 import { historyManager } from "../history";
@@ -27,30 +28,28 @@ type GetState = Parameters<StateCreator<ElementsState>>[1];
  */
 export const createAddElementAction =
   (set: SetState, get: GetState) => async (element: Element) => {
-    // 1. 메모리 상태 업데이트 (우선)
-    set(
-      produce((state: ElementsState) => {
-        // 히스토리 추가 (Page 모드 또는 Layout 모드 모두)
-        if (state.currentPageId || element.layout_id) {
-          historyManager.addEntry({
-            type: "add",
-            elementId: element.id,
-            data: { element: { ...element } },
-          });
-        }
+    const state = get();
 
-        // 새로운 배열 참조 생성 (리렌더링 보장)
-        state.elements = [...state.elements, element];
-      })
-    );
+    // 🚀 Phase 1: Immer → 함수형 업데이트
+    // 1. 히스토리 추가 (Page 모드 또는 Layout 모드 모두)
+    if (state.currentPageId || element.layout_id) {
+      historyManager.addEntry({
+        type: "add",
+        elementId: element.id,
+        data: { element: { ...element } },
+      });
+    }
+
+    // 2. 메모리 상태 업데이트 (불변 - 새로운 배열 참조 생성)
+    set({ elements: [...state.elements, element] });
 
     // 🔧 CRITICAL: elementsMap 재구축 (요소 추가 후 캐시 업데이트)
     get()._rebuildIndexes();
 
-    // 2. iframe 업데이트는 useIframeMessenger의 useEffect에서 자동 처리
+    // 3. iframe 업데이트는 useIframeMessenger의 useEffect에서 자동 처리
     // (elements 변경 감지 → sendElementsToIframe 자동 호출)
 
-    // 3. IndexedDB에 저장 (빠름! 1-5ms)
+    // 4. IndexedDB에 저장 (빠름! 1-5ms)
     try {
       const db = await getDB();
       const sanitized = sanitizeElement(element);
@@ -100,35 +99,32 @@ export const createAddElementAction =
 export const createAddComplexElementAction =
   (set: SetState, get: GetState) =>
   async (parentElement: Element, childElements: Element[]) => {
+    const state = get();
     const allElements = [parentElement, ...childElements];
 
-    // 1. 메모리 상태 업데이트 (우선)
-    set(
-      produce((state: ElementsState) => {
-        // 복합 컴포넌트 생성 히스토리 추가 (Page 모드 또는 Layout 모드 모두)
-        if (state.currentPageId || parentElement.layout_id) {
-          historyManager.addEntry({
-            type: "add",
-            elementId: parentElement.id,
-            data: {
-              element: { ...parentElement },
-              childElements: childElements.map((child) => ({ ...child })),
-            },
-          });
-        }
+    // 🚀 Phase 1: Immer → 함수형 업데이트
+    // 1. 히스토리 추가 (Page 모드 또는 Layout 모드 모두)
+    if (state.currentPageId || parentElement.layout_id) {
+      historyManager.addEntry({
+        type: "add",
+        elementId: parentElement.id,
+        data: {
+          element: { ...parentElement },
+          childElements: childElements.map((child) => ({ ...child })),
+        },
+      });
+    }
 
-        // ⭐ 새로운 배열 참조 생성 (리렌더링 보장 - addElement와 동일 패턴)
-        state.elements = [...state.elements, ...allElements];
-      })
-    );
+    // 2. 메모리 상태 업데이트 (불변 - 새로운 배열 참조 생성)
+    set({ elements: [...state.elements, ...allElements] });
 
     // 🔧 CRITICAL: elementsMap 재구축 (복합 요소 추가 후 캐시 업데이트)
     get()._rebuildIndexes();
 
-    // 2. iframe 업데이트는 useIframeMessenger의 useEffect에서 자동 처리
+    // 3. iframe 업데이트는 useIframeMessenger의 useEffect에서 자동 처리
     // (elements 변경 감지 → sendElementsToIframe 자동 호출)
 
-    // 3. IndexedDB에 배치 저장 (빠름! 1-5ms × N)
+    // 4. IndexedDB에 배치 저장 (빠름! 1-5ms × N)
     try {
       const db = await getDB();
       await db.elements.insertMany(

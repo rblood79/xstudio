@@ -37,13 +37,11 @@ export function useSyncWithBuilder(): void {
       return;
     }
 
-    // ⭐ getState()로 elements 가져오기 (구독하지 않음)
-    const elements = useStore.getState().elements;
+    // ⭐ getState()로 elements, elementsMap 가져오기 (구독하지 않음)
+    const { elements, elementsMap } = useStore.getState();
 
-    // Builder store에서 현재 요소 찾기
-    const currentElementInStore = elements.find(
-      (el) => el.id === selectedElement.id
-    );
+    // 🚀 Phase 4: elementsMap O(1) 조회 활용
+    const currentElementInStore = elementsMap.get(selectedElement.id);
 
     if (!currentElementInStore) {
       return;
@@ -188,32 +186,40 @@ export function useSyncWithBuilder(): void {
                 supabaseColumnsChanged ||
                 columnMappingChanged))
           ) {
+            // 🚀 Phase 4: O(n²) → Set 기반 O(n+m) 조회
+            // 1. TableHeader ID Set 구축 (이 Table의 자식 TableHeader만)
+            const tableHeaderIds = new Set(
+              elements
+                .filter(
+                  (el) =>
+                    el.tag === "TableHeader" &&
+                    el.parent_id === selectedElement.id
+                )
+                .map((el) => el.id)
+            );
+
+            // 2. Column 필터링 (Set 조회 O(1))
             const childColumns = elements.filter(
               (el) =>
                 el.tag === "Column" &&
                 el.parent_id &&
-                elements.some(
-                  (parent) =>
-                    parent.id === el.parent_id &&
-                    parent.tag === "TableHeader" &&
-                    parent.parent_id === selectedElement.id
-                )
+                tableHeaderIds.has(el.parent_id)
             );
 
             if (childColumns.length > 0) {
-              // 한 번에 모든 Column ID 수집
-              const columnIdsToDelete = childColumns.map((c) => c.id);
+              // 🚀 Phase 4: Set으로 O(n²) → O(n+m)
+              const columnIdsToDelete = new Set(childColumns.map((c) => c.id));
 
               // 1. DB에서 일괄 삭제
               try {
-                await elementsApi.deleteMultipleElements(columnIdsToDelete);
+                await elementsApi.deleteMultipleElements([...columnIdsToDelete]);
               } catch (error) {
                 console.error("❌ DB Column 삭제 실패:", error);
               }
 
               // 2. Store에서 일괄 제거 (새 배열 참조 생성)
               const newElements = elements.filter(
-                (el) => !columnIdsToDelete.includes(el.id)
+                (el) => !columnIdsToDelete.has(el.id)
               );
               setElements(newElements);
             }

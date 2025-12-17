@@ -510,9 +510,10 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
             const { elements } = useStore.getState();
             const newColumns = event.data.payload.columns;
 
-            // 중복 제거 (이미 존재하는 Column은 제외)
+            // 🚀 Phase 3: O(n²) → Set 기반 O(n+m) 조회
+            const existingIds = new Set(elements.map(el => el.id));
             const columnsToAdd = newColumns.filter((col: Element) =>
-                !elements.some(el => el.id === col.id)
+                !existingIds.has(col.id)
             );
 
             if (columnsToAdd.length === 0) {
@@ -541,9 +542,10 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
             const { elements } = useStore.getState();
             const newFields = event.data.payload.fields;
 
-            // 중복 제거 (이미 존재하는 Field는 제외)
+            // 🚀 Phase 3: O(n²) → Set 기반 O(n+m) 조회
+            const existingIds = new Set(elements.map(el => el.id));
             const fieldsToAdd = newFields.filter((field: Element) =>
-                !elements.some(el => el.id === field.id)
+                !existingIds.has(field.id)
             );
 
             if (fieldsToAdd.length === 0) {
