@@ -1442,3 +1442,164 @@ const layoutResult = useMemo(() => {
 | 요소 수 > 100개 | 🟡 Phase 10 적용 고려 |
 
 **현재 WebGL 캔버스 성능**: ✅ 양호 (추가 최적화 선택적)
+
+---
+
+# Phase 11: WebGL 모드에서 불필요한 iframe 통신 제거
+
+## 문제 분석
+
+WebGL 캔버스 사용 시 iframe이 렌더링되지 않지만, `useIframeMessenger` 훅과 관련 로직이 여전히 실행됩니다.
+
+### 현재 상태
+
+```typescript
+// BuilderCore.tsx:141-147 - useWebGL 체크 없이 항상 호출
+const {
+  handleIframeLoad,
+  handleMessage,
+  sendElementsToIframe,  // iframe 없으면 무시되지만 호출은 됨
+  iframeReadyState,
+  requestAutoSelectAfterUpdate,
+} = useIframeMessenger();
+```
+
+### 불필요한 오버헤드 (WebGL 모드)
+
+| 항목 | 위치 | 비용 |
+|------|------|------|
+| `useIframeMessenger` 훅 호출 | `BuilderCore.tsx:141` | ~2ms |
+| 5개 store 구독 | `useIframeMessenger.ts:67-86` | ~3-5ms |
+| `handleMessage` 리스너 등록 | `BuilderCore.tsx:360-398` | ~1ms |
+| debounce 함수 생성 | `useIframeMessenger.ts` 내부 | ~1ms |
+| **총 불필요 오버헤드** | | **~7-10ms 초기화 + ~3ms/변경** |
+
+### iframe 모드 vs WebGL 모드 비교
+
+| 항목 | iframe 모드 | WebGL 모드 (현재) | WebGL 모드 (최적화 후) |
+|------|-------------|-------------------|----------------------|
+| `useIframeMessenger` 호출 | ✅ 필요 | ❌ 불필요 | ⛔ 스킵 |
+| postMessage 전송 | ✅ 작동 | ❌ 작동 안함 | ⛔ 스킵 |
+| Store 구독 (iframe용) | ✅ 필요 | ❌ 불필요 | ⛔ 스킵 |
+| `iframeReadyState` 체크 | ✅ 의미있음 | ❌ 항상 'not_initialized' | ⛔ 불필요 |
+
+## 개선안
+
+### 11.1 조건부 훅 호출 (useWebGL 체크)
+
+#### 현행 → 제안 → 검증 표
+
+| 위치 | 현행 | 제안 | 예상 개선 |
+|------|------|------|----------|
+| `BuilderCore.tsx` | 무조건 `useIframeMessenger()` 호출 | `useWebGL ? null : useIframeMessenger()` | ~7-10ms 초기화 절감 |
+| Store 구독 | 항상 5개 구독 설정 | WebGL 모드에서 0개 | 매 변경 ~3ms 절감 |
+
+#### 구현 방안
+
+```typescript
+// BuilderCore.tsx - 조건부 훅 사용
+
+// Option 1: 훅을 조건부로 호출하지 않고, 내부에서 early return
+export const useIframeMessenger = (): UseIframeMessengerReturn | null => {
+  const useWebGL = useWebGLCanvas();
+
+  // WebGL 모드에서는 모든 구독 스킵
+  if (useWebGL) {
+    return {
+      iframeReadyState: 'not_initialized' as const,
+      handleIframeLoad: () => {},
+      handleMessage: () => {},
+      handleUndo: debounce(() => Promise.resolve(), 0),
+      handleRedo: debounce(() => Promise.resolve(), 0),
+      sendElementsToIframe: () => {},
+      sendElementSelectedMessage: () => {},
+      requestElementSelection: () => {},
+      requestAutoSelectAfterUpdate: () => {},
+      sendLayoutsToIframe: () => {},
+      sendDataTablesToIframe: () => {},
+      sendApiEndpointsToIframe: () => {},
+      sendVariablesToIframe: () => {},
+      isIframeReady: false,
+    };
+  }
+
+  // 기존 로직 (iframe 모드)
+  // ... store 구독 등
+};
+```
+
+```typescript
+// Option 2: 별도 훅으로 분리
+// useCanvasMessenger.ts - WebGL/iframe 통합 훅
+export const useCanvasMessenger = () => {
+  const useWebGL = useWebGLCanvas();
+
+  // WebGL: 직접 store 조작 (postMessage 불필요)
+  // iframe: 기존 useIframeMessenger 사용
+  if (useWebGL) {
+    return useWebGLCanvasSync();  // 새 훅 - postMessage 없음
+  } else {
+    return useIframeMessenger();  // 기존 훅
+  }
+};
+```
+
+### 11.2 BuilderCore elements 동기화 조건부 실행
+
+```typescript
+// BuilderCore.tsx:360-398 - 현재 코드
+useEffect(() => {
+  if (iframeReadyState !== 'ready') return;  // ⚠️ WebGL에서도 구독 설정됨
+
+  const unsubscribe = useStore.subscribe((state, prevState) => {
+    // ...
+    sendElementsToIframe(filteredElements);
+  });
+
+  return () => unsubscribe();
+}, [iframeReadyState, sendElementsToIframe]);
+```
+
+```typescript
+// 개선된 코드
+useEffect(() => {
+  // ✅ WebGL 모드에서는 iframe 동기화 스킵
+  if (useWebGL) return;
+  if (iframeReadyState !== 'ready') return;
+
+  const unsubscribe = useStore.subscribe((state, prevState) => {
+    // ...
+    sendElementsToIframe(filteredElements);
+  });
+
+  return () => unsubscribe();
+}, [useWebGL, iframeReadyState, sendElementsToIframe]);
+```
+
+## Phase 11 체크리스트
+
+- [ ] `useIframeMessenger` 내부에 `useWebGL` 체크 추가 (early return)
+- [ ] WebGL 모드에서 store 구독 스킵
+- [ ] `BuilderCore.tsx` elements 동기화에 `useWebGL` 조건 추가
+- [ ] `handleMessage` 리스너 등록 조건부 실행
+- [ ] TypeScript 타입 체크 통과
+- [ ] WebGL/iframe 모드 전환 테스트
+
+## 예상 효과
+
+| 지표 | 현재 (WebGL) | 최적화 후 | 개선율 |
+|------|-------------|----------|--------|
+| 초기화 시간 | +7-10ms (불필요) | 0ms | 100% |
+| 요소 변경 시 | +3ms (불필요) | 0ms | 100% |
+| Store 구독 수 | 5개 (불필요) | 0개 | 100% |
+| postMessage 시도 | 매 변경 (실패) | 0회 | 100% |
+
+## 우선순위
+
+| 조건 | 권장 |
+|------|------|
+| WebGL 모드 기본 사용 | 🔴 **Phase 11 적용 권장** |
+| iframe/WebGL 혼용 | 🟠 Phase 11 적용 후 테스트 필요 |
+| iframe 모드만 사용 | 🟢 적용 불필요 |
+
+**참고**: 이 최적화는 WebGL 모드를 기본으로 사용할 때 가장 효과적입니다. iframe과 WebGL을 동시에 사용하는 비교 모드에서는 별도 처리가 필요합니다.
