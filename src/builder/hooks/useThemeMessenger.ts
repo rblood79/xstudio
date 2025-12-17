@@ -6,12 +6,16 @@
  * - 일관된 에러 처리
  * - 디버깅 로그 통합
  * - 성능 최적화 (메모이제이션, 디바운싱)
+ *
+ * 🚀 Phase 11: WebGL-only 모드에서는 postMessage 스킵
  */
 
 import { useCallback, useRef } from 'react';
 import { MessageService } from '../../utils/messaging';
 import { tokensToCSS } from '../../utils/theme/tokenToCss';
 import type { DesignToken } from '../../types/theme';
+// 🚀 Phase 11: Feature Flags for WebGL-only mode
+import { useWebGLCanvas, useCanvasCompareMode } from '../../utils/featureFlags';
 
 export interface UseThemeMessengerReturn {
     sendThemeTokens: (tokens: DesignToken[]) => void;
@@ -19,6 +23,9 @@ export interface UseThemeMessengerReturn {
 }
 
 export const useThemeMessenger = (): UseThemeMessengerReturn => {
+    // 🚀 Phase 11: WebGL-only 모드 체크
+    const isWebGLOnly = useWebGLCanvas() && !useCanvasCompareMode();
+
     const lastSentTokensHashRef = useRef<string>('');
     const lastSentDarkModeRef = useRef<boolean | null>(null);
 
@@ -26,8 +33,12 @@ export const useThemeMessenger = (): UseThemeMessengerReturn => {
      * Preview에 테마 토큰 전송
      * - 중복 방지: 동일한 tokens는 전송하지 않음
      * - 에러 처리 포함
+     * - 🚀 Phase 11: WebGL-only 모드에서는 스킵
      */
     const sendThemeTokens = useCallback((tokens: DesignToken[]) => {
+        // 🚀 Phase 11: WebGL-only 모드에서는 iframe 통신 불필요
+        if (isWebGLOnly) return;
+
         // 🔧 중복 방지: 전체 토큰을 직렬화하여 Hash 계산
         // value가 객체일 수 있으므로 JSON.stringify 사용
         const currentHash = JSON.stringify(
@@ -60,13 +71,17 @@ export const useThemeMessenger = (): UseThemeMessengerReturn => {
         } catch (error) {
             console.error('❌ [ThemeMessenger] Failed to send theme tokens:', error);
         }
-    }, []);
+    }, [isWebGLOnly]);
 
     /**
      * Preview에 다크 모드 상태 전송
      * - 중복 방지: 동일한 상태는 전송하지 않음
+     * - 🚀 Phase 11: WebGL-only 모드에서는 스킵
      */
     const sendDarkMode = useCallback((isDark: boolean) => {
+        // 🚀 Phase 11: WebGL-only 모드에서는 iframe 통신 불필요
+        if (isWebGLOnly) return;
+
         // 🔧 중복 방지: 이전 값과 비교
         if (lastSentDarkModeRef.current === isDark) {
             console.log('⏭️ [ThemeMessenger] Duplicate dark mode, skipping send');
@@ -91,7 +106,7 @@ export const useThemeMessenger = (): UseThemeMessengerReturn => {
         } catch (error) {
             console.error('❌ [ThemeMessenger] Failed to send dark mode:', error);
         }
-    }, []);
+    }, [isWebGLOnly]);
 
     return {
         sendThemeTokens,

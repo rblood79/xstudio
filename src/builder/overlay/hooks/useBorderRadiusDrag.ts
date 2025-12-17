@@ -14,6 +14,8 @@ import { useCallback, useEffect } from "react";
 import { useInspectorState } from "../../inspector/hooks/useInspectorState";
 import { MessageService } from "../../../utils/messaging";
 import { useStore } from "../../stores";
+// 🚀 Phase 11: Feature Flags for WebGL-only mode
+import { useWebGLCanvas, useCanvasCompareMode } from "../../../utils/featureFlags";
 
 export type CornerPosition =
   | "topLeft"
@@ -89,11 +91,16 @@ function calculateDiagonalDistance(
 
 /**
  * Canvas에 직접 스타일 업데이트 전송 (빠른 프리뷰용)
+ * 🚀 Phase 11: WebGL-only 모드에서는 postMessage 스킵
  */
 function sendStyleToCanvas(
   elementId: string,
   styleProps: Record<string, string>
 ) {
+  // 🚀 Phase 11: WebGL-only 모드에서는 iframe 통신 불필요
+  const isWebGLOnly = useWebGLCanvas() && !useCanvasCompareMode();
+  if (isWebGLOnly) return;
+
   const iframe = MessageService.getIframe();
   if (iframe?.contentWindow) {
     iframe.contentWindow.postMessage(

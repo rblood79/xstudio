@@ -4,6 +4,8 @@ import { ElementProps } from "../../types/integrations/supabase.types";
 import { Element } from "../../types/core/store.types"; // 통합된 타입 사용
 import { useStore } from "../stores"; // useStore import 추가
 import { MessageService } from "../../utils/messaging"; // 메시징 서비스 추가
+// 🚀 Phase 11: Feature Flags for WebGL-only mode
+import { useWebGLCanvas, useCanvasCompareMode } from "../../utils/featureFlags";
 import type { ElementTreeItem } from "../../types/builder/stately.types";
 import { buildTreeFromElements } from "../utils/treeUtils";
 import { VirtualizedLayerTree } from "../sidebar/VirtualizedLayerTree";
@@ -68,16 +70,22 @@ export function Layers({
     [setSelectedElement, sendElementSelectedMessage]
   );
 
+  // 🚀 Phase 11: WebGL-only 모드 체크
+  const isWebGLOnly = useWebGLCanvas() && !useCanvasCompareMode();
+
   // 아이템 삭제 핸들러 (memoized)
   const handleItemDelete = useCallback(
     async (el: Element) => {
       await removeElement(el.id);
       if (el.id === selectedElementId) {
         setSelectedElement(null);
-        MessageService.clearOverlay();
+        // 🚀 Phase 11: WebGL-only 모드에서는 iframe clearOverlay 스킵
+        if (!isWebGLOnly) {
+          MessageService.clearOverlay();
+        }
       }
     },
-    [removeElement, selectedElementId, setSelectedElement]
+    [removeElement, selectedElementId, setSelectedElement, isWebGLOnly]
   );
 
   return (

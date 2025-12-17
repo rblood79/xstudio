@@ -28,6 +28,8 @@ import type {
   DataStoreActions,
   TransformContext,
 } from "../../../types/builder/data.types";
+// 🚀 Phase 11: Feature Flags for WebGL-only mode
+import { useWebGLCanvas, useCanvasCompareMode } from "../../../utils/featureFlags";
 
 // Type aliases for set/get
 type DataStore = DataStoreState & DataStoreActions;
@@ -41,8 +43,14 @@ type GetState = Parameters<StateCreator<DataStore>>[1];
 /**
  * DataTables를 Canvas iframe에 동기화
  * UPDATE_DATA_TABLES 메시지를 통해 전체 DataTables 전송
+ *
+ * 🚀 Phase 11: WebGL-only 모드에서는 postMessage 스킵
  */
 function syncDataTablesToCanvas(dataTables: Map<string, DataTable>): void {
+  // 🚀 Phase 11: WebGL-only 모드에서는 iframe 통신 불필요
+  const isWebGLOnly = useWebGLCanvas() && !useCanvasCompareMode();
+  if (isWebGLOnly) return;
+
   try {
     // previewFrame ID로 Canvas iframe 찾기
     const iframe = document.getElementById('previewFrame') as HTMLIFrameElement;
