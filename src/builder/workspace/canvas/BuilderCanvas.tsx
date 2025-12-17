@@ -14,7 +14,7 @@
  * @updated 2025-12-11 Phase 10 B1.2 - ElementSprite 통합
  */
 
-import { useCallback, useEffect, useRef, useMemo, useState } from "react";
+import { useCallback, useEffect, useRef, useMemo, useState, memo } from "react";
 import { Application, useApplication } from "@pixi/react";
 import { Graphics as PixiGraphics } from "pixi.js";
 import { useStore } from "../../stores";
@@ -358,22 +358,26 @@ function CanvasSmoothResizeBridge({ containerEl }: { containerEl: HTMLElement })
  *
  * 현재 페이지의 모든 요소를 ElementSprite로 렌더링합니다.
  * DOM 레이아웃 방식 (display: block, position: relative)을 재현합니다.
+ *
+ * 🚀 최적화: memo + 내부 selectedElementIds 구독
+ * - 부모(BuilderCanvas) 리렌더링 시 불필요한 리렌더링 방지
+ * - selectedElementIds 변경 시에만 해당 부분 리렌더링
  */
-function ElementsLayer({
-  selectedIds,
+const ElementsLayer = memo(function ElementsLayer({
   layoutResult,
   onClick,
   onDoubleClick,
 }: {
-  selectedIds: string[];
   layoutResult: LayoutResult;
   onClick?: (elementId: string) => void;
   onDoubleClick?: (elementId: string) => void;
 }) {
   const elements = useStore((state) => state.elements);
   const currentPageId = useStore((state) => state.currentPageId);
+  // 🚀 내부에서 직접 구독하여 부모 리렌더링 방지
+  const selectedElementIds = useStore((state) => state.selectedElementIds);
 
-  const selectedIdSet = useMemo(() => new Set(selectedIds), [selectedIds]);
+  const selectedIdSet = useMemo(() => new Set(selectedElementIds), [selectedElementIds]);
 
   const elementById = useMemo(
     () => new Map(elements.map((el) => [el.id, el])),
@@ -484,7 +488,7 @@ export function BuilderCanvas({
 
   // Store state
   const elements = useStore((state) => state.elements);
-  const selectedElementIds = useStore((state) => state.selectedElementIds);
+  // 🚀 selectedElementIds는 ElementsLayer 내부에서 직접 구독 (부모 리렌더링 방지)
   const setSelectedElement = useStore((state) => state.setSelectedElement);
   const setSelectedElements = useStore((state) => state.setSelectedElements);
   const clearSelection = useStore((state) => state.clearSelection);
@@ -773,7 +777,6 @@ export function BuilderCanvas({
 
             {/* Elements Layer (ElementSprite 기반) */}
             <ElementsLayer
-              selectedIds={selectedElementIds}
               layoutResult={layoutResult}
               onClick={handleElementClick}
               onDoubleClick={handleElementDoubleClick}
