@@ -1724,6 +1724,7 @@ postMessage 한 번 호출 비용:
 | **Phase 9** | 페이로드 최적화 | 📋 계획됨 | 20-120ms | - |
 | **Phase 10** | 패널 리사이즈 캔버스 성능 분석 | ✅ 분석완료 | WebGL 이미 최적화 | 80ms throttle + 350ms settle |
 | **Phase 11** | WebGL 모드 postMessage 제거 | ✅ **구현완료** | ~3-5ms/변경 | 초기화 -8~12ms, 변경당 -3~5ms |
+| **Phase 12** | 상태 동기화 최적 방법론 | ✅ **문서화** | 이벤트 기반 권장 | subscribe + Delta + Microtask |
 
 ## 구현 완료된 최적화 (Phase 10-11)
 
@@ -1801,6 +1802,169 @@ WebGL Canvas 리사이즈 최적화 현황:
 | `a6e8cde` | Phase 11 문서 - WebGL 모드 iframe 통신 제거 계획 |
 | `590b1fb` | Phase 11 구현 - useIframeMessenger early return |
 | `8868482` | Phase 11 완료 - 모든 postMessage 차단 (9개 파일) |
+
+---
+
+# Phase 12: 상태 동기화 최적 방법론 - 이벤트 기반 vs 시간 기반
+
+## 핵심 원칙
+
+**이벤트 기반(Event-driven) > 시간 기반(Time-based)**
+
+상태 동기화에서 "언제" 처리할지 시간으로 추측하는 것보다, "무엇이" 변경됐을 때 처리하는 것이 정확하고 효율적입니다.
+
+## 방법론 비교
+
+### 시간 기반 접근 (권장하지 않음)
+
+| 방식 | 문제점 | 정확도 |
+|------|--------|--------|
+| **debounce/setTimeout** | 시간 추측, 지연 발생 | ❌ 낮음 |
+| **RAF (requestAnimationFrame)** | 변경 없어도 매 프레임 체크, 16.67ms 고정 지연 | 🔶 중간 |
+| **setInterval** | 무조건 주기적 실행, 낭비 | ❌ 낮음 |
+
+```
+시간 기반 문제:
+  State 변경 → [16.67ms 대기] → 처리
+                ↑ 이 시간 동안 상태가 또 바뀔 수 있음
+                ↑ 또는 변경 없는데 불필요하게 실행
+```
+
+### 이벤트 기반 접근 (권장)
+
+| 방식 | 장점 | 정확도 |
+|------|------|--------|
+| **Zustand subscribe** | 변경 시에만 실행, 참조 비교 O(1) | ✅ 높음 |
+| **Microtask batching** | 동기 코드 완료 직후 실행, 지연 0 | ✅ 높음 |
+| **Delta Protocol** | 변경분만 전송, payload 최소화 | ✅ 높음 |
+
+```
+이벤트 기반:
+  State 변경 → 즉시 감지 → Microtask 큐 → 처리
+                           ↑ 동기 코드 직후, 렌더 전 실행
+```
+
+## 최적 구현 패턴
+
+### 권장: Zustand subscribe + Delta + Microtask
+
+```typescript
+// ✅ 최적 패턴
+useStore.subscribe((state, prevState) => {
+  // 1. 참조 비교 (O(1)) - 변경 없으면 즉시 종료
+  if (state.elements === prevState.elements) return;
+
+  // 2. Microtask로 자연스러운 배치
+  queueMicrotask(() => {
+    // 3. Delta만 추출하여 전송
+    const changes = extractChanges(prevState.elements, state.elements);
+    if (changes.length > 0) {
+      sendDelta(changes);
+    }
+  });
+});
+```
+
+### RAF가 필요한 경우 (예외)
+
+RAF는 **렌더링 동기화**가 필요한 경우에만 사용:
+
+```typescript
+// ✅ RAF 적합: 애니메이션, 드래그 시각적 피드백
+const animate = () => {
+  updateVisualPosition();  // 시각적 요소만
+  rafId = requestAnimationFrame(animate);
+};
+
+// ❌ RAF 부적합: 상태 동기화
+// 변경 없어도 매 프레임 실행 → 낭비
+```
+
+## 방법론별 상세 비교
+
+### 정확도 비교
+
+| 방법 | 실행 타이밍 | 불필요 실행 | 누락 위험 |
+|------|------------|------------|----------|
+| debounce 300ms | 마지막 변경 후 300ms | 🔶 없음 | 🔴 빠른 연속 변경 시 |
+| RAF | 매 16.67ms | 🔴 변경 없어도 실행 | 🟢 없음 |
+| subscribe | 변경 즉시 | 🟢 없음 | 🟢 없음 |
+
+### 성능 비교
+
+| 방법 | 호출 빈도 | 비교 비용 | 메모리 |
+|------|----------|----------|--------|
+| debounce | 1회/300ms | 전체 비교 필요 | 🟢 낮음 |
+| RAF | 60회/초 | 매번 비교 | 🔴 높음 |
+| subscribe | 변경 시만 | 참조 비교 O(1) | 🟢 낮음 |
+
+### 구현 복잡도
+
+| 방법 | 코드량 | 엣지 케이스 | 디버깅 |
+|------|--------|------------|--------|
+| debounce | 🟢 적음 | 🔴 타이밍 이슈 | 🔴 어려움 |
+| RAF | 🔶 중간 | 🔶 cleanup 필요 | 🔶 중간 |
+| subscribe | 🟢 적음 | 🟢 적음 | 🟢 쉬움 |
+
+## 마이그레이션 가이드
+
+### Before: RAF 기반 (비권장)
+
+```typescript
+// ❌ 비효율: 변경 없어도 매 프레임 실행
+useEffect(() => {
+  let rafId: number;
+  let prevElements = elementsRef.current;
+
+  const tick = () => {
+    const currentElements = useStore.getState().elements;
+    if (currentElements !== prevElements) {
+      sendToCanvas(currentElements);
+      prevElements = currentElements;
+    }
+    rafId = requestAnimationFrame(tick);
+  };
+
+  tick();
+  return () => cancelAnimationFrame(rafId);
+}, []);
+```
+
+### After: subscribe 기반 (권장)
+
+```typescript
+// ✅ 효율적: 변경 시에만 실행
+useEffect(() => {
+  const unsubscribe = useStore.subscribe(
+    (state, prevState) => {
+      // 참조 비교로 즉시 판단
+      if (state.elements === prevState.elements) return;
+
+      // Microtask로 배치
+      queueMicrotask(() => {
+        sendToCanvas(state.elements);
+      });
+    }
+  );
+
+  return () => unsubscribe();
+}, []);
+```
+
+## 결론
+
+| 시나리오 | 권장 방법 |
+|----------|----------|
+| **상태 동기화** | Zustand subscribe + Microtask |
+| **Delta 전송** | subscribe + extractChanges |
+| **애니메이션** | RAF (시각적 요소만) |
+| **사용자 입력 디바운싱** | debounce (검색 입력 등) |
+| **스크롤 이벤트** | throttle + RAF |
+
+**핵심 원칙**:
+- 상태 동기화 = **이벤트 기반** (subscribe)
+- 시각적 업데이트 = **프레임 기반** (RAF)
+- 사용자 입력 = **시간 기반** (debounce/throttle)
 
 ---
 
