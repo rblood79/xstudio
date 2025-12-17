@@ -6,9 +6,13 @@
  * - FID (First Input Delay)
  * - CLS (Cumulative Layout Shift)
  * - TTFB (Time to First Byte)
+ *
+ * 🚀 Phase 11: WebGL-only 모드에서는 iframe 통신 스킵
  */
 
 import { useState, useEffect, useCallback } from "react";
+// 🚀 Phase 11: Feature Flags for WebGL-only mode
+import { useWebGLCanvas, useCanvasCompareMode } from "../../../../utils/featureFlags";
 
 export interface WebVitals {
   lcp: number | null; // Largest Contentful Paint (ms)
@@ -46,13 +50,19 @@ export function useWebVitals(options: UseWebVitalsOptions = {}) {
     return () => window.removeEventListener("message", handleMessage);
   }, [enabled]);
 
+  // 🚀 Phase 11: WebGL-only 모드 체크
+  const isWebGLOnly = useWebGLCanvas() && !useCanvasCompareMode();
+
   // Canvas에 Web Vitals 수집 요청
+  // 🚀 Phase 11: WebGL-only 모드에서는 iframe이 없으므로 스킵
   const requestVitals = useCallback(() => {
+    if (isWebGLOnly) return;
+
     const iframe = document.querySelector<HTMLIFrameElement>(".canvas-iframe");
     if (iframe?.contentWindow) {
       iframe.contentWindow.postMessage({ type: "REQUEST_WEB_VITALS" }, "*");
     }
-  }, []);
+  }, [isWebGLOnly]);
 
   // 현재 페이지의 Web Vitals 직접 수집 (Builder 자체)
   const collectLocalVitals = useCallback(() => {

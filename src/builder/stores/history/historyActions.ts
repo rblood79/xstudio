@@ -11,6 +11,8 @@ import {
 } from "../utils/elementHelpers";
 import { reorderElements } from "../utils/elementReorder";
 import type { ElementsState } from "../elements";
+// 🚀 Phase 11: Feature Flags for WebGL-only mode
+import { useWebGLCanvas, useCanvasCompareMode } from "../../../utils/featureFlags";
 
 /**
  * Undo/Redo 액션 로직
@@ -392,7 +394,9 @@ export const createUndoAction =
       );
 
       // 2. iframe 업데이트
-      if (typeof window !== "undefined" && window.parent) {
+      // 🚀 Phase 11: WebGL-only 모드에서는 iframe 통신 스킵
+      const isWebGLOnly = useWebGLCanvas() && !useCanvasCompareMode();
+      if (!isWebGLOnly && typeof window !== "undefined" && window.parent) {
         try {
           const currentElements = get().elements;
           window.parent.postMessage(
@@ -819,7 +823,9 @@ export const createRedoAction =
       );
 
       // 2. iframe 업데이트
-      if (typeof window !== "undefined" && window.parent) {
+      // 🚀 Phase 11: WebGL-only 모드에서는 iframe 통신 스킵
+      const isWebGLOnly = useWebGLCanvas() && !useCanvasCompareMode();
+      if (!isWebGLOnly && typeof window !== "undefined" && window.parent) {
         try {
           const currentElements = get().elements;
           window.parent.postMessage(

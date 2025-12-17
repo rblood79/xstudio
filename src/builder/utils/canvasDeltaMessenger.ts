@@ -7,10 +7,14 @@
  * - Before: 전체 elements 배열 전송 → O(n) 직렬화 + 전송
  * - After: 변경된 요소만 전송 → O(1) 직렬화 + 전송
  *
+ * 🚀 Phase 11: WebGL-only 모드에서는 postMessage 스킵
+ *
  * @since 2025-12-10 Phase 4 Canvas Delta Updates
  */
 
 import type { Element } from "../../types/core/store.types";
+// 🚀 Phase 11: Feature Flags for WebGL-only mode
+import { useWebGLCanvas, useCanvasCompareMode } from "../../utils/featureFlags";
 
 // ============================================
 // Delta Message Types
@@ -102,8 +106,13 @@ export class CanvasDeltaMessenger {
 
   /**
    * iframe이 준비되었는지 확인
+   * 🚀 Phase 11: WebGL-only 모드에서는 항상 false 반환
    */
   isReady(): boolean {
+    // 🚀 Phase 11: WebGL-only 모드에서는 iframe 통신 불필요
+    const isWebGLOnly = useWebGLCanvas() && !useCanvasCompareMode();
+    if (isWebGLOnly) return false;
+
     return this.enabled && !!this.iframe?.contentWindow;
   }
 

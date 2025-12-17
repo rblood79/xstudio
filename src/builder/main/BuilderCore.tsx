@@ -15,7 +15,7 @@ import { BuilderViewport } from "./BuilderViewport";
 import SelectionOverlay from "../overlay";
 import Grid from "../grid";
 import { Workspace } from "../workspace";
-import { useWebGLCanvas } from "../../utils/featureFlags";
+import { useWebGLCanvas, useCanvasCompareMode } from "../../utils/featureFlags";
 import { PanelSlot, BottomPanelSlot } from "../layout";
 import { InspectorSync } from "../inspector/InspectorSync";
 import { ToastContainer } from "../components/ToastContainer";
@@ -769,7 +769,11 @@ export const BuilderCore: React.FC = () => {
         target.classList.contains("bg");
       if (isWorkspaceBackground) {
         setSelectedElement(null);
-        MessageService.clearOverlay();
+        // 🚀 Phase 11: WebGL-only 모드에서는 iframe clearOverlay 스킵
+        const isWebGLOnly = useWebGLCanvas() && !useCanvasCompareMode();
+        if (!isWebGLOnly) {
+          MessageService.clearOverlay();
+        }
       }
     };
 
