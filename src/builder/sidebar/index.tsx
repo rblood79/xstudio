@@ -1,4 +1,4 @@
-import React, { useCallback } from "react";
+import React from "react";
 import {
   Settings2,
   Trash,
@@ -70,9 +70,8 @@ export default function Sidebar({
   // 개선: useCurrentPageElements() → 현재 페이지 요소만 구독
   const currentPageElements = useCurrentPageElements();
 
-  const selectedElementId = useStore(
-    useCallback((state) => state.selectedElementId, [])
-  );
+  // 🚀 Performance: useCallback 제거 - Zustand selector에 불필요
+  const selectedElementId = useStore((state) => state.selectedElementId);
   const selectedTab = useStore((state) => state.selectedTab);
   // storeSetElements는 현재 사용되지 않음 (Nodes 컴포넌트에서 setElements prop 제거됨)
   const setSelectedElement = useStore((state) => state.setSelectedElement);

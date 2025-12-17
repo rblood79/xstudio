@@ -359,9 +359,10 @@ function CanvasSmoothResizeBridge({ containerEl }: { containerEl: HTMLElement })
  * 현재 페이지의 모든 요소를 ElementSprite로 렌더링합니다.
  * DOM 레이아웃 방식 (display: block, position: relative)을 재현합니다.
  *
- * 🚀 최적화: memo + 내부 selectedElementIds 구독
- * - 부모(BuilderCanvas) 리렌더링 시 불필요한 리렌더링 방지
- * - selectedElementIds 변경 시에만 해당 부분 리렌더링
+ * 🚀 성능 최적화 (2025-12-17):
+ * - selectedElementIds 구독 제거 → 선택 변경 시 ElementsLayer 리렌더 방지
+ * - 각 ElementSprite가 자신의 선택 상태만 구독 → O(n) → O(2) 리렌더
+ * - memo로 부모(BuilderCanvas) 리렌더링 시 불필요한 리렌더링 방지
  */
 const ElementsLayer = memo(function ElementsLayer({
   layoutResult,
@@ -374,10 +375,10 @@ const ElementsLayer = memo(function ElementsLayer({
 }) {
   const elements = useStore((state) => state.elements);
   const currentPageId = useStore((state) => state.currentPageId);
-  // 🚀 내부에서 직접 구독하여 부모 리렌더링 방지
-  const selectedElementIds = useStore((state) => state.selectedElementIds);
-
-  const selectedIdSet = useMemo(() => new Set(selectedElementIds), [selectedElementIds]);
+  // 🚀 성능 최적화: selectedElementIds 구독 제거
+  // 기존: ElementsLayer가 selectedElementIds 구독 → 선택 변경 시 전체 리렌더 O(n)
+  // 개선: 각 ElementSprite가 자신의 선택 상태만 구독 → 변경된 요소만 리렌더 O(2)
+  // selectedElementIds, selectedIdSet 제거됨
 
   const elementById = useMemo(
     () => new Map(elements.map((el) => [el.id, el])),
@@ -444,11 +445,11 @@ const ElementsLayer = memo(function ElementsLayer({
       eventMode="static"
       interactiveChildren={true}
     >
+      {/* 🚀 성능 최적화: isSelected prop 제거 - 각 ElementSprite가 자체 구독 */}
       {sortedElements.map((element) => (
         <ElementSprite
           key={element.id}
           element={element}
-          isSelected={selectedIdSet.has(element.id)}
           layoutPosition={layoutResult.positions.get(element.id)}
           onClick={onClick}
           onDoubleClick={onDoubleClick}

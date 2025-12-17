@@ -68,31 +68,21 @@ export const SelectionLayer = memo(function SelectionLayer({
   useExtend(PIXI_COMPONENTS);
 
   // Store state
-  // 🚀 최적화: elements 배열 대신 elementsMap 사용 (O(1) 조회)
-  const elementsMap = useStore((state) => state.elementsMap);
+  // 🚀 성능 최적화: elementsMap 구독 제거
+  // 기존: elementsMap 구독 → 어떤 요소든 변경되면 SelectionLayer 리렌더
+  // 개선: selectedElementIds만 구독 → 선택 변경 시에만 리렌더
+  // elementsMap은 getState()로 필요할 때만 읽음
   const selectedElementIds = useStore((state) => state.selectedElementIds);
   const currentPageId = useStore((state) => state.currentPageId);
 
-  // 🚀 최적화: pageElementsById는 elementsMap으로 대체
-  // selectedElements 계산 시 직접 elementsMap.get() 사용
-
-  // hasChildrenIdSet은 페이지 변경 시에만 재계산 (요소 변경 시 무시)
-  const hasChildrenIdSet = useMemo(() => {
-    const set = new Set<string>();
-    // elementsMap을 순회하여 자식이 있는 부모 ID 수집
-    elementsMap.forEach((el) => {
-      if (el.page_id !== currentPageId) return;
-      if (el.parent_id) {
-        set.add(el.parent_id);
-      }
-    });
-    return set;
-  }, [elementsMap, currentPageId]);
+  // 🚀 최적화: elementsMap은 구독하지 않고 getState()로 읽음
+  const getElementsMap = useCallback(() => useStore.getState().elementsMap, []);
 
   // 선택된 요소들 (Body 포함)
-  // 🚀 최적화: elementsMap에서 직접 조회 (O(1))
+  // 🚀 최적화: getState()로 elementsMap 조회 (구독 없음)
   const selectedElements = useMemo(() => {
     if (!currentPageId || selectedElementIds.length === 0) return [];
+    const elementsMap = getElementsMap();
     const resolved: Element[] = [];
     for (const id of selectedElementIds) {
       const el = elementsMap.get(id);
@@ -101,7 +91,24 @@ export const SelectionLayer = memo(function SelectionLayer({
       }
     }
     return resolved;
-  }, [currentPageId, selectedElementIds, elementsMap]);
+  }, [currentPageId, selectedElementIds, getElementsMap]);
+
+  // hasChildrenIdSet은 선택된 요소에 대해서만 계산 (전체 순회 제거)
+  // 🚀 최적화: 선택된 요소의 자식 여부만 확인 (O(selected) vs O(all))
+  const hasChildrenIdSet = useMemo(() => {
+    if (selectedElements.length === 0) return new Set<string>();
+    const elementsMap = getElementsMap();
+    const selectedIdSet = new Set(selectedElementIds);
+    const set = new Set<string>();
+    // 선택된 요소에 대해서만 자식 존재 여부 확인
+    elementsMap.forEach((el) => {
+      if (el.page_id !== currentPageId) return;
+      if (el.parent_id && selectedIdSet.has(el.parent_id)) {
+        set.add(el.parent_id);
+      }
+    });
+    return set;
+  }, [selectedElements.length, selectedElementIds, currentPageId, getElementsMap]);
 
   // 선택된 요소들의 바운딩 박스
   const selectionBounds = useMemo(() => {

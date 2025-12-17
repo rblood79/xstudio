@@ -112,6 +112,7 @@ export interface ClickModifiers {
 
 export interface ElementSpriteProps {
   element: Element;
+  /** @deprecated 더 이상 사용하지 않음. 각 ElementSprite가 자체적으로 선택 상태를 구독합니다. */
   isSelected?: boolean;
   /** 레이아웃 계산된 위치 (있으면 style보다 우선) */
   layoutPosition?: LayoutPosition;
@@ -368,13 +369,29 @@ function getSpriteType(element: Element): SpriteType {
  */
 export const ElementSprite = memo(function ElementSprite({
   element,
-  isSelected,
+  isSelected: isSelectedProp, // @deprecated - fallback용으로만 사용
   layoutPosition,
   onClick,
   onDoubleClick,
   onChange,
 }: ElementSpriteProps) {
   useExtend(PIXI_COMPONENTS);
+
+  // 🚀 성능 최적화: 각 ElementSprite가 자신의 선택 상태만 구독
+  // 기존: ElementsLayer가 selectedElementIds 구독 → 전체 리렌더 O(n)
+  // 개선: 각 ElementSprite가 자신의 선택 여부만 구독 → 변경된 요소만 리렌더 O(2)
+  // selector가 boolean을 반환하므로 값이 변경될 때만 리렌더 트리거
+  const elementId = element.id;
+  const isSelected = useStore((state) => {
+    const ids = state.selectedElementIds;
+    // 빠른 체크: 빈 배열이면 false
+    if (ids.length === 0) return false;
+    // 단일 선택 최적화: 첫 번째 ID만 비교
+    if (ids.length === 1) return ids[0] === elementId;
+    // 다중 선택: includes 사용
+    return ids.includes(elementId);
+  }) ?? isSelectedProp ?? false;
+
   // 부모 요소 확인 (CheckboxGroup 자식 여부 판단용)
   // 🚀 최적화: elements 배열 대신 elementsMap 사용 (O(1) 조회)
   // elements 배열 전체 구독 → 다른 요소 변경 시에도 리렌더링 발생

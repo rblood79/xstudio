@@ -58,6 +58,8 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
     const isProcessingRef = useRef(false);
     const messageQueueRef = useRef<Array<{ type: string; payload: unknown }>>([]);
     const lastAckTimestampRef = useRef<number>(0); // ✅ 마지막 ACK 시점
+    const isSendingRef = useRef(false); // ✅ 전송 중 플래그
+    const lastSentElementsRef = useRef<Element[] | null>(null); // ✅ 마지막 전송된 elements (중복 전송 방지)
 
     // 🚀 최적화: elements 구독 제거 - iframe 동기화는 BuilderCore에서 store.subscribe로 처리
     // const elements = useStore((state) => state.elements);  // REMOVED

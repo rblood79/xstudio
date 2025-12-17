@@ -115,15 +115,12 @@ export function createElementLoaderSlice(
   const loadFromIndexedDB = async (pageId: string): Promise<Element[] | null> => {
     try {
       const db = await getDB();
-      const elements = await db.elements
-        .where('page_id')
-        .equals(pageId)
-        .sortBy('order_num');
+      // 🔧 FIX: DatabaseAdapter 인터페이스 사용 (Dexie API 대신)
+      const elements = await db.elements.getByPage(pageId);
 
       if (elements && elements.length > 0) {
-        if (process.env.NODE_ENV === 'development') {
-        }
-        return elements as Element[];
+        // order_num으로 정렬 (getByPage는 정렬하지 않음)
+        return elements.sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
       }
 
       return null;
@@ -145,9 +142,6 @@ export function createElementLoaderSlice(
         .order('order_num');
 
       if (error) throw error;
-
-      if (process.env.NODE_ENV === 'development') {
-      }
 
       return (data as Element[]) ?? [];
     } catch (error) {
@@ -234,9 +228,6 @@ export function createElementLoaderSlice(
       loadingPages: new Set([...s.loadingPages, pageId]),
     }));
 
-    if (process.env.NODE_ENV === 'development') {
-    }
-
     try {
       // 1. IndexedDB에서 먼저 시도
       let elements = await loadFromIndexedDB(pageId);
@@ -290,9 +281,6 @@ export function createElementLoaderSlice(
         loadingPages: new Set([...s.loadingPages].filter((id) => id !== pageId)),
       }));
 
-      if (process.env.NODE_ENV === 'development') {
-      }
-
       return elements;
     } catch (error) {
       console.error('[Loader] Failed to load page:', error);
@@ -321,9 +309,6 @@ export function createElementLoaderSlice(
     // 로드되지 않은 페이지
     if (!state.loadedPages.has(pageId)) {
       return;
-    }
-
-    if (process.env.NODE_ENV === 'development') {
     }
 
     // 해당 페이지 요소 제거
@@ -355,9 +340,6 @@ export function createElementLoaderSlice(
 
     // 인덱스 재구축
     get()._rebuildIndexes();
-
-    if (process.env.NODE_ENV === 'development') {
-    }
   };
 
   /**
@@ -379,9 +361,6 @@ export function createElementLoaderSlice(
    */
   const setLazyLoadingEnabled = (enabled: boolean): void => {
     set({ lazyLoadingEnabled: enabled });
-
-    if (process.env.NODE_ENV === 'development') {
-    }
   };
 
   /**
@@ -412,9 +391,6 @@ export function createElementLoaderSlice(
     if (currentPageId) {
       pageCache.access(currentPageId);
     }
-
-    if (process.env.NODE_ENV === 'development') {
-    }
   };
 
   /**
@@ -438,9 +414,6 @@ export function createElementLoaderSlice(
       setTimeout(() => {
         lazyLoadPageElements(pageId);
       }, 100);
-    }
-
-    if (process.env.NODE_ENV === 'development') {
     }
   };
 

@@ -249,48 +249,43 @@ export function PropertiesPanel({ isActive }: PanelProps) {
 }
 
 /**
- * PropertiesPanelContent - 실제 콘텐츠 컴포넌트
- * 훅은 여기서만 실행됨 (isActive=true일 때만)
+ * 🚀 Performance: MultiSelectContent - 다중 선택 UI 분리 컴포넌트
+ *
+ * multiSelectMode, selectedElementIds 구독을 이 컴포넌트에서만 수행
+ * PropertiesPanelContent는 이 상태들을 구독하지 않아 불필요한 리렌더 방지
  */
-function PropertiesPanelContent() {
-  // ⭐ CRITICAL: Only subscribe to selectedElement (like StylesPanel)
-  // Any other useStore subscription causes unnecessary re-renders!
-  const selectedElement = useInspectorState((state) => state.selectedElement);
-
-  // ⭐ Get multiSelectMode, selectedElementIds, currentPageId for JSX
-  // 🎯 Zustand 구독 패턴 사용 - 상태 변경 즉시 반영
+const MultiSelectContent = memo(function MultiSelectContent({
+  selectedElement,
+  onSetSelectedElement,
+  onSetSelectedElements,
+}: {
+  selectedElement: SelectedElement;
+  onSetSelectedElement: (id: string | null, props?: Record<string, unknown>) => void;
+  onSetSelectedElements: (ids: string[]) => void;
+}) {
+  // 🚀 이 컴포넌트에서만 multiSelectMode, selectedElementIds 구독
   const multiSelectMode = useStore((state) => state.multiSelectMode) || false;
   const rawSelectedElementIds = useStore((state) => state.selectedElementIds);
   const selectedElementIds = useMemo(() => rawSelectedElementIds || [], [rawSelectedElementIds]);
   const currentPageId = useStore((state) => state.currentPageId);
 
-  // ⭐ Optimized: Get actions without subscribing to state changes
+  const isMultiSelectActive = multiSelectMode && selectedElementIds.length > 1;
+
+  // Get actions without subscribing
   const removeElement = useStore.getState().removeElement;
-  const setSelectedElement = useStore.getState().setSelectedElement;
   const updateElementProps = useStore.getState().updateElementProps;
   const addElement = useStore.getState().addElement;
   const updateElement = useStore.getState().updateElement;
-  const setSelectedElements = useStore.getState().setSelectedElements;
+  const getElementsMap = () => useStore.getState().elementsMap;
+  const getPageElements = useStore.getState().getPageElements;
 
-  // ⭐ Optimized: Get state without subscribing (prevents re-renders)
-  const getElementsMap = useCallback(() => useStore.getState().elementsMap, []);
-  // 🆕 getElements 제거 - getPageElements 사용으로 대체
-  const getCurrentPageId = useCallback(() => useStore.getState().currentPageId, []);
-  const getSelectedElementIds = useCallback(() => useStore.getState().selectedElementIds || [], []);
-  const getMultiSelectMode = useCallback(() => useStore.getState().multiSelectMode || false, []);
+  // Get current page elements
+  const currentPageElements = currentPageId ? getPageElements(currentPageId) : [];
 
-  // ⭐ Get current page elements (only recalculate when selectedElement changes)
-  // 🆕 O(1) 인덱스 기반 조회
-  const currentPageElements = useMemo(() => {
-    if (!currentPageId) return [];
-    const getPageElements = useStore.getState().getPageElements;
-    return getPageElements(currentPageId);
-  }, [currentPageId, selectedElement]);
-
-  // ⭐ Get selected elements array for BatchPropertyEditor
+  // Get selected elements array for BatchPropertyEditor
   const selectedElements = useMemo(() => {
-    if (!selectedElement || !currentPageId || selectedElementIds.length === 0) return [];
-    const elementsMap = useStore.getState().elementsMap;
+    if (!isMultiSelectActive || !currentPageId || selectedElementIds.length === 0) return [];
+    const elementsMap = getElementsMap();
     const resolved: Element[] = [];
     for (const id of selectedElementIds) {
       const el = elementsMap.get(id);
@@ -299,7 +294,220 @@ function PropertiesPanelContent() {
       }
     }
     return resolved;
-  }, [selectedElement, selectedElementIds, currentPageId]);
+  }, [isMultiSelectActive, selectedElementIds, currentPageId]);
+
+  // 다중 선택이 아니면 null 반환 (빠른 종료)
+  if (!isMultiSelectActive) {
+    return null;
+  }
+
+  // Multi-select handlers
+  const handleCopyAll = async () => {
+    if (selectedElementIds.length === 0) return;
+    try {
+      const elementsMap = getElementsMap();
+      const copiedData = copyMultipleElements(selectedElementIds, elementsMap);
+      const jsonData = serializeCopiedElements(copiedData);
+      await navigator.clipboard.writeText(jsonData);
+      console.log(`✅ [Copy] Copied ${selectedElementIds.length} elements`);
+    } catch (error) {
+      console.error('❌ [Copy] Failed:', error);
+    }
+  };
+
+  const handlePasteAll = async () => {
+    if (!currentPageId) return;
+    try {
+      const clipboardText = await navigator.clipboard.readText();
+      const copiedData = deserializeCopiedElements(clipboardText);
+      if (!copiedData) return;
+      const newElements = pasteMultipleElements(copiedData, currentPageId, { x: 10, y: 10 });
+      if (newElements.length === 0) return;
+      await Promise.all(newElements.map((element) => addElement(element)));
+      trackMultiPaste(newElements);
+      console.log(`✅ [Paste] Pasted ${newElements.length} elements`);
+    } catch (error) {
+      console.error('❌ [Paste] Failed:', error);
+    }
+  };
+
+  const handleDeleteAll = async () => {
+    if (!confirm(`${selectedElementIds.length}개 요소를 모두 삭제하시겠습니까?`)) return;
+    try {
+      const elementsMap = getElementsMap();
+      const elementsToDelete = selectedElementIds
+        .map((id: string) => elementsMap.get(id))
+        .filter((el): el is NonNullable<typeof el> => el !== undefined);
+      if (elementsToDelete.length === 0) return;
+      trackMultiDelete(elementsToDelete);
+      await Promise.all(selectedElementIds.map((id: string) => removeElement(id)));
+      console.log(`✅ [DeleteAll] Deleted ${elementsToDelete.length} elements`);
+    } catch (error) {
+      console.error('❌ [DeleteAll] Failed:', error);
+    }
+  };
+
+  const handleClearSelection = () => {
+    onSetSelectedElement(null);
+  };
+
+  const handleBatchUpdate = async (updates: Record<string, unknown>) => {
+    try {
+      const elementsMap = getElementsMap();
+      trackBatchUpdate(selectedElementIds, updates, elementsMap);
+      await Promise.all(selectedElementIds.map((id: string) => updateElementProps(id, updates)));
+      console.log('Batch update applied to', selectedElementIds.length, 'elements');
+    } catch (error) {
+      console.error('Failed to batch update:', error);
+    }
+  };
+
+  const handleFilteredElements = (filteredIds: string[]) => {
+    if (filteredIds.length > 0) {
+      onSetSelectedElements(filteredIds);
+    } else {
+      onSetSelectedElement(null);
+    }
+  };
+
+  const handleGroupSelection = async () => {
+    if (selectedElementIds.length < 2 || !currentPageId) return;
+    try {
+      const elementsMap = getElementsMap();
+      const { groupElement, updatedChildren } = createGroupFromSelection(
+        selectedElementIds, elementsMap, currentPageId
+      );
+      await addElement(groupElement);
+      await Promise.all(updatedChildren.map(async (child) => {
+        await updateElement(child.id, { parent_id: child.parent_id, order_num: child.order_num });
+        await supabase.from('elements').update({
+          parent_id: child.parent_id, order_num: child.order_num, updated_at: new Date().toISOString()
+        }).eq('id', child.id);
+      }));
+      trackGroupCreation(groupElement, updatedChildren);
+      onSetSelectedElement(groupElement.id, groupElement.props);
+      console.log(`✅ [Group] Created group with ${updatedChildren.length} children`);
+    } catch (error) {
+      console.error('❌ [Group] Failed:', error);
+    }
+  };
+
+  const handleAlign = async (type: AlignmentType) => {
+    if (selectedElementIds.length < 2) return;
+    try {
+      const elementsMap = getElementsMap();
+      const updates = alignElements(selectedElementIds, elementsMap, type);
+      if (updates.length === 0) return;
+      const styleUpdates: Record<string, Record<string, unknown>> = {};
+      updates.forEach((update) => { styleUpdates[update.id] = update.style; });
+      trackBatchUpdate(selectedElementIds, styleUpdates, elementsMap);
+      await Promise.all(updates.map((update) => {
+        const element = elementsMap.get(update.id);
+        if (element) {
+          const updatedStyle = { ...(element.props.style as Record<string, unknown> || {}), ...update.style };
+          return updateElementProps(update.id, { style: updatedStyle });
+        }
+        return Promise.resolve();
+      }));
+      console.log(`✅ [Alignment] Aligned ${updates.length} elements to ${type}`);
+    } catch (error) {
+      console.error('❌ [Alignment] Failed:', error);
+    }
+  };
+
+  const handleDistribute = async (type: DistributionType) => {
+    if (selectedElementIds.length < 3) return;
+    try {
+      const elementsMap = getElementsMap();
+      const updates = distributeElements(selectedElementIds, elementsMap, type);
+      if (updates.length === 0) return;
+      const styleUpdates: Record<string, Record<string, unknown>> = {};
+      updates.forEach((update) => { styleUpdates[update.id] = update.style; });
+      trackBatchUpdate(selectedElementIds, styleUpdates, elementsMap);
+      await Promise.all(updates.map((update) => {
+        const element = elementsMap.get(update.id);
+        if (element) {
+          const updatedStyle = { ...(element.props.style as Record<string, unknown> || {}), ...update.style };
+          return updateElementProps(update.id, { style: updatedStyle });
+        }
+        return Promise.resolve();
+      }));
+      console.log(`✅ [Distribution] Distributed ${updates.length} elements ${type}ly`);
+    } catch (error) {
+      console.error('❌ [Distribution] Failed:', error);
+    }
+  };
+
+  // Get actual Element from store for SmartSelection
+  const actualElement = currentPageElements.find((el) => el.id === selectedElement.id);
+
+  return (
+    <>
+      <MultiSelectStatusIndicator
+        count={selectedElementIds.length}
+        primaryElementId={selectedElementIds[0]}
+        primaryElementType={selectedElement?.type}
+        onCopyAll={handleCopyAll}
+        onPasteAll={handlePasteAll}
+        onDeleteAll={handleDeleteAll}
+        onClearSelection={handleClearSelection}
+        onGroupSelection={handleGroupSelection}
+        onAlign={handleAlign}
+        onDistribute={handleDistribute}
+      />
+      <BatchPropertyEditor
+        selectedElements={selectedElements}
+        onBatchUpdate={handleBatchUpdate}
+      />
+      <SelectionFilter
+        allElements={currentPageElements}
+        onFilteredElements={handleFilteredElements}
+      />
+      {actualElement && (
+        <SmartSelection
+          referenceElement={actualElement}
+          allElements={currentPageElements}
+          onSelect={(elementIds) => {
+            onSetSelectedElements(elementIds);
+            if (currentPageId) {
+              selectionMemory.addSelection(elementIds, currentPageElements, currentPageId);
+            }
+          }}
+        />
+      )}
+      <SelectionMemory
+        currentPageId={currentPageId}
+        onRestore={(elementIds) => onSetSelectedElements(elementIds)}
+      />
+    </>
+  );
+});
+
+/**
+ * PropertiesPanelContent - 실제 콘텐츠 컴포넌트
+ * 훅은 여기서만 실행됨 (isActive=true일 때만)
+ *
+ * 🚀 Performance: multiSelectMode, selectedElementIds 구독을 MultiSelectContent로 분리
+ * 이 컴포넌트는 selectedElement만 구독하여 단일 선택 시 불필요한 리렌더 방지
+ */
+function PropertiesPanelContent() {
+  // ⭐ CRITICAL: Only subscribe to selectedElement (like StylesPanel)
+  // multiSelectMode, selectedElementIds 구독은 MultiSelectContent에서 수행
+  const selectedElement = useInspectorState((state) => state.selectedElement);
+
+  // 🚀 Performance: 액션만 가져오기 (구독 없음)
+  const removeElement = useStore.getState().removeElement;
+  const setSelectedElement = useStore.getState().setSelectedElement;
+  const updateElementProps = useStore.getState().updateElementProps;
+  const addElement = useStore.getState().addElement;
+  const updateElement = useStore.getState().updateElement;
+  const setSelectedElements = useStore.getState().setSelectedElements;
+
+  // 🚀 Performance: getState() 패턴 - 구독 없이 최신 상태 조회
+  const getElementsMap = useCallback(() => useStore.getState().elementsMap, []);
+  const getCurrentPageId = useCallback(() => useStore.getState().currentPageId, []);
+  const getSelectedElementIds = useCallback(() => useStore.getState().selectedElementIds || [], []);
+  const getMultiSelectMode = useCallback(() => useStore.getState().multiSelectMode || false, []);
 
   const [showKeyboardHelp, setShowKeyboardHelp] = useState(false);
 
@@ -421,77 +629,6 @@ function PropertiesPanelContent() {
     }
   }, [getCurrentPageId, addElement]);
 
-  const handleDeleteAll = useCallback(async () => {
-    const selectedElementIds = getSelectedElementIds();
-    // Confirm deletion
-    if (!confirm(`${selectedElementIds.length}개 요소를 모두 삭제하시겠습니까?`)) {
-      return;
-    }
-
-    try {
-      console.log(`[DeleteAll] Deleting ${selectedElementIds.length} elements`);
-
-      // ⭐ Collect elements BEFORE deletion for history tracking
-      const elementsMap = getElementsMap();
-      const elementsToDelete = selectedElementIds
-        .map((id: string) => elementsMap.get(id))
-        .filter((el): el is NonNullable<typeof el> => el !== undefined);
-
-      if (elementsToDelete.length === 0) {
-        console.warn('[DeleteAll] No elements to delete');
-        return;
-      }
-
-      // ⭐ Track in history BEFORE deleting
-      trackMultiDelete(elementsToDelete);
-
-      // Delete all selected elements
-      await Promise.all(selectedElementIds.map((id: string) => removeElement(id)));
-
-      console.log(`✅ [DeleteAll] Deleted ${elementsToDelete.length} elements`);
-      // TODO: Show toast notification
-    } catch (error) {
-      console.error('❌ [DeleteAll] Failed to delete elements:', error);
-      // TODO: Show error toast
-    }
-  }, [getSelectedElementIds, getElementsMap, removeElement]);
-
-  const handleClearSelection = useCallback(() => {
-    setSelectedElement(null);
-    console.log('Selection cleared');
-  }, [setSelectedElement]);
-
-  // ⭐ Batch property update handler
-  const handleBatchUpdate = useCallback(async (updates: Record<string, unknown>) => {
-    try {
-      const selectedElementIds = getSelectedElementIds();
-      // ⭐ Phase 7: Track in history BEFORE applying updates
-      const elementsMap = getElementsMap();
-      trackBatchUpdate(selectedElementIds, updates, elementsMap);
-
-      // Apply updates to all selected elements
-      await Promise.all(
-        selectedElementIds.map((id: string) => updateElementProps(id, updates))
-      );
-      console.log('Batch update applied to', selectedElementIds.length, 'elements');
-      // TODO: Show toast notification
-    } catch (error) {
-      console.error('Failed to batch update properties:', error);
-      // TODO: Show error toast
-    }
-  }, [getSelectedElementIds, getElementsMap, updateElementProps]);
-
-  // ⭐ Phase 3: Selection filter handler
-  const handleFilteredElements = useCallback((filteredIds: string[]) => {
-    if (filteredIds.length > 0) {
-      setSelectedElements(filteredIds);
-      console.log(`✅ [Filter] Applied filter, selected ${filteredIds.length} elements`);
-    } else if (filteredIds.length === 0) {
-      setSelectedElement(null);
-      console.log('✅ [Filter] No elements match filter, cleared selection');
-    }
-  }, [setSelectedElement, setSelectedElements]);
-
   // ⭐ Phase 6: Duplicate handler (Cmd+D)
   const handleDuplicate = useCallback(async () => {
     const multiSelectMode = getMultiSelectMode();
@@ -600,7 +737,11 @@ function PropertiesPanelContent() {
 
   // ⭐ Phase 4: Group Selection (Cmd+G)
   const handleGroupSelection = useCallback(async () => {
-    if (!multiSelectMode || selectedElementIds.length < 2 || !currentPageId) {
+    const multiSelectMode = getMultiSelectMode();
+    const selectedElementIds = getSelectedElementIds();
+    const pageId = getCurrentPageId();
+
+    if (!multiSelectMode || selectedElementIds.length < 2 || !pageId) {
       console.warn('[Group] Need at least 2 elements selected');
       return;
     }
@@ -614,7 +755,7 @@ function PropertiesPanelContent() {
       const { groupElement, updatedChildren } = createGroupFromSelection(
         selectedElementIds,
         elementsMap,
-        currentPageId
+        pageId
       );
 
       // Add group to store (this saves to DB)
@@ -654,7 +795,7 @@ function PropertiesPanelContent() {
     } catch (error) {
       console.error('❌ [Group] Failed to create group:', error);
     }
-  }, [multiSelectMode, selectedElementIds, currentPageId, getElementsMap, addElement, updateElement, setSelectedElement]);
+  }, [getMultiSelectMode, getSelectedElementIds, getCurrentPageId, getElementsMap, addElement, updateElement, setSelectedElement]);
 
   // ⭐ Phase 4: Ungroup Selection (Cmd+Shift+G)
   const handleUngroupSelection = useCallback(async () => {
@@ -724,6 +865,9 @@ function PropertiesPanelContent() {
 
   // ⭐ Phase 5.1: Element Alignment
   const handleAlign = useCallback(async (type: AlignmentType) => {
+    const multiSelectMode = getMultiSelectMode();
+    const selectedElementIds = getSelectedElementIds();
+
     if (!multiSelectMode || selectedElementIds.length < 2) {
       console.warn('[Alignment] Need at least 2 elements selected');
       return;
@@ -770,10 +914,13 @@ function PropertiesPanelContent() {
     } catch (error) {
       console.error('❌ [Alignment] Failed to align:', error);
     }
-  }, [multiSelectMode, selectedElementIds, getElementsMap, updateElementProps]);
+  }, [getMultiSelectMode, getSelectedElementIds, getElementsMap, updateElementProps]);
 
   // ⭐ Phase 5.2: Element Distribution
   const handleDistribute = useCallback(async (type: DistributionType) => {
+    const multiSelectMode = getMultiSelectMode();
+    const selectedElementIds = getSelectedElementIds();
+
     if (!multiSelectMode || selectedElementIds.length < 3) {
       console.warn('[Distribution] Need at least 3 elements selected');
       return;
@@ -820,7 +967,7 @@ function PropertiesPanelContent() {
     } catch (error) {
       console.error('❌ [Distribution] Failed to distribute:', error);
     }
-  }, [multiSelectMode, selectedElementIds, getElementsMap, updateElementProps]);
+  }, [getMultiSelectMode, getSelectedElementIds, getElementsMap, updateElementProps]);
 
   // 🔥 최적화: 키보드 단축키를 useKeyboardShortcutsRegistry로 통합
   const shortcuts = useMemo(
@@ -971,7 +1118,7 @@ function PropertiesPanelContent() {
     <div className="panel">
       <PanelHeader
         icon={<Settings2 size={16} />}
-        title={multiSelectMode ? `${selectedElementIds.length}개 요소 선택됨` : selectedElement.type}
+        title={selectedElement.type}
         actions={
           <>
             <Button
@@ -1007,79 +1154,24 @@ function PropertiesPanelContent() {
       />
 
       <div className="panel-contents">
-      {/* ⭐ Multi-select status indicator */}
-      {multiSelectMode && selectedElementIds.length > 1 && (
-        <>
-          <MultiSelectStatusIndicator
-            count={selectedElementIds.length}
-            primaryElementId={selectedElementIds[0]}
-            primaryElementType={selectedElement?.type}
-            onCopyAll={handleCopyAll}
-            onPasteAll={handlePasteAll}
-            onDeleteAll={handleDeleteAll}
-            onClearSelection={handleClearSelection}
-            onGroupSelection={handleGroupSelection}
-            onAlign={handleAlign}
-            onDistribute={handleDistribute}
-          />
-
-          {/* ⭐ Batch property editor for common properties */}
-          <BatchPropertyEditor
-            selectedElements={selectedElements}
-            onBatchUpdate={handleBatchUpdate}
-          />
-
-          {/* ⭐ Phase 3: Selection filter for advanced filtering */}
-          <SelectionFilter
-            allElements={currentPageElements}
-            onFilteredElements={handleFilteredElements}
-          />
-
-          {/* ⭐ Phase 9: Smart Selection for AI-powered suggestions */}
-          {selectedElement && (() => {
-            // Get actual Element from store for SmartSelection
-            const actualElement = currentPageElements.find((el) => el.id === selectedElement.id);
-            if (!actualElement) return null;
-            
-            return (
-              <SmartSelection
-                referenceElement={actualElement}
-                allElements={currentPageElements}
-                onSelect={(elementIds) => {
-                  setSelectedElements(elementIds);
-                  // Track in selection memory
-                  // 🆕 currentPageElements 사용 (elements 구독 제거)
-                  if (currentPageId) {
-                    selectionMemory.addSelection(elementIds, currentPageElements, currentPageId);
-                  }
-                }}
-              />
-            );
-          })()}
-
-          {/* ⭐ Phase 9: Selection Memory for quick restore */}
-          <SelectionMemory
-            currentPageId={currentPageId}
-            onRestore={(elementIds) => {
-              setSelectedElements(elementIds);
-            }}
-          />
-        </>
-      )}
+      {/* 🚀 Performance: MultiSelectContent - 다중 선택 UI 분리 */}
+      <MultiSelectContent
+        selectedElement={selectedElement}
+        onSetSelectedElement={setSelectedElement}
+        onSetSelectedElements={setSelectedElements}
+      />
 
       {/* ⭐ 최적화: PropertyEditorWrapper로 Editor 렌더링 분리 */}
       <PropertyEditorWrapper selectedElement={selectedElement} />
 
       {/* ⭐ Layout/Slot System: Element가 들어갈 Slot 선택 */}
-      {selectedElement && !multiSelectMode && (
-        <ElementSlotSelector
-          elementId={selectedElement.id}
-          currentSlotName={selectedElement.properties?.slot_name as string | null | undefined}
-          onSlotChange={(slotName) => {
-            useInspectorState.getState().updateProperties({ slot_name: slotName });
-          }}
-        />
-      )}
+      <ElementSlotSelector
+        elementId={selectedElement.id}
+        currentSlotName={selectedElement.properties?.slot_name as string | null | undefined}
+        onSlotChange={(slotName) => {
+          useInspectorState.getState().updateProperties({ slot_name: slotName });
+        }}
+      />
 
       {/* ⭐ Sprint 3: Keyboard Shortcuts Help Panel */}
       <KeyboardShortcutsHelp

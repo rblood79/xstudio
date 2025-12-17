@@ -33,8 +33,9 @@ export default function SelectionOverlay() {
   // 🔍 Debug: Track rapid remounts (only in dev)
   useOverlayDebug("SelectionOverlay", selectedElementId || "none");
 
-  // 성능 최적화: Map 사용 (O(1) 조회)
-  const elementsMap = useStore((state) => state.elementsMap);
+  // 🚀 Performance: elementsMap 구독 제거 - 선택 변경 시에만 getState()로 조회
+  // 기존: 모든 요소 변경 시 리렌더 발생
+  // 개선: selectedElementId/selectedElementIds 변경 시에만 최신 요소 정보 필요
   const overlayOpacity = useStore((state) => state.overlayOpacity);
 
   // ⭐ Single select state (backward compatibility)
@@ -56,13 +57,15 @@ export default function SelectionOverlay() {
     return inline || computed;
   });
 
-  // Tag 표시 로직 (useMemo로 최적화, Map 사용)
+  // Tag 표시 로직 (useMemo로 최적화, getState() 사용)
+  // 🚀 Performance: selectedElementId 변경 시에만 최신 요소 정보 조회
   const displayTag = useMemo(() => {
+    const elementsMap = useStore.getState().elementsMap;
     const element = selectedElementId
       ? elementsMap.get(selectedElementId)
       : null;
     return element?.tag || selectedTag || "";
-  }, [elementsMap, selectedElementId, selectedTag]);
+  }, [selectedElementId, selectedTag]);
 
   // immediate: true면 RAF 없이 즉시 실행 (초기 선택 시 사용)
   // immediate: false면 기존 RAF 사용 (ResizeObserver, 스크롤 등)
@@ -82,6 +85,8 @@ export default function SelectionOverlay() {
         // ⭐ body element 선택 시: 실제 <body> 태그에서 찾기
         // (실제 body에 data-element-id가 설정되어 있음)
         if (!element) {
+          // 🚀 Performance: getState()로 현재 elementsMap 조회
+          const elementsMap = useStore.getState().elementsMap;
           const selectedElement = elementsMap.get(selectedElementId);
           if (selectedElement?.tag === "body") {
             // 실제 <body> 태그에서 찾기
@@ -129,7 +134,7 @@ export default function SelectionOverlay() {
         });
       }
     },
-    [selectedElementId, elementsMap]
+    [selectedElementId] // 🚀 Performance: elementsMap 의존성 제거 - getState()로 조회
   );
 
   // ⭐ Update multi-select overlay positions
@@ -149,6 +154,8 @@ export default function SelectionOverlay() {
 
       // ⭐ body element 선택 시: 실제 <body> 태그에서 찾기
       if (!element) {
+        // 🚀 Performance: getState()로 현재 elementsMap 조회
+        const elementsMap = useStore.getState().elementsMap;
         const selectedElement = elementsMap.get(elementId);
         if (selectedElement?.tag === "body") {
           // 실제 <body> 태그에서 찾기
@@ -173,7 +180,7 @@ export default function SelectionOverlay() {
     });
 
     setMultiOverlays(newOverlays);
-  }, [selectedElementIds, elementsMap]);
+  }, [selectedElementIds]); // 🚀 Performance: elementsMap 의존성 제거
 
   // ⭐ Convert multiOverlays to VisibleOverlayData format for virtual scrolling
   const overlaysForVirtualScrolling = useMemo((): VisibleOverlayData[] => {
@@ -333,7 +340,8 @@ export default function SelectionOverlay() {
         {visibleOverlays.map((overlayData) => {
           const elementId = overlayData.id;
           const isPrimary = overlayData.isPrimary;
-          const element = elementsMap.get(elementId);
+          // 🚀 Performance: getState()로 현재 elementsMap 조회
+          const element = useStore.getState().elementsMap.get(elementId);
           const overlayInfo = multiOverlays.get(elementId);
           const tag = element?.tag || overlayInfo?.tag || "";
 
