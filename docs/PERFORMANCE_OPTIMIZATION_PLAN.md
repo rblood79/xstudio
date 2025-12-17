@@ -6,6 +6,68 @@
 - `message` 핸들러: 245-260ms
 - Chrome 기준 50ms 초과 = Long Task violation
 
+**목표**: 모든 핸들러 50ms 이하로 최적화 (Long Task violation 해소)
+
+---
+
+## 측정 계획 (베이스라인 및 검증)
+
+### 측정 도구 및 방법
+
+| 도구 | 용도 | 적용 시점 |
+|------|------|----------|
+| `PerformanceObserver('longtask')` | Long Task 자동 감지 | 상시 (dev 모드) |
+| `performance.mark/measure` | 구간별 세부 측정 | 각 Phase 전후 |
+| Chrome DevTools Profiler | Flame graph 분석 | 수동 프로파일링 |
+| User Timing API | 커스텀 지표 기록 | 핵심 핸들러 내부 |
+
+### 베이스라인 측정 프로토콜
+
+각 Phase 시작 전 반드시 수행:
+
+```typescript
+// 1. Long Task Observer 등록 (dev 모드)
+if (import.meta.env.DEV) {
+  const observer = new PerformanceObserver((list) => {
+    for (const entry of list.getEntries()) {
+      console.warn(`[LongTask] ${entry.duration.toFixed(1)}ms`, entry);
+    }
+  });
+  observer.observe({ entryTypes: ['longtask'] });
+}
+
+// 2. 핸들러 내부 측정
+performance.mark('handler-start');
+// ... handler logic ...
+performance.mark('handler-end');
+performance.measure('handler-duration', 'handler-start', 'handler-end');
+```
+
+### 측정 시나리오 체크리스트
+
+| 시나리오 | 측정 지표 | 현재 값 | 목표 값 |
+|----------|----------|---------|---------|
+| 단일 요소 클릭 선택 | click handler duration | 290-435ms | <50ms |
+| Cmd+Click 다중 선택 (5개) | click handler duration | 350-500ms | <50ms |
+| 드래그 영역 선택 (20개) | pointerup handler duration | 400-600ms | <80ms |
+| Inspector 속성 편집 | message handler duration | 245-260ms | <50ms |
+| Undo/Redo | click handler duration | 200-300ms | <50ms |
+| 페이지 전환 | message handler duration | 300-400ms | <100ms |
+
+### 변경 후 검증 템플릿
+
+각 Phase 완료 후 아래 표를 채워 기록:
+
+```markdown
+## Phase X 측정 결과
+
+| 시나리오 | Before | After | 개선율 | 목표 달성 |
+|----------|--------|-------|--------|----------|
+| 단일 요소 선택 | XXms | XXms | XX% | ✅/❌ |
+| 다중 선택 | XXms | XXms | XX% | ✅/❌ |
+| ... | | | | |
+```
+
 ---
 
 ## 근본 원인 분석
@@ -134,6 +196,128 @@ set((state) => ({
 1. **단순 할당 함수**: 직접 객체 전달 `set({ ... })`
 2. **read-then-modify 함수**: 함수형 업데이트 `set((state) => { ... })`
 3. **elements 배열 수정 함수**: Immer 유지 (별도 평가 필요)
+
+---
+
+## ⚠️ Immer 제거 리스크 완화 계획
+
+### 회귀 테스트 시나리오
+
+Immer 제거 전후 반드시 검증해야 할 시나리오:
+
+| 시나리오 | 검증 항목 | 테스트 방법 |
+|----------|----------|-------------|
+| **단일 선택** | selectedElementId, selectedElementProps 정확성 | 요소 클릭 → Inspector에서 props 확인 |
+| **다중 선택** | selectedElementIds 배열 순서/내용 | Cmd+Click 5개 → 모든 ID 포함 확인 |
+| **선택 토글** | 추가/제거 동작 정확성 | Cmd+Click 반복 → ID 추가/제거 확인 |
+| **선택 해제** | 모든 선택 상태 초기화 | 빈 영역 클릭 → 모든 선택 상태 null/[] |
+| **Tab 제거** | Tab/Panel 쌍 동시 제거 | Tab 삭제 → Panel도 함께 삭제 확인 |
+| **Undo/Redo** | 선택 상태 복원 정확성 | 편집 → Undo → 이전 상태 복원 |
+| **페이지 전환** | 선택 상태 초기화 | 다른 페이지 이동 → 선택 초기화 확인 |
+
+### 롤백 전략
+
+```typescript
+// 1. 원본 코드 주석으로 보존
+// ORIGINAL (Immer version) - ROLLBACK IF NEEDED:
+// set(produce((state) => { state.selectedElementId = elementId; }));
+
+// NEW (direct set):
+set({ selectedElementId: elementId });
+
+// 2. Feature flag로 전환 (선택적)
+const USE_IMMER = import.meta.env.VITE_USE_IMMER === 'true';
+
+if (USE_IMMER) {
+  set(produce((state) => { /* Immer version */ }));
+} else {
+  set({ /* Direct version */ });
+}
+```
+
+### 함수별 변환 순서 (리스크 순)
+
+**낮은 리스크 (먼저 변환):**
+1. `clearSelection` - 단순 초기화, 동시성 없음
+2. `setCurrentPageId` - primitive 값 단순 할당
+3. `setPages` - 배열 교체
+
+**중간 리스크:**
+4. `setSelectedElement` - 조건부 로직 있음
+5. `setSelectedElements` - get() 호출 분리 필요
+6. `selectTabElement` - 객체 생성 포함
+
+**높은 리스크 (신중하게):**
+7. `toggleElementInSelection` - read-then-modify, 함수형 업데이트 필수
+8. `removeTabPair` - 배열 필터링, 조건부 로직
+9. `updateElementOrder` - 배열 내부 요소 수정
+
+### 예외 케이스 테스트 코드
+
+```typescript
+// tests/stores/elements.immer-removal.test.ts
+
+describe('Immer 제거 회귀 테스트', () => {
+  describe('toggleElementInSelection 동시성', () => {
+    it('빠른 연속 토글에서 상태 일관성 유지', async () => {
+      const store = useStore.getState();
+
+      // 빠른 연속 호출 시뮬레이션
+      await Promise.all([
+        store.toggleElementInSelection('el-1'),
+        store.toggleElementInSelection('el-2'),
+        store.toggleElementInSelection('el-1'), // 다시 제거
+      ]);
+
+      const { selectedElementIds } = useStore.getState();
+      expect(selectedElementIds).toEqual(['el-2']);
+    });
+  });
+
+  describe('setSelectedElement props 정확성', () => {
+    it('computedStyle이 있을 때 props에 병합', () => {
+      const store = useStore.getState();
+      store.setSelectedElement('el-1', { label: 'Test' }, { color: 'red' }, { width: '100px' });
+
+      const { selectedElementProps } = useStore.getState();
+      expect(selectedElementProps.label).toBe('Test');
+      expect(selectedElementProps.style).toEqual({ color: 'red' });
+      expect(selectedElementProps.computedStyle).toEqual({ width: '100px' });
+    });
+  });
+
+  describe('removeTabPair 연쇄 삭제', () => {
+    it('Tab 삭제 시 연결된 Panel도 삭제', () => {
+      // 사전 조건: Tab(tabId: 'tab-1')과 Panel(tabId: 'tab-1') 존재
+      const store = useStore.getState();
+      store.removeTabPair('tab-element-id');
+
+      const { elements } = useStore.getState();
+      const tabExists = elements.some(el => el.props?.tabId === 'tab-1');
+      expect(tabExists).toBe(false);
+    });
+  });
+});
+```
+
+### 성능 측정 체크리스트 (Immer 제거 전후)
+
+```bash
+# 각 함수별 측정
+# 1. setSelectedElement
+performance.mark('setSelectedElement-start');
+store.setSelectedElement('el-1', props);
+performance.mark('setSelectedElement-end');
+performance.measure('setSelectedElement', 'setSelectedElement-start', 'setSelectedElement-end');
+
+# 목표: 각 함수 호출당 < 5ms
+```
+
+| 함수 | Before (Immer) | After | 개선율 |
+|------|----------------|-------|--------|
+| setSelectedElement | ~25ms | ~2ms | 92% |
+| toggleElementInSelection | ~30ms | ~3ms | 90% |
+| clearSelection | ~15ms | ~1ms | 93% |
 
 ---
 
@@ -658,57 +842,170 @@ Chrome DevTools Performance 탭에서 측정:
 # Phase 6: postMessage 파이프라인 최적화 (핵심)
 
 ## 목표
-- `message` 핸들러에서 “동기적으로 무거운 작업”을 줄이고, 메시지 폭주 시에도 프레임을 양보
+- `message` 핸들러에서 "동기적으로 무거운 작업"을 줄이고, 메시지 폭주 시에도 프레임을 양보
 - Builder↔Preview 간 동기화에서 **Full Sync(UPDATE_ELEMENTS)** 의존도를 낮춤
+- **목표 지표**: message handler 50ms 이하
 
 ## 개선안
 
-### 6.1 메시지 처리 “코얼레싱(coalescing)” + 프레임 양보
+### 6.1 메시지 처리 "코얼레싱(coalescing)" + 프레임 양보
 
 **문제 패턴**
 - `message` 이벤트는 한 번에 여러 개가 연속으로 들어오며(특히 드래그/편집), 각 핸들러가 store 업데이트/DOM 측정/직렬화를 동기 실행하면 Long Task가 발생
 
-**개선 방향**
-- 같은 타입의 최신 메시지만 남기고 버림(예: `UPDATE_ELEMENTS`는 최신 1개만)
-- 실제 반영은 `requestAnimationFrame` 또는 `queueMicrotask`로 배치하여 이벤트 루프를 빨리 반환
+#### 현행 → 제안 → 검증 표
 
-**적용 후보**
-- Builder 쪽 `window.addEventListener('message', ...)` 등록부(여러 곳에 분산) → 단일 디스패처로 통합하거나 최소한 “배치 처리” 계층을 둠
+| 위치 | 현행 | 제안 | 검증 방법 |
+|------|------|------|----------|
+| `useIframeMessenger.ts` | 매 메시지마다 즉시 store 업데이트 | 코얼레싱 Map + RAF 배치 | message handler <30ms |
+| `messageHandlers.ts` | 동기적 `getComputedStyle()` 호출 | `requestIdleCallback`으로 지연 | click handler <50ms |
+| Builder `window.onmessage` | 분산된 리스너 등록 | 단일 디스패처 + 메시지 큐 | 중복 처리 0건 |
+
+#### 구현 코드 예시
+
+```typescript
+// src/builder/hooks/useMessageCoalescing.ts
+
+type MessageType = 'UPDATE_ELEMENTS' | 'ELEMENT_SELECTED' | 'ELEMENT_COMPUTED_STYLE';
+
+class MessageCoalescer {
+  private pending = new Map<MessageType, unknown>();
+  private rafId: number | null = null;
+
+  enqueue(type: MessageType, payload: unknown) {
+    // 같은 타입은 최신 값으로 덮어쓰기
+    this.pending.set(type, payload);
+
+    if (!this.rafId) {
+      this.rafId = requestAnimationFrame(() => this.flush());
+    }
+  }
+
+  private flush() {
+    this.rafId = null;
+    const batch = new Map(this.pending);
+    this.pending.clear();
+
+    // 우선순위 순서로 처리
+    if (batch.has('ELEMENT_SELECTED')) {
+      this.handleElementSelected(batch.get('ELEMENT_SELECTED'));
+    }
+    if (batch.has('UPDATE_ELEMENTS')) {
+      this.handleUpdateElements(batch.get('UPDATE_ELEMENTS'));
+    }
+    // computedStyle은 마지막 (지연 가능)
+    if (batch.has('ELEMENT_COMPUTED_STYLE')) {
+      requestIdleCallback(() => {
+        this.handleComputedStyle(batch.get('ELEMENT_COMPUTED_STYLE'));
+      });
+    }
+  }
+}
+```
 
 체크리스트
-- [ ] `UPDATE_ELEMENTS`/`UPDATE_VARIABLES`/`UPDATE_LAYOUTS` 등 “최신 상태만 필요” 메시지 코얼레싱
-- [ ] `ELEMENT_SELECTED`/`ELEMENT_COMPUTED_STYLE` 등 “연쇄 도착” 메시지 배치 처리(우선 rect/선택 먼저, 스타일은 나중)
+- [ ] `UPDATE_ELEMENTS`/`UPDATE_VARIABLES`/`UPDATE_LAYOUTS` 등 "최신 상태만 필요" 메시지 코얼레싱
+- [ ] `ELEMENT_SELECTED`/`ELEMENT_COMPUTED_STYLE` 등 "연쇄 도착" 메시지 배치 처리(우선 rect/선택 먼저, 스타일은 나중)
+- [ ] 단일 디스패처 도입으로 분산 리스너 통합
 
 ### 6.2 `ELEMENT_SELECTED`에서 computedStyle 분리(이미지/텍스트 등은 지연 전송)
 
 **문제 패턴**
 - 선택 시 `getComputedStyle()` + 여러 속성 추출을 message handler 내에서 동기 실행 → 클릭/포인터다운이 멈춤
 
-**개선 방향**
-- 1차 메시지: rect + 최소 정보(tag, props 일부)만 즉시 전송
-- 2차 메시지: computedStyle은 `requestIdleCallback`(없으면 `setTimeout(0)`)로 지연 전송
+#### 현행 → 제안 → 검증 표
 
-**적용 후보**
-- `src/canvas/utils/messageHandlers.ts`의 `ELEMENT_SELECTED` 응답 로직
+| 단계 | 현행 | 제안 | 검증 방법 |
+|------|------|------|----------|
+| 1차 응답 | rect + props + computedStyle 동시 전송 | rect + props만 즉시 전송 | 선택 응답 <20ms |
+| 2차 응답 | (없음) | `requestIdleCallback`으로 computedStyle 전송 | Inspector 표시 지연 <100ms |
+| payload 크기 | 전체 computedStyle (~50 속성) | 필요 속성만 (layout/typography ~15개) | payload 70% 감소 |
+
+#### computedStyle 필수 속성 목록 (화이트리스트)
+
+```typescript
+// Inspector에서 실제 사용하는 속성만 전송
+const COMPUTED_STYLE_WHITELIST = [
+  // Layout
+  'display', 'position', 'width', 'height',
+  'marginTop', 'marginRight', 'marginBottom', 'marginLeft',
+  'paddingTop', 'paddingRight', 'paddingBottom', 'paddingLeft',
+  // Flexbox
+  'flexDirection', 'justifyContent', 'alignItems', 'gap',
+  // Typography
+  'fontSize', 'fontWeight', 'lineHeight', 'color',
+  // Border
+  'borderRadius', 'borderWidth', 'borderColor',
+] as const;
+
+function extractComputedStyleSubset(element: HTMLElement): Record<string, string> {
+  const computed = getComputedStyle(element);
+  const result: Record<string, string> = {};
+  for (const prop of COMPUTED_STYLE_WHITELIST) {
+    result[prop] = computed.getPropertyValue(prop.replace(/[A-Z]/g, '-$&').toLowerCase());
+  }
+  return result;
+}
+```
 
 체크리스트
 - [ ] `ELEMENT_SELECTED` payload에서 computedStyle 제거(or 옵션화)
 - [ ] 별도 타입 `ELEMENT_COMPUTED_STYLE`로 분리 전송(Builder는 이미 별도 처리 경로가 있음)
-- [ ] computedStyle 속성 “전체”가 아닌 Inspector에서 실제 사용하는 subset만 전송(예: layout/typography만)
+- [ ] computedStyle 속성 "전체"가 아닌 Inspector에서 실제 사용하는 subset만 전송(예: layout/typography만)
+- [ ] 화이트리스트 기반 속성 추출 구현
 
 ### 6.3 Full Sync(UPDATE_ELEMENTS) → Delta Update 전환
 
 **문제 패턴**
 - 작은 변경에도 전체 elements 배열을 postMessage로 보내면: 직렬화/GC/React reconcile 비용이 커짐
 
-**개선 방향**
-- Builder→Preview: 가능한 한 `DELTA_ELEMENT_UPDATED`/`DELTA_BATCH_UPDATE` 사용
-- 선택 편집/드래그 등 빈도가 높은 작업은 Delta 우선
+#### 현행 → 제안 → 검증 표
+
+| 작업 유형 | 현행 | 제안 | 예상 payload 감소 |
+|----------|------|------|------------------|
+| 단일 속성 변경 | `UPDATE_ELEMENTS` (전체 배열) | `DELTA_ELEMENT_UPDATED` (변경 element만) | 95-99% |
+| 다중 요소 정렬 | `UPDATE_ELEMENTS` (전체 배열) | `DELTA_BATCH_UPDATE` (변경 ID 목록) | 80-95% |
+| 요소 삭제 | `UPDATE_ELEMENTS` (전체 배열) | `DELTA_ELEMENT_REMOVED` (삭제 ID만) | 99% |
+| 페이지 전환 | `UPDATE_ELEMENTS` (전체 배열) | (유지 - 필요) | - |
+
+#### Delta 프로토콜 설계
+
+```typescript
+// Delta 메시지 타입 정의
+type DeltaMessage =
+  | { type: 'DELTA_ELEMENT_UPDATED'; elementId: string; changes: Partial<Element> }
+  | { type: 'DELTA_BATCH_UPDATE'; updates: Array<{ id: string; changes: Partial<Element> }> }
+  | { type: 'DELTA_ELEMENT_REMOVED'; elementId: string }
+  | { type: 'DELTA_ELEMENT_ADDED'; element: Element; parentId?: string };
+
+// Preview 측 핸들러
+function handleDeltaUpdate(msg: DeltaMessage) {
+  switch (msg.type) {
+    case 'DELTA_ELEMENT_UPDATED':
+      setElements(prev => prev.map(el =>
+        el.id === msg.elementId ? { ...el, ...msg.changes } : el
+      ));
+      break;
+    case 'DELTA_BATCH_UPDATE':
+      setElements(prev => {
+        const updateMap = new Map(msg.updates.map(u => [u.id, u.changes]));
+        return prev.map(el => {
+          const changes = updateMap.get(el.id);
+          return changes ? { ...el, ...changes } : el;
+        });
+      });
+      break;
+    // ...
+  }
+}
+```
 
 체크리스트
-- [ ] “props 일부 변경”은 `UPDATE_ELEMENT_PROPS(merge)` 또는 `DELTA_ELEMENT_UPDATED`로 통일
-- [ ] “다중 선택/정렬”은 `DELTA_BATCH_UPDATE`로 묶어서 전송
+- [ ] "props 일부 변경"은 `UPDATE_ELEMENT_PROPS(merge)` 또는 `DELTA_ELEMENT_UPDATED`로 통일
+- [ ] "다중 선택/정렬"은 `DELTA_BATCH_UPDATE`로 묶어서 전송
 - [ ] `UPDATE_ELEMENTS`는 초기 로드/리셋/대규모 변경에만 사용
+- [ ] Delta 메시지 타입 정의 및 핸들러 구현
+- [ ] Builder에서 변경 유형에 따라 적절한 메시지 타입 선택 로직
 
 ---
 
@@ -716,22 +1013,93 @@ Chrome DevTools Performance 탭에서 측정:
 
 ## 목표
 - 스크롤/리사이즈/메시지 수신 시 오버레이 좌표 계산이 과다 실행되는 것을 방지
+- **목표 지표**: overlay 업데이트 16ms 이하 (60fps 유지)
 
 ## 개선안
 
 ### 7.1 Multi-select 오버레이 업데이트 RAF 배치
-- 다수 요소의 `querySelector` + `getBoundingClientRect`는 누적 비용이 커짐
-- “동일 프레임 내 중복 호출”은 하나로 합치기
+
+#### 현행 → 제안 → 검증 표
+
+| 위치 | 현행 | 제안 | 검증 방법 |
+|------|------|------|----------|
+| `SelectionOverlay.tsx` | 매 상태 변경마다 즉시 getBoundingClientRect | RAF로 코얼레싱 | FPS 드롭 없음 |
+| 다중 선택 (N개) | N번 DOM 쿼리 | 1회 배치 쿼리 | N=20일 때 <10ms |
+| 대량 선택 (>100개) | 한 프레임에 모두 처리 | chunk 분할 (50개씩) | 프레임 양보 확인 |
+
+#### 구현 코드 예시
+
+```typescript
+// src/builder/overlay/useOverlayRAF.ts
+
+class OverlayUpdateScheduler {
+  private pendingIds = new Set<string>();
+  private rafId: number | null = null;
+  private onUpdate: (rects: Map<string, DOMRect>) => void;
+
+  constructor(onUpdate: (rects: Map<string, DOMRect>) => void) {
+    this.onUpdate = onUpdate;
+  }
+
+  schedule(elementIds: string[]) {
+    for (const id of elementIds) {
+      this.pendingIds.add(id);
+    }
+
+    if (!this.rafId) {
+      this.rafId = requestAnimationFrame(() => this.flush());
+    }
+  }
+
+  private flush() {
+    this.rafId = null;
+    const ids = Array.from(this.pendingIds);
+    this.pendingIds.clear();
+
+    // Chunk 처리 (대량 선택 시)
+    const CHUNK_SIZE = 50;
+    const processChunk = (startIdx: number) => {
+      const rects = new Map<string, DOMRect>();
+      const endIdx = Math.min(startIdx + CHUNK_SIZE, ids.length);
+
+      for (let i = startIdx; i < endIdx; i++) {
+        const el = document.querySelector(`[data-element-id="${ids[i]}"]`);
+        if (el) {
+          rects.set(ids[i], el.getBoundingClientRect());
+        }
+      }
+
+      this.onUpdate(rects);
+
+      // 남은 chunk가 있으면 다음 프레임에 처리
+      if (endIdx < ids.length) {
+        requestAnimationFrame(() => processChunk(endIdx));
+      }
+    };
+
+    processChunk(0);
+  }
+}
+```
 
 체크리스트
 - [ ] multi-select overlay update는 전용 RAF 스케줄러로 코얼레싱
-- [ ] (가능하면) `selectedElementIds`가 매우 큰 경우 chunk 처리(예: 200개씩)로 프레임 양보
+- [ ] (가능하면) `selectedElementIds`가 매우 큰 경우 chunk 처리(예: 50개씩)로 프레임 양보
+- [ ] 스크롤/리사이즈 이벤트 throttling (100ms 이하 간격 무시)
 
 ### 7.2 body element 특수처리/로그 최소화
-- 선택 상태 변화가 잦을 때 `console.log`는 Long Task를 키우는 원인이 됨(DevTools 오픈 시 더 큼)
+
+#### 현행 → 제안 → 검증 표
+
+| 항목 | 현행 | 제안 | 검증 방법 |
+|------|------|------|----------|
+| console.log | 선택마다 상세 로그 출력 | 개발 모드에서도 샘플링 (10번 중 1번) | DevTools 열린 상태에서 측정 |
+| body 선택 | 일반 요소와 동일 처리 | early return (overlay 불필요) | body 선택 시 0ms |
 
 체크리스트
 - [ ] 선택/스크롤 핫패스에서 콘솔 로그 제거 또는 샘플링
+- [ ] body/root 요소 선택 시 overlay 계산 스킵
+- [ ] 개발 모드 로그도 조건부 출력 (`VITE_DEBUG_OVERLAY=true`일 때만)
 
 ---
 
@@ -739,30 +1107,244 @@ Chrome DevTools Performance 탭에서 측정:
 
 ## 목표
 - Preview runtime에서 자주 호출되는 `updateElementProps`가 전체 배열을 매번 순회하지 않도록 개선
-- “변화 없음” 업데이트는 조기 종료하여 React 리렌더를 줄임
+- "변화 없음" 업데이트는 조기 종료하여 React 리렌더를 줄임
+- **목표 지표**: 단일 props 업데이트 <5ms
 
 ## 개선안
-- 배열 전체 `map` 대신 “대상 element만 교체” (findIndex + slice)
-- shallow patch 비교로 no-op 스킵
-- (추가 여지) elements를 Map 인덱스로 유지하고, 렌더 단계에서 필요한 순서만 배열로 파생
+
+### 8.1 데이터 구조 최적화: Map 캐시 일관성 전략
+
+#### 현행 → 제안 → 검증 표
+
+| 연산 | 현행 | 제안 | 시간 복잡도 |
+|------|------|------|------------|
+| 요소 조회 | `elements.find()` O(n) | `elementsMap.get()` O(1) | O(n) → O(1) |
+| 요소 업데이트 | `elements.map()` O(n) | `findIndex + slice` O(n) 최적화 | 상수 계수 50% 감소 |
+| 중복 체크 | `filter().some()` O(n×m) | `Set.has()` O(n+m) | O(n²) → O(n) |
+
+#### Map 캐시 일관성 보장
+
+```typescript
+// elements와 elementsMap 동기화 패턴
+const updateElement = (id: string, changes: Partial<Element>) => {
+  set((state) => {
+    const idx = state.elements.findIndex(el => el.id === id);
+    if (idx === -1) return state;
+
+    const oldElement = state.elements[idx];
+    const newElement = { ...oldElement, ...changes };
+
+    // 실제 변경이 없으면 스킵 (shallow compare)
+    if (shallowEqual(oldElement, newElement)) {
+      return state; // no-op
+    }
+
+    // 배열 부분 교체 (전체 순회 없음)
+    const newElements = [
+      ...state.elements.slice(0, idx),
+      newElement,
+      ...state.elements.slice(idx + 1),
+    ];
+
+    // Map도 동시 업데이트
+    const newMap = new Map(state.elementsMap);
+    newMap.set(id, newElement);
+
+    return { elements: newElements, elementsMap: newMap };
+  });
+};
+```
+
+### 8.2 no-op 스킵 (변경 없으면 업데이트 안함)
+
+```typescript
+function shallowEqual(a: Record<string, unknown>, b: Record<string, unknown>): boolean {
+  const keysA = Object.keys(a);
+  const keysB = Object.keys(b);
+  if (keysA.length !== keysB.length) return false;
+  for (const key of keysA) {
+    if (a[key] !== b[key]) return false;
+  }
+  return true;
+}
+```
 
 체크리스트
 - [ ] Preview runtime store: `updateElementProps` no-op 스킵
 - [ ] 대량 업데이트는 batch API(단일 set) 사용
+- [ ] `elementsMap` 캐시와 `elements` 배열 동기화 보장
+- [ ] `findIndex + slice` 패턴으로 배열 업데이트 최적화
 
 ---
 
 # Phase 9: 측정/가드레일(회귀 방지)
 
 ## 목표
-- 최적화가 실제로 Long Task를 줄였는지 확인 가능한 “재현 시나리오 + 수치” 확보
+- 최적화가 실제로 Long Task를 줄였는지 확인 가능한 "재현 시나리오 + 수치" 확보
 - 추후 기능 추가로 다시 느려지는 것을 조기에 감지
+- **목표 지표**: 모든 핸들러 50ms 이하 유지
 
 ## 개선안
-- dev에서만 활성화되는 SLO/latency 측정(이미 `docs/performance`에 기반 있음)
-- postMessage 처리 시간/빈도, payload 크기(대략 JSON length) 샘플링
+
+### 9.1 자동화된 성능 측정 인프라
+
+```typescript
+// src/utils/performanceMonitor.ts
+
+class PerformanceMonitor {
+  private metrics = new Map<string, number[]>();
+  private longTaskCount = 0;
+
+  constructor() {
+    if (import.meta.env.DEV) {
+      this.setupLongTaskObserver();
+    }
+  }
+
+  private setupLongTaskObserver() {
+    const observer = new PerformanceObserver((list) => {
+      for (const entry of list.getEntries()) {
+        this.longTaskCount++;
+        console.warn(`[LongTask #${this.longTaskCount}] ${entry.duration.toFixed(1)}ms`);
+      }
+    });
+    observer.observe({ entryTypes: ['longtask'] });
+  }
+
+  measure<T>(name: string, fn: () => T): T {
+    const start = performance.now();
+    const result = fn();
+    const duration = performance.now() - start;
+
+    if (!this.metrics.has(name)) {
+      this.metrics.set(name, []);
+    }
+    this.metrics.get(name)!.push(duration);
+
+    // 50ms 초과 시 경고
+    if (duration > 50) {
+      console.warn(`[Perf] ${name}: ${duration.toFixed(1)}ms (> 50ms threshold)`);
+    }
+
+    return result;
+  }
+
+  report(): Record<string, { avg: number; max: number; p95: number }> {
+    const result: Record<string, { avg: number; max: number; p95: number }> = {};
+    for (const [name, values] of this.metrics) {
+      const sorted = [...values].sort((a, b) => a - b);
+      result[name] = {
+        avg: values.reduce((a, b) => a + b, 0) / values.length,
+        max: Math.max(...values),
+        p95: sorted[Math.floor(sorted.length * 0.95)] || 0,
+      };
+    }
+    return result;
+  }
+}
+
+export const perfMonitor = new PerformanceMonitor();
+```
+
+### 9.2 시나리오별 측정 절차
+
+| 시나리오 | 측정 방법 | SLO |
+|----------|----------|-----|
+| 단일 요소 선택 | `perfMonitor.measure('click-select', () => ...)` | <50ms |
+| 다중 선택 (20개) | 드래그 선택 후 handler 시간 | <80ms |
+| 속성 편집 | Inspector 입력 → Preview 반영 | <50ms |
+| Undo/Redo | Cmd+Z 후 상태 복원 | <50ms |
+| 페이지 전환 | 사이드바 페이지 클릭 | <100ms |
+
+### 9.3 postMessage 지표 수집
+
+```typescript
+// postMessage 페이로드 크기/빈도 모니터링
+let messageCount = 0;
+let totalPayloadSize = 0;
+
+const originalPostMessage = window.postMessage.bind(window);
+window.postMessage = (message: unknown, targetOrigin: string, transfer?: Transferable[]) => {
+  messageCount++;
+  totalPayloadSize += JSON.stringify(message).length;
+
+  // 1초마다 리포트 (개발 모드)
+  if (messageCount % 100 === 0 && import.meta.env.DEV) {
+    console.log(`[postMessage] count: ${messageCount}, total size: ${(totalPayloadSize / 1024).toFixed(1)}KB`);
+  }
+
+  return originalPostMessage(message, targetOrigin, transfer);
+};
+```
 
 체크리스트
-- [ ] “선택/드래그/속성편집” 각 시나리오별 측정 절차 문서화
+- [ ] "선택/드래그/속성편집" 각 시나리오별 측정 절차 문서화
 - [ ] `message`/`pointerdown`/`click` 핸들러 duration을 `performance.mark/measure`로 구간별 기록
+- [ ] postMessage payload 크기 모니터링 추가
+- [ ] Long Task 카운트 자동 수집
 - [ ] 12시간 회귀 테스트 리포트에 postMessage 지표 추가(선택)
+
+---
+
+# 전체 실행 타임라인 및 우선순위
+
+## Phase 별 예상 소요 시간 및 효과
+
+| Phase | 설명 | 소요 시간 | 예상 개선 | 우선순위 |
+|-------|------|----------|----------|---------|
+| **Phase 1** | Immer 제거 | 1-2일 | 150-200ms | 🔴 Critical |
+| **Phase 2** | structuredClone | 0.5일 | 50-100ms | 🟠 High |
+| **Phase 3** | O(n²) → Set | 0.5일 | 70-140ms | 🟠 High |
+| **Phase 4** | elementsMap 활용 | 0.5일 | 5-10ms | 🟢 Medium |
+| **Phase 5** | InspectorSync 조기종료 | 0.5일 | 20-50ms | 🟢 Medium |
+| **Phase 6** | postMessage 최적화 | 2-3일 | 100-200ms | 🔴 Critical |
+| **Phase 7** | Overlay RAF 배치 | 1일 | 30-60ms | 🟠 High |
+| **Phase 8** | Store no-op 스킵 | 1일 | 20-50ms | 🟢 Medium |
+| **Phase 9** | 측정 인프라 | 0.5일 | (가드레일) | 🟢 Medium |
+
+## 권장 실행 순서
+
+```
+Week 1:
+├── Day 1-2: Phase 1 (Immer 제거) + 회귀 테스트
+├── Day 3: Phase 2 (structuredClone) + Phase 3 (Set 변환)
+└── Day 4-5: Phase 6.1-6.2 (메시지 코얼레싱, computedStyle 분리)
+
+Week 2:
+├── Day 1-2: Phase 6.3 (Delta Update 프로토콜)
+├── Day 3: Phase 7 (Overlay 최적화)
+├── Day 4: Phase 4-5 + Phase 8
+└── Day 5: Phase 9 (측정 인프라) + 전체 회귀 테스트
+```
+
+## 최종 목표 지표
+
+| 지표 | 현재 | 목표 | 달성 기준 |
+|------|------|------|----------|
+| click handler | 290-435ms | <50ms | Long Task 0건 |
+| pointerdown handler | 290-338ms | <50ms | Long Task 0건 |
+| message handler | 245-260ms | <50ms | Long Task 0건 |
+| postMessage payload | ~50KB/update | <5KB/update | Delta 적용 |
+| Overlay FPS | 30-40fps | 60fps | 드롭 없음 |
+
+## 롤백 체크포인트
+
+각 Phase 완료 후 체크포인트 생성:
+
+```bash
+# Phase 1 완료 후
+git tag perf-phase1-immer-removal
+
+# Phase 6 완료 후
+git tag perf-phase6-postmessage-optimization
+
+# 전체 완료 후
+git tag perf-optimization-complete
+```
+
+**문제 발생 시 롤백:**
+```bash
+git revert --no-commit HEAD~N..HEAD  # N개 커밋 되돌리기
+# 또는
+git checkout perf-phase1-immer-removal  # 특정 체크포인트로
+```
