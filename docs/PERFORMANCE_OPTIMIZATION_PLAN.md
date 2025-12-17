@@ -1713,7 +1713,7 @@ postMessage 한 번 호출 비용:
 
 | Phase | 제목 | 상태 | 예상 개선 | 실제 효과 |
 |-------|------|------|----------|----------|
-| **Phase 1** | Immer → 함수형 업데이트 전환 | 📋 계획됨 | 150-200ms | - |
+| **Phase 1** | Immer → 함수형 업데이트 전환 | ✅ **구현완료** | 150-200ms | 6개 파일, 20+ 함수 변환 |
 | **Phase 2** | JSON 깊은 복사 최적화 | 📋 계획됨 | 50-100ms | - |
 | **Phase 3** | O(n²) → Map 기반 조회 | 📋 계획됨 | 70-140ms | - |
 | **Phase 4** | 배열 순회 최적화 | 📋 계획됨 | 5-10ms | - |
@@ -1725,7 +1725,36 @@ postMessage 한 번 호출 비용:
 | **Phase 10** | 패널 리사이즈 캔버스 성능 분석 | ✅ 분석완료 | WebGL 이미 최적화 | 80ms throttle + 350ms settle |
 | **Phase 11** | WebGL 모드 postMessage 제거 | ✅ **구현완료** | ~3-5ms/변경 | 초기화 -8~12ms, 변경당 -3~5ms |
 
-## 구현 완료된 최적화 (Phase 10-11)
+## 구현 완료된 최적화 (Phase 1, 10-11)
+
+### Phase 1: Immer → 함수형 업데이트 전환 (2025-12-17)
+
+```
+변환 완료된 파일 (6개):
+├─ elements.ts
+│   ├─ setElements, loadPageElements
+│   ├─ setSelectedElement, selectTabElement
+│   ├─ setPages, setCurrentPageId
+│   ├─ removeTabPair, updateElementOrder
+│   └─ toggleElementInSelection, setSelectedElements
+├─ selection.ts (7개 함수 전체)
+├─ elementCreation.ts
+│   ├─ addElement
+│   └─ addComplexElement
+├─ elementUpdate.ts
+│   ├─ updateElementProps, updateElement
+│   └─ batchUpdateElementProps, batchUpdateElements
+├─ elementRemoval.ts
+│   └─ removeElement
+└─ historyActions.ts
+    ├─ undo (6 case switch)
+    └─ redo (6 case switch)
+
+예상 개선: ~150-200ms per operation
+- Proxy 생성 오버헤드 제거
+- 직접 상태 변경 → 순수 함수형 업데이트
+- Zustand shallow merge 활용
+```
 
 ### Phase 10: 패널 리사이즈 분석
 
@@ -1756,7 +1785,7 @@ WebGL Canvas 리사이즈 최적화 현황:
 ## 남은 최적화 우선순위
 
 ### 높음 (Long Task 주요 원인)
-1. **Phase 1**: Immer 제거 - 40-50% 비중, 150-200ms 예상 개선
+1. **Phase 1**: Immer 제거 - ✅ **구현완료** (2025-12-17)
 2. **Phase 2**: JSON 깊은 복사 - 25-30% 비중, 50-100ms 예상 개선
 3. **Phase 3**: O(n²) 조회 - 15-20% 비중, 70-140ms 예상 개선
 
