@@ -1,4 +1,5 @@
-import { produce } from "immer";
+// 🚀 Phase 1: Immer 제거 - 함수형 업데이트로 전환
+// import { produce } from "immer"; // REMOVED
 import type { StateCreator } from "zustand";
 import { ComponentElementProps, Element } from "../../../types/core/store.types";
 import { historyManager } from "../history";
@@ -82,35 +83,36 @@ export const createUpdateElementPropsAction =
     const newPropsClone = shouldRecordHistory ? cloneForHistory(props) : null;
     const prevElementClone = shouldRecordHistory ? cloneForHistory(element) : null;
 
-    // 1. 메모리 상태 업데이트 (우선)
-    set(
-      produce((draftState: ElementsState) => {
-        // produce 내부에서는 배열 순회 사용 (elementsMap은 아직 재구축 전)
-        const element = findElementById(draftState.elements, elementId);
-        if (!element) return;
+    // 🚀 Phase 1: Immer → 함수형 업데이트
+    // 1. 히스토리 추가 (상태 변경 전에 기록)
+    if (currentState.currentPageId && prevPropsClone && newPropsClone && prevElementClone) {
+      historyManager.addEntry({
+        type: "update",
+        elementId: elementId,
+        data: {
+          props: newPropsClone,
+          prevProps: prevPropsClone,
+          prevElement: prevElementClone,
+        },
+      });
+    }
 
-        // 히스토리 추가
-        if (draftState.currentPageId && prevPropsClone && newPropsClone && prevElementClone) {
-          historyManager.addEntry({
-            type: "update",
-            elementId: elementId,
-            data: {
-              props: newPropsClone,
-              prevProps: prevPropsClone,
-              prevElement: prevElementClone,
-            },
-          });
-        }
-
-        // 요소 업데이트
-        element.props = { ...element.props, ...props };
-
-        // 선택된 요소가 업데이트된 경우 selectedElementProps도 업데이트
-        if (draftState.selectedElementId === elementId) {
-          draftState.selectedElementProps = createCompleteProps(element, props);
-        }
-      })
+    // 2. 메모리 상태 업데이트 (불변 업데이트)
+    const updatedElements = currentState.elements.map((el) =>
+      el.id === elementId ? { ...el, props: { ...el.props, ...props } } : el
     );
+
+    // 선택된 요소가 업데이트된 경우 selectedElementProps도 업데이트
+    const updatedElement = updatedElements.find((el) => el.id === elementId);
+    const selectedElementProps =
+      currentState.selectedElementId === elementId && updatedElement
+        ? createCompleteProps(updatedElement, props)
+        : currentState.selectedElementProps;
+
+    set({
+      elements: updatedElements,
+      selectedElementProps,
+    });
 
     // 🔧 CRITICAL: elementsMap 재구축 (재선택 시 이전 값 반환 방지)
     // Immer produce() 외부에서 호출 (Map은 Immer가 직접 지원하지 않음)
@@ -160,38 +162,36 @@ export const createUpdateElementAction =
     const prevElementClone =
       shouldRecordHistory ? cloneForHistory(element) : null;
 
-    // 1. 메모리 상태 업데이트
-    set(
-      produce((draftState: ElementsState) => {
-        // produce 내부에서는 배열 순회 사용 (elementsMap은 아직 재구축 전)
-        const element = findElementById(draftState.elements, elementId);
-        if (!element) return;
+    // 🚀 Phase 1: Immer → 함수형 업데이트
+    // 1. 히스토리 추가 (상태 변경 전에 기록)
+    if (currentState.currentPageId && updates.props && prevPropsClone && newPropsClone && prevElementClone) {
+      historyManager.addEntry({
+        type: "update",
+        elementId: elementId,
+        data: {
+          props: newPropsClone,
+          prevProps: prevPropsClone,
+          prevElement: prevElementClone,
+        },
+      });
+    }
 
-        // 히스토리 추가 (updateElementProps와 동일한 로직)
-        if (draftState.currentPageId && updates.props && prevPropsClone && newPropsClone && prevElementClone) {
-          historyManager.addEntry({
-            type: "update",
-            elementId: elementId,
-            data: {
-              props: newPropsClone,
-              prevProps: prevPropsClone,
-              prevElement: prevElementClone,
-            },
-          });
-        }
-
-        // 요소 업데이트 (props, dataBinding 등)
-        Object.assign(element, updates);
-
-        // 선택된 요소가 업데이트된 경우 props도 업데이트
-        if (draftState.selectedElementId === elementId && updates.props) {
-          draftState.selectedElementProps = createCompleteProps(
-            element,
-            updates.props
-          );
-        }
-      })
+    // 2. 메모리 상태 업데이트 (불변 업데이트)
+    const updatedElements = currentState.elements.map((el) =>
+      el.id === elementId ? { ...el, ...updates } : el
     );
+
+    // 선택된 요소가 업데이트된 경우 props도 업데이트
+    const updatedElement = updatedElements.find((el) => el.id === elementId);
+    const selectedElementProps =
+      currentState.selectedElementId === elementId && updates.props && updatedElement
+        ? createCompleteProps(updatedElement, updates.props)
+        : currentState.selectedElementProps;
+
+    set({
+      elements: updatedElements,
+      selectedElementProps,
+    });
 
     // 🔧 CRITICAL: elementsMap 재구축 (재선택 시 이전 값 반환 방지)
     // Immer produce() 외부에서 호출 (Map은 Immer가 직접 지원하지 않음)
@@ -239,37 +239,47 @@ export const createBatchUpdateElementPropsAction =
 
     if (validUpdates.length === 0) return;
 
-    // 히스토리용 이전 상태 저장
+    // 🚀 Phase 1: Immer → 함수형 업데이트
+    // 1. 히스토리용 이전 상태 저장 (불변 업데이트를 위해 먼저 수집)
     const prevStates: Array<{
       elementId: string;
       prevProps: ComponentElementProps;
       prevElement: Element;
     }> = [];
 
-    // 1. 단일 메모리 상태 업데이트
-    set(
-      produce((state: ElementsState) => {
-        for (const { elementId, props } of validUpdates) {
-          const element = findElementById(state.elements, elementId);
-          if (!element) continue;
+    // 업데이트 맵 생성 (O(1) 조회용)
+    const updateMap = new Map<string, ComponentElementProps>();
+    for (const { elementId, props } of validUpdates) {
+      const element = getElementById(state.elementsMap, elementId);
+      if (element) {
+        prevStates.push({
+          elementId,
+          prevProps: cloneForHistory(element.props),
+          prevElement: cloneForHistory(element),
+        });
+        updateMap.set(elementId, props);
+      }
+    }
 
-          // 히스토리용 이전 상태 저장 (Immer proxy 해제)
-          prevStates.push({
-            elementId,
-            prevProps: cloneForHistory(element.props),
-            prevElement: cloneForHistory(element),
-          });
+    // 2. 단일 메모리 상태 업데이트 (불변)
+    const updatedElements = state.elements.map((el) => {
+      const props = updateMap.get(el.id);
+      return props ? { ...el, props: { ...el.props, ...props } } : el;
+    });
 
-          // 요소 업데이트
-          element.props = { ...element.props, ...props };
+    // 선택된 요소 props 업데이트
+    const selectedId = state.selectedElementId;
+    const selectedProps = selectedId && updateMap.has(selectedId)
+      ? (() => {
+          const el = updatedElements.find((e) => e.id === selectedId);
+          return el ? createCompleteProps(el, updateMap.get(selectedId)!) : state.selectedElementProps;
+        })()
+      : state.selectedElementProps;
 
-          // 선택된 요소 props 업데이트
-          if (state.selectedElementId === elementId) {
-            state.selectedElementProps = createCompleteProps(element, props);
-          }
-        }
-      })
-    );
+    set({
+      elements: updatedElements,
+      selectedElementProps: selectedProps,
+    });
 
     // 2. 단일 히스토리 엔트리 추가 (batch 타입)
     const currentPageId = get().currentPageId;
@@ -326,42 +336,50 @@ export const createBatchUpdateElementsAction =
 
     if (validUpdates.length === 0) return;
 
-    // 히스토리용 이전 상태 저장
+    // 🚀 Phase 1: Immer → 함수형 업데이트
+    // 1. 히스토리용 이전 상태 저장 (props 변경 시에만)
     const prevStates: Array<{
       elementId: string;
       prevProps: ComponentElementProps;
       prevElement: Element;
     }> = [];
 
-    // 1. 단일 메모리 상태 업데이트
-    set(
-      produce((state: ElementsState) => {
-        for (const { elementId, updates: elementUpdates } of validUpdates) {
-          const element = findElementById(state.elements, elementId);
-          if (!element) continue;
-
-          // 히스토리용 이전 상태 저장 (props 변경 시에만)
-          if (elementUpdates.props) {
-            prevStates.push({
-              elementId,
-              prevProps: cloneForHistory(element.props),
-              prevElement: cloneForHistory(element),
-            });
-          }
-
-          // 요소 업데이트
-          Object.assign(element, elementUpdates);
-
-          // 선택된 요소 props 업데이트
-          if (state.selectedElementId === elementId && elementUpdates.props) {
-            state.selectedElementProps = createCompleteProps(
-              element,
-              elementUpdates.props
-            );
-          }
+    // 업데이트 맵 생성 (O(1) 조회용)
+    const updateMap = new Map<string, Partial<Element>>();
+    for (const { elementId, updates: elementUpdates } of validUpdates) {
+      const element = getElementById(state.elementsMap, elementId);
+      if (element) {
+        if (elementUpdates.props) {
+          prevStates.push({
+            elementId,
+            prevProps: cloneForHistory(element.props),
+            prevElement: cloneForHistory(element),
+          });
         }
-      })
-    );
+        updateMap.set(elementId, elementUpdates);
+      }
+    }
+
+    // 2. 단일 메모리 상태 업데이트 (불변)
+    const updatedElements = state.elements.map((el) => {
+      const updates = updateMap.get(el.id);
+      return updates ? { ...el, ...updates } : el;
+    });
+
+    // 선택된 요소 props 업데이트
+    const selectedId = state.selectedElementId;
+    const selectedUpdate = selectedId ? updateMap.get(selectedId) : undefined;
+    const selectedProps = selectedId && selectedUpdate?.props
+      ? (() => {
+          const el = updatedElements.find((e) => e.id === selectedId);
+          return el ? createCompleteProps(el, selectedUpdate.props!) : state.selectedElementProps;
+        })()
+      : state.selectedElementProps;
+
+    set({
+      elements: updatedElements,
+      selectedElementProps: selectedProps,
+    });
 
     // 2. 단일 히스토리 엔트리 추가 (batch 타입)
     const currentPageId = get().currentPageId;

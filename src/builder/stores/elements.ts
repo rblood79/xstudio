@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { create } from "zustand";
-import { produce } from "immer";
+// 🚀 Phase 1: Immer 제거 - 함수형 업데이트로 전환
+// import { produce } from "immer"; // REMOVED
 import { StateCreator } from "zustand";
 import { Element, ComponentElementProps } from "../../types/core/store.types";
 import { historyManager } from "./history";
@@ -177,33 +178,24 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
     _rebuildIndexes,
     getPageElements,
 
+  // 🚀 Phase 1: Immer → 함수형 업데이트 (Low Risk)
+  // setElements는 내부 상태 관리용이므로 히스토리 기록하지 않음
+  // 실제 요소 변경은 addElement, updateElementProps, removeElement에서 처리
   setElements: (elements) => {
-    set(
-      produce((state: ElementsState) => {
-        state.elements = elements;
-
-        // setElements는 내부 상태 관리용이므로 히스토리 기록하지 않음
-        // 실제 요소 변경은 addElement, updateElementProps, removeElement에서 처리
-      })
-    );
+    set({ elements });
     // 인덱스 자동 재구축
     get()._rebuildIndexes();
   },
 
+  // 🚀 Phase 1: Immer → 함수형 업데이트 (Low Risk)
   loadPageElements: (elements, pageId) => {
     // orphan 요소들을 body로 마이그레이션
     const { elements: migratedElements, updatedElements } =
       ElementUtils.migrateOrphanElementsToBody(elements, pageId);
 
-    set(
-      produce((state: ElementsState) => {
-        state.elements = migratedElements;
-        state.currentPageId = pageId;
-
-        // 페이지 변경 시 히스토리 초기화
-        historyManager.setCurrentPage(pageId);
-      })
-    );
+    // 페이지 변경 시 히스토리 초기화
+    historyManager.setCurrentPage(pageId);
+    set({ elements: migratedElements, currentPageId: pageId });
 
     // 인덱스 자동 재구축
     get()._rebuildIndexes();
@@ -239,6 +231,7 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
   // Factory 함수로 생성된 updateElement 사용
   updateElement,
 
+  // 🚀 Phase 1: Immer → 함수형 업데이트 (Medium Risk)
   setSelectedElement: (elementId, props, style, computedStyle) => {
     let resolvedProps = props;
 
@@ -250,55 +243,42 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
       }
     }
 
-    set(
-      produce((state: ElementsState & { selectedElementIds: string[]; multiSelectMode: boolean }) => {
-        state.selectedElementId = elementId;
-
-        if (elementId && resolvedProps) {
-          state.selectedElementProps = {
-            ...resolvedProps,
-            ...(style ? { style } : {}),
-            ...(computedStyle ? { computedStyle } : {}),
-          };
-        } else if (!elementId) {
-          state.selectedElementProps = {};
+    // 상태 업데이트 계산
+    const selectedElementProps = elementId && resolvedProps
+      ? {
+          ...resolvedProps,
+          ...(style ? { style } : {}),
+          ...(computedStyle ? { computedStyle } : {}),
         }
+      : {};
 
-        // ⭐ SelectionState와 동기화
-        if (elementId) {
-          state.selectedElementIds = [elementId];
-          state.multiSelectMode = false;
-        } else {
-          state.selectedElementIds = [];
-          state.multiSelectMode = false;
-        }
-      })
-    );
+    // ⭐ SelectionState와 동기화
+    const selectedElementIds = elementId ? [elementId] : [];
+
+    set({
+      selectedElementId: elementId,
+      selectedElementProps,
+      selectedElementIds,
+      multiSelectMode: false,
+    });
   },
 
+  // 🚀 Phase 1: Immer → 함수형 업데이트 (Medium Risk)
   selectTabElement: (elementId, props, tabIndex) =>
-    set(
-      produce((state: ElementsState) => {
-        state.selectedElementId = elementId;
-        state.selectedElementProps = props;
-        state.selectedTab = { parentId: elementId, tabIndex };
-      })
-    ),
+    set({
+      selectedElementId: elementId,
+      selectedElementProps: props,
+      selectedTab: { parentId: elementId, tabIndex },
+    }),
 
-  setPages: (pages) =>
-    set(
-      produce((state: ElementsState) => {
-        state.pages = pages;
-      })
-    ),
+  // 🚀 Phase 1: Immer → 함수형 업데이트 (Low Risk)
+  setPages: (pages) => set({ pages }),
 
-  setCurrentPageId: (pageId) =>
-    set(
-      produce((state: ElementsState) => {
-        state.currentPageId = pageId;
-        historyManager.setCurrentPage(pageId);
-      })
-    ),
+  // 🚀 Phase 1: Immer → 함수형 업데이트 (Low Risk)
+  setCurrentPageId: (pageId) => {
+    historyManager.setCurrentPage(pageId);
+    set({ currentPageId: pageId });
+  },
 
   undo,
 
@@ -306,102 +286,124 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
 
   removeElement,
 
-  removeTabPair: (elementId) =>
-    set(
-      produce((state: ElementsState) => {
-        // Tab과 Panel 쌍 제거
-        state.elements = state.elements.filter(
-          (el) => el.parent_id !== elementId && el.id !== elementId
-        );
+  // 🚀 Phase 1: Immer → 함수형 업데이트 (High Risk)
+  removeTabPair: (elementId) => {
+    const state = get();
+    // Tab과 Panel 쌍 제거
+    const elements = state.elements.filter(
+      (el) => el.parent_id !== elementId && el.id !== elementId
+    );
 
-        if (state.selectedElementId === elementId) {
-          state.selectedElementId = null;
-          state.selectedElementProps = {};
-        }
-      })
-    ),
+    // 선택 상태 업데이트
+    const isSelected = state.selectedElementId === elementId;
+
+    set({
+      elements,
+      ...(isSelected && {
+        selectedElementId: null,
+        selectedElementProps: {},
+      }),
+    });
+  },
 
   // Factory 함수로 생성된 addComplexElement 사용
   addComplexElement,
 
-  updateElementOrder: (elementId, orderNum) =>
-    set(
-      produce((state: ElementsState) => {
-        // Immer는 Map을 직접 수정할 수 없으므로 elements 배열에서 찾기
-        const element = state.elements.find(el => el.id === elementId);
-        if (element) {
-          element.order_num = orderNum;
-        }
-      })
-    ),
+  // 🚀 Phase 1: Immer → 함수형 업데이트 (High Risk)
+  updateElementOrder: (elementId, orderNum) => {
+    const { elements } = get();
+    // 불변 업데이트: 새 배열 생성
+    const updatedElements = elements.map((el) =>
+      el.id === elementId ? { ...el, order_num: orderNum } : el
+    );
+    set({ elements: updatedElements });
+  },
 
+  // 🚀 Phase 1: Immer → 함수형 업데이트 (High Risk)
   // ⭐ 다중 선택: 요소를 선택 목록에서 추가/제거 (토글)
-  toggleElementInSelection: (elementId: string) =>
-    set(
-      produce((state: ElementsState & { selectedElementIds: string[]; multiSelectMode: boolean }) => {
-        const resolveCompleteProps = (id: string) => {
-          const { elementsMap, elements } = get();
-          const element = elementsMap.get(id) ?? findElementById(elements, id);
-          return element ? createCompleteProps(element) : null;
-        };
+  toggleElementInSelection: (elementId: string) => {
+    const state = get();
+    const { selectedElementIds, elementsMap, elements } = state;
 
-        const isAlreadySelected = state.selectedElementIds.includes(elementId);
+    const resolveCompleteProps = (id: string) => {
+      const element = elementsMap.get(id) ?? findElementById(elements, id);
+      return element ? createCompleteProps(element) : null;
+    };
 
-        if (isAlreadySelected) {
-          // 이미 선택됨 → 제거
-          state.selectedElementIds = state.selectedElementIds.filter(id => id !== elementId);
+    const isAlreadySelected = selectedElementIds.includes(elementId);
 
-          // 선택이 비어있으면 다중 선택 모드 해제
-          if (state.selectedElementIds.length === 0) {
-            state.multiSelectMode = false;
-            state.selectedElementId = null;
-            state.selectedElementProps = {};
-          } else {
-            // 첫 번째 요소를 primary selection으로 유지
-            state.selectedElementId = state.selectedElementIds[0];
-            const nextProps = resolveCompleteProps(state.selectedElementIds[0]);
-            if (nextProps) state.selectedElementProps = nextProps;
-          }
-        } else {
-          // 선택 안 됨 → 추가
-          state.selectedElementIds.push(elementId);
-          state.multiSelectMode = true;
+    if (isAlreadySelected) {
+      // 이미 선택됨 → 제거
+      const newSelectedIds = selectedElementIds.filter((id) => id !== elementId);
 
-          // 첫 번째로 추가되는 경우 primary selection 설정
-          if (state.selectedElementIds.length === 1) {
-            state.selectedElementId = elementId;
-            const nextProps = resolveCompleteProps(elementId);
-            if (nextProps) state.selectedElementProps = nextProps;
-          }
-        }
-      })
-    ),
+      if (newSelectedIds.length === 0) {
+        // 선택이 비어있으면 다중 선택 모드 해제
+        set({
+          selectedElementIds: [],
+          multiSelectMode: false,
+          selectedElementId: null,
+          selectedElementProps: {},
+        });
+      } else {
+        // 첫 번째 요소를 primary selection으로 유지
+        const nextProps = resolveCompleteProps(newSelectedIds[0]);
+        set({
+          selectedElementIds: newSelectedIds,
+          selectedElementId: newSelectedIds[0],
+          selectedElementProps: nextProps || {},
+        });
+      }
+    } else {
+      // 선택 안 됨 → 추가
+      const newSelectedIds = [...selectedElementIds, elementId];
 
+      if (newSelectedIds.length === 1) {
+        // 첫 번째로 추가되는 경우 primary selection 설정
+        const nextProps = resolveCompleteProps(elementId);
+        set({
+          selectedElementIds: newSelectedIds,
+          multiSelectMode: true,
+          selectedElementId: elementId,
+          selectedElementProps: nextProps || {},
+        });
+      } else {
+        set({
+          selectedElementIds: newSelectedIds,
+          multiSelectMode: true,
+        });
+      }
+    }
+  },
+
+  // 🚀 Phase 1: Immer → 함수형 업데이트 (Medium Risk)
   // ⭐ 다중 선택: 여러 요소를 한 번에 선택 (드래그 선택용)
-  setSelectedElements: (elementIds: string[]) =>
-    set(
-      produce((state: ElementsState & { selectedElementIds: string[]; multiSelectMode: boolean }) => {
-        const resolveCompleteProps = (id: string) => {
-          const { elementsMap, elements } = get();
-          const element = elementsMap.get(id) ?? findElementById(elements, id);
-          return element ? createCompleteProps(element) : null;
-        };
+  setSelectedElements: (elementIds: string[]) => {
+    const { elementsMap, elements } = get();
 
-        state.selectedElementIds = elementIds;
-        state.multiSelectMode = elementIds.length > 1;
+    const resolveCompleteProps = (id: string) => {
+      const element = elementsMap.get(id) ?? findElementById(elements, id);
+      return element ? createCompleteProps(element) : null;
+    };
 
-        if (elementIds.length > 0) {
-          // 첫 번째 요소를 primary selection으로 설정
-          state.selectedElementId = elementIds[0];
-          const nextProps = resolveCompleteProps(elementIds[0]);
-          if (nextProps) state.selectedElementProps = nextProps;
-        } else {
-          // 선택 없음
-          state.selectedElementId = null;
-          state.selectedElementProps = {};
-        }
-      })
-    ),
+    if (elementIds.length > 0) {
+      // 첫 번째 요소를 primary selection으로 설정
+      const nextProps = resolveCompleteProps(elementIds[0]);
+      set({
+        selectedElementIds: elementIds,
+        multiSelectMode: elementIds.length > 1,
+        selectedElementId: elementIds[0],
+        selectedElementProps: nextProps || {},
+      });
+    } else {
+      // 선택 없음
+      set({
+        selectedElementIds: [],
+        multiSelectMode: false,
+        selectedElementId: null,
+        selectedElementProps: {},
+      });
+    }
+  },
 
   // 🚀 배치 업데이트 (Factory 함수로 생성)
   batchUpdateElementProps,

@@ -1,4 +1,5 @@
-import { produce } from "immer";
+// 🚀 Phase 1: Immer 제거 - 함수형 업데이트로 전환
+// import { produce } from "immer"; // REMOVED
 import type { StateCreator } from "zustand";
 import { Element } from "../../../types/core/store.types";
 import { historyManager } from "../history";
@@ -309,74 +310,78 @@ export const createRemoveElementAction =
       // IndexedDB 삭제 실패해도 메모리에서는 삭제 진행
     }
 
-    set(
-      produce((state: ElementsState) => {
-        // 히스토리 추가 (부모 요소와 모든 자식 요소들 정보 저장)
-        if (state.currentPageId) {
-          historyManager.addEntry({
-            type: "remove",
-            elementId: elementId,
-            data: {
-              element: { ...element },
-              childElements: uniqueElementsToRemove
-                .slice(1)
-                .map((child) => ({ ...child })), // 첫 번째는 부모 요소이므로 제외
-            },
-          });
-        }
+    // 🚀 Phase 1: Immer → 함수형 업데이트
+    const currentState = get();
 
-        // 삭제 전 요소 개수 확인
-        const beforeCount = state.elements.length;
-        console.log("🔢 삭제 전 요소 개수:", beforeCount);
-        console.log("🗑️ 삭제할 요소 ID들:", elementIdsToRemove);
+    // 히스토리 추가 (부모 요소와 모든 자식 요소들 정보 저장)
+    if (currentState.currentPageId) {
+      historyManager.addEntry({
+        type: "remove",
+        elementId: elementId,
+        data: {
+          element: { ...element },
+          childElements: uniqueElementsToRemove
+            .slice(1)
+            .map((child) => ({ ...child })), // 첫 번째는 부모 요소이므로 제외
+        },
+      });
+    }
 
-        // Tab/Panel 삭제 시 추가 디버깅 정보
-        elementIdsToRemove.forEach((id) => {
-          const el = state.elements.find((e) => e.id === id);
-          if (el && (el.tag === "Tab" || el.tag === "Panel")) {
-            console.log(`🏷️ 삭제될 ${el.tag}:`, {
-              id: el.id,
-              tag: el.tag,
-              tabId: (el.props as { tabId?: string }).tabId,
-              title: (el.props as { title?: string }).title,
-              order_num: el.order_num,
-            });
-          }
+    // 삭제 전 요소 개수 확인
+    const beforeCount = currentState.elements.length;
+    console.log("🔢 삭제 전 요소 개수:", beforeCount);
+    console.log("🗑️ 삭제할 요소 ID들:", elementIdsToRemove);
+
+    // Tab/Panel 삭제 시 추가 디버깅 정보
+    elementIdsToRemove.forEach((id) => {
+      const el = currentState.elements.find((e) => e.id === id);
+      if (el && (el.tag === "Tab" || el.tag === "Panel")) {
+        console.log(`🏷️ 삭제될 ${el.tag}:`, {
+          id: el.id,
+          tag: el.tag,
+          tabId: (el.props as { tabId?: string }).tabId,
+          title: (el.props as { title?: string }).title,
+          order_num: el.order_num,
         });
+      }
+    });
 
-        // 모든 요소 제거 (부모 + 자식들)
-        state.elements = state.elements.filter(
-          (el) => !elementIdsToRemove.includes(el.id)
-        );
-
-        // 삭제 후 요소 개수 확인
-        const afterCount = state.elements.length;
-        console.log(
-          "🔢 삭제 후 요소 개수:",
-          afterCount,
-          "(삭제된 개수:",
-          beforeCount - afterCount,
-          ")"
-        );
-
-        // 선택된 요소가 제거된 경우 선택 해제
-        if (elementIdsToRemove.includes(state.selectedElementId || "")) {
-          state.selectedElementId = null;
-          state.selectedElementProps = {};
-        }
-
-        // postMessage로 iframe에 전달
-        if (typeof window !== "undefined" && window.parent) {
-          window.parent.postMessage(
-            {
-              type: "ELEMENT_REMOVED",
-              payload: { elementId: elementIdsToRemove },
-            },
-            "*"
-          );
-        }
-      })
+    // 모든 요소 제거 (불변 업데이트)
+    const filteredElements = currentState.elements.filter(
+      (el) => !elementIdsToRemove.includes(el.id)
     );
+
+    // 삭제 후 요소 개수 확인
+    const afterCount = filteredElements.length;
+    console.log(
+      "🔢 삭제 후 요소 개수:",
+      afterCount,
+      "(삭제된 개수:",
+      beforeCount - afterCount,
+      ")"
+    );
+
+    // 선택된 요소가 제거된 경우 선택 해제
+    const isSelectedRemoved = elementIdsToRemove.includes(currentState.selectedElementId || "");
+
+    set({
+      elements: filteredElements,
+      ...(isSelectedRemoved && {
+        selectedElementId: null,
+        selectedElementProps: {},
+      }),
+    });
+
+    // postMessage로 iframe에 전달
+    if (typeof window !== "undefined" && window.parent) {
+      window.parent.postMessage(
+        {
+          type: "ELEMENT_REMOVED",
+          payload: { elementId: elementIdsToRemove },
+        },
+        "*"
+      );
+    }
 
     // 🔧 CRITICAL: elementsMap 재구축 (요소 삭제 후 캐시 업데이트)
     get()._rebuildIndexes();

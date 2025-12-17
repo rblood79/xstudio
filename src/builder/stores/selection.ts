@@ -1,5 +1,6 @@
 import { StateCreator } from 'zustand';
-import { produce } from 'immer';
+// 🚀 Phase 1: Immer 제거 - 함수형 업데이트로 전환
+// import { produce } from 'immer'; // REMOVED
 
 export interface SelectionState {
     // 선택 관련 상태
@@ -22,73 +23,53 @@ export interface SelectionState {
     selectByParent: (parentId: string, elements: Array<{ id: string; parent_id?: string | null }>) => void;
 }
 
-export const createSelectionSlice: StateCreator<SelectionState> = (set) => ({
+export const createSelectionSlice: StateCreator<SelectionState> = (set, get) => ({
     multiSelectMode: false,
     selectedElementIds: [],
     selectionBounds: null,
 
-    setMultiSelectMode: (enabled) =>
-        set(
-            produce((state) => {
-                state.multiSelectMode = enabled;
-                if (!enabled) {
-                    // 단일 선택 모드로 전환 시 선택된 요소가 1개만 남도록
-                    state.selectedElementIds = state.selectedElementIds.slice(0, 1);
-                }
-            })
-        ),
+    // 🚀 Phase 1: Immer → 함수형 업데이트
+    setMultiSelectMode: (enabled) => {
+        const { selectedElementIds } = get();
+        set({
+            multiSelectMode: enabled,
+            // 단일 선택 모드로 전환 시 선택된 요소가 1개만 남도록
+            selectedElementIds: enabled ? selectedElementIds : selectedElementIds.slice(0, 1),
+        });
+    },
 
-    addToSelection: (elementId) =>
-        set(
-            produce((state) => {
-                if (!state.multiSelectMode) {
-                    // 단일 선택 모드인 경우 기존 선택을 모두 제거
-                    state.selectedElementIds = [elementId];
-                } else {
-                    // 다중 선택 모드인 경우 추가
-                    if (!state.selectedElementIds.includes(elementId)) {
-                        state.selectedElementIds.push(elementId);
-                    }
-                }
-            })
-        ),
+    // 🚀 Phase 1: Immer → 함수형 업데이트
+    addToSelection: (elementId) => {
+        const { multiSelectMode, selectedElementIds } = get();
+        if (!multiSelectMode) {
+            // 단일 선택 모드인 경우 기존 선택을 모두 제거
+            set({ selectedElementIds: [elementId] });
+        } else {
+            // 다중 선택 모드인 경우 추가 (중복 방지)
+            if (!selectedElementIds.includes(elementId)) {
+                set({ selectedElementIds: [...selectedElementIds, elementId] });
+            }
+        }
+    },
 
-    removeFromSelection: (elementId: string) =>
-        set(
-            produce((state) => {
-                state.selectedElementIds = state.selectedElementIds.filter((id: string) => id !== elementId);
-            })
-        ),
+    // 🚀 Phase 1: Immer → 함수형 업데이트
+    removeFromSelection: (elementId: string) => {
+        const { selectedElementIds } = get();
+        set({ selectedElementIds: selectedElementIds.filter((id: string) => id !== elementId) });
+    },
 
-    clearSelection: () =>
-        set(
-            produce((state) => {
-                state.selectedElementIds = [];
-                state.selectionBounds = null;
-            })
-        ),
+    // 🚀 Phase 1: Immer → 함수형 업데이트
+    clearSelection: () => set({ selectedElementIds: [], selectionBounds: null }),
 
-    setSelectionBounds: (bounds) =>
-        set(
-            produce((state) => {
-                state.selectionBounds = bounds;
-            })
-        ),
+    // 🚀 Phase 1: Immer → 함수형 업데이트
+    setSelectionBounds: (bounds) => set({ selectionBounds: bounds }),
 
-    selectAll: (elements) =>
-        set(
-            produce((state) => {
-                // 현재 페이지의 모든 요소 선택
-                state.selectedElementIds = elements.map((el) => el.id);
-            })
-        ),
+    // 🚀 Phase 1: Immer → 함수형 업데이트
+    selectAll: (elements) => set({ selectedElementIds: elements.map((el) => el.id) }),
 
-    selectByParent: (parentId, elements) =>
-        set(
-            produce((state) => {
-                // 특정 부모의 모든 자식 요소 선택
-                const childElements = elements.filter((el) => el.parent_id === parentId);
-                state.selectedElementIds = childElements.map((el) => el.id);
-            })
-        ),
+    // 🚀 Phase 1: Immer → 함수형 업데이트
+    selectByParent: (parentId, elements) => {
+        const childElements = elements.filter((el) => el.parent_id === parentId);
+        set({ selectedElementIds: childElements.map((el) => el.id) });
+    },
 });

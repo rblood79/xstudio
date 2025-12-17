@@ -1,4 +1,5 @@
-import { produce } from "immer";
+// 🚀 Phase 1: Immer 제거 - 함수형 업데이트로 전환
+// import { produce } from "immer"; // REMOVED
 import type { StateCreator } from "zustand";
 import { Element, ComponentElementProps } from "../../../types/core/store.types";
 import { historyManager } from "../history";
@@ -212,186 +213,223 @@ export const createUndoAction =
         return;
       }
 
-      console.log("🚀 produce 함수 호출 직전, entry.type:", entry.type);
+      console.log("🚀 함수형 업데이트 호출 직전, entry.type:", entry.type);
 
-      set(
-        produce((state: ElementsState) => {
-          console.log("🔧 Undo Produce 함수 실행됨, entry.type:", entry.type);
-          switch (entry.type) {
-            case "add": {
-              // 추가된 요소 제거 (역작업)
-              state.elements = state.elements.filter(
-                (el) => !elementIdsToRemove.includes(el.id)
-              );
-              if (elementIdsToRemove.includes(state.selectedElementId || "")) {
-                state.selectedElementId = null;
-                state.selectedElementProps = {};
-              }
-              break;
+      // 🚀 Phase 1: Immer → 함수형 업데이트
+      const currentState = get();
+      console.log("🔧 Undo 함수형 업데이트 실행됨, entry.type:", entry.type);
+
+      let updatedElements = currentState.elements;
+      let updatedSelectedElementId = currentState.selectedElementId;
+      let updatedSelectedElementProps = currentState.selectedElementProps;
+
+      switch (entry.type) {
+        case "add": {
+          // 추가된 요소 제거 (역작업)
+          updatedElements = currentState.elements.filter(
+            (el) => !elementIdsToRemove.includes(el.id)
+          );
+          if (elementIdsToRemove.includes(currentState.selectedElementId || "")) {
+            updatedSelectedElementId = null;
+            updatedSelectedElementProps = {};
+          }
+          break;
+        }
+
+        case "update": {
+          console.log("📥 Update 케이스 실행됨:", {
+            elementId: entry.elementId,
+            hasPrevProps: !!prevProps,
+            hasPrevElement: !!prevElement,
+          });
+
+          // 이전 상태로 복원 (불변 업데이트)
+          const elementIndex = currentState.elements.findIndex((el) => el.id === entry.elementId);
+          if (elementIndex >= 0 && prevProps) {
+            const element = currentState.elements[elementIndex];
+            console.log("🔄 Undo: Props 복원", {
+              elementId: entry.elementId,
+              elementTag: element.tag,
+              currentProps: { ...element.props },
+              restoringTo: prevProps,
+            });
+
+            updatedElements = currentState.elements.map((el, i) =>
+              i === elementIndex ? { ...el, props: prevProps } : el
+            );
+
+            // 선택된 요소가 업데이트된 경우 selectedElementProps도 업데이트
+            if (currentState.selectedElementId === entry.elementId) {
+              console.log("🔄 Undo: 선택된 요소 props도 업데이트");
+              const restoredElement = { ...element, props: prevProps };
+              updatedSelectedElementProps = createCompleteProps(restoredElement, prevProps);
             }
-
-            case "update": {
-              console.log("📥 Update 케이스 실행됨:", {
+          } else if (elementIndex >= 0 && prevElement) {
+            console.log("🔄 Undo: 전체 요소 복원", {
+              elementId: entry.elementId,
+              prevElement,
+            });
+            // 전체 요소가 저장된 경우
+            updatedElements = currentState.elements.map((el, i) =>
+              i === elementIndex ? { ...el, ...prevElement } : el
+            );
+          } else {
+            console.warn(
+              "⚠️ Undo 실패: 요소 또는 이전 데이터를 찾을 수 없음",
+              {
                 elementId: entry.elementId,
-                hasPrevProps: !!prevProps,
-                hasPrevElement: !!prevElement,
-              });
-
-              // 이전 상태로 복원
-              // produce 내부에서는 배열 순회 사용 (elementsMap은 아직 재구축 전)
-              const element = findElementById(state.elements, entry.elementId);
-              if (element && prevProps) {
-                console.log("🔄 Undo: Props 복원", {
-                  elementId: entry.elementId,
-                  elementTag: element.tag,
-                  currentProps: { ...element.props },
-                  restoringTo: prevProps,
-                });
-                element.props = prevProps;
-
-                // 선택된 요소가 업데이트된 경우 selectedElementProps도 업데이트
-                if (state.selectedElementId === entry.elementId) {
-                  console.log("🔄 Undo: 선택된 요소 props도 업데이트");
-                  state.selectedElementProps = createCompleteProps(
-                    element,
-                    prevProps
-                  );
-                }
-              } else if (element && prevElement) {
-                console.log("🔄 Undo: 전체 요소 복원", {
-                  elementId: entry.elementId,
-                  prevElement,
-                });
-                // 전체 요소가 저장된 경우
-                Object.assign(element, prevElement);
-              } else {
-                console.warn(
-                  "⚠️ Undo 실패: 요소 또는 이전 데이터를 찾을 수 없음",
-                  {
-                    elementId: entry.elementId,
-                    elementFound: !!element,
-                    prevPropsFound: !!prevProps,
-                    prevElementFound: !!prevElement,
-                  }
-                );
+                elementFound: elementIndex >= 0,
+                prevPropsFound: !!prevProps,
+                prevElementFound: !!prevElement,
               }
-              break;
-            }
+            );
+          }
+          break;
+        }
 
-            case "remove": {
-              // 삭제된 요소와 자식 요소들 복원
-              console.log("🔄 Undo: 요소 복원 중:", {
-                restoringCount: elementsToRestore.length,
-              });
+        case "remove": {
+          // 삭제된 요소와 자식 요소들 복원
+          console.log("🔄 Undo: 요소 복원 중:", {
+            restoringCount: elementsToRestore.length,
+          });
 
-              elementsToRestore.forEach((el, index) => {
-                console.log(`📥 복원 요소 ${index + 1}:`, {
-                  id: el.id,
+          elementsToRestore.forEach((el, index) => {
+            console.log(`📥 복원 요소 ${index + 1}:`, {
+              id: el.id,
+              tag: el.tag,
+              tabId: (el.props as { tabId?: string }).tabId,
+              title: (el.props as { title?: string }).title,
+              order_num: el.order_num,
+            });
+          });
+
+          updatedElements = [...currentState.elements, ...elementsToRestore];
+          break;
+        }
+
+        case "batch": {
+          // Batch update Undo - 각 요소의 이전 props 복원
+          if (entry.data.batchUpdates) {
+            console.log("🔄 Undo: Batch update 복원 중:", {
+              updateCount: entry.data.batchUpdates.length,
+            });
+
+            // 업데이트 맵 생성
+            const updateMap = new Map<string, ComponentElementProps>();
+            entry.data.batchUpdates.forEach((update: {
+              elementId: string;
+              prevProps: ComponentElementProps;
+            }) => {
+              updateMap.set(update.elementId, update.prevProps);
+            });
+
+            updatedElements = currentState.elements.map((el) => {
+              const prevPropsForEl = updateMap.get(el.id);
+              if (prevPropsForEl) {
+                console.log(`📥 복원 요소 props:`, {
+                  elementId: el.id,
                   tag: el.tag,
-                  tabId: (el.props as { tabId?: string }).tabId,
-                  title: (el.props as { title?: string }).title,
-                  order_num: el.order_num,
                 });
-              });
-
-              state.elements.push(...elementsToRestore);
-              break;
-            }
-
-            case "batch": {
-              // Batch update Undo - 각 요소의 이전 props 복원
-              if (entry.data.batchUpdates) {
-                console.log("🔄 Undo: Batch update 복원 중:", {
-                  updateCount: entry.data.batchUpdates.length,
-                });
-
-                entry.data.batchUpdates.forEach((update: {
-                  elementId: string;
-                  prevProps: ComponentElementProps;
-                }) => {
-                  const element = findElementById(state.elements, update.elementId);
-                  if (element) {
-                    console.log(`📥 복원 요소 props:`, {
-                      elementId: update.elementId,
-                      tag: element.tag,
-                    });
-                    element.props = update.prevProps;
-
-                    // 선택된 요소가 업데이트된 경우
-                    if (state.selectedElementId === update.elementId) {
-                      state.selectedElementProps = createCompleteProps(
-                        element,
-                        update.prevProps
-                      );
-                    }
-                  }
-                });
+                return { ...el, props: prevPropsForEl };
               }
-              break;
-            }
+              return el;
+            });
 
-            case "group": {
-              // Group 생성 Undo - 그룹 삭제 + 자식들 원래 parent로 이동
-              console.log("🔄 Undo: Group 생성 취소 중");
-
-              // 1. 그룹 요소 삭제
-              state.elements = state.elements.filter(
-                (el) => !elementIdsToRemove.includes(el.id)
-              );
-
-              // 2. 자식 요소들을 원래 parent로 이동
-              if (entry.data.elements) {
-                entry.data.elements.forEach((prevChild: Element) => {
-                  const child = findElementById(state.elements, prevChild.id);
-                  if (child) {
-                    console.log(`📥 자식 요소 원래 parent로 이동:`, {
-                      childId: child.id,
-                      newParentId: prevChild.parent_id,
-                    });
-                    child.parent_id = prevChild.parent_id;
-                    child.order_num = prevChild.order_num;
-                  }
-                });
+            // 선택된 요소가 업데이트된 경우
+            const selectedPrevProps = updateMap.get(currentState.selectedElementId || "");
+            if (selectedPrevProps) {
+              const selectedEl = updatedElements.find((el) => el.id === currentState.selectedElementId);
+              if (selectedEl) {
+                updatedSelectedElementProps = createCompleteProps(selectedEl, selectedPrevProps);
               }
-
-              // 3. 선택 상태 업데이트
-              if (elementIdsToRemove.includes(state.selectedElementId || "")) {
-                state.selectedElementId = null;
-                state.selectedElementProps = {};
-              }
-              break;
-            }
-
-            case "ungroup": {
-              // Ungroup Undo - 그룹 재생성 + 자식들 그룹 안으로 이동
-              console.log("🔄 Undo: Ungroup 취소 중");
-
-              // 1. 그룹 요소 복원
-              state.elements.push(...elementsToRestore);
-              console.log(`📥 그룹 요소 복원:`, {
-                groupId: elementsToRestore[0]?.id,
-                tag: elementsToRestore[0]?.tag,
-              });
-
-              // 2. 자식 요소들을 그룹 안으로 이동
-              if (entry.data.elements) {
-                entry.data.elements.forEach((prevChild: Element) => {
-                  const child = findElementById(state.elements, prevChild.id);
-                  if (child) {
-                    console.log(`📥 자식 요소 그룹 안으로 이동:`, {
-                      childId: child.id,
-                      groupId: entry.elementId,
-                    });
-                    child.parent_id = entry.elementId; // 그룹 ID로 설정
-                    child.order_num = prevChild.order_num;
-                  }
-                });
-              }
-              break;
             }
           }
-        })
-      );
+          break;
+        }
+
+        case "group": {
+          // Group 생성 Undo - 그룹 삭제 + 자식들 원래 parent로 이동
+          console.log("🔄 Undo: Group 생성 취소 중");
+
+          // 1. 그룹 요소 삭제
+          let filteredElements = currentState.elements.filter(
+            (el) => !elementIdsToRemove.includes(el.id)
+          );
+
+          // 2. 자식 요소들을 원래 parent로 이동
+          if (entry.data.elements) {
+            const childUpdates = new Map<string, { parent_id: string | null; order_num: number }>();
+            entry.data.elements.forEach((prevChild: Element) => {
+              childUpdates.set(prevChild.id, {
+                parent_id: prevChild.parent_id,
+                order_num: prevChild.order_num || 0,
+              });
+            });
+
+            filteredElements = filteredElements.map((el) => {
+              const update = childUpdates.get(el.id);
+              if (update) {
+                console.log(`📥 자식 요소 원래 parent로 이동:`, {
+                  childId: el.id,
+                  newParentId: update.parent_id,
+                });
+                return { ...el, parent_id: update.parent_id, order_num: update.order_num };
+              }
+              return el;
+            });
+          }
+
+          updatedElements = filteredElements;
+
+          // 3. 선택 상태 업데이트
+          if (elementIdsToRemove.includes(currentState.selectedElementId || "")) {
+            updatedSelectedElementId = null;
+            updatedSelectedElementProps = {};
+          }
+          break;
+        }
+
+        case "ungroup": {
+          // Ungroup Undo - 그룹 재생성 + 자식들 그룹 안으로 이동
+          console.log("🔄 Undo: Ungroup 취소 중");
+
+          // 1. 그룹 요소 복원
+          let restoredElements = [...currentState.elements, ...elementsToRestore];
+          console.log(`📥 그룹 요소 복원:`, {
+            groupId: elementsToRestore[0]?.id,
+            tag: elementsToRestore[0]?.tag,
+          });
+
+          // 2. 자식 요소들을 그룹 안으로 이동
+          if (entry.data.elements) {
+            const childUpdates = new Map<string, { order_num: number }>();
+            entry.data.elements.forEach((prevChild: Element) => {
+              childUpdates.set(prevChild.id, { order_num: prevChild.order_num || 0 });
+            });
+
+            restoredElements = restoredElements.map((el) => {
+              const update = childUpdates.get(el.id);
+              if (update) {
+                console.log(`📥 자식 요소 그룹 안으로 이동:`, {
+                  childId: el.id,
+                  groupId: entry.elementId,
+                });
+                return { ...el, parent_id: entry.elementId, order_num: update.order_num };
+              }
+              return el;
+            });
+          }
+
+          updatedElements = restoredElements;
+          break;
+        }
+      }
+
+      set({
+        elements: updatedElements,
+        selectedElementId: updatedSelectedElementId,
+        selectedElementProps: updatedSelectedElementProps,
+      });
 
       // 2. iframe 업데이트
       // 🚀 Phase 11: WebGL-only 모드에서는 iframe 통신 스킵
@@ -696,131 +734,168 @@ export const createRedoAction =
         return;
       }
 
-      set(
-        produce((state: ElementsState) => {
-          switch (entry.type) {
-            case "add": {
-              // 요소와 자식 요소들 추가
-              state.elements.push(...elementsToAdd);
-              break;
-            }
+      // 🚀 Phase 1: Immer → 함수형 업데이트
+      const currentState = get();
+      let updatedElements = currentState.elements;
+      let updatedSelectedElementId = currentState.selectedElementId;
+      let updatedSelectedElementProps = currentState.selectedElementProps;
 
-            case "update": {
-              // 업데이트 적용
-              // produce 내부에서는 배열 순회 사용 (elementsMap은 아직 재구축 전)
-              const element = findElementById(state.elements, entry.elementId);
-              if (element && propsToUpdate) {
-                element.props = { ...element.props, ...propsToUpdate };
-              }
-              break;
-            }
+      switch (entry.type) {
+        case "add": {
+          // 요소와 자식 요소들 추가
+          updatedElements = [...currentState.elements, ...elementsToAdd];
+          break;
+        }
 
-            case "remove": {
-              // 요소와 자식 요소들 제거
-              state.elements = state.elements.filter(
-                (el) => !elementIdsToRemove.includes(el.id)
-              );
-              if (elementIdsToRemove.includes(state.selectedElementId || "")) {
-                state.selectedElementId = null;
-                state.selectedElementProps = {};
-              }
-              break;
-            }
+        case "update": {
+          // 업데이트 적용 (불변 업데이트)
+          const elementIndex = currentState.elements.findIndex((el) => el.id === entry.elementId);
+          if (elementIndex >= 0 && propsToUpdate) {
+            updatedElements = currentState.elements.map((el, i) =>
+              i === elementIndex ? { ...el, props: { ...el.props, ...propsToUpdate } } : el
+            );
+          }
+          break;
+        }
 
-            case "batch": {
-              // Batch update Redo - 각 요소의 newProps 적용
-              if (entry.data.batchUpdates) {
-                console.log("🔄 Redo: Batch update 적용 중:", {
-                  updateCount: entry.data.batchUpdates.length,
+        case "remove": {
+          // 요소와 자식 요소들 제거
+          updatedElements = currentState.elements.filter(
+            (el) => !elementIdsToRemove.includes(el.id)
+          );
+          if (elementIdsToRemove.includes(currentState.selectedElementId || "")) {
+            updatedSelectedElementId = null;
+            updatedSelectedElementProps = {};
+          }
+          break;
+        }
+
+        case "batch": {
+          // Batch update Redo - 각 요소의 newProps 적용
+          if (entry.data.batchUpdates) {
+            console.log("🔄 Redo: Batch update 적용 중:", {
+              updateCount: entry.data.batchUpdates.length,
+            });
+
+            // 업데이트 맵 생성
+            const updateMap = new Map<string, ComponentElementProps>();
+            entry.data.batchUpdates.forEach((update: {
+              elementId: string;
+              newProps: ComponentElementProps;
+            }) => {
+              updateMap.set(update.elementId, update.newProps);
+            });
+
+            updatedElements = currentState.elements.map((el) => {
+              const newPropsForEl = updateMap.get(el.id);
+              if (newPropsForEl) {
+                console.log(`📥 적용 요소 props:`, {
+                  elementId: el.id,
+                  tag: el.tag,
                 });
-
-                entry.data.batchUpdates.forEach((update: {
-                  elementId: string;
-                  newProps: ComponentElementProps;
-                }) => {
-                  const element = findElementById(state.elements, update.elementId);
-                  if (element) {
-                    console.log(`📥 적용 요소 props:`, {
-                      elementId: update.elementId,
-                      tag: element.tag,
-                    });
-                    element.props = { ...element.props, ...update.newProps };
-
-                    // 선택된 요소가 업데이트된 경우
-                    if (state.selectedElementId === update.elementId) {
-                      state.selectedElementProps = createCompleteProps(
-                        element,
-                        { ...element.props, ...update.newProps }
-                      );
-                    }
-                  }
-                });
+                return { ...el, props: { ...el.props, ...newPropsForEl } };
               }
-              break;
-            }
+              return el;
+            });
 
-            case "group": {
-              // Group 생성 Redo - 그룹 추가 + 자식들 그룹 안으로 이동
-              console.log("🔄 Redo: Group 생성 중");
-
-              // 1. 그룹 요소 추가
-              state.elements.push(...elementsToAdd);
-              console.log(`📥 그룹 요소 추가:`, {
-                groupId: elementsToAdd[0]?.id,
-                tag: elementsToAdd[0]?.tag,
-              });
-
-              // 2. 자식 요소들을 그룹 안으로 이동
-              if (entry.data.elements) {
-                entry.data.elements.forEach((prevChild: Element) => {
-                  const child = findElementById(state.elements, prevChild.id);
-                  if (child) {
-                    console.log(`📥 자식 요소 그룹 안으로 이동:`, {
-                      childId: child.id,
-                      groupId: entry.elementId,
-                    });
-                    child.parent_id = entry.elementId; // 그룹 ID로 설정
-                    child.order_num = prevChild.order_num;
-                  }
-                });
+            // 선택된 요소가 업데이트된 경우
+            const selectedNewProps = updateMap.get(currentState.selectedElementId || "");
+            if (selectedNewProps) {
+              const selectedEl = updatedElements.find((el) => el.id === currentState.selectedElementId);
+              if (selectedEl) {
+                updatedSelectedElementProps = createCompleteProps(
+                  selectedEl,
+                  { ...selectedEl.props, ...selectedNewProps }
+                );
               }
-              break;
-            }
-
-            case "ungroup": {
-              // Ungroup Redo - 그룹 삭제 + 자식들 원래 parent로 이동
-              console.log("🔄 Redo: Ungroup 실행 중");
-
-              // 1. 그룹 요소 삭제
-              state.elements = state.elements.filter(
-                (el) => !elementIdsToRemove.includes(el.id)
-              );
-
-              // 2. 자식 요소들을 원래 parent로 이동
-              if (entry.data.elements) {
-                entry.data.elements.forEach((prevChild: Element) => {
-                  const child = findElementById(state.elements, prevChild.id);
-                  if (child) {
-                    console.log(`📥 자식 요소 원래 parent로 이동:`, {
-                      childId: child.id,
-                      newParentId: prevChild.parent_id,
-                    });
-                    child.parent_id = prevChild.parent_id;
-                    child.order_num = prevChild.order_num;
-                  }
-                });
-              }
-
-              // 3. 선택 상태 업데이트
-              if (elementIdsToRemove.includes(state.selectedElementId || "")) {
-                state.selectedElementId = null;
-                state.selectedElementProps = {};
-              }
-              break;
             }
           }
-        })
-      );
+          break;
+        }
+
+        case "group": {
+          // Group 생성 Redo - 그룹 추가 + 자식들 그룹 안으로 이동
+          console.log("🔄 Redo: Group 생성 중");
+
+          // 1. 그룹 요소 추가
+          let newElements = [...currentState.elements, ...elementsToAdd];
+          console.log(`📥 그룹 요소 추가:`, {
+            groupId: elementsToAdd[0]?.id,
+            tag: elementsToAdd[0]?.tag,
+          });
+
+          // 2. 자식 요소들을 그룹 안으로 이동
+          if (entry.data.elements) {
+            const childUpdates = new Map<string, { order_num: number }>();
+            entry.data.elements.forEach((prevChild: Element) => {
+              childUpdates.set(prevChild.id, { order_num: prevChild.order_num || 0 });
+            });
+
+            newElements = newElements.map((el) => {
+              const update = childUpdates.get(el.id);
+              if (update) {
+                console.log(`📥 자식 요소 그룹 안으로 이동:`, {
+                  childId: el.id,
+                  groupId: entry.elementId,
+                });
+                return { ...el, parent_id: entry.elementId, order_num: update.order_num };
+              }
+              return el;
+            });
+          }
+
+          updatedElements = newElements;
+          break;
+        }
+
+        case "ungroup": {
+          // Ungroup Redo - 그룹 삭제 + 자식들 원래 parent로 이동
+          console.log("🔄 Redo: Ungroup 실행 중");
+
+          // 1. 그룹 요소 삭제
+          let filteredElements = currentState.elements.filter(
+            (el) => !elementIdsToRemove.includes(el.id)
+          );
+
+          // 2. 자식 요소들을 원래 parent로 이동
+          if (entry.data.elements) {
+            const childUpdates = new Map<string, { parent_id: string | null; order_num: number }>();
+            entry.data.elements.forEach((prevChild: Element) => {
+              childUpdates.set(prevChild.id, {
+                parent_id: prevChild.parent_id,
+                order_num: prevChild.order_num || 0,
+              });
+            });
+
+            filteredElements = filteredElements.map((el) => {
+              const update = childUpdates.get(el.id);
+              if (update) {
+                console.log(`📥 자식 요소 원래 parent로 이동:`, {
+                  childId: el.id,
+                  newParentId: update.parent_id,
+                });
+                return { ...el, parent_id: update.parent_id, order_num: update.order_num };
+              }
+              return el;
+            });
+          }
+
+          updatedElements = filteredElements;
+
+          // 3. 선택 상태 업데이트
+          if (elementIdsToRemove.includes(currentState.selectedElementId || "")) {
+            updatedSelectedElementId = null;
+            updatedSelectedElementProps = {};
+          }
+          break;
+        }
+      }
+
+      set({
+        elements: updatedElements,
+        selectedElementId: updatedSelectedElementId,
+        selectedElementProps: updatedSelectedElementProps,
+      });
 
       // 2. iframe 업데이트
       // 🚀 Phase 11: WebGL-only 모드에서는 iframe 통신 스킵
