@@ -56,15 +56,19 @@ export const BodyLayer = memo(function BodyLayer({
   onClick,
 }: BodyLayerProps) {
   useExtend(PIXI_COMPONENTS);
-  const elements = useStore((state) => state.elements);
+  // 🚀 최적화: elements 배열 대신 elementsMap 사용
+  const elementsMap = useStore((state) => state.elementsMap);
   const currentPageId = useStore((state) => state.currentPageId);
 
-  // Body 요소 찾기
+  // Body 요소 찾기 (페이지당 1개만 존재)
   const bodyElement = useMemo(() => {
-    return elements.find(
-      (el) => el.page_id === currentPageId && el.tag.toLowerCase() === 'body'
-    );
-  }, [elements, currentPageId]);
+    for (const el of elementsMap.values()) {
+      if (el.page_id === currentPageId && el.tag.toLowerCase() === 'body') {
+        return el;
+      }
+    }
+    return undefined;
+  }, [elementsMap, currentPageId]);
 
   // Body 스타일
   const bodyStyle = bodyElement?.props?.style as CSSStyle | undefined;

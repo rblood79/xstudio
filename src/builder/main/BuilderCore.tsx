@@ -50,7 +50,7 @@ export const BuilderCore: React.FC = () => {
   const useWebGL = useWebGLCanvas();
 
   // Store 상태
-  const elements = useStore((state) => state.elements);
+  // 🚀 최적화: elements 구독 제거 - 필요할 때 getState()로 읽기
   const currentPageId = useStore((state) => state.currentPageId);
   // const selectedElementId = useStore((state) => state.selectedElementId);  // 사용하지 않음
   const setSelectedElement = useStore((state) => state.setSelectedElement);
@@ -347,13 +347,15 @@ export const BuilderCore: React.FC = () => {
   }, [iframeReadyState]); // ✅ sendThemeTokens 의존성 제거 (subscribe 재등록 방지)
 
   // Phase 4.2 최적화: setTimeout 제거, useEffect batching 활용
-  // order_num 검증 (dev 모드 전용)
+  // order_num 검증 (dev 모드 전용) - 페이지 변경 시에만 실행
   useEffect(() => {
+    if (!currentPageId) return;
+    // 🚀 최적화: getState()로 elements 읽기 (구독 제거)
+    const elements = useStore.getState().elements;
     if (elements.length > 0) {
-      // React의 자연스러운 batching으로 reorderElements 후 실행됨
       validateOrderNumbers(elements);
     }
-  }, [elements, validateOrderNumbers]);
+  }, [currentPageId, validateOrderNumbers]);
 
   // NAVIGATE_TO_PAGE 메시지 수신 (Preview iframe에서)
   useEffect(() => {

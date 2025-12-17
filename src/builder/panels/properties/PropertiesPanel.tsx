@@ -35,6 +35,7 @@ import { distributeElements } from "../../stores/utils/elementDistribution";
 import type { DistributionType } from "../../stores/utils/elementDistribution";
 import { trackBatchUpdate, trackGroupCreation, trackUngroup, trackMultiPaste, trackMultiDelete } from "../../stores/utils/historyHelpers";
 import { supabase } from "../../../env/supabase.client";
+import type { Element } from "../../../types/core/store.types";
 import "../../panels/common/index.css";
 
 /**
@@ -256,6 +257,13 @@ function PropertiesPanelContent() {
   // Any other useStore subscription causes unnecessary re-renders!
   const selectedElement = useInspectorState((state) => state.selectedElement);
 
+  // ⭐ Get multiSelectMode, selectedElementIds, currentPageId for JSX
+  // 🎯 Zustand 구독 패턴 사용 - 상태 변경 즉시 반영
+  const multiSelectMode = useStore((state) => state.multiSelectMode) || false;
+  const rawSelectedElementIds = useStore((state) => state.selectedElementIds);
+  const selectedElementIds = useMemo(() => rawSelectedElementIds || [], [rawSelectedElementIds]);
+  const currentPageId = useStore((state) => state.currentPageId);
+
   // ⭐ Optimized: Get actions without subscribing to state changes
   const removeElement = useStore.getState().removeElement;
   const setSelectedElement = useStore.getState().setSelectedElement;
@@ -274,27 +282,24 @@ function PropertiesPanelContent() {
   // ⭐ Get current page elements (only recalculate when selectedElement changes)
   // 🆕 O(1) 인덱스 기반 조회
   const currentPageElements = useMemo(() => {
-    if (!selectedElement) return [];
-    const currentPageId = useStore.getState().currentPageId;
     if (!currentPageId) return [];
     const getPageElements = useStore.getState().getPageElements;
     return getPageElements(currentPageId);
-  }, [selectedElement]);
+  }, [currentPageId, selectedElement]);
 
   // ⭐ Get selected elements array for BatchPropertyEditor
   const selectedElements = useMemo(() => {
-    if (!selectedElement) return [];
-    const selectedElementIds = useStore.getState().selectedElementIds || [];
-    return currentPageElements.filter((el) => selectedElementIds.includes(el.id));
-  }, [selectedElement, currentPageElements]);
-
-  // ⭐ Get multiSelectMode, selectedElementIds, currentPageId for JSX
-  // 🎯 Zustand 구독 패턴 사용 - 상태 변경 즉시 반영
-  // 🆕 elements 구독 제거 - currentPageElements (O(1) 인덱스 기반) 사용
-  const multiSelectMode = useStore((state) => state.multiSelectMode) || false;
-  const rawSelectedElementIds = useStore((state) => state.selectedElementIds);
-  const selectedElementIds = useMemo(() => rawSelectedElementIds || [], [rawSelectedElementIds]);
-  const currentPageId = useStore((state) => state.currentPageId);
+    if (!selectedElement || !currentPageId || selectedElementIds.length === 0) return [];
+    const elementsMap = useStore.getState().elementsMap;
+    const resolved: Element[] = [];
+    for (const id of selectedElementIds) {
+      const el = elementsMap.get(id);
+      if (el && el.page_id === currentPageId) {
+        resolved.push(el);
+      }
+    }
+    return resolved;
+  }, [selectedElement, selectedElementIds, currentPageId]);
 
   const [showKeyboardHelp, setShowKeyboardHelp] = useState(false);
 

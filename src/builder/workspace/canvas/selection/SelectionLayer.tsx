@@ -21,6 +21,7 @@ import { LassoSelection } from './LassoSelection';
 import type { BoundingBox, HandlePosition, CursorStyle, DragState } from './types';
 import { calculateCombinedBounds } from './types';
 import type { LayoutResult } from '../layout';
+import type { Element } from '../../../../types';
 
 // ============================================
 // Types
@@ -67,43 +68,40 @@ export const SelectionLayer = memo(function SelectionLayer({
   useExtend(PIXI_COMPONENTS);
 
   // Store state
-  const elements = useStore((state) => state.elements);
+  // 🚀 최적화: elements 배열 대신 elementsMap 사용 (O(1) 조회)
+  const elementsMap = useStore((state) => state.elementsMap);
   const selectedElementIds = useStore((state) => state.selectedElementIds);
   const currentPageId = useStore((state) => state.currentPageId);
 
-  const pageElementsById = useMemo(() => {
-    const map = new Map<string, (typeof elements)[number]>();
-    for (const el of elements) {
-      if (el.page_id === currentPageId) {
-        map.set(el.id, el);
-      }
-    }
-    return map;
-  }, [elements, currentPageId]);
+  // 🚀 최적화: pageElementsById는 elementsMap으로 대체
+  // selectedElements 계산 시 직접 elementsMap.get() 사용
 
+  // hasChildrenIdSet은 페이지 변경 시에만 재계산 (요소 변경 시 무시)
   const hasChildrenIdSet = useMemo(() => {
     const set = new Set<string>();
-    for (const el of elements) {
-      if (el.page_id !== currentPageId) continue;
+    // elementsMap을 순회하여 자식이 있는 부모 ID 수집
+    elementsMap.forEach((el) => {
+      if (el.page_id !== currentPageId) return;
       if (el.parent_id) {
         set.add(el.parent_id);
       }
-    }
+    });
     return set;
-  }, [elements, currentPageId]);
+  }, [elementsMap, currentPageId]);
 
   // 선택된 요소들 (Body 포함)
+  // 🚀 최적화: elementsMap에서 직접 조회 (O(1))
   const selectedElements = useMemo(() => {
     if (!currentPageId || selectedElementIds.length === 0) return [];
-    const resolved: (typeof elements)[number][] = [];
+    const resolved: Element[] = [];
     for (const id of selectedElementIds) {
-      const el = pageElementsById.get(id);
-      if (el) {
+      const el = elementsMap.get(id);
+      if (el && el.page_id === currentPageId) {
         resolved.push(el);
       }
     }
     return resolved;
-  }, [currentPageId, selectedElementIds, pageElementsById]);
+  }, [currentPageId, selectedElementIds, elementsMap]);
 
   // 선택된 요소들의 바운딩 박스
   const selectionBounds = useMemo(() => {
