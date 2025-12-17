@@ -1,12 +1,90 @@
 // scripts/browser-check.js
-const { chromium } = require("playwright");
-const fs = require("fs");
+import { chromium } from "playwright";
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const SESSION_FILE = path.join(__dirname, ".auth-session.json");
+
+// 세션 저장/로드 함수
+function loadSession() {
+  try {
+    if (fs.existsSync(SESSION_FILE)) {
+      return JSON.parse(fs.readFileSync(SESSION_FILE, "utf-8"));
+    }
+  } catch (e) {
+    console.log("⚠️  세션 파일 로드 실패:", e.message);
+  }
+  return null;
+}
+
+function saveSession(storageState) {
+  fs.writeFileSync(SESSION_FILE, JSON.stringify(storageState, null, 2));
+  console.log("✅ 세션 저장됨:", SESSION_FILE);
+}
+
+// 수동 로그인으로 세션 생성
+async function createSession(baseUrl = "http://localhost:5173") {
+  console.log("\n🔐 로그인 세션 생성 모드");
+  console.log("   브라우저가 열립니다. 로그인 후 빌더 화면(/builder)까지 이동하세요.");
+  console.log("   빌더 URL 감지 시 자동으로 세션이 저장됩니다.\n");
+
+  const browser = await chromium.launch({ headless: false });
+  const context = await browser.newContext();
+  const page = await context.newPage();
+
+  await page.goto(baseUrl);
+
+  // 빌더 URL 감지 대기 (최대 5분)
+  let detected = false;
+  const startTime = Date.now();
+  const timeout = 5 * 60 * 1000; // 5분
+
+  while (!detected && Date.now() - startTime < timeout) {
+    const currentUrl = page.url();
+    if (currentUrl.includes("/builder")) {
+      console.log("✅ 빌더 URL 감지:", currentUrl);
+      detected = true;
+      break;
+    }
+    await page.waitForTimeout(1000);
+  }
+
+  if (!detected) {
+    console.log("⚠️  타임아웃: 빌더 URL이 감지되지 않았습니다.");
+  }
+
+  // 추가 대기 (페이지 완전 로드)
+  await page.waitForTimeout(3000);
+
+  // 세션 저장 (브라우저 닫기 전)
+  const storageState = await context.storageState().catch(() => null);
+  if (storageState) {
+    saveSession(storageState);
+  }
+
+  await browser.close();
+
+  return storageState;
+}
 
 async function checkPage(url = "http://localhost:5173", options = {}) {
-  const { quick = false, screenshot = true, json = false } = options;
+  const { quick = false, screenshot = true, json = false, login = false } = options;
+
+  // --login 옵션: 세션 생성 모드
+  if (login) {
+    await createSession(url.split("/").slice(0, 3).join("/"));
+    return;
+  }
+
+  // 저장된 세션 로드
+  const session = loadSession();
 
   const browser = await chromium.launch();
-  const context = await browser.newContext();
+  const context = session
+    ? await browser.newContext({ storageState: session })
+    : await browser.newContext();
   const page = await context.newPage();
 
   const results = {
@@ -316,11 +394,36 @@ function printResults(r, quick) {
 
 // CLI 파싱
 const args = process.argv.slice(2);
+
+// 도움말
+if (args.includes("--help") || args.includes("-h")) {
+  console.log(`
+브라우저 체크 스크립트
+
+사용법:
+  node scripts/browser-check.js [URL] [옵션]
+
+옵션:
+  --login         로그인 세션 생성 (브라우저 열림, 수동 로그인 후 닫기)
+  --quick, -q     빠른 체크 (Web Vitals 생략)
+  --json          JSON 형식 출력
+  --no-screenshot 스크린샷 생략
+  --help, -h      도움말 표시
+
+예시:
+  node scripts/browser-check.js --login                    # 1️⃣ 먼저 세션 생성
+  node scripts/browser-check.js http://localhost:5173/builder  # 2️⃣ 빌더 체크
+  node scripts/browser-check.js --quick                    # 빠른 체크
+`);
+  process.exit(0);
+}
+
 const url = args.find((a) => !a.startsWith("--")) || "http://localhost:5173";
 const options = {
   quick: args.includes("--quick") || args.includes("-q"),
   screenshot: !args.includes("--no-screenshot"),
   json: args.includes("--json"),
+  login: args.includes("--login"),
 };
 
 checkPage(url, options);

@@ -1,0 +1,4502 @@
+{
+  "url": "http://localhost:5173/builder/2126dbd9-2469-47af-8d8d-7063adac76e5",
+  "timestamp": "2025-12-17T16:03:36.241Z",
+  "console": {
+    "errors": [],
+    "warnings": [
+      "An iframe which has both allow-scripts and allow-same-origin for its sandbox attribute can escape its sandboxing.",
+      "[.WebGL-0x11c001b8c00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels",
+      "[.WebGL-0x11c001b9800]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels (this message will no longer repeat)",
+      "[BuilderCore] 프로젝트를 찾을 수 없음: 2126dbd9-2469-47af-8d8d-7063adac76e5"
+    ],
+    "logs": [
+      "[vite] connecting...",
+      "[vite] connected.",
+      "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+      "🎮 [CanvasSync] Canvas ready",
+      "[IndexedDB] Created store: projects",
+      "[IndexedDB] Created store: pages",
+      "[IndexedDB] Created store: elements",
+      "[IndexedDB] Created store: design_tokens",
+      "[IndexedDB] Created store: history",
+      "[IndexedDB] Created store: design_themes",
+      "[IndexedDB] Created store: metadata",
+      "[IndexedDB] Created store: layouts with order_num, slug indexes",
+      "[IndexedDB] Created store: data_tables",
+      "[IndexedDB] Created store: api_endpoints",
+      "[IndexedDB] Created store: variables",
+      "[IndexedDB] Created store: transformers",
+      "[IndexedDB] Schema upgrade completed",
+      "[LayoutEngine] Yoga initialized successfully (also set for @pixi/layout)",
+      "[vite] connecting...",
+      "[vite] connected.",
+      "[useViewportControl] Initial position applied: {x: 35.89999999999998, y: 33.599999999999966, scale: 0.9}",
+      "[ViewportControlBridge] Controller attached",
+      "[Preview] Runtime loaded successfully",
+      "[EventEngine] syncVariables - synced: []",
+      "[EventEngine] syncVariables - synced: []"
+    ]
+  },
+  "network": {
+    "requests": [
+      {
+        "url": "http://localhost:5173/builder/2126dbd9-2469-47af-8d8d-7063adac76e5",
+        "status": 200,
+        "size": 610
+      },
+      {
+        "url": "http://localhost:5173/@vite/client",
+        "status": 200,
+        "size": 178928
+      },
+      {
+        "url": "http://localhost:5173/src/main.tsx",
+        "status": 200,
+        "size": 21223
+      },
+      {
+        "url": "http://localhost:5173/node_modules/vite/dist/client/env.mjs",
+        "status": 200,
+        "size": 3478
+      },
+      {
+        "url": "http://localhost:5173/@react-refresh",
+        "status": 200,
+        "size": 111918
+      },
+      {
+        "url": "http://localhost:5173/node_modules/.vite/deps/react_jsx-dev-runtime.js?v=fb184d8",
+        "status": 200,
+        "size": 12151
+      },
+      {
+        "url": "http://localhost:5173/node_modules/.vite/deps/react.js?v=fb184d85",
+        "status": 200,
+        "size": 1024
+      },
+      {
+        "url": "http://localhost:5173/node_modules/.vite/deps/@tanstack_react-query.js?v=e17a3da",
+        "status": 200,
+        "size": 9956
+      },
+      {
+        "url": "http://localhost:5173/node_modules/.vite/deps/@tanstack_react-query-devtools.js?",
+        "status": 200,
+        "size": 11387
+      },
+      {
+        "url": "http://localhost:5173/src/builder/index.tsx",
+        "status": 200,
+        "size": 2263
+      },
+      {
+        "url": "http://localhost:5173/src/auth/Signin.tsx",
+        "status": 200,
+        "size": 24585
+      },
+      {
+        "url": "http://localhost:5173/src/App.tsx",
+        "status": 200,
+        "size": 37158
+      },
+      {
+        "url": "http://localhost:5173/src/index.css",
+        "status": 200,
+        "size": 610347
+      },
+      {
+        "url": "http://localhost:5173/src/dashboard/index.tsx",
+        "status": 200,
+        "size": 91162
+      },
+      {
+        "url": "http://localhost:5173/node_modules/.vite/deps/react-router.js?v=fb184d85",
+        "status": 200,
+        "size": 24305
+      },
+      {
+        "url": "http://localhost:5173/src/builder/panels/themes/ThemeStudio.tsx",
+        "status": 200,
+        "size": 64011
+      },
+      {
+        "url": "http://localhost:5173/src/env/supabase.client.ts",
+        "status": 200,
+        "size": 3957
+      },
+      {
+        "url": "http://localhost:5173/src/components/ParticleBackground.tsx",
+        "status": 200,
+        "size": 9150
+      },
+      {
+        "url": "http://localhost:5173/node_modules/.vite/deps/chunk-OV4LOSH3.js?v=18230328",
+        "status": 200,
+        "size": 45340
+      },
+      {
+        "url": "http://localhost:5173/node_modules/.vite/deps/chunk-V4OQ3NZ2.js?v=18230328",
+        "status": 200,
+        "size": 9296
+      },
+      {
+        "url": "http://localhost:5173/node_modules/.vite/deps/chunk-KIBLRLJE.js?v=18230328",
+        "status": 200,
+        "size": 109870
+      },
+      {
+        "url": "http://localhost:5173/node_modules/.vite/deps/chunk-67KSCYFA.js?v=18230328",
+        "status": 200,
+        "size": 12525
+      },
+      {
+        "url": "http://localhost:5173/node_modules/.vite/deps/chunk-5YE6AWTO.js?v=18230328",
+        "status": 200,
+        "size": 87884
+      },
+      {
+        "url": "http://localhost:5173/src/builder/hooks/useAsyncMutation.ts",
+        "status": 200,
+        "size": 9751
+      },
+      {
+        "url": "http://localhost:5173/src/builder/main/BuilderCore.tsx",
+        "status": 200,
+        "size": 94351
+      },
+      {
+        "url": "http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=b636b6e5",
+        "status": 200,
+        "size": 1004959
+      },
+      {
+        "url": "http://localhost:5173/src/auth/index.css",
+        "status": 200,
+        "size": 2371
+      },
+      {
+        "url": "http://localhost:5173/src/hero.css",
+        "status": 200,
+        "size": 2269
+      },
+      {
+        "url": "http://localhost:5173/src/App.css",
+        "status": 200,
+        "size": 34056
+      },
+      {
+        "url": "http://localhost:5173/src/builder/styles/1-theme/builder-system.css",
+        "status": 200,
+        "size": 10084
+      },
+      {
+        "url": "http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=fb184d85",
+        "status": 200,
+        "size": 13293
+      },
+      {
+        "url": "http://localhost:5173/src/components/ParticleButton.tsx",
+        "status": 200,
+        "size": 12465
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/index.tsx",
+        "status": 200,
+        "size": 4158
+      },
+      {
+        "url": "http://localhost:5173/src/lib/db/index.ts",
+        "status": 200,
+        "size": 6820
+      },
+      {
+        "url": "http://localhost:5173/src/services/api/index.ts",
+        "status": 200,
+        "size": 93821
+      },
+      {
+        "url": "http://localhost:5173/src/builder/hooks/useAsyncQuery.ts",
+        "status": 200,
+        "size": 11465
+      },
+      {
+        "url": "http://localhost:5173/src/utils/element/elementUtils.ts",
+        "status": 200,
+        "size": 16483
+      },
+      {
+        "url": "http://localhost:5173/src/utils/projectMerger.ts",
+        "status": 200,
+        "size": 22072
+      },
+      {
+        "url": "http://localhost:5173/src/utils/projectSync.ts",
+        "status": 200,
+        "size": 33433
+      },
+      {
+        "url": "http://localhost:5173/src/stores/settingsStore.ts",
+        "status": 200,
+        "size": 4888
+      },
+      {
+        "url": "http://localhost:5173/src/builder/stores/history/historyIndexedDB.ts",
+        "status": 200,
+        "size": 51181
+      },
+      {
+        "url": "http://localhost:5173/src/dashboard/index.css",
+        "status": 200,
+        "size": 9777
+      },
+      {
+        "url": "http://localhost:5173/src/dashboard/SettingsPanel.tsx",
+        "status": 200,
+        "size": 36131
+      },
+      {
+        "url": "http://localhost:5173/src/hooks/theme/index.ts",
+        "status": 200,
+        "size": 1818
+      },
+      {
+        "url": "http://localhost:5173/src/builder/panels/themes/components/AIThemeGenerator.tsx",
+        "status": 200,
+        "size": 60888
+      },
+      {
+        "url": "http://localhost:5173/src/builder/panels/themes/components/HctThemeGenerator.tsx",
+        "status": 200,
+        "size": 107982
+      },
+      {
+        "url": "http://localhost:5173/src/builder/panels/themes/components/FigmaImporter.tsx",
+        "status": 200,
+        "size": 67993
+      },
+      {
+        "url": "http://localhost:5173/node_modules/.vite/deps/tailwind-variants.js?v=11e92f01",
+        "status": 200,
+        "size": 14643
+      },
+      {
+        "url": "http://localhost:5173/src/builder/panels/themes/components/TokenEditor.tsx",
+        "status": 200,
+        "size": 96868
+      },
+      {
+        "url": "http://localhost:5173/src/builder/panels/themes/components/DarkModeGenerator.tsx",
+        "status": 200,
+        "size": 78787
+      },
+      {
+        "url": "http://localhost:5173/src/builder/panels/themes/components/FigmaPluginExporter.t",
+        "status": 200,
+        "size": 72046
+      },
+      {
+        "url": "http://localhost:5173/node_modules/.vite/deps/chunk-ADERJKZ7.js?v=18230328",
+        "status": 200,
+        "size": 428571
+      },
+      {
+        "url": "http://localhost:5173/src/builder/panels/themes/components/ThemeExporter.tsx",
+        "status": 200,
+        "size": 54238
+      },
+      {
+        "url": "http://localhost:5173/src/components/particle/index.ts",
+        "status": 200,
+        "size": 4983
+      },
+      {
+        "url": "http://localhost:5173/src/builder/stores/index.ts",
+        "status": 200,
+        "size": 27072
+      },
+      {
+        "url": "http://localhost:5173/src/builder/stores/history.ts",
+        "status": 200,
+        "size": 77640
+      },
+      {
+        "url": "http://localhost:5173/src/builder/panels/themes/components/M3ColorSystemGuide.ts",
+        "status": 200,
+        "size": 49670
+      },
+      {
+        "url": "http://localhost:5173/src/builder/main/BuilderHeader.tsx",
+        "status": 200,
+        "size": 35940
+      },
+      {
+        "url": "http://localhost:5173/src/builder/main/BuilderWorkflow.tsx",
+        "status": 200,
+        "size": 21821
+      },
+      {
+        "url": "http://localhost:5173/src/builder/main/BuilderCanvas.tsx",
+        "status": 200,
+        "size": 18475
+      },
+      {
+        "url": "http://localhost:5173/src/builder/main/BuilderViewport.tsx",
+        "status": 200,
+        "size": 2979
+      },
+      {
+        "url": "http://localhost:5173/src/builder/panels/index.ts",
+        "status": 200,
+        "size": 3473
+      },
+      {
+        "url": "http://localhost:5173/src/builder/grid/index.tsx",
+        "status": 200,
+        "size": 3578
+      },
+      {
+        "url": "http://localhost:5173/node_modules/.vite/deps/react-aria-components.js?v=fb184d8",
+        "status": 200,
+        "size": 1508684
+      },
+      {
+        "url": "http://localhost:5173/src/builder/layout/index.ts",
+        "status": 200,
+        "size": 1792
+      },
+      {
+        "url": "http://localhost:5173/src/builder/workspace/index.ts",
+        "status": 200,
+        "size": 3376
+      },
+      {
+        "url": "http://localhost:5173/src/utils/featureFlags.ts",
+        "status": 200,
+        "size": 9751
+      },
+      {
+        "url": "http://localhost:5173/src/builder/components/ToastContainer.tsx",
+        "status": 200,
+        "size": 4525
+      },
+      {
+        "url": "http://localhost:5173/src/builder/hooks/usePageLoader.ts",
+        "status": 200,
+        "size": 15683
+      },
+      {
+        "url": "http://localhost:5173/node_modules/.vite/deps/lucide-react.js?v=1f8036d1",
+        "status": 200,
+        "size": 948684
+      },
+      {
+        "url": "http://localhost:5173/src/builder/hooks/useErrorHandler.ts",
+        "status": 200,
+        "size": 36966
+      },
+      {
+        "url": "http://localhost:5173/src/builder/overlay/index.tsx",
+        "status": 200,
+        "size": 59770
+      },
+      {
+        "url": "http://localhost:5173/src/builder/hooks/usePageManager.ts",
+        "status": 200,
+        "size": 52757
+      },
+      {
+        "url": "http://localhost:5173/src/builder/hooks/useToast.ts",
+        "status": 200,
+        "size": 6721
+      },
+      {
+        "url": "http://localhost:5173/src/builder/inspector/InspectorSync.tsx",
+        "status": 200,
+        "size": 26615
+      },
+      {
+        "url": "http://localhost:5173/node_modules/.vite/deps/@supabase_supabase-js.js?v=fb184d8",
+        "status": 200,
+        "size": 503030
+      },
+      {
+        "url": "http://localhost:5173/src/builder/hooks/useThemeManager.ts",
+        "status": 200,
+        "size": 3911
+      },
+      {
+        "url": "http://localhost:5173/src/builder/hooks/useAutoRecovery.ts",
+        "status": 200,
+        "size": 27568
+      },
+      {
+        "url": "http://localhost:5173/src/builder/hooks/useIframeMessenger.ts",
+        "status": 200,
+        "size": 113179
+      },
+      {
+        "url": "http://localhost:5173/src/builder/hooks/useValidation.ts",
+        "status": 200,
+        "size": 7924
+      },
+      {
+        "url": "http://localhost:5173/src/stores/themeStore.ts",
+        "status": 200,
+        "size": 73454
+      },
+      {
+        "url": "http://localhost:5173/src/builder/hooks/useThemeMessenger.ts",
+        "status": 200,
+        "size": 11729
+      },
+      {
+        "url": "http://localhost:5173/src/builder/stores/data.ts",
+        "status": 200,
+        "size": 39415
+      },
+      {
+        "url": "http://localhost:5173/src/utils/messaging.ts",
+        "status": 200,
+        "size": 10951
+      },
+      {
+        "url": "http://localhost:5173/src/builder/stores/editMode.ts",
+        "status": 200,
+        "size": 13098
+      },
+      {
+        "url": "http://localhost:5173/src/builder/stores/layouts.ts",
+        "status": 200,
+        "size": 12430
+      },
+      {
+        "url": "http://localhost:5173/src/builder/stores/datatable.ts",
+        "status": 200,
+        "size": 65058
+      },
+      {
+        "url": "http://localhost:5173/node_modules/.vite/deps/chunk-4RW4ADHG.js?v=18230328",
+        "status": 200,
+        "size": 16198
+      },
+      {
+        "url": "http://localhost:5173/src/utils/dataHelpers.ts",
+        "status": 200,
+        "size": 11467
+      },
+      {
+        "url": "http://localhost:5173/src/components/ParticleButton.css",
+        "status": 200,
+        "size": 2071
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/ComponentList.tsx",
+        "status": 200,
+        "size": 93991
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/Group.tsx",
+        "status": 200,
+        "size": 8411
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/Pagination.tsx",
+        "status": 200,
+        "size": 15652
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/ToggleButton.tsx",
+        "status": 200,
+        "size": 7083
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/Button.tsx",
+        "status": 200,
+        "size": 11529
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/ToggleButtonGroup.tsx",
+        "status": 200,
+        "size": 34140
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/index.css",
+        "status": 200,
+        "size": 456340
+      },
+      {
+        "url": "http://localhost:5173/src/services/api/BaseApiService.ts",
+        "status": 200,
+        "size": 36712
+      },
+      {
+        "url": "http://localhost:5173/src/services/api/ElementsApiService.ts",
+        "status": 200,
+        "size": 19811
+      },
+      {
+        "url": "http://localhost:5173/src/lib/db/indexedDB/adapter.ts",
+        "status": 200,
+        "size": 127280
+      },
+      {
+        "url": "http://localhost:5173/src/services/api/ProjectsApiService.ts",
+        "status": 200,
+        "size": 16505
+      },
+      {
+        "url": "http://localhost:5173/src/services/api/PagesApiService.ts",
+        "status": 200,
+        "size": 13410
+      },
+      {
+        "url": "http://localhost:5173/node_modules/.vite/deps/zustand.js?v=fb184d85",
+        "status": 200,
+        "size": 2044
+      },
+      {
+        "url": "http://localhost:5173/src/types/settings.types.ts",
+        "status": 200,
+        "size": 2607
+      },
+      {
+        "url": "http://localhost:5173/node_modules/.vite/deps/react-stately.js?v=b9263de0",
+        "status": 200,
+        "size": 25909
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/list.ts",
+        "status": 200,
+        "size": 5662
+      },
+      {
+        "url": "http://localhost:5173/node_modules/.vite/deps/zustand_middleware.js?v=bd5ece27",
+        "status": 200,
+        "size": 16480
+      },
+      {
+        "url": "http://localhost:5173/src/services/api/mocks/mockLargeDataV2.ts",
+        "status": 200,
+        "size": 137346
+      },
+      {
+        "url": "http://localhost:5173/src/dashboard/SettingsPanel.css",
+        "status": 200,
+        "size": 2403
+      },
+      {
+        "url": "http://localhost:5173/src/hooks/theme/useThemes.ts",
+        "status": 200,
+        "size": 9543
+      },
+      {
+        "url": "http://localhost:5173/src/hooks/theme/useActiveTheme.ts",
+        "status": 200,
+        "size": 7442
+      },
+      {
+        "url": "http://localhost:5173/src/services/theme/index.ts",
+        "status": 200,
+        "size": 2740
+      },
+      {
+        "url": "http://localhost:5173/src/hooks/theme/useTokens.ts",
+        "status": 200,
+        "size": 24825
+      },
+      {
+        "url": "http://localhost:5173/src/hooks/theme/useTokenSearch.ts",
+        "status": 200,
+        "size": 9592
+      },
+      {
+        "url": "http://localhost:5173/src/hooks/theme/useTokenStats.ts",
+        "status": 200,
+        "size": 9649
+      },
+      {
+        "url": "http://localhost:5173/src/builder/panels/themes/styles/AIThemeGenerator.css",
+        "status": 200,
+        "size": 9973
+      },
+      {
+        "url": "http://localhost:5173/src/builder/panels/themes/styles/HctThemeGenerator.css",
+        "status": 200,
+        "size": 15719
+      },
+      {
+        "url": "http://localhost:5173/src/builder/panels/themes/styles/FigmaImporter.css",
+        "status": 200,
+        "size": 10019
+      },
+      {
+        "url": "http://localhost:5173/src/types/theme/index.ts",
+        "status": 200,
+        "size": 21366
+      },
+      {
+        "url": "http://localhost:5173/src/utils/theme/tokenParser.ts",
+        "status": 200,
+        "size": 22566
+      },
+      {
+        "url": "http://localhost:5173/node_modules/.vite/deps/chunk-4IXOHRSL.js?v=18230328",
+        "status": 200,
+        "size": 93900
+      },
+      {
+        "url": "http://localhost:5173/src/services/theme/FigmaPluginService.ts",
+        "status": 200,
+        "size": 39101
+      },
+      {
+        "url": "http://localhost:5173/src/utils/theme/colorUtils.ts",
+        "status": 200,
+        "size": 28291
+      },
+      {
+        "url": "http://localhost:5173/src/builder/panels/themes/styles/TokenEditor.css",
+        "status": 200,
+        "size": 10823
+      },
+      {
+        "url": "http://localhost:5173/src/services/theme/DarkModeService.ts",
+        "status": 200,
+        "size": 22675
+      },
+      {
+        "url": "http://localhost:5173/src/builder/panels/themes/styles/DarkModeGenerator.css",
+        "status": 200,
+        "size": 11076
+      },
+      {
+        "url": "http://localhost:5173/src/builder/panels/themes/styles/FigmaPluginExporter.css",
+        "status": 200,
+        "size": 10968
+      },
+      {
+        "url": "http://localhost:5173/src/components/particle/constants.ts",
+        "status": 200,
+        "size": 2887
+      },
+      {
+        "url": "http://localhost:5173/src/builder/panels/themes/styles/ThemeExporter.css",
+        "status": 200,
+        "size": 9272
+      },
+      {
+        "url": "http://localhost:5173/src/components/particle/presets.ts",
+        "status": 200,
+        "size": 12468
+      },
+      {
+        "url": "http://localhost:5173/src/components/particle/canvasUtils.ts",
+        "status": 200,
+        "size": 20665
+      },
+      {
+        "url": "http://localhost:5173/src/components/particle/shaders.ts",
+        "status": 200,
+        "size": 29730
+      },
+      {
+        "url": "http://localhost:5173/src/components/particle/ParticleContext.tsx",
+        "status": 200,
+        "size": 12503
+      },
+      {
+        "url": "http://localhost:5173/src/components/particle/ParticleCanvas.tsx",
+        "status": 200,
+        "size": 49231
+      },
+      {
+        "url": "http://localhost:5173/src/components/particle/SmokeCanvas.tsx",
+        "status": 200,
+        "size": 39481
+      },
+      {
+        "url": "http://localhost:5173/src/components/particle/CurlNoiseCanvas.tsx",
+        "status": 200,
+        "size": 56460
+      },
+      {
+        "url": "http://localhost:5173/src/builder/stores/selection.ts",
+        "status": 200,
+        "size": 8684
+      },
+      {
+        "url": "http://localhost:5173/src/components/particle/MondrianArtCanvas.tsx",
+        "status": 200,
+        "size": 104542
+      },
+      {
+        "url": "http://localhost:5173/src/builder/stores/elements.ts",
+        "status": 200,
+        "size": 48891
+      },
+      {
+        "url": "http://localhost:5173/src/components/particle/MatrixRainCanvas.tsx",
+        "status": 200,
+        "size": 104114
+      },
+      {
+        "url": "http://localhost:5173/src/builder/stores/settings.ts",
+        "status": 200,
+        "size": 10417
+      },
+      {
+        "url": "http://localhost:5173/src/builder/stores/panelLayout.ts",
+        "status": 200,
+        "size": 20480
+      },
+      {
+        "url": "http://localhost:5173/src/components/particle/CodeParticleCanvas.tsx",
+        "status": 200,
+        "size": 99096
+      },
+      {
+        "url": "http://localhost:5173/src/builder/stores/elementLoader.ts",
+        "status": 200,
+        "size": 36344
+      },
+      {
+        "url": "http://localhost:5173/src/builder/stores/utils/elementIndexer.ts",
+        "status": 200,
+        "size": 19748
+      },
+      {
+        "url": "http://localhost:5173/src/builder/stores/saveMode.ts",
+        "status": 200,
+        "size": 4442
+      },
+      {
+        "url": "http://localhost:5173/src/builder/panels/themes/components/M3ColorSystemGuide.cs",
+        "status": 200,
+        "size": 6445
+      },
+      {
+        "url": "http://localhost:5173/src/builder/stores/utils/elementDiff.ts",
+        "status": 200,
+        "size": 42292
+      },
+      {
+        "url": "http://localhost:5173/src/builder/stores/commandDataStore.ts",
+        "status": 200,
+        "size": 30158
+      },
+      {
+        "url": "http://localhost:5173/src/utils/ui/uiConstants.ts",
+        "status": 200,
+        "size": 3271
+      },
+      {
+        "url": "http://localhost:5173/src/workflow/store/index.ts",
+        "status": 200,
+        "size": 454
+      },
+      {
+        "url": "http://localhost:5173/src/workflow/components/index.ts",
+        "status": 200,
+        "size": 581
+      },
+      {
+        "url": "http://localhost:5173/src/workflow/styles/workflow.css",
+        "status": 200,
+        "size": 12321
+      },
+      {
+        "url": "http://localhost:5173/src/builder/main/previewSrcdoc.ts",
+        "status": 200,
+        "size": 16415
+      },
+      {
+        "url": "http://localhost:5173/src/builder/panels/core/types.ts",
+        "status": 200,
+        "size": 8365
+      },
+      {
+        "url": "http://localhost:5173/src/builder/panels/core/PanelRegistry.ts",
+        "status": 200,
+        "size": 15036
+      },
+      {
+        "url": "http://localhost:5173/src/builder/panels/core/panelConfigs.ts",
+        "status": 200,
+        "size": 15741
+      },
+      {
+        "url": "http://localhost:5173/src/builder/panels/nodes/NodesPanel.tsx",
+        "status": 200,
+        "size": 20005
+      },
+      {
+        "url": "http://localhost:5173/src/builder/panels/components/ComponentsPanel.tsx",
+        "status": 200,
+        "size": 16419
+      },
+      {
+        "url": "http://localhost:5173/src/builder/panels/themes/ThemesPanel.tsx",
+        "status": 200,
+        "size": 27512
+      },
+      {
+        "url": "http://localhost:5173/src/builder/panels/settings/SettingsPanel.tsx",
+        "status": 200,
+        "size": 43166
+      },
+      {
+        "url": "http://localhost:5173/src/builder/panels/ai/AIPanel.tsx",
+        "status": 200,
+        "size": 65670
+      },
+      {
+        "url": "http://localhost:5173/src/builder/panels/styles/StylesPanel.tsx",
+        "status": 200,
+        "size": 30005
+      },
+      {
+        "url": "http://localhost:5173/src/builder/panels/properties/PropertiesPanel.tsx",
+        "status": 200,
+        "size": 150770
+      },
+      {
+        "url": "http://localhost:5173/src/builder/grid/index.css",
+        "status": 200,
+        "size": 1110
+      },
+      {
+        "url": "http://localhost:5173/node_modules/.vite/deps/@xyflow_react.js?v=64e9d258",
+        "status": 200,
+        "size": 387863
+      },
+      {
+        "url": "http://localhost:5173/src/builder/panels/events/EventsPanel.tsx",
+        "status": 200,
+        "size": 109535
+      },
+      {
+        "url": "http://localhost:5173/node_modules/.vite/deps/chunk-EQGUBBYH.js?v=18230328",
+        "status": 200,
+        "size": 95223
+      },
+      {
+        "url": "http://localhost:5173/node_modules/.vite/deps/chunk-N25DDF24.js?v=18230328",
+        "status": 200,
+        "size": 118990
+      },
+      {
+        "url": "http://localhost:5173/node_modules/.vite/deps/chunk-DOI7WSDS.js?v=18230328",
+        "status": 200,
+        "size": 551
+      },
+      {
+        "url": "http://localhost:5173/node_modules/.vite/deps/chunk-S7GYLZ4A.js?v=18230328",
+        "status": 200,
+        "size": 3875
+      },
+      {
+        "url": "http://localhost:5173/node_modules/.vite/deps/chunk-D4VQQTX7.js?v=18230328",
+        "status": 200,
+        "size": 17698
+      },
+      {
+        "url": "http://localhost:5173/node_modules/.vite/deps/chunk-H5DZYLMZ.js?v=18230328",
+        "status": 200,
+        "size": 4489
+      },
+      {
+        "url": "http://localhost:5173/node_modules/.vite/deps/chunk-A27MC52V.js?v=18230328",
+        "status": 200,
+        "size": 72919
+      },
+      {
+        "url": "http://localhost:5173/src/builder/layout/usePanelLayout.ts",
+        "status": 200,
+        "size": 18111
+      },
+      {
+        "url": "http://localhost:5173/node_modules/.vite/deps/chunk-YAZPUYLT.js?v=18230328",
+        "status": 200,
+        "size": 19107
+      },
+      {
+        "url": "http://localhost:5173/src/builder/layout/PanelNav.tsx",
+        "status": 200,
+        "size": 11362
+      },
+      {
+        "url": "http://localhost:5173/src/builder/layout/PanelContainer.tsx",
+        "status": 200,
+        "size": 13308
+      },
+      {
+        "url": "http://localhost:5173/src/builder/layout/PanelSlot.tsx",
+        "status": 200,
+        "size": 12251
+      },
+      {
+        "url": "http://localhost:5173/src/builder/layout/BottomPanelSlot.tsx",
+        "status": 200,
+        "size": 23245
+      },
+      {
+        "url": "http://localhost:5173/src/builder/layout/types.ts",
+        "status": 200,
+        "size": 1852
+      },
+      {
+        "url": "http://localhost:5173/src/builder/workspace/canvas/store/index.ts",
+        "status": 200,
+        "size": 479
+      },
+      {
+        "url": "http://localhost:5173/src/builder/workspace/canvas/BuilderCanvas.tsx",
+        "status": 200,
+        "size": 94987
+      },
+      {
+        "url": "http://localhost:5173/src/builder/workspace/Workspace.tsx",
+        "status": 200,
+        "size": 64727
+      },
+      {
+        "url": "http://localhost:5173/src/builder/workspace/canvas/canvasSync.ts",
+        "status": 200,
+        "size": 14365
+      },
+      {
+        "url": "http://localhost:5173/src/builder/workspace/canvas/utils/gpuProfilerCore.ts",
+        "status": 200,
+        "size": 13966
+      },
+      {
+        "url": "http://localhost:5173/src/builder/workspace/canvas/sprites/index.ts",
+        "status": 200,
+        "size": 2433
+      },
+      {
+        "url": "http://localhost:5173/node_modules/.vite/deps/chunk-EGXXEFML.js?v=18230328",
+        "status": 200,
+        "size": 364318
+      },
+      {
+        "url": "http://localhost:5173/src/builder/workspace/canvas/utils/GPUDebugOverlay.tsx",
+        "status": 200,
+        "size": 7158
+      },
+      {
+        "url": "http://localhost:5173/src/builder/workspace/canvas/grid/index.ts",
+        "status": 200,
+        "size": 2048
+      },
+      {
+        "url": "http://localhost:5173/src/builder/workspace/overlay/index.ts",
+        "status": 200,
+        "size": 1211
+      },
+      {
+        "url": "http://localhost:5173/src/builder/workspace/canvas/selection/index.ts",
+        "status": 200,
+        "size": 4040
+      },
+      {
+        "url": "http://localhost:5173/src/builder/components/Toast.tsx",
+        "status": 200,
+        "size": 6563
+      },
+      {
+        "url": "http://localhost:5173/src/builder/components/styles/Toast.css",
+        "status": 200,
+        "size": 3087
+      },
+      {
+        "url": "http://localhost:5173/src/builder/overlay/hooks/useVisibleOverlays.ts",
+        "status": 200,
+        "size": 14554
+      },
+      {
+        "url": "http://localhost:5173/src/builder/overlay/OverlayDebug.tsx",
+        "status": 200,
+        "size": 5405
+      },
+      {
+        "url": "http://localhost:5173/src/builder/overlay/components/BorderRadiusHandles.tsx",
+        "status": 200,
+        "size": 23218
+      },
+      {
+        "url": "http://localhost:5173/src/builder/overlay/index.css",
+        "status": 200,
+        "size": 3537
+      },
+      {
+        "url": "http://localhost:5173/src/builder/inspector/hooks/useInspectorState.ts",
+        "status": 200,
+        "size": 34084
+      },
+      {
+        "url": "http://localhost:5173/src/builder/inspector/hooks/index.ts",
+        "status": 200,
+        "size": 592
+      },
+      {
+        "url": "http://localhost:5173/src/builder/inspector/utils/elementMapper.ts",
+        "status": 200,
+        "size": 5104
+      },
+      {
+        "url": "http://localhost:5173/src/builder/utils/LRUPageCache.ts",
+        "status": 200,
+        "size": 15787
+      },
+      {
+        "url": "http://localhost:5173/src/builder/utils/performanceMonitor.ts",
+        "status": 200,
+        "size": 44876
+      },
+      {
+        "url": "http://localhost:5173/src/builder/utils/canvasDeltaMessenger.ts",
+        "status": 200,
+        "size": 27066
+      },
+      {
+        "url": "http://localhost:5173/node_modules/.vite/deps/uuid.js?v=710f9390",
+        "status": 200,
+        "size": 19222
+      },
+      {
+        "url": "http://localhost:5173/node_modules/.vite/deps/immer.js?v=f5db12dc",
+        "status": 200,
+        "size": 42073
+      },
+      {
+        "url": "http://localhost:5173/src/services/theme/ThemeService.ts",
+        "status": 200,
+        "size": 36174
+      },
+      {
+        "url": "http://localhost:5173/src/utils/theme/tokenToCss.ts",
+        "status": 200,
+        "size": 18464
+      },
+      {
+        "url": "http://localhost:5173/src/services/theme/TokenService.ts",
+        "status": 200,
+        "size": 53791
+      },
+      {
+        "url": "http://localhost:5173/node_modules/.vite/deps/lodash.js?v=bd985e7d",
+        "status": 200,
+        "size": 223244
+      },
+      {
+        "url": "http://localhost:5173/src/builder/stores/utils/dataActions.ts",
+        "status": 200,
+        "size": 122205
+      },
+      {
+        "url": "http://localhost:5173/src/builder/stores/utils/layoutActions.ts",
+        "status": 200,
+        "size": 40693
+      },
+      {
+        "url": "http://localhost:5173/src/builder/panels/common/PanelHeader.tsx",
+        "status": 200,
+        "size": 6339
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/ComponentSearch.tsx",
+        "status": 200,
+        "size": 10781
+      },
+      {
+        "url": "http://localhost:5173/src/builder/hooks/useRecentComponents.ts",
+        "status": 200,
+        "size": 14453
+      },
+      {
+        "url": "http://localhost:5173/src/builder/hooks/useFavoriteComponents.ts",
+        "status": 200,
+        "size": 9435
+      },
+      {
+        "url": "http://localhost:5173/src/builder/hooks/useCategoryExpansion.ts",
+        "status": 200,
+        "size": 12103
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/styles/ComponentList.css",
+        "status": 200,
+        "size": 4821
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/styles/Pagination.css",
+        "status": 200,
+        "size": 1761
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/Badge.tsx",
+        "status": 200,
+        "size": 9273
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/styles/ToggleButton.css",
+        "status": 200,
+        "size": 5200
+      },
+      {
+        "url": "http://localhost:5173/node_modules/.vite/deps/@react-aria_focus.js?v=cac913ac",
+        "status": 200,
+        "size": 9583
+      },
+      {
+        "url": "http://localhost:5173/node_modules/.vite/deps/@react-aria_utils.js?v=780bebce",
+        "status": 200,
+        "size": 31430
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/styles/Button.css",
+        "status": 200,
+        "size": 5892
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/Skeleton.tsx",
+        "status": 200,
+        "size": 66087
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/styles/ToggleButtonGroup.css",
+        "status": 200,
+        "size": 7024
+      },
+      {
+        "url": "http://localhost:5173/src/builder/hooks/useCollectionData.ts",
+        "status": 200,
+        "size": 69004
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/Slider.tsx",
+        "status": 200,
+        "size": 13422
+      },
+      {
+        "url": "http://localhost:5173/src/utils/requestDeduplication.ts",
+        "status": 200,
+        "size": 10876
+      },
+      {
+        "url": "http://localhost:5173/src/services/api/ErrorHandler.ts",
+        "status": 200,
+        "size": 29100
+      },
+      {
+        "url": "http://localhost:5173/src/utils/smartCache.ts",
+        "status": 200,
+        "size": 17653
+      },
+      {
+        "url": "http://localhost:5173/src/utils/performanceMonitor.ts",
+        "status": 200,
+        "size": 37301
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/TextField.tsx",
+        "status": 200,
+        "size": 10907
+      },
+      {
+        "url": "http://localhost:5173/src/lib/db/indexedDB/LRUCache.ts",
+        "status": 200,
+        "size": 16204
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/Radio.tsx",
+        "status": 200,
+        "size": 5606
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/NumberField.tsx",
+        "status": 200,
+        "size": 14956
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/SearchField.tsx",
+        "status": 200,
+        "size": 9126
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/Field.tsx",
+        "status": 200,
+        "size": 21243
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/RadioGroup.tsx",
+        "status": 200,
+        "size": 35440
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/Select.tsx",
+        "status": 200,
+        "size": 42092
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/Checkbox.tsx",
+        "status": 200,
+        "size": 12679
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/ComboBox.tsx",
+        "status": 200,
+        "size": 63606
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/CheckboxGroup.tsx",
+        "status": 200,
+        "size": 40066
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/ListBox.tsx",
+        "status": 200,
+        "size": 60301
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/GridList.tsx",
+        "status": 200,
+        "size": 42127
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/Tabs.tsx",
+        "status": 200,
+        "size": 40967
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/Panel.tsx",
+        "status": 200,
+        "size": 5929
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/Tree.tsx",
+        "status": 200,
+        "size": 27717
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/Calendar.tsx",
+        "status": 200,
+        "size": 17115
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/DatePicker.tsx",
+        "status": 200,
+        "size": 32541
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/DateRangePicker.tsx",
+        "status": 200,
+        "size": 40577
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/DateField.tsx",
+        "status": 200,
+        "size": 12364
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/TimeField.tsx",
+        "status": 200,
+        "size": 9888
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/Switch.tsx",
+        "status": 200,
+        "size": 8961
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/Card.tsx",
+        "status": 200,
+        "size": 26216
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/TagGroup.tsx",
+        "status": 200,
+        "size": 55918
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/Table.tsx",
+        "status": 200,
+        "size": 213145
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/Tooltip.tsx",
+        "status": 200,
+        "size": 9186
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/Menu.tsx",
+        "status": 200,
+        "size": 65041
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/ProgressBar.tsx",
+        "status": 200,
+        "size": 12813
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/Meter.tsx",
+        "status": 200,
+        "size": 12464
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/Toolbar.tsx",
+        "status": 200,
+        "size": 2581
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/Separator.tsx",
+        "status": 200,
+        "size": 6362
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/Breadcrumb.tsx",
+        "status": 200,
+        "size": 3432
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/Breadcrumbs.tsx",
+        "status": 200,
+        "size": 27370
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/Link.tsx",
+        "status": 200,
+        "size": 15386
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/Dialog.tsx",
+        "status": 200,
+        "size": 6748
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/Modal.tsx",
+        "status": 200,
+        "size": 9827
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/Popover.tsx",
+        "status": 200,
+        "size": 11682
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/types.ts",
+        "status": 200,
+        "size": 1258
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/metadata.ts",
+        "status": 200,
+        "size": 72753
+      },
+      {
+        "url": "http://localhost:5173/src/services/theme/ThemeGenerationService.ts",
+        "status": 200,
+        "size": 27275
+      },
+      {
+        "url": "http://localhost:5173/src/services/theme/FigmaService.ts",
+        "status": 200,
+        "size": 50135
+      },
+      {
+        "url": "http://localhost:5173/src/services/theme/ExportService.ts",
+        "status": 200,
+        "size": 31467
+      },
+      {
+        "url": "http://localhost:5173/src/services/theme/HctThemeService.ts",
+        "status": 200,
+        "size": 30079
+      },
+      {
+        "url": "http://localhost:5173/node_modules/.vite/deps/three.js?v=fb184d85",
+        "status": 200,
+        "size": 64290
+      },
+      {
+        "url": "http://localhost:5173/node_modules/.vite/deps/three_examples_jsm_postprocessing_",
+        "status": 200,
+        "size": 3104
+      },
+      {
+        "url": "http://localhost:5173/node_modules/.vite/deps/three_examples_jsm_postprocessing_",
+        "status": 200,
+        "size": 5195
+      },
+      {
+        "url": "http://localhost:5173/node_modules/.vite/deps/three_examples_jsm_postprocessing_",
+        "status": 200,
+        "size": 12659
+      },
+      {
+        "url": "http://localhost:5173/node_modules/.vite/deps/three_examples_jsm_postprocessing_",
+        "status": 200,
+        "size": 4784
+      },
+      {
+        "url": "http://localhost:5173/node_modules/.vite/deps/three_examples_jsm_postprocessing_",
+        "status": 200,
+        "size": 14074
+      },
+      {
+        "url": "http://localhost:5173/node_modules/.vite/deps/zod.js?v=0cf09571",
+        "status": 200,
+        "size": 421539
+      },
+      {
+        "url": "http://localhost:5173/src/builder/stores/utils/elementHelpers.ts",
+        "status": 200,
+        "size": 5074
+      },
+      {
+        "url": "http://localhost:5173/src/builder/stores/utils/elementReorder.ts",
+        "status": 200,
+        "size": 38735
+      },
+      {
+        "url": "http://localhost:5173/src/builder/stores/history/historyActions.ts",
+        "status": 200,
+        "size": 132428
+      },
+      {
+        "url": "http://localhost:5173/src/builder/stores/utils/elementCreation.ts",
+        "status": 200,
+        "size": 17106
+      },
+      {
+        "url": "http://localhost:5173/src/builder/stores/utils/elementRemoval.ts",
+        "status": 200,
+        "size": 50343
+      },
+      {
+        "url": "http://localhost:5173/src/builder/stores/utils/elementUpdate.ts",
+        "status": 200,
+        "size": 44999
+      },
+      {
+        "url": "http://localhost:5173/src/workflow/store/workflowStore.ts",
+        "status": 200,
+        "size": 67387
+      },
+      {
+        "url": "http://localhost:5173/src/workflow/components/WorkflowCanvas.tsx",
+        "status": 200,
+        "size": 18483
+      },
+      {
+        "url": "http://localhost:5173/src/workflow/components/WorkflowToolbar.tsx",
+        "status": 200,
+        "size": 19734
+      },
+      {
+        "url": "http://localhost:5173/src/builder/panels/datatable/DataTablePanel.tsx",
+        "status": 200,
+        "size": 31583
+      },
+      {
+        "url": "http://localhost:5173/src/builder/panels/datatable/DataTableEditorPanel.tsx",
+        "status": 200,
+        "size": 56484
+      },
+      {
+        "url": "http://localhost:5173/src/builder/panels/monitor/MonitorPanel.tsx",
+        "status": 200,
+        "size": 74296
+      },
+      {
+        "url": "http://localhost:5173/src/builder/panels/themes/ThemesPanel.css",
+        "status": 200,
+        "size": 628
+      },
+      {
+        "url": "http://localhost:5173/src/builder/hooks/useElementCreator.ts",
+        "status": 200,
+        "size": 40190
+      },
+      {
+        "url": "http://localhost:5173/src/services/save/index.ts",
+        "status": 200,
+        "size": 856
+      },
+      {
+        "url": "http://localhost:5173/src/builder/panels/common/index.ts",
+        "status": 200,
+        "size": 5067
+      },
+      {
+        "url": "http://localhost:5173/src/builder/stores/conversation.ts",
+        "status": 200,
+        "size": 9068
+      },
+      {
+        "url": "http://localhost:5173/src/builder/sidebar/index.tsx",
+        "status": 200,
+        "size": 347975
+      },
+      {
+        "url": "http://localhost:5173/src/services/ai/GroqService.ts",
+        "status": 200,
+        "size": 24023
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/styles/ChatContainer.css",
+        "status": 200,
+        "size": 2839
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/styles/ChatMessage.css",
+        "status": 200,
+        "size": 2704
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/styles/ChatInput.css",
+        "status": 200,
+        "size": 2233
+      },
+      {
+        "url": "http://localhost:5173/src/builder/panels/ai/AIPanel.css",
+        "status": 200,
+        "size": 608
+      },
+      {
+        "url": "http://localhost:5173/src/services/ai/IntentParser.ts",
+        "status": 200,
+        "size": 32341
+      },
+      {
+        "url": "http://localhost:5173/src/builder/panels/styles/sections/index.ts",
+        "status": 200,
+        "size": 1490
+      },
+      {
+        "url": "http://localhost:5173/src/builder/panels/common/index.css",
+        "status": 200,
+        "size": 65703
+      },
+      {
+        "url": "http://localhost:5173/src/builder/panels/styles/hooks/useStyleSource.ts",
+        "status": 200,
+        "size": 10726
+      },
+      {
+        "url": "http://localhost:5173/src/builder/panels/styles/hooks/useSectionCollapse.ts",
+        "status": 200,
+        "size": 11405
+      },
+      {
+        "url": "http://localhost:5173/src/builder/panels/styles/hooks/useStyleActions.ts",
+        "status": 200,
+        "size": 21995
+      },
+      {
+        "url": "http://localhost:5173/src/builder/hooks/useKeyboardShortcutsRegistry.ts",
+        "status": 200,
+        "size": 12857
+      },
+      {
+        "url": "http://localhost:5173/src/builder/panels/styles/StylesPanel.css",
+        "status": 200,
+        "size": 947
+      },
+      {
+        "url": "http://localhost:5173/src/builder/inspector/editors/registry.ts",
+        "status": 200,
+        "size": 20631
+      },
+      {
+        "url": "http://localhost:5173/src/builder/panels/properties/editors/ElementSlotSelector.",
+        "status": 200,
+        "size": 15396
+      },
+      {
+        "url": "http://localhost:5173/src/builder/hooks/useCopyPaste.ts",
+        "status": 200,
+        "size": 12508
+      },
+      {
+        "url": "http://localhost:5173/src/builder/utils/multiElementCopy.ts",
+        "status": 200,
+        "size": 24475
+      },
+      {
+        "url": "http://localhost:5173/src/builder/utils/selectionMemory.ts",
+        "status": 200,
+        "size": 16653
+      },
+      {
+        "url": "http://localhost:5173/src/builder/stores/utils/elementGrouping.ts",
+        "status": 200,
+        "size": 21464
+      },
+      {
+        "url": "http://localhost:5173/src/builder/stores/utils/historyHelpers.ts",
+        "status": 200,
+        "size": 23242
+      },
+      {
+        "url": "http://localhost:5173/src/builder/stores/utils/elementAlignment.ts",
+        "status": 200,
+        "size": 18804
+      },
+      {
+        "url": "http://localhost:5173/src/builder/stores/utils/elementDistribution.ts",
+        "status": 200,
+        "size": 21713
+      },
+      {
+        "url": "http://localhost:5173/src/builder/events/state/useEventHandlers.ts",
+        "status": 200,
+        "size": 18814
+      },
+      {
+        "url": "http://localhost:5173/src/types/events/events.types.ts",
+        "status": 200,
+        "size": 21058
+      },
+      {
+        "url": "http://localhost:5173/src/builder/events/utils/normalizeEventTypes.ts",
+        "status": 200,
+        "size": 10825
+      },
+      {
+        "url": "http://localhost:5173/src/builder/events/pickers/EventTypePicker.tsx",
+        "status": 200,
+        "size": 57079
+      },
+      {
+        "url": "http://localhost:5173/src/builder/events/state/useActions.ts",
+        "status": 200,
+        "size": 21587
+      },
+      {
+        "url": "http://localhost:5173/src/builder/events/state/useEventSelection.ts",
+        "status": 200,
+        "size": 14041
+      },
+      {
+        "url": "http://localhost:5173/src/builder/events/components/DebounceThrottleEditor.tsx",
+        "status": 200,
+        "size": 21948
+      },
+      {
+        "url": "http://localhost:5173/src/builder/panels/events/blocks/WhenBlock.tsx",
+        "status": 200,
+        "size": 13604
+      },
+      {
+        "url": "http://localhost:5173/src/builder/panels/events/blocks/IfBlock.tsx",
+        "status": 200,
+        "size": 24764
+      },
+      {
+        "url": "http://localhost:5173/src/builder/inspector/hooks/useComponentMeta.ts",
+        "status": 200,
+        "size": 1381
+      },
+      {
+        "url": "http://localhost:5173/src/builder/panels/events/blocks/ThenElseBlock.tsx",
+        "status": 200,
+        "size": 24335
+      },
+      {
+        "url": "http://localhost:5173/src/builder/panels/events/editors/BlockActionEditor.tsx",
+        "status": 200,
+        "size": 31488
+      },
+      {
+        "url": "http://localhost:5173/src/builder/hooks/useInitialMountDetection.ts",
+        "status": 200,
+        "size": 8560
+      },
+      {
+        "url": "http://localhost:5173/src/builder/workspace/canvas/store/canvasStore.ts",
+        "status": 200,
+        "size": 12137
+      },
+      {
+        "url": "http://localhost:5173/src/builder/panels/events/EventsPanel.css",
+        "status": 200,
+        "size": 49369
+      },
+      {
+        "url": "http://localhost:5173/src/builder/workspace/canvas/viewport/index.ts",
+        "status": 200,
+        "size": 1596
+      },
+      {
+        "url": "http://localhost:5173/src/builder/workspace/canvas/layers/index.ts",
+        "status": 200,
+        "size": 516
+      },
+      {
+        "url": "http://localhost:5173/src/builder/workspace/canvas/pixiSetup.ts",
+        "status": 200,
+        "size": 6425
+      },
+      {
+        "url": "http://localhost:5173/src/builder/workspace/canvas/layout/index.ts",
+        "status": 200,
+        "size": 2664
+      },
+      {
+        "url": "http://localhost:5173/src/builder/workspace/canvas/hooks/useThemeColors.ts",
+        "status": 200,
+        "size": 7750
+      },
+      {
+        "url": "http://localhost:5173/src/builder/workspace/Workspace.css",
+        "status": 200,
+        "size": 4146
+      },
+      {
+        "url": "http://localhost:5173/src/builder/workspace/canvas/sprites/styleConverter.ts",
+        "status": 200,
+        "size": 28376
+      },
+      {
+        "url": "http://localhost:5173/src/builder/workspace/canvas/sprites/BoxSprite.tsx",
+        "status": 200,
+        "size": 17648
+      },
+      {
+        "url": "http://localhost:5173/src/builder/workspace/canvas/sprites/TextSprite.tsx",
+        "status": 200,
+        "size": 30153
+      },
+      {
+        "url": "http://localhost:5173/src/builder/workspace/canvas/sprites/ImageSprite.tsx",
+        "status": 200,
+        "size": 27851
+      },
+      {
+        "url": "http://localhost:5173/src/builder/workspace/canvas/utils/cssVariableReader.ts",
+        "status": 200,
+        "size": 446819
+      },
+      {
+        "url": "http://localhost:5173/node_modules/.vite/deps/@pixi_react.js?v=151e034b",
+        "status": 200,
+        "size": 652685
+      },
+      {
+        "url": "http://localhost:5173/src/builder/workspace/canvas/grid/GridLayer.tsx",
+        "status": 200,
+        "size": 18214
+      },
+      {
+        "url": "http://localhost:5173/src/builder/workspace/canvas/sprites/ElementSprite.tsx",
+        "status": 200,
+        "size": 113300
+      },
+      {
+        "url": "http://localhost:5173/src/builder/workspace/canvas/grid/useZoomPan.ts",
+        "status": 200,
+        "size": 40104
+      },
+      {
+        "url": "http://localhost:5173/src/builder/workspace/canvas/selection/types.ts",
+        "status": 200,
+        "size": 15327
+      },
+      {
+        "url": "http://localhost:5173/src/builder/workspace/overlay/TextEditOverlay.tsx",
+        "status": 200,
+        "size": 16892
+      },
+      {
+        "url": "http://localhost:5173/src/builder/workspace/overlay/useTextEdit.ts",
+        "status": 200,
+        "size": 17204
+      },
+      {
+        "url": "http://localhost:5173/src/builder/workspace/canvas/selection/SelectionBox.tsx",
+        "status": 200,
+        "size": 16731
+      },
+      {
+        "url": "http://localhost:5173/src/builder/workspace/canvas/selection/TransformHandle.tsx",
+        "status": 200,
+        "size": 11905
+      },
+      {
+        "url": "http://localhost:5173/src/builder/workspace/canvas/selection/LassoSelection.util",
+        "status": 200,
+        "size": 1864
+      },
+      {
+        "url": "http://localhost:5173/src/builder/workspace/canvas/selection/LassoSelection.tsx",
+        "status": 200,
+        "size": 8197
+      },
+      {
+        "url": "http://localhost:5173/src/builder/workspace/canvas/selection/SelectionLayer.util",
+        "status": 200,
+        "size": 2158
+      },
+      {
+        "url": "http://localhost:5173/src/builder/workspace/canvas/selection/SelectionLayer.tsx",
+        "status": 200,
+        "size": 25806
+      },
+      {
+        "url": "http://localhost:5173/src/builder/workspace/canvas/selection/useDragInteraction.",
+        "status": 200,
+        "size": 21737
+      },
+      {
+        "url": "http://localhost:5173/src/builder/overlay/components/BorderRadiusHandles.css",
+        "status": 200,
+        "size": 3164
+      },
+      {
+        "url": "http://localhost:5173/src/builder/overlay/hooks/useBorderRadiusDrag.ts",
+        "status": 200,
+        "size": 34156
+      },
+      {
+        "url": "http://localhost:5173/src/builder/inspector/hooks/useSyncWithBuilder.ts",
+        "status": 200,
+        "size": 37269
+      },
+      {
+        "url": "http://localhost:5173/src/utils/realtimeBatcher.ts",
+        "status": 200,
+        "size": 26186
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/styles/ComponentSearch.css",
+        "status": 200,
+        "size": 3337
+      },
+      {
+        "url": "http://localhost:5173/src/builder/hooks/useRecentSearches.ts",
+        "status": 200,
+        "size": 10716
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/styles/Badge.css",
+        "status": 200,
+        "size": 4713
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/styles/Skeleton.css",
+        "status": 200,
+        "size": 35437
+      },
+      {
+        "url": "http://localhost:5173/src/canvas/store/runtimeStore.ts",
+        "status": 200,
+        "size": 41674
+      },
+      {
+        "url": "http://localhost:5173/src/builder/hooks/useCollectionDataCache.ts",
+        "status": 200,
+        "size": 15210
+      },
+      {
+        "url": "http://localhost:5173/src/utils/core/numberUtils.ts",
+        "status": 200,
+        "size": 44054
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/styles/Slider.css",
+        "status": 200,
+        "size": 7519
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/styles/TextField.css",
+        "status": 200,
+        "size": 10997
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/styles/Radio.css",
+        "status": 200,
+        "size": 7642
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/styles/NumberField.css",
+        "status": 200,
+        "size": 15088
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/styles/SearchField.css",
+        "status": 200,
+        "size": 15416
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/styles/Field.css",
+        "status": 200,
+        "size": 3135
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/styles/RadioGroup.css",
+        "status": 200,
+        "size": 1080
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/styles/Select.css",
+        "status": 200,
+        "size": 18985
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/styles/Checkbox.css",
+        "status": 200,
+        "size": 11571
+      },
+      {
+        "url": "http://localhost:5173/node_modules/.vite/deps/@tanstack_react-virtual.js?v=72dcb",
+        "status": 200,
+        "size": 32325
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/styles/ComboBox.css",
+        "status": 200,
+        "size": 18305
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/styles/CheckboxGroup.css",
+        "status": 200,
+        "size": 1052
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/CollectionErrorState.tsx",
+        "status": 200,
+        "size": 18256
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/styles/Tabs.css",
+        "status": 200,
+        "size": 14212
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/styles/ListBox.css",
+        "status": 200,
+        "size": 23271
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/styles/GridList.css",
+        "status": 200,
+        "size": 22413
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/styles/Panel.css",
+        "status": 200,
+        "size": 1376
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/styles/Tree.css",
+        "status": 200,
+        "size": 13196
+      },
+      {
+        "url": "http://localhost:5173/node_modules/.vite/deps/@internationalized_date.js?v=578f6",
+        "status": 200,
+        "size": 27135
+      },
+      {
+        "url": "http://localhost:5173/src/utils/core/dateUtils.ts",
+        "status": 200,
+        "size": 33400
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/styles/Calendar.css",
+        "status": 200,
+        "size": 5103
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/styles/DatePicker.css",
+        "status": 200,
+        "size": 8603
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/styles/DateRangePicker.css",
+        "status": 200,
+        "size": 11659
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/styles/DateField.css",
+        "status": 200,
+        "size": 13035
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/styles/TimeField.css",
+        "status": 200,
+        "size": 13035
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/styles/Switch.css",
+        "status": 200,
+        "size": 6528
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/styles/Card.css",
+        "status": 200,
+        "size": 4325
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/styles/TagGroup.css",
+        "status": 200,
+        "size": 6684
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/styles/Tooltip.css",
+        "status": 200,
+        "size": 6710
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/styles/Meter.css",
+        "status": 200,
+        "size": 2858
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/styles/Table.css",
+        "status": 200,
+        "size": 28231
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/styles/Menu.css",
+        "status": 200,
+        "size": 14775
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/styles/ProgressBar.css",
+        "status": 200,
+        "size": 3272
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/styles/Separator.css",
+        "status": 200,
+        "size": 3160
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/styles/Toolbar.css",
+        "status": 200,
+        "size": 1388
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/styles/Breadcrumbs.css",
+        "status": 200,
+        "size": 5789
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/styles/Link.css",
+        "status": 200,
+        "size": 4458
+      },
+      {
+        "url": "http://localhost:5173/node_modules/.vite/deps/@tanstack_react-table.js?v=f4656c5",
+        "status": 200,
+        "size": 131431
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/styles/Dialog.css",
+        "status": 200,
+        "size": 3525
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/styles/Modal.css",
+        "status": 200,
+        "size": 4544
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/styles/Popover.css",
+        "status": 200,
+        "size": 7427
+      },
+      {
+        "url": "http://localhost:5173/src/utils/theme/hctUtils.ts",
+        "status": 200,
+        "size": 43717
+      },
+      {
+        "url": "http://localhost:5173/node_modules/.vite/deps/groq-sdk.js?v=f6e375d0",
+        "status": 200,
+        "size": 55551
+      },
+      {
+        "url": "http://localhost:5173/node_modules/.vite/deps/chunk-LYGXKC2E.js?v=18230328",
+        "status": 200,
+        "size": 2751
+      },
+      {
+        "url": "http://localhost:5173/node_modules/.vite/deps/chunk-NY4Z4LNU.js?v=18230328",
+        "status": 200,
+        "size": 656
+      },
+      {
+        "url": "http://localhost:5173/src/builder/stores/utils/elementSanitizer.ts",
+        "status": 200,
+        "size": 6704
+      },
+      {
+        "url": "http://localhost:5173/node_modules/.vite/deps/chunk-4JECOO4M.js?v=18230328",
+        "status": 200,
+        "size": 1642354
+      },
+      {
+        "url": "http://localhost:5173/src/workflow/utils/index.ts",
+        "status": 200,
+        "size": 432
+      },
+      {
+        "url": "http://localhost:5173/src/workflow/nodes/LayoutNode.tsx",
+        "status": 200,
+        "size": 13552
+      },
+      {
+        "url": "http://localhost:5173/src/workflow/nodes/PageNode.tsx",
+        "status": 200,
+        "size": 13820
+      },
+      {
+        "url": "http://localhost:5173/node_modules/@xyflow/react/dist/style.css",
+        "status": 200,
+        "size": 19709
+      },
+      {
+        "url": "http://localhost:5173/src/workflow/nodes/DataSourceNode.tsx",
+        "status": 200,
+        "size": 13661
+      },
+      {
+        "url": "http://localhost:5173/src/builder/panels/datatable/stores/dataTableEditorStore.t",
+        "status": 200,
+        "size": 11626
+      },
+      {
+        "url": "http://localhost:5173/src/builder/hooks/useDataQueries.ts",
+        "status": 200,
+        "size": 32747
+      },
+      {
+        "url": "http://localhost:5173/src/builder/panels/common/EmptyState.tsx",
+        "status": 200,
+        "size": 6315
+      },
+      {
+        "url": "http://localhost:5173/src/builder/panels/common/LoadingSpinner.tsx",
+        "status": 200,
+        "size": 8719
+      },
+      {
+        "url": "http://localhost:5173/src/builder/panels/datatable/components/DataTableList.tsx",
+        "status": 200,
+        "size": 29307
+      },
+      {
+        "url": "http://localhost:5173/src/builder/panels/datatable/components/ApiEndpointList.ts",
+        "status": 200,
+        "size": 31637
+      },
+      {
+        "url": "http://localhost:5173/src/builder/panels/datatable/components/VariableList.tsx",
+        "status": 200,
+        "size": 33031
+      },
+      {
+        "url": "http://localhost:5173/src/builder/panels/datatable/components/TransformerList.ts",
+        "status": 200,
+        "size": 31520
+      },
+      {
+        "url": "http://localhost:5173/src/builder/panels/datatable/editors/index.ts",
+        "status": 200,
+        "size": 1204
+      },
+      {
+        "url": "http://localhost:5173/src/builder/panels/datatable/DataTablePanel.css",
+        "status": 200,
+        "size": 13145
+      },
+      {
+        "url": "http://localhost:5173/src/builder/panels/datatable/DataTableEditorPanel.css",
+        "status": 200,
+        "size": 1323
+      },
+      {
+        "url": "http://localhost:5173/src/builder/panels/monitor/hooks/useMemoryStats.ts",
+        "status": 200,
+        "size": 19954
+      },
+      {
+        "url": "http://localhost:5173/src/builder/panels/monitor/components/MemoryChart.tsx",
+        "status": 200,
+        "size": 22081
+      },
+      {
+        "url": "http://localhost:5173/src/builder/panels/monitor/hooks/useTimeSeriesData.ts",
+        "status": 200,
+        "size": 7290
+      },
+      {
+        "url": "http://localhost:5173/src/builder/panels/monitor/hooks/useFPSMonitor.ts",
+        "status": 200,
+        "size": 10395
+      },
+      {
+        "url": "http://localhost:5173/src/builder/panels/monitor/hooks/useWebVitals.ts",
+        "status": 200,
+        "size": 10716
+      },
+      {
+        "url": "http://localhost:5173/src/builder/panels/monitor/components/MemoryActions.tsx",
+        "status": 200,
+        "size": 8044
+      },
+      {
+        "url": "http://localhost:5173/src/builder/panels/monitor/components/ThresholdIndicator.t",
+        "status": 200,
+        "size": 7132
+      },
+      {
+        "url": "http://localhost:5173/src/builder/panels/monitor/components/ExportButton.tsx",
+        "status": 200,
+        "size": 11437
+      },
+      {
+        "url": "http://localhost:5173/src/builder/panels/monitor/components/RealtimeChart.tsx",
+        "status": 200,
+        "size": 29578
+      },
+      {
+        "url": "http://localhost:5173/src/builder/panels/monitor/components/FPSMeter.tsx",
+        "status": 200,
+        "size": 15580
+      },
+      {
+        "url": "http://localhost:5173/src/builder/panels/monitor/components/WebVitalsCard.tsx",
+        "status": 200,
+        "size": 15260
+      },
+      {
+        "url": "http://localhost:5173/src/builder/panels/monitor/components/ComponentMemoryList.",
+        "status": 200,
+        "size": 32035
+      },
+      {
+        "url": "http://localhost:5173/src/builder/panels/monitor/components/ThresholdSettings.ts",
+        "status": 200,
+        "size": 30384
+      },
+      {
+        "url": "http://localhost:5173/src/builder/utils/HierarchyManager.ts",
+        "status": 200,
+        "size": 60301
+      },
+      {
+        "url": "http://localhost:5173/src/services/save/saveService.ts",
+        "status": 200,
+        "size": 29401
+      },
+      {
+        "url": "http://localhost:5173/src/builder/panels/common/PropertyFieldset.tsx",
+        "status": 200,
+        "size": 6122
+      },
+      {
+        "url": "http://localhost:5173/src/builder/factories/ComponentFactory.ts",
+        "status": 200,
+        "size": 24983
+      },
+      {
+        "url": "http://localhost:5173/src/builder/utils/idGeneration.ts",
+        "status": 200,
+        "size": 5538
+      },
+      {
+        "url": "http://localhost:5173/src/types/builder/unified.types.ts",
+        "status": 200,
+        "size": 56321
+      },
+      {
+        "url": "http://localhost:5173/src/builder/panels/common/PropertySection.tsx",
+        "status": 200,
+        "size": 15583
+      },
+      {
+        "url": "http://localhost:5173/src/builder/panels/common/PropertyInput.tsx",
+        "status": 200,
+        "size": 16277
+      },
+      {
+        "url": "http://localhost:5173/src/builder/panels/common/PropertyCheckbox.tsx",
+        "status": 200,
+        "size": 4759
+      },
+      {
+        "url": "http://localhost:5173/src/builder/panels/common/PropertySelect.tsx",
+        "status": 200,
+        "size": 14637
+      },
+      {
+        "url": "http://localhost:5173/src/builder/panels/common/PropertySwitch.tsx",
+        "status": 200,
+        "size": 6602
+      },
+      {
+        "url": "http://localhost:5173/src/builder/panels/common/PropertySlider.tsx",
+        "status": 200,
+        "size": 11515
+      },
+      {
+        "url": "http://localhost:5173/src/builder/panels/common/PropertyUnitInput.tsx",
+        "status": 200,
+        "size": 43459
+      },
+      {
+        "url": "http://localhost:5173/src/builder/panels/common/PropertyColor.tsx",
+        "status": 200,
+        "size": 19324
+      },
+      {
+        "url": "http://localhost:5173/src/builder/panels/common/PropertyColorPicker.tsx",
+        "status": 200,
+        "size": 9679
+      },
+      {
+        "url": "http://localhost:5173/src/builder/panels/common/PropertyCustomId.tsx",
+        "status": 200,
+        "size": 18365
+      },
+      {
+        "url": "http://localhost:5173/src/builder/panels/common/SectionHeader.tsx",
+        "status": 200,
+        "size": 9227
+      },
+      {
+        "url": "http://localhost:5173/src/builder/panels/common/MultiSelectStatusIndicator.tsx",
+        "status": 200,
+        "size": 57208
+      },
+      {
+        "url": "http://localhost:5173/src/builder/panels/common/BatchPropertyEditor.tsx",
+        "status": 200,
+        "size": 42975
+      },
+      {
+        "url": "http://localhost:5173/src/builder/panels/common/SelectionFilter.tsx",
+        "status": 200,
+        "size": 28423
+      },
+      {
+        "url": "http://localhost:5173/src/builder/panels/common/KeyboardShortcutsHelp.tsx",
+        "status": 200,
+        "size": 38566
+      },
+      {
+        "url": "http://localhost:5173/src/builder/panels/common/SmartSelection.tsx",
+        "status": 200,
+        "size": 19810
+      },
+      {
+        "url": "http://localhost:5173/src/builder/panels/common/SelectionMemory.tsx",
+        "status": 200,
+        "size": 25368
+      },
+      {
+        "url": "http://localhost:5173/src/builder/panels/common/PropertyDataBinding.tsx",
+        "status": 200,
+        "size": 71584
+      },
+      {
+        "url": "http://localhost:5173/src/builder/nodes/index.tsx",
+        "status": 200,
+        "size": 8343
+      },
+      {
+        "url": "http://localhost:5173/src/builder/hooks/useSidebarTabs.ts",
+        "status": 200,
+        "size": 8185
+      },
+      {
+        "url": "http://localhost:5173/src/builder/sidebar/treeHelpers.ts",
+        "status": 200,
+        "size": 5548
+      },
+      {
+        "url": "http://localhost:5173/src/builder/panels/styles/sections/TransformSection.tsx",
+        "status": 200,
+        "size": 15498
+      },
+      {
+        "url": "http://localhost:5173/src/builder/hooks/useTreeExpandState.ts",
+        "status": 200,
+        "size": 16105
+      },
+      {
+        "url": "http://localhost:5173/src/builder/panels/styles/sections/LayoutSection.tsx",
+        "status": 200,
+        "size": 77387
+      },
+      {
+        "url": "http://localhost:5173/src/builder/panels/styles/sections/AppearanceSection.tsx",
+        "status": 200,
+        "size": 20746
+      },
+      {
+        "url": "http://localhost:5173/src/builder/panels/styles/sections/ModifiedStylesSection.t",
+        "status": 200,
+        "size": 30473
+      },
+      {
+        "url": "http://localhost:5173/src/builder/panels/styles/sections/TypographySection.tsx",
+        "status": 200,
+        "size": 65173
+      },
+      {
+        "url": "http://localhost:5173/src/types/events/events.registry.ts",
+        "status": 200,
+        "size": 18308
+      },
+      {
+        "url": "http://localhost:5173/src/builder/panels/events/blocks/BlockConnector.tsx",
+        "status": 200,
+        "size": 3978
+      },
+      {
+        "url": "http://localhost:5173/src/builder/events/types/eventBlockTypes.ts",
+        "status": 200,
+        "size": 19186
+      },
+      {
+        "url": "http://localhost:5173/src/builder/panels/events/editors/ConditionRow.tsx",
+        "status": 200,
+        "size": 16901
+      },
+      {
+        "url": "http://localhost:5173/src/builder/panels/events/editors/OperatorToggle.tsx",
+        "status": 200,
+        "size": 4798
+      },
+      {
+        "url": "http://localhost:5173/src/builder/panels/events/blocks/ActionBlock.tsx",
+        "status": 200,
+        "size": 22807
+      },
+      {
+        "url": "http://localhost:5173/src/builder/events/actions/ActionEditor.tsx",
+        "status": 200,
+        "size": 59405
+      },
+      {
+        "url": "http://localhost:5173/src/builder/events/pickers/ActionTypePicker.tsx",
+        "status": 200,
+        "size": 45033
+      },
+      {
+        "url": "http://localhost:5173/src/builder/workspace/canvas/viewport/ViewportController.t",
+        "status": 200,
+        "size": 21365
+      },
+      {
+        "url": "http://localhost:5173/src/builder/workspace/canvas/viewport/useViewportControl.t",
+        "status": 200,
+        "size": 24636
+      },
+      {
+        "url": "http://localhost:5173/src/builder/workspace/canvas/layers/BodyLayer.tsx",
+        "status": 200,
+        "size": 15600
+      },
+      {
+        "url": "http://localhost:5173/src/builder/workspace/canvas/viewport/ViewportControlBridg",
+        "status": 200,
+        "size": 5853
+      },
+      {
+        "url": "http://localhost:5173/node_modules/.vite/deps/pixi__js.js?v=ef1cc891",
+        "status": 200,
+        "size": 104453
+      },
+      {
+        "url": "http://localhost:5173/node_modules/.vite/deps/@pixi_layout_components.js?v=f45bd",
+        "status": 200,
+        "size": 67278
+      },
+      {
+        "url": "http://localhost:5173/src/builder/workspace/canvas/layout/GridLayout.tsx",
+        "status": 200,
+        "size": 6677
+      },
+      {
+        "url": "http://localhost:5173/src/builder/workspace/canvas/layout/GridLayout.utils.ts",
+        "status": 200,
+        "size": 28660
+      },
+      {
+        "url": "http://localhost:5173/src/builder/workspace/canvas/layout/LayoutEngine.ts",
+        "status": 200,
+        "size": 147353
+      },
+      {
+        "url": "http://localhost:5173/node_modules/.vite/deps/@pixi_ui.js?v=76eeefe0",
+        "status": 200,
+        "size": 216869
+      },
+      {
+        "url": "http://localhost:5173/src/builder/workspace/canvas/utils/index.ts",
+        "status": 200,
+        "size": 1208
+      },
+      {
+        "url": "http://localhost:5173/src/builder/workspace/canvas/sprites/paddingUtils.ts",
+        "status": 200,
+        "size": 12739
+      },
+      {
+        "url": "http://localhost:5173/node_modules/.vite/deps/chunk-P4XDC5FF.js?v=18230328",
+        "status": 200,
+        "size": 105177
+      },
+      {
+        "url": "http://localhost:5173/node_modules/.vite/deps/chunk-GZQOV67W.js?v=18230328",
+        "status": 200,
+        "size": 3302
+      },
+      {
+        "url": "http://localhost:5173/node_modules/.vite/deps/chunk-E6DV3MIS.js?v=18230328",
+        "status": 200,
+        "size": 71503
+      },
+      {
+        "url": "http://localhost:5173/src/builder/workspace/canvas/ui/index.ts",
+        "status": 200,
+        "size": 18899
+      },
+      {
+        "url": "http://localhost:5173/node_modules/.vite/deps/chunk-HFBR7O6Q.js?v=18230328",
+        "status": 200,
+        "size": 125724
+      },
+      {
+        "url": "http://localhost:5173/node_modules/.vite/deps/chunk-SFT3SHT5.js?v=18230328",
+        "status": 200,
+        "size": 605373
+      },
+      {
+        "url": "http://localhost:5173/node_modules/.vite/deps/chunk-UW2SKZFZ.js?v=18230328",
+        "status": 200,
+        "size": 130702
+      },
+      {
+        "url": "http://localhost:5173/node_modules/.vite/deps/chunk-JZI4NLEF.js?v=18230328",
+        "status": 200,
+        "size": 491175
+      },
+      {
+        "url": "http://localhost:5173/node_modules/.vite/deps/chunk-RQHNTLTI.js?v=18230328",
+        "status": 200,
+        "size": 384808
+      },
+      {
+        "url": "http://localhost:5173/node_modules/.vite/deps/@internationalized_number.js?v=d05",
+        "status": 200,
+        "size": 1733
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/CollectionErrorState.css",
+        "status": 200,
+        "size": 3076
+      },
+      {
+        "url": "http://localhost:5173/node_modules/.vite/deps/@material_material-color-utilities",
+        "status": 200,
+        "size": 157684
+      },
+      {
+        "url": "http://localhost:5173/src/workflow/utils/autoLayout.ts",
+        "status": 200,
+        "size": 8542
+      },
+      {
+        "url": "http://localhost:5173/src/builder/panels/datatable/editors/DataTableCreator.tsx",
+        "status": 200,
+        "size": 43922
+      },
+      {
+        "url": "http://localhost:5173/src/builder/panels/datatable/editors/DataTableEditor.tsx",
+        "status": 200,
+        "size": 102726
+      },
+      {
+        "url": "http://localhost:5173/src/builder/panels/datatable/editors/ApiEndpointEditor.tsx",
+        "status": 200,
+        "size": 113709
+      },
+      {
+        "url": "http://localhost:5173/src/builder/panels/datatable/editors/VariableEditor.tsx",
+        "status": 200,
+        "size": 55690
+      },
+      {
+        "url": "http://localhost:5173/src/builder/panels/monitor/hooks/useComponentMemory.ts",
+        "status": 200,
+        "size": 14809
+      },
+      {
+        "url": "http://localhost:5173/src/builder/factories/utils/elementCreation.ts",
+        "status": 200,
+        "size": 11078
+      },
+      {
+        "url": "http://localhost:5173/src/builder/factories/utils/dbPersistence.ts",
+        "status": 200,
+        "size": 19897
+      },
+      {
+        "url": "http://localhost:5173/src/builder/factories/definitions/FormComponents.ts",
+        "status": 200,
+        "size": 4636
+      },
+      {
+        "url": "http://localhost:5173/src/builder/factories/definitions/SelectionComponents.ts",
+        "status": 200,
+        "size": 14590
+      },
+      {
+        "url": "http://localhost:5173/src/builder/factories/definitions/GroupComponents.ts",
+        "status": 200,
+        "size": 25730
+      },
+      {
+        "url": "http://localhost:5173/src/builder/factories/definitions/LayoutComponents.ts",
+        "status": 200,
+        "size": 10793
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/ColorSwatch.tsx",
+        "status": 200,
+        "size": 2941
+      },
+      {
+        "url": "http://localhost:5173/src/builder/factories/definitions/TableComponents.ts",
+        "status": 200,
+        "size": 12354
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/ColorArea.tsx",
+        "status": 200,
+        "size": 3396
+      },
+      {
+        "url": "http://localhost:5173/src/builder/factories/definitions/DataComponents.ts",
+        "status": 200,
+        "size": 10152
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/ColorSlider.tsx",
+        "status": 200,
+        "size": 4011
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/TailSwatch.tsx",
+        "status": 200,
+        "size": 18311
+      },
+      {
+        "url": "http://localhost:5173/src/builder/utils/idValidation.ts",
+        "status": 200,
+        "size": 7190
+      },
+      {
+        "url": "http://localhost:5173/src/builder/panels/properties/utils/batchPropertyUtils.ts",
+        "status": 200,
+        "size": 18327
+      },
+      {
+        "url": "http://localhost:5173/src/builder/panels/common/PropertyDataBinding.css",
+        "status": 200,
+        "size": 3646
+      },
+      {
+        "url": "http://localhost:5173/src/builder/utils/smartSelection.ts",
+        "status": 200,
+        "size": 25747
+      },
+      {
+        "url": "http://localhost:5173/src/builder/nodes/Pages.tsx",
+        "status": 200,
+        "size": 18694
+      },
+      {
+        "url": "http://localhost:5173/src/builder/nodes/Layers.tsx",
+        "status": 200,
+        "size": 18950
+      },
+      {
+        "url": "http://localhost:5173/src/builder/nodes/index.css",
+        "status": 200,
+        "size": 8346
+      },
+      {
+        "url": "http://localhost:5173/src/builder/nodes/NodesPanel.tsx",
+        "status": 200,
+        "size": 17660
+      },
+      {
+        "url": "http://localhost:5173/src/builder/nodes/PagesTab/index.ts",
+        "status": 200,
+        "size": 508
+      },
+      {
+        "url": "http://localhost:5173/src/builder/nodes/LayoutsTab/index.ts",
+        "status": 200,
+        "size": 526
+      },
+      {
+        "url": "http://localhost:5173/src/builder/nodes/NodesPanelTabs.tsx",
+        "status": 200,
+        "size": 8298
+      },
+      {
+        "url": "http://localhost:5173/src/builder/panels/styles/hooks/useStyleValues.ts",
+        "status": 200,
+        "size": 27226
+      },
+      {
+        "url": "http://localhost:5173/src/builder/panels/styles/constants/styleOptions.ts",
+        "status": 200,
+        "size": 6833
+      },
+      {
+        "url": "http://localhost:5173/src/builder/panels/events/editors/OperatorPicker.tsx",
+        "status": 200,
+        "size": 14385
+      },
+      {
+        "url": "http://localhost:5173/src/builder/events/types/eventTypes.ts",
+        "status": 200,
+        "size": 20088
+      },
+      {
+        "url": "http://localhost:5173/src/builder/events/actions/NavigateActionEditor.tsx",
+        "status": 200,
+        "size": 9327
+      },
+      {
+        "url": "http://localhost:5173/src/builder/events/actions/SetStateActionEditor.tsx",
+        "status": 200,
+        "size": 10461
+      },
+      {
+        "url": "http://localhost:5173/src/builder/events/actions/APICallActionEditor.tsx",
+        "status": 200,
+        "size": 18813
+      },
+      {
+        "url": "http://localhost:5173/src/builder/events/actions/ShowModalActionEditor.tsx",
+        "status": 200,
+        "size": 8643
+      },
+      {
+        "url": "http://localhost:5173/src/builder/events/actions/ShowToastActionEditor.tsx",
+        "status": 200,
+        "size": 13878
+      },
+      {
+        "url": "http://localhost:5173/src/builder/events/actions/ValidateFormActionEditor.tsx",
+        "status": 200,
+        "size": 5583
+      },
+      {
+        "url": "http://localhost:5173/src/builder/events/actions/ScrollToActionEditor.tsx",
+        "status": 200,
+        "size": 14521
+      },
+      {
+        "url": "http://localhost:5173/src/builder/events/actions/UpdateStateActionEditor.tsx",
+        "status": 200,
+        "size": 12077
+      },
+      {
+        "url": "http://localhost:5173/src/builder/events/actions/HideModalActionEditor.tsx",
+        "status": 200,
+        "size": 5211
+      },
+      {
+        "url": "http://localhost:5173/src/builder/events/actions/ToggleVisibilityActionEditor.ts",
+        "status": 200,
+        "size": 20691
+      },
+      {
+        "url": "http://localhost:5173/src/builder/events/actions/ResetFormActionEditor.tsx",
+        "status": 200,
+        "size": 5079
+      },
+      {
+        "url": "http://localhost:5173/src/builder/events/actions/SubmitFormActionEditor.tsx",
+        "status": 200,
+        "size": 5139
+      },
+      {
+        "url": "http://localhost:5173/src/builder/events/actions/CopyToClipboardActionEditor.tsx",
+        "status": 200,
+        "size": 15983
+      },
+      {
+        "url": "http://localhost:5173/src/builder/events/actions/CustomFunctionActionEditor.tsx",
+        "status": 200,
+        "size": 14823
+      },
+      {
+        "url": "http://localhost:5173/src/builder/events/actions/SetComponentStateActionEditor.t",
+        "status": 200,
+        "size": 25872
+      },
+      {
+        "url": "http://localhost:5173/src/builder/events/actions/TriggerComponentActionEditor.ts",
+        "status": 200,
+        "size": 30872
+      },
+      {
+        "url": "http://localhost:5173/src/builder/events/actions/UpdateFormFieldActionEditor.tsx",
+        "status": 200,
+        "size": 31677
+      },
+      {
+        "url": "http://localhost:5173/src/builder/events/actions/FilterCollectionActionEditor.ts",
+        "status": 200,
+        "size": 33559
+      },
+      {
+        "url": "http://localhost:5173/src/builder/events/actions/SelectItemActionEditor.tsx",
+        "status": 200,
+        "size": 34689
+      },
+      {
+        "url": "http://localhost:5173/src/builder/events/actions/ClearSelectionActionEditor.tsx",
+        "status": 200,
+        "size": 7411
+      },
+      {
+        "url": "http://localhost:5173/src/builder/events/actions/LoadDataTableActionEditor.tsx",
+        "status": 200,
+        "size": 13562
+      },
+      {
+        "url": "http://localhost:5173/src/builder/events/actions/SyncComponentActionEditor.tsx",
+        "status": 200,
+        "size": 17025
+      },
+      {
+        "url": "http://localhost:5173/src/builder/events/actions/SaveToDataTableActionEditor.tsx",
+        "status": 200,
+        "size": 26929
+      },
+      {
+        "url": "http://localhost:5173/src/builder/events/actions/SetVariableActionEditor.tsx",
+        "status": 200,
+        "size": 28869
+      },
+      {
+        "url": "http://localhost:5173/src/builder/events/components/ConditionEditor.tsx",
+        "status": 200,
+        "size": 16344
+      },
+      {
+        "url": "http://localhost:5173/src/builder/events/components/ActionDelayEditor.tsx",
+        "status": 200,
+        "size": 13744
+      },
+      {
+        "url": "http://localhost:5173/node_modules/.vite/deps/yoga-layout_load.js?v=c993c645",
+        "status": 200,
+        "size": 3056
+      },
+      {
+        "url": "http://localhost:5173/src/builder/workspace/canvas/utils/borderUtils.ts",
+        "status": 200,
+        "size": 13223
+      },
+      {
+        "url": "http://localhost:5173/src/builder/workspace/canvas/utils/graphicsUtils.ts",
+        "status": 200,
+        "size": 28422
+      },
+      {
+        "url": "http://localhost:5173/node_modules/.vite/deps/@pixi_layout.js?v=fc52b3f1",
+        "status": 200,
+        "size": 44705
+      },
+      {
+        "url": "http://localhost:5173/node_modules/.vite/deps/chunk-MTJ2UZPH.js?v=18230328",
+        "status": 200,
+        "size": 147748
+      },
+      {
+        "url": "http://localhost:5173/src/builder/workspace/canvas/ui/PixiButton.tsx",
+        "status": 200,
+        "size": 56639
+      },
+      {
+        "url": "http://localhost:5173/src/builder/workspace/canvas/ui/PixiFancyButton.tsx",
+        "status": 200,
+        "size": 24832
+      },
+      {
+        "url": "http://localhost:5173/src/builder/workspace/canvas/ui/PixiCheckbox.tsx",
+        "status": 200,
+        "size": 24135
+      },
+      {
+        "url": "http://localhost:5173/src/builder/workspace/canvas/ui/PixiCheckboxGroup.tsx",
+        "status": 200,
+        "size": 43267
+      },
+      {
+        "url": "http://localhost:5173/src/builder/workspace/canvas/ui/PixiCheckboxItem.tsx",
+        "status": 200,
+        "size": 12736
+      },
+      {
+        "url": "http://localhost:5173/src/builder/workspace/canvas/ui/PixiRadio.tsx",
+        "status": 200,
+        "size": 39442
+      },
+      {
+        "url": "http://localhost:5173/src/builder/workspace/canvas/ui/PixiRadioItem.tsx",
+        "status": 200,
+        "size": 12584
+      },
+      {
+        "url": "http://localhost:5173/src/builder/workspace/canvas/ui/PixiSlider.tsx",
+        "status": 200,
+        "size": 24846
+      },
+      {
+        "url": "http://localhost:5173/src/builder/workspace/canvas/ui/PixiInput.tsx",
+        "status": 200,
+        "size": 25081
+      },
+      {
+        "url": "http://localhost:5173/src/builder/workspace/canvas/ui/PixiSelect.tsx",
+        "status": 200,
+        "size": 29465
+      },
+      {
+        "url": "http://localhost:5173/src/builder/workspace/canvas/ui/PixiProgressBar.tsx",
+        "status": 200,
+        "size": 21331
+      },
+      {
+        "url": "http://localhost:5173/src/builder/workspace/canvas/ui/PixiSwitcher.tsx",
+        "status": 200,
+        "size": 31647
+      },
+      {
+        "url": "http://localhost:5173/src/builder/workspace/canvas/ui/PixiMaskedFrame.tsx",
+        "status": 200,
+        "size": 23896
+      },
+      {
+        "url": "http://localhost:5173/src/builder/workspace/canvas/ui/PixiList.tsx",
+        "status": 200,
+        "size": 30822
+      },
+      {
+        "url": "http://localhost:5173/src/builder/workspace/canvas/ui/PixiToggleButton.tsx",
+        "status": 200,
+        "size": 52535
+      },
+      {
+        "url": "http://localhost:5173/src/builder/workspace/canvas/ui/PixiToggleButtonGroup.tsx",
+        "status": 200,
+        "size": 49252
+      },
+      {
+        "url": "http://localhost:5173/src/builder/workspace/canvas/ui/PixiScrollBox.tsx",
+        "status": 200,
+        "size": 23241
+      },
+      {
+        "url": "http://localhost:5173/src/builder/workspace/canvas/ui/PixiBadge.tsx",
+        "status": 200,
+        "size": 28821
+      },
+      {
+        "url": "http://localhost:5173/src/builder/workspace/canvas/ui/PixiMeter.tsx",
+        "status": 200,
+        "size": 27366
+      },
+      {
+        "url": "http://localhost:5173/src/builder/workspace/canvas/ui/PixiListBox.tsx",
+        "status": 200,
+        "size": 54892
+      },
+      {
+        "url": "http://localhost:5173/src/builder/workspace/canvas/ui/PixiSeparator.tsx",
+        "status": 200,
+        "size": 21165
+      },
+      {
+        "url": "http://localhost:5173/src/builder/workspace/canvas/ui/PixiLink.tsx",
+        "status": 200,
+        "size": 19153
+      },
+      {
+        "url": "http://localhost:5173/src/builder/workspace/canvas/ui/PixiBreadcrumbs.tsx",
+        "status": 200,
+        "size": 27789
+      },
+      {
+        "url": "http://localhost:5173/src/builder/workspace/canvas/ui/PixiSearchField.tsx",
+        "status": 200,
+        "size": 26676
+      },
+      {
+        "url": "http://localhost:5173/src/builder/workspace/canvas/ui/PixiCard.tsx",
+        "status": 200,
+        "size": 23243
+      },
+      {
+        "url": "http://localhost:5173/src/builder/workspace/canvas/ui/PixiMenu.tsx",
+        "status": 200,
+        "size": 35875
+      },
+      {
+        "url": "http://localhost:5173/src/builder/workspace/canvas/ui/PixiTabs.tsx",
+        "status": 200,
+        "size": 34491
+      },
+      {
+        "url": "http://localhost:5173/src/builder/workspace/canvas/ui/PixiNumberField.tsx",
+        "status": 200,
+        "size": 29678
+      },
+      {
+        "url": "http://localhost:5173/src/builder/workspace/canvas/ui/PixiGridList.tsx",
+        "status": 200,
+        "size": 25168
+      },
+      {
+        "url": "http://localhost:5173/src/builder/workspace/canvas/ui/PixiTagGroup.tsx",
+        "status": 200,
+        "size": 34463
+      },
+      {
+        "url": "http://localhost:5173/src/builder/workspace/canvas/ui/PixiComboBox.tsx",
+        "status": 200,
+        "size": 41241
+      },
+      {
+        "url": "http://localhost:5173/src/builder/workspace/canvas/ui/PixiTree.tsx",
+        "status": 200,
+        "size": 34819
+      },
+      {
+        "url": "http://localhost:5173/src/builder/workspace/canvas/ui/PixiTable.tsx",
+        "status": 200,
+        "size": 44044
+      },
+      {
+        "url": "http://localhost:5173/src/builder/workspace/canvas/ui/PixiDisclosure.tsx",
+        "status": 200,
+        "size": 25498
+      },
+      {
+        "url": "http://localhost:5173/src/builder/workspace/canvas/ui/PixiDisclosureGroup.tsx",
+        "status": 200,
+        "size": 36880
+      },
+      {
+        "url": "http://localhost:5173/src/builder/workspace/canvas/ui/PixiTooltip.tsx",
+        "status": 200,
+        "size": 18748
+      },
+      {
+        "url": "http://localhost:5173/src/builder/workspace/canvas/ui/PixiPopover.tsx",
+        "status": 200,
+        "size": 26505
+      },
+      {
+        "url": "http://localhost:5173/src/builder/workspace/canvas/ui/PixiDialog.tsx",
+        "status": 200,
+        "size": 31080
+      },
+      {
+        "url": "http://localhost:5173/src/builder/workspace/canvas/ui/PixiColorSwatch.tsx",
+        "status": 200,
+        "size": 14010
+      },
+      {
+        "url": "http://localhost:5173/src/builder/workspace/canvas/ui/PixiColorSlider.tsx",
+        "status": 200,
+        "size": 21816
+      },
+      {
+        "url": "http://localhost:5173/src/builder/workspace/canvas/ui/PixiTimeField.tsx",
+        "status": 200,
+        "size": 20898
+      },
+      {
+        "url": "http://localhost:5173/src/builder/workspace/canvas/ui/PixiDateField.tsx",
+        "status": 200,
+        "size": 18576
+      },
+      {
+        "url": "http://localhost:5173/src/builder/workspace/canvas/ui/PixiColorArea.tsx",
+        "status": 200,
+        "size": 19131
+      },
+      {
+        "url": "http://localhost:5173/src/builder/workspace/canvas/ui/PixiCalendar.tsx",
+        "status": 200,
+        "size": 39411
+      },
+      {
+        "url": "http://localhost:5173/src/builder/workspace/canvas/ui/PixiColorWheel.tsx",
+        "status": 200,
+        "size": 20773
+      },
+      {
+        "url": "http://localhost:5173/src/builder/workspace/canvas/ui/PixiDatePicker.tsx",
+        "status": 200,
+        "size": 41903
+      },
+      {
+        "url": "http://localhost:5173/src/builder/workspace/canvas/ui/PixiColorPicker.tsx",
+        "status": 200,
+        "size": 41195
+      },
+      {
+        "url": "http://localhost:5173/src/builder/workspace/canvas/ui/PixiDateRangePicker.tsx",
+        "status": 200,
+        "size": 52885
+      },
+      {
+        "url": "http://localhost:5173/src/builder/workspace/canvas/ui/PixiTextField.tsx",
+        "status": 200,
+        "size": 21413
+      },
+      {
+        "url": "http://localhost:5173/src/builder/workspace/canvas/ui/PixiForm.tsx",
+        "status": 200,
+        "size": 14985
+      },
+      {
+        "url": "http://localhost:5173/src/builder/workspace/canvas/ui/PixiToolbar.tsx",
+        "status": 200,
+        "size": 19906
+      },
+      {
+        "url": "http://localhost:5173/src/builder/workspace/canvas/ui/PixiSwitch.tsx",
+        "status": 200,
+        "size": 16705
+      },
+      {
+        "url": "http://localhost:5173/src/builder/workspace/canvas/ui/PixiTextArea.tsx",
+        "status": 200,
+        "size": 21110
+      },
+      {
+        "url": "http://localhost:5173/src/builder/workspace/canvas/ui/PixiFileTrigger.tsx",
+        "status": 200,
+        "size": 16893
+      },
+      {
+        "url": "http://localhost:5173/src/builder/workspace/canvas/ui/PixiDropZone.tsx",
+        "status": 200,
+        "size": 27412
+      },
+      {
+        "url": "http://localhost:5173/src/builder/workspace/canvas/ui/PixiSkeleton.tsx",
+        "status": 200,
+        "size": 24988
+      },
+      {
+        "url": "http://localhost:5173/src/builder/workspace/canvas/ui/PixiToast.tsx",
+        "status": 200,
+        "size": 28842
+      },
+      {
+        "url": "http://localhost:5173/src/builder/workspace/canvas/ui/PixiPagination.tsx",
+        "status": 200,
+        "size": 29227
+      },
+      {
+        "url": "http://localhost:5173/src/builder/workspace/canvas/ui/PixiColorField.tsx",
+        "status": 200,
+        "size": 20405
+      },
+      {
+        "url": "http://localhost:5173/src/builder/workspace/canvas/ui/PixiColorSwatchPicker.tsx",
+        "status": 200,
+        "size": 18937
+      },
+      {
+        "url": "http://localhost:5173/src/builder/workspace/canvas/ui/PixiGroup.tsx",
+        "status": 200,
+        "size": 19881
+      },
+      {
+        "url": "http://localhost:5173/src/builder/workspace/canvas/ui/PixiSlot.tsx",
+        "status": 200,
+        "size": 34079
+      },
+      {
+        "url": "http://localhost:5173/src/builder/panels/datatable/presets/types.ts",
+        "status": 200,
+        "size": 4315
+      },
+      {
+        "url": "http://localhost:5173/src/builder/panels/datatable/editors/DataTableCreator.css",
+        "status": 200,
+        "size": 13668
+      },
+      {
+        "url": "http://localhost:5173/src/builder/panels/datatable/editors/DataTableEditor.css",
+        "status": 200,
+        "size": 8696
+      },
+      {
+        "url": "http://localhost:5173/node_modules/.vite/deps/papaparse.js?v=e968ca2e",
+        "status": 200,
+        "size": 28744
+      },
+      {
+        "url": "http://localhost:5173/src/builder/panels/datatable/presets/dataTablePresets.ts",
+        "status": 200,
+        "size": 86226
+      },
+      {
+        "url": "http://localhost:5173/src/builder/panels/datatable/components/ColumnSelector.tsx",
+        "status": 200,
+        "size": 29741
+      },
+      {
+        "url": "http://localhost:5173/node_modules/.vite/deps/@dagrejs_dagre.js?v=69a3c84b",
+        "status": 200,
+        "size": 109755
+      },
+      {
+        "url": "http://localhost:5173/src/builder/panels/datatable/utils/columnDetector.ts",
+        "status": 200,
+        "size": 12977
+      },
+      {
+        "url": "http://localhost:5173/src/builder/panels/datatable/editors/ApiEndpointEditor.css",
+        "status": 200,
+        "size": 9093
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/styles/ColorSwatch.css",
+        "status": 200,
+        "size": 772
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/styles/ColorArea.css",
+        "status": 200,
+        "size": 1240
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/styles/ColorSlider.css",
+        "status": 200,
+        "size": 2436
+      },
+      {
+        "url": "http://localhost:5173/src/builder/panels/datatable/editors/VariableEditor.css",
+        "status": 200,
+        "size": 4187
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/utils.ts",
+        "status": 200,
+        "size": 2297
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/ColorSwatchPicker.tsx",
+        "status": 200,
+        "size": 4978
+      },
+      {
+        "url": "http://localhost:5173/src/builder/components/AddPageDialog.tsx",
+        "status": 200,
+        "size": 48253
+      },
+      {
+        "url": "http://localhost:5173/src/builder/utils/treeUtils.ts",
+        "status": 200,
+        "size": 34770
+      },
+      {
+        "url": "http://localhost:5173/src/builder/sidebar/VirtualizedLayerTree.tsx",
+        "status": 200,
+        "size": 61667
+      },
+      {
+        "url": "http://localhost:5173/src/builder/nodes/PagesTab/PagesTab.tsx",
+        "status": 200,
+        "size": 14011
+      },
+      {
+        "url": "http://localhost:5173/src/builder/panels/events/editors/ElementPicker.tsx",
+        "status": 200,
+        "size": 22294
+      },
+      {
+        "url": "http://localhost:5173/src/builder/nodes/LayoutsTab/LayoutsTab.tsx",
+        "status": 200,
+        "size": 84186
+      },
+      {
+        "url": "http://localhost:5173/src/builder/events/components/ComponentSelector.tsx",
+        "status": 200,
+        "size": 18318
+      },
+      {
+        "url": "http://localhost:5173/src/builder/stores/componentRegistry.ts",
+        "status": 200,
+        "size": 15303
+      },
+      {
+        "url": "http://localhost:5173/node_modules/.vite/deps/chunk-MIFGFPNA.js?v=18230328",
+        "status": 200,
+        "size": 9475
+      },
+      {
+        "url": "http://localhost:5173/src/builder/panels/datatable/components/ColumnSelector.css",
+        "status": 200,
+        "size": 6312
+      },
+      {
+        "url": "http://localhost:5173/node_modules/.vite/deps/tailwind-merge.js?v=385afc5c",
+        "status": 200,
+        "size": 1974
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/styles/ColorSwatchPicker.css",
+        "status": 200,
+        "size": 1425
+      },
+      {
+        "url": "http://localhost:5173/src/utils/slugValidator.ts",
+        "status": 200,
+        "size": 15623
+      },
+      {
+        "url": "http://localhost:5173/src/utils/urlGenerator.ts",
+        "status": 200,
+        "size": 28112
+      },
+      {
+        "url": "http://localhost:5173/src/builder/components/AddPageDialog.css",
+        "status": 200,
+        "size": 4718
+      },
+      {
+        "url": "http://localhost:5173/node_modules/.vite/deps/7HGFFDPC-EKTJJJWM.js?v=18230328",
+        "status": 200,
+        "size": 1506
+      },
+      {
+        "url": "http://localhost:5173/node_modules/pretendard/dist/web/static/woff2/Pretendard-R",
+        "status": 200,
+        "size": 765892
+      },
+      {
+        "url": "http://localhost:5173/node_modules/.vite/deps/chunk-AEPCXW4W.js?v=18230328",
+        "status": 200,
+        "size": 437772
+      },
+      {
+        "url": "http://localhost:5173/node_modules/pretendard/dist/web/static/woff2/Pretendard-S",
+        "status": 200,
+        "size": 785856
+      },
+      {
+        "url": "http://localhost:5173/node_modules/pretendard/dist/web/static/woff2/Pretendard-M",
+        "status": 200,
+        "size": 778432
+      },
+      {
+        "url": "http://localhost:5173/@vite/client",
+        "status": 304,
+        "size": 0
+      },
+      {
+        "url": "http://localhost:5173/node_modules/vite/dist/client/env.mjs",
+        "status": 200,
+        "size": 3478
+      },
+      {
+        "url": "http://localhost:5173/node_modules/.vite/deps/WebGLRenderer-O44MWBCQ.js?v=182303",
+        "status": 200,
+        "size": 1644
+      },
+      {
+        "url": "http://localhost:5173/@react-refresh",
+        "status": 200,
+        "size": 111918
+      },
+      {
+        "url": "http://localhost:5173/node_modules/.vite/deps/browserAll-WTNYTTQY.js?v=18230328",
+        "status": 200,
+        "size": 898
+      },
+      {
+        "url": "http://localhost:5173/src/canvas/index.tsx",
+        "status": 200,
+        "size": 11355
+      },
+      {
+        "url": "http://localhost:5173/node_modules/.vite/deps/react_jsx-dev-runtime.js?v=fb184d8",
+        "status": 200,
+        "size": 12151
+      },
+      {
+        "url": "http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=b636b6e5",
+        "status": 200,
+        "size": 1004959
+      },
+      {
+        "url": "http://localhost:5173/node_modules/.vite/deps/chunk-7BZEMQSK.js?v=18230328",
+        "status": 200,
+        "size": 1563
+      },
+      {
+        "url": "http://localhost:5173/node_modules/.vite/deps/chunk-OV4LOSH3.js?v=18230328",
+        "status": 200,
+        "size": 45340
+      },
+      {
+        "url": "http://localhost:5173/node_modules/.vite/deps/chunk-V4OQ3NZ2.js?v=18230328",
+        "status": 200,
+        "size": 9296
+      },
+      {
+        "url": "http://localhost:5173/node_modules/.vite/deps/chunk-4RW4ADHG.js?v=18230328",
+        "status": 200,
+        "size": 16198
+      },
+      {
+        "url": "http://localhost:5173/src/canvas/App.tsx",
+        "status": 200,
+        "size": 79882
+      },
+      {
+        "url": "http://localhost:5173/src/canvas/store/index.ts",
+        "status": 200,
+        "size": 1459
+      },
+      {
+        "url": "http://localhost:5173/src/canvas/router/index.ts",
+        "status": 200,
+        "size": 381
+      },
+      {
+        "url": "http://localhost:5173/src/canvas/messaging/index.ts",
+        "status": 200,
+        "size": 397
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/styles/index.css",
+        "status": 200,
+        "size": 456223
+      },
+      {
+        "url": "http://localhost:5173/node_modules/.vite/deps/react.js?v=fb184d85",
+        "status": 200,
+        "size": 1024
+      },
+      {
+        "url": "http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=fb184d85",
+        "status": 200,
+        "size": 13293
+      },
+      {
+        "url": "http://localhost:5173/node_modules/.vite/deps/chunk-ADERJKZ7.js?v=18230328",
+        "status": 200,
+        "size": 428571
+      },
+      {
+        "url": "http://localhost:5173/src/canvas/renderers/index.ts",
+        "status": 200,
+        "size": 13638
+      },
+      {
+        "url": "http://localhost:5173/src/canvas/store/types.ts",
+        "status": 200,
+        "size": 8104
+      },
+      {
+        "url": "http://localhost:5173/src/utils/events/eventEngine.ts",
+        "status": 200,
+        "size": 132682
+      },
+      {
+        "url": "http://localhost:5173/src/canvas/router/CanvasRouter.tsx",
+        "status": 200,
+        "size": 40230
+      },
+      {
+        "url": "http://localhost:5173/src/canvas/messaging/messageHandler.ts",
+        "status": 200,
+        "size": 51495
+      },
+      {
+        "url": "http://localhost:5173/src/canvas/store/runtimeStore.ts",
+        "status": 200,
+        "size": 41674
+      },
+      {
+        "url": "http://localhost:5173/node_modules/.vite/deps/zustand.js?v=fb184d85",
+        "status": 200,
+        "size": 2044
+      },
+      {
+        "url": "http://localhost:5173/src/canvas/renderers/FormRenderers.tsx",
+        "status": 200,
+        "size": 64171
+      },
+      {
+        "url": "http://localhost:5173/src/canvas/renderers/SelectionRenderers.tsx",
+        "status": 200,
+        "size": 102597
+      },
+      {
+        "url": "http://localhost:5173/src/canvas/renderers/LayoutRenderers.tsx",
+        "status": 200,
+        "size": 68630
+      },
+      {
+        "url": "http://localhost:5173/src/canvas/renderers/DateRenderers.tsx",
+        "status": 200,
+        "size": 35538
+      },
+      {
+        "url": "http://localhost:5173/src/canvas/renderers/CollectionRenderers.tsx",
+        "status": 200,
+        "size": 81496
+      },
+      {
+        "url": "http://localhost:5173/src/canvas/renderers/TableRenderer.tsx",
+        "status": 200,
+        "size": 49187
+      },
+      {
+        "url": "http://localhost:5173/src/canvas/renderers/DataRenderers.tsx",
+        "status": 200,
+        "size": 24504
+      },
+      {
+        "url": "http://localhost:5173/src/types/events/events.types.ts",
+        "status": 200,
+        "size": 21058
+      },
+      {
+        "url": "http://localhost:5173/src/utils/urlGenerator.ts",
+        "status": 200,
+        "size": 28112
+      },
+      {
+        "url": "http://localhost:5173/node_modules/.vite/deps/react-aria-components.js?v=fb184d8",
+        "status": 200,
+        "size": 1508684
+      },
+      {
+        "url": "http://localhost:5173/node_modules/.vite/deps/@internationalized_date.js?v=578f6",
+        "status": 200,
+        "size": 27135
+      },
+      {
+        "url": "http://localhost:5173/node_modules/.vite/deps/chunk-EGXXEFML.js?v=18230328",
+        "status": 200,
+        "size": 364318
+      },
+      {
+        "url": "http://localhost:5173/node_modules/.vite/deps/chunk-S7GYLZ4A.js?v=18230328",
+        "status": 200,
+        "size": 3875
+      },
+      {
+        "url": "http://localhost:5173/node_modules/.vite/deps/chunk-EQGUBBYH.js?v=18230328",
+        "status": 200,
+        "size": 95223
+      },
+      {
+        "url": "http://localhost:5173/node_modules/.vite/deps/chunk-N25DDF24.js?v=18230328",
+        "status": 200,
+        "size": 118990
+      },
+      {
+        "url": "http://localhost:5173/node_modules/.vite/deps/chunk-A27MC52V.js?v=18230328",
+        "status": 200,
+        "size": 72919
+      },
+      {
+        "url": "http://localhost:5173/node_modules/.vite/deps/chunk-H5DZYLMZ.js?v=18230328",
+        "status": 200,
+        "size": 4489
+      },
+      {
+        "url": "http://localhost:5173/node_modules/.vite/deps/chunk-DOI7WSDS.js?v=18230328",
+        "status": 200,
+        "size": 551
+      },
+      {
+        "url": "http://localhost:5173/node_modules/.vite/deps/chunk-D4VQQTX7.js?v=18230328",
+        "status": 200,
+        "size": 17698
+      },
+      {
+        "url": "http://localhost:5173/node_modules/.vite/deps/chunk-YAZPUYLT.js?v=18230328",
+        "status": 200,
+        "size": 19107
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/list.ts",
+        "status": 200,
+        "size": 5662
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/TailSwatch.tsx",
+        "status": 200,
+        "size": 18311
+      },
+      {
+        "url": "http://localhost:5173/src/services/save/index.ts",
+        "status": 200,
+        "size": 856
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/Slot.tsx",
+        "status": 200,
+        "size": 16214
+      },
+      {
+        "url": "http://localhost:5173/src/canvas/utils/eventHandlers.ts",
+        "status": 200,
+        "size": 9179
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/Field.tsx",
+        "status": 200,
+        "size": 21243
+      },
+      {
+        "url": "http://localhost:5173/src/utils/element/elementUtils.ts",
+        "status": 200,
+        "size": 16483
+      },
+      {
+        "url": "http://localhost:5173/src/lib/db/index.ts",
+        "status": 200,
+        "size": 6820
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/Table.tsx",
+        "status": 200,
+        "size": 213145
+      },
+      {
+        "url": "http://localhost:5173/src/types/events/events.registry.ts",
+        "status": 200,
+        "size": 18308
+      },
+      {
+        "url": "http://localhost:5173/node_modules/.vite/deps/tailwind-variants.js?v=11e92f01",
+        "status": 200,
+        "size": 14643
+      },
+      {
+        "url": "http://localhost:5173/node_modules/.vite/deps/@tanstack_react-table.js?v=f4656c5",
+        "status": 200,
+        "size": 131431
+      },
+      {
+        "url": "http://localhost:5173/node_modules/.vite/deps/@tanstack_react-virtual.js?v=72dcb",
+        "status": 200,
+        "size": 32325
+      },
+      {
+        "url": "http://localhost:5173/node_modules/.vite/deps/lucide-react.js?v=1f8036d1",
+        "status": 200,
+        "size": 948684
+      },
+      {
+        "url": "http://localhost:5173/node_modules/.vite/deps/chunk-4IXOHRSL.js?v=18230328",
+        "status": 200,
+        "size": 93900
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/Button.tsx",
+        "status": 200,
+        "size": 11529
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/ToggleButton.tsx",
+        "status": 200,
+        "size": 7083
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/ToggleButtonGroup.tsx",
+        "status": 200,
+        "size": 34140
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/TextField.tsx",
+        "status": 200,
+        "size": 10907
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/NumberField.tsx",
+        "status": 200,
+        "size": 14956
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/SearchField.tsx",
+        "status": 200,
+        "size": 9126
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/Radio.tsx",
+        "status": 200,
+        "size": 5606
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/RadioGroup.tsx",
+        "status": 200,
+        "size": 35440
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/Select.tsx",
+        "status": 200,
+        "size": 42092
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/ComboBox.tsx",
+        "status": 200,
+        "size": 63606
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/Checkbox.tsx",
+        "status": 200,
+        "size": 12679
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/CheckboxGroup.tsx",
+        "status": 200,
+        "size": 40066
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/ListBox.tsx",
+        "status": 200,
+        "size": 60301
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/Tabs.tsx",
+        "status": 200,
+        "size": 40967
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/Tree.tsx",
+        "status": 200,
+        "size": 27717
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/GridList.tsx",
+        "status": 200,
+        "size": 42127
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/Panel.tsx",
+        "status": 200,
+        "size": 5929
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/Calendar.tsx",
+        "status": 200,
+        "size": 17115
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/DatePicker.tsx",
+        "status": 200,
+        "size": 32541
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/DateRangePicker.tsx",
+        "status": 200,
+        "size": 40577
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/DateField.tsx",
+        "status": 200,
+        "size": 12364
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/TimeField.tsx",
+        "status": 200,
+        "size": 9888
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/styles/Slot.css",
+        "status": 200,
+        "size": 5956
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/Switch.tsx",
+        "status": 200,
+        "size": 8961
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/Card.tsx",
+        "status": 200,
+        "size": 26216
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/TagGroup.tsx",
+        "status": 200,
+        "size": 55918
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/Menu.tsx",
+        "status": 200,
+        "size": 65041
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/Tooltip.tsx",
+        "status": 200,
+        "size": 9186
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/ProgressBar.tsx",
+        "status": 200,
+        "size": 12813
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/Meter.tsx",
+        "status": 200,
+        "size": 12464
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/Toolbar.tsx",
+        "status": 200,
+        "size": 2581
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/Separator.tsx",
+        "status": 200,
+        "size": 6362
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/Group.tsx",
+        "status": 200,
+        "size": 8411
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/Breadcrumbs.tsx",
+        "status": 200,
+        "size": 27370
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/Breadcrumb.tsx",
+        "status": 200,
+        "size": 3432
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/Link.tsx",
+        "status": 200,
+        "size": 15386
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/Badge.tsx",
+        "status": 200,
+        "size": 9273
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/Dialog.tsx",
+        "status": 200,
+        "size": 6748
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/Modal.tsx",
+        "status": 200,
+        "size": 9827
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/Popover.tsx",
+        "status": 200,
+        "size": 11682
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/types.ts",
+        "status": 200,
+        "size": 1258
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/ColorSwatchPicker.tsx",
+        "status": 200,
+        "size": 4978
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/Skeleton.tsx",
+        "status": 200,
+        "size": 66087
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/utils.ts",
+        "status": 200,
+        "size": 2297
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/metadata.ts",
+        "status": 200,
+        "size": 72753
+      },
+      {
+        "url": "http://localhost:5173/src/services/save/saveService.ts",
+        "status": 200,
+        "size": 29401
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/styles/Field.css",
+        "status": 200,
+        "size": 3135
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/styles/Table.css",
+        "status": 200,
+        "size": 28231
+      },
+      {
+        "url": "http://localhost:5173/src/builder/hooks/useCollectionData.ts",
+        "status": 200,
+        "size": 69004
+      },
+      {
+        "url": "http://localhost:5173/src/lib/db/indexedDB/adapter.ts",
+        "status": 200,
+        "size": 127280
+      },
+      {
+        "url": "http://localhost:5173/src/services/api/index.ts",
+        "status": 200,
+        "size": 93821
+      },
+      {
+        "url": "http://localhost:5173/node_modules/.vite/deps/@react-aria_focus.js?v=cac913ac",
+        "status": 200,
+        "size": 9583
+      },
+      {
+        "url": "http://localhost:5173/node_modules/.vite/deps/@react-aria_utils.js?v=780bebce",
+        "status": 200,
+        "size": 31430
+      },
+      {
+        "url": "http://localhost:5173/node_modules/.vite/deps/tailwind-merge.js?v=385afc5c",
+        "status": 200,
+        "size": 1974
+      },
+      {
+        "url": "http://localhost:5173/node_modules/.vite/deps/react-stately.js?v=b9263de0",
+        "status": 200,
+        "size": 25909
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/styles/Button.css",
+        "status": 200,
+        "size": 5892
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/Slider.tsx",
+        "status": 200,
+        "size": 13422
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/styles/ToggleButton.css",
+        "status": 200,
+        "size": 5200
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/styles/ToggleButtonGroup.css",
+        "status": 200,
+        "size": 7024
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/styles/TextField.css",
+        "status": 200,
+        "size": 10997
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/styles/Radio.css",
+        "status": 200,
+        "size": 7642
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/styles/RadioGroup.css",
+        "status": 200,
+        "size": 1080
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/styles/NumberField.css",
+        "status": 200,
+        "size": 15088
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/styles/SearchField.css",
+        "status": 200,
+        "size": 15416
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/styles/Select.css",
+        "status": 200,
+        "size": 18985
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/styles/ComboBox.css",
+        "status": 200,
+        "size": 18305
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/styles/Checkbox.css",
+        "status": 200,
+        "size": 11571
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/styles/CheckboxGroup.css",
+        "status": 200,
+        "size": 1052
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/CollectionErrorState.tsx",
+        "status": 200,
+        "size": 18256
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/styles/ListBox.css",
+        "status": 200,
+        "size": 23271
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/styles/Tabs.css",
+        "status": 200,
+        "size": 14212
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/styles/Tree.css",
+        "status": 200,
+        "size": 13196
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/styles/GridList.css",
+        "status": 200,
+        "size": 22413
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/styles/Panel.css",
+        "status": 200,
+        "size": 1376
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/styles/Calendar.css",
+        "status": 200,
+        "size": 5103
+      },
+      {
+        "url": "http://localhost:5173/src/utils/core/dateUtils.ts",
+        "status": 200,
+        "size": 33400
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/styles/DatePicker.css",
+        "status": 200,
+        "size": 8603
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/styles/DateRangePicker.css",
+        "status": 200,
+        "size": 11659
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/styles/DateField.css",
+        "status": 200,
+        "size": 13035
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/styles/TimeField.css",
+        "status": 200,
+        "size": 13035
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/styles/Switch.css",
+        "status": 200,
+        "size": 6528
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/styles/Card.css",
+        "status": 200,
+        "size": 4325
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/styles/TagGroup.css",
+        "status": 200,
+        "size": 6684
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/styles/Menu.css",
+        "status": 200,
+        "size": 14775
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/styles/Tooltip.css",
+        "status": 200,
+        "size": 6710
+      },
+      {
+        "url": "http://localhost:5173/src/utils/core/numberUtils.ts",
+        "status": 200,
+        "size": 44054
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/styles/ProgressBar.css",
+        "status": 200,
+        "size": 3272
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/styles/Meter.css",
+        "status": 200,
+        "size": 2858
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/styles/Toolbar.css",
+        "status": 200,
+        "size": 1388
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/styles/Separator.css",
+        "status": 200,
+        "size": 3160
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/styles/Breadcrumbs.css",
+        "status": 200,
+        "size": 5789
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/styles/Link.css",
+        "status": 200,
+        "size": 4458
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/styles/Badge.css",
+        "status": 200,
+        "size": 4713
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/styles/Dialog.css",
+        "status": 200,
+        "size": 3525
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/styles/Modal.css",
+        "status": 200,
+        "size": 4544
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/styles/Popover.css",
+        "status": 200,
+        "size": 7427
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/ColorSwatch.tsx",
+        "status": 200,
+        "size": 2941
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/styles/ColorSwatchPicker.css",
+        "status": 200,
+        "size": 1425
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/styles/Skeleton.css",
+        "status": 200,
+        "size": 35437
+      },
+      {
+        "url": "http://localhost:5173/src/builder/stores/index.ts",
+        "status": 200,
+        "size": 27072
+      },
+      {
+        "url": "http://localhost:5173/src/env/supabase.client.ts",
+        "status": 200,
+        "size": 3957
+      },
+      {
+        "url": "http://localhost:5173/src/builder/stores/data.ts",
+        "status": 200,
+        "size": 39415
+      },
+      {
+        "url": "http://localhost:5173/src/builder/stores/datatable.ts",
+        "status": 200,
+        "size": 65058
+      },
+      {
+        "url": "http://localhost:5173/src/builder/hooks/useCollectionDataCache.ts",
+        "status": 200,
+        "size": 15210
+      },
+      {
+        "url": "http://localhost:5173/src/lib/db/indexedDB/LRUCache.ts",
+        "status": 200,
+        "size": 16204
+      },
+      {
+        "url": "http://localhost:5173/src/services/api/BaseApiService.ts",
+        "status": 200,
+        "size": 36712
+      },
+      {
+        "url": "http://localhost:5173/src/services/api/ElementsApiService.ts",
+        "status": 200,
+        "size": 19811
+      },
+      {
+        "url": "http://localhost:5173/src/services/api/ProjectsApiService.ts",
+        "status": 200,
+        "size": 16505
+      },
+      {
+        "url": "http://localhost:5173/src/services/api/PagesApiService.ts",
+        "status": 200,
+        "size": 13410
+      },
+      {
+        "url": "http://localhost:5173/src/services/api/mocks/mockLargeDataV2.ts",
+        "status": 200,
+        "size": 137346
+      },
+      {
+        "url": "http://localhost:5173/node_modules/.vite/deps/@internationalized_number.js?v=d05",
+        "status": 200,
+        "size": 1733
+      },
+      {
+        "url": "http://localhost:5173/node_modules/.vite/deps/@supabase_supabase-js.js?v=fb184d8",
+        "status": 200,
+        "size": 503030
+      },
+      {
+        "url": "http://localhost:5173/node_modules/.vite/deps/zustand_middleware.js?v=bd5ece27",
+        "status": 200,
+        "size": 16480
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/styles/Slider.css",
+        "status": 200,
+        "size": 7519
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/CollectionErrorState.css",
+        "status": 200,
+        "size": 3076
+      },
+      {
+        "url": "http://localhost:5173/src/shared/components/styles/ColorSwatch.css",
+        "status": 200,
+        "size": 772
+      },
+      {
+        "url": "http://localhost:5173/src/builder/stores/selection.ts",
+        "status": 200,
+        "size": 8684
+      },
+      {
+        "url": "http://localhost:5173/src/builder/stores/elements.ts",
+        "status": 200,
+        "size": 48891
+      },
+      {
+        "url": "http://localhost:5173/src/builder/stores/saveMode.ts",
+        "status": 200,
+        "size": 4442
+      },
+      {
+        "url": "http://localhost:5173/src/builder/stores/settings.ts",
+        "status": 200,
+        "size": 10417
+      },
+      {
+        "url": "http://localhost:5173/src/builder/stores/panelLayout.ts",
+        "status": 200,
+        "size": 20480
+      },
+      {
+        "url": "http://localhost:5173/src/builder/stores/elementLoader.ts",
+        "status": 200,
+        "size": 36344
+      },
+      {
+        "url": "http://localhost:5173/src/builder/stores/utils/elementIndexer.ts",
+        "status": 200,
+        "size": 19748
+      },
+      {
+        "url": "http://localhost:5173/src/builder/stores/layouts.ts",
+        "status": 200,
+        "size": 12430
+      },
+      {
+        "url": "http://localhost:5173/src/builder/stores/editMode.ts",
+        "status": 200,
+        "size": 13098
+      },
+      {
+        "url": "http://localhost:5173/src/services/api/ErrorHandler.ts",
+        "status": 200,
+        "size": 29100
+      },
+      {
+        "url": "http://localhost:5173/src/utils/smartCache.ts",
+        "status": 200,
+        "size": 17653
+      },
+      {
+        "url": "http://localhost:5173/src/utils/requestDeduplication.ts",
+        "status": 200,
+        "size": 10876
+      },
+      {
+        "url": "http://localhost:5173/src/utils/performanceMonitor.ts",
+        "status": 200,
+        "size": 37301
+      },
+      {
+        "url": "http://localhost:5173/src/builder/stores/utils/dataActions.ts",
+        "status": 200,
+        "size": 122205
+      },
+      {
+        "url": "http://localhost:5173/src/builder/stores/history.ts",
+        "status": 200,
+        "size": 77640
+      },
+      {
+        "url": "http://localhost:5173/src/builder/stores/utils/elementReorder.ts",
+        "status": 200,
+        "size": 38735
+      },
+      {
+        "url": "http://localhost:5173/src/builder/stores/utils/elementHelpers.ts",
+        "status": 200,
+        "size": 5074
+      },
+      {
+        "url": "http://localhost:5173/src/builder/stores/utils/elementRemoval.ts",
+        "status": 200,
+        "size": 50343
+      },
+      {
+        "url": "http://localhost:5173/src/builder/stores/utils/elementCreation.ts",
+        "status": 200,
+        "size": 17106
+      },
+      {
+        "url": "http://localhost:5173/src/builder/layout/types.ts",
+        "status": 200,
+        "size": 1852
+      },
+      {
+        "url": "http://localhost:5173/src/builder/panels/core/types.ts",
+        "status": 200,
+        "size": 8365
+      },
+      {
+        "url": "http://localhost:5173/src/builder/stores/history/historyActions.ts",
+        "status": 200,
+        "size": 132428
+      },
+      {
+        "url": "http://localhost:5173/src/builder/stores/utils/elementUpdate.ts",
+        "status": 200,
+        "size": 44999
+      },
+      {
+        "url": "http://localhost:5173/src/builder/utils/LRUPageCache.ts",
+        "status": 200,
+        "size": 15787
+      },
+      {
+        "url": "http://localhost:5173/src/utils/featureFlags.ts",
+        "status": 200,
+        "size": 9751
+      },
+      {
+        "url": "http://localhost:5173/src/builder/stores/utils/layoutActions.ts",
+        "status": 200,
+        "size": 40693
+      },
+      {
+        "url": "http://localhost:5173/src/builder/stores/commandDataStore.ts",
+        "status": 200,
+        "size": 30158
+      },
+      {
+        "url": "http://localhost:5173/src/builder/stores/utils/elementDiff.ts",
+        "status": 200,
+        "size": 42292
+      },
+      {
+        "url": "http://localhost:5173/src/builder/stores/utils/elementSanitizer.ts",
+        "status": 200,
+        "size": 6704
+      },
+      {
+        "url": "http://localhost:5173/src/builder/stores/history/historyIndexedDB.ts",
+        "status": 200,
+        "size": 51181
+      }
+    ],
+    "totalSize": 41963819
+  },
+  "webVitals": {
+    "TTFB": null,
+    "LCP": 756,
+    "CLS": 0,
+    "INP": 48,
+    "FCP": 596,
+    "FID": 14.5,
+    "lcpElement": "P",
+    "clsEntries": [],
+    "inpEntries": [
+      {
+        "duration": 48,
+        "name": "pointerdown",
+        "target": "svg"
+      },
+      {
+        "duration": 48,
+        "name": "pointerup",
+        "target": "svg"
+      },
+      {
+        "duration": 48,
+        "name": "click",
+        "target": "svg"
+      },
+      {
+        "duration": 32,
+        "name": "pointerdown",
+        "target": "path"
+      },
+      {
+        "duration": 32,
+        "name": "pointerup",
+        "target": "path"
+      }
+    ]
+  },
+  "memory": {
+    "jsHeapUsedMB": "NaN",
+    "jsHeapTotalMB": "NaN"
+  },
+  "loadTime": 1862
+}
