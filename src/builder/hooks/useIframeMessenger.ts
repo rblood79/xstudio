@@ -29,6 +29,8 @@ import { elementsApi } from '../../services/api';
 import { useInspectorState } from '../inspector/hooks/useInspectorState';
 // 🚀 Delta Update
 import { canvasDeltaMessenger } from '../utils/canvasDeltaMessenger';
+// 🚀 Phase 11: Feature Flags for WebGL-only mode optimization
+import { useWebGLCanvas, useCanvasCompareMode } from '../../utils/featureFlags';
 
 export type IframeReadyState = 'not_initialized' | 'loading' | 'ready' | 'error';
 
@@ -52,7 +54,39 @@ export interface UseIframeMessengerReturn {
     isIframeReady: boolean;
 }
 
+// 🚀 Phase 11: No-op debounced functions for WebGL-only mode
+const noopDebouncedAsync = debounce(() => Promise.resolve(), 0);
+
 export const useIframeMessenger = (): UseIframeMessengerReturn => {
+    // 🚀 Phase 11: WebGL-only 모드에서는 iframe 통신 완전 스킵
+    // - useWebGLCanvas(): WebGL 캔버스 활성화 여부
+    // - useCanvasCompareMode(): 비교 모드 (iframe + WebGL 동시 표시)
+    // - WebGL only = WebGL 활성화 && 비교 모드 아님
+    const isWebGLOnly = useWebGLCanvas() && !useCanvasCompareMode();
+
+    if (isWebGLOnly) {
+        // WebGL-only 모드: 모든 함수를 no-op으로 반환
+        // - Store 구독 없음 (~3-5ms 절감)
+        // - postMessage 시도 없음 (~2ms/변경 절감)
+        // - 불필요한 리스너 등록 없음
+        return {
+            iframeReadyState: 'not_initialized',
+            handleIframeLoad: () => {},
+            handleMessage: () => {},
+            handleUndo: noopDebouncedAsync,
+            handleRedo: noopDebouncedAsync,
+            sendElementsToIframe: () => {},
+            sendElementSelectedMessage: () => {},
+            requestElementSelection: () => {},
+            requestAutoSelectAfterUpdate: () => {},
+            sendLayoutsToIframe: () => {},
+            sendDataTablesToIframe: () => {},
+            sendApiEndpointsToIframe: () => {},
+            sendVariablesToIframe: () => {},
+            isIframeReady: false,
+        };
+    }
+
     const [iframeReadyState, setIframeReadyState] = useState<IframeReadyState>('not_initialized');
     const iframeReadyStateRef = useRef<IframeReadyState>('not_initialized'); // 🔧 Ref로 즉시 상태 변경
     const isProcessingRef = useRef(false);

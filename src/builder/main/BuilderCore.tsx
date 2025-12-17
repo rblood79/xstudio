@@ -359,11 +359,13 @@ export const BuilderCore: React.FC = () => {
 
   // 🚀 최적화: store.subscribe로 elements 변경 감지 → iframe 동기화
   // useIframeMessenger에서 elements 구독 제거 후, BuilderCore에서 직접 동기화
+  // 🚀 Phase 11: WebGL-only 모드에서는 iframeReadyState='not_initialized'로 반환되어
+  //    이 구독이 자동으로 스킵됨 (~3ms/변경 절감)
   const lastSentElementsRef = useRef<typeof useStore.getState extends () => infer S ? S['elements'] : never>([]);
   const lastSentEditModeRef = useRef<string>('page');
 
   useEffect(() => {
-    // iframe이 준비되지 않았으면 구독하지 않음
+    // iframe이 준비되지 않았으면 구독하지 않음 (WebGL-only 모드 포함)
     if (iframeReadyState !== 'ready') return;
 
     const unsubscribe = useStore.subscribe((state, prevState) => {
