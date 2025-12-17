@@ -1715,7 +1715,7 @@ postMessage 한 번 호출 비용:
 |-------|------|------|----------|----------|
 | **Phase 1** | Immer → 함수형 업데이트 전환 | ✅ **구현완료** | 150-200ms | 6개 파일, 20+ 함수 변환 |
 | **Phase 2** | JSON 깊은 복사 최적화 | ✅ **구현완료** | 50-100ms | cloneForHistory() 헬퍼 적용 |
-| **Phase 3** | O(n²) → Map 기반 조회 | 📋 계획됨 | 70-140ms | - |
+| **Phase 3** | O(n²) → Set 기반 조회 | ✅ **구현완료** | 70-140ms | useIframeMessenger.ts 2개 핸들러 |
 | **Phase 4** | 배열 순회 최적화 | 📋 계획됨 | 5-10ms | - |
 | **Phase 5** | 무거운 동기 작업 분산 | 📋 계획됨 | 50-150ms | - |
 | **Phase 6** | computedStyle 최적화 | 📋 계획됨 | 30-120ms | - |
@@ -1725,7 +1725,7 @@ postMessage 한 번 호출 비용:
 | **Phase 10** | 패널 리사이즈 캔버스 성능 분석 | ✅ 분석완료 | WebGL 이미 최적화 | 80ms throttle + 350ms settle |
 | **Phase 11** | WebGL 모드 postMessage 제거 | ✅ **구현완료** | ~3-5ms/변경 | 초기화 -8~12ms, 변경당 -3~5ms |
 
-## 구현 완료된 최적화 (Phase 1-2, 10-11)
+## 구현 완료된 최적화 (Phase 1-3, 10-11)
 
 ### Phase 1: Immer → 함수형 업데이트 전환 (2025-12-17)
 
@@ -1779,6 +1779,23 @@ postMessage 한 번 호출 비용:
 - 코드 일관성: elementUpdate.ts와 동일 패턴 적용
 ```
 
+### Phase 3: O(n²) → Set 기반 O(n+m) 조회 (2025-12-17)
+
+```
+변환 완료된 파일:
+└─ useIframeMessenger.ts
+    ├─ ADD_COLUMN_ELEMENTS 핸들러
+    │   ├─ Before: newColumns.filter(col => !elements.some(el => el.id === col.id))
+    │   └─ After: existingIds = new Set(elements.map()), filter with has()
+    └─ ADD_FIELD_ELEMENTS 핸들러
+        └─ 동일 패턴 적용
+
+예상 개선: ~70-140ms (요소 100개+ 시 유의미)
+- O(n×m) → O(n+m) 복잡도 개선
+- Set.has(): O(1) 조회
+- 대규모 프로젝트에서 성능 향상 극대화
+```
+
 ### Phase 10: 패널 리사이즈 분석
 
 ```
@@ -1807,10 +1824,10 @@ WebGL Canvas 리사이즈 최적화 현황:
 
 ## 남은 최적화 우선순위
 
-### 높음 (Long Task 주요 원인)
+### 높음 (Long Task 주요 원인) - ✅ 모두 완료
 1. **Phase 1**: Immer 제거 - ✅ **구현완료** (2025-12-17)
 2. **Phase 2**: JSON 깊은 복사 - ✅ **구현완료** (2025-12-17)
-3. **Phase 3**: O(n²) 조회 - 15-20% 비중, 70-140ms 예상 개선
+3. **Phase 3**: O(n²) 조회 - ✅ **구현완료** (2025-12-17)
 
 ### 중간 (체감 개선)
 4. **Phase 5**: 동기 작업 분산 - postMessage 핸들러 최적화
