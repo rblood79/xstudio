@@ -456,7 +456,7 @@ const ElementsLayer = memo(function ElementsLayer({
       ))}
     </pixiContainer>
   );
-}
+});
 
 // ============================================
 // Main Component
