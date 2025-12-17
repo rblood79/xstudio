@@ -26,6 +26,27 @@ type SetState = Parameters<StateCreator<ElementsState>>[0];
 type GetState = Parameters<StateCreator<ElementsState>>[1];
 
 /**
+ * 🚀 Phase 2: structuredClone 우선 사용 헬퍼
+ * JSON.parse/stringify보다 2-5배 빠름
+ */
+function cloneForHistory<T>(value: T): T {
+  try {
+    if (typeof structuredClone === "function") {
+      return structuredClone(value);
+    }
+  } catch {
+    // structuredClone 실패 시 JSON fallback
+  }
+  try {
+    const json = JSON.stringify(value);
+    if (json === undefined) return value;
+    return JSON.parse(json) as T;
+  } catch {
+    return value;
+  }
+}
+
+/**
  * Undo 액션 생성 팩토리
  *
  * @param set - Zustand store의 set 함수
@@ -94,78 +115,41 @@ export const createUndoAction =
               prevElement: entry.data.prevElement,
             });
 
+            // 🚀 Phase 2: structuredClone 사용
             if (entry.data.prevProps) {
-              try {
-                prevProps = JSON.parse(JSON.stringify(entry.data.prevProps));
-                console.log("✅ prevProps 준비 완료:", prevProps);
-              } catch (proxyError) {
-                console.warn("⚠️ prevProps proxy 오류, 원본 사용:", proxyError);
-                prevProps = entry.data.prevProps;
-              }
+              prevProps = cloneForHistory(entry.data.prevProps);
+              console.log("✅ prevProps 준비 완료:", prevProps);
             }
             if (entry.data.prevElement) {
-              try {
-                prevElement = JSON.parse(
-                  JSON.stringify(entry.data.prevElement)
-                );
-                console.log("✅ prevElement 준비 완료:", prevElement);
-              } catch (proxyError) {
-                console.warn(
-                  "⚠️ prevElement proxy 오류, 원본 사용:",
-                  proxyError
-                );
-                prevElement = entry.data.prevElement;
-              }
+              prevElement = cloneForHistory(entry.data.prevElement);
+              console.log("✅ prevElement 준비 완료:", prevElement);
             }
             break;
           }
 
           case "remove": {
+            // 🚀 Phase 2: structuredClone 사용
             if (entry.data.element) {
-              try {
-                elementsToRestore.push(
-                  JSON.parse(JSON.stringify(entry.data.element))
-                );
-              } catch (proxyError) {
-                console.warn("⚠️ element proxy 오류, 원본 사용:", proxyError);
-                elementsToRestore.push(entry.data.element);
-              }
+              elementsToRestore.push(cloneForHistory(entry.data.element));
             }
             if (
               entry.data.childElements &&
               entry.data.childElements.length > 0
             ) {
-              try {
-                elementsToRestore.push(
-                  ...entry.data.childElements.map((child: Element) =>
-                    JSON.parse(JSON.stringify(child))
-                  )
-                );
-                console.log(
-                  `🔄 Undo: 자식 요소 ${entry.data.childElements.length}개 복원`,
-                  {
-                    parent: entry.data.element?.tag,
-                    children: entry.data.childElements.map(
-                      (child: Element) => ({ id: child.id, tag: child.tag })
-                    ),
-                  }
-                );
-              } catch (proxyError) {
-                console.warn(
-                  "⚠️ childElements proxy 오류, 원본 사용:",
-                  proxyError
-                );
-                elementsToRestore.push(...entry.data.childElements);
-                console.log(
-                  `🔄 Undo: 자식 요소 ${entry.data.childElements.length}개 복원 (원본)`,
-                  {
-                    parent: entry.data.element?.tag,
-                    children: entry.data.childElements.map(
-                      (child: Element) => ({ id: child.id, tag: child.tag })
-                    ),
-                  }
-                );
-              }
+              elementsToRestore.push(
+                ...entry.data.childElements.map((child: Element) =>
+                  cloneForHistory(child)
+                )
+              );
+              console.log(
+                `🔄 Undo: 자식 요소 ${entry.data.childElements.length}개 복원`,
+                {
+                  parent: entry.data.element?.tag,
+                  children: entry.data.childElements.map(
+                    (child: Element) => ({ id: child.id, tag: child.tag })
+                  ),
+                }
+              );
             }
             break;
           }
@@ -187,14 +171,8 @@ export const createUndoAction =
             // Ungroup - 그룹 재생성 + 자식들 그룹 안으로 이동 준비
             console.log("🔄 Undo: Ungroup 데이터 준비");
             if (entry.data.element) {
-              try {
-                elementsToRestore.push(
-                  JSON.parse(JSON.stringify(entry.data.element))
-                );
-              } catch (proxyError) {
-                console.warn("⚠️ element proxy 오류, 원본 사용:", proxyError);
-                elementsToRestore.push(entry.data.element);
-              }
+              // 🚀 Phase 2: structuredClone 사용
+              elementsToRestore.push(cloneForHistory(entry.data.element));
             }
             break;
           }
@@ -656,10 +634,9 @@ export const createRedoAction =
       try {
         switch (entry.type) {
           case "add": {
+            // 🚀 Phase 2: structuredClone 사용
             if (entry.data.element) {
-              elementsToAdd.push(
-                JSON.parse(JSON.stringify(entry.data.element))
-              );
+              elementsToAdd.push(cloneForHistory(entry.data.element));
             }
             if (
               entry.data.childElements &&
@@ -667,7 +644,7 @@ export const createRedoAction =
             ) {
               elementsToAdd.push(
                 ...entry.data.childElements.map((child: Element) =>
-                  JSON.parse(JSON.stringify(child))
+                  cloneForHistory(child)
                 )
               );
               console.log(
@@ -685,8 +662,9 @@ export const createRedoAction =
           }
 
           case "update": {
+            // 🚀 Phase 2: structuredClone 사용
             if (entry.data.props) {
-              propsToUpdate = JSON.parse(JSON.stringify(entry.data.props));
+              propsToUpdate = cloneForHistory(entry.data.props);
             }
             break;
           }
@@ -713,10 +691,9 @@ export const createRedoAction =
           case "group": {
             // Group 생성 Redo - 그룹 요소 추가 준비
             console.log("🔄 Redo: Group 생성 데이터 준비");
+            // 🚀 Phase 2: structuredClone 사용
             if (entry.data.element) {
-              elementsToAdd.push(
-                JSON.parse(JSON.stringify(entry.data.element))
-              );
+              elementsToAdd.push(cloneForHistory(entry.data.element));
             }
             break;
           }
