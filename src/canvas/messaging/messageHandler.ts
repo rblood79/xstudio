@@ -416,13 +416,6 @@ export class MessageHandler {
 
   private handleUpdateDataTables(data: UpdateDataTablesMessage): void {
     const dataTables = data.dataTables || [];
-    console.log('📦 [Canvas] UPDATE_DATA_TABLES 수신:', dataTables.length, '개');
-    console.log('📦 [Canvas] 수신된 테이블:', dataTables.map(dt => ({
-      name: dt.name,
-      mockDataCount: dt.mockData?.length || 0,
-      runtimeDataCount: dt.runtimeData?.length || 0,
-      useMockData: dt.useMockData,
-    })));
     this.store.setDataTables(dataTables);
   }
 
@@ -433,8 +426,6 @@ export class MessageHandler {
 
   private handleUpdateVariables(data: UpdateVariablesMessage): void {
     const variables = data.variables || [];
-    console.log('📦 [Canvas] UPDATE_VARIABLES 수신:', variables.length, '개');
-    console.log('📦 [Canvas] 수신된 변수:', variables);
     this.store.setVariables(variables);
     // EventEngine에 variables 동기화
     if (this.onVariablesUpdated) {
@@ -485,8 +476,6 @@ export class MessageHandler {
       operation: 'ELEMENT_ADDED',
       elementId: element.id,
     });
-
-    console.log(`🚀 [Preview] Delta: Element added (${element.tag})`);
   }
 
   /**
@@ -524,8 +513,6 @@ export class MessageHandler {
       operation: 'ELEMENT_UPDATED',
       elementId,
     });
-
-    console.log(`🚀 [Preview] Delta: Element updated (${elementId})`);
   }
 
   /**
@@ -554,8 +541,6 @@ export class MessageHandler {
       operation: 'ELEMENT_REMOVED',
       elementId,
     });
-
-    console.log(`🚀 [Preview] Delta: Element removed (${elementId})`);
   }
 
   /**
@@ -597,8 +582,6 @@ export class MessageHandler {
       operation: 'BATCH_UPDATE',
       count: updates.length,
     });
-
-    console.log(`🚀 [Preview] Delta: Batch update (${updates.length} elements)`);
   }
 
   // ============================================

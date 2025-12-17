@@ -69,22 +69,33 @@ export class HistoryManager {
     private readonly defaultMaxSize = 50;
     private commandDataStore = commandDataStore;
     private indexedDB = historyIndexedDB;
+    private readonly idbAvailable =
+        typeof (globalThis as unknown as { indexedDB?: unknown }).indexedDB !== 'undefined';
     private isInitialized = false;
     private initPromise: Promise<void> | null = null;
 
     constructor() {
         // IndexedDB 초기화 (백그라운드)
-        this.initPromise = this.initialize();
+        if (this.idbAvailable) {
+            this.initPromise = this.initialize();
+        } else {
+            // Node/Vitest/SSR 환경에서는 IndexedDB가 없으므로 메모리 모드로 동작
+            this.isInitialized = true;
+            this.initPromise = Promise.resolve();
+        }
     }
 
     /**
      * 🆕 Phase 3: IndexedDB 초기화
      */
     private async initialize(): Promise<void> {
+        if (!this.idbAvailable) {
+            this.isInitialized = true;
+            return;
+        }
         try {
             await this.indexedDB.init();
             this.isInitialized = true;
-            console.log('✅ [History] IndexedDB initialized');
         } catch (error) {
             console.error('❌ [History] IndexedDB initialization failed:', error);
             // IndexedDB 실패해도 메모리만으로 동작
@@ -116,7 +127,9 @@ export class HistoryManager {
             });
 
             // 🆕 Phase 3: IndexedDB에서 복원 시도 (백그라운드)
-            this.restoreFromIndexedDB(pageId).catch(console.error);
+            if (this.idbAvailable) {
+                this.restoreFromIndexedDB(pageId).catch(console.error);
+            }
         }
     }
 
@@ -124,6 +137,7 @@ export class HistoryManager {
      * 🆕 Phase 3: IndexedDB에서 히스토리 복원
      */
     async restoreFromIndexedDB(pageId: string): Promise<boolean> {
+        if (!this.idbAvailable) return false;
         try {
             await this.ensureInitialized();
 
@@ -150,7 +164,6 @@ export class HistoryManager {
                     recentEntries.length - 1
                 );
 
-                console.log(`🔄 [History] Restored ${recentEntries.length} entries for page ${pageId}`);
                 return true;
             }
 
@@ -224,6 +237,7 @@ export class HistoryManager {
      * 🆕 Phase 3: IndexedDB에 엔트리 저장 (백그라운드)
      */
     private saveToIndexedDB(pageId: string, entry: HistoryEntry, currentIndex: number): void {
+        if (!this.idbAvailable) return;
         // 비동기로 저장 (UI 블로킹 방지)
         (async () => {
             try {
@@ -274,7 +288,6 @@ export class HistoryManager {
 
         // Diff가 비어있으면 엔트리 추가하지 않음
         if (type === 'update' && isDiffEmpty(elementDiff)) {
-            console.log('⏭️ 변경사항 없음, 히스토리 건너뜀');
             return;
         }
 
@@ -335,7 +348,6 @@ export class HistoryManager {
         // 🆕 Phase 3: IndexedDB에 저장 (백그라운드)
         this.saveToIndexedDB(this.currentPageId, newEntry, pageHistory.currentIndex);
 
-        console.log(`📝 Diff 기반 히스토리 추가: ${type} (${diffSize} bytes)`);
     }
 
     /**
@@ -367,7 +379,6 @@ export class HistoryManager {
 
         // 변경사항이 없으면 건너뜀
         if (diffs.length === 0) {
-            console.log('⏭️ Batch 변경사항 없음, 히스토리 건너뜀');
             return;
         }
 
@@ -412,7 +423,6 @@ export class HistoryManager {
         // 🆕 Phase 3: IndexedDB에 저장 (백그라운드)
         this.saveToIndexedDB(this.currentPageId, newEntry, pageHistory.currentIndex);
 
-        console.log(`📝 Batch Diff 히스토리 추가: ${diffs.length}개 요소 (${totalSize} bytes)`);
     }
 
     /**
@@ -455,6 +465,7 @@ export class HistoryManager {
      * 🆕 Phase 3: IndexedDB 메타데이터 업데이트 (백그라운드)
      */
     private updateIndexedDBMeta(pageId: string, pageHistory: PageHistory): void {
+        if (!this.idbAvailable) return;
         (async () => {
             try {
                 await this.ensureInitialized();
@@ -515,6 +526,7 @@ export class HistoryManager {
         this.pageHistories.delete(pageId);
 
         // 🆕 Phase 3: IndexedDB에서도 삭제 (백그라운드)
+        if (this.idbAvailable) {
         (async () => {
             try {
                 await this.ensureInitialized();
@@ -523,6 +535,7 @@ export class HistoryManager {
                 console.error('❌ [History] Failed to clear IndexedDB page history:', error);
             }
         })();
+        }
 
         // 현재 페이지가 초기화된 페이지라면 새로운 히스토리 생성
         if (this.currentPageId === pageId) {
@@ -538,6 +551,7 @@ export class HistoryManager {
         this.commandDataStore.clear();
 
         // 🆕 Phase 3: IndexedDB도 초기화 (백그라운드)
+        if (this.idbAvailable) {
         (async () => {
             try {
                 await this.ensureInitialized();
@@ -546,6 +560,7 @@ export class HistoryManager {
                 console.error('❌ [History] Failed to clear all IndexedDB history:', error);
             }
         })();
+        }
     }
 
     /**
@@ -689,6 +704,9 @@ export class HistoryManager {
         totalPages: number;
         estimatedSize: number;
     }> {
+        if (!this.idbAvailable) {
+            return { totalEntries: 0, totalPages: 0, estimatedSize: 0 };
+        }
         try {
             await this.ensureInitialized();
             return await this.indexedDB.getStats();
@@ -714,6 +732,7 @@ export class HistoryManager {
         }
 
         // 🆕 Phase 3: IndexedDB 오래된 엔트리 정리 (백그라운드)
+        if (this.idbAvailable) {
         (async () => {
             try {
                 await this.ensureInitialized();
@@ -722,6 +741,7 @@ export class HistoryManager {
                 console.error('❌ [History] Failed to cleanup IndexedDB:', error);
             }
         })();
+        }
     }
 }
 

@@ -58,47 +58,14 @@ export const renderListBox = (
     !('type' in dataBinding);
 
   if (columnMapping) {
-    const visibleColumns = getVisibleColumns(columnMapping);
-
-    console.log("🔍 ListBox ColumnMapping 발견:", {
-      listBoxId: element.id,
-      columnMapping,
-      visibleColumnsCount: visibleColumns.length,
-      visibleColumns,
-      listBoxChildrenCount: listBoxChildren.length,
-    });
-
     // ⚠️ Preview에서 자동으로 Field Elements를 생성하지 않음
     // 이유: APICollectionEditor에서 사용자가 명시적으로 컬럼을 선택할 때 Field Elements를 생성하므로
     // Preview에서 자동 생성하면 충돌이 발생할 수 있음
-    console.log("ℹ️ Field Elements는 Inspector의 Data 섹션에서 컬럼 선택 시 생성됩니다.");
   }
 
   // columnMapping이 있거나 PropertyDataBinding이 있고 ListBoxItem 템플릿이 있으면 render function 사용
   const hasValidTemplate = (columnMapping || isPropertyBinding) && listBoxChildren.length > 0;
 
-  if ((columnMapping || isPropertyBinding) && listBoxChildren.length === 0) {
-    console.warn("⚠️ 데이터 바인딩이 있지만 ListBoxItem 템플릿이 없습니다. Layer Tree에서 ListBoxItem을 추가하세요.");
-  }
-
-  if (isPropertyBinding && listBoxChildren.length > 0) {
-    console.log("🔄 ListBox PropertyDataBinding + ListBoxItem 템플릿 발견:", {
-      listBoxId: element.id,
-      dataBinding,
-      listBoxChildrenCount: listBoxChildren.length,
-    });
-  }
-
-  // 🔍 DEBUG: Always log dataBinding to help debug API Endpoint binding issue
-  console.log("🔍 [Canvas] ListBox renderListBox dataBinding:", {
-    elementId: element.id,
-    elementDataBinding: element.dataBinding,
-    propsDataBinding: element.props.dataBinding,
-    resolvedDataBinding: dataBinding,
-    isPropertyBinding,
-    hasValidTemplate,
-    listBoxChildrenCount: listBoxChildren.length,
-  });
 
   // hasValidTemplate일 때는 render function을 사용
   if (hasValidTemplate) {
@@ -112,24 +79,7 @@ export const renderListBox = (
       )
       .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
 
-    console.log("🎨 ListBox hasValidTemplate - Field 자식 찾기:", {
-      listBoxItemTemplateId: listBoxItemTemplate.id,
-      totalElementsInContext: context.elements.length,
-      fieldChildrenFound: fieldChildren.length,
-      fieldChildren: fieldChildren.map((f) => ({
-        id: f.id,
-        key: (f.props as { key?: string }).key,
-        label: (f.props as { label?: string }).label,
-      })),
-    });
-
     const renderItemFunction = (item: Record<string, unknown>) => {
-      console.log("🎨 ListBox renderItemFunction 호출:", {
-        itemId: item.id,
-        itemKeys: Object.keys(item),
-        item,
-      });
-
       return (
         <ListBoxItem
           key={String(item.id)}
@@ -143,13 +93,6 @@ export const renderListBox = (
             ? fieldChildren.map((field) => {
                 const fieldKey = (field.props as { key?: string }).key;
                 const fieldValue = fieldKey ? item[fieldKey] : undefined;
-
-                console.log("🏷️ Field 렌더링:", {
-                  fieldId: field.id,
-                  fieldKey,
-                  fieldValue,
-                  itemKeys: Object.keys(item),
-                });
 
                 return (
                   <DataField
@@ -328,13 +271,6 @@ export const renderDataField = (
 
       if (parentValue && typeof parentValue === "object") {
         value = parentValue[path] as string | number | boolean | null | undefined;
-        console.log("🔍 DataField 데이터 바인딩:", {
-          fieldId: element.id,
-          fieldKey: element.props.key,
-          path,
-          parentValue,
-          extractedValue: value,
-        });
       }
     }
   }
@@ -389,48 +325,8 @@ export const renderGridList = (
     'name' in dataBinding &&
     !('type' in dataBinding);
 
-  if (columnMapping) {
-    const visibleColumns = getVisibleColumns(columnMapping);
-
-    console.log("🔍 GridList ColumnMapping 발견:", {
-      gridListId: element.id,
-      columnMapping,
-      visibleColumnsCount: visibleColumns.length,
-      visibleColumns,
-      gridListChildrenCount: gridListChildren.length,
-    });
-
-    // ⚠️ Preview에서 자동으로 Field Elements를 생성하지 않음
-    // 이유: APICollectionEditor에서 사용자가 명시적으로 컬럼을 선택할 때 Field Elements를 생성하므로
-    // Preview에서 자동 생성하면 충돌이 발생할 수 있음
-    console.log("ℹ️ Field Elements는 Inspector의 Data 섹션에서 컬럼 선택 시 생성됩니다.");
-  }
-
   // columnMapping이 있거나 PropertyDataBinding이 있고 GridListItem 템플릿이 있으면 render function 사용
   const hasValidTemplate = (columnMapping || isPropertyBinding) && gridListChildren.length > 0;
-
-  if ((columnMapping || isPropertyBinding) && gridListChildren.length === 0) {
-    console.warn("⚠️ 데이터 바인딩이 있지만 GridListItem 템플릿이 없습니다. Layer Tree에서 GridListItem을 추가하세요.");
-  }
-
-  if (isPropertyBinding && gridListChildren.length > 0) {
-    console.log("🔄 GridList PropertyDataBinding + GridListItem 템플릿 발견:", {
-      gridListId: element.id,
-      dataBinding,
-      gridListChildrenCount: gridListChildren.length,
-    });
-  }
-
-  // 🔍 DEBUG: Always log dataBinding to help debug
-  console.log("🔍 [Canvas] GridList renderGridList dataBinding:", {
-    elementId: element.id,
-    elementDataBinding: element.dataBinding,
-    propsDataBinding: element.props.dataBinding,
-    resolvedDataBinding: dataBinding,
-    isPropertyBinding,
-    hasValidTemplate,
-    gridListChildrenCount: gridListChildren.length,
-  });
 
   const renderChildren = hasValidTemplate
     ? (item: Record<string, unknown>) => {
@@ -444,19 +340,6 @@ export const renderGridList = (
               child.parent_id === gridListItemTemplate.id && child.tag === "Field"
           )
           .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
-
-        console.log("🎨 GridList render function 실행 - 데이터 항목:", {
-          itemId: item.id,
-          itemData: item,
-          gridListItemTemplateId: gridListItemTemplate.id,
-          totalElementsInContext: context.elements.length,
-          fieldChildrenFound: fieldChildren.length,
-          fieldChildren: fieldChildren.map((f) => ({
-            id: f.id,
-            key: (f.props as { key?: string }).key,
-            label: (f.props as { label?: string }).label,
-          })),
-        });
 
         return (
           <GridListItem
@@ -605,26 +488,8 @@ export const renderSelect = (
     'name' in dataBinding &&
     !('type' in dataBinding);
 
-  if (columnMapping || isPropertyBinding) {
-    const visibleColumns = columnMapping ? getVisibleColumns(columnMapping) : [];
-
-    console.log("🔍 Select ColumnMapping/DataBinding 발견:", {
-      selectId: element.id,
-      columnMapping,
-      visibleColumnsCount: visibleColumns.length,
-      visibleColumns,
-      selectItemChildrenCount: selectItemChildren.length,
-      dataBinding,
-      isPropertyBinding,
-    });
-  }
-
   // columnMapping이 있거나 PropertyDataBinding이 있고 SelectItem 템플릿이 있으면 render function 사용
   const hasValidTemplate = (columnMapping || isPropertyBinding) && selectItemChildren.length > 0;
-
-  if ((columnMapping || isPropertyBinding) && selectItemChildren.length === 0) {
-    console.warn("⚠️ DataBinding이 있지만 SelectItem 템플릿이 없습니다. Layer Tree에서 SelectItem을 추가하세요.");
-  }
 
   // props를 안전하게 보존
   const elementProps = { ...element.props };
@@ -657,13 +522,6 @@ export const renderSelect = (
               child.parent_id === selectItemTemplate.id && child.tag === "Field"
           )
           .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
-
-        console.log("🎨 Select render function 실행 - 데이터 항목:", {
-          itemId: item.id,
-          itemData: item,
-          selectItemTemplateId: selectItemTemplate.id,
-          fieldChildrenFound: fieldChildren.length,
-        });
 
         return (
           <SelectItem
@@ -782,11 +640,8 @@ export const renderSelect = (
         try {
           const db = await getDB();
           await db.elements.update(element.id, { props: updatedProps });
-          console.log(
-            "✅ [IndexedDB] Element props updated successfully (placeholder preserved)"
-          );
-        } catch (err) {
-          console.error("❌ [IndexedDB] Error updating element props:", err);
+        } catch {
+          // IndexedDB update failed silently
         }
 
         // 전체 props 전송으로 placeholder 보존
@@ -831,26 +686,8 @@ export const renderComboBox = (
     'name' in dataBinding &&
     !('type' in dataBinding);
 
-  if (columnMapping || isPropertyBinding) {
-    const visibleColumns = columnMapping ? getVisibleColumns(columnMapping) : [];
-
-    console.log("🔍 ComboBox ColumnMapping/DataBinding 발견:", {
-      comboBoxId: element.id,
-      columnMapping,
-      visibleColumnsCount: visibleColumns.length,
-      visibleColumns,
-      comboBoxItemChildrenCount: comboBoxItemChildren.length,
-      dataBinding,
-      isPropertyBinding,
-    });
-  }
-
   // columnMapping이 있거나 PropertyDataBinding이 있고 ComboBoxItem 템플릿이 있으면 render function 사용
   const hasValidTemplate = (columnMapping || isPropertyBinding) && comboBoxItemChildren.length > 0;
-
-  if ((columnMapping || isPropertyBinding) && comboBoxItemChildren.length === 0) {
-    console.warn("⚠️ DataBinding이 있지만 ComboBoxItem 템플릿이 없습니다. Layer Tree에서 ComboBoxItem을 추가하세요.");
-  }
 
   const renderChildren = hasValidTemplate
     ? (item: Record<string, unknown>) => {
@@ -865,13 +702,6 @@ export const renderComboBox = (
           )
           .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
 
-        console.log("🎨 ComboBox render function 실행 - 데이터 항목:", {
-          itemId: item.id,
-          itemData: item,
-          comboBoxItemTemplateId: comboBoxItemTemplate.id,
-          fieldChildrenFound: fieldChildren.length,
-        });
-
         // textValue 계산 - 보이는 Field 값들을 연결하여 검색 가능한 텍스트 생성
         const textValue = fieldChildren
           .filter((field) => (field.props as { visible?: boolean }).visible !== false)
@@ -882,12 +712,6 @@ export const renderComboBox = (
           })
           .filter(Boolean)
           .join(' ');
-
-        console.log("🔍 ComboBox textValue 생성:", {
-          itemId: item.id,
-          textValue,
-          visibleFieldsCount: fieldChildren.filter(f => (f.props as { visible?: boolean }).visible !== false).length,
-        });
 
         return (
           <ComboBoxItem
@@ -1041,9 +865,8 @@ export const renderComboBox = (
         try {
           const db = await getDB();
           await db.elements.update(element.id, { props: updatedProps });
-          console.log("✅ [IndexedDB] ComboBox element props updated successfully");
-        } catch (err) {
-          console.error("❌ [IndexedDB] Error updating ComboBox element props:", err);
+        } catch {
+          // IndexedDB update failed silently
         }
 
         window.parent.postMessage(

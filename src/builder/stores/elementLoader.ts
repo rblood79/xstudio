@@ -122,7 +122,6 @@ export function createElementLoaderSlice(
 
       if (elements && elements.length > 0) {
         if (process.env.NODE_ENV === 'development') {
-          console.log(`📦 [Loader] IndexedDB hit: ${pageId} (${elements.length} elements)`);
         }
         return elements as Element[];
       }
@@ -148,7 +147,6 @@ export function createElementLoaderSlice(
       if (error) throw error;
 
       if (process.env.NODE_ENV === 'development') {
-        console.log(`🌐 [Loader] Supabase load: ${pageId} (${data?.length ?? 0} elements)`);
       }
 
       return (data as Element[]) ?? [];
@@ -237,7 +235,6 @@ export function createElementLoaderSlice(
     }));
 
     if (process.env.NODE_ENV === 'development') {
-      console.log(`🔄 [Loader] Loading page: ${pageId}`);
     }
 
     try {
@@ -294,7 +291,6 @@ export function createElementLoaderSlice(
       }));
 
       if (process.env.NODE_ENV === 'development') {
-        console.log(`✅ [Loader] Page loaded: ${pageId} (${elements.length} elements)`);
       }
 
       return elements;
@@ -328,7 +324,6 @@ export function createElementLoaderSlice(
     }
 
     if (process.env.NODE_ENV === 'development') {
-      console.log(`🗑️ [Loader] Unloading page: ${pageId}`);
     }
 
     // 해당 페이지 요소 제거
@@ -362,7 +357,6 @@ export function createElementLoaderSlice(
     get()._rebuildIndexes();
 
     if (process.env.NODE_ENV === 'development') {
-      console.log(`✅ [Loader] Page unloaded: ${pageId}`);
     }
   };
 
@@ -387,7 +381,6 @@ export function createElementLoaderSlice(
     set({ lazyLoadingEnabled: enabled });
 
     if (process.env.NODE_ENV === 'development') {
-      console.log(`🔧 [Loader] Lazy loading ${enabled ? 'enabled' : 'disabled'}`);
     }
   };
 
@@ -421,7 +414,6 @@ export function createElementLoaderSlice(
     }
 
     if (process.env.NODE_ENV === 'development') {
-      console.log('🧹 [Loader] All pages cleared');
     }
   };
 
@@ -449,7 +441,6 @@ export function createElementLoaderSlice(
     }
 
     if (process.env.NODE_ENV === 'development') {
-      console.log(`📥 [Loader] Preloading page: ${pageId}`);
     }
   };
 

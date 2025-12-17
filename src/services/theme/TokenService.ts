@@ -40,7 +40,6 @@ export class TokenService extends BaseApiService {
         is_inherited: false,
       }));
 
-      console.log('[TokenService] getResolvedTokens:', resolvedTokens.length, 'tokens');
       return resolvedTokens;
     } catch (error) {
       console.error('[TokenService] getResolvedTokens failed:', error);
@@ -138,7 +137,6 @@ export class TokenService extends BaseApiService {
     instance.invalidateCache(`tokens:${input.scope}:${input.theme_id}`); // raw or semantic
     instance.invalidateCache(`tokens:type:${input.theme_id}:${input.type}`);
 
-    console.log('[TokenService] Token created:', result);
     return result;
   }
 
@@ -170,7 +168,6 @@ export class TokenService extends BaseApiService {
     instance.invalidateCache(`tokens:${result.scope}:${result.theme_id}`);
     instance.invalidateCache(`tokens:type:${result.theme_id}:${result.type}`);
 
-    console.log('[TokenService] Token updated:', result);
     return result;
   }
 
@@ -200,7 +197,6 @@ export class TokenService extends BaseApiService {
     instance.invalidateCache(`tokens:${token.scope}:${token.theme_id}`);
     instance.invalidateCache(`tokens:type:${token.theme_id}:${token.type}`);
 
-    console.log('[TokenService] Token deleted:', tokenId);
   }
 
   /**
@@ -240,7 +236,6 @@ export class TokenService extends BaseApiService {
       upsertedCount++;
     }
 
-    console.log(`✅ [IndexedDB] Bulk upsert completed: ${upsertedCount} tokens`);
     return upsertedCount;
   }
 
@@ -400,7 +395,6 @@ export class TokenService extends BaseApiService {
         const lastEvent = events[events.length - 1];
         callback(lastEvent.raw as Record<string, unknown>);
 
-        console.log(`✅ [TokenService] Batched ${events.length} token events → processed 1`);
       },
       filter: RealtimeFilters.combineFilters(
         RealtimeFilters.tableFilter(['design_tokens']),
@@ -455,7 +449,6 @@ export class TokenService extends BaseApiService {
           callback(event.raw as Record<string, unknown>);
         });
 
-        console.log(`✅ [TokenService] Batched ${events.length} project token events`);
       },
       filter: RealtimeFilters.combineFilters(
         RealtimeFilters.tableFilter(['design_tokens']),

@@ -559,7 +559,6 @@ export const useUnifiedThemeStore = create<UnifiedThemeState>()(
           }
 
           styleTag.textContent = cssText;
-          console.log('[UnifiedThemeStore] CSS injected:', Object.keys(cssVars).length, 'variables');
         } catch (err) {
           console.error('[UnifiedThemeStore] injectThemeCSS failed:', err);
         }
@@ -582,7 +581,6 @@ export const useUnifiedThemeStore = create<UnifiedThemeState>()(
         unsubscribeThemes = ThemeService.subscribeToProjectThemes(
           projectId,
           (payload) => {
-            console.log('[UnifiedThemeStore] Theme realtime update:', payload);
 
             if (payload.eventType === 'INSERT') {
               get()._addTheme(payload.new as DesignTheme);
@@ -626,7 +624,6 @@ export const useUnifiedThemeStore = create<UnifiedThemeState>()(
           }
         );
 
-        console.log('[UnifiedThemeStore] Subscribed to themes for project:', projectId);
         return unsubscribeThemes;
       },
 
@@ -645,7 +642,6 @@ export const useUnifiedThemeStore = create<UnifiedThemeState>()(
         unsubscribeTokens = TokenService.subscribeToTokenChanges(
           activeThemeId,
           async (payload) => {
-            console.log('[UnifiedThemeStore] Token realtime update:', payload);
 
             try {
               // Reload all tokens and re-inject CSS
@@ -657,7 +653,6 @@ export const useUnifiedThemeStore = create<UnifiedThemeState>()(
           }
         );
 
-        console.log('[UnifiedThemeStore] Subscribed to tokens for theme:', activeThemeId);
         return unsubscribeTokens;
       },
 
@@ -694,13 +689,11 @@ export const useUnifiedThemeStore = create<UnifiedThemeState>()(
         if (unsubscribeThemes) {
           unsubscribeThemes();
           unsubscribeThemes = null;
-          console.log('[UnifiedThemeStore] Unsubscribed from themes');
         }
 
         if (unsubscribeTokens) {
           unsubscribeTokens();
           unsubscribeTokens = null;
-          console.log('[UnifiedThemeStore] Unsubscribed from tokens');
         }
       },
 

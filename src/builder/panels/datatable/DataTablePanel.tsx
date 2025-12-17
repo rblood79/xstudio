@@ -86,7 +86,6 @@ export function DataTablePanel({ isActive }: PanelProps) {
   // React Query 캐시와 별개로, Zustand Store도 초기화해야 DataTableList에서 보임
   useEffect(() => {
     if (isActive && currentProjectId && initialLoadedRef.current !== currentProjectId) {
-      console.log(`📥 [DataTablePanel] 초기 로딩: projectId=${currentProjectId}`);
       initialLoadedRef.current = currentProjectId;
 
       // Zustand Store에 데이터 로드 (IndexedDB → Memory)
@@ -96,7 +95,6 @@ export function DataTablePanel({ isActive }: PanelProps) {
         fetchVariables(currentProjectId),
         fetchTransformers(currentProjectId),
       ]).then(() => {
-        console.log(`✅ [DataTablePanel] Zustand Store 초기화 완료`);
       }).catch((error) => {
         console.error(`❌ [DataTablePanel] 초기화 실패:`, error);
       });

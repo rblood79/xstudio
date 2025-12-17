@@ -71,14 +71,39 @@ export const SelectionLayer = memo(function SelectionLayer({
   const selectedElementIds = useStore((state) => state.selectedElementIds);
   const currentPageId = useStore((state) => state.currentPageId);
 
+  const pageElementsById = useMemo(() => {
+    const map = new Map<string, (typeof elements)[number]>();
+    for (const el of elements) {
+      if (el.page_id === currentPageId) {
+        map.set(el.id, el);
+      }
+    }
+    return map;
+  }, [elements, currentPageId]);
+
+  const hasChildrenIdSet = useMemo(() => {
+    const set = new Set<string>();
+    for (const el of elements) {
+      if (el.page_id !== currentPageId) continue;
+      if (el.parent_id) {
+        set.add(el.parent_id);
+      }
+    }
+    return set;
+  }, [elements, currentPageId]);
+
   // 선택된 요소들 (Body 포함)
   const selectedElements = useMemo(() => {
-    return elements.filter(
-      (el) =>
-        selectedElementIds.includes(el.id) &&
-        el.page_id === currentPageId
-    );
-  }, [elements, selectedElementIds, currentPageId]);
+    if (!currentPageId || selectedElementIds.length === 0) return [];
+    const resolved: (typeof elements)[number][] = [];
+    for (const id of selectedElementIds) {
+      const el = pageElementsById.get(id);
+      if (el) {
+        resolved.push(el);
+      }
+    }
+    return resolved;
+  }, [currentPageId, selectedElementIds, pageElementsById]);
 
   // 선택된 요소들의 바운딩 박스
   const selectionBounds = useMemo(() => {
@@ -114,13 +139,9 @@ export const SelectionLayer = memo(function SelectionLayer({
       // Body는 항상 컨테이너
       if (selectedEl.tag.toLowerCase() === 'body') return true;
 
-      // 선택된 요소를 부모로 가진 자식이 있는지 확인
-      const hasChildren = elements.some(
-        (el) => el.parent_id === selectedEl.id && el.page_id === currentPageId
-      );
-      return hasChildren;
+      return hasChildrenIdSet.has(selectedEl.id);
     });
-  }, [selectedElements, elements, currentPageId]);
+  }, [selectedElements, hasChildrenIdSet]);
 
   // 핸들 드래그 시작
   const handleResizeStart = useCallback(

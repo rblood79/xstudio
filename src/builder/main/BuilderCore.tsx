@@ -169,7 +169,6 @@ export const BuilderCore: React.FC = () => {
   const { stats: recoveryStats } = useAutoRecovery({
     onRecovery: useCallback((reason: string) => {
       showToast('info', `성능 자동 복구 완료: ${reason}`, 8000);
-      console.log('🔧 [AutoRecovery] Recovery complete:', reason);
     }, [showToast]),
     onWarning: useCallback((metrics) => {
       showToast('warning', `성능 경고: Health ${metrics.healthScore}%`, 5000);
@@ -178,12 +177,10 @@ export const BuilderCore: React.FC = () => {
 
   // Dev 모드에서 복구 통계 로깅
   if (process.env.NODE_ENV === 'development' && recoveryStats.totalRecoveries > 0) {
-    console.log('📊 [AutoRecovery] Stats:', recoveryStats);
   }
 
   // Dev 모드에서 페이지 로더 통계 로깅
   if (process.env.NODE_ENV === 'development' && pageLoaderStats.loadedPages > 0) {
-    console.log('📊 [PageLoader] Stats:', pageLoaderStats);
   }
 
   // Local 상태
@@ -213,7 +210,6 @@ export const BuilderCore: React.FC = () => {
     const newBreakpoint = new Set<Key>([value]);
     setBreakpoint(newBreakpoint);
     localStorage.setItem("builder-breakpoint", String(value));
-    console.log("[BuilderCore] Breakpoint changed:", value);
   }, []);
 
   // 프로젝트 정보 가져오기 (IndexedDB만 조회 - Supabase 동기화는 대시보드에서 처리)
@@ -266,7 +262,6 @@ export const BuilderCore: React.FC = () => {
 
       if (editMode === 'layout' && currentLayoutId) {
         try {
-          console.log(`🏗️ [BuilderCore] Layout 모드 복원 - Layout ${currentLayoutId.slice(0, 8)} 요소 로드`);
           const db = await getDB();
           const layoutElements = await db.elements.getByLayout(currentLayoutId);
 
@@ -276,7 +271,6 @@ export const BuilderCore: React.FC = () => {
           const mergedElements = [...otherElements, ...layoutElements];
           setElements(mergedElements, { skipHistory: true });
 
-          console.log(`🏗️ [BuilderCore] Layout 요소 ${layoutElements.length}개 로드 완료`);
 
           // ⭐ Layouts 목록도 로드 (LayoutsTab이 마운트되기 전에 필요)
           const { fetchLayouts } = useLayoutsStore.getState();
@@ -382,7 +376,6 @@ export const BuilderCore: React.FC = () => {
       });
 
       if (targetPage) {
-        console.log("[BuilderCore] Navigating to:", targetPage.name, normalizedPath);
         // 페이지 elements 로드
         const result = await fetchElements(targetPage.id);
         if (!result.success) {
@@ -452,7 +445,6 @@ export const BuilderCore: React.FC = () => {
         await loadDataTable(targetDataTableId);
       }
 
-      console.log(`[BuilderCore] DataTable '${dataTableName}' loaded successfully`);
 
       // TODO: Canvas iframe에 업데이트된 데이터 전송
       // sendDataTablesToIframe();
@@ -535,7 +527,6 @@ export const BuilderCore: React.FC = () => {
       // 타겟 엘리먼트 업데이트
       await updateElementProps(targetElement.id, { value: newValue });
 
-      console.log(`[BuilderCore] Synced '${sourceId}' → '${targetId}' (${syncMode})`);
     }
 
     /**
@@ -639,7 +630,6 @@ export const BuilderCore: React.FC = () => {
         return { dataTableStates: newDataTableStates };
       });
 
-      console.log(`[BuilderCore] Saved to DataTable '${dataTableName}' (${saveMode})`);
     }
 
     window.addEventListener("message", handleDataMessage);
@@ -704,15 +694,12 @@ export const BuilderCore: React.FC = () => {
 
   // 프리뷰 관련 핸들러들
   const handlePreview = useCallback(() => {
-    console.log("Preview clicked");
   }, []);
 
   const handlePlay = useCallback(() => {
-    console.log("Play clicked");
   }, []);
 
   const handlePublish = useCallback(() => {
-    console.log("Publish clicked");
   }, []);
 
   // 클릭 외부 감지

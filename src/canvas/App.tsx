@@ -144,33 +144,28 @@ function CanvasContent() {
     };
   }, [elements, currentLayoutId, currentPageId]);
 
-  // Computed style 수집
+  // Computed style 수집 (Inspector에서 필요한 속성들)
+  // 성능 최적화: getComputedStyle 1회 호출 후 필요한 속성만 추출
   const collectComputedStyle = useCallback((domElement: Element): Record<string, string> => {
     const computed = window.getComputedStyle(domElement);
     return {
+      // Layout (필수)
       display: computed.display,
-      width: computed.width,
-      height: computed.height,
       position: computed.position,
       flexDirection: computed.flexDirection,
       justifyContent: computed.justifyContent,
       alignItems: computed.alignItems,
       gap: computed.gap,
+      // Spacing (Inspector LayoutSection에서 사용)
       padding: computed.padding,
-      paddingTop: computed.paddingTop,
-      paddingRight: computed.paddingRight,
-      paddingBottom: computed.paddingBottom,
-      paddingLeft: computed.paddingLeft,
       margin: computed.margin,
-      marginTop: computed.marginTop,
-      marginRight: computed.marginRight,
-      marginBottom: computed.marginBottom,
-      marginLeft: computed.marginLeft,
+      // Appearance (Inspector AppearanceSection에서 사용)
       backgroundColor: computed.backgroundColor,
+      borderRadius: computed.borderRadius,
+      // Typography (Inspector TypographySection에서 사용)
       color: computed.color,
       fontSize: computed.fontSize,
       fontWeight: computed.fontWeight,
-      borderRadius: computed.borderRadius,
     };
   }, []);
 
@@ -588,7 +583,6 @@ export function App() {
         prevVariablesLength = variables.length;
         const engine = getEventEngine();
         engine.syncVariables(variables);
-        console.log('[Canvas] Variables synced to EventEngine:', variables.length);
       }
     });
 

@@ -27,6 +27,8 @@ import { Element } from '../../types/core/store.types';
 import { MessageService } from '../../utils/messaging';
 import { elementsApi } from '../../services/api';
 import { useInspectorState } from '../inspector/hooks/useInspectorState';
+// 🚀 Delta Update
+import { canvasDeltaMessenger, shouldUseDelta } from '../utils/canvasDeltaMessenger';
 
 export type IframeReadyState = 'not_initialized' | 'loading' | 'ready' | 'error';
 
@@ -395,6 +397,12 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
             // State도 업데이트 (UI 반영)
             setIframeReadyState('ready');
 
+            // 🚀 Delta Update: iframe 참조 설정
+            const iframe = MessageService.getIframe();
+            if (iframe) {
+                canvasDeltaMessenger.setIframe(iframe);
+            }
+
             // ✅ 즉시 처리 (setTimeout 제거)
             processMessageQueue();
 
@@ -571,7 +579,6 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
         }
 
         if (event.data.type === "ELEMENT_SELECTED" && event.data.source !== "builder") {
-            //console.log('Element selected from preview:', event.data.elementId);
 
             const currentSelectedId = useStore.getState().selectedElementId;
             const newElementId = event.data.elementId;
@@ -614,7 +621,6 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
 
         // ⭐ 드래그 선택 (Shift + Drag Lasso Selection)
         if (event.data.type === "ELEMENTS_DRAG_SELECTED") {
-            //console.log('Elements drag selected from preview:', event.data.elementIds);
 
             // ⭐ FIX: 드래그 선택은 새로운 선택 세트를 설정하므로 항상 허용
             // (isSyncingToBuilder 체크 제거 - 새 요소 선택은 차단하지 않음)
@@ -649,7 +655,6 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
 
         // 프리뷰에서 보내는 element-click 메시지 처리
         if (event.data.type === "element-click" && event.data.elementId) {
-            //console.log('Element clicked in preview:', event.data.elementId);
             setSelectedElement(event.data.elementId, event.data.payload?.props);
 
             // 선택된 요소 정보를 iframe에 다시 전송하여 오버레이 표시
@@ -675,7 +680,6 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
 
         // 추가: element-hover 메시지 처리 (선택사항)
         if (event.data.type === "element-hover" && event.data.elementId) {
-            //console.log('Element hovered in preview:', event.data.elementId);
             // 필요시 hover 상태 처리 로직 추가
         }
     }, [setSelectedElement, elementsMap, isSyncingToBuilder, processMessageQueue, sendElementsToIframe, sendLayoutsToIframe, sendDataTablesToIframe, sendApiEndpointsToIframe, sendVariablesToIframe]);
@@ -716,7 +720,9 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
 
     // ⭐ Layout/Slot System: filteredElements가 변경될 때마다 iframe에 전송
     // Phase 2.1 최적화: JSON.stringify 제거, 구조적 참조 비교
+    // 🚀 Phase 4: Delta Update 지원
     const lastSentElementsRef = useRef<Element[]>([]);
+    const lastSentElementsMapRef = useRef<Map<string, Element>>(new Map());
     const lastSentEditModeRef = useRef<string>('page');
     const isSendingRef = useRef(false);
 
@@ -727,39 +733,50 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
         }
 
         // Phase 2.1 최적화: 구조적 참조 비교 (JSON.stringify 제거)
-        // 배열 길이와 각 요소의 참조 비교
         const prevElements = lastSentElementsRef.current;
+        const prevElementsMap = lastSentElementsMapRef.current;
         const prevEditMode = lastSentEditModeRef.current;
 
         // ⭐ editMode 변경 감지 (Layout ↔ Page 전환 시 항상 전송)
         const editModeChanged = prevEditMode !== editMode;
 
-        // ⭐ 요소 개수 변경 감지 (0 → 5개 등)
-        const elementCountChanged = prevElements.length !== filteredElements.length;
+        // 🚀 Delta Update: 변경 분석
+        const addedElements: Element[] = [];
+        const removedElementIds: string[] = [];
+        const updatedElements: Element[] = [];
+        const currentElementsMap = new Map<string, Element>();
 
-        // 구조적 변경 체크 (개수 같을 때만)
-        let structurallyChanged = false;
-        if (!elementCountChanged && filteredElements.length > 0) {
-            for (let i = 0; i < filteredElements.length; i++) {
-                // 요소 참조가 다르거나 id/tag가 다르면 변경됨
-                if (prevElements[i] !== filteredElements[i] ||
-                    prevElements[i].id !== filteredElements[i].id ||
-                    prevElements[i].tag !== filteredElements[i].tag) {
-                    structurallyChanged = true;
-                    break;
-                }
+        // 현재 요소들을 Map으로 변환
+        for (const el of filteredElements) {
+            currentElementsMap.set(el.id, el);
+        }
+
+        // 추가된 요소 찾기 (현재에는 있지만 이전에는 없음)
+        for (const el of filteredElements) {
+            if (!prevElementsMap.has(el.id)) {
+                addedElements.push(el);
+            } else if (prevElementsMap.get(el.id) !== el) {
+                // 참조가 다르면 업데이트됨
+                updatedElements.push(el);
             }
         }
 
+        // 삭제된 요소 찾기 (이전에는 있지만 현재에는 없음)
+        for (const [id] of prevElementsMap) {
+            if (!currentElementsMap.has(id)) {
+                removedElementIds.push(id);
+            }
+        }
+
+        const totalChanges = addedElements.length + removedElementIds.length + updatedElements.length;
+
         // ⭐ 실제 변경이 없으면 스킵
-        if (!editModeChanged && !elementCountChanged && !structurallyChanged) {
+        if (!editModeChanged && totalChanges === 0) {
             return;
         }
 
-        // ✅ ACK 기반 중복 방지: 구조적 변경만 있을 때 체크
-        // ⭐ FIX: editMode 또는 요소 개수가 변경되었으면 isSendingRef와 ACK 타이밍 무시
-        if (!editModeChanged && !elementCountChanged) {
-            // 전송 중이면 스킵 (구조적 변경만 있는 경우)
+        // ✅ ACK 기반 중복 방지
+        if (!editModeChanged && totalChanges > 0) {
             if (isSendingRef.current) {
                 return;
             }
@@ -772,10 +789,44 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
         // 전송 중 플래그 설정
         isSendingRef.current = true;
         lastSentElementsRef.current = filteredElements;
+        lastSentElementsMapRef.current = currentElementsMap;
         lastSentEditModeRef.current = editMode;
 
-        // iframe에 요소 전송 (ACK를 받으면 isSendingRef.current = false로 해제됨)
-        sendElementsToIframe(filteredElements);
+        // 🚀 Delta Update: Delta 사용 여부 결정
+        const useDelta = !editModeChanged &&
+            prevElements.length > 0 &&
+            shouldUseDelta(filteredElements.length, totalChanges);
+
+        if (useDelta && canvasDeltaMessenger.isReady()) {
+            // 🚀 Delta 전송: 변경된 요소만 전송
+
+            // 1. 삭제된 요소 전송
+            for (const elementId of removedElementIds) {
+                canvasDeltaMessenger.sendElementRemoved(elementId);
+            }
+
+            // 2. 추가된 요소 전송
+            for (const element of addedElements) {
+                canvasDeltaMessenger.sendElementAdded(element);
+            }
+
+            // 3. 업데이트된 요소 전송 (배치)
+            if (updatedElements.length > 0) {
+                const updates = updatedElements.map(el => ({
+                    elementId: el.id,
+                    propsChanges: el.props as Record<string, unknown>,
+                    parentId: el.parent_id,
+                    orderNum: el.order_num,
+                }));
+                canvasDeltaMessenger.sendBatchUpdate(updates);
+            }
+
+            // Delta 전송 완료 → 플래그 해제
+            isSendingRef.current = false;
+        } else {
+            // Full Update: 전체 배열 전송 (기존 방식)
+            sendElementsToIframe(filteredElements);
+        }
 
         // ✅ 백업: ACK를 못 받으면 1초 후 플래그 강제 해제
         setTimeout(() => {
@@ -861,7 +912,6 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
         lastSentDataTablesRef.current = dataTablesJson;
         sendDataTablesToIframe();
 
-        console.log('📦 [Builder] DataTables changed, sending to iframe:', dataTables.length, 'tables');
     }, [dataTables, sendDataTablesToIframe]);
 
     // ⭐ ApiEndpoints가 변경될 때마다 iframe에 전송 (PropertyDataBinding용)
@@ -886,7 +936,6 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
         lastSentApiEndpointsRef.current = apiEndpointsJson;
         sendApiEndpointsToIframe();
 
-        console.log('📦 [Builder] ApiEndpoints changed, sending to iframe:', apiEndpoints.length, 'endpoints');
     }, [apiEndpoints, sendApiEndpointsToIframe]);
 
     // ⭐ Variables가 변경될 때마다 iframe에 전송 (PropertyDataBinding용)
@@ -912,7 +961,6 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
         lastSentVariablesRef.current = variablesJson;
         sendVariablesToIframe();
 
-        console.log('📦 [Builder] Variables changed, sending to iframe:', variables.length, 'variables');
     }, [variables, sendVariablesToIframe]);
 
     // 🔧 REMOVED: Ref를 사용하므로 iframeReadyState 기반 useEffect 불필요
@@ -929,7 +977,6 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
 
         // 🔧 FIX: iframe이 준비되지 않았으면 큐에 넣기
         if (iframeReadyStateRef.current !== 'ready' || !iframe?.contentWindow) {
-            console.log('⏸️ [Builder] Queue REQUEST_ELEMENT_SELECTION, iframe not ready');
             messageQueueRef.current.push({
                 type: "REQUEST_ELEMENT_SELECTION",
                 payload: message
@@ -938,7 +985,6 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
         }
 
         iframe.contentWindow.postMessage(message, window.location.origin);
-        console.log('📤 [Builder] Sent REQUEST_ELEMENT_SELECTION:', elementId);
     }, []); // ✅ 의존성 제거 (Ref 사용)
 
     // 🎯 UPDATE_ELEMENTS 후 ACK를 받으면 자동으로 요소 선택 (모듈 레벨 변수)

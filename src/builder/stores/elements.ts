@@ -239,28 +239,28 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
   // Factory 함수로 생성된 updateElement 사용
   updateElement,
 
-  setSelectedElement: (elementId, props, style, computedStyle) =>
+  setSelectedElement: (elementId, props, style, computedStyle) => {
+    let resolvedProps = props;
+
+    if (elementId && !resolvedProps) {
+      const { elementsMap, elements } = get();
+      const element = elementsMap.get(elementId) ?? findElementById(elements, elementId);
+      if (element) {
+        resolvedProps = createCompleteProps(element);
+      }
+    }
+
     set(
       produce((state: ElementsState & { selectedElementIds: string[]; multiSelectMode: boolean }) => {
         state.selectedElementId = elementId;
 
-        if (elementId && props) {
+        if (elementId && resolvedProps) {
           state.selectedElementProps = {
-            ...props,
+            ...resolvedProps,
             ...(style ? { style } : {}),
             ...(computedStyle ? { computedStyle } : {}),
           };
-        } else if (elementId) {
-          // produce 내부에서는 배열 순회 사용 (elementsMap은 produce 외부에서만 사용 가능)
-          const element = findElementById(state.elements, elementId);
-          if (element) {
-            state.selectedElementProps = {
-              ...createCompleteProps(element),
-              ...(style ? { style } : {}),
-              ...(computedStyle ? { computedStyle } : {}),
-            };
-          }
-        } else {
+        } else if (!elementId) {
           state.selectedElementProps = {};
         }
 
@@ -273,7 +273,8 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
           state.multiSelectMode = false;
         }
       })
-    ),
+    );
+  },
 
   selectTabElement: (elementId, props, tabIndex) =>
     set(
@@ -338,6 +339,12 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
   toggleElementInSelection: (elementId: string) =>
     set(
       produce((state: ElementsState & { selectedElementIds: string[]; multiSelectMode: boolean }) => {
+        const resolveCompleteProps = (id: string) => {
+          const { elementsMap, elements } = get();
+          const element = elementsMap.get(id) ?? findElementById(elements, id);
+          return element ? createCompleteProps(element) : null;
+        };
+
         const isAlreadySelected = state.selectedElementIds.includes(elementId);
 
         if (isAlreadySelected) {
@@ -352,10 +359,8 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
           } else {
             // 첫 번째 요소를 primary selection으로 유지
             state.selectedElementId = state.selectedElementIds[0];
-            const element = findElementById(state.elements, state.selectedElementIds[0]);
-            if (element) {
-              state.selectedElementProps = createCompleteProps(element);
-            }
+            const nextProps = resolveCompleteProps(state.selectedElementIds[0]);
+            if (nextProps) state.selectedElementProps = nextProps;
           }
         } else {
           // 선택 안 됨 → 추가
@@ -365,10 +370,8 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
           // 첫 번째로 추가되는 경우 primary selection 설정
           if (state.selectedElementIds.length === 1) {
             state.selectedElementId = elementId;
-            const element = findElementById(state.elements, elementId);
-            if (element) {
-              state.selectedElementProps = createCompleteProps(element);
-            }
+            const nextProps = resolveCompleteProps(elementId);
+            if (nextProps) state.selectedElementProps = nextProps;
           }
         }
       })
@@ -378,16 +381,20 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
   setSelectedElements: (elementIds: string[]) =>
     set(
       produce((state: ElementsState & { selectedElementIds: string[]; multiSelectMode: boolean }) => {
+        const resolveCompleteProps = (id: string) => {
+          const { elementsMap, elements } = get();
+          const element = elementsMap.get(id) ?? findElementById(elements, id);
+          return element ? createCompleteProps(element) : null;
+        };
+
         state.selectedElementIds = elementIds;
         state.multiSelectMode = elementIds.length > 1;
 
         if (elementIds.length > 0) {
           // 첫 번째 요소를 primary selection으로 설정
           state.selectedElementId = elementIds[0];
-          const element = findElementById(state.elements, elementIds[0]);
-          if (element) {
-            state.selectedElementProps = createCompleteProps(element);
-          }
+          const nextProps = resolveCompleteProps(elementIds[0]);
+          if (nextProps) state.selectedElementProps = nextProps;
         } else {
           // 선택 없음
           state.selectedElementId = null;

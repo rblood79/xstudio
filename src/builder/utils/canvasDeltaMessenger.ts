@@ -210,15 +210,12 @@ export class CanvasDeltaMessenger {
   private send(message: DeltaMessage | Record<string, unknown>): boolean {
     try {
       if (!this.iframe?.contentWindow) {
-        console.warn("🚀 [Delta] iframe not ready");
         return false;
       }
 
       this.iframe.contentWindow.postMessage(message, this.targetOrigin);
-      console.log(`🚀 [Delta] Sent: ${message.type}`);
       return true;
-    } catch (error) {
-      console.error("🚀 [Delta] Send failed:", error);
+    } catch {
       return false;
     }
   }

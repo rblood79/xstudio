@@ -76,7 +76,13 @@ export class HistoryIndexedDB {
    */
   private openDatabase(): Promise<IDBDatabase> {
     return new Promise((resolve, reject) => {
-      const request = indexedDB.open(DB_NAME, DB_VERSION);
+      const idb = (globalThis as unknown as { indexedDB?: IDBFactory }).indexedDB;
+      if (!idb) {
+        reject(new Error('IndexedDB is not available in this environment'));
+        return;
+      }
+
+      const request = idb.open(DB_NAME, DB_VERSION);
 
       request.onerror = () => {
         console.error('❌ [HistoryIDB] Failed to open database:', request.error);
@@ -84,7 +90,6 @@ export class HistoryIndexedDB {
       };
 
       request.onsuccess = () => {
-        console.log('✅ [HistoryIDB] Database opened successfully');
         resolve(request.result);
       };
 
@@ -104,7 +109,6 @@ export class HistoryIndexedDB {
           db.createObjectStore(STORE_META, { keyPath: 'pageId' });
         }
 
-        console.log('📦 [HistoryIDB] Database schema created/upgraded');
       };
     });
   }
@@ -220,7 +224,6 @@ export class HistoryIndexedDB {
           // 시간순 정렬
           records.sort((a, b) => a.createdAt - b.createdAt);
           const entries = records.map((r) => r.entry);
-          console.log(`📂 [HistoryIDB] Loaded ${entries.length} entries for page ${pageId}`);
           resolve(entries);
         };
 
@@ -286,7 +289,6 @@ export class HistoryIndexedDB {
         metaStore.delete(pageId);
 
         transaction.oncomplete = () => {
-          console.log(`🗑️ [HistoryIDB] Cleared history for page ${pageId}`);
           resolve();
         };
 
@@ -419,9 +421,6 @@ export class HistoryIndexedDB {
         };
 
         transaction.oncomplete = () => {
-          if (deletedCount > 0) {
-            console.log(`🧹 [HistoryIDB] Cleaned up ${deletedCount} old entries`);
-          }
           resolve(deletedCount);
         };
 
@@ -450,7 +449,6 @@ export class HistoryIndexedDB {
         transaction.objectStore(STORE_META).clear();
 
         transaction.oncomplete = () => {
-          console.log('🗑️ [HistoryIDB] All history cleared');
           resolve();
         };
 
@@ -520,7 +518,6 @@ export class HistoryIndexedDB {
       this.db.close();
       this.db = null;
       this.dbPromise = null;
-      console.log('🔌 [HistoryIDB] Database connection closed');
     }
   }
 }

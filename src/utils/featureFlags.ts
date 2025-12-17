@@ -95,7 +95,6 @@ export function useCanvasCompareMode(): boolean {
  * @example
  * ```typescript
  * const flags = getFeatureFlags();
- * console.log('Feature Flags:', flags);
  * // { useWebGLCanvas: false, enableDebugLogs: true }
  * ```
  */
@@ -113,7 +112,6 @@ export function getFeatureFlags(): FeatureFlags {
 export function logFeatureFlags(): void {
   if (import.meta.env.DEV) {
     const flags = getFeatureFlags();
-    console.log('🚩 Feature Flags:', flags);
   }
 }
 

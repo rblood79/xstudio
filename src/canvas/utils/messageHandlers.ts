@@ -35,9 +35,8 @@ export const handleUpdateElements = (
         },
         window.location.origin
       );
-      console.log('✅ [Preview] Sent ELEMENTS_UPDATED_ACK to Builder');
-    } catch (error) {
-      console.error('❌ [Preview] Failed to send ACK:', error);
+    } catch {
+      // ACK send failed silently
     }
   }
 };
@@ -144,11 +143,6 @@ export const handleThemeVars = (data: MessageType) => {
     }
 
     styleEl.textContent = cssText;
-
-    console.log(
-      "[preview] applied THEME_VARS",
-      `${lightVars.length} light, ${darkVars.length} dark`
-    );
   }
 };
 
@@ -188,8 +182,6 @@ export const handleSetDarkMode = (data: MessageType) => {
     } else {
       document.documentElement.removeAttribute("data-theme");
     }
-
-    console.log("[preview] Dark mode:", isDark ? "enabled" : "disabled");
   }
 };
 
@@ -232,8 +224,6 @@ export const handleSetEditMode = (
     if (setEditMode) {
       setEditMode(mode);
     }
-
-    console.log("[preview] Edit mode:", mode);
   }
 };
 
@@ -252,8 +242,6 @@ export const handleUpdatePageInfo = (
     if (setPageInfo) {
       setPageInfo(pageId, layoutId);
     }
-
-    console.log("[preview] Page info updated:", { pageId, layoutId });
   }
 };
 
@@ -272,8 +260,6 @@ export const handleUpdateLayouts = (
     if (setLayouts) {
       setLayouts(layouts);
     }
-
-    console.log("[preview] Layouts updated:", layouts.length, "layouts");
   }
 };
 
@@ -309,17 +295,12 @@ export const handleRequestElementSelection = (
           elementWithId = document.querySelector(`[data-element-id="${layoutBody.id}"]`);
           if (elementWithId) {
             actualElementId = layoutBody.id;
-            console.log(`🔄 [Preview] Page body → Layout body 대체:`, {
-              pageBodyId: elementId,
-              layoutBodyId: layoutBody.id
-            });
           }
         }
       }
 
-      // 여전히 못 찾으면 경고 후 종료
+      // 여전히 못 찾으면 종료
       if (!elementWithId) {
-        console.warn(`⚠️ [Preview] DOM element not found:`, elementId);
         return;
       }
     }
@@ -405,7 +386,6 @@ export const handleMessage = (
 ) => {
   // Origin 체크 (보안)
   if (event.origin !== window.location.origin) {
-    console.warn('⚠️ [Preview] Message from untrusted origin:', event.origin);
     // 개발 환경에서는 계속 진행
     if (import.meta.env.PROD) return;
   }

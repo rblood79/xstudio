@@ -60,14 +60,6 @@ function syncDataTablesToCanvas(dataTables: Map<string, DataTable>): void {
         type: 'UPDATE_DATA_TABLES',
         dataTables: dataTablesArray,
       }, '*');
-
-      console.log('📦 [Builder] DataTables Canvas 동기화:', dataTablesArray.length, '개');
-      console.log('📦 [Builder] 동기화된 테이블:', dataTablesArray.map(dt => ({
-        name: dt.name,
-        mockDataCount: dt.mockData?.length || 0,
-        runtimeDataCount: dt.runtimeData?.length || 0,
-        useMockData: dt.useMockData,
-      })));
     }
   } catch (error) {
     console.warn('⚠️ Canvas 동기화 실패:', error);
@@ -222,7 +214,6 @@ export const createDeleteDataTableAction =
   async (id: string): Promise<void> => {
     set({ isLoading: true });
 
-    console.log(`🗑️ [DataTable] 삭제 시작: id="${id}"`);
 
     try {
       const db = await getDB();
@@ -237,7 +228,6 @@ export const createDeleteDataTableAction =
       }
 
       await dataTablesStore.delete(id);
-      console.log(`✅ [IndexedDB] DataTable 삭제 완료: id="${id}"`);
 
       // 메모리 상태 업데이트
       const { dataTables } = get();
@@ -252,7 +242,6 @@ export const createDeleteDataTableAction =
         }
       });
 
-      console.log(`✅ [Memory] DataTable "${deletedName}" 삭제 완료, 남은 테이블: ${newMap.size}개`);
 
       set({ dataTables: newMap, isLoading: false });
 
@@ -621,7 +610,6 @@ export const createExecuteApiEndpointAction =
 
           // 🆕 Canvas에 동기화
           syncDataTablesToCanvas(newDataTables);
-          console.log(`✅ API "${endpoint.name}" → DataTable "${endpoint.targetDataTable}" 저장 완료`);
         }
       }
 
