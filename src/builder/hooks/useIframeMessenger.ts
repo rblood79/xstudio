@@ -59,7 +59,8 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
     const messageQueueRef = useRef<Array<{ type: string; payload: unknown }>>([]);
     const lastAckTimestampRef = useRef<number>(0); // ✅ 마지막 ACK 시점
 
-    const elements = useStore((state) => state.elements);
+    // 🚀 최적화: elements 구독 제거 - iframe 동기화는 BuilderCore에서 store.subscribe로 처리
+    // const elements = useStore((state) => state.elements);  // REMOVED
     // 성능 최적화: Map 사용 (O(1) 조회)
     const elementsMap = useStore((state) => state.elementsMap);
     const setSelectedElement = useStore((state) => state.setSelectedElement);
@@ -85,17 +86,6 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
 
     // ⭐ Variables 구독 (PropertyDataBinding용)
     const variables = useVariables();
-
-    // ⭐ Layout/Slot System: Edit Mode에 따라 요소 필터링
-    const filteredElements = useMemo(() => {
-        if (editMode === 'layout' && currentLayoutId) {
-            // Layout 편집 모드: 현재 레이아웃의 요소만 전송
-            const layoutElements = elements.filter(el => el.layout_id === currentLayoutId);
-            return layoutElements;
-        }
-        // Page 편집 모드: 모든 요소 전송 (기존 동작)
-        return elements;
-    }, [elements, editMode, currentLayoutId]);
 
     // 기존 히스토리 시스템에서 필요한 함수들만 가져오기
     // undo, redo는 함수 내에서 직접 호출
@@ -718,123 +708,9 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
     // Layer 트리에서 선택할 때:
     // sendElementSelectedMessage(selectedElementId, element.props);
 
-    // ⭐ Layout/Slot System: filteredElements가 변경될 때마다 iframe에 전송
-    // Phase 2.1 최적화: JSON.stringify 제거, 구조적 참조 비교
-    // 🚀 Phase 4: Delta Update 지원
-    const lastSentElementsRef = useRef<Element[]>([]);
-    const lastSentElementsMapRef = useRef<Map<string, Element>>(new Map());
-    const lastSentEditModeRef = useRef<string>('page');
-    const isSendingRef = useRef(false);
-
-    useEffect(() => {
-        // 🔧 FIX: Ref 사용 - iframe 준비 체크만
-        if (iframeReadyStateRef.current !== 'ready') {
-            return;
-        }
-
-        // Phase 2.1 최적화: 구조적 참조 비교 (JSON.stringify 제거)
-        const prevElements = lastSentElementsRef.current;
-        const prevElementsMap = lastSentElementsMapRef.current;
-        const prevEditMode = lastSentEditModeRef.current;
-
-        // ⭐ editMode 변경 감지 (Layout ↔ Page 전환 시 항상 전송)
-        const editModeChanged = prevEditMode !== editMode;
-
-        // 🚀 Delta Update: 변경 분석
-        const addedElements: Element[] = [];
-        const removedElementIds: string[] = [];
-        const updatedElements: Element[] = [];
-        const currentElementsMap = new Map<string, Element>();
-
-        // 현재 요소들을 Map으로 변환
-        for (const el of filteredElements) {
-            currentElementsMap.set(el.id, el);
-        }
-
-        // 추가된 요소 찾기 (현재에는 있지만 이전에는 없음)
-        for (const el of filteredElements) {
-            if (!prevElementsMap.has(el.id)) {
-                addedElements.push(el);
-            } else if (prevElementsMap.get(el.id) !== el) {
-                // 참조가 다르면 업데이트됨
-                updatedElements.push(el);
-            }
-        }
-
-        // 삭제된 요소 찾기 (이전에는 있지만 현재에는 없음)
-        for (const [id] of prevElementsMap) {
-            if (!currentElementsMap.has(id)) {
-                removedElementIds.push(id);
-            }
-        }
-
-        const totalChanges = addedElements.length + removedElementIds.length + updatedElements.length;
-
-        // ⭐ 실제 변경이 없으면 스킵
-        if (!editModeChanged && totalChanges === 0) {
-            return;
-        }
-
-        // ✅ ACK 기반 중복 방지
-        if (!editModeChanged && totalChanges > 0) {
-            if (isSendingRef.current) {
-                return;
-            }
-            const timeSinceLastAck = Date.now() - lastAckTimestampRef.current;
-            if (timeSinceLastAck < 100) {
-                return;
-            }
-        }
-
-        // 전송 중 플래그 설정
-        isSendingRef.current = true;
-        lastSentElementsRef.current = filteredElements;
-        lastSentElementsMapRef.current = currentElementsMap;
-        lastSentEditModeRef.current = editMode;
-
-        // 🚀 Delta Update: Delta 사용 여부 결정
-        const useDelta = !editModeChanged &&
-            prevElements.length > 0 &&
-            shouldUseDelta(filteredElements.length, totalChanges);
-
-        if (useDelta && canvasDeltaMessenger.isReady()) {
-            // 🚀 Delta 전송: 변경된 요소만 전송
-
-            // 1. 삭제된 요소 전송
-            for (const elementId of removedElementIds) {
-                canvasDeltaMessenger.sendElementRemoved(elementId);
-            }
-
-            // 2. 추가된 요소 전송
-            for (const element of addedElements) {
-                canvasDeltaMessenger.sendElementAdded(element);
-            }
-
-            // 3. 업데이트된 요소 전송 (배치)
-            if (updatedElements.length > 0) {
-                const updates = updatedElements.map(el => ({
-                    elementId: el.id,
-                    propsChanges: el.props as Record<string, unknown>,
-                    parentId: el.parent_id,
-                    orderNum: el.order_num,
-                }));
-                canvasDeltaMessenger.sendBatchUpdate(updates);
-            }
-
-            // Delta 전송 완료 → 플래그 해제
-            isSendingRef.current = false;
-        } else {
-            // Full Update: 전체 배열 전송 (기존 방식)
-            sendElementsToIframe(filteredElements);
-        }
-
-        // ✅ 백업: ACK를 못 받으면 1초 후 플래그 강제 해제
-        setTimeout(() => {
-            if (isSendingRef.current) {
-                isSendingRef.current = false;
-            }
-        }, 1000);
-    }, [filteredElements, sendElementsToIframe, editMode]); // ⭐ Layout/Slot System: filteredElements, editMode 의존성
+    // 🚀 최적화: elements 동기화는 BuilderCore에서 store.subscribe로 처리
+    // 이 hook에서는 elements 구독을 제거하여 불필요한 리렌더링 방지
+    // 기존 filteredElements useEffect는 BuilderCore의 useElementsSync()로 이동됨
 
     // ⭐ Layout/Slot System: Page 정보가 변경될 때 iframe에 전송
     const lastSentPageInfoRef = useRef<{ pageId: string | null; layoutId: string | null }>({

@@ -140,7 +140,7 @@ export const BuilderCore: React.FC = () => {
     handleIframeLoad,
     handleMessage,
     // iframeUndo, iframeRedo는 사용하지 않음
-    // sendElementsToIframe는 사용하지 않음
+    sendElementsToIframe,  // 🚀 elements 동기화용
     // updateElementProps는 제거됨
     iframeReadyState,
     requestAutoSelectAfterUpdate,
@@ -356,6 +356,46 @@ export const BuilderCore: React.FC = () => {
       validateOrderNumbers(elements);
     }
   }, [currentPageId, validateOrderNumbers]);
+
+  // 🚀 최적화: store.subscribe로 elements 변경 감지 → iframe 동기화
+  // useIframeMessenger에서 elements 구독 제거 후, BuilderCore에서 직접 동기화
+  const lastSentElementsRef = useRef<typeof useStore.getState extends () => infer S ? S['elements'] : never>([]);
+  const lastSentEditModeRef = useRef<string>('page');
+
+  useEffect(() => {
+    // iframe이 준비되지 않았으면 구독하지 않음
+    if (iframeReadyState !== 'ready') return;
+
+    const unsubscribe = useStore.subscribe((state, prevState) => {
+      // elements가 변경되었는지 확인 (참조 비교)
+      if (state.elements === prevState.elements) return;
+
+      // editMode 가져오기
+      const editMode = useEditModeStore.getState().mode;
+      const currentLayoutId = useLayoutsStore.getState().currentLayoutId;
+
+      // editMode에 따라 필터링
+      let filteredElements = state.elements;
+      if (editMode === 'layout' && currentLayoutId) {
+        filteredElements = state.elements.filter(el => el.layout_id === currentLayoutId);
+      }
+
+      // 변경 확인 (editMode도 포함)
+      const editModeChanged = lastSentEditModeRef.current !== editMode;
+      const elementsChanged = lastSentElementsRef.current !== filteredElements;
+
+      if (!editModeChanged && !elementsChanged) return;
+
+      // 전송
+      lastSentElementsRef.current = filteredElements;
+      lastSentEditModeRef.current = editMode;
+      sendElementsToIframe(filteredElements);
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, [iframeReadyState, sendElementsToIframe]);
 
   // NAVIGATE_TO_PAGE 메시지 수신 (Preview iframe에서)
   useEffect(() => {
