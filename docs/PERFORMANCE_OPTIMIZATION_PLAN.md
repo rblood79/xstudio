@@ -310,7 +310,7 @@ useEffect(() => {
 
 ---
 
-## Phase 12-16 현황
+## Phase 12-18 현황
 
 | 순서 | Phase | 예상 효과 | 리스크 | 상태 |
 |------|-------|----------|--------|------|
@@ -319,8 +319,10 @@ useEffect(() => {
 | 3 | Phase 14 | 15-25ms | 중간 | ✅ 완료 |
 | 4 | Phase 15 | 200-400ms | 낮음 | ✅ 완료 |
 | 5 | Phase 16 | 30-80ms | 낮음 | ✅ 완료 |
+| 6 | Phase 17 | 1500-1900ms | 낮음 | ✅ 완료 |
+| 7 | Phase 18 | 200ms (INP) | 낮음 | ✅ 완료 |
 
-**Phase 12-16 모두 완료**: 325-655ms 개선
+**Phase 12-18 모두 완료**: 2025-2755ms 개선
 
 ---
 
@@ -472,7 +474,139 @@ useStore.subscribe((state, prevState) => {
 
 ---
 
+### Phase 17: WebGL Hover State 최적화 - useState → useRef (P0) ✅
+
+**배경**: CPU 4x throttle 성능 프로파일링 결과
+
+```
+pointerover event: 1,907ms (32.2%) - 최대 병목
+Microtask execution: 1,855ms (31.4%)
+React performWork: 475ms (8.0%)
+```
+
+**문제 원인**:
+PixiJS 컴포넌트에서 hover 상태 관리에 React useState 사용
+
+```typescript
+// 문제 코드 (4개 컴포넌트에서 동일 패턴)
+const [hoveredItemId, setHoveredItemId] = useState<string | null>(null);
+
+// pointerover 시마다 setState 호출 → 전체 컴포넌트 리렌더링
+pointerover={() => setHoveredItemId(item.id)}
+pointerout={() => setHoveredItemId(null)}
+```
+
+**영향받은 컴포넌트**:
+- `PixiGridList.tsx`
+- `PixiTagGroup.tsx`
+- `PixiTree.tsx`
+- `PixiTable.tsx`
+
+**해결책: useRef + 직접 Graphics 업데이트**
+
+```typescript
+// 🚀 Phase 17: useRef로 hover 상태 관리 (리렌더링 없음)
+const itemGraphicsRefs = useRef<Map<string, PixiGraphics>>(new Map());
+
+// pointerover 시 직접 Graphics 업데이트
+pointerover={() => {
+  const g = itemGraphicsRefs.current.get(item.id);
+  if (g) drawItemBg(g, width, height, true, item.isSelected || false);
+}}
+pointerout={() => {
+  const g = itemGraphicsRefs.current.get(item.id);
+  if (g) drawItemBg(g, width, height, false, item.isSelected || false);
+}}
+
+// Graphics에 ref 연결
+<pixiGraphics
+  ref={(g) => {
+    if (g) itemGraphicsRefs.current.set(item.id, g);
+  }}
+  draw={(g) =>
+    drawItemBg(g, width, height, false, item.isSelected || false)
+  }
+/>
+```
+
+**핵심 개선**:
+1. **useState 제거**: hover 상태 변경이 React 리렌더링을 트리거하지 않음
+2. **직접 Graphics 조작**: PixiJS Graphics API로 즉시 시각적 업데이트
+3. **Map 기반 참조**: 각 아이템별 Graphics 객체를 효율적으로 관리
+4. **Zero re-render**: hover 동작이 React 컴포넌트 트리에 영향 없음
+
+**변경된 파일**:
+
+| 파일 | 변경 내용 |
+|------|----------|
+| `PixiGridList.tsx` | hoveredItemId useState → itemGraphicsRefs useRef |
+| `PixiTagGroup.tsx` | hoveredTagId useState → tagGraphicsRefs useRef |
+| `PixiTree.tsx` | hoveredItemId useState → itemGraphicsRefs useRef |
+| `PixiTable.tsx` | hoveredRowId useState → rowGraphicsRefs useRef |
+
+**예상 효과**: 1500-1900ms 개선 (pointerover 32.2% → near-zero)
+
+---
+
+### Phase 18: INP 최적화 - startTransition으로 선택 업데이트 (P0) ✅
+
+**배경**: Chrome DevTools Performance 분석 결과
+
+```
+INP (Interaction to Next Paint): 270ms
+- Input delay: 1ms
+- Processing duration: 245ms (병목)
+- Presentation delay: 24ms
+```
+
+**문제 원인**:
+클릭 시 동기적 React 렌더링이 메인 스레드 블로킹
+
+```
+workLoopSync: 129.8ms
+commitRoot: 85ms
+recursivelyTraverseMutationEffects: 38ms (each)
+```
+
+**문제 코드**:
+```typescript
+// 선택 업데이트가 동기적으로 처리됨 → 모든 구독자 즉시 리렌더링
+const handleElementClick = useCallback((elementId) => {
+  setSelectedElement(elementId); // 동기적 → 245ms 블로킹
+}, []);
+```
+
+**해결책: React 18 startTransition**
+
+```typescript
+import { startTransition } from 'react';
+
+const handleElementClick = useCallback((elementId) => {
+  // 🚀 Phase 18: startTransition으로 비긴급 업데이트
+  // React가 현재 프레임을 먼저 완료하고, 유휴 시간에 리렌더링 수행
+  startTransition(() => {
+    setSelectedElement(elementId);
+  });
+}, []);
+```
+
+**핵심 개선**:
+1. **비동기 렌더링**: 선택 업데이트를 "비긴급"으로 마킹
+2. **프레임 우선**: 현재 프레임의 중요 업데이트 먼저 처리
+3. **유휴 시간 활용**: React가 브라우저 유휴 시간에 리렌더링 수행
+4. **INP 개선**: Processing duration 245ms → ~50ms 이하
+
+**변경된 파일**:
+
+| 파일 | 변경 내용 |
+|------|----------|
+| `BuilderCanvas.tsx` | handleElementClick에 startTransition 적용 |
+
+**예상 효과**: INP 245ms → ~50ms (200ms 개선)
+
+---
+
 **문서 최종 업데이트**: 2025-12-18
-**완료된 Phase**: 1-15 (총 15개 Phase 모두 완료)
-**총 예상 개선**: 945-1395ms (Phase 1-15 합계)
+**완료된 Phase**: 1-18 (총 18개 Phase 모두 완료)
+**총 예상 개선**: 2645-3495ms (Phase 1-18 합계)
 **상태**: ✅ 성능 최적화 계획 완료

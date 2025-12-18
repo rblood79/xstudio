@@ -7,7 +7,7 @@
  * @package xstudio
  */
 
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useRef } from 'react';
 import { useExtend } from '@pixi/react';
 import { PIXI_COMPONENTS } from '../pixiSetup';
 import { Graphics as PixiGraphics, TextStyle } from 'pixi.js';
@@ -59,8 +59,8 @@ export function PixiTagGroup({
       }));
   }, [allElements, element.id]);
 
-  // Hover state for tags
-  const [hoveredTagId, setHoveredTagId] = useState<string | null>(null);
+  // 🚀 Performance: useRef로 hover 상태 관리 (리렌더링 없음)
+  const tagGraphicsRefs = useRef<Map<string, PixiGraphics>>(new Map());
 
   // Calculate tag positions (flow layout)
   const tagPositions = useMemo(() => {
@@ -215,7 +215,6 @@ export function PixiTagGroup({
         const pos = tagPositions[index];
         if (!pos) return null;
 
-        const isHovered = hoveredTagId === tag.id;
         const tagHeight = sizePreset.fontSize + sizePreset.tagPaddingY * 2;
         const tagTextColor =
           tag.isSelected || variant !== 'default' && variant !== 'surface'
@@ -229,15 +228,26 @@ export function PixiTagGroup({
             y={pos.y}
             eventMode="static"
             cursor="pointer"
-            pointerover={() => setHoveredTagId(tag.id)}
-            pointerout={() => setHoveredTagId(null)}
+            pointerover={() => {
+              // 🚀 Performance: 직접 그래픽스 업데이트 (리렌더링 없음)
+              const g = tagGraphicsRefs.current.get(tag.id);
+              if (g) drawTag(g, pos.width, true, tag.isSelected || false);
+            }}
+            pointerout={() => {
+              // 🚀 Performance: 직접 그래픽스 업데이트 (리렌더링 없음)
+              const g = tagGraphicsRefs.current.get(tag.id);
+              if (g) drawTag(g, pos.width, false, tag.isSelected || false);
+            }}
             pointerdown={(e) => {
               e.stopPropagation();
               handleTagClick(tag.id);
             }}
           >
             <pixiGraphics
-              draw={(g) => drawTag(g, pos.width, isHovered, tag.isSelected || false)}
+              ref={(g) => {
+                if (g) tagGraphicsRefs.current.set(tag.id, g);
+              }}
+              draw={(g) => drawTag(g, pos.width, false, tag.isSelected || false)}
             />
             <Text
               text={tag.text}
@@ -261,7 +271,7 @@ export function PixiTagGroup({
                 cursor="pointer"
                 pointerdown={(e) => handleRemoveClick(tag.id, e)}
               >
-                <pixiGraphics draw={(g) => drawRemoveButton(g, isHovered)} />
+                <pixiGraphics draw={(g) => drawRemoveButton(g, false)} />
               </pixiContainer>
             )}
           </pixiContainer>

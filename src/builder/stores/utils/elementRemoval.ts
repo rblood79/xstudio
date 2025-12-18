@@ -7,6 +7,8 @@ import { getDB } from "../../../lib/db";
 import { getElementById } from "./elementHelpers";
 import { reorderElements } from "./elementReorder";
 import type { ElementsState } from "../elements";
+// 🚀 Phase 11: Feature Flags for WebGL-only mode
+import { isWebGLCanvas, isCanvasCompareMode } from "../../../utils/featureFlags";
 
 type SetState = Parameters<StateCreator<ElementsState>>[0];
 type GetState = Parameters<StateCreator<ElementsState>>[1];
@@ -373,7 +375,9 @@ export const createRemoveElementAction =
     });
 
     // postMessage로 iframe에 전달
-    if (typeof window !== "undefined" && window.parent) {
+    // 🚀 Phase 11: WebGL-only 모드에서는 iframe 통신 스킵
+    const isWebGLOnly = isWebGLCanvas() && !isCanvasCompareMode();
+    if (!isWebGLOnly && typeof window !== "undefined" && window.parent) {
       window.parent.postMessage(
         {
           type: "ELEMENT_REMOVED",

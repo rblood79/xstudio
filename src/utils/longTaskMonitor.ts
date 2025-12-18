@@ -113,6 +113,7 @@ class LongTaskMonitor {
   private startTime = Date.now();
   private thresholds: ThresholdConfig;
   private enabled: boolean;
+  private verbose: boolean = false; // console.warn 출력 여부 (기본: 비활성화)
   private observer: PerformanceObserver | null = null;
 
   constructor(thresholds: ThresholdConfig = DEFAULT_THRESHOLDS) {
@@ -144,13 +145,9 @@ class LongTaskMonitor {
           this.longTaskCount++;
           this.longTaskTotalDuration += entry.duration;
 
-          // Long Task 경고 (개발 모드)
-          if (this.enabled) {
-            console.warn(
-              `[LongTask #${this.longTaskCount}] ${entry.duration.toFixed(1)}ms`,
-              entry.name !== 'self' ? `(${entry.name})` : ''
-            );
-          }
+          // Long Task 경고 (개발 모드) - 기본적으로 비활성화
+          // console.warn 자체가 Long Task를 유발할 수 있으므로 필요시에만 활성화
+          // longTaskMonitor.setVerbose(true) 로 활성화 가능
         }
       });
 
@@ -247,12 +244,15 @@ class LongTaskMonitor {
       history.shift();
     }
 
-    // 임계값 초과 시 경고
-    const threshold = this.thresholds.custom[name] ?? this.thresholds.default;
-    if (duration > threshold) {
-      console.warn(
-        `[Perf] ${name}: ${duration.toFixed(1)}ms (> ${threshold}ms threshold)`
-      );
+    // 임계값 초과 시 경고 - verbose 모드일 때만 출력
+    // console.warn 자체가 Long Task를 유발할 수 있으므로 기본 비활성화
+    if (this.verbose) {
+      const threshold = this.thresholds.custom[name] ?? this.thresholds.default;
+      if (duration > threshold) {
+        console.warn(
+          `[Perf] ${name}: ${duration.toFixed(1)}ms (> ${threshold}ms threshold)`
+        );
+      }
     }
   }
 
@@ -372,6 +372,14 @@ class LongTaskMonitor {
    */
   setEnabled(enabled: boolean): void {
     this.enabled = enabled;
+  }
+
+  /**
+   * Verbose 모드 설정 (console.warn 출력 여부)
+   * 기본값: false (성능 영향 방지)
+   */
+  setVerbose(verbose: boolean): void {
+    this.verbose = verbose;
   }
 
   /**

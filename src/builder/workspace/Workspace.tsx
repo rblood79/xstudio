@@ -382,14 +382,14 @@ export function Workspace({
   // Feature Flag OFF: 기존 iframe 캔버스 사용
   if (!useWebGL && fallbackCanvas) {
     return (
-      <div ref={containerRef} className="workspace">
+      <main ref={containerRef} className="workspace">
         {fallbackCanvas}
-      </div>
+      </main>
     );
   }
 
   return (
-    <div ref={containerRef} className="workspace">
+    <main ref={containerRef} className="workspace">
       {/* WebGL Canvas (DOM depth 최소화: .workspace → .builder-canvas-container → canvas) */}
       <BuilderCanvas
         pageWidth={canvasSize.width}
@@ -462,7 +462,7 @@ export function Workspace({
             : "🔄 캔버스 초기화 중..."}
         </div>
       )}
-    </div>
+    </main>
   );
 }
 
