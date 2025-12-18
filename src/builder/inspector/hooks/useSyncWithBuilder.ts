@@ -20,6 +20,16 @@ export function useSyncWithBuilder(): void {
 
   // 마지막으로 동기화한 element ID 추적
   const lastSyncedElementIdRef = useRef<string | null>(null);
+  // 🚀 Phase 15: 선택 변경 감지 - 선택만 했을 때는 동기화 스킵
+  const previousElementIdRef = useRef<string | null>(null);
+  // 🚀 Phase 15: 이전 상태 참조 저장 (실제 변경 감지용)
+  const previousStateRef = useRef<{
+    customId: string | undefined;
+    properties: Record<string, unknown> | undefined;
+    style: React.CSSProperties | undefined;
+    dataBinding: unknown;
+    events: unknown;
+  } | null>(null);
 
   useEffect(() => {
     // 히스토리 작업 중이면 동기화 건너뛰기
@@ -29,7 +39,26 @@ export function useSyncWithBuilder(): void {
 
     if (!selectedElement) {
       lastSyncedElementIdRef.current = null;
+      previousElementIdRef.current = null;
+      previousStateRef.current = null;
       return;
+    }
+
+    // 🚀 Phase 15: 선택 변경 감지 - 다른 요소를 선택했으면 동기화 스킵
+    // Inspector에서 속성을 편집한 것이 아니라 단순히 다른 요소를 선택한 것
+    const isSelectionChange = previousElementIdRef.current !== selectedElement.id;
+    if (isSelectionChange) {
+      previousElementIdRef.current = selectedElement.id;
+      // 새 요소의 현재 상태 저장 (이후 변경 감지 기준점)
+      previousStateRef.current = {
+        customId: selectedElement.customId,
+        properties: selectedElement.properties,
+        style: selectedElement.style,
+        dataBinding: selectedElement.dataBinding,
+        events: selectedElement.events,
+      };
+      lastSyncedElementIdRef.current = null; // 새 요소이므로 초기화
+      return; // 선택 변경 시에는 동기화하지 않음
     }
 
     // ⭐ getState()로 elements, elementsMap 가져오기 (구독하지 않음)
@@ -42,24 +71,30 @@ export function useSyncWithBuilder(): void {
       return;
     }
 
-    // 🚀 Phase 13: 필드별 참조 비교 (JSON.stringify 제거)
-    // - requestIdleCallback 제거 (50ms 지연 없음)
-    // - JSON.stringify 비교 제거 (2회 → 0회)
-    const {
-      style: storeStyle,
-      computedStyle: _storeComputedStyle, // eslint-disable-line @typescript-eslint/no-unused-vars
-      events: storeEvents,
-      ...storeProps
-    } = currentElementInStore.props as Record<string, unknown>;
+    // 🚀 Phase 15: 이전 Inspector 상태와 비교 (spread로 인한 참조 문제 해결)
+    // 기존: store와 비교 → spread로 항상 새 객체 → 항상 다름
+    // 개선: 이전 Inspector 상태와 비교 → 실제 변경만 감지
+    const prev = previousStateRef.current;
+    if (!prev) {
+      // 이전 상태가 없으면 저장만 하고 스킵 (첫 렌더링)
+      previousStateRef.current = {
+        customId: selectedElement.customId,
+        properties: selectedElement.properties,
+        style: selectedElement.style,
+        dataBinding: selectedElement.dataBinding,
+        events: selectedElement.events,
+      };
+      return;
+    }
 
-    // 필드별 참조 비교 (빠른 스킵)
-    const hasCustomIdChange = selectedElement.customId !== currentElementInStore.customId;
-    const hasPropertiesChange = selectedElement.properties !== storeProps;
-    const hasStyleChange = selectedElement.style !== storeStyle;
-    const hasDataBindingChange = selectedElement.dataBinding !== currentElementInStore.dataBinding;
-    const hasEventsChange = selectedElement.events !== storeEvents;
+    // 🚀 Phase 15: 이전 Inspector 상태와 참조 비교 (실제 변경 감지)
+    const hasCustomIdChange = selectedElement.customId !== prev.customId;
+    const hasPropertiesChange = selectedElement.properties !== prev.properties;
+    const hasStyleChange = selectedElement.style !== prev.style;
+    const hasDataBindingChange = selectedElement.dataBinding !== prev.dataBinding;
+    const hasEventsChange = selectedElement.events !== prev.events;
 
-    // 참조가 모두 같으면 동기화 스킵
+    // 참조가 모두 같으면 동기화 스킵 (실제 변경 없음)
     if (
       !hasCustomIdChange &&
       !hasPropertiesChange &&
@@ -70,10 +105,15 @@ export function useSyncWithBuilder(): void {
       return;
     }
 
-    // 같은 요소의 연속 동기화 방지 (ID 기반)
-    if (lastSyncedElementIdRef.current === selectedElement.id) {
-      // ID가 같아도 참조가 다르면 계속 진행 (실제 변경이 있음)
-    }
+    // 현재 상태를 이전 상태로 저장 (다음 비교를 위해)
+    previousStateRef.current = {
+      customId: selectedElement.customId,
+      properties: selectedElement.properties,
+      style: selectedElement.style,
+      dataBinding: selectedElement.dataBinding,
+      events: selectedElement.events,
+    };
+
     lastSyncedElementIdRef.current = selectedElement.id;
 
     // ⭐ getState()로 syncVersion 가져오기 (구독하지 않음)
