@@ -122,8 +122,11 @@ export function useSyncWithBuilder(): void {
     // Inspector에서 변경된 내용을 Builder에 반영
     const elementUpdate = mapSelectedToElementUpdate(selectedElement);
 
-    // 🚀 Phase 13: 즉시 동기화 (requestIdleCallback 제거)
-    (async () => {
+    // 🚀 Phase 16: 메모리 업데이트는 즉시 실행 (UI 반응성 유지)
+    updateElement(selectedElement.id, elementUpdate);
+
+    // 🚀 Phase 16: DB 저장은 requestIdleCallback으로 지연 (Intel Mac 최적화)
+    const runDbSync = async () => {
       try {
         // Table 요소에 API Collection, Static Data, Supabase의 설정이 변경되면 기존 Column 자식 삭제
         if (
@@ -235,7 +238,8 @@ export function useSyncWithBuilder(): void {
           }
         }
 
-        await updateElement(selectedElement.id, elementUpdate);
+        // 🚀 Phase 16: updateElement는 이미 즉시 실행됨 (위에서)
+        // 여기서는 DB 저장만 수행
 
         const payload: Record<string, unknown> = {};
 
@@ -275,7 +279,18 @@ export function useSyncWithBuilder(): void {
       } finally {
         useInspectorState.getState().confirmSync(currentSyncVersion);
       }
-    })();
+    };
+
+    // 🚀 Phase 16: requestIdleCallback 사용 (Intel Mac 최적화)
+    // - 메모리 업데이트는 위에서 즉시 완료
+    // - DB 저장만 브라우저 유휴 시간에 실행
+    // - fallback: 16ms timeout (1 frame)
+    if (typeof requestIdleCallback !== 'undefined') {
+      requestIdleCallback(() => runDbSync(), { timeout: 16 });
+    } else {
+      // Safari fallback
+      setTimeout(() => runDbSync(), 0);
+    }
 
     return () => {
       // 새 컴포넌트 선택 시 추적 ref만 초기화

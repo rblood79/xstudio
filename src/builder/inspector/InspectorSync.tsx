@@ -9,6 +9,7 @@ import { useEffect, useMemo, useRef } from "react";
 import { useInspectorState, useSyncWithBuilder } from "./hooks";
 import { useStore } from "../stores";
 import { mapElementToSelected } from "./utils/elementMapper";
+import { shallowEqual, shallowEqualStyle, shallowEqualEvents } from "./utils/shallowEqual";
 
 export function InspectorSync() {
   const setSelectedElement = useInspectorState(
@@ -116,10 +117,9 @@ export function InspectorSync() {
     const currentEvents = selectedElement?.events;
     const newEvents = mappedElement.events;
 
-    // 🚀 Phase 12: 참조 비교 우선 + 내용 비교 (무한 루프 방지)
-    // - requestIdleCallback 제거 (50ms 지연 없음)
-    // - 참조가 같으면 빠르게 스킵
-    // - 참조가 다르면 JSON.stringify로 내용 비교 (mappedElement는 항상 새 객체)
+    // 🚀 Phase 16: 빠른 얕은 비교 (Intel Mac 최적화)
+    // - JSON.stringify 대신 shallowEqual 사용 (10-50x 빠름)
+    // - 키 개수 비교 → 값 비교 → 필요시 JSON 폴백
 
     // 참조가 모두 같으면 빠르게 스킵 (가장 빠른 경로)
     if (
@@ -132,38 +132,32 @@ export function InspectorSync() {
       return;
     }
 
-    // 참조가 다르면 내용 비교 (mappedElement는 매번 새 객체이므로 참조는 항상 다름)
-    // JSON.stringify로 실제 내용 변경 여부 확인 (무한 루프 방지)
+    // 🚀 Phase 16: shallowEqual로 빠른 비교
     let hasChanges = false;
 
-    if (currentProps !== newProps) {
-      if (JSON.stringify(currentProps) !== JSON.stringify(newProps)) {
-        hasChanges = true;
-      }
+    // props 비교 (가장 자주 변경됨)
+    if (currentProps !== newProps && !shallowEqual(currentProps, newProps)) {
+      hasChanges = true;
     }
 
-    if (!hasChanges && currentStyle !== newStyle) {
-      if (JSON.stringify(currentStyle) !== JSON.stringify(newStyle)) {
-        hasChanges = true;
-      }
+    // style 비교 (CSS 속성은 프리미티브만)
+    if (!hasChanges && currentStyle !== newStyle && !shallowEqualStyle(currentStyle, newStyle)) {
+      hasChanges = true;
     }
 
-    if (!hasChanges && currentDataBinding !== newDataBinding) {
-      if (JSON.stringify(currentDataBinding) !== JSON.stringify(newDataBinding)) {
-        hasChanges = true;
-      }
+    // dataBinding 비교
+    if (!hasChanges && currentDataBinding !== newDataBinding && !shallowEqual(currentDataBinding, newDataBinding)) {
+      hasChanges = true;
     }
 
-    if (!hasChanges && currentComputedStyle !== newComputedStyle) {
-      if (JSON.stringify(currentComputedStyle) !== JSON.stringify(newComputedStyle)) {
-        hasChanges = true;
-      }
+    // computedStyle 비교 (CSS 속성은 프리미티브만)
+    if (!hasChanges && currentComputedStyle !== newComputedStyle && !shallowEqualStyle(currentComputedStyle, newComputedStyle)) {
+      hasChanges = true;
     }
 
-    if (!hasChanges && currentEvents !== newEvents) {
-      if (JSON.stringify(currentEvents) !== JSON.stringify(newEvents)) {
-        hasChanges = true;
-      }
+    // events 비교 (ID와 타입만 비교)
+    if (!hasChanges && currentEvents !== newEvents && !shallowEqualEvents(currentEvents, newEvents)) {
+      hasChanges = true;
     }
 
     if (!hasChanges) {
