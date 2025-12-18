@@ -1,21 +1,21 @@
-import path from 'node:path';
-import { defineWorkspace } from 'vitest/config';
+import path from "node:path";
 
-export default defineWorkspace([
-  'vite.config.ts',
+export default [
+  "vite.config.ts",
   {
-    extends: 'vite.config.ts',
+    extends: "vite.config.ts",
     test: {
-      name: 'browser-tests',
+      name: "browser-tests",
       browser: {
-        enabled: process.env.BROWSER_TESTS === 'true',
+        enabled: process.env.BROWSER_TESTS === "true",
         headless: true,
-        provider: 'playwright',
-        instances: [{ browser: 'chromium' }]
+        provider: "playwright",
+        instances: [{ browser: "chromium" }],
       },
-      setupFiles: process.env.BROWSER_TESTS === 'true' 
-        ? [path.resolve('.storybook/vitest.setup.ts')] 
-        : undefined,
+      setupFiles:
+        process.env.BROWSER_TESTS === "true"
+          ? [path.resolve(".storybook/vitest.setup.ts")]
+          : undefined,
     },
   },
-]);
+];
