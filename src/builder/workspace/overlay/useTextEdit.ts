@@ -28,11 +28,19 @@ export interface TextEditState {
   style: TextStyleConfig;
 }
 
+/** 레이아웃 위치 정보 */
+export interface LayoutPosition {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
 export interface UseTextEditReturn {
   /** 편집 상태 */
   editState: TextEditState | null;
-  /** 편집 시작 */
-  startEdit: (elementId: string) => void;
+  /** 편집 시작 (layoutPosition: Yoga 레이아웃 계산된 위치) */
+  startEdit: (elementId: string, layoutPosition?: LayoutPosition) => void;
   /** 텍스트 변경 */
   updateText: (elementId: string, newValue: string) => void;
   /** 편집 완료 (저장) */
@@ -54,6 +62,12 @@ const TEXT_ELEMENT_TAGS = new Set([
   'Paragraph',
   'Link',
   'Button', // 버튼의 텍스트도 편집 가능
+  // 🚀 Phase 19: Input 관련 태그 추가 - 더블클릭 시 TextEditOverlay로 텍스트 입력
+  'Input',
+  'TextField',
+  'TextInput',
+  'SearchField',
+  'TextArea',
 ]);
 
 // ============================================
@@ -62,10 +76,13 @@ const TEXT_ELEMENT_TAGS = new Set([
 
 /**
  * 요소에서 텍스트 추출
+ * 🚀 Phase 19: Input 컴포넌트의 value/defaultValue 지원
  */
 function extractText(element: Element): string {
   const props = element.props as Record<string, unknown> | undefined;
-  return String(props?.children || props?.text || props?.label || '');
+  // Input 컴포넌트: value, defaultValue 우선
+  // 텍스트 컴포넌트: children, text, label 우선
+  return String(props?.value || props?.defaultValue || props?.children || props?.text || props?.label || '');
 }
 
 /**
@@ -118,8 +135,9 @@ export function useTextEdit(): UseTextEditReturn {
   const [editState, setEditState] = useState<TextEditState | null>(null);
 
   // 편집 시작
+  // 🚀 Phase 19: layoutPosition 파라미터 추가 - Yoga 레이아웃 위치 사용
   const startEdit = useCallback(
-    (elementId: string) => {
+    (elementId: string, layoutPosition?: LayoutPosition) => {
       const element = elements.find((el) => el.id === elementId);
       if (!element) return;
 
@@ -131,11 +149,21 @@ export function useTextEdit(): UseTextEditReturn {
 
       const text = extractText(element);
 
+      // 🚀 Phase 19: layoutPosition이 있으면 우선 사용 (Yoga 레이아웃 결과)
+      // 없으면 element의 style.left/top에서 추출 (fallback)
+      const position = layoutPosition
+        ? { x: layoutPosition.x, y: layoutPosition.y }
+        : extractPosition(element);
+
+      const size = layoutPosition
+        ? { width: layoutPosition.width, height: layoutPosition.height }
+        : extractSize(element);
+
       setEditState({
         elementId,
         value: text,
-        position: extractPosition(element),
-        size: extractSize(element),
+        position,
+        size,
         style: extractTextStyle(element),
       });
     },
@@ -154,6 +182,7 @@ export function useTextEdit(): UseTextEditReturn {
   );
 
   // 편집 완료 (저장)
+  // 🚀 Phase 19: Input 컴포넌트의 value 속성 지원
   const completeEdit = useCallback(
     (elementId: string) => {
       if (!editState || editState.elementId !== elementId) return;
@@ -165,16 +194,24 @@ export function useTextEdit(): UseTextEditReturn {
       const props = element.props as Record<string, unknown> | undefined;
       const updatedProps: Record<string, unknown> = { ...props };
 
-      // 텍스트 속성 결정 (children, text, label 중 하나)
-      if ('children' in (props || {})) {
+      // 텍스트 속성 결정 (우선순위: value > defaultValue > children > text > label)
+      // Input 컴포넌트는 value 사용
+      if ('value' in (props || {}) || 'defaultValue' in (props || {})) {
+        updatedProps.value = editState.value;
+      } else if ('children' in (props || {})) {
         updatedProps.children = editState.value;
       } else if ('text' in (props || {})) {
         updatedProps.text = editState.value;
       } else if ('label' in (props || {})) {
         updatedProps.label = editState.value;
       } else {
-        // 기본값: children
-        updatedProps.children = editState.value;
+        // Input 관련 태그면 value, 아니면 children
+        const isInputTag = ['Input', 'TextField', 'TextInput', 'SearchField', 'TextArea'].includes(element.tag);
+        if (isInputTag) {
+          updatedProps.value = editState.value;
+        } else {
+          updatedProps.children = editState.value;
+        }
       }
 
       updateElementProps(elementId, updatedProps);

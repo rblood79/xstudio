@@ -241,6 +241,19 @@ export const PixiComboBox = memo(function PixiComboBox({
     onClick?.(element.id);
   }, [onClick, element.id]);
 
+  // 🚀 Phase 19: 전체 크기 계산 (hitArea용)
+  const totalHeight = labelHeight + inputHeight + (isOpen ? dropdownHeight + 4 : 0);
+
+  // 🚀 Phase 19: 투명 히트 영역 (전체 ComboBox 영역)
+  const drawHitArea = useCallback(
+    (g: PixiGraphics) => {
+      g.clear();
+      g.rect(0, 0, sizePreset.inputWidth, totalHeight);
+      g.fill({ color: 0xffffff, alpha: 0 });
+    },
+    [sizePreset.inputWidth, totalHeight]
+  );
+
   // 버튼 위치
   const buttonX = sizePreset.inputWidth - sizePreset.buttonSize - sizePreset.paddingX;
   const buttonY = (inputHeight - sizePreset.buttonSize) / 2;
@@ -258,12 +271,7 @@ export const PixiComboBox = memo(function PixiComboBox({
       {/* ComboBox 그룹 */}
       <pixiContainer y={labelHeight}>
         {/* Input 영역 */}
-        <pixiGraphics
-          draw={drawInput}
-          eventMode="static"
-          cursor="text"
-          onPointerDown={handleClick}
-        />
+        <pixiGraphics draw={drawInput} />
 
         {/* 값 또는 placeholder */}
         <pixiText
@@ -279,11 +287,6 @@ export const PixiComboBox = memo(function PixiComboBox({
           draw={drawButton}
           x={buttonX}
           y={buttonY}
-          eventMode="static"
-          cursor="pointer"
-          onPointerEnter={() => setIsButtonHovered(true)}
-          onPointerLeave={() => setIsButtonHovered(false)}
-          onPointerDown={handleClick}
         />
 
         {/* 드롭다운 (isOpen일 때만) */}
@@ -302,11 +305,6 @@ export const PixiComboBox = memo(function PixiComboBox({
                 {/* 아이템 배경 */}
                 <pixiGraphics
                   draw={(g) => drawItemBackground(g, item, index)}
-                  eventMode="static"
-                  cursor={item.isDisabled ? "not-allowed" : "pointer"}
-                  onPointerEnter={() => !item.isDisabled && setHoveredItemIndex(index)}
-                  onPointerLeave={() => setHoveredItemIndex(null)}
-                  onPointerDown={() => !item.isDisabled && onClick?.(item.id)}
                 />
 
                 {/* 아이템 텍스트 */}
@@ -322,6 +320,14 @@ export const PixiComboBox = memo(function PixiComboBox({
           </pixiContainer>
         )}
       </pixiContainer>
+
+      {/* 🚀 Phase 19: 투명 히트 영역 (클릭 감지용) - 마지막에 렌더링하여 최상단 배치 */}
+      <pixiGraphics
+        draw={drawHitArea}
+        eventMode="static"
+        cursor={isDisabled ? "not-allowed" : "pointer"}
+        onPointerDown={handleClick}
+      />
     </pixiContainer>
   );
 });

@@ -180,6 +180,131 @@ const FALLBACK_COLORS = {
 // Main API
 // ============================================
 
+// ============================================
+// Common Label Style (.react-aria-Label)
+// ============================================
+
+/**
+ * Label 스타일 프리셋
+ * 🚀 Phase 19: .react-aria-Label 클래스에서 공통 스타일 읽기
+ */
+export interface LabelStylePreset {
+  fontSize: number;
+  fontWeight: string;
+  color: number;
+  fontFamily: string;
+}
+
+const LABEL_STYLE_FALLBACKS: Record<string, LabelStylePreset> = {
+  sm: { fontSize: 12, fontWeight: '500', color: 0x374151, fontFamily: 'Inter, system-ui, sans-serif' },
+  md: { fontSize: 14, fontWeight: '500', color: 0x374151, fontFamily: 'Inter, system-ui, sans-serif' },
+  lg: { fontSize: 16, fontWeight: '500', color: 0x374151, fontFamily: 'Inter, system-ui, sans-serif' },
+};
+
+/**
+ * .react-aria-Label 클래스에서 스타일 읽기
+ * 모든 Form 컴포넌트 (TextField, Input, RadioGroup, CheckboxGroup 등)에서 공통 사용
+ */
+export function getLabelStylePreset(size: string = 'md'): LabelStylePreset {
+  const fallback = LABEL_STYLE_FALLBACKS[size] || LABEL_STYLE_FALLBACKS.md;
+
+  try {
+    // 임시 DOM 요소 생성 - .react-aria-Label 클래스 적용
+    const label = document.createElement('label');
+    label.className = 'react-aria-Label';
+    label.style.position = 'absolute';
+    label.style.visibility = 'hidden';
+    label.style.pointerEvents = 'none';
+
+    document.body.appendChild(label);
+
+    const labelStyle = getComputedStyle(label);
+
+    // 스타일 읽기
+    const fontSize = parseFloat(labelStyle.fontSize) || fallback.fontSize;
+    const fontWeight = labelStyle.fontWeight || fallback.fontWeight;
+    const color = cssColorToHex(labelStyle.color, fallback.color);
+    const fontFamily = labelStyle.fontFamily || fallback.fontFamily;
+
+    document.body.removeChild(label);
+
+    return {
+      fontSize,
+      fontWeight,
+      color,
+      fontFamily,
+    };
+  } catch {
+    return fallback;
+  }
+}
+
+/**
+ * Description/FieldError 스타일 프리셋
+ * 🚀 Phase 19: [slot="description"] / .react-aria-FieldError 클래스에서 스타일 읽기
+ */
+export interface DescriptionStylePreset {
+  fontSize: number;
+  color: number;
+  errorColor: number;
+  fontFamily: string;
+}
+
+const DESCRIPTION_STYLE_FALLBACKS: Record<string, DescriptionStylePreset> = {
+  sm: { fontSize: 11, color: 0x6b7280, errorColor: 0xef4444, fontFamily: 'Inter, system-ui, sans-serif' },
+  md: { fontSize: 12, color: 0x6b7280, errorColor: 0xef4444, fontFamily: 'Inter, system-ui, sans-serif' },
+  lg: { fontSize: 14, color: 0x6b7280, errorColor: 0xef4444, fontFamily: 'Inter, system-ui, sans-serif' },
+};
+
+/**
+ * Description / FieldError 스타일 읽기
+ */
+export function getDescriptionStylePreset(size: string = 'md'): DescriptionStylePreset {
+  const fallback = DESCRIPTION_STYLE_FALLBACKS[size] || DESCRIPTION_STYLE_FALLBACKS.md;
+
+  try {
+    // TextField 컨테이너 내에서 description 스타일 읽기
+    const textField = document.createElement('div');
+    textField.className = 'react-aria-TextField';
+    textField.style.position = 'absolute';
+    textField.style.visibility = 'hidden';
+    textField.style.pointerEvents = 'none';
+
+    const description = document.createElement('div');
+    description.slot = 'description';
+    textField.appendChild(description);
+
+    const fieldError = document.createElement('div');
+    fieldError.className = 'react-aria-FieldError';
+    textField.appendChild(fieldError);
+
+    document.body.appendChild(textField);
+
+    const descStyle = getComputedStyle(description);
+    const errorStyle = getComputedStyle(fieldError);
+
+    const fontSize = parseFloat(descStyle.fontSize) || fallback.fontSize;
+    const color = cssColorToHex(descStyle.color, fallback.color);
+    const errorColor = cssColorToHex(errorStyle.color, fallback.errorColor);
+    const fontFamily = descStyle.fontFamily || fallback.fontFamily;
+
+    document.body.removeChild(textField);
+
+    return {
+      fontSize,
+      color,
+      errorColor,
+      fontFamily,
+    };
+  } catch {
+    return fallback;
+  }
+}
+
+// ============================================
+// M3 Button Colors
+// ============================================
+
 /**
  * 현재 테마의 M3 버튼 색상을 읽어옴
  */
@@ -3324,6 +3449,7 @@ export function getDateRangePickerColorPreset(variant: string): DateRangePickerC
 
 /**
  * TextField 사이즈 프리셋
+ * 🚀 Phase 19: .react-aria-TextField / .react-aria-Input 클래스에서 스타일 읽기
  */
 export interface TextFieldSizePreset {
   fontSize: number;
@@ -3336,18 +3462,78 @@ export interface TextFieldSizePreset {
   gap: number;
 }
 
-const TEXT_FIELD_FALLBACKS: Record<string, TextFieldSizePreset> = {
+const TEXT_FIELD_SIZE_FALLBACKS: Record<string, TextFieldSizePreset> = {
   sm: { fontSize: 12, height: 32, padding: 6, paddingX: 10, borderRadius: 6, labelFontSize: 12, descriptionFontSize: 11, gap: 4 },
   md: { fontSize: 14, height: 40, padding: 8, paddingX: 12, borderRadius: 8, labelFontSize: 14, descriptionFontSize: 12, gap: 6 },
   lg: { fontSize: 16, height: 48, padding: 10, paddingX: 14, borderRadius: 10, labelFontSize: 16, descriptionFontSize: 14, gap: 8 },
 };
 
+/**
+ * .react-aria-TextField / .react-aria-Input 클래스에서 사이즈 스타일 읽기
+ */
 export function getTextFieldSizePreset(size: string): TextFieldSizePreset {
-  return TEXT_FIELD_FALLBACKS[size] || TEXT_FIELD_FALLBACKS.md;
+  const fallback = TEXT_FIELD_SIZE_FALLBACKS[size] || TEXT_FIELD_SIZE_FALLBACKS.md;
+
+  try {
+    // 임시 DOM 요소 생성
+    const textField = document.createElement('div');
+    textField.className = `react-aria-TextField ${size}`;
+    textField.style.position = 'absolute';
+    textField.style.visibility = 'hidden';
+    textField.style.pointerEvents = 'none';
+
+    const label = document.createElement('label');
+    label.className = 'react-aria-Label';
+    textField.appendChild(label);
+
+    const input = document.createElement('input');
+    input.className = 'react-aria-Input';
+    textField.appendChild(input);
+
+    const description = document.createElement('div');
+    description.slot = 'description';
+    textField.appendChild(description);
+
+    document.body.appendChild(textField);
+
+    const textFieldStyle = getComputedStyle(textField);
+    const labelStyle = getComputedStyle(label);
+    const inputStyle = getComputedStyle(input);
+    const descStyle = getComputedStyle(description);
+
+    // 값 파싱
+    const fontSize = parseFloat(inputStyle.fontSize) || fallback.fontSize;
+    const labelFontSize = parseFloat(labelStyle.fontSize) || fallback.labelFontSize;
+    const descriptionFontSize = parseFloat(descStyle.fontSize) || fallback.descriptionFontSize;
+    const paddingTop = parseFloat(inputStyle.paddingTop) || fallback.padding;
+    const paddingLeft = parseFloat(inputStyle.paddingLeft) || fallback.paddingX;
+    const borderRadius = parseFloat(inputStyle.borderRadius) || fallback.borderRadius;
+    const gap = parseFloat(textFieldStyle.gap) || fallback.gap;
+
+    // Input 높이 계산 (padding + lineHeight)
+    const lineHeight = parseFloat(inputStyle.lineHeight) || fontSize * 1.5;
+    const height = paddingTop * 2 + lineHeight;
+
+    document.body.removeChild(textField);
+
+    return {
+      fontSize,
+      height: Math.round(height),
+      padding: Math.round(paddingTop),
+      paddingX: Math.round(paddingLeft),
+      borderRadius: Math.round(borderRadius),
+      labelFontSize,
+      descriptionFontSize,
+      gap: Math.round(gap),
+    };
+  } catch {
+    return fallback;
+  }
 }
 
 /**
  * TextField 색상 프리셋
+ * 🚀 Phase 19: .react-aria-TextField / .react-aria-Input 클래스에서 색상 읽기
  */
 export interface TextFieldColorPreset {
   backgroundColor: number;
@@ -3390,8 +3576,86 @@ const TEXT_FIELD_COLOR_FALLBACKS: Record<string, TextFieldColorPreset> = {
   },
 };
 
+/**
+ * .react-aria-TextField / .react-aria-Input 클래스에서 색상 스타일 읽기
+ */
 export function getTextFieldColorPreset(variant: string): TextFieldColorPreset {
-  return TEXT_FIELD_COLOR_FALLBACKS[variant] || TEXT_FIELD_COLOR_FALLBACKS.default;
+  const fallback = TEXT_FIELD_COLOR_FALLBACKS[variant] || TEXT_FIELD_COLOR_FALLBACKS.default;
+
+  try {
+    // 임시 DOM 요소 생성
+    const textField = document.createElement('div');
+    textField.className = `react-aria-TextField ${variant}`;
+    textField.style.position = 'absolute';
+    textField.style.visibility = 'hidden';
+    textField.style.pointerEvents = 'none';
+
+    const label = document.createElement('label');
+    label.className = 'react-aria-Label';
+    textField.appendChild(label);
+
+    const input = document.createElement('input');
+    input.className = 'react-aria-Input';
+    textField.appendChild(input);
+
+    const description = document.createElement('div');
+    description.slot = 'description';
+    textField.appendChild(description);
+
+    const fieldError = document.createElement('div');
+    fieldError.className = 'react-aria-FieldError';
+    textField.appendChild(fieldError);
+
+    document.body.appendChild(textField);
+
+    const labelStyle = getComputedStyle(label);
+    const inputStyle = getComputedStyle(input);
+    const descStyle = getComputedStyle(description);
+    const errorStyle = getComputedStyle(fieldError);
+
+    // 색상 읽기
+    const backgroundColor = cssColorToHex(inputStyle.backgroundColor, fallback.backgroundColor);
+    const borderColor = cssColorToHex(inputStyle.borderColor, fallback.borderColor);
+    const textColor = cssColorToHex(inputStyle.color, fallback.textColor);
+    const labelColor = cssColorToHex(labelStyle.color, fallback.labelColor);
+    const descriptionColor = cssColorToHex(descStyle.color, fallback.descriptionColor);
+    const errorTextColor = cssColorToHex(errorStyle.color, fallback.errorTextColor);
+
+    // Focus 상태 색상 (CSS 변수에서 직접 읽기)
+    const focusBorderColor = cssColorToHex(
+      getCSSVariable('--primary') || getCSSVariable('--tf-accent'),
+      fallback.focusBorderColor
+    );
+    const errorBorderColor = cssColorToHex(getCSSVariable('--error'), fallback.errorBorderColor);
+
+    // Placeholder 색상 (CSS 변수에서 읽기)
+    const placeholderColor = cssColorToHex(
+      getCSSVariable('--on-surface-variant'),
+      fallback.placeholderColor
+    );
+
+    // Disabled 상태 색상 (opacity 38%로 계산)
+    const disabledBackgroundColor = mixWithWhite(backgroundColor, 4);
+    const disabledTextColor = mixWithWhite(textColor, 38);
+
+    document.body.removeChild(textField);
+
+    return {
+      backgroundColor,
+      borderColor,
+      textColor,
+      placeholderColor,
+      labelColor,
+      descriptionColor,
+      focusBorderColor,
+      errorBorderColor,
+      errorTextColor,
+      disabledBackgroundColor,
+      disabledTextColor,
+    };
+  } catch {
+    return fallback;
+  }
 }
 
 /**

@@ -20,6 +20,7 @@ import type { CSSStyle } from '../sprites/styleConverter';
 import { cssColorToHex, parseCSSSize } from '../sprites/styleConverter';
 import { drawBox } from '../utils';
 import { useStore } from '../../../stores';
+import { getLabelStylePreset } from '../utils/cssVariableReader';
 
 // ============================================
 // Types
@@ -299,31 +300,63 @@ export const PixiCheckboxGroup = memo(function PixiCheckboxGroup({
     return flexDirection === 'row';
   }, [props?.orientation, style]);
 
+  // 🚀 Phase 19: .react-aria-Label 클래스에서 스타일 읽기
+  const size = useMemo(() => String(props?.size || 'md'), [props?.size]);
+  const labelPreset = useMemo(() => getLabelStylePreset(size), [size]);
+
   // 스타일
   const checkboxSize = DEFAULT_CHECKBOX_SIZE;
   const borderRadius = DEFAULT_BORDER_RADIUS;
   const primaryColor = cssColorToHex(style?.backgroundColor, DEFAULT_PRIMARY_COLOR);
   const textColor = cssColorToHex(style?.color, DEFAULT_TEXT_COLOR);
-  const fontSize = parseCSSSize(style?.fontSize, undefined, 14);
-  const fontFamily = style?.fontFamily || 'Pretendard, sans-serif';
+  const fontSize = parseCSSSize(style?.fontSize, undefined, labelPreset.fontSize);
+  const fontFamily = labelPreset.fontFamily;
 
   // 위치
   const posX = parseCSSSize(style?.left, undefined, 0);
   const posY = parseCSSSize(style?.top, undefined, 0);
 
   // 라벨이 있으면 옵션들의 Y 오프셋 추가
-  const labelHeight = groupLabel ? fontSize + 8 : 0;
+  const labelHeight = groupLabel ? labelPreset.fontSize + 8 : 0;
 
-  // 라벨 텍스트 스타일
+  // 🚀 Phase 19: 전체 그룹 크기 계산 (hitArea용)
+  const groupDimensions = useMemo(() => {
+    const optionCount = options.length;
+    const optionWidth = 120; // 각 옵션의 대략적인 너비
+    const optionHeight = checkboxSize + DEFAULT_GAP;
+
+    if (isHorizontal) {
+      return {
+        width: optionCount * optionWidth,
+        height: labelHeight + checkboxSize,
+      };
+    }
+    return {
+      width: optionWidth,
+      height: labelHeight + optionCount * optionHeight,
+    };
+  }, [options.length, checkboxSize, labelHeight, isHorizontal]);
+
+  // 🚀 Phase 19: 투명 히트 영역
+  const drawHitArea = useCallback(
+    (g: PixiGraphics) => {
+      g.clear();
+      g.rect(0, 0, groupDimensions.width, groupDimensions.height);
+      g.fill({ color: 0xffffff, alpha: 0 });
+    },
+    [groupDimensions]
+  );
+
+  // 라벨 텍스트 스타일 - 🚀 Phase 19: .react-aria-Label 클래스에서 스타일 읽기
   const labelTextStyle = useMemo(
     () =>
       new TextStyle({
-        fontFamily,
-        fontSize,
-        fontWeight: 'bold',
-        fill: textColor,
+        fontFamily: labelPreset.fontFamily,
+        fontSize: labelPreset.fontSize,
+        fontWeight: labelPreset.fontWeight,
+        fill: labelPreset.color,
       }),
-    [fontFamily, fontSize, textColor]
+    [labelPreset]
   );
 
   // 클릭 핸들러
@@ -346,12 +379,7 @@ export const PixiCheckboxGroup = memo(function PixiCheckboxGroup({
   );
 
   return (
-    <pixiContainer
-      x={posX}
-      y={posY}
-      eventMode="static"
-      onPointerDown={handleClick}
-    >
+    <pixiContainer x={posX} y={posY}>
       {/* CheckboxGroup 라벨 */}
       {groupLabel && (
         <pixiText
@@ -373,7 +401,7 @@ export const PixiCheckboxGroup = memo(function PixiCheckboxGroup({
 
         return (
           <CheckboxItem
-            key={option.value}
+            key={`${option.value}-${index}`}
             option={option}
             isOptionChecked={isOptionChecked}
             x={itemX}
@@ -388,6 +416,14 @@ export const PixiCheckboxGroup = memo(function PixiCheckboxGroup({
           />
         );
       })}
+
+      {/* 🚀 Phase 19: 투명 히트 영역 (그룹 전체 선택용) - 마지막에 렌더링하여 최상단 배치 */}
+      <pixiGraphics
+        draw={drawHitArea}
+        eventMode="static"
+        cursor="pointer"
+        onPointerDown={handleClick}
+      />
     </pixiContainer>
   );
 });

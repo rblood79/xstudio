@@ -696,11 +696,13 @@ export function BuilderCanvas({
   );
 
   // Element double click handler (텍스트 편집 시작)
+  // 🚀 Phase 19: layoutPosition 전달 - TextEditOverlay가 올바른 위치에 표시되도록
   const handleElementDoubleClick = useCallback(
     (elementId: string) => {
-      startEdit(elementId);
+      const layoutPosition = layoutResult.positions.get(elementId);
+      startEdit(elementId, layoutPosition);
     },
-    [startEdit]
+    [startEdit, layoutResult.positions]
   );
 
   // WebGL context recovery

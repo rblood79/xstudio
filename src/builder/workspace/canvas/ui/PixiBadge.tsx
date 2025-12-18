@@ -236,6 +236,16 @@ export const PixiBadge = memo(function PixiBadge({
     };
   }, [isDot, badgeText, badgeSize.width, badgeSize.height, textStyle]);
 
+  // 🚀 Phase 19: 투명 히트 영역
+  const drawHitArea = useCallback(
+    (g: PixiGraphics) => {
+      g.clear();
+      g.rect(0, 0, badgeSize.width, badgeSize.height);
+      g.fill({ color: 0xffffff, alpha: 0 });
+    },
+    [badgeSize.width, badgeSize.height]
+  );
+
   return (
     <pixiContainer
       x={posX}
@@ -245,12 +255,7 @@ export const PixiBadge = memo(function PixiBadge({
       }}
     >
       {/* 배지 배경 */}
-      <pixiGraphics
-        draw={drawBadge}
-        eventMode="static"
-        cursor="pointer"
-        onPointerDown={handleClick}
-      />
+      <pixiGraphics draw={drawBadge} />
 
       {/* 배지 텍스트 (dot이 아닐 때만) */}
       {!isDot && badgeText && (
@@ -259,11 +264,16 @@ export const PixiBadge = memo(function PixiBadge({
           style={textStyle}
           x={textPosition.x}
           y={textPosition.y}
-          eventMode="static"
-          cursor="pointer"
-          onPointerDown={handleClick}
         />
       )}
+
+      {/* 🚀 Phase 19: 투명 히트 영역 (클릭 감지용) - 마지막에 렌더링하여 최상단 배치 */}
+      <pixiGraphics
+        draw={drawHitArea}
+        eventMode="static"
+        cursor="pointer"
+        onPointerDown={handleClick}
+      />
     </pixiContainer>
   );
 });

@@ -1,6 +1,6 @@
 # WebGL Canvas Component Migration Status
 
-> **Last Updated**: 2025-12-17
+> **Last Updated**: 2025-12-18
 > **Branch**: claude/migrate-panel-components-webgl-96QYI
 
 ## Overview
@@ -26,30 +26,35 @@ This document tracks the migration progress of React Aria Components from the if
 
 | Category | Total | Verified | Pending | Progress |
 |----------|-------|----------|---------|----------|
-| **Basic UI** | 8 | 1 | 7 | 12.5% |
-| **Form Controls** | 10 | 2 | 8 | 20.0% |
-| **Selection/Collection** | 12 | 2 | 10 | 16.7% |
+| **Basic UI** | 8 | 3 | 5 | 37.5% |
+| **Form Controls** | 10 | 4 | 6 | 40.0% |
+| **Selection/Collection** | 12 | 3 | 9 | 25.0% |
 | **Layout Components** | 6 | 0 | 6 | 0.0% |
 | **Date/Time** | 5 | 0 | 5 | 0.0% |
 | **Navigation** | 4 | 0 | 4 | 0.0% |
 | **Overlay/Modal** | 4 | 0 | 4 | 0.0% |
-| **Data Display** | 5 | 0 | 5 | 0.0% |
+| **Data Display** | 5 | 1 | 4 | 20.0% |
 | **Primitives** | 3 | 0 | 3 | 0.0% |
-| **Total** | **57** | **5** | **52** | **8.8%** |
+| **Total** | **57** | **11** | **46** | **19.3%** |
 
 ---
 
 ## Detailed Migration Status
 
-### ✅ WebGL에서 확인 완료된 컴포넌트 (5)
+### ✅ WebGL에서 확인 완료된 컴포넌트 (11)
 
 | Category | React Aria | WebGL Implementation | Verification |
 |----------|------------|---------------------|--------------|
 | Basic UI | Button | `PixiButton.tsx` | 렌더링 및 동작 확인 완료 |
+| Basic UI | Badge | `PixiBadge.tsx` | 렌더링, hitArea 클릭 확인 완료 (2025-12-18) |
+| Basic UI | Switch | `PixiSwitch.tsx` | 렌더링, hitArea 클릭 확인 완료 (2025-12-18) |
 | Form Controls | Checkbox | `PixiCheckbox.tsx` | 렌더링 및 동작 확인 완료 |
-| Form Controls | TextField | `PixiTextField.tsx` | 렌더링, 위치, 크기 동기화 확인 완료 (2025-12-17) |
-| Selection/Collection | CheckboxGroup | `PixiCheckboxGroup.tsx` | 렌더링, orientation 지원 확인 완료 (2025-12-17) |
-| Selection/Collection | RadioGroup | `PixiRadio.tsx` | 렌더링, orientation 지원 확인 완료 (2025-12-17) |
+| Form Controls | TextField | `PixiTextField.tsx` | 렌더링, hitArea 클릭, 크기 동기화 확인 완료 (2025-12-18) |
+| Form Controls | Input | `PixiInput.tsx` | 렌더링, hitArea 클릭 확인 완료 (2025-12-18) |
+| Form Controls | ComboBox | `PixiComboBox.tsx` | 렌더링, hitArea 클릭, 드롭다운 확인 완료 (2025-12-18) |
+| Selection/Collection | CheckboxGroup | `PixiCheckboxGroup.tsx` | 렌더링, hitArea 그룹 선택, orientation 확인 완료 (2025-12-18) |
+| Selection/Collection | RadioGroup | `PixiRadio.tsx` | 렌더링, hitArea 그룹 선택, orientation 확인 완료 (2025-12-18) |
+| Data Display | Card | `PixiCard.tsx` | 렌더링, hitArea 클릭 확인 완료 (2025-12-18) |
 
 ### ❔ 미확인 상태 (검증 필요)
 
@@ -62,8 +67,6 @@ This document tracks the migration progress of React Aria Components from the if
 | Basic UI | FancyButton | `PixiFancyButton.tsx` | 미확인 | Wrapper 동작 검증 필요 |
 | Basic UI | ProgressBar | `PixiProgressBar.tsx` | 미확인 | 시각/상태 연동 검증 필요 |
 | Basic UI | Slider | `PixiSlider.tsx` | 미확인 | 입력·핸들 이동 검증 필요 |
-| Basic UI | Switch | `PixiSwitcher.tsx` | 미확인 | 토글 상태 검증 필요 |
-| Form Controls | Input/TextField | `PixiInput.tsx` | 미확인 | 포커스·입력 검증 필요 |
 | Form Controls | Select | `PixiSelect.tsx` | 미확인 | 드롭다운 렌더 검증 필요 |
 | Selection/Collection | CheckboxItem | `PixiCheckboxItem.tsx` | 미확인 | 그룹 내 히트 영역 검증 필요 |
 | Selection/Collection | RadioItem | `PixiRadioItem.tsx` | 미확인 | 그룹 내 히트 영역 검증 필요 |
@@ -250,6 +253,69 @@ export const PixiComponent = memo(function PixiComponent({
 2. **Style Conversion**: Use `styleConverter.ts` for CSS → PixiJS value mapping
 3. **Event Handling**: Use `eventMode="static"` and `onPointerDown`/`onPointerUp`
 4. **State Sync**: Consider Zustand integration for complex state
+
+### Phase 19: hitArea Pattern (CRITICAL)
+
+**Problem**: `pixiContainer` alone doesn't receive click events. Components must have explicit hitArea for selection.
+
+**Solution**: Add transparent `pixiGraphics` with `alpha: 0` as hitArea, rendered LAST in container.
+
+```tsx
+// 🚀 Phase 19: 전체 크기 계산 (hitArea용)
+const totalWidth = sizePreset.inputWidth;
+const totalHeight = labelHeight + inputHeight;
+
+// 🚀 Phase 19: 투명 히트 영역
+const drawHitArea = useCallback(
+  (g: PixiGraphics) => {
+    g.clear();
+    g.rect(0, 0, totalWidth, totalHeight);
+    g.fill({ color: 0xffffff, alpha: 0 });
+  },
+  [totalWidth, totalHeight]
+);
+
+return (
+  <pixiContainer x={posX} y={posY}>
+    {/* Visible content rendered FIRST */}
+    <pixiGraphics draw={drawBackground} />
+    <pixiText text={label} style={labelStyle} x={0} y={0} />
+
+    {/* 🚀 Phase 19: hitArea - 마지막에 렌더링하여 최상단 배치 */}
+    <pixiGraphics
+      draw={drawHitArea}
+      eventMode="static"
+      cursor="pointer"
+      onPointerDown={handleClick}
+    />
+  </pixiContainer>
+);
+```
+
+**Key Rules:**
+1. **hitArea must be rendered LAST** - PixiJS z-order: later children render on top
+2. **Use `alpha: 0`** - Invisible but still captures events
+3. **Cover entire clickable area** - Calculate totalWidth/totalHeight including all child elements
+4. **Remove events from other elements** - Only hitArea should handle clicks to avoid conflicts
+
+**Components with hitArea Pattern (8):**
+- `PixiInput.tsx`, `PixiTextField.tsx` - Form inputs
+- `PixiRadio.tsx`, `PixiCheckboxGroup.tsx` - Group selection
+- `PixiSwitch.tsx` - Toggle switch
+- `PixiBadge.tsx`, `PixiCard.tsx`, `PixiComboBox.tsx` - Data display
+
+**React Key Pattern:**
+```tsx
+// ❌ WRONG - Duplicate keys when values repeat
+{options.map((option) => (
+  <RadioItem key={option.value} ... />
+))}
+
+// ✅ CORRECT - Always unique with index
+{options.map((option, index) => (
+  <RadioItem key={`${option.value}-${index}`} ... />
+))}
+```
 
 ---
 

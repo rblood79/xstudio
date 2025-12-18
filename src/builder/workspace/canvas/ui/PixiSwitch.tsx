@@ -14,9 +14,12 @@ import { useExtend } from '@pixi/react';
 import { PIXI_COMPONENTS } from '../pixiSetup';
 import type { Graphics as PixiGraphics, TextStyle } from 'pixi.js';
 import type { Element } from '@/types/core/store.types';
+import type { CSSStyle } from '../sprites/styleConverter';
+import { parseCSSSize } from '../sprites/styleConverter';
 import {
   getSwitchSizePreset,
   getSwitchColorPreset,
+  getLabelStylePreset,
 } from '../utils/cssVariableReader';
 
 export interface PixiSwitchProps {
@@ -36,15 +39,22 @@ export function PixiSwitch({
 }: PixiSwitchProps) {
   useExtend(PIXI_COMPONENTS);
   const props = element.props || {};
+  const style = props.style as CSSStyle | undefined;
   const variant = (props.variant as string) || 'default';
   const size = (props.size as string) || 'md';
   const label = (props.label as string) || (props.children as string) || '';
   const isChecked = (props.isSelected as boolean) || (props.checked as boolean) || false;
   const isDisabled = (props.isDisabled as boolean) || false;
 
+  // 위치 계산
+  const posX = parseCSSSize(style?.left, undefined, 0);
+  const posY = parseCSSSize(style?.top, undefined, 0);
+
   // Get presets from CSS
   const sizePreset = useMemo(() => getSwitchSizePreset(size), [size]);
   const colorPreset = useMemo(() => getSwitchColorPreset(variant), [variant]);
+  // 🚀 Phase 19: .react-aria-Label 클래스에서 스타일 읽기
+  const labelPreset = useMemo(() => getLabelStylePreset(size), [size]);
 
   // Calculate thumb position
   const thumbX = isChecked
@@ -96,21 +106,41 @@ export function PixiSwitch({
   );
 
   // Label style
+  // 🚀 Phase 19: .react-aria-Label 클래스에서 스타일 읽기
   const labelStyle = useMemo<Partial<TextStyle>>(
     () => ({
-      fontSize: sizePreset.labelFontSize,
-      fill: isDisabled ? colorPreset.disabledThumbColor : colorPreset.labelColor,
-      fontFamily: 'Inter, system-ui, sans-serif',
+      fontSize: labelPreset.fontSize,
+      fill: isDisabled ? colorPreset.disabledThumbColor : labelPreset.color,
+      fontFamily: labelPreset.fontFamily,
     }),
-    [sizePreset, colorPreset, isDisabled]
+    [labelPreset, colorPreset, isDisabled]
   );
 
+  // 🚀 Phase 19: 전체 크기 계산 (hitArea용)
+  const totalWidth = label
+    ? sizePreset.trackWidth + sizePreset.gap + label.length * labelPreset.fontSize * 0.6
+    : sizePreset.trackWidth;
+  const totalHeight = sizePreset.trackHeight;
+
+  // 🚀 Phase 19: 투명 히트 영역
+  const drawHitArea = useCallback(
+    (g: PixiGraphics) => {
+      g.clear();
+      g.rect(0, 0, totalWidth, totalHeight);
+      g.fill({ color: 0xffffff, alpha: 0 });
+    },
+    [totalWidth, totalHeight]
+  );
+
+  // 클릭 핸들러
+  const handleClick = useCallback(() => {
+    if (!isDisabled) {
+      onClick?.(element.id);
+    }
+  }, [element.id, onClick, isDisabled]);
+
   return (
-    <pixiContainer
-      eventMode="static"
-      cursor={isDisabled ? 'not-allowed' : 'pointer'}
-      onpointertap={() => !isDisabled && onClick?.(element.id)}
-    >
+    <pixiContainer x={posX} y={posY}>
       {/* Track */}
       <pixiGraphics draw={drawTrack} />
 
@@ -119,13 +149,21 @@ export function PixiSwitch({
 
       {/* Label */}
       {label && (
-        <Text
+        <pixiText
           text={label}
           style={labelStyle}
           x={sizePreset.trackWidth + sizePreset.gap}
-          y={(sizePreset.trackHeight - sizePreset.labelFontSize) / 2}
+          y={(sizePreset.trackHeight - labelPreset.fontSize) / 2}
         />
       )}
+
+      {/* 🚀 Phase 19: 투명 히트 영역 (클릭 감지용) - 마지막에 렌더링하여 최상단 배치 */}
+      <pixiGraphics
+        draw={drawHitArea}
+        eventMode="static"
+        cursor={isDisabled ? 'not-allowed' : 'pointer'}
+        onPointerDown={handleClick}
+      />
     </pixiContainer>
   );
 }
