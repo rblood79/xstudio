@@ -290,8 +290,28 @@ export const PixiSwitcher = memo(function PixiSwitcher({
     switcherRef.current = switcher;
 
     return () => {
+      // 이벤트 연결 해제
+      container.off('pointerdown', handleClick);
+      itemViews.forEach((view) => {
+        view.off('pointerdown');
+        // view 내부 children (bg Graphics, Text) destroy
+        view.children.forEach((child) => {
+          if ('destroy' in child && typeof child.destroy === 'function') {
+            child.destroy(true);
+          }
+        });
+      });
+
+      // Stage에서 제거
       app.stage.removeChild(container);
+
+      // Graphics 객체 명시적 destroy (GPU 리소스 해제)
+      bg.destroy(true);
+
+      // Switcher 및 Container destroy
+      switcher.destroy();
       container.destroy({ children: true });
+
       containerRef.current = null;
       switcherRef.current = null;
     };

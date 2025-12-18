@@ -314,8 +314,32 @@ export const PixiList = memo(function PixiList({
     listRef.current = list;
 
     return () => {
+      // 이벤트 연결 해제
+      container.off('pointerdown', handleClick);
+
+      // itemViews 이벤트 해제 및 내부 Graphics destroy
+      itemViews.forEach((view) => {
+        view.off('pointerdown');
+        view.off('pointerover');
+        view.off('pointerout');
+        // view 내부 children (bg Graphics, Text) destroy
+        view.children.forEach((child) => {
+          if ('destroy' in child && typeof child.destroy === 'function') {
+            child.destroy(true);
+          }
+        });
+      });
+
+      // Stage에서 제거
       app.stage.removeChild(container);
+
+      // Graphics 객체 명시적 destroy (GPU 리소스 해제)
+      bg.destroy(true);
+
+      // List 및 Container destroy
+      list.destroy({ children: true });
       container.destroy({ children: true });
+
       containerRef.current = null;
       listRef.current = null;
     };

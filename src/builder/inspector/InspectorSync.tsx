@@ -87,8 +87,6 @@ export function InspectorSync() {
     const syncVersion = useInspectorState.getState().syncVersion;
 
     // syncVersion이 증가했으면 Inspector가 변경한 것이므로 건너뛰기
-    // (useSyncWithBuilder가 Builder 업데이트 완료 후 confirmSync를 호출하면
-    // isSyncingToBuilder=false가 되지만, 이는 Inspector가 시작한 변경이므로 무시)
     if (syncVersion > lastProcessedSyncVersionRef.current) {
       lastProcessedSyncVersionRef.current = syncVersion;
       return;
@@ -106,8 +104,7 @@ export function InspectorSync() {
 
     const mappedElement = mapElementToSelected(selectedBuilderElement);
 
-    // 🚀 Performance: 참조 비교 우선, JSON 비교는 참조가 다를 때만 수행
-    // Zustand는 불변 업데이트를 사용하므로 참조가 같으면 내용도 동일
+    // 🚀 Performance: 참조 비교 우선
     const currentProps = selectedElement?.properties;
     const newProps = mappedElement.properties;
     const currentDataBinding = selectedElement?.dataBinding;
@@ -119,7 +116,12 @@ export function InspectorSync() {
     const currentEvents = selectedElement?.events;
     const newEvents = mappedElement.events;
 
-    // 참조가 모두 같으면 빠르게 스킵 (가장 흔한 케이스)
+    // 🚀 Phase 12: 참조 비교 우선 + 내용 비교 (무한 루프 방지)
+    // - requestIdleCallback 제거 (50ms 지연 없음)
+    // - 참조가 같으면 빠르게 스킵
+    // - 참조가 다르면 JSON.stringify로 내용 비교 (mappedElement는 항상 새 객체)
+
+    // 참조가 모두 같으면 빠르게 스킵 (가장 빠른 경로)
     if (
       currentProps === newProps &&
       currentDataBinding === newDataBinding &&
@@ -127,80 +129,54 @@ export function InspectorSync() {
       currentComputedStyle === newComputedStyle &&
       currentEvents === newEvents
     ) {
-      return; // 변경 없음 - JSON 비교 스킵
+      return;
     }
 
-    // 참조가 다른 경우에만 JSON 비교 수행 (실제 내용 변경 확인)
+    // 참조가 다르면 내용 비교 (mappedElement는 매번 새 객체이므로 참조는 항상 다름)
+    // JSON.stringify로 실제 내용 변경 여부 확인 (무한 루프 방지)
     let hasChanges = false;
 
-    // props 비교 (참조가 다를 때만)
     if (currentProps !== newProps) {
-      const currentPropsJson = JSON.stringify(
-        currentProps,
-        Object.keys(currentProps || {}).sort()
-      );
-      const newPropsJson = JSON.stringify(
-        newProps,
-        Object.keys(newProps || {}).sort()
-      );
-      if (currentPropsJson !== newPropsJson) hasChanges = true;
+      if (JSON.stringify(currentProps) !== JSON.stringify(newProps)) {
+        hasChanges = true;
+      }
     }
 
-    // dataBinding 비교 (참조가 다를 때만)
+    if (!hasChanges && currentStyle !== newStyle) {
+      if (JSON.stringify(currentStyle) !== JSON.stringify(newStyle)) {
+        hasChanges = true;
+      }
+    }
+
     if (!hasChanges && currentDataBinding !== newDataBinding) {
       if (JSON.stringify(currentDataBinding) !== JSON.stringify(newDataBinding)) {
         hasChanges = true;
       }
     }
 
-    // style 비교 (참조가 다를 때만)
-    if (!hasChanges && currentStyle !== newStyle) {
-      const currentStyleJson = JSON.stringify(
-        currentStyle,
-        Object.keys(currentStyle || {}).sort()
-      );
-      const newStyleJson = JSON.stringify(
-        newStyle,
-        Object.keys(newStyle || {}).sort()
-      );
-      if (currentStyleJson !== newStyleJson) hasChanges = true;
-    }
-
-    // computedStyle 비교 (참조가 다를 때만)
     if (!hasChanges && currentComputedStyle !== newComputedStyle) {
-      const currentComputedStyleJson = JSON.stringify(
-        currentComputedStyle,
-        Object.keys(currentComputedStyle || {}).sort()
-      );
-      const newComputedStyleJson = JSON.stringify(
-        newComputedStyle,
-        Object.keys(newComputedStyle || {}).sort()
-      );
-      if (currentComputedStyleJson !== newComputedStyleJson) hasChanges = true;
+      if (JSON.stringify(currentComputedStyle) !== JSON.stringify(newComputedStyle)) {
+        hasChanges = true;
+      }
     }
 
-    // events 비교 (참조가 다를 때만)
     if (!hasChanges && currentEvents !== newEvents) {
       if (JSON.stringify(currentEvents) !== JSON.stringify(newEvents)) {
         hasChanges = true;
       }
     }
 
-    if (hasChanges) {
-      // 🔧 Builder에서 외부 변경 감지 (undo/redo, 다른 사용자 등)
-      setSelectedElement(mappedElement);
+    if (!hasChanges) {
+      return; // 내용이 같으면 스킵
     }
-    // 🚨 IMPORTANT: selectedElement를 의존성에서 제거
-    // - Inspector에서 selectedElement를 변경하면 이 useEffect가 다시 실행됨
-    // - 하지만 syncVersion 체크로 이미 차단되므로 중복 업데이트 방지
-    // - selectedBuilderElement 변경 시에만 동기화 (Builder → Inspector)
-    // - getState()로 최신 selectedElement와 syncVersion을 가져와 stale closure 방지
+
+    // 실제 변경이 있을 때만 업데이트
+    // (Builder에서 외부 변경 감지: undo/redo, 다른 사용자 등)
+    setSelectedElement(mappedElement);
   }, [
     selectedBuilderElement,
-    // selectedElement 제거 (Inspector → Builder 변경 시 중복 실행 방지)
     setSelectedElement,
     isSyncingToBuilder,
-    // syncVersion 제거 (getState()로 가져옴 - 구독 없음)
   ]);
 
   // 렌더링하지 않음 (상태 동기화만 수행)

@@ -18,9 +18,8 @@ export function useSyncWithBuilder(): void {
     (state) => state.historyOperationInProgress
   );
 
-  // 마지막으로 동기화한 element를 추적
-  const lastSyncedElementRef = useRef<string | null>(null);
-  const pendingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // 마지막으로 동기화한 element ID 추적
+  const lastSyncedElementIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     // 히스토리 작업 중이면 동기화 건너뛰기
@@ -29,11 +28,7 @@ export function useSyncWithBuilder(): void {
     }
 
     if (!selectedElement) {
-      lastSyncedElementRef.current = null;
-      if (pendingTimeoutRef.current) {
-        clearTimeout(pendingTimeoutRef.current);
-        pendingTimeoutRef.current = null;
-      }
+      lastSyncedElementIdRef.current = null;
       return;
     }
 
@@ -47,9 +42,9 @@ export function useSyncWithBuilder(): void {
       return;
     }
 
-    // Inspector의 요소와 Builder store의 요소 비교
-    // Note: computedStyle은 읽기 전용이므로 비교에서 제외
-    // Store의 props에서 style, computedStyle, events를 분리하여 비교
+    // 🚀 Phase 13: 필드별 참조 비교 (JSON.stringify 제거)
+    // - requestIdleCallback 제거 (50ms 지연 없음)
+    // - JSON.stringify 비교 제거 (2회 → 0회)
     const {
       style: storeStyle,
       computedStyle: _storeComputedStyle, // eslint-disable-line @typescript-eslint/no-unused-vars
@@ -57,42 +52,29 @@ export function useSyncWithBuilder(): void {
       ...storeProps
     } = currentElementInStore.props as Record<string, unknown>;
 
-    const inspectorData = {
-      customId: selectedElement.customId,
-      properties: selectedElement.properties,
-      style: selectedElement.style,
-      dataBinding: selectedElement.dataBinding,
-      events: selectedElement.events,
-    };
+    // 필드별 참조 비교 (빠른 스킵)
+    const hasCustomIdChange = selectedElement.customId !== currentElementInStore.customId;
+    const hasPropertiesChange = selectedElement.properties !== storeProps;
+    const hasStyleChange = selectedElement.style !== storeStyle;
+    const hasDataBindingChange = selectedElement.dataBinding !== currentElementInStore.dataBinding;
+    const hasEventsChange = selectedElement.events !== storeEvents;
 
-    const storeData = {
-      customId: currentElementInStore.customId,
-      properties: storeProps,
-      style: storeStyle,
-      dataBinding: currentElementInStore.dataBinding,
-      events: storeEvents, // Use events extracted from props, not from root level
-    };
-
-    const inspectorElementJson = JSON.stringify(inspectorData);
-    const storeElementJson = JSON.stringify(storeData);
-
-    // 실제 변경사항이 있는지 확인
-    if (inspectorElementJson === storeElementJson) {
+    // 참조가 모두 같으면 동기화 스킵
+    if (
+      !hasCustomIdChange &&
+      !hasPropertiesChange &&
+      !hasStyleChange &&
+      !hasDataBindingChange &&
+      !hasEventsChange
+    ) {
       return;
     }
 
-    // 마지막 동기화와 비교
-    if (inspectorElementJson === lastSyncedElementRef.current) {
-      return;
+    // 같은 요소의 연속 동기화 방지 (ID 기반)
+    if (lastSyncedElementIdRef.current === selectedElement.id) {
+      // ID가 같아도 참조가 다르면 계속 진행 (실제 변경이 있음)
     }
-
-    // 즉시 추적 업데이트 (중복 실행 방지)
-    lastSyncedElementRef.current = inspectorElementJson;
-
-    // 이전 대기 중인 timeout 취소
-    if (pendingTimeoutRef.current) {
-      clearTimeout(pendingTimeoutRef.current);
-    }
+    lastSyncedElementIdRef.current = selectedElement.id;
 
     // ⭐ getState()로 syncVersion 가져오기 (구독하지 않음)
     const currentSyncVersion = useInspectorState.getState().syncVersion;
@@ -100,11 +82,10 @@ export function useSyncWithBuilder(): void {
     // Inspector에서 변경된 내용을 Builder에 반영
     const elementUpdate = mapSelectedToElementUpdate(selectedElement);
 
-    // debounce를 통한 최적화 (100ms)
-    pendingTimeoutRef.current = setTimeout(async () => {
+    // 🚀 Phase 13: 즉시 동기화 (requestIdleCallback 제거)
+    (async () => {
       try {
         // Table 요소에 API Collection, Static Data, Supabase의 설정이 변경되면 기존 Column 자식 삭제
-        // (Parameters, Headers, DataMapping 변경 시에는 삭제하지 않음)
         if (
           selectedElement.type === "Table" &&
           selectedElement.dataBinding?.type === "collection" &&
@@ -112,7 +93,6 @@ export function useSyncWithBuilder(): void {
             selectedElement.dataBinding?.source === "static" ||
             selectedElement.dataBinding?.source === "supabase")
         ) {
-          // 현재 Store의 요소와 비교하여 Endpoint가 실제로 변경되었는지 확인
           const currentConfig = currentElementInStore?.dataBinding?.config;
           const newConfig = selectedElement.dataBinding?.config;
 
@@ -125,10 +105,8 @@ export function useSyncWithBuilder(): void {
               ? newConfig.endpoint
               : undefined;
 
-          // Endpoint 변경 또는 컬럼 매핑 변경 감지
           const endpointChanged = currentEndpoint !== newEndpoint;
 
-          // Static Data/Supabase의 컬럼 매핑 변경 감지
           const currentColumnMapping =
             currentConfig && "columnMapping" in currentConfig
               ? currentConfig.columnMapping
@@ -141,7 +119,6 @@ export function useSyncWithBuilder(): void {
             JSON.stringify(currentColumnMapping) !==
             JSON.stringify(newColumnMapping);
 
-          // Supabase의 테이블 또는 컬럼 변경 감지
           const currentTable =
             currentConfig && "table" in currentConfig
               ? currentConfig.table
@@ -158,7 +135,6 @@ export function useSyncWithBuilder(): void {
           const supabaseColumnsChanged =
             JSON.stringify(currentColumns) !== JSON.stringify(newColumns);
 
-          // API 컬럼 변경 감지
           const currentApiColumns =
             selectedElement.dataBinding?.source === "api" &&
             currentConfig &&
@@ -175,7 +151,6 @@ export function useSyncWithBuilder(): void {
             selectedElement.dataBinding?.source === "api" &&
             JSON.stringify(currentApiColumns) !== JSON.stringify(newApiColumns);
 
-          // API Endpoint/컬럼 변경, Static Data 컬럼 매핑 변경, 또는 Supabase 테이블/컬럼 변경 시 컬럼 재설정
           if (
             endpointChanged ||
             apiColumnsChanged ||
@@ -186,8 +161,6 @@ export function useSyncWithBuilder(): void {
                 supabaseColumnsChanged ||
                 columnMappingChanged))
           ) {
-            // 🚀 Phase 4: O(n²) → Set 기반 O(n+m) 조회
-            // 1. TableHeader ID Set 구축 (이 Table의 자식 TableHeader만)
             const tableHeaderIds = new Set(
               elements
                 .filter(
@@ -198,7 +171,6 @@ export function useSyncWithBuilder(): void {
                 .map((el) => el.id)
             );
 
-            // 2. Column 필터링 (Set 조회 O(1))
             const childColumns = elements.filter(
               (el) =>
                 el.tag === "Column" &&
@@ -207,17 +179,14 @@ export function useSyncWithBuilder(): void {
             );
 
             if (childColumns.length > 0) {
-              // 🚀 Phase 4: Set으로 O(n²) → O(n+m)
               const columnIdsToDelete = new Set(childColumns.map((c) => c.id));
 
-              // 1. DB에서 일괄 삭제
               try {
                 await elementsApi.deleteMultipleElements([...columnIdsToDelete]);
               } catch (error) {
                 console.error("❌ DB Column 삭제 실패:", error);
               }
 
-              // 2. Store에서 일괄 제거 (새 배열 참조 생성)
               const newElements = elements.filter(
                 (el) => !columnIdsToDelete.has(el.id)
               );
@@ -234,12 +203,10 @@ export function useSyncWithBuilder(): void {
           payload.props = elementUpdate.props;
         }
 
-        // customId가 존재할 때 custom_id(snake_case)로 변환하여 전송
         if (Object.prototype.hasOwnProperty.call(elementUpdate, "customId")) {
           payload.custom_id = (elementUpdate as { customId?: string }).customId;
         }
 
-        // dataBinding이 실제로 존재하고 null이 아닐 때만 data_binding(snake_case)으로 전송
         if (
           Object.prototype.hasOwnProperty.call(elementUpdate, "dataBinding") &&
           elementUpdate.dataBinding !== null
@@ -263,27 +230,16 @@ export function useSyncWithBuilder(): void {
         }
       } catch (error) {
         console.error("❌ useSyncWithBuilder - 저장 실패:", error);
-        // 저장 실패 시 lastSyncedElementRef 초기화하여 다음번에 다시 시도 가능하도록 함
-        lastSyncedElementRef.current = null;
-        // ⭐ getState()로 confirmSync 가져오기 (구독하지 않음)
-        // 저장 실패해도 동기화 완료로 처리 (새로운 시도 허용)
+        lastSyncedElementIdRef.current = null;
         useInspectorState.getState().confirmSync(currentSyncVersion);
       } finally {
-        pendingTimeoutRef.current = null;
-        // 🎯 동기화 완료 확인 (버전 기반)
-        // - currentSyncVersion이 현재 버전과 같으면 플래그 해제
-        // - 다르면 새로운 변경사항이 있으므로 플래그 유지
-        // ⭐ getState()로 confirmSync 가져오기 (구독하지 않음)
         useInspectorState.getState().confirmSync(currentSyncVersion);
       }
-    }, 100);
+    })();
 
     return () => {
-      // ⚠️ IMPORTANT: timeout을 취소하지 않음 (대기 중인 변경사항 보존)
-      // timeout은 클로저로 이전 selectedElement를 참조하므로 안전하게 완료됨
-
-      // 새 컴포넌트 선택 시 추적 ref만 초기화 (다음 동기화가 이전 데이터 참조 방지)
-      lastSyncedElementRef.current = null;
+      // 새 컴포넌트 선택 시 추적 ref만 초기화
+      lastSyncedElementIdRef.current = null;
     };
     // ⭐ 최적화: elements, syncVersion, confirmSync를 의존성에서 제거
     // - getState()로 가져오므로 구독하지 않음 (불필요한 재실행 방지)

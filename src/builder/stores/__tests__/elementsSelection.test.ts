@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { create } from "zustand";
 import type { Element } from "../../../types/core/store.types";
 import { createElementsSlice, type ElementsState } from "../elements";
@@ -10,24 +10,33 @@ function createTestStore() {
 
 describe("ElementsState selection actions", () => {
   it("setSelectedElement는 selectedElementIds를 동기화하고 selectedElementProps를 채운다", () => {
-    const store = createTestStore();
-    const element: Element = {
-      id: "el-1",
-      tag: "Button",
-      props: { label: "Click" },
-      parent_id: null,
-      page_id: "page-1",
-      order_num: 0,
-    };
+    vi.useFakeTimers();
+    try {
+      const store = createTestStore();
+      const element: Element = {
+        id: "el-1",
+        tag: "Button",
+        props: { label: "Click" },
+        parent_id: null,
+        page_id: "page-1",
+        order_num: 0,
+      };
 
-    store.getState().setElements([element]);
-    store.getState().setSelectedElement(element.id);
+      store.getState().setElements([element]);
+      store.getState().setSelectedElement(element.id);
 
-    const state = store.getState();
-    expect(state.selectedElementId).toBe(element.id);
-    expect(state.selectedElementIds).toEqual([element.id]);
-    expect(state.multiSelectMode).toBe(false);
-    expect(state.selectedElementProps).toEqual(createCompleteProps(element));
+      const state = store.getState();
+      expect(state.selectedElementId).toBe(element.id);
+      expect(state.selectedElementIds).toEqual([element.id]);
+      expect(state.multiSelectMode).toBe(false);
+      expect(state.selectedElementProps).toEqual({});
+
+      // WebGL Canvas 선택 경로에서는 selectedElementProps를 다음 tick에 채움
+      vi.runOnlyPendingTimers();
+      expect(store.getState().selectedElementProps).toEqual(createCompleteProps(element));
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("setSelectedElement는 style/computedStyle을 병합한다", () => {
@@ -130,4 +139,3 @@ describe("ElementsState selection actions", () => {
     expect(store.getState().multiSelectMode).toBe(false);
   });
 });
-

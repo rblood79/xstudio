@@ -11,8 +11,51 @@
  * @since 2025-12-11 Phase 10 B1.3
  */
 
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import type { DragState, HandlePosition, BoundingBox } from './types';
+
+// ============================================
+// RAF Throttle
+// ============================================
+
+/**
+ * RAF 기반 스로틀 (프레임당 1회만 실행)
+ */
+function useRAFThrottle() {
+  const rafIdRef = useRef<number | null>(null);
+  const pendingCallbackRef = useRef<(() => void) | null>(null);
+
+  const schedule = useCallback((callback: () => void) => {
+    pendingCallbackRef.current = callback;
+
+    if (rafIdRef.current === null) {
+      rafIdRef.current = requestAnimationFrame(() => {
+        rafIdRef.current = null;
+        pendingCallbackRef.current?.();
+        pendingCallbackRef.current = null;
+      });
+    }
+  }, []);
+
+  const cancel = useCallback(() => {
+    if (rafIdRef.current !== null) {
+      cancelAnimationFrame(rafIdRef.current);
+      rafIdRef.current = null;
+    }
+    pendingCallbackRef.current = null;
+  }, []);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (rafIdRef.current !== null) {
+        cancelAnimationFrame(rafIdRef.current);
+      }
+    };
+  }, []);
+
+  return { schedule, cancel };
+}
 
 // ============================================
 // Initial State
@@ -82,6 +125,9 @@ export function useDragInteraction(
   // 중간 상태 저장용 ref (성능 최적화)
   const dragStateRef = useRef<DragState>(initialDragState);
 
+  // 🚀 RAF 스로틀링 (프레임당 1회만 상태 업데이트)
+  const { schedule: scheduleUpdate, cancel: cancelUpdate } = useRAFThrottle();
+
   // 이동 시작
   const startMove = useCallback(
     (elementId: string, bounds: BoundingBox, position: { x: number; y: number }) => {
@@ -138,20 +184,28 @@ export function useDragInteraction(
     setDragState(newState);
   }, []);
 
-  // 드래그 업데이트
+  // 드래그 업데이트 (🚀 RAF 스로틀링 적용)
   const updateDrag = useCallback((position: { x: number; y: number }) => {
     if (!dragStateRef.current.isDragging) return;
 
+    // ref는 즉시 업데이트 (빠른 읽기 가능)
     const newState: DragState = {
       ...dragStateRef.current,
       currentPosition: position,
     };
     dragStateRef.current = newState;
-    setDragState(newState);
-  }, []);
+
+    // 🚀 React 상태는 RAF로 스로틀링하여 프레임당 1회만 업데이트
+    scheduleUpdate(() => {
+      setDragState(dragStateRef.current);
+    });
+  }, [scheduleUpdate]);
 
   // 드래그 종료
   const endDrag = useCallback(() => {
+    // 🚀 pending RAF 취소
+    cancelUpdate();
+
     const state = dragStateRef.current;
     if (!state.isDragging) return;
 
@@ -194,13 +248,15 @@ export function useDragInteraction(
     // 상태 초기화
     dragStateRef.current = initialDragState;
     setDragState(initialDragState);
-  }, [onMoveEnd, onResizeEnd, onLassoEnd, findElementsInLasso]);
+  }, [onMoveEnd, onResizeEnd, onLassoEnd, findElementsInLasso, cancelUpdate]);
 
   // 드래그 취소
   const cancelDrag = useCallback(() => {
+    // 🚀 pending RAF 취소
+    cancelUpdate();
     dragStateRef.current = initialDragState;
     setDragState(initialDragState);
-  }, []);
+  }, [cancelUpdate]);
 
   return {
     dragState,

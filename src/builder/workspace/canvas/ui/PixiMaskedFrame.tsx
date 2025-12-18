@@ -229,8 +229,24 @@ export const PixiMaskedFrame = memo(function PixiMaskedFrame({
     maskedFrameRef.current = maskedFrame;
 
     return () => {
+      // 이벤트 연결 해제
+      container.off('pointerdown', handleClick);
+
+      // Stage에서 제거
       app.stage.removeChild(container);
+
+      // Graphics/Sprite 객체 명시적 destroy (GPU 리소스 해제)
+      mask.destroy(true);
+      if (target instanceof Sprite) {
+        target.destroy({ texture: false }); // texture는 캐시에서 관리
+      } else {
+        target.destroy(true);
+      }
+
+      // MaskedFrame 및 Container destroy
+      maskedFrame.destroy({ children: true });
       container.destroy({ children: true });
+
       containerRef.current = null;
       maskedFrameRef.current = null;
     };

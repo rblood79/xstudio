@@ -223,10 +223,21 @@ export const PixiInput = memo(function PixiInput({
     inputRef.current = input;
 
     return () => {
+      // 이벤트 연결 해제
       input.onEnter.disconnectAll();
       input.onChange.disconnectAll();
+      container.off('pointerdown', handleClick);
+
+      // Stage에서 제거
       app.stage.removeChild(container);
+
+      // Graphics 객체 명시적 destroy (GPU 리소스 해제)
+      bg.destroy(true);
+
+      // Input 및 Container destroy
+      input.destroy({ children: true });
       container.destroy({ children: true });
+
       containerRef.current = null;
       inputRef.current = null;
     };

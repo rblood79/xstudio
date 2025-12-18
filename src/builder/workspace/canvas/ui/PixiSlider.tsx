@@ -235,9 +235,22 @@ export const PixiSlider = memo(function PixiSlider({
     sliderRef.current = slider;
 
     return () => {
+      // 이벤트 연결 해제
       slider.onUpdate.disconnectAll();
+      container.off('pointerdown', handleClick);
+
+      // Stage에서 제거
       app.stage.removeChild(container);
+
+      // Graphics 객체 명시적 destroy (GPU 리소스 해제)
+      bgGraphics.destroy(true);
+      fillGraphics.destroy(true);
+      handleGraphics.destroy(true);
+
+      // Slider 및 Container destroy
+      slider.destroy({ children: true });
       container.destroy({ children: true });
+
       containerRef.current = null;
       sliderRef.current = null;
     };

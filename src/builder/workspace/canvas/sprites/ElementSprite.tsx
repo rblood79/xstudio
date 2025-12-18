@@ -382,15 +382,10 @@ export const ElementSprite = memo(function ElementSprite({
   // 개선: 각 ElementSprite가 자신의 선택 여부만 구독 → 변경된 요소만 리렌더 O(2)
   // selector가 boolean을 반환하므로 값이 변경될 때만 리렌더 트리거
   const elementId = element.id;
-  const isSelected = useStore((state) => {
-    const ids = state.selectedElementIds;
-    // 빠른 체크: 빈 배열이면 false
-    if (ids.length === 0) return false;
-    // 단일 선택 최적화: 첫 번째 ID만 비교
-    if (ids.length === 1) return ids[0] === elementId;
-    // 다중 선택: includes 사용
-    return ids.includes(elementId);
-  }) ?? isSelectedProp ?? false;
+  // 🚀 O(1) 최적화: Set.has() 사용 (includes() 대신)
+  const isSelected = useStore((state) =>
+    state.selectedElementIdsSet.has(elementId)
+  ) ?? isSelectedProp ?? false;
 
   // 부모 요소 확인 (CheckboxGroup 자식 여부 판단용)
   // 🚀 최적화: elements 배열 대신 elementsMap 사용 (O(1) 조회)

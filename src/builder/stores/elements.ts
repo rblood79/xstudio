@@ -26,6 +26,7 @@ import {
 } from "./utils/elementUpdate";
 import { ElementUtils } from "../../utils/element/elementUtils";
 import { elementsApi } from "../../services/api";
+import { longTaskMonitor } from "../../utils/longTaskMonitor";
 import {
   type PageElementIndex,
   createEmptyPageIndex,
@@ -58,6 +59,8 @@ export interface ElementsState {
   historyOperationInProgress: boolean;
   // ⭐ Multi-select state
   selectedElementIds: string[];
+  // 🚀 O(1) 검색용 Set (selectedElementIds와 동기화)
+  selectedElementIdsSet: Set<string>;
   multiSelectMode: boolean;
 
   // 내부 헬퍼: 인덱스 재구축
@@ -159,6 +162,48 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
     return getPageElementsFromIndex(pageIndex, pageId, elementsMap);
   };
 
+  // WebGL Canvas의 pointerdown task를 짧게 유지하기 위해,
+  // selectedElementProps(종종 큰 객체)는 필요 시 다음 tick에 채웁니다.
+  let hydrateSelectedPropsTimeoutId: number | null = null;
+
+  const cancelHydrateSelectedProps = () => {
+    if (hydrateSelectedPropsTimeoutId === null) return;
+    if (typeof window !== "undefined") {
+      window.clearTimeout(hydrateSelectedPropsTimeoutId);
+    }
+    hydrateSelectedPropsTimeoutId = null;
+  };
+
+  const scheduleHydrateSelectedProps = (elementId: string) => {
+    if (typeof window === "undefined") {
+      // SSR/특수 환경: 동기 처리
+      const state = get();
+      const element =
+        state.elementsMap.get(elementId) ??
+        findElementById(state.elements, elementId);
+      if (!element) return;
+      set({ selectedElementProps: createCompleteProps(element) });
+      return;
+    }
+
+    cancelHydrateSelectedProps();
+    hydrateSelectedPropsTimeoutId = window.setTimeout(() => {
+      hydrateSelectedPropsTimeoutId = null;
+
+      const state = get();
+      if (state.selectedElementId !== elementId) return; // stale update 방지
+
+      const element =
+        state.elementsMap.get(elementId) ??
+        findElementById(state.elements, elementId);
+      if (!element) return;
+
+      longTaskMonitor.measure("interaction.select:hydrate-selected-props", () => {
+        set({ selectedElementProps: createCompleteProps(element) });
+      });
+    }, 0);
+  };
+
   return {
     elements: [],
     elementsMap: new Map(),
@@ -173,6 +218,8 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
     historyOperationInProgress: false,
     // ⭐ Multi-select state
     selectedElementIds: [],
+    // 🚀 O(1) 검색용 Set
+    selectedElementIdsSet: new Set<string>(),
     multiSelectMode: false,
 
     _rebuildIndexes,
@@ -232,33 +279,99 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
   updateElement,
 
   // 🚀 Phase 1: Immer → 함수형 업데이트 (Medium Risk)
+  // 🚀 Phase 6.3: 참조 안정성 최적화 - 불필요한 상태 업데이트 방지
   setSelectedElement: (elementId, props, style, computedStyle) => {
+    cancelHydrateSelectedProps();
+
+    const currentState = get();
+
+    // 🚀 Early Return: 동일한 요소 선택 시 (props/style/computedStyle 없는 경우)
+    // - 같은 요소를 클릭해도 불필요한 리렌더 방지
+    if (
+      elementId === currentState.selectedElementId &&
+      !props && !style && !computedStyle
+    ) {
+      return; // 변경 없음
+    }
+
+    const hasExternalProps = Boolean(props || style || computedStyle);
+
+    // WebGL Canvas 기본 선택 경로: elementId만 전달됨
+    // - pointerdown task를 줄이기 위해 selectedElementProps는 다음 tick에 채움
+    if (elementId && !hasExternalProps) {
+      let selectedElementIds: string[];
+      let selectedElementIdsSet: Set<string>;
+
+      if (
+        elementId === currentState.selectedElementId &&
+        currentState.selectedElementIds.length === 1
+      ) {
+        selectedElementIds = currentState.selectedElementIds;
+        selectedElementIdsSet = currentState.selectedElementIdsSet;
+      } else {
+        selectedElementIds = [elementId];
+        selectedElementIdsSet = new Set([elementId]);
+      }
+
+      set({
+        selectedElementId: elementId,
+        selectedElementProps: {},
+        selectedElementIds,
+        selectedElementIdsSet,
+        multiSelectMode: false,
+      });
+
+      scheduleHydrateSelectedProps(elementId);
+      return;
+    }
+
     let resolvedProps = props;
 
     if (elementId && !resolvedProps) {
-      const { elementsMap, elements } = get();
+      const { elementsMap, elements } = currentState;
       const element = elementsMap.get(elementId) ?? findElementById(elements, elementId);
       if (element) {
         resolvedProps = createCompleteProps(element);
       }
     }
 
-    // 상태 업데이트 계산
-    const selectedElementProps = elementId && resolvedProps
-      ? {
+    // 🚀 Phase 6.3: 상태 업데이트 최소화
+    // - style/computedStyle이 없으면 기존 객체 재사용 시도
+    let selectedElementProps: ComponentElementProps;
+    if (elementId && resolvedProps) {
+      if (!style && !computedStyle) {
+        // style/computedStyle 없으면 resolvedProps 그대로 사용 (새 객체 생성 X)
+        selectedElementProps = resolvedProps;
+      } else {
+        selectedElementProps = {
           ...resolvedProps,
           ...(style ? { style } : {}),
           ...(computedStyle ? { computedStyle } : {}),
-        }
-      : {};
+        };
+      }
+    } else {
+      selectedElementProps = {};
+    }
 
     // ⭐ SelectionState와 동기화
-    const selectedElementIds = elementId ? [elementId] : [];
+    // 🚀 Phase 6.3: 동일한 요소면 배열/Set 재생성 스킵
+    let selectedElementIds: string[];
+    let selectedElementIdsSet: Set<string>;
+
+    if (elementId === currentState.selectedElementId && currentState.selectedElementIds.length === 1) {
+      // 같은 요소 선택 - 기존 배열/Set 재사용
+      selectedElementIds = currentState.selectedElementIds;
+      selectedElementIdsSet = currentState.selectedElementIdsSet;
+    } else {
+      selectedElementIds = elementId ? [elementId] : [];
+      selectedElementIdsSet = elementId ? new Set([elementId]) : new Set<string>();
+    }
 
     set({
       selectedElementId: elementId,
       selectedElementProps,
       selectedElementIds,
+      selectedElementIdsSet,
       multiSelectMode: false,
     });
   },
@@ -323,23 +436,27 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
   // ⭐ 다중 선택: 요소를 선택 목록에서 추가/제거 (토글)
   toggleElementInSelection: (elementId: string) => {
     const state = get();
-    const { selectedElementIds, elementsMap, elements } = state;
+    const { elementsMap, elements, selectedElementIdsSet } = state;
 
     const resolveCompleteProps = (id: string) => {
       const element = elementsMap.get(id) ?? findElementById(elements, id);
       return element ? createCompleteProps(element) : null;
     };
 
-    const isAlreadySelected = selectedElementIds.includes(elementId);
+    // 🚀 O(1) 검색용 Set 사용
+    const isAlreadySelected = selectedElementIdsSet.has(elementId);
 
     if (isAlreadySelected) {
       // 이미 선택됨 → 제거
-      const newSelectedIds = selectedElementIds.filter((id) => id !== elementId);
+      const newSet = new Set(selectedElementIdsSet);
+      newSet.delete(elementId);
+      const newSelectedIds = Array.from(newSet);
 
       if (newSelectedIds.length === 0) {
         // 선택이 비어있으면 다중 선택 모드 해제
         set({
           selectedElementIds: [],
+          selectedElementIdsSet: new Set<string>(),
           multiSelectMode: false,
           selectedElementId: null,
           selectedElementProps: {},
@@ -349,19 +466,23 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
         const nextProps = resolveCompleteProps(newSelectedIds[0]);
         set({
           selectedElementIds: newSelectedIds,
+          selectedElementIdsSet: newSet,
           selectedElementId: newSelectedIds[0],
           selectedElementProps: nextProps || {},
         });
       }
     } else {
       // 선택 안 됨 → 추가
-      const newSelectedIds = [...selectedElementIds, elementId];
+      const newSet = new Set(selectedElementIdsSet);
+      newSet.add(elementId);
+      const newSelectedIds = Array.from(newSet);
 
       if (newSelectedIds.length === 1) {
         // 첫 번째로 추가되는 경우 primary selection 설정
         const nextProps = resolveCompleteProps(elementId);
         set({
           selectedElementIds: newSelectedIds,
+          selectedElementIdsSet: newSet,
           multiSelectMode: true,
           selectedElementId: elementId,
           selectedElementProps: nextProps || {},
@@ -369,6 +490,7 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
       } else {
         set({
           selectedElementIds: newSelectedIds,
+          selectedElementIdsSet: newSet,
           multiSelectMode: true,
         });
       }
@@ -390,6 +512,8 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
       const nextProps = resolveCompleteProps(elementIds[0]);
       set({
         selectedElementIds: elementIds,
+        // 🚀 O(1) 검색용 Set 동기화
+        selectedElementIdsSet: new Set(elementIds),
         multiSelectMode: elementIds.length > 1,
         selectedElementId: elementIds[0],
         selectedElementProps: nextProps || {},
@@ -398,6 +522,7 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
       // 선택 없음
       set({
         selectedElementIds: [],
+        selectedElementIdsSet: new Set<string>(),
         multiSelectMode: false,
         selectedElementId: null,
         selectedElementProps: {},

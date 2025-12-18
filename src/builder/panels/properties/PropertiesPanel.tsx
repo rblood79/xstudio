@@ -143,24 +143,33 @@ const PropertyEditorWrapper = memo(function PropertyEditorWrapper({
     />
   );
 }, (prevProps, nextProps) => {
-  // ⭐ 깊은 비교: selectedElement의 실제 내용이 변경되었는지 확인
-  // 🎯 중요: useInspectorState는 Immer를 사용하지 않음
-  // - 수동 spread operator로 새 객체 생성
-  // - structural sharing 없음 → 참조 비교 불가
-  // - JSON.stringify로 깊은 비교 필수
+  // 🚀 Phase 14: 참조 비교 우선, JSON.stringify 최소화
   const prev = prevProps.selectedElement;
   const next = nextProps.selectedElement;
 
-  // 1단계: 기본 필드 빠른 비교 (early return)
+  // 1단계: 기본 필드 빠른 비교 (primitive, early return)
   if (prev.id !== next.id) return false;
   if (prev.type !== next.type) return false;
   if (prev.customId !== next.customId) return false;
 
-  // 2단계: 객체/배열 필드 깊은 비교
-  if (JSON.stringify(prev.properties) !== JSON.stringify(next.properties)) return false;
-  if (JSON.stringify(prev.style) !== JSON.stringify(next.style)) return false;
-  if (JSON.stringify(prev.dataBinding) !== JSON.stringify(next.dataBinding)) return false;
-  if (JSON.stringify(prev.events) !== JSON.stringify(next.events)) return false;
+  // 2단계: 참조 비교 우선 (가장 빠름)
+  // - 같은 참조면 확실히 동일 → JSON.stringify 스킵
+  // - 다른 참조여도 내용이 같을 수 있음 → JSON.stringify로 확인
+  const propertiesSame = prev.properties === next.properties ||
+    JSON.stringify(prev.properties) === JSON.stringify(next.properties);
+  if (!propertiesSame) return false;
+
+  const styleSame = prev.style === next.style ||
+    JSON.stringify(prev.style) === JSON.stringify(next.style);
+  if (!styleSame) return false;
+
+  const dataBindingSame = prev.dataBinding === next.dataBinding ||
+    JSON.stringify(prev.dataBinding) === JSON.stringify(next.dataBinding);
+  if (!dataBindingSame) return false;
+
+  const eventsSame = prev.events === next.events ||
+    JSON.stringify(prev.events) === JSON.stringify(next.events);
+  if (!eventsSame) return false;
 
   // 모든 필드가 같으면 리렌더 불필요
   return true;

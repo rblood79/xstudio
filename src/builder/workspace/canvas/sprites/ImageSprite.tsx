@@ -76,10 +76,18 @@ export function ImageSprite({ element, isSelected, onClick }: ImageSpriteProps) 
     if (!src) return;
 
     let cancelled = false;
+    let loadedTextureRef: Texture | null = null;
 
     Assets.load(src)
       .then((loadedTexture: Texture) => {
-        if (cancelled) return;
+        if (cancelled) {
+          // 취소되었으면 로드된 텍스처 즉시 정리
+          if (loadedTexture && !loadedTexture.destroyed) {
+            loadedTexture.destroy(true);
+          }
+          return;
+        }
+        loadedTextureRef = loadedTexture;
         setLoaded({ src, texture: loadedTexture });
         setErrorSrc(null);
       })
@@ -92,6 +100,13 @@ export function ImageSprite({ element, isSelected, onClick }: ImageSpriteProps) 
 
     return () => {
       cancelled = true;
+      // 이전 텍스처 정리 (Assets 캐시에서 제거하지 않고 참조만 해제)
+      if (loadedTextureRef && !loadedTextureRef.destroyed) {
+        // Note: destroy(true)는 baseTexture도 파괴함
+        // Assets 캐시에 있는 경우 문제가 될 수 있으므로 false 사용
+        loadedTextureRef.destroy(false);
+        loadedTextureRef = null;
+      }
     };
   }, [src]);
 

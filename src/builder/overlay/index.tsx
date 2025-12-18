@@ -4,6 +4,7 @@ import { Maximize2 } from "lucide-react";
 import { MessageService } from "../../utils/messaging";
 import { useVisibleOverlays } from "./hooks/useVisibleOverlays";
 import type { OverlayData as VisibleOverlayData } from "./hooks/useVisibleOverlays";
+import { useOverlayRAF, isOnlyBodySelected, type OverlayUpdateResult } from "./hooks/useOverlayRAF";
 import { useOverlayDebug } from "./OverlayDebug";
 import { BorderRadiusHandles } from "./components/BorderRadiusHandles";
 import { useInspectorState } from "../inspector/hooks/useInspectorState";
@@ -49,7 +50,33 @@ export default function SelectionOverlay() {
 
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
   const rafIdRef = useRef<number | null>(null);
-  const multiRafIdRef = useRef<number | null>(null);
+
+  // 🚀 Phase 7.1: RAF 기반 오버레이 스케줄러
+  const getIframeDocument = useCallback(
+    () => iframeRef.current?.contentDocument,
+    []
+  );
+
+  const handleOverlayUpdate = useCallback(
+    (result: OverlayUpdateResult) => {
+      setMultiOverlays((prev) => {
+        const next = result.reset ? new Map<string, OverlayData>() : new Map(prev);
+        result.rects.forEach((rect, elementId) => {
+          next.set(elementId, {
+            rect,
+            tag: result.tags.get(elementId) || next.get(elementId)?.tag || "",
+          });
+        });
+        return next;
+      });
+    },
+    []
+  );
+
+  const { schedule: scheduleOverlayUpdate, scheduleThrottled, clear: clearOverlayScheduler } = useOverlayRAF(
+    handleOverlayUpdate,
+    getIframeDocument
+  );
 
   // ⭐ Border Radius 구독 (리액티브 업데이트) - 조건부 return 전에 선언
   const borderRadiusFromInspector = useInspectorState((state) => {
@@ -137,60 +164,35 @@ export default function SelectionOverlay() {
     [selectedElementId] // 🚀 Performance: elementsMap 의존성 제거 - getState()로 조회
   );
 
-  // ⭐ Update multi-select overlay positions
-  const updateMultiOverlays = useCallback(() => {
-    const iframe = iframeRef.current;
-    if (!iframe?.contentDocument || selectedElementIds.length === 0) {
-      setMultiOverlays(new Map());
-      return;
-    }
+  // 🚀 Phase 7.2: Body element 조기 종료 체크
+  const isBodyOnlySelected = useMemo(() => {
+    if (selectedElementIds.length === 0) return false;
+    const elementsMap = useStore.getState().elementsMap;
+    return isOnlyBodySelected(selectedElementIds, elementsMap);
+  }, [selectedElementIds]);
 
-    const newOverlays = new Map<string, OverlayData>();
-
-    selectedElementIds.forEach((elementId: string) => {
-      let element = iframe.contentDocument!.querySelector(
-        `[data-element-id="${elementId}"]`
-      ) as HTMLElement;
-
-      // ⭐ body element 선택 시: 실제 <body> 태그에서 찾기
-      if (!element) {
-        // 🚀 Performance: getState()로 현재 elementsMap 조회
-        const elementsMap = useStore.getState().elementsMap;
-        const selectedElement = elementsMap.get(elementId);
-        if (selectedElement?.tag === "body") {
-          // 실제 <body> 태그에서 찾기
-          if (iframe.contentDocument!.body.getAttribute("data-element-id")) {
-            element = iframe.contentDocument!.body;
-          }
-        }
+  // 🚀 Phase 7.1: 멀티 오버레이 스케줄 래퍼 (즉시 실행 옵션)
+  const scheduleMultiOverlayUpdate = useCallback(
+    (immediate = false) => {
+      // 🚀 Phase 7.2: Body만 선택된 경우 오버레이 계산 스킵
+      if (isBodyOnlySelected) {
+        setMultiOverlays(new Map());
+        return;
       }
-
-      if (element) {
-        const elementRect = element.getBoundingClientRect();
-        newOverlays.set(elementId, {
-          rect: {
-            top: elementRect.top,
-            left: elementRect.left,
-            width: elementRect.width,
-            height: elementRect.height,
-          },
-          tag: element.tagName.toLowerCase(),
-        });
+      if (selectedElementIds.length === 0) {
+        setMultiOverlays(new Map());
+        return;
       }
-    });
+      scheduleOverlayUpdate(selectedElementIds, immediate);
+    },
+    [selectedElementIds, isBodyOnlySelected, scheduleOverlayUpdate]
+  );
 
-    setMultiOverlays(newOverlays);
-  }, [selectedElementIds]); // 🚀 Performance: elementsMap 의존성 제거
-
-  const scheduleMultiOverlayUpdate = useCallback(() => {
-    if (multiRafIdRef.current !== null) {
-      cancelAnimationFrame(multiRafIdRef.current);
-    }
-    multiRafIdRef.current = requestAnimationFrame(() => {
-      multiRafIdRef.current = null;
-      updateMultiOverlays();
-    });
-  }, [updateMultiOverlays]);
+  // 🚀 Phase 7.1: 쓰로틀된 스케줄 (스크롤/리사이즈용)
+  const scheduleMultiOverlayThrottled = useCallback(() => {
+    if (isBodyOnlySelected || selectedElementIds.length === 0) return;
+    scheduleThrottled(selectedElementIds);
+  }, [selectedElementIds, isBodyOnlySelected, scheduleThrottled]);
 
   // ⭐ Convert multiOverlays to VisibleOverlayData format for virtual scrolling
   const overlaysForVirtualScrolling = useMemo((): VisibleOverlayData[] => {
@@ -233,7 +235,9 @@ export default function SelectionOverlay() {
 
     if (!selectedElement) return;
 
-    const resizeObserver = new ResizeObserver(updatePosition);
+    // ResizeObserver는 (entries, observer)를 전달하므로, updatePosition()을 직접 넘기면
+    // boolean 파라미터(immediate)가 truthy로 해석되어 강제 동기 getBoundingClientRect()가 발생할 수 있습니다.
+    const resizeObserver = new ResizeObserver(() => updatePosition());
     resizeObserver.observe(selectedElement);
 
     return () => {
@@ -241,12 +245,30 @@ export default function SelectionOverlay() {
     };
   }, [selectedElementId, updatePosition]);
 
+  // 🚀 Phase 6.3: Message handler를 별도 effect로 분리 (마운트 시 한 번만 설정)
+  // - 이전: selectedElementId 변경마다 listener 재등록 → 병목
+  // - 이후: 한 번만 등록, Ref로 최신 상태 참조
+  const selectedElementIdRef = useRef(selectedElementId);
+  const multiSelectModeRef = useRef(multiSelectMode);
+  const updatePositionRef = useRef(updatePosition);
+  const scheduleMultiOverlayUpdateRef = useRef(scheduleMultiOverlayUpdate);
+  const scheduleMultiOverlayThrottledRef = useRef(scheduleMultiOverlayThrottled);
+
+  // Ref 업데이트 (렌더링마다)
+  useEffect(() => {
+    selectedElementIdRef.current = selectedElementId;
+    multiSelectModeRef.current = multiSelectMode;
+    updatePositionRef.current = updatePosition;
+    scheduleMultiOverlayUpdateRef.current = scheduleMultiOverlayUpdate;
+    scheduleMultiOverlayThrottledRef.current = scheduleMultiOverlayThrottled;
+  });
+
+  // 🚀 Phase 6.3: iframe 초기화 및 메시지 핸들러 (마운트 시 한 번만)
   useEffect(() => {
     const iframe = MessageService.getIframe();
     iframeRef.current = iframe;
 
     if (!iframe?.contentDocument) {
-      // ⭐ RAF로 초기화 - effect body에서 직접 setState 호출 방지
       requestAnimationFrame(() => {
         setOverlayRect(null);
         setSelectedTag("");
@@ -254,37 +276,31 @@ export default function SelectionOverlay() {
       return;
     }
 
+    // 🚀 Phase 6.3: Ref를 통해 최신 상태 참조 (클로저 문제 회피)
     const handleMessage = (event: MessageEvent) => {
       if (event.origin !== window.location.origin) return;
 
       if (event.data.type === "ELEMENT_SELECTED" && event.data.payload?.rect) {
-        // ⭐ 초기 선택: postMessage의 rect를 즉시 사용하여 오버레이 표시 (RAF 스킵)
         const { top, left, width, height } = event.data.payload.rect;
         setOverlayRect({ top, left, width, height });
         setSelectedTag(event.data.payload.tag || "");
-        // RAF를 통한 추가 업데이트 취소 (postMessage rect가 최신 상태)
         if (rafIdRef.current !== null) {
           cancelAnimationFrame(rafIdRef.current);
           rafIdRef.current = null;
         }
       } else if (event.data.type === "ELEMENTS_DRAG_SELECTED") {
-        // ⭐ Multi-select: Update all overlay positions
-        scheduleMultiOverlayUpdate();
+        scheduleMultiOverlayUpdateRef.current?.();
       } else if (event.data.type === "UPDATE_ELEMENT_PROPS") {
-        // Props 업데이트 시 overlay 위치 동기화
         if (event.data.payload?.rect) {
-          // rect가 제공된 경우: Preview의 좌표를 직접 사용
           const { top, left, width, height } = event.data.payload.rect;
           setOverlayRect({ top, left, width, height });
         } else {
-          // rect가 없는 경우: DOM에서 직접 재계산
-          if (multiSelectMode) {
-            scheduleMultiOverlayUpdate();
+          if (multiSelectModeRef.current) {
+            scheduleMultiOverlayUpdateRef.current?.();
           } else {
-            updatePosition();
+            updatePositionRef.current?.();
           }
         }
-        // tag 정보가 있으면 업데이트
         if (event.data.payload?.tag) {
           setSelectedTag(event.data.payload.tag);
         }
@@ -295,46 +311,45 @@ export default function SelectionOverlay() {
       }
     };
 
-    // ⭐ Handle scroll/resize for both single and multi-select
     const handleScrollResize = () => {
-      if (multiSelectMode) {
-        scheduleMultiOverlayUpdate();
+      if (multiSelectModeRef.current) {
+        scheduleMultiOverlayThrottledRef.current?.();
       } else {
-        updatePosition();
+        updatePositionRef.current?.();
       }
     };
 
     window.addEventListener("message", handleMessage);
-
-    if (selectedElementId && iframe?.contentWindow) {
-      if (multiSelectMode) {
-        scheduleMultiOverlayUpdate();
-      } else {
-        updatePosition();
-      }
-      iframe.contentWindow.addEventListener("scroll", handleScrollResize);
-      window.addEventListener("resize", handleScrollResize);
-      window.addEventListener("scroll", handleScrollResize);
-    }
+    iframe.contentWindow?.addEventListener("scroll", handleScrollResize);
+    window.addEventListener("resize", handleScrollResize);
+    window.addEventListener("scroll", handleScrollResize);
 
     return () => {
       window.removeEventListener("message", handleMessage);
-      if (iframe?.contentWindow) {
-        iframe.contentWindow.removeEventListener("scroll", handleScrollResize);
-      }
+      iframe.contentWindow?.removeEventListener("scroll", handleScrollResize);
       window.removeEventListener("resize", handleScrollResize);
       window.removeEventListener("scroll", handleScrollResize);
-
-      // requestAnimationFrame cleanup
       if (rafIdRef.current !== null) {
         cancelAnimationFrame(rafIdRef.current);
         rafIdRef.current = null;
       }
-      if (multiRafIdRef.current !== null) {
-        cancelAnimationFrame(multiRafIdRef.current);
-        multiRafIdRef.current = null;
-      }
+      clearOverlayScheduler();
     };
+  }, [clearOverlayScheduler]); // 🚀 의존성 최소화
+
+  // 🚀 Phase 6.3: 선택 변경 시 위치 업데이트 (별도 effect)
+  useEffect(() => {
+    if (!selectedElementId) return;
+
+    const iframe = iframeRef.current;
+    if (!iframe?.contentWindow) return;
+
+    // 위치 업데이트 요청
+    if (multiSelectMode) {
+      scheduleMultiOverlayUpdate();
+    } else {
+      updatePosition();
+    }
   }, [selectedElementId, multiSelectMode, updatePosition, scheduleMultiOverlayUpdate]);
 
   // ⭐ Multi-select mode: Render multiple overlays (with virtual scrolling)

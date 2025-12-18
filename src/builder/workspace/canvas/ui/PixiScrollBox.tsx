@@ -224,8 +224,27 @@ export const PixiScrollBox = memo(function PixiScrollBox({
     scrollBoxRef.current = scrollBox;
 
     return () => {
+      // 이벤트 연결 해제
+      container.off('pointerdown', handleClick);
+
+      // Stage에서 제거
       app.stage.removeChild(container);
+
+      // content 내부 Graphics/Text 명시적 destroy
+      content.children.forEach((child) => {
+        if ('destroy' in child && typeof child.destroy === 'function') {
+          child.destroy(true);
+        }
+      });
+
+      // Graphics 객체 명시적 destroy (GPU 리소스 해제)
+      bg.destroy(true);
+      content.destroy({ children: true });
+
+      // ScrollBox 및 Container destroy
+      scrollBox.destroy({ children: true });
       container.destroy({ children: true });
+
       containerRef.current = null;
       scrollBoxRef.current = null;
     };

@@ -226,9 +226,23 @@ export const PixiFancyButton = memo(function PixiFancyButton({
     buttonRef.current = fancyButton;
 
     return () => {
+      // 이벤트 연결 해제
       fancyButton.onPress.disconnectAll();
+
+      // Stage에서 제거
       app.stage.removeChild(container);
+
+      // Graphics 객체 명시적 destroy (GPU 리소스 해제)
+      defaultBg.destroy(true);
+      hoverBg.destroy(true);
+      pressedBg.destroy(true);
+      disabledBg.destroy(true);
+      text.destroy(true);
+
+      // FancyButton 및 Container destroy
+      fancyButton.destroy({ children: true });
       container.destroy({ children: true });
+
       containerRef.current = null;
       buttonRef.current = null;
     };

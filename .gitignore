@@ -4,6 +4,8 @@ dist
 /build
 .env
 
+/test-results
+
 .cache
 .vercel
 .output

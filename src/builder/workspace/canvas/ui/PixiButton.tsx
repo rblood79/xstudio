@@ -523,19 +523,26 @@ export const PixiButton = memo(function PixiButton({
       loadingIndicatorRef.current = loadingIndicator;
     }
 
-    // Cleanup
+    // Cleanup - Graphics 객체 명시적 destroy (GPU 리소스 해제)
     return () => {
+      // FancyButton destroy (children: true로 내부 Graphics도 함께 정리)
       if (buttonRef.current && container.children.includes(buttonRef.current)) {
         container.removeChild(buttonRef.current);
-        buttonRef.current.destroy();
+        buttonRef.current.destroy({ children: true });
         buttonRef.current = null;
       }
+      // 명시적으로 생성한 Graphics 객체들도 destroy
+      defaultView.destroy(true);
+      hoverView.destroy(true);
+      pressedView.destroy(true);
+      textView.destroy(true);
+
       if (
         disabledOverlayRef.current &&
         container.children.includes(disabledOverlayRef.current)
       ) {
         container.removeChild(disabledOverlayRef.current);
-        disabledOverlayRef.current.destroy();
+        disabledOverlayRef.current.destroy(true);
         disabledOverlayRef.current = null;
       }
       if (
@@ -543,7 +550,7 @@ export const PixiButton = memo(function PixiButton({
         container.children.includes(loadingIndicatorRef.current)
       ) {
         container.removeChild(loadingIndicatorRef.current);
-        loadingIndicatorRef.current.destroy();
+        loadingIndicatorRef.current.destroy(true);
         loadingIndicatorRef.current = null;
       }
     };

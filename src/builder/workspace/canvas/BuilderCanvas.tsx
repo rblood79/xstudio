@@ -39,6 +39,7 @@ import { TextEditOverlay, useTextEdit } from "../overlay";
 import { initYoga, calculateLayout, type LayoutResult } from "./layout";
 import { getOutlineVariantColor } from "./utils/cssVariableReader";
 import { useThemeColors } from "./hooks/useThemeColors";
+import { longTaskMonitor } from "../../../utils/longTaskMonitor";
 
 // ============================================
 // Types
@@ -642,34 +643,39 @@ export function BuilderCanvas({
   // 선택 변경 시 handleElementClick 재생성 방지 → 모든 ElementSprite 리렌더링 방지
   const handleElementClick = useCallback(
     (elementId: string, modifiers?: { metaKey: boolean; shiftKey: boolean; ctrlKey: boolean }) => {
-      // 텍스트 편집 중이면 클릭 무시
-      if (isEditing) return;
+      return longTaskMonitor.measure("interaction.select:webgl-pointerdown", () => {
+        // 텍스트 편집 중이면 클릭 무시
+        if (isEditing) return;
 
-      // Cmd+Click (Mac) or Ctrl+Click (Windows) for multi-select
-      const isMultiSelectKey = modifiers?.metaKey || modifiers?.ctrlKey;
+        // Cmd+Click (Mac) or Ctrl+Click (Windows) for multi-select
+        const isMultiSelectKey = modifiers?.metaKey || modifiers?.ctrlKey;
 
-      if (isMultiSelectKey) {
-        // 🚀 getState()로 현재 selectedElementIds 읽기 (stale closure 방지)
-        const currentSelectedIds = useStore.getState().selectedElementIds;
+        if (isMultiSelectKey) {
+          // 🚀 getState()로 현재 selectedElementIds 읽기 (stale closure 방지)
+          const currentSelectedIds = useStore.getState().selectedElementIds;
 
-        // 다중 선택: 이미 선택된 요소면 제거, 아니면 추가
-        const isAlreadySelected = currentSelectedIds.includes(elementId);
-        if (isAlreadySelected) {
-          // 선택 해제
-          const newSelection = currentSelectedIds.filter((id) => id !== elementId);
-          if (newSelection.length > 0) {
-            setSelectedElements(newSelection);
+          // 🚀 O(n) → O(1) 최적화: Set을 사용하여 빠른 검색
+          const selectedSet = new Set(currentSelectedIds);
+          const isAlreadySelected = selectedSet.has(elementId);
+
+          if (isAlreadySelected) {
+            // 선택 해제 - Set에서 제거 후 배열로 변환
+            selectedSet.delete(elementId);
+            if (selectedSet.size > 0) {
+              setSelectedElements(Array.from(selectedSet));
+            } else {
+              clearSelection();
+            }
           } else {
-            clearSelection();
+            // 선택에 추가 - Set에 추가 후 배열로 변환
+            selectedSet.add(elementId);
+            setSelectedElements(Array.from(selectedSet));
           }
         } else {
-          // 선택에 추가
-          setSelectedElements([...currentSelectedIds, elementId]);
+          // 단일 선택
+          setSelectedElement(elementId);
         }
-      } else {
-        // 단일 선택
-        setSelectedElement(elementId);
-      }
+      });
     },
     [setSelectedElement, setSelectedElements, clearSelection, isEditing]
   );

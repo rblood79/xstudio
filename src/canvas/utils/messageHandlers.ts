@@ -1,4 +1,5 @@
 import { PreviewElement, MessageType } from "../types";
+import { extractComputedStyleAsync, extractComputedStyleSubset } from "./computedStyleExtractor";
 
 /**
  * postMessage 처리 유틸리티
@@ -308,47 +309,10 @@ export const handleRequestElementSelection = (
     // elements 배열에서 찾기 (props 정보 필요) - 실제 DOM의 element ID 사용
     const element = elements.find((el) => el.id === actualElementId);
 
-    // Computed styles 수집 (Preview의 collectComputedStyle 로직과 동일)
-    const computed = window.getComputedStyle(elementWithId);
-    const computedStyle = {
-      // Layout
-      display: computed.display,
-      position: computed.position,
-      width: computed.width,
-      height: computed.height,
-      margin: computed.margin,
-      padding: computed.padding,
-
-      // Flexbox
-      flexDirection: computed.flexDirection,
-      justifyContent: computed.justifyContent,
-      alignItems: computed.alignItems,
-      gap: computed.gap,
-
-      // Background
-      backgroundColor: computed.backgroundColor,
-
-      // Border
-      border: computed.border,
-      borderRadius: computed.borderRadius,
-
-      // Typography
-      color: computed.color,
-      fontSize: computed.fontSize,
-      fontFamily: computed.fontFamily,
-      fontWeight: computed.fontWeight,
-      fontStyle: computed.fontStyle,
-      lineHeight: computed.lineHeight,
-      letterSpacing: computed.letterSpacing,
-      textAlign: computed.textAlign,
-      textDecoration: computed.textDecoration,
-      textTransform: computed.textTransform,
-    };
-
-    // Rect 정보 수집
+    // 🚀 Phase 6.2 최적화: Rect 정보만 동기로 수집 (빠름)
     const rect = elementWithId.getBoundingClientRect();
 
-    // Builder에 ELEMENT_SELECTED 응답 전송
+    // 🚀 즉시 응답: rect + props (computedStyle 제외)
     window.parent.postMessage(
       {
         type: "ELEMENT_SELECTED",
@@ -363,10 +327,27 @@ export const handleRequestElementSelection = (
           props: element?.props || {},
           tag: element?.tag || elementWithId.tagName.toLowerCase(),
           style: element?.props?.style || {},
-          computedStyle,
+          // computedStyle은 아래에서 비동기로 전송
         },
       },
       window.location.origin
+    );
+
+    // 🚀 Phase 6.2 최적화: computedStyle은 requestIdleCallback으로 지연 추출
+    extractComputedStyleAsync(
+      elementWithId as HTMLElement,
+      (computedStyle) => {
+        // 별도 메시지로 computedStyle 전송 (payload 형식 유지)
+        window.parent.postMessage(
+          {
+            type: "ELEMENT_COMPUTED_STYLE",
+            elementId: elementId,
+            payload: { computedStyle },
+          },
+          window.location.origin
+        );
+      },
+      { timeout: 100 }
     );
   }
 };

@@ -11,6 +11,11 @@ import {
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 
+// 🚀 Phase 9: Performance Monitors (dev mode only)
+// Side-effect import to initialize monitors and attach to window
+import "./utils/longTaskMonitor";
+import "./utils/postMessageMonitor";
+
 // Single CSS entry point - all imports handled in index.css via @import
 import "./index.css";
 import App from "./App.tsx";

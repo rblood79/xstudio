@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useDeferredValue } from "react";
 import {
   Settings2,
   Trash,
@@ -71,7 +71,11 @@ export default function Sidebar({
   const currentPageElements = useCurrentPageElements();
 
   // 🚀 Performance: useCallback 제거 - Zustand selector에 불필요
-  const selectedElementId = useStore((state) => state.selectedElementId);
+  const rawSelectedElementId = useStore((state) => state.selectedElementId);
+  // 🚀 Phase 6.5: useDeferredValue로 선택 상태 업데이트 지연
+  // - 선택 변경 시 sidebar 리렌더가 낮은 우선순위로 처리됨
+  // - 사용자 입력(클릭)이 먼저 완료되고, sidebar는 나중에 업데이트
+  const selectedElementId = useDeferredValue(rawSelectedElementId);
   const selectedTab = useStore((state) => state.selectedTab);
   // storeSetElements는 현재 사용되지 않음 (Nodes 컴포넌트에서 setElements prop 제거됨)
   const setSelectedElement = useStore((state) => state.setSelectedElement);

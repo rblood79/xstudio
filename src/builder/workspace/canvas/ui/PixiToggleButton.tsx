@@ -458,9 +458,15 @@ export const PixiToggleButton = memo(function PixiToggleButton({
 
     // Cleanup
     return () => {
+      // Graphics 객체 명시적 destroy (GPU 리소스 해제)
+      defaultView.destroy(true);
+      hoverView.destroy(true);
+      pressedView.destroy(true);
+      textView.destroy(true);
+
       if (buttonRef.current && container.children.includes(buttonRef.current)) {
         container.removeChild(buttonRef.current);
-        buttonRef.current.destroy();
+        buttonRef.current.destroy({ children: true });
         buttonRef.current = null;
       }
       if (
@@ -468,7 +474,7 @@ export const PixiToggleButton = memo(function PixiToggleButton({
         container.children.includes(disabledOverlayRef.current)
       ) {
         container.removeChild(disabledOverlayRef.current);
-        disabledOverlayRef.current.destroy();
+        disabledOverlayRef.current.destroy(true);
         disabledOverlayRef.current = null;
       }
     };

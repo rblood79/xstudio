@@ -194,8 +194,20 @@ export const PixiProgressBar = memo(function PixiProgressBar({
     progressBarRef.current = progressBar;
 
     return () => {
+      // 이벤트 연결 해제
+      container.off('pointerdown', handleClick);
+
+      // Stage에서 제거
       app.stage.removeChild(container);
+
+      // Graphics 객체 명시적 destroy (GPU 리소스 해제)
+      bgGraphics.destroy(true);
+      fillGraphics.destroy(true);
+
+      // ProgressBar 및 Container destroy
+      progressBar.destroy({ children: true });
       container.destroy({ children: true });
+
       containerRef.current = null;
       progressBarRef.current = null;
     };
