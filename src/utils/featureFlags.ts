@@ -49,16 +49,21 @@ function parseBoolean(value: string | undefined, defaultValue: boolean): boolean
  *
  * @example
  * ```typescript
- * if (useWebGLCanvas()) {
+ * if (isWebGLCanvas()) {
  *   return <WebGLCanvas />;
  * } else {
  *   return <IframeCanvas />;
  * }
  * ```
  */
-export function useWebGLCanvas(): boolean {
+export function isWebGLCanvas(): boolean {
   return parseBoolean(import.meta.env.VITE_USE_WEBGL_CANVAS, false);
 }
+
+/**
+ * @deprecated Use isWebGLCanvas() instead
+ */
+export const useWebGLCanvas = isWebGLCanvas;
 
 /**
  * 디버그 로그 활성화 여부
@@ -78,14 +83,19 @@ export function enableDebugLogs(): boolean {
  *
  * @example
  * ```typescript
- * if (useCanvasCompareMode()) {
+ * if (isCanvasCompareMode()) {
  *   return <SplitView left={<IframeCanvas />} right={<WebGLCanvas />} />;
  * }
  * ```
  */
-export function useCanvasCompareMode(): boolean {
+export function isCanvasCompareMode(): boolean {
   return parseBoolean(import.meta.env.VITE_CANVAS_COMPARE_MODE, false);
 }
+
+/**
+ * @deprecated Use isCanvasCompareMode() instead
+ */
+export const useCanvasCompareMode = isCanvasCompareMode;
 
 /**
  * 모든 Feature Flags 조회
@@ -112,6 +122,7 @@ export function getFeatureFlags(): FeatureFlags {
 export function logFeatureFlags(): void {
   if (import.meta.env.DEV) {
     const flags = getFeatureFlags();
+    console.log('[FeatureFlags]', flags);
   }
 }
 

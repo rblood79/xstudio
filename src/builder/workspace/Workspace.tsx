@@ -27,7 +27,7 @@ import {
 } from "react-aria-components";
 import { BuilderCanvas } from "./canvas/BuilderCanvas";
 import { useCanvasSyncStore } from "./canvas/canvasSync";
-import { useWebGLCanvas, useCanvasCompareMode } from "../../utils/featureFlags";
+import { isWebGLCanvas, isCanvasCompareMode } from "../../utils/featureFlags";
 import { Minus, Plus, Scan, ChevronDown } from "lucide-react";
 import "./Workspace.css";
 // ============================================
@@ -74,8 +74,8 @@ export function Workspace({
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
 
   // Feature flags
-  const useWebGL = useWebGLCanvas();
-  const compareMode = useCanvasCompareMode();
+  const useWebGL = isWebGLCanvas();
+  const compareMode = isCanvasCompareMode();
 
   // ============================================
   // Canvas Size from Breakpoint

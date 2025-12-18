@@ -15,7 +15,7 @@ import { useInspectorState } from "../../inspector/hooks/useInspectorState";
 import { MessageService } from "../../../utils/messaging";
 import { useStore } from "../../stores";
 // 🚀 Phase 11: Feature Flags for WebGL-only mode
-import { useWebGLCanvas, useCanvasCompareMode } from "../../../utils/featureFlags";
+import { isWebGLCanvas, isCanvasCompareMode } from "../../../utils/featureFlags";
 
 export type CornerPosition =
   | "topLeft"
@@ -98,7 +98,7 @@ function sendStyleToCanvas(
   styleProps: Record<string, string>
 ) {
   // 🚀 Phase 11: WebGL-only 모드에서는 iframe 통신 불필요
-  const isWebGLOnly = useWebGLCanvas() && !useCanvasCompareMode();
+  const isWebGLOnly = isWebGLCanvas() && !isCanvasCompareMode();
   if (isWebGLOnly) return;
 
   const iframe = MessageService.getIframe();

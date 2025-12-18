@@ -641,8 +641,8 @@ export const useUnifiedThemeStore = create<UnifiedThemeState>()(
 
         unsubscribeTokens = TokenService.subscribeToTokenChanges(
           activeThemeId,
-          async (payload) => {
-
+          async (_payload) => {
+            // _payload contains realtime change info, but we reload all tokens
             try {
               // Reload all tokens and re-inject CSS
               await get().loadTokens(activeThemeId);

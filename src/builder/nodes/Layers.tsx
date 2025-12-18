@@ -5,7 +5,7 @@ import { Element } from "../../types/core/store.types"; // 통합된 타입 사�
 import { useStore } from "../stores"; // useStore import 추가
 import { MessageService } from "../../utils/messaging"; // 메시징 서비스 추가
 // 🚀 Phase 11: Feature Flags for WebGL-only mode
-import { useWebGLCanvas, useCanvasCompareMode } from "../../utils/featureFlags";
+import { isWebGLCanvas, isCanvasCompareMode } from "../../utils/featureFlags";
 import type { ElementTreeItem } from "../../types/builder/stately.types";
 import { buildTreeFromElements } from "../utils/treeUtils";
 import { VirtualizedLayerTree } from "../sidebar/VirtualizedLayerTree";
@@ -71,7 +71,7 @@ export function Layers({
   );
 
   // 🚀 Phase 11: WebGL-only 모드 체크
-  const isWebGLOnly = useWebGLCanvas() && !useCanvasCompareMode();
+  const isWebGLOnly = isWebGLCanvas() && !isCanvasCompareMode();
 
   // 아이템 삭제 핸들러 (memoized)
   const handleItemDelete = useCallback(

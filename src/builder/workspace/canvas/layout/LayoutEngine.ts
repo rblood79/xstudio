@@ -742,9 +742,9 @@ function isTextFieldElement(element: Element): boolean {
  * = width: props.width || 240
  * = height: labelHeight + inputHeight + descriptionHeight
  */
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function measureTextFieldSize(
   element: Element,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   _style: CSSStyle | undefined
 ): { width: number; height: number } | null {
   const props = element.props as Record<string, unknown> | undefined;

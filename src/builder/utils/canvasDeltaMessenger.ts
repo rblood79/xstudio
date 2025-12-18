@@ -14,7 +14,7 @@
 
 import type { Element } from "../../types/core/store.types";
 // 🚀 Phase 11: Feature Flags for WebGL-only mode
-import { useWebGLCanvas, useCanvasCompareMode } from "../../utils/featureFlags";
+import { isWebGLCanvas, isCanvasCompareMode } from "../../utils/featureFlags";
 
 // ============================================
 // Delta Message Types
@@ -110,7 +110,7 @@ export class CanvasDeltaMessenger {
    */
   isReady(): boolean {
     // 🚀 Phase 11: WebGL-only 모드에서는 iframe 통신 불필요
-    const isWebGLOnly = useWebGLCanvas() && !useCanvasCompareMode();
+    const isWebGLOnly = isWebGLCanvas() && !isCanvasCompareMode();
     if (isWebGLOnly) return false;
 
     return this.enabled && !!this.iframe?.contentWindow;

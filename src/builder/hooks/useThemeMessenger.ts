@@ -15,7 +15,7 @@ import { MessageService } from '../../utils/messaging';
 import { tokensToCSS } from '../../utils/theme/tokenToCss';
 import type { DesignToken } from '../../types/theme';
 // 🚀 Phase 11: Feature Flags for WebGL-only mode
-import { useWebGLCanvas, useCanvasCompareMode } from '../../utils/featureFlags';
+import { isWebGLCanvas, isCanvasCompareMode } from '../../utils/featureFlags';
 
 export interface UseThemeMessengerReturn {
     sendThemeTokens: (tokens: DesignToken[]) => void;
@@ -24,7 +24,7 @@ export interface UseThemeMessengerReturn {
 
 export const useThemeMessenger = (): UseThemeMessengerReturn => {
     // 🚀 Phase 11: WebGL-only 모드 체크
-    const isWebGLOnly = useWebGLCanvas() && !useCanvasCompareMode();
+    const isWebGLOnly = isWebGLCanvas() && !isCanvasCompareMode();
 
     const lastSentTokensHashRef = useRef<string>('');
     const lastSentDarkModeRef = useRef<boolean | null>(null);

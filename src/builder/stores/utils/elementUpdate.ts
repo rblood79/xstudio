@@ -3,7 +3,7 @@
 import type { StateCreator } from "zustand";
 import { ComponentElementProps, Element } from "../../../types/core/store.types";
 import { historyManager } from "../history";
-import { getElementById, findElementById, createCompleteProps } from "./elementHelpers";
+import { getElementById, createCompleteProps } from "./elementHelpers";
 import type { ElementsState } from "../elements";
 import { getDB } from "../../../lib/db";
 

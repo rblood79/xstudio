@@ -15,7 +15,7 @@ import { BuilderViewport } from "./BuilderViewport";
 import SelectionOverlay from "../overlay";
 import Grid from "../grid";
 import { Workspace } from "../workspace";
-import { useWebGLCanvas, useCanvasCompareMode } from "../../utils/featureFlags";
+import { isWebGLCanvas, isCanvasCompareMode } from "../../utils/featureFlags";
 import { PanelSlot, BottomPanelSlot } from "../layout";
 import { InspectorSync } from "../inspector/InspectorSync";
 import { ToastContainer } from "../components/ToastContainer";
@@ -47,7 +47,7 @@ export const BuilderCore: React.FC = () => {
   const [projectInfo, setProjectInfo] = useState<Project | null>(null);
 
   // Feature Flag: WebGL Canvas 사용 여부
-  const useWebGL = useWebGLCanvas();
+  const useWebGL = isWebGLCanvas();
 
   // Store 상태
   // 🚀 최적화: elements 구독 제거 - 필요할 때 getState()로 읽기
@@ -175,13 +175,13 @@ export const BuilderCore: React.FC = () => {
     }, [showToast]),
   });
 
-  // Dev 모드에서 복구 통계 로깅
-  if (process.env.NODE_ENV === 'development' && recoveryStats.totalRecoveries > 0) {
-  }
+  // Dev 모드에서 복구 통계 로깅 (필요 시 구현)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const _recoveryStatsForDebug = recoveryStats;
 
-  // Dev 모드에서 페이지 로더 통계 로깅
-  if (process.env.NODE_ENV === 'development' && pageLoaderStats.loadedPages > 0) {
-  }
+  // Dev 모드에서 페이지 로더 통계 로깅 (필요 시 구현)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const _pageLoaderStatsForDebug = pageLoaderStats;
 
   // Local 상태
   const [breakpoint, setBreakpoint] = useState<Set<Key>>(() => {
@@ -770,7 +770,7 @@ export const BuilderCore: React.FC = () => {
       if (isWorkspaceBackground) {
         setSelectedElement(null);
         // 🚀 Phase 11: WebGL-only 모드에서는 iframe clearOverlay 스킵
-        const isWebGLOnly = useWebGLCanvas() && !useCanvasCompareMode();
+        const isWebGLOnly = isWebGLCanvas() && !isCanvasCompareMode();
         if (!isWebGLOnly) {
           MessageService.clearOverlay();
         }

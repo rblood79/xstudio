@@ -30,7 +30,7 @@ import { useInspectorState } from '../inspector/hooks/useInspectorState';
 // 🚀 Delta Update
 import { canvasDeltaMessenger } from '../utils/canvasDeltaMessenger';
 // 🚀 Phase 11: Feature Flags for WebGL-only mode optimization
-import { useWebGLCanvas, useCanvasCompareMode } from '../../utils/featureFlags';
+import { isWebGLCanvas, isCanvasCompareMode } from '../../utils/featureFlags';
 
 export type IframeReadyState = 'not_initialized' | 'loading' | 'ready' | 'error';
 
@@ -59,34 +59,13 @@ const noopDebouncedAsync = debounce(() => Promise.resolve(), 0);
 
 export const useIframeMessenger = (): UseIframeMessengerReturn => {
     // 🚀 Phase 11: WebGL-only 모드에서는 iframe 통신 완전 스킵
-    // - useWebGLCanvas(): WebGL 캔버스 활성화 여부
-    // - useCanvasCompareMode(): 비교 모드 (iframe + WebGL 동시 표시)
+    // - isWebGLCanvas(): WebGL 캔버스 활성화 여부 (빌드타임 상수)
+    // - isCanvasCompareMode(): 비교 모드 (빌드타임 상수)
     // - WebGL only = WebGL 활성화 && 비교 모드 아님
-    const isWebGLOnly = useWebGLCanvas() && !useCanvasCompareMode();
+    // ⚠️ React Hook 규칙: 모든 Hook은 조건문 전에 호출해야 함
+    const isWebGLOnly = isWebGLCanvas() && !isCanvasCompareMode();
 
-    if (isWebGLOnly) {
-        // WebGL-only 모드: 모든 함수를 no-op으로 반환
-        // - Store 구독 없음 (~3-5ms 절감)
-        // - postMessage 시도 없음 (~2ms/변경 절감)
-        // - 불필요한 리스너 등록 없음
-        return {
-            iframeReadyState: 'not_initialized',
-            handleIframeLoad: () => {},
-            handleMessage: () => {},
-            handleUndo: noopDebouncedAsync,
-            handleRedo: noopDebouncedAsync,
-            sendElementsToIframe: () => {},
-            sendElementSelectedMessage: () => {},
-            requestElementSelection: () => {},
-            requestAutoSelectAfterUpdate: () => {},
-            sendLayoutsToIframe: () => {},
-            sendDataTablesToIframe: () => {},
-            sendApiEndpointsToIframe: () => {},
-            sendVariablesToIframe: () => {},
-            isIframeReady: false,
-        };
-    }
-
+    // ⚠️ Hook 호출은 항상 동일한 순서로 실행 (조건부 early return 금지)
     const [iframeReadyState, setIframeReadyState] = useState<IframeReadyState>('not_initialized');
     const iframeReadyStateRef = useRef<IframeReadyState>('not_initialized'); // 🔧 Ref로 즉시 상태 변경
     const isProcessingRef = useRef(false);
@@ -889,8 +868,30 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
 
     // 🎯 UPDATE_ELEMENTS 후 ACK를 받으면 자동으로 요소 선택 (모듈 레벨 변수)
     const requestAutoSelectAfterUpdate = useCallback((elementId: string) => {
+        if (isWebGLOnly) return; // 🚀 WebGL-only 모드에서는 스킵
         pendingAutoSelectElementId = elementId;
-    }, []);
+    }, [isWebGLOnly]);
+
+    // 🚀 Phase 11: WebGL-only 모드에서는 no-op 반환
+    // Hook은 항상 호출되지만, 실제 작업은 스킵됨
+    if (isWebGLOnly) {
+        return {
+            iframeReadyState: 'not_initialized',
+            handleIframeLoad: () => {},
+            handleMessage: () => {},
+            handleUndo: noopDebouncedAsync,
+            handleRedo: noopDebouncedAsync,
+            sendElementsToIframe: () => {},
+            sendElementSelectedMessage: () => {},
+            requestElementSelection: () => {},
+            requestAutoSelectAfterUpdate: () => {},
+            sendLayoutsToIframe: () => {},
+            sendDataTablesToIframe: () => {},
+            sendApiEndpointsToIframe: () => {},
+            sendVariablesToIframe: () => {},
+            isIframeReady: false,
+        };
+    }
 
     return {
         iframeReadyState,

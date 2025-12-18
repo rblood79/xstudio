@@ -29,7 +29,7 @@ import type {
   TransformContext,
 } from "../../../types/builder/data.types";
 // 🚀 Phase 11: Feature Flags for WebGL-only mode
-import { useWebGLCanvas, useCanvasCompareMode } from "../../../utils/featureFlags";
+import { isWebGLCanvas, isCanvasCompareMode } from "../../../utils/featureFlags";
 
 // Type aliases for set/get
 type DataStore = DataStoreState & DataStoreActions;
@@ -48,7 +48,7 @@ type GetState = Parameters<StateCreator<DataStore>>[1];
  */
 function syncDataTablesToCanvas(dataTables: Map<string, DataTable>): void {
   // 🚀 Phase 11: WebGL-only 모드에서는 iframe 통신 불필요
-  const isWebGLOnly = useWebGLCanvas() && !useCanvasCompareMode();
+  const isWebGLOnly = isWebGLCanvas() && !isCanvasCompareMode();
   if (isWebGLOnly) return;
 
   try {
@@ -242,14 +242,11 @@ export const createDeleteDataTableAction =
       const newMap = new Map(dataTables);
 
       // ID로 DataTable 찾아서 삭제
-      let deletedName: string | null = null;
       dataTables.forEach((dt, key) => {
         if (dt.id === id) {
-          deletedName = key;
           newMap.delete(key);
         }
       });
-
 
       set({ dataTables: newMap, isLoading: false });
 

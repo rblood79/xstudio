@@ -22,7 +22,7 @@ import { useStore } from "../../stores";
 // P4: useExtend 훅으로 메모이제이션된 컴포넌트 등록
 import { useExtend, PIXI_COMPONENTS } from "./pixiSetup";
 import { useCanvasSyncStore } from "./canvasSync";
-import { useWebGLCanvas } from "../../../utils/featureFlags";
+import { isWebGLCanvas } from "../../../utils/featureFlags";
 import { ElementSprite } from "./sprites";
 import {
   SelectionLayer,
@@ -825,7 +825,7 @@ export function BuilderCanvas({
  * Feature Flag에 따라 WebGL 또는 기존 iframe 캔버스 반환
  */
 export function BuilderCanvasWithFlag(props: BuilderCanvasProps) {
-  const useWebGL = useWebGLCanvas();
+  const useWebGL = isWebGLCanvas();
 
   if (!useWebGL) {
     // 기존 iframe Canvas (Fallback)

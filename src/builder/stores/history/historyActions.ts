@@ -7,13 +7,12 @@ import { supabase } from "../../../env/supabase.client";
 import { sanitizeElement } from "../utils/elementSanitizer";
 import {
   getElementById,
-  findElementById,
   createCompleteProps,
 } from "../utils/elementHelpers";
 import { reorderElements } from "../utils/elementReorder";
 import type { ElementsState } from "../elements";
 // 🚀 Phase 11: Feature Flags for WebGL-only mode
-import { useWebGLCanvas, useCanvasCompareMode } from "../../../utils/featureFlags";
+import { isWebGLCanvas, isCanvasCompareMode } from "../../../utils/featureFlags";
 
 /**
  * Undo/Redo 액션 로직
@@ -411,7 +410,7 @@ export const createUndoAction =
 
       // 2. iframe 업데이트
       // 🚀 Phase 11: WebGL-only 모드에서는 iframe 통신 스킵
-      const isWebGLOnly = useWebGLCanvas() && !useCanvasCompareMode();
+      const isWebGLOnly = isWebGLCanvas() && !isCanvasCompareMode();
       if (!isWebGLOnly && typeof window !== "undefined" && window.parent) {
         try {
           const currentElements = get().elements;
@@ -876,7 +875,7 @@ export const createRedoAction =
 
       // 2. iframe 업데이트
       // 🚀 Phase 11: WebGL-only 모드에서는 iframe 통신 스킵
-      const isWebGLOnly = useWebGLCanvas() && !useCanvasCompareMode();
+      const isWebGLOnly = isWebGLCanvas() && !isCanvasCompareMode();
       if (!isWebGLOnly && typeof window !== "undefined" && window.parent) {
         try {
           const currentElements = get().elements;

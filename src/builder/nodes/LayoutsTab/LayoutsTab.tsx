@@ -21,7 +21,7 @@ import { MessageService } from "../../../utils/messaging";
 import { getDB } from "../../../lib/db";
 import { useTreeExpandState } from "../../hooks/useTreeExpandState";
 // 🚀 Phase 11: Feature Flags for WebGL-only mode
-import { useWebGLCanvas, useCanvasCompareMode } from "../../../utils/featureFlags";
+import { isWebGLCanvas, isCanvasCompareMode } from "../../../utils/featureFlags";
 
 interface LayoutsTabProps {
   // ⭐ renderTree/renderElementTree/collapseAllTreeItems 제거됨
@@ -72,7 +72,7 @@ export function LayoutsTab({
   const setElements = useStore((state) => state.setElements);
 
   // 🚀 Phase 11: WebGL-only 모드 체크
-  const isWebGLOnly = useWebGLCanvas() && !useCanvasCompareMode();
+  const isWebGLOnly = isWebGLCanvas() && !isCanvasCompareMode();
 
   // 컴포넌트 마운트 시 Layouts 로드
   useEffect(() => {
