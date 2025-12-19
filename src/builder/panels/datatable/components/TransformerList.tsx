@@ -9,6 +9,7 @@ import { Workflow, Plus, Trash2, Edit2, Play } from "lucide-react";
 import { useDataStore, useTransformers } from "../../../stores/data";
 import { SectionHeader } from "../../common/SectionHeader";
 import type { TransformLevel } from "../../../../types/builder/data.types";
+import { iconProps, iconEditProps } from "../../../../utils/ui/uiConstants";
 
 interface TransformerListProps {
   projectId: string;
@@ -103,7 +104,7 @@ export function TransformerList({ projectId }: TransformerListProps) {
                 onClick={() => setSelectedId(transformer.id)}
               >
                 <div className="datatable-item-icon">
-                  <Workflow size={16} />
+                  <Workflow {...iconProps} />
                 </div>
                 <div className="datatable-item-info">
                   <div className="datatable-item-name">{transformer.name}</div>
@@ -124,7 +125,7 @@ export function TransformerList({ projectId }: TransformerListProps) {
                     disabled={!transformer.enabled}
                     title="실행"
                   >
-                    <Play size={14} />
+                    <Play {...iconEditProps} />
                   </button>
                   <button
                     type="button"
@@ -135,7 +136,7 @@ export function TransformerList({ projectId }: TransformerListProps) {
                     }}
                     title="편집"
                   >
-                    <Edit2 size={14} />
+                    <Edit2 {...iconEditProps} />
                   </button>
                   <button
                     type="button"
@@ -143,7 +144,7 @@ export function TransformerList({ projectId }: TransformerListProps) {
                     onClick={(e) => handleDelete(transformer.id, e)}
                     title="삭제"
                   >
-                    <Trash2 size={14} />
+                    <Trash2 {...iconEditProps} />
                   </button>
                 </div>
               </div>
@@ -156,7 +157,7 @@ export function TransformerList({ projectId }: TransformerListProps) {
           className="datatable-add-btn"
           onClick={handleCreate}
         >
-          <Plus size={16} />
+          <Plus {...iconProps} />
           <span>Transformer 추가</span>
         </button>
       </div>

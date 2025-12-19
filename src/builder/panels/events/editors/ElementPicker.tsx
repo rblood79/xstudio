@@ -17,7 +17,7 @@ import {
 } from 'react-aria-components';
 import { Hash, ChevronDown, Search } from 'lucide-react';
 import { useStore } from '../../../stores';
-import { iconProps } from '../../../../utils/ui/uiConstants';
+import { iconProps, iconEditProps } from '../../../../utils/ui/uiConstants';
 
 interface ElementPickerProps {
   /** 현재 선택된 요소 참조 (예: "#submit-btn", "element-123") */
@@ -129,13 +129,13 @@ export function ElementPicker({
       {label && <Label className="element-picker-label">{label}</Label>}
 
       <div className="element-picker-input-wrapper">
-        <Hash size={14} className="element-picker-icon" />
+        <Hash size={iconEditProps.size} className="element-picker-icon" />
         <Input
           className="element-picker-input"
           placeholder={placeholder}
         />
         <Button className="element-picker-button">
-          <ChevronDown size={14} />
+          <ChevronDown size={iconEditProps.size} />
         </Button>
       </div>
 
@@ -143,7 +143,7 @@ export function ElementPicker({
         <ListBox className="element-picker-list">
           {filteredOptions.length === 0 ? (
             <div className="element-picker-empty">
-              <Search size={16} color={iconProps.color} />
+              <Search size={iconProps.size} color={iconProps.color} />
               <span>No elements found</span>
             </div>
           ) : (

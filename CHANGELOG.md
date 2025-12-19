@@ -7,6 +7,101 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added - WebGL Canvas Phase 19: hitArea Pattern (2025-12-18)
+
+#### Phase 19: Click Selection Fix for WebGL Components
+
+**Problem:**
+- Form components (TextField, Input, RadioGroup, CheckboxGroup, Switch) couldn't be clicked/selected in WebGL canvas
+- `pixiContainer` alone doesn't have hitArea, so events don't register
+- Initial hitArea placement at beginning of render didn't work (z-order issue)
+
+**Solution - hitArea Pattern:**
+- Add transparent `pixiGraphics` with `alpha: 0` as hitArea
+- **CRITICAL**: hitArea must be rendered LAST in container (PixiJS z-order: later children on top)
+- Use `eventMode="static"` and `onPointerDown` for click detection
+
+**Modified Files (8 components):**
+
+1. `src/builder/workspace/canvas/ui/PixiInput.tsx`
+   - Added drawHitArea with full input area coverage
+   - Moved hitArea to render LAST in container
+
+2. `src/builder/workspace/canvas/ui/PixiTextField.tsx`
+   - Added drawHitArea covering label + input + description
+   - Moved hitArea to render LAST
+
+3. `src/builder/workspace/canvas/ui/PixiRadio.tsx`
+   - Added groupDimensions calculation for hitArea sizing
+   - Added drawHitArea covering entire RadioGroup
+   - Fixed duplicate key error: `key={option.value}` → `key={`${option.value}-${index}`}`
+
+4. `src/builder/workspace/canvas/ui/PixiCheckboxGroup.tsx`
+   - Added groupDimensions calculation for hitArea sizing
+   - Added drawHitArea covering entire CheckboxGroup
+   - Fixed duplicate key error: `key={option.value}` → `key={`${option.value}-${index}`}`
+
+5. `src/builder/workspace/canvas/ui/PixiSwitch.tsx`
+   - Added missing position handling (posX, posY)
+   - Added drawHitArea for switch + label area
+   - Fixed `Text` → `pixiText` component name
+
+6. `src/builder/workspace/canvas/ui/PixiBadge.tsx`
+   - Added drawHitArea
+   - Removed duplicate event handlers from individual elements
+
+7. `src/builder/workspace/canvas/ui/PixiCard.tsx`
+   - Added drawHitArea
+   - Removed duplicate event handlers from individual elements
+
+8. `src/builder/workspace/canvas/ui/PixiComboBox.tsx`
+   - Added totalHeight calculation including dropdown
+   - Added drawHitArea covering input + dropdown area
+
+**hitArea Pattern Template:**
+```tsx
+// 🚀 Phase 19: 전체 크기 계산 (hitArea용)
+const totalWidth = sizePreset.inputWidth;
+const totalHeight = labelHeight + inputHeight;
+
+// 🚀 Phase 19: 투명 히트 영역
+const drawHitArea = useCallback(
+  (g: PixiGraphics) => {
+    g.clear();
+    g.rect(0, 0, totalWidth, totalHeight);
+    g.fill({ color: 0xffffff, alpha: 0 });
+  },
+  [totalWidth, totalHeight]
+);
+
+return (
+  <pixiContainer x={posX} y={posY}>
+    {/* Other content rendered first */}
+
+    {/* 🚀 Phase 19: 투명 히트 영역 - 마지막에 렌더링하여 최상단 배치 */}
+    <pixiGraphics
+      draw={drawHitArea}
+      eventMode="static"
+      cursor="pointer"
+      onPointerDown={handleClick}
+    />
+  </pixiContainer>
+);
+```
+
+**Bug Fixes:**
+- Fixed TextField/Input not clickable in WebGL canvas
+- Fixed RadioGroup/CheckboxGroup whole group not selectable (only child options were)
+- Fixed Switch not selectable
+- Fixed Badge/Card/ComboBox click detection
+- Fixed React duplicate key warning in RadioGroup/CheckboxGroup
+
+**Results:**
+- ✅ All 8 form components now clickable/selectable in WebGL canvas
+- ✅ hitArea pattern documented for future component implementations
+- ✅ No TypeScript errors
+- ✅ No React key warnings
+
 ### Added - Events Panel Block-Based UI (2025-12-08)
 
 #### Phase 5: Block-Based UI Implementation

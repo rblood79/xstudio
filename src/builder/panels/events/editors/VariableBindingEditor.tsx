@@ -17,6 +17,7 @@ import {
   ListBoxItem,
 } from 'react-aria-components';
 import { Variable, AlertCircle, CheckCircle, ChevronRight } from 'lucide-react';
+import { iconEditProps, iconSmall } from '../../../../utils/ui/uiConstants';
 import {
   parseVariables,
   getPathPrefix,
@@ -311,7 +312,7 @@ export function VariableBindingEditor({
 
         <div className="variable-input-wrapper">
           <Variable
-            size={14}
+            size={iconEditProps.size}
             className={`variable-icon ${hasBindings ? 'has-bindings' : ''}`}
           />
           <Input
@@ -326,14 +327,14 @@ export function VariableBindingEditor({
           {/* 상태 아이콘 */}
           {showErrors && hasErrors && (
             <AlertCircle
-              size={14}
+              size={iconEditProps.size}
               className="variable-status-icon error"
               aria-label="Binding errors detected"
             />
           )}
           {!hasErrors && hasBindings && (
             <CheckCircle
-              size={14}
+              size={iconEditProps.size}
               className="variable-status-icon valid"
               aria-label="Valid bindings"
             />
@@ -370,7 +371,7 @@ export function VariableBindingEditor({
                   </span>
                 )}
                 {suggestion.hasChildren && (
-                  <ChevronRight size={12} className="suggestion-arrow" />
+                  <ChevronRight size={iconSmall.size} className="suggestion-arrow" />
                 )}
               </ListBoxItem>
             ))}
@@ -383,7 +384,7 @@ export function VariableBindingEditor({
         <div className="variable-errors">
           {parseResult.errors.map((error, index) => (
             <div key={index} className="variable-error">
-              <AlertCircle size={12} />
+              <AlertCircle size={iconSmall.size} />
               <span>{error.message}</span>
             </div>
           ))}

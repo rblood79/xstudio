@@ -1,11 +1,16 @@
-import { useCallback } from 'react';
+import { useCallback, useRef } from 'react';
 import { Element } from '../../types/core/store.types';
+import { reorderElements } from '../stores/utils/elementReorder';
+import { useStore } from '../stores';
 
 export interface UseValidationReturn {
     validateOrderNumbers: (elements: Element[]) => void;
 }
 
 export const useValidation = (): UseValidationReturn => {
+    // 🚀 Phase 17.1: 페이지별 자동 수정 트래킹 (중복 수정 방지)
+    const fixedPagesRef = useRef<Set<string>>(new Set());
+
     const validateOrderNumbers = useCallback((elements: Element[]) => {
         if (process.env.NODE_ENV !== 'development') return;
 
@@ -18,6 +23,9 @@ export const useValidation = (): UseValidationReturn => {
             acc[key].push(element);
             return acc;
         }, {} as Record<string, Element[]>);
+
+        // 중복 발견된 페이지 ID 수집
+        const pagesWithDuplicates = new Set<string>();
 
         Object.entries(groups).forEach(([, children]) => {
             // Tabs 하위 요소(Tab/Panel)인지 확인
@@ -43,9 +51,16 @@ export const useValidation = (): UseValidationReturn => {
 
                 // 중복 order_num 확인
                 if (currentOrder === nextOrder) {
-                    console.warn(
-                        `❌ Duplicate order_num detected: ${current.tag} (${current.id.slice(0, 8)}...) and ${next.tag} (${next.id.slice(0, 8)}...) both have order_num=${currentOrder}`
-                    );
+                    const pageId = current.page_id || current.layout_id;
+                    if (pageId) {
+                        pagesWithDuplicates.add(pageId);
+                    }
+                    // 경고는 자동 수정되지 않은 경우에만 출력
+                    if (!pageId || !fixedPagesRef.current.has(pageId)) {
+                        console.warn(
+                            `⚠️ Duplicate order_num detected: ${current.tag} (${current.id.slice(0, 8)}...) and ${next.tag} (${next.id.slice(0, 8)}...) both have order_num=${currentOrder} → Auto-fixing...`
+                        );
+                    }
                 }
 
                 // 순서 역전 확인 (정렬 후에는 발생하지 않지만, 데이터 무결성 확인)
@@ -56,6 +71,26 @@ export const useValidation = (): UseValidationReturn => {
                 }
             }
         });
+
+        // 🚀 Phase 17.1: 중복 발견 시 자동 수정
+        if (pagesWithDuplicates.size > 0) {
+            const { updateElementOrder } = useStore.getState();
+
+            pagesWithDuplicates.forEach((pageId) => {
+                // 이미 수정한 페이지는 스킵
+                if (fixedPagesRef.current.has(pageId)) return;
+
+                // 수정 완료 표시 (재진입 방지)
+                fixedPagesRef.current.add(pageId);
+
+                // 비동기로 재정렬 실행 (상태 업데이트 완료 후)
+                setTimeout(async () => {
+                    console.log(`🔧 Auto-fixing order_num for page: ${pageId}`);
+                    await reorderElements(elements, pageId, updateElementOrder);
+                    console.log(`✅ order_num auto-fix completed for page: ${pageId}`);
+                }, 0);
+            });
+        }
     }, []);
 
     return {

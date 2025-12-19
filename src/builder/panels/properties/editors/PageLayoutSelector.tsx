@@ -13,6 +13,7 @@ import { PropertySelect, PropertySection } from "../../common";
 import { useLayoutsStore } from "../../../stores/layouts";
 import { useStore } from "../../../stores";
 import { getDB } from "../../../../lib/db";
+import { iconEditProps } from "../../../../utils/ui/uiConstants";
 
 interface PageLayoutSelectorProps {
   pageId: string;
@@ -121,7 +122,7 @@ export const PageLayoutSelector = memo(function PageLayoutSelector({
             onClick={() => handleLayoutChange("")}
             title="Remove layout from this page"
           >
-            <X size={14} />
+            <X size={iconEditProps.size} />
             <span>Remove Layout</span>
           </button>
         </div>

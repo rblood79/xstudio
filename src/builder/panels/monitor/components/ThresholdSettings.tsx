@@ -10,6 +10,7 @@
 import { useState, useEffect } from "react";
 import { Settings, X, RotateCcw } from "lucide-react";
 import { Button } from "react-aria-components";
+import { iconSmall, iconEditProps } from "../../../../utils/ui/uiConstants";
 
 export interface ThresholdConfig {
   warning: number; // default: 60
@@ -79,7 +80,7 @@ export function ThresholdSettings({
         aria-label="Threshold settings"
         onPress={() => setIsOpen(!isOpen)}
       >
-        <Settings size={14} />
+        <Settings size={iconEditProps.size} />
       </Button>
 
       {isOpen && (
@@ -87,7 +88,7 @@ export function ThresholdSettings({
           <div className="popup-header">
             <h4>Threshold Settings</h4>
             <Button className="popup-close" onPress={() => setIsOpen(false)}>
-              <X size={14} />
+              <X size={iconEditProps.size} />
             </Button>
           </div>
 
@@ -171,7 +172,7 @@ export function ThresholdSettings({
 
           <div className="popup-footer">
             <Button className="btn-secondary" onPress={handleReset}>
-              <RotateCcw size={12} />
+              <RotateCcw size={iconSmall.size} />
               Reset
             </Button>
             <Button className="btn-primary" onPress={handleSave}>

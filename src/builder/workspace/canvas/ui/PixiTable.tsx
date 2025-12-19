@@ -7,7 +7,7 @@
  * @package xstudio
  */
 
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useRef } from 'react';
 import { useExtend } from '@pixi/react';
 import { PIXI_COMPONENTS } from '../pixiSetup';
 import { Graphics as PixiGraphics, TextStyle } from 'pixi.js';
@@ -49,8 +49,8 @@ export function PixiTable({
   const sizePreset = useMemo(() => getTableSizePreset(size), [size]);
   const colorPreset = useMemo(() => getTableColorPreset(variant), [variant]);
 
-  // Hover state
-  const [hoveredRowId, setHoveredRowId] = useState<string | null>(null);
+  // 🚀 Performance: useRef로 hover 상태 관리 (리렌더링 없음)
+  const rowGraphicsRefs = useRef<Map<string, PixiGraphics>>(new Map());
 
   // Get children from store
   const allElements = useStore((state) => state.elements);
@@ -301,7 +301,6 @@ export function PixiTable({
       {/* Rows */}
       {rows.map((row, rowIndex) => {
         const rowY = headerHeight + rowIndex * sizePreset.rowMinHeight;
-        const isHovered = hoveredRowId === row.id;
 
         return (
           <pixiContainer
@@ -309,8 +308,16 @@ export function PixiTable({
             y={rowY}
             eventMode="static"
             cursor="pointer"
-            pointerover={() => setHoveredRowId(row.id)}
-            pointerout={() => setHoveredRowId(null)}
+            pointerover={() => {
+              // 🚀 Performance: 직접 그래픽스 업데이트 (리렌더링 없음)
+              const g = rowGraphicsRefs.current.get(row.id);
+              if (g) drawRowBg(g, totalWidth, sizePreset.rowMinHeight, true, row.isSelected || false);
+            }}
+            pointerout={() => {
+              // 🚀 Performance: 직접 그래픽스 업데이트 (리렌더링 없음)
+              const g = rowGraphicsRefs.current.get(row.id);
+              if (g) drawRowBg(g, totalWidth, sizePreset.rowMinHeight, false, row.isSelected || false);
+            }}
             pointerdown={(e) => {
               e.stopPropagation();
               handleRowClick(row.id);
@@ -318,8 +325,11 @@ export function PixiTable({
           >
             {/* Row background */}
             <pixiGraphics
+              ref={(g) => {
+                if (g) rowGraphicsRefs.current.set(row.id, g);
+              }}
               draw={(g) =>
-                drawRowBg(g, totalWidth, sizePreset.rowMinHeight, isHovered, row.isSelected || false)
+                drawRowBg(g, totalWidth, sizePreset.rowMinHeight, false, row.isSelected || false)
               }
             />
 

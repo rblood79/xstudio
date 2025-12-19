@@ -7,7 +7,7 @@
  * @package xstudio
  */
 
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useRef } from 'react';
 import { useExtend } from '@pixi/react';
 import { PIXI_COMPONENTS } from '../pixiSetup';
 import { Graphics as PixiGraphics, TextStyle } from 'pixi.js';
@@ -56,8 +56,9 @@ export function PixiGridList({
       }));
   }, [allElements, element.id]);
 
-  // Hover state for items
-  const [hoveredItemId, setHoveredItemId] = useState<string | null>(null);
+  // 🚀 Performance: useRef로 hover 상태 관리 (리렌더링 없음)
+  // useState → useRef 변경으로 pointerover 시 전체 리렌더링 방지
+  const itemGraphicsRefs = useRef<Map<string, PixiGraphics>>(new Map());
 
   // Calculate dimensions
   const listWidth = 200;
@@ -165,7 +166,6 @@ export function PixiGridList({
         const itemY =
           sizePreset.listPadding +
           index * (sizePreset.itemMinHeight + sizePreset.listGap);
-        const isHovered = hoveredItemId === item.id;
         const isItemSelected = item.isSelected;
 
         return (
@@ -175,16 +175,27 @@ export function PixiGridList({
             y={itemY}
             eventMode="static"
             cursor="pointer"
-            pointerover={() => setHoveredItemId(item.id)}
-            pointerout={() => setHoveredItemId(null)}
+            pointerover={() => {
+              // 🚀 Performance: 직접 그래픽스 업데이트 (리렌더링 없음)
+              const g = itemGraphicsRefs.current.get(item.id);
+              if (g) drawItemBg(g, itemWidth, sizePreset.itemMinHeight, true, isItemSelected);
+            }}
+            pointerout={() => {
+              // 🚀 Performance: 직접 그래픽스 업데이트 (리렌더링 없음)
+              const g = itemGraphicsRefs.current.get(item.id);
+              if (g) drawItemBg(g, itemWidth, sizePreset.itemMinHeight, false, isItemSelected);
+            }}
             pointerdown={(e) => {
               e.stopPropagation();
               handleItemClick(item.id);
             }}
           >
             <pixiGraphics
+              ref={(g) => {
+                if (g) itemGraphicsRefs.current.set(item.id, g);
+              }}
               draw={(g) =>
-                drawItemBg(g, itemWidth, sizePreset.itemMinHeight, isHovered, isItemSelected)
+                drawItemBg(g, itemWidth, sizePreset.itemMinHeight, false, isItemSelected)
               }
             />
             <Text

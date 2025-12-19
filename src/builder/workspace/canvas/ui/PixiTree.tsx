@@ -7,7 +7,7 @@
  * @package xstudio
  */
 
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { useExtend } from '@pixi/react';
 import { PIXI_COMPONENTS } from '../pixiSetup';
 import { Graphics as PixiGraphics, TextStyle } from 'pixi.js';
@@ -50,8 +50,8 @@ export function PixiTree({
   // Expanded state (local)
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
 
-  // Hover state
-  const [hoveredItemId, setHoveredItemId] = useState<string | null>(null);
+  // 🚀 Performance: useRef로 hover 상태 관리 (리렌더링 없음)
+  const itemGraphicsRefs = useRef<Map<string, PixiGraphics>>(new Map());
 
   // Get all TreeItem elements
   const allElements = useStore((state) => state.elements);
@@ -247,7 +247,6 @@ export function PixiTree({
           sizePreset.treePadding +
           index * (sizePreset.itemMinHeight + sizePreset.treeGap);
         const indent = item.depth * sizePreset.indentSize;
-        const isHovered = hoveredItemId === item.id;
 
         return (
           <pixiContainer
@@ -256,8 +255,16 @@ export function PixiTree({
             y={itemY}
             eventMode="static"
             cursor="pointer"
-            pointerover={() => setHoveredItemId(item.id)}
-            pointerout={() => setHoveredItemId(null)}
+            pointerover={() => {
+              // 🚀 Performance: 직접 그래픽스 업데이트 (리렌더링 없음)
+              const g = itemGraphicsRefs.current.get(item.id);
+              if (g) drawItemBg(g, itemWidth, sizePreset.itemMinHeight, true, item.isSelected || false);
+            }}
+            pointerout={() => {
+              // 🚀 Performance: 직접 그래픽스 업데이트 (리렌더링 없음)
+              const g = itemGraphicsRefs.current.get(item.id);
+              if (g) drawItemBg(g, itemWidth, sizePreset.itemMinHeight, false, item.isSelected || false);
+            }}
             pointerdown={(e) => {
               e.stopPropagation();
               handleItemClick(item.id);
@@ -265,8 +272,11 @@ export function PixiTree({
           >
             {/* Item background */}
             <pixiGraphics
+              ref={(g) => {
+                if (g) itemGraphicsRefs.current.set(item.id, g);
+              }}
               draw={(g) =>
-                drawItemBg(g, itemWidth, sizePreset.itemMinHeight, isHovered, item.isSelected || false)
+                drawItemBg(g, itemWidth, sizePreset.itemMinHeight, false, item.isSelected || false)
               }
             />
 

@@ -63,7 +63,7 @@ export const PropertySelect = memo(function PropertySelect({
                         )}
                         <SelectValue />
                         <span aria-hidden="true" className="select-chevron">
-                            <ChevronDown size={16} />
+                            <ChevronDown size={iconProps.size} />
                         </span>
                     </Button>
                     <Popover className="react-aria-Popover">

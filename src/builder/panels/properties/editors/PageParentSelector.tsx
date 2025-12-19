@@ -23,6 +23,7 @@ import {
   generateSlugFromTitle,
 } from "../../../../utils/slugValidator";
 import { useLayoutsStore } from "../../../stores/layouts";
+import { iconSmall } from "../../../../utils/ui/uiConstants";
 
 interface PageParentSelectorProps {
   pageId: string;
@@ -266,7 +267,7 @@ export const PageParentSelector = memo(function PageParentSelector({
         />
         {slugError && (
           <div className="page-slug-error">
-            <AlertCircle size={12} />
+            <AlertCircle size={iconSmall.size} />
             <span>{slugError}</span>
           </div>
         )}

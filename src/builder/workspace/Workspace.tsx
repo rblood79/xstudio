@@ -29,6 +29,7 @@ import { BuilderCanvas } from "./canvas/BuilderCanvas";
 import { useCanvasSyncStore } from "./canvas/canvasSync";
 import { isWebGLCanvas, isCanvasCompareMode } from "../../utils/featureFlags";
 import { Minus, Plus, Scan, ChevronDown } from "lucide-react";
+import { iconProps, iconSmall } from "../../utils/ui/uiConstants";
 import "./Workspace.css";
 // ============================================
 // Types
@@ -321,7 +322,7 @@ export function Workspace({
             onClick={() => zoomTo(zoom - ZOOM_STEP)}
             disabled={zoom <= MIN_ZOOM}
           >
-            <Minus size={16} />
+            <Minus size={iconProps.size} />
           </button>
           <ComboBox
             className="zoom-combobox"
@@ -338,7 +339,7 @@ export function Workspace({
                 onBlur={handleZoomInputBlur}
               />
               <Button className="zoom-combobox-button">
-                <ChevronDown size={12} />
+                <ChevronDown size={iconSmall.size} />
               </Button>
             </div>
             <Popover className="zoom-combobox-popover">
@@ -360,10 +361,10 @@ export function Workspace({
             onClick={() => zoomTo(zoom + ZOOM_STEP)}
             disabled={zoom >= MAX_ZOOM}
           >
-            <Plus size={16} />
+            <Plus size={iconProps.size} />
           </button>
           <button className="zoom-control-button" onClick={zoomToFit}>
-            <Scan size={16} />
+            <Scan size={iconProps.size} />
           </button>
         </div>
 
@@ -382,14 +383,14 @@ export function Workspace({
   // Feature Flag OFF: 기존 iframe 캔버스 사용
   if (!useWebGL && fallbackCanvas) {
     return (
-      <div ref={containerRef} className="workspace">
+      <main ref={containerRef} className="workspace">
         {fallbackCanvas}
-      </div>
+      </main>
     );
   }
 
   return (
-    <div ref={containerRef} className="workspace">
+    <main ref={containerRef} className="workspace">
       {/* WebGL Canvas (DOM depth 최소화: .workspace → .builder-canvas-container → canvas) */}
       <BuilderCanvas
         pageWidth={canvasSize.width}
@@ -408,7 +409,7 @@ export function Workspace({
           onClick={() => zoomTo(zoom - ZOOM_STEP)}
           disabled={zoom <= MIN_ZOOM}
         >
-          <Minus size={16} />
+          <Minus size={iconProps.size} />
         </button>
         <ComboBox
           className="zoom-combobox"
@@ -425,7 +426,7 @@ export function Workspace({
               onBlur={handleZoomInputBlur}
             />
             <Button className="zoom-combobox-button">
-              <ChevronDown size={12} />
+              <ChevronDown size={iconSmall.size} />
             </Button>
           </div>
           <Popover className="zoom-combobox-popover">
@@ -447,10 +448,10 @@ export function Workspace({
           onClick={() => zoomTo(zoom + ZOOM_STEP)}
           disabled={zoom >= MAX_ZOOM}
         >
-          <Plus size={16} />
+          <Plus size={iconProps.size} />
         </button>
         <button className="zoom-control-button" onClick={zoomToFit}>
-          <Scan size={16} />
+          <Scan size={iconProps.size} />
         </button>
       </div>
 
@@ -462,7 +463,7 @@ export function Workspace({
             : "🔄 캔버스 초기화 중..."}
         </div>
       )}
-    </div>
+    </main>
   );
 }
 

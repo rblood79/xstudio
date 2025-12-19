@@ -9,7 +9,7 @@ import { Button, TextField, Input } from 'react-aria-components';
 import { Trash, GripVertical } from 'lucide-react';
 import type { Condition, ConditionOperand, ConditionOperator } from '../../../events/types/eventBlockTypes';
 import { isUnaryOperator } from '../../../events/types/eventBlockTypes';
-import { iconProps } from '../../../../utils/ui/uiConstants';
+import { iconProps, iconEditProps } from '../../../../utils/ui/uiConstants';
 import { OperatorPicker } from './OperatorPicker';
 
 interface ConditionRowProps {
@@ -88,7 +88,7 @@ export function ConditionRow({
     <div className="condition-row" role="group" aria-label="Condition">
       {/* Drag Handle */}
       <div className="condition-drag-handle" {...dragHandleProps}>
-        <GripVertical size={14} color={iconProps.color} strokeWidth={iconProps.stroke} />
+        <GripVertical size={iconEditProps.size} color={iconProps.color} strokeWidth={iconProps.stroke} />
       </div>
 
       {/* Left Operand */}
@@ -129,7 +129,7 @@ export function ConditionRow({
         onPress={onRemove}
         aria-label="Remove condition"
       >
-        <Trash size={14} color={iconProps.color} strokeWidth={iconProps.stroke} />
+        <Trash size={iconEditProps.size} color={iconProps.color} strokeWidth={iconProps.stroke} />
       </Button>
     </div>
   );

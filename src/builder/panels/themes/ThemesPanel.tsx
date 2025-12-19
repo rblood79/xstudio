@@ -8,6 +8,7 @@
 import { useParams } from 'react-router-dom';
 import { useMemo } from 'react';
 import { Palette, SwatchBook } from 'lucide-react';
+import { iconProps } from '../../../utils/ui/uiConstants';
 import type { PanelProps } from '../core/types';
 import { useUnifiedThemeStore } from '../../../stores/themeStore';
 import {
@@ -80,14 +81,14 @@ function ThemesContent() {
     return (
       <div className="themes-panel">
         <PanelHeader
-          icon={<SwatchBook size={16} />}
+          icon={<SwatchBook size={iconProps.size} />}
           title="Themes"
           actions={
             <Button
               onPress={handleOpenThemeStudio}
               className="iconButton"
             >
-              <Palette size={16} />
+              <Palette size={iconProps.size} />
             </Button>
           }
         />
@@ -102,14 +103,14 @@ function ThemesContent() {
   return (
     <div className="themes-panel">
       <PanelHeader
-        icon={<SwatchBook size={16} />}
+        icon={<SwatchBook size={iconProps.size} />}
         title="Themes"
         actions={
           <Button
             onPress={handleOpenThemeStudio}
             className="iconButton"
           >
-            <Palette size={16} />
+            <Palette size={iconProps.size} />
           </Button>
         }
       />
@@ -150,7 +151,7 @@ function ThemesContent() {
           <Button
             onPress={handleOpenThemeStudio}
           >
-            <Palette size={16} />
+            <Palette size={iconProps.size} />
           </Button>
         </PropertySection>
       ) : (
@@ -176,7 +177,7 @@ function ThemesContent() {
               onPress={handleOpenThemeStudio}
               className="iconButton"
             >
-              <Palette size={16} />
+              <Palette size={iconProps.size} />
               Manage All Tokens in Theme Studio
             </Button>
           </PropertySection>

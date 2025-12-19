@@ -41,7 +41,7 @@ export const TagEditor = memo(function TagEditor({ elementId, currentProps, onUp
             <>
                 <div className="properties-aria">
                     <legend className="fieldset-legend">
-                        <Database size={16} /> Field Management
+                        <Database size={iconProps.size} /> Field Management
                     </legend>
 
                     <div className="tab-overview">
@@ -224,7 +224,7 @@ export const TagEditor = memo(function TagEditor({ elementId, currentProps, onUp
             {/* Add Field Option */}
             <div className="properties-aria">
                 <legend className="fieldset-legend">
-                    <Database size={16} /> Convert to Dynamic Item
+                    <Database size={iconProps.size} /> Convert to Dynamic Item
                 </legend>
 
                 <div className="tab-overview">

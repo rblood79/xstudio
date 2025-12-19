@@ -36,7 +36,7 @@ export default defineConfig({
       compress: {
         drop_console: false, // 개발 중에는 콘솔 유지
       },
-    },
+    } as Record<string, unknown>,
     // 소스맵 (개발용)
     sourcemap: false,
   },
@@ -47,6 +47,8 @@ export default defineConfig({
   },
   define: {
     // 환경 변수 정의
-    "process.env.NODE_ENV": JSON.stringify(process.env.NODE_ENV || "production"),
+    "process.env.NODE_ENV": JSON.stringify(
+      process.env.NODE_ENV || "production"
+    ),
   },
 });

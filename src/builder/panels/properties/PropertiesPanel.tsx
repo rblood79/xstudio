@@ -1126,7 +1126,7 @@ function PropertiesPanelContent() {
   return (
     <div className="panel">
       <PanelHeader
-        icon={<Settings2 size={16} />}
+        icon={<Settings2 size={iconProps.size} />}
         title={selectedElement.type}
         actions={
           <>

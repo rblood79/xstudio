@@ -25,7 +25,7 @@ export interface PanelHeaderProps {
  * ```tsx
  * <PanelHeader
  *   title="Properties"
- *   actions={<button className="iconButton"><Square size={16} /></button>}
+ *   actions={<button className="iconButton"><Square size={iconProps.size} /></button>}
  * />
  * ```
  *
@@ -33,7 +33,7 @@ export interface PanelHeaderProps {
  * ```tsx
  * // 아이콘이 있는 패널 헤더
  * <PanelHeader
- *   icon={<Database size={16} />}
+ *   icon={<Database size={iconProps.size} />}
  *   title="DataTable"
  * />
  * ```

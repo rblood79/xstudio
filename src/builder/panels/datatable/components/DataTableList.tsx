@@ -11,6 +11,7 @@ import { Table2, Plus, Trash2, Edit2, Link } from "lucide-react";
 import { Button } from "react-aria-components";
 import { useDataStore } from "../../../stores/data";
 import { SectionHeader } from "../../common/SectionHeader";
+import { iconProps, iconEditProps, iconSmall } from "../../../../utils/ui/uiConstants";
 
 interface DataTableListProps {
   projectId: string;
@@ -100,7 +101,7 @@ export function DataTableList({
                 onClick={() => onEditingChange(table.id)}
               >
                 <div className="list-item-icon">
-                  <Table2 size={16} />
+                  <Table2 {...iconProps} />
                 </div>
                 <div className="list-item-content">
                   <div className="list-item-name">{table.name}</div>
@@ -126,7 +127,7 @@ export function DataTableList({
                     onClick={(e) => handleEdit(table.id, e)}
                     title="편집"
                   >
-                    <Edit2 size={14} />
+                    <Edit2 {...iconEditProps} />
                   </button>
                   <button
                     type="button"
@@ -134,7 +135,7 @@ export function DataTableList({
                     onClick={(e) => handleDelete(table.id, e)}
                     title="삭제"
                   >
-                    <Trash2 size={14} />
+                    <Trash2 {...iconEditProps} />
                   </button>
                 </div>
               </div>
@@ -144,7 +145,7 @@ export function DataTableList({
         )}
 
         <Button className="datatable-add-btn" onPress={onCreateClick}>
-          <Plus size={16} />
+          <Plus {...iconProps} />
           <span>Table 추가</span>
         </Button>
       </div>

@@ -11,7 +11,7 @@ import { useState, useMemo, useCallback } from 'react';
 import { Button } from 'react-aria-components';
 import { Copy, Check, Code, ChevronDown, ChevronRight } from 'lucide-react';
 import type { BlockEventHandler } from '../../../events/types/eventBlockTypes';
-import { iconProps } from '../../../../utils/ui/uiConstants';
+import { iconProps, iconEditProps } from '../../../../utils/ui/uiConstants';
 import { useCopyPaste } from '../../../hooks/useCopyPaste';
 
 interface CodePreviewPanelProps {
@@ -288,11 +288,11 @@ const getElement = (id) => document.querySelector(id.startsWith('#') ? id : \`[d
           aria-expanded={!isCollapsed}
         >
           {isCollapsed ? (
-            <ChevronRight size={14} color={iconProps.color} />
+            <ChevronRight size={iconEditProps.size} color={iconProps.color} />
           ) : (
-            <ChevronDown size={14} color={iconProps.color} />
+            <ChevronDown size={iconEditProps.size} color={iconProps.color} />
           )}
-          <Code size={14} color={iconProps.color} />
+          <Code size={iconEditProps.size} color={iconProps.color} />
           <span>Code Preview</span>
         </Button>
 
@@ -303,9 +303,9 @@ const getElement = (id) => document.querySelector(id.startsWith('#') ? id : \`[d
             aria-label={copied ? 'Copied!' : 'Copy code'}
           >
             {copied ? (
-              <Check size={14} color="var(--color-green-500)" />
+              <Check size={iconEditProps.size} color="var(--color-green-500)" />
             ) : (
-              <Copy size={14} color={iconProps.color} />
+              <Copy size={iconEditProps.size} color={iconProps.color} />
             )}
           </Button>
         )}

@@ -14,6 +14,7 @@
 
 import { Component, ReactNode } from 'react';
 import { AlertTriangle, RefreshCw, X } from 'lucide-react';
+import { iconProps, iconEditProps, iconLarge } from '../../utils/ui/uiConstants';
 
 // ============================================
 // Types
@@ -228,7 +229,7 @@ function FailSoftUI({
   if (compact) {
     return (
       <div className="scoped-error-boundary-compact">
-        <AlertTriangle size={16} />
+        <AlertTriangle size={iconProps.size} />
         <span>{name} error</span>
         {canRetry && (
           <button
@@ -236,7 +237,7 @@ function FailSoftUI({
             disabled={isRecovering}
             className="scoped-error-retry-btn-compact"
           >
-            <RefreshCw size={14} className={isRecovering ? 'spinning' : ''} />
+            <RefreshCw size={iconEditProps.size} className={isRecovering ? 'spinning' : ''} />
           </button>
         )}
       </div>
@@ -247,11 +248,11 @@ function FailSoftUI({
   return (
     <div className="scoped-error-boundary">
       <div className="scoped-error-boundary-header">
-        <AlertTriangle size={24} className="scoped-error-icon" />
+        <AlertTriangle size={iconLarge.size} className="scoped-error-icon" />
         <h3 className="scoped-error-title">{name} Error</h3>
         {onDismiss && (
           <button onClick={onDismiss} className="scoped-error-dismiss-btn">
-            <X size={16} />
+            <X size={iconProps.size} />
           </button>
         )}
       </div>
@@ -261,7 +262,7 @@ function FailSoftUI({
 
         {isRecovering && (
           <p className="scoped-error-recovering">
-            <RefreshCw size={14} className="spinning" />
+            <RefreshCw size={iconEditProps.size} className="spinning" />
             Recovering...
           </p>
         )}
@@ -280,7 +281,7 @@ function FailSoftUI({
             disabled={isRecovering}
             className="scoped-error-retry-btn"
           >
-            <RefreshCw size={16} className={isRecovering ? 'spinning' : ''} />
+            <RefreshCw size={iconProps.size} className={isRecovering ? 'spinning' : ''} />
             Retry
           </button>
         ) : (

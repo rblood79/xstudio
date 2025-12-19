@@ -8,7 +8,7 @@
 import { useState, useEffect } from "react";
 import { Button } from "../../../shared/components";
 import { History, Clock, Trash2, RotateCcw } from "lucide-react";
-import { iconProps } from "../../../utils/ui/uiConstants";
+import { iconProps, iconEditProps, iconSmall, iconLarge } from "../../../utils/ui/uiConstants";
 import {
   selectionMemory,
   formatTimestamp,
@@ -85,7 +85,7 @@ export function SelectionMemory({
     return (
       <div className={`selection-memory empty ${className}`.trim()}>
         <div className="empty-state">
-          <History size={24} color="var(--color-text-tertiary)" />
+          <History size={iconLarge.size} color="var(--color-text-tertiary)" />
           <p className="empty-text">No selection history</p>
           <p className="empty-hint">
             Previous selections will appear here for quick access
@@ -113,7 +113,7 @@ export function SelectionMemory({
             aria-label="Clear all history"
             className="clear-all-btn"
           >
-            <Trash2 size={14} />
+            <Trash2 size={iconEditProps.size} />
           </Button>
         )}
       </div>
@@ -135,7 +135,7 @@ export function SelectionMemory({
               <div className="history-info">
                 <span className="history-label">{entry.label}</span>
                 <span className="history-time">
-                  <Clock size={12} />
+                  <Clock size={iconSmall.size} />
                   {formatTimestamp(entry.timestamp)}
                 </span>
               </div>
@@ -147,7 +147,7 @@ export function SelectionMemory({
               aria-label="Delete history entry"
               className="delete-btn"
             >
-              <Trash2 size={14} />
+              <Trash2 size={iconEditProps.size} />
             </Button>
           </div>
         ))}

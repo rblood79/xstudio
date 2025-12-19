@@ -20,7 +20,7 @@ import type { CSSStyle } from '../sprites/styleConverter';
 import { cssColorToHex, parseCSSSize } from '../sprites/styleConverter';
 import { drawCircle } from '../utils';
 import { useStore } from '../../../stores';
-import { getRadioSizePreset } from '../utils/cssVariableReader';
+import { getRadioSizePreset, getLabelStylePreset } from '../utils/cssVariableReader';
 
 // ============================================
 // Types
@@ -283,32 +283,62 @@ export const PixiRadio = memo(function PixiRadio({
   // 🚀 Phase 0: CSS 동기화 - size prop에서 사이즈 프리셋 적용
   const size = useMemo(() => String(props?.size || 'md'), [props?.size]);
   const sizePreset = useMemo(() => getRadioSizePreset(size), [size]);
+  // 🚀 Phase 19: .react-aria-Label 클래스에서 스타일 읽기
+  const labelPreset = useMemo(() => getLabelStylePreset(size), [size]);
 
   // 스타일 (CSS 사이즈 프리셋 적용)
   const radioSize = sizePreset.radioSize;
   const gap = sizePreset.gap;
   const primaryColor = cssColorToHex(style?.backgroundColor, DEFAULT_PRIMARY_COLOR);
   const textColor = cssColorToHex(style?.color, DEFAULT_TEXT_COLOR);
-  const fontSize = parseCSSSize(style?.fontSize, undefined, sizePreset.fontSize);
-  const fontFamily = style?.fontFamily || 'Pretendard, sans-serif';
+  const fontSize = parseCSSSize(style?.fontSize, undefined, labelPreset.fontSize);
+  const fontFamily = labelPreset.fontFamily;
 
   // 위치
   const posX = parseCSSSize(style?.left, undefined, 0);
   const posY = parseCSSSize(style?.top, undefined, 0);
 
   // 라벨이 있으면 옵션들의 Y 오프셋 추가
-  const labelHeight = groupLabel ? fontSize + 8 : 0;
+  const labelHeight = groupLabel ? labelPreset.fontSize + 8 : 0;
 
-  // 라벨 텍스트 스타일
+  // 🚀 Phase 19: 전체 그룹 크기 계산 (hitArea용)
+  const groupDimensions = useMemo(() => {
+    const optionCount = options.length;
+    const optionWidth = 120; // 각 옵션의 대략적인 너비
+    const optionHeight = radioSize + gap;
+
+    if (isHorizontal) {
+      return {
+        width: optionCount * optionWidth,
+        height: labelHeight + radioSize,
+      };
+    }
+    return {
+      width: optionWidth,
+      height: labelHeight + optionCount * optionHeight,
+    };
+  }, [options.length, radioSize, gap, labelHeight, isHorizontal]);
+
+  // 🚀 Phase 19: 투명 히트 영역
+  const drawHitArea = useCallback(
+    (g: PixiGraphics) => {
+      g.clear();
+      g.rect(0, 0, groupDimensions.width, groupDimensions.height);
+      g.fill({ color: 0xffffff, alpha: 0 });
+    },
+    [groupDimensions]
+  );
+
+  // 라벨 텍스트 스타일 - 🚀 Phase 19: .react-aria-Label 클래스에서 스타일 읽기
   const labelTextStyle = useMemo(
     () =>
       new TextStyle({
-        fontFamily,
-        fontSize,
-        fontWeight: 'bold',
-        fill: textColor,
+        fontFamily: labelPreset.fontFamily,
+        fontSize: labelPreset.fontSize,
+        fontWeight: labelPreset.fontWeight,
+        fill: labelPreset.color,
       }),
-    [fontFamily, fontSize, textColor]
+    [labelPreset]
   );
 
   // 클릭 핸들러
@@ -325,12 +355,7 @@ export const PixiRadio = memo(function PixiRadio({
   );
 
   return (
-    <pixiContainer
-      x={posX}
-      y={posY}
-      eventMode="static"
-      onPointerDown={handleClick}
-    >
+    <pixiContainer x={posX} y={posY}>
       {/* RadioGroup 라벨 */}
       {groupLabel && (
         <pixiText
@@ -353,7 +378,7 @@ export const PixiRadio = memo(function PixiRadio({
 
         return (
           <RadioItem
-            key={option.value}
+            key={`${option.value}-${index}`}
             option={option}
             isOptionSelected={isOptionSelected}
             x={itemX}
@@ -367,6 +392,14 @@ export const PixiRadio = memo(function PixiRadio({
           />
         );
       })}
+
+      {/* 🚀 Phase 19: 투명 히트 영역 (그룹 전체 선택용) - 마지막에 렌더링하여 최상단 배치 */}
+      <pixiGraphics
+        draw={drawHitArea}
+        eventMode="static"
+        cursor="pointer"
+        onPointerDown={handleClick}
+      />
     </pixiContainer>
   );
 });

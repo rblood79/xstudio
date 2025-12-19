@@ -9,7 +9,7 @@ import { Button } from 'react-aria-components';
 import { Zap, Settings } from 'lucide-react';
 import type { EventTrigger } from '../../../events/types/eventBlockTypes';
 import type { EventType } from '@/types/events/events.types';
-import { iconProps } from '../../../../utils/ui/uiConstants';
+import { iconProps, iconEditProps } from '../../../../utils/ui/uiConstants';
 import { BlockConnector } from './BlockConnector';
 import { EventTypePicker } from '../../../events/pickers/EventTypePicker';
 
@@ -91,7 +91,7 @@ export function WhenBlock({
               aria-label="Trigger options"
             >
               <Settings
-                size={14}
+                size={iconEditProps.size}
                 color={iconProps.color}
                 strokeWidth={iconProps.stroke}
               />

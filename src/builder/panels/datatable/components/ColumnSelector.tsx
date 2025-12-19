@@ -13,6 +13,7 @@ import { Check, Square, CheckSquare, Download, Table2 } from "lucide-react";
 import { Button } from "react-aria-components";
 import type { DetectedColumn } from "../utils/columnDetector";
 import "./ColumnSelector.css";
+import { iconProps, iconEditProps } from "../../../../utils/ui/uiConstants";
 
 interface ColumnSelectorProps {
   columns: DetectedColumn[];
@@ -106,7 +107,7 @@ export function ColumnSelector({
     <div className="column-selector">
       <div className="column-selector-header">
         <h4 className="column-selector-title">
-          <Table2 size={16} />
+          <Table2 {...iconProps} />
           Detected Columns
         </h4>
         <span className="column-selector-count">
@@ -120,7 +121,7 @@ export function ColumnSelector({
           className="toggle-all-btn"
           onPress={handleToggleAll}
         >
-          {allSelected ? <CheckSquare size={16} /> : <Square size={16} />}
+          {allSelected ? <CheckSquare {...iconProps} /> : <Square {...iconProps} />}
           {allSelected ? "Deselect All" : "Select All"}
         </Button>
       </div>
@@ -135,7 +136,7 @@ export function ColumnSelector({
           >
             <div className="column-checkbox">
               {column.selected ? (
-                <Check size={14} className="check-icon" />
+                <Check {...iconEditProps} className="check-icon" />
               ) : (
                 <div className="empty-checkbox" />
               )}
@@ -174,7 +175,7 @@ export function ColumnSelector({
           onPress={handleImport}
           isDisabled={noneSelected || !tableName.trim() || isImporting}
         >
-          <Download size={14} />
+          <Download {...iconEditProps} />
           {isImporting ? "Importing..." : `Import ${selectedCount} Columns`}
         </Button>
       </div>

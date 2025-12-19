@@ -8,6 +8,7 @@
 
 import { Gauge, MousePointer, Layout, Clock } from "lucide-react";
 import type { WebVitals } from "../hooks/useWebVitals";
+import { iconEditProps } from "../../../../utils/ui/uiConstants";
 
 interface WebVitalsCardProps {
   vitals: WebVitals;
@@ -101,7 +102,7 @@ export function WebVitalsCard({ vitals, onRefresh }: WebVitalsCardProps) {
             data-status={getStatus(key, value)}
             title={description}
           >
-            <Icon size={14} aria-hidden="true" />
+            <Icon size={iconEditProps.size} aria-hidden="true" />
             <span className="web-vital-label">{label}</span>
             <span className="web-vital-value">
               {formatValue(key, value)}

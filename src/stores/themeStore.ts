@@ -15,7 +15,7 @@
 
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
-import { produce } from 'immer';
+// import { produce } from 'immer'; // REMOVED - Phase 15 일관성 리팩토링
 import { v4 as uuidv4 } from 'uuid';
 import { ThemeService } from '../services/theme/ThemeService';
 import { TokenService } from '../services/theme/TokenService';
@@ -335,17 +335,16 @@ export const useUnifiedThemeStore = create<UnifiedThemeState>()(
         try {
           const newVersion = await ThemeService.createSnapshot(activeTheme.id);
 
-          set(
-            produce((state: UnifiedThemeState) => {
-              if (state.activeTheme) {
-                state.activeTheme = {
+          // Phase 15 리팩토링: Immer 제거, spread 패턴 사용
+          set((state) => ({
+            activeTheme: state.activeTheme
+              ? {
                   ...state.activeTheme,
                   version: newVersion,
                   updated_at: new Date().toISOString(),
-                };
-              }
-            })
-          );
+                }
+              : null,
+          }));
         } catch (err) {
           const message = err instanceof Error ? err.message : '버전 스냅샷 생성 실패';
           set({ error: message });
@@ -420,25 +419,34 @@ export const useUnifiedThemeStore = create<UnifiedThemeState>()(
 
       /**
        * Update token value (local only, mark as dirty)
+       * Phase 15 리팩토링: Immer 제거, spread 패턴 사용
        */
       updateTokenValue: (name, scope, value) => {
-        set(
-          produce((state: UnifiedThemeState) => {
-            const token = state.tokens.find(
-              (t) => t.name === name && t.scope === scope
-            );
+        set((state) => {
+          const tokenIndex = state.tokens.findIndex(
+            (t) => t.name === name && t.scope === scope
+          );
 
-            if (token) {
-              token.value = value;
-              token.updated_at = new Date().toISOString();
-              state.dirty = true;
-              state._tokensVersion += 1; // Phase 3.1: 캐시 무효화
+          if (tokenIndex === -1) {
+            return state; // 토큰을 찾지 못하면 상태 변경 없음
+          }
 
-              // ✅ CSS 즉시 업데이트 (synchronization)
-              // Note: injectThemeCSS() will be called after produce completes
-            }
-          })
-        );
+          const updatedToken = {
+            ...state.tokens[tokenIndex],
+            value,
+            updated_at: new Date().toISOString(),
+          };
+
+          return {
+            tokens: [
+              ...state.tokens.slice(0, tokenIndex),
+              updatedToken,
+              ...state.tokens.slice(tokenIndex + 1),
+            ],
+            dirty: true,
+            _tokensVersion: state._tokensVersion + 1, // Phase 3.1: 캐시 무효화
+          };
+        });
 
         // Inject CSS after state update
         get().injectThemeCSS();
@@ -446,29 +454,30 @@ export const useUnifiedThemeStore = create<UnifiedThemeState>()(
 
       /**
        * Add token (local only, mark as dirty)
+       * Phase 15 리팩토링: Immer 제거, spread 패턴 사용
        */
       addToken: (input) => {
-        set(
-          produce((state: UnifiedThemeState) => {
-            const newToken: DesignToken = {
-              id: uuidv4(),
-              project_id: state.activeTheme?.project_id || state.projectId || '',
-              theme_id: state.activeTheme?.id || '',
-              name: input.name,
-              type: input.type,
-              value: input.value,
-              scope: input.scope,
-              alias_of: input.alias_of,
-              css_variable: input.css_variable,
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString(),
-            };
+        set((state) => {
+          const newToken: DesignToken = {
+            id: uuidv4(),
+            project_id: state.activeTheme?.project_id || state.projectId || '',
+            theme_id: state.activeTheme?.id || '',
+            name: input.name,
+            type: input.type,
+            value: input.value,
+            scope: input.scope,
+            alias_of: input.alias_of,
+            css_variable: input.css_variable,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          };
 
-            state.tokens.push(newToken);
-            state.dirty = true;
-            state._tokensVersion += 1; // Phase 3.1: 캐시 무효화
-          })
-        );
+          return {
+            tokens: [...state.tokens, newToken],
+            dirty: true,
+            _tokensVersion: state._tokensVersion + 1, // Phase 3.1: 캐시 무효화
+          };
+        });
 
         // Inject CSS after state update
         get().injectThemeCSS();

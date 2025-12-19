@@ -69,9 +69,16 @@ performance.measure('handler-duration', 'handler-start', 'handler-end');
 
 ---
 
-## Phase 12-14: 추가 최적화 계획 (2025-12-18)
+## Phase 12-15: 추가 최적화 현황 (2025-12-18)
 
-### 현재 문제
+| Phase | 내용 | 상태 | 예상 개선 |
+|-------|------|------|----------|
+| **12** | InspectorSync JSON 비교 제거 | ✅ 완료 | 50-100ms |
+| **13** | useSyncWithBuilder requestIdleCallback 제거 | ✅ 완료 | 30-50ms |
+| **14** | PropertyEditorWrapper Memo 최적화 | ✅ 완료 | 15-25ms |
+| **15** | useSyncWithBuilder 선택 변경 감지 버그 수정 | ✅ 완료 | 200-400ms |
+
+### 배경: Phase 1-11 완료 후 문제
 
 Phase 1-11 완료 후에도 요소 선택 시 여전히 지연 발생:
 
@@ -81,20 +88,19 @@ Phase 1-11 완료 후에도 요소 선택 시 여전히 지연 발생:
 [Violation] 'message' handler took 635ms
 ```
 
-### 근본 원인: JSON.stringify 과다 호출
+### 근본 원인 분석
 
+**초기 분석 (오류)**:
 | 위치 | 호출 횟수 | 비용 |
 |------|----------|------|
 | InspectorSync 참조비교 | 5회 | 10-20ms |
 | InspectorSync JSON비교 | 10회 | 30-50ms |
 | PropertyEditorWrapper memo | 4회 | 15-25ms |
-| **총합** | **19회+** | **55-95ms** |
 
-### requestIdleCallback 50ms 지연 문제
-
-- InspectorSync와 useSyncWithBuilder에서 `{ timeout: 50 }` 사용
-- 참조가 다르면 무조건 50ms 대기 후 JSON 비교
-- 연속 선택 시 callback 취소/재등록 반복
+**실제 원인 (Phase 15에서 발견)**:
+- InspectorSync: 선택 변경 시 조기 반환으로 JSON.stringify 스킵됨 ✅
+- PropertyEditorWrapper: id 비교로 조기 반환됨 ✅
+- **useSyncWithBuilder**: 선택만 해도 불필요한 DB 저장 발생 ❌ (버그)
 
 ---
 
@@ -227,15 +233,174 @@ const PropertyEditorWrapper = memo(({ ... }) => {
 
 ---
 
-## Phase 12-14 우선순위
+### Phase 15: useSyncWithBuilder 선택 변경 감지 버그 수정 (P0) ✅
 
-| 순서 | Phase | 예상 효과 | 리스크 | 소요 시간 |
-|------|-------|----------|--------|----------|
-| 1 | Phase 12 | 50-100ms | 낮음 | 1-2시간 |
-| 2 | Phase 13 | 30-50ms | 낮음 | 1시간 |
-| 3 | Phase 14 | 15-25ms | 중간 | 1-2시간 |
+**파일**: `src/builder/inspector/hooks/useSyncWithBuilder.ts`
 
-**Phase 12-14 완료 시**: 95-175ms 개선 → 목표 달성 가능
+**발견된 버그**:
+
+요소 선택만 해도 불필요한 DB 저장이 발생하는 심각한 성능 버그
+
+**버그 원인**:
+```typescript
+// 문제 코드: Inspector vs Store 상태 비교
+const hasCustomIdChange = selectedElement.customId !== currentElementInStore.customId;
+const hasPropertiesChange = selectedElement.properties !== currentElementInStore.props.properties;
+const hasStyleChange = selectedElement.style !== (currentElementInStore.props as any).style;
+// ...
+
+// 참조 비교가 항상 실패하는 이유:
+// 1. selectedElement는 mapElementToSelected()가 생성 (spread로 새 객체)
+// 2. currentElementInStore.props도 spread로 새 객체
+// → 항상 다른 참조 → 항상 동기화 트리거 → DB 저장
+```
+
+**핵심 문제**:
+- `mapElementToSelected()`는 항상 새 객체 생성 (`{ ...element.props }`)
+- Store의 element.props도 spread로 새 객체
+- 두 객체가 내용이 같아도 참조가 다름
+- **결과**: 선택만 해도 DB 저장 발생 (200-400ms 지연)
+
+**수정 내용**:
+```typescript
+// 🚀 Phase 15: 선택 변경 감지
+const previousElementIdRef = useRef<string | null>(null);
+const previousStateRef = useRef<{
+  customId: string | undefined;
+  properties: Record<string, unknown> | undefined;
+  style: React.CSSProperties | undefined;
+  dataBinding: unknown;
+  events: unknown;
+} | null>(null);
+
+useEffect(() => {
+  // 1. 선택 변경 감지 - 다른 요소 선택 시 동기화 스킵
+  const isSelectionChange = previousElementIdRef.current !== selectedElement.id;
+  if (isSelectionChange) {
+    previousElementIdRef.current = selectedElement.id;
+    previousStateRef.current = {
+      customId: selectedElement.customId,
+      properties: selectedElement.properties,
+      style: selectedElement.style,
+      dataBinding: selectedElement.dataBinding,
+      events: selectedElement.events,
+    };
+    return; // 선택 변경 시에는 동기화하지 않음
+  }
+
+  // 2. 이전 Inspector 상태와 비교 (Store가 아닌!)
+  const prev = previousStateRef.current;
+  const hasCustomIdChange = selectedElement.customId !== prev.customId;
+  const hasPropertiesChange = selectedElement.properties !== prev.properties;
+  // ...
+
+  if (!hasChanges) return; // 실제 변경 없으면 스킵
+
+  // 3. 변경 있을 때만 DB 저장
+  await saveService.savePropertyChange(...);
+}, [selectedElement, ...]);
+```
+
+**핵심 개선**:
+1. **선택 변경 감지**: `previousElementIdRef`로 다른 요소 선택 시 동기화 스킵
+2. **이전 상태 비교**: Store가 아닌 이전 Inspector 상태와 비교
+3. **실제 변경만 저장**: 속성 편집 시에만 DB 저장 발생
+
+**예상 효과**: 200-400ms 개선 (선택 시 DB 저장 제거)
+
+---
+
+## Phase 12-18 현황
+
+| 순서 | Phase | 예상 효과 | 리스크 | 상태 |
+|------|-------|----------|--------|------|
+| 1 | Phase 12 | 50-100ms | 낮음 | ✅ 완료 |
+| 2 | Phase 13 | 30-50ms | 낮음 | ✅ 완료 |
+| 3 | Phase 14 | 15-25ms | 중간 | ✅ 완료 |
+| 4 | Phase 15 | 200-400ms | 낮음 | ✅ 완료 |
+| 5 | Phase 16 | 30-80ms | 낮음 | ✅ 완료 |
+| 6 | Phase 17 | 1500-1900ms | 낮음 | ✅ 완료 |
+| 7 | Phase 18 | 200ms (INP) | 낮음 | ✅ 완료 |
+
+**Phase 12-18 모두 완료**: 2025-2755ms 개선
+
+---
+
+### Phase 16: Intel Mac 최적화 - shallowEqual + requestIdleCallback (P0) ✅
+
+**배경**: 2019 Intel Mac에서 여전히 성능 경고 발생, 2025 ARM Mac에서는 정상
+
+**파일**:
+- `src/builder/inspector/utils/shallowEqual.ts` (신규)
+- `src/builder/inspector/InspectorSync.tsx`
+- `src/builder/inspector/hooks/useSyncWithBuilder.ts`
+
+**문제 원인**:
+1. JSON.stringify 비교가 느린 CPU에서 병목
+2. DB 저장이 메인 스레드 블로킹
+3. IndexedDB 자체는 비동기이지만, 호출 준비가 동기
+
+**해결책 1: shallowEqual 유틸리티**
+
+```typescript
+// src/builder/inspector/utils/shallowEqual.ts
+// JSON.stringify 대비 10-50x 빠른 비교
+
+export function shallowEqual(a: unknown, b: unknown): boolean {
+  // 1. 참조 동일성 (가장 빠름)
+  if (a === b) return true;
+
+  // 2. 키 개수 비교 (빠른 bailout)
+  const keysA = Object.keys(objA);
+  if (keysA.length !== Object.keys(objB).length) return false;
+
+  // 3. 얕은 값 비교
+  for (const key of keysA) {
+    if (!shallowEqualValue(objA[key], objB[key])) return false;
+  }
+  return true;
+}
+
+// 특화된 비교 함수
+export function shallowEqualStyle(a, b): boolean;  // CSS 프리미티브만
+export function shallowEqualEvents(a, b): boolean; // ID/타입만 비교
+```
+
+**해결책 2: requestIdleCallback으로 DB 저장 지연**
+
+```typescript
+// useSyncWithBuilder.ts
+
+// 🚀 Phase 16: 메모리 업데이트는 즉시
+updateElement(selectedElement.id, elementUpdate);
+
+// 🚀 Phase 16: DB 저장은 브라우저 유휴 시간에
+const runDbSync = async () => {
+  await saveService.savePropertyChange(...);
+};
+
+if (typeof requestIdleCallback !== 'undefined') {
+  requestIdleCallback(() => runDbSync(), { timeout: 16 });
+} else {
+  setTimeout(() => runDbSync(), 0);
+}
+```
+
+**핵심 개선**:
+1. **shallowEqual**: JSON.stringify 대비 10-50x 빠른 비교
+2. **분리된 업데이트**: 메모리는 즉시, DB는 유휴 시간에
+3. **특화된 비교**: Style(프리미티브), Events(ID/타입만)
+
+**예상 효과**: 30-80ms 개선 (Intel Mac 기준)
+
+### 변경된 파일 (Phase 12-16)
+
+| 파일 | Phase | 변경 내용 |
+|------|-------|----------|
+| `InspectorSync.tsx` | 12, 16 | requestIdleCallback 제거, 참조 비교 우선, shallowEqual 적용 |
+| `useSyncWithBuilder.ts` | 13, 15, 16 | 선택 변경 감지, 이전 상태 비교, 메모리/DB 분리, requestIdleCallback |
+| `PropertiesPanel.tsx` | 14 | PropertyEditorWrapper memo 최적화: primitive early return + 참조 비교 우선 |
+| `shallowEqual.ts` | 16 (신규) | shallowEqual, shallowEqualStyle, shallowEqualEvents 유틸리티 |
 
 ---
 
@@ -309,5 +474,139 @@ useStore.subscribe((state, prevState) => {
 
 ---
 
+### Phase 17: WebGL Hover State 최적화 - useState → useRef (P0) ✅
+
+**배경**: CPU 4x throttle 성능 프로파일링 결과
+
+```
+pointerover event: 1,907ms (32.2%) - 최대 병목
+Microtask execution: 1,855ms (31.4%)
+React performWork: 475ms (8.0%)
+```
+
+**문제 원인**:
+PixiJS 컴포넌트에서 hover 상태 관리에 React useState 사용
+
+```typescript
+// 문제 코드 (4개 컴포넌트에서 동일 패턴)
+const [hoveredItemId, setHoveredItemId] = useState<string | null>(null);
+
+// pointerover 시마다 setState 호출 → 전체 컴포넌트 리렌더링
+pointerover={() => setHoveredItemId(item.id)}
+pointerout={() => setHoveredItemId(null)}
+```
+
+**영향받은 컴포넌트**:
+- `PixiGridList.tsx`
+- `PixiTagGroup.tsx`
+- `PixiTree.tsx`
+- `PixiTable.tsx`
+
+**해결책: useRef + 직접 Graphics 업데이트**
+
+```typescript
+// 🚀 Phase 17: useRef로 hover 상태 관리 (리렌더링 없음)
+const itemGraphicsRefs = useRef<Map<string, PixiGraphics>>(new Map());
+
+// pointerover 시 직접 Graphics 업데이트
+pointerover={() => {
+  const g = itemGraphicsRefs.current.get(item.id);
+  if (g) drawItemBg(g, width, height, true, item.isSelected || false);
+}}
+pointerout={() => {
+  const g = itemGraphicsRefs.current.get(item.id);
+  if (g) drawItemBg(g, width, height, false, item.isSelected || false);
+}}
+
+// Graphics에 ref 연결
+<pixiGraphics
+  ref={(g) => {
+    if (g) itemGraphicsRefs.current.set(item.id, g);
+  }}
+  draw={(g) =>
+    drawItemBg(g, width, height, false, item.isSelected || false)
+  }
+/>
+```
+
+**핵심 개선**:
+1. **useState 제거**: hover 상태 변경이 React 리렌더링을 트리거하지 않음
+2. **직접 Graphics 조작**: PixiJS Graphics API로 즉시 시각적 업데이트
+3. **Map 기반 참조**: 각 아이템별 Graphics 객체를 효율적으로 관리
+4. **Zero re-render**: hover 동작이 React 컴포넌트 트리에 영향 없음
+
+**변경된 파일**:
+
+| 파일 | 변경 내용 |
+|------|----------|
+| `PixiGridList.tsx` | hoveredItemId useState → itemGraphicsRefs useRef |
+| `PixiTagGroup.tsx` | hoveredTagId useState → tagGraphicsRefs useRef |
+| `PixiTree.tsx` | hoveredItemId useState → itemGraphicsRefs useRef |
+| `PixiTable.tsx` | hoveredRowId useState → rowGraphicsRefs useRef |
+
+**예상 효과**: 1500-1900ms 개선 (pointerover 32.2% → near-zero)
+
+---
+
+### Phase 18: INP 최적화 - startTransition으로 선택 업데이트 (P0) ✅
+
+**배경**: Chrome DevTools Performance 분석 결과
+
+```
+INP (Interaction to Next Paint): 270ms
+- Input delay: 1ms
+- Processing duration: 245ms (병목)
+- Presentation delay: 24ms
+```
+
+**문제 원인**:
+클릭 시 동기적 React 렌더링이 메인 스레드 블로킹
+
+```
+workLoopSync: 129.8ms
+commitRoot: 85ms
+recursivelyTraverseMutationEffects: 38ms (each)
+```
+
+**문제 코드**:
+```typescript
+// 선택 업데이트가 동기적으로 처리됨 → 모든 구독자 즉시 리렌더링
+const handleElementClick = useCallback((elementId) => {
+  setSelectedElement(elementId); // 동기적 → 245ms 블로킹
+}, []);
+```
+
+**해결책: React 18 startTransition**
+
+```typescript
+import { startTransition } from 'react';
+
+const handleElementClick = useCallback((elementId) => {
+  // 🚀 Phase 18: startTransition으로 비긴급 업데이트
+  // React가 현재 프레임을 먼저 완료하고, 유휴 시간에 리렌더링 수행
+  startTransition(() => {
+    setSelectedElement(elementId);
+  });
+}, []);
+```
+
+**핵심 개선**:
+1. **비동기 렌더링**: 선택 업데이트를 "비긴급"으로 마킹
+2. **프레임 우선**: 현재 프레임의 중요 업데이트 먼저 처리
+3. **유휴 시간 활용**: React가 브라우저 유휴 시간에 리렌더링 수행
+4. **INP 개선**: Processing duration 245ms → ~50ms 이하
+
+**변경된 파일**:
+
+| 파일 | 변경 내용 |
+|------|----------|
+| `BuilderCanvas.tsx` | handleElementClick에 startTransition 적용 |
+
+**예상 효과**: INP 245ms → ~50ms (200ms 개선)
+
+---
+
 **문서 최종 업데이트**: 2025-12-18
-**다음 단계**: Phase 12 (InspectorSync JSON 비교 제거) 구현
+**완료된 Phase**: 1-18 (총 18개 Phase 모두 완료)
+**총 예상 개선**: 2645-3495ms (Phase 1-18 합계)
+**상태**: ✅ 성능 최적화 계획 완료

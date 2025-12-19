@@ -19,6 +19,7 @@ import type {
 } from "../../../../types/builder/data.types";
 import { PropertySwitch } from "../../common";
 import "./DataTableEditor.css";
+import { iconEditProps, iconSmall } from "../../../../utils/ui/uiConstants";
 
 interface DataTableEditorProps {
   dataTable: DataTable;
@@ -298,7 +299,7 @@ function SchemaFieldRow({
           className="delete-row-btn"
           onClick={() => onDeleteField(field.key)}
         >
-          <Trash2 size={12} />
+          <Trash2 size={iconSmall.size} />
         </button>
       </td>
     </tr>
@@ -340,7 +341,7 @@ function SchemaEditor({
       </div>
 
       <button type="button" className="add-field-btn" onClick={onAddField}>
-        <Plus size={14} />
+        <Plus {...iconEditProps} />
         Add Column
       </button>
     </div>
@@ -460,7 +461,7 @@ function MockDataEditor({
         <div className="data-toolbar">
           {/* Filter */}
           <div className="filter-input-wrapper">
-            <Search size={14} className="filter-icon" />
+            <Search {...iconEditProps} className="filter-icon" />
             <input
               type="text"
               className="filter-input"
@@ -474,7 +475,7 @@ function MockDataEditor({
                 className="filter-clear-btn"
                 onClick={() => setFilterText("")}
               >
-                <X size={12} />
+                <X size={iconSmall.size} />
               </button>
             )}
           </div>
@@ -494,7 +495,7 @@ function MockDataEditor({
               onClick={() => fileInputRef.current?.click()}
               title="Import CSV"
             >
-              <Upload size={14} />
+              <Upload {...iconEditProps} />
               Import
             </button>
             <button
@@ -504,7 +505,7 @@ function MockDataEditor({
               disabled={mockData.length === 0}
               title="Export CSV"
             >
-              <Download size={14} />
+              <Download {...iconEditProps} />
               Export
             </button>
           </div>
@@ -553,7 +554,7 @@ function MockDataEditor({
                       className="delete-row-btn"
                       onClick={() => onDeleteRow(originalIndex)}
                     >
-                      <Trash2 size={12} />
+                      <Trash2 size={iconSmall.size} />
                     </button>
                   </td>
                 </tr>
@@ -565,7 +566,7 @@ function MockDataEditor({
 
       </div>
       <button type="button" className="add-row-btn" onClick={onAddRow}>
-        <Plus size={14} />
+        <Plus {...iconEditProps} />
         Add Row
       </button>
     </div>

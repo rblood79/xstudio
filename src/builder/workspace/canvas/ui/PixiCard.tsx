@@ -182,17 +182,20 @@ export const PixiCard = memo(function PixiCard({
     onClick?.(element.id);
   }, [element.id, onClick]);
 
+  // 🚀 Phase 19: 투명 히트 영역
+  const drawHitArea = useCallback(
+    (g: PixiGraphics) => {
+      g.clear();
+      g.rect(0, 0, cardWidth, cardHeight);
+      g.fill({ color: 0xffffff, alpha: 0 });
+    },
+    [cardWidth, cardHeight]
+  );
+
   return (
     <pixiContainer x={posX} y={posY}>
       {/* 카드 배경 */}
-      <pixiGraphics
-        draw={drawCard}
-        eventMode="static"
-        cursor="pointer"
-        onPointerEnter={handlePointerEnter}
-        onPointerLeave={handlePointerLeave}
-        onPointerDown={handleClick}
-      />
+      <pixiGraphics draw={drawCard} />
 
       {/* 카드 텍스트 */}
       {cardText && (
@@ -201,13 +204,18 @@ export const PixiCard = memo(function PixiCard({
           style={textStyle}
           x={textPosition.x}
           y={textPosition.y}
-          eventMode="static"
-          cursor="pointer"
-          onPointerEnter={handlePointerEnter}
-          onPointerLeave={handlePointerLeave}
-          onPointerDown={handleClick}
         />
       )}
+
+      {/* 🚀 Phase 19: 투명 히트 영역 (클릭 감지용) - 마지막에 렌더링하여 최상단 배치 */}
+      <pixiGraphics
+        draw={drawHitArea}
+        eventMode="static"
+        cursor="pointer"
+        onPointerEnter={handlePointerEnter}
+        onPointerLeave={handlePointerLeave}
+        onPointerDown={handleClick}
+      />
     </pixiContainer>
   );
 });

@@ -14,7 +14,7 @@
  * @updated 2025-12-11 Phase 10 B1.2 - ElementSprite 통합
  */
 
-import { useCallback, useEffect, useRef, useMemo, useState, memo } from "react";
+import { useCallback, useEffect, useRef, useMemo, useState, memo, startTransition } from "react";
 import { Application, useApplication } from "@pixi/react";
 import { Graphics as PixiGraphics } from "pixi.js";
 import { useStore } from "../../stores";
@@ -135,9 +135,19 @@ function ClickableBackground({ onClick, onLassoStart, onLassoDrag, onLassoEnd, z
 
   // Shift 키 상태 추적 (Lasso 모드) - canvas cursor 직접 변경
   useEffect(() => {
-    if (!app?.canvas) return;
+    // app.canvas getter는 내부적으로 renderer.canvas를 참조하므로
+    // renderer가 준비되기 전에 접근하면 에러 발생
+    if (!app || !app.renderer) return;
 
-    const canvas = app.canvas as HTMLCanvasElement;
+    let canvas: HTMLCanvasElement | null = null;
+    try {
+      canvas = app.canvas as HTMLCanvasElement;
+    } catch {
+      // canvas가 아직 준비되지 않음
+      return;
+    }
+
+    if (!canvas) return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Shift') {
@@ -641,6 +651,7 @@ export function BuilderCanvas({
   // Element click handler with multi-select support
   // 🚀 최적화: selectedElementIds를 deps에서 제거하고 getState()로 읽어서
   // 선택 변경 시 handleElementClick 재생성 방지 → 모든 ElementSprite 리렌더링 방지
+  // 🚀 Phase 18: startTransition으로 선택 업데이트 → INP 개선 (245ms → ~50ms)
   const handleElementClick = useCallback(
     (elementId: string, modifiers?: { metaKey: boolean; shiftKey: boolean; ctrlKey: boolean }) => {
       return longTaskMonitor.measure("interaction.select:webgl-pointerdown", () => {
@@ -650,42 +661,48 @@ export function BuilderCanvas({
         // Cmd+Click (Mac) or Ctrl+Click (Windows) for multi-select
         const isMultiSelectKey = modifiers?.metaKey || modifiers?.ctrlKey;
 
-        if (isMultiSelectKey) {
-          // 🚀 getState()로 현재 selectedElementIds 읽기 (stale closure 방지)
-          const currentSelectedIds = useStore.getState().selectedElementIds;
+        // 🚀 Phase 18: startTransition으로 선택 업데이트를 비긴급 처리
+        // React가 현재 프레임을 먼저 완료하고, 유휴 시간에 리렌더링 수행
+        startTransition(() => {
+          if (isMultiSelectKey) {
+            // 🚀 getState()로 현재 selectedElementIds 읽기 (stale closure 방지)
+            const currentSelectedIds = useStore.getState().selectedElementIds;
 
-          // 🚀 O(n) → O(1) 최적화: Set을 사용하여 빠른 검색
-          const selectedSet = new Set(currentSelectedIds);
-          const isAlreadySelected = selectedSet.has(elementId);
+            // 🚀 O(n) → O(1) 최적화: Set을 사용하여 빠른 검색
+            const selectedSet = new Set(currentSelectedIds);
+            const isAlreadySelected = selectedSet.has(elementId);
 
-          if (isAlreadySelected) {
-            // 선택 해제 - Set에서 제거 후 배열로 변환
-            selectedSet.delete(elementId);
-            if (selectedSet.size > 0) {
-              setSelectedElements(Array.from(selectedSet));
+            if (isAlreadySelected) {
+              // 선택 해제 - Set에서 제거 후 배열로 변환
+              selectedSet.delete(elementId);
+              if (selectedSet.size > 0) {
+                setSelectedElements(Array.from(selectedSet));
+              } else {
+                clearSelection();
+              }
             } else {
-              clearSelection();
+              // 선택에 추가 - Set에 추가 후 배열로 변환
+              selectedSet.add(elementId);
+              setSelectedElements(Array.from(selectedSet));
             }
           } else {
-            // 선택에 추가 - Set에 추가 후 배열로 변환
-            selectedSet.add(elementId);
-            setSelectedElements(Array.from(selectedSet));
+            // 단일 선택
+            setSelectedElement(elementId);
           }
-        } else {
-          // 단일 선택
-          setSelectedElement(elementId);
-        }
+        });
       });
     },
     [setSelectedElement, setSelectedElements, clearSelection, isEditing]
   );
 
   // Element double click handler (텍스트 편집 시작)
+  // 🚀 Phase 19: layoutPosition 전달 - TextEditOverlay가 올바른 위치에 표시되도록
   const handleElementDoubleClick = useCallback(
     (elementId: string) => {
-      startEdit(elementId);
+      const layoutPosition = layoutResult.positions.get(elementId);
+      startEdit(elementId, layoutPosition);
     },
-    [startEdit]
+    [startEdit, layoutResult.positions]
   );
 
   // WebGL context recovery

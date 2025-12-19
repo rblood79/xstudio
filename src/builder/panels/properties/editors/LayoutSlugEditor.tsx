@@ -19,6 +19,7 @@ import {
   generateSlugFromTitle,
   toAbsoluteSlug,
 } from "../../../../utils/slugValidator";
+import { iconSmall } from "../../../../utils/ui/uiConstants";
 
 interface LayoutSlugEditorProps {
   layoutId: string;
@@ -108,7 +109,7 @@ export const LayoutSlugEditor = memo(function LayoutSlugEditor({
 
         {slugError && (
           <div className="page-slug-error">
-            <AlertCircle size={12} />
+            <AlertCircle size={iconSmall.size} />
             <span>{slugError}</span>
           </div>
         )}
@@ -120,7 +121,7 @@ export const LayoutSlugEditor = memo(function LayoutSlugEditor({
             onClick={handleGenerateSlug}
             title="Generate slug from layout name"
           >
-            <RefreshCw size={12} />
+            <RefreshCw size={iconSmall.size} />
             Generate
           </button>
 

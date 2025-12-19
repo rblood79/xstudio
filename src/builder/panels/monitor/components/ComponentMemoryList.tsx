@@ -14,6 +14,7 @@ import {
   type ComponentMemoryInfo,
 } from "../hooks/useComponentMemory";
 import { formatBytes } from "../hooks/useMemoryStats";
+import { iconSmall, iconEditProps, iconLarge } from "../../../../utils/ui/uiConstants";
 
 interface ComponentMemoryListProps {
   enabled?: boolean;
@@ -50,7 +51,7 @@ export function ComponentMemoryList({
           onClick={() => setExpanded(!expanded)}
           aria-expanded={expanded}
         >
-          {expanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+          {expanded ? <ChevronUp size={iconEditProps.size} /> : <ChevronDown size={iconEditProps.size} />}
           <span>Component Memory</span>
         </button>
         <div className="component-memory-controls">
@@ -69,7 +70,7 @@ export function ComponentMemoryList({
             onPress={refresh}
             aria-label="Refresh"
           >
-            <RefreshCw size={12} />
+            <RefreshCw size={iconSmall.size} />
           </Button>
         </div>
       </div>
@@ -88,7 +89,7 @@ export function ComponentMemoryList({
           ))}
           {componentMemory.length === 0 && (
             <div className="component-memory-empty">
-              <Box size={24} />
+              <Box size={iconLarge.size} />
               <p>No components to analyze</p>
             </div>
           )}

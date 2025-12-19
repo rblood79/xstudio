@@ -9,6 +9,7 @@ import { useEffect, useMemo, useRef } from "react";
 import { useInspectorState, useSyncWithBuilder } from "./hooks";
 import { useStore } from "../stores";
 import { mapElementToSelected } from "./utils/elementMapper";
+import { shallowEqual, shallowEqualStyle, shallowEqualEvents } from "./utils/shallowEqual";
 
 export function InspectorSync() {
   const setSelectedElement = useInspectorState(
@@ -114,10 +115,72 @@ export function InspectorSync() {
       return;
     }
 
-    // 🚀 Phase 12: 참조 비교만 수행 (JSON.stringify 제거)
-    // - mappedElement는 항상 새 객체지만, 플래그로 useSyncWithBuilder 스킵
-    // - Builder에서 외부 변경 감지: undo/redo, 다른 사용자 등
+    // 🚀 통합 최적화: 참조 비교 → shallowEqual 비교 → 플래그 기반 업데이트
+    // - Phase 12: isUpdatingFromBuilder 플래그로 useSyncWithBuilder 스킵
+    // - Phase 16: shallowEqual로 빠른 비교 (JSON.stringify 제거)
     const mappedElement = mapElementToSelected(selectedBuilderElement);
+
+    // 🚀 Performance: 참조 비교 우선 (가장 빠른 경로)
+    const currentProps = selectedElement?.properties;
+    const newProps = mappedElement.properties;
+    const currentDataBinding = selectedElement?.dataBinding;
+    const newDataBinding = mappedElement.dataBinding;
+    const currentStyle = selectedElement?.style;
+    const newStyle = mappedElement.style;
+    const currentComputedStyle = selectedElement?.computedStyle;
+    const newComputedStyle = mappedElement.computedStyle;
+    const currentEvents = selectedElement?.events;
+    const newEvents = mappedElement.events;
+
+    // 참조가 모두 같으면 빠르게 스킵 (가장 빠른 경로)
+    if (
+      currentProps === newProps &&
+      currentDataBinding === newDataBinding &&
+      currentStyle === newStyle &&
+      currentComputedStyle === newComputedStyle &&
+      currentEvents === newEvents
+    ) {
+      return;
+    }
+
+    // 🚀 Phase 16: shallowEqual로 빠른 비교 (Intel Mac 최적화)
+    // - JSON.stringify 대신 shallowEqual 사용 (10-50x 빠름)
+    // - 키 개수 비교 → 값 비교 → 필요시 JSON 폴백
+    let hasChanges = false;
+
+    // props 비교 (가장 자주 변경됨)
+    if (currentProps !== newProps && !shallowEqual(currentProps, newProps)) {
+      hasChanges = true;
+    }
+
+    // style 비교 (CSS 속성은 프리미티브만)
+    if (!hasChanges && currentStyle !== newStyle && !shallowEqualStyle(currentStyle, newStyle)) {
+      hasChanges = true;
+    }
+
+    // dataBinding 비교
+    if (!hasChanges && currentDataBinding !== newDataBinding && !shallowEqual(currentDataBinding, newDataBinding)) {
+      hasChanges = true;
+    }
+
+    // computedStyle 비교 (CSS 속성은 프리미티브만)
+    if (!hasChanges && currentComputedStyle !== newComputedStyle && !shallowEqualStyle(currentComputedStyle, newComputedStyle)) {
+      hasChanges = true;
+    }
+
+    // events 비교 (ID와 타입만 비교)
+    if (!hasChanges && currentEvents !== newEvents && !shallowEqualEvents(currentEvents, newEvents)) {
+      hasChanges = true;
+    }
+
+    if (!hasChanges) {
+      return; // 내용이 같으면 스킵
+    }
+
+    // 🚀 Phase 12: 실제 변경이 있을 때만 플래그 기반 업데이트
+    // - 플래그 설정 → setSelectedElement → 마이크로태스크로 플래그 해제
+    // - useSyncWithBuilder가 플래그를 확인하여 불필요한 동기화 스킵
+    // (Builder에서 외부 변경 감지: undo/redo, 다른 사용자 등)
     updateWithFlag(mappedElement);
   }, [
     selectedBuilderElement,

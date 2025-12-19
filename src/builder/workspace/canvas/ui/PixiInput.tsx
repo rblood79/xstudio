@@ -1,25 +1,27 @@
 /**
  * Pixi Input
  *
- * 🚀 Phase 6.2: @pixi/ui Input 래퍼
+ * 🚀 Phase 19: JSX 기반 재작성
  *
- * @pixi/ui의 Input 컴포넌트를 xstudio Element 시스템과 통합
- * 텍스트 입력을 위해 HTML input 오버레이를 사용합니다.
+ * @pixi/ui Input 대신 순수 PixiJS 렌더링 사용
+ * 실제 텍스트 입력은 TextEditOverlay로 처리
+ *
+ * 기존 문제:
+ * - app.stage.addChild()로 Camera 컨테이너 바깥에 렌더링
+ * - Yoga 레이아웃 위치가 반영되지 않음
  *
  * @since 2025-12-13 Phase 6.2
+ * @updated 2025-12-19 Phase 19 - JSX 기반 재작성 + Label/Description 지원
  */
 
 import { useExtend } from '@pixi/react';
 import { PIXI_COMPONENTS } from '../pixiSetup';
-import { memo, useCallback, useEffect, useMemo, useRef } from 'react';
-import { useApplication } from '@pixi/react';
-import { Input } from '@pixi/ui';
-import { Container, Graphics, TextStyle } from 'pixi.js';
+import { memo, useCallback, useMemo, useRef } from 'react';
+import type { Graphics as PixiGraphicsType, TextStyle } from 'pixi.js';
 import type { Element } from '../../../../types/core/store.types';
 import type { CSSStyle } from '../sprites/styleConverter';
-import { cssColorToHex, parseCSSSize } from '../sprites/styleConverter';
-import { drawBox } from '../utils';
-import { getInputSizePreset } from '../utils/cssVariableReader';
+import { parseCSSSize } from '../sprites/styleConverter';
+import { getTextFieldSizePreset, getTextFieldColorPreset, getLabelStylePreset, getDescriptionStylePreset } from '../utils/cssVariableReader';
 
 // ============================================
 // Types
@@ -33,225 +35,256 @@ export interface PixiInputProps {
 }
 
 // ============================================
-// Style Conversion
-// ============================================
-
-interface InputLayoutStyle {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-  backgroundColor: number;
-  borderColor: number;
-  borderWidth: number;
-  borderRadius: number;
-  textColor: number;
-  fontSize: number;
-  fontFamily: string;
-  paddingLeft: number;
-  paddingRight: number;
-}
-
-/**
- * CSS 스타일을 Input 레이아웃 스타일로 변환
- * 🚀 Phase 0: CSS 동기화 - getInputSizePreset() 사용
- */
-function convertToInputStyle(style: CSSStyle | undefined, size: string): InputLayoutStyle {
-  // 🚀 CSS에서 사이즈 프리셋 읽기
-  const sizePreset = getInputSizePreset(size);
-
-  // 높이 계산: fontSize + paddingY * 2 + border (대략적 추정)
-  const defaultHeight = sizePreset.fontSize + sizePreset.paddingY * 2 + 8;
-
-  return {
-    x: parseCSSSize(style?.left, undefined, 0),
-    y: parseCSSSize(style?.top, undefined, 0),
-    width: parseCSSSize(style?.width, undefined, 200),
-    height: parseCSSSize(style?.height, undefined, defaultHeight),
-    backgroundColor: cssColorToHex(style?.backgroundColor, 0xffffff),
-    borderColor: cssColorToHex(style?.borderColor, 0xd1d5db),
-    borderWidth: parseCSSSize(style?.borderWidth, undefined, 1),
-    borderRadius: parseCSSSize(style?.borderRadius, undefined, sizePreset.borderRadius),
-    textColor: cssColorToHex(style?.color, 0x000000),
-    fontSize: parseCSSSize(style?.fontSize, undefined, sizePreset.fontSize),
-    fontFamily: style?.fontFamily || 'Pretendard, sans-serif',
-    paddingLeft: parseCSSSize(style?.paddingLeft || style?.padding, undefined, sizePreset.paddingX),
-    paddingRight: parseCSSSize(style?.paddingRight || style?.padding, undefined, sizePreset.paddingX),
-  };
-}
-
-// ============================================
-// Graphics Creation
-// ============================================
-
-/**
- * 입력 필드 배경 생성
- * 🚀 Border-Box v2: drawBox 유틸리티 사용
- */
-function createInputBackground(
-  width: number,
-  height: number,
-  backgroundColor: number,
-  borderColor: number,
-  borderWidth: number,
-  borderRadius: number
-): Graphics {
-  const g = new Graphics();
-
-  // Border-Box v2: drawBox 유틸리티 사용
-  drawBox(g, {
-    width,
-    height,
-    backgroundColor,
-    backgroundAlpha: 1,
-    borderRadius,
-    border: {
-      width: borderWidth,
-      color: borderColor,
-      alpha: 1,
-      style: 'solid',
-      radius: borderRadius,
-    },
-  });
-
-  return g;
-}
-
-// ============================================
 // Component
 // ============================================
 
 /**
  * PixiInput
  *
- * @pixi/ui의 Input을 사용하여 텍스트 입력 필드 렌더링
- *
- * @example
- * <PixiInput
- *   element={inputElement}
- *   onChange={(id, value) => handleValueChange(id, value)}
- * />
+ * JSX 기반 Input 컴포넌트
+ * - 순수 PixiJS 렌더링 (pixiGraphics + pixiText)
+ * - ElementsLayer 계층 안에서 올바르게 배치됨
+ * - 더블클릭 시 TextEditOverlay로 텍스트 입력 처리
+ * - Label, Description, ErrorMessage 지원
  */
 export const PixiInput = memo(function PixiInput({
   element,
-  isSelected,
+  isSelected = false,
   onClick,
-  onChange,
 }: PixiInputProps) {
   useExtend(PIXI_COMPONENTS);
-  const { app } = useApplication();
-  const containerRef = useRef<pixiContainer | null>(null);
-  const inputRef = useRef<Input | null>(null);
 
-  const style = element.props?.style as CSSStyle | undefined;
-  const props = element.props as Record<string, unknown> | undefined;
+  const props = element.props || {};
+  const style = props.style as CSSStyle | undefined;
+  const variant = (props.variant as string) || 'default';
+  const size = (props.size as string) || 'md';
+  const label = (props.label as string) || '';
+  const placeholder = (props.placeholder as string) || '';
+  const value = (props.value as string) || (props.defaultValue as string) || '';
+  const description = (props.description as string) || '';
+  const isDisabled = (props.isDisabled as boolean) || false;
+  const isInvalid = (props.isInvalid as boolean) || false;
+  const errorMessage = (props.errorMessage as string) || '';
 
-  // 🚀 Phase 0: size prop 추출 (기본값: 'md')
-  const size = useMemo(() => String(props?.size || 'md'), [props?.size]);
+  // Position (from effectiveElement with layoutPosition applied)
+  const posX = parseCSSSize(style?.left, undefined, 0);
+  const posY = parseCSSSize(style?.top, undefined, 0);
 
-  // 입력 스타일 (CSS 사이즈 프리셋 적용)
-  const layoutStyle = useMemo(() => convertToInputStyle(style, size), [style, size]);
+  // Get presets from CSS (TextField preset has label/description support)
+  const sizePreset = useMemo(() => getTextFieldSizePreset(size), [size]);
+  const colorPreset = useMemo(() => getTextFieldColorPreset(variant), [variant]);
+  // 🚀 Phase 19: .react-aria-Label / .react-aria-FieldError 클래스에서 스타일 읽기
+  const labelPreset = useMemo(() => getLabelStylePreset(size), [size]);
+  const descPreset = useMemo(() => getDescriptionStylePreset(size), [size]);
 
-  // 입력 값과 placeholder
-  const value = useMemo(() => String(props?.value || props?.defaultValue || ''), [props?.value, props?.defaultValue]);
-  const placeholder = useMemo(() => String(props?.placeholder || ''), [props?.placeholder]);
+  // 🚀 Phase 19: flexDirection 지원 (row/column)
+  const flexDirection = useMemo(() => {
+    const dir = style?.flexDirection;
+    if (dir === 'row' || dir === 'row-reverse') return 'row';
+    return 'column'; // default
+  }, [style?.flexDirection]);
 
-  // 이벤트 핸들러
-  const handleChange = useCallback(
-    (newValue: string) => {
-      onChange?.(element.id, newValue);
+  const isRow = flexDirection === 'row';
+
+  // Calculate dimensions - 🚀 Phase 19: labelPreset/descPreset 사용
+  const fieldWidth = parseCSSSize(style?.width, undefined, 240);
+
+  // Column 레이아웃용 높이 계산
+  const labelHeight = label ? labelPreset.fontSize + sizePreset.gap : 0;
+  const descriptionHeight = (description || (isInvalid && errorMessage))
+    ? descPreset.fontSize + sizePreset.gap
+    : 0;
+
+  // Row 레이아웃용 너비 계산
+  const labelWidth = label ? label.length * labelPreset.fontSize * 0.6 + sizePreset.gap : 0;
+
+  // Display text
+  const displayText = value || placeholder;
+  const isPlaceholder = !value && placeholder;
+  const descriptionText = isInvalid && errorMessage ? errorMessage : description;
+
+  // 🚀 Phase 19: 전체 영역 계산 (hitArea용)
+  const totalWidth = isRow ? labelWidth + fieldWidth : fieldWidth;
+  const totalHeightCalc = isRow
+    ? sizePreset.height + (descriptionText ? descPreset.fontSize + sizePreset.gap : 0)
+    : labelHeight + sizePreset.height + (descriptionText ? descPreset.fontSize + sizePreset.gap : 0);
+
+  // 🚀 Performance: useRef로 hover 상태 관리
+  const graphicsRef = useRef<PixiGraphicsType>(null);
+
+  // Draw input background
+  const drawBackground = useCallback(
+    (g: PixiGraphicsType, isHovered = false) => {
+      g.clear();
+
+      // Background (hover 시 약간 어둡게)
+      let bgColor = colorPreset.backgroundColor;
+      if (isDisabled) {
+        bgColor = colorPreset.disabledBackgroundColor;
+      } else if (isHovered) {
+        bgColor = Math.max(0, colorPreset.backgroundColor - 0x0a0a0a);
+      }
+
+      g.roundRect(0, 0, fieldWidth, sizePreset.height, sizePreset.borderRadius);
+      g.fill({ color: bgColor });
+
+      // Border
+      let borderColor = colorPreset.borderColor;
+      if (isInvalid) {
+        borderColor = colorPreset.errorBorderColor;
+      } else if (isSelected) {
+        borderColor = colorPreset.focusBorderColor;
+      } else if (isHovered) {
+        borderColor = colorPreset.focusBorderColor;
+      }
+
+      g.stroke({ color: borderColor, width: 1 });
+
+      // Selection indicator
+      if (isSelected) {
+        g.roundRect(-2, -2, fieldWidth + 4, sizePreset.height + 4, sizePreset.borderRadius + 2);
+        g.stroke({ color: colorPreset.focusBorderColor, width: 2 });
+      }
     },
-    [element.id, onChange]
+    [fieldWidth, sizePreset, colorPreset, isSelected, isDisabled, isInvalid]
   );
 
+  // Text styles - 🚀 Phase 19: .react-aria-Label 클래스에서 스타일 읽기
+  const labelStyle = useMemo<Partial<TextStyle>>(
+    () => ({
+      fontSize: labelPreset.fontSize,
+      fill: labelPreset.color,
+      fontFamily: labelPreset.fontFamily,
+      fontWeight: labelPreset.fontWeight,
+    }),
+    [labelPreset]
+  );
+
+  const inputStyle = useMemo<Partial<TextStyle>>(
+    () => ({
+      fontSize: sizePreset.fontSize,
+      fill: isDisabled
+        ? colorPreset.disabledTextColor
+        : isPlaceholder
+          ? colorPreset.placeholderColor
+          : colorPreset.textColor,
+      fontFamily: labelPreset.fontFamily,
+    }),
+    [sizePreset, colorPreset, isDisabled, isPlaceholder, labelPreset.fontFamily]
+  );
+
+  // 🚀 Phase 19: .react-aria-FieldError / [slot="description"] 클래스에서 스타일 읽기
+  const descriptionStyle = useMemo<Partial<TextStyle>>(
+    () => ({
+      fontSize: descPreset.fontSize,
+      fill: isInvalid ? descPreset.errorColor : descPreset.color,
+      fontFamily: descPreset.fontFamily,
+    }),
+    [descPreset, isInvalid]
+  );
+
+  // Event handlers
   const handleClick = useCallback(() => {
     onClick?.(element.id);
   }, [element.id, onClick]);
 
-  // Input 생성 및 관리
-  useEffect(() => {
-    if (!app?.stage) return;
-
-    // 컨테이너 생성
-    const container = new Container();
-    container.x = layoutStyle.x;
-    container.y = layoutStyle.y;
-    container.eventMode = 'static';
-    container.cursor = 'text';
-    container.on('pointerdown', handleClick);
-
-    // 배경 그래픽 생성
-    const bg = createInputBackground(
-      layoutStyle.width,
-      layoutStyle.height,
-      layoutStyle.backgroundColor,
-      layoutStyle.borderColor,
-      layoutStyle.borderWidth,
-      layoutStyle.borderRadius
-    );
-
-    // 텍스트 스타일
-    const textStyle = new TextStyle({
-      fontSize: layoutStyle.fontSize,
-      fontFamily: layoutStyle.fontFamily,
-      fill: layoutStyle.textColor,
-    });
-
-    // @pixi/ui Input 생성
-    const input = new Input({
-      bg,
-      textStyle,
-      placeholder,
-      padding: [0, layoutStyle.paddingRight, 0, layoutStyle.paddingLeft],
-    });
-
-    // 크기 설정
-    input.width = layoutStyle.width;
-    input.height = layoutStyle.height;
-
-    // 이벤트 연결
-    input.onEnter.connect(handleChange);
-    input.onChange.connect(handleChange);
-
-    // 컨테이너에 추가
-    container.addChild(input);
-
-    // Stage에 추가
-    app.stage.addChild(container);
-
-    containerRef.current = container;
-    inputRef.current = input;
-
-    return () => {
-      // 이벤트 연결 해제
-      input.onEnter.disconnectAll();
-      input.onChange.disconnectAll();
-      container.off('pointerdown', handleClick);
-
-      // Stage에서 제거
-      app.stage.removeChild(container);
-
-      // Graphics 객체 명시적 destroy (GPU 리소스 해제)
-      bg.destroy(true);
-
-      // Input 및 Container destroy
-      input.destroy({ children: true });
-      container.destroy({ children: true });
-
-      containerRef.current = null;
-      inputRef.current = null;
-    };
-  }, [app, layoutStyle, placeholder, handleClick, handleChange]);
-
-  // 값 동기화
-  useEffect(() => {
-    if (inputRef.current && inputRef.current.value !== value) {
-      inputRef.current.value = value;
+  const handlePointerOver = useCallback(() => {
+    if (graphicsRef.current && !isDisabled) {
+      drawBackground(graphicsRef.current, true);
     }
-  }, [value]);
+  }, [drawBackground, isDisabled]);
 
-  // @pixi/ui는 imperative이므로 JSX 반환 없음
-  return null;
+  const handlePointerOut = useCallback(() => {
+    if (graphicsRef.current) {
+      drawBackground(graphicsRef.current, false);
+    }
+  }, [drawBackground]);
+
+  // 🚀 Phase 19: 투명 히트 영역 (클릭 감지용)
+  const drawHitArea = useCallback(
+    (g: PixiGraphicsType) => {
+      g.clear();
+      g.rect(0, 0, totalWidth, totalHeightCalc);
+      g.fill({ color: 0xffffff, alpha: 0 });
+    },
+    [totalWidth, totalHeightCalc]
+  );
+
+  // 🚀 Phase 19: Row/Column 레이아웃 위치 계산
+  const labelPos = useMemo(() => {
+    if (isRow) {
+      // Row: Label 왼쪽, Input 중앙 정렬
+      return { x: 0, y: (sizePreset.height - labelPreset.fontSize) / 2 };
+    }
+    // Column: Label 위쪽
+    return { x: 0, y: 0 };
+  }, [isRow, sizePreset.height, labelPreset.fontSize]);
+
+  const inputPos = useMemo(() => {
+    if (isRow) {
+      // Row: Label 오른쪽에 Input
+      return { x: labelWidth, y: 0 };
+    }
+    // Column: Label 아래에 Input
+    return { x: 0, y: labelHeight };
+  }, [isRow, labelWidth, labelHeight]);
+
+  const descriptionPos = useMemo(() => {
+    if (isRow) {
+      // Row: Input 아래에 Description
+      return { x: labelWidth, y: sizePreset.height + sizePreset.gap };
+    }
+    // Column: Input 아래에 Description
+    return { x: 0, y: labelHeight + sizePreset.height + sizePreset.gap };
+  }, [isRow, labelWidth, labelHeight, sizePreset]);
+
+  return (
+    <pixiContainer x={posX} y={posY}>
+      {/* Label */}
+      {label && (
+        <pixiText
+          text={label}
+          style={labelStyle}
+          x={labelPos.x}
+          y={labelPos.y}
+        />
+      )}
+
+      {/* Input field */}
+      <pixiContainer x={inputPos.x} y={inputPos.y}>
+        <pixiGraphics
+          ref={graphicsRef}
+          draw={(g) => drawBackground(g, false)}
+        />
+        <pixiText
+          text={displayText}
+          style={inputStyle}
+          x={sizePreset.paddingX}
+          y={(sizePreset.height - sizePreset.fontSize) / 2}
+        />
+      </pixiContainer>
+
+      {/* Description / Error message */}
+      {descriptionText && (
+        <pixiText
+          text={descriptionText}
+          style={descriptionStyle}
+          x={descriptionPos.x}
+          y={descriptionPos.y}
+        />
+      )}
+
+      {/* 🚀 Phase 19: 투명 히트 영역 (클릭 감지용) - 마지막에 렌더링하여 최상단 배치 */}
+      <pixiGraphics
+        draw={drawHitArea}
+        eventMode="static"
+        cursor={isDisabled ? 'not-allowed' : 'text'}
+        onPointerDown={handleClick}
+        onPointerOver={handlePointerOver}
+        onPointerOut={handlePointerOut}
+      />
+    </pixiContainer>
+  );
 });
 
 export default PixiInput;

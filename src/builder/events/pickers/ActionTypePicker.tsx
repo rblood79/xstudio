@@ -18,7 +18,7 @@ import { Popover } from '@/shared/components/Popover';
 import { CirclePlus, Search, ChevronDown } from 'lucide-react';
 import type { ActionType } from '@/types/events/events.types';
 import { ACTION_TYPE_LABELS, REGISTRY_ACTION_CATEGORIES } from '@/types/events/events.types';
-import { iconProps } from '@/utils/ui/uiConstants';
+import { iconProps, iconEditProps } from '@/utils/ui/uiConstants';
 
 interface ActionTypePickerProps {
   /** 액션 선택 시 호출되는 콜백 */
@@ -139,7 +139,7 @@ export function ActionTypePicker({
           <span className="action-picker-value">
             {selectedType ? ACTION_TYPE_LABELS[selectedType] || selectedType : placeholder}
           </span>
-          <ChevronDown size={14} />
+          <ChevronDown size={iconEditProps.size} />
         </Button>
 
         <Popover
@@ -149,7 +149,7 @@ export function ActionTypePicker({
           showArrow={false}
         >
           <div className="action-picker-search">
-            <Search size={14} color={iconProps.color} />
+            <Search size={iconEditProps.size} color={iconProps.color} />
             <input
               ref={searchInputRef}
               className="action-picker-search-input"
@@ -171,7 +171,7 @@ export function ActionTypePicker({
             {filteredActionTypes.length === 0 ? (
               <ListBoxItem id="empty" textValue="No actions found">
                 <div className="action-picker-empty">
-                  <Search size={16} color={iconProps.color} />
+                  <Search size={iconProps.size} color={iconProps.color} />
                   <span>No actions found</span>
                 </div>
               </ListBoxItem>
@@ -228,7 +228,7 @@ export function ActionTypePicker({
         showArrow={false}
       >
         <div className="action-picker-search">
-          <Search size={14} color={iconProps.color} />
+          <Search size={iconEditProps.size} color={iconProps.color} />
           <input
             ref={searchInputRef}
             className="action-picker-search-input"

@@ -26,6 +26,7 @@ import {
   ListBoxItem,
 } from 'react-aria-components';
 import { ChevronDown, Database, Globe, Variable, Link2, X, RefreshCw } from 'lucide-react';
+import { iconProps, iconEditProps } from '../../../utils/ui/uiConstants';
 import { PropertyFieldset } from './PropertyFieldset';
 import { useDataTables, useApiEndpoints, useVariables } from '../../stores/data';
 import './PropertyDataBinding.css';
@@ -247,7 +248,7 @@ export const PropertyDataBinding = memo(function PropertyDataBinding({
               type="button"
               aria-label="바인딩 제거"
             >
-              <X size={14} />
+              <X size={iconEditProps.size} />
             </button>
           </div>
         )}
@@ -265,7 +266,7 @@ export const PropertyDataBinding = memo(function PropertyDataBinding({
               
               <SelectValue placeholder="소스 선택..." />
               <span aria-hidden="true" className="select-chevron">
-                <ChevronDown size={16} />
+                <ChevronDown size={iconProps.size} />
               </span>
             </Button>
             <Popover className="react-aria-Popover">
@@ -276,7 +277,7 @@ export const PropertyDataBinding = memo(function PropertyDataBinding({
                     id={option.value}
                     className="react-aria-ListBoxItem"
                   >
-                    <option.icon size={14} />
+                    <option.icon size={iconEditProps.size} />
                     <span>{option.label}</span>
                   </ListBoxItem>
                 ))}
@@ -299,7 +300,7 @@ export const PropertyDataBinding = memo(function PropertyDataBinding({
                 <Button className="react-aria-Button">
                   <SelectValue placeholder="이름 선택..." />
                   <span aria-hidden="true" className="select-chevron">
-                    <ChevronDown size={16} />
+                    <ChevronDown size={iconProps.size} />
                   </span>
                 </Button>
                 <Popover className="react-aria-Popover">
@@ -374,7 +375,7 @@ export const PropertyDataBinding = memo(function PropertyDataBinding({
           <>
             <div className="binding-row binding-refresh-row">
               <label className="binding-row-label">
-                <RefreshCw size={14} />
+                <RefreshCw size={iconEditProps.size} />
                 <span>갱신 모드</span>
               </label>
               <AriaSelect
@@ -387,7 +388,7 @@ export const PropertyDataBinding = memo(function PropertyDataBinding({
                 <Button className="react-aria-Button">
                   <SelectValue />
                   <span aria-hidden="true" className="select-chevron">
-                    <ChevronDown size={16} />
+                    <ChevronDown size={iconProps.size} />
                   </span>
                 </Button>
                 <Popover className="react-aria-Popover">

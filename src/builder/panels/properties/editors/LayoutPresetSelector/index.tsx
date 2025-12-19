@@ -23,6 +23,7 @@ import {
 } from "./presetDefinitions";
 import type { PresetApplyMode } from "./types";
 import "./styles.css";
+import { iconEditProps } from "../../../../../utils/ui/uiConstants";
 
 interface LayoutPresetSelectorProps {
   /** Layout ID */
@@ -128,7 +129,7 @@ export const LayoutPresetSelector = memo(function LayoutPresetSelector({
         return (
           <div key={categoryKey} className="list-subgroup">
             <div className="list-subgroup-header">
-              <CategoryIcon size={14} className="list-subgroup-icon" />
+              <CategoryIcon size={iconEditProps.size} className="list-subgroup-icon" />
               <span className="list-subgroup-title">{meta.label}</span>
             </div>
 

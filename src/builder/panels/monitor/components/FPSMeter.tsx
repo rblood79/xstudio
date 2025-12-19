@@ -9,6 +9,7 @@
 
 import { Activity } from "lucide-react";
 import type { FPSData } from "../hooks/useFPSMonitor";
+import { iconEditProps } from "../../../../utils/ui/uiConstants";
 
 interface FPSMeterProps {
   fps: FPSData;
@@ -26,7 +27,7 @@ export function FPSMeter({ fps }: FPSMeterProps) {
   return (
     <div className="fps-meter" data-status={status}>
       <div className="fps-meter-header">
-        <Activity size={14} aria-hidden="true" />
+        <Activity size={iconEditProps.size} aria-hidden="true" />
         <span className="fps-meter-title">FPS</span>
       </div>
 

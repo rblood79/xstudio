@@ -19,6 +19,8 @@ import { parseCSSSize } from '../sprites/styleConverter';
 import {
   getTextFieldSizePreset,
   getTextFieldColorPreset,
+  getLabelStylePreset,
+  getDescriptionStylePreset,
 } from '../utils/cssVariableReader';
 
 export interface PixiTextFieldProps {
@@ -56,14 +58,34 @@ export function PixiTextField({
   // Get presets from CSS
   const sizePreset = useMemo(() => getTextFieldSizePreset(size), [size]);
   const colorPreset = useMemo(() => getTextFieldColorPreset(variant), [variant]);
+  // 🚀 Phase 19: .react-aria-Label / .react-aria-FieldError 클래스에서 스타일 읽기
+  const labelPreset = useMemo(() => getLabelStylePreset(size), [size]);
+  const descPreset = useMemo(() => getDescriptionStylePreset(size), [size]);
 
-  // Calculate dimensions
+  // 🚀 Phase 19: flexDirection 지원 (row/column)
+  const flexDirection = useMemo(() => {
+    const dir = style?.flexDirection;
+    if (dir === 'row' || dir === 'row-reverse') return 'row';
+    return 'column'; // default
+  }, [style?.flexDirection]);
+
+  const isRow = flexDirection === 'row';
+
+  // Calculate dimensions - 🚀 Phase 19: labelPreset/descPreset 사용
   const fieldWidth = (props.width as number) || 240;
-  const labelHeight = label ? sizePreset.labelFontSize + sizePreset.gap : 0;
+
+  // Column 레이아웃용 높이 계산
+  const labelHeight = label ? labelPreset.fontSize + sizePreset.gap : 0;
   const descriptionHeight = (description || (isInvalid && errorMessage))
-    ? sizePreset.descriptionFontSize + sizePreset.gap
+    ? descPreset.fontSize + sizePreset.gap
     : 0;
-  const totalHeight = labelHeight + sizePreset.height + descriptionHeight;
+
+  // Row 레이아웃용 너비 계산
+  const labelWidth = label ? label.length * labelPreset.fontSize * 0.6 + sizePreset.gap : 0;
+
+  const totalHeight = isRow
+    ? sizePreset.height
+    : labelHeight + sizePreset.height + descriptionHeight;
 
   // Draw input field
   const drawField = useCallback(
@@ -92,15 +114,15 @@ export function PixiTextField({
     [fieldWidth, sizePreset, colorPreset, isSelected, isDisabled, isInvalid]
   );
 
-  // Text styles
+  // Text styles - 🚀 Phase 19: .react-aria-Label 클래스에서 스타일 읽기
   const labelStyle = useMemo<Partial<TextStyle>>(
     () => ({
-      fontSize: sizePreset.labelFontSize,
-      fill: colorPreset.labelColor,
-      fontFamily: 'Inter, system-ui, sans-serif',
-      fontWeight: '500',
+      fontSize: labelPreset.fontSize,
+      fill: labelPreset.color,
+      fontFamily: labelPreset.fontFamily,
+      fontWeight: labelPreset.fontWeight,
     }),
-    [sizePreset, colorPreset]
+    [labelPreset]
   );
 
   const inputStyle = useMemo<Partial<TextStyle>>(
@@ -111,44 +133,88 @@ export function PixiTextField({
         : value
           ? colorPreset.textColor
           : colorPreset.placeholderColor,
-      fontFamily: 'Inter, system-ui, sans-serif',
+      fontFamily: labelPreset.fontFamily,
     }),
-    [sizePreset, colorPreset, value, isDisabled]
+    [sizePreset, colorPreset, value, isDisabled, labelPreset.fontFamily]
   );
 
+  // 🚀 Phase 19: .react-aria-FieldError / [slot="description"] 클래스에서 스타일 읽기
   const descriptionStyle = useMemo<Partial<TextStyle>>(
     () => ({
-      fontSize: sizePreset.descriptionFontSize,
-      fill: isInvalid ? colorPreset.errorTextColor : colorPreset.descriptionColor,
-      fontFamily: 'Inter, system-ui, sans-serif',
+      fontSize: descPreset.fontSize,
+      fill: isInvalid ? descPreset.errorColor : descPreset.color,
+      fontFamily: descPreset.fontFamily,
     }),
-    [sizePreset, colorPreset, isInvalid]
+    [descPreset, isInvalid]
   );
 
   // Display text
   const displayText = value || placeholder;
   const descriptionText = isInvalid && errorMessage ? errorMessage : description;
 
+  // 전체 영역 계산 (hitArea용)
+  const totalWidth = isRow ? labelWidth + fieldWidth : fieldWidth;
+  const totalHeightCalc = isRow
+    ? sizePreset.height + (descriptionText ? descPreset.fontSize + sizePreset.gap : 0)
+    : labelHeight + sizePreset.height + (descriptionText ? descPreset.fontSize + sizePreset.gap : 0);
+
+  // 🚀 Phase 19: 투명 히트 영역 (클릭 감지용)
+  const drawHitArea = useCallback(
+    (g: PixiGraphics) => {
+      g.clear();
+      g.rect(0, 0, totalWidth, totalHeightCalc);
+      g.fill({ color: 0xffffff, alpha: 0 });
+    },
+    [totalWidth, totalHeightCalc]
+  );
+
+  // 클릭 핸들러
+  const handleClick = useCallback(() => {
+    onClick?.(element.id);
+  }, [element.id, onClick]);
+
+  // 🚀 Phase 19: Row/Column 레이아웃 위치 계산
+  const labelPos = useMemo(() => {
+    if (isRow) {
+      // Row: Label 왼쪽, Input 중앙 정렬
+      return { x: 0, y: (sizePreset.height - labelPreset.fontSize) / 2 };
+    }
+    // Column: Label 위쪽
+    return { x: 0, y: 0 };
+  }, [isRow, sizePreset.height, labelPreset.fontSize]);
+
+  const inputPos = useMemo(() => {
+    if (isRow) {
+      // Row: Label 오른쪽에 Input
+      return { x: labelWidth, y: 0 };
+    }
+    // Column: Label 아래에 Input
+    return { x: 0, y: labelHeight };
+  }, [isRow, labelWidth, labelHeight]);
+
+  const descriptionPos = useMemo(() => {
+    if (isRow) {
+      // Row: Input 오른쪽에 Description (또는 Input 아래)
+      return { x: labelWidth, y: sizePreset.height + sizePreset.gap };
+    }
+    // Column: Input 아래에 Description
+    return { x: 0, y: labelHeight + sizePreset.height + sizePreset.gap };
+  }, [isRow, labelWidth, labelHeight, sizePreset]);
+
   return (
-    <pixiContainer
-      x={posX}
-      y={posY}
-      eventMode="static"
-      cursor="pointer"
-      onPointerDown={() => onClick?.(element.id)}
-    >
+    <pixiContainer x={posX} y={posY}>
       {/* Label */}
       {label && (
         <pixiText
           text={label}
           style={labelStyle}
-          x={0}
-          y={0}
+          x={labelPos.x}
+          y={labelPos.y}
         />
       )}
 
       {/* Input field */}
-      <pixiContainer y={labelHeight}>
+      <pixiContainer x={inputPos.x} y={inputPos.y}>
         <pixiGraphics draw={drawField} />
         <pixiText
           text={displayText}
@@ -163,10 +229,18 @@ export function PixiTextField({
         <pixiText
           text={descriptionText}
           style={descriptionStyle}
-          x={0}
-          y={labelHeight + sizePreset.height + sizePreset.gap}
+          x={descriptionPos.x}
+          y={descriptionPos.y}
         />
       )}
+
+      {/* 🚀 Phase 19: 투명 히트 영역 (클릭 감지용) - 마지막에 렌더링하여 최상단 배치 */}
+      <pixiGraphics
+        draw={drawHitArea}
+        eventMode="static"
+        cursor="pointer"
+        onPointerDown={handleClick}
+      />
     </pixiContainer>
   );
 }
