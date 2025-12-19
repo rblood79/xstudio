@@ -106,7 +106,7 @@ export function PixiTooltip({
         g.stroke({ color: 0x3b82f6, width: 2 });
       }
     },
-    [containerWidth, containerHeight, sizePreset, colorPreset, placement, isSelected]
+    [containerWidth, containerHeight, sizePreset, colorPreset, placement, isSelected, arrowSize]
   );
 
   // Text style

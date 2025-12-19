@@ -14,8 +14,6 @@ import { useState, useCallback, useEffect, useRef } from "react";
 import {
   Plus,
   Trash2,
-  ChevronDown,
-  ChevronRight,
   Play,
   Wand2,
 } from "lucide-react";
@@ -24,11 +22,11 @@ import { useDataStore } from "../../../stores/data";
 import type {
   ApiEndpoint,
   HttpMethod,
+  ApiHeader,
 } from "../../../../types/builder/data.types";
 import {
   PropertyInput,
   PropertySelect,
-  PropertySwitch,
 } from "../../common";
 import { ColumnSelector } from "../components/ColumnSelector";
 import {
@@ -59,9 +57,6 @@ export function ApiEndpointEditor({ endpoint, onClose, activeTab }: ApiEndpointE
   const executeApiEndpoint = useDataStore((state) => state.executeApiEndpoint);
   const createDataTable = useDataStore((state) => state.createDataTable);
 
-  const [expandedSections, setExpandedSections] = useState<Set<string>>(
-    new Set(["headers", "queryParams"])
-  );
   const [testResult, setTestResult] = useState<{ success: boolean; data: unknown } | null>(null);
   const [isExecuting, setIsExecuting] = useState(false);
   const [detectedColumns, setDetectedColumns] = useState<DetectedColumn[]>([]);
@@ -80,64 +75,29 @@ export function ApiEndpointEditor({ endpoint, onClose, activeTab }: ApiEndpointE
     [endpoint.id, updateApiEndpoint]
   );
 
-  // Headers 업데이트
+  // Headers 업데이트 (ApiHeader[] 형식)
   const handleAddHeader = useCallback(() => {
-    const newHeaders = { ...endpoint.headers, "": "" };
+    const newHeaders = [...(endpoint.headers || []), { key: "", value: "", enabled: true }];
     handleBasicUpdate({ headers: newHeaders });
   }, [endpoint.headers, handleBasicUpdate]);
 
   const handleUpdateHeader = useCallback(
-    (oldKey: string, newKey: string, value: string) => {
-      const newHeaders = { ...endpoint.headers };
-      if (oldKey !== newKey) {
-        delete newHeaders[oldKey];
-      }
-      newHeaders[newKey] = value;
+    (index: number, key: string, value: string) => {
+      const newHeaders = [...(endpoint.headers || [])];
+      newHeaders[index] = { ...newHeaders[index], key, value };
       handleBasicUpdate({ headers: newHeaders });
     },
     [endpoint.headers, handleBasicUpdate]
   );
 
   const handleDeleteHeader = useCallback(
-    (key: string) => {
-      const newHeaders = { ...endpoint.headers };
-      delete newHeaders[key];
+    (index: number) => {
+      const newHeaders = [...(endpoint.headers || [])];
+      newHeaders.splice(index, 1);
       handleBasicUpdate({ headers: newHeaders });
     },
     [endpoint.headers, handleBasicUpdate]
   );
-
-  // Query Params 업데이트 (future feature - Query Params tab)
-  const _handleAddQueryParam = useCallback(() => {
-    const newParams = { ...endpoint.queryParams, "": "" };
-    handleBasicUpdate({ queryParams: newParams });
-  }, [endpoint.queryParams, handleBasicUpdate]);
-
-  const _handleUpdateQueryParam = useCallback(
-    (oldKey: string, newKey: string, value: string) => {
-      const newParams = { ...endpoint.queryParams };
-      if (oldKey !== newKey) {
-        delete newParams[oldKey];
-      }
-      newParams[newKey] = value;
-      handleBasicUpdate({ queryParams: newParams });
-    },
-    [endpoint.queryParams, handleBasicUpdate]
-  );
-
-  const _handleDeleteQueryParam = useCallback(
-    (key: string) => {
-      const newParams = { ...endpoint.queryParams };
-      delete newParams[key];
-      handleBasicUpdate({ queryParams: newParams });
-    },
-    [endpoint.queryParams, handleBasicUpdate]
-  );
-
-  // Silence unused variable warnings for future feature handlers
-  void _handleAddQueryParam;
-  void _handleUpdateQueryParam;
-  void _handleDeleteQueryParam;
 
   // 테스트 실행
   const handleTest = useCallback(async () => {
@@ -279,18 +239,6 @@ export function ApiEndpointEditor({ endpoint, onClose, activeTab }: ApiEndpointE
     [testResult?.data, endpoint.project_id, createDataTable]
   );
 
-  const toggleSection = (section: string) => {
-    setExpandedSections((prev) => {
-      const next = new Set(prev);
-      if (next.has(section)) {
-        next.delete(section);
-      } else {
-        next.add(section);
-      }
-      return next;
-    });
-  };
-
   // Note: onClose is handled by parent DataTableEditorPanel
   void onClose;
 
@@ -304,16 +252,11 @@ export function ApiEndpointEditor({ endpoint, onClose, activeTab }: ApiEndpointE
       )}
 
       {activeTab === "headers" && (
-        <KeyValueEditor
-          title="Headers"
-          description="HTTP 헤더를 설정합니다. {{변수명}} 형식으로 변수를 참조할 수 있습니다."
-          items={endpoint.headers || {}}
-          expandedSections={expandedSections}
-          onToggleSection={toggleSection}
+        <HeadersEditor
+          headers={endpoint.headers || []}
           onAdd={handleAddHeader}
           onUpdate={handleUpdateHeader}
           onDelete={handleDeleteHeader}
-          sectionKey="headers"
         />
       )}
 
@@ -374,26 +317,11 @@ function BasicEditor({ endpoint, onUpdate }: BasicEditorProps) {
       />
 
       <PropertyInput
-        label="Endpoint"
-        value={endpoint.endpoint}
-        onChange={(value) => onUpdate({ endpoint: value })}
+        label="Path"
+        value={endpoint.path}
+        onChange={(value) => onUpdate({ path: value })}
         placeholder="/users/{{userId}}"
       />
-
-      <PropertySwitch
-        label="Authentication Required"
-        isSelected={endpoint.authRequired || false}
-        onChange={(checked) => onUpdate({ authRequired: checked })}
-      />
-
-      {endpoint.authRequired && (
-        <PropertyInput
-          label="Auth Header"
-          value={endpoint.authHeader || ""}
-          onChange={(value) => onUpdate({ authHeader: value })}
-          placeholder="Bearer {{accessToken}}"
-        />
-      )}
 
       <div className="section-divider" />
 
@@ -413,55 +341,47 @@ interface QueryParamsEditorProps {
 }
 
 function QueryParamsEditor({ endpoint, onUpdate }: QueryParamsEditorProps) {
-  const params = endpoint.queryParams || {};
-  const entries = Object.entries(params);
+  const params = endpoint.queryParams || [];
 
   const handleAdd = () => {
-    const newParams = { ...params, "": "" };
+    const newParams = [...params, { key: "", value: "", type: "string" as const, required: false }];
     onUpdate({ queryParams: newParams });
   };
 
-  const handleUpdateKey = (oldKey: string, newKey: string) => {
-    const newParams = { ...params };
-    const value = newParams[oldKey];
-    delete newParams[oldKey];
-    newParams[newKey] = value;
+  const handleUpdate = (index: number, key: string, value: string) => {
+    const newParams = [...params];
+    newParams[index] = { ...newParams[index], key, value };
     onUpdate({ queryParams: newParams });
   };
 
-  const handleUpdateValue = (key: string, value: string) => {
-    const newParams = { ...params, [key]: value };
-    onUpdate({ queryParams: newParams });
-  };
-
-  const handleDelete = (key: string) => {
-    const newParams = { ...params };
-    delete newParams[key];
+  const handleDelete = (index: number) => {
+    const newParams = [...params];
+    newParams.splice(index, 1);
     onUpdate({ queryParams: newParams });
   };
 
   return (
     <div className="query-params-editor">
-      {entries.map(([key, value], index) => (
+      {params.map((param, index) => (
         <div key={index} className="kv-row">
           <input
             type="text"
             className="kv-input key"
-            value={key}
-            onChange={(e) => handleUpdateKey(key, e.target.value)}
+            value={param.key}
+            onChange={(e) => handleUpdate(index, e.target.value, param.value)}
             placeholder="key"
           />
           <input
             type="text"
             className="kv-input value"
-            value={value}
-            onChange={(e) => handleUpdateValue(key, e.target.value)}
+            value={param.value}
+            onChange={(e) => handleUpdate(index, param.key, e.target.value)}
             placeholder="value or {{variable}}"
           />
           <button
             type="button"
             className="kv-delete"
-            onClick={() => handleDelete(key)}
+            onClick={() => handleDelete(index)}
           >
             <Trash2 size={iconSmall.size} />
           </button>
@@ -477,81 +397,60 @@ function QueryParamsEditor({ endpoint, onUpdate }: QueryParamsEditorProps) {
 }
 
 // ============================================
-// Key-Value Editor (Headers)
+// Headers Editor (ApiHeader[] format)
 // ============================================
 
-interface KeyValueEditorProps {
-  title: string;
-  description: string;
-  items: Record<string, string>;
-  expandedSections: Set<string>;
-  onToggleSection: (key: string) => void;
+interface HeadersEditorProps {
+  headers: ApiHeader[];
   onAdd: () => void;
-  onUpdate: (oldKey: string, newKey: string, value: string) => void;
-  onDelete: (key: string) => void;
-  sectionKey: string;
+  onUpdate: (index: number, key: string, value: string) => void;
+  onDelete: (index: number) => void;
 }
 
-function KeyValueEditor({
-  title,
-  description,
-  items,
-  expandedSections,
-  onToggleSection,
+function HeadersEditor({
+  headers,
   onAdd,
   onUpdate,
   onDelete,
-  sectionKey,
-}: KeyValueEditorProps) {
-  const entries = Object.entries(items);
-  const isExpanded = expandedSections.has(sectionKey);
-
+}: HeadersEditorProps) {
   return (
     <div className="kv-editor">
-      <div className="kv-section-header" onClick={() => onToggleSection(sectionKey)}>
-        {isExpanded ? <ChevronDown {...iconEditProps} /> : <ChevronRight {...iconEditProps} />}
-        <span className="kv-section-title">{title}</span>
-        <span className="kv-section-count">{entries.length}</span>
+      <p className="kv-description">
+        HTTP 헤더를 설정합니다. {"{{변수명}}"} 형식으로 변수를 참조할 수 있습니다.
+      </p>
+
+      <div className="kv-list">
+        {headers.map((header, index) => (
+          <div key={index} className="kv-row">
+            <input
+              type="text"
+              className="kv-input key"
+              value={header.key}
+              onChange={(e) => onUpdate(index, e.target.value, header.value)}
+              placeholder="Header Name"
+            />
+            <input
+              type="text"
+              className="kv-input value"
+              value={header.value}
+              onChange={(e) => onUpdate(index, header.key, e.target.value)}
+              placeholder="Value or {{variable}}"
+            />
+            <button
+              type="button"
+              className="kv-delete"
+              onClick={() => onDelete(index)}
+            >
+              <Trash2 size={iconSmall.size} />
+            </button>
+          </div>
+        ))}
       </div>
 
-      {isExpanded && (
-        <>
-          <p className="kv-description">{description}</p>
-
-          <div className="kv-list">
-            {entries.map(([key, value], index) => (
-              <div key={index} className="kv-row">
-                <input
-                  type="text"
-                  className="kv-input key"
-                  value={key}
-                  onChange={(e) => onUpdate(key, e.target.value, value)}
-                  placeholder="Header Name"
-                />
-                <input
-                  type="text"
-                  className="kv-input value"
-                  value={value}
-                  onChange={(e) => onUpdate(key, key, e.target.value)}
-                  placeholder="Value or {{variable}}"
-                />
-                <button
-                  type="button"
-                  className="kv-delete"
-                  onClick={() => onDelete(key)}
-                >
-                  <Trash2 size={iconSmall.size} />
-                </button>
-              </div>
-            ))}
-          </div>
-
-          <button type="button" className="add-kv-btn" onClick={onAdd}>
-            <Plus {...iconEditProps} />
-            Add {title.slice(0, -1)}
-          </button>
-        </>
-      )}
+      <button type="button" className="add-kv-btn" onClick={onAdd}>
+        <Plus {...iconEditProps} />
+        Add Header
+      </button>
     </div>
   );
 }
@@ -566,15 +465,11 @@ interface BodyEditorProps {
 }
 
 function BodyEditor({ endpoint, onUpdate }: BodyEditorProps) {
-  const bodyJson = endpoint.body ? JSON.stringify(endpoint.body, null, 2) : "";
+  // bodyTemplate is already a string (JSON template)
+  const bodyTemplate = endpoint.bodyTemplate || "";
 
   const handleBodyChange = (value: string) => {
-    try {
-      const parsed = value ? JSON.parse(value) : undefined;
-      onUpdate({ body: parsed });
-    } catch {
-      // Invalid JSON - keep current value
-    }
+    onUpdate({ bodyTemplate: value });
   };
 
   return (
@@ -587,7 +482,7 @@ function BodyEditor({ endpoint, onUpdate }: BodyEditorProps) {
 
       <textarea
         className="body-textarea"
-        value={bodyJson}
+        value={bodyTemplate}
         onChange={(e) => handleBodyChange(e.target.value)}
         placeholder='{"key": "value", "userId": "{{userId}}"}'
         rows={10}
@@ -711,40 +606,40 @@ interface FieldMappingEditorProps {
 }
 
 function FieldMappingEditor({ endpoint, onUpdate }: FieldMappingEditorProps) {
-  const fieldMapping = endpoint.responseMapping?.fieldMapping || {};
-  const entries = Object.entries(fieldMapping);
+  // fieldMappings is an array of { sourceKey, targetKey }
+  const fieldMappings = endpoint.responseMapping?.fieldMappings || [];
 
   const handleAdd = () => {
-    const newMapping = { ...fieldMapping, "": "" };
+    const newMappings = [...fieldMappings, { sourceKey: "", targetKey: "" }];
     onUpdate({
       responseMapping: {
         ...endpoint.responseMapping,
-        fieldMapping: newMapping,
+        dataPath: endpoint.responseMapping?.dataPath || "",
+        fieldMappings: newMappings,
       },
     });
   };
 
-  const handleUpdate = (oldKey: string, newKey: string, value: string) => {
-    const newMapping = { ...fieldMapping };
-    if (oldKey !== newKey) {
-      delete newMapping[oldKey];
-    }
-    newMapping[newKey] = value;
+  const handleUpdate = (index: number, sourceKey: string, targetKey: string) => {
+    const newMappings = [...fieldMappings];
+    newMappings[index] = { sourceKey, targetKey };
     onUpdate({
       responseMapping: {
         ...endpoint.responseMapping,
-        fieldMapping: newMapping,
+        dataPath: endpoint.responseMapping?.dataPath || "",
+        fieldMappings: newMappings,
       },
     });
   };
 
-  const handleDelete = (key: string) => {
-    const newMapping = { ...fieldMapping };
-    delete newMapping[key];
+  const handleDelete = (index: number) => {
+    const newMappings = [...fieldMappings];
+    newMappings.splice(index, 1);
     onUpdate({
       responseMapping: {
         ...endpoint.responseMapping,
-        fieldMapping: newMapping,
+        dataPath: endpoint.responseMapping?.dataPath || "",
+        fieldMappings: newMappings,
       },
     });
   };
@@ -752,27 +647,27 @@ function FieldMappingEditor({ endpoint, onUpdate }: FieldMappingEditorProps) {
   return (
     <div className="field-mapping-editor">
       <div className="kv-list">
-        {entries.map(([key, value], index) => (
+        {fieldMappings.map((mapping, index) => (
           <div key={index} className="kv-row">
             <input
               type="text"
               className="kv-input key"
-              value={key}
-              onChange={(e) => handleUpdate(key, e.target.value, value)}
+              value={mapping.sourceKey}
+              onChange={(e) => handleUpdate(index, e.target.value, mapping.targetKey)}
               placeholder="API Field"
             />
             <span className="kv-arrow">→</span>
             <input
               type="text"
               className="kv-input value"
-              value={value}
-              onChange={(e) => handleUpdate(key, key, e.target.value)}
+              value={mapping.targetKey}
+              onChange={(e) => handleUpdate(index, mapping.sourceKey, e.target.value)}
               placeholder="DataTable Field"
             />
             <button
               type="button"
               className="kv-delete"
-              onClick={() => handleDelete(key)}
+              onClick={() => handleDelete(index)}
             >
               <Trash2 size={iconSmall.size} />
             </button>
@@ -821,7 +716,7 @@ function TestEditor({
         </span>
         <span className="test-url">
           {endpoint.baseUrl}
-          {endpoint.endpoint}
+          {endpoint.path}
         </span>
       </div>
 

@@ -87,14 +87,14 @@ export const PixiBadge = memo(function PixiBadge({
       return cssColorToHex(style.backgroundColor, colorPreset.background);
     }
     return colorPreset.background;
-  }, [style?.backgroundColor, colorPreset.background]);
+  }, [style, colorPreset]);
 
   const textColor = useMemo(() => {
     if (style?.color) {
       return cssColorToHex(style.color, colorPreset.text);
     }
     return colorPreset.text;
-  }, [style?.color, colorPreset.text]);
+  }, [style, colorPreset]);
 
   // 배지 크기 계산
   const badgeSize = useMemo(() => {

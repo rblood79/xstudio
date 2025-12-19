@@ -69,7 +69,7 @@ export const PixiCheckbox = memo(function PixiCheckbox({
   const sizePreset = useMemo(() => {
     const size = props?.size ? String(props.size) : 'md';
     return getCheckboxSizePreset(size);
-  }, [props?.size]);
+  }, [props]);
 
   const boxSize = sizePreset.boxSize;
 
@@ -133,7 +133,7 @@ export const PixiCheckbox = memo(function PixiCheckbox({
         fontSize,
         fill: textColor,
       }),
-    [style?.fontFamily, fontSize, textColor]
+    [style, fontSize, textColor]
   );
 
   // 클릭 핸들러

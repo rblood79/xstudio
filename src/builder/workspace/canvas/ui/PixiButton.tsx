@@ -551,7 +551,7 @@ export const PixiButton = memo(function PixiButton({
         loadingIndicatorRef.current = null;
       }
     };
-  }, [layout.width, layout.height, layout.backgroundColor, layout.backgroundAlpha, layout.hoverColor, layout.pressedColor, layout.borderColor, layout.borderRadius, layout.textColor, layout.fontSize, layout.fontFamily, layout.isDisabled, layout.isLoading, buttonText]);
+  }, [layout, buttonText]);
 
   // 투명 히트 영역 (modifier 키 감지용)
   const drawHitArea = useCallback(

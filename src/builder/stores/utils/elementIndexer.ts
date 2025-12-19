@@ -73,6 +73,9 @@ export function indexElement(
 ): void {
   const { page_id, id, parent_id } = element;
 
+  // page_id가 null/undefined이면 스킵 (Layout 요소 등)
+  if (!page_id) return;
+
   // 1. elementsByPage에 추가
   if (!index.elementsByPage.has(page_id)) {
     index.elementsByPage.set(page_id, new Set());
@@ -104,6 +107,9 @@ export function unindexElement(
   element: Element
 ): void {
   const { page_id, id } = element;
+
+  // page_id가 null/undefined이면 스킵 (Layout 요소 등)
+  if (!page_id) return;
 
   // 1. elementsByPage에서 제거
   const pageSet = index.elementsByPage.get(page_id);
@@ -222,6 +228,9 @@ export function updateElementParent(
   elementsMap: Map<string, Element>
 ): void {
   const { page_id, id, parent_id: newParentId } = element;
+
+  // page_id가 null/undefined이면 스킵 (Layout 요소 등)
+  if (!page_id) return;
 
   // 이전에 루트였는지 확인
   const wasRoot = !oldParentId || isBodyElement(oldParentId, elementsMap);

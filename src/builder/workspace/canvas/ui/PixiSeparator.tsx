@@ -79,7 +79,7 @@ export const PixiSeparator = memo(function PixiSeparator({
       return cssColorToHex(style.borderColor, colorPreset.color);
     }
     return colorPreset.color;
-  }, [style?.backgroundColor, style?.borderColor, colorPreset.color]);
+  }, [style, colorPreset]);
 
   // 크기 계산
   const separatorSize = useMemo(() => {

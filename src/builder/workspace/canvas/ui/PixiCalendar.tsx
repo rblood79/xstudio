@@ -63,14 +63,23 @@ export function PixiCalendar({
     };
   }, [value]);
 
-  // Calculate calendar dimensions
-  const cellSize = sizePreset.cellSize;
-  const calendarWidth = cellSize * 7 + sizePreset.gap * 6 + sizePreset.padding * 2;
-  const headerHeight = sizePreset.buttonSize + sizePreset.gap;
-  const weekdayHeight = sizePreset.fontSize + sizePreset.gap;
-  const gridRows = 6;
-  const gridHeight = cellSize * gridRows + sizePreset.gap * (gridRows - 1);
-  const calendarHeight = sizePreset.padding * 2 + headerHeight + weekdayHeight + gridHeight;
+  // Calculate calendar dimensions (memoized for stable references)
+  const dimensions = useMemo(() => {
+    const cellSize = sizePreset.cellSize;
+    const headerHeight = sizePreset.buttonSize + sizePreset.gap;
+    const weekdayHeight = sizePreset.fontSize + sizePreset.gap;
+    const gridRows = 6;
+    const gridHeight = cellSize * gridRows + sizePreset.gap * (gridRows - 1);
+    return {
+      cellSize,
+      calendarWidth: cellSize * 7 + sizePreset.gap * 6 + sizePreset.padding * 2,
+      headerHeight,
+      weekdayHeight,
+      gridHeight,
+      calendarHeight: sizePreset.padding * 2 + headerHeight + weekdayHeight + gridHeight,
+    };
+  }, [sizePreset]);
+  const { cellSize, calendarWidth, headerHeight, weekdayHeight, calendarHeight } = dimensions;
 
   // Get days in month
   const daysInMonth = useMemo(() => {
@@ -208,7 +217,7 @@ export function PixiCalendar({
     } else {
       setDisplayMonth(displayMonth - 1);
     }
-  }, [displayMonth, displayYear]);
+  }, [displayMonth, displayYear, setDisplayMonth, setDisplayYear]);
 
   const handleNextMonth = useCallback(() => {
     if (displayMonth === 11) {
@@ -217,47 +226,45 @@ export function PixiCalendar({
     } else {
       setDisplayMonth(displayMonth + 1);
     }
-  }, [displayMonth, displayYear]);
+  }, [displayMonth, displayYear, setDisplayMonth, setDisplayYear]);
 
-  // Render day cells
-  const renderDays = useMemo(() => {
-    return daysInMonth.map((dayInfo, index) => {
-      const col = index % 7;
-      const row = Math.floor(index / 7);
-      const x = sizePreset.padding + col * (cellSize + sizePreset.gap) + cellSize / 2;
-      const y = sizePreset.padding + headerHeight + weekdayHeight + row * (cellSize + sizePreset.gap) + cellSize / 2;
+  // Render day cells (React Compiler handles optimization automatically)
+  const renderDays = daysInMonth.map((dayInfo, index) => {
+    const col = index % 7;
+    const row = Math.floor(index / 7);
+    const x = sizePreset.padding + col * (cellSize + sizePreset.gap) + cellSize / 2;
+    const y = sizePreset.padding + headerHeight + weekdayHeight + row * (cellSize + sizePreset.gap) + cellSize / 2;
 
-      // Draw cell background
-      const drawCell = (g: PixiGraphics) => {
-        g.clear();
+    // Draw cell background
+    const drawCell = (g: PixiGraphics) => {
+      g.clear();
 
-        if (dayInfo.isSelected) {
-          g.circle(0, 0, cellSize / 2 - 2);
-          g.fill({ color: colorPreset.selectedBgColor });
-        } else if (dayInfo.isToday) {
-          g.circle(0, 0, cellSize / 2 - 2);
-          g.stroke({ color: colorPreset.todayBorderColor, width: 2 });
-        }
-      };
+      if (dayInfo.isSelected) {
+        g.circle(0, 0, cellSize / 2 - 2);
+        g.fill({ color: colorPreset.selectedBgColor });
+      } else if (dayInfo.isToday) {
+        g.circle(0, 0, cellSize / 2 - 2);
+        g.stroke({ color: colorPreset.todayBorderColor, width: 2 });
+      }
+    };
 
-      const textColor = dayInfo.isSelected
-        ? colorPreset.selectedTextColor
-        : dayInfo.isCurrentMonth
-          ? colorPreset.textColor
-          : colorPreset.outsideMonthColor;
+    const textColor = dayInfo.isSelected
+      ? colorPreset.selectedTextColor
+      : dayInfo.isCurrentMonth
+        ? colorPreset.textColor
+        : colorPreset.outsideMonthColor;
 
-      return (
-        <pixiContainer key={index} x={x} y={y}>
-          <pixiGraphics draw={drawCell} />
-          <pixiText
-            text={String(dayInfo.day)}
-            style={{ ...dayStyle, fill: textColor }}
-            anchor={0.5}
-          />
-        </pixiContainer>
-      );
-    });
-  }, [daysInMonth, sizePreset, colorPreset, cellSize, headerHeight, weekdayHeight, dayStyle]);
+    return (
+      <pixiContainer key={index} x={x} y={y}>
+        <pixiGraphics draw={drawCell} />
+        <pixiText
+          text={String(dayInfo.day)}
+          style={{ ...dayStyle, fill: textColor }}
+          anchor={0.5}
+        />
+      </pixiContainer>
+    );
+  });
 
   return (
     <pixiContainer

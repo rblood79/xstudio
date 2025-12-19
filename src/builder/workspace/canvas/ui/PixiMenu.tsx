@@ -98,14 +98,14 @@ export const PixiMenu = memo(function PixiMenu({
       return cssColorToHex(style.backgroundColor, colorPreset.backgroundColor);
     }
     return colorPreset.backgroundColor;
-  }, [style?.backgroundColor, colorPreset.backgroundColor]);
+  }, [style, colorPreset]);
 
   const borderColor = useMemo(() => {
     if (style?.borderColor) {
       return cssColorToHex(style.borderColor, colorPreset.borderColor);
     }
     return colorPreset.borderColor;
-  }, [style?.borderColor, colorPreset.borderColor]);
+  }, [style, colorPreset]);
 
   // 위치
   const posX = parseCSSSize(style?.left, undefined, 0);
@@ -230,7 +230,7 @@ export const PixiMenu = memo(function PixiMenu({
           : colorPreset.textColor,
         fontWeight: "600",
       }),
-    [sizePreset.fontSize, colorPreset]
+    [sizePreset, colorPreset]
   );
 
   // shortcut 스타일

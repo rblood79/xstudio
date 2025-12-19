@@ -74,7 +74,7 @@ export const PixiCard = memo(function PixiCard({
       return cssColorToHex(style.backgroundColor, colorPreset.backgroundColor);
     }
     return isHovered ? colorPreset.hoverBgColor : colorPreset.backgroundColor;
-  }, [style?.backgroundColor, isHovered, colorPreset]);
+  }, [style, isHovered, colorPreset]);
 
   // 텍스트 색상
   const textColor = useMemo(() => {
@@ -82,7 +82,7 @@ export const PixiCard = memo(function PixiCard({
       return cssColorToHex(style.color, colorPreset.textColor);
     }
     return colorPreset.textColor;
-  }, [style?.color, colorPreset.textColor]);
+  }, [style, colorPreset]);
 
   // 테두리 색상
   const borderColor = useMemo(() => {
@@ -90,7 +90,7 @@ export const PixiCard = memo(function PixiCard({
       return cssColorToHex(style.borderColor, colorPreset.borderColor);
     }
     return colorPreset.borderColor;
-  }, [style?.borderColor, colorPreset.borderColor]);
+  }, [style, colorPreset]);
 
   // 카드 크기
   const cardWidth = parseCSSSize(style?.width, undefined, 200);

@@ -82,7 +82,7 @@ export const PixiLink = memo(function PixiLink({
       return cssColorToHex(style.color, colorPreset.color);
     }
     return colorPreset.color;
-  }, [isDisabled, isPressed, isHovered, style?.color, colorPreset]);
+  }, [isDisabled, isPressed, isHovered, style, colorPreset]);
 
   // 텍스트 스타일
   const textStyle = useMemo(
@@ -93,7 +93,7 @@ export const PixiLink = memo(function PixiLink({
         fill: currentColor,
         fontWeight: "500",
       }),
-    [sizePreset.fontSize, currentColor]
+    [sizePreset, currentColor]
   );
 
   // 텍스트 크기 계산

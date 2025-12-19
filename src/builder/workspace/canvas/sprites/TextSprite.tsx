@@ -181,7 +181,7 @@ export const TextSprite = memo(function TextSprite({
         border: borderConfig,
       });
     },
-    [style?.backgroundColor, transform.width, transform.height, fill.color, fill.alpha, effectiveBorderRadius, borderConfig]
+    [style, transform, fill, effectiveBorderRadius, borderConfig]
   );
 
   const handleClick = useCallback((e: unknown) => {

@@ -76,7 +76,7 @@ export const PixiBreadcrumbs = memo(function PixiBreadcrumbs({
       return cssColorToHex(style.color, colorPreset.textColor);
     }
     return colorPreset.textColor;
-  }, [style?.color, colorPreset.textColor]);
+  }, [style, colorPreset]);
 
   // 위치
   const posX = parseCSSSize(style?.left, undefined, 0);
