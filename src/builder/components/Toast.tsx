@@ -6,6 +6,7 @@
 
 import { X, AlertCircle, AlertTriangle, CheckCircle, Info } from "lucide-react";
 import { Button } from "react-aria-components";
+import { iconProps, iconEditProps } from "../../utils/ui/uiConstants";
 import type { ToastType } from "../hooks/useToast";
 import "./styles/Toast.css";
 
@@ -28,14 +29,14 @@ export function Toast({ id, type, message, onDismiss }: ToastProps) {
 
   return (
     <div className="toast" data-type={type} role="alert" aria-live="polite">
-      <Icon size={16} className="toast-icon" aria-hidden="true" />
+      <Icon size={iconProps.size} className="toast-icon" aria-hidden="true" />
       <span className="toast-message">{message}</span>
       <Button
         className="toast-dismiss"
         onPress={() => onDismiss(id)}
         aria-label="Dismiss notification"
       >
-        <X size={14} aria-hidden="true" />
+        <X size={iconEditProps.size} aria-hidden="true" />
       </Button>
     </div>
   );

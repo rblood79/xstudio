@@ -186,9 +186,9 @@ export function KeyboardShortcutsHelp({
                   aria-expanded={!isCollapsed}
                 >
                   {isCollapsed ? (
-                    <ChevronRight size={16} strokeWidth={2} />
+                    <ChevronRight size={iconProps.size} strokeWidth={2} />
                   ) : (
-                    <ChevronDown size={16} strokeWidth={2} />
+                    <ChevronDown size={iconProps.size} strokeWidth={2} />
                   )}
                   <h3>{category}</h3>
                   <span className="category-count">({shortcuts.length})</span>

@@ -130,7 +130,7 @@ export function SelectionFilter({
     <div className={`selection-filter ${className}`.trim()}>
       <div className="filter-header">
         <div className="filter-title">
-          <Filter size={16} />
+          <Filter size={iconProps.size} />
           <span>선택 필터</span>
         </div>
         <Button
@@ -139,7 +139,7 @@ export function SelectionFilter({
           onPress={() => setIsExpanded(false)}
           aria-label="Hide filter options"
         >
-          <X size={16} />
+          <X size={iconProps.size} />
         </Button>
       </div>
 
