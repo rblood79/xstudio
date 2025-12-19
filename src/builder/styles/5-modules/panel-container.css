@@ -39,6 +39,9 @@
     transform: translateX(-100%);
     opacity: 0;
     pointer-events: none;
+
+    /* 🚀 Phase 11: content-visibility로 렌더링 완전 스킵 */
+    content-visibility: hidden;
   }
 
   /* 🔧 Right 패널 숨김 상태 - absolute로 레이아웃에서 제거 */
@@ -51,6 +54,9 @@
     transform: translateX(100%);
     opacity: 0;
     pointer-events: none;
+
+    /* 🚀 Phase 11: content-visibility로 렌더링 완전 스킵 */
+    content-visibility: hidden;
   }
 
   /* 표시 상태 - relative로 flexbox에 참여 */
@@ -102,7 +108,10 @@
     transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
       opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1),
       margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-      margin-right 0.3s cubic-bezier(0.4, 0, 0.2, 1), visibility 0s 0.3s; /* visibility는 애니메이션 후에 변경 */
+      margin-right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+    /* 🚀 Phase 11: GPU 레이어 미리 생성 */
+    will-change: transform, opacity;
 
     /* 비활성 패널: translateX(시각적 이동) + margin-left(레이아웃 공간 제거) */
     /* ✅ 두 가지 모두 필요:
@@ -115,14 +124,13 @@
         0px - var(--panel-width, 233px)
       ); /* 레이아웃 공간 제거 */
       opacity: 0;
-      visibility: hidden;
       pointer-events: none;
       z-index: -1;
       overflow: hidden;
-      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-        opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-        margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-        margin-right 0.3s cubic-bezier(0.4, 0, 0.2, 1), visibility 0s 0.3s; /* 애니메이션 완료 후 visibility 변경 */
+
+      /* 🚀 Phase 11: content-visibility로 렌더링 완전 스킵 */
+      content-visibility: hidden;
+      contain-intrinsic-size: var(--panel-width, 233px) auto;
     }
 
     /* 활성 패널: 레이아웃에 참여하여 나란히 표시 */
@@ -132,15 +140,13 @@
       margin-left: 0; /* 레이아웃 공간 정상 사용 */
       margin-right: 0;
       opacity: 1;
-      visibility: visible;
       pointer-events: auto;
       overflow-y: auto;
       overflow-x: hidden;
       z-index: 1;
-      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-        opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-        margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-        margin-right 0.3s cubic-bezier(0.4, 0, 0.2, 1), visibility 0s; /* 나타날 때는 즉시 visibility 변경 */
+
+      /* 🚀 Phase 11: 활성 패널은 정상 렌더링 */
+      content-visibility: visible;
     }
 
     /* 패널 컴포넌트가 전체 높이를 차지하도록 */

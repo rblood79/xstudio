@@ -86,6 +86,11 @@
     flex-direction: column;
     margin-bottom: 0;
 
+    /* 🚀 Phase 11: 스크롤 영역 밖 섹션 렌더링 스킵 */
+    /* content-visibility: auto는 뷰포트 밖일 때 렌더링 스킵 */
+    content-visibility: auto;
+    contain-intrinsic-size: auto 150px; /* 평균 섹션 높이 힌트 */
+
     &.empty,
     &.loading {
       display: flex;
