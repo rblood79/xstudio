@@ -57,6 +57,7 @@ xstudio/
 | [08-additional-ideas.md](./08-additional-ideas.md) | 추가 최적화 아이디어                           | 📋 참고용       |
 | [task.md](./task.md)                               | 작업 진행 현황 (Checklist)                     | ✅ **완료**     |
 | **[10-webgl-builder-architecture.md](./10-webgl-builder-architecture.md)** | **🚀 WebGL Builder + Publish App 분리** | ✅ **완료** |
+| **[11-canvas-resize-optimization.md](./11-canvas-resize-optimization.md)** | **🚀 Canvas Resize 최적화 (Panel 토글 성능)** | 📋 **계획** |
 
 ## 목표 성능 지표
 
@@ -116,6 +117,20 @@ xstudio/
 | **QueryPersister.ts** | React Query 메모리 캐시로 충분 |
 
 ## 향후 개선 사항 (선택적)
+
+### 🚀 Phase 11: Canvas Resize 최적화 (진행 예정)
+
+> **문서**: [11-canvas-resize-optimization.md](./11-canvas-resize-optimization.md)
+
+패널 토글 시 발생하는 Canvas resize로 인한 성능 저하 해결:
+
+| 지표 | Before | After (목표) |
+|------|--------|-------------|
+| 패널 토글 시 resize | 10+ 회 | **0회** |
+| 프레임 드랍 | 심각 | **없음** |
+| FPS | <30 | **>55** |
+
+**핵심 전략**: Canvas를 레이아웃에서 분리 (Figma 방식)
 
 ### 리뷰 코멘트 체크리스트
 
