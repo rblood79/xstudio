@@ -4,11 +4,13 @@ import type { SelectedElement, EventHandler, DataBinding } from "../types";
 interface InspectorState {
   selectedElement: SelectedElement | null;
   isSyncingToBuilder: boolean; // Inspector → Builder 동기화 중 플래그
+  isUpdatingFromBuilder: boolean; // Builder → Inspector 동기화 중 플래그 (useSyncWithBuilder 스킵용)
   syncVersion: number; // 동기화 버전 (Inspector → Builder 업데이트 추적)
 
   // 요소 선택
   setSelectedElement: (element: SelectedElement | null) => void;
   setSyncingToBuilder: (syncing: boolean) => void;
+  setUpdatingFromBuilder: (updating: boolean) => void;
   incrementSyncVersion: () => number; // 버전 증가 및 반환
   confirmSync: (version: number) => void; // Builder 업데이트 완료 확인
 
@@ -46,10 +48,12 @@ interface InspectorState {
 export const useInspectorState = create<InspectorState>((set, get) => ({
   selectedElement: null,
   isSyncingToBuilder: false,
+  isUpdatingFromBuilder: false,
   syncVersion: 0,
 
   setSelectedElement: (element) => set({ selectedElement: element }),
   setSyncingToBuilder: (syncing) => set({ isSyncingToBuilder: syncing }),
+  setUpdatingFromBuilder: (updating) => set({ isUpdatingFromBuilder: updating }),
 
   incrementSyncVersion: () => {
     const newVersion = get().syncVersion + 1;

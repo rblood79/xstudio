@@ -22,6 +22,13 @@ export function useSyncWithBuilder(): void {
   const lastSyncedElementIdRef = useRef<string | null>(null);
 
   useEffect(() => {
+    // 🚀 Phase 12: Builder → Inspector 동기화 중이면 스킵
+    // InspectorSync에서 setSelectedElement 호출 시 설정됨
+    const isUpdatingFromBuilder = useInspectorState.getState().isUpdatingFromBuilder;
+    if (isUpdatingFromBuilder) {
+      return;
+    }
+
     // 히스토리 작업 중이면 동기화 건너뛰기
     if (historyOperationInProgress) {
       return;
