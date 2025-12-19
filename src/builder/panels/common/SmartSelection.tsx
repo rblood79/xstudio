@@ -9,7 +9,7 @@ import { useMemo } from "react";
 import type { Element } from "../../../types/core/store.types";
 import { Button } from "../../../shared/components";
 import { Sparkles, Users, GitBranch, Box, Tag, Palette, Type } from "lucide-react";
-import { iconProps } from "../../../utils/ui/uiConstants";
+import { iconProps, iconLarge } from "../../../utils/ui/uiConstants";
 import { getAllSuggestions, type SuggestionResult } from "../../utils/smartSelection";
 
 export interface SmartSelectionProps {
@@ -69,7 +69,7 @@ export function SmartSelection({
     return (
       <div className={`smart-selection empty ${className}`.trim()}>
         <div className="empty-state">
-          <Sparkles size={24} color="var(--color-text-tertiary)" />
+          <Sparkles size={iconLarge.size} color="var(--color-text-tertiary)" />
           <p className="empty-text">No smart selection suggestions available</p>
           <p className="empty-hint">
             Select an element with siblings, children, or similar elements to see suggestions

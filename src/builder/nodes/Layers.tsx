@@ -1,5 +1,6 @@
 import React, { useCallback } from "react";
 import { CopyMinus } from "lucide-react"; // CopyMinus 추가
+import { iconProps } from "../../utils/ui/uiConstants";
 import { ElementProps } from "../../types/integrations/supabase.types";
 import { Element } from "../../types/core/store.types"; // 통합된 타입 사용
 import { useStore } from "../stores"; // useStore import 추가
@@ -102,7 +103,7 @@ export function Layers({
               }
             }}
           >
-            <CopyMinus color="#666" strokeWidth={1.5} size={16} />
+            <CopyMinus color="#666" strokeWidth={1.5} size={iconProps.size} />
           </button>
         </div>
       </div>

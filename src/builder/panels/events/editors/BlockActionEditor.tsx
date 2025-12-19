@@ -12,7 +12,7 @@ import type { BlockEventAction } from '../../../events/types/eventBlockTypes';
 import type { EventAction } from '../../../events/types/eventTypes';
 import { ActionEditor } from '../../../events/actions/ActionEditor';
 import { ActionTypePicker } from '../../../events/pickers/ActionTypePicker';
-import { iconProps } from '../../../../utils/ui/uiConstants';
+import { iconProps, iconEditProps } from '../../../../utils/ui/uiConstants';
 
 interface BlockActionEditorProps {
   /** 편집 중인 액션 */
@@ -122,7 +122,7 @@ export function BlockActionEditor({
               onPress={onRemove}
               aria-label="Remove action"
             >
-              <X size={16} color={iconProps.color} strokeWidth={iconProps.stroke} />
+              <X size={iconProps.size} color={iconProps.color} strokeWidth={iconProps.stroke} />
             </Button>
           )}
 
@@ -133,7 +133,7 @@ export function BlockActionEditor({
               onPress={onClose}
               aria-label="Close editor"
             >
-              <X size={16} color={iconProps.color} strokeWidth={iconProps.stroke} />
+              <X size={iconProps.size} color={iconProps.color} strokeWidth={iconProps.stroke} />
             </Button>
           )}
         </div>
@@ -169,9 +169,9 @@ export function BlockActionEditor({
         aria-expanded={showAdvanced}
       >
         {showAdvanced ? (
-          <ChevronDown size={14} color={iconProps.color} />
+          <ChevronDown size={iconEditProps.size} color={iconProps.color} />
         ) : (
-          <ChevronRight size={14} color={iconProps.color} />
+          <ChevronRight size={iconEditProps.size} color={iconProps.color} />
         )}
         <span>Advanced Settings</span>
       </Button>

@@ -23,7 +23,7 @@ import { useStore } from "../stores";
 import { useLayoutsStore } from "../stores/layouts";
 import { generateSlugFromTitle, validateSlug } from "../../utils/slugValidator";
 import { generatePageUrl } from "../../utils/urlGenerator";
-import { iconProps } from "../../utils/ui/uiConstants";
+import { iconProps, iconEditProps, iconSmall } from "../../utils/ui/uiConstants";
 import "./AddPageDialog.css";
 
 export interface AddPageDialogResult {
@@ -183,7 +183,7 @@ export function AddPageDialog({ onSubmit, existingPagesCount }: AddPageDialogPro
       <Modal className="add-page-modal">
         <Dialog className="add-page-dialog">
           <Heading slot="title" className="add-page-title">
-            <CirclePlus size={20} />
+            <CirclePlus size={iconProps.size} />
             Add New Page
           </Heading>
 
@@ -201,7 +201,7 @@ export function AddPageDialog({ onSubmit, existingPagesCount }: AddPageDialogPro
             {/* Slug */}
             <TextField className="add-page-field" isInvalid={!!slugError}>
               <Label>
-                <Link size={14} />
+                <Link size={iconEditProps.size} />
                 URL Slug
               </Label>
               <Input
@@ -211,7 +211,7 @@ export function AddPageDialog({ onSubmit, existingPagesCount }: AddPageDialogPro
               />
               {slugError && (
                 <div className="add-page-error">
-                  <AlertCircle size={12} />
+                  <AlertCircle size={iconSmall.size} />
                   <span>{slugError}</span>
                 </div>
               )}
@@ -223,7 +223,7 @@ export function AddPageDialog({ onSubmit, existingPagesCount }: AddPageDialogPro
             {/* Layout (Optional) */}
             <div className="add-page-field">
               <Label>
-                <Layout size={14} />
+                <Layout size={iconEditProps.size} />
                 Layout (Optional)
               </Label>
               <select
@@ -243,7 +243,7 @@ export function AddPageDialog({ onSubmit, existingPagesCount }: AddPageDialogPro
             {/* Parent Page (Optional) */}
             <div className="add-page-field">
               <Label>
-                <FolderTree size={14} />
+                <FolderTree size={iconEditProps.size} />
                 Parent Page (Optional)
               </Label>
               <select

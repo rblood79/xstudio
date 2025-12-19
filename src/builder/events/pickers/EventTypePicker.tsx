@@ -19,7 +19,7 @@ import { Popover } from '@/shared/components/Popover';
 import { CirclePlus, Search, ChevronDown, Zap } from 'lucide-react';
 import type { EventType } from '@/types/events/events.types';
 import { EVENT_TYPE_LABELS, EVENT_CATEGORIES } from '@/types/events/events.types';
-import { iconProps } from '@/utils/ui/uiConstants';
+import { iconProps, iconEditProps, iconSmall } from '@/utils/ui/uiConstants';
 
 // 추천 이벤트 우선순위 (컴포넌트별 가장 많이 사용되는 이벤트 순서)
 // ⚠️ 순서 중요: 사용자 상호작용 → 값 변경 → 포커스 순
@@ -189,7 +189,7 @@ export function EventTypePicker({
           <span className="event-picker-value">
             {selectedType ? EVENT_TYPE_LABELS[selectedType] || selectedType : 'Select event...'}
           </span>
-          <ChevronDown size={14} />
+          <ChevronDown size={iconEditProps.size} />
         </Button>
 
         <Popover
@@ -199,7 +199,7 @@ export function EventTypePicker({
           showArrow={false}
         >
           <div className="event-picker-search">
-            <Search size={14} color={iconProps.color} />
+            <Search size={iconEditProps.size} color={iconProps.color} />
             <input
               ref={searchInputRef}
               className="event-picker-search-input"
@@ -221,7 +221,7 @@ export function EventTypePicker({
             {filteredEventTypes.length === 0 ? (
               <ListBoxItem id="empty" textValue="No events found">
                 <div className="event-picker-empty">
-                  <Search size={16} color={iconProps.color} />
+                  <Search size={iconProps.size} color={iconProps.color} />
                   <span>No events found</span>
                 </div>
               </ListBoxItem>
@@ -281,7 +281,7 @@ export function EventTypePicker({
         {!searchValue && recommendedEvents.length > 0 && (
           <div className="event-picker-recommended">
             <div className="event-picker-recommended-header">
-              <Zap size={12} color={iconProps.color} />
+              <Zap size={iconSmall.size} color={iconProps.color} />
               <span>Recommended</span>
             </div>
             <div className="event-picker-recommended-list">
@@ -302,7 +302,7 @@ export function EventTypePicker({
         )}
 
         <div className="event-picker-search">
-          <Search size={14} color={iconProps.color} />
+          <Search size={iconEditProps.size} color={iconProps.color} />
           <input
             ref={searchInputRef}
             className="event-picker-search-input"

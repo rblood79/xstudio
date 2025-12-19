@@ -7,6 +7,7 @@ import { useState } from 'react';
 import { parseColor, type Color } from 'react-aria-components';
 import { MyColorSwatches } from '../../../shared/components/TailSwatch';
 import { Paintbrush } from 'lucide-react';
+import { iconEditProps } from '../../../utils/ui/uiConstants';
 
 export interface PropertyColorPickerProps {
   label: string;
@@ -50,7 +51,7 @@ export function PropertyColorPicker({
   return (
     <div className="property-field">
       <label className="property-label">
-        <Icon size={14} className="property-icon" />
+        <Icon size={iconEditProps.size} className="property-icon" />
         <span>{label}</span>
       </label>
 

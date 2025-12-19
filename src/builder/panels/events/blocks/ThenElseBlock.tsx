@@ -11,7 +11,7 @@ import { Plus, ChevronDown, ChevronRight } from 'lucide-react';
 import type { BlockEventAction } from '../../../events/types/eventBlockTypes';
 import { ActionBlock } from './ActionBlock';
 import { BlockConnector } from './BlockConnector';
-import { iconProps } from '../../../../utils/ui/uiConstants';
+import { iconProps, iconSmall } from '../../../../utils/ui/uiConstants';
 
 interface ThenElseBlockProps {
   /** 블록 타입: 'then' 또는 'else' */
@@ -100,9 +100,9 @@ export function ThenElseBlock({
             aria-label={isCollapsed ? `Expand ${label} block` : `Collapse ${label} block`}
           >
             {isCollapsed ? (
-              <ChevronRight size={16} color={iconProps.color} strokeWidth={iconProps.stroke} />
+              <ChevronRight size={iconProps.size} color={iconProps.color} strokeWidth={iconProps.stroke} />
             ) : (
-              <ChevronDown size={16} color={iconProps.color} strokeWidth={iconProps.stroke} />
+              <ChevronDown size={iconProps.size} color={iconProps.color} strokeWidth={iconProps.stroke} />
             )}
           </Button>
 
@@ -121,7 +121,7 @@ export function ThenElseBlock({
             isDisabled={isDisabled}
             aria-label={`Add action to ${label}`}
           >
-            <Plus size={16} color={iconProps.color} strokeWidth={iconProps.stroke} />
+            <Plus size={iconProps.size} color={iconProps.color} strokeWidth={iconProps.stroke} />
           </Button>
         </div>
 
@@ -136,7 +136,7 @@ export function ThenElseBlock({
                   onPress={onAddAction}
                   isDisabled={isDisabled}
                 >
-                  <Plus size={12} />
+                  <Plus size={iconSmall.size} />
                   <span>Add action</span>
                 </Button>
               </div>

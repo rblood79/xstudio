@@ -7,6 +7,7 @@
 import { Download } from "lucide-react";
 import { Button } from "react-aria-components";
 import type { MemoryStats } from "../hooks/useMemoryStats";
+import { iconEditProps } from "../../../../utils/ui/uiConstants";
 
 interface ExportButtonProps {
   /** 내보낼 통계 데이터 */
@@ -77,7 +78,7 @@ export function ExportButton({ stats, format = "json" }: ExportButtonProps) {
       isDisabled={!stats}
       aria-label={`Export stats as ${format.toUpperCase()}`}
     >
-      <Download size={14} aria-hidden="true" />
+      <Download size={iconEditProps.size} aria-hidden="true" />
       <span>Export {format.toUpperCase()}</span>
     </Button>
   );

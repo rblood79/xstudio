@@ -10,6 +10,7 @@ import { Globe, Plus, Trash2, Edit2, Play } from "lucide-react";
 import { useDataStore, useApiEndpoints } from "../../../stores/data";
 import { useDataTableEditorStore } from "../stores/dataTableEditorStore";
 import { SectionHeader } from "../../common/SectionHeader";
+import { iconProps, iconEditProps } from "../../../../utils/ui/uiConstants";
 
 interface ApiEndpointListProps {
   projectId: string;
@@ -111,7 +112,7 @@ export function ApiEndpointList({ projectId }: ApiEndpointListProps) {
                 onClick={() => setSelectedId(endpoint.id)}
               >
                 <div className="list-item-icon">
-                  <Globe size={16} />
+                  <Globe {...iconProps} />
                 </div>
                 <div className="list-item-content">
                   <div className="list-item-name">{endpoint.name}</div>
@@ -130,7 +131,7 @@ export function ApiEndpointList({ projectId }: ApiEndpointListProps) {
                     onClick={(e) => handleExecute(endpoint.id, e)}
                     title="테스트"
                   >
-                    <Play size={14} />
+                    <Play {...iconEditProps} />
                   </button>
                   <button
                     type="button"
@@ -138,7 +139,7 @@ export function ApiEndpointList({ projectId }: ApiEndpointListProps) {
                     onClick={(e) => handleEdit(endpoint.id, e)}
                     title="편집"
                   >
-                    <Edit2 size={14} />
+                    <Edit2 {...iconEditProps} />
                   </button>
                   <button
                     type="button"
@@ -146,7 +147,7 @@ export function ApiEndpointList({ projectId }: ApiEndpointListProps) {
                     onClick={(e) => handleDelete(endpoint.id, e)}
                     title="삭제"
                   >
-                    <Trash2 size={14} />
+                    <Trash2 {...iconEditProps} />
                   </button>
                 </div>
               </div>
@@ -159,7 +160,7 @@ export function ApiEndpointList({ projectId }: ApiEndpointListProps) {
           className="datatable-add-btn"
           onClick={handleCreate}
         >
-          <Plus size={16} />
+          <Plus {...iconProps} />
           <span>API 추가</span>
         </button>
       </div>

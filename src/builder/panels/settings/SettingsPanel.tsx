@@ -21,6 +21,7 @@ import {
   Sun,
   Settings,
 } from "lucide-react";
+import { iconProps } from "../../../utils/ui/uiConstants";
 import { Button } from "react-aria-components";
 import { useParams } from "react-router-dom";
 import type { PanelProps } from "../core/types";
@@ -190,7 +191,7 @@ function SettingsContent() {
 
   return (
     <div className="settings-panel">
-      <PanelHeader icon={<Settings size={16} />} title="Settings" />
+      <PanelHeader icon={<Settings size={iconProps.size} />} title="Settings" />
 
       <div className="panel-settings">
         {/* Save Mode Section */}

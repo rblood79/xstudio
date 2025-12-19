@@ -37,7 +37,7 @@ export interface SectionHeaderProps {
  * ```tsx
  * // 아이콘이 있는 섹션 헤더
  * <SectionHeader
- *   icon={<Database size={16} />}
+ *   icon={<Database size={iconProps.size} />}
  *   title="Users Schema"
  * />
  * ```
@@ -47,7 +47,7 @@ export interface SectionHeaderProps {
  * // 액션 버튼이 있는 섹션 헤더
  * <SectionHeader
  *   title="Transform"
- *   actions={<button className="iconButton"><ChevronUp size={16} /></button>}
+ *   actions={<button className="iconButton"><ChevronUp size={iconProps.size} /></button>}
  * />
  * ```
  *

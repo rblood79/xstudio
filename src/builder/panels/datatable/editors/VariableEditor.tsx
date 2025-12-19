@@ -28,6 +28,7 @@ import {
   PropertySwitch,
 } from "../../common";
 import "./VariableEditor.css";
+import { iconEditProps } from "../../../../utils/ui/uiConstants";
 
 interface VariableEditorProps {
   variable: VariableType;
@@ -225,7 +226,7 @@ function ValidationEditor({
         className="section-header"
         onClick={() => onToggleSection("validation")}
       >
-        {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+        {isExpanded ? <ChevronDown {...iconEditProps} /> : <ChevronRight {...iconEditProps} />}
         <span className="section-header-title">Validation Rules</span>
       </div>
 

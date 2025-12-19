@@ -7,6 +7,7 @@ import {
   ChevronDown,
   ChevronRight,
 } from "lucide-react";
+import { iconProps, iconLarge } from "../../utils/ui/uiConstants";
 import { Button } from "../../../shared/components/list";
 import { PropertyInput, PropertySelect, PropertyCheckbox } from "../../../shared/components";
 import { useStore } from "../../stores";
@@ -259,13 +260,13 @@ function ActionEditor({ action, onUpdate, onDelete }: ActionEditorProps) {
         <div className="action-controls">
           <Button onPress={() => setIsExpanded(!isExpanded)}>
             {isExpanded ? (
-              <ChevronDown size={16} />
+              <ChevronDown size={iconProps.size} />
             ) : (
-              <ChevronRight size={16} />
+              <ChevronRight size={iconProps.size} />
             )}
           </Button>
           <Button onPress={onDelete}>
-            <Trash2 size={16} />
+            <Trash2 size={iconProps.size} />
           </Button>
         </div>
       </div>
@@ -408,13 +409,13 @@ function EventEditor({ event, onUpdate, onDelete }: EventEditorProps) {
         <div className="event-controls">
           <Button onPress={() => setIsExpanded(!isExpanded)}>
             {isExpanded ? (
-              <ChevronDown size={16} />
+              <ChevronDown size={iconProps.size} />
             ) : (
-              <ChevronRight size={16} />
+              <ChevronRight size={iconProps.size} />
             )}
           </Button>
           <Button onPress={onDelete}>
-            <Trash2 size={16} />
+            <Trash2 size={iconProps.size} />
           </Button>
         </div>
       </div>
@@ -487,7 +488,7 @@ function EventEditor({ event, onUpdate, onDelete }: EventEditorProps) {
             <div className="actions-header">
               <h4>액션</h4>
               <Button onPress={handleAddAction}>
-                <Plus size={16} />
+                <Plus size={iconProps.size} />
               </Button>
             </div>
 
@@ -588,18 +589,18 @@ function Events() {
         <h3 className="panel-title">이벤트</h3>
         <div className="header-actions">
           <Button onPress={addEvent}>
-            <Plus size={16} />
+            <Plus size={iconProps.size} />
           </Button>
         </div>
       </div>
 
       {events.length === 0 ? (
         <div className="no-events">
-          <Play size={24} />
+          <Play size={iconLarge.size} />
           <h4>이벤트가 없습니다</h4>
           <p>첫 번째 이벤트를 추가해보세요.</p>
           <Button onPress={addEvent}>
-            <Plus size={16} />
+            <Plus size={iconProps.size} />
             이벤트 추가
           </Button>
         </div>

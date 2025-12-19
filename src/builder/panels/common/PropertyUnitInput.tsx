@@ -298,7 +298,7 @@ export const PropertyUnitInput = memo(function PropertyUnitInput({
               placeholder="reset"
             />
             <Button className="react-aria-Button">
-              <ChevronDown size={16} />
+              <ChevronDown size={iconProps.size} />
             </Button>
           </div>
           <Popover className="react-aria-Popover">

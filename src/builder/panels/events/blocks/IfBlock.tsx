@@ -10,7 +10,7 @@ import { Button } from 'react-aria-components';
 import { Search, Plus, Trash, ChevronDown, ChevronRight } from 'lucide-react';
 import type { ConditionGroup, Condition } from '../../../events/types/eventBlockTypes';
 import { createEmptyCondition } from '../../../events/types/eventBlockTypes';
-import { iconProps } from '../../../../utils/ui/uiConstants';
+import { iconProps, iconEditProps } from '../../../../utils/ui/uiConstants';
 import { BlockConnector } from './BlockConnector';
 import { ConditionRow } from '../editors/ConditionRow';
 import { OperatorToggle } from '../editors/OperatorToggle';
@@ -54,7 +54,7 @@ export function IfBlock({
         className="add-condition-button"
         onPress={() => onChange({ operator: 'AND', conditions: [createEmptyCondition()] })}
       >
-        <Plus size={14} />
+        <Plus size={iconEditProps.size} />
         Add Condition (optional)
       </Button>
     );
@@ -112,9 +112,9 @@ export function IfBlock({
             aria-expanded={isExpanded}
           >
             {isExpanded ? (
-              <ChevronDown size={14} color={iconProps.color} strokeWidth={iconProps.stroke} />
+              <ChevronDown size={iconEditProps.size} color={iconProps.color} strokeWidth={iconProps.stroke} />
             ) : (
-              <ChevronRight size={14} color={iconProps.color} strokeWidth={iconProps.stroke} />
+              <ChevronRight size={iconEditProps.size} color={iconProps.color} strokeWidth={iconProps.stroke} />
             )}
           </Button>
 
@@ -124,7 +124,7 @@ export function IfBlock({
             onPress={onRemove}
             aria-label="Remove condition block"
           >
-            <Trash size={14} color={iconProps.color} strokeWidth={iconProps.stroke} />
+            <Trash size={iconEditProps.size} color={iconProps.color} strokeWidth={iconProps.stroke} />
           </Button>
         </div>
       </div>
@@ -156,7 +156,7 @@ export function IfBlock({
             className="add-row-button"
             onPress={addCondition}
           >
-            <Plus size={14} />
+            <Plus size={iconEditProps.size} />
             Add Condition
           </Button>
         </div>

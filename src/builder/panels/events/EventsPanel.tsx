@@ -40,7 +40,7 @@ import {
   Zap,
   SquareMousePointer,
 } from "lucide-react";
-import { iconProps } from "../../../utils/ui/uiConstants";
+import { iconProps, iconEditProps, iconLarge } from "../../../utils/ui/uiConstants";
 import { PanelHeader, PropertySection, EmptyState } from "../common";
 import { useInitialMountDetection } from "../../hooks/useInitialMountDetection";
 import { useComponentMeta } from "../../inspector/hooks/useComponentMeta";
@@ -199,7 +199,7 @@ function ActionPickerOverlay({ branch, onSelect, onClose }: ActionPickerOverlayP
       </div>
 
       <div className="action-picker-search">
-        <Search size={14} color={iconProps.color} />
+        <Search size={iconEditProps.size} color={iconProps.color} />
         <input
           className="action-picker-search-input"
           placeholder="Search actions..."
@@ -212,7 +212,7 @@ function ActionPickerOverlay({ branch, onSelect, onClose }: ActionPickerOverlayP
       <div className="action-picker-list" role="listbox" aria-label="액션 타입 목록">
         {filteredActionTypes.length === 0 ? (
           <div className="action-picker-empty">
-            <Search size={16} color={iconProps.color} />
+            <Search size={iconProps.size} color={iconProps.color} />
             <span>No actions found</span>
           </div>
         ) : (
@@ -254,7 +254,7 @@ export function EventsPanel({ isActive }: PanelProps) {
   if (!selectedElement) {
     return (
       <div className="events-panel">
-        <PanelHeader icon={<SquareMousePointer size={16} />} title="Events" />
+        <PanelHeader icon={<SquareMousePointer size={iconProps.size} />} title="Events" />
         <div className="panel-contents">
           <EmptyState message="요소를 선택하세요" />
         </div>
@@ -522,7 +522,7 @@ function EventsPanelContent({
   return (
     <div className="events-panel">
       <PanelHeader
-        icon={<SquareMousePointer size={16} />}
+        icon={<SquareMousePointer size={iconProps.size} />}
         title="Events"
         actions={
           availableSupportedEvents.length === 1 ? (
@@ -557,7 +557,7 @@ function EventsPanelContent({
           <EmptyState
             icon={
               <Zap
-                size={32}
+                size={iconLarge.size}
                 color={iconProps.color}
                 strokeWidth={iconProps.stroke}
               />
@@ -720,7 +720,7 @@ function EventsPanelContent({
                 >
                   <div className="handler-info">
                     <Zap
-                      size={14}
+                      size={iconEditProps.size}
                       color={iconProps.color}
                       strokeWidth={iconProps.stroke}
                     />

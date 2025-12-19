@@ -6,6 +6,7 @@
 
 import { Select, SelectValue, Button, Popover, ListBox, ListBoxItem } from 'react-aria-components';
 import { ChevronDown } from 'lucide-react';
+import { iconSmall } from '../../../../utils/ui/uiConstants';
 import type { ConditionOperator } from '../../../events/types/eventBlockTypes';
 import { CONDITION_OPERATOR_META } from '../../../events/types/eventBlockTypes';
 
@@ -58,7 +59,7 @@ export function OperatorPicker({ value, onChange }: OperatorPickerProps) {
         <SelectValue>
           {meta.label}
         </SelectValue>
-        <ChevronDown size={12} />
+        <ChevronDown size={iconSmall.size} />
       </Button>
 
       <Popover className="operator-picker-popover">

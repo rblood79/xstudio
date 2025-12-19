@@ -10,6 +10,7 @@
 
 import { memo, useCallback, useEffect, useRef, useState } from "react";
 import { X, GripHorizontal } from "lucide-react";
+import { iconProps, iconEditProps } from "../../utils/ui/uiConstants";
 import { usePanelLayout } from "./usePanelLayout";
 import { PanelRegistry } from "../panels/core/PanelRegistry";
 import { useKeyboardShortcutsRegistry } from "../hooks/useKeyboardShortcutsRegistry";
@@ -110,7 +111,7 @@ export const BottomPanelSlot = memo(function BottomPanelSlot() {
           }
         }}
       >
-        <GripHorizontal size={16} />
+        <GripHorizontal size={iconProps.size} />
       </div>
 
       {/* Panel Header */}
@@ -122,7 +123,7 @@ export const BottomPanelSlot = memo(function BottomPanelSlot() {
             const Icon = panelConfig.icon;
             return (
               <span key={panelId} className="bottom-panel-tab active">
-                <Icon size={14} />
+                <Icon size={iconEditProps.size} />
                 {panelConfig.name}
               </span>
             );
@@ -134,7 +135,7 @@ export const BottomPanelSlot = memo(function BottomPanelSlot() {
           aria-label="Close panel"
           type="button"
         >
-          <X size={16} />
+          <X size={iconProps.size} />
         </button>
       </div>
 

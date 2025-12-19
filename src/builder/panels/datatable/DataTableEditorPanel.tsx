@@ -44,6 +44,7 @@ import type {
   DataTableEditorMode,
 } from "./types/editorTypes";
 import "./DataTableEditorPanel.css";
+import { iconProps, iconEditProps } from "../../../utils/ui/uiConstants";
 
 // 탭 설정 타입
 interface TabConfig<T extends string> {
@@ -170,7 +171,7 @@ function EditorContent({ mode, close }: EditorContentProps) {
                 className={`panel-tab ${tableTab === tab.id ? "active" : ""}`}
                 onClick={() => setTableTab(tab.id)}
               >
-                <tab.icon size={14} />
+                <tab.icon {...iconEditProps} />
                 <span>{tab.label}</span>
               </button>
             ))}
@@ -187,7 +188,7 @@ function EditorContent({ mode, close }: EditorContentProps) {
                 className={`panel-tab ${apiTab === tab.id ? "active" : ""}`}
                 onClick={() => setApiTab(tab.id)}
               >
-                <tab.icon size={14} />
+                <tab.icon {...iconEditProps} />
                 <span>{tab.label}</span>
               </button>
             ))}
@@ -206,7 +207,7 @@ function EditorContent({ mode, close }: EditorContentProps) {
                 }`}
                 onClick={() => setVariableTab(tab.id)}
               >
-                <tab.icon size={14} />
+                <tab.icon {...iconEditProps} />
                 <span>{tab.label}</span>
               </button>
             ))}
@@ -332,7 +333,7 @@ function EditorContent({ mode, close }: EditorContentProps) {
   return (
     <div className="datatable-editor-panel">
       <PanelHeader
-        icon={<FileEdit size={16} />}
+        icon={<FileEdit {...iconProps} />}
         title={getHeaderTitle()}
         actions={
           <button
@@ -341,7 +342,7 @@ function EditorContent({ mode, close }: EditorContentProps) {
             onClick={close}
             title="닫기"
           >
-            <X size={16} />
+            <X {...iconProps} />
           </button>
         }
       />
@@ -393,7 +394,7 @@ export function DataTableEditorPanel({ isActive }: PanelProps) {
   if (!mode) {
     return (
       <div className="datatable-editor-panel">
-        <PanelHeader icon={<FileEdit size={16} />} title="Editor" />
+        <PanelHeader icon={<FileEdit size={iconProps.size} />} title="Editor" />
         <div className="panel-contents">
           <EmptyState message="편집할 항목을 선택하세요" />
         </div>

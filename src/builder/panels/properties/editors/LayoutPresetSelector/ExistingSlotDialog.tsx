@@ -19,6 +19,7 @@ import {
   Heading,
 } from "react-aria-components";
 import type { ExistingSlotInfo, PresetApplyMode } from "./types";
+import { iconProps } from "../../../../../utils/ui/uiConstants";
 
 interface ExistingSlotDialogProps {
   /** 다이얼로그 열림 상태 */
@@ -66,7 +67,7 @@ export const ExistingSlotDialog = memo(function ExistingSlotDialog({
       >
         <Dialog className="react-aria-Dialog existing-slot-dialog">
           <Heading slot="title" className="dialog-title">
-            <AlertTriangle className="icon-warning" size={20} />
+            <AlertTriangle className="icon-warning" size={iconProps.size} />
             기존 Slot이 있습니다
           </Heading>
 
@@ -94,7 +95,7 @@ export const ExistingSlotDialog = memo(function ExistingSlotDialog({
 
             {hasChildrenSlots && (
               <div className="warning-box">
-                <AlertTriangle size={16} />
+                <AlertTriangle size={iconProps.size} />
                 <span>
                   일부 Slot에 콘텐츠가 있습니다. 덮어쓰기 시 삭제됩니다.
                 </span>
@@ -104,15 +105,15 @@ export const ExistingSlotDialog = memo(function ExistingSlotDialog({
 
           <div className="dialog-actions">
             <Button variant="default" onPress={handleCancel}>
-              <X size={16} />
+              <X size={iconProps.size} />
               취소
             </Button>
             <Button variant="secondary" onPress={handleMerge}>
-              <Merge size={16} />
+              <Merge size={iconProps.size} />
               병합 (새 Slot만 추가)
             </Button>
             <Button variant="primary" onPress={handleReplace}>
-              <Trash2 size={16} />
+              <Trash2 size={iconProps.size} />
               덮어쓰기
             </Button>
           </div>

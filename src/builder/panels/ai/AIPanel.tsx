@@ -552,7 +552,7 @@ function AIPanelContent() {
   return (
     <div className="ai-panel">
       <PanelHeader
-        icon={<Bot size={16} />}
+        icon={<Bot size={iconProps.size} />}
         title="AI Assistant"
         actions={
           messages.length > 0 && (

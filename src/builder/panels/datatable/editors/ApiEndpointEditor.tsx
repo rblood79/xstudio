@@ -38,6 +38,7 @@ import {
   type DetectedColumn,
 } from "../utils/columnDetector";
 import "./ApiEndpointEditor.css";
+import { iconEditProps, iconSmall } from "../../../../utils/ui/uiConstants";
 
 interface ApiEndpointEditorProps {
   endpoint: ApiEndpoint;
@@ -462,13 +463,13 @@ function QueryParamsEditor({ endpoint, onUpdate }: QueryParamsEditorProps) {
             className="kv-delete"
             onClick={() => handleDelete(key)}
           >
-            <Trash2 size={12} />
+            <Trash2 size={iconSmall.size} />
           </button>
         </div>
       ))}
 
       <button type="button" className="add-kv-btn" onClick={handleAdd}>
-        <Plus size={14} />
+        <Plus {...iconEditProps} />
         Add Parameter
       </button>
     </div>
@@ -508,7 +509,7 @@ function KeyValueEditor({
   return (
     <div className="kv-editor">
       <div className="kv-section-header" onClick={() => onToggleSection(sectionKey)}>
-        {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+        {isExpanded ? <ChevronDown {...iconEditProps} /> : <ChevronRight {...iconEditProps} />}
         <span className="kv-section-title">{title}</span>
         <span className="kv-section-count">{entries.length}</span>
       </div>
@@ -539,14 +540,14 @@ function KeyValueEditor({
                   className="kv-delete"
                   onClick={() => onDelete(key)}
                 >
-                  <Trash2 size={12} />
+                  <Trash2 size={iconSmall.size} />
                 </button>
               </div>
             ))}
           </div>
 
           <button type="button" className="add-kv-btn" onClick={onAdd}>
-            <Plus size={14} />
+            <Plus {...iconEditProps} />
             Add {title.slice(0, -1)}
           </button>
         </>
@@ -665,7 +666,7 @@ function ResponseEditor({ endpoint, onUpdate }: ResponseEditorProps) {
           disabled={isDetecting}
           title="API를 호출하여 배열 필드를 자동 감지합니다"
         >
-          <Wand2 size={14} />
+          <Wand2 {...iconEditProps} />
           {isDetecting ? "감지 중..." : "자동 감지"}
         </button>
       </div>
@@ -773,14 +774,14 @@ function FieldMappingEditor({ endpoint, onUpdate }: FieldMappingEditorProps) {
               className="kv-delete"
               onClick={() => handleDelete(key)}
             >
-              <Trash2 size={12} />
+              <Trash2 size={iconSmall.size} />
             </button>
           </div>
         ))}
       </div>
 
       <button type="button" className="add-kv-btn" onClick={handleAdd}>
-        <Plus size={14} />
+        <Plus {...iconEditProps} />
         Add Mapping
       </button>
     </div>
@@ -830,7 +831,7 @@ function TestEditor({
         onClick={onTest}
         disabled={isExecuting}
       >
-        <Play size={14} />
+        <Play {...iconEditProps} />
         {isExecuting ? "Executing..." : "Execute Request"}
       </button>
 

@@ -41,6 +41,7 @@ import type { DataTablePreset, PresetCategory } from "./types";
 import { PRESET_CATEGORIES } from "./types";
 import { DATATABLE_PRESETS, getPresetsByCategory } from "./dataTablePresets";
 import "./DataTablePresetSelector.css";
+import { iconProps, iconLarge } from "../../../../utils/ui/uiConstants";
 
 // ============================================
 // Icon Mapping
@@ -150,12 +151,12 @@ export function DataTablePresetSelector({
   }, [mode, selectedPreset, sampleCount, onSelect, onCreateEmpty, setIsOpen]);
 
   // 아이콘 렌더링 헬퍼
-  const renderIcon = (iconName: string, size = 20) => {
+  const renderIcon = (iconName: string, size?: number) => {
     const IconComponent = iconMap[iconName];
     return IconComponent ? <IconComponent size={size} /> : <Database size={size} />;
   };
 
-  const renderCategoryIcon = (category: PresetCategory, size = 16) => {
+  const renderCategoryIcon = (category: PresetCategory, size?: number) => {
     const IconComponent = categoryIconMap[category];
     return IconComponent ? <IconComponent size={size} /> : <Database size={size} />;
   };
@@ -164,7 +165,7 @@ export function DataTablePresetSelector({
     <DialogTrigger isOpen={isOpen} onOpenChange={setIsOpen}>
       {trigger || (
         <Button className="react-aria-Button primary">
-          <Plus size={16} />
+          <Plus {...iconProps} />
           DataTable 추가
         </Button>
       )}
@@ -177,11 +178,11 @@ export function DataTablePresetSelector({
                 {/* Header */}
                 <div className="preset-modal-header">
                   <Heading slot="title" className="preset-modal-title">
-                    <Database size={20} />
+                    <Database size={iconLarge.size} />
                     DataTable 추가
                   </Heading>
                   <Button className="preset-modal-close" onPress={close}>
-                    <X size={18} />
+                    <X size={iconProps.size} />
                   </Button>
                 </div>
 
@@ -221,7 +222,7 @@ export function DataTablePresetSelector({
                           onClick={() => handleCategoryChange(cat.id)}
                           title={cat.description}
                         >
-                          {renderCategoryIcon(cat.id)}
+                          {renderCategoryIcon(cat.id, iconProps.size)}
                           <span>{cat.name}</span>
                         </button>
                       ))}
@@ -239,7 +240,7 @@ export function DataTablePresetSelector({
                           onClick={() => handlePresetSelect(preset)}
                         >
                           <div className="list-item-icon">
-                            {renderIcon(preset.icon, 24)}
+                            {renderIcon(preset.icon, iconLarge.size)}
                           </div>
                           <div className="list-item-name">{preset.name}</div>
                           <div className="list-item-desc">{preset.description}</div>
@@ -255,7 +256,7 @@ export function DataTablePresetSelector({
                       <div className="preset-preview">
                         <div className="preset-preview-header">
                           <span className="preset-preview-title">
-                            {renderIcon(selectedPreset.icon, 16)}
+                            {renderIcon(selectedPreset.icon, iconProps.size)}
                             {selectedPreset.name} Schema
                           </span>
                           <div className="preset-sample-count">

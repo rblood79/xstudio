@@ -23,6 +23,7 @@ import {
 import { PropertyEditorProps } from "../types/editorTypes";
 import { useStore } from "../../../stores";
 import { useInspectorState } from "../../../inspector/hooks/useInspectorState";
+import { iconEditProps } from "../../../../utils/ui/uiConstants";
 
 export const SlotEditor = memo(function SlotEditor({
   elementId,
@@ -155,7 +156,7 @@ export const SlotEditor = memo(function SlotEditor({
                   }
                 }}
               >
-                <Box size={14} className="slot-child-icon" />
+                <Box size={iconEditProps.size} className="slot-child-icon" />
                 <span className="slot-child-name">
                   {child.customId || child.tag}
                 </span>
