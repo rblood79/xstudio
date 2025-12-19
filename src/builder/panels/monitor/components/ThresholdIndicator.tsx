@@ -8,6 +8,7 @@
  */
 
 import { AlertTriangle, AlertCircle, CheckCircle } from "lucide-react";
+import { iconProps } from "../../../../utils/ui/uiConstants";
 
 type ThresholdLevel = "safe" | "warning" | "danger";
 
@@ -51,7 +52,7 @@ export function ThresholdIndicator({
 
   return (
     <div className="threshold-indicator" data-threshold={threshold}>
-      <Icon size={16} aria-hidden="true" />
+      <Icon size={iconProps.size} aria-hidden="true" />
       <span className="sr-only">{statusText}: </span>
       <span>
         {label}: {value.toFixed(1)}%

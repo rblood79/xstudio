@@ -302,7 +302,7 @@ export function EventTypePicker({
         )}
 
         <div className="event-picker-search">
-          <Search size={14} color={iconProps.color} />
+          <Search size={iconEditProps.size} color={iconProps.color} />
           <input
             ref={searchInputRef}
             className="event-picker-search-input"

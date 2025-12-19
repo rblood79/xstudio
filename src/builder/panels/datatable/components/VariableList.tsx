@@ -10,6 +10,7 @@ import { useDataStore, useVariables } from "../../../stores/data";
 import { useDataTableEditorStore } from "../stores/dataTableEditorStore";
 import { SectionHeader } from "../../common/SectionHeader";
 import type { Variable as VariableType } from "../../../../types/builder/data.types";
+import { iconProps, iconEditProps } from "../../../../utils/ui/uiConstants";
 
 interface VariableListProps {
   projectId: string;
@@ -73,7 +74,7 @@ export function VariableList({ projectId }: VariableListProps) {
       onClick={() => openVariableEditor(variable.id)}
     >
       <div className="list-item-icon">
-        <Variable size={16} />
+        <Variable {...iconProps} />
       </div>
       <div className="list-item-content">
         <div className="list-item-name">{variable.name}</div>
@@ -92,7 +93,7 @@ export function VariableList({ projectId }: VariableListProps) {
           onClick={(e) => handleEdit(variable.id, e)}
           title="편집"
         >
-          <Edit2 size={14} />
+          <Edit2 {...iconEditProps} />
         </button>
         <button
           type="button"
@@ -100,7 +101,7 @@ export function VariableList({ projectId }: VariableListProps) {
           onClick={(e) => handleDelete(variable.id, e)}
           title="삭제"
         >
-          <Trash2 size={14} />
+          <Trash2 {...iconEditProps} />
         </button>
       </div>
     </div>
@@ -159,7 +160,7 @@ export function VariableList({ projectId }: VariableListProps) {
           className="datatable-add-btn"
           onClick={handleCreate}
         >
-          <Plus size={16} />
+          <Plus {...iconProps} />
           <span>Variable 추가</span>
         </button>
       </div>

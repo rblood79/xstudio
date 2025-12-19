@@ -29,6 +29,7 @@ import {
 import { PropertyEditorProps } from "../types/editorTypes";
 import { useStore } from "../../../stores";
 import { useDataTableStore } from "../../../stores/datatable";
+import { iconEditProps } from "../../../../utils/ui/uiConstants";
 
 export const DataTableEditor = memo(function DataTableEditor({
   elementId,
@@ -97,11 +98,11 @@ export const DataTableEditor = memo(function DataTableEditor({
 
     switch (dataTableState.status) {
       case "loading":
-        return <Loader2 size={14} className="spin" />;
+        return <Loader2 size={iconEditProps.size} className="spin" />;
       case "success":
-        return <CheckCircle2 size={14} className="text-success" />;
+        return <CheckCircle2 size={iconEditProps.size} className="text-success" />;
       case "error":
-        return <AlertCircle size={14} className="text-error" />;
+        return <AlertCircle size={iconEditProps.size} className="text-error" />;
       default:
         return null;
     }
@@ -236,7 +237,7 @@ export const DataTableEditor = memo(function DataTableEditor({
             onClick={handleLoad}
             disabled={!dataTableId || dataTableState?.status === "loading"}
           >
-            <Database size={14} />
+            <Database size={iconEditProps.size} />
             Load Data
           </button>
 
@@ -245,7 +246,7 @@ export const DataTableEditor = memo(function DataTableEditor({
             onClick={handleRefresh}
             disabled={!dataTableId || dataTableState?.status === "loading"}
           >
-            <RefreshCw size={14} />
+            <RefreshCw size={iconEditProps.size} />
             Refresh
           </button>
         </div>

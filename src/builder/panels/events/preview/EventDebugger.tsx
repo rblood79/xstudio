@@ -18,6 +18,7 @@ import {
   ChevronRight,
   AlertTriangle,
 } from 'lucide-react';
+import { iconEditProps, iconSmall } from '../../../../utils/ui/uiConstants';
 import type { BlockEventHandler } from '../../../events/types/eventBlockTypes';
 
 /**
@@ -417,7 +418,7 @@ export function EventDebugger({
           onPress={runTest}
           isDisabled={status === 'running'}
         >
-          <Play size={14} />
+          <Play size={iconEditProps.size} />
           <span>Run Test</span>
         </Button>
 
@@ -426,7 +427,7 @@ export function EventDebugger({
           onPress={reset}
           isDisabled={status === 'running'}
         >
-          <RefreshCw size={14} />
+          <RefreshCw size={iconEditProps.size} />
           <span>Reset</span>
         </Button>
       </div>
@@ -456,9 +457,9 @@ export function EventDebugger({
               onPress={() => toggleStepExpand(step.id)}
             >
               {expandedSteps.has(step.id) ? (
-                <ChevronDown size={12} />
+                <ChevronDown size={iconSmall.size} />
               ) : (
-                <ChevronRight size={12} />
+                <ChevronRight size={iconSmall.size} />
               )}
               <StepStatusIcon status={step.status} />
               <span className="step-name">{step.name}</span>
@@ -483,7 +484,7 @@ export function EventDebugger({
                 )}
                 {step.error && (
                   <div className="step-error">
-                    <AlertTriangle size={12} />
+                    <AlertTriangle size={iconSmall.size} />
                     <span>{step.error}</span>
                   </div>
                 )}
@@ -518,13 +519,13 @@ export function EventDebugger({
 function StepStatusIcon({ status }: { status: StepResult['status'] }) {
   switch (status) {
     case 'success':
-      return <CheckCircle size={14} className="step-icon success" />;
+      return <CheckCircle size={iconEditProps.size} className="step-icon success" />;
     case 'failed':
-      return <XCircle size={14} className="step-icon failed" />;
+      return <XCircle size={iconEditProps.size} className="step-icon failed" />;
     case 'running':
-      return <Clock size={14} className="step-icon running" />;
+      return <Clock size={iconEditProps.size} className="step-icon running" />;
     case 'skipped':
-      return <SkipForward size={14} className="step-icon skipped" />;
+      return <SkipForward size={iconEditProps.size} className="step-icon skipped" />;
     default:
       return <div className="step-icon pending" />;
   }

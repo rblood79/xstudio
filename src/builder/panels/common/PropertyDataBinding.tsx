@@ -300,7 +300,7 @@ export const PropertyDataBinding = memo(function PropertyDataBinding({
                 <Button className="react-aria-Button">
                   <SelectValue placeholder="이름 선택..." />
                   <span aria-hidden="true" className="select-chevron">
-                    <ChevronDown size={16} />
+                    <ChevronDown size={iconProps.size} />
                   </span>
                 </Button>
                 <Popover className="react-aria-Popover">
@@ -388,7 +388,7 @@ export const PropertyDataBinding = memo(function PropertyDataBinding({
                 <Button className="react-aria-Button">
                   <SelectValue />
                   <span aria-hidden="true" className="select-chevron">
-                    <ChevronDown size={16} />
+                    <ChevronDown size={iconProps.size} />
                   </span>
                 </Button>
                 <Popover className="react-aria-Popover">

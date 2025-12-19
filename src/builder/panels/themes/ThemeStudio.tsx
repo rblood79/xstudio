@@ -7,6 +7,7 @@ import { useState, useEffect } from 'react';
 import { tv } from 'tailwind-variants';
 import { useThemes, useActiveTheme } from '../../../hooks/theme';
 import { Moon, Sun } from 'lucide-react';
+import { iconProps, iconEditProps } from '../../../utils/ui/uiConstants';
 
 // 하위 컴포넌트 import
 import { AIThemeGenerator } from './components/AIThemeGenerator';
@@ -111,7 +112,7 @@ export function ThemeStudio({ projectId }: ThemeStudioProps) {
             onClick={handleTogglePreviewDarkMode}
             title={isPreviewDarkMode ? 'Light 모드로 전환' : 'Dark 모드로 전환'}
           >
-            {isPreviewDarkMode ? <Sun size={16} /> : <Moon size={16} />}
+            {isPreviewDarkMode ? <Sun size={iconProps.size} /> : <Moon size={iconProps.size} />}
             <span>{isPreviewDarkMode ? 'Light' : 'Dark'}</span>
           </button>
           <button
@@ -190,7 +191,7 @@ export function ThemeStudio({ projectId }: ThemeStudioProps) {
                   <div className="theme-name-row">
                     <span className="theme-name">{theme.name}</span>
                     {(theme.supports_dark_mode ?? true) && (
-                      <Moon size={14} className="dark-mode-indicator" />
+                      <Moon size={iconEditProps.size} className="dark-mode-indicator" />
                     )}
                   </div>
                   <span className="theme-status">{theme.status}</span>
@@ -283,7 +284,7 @@ export function ThemeStudio({ projectId }: ThemeStudioProps) {
                 <h3>테마 설정</h3>
                 <div className="setting-item">
                   <label htmlFor="dark-mode-support">
-                    <Moon size={16} />
+                    <Moon size={iconProps.size} />
                     <span>다크모드 지원</span>
                   </label>
                   <input

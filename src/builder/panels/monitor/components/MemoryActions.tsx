@@ -6,6 +6,7 @@
 
 import { Trash2, RefreshCw } from "lucide-react";
 import { Button } from "react-aria-components";
+import { iconEditProps } from "../../../../utils/ui/uiConstants";
 
 interface MemoryActionsProps {
   /** 최적화 실행 핸들러 */
@@ -34,12 +35,12 @@ export function MemoryActions({
       >
         {isOptimizing ? (
           <>
-            <RefreshCw size={14} className="spinning" />
+            <RefreshCw size={iconEditProps.size} className="spinning" />
             <span>Optimizing...</span>
           </>
         ) : (
           <>
-            <Trash2 size={14} />
+            <Trash2 size={iconEditProps.size} />
             <span>Optimize</span>
           </>
         )}

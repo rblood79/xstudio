@@ -10,6 +10,7 @@ import { Monitor, Tablet, Smartphone, Eye, EyeOff } from "lucide-react";
 import { PropertySection } from "../../common";
 import type { ResponsiveVisibility, BreakpointName } from "../../../../types/builder/responsive.types";
 import { BREAKPOINTS, BREAKPOINT_ORDER } from "../../../../types/builder/responsive.types";
+import { iconEditProps, iconSmall } from "../../../../utils/ui/uiConstants";
 
 interface ResponsiveVisibilityEditorProps {
   /** 현재 가시성 설정 */
@@ -96,9 +97,9 @@ export const ResponsiveVisibilityEditor = memo(function ResponsiveVisibilityEdit
                 title={`${config.label}: ${isVisible ? "Visible" : "Hidden"} (${config.minWidth}px${config.maxWidth ? `-${config.maxWidth}px` : "+"})`}
                 aria-pressed={isVisible}
               >
-                <BreakpointIcon breakpoint={bp} size={14} />
+                <BreakpointIcon breakpoint={bp} size={iconEditProps.size} />
                 <span className="responsive-visibility-label">{config.label}</span>
-                {isVisible ? <Eye size={12} /> : <EyeOff size={12} />}
+                {isVisible ? <Eye size={iconSmall.size} /> : <EyeOff size={iconSmall.size} />}
               </button>
             );
           })}
