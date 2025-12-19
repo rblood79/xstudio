@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useStore } from "../stores";
 import { Maximize2 } from "lucide-react";
+import { iconProps } from "../../utils/ui/uiConstants";
 import { MessageService } from "../../utils/messaging";
 import { useVisibleOverlays } from "./hooks/useVisibleOverlays";
 import type { OverlayData as VisibleOverlayData } from "./hooks/useVisibleOverlays";
@@ -387,7 +388,7 @@ export default function SelectionOverlay() {
               {isPrimary && (
                 <div className="overlay-info">
                   <div className="overlay-tag-parent">
-                    <Maximize2 size={16} />
+                    <Maximize2 size={iconProps.size} />
                   </div>
                   <div className="overlay-tag">{tag}</div>
                 </div>
@@ -427,7 +428,7 @@ export default function SelectionOverlay() {
       >
         <div className="overlay-info">
           <div className="overlay-tag-parent">
-            <Maximize2 size={16} />
+            <Maximize2 size={iconProps.size} />
           </div>
           <div className="overlay-tag">{displayTag}</div>
         </div>
