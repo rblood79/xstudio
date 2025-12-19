@@ -50,7 +50,7 @@ jobs:
           echo "✅ Lockfile is in sync and dependencies installed"
 
       - name: Build project
-        run: pnpm vite build
+        run: pnpm run build
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
