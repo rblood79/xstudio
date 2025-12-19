@@ -103,7 +103,7 @@ export function MultiSelectStatusIndicator({
             <Copy
               color={iconProps.color}
               size={iconProps.size}
-              strokeWidth={iconProps.stroke}
+              strokeWidth={iconProps.strokeWidth}
             />
             <span>모두 복사</span>
             <span className="shortcut-hint">⌘⇧C</span>
@@ -118,7 +118,7 @@ export function MultiSelectStatusIndicator({
             <ClipboardPaste
               color={iconProps.color}
               size={iconProps.size}
-              strokeWidth={iconProps.stroke}
+              strokeWidth={iconProps.strokeWidth}
             />
             <span>붙여넣기</span>
             <span className="shortcut-hint">⌘⇧V</span>
@@ -137,7 +137,7 @@ export function MultiSelectStatusIndicator({
             <GroupIcon
               color={iconProps.color}
               size={iconProps.size}
-              strokeWidth={iconProps.stroke}
+              strokeWidth={iconProps.strokeWidth}
             />
             <span>그룹화</span>
             <span className="shortcut-hint">⌘G</span>
@@ -159,7 +159,7 @@ export function MultiSelectStatusIndicator({
                 <AlignLeft
                   color={iconProps.color}
                   size={iconProps.size}
-                  strokeWidth={iconProps.stroke}
+                  strokeWidth={iconProps.strokeWidth}
                 />
               </Button>
 
@@ -173,7 +173,7 @@ export function MultiSelectStatusIndicator({
                 <AlignCenter
                   color={iconProps.color}
                   size={iconProps.size}
-                  strokeWidth={iconProps.stroke}
+                  strokeWidth={iconProps.strokeWidth}
                 />
               </Button>
 
@@ -187,7 +187,7 @@ export function MultiSelectStatusIndicator({
                 <AlignRight
                   color={iconProps.color}
                   size={iconProps.size}
-                  strokeWidth={iconProps.stroke}
+                  strokeWidth={iconProps.strokeWidth}
                 />
               </Button>
 
@@ -201,7 +201,7 @@ export function MultiSelectStatusIndicator({
                 <AlignVerticalJustifyStart
                   color={iconProps.color}
                   size={iconProps.size}
-                  strokeWidth={iconProps.stroke}
+                  strokeWidth={iconProps.strokeWidth}
                 />
               </Button>
 
@@ -215,7 +215,7 @@ export function MultiSelectStatusIndicator({
                 <AlignVerticalJustifyCenter
                   color={iconProps.color}
                   size={iconProps.size}
-                  strokeWidth={iconProps.stroke}
+                  strokeWidth={iconProps.strokeWidth}
                 />
               </Button>
 
@@ -229,7 +229,7 @@ export function MultiSelectStatusIndicator({
                 <AlignVerticalJustifyEnd
                   color={iconProps.color}
                   size={iconProps.size}
-                  strokeWidth={iconProps.stroke}
+                  strokeWidth={iconProps.strokeWidth}
                 />
               </Button>
             </div>
@@ -251,7 +251,7 @@ export function MultiSelectStatusIndicator({
                 <AlignHorizontalDistributeCenter
                   color={iconProps.color}
                   size={iconProps.size}
-                  strokeWidth={iconProps.stroke}
+                  strokeWidth={iconProps.strokeWidth}
                 />
               </Button>
 
@@ -265,7 +265,7 @@ export function MultiSelectStatusIndicator({
                 <AlignVerticalDistributeCenter
                   color={iconProps.color}
                   size={iconProps.size}
-                  strokeWidth={iconProps.stroke}
+                  strokeWidth={iconProps.strokeWidth}
                 />
               </Button>
             </div>
@@ -284,7 +284,7 @@ export function MultiSelectStatusIndicator({
             <Trash2
               color={iconProps.color}
               size={iconProps.size}
-              strokeWidth={iconProps.stroke}
+              strokeWidth={iconProps.strokeWidth}
             />
             <span>모두 삭제</span>
             <span className="shortcut-hint">⌦</span>
@@ -300,7 +300,7 @@ export function MultiSelectStatusIndicator({
             <X
               color={iconProps.color}
               size={iconProps.size}
-              strokeWidth={iconProps.stroke}
+              strokeWidth={iconProps.strokeWidth}
             />
             <span>선택 해제</span>
             <span className="shortcut-hint">Esc</span>

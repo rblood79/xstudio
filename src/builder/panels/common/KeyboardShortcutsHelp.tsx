@@ -152,7 +152,7 @@ export function KeyboardShortcutsHelp({
             <Keyboard
               color={iconProps.color}
               size={iconProps.size}
-              strokeWidth={iconProps.stroke}
+              strokeWidth={iconProps.strokeWidth}
             />
             <h2>Keyboard Shortcuts</h2>
           </div>
@@ -165,7 +165,7 @@ export function KeyboardShortcutsHelp({
             <X
               color={iconProps.color}
               size={iconProps.size}
-              strokeWidth={iconProps.stroke}
+              strokeWidth={iconProps.strokeWidth}
             />
           </Button>
         </div>

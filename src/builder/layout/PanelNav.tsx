@@ -55,7 +55,7 @@ export function PanelNav({
               >
                 <Icon
                   color={iconProps.color}
-                  strokeWidth={iconProps.stroke}
+                  strokeWidth={iconProps.strokeWidth}
                   size={iconProps.size}
                 />
               </button>
@@ -75,13 +75,13 @@ export function PanelNav({
           {side === "left" ? (
             <ChevronLeft
               color={iconProps.color}
-              strokeWidth={iconProps.stroke}
+              strokeWidth={iconProps.strokeWidth}
               size={iconProps.size}
             />
           ) : (
             <ChevronRight
               color={iconProps.color}
-              strokeWidth={iconProps.stroke}
+              strokeWidth={iconProps.strokeWidth}
               size={iconProps.size}
             />
           )}

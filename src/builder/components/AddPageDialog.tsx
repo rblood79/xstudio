@@ -175,7 +175,7 @@ export function AddPageDialog({ onSubmit, existingPagesCount }: AddPageDialogPro
       <Button className="iconButton" aria-label="Add Page">
         <CirclePlus
           color={iconProps.color}
-          strokeWidth={iconProps.stroke}
+          strokeWidth={iconProps.strokeWidth}
           size={iconProps.size}
         />
       </Button>

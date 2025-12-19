@@ -135,7 +135,7 @@ export const TagEditor = memo(function TagEditor({ elementId, currentProps, onUp
                         >
                             <SquarePlus
                                 color={iconProps.color}
-                                strokeWidth={iconProps.stroke}
+                                strokeWidth={iconProps.strokeWidth}
                                 size={iconProps.size}
                             />
                             Add Field
@@ -281,7 +281,7 @@ export const TagEditor = memo(function TagEditor({ elementId, currentProps, onUp
                     >
                         <SquarePlus
                             color={iconProps.color}
-                            strokeWidth={iconProps.stroke}
+                            strokeWidth={iconProps.strokeWidth}
                             size={iconProps.size}
                         />
                         Add First Field

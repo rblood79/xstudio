@@ -211,7 +211,7 @@ export const BreadcrumbsEditor = memo(function BreadcrumbsEditor({ elementId, cu
                             }
                         }}
                     >
-                        <SquarePlus color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
+                        <SquarePlus color={iconProps.color} strokeWidth={iconProps.strokeWidth} size={iconProps.size} />
                         Add Breadcrumb
                     </button>
                 </div>

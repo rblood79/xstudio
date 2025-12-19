@@ -74,7 +74,7 @@ export const BuilderHeader: React.FC<BuilderHeaderProps> = ({
     <nav className="header">
       <div className="header_contents header_left">
         <button aria-label="Menu">
-          <Menu strokeWidth={iconProps.stroke} size={iconProps.size} />
+          <Menu strokeWidth={iconProps.strokeWidth} size={iconProps.size} />
         </button>
         <div className="project-info">
           {projectName && <span className="project-name">{projectName}</span>}
@@ -110,28 +110,28 @@ export const BuilderHeader: React.FC<BuilderHeaderProps> = ({
               {bp.id === "screen" && (
                 <Asterisk
                   color={iconProps.color}
-                  strokeWidth={iconProps.stroke}
+                  strokeWidth={iconProps.strokeWidth}
                   size={iconProps.size}
                 />
               )}
               {bp.id === "desktop" && (
                 <Monitor
                   color={iconProps.color}
-                  strokeWidth={iconProps.stroke}
+                  strokeWidth={iconProps.strokeWidth}
                   size={iconProps.size}
                 />
               )}
               {bp.id === "tablet" && (
                 <Tablet
                   color={iconProps.color}
-                  strokeWidth={iconProps.stroke}
+                  strokeWidth={iconProps.strokeWidth}
                   size={iconProps.size}
                 />
               )}
               {bp.id === "mobile" && (
                 <Smartphone
                   color={iconProps.color}
-                  strokeWidth={iconProps.stroke}
+                  strokeWidth={iconProps.strokeWidth}
                   size={iconProps.size}
                 />
               )}
@@ -152,7 +152,7 @@ export const BuilderHeader: React.FC<BuilderHeaderProps> = ({
         >
           <Undo
             color={!canUndo ? "#999" : iconProps.color}
-            strokeWidth={iconProps.stroke}
+            strokeWidth={iconProps.strokeWidth}
             size={iconProps.size}
           />
         </button>
@@ -164,7 +164,7 @@ export const BuilderHeader: React.FC<BuilderHeaderProps> = ({
         >
           <Redo
             color={!canRedo ? "#999" : iconProps.color}
-            strokeWidth={iconProps.stroke}
+            strokeWidth={iconProps.strokeWidth}
             size={iconProps.size}
           />
         </button>
@@ -196,7 +196,7 @@ export const BuilderHeader: React.FC<BuilderHeaderProps> = ({
           <ToggleButton id="monitor" aria-label="Toggle Monitor Panel">
             <Activity
               color={isMonitorOpen ? "var(--color-white)" : iconProps.color}
-              strokeWidth={iconProps.stroke}
+              strokeWidth={iconProps.strokeWidth}
               size={iconProps.size}
             />
           </ToggleButton>
@@ -207,13 +207,13 @@ export const BuilderHeader: React.FC<BuilderHeaderProps> = ({
             {viewMode === "canvas" ? (
               <GitBranch
                 color={iconProps.color}
-                strokeWidth={iconProps.stroke}
+                strokeWidth={iconProps.strokeWidth}
                 size={iconProps.size}
               />
             ) : (
               <LayoutGrid
                 color="var(--color-white)"
-                strokeWidth={iconProps.stroke}
+                strokeWidth={iconProps.strokeWidth}
                 size={iconProps.size}
               />
             )}
@@ -221,7 +221,7 @@ export const BuilderHeader: React.FC<BuilderHeaderProps> = ({
           <ToggleButton id="preview" aria-label="Preview" onPress={onPreview}>
             <Eye
               color={iconProps.color}
-              strokeWidth={iconProps.stroke}
+              strokeWidth={iconProps.strokeWidth}
               size={iconProps.size}
             />
           </ToggleButton>
@@ -229,7 +229,7 @@ export const BuilderHeader: React.FC<BuilderHeaderProps> = ({
         <button aria-label="Play" onClick={onPlay}>
           <Play
             color={iconProps.color}
-            strokeWidth={iconProps.stroke}
+            strokeWidth={iconProps.strokeWidth}
             size={iconProps.size}
           />
         </button>

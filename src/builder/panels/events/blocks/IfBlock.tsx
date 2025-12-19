@@ -98,7 +98,7 @@ export function IfBlock({
         <Search
           className="block-icon"
           size={iconProps.size}
-          strokeWidth={iconProps.stroke}
+          strokeWidth={iconProps.strokeWidth}
         />
         <span className="block-label">IF</span>
         <span className="block-sublabel">(optional)</span>
@@ -112,9 +112,9 @@ export function IfBlock({
             aria-expanded={isExpanded}
           >
             {isExpanded ? (
-              <ChevronDown size={iconEditProps.size} color={iconProps.color} strokeWidth={iconProps.stroke} />
+              <ChevronDown size={iconEditProps.size} color={iconProps.color} strokeWidth={iconProps.strokeWidth} />
             ) : (
-              <ChevronRight size={iconEditProps.size} color={iconProps.color} strokeWidth={iconProps.stroke} />
+              <ChevronRight size={iconEditProps.size} color={iconProps.color} strokeWidth={iconProps.strokeWidth} />
             )}
           </Button>
 
@@ -124,7 +124,7 @@ export function IfBlock({
             onPress={onRemove}
             aria-label="Remove condition block"
           >
-            <Trash size={iconEditProps.size} color={iconProps.color} strokeWidth={iconProps.stroke} />
+            <Trash size={iconEditProps.size} color={iconProps.color} strokeWidth={iconProps.strokeWidth} />
           </Button>
         </div>
       </div>

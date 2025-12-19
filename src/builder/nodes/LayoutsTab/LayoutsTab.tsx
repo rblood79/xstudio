@@ -254,7 +254,7 @@ export function LayoutsTab({
                     {hasChildNodes ? (
                       <ChevronRight
                         color={iconProps.color}
-                        strokeWidth={iconProps.stroke}
+                        strokeWidth={iconProps.strokeWidth}
                         size={iconProps.size}
                         style={{
                           transform: isExpanded ? "rotate(90deg)" : "rotate(0deg)",
@@ -263,7 +263,7 @@ export function LayoutsTab({
                     ) : (
                       <Box
                         color={iconProps.color}
-                        strokeWidth={iconProps.stroke}
+                        strokeWidth={iconProps.strokeWidth}
                         size={iconProps.size}
                         style={{ padding: "2px" }}
                       />
@@ -278,7 +278,7 @@ export function LayoutsTab({
                     <button className="iconButton" aria-label="Settings">
                       <Settings2
                         color={iconProps.color}
-                        strokeWidth={iconProps.stroke}
+                        strokeWidth={iconProps.strokeWidth}
                         size={iconProps.size}
                       />
                     </button>
@@ -294,7 +294,7 @@ export function LayoutsTab({
                       >
                         <Trash
                           color={iconProps.color}
-                          strokeWidth={iconProps.stroke}
+                          strokeWidth={iconProps.strokeWidth}
                           size={iconProps.size}
                         />
                       </button>
@@ -430,7 +430,7 @@ export function LayoutsTab({
             >
               <CirclePlus
                 color={iconProps.color}
-                strokeWidth={iconProps.stroke}
+                strokeWidth={iconProps.strokeWidth}
                 size={iconProps.size}
               />
             </button>
@@ -456,7 +456,7 @@ export function LayoutsTab({
                   <div className="elementItemIcon">
                     <Box
                       color={iconProps.color}
-                      strokeWidth={iconProps.stroke}
+                      strokeWidth={iconProps.strokeWidth}
                       size={iconProps.size}
                       style={{ padding: "2px" }}
                     />
@@ -473,7 +473,7 @@ export function LayoutsTab({
                     >
                       <Trash
                         color={iconProps.color}
-                        strokeWidth={iconProps.stroke}
+                        strokeWidth={iconProps.strokeWidth}
                         size={iconProps.size}
                       />
                     </button>
@@ -497,7 +497,7 @@ export function LayoutsTab({
             >
               <CopyMinus
                 color={iconProps.color}
-                strokeWidth={iconProps.stroke}
+                strokeWidth={iconProps.strokeWidth}
                 size={iconProps.size}
               />
             </button>

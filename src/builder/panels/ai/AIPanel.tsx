@@ -565,7 +565,7 @@ function AIPanelContent() {
             >
               <Trash2
                 color={iconProps.color}
-                strokeWidth={iconProps.stroke}
+                strokeWidth={iconProps.strokeWidth}
                 size={iconProps.size}
               />
             </button>

@@ -463,7 +463,7 @@ export const SelectEditor = memo(function SelectEditor({ elementId, currentProps
             className='control-button add'
             onClick={addItem}
           >
-            <SquarePlus color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
+            <SquarePlus color={iconProps.color} strokeWidth={iconProps.strokeWidth} size={iconProps.size} />
             Add Item
           </button>
         </div>
@@ -506,7 +506,7 @@ export const SelectEditor = memo(function SelectEditor({ elementId, currentProps
               className='control-button delete'
               onClick={() => handleDeleteOption(currentOption.id)}
             >
-              <Trash color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
+              <Trash color={iconProps.color} strokeWidth={iconProps.strokeWidth} size={iconProps.size} />
               Delete This Item
             </button>
           </div>

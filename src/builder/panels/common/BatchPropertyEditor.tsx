@@ -266,7 +266,7 @@ export function BatchPropertyEditor({
             <Check
               color={iconProps.color}
               size={iconProps.size}
-              strokeWidth={iconProps.stroke}
+              strokeWidth={iconProps.strokeWidth}
             />
             <span>모두 적용 ({Object.keys(pendingUpdates).length}개)</span>
           </Button>
@@ -280,7 +280,7 @@ export function BatchPropertyEditor({
             <RefreshCw
               color={iconProps.color}
               size={iconProps.size}
-              strokeWidth={iconProps.stroke}
+              strokeWidth={iconProps.strokeWidth}
             />
             <span>초기화</span>
           </Button>

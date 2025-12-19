@@ -77,7 +77,7 @@ export function ActionListView({
                 <GripVertical
                   size={iconProps.size}
                   color={iconProps.color}
-                  strokeWidth={iconProps.stroke}
+                  strokeWidth={iconProps.strokeWidth}
                 />
               </div>
 
@@ -103,13 +103,13 @@ export function ActionListView({
                     <ChevronDown
                       size={iconProps.size}
                       color={iconProps.color}
-                      strokeWidth={iconProps.stroke}
+                      strokeWidth={iconProps.strokeWidth}
                     />
                   ) : (
                     <ChevronRight
                       size={iconProps.size}
                       color={iconProps.color}
-                      strokeWidth={iconProps.stroke}
+                      strokeWidth={iconProps.strokeWidth}
                     />
                   )}
                 </Button>
@@ -121,7 +121,7 @@ export function ActionListView({
                   <Trash
                     size={iconProps.size}
                     color={iconProps.color}
-                    strokeWidth={iconProps.stroke}
+                    strokeWidth={iconProps.strokeWidth}
                   />
                 </Button>
               </div>

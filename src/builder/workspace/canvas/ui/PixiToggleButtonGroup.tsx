@@ -19,11 +19,10 @@ import {
   Graphics as PixiGraphics,
   TextStyle,
   CanvasTextMetrics,
-  Container as PixiContainer,
 } from "pixi.js";
 import type { Element } from "../../../../types/core/store.types";
 import type { CSSStyle } from "../sprites/styleConverter";
-import { cssColorToHex, parseCSSSize } from "../sprites/styleConverter";
+import { parseCSSSize } from "../sprites/styleConverter";
 import {
   getToggleButtonSizePreset,
   getToggleButtonColorPreset,
@@ -398,14 +397,17 @@ export const PixiToggleButtonGroup = memo(function PixiToggleButtonGroup({
     [element.id, onClick, onChange, selectionMode, selectedKeys]
   );
 
-  // 아이템 위치 계산
+  // 아이템 위치 계산 (reduce로 누적 계산하여 변수 재할당 방지)
   const itemPositions = useMemo(() => {
-    let currentPos = 0;
-    return buttonSizes.map((size) => {
-      const pos = currentPos;
-      currentPos += (isHorizontal ? size.width : size.height) + gap;
-      return pos;
-    });
+    return buttonSizes.reduce<number[]>((positions, size, index) => {
+      if (index === 0) {
+        return [0];
+      }
+      const prevPos = positions[index - 1];
+      const prevSize = buttonSizes[index - 1];
+      const newPos = prevPos + (isHorizontal ? prevSize.width : prevSize.height) + gap;
+      return [...positions, newPos];
+    }, []);
   }, [buttonSizes, isHorizontal, gap]);
 
   return (

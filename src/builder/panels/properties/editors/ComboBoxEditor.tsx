@@ -434,7 +434,7 @@ export const ComboBoxEditor = memo(function ComboBoxEditor({ elementId, currentP
             className='control-button add'
             onClick={addItem}
           >
-            <SquarePlus color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
+            <SquarePlus color={iconProps.color} strokeWidth={iconProps.strokeWidth} size={iconProps.size} />
             {PROPERTY_LABELS.ADD_OPTION}
           </button>
         </div>
@@ -484,7 +484,7 @@ export const ComboBoxEditor = memo(function ComboBoxEditor({ elementId, currentP
               className='control-button delete'
               onClick={() => handleDeleteOption(currentOption.id)}
             >
-              <Trash color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
+              <Trash color={iconProps.color} strokeWidth={iconProps.strokeWidth} size={iconProps.size} />
               Delete This Item
             </button>
           </div>

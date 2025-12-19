@@ -277,7 +277,7 @@ export const TableHeaderEditor = memo(function TableHeaderEditor({ elementId, cu
                                         className='control-button delete'
                                         onClick={() => deleteColumn(column.id)}
                                     >
-                                        <Trash color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
+                                        <Trash color={iconProps.color} strokeWidth={iconProps.strokeWidth} size={iconProps.size} />
                                     </button>
                                 </div>
                             );
@@ -293,7 +293,7 @@ export const TableHeaderEditor = memo(function TableHeaderEditor({ elementId, cu
                                 className='control-button add'
                                 onClick={addColumn}
                             >
-                                <SquarePlus color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
+                                <SquarePlus color={iconProps.color} strokeWidth={iconProps.strokeWidth} size={iconProps.size} />
                                 Add Column
                             </button>
                             <button
@@ -312,7 +312,7 @@ export const TableHeaderEditor = memo(function TableHeaderEditor({ elementId, cu
                             className='control-button add'
                             onClick={() => setIsAddingColumn(true)}
                         >
-                            <SquarePlus color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
+                            <SquarePlus color={iconProps.color} strokeWidth={iconProps.strokeWidth} size={iconProps.size} />
                             Add Column
                         </button>
                     )}

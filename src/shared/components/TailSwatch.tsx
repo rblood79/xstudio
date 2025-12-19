@@ -78,7 +78,6 @@ function getTailwindColorValue(name: TailwindColorName): string {
   return TAILWIND_HEX_COLORS[name];
 }
 
-// eslint-disable-next-line react-refresh/only-export-components
 export const DEFAULT_TAILWIND_SWATCHES: TailwindSwatch[] =
   tailwindColorNames.map((name) => ({
     name,

@@ -332,7 +332,7 @@ export const TabsEditor = memo(
             >
               <Plus
                 color={iconProps.color}
-                strokeWidth={iconProps.stroke}
+                strokeWidth={iconProps.strokeWidth}
                 size={iconProps.size}
               />
               {PROPERTY_LABELS.ADD_TAB}

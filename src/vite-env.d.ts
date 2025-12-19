@@ -1,5 +1,90 @@
 /// <reference types="vite/client" />
 
+// @pixi/react JSX 타입 확장
+import type { Graphics } from 'pixi.js';
+import type { ReactNode } from 'react';
+
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      pixiContainer: React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement>, HTMLElement> & {
+        x?: number;
+        y?: number;
+        width?: number;
+        height?: number;
+        alpha?: number;
+        visible?: boolean;
+        interactive?: boolean;
+        cursor?: string;
+        pointerdown?: (e: unknown) => void;
+        pointerup?: (e: unknown) => void;
+        pointerover?: (e: unknown) => void;
+        pointerout?: (e: unknown) => void;
+        children?: ReactNode;
+      };
+      pixiGraphics: {
+        draw?: (g: Graphics) => void;
+        x?: number;
+        y?: number;
+        alpha?: number;
+        visible?: boolean;
+        interactive?: boolean;
+        cursor?: string;
+        pointerdown?: (e: unknown) => void;
+        pointerup?: (e: unknown) => void;
+        pointerover?: (e: unknown) => void;
+        pointerout?: (e: unknown) => void;
+      };
+      pixiText: {
+        text?: string;
+        style?: object;
+        anchor?: number | { x: number; y: number };
+        x?: number;
+        y?: number;
+        alpha?: number;
+        visible?: boolean;
+      };
+      pixiSprite: {
+        texture?: unknown;
+        x?: number;
+        y?: number;
+        width?: number;
+        height?: number;
+        alpha?: number;
+        visible?: boolean;
+      };
+      Text: {
+        text?: string;
+        style?: object;
+        anchor?: number | { x: number; y: number };
+        x?: number;
+        y?: number;
+        alpha?: number;
+        visible?: boolean;
+      };
+      Container: React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement>, HTMLElement> & {
+        x?: number;
+        y?: number;
+        width?: number;
+        height?: number;
+        alpha?: number;
+        visible?: boolean;
+        children?: ReactNode;
+      };
+      Graphics: {
+        draw?: (g: Graphics) => void;
+        x?: number;
+        y?: number;
+      };
+      Sprite: {
+        texture?: unknown;
+        x?: number;
+        y?: number;
+      };
+    }
+  }
+}
+
 /**
  * Vite 환경변수 타입 정의
  *

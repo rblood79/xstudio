@@ -107,7 +107,7 @@ export const ToggleButtonGroupEditor = memo(function ToggleButtonGroupEditor({ e
                                 }
                             }}
                         >
-                            <Trash color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
+                            <Trash color={iconProps.color} strokeWidth={iconProps.strokeWidth} size={iconProps.size} />
                             Delete This Button
                         </button>
                     </div>
@@ -365,7 +365,7 @@ export const ToggleButtonGroupEditor = memo(function ToggleButtonGroupEditor({ e
                             }
                         }}
                     >
-                        <SquarePlus color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
+                        <SquarePlus color={iconProps.color} strokeWidth={iconProps.strokeWidth} size={iconProps.size} />
                         {PROPERTY_LABELS.ADD_TOGGLE_BUTTON}
                     </button>
                 </div>

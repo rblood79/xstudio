@@ -11,7 +11,7 @@ import { Table2, Plus, Trash2, Edit2, Link } from "lucide-react";
 import { Button } from "react-aria-components";
 import { useDataStore } from "../../../stores/data";
 import { SectionHeader } from "../../common/SectionHeader";
-import { iconProps, iconEditProps, iconSmall } from "../../../../utils/ui/uiConstants";
+import { iconProps, iconEditProps } from "../../../../utils/ui/uiConstants";
 
 interface DataTableListProps {
   projectId: string;

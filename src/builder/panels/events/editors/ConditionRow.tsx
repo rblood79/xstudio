@@ -88,7 +88,7 @@ export function ConditionRow({
     <div className="condition-row" role="group" aria-label="Condition">
       {/* Drag Handle */}
       <div className="condition-drag-handle" {...dragHandleProps}>
-        <GripVertical size={iconEditProps.size} color={iconProps.color} strokeWidth={iconProps.stroke} />
+        <GripVertical size={iconEditProps.size} color={iconProps.color} strokeWidth={iconProps.strokeWidth} />
       </div>
 
       {/* Left Operand */}
@@ -129,7 +129,7 @@ export function ConditionRow({
         onPress={onRemove}
         aria-label="Remove condition"
       >
-        <Trash size={iconEditProps.size} color={iconProps.color} strokeWidth={iconProps.stroke} />
+        <Trash size={iconEditProps.size} color={iconProps.color} strokeWidth={iconProps.strokeWidth} />
       </Button>
     </div>
   );

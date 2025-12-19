@@ -69,7 +69,7 @@ export const TransformSection = memo(function TransformSection({
               <EllipsisVertical
                 color={iconProps.color}
                 size={iconProps.size}
-                strokeWidth={iconProps.stroke}
+                strokeWidth={iconProps.strokeWidth}
               />
             </Button>
           </div>
@@ -99,7 +99,7 @@ export const TransformSection = memo(function TransformSection({
               <EllipsisVertical
                 color={iconProps.color}
                 size={iconProps.size}
-                strokeWidth={iconProps.stroke}
+                strokeWidth={iconProps.strokeWidth}
               />
             </Button>
           </div>

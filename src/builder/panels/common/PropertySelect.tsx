@@ -58,7 +58,7 @@ export const PropertySelect = memo(function PropertySelect({
                                 <Icon
                                     color={iconProps.color}
                                     size={iconProps.size}
-                                    strokeWidth={iconProps.stroke}
+                                    strokeWidth={iconProps.strokeWidth}
                                 />
                             </label>
                         )}

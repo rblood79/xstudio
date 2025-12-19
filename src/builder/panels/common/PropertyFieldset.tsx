@@ -19,7 +19,7 @@ export function PropertyFieldset({ legend, icon: Icon, children, className = '' 
             <div className='react-aria-control react-aria-Group'>
                 {Icon && (
                     <label className='control-label'>
-                        <Icon color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.stroke} />
+                        <Icon color={iconProps.color} size={iconProps.size} strokeWidth={iconProps.strokeWidth} />
                     </label>
                 )}
                 {children}

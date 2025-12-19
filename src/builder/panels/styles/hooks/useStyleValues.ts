@@ -7,7 +7,7 @@
  * 🚀 Phase 21: 값이 동일하면 이전 객체 재사용 (참조 안정성)
  */
 
-import { useMemo, useRef } from 'react';
+import { useMemo } from 'react';
 import type { SelectedElement } from '../../../inspector/types';
 
 // Properties that should only show inline styles (not computed)
@@ -100,14 +100,15 @@ function areStyleValuesEqual(a: StyleValues | null, b: StyleValues | null): bool
 /**
  * Hook: 모든 스타일 값을 메모이제이션하여 반환
  * 🚀 Phase 20: 1회 파싱으로 성능 최적화
- * 🚀 Phase 21: 값이 동일하면 이전 객체 재사용 (참조 안정성)
+ * 🚀 Phase 21: useMemo 내부에서 직접 안정적인 참조 반환
  */
-export function useStyleValues(selectedElement: SelectedElement | null): StyleValues | null {
-  const prevRef = useRef<StyleValues | null>(null);
+// 모듈 레벨 캐시 (컴포넌트 외부)
+let prevStyleValues: StyleValues | null = null;
 
+export function useStyleValues(selectedElement: SelectedElement | null): StyleValues | null {
   return useMemo(() => {
     if (!selectedElement) {
-      prevRef.current = null;
+      prevStyleValues = null;
       return null;
     }
 
@@ -149,11 +150,11 @@ export function useStyleValues(selectedElement: SelectedElement | null): StyleVa
     };
 
     // 🚀 Phase 21: 값이 동일하면 이전 객체 반환 (참조 안정성 유지)
-    if (areStyleValuesEqual(prevRef.current, newValues)) {
-      return prevRef.current;
+    if (areStyleValuesEqual(prevStyleValues, newValues)) {
+      return prevStyleValues;
     }
 
-    prevRef.current = newValues;
+    prevStyleValues = newValues;
     return newValues;
   }, [selectedElement]);
 }

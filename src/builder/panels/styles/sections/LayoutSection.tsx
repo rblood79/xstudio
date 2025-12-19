@@ -183,21 +183,21 @@ export const LayoutSection = memo(function LayoutSection({
               <Square
                 color={iconProps.color}
                 size={iconProps.size}
-                strokeWidth={iconProps.stroke}
+                strokeWidth={iconProps.strokeWidth}
               />
             </ToggleButton>
             <ToggleButton id="row">
               <StretchVertical
                 color={iconProps.color}
                 size={iconProps.size}
-                strokeWidth={iconProps.stroke}
+                strokeWidth={iconProps.strokeWidth}
               />
             </ToggleButton>
             <ToggleButton id="column">
               <StretchHorizontal
                 color={iconProps.color}
                 size={iconProps.size}
-                strokeWidth={iconProps.stroke}
+                strokeWidth={iconProps.strokeWidth}
               />
             </ToggleButton>
           </ToggleButtonGroup>
@@ -255,7 +255,7 @@ export const LayoutSection = memo(function LayoutSection({
             <LayoutGrid
               color={iconProps.color}
               size={iconProps.size}
-              strokeWidth={iconProps.stroke}
+              strokeWidth={iconProps.strokeWidth}
             />
           </Button>
         </div>
@@ -277,21 +277,21 @@ export const LayoutSection = memo(function LayoutSection({
               <AlignHorizontalSpaceAround
                 color={iconProps.color}
                 size={iconProps.size}
-                strokeWidth={iconProps.stroke}
+                strokeWidth={iconProps.strokeWidth}
               />
             </ToggleButton>
             <ToggleButton id="space-between">
               <GalleryHorizontal
                 color={iconProps.color}
                 size={iconProps.size}
-                strokeWidth={iconProps.stroke}
+                strokeWidth={iconProps.strokeWidth}
               />
             </ToggleButton>
             <ToggleButton id="space-evenly">
               <AlignHorizontalSpaceAround
                 color={iconProps.color}
                 size={iconProps.size}
-                strokeWidth={iconProps.stroke}
+                strokeWidth={iconProps.strokeWidth}
               />
             </ToggleButton>
           </ToggleButtonGroup>
@@ -314,21 +314,21 @@ export const LayoutSection = memo(function LayoutSection({
               <WrapText
                 color={iconProps.color}
                 size={iconProps.size}
-                strokeWidth={iconProps.stroke}
+                strokeWidth={iconProps.strokeWidth}
               />
             </ToggleButton>
             <ToggleButton id="wrap-reverse">
               <CornerDownLeft
                 color={iconProps.color}
                 size={iconProps.size}
-                strokeWidth={iconProps.stroke}
+                strokeWidth={iconProps.strokeWidth}
               />
             </ToggleButton>
             <ToggleButton id="nowrap">
               <ArrowRightToLine
                 color={iconProps.color}
                 size={iconProps.size}
-                strokeWidth={iconProps.stroke}
+                strokeWidth={iconProps.strokeWidth}
               />
             </ToggleButton>
           </ToggleButtonGroup>
@@ -377,7 +377,7 @@ export const LayoutSection = memo(function LayoutSection({
               <Maximize2
                 color={iconProps.color}
                 size={iconProps.size}
-                strokeWidth={iconProps.stroke}
+                strokeWidth={iconProps.strokeWidth}
               />
             </Button>
           </div>
@@ -412,7 +412,7 @@ export const LayoutSection = memo(function LayoutSection({
               <Minimize2
                 color={iconProps.color}
                 size={iconProps.size}
-                strokeWidth={iconProps.stroke}
+                strokeWidth={iconProps.strokeWidth}
               />
             </Button>
           </div>

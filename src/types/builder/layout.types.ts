@@ -57,7 +57,7 @@ export type LayoutUpdate = Partial<
  * Slot props 타입 (Element.props에 저장)
  * Slot은 tag="Slot"인 Element
  */
-export interface SlotProps {
+export interface SlotProps extends Record<string, unknown> {
   /** Slot 식별자 (예: "content", "sidebar", "navigation") */
   name: string;
 

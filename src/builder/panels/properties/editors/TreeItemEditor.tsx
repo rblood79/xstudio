@@ -189,7 +189,7 @@ export const TreeItemEditor = memo(function TreeItemEditor({ elementId, currentP
                         onClick={addNewChildTreeItem}
                         disabled={!localPageId}
                     >
-                        <Plus color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
+                        <Plus color={iconProps.color} strokeWidth={iconProps.strokeWidth} size={iconProps.size} />
                         Add Child TreeItem
                     </button>
                 </div>

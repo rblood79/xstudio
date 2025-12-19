@@ -175,10 +175,10 @@ export const usePageManager = ({ requestAutoSelectAfterUpdate }: UsePageManagerP
 
             // IndexedDB에 새 페이지 저장
             const db = await getDB();
-            const newPageData = {
+            const newPageData: Page = {
                 id: ElementUtils.generateId(),
                 project_id: projectId,
-                name: `Page ${nextOrderNum + 1}`,
+                title: `Page ${nextOrderNum + 1}`,
                 slug: `/page-${nextOrderNum + 1}`,
                 parent_id: null,
                 order_num: nextOrderNum,
@@ -193,12 +193,12 @@ export const usePageManager = ({ requestAutoSelectAfterUpdate }: UsePageManagerP
             const apiPage: ApiPage = {
                 id: newPage.id,
                 project_id: newPage.project_id,
-                title: newPage.name, // name → title
+                title: newPage.title,
                 slug: newPage.slug,
-                parent_id: newPage.parent_id,
-                order_num: newPage.order_num,
-                created_at: newPage.created_at,
-                updated_at: newPage.updated_at
+                parent_id: newPage.parent_id ?? null,
+                order_num: newPage.order_num ?? 0,
+                created_at: newPage.created_at ?? new Date().toISOString(),
+                updated_at: newPage.updated_at ?? new Date().toISOString()
             };
             pageList.append(apiPage);
             setSelectedPageId(newPage.id);
@@ -259,10 +259,10 @@ export const usePageManager = ({ requestAutoSelectAfterUpdate }: UsePageManagerP
 
             // IndexedDB에 새 페이지 저장
             const db = await getDB();
-            const newPageData = {
+            const newPageData: Page = {
                 id: ElementUtils.generateId(),
                 project_id: projectId,
-                name: title,
+                title: title,
                 slug: slug,
                 parent_id: parentId,
                 order_num: nextOrderNum,
@@ -277,12 +277,12 @@ export const usePageManager = ({ requestAutoSelectAfterUpdate }: UsePageManagerP
             const apiPage: ApiPage = {
                 id: newPage.id,
                 project_id: newPage.project_id,
-                title: newPage.name,
+                title: newPage.title,
                 slug: newPage.slug,
-                parent_id: newPage.parent_id,
-                order_num: newPage.order_num,
-                created_at: newPage.created_at,
-                updated_at: newPage.updated_at
+                parent_id: newPage.parent_id ?? null,
+                order_num: newPage.order_num ?? 0,
+                created_at: newPage.created_at ?? new Date().toISOString(),
+                updated_at: newPage.updated_at ?? new Date().toISOString()
             };
             pageList.append(apiPage);
             setSelectedPageId(newPage.id);
@@ -310,7 +310,7 @@ export const usePageManager = ({ requestAutoSelectAfterUpdate }: UsePageManagerP
             // 새 페이지의 요소들을 로드 (Preview 업데이트 + body 자동 선택)
             await fetchElements(newPage.id);
 
-            console.log('✅ 페이지 추가 완료 (with params):', newPage.name, 'slug:', newPage.slug);
+            console.log('✅ 페이지 추가 완료 (with params):', newPage.title, 'slug:', newPage.slug);
             return { success: true, data: apiPage };
         } catch (error) {
             console.error('페이지 생성 에러 (with params):', error);
@@ -349,14 +349,13 @@ export const usePageManager = ({ requestAutoSelectAfterUpdate }: UsePageManagerP
             }
 
             // IndexedDB Page를 ApiPage로 변환
-            // IndexedDB에 title 또는 name 필드가 있을 수 있음 (Supabase 동기화 이슈)
             const apiPages: ApiPage[] = projectPages.map(p => ({
                 id: p.id,
                 project_id: p.project_id,
-                title: (p as unknown as { title?: string }).title || p.name || 'Untitled', // title 또는 name 필드 지원
+                title: p.title || 'Untitled',
                 slug: p.slug,
-                parent_id: p.parent_id,
-                order_num: p.order_num,
+                parent_id: p.parent_id ?? null,
+                order_num: p.order_num ?? 0,
                 created_at: p.created_at || new Date().toISOString(),
                 updated_at: p.updated_at || new Date().toISOString()
             }));

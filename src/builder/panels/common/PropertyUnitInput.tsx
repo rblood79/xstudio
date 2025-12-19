@@ -269,7 +269,7 @@ export const PropertyUnitInput = memo(function PropertyUnitInput({
             <Icon
               color={iconProps.color}
               size={iconProps.size}
-              strokeWidth={iconProps.stroke}
+              strokeWidth={iconProps.strokeWidth}
             />
           </label>
         )}

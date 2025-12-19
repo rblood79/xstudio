@@ -12,7 +12,7 @@
  * @since 2025-12-18 Phase 9.3
  */
 
-import React, { useCallback, useEffect, useRef } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useRef } from 'react';
 import { longTaskMonitor, type MetricStats } from '../../utils/longTaskMonitor';
 import { postMessageMonitor } from '../../utils/postMessageMonitor';
 
@@ -70,9 +70,11 @@ export function usePerformanceMonitor(componentName?: string): PerformanceHookRe
   const renderStartRef = useRef<number>(0);
   const renderCountRef = useRef<number>(0);
 
-  // 렌더 시작 시간 기록
-  renderStartRef.current = performance.now();
-  renderCountRef.current++;
+  // 🚀 렌더 시작 시간 기록: useLayoutEffect로 이동 (렌더링 중 불순 함수 호출 금지)
+  useLayoutEffect(() => {
+    renderStartRef.current = performance.now();
+    renderCountRef.current++;
+  });
 
   // 렌더 완료 시 측정 (useEffect는 렌더 후 실행)
   useEffect(() => {

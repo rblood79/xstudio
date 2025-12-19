@@ -157,7 +157,7 @@ export const ListBoxItemEditor = memo(function ListBoxItemEditor({
             >
               <SquarePlus
                 color={iconProps.color}
-                strokeWidth={iconProps.stroke}
+                strokeWidth={iconProps.strokeWidth}
                 size={iconProps.size}
               />
               Add Field
@@ -319,7 +319,7 @@ export const ListBoxItemEditor = memo(function ListBoxItemEditor({
           >
             <SquarePlus
               color={iconProps.color}
-              strokeWidth={iconProps.stroke}
+              strokeWidth={iconProps.strokeWidth}
               size={iconProps.size}
             />
             Add First Field

@@ -62,7 +62,7 @@ export function WhenBlock({
         <Zap
           className="block-icon"
           size={iconProps.size}
-          strokeWidth={iconProps.stroke}
+          strokeWidth={iconProps.strokeWidth}
         />
         <span className="block-label">WHEN</span>
       </div>
@@ -93,7 +93,7 @@ export function WhenBlock({
               <Settings
                 size={iconEditProps.size}
                 color={iconProps.color}
-                strokeWidth={iconProps.stroke}
+                strokeWidth={iconProps.strokeWidth}
               />
             </Button>
           )}

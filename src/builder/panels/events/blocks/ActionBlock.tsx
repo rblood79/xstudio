@@ -143,7 +143,7 @@ export function ActionBlock({
         <GripVertical
           size={iconEditProps.size}
           color={iconProps.color}
-          strokeWidth={iconProps.stroke}
+          strokeWidth={iconProps.strokeWidth}
         />
       </div>
 
@@ -178,13 +178,13 @@ export function ActionBlock({
               <ChevronDown
                 size={iconEditProps.size}
                 color={iconProps.color}
-                strokeWidth={iconProps.stroke}
+                strokeWidth={iconProps.strokeWidth}
               />
             ) : (
               <ChevronRight
                 size={iconEditProps.size}
                 color={iconProps.color}
-                strokeWidth={iconProps.stroke}
+                strokeWidth={iconProps.strokeWidth}
               />
             )}
           </Button>
@@ -200,7 +200,7 @@ export function ActionBlock({
             <Trash
               size={iconEditProps.size}
               color={iconProps.color}
-              strokeWidth={iconProps.stroke}
+              strokeWidth={iconProps.strokeWidth}
             />
           </Button>
         )}

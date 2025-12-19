@@ -169,7 +169,7 @@ export const CheckboxGroupEditor = memo(function CheckboxGroupEditor({ elementId
                                 }
                             }}
                         >
-                            <Trash color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
+                            <Trash color={iconProps.color} strokeWidth={iconProps.strokeWidth} size={iconProps.size} />
                             {PROPERTY_LABELS.DELETE_THIS_CHECKBOX}
                         </button>
                     </div>
@@ -422,7 +422,7 @@ export const CheckboxGroupEditor = memo(function CheckboxGroupEditor({ elementId
                             }
                         }}
                     >
-                        <SquarePlus color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
+                        <SquarePlus color={iconProps.color} strokeWidth={iconProps.strokeWidth} size={iconProps.size} />
                         {PROPERTY_LABELS.ADD_CHECKBOX}
                     </button>
                 </div>

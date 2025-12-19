@@ -27,7 +27,7 @@ export function NodesPanelTabs({
       icon: (
         <FileText
           color={iconProps.color}
-          strokeWidth={iconProps.stroke}
+          strokeWidth={iconProps.strokeWidth}
           size={iconProps.size}
         />
       ),
@@ -38,7 +38,7 @@ export function NodesPanelTabs({
       icon: (
         <Layout
           color={iconProps.color}
-          strokeWidth={iconProps.stroke}
+          strokeWidth={iconProps.strokeWidth}
           size={iconProps.size}
         />
       ),

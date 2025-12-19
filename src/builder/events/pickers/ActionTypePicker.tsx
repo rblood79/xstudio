@@ -216,7 +216,7 @@ export function ActionTypePicker({
       >
         <CirclePlus
           color={iconProps.color}
-          strokeWidth={iconProps.stroke}
+          strokeWidth={iconProps.strokeWidth}
           size={iconProps.size}
         />
       </Button>

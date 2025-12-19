@@ -118,7 +118,7 @@ export function SelectionFilter({
           <Filter
             color={iconProps.color}
             size={iconProps.size}
-            strokeWidth={iconProps.stroke}
+            strokeWidth={iconProps.strokeWidth}
           />
           <span>필터</span>
         </Button>

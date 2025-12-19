@@ -192,7 +192,7 @@ function ActionPickerOverlay({ branch, onSelect, onClose }: ActionPickerOverlayP
         >
           <X
             color={iconProps.color}
-            strokeWidth={iconProps.stroke}
+            strokeWidth={iconProps.strokeWidth}
             size={iconProps.size}
           />
         </Button>
@@ -536,7 +536,7 @@ function EventsPanelContent({
               <Zap
                 size={iconProps.size}
                 color={iconProps.color}
-                strokeWidth={iconProps.stroke}
+                strokeWidth={iconProps.strokeWidth}
               />
             </Button>
           ) : (
@@ -559,7 +559,7 @@ function EventsPanelContent({
               <Zap
                 size={iconLarge.size}
                 color={iconProps.color}
-                strokeWidth={iconProps.stroke}
+                strokeWidth={iconProps.strokeWidth}
               />
             }
             message="이벤트 핸들러가 없습니다"
@@ -577,7 +577,7 @@ function EventsPanelContent({
               >
                 <ChevronLeft
                   color={iconProps.color}
-                  strokeWidth={iconProps.stroke}
+                  strokeWidth={iconProps.strokeWidth}
                   size={iconProps.size}
                 />
               </Button>
@@ -590,7 +590,7 @@ function EventsPanelContent({
                 >
                   <Trash
                     color={iconProps.color}
-                    strokeWidth={iconProps.stroke}
+                    strokeWidth={iconProps.strokeWidth}
                     size={iconProps.size}
                   />
                 </Button>
@@ -668,7 +668,7 @@ function EventsPanelContent({
                     >
                       <ChevronLeft
                         color={iconProps.color}
-                        strokeWidth={iconProps.stroke}
+                        strokeWidth={iconProps.strokeWidth}
                         size={iconProps.size}
                       />
                     </Button>
@@ -722,7 +722,7 @@ function EventsPanelContent({
                     <Zap
                       size={iconEditProps.size}
                       color={iconProps.color}
-                      strokeWidth={iconProps.stroke}
+                      strokeWidth={iconProps.strokeWidth}
                     />
                     <span className="handler-type">{handler.event}</span>
                   </div>

@@ -713,7 +713,7 @@ export const TableEditor = memo(function TableEditor({
                   >
                     <Trash
                       color={iconProps.color}
-                      strokeWidth={iconProps.stroke}
+                      strokeWidth={iconProps.strokeWidth}
                       size={iconProps.size}
                     />
                   </button>
@@ -737,7 +737,7 @@ export const TableEditor = memo(function TableEditor({
           <button className="control-button add" onClick={addColumnGroup}>
             <Layers
               color={iconProps.color}
-              strokeWidth={iconProps.stroke}
+              strokeWidth={iconProps.strokeWidth}
               size={iconProps.size}
             />
             Add Column Group
@@ -786,7 +786,7 @@ export const TableEditor = memo(function TableEditor({
                   >
                     <Trash
                       color={iconProps.color}
-                      strokeWidth={iconProps.stroke}
+                      strokeWidth={iconProps.strokeWidth}
                       size={iconProps.size}
                     />
                   </button>
@@ -801,7 +801,7 @@ export const TableEditor = memo(function TableEditor({
           <button className="control-button add" onClick={addRow}>
             <SquarePlus
               color={iconProps.color}
-              strokeWidth={iconProps.stroke}
+              strokeWidth={iconProps.strokeWidth}
               size={iconProps.size}
             />
             Add Row

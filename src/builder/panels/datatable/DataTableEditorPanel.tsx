@@ -84,7 +84,7 @@ type CreatorMode = "empty" | "preset";
  * (useEffect에서 setState 호출하는 안티패턴 제거)
  */
 interface EditorContentProps {
-  mode: DataTableEditorMode;
+  mode: NonNullable<DataTableEditorMode>;
   close: () => void;
 }
 
@@ -361,7 +361,7 @@ function EditorContent({ mode, close }: EditorContentProps) {
  * - api-edit: type + endpointId
  * - etc.
  */
-function getModeKey(mode: DataTableEditorMode): string {
+function getModeKey(mode: NonNullable<DataTableEditorMode>): string {
   switch (mode.type) {
     case "table-create":
       return `table-create-${mode.projectId}`;

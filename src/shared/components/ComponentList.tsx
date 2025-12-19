@@ -367,7 +367,7 @@ const ComponentList = memo(
             <button className="iconButton" aria-label="filter components">
               <Settings2
                 color={iconProps.color}
-                strokeWidth={iconProps.stroke}
+                strokeWidth={iconProps.strokeWidth}
                 size={iconProps.size}
               />
             </button>
@@ -396,7 +396,7 @@ const ComponentList = memo(
                   >
                     <Trash2
                       color={iconProps.color}
-                      strokeWidth={iconProps.stroke}
+                      strokeWidth={iconProps.strokeWidth}
                       size={iconProps.size}
                     />
                   </button>
@@ -475,13 +475,13 @@ const ComponentList = memo(
                         {expanded ? (
                           <ChevronUp
                             color={iconProps.color}
-                            strokeWidth={iconProps.stroke}
+                            strokeWidth={iconProps.strokeWidth}
                             size={iconProps.size}
                           />
                         ) : (
                           <ChevronDown
                             color={iconProps.color}
-                            strokeWidth={iconProps.stroke}
+                            strokeWidth={iconProps.strokeWidth}
                             size={iconProps.size}
                           />
                         )}
@@ -530,13 +530,13 @@ const ComponentList = memo(
                         {expanded ? (
                           <ChevronUp
                             color={iconProps.color}
-                            strokeWidth={iconProps.stroke}
+                            strokeWidth={iconProps.strokeWidth}
                             size={iconProps.size}
                           />
                         ) : (
                           <ChevronDown
                             color={iconProps.color}
-                            strokeWidth={iconProps.stroke}
+                            strokeWidth={iconProps.strokeWidth}
                             size={iconProps.size}
                           />
                         )}

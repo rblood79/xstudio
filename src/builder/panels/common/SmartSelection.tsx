@@ -85,7 +85,7 @@ export function SmartSelection({
         <Sparkles
           color={iconProps.color}
           size={iconProps.size}
-          strokeWidth={iconProps.stroke}
+          strokeWidth={iconProps.strokeWidth}
         />
         <h3>Smart Select</h3>
         <span className="suggestion-count">{suggestions.length} suggestions</span>
@@ -106,7 +106,7 @@ export function SmartSelection({
               <Icon
                 color={iconProps.color}
                 size={iconProps.size}
-                strokeWidth={iconProps.stroke}
+                strokeWidth={iconProps.strokeWidth}
               />
               <div className="suggestion-info">
                 <span className="suggestion-description">{suggestion.description}</span>

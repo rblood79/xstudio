@@ -101,7 +101,7 @@ export function SelectionMemory({
         <History
           color={iconProps.color}
           size={iconProps.size}
-          strokeWidth={iconProps.stroke}
+          strokeWidth={iconProps.strokeWidth}
         />
         <h3>Selection History</h3>
         <span className="history-count">{pageHistory.length}</span>
@@ -130,7 +130,7 @@ export function SelectionMemory({
               <RotateCcw
                 color={iconProps.color}
                 size={iconProps.size}
-                strokeWidth={iconProps.stroke}
+                strokeWidth={iconProps.strokeWidth}
               />
               <div className="history-info">
                 <span className="history-label">{entry.label}</span>

@@ -35,7 +35,7 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
       icon: (
         <File
           color={iconProps.color}
-          strokeWidth={iconProps.stroke}
+          strokeWidth={iconProps.strokeWidth}
           size={iconProps.size}
         />
       ),
@@ -46,7 +46,7 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
       icon: (
         <SquarePlus
           color={iconProps.color}
-          strokeWidth={iconProps.stroke}
+          strokeWidth={iconProps.strokeWidth}
           size={iconProps.size}
         />
       ),
@@ -57,7 +57,7 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
       icon: (
         <Palette
           color={iconProps.color}
-          strokeWidth={iconProps.stroke}
+          strokeWidth={iconProps.strokeWidth}
           size={iconProps.size}
         />
       ),
@@ -68,7 +68,7 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
       icon: (
         <WandSparkles
           color={iconProps.color}
-          strokeWidth={iconProps.stroke}
+          strokeWidth={iconProps.strokeWidth}
           size={iconProps.size}
         />
       ),
@@ -79,7 +79,7 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
       icon: (
         <Settings
           color={iconProps.color}
-          strokeWidth={iconProps.stroke}
+          strokeWidth={iconProps.strokeWidth}
           size={iconProps.size}
         />
       ),
@@ -110,7 +110,7 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
         >
           <ChevronLeft
             color={iconProps.color}
-            strokeWidth={iconProps.stroke}
+            strokeWidth={iconProps.strokeWidth}
             size={iconProps.size}
           />
         </button>

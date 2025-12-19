@@ -97,7 +97,7 @@ export const TypographySection = memo(function TypographySection({
               <EllipsisVertical
                 color={iconProps.color}
                 size={iconProps.size}
-                strokeWidth={iconProps.stroke}
+                strokeWidth={iconProps.strokeWidth}
               />
             </Button>
           </div>
@@ -161,7 +161,7 @@ export const TypographySection = memo(function TypographySection({
               <EllipsisVertical
                 color={iconProps.color}
                 size={iconProps.size}
-                strokeWidth={iconProps.stroke}
+                strokeWidth={iconProps.strokeWidth}
               />
             </Button>
           </div>
@@ -181,21 +181,21 @@ export const TypographySection = memo(function TypographySection({
                 <AlignLeft
                   color={iconProps.color}
                   size={iconProps.size}
-                  strokeWidth={iconProps.stroke}
+                  strokeWidth={iconProps.strokeWidth}
                 />
               </ToggleButton>
               <ToggleButton id="center">
                 <AlignCenter
                   color={iconProps.color}
                   size={iconProps.size}
-                  strokeWidth={iconProps.stroke}
+                  strokeWidth={iconProps.strokeWidth}
                 />
               </ToggleButton>
               <ToggleButton id="right">
                 <AlignRight
                   color={iconProps.color}
                   size={iconProps.size}
-                  strokeWidth={iconProps.stroke}
+                  strokeWidth={iconProps.strokeWidth}
                 />
               </ToggleButton>
             </ToggleButtonGroup>
@@ -216,21 +216,21 @@ export const TypographySection = memo(function TypographySection({
                 <AlignVerticalJustifyStart
                   color={iconProps.color}
                   size={iconProps.size}
-                  strokeWidth={iconProps.stroke}
+                  strokeWidth={iconProps.strokeWidth}
                 />
               </ToggleButton>
               <ToggleButton id="middle">
                 <AlignVerticalJustifyCenter
                   color={iconProps.color}
                   size={iconProps.size}
-                  strokeWidth={iconProps.stroke}
+                  strokeWidth={iconProps.strokeWidth}
                 />
               </ToggleButton>
               <ToggleButton id="bottom">
                 <AlignVerticalJustifyEnd
                   color={iconProps.color}
                   size={iconProps.size}
-                  strokeWidth={iconProps.stroke}
+                  strokeWidth={iconProps.strokeWidth}
                 />
               </ToggleButton>
             </ToggleButtonGroup>
@@ -241,7 +241,7 @@ export const TypographySection = memo(function TypographySection({
               <EllipsisVertical
                 color={iconProps.color}
                 size={iconProps.size}
-                strokeWidth={iconProps.stroke}
+                strokeWidth={iconProps.strokeWidth}
               />
             </Button>
           </div>
@@ -266,7 +266,7 @@ export const TypographySection = memo(function TypographySection({
                 <Baseline
                   color={iconProps.color}
                   size={iconProps.size}
-                  strokeWidth={iconProps.stroke}
+                  strokeWidth={iconProps.strokeWidth}
                   style={{ transform: 'rotate(180deg)' }}
                 />
               </ToggleButton>
@@ -274,14 +274,14 @@ export const TypographySection = memo(function TypographySection({
                 <Underline
                   color={iconProps.color}
                   size={iconProps.size}
-                  strokeWidth={iconProps.stroke}
+                  strokeWidth={iconProps.strokeWidth}
                 />
               </ToggleButton>
               <ToggleButton id="line-through">
                 <Strikethrough
                   color={iconProps.color}
                   size={iconProps.size}
-                  strokeWidth={iconProps.stroke}
+                  strokeWidth={iconProps.strokeWidth}
                 />
               </ToggleButton>
             </ToggleButtonGroup>
@@ -302,21 +302,21 @@ export const TypographySection = memo(function TypographySection({
                 <RemoveFormatting
                   color={iconProps.color}
                   size={iconProps.size}
-                  strokeWidth={iconProps.stroke}
+                  strokeWidth={iconProps.strokeWidth}
                 />
               </ToggleButton>
               <ToggleButton id="italic">
                 <Italic
                   color={iconProps.color}
                   size={iconProps.size}
-                  strokeWidth={iconProps.stroke}
+                  strokeWidth={iconProps.strokeWidth}
                 />
               </ToggleButton>
               <ToggleButton id="oblique">
                 <Type
                   color={iconProps.color}
                   size={iconProps.size}
-                  strokeWidth={iconProps.stroke}
+                  strokeWidth={iconProps.strokeWidth}
                   style={{ fontStyle: 'oblique', transform: 'skewX(-10deg)' }}
                 />
               </ToggleButton>
@@ -328,7 +328,7 @@ export const TypographySection = memo(function TypographySection({
               <EllipsisVertical
                 color={iconProps.color}
                 size={iconProps.size}
-                strokeWidth={iconProps.stroke}
+                strokeWidth={iconProps.strokeWidth}
               />
             </Button>
           </div>
@@ -353,21 +353,21 @@ export const TypographySection = memo(function TypographySection({
                 <CaseUpper
                   color={iconProps.color}
                   size={iconProps.size}
-                  strokeWidth={iconProps.stroke}
+                  strokeWidth={iconProps.strokeWidth}
                 />
               </ToggleButton>
               <ToggleButton id="lowercase">
                 <CaseLower
                   color={iconProps.color}
                   size={iconProps.size}
-                  strokeWidth={iconProps.stroke}
+                  strokeWidth={iconProps.strokeWidth}
                 />
               </ToggleButton>
               <ToggleButton id="capitalize">
                 <CaseSensitive
                   color={iconProps.color}
                   size={iconProps.size}
-                  strokeWidth={iconProps.stroke}
+                  strokeWidth={iconProps.strokeWidth}
                 />
               </ToggleButton>
             </ToggleButtonGroup>

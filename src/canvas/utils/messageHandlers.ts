@@ -1,5 +1,5 @@
 import { PreviewElement, MessageType } from "../types";
-import { extractComputedStyleAsync, extractComputedStyleSubset } from "./computedStyleExtractor";
+import { extractComputedStyleAsync } from "./computedStyleExtractor";
 
 /**
  * postMessage 처리 유틸리티

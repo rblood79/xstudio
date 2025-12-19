@@ -461,7 +461,7 @@ export const RadioGroupEditor = memo(function RadioGroupEditor({ elementId, curr
             className='control-button add'
             onClick={handleAddRadio}
           >
-            <SquarePlus color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
+            <SquarePlus color={iconProps.color} strokeWidth={iconProps.strokeWidth} size={iconProps.size} />
             {PROPERTY_LABELS.ADD_RADIO}
           </button>
         </div>
@@ -504,7 +504,7 @@ export const RadioGroupEditor = memo(function RadioGroupEditor({ elementId, curr
               className='control-button delete'
               onClick={() => handleDeleteRadio(currentRadio.id)}
             >
-              <Trash color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
+              <Trash color={iconProps.color} strokeWidth={iconProps.strokeWidth} size={iconProps.size} />
               {PROPERTY_LABELS.DELETE_THIS_RADIO}
             </button>
           </div>

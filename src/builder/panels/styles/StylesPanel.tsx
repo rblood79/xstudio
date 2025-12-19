@@ -186,7 +186,7 @@ function StylesPanelContent() {
             <Copy
               color={iconProps.color}
               size={iconProps.size}
-              strokeWidth={iconProps.stroke}
+              strokeWidth={iconProps.strokeWidth}
             />
           </Button>
           <Button
@@ -198,7 +198,7 @@ function StylesPanelContent() {
             <ClipboardPaste
               color={iconProps.color}
               size={iconProps.size}
-              strokeWidth={iconProps.stroke}
+              strokeWidth={iconProps.strokeWidth}
             />
           </Button>
         </div>

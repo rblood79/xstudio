@@ -65,7 +65,7 @@ export const PropertySection = memo(function PropertySection({
             >
               <RotateCcw
                 color={iconProps.color}
-                strokeWidth={iconProps.stroke}
+                strokeWidth={iconProps.strokeWidth}
                 size={iconProps.size}
               />
             </button>
@@ -80,7 +80,7 @@ export const PropertySection = memo(function PropertySection({
           >
             <ChevronUp
               color={iconProps.color}
-              strokeWidth={iconProps.stroke}
+              strokeWidth={iconProps.strokeWidth}
               size={iconProps.size}
               style={{
                 transform: isExpanded ? "rotate(0deg)" : "rotate(180deg)",

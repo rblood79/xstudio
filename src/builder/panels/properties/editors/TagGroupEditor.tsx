@@ -111,7 +111,7 @@ export const TagGroupEditor = memo(function TagGroupEditor({ elementId, currentP
                                 }
                             }}
                         >
-                            <Trash color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
+                            <Trash color={iconProps.color} strokeWidth={iconProps.strokeWidth} size={iconProps.size} />
                             Delete Tag
                         </button>
                     </div>
@@ -428,7 +428,7 @@ export const TagGroupEditor = memo(function TagGroupEditor({ elementId, currentP
                             }
                         }}
                     >
-                        <SquarePlus color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
+                        <SquarePlus color={iconProps.color} strokeWidth={iconProps.strokeWidth} size={iconProps.size} />
                         Add Tag
                     </button>
                 </div>

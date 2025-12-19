@@ -122,7 +122,7 @@ export function BlockActionEditor({
               onPress={onRemove}
               aria-label="Remove action"
             >
-              <X size={iconProps.size} color={iconProps.color} strokeWidth={iconProps.stroke} />
+              <X size={iconProps.size} color={iconProps.color} strokeWidth={iconProps.strokeWidth} />
             </Button>
           )}
 
@@ -133,7 +133,7 @@ export function BlockActionEditor({
               onPress={onClose}
               aria-label="Close editor"
             >
-              <X size={iconProps.size} color={iconProps.color} strokeWidth={iconProps.stroke} />
+              <X size={iconProps.size} color={iconProps.color} strokeWidth={iconProps.strokeWidth} />
             </Button>
           )}
         </div>

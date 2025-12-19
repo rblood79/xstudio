@@ -152,7 +152,7 @@ export const GridListEditor = memo(function GridListEditor({ elementId, currentP
                             className='control-button delete'
                             onClick={() => deleteItem(currentItem.id)}
                         >
-                            <Trash color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
+                            <Trash color={iconProps.color} strokeWidth={iconProps.strokeWidth} size={iconProps.size} />
                             {PROPERTY_LABELS.DELETE_THIS_ITEM}
                         </button>
                     </div>
@@ -401,7 +401,7 @@ export const GridListEditor = memo(function GridListEditor({ elementId, currentP
                         className='control-button add'
                         onClick={addItem}
                     >
-                        <SquarePlus color={iconProps.color} strokeWidth={iconProps.stroke} size={iconProps.size} />
+                        <SquarePlus color={iconProps.color} strokeWidth={iconProps.strokeWidth} size={iconProps.size} />
                         {PROPERTY_LABELS.ADD_ITEM}
                     </button>
                 </div>

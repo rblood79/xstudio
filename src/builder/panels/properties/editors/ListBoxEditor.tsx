@@ -647,7 +647,7 @@ export const ListBoxEditor = memo(function ListBoxEditor({
               >
                 <Wand2
                   color={iconProps.color}
-                  strokeWidth={iconProps.stroke}
+                  strokeWidth={iconProps.strokeWidth}
                   size={iconProps.size}
                 />
                 Field 자동 생성
@@ -742,7 +742,7 @@ export const ListBoxEditor = memo(function ListBoxEditor({
           >
             <SquarePlus
               color={iconProps.color}
-              strokeWidth={iconProps.stroke}
+              strokeWidth={iconProps.strokeWidth}
               size={iconProps.size}
             />
             Add Item
@@ -795,7 +795,7 @@ export const ListBoxEditor = memo(function ListBoxEditor({
             >
               <Trash
                 color={iconProps.color}
-                strokeWidth={iconProps.stroke}
+                strokeWidth={iconProps.strokeWidth}
                 size={iconProps.size}
               />
               Delete This Item

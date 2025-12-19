@@ -1143,7 +1143,7 @@ function PropertiesPanelContent() {
               <Copy
                 color={iconProps.color}
                 size={iconProps.size}
-                strokeWidth={iconProps.stroke}
+                strokeWidth={iconProps.strokeWidth}
               />
             </Button>
             <Button
@@ -1155,7 +1155,7 @@ function PropertiesPanelContent() {
               <ClipboardPaste
                 color={iconProps.color}
                 size={iconProps.size}
-                strokeWidth={iconProps.stroke}
+                strokeWidth={iconProps.strokeWidth}
               />
             </Button>
           </>

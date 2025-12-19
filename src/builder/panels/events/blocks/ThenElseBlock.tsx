@@ -100,9 +100,9 @@ export function ThenElseBlock({
             aria-label={isCollapsed ? `Expand ${label} block` : `Collapse ${label} block`}
           >
             {isCollapsed ? (
-              <ChevronRight size={iconProps.size} color={iconProps.color} strokeWidth={iconProps.stroke} />
+              <ChevronRight size={iconProps.size} color={iconProps.color} strokeWidth={iconProps.strokeWidth} />
             ) : (
-              <ChevronDown size={iconProps.size} color={iconProps.color} strokeWidth={iconProps.stroke} />
+              <ChevronDown size={iconProps.size} color={iconProps.color} strokeWidth={iconProps.strokeWidth} />
             )}
           </Button>
 
@@ -121,7 +121,7 @@ export function ThenElseBlock({
             isDisabled={isDisabled}
             aria-label={`Add action to ${label}`}
           >
-            <Plus size={iconProps.size} color={iconProps.color} strokeWidth={iconProps.stroke} />
+            <Plus size={iconProps.size} color={iconProps.color} strokeWidth={iconProps.strokeWidth} />
           </Button>
         </div>
 

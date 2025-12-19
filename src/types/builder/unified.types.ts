@@ -49,7 +49,7 @@ export interface Element {
   id: string;
   customId?: string; // 사용자 정의 ID (예: button_1, input_2) - 이벤트 핸들링, CSS 선택자용
   tag: string;
-  props: ComponentElementProps;
+  props: ComponentElementProps & Record<string, unknown>;
   parent_id?: string | null;
   order_num?: number;
   page_id?: string | null; // Layout element면 null (layout_id와 상호 배타적)

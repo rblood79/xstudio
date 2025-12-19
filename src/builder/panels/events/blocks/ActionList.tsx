@@ -113,7 +113,7 @@ export function ActionList({
                 isDisabled={isDisabled || index === 0}
                 aria-label="Move action up"
               >
-                <ChevronUp size={iconSmall.size} color={iconProps.color} strokeWidth={iconProps.stroke} />
+                <ChevronUp size={iconSmall.size} color={iconProps.color} strokeWidth={iconProps.strokeWidth} />
               </Button>
               <Button
                 className="iconButton action-reorder-btn"
@@ -121,7 +121,7 @@ export function ActionList({
                 isDisabled={isDisabled || index === actions.length - 1}
                 aria-label="Move action down"
               >
-                <ChevronDown size={iconSmall.size} color={iconProps.color} strokeWidth={iconProps.stroke} />
+                <ChevronDown size={iconSmall.size} color={iconProps.color} strokeWidth={iconProps.strokeWidth} />
               </Button>
             </div>
           )}
