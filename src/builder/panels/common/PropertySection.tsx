@@ -6,8 +6,9 @@
  *
  * Phase 8a: Integrated with useSectionCollapse for persistent state
  * Phase 4: Added Reset button
- * 
+ *
  * ⭐ 최적화: React.memo로 불필요한 리렌더링 방지
+ * 🚀 Phase 20: Lazy Children Pattern - 열릴 때만 children 평가
  */
 
 import React, { memo } from "react";
@@ -15,9 +16,12 @@ import { ChevronUp, RotateCcw } from "lucide-react";
 import { iconProps } from "../../../utils/ui/uiConstants";
 import { useSectionCollapse } from "../styles/hooks/useSectionCollapse";
 
+// 🚀 Phase 20: children을 함수로도 받을 수 있도록 타입 확장
+type LazyChildren = React.ReactNode | (() => React.ReactNode);
+
 interface PropertySectionProps {
   title: string;
-  children: React.ReactNode;
+  children: LazyChildren;
   id?: string; // Section ID for collapse state persistence
   defaultExpanded?: boolean;
   onReset?: () => void; // Reset button handler
@@ -86,8 +90,11 @@ export const PropertySection = memo(function PropertySection({
           </button>
         </div>
       </div>
+      {/* 🚀 Phase 20: Lazy Children - 열릴 때만 children 평가 */}
       {isExpanded && (
-        <div className="section-content">{children}</div>
+        <div className="section-content">
+          {typeof children === 'function' ? children() : children}
+        </div>
       )}
     </div>
   );

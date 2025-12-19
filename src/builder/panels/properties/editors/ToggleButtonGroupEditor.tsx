@@ -15,10 +15,13 @@ interface SelectedButtonState {
 
 export const ToggleButtonGroupEditor = memo(function ToggleButtonGroupEditor({ elementId, currentProps, onUpdate }: PropertyEditorProps) {
     const [selectedButton, setSelectedButton] = useState<SelectedButtonState | null>(null);
-    const { addElement, currentPageId, updateElementProps, setElements } = useStore();
-
+    // 🚀 Phase 19: Zustand selector 패턴 적용 (불필요한 리렌더링 방지)
+    const addElement = useStore((state) => state.addElement);
+    const currentPageId = useStore((state) => state.currentPageId);
+    const updateElementProps = useStore((state) => state.updateElementProps);
+    const setElements = useStore((state) => state.setElements);
     // 스토어에서 elements를 직접 구독하여 실시간 업데이트
-    const storeElements = useStore(state => state.elements);
+    const storeElements = useStore((state) => state.elements);
 
     // Get customId from element in store
       // ⭐ 최적화: customId를 현재 시점에만 가져오기 (Zustand 구독 방지)

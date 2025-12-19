@@ -7,6 +7,135 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed - WebGL Canvas Performance Optimization (2025-12-19)
+
+#### Phase 20: INP Performance Fix for Panel Resize
+
+**Problem:**
+- WebGL 모드에서 패널 열고 닫을 때 INP가 1468ms로 극심한 프레임 드랍 발생
+- iframe 모드는 100ms 초반대 유지하는 반면, WebGL은 400ms+ 초과
+- 줌 비율이 패널 토글 시 재설정되는 문제
+
+**Root Causes Identified:**
+1. `SelectionLayer.tsx`의 `hasChildrenIdSet` useMemo가 O(n) 순회
+2. `BoxSprite`, `TextSprite`, `ImageSprite`에 `memo` 누락
+3. `Workspace.tsx`의 ResizeObserver가 매 프레임 상태 업데이트
+4. `BuilderCanvas.tsx`의 `ClickableBackground`가 resize 이벤트마다 리렌더링
+
+**Solutions Applied:**
+
+1. **SelectionLayer.tsx - O(n) → O(selected) 최적화**
+   - `elementsMap.forEach()` 대신 `childrenMap` 활용
+   - 선택된 요소만 순회하여 성능 개선
+   ```typescript
+   // Before: O(n) - 모든 요소 순회
+   elementsMap.forEach((element, id) => {
+     if (selectedElementIds.includes(id) && element.children?.length > 0) {
+       set.add(id);
+     }
+   });
+
+   // After: O(selected) - 선택된 요소만 순회
+   const childrenMap = getChildrenMap();
+   for (const id of selectedElementIds) {
+     const children = childrenMap.get(id);
+     if (children && children.length > 0) {
+       set.add(id);
+     }
+   }
+   ```
+
+2. **Sprite Components - memo 추가**
+   - `BoxSprite.tsx`, `TextSprite.tsx`, `ImageSprite.tsx`에 `memo()` 래퍼 적용
+   - 불필요한 리렌더링 방지
+
+3. **Workspace.tsx - ResizeObserver 최적화**
+   - RAF 스로틀링 + 값 비교 추가
+   - 패널 애니메이션 중 매 프레임 상태 업데이트 방지
+   ```typescript
+   const throttledUpdate = () => {
+     if (rafId !== null) return;
+     rafId = requestAnimationFrame(() => {
+       rafId = null;
+       updateSize();
+     });
+   };
+   ```
+
+4. **BuilderCanvas.tsx - CSS-First Resize Strategy**
+   - `resizeTo={containerEl}` 제거
+   - `CanvasSmoothResizeBridge`: requestIdleCallback 기반 리사이즈
+   - debounce/setTimeout 대신 브라우저 유휴 시간 활용
+   ```typescript
+   const requestIdle = window.requestIdleCallback || ((cb) => setTimeout(cb, 1));
+   idleCallbackRef.current = requestIdle(() => {
+     renderer.resize(width, height);
+   });
+   ```
+
+5. **ClickableBackground - Resize Listener 제거**
+   - `screenSize` state 제거 (리렌더링 원인)
+   - `renderer.on("resize", update)` 리스너 제거
+   - 고정 크기 사용: `-5000, -5000, 10000, 10000` (모든 뷰포트 커버)
+   ```typescript
+   // Before: resize마다 리렌더링
+   const [screenSize, setScreenSize] = useState(...);
+   renderer.on("resize", update); // setScreenSize 호출
+
+   // After: 고정 크기, 리렌더링 없음
+   const draw = useCallback((g) => {
+     g.rect(-5000, -5000, 10000, 10000);
+     g.fill({ color: 0xffffff, alpha: 0 });
+   }, []); // 의존성 없음
+   ```
+
+6. **PixiButton.tsx - WebGL Destroy Error Fix**
+   - 이미 파괴된 Graphics 객체 중복 destroy 방지
+   ```typescript
+   if (!buttonRef.current.destroyed) {
+     buttonRef.current.destroy({ children: true });
+   }
+   ```
+
+**Modified Files:**
+
+1. `src/builder/workspace/canvas/selection/SelectionLayer.tsx`
+   - hasChildrenIdSet: O(n) → O(selected) 최적화
+
+2. `src/builder/workspace/canvas/sprites/BoxSprite.tsx`
+   - memo() 래퍼 추가
+
+3. `src/builder/workspace/canvas/sprites/TextSprite.tsx`
+   - memo() 래퍼 추가
+
+4. `src/builder/workspace/canvas/sprites/ImageSprite.tsx`
+   - memo() 래퍼 추가
+
+5. `src/builder/workspace/Workspace.tsx`
+   - ResizeObserver에 RAF 스로틀링 + 값 비교 추가
+
+6. `src/builder/workspace/canvas/BuilderCanvas.tsx`
+   - CanvasSmoothResizeBridge: requestIdleCallback 기반 리사이즈
+   - Application에서 resizeTo 제거
+   - ClickableBackground: screenSize state 및 resize 리스너 제거
+
+7. `src/builder/workspace/canvas/ui/PixiButton.tsx`
+   - destroyed 체크 후 destroy 호출
+
+**Results:**
+- ✅ 패널 열고 닫을 때 프레임 드랍 대폭 감소
+- ✅ 줌 비율 재설정 문제 해결
+- ✅ requestIdleCallback 활용으로 시간 기반 debounce 제거
+- ✅ WebGL destroy 에러 해결
+- ✅ No TypeScript errors
+
+**Research References:**
+- Figma: CSS-First Resize Strategy (CSS 스트레치 → GPU 버퍼는 안정 시에만)
+- PixiJS v8: requestIdleCallback 패턴
+- WebGL Fundamentals: 리사이즈 최적화 가이드
+
+---
+
 ### Added - WebGL Canvas Phase 19: hitArea Pattern (2025-12-18)
 
 #### Phase 19: Click Selection Fix for WebGL Components

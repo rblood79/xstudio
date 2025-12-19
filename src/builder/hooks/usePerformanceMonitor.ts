@@ -12,7 +12,7 @@
  * @since 2025-12-18 Phase 9.3
  */
 
-import { useCallback, useEffect, useRef } from 'react';
+import React, { useCallback, useEffect, useRef } from 'react';
 import { longTaskMonitor, type MetricStats } from '../../utils/longTaskMonitor';
 import { postMessageMonitor } from '../../utils/postMessageMonitor';
 
@@ -249,7 +249,7 @@ export function withPerformanceMonitoring<P extends object>(
 ): React.FC<P> {
   const WrappedComponent: React.FC<P> = (props) => {
     usePerformanceMonitor(componentName);
-    return <Component {...props} />;
+    return React.createElement(Component, props);
   };
 
   WrappedComponent.displayName = `Monitored(${componentName})`;

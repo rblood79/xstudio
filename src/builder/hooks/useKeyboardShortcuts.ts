@@ -2,7 +2,9 @@ import { useEffect } from 'react';
 import { useStore } from '../stores';
 
 export function useKeyboardShortcuts() {
-    const { undo, redo } = useStore();
+    // 🚀 Phase 19: Zustand selector 패턴 적용 (불필요한 리렌더링 방지)
+    const undo = useStore((state) => state.undo);
+    const redo = useStore((state) => state.redo);
 
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {

@@ -16,7 +16,10 @@ interface SelectedBreadcrumbState {
 
 export const BreadcrumbsEditor = memo(function BreadcrumbsEditor({ elementId, currentProps, onUpdate }: PropertyEditorProps) {
     const [selectedBreadcrumb, setSelectedBreadcrumb] = useState<SelectedBreadcrumbState | null>(null);
-    const { addElement, elements, currentPageId } = useStore();
+    // 🚀 Phase 19: Zustand selector 패턴 적용 (불필요한 리렌더링 방지)
+    const addElement = useStore((state) => state.addElement);
+    const elements = useStore((state) => state.elements);
+    const currentPageId = useStore((state) => state.currentPageId);
 
     // Get customId from element in store
     const element = elements.find((el) => el.id === elementId);

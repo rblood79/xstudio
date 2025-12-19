@@ -339,9 +339,24 @@ export const useInspectorState = create<InspectorState>((set, get) => ({
 
   // ⭐ Option C: computedStyle 지연 업데이트 (syncVersion 증가 없음)
   // 오버레이 표시 후 Preview에서 비동기로 도착하는 computedStyle 처리
+  // 🚀 Phase 21: 값이 같으면 업데이트 스킵 (불필요한 리렌더링 방지)
   updateSelectedElementComputedStyle: (computedStyle) => {
     set((state) => {
       if (!state.selectedElement) return state;
+
+      // 🚀 Phase 21: 기존 computedStyle과 동일하면 업데이트 스킵
+      const prevComputedStyle = state.selectedElement.computedStyle;
+      if (prevComputedStyle) {
+        const prevKeys = Object.keys(prevComputedStyle);
+        const newKeys = Object.keys(computedStyle);
+        if (prevKeys.length === newKeys.length) {
+          const isSame = prevKeys.every(
+            (key) => prevComputedStyle[key] === computedStyle[key]
+          );
+          if (isSame) return state; // 변경 없음
+        }
+      }
+
       return {
         selectedElement: {
           ...state.selectedElement,

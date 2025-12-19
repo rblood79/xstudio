@@ -67,8 +67,11 @@ export function useCollectionItemManager(
 
   const [selectedItemIndex, setSelectedItemIndex] = useState<number | null>(null);
 
-  // Zustand store에서 필요한 함수들 가져오기
-  const { addElement, updateElementProps, setElements, currentPageId } = useStore();
+  // 🚀 Phase 19: Zustand selector 패턴 적용 (불필요한 리렌더링 방지)
+  const addElement = useStore((state) => state.addElement);
+  const updateElementProps = useStore((state) => state.updateElementProps);
+  const setElements = useStore((state) => state.setElements);
+  const currentPageId = useStore((state) => state.currentPageId);
   const storeElements = useStore((state) => state.elements);
 
   /**

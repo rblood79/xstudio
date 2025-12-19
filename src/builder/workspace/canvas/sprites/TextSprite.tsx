@@ -12,7 +12,7 @@
 
 import { useExtend } from '@pixi/react';
 import { PIXI_COMPONENTS } from '../pixiSetup';
-import { useCallback, useMemo, useRef } from 'react';
+import { useCallback, useMemo, useRef, memo } from 'react';
 import { Graphics as PixiGraphics, TextStyle, Text } from 'pixi.js';
 import type { Element } from '../../../../types/core/store.types';
 import { convertStyle, applyTextTransform, type CSSStyle } from './styleConverter';
@@ -70,7 +70,7 @@ function parseTextDecoration(decoration: string | undefined): TextDecorationConf
 // Component
 // ============================================
 
-export function TextSprite({
+export const TextSprite = memo(function TextSprite({
   element,
   isSelected,
   onClick,
@@ -254,6 +254,6 @@ export function TextSprite({
       )}
     </pixiContainer>
   );
-}
+});
 
 export default TextSprite;

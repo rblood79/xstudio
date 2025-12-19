@@ -22,7 +22,8 @@ const SELECTION_BEHAVIORS: Array<{ value: string; label: string }> = [
 ];
 
 export const TreeEditor = memo(function TreeEditor({ elementId, currentProps, onUpdate }: PropertyEditorProps) {
-    const { addElement } = useStore();
+    // 🚀 Phase 19: Zustand selector 패턴 적용 (불필요한 리렌더링 방지)
+    const addElement = useStore((state) => state.addElement);
     const [localPageId, setLocalPageId] = useState<string>('');
 
     // Get customId from element in store

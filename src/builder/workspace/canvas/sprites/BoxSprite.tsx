@@ -14,7 +14,7 @@
 
 import { useExtend } from '@pixi/react';
 import { PIXI_COMPONENTS } from '../pixiSetup';
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, memo } from 'react';
 import { Graphics as PixiGraphics, TextStyle } from 'pixi.js';
 import type { Element } from '../../../../types/core/store.types';
 import { convertStyle, cssColorToHex, type CSSStyle } from './styleConverter';
@@ -36,7 +36,7 @@ export interface BoxSpriteProps {
 // Component
 // ============================================
 
-export function BoxSprite({ element, onClick }: BoxSpriteProps) {
+export const BoxSprite = memo(function BoxSprite({ element, onClick }: BoxSpriteProps) {
   useExtend(PIXI_COMPONENTS);
   const style = element.props?.style as CSSStyle | undefined;
   const converted = useMemo(() => convertStyle(style), [style]);
@@ -127,6 +127,6 @@ export function BoxSprite({ element, onClick }: BoxSpriteProps) {
       )}
     </pixiContainer>
   );
-}
+});
 
 export default BoxSprite;

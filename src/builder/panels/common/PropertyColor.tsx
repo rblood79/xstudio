@@ -1,4 +1,4 @@
-import React, { useCallback, useRef } from 'react';
+import React, { useCallback, useRef, memo } from 'react';
 import {
   ColorPicker as AriaColorPicker,
   ColorField as AriaColorField,
@@ -121,7 +121,8 @@ function ColorPickerInner({
   );
 }
 
-export function PropertyColor({
+// 🚀 Phase 21: memo 적용
+export const PropertyColor = memo(function PropertyColor({
   label,
   value,
   onChange,
@@ -138,4 +139,13 @@ export function PropertyColor({
       />
     </fieldset>
   );
-}
+}, (prevProps, nextProps) => {
+  // 커스텀 비교: onChange 함수 참조는 무시하고 실제 값만 비교
+  return (
+    prevProps.label === nextProps.label &&
+    prevProps.value === nextProps.value &&
+    prevProps.className === nextProps.className &&
+    prevProps.icon === nextProps.icon &&
+    prevProps.placeholder === nextProps.placeholder
+  );
+});

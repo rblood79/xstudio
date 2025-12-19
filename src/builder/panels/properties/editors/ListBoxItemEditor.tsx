@@ -29,7 +29,10 @@ export const ListBoxItemEditor = memo(function ListBoxItemEditor({
   currentProps,
   onUpdate,
 }: PropertyEditorProps) {
-  const { addElement, currentPageId, setSelectedElement } = useStore();
+  // 🚀 Phase 19: Zustand selector 패턴 적용 (불필요한 리렌더링 방지)
+  const addElement = useStore((state) => state.addElement);
+  const currentPageId = useStore((state) => state.currentPageId);
+  const setSelectedElement = useStore((state) => state.setSelectedElement);
   const storeElements = useStore((state) => state.elements);
 
   // Get customId from element in store

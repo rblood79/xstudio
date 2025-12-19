@@ -3,14 +3,17 @@
  *
  * Flex direction, Alignment, Gap, Padding, Margin 편집
  * 4방향 확장 모드: direction-alignment-grid 스타일 패턴 사용
+ *
+ * 🚀 Phase 20: Lazy Children Pattern + memo 적용
  */
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, memo } from 'react';
 import { PropertySection, PropertyUnitInput } from '../../common';
 import { ToggleButton, ToggleButtonGroup, Button } from '../../../../shared/components';
 import { Input } from 'react-aria-components';
 import { iconProps } from '../../../../utils/ui/uiConstants';
 import type { SelectedElement } from '../../../inspector/types';
+import type { StyleValues } from '../hooks/useStyleValues';
 import {
   Square,
   Maximize2,
@@ -37,6 +40,7 @@ import {
 
 interface LayoutSectionProps {
   selectedElement: SelectedElement;
+  styleValues: StyleValues | null;
 }
 
 /**
@@ -114,7 +118,11 @@ function FourWayGrid({ values, onChange }: FourWayGridProps) {
   );
 }
 
-export function LayoutSection({ selectedElement }: LayoutSectionProps) {
+// 🚀 Phase 20: memo 적용
+export const LayoutSection = memo(function LayoutSection({
+  selectedElement,
+  styleValues,
+}: LayoutSectionProps) {
   const [isSpacingExpanded, setIsSpacingExpanded] = useState(false);
 
   const {
@@ -152,8 +160,13 @@ export function LayoutSection({ selectedElement }: LayoutSectionProps) {
     updateStyle(`margin${direction}` as keyof React.CSSProperties, value);
   };
 
+  // 🚀 Phase 20: styleValues가 없으면 렌더링 안함
+  if (!styleValues) return null;
+
   return (
     <PropertySection id="layout" title="Layout" onReset={handleReset}>
+      {() => (
+        <>
       <div className="layout-direction">
         <div className="direction-controls flex-direction">
           <legend className="fieldset-legend">Direction</legend>
@@ -405,6 +418,47 @@ export function LayoutSection({ selectedElement }: LayoutSectionProps) {
           </div>
         </div>
       )}
+        </>
+      )}
     </PropertySection>
   );
-}
+}, (prevProps, nextProps) => {
+  // 🚀 Phase 21: styleValues + selectedElement의 관련 값만 비교
+  const prev = prevProps.styleValues;
+  const next = nextProps.styleValues;
+  const prevEl = prevProps.selectedElement;
+  const nextEl = nextProps.selectedElement;
+
+  if (prev === next && prevEl === nextEl) return true;
+  if (!prev || !next) return false;
+
+  // Layout 관련 스타일 값 비교
+  const styleEqual = (
+    prev.display === next.display &&
+    prev.flexDirection === next.flexDirection &&
+    prev.alignItems === next.alignItems &&
+    prev.justifyContent === next.justifyContent &&
+    prev.gap === next.gap &&
+    prev.padding === next.padding &&
+    prev.margin === next.margin
+  );
+
+  if (!styleEqual) return false;
+
+  // selectedElement의 style/computedStyle 비교 (4방향 padding/margin, flexWrap용)
+  if (!prevEl || !nextEl) return prevEl === nextEl;
+
+  const prevStyle = prevEl.style || {};
+  const nextStyle = nextEl.style || {};
+  return (
+    prevStyle.paddingTop === nextStyle.paddingTop &&
+    prevStyle.paddingRight === nextStyle.paddingRight &&
+    prevStyle.paddingBottom === nextStyle.paddingBottom &&
+    prevStyle.paddingLeft === nextStyle.paddingLeft &&
+    prevStyle.marginTop === nextStyle.marginTop &&
+    prevStyle.marginRight === nextStyle.marginRight &&
+    prevStyle.marginBottom === nextStyle.marginBottom &&
+    prevStyle.marginLeft === nextStyle.marginLeft &&
+    prevStyle.flexWrap === nextStyle.flexWrap
+  );
+});

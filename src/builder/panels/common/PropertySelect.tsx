@@ -23,6 +23,7 @@ interface PropertySelectProps {
     className?: string;
 }
 
+// 🚀 Phase 21: memo + 커스텀 비교 함수 적용
 export const PropertySelect = memo(function PropertySelect({
     label,
     value,
@@ -82,5 +83,14 @@ export const PropertySelect = memo(function PropertySelect({
                 </AriaSelect>
             </div>
         </fieldset>
+    );
+}, (prevProps, nextProps) => {
+    // 커스텀 비교: onChange 함수 참조는 무시하고 실제 값만 비교
+    return (
+        prevProps.label === nextProps.label &&
+        prevProps.value === nextProps.value &&
+        prevProps.className === nextProps.className &&
+        prevProps.icon === nextProps.icon &&
+        prevProps.options === nextProps.options
     );
 });

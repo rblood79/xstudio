@@ -2,10 +2,12 @@
  * useStyleValues - 스타일 값 계산 훅
  *
  * inline style, computed style, default value의 우선순위에 따라 스타일 값을 반환
- * Performance: useMemo로 최적화
+ * Performance: useMemo + useRef로 참조 안정성 최적화
+ *
+ * 🚀 Phase 21: 값이 동일하면 이전 객체 재사용 (참조 안정성)
  */
 
-import { useMemo } from 'react';
+import { useMemo, useRef } from 'react';
 import type { SelectedElement } from '../../../inspector/types';
 
 // Properties that should only show inline styles (not computed)
@@ -48,14 +50,68 @@ export function getStyleValue(
   return defaultValue;
 }
 
+// 🚀 Phase 20: 스타일 값 타입 정의
+export interface StyleValues {
+  // Transform
+  width: string;
+  height: string;
+  top: string;
+  left: string;
+  // Layout
+  display: string;
+  flexDirection: string;
+  alignItems: string;
+  justifyContent: string;
+  gap: string;
+  padding: string;
+  margin: string;
+  // Appearance
+  backgroundColor: string;
+  borderColor: string;
+  borderWidth: string;
+  borderRadius: string;
+  borderStyle: string;
+  // Typography
+  fontFamily: string;
+  fontSize: string;
+  fontWeight: string;
+  fontStyle: string;
+  lineHeight: string;
+  letterSpacing: string;
+  color: string;
+  textAlign: string;
+  textDecoration: string;
+  textTransform: string;
+  verticalAlign: string;
+}
+
+/**
+ * 🚀 Phase 21: 두 StyleValues 객체가 동일한지 비교
+ */
+function areStyleValuesEqual(a: StyleValues | null, b: StyleValues | null): boolean {
+  if (a === b) return true;
+  if (!a || !b) return false;
+
+  // 모든 키에 대해 값 비교
+  const keys = Object.keys(a) as (keyof StyleValues)[];
+  return keys.every((key) => a[key] === b[key]);
+}
+
 /**
  * Hook: 모든 스타일 값을 메모이제이션하여 반환
+ * 🚀 Phase 20: 1회 파싱으로 성능 최적화
+ * 🚀 Phase 21: 값이 동일하면 이전 객체 재사용 (참조 안정성)
  */
-export function useStyleValues(selectedElement: SelectedElement | null) {
-  return useMemo(() => {
-    if (!selectedElement) return null;
+export function useStyleValues(selectedElement: SelectedElement | null): StyleValues | null {
+  const prevRef = useRef<StyleValues | null>(null);
 
-    return {
+  return useMemo(() => {
+    if (!selectedElement) {
+      prevRef.current = null;
+      return null;
+    }
+
+    const newValues: StyleValues = {
       // Transform
       width: getStyleValue(selectedElement, 'width', 'auto'),
       height: getStyleValue(selectedElement, 'height', 'auto'),
@@ -91,6 +147,14 @@ export function useStyleValues(selectedElement: SelectedElement | null) {
       textTransform: getStyleValue(selectedElement, 'textTransform', 'none'),
       verticalAlign: getStyleValue(selectedElement, 'verticalAlign', 'baseline'),
     };
+
+    // 🚀 Phase 21: 값이 동일하면 이전 객체 반환 (참조 안정성 유지)
+    if (areStyleValuesEqual(prevRef.current, newValues)) {
+      return prevRef.current;
+    }
+
+    prevRef.current = newValues;
+    return newValues;
   }, [selectedElement]);
 }
 

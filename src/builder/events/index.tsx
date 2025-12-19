@@ -512,8 +512,10 @@ function EventEditor({ event, onUpdate, onDelete }: EventEditorProps) {
 }
 
 function Events() {
-  const { selectedElementId, selectedElementProps, updateElementProps } =
-    useStore();
+  // 🚀 Phase 19: Zustand selector 패턴 적용 (불필요한 리렌더링 방지)
+  const selectedElementId = useStore((state) => state.selectedElementId);
+  const selectedElementProps = useStore((state) => state.selectedElementProps);
+  const updateElementProps = useStore((state) => state.updateElementProps);
   const [events, setEvents] = useState<ElementEvent[]>([]);
 
   // 선택된 요소의 이벤트 로드

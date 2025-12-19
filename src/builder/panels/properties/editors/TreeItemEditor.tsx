@@ -10,7 +10,9 @@ import { ElementUtils } from '../../../../utils/element/elementUtils';
 import { generateCustomId } from '../../../utils/idGeneration';
 
 export const TreeItemEditor = memo(function TreeItemEditor({ elementId, currentProps, onUpdate }: PropertyEditorProps) {
-    const { addElement, elements: storeElements } = useStore();
+    // 🚀 Phase 19: Zustand selector 패턴 적용 (불필요한 리렌더링 방지)
+    const addElement = useStore((state) => state.addElement);
+    const storeElements = useStore((state) => state.elements);
     const [localPageId, setLocalPageId] = useState<string>('');
 
     // Get customId from element in store

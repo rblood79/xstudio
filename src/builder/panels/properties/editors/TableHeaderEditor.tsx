@@ -21,8 +21,10 @@ interface TableHeaderElementProps {
 // }
 
 export const TableHeaderEditor = memo(function TableHeaderEditor({ elementId, currentProps, onUpdate }: PropertyEditorProps) {
-    const elements = useStore(state => state.elements);
-    const { addElement, removeElement } = useStore();
+    // 🚀 Phase 19: Zustand selector 패턴 적용 (불필요한 리렌더링 방지)
+    const elements = useStore((state) => state.elements);
+    const addElement = useStore((state) => state.addElement);
+    const removeElement = useStore((state) => state.removeElement);
     const [isAddingColumn, setIsAddingColumn] = useState(false);
     const [newColumnLabel, setNewColumnLabel] = useState('');
     const [newColumnKey, setNewColumnKey] = useState('');

@@ -128,10 +128,9 @@ interface ClickableBackgroundProps {
 function ClickableBackground({ onClick, onLassoStart, onLassoDrag, onLassoEnd, zoom, panOffset }: ClickableBackgroundProps) {
   useExtend(PIXI_COMPONENTS);
   const { app } = useApplication();
-  const [screenSize, setScreenSize] = useState<{
-    width: number;
-    height: number;
-  } | null>(null);
+
+  // 🚀 최적화: screenSize state 제거 - resize 리스너로 인한 리렌더링 방지
+  // 대신 충분히 큰 고정 크기 사용 (10000x10000, 원점 -5000)
 
   // Shift 키 상태 추적 (Lasso 모드) - canvas cursor 직접 변경
   useEffect(() => {
@@ -169,52 +168,18 @@ function ClickableBackground({ onClick, onLassoStart, onLassoDrag, onLassoEnd, z
     };
   }, [app]);
 
-  useEffect(() => {
-    if (!app) return;
-
-    let rafId = 0;
-    let detach: (() => void) | null = null;
-    let canceled = false;
-
-    const attach = () => {
-      if (canceled) return;
-
-      const renderer = app.renderer;
-      if (!renderer) {
-        rafId = window.requestAnimationFrame(attach);
-        return;
-      }
-
-      const update = () => {
-        setScreenSize({
-          width: renderer.screen.width,
-          height: renderer.screen.height,
-        });
-      };
-
-      update();
-      renderer.on("resize", update);
-      detach = () => renderer.off("resize", update);
-    };
-
-    attach();
-
-    return () => {
-      canceled = true;
-      if (rafId) window.cancelAnimationFrame(rafId);
-      detach?.();
-    };
-  }, [app]);
+  // 🚀 최적화: resize 리스너 useEffect 제거
+  // renderer.on("resize", update)가 매 프레임 setScreenSize 호출하여 프레임 드랍 유발
 
   const draw = useCallback(
     (g: PixiGraphics) => {
       g.clear();
-      if (!screenSize) return;
+      // 🚀 최적화: 고정 크기 사용 (충분히 큰 영역으로 모든 뷰포트 커버)
       // 투명한 영역 (클릭 감지용)
-      g.rect(0, 0, screenSize.width, screenSize.height);
+      g.rect(-5000, -5000, 10000, 10000);
       g.fill({ color: 0xffffff, alpha: 0 });
     },
-    [screenSize]
+    []
   );
 
   // 라쏘 드래그 상태
@@ -265,25 +230,31 @@ function ClickableBackground({ onClick, onLassoStart, onLassoDrag, onLassoEnd, z
 }
 
 /**
- * 패널 애니메이션 중에는 캔버스를 CSS 사이즈로만 부드럽게 따라가게 하고,
- * 크기 변화가 멈춘 뒤에만 renderer.resize를 1회 수행해 선명도를 복구합니다.
+ * 🚀 Idle-Based Resize Strategy
+ *
+ * Time 기반 debounce 대신 requestIdleCallback을 사용하여
+ * 브라우저가 유휴 상태일 때만 resize를 수행합니다.
+ *
+ * 패널 애니메이션 중에는 브라우저가 바쁘므로 resize가 호출되지 않고,
+ * 애니메이션이 끝나고 유휴 상태가 되면 resize가 호출됩니다.
+ *
+ * @see https://developer.mozilla.org/en-US/docs/Web/API/Window/requestIdleCallback
  */
-// 리사이즈 타이밍 상수 (panel-container.css transition: 0.3s와 동기화)
-const RESIZE_THROTTLE_MS = 80;
-const RESIZE_SETTLE_MS = 350; // CSS transition(300ms) + 여유 50ms
-
 function CanvasSmoothResizeBridge({ containerEl }: { containerEl: HTMLElement }) {
   const { app } = useApplication();
+  const idleCallbackRef = useRef<number>(0);
+  const pendingResizeRef = useRef(false);
   const lastSizeRef = useRef<{ width: number; height: number } | null>(null);
-  const settleTimeoutIdRef = useRef<number>(0);
-  const throttleTimeoutIdRef = useRef<number>(0);
-  const lastQueuedAtRef = useRef(0);
 
   useEffect(() => {
     if (!app) return;
 
     let canceled = false;
     let observer: ResizeObserver | null = null;
+
+    // requestIdleCallback polyfill (Safari 지원)
+    const requestIdle = window.requestIdleCallback || ((cb: () => void) => setTimeout(cb, 1));
+    const cancelIdle = window.cancelIdleCallback || clearTimeout;
 
     const attach = () => {
       if (canceled) return;
@@ -294,57 +265,48 @@ function CanvasSmoothResizeBridge({ containerEl }: { containerEl: HTMLElement })
         return;
       }
 
-      const queueResizeThrottled = () => {
-        if (typeof window === "undefined") return;
-
-        const now = typeof performance !== "undefined" ? performance.now() : Date.now();
-        const elapsed = now - lastQueuedAtRef.current;
-
-        if (elapsed >= RESIZE_THROTTLE_MS) {
-          lastQueuedAtRef.current = now;
-          app.queueResize();
-          return;
-        }
-
-        if (throttleTimeoutIdRef.current) return;
-        throttleTimeoutIdRef.current = window.setTimeout(() => {
-          throttleTimeoutIdRef.current = 0;
-          lastQueuedAtRef.current =
-            typeof performance !== "undefined" ? performance.now() : Date.now();
-          app.queueResize();
-        }, Math.max(0, RESIZE_THROTTLE_MS - elapsed));
+      // 초기 동기화: 컨테이너 크기로 renderer 설정
+      renderer.resize(containerEl.clientWidth, containerEl.clientHeight);
+      lastSizeRef.current = {
+        width: containerEl.clientWidth,
+        height: containerEl.clientHeight,
       };
 
-      const scheduleSettleResize = () => {
-        if (settleTimeoutIdRef.current) {
-          window.clearTimeout(settleTimeoutIdRef.current);
+      const scheduleIdleResize = () => {
+        if (pendingResizeRef.current) return; // 이미 예약됨
+        pendingResizeRef.current = true;
+
+        if (idleCallbackRef.current) {
+          cancelIdle(idleCallbackRef.current);
         }
-        settleTimeoutIdRef.current = window.setTimeout(() => {
-          settleTimeoutIdRef.current = 0;
-          app.resize();
-        }, RESIZE_SETTLE_MS);
+
+        idleCallbackRef.current = requestIdle(() => {
+          idleCallbackRef.current = 0;
+          pendingResizeRef.current = false;
+          if (canceled) return;
+
+          const width = containerEl.clientWidth;
+          const height = containerEl.clientHeight;
+          if (width > 0 && height > 0) {
+            renderer.resize(width, height);
+          }
+        });
       };
-
-      const updateFromRect = (rect: DOMRectReadOnly | DOMRect) => {
-        if (rect.width <= 0 || rect.height <= 0) return;
-        const next = { width: rect.width, height: rect.height };
-        const prev = lastSizeRef.current;
-        lastSizeRef.current = next;
-
-        // 애니메이션 중에는 과도한 리사이즈를 피하면서도 계속 따라가도록 스로틀
-        if (!prev || prev.width !== next.width || prev.height !== next.height) {
-          queueResizeThrottled();
-        }
-        scheduleSettleResize();
-      };
-
-      // 초기 동기화: 첫 렌더는 resizeTo 기준으로 선명하게 맞춤
-      app.resize();
 
       observer = new ResizeObserver((entries) => {
         const entry = entries[0];
         if (!entry) return;
-        updateFromRect(entry.contentRect);
+
+        const { width, height } = entry.contentRect;
+        if (width <= 0 || height <= 0) return;
+
+        // 크기가 변경되지 않았으면 스킵
+        const prev = lastSizeRef.current;
+        if (prev && prev.width === width && prev.height === height) return;
+        lastSizeRef.current = { width, height };
+
+        // 🚀 유휴 상태에서만 resize 수행
+        scheduleIdleResize();
       });
       observer.observe(containerEl);
     };
@@ -353,8 +315,9 @@ function CanvasSmoothResizeBridge({ containerEl }: { containerEl: HTMLElement })
 
     return () => {
       canceled = true;
-      if (settleTimeoutIdRef.current) window.clearTimeout(settleTimeoutIdRef.current);
-      if (throttleTimeoutIdRef.current) window.clearTimeout(throttleTimeoutIdRef.current);
+      if (idleCallbackRef.current) {
+        cancelIdle(idleCallbackRef.current);
+      }
       observer?.disconnect();
     };
   }, [app, containerEl]);
@@ -744,7 +707,8 @@ export function BuilderCanvas({
       {/* Wait for both container and yoga to be ready before rendering PixiJS */}
       {containerEl && yogaReady && (
         <Application
-          resizeTo={containerEl}
+          // 🚀 resizeTo 제거: CanvasSmoothResizeBridge에서 수동 resize만 사용
+          // resizeTo가 있으면 PixiJS가 자체적으로 resize를 시도하여 떨림 발생
           background={backgroundColor}
           antialias={true}
           resolution={Math.max(window.devicePixelRatio || 1, 2)}

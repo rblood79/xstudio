@@ -1,4 +1,4 @@
-import React, { useCallback } from "react";
+import React, { useCallback, startTransition } from "react";
 import { CopyMinus } from "lucide-react"; // CopyMinus 추가
 import { iconProps } from "../../utils/ui/uiConstants";
 import { ElementProps } from "../../types/integrations/supabase.types";
@@ -49,7 +49,8 @@ export function Layers({
   onSelectTabElement,
   forceVirtualization = false,
 }: LayersProps) {
-  const { removeElement } = useStore(); // removeElement 함수 가져오기
+  // 🚀 Phase 19: Zustand selector 패턴 적용 (불필요한 리렌더링 방지)
+  const removeElement = useStore((state) => state.removeElement);
 
   // Phase 3.2: flat Element[] → hierarchical ElementTreeItem[] 변환
   const elementTree = React.useMemo(() => {
@@ -61,9 +62,12 @@ export function Layers({
   const hasVirtualizationProps = expandedKeys && onToggleExpand;
 
   // 아이템 클릭 핸들러 (memoized)
+  // 🚀 Phase 19: startTransition으로 선택 업데이트를 비긴급 처리 (INP 개선)
   const handleItemClick = useCallback(
     (el: Element) => {
-      setSelectedElement(el.id, el.props as ElementProps);
+      startTransition(() => {
+        setSelectedElement(el.id, el.props as ElementProps);
+      });
       requestAnimationFrame(() =>
         sendElementSelectedMessage(el.id, el.props as ElementProps)
       );
@@ -75,11 +79,14 @@ export function Layers({
   const isWebGLOnly = isWebGLCanvas() && !isCanvasCompareMode();
 
   // 아이템 삭제 핸들러 (memoized)
+  // 🚀 Phase 19: startTransition으로 선택 업데이트를 비긴급 처리 (INP 개선)
   const handleItemDelete = useCallback(
     async (el: Element) => {
       await removeElement(el.id);
       if (el.id === selectedElementId) {
-        setSelectedElement(null);
+        startTransition(() => {
+          setSelectedElement(null);
+        });
         // 🚀 Phase 11: WebGL-only 모드에서는 iframe clearOverlay 스킵
         if (!isWebGLOnly) {
           MessageService.clearOverlay();

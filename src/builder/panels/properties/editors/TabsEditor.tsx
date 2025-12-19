@@ -27,7 +27,9 @@ const UUID_REGEX =
 
 // 커스텀 훅: 페이지 ID 관리
 function usePageId() {
-  const { currentPageId: storePageId, setCurrentPageId } = useStore();
+  // 🚀 Phase 19: Zustand selector 패턴 적용 (불필요한 리렌더링 방지)
+  const storePageId = useStore((state) => state.currentPageId);
+  const setCurrentPageId = useStore((state) => state.setCurrentPageId);
   const [localPageId, setLocalPageId] = useState<string>("");
 
   const fetchCurrentPageId = useCallback(
@@ -95,7 +97,9 @@ export const TabsEditor = memo(
     currentProps,
     onUpdate,
   }: PropertyEditorProps) {
-    const { addElement, elements: storeElements } = useStore();
+    // 🚀 Phase 19: Zustand selector 패턴 적용 (불필요한 리렌더링 방지)
+    const addElement = useStore((state) => state.addElement);
+    const storeElements = useStore((state) => state.elements);
     const { localPageId, storePageId } = usePageId();
 
     // ⭐ 최적화: customId를 현재 시점에만 가져오기 (Zustand 구독 방지)

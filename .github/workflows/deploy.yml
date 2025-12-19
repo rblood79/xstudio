@@ -34,14 +34,30 @@ jobs:
           node-version: "22"
           cache: "pnpm"
 
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+      - name: Verify lockfile sync and install dependencies
+        run: |
+          echo "🔍 Verifying pnpm-lock.yaml is in sync with package.json..."
+          if ! pnpm install --frozen-lockfile 2>&1 | tee /tmp/install.log; then
+            echo "::error::pnpm-lock.yaml is out of sync with package.json"
+            echo ""
+            echo "::error::To fix this issue:"
+            echo "::error::1. Run 'pnpm install' locally"
+            echo "::error::2. Commit the updated pnpm-lock.yaml file"
+            echo "::error::3. Push your changes"
+            echo ""
+            echo "::error::Installation log:"
+            cat /tmp/install.log
+            exit 1
+          fi
+          echo "✅ Lockfile is in sync and dependencies installed"
 
       - name: Build project
         run: pnpm vite build
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          VITE_USE_WEBGL_CANVAS: ${{ secrets.VITE_USE_WEBGL_CANVAS }}
+          VITE_CANVAS_COMPARE_MODE: ${{ secrets.VITE_CANVAS_COMPARE_MODE }}
 
       - name: Deploy to gh-pages
         uses: peaceiris/actions-gh-pages@v3

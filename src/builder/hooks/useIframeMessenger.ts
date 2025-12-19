@@ -14,7 +14,7 @@
  * @see src/builder/workspace/canvas/store/canvasStore.ts
  */
 
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect, useRef, startTransition } from 'react';
 import { debounce, DebouncedFunc } from 'lodash';
 import { useStore } from '../stores';
 import { useEditModeStore } from '../stores/editMode';
@@ -595,60 +595,77 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
             // ⭐ 다중 선택 모드 처리
             const { isMultiSelect } = event.data;
 
-            if (isMultiSelect) {
-                // Cmd/Ctrl + Click: 다중 선택 토글
-                const store = useStore.getState();
-                store.toggleElementInSelection(newElementId);
-            } else {
-                // 일반 클릭: 단일 선택 (computedStyle 없이 즉시 선택 - Option B+C)
-                // computedStyle은 별도 메시지(ELEMENT_COMPUTED_STYLE)로 나중에 도착
-                setSelectedElement(
-                    newElementId,
-                    event.data.payload?.props,
-                    event.data.payload?.style,
-                    undefined // computedStyle은 나중에 업데이트
-                );
-            }
+            // 🚀 Phase 19: startTransition으로 선택 업데이트를 비긴급 처리 (INP 개선)
+            startTransition(() => {
+                if (isMultiSelect) {
+                    // Cmd/Ctrl + Click: 다중 선택 토글
+                    const store = useStore.getState();
+                    store.toggleElementInSelection(newElementId);
+                } else {
+                    // 일반 클릭: 단일 선택 (computedStyle 없이 즉시 선택 - Option B+C)
+                    // computedStyle은 별도 메시지(ELEMENT_COMPUTED_STYLE)로 나중에 도착
+                    setSelectedElement(
+                        newElementId,
+                        event.data.payload?.props,
+                        event.data.payload?.style,
+                        undefined // computedStyle은 나중에 업데이트
+                    );
+                }
+            });
         }
 
         // ⭐ Option C: computedStyle 별도 메시지 처리 (오버레이 표시 후 지연 도착)
+        // 🚀 Phase 21: startTransition 적용
         if (event.data.type === "ELEMENT_COMPUTED_STYLE" && event.data.elementId) {
-            const { updateSelectedElementComputedStyle } = useInspectorState.getState();
-            const currentSelectedId = useStore.getState().selectedElementId;
+            startTransition(() => {
+                const { updateSelectedElementComputedStyle } = useInspectorState.getState();
+                const currentSelectedId = useStore.getState().selectedElementId;
 
-            // 현재 선택된 요소의 computedStyle만 업데이트
-            if (currentSelectedId === event.data.elementId && event.data.payload?.computedStyle) {
-                updateSelectedElementComputedStyle(event.data.payload.computedStyle);
-            }
+                // 현재 선택된 요소의 computedStyle만 업데이트
+                if (currentSelectedId === event.data.elementId && event.data.payload?.computedStyle) {
+                    updateSelectedElementComputedStyle(event.data.payload.computedStyle);
+                }
+            });
         }
 
         // ⭐ 드래그 선택 (Shift + Drag Lasso Selection)
+        // 🚀 Phase 21: startTransition 적용
         if (event.data.type === "ELEMENTS_DRAG_SELECTED") {
-
-            // ⭐ FIX: 드래그 선택은 새로운 선택 세트를 설정하므로 항상 허용
-            // (isSyncingToBuilder 체크 제거 - 새 요소 선택은 차단하지 않음)
-            const store = useStore.getState();
-            store.setSelectedElements(event.data.elementIds);
+            startTransition(() => {
+                // ⭐ FIX: 드래그 선택은 새로운 선택 세트를 설정하므로 항상 허용
+                // (isSyncingToBuilder 체크 제거 - 새 요소 선택은 차단하지 않음)
+                const store = useStore.getState();
+                store.setSelectedElements(event.data.elementIds);
+            });
         }
 
         // ELEMENT_UPDATED 메시지 처리는 제거 (무한 루프 방지)
         // PropertyPanel에서 직접 iframe으로 메시지를 보내므로 여기서는 처리하지 않음
 
         // 누락된 메시지 핸들링 추가
+        // 🚀 Phase 21: startTransition 적용
         if (event.data.type === "UPDATE_ELEMENT_PROPS" && event.data.elementId) {
-            const { updateElementProps } = useStore.getState();
-            updateElementProps(event.data.elementId, event.data.props || event.data.payload?.props);
+            startTransition(() => {
+                const { updateElementProps } = useStore.getState();
+                updateElementProps(event.data.elementId, event.data.props || event.data.payload?.props);
+            });
         }
 
         // 프리뷰에서 보내는 element-props-update 메시지 처리
+        // 🚀 Phase 21: startTransition 적용
         if (event.data.type === "element-props-update" && event.data.elementId) {
-            const { updateElementProps } = useStore.getState();
-            updateElementProps(event.data.elementId, event.data.props);
+            startTransition(() => {
+                const { updateElementProps } = useStore.getState();
+                updateElementProps(event.data.elementId, event.data.props);
+            });
         }
 
         // 프리뷰에서 보내는 element-click 메시지 처리
         if (event.data.type === "element-click" && event.data.elementId) {
-            setSelectedElement(event.data.elementId, event.data.payload?.props);
+            // 🚀 Phase 19: startTransition으로 선택 업데이트를 비긴급 처리 (INP 개선)
+            startTransition(() => {
+                setSelectedElement(event.data.elementId, event.data.payload?.props);
+            });
 
             // 선택된 요소 정보를 iframe에 다시 전송하여 오버레이 표시
             // 성능 최적화: Map 사용 (O(1) 조회)

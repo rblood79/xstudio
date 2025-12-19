@@ -10,7 +10,7 @@
 
 import { useExtend } from '@pixi/react';
 import { PIXI_COMPONENTS } from '../pixiSetup';
-import { useCallback, useMemo, useState, useEffect } from 'react';
+import { useCallback, useMemo, useState, useEffect, memo } from 'react';
 import { Graphics as PixiGraphics, Texture, Assets } from 'pixi.js';
 import type { Element } from '../../../../types/core/store.types';
 import { convertStyle, type CSSStyle } from './styleConverter';
@@ -44,7 +44,7 @@ const PLACEHOLDER_COLOR = 0xe5e7eb; // gray-200
 // Component
 // ============================================
 
-export function ImageSprite({ element, isSelected, onClick }: ImageSpriteProps) {
+export const ImageSprite = memo(function ImageSprite({ element, isSelected, onClick }: ImageSpriteProps) {
   useExtend(PIXI_COMPONENTS);
   const style = element.props?.style as CSSStyle | undefined;
   const converted = useMemo(() => convertStyle(style), [style]);
@@ -228,6 +228,6 @@ export function ImageSprite({ element, isSelected, onClick }: ImageSpriteProps) 
       )}
     </pixiContainer>
   );
-}
+});
 
 export default ImageSprite;

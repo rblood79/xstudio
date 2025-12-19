@@ -16,7 +16,12 @@ interface SelectedTagState {
 
 export const TagGroupEditor = memo(function TagGroupEditor({ elementId, currentProps, onUpdate }: PropertyEditorProps) {
     const [selectedTag, setSelectedTag] = useState<SelectedTagState | null>(null);
-    const { addElement, currentPageId, updateElementProps, setElements, elements: storeElements } = useStore();
+    // 🚀 Phase 19: Zustand selector 패턴 적용 (불필요한 리렌더링 방지)
+    const addElement = useStore((state) => state.addElement);
+    const currentPageId = useStore((state) => state.currentPageId);
+    const updateElementProps = useStore((state) => state.updateElementProps);
+    const setElements = useStore((state) => state.setElements);
+    const storeElements = useStore((state) => state.elements);
 
     // Get customId from element in store
     const element = storeElements.find((el) => el.id === elementId);

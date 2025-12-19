@@ -157,23 +157,45 @@ export function Workspace({
   // Container Size Tracking
   // ============================================
 
+  // 🚀 최적화: ResizeObserver 콜백에 RAF 스로틀링 + 값 비교
+  // 패널 애니메이션 중 매 프레임마다 상태 업데이트 방지
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
 
+    let rafId: number | null = null;
+    let lastWidth = 0;
+    let lastHeight = 0;
+
     const updateSize = () => {
-      setContainerSize({
-        width: container.clientWidth,
-        height: container.clientHeight,
+      const width = container.clientWidth;
+      const height = container.clientHeight;
+
+      // 값이 변경되지 않으면 스킵
+      if (width === lastWidth && height === lastHeight) return;
+
+      lastWidth = width;
+      lastHeight = height;
+      setContainerSize({ width, height });
+    };
+
+    const throttledUpdate = () => {
+      if (rafId !== null) return;
+      rafId = requestAnimationFrame(() => {
+        rafId = null;
+        updateSize();
       });
     };
 
     updateSize();
 
-    const resizeObserver = new ResizeObserver(updateSize);
+    const resizeObserver = new ResizeObserver(throttledUpdate);
     resizeObserver.observe(container);
 
-    return () => resizeObserver.disconnect();
+    return () => {
+      if (rafId !== null) cancelAnimationFrame(rafId);
+      resizeObserver.disconnect();
+    };
   }, []);
 
   // ============================================

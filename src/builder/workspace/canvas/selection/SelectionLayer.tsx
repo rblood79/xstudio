@@ -93,22 +93,23 @@ export const SelectionLayer = memo(function SelectionLayer({
     return resolved;
   }, [currentPageId, selectedElementIds, getElementsMap]);
 
-  // hasChildrenIdSet은 선택된 요소에 대해서만 계산 (전체 순회 제거)
-  // 🚀 최적화: 선택된 요소의 자식 여부만 확인 (O(selected) vs O(all))
+  // 🚀 최적화: childrenMap 활용하여 O(n) → O(selected) 개선
+  // 기존: elementsMap.forEach로 전체 요소 순회 (O(n))
+  // 개선: childrenMap에서 선택된 요소의 자식 여부만 확인 (O(selected))
+  const getChildrenMap = useCallback(() => useStore.getState().childrenMap, []);
+
   const hasChildrenIdSet = useMemo(() => {
-    if (selectedElements.length === 0) return new Set<string>();
-    const elementsMap = getElementsMap();
-    const selectedIdSet = new Set(selectedElementIds);
+    if (selectedElementIds.length === 0) return new Set<string>();
+    const childrenMap = getChildrenMap();
     const set = new Set<string>();
-    // 선택된 요소에 대해서만 자식 존재 여부 확인
-    elementsMap.forEach((el) => {
-      if (el.page_id !== currentPageId) return;
-      if (el.parent_id && selectedIdSet.has(el.parent_id)) {
-        set.add(el.parent_id);
+    for (const id of selectedElementIds) {
+      const children = childrenMap.get(id);
+      if (children && children.length > 0) {
+        set.add(id);
       }
-    });
+    }
     return set;
-  }, [selectedElements.length, selectedElementIds, currentPageId, getElementsMap]);
+  }, [selectedElementIds, getChildrenMap]);
 
   // 선택된 요소들의 바운딩 박스
   const selectionBounds = useMemo(() => {
