@@ -26,7 +26,6 @@ import { Element } from '../../types/core/store.types';
 // ElementUtils는 현재 사용되지 않음
 import { MessageService } from '../../utils/messaging';
 import { elementsApi } from '../../services/api';
-import { useInspectorState } from '../inspector/hooks/useInspectorState';
 // 🚀 Delta Update
 import { canvasDeltaMessenger } from '../utils/canvasDeltaMessenger';
 // 🚀 Phase 11: Feature Flags for WebGL-only mode optimization
@@ -79,7 +78,6 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
     // 성능 최적화: Map 사용 (O(1) 조회)
     const elementsMap = useStore((state) => state.elementsMap);
     const setSelectedElement = useStore((state) => state.setSelectedElement);
-    const isSyncingToBuilder = useInspectorState((state) => state.isSyncingToBuilder);
     // updateElementProps는 useZundoActions에서 가져옴
 
     // ⭐ Layout/Slot System: Page 정보 구독
@@ -583,14 +581,7 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
 
         if (event.data.type === "ELEMENT_SELECTED" && event.data.source !== "builder") {
 
-            const currentSelectedId = useStore.getState().selectedElementId;
             const newElementId = event.data.elementId;
-
-            // ⭐ FIX: 다른 요소 선택은 항상 허용
-            // 같은 요소 재선택만 동기화 중일 때 스킵 (무한 루프 방지)
-            if (isSyncingToBuilder && newElementId === currentSelectedId) {
-                return;
-            }
 
             // ⭐ 다중 선택 모드 처리
             const { isMultiSelect } = event.data;
@@ -618,12 +609,12 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
         // 🚀 Phase 21: startTransition 적용
         if (event.data.type === "ELEMENT_COMPUTED_STYLE" && event.data.elementId) {
             startTransition(() => {
-                const { updateSelectedElementComputedStyle } = useInspectorState.getState();
-                const currentSelectedId = useStore.getState().selectedElementId;
+                const store = useStore.getState();
+                const currentSelectedId = store.selectedElementId;
 
                 // 현재 선택된 요소의 computedStyle만 업데이트
                 if (currentSelectedId === event.data.elementId && event.data.payload?.computedStyle) {
-                    updateSelectedElementComputedStyle(event.data.payload.computedStyle);
+                    store.updateSelectedComputedStyle(event.data.payload.computedStyle);
                 }
             });
         }
@@ -692,7 +683,7 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
         if (event.data.type === "element-hover" && event.data.elementId) {
             // 필요시 hover 상태 처리 로직 추가
         }
-    }, [setSelectedElement, elementsMap, isSyncingToBuilder, processMessageQueue, sendElementsToIframe, sendLayoutsToIframe, sendDataTablesToIframe, sendApiEndpointsToIframe, sendVariablesToIframe]);
+    }, [setSelectedElement, elementsMap, processMessageQueue, sendElementsToIframe, sendLayoutsToIframe, sendDataTablesToIframe, sendApiEndpointsToIframe, sendVariablesToIframe]);
 
     const handleUndo = debounce(async () => {
         if (isProcessingRef.current) return;

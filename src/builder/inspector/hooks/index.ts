@@ -1,3 +1,4 @@
 export * from "./useComponentMeta";
-export * from "./useInspectorState";
-export * from "./useSyncWithBuilder";
+
+// 🚀 Single Source of Truth: useInspectorState, useSyncWithBuilder 제거
+// Builder Store (useStore, useSelectedElementData, useInspectorActions)를 직접 사용

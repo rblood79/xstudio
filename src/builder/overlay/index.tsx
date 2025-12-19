@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
-import { useStore } from "../stores";
+import { useStore, useSelectedElementData } from "../stores";
 import { Maximize2 } from "lucide-react";
 import { iconProps } from "../../utils/ui/uiConstants";
 import { MessageService } from "../../utils/messaging";
@@ -8,7 +8,6 @@ import type { OverlayData as VisibleOverlayData } from "./hooks/useVisibleOverla
 import { useOverlayRAF, isOnlyBodySelected, type OverlayUpdateResult } from "./hooks/useOverlayRAF";
 import { useOverlayDebug } from "./OverlayDebug";
 import { BorderRadiusHandles } from "./components/BorderRadiusHandles";
-import { useInspectorState } from "../inspector/hooks/useInspectorState";
 
 import "./index.css";
 
@@ -80,11 +79,12 @@ export default function SelectionOverlay() {
   );
 
   // ⭐ Border Radius 구독 (리액티브 업데이트) - 조건부 return 전에 선언
-  const borderRadiusFromInspector = useInspectorState((state) => {
-    const computed = state.selectedElement?.computedStyle?.borderRadius;
-    const inline = state.selectedElement?.style?.borderRadius as string | undefined;
+  const selectedElement = useSelectedElementData();
+  const borderRadiusFromStore = useMemo(() => {
+    const computed = selectedElement?.computedStyle?.borderRadius;
+    const inline = selectedElement?.style?.borderRadius as string | undefined;
     return inline || computed;
-  });
+  }, [selectedElement?.computedStyle?.borderRadius, selectedElement?.style?.borderRadius]);
 
   // Tag 표시 로직 (useMemo로 최적화, getState() 사용)
   // 🚀 Performance: selectedElementId 변경 시에만 최신 요소 정보 조회
@@ -443,7 +443,7 @@ export default function SelectionOverlay() {
         {/* Border Radius 코너 포인트 */}
         <BorderRadiusHandles
           rect={overlayRect}
-          borderRadius={borderRadiusFromInspector}
+          borderRadius={borderRadiusFromStore}
         />
       </div>
     </div>

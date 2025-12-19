@@ -2,7 +2,6 @@ import React, { useState, useEffect, memo } from "react";
 import { Hash } from "lucide-react";
 import { PropertyFieldset } from "./PropertyFieldset";
 import { useStore } from "../../stores";
-import { useInspectorState } from "../../inspector/hooks/useInspectorState";
 import { validateCustomId } from "../../utils/idValidation";
 
 interface PropertyCustomIdProps {
@@ -27,8 +26,8 @@ export const PropertyCustomId = memo(function PropertyCustomId({
   // ⭐ 최적화: validation 시에만 elementsMap 가져오기 (구독 방지)
   // getState()로 현재 시점의 값만 가져옴
 
-  // Use Inspector state to update customId (triggers useSyncWithBuilder)
-  const updateCustomIdInInspector = useInspectorState((state) => state.updateCustomId);
+  // Use Builder store to update customId directly
+  const updateCustomId = useStore((state) => state.updateSelectedCustomId);
 
   // Sync local state with prop value when it changes externally
   useEffect(() => {
@@ -69,7 +68,7 @@ export const PropertyCustomId = memo(function PropertyCustomId({
       // IMPORTANT: Only update Inspector state, NOT calling onChange
       // onChange would bypass Inspector state and directly update Builder store
       // which prevents useSyncWithBuilder from detecting changes
-      updateCustomIdInInspector(inputValue);
+      updateCustomId(inputValue);
       setError(undefined);
     }
   };
@@ -95,7 +94,7 @@ export const PropertyCustomId = memo(function PropertyCustomId({
         // IMPORTANT: Only update Inspector state, NOT calling onChange
         // onChange would bypass Inspector state and directly update Builder store
         // which prevents useSyncWithBuilder from detecting changes
-        updateCustomIdInInspector(inputValue);
+        updateCustomId(inputValue);
         setError(undefined);
       }
 

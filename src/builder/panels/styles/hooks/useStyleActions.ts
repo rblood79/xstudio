@@ -1,14 +1,16 @@
 /**
  * useStyleActions - 스타일 업데이트 액션 훅
  *
- * Inspector state의 updateInlineStyle, updateInlineStyles를 래핑하여 제공
- * 
+ * Builder Store의 updateSelectedStyle, updateSelectedStyles를 래핑하여 제공
+ *
  * ⚠️ 최적화: 모든 액션은 getState()를 사용하여 구독하지 않음
  * Action 함수는 변경되지 않으므로 리렌더링 유발할 필요 없음
+ *
+ * 🚀 Single Source of Truth: useInspectorState 제거, Builder Store 직접 사용
  */
 
 import { useCallback } from 'react';
-import { useInspectorState } from '../../../inspector/hooks/useInspectorState';
+import { useStore } from '../../../stores';
 import { useCopyPaste } from '../../../hooks/useCopyPaste';
 
 export function useStyleActions() {
@@ -22,7 +24,7 @@ export function useStyleActions() {
           stylesObj[key] = String(value);
         }
       });
-      useInspectorState.getState().updateInlineStyles(stylesObj);
+      useStore.getState().updateSelectedStyles(stylesObj);
     },
     name: 'styles',
   });
@@ -32,7 +34,7 @@ export function useStyleActions() {
    */
   const updateStyle = useCallback(
     (property: string, value: string) => {
-      useInspectorState.getState().updateInlineStyle(property, value);
+      useStore.getState().updateSelectedStyle(property, value);
     },
     []
   );
@@ -42,7 +44,7 @@ export function useStyleActions() {
    */
   const updateStyles = useCallback(
     (styles: Record<string, string>) => {
-      useInspectorState.getState().updateInlineStyles(styles);
+      useStore.getState().updateSelectedStyles(styles);
     },
     []
   );
@@ -58,7 +60,7 @@ export function useStyleActions() {
         'align-vertical-end': 'flex-end',
       };
 
-      useInspectorState.getState().updateInlineStyles({
+      useStore.getState().updateSelectedStyles({
         display: 'flex',
         alignItems: alignItemsMap[value] || 'flex-start',
       });
@@ -77,7 +79,7 @@ export function useStyleActions() {
         'align-horizontal-end': 'flex-end',
       };
 
-      useInspectorState.getState().updateInlineStyles({
+      useStore.getState().updateSelectedStyles({
         display: 'flex',
         justifyContent: justifyContentMap[value] || 'flex-start',
       });
@@ -95,7 +97,7 @@ export function useStyleActions() {
     (value: string) => {
       if (value === 'block') {
         // display: block으로 전환, flex 관련 속성 제거
-        useInspectorState.getState().updateInlineStyles({
+        useStore.getState().updateSelectedStyles({
           display: 'block',
           flexDirection: '',
           justifyContent: '',
@@ -104,12 +106,12 @@ export function useStyleActions() {
           gap: '',
         });
       } else if (value === 'row') {
-        useInspectorState.getState().updateInlineStyles({
+        useStore.getState().updateSelectedStyles({
           display: 'flex',
           flexDirection: 'row',
         });
       } else if (value === 'column') {
-        useInspectorState.getState().updateInlineStyles({
+        useStore.getState().updateSelectedStyles({
           display: 'flex',
           flexDirection: 'column',
         });
@@ -144,14 +146,14 @@ export function useStyleActions() {
         // For row: horizontal = justifyContent, vertical = alignItems
         // For column: horizontal = alignItems, vertical = justifyContent
         if (currentFlexDirection === 'column') {
-          useInspectorState.getState().updateInlineStyles({
+          useStore.getState().updateSelectedStyles({
             display: 'flex',
             justifyContent: position.vertical,
             alignItems: position.horizontal,
           });
         } else {
           // row or default
-          useInspectorState.getState().updateInlineStyles({
+          useStore.getState().updateSelectedStyles({
             display: 'flex',
             justifyContent: position.horizontal,
             alignItems: position.vertical,
@@ -167,7 +169,7 @@ export function useStyleActions() {
    */
   const handleJustifyContentSpacing = useCallback(
     (value: string) => {
-      useInspectorState.getState().updateInlineStyles({
+      useStore.getState().updateSelectedStyles({
         display: 'flex',
         justifyContent: value, // space-around, space-between, space-evenly
       });
@@ -180,7 +182,7 @@ export function useStyleActions() {
    */
   const handleFlexWrap = useCallback(
     (value: string) => {
-      useInspectorState.getState().updateInlineStyles({
+      useStore.getState().updateSelectedStyles({
         display: 'flex',
         flexWrap: value, // wrap, wrap-reverse, nowrap
       });
@@ -195,7 +197,7 @@ export function useStyleActions() {
     (properties: string[]) => {
       const resetObj: Record<string, string> = {};
       properties.forEach((prop) => (resetObj[prop] = ''));
-      useInspectorState.getState().updateInlineStyles(resetObj);
+      useStore.getState().updateSelectedStyles(resetObj);
     },
     []
   );

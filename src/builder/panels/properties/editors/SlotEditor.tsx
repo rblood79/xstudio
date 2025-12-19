@@ -22,7 +22,6 @@ import {
 } from "../../common";
 import { PropertyEditorProps } from "../types/editorTypes";
 import { useStore } from "../../../stores";
-import { useInspectorState } from "../../../inspector/hooks/useInspectorState";
 import { iconEditProps } from "../../../../utils/ui/uiConstants";
 
 export const SlotEditor = memo(function SlotEditor({
@@ -60,9 +59,6 @@ export const SlotEditor = memo(function SlotEditor({
     };
   }, [elementId]);
 
-  // Get setSelectedElement for navigation
-  const setSelectedElement = useInspectorState((state) => state.setSelectedElement);
-
   const updateProp = useCallback((key: string, value: unknown) => {
     const updatedProps = {
       ...currentProps,
@@ -80,16 +76,9 @@ export const SlotEditor = memo(function SlotEditor({
 
   // Navigate to child element
   const handleChildClick = useCallback((childId: string) => {
-    const elementsMap = useStore.getState().elementsMap;
-    const childElement = elementsMap.get(childId);
-    if (childElement) {
-      setSelectedElement({
-        id: childElement.id,
-        type: childElement.tag,
-        properties: childElement.props as Record<string, unknown>,
-      });
-    }
-  }, [setSelectedElement]);
+    // 🚀 Single Source of Truth: Builder Store의 setSelectedElement 직접 사용
+    useStore.getState().setSelectedElement(childId);
+  }, []);
 
   return (
     <>

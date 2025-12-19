@@ -6,7 +6,13 @@ import { createSaveModeSlice, SaveModeState } from "./saveMode";
 import { createSettingsSlice, SettingsState } from "./settings";
 import { createPanelLayoutSlice, PanelLayoutSlice } from "./panelLayout";
 import { createElementLoaderSlice, ElementLoaderSlice } from "./elementLoader";
+import {
+  createInspectorActionsSlice,
+  InspectorActionsState,
+  mapElementToSelectedElement,
+} from "./inspectorActions";
 import { getPageElements } from "./utils/elementIndexer";
+import type { SelectedElement } from "../inspector/types";
 
 // ✅ ThemeState removed - now using unified theme store (themeStore.unified.ts)
 
@@ -17,7 +23,8 @@ interface Store
     SaveModeState,
     SettingsState,
     PanelLayoutSlice,
-    ElementLoaderSlice {}
+    ElementLoaderSlice,
+    InspectorActionsState {}
 
 type UseStoreType = UseBoundStore<StoreApi<Store>>;
 
@@ -47,6 +54,7 @@ if (hasExistingStore) {
     ...createSettingsSlice(...args),
     ...createPanelLayoutSlice(...args),
     ...createElementLoaderSlice(...args),
+    ...createInspectorActionsSlice(...args),
   }));
 
   if (typeof window !== "undefined") {
@@ -83,12 +91,54 @@ export const subscribeStore = useStore.subscribe;
 
 // 간단한 선택기들 (Zustand의 내장 최적화 활용)
 export const useElements = () => useStore((state) => state.elements);
-export const useSelectedElement = () =>
+export const useSelectedElementId = () =>
   useStore((state) => state.selectedElementId);
+// 호환성 alias
+export const useSelectedElement = useSelectedElementId;
 export const useSelectedElementProps = () =>
   useStore((state) => state.selectedElementProps);
 export const useCurrentPageId = () => useStore((state) => state.currentPageId);
 export const usePages = () => useStore((state) => state.pages);
+
+// ============================================
+// 🚀 Single Source of Truth: Selected Element
+// ============================================
+
+/**
+ * 선택된 요소를 SelectedElement 형태로 반환
+ * Inspector Store 제거 후 Builder Store에서 직접 사용
+ *
+ * @returns SelectedElement | null
+ */
+export const useSelectedElementData = (): SelectedElement | null => {
+  const selectedElementId = useStore((state) => state.selectedElementId);
+  const elementsMap = useStore((state) => state.elementsMap);
+
+  return useMemo(() => {
+    if (!selectedElementId) return null;
+    const element = elementsMap.get(selectedElementId);
+    if (!element) return null;
+    return mapElementToSelectedElement(element);
+  }, [selectedElementId, elementsMap]);
+};
+
+/**
+ * Inspector 액션 훅 (스타일, 속성, 이벤트 업데이트)
+ * 기존 useInspectorState의 액션들을 대체
+ */
+export const useInspectorActions = () =>
+  useStore((state) => ({
+    updateStyle: state.updateSelectedStyle,
+    updateStyles: state.updateSelectedStyles,
+    updateProperty: state.updateSelectedProperty,
+    updateProperties: state.updateSelectedProperties,
+    updateCustomId: state.updateSelectedCustomId,
+    updateDataBinding: state.updateSelectedDataBinding,
+    updateEvents: state.updateSelectedEvents,
+    addEvent: state.addSelectedEvent,
+    updateEvent: state.updateSelectedEvent,
+    removeEvent: state.removeSelectedEvent,
+  }));
 
 // ============================================
 // 🚀 Performance Optimized Selectors (Phase 1)

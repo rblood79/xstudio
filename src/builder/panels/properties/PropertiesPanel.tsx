@@ -16,7 +16,7 @@ import type { ComponentType } from "react";
 import type { PanelProps } from "../core/types";
 import { getEditor, type EditorContext } from "../../inspector/editors/registry";
 import { useEditModeStore } from "../../stores/editMode";
-import { useInspectorState } from "../../inspector/hooks/useInspectorState";
+import { useSelectedElementData } from "../../stores";
 import type { ComponentEditorProps, SelectedElement } from "../../inspector/types";
 import { EmptyState, LoadingSpinner, PanelHeader, MultiSelectStatusIndicator, BatchPropertyEditor, SelectionFilter, KeyboardShortcutsHelp, SmartSelection, SelectionMemory } from "../common";
 import { ElementSlotSelector } from "./editors/ElementSlotSelector";
@@ -114,7 +114,7 @@ const PropertyEditorWrapper = memo(function PropertyEditorWrapper({
 
   // handleUpdate는 항상 안정적인 함수 (getState 사용)
   const handleUpdate = useCallback((updatedProps: Record<string, unknown>) => {
-    useInspectorState.getState().updateProperties(updatedProps);
+    useStore.getState().updateSelectedProperties(updatedProps);
   }, []);
 
   if (loading) {
@@ -502,7 +502,7 @@ const MultiSelectContent = memo(function MultiSelectContent({
 function PropertiesPanelContent() {
   // ⭐ CRITICAL: Only subscribe to selectedElement (like StylesPanel)
   // multiSelectMode, selectedElementIds 구독은 MultiSelectContent에서 수행
-  const selectedElement = useInspectorState((state) => state.selectedElement);
+  const selectedElement = useSelectedElementData();
 
   // 🚀 Performance: 액션만 가져오기 (구독 없음)
   const removeElement = useStore.getState().removeElement;
@@ -523,7 +523,7 @@ function PropertiesPanelContent() {
   // 🔥 최적화: useCopyPaste hook 사용
   const { copy: copyProperties, paste: pasteProperties } = useCopyPaste({
     onPaste: (data) => {
-      useInspectorState.getState().updateProperties(data);
+      useStore.getState().updateSelectedProperties(data);
     },
     name: 'properties',
   });
@@ -1178,7 +1178,7 @@ function PropertiesPanelContent() {
         elementId={selectedElement.id}
         currentSlotName={selectedElement.properties?.slot_name as string | null | undefined}
         onSlotChange={(slotName) => {
-          useInspectorState.getState().updateProperties({ slot_name: slotName });
+          useStore.getState().updateSelectedProperties({ slot_name: slotName });
         }}
       />
 

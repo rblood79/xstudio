@@ -23,7 +23,7 @@ import type {
 } from "../../events/types/eventBlockTypes";
 import { normalizeToInspectorAction } from "../../events/utils/normalizeEventTypes";
 import { isImplementedEventType } from "@/types/events/events.types";
-import { useInspectorState } from "../../inspector/hooks/useInspectorState";
+import { useSelectedElementData, useStore } from "../../stores";
 import { EventTypePicker } from "../../events/pickers/EventTypePicker";
 import { useEventHandlers } from "../../events/state/useEventHandlers";
 import { useActions } from "../../events/state/useActions";
@@ -241,9 +241,9 @@ function ActionPickerOverlay({ branch, onSelect, onClose }: ActionPickerOverlayP
 }
 
 export function EventsPanel({ isActive }: PanelProps) {
-  // Inspector 상태에서 이벤트 가져오기
-  const selectedElement = useInspectorState((state) => state.selectedElement);
-  const updateEvents = useInspectorState((state) => state.updateEvents);
+  // Builder Store에서 선택된 요소와 이벤트 업데이트 함수 가져오기
+  const selectedElement = useSelectedElementData();
+  const updateEvents = useStore((state) => state.updateSelectedEvents);
 
   // 활성 상태가 아니면 렌더링하지 않음 (성능 최적화)
   if (!isActive) {

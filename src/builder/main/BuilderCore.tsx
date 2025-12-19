@@ -17,7 +17,6 @@ import Grid from "../grid";
 import { Workspace } from "../workspace";
 import { isWebGLCanvas, isCanvasCompareMode } from "../../utils/featureFlags";
 import { PanelSlot, BottomPanelSlot } from "../layout";
-import { InspectorSync } from "../inspector/InspectorSync";
 import { ToastContainer } from "../components/ToastContainer";
 
 import { useErrorHandler } from "../hooks/useErrorHandler";
@@ -801,9 +800,6 @@ export const BuilderCore: React.FC = () => {
           </div>
         </div>
       )}
-
-      {/* Inspector 상태 동기화 (항상 마운트) */}
-      <InspectorSync />
 
       <BuilderHeader
         projectId={projectId}

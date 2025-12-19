@@ -1,7 +1,7 @@
 import { Button } from "react-aria-components";
 import type { EventHandler, EventType } from "./types/eventTypes";
 import type { SelectedElement } from "../inspector/types";
-import { useInspectorState } from "../inspector/hooks/useInspectorState";
+import { useStore } from "../stores";
 import { useComponentMeta } from "../inspector/hooks/useComponentMeta";
 
 export interface EventListProps {
@@ -11,7 +11,8 @@ export interface EventListProps {
 
 export function EventList({ element, onSelectEvent }: EventListProps) {
   const meta = useComponentMeta(element.type);
-  const { addEvent, removeEvent } = useInspectorState();
+  const addEvent = useStore((state) => state.addSelectedEvent);
+  const removeEvent = useStore((state) => state.removeSelectedEvent);
 
   const supportedEvents = meta?.inspector?.supportedEvents || [];
   const registeredEvents = element.events || [];

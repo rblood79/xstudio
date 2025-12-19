@@ -19,7 +19,7 @@
 import "../../panels/common/index.css";
 import { useState, useMemo, useCallback } from "react";
 import type { PanelProps } from "../core/types";
-import { useInspectorState } from "../../inspector/hooks/useInspectorState";
+import { useSelectedElementData } from "../../stores";
 import {
   ToggleButtonGroup,
   ToggleButton,
@@ -60,7 +60,7 @@ export function StylesPanel({ isActive }: PanelProps) {
  * 훅은 여기서만 실행됨 (isActive=true일 때만)
  */
 function StylesPanelContent() {
-  const selectedElement = useInspectorState((state) => state.selectedElement);
+  const selectedElement = useSelectedElementData();
   const [filter, setFilter] = useState<"all" | "modified">("all");
   const {
     expandAll,

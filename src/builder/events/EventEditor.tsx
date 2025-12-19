@@ -1,6 +1,6 @@
 import { Button } from "react-aria-components";
 import type { EventHandler, EventAction } from "./types/eventTypes";
-import { useInspectorState } from "../inspector/hooks/useInspectorState";
+import { useStore } from "../stores";
 import { ActionEditor } from "./actions/ActionEditor";
 
 export interface EventEditorProps {
@@ -9,7 +9,7 @@ export interface EventEditorProps {
 }
 
 export function EventEditor({ event, onBack }: EventEditorProps) {
-  const { updateEvent } = useInspectorState();
+  const updateEvent = useStore((state) => state.updateSelectedEvent);
 
   const handleAddAction = () => {
     const newAction: EventAction = {

@@ -11,7 +11,6 @@
  */
 
 import { useCallback, useEffect } from "react";
-import { useInspectorState } from "../../inspector/hooks/useInspectorState";
 import { MessageService } from "../../../utils/messaging";
 import { useStore } from "../../stores";
 // 🚀 Phase 11: Feature Flags for WebGL-only mode
@@ -305,15 +304,15 @@ function handleMouseUp(e: MouseEvent) {
   const styleProps = createStyleProps(finalRadius, corner, shiftKey);
   sendStyleToCanvas(selectedElementId, styleProps);
 
-  // Inspector state 업데이트 (store 저장)
-  const updateInlineStyle = useInspectorState.getState().updateInlineStyle;
-  const updateInlineStyles = useInspectorState.getState().updateInlineStyles;
+  // Builder Store 업데이트 (직접 저장)
+  const updateStyle = useStore.getState().updateSelectedStyle;
+  const updateStyles = useStore.getState().updateSelectedStyles;
 
   if (shiftKey) {
-    updateInlineStyles(styleProps);
+    updateStyles(styleProps);
   } else {
     const property = cornerPropertyMap[corner];
-    updateInlineStyle(property, `${finalRadius}px`);
+    updateStyle(property, `${finalRadius}px`);
   }
 }
 
