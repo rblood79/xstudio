@@ -149,7 +149,7 @@ export function PixiDropZone({
       />
 
       {/* Label */}
-      <Text
+      <pixiText
         text={label}
         style={labelStyle}
         x={zoneWidth / 2}
@@ -158,7 +158,7 @@ export function PixiDropZone({
       />
 
       {/* Description */}
-      <Text
+      <pixiText
         text={description}
         style={descriptionStyle}
         x={zoneWidth / 2}

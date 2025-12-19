@@ -220,12 +220,6 @@ export function PixiColorPicker({
   const alphaSliderY = hueSliderY + sizePreset.sliderHeight + sizePreset.gap;
   const swatchY = alphaSliderY + sizePreset.sliderHeight + sizePreset.gap;
 
-  // Thumb positions
-  const areaThumbX = areaX + saturation * sizePreset.areaSize;
-  const areaThumbY = areaY + (1 - brightness) * sizePreset.areaSize;
-  const hueThumbX = areaX + (hue / 360) * sizePreset.sliderWidth;
-  const alphaThumbX = areaX + alpha * sizePreset.sliderWidth;
-
   return (
     <pixiContainer
       eventMode="static"
@@ -256,7 +250,7 @@ export function PixiColorPicker({
       {/* Color swatch and hex value */}
       <pixiContainer x={areaX} y={swatchY}>
         <pixiGraphics draw={drawSwatch} />
-        <Text
+        <pixiText
           text={`#${currentColor.toString(16).padStart(6, '0').toUpperCase()}`}
           style={labelStyle}
           x={sizePreset.swatchSize + sizePreset.gap}

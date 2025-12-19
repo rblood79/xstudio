@@ -17,7 +17,7 @@ import { FancyButton } from '@pixi/ui';
 import { Container, Graphics, Text, TextStyle } from 'pixi.js';
 import type { Element } from '../../../../types/core/store.types';
 import type { CSSStyle } from '../sprites/styleConverter';
-import { cssColorToHex, parseCSSSize } from '../sprites/styleConverter';
+import { parseCSSSize } from '../sprites/styleConverter';
 
 // ============================================
 // Types
@@ -53,7 +53,31 @@ interface FancyButtonLayoutStyle {
 }
 
 function convertToFancyButtonStyle(style: CSSStyle | undefined): FancyButtonLayoutStyle {
-  const bgColor = cssColorToHex(style?.backgroundColor, 0x3b82f6);
+  // Extract RGB from backgroundColor
+  const bgColor = (() => {
+    const bg = style?.backgroundColor;
+    if (!bg) return 0x3b82f6;
+    if (typeof bg === 'number') return bg;
+    if (typeof bg === 'string') {
+      if (bg.startsWith('#')) {
+        return parseInt(bg.slice(1), 16);
+      }
+    }
+    return 0x3b82f6;
+  })();
+
+  // Extract RGB from color
+  const textColor = (() => {
+    const col = style?.color;
+    if (!col) return 0xffffff;
+    if (typeof col === 'number') return col;
+    if (typeof col === 'string') {
+      if (col.startsWith('#')) {
+        return parseInt(col.slice(1), 16);
+      }
+    }
+    return 0xffffff;
+  })();
 
   return {
     x: parseCSSSize(style?.left, undefined, 0),
@@ -64,7 +88,7 @@ function convertToFancyButtonStyle(style: CSSStyle | undefined): FancyButtonLayo
     hoverColor: adjustColor(bgColor, 0.9), // 약간 어둡게
     pressedColor: adjustColor(bgColor, 0.8), // 더 어둡게
     disabledColor: 0xcccccc,
-    textColor: cssColorToHex(style?.color, 0xffffff),
+    textColor: textColor,
     fontSize: parseCSSSize(style?.fontSize, undefined, 14),
     fontFamily: style?.fontFamily || 'Pretendard, sans-serif',
     borderRadius: parseCSSSize(style?.borderRadius, undefined, 8),
@@ -122,7 +146,6 @@ function createButtonBackground(
  */
 export const PixiFancyButton = memo(function PixiFancyButton({
   element,
-  isSelected,
   onClick,
 }: PixiFancyButtonProps) {
   useExtend(PIXI_COMPONENTS);

@@ -220,7 +220,6 @@ function createListBackground(
  */
 export const PixiList = memo(function PixiList({
   element,
-  isSelected,
   onClick,
   onItemClick,
 }: PixiListProps) {

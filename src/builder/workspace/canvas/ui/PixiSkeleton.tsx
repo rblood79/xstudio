@@ -89,7 +89,7 @@ export function PixiSkeleton({
           g.fill({ color: colorPreset.baseColor });
           break;
 
-        case 'card':
+        case 'card': {
           // Card skeleton with image placeholder and text lines
           g.roundRect(0, 0, dimensions.width, dimensions.height, sizePreset.borderRadius);
           g.fill({ color: colorPreset.baseColor });
@@ -111,6 +111,7 @@ export function PixiSkeleton({
           g.roundRect(textPadding, textStartY + sizePreset.lineHeight + sizePreset.lineGap / 2, dimensions.width * 0.5, sizePreset.lineHeight * 0.8, 4);
           g.fill({ color: colorPreset.shimmerColor });
           break;
+        }
 
         case 'list':
           // List with avatar and text lines

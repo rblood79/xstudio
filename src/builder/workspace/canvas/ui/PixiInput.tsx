@@ -91,9 +91,6 @@ export const PixiInput = memo(function PixiInput({
 
   // Column 레이아웃용 높이 계산
   const labelHeight = label ? labelPreset.fontSize + sizePreset.gap : 0;
-  const descriptionHeight = (description || (isInvalid && errorMessage))
-    ? descPreset.fontSize + sizePreset.gap
-    : 0;
 
   // Row 레이아웃용 너비 계산
   const labelWidth = label ? label.length * labelPreset.fontSize * 0.6 + sizePreset.gap : 0;

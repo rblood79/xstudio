@@ -131,7 +131,7 @@ export function PixiTooltip({
       <pixiGraphics draw={drawTooltip} />
 
       {/* Tooltip text */}
-      <Text
+      <pixiText
         text={content}
         style={textStyle}
         x={sizePreset.paddingX}

@@ -147,9 +147,6 @@ function getToggleButtonLayout(
   // 테두리 반경 (inline style > size preset)
   const borderRadius = parseCSSSize(style?.borderRadius, undefined, sizePreset.borderRadius);
 
-  // 테두리 너비
-  const borderWidth = parseCSSSize(style?.borderWidth, undefined, 1);
-
   // 색상 (inline style > theme)
   const hasInlineBg = style?.backgroundColor !== undefined;
   const hasInlineColor = style?.color !== undefined;

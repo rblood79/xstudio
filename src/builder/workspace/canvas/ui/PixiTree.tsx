@@ -299,7 +299,7 @@ export function PixiTree({
             )}
 
             {/* Item text */}
-            <Text
+            <pixiText
               text={item.text}
               style={item.isSelected ? selectedTextStyle : textStyle}
               x={indent + sizePreset.chevronSize + 4}
@@ -311,7 +311,7 @@ export function PixiTree({
 
       {/* Empty state */}
       {treeItems.length === 0 && (
-        <Text
+        <pixiText
           text="No items"
           style={
             new TextStyle({

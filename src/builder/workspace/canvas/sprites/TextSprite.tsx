@@ -72,7 +72,6 @@ function parseTextDecoration(decoration: string | undefined): TextDecorationConf
 
 export const TextSprite = memo(function TextSprite({
   element,
-  isSelected,
   onClick,
   onDoubleClick,
 }: TextSpriteProps) {

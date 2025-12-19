@@ -212,7 +212,6 @@ const RadioItem = memo(function RadioItem({
 
 export const PixiRadio = memo(function PixiRadio({
   element,
-  isSelected,
   onChange,
   onClick,
 }: PixiRadioProps) {

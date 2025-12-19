@@ -22,13 +22,6 @@ export interface PixiTagGroupProps {
   onChange?: (elementId: string, value: unknown) => void;
 }
 
-interface TagData {
-  id: string;
-  text: string;
-  isSelected?: boolean;
-  isRemovable?: boolean;
-}
-
 export function PixiTagGroup({
   element,
   isSelected = false,
@@ -105,16 +98,6 @@ export function PixiTagGroup({
     [sizePreset.fontSize]
   );
 
-  // Text style for tags
-  const tagTextStyle = useMemo(
-    () =>
-      new TextStyle({
-        fontSize: sizePreset.fontSize,
-        fill: colorPreset.textColor,
-        fontFamily: 'Inter, system-ui, sans-serif',
-      }),
-    [sizePreset.fontSize, colorPreset.textColor]
-  );
 
   // Draw selection indicator
   const drawSelection = useCallback(
@@ -249,7 +232,7 @@ export function PixiTagGroup({
               }}
               draw={(g) => drawTag(g, pos.width, false, tag.isSelected || false)}
             />
-            <Text
+            <pixiText
               text={tag.text}
               style={
                 new TextStyle({
@@ -280,7 +263,7 @@ export function PixiTagGroup({
 
       {/* Empty state */}
       {tagItems.length === 0 && (
-        <Text
+        <pixiText
           text="No tags"
           style={
             new TextStyle({

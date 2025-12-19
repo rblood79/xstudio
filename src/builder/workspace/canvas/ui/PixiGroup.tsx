@@ -149,7 +149,7 @@ export function PixiGroup({
       {label && (
         <pixiContainer x={0} y={-sizePreset.labelFontSize - sizePreset.labelPadding - 4}>
           <pixiGraphics draw={(g) => drawLabelBadge(g, estimatedLabelWidth)} />
-          <Text
+          <pixiText
             text={label}
             style={labelStyle}
             x={sizePreset.labelPadding}

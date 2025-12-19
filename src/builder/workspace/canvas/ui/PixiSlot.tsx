@@ -183,7 +183,7 @@ export function PixiSlot({
 
           {/* Name with optional required badge */}
           <pixiContainer y={startY + sizePreset.iconSize + sizePreset.gap}>
-            <Text
+            <pixiText
               text={name}
               style={nameStyle}
               x={slotWidth / 2}
@@ -193,7 +193,7 @@ export function PixiSlot({
             {isRequired && (
               <pixiContainer x={slotWidth / 2 + 40} y={-2}>
                 <pixiGraphics draw={drawRequiredBadge} />
-                <Text
+                <pixiText
                   text="Required"
                   style={requiredStyle}
                   x={8}
@@ -204,7 +204,7 @@ export function PixiSlot({
           </pixiContainer>
 
           {/* Description */}
-          <Text
+          <pixiText
             text={description}
             style={descriptionStyle}
             x={slotWidth / 2}

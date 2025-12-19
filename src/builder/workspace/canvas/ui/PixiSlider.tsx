@@ -145,7 +145,6 @@ function createHandleGraphics(size: number, color: number): Graphics {
  */
 export const PixiSlider = memo(function PixiSlider({
   element,
-  isSelected,
   onClick,
   onChange,
 }: PixiSliderProps) {

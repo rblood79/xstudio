@@ -180,7 +180,7 @@ export function PixiPagination({
 
         if (typeof page === 'string') {
           return (
-            <Text
+            <pixiText
               key={`ellipsis-${index}`}
               text="..."
               style={ellipsisStyle}
@@ -194,7 +194,7 @@ export function PixiPagination({
         return (
           <pixiContainer key={page} x={x} y={0}>
             <pixiGraphics draw={(g) => drawPageButton(g, isCurrent)} />
-            <Text
+            <pixiText
               text={String(page)}
               style={pageTextStyle(isCurrent)}
               x={sizePreset.buttonSize / 2}
@@ -210,7 +210,7 @@ export function PixiPagination({
 
       {/* Page info */}
       {showInfo && (
-        <Text
+        <pixiText
           text={`Page ${currentPage} of ${totalPages}`}
           style={infoStyle}
           x={totalWidth / 2}

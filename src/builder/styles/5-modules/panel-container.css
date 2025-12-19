@@ -40,8 +40,10 @@
     opacity: 0;
     pointer-events: none;
 
-    /* 🚀 Phase 11: content-visibility로 렌더링 완전 스킵 */
-    content-visibility: hidden;
+    /* 🚀 Phase 11: content-visibility로 렌더링 스킵 */
+    /* ⚠️ hidden → auto 변경: React Aria 컴포넌트 경고 방지 */
+    content-visibility: auto;
+    contain-intrinsic-size: auto 500px;
   }
 
   /* 🔧 Right 패널 숨김 상태 - absolute로 레이아웃에서 제거 */
@@ -55,8 +57,10 @@
     opacity: 0;
     pointer-events: none;
 
-    /* 🚀 Phase 11: content-visibility로 렌더링 완전 스킵 */
-    content-visibility: hidden;
+    /* 🚀 Phase 11: content-visibility로 렌더링 스킵 */
+    /* ⚠️ hidden → auto 변경: React Aria 컴포넌트 경고 방지 */
+    content-visibility: auto;
+    contain-intrinsic-size: auto 500px;
   }
 
   /* 표시 상태 - relative로 flexbox에 참여 */
@@ -128,8 +132,9 @@
       z-index: -1;
       overflow: hidden;
 
-      /* 🚀 Phase 11: content-visibility로 렌더링 완전 스킵 */
-      content-visibility: hidden;
+      /* 🚀 Phase 11: content-visibility로 렌더링 스킵 */
+      /* ⚠️ hidden → auto 변경: React Aria 컴포넌트 경고 방지 */
+      content-visibility: auto;
       contain-intrinsic-size: var(--panel-width, 233px) auto;
     }
 

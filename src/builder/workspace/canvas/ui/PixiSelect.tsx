@@ -163,7 +163,6 @@ function createSelectBackground(
  */
 export const PixiSelect = memo(function PixiSelect({
   element,
-  isSelected,
   onClick,
   onChange,
 }: PixiSelectProps) {

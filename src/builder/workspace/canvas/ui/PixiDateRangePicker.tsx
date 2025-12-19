@@ -9,7 +9,7 @@
  * - getDateRangePickerColorPreset(): fieldBackgroundColor, rangeBgColor
  */
 
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo } from 'react';
 import { useExtend } from '@pixi/react';
 import { PIXI_COMPONENTS } from '../pixiSetup';
 import type { Graphics as PixiGraphics, TextStyle } from 'pixi.js';
@@ -55,9 +55,9 @@ export function PixiDateRangePicker({
   const calendarColorPreset = useMemo(() => getCalendarColorPreset(variant), [variant]);
 
   // State
-  const today = new Date();
-  const [displayYear, setDisplayYear] = useState(today.getFullYear());
-  const [displayMonth, setDisplayMonth] = useState(today.getMonth());
+  const today = useMemo(() => new Date(), []);
+  const displayYear = today.getFullYear();
+  const displayMonth = today.getMonth();
 
   // Parse dates
   const startDate = useMemo(() => {
@@ -88,7 +88,7 @@ export function PixiDateRangePicker({
   const calendarHeight = calendarSizePreset.padding * 2 + calendarHeaderHeight + calendarWeekdayHeight + calendarGridHeight;
 
   // Get days for both months
-  const getDaysInMonth = (year: number, month: number) => {
+  const getDaysInMonth = useCallback((year: number, month: number) => {
     const firstDay = new Date(year, month, 1).getDay();
     const lastDate = new Date(year, month + 1, 0).getDate();
     const prevMonthLastDate = new Date(year, month, 0).getDate();
@@ -121,12 +121,12 @@ export function PixiDateRangePicker({
     }
 
     return days;
-  };
+  }, [today, startDate, endDate]);
 
-  const leftMonthDays = useMemo(() => getDaysInMonth(displayYear, displayMonth), [displayYear, displayMonth, startDate, endDate, today]);
+  const leftMonthDays = useMemo(() => getDaysInMonth(displayYear, displayMonth), [displayYear, displayMonth, getDaysInMonth]);
   const rightMonth = displayMonth === 11 ? 0 : displayMonth + 1;
   const rightYear = displayMonth === 11 ? displayYear + 1 : displayYear;
-  const rightMonthDays = useMemo(() => getDaysInMonth(rightYear, rightMonth), [rightYear, rightMonth, startDate, endDate, today]);
+  const rightMonthDays = useMemo(() => getDaysInMonth(rightYear, rightMonth), [rightYear, rightMonth, getDaysInMonth]);
 
   // Draw field
   const drawField = useCallback(
@@ -252,7 +252,7 @@ export function PixiDateRangePicker({
           <pixiGraphics draw={drawCalendar} />
 
           {/* Left calendar header */}
-          <Text
+          <pixiText
             text={`${MONTHS_SHORT[displayMonth]} ${displayYear}`}
             style={{ ...calendarDayStyle, fontWeight: '600', fontSize: calendarSizePreset.headerFontSize }}
             x={singleCalendarWidth / 2}
@@ -261,7 +261,7 @@ export function PixiDateRangePicker({
           />
 
           {/* Right calendar header */}
-          <Text
+          <pixiText
             text={`${MONTHS_SHORT[rightMonth]} ${rightYear}`}
             style={{ ...calendarDayStyle, fontWeight: '600', fontSize: calendarSizePreset.headerFontSize }}
             x={singleCalendarWidth + sizePreset.gap + singleCalendarWidth / 2}
@@ -271,7 +271,7 @@ export function PixiDateRangePicker({
 
           {/* Left calendar weekdays */}
           {WEEKDAYS.map((day, index) => (
-            <Text
+            <pixiText
               key={`left-${day}-${index}`}
               text={day}
               style={{ ...calendarDayStyle, fill: calendarColorPreset.weekdayColor, fontSize: calendarSizePreset.fontSize * 0.85 }}
@@ -283,7 +283,7 @@ export function PixiDateRangePicker({
 
           {/* Right calendar weekdays */}
           {WEEKDAYS.map((day, index) => (
-            <Text
+            <pixiText
               key={`right-${day}-${index}`}
               text={day}
               style={{ ...calendarDayStyle, fill: calendarColorPreset.weekdayColor, fontSize: calendarSizePreset.fontSize * 0.85 }}

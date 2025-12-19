@@ -40,7 +40,6 @@ const LABEL_GAP = 8;
 
 export const PixiCheckboxItem = memo(function PixiCheckboxItem({
   element,
-  isSelected,
   onClick,
 }: PixiCheckboxItemProps) {
   useExtend(PIXI_COMPONENTS);

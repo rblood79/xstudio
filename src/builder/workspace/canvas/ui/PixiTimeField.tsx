@@ -162,7 +162,7 @@ export function PixiTimeField({
 
       {/* Time segments */}
       {segments.map((segment, index) => (
-        <Text
+        <pixiText
           key={index}
           text={segment.text}
           style={segment.isSeparator ? separatorStyle : textStyle}

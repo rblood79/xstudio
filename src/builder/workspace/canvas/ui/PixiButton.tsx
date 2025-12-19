@@ -187,13 +187,6 @@ function getButtonLayout(
     sizePreset.borderRadius
   );
 
-  // 테두리 너비
-  const borderWidth = parseCSSSize(
-    style?.borderWidth,
-    undefined,
-    variantColors.border ? 1 : 0
-  );
-
   // 색상 (inline style > variant)
   const hasInlineBg = style?.backgroundColor !== undefined;
   const hasInlineColor = style?.color !== undefined;

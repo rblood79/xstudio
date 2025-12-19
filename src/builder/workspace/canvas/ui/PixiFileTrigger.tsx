@@ -126,7 +126,7 @@ export function PixiFileTrigger({
       <pixiGraphics draw={drawIcon} x={iconX} y={iconY} />
 
       {/* Label */}
-      <Text
+      <pixiText
         text={label}
         style={textStyle}
         x={textX}

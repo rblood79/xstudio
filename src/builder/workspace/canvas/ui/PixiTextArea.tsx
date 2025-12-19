@@ -55,9 +55,6 @@ export function PixiTextArea({
   const fieldWidth = (props.width as number) || 280;
   const fieldHeight = Math.max(sizePreset.minHeight, rows * sizePreset.fontSize * sizePreset.lineHeight + sizePreset.padding * 2);
   const labelHeight = label ? sizePreset.labelFontSize + sizePreset.gap : 0;
-  const descriptionHeight = (description || (isInvalid && errorMessage))
-    ? sizePreset.descriptionFontSize + sizePreset.gap
-    : 0;
 
   // Draw textarea field
   const drawField = useCallback(
@@ -134,7 +131,7 @@ export function PixiTextArea({
     >
       {/* Label */}
       {label && (
-        <Text
+        <pixiText
           text={label}
           style={labelStyle}
           x={0}
@@ -145,7 +142,7 @@ export function PixiTextArea({
       {/* TextArea field */}
       <pixiContainer y={labelHeight}>
         <pixiGraphics draw={drawField} />
-        <Text
+        <pixiText
           text={displayText}
           style={inputStyle}
           x={sizePreset.paddingX}
@@ -155,7 +152,7 @@ export function PixiTextArea({
 
       {/* Description / Error message */}
       {descriptionText && (
-        <Text
+        <pixiText
           text={descriptionText}
           style={descriptionStyle}
           x={0}

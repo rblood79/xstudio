@@ -35,7 +35,6 @@ export interface PixiCheckboxProps {
 // Constants
 // ============================================
 
-const DEFAULT_SIZE = 20;
 const DEFAULT_BORDER_RADIUS = 4;
 const DEFAULT_PRIMARY_COLOR = 0x3b82f6; // blue-500
 const DEFAULT_BORDER_COLOR = 0xd1d5db; // gray-300
@@ -47,7 +46,6 @@ const DEFAULT_TEXT_COLOR = 0x374151; // gray-700
 
 export const PixiCheckbox = memo(function PixiCheckbox({
   element,
-  isSelected,
   onChange,
   onClick,
 }: PixiCheckboxProps) {

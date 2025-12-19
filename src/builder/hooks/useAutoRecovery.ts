@@ -14,7 +14,6 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { performanceMonitor, type PerformanceMetrics } from '../utils/performanceMonitor';
 import { useStore } from '../stores';
-import { historyManager } from '../stores/history';
 import { pageCache } from '../utils/LRUPageCache';
 
 // ============================================
@@ -147,9 +146,8 @@ export function useAutoRecovery(options?: {
           clearAllPages();
         }
 
-        // 2단계: 히스토리 정리
-        console.log('  Step 2: Trimming history...');
-        historyManager.trim(config.historyKeepCount);
+        // 2단계: 히스토리 정리 (trim 메서드 미구현 - 스킵)
+        console.log('  Step 2: History trimming skipped (not implemented)');
 
         // 3단계: LRU 캐시 정리 (현재 페이지 제외)
         console.log('  Step 3: Clearing caches...');
@@ -265,8 +263,8 @@ export async function emergencyRecovery(): Promise<void> {
   console.error('🚨 [EmergencyRecovery] Starting emergency recovery...');
 
   try {
-    // 1. 히스토리 대폭 정리
-    historyManager.trim(20);
+    // 1. 히스토리 대폭 정리 (trim 메서드 미구현 - 스킵)
+    // historyManager.trim(20);
 
     // 2. LRU 캐시 완전 클리어
     pageCache.clear();

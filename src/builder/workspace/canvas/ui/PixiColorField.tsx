@@ -138,7 +138,7 @@ export function PixiColorField({
     >
       {/* Label */}
       {label && (
-        <Text
+        <pixiText
           text={label}
           style={labelStyle}
           x={0}
@@ -154,7 +154,7 @@ export function PixiColorField({
         <pixiGraphics draw={drawSwatch} x={swatchX} y={swatchY} />
 
         {/* Hex value */}
-        <Text
+        <pixiText
           text={value.toUpperCase()}
           style={valueStyle}
           x={textX}

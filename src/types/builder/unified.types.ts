@@ -4,7 +4,7 @@ import { ElementEvent } from "../events/events.types";
 import { TokenValue, DesignToken } from "../theme";
 
 // === 기본 타입 정의 ===
-export interface BaseElementProps {
+export interface BaseElementProps extends Record<string, unknown> {
   id?: string;
   className?: string;
   style?: React.CSSProperties;
@@ -49,7 +49,7 @@ export interface Element {
   id: string;
   customId?: string; // 사용자 정의 ID (예: button_1, input_2) - 이벤트 핸들링, CSS 선택자용
   tag: string;
-  props: ComponentElementProps & Record<string, unknown>;
+  props: Record<string, unknown>;
   parent_id?: string | null;
   order_num?: number;
   page_id?: string | null; // Layout element면 null (layout_id와 상호 배타적)
@@ -494,7 +494,7 @@ export interface NavElementProps extends BaseElementProps {
 // === Slot Element Props (Layout System) ===
 export interface SlotElementProps extends BaseElementProps {
   /** Slot 식별자 (예: "content", "sidebar", "navigation") */
-  name: string;
+  name?: string;
   /** 필수 여부 - true면 Page에서 반드시 채워야 함 */
   required?: boolean;
   /** Slot 설명 (UI 표시용) */

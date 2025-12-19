@@ -150,7 +150,6 @@ function createPlaceholderGraphics(
  */
 export const PixiMaskedFrame = memo(function PixiMaskedFrame({
   element,
-  isSelected,
   onClick,
 }: PixiMaskedFrameProps) {
   useExtend(PIXI_COMPONENTS);

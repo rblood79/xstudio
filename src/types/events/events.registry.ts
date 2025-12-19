@@ -80,7 +80,8 @@ export const IMPLEMENTED_ACTION_TYPES = [
   // Data Management (구현됨)
   "update_state",
   "updateState", // alias for update_state
-  "setState", // alias for update_state
+  "set_state",
+  "setState", // alias for set_state
   "copy_to_clipboard",
   "copyToClipboard", // alias for copy_to_clipboard
 
@@ -89,22 +90,32 @@ export const IMPLEMENTED_ACTION_TYPES = [
   "validateForm", // alias for validate_form
   "reset_form",
   "resetForm", // alias for reset_form
-  "submitForm",
-  "updateFormField",
+  "submit_form",
+  "submitForm", // alias for submit_form
+  "update_form_field",
+  "updateFormField", // alias for update_form_field
 
   // Custom (구현됨)
   "custom_function",
   "customFunction", // alias for custom_function
-  "apiCall",
+  "api_call",
+  "apiCall", // alias for api_call
+  "show_toast",
+  // showToast already above
 
   // Component Interaction (구현됨)
-  "setComponentState",
-  "triggerComponentAction",
+  "set_component_state",
+  "setComponentState", // alias for set_component_state
+  "trigger_component_action",
+  "triggerComponentAction", // alias for trigger_component_action
 
   // Collection Interaction (구현됨)
-  "filterCollection",
-  "selectItem",
-  "clearSelection",
+  "filter_collection",
+  "filterCollection", // alias for filter_collection
+  "select_item",
+  "selectItem", // alias for select_item
+  "clear_selection",
+  "clearSelection", // alias for clear_selection
 
   // Data Panel Integration (구현됨)
   "fetchDataTable",      // DataTable 데이터 fetch

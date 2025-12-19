@@ -145,7 +145,6 @@ function createSampleContent(width: number, itemCount: number): Container {
  */
 export const PixiScrollBox = memo(function PixiScrollBox({
   element,
-  isSelected,
   onClick,
 }: PixiScrollBoxProps) {
   useExtend(PIXI_COMPONENTS);

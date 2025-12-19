@@ -136,7 +136,6 @@ export const PixiMeter = memo(function PixiMeter({
   // 전체 높이 계산 (라벨/값 + 갭 + 바)
   const hasLabelRow = label || showValue;
   const labelRowHeight = hasLabelRow ? sizePreset.fontSize + sizePreset.gap : 0;
-  const totalHeight = labelRowHeight + barHeight;
 
   // 위치
   const posX = parseCSSSize(style?.left, undefined, 0);

@@ -38,7 +38,6 @@ interface TypographySectionProps {
 }
 
 export const TypographySection = memo(function TypographySection({
-  selectedElement,
   styleValues,
 }: TypographySectionProps) {
   const { updateStyle, resetStyles } = useStyleActions();

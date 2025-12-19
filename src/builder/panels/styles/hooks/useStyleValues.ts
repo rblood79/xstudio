@@ -86,33 +86,17 @@ export interface StyleValues {
 }
 
 /**
- * 🚀 Phase 21: 두 StyleValues 객체가 동일한지 비교
- */
-function areStyleValuesEqual(a: StyleValues | null, b: StyleValues | null): boolean {
-  if (a === b) return true;
-  if (!a || !b) return false;
-
-  // 모든 키에 대해 값 비교
-  const keys = Object.keys(a) as (keyof StyleValues)[];
-  return keys.every((key) => a[key] === b[key]);
-}
-
-/**
  * Hook: 모든 스타일 값을 메모이제이션하여 반환
  * 🚀 Phase 20: 1회 파싱으로 성능 최적화
- * 🚀 Phase 21: useMemo 내부에서 직접 안정적인 참조 반환
+ * 🚀 Phase 21: useMemo가 selectedElement 기반으로 메모이제이션 제공
  */
-// 모듈 레벨 캐시 (컴포넌트 외부)
-let prevStyleValues: StyleValues | null = null;
-
 export function useStyleValues(selectedElement: SelectedElement | null): StyleValues | null {
   return useMemo(() => {
     if (!selectedElement) {
-      prevStyleValues = null;
       return null;
     }
 
-    const newValues: StyleValues = {
+    return {
       // Transform
       width: getStyleValue(selectedElement, 'width', 'auto'),
       height: getStyleValue(selectedElement, 'height', 'auto'),
@@ -148,14 +132,6 @@ export function useStyleValues(selectedElement: SelectedElement | null): StyleVa
       textTransform: getStyleValue(selectedElement, 'textTransform', 'none'),
       verticalAlign: getStyleValue(selectedElement, 'verticalAlign', 'baseline'),
     };
-
-    // 🚀 Phase 21: 값이 동일하면 이전 객체 반환 (참조 안정성 유지)
-    if (areStyleValuesEqual(prevStyleValues, newValues)) {
-      return prevStyleValues;
-    }
-
-    prevStyleValues = newValues;
-    return newValues;
   }, [selectedElement]);
 }
 

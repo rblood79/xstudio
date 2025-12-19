@@ -203,7 +203,7 @@ export function PixiDialog({
         <pixiGraphics draw={drawDialog} />
 
         {/* Title */}
-        <Text
+        <pixiText
           text={title}
           style={titleStyle}
           x={sizePreset.padding}
@@ -211,7 +211,7 @@ export function PixiDialog({
         />
 
         {/* Content */}
-        <Text
+        <pixiText
           text={content}
           style={contentStyle}
           x={sizePreset.padding}
@@ -219,7 +219,7 @@ export function PixiDialog({
         />
 
         {/* Cancel button text */}
-        <Text
+        <pixiText
           text="Cancel"
           style={cancelBtnStyle}
           x={cancelBtnX + btnWidth / 2}
@@ -228,7 +228,7 @@ export function PixiDialog({
         />
 
         {/* Confirm button text */}
-        <Text
+        <pixiText
           text="Confirm"
           style={confirmBtnStyle}
           x={confirmBtnX + btnWidth / 2}

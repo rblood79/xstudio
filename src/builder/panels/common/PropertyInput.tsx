@@ -18,6 +18,7 @@ interface PropertyInputProps {
     min?: string | number; // 최소값
     max?: string | number; // 최대값
     disabled?: boolean; // Disable input (read-only)
+    description?: string; // Optional description (not displayed)
 }
 
 export const PropertyInput = memo(function PropertyInput({

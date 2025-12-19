@@ -23,7 +23,6 @@ export interface PixiCalendarProps {
   element: Element;
   isSelected?: boolean;
   onClick?: (elementId: string) => void;
-  onChange?: (elementId: string, value: unknown) => void;
 }
 
 const WEEKDAYS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
@@ -37,7 +36,6 @@ export function PixiCalendar({
   element,
   isSelected = false,
   onClick,
-  onChange,
 }: PixiCalendarProps) {
   useExtend(PIXI_COMPONENTS);
   const props = element.props || {};
@@ -251,7 +249,7 @@ export function PixiCalendar({
       return (
         <pixiContainer key={index} x={x} y={y}>
           <pixiGraphics draw={drawCell} />
-          <Text
+          <pixiText
             text={String(dayInfo.day)}
             style={{ ...dayStyle, fill: textColor }}
             anchor={0.5}
@@ -282,7 +280,7 @@ export function PixiCalendar({
       </pixiContainer>
 
       {/* Header: Month Year */}
-      <Text
+      <pixiText
         text={`${MONTHS[displayMonth]} ${displayYear}`}
         style={headerStyle}
         x={calendarWidth / 2}
@@ -303,7 +301,7 @@ export function PixiCalendar({
 
       {/* Weekday headers */}
       {WEEKDAYS.map((day, index) => (
-        <Text
+        <pixiText
           key={day + index}
           text={day}
           style={weekdayStyle}

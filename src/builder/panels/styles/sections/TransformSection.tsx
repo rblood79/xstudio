@@ -28,7 +28,6 @@ interface TransformSectionProps {
 
 // 🚀 Phase 21: 커스텀 비교 함수 - 실제 사용하는 스타일 값만 비교
 export const TransformSection = memo(function TransformSection({
-  selectedElement,
   styleValues,
 }: TransformSectionProps) {
   const { updateStyle, resetStyles } = useStyleActions();

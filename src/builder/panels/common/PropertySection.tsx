@@ -25,6 +25,7 @@ interface PropertySectionProps {
   id?: string; // Section ID for collapse state persistence
   defaultExpanded?: boolean;
   onReset?: () => void; // Reset button handler
+  icon?: React.ComponentType<{ size?: number; strokeWidth?: number; color?: string }>; // Optional icon (not displayed)
 }
 
 export const PropertySection = memo(function PropertySection({

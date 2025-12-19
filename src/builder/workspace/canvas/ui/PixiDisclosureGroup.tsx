@@ -27,13 +27,6 @@ export interface PixiDisclosureGroupProps {
   onChange?: (elementId: string, value: unknown) => void;
 }
 
-interface DisclosureItemState {
-  id: string;
-  title: string;
-  content: string;
-  isExpanded: boolean;
-}
-
 /**
  * PixiDisclosureGroup - Accordion-style disclosure group
  */
@@ -161,6 +154,27 @@ export function PixiDisclosureGroup({
     [sizePreset, colorPreset, containerWidth]
   );
 
+  // Pre-calculate Y positions (avoid mutation during render) - must be before early return
+  const itemPositions = useMemo(() => {
+    if (childItems.length === 0) return [];
+    return childItems.reduce<number[]>((positions, _item, index) => {
+      const prevY = index === 0 ? sizePreset.padding : positions[index - 1];
+      let currentY = prevY;
+
+      if (index > 0) {
+        const prevItem = childItems[index - 1];
+        const prevExpanded = expandedIds.has(prevItem.id);
+        currentY += triggerHeight;
+        if (prevExpanded) {
+          currentY += panelHeight + sizePreset.gap;
+        }
+        currentY += itemSpacing;
+      }
+
+      return [...positions, currentY];
+    }, []);
+  }, [childItems, expandedIds, triggerHeight, panelHeight, sizePreset.padding, sizePreset.gap, itemSpacing]);
+
   // Empty state
   if (childItems.length === 0) {
     const emptyStyle: Partial<TextStyle> = {
@@ -176,7 +190,7 @@ export function PixiDisclosureGroup({
         onpointertap={() => onClick?.(element.id)}
       >
         <pixiGraphics draw={drawContainer} />
-        <Text
+        <pixiText
           text="No items"
           style={emptyStyle}
           x={containerWidth / 2}
@@ -187,9 +201,6 @@ export function PixiDisclosureGroup({
     );
   }
 
-  // Render items
-  let currentY = sizePreset.padding;
-
   return (
     <pixiContainer>
       {/* Container background */}
@@ -197,18 +208,9 @@ export function PixiDisclosureGroup({
 
       {/* Disclosure items */}
       {childItems.map((item, index) => {
-        const itemY = currentY;
+        const itemY = itemPositions[index] ?? sizePreset.padding;
         const isItemExpanded = expandedIds.has(item.id);
         const isItemHovered = hoveredId === item.id;
-
-        // Update Y position for next item
-        currentY += triggerHeight;
-        if (isItemExpanded) {
-          currentY += panelHeight + sizePreset.gap;
-        }
-        if (index < childItems.length - 1) {
-          currentY += itemSpacing;
-        }
 
         // Draw item trigger
         const drawItemTrigger = (g: PixiGraphics) => {
@@ -276,7 +278,7 @@ export function PixiDisclosureGroup({
             <pixiGraphics draw={drawItemTrigger} />
 
             {/* Title */}
-            <Text
+            <pixiText
               text={item.title}
               style={titleStyle}
               x={sizePreset.padding * 2 + sizePreset.chevronSize + sizePreset.gap}
@@ -285,7 +287,7 @@ export function PixiDisclosureGroup({
 
             {/* Panel content (when expanded) */}
             {isItemExpanded && (
-              <Text
+              <pixiText
                 text={item.content}
                 style={contentStyle}
                 x={sizePreset.panelIndent}

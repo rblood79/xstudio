@@ -13,6 +13,7 @@ interface PropertySwitchProps {
     strokeWidth?: number;
   }>;
   className?: string;
+  description?: string; // Optional description (not displayed)
 }
 
 export const PropertySwitch = memo(function PropertySwitch({

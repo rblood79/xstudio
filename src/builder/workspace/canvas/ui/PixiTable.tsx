@@ -287,7 +287,7 @@ export function PixiTable({
               {colIndex > 0 && <pixiGraphics draw={(g) => drawColumnSeparator(g, headerHeight)} />}
 
               {/* Header text */}
-              <Text
+              <pixiText
                 text={col.label}
                 style={headerTextStyle}
                 x={sizePreset.cellPaddingX}
@@ -346,7 +346,7 @@ export function PixiTable({
                   )}
 
                   {/* Cell text */}
-                  <Text
+                  <pixiText
                     text={cellValue}
                     style={row.isSelected ? selectedCellTextStyle : cellTextStyle}
                     x={sizePreset.cellPaddingX}
@@ -361,7 +361,7 @@ export function PixiTable({
 
       {/* Empty state */}
       {rows.length === 0 && (
-        <Text
+        <pixiText
           text="No data"
           style={
             new TextStyle({

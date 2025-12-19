@@ -10,6 +10,7 @@ interface PropertyCustomIdProps {
   elementId: string; // Current element ID (to exclude from uniqueness check)
   placeholder?: string;
   className?: string;
+  onChange?: (newCustomId: string) => void; // Not used internally (for API compatibility)
 }
 
 export const PropertyCustomId = memo(function PropertyCustomId({

@@ -178,7 +178,7 @@ export function PixiPopover({
 
       {/* Title (optional) */}
       {title && (
-        <Text
+        <pixiText
           text={title}
           style={titleStyle}
           x={sizePreset.padding}
@@ -187,7 +187,7 @@ export function PixiPopover({
       )}
 
       {/* Content */}
-      <Text
+      <pixiText
         text={content}
         style={contentStyle}
         x={sizePreset.padding}

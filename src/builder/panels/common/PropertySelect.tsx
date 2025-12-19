@@ -21,6 +21,7 @@ interface PropertySelectProps {
         strokeWidth?: number;
     }>;
     className?: string;
+    description?: string; // Optional description (not displayed)
 }
 
 // 🚀 Phase 21: memo + 커스텀 비교 함수 적용

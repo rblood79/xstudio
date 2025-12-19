@@ -116,7 +116,7 @@ export function PixiForm({
       <pixiGraphics draw={drawFormIcon} />
 
       {/* Form label indicator */}
-      <Text
+      <pixiText
         text="Form"
         style={labelStyle}
         x={sizePreset.padding}

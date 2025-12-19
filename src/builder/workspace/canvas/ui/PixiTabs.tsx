@@ -22,7 +22,7 @@ import {
 } from "pixi.js";
 import type { Element } from "../../../../types/core/store.types";
 import type { CSSStyle } from "../sprites/styleConverter";
-import { cssColorToHex, parseCSSSize } from "../sprites/styleConverter";
+import { parseCSSSize } from "../sprites/styleConverter";
 import {
   getTabsSizePreset,
   getTabsColorPreset,

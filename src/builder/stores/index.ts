@@ -125,20 +125,35 @@ export const useSelectedElementData = (): SelectedElement | null => {
 /**
  * Inspector 액션 훅 (스타일, 속성, 이벤트 업데이트)
  * 기존 useInspectorState의 액션들을 대체
+ * 🚀 개별 selector로 분리하여 무한 루프 방지
  */
-export const useInspectorActions = () =>
-  useStore((state) => ({
-    updateStyle: state.updateSelectedStyle,
-    updateStyles: state.updateSelectedStyles,
-    updateProperty: state.updateSelectedProperty,
-    updateProperties: state.updateSelectedProperties,
-    updateCustomId: state.updateSelectedCustomId,
-    updateDataBinding: state.updateSelectedDataBinding,
-    updateEvents: state.updateSelectedEvents,
-    addEvent: state.addSelectedEvent,
-    updateEvent: state.updateSelectedEvent,
-    removeEvent: state.removeSelectedEvent,
-  }));
+export const useUpdateStyle = () => useStore((state) => state.updateSelectedStyle);
+export const useUpdateStyles = () => useStore((state) => state.updateSelectedStyles);
+export const useUpdateProperty = () => useStore((state) => state.updateSelectedProperty);
+export const useUpdateProperties = () => useStore((state) => state.updateSelectedProperties);
+export const useUpdateCustomId = () => useStore((state) => state.updateSelectedCustomId);
+export const useUpdateDataBinding = () => useStore((state) => state.updateSelectedDataBinding);
+export const useUpdateEvents = () => useStore((state) => state.updateSelectedEvents);
+export const useAddEvent = () => useStore((state) => state.addSelectedEvent);
+export const useUpdateEvent = () => useStore((state) => state.updateSelectedEvent);
+export const useRemoveEvent = () => useStore((state) => state.removeSelectedEvent);
+
+/**
+ * 🔧 레거시 호환: useInspectorActions (개별 hook 조합)
+ * 새 코드에서는 개별 hook 사용 권장
+ */
+export const useInspectorActions = () => ({
+  updateStyle: useUpdateStyle(),
+  updateStyles: useUpdateStyles(),
+  updateProperty: useUpdateProperty(),
+  updateProperties: useUpdateProperties(),
+  updateCustomId: useUpdateCustomId(),
+  updateDataBinding: useUpdateDataBinding(),
+  updateEvents: useUpdateEvents(),
+  addEvent: useAddEvent(),
+  updateEvent: useUpdateEvent(),
+  removeEvent: useRemoveEvent(),
+});
 
 // ============================================
 // 🚀 Performance Optimized Selectors (Phase 1)

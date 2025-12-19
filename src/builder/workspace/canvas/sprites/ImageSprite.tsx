@@ -44,7 +44,7 @@ const PLACEHOLDER_COLOR = 0xe5e7eb; // gray-200
 // Component
 // ============================================
 
-export const ImageSprite = memo(function ImageSprite({ element, isSelected, onClick }: ImageSpriteProps) {
+export const ImageSprite = memo(function ImageSprite({ element, onClick }: ImageSpriteProps) {
   useExtend(PIXI_COMPONENTS);
   const style = element.props?.style as CSSStyle | undefined;
   const converted = useMemo(() => convertStyle(style), [style]);

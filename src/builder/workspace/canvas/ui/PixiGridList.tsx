@@ -22,12 +22,6 @@ export interface PixiGridListProps {
   onChange?: (elementId: string, value: unknown) => void;
 }
 
-interface GridListItemData {
-  id: string;
-  text: string;
-  isSelected?: boolean;
-}
-
 export function PixiGridList({
   element,
   isSelected = false,
@@ -198,7 +192,7 @@ export function PixiGridList({
                 drawItemBg(g, itemWidth, sizePreset.itemMinHeight, false, isItemSelected)
               }
             />
-            <Text
+            <pixiText
               text={item.text}
               style={isItemSelected ? selectedTextStyle : textStyle}
               x={sizePreset.itemPaddingX}
@@ -210,7 +204,7 @@ export function PixiGridList({
 
       {/* Empty state */}
       {childItems.length === 0 && (
-        <Text
+        <pixiText
           text="No items"
           style={
             new TextStyle({

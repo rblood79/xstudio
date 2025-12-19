@@ -187,7 +187,6 @@ function createItemView(
  */
 export const PixiSwitcher = memo(function PixiSwitcher({
   element,
-  isSelected,
   onClick,
   onChange,
 }: PixiSwitcherProps) {

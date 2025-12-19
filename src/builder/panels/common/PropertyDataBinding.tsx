@@ -264,7 +264,7 @@ export const PropertyDataBinding = memo(function PropertyDataBinding({
           >
             <Button className="react-aria-Button">
               
-              <SelectValue placeholder="소스 선택..." />
+              <SelectValue>{"소스 선택..."}</SelectValue>
               <span aria-hidden="true" className="select-chevron">
                 <ChevronDown size={iconProps.size} />
               </span>
@@ -298,7 +298,7 @@ export const PropertyDataBinding = memo(function PropertyDataBinding({
                 isDisabled={disabled}
               >
                 <Button className="react-aria-Button">
-                  <SelectValue placeholder="이름 선택..." />
+                  <SelectValue>{"이름 선택..."}</SelectValue>
                   <span aria-hidden="true" className="select-chevron">
                     <ChevronDown size={iconProps.size} />
                   </span>

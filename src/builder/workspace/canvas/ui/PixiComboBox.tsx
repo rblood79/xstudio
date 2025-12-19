@@ -13,11 +13,10 @@
 
 import { useExtend } from '@pixi/react';
 import { PIXI_COMPONENTS } from '../pixiSetup';
-import { memo, useCallback, useMemo, useState } from "react";
+import { memo, useCallback, useMemo } from "react";
 import {
   Graphics as PixiGraphics,
   TextStyle,
-  CanvasTextMetrics,
 } from "pixi.js";
 import type { Element } from "../../../../types/core/store.types";
 import type { CSSStyle } from "../sprites/styleConverter";
@@ -90,10 +89,6 @@ export const PixiComboBox = memo(function PixiComboBox({
   const sizePreset = useMemo(() => getComboBoxSizePreset(size), [size]);
   const colorPreset = useMemo(() => getComboBoxColorPreset(variant), [variant]);
 
-  // hover 상태 관리
-  const [isButtonHovered, setIsButtonHovered] = useState(false);
-  const [hoveredItemIndex, setHoveredItemIndex] = useState<number | null>(null);
-
   // 위치
   const posX = parseCSSSize(style?.left, undefined, 0);
   const posY = parseCSSSize(style?.top, undefined, 0);
@@ -136,9 +131,7 @@ export const PixiComboBox = memo(function PixiComboBox({
     (g: PixiGraphics) => {
       g.clear();
       const btnSize = sizePreset.buttonSize;
-      const bgColor = isButtonHovered
-        ? colorPreset.buttonHoverBgColor
-        : colorPreset.buttonBgColor;
+      const bgColor = colorPreset.buttonBgColor;
 
       g.roundRect(0, 0, btnSize, btnSize, 4);
       g.fill({ color: bgColor });
@@ -153,7 +146,7 @@ export const PixiComboBox = memo(function PixiComboBox({
       g.lineTo(cx + chevronSize / 2, cy - chevronSize / 4);
       g.stroke();
     },
-    [isButtonHovered, colorPreset, sizePreset.buttonSize]
+    [colorPreset, sizePreset.buttonSize]
   );
 
   // 드롭다운 배경 그리기
@@ -172,16 +165,13 @@ export const PixiComboBox = memo(function PixiComboBox({
 
   // 아이템 배경 그리기
   const drawItemBackground = useCallback(
-    (g: PixiGraphics, item: ComboBoxItemData, index: number) => {
+    (g: PixiGraphics, item: ComboBoxItemData) => {
       g.clear();
       const itemHeight = sizePreset.itemPaddingY * 2 + sizePreset.fontSize;
-      const isHovered = hoveredItemIndex === index;
 
       let bgColor = 0x00000000; // 투명
       if (item.isSelected) {
         bgColor = colorPreset.itemSelectedBgColor;
-      } else if (isHovered && !item.isDisabled) {
-        bgColor = colorPreset.itemHoverBgColor;
       }
 
       if (bgColor !== 0x00000000) {
@@ -195,7 +185,7 @@ export const PixiComboBox = memo(function PixiComboBox({
         g.fill({ color: bgColor });
       }
     },
-    [hoveredItemIndex, colorPreset, sizePreset]
+    [colorPreset, sizePreset]
   );
 
   // 텍스트 스타일
@@ -304,7 +294,7 @@ export const PixiComboBox = memo(function PixiComboBox({
               >
                 {/* 아이템 배경 */}
                 <pixiGraphics
-                  draw={(g) => drawItemBackground(g, item, index)}
+                  draw={(g) => drawItemBackground(g, item)}
                 />
 
                 {/* 아이템 텍스트 */}

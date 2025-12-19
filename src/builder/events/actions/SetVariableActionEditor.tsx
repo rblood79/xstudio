@@ -86,7 +86,7 @@ export function SetVariableActionEditor({
             onSelectionChange={(key) => updateVariableName(key as string)}
           >
             <Button className="select-trigger">
-              <SelectValue placeholder="Select variable..." />
+              <SelectValue>{"Select variable..."}</SelectValue>
             </Button>
             <Popover className="select-popover">
               <ListBox className="select-listbox">

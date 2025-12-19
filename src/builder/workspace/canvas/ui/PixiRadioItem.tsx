@@ -40,7 +40,6 @@ const LABEL_GAP = 8;
 
 export const PixiRadioItem = memo(function PixiRadioItem({
   element,
-  isSelected,
   onClick,
 }: PixiRadioItemProps) {
   useExtend(PIXI_COMPONENTS);

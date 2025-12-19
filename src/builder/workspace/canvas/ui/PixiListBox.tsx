@@ -18,13 +18,12 @@ import { memo, useCallback, useMemo, useRef, useEffect } from "react";
 import {
   Graphics as PixiGraphics,
   TextStyle,
-  CanvasTextMetrics,
   Container as PixiContainer,
 } from "pixi.js";
 import { ScrollBox } from "@pixi/ui";
 import type { Element } from "../../../../types/core/store.types";
 import type { CSSStyle } from "../sprites/styleConverter";
-import { cssColorToHex, parseCSSSize } from "../sprites/styleConverter";
+import { parseCSSSize } from "../sprites/styleConverter";
 import {
   getListBoxSizePreset,
   getListBoxColorPreset,

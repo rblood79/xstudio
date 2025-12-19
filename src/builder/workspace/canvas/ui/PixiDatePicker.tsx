@@ -9,7 +9,7 @@
  * - getDatePickerColorPreset(): fieldBackgroundColor, buttonBackgroundColor
  */
 
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo } from 'react';
 import { useExtend } from '@pixi/react';
 import { PIXI_COMPONENTS } from '../pixiSetup';
 import type { Graphics as PixiGraphics, TextStyle } from 'pixi.js';
@@ -53,10 +53,10 @@ export function PixiDatePicker({
   const calendarSizePreset = useMemo(() => getCalendarSizePreset(size), [size]);
   const calendarColorPreset = useMemo(() => getCalendarColorPreset(variant), [variant]);
 
-  // State for displayed month
-  const today = new Date();
-  const [displayYear, setDisplayYear] = useState(today.getFullYear());
-  const [displayMonth, setDisplayMonth] = useState(today.getMonth());
+  // Display month (static - no navigation implemented yet)
+  const today = useMemo(() => new Date(), []);
+  const displayYear = today.getFullYear();
+  const displayMonth = today.getMonth();
 
   // Parse selected date
   const selectedDate = useMemo(() => {
@@ -190,7 +190,7 @@ export function PixiDatePicker({
     >
       {/* Date field */}
       <pixiGraphics draw={drawField} />
-      <Text
+      <pixiText
         text={displayText}
         style={fieldTextStyle}
         x={sizePreset.fieldPadding}
@@ -203,7 +203,7 @@ export function PixiDatePicker({
           <pixiGraphics draw={drawCalendar} />
 
           {/* Month/Year header */}
-          <Text
+          <pixiText
             text={`${MONTHS_SHORT[displayMonth]} ${displayYear}`}
             style={{ ...calendarDayStyle, fontWeight: '600', fontSize: calendarSizePreset.headerFontSize }}
             x={calendarWidth / 2}
@@ -213,7 +213,7 @@ export function PixiDatePicker({
 
           {/* Weekday headers */}
           {WEEKDAYS.map((day, index) => (
-            <Text
+            <pixiText
               key={day + index}
               text={day}
               style={{ ...calendarDayStyle, fill: calendarColorPreset.weekdayColor, fontSize: calendarSizePreset.fontSize * 0.85 }}

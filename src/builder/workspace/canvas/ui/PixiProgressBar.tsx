@@ -120,7 +120,6 @@ function createFillGraphics(
  */
 export const PixiProgressBar = memo(function PixiProgressBar({
   element,
-  isSelected,
   onClick,
 }: PixiProgressBarProps) {
   useExtend(PIXI_COMPONENTS);

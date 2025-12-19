@@ -199,7 +199,7 @@ export function PixiToast({
       <pixiGraphics draw={drawIcon} x={iconX} y={iconY} />
 
       {/* Message */}
-      <Text
+      <pixiText
         text={message}
         style={textStyle}
         x={textX}

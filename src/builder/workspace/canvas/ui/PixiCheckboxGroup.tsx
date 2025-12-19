@@ -226,7 +226,6 @@ const CheckboxItem = memo(function CheckboxItem({
 
 export const PixiCheckboxGroup = memo(function PixiCheckboxGroup({
   element,
-  isSelected,
   onChange,
   onClick,
 }: PixiCheckboxGroupProps) {

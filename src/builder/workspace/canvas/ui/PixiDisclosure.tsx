@@ -173,7 +173,7 @@ export function PixiDisclosure({
       <pixiGraphics draw={drawTrigger} />
 
       {/* Title text */}
-      <Text
+      <pixiText
         text={title}
         style={titleStyle}
         x={sizePreset.padding * 2 + sizePreset.chevronSize + sizePreset.gap}
@@ -184,7 +184,7 @@ export function PixiDisclosure({
       {isExpanded && (
         <pixiContainer y={triggerHeight + sizePreset.gap}>
           <pixiGraphics draw={drawPanel} />
-          <Text
+          <pixiText
             text={content}
             style={contentStyle}
             x={sizePreset.panelIndent}

@@ -28,7 +28,6 @@ interface AppearanceSectionProps {
 
 // 🚀 Phase 21: 커스텀 비교 함수 - 실제 사용하는 스타일 값만 비교
 export const AppearanceSection = memo(function AppearanceSection({
-  selectedElement,
   styleValues,
 }: AppearanceSectionProps) {
   const { updateStyle, resetStyles } = useStyleActions();
