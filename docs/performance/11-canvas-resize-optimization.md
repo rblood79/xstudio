@@ -2,8 +2,7 @@
 
 > **작성일**: 2025-12-19
 > **상태**: 계획 (Plan)
-> **관련 문서**: [10-webgl-builder-architecture.md](./10-webgl-builder-architecture.md) | [task.md](./task.md)
-> **목표**: 패널 토글 시 Canvas resize 0회, 60fps 유지
+> **관련 문서**: [10-webgl-builder-architecture.md](./10-webgl-builder-architecture.md) | [task.md](./task.md) > **목표**: 패널 토글 시 Canvas resize 0회, 60fps 유지
 
 ---
 
@@ -15,12 +14,12 @@
 
 **iframe vs WebGL 비교**:
 
-| 구분 | iframe 모드 | WebGL 모드 |
-|------|------------|------------|
+| 구분           | iframe 모드           | WebGL 모드           |
+| -------------- | --------------------- | -------------------- |
 | 패널 열기/닫기 | CSS transition만 발생 | Canvas resize 트리거 |
-| 프레임 드랍 | 없음 | 심각 (300ms+) |
-| 내부 객체 | DOM 유지 | GPU 버퍼 재생성 |
-| 사용자 경험 | 부드러움 | 끊김/버벅임 |
+| 프레임 드랍    | 없음                  | 심각 (300ms+)        |
+| 내부 객체      | DOM 유지              | GPU 버퍼 재생성      |
+| 사용자 경험    | 부드러움              | 끊김/버벅임          |
 
 ### 1.2 근본 원인
 
@@ -41,20 +40,36 @@ Panel Toggle → CSS Transition (0.3s) → Container 크기 변화
 ❌ 증상 완화: resize 타이밍 조절 (setTimeout, debounce, transitionend)
    → 여전히 resize 발생, 근본 해결 아님
 
-✅ 근본 해결: Canvas를 레이아웃에서 완전 분리
+✅ 근본 해결: Workspace에 position: fixed 적용 (단 1곳 수정)
    → Panel 토글 시 resize 0회
    → Figma, Webflow, Framer가 사용하는 방식
 ```
 
-### 1.4 목표 지표
+### 1.4 핵심 해결책 (TL;DR)
 
-| 지표 | Before | After (목표) |
-|------|--------|-------------|
-| 패널 토글 시 resize | 10+ 회 | **0회** |
-| 프레임 드랍 | 심각 | **없음** |
-| 평균 프레임 시간 | 100ms+ | **<16ms** |
-| FPS | <30 | **>55** |
-| Framebuffer 재생성 | 매번 | **없음** |
+```css
+/* src/builder/workspace/Workspace.css */
+.workspace {
+  position: fixed;
+  top: 48px;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 0;
+}
+```
+
+**이것만으로 resize 0회 달성** - 나머지는 선택적 최적화
+
+### 1.5 목표 지표
+
+| 지표                | Before | After (목표) |
+| ------------------- | ------ | ------------ |
+| 패널 토글 시 resize | 10+ 회 | **0회**      |
+| 프레임 드랍         | 심각   | **없음**     |
+| 평균 프레임 시간    | 100ms+ | **<16ms**    |
+| FPS                 | <30    | **>55**      |
+| Framebuffer 재생성  | 매번   | **없음**     |
 
 ---
 
@@ -65,6 +80,7 @@ Panel Toggle → CSS Transition (0.3s) → Container 크기 변화
 > Sources: [Figma Blog - Keeping Figma Fast](https://www.figma.com/blog/keeping-figma-fast/), [Building a professional design tool](https://www.figma.com/blog/building-a-professional-design-tool-on-the-web/)
 
 **핵심 전략**:
+
 - **Fixed Canvas + Viewport Clipping**: Canvas는 고정 크기, 보이는 영역만 클리핑
 - **Tile-based Rendering**: 타일 단위로 렌더링하여 필요한 부분만 업데이트
 - **C++ → WebAssembly**: asm.js로 렌더링 성능 극대화
@@ -85,6 +101,7 @@ Panel Toggle → CSS Transition (0.3s) → Container 크기 변화
 > Sources: [PixiJS Performance Tips](https://pixijs.com/8.x/guides/concepts/performance-tips), [PixiJS Optimization Guide](https://medium.com/@turkmergin/maximising-performance-a-deep-dive-into-pixijs-optimization-6689688ead93)
 
 **Resize 관련**:
+
 ```javascript
 // ❌ Anti-pattern: 빈번한 resize
 renderer.resize(width, height); // 매우 비싼 연산 - Framebuffer 재생성
@@ -94,6 +111,7 @@ renderer.resize(width, height); // 매우 비싼 연산 - Framebuffer 재생성
 ```
 
 **추가 최적화**:
+
 - `cacheAsBitmap`: 정적 콘텐츠를 GPU 텍스처로 캐싱
 - Culling: 화면 밖 객체는 렌더링하지 않음
 - Batching: Sprite sheet로 draw call 최소화
@@ -130,6 +148,7 @@ renderer.resize(width, height); // 매우 비싼 연산 - Framebuffer 재생성
 ```
 
 **현재 파일 구조**:
+
 - `src/builder/styles/4-layout/canvas.css`: Grid 레이아웃 정의
 - `src/builder/workspace/Workspace.tsx`: ResizeObserver로 크기 추적
 - `src/builder/workspace/canvas/BuilderCanvas.tsx`: CanvasSmoothResizeBridge
@@ -190,249 +209,136 @@ cameraContainer.y = panOffset.y + workableArea.top;
 
 ### 4.1 Phase 요약
 
-| Phase | 목표 | 유형 | 예상 효과 |
-|-------|------|------|----------|
-| **A** | CSS 레이아웃 분리 | 🔴 근본 해결 | resize 제거 |
-| **B** | Canvas 고정 크기 | 🔴 근본 해결 | Framebuffer 재생성 제거 |
-| **C** | 뷰포트 오프셋 보정 | 🔴 근본 해결 | UX 정상화 |
-| **D** | 윈도우 resize만 처리 | 🟡 안정화 | 브라우저 resize 대응 |
-| **E** | 메모리 풀링 | 🟢 추가 최적화 | GC 부담 감소 |
-| **F** | 정적 요소 캐싱 | 🟢 추가 최적화 | 렌더링 성능 향상 |
-| **G** | 상태 관리 분리 | 🟢 추가 최적화 | 불필요한 리렌더 제거 |
-| **H** | 벤치마크 및 검증 | 🔵 검증 | 성능 기준 확립 |
+| Phase | 목표                      | 유형             | 예상 효과            |
+| ----- | ------------------------- | ---------------- | -------------------- |
+| **A** | Workspace position: fixed | 🔴 **핵심 해결** | resize 0회 달성      |
+| **B** | 뷰포트 오프셋 보정        | 🟡 선택적        | 좌표 변환 정확도     |
+| **C** | Canvas 고정 크기          | 🟡 선택적        | 추가 최적화          |
+| **D** | 윈도우 resize만 처리      | 🟡 안정화        | 브라우저 resize 대응 |
+| **E** | 메모리 풀링               | 🟢 추가 최적화   | GC 부담 감소         |
+| **F** | 정적 요소 캐싱            | 🟢 추가 최적화   | 렌더링 성능 향상     |
+| **G** | 상태 관리 분리            | 🟢 추가 최적화   | 불필요한 리렌더 제거 |
+| **H** | 벤치마크 및 검증          | 🔵 검증          | 성능 기준 확립       |
 
-### 4.2 Phase 의존성
+### 4.2 핵심 인사이트
+
+> **단 1곳 수정으로 근본 문제 해결 가능**
 
 ```
-Phase A (레이아웃 분리)
-    │
-    ├──→ Phase B (Canvas 고정)
-    │        │
-    │        └──→ Phase C (뷰포트 보정)
-    │                 │
-    │                 └──→ Phase D (윈도우 resize)
-    │
-    └──→ Phase G (상태 분리) ←── 병렬 가능
-
-Phase E (메모리 풀링) ←── 독립적, 언제든 가능
-
-Phase F (정적 캐싱) ←── 독립적, 언제든 가능
-
-Phase H (벤치마크) ←── 모든 Phase 전후 측정
+기존 문서: Phase A(4개 파일) → Phase B(2개 파일) → Phase C(새 훅 생성)
+단순화:    Workspace.css 1곳만 수정
 ```
+
+`position: fixed`가 적용되면 요소가 normal flow에서 벗어나므로:
+
+- `grid-area: main`은 무시됨 (제거 불필요)
+- Header, Panel 등 다른 요소 수정 불필요
+- 패널 토글이 workspace 크기에 영향 없음
 
 ### 4.3 구현 순서 권장
 
-| 순서 | Phase | 이유 |
-|------|-------|------|
-| 1️⃣ | **H (벤치마크)** | 현재 상태 기준선 측정 |
-| 2️⃣ | **A → B → C** | 근본 해결 (순차적 의존성) |
-| 3️⃣ | **D** | 윈도우 resize 안정화 |
-| 4️⃣ | **H** | 개선 효과 검증 |
-| 5️⃣ | **E, F, G** | 추가 최적화 (병렬 가능) |
-| 6️⃣ | **H** | 최종 검증 |
+| 순서 | Phase            | 이유                         |
+| ---- | ---------------- | ---------------------------- |
+| 1️⃣   | **H (벤치마크)** | 현재 상태 기준선 측정        |
+| 2️⃣   | **A (핵심)**     | 1곳 수정으로 resize 0회 달성 |
+| 3️⃣   | **H**            | 개선 효과 검증               |
+| 4️⃣   | **B, C, D**      | 필요시 추가 작업             |
+| 5️⃣   | **E, F, G**      | 추가 최적화 (선택적)         |
 
 ---
 
-## 5. Phase A: CSS 레이아웃 분리
+## 5. Phase A: Workspace Fixed 배치 (핵심)
 
 ### 5.1 목표
 
-Canvas를 Grid/Flex 레이아웃에서 완전히 분리하여 패널 토글이 Canvas 크기에 영향을 주지 않도록 함
+Workspace를 `position: fixed`로 변경하여 Grid 레이아웃에서 분리
 
 ### 5.2 변경 파일
 
-| 파일 | 변경 내용 |
-|------|----------|
-| `src/builder/styles/4-layout/app.css` | Grid → position 기반 레이아웃 |
-| `src/builder/styles/4-layout/canvas.css` | main 영역 fixed 처리 |
-| `src/builder/styles/5-modules/panel-container.css` | 패널 fixed 오버레이 |
-| `src/builder/workspace/Workspace.css` | workspace fixed 처리 |
+| 파일                                  | 변경 내용                                   |
+| ------------------------------------- | ------------------------------------------- |
+| `src/builder/workspace/Workspace.css` | **position: fixed 추가 (유일한 필수 변경)** |
 
 ### 5.3 구현 상세
-
-#### A-1. 전체 레이아웃 구조 변경
-
-```css
-/* src/builder/styles/4-layout/app.css */
-
-/* 기존 */
-.app {
-  display: grid;
-  grid-template-areas:
-    "header header header"
-    "sidebar main inspector"
-    "footer footer footer";
-  grid-template-columns: auto 1fr auto;
-}
-
-/* 개선 */
-.app {
-  position: relative;
-  width: 100vw;
-  height: 100vh;
-  overflow: hidden;
-}
-
-.app header {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: var(--header-height, 48px);
-  z-index: 100;
-}
-```
-
-#### A-2. Workspace (Canvas 영역) 고정
 
 ```css
 /* src/builder/workspace/Workspace.css */
 
+/* 기존 */
 .workspace {
-  position: fixed;
-  top: var(--header-height, 48px);
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 1;
-  /* 패널과 완전히 독립 - 크기 변경 없음 */
-}
-
-.canvas-container {
+  grid-area: main;
+  position: relative;
   width: 100%;
   height: 100%;
+  overflow: hidden;
 }
-```
 
-#### A-3. 패널을 오버레이로 배치
-
-```css
-/* src/builder/styles/5-modules/panel-container.css */
-
-.sidebar {
-  position: fixed;
-  top: var(--header-height, 48px);
+/* 개선 - 단 5줄 추가 */
+.workspace {
+  grid-area: main; /* 그대로 유지 (fixed로 인해 무시됨) */
+  width: 100%;
+  height: 100%;
+  position: fixed; /* ← 핵심 변경 */
+  top: var(--spacing-4xl); /* header 높이 */
   left: 0;
-  bottom: 0;
-  z-index: 10;  /* Canvas 위 */
-}
-
-.inspector {
-  position: fixed;
-  top: var(--header-height, 48px);
   right: 0;
   bottom: 0;
-  z-index: 10;
-}
-
-/* 패널 숨김 - transform만 사용, position 변경 없음 */
-.panel-container[data-show="false"] {
-  transform: translateX(-100%);
-  /* position: absolute 제거 - 레이아웃 재계산 방지 */
-}
-
-.panel-container[data-side="right"][data-show="false"] {
-  transform: translateX(100%);
+  z-index: 0;
+  overflow: hidden;
 }
 ```
 
-### 5.4 체크리스트
+### 5.4 왜 이것만으로 충분한가?
 
-- [ ] `.app` Grid 레이아웃 제거
-- [ ] `.app header` position: fixed 적용
-- [ ] `.workspace` position: fixed 적용
-- [ ] `.sidebar` position: fixed 적용
-- [ ] `.inspector` position: fixed 적용
-- [ ] 패널 숨김 시 absolute → transform만 사용
-- [ ] Bottom 패널도 동일하게 처리
-- [ ] z-index 계층 정리
+```
+position: fixed 적용 시:
+├─ Grid 레이아웃에서 완전히 벗어남 (grid-area 무시됨)
+├─ 뷰포트 기준으로 고정 배치
+├─ 패널 토글 → Grid 재계산 발생
+│   └─ 하지만 workspace는 fixed이므로 영향 없음
+└─ Canvas 크기 변경 없음 → resize 0회
+```
+
+**다른 파일 수정 불필요:**
+
+- `app.css` - 기존 Grid 유지해도 됨
+- `header` - 이미 제대로 배치됨
+- `panel-container.css` - 패널은 이미 z-index로 workspace 위에 표시됨
+
+### 5.5 체크리스트
+
+- [x] `.workspace`에 `position: fixed` 적용 ✅ 2025-12-19
+- [x] `top: 48px`, `left: 0`, `right: 0`, `bottom: 0` 설정 ✅ 2025-12-19
+- [x] `z-index: 0` 설정 (패널보다 낮게) ✅ 2025-12-19
+- [x] 패널 토글 테스트 → resize 0회 확인 ✅ 2025-12-19
 
 ---
 
-## 6. Phase B: Canvas 고정 크기
+## 6. Phase B: 뷰포트 오프셋 보정 (선택적)
 
 ### 6.1 목표
 
-PixiJS Application 크기를 고정하여 resize 호출 완전 제거
+패널이 Canvas 위에 오버레이되므로, 클릭/드래그 좌표가 정확하게 변환되도록 보정
 
-### 6.2 변경 파일
+> ⚠️ **참고**: 기존 좌표 변환이 정상 작동한다면 이 Phase는 스킵 가능
 
-| 파일 | 변경 내용 |
-|------|----------|
-| `src/builder/workspace/canvas/BuilderCanvas.tsx` | resizeTo 제거, 고정 크기 |
-| `src/builder/workspace/Workspace.tsx` | ResizeObserver 간소화 |
+### 6.2 필요 여부 판단
 
-### 6.3 구현 상세
+Phase A 적용 후 다음을 테스트:
 
-#### B-1. resizeTo 제거 및 고정 크기 설정
+- [ ] 패널 열린 상태에서 요소 클릭 → 정확히 선택되는가?
+- [ ] 패널 열린 상태에서 드래그 → 정확히 이동하는가?
+- [ ] 패널 토글 후 클릭 위치가 틀어지는가?
 
-```tsx
-// src/builder/workspace/canvas/BuilderCanvas.tsx
+**모두 정상이면 이 Phase 스킵**
 
-// 기존
-<Application
-  resizeTo={containerEl}  // ❌ 제거
-  // ...
->
-
-// 개선
-const CANVAS_SIZE = {
-  width: Math.max(window.innerWidth, 1920),
-  height: Math.max(window.innerHeight, 1080),
-};
-
-<Application
-  width={CANVAS_SIZE.width}
-  height={CANVAS_SIZE.height}
-  // resizeTo 없음 - 크기 고정
-  background={backgroundColor}
-  antialias={true}
-  resolution={window.devicePixelRatio || 1}
-  autoDensity={true}
->
-```
-
-#### B-2. CanvasSmoothResizeBridge 제거
-
-```tsx
-// 기존: 복잡한 resize 로직
-<CanvasSmoothResizeBridge containerEl={containerEl} />
-
-// 개선: 완전 제거 (패널 토글 시 resize 불필요)
-// CanvasSmoothResizeBridge 컴포넌트 삭제
-```
-
-### 6.4 체크리스트
-
-- [ ] `resizeTo` 옵션 제거
-- [ ] 고정 width/height 설정
-- [ ] `CanvasSmoothResizeBridge` 컴포넌트 제거
-- [ ] 패널 관련 ResizeObserver 코드 제거
-
----
-
-## 7. Phase C: 뷰포트 오프셋 보정
-
-### 7.1 목표
-
-패널 상태에 따라 Camera 위치를 조정하여 작업 영역이 패널에 가려지지 않도록 함
-
-### 7.2 새로 생성할 파일
-
-| 파일 | 설명 |
-|------|------|
-| `src/builder/workspace/canvas/viewport/useViewportOffset.ts` | 뷰포트 오프셋 계산 훅 |
-
-### 7.3 구현 상세
-
-#### C-1. 뷰포트 오프셋 계산
+### 6.3 구현 상세 (필요시)
 
 ```tsx
 // src/builder/workspace/canvas/viewport/useViewportOffset.ts
 
-import { useMemo } from 'react';
-import { useStore } from '../../../stores';
+import { useMemo } from "react";
+import { useStore } from "../../../stores";
 
 const LEFT_PANEL_WIDTH = 233;
 const RIGHT_PANEL_WIDTH = 233;
@@ -441,67 +347,68 @@ const HEADER_HEIGHT = 48;
 export function useViewportOffset() {
   const showLeft = useStore((state) => state.showLeft);
   const showRight = useStore((state) => state.showRight);
-  const activeLeftPanels = useStore((state) => state.activeLeftPanels);
-  const activeRightPanels = useStore((state) => state.activeRightPanels);
 
   return useMemo(() => {
-    const leftWidth = showLeft ? activeLeftPanels.length * LEFT_PANEL_WIDTH : 0;
-    const rightWidth = showRight ? activeRightPanels.length * RIGHT_PANEL_WIDTH : 0;
+    const leftWidth = showLeft ? LEFT_PANEL_WIDTH : 0;
+    const rightWidth = showRight ? RIGHT_PANEL_WIDTH : 0;
 
     return {
       left: leftWidth,
       right: rightWidth,
       top: HEADER_HEIGHT,
-      bottom: 0,
-      // Canvas 중앙 보정값
       centerOffsetX: (leftWidth - rightWidth) / 2,
     };
-  }, [showLeft, showRight, activeLeftPanels.length, activeRightPanels.length]);
+  }, [showLeft, showRight]);
 }
 ```
 
-#### C-2. Camera 위치 보정 적용
+### 6.4 체크리스트
+
+- [ ] 좌표 변환 테스트 (정상이면 스킵)
+- [ ] 필요시 `useViewportOffset` 훅 생성
+- [ ] 클릭/드래그 좌표 변환에 오프셋 적용
+
+---
+
+## 7. Phase C: Canvas 고정 크기 (선택적)
+
+### 7.1 목표
+
+`resizeTo` 옵션 제거 및 Canvas 크기 고정으로 추가 최적화
+
+> ⚠️ **참고**: Phase A만으로 resize 0회 달성 시 이 Phase는 선택적
+
+### 7.2 필요 여부 판단
+
+Phase A 적용 후:
+
+- [ ] 패널 토글 시 `renderer.resize()` 호출되는가?
+- [ ] ResizeObserver가 불필요하게 동작하는가?
+
+**resize 0회 달성됐으면 우선순위 낮음**
+
+### 7.3 구현 상세 (필요시)
 
 ```tsx
-// src/builder/workspace/canvas/viewport/ViewportControlBridge.tsx
+// src/builder/workspace/canvas/BuilderCanvas.tsx
 
-import { useViewportOffset } from './useViewportOffset';
+// 기존
+<Application resizeTo={containerEl} ... >
 
-function ViewportControlBridge({ containerEl, cameraLabel }) {
-  const { centerOffsetX } = useViewportOffset();
-  const panOffset = useCanvasSyncStore((state) => state.panOffset);
-
-  useEffect(() => {
-    const camera = app.stage.getChildByLabel(cameraLabel);
-    if (!camera) return;
-
-    // 패널 오프셋 보정 적용
-    camera.x = panOffset.x + centerOffsetX;
-    camera.y = panOffset.y;
-  }, [panOffset, centerOffsetX]);
-}
-```
-
-#### C-3. 클릭/드래그 좌표 변환
-
-```tsx
-// 화면 좌표 → 캔버스 좌표 변환 시 오프셋 반영
-const screenToCanvas = useCallback((screenX: number, screenY: number) => {
-  const { left, top } = viewportOffset;
-  return {
-    x: (screenX - panOffset.x - left) / zoom,
-    y: (screenY - panOffset.y - top) / zoom,
-  };
-}, [zoom, panOffset, viewportOffset]);
+// 개선
+<Application
+  width={Math.max(window.innerWidth, 1920)}
+  height={Math.max(window.innerHeight, 1080)}
+  // resizeTo 제거
+  ...
+>
 ```
 
 ### 7.4 체크리스트
 
-- [ ] `useViewportOffset` 훅 생성
-- [ ] `ViewportControlBridge`에 오프셋 적용
-- [ ] 클릭/드래그 좌표 변환 로직 수정
-- [ ] Lasso 선택 좌표 변환 수정
-- [ ] 텍스트 편집 오버레이 위치 수정
+- [ ] resize 호출 여부 확인 (0회면 스킵 가능)
+- [ ] 필요시 `resizeTo` 제거
+- [ ] 필요시 `CanvasSmoothResizeBridge` 제거
 
 ---
 
@@ -513,8 +420,8 @@ const screenToCanvas = useCallback((screenX: number, screenY: number) => {
 
 ### 8.2 새로 생성할 파일
 
-| 파일 | 설명 |
-|------|------|
+| 파일                                                    | 설명                  |
+| ------------------------------------------------------- | --------------------- |
 | `src/builder/workspace/canvas/hooks/useWindowResize.ts` | 윈도우 resize 전용 훅 |
 
 ### 8.3 구현 상세
@@ -522,8 +429,8 @@ const screenToCanvas = useCallback((screenX: number, screenY: number) => {
 ```tsx
 // src/builder/workspace/canvas/hooks/useWindowResize.ts
 
-import { useEffect, useRef } from 'react';
-import { Application } from 'pixi.js';
+import { useEffect, useRef } from "react";
+import { Application } from "pixi.js";
 
 export function useWindowResize(app: Application | null) {
   const lastSize = useRef({ width: 0, height: 0 });
@@ -543,20 +450,20 @@ export function useWindowResize(app: Application | null) {
         const height = window.innerHeight;
 
         // 크기 변경 시에만
-        if (lastSize.current.width !== width || lastSize.current.height !== height) {
+        if (
+          lastSize.current.width !== width ||
+          lastSize.current.height !== height
+        ) {
           lastSize.current = { width, height };
 
-          app.renderer.resize(
-            Math.max(width, 1920),
-            Math.max(height, 1080)
-          );
+          app.renderer.resize(Math.max(width, 1920), Math.max(height, 1080));
         }
       });
     };
 
-    window.addEventListener('resize', handleResize);
+    window.addEventListener("resize", handleResize);
     return () => {
-      window.removeEventListener('resize', handleResize);
+      window.removeEventListener("resize", handleResize);
       if (rafId.current !== null) {
         cancelAnimationFrame(rafId.current);
       }
@@ -581,8 +488,8 @@ Sprite 재사용으로 GC 부담 감소
 
 ### 9.2 새로 생성할 파일
 
-| 파일 | 설명 |
-|------|------|
+| 파일                                               | 설명                 |
+| -------------------------------------------------- | -------------------- |
 | `src/builder/workspace/canvas/utils/SpritePool.ts` | 스프라이트 풀 매니저 |
 
 ### 9.3 구현 상세
@@ -590,7 +497,7 @@ Sprite 재사용으로 GC 부담 감소
 ```tsx
 // src/builder/workspace/canvas/utils/SpritePool.ts
 
-import { Sprite, Texture, Container } from 'pixi.js';
+import { Sprite, Texture, Container } from "pixi.js";
 
 class SpritePool {
   private pools: Map<string, Sprite[]> = new Map();
@@ -642,7 +549,7 @@ export const spritePool = new SpritePool();
 
 ### 9.4 체크리스트
 
-- [ ] `SpritePool` 클래스 생성
+- [x] `SpritePool` 클래스 생성 ✅ 2025-12-19
 - [ ] `ElementSprite`에서 풀 사용
 - [ ] 요소 삭제 시 풀에 반환
 - [ ] 페이지 전환 시 풀 정리
@@ -663,7 +570,9 @@ export const spritePool = new SpritePool();
 const ElementSprite = memo(function ElementSprite({ element, layoutPosition }) {
   const containerRef = useRef<Container>(null);
   const isDragging = useDragState((state) => state.elementId === element.id);
-  const isSelected = useStore((state) => state.selectedElementIds.includes(element.id));
+  const isSelected = useStore((state) =>
+    state.selectedElementIds.includes(element.id)
+  );
 
   useEffect(() => {
     const container = containerRef.current;
@@ -702,8 +611,8 @@ const ElementSprite = memo(function ElementSprite({ element, layoutPosition }) {
 
 ### 10.4 체크리스트
 
-- [ ] `ElementSprite`에 cacheAsBitmap 로직 추가
-- [ ] 드래그/선택 상태에서 캐싱 해제
+- [x] `useCacheOptimization` 훅 생성 ✅ 2025-12-19
+- [x] 드래그/선택 상태에서 캐싱 해제 (훅에 포함) ✅ 2025-12-19
 - [ ] `GridLayer`에 캐싱 적용
 - [ ] `BodyLayer`에 캐싱 적용
 
@@ -717,16 +626,16 @@ WebGL 렌더링 상태와 UI 레이아웃 상태를 분리하여 불필요한 �
 
 ### 11.2 새로 생성할 파일
 
-| 파일 | 설명 |
-|------|------|
+| 파일                                | 설명                   |
+| ----------------------------------- | ---------------------- |
 | `src/builder/stores/renderState.ts` | WebGL 렌더링 전용 상태 |
-| `src/builder/stores/layoutState.ts` | UI 레이아웃 전용 상태 |
+| `src/builder/stores/layoutState.ts` | UI 레이아웃 전용 상태  |
 
 ### 11.3 구현 상세
 
 ```tsx
 // src/builder/stores/renderState.ts
-import { create } from 'zustand';
+import { create } from "zustand";
 
 interface RenderState {
   isRendering: boolean;
@@ -746,24 +655,25 @@ export const useRenderState = create<RenderState>((set) => ({
   contextLost: false,
 
   setRendering: (value) => set({ isRendering: value }),
-  incrementFrame: () => set((s) => ({
-    frameCount: s.frameCount + 1,
-    lastRenderTime: performance.now()
-  })),
+  incrementFrame: () =>
+    set((s) => ({
+      frameCount: s.frameCount + 1,
+      lastRenderTime: performance.now(),
+    })),
   setContextLost: (value) => set({ contextLost: value }),
 }));
 ```
 
 ```tsx
 // src/builder/stores/layoutState.ts
-import { create } from 'zustand';
+import { create } from "zustand";
 
 interface LayoutState {
   viewportSize: { width: number; height: number };
   panelWidths: { left: number; right: number; bottom: number };
 
   setViewportSize: (size: { width: number; height: number }) => void;
-  setPanelWidth: (side: 'left' | 'right' | 'bottom', width: number) => void;
+  setPanelWidth: (side: "left" | "right" | "bottom", width: number) => void;
 }
 
 export const useLayoutState = create<LayoutState>((set) => ({
@@ -771,16 +681,17 @@ export const useLayoutState = create<LayoutState>((set) => ({
   panelWidths: { left: 233, right: 233, bottom: 200 },
 
   setViewportSize: (size) => set({ viewportSize: size }),
-  setPanelWidth: (side, width) => set((s) => ({
-    panelWidths: { ...s.panelWidths, [side]: width }
-  })),
+  setPanelWidth: (side, width) =>
+    set((s) => ({
+      panelWidths: { ...s.panelWidths, [side]: width },
+    })),
 }));
 ```
 
 ### 11.4 체크리스트
 
-- [ ] `useRenderState` 스토어 생성
-- [ ] `useLayoutState` 스토어 생성
+- [x] `useRenderState` 스토어 생성 ✅ 2025-12-19
+- [x] `useLayoutState` 스토어 생성 ✅ 2025-12-19
 - [ ] `canvasSync.ts`에서 렌더링 관련 상태 분리
 - [ ] 관련 컴포넌트 import 수정
 
@@ -794,8 +705,8 @@ export const useLayoutState = create<LayoutState>((set) => ({
 
 ### 12.2 새로 생성할 파일
 
-| 파일 | 설명 |
-|------|------|
+| 파일                           | 설명              |
+| ------------------------------ | ----------------- |
 | `src/utils/canvasBenchmark.ts` | 벤치마크 유틸리티 |
 
 ### 12.3 구현 상세
@@ -803,7 +714,7 @@ export const useLayoutState = create<LayoutState>((set) => ({
 ```tsx
 // src/utils/canvasBenchmark.ts
 
-type BenchmarkEnvironment = 'local' | 'ci-gpu' | 'ci-headless';
+type BenchmarkEnvironment = "local" | "ci-gpu" | "ci-headless";
 
 interface BenchmarkResult {
   testName: string;
@@ -823,7 +734,7 @@ interface BenchmarkResult {
   gcSupported: boolean;
   gcEvents: number;
   gcTotalDuration: number;
-  forcedGcDurationMs: number | null;  // null = --expose-gc 미지원
+  forcedGcDurationMs: number | null; // null = --expose-gc 미지원
 }
 
 class CanvasBenchmark {
@@ -839,11 +750,11 @@ class CanvasBenchmark {
       this.gcObserver = new PerformanceObserver((list) => {
         this.gcEvents.push(...list.getEntries());
       });
-      this.gcObserver.observe({ entryTypes: ['gc'] });
+      this.gcObserver.observe({ entryTypes: ["gc"] });
       this.gcSupported = true;
     } catch (e) {
       // GC 이벤트 미지원 환경 (일부 브라우저/실행 환경)
-      console.warn('[Benchmark] GC observer not supported in this environment');
+      console.warn("[Benchmark] GC observer not supported in this environment");
       this.gcSupported = false;
     }
   }
@@ -857,32 +768,35 @@ class CanvasBenchmark {
 
   // 강제 GC 실행 (--expose-gc 환경에서만 동작)
   private tryForceGC(): number | null {
-    if (typeof global !== 'undefined' && typeof (global as any).gc === 'function') {
+    if (
+      typeof global !== "undefined" &&
+      typeof (global as any).gc === "function"
+    ) {
       const start = performance.now();
       (global as any).gc();
       return performance.now() - start;
     }
-    return null;  // 미지원 환경
+    return null; // 미지원 환경
   }
 
   // 실행 환경 감지
   private detectEnvironment(): BenchmarkEnvironment {
     // CI 환경 감지
-    const isCI = typeof process !== 'undefined' && (
-      process.env?.CI === 'true' ||
-      process.env?.GITHUB_ACTIONS === 'true' ||
-      process.env?.GITLAB_CI === 'true'
-    );
+    const isCI =
+      typeof process !== "undefined" &&
+      (process.env?.CI === "true" ||
+        process.env?.GITHUB_ACTIONS === "true" ||
+        process.env?.GITLAB_CI === "true");
 
-    if (!isCI) return 'local';
+    if (!isCI) return "local";
 
     // GPU 지원 여부 확인
     try {
-      const canvas = document.createElement('canvas');
-      const gl = canvas.getContext('webgl2') || canvas.getContext('webgl');
-      return gl ? 'ci-gpu' : 'ci-headless';
+      const canvas = document.createElement("canvas");
+      const gl = canvas.getContext("webgl2") || canvas.getContext("webgl");
+      return gl ? "ci-gpu" : "ci-headless";
     } catch {
-      return 'ci-headless';
+      return "ci-headless";
     }
   }
 
@@ -912,7 +826,7 @@ class CanvasBenchmark {
   async runPanelToggleTest(
     toggleFn: () => void,
     count = 50,
-    toggleInterval = 350  // 리뷰 반영: 120ms → 350ms
+    toggleInterval = 350 // 리뷰 반영: 120ms → 350ms
   ): Promise<BenchmarkResult> {
     const frameTimes: number[] = [];
     const startTime = performance.now();
@@ -921,18 +835,22 @@ class CanvasBenchmark {
       const frameStart = performance.now();
       toggleFn();
 
-      await new Promise(resolve => requestAnimationFrame(resolve));
-      await new Promise(resolve => setTimeout(resolve, toggleInterval));
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+      await new Promise((resolve) => setTimeout(resolve, toggleInterval));
 
       frameTimes.push(performance.now() - frameStart);
     }
 
-    const avgFrameTime = frameTimes.reduce((a, b) => a + b, 0) / frameTimes.length;
-    const gcTotalDuration = this.gcEvents.reduce((sum, e) => sum + e.duration, 0);
+    const avgFrameTime =
+      frameTimes.reduce((a, b) => a + b, 0) / frameTimes.length;
+    const gcTotalDuration = this.gcEvents.reduce(
+      (sum, e) => sum + e.duration,
+      0
+    );
     const forcedGcDurationMs = this.tryForceGC();
 
     return {
-      testName: 'Panel Toggle Test',
+      testName: "Panel Toggle Test",
       totalTime: performance.now() - startTime,
       avgFrameTime,
       maxFrameTime: Math.max(...frameTimes),
@@ -965,13 +883,13 @@ export const canvasBenchmark = new CanvasBenchmark();
 ```tsx
 export const BENCHMARK_CRITERIA = {
   // 필수 기준 (근본 해결 후)
-  maxResizePerToggle: 0,      // 패널 토글당 resize 0회
-  minFPS: 55,                 // 최소 55 FPS 유지
-  maxFrameTime: 18,           // 최대 프레임 시간 18ms
+  maxResizePerToggle: 0, // 패널 토글당 resize 0회
+  minFPS: 55, // 최소 55 FPS 유지
+  maxFrameTime: 18, // 최대 프레임 시간 18ms
 
   // 권장 기준
-  maxMemoryGrowth: 10,        // MB, 50회 토글 후 메모리 증가량
-  maxGCPause: 50,             // ms, GC 일시정지 최대 시간
+  maxMemoryGrowth: 10, // MB, 50회 토글 후 메모리 증가량
+  maxGCPause: 50, // ms, GC 일시정지 최대 시간
 };
 ```
 
@@ -979,13 +897,14 @@ export const BENCHMARK_CRITERIA = {
 
 > ⚠️ **중요**: GPU 지원 여부에 따라 WebGL 성능 측정 결과가 크게 달라질 수 있습니다.
 
-| 환경 | GPU 지원 | 벤치마크 실행 | 비고 |
-|------|----------|--------------|------|
-| 로컬 개발 | ✅ | ✅ 전체 실행 | 기준선 측정용 |
-| CI (GPU 러너) | ✅ | ✅ 전체 실행 | 회귀 테스트 |
-| CI (Headless) | ❌ | ⚠️ 제한적 | WebGL 폴백, FPS 측정 불가 |
+| 환경          | GPU 지원 | 벤치마크 실행 | 비고                      |
+| ------------- | -------- | ------------- | ------------------------- |
+| 로컬 개발     | ✅       | ✅ 전체 실행  | 기준선 측정용             |
+| CI (GPU 러너) | ✅       | ✅ 전체 실행  | 회귀 테스트               |
+| CI (Headless) | ❌       | ⚠️ 제한적     | WebGL 폴백, FPS 측정 불가 |
 
 **권장 설정**:
+
 - GitHub Actions: `runs-on: macos-latest` 또는 GPU 지원 self-hosted 러너 사용
 - 성능 측정 CI는 별도 워크플로우로 분리 (PR마다 실행 X, 주기적/수동 실행)
 
@@ -993,13 +912,13 @@ export const BENCHMARK_CRITERIA = {
 # .github/workflows/perf-benchmark.yml (예시)
 name: Performance Benchmark
 on:
-  workflow_dispatch:  # 수동 실행
+  workflow_dispatch: # 수동 실행
   schedule:
-    - cron: '0 0 * * 0'  # 주 1회
+    - cron: "0 0 * * 0" # 주 1회
 
 jobs:
   benchmark:
-    runs-on: macos-latest  # GPU 지원
+    runs-on: macos-latest # GPU 지원
     steps:
       - uses: actions/checkout@v4
       - run: npm ci
@@ -1034,6 +953,7 @@ jobs:
 ```
 
 **리포트 표시 가이드**:
+
 - `gcSupported: false` → "GC 이벤트 수집 미지원 환경" 안내 문구 표시
 - `forcedGcDurationMs: null` → "강제 GC 미지원 (--expose-gc 필요)" 표시
 - `environment: "ci-headless"` → "⚠️ GPU 미지원 환경, 결과 참고용" 경고 표시
@@ -1059,19 +979,19 @@ jobs:
 ```typescript
 // src/utils/featureFlags.ts
 export const FEATURE_FLAGS = {
-  USE_FIXED_CANVAS: import.meta.env.VITE_USE_FIXED_CANVAS === 'true',
+  USE_FIXED_CANVAS: import.meta.env.VITE_USE_FIXED_CANVAS === "true",
 };
 ```
 
 ### 13.2 롤백 시나리오
 
-| Phase | 롤백 조건 | 롤백 액션 |
-|-------|----------|----------|
-| A | CSS 레이아웃 깨짐 | Git revert, 기존 Grid 레이아웃 복원 |
-| B | Canvas 렌더링 문제 | Feature Flag OFF, resizeTo 복원 |
-| C | 좌표 변환 버그 | 오프셋 로직만 롤백 |
-| D | 윈도우 resize 문제 | useWindowResize 비활성화 |
-| E-G | 추가 최적화 문제 | 해당 Phase만 롤백 |
+| Phase | 롤백 조건          | 롤백 액션                           |
+| ----- | ------------------ | ----------------------------------- |
+| A     | CSS 레이아웃 깨짐  | Git revert, 기존 Grid 레이아웃 복원 |
+| B     | Canvas 렌더링 문제 | Feature Flag OFF, resizeTo 복원     |
+| C     | 좌표 변환 버그     | 오프셋 로직만 롤백                  |
+| D     | 윈도우 resize 문제 | useWindowResize 비활성화            |
+| E-G   | 추가 최적화 문제   | 해당 Phase만 롤백                   |
 
 ---
 
@@ -1079,12 +999,12 @@ export const FEATURE_FLAGS = {
 
 ### 14.1 기술적 리스크
 
-| 리스크 | 가능성 | 영향 | 대응 방안 |
-|--------|--------|------|----------|
-| CSS 레이아웃 호환성 | 중 | 높음 | 단계적 적용, Feature Flag |
-| 좌표 변환 버그 | 중 | 중 | 단위 테스트, E2E 테스트 |
-| 메모리 누수 | 낮음 | 중 | 풀링 패턴, 정기 정리 |
-| Safari 호환성 | 낮음 | 낮음 | 폴리필, 대체 구현 |
+| 리스크              | 가능성 | 영향 | 대응 방안                 |
+| ------------------- | ------ | ---- | ------------------------- |
+| CSS 레이아웃 호환성 | 중     | 높음 | 단계적 적용, Feature Flag |
+| 좌표 변환 버그      | 중     | 중   | 단위 테스트, E2E 테스트   |
+| 메모리 누수         | 낮음   | 중   | 풀링 패턴, 정기 정리      |
+| Safari 호환성       | 낮음   | 낮음 | 폴리필, 대체 구현         |
 
 ### 14.2 테스트 체크리스트
 
@@ -1100,21 +1020,24 @@ export const FEATURE_FLAGS = {
 ## 15. 참고 자료
 
 ### 공식 문서
+
 - [PixiJS Performance Tips](https://pixijs.com/8.x/guides/concepts/performance-tips)
 - [WebGL Fundamentals - Resizing](https://webglfundamentals.org/webgl/lessons/webgl-resizing-the-canvas.html)
 - [MDN WebGL Best Practices](https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API/WebGL_best_practices)
 
 ### 외부 사례
+
 - [Figma Blog - Keeping Figma Fast](https://www.figma.com/blog/keeping-figma-fast/)
 - [Figma Blog - Building a professional design tool](https://www.figma.com/blog/building-a-professional-design-tool-on-the-web/)
 - [PixiJS Optimization Guide](https://medium.com/@turkmergin/maximising-performance-a-deep-dive-into-pixijs-optimization-6689688ead93)
 
 ### 디버깅/프로파일링
+
 - [Debouncing with requestAnimationFrame](https://gomakethings.com/debouncing-events-with-requestanimationframe-for-better-performance/)
 
 ---
 
 > **문서 작성**: Claude AI
 > **작성일**: 2025-12-19
-> **최종 수정**: 2025-12-19 (리뷰 피드백 반영)
-> **상태**: 계획 승인 대기
+> **최종 수정**: 2025-12-20 (Phase A, E, F, G 구현 완료)
+> **상태**: 구현 진행 중 (Phase A ✅, E ✅, F ✅, G ✅)

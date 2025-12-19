@@ -239,3 +239,20 @@ export {
   useCurrentEditLayoutId,
   useEditContext,
 } from "./editMode";
+
+// ============================================
+// Phase G: 렌더링/레이아웃 상태 분리
+// ============================================
+export {
+  useRenderState,
+  selectIsRendering,
+  selectContextLost,
+  selectFps,
+} from "./renderState";
+
+export {
+  useLayoutState,
+  selectViewportSize,
+  selectPanelWidths,
+  selectWorkableArea,
+} from "./layoutState";

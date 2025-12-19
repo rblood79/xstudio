@@ -61,6 +61,7 @@
     --spacing-xl: 1.5rem; /* 24px */
     --spacing-2xl: 2rem; /* 32px */
     --spacing-3xl: 2.5rem; /* 40px */
+    --spacing-4xl: 3rem; /* 48px */
 
     /* Border Radius - Tailwind v4 표준 (고정값, AI 생성 불필요) */
     --radius-xs: 0.125rem; /* 2px */
