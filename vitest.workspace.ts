@@ -1,9 +1,15 @@
 import path from "node:path";
 
 export default [
-  "vite.config.ts",
   {
-    extends: "vite.config.ts",
+    extends: "./vite.config.ts",
+    test: {
+      name: "unit",
+      include: ["src/**/*.{test,spec}.{js,ts,jsx,tsx}"],
+    },
+  },
+  {
+    extends: "./vite.config.ts",
     test: {
       name: "browser-tests",
       browser: {
@@ -12,6 +18,7 @@ export default [
         provider: "playwright",
         instances: [{ browser: "chromium" }],
       },
+      include: ["src/**/*.browser.{test,spec}.{js,ts,jsx,tsx}"],
       setupFiles:
         process.env.BROWSER_TESTS === "true"
           ? [path.resolve(".storybook/vitest.setup.ts")]
