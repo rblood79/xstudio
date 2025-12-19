@@ -803,6 +803,8 @@ export const useLayoutState = create<LayoutState>((set) => ({
 ```tsx
 // src/utils/canvasBenchmark.ts
 
+type BenchmarkEnvironment = 'local' | 'ci-gpu' | 'ci-headless';
+
 interface BenchmarkResult {
   testName: string;
   totalTime: number;
@@ -811,16 +813,85 @@ interface BenchmarkResult {
   minFrameTime: number;
   resizeCalls: number;
   passed: boolean;
+
+  // 환경 정보 (리뷰 반영)
+  devicePixelRatio: number;
+  screenResolution: { width: number; height: number };
+  environment: BenchmarkEnvironment;
+
+  // GC 관련 (리뷰 반영)
+  gcSupported: boolean;
+  gcEvents: number;
+  gcTotalDuration: number;
+  forcedGcDurationMs: number | null;  // null = --expose-gc 미지원
 }
 
 class CanvasBenchmark {
   private resizeCallCount = 0;
   private originalResize: Function | null = null;
+  private gcObserver: PerformanceObserver | null = null;
+  private gcEvents: PerformanceEntry[] = [];
+  private gcSupported = false;
+
+  // GC 옵저버 초기화 (리뷰 반영: 폴백 처리)
+  private initGCObserver(): void {
+    try {
+      this.gcObserver = new PerformanceObserver((list) => {
+        this.gcEvents.push(...list.getEntries());
+      });
+      this.gcObserver.observe({ entryTypes: ['gc'] });
+      this.gcSupported = true;
+    } catch (e) {
+      // GC 이벤트 미지원 환경 (일부 브라우저/실행 환경)
+      console.warn('[Benchmark] GC observer not supported in this environment');
+      this.gcSupported = false;
+    }
+  }
+
+  private cleanupGCObserver(): void {
+    if (this.gcObserver) {
+      this.gcObserver.disconnect();
+      this.gcObserver = null;
+    }
+  }
+
+  // 강제 GC 실행 (--expose-gc 환경에서만 동작)
+  private tryForceGC(): number | null {
+    if (typeof global !== 'undefined' && typeof (global as any).gc === 'function') {
+      const start = performance.now();
+      (global as any).gc();
+      return performance.now() - start;
+    }
+    return null;  // 미지원 환경
+  }
+
+  // 실행 환경 감지
+  private detectEnvironment(): BenchmarkEnvironment {
+    // CI 환경 감지
+    const isCI = typeof process !== 'undefined' && (
+      process.env?.CI === 'true' ||
+      process.env?.GITHUB_ACTIONS === 'true' ||
+      process.env?.GITLAB_CI === 'true'
+    );
+
+    if (!isCI) return 'local';
+
+    // GPU 지원 여부 확인
+    try {
+      const canvas = document.createElement('canvas');
+      const gl = canvas.getContext('webgl2') || canvas.getContext('webgl');
+      return gl ? 'ci-gpu' : 'ci-headless';
+    } catch {
+      return 'ci-headless';
+    }
+  }
 
   // resize 호출 횟수 추적
   startTracking(renderer: any): void {
     this.resizeCallCount = 0;
+    this.gcEvents = [];
     this.originalResize = renderer.resize.bind(renderer);
+    this.initGCObserver();
 
     renderer.resize = (...args: any[]) => {
       this.resizeCallCount++;
@@ -833,12 +904,15 @@ class CanvasBenchmark {
     if (this.originalResize) {
       renderer.resize = this.originalResize;
     }
+    this.cleanupGCObserver();
   }
 
   // 패널 토글 테스트
+  // 토글 인터벌: 350ms (CSS transition 300ms + 여유 50ms)
   async runPanelToggleTest(
     toggleFn: () => void,
-    count = 50
+    count = 50,
+    toggleInterval = 350  // 리뷰 반영: 120ms → 350ms
   ): Promise<BenchmarkResult> {
     const frameTimes: number[] = [];
     const startTime = performance.now();
@@ -848,12 +922,14 @@ class CanvasBenchmark {
       toggleFn();
 
       await new Promise(resolve => requestAnimationFrame(resolve));
-      await new Promise(resolve => setTimeout(resolve, 350)); // 애니메이션 대기
+      await new Promise(resolve => setTimeout(resolve, toggleInterval));
 
       frameTimes.push(performance.now() - frameStart);
     }
 
     const avgFrameTime = frameTimes.reduce((a, b) => a + b, 0) / frameTimes.length;
+    const gcTotalDuration = this.gcEvents.reduce((sum, e) => sum + e.duration, 0);
+    const forcedGcDurationMs = this.tryForceGC();
 
     return {
       testName: 'Panel Toggle Test',
@@ -863,6 +939,20 @@ class CanvasBenchmark {
       minFrameTime: Math.min(...frameTimes),
       resizeCalls: this.resizeCallCount,
       passed: this.resizeCallCount === 0 && avgFrameTime < 400,
+
+      // 환경 정보
+      devicePixelRatio: window.devicePixelRatio || 1,
+      screenResolution: {
+        width: window.screen.width,
+        height: window.screen.height,
+      },
+      environment: this.detectEnvironment(),
+
+      // GC 정보
+      gcSupported: this.gcSupported,
+      gcEvents: this.gcEvents.length,
+      gcTotalDuration,
+      forcedGcDurationMs,
     };
   }
 }
@@ -885,13 +975,80 @@ export const BENCHMARK_CRITERIA = {
 };
 ```
 
-### 12.5 체크리스트
+### 12.5 CI 연동 범위 (리뷰 반영)
+
+> ⚠️ **중요**: GPU 지원 여부에 따라 WebGL 성능 측정 결과가 크게 달라질 수 있습니다.
+
+| 환경 | GPU 지원 | 벤치마크 실행 | 비고 |
+|------|----------|--------------|------|
+| 로컬 개발 | ✅ | ✅ 전체 실행 | 기준선 측정용 |
+| CI (GPU 러너) | ✅ | ✅ 전체 실행 | 회귀 테스트 |
+| CI (Headless) | ❌ | ⚠️ 제한적 | WebGL 폴백, FPS 측정 불가 |
+
+**권장 설정**:
+- GitHub Actions: `runs-on: macos-latest` 또는 GPU 지원 self-hosted 러너 사용
+- 성능 측정 CI는 별도 워크플로우로 분리 (PR마다 실행 X, 주기적/수동 실행)
+
+```yaml
+# .github/workflows/perf-benchmark.yml (예시)
+name: Performance Benchmark
+on:
+  workflow_dispatch:  # 수동 실행
+  schedule:
+    - cron: '0 0 * * 0'  # 주 1회
+
+jobs:
+  benchmark:
+    runs-on: macos-latest  # GPU 지원
+    steps:
+      - uses: actions/checkout@v4
+      - run: npm ci
+      - run: npm run perf:benchmark
+```
+
+### 12.6 결과 리포트 포맷 (리뷰 반영)
+
+벤치마크 결과 JSON에 다음 정보가 포함되어야 합니다:
+
+```json
+{
+  "testName": "Panel Toggle Test",
+  "passed": true,
+  "resizeCalls": 0,
+  "avgFrameTime": 12.5,
+
+  "environment": {
+    "type": "local",
+    "devicePixelRatio": 2,
+    "screenResolution": { "width": 2560, "height": 1440 },
+    "gcSupported": true,
+    "forcedGcDurationMs": null
+  },
+
+  "gc": {
+    "supported": true,
+    "events": 3,
+    "totalDuration": 15.2
+  }
+}
+```
+
+**리포트 표시 가이드**:
+- `gcSupported: false` → "GC 이벤트 수집 미지원 환경" 안내 문구 표시
+- `forcedGcDurationMs: null` → "강제 GC 미지원 (--expose-gc 필요)" 표시
+- `environment: "ci-headless"` → "⚠️ GPU 미지원 환경, 결과 참고용" 경고 표시
+
+### 12.7 체크리스트
 
 - [ ] `CanvasBenchmark` 클래스 생성
 - [ ] resize 호출 추적 기능
-- [ ] 패널 토글 50회 테스트
+- [ ] 패널 토글 50회 테스트 (350ms 인터벌)
 - [ ] 성능 기준 정의
-- [ ] CI 통합 테스트 (선택적)
+- [ ] devicePixelRatio 및 해상도 수집
+- [ ] GC 옵저버 폴백 처리 (`gcSupported` 플래그)
+- [ ] 강제 GC 지원 여부 표기 (`forcedGcDurationMs`)
+- [ ] 환경 감지 (`local` / `ci-gpu` / `ci-headless`)
+- [ ] CI 통합 (GPU 지원 러너 한정)
 
 ---
 
@@ -959,4 +1116,5 @@ export const FEATURE_FLAGS = {
 
 > **문서 작성**: Claude AI
 > **작성일**: 2025-12-19
+> **최종 수정**: 2025-12-19 (리뷰 피드백 반영)
 > **상태**: 계획 승인 대기
