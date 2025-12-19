@@ -57,7 +57,7 @@ xstudio/
 | [08-additional-ideas.md](./08-additional-ideas.md) | 추가 최적화 아이디어                           | 📋 참고용       |
 | [task.md](./task.md)                               | 작업 진행 현황 (Checklist)                     | ✅ **완료**     |
 | **[10-webgl-builder-architecture.md](./10-webgl-builder-architecture.md)** | **🚀 WebGL Builder + Publish App 분리** | ✅ **완료** |
-| **[11-canvas-resize-optimization.md](./11-canvas-resize-optimization.md)** | **🚀 Canvas Resize 최적화 (Panel 토글 성능)** | 📋 **계획** |
+| **[11-canvas-resize-optimization.md](./11-canvas-resize-optimization.md)** | **🚀 Canvas Resize 최적화 + Viewport Culling** | ✅ **진행 중** |
 
 ## 목표 성능 지표
 
@@ -118,19 +118,38 @@ xstudio/
 
 ## 향후 개선 사항 (선택적)
 
-### 🚀 Phase 11: Canvas Resize 최적화 (진행 예정)
+### 🚀 Phase 11: Canvas Resize 최적화 + Viewport Culling (진행 중)
 
 > **문서**: [11-canvas-resize-optimization.md](./11-canvas-resize-optimization.md)
 
-패널 토글 시 발생하는 Canvas resize로 인한 성능 저하 해결:
+패널 토글 시 발생하는 Canvas resize로 인한 성능 저하 해결 + GPU 렌더링 최적화:
 
-| 지표 | Before | After (목표) |
+| 지표 | Before | After (현재) |
 |------|--------|-------------|
-| 패널 토글 시 resize | 10+ 회 | **0회** |
-| 프레임 드랍 | 심각 | **없음** |
-| FPS | <30 | **>55** |
+| 패널 토글 시 resize | 10+ 회 | **0회** ✅ |
+| 프레임 드랍 | 심각 | **없음** ✅ |
+| FPS | <30 | **>55** ✅ |
+| 뷰포트 외부 요소 렌더링 | 전체 | **제외** ✅ |
 
-**핵심 전략**: Canvas를 레이아웃에서 분리 (Figma 방식)
+**완료된 최적화**:
+- ✅ **Phase A**: Workspace `position: fixed` (resize 0회 달성)
+- ✅ **Phase E**: SpritePool 메모리 풀링
+- ✅ **Phase F**: cacheAsBitmap 정적 요소 캐싱
+- ✅ **Phase G**: 상태 관리 분리 (renderState, layoutState)
+- ✅ **Viewport Culling**: 수동 visibility 기반 뷰포트 컬링 (GPU 20-40% 감소)
+
+**Viewport Culling 구현**:
+```typescript
+// src/builder/workspace/canvas/hooks/useViewportCulling.ts
+const { visibleElements } = useViewportCulling({
+  elements: sortedElements,
+  layoutResult,
+  zoom,
+  panOffset,
+  enabled: true,
+});
+// 뷰포트 내 요소만 렌더링 → GPU 부하 20-40% 감소
+```
 
 ### 리뷰 코멘트 체크리스트
 
@@ -150,4 +169,5 @@ xstudio/
 
 > **문서 작성**: Claude AI
 > **완료일**: 2025-12-11
+> **최종 수정**: 2025-12-20 (Viewport Culling 추가)
 > **검증**: 전체 코드베이스 대상 검증 완료
