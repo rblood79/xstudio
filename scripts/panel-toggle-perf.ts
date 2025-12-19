@@ -169,22 +169,24 @@ async function injectPanelMetrics(page: Page, throttleMs: number): Promise<void>
       let lastCall = 0;
       let scheduled: number | null = null;
 
-      globalPixi.Renderer!.prototype.resize = function patchedResize(width: number, height: number) {
+      globalPixi.Renderer!.prototype.resize = function patchedResize(width: number, height: number): void {
         const invoke = () => {
           metrics.recordResize(width, height);
-          return resize.call(this, width, height);
+          resize.call(this, width, height);
         };
 
         if (!throttleInterval) {
           lastCall = performance.now();
-          return invoke();
+          invoke();
+          return;
         }
 
         const now = performance.now();
         const elapsed = now - lastCall;
         if (elapsed >= throttleInterval) {
           lastCall = now;
-          return invoke();
+          invoke();
+          return;
         }
 
         if (scheduled) {
@@ -195,7 +197,6 @@ async function injectPanelMetrics(page: Page, throttleMs: number): Promise<void>
           scheduled = null;
           invoke();
         }, throttleInterval - elapsed);
-        return undefined;
       };
       return true;
     };
