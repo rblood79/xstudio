@@ -51,3 +51,23 @@ export const iconComponent = {
     stroke: 1,
     size: 16
 };
+
+/**
+ * 작은 아이콘 속성
+ * 작은 버튼, 인라인 아이콘에 적용되는 스타일
+ */
+export const iconSmall = {
+    color: 'var(--color-gray-500)',
+    stroke: 1,
+    size: 12
+};
+
+/**
+ * 큰 아이콘 속성
+ * 플레이스홀더, 빈 상태 아이콘에 적용되는 스타일
+ */
+export const iconLarge = {
+    color: 'var(--color-gray-400)',
+    stroke: 1,
+    size: 24
+};

@@ -25,7 +25,7 @@ import {
 import type { BlockEventAction } from "../../../events/types/eventBlockTypes";
 import type { ActionType } from "../../../events/types/eventTypes";
 import { ACTION_TYPE_LABELS } from "../../../events/types/eventTypes";
-import { iconProps } from "../../../../utils/ui/uiConstants";
+import { iconProps, iconEditProps } from "../../../../utils/ui/uiConstants";
 
 interface ActionBlockProps {
   /** 액션 데이터 */
@@ -141,7 +141,7 @@ export function ActionBlock({
       {/* Drag Handle */}
       <div className="action-drag-handle" {...dragHandleProps}>
         <GripVertical
-          size={14}
+          size={iconEditProps.size}
           color={iconProps.color}
           strokeWidth={iconProps.stroke}
         />
@@ -149,7 +149,7 @@ export function ActionBlock({
 
       {/* Action Icon */}
       <div className="list-item-icon">
-        <IconComponent size={16} />
+        <IconComponent size={iconProps.size} />
         {/* Action Number */}
         <span className="list-item-index">{index}</span>
       </div>
@@ -176,13 +176,13 @@ export function ActionBlock({
           >
             {isExpanded ? (
               <ChevronDown
-                size={14}
+                size={iconEditProps.size}
                 color={iconProps.color}
                 strokeWidth={iconProps.stroke}
               />
             ) : (
               <ChevronRight
-                size={14}
+                size={iconEditProps.size}
                 color={iconProps.color}
                 strokeWidth={iconProps.stroke}
               />
@@ -198,7 +198,7 @@ export function ActionBlock({
             aria-label="Delete action"
           >
             <Trash
-              size={14}
+              size={iconEditProps.size}
               color={iconProps.color}
               strokeWidth={iconProps.stroke}
             />

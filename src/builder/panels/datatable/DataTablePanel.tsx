@@ -28,6 +28,7 @@ import {
   RefreshCw,
   Database,
 } from "lucide-react";
+import { iconProps, iconEditProps } from "../../../utils/ui/uiConstants";
 import type { PanelProps } from "../core/types";
 import { useDataStore } from "../../stores/data";
 import { useDataTableEditorStore } from "./stores/dataTableEditorStore";
@@ -119,7 +120,7 @@ export function DataTablePanel({ isActive }: PanelProps) {
   if (!currentProjectId) {
     return (
       <div className="datatable-panel">
-        <PanelHeader icon={<Database size={16} />} title="DataTable" />
+        <PanelHeader icon={<Database size={iconProps.size} />} title="DataTable" />
         <EmptyState message="프로젝트를 선택하세요" />
       </div>
     );
@@ -150,7 +151,7 @@ export function DataTablePanel({ isActive }: PanelProps) {
   return (
     <div className="datatable-panel">
       <PanelHeader
-        icon={<Database size={16} />}
+        icon={<Database size={iconProps.size} />}
         title="DataTable"
         actions={
           <button
@@ -159,7 +160,7 @@ export function DataTablePanel({ isActive }: PanelProps) {
             onClick={handleRefresh}
             title="새로고침"
           >
-            <RefreshCw size={16} />
+            <RefreshCw size={iconProps.size} />
           </button>
         }
       />
@@ -181,7 +182,7 @@ export function DataTablePanel({ isActive }: PanelProps) {
             }}
             type="button"
           >
-            <tab.icon size={14} />
+            <tab.icon size={iconEditProps.size} />
             <span>{tab.label}</span>
           </button>
         ))}

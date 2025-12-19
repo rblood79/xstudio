@@ -9,7 +9,7 @@ import { Button } from 'react-aria-components';
 import { ChevronUp, ChevronDown, Plus } from 'lucide-react';
 import type { BlockEventAction } from '../../../events/types/eventBlockTypes';
 import { ActionBlock } from './ActionBlock';
-import { iconProps } from '../../../../utils/ui/uiConstants';
+import { iconProps, iconSmall } from '../../../../utils/ui/uiConstants';
 
 interface ActionListProps {
   /** 액션 목록 */
@@ -92,7 +92,7 @@ export function ActionList({
             onPress={onAddAction}
             isDisabled={isDisabled}
           >
-            <Plus size={12} />
+            <Plus size={iconSmall.size} />
             <span>Add action</span>
           </Button>
         )}
@@ -113,7 +113,7 @@ export function ActionList({
                 isDisabled={isDisabled || index === 0}
                 aria-label="Move action up"
               >
-                <ChevronUp size={12} color={iconProps.color} strokeWidth={iconProps.stroke} />
+                <ChevronUp size={iconSmall.size} color={iconProps.color} strokeWidth={iconProps.stroke} />
               </Button>
               <Button
                 className="iconButton action-reorder-btn"
@@ -121,7 +121,7 @@ export function ActionList({
                 isDisabled={isDisabled || index === actions.length - 1}
                 aria-label="Move action down"
               >
-                <ChevronDown size={12} color={iconProps.color} strokeWidth={iconProps.stroke} />
+                <ChevronDown size={iconSmall.size} color={iconProps.color} strokeWidth={iconProps.stroke} />
               </Button>
             </div>
           )}
@@ -152,7 +152,7 @@ export function ActionList({
             onPress={onAddAction}
             isDisabled={isDisabled}
           >
-            <Plus size={12} />
+            <Plus size={iconSmall.size} />
             <span>Add action</span>
           </Button>
         </div>

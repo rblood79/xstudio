@@ -19,6 +19,7 @@ import {
   TabPanel,
 } from "react-aria-components";
 import { Activity, Database, Cpu, Zap, BarChart3 } from "lucide-react";
+import { iconProps, iconEditProps, iconLarge } from "../../../utils/ui/uiConstants";
 import { performanceMonitor } from "../../utils/performanceMonitor";
 import type { PanelProps } from "../core/types";
 import { useMemoryStats, formatBytes } from "./hooks/useMemoryStats";
@@ -172,23 +173,23 @@ function MonitorPanelContent() {
       >
         <TabList className="monitor-tab-list" aria-label="Monitor tabs">
           <Tab id="memory" className="monitor-tab">
-            <Activity size={14} />
+            <Activity size={iconEditProps.size} />
             <span>Memory</span>
           </Tab>
           <Tab id="realtime" className="monitor-tab">
-            <Zap size={14} />
+            <Zap size={iconEditProps.size} />
             <span>Realtime</span>
           </Tab>
           <Tab id="stats" className="monitor-tab">
-            <Database size={14} />
+            <Database size={iconEditProps.size} />
             <span>Stats</span>
           </Tab>
           <Tab id="browser" className="monitor-tab">
-            <Cpu size={14} />
+            <Cpu size={iconEditProps.size} />
             <span>Browser</span>
           </Tab>
           <Tab id="analysis" className="monitor-tab">
-            <BarChart3 size={14} />
+            <BarChart3 size={iconEditProps.size} />
             <span>Analysis</span>
           </Tab>
         </TabList>
@@ -259,33 +260,33 @@ function MonitorPanelContent() {
                 <StatCard
                   label="Pages"
                   value={stats.pageCount.toString()}
-                  icon={<Database size={16} />}
+                  icon={<Database size={iconProps.size} />}
                 />
                 <StatCard
                   label="History Entries"
                   value={stats.totalEntries.toString()}
-                  icon={<Activity size={16} />}
+                  icon={<Activity size={iconProps.size} />}
                 />
                 <StatCard
                   label="Commands"
                   value={stats.commandStoreStats.commandCount.toString()}
-                  icon={<Activity size={16} />}
+                  icon={<Activity size={iconProps.size} />}
                 />
                 <StatCard
                   label="Cache Size"
                   value={stats.commandStoreStats.cacheSize.toString()}
-                  icon={<Database size={16} />}
+                  icon={<Database size={iconProps.size} />}
                 />
                 <StatCard
                   label="Memory Usage"
                   value={formatBytes(stats.commandStoreStats.estimatedMemoryUsage)}
-                  icon={<Cpu size={16} />}
+                  icon={<Cpu size={iconProps.size} />}
                   highlight={stats.commandStoreStats.estimatedMemoryUsage > 50 * 1024 * 1024}
                 />
                 <StatCard
                   label="Compression"
                   value={`${(stats.commandStoreStats.compressionRatio * 100).toFixed(1)}%`}
-                  icon={<Activity size={16} />}
+                  icon={<Activity size={iconProps.size} />}
                 />
               </>
             )}
@@ -299,28 +300,28 @@ function MonitorPanelContent() {
               <StatCard
                 label="Used Heap"
                 value={formatBytes(stats.browserMemory.usedJSHeapSize)}
-                icon={<Cpu size={16} />}
+                icon={<Cpu size={iconProps.size} />}
               />
               <StatCard
                 label="Total Heap"
                 value={formatBytes(stats.browserMemory.totalJSHeapSize)}
-                icon={<Cpu size={16} />}
+                icon={<Cpu size={iconProps.size} />}
               />
               <StatCard
                 label="Heap Limit"
                 value={formatBytes(stats.browserMemory.jsHeapSizeLimit)}
-                icon={<Cpu size={16} />}
+                icon={<Cpu size={iconProps.size} />}
               />
               <StatCard
                 label="Usage"
                 value={`${stats.browserMemory.usagePercent.toFixed(1)}%`}
-                icon={<Activity size={16} />}
+                icon={<Activity size={iconProps.size} />}
                 highlight={stats.browserMemory.usagePercent > 75}
               />
             </div>
           ) : (
             <div className="browser-memory-fallback">
-              <Cpu size={24} />
+              <Cpu size={iconLarge.size} />
               <p>Browser memory information is only available in Chrome/Edge.</p>
             </div>
           )}
