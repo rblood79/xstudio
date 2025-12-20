@@ -7,6 +7,114 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Optimized - StylesPanel Jotai 마이그레이션 및 성능 최적화 (2025-12-21)
+
+#### 개요
+StylesPanel의 요소 선택 시 발생하던 150-200ms handler violation을 해결하기 위한 Jotai 기반 상태 관리 마이그레이션
+
+#### Phase 3: Jotai 기반 Fine-grained Reactivity
+
+**1. Jotai Atoms 구현 (`atoms/styleAtoms.ts`)**
+```typescript
+// 35개 이상의 selectAtom 정의 (equality 체크 포함)
+export const widthAtom = selectAtom(
+  selectedElementAtom,
+  (element) => element?.style?.width ?? 'auto',
+  (a, b) => a === b  // equality 체크로 불필요한 리렌더 방지
+);
+
+// 그룹 atoms (섹션별 값 묶음)
+export const transformValuesAtom = selectAtom(
+  selectedElementAtom,
+  (element) => ({
+    width: String(element?.style?.width ?? 'auto'),
+    height: String(element?.style?.height ?? 'auto'),
+    top: String(element?.style?.top ?? 'auto'),
+    left: String(element?.style?.left ?? 'auto'),
+  }),
+  (a, b) => a?.width === b?.width && a?.height === b?.height && ...
+);
+
+// StylesPanel용 atoms
+export const hasSelectedElementAtom = selectAtom(...);
+export const modifiedCountAtom = selectAtom(...);
+export const isCopyDisabledAtom = selectAtom(...);
+```
+
+**2. Zustand-Jotai 브릿지 (`hooks/useZustandJotaiBridge.ts`)**
+```typescript
+export function useZustandJotaiBridge(): void {
+  const setSelectedElement = useSetAtom(selectedElementAtom);
+  useEffect(() => {
+    const unsubscribe = useStore.subscribe((state, prevState) => {
+      if (state.selectedElementId !== prevState.selectedElementId) {
+        setSelectedElement(buildSelectedElement(state));
+      }
+    });
+    return unsubscribe;
+  }, [setSelectedElement]);
+}
+```
+
+**3. 섹션별 Jotai 훅**
+- `useTransformValuesJotai.ts` - Transform 섹션용
+- `useLayoutValuesJotai.ts` - Layout 섹션용
+- `useAppearanceValuesJotai.ts` - Appearance 섹션용
+- `useTypographyValuesJotai.ts` - Typography 섹션용
+
+**4. StylesPanel 최적화**
+```typescript
+// 이전: useSelectedElementData() 직접 사용 → 매번 리렌더
+// 이후: Jotai atoms 사용 → 값이 동일하면 리렌더 없음
+
+function StylesPanelContent() {
+  const hasSelectedElement = useAtomValue(hasSelectedElementAtom);
+  const modifiedCount = useAtomValue(modifiedCountAtom);
+  const isCopyDisabled = useAtomValue(isCopyDisabledAtom);
+  // ...
+}
+
+// AllSections, ModifiedSectionsWrapper 분리로 리렌더 격리
+const AllSections = memo(function AllSections() { ... });
+const ModifiedSectionsWrapper = memo(function ModifiedSectionsWrapper() { ... });
+```
+
+#### Phase 4: PropertyColor 최적화
+
+**key={value} 패턴 유지 + Jotai 시너지**
+- `key={value}` 패턴: 값 변경 시 재마운트로 상태 동기화
+- Jotai selectAtom equality 체크: 동일한 값이면 리렌더 없음 → key 변경 없음 → 재마운트 없음
+
+#### 수정된 파일
+
+**신규 파일:**
+- `src/builder/panels/styles/atoms/styleAtoms.ts` - 35+ Jotai atoms
+- `src/builder/panels/styles/atoms/index.ts` - exports
+- `src/builder/panels/styles/hooks/useZustandJotaiBridge.ts`
+- `src/builder/panels/styles/hooks/useTransformValuesJotai.ts`
+- `src/builder/panels/styles/hooks/useLayoutValuesJotai.ts`
+- `src/builder/panels/styles/hooks/useAppearanceValuesJotai.ts`
+- `src/builder/panels/styles/hooks/useTypographyValuesJotai.ts`
+
+**수정된 파일:**
+- `src/builder/panels/styles/StylesPanel.tsx` - Jotai atoms 사용, 컴포넌트 분리
+- `src/builder/panels/styles/sections/TransformSection.tsx` - Jotai 마이그레이션
+- `src/builder/panels/styles/sections/LayoutSection.tsx` - Jotai 마이그레이션
+- `src/builder/panels/styles/sections/AppearanceSection.tsx` - Jotai 마이그레이션
+- `src/builder/panels/styles/sections/TypographySection.tsx` - Jotai 마이그레이션
+- `src/builder/panels/common/PropertyColor.tsx` - key 패턴 문서화
+- `src/shared/components/ComboBox.tsx` - ClassNameOrFunction 타입 지원
+
+#### 성능 개선
+
+| 시나리오 | 이전 | 이후 |
+|---------|------|------|
+| 동일 스타일 요소 간 교차 선택 | 매번 리렌더 (150-200ms) | 리렌더 없음 (0ms) |
+| 스타일 값 변경 | 전체 섹션 리렌더 | 해당 섹션만 리렌더 |
+| filter="all" 모드 | Zustand 구독 | Zustand 구독 완전 제거 |
+
+---
+
 ### Added - Viewport Culling 최적화 (2025-12-20)
 
 #### 개요
