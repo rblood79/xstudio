@@ -1,4 +1,4 @@
-import React, { useCallback, useRef, memo } from 'react';
+import React, { useCallback, useRef, useEffect, memo } from 'react';
 import {
   ColorPicker as AriaColorPicker,
   ColorField as AriaColorField,
@@ -27,24 +27,39 @@ interface PropertyColorProps {
 
 /**
  * 내부 ColorPicker 컴포넌트 - 드래그 중 로컬 상태 관리
- * key prop으로 외부 value 변경 시 재마운트하여 상태 동기화
+ * 🚀 Phase 4: useEffect로 외부 값 동기화 (key 패턴 제거로 재마운트 방지)
  */
-function ColorPickerInner({
-  initialValue,
+const ColorPickerInner = memo(function ColorPickerInner({
+  value,
   onChange,
   label,
 }: {
-  initialValue: string;
+  value: string;
   onChange: (value: string) => void;
   label?: string;
 }) {
-  const [localColor, setLocalColor] = React.useState<string>(initialValue);
-  const [inputValue, setInputValue] = React.useState<string>(initialValue);
-  const lastSavedValue = useRef<string>(initialValue);
+  const [localColor, setLocalColor] = React.useState<string>(value);
+  const [inputValue, setInputValue] = React.useState<string>(value);
+  const lastSavedValue = useRef<string>(value);
+  // 🚀 드래그 중인지 추적 (외부 동기화 방지)
+  const isDraggingRef = useRef<boolean>(false);
+
+  // 🚀 Phase 4: 외부 value 변경 시 로컬 상태 동기화
+  useEffect(() => {
+    // 드래그 중이면 외부 동기화 스킵 (드래그 중 깜빡임 방지)
+    if (isDraggingRef.current) return;
+    // 외부에서 변경된 경우만 동기화
+    if (value !== lastSavedValue.current) {
+      setLocalColor(value);
+      setInputValue(value);
+      lastSavedValue.current = value;
+    }
+  }, [value]);
 
   // 드래그 중: 로컬 상태만 업데이트 (UI 실시간 반영)
   const handleChange = useCallback((color: Color | null) => {
     if (!color) return;
+    isDraggingRef.current = true; // 🚀 드래그 시작
     const hexValue = color.toString('hex');
     setLocalColor(hexValue);
     setInputValue(hexValue);
@@ -52,6 +67,7 @@ function ColorPickerInner({
 
   // 드래그 종료: 실제 저장 (onChangeEnd)
   const handleChangeEnd = useCallback((color: Color) => {
+    isDraggingRef.current = false; // 🚀 드래그 종료
     const hexValue = color.toString('hex');
     if (hexValue !== lastSavedValue.current) {
       lastSavedValue.current = hexValue;
@@ -119,9 +135,13 @@ function ColorPickerInner({
       </DialogTrigger>
     </AriaColorPicker>
   );
-}
+}, (prevProps, nextProps) => {
+  // 🚀 Phase 4: value만 비교 (onChange는 무시)
+  return prevProps.value === nextProps.value && prevProps.label === nextProps.label;
+});
 
 // 🚀 Phase 21: memo 적용
+// 🚀 Phase 4: key 패턴 제거 - 재마운트 대신 useEffect로 동기화
 export const PropertyColor = memo(function PropertyColor({
   label,
   value,
@@ -132,8 +152,7 @@ export const PropertyColor = memo(function PropertyColor({
     <fieldset className={`properties-aria property-color-input ${className || ''}`}>
       {label && <legend className="fieldset-legend">{label}</legend>}
       <ColorPickerInner
-        key={value}
-        initialValue={value}
+        value={value}
         onChange={onChange}
         label={label}
       />
