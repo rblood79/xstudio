@@ -1,4 +1,4 @@
-import { createContext, useContext } from 'react';
+import { createContext, useContext, type ReactNode } from 'react';
 import {
   Tabs as RACTabs,
   TabsProps,
@@ -273,7 +273,7 @@ export function TabList<T extends object>({
       <RACTabList {...props} className={tabListClassName} data-variant={variant} data-size={size} data-show-indicator="true">
         <SharedElementTransition>
           <TabListIndicatorContext.Provider value={true}>
-            {children}
+            {children as ReactNode}
           </TabListIndicatorContext.Provider>
         </SharedElementTransition>
       </RACTabList>
@@ -284,7 +284,7 @@ export function TabList<T extends object>({
   return (
     <RACTabList {...props} className={tabListClassName} data-variant={variant} data-size={size}>
       <TabListIndicatorContext.Provider value={false}>
-        {children}
+        {children as ReactNode}
       </TabListIndicatorContext.Provider>
     </RACTabList>
   );
@@ -301,7 +301,7 @@ export function Tab({ children, ...props }: TabProps) {
   return (
     <RACTab {...props} className="react-aria-Tab">
       {showIndicator && <SelectionIndicator />}
-      {children}
+      {children as ReactNode}
     </RACTab>
   );
 }

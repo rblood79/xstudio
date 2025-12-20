@@ -99,7 +99,9 @@ export function MenuButton<T extends object>({
   });
 
   // Menu className generator (reused across all conditional renders)
-  const getMenuClassName = (baseClassName?: string) =>
+  // props.className can be string or function, so we extract string value if available
+  const baseClassName = typeof props.className === 'string' ? props.className : undefined;
+  const getMenuClassName = () =>
     composeRenderProps(
       baseClassName,
       (className) => className ? `react-aria-Menu ${className}` : 'react-aria-Menu'
@@ -120,7 +122,7 @@ export function MenuButton<T extends object>({
         <MenuTrigger {...props}>
           <Button>{label}</Button>
           <Popover>
-            <Menu className={getMenuClassName(props.className)} data-variant={variant} data-size={size}>
+            <Menu className={getMenuClassName()} data-variant={variant} data-size={size}>
               <AriaMenuItem key="loading" textValue="Loading">
                 ⏳ 데이터 로딩 중...
               </AriaMenuItem>
@@ -136,7 +138,7 @@ export function MenuButton<T extends object>({
         <MenuTrigger {...props}>
           <Button>{label}</Button>
           <Popover>
-            <Menu className={getMenuClassName(props.className)} data-variant={variant} data-size={size}>
+            <Menu className={getMenuClassName()} data-variant={variant} data-size={size}>
               <AriaMenuItem key="error" textValue="Error">
                 ❌ 오류: {error}
               </AriaMenuItem>
@@ -206,7 +208,7 @@ export function MenuButton<T extends object>({
                 )}
               </AriaMenuItem>
               <Popover>
-                <Menu items={submenuItems as Iterable<T>} className={getMenuClassName(props.className)} data-variant={variant} data-size={size}>
+                <Menu items={submenuItems as Iterable<T>} className={getMenuClassName()} data-variant={variant} data-size={size}>
                   {(subItem) => renderMenuItem(subItem as unknown as MenuItem)}
                 </Menu>
               </Popover>
@@ -234,7 +236,7 @@ export function MenuButton<T extends object>({
         <MenuTrigger {...props}>
           <Button>{label}</Button>
           <Popover>
-            <Menu items={menuItems as Iterable<T>} className={getMenuClassName(props.className)} data-variant={variant} data-size={size}>
+            <Menu items={menuItems as Iterable<T>} className={getMenuClassName()} data-variant={variant} data-size={size}>
               {(item) => renderMenuItem(item as unknown as MenuItem)}
             </Menu>
           </Popover>
@@ -247,7 +249,7 @@ export function MenuButton<T extends object>({
       <MenuTrigger {...props}>
         <Button>{label}</Button>
         <Popover>
-          <Menu className={getMenuClassName(props.className)} data-variant={variant} data-size={size}>
+          <Menu className={getMenuClassName()} data-variant={variant} data-size={size}>
             {children}
           </Menu>
         </Popover>
@@ -352,7 +354,7 @@ export function MenuButton<T extends object>({
                 onAction={(key) => {
                   console.log("Submenu item selected:", key);
                 }}
-                className={getMenuClassName(props.className)}
+                className={getMenuClassName()}
                 data-variant={variant}
                 data-size={size}
               >
@@ -384,7 +386,7 @@ export function MenuButton<T extends object>({
               console.log("Selected item data:", selectedItem);
               // 이벤트 핸들러 실행 가능
             }}
-            className={getMenuClassName(props.className)}
+            className={getMenuClassName()}
             data-variant={variant}
             data-size={size}
           >
@@ -400,7 +402,7 @@ export function MenuButton<T extends object>({
     <MenuTrigger {...props}>
       <Button>{label}</Button>
       <Popover>
-        <Menu {...props} className={getMenuClassName(props.className)} data-variant={variant} data-size={size}>
+        <Menu {...props} className={getMenuClassName()} data-variant={variant} data-size={size}>
           {loading && (
             <AriaMenuItem key="loading" textValue="Loading">
               ⏳ 데이터 로딩 중...

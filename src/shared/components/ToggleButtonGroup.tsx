@@ -1,4 +1,4 @@
-import { createContext, useContext } from "react";
+import { createContext, useContext, type ReactNode } from "react";
 import {
   ToggleButton as RACToggleButton,
   ToggleButtonGroup as RACToggleButtonGroup,
@@ -158,7 +158,7 @@ export function ToggleButtonGroup({
           className={toggleButtonGroupClassName}
         >
           <ToggleButtonGroupIndicatorContext.Provider value={indicator}>
-            {children}
+            {children as ReactNode}
           </ToggleButtonGroupIndicatorContext.Provider>
         </RACToggleButtonGroup>
       );
@@ -174,7 +174,7 @@ export function ToggleButtonGroup({
         className={toggleButtonGroupClassName}
       >
         <ToggleButtonGroupIndicatorContext.Provider value={indicator}>
-          {children}
+          {children as ReactNode}
         </ToggleButtonGroupIndicatorContext.Provider>
       </RACToggleButtonGroup>
     );
@@ -272,7 +272,7 @@ export function ToggleButtonGroup({
       className={toggleButtonGroupClassName}
     >
       <ToggleButtonGroupIndicatorContext.Provider value={indicator}>
-        {children}
+        {children as ReactNode}
       </ToggleButtonGroupIndicatorContext.Provider>
     </RACToggleButtonGroup>
   );

@@ -483,10 +483,10 @@ Skeleton.Text = function SkeletonText({
  * Skeleton.Circle - Convenience component for circular skeletons
  */
 Skeleton.Circle = function SkeletonCircle({
-  size = 48,
+  size: circleSize = 48,
   ...props
-}: Omit<SkeletonProps, "variant" | "width" | "height"> & { size?: number }) {
-  return <Skeleton variant="circular" width={size} height={size} {...props} />;
+}: Omit<SkeletonProps, "variant" | "width" | "height" | "size"> & { size?: number }) {
+  return <Skeleton variant="circular" width={circleSize} height={circleSize} {...props} />;
 };
 
 /**

@@ -36,7 +36,7 @@ import { Skeleton } from "./Skeleton";
 import "./styles/Select.css";
 
 export interface SelectProps<T extends object>
-  extends Omit<AriaSelectProps<T>, "children"> {
+  extends Omit<AriaSelectProps<T>, "children" | "selectionMode"> {
   label?: string;
   description?: string;
   errorMessage?: string | ((validation: ValidationResult) => string);
@@ -314,7 +314,6 @@ export function Select<T extends object>({
       placeholder={placeholder}
       isDisabled={hasDataBinding && (loading || !!error)}
       data-selection-mode={selectionMode}
-      selectionMode={selectionMode}
     >
       {(renderProps) => (
         <>
@@ -323,21 +322,7 @@ export function Select<T extends object>({
           )}
 
           <Button className="react-aria-Button">
-            {selectionMode === "multiple" ? (
-              (() => {
-                const customValue = renderMultipleSelectValue(
-                  renderProps.selectedKeys,
-                  renderProps.selectedItems
-                );
-                return customValue ? (
-                  <SelectValue>{customValue}</SelectValue>
-                ) : (
-                  <SelectValue />
-                );
-              })()
-            ) : (
-              <SelectValue />
-            )}
+            <SelectValue />
             <span aria-hidden="true" className="select-chevron">
               <ChevronDown size={16} />
             </span>

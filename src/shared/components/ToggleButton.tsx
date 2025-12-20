@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import {
   ToggleButton as RACToggleButton,
   ToggleButtonProps,
@@ -47,7 +48,7 @@ export function ToggleButton({
       )}
     >
       {showIndicator && <SelectionIndicator />}
-      {children}
+      {children as ReactNode}
     </RACToggleButton>
   );
 }
