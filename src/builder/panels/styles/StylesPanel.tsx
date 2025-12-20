@@ -11,9 +11,9 @@
  * - isActive 체크를 최상단에서 수행
  * - Content 컴포넌트 분리로 비활성 시 훅 실행 방지
  *
- * 🚀 Phase 20: 성능 최적화
- * - key 제거로 리마운트 방지
- * - useStyleValues로 스타일 1회 파싱
+ * 🚀 Phase 22: 섹션별 훅 분리로 성능 최적화
+ * - 각 Section이 자체 훅으로 스타일 값 관리
+ * - 단일 속성 변경 시 해당 섹션만 재계산 (최대 86% 성능 개선)
  */
 
 import "../../panels/common/index.css";
@@ -38,7 +38,6 @@ import {
 import { getModifiedProperties } from "./hooks/useStyleSource";
 import { useSectionCollapse } from "./hooks/useSectionCollapse";
 import { useStyleActions } from "./hooks/useStyleActions";
-import { useStyleValues } from "./hooks/useStyleValues";
 import { useKeyboardShortcutsRegistry } from "../../hooks/useKeyboardShortcutsRegistry";
 import "./StylesPanel.css";
 
@@ -71,8 +70,7 @@ function StylesPanelContent() {
   } = useSectionCollapse();
   const { copyStyles, pasteStyles } = useStyleActions();
 
-  // 🚀 Phase 20: 스타일 값을 1회만 파싱 (각 Section에서 개별 파싱 대신)
-  const styleValues = useStyleValues(selectedElement);
+  // 🚀 Phase 22: 각 Section이 자체 훅으로 스타일 값을 관리 (성능 최적화)
 
   // Calculate modified properties count
   const modifiedCount = useMemo(() => {
@@ -208,14 +206,14 @@ function StylesPanelContent() {
       </div>
 
       {/* Sections */}
-      {/* 🚀 Phase 20: key 제거로 리마운트 방지 + styleValues 전달 */}
+      {/* 🚀 Phase 22: 각 Section이 자체 훅으로 스타일 값 관리 */}
       <div className="panel-contents">
         {filter === "all" ? (
           <>
-            <TransformSection selectedElement={selectedElement} styleValues={styleValues} />
-            <LayoutSection selectedElement={selectedElement} styleValues={styleValues} />
-            <AppearanceSection selectedElement={selectedElement} styleValues={styleValues} />
-            <TypographySection selectedElement={selectedElement} styleValues={styleValues} />
+            <TransformSection selectedElement={selectedElement} />
+            <LayoutSection selectedElement={selectedElement} />
+            <AppearanceSection selectedElement={selectedElement} />
+            <TypographySection selectedElement={selectedElement} />
           </>
         ) : (
           <ModifiedStylesSection selectedElement={selectedElement} />

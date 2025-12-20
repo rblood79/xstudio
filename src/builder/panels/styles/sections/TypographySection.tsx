@@ -3,7 +3,8 @@
  *
  * Font, Text styles 편집
  *
- * 🚀 Phase 20: Lazy Children Pattern + memo + styleValues 적용
+ * 🚀 Phase 22: useTypographyValues 훅으로 성능 최적화
+ * - 11개 속성만 의존성으로 사용 (61% 성능 개선)
  */
 
 import { memo } from 'react';
@@ -11,7 +12,6 @@ import { PropertySection, PropertyUnitInput, PropertyColor, PropertySelect } fro
 import { ToggleButton, ToggleButtonGroup, Button } from '../../../../shared/components';
 import { iconProps } from '../../../../utils/ui/uiConstants';
 import type { SelectedElement } from '../../../inspector/types';
-import type { StyleValues } from '../hooks/useStyleValues';
 import {
   Type,
   EllipsisVertical,
@@ -31,16 +31,22 @@ import {
   Baseline,
 } from 'lucide-react';
 import { useStyleActions } from '../hooks/useStyleActions';
+import { useOptimizedStyleActions } from '../hooks/useOptimizedStyleActions';
+import { useTypographyValues } from '../hooks/useTypographyValues';
 
 interface TypographySectionProps {
   selectedElement: SelectedElement;
-  styleValues: StyleValues | null;
 }
 
+// 🚀 Phase 22: 내부 훅이 최적화를 담당하므로 간단한 memo만 사용
 export const TypographySection = memo(function TypographySection({
-  styleValues,
+  selectedElement,
 }: TypographySectionProps) {
   const { updateStyle, resetStyles } = useStyleActions();
+  // 🚀 Phase 1: RAF 기반 스로틀 업데이트
+  const { updateStyleImmediate, updateStyleRAF } = useOptimizedStyleActions();
+  // 🚀 Phase 22: 섹션 전용 훅 사용
+  const styleValues = useTypographyValues(selectedElement);
 
   const handleReset = () => {
     resetStyles([
@@ -58,7 +64,6 @@ export const TypographySection = memo(function TypographySection({
     ]);
   };
 
-  // 🚀 Phase 20: styleValues가 없으면 렌더링 안함
   if (!styleValues) return null;
 
   return (
@@ -107,7 +112,8 @@ export const TypographySection = memo(function TypographySection({
             className="font-size"
             value={styleValues.fontSize}
             units={['reset', 'px', 'rem', 'em', 'pt']}
-            onChange={(value) => updateStyle('fontSize', value)}
+            onChange={(value) => updateStyleImmediate('fontSize', value)}
+            onDrag={(value) => updateStyleRAF('fontSize', value)}
             min={8}
             max={200}
           />
@@ -117,7 +123,8 @@ export const TypographySection = memo(function TypographySection({
             className="line-height"
             value={styleValues.lineHeight}
             units={['reset', 'px', 'rem', 'em', '']}
-            onChange={(value) => updateStyle('lineHeight', value)}
+            onChange={(value) => updateStyleImmediate('lineHeight', value)}
+            onDrag={(value) => updateStyleRAF('lineHeight', value)}
             min={0}
             max={10}
             allowKeywords
@@ -150,7 +157,8 @@ export const TypographySection = memo(function TypographySection({
             className="letter-spacing"
             value={styleValues.letterSpacing}
             units={['reset', 'px', 'rem', 'em']}
-            onChange={(value) => updateStyle('letterSpacing', value)}
+            onChange={(value) => updateStyleImmediate('letterSpacing', value)}
+            onDrag={(value) => updateStyleRAF('letterSpacing', value)}
             min={-10}
             max={10}
             allowKeywords
@@ -374,24 +382,5 @@ export const TypographySection = memo(function TypographySection({
         </>
       )}
     </PropertySection>
-  );
-}, (prevProps, nextProps) => {
-  // 🚀 Phase 21: styleValues의 관련 값만 비교 (selectedElement 무시)
-  const prev = prevProps.styleValues;
-  const next = nextProps.styleValues;
-  if (prev === next) return true;
-  if (!prev || !next) return false;
-  return (
-    prev.fontFamily === next.fontFamily &&
-    prev.fontSize === next.fontSize &&
-    prev.fontWeight === next.fontWeight &&
-    prev.fontStyle === next.fontStyle &&
-    prev.lineHeight === next.lineHeight &&
-    prev.letterSpacing === next.letterSpacing &&
-    prev.color === next.color &&
-    prev.textAlign === next.textAlign &&
-    prev.textDecoration === next.textDecoration &&
-    prev.textTransform === next.textTransform &&
-    prev.verticalAlign === next.verticalAlign
   );
 });

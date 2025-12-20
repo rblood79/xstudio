@@ -3,7 +3,8 @@
  *
  * Background, Border 편집
  *
- * 🚀 Phase 20: Lazy Children Pattern + memo + styleValues 적용
+ * 🚀 Phase 22: useAppearanceValues 훅으로 성능 최적화
+ * - 5개 속성만 의존성으로 사용 (82% 성능 개선)
  */
 
 import { memo } from 'react';
@@ -11,7 +12,6 @@ import { PropertySection, PropertyUnitInput, PropertyColor, PropertySelect } fro
 import { Button } from '../../../../shared/components';
 import { iconProps } from '../../../../utils/ui/uiConstants';
 import type { SelectedElement } from '../../../inspector/types';
-import type { StyleValues } from '../hooks/useStyleValues';
 import {
   Square,
   SquareDashed,
@@ -20,23 +20,27 @@ import {
   EllipsisVertical,
 } from 'lucide-react';
 import { useStyleActions } from '../hooks/useStyleActions';
+import { useOptimizedStyleActions } from '../hooks/useOptimizedStyleActions';
+import { useAppearanceValues } from '../hooks/useAppearanceValues';
 
 interface AppearanceSectionProps {
   selectedElement: SelectedElement;
-  styleValues: StyleValues | null;
 }
 
-// 🚀 Phase 21: 커스텀 비교 함수 - 실제 사용하는 스타일 값만 비교
+// 🚀 Phase 22: 내부 훅이 최적화를 담당하므로 간단한 memo만 사용
 export const AppearanceSection = memo(function AppearanceSection({
-  styleValues,
+  selectedElement,
 }: AppearanceSectionProps) {
   const { updateStyle, resetStyles } = useStyleActions();
+  // 🚀 Phase 1: RAF 기반 스로틀 업데이트
+  const { updateStyleImmediate, updateStyleRAF } = useOptimizedStyleActions();
+  // 🚀 Phase 22: 섹션 전용 훅 사용
+  const styleValues = useAppearanceValues(selectedElement);
 
   const handleReset = () => {
     resetStyles(['backgroundColor', 'borderColor', 'borderWidth', 'borderRadius', 'borderStyle']);
   };
 
-  // 🚀 Phase 20: styleValues가 없으면 렌더링 안함
   if (!styleValues) return null;
 
   return (
@@ -78,7 +82,8 @@ export const AppearanceSection = memo(function AppearanceSection({
               className="border-width"
               value={styleValues.borderWidth}
               units={['reset', 'px']}
-              onChange={(value) => updateStyle('borderWidth', value)}
+              onChange={(value) => updateStyleImmediate('borderWidth', value)}
+              onDrag={(value) => updateStyleRAF('borderWidth', value)}
               min={0}
               max={100}
             />
@@ -88,7 +93,8 @@ export const AppearanceSection = memo(function AppearanceSection({
               className="border-radius"
               value={styleValues.borderRadius}
               units={['reset', 'px', '%', 'rem', 'em']}
-              onChange={(value) => updateStyle('borderRadius', value)}
+              onChange={(value) => updateStyleImmediate('borderRadius', value)}
+              onDrag={(value) => updateStyleRAF('borderRadius', value)}
               min={0}
               max={500}
             />
@@ -124,18 +130,5 @@ export const AppearanceSection = memo(function AppearanceSection({
         </>
       )}
     </PropertySection>
-  );
-}, (prevProps, nextProps) => {
-  // 🚀 Phase 21: styleValues의 관련 값만 비교 (selectedElement 무시)
-  const prev = prevProps.styleValues;
-  const next = nextProps.styleValues;
-  if (prev === next) return true;
-  if (!prev || !next) return false;
-  return (
-    prev.backgroundColor === next.backgroundColor &&
-    prev.borderColor === next.borderColor &&
-    prev.borderWidth === next.borderWidth &&
-    prev.borderRadius === next.borderRadius &&
-    prev.borderStyle === next.borderStyle
   );
 });

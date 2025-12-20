@@ -4,16 +4,15 @@
  * Flex direction, Alignment, Gap, Padding, Margin 편집
  * 4방향 확장 모드: direction-alignment-grid 스타일 패턴 사용
  *
- * 🚀 Phase 20: Lazy Children Pattern + memo 적용
+ * 🚀 Phase 22: useLayoutValues 훅으로 성능 최적화
  */
 
-import { useState, useMemo, memo } from 'react';
+import { useState, memo } from 'react';
 import { PropertySection, PropertyUnitInput } from '../../common';
 import { ToggleButton, ToggleButtonGroup, Button } from '../../../../shared/components';
 import { Input } from 'react-aria-components';
 import { iconProps } from '../../../../utils/ui/uiConstants';
 import type { SelectedElement } from '../../../inspector/types';
-import type { StyleValues } from '../hooks/useStyleValues';
 import {
   Square,
   Maximize2,
@@ -30,6 +29,7 @@ import {
   ArrowRightToLine,
 } from 'lucide-react';
 import { useStyleActions } from '../hooks/useStyleActions';
+import { useOptimizedStyleActions } from '../hooks/useOptimizedStyleActions';
 import {
   getStyleValue,
   getFlexDirectionKeys,
@@ -37,26 +37,13 @@ import {
   getJustifyContentSpacingKeys,
   getFlexWrapKeys,
 } from '../hooks/useStyleValues';
+import { useLayoutValues } from '../hooks/useLayoutValues';
 
 interface LayoutSectionProps {
   selectedElement: SelectedElement;
-  styleValues: StyleValues | null;
 }
 
-/**
- * 4방향 값 추출 (padding/margin)
- */
-function get4DirectionValues(
-  element: SelectedElement,
-  prefix: 'padding' | 'margin'
-): { top: string; right: string; bottom: string; left: string } {
-  return {
-    top: getStyleValue(element, `${prefix}Top` as keyof React.CSSProperties, ''),
-    right: getStyleValue(element, `${prefix}Right` as keyof React.CSSProperties, ''),
-    bottom: getStyleValue(element, `${prefix}Bottom` as keyof React.CSSProperties, ''),
-    left: getStyleValue(element, `${prefix}Left` as keyof React.CSSProperties, ''),
-  };
-}
+// 4방향 값 추출은 이제 useLayoutValues 훅에서 처리됨
 
 /**
  * 4방향 입력 그리드 컴포넌트
@@ -118,31 +105,24 @@ function FourWayGrid({ values, onChange }: FourWayGridProps) {
   );
 }
 
-// 🚀 Phase 20: memo 적용
+// 🚀 Phase 22: useLayoutValues 훅으로 성능 최적화
 export const LayoutSection = memo(function LayoutSection({
   selectedElement,
-  styleValues,
 }: LayoutSectionProps) {
   const [isSpacingExpanded, setIsSpacingExpanded] = useState(false);
 
   const {
-    updateStyle,
     resetStyles,
     handleFlexDirection,
     handleFlexAlignment,
     handleJustifyContentSpacing,
     handleFlexWrap,
   } = useStyleActions();
+  // 🚀 Phase 1: RAF 기반 스로틀 업데이트
+  const { updateStyleImmediate, updateStyleRAF, updateStyleIdle } = useOptimizedStyleActions();
 
-  // 4방향 값 계산
-  const paddingValues = useMemo(
-    () => get4DirectionValues(selectedElement, 'padding'),
-    [selectedElement]
-  );
-  const marginValues = useMemo(
-    () => get4DirectionValues(selectedElement, 'margin'),
-    [selectedElement]
-  );
+  // 🚀 Phase 22: 섹션 전용 훅 사용
+  const styleValues = useLayoutValues(selectedElement);
 
   const handleReset = () => {
     resetStyles([
@@ -152,16 +132,30 @@ export const LayoutSection = memo(function LayoutSection({
     ]);
   };
 
+  // 🚀 Phase 1: FourWayGrid는 타이핑이므로 Idle 업데이트 사용
   const handlePaddingChange = (direction: 'Top' | 'Right' | 'Bottom' | 'Left', value: string) => {
-    updateStyle(`padding${direction}` as keyof React.CSSProperties, value);
+    updateStyleIdle(`padding${direction}`, value);
   };
 
   const handleMarginChange = (direction: 'Top' | 'Right' | 'Bottom' | 'Left', value: string) => {
-    updateStyle(`margin${direction}` as keyof React.CSSProperties, value);
+    updateStyleIdle(`margin${direction}`, value);
   };
 
-  // 🚀 Phase 20: styleValues가 없으면 렌더링 안함
   if (!styleValues) return null;
+
+  // 4방향 값은 훅에서 가져옴
+  const paddingValues = {
+    top: styleValues.paddingTop,
+    right: styleValues.paddingRight,
+    bottom: styleValues.paddingBottom,
+    left: styleValues.paddingLeft,
+  };
+  const marginValues = {
+    top: styleValues.marginTop,
+    right: styleValues.marginRight,
+    bottom: styleValues.marginBottom,
+    left: styleValues.marginLeft,
+  };
 
   return (
     <PropertySection id="layout" title="Layout" onReset={handleReset}>
@@ -337,9 +331,10 @@ export const LayoutSection = memo(function LayoutSection({
           icon={LayoutGrid}
           label="Gap"
           className="displayGap"
-          value={getStyleValue(selectedElement, 'gap', '0px')}
+          value={styleValues.gap}
           units={['reset', 'px', 'rem', 'em']}
-          onChange={(value) => updateStyle('gap', value)}
+          onChange={(value) => updateStyleImmediate('gap', value)}
+          onDrag={(value) => updateStyleRAF('gap', value)}
           min={0}
           max={500}
         />
@@ -353,9 +348,10 @@ export const LayoutSection = memo(function LayoutSection({
             icon={SquareSquare}
             label="Padding"
             className="padding"
-            value={getStyleValue(selectedElement, 'padding', '0px')}
+            value={styleValues.padding}
             units={['reset', 'px', 'rem', 'em']}
-            onChange={(value) => updateStyle('padding', value)}
+            onChange={(value) => updateStyleImmediate('padding', value)}
+            onDrag={(value) => updateStyleRAF('padding', value)}
             min={0}
             max={500}
           />
@@ -363,9 +359,10 @@ export const LayoutSection = memo(function LayoutSection({
             icon={Frame}
             label="Margin"
             className="margin"
-            value={getStyleValue(selectedElement, 'margin', '0px')}
+            value={styleValues.margin}
             units={['reset', 'px', 'rem', 'em']}
-            onChange={(value) => updateStyle('margin', value)}
+            onChange={(value) => updateStyleImmediate('margin', value)}
+            onDrag={(value) => updateStyleRAF('margin', value)}
             min={0}
             max={500}
           />
@@ -421,44 +418,5 @@ export const LayoutSection = memo(function LayoutSection({
         </>
       )}
     </PropertySection>
-  );
-}, (prevProps, nextProps) => {
-  // 🚀 Phase 21: styleValues + selectedElement의 관련 값만 비교
-  const prev = prevProps.styleValues;
-  const next = nextProps.styleValues;
-  const prevEl = prevProps.selectedElement;
-  const nextEl = nextProps.selectedElement;
-
-  if (prev === next && prevEl === nextEl) return true;
-  if (!prev || !next) return false;
-
-  // Layout 관련 스타일 값 비교
-  const styleEqual = (
-    prev.display === next.display &&
-    prev.flexDirection === next.flexDirection &&
-    prev.alignItems === next.alignItems &&
-    prev.justifyContent === next.justifyContent &&
-    prev.gap === next.gap &&
-    prev.padding === next.padding &&
-    prev.margin === next.margin
-  );
-
-  if (!styleEqual) return false;
-
-  // selectedElement의 style/computedStyle 비교 (4방향 padding/margin, flexWrap용)
-  if (!prevEl || !nextEl) return prevEl === nextEl;
-
-  const prevStyle = prevEl.style || {};
-  const nextStyle = nextEl.style || {};
-  return (
-    prevStyle.paddingTop === nextStyle.paddingTop &&
-    prevStyle.paddingRight === nextStyle.paddingRight &&
-    prevStyle.paddingBottom === nextStyle.paddingBottom &&
-    prevStyle.paddingLeft === nextStyle.paddingLeft &&
-    prevStyle.marginTop === nextStyle.marginTop &&
-    prevStyle.marginRight === nextStyle.marginRight &&
-    prevStyle.marginBottom === nextStyle.marginBottom &&
-    prevStyle.marginLeft === nextStyle.marginLeft &&
-    prevStyle.flexWrap === nextStyle.flexWrap
   );
 });

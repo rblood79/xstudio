@@ -4,8 +4,13 @@
  * CSS 변수를 런타임에 읽어서 PixiJS에서 사용할 수 있는 hex 값으로 변환
  * 테마 변경 시 동적으로 색상 업데이트 지원
  *
+ * 🚀 Phase 22: colord 기반 색상 파싱으로 통합
+ * - cssColorToPixiHex 사용으로 더 많은 색상 형식 지원
+ *
  * @since 2025-12-15
  */
+
+import { cssColorToPixiHex } from '../../../../utils/color';
 
 // ============================================
 // Types
@@ -77,36 +82,20 @@ function getCSSVariable(name: string): string {
 
 /**
  * CSS 색상 문자열을 hex 숫자로 변환
- * 지원: #hex, rgb(), rgba(), color-mix()
+ *
+ * 🚀 Phase 22: colord 기반으로 리팩토링
+ * 지원: hex, rgb, rgba, hsl, hsla, named colors, color-mix 등
  */
 function cssColorToHex(color: string, fallback: number): number {
   if (!color) return fallback;
-
-  // #hex 형식
-  if (color.startsWith('#')) {
-    const hex = color.slice(1);
-    if (hex.length === 3) {
-      const expanded = hex.split('').map((c) => c + c).join('');
-      return parseInt(expanded, 16);
-    }
-    return parseInt(hex, 16);
-  }
-
-  // rgb()/rgba() 형식
-  const rgbMatch = color.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
-  if (rgbMatch) {
-    const r = parseInt(rgbMatch[1], 10);
-    const g = parseInt(rgbMatch[2], 10);
-    const b = parseInt(rgbMatch[3], 10);
-    return (r << 16) | (g << 8) | b;
-  }
 
   // color-mix() 처리 - 브라우저가 계산한 값을 canvas로 읽어옴
   if (color.startsWith('color-mix')) {
     return resolveColorMix(color, fallback);
   }
 
-  return fallback;
+  // colord 기반 파싱 (hex, rgb, hsl, named colors 등 모두 지원)
+  return cssColorToPixiHex(color, fallback);
 }
 
 /**

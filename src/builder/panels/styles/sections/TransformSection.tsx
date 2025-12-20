@@ -4,7 +4,8 @@
  * Size, Position 편집
  * Note: Alignment는 Layout 섹션의 3x3 Flex alignment로 통합됨
  *
- * 🚀 Phase 20: styleValues prop으로 파싱된 값 직접 사용
+ * 🚀 Phase 22: useTransformValues 훅으로 성능 최적화
+ * - 4개 속성만 의존성으로 사용 (86% 성능 개선)
  */
 
 import { memo } from 'react';
@@ -12,7 +13,6 @@ import { PropertySection, PropertyUnitInput } from '../../common';
 import { Button } from '../../../../shared/components';
 import { iconProps } from '../../../../utils/ui/uiConstants';
 import type { SelectedElement } from '../../../inspector/types';
-import type { StyleValues } from '../hooks/useStyleValues';
 import {
   EllipsisVertical,
   RulerDimensionLine,
@@ -20,23 +20,27 @@ import {
   ArrowDownFromLine,
 } from 'lucide-react';
 import { useStyleActions } from '../hooks/useStyleActions';
+import { useOptimizedStyleActions } from '../hooks/useOptimizedStyleActions';
+import { useTransformValues } from '../hooks/useTransformValues';
 
 interface TransformSectionProps {
   selectedElement: SelectedElement;
-  styleValues: StyleValues | null;
 }
 
-// 🚀 Phase 21: 커스텀 비교 함수 - 실제 사용하는 스타일 값만 비교
+// 🚀 Phase 22: 내부 훅이 최적화를 담당하므로 간단한 memo만 사용
 export const TransformSection = memo(function TransformSection({
-  styleValues,
+  selectedElement,
 }: TransformSectionProps) {
-  const { updateStyle, resetStyles } = useStyleActions();
+  const { resetStyles } = useStyleActions();
+  // 🚀 Phase 1: RAF 기반 스로틀 업데이트
+  const { updateStyleImmediate, updateStyleRAF } = useOptimizedStyleActions();
+  // 🚀 Phase 22: 섹션 전용 훅 사용
+  const styleValues = useTransformValues(selectedElement);
 
   const handleReset = () => {
     resetStyles(['width', 'height', 'top', 'left']);
   };
 
-  // 🚀 Phase 20: styleValues가 없으면 렌더링 안함
   if (!styleValues) return null;
 
   return (
@@ -49,7 +53,8 @@ export const TransformSection = memo(function TransformSection({
             className="width"
             value={styleValues.width}
             units={['reset', 'px', '%', 'rem', 'em', 'vh', 'vw']}
-            onChange={(value) => updateStyle('width', value)}
+            onChange={(value) => updateStyleImmediate('width', value)}
+            onDrag={(value) => updateStyleRAF('width', value)}
             min={0}
             max={9999}
           />
@@ -59,7 +64,8 @@ export const TransformSection = memo(function TransformSection({
             className="height"
             value={styleValues.height}
             units={['reset', 'px', '%', 'rem', 'em', 'vh', 'vw']}
-            onChange={(value) => updateStyle('height', value)}
+            onChange={(value) => updateStyleImmediate('height', value)}
+            onDrag={(value) => updateStyleRAF('height', value)}
             min={0}
             max={9999}
           />
@@ -79,7 +85,8 @@ export const TransformSection = memo(function TransformSection({
             className="left"
             value={styleValues.left}
             units={['reset', 'px', '%', 'rem', 'em', 'vh', 'vw']}
-            onChange={(value) => updateStyle('left', value)}
+            onChange={(value) => updateStyleImmediate('left', value)}
+            onDrag={(value) => updateStyleRAF('left', value)}
             min={-9999}
             max={9999}
           />
@@ -89,7 +96,8 @@ export const TransformSection = memo(function TransformSection({
             className="top"
             value={styleValues.top}
             units={['reset', 'px', '%', 'rem', 'em', 'vh', 'vw']}
-            onChange={(value) => updateStyle('top', value)}
+            onChange={(value) => updateStyleImmediate('top', value)}
+            onDrag={(value) => updateStyleRAF('top', value)}
             min={-9999}
             max={9999}
           />
@@ -105,17 +113,5 @@ export const TransformSection = memo(function TransformSection({
         </>
       )}
     </PropertySection>
-  );
-}, (prevProps, nextProps) => {
-  // 🚀 Phase 21: styleValues의 관련 값만 비교 (selectedElement 무시)
-  const prev = prevProps.styleValues;
-  const next = nextProps.styleValues;
-  if (prev === next) return true;
-  if (!prev || !next) return false;
-  return (
-    prev.width === next.width &&
-    prev.height === next.height &&
-    prev.top === next.top &&
-    prev.left === next.left
   );
 });

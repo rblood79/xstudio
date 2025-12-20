@@ -299,10 +299,46 @@ Part 3 (StyleValues 최적화) ──────┴─────────�
 | 2 | Part 3-2: colord 도입 | 2개 파일 수정 | 색상 파싱 통합 |
 | 3 | Part 2: data-* 패턴 전환 | 86개 파일 | 대규모, 스크립트 필요 |
 
-### 4.3 Phase별 상세 계획
+### 4.3 PR 분할 전략
 
-#### Phase 1: 즉시 적용 (1일)
+각 Phase별 독립적인 PR을 생성하여 리뷰 용이성을 확보합니다.
 
+| PR | 브랜치명 | 내용 | 리뷰 포인트 |
+|----|----------|------|-------------|
+| PR #1 | `feat/react-aria-1.14-upgrade` | Phase 1 | 빌드/테스트 통과 확인 |
+| PR #2 | `perf/style-values-optimization` | Phase 2 | 성능 벤치마크 결과 첨부 |
+| PR #3 | `refactor/colord-integration` | Phase 3 | 색상 파싱 정확성 테스트 |
+| PR #4 | `refactor/data-attrs-migration` | Phase 4 | Storybook 스크린샷 비교 |
+
+### 4.4 롤백 전략
+
+각 Phase별 문제 발생 시 롤백 방안:
+
+| Phase | 롤백 방법 | 롤백 명령 |
+|-------|-----------|-----------|
+| Phase 1 | 패키지 다운그레이드 | `pnpm add react-aria-components@^1.13.0` |
+| Phase 2 | 기존 useStyleValues 훅 유지 | 새 훅 파일 삭제, Section 컴포넌트 import 복원 |
+| Phase 3 | colord 제거, 기존 파싱 로직 복원 | `pnpm remove colord` + git revert |
+| Phase 4 | Git revert (가장 중요) | `git revert --no-commit HEAD~N..HEAD` |
+
+**Phase 4 롤백 상세**:
+```bash
+# Phase 4 문제 발생 시 롤백 절차
+# 1. 변환 커밋 되돌리기
+git revert --no-commit <commit-hash>
+
+# 2. tailwind-variants 재설치 (제거한 경우)
+pnpm add tailwind-variants
+
+# 3. 빌드 확인
+pnpm build && pnpm test
+```
+
+### 4.5 Phase별 상세 계획
+
+#### Phase 1: React Aria 1.14.0 업그레이드
+
+**단계**:
 ```bash
 # 1. React Aria 업그레이드
 pnpm update react-aria-components@^1.14.0
@@ -314,7 +350,14 @@ pnpm update react-aria-components@^1.14.0
 pnpm build && pnpm test
 ```
 
-#### Phase 2: StyleValues 최적화 (2-3일)
+**완료 기준**:
+- [ ] 빌드 성공
+- [ ] 기존 테스트 통과
+- [ ] Storybook 정상 동작
+
+---
+
+#### Phase 2: StyleValues 최적화
 
 **생성할 파일**:
 ```
@@ -335,31 +378,191 @@ src/builder/panels/styles/sections/
 └── TypographySection.tsx   (새 훅 사용)
 ```
 
-#### Phase 3: colord 도입 (1일)
+**성능 벤치마크 스크립트** (PR에 결과 첨부 필수):
+```typescript
+// scripts/benchmark-style-values.tsx
+import { Profiler, ProfilerOnRenderCallback } from 'react';
 
+const onRender: ProfilerOnRenderCallback = (
+  id, phase, actualDuration, baseDuration
+) => {
+  console.log(`[${id}] ${phase}: ${actualDuration.toFixed(2)}ms`);
+};
+
+// Before: 단일 useStyleValues 사용
+function BenchmarkBefore() {
+  return (
+    <Profiler id="StylePanel-Before" onRender={onRender}>
+      <StylePanel />
+    </Profiler>
+  );
+}
+
+// After: 분할된 훅 사용
+function BenchmarkAfter() {
+  return (
+    <>
+      <Profiler id="TransformSection" onRender={onRender}>
+        <TransformSection />
+      </Profiler>
+      <Profiler id="LayoutSection" onRender={onRender}>
+        <LayoutSection />
+      </Profiler>
+      <Profiler id="AppearanceSection" onRender={onRender}>
+        <AppearanceSection />
+      </Profiler>
+      <Profiler id="TypographySection" onRender={onRender}>
+        <TypographySection />
+      </Profiler>
+    </>
+  );
+}
+
+// 측정 시나리오
+// 1. width 변경 시 리렌더링 범위 비교
+// 2. backgroundColor 변경 시 리렌더링 범위 비교
+// 3. fontSize 변경 시 리렌더링 범위 비교
+```
+
+**완료 기준**:
+- [ ] 4개 훅 생성 완료
+- [ ] 각 Section 컴포넌트 새 훅 사용으로 전환
+- [ ] 벤치마크 결과 문서화 (PR description에 첨부)
+- [ ] 기존 동작 regression 없음
+
+---
+
+#### Phase 3: colord 도입
+
+**설치** (필요한 플러그인만 선별):
+```bash
+# 기본 설치 (~2KB gzipped)
+pnpm add colord
+
+# 필요 시 플러그인 추가 (각 ~0.5KB)
+# - mix: color-mix() 지원 필요 시
+# - names: CSS named colors 지원 필요 시
+```
+
+**플러그인 선별 기준**:
+
+| 플러그인 | 용도 | 필요 여부 |
+|----------|------|-----------|
+| `mix` | `color-mix()` 파싱 | ⚠️ CSS 변수에서 사용 시 필요 |
+| `names` | `red`, `blue` 등 named colors | ✅ 권장 (CSS에서 자주 사용) |
+| `lch` | `lch()`, `oklch()` 파싱 | ❌ 현재 미사용 |
+| `hwb` | `hwb()` 파싱 | ❌ 현재 미사용 |
+| `lab` | `lab()`, `oklab()` 파싱 | ❌ 현재 미사용 |
+
+**권장 설치**:
 ```bash
 pnpm add colord
+# 플러그인은 코드에서 필요 시 동적 import
 ```
 
 **수정할 파일**:
 - `src/builder/panels/styles/utils/colorParser.ts` (신규 또는 기존 수정)
 - `src/builder/workspace/canvas/utils/cssVariableReader.ts`
 
-#### Phase 4: data-* 패턴 전환 (3-5일)
+**완료 기준**:
+- [ ] colord 설치 완료
+- [ ] 스타일 패널 색상 파싱 적용
+- [ ] Pixi Canvas 색상 파싱 적용
+- [ ] 색상 변환 정확성 테스트 (hex, rgb, rgba, hsl, named colors)
+
+---
+
+#### Phase 4: data-* 패턴 전환
 
 **자동화 스크립트 작성**:
 ```
 scripts/
 ├── migrate-tsx-to-data-attrs.ts
-└── migrate-css-to-data-attrs.ts
+├── migrate-css-to-data-attrs.ts
+└── validate-migration.ts        (신규: 마이그레이션 검증)
+```
+
+**CSS Nesting 호환성 확인**:
+```typescript
+// scripts/migrate-css-to-data-attrs.ts
+// CSS nesting 문법 (&.class) 처리 확인
+
+// 입력 예시:
+// .react-aria-Button {
+//   &.primary { ... }
+//   &.primary[data-hovered] { ... }
+// }
+
+// 출력 예시:
+// .react-aria-Button {
+//   &[data-variant="primary"] { ... }
+//   &[data-variant="primary"][data-hovered] { ... }
+// }
+
+// 주의: 중첩된 &.class 패턴도 올바르게 변환되는지 확인
+```
+
+**composeRenderProps 유지 확인**:
+```tsx
+// React Aria 상태 속성(data-pressed, data-hovered 등) 유지 필수
+// Before
+<RACButton
+  className={composeRenderProps(
+    props.className,
+    (className, renderProps) => button({ ...renderProps, variant, size, className })
+  )}
+>
+
+// After - renderProps 유지 필요!
+<RACButton
+  data-variant={variant || "default"}
+  data-size={size || "sm"}
+  className={composeRenderProps(
+    props.className,
+    (className, renderProps) => {
+      // renderProps에서 pressed, hovered 등 상태 유지
+      return cn("react-aria-Button", className);
+    }
+  )}
+>
+
+// 주의: React Aria가 자동으로 data-pressed, data-hovered 등을 추가함
+// composeRenderProps는 className 병합을 위해 유지
 ```
 
 **전환 순서**:
 1. Button 컴포넌트 수동 전환 및 테스트
 2. 자동화 스크립트 작성 및 검증
-3. 나머지 42개 컴포넌트 일괄 전환
-4. CSS 파일 일괄 전환
-5. 전체 테스트
+3. 마이그레이션 검증 스크립트 실행
+4. 나머지 42개 컴포넌트 일괄 전환
+5. CSS 파일 일괄 전환
+6. 전체 테스트
+7. **tailwind-variants 의존성 제거**
+
+**tailwind-variants 제거**:
+```bash
+# Phase 4 완료 후 실행
+# 1. 사용처 확인
+grep -r "from ['\"]tailwind-variants['\"]" src/
+
+# 2. 사용처가 없으면 제거
+pnpm remove tailwind-variants
+
+# 3. 빌드 확인
+pnpm build
+```
+
+**완료 기준**:
+- [ ] Button 컴포넌트 수동 전환 완료
+- [ ] 자동화 스크립트 작성 완료
+- [ ] 마이그레이션 검증 스크립트 통과
+- [ ] TSX 43개 파일 전환 완료
+- [ ] CSS 43개 파일 전환 완료
+- [ ] composeRenderProps 동작 확인 (data-pressed, data-hovered 유지)
+- [ ] tailwind-variants 의존성 제거 완료
+- [ ] 전체 Storybook 테스트 통과
+- [ ] Pixi Canvas 정상 동작 확인
+- [ ] Property Editor 정상 동작 확인
 
 ---
 
@@ -750,7 +953,18 @@ export function useLayoutValues(
     selectedElement?.id,
     selectedElement?.style?.display,
     selectedElement?.style?.flexDirection,
-    // ... 나머지 의존성
+    selectedElement?.style?.alignItems,
+    selectedElement?.style?.justifyContent,
+    selectedElement?.style?.gap,
+    selectedElement?.style?.flexWrap,
+    selectedElement?.style?.paddingTop,
+    selectedElement?.style?.paddingRight,
+    selectedElement?.style?.paddingBottom,
+    selectedElement?.style?.paddingLeft,
+    selectedElement?.style?.marginTop,
+    selectedElement?.style?.marginRight,
+    selectedElement?.style?.marginBottom,
+    selectedElement?.style?.marginLeft,
   ]);
 }
 ```
@@ -791,7 +1005,11 @@ export function useAppearanceValues(
     selectedElement?.id,
     selectedElement?.style?.backgroundColor,
     selectedElement?.style?.borderColor,
-    // ... 나머지 의존성
+    selectedElement?.style?.borderWidth,
+    selectedElement?.style?.borderRadius,
+    selectedElement?.style?.borderStyle,
+    selectedElement?.style?.opacity,
+    selectedElement?.style?.boxShadow,
   ]);
 }
 ```
@@ -840,7 +1058,15 @@ export function useTypographyValues(
     selectedElement?.id,
     selectedElement?.style?.fontFamily,
     selectedElement?.style?.fontSize,
-    // ... 나머지 의존성
+    selectedElement?.style?.fontWeight,
+    selectedElement?.style?.fontStyle,
+    selectedElement?.style?.lineHeight,
+    selectedElement?.style?.letterSpacing,
+    selectedElement?.style?.color,
+    selectedElement?.style?.textAlign,
+    selectedElement?.style?.textDecoration,
+    selectedElement?.style?.textTransform,
+    selectedElement?.style?.verticalAlign,
   ]);
 }
 ```

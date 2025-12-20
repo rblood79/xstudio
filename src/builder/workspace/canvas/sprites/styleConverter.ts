@@ -3,10 +3,14 @@
  *
  * 🚀 Phase 10 B1.2: CSS Style → PixiJS 속성 변환
  * 🚀 P7: StylePanel ↔ Canvas 스타일 동기화 확장
+ * 🚀 Phase 22: colord 기반 색상 파싱 통합
  *
  * @since 2025-12-11 Phase 10 B1.2
  * @updated 2025-12-13 P7.2-P7.6 - 타이포그래피 속성 확장
+ * @updated 2025-12-20 Phase 22 - colord 색상 파싱
  */
+
+import { cssColorToPixiHex } from '../../../../utils/color';
 
 // ============================================
 // Types
@@ -83,53 +87,17 @@ export interface PixiTextStyle {
 /**
  * CSS 색상을 PixiJS 숫자로 변환
  *
+ * 🚀 Phase 22: colord 기반으로 리팩토링
+ * - 모든 CSS 색상 형식 지원 (hex, rgb, hsl, named colors 등)
+ *
  * @example
  * cssColorToHex('#3b82f6') // 0x3b82f6
  * cssColorToHex('rgb(59, 130, 246)') // 0x3b82f6
  * cssColorToHex('blue') // 0x0000ff
+ * cssColorToHex('hsl(217, 91%, 60%)') // 0x3b82f6
  */
 export function cssColorToHex(color: string | undefined, fallback = 0x000000): number {
-  if (!color) return fallback;
-
-  // Hex color
-  if (color.startsWith('#')) {
-    const hex = color.slice(1);
-    if (hex.length === 3) {
-      // Short hex (#fff → #ffffff)
-      const expanded = hex
-        .split('')
-        .map((c) => c + c)
-        .join('');
-      return parseInt(expanded, 16);
-    }
-    return parseInt(hex, 16);
-  }
-
-  // RGB/RGBA
-  const rgbMatch = color.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
-  if (rgbMatch) {
-    const r = parseInt(rgbMatch[1], 10);
-    const g = parseInt(rgbMatch[2], 10);
-    const b = parseInt(rgbMatch[3], 10);
-    return (r << 16) | (g << 8) | b;
-  }
-
-  // Named colors (basic subset)
-  const namedColors: Record<string, number> = {
-    white: 0xffffff,
-    black: 0x000000,
-    red: 0xff0000,
-    green: 0x00ff00,
-    blue: 0x0000ff,
-    yellow: 0xffff00,
-    cyan: 0x00ffff,
-    magenta: 0xff00ff,
-    gray: 0x808080,
-    grey: 0x808080,
-    transparent: 0x000000,
-  };
-
-  return namedColors[color.toLowerCase()] ?? fallback;
+  return cssColorToPixiHex(color, fallback);
 }
 
 /**

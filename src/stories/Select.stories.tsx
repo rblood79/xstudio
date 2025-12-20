@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import { Form, Section, Header } from 'react-aria-components';
+import { Form, ListBoxSection, Header } from 'react-aria-components';
 import { Button } from '../shared/components/Button';
 import { Select, SelectItem } from '../shared/components/Select';
 
@@ -89,18 +89,18 @@ export const SelectWithSections: Story = {
     label: '섹션이 있는 선택 상자',
     children: (
       <>
-        <Section>
+        <ListBoxSection>
           <Header>과일</Header>
           <SelectItem id="apple">사과</SelectItem>
           <SelectItem id="banana">바나나</SelectItem>
           <SelectItem id="orange">오렌지</SelectItem>
-        </Section>
-        <Section>
+        </ListBoxSection>
+        <ListBoxSection>
           <Header>채소</Header>
           <SelectItem id="carrot">당근</SelectItem>
           <SelectItem id="broccoli">브로콜리</SelectItem>
           <SelectItem id="spinach">시금치</SelectItem>
-        </Section>
+        </ListBoxSection>
       </>
     ),
   },
