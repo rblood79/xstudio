@@ -120,11 +120,14 @@ export function ComboBox<T extends object>({
     isPropertyBinding;
 
   // ComboBox className generator (reused across all conditional renders)
-  const getComboBoxClassName = (baseClassName?: string) =>
-    composeRenderProps(
-      baseClassName,
+  // 🚀 ClassNameOrFunction 타입 지원 - string으로 변환 후 처리
+  const getComboBoxClassName = (baseClassName?: string | ((renderProps: unknown) => string)) => {
+    const resolvedClassName = typeof baseClassName === 'function' ? undefined : baseClassName;
+    return composeRenderProps(
+      resolvedClassName,
       (className) => className ? `react-aria-ComboBox ${className}` : 'react-aria-ComboBox'
     );
+  };
 
   // ColumnMapping이 있으면 각 데이터 항목마다 ListBoxItem 렌더링
   // ListBox와 동일한 패턴: Element tree의 ComboBoxItem 템플릿 + Field 자식 사용

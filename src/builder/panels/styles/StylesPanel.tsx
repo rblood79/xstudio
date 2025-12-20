@@ -210,6 +210,7 @@ function StylesPanelContent() {
           indicator
           aria-label="Style filter"
           selectionMode="single"
+          disallowEmptySelection
           selectedKeys={[filter]}
           onSelectionChange={(keys) => {
             const selectedFilter = Array.from(keys)[0] as "all" | "modified";
@@ -258,11 +259,7 @@ function StylesPanelContent() {
       {/* Sections */}
       {/* 🚀 Phase 3b: memo 래퍼로 리렌더 차단 */}
       <div className="panel-contents">
-        {filter === "all" ? (
-          <AllSections />
-        ) : (
-          <ModifiedSectionsWrapper />
-        )}
+        {filter === "all" ? <AllSections /> : <ModifiedSectionsWrapper />}
       </div>
     </div>
   );
