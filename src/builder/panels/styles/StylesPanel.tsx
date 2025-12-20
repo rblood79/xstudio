@@ -22,14 +22,11 @@
 
 import "../../panels/common/index.css";
 import { useState, useMemo, useCallback, memo } from "react";
+import { ToggleButton } from "react-aria-components";
 import type { PanelProps } from "../core/types";
 import { useSelectedElementData } from "../../stores";
-import {
-  ToggleButtonGroup,
-  ToggleButton,
-  Button,
-} from "../../../shared/components";
-import { Copy, ClipboardPaste } from "lucide-react";
+import { Button } from "../../../shared/components";
+import { Copy, ClipboardPaste, PencilRuler, Palette } from "lucide-react";
 import { iconProps } from "../../../utils/ui/uiConstants";
 import { EmptyState } from "../common";
 import {
@@ -206,24 +203,33 @@ function StylesPanelContent() {
   return (
     <div className="panel">
       <div className="panel-header">
-        <ToggleButtonGroup
-          indicator
-          aria-label="Style filter"
-          selectionMode="single"
-          disallowEmptySelection
-          selectedKeys={[filter]}
-          onSelectionChange={(keys) => {
-            const selectedFilter = Array.from(keys)[0] as "all" | "modified";
-            setFilter(selectedFilter);
-          }}
-        >
-          <ToggleButton id="all">Style</ToggleButton>
-          <ToggleButton id="modified">
-            modify {modifiedCount > 0 && `(${modifiedCount})`}
+        <div className="panel-actions">
+          <ToggleButton
+            className="iconButton"
+            isSelected={filter === "all"}
+            onChange={() => setFilter("all")}
+            aria-label="Style"
+          >
+            <Palette
+              color={iconProps.color}
+              size={iconProps.size}
+              strokeWidth={iconProps.strokeWidth}
+            />
           </ToggleButton>
-        </ToggleButtonGroup>
-
-        {/* Copy/Paste buttons */}
+          <ToggleButton
+            className="iconButton panel-title"
+            isSelected={filter === "modified"}
+            onChange={() => setFilter("modified")}
+            aria-label="Modify"
+          >
+            <PencilRuler
+              color={iconProps.color}
+              size={iconProps.size}
+              strokeWidth={iconProps.strokeWidth}
+            />
+            {modifiedCount > 0 && `modify ${modifiedCount}`}
+          </ToggleButton>
+        </div>
         <div className="panel-actions">
           <Button
             variant="ghost"

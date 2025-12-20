@@ -109,7 +109,10 @@
     align-items: center;
     justify-content: space-between;
   }
-
+  .panel-header .panel-actions {
+    display: flex;
+    flex-direction: row;
+  }
   .panel-header .iconButton {
     border-width: 0px;
     padding: var(--spacing-sm);
