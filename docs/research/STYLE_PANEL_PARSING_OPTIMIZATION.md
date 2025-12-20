@@ -398,34 +398,221 @@ const app = new PIXI.Application({
 
 ---
 
-## 8. 최종 수정 계획 (Revised)
+## 8. 상세 실행 계획 (Detailed Implementation Plan)
 
 ### 8.1 개요
 
-기존 계획의 "StyleValues 섹션별 분할"은 유지하되, 추가 리서치를 통해 발견한 **더 효과적인 최적화 기법**을 통합합니다.
+기존 리서치 결과와 추가 최적화 기법을 통합하여 **6단계 Phase**로 재구성합니다.
+각 Phase는 독립적으로 완료 가능하며, 이전 Phase의 성과를 기반으로 점진적 개선을 달성합니다.
 
-### 8.2 Phase 1: 즉시 적용 (1차)
+### 8.2 Phase 로드맵 요약
 
-#### 8.2.1 Selector 최적화 (기존 Zustand 유지)
-
-**변경 범위**: 최소
-**예상 개선**: 30~50% 불필요 리렌더링 감소
-
-```typescript
-// Before: 전체 StyleValues 객체 구독
-const styleValues = useStyleValues(selectedElement);
-
-// After: primitive 값 개별 구독
-const width = useStyleStore(s => s.computedStyle?.width);
-const height = useStyleStore(s => s.computedStyle?.height);
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  Phase 0: 준비 (Foundation)                                                  │
+│  벤치마크 기준선 설정 + 측정 인프라 구축                                      │
+│  예상 소요: 1-2일 | 성능 개선: 0% (측정 기반 마련)                            │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                      ↓
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  Phase 1: Quick Wins (즉시 적용)                                             │
+│  Selector 최적화 + useTransition + colord 도입                               │
+│  예상 소요: 3-5일 | 누적 성능 개선: 30-50%                                   │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                      ↓
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  Phase 2: 구조적 최적화 (Structural)                                         │
+│  StyleValues 섹션별 분할 + Lazy Hook Execution                               │
+│  예상 소요: 1-2주 | 누적 성능 개선: 70-80%                                   │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                      ↓
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  Phase 3: 고급 상태 관리 (Advanced State)                                    │
+│  Jotai Atomic State + Immer Structural Sharing                              │
+│  예상 소요: 1-2주 | 누적 성능 개선: 85-90%                                   │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                      ↓
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  Phase 4: 메모리 최적화 (Memory)                                             │
+│  Object Pool Pattern + GC 최적화                                             │
+│  예상 소요: 3-5일 | 메모리 사용량: 40-50% 감소                               │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                      ↓
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  Phase 5: 장기 최적화 (Long-term)                                            │
+│  Web Worker + PixiJS v8 WebGPU + React Compiler                             │
+│  예상 소요: 2-4주 | 대규모 요소 처리 성능: 200-300% 향상                     │
+└─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-**장점**:
-- 기존 코드 최소 변경
-- Zustand selector 최적화만으로 효과 확인 가능
-- 리스크 낮음
+---
 
-#### 8.2.2 colord 도입 (기존 계획 유지)
+## 9. Phase 0: 준비 단계 (Foundation)
+
+### 9.1 목표
+
+최적화 효과를 정량적으로 측정하기 위한 **벤치마크 기준선**과 **측정 인프라** 구축
+
+### 9.2 세부 작업
+
+#### 9.2.1 React DevTools Profiler 설정
+
+```typescript
+// src/utils/performanceMarkers.ts
+export const PERF_MARKERS = {
+  STYLE_VALUES_CALC: 'style-values-calculation',
+  SECTION_RENDER: 'section-render',
+  CANVAS_SYNC: 'canvas-sync',
+} as const;
+
+export function measureStyleCalculation<T>(fn: () => T): T {
+  performance.mark(`${PERF_MARKERS.STYLE_VALUES_CALC}-start`);
+  const result = fn();
+  performance.mark(`${PERF_MARKERS.STYLE_VALUES_CALC}-end`);
+  performance.measure(
+    PERF_MARKERS.STYLE_VALUES_CALC,
+    `${PERF_MARKERS.STYLE_VALUES_CALC}-start`,
+    `${PERF_MARKERS.STYLE_VALUES_CALC}-end`
+  );
+  return result;
+}
+```
+
+#### 9.2.2 벤치마크 스크립트 작성
+
+```typescript
+// scripts/benchmark-style-panel.ts
+interface BenchmarkResult {
+  rerenderCount: number;
+  avgCalculationTime: number;
+  memoryUsage: number;
+  gcFrequency: number;
+}
+
+export async function runStylePanelBenchmark(): Promise<BenchmarkResult> {
+  const scenarios = [
+    { name: 'single-element-select', elements: 1 },
+    { name: 'multi-element-select', elements: 10 },
+    { name: 'rapid-style-change', changes: 100 },
+    { name: 'section-toggle', toggles: 50 },
+  ];
+
+  // 각 시나리오별 측정 실행
+  // ...
+}
+```
+
+#### 9.2.3 기준선 메트릭 수집
+
+| 메트릭 | 측정 방법 | 목표 기준 |
+|--------|----------|----------|
+| 리렌더링 횟수 | React DevTools Profiler | 현재 값 기록 |
+| 스타일 계산 시간 | Performance.measure() | < 16ms (60fps) |
+| 메모리 사용량 | Chrome DevTools Memory | 현재 값 기록 |
+| GC 빈도 | Performance Observer | 현재 값 기록 |
+| FPS | requestAnimationFrame | > 55fps |
+
+### 9.3 기대 효과
+
+| 항목 | 효과 |
+|------|------|
+| 성능 개선 | 0% (측정 기반 마련) |
+| 가치 | 이후 모든 Phase의 효과를 정량적으로 검증 가능 |
+
+### 9.4 체크리스트
+
+- [ ] Performance markers 유틸리티 생성 (`src/utils/performanceMarkers.ts`)
+- [ ] 벤치마크 스크립트 작성 (`scripts/benchmark-style-panel.ts`)
+- [ ] 기준선 메트릭 수집 및 문서화
+- [ ] CI/CD에 성능 회귀 테스트 추가 (선택)
+- [ ] 벤치마크 결과 기록 템플릿 생성
+
+---
+
+## 10. Phase 1: Quick Wins (즉시 적용)
+
+### 10.1 목표
+
+**최소 변경으로 최대 효과** - 기존 코드 구조를 유지하면서 즉각적인 성능 개선 달성
+
+### 10.2 세부 작업
+
+#### 10.2.1 Selector Primitive 구독 최적화
+
+**변경 범위**: 최소
+**예상 개선**: 30-40% 불필요 리렌더링 감소
+
+```typescript
+// ❌ Before: 전체 객체 구독 (매번 새 참조 생성)
+const styleValues = useStyleValues(selectedElement);
+const { width, height } = styleValues;
+
+// ✅ After: primitive 값 개별 구독
+const width = useStyleStore(s => s.selectedElement?.computedStyle?.width);
+const height = useStyleStore(s => s.selectedElement?.computedStyle?.height);
+
+// ✅ After: 여러 값이 필요한 경우 shallow 비교
+import { shallow } from 'zustand/shallow';
+
+const { width, height } = useStyleStore(
+  s => ({
+    width: s.selectedElement?.computedStyle?.width,
+    height: s.selectedElement?.computedStyle?.height,
+  }),
+  shallow
+);
+```
+
+**적용 대상 파일**:
+- `src/components/panels/style/TransformSection.tsx`
+- `src/components/panels/style/LayoutSection.tsx`
+- `src/components/panels/style/AppearanceSection.tsx`
+- `src/components/panels/style/TypographySection.tsx`
+
+#### 10.2.2 useTransition/useDeferredValue 적용
+
+**변경 범위**: 최소
+**예상 개선**: UI 반응성 50% 향상 (체감 성능)
+
+```typescript
+// src/components/panels/style/StylePanel.tsx
+import { useTransition, useDeferredValue } from 'react';
+
+function StylePanel() {
+  const [isPending, startTransition] = useTransition();
+
+  const handleStyleChange = useCallback((property: string, value: string) => {
+    // 긴급: 입력 필드 즉시 업데이트
+    setLocalValue(value);
+
+    // 지연: 캔버스 업데이트는 낮은 우선순위
+    startTransition(() => {
+      updateElementStyle(property, value);
+    });
+  }, []);
+
+  return (
+    <div className={isPending ? 'opacity-70' : ''}>
+      {/* 스타일 섹션들 */}
+    </div>
+  );
+}
+
+// 디바운스와 함께 사용
+function StyleInput({ value, onChange }: StyleInputProps) {
+  const deferredValue = useDeferredValue(value);
+
+  // deferredValue로 무거운 연산 수행
+  const computedPreview = useMemo(() =>
+    calculatePreview(deferredValue),
+    [deferredValue]
+  );
+
+  return <input value={value} onChange={onChange} />;
+}
+```
+
+#### 10.2.3 colord 라이브러리 도입
 
 **변경 범위**: 중간
 **크기 추가**: 1.7KB gzipped
@@ -435,174 +622,1202 @@ pnpm add colord
 ```
 
 ```typescript
-import { colord } from 'colord';
+// src/utils/colorUtils.ts
+import { colord, extend } from 'colord';
+import namesPlugin from 'colord/plugins/names';
+import hwbPlugin from 'colord/plugins/hwb';
 
-// 안전한 색상 파싱
-const color = colord(value);
-if (color.isValid()) {
-  return color.toHsl();
+// CSS Color Level 4 지원을 위한 플러그인 확장
+extend([namesPlugin, hwbPlugin]);
+
+export function parseColor(value: string) {
+  const color = colord(value);
+  if (!color.isValid()) {
+    return null;
+  }
+
+  return {
+    hex: color.toHex(),
+    rgb: color.toRgb(),
+    hsl: color.toHsl(),
+    alpha: color.alpha(),
+    isLight: color.isLight(),
+  };
+}
+
+export function formatColor(
+  color: ReturnType<typeof parseColor>,
+  format: 'hex' | 'rgb' | 'hsl'
+): string {
+  if (!color) return '';
+
+  switch (format) {
+    case 'hex': return color.hex;
+    case 'rgb': return `rgb(${color.rgb.r}, ${color.rgb.g}, ${color.rgb.b})`;
+    case 'hsl': return `hsl(${color.hsl.h}, ${color.hsl.s}%, ${color.hsl.l}%)`;
+  }
 }
 ```
 
-### 8.3 Phase 2: StyleValues 섹션별 분할 (2차)
+#### 10.2.4 입력 디바운스 통합
 
-**변경 범위**: 중간~큰
-**예상 개선**: 75% 재계산 감소
-
-기존 계획대로 4개 섹션으로 분할:
-
-| Hook | 속성 수 | 컴포넌트 |
-|------|--------|---------|
-| `useTransformValues` | 4개 | TransformSection |
-| `useLayoutValues` | 15개 | LayoutSection |
-| `useAppearanceValues` | 5개 | AppearanceSection |
-| `useTypographyValues` | 11개 | TypographySection |
-
-**구현 전략**:
-1. 각 섹션별 타입 정의 분리
-2. 기존 `useStyleValues` 내부에서 섹션별 훅 호출
-3. 점진적으로 각 Section 컴포넌트가 직접 섹션별 훅 사용하도록 마이그레이션
-
-### 8.4 Phase 3: 고급 최적화 (3차, 선택적)
-
-#### 8.4.1 Jotai Atomic State 마이그레이션
-
-**적용 조건**: Phase 2 완료 후 추가 성능 개선 필요 시
+**변경 범위**: 최소
+**예상 개선**: 재계산 빈도 60-70% 감소
 
 ```typescript
-// 속성별 atom 정의
-const widthAtom = atom((get) => get(computedStyleAtom)?.width);
-const heightAtom = atom((get) => get(computedStyleAtom)?.height);
+// src/hooks/useDebouncedStyleUpdate.ts
+import { useDebouncedCallback } from 'use-debounce';
 
-// 컴포넌트에서 개별 구독
-function WidthInput() {
-  const width = useAtomValue(widthAtom); // width만 변경 시 리렌더링
+export function useDebouncedStyleUpdate(
+  updateFn: (property: string, value: string) => void,
+  delay = 100
+) {
+  const debouncedUpdate = useDebouncedCallback(updateFn, delay);
+
+  return {
+    immediateUpdate: updateFn,      // 즉시 업데이트 (blur, enter)
+    debouncedUpdate: debouncedUpdate, // 디바운스 업데이트 (typing)
+  };
 }
 ```
 
-**장점**:
-- 속성 레벨 Fine-grained Reactivity
-- 자동 의존성 추적
-- 4KB 추가 (Zustand 대체 시 실질 0)
+### 10.3 기대 효과
 
-#### 8.4.2 Object Pool Pattern
+| 항목 | Before | After | 개선율 |
+|------|--------|-------|--------|
+| 리렌더링 횟수 (속성 변경 시) | ~20회 | ~8회 | 60% 감소 |
+| 입력 반응 시간 | ~50ms | ~10ms | 80% 향상 |
+| 스타일 계산 빈도 | 매 입력 | 100ms 디바운스 | 70% 감소 |
+| 색상 파싱 오류 | 발생 가능 | 0 | 100% 안정화 |
 
-**적용 대상**: 빈번한 StyleValues 객체 생성/파괴
+### 10.4 체크리스트
+
+#### Selector 최적화
+- [ ] TransformSection selector를 primitive 값으로 변경
+- [ ] LayoutSection selector를 primitive 값으로 변경
+- [ ] AppearanceSection selector를 primitive 값으로 변경
+- [ ] TypographySection selector를 primitive 값으로 변경
+- [ ] shallow 비교 필요한 곳에 `zustand/shallow` 적용
+
+#### useTransition 적용
+- [ ] StylePanel에 useTransition 추가
+- [ ] 캔버스 업데이트를 startTransition으로 래핑
+- [ ] isPending 상태에 따른 UI 피드백 추가
+- [ ] useDeferredValue로 미리보기 최적화
+
+#### colord 도입
+- [ ] colord 패키지 설치
+- [ ] colorUtils.ts 유틸리티 생성
+- [ ] 기존 색상 파싱 코드를 colord로 마이그레이션
+- [ ] ColorPicker 컴포넌트 업데이트
+
+#### 디바운스
+- [ ] useDebouncedStyleUpdate 훅 생성
+- [ ] 텍스트 입력 필드에 디바운스 적용
+- [ ] 슬라이더 입력에 디바운스 적용 (선택적)
+
+---
+
+## 11. Phase 2: 구조적 최적화 (Structural)
+
+### 11.1 목표
+
+**StyleValues 28개 속성**을 섹션별로 분할하여 **불필요한 재계산 75% 감소**
+
+### 11.2 세부 작업
+
+#### 11.2.1 섹션별 타입 정의
 
 ```typescript
-// StyleValues 객체 풀 (간단 구현)
-const styleValuesPool: StyleValues[] = [];
+// src/types/styleValues.ts
 
-export function acquireStyleValues(): StyleValues {
-  return styleValuesPool.pop() ?? createDefaultStyleValues();
+// Transform 섹션 (4개 속성)
+export interface TransformStyleValues {
+  width: StyleValue;
+  height: StyleValue;
+  top: StyleValue;
+  left: StyleValue;
 }
 
-export function releaseStyleValues(sv: StyleValues): void {
-  Object.keys(sv).forEach(key => sv[key] = undefined);
-  styleValuesPool.push(sv);
+// Layout 섹션 (15개 속성)
+export interface LayoutStyleValues {
+  display: StyleValue;
+  flexDirection: StyleValue;
+  flexWrap: StyleValue;
+  alignItems: StyleValue;
+  justifyContent: StyleValue;
+  gap: StyleValue;
+  paddingTop: StyleValue;
+  paddingRight: StyleValue;
+  paddingBottom: StyleValue;
+  paddingLeft: StyleValue;
+  marginTop: StyleValue;
+  marginRight: StyleValue;
+  marginBottom: StyleValue;
+  marginLeft: StyleValue;
+  overflow: StyleValue;
+}
+
+// Appearance 섹션 (5개 속성)
+export interface AppearanceStyleValues {
+  backgroundColor: StyleValue;
+  borderColor: StyleValue;
+  borderWidth: StyleValue;
+  borderRadius: StyleValue;
+  borderStyle: StyleValue;
+  opacity: StyleValue;
+  boxShadow: StyleValue;
+}
+
+// Typography 섹션 (11개 속성)
+export interface TypographyStyleValues {
+  fontFamily: StyleValue;
+  fontSize: StyleValue;
+  fontWeight: StyleValue;
+  fontStyle: StyleValue;
+  lineHeight: StyleValue;
+  letterSpacing: StyleValue;
+  color: StyleValue;
+  textAlign: StyleValue;
+  textDecoration: StyleValue;
+  textTransform: StyleValue;
+  verticalAlign: StyleValue;
 }
 ```
 
-#### 8.4.3 Web Worker 스타일 계산
-
-**적용 조건**: 100+ 요소 동시 선택/업데이트 시
+#### 11.2.2 섹션별 훅 구현
 
 ```typescript
-// worker/styleCalculator.worker.ts
-self.onmessage = (e) => {
-  const { elements } = e.data;
-  const results = elements.map(computeStyleValues);
-  self.postMessage(results);
+// src/hooks/style/useTransformValues.ts
+import { useShallow } from 'zustand/react/shallow';
+
+const TRANSFORM_PROPERTIES = ['width', 'height', 'top', 'left'] as const;
+
+export function useTransformValues(): TransformStyleValues | null {
+  const element = useStyleStore(s => s.selectedElement);
+
+  return useStyleStore(
+    useShallow(s => {
+      if (!s.selectedElement) return null;
+
+      const { style, computedStyle } = s.selectedElement;
+
+      return {
+        width: extractStyleValue('width', style, computedStyle),
+        height: extractStyleValue('height', style, computedStyle),
+        top: extractStyleValue('top', style, computedStyle),
+        left: extractStyleValue('left', style, computedStyle),
+      };
+    })
+  );
+}
+
+// src/hooks/style/useLayoutValues.ts
+export function useLayoutValues(): LayoutStyleValues | null {
+  // 유사한 구현...
+}
+
+// src/hooks/style/useAppearanceValues.ts
+export function useAppearanceValues(): AppearanceStyleValues | null {
+  // 유사한 구현...
+}
+
+// src/hooks/style/useTypographyValues.ts
+export function useTypographyValues(): TypographyStyleValues | null {
+  // 유사한 구현...
+}
+
+// src/hooks/style/index.ts (하위 호환성 유지)
+export function useStyleValues(): StyleValues | null {
+  const transform = useTransformValues();
+  const layout = useLayoutValues();
+  const appearance = useAppearanceValues();
+  const typography = useTypographyValues();
+
+  if (!transform && !layout && !appearance && !typography) {
+    return null;
+  }
+
+  return {
+    ...transform,
+    ...layout,
+    ...appearance,
+    ...typography,
+  };
+}
+```
+
+#### 11.2.3 Lazy Hook Execution 패턴
+
+```typescript
+// src/components/panels/style/sections/TransformSection.tsx
+
+interface TransformSectionProps {
+  isExpanded: boolean;
+  onToggle: () => void;
+}
+
+// 접힌 상태에서는 훅 호출을 건너뛰기 위해 컴포넌트 분리
+export function TransformSection({ isExpanded, onToggle }: TransformSectionProps) {
+  return (
+    <SectionWrapper title="Transform" isExpanded={isExpanded} onToggle={onToggle}>
+      {isExpanded && <TransformSectionContent />}
+    </SectionWrapper>
+  );
+}
+
+// 실제 훅 호출은 Content 컴포넌트에서만 발생
+function TransformSectionContent() {
+  const values = useTransformValues();
+
+  if (!values) return null;
+
+  return (
+    <>
+      <DimensionInput label="Width" value={values.width} property="width" />
+      <DimensionInput label="Height" value={values.height} property="height" />
+      <PositionInput label="Top" value={values.top} property="top" />
+      <PositionInput label="Left" value={values.left} property="left" />
+    </>
+  );
+}
+```
+
+#### 11.2.4 Shorthand Property 확장 (CSSTree 부분 도입)
+
+```typescript
+// src/utils/shorthandExpander.ts
+import { parse, walk } from 'css-tree';
+
+interface ExpandedPadding {
+  paddingTop: string;
+  paddingRight: string;
+  paddingBottom: string;
+  paddingLeft: string;
+}
+
+export function expandPadding(value: string): ExpandedPadding {
+  const parts = value.trim().split(/\s+/);
+
+  switch (parts.length) {
+    case 1:
+      return {
+        paddingTop: parts[0],
+        paddingRight: parts[0],
+        paddingBottom: parts[0],
+        paddingLeft: parts[0],
+      };
+    case 2:
+      return {
+        paddingTop: parts[0],
+        paddingRight: parts[1],
+        paddingBottom: parts[0],
+        paddingLeft: parts[1],
+      };
+    case 3:
+      return {
+        paddingTop: parts[0],
+        paddingRight: parts[1],
+        paddingBottom: parts[2],
+        paddingLeft: parts[1],
+      };
+    case 4:
+      return {
+        paddingTop: parts[0],
+        paddingRight: parts[1],
+        paddingBottom: parts[2],
+        paddingLeft: parts[3],
+      };
+    default:
+      return {
+        paddingTop: '0',
+        paddingRight: '0',
+        paddingBottom: '0',
+        paddingLeft: '0',
+      };
+  }
+}
+
+// margin, border-radius 등 유사하게 구현
+```
+
+### 11.3 기대 효과
+
+| 시나리오 | Before | After | 개선율 |
+|---------|--------|-------|--------|
+| width 변경 | 28개 속성 재계산 | 4개 속성 재계산 | 86% 감소 |
+| backgroundColor 변경 | 28개 속성 재계산 | 7개 속성 재계산 | 75% 감소 |
+| fontSize 변경 | 28개 속성 재계산 | 11개 속성 재계산 | 61% 감소 |
+| 섹션 접힘 시 | 모든 섹션 훅 실행 | 해당 섹션만 실행 | 75% 감소 |
+| **평균** | 28개 | 7개 | **75% 감소** |
+
+### 11.4 체크리스트
+
+#### 타입 정의
+- [ ] `TransformStyleValues` 인터페이스 정의
+- [ ] `LayoutStyleValues` 인터페이스 정의
+- [ ] `AppearanceStyleValues` 인터페이스 정의
+- [ ] `TypographyStyleValues` 인터페이스 정의
+- [ ] 기존 `StyleValues`를 Union 타입으로 재정의
+
+#### 섹션별 훅
+- [ ] `useTransformValues` 훅 구현
+- [ ] `useLayoutValues` 훅 구현
+- [ ] `useAppearanceValues` 훅 구현
+- [ ] `useTypographyValues` 훅 구현
+- [ ] 하위 호환성을 위한 `useStyleValues` 래퍼 유지
+- [ ] 각 훅에 대한 단위 테스트 작성
+
+#### Lazy Hook Execution
+- [ ] SectionWrapper 컴포넌트 생성
+- [ ] TransformSection 분리 (wrapper + content)
+- [ ] LayoutSection 분리
+- [ ] AppearanceSection 분리
+- [ ] TypographySection 분리
+
+#### Shorthand 확장
+- [ ] `expandPadding` 함수 구현
+- [ ] `expandMargin` 함수 구현
+- [ ] `expandBorderRadius` 함수 구현
+- [ ] `expandBorder` 함수 구현
+
+---
+
+## 12. Phase 3: 고급 상태 관리 (Advanced State)
+
+### 12.1 목표
+
+**속성 레벨 Fine-grained Reactivity**로 섹션 분할보다 더 세밀한 구독 최적화
+
+### 12.2 세부 작업
+
+#### 12.2.1 Jotai Atomic State 설계
+
+```typescript
+// src/store/atoms/styleAtoms.ts
+import { atom } from 'jotai';
+import { selectAtom } from 'jotai/utils';
+
+// 기본 atom - 선택된 요소
+export const selectedElementAtom = atom<SelectedElement | null>(null);
+
+// 파생 atom - computedStyle
+export const computedStyleAtom = atom((get) =>
+  get(selectedElementAtom)?.computedStyle ?? null
+);
+
+// 속성별 atom (자동 의존성 추적)
+export const widthAtom = selectAtom(
+  computedStyleAtom,
+  (style) => style?.width
+);
+
+export const heightAtom = selectAtom(
+  computedStyleAtom,
+  (style) => style?.height
+);
+
+// 섹션별 atom (여러 속성 그룹)
+export const transformValuesAtom = atom((get) => ({
+  width: get(widthAtom),
+  height: get(heightAtom),
+  top: get(selectAtom(computedStyleAtom, s => s?.top)),
+  left: get(selectAtom(computedStyleAtom, s => s?.left)),
+}));
+```
+
+#### 12.2.2 Zustand → Jotai 점진적 마이그레이션
+
+```typescript
+// src/store/styleStore.ts
+// Phase 3-1: Jotai와 Zustand 공존
+
+import { useAtomValue, useSetAtom } from 'jotai';
+import { useStore } from 'zustand';
+
+// Zustand store (기존)
+export const useStyleStore = create<StyleStore>((set) => ({
+  selectedElement: null,
+  setSelectedElement: (element) => set({ selectedElement: element }),
+}));
+
+// Jotai atoms (신규)
+export const selectedElementAtom = atom<SelectedElement | null>(null);
+
+// Bridge: Zustand → Jotai 동기화
+export function useStyleBridge() {
+  const zustandElement = useStyleStore(s => s.selectedElement);
+  const setJotaiElement = useSetAtom(selectedElementAtom);
+
+  useEffect(() => {
+    setJotaiElement(zustandElement);
+  }, [zustandElement, setJotaiElement]);
+}
+```
+
+#### 12.2.3 Immer Structural Sharing
+
+```typescript
+// src/store/styleStore.ts
+import { produce } from 'immer';
+
+export const useStyleStore = create<StyleStore>((set) => ({
+  selectedElement: null,
+
+  updateStyle: (property: string, value: string) => set(
+    produce((state) => {
+      if (state.selectedElement?.style) {
+        state.selectedElement.style[property] = value;
+        // Immer가 변경되지 않은 속성의 참조를 유지
+        // → 해당 속성을 구독하는 컴포넌트만 리렌더링
+      }
+    })
+  ),
+}));
+```
+
+#### 12.2.4 컴포넌트 마이그레이션
+
+```typescript
+// src/components/panels/style/inputs/WidthInput.tsx
+import { useAtomValue } from 'jotai';
+import { widthAtom } from '@/store/atoms/styleAtoms';
+
+export function WidthInput() {
+  // width만 변경되면 이 컴포넌트만 리렌더링
+  const width = useAtomValue(widthAtom);
+
+  return (
+    <DimensionInput
+      label="Width"
+      value={width}
+      onChange={(value) => updateStyle('width', value)}
+    />
+  );
+}
+```
+
+### 12.3 기대 효과
+
+| 항목 | Phase 2 이후 | Phase 3 이후 | 추가 개선 |
+|------|------------|------------|----------|
+| 구독 단위 | 섹션 (4-15개 속성) | 속성 (1개) | 4-15x 세밀화 |
+| width 변경 시 리렌더링 | TransformSection 전체 | WidthInput만 | 75% 추가 감소 |
+| 전체 리렌더링 횟수 | ~5회 | ~1회 | 80% 추가 감소 |
+
+### 12.4 체크리스트
+
+#### Jotai 설정
+- [ ] jotai 패키지 설치 (`pnpm add jotai`)
+- [ ] Provider 설정 (루트 컴포넌트)
+- [ ] 기본 atoms 정의 (`selectedElementAtom`, `computedStyleAtom`)
+
+#### 속성별 atoms
+- [ ] Transform 속성 atoms (width, height, top, left)
+- [ ] Layout 속성 atoms (15개)
+- [ ] Appearance 속성 atoms (7개)
+- [ ] Typography 속성 atoms (11개)
+
+#### 마이그레이션
+- [ ] Zustand ↔ Jotai bridge 구현
+- [ ] TransformSection을 Jotai로 마이그레이션
+- [ ] LayoutSection을 Jotai로 마이그레이션
+- [ ] AppearanceSection을 Jotai로 마이그레이션
+- [ ] TypographySection을 Jotai로 마이그레이션
+- [ ] 기존 Zustand 코드 정리 (완료 후)
+
+#### Immer 통합
+- [ ] immer 패키지 설치 (`pnpm add immer`)
+- [ ] Zustand store에 immer middleware 적용
+- [ ] 상태 업데이트 로직 리팩토링
+
+---
+
+## 13. Phase 4: 메모리 최적화 (Memory)
+
+### 13.1 목표
+
+**Object Pool Pattern**과 **GC 최적화**로 메모리 사용량 40-50% 감소
+
+### 13.2 세부 작업
+
+#### 13.2.1 StyleValues Object Pool
+
+```typescript
+// src/utils/objectPool.ts
+
+interface PoolConfig {
+  initialSize: number;
+  maxSize: number;
+}
+
+class ObjectPool<T> {
+  private pool: T[] = [];
+  private factory: () => T;
+  private reset: (obj: T) => void;
+  private maxSize: number;
+
+  constructor(
+    factory: () => T,
+    reset: (obj: T) => void,
+    config: PoolConfig = { initialSize: 10, maxSize: 100 }
+  ) {
+    this.factory = factory;
+    this.reset = reset;
+    this.maxSize = config.maxSize;
+
+    // 초기 풀 생성
+    for (let i = 0; i < config.initialSize; i++) {
+      this.pool.push(factory());
+    }
+  }
+
+  acquire(): T {
+    return this.pool.pop() ?? this.factory();
+  }
+
+  release(obj: T): void {
+    if (this.pool.length < this.maxSize) {
+      this.reset(obj);
+      this.pool.push(obj);
+    }
+  }
+
+  get size(): number {
+    return this.pool.length;
+  }
+}
+
+// StyleValues 전용 풀
+export const styleValuesPool = new ObjectPool<StyleValues>(
+  () => createEmptyStyleValues(),
+  (obj) => {
+    Object.keys(obj).forEach(key => {
+      (obj as any)[key] = undefined;
+    });
+  },
+  { initialSize: 20, maxSize: 200 }
+);
+```
+
+#### 13.2.2 사용 패턴
+
+```typescript
+// src/hooks/style/useTransformValues.ts
+import { styleValuesPool } from '@/utils/objectPool';
+
+export function useTransformValues(): TransformStyleValues | null {
+  const prevValuesRef = useRef<TransformStyleValues | null>(null);
+
+  const values = useMemo(() => {
+    const element = store.getState().selectedElement;
+    if (!element) return null;
+
+    // 풀에서 객체 획득
+    const newValues = styleValuesPool.acquire() as TransformStyleValues;
+
+    // 값 할당
+    newValues.width = extractStyleValue('width', element);
+    newValues.height = extractStyleValue('height', element);
+    newValues.top = extractStyleValue('top', element);
+    newValues.left = extractStyleValue('left', element);
+
+    return newValues;
+  }, [element]);
+
+  // 이전 값 반환
+  useEffect(() => {
+    return () => {
+      if (prevValuesRef.current) {
+        styleValuesPool.release(prevValuesRef.current);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (prevValuesRef.current && prevValuesRef.current !== values) {
+      styleValuesPool.release(prevValuesRef.current);
+    }
+    prevValuesRef.current = values;
+  }, [values]);
+
+  return values;
+}
+```
+
+#### 13.2.3 PixiJS 메모리 최적화
+
+```typescript
+// src/canvas/memoryManager.ts
+import { Ticker, Assets } from 'pixi.js';
+
+class CanvasMemoryManager {
+  private gcInterval = 30000; // 30초
+  private lastGC = Date.now();
+
+  constructor(app: Application) {
+    // 주기적 GC
+    Ticker.shared.add(() => {
+      if (Date.now() - this.lastGC > this.gcInterval) {
+        this.runGC();
+        this.lastGC = Date.now();
+      }
+    });
+  }
+
+  runGC(): void {
+    // 미사용 텍스처 정리
+    Assets.cache.reset();
+
+    // Graphics 객체 캐시 정리
+    this.cleanupGraphicsCache();
+  }
+
+  private cleanupGraphicsCache(): void {
+    // 구현...
+  }
+}
+```
+
+#### 13.2.4 메모리 모니터링
+
+```typescript
+// src/utils/memoryMonitor.ts
+
+export function setupMemoryMonitor() {
+  if (process.env.NODE_ENV !== 'development') return;
+
+  const logMemory = () => {
+    if ('memory' in performance) {
+      const memory = (performance as any).memory;
+      console.log('[Memory]', {
+        usedJSHeapSize: formatBytes(memory.usedJSHeapSize),
+        totalJSHeapSize: formatBytes(memory.totalJSHeapSize),
+        jsHeapSizeLimit: formatBytes(memory.jsHeapSizeLimit),
+      });
+    }
+  };
+
+  // 30초마다 로깅
+  setInterval(logMemory, 30000);
+}
+```
+
+### 13.3 기대 효과
+
+| 항목 | Before | After | 개선율 |
+|------|--------|-------|--------|
+| StyleValues 객체 생성 | 매번 new | 풀에서 재사용 | GC 50% 감소 |
+| 메모리 사용량 (100 요소) | ~50MB | ~30MB | 40% 감소 |
+| GC Pause 시간 | ~50ms | ~20ms | 60% 감소 |
+| 텍스처 메모리 누수 | 발생 가능 | 주기적 정리 | 누수 방지 |
+
+### 13.4 체크리스트
+
+#### Object Pool
+- [ ] `ObjectPool` 제네릭 클래스 구현
+- [ ] `styleValuesPool` 인스턴스 생성
+- [ ] 각 섹션 훅에 풀 적용
+- [ ] 릴리스 로직 정확성 검증
+
+#### PixiJS 메모리
+- [ ] `CanvasMemoryManager` 구현
+- [ ] 텍스처 캐시 정리 로직
+- [ ] Graphics 객체 재사용 패턴 적용
+- [ ] 이벤트 리스너 정리 확인
+
+#### 모니터링
+- [ ] 메모리 모니터 유틸리티 구현
+- [ ] 개발 환경에서 메모리 로깅 활성화
+- [ ] 메모리 회귀 테스트 추가 (선택)
+
+---
+
+## 14. Phase 5: 장기 최적화 (Long-term)
+
+### 14.1 목표
+
+**대규모 요소 처리**와 **최신 기술 도입**으로 미래 확장성 확보
+
+### 14.2 세부 작업
+
+#### 14.2.1 Web Worker 스타일 계산
+
+```typescript
+// src/workers/styleCalculator.worker.ts
+import { computeStyleValues } from '../utils/styleComputation';
+
+interface WorkerMessage {
+  type: 'COMPUTE_STYLES';
+  elements: SerializedElement[];
+}
+
+interface WorkerResponse {
+  type: 'STYLES_COMPUTED';
+  results: StyleValues[];
+}
+
+self.onmessage = (e: MessageEvent<WorkerMessage>) => {
+  const { type, elements } = e.data;
+
+  if (type === 'COMPUTE_STYLES') {
+    const results = elements.map(computeStyleValues);
+
+    self.postMessage({
+      type: 'STYLES_COMPUTED',
+      results,
+    } as WorkerResponse);
+  }
 };
+
+// src/hooks/useWorkerStyleCalculation.ts
+export function useWorkerStyleCalculation(
+  elements: SelectedElement[],
+  enabled = elements.length > 50
+) {
+  const workerRef = useRef<Worker | null>(null);
+  const [results, setResults] = useState<StyleValues[]>([]);
+
+  useEffect(() => {
+    if (!enabled) return;
+
+    if (!workerRef.current) {
+      workerRef.current = new Worker(
+        new URL('../workers/styleCalculator.worker.ts', import.meta.url)
+      );
+    }
+
+    const worker = workerRef.current;
+
+    worker.onmessage = (e: MessageEvent<WorkerResponse>) => {
+      if (e.data.type === 'STYLES_COMPUTED') {
+        setResults(e.data.results);
+      }
+    };
+
+    worker.postMessage({
+      type: 'COMPUTE_STYLES',
+      elements: elements.map(serializeElement),
+    });
+
+    return () => worker.terminate();
+  }, [elements, enabled]);
+
+  return results;
+}
 ```
 
----
-
-## 9. 저사양 환경 특화 최적화
-
-### 9.1 PixiJS 설정 조정
+#### 14.2.2 PixiJS v8 WebGPU 업그레이드
 
 ```typescript
-// 저사양 기기 감지
-const isLowEnd = navigator.hardwareConcurrency <= 2 ||
-                 navigator.deviceMemory <= 2;
+// src/canvas/renderer.ts
+import { Application, autoDetectRenderer } from 'pixi.js';
 
-const app = new PIXI.Application({
-  antialias: !isLowEnd,
-  resolution: isLowEnd ? 0.75 : 1,
-  legacy: isLowEnd,
+export async function initializeRenderer(canvas: HTMLCanvasElement) {
+  // WebGPU 우선, WebGL2 fallback, WebGL1 최종 fallback
+  const app = new Application();
+
+  await app.init({
+    canvas,
+    preference: 'webgpu',
+    fallbackPreference: 'webgl2',
+    antialias: true,
+    resolution: window.devicePixelRatio,
+  });
+
+  console.log(`[Renderer] Using: ${app.renderer.type}`);
+  // 'webgpu' | 'webgl2' | 'webgl'
+
+  return app;
+}
+
+// 렌더러 타입에 따른 최적화 분기
+export function getOptimalBatchSize(rendererType: string): number {
+  switch (rendererType) {
+    case 'webgpu': return 10000;
+    case 'webgl2': return 5000;
+    default: return 2000;
+  }
+}
+```
+
+#### 14.2.3 React Compiler 도입 (React 19)
+
+```typescript
+// babel.config.js 또는 vite.config.ts
+// React Compiler 플러그인 설정
+
+// vite.config.ts
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+
+export default defineConfig({
+  plugins: [
+    react({
+      babel: {
+        plugins: [
+          // React Compiler 활성화 시
+          // ['babel-plugin-react-compiler', {}],
+        ],
+      },
+    }),
+  ],
 });
+
+// 컴포넌트에서 수동 메모이제이션 제거 가능
+// Before (React 18)
+const MemoizedComponent = React.memo(({ value }) => {
+  const computed = useMemo(() => expensiveCalc(value), [value]);
+  const handler = useCallback(() => doSomething(value), [value]);
+  return <div onClick={handler}>{computed}</div>;
+});
+
+// After (React 19 + Compiler)
+function Component({ value }) {
+  const computed = expensiveCalc(value);  // 자동 메모이제이션
+  const handler = () => doSomething(value); // 자동 메모이제이션
+  return <div onClick={handler}>{computed}</div>;
+}
 ```
 
-### 9.2 스타일 패널 최적화
+#### 14.2.4 SharedArrayBuffer 도입 (선택적)
 
-- **지연 로딩**: 섹션 접힘 상태에서는 해당 섹션 훅 실행 안 함
-- **디바운스**: 입력 변경 시 100ms 디바운스로 재계산 빈도 감소
-- **가상 스크롤**: 긴 속성 목록 시 viewport 내 항목만 렌더링
+```typescript
+// 서버 헤더 설정 필요
+// Cross-Origin-Opener-Policy: same-origin
+// Cross-Origin-Embedder-Policy: require-corp
 
-### 9.3 메모리 예산
+// src/workers/sharedStyleBuffer.ts
+export function createSharedStyleBuffer(elementCount: number) {
+  // 요소당 28개 속성 × 4바이트 (float32)
+  const bytesPerElement = 28 * 4;
+  const buffer = new SharedArrayBuffer(elementCount * bytesPerElement);
+  const view = new Float32Array(buffer);
 
-| 환경 | 권장 메모리 예산 | 대응 전략 |
-|------|----------------|----------|
-| 고사양 | 512MB+ | 기본 설정 |
-| 중간 | 256~512MB | 저해상도 텍스처, GC 주기 단축 |
-| 저사양 | <256MB | legacy 모드, 최소 텍스처, Worker 비활성화 |
+  return {
+    buffer,
+    view,
+    getElementOffset: (index: number) => index * 28,
+  };
+}
+```
+
+### 14.3 기대 효과
+
+| 항목 | Before | After | 개선율 |
+|------|--------|-------|--------|
+| 100+ 요소 스타일 계산 | 메인 스레드 블로킹 | Worker에서 비동기 | UI 블로킹 0% |
+| WebGPU 렌더링 (지원 시) | WebGL | WebGPU | 30-50% 빠름 |
+| React 메모이제이션 보일러플레이트 | 수동 | 자동 | 코드량 50% 감소 |
+| Worker ↔ 메인 데이터 전송 | postMessage 복사 | SharedArrayBuffer | 90% 지연 감소 |
+
+### 14.4 체크리스트
+
+#### Web Worker
+- [ ] `styleCalculator.worker.ts` 구현
+- [ ] `useWorkerStyleCalculation` 훅 구현
+- [ ] 50+ 요소 선택 시 자동 전환 로직
+- [ ] Worker 에러 핸들링 및 fallback
+
+#### PixiJS v8
+- [ ] PixiJS v8로 업그레이드
+- [ ] WebGPU 렌더러 초기화 로직
+- [ ] 렌더러 타입별 최적화 분기
+- [ ] 브라우저 호환성 테스트
+
+#### React Compiler
+- [ ] React 19 업그레이드 대기
+- [ ] babel-plugin-react-compiler 설정
+- [ ] 기존 useMemo/useCallback 점진적 제거
+- [ ] 성능 비교 벤치마크
+
+#### SharedArrayBuffer (선택)
+- [ ] 서버 COOP/COEP 헤더 설정
+- [ ] SharedArrayBuffer 기반 데이터 구조 설계
+- [ ] Atomics를 활용한 동기화 로직
+- [ ] 브라우저 지원 fallback
 
 ---
 
-## 10. 권장 적용 순서
+## 15. 저사양 환경 특화 최적화
 
+### 15.1 저사양 기기 감지
+
+```typescript
+// src/utils/deviceCapability.ts
+
+export interface DeviceCapability {
+  tier: 'high' | 'medium' | 'low';
+  cores: number;
+  memory: number; // GB
+  gpu: 'webgpu' | 'webgl2' | 'webgl';
+}
+
+export function detectDeviceCapability(): DeviceCapability {
+  const cores = navigator.hardwareConcurrency ?? 4;
+  const memory = (navigator as any).deviceMemory ?? 4;
+
+  let tier: DeviceCapability['tier'];
+  if (cores >= 8 && memory >= 8) {
+    tier = 'high';
+  } else if (cores >= 4 && memory >= 4) {
+    tier = 'medium';
+  } else {
+    tier = 'low';
+  }
+
+  return { tier, cores, memory, gpu: detectGPU() };
+}
+
+function detectGPU(): DeviceCapability['gpu'] {
+  if ('gpu' in navigator) return 'webgpu';
+  const canvas = document.createElement('canvas');
+  const gl = canvas.getContext('webgl2');
+  return gl ? 'webgl2' : 'webgl';
+}
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                      Phase 1 (즉시)                         │
-│  ┌─────────────────────┐  ┌─────────────────────┐          │
-│  │ Selector 최적화     │  │ colord 도입          │          │
-│  │ (primitive 구독)    │  │ (색상 파싱 안정화)   │          │
-│  └─────────────────────┘  └─────────────────────┘          │
-└─────────────────────────────────────────────────────────────┘
-                              ↓
-┌─────────────────────────────────────────────────────────────┐
-│                      Phase 2 (핵심)                         │
-│  ┌─────────────────────────────────────────────────────┐   │
-│  │ StyleValues 섹션별 분할                              │   │
-│  │ useTransformValues / useLayoutValues /              │   │
-│  │ useAppearanceValues / useTypographyValues           │   │
-│  └─────────────────────────────────────────────────────┘   │
-└─────────────────────────────────────────────────────────────┘
-                              ↓
-┌─────────────────────────────────────────────────────────────┐
-│                   Phase 3 (선택적/장기)                     │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐      │
-│  │ Jotai Atoms  │  │ Object Pool  │  │ Web Worker   │      │
-│  │ (속성별 구독)│  │ (메모리 최적)│  │ (100+ 요소)  │      │
-│  └──────────────┘  └──────────────┘  └──────────────┘      │
-└─────────────────────────────────────────────────────────────┘
+
+### 15.2 Tier별 설정
+
+```typescript
+// src/config/performancePresets.ts
+
+export const PERFORMANCE_PRESETS = {
+  high: {
+    pixi: {
+      antialias: true,
+      resolution: window.devicePixelRatio,
+      legacy: false,
+    },
+    stylePanel: {
+      debounceMs: 50,
+      lazyLoadSections: false,
+      enableWorker: true,
+    },
+  },
+  medium: {
+    pixi: {
+      antialias: true,
+      resolution: Math.min(window.devicePixelRatio, 1.5),
+      legacy: false,
+    },
+    stylePanel: {
+      debounceMs: 100,
+      lazyLoadSections: true,
+      enableWorker: true,
+    },
+  },
+  low: {
+    pixi: {
+      antialias: false,
+      resolution: 1,
+      legacy: true,
+    },
+    stylePanel: {
+      debounceMs: 150,
+      lazyLoadSections: true,
+      enableWorker: false, // Worker 오버헤드가 더 클 수 있음
+    },
+  },
+} as const;
 ```
+
+### 15.3 메모리 예산
+
+| 환경 | 메모리 예산 | Object Pool 크기 | GC 주기 |
+|------|------------|-----------------|---------|
+| 고사양 | 512MB+ | 200 | 60초 |
+| 중간 | 256-512MB | 100 | 30초 |
+| 저사양 | <256MB | 50 | 15초 |
+
+### 15.4 체크리스트
+
+- [ ] `detectDeviceCapability` 함수 구현
+- [ ] `PERFORMANCE_PRESETS` 설정 정의
+- [ ] 앱 초기화 시 프리셋 자동 적용
+- [ ] 사용자 수동 설정 옵션 제공 (선택)
 
 ---
 
-## 11. 결론 (Updated)
+## 16. 전체 성능 개선 요약
 
-### 핵심 발견 (추가)
+### 16.1 Phase별 누적 효과
 
-1. **Signals/Jotai**: Fine-grained Reactivity로 속성 레벨 구독 가능, 섹션 분할보다 더 세밀한 최적화
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                          성능 개선 누적 그래프                               │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  리렌더링 감소율                                                            │
+│  100% ┤                                                    ████████ 95%    │
+│   90% ┤                                          ████████████████████      │
+│   80% ┤                              ████████████████████████████████ 85%  │
+│   70% ┤                    ██████████████████████████████████████████ 75%  │
+│   60% ┤                    ██████████████████████████████████████████      │
+│   50% ┤          ██████████████████████████████████████████████████ 40%    │
+│   40% ┤          ██████████████████████████████████████████████████        │
+│   30% ┤          ██████████████████████████████████████████████████        │
+│   20% ┤          ██████████████████████████████████████████████████        │
+│   10% ┤          ██████████████████████████████████████████████████        │
+│    0% ┼──────────┴──────────┴──────────┴──────────┴──────────┴─────────    │
+│        Baseline   Phase 1    Phase 2    Phase 3    Phase 4    Phase 5      │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
 
-2. **Object Pool**: StyleValues 객체 재사용으로 GC 부하 감소 (Netflix/Uber 사례)
+### 16.2 세부 메트릭
 
-3. **useSyncExternalStore selector**: primitive 값 개별 구독만으로 상당한 리렌더링 감소
+| Phase | 리렌더링 감소 | 계산 시간 감소 | 메모리 감소 | UI 반응성 |
+|-------|-------------|--------------|------------|----------|
+| 0 (준비) | 0% | 0% | 0% | 기준선 설정 |
+| 1 (Quick Wins) | 40% | 30% | - | 50% 향상 |
+| 2 (구조적) | 75% | 60% | 10% | 70% 향상 |
+| 3 (상태 관리) | 85% | 70% | 15% | 80% 향상 |
+| 4 (메모리) | 85% | 70% | 45% | 85% 향상 |
+| 5 (장기) | 95% | 85% | 50% | 95% 향상 |
 
-4. **저사양 최적화**: PixiJS legacy 모드, 저해상도 텍스처, 섹션 지연 로딩
+### 16.3 ROI 분석
 
-### 최종 권장 전략
+| Phase | 구현 비용 | 효과 | ROI |
+|-------|----------|------|-----|
+| 0 | 낮음 | 필수 기반 | ★★★★★ |
+| 1 | 낮음 | 높음 | ★★★★★ |
+| 2 | 중간 | 매우 높음 | ★★★★☆ |
+| 3 | 높음 | 높음 | ★★★☆☆ |
+| 4 | 중간 | 중간 | ★★★☆☆ |
+| 5 | 매우 높음 | 중간 (미래 대비) | ★★☆☆☆ |
 
-| 우선순위 | 최적화 | 변경 범위 | 예상 효과 |
-|---------|-------|----------|----------|
-| **1 (즉시)** | Selector primitive 구독 | 최소 | 30~50% 리렌더링 감소 |
-| **2 (즉시)** | colord 도입 | 중간 | 색상 파싱 안정성 |
-| **3 (핵심)** | StyleValues 섹션 분할 | 큰 | 75% 재계산 감소 |
-| **4 (선택)** | Jotai 마이그레이션 | 큰 | 속성별 Fine-grained |
-| **5 (선택)** | Object Pool | 중간 | GC 부하 감소 |
-| **6 (장기)** | Web Worker | 큰 | 대규모 요소 처리 |
+---
+
+## 17. 전체 체크리스트 (Master Checklist)
+
+### Phase 0: 준비 단계
+- [ ] Performance markers 유틸리티 생성
+- [ ] 벤치마크 스크립트 작성
+- [ ] 기준선 메트릭 수집 및 문서화
+- [ ] CI/CD 성능 회귀 테스트 추가
+
+### Phase 1: Quick Wins
+#### Selector 최적화
+- [ ] TransformSection selector primitive 변경
+- [ ] LayoutSection selector primitive 변경
+- [ ] AppearanceSection selector primitive 변경
+- [ ] TypographySection selector primitive 변경
+- [ ] shallow 비교 적용
+
+#### useTransition
+- [ ] StylePanel useTransition 추가
+- [ ] 캔버스 업데이트 startTransition 래핑
+- [ ] isPending UI 피드백
+- [ ] useDeferredValue 미리보기 최적화
+
+#### colord
+- [ ] colord 패키지 설치
+- [ ] colorUtils.ts 유틸리티 생성
+- [ ] 기존 색상 파싱 마이그레이션
+- [ ] ColorPicker 업데이트
+
+#### 디바운스
+- [ ] useDebouncedStyleUpdate 훅 생성
+- [ ] 텍스트 입력 디바운스 적용
+- [ ] 슬라이더 입력 디바운스 (선택)
+
+### Phase 2: 구조적 최적화
+#### 타입 정의
+- [ ] TransformStyleValues 정의
+- [ ] LayoutStyleValues 정의
+- [ ] AppearanceStyleValues 정의
+- [ ] TypographyStyleValues 정의
+
+#### 섹션별 훅
+- [ ] useTransformValues 구현
+- [ ] useLayoutValues 구현
+- [ ] useAppearanceValues 구현
+- [ ] useTypographyValues 구현
+- [ ] 하위 호환 useStyleValues 래퍼
+- [ ] 단위 테스트 작성
+
+#### Lazy Hook Execution
+- [ ] SectionWrapper 컴포넌트
+- [ ] TransformSection 분리
+- [ ] LayoutSection 분리
+- [ ] AppearanceSection 분리
+- [ ] TypographySection 분리
+
+#### Shorthand 확장
+- [ ] expandPadding 함수
+- [ ] expandMargin 함수
+- [ ] expandBorderRadius 함수
+- [ ] expandBorder 함수
+
+### Phase 3: 고급 상태 관리
+#### Jotai
+- [ ] jotai 설치
+- [ ] Provider 설정
+- [ ] 기본 atoms 정의
+- [ ] 속성별 atoms (35개)
+- [ ] Zustand ↔ Jotai bridge
+
+#### 마이그레이션
+- [ ] TransformSection Jotai 적용
+- [ ] LayoutSection Jotai 적용
+- [ ] AppearanceSection Jotai 적용
+- [ ] TypographySection Jotai 적용
+- [ ] Zustand 코드 정리
+
+#### Immer
+- [ ] immer 설치
+- [ ] Zustand middleware 적용
+- [ ] 상태 업데이트 리팩토링
+
+### Phase 4: 메모리 최적화
+#### Object Pool
+- [ ] ObjectPool 클래스 구현
+- [ ] styleValuesPool 인스턴스
+- [ ] 섹션 훅에 풀 적용
+- [ ] 릴리스 로직 검증
+
+#### PixiJS 메모리
+- [ ] CanvasMemoryManager 구현
+- [ ] 텍스처 캐시 정리
+- [ ] Graphics 재사용 패턴
+- [ ] 이벤트 리스너 정리
+
+#### 모니터링
+- [ ] 메모리 모니터 유틸리티
+- [ ] 개발 환경 로깅
+- [ ] 메모리 회귀 테스트
+
+### Phase 5: 장기 최적화
+#### Web Worker
+- [ ] styleCalculator.worker.ts
+- [ ] useWorkerStyleCalculation 훅
+- [ ] 50+ 요소 자동 전환
+- [ ] 에러 핸들링 및 fallback
+
+#### PixiJS v8
+- [ ] v8 업그레이드
+- [ ] WebGPU 초기화
+- [ ] 렌더러별 최적화
+- [ ] 호환성 테스트
+
+#### React Compiler
+- [ ] React 19 업그레이드 대기
+- [ ] 플러그인 설정
+- [ ] 메모이제이션 정리
+- [ ] 벤치마크
+
+#### SharedArrayBuffer
+- [ ] COOP/COEP 헤더
+- [ ] 데이터 구조 설계
+- [ ] Atomics 동기화
+- [ ] Fallback
+
+### 저사양 최적화
+- [ ] detectDeviceCapability 함수
+- [ ] PERFORMANCE_PRESETS 설정
+- [ ] 자동 프리셋 적용
+- [ ] 수동 설정 옵션
 
 ---
 
