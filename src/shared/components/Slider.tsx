@@ -7,7 +7,6 @@ import {
     SliderTrack,
     composeRenderProps
 } from 'react-aria-components';
-import { tv } from 'tailwind-variants';
 import type { ComponentSizeSubset, SliderVariant } from '../../types/builder/componentVariants.types';
 import { formatNumber, formatPercent, formatUnit } from '../../utils/core/numberUtils';
 import { Skeleton } from './Skeleton';
@@ -62,27 +61,11 @@ export interface SliderProps<T> extends AriaSliderProps<T> {
     isLoading?: boolean;
 }
 
-const sliderStyles = tv({
-    base: 'react-aria-Slider',
-    variants: {
-        variant: {
-            default: '',
-            primary: 'primary',
-            secondary: 'secondary',
-            surface: 'surface',
-        },
-        size: {
-            sm: 'sm',
-            md: 'md',
-            lg: 'lg',
-        },
-    },
-    defaultVariants: {
-        variant: 'default',
-        size: 'md',
-    },
-});
-
+/**
+ * 🚀 Phase 4: data-* 패턴 전환
+ * - tailwind-variants 제거
+ * - data-variant, data-size 속성 사용
+ */
 export function Slider<T extends number | number[]>({
     label,
     thumbLabels,
@@ -109,7 +92,7 @@ export function Slider<T extends number | number[]>({
 
     const sliderClassName = composeRenderProps(
         props.className,
-        (className) => sliderStyles({ variant, size, className })
+        (className) => className ? `react-aria-Slider ${className}` : 'react-aria-Slider'
     );
 
     // 값 포맷팅 함수
@@ -130,7 +113,7 @@ export function Slider<T extends number | number[]>({
     };
 
     return (
-        <AriaSlider {...props} className={sliderClassName}>
+        <AriaSlider {...props} className={sliderClassName} data-variant={variant} data-size={size}>
             {label && <Label>{label}</Label>}
             {showValue && (
                 <SliderOutput>

@@ -5,7 +5,6 @@ import {
 } from 'react-aria-components';
 import { useFocusRing } from '@react-aria/focus';
 import { mergeProps } from '@react-aria/utils';
-import { tv } from 'tailwind-variants';
 
 import './styles/Radio.css';
 
@@ -13,16 +12,11 @@ export interface RadioProps extends AriaRadioProps {
     children?: React.ReactNode;
 }
 
-const radioStyles = tv({
-  base: 'react-aria-Radio',
-  variants: {
-    isFocusVisible: {
-      true: 'focus-visible',
-      false: '',
-    },
-  },
-});
-
+/**
+ * 🚀 Phase 4: data-* 패턴 전환
+ * - tailwind-variants 제거
+ * - data-focus-visible 속성 사용
+ */
 export function Radio({
     children,
     ...props
@@ -32,14 +26,10 @@ export function Radio({
     return (
         <AriaRadio
             {...mergeProps(props, focusProps)}
-            data-focus-visible={isFocusVisible}
+            data-focus-visible={isFocusVisible || undefined}
             className={composeRenderProps(
                 props.className,
-                (className, renderProps) => radioStyles({
-                    ...renderProps,
-                    isFocusVisible,
-                    className
-                })
+                (className) => className ? `react-aria-Radio ${className}` : 'react-aria-Radio'
             )}
         >
             {children}

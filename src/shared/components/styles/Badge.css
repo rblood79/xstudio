@@ -28,31 +28,31 @@
   /* ========== M3 Variant Colors ========== */
 
   /* ===== Primary Variant ===== */
-  .react-aria-Badge.primary {
+  .react-aria-Badge[data-variant="primary"] {
     background: var(--primary);
     color: var(--on-primary);
   }
 
   /* ===== Secondary Variant ===== */
-  .react-aria-Badge.secondary {
+  .react-aria-Badge[data-variant="secondary"] {
     background: var(--secondary);
     color: var(--on-secondary);
   }
 
   /* ===== Tertiary Variant ===== */
-  .react-aria-Badge.tertiary {
+  .react-aria-Badge[data-variant="tertiary"] {
     background: var(--tertiary);
     color: var(--on-tertiary);
   }
 
   /* ===== Error Variant ===== */
-  .react-aria-Badge.error {
+  .react-aria-Badge[data-variant="error"] {
     background: var(--error);
     color: var(--on-error);
   }
 
   /* ===== Surface Variant ===== */
-  .react-aria-Badge.surface {
+  .react-aria-Badge[data-variant="surface"] {
     background: var(--surface-container-highest);
     color: var(--on-surface);
   }
@@ -60,7 +60,7 @@
   /* ========== Size Variants ========== */
 
   /* ===== Small Size (Default) ===== */
-  .react-aria-Badge.sm {
+  .react-aria-Badge[data-size="sm"] {
     font-size: var(--text-sm);
     padding: 2px var(--spacing-md);
     min-width: 20px;
@@ -68,7 +68,7 @@
   }
 
   /* ===== Medium Size ===== */
-  .react-aria-Badge.md {
+  .react-aria-Badge[data-size="md"] {
     font-size: var(--text-base);
     padding: var(--spacing-sm) var(--spacing-md);
     min-width: 24px;
@@ -76,7 +76,7 @@
   }
 
   /* ===== Large Size ===== */
-  .react-aria-Badge.lg {
+  .react-aria-Badge[data-size="lg"] {
     font-size: var(--text-lg);
     padding: var(--spacing-sm) var(--spacing-lg);
     min-width: 28px;
@@ -84,22 +84,22 @@
   }
 
   /* ========== Dot Badge (indicator only, no text) ========== */
-  .react-aria-Badge.dot {
+  .react-aria-Badge[data-dot] {
     padding: 0;
 
-    &.sm {
+    &[data-size="sm"] {
       width: 8px;
       height: 8px;
       min-width: 8px;
     }
 
-    &.md {
+    &[data-size="md"] {
       width: 10px;
       height: 10px;
       min-width: 10px;
     }
 
-    &.lg {
+    &[data-size="lg"] {
       width: 12px;
       height: 12px;
       min-width: 12px;
@@ -107,7 +107,7 @@
   }
 
   /* Pulsing animation */
-  .react-aria-Badge.pulsing {
+  .react-aria-Badge[data-pulsing] {
     animation: badge-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
   }
 

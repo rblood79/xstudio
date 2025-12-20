@@ -5,7 +5,6 @@
 
 /* eslint-disable local/prefer-copy-paste-hook */
 import { useState } from 'react';
-import { tv } from 'tailwind-variants';
 import { useAsyncMutation } from '../../../hooks/useAsyncMutation';
 import { FigmaPluginService } from '../../../../services/theme/FigmaPluginService';
 import type {
@@ -15,13 +14,16 @@ import type {
 import { useTokens } from '../../../../hooks/theme/useTokens';
 import '../styles/FigmaPluginExporter.css';
 
-const figmaPluginStyles = tv({
-  slots: {
-    container: 'figma-plugin-container',
-    form: 'figma-plugin-form',
-    preview: 'figma-plugin-preview',
-  },
-});
+/**
+ * 🚀 Phase 4: data-* 패턴 전환
+ * - tailwind-variants 제거
+ * - 직접 CSS 클래스 사용
+ */
+const styles = {
+  container: 'figma-plugin-container',
+  form: 'figma-plugin-form',
+  preview: 'figma-plugin-preview',
+};
 
 interface FigmaPluginExporterProps {
   themeId: string;
@@ -29,7 +31,6 @@ interface FigmaPluginExporterProps {
 }
 
 export function FigmaPluginExporter({ themeId }: FigmaPluginExporterProps) {
-  const styles = figmaPluginStyles();
 
   const { tokens, loading } = useTokens({
     themeId,
@@ -126,7 +127,7 @@ export function FigmaPluginExporter({ themeId }: FigmaPluginExporterProps) {
   };
 
   return (
-    <div className={styles.container()}>
+    <div className={styles.container}>
       <h2>Figma Plugin Export</h2>
       <p className="subtitle">
         테마를 Figma Plugin 형식으로 내보내어 Figma에서 직접 Import할 수 있습니다
@@ -140,7 +141,7 @@ export function FigmaPluginExporter({ themeId }: FigmaPluginExporterProps) {
       )}
 
       {!loading && !exportMutation.data && (
-        <form className={styles.form()} onSubmit={(e) => { e.preventDefault(); handleExport(); }}>
+        <form className={styles.form} onSubmit={(e) => { e.preventDefault(); handleExport(); }}>
           {/* Plugin Name */}
           <div className="form-group">
             <label htmlFor="plugin-name">
@@ -245,7 +246,7 @@ export function FigmaPluginExporter({ themeId }: FigmaPluginExporterProps) {
 
       {/* Preview */}
       {exportMutation.data && (
-        <div className={styles.preview()}>
+        <div className={styles.preview}>
           <div className="preview-header">
             <div className="preview-title">
               <h3>Plugin 파일 생성 완료</h3>

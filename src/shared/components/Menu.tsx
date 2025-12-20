@@ -10,13 +10,18 @@ import {
   SubmenuTrigger,
   composeRenderProps
 } from "react-aria-components";
-import { tv } from 'tailwind-variants';
 import type { MenuVariant, ComponentSize } from '../../types/componentVariants';
 import type { DataBinding, ColumnMapping } from "../../types/builder/unified.types";
 import type { DataBindingValue } from "../../builder/panels/common/PropertyDataBinding";
 import { useCollectionData } from "../../builder/hooks/useCollectionData";
 
 import "./styles/Menu.css";
+
+/**
+ * 🚀 Phase 4: data-* 패턴 전환
+ * - tailwind-variants 제거
+ * - data-variant, data-size 속성 사용
+ */
 
 export interface MenuItem {
   id: string;
@@ -38,28 +43,6 @@ export interface MenuButtonProps<T>
   variant?: MenuVariant;
   size?: ComponentSize;
 }
-
-const menuStyles = tv({
-  base: 'react-aria-Menu',
-  variants: {
-    variant: {
-      primary: 'primary',
-      secondary: 'secondary',
-      tertiary: 'tertiary',
-      error: 'error',
-      filled: 'filled',
-    },
-    size: {
-      sm: 'sm',
-      md: 'md',
-      lg: 'lg',
-    },
-  },
-  defaultVariants: {
-    variant: 'primary',
-    size: 'md',
-  },
-});
 
 export function MenuButton<T extends object>({
   label,
@@ -119,14 +102,7 @@ export function MenuButton<T extends object>({
   const getMenuClassName = (baseClassName?: string) =>
     composeRenderProps(
       baseClassName,
-      (className, renderProps) => {
-        return menuStyles({
-          ...renderProps,
-          variant,
-          size,
-          className,
-        });
-      }
+      (className) => className ? `react-aria-Menu ${className}` : 'react-aria-Menu'
     );
 
   // ColumnMapping이 있으면 각 데이터 항목마다 MenuItem 렌더링
@@ -144,7 +120,7 @@ export function MenuButton<T extends object>({
         <MenuTrigger {...props}>
           <Button>{label}</Button>
           <Popover>
-            <Menu className={getMenuClassName(props.className)}>
+            <Menu className={getMenuClassName(props.className)} data-variant={variant} data-size={size}>
               <AriaMenuItem key="loading" textValue="Loading">
                 ⏳ 데이터 로딩 중...
               </AriaMenuItem>
@@ -160,7 +136,7 @@ export function MenuButton<T extends object>({
         <MenuTrigger {...props}>
           <Button>{label}</Button>
           <Popover>
-            <Menu className={getMenuClassName(props.className)}>
+            <Menu className={getMenuClassName(props.className)} data-variant={variant} data-size={size}>
               <AriaMenuItem key="error" textValue="Error">
                 ❌ 오류: {error}
               </AriaMenuItem>
@@ -230,7 +206,7 @@ export function MenuButton<T extends object>({
                 )}
               </AriaMenuItem>
               <Popover>
-                <Menu items={submenuItems as Iterable<T>} className={getMenuClassName(props.className)}>
+                <Menu items={submenuItems as Iterable<T>} className={getMenuClassName(props.className)} data-variant={variant} data-size={size}>
                   {(subItem) => renderMenuItem(subItem as unknown as MenuItem)}
                 </Menu>
               </Popover>
@@ -258,7 +234,7 @@ export function MenuButton<T extends object>({
         <MenuTrigger {...props}>
           <Button>{label}</Button>
           <Popover>
-            <Menu items={menuItems as Iterable<T>} className={getMenuClassName(props.className)}>
+            <Menu items={menuItems as Iterable<T>} className={getMenuClassName(props.className)} data-variant={variant} data-size={size}>
               {(item) => renderMenuItem(item as unknown as MenuItem)}
             </Menu>
           </Popover>
@@ -271,7 +247,7 @@ export function MenuButton<T extends object>({
       <MenuTrigger {...props}>
         <Button>{label}</Button>
         <Popover>
-          <Menu className={getMenuClassName(props.className)}>
+          <Menu className={getMenuClassName(props.className)} data-variant={variant} data-size={size}>
             {children}
           </Menu>
         </Popover>
@@ -377,6 +353,8 @@ export function MenuButton<T extends object>({
                   console.log("Submenu item selected:", key);
                 }}
                 className={getMenuClassName(props.className)}
+                data-variant={variant}
+                data-size={size}
               >
                 {(subItem) => renderMenuItem(subItem)}
               </Menu>
@@ -407,6 +385,8 @@ export function MenuButton<T extends object>({
               // 이벤트 핸들러 실행 가능
             }}
             className={getMenuClassName(props.className)}
+            data-variant={variant}
+            data-size={size}
           >
             {(item) => renderMenuItem(item)}
           </Menu>
@@ -420,7 +400,7 @@ export function MenuButton<T extends object>({
     <MenuTrigger {...props}>
       <Button>{label}</Button>
       <Popover>
-        <Menu {...props} className={getMenuClassName(props.className)}>
+        <Menu {...props} className={getMenuClassName(props.className)} data-variant={variant} data-size={size}>
           {loading && (
             <AriaMenuItem key="loading" textValue="Loading">
               ⏳ 데이터 로딩 중...

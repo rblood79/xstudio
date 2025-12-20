@@ -14,7 +14,6 @@ import {
   GridListProps,
   composeRenderProps
 } from 'react-aria-components';
-import { tv } from 'tailwind-variants';
 import { MyCheckbox } from './Checkbox';
 import type { GridListVariant, ComponentSize } from '../../types/componentVariants';
 import type { DataBinding, ColumnMapping } from '../../types/builder/unified.types';
@@ -22,6 +21,12 @@ import type { DataBindingValue } from '../../builder/panels/common/PropertyDataB
 import { useCollectionData } from '../../builder/hooks/useCollectionData';
 
 import './styles/GridList.css';
+
+/**
+ * 🚀 Phase 4: data-* 패턴 전환
+ * - tailwind-variants 제거
+ * - data-variant, data-size 속성 사용
+ */
 
 interface ExtendedGridListProps<T extends object> extends GridListProps<T> {
   dataBinding?: DataBinding | DataBindingValue;
@@ -45,28 +50,6 @@ interface ExtendedGridListProps<T extends object> extends GridListProps<T> {
    */
   filterFields?: (keyof T)[];
 }
-
-const gridListStyles = tv({
-  base: 'react-aria-GridList',
-  variants: {
-    variant: {
-      primary: 'primary',
-      secondary: 'secondary',
-      tertiary: 'tertiary',
-      error: 'error',
-      filled: 'filled',
-    },
-    size: {
-      sm: 'sm',
-      md: 'md',
-      lg: 'lg',
-    },
-  },
-  defaultVariants: {
-    variant: 'primary',
-    size: 'md',
-  },
-});
 
 export function GridList<T extends object>({
   children,
@@ -134,14 +117,7 @@ export function GridList<T extends object>({
   const getGridListClassName = (baseClassName?: string) =>
     composeRenderProps(
       baseClassName,
-      (className, renderProps) => {
-        return gridListStyles({
-          ...renderProps,
-          variant,
-          size,
-          className,
-        });
-      }
+      (className) => className ? `react-aria-GridList ${className}` : 'react-aria-GridList'
     );
 
   // ColumnMapping이 있으면 각 데이터 항목마다 GridListItem 렌더링
@@ -160,7 +136,7 @@ export function GridList<T extends object>({
     // Loading 상태
     if (loading) {
       return (
-        <AriaGridList {...props} className={getGridListClassName(props.className)}>
+        <AriaGridList {...props} className={getGridListClassName(props.className)} data-variant={variant} data-size={size}>
           <AriaGridListItem
             key="loading"
             value={{}}
@@ -183,7 +159,7 @@ export function GridList<T extends object>({
     // Error 상태
     if (error) {
       return (
-        <AriaGridList {...props} className={getGridListClassName(props.className)}>
+        <AriaGridList {...props} className={getGridListClassName(props.className)} data-variant={variant} data-size={size}>
           <AriaGridListItem
             key="error"
             value={{}}
@@ -213,7 +189,7 @@ export function GridList<T extends object>({
       console.log('✅ GridList with columnMapping - items:', items);
 
       return (
-        <AriaGridList {...props} className={getGridListClassName(props.className)} items={items}>
+        <AriaGridList {...props} className={getGridListClassName(props.className)} data-variant={variant} data-size={size} items={items}>
           {children}
         </AriaGridList>
       );
@@ -221,7 +197,7 @@ export function GridList<T extends object>({
 
     // 데이터 없음
     return (
-      <AriaGridList {...props} className={getGridListClassName(props.className)}>
+      <AriaGridList {...props} className={getGridListClassName(props.className)} data-variant={variant} data-size={size}>
         {children}
       </AriaGridList>
     );
@@ -232,7 +208,7 @@ export function GridList<T extends object>({
     // Loading 상태
     if (loading) {
       return (
-        <AriaGridList {...props} className={getGridListClassName(props.className)}>
+        <AriaGridList {...props} className={getGridListClassName(props.className)} data-variant={variant} data-size={size}>
           <AriaGridListItem
             key="loading"
             value={{}}
@@ -255,7 +231,7 @@ export function GridList<T extends object>({
     // Error 상태
     if (error) {
       return (
-        <AriaGridList {...props} className={getGridListClassName(props.className)}>
+        <AriaGridList {...props} className={getGridListClassName(props.className)} data-variant={variant} data-size={size}>
           <AriaGridListItem
             key="error"
             value={{}}
@@ -288,7 +264,7 @@ export function GridList<T extends object>({
       console.log('✅ GridList Dynamic Collection - items:', items);
 
       return (
-        <AriaGridList {...props} className={getGridListClassName(props.className)} items={items}>
+        <AriaGridList {...props} className={getGridListClassName(props.className)} data-variant={variant} data-size={size} items={items}>
           {(item) => (
             <AriaGridListItem
               key={item.id}
@@ -314,7 +290,7 @@ export function GridList<T extends object>({
 
   // Static Children (기존 방식)
   return (
-    <AriaGridList {...props} className={getGridListClassName(props.className)}>
+    <AriaGridList {...props} className={getGridListClassName(props.className)} data-variant={variant} data-size={size}>
       {children}
     </AriaGridList>
   );

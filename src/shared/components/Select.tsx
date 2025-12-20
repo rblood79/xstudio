@@ -21,7 +21,6 @@ import {
   ValidationResult,
   composeRenderProps,
 } from "react-aria-components";
-import { tv } from "tailwind-variants";
 import { ChevronDown } from "lucide-react";
 import type {
   SelectVariant,
@@ -73,29 +72,6 @@ export interface SelectProps<T extends object>
    */
   isLoading?: boolean;
 }
-
-const selectStyles = tv({
-  base: "react-aria-Select",
-  variants: {
-    variant: {
-      primary: "primary",
-      secondary: "secondary",
-      tertiary: "tertiary",
-      error: "error",
-      filled: "filled",
-      surface: "surface",
-    },
-    size: {
-      sm: "sm",
-      md: "md",
-      lg: "lg",
-    },
-  },
-  defaultVariants: {
-    variant: "primary",
-    size: "md",
-  },
-});
 
 export function Select<T extends object>({
   label,
@@ -328,16 +304,11 @@ export function Select<T extends object>({
   return (
     <AriaSelect
       {...props}
+      data-variant={variant}
+      data-size={size}
       className={composeRenderProps(
         props.className,
-        (className, renderProps) => {
-          return selectStyles({
-            ...renderProps,
-            variant,
-            size,
-            className,
-          });
-        }
+        (cls) => cls ? `react-aria-Select ${cls}` : "react-aria-Select"
       )}
       aria-label={ariaLabel}
       placeholder={placeholder}

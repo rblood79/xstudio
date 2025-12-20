@@ -21,7 +21,6 @@ import {
   ValidationResult,
   composeRenderProps
 } from 'react-aria-components';
-import { tv } from 'tailwind-variants';
 import { ChevronDown } from 'lucide-react';
 import type { ComboBoxVariant, ComponentSize } from '../../types/componentVariants';
 import type { DataBinding, ColumnMapping } from '../../types/builder/unified.types';
@@ -29,6 +28,12 @@ import type { DataBindingValue } from '../../builder/panels/common/PropertyDataB
 import { useCollectionData } from '../../builder/hooks/useCollectionData';
 import { Skeleton } from './Skeleton';
 import './styles/ComboBox.css';
+
+/**
+ * 🚀 Phase 4: data-* 패턴 전환
+ * - tailwind-variants 제거
+ * - data-variant, data-size 속성 사용
+ */
 
 export interface ComboBoxProps<T extends object>
   extends Omit<AriaComboBoxProps<T>, 'children'> {
@@ -51,28 +56,6 @@ export interface ComboBoxProps<T extends object>
    */
   isLoading?: boolean;
 }
-
-const comboBoxStyles = tv({
-  base: 'react-aria-ComboBox',
-  variants: {
-    variant: {
-      primary: 'primary',
-      secondary: 'secondary',
-      tertiary: 'tertiary',
-      error: 'error',
-      filled: 'filled',
-    },
-    size: {
-      sm: 'sm',
-      md: 'md',
-      lg: 'lg',
-    },
-  },
-  defaultVariants: {
-    variant: 'primary',
-    size: 'md',
-  },
-});
 
 export function ComboBox<T extends object>({
   label,
@@ -140,14 +123,7 @@ export function ComboBox<T extends object>({
   const getComboBoxClassName = (baseClassName?: string) =>
     composeRenderProps(
       baseClassName,
-      (className, renderProps) => {
-        return comboBoxStyles({
-          ...renderProps,
-          variant,
-          size,
-          className,
-        });
-      }
+      (className) => className ? `react-aria-ComboBox ${className}` : 'react-aria-ComboBox'
     );
 
   // ColumnMapping이 있으면 각 데이터 항목마다 ListBoxItem 렌더링
@@ -165,6 +141,8 @@ export function ComboBox<T extends object>({
         <AriaComboBox
           {...props}
           className={getComboBoxClassName(props.className)}
+          data-variant={variant}
+          data-size={size}
           aria-label={ariaLabel}
           isDisabled
         >
@@ -193,6 +171,8 @@ export function ComboBox<T extends object>({
         <AriaComboBox
           {...props}
           className={getComboBoxClassName(props.className)}
+          data-variant={variant}
+          data-size={size}
           aria-label={ariaLabel}
           isDisabled
         >
@@ -230,6 +210,8 @@ export function ComboBox<T extends object>({
           inputValue={inputValue}
           onInputChange={onInputChange}
           className={getComboBoxClassName(props.className)}
+          data-variant={variant}
+          data-size={size}
           aria-label={ariaLabel}
         >
           {hasVisibleLabel && <Label>{String(label)}</Label>}
@@ -257,6 +239,8 @@ export function ComboBox<T extends object>({
         inputValue={inputValue}
         onInputChange={onInputChange}
         className={getComboBoxClassName(props.className)}
+        data-variant={variant}
+        data-size={size}
         aria-label={ariaLabel}
       >
         {hasVisibleLabel && <Label>{String(label)}</Label>}
@@ -311,6 +295,8 @@ export function ComboBox<T extends object>({
         inputValue={inputValue}
         onInputChange={onInputChange}
         className={getComboBoxClassName(props.className)}
+        data-variant={variant}
+        data-size={size}
         aria-label={ariaLabel}
       >
         {hasVisibleLabel && <Label>{String(label)}</Label>}
@@ -345,6 +331,8 @@ export function ComboBox<T extends object>({
       <AriaComboBox
         {...props}
         className={getComboBoxClassName(props.className)}
+        data-variant={variant}
+        data-size={size}
         aria-label={ariaLabel}
         isDisabled
       >
@@ -366,6 +354,8 @@ export function ComboBox<T extends object>({
       <AriaComboBox
         {...props}
         className={getComboBoxClassName(props.className)}
+        data-variant={variant}
+        data-size={size}
         aria-label={ariaLabel}
         isDisabled
       >
@@ -388,6 +378,8 @@ export function ComboBox<T extends object>({
       inputValue={inputValue}
       onInputChange={onInputChange}
       className={getComboBoxClassName(props.className)}
+      data-variant={variant}
+      data-size={size}
       aria-label={ariaLabel}
     >
       {hasVisibleLabel && <Label>{String(label)}</Label>}

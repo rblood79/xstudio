@@ -4,7 +4,6 @@
  */
 
 import { useState, useEffect } from 'react';
-import { tv } from 'tailwind-variants';
 import { useThemes, useActiveTheme } from '../../../hooks/theme';
 import { Moon, Sun } from 'lucide-react';
 import { iconProps, iconEditProps } from '../../../utils/ui/uiConstants';
@@ -19,15 +18,18 @@ import { DarkModeGenerator } from './components/DarkModeGenerator';
 import { FigmaPluginExporter } from './components/FigmaPluginExporter';
 import { M3ColorSystemGuide } from './components/M3ColorSystemGuide';
 
-const themeStudioStyles = tv({
-  slots: {
-    container: 'themePanel',
-    header: 'theme-studio-header',
-    sidebar: 'theme-studio-sidebar',
-    main: 'theme-studio-main',
-    panel: 'theme-studio-panel',
-  },
-});
+/**
+ * 🚀 Phase 4: data-* 패턴 전환
+ * - tailwind-variants 제거
+ * - 직접 CSS 클래스 사용
+ */
+const styles = {
+  container: 'themePanel',
+  header: 'theme-studio-header',
+  sidebar: 'theme-studio-sidebar',
+  main: 'theme-studio-main',
+  panel: 'theme-studio-panel',
+};
 
 interface ThemeStudioProps {
   projectId: string;
@@ -36,7 +38,6 @@ interface ThemeStudioProps {
 type ThemeStudioView = 'tokens' | 'ai-generator' | 'hct-generator' | 'figma-import' | 'dark-mode' | 'figma-plugin' | 'settings';
 
 export function ThemeStudio({ projectId }: ThemeStudioProps) {
-  const styles = themeStudioStyles();
 
   const [currentView, setCurrentView] = useState<ThemeStudioView>('tokens');
   const [isPreviewDarkMode, setIsPreviewDarkMode] = useState(false);
@@ -77,7 +78,7 @@ export function ThemeStudio({ projectId }: ThemeStudioProps) {
 
   if (loading) {
     return (
-      <div className={styles.container()}>
+      <div className={styles.container}>
         <div className="loading-state">
           <div className="spinner" />
           <p>테마 로드 중...</p>
@@ -89,7 +90,7 @@ export function ThemeStudio({ projectId }: ThemeStudioProps) {
 
   return (
     <div
-      className={styles.container()}
+      className={styles.container}
       data-theme={isPreviewDarkMode ? 'dark' : undefined}
     >
       {/* Header */}
@@ -162,7 +163,7 @@ export function ThemeStudio({ projectId }: ThemeStudioProps) {
 
       <div className="studio-body">
         {/* Sidebar - Theme List */}
-        <aside className={styles.sidebar()}>
+        <aside className={styles.sidebar}>
           <div className="sidebar-header">
             <h2>테마</h2>
             <button
@@ -214,7 +215,7 @@ export function ThemeStudio({ projectId }: ThemeStudioProps) {
         </aside>
 
         {/* Main Content */}
-        <main className={styles.main()}>
+        <main className={styles.main}>
           {currentView === 'tokens' && activeTheme && (
             <TokenEditor themeId={activeTheme.id} projectId={projectId} />
           )}
@@ -317,7 +318,7 @@ export function ThemeStudio({ projectId }: ThemeStudioProps) {
         </main>
 
         {/* Right Panel - M3 Color System Guide */}
-        <aside className={styles.panel()}>
+        <aside className={styles.panel}>
           {activeTheme ? (
             <M3ColorSystemGuide
               themeId={activeTheme.id}

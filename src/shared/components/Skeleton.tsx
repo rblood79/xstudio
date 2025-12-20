@@ -25,7 +25,6 @@
  */
 
 import React from "react";
-import { tv } from "tailwind-variants";
 import type { ComponentSize } from "../../types/builder/componentVariants.types";
 import "./styles/Skeleton.css";
 
@@ -116,68 +115,11 @@ export interface SkeletonProps {
   "data-testid"?: string;
 }
 
-const skeleton = tv({
-  base: "react-aria-Skeleton",
-  variants: {
-    variant: {
-      text: "text",
-      circular: "circular",
-      rectangular: "rectangular",
-      rounded: "rounded",
-    },
-    animation: {
-      shimmer: "shimmer",
-      pulse: "pulse",
-      wave: "wave",
-      none: "",
-    },
-    componentVariant: {
-      button: "button",
-      badge: "badge",
-      link: "link",
-      input: "input",
-      checkbox: "checkbox",
-      radio: "radio",
-      switch: "switch",
-      slider: "slider",
-      "list-item": "list-item",
-      "grid-item": "grid-item",
-      "table-row": "table-row",
-      "table-cell": "table-cell",
-      "tree-node": "tree-node",
-      card: "card",
-      "card-gallery": "card-gallery",
-      "card-horizontal": "card-horizontal",
-      tabs: "tabs",
-      tab: "tab",
-      calendar: "calendar",
-      "calendar-cell": "calendar-cell",
-      progress: "progress",
-      meter: "meter",
-      avatar: "avatar",
-      nav: "nav",
-      breadcrumb: "breadcrumb",
-      pagination: "pagination",
-      "color-swatch": "color-swatch",
-      "color-area": "color-area",
-      tag: "tag",
-      "menu-item": "menu-item",
-      disclosure: "disclosure",
-    },
-    size: {
-      xs: "xs",
-      sm: "sm",
-      md: "md",
-      lg: "lg",
-      xl: "xl",
-    },
-  },
-  defaultVariants: {
-    variant: "text",
-    animation: "shimmer",
-    size: "md",
-  },
-});
+/**
+ * 🚀 Phase 4: data-* 패턴 전환
+ * - tailwind-variants 제거
+ * - data-variant, data-animation, data-component-variant, data-size 속성 사용
+ */
 
 /**
  * Single skeleton line component
@@ -187,7 +129,7 @@ function SkeletonLine({
   height,
   isLast,
   lastLineWidth,
-  animation,
+  animation = "shimmer",
   className,
   style,
 }: {
@@ -203,7 +145,9 @@ function SkeletonLine({
 
   return (
     <div
-      className={skeleton({ variant: "text", animation, className })}
+      className={className ? `react-aria-Skeleton ${className}` : "react-aria-Skeleton"}
+      data-variant="text"
+      data-animation={animation !== "none" ? animation : undefined}
       style={{
         width: typeof lineWidth === "number" ? `${lineWidth}px` : lineWidth,
         height: typeof height === "number" ? `${height}px` : height,
@@ -238,7 +182,10 @@ export function Skeleton({
   if (componentVariant) {
     return (
       <div
-        className={skeleton({ componentVariant, size, animation, className })}
+        className={className ? `react-aria-Skeleton ${className}` : "react-aria-Skeleton"}
+        data-component-variant={componentVariant}
+        data-size={size}
+        data-animation={animation !== "none" ? animation : undefined}
         style={{
           "--skeleton-index": index,
           ...style,
@@ -286,7 +233,9 @@ export function Skeleton({
   // Base skeleton
   return (
     <div
-      className={skeleton({ variant, animation, className })}
+      className={className ? `react-aria-Skeleton ${className}` : "react-aria-Skeleton"}
+      data-variant={variant}
+      data-animation={animation !== "none" ? animation : undefined}
       style={{
         width: typeof width === "number" ? `${width}px` : width,
         height: typeof height === "number" ? `${height}px` : height,

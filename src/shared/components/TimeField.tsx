@@ -17,10 +17,15 @@ import {
   ValidationResult,
   composeRenderProps
 } from 'react-aria-components';
-import { tv } from 'tailwind-variants';
 import type { TimeFieldVariant, ComponentSize } from '../../types/componentVariants';
 
 import './styles/TimeField.css';
+
+/**
+ * 🚀 Phase 4: data-* 패턴 전환
+ * - tailwind-variants 제거
+ * - data-variant, data-size 속성 사용
+ */
 
 export interface TimeFieldProps<T extends TimeValue>
   extends AriaTimeFieldProps<T> {
@@ -43,28 +48,6 @@ export interface TimeFieldProps<T extends TimeValue>
   size?: ComponentSize;
 }
 
-const timeFieldStyles = tv({
-  base: 'react-aria-TimeField',
-  variants: {
-    variant: {
-      primary: 'primary',
-      secondary: 'secondary',
-      tertiary: 'tertiary',
-      error: 'error',
-      filled: 'filled',
-    },
-    size: {
-      sm: 'sm',
-      md: 'md',
-      lg: 'lg',
-    },
-  },
-  defaultVariants: {
-    variant: 'primary',
-    size: 'md',
-  },
-});
-
 export function TimeField<T extends TimeValue>({
   label,
   description,
@@ -80,15 +63,10 @@ export function TimeField<T extends TimeValue>({
       {...props}
       className={composeRenderProps(
         props.className,
-        (className, renderProps) => {
-          return timeFieldStyles({
-            ...renderProps,
-            variant,
-            size,
-            className,
-          });
-        }
+        (className) => className ? `react-aria-TimeField ${className}` : 'react-aria-TimeField'
       )}
+      data-variant={variant}
+      data-size={size}
       hourCycle={hourCycle}
     >
       {label && <Label>{label}</Label>}

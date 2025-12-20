@@ -1,5 +1,4 @@
 import React from "react";
-import { tv } from "tailwind-variants";
 import type { CardVariant, ComponentSizeSubset } from "../../types/builder/componentVariants.types";
 import { Skeleton } from "./Skeleton";
 import './styles/Card.css';
@@ -59,51 +58,6 @@ export interface CardProps {
   /** Skeleton layout variant */
   skeletonLayout?: 'default' | 'gallery' | 'horizontal';
 }
-
-const card = tv({
-  base: "react-aria-Card",
-  variants: {
-    variant: {
-      default: "",
-      primary: "primary",
-      secondary: "secondary",
-      surface: "surface",
-      elevated: "elevated",
-      outlined: "outlined",
-      gallery: "gallery",
-      quiet: "quiet",
-    },
-    size: {
-      sm: "sm",
-      md: "md",
-      lg: "lg",
-    },
-    orientation: {
-      horizontal: "horizontal",
-      vertical: "vertical",
-    },
-    isQuiet: {
-      true: "quiet",
-    },
-    isDisabled: {
-      true: "disabled",
-    },
-    isSelectable: {
-      true: "selectable",
-    },
-    isSelected: {
-      true: "selected",
-    },
-    isFocused: {
-      true: "focused",
-    },
-  },
-  defaultVariants: {
-    variant: "default",
-    size: "md",
-    orientation: "vertical",
-  },
-});
 
 // Asset Icon Component
 function AssetIcon({ type }: { type: CardAssetType }) {
@@ -188,23 +142,11 @@ export function Card({
     }
   };
 
-  const cardClassName = card({
-    variant,
-    size,
-    orientation,
-    isQuiet,
-    isDisabled,
-    isSelectable,
-    isSelected,
-    isFocused,
-    className,
-  });
-
   const CardElement = href ? 'a' : 'div';
 
   const elementProps = {
     id,
-    className: cardClassName,
+    className: className ? `react-aria-Card ${className}` : "react-aria-Card",
     style,
     onClick: handleClick,
     onKeyDown: handleKeyDown,
@@ -212,6 +154,14 @@ export function Card({
     tabIndex: isDisabled ? -1 : (isSelectable || onClick || href) ? 0 : undefined,
     'aria-disabled': isDisabled,
     'aria-selected': isSelectable ? isSelected : undefined,
+    'data-variant': variant,
+    'data-size': size,
+    'data-orientation': orientation,
+    'data-quiet': isQuiet || undefined,
+    'data-disabled': isDisabled || undefined,
+    'data-selectable': isSelectable || undefined,
+    'data-selected': isSelected || undefined,
+    'data-focused': isFocused || undefined,
     ...(href ? { href, target } : {}),
     ...props,
   };

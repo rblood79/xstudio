@@ -10,7 +10,6 @@ import {
   Collection,
   composeRenderProps,
 } from "react-aria-components";
-import { tv } from "tailwind-variants";
 import { InfoIcon, ChevronRightIcon, Minus } from "lucide-react";
 import { MyCheckbox } from "./Checkbox";
 import type { DataBinding } from "../../types/builder/unified.types";
@@ -47,28 +46,12 @@ export interface MyTreeProps<T extends object> extends TreeProps<T> {
   skeletonNodeCount?: number;
 }
 
-const treeStyles = tv({
-  base: 'react-aria-Tree',
-  variants: {
-    variant: {
-      primary: 'primary',
-      secondary: 'secondary',
-      tertiary: 'tertiary',
-    },
-    size: {
-      sm: 'sm',
-      md: 'md',
-      lg: 'lg',
-    },
-  },
-  defaultVariants: {
-    variant: 'primary',
-    size: 'md',
-  },
-});
-
 /**
  * Tree Component with Material Design 3 support
+ *
+ * 🚀 Phase 4: data-* 패턴 전환
+ * - tailwind-variants 제거
+ * - data-variant, data-size 속성 사용
  *
  * M3 Features:
  * - 3 variants: primary, secondary, tertiary
@@ -109,7 +92,9 @@ export function Tree<T extends object>(props: MyTreeProps<T>) {
   if (externalLoading) {
     return (
       <div
-        className={treeStyles({ variant, size, className: restProps.className as string })}
+        className={restProps.className ? `react-aria-Tree ${restProps.className}` : "react-aria-Tree"}
+        data-variant={variant}
+        data-size={size}
         role="tree"
         aria-busy="true"
         aria-label="Loading tree..."
@@ -125,9 +110,7 @@ export function Tree<T extends object>(props: MyTreeProps<T>) {
 
   const treeClassName = composeRenderProps(
     restProps.className,
-    (className, renderProps) => {
-      return treeStyles({ ...renderProps, variant, size, className });
-    }
+    (cls) => cls ? `react-aria-Tree ${cls}` : "react-aria-Tree"
   );
 
   // DataBinding이 있고 데이터가 로드된 경우
@@ -159,7 +142,7 @@ export function Tree<T extends object>(props: MyTreeProps<T>) {
     };
 
     return (
-      <AriaTree {...restProps} className={treeClassName}>
+      <AriaTree {...restProps} className={treeClassName} data-variant={variant} data-size={size}>
         {loading ? (
           <TreeItem
             key="loading"
@@ -177,7 +160,7 @@ export function Tree<T extends object>(props: MyTreeProps<T>) {
 
   // Static children
   return (
-    <AriaTree {...restProps} className={treeClassName}>
+    <AriaTree {...restProps} className={treeClassName} data-variant={variant} data-size={size}>
       {children}
     </AriaTree>
   );

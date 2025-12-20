@@ -5,7 +5,6 @@ import {
   ToggleButtonGroupProps,
   composeRenderProps,
 } from "react-aria-components";
-import { tv } from "tailwind-variants";
 import type {
   DataBinding,
   ColumnMapping,
@@ -43,27 +42,11 @@ export interface ToggleButtonGroupExtendedProps extends ToggleButtonGroupProps {
   columnMapping?: ColumnMapping;
 }
 
-const toggleButtonGroupStyles = tv({
-  base: "react-aria-ToggleButtonGroup",
-  variants: {
-    variant: {
-      default: "",
-      primary: "primary",
-      secondary: "secondary",
-      surface: "surface",
-    },
-    size: {
-      sm: "sm",
-      md: "md",
-      lg: "lg",
-    },
-  },
-  defaultVariants: {
-    variant: "default",
-    size: "sm",
-  },
-});
-
+/**
+ * 🚀 Phase 4: data-* 패턴 전환
+ * - tailwind-variants 제거
+ * - data-togglebutton-variant, data-togglebutton-size 사용 (그룹 컨텍스트)
+ */
 export function ToggleButtonGroup({
   indicator = false,
   variant = "default",
@@ -105,7 +88,7 @@ export function ToggleButtonGroup({
 
   const toggleButtonGroupClassName = composeRenderProps(
     props.className,
-    (className) => toggleButtonGroupStyles({ variant, size, className })
+    (cls) => cls ? `react-aria-ToggleButtonGroup ${cls}` : "react-aria-ToggleButtonGroup"
   );
 
   // ColumnMapping이 있으면 각 데이터 항목마다 ToggleButton 렌더링

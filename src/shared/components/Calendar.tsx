@@ -10,7 +10,6 @@ import {
   composeRenderProps
 } from 'react-aria-components';
 
-import { tv } from 'tailwind-variants';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { getLocalTimeZone, today } from '@internationalized/date';
 import { safeParseDateString } from '../../utils/core/dateUtils';
@@ -19,25 +18,11 @@ import { Skeleton } from './Skeleton';
 
 import './styles/Calendar.css';
 
-const calendarStyles = tv({
-  base: 'react-aria-Calendar',
-  variants: {
-    variant: {
-      primary: 'primary',
-      secondary: 'secondary',
-      tertiary: 'tertiary',
-    },
-    size: {
-      sm: 'sm',
-      md: 'md',
-      lg: 'lg',
-    },
-  },
-  defaultVariants: {
-    variant: 'primary',
-    size: 'md',
-  },
-});
+/**
+ * 🚀 Phase 4: data-* 패턴 전환
+ * - tailwind-variants 제거
+ * - data-variant, data-size 속성 사용
+ */
 
 export interface CalendarProps<T extends DateValue>
   extends AriaCalendarProps<T> {
@@ -149,15 +134,15 @@ export function Calendar<T extends DateValue>(
 
   const calendarClassName = composeRenderProps(
     props.className,
-    (className, renderProps) => {
-      return calendarStyles({ ...renderProps, variant, size, className });
-    }
+    (className) => className ? `react-aria-Calendar ${className}` : 'react-aria-Calendar'
   );
 
   return (
     <AriaCalendar
       {...props}
       className={calendarClassName}
+      data-variant={variant}
+      data-size={size}
       defaultValue={defaultValue}
       minValue={minValue as T | undefined}
       maxValue={maxValue as T | undefined}

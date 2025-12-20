@@ -15,13 +15,18 @@ import {
   ValidationResult,
   composeRenderProps
 } from 'react-aria-components';
-import { tv } from 'tailwind-variants';
 import type { DataBinding, ColumnMapping } from '../../types/builder/unified.types';
 import type { DataBindingValue } from '../../builder/panels/common/PropertyDataBinding';
 import type { ComponentSizeSubset, RadioVariant } from '../../types/builder/componentVariants.types';
 import { useCollectionData } from '../../builder/hooks/useCollectionData';
 
 import './styles/RadioGroup.css';
+
+/**
+ * 🚀 Phase 4: data-* 패턴 전환
+ * - tailwind-variants 제거
+ * - data-radio-variant, data-radio-size 속성 사용
+ */
 
 export interface RadioGroupProps extends Omit<AriaRadioGroupProps, 'children'> {
   children?: React.ReactNode;
@@ -42,27 +47,6 @@ export interface RadioGroupProps extends Omit<AriaRadioGroupProps, 'children'> {
    */
   size?: ComponentSizeSubset;
 }
-
-const radioGroupStyles = tv({
-  base: 'react-aria-RadioGroup',
-  variants: {
-    variant: {
-      default: '',
-      primary: 'primary',
-      secondary: 'secondary',
-      surface: 'surface',
-    },
-    size: {
-      sm: 'sm',
-      md: 'md',
-      lg: 'lg',
-    },
-  },
-  defaultVariants: {
-    variant: 'default',
-    size: 'md',
-  },
-});
 
 export function RadioGroup(
   {
@@ -107,7 +91,7 @@ export function RadioGroup(
 
   const radioGroupClassName = composeRenderProps(
     props.className,
-    (className) => radioGroupStyles({ variant, size, className })
+    (className) => className ? `react-aria-RadioGroup ${className}` : 'react-aria-RadioGroup'
   );
 
   // ColumnMapping이 있으면 각 데이터 항목마다 Radio 렌더링

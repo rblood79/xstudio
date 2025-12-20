@@ -11,7 +11,6 @@ import {
   ProgressBarProps as AriaProgressBarProps,
   composeRenderProps
 } from 'react-aria-components';
-import { tv } from 'tailwind-variants';
 import type { ComponentSizeSubset, ProgressBarVariant } from '../../types/builder/componentVariants.types';
 import { formatPercent, formatNumber } from '../../utils/core/numberUtils';
 import { Skeleton } from './Skeleton';
@@ -59,27 +58,11 @@ export interface ProgressBarProps extends AriaProgressBarProps {
   isLoading?: boolean;
 }
 
-const progressBar = tv({
-  base: 'react-aria-ProgressBar',
-  variants: {
-    variant: {
-      default: '',
-      primary: 'primary',
-      secondary: 'secondary',
-      surface: 'surface',
-    },
-    size: {
-      sm: 'sm',
-      md: 'md',
-      lg: 'lg',
-    },
-  },
-  defaultVariants: {
-    variant: 'default',
-    size: 'md',
-  },
-});
-
+/**
+ * 🚀 Phase 4: data-* 패턴 전환
+ * - tailwind-variants 제거
+ * - data-variant, data-size 속성 사용
+ */
 export function ProgressBar({
   label,
   variant = 'default',
@@ -122,8 +105,10 @@ export function ProgressBar({
       {...props}
       className={composeRenderProps(
         props.className,
-        (className) => progressBar({ variant, size, className })
+        (className) => className ? `react-aria-ProgressBar ${className}` : 'react-aria-ProgressBar'
       )}
+      data-variant={variant}
+      data-size={size}
     >
       {({ percentage, valueText }) => (
         <>

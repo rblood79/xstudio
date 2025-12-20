@@ -12,7 +12,6 @@ import {
 } from "@tanstack/react-table";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { Button, Select, SelectItem } from "./list";
-import { tv } from 'tailwind-variants';
 import type { TableVariant, ComponentSize } from '../../types/componentVariants';
 import type { DataBinding, ColumnMapping } from '../../types/builder/unified.types';
 import type { DataBindingValue } from '../../builder/panels/common/PropertyDataBinding';
@@ -29,6 +28,13 @@ import {
 import { apiConfig } from "../../services/api";
 import { ElementUtils } from "../../utils/element/elementUtils";
 import { Skeleton } from "./Skeleton";
+
+/**
+ * 🚀 Phase 4: data-* 패턴 전환
+ * - tailwind-variants 제거
+ * - data-variant, data-size 속성 사용
+ */
+
 export type PaginationMode = "pagination" | "infinite";
 
 export interface ColumnDefinition<T> {
@@ -120,27 +126,9 @@ export interface TableProps<T extends { id: string | number }> {
   skeletonRowCount?: number;
 }
 
-const tableStyles = tv({
-  base: 'react-aria-Table',
-  variants: {
-    variant: {
-      primary: 'primary',
-      secondary: 'secondary',
-      tertiary: 'tertiary',
-      error: 'error',
-      filled: 'filled',
-    },
-    size: {
-      sm: 'sm',
-      md: 'md',
-      lg: 'lg',
-    },
-  },
-  defaultVariants: {
-    variant: 'primary',
-    size: 'md',
-  },
-});
+// Table className helper
+const getTableClassName = (variant: TableVariant, size: ComponentSize, className?: string) =>
+  className ? `react-aria-Table ${className}` : 'react-aria-Table';
 
 export default React.memo(function Table<T extends { id: string | number }>(
   props: TableProps<T>
@@ -1080,7 +1068,9 @@ export default React.memo(function Table<T extends { id: string | number }>(
     const skeletonColumnCount = Math.max(columns.length, 3);
     return (
       <div
-        className={tableStyles({ variant, size, className })}
+        className={getTableClassName(variant, size, className)}
+        data-variant={variant}
+        data-size={size}
         role="grid"
         aria-busy="true"
         aria-label="Loading table..."
@@ -1132,7 +1122,9 @@ export default React.memo(function Table<T extends { id: string | number }>(
     <>
       <div
         data-element-id={props["data-element-id"]}
-        className={tableStyles({ variant, size, className })}
+        className={getTableClassName(variant, size, className)}
+        data-variant={variant}
+        data-size={size}
         role="grid"
         aria-rowcount={rows.length}
         aria-colcount={table.getAllLeafColumns().length}

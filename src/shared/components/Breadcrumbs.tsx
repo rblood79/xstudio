@@ -1,12 +1,16 @@
-import {Breadcrumbs as RACBreadcrumbs, BreadcrumbsProps, Breadcrumb, Link} from 'react-aria-components';
-import { tv } from 'tailwind-variants';
-import { composeRenderProps } from 'react-aria-components';
+import {Breadcrumbs as RACBreadcrumbs, BreadcrumbsProps, Breadcrumb, Link, composeRenderProps} from 'react-aria-components';
 import type { BreadcrumbsVariant, ComponentSize } from '../../types/componentVariants';
 import type { DataBinding, ColumnMapping } from '../../types/builder/unified.types';
 import type { DataBindingValue } from '../../builder/panels/common/PropertyDataBinding';
 import { useCollectionData } from '../../builder/hooks/useCollectionData';
 import { Skeleton } from './Skeleton';
 import './styles/Breadcrumbs.css';
+
+/**
+ * 🚀 Phase 4: data-* 패턴 전환
+ * - tailwind-variants 제거
+ * - data-variant, data-size 속성 사용
+ */
 
 export interface BreadcrumbsExtendedProps<T extends object> extends BreadcrumbsProps<T> {
   /**
@@ -38,28 +42,6 @@ export interface BreadcrumbsExtendedProps<T extends object> extends BreadcrumbsP
    */
   skeletonCount?: number;
 }
-
-const breadcrumbsStyles = tv({
-  base: 'react-aria-Breadcrumbs',
-  variants: {
-    variant: {
-      primary: 'primary',
-      secondary: 'secondary',
-      tertiary: 'tertiary',
-      error: 'error',
-      filled: 'filled',
-    },
-    size: {
-      sm: 'sm',
-      md: 'md',
-      lg: 'lg',
-    },
-  },
-  defaultVariants: {
-    variant: 'primary',
-    size: 'md',
-  },
-});
 
 /**
  * Breadcrumbs Component with Material Design 3 support
@@ -112,7 +94,9 @@ export function Breadcrumbs<T extends object>({
   if (externalLoading) {
     return (
       <nav
-        className={breadcrumbsStyles({ variant, size, className: props.className as string })}
+        className={props.className ? `react-aria-Breadcrumbs ${props.className}` : 'react-aria-Breadcrumbs'}
+        data-variant={variant}
+        data-size={size}
         aria-busy="true"
         aria-label="Loading breadcrumbs..."
       >
@@ -143,21 +127,14 @@ export function Breadcrumbs<T extends object>({
 
   const breadcrumbsClassName = composeRenderProps(
     props.className,
-    (className, renderProps) => {
-      return breadcrumbsStyles({
-        ...renderProps,
-        variant,
-        size,
-        className,
-      });
-    }
+    (className) => className ? `react-aria-Breadcrumbs ${className}` : 'react-aria-Breadcrumbs'
   );
 
   // DataBinding이 있고 columnMapping이 있으면 children 템플릿 사용
   if (hasDataBinding && columnMapping) {
     if (loading) {
       return (
-        <RACBreadcrumbs {...props} className={breadcrumbsClassName}>
+        <RACBreadcrumbs {...props} className={breadcrumbsClassName} data-variant={variant} data-size={size}>
           <Breadcrumb><Link>⏳ 로딩 중...</Link></Breadcrumb>
         </RACBreadcrumbs>
       );
@@ -165,7 +142,7 @@ export function Breadcrumbs<T extends object>({
 
     if (error) {
       return (
-        <RACBreadcrumbs {...props} className={breadcrumbsClassName}>
+        <RACBreadcrumbs {...props} className={breadcrumbsClassName} data-variant={variant} data-size={size}>
           <Breadcrumb><Link>❌ 오류</Link></Breadcrumb>
         </RACBreadcrumbs>
       );
@@ -173,7 +150,7 @@ export function Breadcrumbs<T extends object>({
 
     if (boundData.length > 0) {
       return (
-        <RACBreadcrumbs {...props} className={breadcrumbsClassName}>
+        <RACBreadcrumbs {...props} className={breadcrumbsClassName} data-variant={variant} data-size={size}>
           {children}
         </RACBreadcrumbs>
       );
@@ -184,7 +161,7 @@ export function Breadcrumbs<T extends object>({
   if (hasDataBinding && !columnMapping) {
     if (loading) {
       return (
-        <RACBreadcrumbs {...props} className={breadcrumbsClassName}>
+        <RACBreadcrumbs {...props} className={breadcrumbsClassName} data-variant={variant} data-size={size}>
           <Breadcrumb><Link>⏳ 로딩 중...</Link></Breadcrumb>
         </RACBreadcrumbs>
       );
@@ -192,7 +169,7 @@ export function Breadcrumbs<T extends object>({
 
     if (error) {
       return (
-        <RACBreadcrumbs {...props} className={breadcrumbsClassName}>
+        <RACBreadcrumbs {...props} className={breadcrumbsClassName} data-variant={variant} data-size={size}>
           <Breadcrumb><Link>❌ 오류</Link></Breadcrumb>
         </RACBreadcrumbs>
       );
@@ -200,7 +177,7 @@ export function Breadcrumbs<T extends object>({
 
     if (boundData.length > 0) {
       return (
-        <RACBreadcrumbs {...props} className={breadcrumbsClassName}>
+        <RACBreadcrumbs {...props} className={breadcrumbsClassName} data-variant={variant} data-size={size}>
           {boundData.map((item, index) => (
             <Breadcrumb key={String(item.id || index)}>
               <Link href={String(item.href || item.url || '')}>
@@ -214,5 +191,5 @@ export function Breadcrumbs<T extends object>({
   }
 
   // Static children (기존 방식)
-  return <RACBreadcrumbs {...props} className={breadcrumbsClassName}>{children}</RACBreadcrumbs>;
+  return <RACBreadcrumbs {...props} className={breadcrumbsClassName} data-variant={variant} data-size={size}>{children}</RACBreadcrumbs>;
 }

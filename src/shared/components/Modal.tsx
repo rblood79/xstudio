@@ -1,8 +1,6 @@
 import React from 'react';
-import { Modal as RACModal, ModalOverlayProps } from 'react-aria-components';
+import { Modal as RACModal, ModalOverlayProps, composeRenderProps } from 'react-aria-components';
 import { FocusScope } from '@react-aria/focus';
-import { tv } from 'tailwind-variants';
-import { composeRenderProps } from 'react-aria-components';
 import type { ModalVariant, ComponentSize } from '../../types/componentVariants';
 import './styles/Modal.css';
 
@@ -37,31 +35,12 @@ export interface ModalProps extends ModalOverlayProps {
   restoreFocus?: boolean;
 }
 
-const modalStyles = tv({
-  base: 'react-aria-Modal',
-  variants: {
-    variant: {
-      primary: 'primary',
-      secondary: 'secondary',
-      tertiary: 'tertiary',
-      error: 'error',
-      filled: 'filled',
-      surface: 'surface',
-    },
-    size: {
-      sm: 'sm',
-      md: 'md',
-      lg: 'lg',
-    },
-  },
-  defaultVariants: {
-    variant: 'primary',
-    size: 'md',
-  },
-});
-
 /**
  * Modal Component with Material Design 3 support
+ *
+ * 🚀 Phase 4: data-* 패턴 전환
+ * - tailwind-variants 제거
+ * - data-variant, data-size 속성 사용
  *
  * M3 Features:
  * - 5 variants: primary, secondary, tertiary, error, filled
@@ -95,18 +74,11 @@ export function Modal({
 }: ModalProps) {
   const modalClassName = composeRenderProps(
     props.className,
-    (className, renderProps) => {
-      return modalStyles({
-        ...renderProps,
-        variant,
-        size,
-        className,
-      });
-    }
+    (className) => className ? `react-aria-Modal ${className}` : 'react-aria-Modal'
   );
 
   return (
-    <RACModal {...props} className={modalClassName}>
+    <RACModal {...props} className={modalClassName} data-variant={variant} data-size={size}>
       <FocusScope
         contain={trapFocus}
         autoFocus={autoFocus}

@@ -4,7 +4,6 @@ import {
   Button as RACButton,
   ButtonProps as RACButtonProps,
 } from "react-aria-components";
-import { tv } from "tailwind-variants";
 import { useFocusRing } from "@react-aria/focus";
 import { mergeProps } from "@react-aria/utils";
 import type {
@@ -23,45 +22,20 @@ export interface ButtonProps extends RACButtonProps {
   loadingLabel?: string;
 }
 
-const button = tv({
-  base: "react-aria-Button",
-  variants: {
-    variant: {
-      default: "",
-      primary: "primary",
-      secondary: "secondary",
-      tertiary: "tertiary",
-      error: "error",
-      surface: "surface",
-      outline: "outline",
-      ghost: "ghost",
-    },
-    size: {
-      xs: "xs",
-      sm: "sm",
-      md: "md",
-      lg: "lg",
-      xl: "xl",
-    },
-    // 포커스 가시성 variant 추가
-    isFocusVisible: {
-      true: "focus-visible",
-      false: "",
-    },
-  },
-  defaultVariants: {
-    variant: "default",
-    size: "sm",
-  },
-});
-
+/**
+ * 🚀 Phase 4: data-* 패턴 전환
+ * - tailwind-variants 제거
+ * - data-variant, data-size 속성으로 스타일 적용
+ */
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   function Button(props, ref) {
     const {
       isLoading,
       loadingLabel = "Loading...",
       children,
+      variant = "default",
       size = "sm",
+      className,
       ...restProps
     } = props;
     const { focusProps, isFocusVisible } = useFocusRing();
@@ -72,21 +46,13 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         {...mergeProps(restProps, focusProps)}
         type={props.type}
         isDisabled={isLoading || props.isDisabled}
-        data-focus-visible={isFocusVisible}
+        data-variant={variant}
+        data-size={size}
+        data-focus-visible={isFocusVisible || undefined}
         data-loading={isLoading || undefined}
         aria-busy={isLoading || undefined}
-        className={composeRenderProps(
-          props.className,
-          (className, renderProps) => {
-            const generatedClass = button({
-              ...renderProps,
-              variant: props.variant,
-              size,
-              isFocusVisible,
-              className,
-            });
-            return generatedClass;
-          }
+        className={composeRenderProps(className, (cls) =>
+          cls ? `react-aria-Button ${cls}` : "react-aria-Button"
         )}
       >
         {isLoading ? (

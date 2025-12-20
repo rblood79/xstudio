@@ -4,7 +4,6 @@ import {
   SelectionIndicator,
   composeRenderProps,
 } from "react-aria-components";
-import { tv } from "tailwind-variants";
 import type {
   ComponentSizeSubset,
   ToggleButtonVariant,
@@ -25,27 +24,11 @@ export interface ToggleButtonExtendedProps extends ToggleButtonProps {
   size?: ComponentSizeSubset;
 }
 
-const toggleButtonStyles = tv({
-  base: "react-aria-ToggleButton",
-  variants: {
-    variant: {
-      default: "",
-      primary: "primary",
-      secondary: "secondary",
-      surface: "surface",
-    },
-    size: {
-      sm: "sm",
-      md: "md",
-      lg: "lg",
-    },
-  },
-  defaultVariants: {
-    variant: "default",
-    size: "sm",
-  },
-});
-
+/**
+ * 🚀 Phase 4: data-* 패턴 전환
+ * - tailwind-variants 제거
+ * - data-variant, data-size 속성 사용
+ */
 export function ToggleButton({
   variant = "default",
   size = "sm",
@@ -53,13 +36,16 @@ export function ToggleButton({
   ...props
 }: ToggleButtonExtendedProps) {
   const showIndicator = useToggleButtonGroupIndicator();
-  const toggleButtonClassName = composeRenderProps(
-    props.className,
-    (className) => toggleButtonStyles({ variant, size, className })
-  );
 
   return (
-    <RACToggleButton {...props} className={toggleButtonClassName}>
+    <RACToggleButton
+      {...props}
+      data-variant={variant}
+      data-size={size}
+      className={composeRenderProps(props.className, (cls) =>
+        cls ? `react-aria-ToggleButton ${cls}` : "react-aria-ToggleButton"
+      )}
+    >
       {showIndicator && <SelectionIndicator />}
       {children}
     </RACToggleButton>

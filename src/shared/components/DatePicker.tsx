@@ -20,7 +20,6 @@ import {
   composeRenderProps
 } from "react-aria-components";
 
-import { tv } from 'tailwind-variants';
 import { ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
 import {
   getLocalTimeZone,
@@ -31,27 +30,11 @@ import type { DatePickerVariant, ComponentSize } from '../../types/componentVari
 
 import "./styles/DatePicker.css";
 
-const datePickerStyles = tv({
-  base: 'react-aria-DatePicker',
-  variants: {
-    variant: {
-      primary: 'primary',
-      secondary: 'secondary',
-      tertiary: 'tertiary',
-      error: 'error',
-      filled: 'filled',
-    },
-    size: {
-      sm: 'sm',
-      md: 'md',
-      lg: 'lg',
-    },
-  },
-  defaultVariants: {
-    variant: 'primary',
-    size: 'md',
-  },
-});
+/**
+ * 🚀 Phase 4: data-* 패턴 전환
+ * - tailwind-variants 제거
+ * - data-variant, data-size 속성 사용
+ */
 
 export interface DatePickerProps<T extends DateValue>
   extends AriaDatePickerProps<T> {
@@ -177,15 +160,15 @@ export function DatePicker<T extends DateValue>({
 
   const datePickerClassName = composeRenderProps(
     props.className,
-    (className, renderProps) => {
-      return datePickerStyles({ ...renderProps, variant, size, className });
-    }
+    (className) => className ? `react-aria-DatePicker ${className}` : 'react-aria-DatePicker'
   );
 
   return (
     <AriaDatePicker
       {...props}
       className={datePickerClassName}
+      data-variant={variant}
+      data-size={size}
       granularity={effectiveGranularity}
       defaultValue={defaultValue}
       minValue={minValue as T | undefined}

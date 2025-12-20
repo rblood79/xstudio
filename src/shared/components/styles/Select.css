@@ -196,35 +196,35 @@
   }
 
   /* Variant별 CSS 변수만 오버라이드 */
-  .react-aria-Select.primary {
+  .react-aria-Select[data-variant="primary"] {
     --select-accent: var(--primary);
     --select-accent-container: var(--primary-container);
     --select-on-accent-container: var(--on-primary-container);
   }
 
-  .react-aria-Select.secondary {
+  .react-aria-Select[data-variant="secondary"] {
     --select-accent: var(--secondary);
     --select-accent-container: var(--secondary-container);
     --select-on-accent-container: var(--on-secondary-container);
   }
 
-  .react-aria-Select.tertiary {
+  .react-aria-Select[data-variant="tertiary"] {
     --select-accent: var(--tertiary);
     --select-accent-container: var(--tertiary-container);
     --select-on-accent-container: var(--on-tertiary-container);
   }
 
-  .react-aria-Select.error {
+  .react-aria-Select[data-variant="error"] {
     --select-accent: var(--error);
     --select-accent-container: var(--error-container);
     --select-on-accent-container: var(--on-error-container);
   }
 
   /* 모든 color variant에 공통 적용되는 Button 스타일 */
-  .react-aria-Select.primary,
-  .react-aria-Select.secondary,
-  .react-aria-Select.tertiary,
-  .react-aria-Select.error {
+  .react-aria-Select[data-variant="primary"],
+  .react-aria-Select[data-variant="secondary"],
+  .react-aria-Select[data-variant="tertiary"],
+  .react-aria-Select[data-variant="error"] {
     .react-aria-Label {
       color: var(--select-accent);
     }
@@ -250,7 +250,7 @@
   }
 
   /* ===== M3 Filled Variant ===== */
-  .react-aria-Select.filled {
+  .react-aria-Select[data-variant="filled"] {
     .react-aria-Button {
       background: var(--surface-container-highest);
       border-color: transparent;
@@ -287,7 +287,7 @@
   }
 
   /* Size별 CSS 변수만 오버라이드 */
-  .react-aria-Select.sm {
+  .react-aria-Select[data-size="sm"] {
     --select-label-size: var(--text-xs);
     --select-btn-padding: var(--spacing-sm) var(--spacing);
     --select-btn-font-size: var(--text-xs);
@@ -296,7 +296,7 @@
     --select-hint-size: 10px;
   }
 
-  .react-aria-Select.md {
+  .react-aria-Select[data-size="md"] {
     --select-label-size: var(--text-sm);
     --select-btn-padding: var(--spacing) var(--spacing-md);
     --select-btn-font-size: var(--text-sm);
@@ -305,7 +305,7 @@
     --select-hint-size: var(--text-xs);
   }
 
-  .react-aria-Select.lg {
+  .react-aria-Select[data-size="lg"] {
     --select-label-size: var(--text-base);
     --select-btn-padding: var(--spacing-md) var(--spacing-lg);
     --select-btn-font-size: var(--text-base);
@@ -315,9 +315,9 @@
   }
 
   /* 모든 size에 공통 적용되는 스타일 */
-  .react-aria-Select.sm,
-  .react-aria-Select.md,
-  .react-aria-Select.lg {
+  .react-aria-Select[data-size="sm"],
+  .react-aria-Select[data-size="md"],
+  .react-aria-Select[data-size="lg"] {
     .react-aria-Label {
       font-size: var(--select-label-size);
     }
@@ -344,21 +344,21 @@
   }
 
   /* Popover size variants */
-  .react-aria-Popover[data-trigger="Select"].sm {
+  .react-aria-Popover[data-trigger="Select"][data-size="sm"] {
     .react-aria-ListBox .react-aria-ListBoxItem {
       padding: var(--spacing-sm) var(--spacing);
       font-size: var(--text-xs);
     }
   }
 
-  .react-aria-Popover[data-trigger="Select"].md {
+  .react-aria-Popover[data-trigger="Select"][data-size="md"] {
     .react-aria-ListBox .react-aria-ListBoxItem {
       padding: var(--spacing) var(--spacing-md);
       font-size: var(--text-sm);
     }
   }
 
-  .react-aria-Popover[data-trigger="Select"].lg {
+  .react-aria-Popover[data-trigger="Select"][data-size="lg"] {
     .react-aria-ListBox .react-aria-ListBoxItem {
       padding: var(--spacing-md) var(--spacing-lg);
       font-size: var(--text-base);
@@ -415,10 +415,10 @@
   }
 
   /* Multi-selection variant colors */
-  .react-aria-Select.primary[data-selection-mode="multiple"],
-  .react-aria-Select.secondary[data-selection-mode="multiple"],
-  .react-aria-Select.tertiary[data-selection-mode="multiple"],
-  .react-aria-Select.error[data-selection-mode="multiple"] {
+  .react-aria-Select[data-variant="primary"][data-selection-mode="multiple"],
+  .react-aria-Select[data-variant="secondary"][data-selection-mode="multiple"],
+  .react-aria-Select[data-variant="tertiary"][data-selection-mode="multiple"],
+  .react-aria-Select[data-variant="error"][data-selection-mode="multiple"] {
     .react-aria-ListBox .react-aria-ListBoxItem {
       &[data-selected]::before {
         background: var(--select-accent);
@@ -439,7 +439,7 @@
     }
   }
 
-  .react-aria-Select.filled[data-invalid] {
+  .react-aria-Select[data-variant="filled"][data-invalid] {
     .react-aria-Button {
       border-bottom-color: var(--error);
     }

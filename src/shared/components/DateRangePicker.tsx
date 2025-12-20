@@ -20,7 +20,6 @@ import {
   composeRenderProps
 } from "react-aria-components";
 
-import { tv } from 'tailwind-variants';
 import { ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
 import { getLocalTimeZone, today } from '@internationalized/date';
 import { safeParseDateString } from '../../utils/core/dateUtils';
@@ -28,27 +27,11 @@ import type { DateRangePickerVariant, ComponentSize } from '../../types/componen
 
 import "./styles/DateRangePicker.css";
 
-const dateRangePickerStyles = tv({
-  base: 'react-aria-DateRangePicker',
-  variants: {
-    variant: {
-      primary: 'primary',
-      secondary: 'secondary',
-      tertiary: 'tertiary',
-      error: 'error',
-      filled: 'filled',
-    },
-    size: {
-      sm: 'sm',
-      md: 'md',
-      lg: 'lg',
-    },
-  },
-  defaultVariants: {
-    variant: 'primary',
-    size: 'md',
-  },
-});
+/**
+ * 🚀 Phase 4: data-* 패턴 전환
+ * - tailwind-variants 제거
+ * - data-variant, data-size 속성 사용
+ */
 
 export interface DateRangePickerProps<T extends DateValue>
   extends AriaDateRangePickerProps<T> {
@@ -174,15 +157,15 @@ export function DateRangePicker<T extends DateValue>({
 
   const dateRangePickerClassName = composeRenderProps(
     props.className,
-    (className, renderProps) => {
-      return dateRangePickerStyles({ ...renderProps, variant, size, className });
-    }
+    (className) => className ? `react-aria-DateRangePicker ${className}` : 'react-aria-DateRangePicker'
   );
 
   return (
     <AriaDateRangePicker
       {...props}
       className={dateRangePickerClassName}
+      data-variant={variant}
+      data-size={size}
       granularity={effectiveGranularity}
       defaultValue={defaultValue}
       minValue={minValue as T | undefined}

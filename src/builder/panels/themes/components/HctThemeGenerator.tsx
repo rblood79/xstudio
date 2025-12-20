@@ -4,7 +4,6 @@
  */
 
 import { useState, useMemo, useCallback } from 'react';
-import { tv } from 'tailwind-variants';
 import {
   HctThemeService,
   previewHctScheme,
@@ -20,15 +19,18 @@ import type { SchemeVariant, MaterialScheme, TonalPaletteSet } from '../../../..
 import { useAsyncMutation } from '../../../hooks/useAsyncMutation';
 import '../styles/HctThemeGenerator.css';
 
-const hctGeneratorStyles = tv({
-  slots: {
-    container: 'hct-generator-container',
-    form: 'hct-generator-form',
-    formGroup: 'form-group',
-    preview: 'hct-preview-section',
-    results: 'generation-results',
-  },
-});
+/**
+ * 🚀 Phase 4: data-* 패턴 전환
+ * - tailwind-variants 제거
+ * - 직접 CSS 클래스 사용
+ */
+const styles = {
+  container: 'hct-generator-container',
+  form: 'hct-generator-form',
+  formGroup: 'form-group',
+  preview: 'hct-preview-section',
+  results: 'generation-results',
+};
 
 interface HctThemeGeneratorProps {
   projectId: string;
@@ -79,7 +81,6 @@ export function HctThemeGenerator({
   projectId,
   onThemeGenerated,
 }: HctThemeGeneratorProps) {
-  const styles = hctGeneratorStyles();
 
   // Form state
   const [themeName, setThemeName] = useState('');
@@ -178,7 +179,7 @@ export function HctThemeGenerator({
   }, [generateMutation]);
 
   return (
-    <div className={styles.container()}>
+    <div className={styles.container}>
       <div className="hct-header">
         <h2>HCT Theme Generator</h2>
         <p className="subtitle">
@@ -190,9 +191,9 @@ export function HctThemeGenerator({
         {/* Left: Form + Preview Scheme */}
         <div className="hct-form-section">
           {!generateMutation.isLoading && !generateMutation.data && (
-            <form className={styles.form()} onSubmit={(e) => { e.preventDefault(); handleGenerate(); }}>
+            <form className={styles.form} onSubmit={(e) => { e.preventDefault(); handleGenerate(); }}>
               {/* Theme Name */}
-              <div className={styles.formGroup()}>
+              <div className={styles.formGroup}>
                 <label htmlFor="hct-theme-name">
                   Theme Name <span className="required">*</span>
                 </label>
@@ -207,7 +208,7 @@ export function HctThemeGenerator({
               </div>
 
               {/* Source Color */}
-              <div className={styles.formGroup()}>
+              <div className={styles.formGroup}>
                 <label htmlFor="hct-source-color">Source Color</label>
                 <div className="color-input-group">
                   <input
@@ -230,7 +231,7 @@ export function HctThemeGenerator({
               </div>
 
               {/* Variant Selection */}
-              <div className={styles.formGroup()}>
+              <div className={styles.formGroup}>
                 <label htmlFor="hct-variant">Scheme Variant</label>
                 <select
                   id="hct-variant"
@@ -249,7 +250,7 @@ export function HctThemeGenerator({
               </div>
 
               {/* Contrast Level */}
-              <div className={styles.formGroup()}>
+              <div className={styles.formGroup}>
                 <label htmlFor="hct-contrast">
                   Contrast Level: {contrastLevel.toFixed(1)}
                 </label>
@@ -270,7 +271,7 @@ export function HctThemeGenerator({
               </div>
 
               {/* Dark Mode Toggle */}
-              <div className={styles.formGroup()}>
+              <div className={styles.formGroup}>
                 <label className="checkbox-label">
                   <input
                     type="checkbox"
@@ -282,7 +283,7 @@ export function HctThemeGenerator({
               </div>
 
               {/* Description */}
-              <div className={styles.formGroup()}>
+              <div className={styles.formGroup}>
                 <label htmlFor="hct-description">Description (optional)</label>
                 <textarea
                   id="hct-description"
@@ -342,7 +343,7 @@ export function HctThemeGenerator({
 
           {/* Results */}
           {generateMutation.data && (
-            <div className={styles.results()}>
+            <div className={styles.results}>
               <div className="result-header">
                 <h3>Theme Generated!</h3>
                 <button onClick={handleReset} className="new-theme-btn">
@@ -378,7 +379,7 @@ export function HctThemeGenerator({
         </div>
 
         {/* Right: Live Preview */}
-        <div className={styles.preview()}>
+        <div className={styles.preview}>
           <div className="preview-header">
             <h3>Live Preview</h3>
             <div className="preview-mode-toggle">

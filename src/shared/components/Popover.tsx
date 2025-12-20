@@ -2,11 +2,10 @@ import {
   Dialog,
   OverlayArrow,
   Popover as AriaPopover,
-  PopoverProps as AriaPopoverProps
+  PopoverProps as AriaPopoverProps,
+  composeRenderProps
 } from 'react-aria-components';
 import { FocusScope } from '@react-aria/focus';
-import { tv } from 'tailwind-variants';
-import { composeRenderProps } from 'react-aria-components';
 import type { PopoverVariant, ComponentSize } from '../../types/componentVariants';
 
 import './styles/Popover.css';
@@ -48,31 +47,12 @@ export interface PopoverProps extends Omit<AriaPopoverProps, 'children'> {
   restoreFocus?: boolean;
 }
 
-const popoverStyles = tv({
-  base: 'react-aria-Popover',
-  variants: {
-    variant: {
-      primary: 'primary',
-      secondary: 'secondary',
-      tertiary: 'tertiary',
-      error: 'error',
-      filled: 'filled',
-      surface: 'surface',
-    },
-    size: {
-      sm: 'sm',
-      md: 'md',
-      lg: 'lg',
-    },
-  },
-  defaultVariants: {
-    variant: 'primary',
-    size: 'md',
-  },
-});
-
 /**
  * Popover Component with Material Design 3 support
+ *
+ * 🚀 Phase 4: data-* 패턴 전환
+ * - tailwind-variants 제거
+ * - data-variant, data-size 속성 사용
  *
  * M3 Features:
  * - 5 variants: primary, secondary, tertiary, error, filled
@@ -106,18 +86,11 @@ export function Popover({
 }: PopoverProps) {
   const popoverClassName = composeRenderProps(
     props.className,
-    (className, renderProps) => {
-      return popoverStyles({
-        ...renderProps,
-        variant,
-        size,
-        className,
-      });
-    }
+    (className) => className ? `react-aria-Popover ${className}` : 'react-aria-Popover'
   );
 
   return (
-    <AriaPopover {...props} className={popoverClassName}>
+    <AriaPopover {...props} className={popoverClassName} data-variant={variant} data-size={size}>
       {showArrow && (
         <OverlayArrow>
           <svg width={12} height={12} viewBox="0 0 12 12">

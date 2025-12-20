@@ -4,7 +4,6 @@
  */
 
 import { useState, useMemo } from 'react';
-import { tv } from 'tailwind-variants';
 import { useTokens, useTokenStats } from '../../../../hooks/theme';
 import type { DesignToken, TokenType, ColorValue } from '../../../../types/theme';
 import { isColorValueHSL } from '../../../../types/theme';
@@ -12,14 +11,17 @@ import { parseTokenName } from '../../../../utils/theme/tokenParser';
 import { generateDarkVariant } from '../../../../utils/theme/colorUtils';
 import '../styles/TokenEditor.css';
 
-const tokenEditorStyles = tv({
-  slots: {
-    container: 'token-editor-container',
-    sidebar: 'token-editor-sidebar',
-    main: 'token-editor-main',
-    panel: 'token-editor-panel',
-  },
-});
+/**
+ * 🚀 Phase 4: data-* 패턴 전환
+ * - tailwind-variants 제거
+ * - 직접 CSS 클래스 사용
+ */
+const styles = {
+  container: 'token-editor-container',
+  sidebar: 'token-editor-sidebar',
+  main: 'token-editor-main',
+  panel: 'token-editor-panel',
+};
 
 interface TokenEditorProps {
   themeId: string;
@@ -27,7 +29,6 @@ interface TokenEditorProps {
 }
 
 export function TokenEditor({ themeId, projectId }: TokenEditorProps) {
-  const styles = tokenEditorStyles();
 
   const [selectedTokenId, setSelectedTokenId] = useState<string | null>(null);
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
@@ -150,7 +151,7 @@ export function TokenEditor({ themeId, projectId }: TokenEditorProps) {
 
   if (loading) {
     return (
-      <div className={styles.container()}>
+      <div className={styles.container}>
         <div className="loading-state">
           <div className="spinner" />
           <p>토큰 로드 중...</p>
@@ -160,9 +161,9 @@ export function TokenEditor({ themeId, projectId }: TokenEditorProps) {
   }
 
   return (
-    <div className={styles.container()}>
+    <div className={styles.container}>
       {/* Sidebar - Token List */}
-      <aside className={styles.sidebar()}>
+      <aside className={styles.sidebar}>
         <div className="sidebar-header">
           <h3>토큰 목록</h3>
           <button className="create-token-btn" onClick={handleCreateToken}>
@@ -265,7 +266,7 @@ export function TokenEditor({ themeId, projectId }: TokenEditorProps) {
       </aside>
 
       {/* Main - Token Detail Editor */}
-      <main className={styles.main()}>
+      <main className={styles.main}>
         {selectedToken ? (
           <div className="token-detail">
             <div className="detail-header">

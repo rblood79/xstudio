@@ -4,7 +4,6 @@
  */
 
 import { useState } from 'react';
-import { tv } from 'tailwind-variants';
 import { useAsyncMutation } from '../../../hooks/useAsyncMutation';
 import { createThemeGenerationService } from '../../../../services/theme';
 import type {
@@ -15,15 +14,18 @@ import type {
 } from '../../../../types/theme/generation.types';
 import '../styles/AIThemeGenerator.css';
 
-const aiGeneratorStyles = tv({
-  slots: {
-    container: 'ai-generator-container',
-    form: 'ai-generator-form',
-    formGroup: 'form-group',
-    progressBar: 'progress-bar',
-    results: 'generation-results',
-  },
-});
+/**
+ * 🚀 Phase 4: data-* 패턴 전환
+ * - tailwind-variants 제거
+ * - 직접 CSS 클래스 사용
+ */
+const styles = {
+  container: 'ai-generator-container',
+  form: 'ai-generator-form',
+  formGroup: 'form-group',
+  progressBar: 'progress-bar',
+  results: 'generation-results',
+};
 
 interface AIThemeGeneratorProps {
   projectId: string;
@@ -46,7 +48,6 @@ export function AIThemeGenerator({
   projectId,
   onThemeGenerated,
 }: AIThemeGeneratorProps) {
-  const styles = aiGeneratorStyles();
 
   // Streaming progress state (별도 관리 필요)
   const [progress, setProgress] = useState<ThemeGenerationProgress | null>(null);
@@ -118,16 +119,16 @@ export function AIThemeGenerator({
   };
 
   return (
-    <div className={styles.container()}>
+    <div className={styles.container}>
       <h2>AI 테마 생성</h2>
       <p className="subtitle">
         브랜드 색상과 스타일을 입력하면 완전한 디자인 테마를 자동 생성합니다
       </p>
 
       {!generateMutation.isLoading && !generateMutation.data && (
-        <form className={styles.form()} onSubmit={(e) => { e.preventDefault(); handleGenerate(); }}>
+        <form className={styles.form} onSubmit={(e) => { e.preventDefault(); handleGenerate(); }}>
           {/* Theme Name */}
-          <div className={styles.formGroup()}>
+          <div className={styles.formGroup}>
             <label htmlFor="theme-name">
               테마 이름 <span className="required">*</span>
             </label>
@@ -142,7 +143,7 @@ export function AIThemeGenerator({
           </div>
 
           {/* Brand Color */}
-          <div className={styles.formGroup()}>
+          <div className={styles.formGroup}>
             <label htmlFor="brand-color">브랜드 색상</label>
             <div className="color-input-group">
               <input
@@ -164,7 +165,7 @@ export function AIThemeGenerator({
           </div>
 
           {/* Style */}
-          <div className={styles.formGroup()}>
+          <div className={styles.formGroup}>
             <label htmlFor="theme-style">테마 스타일</label>
             <select
               id="theme-style"
@@ -180,7 +181,7 @@ export function AIThemeGenerator({
           </div>
 
           {/* Description */}
-          <div className={styles.formGroup()}>
+          <div className={styles.formGroup}>
             <label htmlFor="description">설명 (선택)</label>
             <textarea
               id="description"
@@ -206,7 +207,7 @@ export function AIThemeGenerator({
             <span className="progress-percentage">{progress.progress}%</span>
           </div>
 
-          <div className={styles.progressBar()}>
+          <div className={styles.progressBar}>
             <div
               className="progress-fill"
               style={{ width: `${progress.progress}%` }}
@@ -239,7 +240,7 @@ export function AIThemeGenerator({
 
       {/* Results */}
       {generateMutation.data && (
-        <div className={styles.results()}>
+        <div className={styles.results}>
           <div className="result-header">
             <h3>✅ 테마 생성 완료!</h3>
             <button onClick={handleReset} className="new-theme-btn">

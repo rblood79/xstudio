@@ -4,7 +4,6 @@
  */
 
 import { useState } from 'react';
-import { tv } from 'tailwind-variants';
 import { useAsyncMutation } from '../../../hooks/useAsyncMutation';
 import { createFigmaService } from '../../../../services/theme';
 import type {
@@ -13,13 +12,16 @@ import type {
 } from '../../../../types/theme/figma.types';
 import '../styles/FigmaImporter.css';
 
-const figmaImporterStyles = tv({
-  slots: {
-    container: 'figma-importer-container',
-    form: 'figma-import-form',
-    results: 'import-results',
-  },
-});
+/**
+ * 🚀 Phase 4: data-* 패턴 전환
+ * - tailwind-variants 제거
+ * - 직접 CSS 클래스 사용
+ */
+const styles = {
+  container: 'figma-importer-container',
+  form: 'figma-import-form',
+  results: 'import-results',
+};
 
 interface FigmaImporterProps {
   projectId: string;
@@ -32,7 +34,6 @@ export function FigmaImporter({
   themeId,
   onImportComplete,
 }: FigmaImporterProps) {
-  const styles = figmaImporterStyles();
 
   // Form state
   const [fileKey, setFileKey] = useState('');
@@ -96,14 +97,14 @@ export function FigmaImporter({
   };
 
   return (
-    <div className={styles.container()}>
+    <div className={styles.container}>
       <h2>Figma Import</h2>
       <p className="subtitle">
         Figma 파일에서 색상, 텍스트, 효과 스타일을 가져옵니다
       </p>
 
       {!importMutation.isLoading && !importMutation.data && (
-        <form className={styles.form()} onSubmit={(e) => { e.preventDefault(); handleImport(); }}>
+        <form className={styles.form} onSubmit={(e) => { e.preventDefault(); handleImport(); }}>
           {/* File Key */}
           <div className="form-group">
             <label htmlFor="file-key">
@@ -213,7 +214,7 @@ export function FigmaImporter({
 
       {/* Results */}
       {importMutation.data && (
-        <div className={styles.results()}>
+        <div className={styles.results}>
           <div className="result-header">
             <h3>
               {importMutation.data.success ? '✅ Import 완료!' : '⚠️ Import 완료 (일부 오류)'}

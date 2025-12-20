@@ -8,9 +8,7 @@
  */
 
 import { ReactNode } from "react";
-import { Group as AriaGroup, type GroupProps as AriaGroupProps } from "react-aria-components";
-import { tv } from "tailwind-variants";
-import { composeRenderProps } from "react-aria-components";
+import { Group as AriaGroup, type GroupProps as AriaGroupProps, composeRenderProps } from "react-aria-components";
 
 export interface GroupProps extends Omit<AriaGroupProps, 'className' | 'style'> {
   /** Group content (children elements) */
@@ -35,20 +33,11 @@ export interface GroupProps extends Omit<AriaGroupProps, 'className' | 'style'> 
   role?: "group" | "region" | "presentation";
 }
 
-const groupStyles = tv({
-  base: "react-aria-Group",
-  variants: {
-    isDisabled: {
-      true: "disabled",
-    },
-    isInvalid: {
-      true: "invalid",
-    },
-    isReadOnly: {
-      true: "read-only",
-    },
-  },
-});
+/**
+ * 🚀 Phase 4: data-* 패턴 전환
+ * - tailwind-variants 제거
+ * - data-disabled, data-invalid, data-readonly 속성 사용
+ */
 
 /**
  * Group component
@@ -93,17 +82,14 @@ export function Group({
       {...props}
       role={role}
       isDisabled={isDisabled}
-      className={composeRenderProps(className, (className, renderProps) => {
-        return groupStyles({
-          ...renderProps,
-          isDisabled,
-          isInvalid,
-          isReadOnly,
-          className,
-        });
+      className={composeRenderProps(className, (cls) => {
+        return cls ? `react-aria-Group ${cls}` : "react-aria-Group";
       })}
       style={style}
       data-group-label={label}
+      data-disabled={isDisabled || undefined}
+      data-invalid={isInvalid || undefined}
+      data-readonly={isReadOnly || undefined}
     >
       {children}
     </AriaGroup>

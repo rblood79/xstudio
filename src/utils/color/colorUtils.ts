@@ -136,7 +136,7 @@ export function formatColor(
   if (typeof color === 'string') {
     parsed = parseColor(color);
   } else {
-    parsed = color;
+    parsed = color ?? null;
   }
 
   if (!parsed) {

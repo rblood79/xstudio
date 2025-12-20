@@ -1,5 +1,4 @@
 import React from "react";
-import { tv } from "tailwind-variants";
 import type { BadgeVariant, ComponentSize } from "../../types/componentVariants";
 import { Skeleton } from "./Skeleton";
 import "./styles/Badge.css";
@@ -36,40 +35,12 @@ export interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
   isLoading?: boolean;
 }
 
-const badge = tv({
-  base: "react-aria-Badge",
-  variants: {
-    variant: {
-      primary: "primary",
-      secondary: "secondary",
-      tertiary: "tertiary",
-      error: "error",
-      surface: "surface",
-    },
-    size: {
-      sm: "sm",
-      md: "md",
-      lg: "lg",
-    },
-    isDot: {
-      true: "dot",
-      false: "",
-    },
-    isPulsing: {
-      true: "pulsing",
-      false: "",
-    },
-  },
-  defaultVariants: {
-    variant: "primary",
-    size: "sm",
-    isDot: false,
-    isPulsing: false,
-  },
-});
-
 /**
  * Badge Component with Material Design 3 support
+ *
+ * 🚀 Phase 4: data-* 패턴 전환
+ * - tailwind-variants 제거
+ * - data-variant, data-size, data-dot, data-pulsing 속성 사용
  *
  * M3 Features:
  * - 5 variants: primary, secondary, tertiary, error, surface
@@ -97,14 +68,6 @@ export function Badge({
   children,
   ...props
 }: BadgeProps) {
-  const badgeClassName = badge({
-    variant,
-    size,
-    isDot,
-    isPulsing,
-    className,
-  });
-
   if (isLoading) {
     return (
       <Skeleton
@@ -117,7 +80,15 @@ export function Badge({
   }
 
   return (
-    <span {...props} className={badgeClassName} data-badge>
+    <span
+      {...props}
+      className={className ? `react-aria-Badge ${className}` : "react-aria-Badge"}
+      data-badge
+      data-variant={variant}
+      data-size={size}
+      data-dot={isDot || undefined}
+      data-pulsing={isPulsing || undefined}
+    >
       {!isDot && children}
     </span>
   );

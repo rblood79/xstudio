@@ -1,10 +1,9 @@
 import {
   OverlayArrow,
   Tooltip as AriaTooltip,
-  TooltipProps as AriaTooltipProps
+  TooltipProps as AriaTooltipProps,
+  composeRenderProps
 } from 'react-aria-components';
-import { tv } from 'tailwind-variants';
-import { composeRenderProps } from 'react-aria-components';
 import type { TooltipVariant, ComponentSize } from '../../types/componentVariants';
 
 import './styles/Tooltip.css';
@@ -23,31 +22,12 @@ export type TooltipProps = AriaTooltipProps & {
   size?: ComponentSize;
 };
 
-const tooltipStyles = tv({
-  base: 'react-aria-Tooltip',
-  variants: {
-    variant: {
-      primary: 'primary',
-      secondary: 'secondary',
-      tertiary: 'tertiary',
-      error: 'error',
-      filled: 'filled',
-      surface: 'surface',
-    },
-    size: {
-      sm: 'sm',
-      md: 'md',
-      lg: 'lg',
-    },
-  },
-  defaultVariants: {
-    variant: 'primary',
-    size: 'md',
-  },
-});
-
 /**
  * Tooltip Component with Material Design 3 support
+ *
+ * 🚀 Phase 4: data-* 패턴 전환
+ * - tailwind-variants 제거
+ * - data-variant, data-size 속성 사용
  *
  * M3 Features:
  * - 5 variants: primary, secondary, tertiary, error, filled
@@ -71,19 +51,12 @@ const tooltipStyles = tv({
 export function Tooltip({ id, variant = 'primary', size = 'md', children, ...props }: TooltipProps) {
   const tooltipClassName = composeRenderProps(
     props.className,
-    (className, renderProps) => {
-      return tooltipStyles({
-        ...renderProps,
-        variant,
-        size,
-        className,
-      });
-    }
+    (className) => className ? `react-aria-Tooltip ${className}` : 'react-aria-Tooltip'
   );
 
   return (
     // @ts-expect-error - AriaTooltip children type compatibility
-    <AriaTooltip id={id} {...props} className={tooltipClassName}>
+    <AriaTooltip id={id} {...props} className={tooltipClassName} data-variant={variant} data-size={size}>
       <OverlayArrow>
         <svg width={8} height={8} viewBox="0 0 8 8">
           <path d="M0 0 L4 4 L8 0" />

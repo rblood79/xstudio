@@ -1,11 +1,13 @@
-import { Dialog as RACDialog, DialogProps } from 'react-aria-components';
-import { tv } from 'tailwind-variants';
-import { composeRenderProps } from 'react-aria-components';
+import { Dialog as RACDialog, DialogProps, composeRenderProps } from 'react-aria-components';
 import type { DialogVariant, ComponentSize } from '../../types/componentVariants';
 import './styles/Dialog.css';
 
 /**
  * Dialog Component with Material Design 3 support
+ *
+ * 🚀 Phase 4: data-* 패턴 전환
+ * - tailwind-variants 제거
+ * - data-variant, data-size 속성 사용
  *
  * A dialog component that should be used within a Modal overlay.
  * The Modal component handles focus management, so this component
@@ -36,40 +38,11 @@ export interface DialogExtendedProps extends DialogProps {
   size?: ComponentSize;
 }
 
-const dialogStyles = tv({
-  base: 'react-aria-Dialog',
-  variants: {
-    variant: {
-      primary: 'primary',
-      secondary: 'secondary',
-      tertiary: 'tertiary',
-      error: 'error',
-      filled: 'filled',
-    },
-    size: {
-      sm: 'sm',
-      md: 'md',
-      lg: 'lg',
-    },
-  },
-  defaultVariants: {
-    variant: 'primary',
-    size: 'md',
-  },
-});
-
 export function Dialog({ variant = 'primary', size = 'md', ...props }: DialogExtendedProps) {
   const dialogClassName = composeRenderProps(
     props.className,
-    (className, renderProps) => {
-      return dialogStyles({
-        ...renderProps,
-        variant,
-        size,
-        className,
-      });
-    }
+    (className) => className ? `react-aria-Dialog ${className}` : 'react-aria-Dialog'
   );
 
-  return <RACDialog {...props} className={dialogClassName} />;
+  return <RACDialog {...props} className={dialogClassName} data-variant={variant} data-size={size} />;
 }

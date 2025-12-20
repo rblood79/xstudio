@@ -11,7 +11,6 @@ import {
   composeRenderProps
 } from 'react-aria-components';
 import { CheckIcon, Minus } from 'lucide-react';
-import { tv } from 'tailwind-variants';
 import { useFocusRing } from '@react-aria/focus';
 import { mergeProps } from '@react-aria/utils';
 import type { ComponentSizeSubset, CheckboxVariant } from '../../types/builder/componentVariants.types';
@@ -39,31 +38,11 @@ export interface CheckboxProps extends Omit<AriaCheckboxProps, 'children'> {
   isLoading?: boolean;
 }
 
-const checkboxStyles = tv({
-  base: 'react-aria-Checkbox',
-  variants: {
-    variant: {
-      default: '',
-      primary: 'primary',
-      secondary: 'secondary',
-      surface: 'surface',
-    },
-    size: {
-      sm: 'sm',
-      md: 'md',
-      lg: 'lg',
-    },
-    isFocusVisible: {
-      true: 'focus-visible',
-      false: '',
-    },
-  },
-  defaultVariants: {
-    variant: 'default',
-    size: 'md',
-  },
-});
-
+/**
+ * 🚀 Phase 4: data-* 패턴 전환
+ * - tailwind-variants 제거
+ * - data-variant, data-size, data-focus-visible 속성 사용
+ */
 export function MyCheckbox(props: CheckboxProps) {
   const { children, isTreeItemChild = false, variant = 'default', size = 'md', isLoading, ...restProps } = props;
   const { focusProps, isFocusVisible } = useFocusRing();
@@ -86,16 +65,12 @@ export function MyCheckbox(props: CheckboxProps) {
   return (
     <AriaCheckbox
       {...checkboxProps}
-      data-focus-visible={isFocusVisible}
+      data-focus-visible={isFocusVisible || undefined}
+      data-variant={variant}
+      data-size={size}
       className={composeRenderProps(
         checkboxProps.className,
-        (className, renderProps) => checkboxStyles({
-          ...renderProps,
-          variant,
-          size,
-          isFocusVisible,
-          className
-        })
+        (className) => className ? `react-aria-Checkbox ${className}` : 'react-aria-Checkbox'
       )}
     >
       {({ isSelected, isIndeterminate }) => (

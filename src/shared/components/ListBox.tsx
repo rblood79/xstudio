@@ -23,7 +23,6 @@ import {
   composeRenderProps,
 } from "react-aria-components";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { tv } from "tailwind-variants";
 import type {
   ListBoxVariant,
   ComponentSize,
@@ -84,28 +83,11 @@ interface ExtendedListBoxProps<T extends object> extends ListBoxProps<T> {
   skeletonCount?: number;
 }
 
-const listBoxStyles = tv({
-  base: "react-aria-ListBox",
-  variants: {
-    variant: {
-      primary: "primary",
-      secondary: "secondary",
-      tertiary: "tertiary",
-      error: "error",
-      filled: "filled",
-      surface: "surface",
-    },
-    size: {
-      sm: "sm",
-      md: "md",
-      lg: "lg",
-    },
-  },
-  defaultVariants: {
-    variant: "primary",
-    size: "md",
-  },
-});
+/**
+ * 🚀 Phase 4: data-* 패턴 전환
+ * - tailwind-variants 제거
+ * - data-variant, data-size 속성 사용
+ */
 
 export function ListBox<T extends object>({
   children,
@@ -190,13 +172,8 @@ export function ListBox<T extends object>({
 
   // ListBox className generator (reused across all conditional renders)
   const getListBoxClassName = (baseClassName?: ListBoxProps<T>["className"]) =>
-    composeRenderProps(baseClassName, (className, renderProps) => {
-      return listBoxStyles({
-        ...renderProps,
-        variant,
-        size,
-        className,
-      });
+    composeRenderProps(baseClassName, (className) => {
+      return className ? `react-aria-ListBox ${className}` : "react-aria-ListBox";
     });
 
   // 가상화용 아이템 배열 (메모이제이션) - filteredData 사용
@@ -413,6 +390,8 @@ export function ListBox<T extends object>({
         <AriaListBox
           {...props}
           className={getListBoxClassName(props.className)}
+          data-variant={variant}
+          data-size={size}
         >
           <AriaListBoxItem
             key="loading"
@@ -432,6 +411,8 @@ export function ListBox<T extends object>({
         <AriaListBox
           {...props}
           className={getListBoxClassName(props.className)}
+          data-variant={variant}
+          data-size={size}
         >
           <AriaListBoxItem
             key="error"
@@ -456,6 +437,8 @@ export function ListBox<T extends object>({
         <AriaListBox
           {...props}
           className={getListBoxClassName(props.className)}
+          data-variant={variant}
+          data-size={size}
           items={items}
         >
           {children}
@@ -465,7 +448,7 @@ export function ListBox<T extends object>({
 
     // 데이터 없음
     return (
-      <AriaListBox {...props} className={getListBoxClassName(props.className)}>
+      <AriaListBox {...props} className={getListBoxClassName(props.className)} data-variant={variant} data-size={size}>
         {children}
       </AriaListBox>
     );
@@ -479,6 +462,8 @@ export function ListBox<T extends object>({
         <AriaListBox
           {...props}
           className={getListBoxClassName(props.className)}
+          data-variant={variant}
+          data-size={size}
         >
           <AriaListBoxItem
             key="loading"
@@ -498,6 +483,8 @@ export function ListBox<T extends object>({
         <AriaListBox
           {...props}
           className={getListBoxClassName(props.className)}
+          data-variant={variant}
+          data-size={size}
         >
           <AriaListBoxItem
             key="error"
@@ -528,6 +515,8 @@ export function ListBox<T extends object>({
           <AriaListBox
             {...props}
             className={getListBoxClassName(props.className)}
+            data-variant={variant}
+            data-size={size}
             items={items}
           >
             {children}
@@ -540,6 +529,8 @@ export function ListBox<T extends object>({
         <AriaListBox
           {...props}
           className={getListBoxClassName(props.className)}
+          data-variant={variant}
+          data-size={size}
           items={items}
         >
           {(item) => {
@@ -562,7 +553,7 @@ export function ListBox<T extends object>({
 
   // Static Children (기존 방식)
   return (
-    <AriaListBox {...props} className={getListBoxClassName(props.className)}>
+    <AriaListBox {...props} className={getListBoxClassName(props.className)} data-variant={variant} data-size={size}>
       {children}
     </AriaListBox>
   );

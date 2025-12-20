@@ -9,13 +9,18 @@ import {
   composeRenderProps
 } from 'react-aria-components';
 import { CheckIcon, Minus } from 'lucide-react';
-import { tv } from 'tailwind-variants';
 import type { DataBinding, ColumnMapping } from '../../types/builder/unified.types';
 import type { DataBindingValue } from '../../builder/panels/common/PropertyDataBinding';
 import type { ComponentSizeSubset, CheckboxVariant } from '../../types/builder/componentVariants.types';
 import { useCollectionData } from '../../builder/hooks/useCollectionData';
 
 import './styles/CheckboxGroup.css';
+
+/**
+ * 🚀 Phase 4: data-* 패턴 전환
+ * - tailwind-variants 제거
+ * - data-checkbox-variant, data-checkbox-size 속성 사용
+ */
 
 export interface CheckboxGroupProps
   extends Omit<AriaCheckboxGroupProps, 'children'> {
@@ -38,27 +43,6 @@ export interface CheckboxGroupProps
    */
   size?: ComponentSizeSubset;
 }
-
-const checkboxGroupStyles = tv({
-  base: 'react-aria-CheckboxGroup',
-  variants: {
-    variant: {
-      default: '',
-      primary: 'primary',
-      secondary: 'secondary',
-      surface: 'surface',
-    },
-    size: {
-      sm: 'sm',
-      md: 'md',
-      lg: 'lg',
-    },
-  },
-  defaultVariants: {
-    variant: 'default',
-    size: 'md',
-  },
-});
 
 export function CheckboxGroup(
   {
@@ -104,7 +88,7 @@ export function CheckboxGroup(
 
   const checkboxGroupClassName = composeRenderProps(
     props.className,
-    (className) => checkboxGroupStyles({ variant, size, className })
+    (className) => className ? `react-aria-CheckboxGroup ${className}` : 'react-aria-CheckboxGroup'
   );
 
   // ColumnMapping이 있으면 각 데이터 항목마다 Checkbox 렌더링

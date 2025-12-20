@@ -52,7 +52,7 @@
   }
 
   /* ===== M3 Primary ===== */
-  .react-aria-ToggleButton.primary,
+  .react-aria-ToggleButton[data-variant="primary"],
   .react-aria-ToggleButtonGroup[data-togglebutton-variant="primary"]
     .react-aria-ToggleButton {
     --tb-selected-bg: var(--primary);
@@ -63,7 +63,7 @@
   }
 
   /* ===== M3 Secondary ===== */
-  .react-aria-ToggleButton.secondary,
+  .react-aria-ToggleButton[data-variant="secondary"],
   .react-aria-ToggleButtonGroup[data-togglebutton-variant="secondary"]
     .react-aria-ToggleButton {
     --tb-selected-bg: var(--secondary);
@@ -74,7 +74,7 @@
   }
 
   /* ===== M3 Tertiary ===== */
-  .react-aria-ToggleButton.tertiary,
+  .react-aria-ToggleButton[data-variant="tertiary"],
   .react-aria-ToggleButtonGroup[data-togglebutton-variant="tertiary"]
     .react-aria-ToggleButton {
     --tb-selected-bg: var(--tertiary);
@@ -85,7 +85,7 @@
   }
 
   /* ===== M3 Error ===== */
-  .react-aria-ToggleButton.error,
+  .react-aria-ToggleButton[data-variant="error"],
   .react-aria-ToggleButtonGroup[data-togglebutton-variant="error"]
     .react-aria-ToggleButton {
     --tb-selected-bg: var(--error);
@@ -96,7 +96,7 @@
   }
 
   /* ===== M3 Surface ===== */
-  .react-aria-ToggleButton.surface,
+  .react-aria-ToggleButton[data-variant="surface"],
   .react-aria-ToggleButtonGroup[data-togglebutton-variant="surface"]
     .react-aria-ToggleButton {
     --tb-selected-bg: var(--surface-container-highest);
@@ -112,7 +112,7 @@
 
   /* ===== Size Variants ===== */
   /* Small */
-  .react-aria-ToggleButton.sm,
+  .react-aria-ToggleButton[data-size="sm"],
   .react-aria-ToggleButtonGroup[data-togglebutton-size="sm"]
     .react-aria-ToggleButton {
     font-size: var(--text-sm);
@@ -120,7 +120,7 @@
   }
 
   /* Medium (default) */
-  .react-aria-ToggleButton.md,
+  .react-aria-ToggleButton[data-size="md"],
   .react-aria-ToggleButtonGroup[data-togglebutton-size="md"]
     .react-aria-ToggleButton {
     font-size: var(--text-base);
@@ -128,7 +128,7 @@
   }
 
   /* Large */
-  .react-aria-ToggleButton.lg,
+  .react-aria-ToggleButton[data-size="lg"],
   .react-aria-ToggleButtonGroup[data-togglebutton-size="lg"]
     .react-aria-ToggleButton {
     font-size: var(--text-lg);

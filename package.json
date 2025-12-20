@@ -67,7 +67,6 @@
     "react-router-dom": "^7.11.0",
     "react-stately": "^3.43.0",
     "tailwind-merge": "^3.4.0",
-    "tailwind-variants": "^3.2.2",
     "tailwindcss": "^4.1.18",
     "tailwindcss-react-aria-components": "^2.0.1",
     "three": "^0.182.0",

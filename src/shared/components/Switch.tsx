@@ -10,7 +10,6 @@ import {
   SwitchProps as AriaSwitchProps,
   composeRenderProps
 } from 'react-aria-components';
-import { tv } from 'tailwind-variants';
 import { useFocusRing } from '@react-aria/focus';
 import { mergeProps } from '@react-aria/utils';
 import type { ComponentSizeSubset, SwitchVariant } from '../../types/builder/componentVariants.types';
@@ -37,31 +36,11 @@ export interface SwitchProps extends Omit<AriaSwitchProps, 'children'> {
   isLoading?: boolean;
 }
 
-const switchStyles = tv({
-  base: 'react-aria-Switch',
-  variants: {
-    variant: {
-      default: '',
-      primary: 'primary',
-      secondary: 'secondary',
-      surface: 'surface',
-    },
-    size: {
-      sm: 'sm',
-      md: 'md',
-      lg: 'lg',
-    },
-    isFocusVisible: {
-      true: 'focus-visible',
-      false: '',
-    },
-  },
-  defaultVariants: {
-    variant: 'default',
-    size: 'md',
-  },
-});
-
+/**
+ * 🚀 Phase 4: data-* 패턴 전환
+ * - tailwind-variants 제거
+ * - data-variant, data-size, data-focus-visible 속성 사용
+ */
 export function Switch({ children, variant = 'default', size = 'md', isLoading, ...props }: SwitchProps) {
   const { focusProps, isFocusVisible } = useFocusRing();
 
@@ -78,16 +57,12 @@ export function Switch({ children, variant = 'default', size = 'md', isLoading, 
   return (
     <AriaSwitch
       {...mergeProps(props, focusProps)}
-      data-focus-visible={isFocusVisible}
+      data-focus-visible={isFocusVisible || undefined}
+      data-variant={variant}
+      data-size={size}
       className={composeRenderProps(
         props.className,
-        (className, renderProps) => switchStyles({
-          ...renderProps,
-          variant,
-          size,
-          isFocusVisible,
-          className
-        })
+        (className) => className ? `react-aria-Switch ${className}` : 'react-aria-Switch'
       )}
     >
       <div className="indicator" />

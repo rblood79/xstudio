@@ -5,7 +5,6 @@
 
 /* eslint-disable local/prefer-copy-paste-hook */
 import { useState } from 'react';
-import { tv } from 'tailwind-variants';
 import { useAsyncMutation } from '../../../hooks/useAsyncMutation';
 import { ExportService } from '../../../../services/theme';
 import type {
@@ -16,13 +15,16 @@ import type {
 import { useTokens } from '../../../../hooks/theme/useTokens';
 import '../styles/ThemeExporter.css';
 
-const exporterStyles = tv({
-  slots: {
-    container: 'theme-exporter-container',
-    form: 'exporter-form',
-    preview: 'export-preview',
-  },
-});
+/**
+ * 🚀 Phase 4: data-* 패턴 전환
+ * - tailwind-variants 제거
+ * - 직접 CSS 클래스 사용
+ */
+const styles = {
+  container: 'theme-exporter-container',
+  form: 'exporter-form',
+  preview: 'export-preview',
+};
 
 interface ThemeExporterProps {
   themeId: string;
@@ -30,7 +32,6 @@ interface ThemeExporterProps {
 }
 
 export function ThemeExporter({ themeId }: ThemeExporterProps) {
-  const styles = exporterStyles();
 
   const { tokens, loading } = useTokens({
     themeId,
@@ -81,7 +82,7 @@ export function ThemeExporter({ themeId }: ThemeExporterProps) {
   };
 
   return (
-    <div className={styles.container()}>
+    <div className={styles.container}>
       <h2>Export 설정</h2>
       <p className="subtitle">
         디자인 토큰을 CSS, Tailwind, SCSS, JSON 형식으로 내보냅니다
@@ -96,7 +97,7 @@ export function ThemeExporter({ themeId }: ThemeExporterProps) {
 
       {!loading && (
         <>
-          <form className={styles.form()} onSubmit={(e) => { e.preventDefault(); handleExport(); }}>
+          <form className={styles.form} onSubmit={(e) => { e.preventDefault(); handleExport(); }}>
             {/* Format Selection */}
             <div className="form-group">
               <label htmlFor="export-format">
@@ -165,7 +166,7 @@ export function ThemeExporter({ themeId }: ThemeExporterProps) {
 
           {/* Preview */}
           {exportMutation.data && (
-            <div className={styles.preview()}>
+            <div className={styles.preview}>
               <div className="preview-header">
                 <div className="preview-title">
                   <h3>Export 결과</h3>

@@ -5,7 +5,6 @@ import {
   DialogTrigger,
   composeRenderProps
 } from "react-aria-components";
-import { tv } from 'tailwind-variants';
 import { Button } from "./Button";
 import { ColorSwatch } from "./ColorSwatch";
 import { ColorSlider } from "./ColorSlider";
@@ -16,25 +15,11 @@ import type { ColorPickerVariant, ComponentSize } from '../../types/componentVar
 
 import "./styles/ColorPicker.css";
 
-const colorPickerStyles = tv({
-  base: 'react-aria-ColorPicker',
-  variants: {
-    variant: {
-      primary: 'primary',
-      secondary: 'secondary',
-      tertiary: 'tertiary',
-    },
-    size: {
-      sm: 'sm',
-      md: 'md',
-      lg: 'lg',
-    },
-  },
-  defaultVariants: {
-    variant: 'primary',
-    size: 'md',
-  },
-});
+/**
+ * 🚀 Phase 4: data-* 패턴 전환
+ * - tailwind-variants 제거
+ * - data-variant, data-size 속성 사용
+ */
 
 export interface ColorPickerProps extends AriaColorPickerProps {
   /**
@@ -79,13 +64,11 @@ export function ColorPicker({
 }: ColorPickerProps) {
   const colorPickerClassName = composeRenderProps(
     props.className,
-    (className, renderProps) => {
-      return colorPickerStyles({ ...renderProps, variant, size, className });
-    }
+    (className) => className ? `react-aria-ColorPicker ${className}` : 'react-aria-ColorPicker'
   );
 
   return (
-    <AriaColorPicker {...props} className={colorPickerClassName}>
+    <AriaColorPicker {...props} className={colorPickerClassName} data-variant={variant} data-size={size}>
       <DialogTrigger>
         <Button className="color-picker-button">
           <ColorSwatch />

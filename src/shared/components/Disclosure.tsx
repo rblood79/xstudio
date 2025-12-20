@@ -6,7 +6,6 @@ import {
   Heading,
   composeRenderProps,
 } from 'react-aria-components';
-import { tv } from 'tailwind-variants';
 import type { DisclosureVariant, ComponentSize } from '../../types/componentVariants';
 
 import './styles/Disclosure.css';
@@ -32,27 +31,12 @@ export interface DisclosureProps extends Omit<AriaDisclosureProps, 'children'> {
   children?: React.ReactNode;
 }
 
-const disclosureStyles = tv({
-  base: 'react-aria-Disclosure',
-  variants: {
-    variant: {
-      primary: 'primary',
-      secondary: 'secondary',
-    },
-    size: {
-      sm: 'sm',
-      md: 'md',
-      lg: 'lg',
-    },
-  },
-  defaultVariants: {
-    variant: 'primary',
-    size: 'md',
-  },
-});
-
 /**
  * Disclosure Component with Material Design 3 support
+ *
+ * 🚀 Phase 4: data-* 패턴 전환
+ * - tailwind-variants 제거
+ * - data-variant, data-size 속성 사용
  *
  * M3 Features:
  * - 2 variants: primary, secondary
@@ -73,13 +57,11 @@ const disclosureStyles = tv({
 export function Disclosure({ variant = 'primary', size = 'md', title, children, ...props }: DisclosureProps) {
   const disclosureClassName = composeRenderProps(
     props.className,
-    (className, renderProps) => {
-      return disclosureStyles({ ...renderProps, variant, size, className });
-    }
+    (className) => className ? `react-aria-Disclosure ${className}` : 'react-aria-Disclosure'
   );
 
   return (
-    <AriaDisclosure {...props} className={disclosureClassName}>
+    <AriaDisclosure {...props} className={disclosureClassName} data-variant={variant} data-size={size}>
       <Heading>
         <Button slot="trigger">
           <svg viewBox="0 0 24 24" className="disclosure-chevron">

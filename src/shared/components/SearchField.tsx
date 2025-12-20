@@ -16,10 +16,15 @@ import {
   ValidationResult,
   composeRenderProps
 } from 'react-aria-components';
-import { tv } from 'tailwind-variants';
 import type { SearchFieldVariant, ComponentSize } from '../../types/componentVariants';
 
 import './styles/SearchField.css';
+
+/**
+ * 🚀 Phase 4: data-* 패턴 전환
+ * - tailwind-variants 제거
+ * - data-variant, data-size 속성 사용
+ */
 
 export interface SearchFieldProps extends AriaSearchFieldProps {
   label?: string;
@@ -30,28 +35,6 @@ export interface SearchFieldProps extends AriaSearchFieldProps {
   variant?: SearchFieldVariant;
   size?: ComponentSize;
 }
-
-const searchFieldStyles = tv({
-  base: 'react-aria-SearchField',
-  variants: {
-    variant: {
-      primary: 'primary',
-      secondary: 'secondary',
-      tertiary: 'tertiary',
-      error: 'error',
-      filled: 'filled',
-    },
-    size: {
-      sm: 'sm',
-      md: 'md',
-      lg: 'lg',
-    },
-  },
-  defaultVariants: {
-    variant: 'primary',
-    size: 'md',
-  },
-});
 
 export function SearchField({
   label,
@@ -67,15 +50,10 @@ export function SearchField({
       {...props}
       className={composeRenderProps(
         props.className,
-        (className, renderProps) => {
-          return searchFieldStyles({
-            ...renderProps,
-            variant,
-            size,
-            className,
-          });
-        }
+        (className) => className ? `react-aria-SearchField ${className}` : 'react-aria-SearchField'
       )}
+      data-variant={variant}
+      data-size={size}
     >
       {label && <Label>{label}</Label>}
       <Input placeholder={placeholder} />

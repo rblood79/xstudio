@@ -1,5 +1,4 @@
 import React from 'react';
-import { tv } from 'tailwind-variants';
 import type { PanelVariant } from '../../types/builder/componentVariants.types';
 import './styles/Panel.css';
 
@@ -13,22 +12,11 @@ export interface PanelProps {
     [key: string]: unknown;
 }
 
-const panel = tv({
-    base: 'react-aria-Panel',
-    variants: {
-        variant: {
-            default: 'panel-default',
-            tab: 'panel-tab',
-            sidebar: 'panel-sidebar',
-            card: 'panel-card',
-            modal: 'panel-modal',
-        },
-    },
-    defaultVariants: {
-        variant: 'default',
-    },
-});
-
+/**
+ * 🚀 Phase 4: data-* 패턴 전환
+ * - tailwind-variants 제거
+ * - data-variant 속성 사용
+ */
 export function Panel({
     children,
     className,
@@ -38,7 +26,12 @@ export function Panel({
     ...props
 }: PanelProps) {
     return (
-        <div {...props} className={panel({ variant, className })} style={style}>
+        <div
+            {...props}
+            className={className ? `react-aria-Panel ${className}` : 'react-aria-Panel'}
+            style={style}
+            data-variant={variant}
+        >
             {title && <div className="panel-title">{title}</div>}
             <div className="panel-content">
                 {children}

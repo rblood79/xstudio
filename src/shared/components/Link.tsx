@@ -3,7 +3,6 @@ import {
   Link as RACLink,
   LinkProps as RACLinkProps,
 } from "react-aria-components";
-import { tv } from "tailwind-variants";
 import { useFocusRing } from "@react-aria/focus";
 import { mergeProps } from "@react-aria/utils";
 import type { LinkVariant, ComponentSize } from "../../types/componentVariants";
@@ -38,35 +37,12 @@ export interface LinkProps extends RACLinkProps {
   isLoading?: boolean;
 }
 
-const link = tv({
-  base: "react-aria-Link",
-  variants: {
-    variant: {
-      primary: "primary",
-      secondary: "secondary",
-    },
-    size: {
-      sm: "sm",
-      md: "md",
-      lg: "lg",
-    },
-    isFocusVisible: {
-      true: "focus-visible",
-      false: "",
-    },
-    isExternal: {
-      true: "external",
-      false: "",
-    },
-  },
-  defaultVariants: {
-    variant: "primary",
-    size: "md",
-  },
-});
-
 /**
  * Link Component with Material Design 3 support
+ *
+ * 🚀 Phase 4: data-* 패턴 전환
+ * - tailwind-variants 제거
+ * - data-variant, data-size 속성 사용
  *
  * M3 Features:
  * - 2 variants: primary, secondary
@@ -85,7 +61,14 @@ const link = tv({
  */
 export function Link(props: LinkProps) {
   const { focusProps, isFocusVisible } = useFocusRing();
-  const { isExternal, showExternalIcon = true, isLoading, ...restProps } = props;
+  const {
+    variant = "primary",
+    size = "md",
+    isExternal,
+    showExternalIcon = true,
+    isLoading,
+    ...restProps
+  } = props;
 
   // Show skeleton when loading
   if (isLoading) {
@@ -111,20 +94,13 @@ export function Link(props: LinkProps) {
   return (
     <RACLink
       {...(allProps as RACLinkProps)}
-      data-focus-visible={isFocusVisible}
-      data-external={isExternal}
+      data-variant={variant}
+      data-size={size}
+      data-focus-visible={isFocusVisible || undefined}
+      data-external={isExternal || undefined}
       className={composeRenderProps(
         props.className,
-        (className, renderProps) => {
-          return link({
-            ...renderProps,
-            variant: props.variant,
-            size: props.size,
-            isFocusVisible,
-            isExternal,
-            className,
-          });
-        }
+        (cls) => cls ? `react-aria-Link ${cls}` : "react-aria-Link"
       )}
     >
       {composeRenderProps(props.children, (children) => (

@@ -17,11 +17,16 @@ import {
   ValidationResult,
   composeRenderProps
 } from 'react-aria-components';
-import { tv } from 'tailwind-variants';
 import type { NumberFieldVariant, ComponentSize } from '../../types/componentVariants';
 import { Plus, Minus } from 'lucide-react';
 
 import './styles/NumberField.css';
+
+/**
+ * 🚀 Phase 4: data-* 패턴 전환
+ * - tailwind-variants 제거
+ * - data-variant, data-size 속성 사용
+ */
 
 export interface NumberFieldProps extends AriaNumberFieldProps {
   label?: string;
@@ -73,28 +78,6 @@ export interface NumberFieldProps extends AriaNumberFieldProps {
   size?: ComponentSize;
 }
 
-const numberFieldStyles = tv({
-  base: 'react-aria-NumberField',
-  variants: {
-    variant: {
-      primary: 'primary',
-      secondary: 'secondary',
-      tertiary: 'tertiary',
-      error: 'error',
-      filled: 'filled',
-    },
-    size: {
-      sm: 'sm',
-      md: 'md',
-      lg: 'lg',
-    },
-  },
-  defaultVariants: {
-    variant: 'primary',
-    size: 'md',
-  },
-});
-
 export function NumberField({
   label,
   description,
@@ -139,15 +122,10 @@ export function NumberField({
       {...props}
       className={composeRenderProps(
         props.className,
-        (className, renderProps) => {
-          return numberFieldStyles({
-            ...renderProps,
-            variant,
-            size,
-            className,
-          });
-        }
+        (className) => className ? `react-aria-NumberField ${className}` : 'react-aria-NumberField'
       )}
+      data-variant={variant}
+      data-size={size}
       formatOptions={formatOptions}
     >
       {label && <Label>{label}</Label>}

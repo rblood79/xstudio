@@ -17,12 +17,17 @@ import {
   ValidationResult,
   composeRenderProps
 } from 'react-aria-components';
-import { tv } from 'tailwind-variants';
 import type { DateFieldVariant, ComponentSize } from '../../types/componentVariants';
 import { getLocalTimeZone, today } from '@internationalized/date';
 import { safeParseDateString } from '../../utils/core/dateUtils';
 
 import './styles/DateField.css';
+
+/**
+ * 🚀 Phase 4: data-* 패턴 전환
+ * - tailwind-variants 제거
+ * - data-variant, data-size 속성 사용
+ */
 
 export interface DateFieldProps<T extends DateValue>
   extends AriaDateFieldProps<T> {
@@ -53,28 +58,6 @@ export interface DateFieldProps<T extends DateValue>
   variant?: DateFieldVariant;
   size?: ComponentSize;
 }
-
-const dateFieldStyles = tv({
-  base: 'react-aria-DateField',
-  variants: {
-    variant: {
-      primary: 'primary',
-      secondary: 'secondary',
-      tertiary: 'tertiary',
-      error: 'error',
-      filled: 'filled',
-    },
-    size: {
-      sm: 'sm',
-      md: 'md',
-      lg: 'lg',
-    },
-  },
-  defaultVariants: {
-    variant: 'primary',
-    size: 'md',
-  },
-});
 
 export function DateField<T extends DateValue>({
   label,
@@ -110,15 +93,10 @@ export function DateField<T extends DateValue>({
       {...props}
       className={composeRenderProps(
         props.className,
-        (className, renderProps) => {
-          return dateFieldStyles({
-            ...renderProps,
-            variant,
-            size,
-            className,
-          });
-        }
+        (className) => className ? `react-aria-DateField ${className}` : 'react-aria-DateField'
       )}
+      data-variant={variant}
+      data-size={size}
       defaultValue={defaultValue}
       minValue={minValue as T | undefined}
       maxValue={maxValue as T | undefined}

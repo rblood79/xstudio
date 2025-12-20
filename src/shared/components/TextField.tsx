@@ -15,11 +15,16 @@ import {
   ValidationResult,
   composeRenderProps
 } from 'react-aria-components';
-import { tv } from 'tailwind-variants';
 import type { TextFieldVariant, ComponentSize } from '../../types/componentVariants';
 import { Skeleton } from './Skeleton';
 
 import './styles/TextField.css';
+
+/**
+ * 🚀 Phase 4: data-* 패턴 전환
+ * - tailwind-variants 제거
+ * - data-variant, data-size 속성 사용
+ */
 
 export interface TextFieldProps extends AriaTextFieldProps {
   label?: string;
@@ -38,28 +43,6 @@ export interface TextFieldProps extends AriaTextFieldProps {
   /** Show loading skeleton instead of input */
   isLoading?: boolean;
 }
-
-const textFieldStyles = tv({
-  base: 'react-aria-TextField',
-  variants: {
-    variant: {
-      primary: 'primary',
-      secondary: 'secondary',
-      tertiary: 'tertiary',
-      error: 'error',
-      filled: 'filled',
-    },
-    size: {
-      sm: 'sm',
-      md: 'md',
-      lg: 'lg',
-    },
-  },
-  defaultVariants: {
-    variant: 'primary',
-    size: 'md',
-  },
-});
 
 export function TextField({
   label,
@@ -93,15 +76,10 @@ export function TextField({
       {...props}
       className={composeRenderProps(
         props.className,
-        (className, renderProps) => {
-          return textFieldStyles({
-            ...renderProps,
-            variant,
-            size,
-            className,
-          });
-        }
+        (className) => className ? `react-aria-TextField ${className}` : 'react-aria-TextField'
       )}
+      data-variant={variant}
+      data-size={size}
       value={value}
       onChange={onChange}
       isRequired={isRequired}

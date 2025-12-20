@@ -11,7 +11,6 @@ import {
   MeterProps as AriaMeterProps,
   composeRenderProps
 } from 'react-aria-components';
-import { tv } from 'tailwind-variants';
 import type { ComponentSizeSubset, MeterVariant } from '../../types/builder/componentVariants.types';
 import { formatPercent, formatNumber } from '../../utils/core/numberUtils';
 import { Skeleton } from './Skeleton';
@@ -59,27 +58,11 @@ export interface MeterProps extends AriaMeterProps {
   isLoading?: boolean;
 }
 
-const meter = tv({
-  base: 'react-aria-Meter',
-  variants: {
-    variant: {
-      default: '',
-      primary: 'primary',
-      secondary: 'secondary',
-      surface: 'surface',
-    },
-    size: {
-      sm: 'sm',
-      md: 'md',
-      lg: 'lg',
-    },
-  },
-  defaultVariants: {
-    variant: 'default',
-    size: 'md',
-  },
-});
-
+/**
+ * 🚀 Phase 4: data-* 패턴 전환
+ * - tailwind-variants 제거
+ * - data-variant, data-size 속성 사용
+ */
 export function Meter({
   label,
   variant = 'default',
@@ -122,8 +105,10 @@ export function Meter({
       {...props}
       className={composeRenderProps(
         props.className,
-        (className) => meter({ variant, size, className })
+        (className) => className ? `react-aria-Meter ${className}` : 'react-aria-Meter'
       )}
+      data-variant={variant}
+      data-size={size}
     >
       {({ percentage, valueText }) => (
         <>

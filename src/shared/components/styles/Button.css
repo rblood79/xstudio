@@ -33,7 +33,7 @@
     }
 
     /* ===== M3 Primary (Filled Button) ===== */
-    &.primary {
+    &[data-variant="primary"] {
       background: var(--primary);
       color: var(--on-primary);
       border-color: var(--primary);
@@ -50,7 +50,7 @@
     }
 
     /* ===== M3 Secondary (Filled Button) ===== */
-    &.secondary {
+    &[data-variant="secondary"] {
       background: var(--secondary);
       color: var(--on-secondary);
       border-color: var(--secondary);
@@ -67,7 +67,7 @@
     }
 
     /* ===== M3 Tertiary (Filled Button) ===== */
-    &.tertiary {
+    &[data-variant="tertiary"] {
       background: var(--tertiary);
       color: var(--on-tertiary);
       border-color: var(--tertiary);
@@ -84,7 +84,7 @@
     }
 
     /* ===== M3 Error (Filled Button) ===== */
-    &.error {
+    &[data-variant="error"] {
       background: var(--error);
       color: var(--on-error);
       border-color: var(--error);
@@ -101,7 +101,7 @@
     }
 
     /* ===== M3 Surface (Filled Tonal Button) ===== */
-    &.surface {
+    &[data-variant="surface"] {
       background: var(--surface-container-highest);
       color: var(--on-surface);
       border-color: var(--outline-variant);
@@ -118,7 +118,7 @@
     }
 
     /* ===== M3 Outline (Outlined Button) ===== */
-    &.outline {
+    &[data-variant="outline"] {
       background: transparent;
       color: var(--primary);
       border-color: var(--outline);
@@ -136,7 +136,7 @@
     }
 
     /* ===== M3 Ghost (Text Button) ===== */
-    &.ghost {
+    &[data-variant="ghost"] {
       background: transparent;
       color: var(--primary);
       border-color: transparent;
@@ -151,27 +151,28 @@
       }
     }
 
-    &.xs {
+    /* ===== Size Variants ===== */
+    &[data-size="xs"] {
       font-size: var(--text-2xs);
       padding: var(--spacing-2xs) var(--spacing-sm);
     }
 
-    &.sm {
+    &[data-size="sm"] {
       padding: var(--spacing) var(--spacing-md);
       font-size: var(--text-sm);
     }
 
-    &.md {
+    &[data-size="md"] {
       padding: var(--spacing-sm) var(--spacing-xl);
       font-size: var(--text-base);
     }
 
-    &.lg {
+    &[data-size="lg"] {
       padding: var(--spacing-md) var(--spacing-2xl);
       font-size: var(--text-lg);
     }
 
-    &.xl {
+    &[data-size="xl"] {
       padding: var(--spacing-lg) var(--spacing-3xl);
       font-size: var(--text-xl);
     }

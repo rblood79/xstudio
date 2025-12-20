@@ -16,7 +16,6 @@
  */
 
 import React from "react";
-import { tv } from "tailwind-variants";
 import "./styles/Slot.css";
 
 export interface SlotProps {
@@ -53,24 +52,11 @@ export interface SlotProps {
   isEditMode?: boolean;
 }
 
-const slotStyles = tv({
-  base: "react-aria-Slot",
-  variants: {
-    required: {
-      true: "required",
-      false: "",
-    },
-    empty: {
-      true: "empty",
-      false: "",
-    },
-  },
-  defaultVariants: {
-    required: false,
-    empty: true,
-  },
-});
-
+/**
+ * 🚀 Phase 4: data-* 패턴 전환
+ * - tailwind-variants 제거
+ * - data-required, data-empty 속성 사용
+ */
 export function Slot({
   name,
   required = false,
@@ -88,18 +74,14 @@ export function Slot({
     return <>{children}</>;
   }
 
-  const slotClassName = slotStyles({
-    required,
-    empty: isEmpty,
-    className,
-  });
-
   return (
     <div
-      className={slotClassName}
+      className={className ? `react-aria-Slot ${className}` : "react-aria-Slot"}
       style={style}
       data-slot-name={name}
       data-slot-required={required}
+      data-required={required || undefined}
+      data-empty={isEmpty || undefined}
       {...props}
     >
       {/* Edit 모드일 때 플레이스홀더 UI 표시 */}

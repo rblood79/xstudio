@@ -4,7 +4,6 @@
  */
 
 import { useState } from 'react';
-import { tv } from 'tailwind-variants';
 import { useAsyncMutation } from '../../../hooks/useAsyncMutation';
 import { DarkModeService } from '../../../../services/theme/DarkModeService';
 import type { DarkModeOptions } from '../../../../services/theme/DarkModeService';
@@ -13,13 +12,16 @@ import { useThemes } from '../../../../hooks/theme/useThemes';
 import type { DesignToken, ColorValueHSL } from '../../../../types/theme';
 import '../styles/DarkModeGenerator.css';
 
-const darkModeStyles = tv({
-  slots: {
-    container: 'dark-mode-container',
-    form: 'dark-mode-form',
-    preview: 'dark-mode-preview',
-  },
-});
+/**
+ * 🚀 Phase 4: data-* 패턴 전환
+ * - tailwind-variants 제거
+ * - 직접 CSS 클래스 사용
+ */
+const styles = {
+  container: 'dark-mode-container',
+  form: 'dark-mode-form',
+  preview: 'dark-mode-preview',
+};
 
 interface DarkModeGeneratorProps {
   themeId: string;
@@ -34,7 +36,6 @@ export function DarkModeGenerator({
   projectId,
   onDarkThemeCreated,
 }: DarkModeGeneratorProps) {
-  const styles = darkModeStyles();
 
   const { tokens: lightTokens, loading } = useTokens({
     themeId,
@@ -138,7 +139,7 @@ export function DarkModeGenerator({
   const previewColorTokens = previewTokens.filter((t) => t.type === 'color');
 
   return (
-    <div className={styles.container()}>
+    <div className={styles.container}>
       <h2>다크 모드 생성</h2>
       <p className="subtitle">
         라이트 모드 테마를 기반으로 다크 모드 테마를 자동 생성합니다
@@ -153,7 +154,7 @@ export function DarkModeGenerator({
 
       {!loading && !generateMutation.isSuccess && (
         <>
-          <form className={styles.form()} onSubmit={(e) => { e.preventDefault(); handleGenerate(); }}>
+          <form className={styles.form} onSubmit={(e) => { e.preventDefault(); handleGenerate(); }}>
             {/* Dark Theme Name */}
             <div className="form-group">
               <label htmlFor="dark-theme-name">
@@ -286,7 +287,7 @@ export function DarkModeGenerator({
 
           {/* Preview */}
           {previewTokens.length > 0 && (
-            <div className={styles.preview()}>
+            <div className={styles.preview}>
               <div className="preview-header">
                 <h3>변환 미리보기</h3>
                 <span className="preview-count">{previewColorTokens.length}개 색상</span>

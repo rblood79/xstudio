@@ -14,6 +14,8 @@ interface PropertyUnitInputProps {
   label?: string;
   value: string; // "100px", "50%", "auto"
   onChange: (value: string) => void;
+  /** RAF 스로틀 업데이트 (화살표 키 반복 입력용) */
+  onDrag?: (value: string) => void;
   icon?: React.ComponentType<{
     color?: string;
     size?: number;
@@ -57,6 +59,7 @@ export const PropertyUnitInput = memo(function PropertyUnitInput({
   label,
   value,
   onChange,
+  onDrag,
   icon: Icon,
   className,
   units = DEFAULT_UNITS,
@@ -247,14 +250,17 @@ export const PropertyUnitInput = memo(function PropertyUnitInput({
     const step = e.shiftKey ? 10 : 1;
     let newValue = numericValue || 0;
 
+    // 🚀 Phase 1: onDrag가 있으면 RAF 스로틀 업데이트, 없으면 즉시 업데이트
+    const updateFn = onDrag || onChange;
+
     if (e.key === "ArrowUp") {
       e.preventDefault();
       newValue = Math.min(newValue + step, max);
-      onChange(`${newValue}${unit}`);
+      updateFn(`${newValue}${unit}`);
     } else if (e.key === "ArrowDown") {
       e.preventDefault();
       newValue = Math.max(newValue - step, min);
-      onChange(`${newValue}${unit}`);
+      updateFn(`${newValue}${unit}`);
     }
   };
 

@@ -6,7 +6,6 @@
  */
 
 import { Separator as AriaSeparator, SeparatorProps as AriaSeparatorProps } from 'react-aria-components';
-import { tv } from 'tailwind-variants';
 import type { SeparatorVariant, ComponentSizeSubset } from '../../types/builder/componentVariants.types';
 import './styles/Separator.css';
 
@@ -30,46 +29,21 @@ export interface SeparatorProps extends AriaSeparatorProps {
   size?: ComponentSizeSubset;
 }
 
-const separator = tv({
-  base: 'react-aria-Separator',
-  variants: {
-    variant: {
-      default: '',
-      dashed: 'dashed',
-      dotted: 'dotted',
-    },
-    size: {
-      sm: 'sm',
-      md: 'md',
-      lg: 'lg',
-    },
-    orientation: {
-      horizontal: 'horizontal',
-      vertical: 'vertical',
-    },
-  },
-  defaultVariants: {
-    variant: 'default',
-    size: 'md',
-    orientation: 'horizontal',
-  },
-});
-
+/**
+ * 🚀 Phase 4: data-* 패턴 전환
+ * - tailwind-variants 제거
+ * - data-variant, data-size 속성 사용
+ */
 export function Separator(props: SeparatorProps) {
-  const { orientation = 'horizontal', variant = 'default', size = 'md' } = props;
-
-  const className = separator({
-    variant,
-    size,
-    orientation,
-    className: props.className,
-  });
+  const { orientation = 'horizontal', variant = 'default', size = 'md', className, ...restProps } = props;
 
   return (
     <AriaSeparator
-      {...props}
+      {...restProps}
       orientation={orientation}
-      className={className}
+      className={className ? `react-aria-Separator ${className}` : 'react-aria-Separator'}
+      data-variant={variant}
+      data-size={size}
     />
   );
 }
