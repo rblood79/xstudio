@@ -21,6 +21,9 @@ import {
   MousePointer,
   ClipboardCopy,
   ArrowDown,
+  Table,
+  Save,
+  Variable,
 } from "lucide-react";
 import type { BlockEventAction } from "../../../events/types/eventBlockTypes";
 import type { ActionType } from "../../../events/types/eventTypes";
@@ -77,6 +80,12 @@ const ACTION_ICONS: Record<
   clearSelection: MousePointer,
   copyToClipboard: ClipboardCopy,
   customFunction: Code,
+  // Data Panel Integration
+  loadDataTable: Table,
+  syncComponent: RefreshCw,
+  saveToDataTable: Save,
+  // Variable
+  setVariable: Variable,
 };
 
 /**

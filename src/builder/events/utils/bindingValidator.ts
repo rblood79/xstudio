@@ -138,7 +138,7 @@ function resolvePath(
     }
 
     // 첫 번째 속성 접근
-    if (i === 1) {
+    if (i === 1 && currentSchema) {
       node = currentSchema[part];
     } else if (currentSchema) {
       node = currentSchema[part];

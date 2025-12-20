@@ -32,8 +32,6 @@ export {
 export {
   normalizeToRegistryAction,
   normalizeToInspectorAction,
-  normalizeToRegistryEvent,
-  normalizeToInspectorEvent,
 } from './normalizeEventTypes';
 
 // Action Helpers

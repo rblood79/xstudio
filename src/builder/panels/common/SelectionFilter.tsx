@@ -98,7 +98,6 @@ export function SelectionFilter({
   // Clear filter
   const handleClearFilter = () => {
     setFilterType("all");
-    setSelectedType("");
     setSelectedTag("");
     setPropertyKey("");
     setPropertyValue("");

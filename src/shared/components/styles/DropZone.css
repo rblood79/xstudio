@@ -1,0 +1,113 @@
+/**
+ * DropZone Component Styles
+ * Material Design 3 based styling
+ */
+
+.react-aria-DropZone {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 120px;
+  padding: var(--spacing-lg, 24px);
+  border: 2px solid var(--outline, #79747e);
+  border-radius: var(--radius-md, 12px);
+  background-color: var(--surface, #fef7ff);
+  color: var(--on-surface, #1d1b20);
+  transition: all 0.2s ease;
+  cursor: pointer;
+  text-align: center;
+}
+
+/* Variant: default */
+.react-aria-DropZone[data-variant="default"] {
+  border-style: solid;
+}
+
+/* Variant: primary */
+.react-aria-DropZone[data-variant="primary"] {
+  border-color: var(--primary, #6750a4);
+  background-color: var(--primary-container, #eaddff);
+}
+
+/* Variant: dashed */
+.react-aria-DropZone[data-variant="dashed"] {
+  border-style: dashed;
+}
+
+/* Size: sm */
+.react-aria-DropZone[data-size="sm"] {
+  min-height: 80px;
+  padding: var(--spacing-md, 16px);
+}
+
+.react-aria-DropZone[data-size="sm"] .dropzone-icon {
+  width: 24px;
+  height: 24px;
+}
+
+/* Size: md */
+.react-aria-DropZone[data-size="md"] {
+  min-height: 120px;
+  padding: var(--spacing-lg, 24px);
+}
+
+.react-aria-DropZone[data-size="md"] .dropzone-icon {
+  width: 32px;
+  height: 32px;
+}
+
+/* Size: lg */
+.react-aria-DropZone[data-size="lg"] {
+  min-height: 160px;
+  padding: var(--spacing-xl, 32px);
+}
+
+.react-aria-DropZone[data-size="lg"] .dropzone-icon {
+  width: 48px;
+  height: 48px;
+}
+
+/* Drop target state */
+.react-aria-DropZone[data-drop-target],
+.react-aria-DropZone.is-drop-target {
+  border-color: var(--primary, #6750a4);
+  background-color: var(--primary-container, #eaddff);
+  transform: scale(1.02);
+}
+
+/* Focus visible state */
+.react-aria-DropZone[data-focus-visible],
+.react-aria-DropZone.is-focus-visible {
+  outline: 2px solid var(--primary, #6750a4);
+  outline-offset: 2px;
+}
+
+/* Disabled state */
+.react-aria-DropZone[data-disabled] {
+  opacity: 0.38;
+  cursor: not-allowed;
+}
+
+/* Content container */
+.dropzone-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-sm, 8px);
+}
+
+.dropzone-icon {
+  color: var(--on-surface-variant, #49454f);
+  margin-bottom: var(--spacing-xs, 4px);
+}
+
+.react-aria-DropZone [slot="label"] {
+  font-size: var(--text-md, 14px);
+  font-weight: 500;
+  color: var(--on-surface, #1d1b20);
+}
+
+.react-aria-DropZone [slot="description"] {
+  font-size: var(--text-sm, 12px);
+  color: var(--on-surface-variant, #49454f);
+}

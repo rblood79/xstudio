@@ -86,8 +86,6 @@ export {
   getSuggestions,
   normalizeToRegistryAction,
   normalizeToInspectorAction,
-  normalizeToRegistryEvent,
-  normalizeToInspectorEvent,
 } from './utils';
 
 // Types

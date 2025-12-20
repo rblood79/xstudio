@@ -263,6 +263,135 @@ export const componentMetadata: ComponentMeta[] = [
       supportedEvents: ["onChange", "onFocus", "onBlur"],
     },
   },
+  {
+    type: "FileTrigger",
+    label: "File Trigger",
+    category: "Inputs",
+    icon: "📁",
+    inspector: {
+      hasCustomEditor: true,
+      editorName: "FileTriggerEditor",
+      dataBindingType: null,
+      // React Aria: onSelect
+      supportedEvents: ["onSelect"],
+    },
+  },
+  {
+    type: "DropZone",
+    label: "Drop Zone",
+    category: "Inputs",
+    icon: "📥",
+    inspector: {
+      hasCustomEditor: true,
+      editorName: "DropZoneEditor",
+      dataBindingType: null,
+      // React Aria: onDrop, onDropEnter, onDropExit
+      supportedEvents: ["onDrop", "onDropEnter", "onDropExit"],
+    },
+  },
+  {
+    type: "Autocomplete",
+    label: "Autocomplete",
+    category: "Inputs",
+    icon: "🔍",
+    inspector: {
+      hasCustomEditor: true,
+      editorName: "AutocompleteEditor",
+      dataBindingType: "collection",
+      // React Aria: onInputChange, onSelectionChange, onFocus, onBlur
+      supportedEvents: ["onInputChange", "onSelectionChange", "onFocus", "onBlur"],
+    },
+  },
+  {
+    type: "ColorPicker",
+    label: "Color Picker",
+    category: "Color",
+    icon: "🎨",
+    inspector: {
+      hasCustomEditor: true,
+      editorName: "ColorPickerEditor",
+      dataBindingType: "value",
+      // React Aria: onChange, onFocus, onBlur
+      supportedEvents: ["onChange", "onFocus", "onBlur"],
+    },
+  },
+  {
+    type: "ColorField",
+    label: "Color Field",
+    category: "Color",
+    icon: "🎨",
+    inspector: {
+      hasCustomEditor: true,
+      editorName: "ColorFieldEditor",
+      dataBindingType: "value",
+      // React Aria: onChange, onFocus, onBlur
+      supportedEvents: ["onChange", "onFocus", "onBlur"],
+    },
+  },
+  {
+    type: "ColorArea",
+    label: "Color Area",
+    category: "Color",
+    icon: "🎨",
+    inspector: {
+      hasCustomEditor: true,
+      editorName: "ColorAreaEditor",
+      dataBindingType: "value",
+      // React Aria: onChange, onChangeEnd, onFocus, onBlur
+      supportedEvents: ["onChange", "onChangeEnd", "onFocus", "onBlur"],
+    },
+  },
+  {
+    type: "ColorSlider",
+    label: "Color Slider",
+    category: "Color",
+    icon: "🎨",
+    inspector: {
+      hasCustomEditor: true,
+      editorName: "ColorSliderEditor",
+      dataBindingType: "value",
+      // React Aria: onChange, onChangeEnd, onFocus, onBlur
+      supportedEvents: ["onChange", "onChangeEnd", "onFocus", "onBlur"],
+    },
+  },
+  {
+    type: "ColorWheel",
+    label: "Color Wheel",
+    category: "Color",
+    icon: "🎨",
+    inspector: {
+      hasCustomEditor: true,
+      editorName: "ColorWheelEditor",
+      dataBindingType: "value",
+      // React Aria: onChange, onChangeEnd, onFocus, onBlur
+      supportedEvents: ["onChange", "onChangeEnd", "onFocus", "onBlur"],
+    },
+  },
+  {
+    type: "ColorSwatch",
+    label: "Color Swatch",
+    category: "Color",
+    icon: "🎨",
+    inspector: {
+      hasCustomEditor: true,
+      editorName: "ColorSwatchEditor",
+      dataBindingType: null,
+      supportedEvents: [],
+    },
+  },
+  {
+    type: "ColorSwatchPicker",
+    label: "Color Swatch Picker",
+    category: "Color",
+    icon: "🎨",
+    inspector: {
+      hasCustomEditor: true,
+      editorName: "ColorSwatchPickerEditor",
+      dataBindingType: "collection",
+      // React Aria: onChange, onFocus, onBlur
+      supportedEvents: ["onChange", "onFocus", "onBlur"],
+    },
+  },
 
   // Data Display
   {
@@ -381,6 +510,19 @@ export const componentMetadata: ComponentMeta[] = [
       supportedEvents: [],
     },
   },
+  {
+    type: "Toast",
+    label: "Toast",
+    category: "Feedback",
+    icon: "🔔",
+    inspector: {
+      hasCustomEditor: true,
+      editorName: "ToastEditor",
+      dataBindingType: null,
+      // React Aria: onClose
+      supportedEvents: ["onClose"],
+    },
+  },
 
   // Layout
   {
@@ -459,6 +601,45 @@ export const componentMetadata: ComponentMeta[] = [
       dataBindingType: null,
       // React Aria: onFocus, onBlur (for keyboard navigation)
       supportedEvents: ["onFocus", "onBlur"],
+    },
+  },
+  {
+    type: "Form",
+    label: "Form",
+    category: "Layout",
+    icon: "📝",
+    inspector: {
+      hasCustomEditor: true,
+      editorName: "FormEditor",
+      dataBindingType: null,
+      // React Aria: onSubmit, onReset, onInvalid
+      supportedEvents: ["onSubmit", "onReset", "onInvalid"],
+    },
+  },
+  {
+    type: "Disclosure",
+    label: "Disclosure",
+    category: "Layout",
+    icon: "📂",
+    inspector: {
+      hasCustomEditor: true,
+      editorName: "DisclosureEditor",
+      dataBindingType: null,
+      // React Aria: onExpandedChange, onFocus, onBlur
+      supportedEvents: ["onExpandedChange", "onFocus", "onBlur"],
+    },
+  },
+  {
+    type: "DisclosureGroup",
+    label: "Disclosure Group",
+    category: "Layout",
+    icon: "📂",
+    inspector: {
+      hasCustomEditor: true,
+      editorName: "DisclosureGroupEditor",
+      dataBindingType: null,
+      // React Aria: onExpandedChange
+      supportedEvents: ["onExpandedChange"],
     },
   },
   {
@@ -580,6 +761,32 @@ export const componentMetadata: ComponentMeta[] = [
       editorName: "TimeFieldEditor",
       dataBindingType: "value",
       // React Aria: onChange, onFocus, onBlur, onFocusChange
+      supportedEvents: ["onChange", "onFocus", "onBlur"],
+    },
+  },
+  {
+    type: "DateField",
+    label: "Date Field",
+    category: "Date & Time",
+    icon: "📅",
+    inspector: {
+      hasCustomEditor: true,
+      editorName: "DateFieldEditor",
+      dataBindingType: "value",
+      // React Aria: onChange, onFocus, onBlur, onFocusChange
+      supportedEvents: ["onChange", "onFocus", "onBlur"],
+    },
+  },
+  {
+    type: "RangeCalendar",
+    label: "Range Calendar",
+    category: "Date & Time",
+    icon: "📅",
+    inspector: {
+      hasCustomEditor: true,
+      editorName: "RangeCalendarEditor",
+      dataBindingType: "value",
+      // React Aria: onChange, onFocusChange, onFocus, onBlur
       supportedEvents: ["onChange", "onFocus", "onBlur"],
     },
   },

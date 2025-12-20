@@ -119,6 +119,27 @@ export const DEFAULT_ACTION_CONFIGS: Record<ActionType, ActionConfig> = {
   },
   customFunction: {
     code: ""
+  },
+  // Data Panel Integration
+  loadDataTable: {
+    dataTableName: "",
+    forceRefresh: false
+  },
+  syncComponent: {
+    sourceId: "",
+    targetId: "",
+    syncMode: "replace"
+  },
+  saveToDataTable: {
+    dataTableName: "",
+    source: "response",
+    saveMode: "replace"
+  },
+  // Variable
+  setVariable: {
+    variableName: "",
+    value: "",
+    persist: false
   }
 };
 

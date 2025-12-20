@@ -51,7 +51,7 @@ export const LayoutSlugEditor = memo(function LayoutSlugEditor({
       // Validate slug (empty is allowed)
       if (normalizedSlug) {
         const validation = validateSlug(normalizedSlug);
-        if (!validation.isValid) {
+        if (!validation.valid) {
           setSlugError(validation.error || "Invalid slug");
           return;
         }
@@ -68,10 +68,10 @@ export const LayoutSlugEditor = memo(function LayoutSlugEditor({
         const db = await getDB();
 
         // Update in store (triggers useEffect in useIframeMessenger → sendLayoutsToIframe)
-        updateLayout(layoutId, { slug: normalizedSlug || null });
+        updateLayout(layoutId, { slug: normalizedSlug || undefined });
 
         // Save to IndexedDB
-        await db.layouts.update(layoutId, { slug: normalizedSlug || null });
+        await db.layouts.update(layoutId, { slug: normalizedSlug || undefined });
 
         console.log("✅ Layout slug updated successfully");
       } catch (error) {

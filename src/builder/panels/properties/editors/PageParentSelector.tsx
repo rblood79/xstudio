@@ -198,7 +198,7 @@ export const PageParentSelector = memo(function PageParentSelector({
     async (newSlug: string) => {
       // Validate slug
       const validation = validateSlug(newSlug);
-      if (!validation.isValid) {
+      if (!validation.valid) {
         setSlugError(validation.error || "Invalid slug");
         return;
       }

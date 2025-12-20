@@ -224,7 +224,7 @@ export function useCollectionData({
 }: UseCollectionDataOptions): UseCollectionDataResult {
   // DataTable Store 접근
   const datatableState = useDataTableStore((state) =>
-    datatableId ? state.datatableStates.get(datatableId) : undefined
+    datatableId ? state.dataTableStates.get(datatableId) : undefined
   );
   const addConsumer = useDataTableStore((state) => state.addConsumer);
   const removeConsumer = useDataTableStore((state) => state.removeConsumer);
@@ -644,7 +644,7 @@ export function useCollectionData({
 
   return {
     data: processedData,
-    loading,
+    loading: loading ?? false,
     error,
     reload,
     clearCache,

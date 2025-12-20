@@ -115,6 +115,9 @@ export type ActionType =
   | "syncComponent"
   | "saveToDataTable"
 
+  // Variable
+  | "setVariable"
+
   // Utilities
   | "copyToClipboard"
   | "customFunction";
@@ -143,7 +146,9 @@ export type ActionConfig =
   // Data Panel Integration (NEW)
   | LoadDataTableConfig
   | SyncComponentConfig
-  | SaveToDataTableConfig;
+  | SaveToDataTableConfig
+  // Variable
+  | SetVariableConfig;
 
 /**
  * Navigate 액션 설정
@@ -357,6 +362,18 @@ export interface SaveToDataTableConfig {
 }
 
 /**
+ * Set Variable 액션 설정
+ */
+export interface SetVariableConfig {
+  /** 변수 이름 */
+  variableName: string;
+  /** 변수 값 */
+  value: unknown;
+  /** 로컬 스토리지에 저장 */
+  persist?: boolean;
+}
+
+/**
  * 이벤트 카테고리
  */
 export interface EventCategory {
@@ -491,6 +508,8 @@ export const ACTION_TYPE_LABELS: Record<ActionType, string> = {
   loadDataTable: "DataTable 로드",
   syncComponent: "컴포넌트 동기화",
   saveToDataTable: "DataTable 저장",
+  // Variable
+  setVariable: "변수 설정",
   copyToClipboard: "클립보드 복사",
   customFunction: "커스텀 함수"
 };

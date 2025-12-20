@@ -479,6 +479,132 @@ export const ACTION_METADATA: Record<ActionType, ActionMetadata> = {
         placeholder: "listbox-id"
       }
     ]
+  },
+
+  // Data Panel Integration
+  loadDataTable: {
+    label: "DataTable 로드",
+    description: "DataTable 데이터를 로드합니다",
+    icon: "📊",
+    category: "api",
+    configFields: [
+      {
+        name: "dataTableName",
+        label: "DataTable Name",
+        type: "text",
+        required: true,
+        placeholder: "users"
+      },
+      {
+        name: "forceRefresh",
+        label: "Force Refresh",
+        type: "boolean",
+        defaultValue: false
+      }
+    ]
+  },
+
+  syncComponent: {
+    label: "컴포넌트 동기화",
+    description: "컴포넌트 간 데이터를 동기화합니다",
+    icon: "🔄",
+    category: "ui",
+    configFields: [
+      {
+        name: "sourceId",
+        label: "Source Component",
+        type: "text",
+        required: true,
+        placeholder: "source-component-id"
+      },
+      {
+        name: "targetId",
+        label: "Target Component",
+        type: "text",
+        required: true,
+        placeholder: "target-component-id"
+      },
+      {
+        name: "syncMode",
+        label: "Sync Mode",
+        type: "select",
+        options: [
+          { value: "replace", label: "Replace" },
+          { value: "merge", label: "Merge" },
+          { value: "append", label: "Append" }
+        ],
+        defaultValue: "replace"
+      }
+    ]
+  },
+
+  saveToDataTable: {
+    label: "DataTable 저장",
+    description: "데이터를 DataTable에 저장합니다",
+    icon: "💾",
+    category: "api",
+    configFields: [
+      {
+        name: "dataTableName",
+        label: "DataTable Name",
+        type: "text",
+        required: true,
+        placeholder: "users"
+      },
+      {
+        name: "source",
+        label: "Data Source",
+        type: "select",
+        options: [
+          { value: "response", label: "API Response" },
+          { value: "variable", label: "Variable" },
+          { value: "static", label: "Static" }
+        ],
+        defaultValue: "response"
+      },
+      {
+        name: "saveMode",
+        label: "Save Mode",
+        type: "select",
+        options: [
+          { value: "replace", label: "Replace" },
+          { value: "merge", label: "Merge" },
+          { value: "append", label: "Append" },
+          { value: "upsert", label: "Upsert" }
+        ],
+        defaultValue: "replace"
+      }
+    ]
+  },
+
+  // Variable
+  setVariable: {
+    label: "변수 설정",
+    description: "변수 값을 설정합니다",
+    icon: "📦",
+    category: "state",
+    configFields: [
+      {
+        name: "variableName",
+        label: "Variable Name",
+        type: "text",
+        required: true,
+        placeholder: "myVariable"
+      },
+      {
+        name: "value",
+        label: "Value",
+        type: "text",
+        required: true,
+        placeholder: "value"
+      },
+      {
+        name: "persist",
+        label: "Persist to Storage",
+        type: "boolean",
+        defaultValue: false
+      }
+    ]
   }
 };
 
