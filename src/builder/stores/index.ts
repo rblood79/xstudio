@@ -108,18 +108,50 @@ export const usePages = () => useStore((state) => state.pages);
  * 선택된 요소를 SelectedElement 형태로 반환
  * Inspector Store 제거 후 Builder Store에서 직접 사용
  *
+ * 🚀 Performance Optimization:
+ * - elementsMap 전체 구독 제거 (O(n) 리렌더링 방지)
+ * - selectedElementProps 직접 구독 (선택된 요소만 추적)
+ * - 다른 요소 변경 시 리렌더링 방지
+ *
  * @returns SelectedElement | null
  */
 export const useSelectedElementData = (): SelectedElement | null => {
+  // 🚀 selectedElementId만 구독 (primitive 값)
   const selectedElementId = useStore((state) => state.selectedElementId);
-  const elementsMap = useStore((state) => state.elementsMap);
 
+  // 🚀 selectedElementProps만 구독 (선택된 요소의 props만)
+  // elementsMap 전체 구독 대신 이미 계산된 props 사용
+  const selectedElementProps = useStore((state) => state.selectedElementProps);
+
+  // 🚀 추가 정보를 위해 elementsMap에서 한 번만 읽기 (구독 아님)
+  // tag, customId, dataBinding은 자주 변경되지 않음
   return useMemo(() => {
     if (!selectedElementId) return null;
-    const element = elementsMap.get(selectedElementId);
+
+    // getState()로 동기적 읽기 (구독 없음)
+    const element = useStore.getState().elementsMap.get(selectedElementId);
     if (!element) return null;
-    return mapElementToSelectedElement(element);
-  }, [selectedElementId, elementsMap]);
+
+    // selectedElementProps가 비어있으면 element에서 직접 추출
+    const props = selectedElementProps && Object.keys(selectedElementProps).length > 0
+      ? selectedElementProps
+      : element.props;
+
+    const { style, computedStyle, events, ...otherProps } = props as Record<string, unknown>;
+
+    return {
+      id: element.id,
+      customId: element.customId,
+      type: element.tag,
+      properties: otherProps,
+      style: (style as React.CSSProperties) || {},
+      computedStyle: computedStyle as Partial<React.CSSProperties> | undefined,
+      semanticClasses: [],
+      cssVariables: {},
+      dataBinding: element.dataBinding as SelectedElement["dataBinding"],
+      events: (events as SelectedElement["events"]) || [],
+    };
+  }, [selectedElementId, selectedElementProps]);
 };
 
 /**

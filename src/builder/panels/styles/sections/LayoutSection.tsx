@@ -5,6 +5,7 @@
  * 4방향 확장 모드: direction-alignment-grid 스타일 패턴 사용
  *
  * 🚀 Phase 22: useLayoutValues 훅으로 성능 최적화
+ * 🚀 Phase 23: 컨텐츠 분리로 접힌 섹션 훅 실행 방지
  */
 
 import { useState, memo } from 'react';
@@ -105,14 +106,17 @@ function FourWayGrid({ values, onChange }: FourWayGridProps) {
   );
 }
 
-// 🚀 Phase 22: useLayoutValues 훅으로 성능 최적화
-export const LayoutSection = memo(function LayoutSection({
+/**
+ * 🚀 Phase 23: 내부 컨텐츠 컴포넌트
+ * - 섹션이 열릴 때만 마운트됨
+ * - 훅은 여기서만 실행 (접힌 상태에서 실행 방지)
+ */
+const LayoutSectionContent = memo(function LayoutSectionContent({
   selectedElement,
 }: LayoutSectionProps) {
   const [isSpacingExpanded, setIsSpacingExpanded] = useState(false);
 
   const {
-    resetStyles,
     handleFlexDirection,
     handleFlexAlignment,
     handleJustifyContentSpacing,
@@ -123,14 +127,6 @@ export const LayoutSection = memo(function LayoutSection({
 
   // 🚀 Phase 22: 섹션 전용 훅 사용
   const styleValues = useLayoutValues(selectedElement);
-
-  const handleReset = () => {
-    resetStyles([
-      'display', 'flexDirection', 'flexWrap', 'alignItems', 'justifyContent', 'gap',
-      'padding', 'paddingTop', 'paddingRight', 'paddingBottom', 'paddingLeft',
-      'margin', 'marginTop', 'marginRight', 'marginBottom', 'marginLeft',
-    ]);
-  };
 
   // 🚀 Phase 1: FourWayGrid는 타이핑이므로 Idle 업데이트 사용
   const handlePaddingChange = (direction: 'Top' | 'Right' | 'Bottom' | 'Left', value: string) => {
@@ -158,9 +154,7 @@ export const LayoutSection = memo(function LayoutSection({
   };
 
   return (
-    <PropertySection id="layout" title="Layout" onReset={handleReset}>
-      {() => (
-        <>
+    <>
       <div className="layout-direction">
         <div className="direction-controls flex-direction">
           <legend className="fieldset-legend">Direction</legend>
@@ -415,8 +409,31 @@ export const LayoutSection = memo(function LayoutSection({
           </div>
         </div>
       )}
-        </>
-      )}
+    </>
+  );
+});
+
+/**
+ * LayoutSection - 외부 래퍼
+ * - PropertySection만 관리
+ * - 무거운 훅은 내부 컴포넌트로 위임
+ */
+export const LayoutSection = memo(function LayoutSection({
+  selectedElement,
+}: LayoutSectionProps) {
+  const { resetStyles } = useStyleActions();
+
+  const handleReset = () => {
+    resetStyles([
+      'display', 'flexDirection', 'flexWrap', 'alignItems', 'justifyContent', 'gap',
+      'padding', 'paddingTop', 'paddingRight', 'paddingBottom', 'paddingLeft',
+      'margin', 'marginTop', 'marginRight', 'marginBottom', 'marginLeft',
+    ]);
+  };
+
+  return (
+    <PropertySection id="layout" title="Layout" onReset={handleReset}>
+      <LayoutSectionContent selectedElement={selectedElement} />
     </PropertySection>
   );
 });

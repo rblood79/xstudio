@@ -71,13 +71,19 @@ export const createInspectorActionsSlice: StateCreator<
 
   /**
    * Helper: Update element and save to DB
+   *
+   * 🚀 Performance Optimization:
+   * - elementsMap 직접 업데이트 (O(1))
+   * - props/style 변경 시 _rebuildIndexes 스킵 (구조 변경 없음)
+   * - 단일 set() 호출로 배칭
    */
   const updateAndSave = async (
     elementId: string,
     propsUpdate: Partial<ComponentElementProps>,
     additionalUpdates?: Partial<Element>
   ) => {
-    const element = get().elementsMap.get(elementId);
+    const { elementsMap, elements, selectedElementId } = get();
+    const element = elementsMap.get(elementId);
     if (!element) return;
 
     const newProps = {
@@ -85,27 +91,40 @@ export const createInspectorActionsSlice: StateCreator<
       ...propsUpdate,
     };
 
-    const updates: Partial<Element> = {
+    const updatedElement: Element = {
+      ...element,
       props: newProps,
       ...additionalUpdates,
     };
 
-    // 메모리 업데이트 (즉시)
-    const { elements } = get();
-    const updatedElements = elements.map((el) =>
-      el.id === elementId ? { ...el, ...updates } : el
-    );
+    // 🚀 O(1) Map 업데이트 (새 Map 생성으로 불변성 유지)
+    const newElementsMap = new Map(elementsMap);
+    newElementsMap.set(elementId, updatedElement);
 
-    set({ elements: updatedElements });
-    get()._rebuildIndexes();
-
-    // selectedElementProps도 업데이트 (UI 반영)
-    const currentState = get() as CombinedState & { selectedElementProps: ComponentElementProps };
-    if (currentState.selectedElementId === elementId) {
-      set({
-        selectedElementProps: newProps,
-      } as Partial<CombinedState>);
+    // 🚀 elements 배열도 업데이트 (findIndex로 위치 찾아서 직접 교체)
+    const elementIndex = elements.findIndex((el) => el.id === elementId);
+    let newElements = elements;
+    if (elementIndex !== -1) {
+      newElements = [...elements];
+      newElements[elementIndex] = updatedElement;
     }
+
+    // 🚀 단일 set() 호출 - 배칭으로 리렌더링 최소화
+    const stateUpdate: Partial<CombinedState> = {
+      elements: newElements,
+      elementsMap: newElementsMap,
+    };
+
+    // selectedElementProps 동시 업데이트
+    if (selectedElementId === elementId) {
+      (stateUpdate as Record<string, unknown>).selectedElementProps = newProps;
+    }
+
+    set(stateUpdate);
+
+    // ⚠️ 구조 변경(parent_id, 추가/삭제) 시에만 인덱스 재구축
+    // props/style 변경은 구조 변경이 아니므로 스킵
+    // (childrenMap, pageIndex는 parent_id 기반이므로 영향 없음)
 
     // DB 저장 (비동기, idle callback)
     const runDbSync = async () => {
