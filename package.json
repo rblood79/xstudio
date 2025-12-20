@@ -54,6 +54,7 @@
     "hellpeq": "^1.0.1",
     "immer": "^11.0.1",
     "intervaq": "^2.1.2",
+    "jotai": "^2.16.0",
     "lodash": "^4.17.21",
     "lucide-react": "^0.562.0",
     "papaparse": "^5.5.3",

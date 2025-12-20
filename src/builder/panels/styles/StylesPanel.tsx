@@ -14,10 +14,14 @@
  * 🚀 Phase 22: 섹션별 훅 분리로 성능 최적화
  * - 각 Section이 자체 훅으로 스타일 값 관리
  * - 단일 속성 변경 시 해당 섹션만 재계산 (최대 86% 성능 개선)
+ *
+ * 🚀 Phase 3b: StylesPanel Jotai 최적화
+ * - useSelectedElementData() 제거, Jotai atom으로 대체
+ * - 요소 교차 선택 시 불필요한 리렌더 방지
  */
 
 import "../../panels/common/index.css";
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, memo } from "react";
 import type { PanelProps } from "../core/types";
 import { useSelectedElementData } from "../../stores";
 import {
@@ -35,11 +39,28 @@ import {
   TypographySection,
   ModifiedStylesSection,
 } from "./sections";
-import { getModifiedProperties } from "./hooks/useStyleSource";
 import { useSectionCollapse } from "./hooks/useSectionCollapse";
 import { useStyleActions } from "./hooks/useStyleActions";
 import { useKeyboardShortcutsRegistry } from "../../hooks/useKeyboardShortcutsRegistry";
+import { useZustandJotaiBridge } from "./hooks/useZustandJotaiBridge";
+import { useAtomValue } from "jotai";
+import {
+  hasSelectedElementAtom,
+  selectedStyleAtom,
+  modifiedCountAtom,
+  isCopyDisabledAtom,
+} from "./atoms/styleAtoms";
 import "./StylesPanel.css";
+
+/**
+ * 🚀 Phase 3: Zustand-Jotai 브릿지 전용 컴포넌트
+ * - 자체 리렌더 없음 (useSetAtom은 리렌더 트리거 안함)
+ * - 스타일 패널과 독립적으로 동기화 수행
+ */
+function JotaiBridge() {
+  useZustandJotaiBridge();
+  return null;
+}
 
 /**
  * StylesPanel - Gateway 컴포넌트
@@ -51,15 +72,53 @@ export function StylesPanel({ isActive }: PanelProps) {
     return null;
   }
 
-  return <StylesPanelContent />;
+  return (
+    <>
+      <JotaiBridge />
+      <StylesPanelContent />
+    </>
+  );
 }
+
+/**
+ * 🚀 Phase 3b: ModifiedSections 래퍼
+ * - filter가 "modified"일 때만 Zustand 구독
+ * - "all" 모드에서는 마운트되지 않음
+ */
+const ModifiedSectionsWrapper = memo(function ModifiedSectionsWrapper() {
+  const selectedElement = useSelectedElementData();
+  if (!selectedElement) return null;
+  return <ModifiedStylesSection selectedElement={selectedElement} />;
+});
+
+/**
+ * 🚀 Phase 3b: All Sections 래퍼
+ * - memo로 감싸서 부모 리렌더 영향 차단
+ * - Jotai atom 기반 섹션들만 포함
+ */
+const AllSections = memo(function AllSections() {
+  return (
+    <>
+      <TransformSection />
+      <LayoutSection />
+      <AppearanceSection />
+      <TypographySection />
+    </>
+  );
+});
 
 /**
  * StylesPanelContent - 실제 콘텐츠 컴포넌트
  * 훅은 여기서만 실행됨 (isActive=true일 때만)
+ * 🚀 Phase 3b: Jotai atom 기반으로 최적화
  */
 function StylesPanelContent() {
-  const selectedElement = useSelectedElementData();
+  // 🚀 Phase 3b: Jotai atoms로 구독 (교차 선택 시 리렌더 최소화)
+  const hasSelectedElement = useAtomValue(hasSelectedElementAtom);
+  const selectedStyle = useAtomValue(selectedStyleAtom);
+  const modifiedCount = useAtomValue(modifiedCountAtom);
+  const isCopyDisabled = useAtomValue(isCopyDisabledAtom);
+
   const [filter, setFilter] = useState<"all" | "modified">("all");
   const {
     expandAll,
@@ -72,18 +131,12 @@ function StylesPanelContent() {
 
   // 🚀 Phase 22: 각 Section이 자체 훅으로 스타일 값을 관리 (성능 최적화)
 
-  // Calculate modified properties count
-  const modifiedCount = useMemo(() => {
-    if (!selectedElement) return 0;
-    return getModifiedProperties(selectedElement).length;
-  }, [selectedElement]);
-
   // Copy/Paste handlers
   const handleCopyStyles = useCallback(async () => {
-    if (!selectedElement?.style) return;
-    await copyStyles(selectedElement.style as Record<string, unknown>);
+    if (!selectedStyle) return;
+    await copyStyles(selectedStyle as Record<string, unknown>);
     // TODO: Show toast notification
-  }, [selectedElement, copyStyles]);
+  }, [selectedStyle, copyStyles]);
 
   const handlePasteStyles = useCallback(async () => {
     await pasteStyles();
@@ -145,8 +198,8 @@ function StylesPanelContent() {
     collapseAll,
   ]);
 
-  // 선택된 요소가 없으면 빈 상태 표시
-  if (!selectedElement) {
+  // 🚀 Phase 3b: Jotai atom 기반 empty state 체크
+  if (!hasSelectedElement) {
     return <EmptyState message="요소를 선택하세요" />;
   }
 
@@ -176,10 +229,7 @@ function StylesPanelContent() {
             className="iconButton"
             onPress={handleCopyStyles}
             aria-label="Copy styles"
-            isDisabled={
-              !selectedElement?.style ||
-              Object.keys(selectedElement.style).length === 0
-            }
+            isDisabled={isCopyDisabled}
           >
             <Copy
               color={iconProps.color}
@@ -206,17 +256,12 @@ function StylesPanelContent() {
       </div>
 
       {/* Sections */}
-      {/* 🚀 Phase 22: 각 Section이 자체 훅으로 스타일 값 관리 */}
+      {/* 🚀 Phase 3b: memo 래퍼로 리렌더 차단 */}
       <div className="panel-contents">
         {filter === "all" ? (
-          <>
-            <TransformSection selectedElement={selectedElement} />
-            <LayoutSection selectedElement={selectedElement} />
-            <AppearanceSection selectedElement={selectedElement} />
-            <TypographySection selectedElement={selectedElement} />
-          </>
+          <AllSections />
         ) : (
-          <ModifiedStylesSection selectedElement={selectedElement} />
+          <ModifiedSectionsWrapper />
         )}
       </div>
     </div>

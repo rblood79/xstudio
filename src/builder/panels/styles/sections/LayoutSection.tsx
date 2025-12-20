@@ -4,7 +4,7 @@
  * Flex direction, Alignment, Gap, Padding, Margin 편집
  * 4방향 확장 모드: direction-alignment-grid 스타일 패턴 사용
  *
- * 🚀 Phase 22: useLayoutValues 훅으로 성능 최적화
+ * 🚀 Phase 3: Jotai 기반 Fine-grained Reactivity
  * 🚀 Phase 23: 컨텐츠 분리로 접힌 섹션 훅 실행 방지
  */
 
@@ -13,7 +13,6 @@ import { PropertySection, PropertyUnitInput } from '../../common';
 import { ToggleButton, ToggleButtonGroup, Button } from '../../../../shared/components';
 import { Input } from 'react-aria-components';
 import { iconProps } from '../../../../utils/ui/uiConstants';
-import type { SelectedElement } from '../../../inspector/types';
 import {
   Square,
   Maximize2,
@@ -31,18 +30,14 @@ import {
 } from 'lucide-react';
 import { useStyleActions } from '../hooks/useStyleActions';
 import { useOptimizedStyleActions } from '../hooks/useOptimizedStyleActions';
+import { useLayoutValuesJotai } from '../hooks/useLayoutValuesJotai';
+import { useAtomValue } from 'jotai';
 import {
-  getStyleValue,
-  getFlexDirectionKeys,
-  getFlexAlignmentKeys,
-  getJustifyContentSpacingKeys,
-  getFlexWrapKeys,
-} from '../hooks/useStyleValues';
-import { useLayoutValues } from '../hooks/useLayoutValues';
-
-interface LayoutSectionProps {
-  selectedElement: SelectedElement;
-}
+  flexDirectionKeysAtom,
+  flexAlignmentKeysAtom,
+  justifyContentSpacingKeysAtom,
+  flexWrapKeysAtom,
+} from '../atoms/styleAtoms';
 
 // 4방향 값 추출은 이제 useLayoutValues 훅에서 처리됨
 
@@ -107,13 +102,12 @@ function FourWayGrid({ values, onChange }: FourWayGridProps) {
 }
 
 /**
- * 🚀 Phase 23: 내부 컨텐츠 컴포넌트
+ * 🚀 Phase 3/23: 내부 컨텐츠 컴포넌트
  * - 섹션이 열릴 때만 마운트됨
- * - 훅은 여기서만 실행 (접힌 상태에서 실행 방지)
+ * - Jotai atom에서 직접 값 구독 (props 불필요)
+ * - 🚀 selectedElementAtom 직접 구독 제거 - alignment atoms 사용
  */
-const LayoutSectionContent = memo(function LayoutSectionContent({
-  selectedElement,
-}: LayoutSectionProps) {
+const LayoutSectionContent = memo(function LayoutSectionContent() {
   const [isSpacingExpanded, setIsSpacingExpanded] = useState(false);
 
   const {
@@ -125,8 +119,14 @@ const LayoutSectionContent = memo(function LayoutSectionContent({
   // 🚀 Phase 1: RAF 기반 스로틀 업데이트
   const { updateStyleImmediate, updateStyleRAF, updateStyleIdle } = useOptimizedStyleActions();
 
-  // 🚀 Phase 22: 섹션 전용 훅 사용
-  const styleValues = useLayoutValues(selectedElement);
+  // 🚀 Phase 3: Jotai atom에서 직접 값 구독
+  const styleValues = useLayoutValuesJotai();
+
+  // 🚀 Phase 3: alignment keys atoms 사용 (selectedElementAtom 직접 구독 제거)
+  const flexDirectionKeys = useAtomValue(flexDirectionKeysAtom);
+  const flexAlignmentKeys = useAtomValue(flexAlignmentKeysAtom);
+  const justifyContentSpacingKeys = useAtomValue(justifyContentSpacingKeysAtom);
+  const flexWrapKeys = useAtomValue(flexWrapKeysAtom);
 
   // 🚀 Phase 1: FourWayGrid는 타이핑이므로 Idle 업데이트 사용
   const handlePaddingChange = (direction: 'Top' | 'Right' | 'Bottom' | 'Left', value: string) => {
@@ -161,7 +161,7 @@ const LayoutSectionContent = memo(function LayoutSectionContent({
           <ToggleButtonGroup
             aria-label="Flex direction"
             indicator
-            selectedKeys={getFlexDirectionKeys(selectedElement)}
+            selectedKeys={flexDirectionKeys}
             onSelectionChange={(keys) => {
               const value = Array.from(keys)[0] as string;
               handleFlexDirection(value);
@@ -196,16 +196,12 @@ const LayoutSectionContent = memo(function LayoutSectionContent({
             aria-label="Flex alignment"
             indicator
             selectionMode="single"
-            selectedKeys={getFlexAlignmentKeys(selectedElement)}
+            selectedKeys={flexAlignmentKeys}
             onSelectionChange={(keys) => {
               const value = Array.from(keys)[0] as string;
               if (value) {
-                const currentFlexDirection = getStyleValue(
-                  selectedElement,
-                  'flexDirection',
-                  'row'
-                );
-                handleFlexAlignment(value, currentFlexDirection);
+                // 🚀 Phase 3: styleValues에서 직접 값 사용
+                handleFlexAlignment(value, styleValues.flexDirection);
               }
             }}
           >
@@ -253,7 +249,7 @@ const LayoutSectionContent = memo(function LayoutSectionContent({
             aria-label="Justify content alignment"
             indicator
             selectionMode="single"
-            selectedKeys={getJustifyContentSpacingKeys(selectedElement)}
+            selectedKeys={justifyContentSpacingKeys}
             onSelectionChange={(keys) => {
               const value = Array.from(keys)[0] as string;
               if (value) {
@@ -290,7 +286,7 @@ const LayoutSectionContent = memo(function LayoutSectionContent({
             aria-label="Flex wrap"
             indicator
             selectionMode="single"
-            selectedKeys={getFlexWrapKeys(selectedElement)}
+            selectedKeys={flexWrapKeys}
             onSelectionChange={(keys) => {
               const value = Array.from(keys)[0] as string;
               if (value) {
@@ -416,11 +412,9 @@ const LayoutSectionContent = memo(function LayoutSectionContent({
 /**
  * LayoutSection - 외부 래퍼
  * - PropertySection만 관리
- * - 무거운 훅은 내부 컴포넌트로 위임
+ * - 🚀 Phase 3: Jotai 기반 - props 불필요
  */
-export const LayoutSection = memo(function LayoutSection({
-  selectedElement,
-}: LayoutSectionProps) {
+export const LayoutSection = memo(function LayoutSection() {
   const { resetStyles } = useStyleActions();
 
   const handleReset = () => {
@@ -433,7 +427,7 @@ export const LayoutSection = memo(function LayoutSection({
 
   return (
     <PropertySection id="layout" title="Layout" onReset={handleReset}>
-      <LayoutSectionContent selectedElement={selectedElement} />
+      <LayoutSectionContent />
     </PropertySection>
   );
 });

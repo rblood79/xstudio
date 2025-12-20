@@ -3,9 +3,7 @@
  *
  * Font, Text styles 편집
  *
- * 🚀 Phase 22: useTypographyValues 훅으로 성능 최적화
- * - 11개 속성만 의존성으로 사용 (61% 성능 개선)
- *
+ * 🚀 Phase 3: Jotai 기반 Fine-grained Reactivity
  * 🚀 Phase 23: 컨텐츠 분리로 접힌 섹션 훅 실행 방지
  */
 
@@ -13,7 +11,6 @@ import { memo } from 'react';
 import { PropertySection, PropertyUnitInput, PropertyColor, PropertySelect } from '../../common';
 import { ToggleButton, ToggleButtonGroup, Button } from '../../../../shared/components';
 import { iconProps } from '../../../../utils/ui/uiConstants';
-import type { SelectedElement } from '../../../inspector/types';
 import {
   Type,
   EllipsisVertical,
@@ -34,25 +31,19 @@ import {
 } from 'lucide-react';
 import { useStyleActions } from '../hooks/useStyleActions';
 import { useOptimizedStyleActions } from '../hooks/useOptimizedStyleActions';
-import { useTypographyValues } from '../hooks/useTypographyValues';
-
-interface TypographySectionProps {
-  selectedElement: SelectedElement;
-}
+import { useTypographyValuesJotai } from '../hooks/useTypographyValuesJotai';
 
 /**
- * 🚀 Phase 23: 내부 컨텐츠 컴포넌트
+ * 🚀 Phase 3/23: 내부 컨텐츠 컴포넌트
  * - 섹션이 열릴 때만 마운트됨
- * - 훅은 여기서만 실행 (접힌 상태에서 실행 방지)
+ * - Jotai atom에서 직접 값 구독 (props 불필요)
  */
-const TypographySectionContent = memo(function TypographySectionContent({
-  selectedElement,
-}: TypographySectionProps) {
+const TypographySectionContent = memo(function TypographySectionContent() {
   const { updateStyle } = useStyleActions();
   // 🚀 Phase 1: RAF 기반 스로틀 업데이트
   const { updateStyleImmediate, updateStyleRAF } = useOptimizedStyleActions();
-  // 🚀 Phase 22: 섹션 전용 훅 사용
-  const styleValues = useTypographyValues(selectedElement);
+  // 🚀 Phase 3: Jotai atom에서 직접 값 구독
+  const styleValues = useTypographyValuesJotai();
 
   if (!styleValues) return null;
 
@@ -374,11 +365,9 @@ const TypographySectionContent = memo(function TypographySectionContent({
 /**
  * TypographySection - 외부 래퍼
  * - PropertySection만 관리
- * - 무거운 훅은 내부 컴포넌트로 위임
+ * - 🚀 Phase 3: Jotai 기반 - props 불필요
  */
-export const TypographySection = memo(function TypographySection({
-  selectedElement,
-}: TypographySectionProps) {
+export const TypographySection = memo(function TypographySection() {
   const { resetStyles } = useStyleActions();
 
   const handleReset = () => {
@@ -399,7 +388,7 @@ export const TypographySection = memo(function TypographySection({
 
   return (
     <PropertySection id="typography" title="Typography" onReset={handleReset}>
-      <TypographySectionContent selectedElement={selectedElement} />
+      <TypographySectionContent />
     </PropertySection>
   );
 });

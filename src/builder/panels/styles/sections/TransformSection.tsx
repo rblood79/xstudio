@@ -4,8 +4,9 @@
  * Size, Position 편집
  * Note: Alignment는 Layout 섹션의 3x3 Flex alignment로 통합됨
  *
- * 🚀 Phase 22: useTransformValues 훅으로 성능 최적화
- * - 4개 속성만 의존성으로 사용 (86% 성능 개선)
+ * 🚀 Phase 3: Jotai 기반 Fine-grained Reactivity
+ * - useTransformValuesJotai로 atom에서 직접 값 구독
+ * - selectedElement props 불필요 (atom에서 읽음)
  *
  * 🚀 Phase 23: 컨텐츠 분리로 접힌 섹션 훅 실행 방지
  * - TransformSectionContent를 별도 컴포넌트로 분리
@@ -16,7 +17,6 @@ import { memo } from 'react';
 import { PropertySection, PropertyUnitInput } from '../../common';
 import { Button } from '../../../../shared/components';
 import { iconProps } from '../../../../utils/ui/uiConstants';
-import type { SelectedElement } from '../../../inspector/types';
 import {
   EllipsisVertical,
   RulerDimensionLine,
@@ -25,24 +25,18 @@ import {
 } from 'lucide-react';
 import { useStyleActions } from '../hooks/useStyleActions';
 import { useOptimizedStyleActions } from '../hooks/useOptimizedStyleActions';
-import { useTransformValues } from '../hooks/useTransformValues';
-
-interface TransformSectionProps {
-  selectedElement: SelectedElement;
-}
+import { useTransformValuesJotai } from '../hooks/useTransformValuesJotai';
 
 /**
- * 🚀 Phase 23: 내부 컨텐츠 컴포넌트
+ * 🚀 Phase 3/23: 내부 컨텐츠 컴포넌트
  * - 섹션이 열릴 때만 마운트됨
- * - 훅은 여기서만 실행 (접힌 상태에서 실행 방지)
+ * - Jotai atom에서 직접 값 구독 (props 불필요)
  */
-const TransformSectionContent = memo(function TransformSectionContent({
-  selectedElement,
-}: TransformSectionProps) {
+const TransformSectionContent = memo(function TransformSectionContent() {
   // 🚀 Phase 1: RAF 기반 스로틀 업데이트
   const { updateStyleImmediate, updateStyleRAF } = useOptimizedStyleActions();
-  // 🚀 Phase 22: 섹션 전용 훅 사용
-  const styleValues = useTransformValues(selectedElement);
+  // 🚀 Phase 3: Jotai atom에서 직접 값 구독
+  const styleValues = useTransformValuesJotai();
 
   if (!styleValues) return null;
 
@@ -118,11 +112,9 @@ const TransformSectionContent = memo(function TransformSectionContent({
 /**
  * TransformSection - 외부 래퍼
  * - PropertySection만 관리
- * - 무거운 훅은 내부 컴포넌트로 위임
+ * - 🚀 Phase 3: Jotai 기반 - props 불필요
  */
-export const TransformSection = memo(function TransformSection({
-  selectedElement,
-}: TransformSectionProps) {
+export const TransformSection = memo(function TransformSection() {
   const { resetStyles } = useStyleActions();
 
   const handleReset = () => {
@@ -131,7 +123,7 @@ export const TransformSection = memo(function TransformSection({
 
   return (
     <PropertySection id="transform" title="Transform" onReset={handleReset}>
-      <TransformSectionContent selectedElement={selectedElement} />
+      <TransformSectionContent />
     </PropertySection>
   );
 });

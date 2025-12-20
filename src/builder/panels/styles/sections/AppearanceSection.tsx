@@ -3,9 +3,7 @@
  *
  * Background, Border 편집
  *
- * 🚀 Phase 22: useAppearanceValues 훅으로 성능 최적화
- * - 5개 속성만 의존성으로 사용 (82% 성능 개선)
- *
+ * 🚀 Phase 3: Jotai 기반 Fine-grained Reactivity
  * 🚀 Phase 23: 컨텐츠 분리로 접힌 섹션 훅 실행 방지
  */
 
@@ -13,7 +11,6 @@ import { memo } from 'react';
 import { PropertySection, PropertyUnitInput, PropertyColor, PropertySelect } from '../../common';
 import { Button } from '../../../../shared/components';
 import { iconProps } from '../../../../utils/ui/uiConstants';
-import type { SelectedElement } from '../../../inspector/types';
 import {
   Square,
   SquareDashed,
@@ -23,25 +20,19 @@ import {
 } from 'lucide-react';
 import { useStyleActions } from '../hooks/useStyleActions';
 import { useOptimizedStyleActions } from '../hooks/useOptimizedStyleActions';
-import { useAppearanceValues } from '../hooks/useAppearanceValues';
-
-interface AppearanceSectionProps {
-  selectedElement: SelectedElement;
-}
+import { useAppearanceValuesJotai } from '../hooks/useAppearanceValuesJotai';
 
 /**
- * 🚀 Phase 23: 내부 컨텐츠 컴포넌트
+ * 🚀 Phase 3/23: 내부 컨텐츠 컴포넌트
  * - 섹션이 열릴 때만 마운트됨
- * - 훅은 여기서만 실행 (접힌 상태에서 실행 방지)
+ * - Jotai atom에서 직접 값 구독 (props 불필요)
  */
-const AppearanceSectionContent = memo(function AppearanceSectionContent({
-  selectedElement,
-}: AppearanceSectionProps) {
+const AppearanceSectionContent = memo(function AppearanceSectionContent() {
   const { updateStyle } = useStyleActions();
   // 🚀 Phase 1: RAF 기반 스로틀 업데이트
   const { updateStyleImmediate, updateStyleRAF } = useOptimizedStyleActions();
-  // 🚀 Phase 22: 섹션 전용 훅 사용
-  const styleValues = useAppearanceValues(selectedElement);
+  // 🚀 Phase 3: Jotai atom에서 직접 값 구독
+  const styleValues = useAppearanceValuesJotai();
 
   if (!styleValues) return null;
 
@@ -134,11 +125,9 @@ const AppearanceSectionContent = memo(function AppearanceSectionContent({
 /**
  * AppearanceSection - 외부 래퍼
  * - PropertySection만 관리
- * - 무거운 훅은 내부 컴포넌트로 위임
+ * - 🚀 Phase 3: Jotai 기반 - props 불필요
  */
-export const AppearanceSection = memo(function AppearanceSection({
-  selectedElement,
-}: AppearanceSectionProps) {
+export const AppearanceSection = memo(function AppearanceSection() {
   const { resetStyles } = useStyleActions();
 
   const handleReset = () => {
@@ -147,7 +136,7 @@ export const AppearanceSection = memo(function AppearanceSection({
 
   return (
     <PropertySection id="appearance" title="Appearance" onReset={handleReset}>
-      <AppearanceSectionContent selectedElement={selectedElement} />
+      <AppearanceSectionContent />
     </PropertySection>
   );
 });
