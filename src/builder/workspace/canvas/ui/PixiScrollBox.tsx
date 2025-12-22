@@ -222,27 +222,54 @@ export const PixiScrollBox = memo(function PixiScrollBox({
     containerRef.current = container;
     scrollBoxRef.current = scrollBox;
 
+    // ⚠️ try-catch: CanvasTextSystem이 이미 정리된 경우 에러 방지
     return () => {
       // 이벤트 연결 해제
-      container.off('pointerdown', handleClick);
+      try {
+        container.off('pointerdown', handleClick);
+      } catch {
+        // ignore
+      }
 
       // Stage에서 제거
-      app.stage.removeChild(container);
+      try {
+        app.stage.removeChild(container);
+      } catch {
+        // ignore
+      }
 
       // content 내부 Graphics/Text 명시적 destroy
-      content.children.forEach((child) => {
-        if ('destroy' in child && typeof child.destroy === 'function') {
-          child.destroy(true);
-        }
-      });
+      try {
+        content.children.forEach((child) => {
+          if ('destroy' in child && typeof child.destroy === 'function') {
+            child.destroy(true);
+          }
+        });
+      } catch {
+        // CanvasTextSystem race condition - 무시
+      }
 
       // Graphics 객체 명시적 destroy (GPU 리소스 해제)
-      bg.destroy(true);
-      content.destroy({ children: true });
+      try {
+        bg.destroy(true);
+        if (!content.destroyed) {
+          content.destroy({ children: true });
+        }
+      } catch {
+        // ignore
+      }
 
       // ScrollBox 및 Container destroy
-      scrollBox.destroy({ children: true });
-      container.destroy({ children: true });
+      try {
+        if (!scrollBox.destroyed) {
+          scrollBox.destroy({ children: true });
+        }
+        if (!container.destroyed) {
+          container.destroy({ children: true });
+        }
+      } catch {
+        // ignore
+      }
 
       containerRef.current = null;
       scrollBoxRef.current = null;

@@ -129,6 +129,7 @@
   }
 
   .header_contents.screen .sizeInfo {
+    display: none;
     position: absolute;
     width: 64px;
     left: -64px;

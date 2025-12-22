@@ -454,24 +454,42 @@ export const PixiToggleButton = memo(function PixiToggleButton({
     }
 
     // Cleanup
+    // ⚠️ try-catch: CanvasTextSystem이 이미 정리된 경우 에러 방지
     return () => {
-      // Graphics 객체 명시적 destroy (GPU 리소스 해제)
-      defaultView.destroy(true);
-      hoverView.destroy(true);
-      pressedView.destroy(true);
-      textView.destroy(true);
+      try {
+        // Graphics 객체 명시적 destroy (GPU 리소스 해제)
+        defaultView.destroy(true);
+        hoverView.destroy(true);
+        pressedView.destroy(true);
+        textView.destroy(true);
+      } catch {
+        // CanvasTextSystem race condition - 무시
+      }
 
-      if (buttonRef.current && container.children.includes(buttonRef.current)) {
-        container.removeChild(buttonRef.current);
-        buttonRef.current.destroy({ children: true });
+      if (buttonRef.current) {
+        try {
+          if (container.children.includes(buttonRef.current)) {
+            container.removeChild(buttonRef.current);
+          }
+          if (!buttonRef.current.destroyed) {
+            buttonRef.current.destroy({ children: true });
+          }
+        } catch {
+          // ignore
+        }
         buttonRef.current = null;
       }
-      if (
-        disabledOverlayRef.current &&
-        container.children.includes(disabledOverlayRef.current)
-      ) {
-        container.removeChild(disabledOverlayRef.current);
-        disabledOverlayRef.current.destroy(true);
+      if (disabledOverlayRef.current) {
+        try {
+          if (container.children.includes(disabledOverlayRef.current)) {
+            container.removeChild(disabledOverlayRef.current);
+          }
+          if (!disabledOverlayRef.current.destroyed) {
+            disabledOverlayRef.current.destroy(true);
+          }
+        } catch {
+          // ignore
+        }
         disabledOverlayRef.current = null;
       }
     };

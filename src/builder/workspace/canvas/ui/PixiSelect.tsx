@@ -271,18 +271,35 @@ export const PixiSelect = memo(function PixiSelect({
     containerRef.current = container;
     selectRef.current = select;
 
+    // ⚠️ try-catch: CanvasTextSystem이 이미 정리된 경우 에러 방지
     return () => {
       // 이벤트 연결 해제
-      select.onSelect.disconnectAll();
-      container.off('pointerdown', handleClick);
+      try {
+        select.onSelect.disconnectAll();
+        container.off('pointerdown', handleClick);
+      } catch {
+        // ignore
+      }
 
       // Stage에서 제거
-      app.stage.removeChild(container);
+      try {
+        app.stage.removeChild(container);
+      } catch {
+        // ignore
+      }
 
       // Select 내부 Graphics는 Select destroy시 자동 처리됨
       // Select 및 Container destroy
-      select.destroy({ children: true });
-      container.destroy({ children: true });
+      try {
+        if (!select.destroyed) {
+          select.destroy({ children: true });
+        }
+        if (!container.destroyed) {
+          container.destroy({ children: true });
+        }
+      } catch {
+        // ignore
+      }
 
       containerRef.current = null;
       selectRef.current = null;

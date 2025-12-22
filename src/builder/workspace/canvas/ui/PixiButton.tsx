@@ -521,32 +521,45 @@ export const PixiButton = memo(function PixiButton({
       // FancyButton destroy (children: true로 내부 Graphics/Text도 함께 정리)
       // Note: defaultView, hoverView, pressedView, textView는 FancyButton의 children이므로
       // destroy({ children: true })로 함께 정리됨 - 별도 destroy 불필요
+      // ⚠️ try-catch: CanvasTextSystem이 이미 정리된 경우 에러 방지
       if (buttonRef.current) {
-        if (container.children.includes(buttonRef.current)) {
-          container.removeChild(buttonRef.current);
-        }
-        if (!buttonRef.current.destroyed) {
-          buttonRef.current.destroy({ children: true });
+        try {
+          if (container.children.includes(buttonRef.current)) {
+            container.removeChild(buttonRef.current);
+          }
+          if (!buttonRef.current.destroyed) {
+            buttonRef.current.destroy({ children: true });
+          }
+        } catch {
+          // CanvasTextSystem race condition - 무시 (시스템이 이미 정리됨)
         }
         buttonRef.current = null;
       }
 
       // disabledOverlay와 loadingIndicator는 container의 직접 children이므로 별도 정리
       if (disabledOverlayRef.current) {
-        if (container.children.includes(disabledOverlayRef.current)) {
-          container.removeChild(disabledOverlayRef.current);
-        }
-        if (!disabledOverlayRef.current.destroyed) {
-          disabledOverlayRef.current.destroy(true);
+        try {
+          if (container.children.includes(disabledOverlayRef.current)) {
+            container.removeChild(disabledOverlayRef.current);
+          }
+          if (!disabledOverlayRef.current.destroyed) {
+            disabledOverlayRef.current.destroy(true);
+          }
+        } catch {
+          // ignore
         }
         disabledOverlayRef.current = null;
       }
       if (loadingIndicatorRef.current) {
-        if (container.children.includes(loadingIndicatorRef.current)) {
-          container.removeChild(loadingIndicatorRef.current);
-        }
-        if (!loadingIndicatorRef.current.destroyed) {
-          loadingIndicatorRef.current.destroy(true);
+        try {
+          if (container.children.includes(loadingIndicatorRef.current)) {
+            container.removeChild(loadingIndicatorRef.current);
+          }
+          if (!loadingIndicatorRef.current.destroyed) {
+            loadingIndicatorRef.current.destroy(true);
+          }
+        } catch {
+          // ignore
         }
         loadingIndicatorRef.current = null;
       }

@@ -312,32 +312,57 @@ export const PixiList = memo(function PixiList({
     containerRef.current = container;
     listRef.current = list;
 
+    // ⚠️ try-catch: CanvasTextSystem이 이미 정리된 경우 에러 방지
     return () => {
       // 이벤트 연결 해제
-      container.off('pointerdown', handleClick);
+      try {
+        container.off('pointerdown', handleClick);
+      } catch {
+        // ignore
+      }
 
       // itemViews 이벤트 해제 및 내부 Graphics destroy
-      itemViews.forEach((view) => {
-        view.off('pointerdown');
-        view.off('pointerover');
-        view.off('pointerout');
-        // view 내부 children (bg Graphics, Text) destroy
-        view.children.forEach((child) => {
-          if ('destroy' in child && typeof child.destroy === 'function') {
-            child.destroy(true);
-          }
+      try {
+        itemViews.forEach((view) => {
+          view.off('pointerdown');
+          view.off('pointerover');
+          view.off('pointerout');
+          // view 내부 children (bg Graphics, Text) destroy
+          view.children.forEach((child) => {
+            if ('destroy' in child && typeof child.destroy === 'function') {
+              child.destroy(true);
+            }
+          });
         });
-      });
+      } catch {
+        // CanvasTextSystem race condition - 무시
+      }
 
       // Stage에서 제거
-      app.stage.removeChild(container);
+      try {
+        app.stage.removeChild(container);
+      } catch {
+        // ignore
+      }
 
       // Graphics 객체 명시적 destroy (GPU 리소스 해제)
-      bg.destroy(true);
+      try {
+        bg.destroy(true);
+      } catch {
+        // ignore
+      }
 
       // List 및 Container destroy
-      list.destroy({ children: true });
-      container.destroy({ children: true });
+      try {
+        if (!list.destroyed) {
+          list.destroy({ children: true });
+        }
+        if (!container.destroyed) {
+          container.destroy({ children: true });
+        }
+      } catch {
+        // ignore
+      }
 
       containerRef.current = null;
       listRef.current = null;

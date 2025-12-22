@@ -192,20 +192,41 @@ export const PixiProgressBar = memo(function PixiProgressBar({
     containerRef.current = container;
     progressBarRef.current = progressBar;
 
+    // ⚠️ try-catch: CanvasTextSystem이 이미 정리된 경우 에러 방지
     return () => {
       // 이벤트 연결 해제
-      container.off('pointerdown', handleClick);
+      try {
+        container.off('pointerdown', handleClick);
+      } catch {
+        // ignore
+      }
 
       // Stage에서 제거
-      app.stage.removeChild(container);
+      try {
+        app.stage.removeChild(container);
+      } catch {
+        // ignore
+      }
 
       // Graphics 객체 명시적 destroy (GPU 리소스 해제)
-      bgGraphics.destroy(true);
-      fillGraphics.destroy(true);
+      try {
+        bgGraphics.destroy(true);
+        fillGraphics.destroy(true);
+      } catch {
+        // ignore
+      }
 
       // ProgressBar 및 Container destroy
-      progressBar.destroy({ children: true });
-      container.destroy({ children: true });
+      try {
+        if (!progressBar.destroyed) {
+          progressBar.destroy({ children: true });
+        }
+        if (!container.destroyed) {
+          container.destroy({ children: true });
+        }
+      } catch {
+        // ignore
+      }
 
       containerRef.current = null;
       progressBarRef.current = null;

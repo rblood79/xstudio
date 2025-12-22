@@ -288,28 +288,49 @@ export const PixiSwitcher = memo(function PixiSwitcher({
     containerRef.current = container;
     switcherRef.current = switcher;
 
+    // ⚠️ try-catch: CanvasTextSystem이 이미 정리된 경우 에러 방지
     return () => {
       // 이벤트 연결 해제
-      container.off('pointerdown', handleClick);
-      itemViews.forEach((view) => {
-        view.off('pointerdown');
-        // view 내부 children (bg Graphics, Text) destroy
-        view.children.forEach((child) => {
-          if ('destroy' in child && typeof child.destroy === 'function') {
-            child.destroy(true);
-          }
+      try {
+        container.off('pointerdown', handleClick);
+        itemViews.forEach((view) => {
+          view.off('pointerdown');
+          // view 내부 children (bg Graphics, Text) destroy
+          view.children.forEach((child) => {
+            if ('destroy' in child && typeof child.destroy === 'function') {
+              child.destroy(true);
+            }
+          });
         });
-      });
+      } catch {
+        // CanvasTextSystem race condition - 무시
+      }
 
       // Stage에서 제거
-      app.stage.removeChild(container);
+      try {
+        app.stage.removeChild(container);
+      } catch {
+        // ignore
+      }
 
       // Graphics 객체 명시적 destroy (GPU 리소스 해제)
-      bg.destroy(true);
+      try {
+        bg.destroy(true);
+      } catch {
+        // ignore
+      }
 
       // Switcher 및 Container destroy
-      switcher.destroy();
-      container.destroy({ children: true });
+      try {
+        if (!switcher.destroyed) {
+          switcher.destroy();
+        }
+        if (!container.destroyed) {
+          container.destroy({ children: true });
+        }
+      } catch {
+        // ignore
+      }
 
       containerRef.current = null;
       switcherRef.current = null;

@@ -233,22 +233,43 @@ export const PixiSlider = memo(function PixiSlider({
     containerRef.current = container;
     sliderRef.current = slider;
 
+    // ⚠️ try-catch: CanvasTextSystem이 이미 정리된 경우 에러 방지
     return () => {
       // 이벤트 연결 해제
-      slider.onUpdate.disconnectAll();
-      container.off('pointerdown', handleClick);
+      try {
+        slider.onUpdate.disconnectAll();
+        container.off('pointerdown', handleClick);
+      } catch {
+        // ignore
+      }
 
       // Stage에서 제거
-      app.stage.removeChild(container);
+      try {
+        app.stage.removeChild(container);
+      } catch {
+        // ignore
+      }
 
       // Graphics 객체 명시적 destroy (GPU 리소스 해제)
-      bgGraphics.destroy(true);
-      fillGraphics.destroy(true);
-      handleGraphics.destroy(true);
+      try {
+        bgGraphics.destroy(true);
+        fillGraphics.destroy(true);
+        handleGraphics.destroy(true);
+      } catch {
+        // ignore
+      }
 
       // Slider 및 Container destroy
-      slider.destroy({ children: true });
-      container.destroy({ children: true });
+      try {
+        if (!slider.destroyed) {
+          slider.destroy({ children: true });
+        }
+        if (!container.destroyed) {
+          container.destroy({ children: true });
+        }
+      } catch {
+        // ignore
+      }
 
       containerRef.current = null;
       sliderRef.current = null;

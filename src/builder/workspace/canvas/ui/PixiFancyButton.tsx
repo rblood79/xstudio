@@ -248,23 +248,44 @@ export const PixiFancyButton = memo(function PixiFancyButton({
     containerRef.current = container;
     buttonRef.current = fancyButton;
 
+    // ⚠️ try-catch: CanvasTextSystem이 이미 정리된 경우 에러 방지
     return () => {
       // 이벤트 연결 해제
-      fancyButton.onPress.disconnectAll();
+      try {
+        fancyButton.onPress.disconnectAll();
+      } catch {
+        // ignore
+      }
 
       // Stage에서 제거
-      app.stage.removeChild(container);
+      try {
+        app.stage.removeChild(container);
+      } catch {
+        // ignore
+      }
 
       // Graphics 객체 명시적 destroy (GPU 리소스 해제)
-      defaultBg.destroy(true);
-      hoverBg.destroy(true);
-      pressedBg.destroy(true);
-      disabledBg.destroy(true);
-      text.destroy(true);
+      try {
+        defaultBg.destroy(true);
+        hoverBg.destroy(true);
+        pressedBg.destroy(true);
+        disabledBg.destroy(true);
+        text.destroy(true);
+      } catch {
+        // CanvasTextSystem race condition - 무시
+      }
 
       // FancyButton 및 Container destroy
-      fancyButton.destroy({ children: true });
-      container.destroy({ children: true });
+      try {
+        if (!fancyButton.destroyed) {
+          fancyButton.destroy({ children: true });
+        }
+        if (!container.destroyed) {
+          container.destroy({ children: true });
+        }
+      } catch {
+        // ignore
+      }
 
       containerRef.current = null;
       buttonRef.current = null;

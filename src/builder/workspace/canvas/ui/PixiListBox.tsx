@@ -429,9 +429,16 @@ export const PixiListBox = memo(function PixiListBox({
     // 새 ScrollBox 생성은 필요시 여기서 처리
     // 현재는 JSX 방식으로 충분히 구현됨
 
+    // ⚠️ try-catch: CanvasTextSystem이 이미 정리된 경우 에러 방지
     return () => {
       if (scrollBoxRef.current) {
-        scrollBoxRef.current.destroy();
+        try {
+          if (!scrollBoxRef.current.destroyed) {
+            scrollBoxRef.current.destroy();
+          }
+        } catch {
+          // ignore
+        }
         scrollBoxRef.current = null;
       }
     };

@@ -177,10 +177,14 @@ export function Workspace({
   centerCanvasRef.current = centerCanvas;
 
   // Center canvas when breakpoint changes (NOT when container resizes)
+  // 단, % breakpoint일 때는 canvasSize 변경 시에도 센터링 수행
   useEffect(() => {
     // breakpoint ID + 정의값 조합 키
+    // % breakpoint일 때는 canvasSize도 키에 포함 (리사이즈 시 센터링 필요)
     const breakpointKey = selectedBreakpoint
-      ? `${selectedBreakpoint.id}:${selectedBreakpoint.max_width}x${selectedBreakpoint.max_height}`
+      ? usesPercentBreakpoint
+        ? `${selectedBreakpoint.id}:${canvasSize.width}x${canvasSize.height}`
+        : `${selectedBreakpoint.id}:${selectedBreakpoint.max_width}x${selectedBreakpoint.max_height}`
       : null;
 
     // 같은 키면 센터링 스킵 (패널 resize 무시)
@@ -191,7 +195,7 @@ export function Workspace({
     if (centerCanvas()) {
       lastCenteredKeyRef.current = breakpointKey;
     }
-  }, [selectedBreakpoint, canvasSize.width, canvasSize.height, centerCanvas]);
+  }, [selectedBreakpoint, usesPercentBreakpoint, canvasSize.width, canvasSize.height, centerCanvas]);
 
   // ============================================
   // Container Size Tracking
@@ -526,6 +530,7 @@ export function Workspace({
                   key={preset}
                   id={preset}
                   className="zoom-combobox-item"
+                  textValue={`${preset}%`}
                 >
                   {preset}%
                 </ListBoxItem>
