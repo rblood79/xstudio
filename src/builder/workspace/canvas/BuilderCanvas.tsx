@@ -14,15 +14,7 @@
  * @updated 2025-12-11 Phase 10 B1.2 - ElementSprite 통합
  */
 
-import {
-  useCallback,
-  useEffect,
-  useRef,
-  useMemo,
-  useState,
-  memo,
-  startTransition,
-} from "react";
+import { useCallback, useEffect, useRef, useMemo, useState, memo, startTransition } from "react";
 import { Application, useApplication } from "@pixi/react";
 import { Graphics as PixiGraphics } from "pixi.js";
 import { useStore } from "../../stores";
@@ -92,15 +84,7 @@ function PixiExtendBridge() {
 /**
  * 캔버스 경계 표시
  */
-function CanvasBounds({
-  width,
-  height,
-  zoom = 1,
-}: {
-  width: number;
-  height: number;
-  zoom?: number;
-}) {
+function CanvasBounds({ width, height, zoom = 1 }: { width: number; height: number; zoom?: number }) {
   useExtend(PIXI_COMPONENTS);
   // 테마 변경 감지 (MutationObserver 기반)
   useThemeColors();
@@ -142,14 +126,7 @@ interface ClickableBackgroundProps {
   panOffset: { x: number; y: number };
 }
 
-function ClickableBackground({
-  onClick,
-  onLassoStart,
-  onLassoDrag,
-  onLassoEnd,
-  zoom,
-  panOffset,
-}: ClickableBackgroundProps) {
+function ClickableBackground({ onClick, onLassoStart, onLassoDrag, onLassoEnd, zoom, panOffset }: ClickableBackgroundProps) {
   useExtend(PIXI_COMPONENTS);
   const { app } = useApplication();
 
@@ -173,68 +150,62 @@ function ClickableBackground({
     if (!canvas) return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Shift") {
-        canvas.style.cursor = "crosshair";
+      if (e.key === 'Shift') {
+        canvas.style.cursor = 'crosshair';
       }
     };
     const handleKeyUp = (e: KeyboardEvent) => {
-      if (e.key === "Shift") {
-        canvas.style.cursor = "default";
+      if (e.key === 'Shift') {
+        canvas.style.cursor = 'default';
       }
     };
 
-    window.addEventListener("keydown", handleKeyDown);
-    window.addEventListener("keyup", handleKeyUp);
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
 
     return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-      window.removeEventListener("keyup", handleKeyUp);
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
     };
   }, [app]);
 
   // 🚀 최적화: resize 리스너 useEffect 제거
   // renderer.on("resize", update)가 매 프레임 setScreenSize 호출하여 프레임 드랍 유발
 
-  const draw = useCallback((g: PixiGraphics) => {
-    g.clear();
-    // 🚀 최적화: 고정 크기 사용 (충분히 큰 영역으로 모든 뷰포트 커버)
-    // 투명한 영역 (클릭 감지용)
-    g.rect(-5000, -5000, 10000, 10000);
-    g.fill({ color: 0xffffff, alpha: 0 });
-  }, []);
+  const draw = useCallback(
+    (g: PixiGraphics) => {
+      g.clear();
+      // 🚀 최적화: 고정 크기 사용 (충분히 큰 영역으로 모든 뷰포트 커버)
+      // 투명한 영역 (클릭 감지용)
+      g.rect(-5000, -5000, 10000, 10000);
+      g.fill({ color: 0xffffff, alpha: 0 });
+    },
+    []
+  );
 
   // 라쏘 드래그 상태
   const isDragging = useRef(false);
 
   // 화면 좌표를 캔버스 좌표로 변환
-  const screenToCanvas = useCallback(
-    (screenX: number, screenY: number) => {
-      return {
-        x: (screenX - panOffset.x) / zoom,
-        y: (screenY - panOffset.y) / zoom,
-      };
-    },
-    [zoom, panOffset]
-  );
+  const screenToCanvas = useCallback((screenX: number, screenY: number) => {
+    return {
+      x: (screenX - panOffset.x) / zoom,
+      y: (screenY - panOffset.y) / zoom,
+    };
+  }, [zoom, panOffset]);
 
-  const handlePointerDown = useCallback(
-    (e: { global: { x: number; y: number } }) => {
-      isDragging.current = true;
+  const handlePointerDown = useCallback((e: { global: { x: number; y: number } }) => {
+    isDragging.current = true;
+    const canvasPos = screenToCanvas(e.global.x, e.global.y);
+    onLassoStart?.(canvasPos);
+  }, [onLassoStart, screenToCanvas]);
+
+  const handlePointerMove = useCallback((e: { global: { x: number; y: number } }) => {
+    if (isDragging.current) {
       const canvasPos = screenToCanvas(e.global.x, e.global.y);
-      onLassoStart?.(canvasPos);
-    },
-    [onLassoStart, screenToCanvas]
-  );
-
-  const handlePointerMove = useCallback(
-    (e: { global: { x: number; y: number } }) => {
-      if (isDragging.current) {
-        const canvasPos = screenToCanvas(e.global.x, e.global.y);
-        onLassoDrag?.(canvasPos);
-      }
-    },
-    [onLassoDrag, screenToCanvas]
-  );
+      onLassoDrag?.(canvasPos);
+    }
+  }, [onLassoDrag, screenToCanvas]);
 
   const handlePointerUp = useCallback(() => {
     if (isDragging.current) {
@@ -284,17 +255,11 @@ function CanvasSmoothResizeBridge() {
     const renderer = app.renderer;
 
     // requestIdleCallback polyfill (Safari 지원)
-    const requestIdle =
-      window.requestIdleCallback ||
-      ((cb: () => void) => window.setTimeout(cb, 1));
+    const requestIdle = window.requestIdleCallback || ((cb: () => void) => window.setTimeout(cb, 1));
     const cancelIdle = window.cancelIdleCallback || window.clearTimeout;
 
     // ✅ 크기 비교 후 resize 호출 (같으면 스킵)
-    const applyResizeIfNeeded = (
-      width: number,
-      height: number,
-      immediate = false
-    ) => {
+    const applyResizeIfNeeded = (width: number, height: number, immediate = false) => {
       if (width <= 0 || height <= 0) return;
 
       // ✅ 크기 비교 - 같으면 스킵
@@ -520,7 +485,6 @@ export function BuilderCanvas({
 
   const zoom = useCanvasSyncStore((state) => state.zoom);
   const panOffset = useCanvasSyncStore((state) => state.panOffset);
-  const containerSize = useCanvasSyncStore((state) => state.containerSize);
 
   // Canvas sync actions
   const setCanvasReady = useCanvasSyncStore((state) => state.setCanvasReady);
@@ -560,64 +524,66 @@ export function BuilderCanvas({
   );
 
   // 드래그 인터랙션 - Lasso 선택 포함
-  const { dragState, startMove, startResize, startLasso, updateDrag, endDrag } =
-    useDragInteraction({
-      onMoveEnd: useCallback(
-        (elementId: string, delta: { x: number; y: number }) => {
-          const element = elements.find((el) => el.id === elementId);
-          if (!element) return;
+  const {
+    dragState,
+    startMove,
+    startResize,
+    startLasso,
+    updateDrag,
+    endDrag,
+  } = useDragInteraction({
+    onMoveEnd: useCallback(
+      (elementId: string, delta: { x: number; y: number }) => {
+        const element = elements.find((el) => el.id === elementId);
+        if (!element) return;
 
-          const style = element.props?.style as
-            | Record<string, unknown>
-            | undefined;
-          const currentX = Number(style?.left) || 0;
-          const currentY = Number(style?.top) || 0;
+        const style = element.props?.style as
+          | Record<string, unknown>
+          | undefined;
+        const currentX = Number(style?.left) || 0;
+        const currentY = Number(style?.top) || 0;
 
-          updateElementProps(elementId, {
-            style: {
-              ...style,
-              left: currentX + delta.x,
-              top: currentY + delta.y,
-            },
-          });
-        },
-        [elements, updateElementProps]
-      ),
-      onResizeEnd: useCallback(
-        (
-          elementId: string,
-          _handle: HandlePosition,
-          newBounds: BoundingBox
-        ) => {
-          const element = elements.find((el) => el.id === elementId);
-          if (!element) return;
+        updateElementProps(elementId, {
+          style: {
+            ...style,
+            left: currentX + delta.x,
+            top: currentY + delta.y,
+          },
+        });
+      },
+      [elements, updateElementProps]
+    ),
+    onResizeEnd: useCallback(
+      (elementId: string, _handle: HandlePosition, newBounds: BoundingBox) => {
+        const element = elements.find((el) => el.id === elementId);
+        if (!element) return;
 
-          const style = element.props?.style as
-            | Record<string, unknown>
-            | undefined;
+        const style = element.props?.style as
+          | Record<string, unknown>
+          | undefined;
 
-          updateElementProps(elementId, {
-            style: {
-              ...style,
-              left: newBounds.x,
-              top: newBounds.y,
-              width: newBounds.width,
-              height: newBounds.height,
-            },
-          });
-        },
-        [elements, updateElementProps]
-      ),
-      onLassoEnd: useCallback(
-        (selectedIds: string[]) => {
-          if (selectedIds.length > 0) {
-            setSelectedElements(selectedIds);
-          }
-        },
-        [setSelectedElements]
-      ),
-      findElementsInLasso: findElementsInLassoArea,
-    });
+        updateElementProps(elementId, {
+          style: {
+            ...style,
+            left: newBounds.x,
+            top: newBounds.y,
+            width: newBounds.width,
+            height: newBounds.height,
+          },
+        });
+      },
+      [elements, updateElementProps]
+    ),
+    onLassoEnd: useCallback(
+      (selectedIds: string[]) => {
+        if (selectedIds.length > 0) {
+          setSelectedElements(selectedIds);
+        }
+      },
+      [setSelectedElements]
+    ),
+    findElementsInLasso: findElementsInLassoArea,
+  });
 
   // 리사이즈 시작 핸들러
   const handleResizeStart = useCallback(
@@ -659,50 +625,44 @@ export function BuilderCanvas({
   // 선택 변경 시 handleElementClick 재생성 방지 → 모든 ElementSprite 리렌더링 방지
   // 🚀 Phase 18: startTransition으로 선택 업데이트 → INP 개선 (245ms → ~50ms)
   const handleElementClick = useCallback(
-    (
-      elementId: string,
-      modifiers?: { metaKey: boolean; shiftKey: boolean; ctrlKey: boolean }
-    ) => {
-      return longTaskMonitor.measure(
-        "interaction.select:webgl-pointerdown",
-        () => {
-          // 텍스트 편집 중이면 클릭 무시
-          if (isEditing) return;
+    (elementId: string, modifiers?: { metaKey: boolean; shiftKey: boolean; ctrlKey: boolean }) => {
+      return longTaskMonitor.measure("interaction.select:webgl-pointerdown", () => {
+        // 텍스트 편집 중이면 클릭 무시
+        if (isEditing) return;
 
-          // Cmd+Click (Mac) or Ctrl+Click (Windows) for multi-select
-          const isMultiSelectKey = modifiers?.metaKey || modifiers?.ctrlKey;
+        // Cmd+Click (Mac) or Ctrl+Click (Windows) for multi-select
+        const isMultiSelectKey = modifiers?.metaKey || modifiers?.ctrlKey;
 
-          // 🚀 Phase 18: startTransition으로 선택 업데이트를 비긴급 처리
-          // React가 현재 프레임을 먼저 완료하고, 유휴 시간에 리렌더링 수행
-          startTransition(() => {
-            if (isMultiSelectKey) {
-              // 🚀 getState()로 현재 selectedElementIds 읽기 (stale closure 방지)
-              const currentSelectedIds = useStore.getState().selectedElementIds;
+        // 🚀 Phase 18: startTransition으로 선택 업데이트를 비긴급 처리
+        // React가 현재 프레임을 먼저 완료하고, 유휴 시간에 리렌더링 수행
+        startTransition(() => {
+          if (isMultiSelectKey) {
+            // 🚀 getState()로 현재 selectedElementIds 읽기 (stale closure 방지)
+            const currentSelectedIds = useStore.getState().selectedElementIds;
 
-              // 🚀 O(n) → O(1) 최적화: Set을 사용하여 빠른 검색
-              const selectedSet = new Set(currentSelectedIds);
-              const isAlreadySelected = selectedSet.has(elementId);
+            // 🚀 O(n) → O(1) 최적화: Set을 사용하여 빠른 검색
+            const selectedSet = new Set(currentSelectedIds);
+            const isAlreadySelected = selectedSet.has(elementId);
 
-              if (isAlreadySelected) {
-                // 선택 해제 - Set에서 제거 후 배열로 변환
-                selectedSet.delete(elementId);
-                if (selectedSet.size > 0) {
-                  setSelectedElements(Array.from(selectedSet));
-                } else {
-                  clearSelection();
-                }
-              } else {
-                // 선택에 추가 - Set에 추가 후 배열로 변환
-                selectedSet.add(elementId);
+            if (isAlreadySelected) {
+              // 선택 해제 - Set에서 제거 후 배열로 변환
+              selectedSet.delete(elementId);
+              if (selectedSet.size > 0) {
                 setSelectedElements(Array.from(selectedSet));
+              } else {
+                clearSelection();
               }
             } else {
-              // 단일 선택
-              setSelectedElement(elementId);
+              // 선택에 추가 - Set에 추가 후 배열로 변환
+              selectedSet.add(elementId);
+              setSelectedElements(Array.from(selectedSet));
             }
-          });
-        }
-      );
+          } else {
+            // 단일 선택
+            setSelectedElement(elementId);
+          }
+        });
+      });
     },
     [setSelectedElement, setSelectedElements, clearSelection, isEditing]
   );
@@ -778,16 +738,6 @@ export function BuilderCanvas({
             maxZoom={5}
           />
 
-          {/* Grid Layer - Camera 바깥, 화면 중앙 기준 고정 (드래그 불필요) */}
-          {showGrid && containerSize.width > 0 && containerSize.height > 0 && (
-            <GridLayer
-              width={containerSize.width}
-              height={containerSize.height}
-              zoom={zoom}
-              gridSize={gridSize}
-            />
-          )}
-
           {/* 전체 Canvas 영역 클릭 → 선택 해제 + 라쏘 선택 시작 */}
           <ClickableBackground
             onClick={clearSelection}
@@ -797,6 +747,15 @@ export function BuilderCanvas({
             zoom={zoom}
             panOffset={panOffset}
           />
+
+          {/* Grid Layer - Camera 밖, 화면 고정 (자체 containerSize 구독) */}
+          {showGrid && (
+            <GridLayer
+              zoom={zoom}
+              showGrid={showGrid}
+              gridSize={gridSize}
+            />
+          )}
 
           {/* Camera/Viewport - x, y, scale은 ViewportController가 직접 조작 */}
           <pixiContainer

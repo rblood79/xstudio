@@ -156,6 +156,9 @@ export function Workspace({
   const lastCenteredKeyRef = useRef<string | null>(null);
   const centerCanvasRef = useRef<() => boolean>(() => false);
 
+  // 🚀 Fit 모드 추적: zoom이 fit 상태일 때 리사이즈 시 center 유지
+  const isFitModeRef = useRef(true); // 초기 로드 시 fit 모드로 시작
+
   // 줌/팬 초기화 함수 (재사용)
   const centerCanvas = useCallback(() => {
     const containerSize = containerSizeRef.current;
@@ -177,14 +180,10 @@ export function Workspace({
   centerCanvasRef.current = centerCanvas;
 
   // Center canvas when breakpoint changes (NOT when container resizes)
-  // 단, % breakpoint일 때는 canvasSize 변경 시에도 센터링 수행
   useEffect(() => {
     // breakpoint ID + 정의값 조합 키
-    // % breakpoint일 때는 canvasSize도 키에 포함 (리사이즈 시 센터링 필요)
     const breakpointKey = selectedBreakpoint
-      ? usesPercentBreakpoint
-        ? `${selectedBreakpoint.id}:${canvasSize.width}x${canvasSize.height}`
-        : `${selectedBreakpoint.id}:${selectedBreakpoint.max_width}x${selectedBreakpoint.max_height}`
+      ? `${selectedBreakpoint.id}:${selectedBreakpoint.max_width}x${selectedBreakpoint.max_height}`
       : null;
 
     // 같은 키면 센터링 스킵 (패널 resize 무시)
@@ -195,7 +194,7 @@ export function Workspace({
     if (centerCanvas()) {
       lastCenteredKeyRef.current = breakpointKey;
     }
-  }, [selectedBreakpoint, usesPercentBreakpoint, canvasSize.width, canvasSize.height, centerCanvas]);
+  }, [selectedBreakpoint, canvasSize.width, canvasSize.height, centerCanvas]);
 
   // ============================================
   // Container Size Tracking
@@ -240,8 +239,8 @@ export function Workspace({
           setContainerSizeForPercent({ width, height });
         }
 
-        // 🚀 초기 로드 시 센터링 수행
-        if (isInitialLoad) {
+        // 🚀 초기 로드 또는 fit 모드일 때 센터링 수행
+        if (isInitialLoad || isFitModeRef.current) {
           centerCanvasRef.current();
         }
       });
@@ -282,6 +281,9 @@ export function Workspace({
 
   const zoomTo = useCallback(
     (level: number) => {
+      // 🚀 수동 zoom 변경 시 fit 모드 해제
+      isFitModeRef.current = false;
+
       const containerSize = containerSizeRef.current;
       if (containerSize.width === 0 || containerSize.height === 0) {
         setZoom(level);
@@ -315,6 +317,9 @@ export function Workspace({
   const zoomToFit = useCallback(() => {
     const containerSize = containerSizeRef.current;
     if (containerSize.width === 0 || containerSize.height === 0) return;
+
+    // 🚀 Fit 버튼 클릭 시 fit 모드 활성화
+    isFitModeRef.current = true;
 
     const scaleX = containerSize.width / canvasSize.width;
     const scaleY = containerSize.height / canvasSize.height;
@@ -530,7 +535,6 @@ export function Workspace({
                   key={preset}
                   id={preset}
                   className="zoom-combobox-item"
-                  textValue={`${preset}%`}
                 >
                   {preset}%
                 </ListBoxItem>

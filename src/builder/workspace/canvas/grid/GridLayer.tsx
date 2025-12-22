@@ -16,20 +16,23 @@ import { useCallback, useMemo, memo } from 'react';
 import { Graphics as PixiGraphics } from 'pixi.js';
 import { useExtend } from '@pixi/react';
 import { PIXI_COMPONENTS } from '../pixiSetup';
+import { useCanvasSyncStore } from '../canvasSync';
 
 // ============================================
 // Types
 // ============================================
 
 export interface GridLayerProps {
-  /** 뷰포트 너비 */
-  width: number;
-  /** 뷰포트 높이 */
-  height: number;
   /** 현재 줌 레벨 */
   zoom: number;
+  /** 그리드 표시 여부 */
+  showGrid?: boolean;
+  /** 스냅 그리드 표시 여부 */
+  showSnapGrid?: boolean;
   /** 기본 그리드 크기 */
   gridSize?: number;
+  /** 스냅 그리드 크기 */
+  snapSize?: number;
 }
 
 // ============================================
@@ -42,9 +45,12 @@ const GRID_ALPHA = 0.5;
 const MAJOR_GRID_COLOR = 0x94a3b8; // slate-400
 const MAJOR_GRID_ALPHA = 0.3;
 
-const CENTER_LINE_COLOR = 0x64748b; // slate-500
-const CENTER_LINE_ALPHA = 0.7;
+const CENTER_LINE_COLOR = 0x475569; // slate-600
+const CENTER_LINE_ALPHA = 0.6;
 const CENTER_LINE_WIDTH = 1;
+
+const SNAP_GRID_COLOR = 0x3b82f6; // blue-500
+const SNAP_GRID_ALPHA = 0.2;
 
 // ============================================
 // Helper Functions
@@ -80,76 +86,84 @@ function getMajorGridInterval(gridInterval: number): number {
  * 줌 레벨에 따라 그리드 밀도가 자동으로 조정됩니다.
  */
 export const GridLayer = memo(function GridLayer({
-  width,
-  height,
   zoom,
+  showGrid = true,
+  showSnapGrid = false,
   gridSize = 20,
+  snapSize = 10,
 }: GridLayerProps) {
   useExtend(PIXI_COMPONENTS);
 
+  // 🚀 자체 구독: BuilderCanvas 리렌더링 없이 GridLayer만 독립적으로 업데이트
+  const containerSize = useCanvasSyncStore((state) => state.containerSize);
+  const { width, height } = containerSize;
+
   // 줌 레벨에 따른 그리드 간격 계산
   const gridInterval = useMemo(() => calculateGridInterval(gridSize, zoom), [gridSize, zoom]);
+
   const majorGridInterval = useMemo(() => getMajorGridInterval(gridInterval), [gridInterval]);
 
-  // 화면 중앙 기준 그리드 (pan과 무관하게 고정)
+  // 그리드 그리기
   const draw = useCallback(
     (g: PixiGraphics) => {
       g.clear();
 
-      if (width <= 0 || height <= 0) return;
+      if (!showGrid) return;
 
-      // 화면 중앙을 기준으로 그리드 정렬
-      const centerX = width / 2;
-      const centerY = height / 2;
-
-      // 중앙에서 시작점까지의 오프셋 계산 (그리드 간격에 맞춤)
-      const startX = centerX % gridInterval;
-      const startY = centerY % gridInterval;
-
-      // PixiJS v8: 각 라인을 rect로 그리기
+      // PixiJS v8: 각 라인을 rect로 그리기 (moveTo/lineTo 대신)
       const drawLine = (x1: number, y1: number, x2: number, y2: number, lineWidth: number, color: number, alpha: number) => {
         if (x1 === x2) {
+          // 수직선
           g.rect(x1 - lineWidth / 2, Math.min(y1, y2), lineWidth, Math.abs(y2 - y1));
         } else {
+          // 수평선
           g.rect(Math.min(x1, x2), y1 - lineWidth / 2, Math.abs(x2 - x1), lineWidth);
         }
         g.fill({ color, alpha });
       };
 
       // === 일반 그리드 ===
-      for (let x = startX; x <= width; x += gridInterval) {
-        const relX = x - centerX;
-        if (Math.abs(relX % majorGridInterval) < 0.1) continue;
+      // 수직선
+      for (let x = 0; x <= width; x += gridInterval) {
+        if (x % majorGridInterval === 0) continue;
         drawLine(x, 0, x, height, 1, GRID_COLOR, GRID_ALPHA);
       }
 
-      for (let y = startY; y <= height; y += gridInterval) {
-        const relY = y - centerY;
-        if (Math.abs(relY % majorGridInterval) < 0.1) continue;
+      // 수평선
+      for (let y = 0; y <= height; y += gridInterval) {
+        if (y % majorGridInterval === 0) continue;
         drawLine(0, y, width, y, 1, GRID_COLOR, GRID_ALPHA);
       }
 
-      // === 메이저 그리드 ===
-      const majorStartX = centerX % majorGridInterval;
-      const majorStartY = centerY % majorGridInterval;
-
-      for (let x = majorStartX; x <= width; x += majorGridInterval) {
+      // === 메이저 그리드 (더 진한 색상) ===
+      // 수직선
+      for (let x = 0; x <= width; x += majorGridInterval) {
         drawLine(x, 0, x, height, 1, MAJOR_GRID_COLOR, MAJOR_GRID_ALPHA);
       }
 
-      for (let y = majorStartY; y <= height; y += majorGridInterval) {
+      // 수평선
+      for (let y = 0; y <= height; y += majorGridInterval) {
         drawLine(0, y, width, y, 1, MAJOR_GRID_COLOR, MAJOR_GRID_ALPHA);
       }
 
       // === 중앙선 강조 ===
-      drawLine(centerX, 0, centerX, height, CENTER_LINE_WIDTH, CENTER_LINE_COLOR, CENTER_LINE_ALPHA);
-      drawLine(0, centerY, width, centerY, CENTER_LINE_WIDTH, CENTER_LINE_COLOR, CENTER_LINE_ALPHA);
+      drawLine(width / 2, 0, width / 2, height, CENTER_LINE_WIDTH, CENTER_LINE_COLOR, CENTER_LINE_ALPHA);
+      drawLine(0, height / 2, width, height / 2, CENTER_LINE_WIDTH, CENTER_LINE_COLOR, CENTER_LINE_ALPHA);
+
+      // === 스냅 그리드 (선택적) ===
+      if (showSnapGrid && snapSize !== gridInterval) {
+        for (let x = 0; x <= width; x += snapSize) {
+          for (let y = 0; y <= height; y += snapSize) {
+            g.circle(x, y, 1);
+            g.fill({ color: SNAP_GRID_COLOR, alpha: SNAP_GRID_ALPHA });
+          }
+        }
+      }
     },
-    [width, height, gridInterval, majorGridInterval]
+    [width, height, gridInterval, majorGridInterval, showGrid, showSnapGrid, snapSize]
   );
 
-  // eventMode="none"으로 이벤트 처리 완전 비활성화 (성능 최적화)
-  return <pixiGraphics draw={draw} eventMode="none" />;
+  return <pixiGraphics draw={draw} />;
 });
 
 export default GridLayer;
