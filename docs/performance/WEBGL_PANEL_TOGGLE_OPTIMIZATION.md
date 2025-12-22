@@ -1,8 +1,76 @@
 # WebGL 패널 토글 성능 최적화
 
-> **상태**: 설계 완료, 구현 대기
+> **상태**: 구현 대기
 > **작성일**: 2024-12-22
-> **관련 파일**: `Workspace.tsx`, `BuilderCanvas.tsx`, `canvasSync.ts`
+> **관련 파일**: `BuilderCanvas.tsx`
+
+---
+
+## 0. 🎯 근본 원인 (최종 확정)
+
+### 0.1 검증 결과
+
+| 테스트 | 결과 |
+|--------|------|
+| `canvas` 영역을 `display:none`으로 설정 | 성능 저하 없음 |
+| `renderer.resize()` 호출 주석 처리 | 성능 저하 없음 |
+
+### 0.2 결론
+
+**`renderer.resize()` 자체가 150ms+ Long Task의 직접적인 원인**
+
+- GPU 버퍼 재할당으로 인한 메인 스레드 블로킹
+- React state, @pixi/react 리렌더링은 원인이 **아님**
+
+### 0.3 이전 가설 (폐기)
+
+| 가설 | 왜 틀렸는가 |
+|------|------------|
+| React state 구독 → @pixi/react 리렌더링 | `renderer.resize()` 주석 처리 시 문제 없음 |
+| ResizeObserver 2개 → 동기 작업 중첩 | 동일 |
+| containerSize state 업데이트 비용 | 동일 |
+
+### 0.4 간소화된 해결책
+
+**파일**: `src/builder/workspace/canvas/BuilderCanvas.tsx`
+
+#### Phase 1: Safari polyfill 수정 (라인 256-258)
+
+**변경 전:**
+```typescript
+const requestIdle = window.requestIdleCallback || ((cb: () => void) => setTimeout(cb, 1));
+const cancelIdle = window.cancelIdleCallback || clearTimeout;
+```
+
+**변경 후:**
+```typescript
+const requestIdle: typeof requestIdleCallback = window.requestIdleCallback
+  || ((cb, options) => setTimeout(cb, options?.timeout || 100) as unknown as number);
+const cancelIdle = window.cancelIdleCallback || clearTimeout;
+```
+
+#### Phase 2: timeout 옵션 추가 (라인 284-294)
+
+**변경 전:**
+```typescript
+idleCallbackRef.current = requestIdle(() => {
+  // ... resize 로직
+});
+```
+
+**변경 후:**
+```typescript
+idleCallbackRef.current = requestIdle(() => {
+  // ... resize 로직
+}, { timeout: 500 }); // 최대 500ms 대기 후 강제 실행
+```
+
+### 0.5 동작 원리
+
+1. 패널 토글 클릭 → CSS transition 시작 (보통 200-300ms)
+2. ResizeObserver 매 프레임 콜백 → 이전 idle callback 취소, 새로 예약
+3. transition 끝 → 브라우저 유휴 상태 → resize 실행
+4. **브라우저가 계속 바쁘면 최대 500ms 후 강제 실행**
 
 ---
 
