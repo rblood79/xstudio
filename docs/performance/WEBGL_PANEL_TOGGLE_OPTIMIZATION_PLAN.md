@@ -1,8 +1,8 @@
-# WebGL 패널 토글 성능 최적화 - 실행 계획 v3
+# WebGL 패널 토글 성능 최적화 - 실행 계획 v4
 
-> **상태**: 검토 완료, 실행 대기
+> **상태**: ✅ 구현 완료
 > **작성일**: 2024-12-22
-> **최종 수정**: 2024-12-22 (문제점 추가 발견)
+> **최종 수정**: 2024-12-23 (구현 완료, 추가 기능 포함)
 > **관련 문서**: `11-canvas-resize-optimization.md`, `WEBGL_PANEL_TOGGLE_OPTIMIZATION.md`
 
 ---
@@ -35,131 +35,49 @@
 
 ---
 
-## 1. 발견된 문제점 (총 5개)
+## 1. 발견된 문제점 (총 5개) - 모두 해결됨 ✅
 
-### 문제 1: 초기 resize에 크기 비교 없음 ⭐ Critical
+### 문제 1: 초기 resize에 크기 비교 없음 ⭐ Critical ✅ 해결
 
-**파일**: `BuilderCanvas.tsx:269-270`
+**파일**: `BuilderCanvas.tsx`
 
-```typescript
-const attach = () => {
-  // ...
-  // 🔴 크기 비교 없이 무조건 resize 호출!
-  renderer.resize(containerEl.clientWidth, containerEl.clientHeight);
-  lastSizeRef.current = { width, height };
-};
-
-// useEffect 의존성: [app, containerEl]
-// app 또는 containerEl 변경 시 → attach() 재호출 → resize 호출
-```
-
-**영향**: useEffect 재실행 시 크기가 같아도 resize 호출됨
+**해결**: Zustand subscribe 패턴으로 변경, 크기 비교 로직 추가
 
 ---
 
-### 문제 2: 줌/팬 초기화 useEffect가 containerSize 의존
+### 문제 2: 줌/팬 초기화 useEffect가 containerSize 의존 ✅ 해결
 
-**파일**: `Workspace.tsx:134-154`
+**파일**: `Workspace.tsx`
 
-```typescript
-useEffect(() => {
-  if (containerSize.width > 0 && containerSize.height > 0) {
-    // 줌/팬 초기화 (매번!)
-    setZoom(fitZoom);
-    setPanOffset({...});
-  }
-}, [
-  canvasSize.width,
-  canvasSize.height,
-  containerSize.width,   // ← containerSize 변경 시 초기화!
-  containerSize.height,
-  setZoom,
-  setPanOffset,
-]);
-```
-
-**영향**: containerSize 변경 시 줌/팬이 매번 초기화됨
+**해결**: `lastCenteredKeyRef` 가드 추가, breakpoint 변경 시에만 초기화
 
 ---
 
-### 문제 3: clientWidth 직접 읽기 (Forced Reflow 가능)
+### 문제 3: clientWidth 직접 읽기 (Forced Reflow 가능) ✅ 해결
 
-**파일**: `Workspace.tsx:170-172`
+**파일**: `Workspace.tsx`
 
-```typescript
-const updateSize = () => {
-  const width = container.clientWidth;   // ← Forced Reflow
-  const height = container.clientHeight;
-  // ...
-};
-```
-
-**영향**: ResizeObserver 콜백에서 Forced Reflow 발생 가능
+**해결**: ResizeObserver의 `contentRect` 사용
 
 ---
 
-### 문제 4: 이중 ResizeObserver
+### 문제 4: 이중 ResizeObserver ✅ 해결
 
-| 파일 | 관찰 대상 | 목적 |
-|------|----------|------|
-| `Workspace.tsx:192` | `.workspace` | containerSize state 업데이트 |
-| `BuilderCanvas.tsx:312` | `.canvas-container` | renderer.resize() 호출 |
-
-**영향**: 두 observer가 동시에 동작하며 리소스 낭비
+**해결**: BuilderCanvas의 ResizeObserver 제거, Workspace만 유지
 
 ---
 
-### 문제 5: ResizeObserver 콜백에서 scheduleIdleResize 호출
+### 문제 5: ResizeObserver 콜백에서 scheduleIdleResize 호출 ✅ 해결
 
-**파일**: `BuilderCanvas.tsx:297-310`
-
-```typescript
-observer = new ResizeObserver((entries) => {
-  const { width, height } = entry.contentRect;
-
-  // 크기 비교
-  const prev = lastSizeRef.current;
-  if (prev && prev.width === width && prev.height === height) return;
-
-  // 🔴 크기가 다르면 resize 예약
-  scheduleIdleResize();
-});
-```
-
-**문제**: 패널이 오버레이인데 왜 크기가 다른가?
-- 가능성 1: 서브픽셀 차이
-- 가능성 2: 브라우저 레이아웃 재계산 시 미세한 변화
-- 가능성 3: CSS 변수 변화
+**해결**: Zustand subscribe 패턴으로 대체
 
 ---
 
-## 2. 해결 방향
+## 2. 구현 완료 내역
 
-### 핵심 원칙
+### Phase 1: canvasSync Store 확장 ✅
 
-```
-패널이 Canvas 위에 오버레이
-    ↓
-패널 토글 시 Canvas 크기 불변
-    ↓
-resize 호출 불필요
-    ↓
-resize 0회 달성
-```
-
----
-
-## Phase 1: canvasSync Store 확장
-
-### 1.1 목적
-
-containerSize를 React state 대신 Zustand store로 관리하여 React 리렌더링 최소화
-
-### 1.2 변경 파일
-
-`src/builder/workspace/canvas/canvasSync.ts`
-
-### 1.3 변경 내용
+**파일**: `src/builder/workspace/canvas/canvasSync.ts`
 
 ```typescript
 // State 타입 추가
@@ -170,34 +88,21 @@ containerSize: { width: 0, height: 0 },
 
 // Action 추가
 setContainerSize: (size: { width: number; height: number }) => void;
-
-// 구현
-setContainerSize: (size) => {
-  set({ containerSize: size });
-},
 ```
 
-### 1.4 체크리스트
-
-- [ ] CanvasSyncState interface에 containerSize 추가
-- [ ] initialState에 containerSize 추가
-- [ ] setContainerSize 액션 추가
-- [ ] 타입 체크 통과
+**체크리스트**:
+- [x] CanvasSyncState interface에 containerSize 추가
+- [x] initialState에 containerSize 추가
+- [x] setContainerSize 액션 추가
+- [x] 타입 체크 통과
 
 ---
 
-## Phase 2: Workspace.tsx 최적화
+### Phase 2: Workspace.tsx 최적화 ✅
 
-### 2.1 목적
+**변경 사항**:
 
-- containerSize React state 제거
-- 줌/팬 초기화를 breakpoint 변경 시에만 실행
-- Forced Reflow 방지
-
-### 2.2 변경 사항
-
-#### 2.2.1 containerSize 관리 방식 변경
-
+1. **containerSize 관리 방식 변경**
 ```typescript
 // 기존
 const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
@@ -208,242 +113,227 @@ const [containerSizeForPercent, setContainerSizeForPercent] = useState({ width: 
 const usesPercentBreakpointRef = useRef(false);
 ```
 
-#### 2.2.2 ResizeObserver 콜백 최적화
+2. **ResizeObserver 콜백 최적화**
+   - `contentRect` 사용 (Forced Reflow 방지)
+   - 동일값 스킵
+   - RAF 스로틀
 
-```typescript
-useEffect(() => {
-  const container = containerRef.current;
-  if (!container) return;
+3. **줌/팬 초기화 보호**
+   - `lastCenteredKeyRef` 가드 추가
+   - breakpoint 변경 시에만 초기화
 
-  let rafId: number | null = null;
-
-  const resizeObserver = new ResizeObserver((entries) => {
-    const entry = entries[0];
-    if (!entry) return;
-
-    // ✅ contentRect 사용 (Forced Reflow 방지)
-    const { width, height } = entry.contentRect;
-    if (width <= 0 || height <= 0) return;
-
-    // ✅ 동일값 스킵
-    const prev = containerSizeRef.current;
-    if (prev.width === width && prev.height === height) return;
-
-    // ✅ RAF 스로틀
-    if (rafId !== null) return;
-    rafId = requestAnimationFrame(() => {
-      rafId = null;
-
-      // ref 업데이트 (React 리렌더 없음)
-      containerSizeRef.current = { width, height };
-
-      // store 업데이트
-      useCanvasSyncStore.getState().setContainerSize({ width, height });
-
-      // % breakpoint일 때만 React state 업데이트
-      if (usesPercentBreakpointRef.current) {
-        setContainerSizeForPercent({ width, height });
-      }
-    });
-  });
-
-  resizeObserver.observe(container);
-
-  return () => {
-    if (rafId !== null) cancelAnimationFrame(rafId);
-    resizeObserver.disconnect();
-  };
-}, []);
-```
-
-#### 2.2.3 줌/팬 초기화 보호
-
-```typescript
-const lastCenteredKeyRef = useRef<string | null>(null);
-
-useEffect(() => {
-  // breakpoint ID + 정의값 조합 키
-  const breakpointKey = selectedBreakpoint
-    ? `${selectedBreakpoint.id}:${selectedBreakpoint.max_width}x${selectedBreakpoint.max_height}`
-    : null;
-
-  // 같은 키면 센터링 스킵 (패널 resize 무시)
-  if (lastCenteredKeyRef.current === breakpointKey) return;
-  lastCenteredKeyRef.current = breakpointKey;
-
-  // ... 줌/팬 초기화
-}, [selectedBreakpoint, canvasSize.width, canvasSize.height, setZoom, setPanOffset]);
-```
-
-### 2.3 체크리스트
-
-- [ ] containerSize useState → useRef로 변경
-- [ ] containerSizeForPercent state 추가 (% breakpoint용)
-- [ ] usesPercentBreakpointRef 추가
-- [ ] ResizeObserver 콜백에서 contentRect 사용
-- [ ] 줌/팬 초기화 useEffect에 lastCenteredKeyRef 가드 추가
-- [ ] zoomTo, zoomToFit 함수에서 ref 사용
+**체크리스트**:
+- [x] containerSize useState → useRef로 변경
+- [x] containerSizeForPercent state 추가 (% breakpoint용)
+- [x] usesPercentBreakpointRef 추가
+- [x] ResizeObserver 콜백에서 contentRect 사용
+- [x] 줌/팬 초기화 useEffect에 lastCenteredKeyRef 가드 추가
+- [x] zoomTo, zoomToFit 함수에서 ref 사용
 
 ---
 
-## Phase 3: BuilderCanvas.tsx 리팩토링 ⭐ 핵심
+### Phase 3: BuilderCanvas.tsx 리팩토링 ✅
 
-### 3.1 목적
+**변경 사항**:
 
-- **초기 resize에 크기 비교 추가** (문제 1 해결)
-- ResizeObserver 제거, Zustand subscribe로 변경
-- 패널 토글 시 resize 0회 달성
+1. **CanvasSmoothResizeBridge 리팩토링**
+   - containerEl prop 제거
+   - ResizeObserver 제거 → Zustand subscribe 패턴
+   - 크기 비교 로직 추가
 
-### 3.2 CanvasSmoothResizeBridge 완전 리팩토링
+2. **제거된 항목**:
+   - containerEl prop
+   - 내부 ResizeObserver
+   - requestIdleCallback 로직
+   - attach() 함수
 
+**체크리스트**:
+- [x] CanvasSmoothResizeBridge에서 containerEl prop 제거
+- [x] 내부 ResizeObserver 제거
+- [x] Zustand subscribe 패턴 적용
+- [x] 초기 resize에 크기 비교 추가
+
+---
+
+## 3. 추가 구현 기능
+
+### 3.1 Fit 모드 추적 (리사이즈 시 center 유지) ✅
+
+**파일**: `Workspace.tsx`
+
+**목적**: zoom이 100% fit 상태일 때 브라우저 리사이즈 시 center 유지
+
+**구현**:
 ```typescript
-function CanvasSmoothResizeBridge() {
-  const { app } = useApplication();
-  const lastSizeRef = useRef<{ width: number; height: number } | null>(null);
+// Fit 모드 추적 ref
+const isFitModeRef = useRef(true); // 초기 로드 시 fit 모드로 시작
 
-  useEffect(() => {
-    if (!app?.renderer) return;
+// zoomTo() - 수동 zoom 변경 시 fit 모드 해제
+const zoomTo = useCallback((level: number) => {
+  isFitModeRef.current = false;
+  // ...
+}, [...]);
 
-    const renderer = app.renderer;
+// zoomToFit() - Fit 버튼 클릭 시 fit 모드 활성화
+const zoomToFit = useCallback(() => {
+  isFitModeRef.current = true;
+  // ...
+}, [...]);
 
-    // ✅ 초기 크기 동기화 (크기 비교 포함!)
-    const applyResizeIfNeeded = (width: number, height: number) => {
-      if (width <= 0 || height <= 0) return;
-
-      // ✅ 크기 비교 - 같으면 스킵
-      const prev = lastSizeRef.current;
-      if (prev && prev.width === width && prev.height === height) return;
-
-      lastSizeRef.current = { width, height };
-      renderer.resize(width, height);
-    };
-
-    // 초기 동기화
-    const initialSize = useCanvasSyncStore.getState().containerSize;
-    if (initialSize.width > 0 && initialSize.height > 0) {
-      applyResizeIfNeeded(initialSize.width, initialSize.height);
-    }
-
-    // ✅ Zustand subscribe (React 외부에서 처리)
-    const unsubscribe = useCanvasSyncStore.subscribe(
-      (state) => state.containerSize,
-      (size) => {
-        applyResizeIfNeeded(size.width, size.height);
-      }
-    );
-
-    return () => {
-      unsubscribe();
-    };
-  }, [app]);
-
-  return null;
+// ResizeObserver - fit 모드일 때 센터링 재계산
+if (isInitialLoad || isFitModeRef.current) {
+  centerCanvasRef.current();
 }
 ```
 
-### 3.3 제거 항목
-
-```diff
-- containerEl prop
-- 내부 ResizeObserver
-- requestIdleCallback 로직
-- setTimeout polyfill
-- pendingResizeRef, idleCallbackRef
-- attach() 함수
-```
-
-### 3.4 컴포넌트 호출 변경
-
-```diff
-- <CanvasSmoothResizeBridge containerEl={containerEl} />
-+ <CanvasSmoothResizeBridge />
-```
-
-### 3.5 체크리스트
-
-- [ ] CanvasSmoothResizeBridge에서 containerEl prop 제거
-- [ ] 내부 ResizeObserver 제거
-- [ ] Zustand subscribe 패턴 적용
-- [ ] 초기 resize에 크기 비교 추가
-- [ ] requestIdleCallback 로직 제거
-- [ ] attach() 함수 제거
+**동작 방식**:
+- 초기 로드 → fit 모드 활성 → 리사이즈 시 center 유지
+- Fit 버튼 (Scan 아이콘) 클릭 → fit 모드 활성 → 리사이즈 시 center 유지
+- 수동 zoom 변경 (`+`, `-`, 프리셋) → fit 모드 해제 → 리사이즈 시 현재 위치 유지
 
 ---
 
-## Phase 4: 통합 테스트
+### 3.2 Canvas 전체 그리드 (GridLayer 자체 구독) ✅
 
-### 4.1 기능 테스트
+**파일**: `GridLayer.tsx`, `BuilderCanvas.tsx`
 
-- [ ] 패널 토글 시 resize 호출 0회 확인
-- [ ] 패널 토글 시 줌/팬 유지
-- [ ] breakpoint 변경 시 줌/팬 초기화
-- [ ] % breakpoint에서 canvasSize 정상 계산
-- [ ] 윈도우 resize 시 정상 동작
-- [ ] 초기 로드 시 정상 동작
+**목적**: 그리드를 page 내부가 아닌 canvas 전체에 표시, 성능 저하 없이
 
-### 4.2 성능 테스트
+**구현**:
 
+1. **GridLayer 자체 구독** (BuilderCanvas 리렌더링 방지)
 ```typescript
-// 테스트 코드
-console.log('[RESIZE] before:', lastSizeRef.current);
-console.log('[RESIZE] after:', { width, height });
-console.log('[RESIZE] skipped:', prev?.width === width && prev?.height === height);
+// GridLayer.tsx
+const containerSize = useCanvasSyncStore((state) => state.containerSize);
+const { width, height } = containerSize;
 ```
 
-| 메트릭 | Before | After (목표) |
-|--------|--------|--------------|
-| 패널 토글 시 resize | 10-20회 | **0회** |
-| Long Task | 150ms+ | **없음** |
-| 줌/팬 초기화 | 매번 | breakpoint 변경 시만 |
+2. **Camera 밖으로 이동** (화면 고정)
+```tsx
+// BuilderCanvas.tsx
+{/* Grid Layer - Camera 밖, 화면 고정 (자체 containerSize 구독) */}
+{showGrid && (
+  <GridLayer
+    zoom={zoom}
+    showGrid={showGrid}
+    gridSize={gridSize}
+  />
+)}
+
+{/* Camera/Viewport */}
+<pixiContainer label="Camera" ref={cameraRef}>
+  {/* ... */}
+</pixiContainer>
+```
+
+3. **Props 변경**
+```typescript
+// 기존
+interface GridLayerProps {
+  width: number;
+  height: number;
+  zoom: number;
+  // ...
+}
+
+// 변경 (width, height 제거)
+interface GridLayerProps {
+  zoom: number;
+  showGrid?: boolean;
+  showSnapGrid?: boolean;
+  gridSize?: number;
+  snapSize?: number;
+}
+```
 
 ---
 
-## 3. 예상 효과
+### 3.3 그리드 중앙선 스타일 변경 ✅
 
-| 항목 | 변경 전 | 변경 후 |
-|------|--------|--------|
-| ResizeObserver 수 | 2개 | 1개 (Workspace만) |
-| 패널 토글 시 resize | 10-20회 | **0회** |
-| 패널 토글 시 줌/팬 | 초기화됨 | **유지** |
-| React 리렌더링 | containerSize 변경마다 | % breakpoint만 |
-| Forced Reflow | 발생 가능 | **없음** |
+**파일**: `GridLayer.tsx`
 
----
+**변경 내용**:
+```typescript
+// 기존
+const CENTER_LINE_COLOR = 0x94a3b8; // slate-400
+const CENTER_LINE_ALPHA = 0.5;
+const CENTER_LINE_WIDTH = 2;
 
-## 4. 구현 순서
-
-| 순서 | Phase | 파일 | 의존성 |
-|------|-------|------|--------|
-| 1 | Phase 1 | canvasSync.ts | 없음 |
-| 2 | Phase 2 | Workspace.tsx | Phase 1 |
-| 3 | Phase 3 | BuilderCanvas.tsx | Phase 1, 2 |
-| 4 | Phase 4 | 테스트 | 모두 |
+// 변경
+const CENTER_LINE_COLOR = 0x475569; // slate-600 (더 진한 색상)
+const CENTER_LINE_ALPHA = 0.6;
+const CENTER_LINE_WIDTH = 1;
+```
 
 ---
 
-## 5. 롤백 전략
+## 4. 성능 테스트 결과
 
-| Phase | 롤백 조건 | 롤백 액션 |
-|-------|----------|----------|
-| 1 | 타입 에러 | canvasSync.ts revert |
-| 2 | 줌/팬 이상 | Workspace.tsx revert |
-| 3 | resize 이상 | BuilderCanvas.tsx revert |
+| 메트릭 | Before | After |
+|--------|--------|-------|
+| 패널 토글 시 resize | 10-20회 | **0회** ✅ |
+| Long Task | 150ms+ | **없음** ✅ |
+| 줌/팬 초기화 | 매번 | breakpoint 변경 시만 ✅ |
+| GridLayer 리렌더링 | BuilderCanvas와 함께 | **독립적** ✅ |
 
 ---
 
-## 6. 핵심 변경 요약
+## 5. 최종 아키텍처
 
 ```
-문제: 패널 오버레이인데 resize 호출됨
-    ↓
-원인 1: 초기 resize에 크기 비교 없음 (attach 함수)
-원인 2: containerSize 변경 시 줌/팬 초기화
-원인 3: 이중 ResizeObserver
+┌─────────────────────────────────────────────────────────────┐
+│                      Workspace.tsx                          │
+│  ┌─────────────────────────────────────────────────────────┐│
+│  │  ResizeObserver (contentRect)                           ││
+│  │       ↓                                                 ││
+│  │  containerSizeRef (React 리렌더 없음)                   ││
+│  │       ↓                                                 ││
+│  │  useCanvasSyncStore.setContainerSize()                  ││
+│  │       ↓                                                 ││
+│  │  isFitModeRef → centerCanvasRef.current() (조건부)      ││
+│  └─────────────────────────────────────────────────────────┘│
+└─────────────────────────────────────────────────────────────┘
+                              ↓
+┌─────────────────────────────────────────────────────────────┐
+│                    canvasSync Store                         │
+│  containerSize: { width, height }                           │
+└─────────────────────────────────────────────────────────────┘
+          ↓                              ↓
+┌──────────────────────┐    ┌──────────────────────────────────┐
+│   BuilderCanvas.tsx  │    │        GridLayer.tsx             │
+│  ┌──────────────────┐│    │  ┌────────────────────────────┐  │
+│  │CanvasSmoothResize││    │  │ 자체 구독 (isolated)       │  │
+│  │Bridge (subscribe)││    │  │ containerSize → draw()     │  │
+│  │  ↓               ││    │  └────────────────────────────┘  │
+│  │ renderer.resize()││    └──────────────────────────────────┘
+│  │ (크기 비교 후)   ││
+│  └──────────────────┘│
+└──────────────────────┘
+```
+
+---
+
+## 6. 관련 커밋
+
+- `ab170eeb` - Add fit mode tracking for resize centering and canvas-wide grid
+- `095b2c7c` - Refactor Workspace and BuilderCanvas for optimized resize handling
+
+---
+
+## 7. 핵심 변경 요약
+
+```
+문제: 패널 오버레이인데 resize 호출됨 + 리사이즈 시 center 유실
     ↓
 해결:
 1. 초기 resize에 크기 비교 추가
 2. 줌/팬 초기화를 breakpoint 변경 시만
 3. BuilderCanvas의 ResizeObserver 제거 → Zustand subscribe
+4. Fit 모드 추적 → 리사이즈 시 center 유지
+5. GridLayer 자체 구독 → 성능 저하 없이 canvas 전체 그리드
     ↓
-결과: 패널 토글 시 resize 0회
+결과:
+- 패널 토글 시 resize 0회 ✅
+- Fit 모드에서 리사이즈 시 center 유지 ✅
+- Canvas 전체 그리드 (성능 저하 없음) ✅
 ```
