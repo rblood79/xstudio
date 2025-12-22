@@ -1,0 +1,259 @@
+/**
+ * CustomScrollbar Styles
+ *
+ * 모던하고 일관된 커스텀 스크롤바 스타일
+ * - 미니멀한 디자인 (hover 시 확장)
+ * - 상단/하단 그라데이션 페이드
+ * - 다크 모드 지원
+ */
+
+@layer components {
+  /* ==================== CSS Variables ==================== */
+  .custom-scrollbar-wrapper {
+    /* 스크롤바 크기 */
+    --scrollbar-width: 6px;
+    --scrollbar-width-hover: 10px;
+
+    /* 스크롤바 색상 (라이트 모드) */
+    --scrollbar-track: transparent;
+    --scrollbar-thumb: var(--gray-300);
+    --scrollbar-thumb-hover: var(--gray-400);
+
+    /* 페이드 그라데이션 */
+    --fade-gradient-start: var(--surface, var(--gray-0));
+    --fade-gradient-end: transparent;
+
+    /* 트랜지션 */
+    --scrollbar-transition: all 0.2s ease;
+
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    min-width: 0;
+  }
+
+  /* 다크 모드 색상 */
+  [data-builder-theme="dark"] .custom-scrollbar-wrapper {
+    --scrollbar-thumb: var(--gray-600);
+    --scrollbar-thumb-hover: var(--gray-500);
+    --fade-gradient-start: var(--surface, var(--gray-900));
+  }
+
+  /* ==================== Scroll Container ==================== */
+  .custom-scrollbar {
+    overflow-y: auto;
+    overflow-x: hidden;
+    scroll-behavior: smooth;
+    overscroll-behavior: contain;
+
+    /* 스크롤바 기본 숨김, hover 시 표시 */
+    scrollbar-width: thin;
+    scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+
+    /* iOS 터치 스크롤 최적화 */
+    -webkit-overflow-scrolling: touch;
+
+    /* 콘텐츠 가시성 최적화 */
+    contain: strict;
+  }
+
+  /* 수평 스크롤 */
+  .custom-scrollbar--horizontal {
+    overflow-y: hidden;
+    overflow-x: auto;
+  }
+
+  /* 스크롤 중 상태 */
+  .custom-scrollbar--scrolling {
+    scrollbar-color: var(--scrollbar-thumb-hover) var(--scrollbar-track);
+  }
+
+  /* ==================== Webkit 스크롤바 스타일 ==================== */
+  .custom-scrollbar::-webkit-scrollbar {
+    width: var(--scrollbar-width);
+    height: var(--scrollbar-width);
+    transition: var(--scrollbar-transition);
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: var(--scrollbar-track);
+    border-radius: var(--radius-lg);
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: var(--scrollbar-thumb);
+    border-radius: var(--radius-lg);
+    border: 2px solid transparent;
+    background-clip: padding-box;
+    transition: var(--scrollbar-transition);
+  }
+
+  /* Hover 시 스크롤바 확장 및 색상 변경 */
+  .custom-scrollbar:hover::-webkit-scrollbar {
+    width: var(--scrollbar-width-hover);
+    height: var(--scrollbar-width-hover);
+  }
+
+  .custom-scrollbar:hover::-webkit-scrollbar-thumb {
+    background: var(--scrollbar-thumb-hover);
+    background-clip: padding-box;
+  }
+
+  /* Active/드래그 중 */
+  .custom-scrollbar::-webkit-scrollbar-thumb:active {
+    background: var(--primary, var(--blue-400));
+    background-clip: padding-box;
+  }
+
+  /* 코너 (수직+수평 스크롤 시) */
+  .custom-scrollbar::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+
+  /* ==================== Fade Indicators ==================== */
+  .custom-scrollbar-fade {
+    position: absolute;
+    left: 0;
+    right: 0;
+    pointer-events: none;
+    z-index: 1;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+  }
+
+  /* 페이드 표시 시 */
+  .custom-scrollbar-wrapper:has(.custom-scrollbar-fade--top) .custom-scrollbar-fade--top,
+  .custom-scrollbar-wrapper:has(.custom-scrollbar-fade--bottom) .custom-scrollbar-fade--bottom,
+  .custom-scrollbar-wrapper:has(.custom-scrollbar-fade--left) .custom-scrollbar-fade--left,
+  .custom-scrollbar-wrapper:has(.custom-scrollbar-fade--right) .custom-scrollbar-fade--right {
+    opacity: 1;
+  }
+
+  /* 상단 페이드 */
+  .custom-scrollbar-fade--top {
+    top: 0;
+    background: linear-gradient(
+      to bottom,
+      var(--fade-gradient-start) 0%,
+      var(--fade-gradient-start) 20%,
+      var(--fade-gradient-end) 100%
+    );
+    border-radius: var(--radius-md) var(--radius-md) 0 0;
+  }
+
+  /* 하단 페이드 */
+  .custom-scrollbar-fade--bottom {
+    bottom: 0;
+    background: linear-gradient(
+      to top,
+      var(--fade-gradient-start) 0%,
+      var(--fade-gradient-start) 20%,
+      var(--fade-gradient-end) 100%
+    );
+    border-radius: 0 0 var(--radius-md) var(--radius-md);
+  }
+
+  /* 좌측 페이드 (수평 스크롤) */
+  .custom-scrollbar-fade--left {
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: auto;
+    background: linear-gradient(
+      to right,
+      var(--fade-gradient-start) 0%,
+      var(--fade-gradient-start) 20%,
+      var(--fade-gradient-end) 100%
+    );
+    border-radius: var(--radius-md) 0 0 var(--radius-md);
+  }
+
+  /* 우측 페이드 (수평 스크롤) */
+  .custom-scrollbar-fade--right {
+    top: 0;
+    bottom: 0;
+    right: 0;
+    left: auto;
+    background: linear-gradient(
+      to left,
+      var(--fade-gradient-start) 0%,
+      var(--fade-gradient-start) 20%,
+      var(--fade-gradient-end) 100%
+    );
+    border-radius: 0 var(--radius-md) var(--radius-md) 0;
+  }
+
+  /* ==================== Scroll Snap ==================== */
+  .scroll-snap-item {
+    scroll-snap-align: start;
+  }
+
+  /* Scroll snap 자식 요소 스타일 */
+  .custom-scrollbar[data-scroll-snap-align="start"] > * {
+    scroll-snap-align: start;
+  }
+
+  .custom-scrollbar[data-scroll-snap-align="center"] > * {
+    scroll-snap-align: center;
+  }
+
+  .custom-scrollbar[data-scroll-snap-align="end"] > * {
+    scroll-snap-align: end;
+  }
+
+  /* ==================== 모션 감소 설정 ==================== */
+  @media (prefers-reduced-motion: reduce) {
+    .custom-scrollbar {
+      scroll-behavior: auto;
+    }
+
+    .custom-scrollbar-fade {
+      transition: none;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      transition: none;
+    }
+  }
+
+  /* ==================== 포커스 스타일 (접근성) ==================== */
+  .custom-scrollbar:focus-visible {
+    outline: 2px solid var(--focus-ring-color, var(--blue-400));
+    outline-offset: 2px;
+  }
+
+  /* ==================== 유틸리티 변형 ==================== */
+
+  /* 항상 스크롤바 표시 */
+  .custom-scrollbar--always-visible {
+    scrollbar-width: auto;
+  }
+
+  .custom-scrollbar--always-visible::-webkit-scrollbar {
+    width: var(--scrollbar-width-hover);
+    height: var(--scrollbar-width-hover);
+  }
+
+  /* 스크롤바 숨김 (콘텐츠 영역 최대화) */
+  .custom-scrollbar--hidden-scrollbar {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .custom-scrollbar--hidden-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* 얇은 스크롤바 */
+  .custom-scrollbar--thin {
+    --scrollbar-width: 4px;
+    --scrollbar-width-hover: 6px;
+  }
+
+  /* 두꺼운 스크롤바 */
+  .custom-scrollbar--thick {
+    --scrollbar-width: 8px;
+    --scrollbar-width-hover: 12px;
+  }
+}
