@@ -85,7 +85,9 @@ export function validateSlug(slug: string): SlugValidationResult {
  * generateSlugFromTitle('제품 상세')
  * // → '' (한글은 제거됨)
  */
-export function generateSlugFromTitle(title: string): string {
+export function generateSlugFromTitle(title: string | undefined | null): string {
+  if (!title) return '';
+
   return title
     .toLowerCase()
     .trim()
