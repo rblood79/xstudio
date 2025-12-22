@@ -276,6 +276,7 @@ export const PropertyDataBinding = memo(function PropertyDataBinding({
                     key={option.value}
                     id={option.value}
                     className="react-aria-ListBoxItem"
+                    textValue={option.label}
                   >
                     <option.icon size={iconEditProps.size} />
                     <span>{option.label}</span>

@@ -57,6 +57,9 @@ export interface DataTable {
   name: string; // "users", "products"
   project_id: string;
 
+  /** 설명 */
+  description?: string;
+
   /** 스키마 정의 */
   schema: DataField[];
 
@@ -181,6 +184,9 @@ export interface ApiEndpoint {
   id: string;
   name: string; // "getUsers", "createUser"
   project_id: string;
+
+  /** 설명 */
+  description?: string;
 
   // Request Configuration
   method: HttpMethod;
