@@ -72,7 +72,12 @@ export function Workspace({
   fallbackCanvas,
 }: WorkspaceProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
+
+  // 🚀 Phase 2 최적화: containerSize를 ref로 관리 (React 리렌더 방지)
+  const containerSizeRef = useRef({ width: 0, height: 0 });
+  // % breakpoint일 때만 React state로 관리 (canvasSize 재계산용)
+  const [containerSizeForPercent, setContainerSizeForPercent] = useState({ width: 0, height: 0 });
+  const usesPercentBreakpointRef = useRef(false);
 
   // Feature flags
   const useWebGL = isWebGLCanvas();
@@ -82,17 +87,29 @@ export function Workspace({
   // Canvas Size from Breakpoint
   // ============================================
 
-  const canvasSize = useMemo(() => {
+  // 선택된 breakpoint 정보
+  const selectedBreakpoint = useMemo(() => {
     if (!breakpoint || !breakpoints || breakpoints.length === 0) {
-      return { width: 1920, height: 1080 }; // Default fallback
+      return null;
     }
-
-    // Get selected breakpoint ID
     const selectedId = Array.from(breakpoint)[0] as string;
-    const selectedBreakpoint = breakpoints.find((bp) => bp.id === selectedId);
+    return breakpoints.find((bp) => bp.id === selectedId) ?? null;
+  }, [breakpoint, breakpoints]);
 
+  // % breakpoint 여부 체크 및 ref 업데이트
+  const usesPercentBreakpoint = useMemo(() => {
+    if (!selectedBreakpoint) return false;
+    const widthStr = String(selectedBreakpoint.max_width);
+    const heightStr = String(selectedBreakpoint.max_height);
+    return widthStr.includes("%") || heightStr.includes("%");
+  }, [selectedBreakpoint]);
+
+  // ref 동기화 (useEffect 없이 직접 업데이트)
+  usesPercentBreakpointRef.current = usesPercentBreakpoint;
+
+  const canvasSize = useMemo(() => {
     if (!selectedBreakpoint) {
-      return { width: 1920, height: 1080 };
+      return { width: 1920, height: 1080 }; // Default fallback
     }
 
     // Parse width and height from breakpoint
@@ -114,13 +131,18 @@ export function Workspace({
       return isNaN(numValue) ? 1920 : numValue;
     };
 
+    // % breakpoint일 때만 containerSizeForPercent 사용
+    const containerSize = usesPercentBreakpoint
+      ? containerSizeForPercent
+      : containerSizeRef.current;
+
     const size = {
       width: parseSize(selectedBreakpoint.max_width, containerSize.width),
       height: parseSize(selectedBreakpoint.max_height, containerSize.height),
     };
 
     return size;
-  }, [breakpoint, breakpoints, containerSize]);
+  }, [selectedBreakpoint, usesPercentBreakpoint, containerSizeForPercent]);
 
   // Canvas sync store
   const zoom = useCanvasSyncStore((state) => state.zoom);
@@ -130,73 +152,117 @@ export function Workspace({
   const isCanvasReady = useCanvasSyncStore((state) => state.isCanvasReady);
   const isContextLost = useCanvasSyncStore((state) => state.isContextLost);
 
-  // Center canvas when breakpoint changes
-  useEffect(() => {
-    if (containerSize.width > 0 && containerSize.height > 0) {
-      // Center the canvas
-      const scaleX = containerSize.width / canvasSize.width;
-      const scaleY = containerSize.height / canvasSize.height;
-      const fitZoom = Math.min(scaleX, scaleY) * 0.9;
+  // 🚀 Phase 2 최적화: breakpoint 변경 시에만 줌/팬 초기화
+  const lastCenteredKeyRef = useRef<string | null>(null);
+  const centerCanvasRef = useRef<() => boolean>(() => false);
 
-      setZoom(fitZoom);
-      setPanOffset({
-        x: (containerSize.width - canvasSize.width * fitZoom) / 2,
-        y: (containerSize.height - canvasSize.height * fitZoom) / 2,
-      });
+  // 줌/팬 초기화 함수 (재사용)
+  const centerCanvas = useCallback(() => {
+    const containerSize = containerSizeRef.current;
+    if (containerSize.width <= 0 || containerSize.height <= 0) return false;
+
+    const scaleX = containerSize.width / canvasSize.width;
+    const scaleY = containerSize.height / canvasSize.height;
+    const fitZoom = Math.min(scaleX, scaleY) * 0.9;
+
+    setZoom(fitZoom);
+    setPanOffset({
+      x: (containerSize.width - canvasSize.width * fitZoom) / 2,
+      y: (containerSize.height - canvasSize.height * fitZoom) / 2,
+    });
+    return true;
+  }, [canvasSize.width, canvasSize.height, setZoom, setPanOffset]);
+
+  // ref 동기화 (useEffect에서 stale closure 방지)
+  centerCanvasRef.current = centerCanvas;
+
+  // Center canvas when breakpoint changes (NOT when container resizes)
+  useEffect(() => {
+    // breakpoint ID + 정의값 조합 키
+    const breakpointKey = selectedBreakpoint
+      ? `${selectedBreakpoint.id}:${selectedBreakpoint.max_width}x${selectedBreakpoint.max_height}`
+      : null;
+
+    // 같은 키면 센터링 스킵 (패널 resize 무시)
+    if (lastCenteredKeyRef.current === breakpointKey) return;
+
+    // 실제로 센터링이 수행된 후에만 키 업데이트
+    // containerSize가 아직 0,0이면 키를 업데이트하지 않아서 나중에 다시 시도됨
+    if (centerCanvas()) {
+      lastCenteredKeyRef.current = breakpointKey;
     }
-  }, [
-    canvasSize.width,
-    canvasSize.height,
-    containerSize.width,
-    containerSize.height,
-    setZoom,
-    setPanOffset,
-  ]);
+  }, [selectedBreakpoint, canvasSize.width, canvasSize.height, centerCanvas]);
 
   // ============================================
   // Container Size Tracking
   // ============================================
 
-  // 🚀 최적화: ResizeObserver 콜백에 RAF 스로틀링 + 값 비교
-  // 패널 애니메이션 중 매 프레임마다 상태 업데이트 방지
+  // 🚀 Phase 2 최적화: ResizeObserver 콜백에서 contentRect 사용 (Forced Reflow 방지)
+  // ref + store 업데이트, % breakpoint일 때만 React state 업데이트
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
 
     let rafId: number | null = null;
-    let lastWidth = 0;
-    let lastHeight = 0;
 
-    const updateSize = () => {
-      const width = container.clientWidth;
-      const height = container.clientHeight;
+    const resizeObserver = new ResizeObserver((entries) => {
+      const entry = entries[0];
+      if (!entry) return;
 
-      // 값이 변경되지 않으면 스킵
-      if (width === lastWidth && height === lastHeight) return;
+      // ✅ contentRect 사용 (Forced Reflow 방지)
+      const { width, height } = entry.contentRect;
+      if (width <= 0 || height <= 0) return;
 
-      lastWidth = width;
-      lastHeight = height;
-      setContainerSize({ width, height });
-    };
+      // ✅ 동일값 스킵
+      const prev = containerSizeRef.current;
+      if (prev.width === width && prev.height === height) return;
 
-    const throttledUpdate = () => {
+      // ✅ RAF 스로틀
       if (rafId !== null) return;
       rafId = requestAnimationFrame(() => {
         rafId = null;
-        updateSize();
+
+        // 초기 로드 여부 체크 (센터링 아직 안 됨)
+        const isInitialLoad = containerSizeRef.current.width === 0;
+
+        // ref 업데이트 (React 리렌더 없음)
+        containerSizeRef.current = { width, height };
+
+        // store 업데이트 (Phase 3에서 BuilderCanvas가 subscribe)
+        useCanvasSyncStore.getState().setContainerSize({ width, height });
+
+        // % breakpoint일 때만 React state 업데이트
+        if (usesPercentBreakpointRef.current) {
+          setContainerSizeForPercent({ width, height });
+        }
+
+        // 🚀 초기 로드 시 센터링 수행
+        if (isInitialLoad) {
+          centerCanvasRef.current();
+        }
       });
-    };
+    });
 
-    updateSize();
-
-    const resizeObserver = new ResizeObserver(throttledUpdate);
     resizeObserver.observe(container);
+
+    // 초기 크기 설정
+    const initialWidth = container.clientWidth;
+    const initialHeight = container.clientHeight;
+    if (initialWidth > 0 && initialHeight > 0) {
+      containerSizeRef.current = { width: initialWidth, height: initialHeight };
+      useCanvasSyncStore.getState().setContainerSize({ width: initialWidth, height: initialHeight });
+      if (usesPercentBreakpointRef.current) {
+        setContainerSizeForPercent({ width: initialWidth, height: initialHeight });
+      }
+      // 🚀 초기 센터링 수행 (ref 사용 - 의존성 불필요)
+      centerCanvasRef.current();
+    }
 
     return () => {
       if (rafId !== null) cancelAnimationFrame(rafId);
       resizeObserver.disconnect();
     };
-  }, []);
+  }, []); // 의존성 없음 - ref 사용으로 stale closure 방지
 
   // ============================================
   // Zoom Controls (휠 줌은 useZoomPan에서 처리)
@@ -212,6 +278,7 @@ export function Workspace({
 
   const zoomTo = useCallback(
     (level: number) => {
+      const containerSize = containerSizeRef.current;
       if (containerSize.width === 0 || containerSize.height === 0) {
         setZoom(level);
         return;
@@ -238,10 +305,11 @@ export function Workspace({
       setZoom(newZoom);
       setPanOffset({ x: newPanX, y: newPanY });
     },
-    [containerSize, zoom, panOffset, setZoom, setPanOffset]
+    [zoom, panOffset, setZoom, setPanOffset]
   );
 
   const zoomToFit = useCallback(() => {
+    const containerSize = containerSizeRef.current;
     if (containerSize.width === 0 || containerSize.height === 0) return;
 
     const scaleX = containerSize.width / canvasSize.width;
@@ -253,7 +321,7 @@ export function Workspace({
       x: (containerSize.width - canvasSize.width * fitZoom) / 2,
       y: (containerSize.height - canvasSize.height * fitZoom) / 2,
     });
-  }, [containerSize, canvasSize, setZoom, setPanOffset]);
+  }, [canvasSize, setZoom, setPanOffset]);
 
   // ============================================
   // Zoom ComboBox

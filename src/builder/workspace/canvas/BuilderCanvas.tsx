@@ -231,51 +231,48 @@ function ClickableBackground({ onClick, onLassoStart, onLassoDrag, onLassoEnd, z
 }
 
 /**
- * 🚀 Idle-Based Resize Strategy
+ * 🚀 Phase 3: Zustand Subscribe 기반 Resize
  *
- * Time 기반 debounce 대신 requestIdleCallback을 사용하여
- * 브라우저가 유휴 상태일 때만 resize를 수행합니다.
+ * ResizeObserver 제거 → Zustand store의 containerSize를 subscribe하여
+ * 패널 토글 시 불필요한 resize 호출을 완전히 제거합니다.
  *
- * 패널 애니메이션 중에는 브라우저가 바쁘므로 resize가 호출되지 않고,
- * 애니메이션이 끝나고 유휴 상태가 되면 resize가 호출됩니다.
- *
- * @see https://developer.mozilla.org/en-US/docs/Web/API/Window/requestIdleCallback
+ * 핵심 원리:
+ * - 패널이 Canvas 위에 오버레이이므로 Canvas 크기는 변하지 않음
+ * - Workspace.tsx의 ResizeObserver가 containerSize를 store에 업데이트
+ * - 여기서는 store를 subscribe하고, 크기가 실제로 변경된 경우에만 resize 호출
+ * - 초기 resize에도 크기 비교 포함 → 중복 호출 방지
+ * - requestIdleCallback으로 유휴 시간에 resize 수행 → 깜빡임 방지
  */
-function CanvasSmoothResizeBridge({ containerEl }: { containerEl: HTMLElement }) {
+function CanvasSmoothResizeBridge() {
   const { app } = useApplication();
-  const idleCallbackRef = useRef<number>(0);
-  const pendingResizeRef = useRef(false);
   const lastSizeRef = useRef<{ width: number; height: number } | null>(null);
+  const idleCallbackRef = useRef<number>(0);
+  const pendingSizeRef = useRef<{ width: number; height: number } | null>(null);
 
   useEffect(() => {
-    if (!app) return;
+    if (!app?.renderer) return;
 
-    let canceled = false;
-    let observer: ResizeObserver | null = null;
+    const renderer = app.renderer;
 
     // requestIdleCallback polyfill (Safari 지원)
-    const requestIdle = window.requestIdleCallback || ((cb: () => void) => setTimeout(cb, 1));
-    const cancelIdle = window.cancelIdleCallback || clearTimeout;
+    const requestIdle = window.requestIdleCallback || ((cb: () => void) => window.setTimeout(cb, 1));
+    const cancelIdle = window.cancelIdleCallback || window.clearTimeout;
 
-    const attach = () => {
-      if (canceled) return;
+    // ✅ 크기 비교 후 resize 호출 (같으면 스킵)
+    const applyResizeIfNeeded = (width: number, height: number, immediate = false) => {
+      if (width <= 0 || height <= 0) return;
 
-      const renderer = app.renderer;
-      if (!renderer) {
-        window.requestAnimationFrame(attach);
-        return;
-      }
+      // ✅ 크기 비교 - 같으면 스킵
+      const prev = lastSizeRef.current;
+      if (prev && prev.width === width && prev.height === height) return;
 
-      // 초기 동기화: 컨테이너 크기로 renderer 설정
-      renderer.resize(containerEl.clientWidth, containerEl.clientHeight);
-      lastSizeRef.current = {
-        width: containerEl.clientWidth,
-        height: containerEl.clientHeight,
-      };
-
-      const scheduleIdleResize = () => {
-        if (pendingResizeRef.current) return; // 이미 예약됨
-        pendingResizeRef.current = true;
+      if (immediate) {
+        // 초기 로드 시에는 즉시 적용
+        lastSizeRef.current = { width, height };
+        renderer.resize(width, height);
+      } else {
+        // 브라우저 리사이즈 시에는 idle 시간에 적용 (깜빡임 방지)
+        pendingSizeRef.current = { width, height };
 
         if (idleCallbackRef.current) {
           cancelIdle(idleCallbackRef.current);
@@ -283,45 +280,38 @@ function CanvasSmoothResizeBridge({ containerEl }: { containerEl: HTMLElement })
 
         idleCallbackRef.current = requestIdle(() => {
           idleCallbackRef.current = 0;
-          pendingResizeRef.current = false;
-          if (canceled) return;
-
-          const width = containerEl.clientWidth;
-          const height = containerEl.clientHeight;
-          if (width > 0 && height > 0) {
-            renderer.resize(width, height);
+          const pending = pendingSizeRef.current;
+          if (pending && pending.width > 0 && pending.height > 0) {
+            lastSizeRef.current = pending;
+            renderer.resize(pending.width, pending.height);
+            pendingSizeRef.current = null;
           }
         });
-      };
-
-      observer = new ResizeObserver((entries) => {
-        const entry = entries[0];
-        if (!entry) return;
-
-        const { width, height } = entry.contentRect;
-        if (width <= 0 || height <= 0) return;
-
-        // 크기가 변경되지 않았으면 스킵
-        const prev = lastSizeRef.current;
-        if (prev && prev.width === width && prev.height === height) return;
-        lastSizeRef.current = { width, height };
-
-        // 🚀 유휴 상태에서만 resize 수행
-        scheduleIdleResize();
-      });
-      observer.observe(containerEl);
+      }
     };
 
-    attach();
+    // 초기 동기화 (즉시 적용)
+    const initialSize = useCanvasSyncStore.getState().containerSize;
+    if (initialSize.width > 0 && initialSize.height > 0) {
+      applyResizeIfNeeded(initialSize.width, initialSize.height, true);
+    }
+
+    // ✅ Zustand subscribe (React 외부에서 처리, 리렌더링 없음)
+    const unsubscribe = useCanvasSyncStore.subscribe(
+      (state) => state.containerSize,
+      (size) => {
+        // 이후 변경은 idle 시간에 적용
+        applyResizeIfNeeded(size.width, size.height, false);
+      }
+    );
 
     return () => {
-      canceled = true;
+      unsubscribe();
       if (idleCallbackRef.current) {
         cancelIdle(idleCallbackRef.current);
       }
-      observer?.disconnect();
     };
-  }, [app, containerEl]);
+  }, [app]);
 
   return null;
 }
@@ -737,7 +727,8 @@ export function BuilderCanvas({
           {/* P4: 메모이제이션된 컴포넌트 등록 (첫 번째 자식) */}
           <PixiExtendBridge />
 
-          <CanvasSmoothResizeBridge containerEl={containerEl} />
+          {/* 🚀 Phase 3: containerEl prop 제거 - Zustand store에서 containerSize subscribe */}
+          <CanvasSmoothResizeBridge />
 
           {/* ViewportControlBridge: Camera Container 직접 조작 (React re-render 최소화) */}
           <ViewportControlBridge

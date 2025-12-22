@@ -53,6 +53,8 @@ export interface CanvasSyncState {
   zoom: number;
   /** 팬 오프셋 */
   panOffset: { x: number; y: number };
+  /** 컨테이너 크기 (패널 토글 최적화용) */
+  containerSize: { width: number; height: number };
 
   // ============================================
   // GPU Metrics
@@ -77,6 +79,8 @@ export interface CanvasSyncState {
   setZoom: (zoom: number) => void;
   /** 팬 오프셋 설정 */
   setPanOffset: (offset: { x: number; y: number }) => void;
+  /** 컨테이너 크기 설정 */
+  setContainerSize: (size: { width: number; height: number }) => void;
   /** GPU 메트릭 업데이트 */
   updateGPUMetrics: (metrics: Partial<GPUMetrics>) => void;
   /** 상태 리셋 */
@@ -102,6 +106,7 @@ const initialState = {
   isContextLost: false,
   zoom: 1,
   panOffset: { x: 0, y: 0 },
+  containerSize: { width: 0, height: 0 },
   gpuMetrics: initialGPUMetrics,
 };
 
@@ -151,6 +156,10 @@ export const useCanvasSyncStore = create<CanvasSyncState>()(
 
     setPanOffset: (offset) => {
       set({ panOffset: offset });
+    },
+
+    setContainerSize: (size) => {
+      set({ containerSize: size });
     },
 
     updateGPUMetrics: (metrics) => {
