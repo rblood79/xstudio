@@ -96,6 +96,17 @@ PixiJS 렌더링
 
 ## 3. 최적화 실행 계획
 
+### 타이밍 상수 정의
+
+```typescript
+// src/builder/constants/timing.ts (신규)
+export const TIMING = {
+  INSPECTOR_DEBOUNCE: 100,    // 선택 → 인스펙터 (ms)
+  INPUT_DEBOUNCE: 150,        // 입력 → store (ms)
+  DRAG_THROTTLE: 16,          // 드래그 프레임 (60fps)
+} as const;
+```
+
 ### Phase 1: 드래그 성능 최적화 (최우선)
 
 **목표**: 1,239ms → < 100ms
@@ -110,14 +121,20 @@ const updateDrag = (position) => {
   setDragState({ ...state, currentPosition: position }); // store 업데이트
 };
 
-// After: 로컬 상태만 업데이트
+// After: 로컬 ref + throttle
 const localPositionRef = useRef({ x: 0, y: 0 });
+const lastUpdateTime = useRef(0);
+
 const updateDrag = (position) => {
-  localPositionRef.current = position; // 로컬 ref만 업데이트
-  requestAnimationFrame(() => {
-    // PixiJS 직접 업데이트
-    selectionBoxRef.current?.updatePosition(position);
-  });
+  localPositionRef.current = position;
+
+  // 16ms throttle (60fps)
+  const now = performance.now();
+  if (now - lastUpdateTime.current < TIMING.DRAG_THROTTLE) return;
+  lastUpdateTime.current = now;
+
+  // PixiJS 직접 업데이트 (React 리렌더링 없음)
+  selectionBoxRef.current?.updatePosition(position);
 };
 ```
 
@@ -202,9 +219,23 @@ useEffect(() => {
 **파일**: `src/builder/sidebar/index.tsx`
 
 ```typescript
-// 선택 변경 후 150ms 디바운스
-const deferredSelectedId = useDeferredValue(selectedElementId);
-const debouncedSelectedId = useDebounce(deferredSelectedId, 150);
+import { TIMING } from '../constants/timing';
+import { useDebouncedCallback } from 'use-debounce';
+
+// 명시적 debounce - 예측 가능하고 테스트 용이
+const [inspectorElementId, setInspectorElementId] = useState<string | null>(null);
+
+const debouncedUpdateInspector = useDebouncedCallback(
+  (elementId: string | null) => {
+    setInspectorElementId(elementId);
+  },
+  TIMING.INSPECTOR_DEBOUNCE
+);
+
+// 선택 변경 시
+useEffect(() => {
+  debouncedUpdateInspector(selectedElementId);
+}, [selectedElementId]);
 ```
 
 #### 3.2 섹션 조건부 렌더링

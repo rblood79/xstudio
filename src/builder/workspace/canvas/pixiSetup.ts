@@ -27,6 +27,8 @@ import {
   Graphics as PixiGraphics,
   Sprite as PixiSprite,
   Text as PixiText,
+  AbstractRenderer,
+  TextureSource,
 } from 'pixi.js';
 import {
   LayoutContainer,
@@ -34,6 +36,86 @@ import {
 } from '@pixi/layout/components';
 import { FancyButton } from '@pixi/ui';
 import { extend } from '@pixi/react';
+
+// ============================================
+// 🚀 Phase 5: PixiJS 전역 성능 설정
+// ============================================
+
+/**
+ * PixiJS 전역 설정 최적화
+ *
+ * - ROUND_PIXELS: 서브픽셀 렌더링 방지 (선명한 렌더링)
+ * - GC_MAX_IDLE: 텍스처 가비지 컬렉션 주기
+ * - RESOLUTION: 기본 해상도 설정
+ */
+function initPixiSettings() {
+  // 서브픽셀 렌더링 방지 (선명한 렌더링, 성능 개선)
+  // PixiJS 8.x에서는 Application 옵션으로 설정 (roundPixels: true)
+
+  // 텍스처 가비지 컬렉션 최적화
+  // 60초 동안 사용되지 않은 텍스처 자동 해제
+  TextureSource.defaultOptions.autoGarbageCollect = true;
+
+  // 기본 해상도 설정 (devicePixelRatio 기반)
+  AbstractRenderer.defaultOptions.resolution = Math.min(window.devicePixelRatio || 1, 2);
+
+  // 기본 antialias 설정 (고사양 기기만)
+  AbstractRenderer.defaultOptions.antialias = !isLowEndDevice();
+
+  // 기본 powerPreference 설정
+  AbstractRenderer.defaultOptions.powerPreference = 'high-performance';
+}
+
+/**
+ * 저사양 기기 감지
+ *
+ * - hardwareConcurrency < 4 (듀얼코어 이하)
+ * - deviceMemory < 4GB (Chrome만 지원)
+ * - 모바일 기기
+ */
+export function isLowEndDevice(): boolean {
+  // hardwareConcurrency 체크 (논리 코어 수)
+  if (navigator.hardwareConcurrency && navigator.hardwareConcurrency < 4) {
+    return true;
+  }
+
+  // deviceMemory 체크 (Chrome 전용 API)
+  if ('deviceMemory' in navigator && (navigator as { deviceMemory?: number }).deviceMemory! < 4) {
+    return true;
+  }
+
+  // 모바일 기기 체크
+  const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+    navigator.userAgent
+  );
+  if (isMobile) {
+    return true;
+  }
+
+  return false;
+}
+
+/**
+ * 동적 해상도 계산
+ *
+ * @param isInteracting - 사용자 인터랙션 중 여부 (드래그, 줌 등)
+ * @returns 최적화된 해상도
+ */
+export function getDynamicResolution(isInteracting: boolean): number {
+  const devicePixelRatio = window.devicePixelRatio || 1;
+  const isLowEnd = isLowEndDevice();
+
+  if (isInteracting) {
+    // 인터랙션 중: 해상도 낮춤 (60fps 유지)
+    return isLowEnd ? 1 : Math.min(devicePixelRatio, 1.5);
+  }
+
+  // 유휴 상태: 고해상도
+  return isLowEnd ? Math.min(devicePixelRatio, 1.5) : Math.min(devicePixelRatio, 2);
+}
+
+// 모듈 로드 시점에 전역 설정 적용
+initPixiSettings();
 
 /**
  * PixiJS 컴포넌트 카탈로그

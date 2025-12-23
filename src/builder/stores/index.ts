@@ -1,5 +1,6 @@
-import { useMemo } from "react";
+import { useMemo, useState, useEffect, useRef, useDeferredValue } from "react";
 import { create, type StoreApi, type UseBoundStore } from "zustand";
+import { TIMING } from "../constants/timing";
 import { createSelectionSlice, SelectionState } from "./selection";
 import { createElementsSlice, ElementsState, type Element } from "./elements";
 import { createSaveModeSlice, SaveModeState } from "./saveMode";
@@ -152,6 +153,81 @@ export const useSelectedElementData = (): SelectedElement | null => {
       events: (events as SelectedElement["events"]) || [],
     };
   }, [selectedElementId, selectedElementProps]);
+};
+
+/**
+ * 🚀 Phase 19/Phase 3: 디바운스된 선택 요소 데이터
+ *
+ * 선택 변경 시 INSPECTOR_DEBOUNCE (100ms) 지연 후 업데이트
+ * - 빠른 선택 전환 시 불필요한 인스펙터 리렌더링 방지
+ * - 드래그 중 선택 변경에도 부드러운 UX 제공
+ *
+ * @returns SelectedElement | null (디바운스됨)
+ */
+export const useDebouncedSelectedElementData = (): SelectedElement | null => {
+  const currentData = useSelectedElementData();
+  const [debouncedData, setDebouncedData] = useState<SelectedElement | null>(currentData);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    // 이전 타이머 취소
+    if (timeoutRef.current !== null) {
+      clearTimeout(timeoutRef.current);
+    }
+
+    // null → 값: 즉시 업데이트 (선택됨 표시 빠르게)
+    // 값 → null: 즉시 업데이트 (선택 해제 빠르게)
+    // 값 → 다른값: 디바운스 (빠른 선택 전환 시 지연)
+    if (currentData === null || debouncedData === null) {
+      setDebouncedData(currentData);
+    } else if (currentData.id !== debouncedData.id) {
+      // 다른 요소로 선택 변경: 디바운스 적용
+      timeoutRef.current = setTimeout(() => {
+        setDebouncedData(currentData);
+        timeoutRef.current = null;
+      }, TIMING.INSPECTOR_DEBOUNCE);
+    } else {
+      // 같은 요소의 속성 변경: 즉시 업데이트
+      setDebouncedData(currentData);
+    }
+
+    return () => {
+      if (timeoutRef.current !== null) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
+    };
+  }, [currentData, debouncedData]);
+
+  return debouncedData;
+};
+
+/**
+ * 🚀 Phase 4.5: useDeferredValue 기반 선택 요소 ID
+ *
+ * React 18 Concurrent Features를 활용하여 선택 변경을 낮은 우선순위로 처리
+ * - 캔버스 클릭은 즉시 반응
+ * - 트리 하이라이트 등 부가 UI는 지연 업데이트
+ *
+ * @returns 지연된 selectedElementId
+ */
+export const useDeferredSelectedElementId = (): string | null => {
+  const selectedElementId = useStore((state) => state.selectedElementId);
+  return useDeferredValue(selectedElementId);
+};
+
+/**
+ * 🚀 Phase 4.5: useDeferredValue 기반 선택 요소 데이터
+ *
+ * useDebouncedSelectedElementData + useDeferredValue 조합
+ * - 디바운스: 빠른 선택 전환 필터링
+ * - Defer: React concurrent 우선순위 활용
+ *
+ * @returns 지연된 SelectedElement | null
+ */
+export const useDeferredSelectedElementDataConcurrent = (): SelectedElement | null => {
+  const currentData = useDebouncedSelectedElementData();
+  return useDeferredValue(currentData);
 };
 
 /**

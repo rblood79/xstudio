@@ -8,7 +8,7 @@
  * - TreeNodeItem으로 개별 노드 최적화
  */
 
-import React, { memo, useMemo } from "react";
+import React, { memo, useMemo, useDeferredValue } from "react";
 import { TreeNodeItem } from "./TreeNodeItem";
 import type { Element } from "../../../types/core/store.types";
 import { sortChildrenByParentTag, sortByOrderNum } from "../../utils/treeUtils";
@@ -64,15 +64,21 @@ function getElementLabel(element: Element): string {
 
 /**
  * 메모이제이션된 요소 트리 렌더러
+ *
+ * 🚀 Phase 4.5: useDeferredValue로 선택 하이라이트 낮은 우선순위 처리
+ * - 캔버스 클릭은 즉시 반응
+ * - 트리 하이라이트는 concurrent 렌더링으로 지연
  */
 export const ElementTreeRenderer = memo(function ElementTreeRenderer({
   elements,
-  selectedElementId,
+  selectedElementId: rawSelectedElementId,
   expandedKeys,
   onSelect,
   onDelete,
   onToggle,
 }: ElementTreeRendererProps) {
+  // 🚀 Phase 4.5: 선택 하이라이트를 낮은 우선순위로 처리
+  const selectedElementId = useDeferredValue(rawSelectedElementId);
   // 🚀 Performance: childrenMap 생성 (O(n))
   const childrenMap = useMemo(() => {
     const map = new Map<string, Element[]>();

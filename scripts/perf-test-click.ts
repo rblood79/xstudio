@@ -8,7 +8,9 @@ import { chromium } from 'playwright';
 
 const TEST_EMAIL = 'rblood79@gmail.com';
 const TEST_PASSWORD = '79@dltkdxo';
-const BASE_URL = 'http://localhost:5174';
+const BASE_URL = 'http://localhost:5173';
+// 직접 빌더 URL (이미 로그인된 상태에서 사용)
+const DIRECT_BUILDER_URL = process.env.BUILDER_URL || '';
 
 async function runPerfTest() {
   console.log('🚀 Phase 19 성능 테스트 시작...\n');
@@ -42,61 +44,47 @@ async function runPerfTest() {
   });
 
   try {
-    // 1. 로그인 페이지로 이동
-    console.log('📄 로그인 페이지 로드 중...');
-    await page.goto(`${BASE_URL}/signin`, { waitUntil: 'networkidle' });
-    await page.waitForTimeout(2000);
-
-    // 2. 로그인
-    console.log('🔐 로그인 진행 중...');
-
-    // 이메일 입력 (React Aria TextField)
-    const emailInput = await page.waitForSelector('input[type="email"]', { timeout: 5000 });
-    await emailInput.fill(TEST_EMAIL);
-
-    // 비밀번호 입력
-    const passwordInput = await page.waitForSelector('input[type="password"]', { timeout: 5000 });
-    await passwordInput.fill(TEST_PASSWORD);
-
-    // Sign In 버튼 클릭
-    const signInButton = await page.waitForSelector('button[type="submit"]', { timeout: 5000 });
-    await signInButton.click();
-
-    // 대시보드로 이동 대기
-    console.log('⏳ 대시보드 로딩 대기...');
-    await page.waitForURL('**/dashboard**', { timeout: 10000 });
-    await page.waitForTimeout(2000);
-    console.log('✅ 대시보드 도착\n');
-
-    // 3. 프로젝트 선택 또는 생성
-    console.log('📁 프로젝트 확인 중...');
-    await page.waitForTimeout(2000);
-
-    // 기존 프로젝트 카드의 Open 버튼 찾기
-    const projectOpenButton = await page.$('.project-card .react-aria-Button.primary');
-
-    if (projectOpenButton) {
-      console.log('📁 기존 프로젝트 Open 클릭...');
-      await projectOpenButton.click();
-      await page.waitForURL('**/builder/**', { timeout: 10000 });
+    // 직접 빌더 URL이 있으면 바로 이동
+    if (DIRECT_BUILDER_URL) {
+      console.log('📍 직접 빌더 URL로 이동:', DIRECT_BUILDER_URL);
+      await page.goto(DIRECT_BUILDER_URL, { waitUntil: 'networkidle' });
       await page.waitForTimeout(3000);
-      console.log('✅ 프로젝트 진입\n');
+      console.log('✅ 빌더 진입\n');
     } else {
-      // 프로젝트가 없으면 새로 생성
-      console.log('📁 프로젝트 없음, 새 프로젝트 생성...');
+      // 1. 로그인 페이지로 이동
+      console.log('📄 로그인 페이지 로드 중...');
+      await page.goto(`${BASE_URL}/signin`, { waitUntil: 'networkidle' });
+      await page.waitForTimeout(2000);
 
-      const projectNameInput = await page.$('input[placeholder="New Project"]');
-      if (projectNameInput) {
-        await projectNameInput.fill('PerfTest_' + Date.now());
+      // 2. 로그인
+      console.log('🔐 로그인 진행 중...');
 
-        const createButton = await page.$('.add-project-button');
-        if (createButton) {
-          await createButton.click();
-          await page.waitForURL('**/builder/**', { timeout: 15000 });
-          await page.waitForTimeout(3000);
-          console.log('✅ 새 프로젝트 생성 및 진입\n');
-        }
-      }
+      // 이메일 입력 (React Aria TextField)
+      const emailInput = await page.waitForSelector('input[type="email"]', { timeout: 5000 });
+      await emailInput.fill(TEST_EMAIL);
+
+      // 비밀번호 입력
+      const passwordInput = await page.waitForSelector('input[type="password"]', { timeout: 5000 });
+      await passwordInput.fill(TEST_PASSWORD);
+
+      // Sign In 버튼 클릭
+      const signInButton = await page.waitForSelector('button[type="submit"]', { timeout: 5000 });
+      await signInButton.click();
+
+      // 대시보드로 이동 대기
+      console.log('⏳ 대시보드 로딩 대기...');
+      await page.waitForURL('**/dashboard**', { timeout: 10000 });
+      await page.waitForTimeout(2000);
+      console.log('✅ 대시보드 도착\n');
+
+      // 3. 프로젝트 선택 - 사용자가 직접 선택하도록 대기
+      console.log('📁 프로젝트를 선택해주세요...');
+      console.log('⏳ 빌더 URL 대기 중... (120초)');
+
+      await page.waitForURL('**/builder/**', { timeout: 120000 });
+      console.log('✅ 빌더 진입\n');
+
+      await page.waitForTimeout(3000);
     }
 
     // 4. 빌더 로드 확인
@@ -106,38 +94,11 @@ async function runPerfTest() {
     // 현재 URL 출력
     console.log(`📍 현재 URL: ${page.url()}\n`);
 
-    // 5. 컴포넌트 추가 - 사이드바에서 Button 등 컴포넌트 찾아서 클릭
-    console.log('🧩 컴포넌트 추가 시도...');
-
-    // 사이드바의 컴포넌트 아이템 찾기 (다양한 선택자 시도)
-    const componentSelectors = [
-      '[data-component-type="Button"]',
-      '[draggable="true"]',
-      '.component-item',
-      '.sidebar_elements button',
-      '[class*="component"]',
-      '.palette-item'
-    ];
-
-    let componentItem = null;
-    for (const selector of componentSelectors) {
-      componentItem = await page.$(selector);
-      if (componentItem) {
-        console.log(`  선택자 "${selector}"로 컴포넌트 발견`);
-        break;
-      }
-    }
-
-    if (componentItem) {
-      // 컴포넌트 더블클릭으로 캔버스에 추가
-      await componentItem.dblclick();
-      await page.waitForTimeout(1000);
-      console.log('✅ 컴포넌트 추가됨\n');
-    } else {
-      console.log('⚠️  컴포넌트 아이템을 찾지 못함, 수동 추가 대기...');
-      console.log('🖐️  10초 내에 컴포넌트를 수동으로 추가해주세요...\n');
-      await page.waitForTimeout(10000);
-    }
+    // 5. 요소 준비 대기
+    console.log('🧩 요소가 있는지 확인 중...');
+    console.log('📌 캔버스에 요소가 있어야 테스트가 가능합니다.');
+    console.log('⏳ 10초 대기 (필요하면 요소를 추가해주세요)...\n');
+    await page.waitForTimeout(10000);
 
     // 6. 캔버스에서 요소 선택 테스트
     console.log('🔍 캔버스 요소 확인 중...');
@@ -224,15 +185,73 @@ async function runPerfTest() {
       console.log(`\n🖱️  레이어 클릭 테스트 시작...\n`);
 
       for (let i = 0; i < Math.min(3, layerItems.length); i++) {
-        const startTime = Date.now();
-        await layerItems[i].click();
-        const clickDuration = Date.now() - startTime;
-
-        console.log(`  레이어 ${i + 1} 클릭: ${clickDuration}ms`);
-        await page.waitForTimeout(1000);
+        try {
+          const startTime = Date.now();
+          await layerItems[i].click({ force: true, timeout: 5000 });
+          const clickDuration = Date.now() - startTime;
+          console.log(`  레이어 ${i + 1} 클릭: ${clickDuration}ms`);
+          await page.waitForTimeout(1000);
+        } catch (e) {
+          console.log(`  레이어 ${i + 1} 클릭 실패 (뷰포트 밖)`);
+        }
       }
     } else {
       console.log('  레이어 아이템을 찾지 못했습니다.');
+    }
+
+    // 6. 드래그 테스트
+    if (canvas) {
+      const box = await canvas.boundingBox();
+      if (box) {
+        console.log('\n🖱️  드래그 테스트 시작 (3회)...\n');
+
+        for (let i = 0; i < 3; i++) {
+          const startX = box.x + box.width * 0.4;
+          const startY = box.y + box.height * 0.4;
+          const endX = startX + 100;
+          const endY = startY + 100;
+
+          const startTime = Date.now();
+
+          // 마우스 다운
+          await page.mouse.move(startX, startY);
+          await page.mouse.down();
+
+          // 드래그 (여러 단계)
+          for (let step = 0; step < 10; step++) {
+            const x = startX + (endX - startX) * (step / 10);
+            const y = startY + (endY - startY) * (step / 10);
+            await page.mouse.move(x, y);
+            await page.waitForTimeout(16); // 60fps
+          }
+
+          // 마우스 업
+          await page.mouse.up();
+
+          const dragDuration = Date.now() - startTime;
+          console.log(`  드래그 ${i + 1}: ${dragDuration}ms`);
+          await page.waitForTimeout(500);
+        }
+      }
+    }
+
+    // 7. 빠른 선택 전환 테스트
+    if (layerItems.length >= 2) {
+      console.log('\n🔄 빠른 선택 전환 테스트 (10회)...\n');
+
+      const switchTimes: number[] = [];
+      for (let i = 0; i < 10; i++) {
+        const targetIdx = i % Math.min(layerItems.length, 3);
+        const startTime = Date.now();
+        await layerItems[targetIdx].click();
+        const switchDuration = Date.now() - startTime;
+        switchTimes.push(switchDuration);
+        await page.waitForTimeout(150); // 디바운스 시간보다 조금 더
+      }
+
+      const avgSwitch = switchTimes.reduce((a, b) => a + b, 0) / switchTimes.length;
+      const maxSwitch = Math.max(...switchTimes);
+      console.log(`  평균: ${Math.round(avgSwitch)}ms, 최대: ${maxSwitch}ms`);
     }
 
     // 결과 요약

@@ -35,7 +35,7 @@ export {
 
 // Components
 export { SelectionBox } from './SelectionBox';
-export type { SelectionBoxProps } from './SelectionBox';
+export type { SelectionBoxProps, SelectionBoxHandle } from './SelectionBox';
 
 export { TransformHandle } from './TransformHandle';
 export type { TransformHandleProps } from './TransformHandle';

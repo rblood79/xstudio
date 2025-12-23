@@ -11,7 +11,7 @@
  * 🚀 Phase 20: Lazy Children Pattern - 열릴 때만 children 평가
  */
 
-import React, { memo } from "react";
+import React, { memo, useTransition } from "react";
 import { ChevronUp, RotateCcw } from "lucide-react";
 import { iconProps } from "../../../utils/ui/uiConstants";
 import { useSectionCollapse } from "../styles/hooks/useSectionCollapse";
@@ -38,20 +38,29 @@ export const PropertySection = memo(function PropertySection({
   // Use persistent collapse state if ID provided, otherwise use local state
   const { isCollapsed, toggleSection } = useSectionCollapse();
   const [localExpanded, setLocalExpanded] = React.useState(defaultExpanded);
+  // 🚀 Phase 4.2: startTransition으로 섹션 열기 우선순위 낮춤
+  const [isPending, startTransition] = useTransition();
 
   const hasPersistedState = id !== undefined;
   const isExpanded = hasPersistedState ? !isCollapsed(id) : localExpanded;
 
   const handleToggle = () => {
-    if (hasPersistedState && id) {
-      toggleSection(id);
-    } else {
-      setLocalExpanded(!localExpanded);
-    }
+    // 🚀 Phase 4.2: 섹션 열기는 낮은 우선순위로 처리
+    startTransition(() => {
+      if (hasPersistedState && id) {
+        toggleSection(id);
+      } else {
+        setLocalExpanded(!localExpanded);
+      }
+    });
   };
 
   return (
-    <div className="section" data-section-id={id}>
+    <div
+      className="section"
+      data-section-id={id}
+      style={{ opacity: isPending ? 0.7 : 1 }}
+    >
       <div className="section-header">
         <div className="section-title">{title}</div>
         <div className="section-actions">

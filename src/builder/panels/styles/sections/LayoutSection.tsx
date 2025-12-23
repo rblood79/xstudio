@@ -31,6 +31,7 @@ import {
 import { useStyleActions } from '../hooks/useStyleActions';
 import { useOptimizedStyleActions } from '../hooks/useOptimizedStyleActions';
 import { useLayoutValuesJotai } from '../hooks/useLayoutValuesJotai';
+import { useResetStyles } from '../hooks/useResetStyles';
 import { useAtomValue } from 'jotai';
 import {
   flexDirectionKeysAtom,
@@ -413,9 +414,10 @@ const LayoutSectionContent = memo(function LayoutSectionContent() {
  * LayoutSection - 외부 래퍼
  * - PropertySection만 관리
  * - 🚀 Phase 3: Jotai 기반 - props 불필요
+ * - 🚀 Phase 4.2c: useResetStyles 경량 훅 사용
  */
 export const LayoutSection = memo(function LayoutSection() {
-  const { resetStyles } = useStyleActions();
+  const resetStyles = useResetStyles();
 
   const handleReset = () => {
     resetStyles([

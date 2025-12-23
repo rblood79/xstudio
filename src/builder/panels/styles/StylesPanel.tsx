@@ -24,7 +24,7 @@ import "../../panels/common/index.css";
 import { useState, useMemo, useCallback, memo } from "react";
 import { ToggleButton } from "react-aria-components";
 import type { PanelProps } from "../core/types";
-import { useSelectedElementData } from "../../stores";
+import { useDebouncedSelectedElementData } from "../../stores";
 import { Button } from "../../../shared/components";
 import { Copy, ClipboardPaste, PencilRuler, Palette } from "lucide-react";
 import { iconProps } from "../../../utils/ui/uiConstants";
@@ -83,7 +83,8 @@ export function StylesPanel({ isActive }: PanelProps) {
  * - "all" 모드에서는 마운트되지 않음
  */
 const ModifiedSectionsWrapper = memo(function ModifiedSectionsWrapper() {
-  const selectedElement = useSelectedElementData();
+  // 🚀 Phase 3: 디바운스된 선택 데이터 사용
+  const selectedElement = useDebouncedSelectedElementData();
   if (!selectedElement) return null;
   return <ModifiedStylesSection selectedElement={selectedElement} />;
 });

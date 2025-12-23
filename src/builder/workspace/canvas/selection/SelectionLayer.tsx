@@ -2,6 +2,7 @@
  * Selection Layer
  *
  * 🚀 Phase 10 B1.3: 선택 시스템 통합 레이어
+ * 🚀 Phase 19: 성능 최적화 - selectionBoxRef를 통한 imperative 업데이트
  *
  * 기능:
  * - 선택된 요소의 SelectionBox 표시
@@ -10,18 +11,20 @@
  * - 라쏘 선택
  *
  * @since 2025-12-11 Phase 10 B1.3
+ * @updated 2025-12-23 Phase 19 성능 최적화
  */
 
-import { useCallback, useMemo, memo } from 'react';
+import { useCallback, useMemo, memo, type RefObject, useState, useEffect, useRef } from 'react';
 import { useExtend } from '@pixi/react';
 import { PIXI_COMPONENTS } from '../pixiSetup';
 import { useStore } from '../../../stores';
-import { SelectionBox } from './SelectionBox';
+import { SelectionBox, type SelectionBoxHandle } from './SelectionBox';
 import { LassoSelection } from './LassoSelection';
 import type { BoundingBox, HandlePosition, CursorStyle, DragState } from './types';
 import { calculateCombinedBounds } from './types';
 import type { LayoutResult } from '../layout';
 import type { Element } from '../../../../types';
+import { TIMING } from '../../../constants/timing';
 
 // ============================================
 // Types
@@ -44,6 +47,11 @@ export interface SelectionLayerProps {
   onMoveStart?: (elementId: string, bounds: BoundingBox) => void;
   /** 커서 변경 콜백 */
   onCursorChange?: (cursor: CursorStyle) => void;
+  /**
+   * 🚀 Phase 19: SelectionBox imperative handle ref
+   * 드래그 중 React 리렌더링 없이 위치 업데이트용
+   */
+  selectionBoxRef?: RefObject<SelectionBoxHandle | null>;
 }
 
 // ============================================
@@ -64,6 +72,7 @@ export const SelectionLayer = memo(function SelectionLayer({
   onResizeStart,
   onMoveStart,
   onCursorChange,
+  selectionBoxRef,
 }: SelectionLayerProps) {
   useExtend(PIXI_COMPONENTS);
 
@@ -111,8 +120,8 @@ export const SelectionLayer = memo(function SelectionLayer({
     return set;
   }, [selectedElementIds, getChildrenMap]);
 
-  // 선택된 요소들의 바운딩 박스
-  const selectionBounds = useMemo(() => {
+  // 🚀 Phase 19: selectionBounds 계산 함수 (재사용)
+  const computeSelectionBounds = useCallback(() => {
     if (selectedElements.length === 0) return null;
 
     const boxes = selectedElements.map((el) => {
@@ -132,6 +141,44 @@ export const SelectionLayer = memo(function SelectionLayer({
 
     return calculateCombinedBounds(boxes);
   }, [selectedElements, pageWidth, pageHeight, layoutResult]);
+
+  // 🚀 Phase 19: 선택 변경 시 즉시 bounds 계산 (첫 프레임)
+  // 추가 레이아웃 변경은 requestIdleCallback으로 지연
+  const [selectionBounds, setSelectionBounds] = useState<BoundingBox | null>(null);
+  const pendingUpdateRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    // 첫 번째 프레임: 즉시 계산 (선택 피드백 즉시 표시)
+    const bounds = computeSelectionBounds();
+    setSelectionBounds(bounds);
+
+    // cleanup: pending update 취소
+    return () => {
+      if (pendingUpdateRef.current !== null) {
+        cancelIdleCallback(pendingUpdateRef.current);
+        pendingUpdateRef.current = null;
+      }
+    };
+  }, [computeSelectionBounds]);
+
+  // 🚀 Phase 19: layoutResult 변경 시에만 지연 업데이트 (드래그 중 등)
+  const layoutResultRef = useRef(layoutResult);
+  useEffect(() => {
+    if (layoutResultRef.current === layoutResult) return;
+    layoutResultRef.current = layoutResult;
+
+    // 레이아웃 변경 시 idle callback으로 bounds 재계산
+    if (pendingUpdateRef.current !== null) {
+      cancelIdleCallback(pendingUpdateRef.current);
+    }
+    pendingUpdateRef.current = requestIdleCallback(
+      () => {
+        setSelectionBounds(computeSelectionBounds());
+        pendingUpdateRef.current = null;
+      },
+      { timeout: TIMING.IDLE_CALLBACK_TIMEOUT }
+    );
+  }, [layoutResult, computeSelectionBounds]);
 
   // 단일 선택 여부
   const isSingleSelection = selectedElements.length === 1;
@@ -185,6 +232,7 @@ export const SelectionLayer = memo(function SelectionLayer({
       {/* 선택 박스 (선택된 요소가 있을 때) */}
       {selectionBounds && (
         <SelectionBox
+          ref={selectionBoxRef}
           bounds={selectionBounds}
           showHandles={isSingleSelection}
           enableMoveArea={!isContainerSelected}

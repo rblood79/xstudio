@@ -20,7 +20,8 @@ import { Graphics as PixiGraphics } from "pixi.js";
 import { useStore } from "../../stores";
 
 // P4: useExtend 훅으로 메모이제이션된 컴포넌트 등록
-import { useExtend, PIXI_COMPONENTS } from "./pixiSetup";
+// 🚀 Phase 5: 동적 해상도 및 저사양 기기 감지
+import { useExtend, PIXI_COMPONENTS, isLowEndDevice, getDynamicResolution } from "./pixiSetup";
 import { useCanvasSyncStore } from "./canvasSync";
 import { isWebGLCanvas } from "../../../utils/featureFlags";
 import { ElementSprite } from "./sprites";
@@ -31,6 +32,7 @@ import {
   type HandlePosition,
   type BoundingBox,
   type CursorStyle,
+  type SelectionBoxHandle,
 } from "./selection";
 import { GridLayer } from "./grid";
 import { ViewportControlBridge } from "./viewport";
@@ -367,8 +369,21 @@ export function BuilderCanvas({
   backgroundColor = DEFAULT_BACKGROUND,
 }: BuilderCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  // 🚀 Phase 19: SelectionBox imperative handle ref (드래그 중 React 리렌더링 없이 위치 업데이트)
+  const selectionBoxRef = useRef<SelectionBoxHandle>(null);
   const [containerEl, setContainerEl] = useState<HTMLDivElement | null>(null);
   const [yogaReady, setYogaReady] = useState(false);
+
+  // 🚀 Phase 5: 저사양 기기 감지 (초기화 시 한 번만)
+  const isLowEnd = useMemo(() => isLowEndDevice(), []);
+
+  // 🚀 Phase 5: 동적 해상도 (드래그/줌 중에는 낮춤)
+  // dragState가 active일 때 해상도 낮춤
+  const [isInteracting, setIsInteracting] = useState(false);
+  const resolution = useMemo(
+    () => getDynamicResolution(isInteracting),
+    [isInteracting]
+  );
 
   // P7.8: Yoga 엔진 초기화
   useEffect(() => {
@@ -438,6 +453,15 @@ export function BuilderCanvas({
     [pageElements]
   );
 
+  // 🚀 Phase 5: 드래그 시작/종료 시 해상도 조정
+  const handleDragStart = useCallback(() => {
+    setIsInteracting(true);
+  }, []);
+
+  const handleDragEnd = useCallback(() => {
+    setIsInteracting(false);
+  }, []);
+
   // 드래그 인터랙션 - Lasso 선택 포함
   const {
     dragState,
@@ -447,8 +471,13 @@ export function BuilderCanvas({
     updateDrag,
     endDrag,
   } = useDragInteraction({
+    // 🚀 Phase 5: 드래그 시작 시 해상도 낮춤
+    onDragStart: handleDragStart,
     onMoveEnd: useCallback(
       (elementId: string, delta: { x: number; y: number }) => {
+        // 🚀 Phase 5: 드래그 종료 시 해상도 복원
+        handleDragEnd();
+
         const element = elements.find((el) => el.id === elementId);
         if (!element) return;
 
@@ -466,10 +495,13 @@ export function BuilderCanvas({
           },
         });
       },
-      [elements, updateElementProps]
+      [elements, updateElementProps, handleDragEnd]
     ),
     onResizeEnd: useCallback(
       (elementId: string, _handle: HandlePosition, newBounds: BoundingBox) => {
+        // 🚀 Phase 5: 드래그 종료 시 해상도 복원
+        handleDragEnd();
+
         const element = elements.find((el) => el.id === elementId);
         if (!element) return;
 
@@ -487,17 +519,47 @@ export function BuilderCanvas({
           },
         });
       },
-      [elements, updateElementProps]
+      [elements, updateElementProps, handleDragEnd]
     ),
     onLassoEnd: useCallback(
       (selectedIds: string[]) => {
+        // 🚀 Phase 5: 드래그 종료 시 해상도 복원
+        handleDragEnd();
+
         if (selectedIds.length > 0) {
           setSelectedElements(selectedIds);
         }
       },
-      [setSelectedElements]
+      [setSelectedElements, handleDragEnd]
     ),
     findElementsInLasso: findElementsInLassoArea,
+    // 🚀 Phase 19: 드래그 중 React 리렌더링 없이 PixiJS 직접 조작
+    onDragUpdate: useCallback(
+      (
+        operation: 'move' | 'resize' | 'lasso',
+        data: {
+          delta?: { x: number; y: number };
+          newBounds?: BoundingBox;
+        }
+      ) => {
+        if (!selectionBoxRef.current) return;
+
+        switch (operation) {
+          case 'move':
+            if (data.delta) {
+              selectionBoxRef.current.updatePosition(data.delta);
+            }
+            break;
+          case 'resize':
+            if (data.newBounds) {
+              selectionBoxRef.current.updateBounds(data.newBounds);
+            }
+            break;
+          // lasso는 기존 방식 유지 (LassoSelection 컴포넌트 사용)
+        }
+      },
+      []
+    ),
   });
 
   // 리사이즈 시작 핸들러
@@ -633,10 +695,16 @@ export function BuilderCanvas({
         <Application
           resizeTo={containerEl}
           background={backgroundColor}
-          antialias={true}
-          resolution={Math.max(window.devicePixelRatio || 1, 2)}
+          // 🚀 Phase 5: 저사양 기기에서 antialias 비활성화
+          antialias={!isLowEnd}
+          // 🚀 Phase 5: 동적 해상도 (인터랙션 중 낮춤)
+          resolution={resolution}
           autoDensity={true}
           roundPixels={true}
+          // 🚀 Phase 5: GPU 성능 최적화
+          powerPreference="high-performance"
+          // 🚀 Phase 5: 불필요한 스텐실 버퍼 비활성화 (성능 개선)
+          stencil={false}
         >
           {/* P4: 메모이제이션된 컴포넌트 등록 (첫 번째 자식) */}
           <PixiExtendBridge />
@@ -703,6 +771,7 @@ export function BuilderCanvas({
               onResizeStart={handleResizeStart}
               onMoveStart={handleMoveStart}
               onCursorChange={handleCursorChange}
+              selectionBoxRef={selectionBoxRef}
             />
           </pixiContainer>
         </Application>

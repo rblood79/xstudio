@@ -2,17 +2,24 @@
  * useDragInteraction Hook
  *
  * 🚀 Phase 10 B1.3: 드래그 인터랙션 관리
+ * 🚀 Phase 19: 성능 최적화 - 드래그 중 React 리렌더링 방지
  *
  * 기능:
  * - 요소 이동 (Move)
  * - 요소 리사이즈 (Resize)
  * - 라쏘 선택 (Lasso)
  *
+ * 최적화:
+ * - 드래그 중에는 React state 업데이트 없이 콜백으로 PixiJS 직접 조작
+ * - 드래그 종료 시에만 React state 동기화
+ *
  * @since 2025-12-11 Phase 10 B1.3
+ * @updated 2025-12-23 Phase 19 성능 최적화
  */
 
 import { useState, useCallback, useRef, useEffect } from 'react';
 import type { DragState, HandlePosition, BoundingBox } from './types';
+import { TIMING } from '../../../constants/timing';
 
 // ============================================
 // RAF Throttle
@@ -91,6 +98,25 @@ export interface UseDragInteractionOptions {
     start: { x: number; y: number },
     end: { x: number; y: number }
   ) => string[];
+  /**
+   * 🚀 Phase 5: 드래그 시작 콜백 (해상도 조정 등)
+   */
+  onDragStart?: () => void;
+  /**
+   * 🚀 Phase 19: 드래그 중 실시간 콜백 (React 리렌더링 없이 PixiJS 직접 조작)
+   * - Move: delta 전달
+   * - Resize: newBounds 전달
+   * - Lasso: start, current 전달
+   */
+  onDragUpdate?: (
+    operation: 'move' | 'resize' | 'lasso',
+    data: {
+      delta?: { x: number; y: number };
+      newBounds?: BoundingBox;
+      start?: { x: number; y: number };
+      current?: { x: number; y: number };
+    }
+  ) => void;
 }
 
 export interface UseDragInteractionReturn {
@@ -118,12 +144,15 @@ export interface UseDragInteractionReturn {
 export function useDragInteraction(
   options: UseDragInteractionOptions = {}
 ): UseDragInteractionReturn {
-  const { onMoveEnd, onResizeEnd, onLassoEnd, findElementsInLasso } = options;
+  const { onMoveEnd, onResizeEnd, onLassoEnd, findElementsInLasso, onDragStart, onDragUpdate } = options;
 
   const [dragState, setDragState] = useState<DragState>(initialDragState);
 
   // 중간 상태 저장용 ref (성능 최적화)
   const dragStateRef = useRef<DragState>(initialDragState);
+
+  // 🚀 Phase 19: 마지막 스로틀 시간 추적
+  const lastThrottleTimeRef = useRef<number>(0);
 
   // 🚀 RAF 스로틀링 (프레임당 1회만 상태 업데이트)
   const { schedule: scheduleUpdate, cancel: cancelUpdate } = useRAFThrottle();
@@ -131,6 +160,9 @@ export function useDragInteraction(
   // 이동 시작
   const startMove = useCallback(
     (elementId: string, bounds: BoundingBox, position: { x: number; y: number }) => {
+      // 🚀 Phase 5: 드래그 시작 콜백 (해상도 조정 등)
+      onDragStart?.();
+
       const newState: DragState = {
         isDragging: true,
         operation: 'move',
@@ -143,7 +175,7 @@ export function useDragInteraction(
       dragStateRef.current = newState;
       setDragState(newState);
     },
-    []
+    [onDragStart]
   );
 
   // 리사이즈 시작
@@ -154,6 +186,9 @@ export function useDragInteraction(
       bounds: BoundingBox,
       position: { x: number; y: number }
     ) => {
+      // 🚀 Phase 5: 드래그 시작 콜백 (해상도 조정 등)
+      onDragStart?.();
+
       const newState: DragState = {
         isDragging: true,
         operation: 'resize',
@@ -166,11 +201,14 @@ export function useDragInteraction(
       dragStateRef.current = newState;
       setDragState(newState);
     },
-    []
+    [onDragStart]
   );
 
   // 라쏘 선택 시작
   const startLasso = useCallback((position: { x: number; y: number }) => {
+    // 🚀 Phase 5: 드래그 시작 콜백 (해상도 조정 등)
+    onDragStart?.();
+
     const newState: DragState = {
       isDragging: true,
       operation: 'lasso',
@@ -182,24 +220,64 @@ export function useDragInteraction(
     };
     dragStateRef.current = newState;
     setDragState(newState);
-  }, []);
+  }, [onDragStart]);
 
-  // 드래그 업데이트 (🚀 RAF 스로틀링 적용)
+  // 드래그 업데이트 (🚀 Phase 19: React 리렌더링 없이 콜백만 호출)
   const updateDrag = useCallback((position: { x: number; y: number }) => {
-    if (!dragStateRef.current.isDragging) return;
+    const state = dragStateRef.current;
+    if (!state.isDragging) return;
 
-    // ref는 즉시 업데이트 (빠른 읽기 가능)
+    // 🚀 Phase 19: 시간 기반 스로틀링 (16ms = 60fps)
+    const now = performance.now();
+    if (now - lastThrottleTimeRef.current < TIMING.DRAG_THROTTLE) {
+      return; // 스로틀 간격 내에서는 무시
+    }
+    lastThrottleTimeRef.current = now;
+
+    // ref만 업데이트 (React state는 업데이트하지 않음!)
     const newState: DragState = {
-      ...dragStateRef.current,
+      ...state,
       currentPosition: position,
     };
     dragStateRef.current = newState;
 
-    // 🚀 React 상태는 RAF로 스로틀링하여 프레임당 1회만 업데이트
-    scheduleUpdate(() => {
-      setDragState(dragStateRef.current);
-    });
-  }, [scheduleUpdate]);
+    // 🚀 Phase 19: 콜백을 통해 PixiJS 직접 조작 (React 리렌더링 없음)
+    if (onDragUpdate && state.startPosition) {
+      const { operation, startPosition, startBounds, targetHandle } = state;
+
+      switch (operation) {
+        case 'move': {
+          const delta = {
+            x: position.x - startPosition.x,
+            y: position.y - startPosition.y,
+          };
+          onDragUpdate('move', { delta });
+          break;
+        }
+        case 'resize': {
+          if (startBounds && targetHandle) {
+            const newBounds = calculateResizedBounds(
+              startBounds,
+              targetHandle,
+              startPosition,
+              position
+            );
+            onDragUpdate('resize', { newBounds });
+          }
+          break;
+        }
+        case 'lasso': {
+          onDragUpdate('lasso', { start: startPosition, current: position });
+          break;
+        }
+      }
+    } else {
+      // 🚀 onDragUpdate가 없으면 기존 방식 (React state 업데이트)
+      scheduleUpdate(() => {
+        setDragState(dragStateRef.current);
+      });
+    }
+  }, [onDragUpdate, scheduleUpdate]);
 
   // 드래그 종료
   const endDrag = useCallback(() => {

@@ -27,6 +27,7 @@ import {
 import { ElementUtils } from "../../utils/element/elementUtils";
 import { elementsApi } from "../../services/api";
 import { longTaskMonitor } from "../../utils/longTaskMonitor";
+import { scheduleCancelableBackgroundTask } from "../utils/scheduleTask";
 import {
   type PageElementIndex,
   createEmptyPageIndex,
@@ -162,16 +163,16 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
     return getPageElementsFromIndex(pageIndex, pageId, elementsMap);
   };
 
+  // 🚀 Phase 4.3: 인스펙터 props hydration을 백그라운드 우선순위로 분리
   // WebGL Canvas의 pointerdown task를 짧게 유지하기 위해,
-  // selectedElementProps(종종 큰 객체)는 필요 시 다음 tick에 채웁니다.
-  let hydrateSelectedPropsTimeoutId: number | null = null;
+  // selectedElementProps(종종 큰 객체)는 브라우저 유휴 시간에 채웁니다.
+  let cancelHydrateTask: (() => void) | null = null;
 
   const cancelHydrateSelectedProps = () => {
-    if (hydrateSelectedPropsTimeoutId === null) return;
-    if (typeof window !== "undefined") {
-      window.clearTimeout(hydrateSelectedPropsTimeoutId);
+    if (cancelHydrateTask) {
+      cancelHydrateTask();
+      cancelHydrateTask = null;
     }
-    hydrateSelectedPropsTimeoutId = null;
   };
 
   const scheduleHydrateSelectedProps = (elementId: string) => {
@@ -187,8 +188,12 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
     }
 
     cancelHydrateSelectedProps();
-    hydrateSelectedPropsTimeoutId = window.setTimeout(() => {
-      hydrateSelectedPropsTimeoutId = null;
+
+    // 🚀 Phase 4.3: scheduler.postTask('background') 또는 requestIdleCallback 사용
+    // - 캔버스 렌더링보다 낮은 우선순위
+    // - 브라우저 유휴 시간에 실행되어 Long Task 분할
+    cancelHydrateTask = scheduleCancelableBackgroundTask(() => {
+      cancelHydrateTask = null;
 
       const state = get();
       if (state.selectedElementId !== elementId) return; // stale update 방지
@@ -201,7 +206,7 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
       longTaskMonitor.measure("interaction.select:hydrate-selected-props", () => {
         set({ selectedElementProps: createCompleteProps(element) });
       });
-    }, 0);
+    }, { timeout: 50 }); // 50ms 내에 실행 보장
   };
 
   return {

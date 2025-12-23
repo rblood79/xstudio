@@ -23,9 +23,9 @@ import {
   ArrowRightFromLine,
   ArrowDownFromLine,
 } from 'lucide-react';
-import { useStyleActions } from '../hooks/useStyleActions';
 import { useOptimizedStyleActions } from '../hooks/useOptimizedStyleActions';
 import { useTransformValuesJotai } from '../hooks/useTransformValuesJotai';
+import { useResetStyles } from '../hooks/useResetStyles';
 
 /**
  * 🚀 Phase 3/23: 내부 컨텐츠 컴포넌트
@@ -113,9 +113,10 @@ const TransformSectionContent = memo(function TransformSectionContent() {
  * TransformSection - 외부 래퍼
  * - PropertySection만 관리
  * - 🚀 Phase 3: Jotai 기반 - props 불필요
+ * - 🚀 Phase 4.2c: useResetStyles 경량 훅 사용
  */
 export const TransformSection = memo(function TransformSection() {
-  const { resetStyles } = useStyleActions();
+  const resetStyles = useResetStyles();
 
   const handleReset = () => {
     resetStyles(['width', 'height', 'top', 'left']);
