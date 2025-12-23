@@ -1,7 +1,6 @@
 import { defineConfig } from "vitest/config";
 import type { Connect, ViteDevServer } from "vite";
 import react from "@vitejs/plugin-react-swc";
-import postcssNested from "postcss-nested";
 import path from "path";
 import type { IncomingMessage, ServerResponse } from "http";
 
@@ -182,9 +181,6 @@ export default defineConfig(({ command }) => {
       },
     },
     css: {
-      postcss: {
-        plugins: [postcssNested()],
-      },
       modules: {
         // CSS Modules 설정
         localsConvention: "camelCaseOnly", // 클래스 이름을 camelCase로 변환
