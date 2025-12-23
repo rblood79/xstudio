@@ -21,6 +21,11 @@ export interface ViewportControlBridgeProps {
   minZoom?: number;
   /** 최대 줌 */
   maxZoom?: number;
+  // 🚀 Phase 6.1: 인터랙션 콜백 (동적 해상도 연동용)
+  /** 팬/줌 인터랙션 시작 시 호출 */
+  onInteractionStart?: () => void;
+  /** 팬/줌 인터랙션 종료 시 호출 */
+  onInteractionEnd?: () => void;
 }
 
 /**
@@ -33,6 +38,9 @@ export function ViewportControlBridge({
   cameraLabel = 'Camera',
   minZoom = 0.1,
   maxZoom = 5,
+  // 🚀 Phase 6.1: 인터랙션 콜백
+  onInteractionStart,
+  onInteractionEnd,
 }: ViewportControlBridgeProps): null {
   // ViewportController 연결 및 이벤트 핸들링
   const { controller } = useViewportControl({
@@ -40,6 +48,9 @@ export function ViewportControlBridge({
     cameraLabel,
     minZoom,
     maxZoom,
+    // 🚀 Phase 6.1: 인터랙션 콜백 전달
+    onInteractionStart,
+    onInteractionEnd,
   });
 
   // 디버그 로깅 (개발 모드에서만)

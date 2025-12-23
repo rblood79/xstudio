@@ -417,3 +417,263 @@ export const useDebouncedSelectedElementData = (): SelectedElement | null => {
 │  최종 결정: useDeferredValue 적용 ✅                    │
 └─────────────────────────────────────────────────────────┘
 ```
+
+---
+
+## 추가 개선 포인트 (Phase 6)
+
+> **상태**: ✅ 완료
+> **구현일**: 2025-12-23
+
+### 6.1 줌·팬 중 동적 해상도 하향 적용
+
+**문제점**
+
+현재 `BuilderCanvas`는 요소 드래그/리사이즈 이벤트에만 `isInteracting` 플래그를 세팅해 해상도를 낮추지만, `useViewportControl`의 줌(휠)·팬(Alt+드래그/중간버튼) 경로에서는 이 플래그가 전혀 갱신되지 않는다.
+
+| 파일 | 현재 상태 |
+|------|----------|
+| `BuilderCanvas.tsx:380-385` | `isInteracting` 상태로 동적 해상도 제어 |
+| `BuilderCanvas.tsx:456-463` | `handleDragStart/End`가 드래그에만 연결 |
+| `useViewportControl.ts:116-172` | 줌/팬 시 `isInteracting` 미갱신 |
+
+**개선 방안**
+
+`useViewportControl`에 인터랙션 시작/종료 콜백을 추가하고, 휠 줌은 디바운스된 종료 감지를 적용한다.
+
+```typescript
+// useViewportControl.ts
+interface UseViewportControlOptions {
+  // ... 기존 옵션
+  onInteractionStart?: () => void;
+  onInteractionEnd?: () => void;
+}
+
+// 팬 핸들러 - 명시적 시작/종료
+const handleMouseDown = (e: MouseEvent) => {
+  if ((e.altKey && e.button === 0) || e.button === 1) {
+    e.preventDefault();
+    onInteractionStart?.();  // 추가
+    controller.startPan(e.clientX, e.clientY);
+    isPanningRef.current = true;
+    containerEl.style.cursor = 'grabbing';
+  }
+};
+
+const handleMouseUp = () => {
+  if (controller.isPanningActive()) {
+    controller.endPan();
+    isPanningRef.current = false;
+    containerEl.style.cursor = '';
+    onInteractionEnd?.();  // 추가
+  }
+};
+
+// 줌 핸들러 - 디바운스된 종료 감지
+const zoomEndTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+const handleWheel = (e: WheelEvent) => {
+  if (e.ctrlKey || e.metaKey) {
+    e.preventDefault();
+    e.stopPropagation();
+
+    // 줌 시작 알림
+    onInteractionStart?.();
+
+    // 기존 종료 타임아웃 취소
+    if (zoomEndTimeoutRef.current) {
+      clearTimeout(zoomEndTimeoutRef.current);
+    }
+
+    // 150ms 동안 휠 이벤트 없으면 종료로 간주
+    zoomEndTimeoutRef.current = setTimeout(() => {
+      onInteractionEnd?.();
+      zoomEndTimeoutRef.current = null;
+    }, 150);
+
+    const rect = containerEl.getBoundingClientRect();
+    const delta = -e.deltaY * 0.001;
+    controller.zoomAtPoint(e.clientX, e.clientY, rect, delta, true);
+  }
+};
+
+// cleanup에서 타임아웃 정리
+return () => {
+  if (zoomEndTimeoutRef.current) {
+    clearTimeout(zoomEndTimeoutRef.current);
+  }
+  // ... 기존 cleanup
+};
+```
+
+```typescript
+// BuilderCanvas.tsx - 콜백 연결
+useViewportControl({
+  // ... 기존 옵션
+  onInteractionStart: handleDragStart,  // 기존 핸들러 재사용
+  onInteractionEnd: handleDragEnd,
+});
+```
+
+**예상 효과**
+
+- 뷰포트 이동 중 GPU 부하 감소
+- 대형 캔버스에서 줌/팬 시 프레임 드랍 방지
+
+---
+
+### 6.2 저사양 감지 결과 재사용
+
+**문제점**
+
+`BuilderCanvas`에서 `isLowEndDevice()` 결과를 `useMemo`로 한 번 계산해 `antialias` 선택에 쓰고 있지만, `getDynamicResolution` 내부에서도 매번 `isLowEndDevice()`를 다시 호출해 userAgent 정규식/하드웨어 체크가 반복된다.
+
+| 파일 | 현재 상태 |
+|------|----------|
+| `BuilderCanvas.tsx:378` | `useMemo(() => isLowEndDevice(), [])` - 1회 계산 |
+| `BuilderCanvas.tsx:384` | `getDynamicResolution(isInteracting)` - `isLowEnd` 미전달 |
+| `pixiSetup.ts:104-115` | `getDynamicResolution` 내부에서 `isLowEndDevice()` 재호출 |
+
+**개선 방안**
+
+모듈 레벨 캐싱을 적용하여 `isLowEndDevice()` 결과를 한 번만 계산하고 재사용한다.
+
+> **방안 B(모듈 레벨 캐싱) 권장 이유**:
+> - 호출처마다 `isLowEnd` 파라미터 전달 불필요
+> - 기존 코드 변경 최소화
+> - 단일 진실 공급원(Single Source of Truth)
+
+```typescript
+// pixiSetup.ts - 모듈 레벨 캐싱
+let cachedIsLowEnd: boolean | null = null;
+
+/**
+ * 저사양 기기 감지 (캐싱 적용)
+ *
+ * 최초 호출 시 한 번만 계산하고 이후 캐싱된 결과 반환.
+ * userAgent 정규식/하드웨어 체크 반복 실행 방지.
+ */
+export function isLowEndDevice(): boolean {
+  if (cachedIsLowEnd !== null) {
+    return cachedIsLowEnd;
+  }
+
+  // 모바일 기기 체크
+  const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+    navigator.userAgent
+  );
+
+  // 하드웨어 동시성 체크 (논리 프로세서 수)
+  const hardwareConcurrency = navigator.hardwareConcurrency || 4;
+  const isLowCPU = hardwareConcurrency <= 4;
+
+  // 메모리 체크 (가용한 경우)
+  const deviceMemory = (navigator as Navigator & { deviceMemory?: number }).deviceMemory;
+  const isLowMemory = deviceMemory !== undefined && deviceMemory <= 4;
+
+  cachedIsLowEnd = isMobile || isLowCPU || isLowMemory;
+  return cachedIsLowEnd;
+}
+
+/**
+ * 동적 해상도 계산
+ *
+ * isLowEndDevice()가 캐싱되어 있으므로 매번 호출해도 성능 영향 없음.
+ */
+export function getDynamicResolution(isInteracting: boolean): number {
+  const devicePixelRatio = window.devicePixelRatio || 1;
+  const isLowEnd = isLowEndDevice();  // 캐싱된 값 반환
+
+  if (isInteracting) {
+    return isLowEnd ? 1 : Math.min(devicePixelRatio, 1.5);
+  }
+
+  return isLowEnd ? Math.min(devicePixelRatio, 1.5) : Math.min(devicePixelRatio, 2);
+}
+```
+
+**예상 효과**
+
+- 불필요한 userAgent 정규식/하드웨어 체크 제거
+- 해상도·안티앨리어싱 결정의 일관성 확보
+- `BuilderCanvas`의 `useMemo` 캐싱과 중복 제거 가능
+
+---
+
+## 버그 수정 (Phase 6 구현 중 발견)
+
+> **수정일**: 2025-12-23
+
+### Bug 1: 라쏘 선택 박스 미표시
+
+**문제점**
+
+Phase 19 최적화에서 `onDragUpdate` 콜백이 있으면 `move`/`resize`는 React state 업데이트 없이 PixiJS 직접 조작하도록 변경했으나, `lasso` 케이스 처리가 누락되어 라쏘 선택 박스가 표시되지 않음.
+
+| 파일 | 원인 |
+|------|------|
+| `useDragInteraction.ts:269-275` | `lasso` 케이스에서 React state 업데이트 누락 |
+
+**수정**
+
+```typescript
+case 'lasso': {
+  // 🚀 lasso는 React state 업데이트 필요 (LassoSelection 컴포넌트가 dragState 사용)
+  scheduleUpdate(() => {
+    setDragState(dragStateRef.current);
+  });
+  break;
+}
+```
+
+**영향 분석**
+
+- `move`/`resize` 최적화: 영향 없음 (여전히 React state 업데이트 없이 PixiJS 직접 조작)
+- `lasso`: 원래 의도대로 동작 (React state 업데이트 필요)
+
+---
+
+### Bug 2: 라쏘 영역 내 요소 미선택
+
+**문제점**
+
+`findElementsInLassoArea`가 `el.props?.style`을 사용했으나, Yoga 레이아웃이 적용된 실제 렌더링 위치는 `layoutResult.positions`에 있어서 좌표 불일치 발생.
+
+| 파일 | 원인 |
+|------|------|
+| `BuilderCanvas.tsx:442-454` | `el.props?.style` 사용 (Yoga 레이아웃 위치 무시) |
+
+**수정**
+
+```typescript
+const findElementsInLassoArea = useCallback(
+  (start, end) => {
+    return findElementsInLasso(
+      pageElements.map((el) => {
+        // layoutResult에서 실제 렌더링 위치 가져오기
+        const layoutPos = layoutResult.positions.get(el.id);
+        if (layoutPos) {
+          return {
+            id: el.id,
+            props: {
+              style: {
+                left: layoutPos.x,
+                top: layoutPos.y,
+                width: layoutPos.width,
+                height: layoutPos.height,
+              },
+            },
+          };
+        }
+        // fallback: 원래 스타일 사용
+        return {
+          id: el.id,
+          props: { style: el.props?.style },
+        };
+      }),
+      start,
+      end
+    );
+  },
+  [pageElements, layoutResult]
+);

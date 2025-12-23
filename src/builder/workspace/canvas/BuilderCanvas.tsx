@@ -374,10 +374,10 @@ export function BuilderCanvas({
   const [containerEl, setContainerEl] = useState<HTMLDivElement | null>(null);
   const [yogaReady, setYogaReady] = useState(false);
 
-  // 🚀 Phase 5: 저사양 기기 감지 (초기화 시 한 번만)
-  const isLowEnd = useMemo(() => isLowEndDevice(), []);
+  // 🚀 Phase 5 + 6.2: 저사양 기기 감지 (모듈 레벨 캐싱으로 useMemo 불필요)
+  const isLowEnd = isLowEndDevice();
 
-  // 🚀 Phase 5: 동적 해상도 (드래그/줌 중에는 낮춤)
+  // 🚀 Phase 5 + 6.1: 동적 해상도 (드래그/줌/팬 중에는 낮춤)
   // dragState가 active일 때 해상도 낮춤
   const [isInteracting, setIsInteracting] = useState(false);
   const resolution = useMemo(
@@ -439,18 +439,37 @@ export function BuilderCanvas({
   }, [elements, currentPageId]);
 
   // 라쏘 선택 영역 내 요소 찾기
+  // 🚀 Bug fix: layoutResult.positions 사용 (Yoga 레이아웃 적용된 실제 위치)
   const findElementsInLassoArea = useCallback(
     (start: { x: number; y: number }, end: { x: number; y: number }) => {
       return findElementsInLasso(
-        pageElements.map((el) => ({
-          id: el.id,
-          props: { style: el.props?.style as Record<string, unknown> },
-        })),
+        pageElements.map((el) => {
+          // layoutResult에서 실제 렌더링 위치 가져오기
+          const layoutPos = layoutResult.positions.get(el.id);
+          if (layoutPos) {
+            return {
+              id: el.id,
+              props: {
+                style: {
+                  left: layoutPos.x,
+                  top: layoutPos.y,
+                  width: layoutPos.width,
+                  height: layoutPos.height,
+                },
+              },
+            };
+          }
+          // fallback: 원래 스타일 사용
+          return {
+            id: el.id,
+            props: { style: el.props?.style as Record<string, unknown> },
+          };
+        }),
         start,
         end
       );
     },
-    [pageElements]
+    [pageElements, layoutResult]
   );
 
   // 🚀 Phase 5: 드래그 시작/종료 시 해상도 조정
@@ -710,11 +729,14 @@ export function BuilderCanvas({
           <PixiExtendBridge />
 
           {/* ViewportControlBridge: Camera Container 직접 조작 (React re-render 최소화) */}
+          {/* 🚀 Phase 6.1: 줌/팬 인터랙션 시 동적 해상도 조정 */}
           <ViewportControlBridge
             containerEl={containerEl}
             cameraLabel="Camera"
             minZoom={0.1}
             maxZoom={5}
+            onInteractionStart={handleDragStart}
+            onInteractionEnd={handleDragEnd}
           />
 
           {/* 전체 Canvas 영역 클릭 → 선택 해제 + 라쏘 선택 시작 */}

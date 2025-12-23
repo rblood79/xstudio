@@ -31,6 +31,11 @@ export interface UseViewportControlOptions {
   maxZoom?: number;
   /** HTML 컨테이너 요소 (이벤트 바인딩용) */
   containerEl?: HTMLElement | null;
+  // 🚀 Phase 6.1: 인터랙션 콜백 (동적 해상도 연동용)
+  /** 팬/줌 인터랙션 시작 시 호출 */
+  onInteractionStart?: () => void;
+  /** 팬/줌 인터랙션 종료 시 호출 */
+  onInteractionEnd?: () => void;
 }
 
 export interface UseViewportControlReturn {
@@ -50,11 +55,25 @@ export function useViewportControl(options: UseViewportControlOptions): UseViewp
     minZoom = 0.1,
     maxZoom = 5,
     containerEl,
+    // 🚀 Phase 6.1: 인터랙션 콜백
+    onInteractionStart,
+    onInteractionEnd,
   } = options;
 
   const { app } = useApplication();
   const isPanningRef = useRef(false);
   const isSpacePressedRef = useRef(false);
+  // 🚀 Phase 6.1: 줌 종료 디바운스 타이머
+  const zoomEndTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isZoomingRef = useRef(false);
+
+  // 🚀 Phase 6.1: 콜백 ref (의존성 배열에서 제외하여 useEffect 재실행 방지)
+  const onInteractionStartRef = useRef(onInteractionStart);
+  const onInteractionEndRef = useRef(onInteractionEnd);
+  useEffect(() => {
+    onInteractionStartRef.current = onInteractionStart;
+    onInteractionEndRef.current = onInteractionEnd;
+  });
 
   // Zustand store actions
   const setZoom = useCanvasSyncStore((state) => state.setZoom);
@@ -109,7 +128,7 @@ export function useViewportControl(options: UseViewportControlOptions): UseViewp
     };
   }, [app, cameraLabel, controller]);
 
-  // 마우스 이벤트 핸들러
+  // 마우스 이벤트 핸들러 (팬)
   useEffect(() => {
     if (!containerEl || !controller) return;
 
@@ -117,6 +136,8 @@ export function useViewportControl(options: UseViewportControlOptions): UseViewp
       // Alt + 클릭 또는 중간 버튼 = 팬 시작
       if ((e.altKey && e.button === 0) || e.button === 1) {
         e.preventDefault();
+        // 🚀 Phase 6.1: 인터랙션 시작 알림 (ref 사용)
+        onInteractionStartRef.current?.();
         controller.startPan(e.clientX, e.clientY);
         isPanningRef.current = true;
         containerEl.style.cursor = 'grabbing';
@@ -133,6 +154,8 @@ export function useViewportControl(options: UseViewportControlOptions): UseViewp
         controller.endPan();
         isPanningRef.current = false;
         containerEl.style.cursor = '';
+        // 🚀 Phase 6.1: 인터랙션 종료 알림 (ref 사용)
+        onInteractionEndRef.current?.();
       }
     };
 
@@ -147,7 +170,7 @@ export function useViewportControl(options: UseViewportControlOptions): UseViewp
     };
   }, [containerEl, controller]);
 
-  // 휠 이벤트 핸들러 (줌)
+  // 휠 이벤트 핸들러 (줌) - 🚀 Phase 6.1: 디바운스된 종료 감지
   useEffect(() => {
     if (!containerEl || !controller) return;
 
@@ -156,6 +179,24 @@ export function useViewportControl(options: UseViewportControlOptions): UseViewp
       if (e.ctrlKey || e.metaKey) {
         e.preventDefault();
         e.stopPropagation();
+
+        // 🚀 Phase 6.1: 줌 시작 알림 (최초 1회만, ref 사용)
+        if (!isZoomingRef.current) {
+          isZoomingRef.current = true;
+          onInteractionStartRef.current?.();
+        }
+
+        // 기존 종료 타임아웃 취소
+        if (zoomEndTimeoutRef.current) {
+          clearTimeout(zoomEndTimeoutRef.current);
+        }
+
+        // 150ms 동안 휠 이벤트 없으면 종료로 간주
+        zoomEndTimeoutRef.current = setTimeout(() => {
+          isZoomingRef.current = false;
+          onInteractionEndRef.current?.();
+          zoomEndTimeoutRef.current = null;
+        }, 150);
 
         const rect = containerEl.getBoundingClientRect();
         const delta = -e.deltaY * 0.001;
@@ -168,6 +209,11 @@ export function useViewportControl(options: UseViewportControlOptions): UseViewp
 
     return () => {
       containerEl.removeEventListener('wheel', handleWheel, { capture: true });
+      // 🚀 Phase 6.1: cleanup 시 타임아웃 정리
+      if (zoomEndTimeoutRef.current) {
+        clearTimeout(zoomEndTimeoutRef.current);
+        zoomEndTimeoutRef.current = null;
+      }
     };
   }, [containerEl, controller]);
 

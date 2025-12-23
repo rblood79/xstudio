@@ -66,21 +66,34 @@ function initPixiSettings() {
   AbstractRenderer.defaultOptions.powerPreference = 'high-performance';
 }
 
+// 🚀 Phase 6.2: 저사양 감지 결과 캐싱
+let cachedIsLowEnd: boolean | null = null;
+
 /**
- * 저사양 기기 감지
+ * 저사양 기기 감지 (캐싱 적용)
+ *
+ * 최초 호출 시 한 번만 계산하고 이후 캐싱된 결과 반환.
+ * userAgent 정규식/하드웨어 체크 반복 실행 방지.
  *
  * - hardwareConcurrency < 4 (듀얼코어 이하)
  * - deviceMemory < 4GB (Chrome만 지원)
  * - 모바일 기기
  */
 export function isLowEndDevice(): boolean {
+  // 캐싱된 결과가 있으면 즉시 반환
+  if (cachedIsLowEnd !== null) {
+    return cachedIsLowEnd;
+  }
+
   // hardwareConcurrency 체크 (논리 코어 수)
   if (navigator.hardwareConcurrency && navigator.hardwareConcurrency < 4) {
+    cachedIsLowEnd = true;
     return true;
   }
 
   // deviceMemory 체크 (Chrome 전용 API)
   if ('deviceMemory' in navigator && (navigator as { deviceMemory?: number }).deviceMemory! < 4) {
+    cachedIsLowEnd = true;
     return true;
   }
 
@@ -89,9 +102,11 @@ export function isLowEndDevice(): boolean {
     navigator.userAgent
   );
   if (isMobile) {
+    cachedIsLowEnd = true;
     return true;
   }
 
+  cachedIsLowEnd = false;
   return false;
 }
 

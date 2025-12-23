@@ -267,7 +267,10 @@ export function useDragInteraction(
           break;
         }
         case 'lasso': {
-          onDragUpdate('lasso', { start: startPosition, current: position });
+          // 🚀 lasso는 React state 업데이트 필요 (LassoSelection 컴포넌트가 dragState 사용)
+          scheduleUpdate(() => {
+            setDragState(dragStateRef.current);
+          });
           break;
         }
       }
