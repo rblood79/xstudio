@@ -1,5 +1,8 @@
 # GitHub Actions TypeScript 빌드 오류 수정 계획
 
+> **마지막 검토:** 2025-12-23
+> **현재 상태:** TypeScript 빌드 통과 (에러 없음), 하지만 타입 불일치 잠재적 문제 존재
+
 ## 결정 사항
 1. **Page 타입:** `unified.types.ts`를 마스터로, 이름 필드는 `title`로 통일
 2. **PixiJS 이벤트:** camelCase로 일괄 변환 (공식 권장 형식)
@@ -99,12 +102,22 @@ Property 'name' does not exist on type 'Page'.
 ## 수정 작업 목록
 
 ### 1. Page 타입 통합
-| 파일 | 수정 내용 |
-|------|----------|
-| `src/services/api/PagesApiService.ts` | `parent_id`, `layout_id` 필드 추가, `order_num` optional로 변경 |
-| `src/builder/stores/elements.ts` | 로컬 Page 인터페이스 제거 → unified.types import |
-| `src/builder/hooks/usePageManager.ts` | Page 타입 import 경로 수정 |
-| `src/builder/sidebar/components/PageTreeRenderer.tsx` | `page.name` → `page.title` |
+| 파일 | 수정 내용 | 현재 상태 |
+|------|----------|----------|
+| `src/services/api/PagesApiService.ts` | `parent_id`, `layout_id` 필드 추가, `order_num` optional로 변경 | ⚠️ 미수정 |
+| `src/builder/stores/elements.ts` | 로컬 Page 인터페이스 제거 → unified.types import | ⚠️ 미수정 |
+| `src/builder/hooks/usePageManager.ts` | Page 타입 import 경로 수정 | 확인 필요 |
+| `src/builder/sidebar/components/PageTreeRenderer.tsx` | `page.name` → `page.title` (fallback 제거) | ⚠️ 미수정 |
+| `src/builder/panels/properties/editors/PageParentSelector.tsx` | `page.name` → `page.title` (4곳) | ⚠️ 미수정 |
+
+#### PageParentSelector.tsx 수정 대상 (추가됨)
+```typescript
+// 현재 코드 (수정 필요):
+66:  title: page.name,
+78:  title: p.name,
+237: generateSlugFromTitle(page.name)
+265: placeholder={generateSlugFromTitle(page.name)}
+```
 
 ### 2. PixiJS 이벤트 핸들러 (일괄 변환)
 ```
@@ -116,42 +129,79 @@ pointerdown → onPointerDown
 pointerover → onPointerOver
 pointerout → onPointerOut
 ```
-**대상:** `src/builder/workspace/canvas/ui/Pixi*.tsx` (40+ 파일)
+
+**현재 상태:** 38개 소문자 이벤트 핸들러 발견
+
+**대상 파일 목록 (25개):**
+- `PixiDisclosure.tsx` (3개)
+- `PixiDisclosureGroup.tsx` (4개)
+- `PixiDialog.tsx` (3개)
+- `PixiPopover.tsx` (3개)
+- `PixiCalendar.tsx` (3개)
+- `PixiToolbar.tsx`, `PixiTextArea.tsx`, `PixiTooltip.tsx`
+- `PixiDropZone.tsx`, `PixiColorPicker.tsx`, `PixiColorArea.tsx`
+- `PixiDatePicker.tsx`, `PixiColorField.tsx`, `PixiColorSlider.tsx`
+- `PixiTimeField.tsx`, `PixiSkeleton.tsx`, `PixiDateField.tsx`
+- `PixiPagination.tsx`, `PixiFileTrigger.tsx`, `PixiForm.tsx`
+- `PixiToast.tsx`, `PixiDateRangePicker.tsx`, `PixiColorWheel.tsx`
+- `PixiGroup.tsx`, `PixiSlot.tsx`, `PixiColorSwatchPicker.tsx`, `PixiColorSwatch.tsx`
 
 ### 3. PixiJS 기타 수정
-| 파일 | 수정 내용 |
-|------|----------|
-| `Pixi*.tsx` (8개) | `pixiContainer` → `Container` 타입 |
-| `LayoutEngine.ts` 외 5개 | `fontWeight as TextStyleFontWeight` |
-| `PixiCard.tsx`, `PixiMenu.tsx` | BorderConfig에 `alpha`, `style`, `radius` 추가 |
-| `BuilderCanvas.tsx` | `stencil` 속성 제거 |
+| 파일 | 수정 내용 | 현재 상태 |
+|------|----------|----------|
+| `Pixi*.tsx` (8개) | `pixiContainer` → `Container` 타입 | 확인 필요 |
+| `LayoutEngine.ts` 외 5개 | `fontWeight as TextStyleFontWeight` | ⚠️ 미적용 |
+| `PixiCard.tsx`, `PixiMenu.tsx` | BorderConfig에 `alpha`, `style`, `radius` 추가 | 확인 필요 |
+| `BuilderCanvas.tsx` | `stencil` 속성 제거 (707번째 줄) | ⚠️ 미수정 |
 
 ### 4. Store/상태 타입 수정
-| 파일 | 수정 내용 |
-|------|----------|
-| `src/builder/stores/index.ts` | `lastApiResponse`, `dragState` 속성 추가 |
-| `src/builder/inspector/types.ts` | SelectedElement에 `className` 추가 |
+| 파일 | 수정 내용 | 현재 상태 |
+|------|----------|----------|
+| ~~`src/builder/stores/index.ts`~~ | ~~`lastApiResponse`, `dragState` 속성 추가~~ | ❓ 재검토 필요 - 현재 코드에서 미발견 |
+| `src/builder/inspector/types.ts` | SelectedElement에 `className` 추가 | ⚠️ 미수정 |
+
+> **Note:** `lastApiResponse`, `dragState`는 현재 코드베이스에서 검색되지 않음.
+> 해당 속성이 실제로 필요한지 재확인 필요.
 
 ### 5. 함수 시그니처 수정
-| 파일 | 수정 내용 |
-|------|----------|
-| `LayoutsTab.tsx` | `setElements` 호출 수정 (options 제거 또는 시그니처 수정) |
-| `PageLayoutSelector.tsx` | 동일 |
-| `layoutActions.ts` | 동일 |
+| 파일 | 수정 내용 | 현재 상태 |
+|------|----------|----------|
+| `LayoutsTab.tsx` | `setElements` 호출 수정 (options 제거 또는 시그니처 수정) | 확인 필요 |
+| `PageLayoutSelector.tsx` | 동일 | 확인 필요 |
+| `layoutActions.ts` | 동일 | 확인 필요 |
 
 ### 6. 기타 수정
-| 파일 | 수정 내용 |
-|------|----------|
-| `useIframeMessenger.ts` | `params` → `queryParams`, `body` → `bodyTemplate` |
-| `DarkModeGenerator.tsx` | `useState`로 `setError` 정의 |
-| `AIThemeGenerator.tsx` | `as ThemeGenerationResponse` 타입 단언 |
-| `ModifiedStylesSection.tsx` | `[...readonly_array]` spread |
-| 모듈 경로 오류 파일들 | `@/types/core` → 정확한 경로로 수정 |
+| 파일 | 수정 내용 | 현재 상태 |
+|------|----------|----------|
+| `useIframeMessenger.ts` | `params` → `queryParams`, `body` → `bodyTemplate` | ⚠️ 미수정 (255-256번째 줄) |
+| `DarkModeGenerator.tsx` | `useState`로 `setError` 정의 | 확인 필요 |
+| `AIThemeGenerator.tsx` | `as ThemeGenerationResponse` 타입 단언 | 확인 필요 |
+| `ModifiedStylesSection.tsx` | `[...readonly_array]` spread | 확인 필요 |
+| 모듈 경로 오류 파일들 | `@/types/core` → 정확한 경로로 수정 | 확인 필요 |
 
 ---
 
 ## 실행 순서
-1. Page 타입 통합 (PagesApiService.ts, elements.ts)
-2. PixiJS 이벤트 핸들러 일괄 변환 (sed 사용)
-3. 개별 파일 수정
-4. `pnpm run type-check`로 검증
+
+1. **Page 타입 통합** (PagesApiService.ts, elements.ts, PageParentSelector.tsx)
+2. **PixiJS 이벤트 핸들러 일괄 변환** (sed 사용)
+   ```bash
+   # 예시 명령어
+   find src/builder/workspace/canvas/ui -name "Pixi*.tsx" -exec sed -i '' \
+     -e 's/onpointertap/onPointerTap/g' \
+     -e 's/onpointerdown/onPointerDown/g' \
+     -e 's/onpointerenter/onPointerEnter/g' \
+     -e 's/onpointerleave/onPointerLeave/g' {} \;
+   ```
+3. **개별 파일 수정**
+4. **`pnpm run type-check`로 검증**
+
+---
+
+## 우선순위
+
+| 우선순위 | 항목 | 이유 |
+|---------|------|------|
+| **높음** | Page 타입 통합 | 런타임 불일치 가능성 |
+| **중간** | PixiJS 이벤트 핸들러 | 현재 동작하지만 향후 PixiJS 업데이트 시 문제 가능 |
+| **낮음** | Store 타입 재검토 | 빌드 통과, 실제 필요 여부 확인 필요 |
