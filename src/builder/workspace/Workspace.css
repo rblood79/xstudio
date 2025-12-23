@@ -37,7 +37,7 @@
 .workspace-zoom-controls {
   position: absolute;
   bottom: 16px;
-  right: 16px;
+  right: 50%;
   display: flex;
   background-color: white;
   border-radius: var(--radius-lg);
