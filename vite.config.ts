@@ -1,7 +1,6 @@
 import { defineConfig } from "vitest/config";
 import type { Connect, ViteDevServer } from "vite";
 import react from "@vitejs/plugin-react-swc";
-import path from "path";
 import type { IncomingMessage, ServerResponse } from "http";
 
 /**
@@ -143,7 +142,7 @@ export default defineConfig(({ command }) => {
     },
     resolve: {
       alias: {
-        "@": path.resolve(__dirname, "./src"),
+        "@": `${import.meta.dirname}/src`,
       },
     },
     optimizeDeps: {
@@ -163,8 +162,6 @@ export default defineConfig(({ command }) => {
         "three/examples/jsm/postprocessing/UnrealBloomPass.js",
         "three/examples/jsm/postprocessing/OutputPass.js",
       ],
-      // 문제가 있는 의존성을 사전 번들링에서 제외 (필요시 추가)
-      exclude: [],
     },
     server: {
       // Note: Supabase client connects directly using VITE_SUPABASE_URL

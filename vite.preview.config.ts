@@ -7,7 +7,6 @@
 
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
-import path from "path";
 
 export default defineConfig({
   plugins: [react()],
@@ -15,7 +14,7 @@ export default defineConfig({
     outDir: "dist/preview",
     emptyOutDir: true,
     lib: {
-      entry: path.resolve(__dirname, "src/canvas/index.tsx"),
+      entry: `${import.meta.dirname}/src/canvas/index.tsx`,
       name: "CanvasRuntime",
       formats: ["iife"], // 즉시 실행 함수로 번들링 (srcdoc용)
       fileName: () => "canvas.js",
@@ -42,7 +41,7 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      "@": path.resolve(__dirname, "./src"),
+      "@": `${import.meta.dirname}/src`,
     },
   },
   define: {
