@@ -36,6 +36,7 @@ export interface LayoutStyleValues {
 export function useLayoutValues(
   selectedElement: SelectedElement | null
 ): LayoutStyleValues | null {
+  // React Compiler 호환: selectedElement 전체를 의존성으로 사용
   return useMemo(() => {
     if (!selectedElement) return null;
 
@@ -57,27 +58,5 @@ export function useLayoutValues(
       marginBottom: getStyleValue(selectedElement, 'marginBottom', ''),
       marginLeft: getStyleValue(selectedElement, 'marginLeft', ''),
     };
-  }, [
-    selectedElement?.id,
-    selectedElement?.style?.display,
-    selectedElement?.style?.flexDirection,
-    selectedElement?.style?.flexWrap,
-    selectedElement?.style?.alignItems,
-    selectedElement?.style?.justifyContent,
-    selectedElement?.style?.gap,
-    selectedElement?.style?.padding,
-    selectedElement?.style?.paddingTop,
-    selectedElement?.style?.paddingRight,
-    selectedElement?.style?.paddingBottom,
-    selectedElement?.style?.paddingLeft,
-    selectedElement?.style?.margin,
-    selectedElement?.style?.marginTop,
-    selectedElement?.style?.marginRight,
-    selectedElement?.style?.marginBottom,
-    selectedElement?.style?.marginLeft,
-    // computedStyle도 포함 (padding/margin은 computed 사용 가능)
-    selectedElement?.computedStyle?.gap,
-    selectedElement?.computedStyle?.padding,
-    selectedElement?.computedStyle?.margin,
-  ]);
+  }, [selectedElement]);
 }

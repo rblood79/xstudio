@@ -24,6 +24,7 @@ export interface TransformStyleValues {
 export function useTransformValues(
   selectedElement: SelectedElement | null
 ): TransformStyleValues | null {
+  // React Compiler 호환: selectedElement 전체를 의존성으로 사용
   return useMemo(() => {
     if (!selectedElement) return null;
 
@@ -33,11 +34,5 @@ export function useTransformValues(
       top: getStyleValue(selectedElement, 'top', 'auto'),
       left: getStyleValue(selectedElement, 'left', 'auto'),
     };
-  }, [
-    selectedElement?.id,
-    selectedElement?.style?.width,
-    selectedElement?.style?.height,
-    selectedElement?.style?.top,
-    selectedElement?.style?.left,
-  ]);
+  }, [selectedElement]);
 }

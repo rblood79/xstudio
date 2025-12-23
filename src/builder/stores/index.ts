@@ -10,7 +10,6 @@ import { createElementLoaderSlice, ElementLoaderSlice } from "./elementLoader";
 import {
   createInspectorActionsSlice,
   InspectorActionsState,
-  mapElementToSelectedElement,
 } from "./inspectorActions";
 import { getPageElements } from "./utils/elementIndexer";
 import type { SelectedElement } from "../inspector/types";
@@ -179,7 +178,8 @@ export const useDebouncedSelectedElementData = (): SelectedElement | null => {
     // 값 → null: 즉시 업데이트 (선택 해제 빠르게)
     // 값 → 다른값: 디바운스 (빠른 선택 전환 시 지연)
     if (currentData === null || debouncedData === null) {
-      setDebouncedData(currentData);
+      // React Compiler 호환: queueMicrotask로 비동기 업데이트
+      queueMicrotask(() => setDebouncedData(currentData));
     } else if (currentData.id !== debouncedData.id) {
       // 다른 요소로 선택 변경: 디바운스 적용
       timeoutRef.current = setTimeout(() => {
@@ -187,8 +187,8 @@ export const useDebouncedSelectedElementData = (): SelectedElement | null => {
         timeoutRef.current = null;
       }, TIMING.INSPECTOR_DEBOUNCE);
     } else {
-      // 같은 요소의 속성 변경: 즉시 업데이트
-      setDebouncedData(currentData);
+      // 같은 요소의 속성 변경: queueMicrotask로 비동기 업데이트
+      queueMicrotask(() => setDebouncedData(currentData));
     }
 
     return () => {

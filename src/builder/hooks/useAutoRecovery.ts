@@ -196,7 +196,7 @@ export function useAutoRecovery(options?: {
         isRecoveringRef.current = false;
       }
     },
-    [clearAllPages, currentPageId, config.historyKeepCount, config.recoveryCooldown, options]
+    [clearAllPages, currentPageId, config.recoveryCooldown, options]
   );
 
   /**

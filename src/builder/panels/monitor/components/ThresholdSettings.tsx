@@ -11,39 +11,17 @@ import { useState, useEffect } from "react";
 import { Settings, X, RotateCcw } from "lucide-react";
 import { Button } from "react-aria-components";
 import { iconSmall, iconEditProps } from "../../../../utils/ui/uiConstants";
+import {
+  type ThresholdConfig,
+  saveThresholdConfig,
+} from "../utils/thresholdConfig";
 
-export interface ThresholdConfig {
-  warning: number; // default: 60
-  danger: number; // default: 75
-}
+// 외부에서 사용하는 경우 별도 파일에서 직접 import하세요:
+// import { loadThresholdConfig, type ThresholdConfig } from "../utils/thresholdConfig";
 
 interface ThresholdSettingsProps {
   config: ThresholdConfig;
   onChange: (config: ThresholdConfig) => void;
-}
-
-const STORAGE_KEY = "xstudio-monitor-thresholds";
-
-// localStorage에서 설정 로드
-export function loadThresholdConfig(): ThresholdConfig {
-  try {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
-      return JSON.parse(saved);
-    }
-  } catch {
-    // 무시
-  }
-  return { warning: 60, danger: 75 };
-}
-
-// localStorage에 설정 저장
-function saveThresholdConfig(config: ThresholdConfig) {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(config));
-  } catch {
-    // 무시
-  }
 }
 
 export function ThresholdSettings({

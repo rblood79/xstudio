@@ -85,11 +85,15 @@ export function Select<T extends object>({
   variant = "primary",
   size = "md",
   selectionMode = "single",
-  multipleDisplayMode = "count",
-  renderMultipleValue,
+  // Note: 다중 선택 관련 기능은 현재 미구현 상태
+  multipleDisplayMode: _multipleDisplayMode = "count",
+  renderMultipleValue: _renderMultipleValue,
   isLoading: externalLoading,
   ...props
 }: SelectProps<T>) {
+  // 다중 선택 기능 구현 예정 (현재는 미사용)
+  void _multipleDisplayMode;
+  void _renderMultipleValue;
   // useCollectionData Hook - 항상 최상단에서 호출 (Rules of Hooks)
   const {
     data: boundData,
@@ -178,53 +182,6 @@ export function Select<T extends object>({
     dataBinding,
     items,
   ]);
-
-  // 다중 선택 모드일 때 선택된 값 표시 로직
-  const renderMultipleSelectValue = React.useCallback(
-    (
-      selectedKeys: React.Key[] | "all" | null,
-      selectedItems: Iterable<T> | null
-    ) => {
-      if (
-        selectionMode !== "multiple" ||
-        !selectedKeys ||
-        selectedKeys === "all" ||
-        (Array.isArray(selectedKeys) && selectedKeys.length === 0)
-      ) {
-        return null;
-      }
-
-      const selectedItemsArray = selectedItems ? Array.from(selectedItems) : [];
-      const keyCount = Array.isArray(selectedKeys) ? selectedKeys.length : 0;
-
-      if (keyCount === 0) {
-        return null;
-      }
-
-      switch (multipleDisplayMode) {
-        case "count":
-          return `${keyCount}개 선택됨`;
-        case "list": {
-          const labels = selectedItemsArray
-            .map((item) => {
-              const itemRecord = item as Record<string, unknown>;
-              return String(
-                itemRecord.label || itemRecord.name || itemRecord.id || ""
-              );
-            })
-            .filter(Boolean);
-          return labels.length > 0 ? labels.join(", ") : `${keyCount}개 선택됨`;
-        }
-        case "custom":
-          return renderMultipleValue
-            ? renderMultipleValue(selectedItemsArray)
-            : `${keyCount}개 선택됨`;
-        default:
-          return `${keyCount}개 선택됨`;
-      }
-    },
-    [selectionMode, multipleDisplayMode, renderMultipleValue]
-  );
 
   // Render ListBox content based on state - memoized to prevent unnecessary re-renders
   const listBoxContent: React.ReactNode | ((item: T) => React.ReactNode) =
@@ -315,7 +272,7 @@ export function Select<T extends object>({
       isDisabled={hasDataBinding && (loading || !!error)}
       data-selection-mode={selectionMode}
     >
-      {(renderProps) => (
+      {() => (
         <>
           {hasVisibleLabel && (
             <Label className="react-aria-Label">{String(label)}</Label>

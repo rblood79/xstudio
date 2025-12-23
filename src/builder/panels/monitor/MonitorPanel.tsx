@@ -34,11 +34,11 @@ import { RealtimeChart } from "./components/RealtimeChart";
 import { FPSMeter } from "./components/FPSMeter";
 import { WebVitalsCard } from "./components/WebVitalsCard";
 import { ComponentMemoryList } from "./components/ComponentMemoryList";
+import { ThresholdSettings } from "./components/ThresholdSettings";
 import {
-  ThresholdSettings,
   loadThresholdConfig,
   type ThresholdConfig,
-} from "./components/ThresholdSettings";
+} from "./utils/thresholdConfig";
 import { useToast } from "../../hooks/useToast";
 import { ToastContainer } from "../../components/ToastContainer";
 

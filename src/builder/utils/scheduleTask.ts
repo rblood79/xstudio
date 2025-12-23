@@ -121,7 +121,6 @@ export function scheduleCancelableBackgroundTask(
   options?: { timeout?: number }
 ): () => void {
   let cancelled = false;
-  let taskId: number | void;
 
   const wrappedCallback = () => {
     if (!cancelled) {
@@ -129,7 +128,7 @@ export function scheduleCancelableBackgroundTask(
     }
   };
 
-  taskId = scheduleBackgroundTask(wrappedCallback, options);
+  const taskId = scheduleBackgroundTask(wrappedCallback, options);
 
   return () => {
     cancelled = true;

@@ -305,6 +305,12 @@ const MultiSelectContent = memo(function MultiSelectContent({
     return resolved;
   }, [isMultiSelectActive, selectedElementIds, currentPageId]);
 
+  // useCopyPaste hook을 사용하여 클립보드 작업 수행
+  const { copyText, pasteText } = useCopyPaste({
+    onPaste: () => {}, // 별도 처리하므로 빈 함수
+    name: 'multi-elements',
+  });
+
   // 다중 선택이 아니면 null 반환 (빠른 종료)
   if (!isMultiSelectActive) {
     return null;
@@ -317,7 +323,7 @@ const MultiSelectContent = memo(function MultiSelectContent({
       const elementsMap = getElementsMap();
       const copiedData = copyMultipleElements(selectedElementIds, elementsMap);
       const jsonData = serializeCopiedElements(copiedData);
-      await navigator.clipboard.writeText(jsonData);
+      await copyText(jsonData);
       console.log(`✅ [Copy] Copied ${selectedElementIds.length} elements`);
     } catch (error) {
       console.error('❌ [Copy] Failed:', error);
@@ -327,7 +333,8 @@ const MultiSelectContent = memo(function MultiSelectContent({
   const handlePasteAll = async () => {
     if (!currentPageId) return;
     try {
-      const clipboardText = await navigator.clipboard.readText();
+      const clipboardText = await pasteText();
+      if (!clipboardText) return;
       const copiedData = deserializeCopiedElements(clipboardText);
       if (!copiedData) return;
       const newElements = pasteMultipleElements(copiedData, currentPageId, { x: 10, y: 10 });

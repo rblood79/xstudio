@@ -25,6 +25,8 @@ export interface AppearanceStyleValues {
 export function useAppearanceValues(
   selectedElement: SelectedElement | null
 ): AppearanceStyleValues | null {
+  // React Compiler 호환: selectedElement 전체를 의존성으로 사용
+  // 세부 속성 최적화는 상위 컴포넌트에서 selector를 통해 처리
   return useMemo(() => {
     if (!selectedElement) return null;
 
@@ -35,18 +37,5 @@ export function useAppearanceValues(
       borderRadius: getStyleValue(selectedElement, 'borderRadius', '0px'),
       borderStyle: getStyleValue(selectedElement, 'borderStyle', 'solid'),
     };
-  }, [
-    selectedElement?.id,
-    selectedElement?.style?.backgroundColor,
-    selectedElement?.style?.borderColor,
-    selectedElement?.style?.borderWidth,
-    selectedElement?.style?.borderRadius,
-    selectedElement?.style?.borderStyle,
-    // computedStyle도 포함
-    selectedElement?.computedStyle?.backgroundColor,
-    selectedElement?.computedStyle?.borderColor,
-    selectedElement?.computedStyle?.borderWidth,
-    selectedElement?.computedStyle?.borderRadius,
-    selectedElement?.computedStyle?.borderStyle,
-  ]);
+  }, [selectedElement]);
 }

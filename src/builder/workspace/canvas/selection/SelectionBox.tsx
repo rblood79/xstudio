@@ -8,7 +8,7 @@
  * @updated 2025-12-23 Phase 19 성능 최적화
  */
 
-import { useCallback, memo, useRef, useImperativeHandle, forwardRef } from 'react';
+import { useCallback, memo, useRef, useImperativeHandle, forwardRef, useEffect } from 'react';
 import { Graphics as PixiGraphics, Container as PixiContainer } from 'pixi.js';
 import { useExtend } from '@pixi/react';
 import { PIXI_COMPONENTS } from '../pixiSetup';
@@ -82,7 +82,10 @@ export const SelectionBox = memo(
 
     // 🚀 Phase 19: 원본 bounds 저장 (리셋용)
     const originalBoundsRef = useRef<BoundingBox>(bounds);
-    originalBoundsRef.current = bounds;
+    // React Compiler 호환: useEffect로 ref 업데이트
+    useEffect(() => {
+      originalBoundsRef.current = bounds;
+    }, [bounds]);
 
     // 서브픽셀 렌더링 방지: 좌표와 크기를 정수로 반올림
     const x = Math.round(bounds.x);

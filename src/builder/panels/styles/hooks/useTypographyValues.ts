@@ -31,6 +31,7 @@ export interface TypographyStyleValues {
 export function useTypographyValues(
   selectedElement: SelectedElement | null
 ): TypographyStyleValues | null {
+  // React Compiler 호환: selectedElement 전체를 의존성으로 사용
   return useMemo(() => {
     if (!selectedElement) return null;
 
@@ -47,30 +48,5 @@ export function useTypographyValues(
       textTransform: getStyleValue(selectedElement, 'textTransform', 'none'),
       verticalAlign: getStyleValue(selectedElement, 'verticalAlign', 'baseline'),
     };
-  }, [
-    selectedElement?.id,
-    selectedElement?.style?.fontFamily,
-    selectedElement?.style?.fontSize,
-    selectedElement?.style?.fontWeight,
-    selectedElement?.style?.fontStyle,
-    selectedElement?.style?.lineHeight,
-    selectedElement?.style?.letterSpacing,
-    selectedElement?.style?.color,
-    selectedElement?.style?.textAlign,
-    selectedElement?.style?.textDecoration,
-    selectedElement?.style?.textTransform,
-    selectedElement?.style?.verticalAlign,
-    // computedStyle도 포함
-    selectedElement?.computedStyle?.fontFamily,
-    selectedElement?.computedStyle?.fontSize,
-    selectedElement?.computedStyle?.fontWeight,
-    selectedElement?.computedStyle?.fontStyle,
-    selectedElement?.computedStyle?.lineHeight,
-    selectedElement?.computedStyle?.letterSpacing,
-    selectedElement?.computedStyle?.color,
-    selectedElement?.computedStyle?.textAlign,
-    selectedElement?.computedStyle?.textDecoration,
-    selectedElement?.computedStyle?.textTransform,
-    selectedElement?.computedStyle?.verticalAlign,
-  ]);
+  }, [selectedElement]);
 }

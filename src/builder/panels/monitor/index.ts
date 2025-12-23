@@ -27,8 +27,6 @@ export { RealtimeChart } from "./components/RealtimeChart";
 export { FPSMeter } from "./components/FPSMeter";
 export { WebVitalsCard } from "./components/WebVitalsCard";
 export { ComponentMemoryList } from "./components/ComponentMemoryList";
-export {
-  ThresholdSettings,
-  loadThresholdConfig,
-} from "./components/ThresholdSettings";
-export type { ThresholdConfig } from "./components/ThresholdSettings";
+export { ThresholdSettings } from "./components/ThresholdSettings";
+export { loadThresholdConfig } from "./utils/thresholdConfig";
+export type { ThresholdConfig } from "./utils/thresholdConfig";

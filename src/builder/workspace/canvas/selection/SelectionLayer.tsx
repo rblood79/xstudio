@@ -147,10 +147,11 @@ export const SelectionLayer = memo(function SelectionLayer({
   const [selectionBounds, setSelectionBounds] = useState<BoundingBox | null>(null);
   const pendingUpdateRef = useRef<number | null>(null);
 
+  // React Compiler 호환: queueMicrotask로 비동기 업데이트
   useEffect(() => {
     // 첫 번째 프레임: 즉시 계산 (선택 피드백 즉시 표시)
     const bounds = computeSelectionBounds();
-    setSelectionBounds(bounds);
+    queueMicrotask(() => setSelectionBounds(bounds));
 
     // cleanup: pending update 취소
     return () => {

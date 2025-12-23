@@ -91,6 +91,17 @@ export const PanelContainer = memo(function PanelContainer({
   // - activePanels에 있으면 보이고, 없으면 transform으로 숨김
   // - 패널 컴포넌트는 isActive prop으로 실제 활성 상태를 받음
 
+  // 🚀 패널별 width 메모이제이션 (PanelRegistry 조회 최소화)
+  // Note: React Hooks 규칙 준수를 위해 조건문 이전에 호출
+  const panelWidths = useMemo(() => {
+    const widths: Record<string, number> = {};
+    for (const panelId of panelIds) {
+      const config = PanelRegistry.getPanel(panelId);
+      widths[panelId] = config?.minWidth || 233;
+    }
+    return widths;
+  }, [panelIds]);
+
   // 활성 패널이 없고 show가 false인 경우 빈 상태 표시
   if (activePanels.length === 0 && !show) {
     return (
@@ -106,16 +117,6 @@ export const PanelContainer = memo(function PanelContainer({
       </div>
     );
   }
-
-  // 🚀 패널별 width 메모이제이션 (PanelRegistry 조회 최소화)
-  const panelWidths = useMemo(() => {
-    const widths: Record<string, number> = {};
-    for (const panelId of panelIds) {
-      const config = PanelRegistry.getPanel(panelId);
-      widths[panelId] = config?.minWidth || 233;
-    }
-    return widths;
-  }, [panelIds]);
 
   return (
     <div
