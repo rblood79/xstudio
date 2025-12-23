@@ -305,3 +305,115 @@ export function getDynamicResolution(isInteracting: boolean): number {
 2. **requestIdleCallback**으로 브라우저 유휴 시간 활용
 3. **동적 해상도**로 인터랙션 중 WebGL 부하 감소
 4. **React 18 Concurrent Features**로 우선순위 기반 렌더링
+
+---
+
+## 부록: 디바운스 구현 비교 테스트
+
+> **테스트 일자**: 2025-12-23
+> **테스트 조건**: 15회 요소 선택 전환 (동일 조건)
+
+### 테스트 대상
+
+| 구현 방식 | 설명 | 코드 복잡도 |
+|-----------|------|-------------|
+| **Test A**: setTimeout | 100ms 고정 지연, 수동 상태 관리 | 38줄 |
+| **Test B**: useDeferredValue | React 18 내장 스케줄러 활용 | 4줄 |
+
+### 성능 비교 결과
+
+| 지표 | setTimeout (A) | useDeferredValue (B) | 변화 | 승자 |
+|------|----------------|----------------------|------|------|
+| **Long Task 횟수** | 21회 | 18회 | **-14%** | B |
+| **Long Task 최대** | 124ms | 68ms | **-45%** | **B** |
+| **Long Task 평균** | 60ms | 59ms | -2% | - |
+| **Long Task 총합** | - | 1059ms | - | - |
+| **FPS 평균** | 50 | 50 | 동일 | - |
+| **FPS 최소** | 42 | 46 | **+10%** | **B** |
+| **FPS 최대** | 52 | 52 | 동일 | - |
+
+### 구현 코드 비교
+
+**Test A: setTimeout 기반 (이전)**
+```typescript
+export const useDebouncedSelectedElementData = (): SelectedElement | null => {
+  const currentData = useSelectedElementData();
+  const [debouncedData, setDebouncedData] = useState<SelectedElement | null>(currentData);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    if (timeoutRef.current !== null) {
+      clearTimeout(timeoutRef.current);
+    }
+
+    if (currentData === null || debouncedData === null) {
+      queueMicrotask(() => setDebouncedData(currentData));
+    } else if (currentData.id !== debouncedData.id) {
+      timeoutRef.current = setTimeout(() => {
+        setDebouncedData(currentData);
+        timeoutRef.current = null;
+      }, TIMING.INSPECTOR_DEBOUNCE); // 100ms
+    } else {
+      queueMicrotask(() => setDebouncedData(currentData));
+    }
+
+    return () => {
+      if (timeoutRef.current !== null) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
+    };
+  }, [currentData, debouncedData]);
+
+  return debouncedData;
+};
+```
+
+**Test B: useDeferredValue 기반 (현재 적용)**
+```typescript
+export const useDebouncedSelectedElementData = (): SelectedElement | null => {
+  const currentData = useSelectedElementData();
+  return useDeferredValue(currentData);
+};
+```
+
+### 분석
+
+#### useDeferredValue의 장점
+
+1. **Long Task 최대값 45% 감소** (124ms → 68ms)
+   - React의 내장 스케줄러가 작업을 더 작은 청크로 분배
+   - 메인 스레드 블로킹 시간 대폭 감소
+
+2. **FPS 최소값 10% 개선** (42fps → 46fps)
+   - 성능 저하 시에도 더 안정적인 프레임 레이트 유지
+   - 사용자 체감 끊김 현상 감소
+
+3. **코드 간결화** (38줄 → 4줄)
+   - 수동 타이머 관리 불필요
+   - useEffect cleanup 로직 제거
+   - 버그 발생 가능성 감소
+
+4. **React 생태계 통합**
+   - Concurrent Mode와 자연스럽게 연동
+   - startTransition과 함께 사용 시 추가 최적화 가능
+
+#### setTimeout의 장점 (참고)
+
+- 고정된 지연 시간 보장 (100ms)
+- React 버전 독립적
+- 디버깅 시 예측 가능한 동작
+
+### 결론
+
+**useDeferredValue 채택 권장**
+
+```
+┌─────────────────────────────────────────────────────────┐
+│  성능:      useDeferredValue 우세 (Long Task -45%)      │
+│  코드 품질: useDeferredValue 우세 (38줄 → 4줄)          │
+│  유지보수:  useDeferredValue 우세 (React 내장 기능)     │
+│  ────────────────────────────────────────────────────── │
+│  최종 결정: useDeferredValue 적용 ✅                    │
+└─────────────────────────────────────────────────────────┘
+```

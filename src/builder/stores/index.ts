@@ -1,6 +1,5 @@
-import { useMemo, useState, useEffect, useRef, useDeferredValue } from "react";
+import { useMemo, useDeferredValue } from "react";
 import { create, type StoreApi, type UseBoundStore } from "zustand";
-import { TIMING } from "../constants/timing";
 import { createSelectionSlice, SelectionState } from "./selection";
 import { createElementsSlice, ElementsState, type Element } from "./elements";
 import { createSaveModeSlice, SaveModeState } from "./saveMode";
@@ -157,49 +156,17 @@ export const useSelectedElementData = (): SelectedElement | null => {
 /**
  * 🚀 Phase 19/Phase 3: 디바운스된 선택 요소 데이터
  *
- * 선택 변경 시 INSPECTOR_DEBOUNCE (100ms) 지연 후 업데이트
- * - 빠른 선택 전환 시 불필요한 인스펙터 리렌더링 방지
- * - 드래그 중 선택 변경에도 부드러운 UX 제공
+ * 🔄 Test B: useDeferredValue 기반 구현
+ * React 18 Concurrent Features를 활용하여 선택 변경을 낮은 우선순위로 처리
+ * - setTimeout 대신 React의 내장 스케줄링 사용
+ * - 브라우저의 네이티브 우선순위 시스템 활용
+ * - 캔버스 인터랙션에 방해 없이 인스펙터 업데이트
  *
- * @returns SelectedElement | null (디바운스됨)
+ * @returns SelectedElement | null (지연됨)
  */
 export const useDebouncedSelectedElementData = (): SelectedElement | null => {
   const currentData = useSelectedElementData();
-  const [debouncedData, setDebouncedData] = useState<SelectedElement | null>(currentData);
-  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  useEffect(() => {
-    // 이전 타이머 취소
-    if (timeoutRef.current !== null) {
-      clearTimeout(timeoutRef.current);
-    }
-
-    // null → 값: 즉시 업데이트 (선택됨 표시 빠르게)
-    // 값 → null: 즉시 업데이트 (선택 해제 빠르게)
-    // 값 → 다른값: 디바운스 (빠른 선택 전환 시 지연)
-    if (currentData === null || debouncedData === null) {
-      // React Compiler 호환: queueMicrotask로 비동기 업데이트
-      queueMicrotask(() => setDebouncedData(currentData));
-    } else if (currentData.id !== debouncedData.id) {
-      // 다른 요소로 선택 변경: 디바운스 적용
-      timeoutRef.current = setTimeout(() => {
-        setDebouncedData(currentData);
-        timeoutRef.current = null;
-      }, TIMING.INSPECTOR_DEBOUNCE);
-    } else {
-      // 같은 요소의 속성 변경: queueMicrotask로 비동기 업데이트
-      queueMicrotask(() => setDebouncedData(currentData));
-    }
-
-    return () => {
-      if (timeoutRef.current !== null) {
-        clearTimeout(timeoutRef.current);
-        timeoutRef.current = null;
-      }
-    };
-  }, [currentData, debouncedData]);
-
-  return debouncedData;
+  return useDeferredValue(currentData);
 };
 
 /**
