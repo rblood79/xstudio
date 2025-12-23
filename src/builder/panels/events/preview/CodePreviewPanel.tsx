@@ -10,7 +10,7 @@
 import { useState, useMemo, useCallback } from 'react';
 import { Button } from 'react-aria-components';
 import { Copy, Check, Code, ChevronDown, ChevronRight } from 'lucide-react';
-import type { BlockEventHandler } from '../../../events/types/eventBlockTypes';
+import type { BlockEventHandler, ConditionOperand } from '../../../events/types/eventBlockTypes';
 import { iconProps, iconEditProps } from '../../../../utils/ui/uiConstants';
 import { useCopyPaste } from '../../../hooks/useCopyPaste';
 
@@ -100,7 +100,7 @@ function generateConditionCode(
   const operator = group.operator === 'AND' ? ' && ' : ' || ';
   const conditions = group.conditions.map((cond) => {
     const left = formatOperand(cond.left);
-    const right = formatOperand(cond.right);
+    const right = cond.right ? formatOperand(cond.right) : "''";
 
     switch (cond.operator) {
       case 'equals':
@@ -140,26 +140,27 @@ function generateConditionCode(
 /**
  * 피연산자 포맷
  */
-function formatOperand(operand: { type: string; value: string }): string {
+function formatOperand(operand: ConditionOperand): string {
+  const strValue = String(operand.value ?? '');
   switch (operand.type) {
     case 'element':
-      return `getElement('${operand.value}')?.value`;
+      return `getElement('${strValue}')?.value`;
     case 'state':
-      return `state.${operand.value}`;
+      return `state.${strValue}`;
     case 'event':
-      return `event.${operand.value}`;
-    case 'static':
+      return `event.${strValue}`;
+    case 'literal':
       // 숫자인지 확인
-      if (!isNaN(Number(operand.value))) {
-        return operand.value;
+      if (!isNaN(Number(strValue))) {
+        return strValue;
       }
       // 불리언인지 확인
-      if (operand.value === 'true' || operand.value === 'false') {
-        return operand.value;
+      if (operand.value === true || operand.value === false || strValue === 'true' || strValue === 'false') {
+        return strValue;
       }
-      return `'${operand.value}'`;
+      return `'${strValue}'`;
     default:
-      return `'${operand.value}'`;
+      return `'${strValue}'`;
   }
 }
 

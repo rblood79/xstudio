@@ -117,7 +117,7 @@ export function PixiFileTrigger({
     <pixiContainer
       eventMode="static"
       cursor="pointer"
-      onpointertap={() => onClick?.(element.id)}
+      onPointerTap={() => onClick?.(element.id)}
     >
       {/* Button background */}
       <pixiGraphics draw={drawButton} />

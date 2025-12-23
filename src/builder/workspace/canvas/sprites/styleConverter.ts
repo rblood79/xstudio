@@ -44,6 +44,10 @@ export interface CSSStyle {
   paddingBottom?: number | string;
   paddingLeft?: number | string;
   boxShadow?: string;
+  // Layout properties
+  display?: string;
+  flexDirection?: string;
+  gap?: number | string;
 }
 
 export interface PixiTransform {

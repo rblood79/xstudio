@@ -338,7 +338,7 @@ export function TokenEditor({ themeId, projectId }: TokenEditorProps) {
                         value={selectedToken.value.h || 0}
                         onChange={(e) =>
                           handleUpdateToken({
-                            value: { ...(selectedToken.value as ColorValue), h: parseInt(e.target.value) },
+                            value: Object.assign({}, selectedToken.value as ColorValue, { h: parseInt(e.target.value) }),
                           })
                         }
                       />
@@ -348,7 +348,7 @@ export function TokenEditor({ themeId, projectId }: TokenEditorProps) {
                         value={selectedToken.value.s || 0}
                         onChange={(e) =>
                           handleUpdateToken({
-                            value: { ...(selectedToken.value as ColorValue), s: parseInt(e.target.value) },
+                            value: Object.assign({}, selectedToken.value as ColorValue, { s: parseInt(e.target.value) }),
                           })
                         }
                       />
@@ -358,7 +358,7 @@ export function TokenEditor({ themeId, projectId }: TokenEditorProps) {
                         value={selectedToken.value.l || 50}
                         onChange={(e) =>
                           handleUpdateToken({
-                            value: { ...(selectedToken.value as ColorValue), l: parseInt(e.target.value) },
+                            value: Object.assign({}, selectedToken.value as ColorValue, { l: parseInt(e.target.value) }),
                           })
                         }
                       />
@@ -369,7 +369,7 @@ export function TokenEditor({ themeId, projectId }: TokenEditorProps) {
                         value={selectedToken.value.a || 1}
                         onChange={(e) =>
                           handleUpdateToken({
-                            value: { ...(selectedToken.value as ColorValue), a: parseFloat(e.target.value) },
+                            value: Object.assign({}, selectedToken.value as ColorValue, { a: parseFloat(e.target.value) }),
                           })
                         }
                       />

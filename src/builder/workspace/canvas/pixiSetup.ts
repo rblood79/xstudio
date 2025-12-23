@@ -59,11 +59,8 @@ function initPixiSettings() {
   // 기본 해상도 설정 (devicePixelRatio 기반)
   AbstractRenderer.defaultOptions.resolution = Math.min(window.devicePixelRatio || 1, 2);
 
-  // 기본 antialias 설정 (고사양 기기만)
-  AbstractRenderer.defaultOptions.antialias = !isLowEndDevice();
-
-  // 기본 powerPreference 설정
-  AbstractRenderer.defaultOptions.powerPreference = 'high-performance';
+  // Note: antialias와 powerPreference는 Application 생성 시 개별 설정
+  // PixiJS v8에서 defaultOptions에서 제거됨
 }
 
 // 🚀 Phase 6.2: 저사양 감지 결과 캐싱

@@ -4,6 +4,7 @@ import { Key } from "react-aria-components";
 
 import { useStore } from "../stores";
 import { historyManager } from "../stores/history";
+import type { Element } from "../../types/core/store.types";
 
 // 패널 등록 (side effect import - registerAllPanels() 자동 실행)
 import "../panels";
@@ -169,7 +170,7 @@ export const BuilderCore: React.FC = () => {
     onRecovery: useCallback((reason: string) => {
       showToast('info', `성능 자동 복구 완료: ${reason}`, 8000);
     }, [showToast]),
-    onWarning: useCallback((metrics) => {
+    onWarning: useCallback((metrics: { healthScore: number }) => {
       showToast('warning', `성능 경고: Health ${metrics.healthScore}%`, 5000);
     }, [showToast]),
   });
@@ -268,7 +269,7 @@ export const BuilderCore: React.FC = () => {
           const { elements, setElements } = useStore.getState();
           const otherElements = elements.filter((el) => el.layout_id !== currentLayoutId);
           const mergedElements = [...otherElements, ...layoutElements];
-          setElements(mergedElements, { skipHistory: true });
+          setElements(mergedElements);
 
 
           // ⭐ Layouts 목록도 로드 (LayoutsTab이 마운트되기 전에 필요)
@@ -360,7 +361,7 @@ export const BuilderCore: React.FC = () => {
   // useIframeMessenger에서 elements 구독 제거 후, BuilderCore에서 직접 동기화
   // 🚀 Phase 11: WebGL-only 모드에서는 iframeReadyState='not_initialized'로 반환되어
   //    이 구독이 자동으로 스킵됨 (~3ms/변경 절감)
-  const lastSentElementsRef = useRef<typeof useStore.getState extends () => infer S ? S['elements'] : never>([]);
+  const lastSentElementsRef = useRef<Element[]>([]);
   const lastSentEditModeRef = useRef<string>('page');
 
   useEffect(() => {
@@ -606,8 +607,8 @@ export const BuilderCore: React.FC = () => {
       switch (source) {
         case "response":
           // 마지막 API 응답에서 가져오기 (현재는 상태에서 가져옴)
-          // TODO: lastApiResponse 상태 관리 필요
-          data = useStore.getState().lastApiResponse;
+          // TODO: lastApiResponse 상태 관리 필요 - 현재 미구현
+          data = undefined;
           break;
         case "variable":
           // 변수에서 가져오기

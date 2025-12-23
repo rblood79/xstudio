@@ -52,9 +52,10 @@ export const renderListBox = (
   // PropertyDataBinding 형식 감지 (source: 'dataTable', name: 'xxx')
   const dataBinding = element.dataBinding || element.props.dataBinding;
   const isPropertyBinding = dataBinding &&
-    'source' in dataBinding &&
-    'name' in dataBinding &&
-    !('type' in dataBinding);
+    typeof dataBinding === 'object' &&
+    'source' in (dataBinding as object) &&
+    'name' in (dataBinding as object) &&
+    !('type' in (dataBinding as object));
 
   if (columnMapping) {
     // ⚠️ Preview에서 자동으로 Field Elements를 생성하지 않음
@@ -138,7 +139,7 @@ export const renderListBox = (
             ? (element.props.selectedKeys as unknown as string[])
             : []
         }
-        dataBinding={element.dataBinding || element.props.dataBinding}
+        dataBinding={(element.dataBinding || element.props.dataBinding) as import('../../types/builder/unified.types').DataBinding | undefined}
         columnMapping={columnMapping}
         onSelectionChange={(selectedKeys) => {
           const updatedProps = {
@@ -174,7 +175,7 @@ export const renderListBox = (
           ? (element.props.selectedKeys as unknown as string[])
           : []
       }
-      dataBinding={element.dataBinding || element.props.dataBinding}
+      dataBinding={(element.dataBinding || element.props.dataBinding) as import('../../types/builder/unified.types').DataBinding | undefined}
       columnMapping={columnMapping}
       onSelectionChange={(selectedKeys) => {
         const updatedProps = {
@@ -269,7 +270,11 @@ export const renderDataField = (
       const parentValue = parent.props.value as Record<string, unknown> | undefined;
 
       if (parentValue && typeof parentValue === "object") {
-        value = parentValue[path] as string | number | boolean | null | undefined;
+        const rawValue = parentValue[path];
+        // null과 boolean을 적절히 변환 (DataField는 string | number | readonly string[] | undefined만 허용)
+        value = rawValue === null ? undefined :
+          typeof rawValue === 'boolean' ? String(rawValue) :
+          rawValue as string | number | undefined;
       }
     }
   }
@@ -320,9 +325,10 @@ export const renderGridList = (
   // PropertyDataBinding 형식 감지 (source: 'dataTable' 또는 'apiEndpoint', name: 'xxx')
   const dataBinding = element.dataBinding || element.props.dataBinding;
   const isPropertyBinding = dataBinding &&
-    'source' in dataBinding &&
-    'name' in dataBinding &&
-    !('type' in dataBinding);
+    typeof dataBinding === 'object' &&
+    'source' in (dataBinding as object) &&
+    'name' in (dataBinding as object) &&
+    !('type' in (dataBinding as object));
 
   // columnMapping이 있거나 PropertyDataBinding이 있고 GridListItem 템플릿이 있으면 render function 사용
   const hasValidTemplate = (columnMapping || isPropertyBinding) && gridListChildren.length > 0;
@@ -397,7 +403,7 @@ export const renderGridList = (
           ? (element.props.selectedKeys as unknown as string[])
           : []
       }
-      dataBinding={element.dataBinding || element.props.dataBinding}
+      dataBinding={(element.dataBinding || element.props.dataBinding) as import('../../types/builder/unified.types').DataBinding | undefined}
       columnMapping={columnMapping}
       onSelectionChange={(selectedKeys) => {
         const updatedProps = {
@@ -483,9 +489,10 @@ export const renderSelect = (
   // PropertyDataBinding 형식 감지 (source: 'dataTable' 또는 'apiEndpoint', name: 'xxx')
   const dataBinding = element.dataBinding || element.props.dataBinding;
   const isPropertyBinding = dataBinding &&
-    'source' in dataBinding &&
-    'name' in dataBinding &&
-    !('type' in dataBinding);
+    typeof dataBinding === 'object' &&
+    'source' in (dataBinding as object) &&
+    'name' in (dataBinding as object) &&
+    !('type' in (dataBinding as object));
 
   // columnMapping이 있거나 PropertyDataBinding이 있고 SelectItem 템플릿이 있으면 render function 사용
   const hasValidTemplate = (columnMapping || isPropertyBinding) && selectItemChildren.length > 0;
@@ -606,7 +613,7 @@ export const renderSelect = (
       isDisabled={Boolean(elementProps.isDisabled)}
       isRequired={Boolean(elementProps.isRequired)}
       autoFocus={Boolean(elementProps.autoFocus)}
-      dataBinding={element.dataBinding || element.props.dataBinding}
+      dataBinding={(element.dataBinding || element.props.dataBinding) as import('../../types/builder/unified.types').DataBinding | undefined}
       columnMapping={columnMapping}
       onSelectionChange={async (selectedKey) => {
         // React Aria의 내부 ID를 실제 값으로 변환
@@ -681,9 +688,10 @@ export const renderComboBox = (
   // PropertyDataBinding 형식 감지 (source: 'dataTable' 또는 'apiEndpoint', name: 'xxx')
   const dataBinding = element.dataBinding || element.props.dataBinding;
   const isPropertyBinding = dataBinding &&
-    'source' in dataBinding &&
-    'name' in dataBinding &&
-    !('type' in dataBinding);
+    typeof dataBinding === 'object' &&
+    'source' in (dataBinding as object) &&
+    'name' in (dataBinding as object) &&
+    !('type' in (dataBinding as object));
 
   // columnMapping이 있거나 PropertyDataBinding이 있고 ComboBoxItem 템플릿이 있으면 render function 사용
   const hasValidTemplate = (columnMapping || isPropertyBinding) && comboBoxItemChildren.length > 0;
@@ -793,7 +801,7 @@ export const renderComboBox = (
       isDisabled={Boolean(element.props.isDisabled)}
       isRequired={Boolean(element.props.isRequired)}
       isReadOnly={Boolean(element.props.isReadOnly)}
-      dataBinding={element.dataBinding || element.props.dataBinding}
+      dataBinding={(element.dataBinding || element.props.dataBinding) as import('../../types/builder/unified.types').DataBinding | undefined}
       columnMapping={columnMapping}
       onSelectionChange={async (selectedKey) => {
         // selectedKey가 undefined이면 선택 해제로 처리

@@ -352,7 +352,7 @@ export const PixiCheckboxGroup = memo(function PixiCheckboxGroup({
       new TextStyle({
         fontFamily: labelPreset.fontFamily,
         fontSize: labelPreset.fontSize,
-        fontWeight: labelPreset.fontWeight,
+        fontWeight: labelPreset.fontWeight as import('pixi.js').TextStyleFontWeight,
         fill: labelPreset.color,
       }),
     [labelPreset]

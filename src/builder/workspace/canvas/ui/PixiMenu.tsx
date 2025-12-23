@@ -183,7 +183,7 @@ export const PixiMenu = memo(function PixiMenu({
         backgroundColor: bgColor,
         backgroundAlpha: 1,
         borderRadius: sizePreset.borderRadius,
-        border: borderColor !== 0x00000000 ? { width: 1, color: borderColor } : undefined,
+        border: borderColor !== 0x00000000 ? { width: 1, color: borderColor, alpha: 1, style: 'solid' as const, radius: sizePreset.borderRadius } : undefined,
       });
     },
     [menuLayout.totalWidth, menuLayout.totalHeight, bgColor, borderColor, sizePreset.borderRadius]

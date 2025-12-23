@@ -55,11 +55,12 @@ interface ActionBlockProps {
 
 /**
  * 액션 타입별 아이콘 매핑
+ * Note: Partial 사용 - 모든 ActionType이 필요하지 않음 (camelCase만 정의, 폴백 있음)
  */
-const ACTION_ICONS: Record<
+const ACTION_ICONS: Partial<Record<
   ActionType,
   React.ComponentType<{ size?: number; className?: string }>
-> = {
+>> = {
   navigate: Navigation,
   scrollTo: ArrowDown,
   setState: Database,
@@ -136,8 +137,9 @@ export function ActionBlock({
   onToggleExpand,
   dragHandleProps = {},
 }: ActionBlockProps) {
-  const IconComponent = ACTION_ICONS[action.type] || Code;
-  const label = ACTION_TYPE_LABELS[action.type] || action.type;
+  // snake_case 액션 타입 (scroll_to 등)은 폴백 아이콘 사용
+  const IconComponent = (ACTION_ICONS as Record<string, React.ComponentType<{ size?: number; className?: string }>>)[action.type] || Code;
+  const label = (ACTION_TYPE_LABELS as Record<string, string>)[action.type] || action.type;
   const summary = getActionSummary(action);
 
   return (

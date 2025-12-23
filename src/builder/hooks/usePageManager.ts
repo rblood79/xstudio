@@ -2,6 +2,7 @@ import { useState, useRef, useCallback } from 'react';
 import { useListData } from 'react-stately';
 import { Element } from '../../types/core/store.types';
 import { type Page as ApiPage } from '../../services/api/PagesApiService';
+import { type Page } from '../../types/builder/unified.types';
 import { getDB } from '../../lib/db';
 import { useStore } from '../stores';
 import type { ElementProps } from '../../types/integrations/supabase.types';
@@ -135,7 +136,7 @@ export const usePageManager = ({ requestAutoSelectAfterUpdate }: UsePageManagerP
             }
 
             // 항상 히스토리 기록하지 않음 (useEffect → UPDATE_ELEMENTS → ACK → auto-select 실행)
-            setElements(allElements, { skipHistory: true });
+            setElements(allElements);
 
             // 페이지 변경 시 현재 페이지 ID 업데이트
             setCurrentPageId(pageId);
@@ -370,9 +371,10 @@ export const usePageManager = ({ requestAutoSelectAfterUpdate }: UsePageManagerP
                 const originalPage = projectPages.find(pp => pp.id === p.id);
                 return {
                     id: p.id,
-                    name: p.title, // title → name
+                    title: p.title,
                     slug: p.slug,
-                    parent_id: p.parent_id,
+                    project_id: p.project_id,
+                    parent_id: p.parent_id ?? null,
                     order_num: p.order_num,
                     layout_id: (originalPage as { layout_id?: string | null })?.layout_id || null
                 };

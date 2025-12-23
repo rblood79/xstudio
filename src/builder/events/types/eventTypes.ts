@@ -484,8 +484,9 @@ export const EVENT_TYPE_LABELS: Record<EventType, string> = {
 
 /**
  * 액션 타입 레이블 맵
+ * Note: Partial 사용 - camelCase만 정의 (snake_case 별칭은 폴백 사용)
  */
-export const ACTION_TYPE_LABELS: Record<ActionType, string> = {
+export const ACTION_TYPE_LABELS: Partial<Record<ActionType, string>> = {
   navigate: "페이지 이동",
   scrollTo: "스크롤 이동",
   setState: "상태 설정",

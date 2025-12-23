@@ -722,8 +722,6 @@ export function BuilderCanvas({
           roundPixels={true}
           // 🚀 Phase 5: GPU 성능 최적화
           powerPreference="high-performance"
-          // 🚀 Phase 5: 불필요한 스텐실 버퍼 비활성화 (성능 개선)
-          stencil={false}
         >
           {/* P4: 메모이제이션된 컴포넌트 등록 (첫 번째 자식) */}
           <PixiExtendBridge />

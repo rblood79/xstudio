@@ -29,10 +29,10 @@ export const PageLayoutSelector = memo(function PageLayoutSelector({
 
   // ⭐ layouts가 비어있으면 자동 로드
   useEffect(() => {
-    if (layouts.length === 0) {
-      fetchLayouts();
+    if (layouts.length === 0 && page?.project_id) {
+      fetchLayouts(page.project_id);
     }
-  }, [layouts.length, fetchLayouts]);
+  }, [layouts.length, fetchLayouts, page?.project_id]);
 
   // Current layout
   const currentLayoutId = page?.layout_id || "";
@@ -74,7 +74,7 @@ export const PageLayoutSelector = memo(function PageLayoutSelector({
         // 기존 요소들 중 해당 레이아웃 요소가 아닌 것들 유지 + 새 레이아웃 요소 추가
         const otherElements = elements.filter((el) => el.layout_id !== layoutId);
         mergedElements = [...otherElements, ...layoutElements];
-        setElements(mergedElements, { skipHistory: true });
+        setElements(mergedElements);
       }
 
       // 2. 요소 로드 완료 후 pages 업데이트 (이때 UPDATE_PAGE_INFO 전송됨)

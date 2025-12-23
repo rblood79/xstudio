@@ -85,12 +85,12 @@ export interface DatePickerProps<T extends DateValue>
    */
   maxDate?: string | DateValue;
   /**
-   * React Aria 1.13.0: 주의 첫 번째 요일
-   * 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+   * React Aria: 주의 첫 번째 요일
+   * "sun" | "mon" | "tue" | "wed" | "thu" | "fri" | "sat"
    * 기본값은 locale에 따라 자동 설정
-   * @example 1 (월요일 시작)
+   * @example "mon" (월요일 시작)
    */
-  firstDayOfWeek?: 0 | 1 | 2 | 3 | 4 | 5 | 6;
+  firstDayOfWeek?: "sun" | "mon" | "tue" | "wed" | "thu" | "fri" | "sat";
 }
 
 /**

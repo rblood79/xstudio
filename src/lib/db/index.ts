@@ -34,13 +34,13 @@ export async function getDB(): Promise<DatabaseAdapter> {
   }
 
   // 새로 초기화
-  initPromise = (async () => {
+  const promise = (async (): Promise<DatabaseAdapter> => {
     // 향후 Electron 지원 시:
     // const adapter = import.meta.env.ELECTRON
     //   ? new PGliteAdapter()
     //   : new IndexedDBAdapter();
 
-    const adapter = new IndexedDBAdapter();
+    const adapter: DatabaseAdapter = new IndexedDBAdapter();
     await adapter.init();
 
     dbInstance = adapter;
@@ -49,7 +49,8 @@ export async function getDB(): Promise<DatabaseAdapter> {
     return adapter;
   })();
 
-  return initPromise;
+  initPromise = promise;
+  return promise;
 }
 
 /**

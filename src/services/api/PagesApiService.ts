@@ -5,9 +5,11 @@ export interface Page {
     project_id: string;
     title: string;
     slug: string;
-    order_num: number;
-    created_at: string;
-    updated_at: string;
+    order_num?: number;
+    created_at?: string;
+    updated_at?: string;
+    parent_id?: string | null;
+    layout_id?: string | null;
 }
 
 export interface CreatePageData {

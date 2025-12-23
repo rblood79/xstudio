@@ -44,12 +44,12 @@ export function NodesPanel({ isActive }: PanelProps) {
     }
   }, [projectId, pages.length, isActive, initializeProject]);
 
-  // Convert store pages (name) to UnifiedPage (title) for Sidebar
+  // Convert store pages to UnifiedPage for Sidebar
   const unifiedPages: UnifiedPage[] = useMemo(() =>
     pages.map(p => ({
       id: p.id,
-      title: p.name || 'Untitled', // Convert name → title
-      project_id: '', // Not used by Sidebar
+      title: p.title || 'Untitled',
+      project_id: p.project_id || '', // Not used by Sidebar
       slug: p.slug || '',
       parent_id: p.parent_id,
       order_num: p.order_num || 0

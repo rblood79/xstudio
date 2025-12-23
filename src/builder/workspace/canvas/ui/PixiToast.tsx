@@ -66,7 +66,7 @@ export function PixiToast({
       g.stroke({ color: colorPreset.borderColor, width: 1 });
 
       // Left accent bar
-      g.roundRect(0, 0, 3, toastHeight, { topLeft: sizePreset.borderRadius, bottomLeft: sizePreset.borderRadius, topRight: 0, bottomRight: 0 });
+      g.roundRect(0, 0, 3, toastHeight, sizePreset.borderRadius);
       g.fill({ color: colorPreset.accentColor });
 
       // Selection indicator
@@ -190,7 +190,7 @@ export function PixiToast({
     <pixiContainer
       eventMode="static"
       cursor="pointer"
-      onpointertap={() => onClick?.(element.id)}
+      onPointerTap={() => onClick?.(element.id)}
     >
       {/* Toast container */}
       <pixiGraphics draw={drawContainer} />

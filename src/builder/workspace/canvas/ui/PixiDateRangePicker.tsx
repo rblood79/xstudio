@@ -222,7 +222,7 @@ export function PixiDateRangePicker({
     <pixiContainer
       eventMode="static"
       cursor="pointer"
-      onpointertap={() => onClick?.(element.id)}
+      onPointerTap={() => onClick?.(element.id)}
     >
       {/* Start field */}
       <pixiGraphics draw={(g) => drawField(g, fieldWidth)} />

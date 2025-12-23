@@ -97,22 +97,22 @@ function loadLayoutFromStorage(): import('../panels/core/types').PanelLayoutStat
 
       // 마이그레이션: 제거된 'data' 패널 제거
       if (Array.isArray(result.rightPanels)) {
-        result.rightPanels = result.rightPanels.filter((id) => id !== 'data');
+        result.rightPanels = result.rightPanels.filter((id: string) => id !== 'data');
       }
       if (Array.isArray(result.activeRightPanels)) {
-        result.activeRightPanels = result.activeRightPanels.filter((id) => id !== 'data');
+        result.activeRightPanels = result.activeRightPanels.filter((id: string) => id !== 'data');
       }
       if (Array.isArray(result.leftPanels)) {
-        result.leftPanels = result.leftPanels.filter((id) => id !== 'data');
+        result.leftPanels = result.leftPanels.filter((id: string) => id !== 'data');
       }
       if (Array.isArray(result.activeLeftPanels)) {
-        result.activeLeftPanels = result.activeLeftPanels.filter((id) => id !== 'data');
+        result.activeLeftPanels = result.activeLeftPanels.filter((id: string) => id !== 'data');
       }
       if (Array.isArray(result.bottomPanels)) {
-        result.bottomPanels = result.bottomPanels.filter((id) => id !== 'data');
+        result.bottomPanels = result.bottomPanels.filter((id: string) => id !== 'data');
       }
       if (Array.isArray(result.activeBottomPanels)) {
-        result.activeBottomPanels = result.activeBottomPanels.filter((id) => id !== 'data');
+        result.activeBottomPanels = result.activeBottomPanels.filter((id: string) => id !== 'data');
       }
 
       // 🔧 임시 수정: 너무 많은 패널이 활성화된 경우 기본값으로 리셋
@@ -151,7 +151,7 @@ export const createPanelLayoutSlice: StateCreator<
   [],
   [],
   PanelLayoutSlice
-> = (set, get) => ({
+> = (set, get, _store) => ({
   // 초기 상태: localStorage에서 로드하거나 기본값 사용
   panelLayout: loadLayoutFromStorage() || DEFAULT_PANEL_LAYOUT,
 

@@ -49,7 +49,7 @@ function estimateObjectSize(obj: unknown): number {
 // 요소의 깊이 계산
 function getElementDepth(
   elementId: string,
-  elements: { id: string; parent_id: string | null }[]
+  elements: { id: string; parent_id?: string | null }[]
 ): number {
   let depth = 0;
   let current = elements.find((el) => el.id === elementId);
@@ -66,7 +66,7 @@ function getElementDepth(
 // 자식 요소 수 계산
 function countChildren(
   elementId: string,
-  elements: { id: string; parent_id: string | null }[]
+  elements: { id: string; parent_id?: string | null }[]
 ): number {
   const directChildren = elements.filter((el) => el.parent_id === elementId);
   return directChildren.reduce(

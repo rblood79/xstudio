@@ -125,7 +125,7 @@ export function trackMultiDelete(elements: Element[]): void {
       elementId: element.id,
       data: {
         element: element,
-        childElements: element.children as Element[] | undefined,
+        childElements: undefined,
       },
     });
   });

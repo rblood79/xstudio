@@ -33,10 +33,11 @@ interface BlockActionEditorProps {
 
 /**
  * BlockEventAction을 EventAction으로 변환
+ * Note: 타입 어서션 사용 - BlockEventAction.type (registry)과 EventAction.type (eventTypes) 간 호환
  */
 function toEventAction(blockAction: BlockEventAction): EventAction {
   return {
-    type: blockAction.type,
+    type: blockAction.type as EventAction['type'],
     config: blockAction.config,
     delay: blockAction.delay,
     condition: blockAction.condition,

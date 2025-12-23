@@ -19,7 +19,7 @@ import {
   AlertTriangle,
 } from 'lucide-react';
 import { iconEditProps, iconSmall } from '../../../../utils/ui/uiConstants';
-import type { BlockEventHandler } from '../../../events/types/eventBlockTypes';
+import type { BlockEventHandler, ConditionOperand } from '../../../events/types/eventBlockTypes';
 
 /**
  * 실행 상태
@@ -98,7 +98,7 @@ function evaluateCondition(
   for (const cond of condition.conditions) {
     // 간단한 평가 시뮬레이션
     const leftValue = getValueFromOperand(cond.left, context);
-    const rightValue = getValueFromOperand(cond.right, context);
+    const rightValue = cond.right ? getValueFromOperand(cond.right, context) : undefined;
 
     let result = false;
     switch (cond.operator) {
@@ -125,7 +125,7 @@ function evaluateCondition(
     }
 
     evaluations.push({
-      condition: `${cond.left.value} ${cond.operator} ${cond.right.value}`,
+      condition: `${cond.left.value} ${cond.operator} ${cond.right?.value ?? ''}`,
       result,
     });
     results.push(result);
@@ -142,19 +142,21 @@ function evaluateCondition(
  * 피연산자에서 값 추출
  */
 function getValueFromOperand(
-  operand: { type: string; value: string },
+  operand: ConditionOperand,
   context: { event: unknown; state: unknown }
 ): unknown {
+  const strValue = String(operand.value ?? '');
   switch (operand.type) {
     case 'event':
-      return getNestedValue(context.event, operand.value);
+      return getNestedValue(context.event, strValue);
     case 'state':
-      return getNestedValue(context.state, operand.value);
-    case 'static':
+      return getNestedValue(context.state, strValue);
+    case 'literal':
       // 타입 추론
-      if (operand.value === 'true') return true;
-      if (operand.value === 'false') return false;
-      if (!isNaN(Number(operand.value))) return Number(operand.value);
+      if (operand.value === true || strValue === 'true') return true;
+      if (operand.value === false || strValue === 'false') return false;
+      if (typeof operand.value === 'number') return operand.value;
+      if (!isNaN(Number(strValue))) return Number(strValue);
       return operand.value;
     default:
       return operand.value;

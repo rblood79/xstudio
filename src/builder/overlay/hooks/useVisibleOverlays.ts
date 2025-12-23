@@ -65,7 +65,7 @@ export interface OverlayData {
  */
 export function useVisibleOverlays(
   overlays: OverlayData[],
-  iframeRef: React.RefObject<HTMLIFrameElement>
+  iframeRef: React.RefObject<HTMLIFrameElement | null>
 ): OverlayData[] {
   const [viewport, setViewport] = useState<ViewportBounds>({
     left: 0,

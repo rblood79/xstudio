@@ -179,8 +179,8 @@ export function MenuButton<T extends object>({
               id: String(child.id || `${item.id}-${childIndex}`),
               label: String(
                 child.label ||
-                  (child as Record<string, unknown>).text ||
-                  (child as Record<string, unknown>).name ||
+                  (child as unknown as Record<string, unknown>).text ||
+                  (child as unknown as Record<string, unknown>).name ||
                   `Item ${childIndex + 1}`
               ),
               isDisabled: Boolean(child.isDisabled),

@@ -252,8 +252,8 @@ export const useIframeMessenger = (): UseIframeMessengerReturn => {
             baseUrl: ep.baseUrl,
             path: ep.path,
             headers: ep.headers,
-            params: ep.params,
-            body: ep.body,
+            params: ep.queryParams,
+            body: ep.bodyTemplate,
         }));
 
         const message = {

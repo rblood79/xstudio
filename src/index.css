@@ -24,3 +24,10 @@
 
 /* XStudio Builder Styles */
 @import "./builder/styles/index.css";
+
+/* React Query Devtools - 버튼 위치 조정 (우측 세로 중앙) */
+.tsqd-open-btn-container {
+  top: 50% !important;
+  bottom: auto !important;
+  transform: translateY(-50%);
+}

@@ -85,7 +85,7 @@ export const PageTreeRenderer = memo(function PageTreeRenderer({
               <TreeNodeItem
                 key={page.id}
                 id={page.id}
-                label={page.title || page.name || "Untitled"}
+                label={page.title || "Untitled"}
                 depth={depth}
                 hasChildren={pageHasChildren}
                 isExpanded={isExpanded}

@@ -99,7 +99,7 @@ export const TextSprite = memo(function TextSprite({
   const hasDecoration = textDecoration.underline || textDecoration.lineThrough || textDecoration.overline;
 
   // Text ref for measuring bounds
-  const textRef = useRef<pixiText | null>(null);
+  const textRef = useRef<Text | null>(null);
 
   // PixiJS TextStyle (P7.2-P7.4 extended)
   const pixiTextStyle = useMemo(

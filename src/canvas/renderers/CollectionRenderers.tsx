@@ -13,7 +13,7 @@ import {
 import { DataField } from "../../shared/components/Field";
 import { PreviewElement, RenderContext } from "../types";
 import { getDB } from "../../lib/db";
-import type { ColumnMapping } from "../../types/builder/unified.types";
+import type { ColumnMapping, DataBinding } from "../../types/builder/unified.types";
 
 /**
  * Collection 관련 컴포넌트 렌더러
@@ -82,7 +82,7 @@ export const renderTree = (
       key={element.id}
       id={element.customId}
       data-element-id={element.id}
-      dataBinding={element.dataBinding || element.props.dataBinding}
+      dataBinding={(element.dataBinding || element.props.dataBinding) as DataBinding | undefined}
       style={element.props.style}
       className={element.props.className}
       aria-label={String(element.props["aria-label"] || "Tree")}
@@ -188,9 +188,10 @@ export const renderTagGroup = (
   // PropertyDataBinding 형식 감지 (source: 'dataTable' 또는 'apiEndpoint', name: 'xxx')
   const dataBinding = element.dataBinding || element.props.dataBinding;
   const isPropertyBinding = dataBinding &&
-    'source' in dataBinding &&
-    'name' in dataBinding &&
-    !('type' in dataBinding);
+    typeof dataBinding === 'object' &&
+    'source' in (dataBinding as object) &&
+    'name' in (dataBinding as object) &&
+    !('type' in (dataBinding as object));
 
   // Tag 템플릿에 Field children이 있는지 미리 확인
   const tagTemplate = tagChildren.length > 0 ? tagChildren[0] : null;
@@ -303,7 +304,7 @@ export const renderTagGroup = (
       size={
         (element.props.size as "sm" | "md" | "lg") || "md"
       }
-      dataBinding={element.dataBinding || element.props.dataBinding}
+      dataBinding={(element.dataBinding || element.props.dataBinding) as DataBinding | undefined}
       columnMapping={columnMapping}
       removedItemIds={removedItemIds}
       onSelectionChange={async (selectedKeys) => {
@@ -547,7 +548,7 @@ export const renderToggleButtonGroup = (
   return (
     <ToggleButtonGroup
       key={element.id}
-      id={element.customId}
+      data-custom-id={element.customId}
       data-element-id={element.id}
       style={element.props.style}
       className={element.props.className}
@@ -683,7 +684,7 @@ export const renderMenu = (
       label={String(element.props.label || "Menu")}
       style={element.props.style}
       className={element.props.className}
-      dataBinding={element.dataBinding || element.props.dataBinding}
+      dataBinding={(element.dataBinding || element.props.dataBinding) as DataBinding | undefined}
     >
       {/* Static 방법: MenuItem 자식 렌더링 (dataBinding이 없을 때만) */}
       {menuItemChildren.map((child) => renderElement(child, child.id))}
@@ -738,7 +739,7 @@ export const renderToolbar = (
   return (
     <Toolbar
       key={element.id}
-      id={element.customId}
+      data-custom-id={element.customId}
       data-element-id={element.id}
       style={element.props.style}
       className={element.props.className}

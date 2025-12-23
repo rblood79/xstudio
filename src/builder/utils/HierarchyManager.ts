@@ -269,11 +269,13 @@ export class HierarchyManager {
     static getPerformanceStats(): {
         cacheSize: number;
         childrenCacheSize: number;
+        orderNumCacheSize: number;
         hitRate: number;
     } {
         return {
             cacheSize: this.treeCache.size,
             childrenCacheSize: this.childrenCache.size,
+            orderNumCacheSize: 0, // orderNum 캐시는 현재 별도로 관리되지 않음
             hitRate: 0 // TODO: 히트율 계산 로직 추가
         };
     }

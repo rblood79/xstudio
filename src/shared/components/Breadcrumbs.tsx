@@ -125,10 +125,9 @@ export function Breadcrumbs<T extends object>({
       dataBinding.type === 'collection') ||
     isPropertyBinding;
 
-  const breadcrumbsClassName = composeRenderProps(
-    props.className,
-    (className) => className ? `react-aria-Breadcrumbs ${className}` : 'react-aria-Breadcrumbs'
-  );
+  // 🚀 ClassNameOrFunction 타입 지원 - 문자열로 단순화
+  const baseClassName = typeof props.className === 'string' ? props.className : undefined;
+  const breadcrumbsClassName = baseClassName ? `react-aria-Breadcrumbs ${baseClassName}` : 'react-aria-Breadcrumbs';
 
   // DataBinding이 있고 columnMapping이 있으면 children 템플릿 사용
   if (hasDataBinding && columnMapping) {

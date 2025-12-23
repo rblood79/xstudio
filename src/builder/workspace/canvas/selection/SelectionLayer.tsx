@@ -23,7 +23,7 @@ import { LassoSelection } from './LassoSelection';
 import type { BoundingBox, HandlePosition, CursorStyle, DragState } from './types';
 import { calculateCombinedBounds } from './types';
 import type { LayoutResult } from '../layout';
-import type { Element } from '../../../../types';
+import type { Element } from '../../../../types/core/store.types';
 import { TIMING } from '../../../constants/timing';
 
 // ============================================

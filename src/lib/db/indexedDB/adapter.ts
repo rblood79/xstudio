@@ -14,7 +14,7 @@ import type {
   SyncMetadata,
 } from '../types';
 import type { Element, Page } from '../../../types/core/store.types';
-import type { DesignToken } from '../../../types/theme';
+import type { DesignToken, DesignTheme } from '../../../types/theme';
 import type { Layout } from '../../../types/builder/layout.types';
 import type {
   DataTable,
@@ -770,39 +770,39 @@ export class IndexedDBAdapter implements DatabaseAdapter {
   // === Design Themes ===
 
   themes = {
-    getAll: async () => {
-      return this.getAllFromStore<Record<string, unknown>>('design_themes');
+    getAll: async (): Promise<DesignTheme[]> => {
+      return this.getAllFromStore<DesignTheme>('design_themes');
     },
 
-    getById: async (id: string) => {
-      return this.getFromStore<Record<string, unknown>>('design_themes', id);
+    getById: async (id: string): Promise<DesignTheme | null> => {
+      return this.getFromStore<DesignTheme>('design_themes', id);
     },
 
-    getByProject: async (projectId: string) => {
+    getByProject: async (projectId: string): Promise<DesignTheme[]> => {
       const db = this.ensureDB();
-      return new Promise<Array<Record<string, unknown>>>((resolve, reject) => {
+      return new Promise<DesignTheme[]>((resolve, reject) => {
         const tx = db.transaction('design_themes', 'readonly');
         const store = tx.objectStore('design_themes');
         const index = store.index('project_id');
         const request = index.getAll(projectId);
 
-        request.onsuccess = () => resolve(request.result || []);
+        request.onsuccess = () => resolve((request.result || []) as DesignTheme[]);
         request.onerror = () => reject(request.error);
       });
     },
 
-    getActiveTheme: async (projectId: string) => {
+    getActiveTheme: async (projectId: string): Promise<DesignTheme | null> => {
       const themes = await this.themes.getByProject(projectId);
-      const activeTheme = themes.find((t) => (t as { status?: string }).status === 'active');
+      const activeTheme = themes.find((t) => t.status === 'active');
       return activeTheme || themes[0] || null;
     },
 
-    insert: async (theme: Record<string, unknown>) => {
+    insert: async (theme: DesignTheme): Promise<DesignTheme> => {
       await this.putToStore('design_themes', theme);
       return theme;
     },
 
-    update: async (id: string, updates: Record<string, unknown>) => {
+    update: async (id: string, updates: Partial<DesignTheme>): Promise<DesignTheme> => {
       const existing = await this.themes.getById(id);
       if (!existing) {
         throw new Error(`Theme ${id} not found`);

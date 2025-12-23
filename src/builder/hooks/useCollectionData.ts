@@ -391,9 +391,20 @@ export function useCollectionData({
 
           // CORS bypass를 위해 proxy 사용
           const proxyUrl = `/api/proxy?url=${encodeURIComponent(url)}`;
+          // Convert headers to Record<string, string>
+          const headers: Record<string, string> = {};
+          if (endpoint.headers) {
+            if (Array.isArray(endpoint.headers)) {
+              endpoint.headers.forEach((h) => {
+                if (h.enabled) headers[h.key] = h.value;
+              });
+            } else {
+              Object.assign(headers, endpoint.headers);
+            }
+          }
           const response = await fetch(proxyUrl, {
             method: endpoint.method || 'GET',
-            headers: endpoint.headers || {},
+            headers,
           });
 
           if (!response.ok) {

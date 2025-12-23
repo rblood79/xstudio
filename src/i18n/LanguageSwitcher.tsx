@@ -45,8 +45,10 @@ export function LanguageSwitcher({
 }: LanguageSwitcherProps) {
   const { locale, setLocale, t } = useI18n();
 
-  const handleSelectionChange = (key: React.Key) => {
-    setLocale(key as SupportedLocale);
+  const handleSelectionChange = (key: React.Key | null) => {
+    if (key) {
+      setLocale(key as SupportedLocale);
+    }
   };
 
   const effectiveLabel = label || t('common.select');

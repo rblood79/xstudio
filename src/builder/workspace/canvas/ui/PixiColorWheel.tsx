@@ -123,7 +123,7 @@ export function PixiColorWheel({
     <pixiContainer
       eventMode="static"
       cursor="pointer"
-      onpointertap={() => onClick?.(element.id)}
+      onPointerTap={() => onClick?.(element.id)}
     >
       {/* Color wheel */}
       <pixiGraphics draw={drawWheel} />

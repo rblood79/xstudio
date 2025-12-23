@@ -114,7 +114,7 @@ export function AddPageDialog({ onSubmit, existingPagesCount }: AddPageDialogPro
         : null,
       allPages: pages.map((p) => ({
         id: p.id,
-        title: p.name,
+        title: p.title,
         slug: p.slug || "",
         project_id: p.project_id || "",
         parent_id: p.parent_id,
@@ -158,7 +158,7 @@ export function AddPageDialog({ onSubmit, existingPagesCount }: AddPageDialogPro
   const parentOptions = useMemo(() => {
     return pages.map((p) => ({
       value: p.id,
-      label: p.name,
+      label: p.title,
     }));
   }, [pages]);
 

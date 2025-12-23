@@ -114,11 +114,9 @@ export function GridList<T extends object>({
     isPropertyBinding;
 
   // GridList className generator (reused across all conditional renders)
-  const getGridListClassName = (baseClassName?: string) =>
-    composeRenderProps(
-      baseClassName,
-      (className) => className ? `react-aria-GridList ${className}` : 'react-aria-GridList'
-    );
+  // 🚀 ClassNameOrFunction 타입 지원 - 문자열로 단순화
+  const baseClassName = typeof props.className === 'string' ? props.className : undefined;
+  const gridListClassName = baseClassName ? `react-aria-GridList ${baseClassName}` : 'react-aria-GridList';
 
   // ColumnMapping이 있으면 각 데이터 항목마다 GridListItem 렌더링
   // ListBox와 동일한 패턴: Element tree의 GridListItem 템플릿 + Field 자식 사용
@@ -136,7 +134,7 @@ export function GridList<T extends object>({
     // Loading 상태
     if (loading) {
       return (
-        <AriaGridList {...props} className={getGridListClassName(props.className)} data-variant={variant} data-size={size}>
+        <AriaGridList {...props} className={gridListClassName} data-variant={variant} data-size={size}>
           <AriaGridListItem
             key="loading"
             value={{}}
@@ -159,7 +157,7 @@ export function GridList<T extends object>({
     // Error 상태
     if (error) {
       return (
-        <AriaGridList {...props} className={getGridListClassName(props.className)} data-variant={variant} data-size={size}>
+        <AriaGridList {...props} className={gridListClassName} data-variant={variant} data-size={size}>
           <AriaGridListItem
             key="error"
             value={{}}
@@ -189,7 +187,7 @@ export function GridList<T extends object>({
       console.log('✅ GridList with columnMapping - items:', items);
 
       return (
-        <AriaGridList {...props} className={getGridListClassName(props.className)} data-variant={variant} data-size={size} items={items}>
+        <AriaGridList {...props} className={gridListClassName} data-variant={variant} data-size={size} items={items}>
           {children}
         </AriaGridList>
       );
@@ -197,7 +195,7 @@ export function GridList<T extends object>({
 
     // 데이터 없음
     return (
-      <AriaGridList {...props} className={getGridListClassName(props.className)} data-variant={variant} data-size={size}>
+      <AriaGridList {...props} className={gridListClassName} data-variant={variant} data-size={size}>
         {children}
       </AriaGridList>
     );
@@ -208,7 +206,7 @@ export function GridList<T extends object>({
     // Loading 상태
     if (loading) {
       return (
-        <AriaGridList {...props} className={getGridListClassName(props.className)} data-variant={variant} data-size={size}>
+        <AriaGridList {...props} className={gridListClassName} data-variant={variant} data-size={size}>
           <AriaGridListItem
             key="loading"
             value={{}}
@@ -231,7 +229,7 @@ export function GridList<T extends object>({
     // Error 상태
     if (error) {
       return (
-        <AriaGridList {...props} className={getGridListClassName(props.className)} data-variant={variant} data-size={size}>
+        <AriaGridList {...props} className={gridListClassName} data-variant={variant} data-size={size}>
           <AriaGridListItem
             key="error"
             value={{}}
@@ -264,7 +262,7 @@ export function GridList<T extends object>({
       console.log('✅ GridList Dynamic Collection - items:', items);
 
       return (
-        <AriaGridList {...props} className={getGridListClassName(props.className)} data-variant={variant} data-size={size} items={items}>
+        <AriaGridList {...props} className={gridListClassName} data-variant={variant} data-size={size} items={items}>
           {(item) => (
             <AriaGridListItem
               key={item.id}
@@ -290,7 +288,7 @@ export function GridList<T extends object>({
 
   // Static Children (기존 방식)
   return (
-    <AriaGridList {...props} className={getGridListClassName(props.className)} data-variant={variant} data-size={size}>
+    <AriaGridList {...props} className={gridListClassName} data-variant={variant} data-size={size}>
       {children}
     </AriaGridList>
   );

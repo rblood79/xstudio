@@ -21,7 +21,7 @@ import "./styles/ColorPicker.css";
  * - data-variant, data-size 속성 사용
  */
 
-export interface ColorPickerProps extends AriaColorPickerProps {
+export interface ColorPickerProps extends Omit<AriaColorPickerProps, 'children'> {
   /**
    * M3 variant
    * @default 'primary'
@@ -34,6 +34,7 @@ export interface ColorPickerProps extends AriaColorPickerProps {
   size?: ComponentSize;
   label?: string;
   children?: React.ReactNode;
+  className?: string;
 }
 
 /**
@@ -60,33 +61,35 @@ export function ColorPicker({
   variant = 'primary',
   size = 'md',
   children,
+  className,
   ...props
 }: ColorPickerProps) {
-  const colorPickerClassName = composeRenderProps(
-    props.className,
-    (className) => className ? `react-aria-ColorPicker ${className}` : 'react-aria-ColorPicker'
-  );
+  // 🚀 ClassNameOrFunction 타입 지원 - 문자열로 단순화
+  const baseClassName = typeof className === 'string' ? className : undefined;
+  const colorPickerClassName = baseClassName ? `react-aria-ColorPicker ${baseClassName}` : 'react-aria-ColorPicker';
 
   return (
-    <AriaColorPicker {...props} className={colorPickerClassName} data-variant={variant} data-size={size}>
-      <DialogTrigger>
-        <Button className="color-picker-button">
-          <ColorSwatch />
-        </Button>
-        <Popover placement="bottom start" className="color-picker-popover">
-          {children || (
-            <>
-              <ColorArea
-                colorSpace="hsb"
-                xChannel="saturation"
-                yChannel="brightness"
-              />
-              <ColorSlider colorSpace="hsb" channel="hue" />
-              <ColorField label="Hex" />
-            </>
-          )}
-        </Popover>
-      </DialogTrigger>
-    </AriaColorPicker>
+    <div className={colorPickerClassName} data-variant={variant} data-size={size}>
+      <AriaColorPicker {...props}>
+        <DialogTrigger>
+          <Button className="color-picker-button">
+            <ColorSwatch />
+          </Button>
+          <Popover placement="bottom start" className="color-picker-popover">
+            {children || (
+              <>
+                <ColorArea
+                  colorSpace="hsb"
+                  xChannel="saturation"
+                  yChannel="brightness"
+                />
+                <ColorSlider colorSpace="hsb" channel="hue" />
+                <ColorField label="Hex" />
+              </>
+            )}
+          </Popover>
+        </DialogTrigger>
+      </AriaColorPicker>
+    </div>
   );
 }

@@ -13,7 +13,14 @@ import { useEffect } from 'react';
 import { useSetAtom } from 'jotai';
 import { useStore } from '../../../stores';
 import { selectedElementAtom } from '../atoms/styleAtoms';
-import type { SelectedElement } from '../../../inspector/types';
+// Local interface for style panel's selected element (different from inspector's SelectedElement)
+interface StylePanelSelectedElement {
+  id: string;
+  type: string;
+  style: Record<string, unknown>;
+  computedStyle?: Record<string, unknown>;
+  className: string;
+}
 
 /**
  * Zustand store의 선택된 요소를 Jotai atom과 동기화하는 훅
@@ -36,7 +43,7 @@ export function useZustandJotaiBridge(): void {
     // 초기값 설정
     const state = useStore.getState();
     const initialElement = buildSelectedElement(state);
-    setSelectedElement(initialElement);
+    setSelectedElement(initialElement as unknown as Parameters<typeof setSelectedElement>[0]);
 
     // Zustand 구독
     const unsubscribe = useStore.subscribe((state, prevState) => {
@@ -46,7 +53,7 @@ export function useZustandJotaiBridge(): void {
         state.selectedElementProps !== prevState.selectedElementProps
       ) {
         const element = buildSelectedElement(state);
-        setSelectedElement(element);
+        setSelectedElement(element as unknown as Parameters<typeof setSelectedElement>[0]);
       }
     });
 
@@ -59,7 +66,7 @@ export function useZustandJotaiBridge(): void {
  */
 function buildSelectedElement(
   state: ReturnType<typeof useStore.getState>
-): SelectedElement | null {
+): StylePanelSelectedElement | null {
   const { selectedElementId, elementsMap, selectedElementProps } = state;
 
   if (!selectedElementId) return null;
@@ -69,10 +76,10 @@ function buildSelectedElement(
 
   return {
     id: element.id,
-    type: element.type,
-    style: selectedElementProps?.style ?? element.props.style ?? {},
-    computedStyle: selectedElementProps?.computedStyle,
-    className: selectedElementProps?.className ?? element.props.className ?? '',
+    type: element.tag,
+    style: (selectedElementProps?.style ?? (element.props as Record<string, unknown>)?.style ?? {}) as Record<string, unknown>,
+    computedStyle: selectedElementProps?.computedStyle as Record<string, unknown> | undefined,
+    className: (selectedElementProps?.className as string) ?? ((element.props as Record<string, unknown>)?.className as string) ?? '',
   };
 }
 

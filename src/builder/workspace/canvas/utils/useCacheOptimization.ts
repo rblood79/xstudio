@@ -24,7 +24,7 @@ const CACHE_DELAY = 150;
 function useIsDragging(elementId: string): boolean {
   return useStore((state) => {
     // dragState가 있고 해당 요소가 드래그 중인지 확인
-    const dragState = state.dragState;
+    const dragState = (state as unknown as { dragState?: { elementId?: string; elementIds?: string[] } }).dragState;
     if (!dragState) return false;
 
     // 단일 요소 드래그

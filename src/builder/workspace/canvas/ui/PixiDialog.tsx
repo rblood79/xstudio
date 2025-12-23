@@ -190,9 +190,9 @@ export function PixiDialog({
     <pixiContainer
       eventMode="static"
       cursor="pointer"
-      onpointerenter={() => setIsHovered(true)}
-      onpointerleave={() => setIsHovered(false)}
-      onpointertap={() => onClick?.(element.id)}
+      onPointerEnter={() => setIsHovered(true)}
+      onPointerLeave={() => setIsHovered(false)}
+      onPointerTap={() => onClick?.(element.id)}
     >
       {/* Backdrop (optional visual representation) */}
       {showBackdrop && <pixiGraphics draw={drawBackdrop} />}

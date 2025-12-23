@@ -14,7 +14,7 @@ import {
   GeneratedMediaQuery,
   ElementGeneratedCSS,
   generateMediaQueryString,
-} from "../../../types/builder/responsive.types";
+} from "../../types/builder/responsive.types";
 
 /**
  * CSS 속성 이름을 kebab-case로 변환

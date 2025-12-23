@@ -510,7 +510,7 @@ export const ListBoxEditor = memo(function ListBoxEditor({
           icon={Zap}
         />
 
-        {currentProps.enableVirtualization && (
+        {Boolean(currentProps.enableVirtualization) && (
           <>
             <PropertyInput
               label="컨테이너 높이 (px)"

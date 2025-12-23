@@ -69,7 +69,7 @@ export function AIThemeGenerator({
         setProgress(progressData);
 
         if (progressData.stage === 'complete' && progressData.data) {
-          finalResult = progressData.data;
+          finalResult = progressData.data as ThemeGenerationResponse;
         }
       }
 

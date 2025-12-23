@@ -338,7 +338,7 @@ export const createUndoAction =
             const childUpdates = new Map<string, { parent_id: string | null; order_num: number }>();
             entry.data.elements.forEach((prevChild: Element) => {
               childUpdates.set(prevChild.id, {
-                parent_id: prevChild.parent_id,
+                parent_id: prevChild.parent_id ?? null,
                 order_num: prevChild.order_num || 0,
               });
             });
@@ -838,7 +838,7 @@ export const createRedoAction =
             const childUpdates = new Map<string, { parent_id: string | null; order_num: number }>();
             entry.data.elements.forEach((prevChild: Element) => {
               childUpdates.set(prevChild.id, {
-                parent_id: prevChild.parent_id,
+                parent_id: prevChild.parent_id ?? null,
                 order_num: prevChild.order_num || 0,
               });
             });

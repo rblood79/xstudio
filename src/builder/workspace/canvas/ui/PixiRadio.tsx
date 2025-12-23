@@ -334,7 +334,7 @@ export const PixiRadio = memo(function PixiRadio({
       new TextStyle({
         fontFamily: labelPreset.fontFamily,
         fontSize: labelPreset.fontSize,
-        fontWeight: labelPreset.fontWeight,
+        fontWeight: labelPreset.fontWeight as import('pixi.js').TextStyleFontWeight,
         fill: labelPreset.color,
       }),
     [labelPreset]

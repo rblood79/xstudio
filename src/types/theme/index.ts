@@ -386,4 +386,5 @@ export function isResolvedToken(token: DesignToken | ResolvedToken): token is Re
 
 // ===== Legacy Type Aliases (For Backward Compatibility) =====
 // These will be removed in v2.0
-export type NewTokenInput = CreateTokenInput;
+// NewTokenInput: TokenForm에서 project_id/theme_id 없이 토큰 정보 수집용
+export type NewTokenInput = Omit<CreateTokenInput, 'project_id' | 'theme_id'>;

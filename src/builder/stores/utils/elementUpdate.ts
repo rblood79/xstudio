@@ -290,9 +290,8 @@ export const createBatchUpdateElementPropsAction =
         data: {
           batchUpdates: validUpdates.map((u, i) => ({
             elementId: u.elementId,
-            props: cloneForHistory(u.props),
+            newProps: cloneForHistory(u.props),
             prevProps: prevStates[i]?.prevProps,
-            prevElement: prevStates[i]?.prevElement,
           })),
         },
       });
@@ -390,11 +389,8 @@ export const createBatchUpdateElementsAction =
         data: {
           batchUpdates: prevStates.map((ps, i) => ({
             elementId: ps.elementId,
-            props: validUpdates[i]?.updates.props
-              ? cloneForHistory(validUpdates[i].updates.props)
-              : undefined,
+            newProps: cloneForHistory(validUpdates[i]?.updates.props ?? {}) as ComponentElementProps,
             prevProps: ps.prevProps,
-            prevElement: ps.prevElement,
           })),
         },
       });

@@ -14,6 +14,7 @@
 import { StateCreator } from "zustand";
 import type { Element, ComponentElementProps } from "../../types/core/store.types";
 import type { SelectedElement, DataBinding, EventHandler } from "../inspector/types";
+import type { ElementEvent } from "../../types/events/events.types";
 import { saveService } from "../../services/save";
 
 // ============================================
@@ -247,7 +248,7 @@ export const createInspectorActionsSlice: StateCreator<
       const element = getSelectedElement();
       if (!element) return;
 
-      updateAndSave(element.id, { events });
+      updateAndSave(element.id, { events: events as unknown as ElementEvent[] });
     },
 
     addSelectedEvent: (event) => {
@@ -255,7 +256,7 @@ export const createInspectorActionsSlice: StateCreator<
       if (!element) return;
 
       const currentEvents = ((element.props?.events as EventHandler[]) || []);
-      updateAndSave(element.id, { events: [...currentEvents, event] });
+      updateAndSave(element.id, { events: [...currentEvents, event] as unknown as ElementEvent[] });
     },
 
     updateSelectedEvent: (id, event) => {
@@ -264,7 +265,7 @@ export const createInspectorActionsSlice: StateCreator<
 
       const currentEvents = ((element.props?.events as EventHandler[]) || []);
       const updatedEvents = currentEvents.map((e) => (e.id === id ? event : e));
-      updateAndSave(element.id, { events: updatedEvents });
+      updateAndSave(element.id, { events: updatedEvents as unknown as ElementEvent[] });
     },
 
     removeSelectedEvent: (id) => {
@@ -273,7 +274,7 @@ export const createInspectorActionsSlice: StateCreator<
 
       const currentEvents = ((element.props?.events as EventHandler[]) || []);
       const updatedEvents = currentEvents.filter((e) => e.id !== id);
-      updateAndSave(element.id, { events: updatedEvents });
+      updateAndSave(element.id, { events: updatedEvents as unknown as ElementEvent[] });
     },
 
     // ============================================

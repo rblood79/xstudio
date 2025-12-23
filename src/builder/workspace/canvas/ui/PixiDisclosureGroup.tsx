@@ -187,7 +187,7 @@ export function PixiDisclosureGroup({
       <pixiContainer
         eventMode="static"
         cursor="pointer"
-        onpointertap={() => onClick?.(element.id)}
+        onPointerTap={() => onClick?.(element.id)}
       >
         <pixiGraphics draw={drawContainer} />
         <pixiText
@@ -270,9 +270,9 @@ export function PixiDisclosureGroup({
             y={itemY}
             eventMode="static"
             cursor="pointer"
-            onpointerenter={() => setHoveredId(item.id)}
-            onpointerleave={() => setHoveredId(null)}
-            onpointertap={() => handleItemClick(item.id)}
+            onPointerEnter={() => setHoveredId(item.id)}
+            onPointerLeave={() => setHoveredId(null)}
+            onPointerTap={() => handleItemClick(item.id)}
           >
             {/* Item trigger */}
             <pixiGraphics draw={drawItemTrigger} />

@@ -66,7 +66,7 @@ function convertToSwitcherStyle(style: CSSStyle | undefined, itemCount: number, 
   const sizePreset = getSwitchSizePreset(size);
 
   // Switcher 높이는 Switch indicator 높이와 유사하게 설정
-  const defaultHeight = sizePreset.indicatorHeight + 8; // 약간의 패딩 추가
+  const defaultHeight = sizePreset.trackHeight + 8; // 약간의 패딩 추가
 
   return {
     x: parseCSSSize(style?.left, undefined, 0),
@@ -77,9 +77,9 @@ function convertToSwitcherStyle(style: CSSStyle | undefined, itemCount: number, 
     activeColor: cssColorToHex(style?.borderColor, 0x3b82f6),
     textColor: cssColorToHex(style?.color, 0x6b7280),
     activeTextColor: 0xffffff,
-    fontSize: parseCSSSize(style?.fontSize, undefined, sizePreset.fontSize),
+    fontSize: parseCSSSize(style?.fontSize, undefined, sizePreset.labelFontSize),
     fontFamily: style?.fontFamily || 'Pretendard, sans-serif',
-    borderRadius: parseCSSSize(style?.borderRadius, undefined, sizePreset.indicatorHeight / 2),
+    borderRadius: parseCSSSize(style?.borderRadius, undefined, sizePreset.trackHeight / 2),
     itemWidth: itemCount > 0 ? width / itemCount : width,
   };
 }
@@ -192,7 +192,7 @@ export const PixiSwitcher = memo(function PixiSwitcher({
 }: PixiSwitcherProps) {
   useExtend(PIXI_COMPONENTS);
   const { app } = useApplication();
-  const containerRef = useRef<pixiContainer | null>(null);
+  const containerRef = useRef<Container | null>(null);
   const switcherRef = useRef<Switcher | null>(null);
 
   const style = element.props?.style as CSSStyle | undefined;
@@ -262,7 +262,7 @@ export const PixiSwitcher = memo(function PixiSwitcher({
 
     // 초기 선택
     if (activeIndex >= 0 && activeIndex < items.length) {
-      switcher.show(activeIndex);
+      (switcher as unknown as { selectView: (index: number) => void }).selectView(activeIndex);
     }
 
     // 이벤트 연결 (Switcher는 show/hide 기반이므로 클릭으로 변경 처리)
@@ -271,7 +271,7 @@ export const PixiSwitcher = memo(function PixiSwitcher({
       view.cursor = 'pointer';
       view.on('pointerdown', (e) => {
         e.stopPropagation();
-        switcher.show(index);
+        (switcher as unknown as { selectView: (index: number) => void }).selectView(index);
         handleChange(index);
       });
     });

@@ -1,7 +1,8 @@
 import { useMemo, useDeferredValue } from "react";
 import { create, type StoreApi, type UseBoundStore } from "zustand";
 import { createSelectionSlice, SelectionState } from "./selection";
-import { createElementsSlice, ElementsState, type Element } from "./elements";
+import { createElementsSlice, ElementsState } from "./elements";
+import type { Element } from "../../types/core/store.types";
 import { createSaveModeSlice, SaveModeState } from "./saveMode";
 import { createSettingsSlice, SettingsState } from "./settings";
 import { createPanelLayoutSlice, PanelLayoutSlice } from "./panelLayout";
@@ -46,14 +47,14 @@ if (hasExistingStore) {
   useStore = window.__XSTUDIO_STORE__!;
 } else {
   // 새로운 인스턴스 생성
-  useStore = create<Store>((...args) => ({
-    ...createElementsSlice(...args),
-    ...createSelectionSlice(...args),
-    ...createSaveModeSlice(...args),
-    ...createSettingsSlice(...args),
-    ...createPanelLayoutSlice(...args),
-    ...createElementLoaderSlice(...args),
-    ...createInspectorActionsSlice(...args),
+  useStore = create<Store>((set, get, store) => ({
+    ...createElementsSlice(set, get, store),
+    ...createSelectionSlice(set, get, store),
+    ...createSaveModeSlice(set, get, store),
+    ...createSettingsSlice(set, get, store),
+    ...createPanelLayoutSlice(set, get, store),
+    ...createElementLoaderSlice(set, get),
+    ...createInspectorActionsSlice(set, get, store),
   }));
 
   if (typeof window !== "undefined") {

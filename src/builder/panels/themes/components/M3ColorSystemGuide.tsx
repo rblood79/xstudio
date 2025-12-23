@@ -84,13 +84,14 @@ export function M3ColorSystemGuide({ themeId, projectId, isDarkMode = false }: M
         const { getDB } = await import('../../../../lib/db');
         const db = await getDB();
 
-        // Fetch all tokens for this theme from IndexedDB
-        const allTokens = await db.designTokens.getByTheme(themeId);
+        // Fetch all tokens from IndexedDB and filter by theme
+        const allProjectTokens = await db.designTokens.getAll();
+        const allTokens = allProjectTokens.filter((t: { theme_id?: string }) => t.theme_id === themeId);
 
         // Create token map: name → value
         const tokenMap = new Map<string, string>();
 
-        allTokens.forEach((token) => {
+        allTokens.forEach((token: { type: string; name: string; value: unknown }) => {
           // Only process color tokens
           if (token.type !== 'color') return;
 

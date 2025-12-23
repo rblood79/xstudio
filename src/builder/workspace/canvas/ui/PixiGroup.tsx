@@ -139,7 +139,7 @@ export function PixiGroup({
     <pixiContainer
       eventMode="static"
       cursor="pointer"
-      onpointertap={() => onClick?.(element.id)}
+      onPointerTap={() => onClick?.(element.id)}
       alpha={isDisabled ? colorPreset.disabledOpacity : 1}
     >
       {/* Group container */}

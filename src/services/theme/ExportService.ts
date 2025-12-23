@@ -111,7 +111,7 @@ export class ExportService {
     tokens: DesignToken[],
     options: ExportOptions
   ): ExportResult {
-    const config: Record<string, unknown> = {
+    const config: { theme: { extend: Record<string, Record<string, string>> } } = {
       theme: {
         extend: {},
       },

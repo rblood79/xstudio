@@ -2,7 +2,7 @@
  * styleOptions - 스타일 편집에 사용되는 옵션 목록
  */
 
-export const FONT_FAMILIES = [
+export const FONT_FAMILIES: { value: string; label: string }[] = [
   { value: 'auto', label: 'auto' },
   { value: 'Arial', label: 'Arial' },
   { value: 'Helvetica', label: 'Helvetica' },
@@ -10,9 +10,9 @@ export const FONT_FAMILIES = [
   { value: 'Georgia', label: 'Georgia' },
   { value: 'Courier New', label: 'Courier New' },
   { value: 'Verdana', label: 'Verdana' },
-] as const;
+];
 
-export const FONT_WEIGHTS = [
+export const FONT_WEIGHTS: { value: string; label: string }[] = [
   { value: 'auto', label: 'auto' },
   { value: '100', label: '100 - Thin' },
   { value: '200', label: '200 - Extra Light' },
@@ -25,9 +25,9 @@ export const FONT_WEIGHTS = [
   { value: '900', label: '900 - Black' },
   { value: 'normal', label: 'Normal' },
   { value: 'bold', label: 'Bold' },
-] as const;
+];
 
-export const BORDER_STYLES = [
+export const BORDER_STYLES: { value: string; label: string }[] = [
   { value: 'auto', label: 'auto' },
   { value: 'none', label: 'none' },
   { value: 'solid', label: 'solid' },
@@ -38,7 +38,7 @@ export const BORDER_STYLES = [
   { value: 'ridge', label: 'ridge' },
   { value: 'inset', label: 'inset' },
   { value: 'outset', label: 'outset' },
-] as const;
+];
 
 export const UNIT_OPTIONS = {
   size: ['px', '%', 'rem', 'em', 'vh', 'vw', 'auto'],

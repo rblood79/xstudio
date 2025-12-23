@@ -86,8 +86,9 @@ export function Pages({ pages, pageList, handleAddPage, addPageWithParams, proje
         // UnifiedPage 타입을 store Page 타입으로 변환 (title → name)
         const updatedPages = remainingPages.map(p => ({
             id: p.id,
-            name: p.title, // UnifiedPage.title → store Page.name
+            title: p.title,
             slug: p.slug,
+            project_id: p.project_id,
             parent_id: p.parent_id,
             order_num: p.order_num
         }));

@@ -155,7 +155,7 @@ export function PixiTimeField({
     <pixiContainer
       eventMode="static"
       cursor="text"
-      onpointertap={() => onClick?.(element.id)}
+      onPointerTap={() => onClick?.(element.id)}
     >
       {/* Container background */}
       <pixiGraphics draw={drawContainer} />

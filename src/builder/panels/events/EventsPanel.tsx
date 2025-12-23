@@ -67,10 +67,11 @@ import "./EventsPanel.css";
 
 /**
  * EventHandler → EventTrigger 변환
+ * Note: 타입 어서션 사용 - eventTypes의 EventType과 registry의 EventType 간 호환
  */
 function handlerToTrigger(handler: EventHandler): EventTrigger {
   return {
-    event: handler.event,
+    event: handler.event as EventTrigger['event'],
     target: "self",
   };
 }
@@ -89,6 +90,23 @@ function actionsToBlockActions(
     delay: action.delay,
     condition: action.condition,
     enabled: action.enabled !== false,
+  }));
+}
+
+/**
+ * BlockEventAction[] → EventHandler.actions 변환 (역변환)
+ * Note: 타입 어서션 사용 - BlockEventAction.type (registry)과 EventAction.type (eventTypes) 간 호환
+ */
+function blockActionsToEventActions(
+  blockActions: BlockEventAction[]
+): EventHandler["actions"] {
+  return blockActions.map((action) => ({
+    id: action.id,
+    type: action.type as EventHandler["actions"][number]["type"],
+    config: action.config,
+    delay: action.delay,
+    condition: action.condition,
+    enabled: action.enabled,
   }));
 }
 
@@ -428,14 +446,19 @@ function EventsPanelContent({
   );
 
   // 액션 업데이트 (THEN)
+  // Note: actions는 EventAction[] 타입 (from useActions)
   const handleUpdateAction = useCallback(
     (actionId: string, updates: Partial<BlockEventAction>) => {
       const action = actions.find((a) => a.id === actionId);
       if (action) {
         // ⚠️ enabled가 undefined면 true로 기본값 설정
-        const updatedAction = {
+        // BlockEventAction의 업데이트를 EventAction에 맞게 변환
+        const updatedAction: typeof action = {
           ...action,
-          ...updates,
+          type: (updates.type ?? action.type) as typeof action.type,
+          config: updates.config ?? action.config,
+          delay: updates.delay ?? action.delay,
+          condition: updates.condition ?? action.condition,
           enabled: updates.enabled !== undefined ? updates.enabled : (action.enabled ?? true)
         };
 
@@ -453,13 +476,18 @@ function EventsPanelContent({
   );
 
   // 액션 업데이트 (ELSE)
+  // Note: elseActions는 EventAction[] 타입 (from useActions)
   const handleUpdateElseAction = useCallback(
     (actionId: string, updates: Partial<BlockEventAction>) => {
       const action = elseActions.find((a) => a.id === actionId);
       if (action) {
-        const updatedAction = {
+        // BlockEventAction의 업데이트를 EventAction에 맞게 변환
+        const updatedAction: typeof action = {
           ...action,
-          ...updates,
+          type: (updates.type ?? action.type) as typeof action.type,
+          config: updates.config ?? action.config,
+          delay: updates.delay ?? action.delay,
+          condition: updates.condition ?? action.condition,
           enabled: updates.enabled !== undefined ? updates.enabled : (action.enabled ?? true)
         };
 
@@ -532,7 +560,6 @@ function EventsPanelContent({
               className="iconButton"
               onPress={() => handleAddEvent(availableSupportedEvents[0])}
               aria-label={`Add ${availableSupportedEvents[0]}`}
-              title={`Add ${availableSupportedEvents[0]}`}
             >
               <Zap
                 size={iconProps.size}

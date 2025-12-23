@@ -53,6 +53,7 @@ export function DarkModeGenerator({
 
   // Preview state
   const [previewTokens, setPreviewTokens] = useState<DesignToken[]>([]);
+  const [error, setError] = useState<string | null>(null);
 
   // Generate mutation
   interface GenerateRequest {

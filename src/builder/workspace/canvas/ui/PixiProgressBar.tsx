@@ -124,7 +124,7 @@ export const PixiProgressBar = memo(function PixiProgressBar({
 }: PixiProgressBarProps) {
   useExtend(PIXI_COMPONENTS);
   const { app } = useApplication();
-  const containerRef = useRef<pixiContainer | null>(null);
+  const containerRef = useRef<Container | null>(null);
   const progressBarRef = useRef<ProgressBar | null>(null);
 
   const style = element.props?.style as CSSStyle | undefined;

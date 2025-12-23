@@ -138,7 +138,7 @@ export const PixiCard = memo(function PixiCard({
         borderRadius: sizePreset.borderRadius,
         border:
           borderWidth > 0
-            ? { width: borderWidth, color: borderColor }
+            ? { width: borderWidth, color: borderColor, alpha: 1, style: 'solid' as const, radius: sizePreset.borderRadius }
             : undefined,
       });
     },

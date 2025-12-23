@@ -24,7 +24,6 @@ import { ThemeService } from './ThemeService';
 import { TokenService } from './TokenService';
 
 export class ThemeGenerationService {
-  // @ts-expect-error - Reserved for future use
   private _client: Groq;
   private model: string;
 

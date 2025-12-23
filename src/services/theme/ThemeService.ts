@@ -20,6 +20,7 @@ export interface CreateThemeInput {
   name: string;
   parent_theme_id?: string;
   status?: 'active' | 'draft' | 'archived';
+  supports_dark_mode?: boolean;
 }
 
 export interface UpdateThemeInput {

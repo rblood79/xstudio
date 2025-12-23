@@ -112,7 +112,7 @@ export const createCreateLayoutAction =
 
       // ⭐ Layout/Slot System: body 요소를 elements 스토어에도 추가
       const { elements, setElements } = useStore.getState();
-      setElements([...elements, bodyElement], { skipHistory: true });
+      setElements([...elements, bodyElement]);
 
       // 메모리 상태 업데이트
       const { layouts } = get();
@@ -205,7 +205,7 @@ export const createDeleteLayoutAction =
         // 메모리 상태의 elements도 업데이트
         const { elements, setElements } = useStore.getState();
         const filteredElements = elements.filter((el) => el.layout_id !== id);
-        setElements(filteredElements, { skipHistory: true });
+        setElements(filteredElements);
       }
 
       // 3. Layout 삭제

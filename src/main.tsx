@@ -133,6 +133,12 @@ ReactDOM.createRoot(root!).render(
         <AppLayout />
       </ParticleBackgroundProvider>
     </BrowserRouter>
-    {import.meta.env.DEV && <ReactQueryDevtools initialIsOpen={false} />}
+    {import.meta.env.DEV && (
+      <ReactQueryDevtools
+        initialIsOpen={false}
+        buttonPosition="top-right"
+        position="right"
+      />
+    )}
   </QueryClientProvider>
 );

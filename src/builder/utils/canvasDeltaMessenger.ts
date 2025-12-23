@@ -248,7 +248,6 @@ export class CanvasDeltaMessenger {
         events: element.events,
         dataBinding: element.dataBinding,
         layout_id: element.layout_id,
-        slot_id: element.slot_id,
       };
     }
   }

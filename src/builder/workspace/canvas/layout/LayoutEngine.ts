@@ -11,7 +11,7 @@
 
 import type { Element } from '../../../../types/core/store.types';
 import { parsePadding } from '../sprites/paddingUtils';
-import { CanvasTextMetrics, TextStyle } from 'pixi.js';
+import { CanvasTextMetrics, TextStyle, type TextStyleFontWeight } from 'pixi.js';
 import { getRadioSizePreset, getTextFieldSizePreset } from '../utils/cssVariableReader';
 
 // yoga-layout v3.2.1: enums are directly exported from 'yoga-layout/load'
@@ -378,7 +378,7 @@ function measureTextSize(
   const textStyle = new TextStyle({
     fontFamily: (style?.fontFamily as string) || 'Arial',
     fontSize,
-    fontWeight: (style?.fontWeight as string) || 'normal',
+    fontWeight: ((style?.fontWeight as string) || 'normal') as TextStyleFontWeight,
     fontStyle: (style?.fontStyle as 'normal' | 'italic' | 'oblique') || 'normal',
     letterSpacing: parseCSSValue(style?.letterSpacing, 0),
   });
@@ -462,7 +462,7 @@ function measureCheckboxSize(
   const textStyle = new TextStyle({
     fontFamily: (style?.fontFamily as string) || 'Pretendard, sans-serif',
     fontSize,
-    fontWeight: (style?.fontWeight as string) || 'normal',
+    fontWeight: ((style?.fontWeight as string) || 'normal') as TextStyleFontWeight,
     fontStyle: (style?.fontStyle as 'normal' | 'italic' | 'oblique') || 'normal',
     letterSpacing: parseCSSValue(style?.letterSpacing, 0),
   });
@@ -548,7 +548,7 @@ function measureCheckboxGroupSize(
   const textStyle = new TextStyle({
     fontFamily: (style?.fontFamily as string) || 'Pretendard, sans-serif',
     fontSize,
-    fontWeight: (style?.fontWeight as string) || 'normal',
+    fontWeight: ((style?.fontWeight as string) || 'normal') as TextStyleFontWeight,
     fontStyle: (style?.fontStyle as 'normal' | 'italic' | 'oblique') || 'normal',
     letterSpacing: parseCSSValue(style?.letterSpacing, 0),
   });
@@ -667,7 +667,7 @@ function measureRadioSize(
   const textStyle = new TextStyle({
     fontFamily: (style?.fontFamily as string) || 'Pretendard, sans-serif',
     fontSize,
-    fontWeight: (style?.fontWeight as string) || 'normal',
+    fontWeight: ((style?.fontWeight as string) || 'normal') as TextStyleFontWeight,
     fontStyle: (style?.fontStyle as 'normal' | 'italic' | 'oblique') || 'normal',
     letterSpacing: parseCSSValue(style?.letterSpacing, 0),
   });

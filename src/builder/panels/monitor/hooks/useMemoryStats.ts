@@ -36,9 +36,9 @@ interface PerformanceMemory {
   jsHeapSizeLimit: number;
 }
 
-interface PerformanceWithMemory extends Performance {
+type PerformanceWithMemory = Performance & {
   memory?: PerformanceMemory;
-}
+};
 
 interface UseMemoryStatsOptions {
   /** 훅 활성화 여부 (비활성 시 interval 중지) */

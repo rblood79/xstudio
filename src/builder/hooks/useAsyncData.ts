@@ -111,7 +111,7 @@ export function useAsyncData<TData>({
         globalPerformanceMonitor.recordCacheHit(queryKey, 0);
 
         // 캐시 히트
-        setData(cached.data);
+        setData(cached.data as TData);
         setLoading(queryKey, false);
         setError(queryKey, null);
 

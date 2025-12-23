@@ -45,9 +45,10 @@ export const renderTabs = (
   const dataBinding = element.dataBinding || element.props.dataBinding;
   const isPropertyBinding =
     dataBinding &&
-    "source" in dataBinding &&
-    "name" in dataBinding &&
-    !("type" in dataBinding);
+    typeof dataBinding === 'object' &&
+    "source" in (dataBinding as object) &&
+    "name" in (dataBinding as object) &&
+    !("type" in (dataBinding as object));
 
   const tabChildren = elements
     .filter((child) => child.parent_id === element.id && child.tag === "Tab")
@@ -69,8 +70,8 @@ export const renderTabs = (
         (element.props.orientation as "horizontal" | "vertical") || "horizontal"
       }
       isDisabled={Boolean(element.props.isDisabled)}
-      dataBinding={isPropertyBinding ? dataBinding : element.dataBinding}
-      columnMapping={element.props.columnMapping}
+      dataBinding={(isPropertyBinding ? dataBinding : element.dataBinding) as import('../../types/builder/unified.types').DataBinding | undefined}
+      columnMapping={element.props.columnMapping as import('../../types/builder/unified.types').ColumnMapping | undefined}
       onSelectionChange={(key) => {
         const updatedProps = {
           ...element.props,
@@ -507,9 +508,10 @@ export const renderBreadcrumbs = (
   const dataBinding = element.dataBinding || element.props.dataBinding;
   const isPropertyBinding =
     dataBinding &&
-    "source" in dataBinding &&
-    "name" in dataBinding &&
-    !("type" in dataBinding);
+    typeof dataBinding === 'object' &&
+    "source" in (dataBinding as object) &&
+    "name" in (dataBinding as object) &&
+    !("type" in (dataBinding as object));
 
   const breadcrumbChildren = elements
     .filter((child) => child.parent_id === element.id && child.tag === "Breadcrumb")
@@ -524,8 +526,8 @@ export const renderBreadcrumbs = (
       isDisabled={Boolean(element.props.isDisabled)}
       style={element.props.style}
       className={element.props.className}
-      dataBinding={isPropertyBinding ? dataBinding : element.dataBinding}
-      columnMapping={element.props.columnMapping}
+      dataBinding={(isPropertyBinding ? dataBinding : element.dataBinding) as import('../../types/builder/unified.types').DataBinding | undefined}
+      columnMapping={element.props.columnMapping as import('../../types/builder/unified.types').ColumnMapping | undefined}
       {...eventHandlers}
     >
       {breadcrumbChildren.map((child) => renderElement(child))}
@@ -570,18 +572,13 @@ export const renderLink = (
   return (
     <Link
       key={element.id}
-      id={element.customId || undefined}
+      data-custom-id={element.customId || undefined}
       data-element-id={element.id}
       href={String(element.props.href || "")}
       variant={
-        element.props.variant as
-          | "primary"
-          | "secondary"
-          | "surface"
-          | "outline"
-          | "ghost"
+        (element.props.variant as "primary" | "secondary") || undefined
       }
-      size={element.props.size as "xs" | "sm" | "md" | "lg" | "xl"}
+      size={(element.props.size as "sm" | "md" | "lg") || undefined}
       isExternal={Boolean(element.props.isExternal)}
       showExternalIcon={element.props.showExternalIcon !== false}
       isDisabled={Boolean(element.props.isDisabled)}
@@ -624,14 +621,9 @@ export const renderBadge = (
       id={element.customId}
       data-element-id={element.id}
       variant={
-        element.props.variant as
-          | "primary"
-          | "secondary"
-          | "surface"
-          | "outline"
-          | "ghost"
+        (element.props.variant as "primary" | "secondary" | "tertiary" | "error" | "surface") || undefined
       }
-      size={element.props.size as "xs" | "sm" | "md" | "lg" | "xl"}
+      size={(element.props.size as "sm" | "md" | "lg") || undefined}
       isDot={Boolean(element.props.isDot)}
       isPulsing={Boolean(element.props.isPulsing)}
       style={element.props.style}

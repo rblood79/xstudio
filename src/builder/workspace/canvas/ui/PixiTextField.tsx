@@ -113,7 +113,7 @@ export function PixiTextField({
       fontSize: labelPreset.fontSize,
       fill: labelPreset.color,
       fontFamily: labelPreset.fontFamily,
-      fontWeight: labelPreset.fontWeight,
+      fontWeight: labelPreset.fontWeight as import('pixi.js').TextStyleFontWeight,
     }),
     [labelPreset]
   );

@@ -162,9 +162,9 @@ export function PixiDisclosure({
     <pixiContainer
       eventMode="static"
       cursor="pointer"
-      onpointerenter={() => setIsHovered(true)}
-      onpointerleave={() => setIsHovered(false)}
-      onpointertap={handleClick}
+      onPointerEnter={() => setIsHovered(true)}
+      onPointerLeave={() => setIsHovered(false)}
+      onPointerTap={handleClick}
     >
       {/* Container background */}
       <pixiGraphics draw={drawContainer} />

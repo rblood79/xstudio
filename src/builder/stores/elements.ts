@@ -4,6 +4,7 @@ import { create } from "zustand";
 // import { produce } from "immer"; // REMOVED
 import { StateCreator } from "zustand";
 import { Element, ComponentElementProps } from "../../types/core/store.types";
+import { Page } from "../../types/builder/unified.types";
 import { historyManager } from "./history";
 import { reorderElements } from "./utils/elementReorder";
 import {
@@ -34,16 +35,6 @@ import {
   rebuildPageIndex,
   getPageElements as getPageElementsFromIndex,
 } from "./utils/elementIndexer";
-
-interface Page {
-  id: string;
-  name: string;
-  slug: string;
-  parent_id?: string | null;
-  order_num?: number;
-  project_id?: string;
-  layout_id?: string | null;
-}
 
 export interface ElementsState {
   elements: Element[];

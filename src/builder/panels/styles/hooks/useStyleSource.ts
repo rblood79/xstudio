@@ -45,7 +45,7 @@ export function getStyleSource(
     element.computedStyle[property] !== undefined
   ) {
     // Extract class name from element if available
-    const className = element.className || 'unknown-class';
+    const className = (element as unknown as { className?: string }).className || 'unknown-class';
     return { type: 'computed', location: className };
   }
 

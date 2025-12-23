@@ -12,7 +12,7 @@ import { useExtend } from '@pixi/react';
 import { PIXI_COMPONENTS } from '../pixiSetup';
 import { Graphics as PixiGraphics, TextStyle } from 'pixi.js';
 import { getTreeSizePreset, getTreeColorPreset } from '../utils/cssVariableReader';
-import type { Element } from '@/types/core';
+import type { Element } from '@/types/core/store.types';
 import { useStore } from '@/builder/stores';
 
 export interface PixiTreeProps {
@@ -236,7 +236,7 @@ export function PixiTree({
     <pixiContainer
       eventMode="static"
       cursor="pointer"
-      pointerdown={handleContainerClick}
+      onPointerDown={handleContainerClick}
     >
       {/* Container */}
       <pixiGraphics draw={drawContainer} />
@@ -255,17 +255,17 @@ export function PixiTree({
             y={itemY}
             eventMode="static"
             cursor="pointer"
-            pointerover={() => {
+            onPointerOver={() => {
               // 🚀 Performance: 직접 그래픽스 업데이트 (리렌더링 없음)
               const g = itemGraphicsRefs.current.get(item.id);
               if (g) drawItemBg(g, itemWidth, sizePreset.itemMinHeight, true, item.isSelected || false);
             }}
-            pointerout={() => {
+            onPointerOut={() => {
               // 🚀 Performance: 직접 그래픽스 업데이트 (리렌더링 없음)
               const g = itemGraphicsRefs.current.get(item.id);
               if (g) drawItemBg(g, itemWidth, sizePreset.itemMinHeight, false, item.isSelected || false);
             }}
-            pointerdown={(e) => {
+            onPointerDown={(e: { stopPropagation: () => void }) => {
               e.stopPropagation();
               handleItemClick(item.id);
             }}
@@ -287,7 +287,7 @@ export function PixiTree({
                 y={(sizePreset.itemMinHeight - sizePreset.chevronSize) / 2}
                 eventMode="static"
                 cursor="pointer"
-                pointerdown={(e) => {
+                onPointerDown={(e: { stopPropagation: () => void }) => {
                   e.stopPropagation();
                   toggleExpand(item.id);
                 }}

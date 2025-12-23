@@ -117,9 +117,10 @@ export const handleThemeVars = (data: MessageType) => {
     }
 
     // Light 모드 토큰 (isDark가 없거나 false인 것들)
-    const lightVars = (data.vars as { isDark?: boolean; name: string; value: string }[]).filter((v) => !v.isDark);
+    const allVars = data.vars as { isDark?: boolean; cssVar: string; value: string }[];
+    const lightVars = allVars.filter((v) => !v.isDark);
     // Dark 모드 토큰 (isDark가 true인 것들)
-    const darkVars = (data.vars as { isDark?: boolean; name: string; value: string }[]).filter((v) => v.isDark);
+    const darkVars = allVars.filter((v) => v.isDark);
 
     let cssText = "";
 
@@ -128,7 +129,7 @@ export const handleThemeVars = (data: MessageType) => {
       cssText +=
         ":root {\n" +
         lightVars
-          .map((v: { cssVar: string; value: string }) => `  ${v.cssVar}: ${v.value};`)
+          .map((v) => `  ${v.cssVar}: ${v.value};`)
           .join("\n") +
         "\n}\n";
     }
@@ -138,7 +139,7 @@ export const handleThemeVars = (data: MessageType) => {
       cssText +=
         '\n[data-theme="dark"] {\n' +
         darkVars
-          .map((v: { cssVar: string; value: string }) => `  ${v.cssVar}: ${v.value};`)
+          .map((v) => `  ${v.cssVar}: ${v.value};`)
           .join("\n") +
         "\n}\n";
     }
@@ -271,7 +272,7 @@ export const handleUpdateLayouts = (
  * ⭐ Layout/Slot System: Page body가 DOM에 없을 때 Layout body로 대체
  */
 export const handleRequestElementSelection = (
-  data: MessageType,
+  data: { type: string; elementId?: string },
   elements: PreviewElement[]
 ) => {
   if (data.type === "REQUEST_ELEMENT_SELECTION" && data.elementId) {

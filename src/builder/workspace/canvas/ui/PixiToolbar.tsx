@@ -139,7 +139,7 @@ export function PixiToolbar({
     <pixiContainer
       eventMode="static"
       cursor="pointer"
-      onpointertap={() => onClick?.(element.id)}
+      onPointerTap={() => onClick?.(element.id)}
     >
       {/* Toolbar container */}
       <pixiGraphics draw={drawContainer} />

@@ -190,7 +190,9 @@ export function SmokeCanvas({
       }
     }
 
-    morphTextureRef.current.image.data.set(data);
+    if (morphTextureRef.current.image.data) {
+      morphTextureRef.current.image.data.set(data);
+    }
     morphTextureRef.current.needsUpdate = true;
     transitionProgressRef.current = 0;
   }, [contentVersion, contentRef]);

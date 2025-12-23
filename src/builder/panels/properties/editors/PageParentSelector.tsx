@@ -63,7 +63,7 @@ export const PageParentSelector = memo(function PageParentSelector({
     return generatePageUrl({
       page: {
         id: page.id,
-        title: page.name,
+        title: page.title,
         slug: page.slug,
         project_id: page.project_id,
         parent_id: page.parent_id,
@@ -75,7 +75,7 @@ export const PageParentSelector = memo(function PageParentSelector({
         : null,
       allPages: pages.map((p) => ({
         id: p.id,
-        title: p.name,
+        title: p.title,
         slug: p.slug,
         project_id: p.project_id,
         parent_id: p.parent_id,
@@ -111,7 +111,7 @@ export const PageParentSelector = memo(function PageParentSelector({
       // Check nesting depth (prevent too deep nesting)
       const depthIfSelected = getNestingDepth(p.id, pages.map((pg) => ({
         id: pg.id,
-        title: pg.name,
+        title: pg.title,
         slug: pg.slug,
         project_id: pg.project_id,
         parent_id: pg.parent_id,
@@ -124,7 +124,7 @@ export const PageParentSelector = memo(function PageParentSelector({
       // Add indentation based on depth
       const depth = getNestingDepth(p.id, pages.map((pg) => ({
         id: pg.id,
-        title: pg.name,
+        title: pg.title,
         slug: pg.slug,
         project_id: pg.project_id,
         parent_id: pg.parent_id,
@@ -135,7 +135,7 @@ export const PageParentSelector = memo(function PageParentSelector({
 
       options.push({
         value: p.id,
-        label: `${indent}${p.name}`,
+        label: `${indent}${p.title}`,
       });
     });
 
@@ -153,7 +153,7 @@ export const PageParentSelector = memo(function PageParentSelector({
           newParentId,
           pages.map((p) => ({
             id: p.id,
-            title: p.name,
+            title: p.title,
             slug: p.slug,
             project_id: p.project_id,
             parent_id: p.parent_id,
@@ -216,12 +216,12 @@ export const PageParentSelector = memo(function PageParentSelector({
 
         // Update pages in memory
         const updatedPages = currentPages.map((p) =>
-          p.id === pageId ? { ...p, slug: newSlug || null } : p
+          p.id === pageId ? { ...p, slug: newSlug || '' } : p
         );
         setPages(updatedPages);
 
         // Save to IndexedDB
-        await db.pages.update(pageId, { slug: newSlug || null });
+        await db.pages.update(pageId, { slug: newSlug || '' });
 
         console.log("✅ Page slug updated successfully");
       } catch (error) {
@@ -234,7 +234,7 @@ export const PageParentSelector = memo(function PageParentSelector({
   // Generate slug from title
   const handleGenerateSlug = useCallback(() => {
     if (!page) return;
-    const generatedSlug = generateSlugFromTitle(page.name);
+    const generatedSlug = generateSlugFromTitle(page.title);
     handleSlugChange(generatedSlug);
   }, [page, handleSlugChange]);
 
@@ -251,7 +251,7 @@ export const PageParentSelector = memo(function PageParentSelector({
         icon={FolderTree}
         description={
           currentParent
-            ? `Child of "${currentParent.name}"`
+            ? `Child of "${currentParent.title}"`
             : "This page is at root level"
         }
       />
@@ -262,7 +262,7 @@ export const PageParentSelector = memo(function PageParentSelector({
           label="Slug"
           value={currentSlug}
           onChange={handleSlugChange}
-          placeholder={generateSlugFromTitle(page.name)}
+          placeholder={generateSlugFromTitle(page.title)}
           description="URL path segment for this page"
         />
         {slugError && (

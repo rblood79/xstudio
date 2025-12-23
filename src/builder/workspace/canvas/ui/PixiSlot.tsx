@@ -166,7 +166,7 @@ export function PixiSlot({
     <pixiContainer
       eventMode="static"
       cursor="pointer"
-      onpointertap={() => onClick?.(element.id)}
+      onPointerTap={() => onClick?.(element.id)}
     >
       {/* Slot container */}
       <pixiGraphics draw={drawContainer} />

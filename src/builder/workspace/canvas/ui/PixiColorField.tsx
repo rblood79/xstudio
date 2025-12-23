@@ -134,7 +134,7 @@ export function PixiColorField({
     <pixiContainer
       eventMode="static"
       cursor={isDisabled ? 'not-allowed' : 'pointer'}
-      onpointertap={() => !isDisabled && onClick?.(element.id)}
+      onPointerTap={() => !isDisabled && onClick?.(element.id)}
     >
       {/* Label */}
       {label && (

@@ -12,7 +12,7 @@ import { useExtend } from '@pixi/react';
 import { PIXI_COMPONENTS } from '../pixiSetup';
 import { Graphics as PixiGraphics, TextStyle } from 'pixi.js';
 import { getGridListSizePreset, getGridListColorPreset } from '../utils/cssVariableReader';
-import type { Element } from '@/types/core';
+import type { Element } from '@/types/core/store.types';
 import { useStore } from '@/builder/stores';
 
 export interface PixiGridListProps {
@@ -150,7 +150,7 @@ export function PixiGridList({
     <pixiContainer
       eventMode="static"
       cursor="pointer"
-      pointerdown={handleContainerClick}
+      onPointerDown={handleContainerClick}
     >
       {/* List Container */}
       <pixiGraphics draw={drawContainer} />
@@ -169,17 +169,17 @@ export function PixiGridList({
             y={itemY}
             eventMode="static"
             cursor="pointer"
-            pointerover={() => {
+            onPointerOver={() => {
               // 🚀 Performance: 직접 그래픽스 업데이트 (리렌더링 없음)
               const g = itemGraphicsRefs.current.get(item.id);
               if (g) drawItemBg(g, itemWidth, sizePreset.itemMinHeight, true, isItemSelected);
             }}
-            pointerout={() => {
+            onPointerOut={() => {
               // 🚀 Performance: 직접 그래픽스 업데이트 (리렌더링 없음)
               const g = itemGraphicsRefs.current.get(item.id);
               if (g) drawItemBg(g, itemWidth, sizePreset.itemMinHeight, false, isItemSelected);
             }}
-            pointerdown={(e) => {
+            onPointerDown={(e: { stopPropagation: () => void }) => {
               e.stopPropagation();
               handleItemClick(item.id);
             }}

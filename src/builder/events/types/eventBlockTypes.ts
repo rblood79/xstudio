@@ -5,7 +5,8 @@
  * 설계 문서: docs/EVENTS_PANEL_REDESIGN.md
  */
 
-import type { ActionType, ActionConfig, EventType } from './eventTypes';
+import type { ActionConfig } from './eventTypes';
+import type { ActionType, EventType } from '@/types/events/events.types';
 
 // ============================================================================
 // WHEN 블록 (트리거)
@@ -113,6 +114,11 @@ export type ConditionOperator =
   | 'less_than'
   | 'greater_or_equal'
   | 'less_or_equal'
+  // 별칭 (하위 호환)
+  | 'greater_than_or_equals'
+  | 'less_than_or_equals'
+  // 정규식 별칭
+  | 'matches'
 
   // 단항 연산자 (right 불필요)
   | 'is_empty'
@@ -281,6 +287,10 @@ export const CONDITION_OPERATOR_META: Record<
   less_than: { label: '<', unary: false, description: '보다 작음' },
   greater_or_equal: { label: '>=', unary: false, description: '이상' },
   less_or_equal: { label: '<=', unary: false, description: '이하' },
+  // 별칭 (하위 호환)
+  greater_than_or_equals: { label: '>=', unary: false, description: '이상' },
+  less_than_or_equals: { label: '<=', unary: false, description: '이하' },
+  matches: { label: 'matches', unary: false, description: '정규식 매치' },
 
   // 단항 연산자
   is_empty: { label: 'is empty', unary: true, description: '비어 있음' },

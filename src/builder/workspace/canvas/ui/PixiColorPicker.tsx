@@ -224,7 +224,7 @@ export function PixiColorPicker({
     <pixiContainer
       eventMode="static"
       cursor="pointer"
-      onpointertap={() => onClick?.(element.id)}
+      onPointerTap={() => onClick?.(element.id)}
     >
       {/* Container */}
       <pixiGraphics draw={drawContainer} />

@@ -33,11 +33,12 @@ export class TokenService extends BaseApiService {
       const tokens = await db.designTokens.getByTheme(themeId);
 
       // ResolvedToken 형식으로 변환 (상속 해석은 나중에 필요시 구현)
-      const resolvedTokens: ResolvedToken[] = tokens.map(token => ({
+      const resolvedTokens: ResolvedToken[] = tokens.map((token: DesignToken) => ({
         ...token,
         resolved_value: token.value,
         source_theme_id: themeId,
         is_inherited: false,
+        inheritance_depth: 0,
       }));
 
       return resolvedTokens;

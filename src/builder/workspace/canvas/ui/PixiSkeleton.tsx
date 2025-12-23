@@ -179,7 +179,7 @@ export function PixiSkeleton({
     <pixiContainer
       eventMode="static"
       cursor="pointer"
-      onpointertap={() => onClick?.(element.id)}
+      onPointerTap={() => onClick?.(element.id)}
     >
       {/* Skeleton base */}
       <pixiGraphics draw={drawSkeleton} />

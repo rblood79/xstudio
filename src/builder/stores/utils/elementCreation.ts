@@ -78,7 +78,7 @@ export const createAddElementAction =
         const layoutElements = elements.filter(el => el.layout_id === element.layout_id);
         if (layoutElements.length > 0) {
           // reorderElements는 pageId를 사용하지만, layout_id로 대체하여 호출
-          reorderElements(elements, element.layout_id, updateElementOrder);
+          reorderElements(elements, element.layout_id!, updateElementOrder);
         }
       }, 100);
     }

@@ -113,6 +113,8 @@ export interface DatabaseAdapter {
     insertMany(tokens: DesignToken[]): Promise<DesignToken[]>;
     update(id: string, data: Partial<DesignToken>): Promise<DesignToken>;
     delete(id: string): Promise<void>;
+    getById(id: string): Promise<DesignToken | null>;
+    getByTheme(themeId: string): Promise<DesignToken[]>;
     getByProject(projectId: string): Promise<DesignToken[]>;
     getAll(): Promise<DesignToken[]>;
   };

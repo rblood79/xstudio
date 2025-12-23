@@ -39,10 +39,9 @@ export interface DialogExtendedProps extends DialogProps {
 }
 
 export function Dialog({ variant = 'primary', size = 'md', ...props }: DialogExtendedProps) {
-  const dialogClassName = composeRenderProps(
-    props.className,
-    (className) => className ? `react-aria-Dialog ${className}` : 'react-aria-Dialog'
-  );
+  // 🚀 ClassNameOrFunction 타입 지원 - 문자열로 단순화
+  const baseClassName = typeof props.className === 'string' ? props.className : undefined;
+  const dialogClassName = baseClassName ? `react-aria-Dialog ${baseClassName}` : 'react-aria-Dialog';
 
   return <RACDialog {...props} className={dialogClassName} data-variant={variant} data-size={size} />;
 }

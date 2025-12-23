@@ -270,7 +270,7 @@ export function PixiCalendar({
     <pixiContainer
       eventMode="static"
       cursor="pointer"
-      onpointertap={() => onClick?.(element.id)}
+      onPointerTap={() => onClick?.(element.id)}
     >
       {/* Container background */}
       <pixiGraphics draw={drawContainer} />
@@ -281,7 +281,7 @@ export function PixiCalendar({
         y={sizePreset.padding}
         eventMode="static"
         cursor="pointer"
-        onpointertap={handlePrevMonth}
+        onPointerTap={handlePrevMonth}
       >
         <pixiGraphics draw={(g) => drawNavButton(g, true)} />
       </pixiContainer>
@@ -301,7 +301,7 @@ export function PixiCalendar({
         y={sizePreset.padding}
         eventMode="static"
         cursor="pointer"
-        onpointertap={handleNextMonth}
+        onPointerTap={handleNextMonth}
       >
         <pixiGraphics draw={(g) => drawNavButton(g, false)} />
       </pixiContainer>

@@ -118,7 +118,7 @@ export function LayoutsTab({
         );
         // 새로 로드한 레이아웃 요소들과 병합
         const mergedElements = [...otherElements, ...layoutElements];
-        storeSetElements(mergedElements, { skipHistory: true });
+        storeSetElements(mergedElements);
 
         // 로드 완료 표시
         loadedLayoutIdsRef.current.add(currentLayoutId);
@@ -331,7 +331,7 @@ export function LayoutsTab({
         const currentElements = useStore.getState().elements;
         const otherElements = currentElements.filter((el) => el.layout_id !== layout.id);
         const mergedElements = [...otherElements, ...layoutElements];
-        setElements(mergedElements, { skipHistory: true });
+        setElements(mergedElements);
 
         // 로드 완료 표시 (useEffect에서 중복 로드 방지)
         loadedLayoutIdsRef.current.add(layout.id);

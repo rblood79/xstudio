@@ -156,7 +156,7 @@ export function createElementLoaderSlice(
   const cacheToIndexedDB = async (elements: Element[]): Promise<void> => {
     try {
       const db = await getDB();
-      await db.elements.bulkPut(elements);
+      await db.elements.insertMany(elements);
     } catch (error) {
       console.warn('[Loader] IndexedDB cache failed:', error);
     }

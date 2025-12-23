@@ -169,9 +169,9 @@ export function PixiPopover({
     <pixiContainer
       eventMode="static"
       cursor="pointer"
-      onpointerenter={() => setIsHovered(true)}
-      onpointerleave={() => setIsHovered(false)}
-      onpointertap={() => onClick?.(element.id)}
+      onPointerEnter={() => setIsHovered(true)}
+      onPointerLeave={() => setIsHovered(false)}
+      onPointerTap={() => onClick?.(element.id)}
     >
       {/* Popover background with arrow */}
       <pixiGraphics draw={drawPopover} />

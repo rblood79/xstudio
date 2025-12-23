@@ -12,7 +12,7 @@ import { useExtend } from '@pixi/react';
 import { PIXI_COMPONENTS } from '../pixiSetup';
 import { Graphics as PixiGraphics, TextStyle } from 'pixi.js';
 import { getTableSizePreset, getTableColorPreset } from '../utils/cssVariableReader';
-import type { Element } from '@/types/core';
+import type { Element } from '@/types/core/store.types';
 import { useStore } from '@/builder/stores';
 
 export interface PixiTableProps {
@@ -195,12 +195,7 @@ export function PixiTable({
   const drawHeaderBg = useCallback(
     (g: PixiGraphics) => {
       g.clear();
-      g.roundRect(0, 0, totalWidth, headerHeight, [
-        sizePreset.borderRadius,
-        sizePreset.borderRadius,
-        0,
-        0,
-      ]);
+      g.roundRect(0, 0, totalWidth, headerHeight, sizePreset.borderRadius);
       g.fill(colorPreset.headerBgColor);
 
       // Bottom border
@@ -268,7 +263,7 @@ export function PixiTable({
     <pixiContainer
       eventMode="static"
       cursor="pointer"
-      pointerdown={handleContainerClick}
+      onPointerDown={handleContainerClick}
     >
       {/* Container */}
       <pixiGraphics draw={drawContainer} />
@@ -308,17 +303,17 @@ export function PixiTable({
             y={rowY}
             eventMode="static"
             cursor="pointer"
-            pointerover={() => {
+            onPointerOver={() => {
               // 🚀 Performance: 직접 그래픽스 업데이트 (리렌더링 없음)
               const g = rowGraphicsRefs.current.get(row.id);
               if (g) drawRowBg(g, totalWidth, sizePreset.rowMinHeight, true, row.isSelected || false);
             }}
-            pointerout={() => {
+            onPointerOut={() => {
               // 🚀 Performance: 직접 그래픽스 업데이트 (리렌더링 없음)
               const g = rowGraphicsRefs.current.get(row.id);
               if (g) drawRowBg(g, totalWidth, sizePreset.rowMinHeight, false, row.isSelected || false);
             }}
-            pointerdown={(e) => {
+            onPointerDown={(e: { stopPropagation: () => void }) => {
               e.stopPropagation();
               handleRowClick(row.id);
             }}

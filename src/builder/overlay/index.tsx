@@ -83,7 +83,8 @@ export default function SelectionOverlay() {
   const borderRadiusFromStore = useMemo(() => {
     const computed = selectedElement?.computedStyle?.borderRadius;
     const inline = selectedElement?.style?.borderRadius as string | undefined;
-    return inline || computed;
+    const computedStr = typeof computed === 'number' ? `${computed}px` : computed;
+    return inline || computedStr;
   }, [selectedElement?.computedStyle?.borderRadius, selectedElement?.style?.borderRadius]);
 
   // Tag 표시 로직 (useMemo로 최적화, getState() 사용)

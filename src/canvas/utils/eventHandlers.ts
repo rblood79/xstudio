@@ -1,5 +1,5 @@
-import { EventEngine } from "../../../utils/events/eventEngine";
-import { EventContext } from "../../../types/events/events.types";
+import { EventEngine } from "../../utils/events/eventEngine";
+import { EventContext, ElementEvent } from "../../types/events/events.types";
 import { PreviewElement, EventHandlerMap } from "../types";
 
 /**
@@ -45,7 +45,7 @@ export const createEventHandler = (
     // 각 이벤트 실행
     for (const elementEvent of matchingEvents) {
       try {
-        await eventEngine.executeEvent(elementEvent as Record<string, unknown>, context);
+        await eventEngine.executeEvent(elementEvent as unknown as ElementEvent, context);
       } catch (error) {
         console.error("이벤트 실행 오류:", error);
       }

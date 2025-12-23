@@ -12,7 +12,7 @@ import { useExtend } from '@pixi/react';
 import { PIXI_COMPONENTS } from '../pixiSetup';
 import { Graphics as PixiGraphics, TextStyle } from 'pixi.js';
 import { getTagGroupSizePreset, getTagGroupColorPreset } from '../utils/cssVariableReader';
-import type { Element } from '@/types/core';
+import type { Element } from '@/types/core/store.types';
 import { useStore } from '@/builder/stores';
 
 export interface PixiTagGroupProps {
@@ -185,7 +185,7 @@ export function PixiTagGroup({
     <pixiContainer
       eventMode="static"
       cursor="pointer"
-      pointerdown={handleContainerClick}
+      onPointerDown={handleContainerClick}
     >
       {/* Selection indicator */}
       <pixiGraphics draw={drawSelection} />
@@ -211,17 +211,17 @@ export function PixiTagGroup({
             y={pos.y}
             eventMode="static"
             cursor="pointer"
-            pointerover={() => {
+            onPointerOver={() => {
               // 🚀 Performance: 직접 그래픽스 업데이트 (리렌더링 없음)
               const g = tagGraphicsRefs.current.get(tag.id);
               if (g) drawTag(g, pos.width, true, tag.isSelected || false);
             }}
-            pointerout={() => {
+            onPointerOut={() => {
               // 🚀 Performance: 직접 그래픽스 업데이트 (리렌더링 없음)
               const g = tagGraphicsRefs.current.get(tag.id);
               if (g) drawTag(g, pos.width, false, tag.isSelected || false);
             }}
-            pointerdown={(e) => {
+            onPointerDown={(e: { stopPropagation: () => void }) => {
               e.stopPropagation();
               handleTagClick(tag.id);
             }}
@@ -252,7 +252,7 @@ export function PixiTagGroup({
                 y={(tagHeight - 14) / 2}
                 eventMode="static"
                 cursor="pointer"
-                pointerdown={(e) => handleRemoveClick(tag.id, e)}
+                onPointerDown={(e: { stopPropagation: () => void }) => handleRemoveClick(tag.id, e)}
               >
                 <pixiGraphics draw={(g) => drawRemoveButton(g, false)} />
               </pixiContainer>

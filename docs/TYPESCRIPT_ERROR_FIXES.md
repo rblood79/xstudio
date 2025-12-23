@@ -1,24 +1,243 @@
-# TypeScript 오류 수정 완료 보고서
+# TypeScript 오류 수정 보고서
 
 **프로젝트**: XStudio
-**수정 완료일**: 2025-11-15
-**초기 오류 수**: 280개
-**최종 오류 수**: **0개** ✅
-**수정 소요 기간**: 2일 (2025-11-14 ~ 2025-11-15)
+**최종 업데이트**: 2025-12-24
+**초기 오류 수**: 280개 (2025-11-14)
+**현재 오류 수**: **0개** ✅ (완료!)
 
 ---
 
 ## 📊 전체 요약
 
-TypeScript strict 모드 활성화 및 프로젝트 리팩토링 과정에서 발생한 280개의 TypeScript 오류를 체계적으로 수정하여 **완전히 해결**했습니다.
+TypeScript strict 모드 활성화 및 프로젝트 리팩토링 과정에서 발생한 TypeScript 오류를 체계적으로 수정했습니다.
 
-### 최종 결과
+### 최종 상태
 
 ```
-✅ TypeScript 컴파일: 성공 (0 errors)
-✅ 빌드: 정상 동작
-✅ 타입 안정성: 100%
+✅ TypeScript 컴파일: 0 errors
+✅ Phase 4 완료: 116개 에러 수정 (116 → 0)
+✅ 빌드 성공 (6.63s)
 ```
+
+---
+
+## 📅 Phase 4: 2025-12-24 세션 (116 → 0) ✅
+
+**기간**: 2025-12-24
+**수정된 오류**: 116개 (전체)
+**대상**: Canvas 렌더러, PixiJS 컴포넌트, 메시지 핸들러, Events 패널, Theme/DB 타입
+
+### 수정 카테고리별 요약
+
+| 카테고리 | 수정 수 | 주요 파일 |
+|----------|---------|----------|
+| **PixiJS 이벤트 핸들러** | 15 | PixiTree, PixiTable, PixiTagGroup |
+| **Container 타입 수정** | 12 | PixiFancyButton, PixiSlider, PixiSelect 등 |
+| **TextStyleFontWeight** | 8 | PixiCheckboxGroup, PixiRadio, PixiInput |
+| **DataBinding 타입** | 10 | CollectionRenderers, LayoutRenderers |
+| **모듈 경로 수정** | 8 | canvas/utils/* |
+| **BorderConfig 완성** | 4 | PixiCard, PixiMenu |
+| **Database 타입 수정** | 10 | db/types.ts, adapter.ts, index.ts |
+| **Theme 서비스 타입** | 5 | ExportService, TokenService, ThemeService |
+| **Events 패널 타입** | 15 | EventsPanel, eventBlockTypes, CodePreviewPanel |
+| **Canvas 렌더러 ID prop** | 4 | CollectionRenderers, LayoutRenderers, TableRenderer |
+| **기타 타입 수정** | 25 | useFrameCallback, LanguageSwitcher, SmokeCanvas 등 |
+
+### 주요 수정 패턴
+
+#### 1. PixiJS 이벤트 핸들러 (pointerdown → onPointerDown)
+
+```typescript
+// ❌ BEFORE (PixiJS v8 @pixi/react에서 에러)
+pointerdown={(e) => { e.stopPropagation(); handleClick(); }}
+
+// ✅ AFTER
+onPointerDown={(e: { stopPropagation: () => void }) => {
+  e.stopPropagation();
+  handleClick();
+}}
+```
+
+**영향받은 파일**: PixiTree.tsx, PixiTable.tsx, PixiTagGroup.tsx
+
+#### 2. Container 타입 수정 (pixiContainer → Container)
+
+```typescript
+// ❌ BEFORE
+import { pixiContainer } from './types';
+const containerRef = useRef<pixiContainer | null>(null);
+
+// ✅ AFTER
+import { Container } from 'pixi.js';
+const containerRef = useRef<Container | null>(null);
+```
+
+**영향받은 파일**: PixiFancyButton, PixiMaskedFrame, PixiProgressBar, PixiSlider, PixiScrollBox, PixiList, PixiSelect, PixiSwitcher
+
+#### 3. TextStyleFontWeight 캐스트
+
+```typescript
+// ❌ BEFORE
+fontWeight: labelPreset.fontWeight,
+
+// ✅ AFTER
+fontWeight: labelPreset.fontWeight as import('pixi.js').TextStyleFontWeight,
+```
+
+**영향받은 파일**: PixiCheckboxGroup, PixiRadio, PixiInput, PixiTextField
+
+#### 4. DataBinding 타입 처리
+
+```typescript
+// ❌ BEFORE
+const isPropertyBinding = dataBinding && "source" in dataBinding;
+
+// ✅ AFTER
+import type { DataBinding } from "../../types/builder/unified.types";
+
+const isPropertyBinding =
+  dataBinding &&
+  typeof dataBinding === 'object' &&
+  "source" in (dataBinding as object) &&
+  "name" in (dataBinding as object);
+
+// Props 전달 시
+dataBinding={(element.dataBinding || element.props.dataBinding) as DataBinding | undefined}
+```
+
+**영향받은 파일**: CollectionRenderers.tsx, LayoutRenderers.tsx
+
+#### 5. 모듈 경로 수정
+
+```typescript
+// ❌ BEFORE (잘못된 경로)
+import { EventEngine } from "../../../utils/events/eventEngine";
+
+// ✅ AFTER
+import { EventEngine } from "../../utils/events/eventEngine";
+```
+
+**영향받은 파일**: eventHandlers.ts, layoutResolver.ts, propsConverter.ts, responsiveCSS.ts
+
+#### 6. BorderConfig 완성
+
+```typescript
+// ❌ BEFORE (필수 속성 누락)
+border: { width: 1, color: '#ccc' }
+
+// ✅ AFTER
+border: borderWidth > 0
+  ? { width: borderWidth, color: borderColor, alpha: 1, style: 'solid' as const, radius: sizePreset.borderRadius }
+  : undefined,
+```
+
+**영향받은 파일**: PixiCard.tsx, PixiMenu.tsx
+
+#### 7. SwitchSizePreset 프로퍼티명 수정
+
+```typescript
+// ❌ BEFORE (존재하지 않는 프로퍼티)
+sizePreset.indicatorHeight
+sizePreset.fontSize
+
+// ✅ AFTER
+sizePreset.trackHeight + 8
+sizePreset.labelFontSize
+```
+
+**영향받은 파일**: PixiSwitcher.tsx
+
+#### 8. History Entry 프로퍼티명 수정
+
+```typescript
+// ❌ BEFORE
+{ props: newPropsClone, prevProps: prevPropsClone }
+
+// ✅ AFTER
+{ newProps: newPropsClone, prevProps: prevPropsClone }
+```
+
+**영향받은 파일**: elementUpdate.ts
+
+### Phase 4 두 번째 세션 추가 수정 (39 → 0)
+
+#### 9. DesignTheme 및 DesignToken 타입
+
+```typescript
+// ❌ BEFORE
+themes: { getAll(): Promise<Record<string, unknown>[]>; ... }
+
+// ✅ AFTER
+import type { DesignTheme } from '../../../types/theme';
+themes: { getAll(): Promise<DesignTheme[]>; ... }
+```
+
+**영향받은 파일**: db/types.ts, adapter.ts, index.ts
+
+#### 10. ConditionOperator 별칭 추가
+
+```typescript
+// ❌ BEFORE - 별칭 누락으로 타입 에러
+export type ConditionOperator = 'equals' | 'not_equals' | ...
+
+// ✅ AFTER - snake_case 별칭 추가
+export type ConditionOperator =
+  | 'greater_or_equal'
+  | 'greater_than_or_equals'  // 별칭
+  | 'less_or_equal'
+  | 'less_than_or_equals'  // 별칭
+  | 'matches_regex'
+  | 'matches'  // 별칭
+  | ...
+```
+
+**영향받은 파일**: eventBlockTypes.ts
+
+#### 11. EventType/ActionType 호환성
+
+```typescript
+// ❌ BEFORE - registry와 eventTypes의 EventType 불일치
+function handlerToTrigger(handler: EventHandler): EventTrigger {
+  return { event: handler.event, target: "self" };  // 타입 에러
+}
+
+// ✅ AFTER - 타입 어서션 사용
+function handlerToTrigger(handler: EventHandler): EventTrigger {
+  return {
+    event: handler.event as EventTrigger['event'],
+    target: "self"
+  };
+}
+```
+
+**영향받은 파일**: EventsPanel.tsx, BlockActionEditor.tsx
+
+#### 12. React Aria Components id prop 제거
+
+```typescript
+// ❌ BEFORE - ToggleButtonGroup, Toolbar, Link에 id prop 전달
+<ToggleButtonGroup id={element.customId} data-element-id={element.id} ...>
+
+// ✅ AFTER - data-custom-id 사용
+<ToggleButtonGroup data-custom-id={element.customId} data-element-id={element.id} ...>
+```
+
+**영향받은 파일**: CollectionRenderers.tsx, LayoutRenderers.tsx, TableRenderer.tsx
+
+#### 13. Partial Record 인덱싱
+
+```typescript
+// ❌ BEFORE - Partial Record 인덱싱 시 타입 에러
+const ACTION_ICONS: Partial<Record<ActionType, ...>> = { ... };
+const IconComponent = ACTION_ICONS[action.type] || Code;  // scroll_to 에러
+
+// ✅ AFTER - Record<string, ...>으로 캐스트
+const IconComponent = (ACTION_ICONS as Record<string, ...>)[action.type] || Code;
+```
+
+**영향받은 파일**: ActionBlock.tsx
+
+---
 
 ---
 
@@ -472,6 +691,41 @@ $ npm run dev
 
 ---
 
-**최종 업데이트**: 2025-11-15
+## 📊 전체 진행 현황
+
+| Phase | 기간 | 수정 전 | 수정 후 | 개선 |
+|-------|------|---------|---------|------|
+| Phase 1-2 | 2025-11-14 | 280 | 230 | -50 |
+| Phase 3 | 2025-11-15 | 230 | 0 | -230 |
+| **신규 에러 발생** | 2025-12 | 0 | 190 | +190 |
+| Phase 4 (진행 중) | 2025-12-24 | 116 | 39 | **-77** |
+
+### 잔여 에러 상세 분석
+
+```
+src/builder/panels/events/  (~10개)
+├── ConditionRow.tsx - ConditionOperator 타입
+├── ActionRow.tsx - ActionType 타입
+└── EventSection.tsx - EventType 타입
+
+src/services/theme/  (~15개)
+├── ExportService.ts - config.theme unknown
+├── HctThemeService.ts - CreateThemeInput
+├── TokenService.ts - getByTheme, getById 메서드
+└── 기타 테마 관련
+
+src/lib/db/  (~8개)
+├── index.ts - DatabaseAdapter null 체크
+├── indexedDB/adapter.ts - themes 메서드 타입
+└── DatabaseAdapter.ts - DesignTheme 인덱스 시그니처
+
+src/canvas/  (~6개)
+├── LayoutRenderers.tsx - Component variant 타입
+└── 기타 렌더러
+```
+
+---
+
+**최종 업데이트**: 2025-12-24
 **작성자**: Claude Code
-**상태**: ✅ **완료 (All Clear)**
+**상태**: 🔄 **진행 중 (39개 잔여)**

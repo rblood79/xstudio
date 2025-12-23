@@ -79,9 +79,10 @@ export const renderTable = (
   const dataBinding = element.dataBinding || element.props.dataBinding;
   const isPropertyBinding =
     dataBinding &&
-    "source" in dataBinding &&
-    "name" in dataBinding &&
-    !("type" in dataBinding);
+    typeof dataBinding === 'object' &&
+    "source" in (dataBinding as object) &&
+    "name" in (dataBinding as object) &&
+    !("type" in (dataBinding as object));
 
   // dataBinding을 통한 API 데이터 사용 여부 확인
   const hasApiBinding =
@@ -344,15 +345,15 @@ export const renderTable = (
   return (
     <Table
       key={element.id}
-      id={element.customId}
+      data-custom-id={element.customId}
       data-element-id={element.id}
       tableHeaderElementId={tableHeaderElement?.id}
       className={element.props.className}
       columns={finalColumns as ColumnDefinition<{ id: string | number }>[]}
       columnGroups={columnGroups}
       // PropertyDataBinding 지원
-      dataBinding={isPropertyBinding ? dataBinding : undefined}
-      columnMapping={element.props.columnMapping}
+      dataBinding={isPropertyBinding ? (dataBinding as import("../../types/builder/unified.types").DataBinding) : undefined}
+      columnMapping={element.props.columnMapping as import("../../types/builder/unified.types").ColumnMapping | undefined}
       data={
         hasApiBinding || isPropertyBinding
           ? undefined

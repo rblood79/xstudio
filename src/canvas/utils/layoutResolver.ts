@@ -5,14 +5,14 @@
  * 재귀적 트리 탐색으로 중첩된 Slot 처리.
  */
 
-import type { Element, Page } from "../../../types/builder/unified.types";
+import type { Element, Page } from "../../types/builder/unified.types";
 import type {
   Layout,
   ResolvedElement,
   ResolvedSlotContent,
   SlotValidationError,
   LayoutResolutionResult,
-} from "../../../types/builder/layout.types";
+} from "../../types/builder/layout.types";
 
 // ============================================
 // Main Resolver

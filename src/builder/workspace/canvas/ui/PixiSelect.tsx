@@ -168,7 +168,7 @@ export const PixiSelect = memo(function PixiSelect({
 }: PixiSelectProps) {
   useExtend(PIXI_COMPONENTS);
   const { app } = useApplication();
-  const containerRef = useRef<pixiContainer | null>(null);
+  const containerRef = useRef<Container | null>(null);
   const selectRef = useRef<Select | null>(null);
 
   const style = element.props?.style as CSSStyle | undefined;
@@ -245,7 +245,6 @@ export const PixiSelect = memo(function PixiSelect({
         hoverColor: 0xe5e7eb,
         width: layoutStyle.width,
         height: layoutStyle.height,
-        textOffset: [layoutStyle.paddingLeft, 0],
       },
       scrollBox: {
         width: layoutStyle.width,

@@ -124,7 +124,7 @@ function flattenTree(
     result.push({
       item,
       depth,
-      hasChildren: hasAnyChildren,
+      hasChildren: Boolean(hasAnyChildren),
       isExpanded,
     });
 

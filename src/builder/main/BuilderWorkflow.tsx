@@ -42,7 +42,7 @@ function useWorkflowSync() {
   useEffect(() => {
     const workflowPages: WorkflowPage[] = pages.map((p) => ({
       id: p.id,
-      title: p.name,
+      title: p.title,
       // 슬러그 앞의 "/"를 제거해 표시/매칭 시 중복 슬래시 방지
       slug: p.slug?.replace(/^\/+/, "") || "",
       project_id: p.project_id || "",

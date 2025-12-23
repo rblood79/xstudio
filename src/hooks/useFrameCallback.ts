@@ -23,7 +23,8 @@ import { useRef, useCallback, useEffect, useMemo } from 'react';
 // Types
 // ============================================
 
-type AnyFunction = (...args: unknown[]) => void;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type AnyFunction = (...args: any[]) => void;
 
 interface UseFrameCallbackResult<T extends AnyFunction> {
   /** requestAnimationFrame 기반 스로틀 콜백 */
