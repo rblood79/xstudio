@@ -6,8 +6,11 @@
  * - 상태 보존 (스크롤, 입력값 등)
  * - 부드러운 애니메이션 가능
  * - 동일한 패널 toggle 시 위치만 재조정
+ *
+ * 🚀 성능 최적화 (2024-12): React.memo로 불필요한 리렌더링 방지
  */
 
+import { memo, useMemo } from "react";
 import type { PanelSide, PanelId } from "../panels/core/types";
 import { PanelRegistry } from "../panels/core/PanelRegistry";
 
@@ -25,7 +28,60 @@ export interface PanelContainerProps {
   show: boolean;
 }
 
-export function PanelContainer({
+/**
+ * 🚀 개별 패널 래퍼 - memo로 불필요한 리렌더링 방지
+ */
+interface PanelWrapperProps {
+  panelId: PanelId;
+  side: PanelSide;
+  isActive: boolean;
+  panelWidth: number;
+}
+
+/**
+ * 🚀 패널 콘텐츠 - memo로 side/panelId 변경 시에만 리렌더링
+ */
+interface PanelContentProps {
+  panelId: PanelId;
+  side: PanelSide;
+}
+
+const PanelContent = memo(function PanelContent({ panelId, side }: PanelContentProps) {
+  const panelConfig = PanelRegistry.getPanel(panelId);
+  if (!panelConfig) {
+    console.warn(`[PanelContainer] Panel "${panelId}" not found in registry`);
+    return null;
+  }
+  const PanelComponent = panelConfig.component;
+  return <PanelComponent isActive={true} side={side} onClose={undefined} />;
+});
+
+/**
+ * 🚀 패널 래퍼 - isActive 변경 시에도 PanelContent는 리렌더링 안 함
+ */
+function PanelWrapper({
+  panelId,
+  side,
+  isActive,
+  panelWidth,
+}: PanelWrapperProps) {
+  return (
+    <div
+      className="panel-wrapper"
+      data-panel={panelId}
+      data-active={isActive}
+      style={{
+        ["--panel-width" as string]: `${panelWidth}px`,
+        width: `${panelWidth}px`,
+        minWidth: `${panelWidth}px`,
+      }}
+    >
+      <PanelContent panelId={panelId} side={side} />
+    </div>
+  );
+}
+
+export const PanelContainer = memo(function PanelContainer({
   side,
   panelIds,
   activePanels,
@@ -51,14 +107,16 @@ export function PanelContainer({
     );
   }
 
-  // ✅ 성능 최적화: 모든 패널을 항상 렌더링 (DOM에 유지)
-  // - activePanels 순서대로 활성 패널 먼저 렌더링
-  // - 그 다음 비활성 패널 렌더링
-  // - CSS transform으로 위치만 이동하여 표시/숨김 제어
+  // 🚀 패널별 width 메모이제이션 (PanelRegistry 조회 최소화)
+  const panelWidths = useMemo(() => {
+    const widths: Record<string, number> = {};
+    for (const panelId of panelIds) {
+      const config = PanelRegistry.getPanel(panelId);
+      widths[panelId] = config?.minWidth || 233;
+    }
+    return widths;
+  }, [panelIds]);
 
-  // ✅ 모든 패널을 항상 렌더링 (DOM에 유지)
-  // 패널 컴포넌트에 항상 isActive={true}를 전달하여 return null 방지
-  // 실제 표시/숨김은 wrapper의 data-active 속성으로 CSS에서 제어
   return (
     <div
       className="panel-container"
@@ -67,41 +125,16 @@ export function PanelContainer({
       aria-hidden={!show}
     >
       <div className="panel-content">
-        {panelIds.map((panelId) => {
-          const panelConfig = PanelRegistry.getPanel(panelId);
-          if (!panelConfig) {
-            console.warn(
-              `[PanelContainer] Panel "${panelId}" not found in registry`
-            );
-            return null;
-          }
-
-          const PanelComponent = panelConfig.component;
-          const isActive = activePanels.includes(panelId);
-
-          // 패널 넓이를 CSS 변수로 전달 (동적 처리)
-          const panelWidth = panelConfig.minWidth || 233;
-
-          return (
-            <div
-              key={panelId}
-              className="panel-wrapper"
-              data-panel={panelId}
-              data-active={isActive}
-              style={{
-                // CSS 변수로 패널 넓이 전달
-                ["--panel-width" as string]: `${panelWidth}px`,
-                width: `${panelWidth}px`,
-                minWidth: `${panelWidth}px`,
-              }}
-            >
-              {/* ✅ 항상 isActive={true}를 전달하여 패널이 return null하지 않도록 */}
-              {/* 실제 표시/숨김은 CSS transform으로 제어 */}
-              <PanelComponent isActive={true} side={side} onClose={undefined} />
-            </div>
-          );
-        })}
+        {panelIds.map((panelId) => (
+          <PanelWrapper
+            key={panelId}
+            panelId={panelId}
+            side={side}
+            isActive={activePanels.includes(panelId)}
+            panelWidth={panelWidths[panelId]}
+          />
+        ))}
       </div>
     </div>
   );
-}
+});

@@ -27,6 +27,7 @@ import {
 } from "react-aria-components";
 import { BuilderCanvas } from "./canvas/BuilderCanvas";
 import { useCanvasSyncStore } from "./canvas/canvasSync";
+import { useStore } from "../stores";
 import { isWebGLCanvas, isCanvasCompareMode } from "../../utils/featureFlags";
 import { Minus, Plus, Scan, ChevronDown } from "lucide-react";
 import { iconProps, iconSmall } from "../../utils/ui/uiConstants";
@@ -104,8 +105,10 @@ export function Workspace({
     return widthStr.includes("%") || heightStr.includes("%");
   }, [selectedBreakpoint]);
 
-  // ref 동기화 (useEffect 없이 직접 업데이트)
-  usesPercentBreakpointRef.current = usesPercentBreakpoint;
+  // ref 동기화 (useEffect에서 업데이트)
+  useEffect(() => {
+    usesPercentBreakpointRef.current = usesPercentBreakpoint;
+  }, [usesPercentBreakpoint]);
 
   const canvasSize = useMemo(() => {
     if (!selectedBreakpoint) {
@@ -132,9 +135,10 @@ export function Workspace({
     };
 
     // % breakpoint일 때만 containerSizeForPercent 사용
+    // 비-% breakpoint에서는 parseSize가 숫자값을 직접 반환하므로 containerSize 미사용
     const containerSize = usesPercentBreakpoint
       ? containerSizeForPercent
-      : containerSizeRef.current;
+      : { width: 0, height: 0 };
 
     const size = {
       width: parseSize(selectedBreakpoint.max_width, containerSize.width),
@@ -159,6 +163,9 @@ export function Workspace({
   // 🚀 Fit 모드 추적: zoom이 fit 상태일 때 리사이즈 시 center 유지
   const isFitModeRef = useRef(true); // 초기 로드 시 fit 모드로 시작
 
+  // 🚀 패널 토글 감지: 패널 리사이즈 시 centerCanvas 스킵
+  const isPanelResizingRef = useRef(false);
+
   // 줌/팬 초기화 함수 (재사용)
   const centerCanvas = useCallback(() => {
     const containerSize = containerSizeRef.current;
@@ -177,7 +184,31 @@ export function Workspace({
   }, [canvasSize.width, canvasSize.height, setZoom, setPanOffset]);
 
   // ref 동기화 (useEffect에서 stale closure 방지)
-  centerCanvasRef.current = centerCanvas;
+  useEffect(() => {
+    centerCanvasRef.current = centerCanvas;
+  }, [centerCanvas]);
+
+  // 🚀 패널 토글 감지: panelLayout 변경 시 플래그 설정
+  useEffect(() => {
+    let prevShowLeft = useStore.getState().panelLayout.showLeft;
+    let prevShowRight = useStore.getState().panelLayout.showRight;
+
+    const unsubscribe = useStore.subscribe((state) => {
+      const { showLeft, showRight } = state.panelLayout;
+      // showLeft 또는 showRight가 변경되었을 때만 처리
+      if (showLeft !== prevShowLeft || showRight !== prevShowRight) {
+        prevShowLeft = showLeft;
+        prevShowRight = showRight;
+        // 패널 토글 시 플래그 설정
+        isPanelResizingRef.current = true;
+        // 300ms 후 플래그 해제 (ResizeObserver보다 충분히 긴 시간)
+        setTimeout(() => {
+          isPanelResizingRef.current = false;
+        }, 300);
+      }
+    });
+    return unsubscribe;
+  }, []);
 
   // Center canvas when breakpoint changes (NOT when container resizes)
   useEffect(() => {
@@ -231,7 +262,12 @@ export function Workspace({
         // ref 업데이트 (React 리렌더 없음)
         containerSizeRef.current = { width, height };
 
-        // store 업데이트 (Phase 3에서 BuilderCanvas가 subscribe)
+        // 🚀 패널 토글로 인한 리사이즈는 store 업데이트 스킵 (GridLayer 리렌더 방지)
+        if (isPanelResizingRef.current) {
+          return;
+        }
+
+        // store 업데이트 (GridLayer 등이 subscribe)
         useCanvasSyncStore.getState().setContainerSize({ width, height });
 
         // % breakpoint일 때만 React state 업데이트
