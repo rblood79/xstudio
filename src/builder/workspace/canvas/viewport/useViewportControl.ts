@@ -102,6 +102,45 @@ export function useViewportControl(options: UseViewportControlOptions): UseViewp
     containerElRef.current = containerEl ?? null;
   }, [containerEl]);
 
+  // 팬 모드 커서 스타일 (자식 요소 포함 !important)
+  const panCursorStyleRef = useRef<HTMLStyleElement | null>(null);
+
+  const applyPanCursor = useCallback((cursor: 'grab' | 'grabbing' | null) => {
+    // 기존 스타일 제거
+    if (panCursorStyleRef.current) {
+      panCursorStyleRef.current.remove();
+      panCursorStyleRef.current = null;
+    }
+
+    if (cursor && containerElRef.current) {
+      // 동적 스타일 태그 생성 (자식 요소 포함 !important)
+      const style = document.createElement('style');
+      const containerId = containerElRef.current.id || 'viewport-container';
+      if (!containerElRef.current.id) {
+        containerElRef.current.id = containerId;
+      }
+      style.textContent = `#${containerId}, #${containerId} * { cursor: ${cursor} !important; }`;
+      document.head.appendChild(style);
+      panCursorStyleRef.current = style;
+    }
+  }, []);
+
+  // applyPanCursor를 ref로 저장 (마우스 핸들러에서 사용)
+  const applyPanCursorRef = useRef(applyPanCursor);
+  useEffect(() => {
+    applyPanCursorRef.current = applyPanCursor;
+  }, [applyPanCursor]);
+
+  // cleanup 시 스타일 제거
+  useEffect(() => {
+    return () => {
+      if (panCursorStyleRef.current) {
+        panCursorStyleRef.current.remove();
+        panCursorStyleRef.current = null;
+      }
+    };
+  }, []);
+
   // Controller 생성 및 Container 연결
   useEffect(() => {
     if (!app?.stage || !controller) return;
@@ -140,7 +179,7 @@ export function useViewportControl(options: UseViewportControlOptions): UseViewp
         onInteractionStartRef.current?.();
         controller.startPan(e.clientX, e.clientY);
         isPanningRef.current = true;
-        containerEl.style.cursor = 'grabbing';
+        applyPanCursorRef.current('grabbing');
       }
     };
 
@@ -153,7 +192,8 @@ export function useViewportControl(options: UseViewportControlOptions): UseViewp
       if (controller.isPanningActive()) {
         controller.endPan();
         isPanningRef.current = false;
-        containerEl.style.cursor = '';
+        // Space가 여전히 눌려있으면 grab, 아니면 null
+        applyPanCursorRef.current(isSpacePressedRef.current ? 'grab' : null);
         // 🚀 Phase 6.1: 인터랙션 종료 알림 (ref 사용)
         onInteractionEndRef.current?.();
       }
@@ -170,12 +210,12 @@ export function useViewportControl(options: UseViewportControlOptions): UseViewp
     };
   }, [containerEl, controller]);
 
-  // 휠 이벤트 핸들러 (줌) - 🚀 Phase 6.1: 디바운스된 종료 감지
+  // 휠 이벤트 핸들러 (줌/팬) - Figma/Photoshop 스타일
   useEffect(() => {
     if (!containerEl || !controller) return;
 
     const handleWheel = (e: WheelEvent) => {
-      // Ctrl + wheel = Zoom
+      // Ctrl/Cmd + wheel = Zoom
       if (e.ctrlKey || e.metaKey) {
         e.preventDefault();
         e.stopPropagation();
@@ -202,6 +242,21 @@ export function useViewportControl(options: UseViewportControlOptions): UseViewp
         const delta = -e.deltaY * 0.001;
 
         controller.zoomAtPoint(e.clientX, e.clientY, rect, delta, true);
+      } else {
+        // 일반 휠 = 팬 (Figma/Photoshop 스타일)
+        e.preventDefault();
+        e.stopPropagation();
+
+        // Shift + wheel = 좌우 팬, 일반 wheel = 상하 팬
+        const rawDeltaX = e.shiftKey ? e.deltaY : e.deltaX;
+        const rawDeltaY = e.shiftKey ? 0 : e.deltaY;
+
+        const { panOffset, zoom } = useCanvasSyncStore.getState();
+        const newX = panOffset.x - rawDeltaX;
+        const newY = panOffset.y - rawDeltaY;
+
+        controller.setPosition(newX, newY, zoom);
+        setPanOffset({ x: newX, y: newY });
       }
     };
 
@@ -209,7 +264,7 @@ export function useViewportControl(options: UseViewportControlOptions): UseViewp
 
     return () => {
       containerEl.removeEventListener('wheel', handleWheel, { capture: true });
-      // 🚀 Phase 6.1: cleanup 시 타임아웃 정리
+      // cleanup 시 타임아웃 정리
       if (zoomEndTimeoutRef.current) {
         clearTimeout(zoomEndTimeoutRef.current);
         zoomEndTimeoutRef.current = null;
@@ -243,6 +298,7 @@ export function useViewportControl(options: UseViewportControlOptions): UseViewp
     return unsubscribe;
   }, [controller]);
 
+
   // 스페이스바 팬 모드 (cursor만 변경)
   useKeyboardShortcutsRegistry(
     [
@@ -253,14 +309,13 @@ export function useViewportControl(options: UseViewportControlOptions): UseViewp
         preventDefault: false,
         disabled: !containerEl,
         handler: () => {
-          const el = containerElRef.current;
-          if (!el || isSpacePressedRef.current) return;
+          if (isSpacePressedRef.current) return;
           isSpacePressedRef.current = true;
-          el.style.cursor = 'grab';
+          applyPanCursor('grab');
         },
       },
     ],
-    [containerEl]
+    [containerEl, applyPanCursor]
   );
 
   useKeyboardShortcutsRegistry(
@@ -273,15 +328,13 @@ export function useViewportControl(options: UseViewportControlOptions): UseViewp
         disabled: !containerEl,
         handler: () => {
           isSpacePressedRef.current = false;
-          const el = containerElRef.current;
-          if (!el) return;
           if (!isPanningRef.current) {
-            el.style.cursor = '';
+            applyPanCursor(null);
           }
         },
       },
     ],
-    [containerEl],
+    [containerEl, applyPanCursor],
     'keyup'
   );
 

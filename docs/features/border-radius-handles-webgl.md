@@ -168,8 +168,8 @@ export function calculateDiagonalDistance(
 ### 3.2 BorderRadiusHandle.tsx
 
 ```typescript
-import { memo, useCallback } from 'react';
-import { Graphics as PixiGraphics, FederatedPointerEvent } from 'pixi.js';
+import { memo, useCallback, useMemo } from 'react';
+import { Graphics as PixiGraphics, FederatedPointerEvent, Circle } from 'pixi.js';
 import { useExtend } from '@pixi/react';
 import { PIXI_COMPONENTS } from '../pixiSetup';
 import type { CornerPosition } from './borderRadiusTypes';
@@ -184,6 +184,8 @@ export interface BorderRadiusHandleProps {
   x: number;
   y: number;
   zoom: number;
+  /** ⚡ 테마 색상을 부모에서 props로 전달 (훅 호출 방지) */
+  handleColor?: number;
   onDragStart: (corner: CornerPosition, e: FederatedPointerEvent) => void;
 }
 
@@ -192,6 +194,7 @@ export const BorderRadiusHandle = memo(function BorderRadiusHandle({
   x,
   y,
   zoom,
+  handleColor = BORDER_RADIUS_HANDLE_COLOR,
   onDragStart,
 }: BorderRadiusHandleProps) {
   useExtend(PIXI_COMPONENTS);
@@ -200,13 +203,19 @@ export const BorderRadiusHandle = memo(function BorderRadiusHandle({
   const radius = BORDER_RADIUS_HANDLE_SIZE / zoom;
   const strokeWidth = 1.5 / zoom;
 
+  // ⚡ hitArea 확장 (클릭 영역 +4px)
+  const hitArea = useMemo(() => {
+    const hitRadius = (BORDER_RADIUS_HANDLE_SIZE + 4) / zoom;
+    return new Circle(0, 0, hitRadius);
+  }, [zoom]);
+
   const draw = useCallback((g: PixiGraphics) => {
     g.clear();
     g.circle(0, 0, radius);
-    g.fill({ color: BORDER_RADIUS_HANDLE_COLOR });
+    g.fill({ color: handleColor });
     g.setStrokeStyle({ width: strokeWidth, color: 0xffffff });
     g.stroke();
-  }, [radius, strokeWidth]);
+  }, [radius, strokeWidth, handleColor]);
 
   const handlePointerDown = useCallback((e: FederatedPointerEvent) => {
     e.stopPropagation();
@@ -220,6 +229,7 @@ export const BorderRadiusHandle = memo(function BorderRadiusHandle({
       draw={draw}
       eventMode="static"
       cursor={cornerCursorMap[corner]}
+      hitArea={hitArea}
       onPointerDown={handlePointerDown}
     />
   );
@@ -234,6 +244,7 @@ import { useExtend } from '@pixi/react';
 import { PIXI_COMPONENTS } from '../pixiSetup';
 import { BorderRadiusHandle } from './BorderRadiusHandle';
 import type { CornerPosition } from './borderRadiusTypes';
+import { BORDER_RADIUS_HANDLE_COLOR } from './borderRadiusTypes';
 import type { FederatedPointerEvent } from 'pixi.js';
 
 export interface BorderRadiusHandlesProps {
@@ -242,6 +253,8 @@ export interface BorderRadiusHandlesProps {
   boundsHeight: number;
   currentRadius: number;
   zoom: number;
+  /** ⚡ 테마 색상을 부모(SelectionLayer)에서 전달 */
+  handleColor?: number;
   onDragStart: (corner: CornerPosition, e: FederatedPointerEvent) => void;
 }
 
@@ -251,12 +264,15 @@ export const BorderRadiusHandles = memo(function BorderRadiusHandles({
   boundsHeight,
   currentRadius,
   zoom,
+  handleColor = BORDER_RADIUS_HANDLE_COLOR,
   onDragStart,
 }: BorderRadiusHandlesProps) {
   useExtend(PIXI_COMPONENTS);
 
-  // ⚡ 핸들 위치 계산 (radius에 비례하여 대각선 오프셋 + 서브픽셀 방지)
-  const handlePositions = useMemo(() => {
+  // ⚡ 단일 코너만 계산 (4개 모두 계산하지 않음)
+  const handlePosition = useMemo(() => {
+    if (!hoveredCorner) return null;
+
     const getOffset = (radius: number) => {
       const minOffset = 4 / zoom;
       const radiusOffset = radius * 0.5;
@@ -266,25 +282,30 @@ export const BorderRadiusHandles = memo(function BorderRadiusHandles({
     const offset = getOffset(currentRadius);
 
     // ⚡ Math.round로 서브픽셀 렌더링 방지
-    return {
-      topLeft: { x: Math.round(offset), y: Math.round(offset) },
-      topRight: { x: Math.round(boundsWidth - offset), y: Math.round(offset) },
-      bottomLeft: { x: Math.round(offset), y: Math.round(boundsHeight - offset) },
-      bottomRight: { x: Math.round(boundsWidth - offset), y: Math.round(boundsHeight - offset) },
-    };
-  }, [boundsWidth, boundsHeight, currentRadius, zoom]);
+    switch (hoveredCorner) {
+      case 'topLeft':
+        return { x: Math.round(offset), y: Math.round(offset) };
+      case 'topRight':
+        return { x: Math.round(boundsWidth - offset), y: Math.round(offset) };
+      case 'bottomLeft':
+        return { x: Math.round(offset), y: Math.round(boundsHeight - offset) };
+      case 'bottomRight':
+        return { x: Math.round(boundsWidth - offset), y: Math.round(boundsHeight - offset) };
+      default:
+        return null;
+    }
+  }, [hoveredCorner, boundsWidth, boundsHeight, currentRadius, zoom]);
 
   // hover된 코너만 렌더링 (조건부 렌더링)
-  if (!hoveredCorner) return null;
-
-  const position = handlePositions[hoveredCorner];
+  if (!hoveredCorner || !handlePosition) return null;
 
   return (
     <BorderRadiusHandle
       corner={hoveredCorner}
-      x={position.x}
-      y={position.y}
+      x={handlePosition.x}
+      y={handlePosition.y}
       zoom={zoom}
+      handleColor={handleColor}
       onDragStart={onDragStart}
     />
   );
@@ -569,12 +590,16 @@ export function useBorderRadiusDragPixi(
 
 | 기술 | 기여율 | 적용 위치 |
 |------|--------|----------|
-| RAF + 시간 기반 스로틀링 | ~35% | `useBorderRadiusDragPixi` 드래그 중 |
-| ref 기반 상태 | ~25% | 드래그 중간 상태 |
-| **값 변경 시에만 업데이트** | ~15% | hover 감지 (리렌더링 방지) |
-| Hover debounce | ~10% | 깜빡임 방지 |
-| 조건부 렌더링 | ~8% | hover 코너만 표시 |
-| cancelUpdate (RAF 취소) | ~5% | 드래그 종료/취소 시 |
+| RAF + 시간 기반 스로틀링 | ~25% | `useBorderRadiusDragPixi` 드래그 중 |
+| ref 기반 상태 | ~20% | 드래그 중간 상태 |
+| **값 변경 시에만 업데이트** | ~12% | hover 감지 (리렌더링 방지) |
+| **단일 코너만 계산** | ~10% | `BorderRadiusHandles` (4개 → 1개) |
+| Hover debounce | ~8% | 깜빡임 방지 |
+| **테마 색상 props 전달** | ~6% | 핸들 내 훅 호출 방지 |
+| 조건부 렌더링 | ~5% | hover 코너만 표시 |
+| **hitArea 확장** | ~5% | 클릭 성공률 + UX |
+| cancelUpdate (RAF 취소) | ~4% | 드래그 종료/취소 시 |
+| **Store selector 최적화** | ~3% | shallow 비교 |
 | useDeferredValue | ~2% | 인스펙터 패널 |
 
 ### 4.2 최적화 전략
@@ -656,19 +681,63 @@ useEffect(() => {
 }, []);
 ```
 
-#### 핸들 위치 계산 (서브픽셀 방지)
+#### 단일 코너만 계산 (BorderRadiusHandles)
 ```typescript
-// ⚡ Math.round로 서브픽셀 렌더링 방지
-const handlePositions = useMemo(() => {
+// ⚡ 4개 모두 계산하지 않고 hoveredCorner만 계산
+const handlePosition = useMemo(() => {
+  if (!hoveredCorner) return null;
+
   const offset = getOffset(currentRadius);
 
-  return {
-    topLeft: { x: Math.round(offset), y: Math.round(offset) },
-    topRight: { x: Math.round(boundsWidth - offset), y: Math.round(offset) },
-    bottomLeft: { x: Math.round(offset), y: Math.round(boundsHeight - offset) },
-    bottomRight: { x: Math.round(boundsWidth - offset), y: Math.round(boundsHeight - offset) },
-  };
-}, [boundsWidth, boundsHeight, currentRadius, zoom]);
+  // Math.round로 서브픽셀 방지
+  switch (hoveredCorner) {
+    case 'topLeft':
+      return { x: Math.round(offset), y: Math.round(offset) };
+    case 'topRight':
+      return { x: Math.round(boundsWidth - offset), y: Math.round(offset) };
+    // ...
+  }
+}, [hoveredCorner, boundsWidth, boundsHeight, currentRadius, zoom]);
+```
+
+#### 테마 색상 props 전달
+```typescript
+// ❌ 핸들 내부에서 훅 호출 (매 렌더마다 호출)
+const BorderRadiusHandle = () => {
+  const colors = useThemeColors();
+  ...
+}
+
+// ✅ SelectionLayer에서 한 번만 호출하고 props로 전달
+const SelectionLayer = () => {
+  const colors = useThemeColors();
+  return <BorderRadiusHandles handleColor={colors.primary} ... />;
+}
+```
+
+#### hitArea 확장 (BorderRadiusHandle)
+```typescript
+// ⚡ 클릭 영역을 핸들 크기보다 크게 설정
+const hitArea = useMemo(() => {
+  const hitRadius = (BORDER_RADIUS_HANDLE_SIZE + 4) / zoom;
+  return new Circle(0, 0, hitRadius);
+}, [zoom]);
+
+<pixiGraphics hitArea={hitArea} ... />
+```
+
+#### Store selector 최적화 (SelectionLayer)
+```typescript
+import { shallow } from 'zustand/shallow';
+
+// ⚡ shallow 비교 + selector로 불필요한 리렌더링 방지
+const borderRadius = useStore(
+  useCallback((state) => {
+    const el = state.elements[selectedId];
+    return el?.style?.borderRadius ?? 0;
+  }, [selectedId]),
+  shallow
+);
 ```
 
 #### 핸들 렌더링 (BorderRadiusHandles)
@@ -717,13 +786,14 @@ export const HOVER_DEBOUNCE_MS = 30;
 - zoom 독립적 크기
 - eventMode="static"
 - 모든 콜백 useCallback 래핑
-- 드래그 성공률 개선을 위해 hitArea 확장
-- 핸들 색상은 테마 토큰 기반 (폴백은 상수)
+- ⚡ **hitArea 확장** (`Circle(0, 0, hitRadius)`) - 클릭 성공률 개선
+- ⚡ **handleColor props** - 테마 색상을 부모에서 전달 (훅 호출 방지)
 
 ### Step 4: BorderRadiusHandles.tsx
 - hoveredCorner에 해당하는 핸들만 렌더링 (조건부 렌더링)
+- ⚡ **단일 코너만 계산** - 4개 모두 계산하지 않음
 - ⚡ **Math.round로 서브픽셀 방지**
-- 핸들 위치 계산 (radius 비례 오프셋)
+- handleColor props를 자식에게 전달
 
 ### Step 5: SelectionBox.tsx 수정
 - onPointerMove로 마우스 위치 추적
@@ -789,8 +859,38 @@ useEffect(() => {
 
 ### Step 6: SelectionLayer.tsx 수정
 - 선택된 요소의 borderRadius 값 구독
+- ⚡ **Store selector 최적화** - shallow 비교 + useCallback selector
+- ⚡ **useThemeColors** 훅 호출 → handleColor props로 전달
 - onDragStart, onDragUpdate, onDragEnd, ⚡ **onDragCancel** 콜백 연결
 - ⚡ **useDeferredValue**로 인스펙터 업데이트 분리 (선택적)
+
+```typescript
+// ⚡ SelectionLayer에서 테마 색상 + Store 최적화
+import { shallow } from 'zustand/shallow';
+import { useThemeColors } from '../hooks/useThemeColors';
+
+const SelectionLayer = () => {
+  // 테마 색상 한 번만 호출
+  const colors = useThemeColors();
+
+  // Store selector 최적화
+  const borderRadius = useStore(
+    useCallback((state) => {
+      const el = state.elements[selectedId];
+      return parseBorderRadius(el?.style?.borderRadius);
+    }, [selectedId]),
+    shallow
+  );
+
+  return (
+    <BorderRadiusHandles
+      handleColor={colors.primary}
+      currentRadius={borderRadius}
+      ...
+    />
+  );
+};
+```
 
 ---
 
@@ -814,6 +914,9 @@ useEffect(() => {
 - [ ] hover 시 깜빡임 없음 (debounce 동작)
 - [ ] 빠른 마우스 이동에도 핸들 안정적 표시
 - [ ] 드래그 종료 후 불필요한 콜백 없음 (cancelUpdate 동작)
+- [ ] 테마 변경 시 핸들 색상 즉시 반영
+- [ ] hitArea 확장으로 작은 핸들도 클릭 용이
+- [ ] Store 변경 시 불필요한 리렌더링 없음 (React DevTools 확인)
 
 ---
 

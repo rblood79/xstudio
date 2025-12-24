@@ -10,10 +10,6 @@
 export { GridLayer } from './GridLayer';
 export type { GridLayerProps } from './GridLayer';
 
-// Hooks
-export { useZoomPan } from './useZoomPan';
-export type { UseZoomPanOptions, UseZoomPanReturn } from './useZoomPan';
-
 // Constants
 export const ZOOM_PRESETS = {
   FIT: 'fit',
