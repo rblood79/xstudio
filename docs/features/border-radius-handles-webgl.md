@@ -78,9 +78,14 @@ export const CORNER_HOVER_DISTANCE = 30;
 export const BORDER_RADIUS_HANDLE_SIZE = 4;
 
 /**
- * 핸들 색상 (primary blue)
+ * 핸들 색상 (테마 토큰 fallback)
  */
 export const BORDER_RADIUS_HANDLE_COLOR = 0x3b82f6;
+
+/**
+ * ⚡ Hover 디바운스 시간 (ms) - 깜빡임 방지
+ */
+export const HOVER_DEBOUNCE_MS = 30;
 
 /**
  * 코너별 CSS 속성 매핑
@@ -157,6 +162,8 @@ export function calculateDiagonalDistance(
   }
 }
 ```
+
+> **색상 토큰 주의**: `BORDER_RADIUS_HANDLE_COLOR`는 하드코딩 값이 아니라 `cssVariableReader` 기반 테마 컬러를 우선 사용하고, 해당 값은 폴백으로만 둡니다.
 
 ### 3.2 BorderRadiusHandle.tsx
 
@@ -248,7 +255,7 @@ export const BorderRadiusHandles = memo(function BorderRadiusHandles({
 }: BorderRadiusHandlesProps) {
   useExtend(PIXI_COMPONENTS);
 
-  // 핸들 위치 계산 (radius에 비례하여 대각선 오프셋)
+  // ⚡ 핸들 위치 계산 (radius에 비례하여 대각선 오프셋 + 서브픽셀 방지)
   const handlePositions = useMemo(() => {
     const getOffset = (radius: number) => {
       const minOffset = 4 / zoom;
@@ -258,15 +265,16 @@ export const BorderRadiusHandles = memo(function BorderRadiusHandles({
 
     const offset = getOffset(currentRadius);
 
+    // ⚡ Math.round로 서브픽셀 렌더링 방지
     return {
-      topLeft: { x: offset, y: offset },
-      topRight: { x: boundsWidth - offset, y: offset },
-      bottomLeft: { x: offset, y: boundsHeight - offset },
-      bottomRight: { x: boundsWidth - offset, y: boundsHeight - offset },
+      topLeft: { x: Math.round(offset), y: Math.round(offset) },
+      topRight: { x: Math.round(boundsWidth - offset), y: Math.round(offset) },
+      bottomLeft: { x: Math.round(offset), y: Math.round(boundsHeight - offset) },
+      bottomRight: { x: Math.round(boundsWidth - offset), y: Math.round(boundsHeight - offset) },
     };
   }, [boundsWidth, boundsHeight, currentRadius, zoom]);
 
-  // hover된 코너만 렌더링
+  // hover된 코너만 렌더링 (조건부 렌더링)
   if (!hoveredCorner) return null;
 
   const position = handlePositions[hoveredCorner];
@@ -293,6 +301,53 @@ import { calculateDiagonalDistance, cornerPropertyMap } from './borderRadiusType
 import { TIMING } from '../../../constants/timing';
 import { useStore } from '../../../stores';
 
+// ============================================
+// RAF Throttle (useDragInteraction 패턴)
+// ============================================
+
+/**
+ * ⚡ RAF 기반 스로틀 (프레임당 1회만 실행)
+ */
+function useRAFThrottle() {
+  const rafIdRef = useRef<number | null>(null);
+  const pendingCallbackRef = useRef<(() => void) | null>(null);
+
+  const schedule = useCallback((callback: () => void) => {
+    pendingCallbackRef.current = callback;
+
+    if (rafIdRef.current === null) {
+      rafIdRef.current = requestAnimationFrame(() => {
+        rafIdRef.current = null;
+        pendingCallbackRef.current?.();
+        pendingCallbackRef.current = null;
+      });
+    }
+  }, []);
+
+  const cancel = useCallback(() => {
+    if (rafIdRef.current !== null) {
+      cancelAnimationFrame(rafIdRef.current);
+      rafIdRef.current = null;
+    }
+    pendingCallbackRef.current = null;
+  }, []);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (rafIdRef.current !== null) {
+        cancelAnimationFrame(rafIdRef.current);
+      }
+    };
+  }, []);
+
+  return { schedule, cancel };
+}
+
+// ============================================
+// Types
+// ============================================
+
 interface DragState {
   isDragging: boolean;
   corner: CornerPosition | null;
@@ -317,25 +372,34 @@ export interface UseBorderRadiusDragOptions {
   onDragStart?: () => void;
   onDragUpdate?: (radius: number, corner: CornerPosition) => void;
   onDragEnd?: (radius: number, corner: CornerPosition) => void;
+  /** ⚡ ESC 키로 드래그 취소 시 콜백 */
+  onDragCancel?: () => void;
 }
+
+// ============================================
+// Hook
+// ============================================
 
 export function useBorderRadiusDragPixi(
   bounds: { width: number; height: number } | null,
   currentBorderRadius: number,
   options: UseBorderRadiusDragOptions = {}
 ) {
-  const { onDragStart, onDragUpdate, onDragEnd } = options;
+  const { onDragStart, onDragUpdate, onDragEnd, onDragCancel } = options;
 
   // ref 기반 상태 관리 (React 리렌더링 방지)
   const dragStateRef = useRef<DragState>({ ...initialDragState });
   const lastThrottleTimeRef = useRef<number>(0);
+
+  // ⚡ RAF 스로틀링
+  const { schedule: scheduleUpdate, cancel: cancelUpdate } = useRAFThrottle();
 
   // 마우스 이동 핸들러
   const handleMouseMove = useCallback((e: MouseEvent) => {
     const state = dragStateRef.current;
     if (!state.isDragging || !state.corner) return;
 
-    // 시간 기반 스로틀링 (16ms = 60fps)
+    // ⚡ 시간 기반 스로틀링 (16ms = 60fps)
     const now = performance.now();
     if (now - lastThrottleTimeRef.current < TIMING.DRAG_THROTTLE) {
       return;
@@ -352,11 +416,18 @@ export function useBorderRadiusDragPixi(
     if (newRadius === state.lastRadius) return;
 
     dragStateRef.current.lastRadius = newRadius;
-    onDragUpdate?.(newRadius, state.corner);
-  }, [onDragUpdate]);
+
+    // ⚡ RAF 스케줄링으로 콜백 호출
+    scheduleUpdate(() => {
+      onDragUpdate?.(newRadius, state.corner!);
+    });
+  }, [onDragUpdate, scheduleUpdate]);
 
   // 마우스 업 핸들러
   const handleMouseUp = useCallback((e: MouseEvent) => {
+    // ⚡ pending RAF 취소
+    cancelUpdate();
+
     const state = dragStateRef.current;
     if (!state.isDragging || !state.corner) return;
 
@@ -389,7 +460,24 @@ export function useBorderRadiusDragPixi(
     }
 
     onDragEnd?.(finalRadius, corner);
-  }, [handleMouseMove, onDragEnd]);
+  }, [handleMouseMove, onDragEnd, cancelUpdate]);
+
+  // ⚡ ESC 키로 드래그 취소
+  const handleKeyDown = useCallback((e: KeyboardEvent) => {
+    if (e.key === 'Escape' && dragStateRef.current.isDragging) {
+      // pending RAF 취소
+      cancelUpdate();
+
+      // 이벤트 리스너 제거
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+
+      // 상태 초기화
+      dragStateRef.current = { ...initialDragState };
+
+      onDragCancel?.();
+    }
+  }, [cancelUpdate, handleMouseMove, handleMouseUp, onDragCancel]);
 
   // 드래그 시작
   const startDrag = useCallback((corner: CornerPosition, e: FederatedPointerEvent) => {
@@ -409,15 +497,18 @@ export function useBorderRadiusDragPixi(
 
     document.addEventListener('mousemove', handleMouseMove);
     document.addEventListener('mouseup', handleMouseUp);
-  }, [bounds, currentBorderRadius, onDragStart, handleMouseMove, handleMouseUp]);
+    document.addEventListener('keydown', handleKeyDown);
+  }, [bounds, currentBorderRadius, onDragStart, handleMouseMove, handleMouseUp, handleKeyDown]);
 
   // 컴포넌트 언마운트 시 정리
   useEffect(() => {
     return () => {
+      cancelUpdate();
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
+      document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [handleMouseMove, handleMouseUp]);
+  }, [handleMouseMove, handleMouseUp, handleKeyDown, cancelUpdate]);
 
   return {
     startDrag,
@@ -427,7 +518,48 @@ export function useBorderRadiusDragPixi(
 }
 ```
 
+> **WebGL 적용 시 변경 포인트**
+> - `MouseEvent` 대신 `FederatedPointerEvent` 사용
+> - `document.addEventListener` 대신 `app.stage.on/off` 또는 상위 컨테이너 이벤트 사용
+> - `e.getLocalPosition(selectionContainer)`로 로컬 델타 계산
+
+### 3.5 WebGL 전용 보완 사항
+
+#### 3.5.1 좌표계/줌
+- **좌표계 통일**: 드래그 시작/이동/종료 모두 Pixi 좌표로 처리합니다. `FederatedPointerEvent.getLocalPosition(selectionContainer)` 기준으로 델타를 계산하고 DOM `clientX/Y`와 혼용하지 않습니다.
+- **줌 보정**: `selectionContainer`가 `viewport` 스케일을 포함한다면 로컬 좌표 사용만으로 보정이 됩니다. DOM 좌표를 써야 한다면 `delta / zoom` 보정을 반드시 적용합니다.
+- **로테이션/스케일**: 회전/스케일이 적용된 선택 박스에서도 일관된 델타를 얻으려면 항상 로컬 좌표를 사용합니다.
+
+#### 3.5.2 이벤트 처리 전략
+- **Pixi pointer 이벤트 사용**: `pointerdown`은 핸들에서, `pointermove`/`pointerup`/`pointerupoutside`는 `app.stage` 또는 상위 컨테이너에 등록합니다.
+- **포인터 추적**: `pointerId`를 저장해 멀티 포인터 입력을 무시합니다.
+- **리스너 정리**: 드래그 종료/취소 시 `pointermove`, `pointerup`, `pointerupoutside`, `keydown` 리스너를 모두 제거합니다. `keydown`은 mouseup에서도 반드시 해제합니다.
+
+#### 3.5.3 Store 업데이트 흐름 (WebGL)
+- **실시간 미리보기**: `onDragUpdate`에서 `updateSelectedStyle(s)`를 호출해 WebGL 프리뷰를 즉시 갱신합니다.
+- **커밋 시점 분리**: DB 저장/동기화는 drag end에서만 수행합니다(메모리 상태 → preview → DB 순서 유지).
+- **히스토리 최소화**: undo/redo 히스토리는 drag end에서만 기록되도록 처리합니다.
+- **ESC 취소 복원**: 드래그 시작 시 `initialRadius`를 저장해두고 `onDragCancel`에서 해당 값을 store에 복원합니다.
+- **Shift 상태 반영**: 드래그 중 `event.shiftKey`를 읽어 즉시 반영합니다(마우스 업 시점만 확인하면 UX가 어긋날 수 있음).
+
+#### 3.5.4 값/단위 처리 규칙
+- **기본 단위**: 드래그 조절 값은 px 기준으로 계산합니다.
+- **percent 처리 정책 필요**: `borderRadius: "50%"` 등 퍼센트 값이 있으면 `min(width, height)` 기준 px로 변환해 표시하거나, 편집 시점에 px로 정규화합니다. 문서에 명시된 정책대로 일관되게 저장합니다.
+- **혼합 값**: 코너별 값이 다른 경우(혼합)에는 hover 시 해당 코너만 조절하고 Shift로 전체를 덮어씁니다.
+
+#### 3.5.5 Hover/Hit 영역
+- **히트 영역 확장**: `CORNER_HOVER_DISTANCE / zoom`만큼 selection hitArea를 확장해 코너 바깥에서도 hover가 안정적으로 동작하게 합니다.
+- **멀티 선택 제한**: 다중 선택 시 핸들 숨김을 유지합니다(드래그 UX 충돌 방지).
+
 ---
+
+### 3.6 UI 피드백 및 레이어링
+
+- **핸들 레이어링**: Selection overlay 최상단에 렌더링하고, 선택 테두리/리사이즈 핸들보다 위에 배치합니다.
+- **테마 컬러 연동**: M3 토큰에서 핸들 색을 읽고(예: primary/outline) 다크/라이트 테마를 모두 지원합니다.
+- **드래그 툴팁(선택)**: 코너 근처 드래그 시 현재 px 값을 간단한 텍스트로 표시합니다(예: Pixi Text 또는 DOM overlay).
+- **히트 영역 확장**: 손잡이 원 크기보다 큰 `hitArea`를 설정해 미스 클릭을 줄입니다.
+- **상호작용 충돌 방지**: 드래그 중에는 viewport pan/zoom 입력을 비활성화하거나 `stopPropagation` 처리합니다.
 
 ## 4. 성능 최적화
 
@@ -437,11 +569,13 @@ export function useBorderRadiusDragPixi(
 
 | 기술 | 기여율 | 적용 위치 |
 |------|--------|----------|
-| RAF 스로틀링 | ~40% | `useBorderRadiusDragPixi` 드래그 중 |
+| RAF + 시간 기반 스로틀링 | ~35% | `useBorderRadiusDragPixi` 드래그 중 |
 | ref 기반 상태 | ~25% | 드래그 중간 상태 |
-| **값 변경 시에만 업데이트** | ~20% | hover 감지 (리렌더링 방지) |
-| 조건부 렌더링 | ~10% | hover 코너만 표시 |
-| useDeferredValue | ~5% | 인스펙터 패널 (선택적) |
+| **값 변경 시에만 업데이트** | ~15% | hover 감지 (리렌더링 방지) |
+| Hover debounce | ~10% | 깜빡임 방지 |
+| 조건부 렌더링 | ~8% | hover 코너만 표시 |
+| cancelUpdate (RAF 취소) | ~5% | 드래그 종료/취소 시 |
+| useDeferredValue | ~2% | 인스펙터 패널 |
 
 ### 4.2 최적화 전략
 
@@ -450,30 +584,91 @@ export function useBorderRadiusDragPixi(
 // 1. ref 기반 상태 관리 (React 리렌더링 방지)
 const dragStateRef = useRef<DragState>({ ... });
 
-// 2. 시간 기반 스로틀링 (16ms = 60fps)
+// 2. RAF + 시간 기반 이중 스로틀링
+const { schedule: scheduleUpdate, cancel: cancelUpdate } = useRAFThrottle();
+
 const now = performance.now();
 if (now - lastThrottleTimeRef.current < TIMING.DRAG_THROTTLE) {
   return;
 }
 
-// 3. 콜백으로 PixiJS 직접 조작
-onDragUpdate?.(newRadius, corner);
+// 3. RAF 스케줄링으로 콜백 호출
+scheduleUpdate(() => {
+  onDragUpdate?.(newRadius, corner);
+});
+```
+
+#### 드래그 종료/취소 시 RAF 정리
+```typescript
+// ⚡ pending RAF 취소 (불필요한 콜백 실행 방지)
+const handleMouseUp = useCallback(() => {
+  cancelUpdate(); // 먼저 취소
+  // ... 종료 로직
+}, [cancelUpdate]);
+
+// ⚡ ESC 키로 드래그 취소
+const handleKeyDown = useCallback((e: KeyboardEvent) => {
+  if (e.key === 'Escape' && dragStateRef.current.isDragging) {
+    cancelUpdate();
+    dragStateRef.current = { ...initialDragState };
+    onDragCancel?.();
+  }
+}, [cancelUpdate, onDragCancel]);
 ```
 
 #### Hover 감지 (SelectionBox)
 ```typescript
-// ⚡ 값 변경 시에만 state 업데이트 (불필요한 리렌더링 방지)
+// ⚡ 값 변경 시에만 state 업데이트 + debounce로 깜빡임 방지
 const hoveredCornerRef = useRef<CornerPosition | null>(null);
+const hoverDebounceRef = useRef<NodeJS.Timeout | null>(null);
 
-const handlePointerMove = (e) => {
+const handlePointerMove = useCallback((e) => {
   const corner = findNearestCorner(...);
 
-  // 이전 값과 다를 때만 업데이트
+  // 이전 값과 다를 때만 처리
   if (corner !== hoveredCornerRef.current) {
-    hoveredCornerRef.current = corner;
-    setHoveredCorner(corner);
+    // pending debounce 취소
+    if (hoverDebounceRef.current) {
+      clearTimeout(hoverDebounceRef.current);
+    }
+
+    if (corner === null) {
+      // ⚡ 코너 벗어날 때는 30ms 딜레이 (깜빡임 방지)
+      hoverDebounceRef.current = setTimeout(() => {
+        hoveredCornerRef.current = null;
+        setHoveredCorner(null);
+      }, 30);
+    } else {
+      // 코너 진입은 즉시
+      hoveredCornerRef.current = corner;
+      setHoveredCorner(corner);
+    }
   }
-};
+}, []);
+
+// cleanup
+useEffect(() => {
+  return () => {
+    if (hoverDebounceRef.current) {
+      clearTimeout(hoverDebounceRef.current);
+    }
+  };
+}, []);
+```
+
+#### 핸들 위치 계산 (서브픽셀 방지)
+```typescript
+// ⚡ Math.round로 서브픽셀 렌더링 방지
+const handlePositions = useMemo(() => {
+  const offset = getOffset(currentRadius);
+
+  return {
+    topLeft: { x: Math.round(offset), y: Math.round(offset) },
+    topRight: { x: Math.round(boundsWidth - offset), y: Math.round(offset) },
+    bottomLeft: { x: Math.round(offset), y: Math.round(boundsHeight - offset) },
+    bottomRight: { x: Math.round(boundsWidth - offset), y: Math.round(boundsHeight - offset) },
+  };
+}, [boundsWidth, boundsHeight, currentRadius, zoom]);
 ```
 
 #### 핸들 렌더링 (BorderRadiusHandles)
@@ -484,7 +679,7 @@ if (!hoveredCorner) return null;
 return <BorderRadiusHandle corner={hoveredCorner} ... />;
 ```
 
-#### 인스펙터 패널 (선택적)
+#### 인스펙터 패널
 ```typescript
 // useDeferredValue로 Long Task 감소
 export const useDebouncedBorderRadius = () => {
@@ -499,33 +694,49 @@ export const useDebouncedBorderRadius = () => {
 
 ### Step 1: borderRadiusTypes.ts
 - CornerPosition 타입
-- 상수 정의 (CORNER_HOVER_DISTANCE, BORDER_RADIUS_HANDLE_SIZE 등)
+- 상수 정의 (CORNER_HOVER_DISTANCE, BORDER_RADIUS_HANDLE_SIZE, HOVER_DEBOUNCE_MS 등)
 - 유틸리티 함수 (findNearestCorner, calculateDiagonalDistance)
 
+```typescript
+/** ⚡ Hover 디바운스 시간 (ms) - 깜빡임 방지 */
+export const HOVER_DEBOUNCE_MS = 30;
+```
+
 ### Step 2: useBorderRadiusDragPixi.ts
+- ⚡ **useRAFThrottle 훅** (useDragInteraction 패턴)
 - ref 기반 드래그 상태 관리
-- 시간 기반 스로틀링
-- document 레벨 이벤트 핸들링
-- Store 업데이트 로직
+- ⚡ **RAF + 시간 기반 이중 스로틀링**
+- Pixi pointer 이벤트(`pointermove`, `pointerup`, `pointerupoutside`) 기반 처리
+- `pointerId` 추적으로 멀티 포인터 입력 무시
+- ⚡ **ESC 키 취소 처리** + onDragCancel 콜백
+- ⚡ **cancelUpdate** - 드래그 종료/취소 시 pending RAF 정리
+- Store 업데이트 로직 (Shift 키 지원)
 
 ### Step 3: BorderRadiusHandle.tsx
 - PixiJS Graphics로 원형 핸들 렌더링
 - zoom 독립적 크기
 - eventMode="static"
+- 모든 콜백 useCallback 래핑
+- 드래그 성공률 개선을 위해 hitArea 확장
+- 핸들 색상은 테마 토큰 기반 (폴백은 상수)
 
 ### Step 4: BorderRadiusHandles.tsx
-- hoveredCorner에 해당하는 핸들만 렌더링
+- hoveredCorner에 해당하는 핸들만 렌더링 (조건부 렌더링)
+- ⚡ **Math.round로 서브픽셀 방지**
 - 핸들 위치 계산 (radius 비례 오프셋)
 
 ### Step 5: SelectionBox.tsx 수정
 - onPointerMove로 마우스 위치 추적
 - findNearestCorner로 hover 코너 감지
-- **값 변경 시에만 state 업데이트** (불필요한 리렌더링 방지)
+- ⚡ **값 변경 시에만 state 업데이트** (불필요한 리렌더링 방지)
+- ⚡ **Hover debounce** (30ms) - 깜빡임 방지
 - BorderRadiusHandles 렌더링
+- selection 컨테이너 `eventMode="static"` + `hitArea` 확장
 
 ```typescript
-// ⚡ 퍼포먼스 최적화: ref로 이전 값 추적
+// ⚡ 퍼포먼스 최적화: ref로 이전 값 추적 + debounce
 const hoveredCornerRef = useRef<CornerPosition | null>(null);
+const hoverDebounceRef = useRef<NodeJS.Timeout | null>(null);
 const [hoveredCorner, setHoveredCorner] = useState<CornerPosition | null>(null);
 
 const handlePointerMove = useCallback((e: FederatedPointerEvent) => {
@@ -534,37 +745,75 @@ const handlePointerMove = useCallback((e: FederatedPointerEvent) => {
   const local = e.getLocalPosition(e.currentTarget);
   const corner = findNearestCorner(local.x, local.y, width, height, zoom);
 
-  // ⚡ 값이 변경된 경우에만 state 업데이트
+  // 값이 변경된 경우에만 처리
   if (corner !== hoveredCornerRef.current) {
-    hoveredCornerRef.current = corner;
-    setHoveredCorner(corner);
+    // pending debounce 취소
+    if (hoverDebounceRef.current) {
+      clearTimeout(hoverDebounceRef.current);
+    }
+
+    if (corner === null) {
+      // ⚡ 코너 벗어날 때는 30ms 딜레이 (깜빡임 방지)
+      hoverDebounceRef.current = setTimeout(() => {
+        hoveredCornerRef.current = null;
+        setHoveredCorner(null);
+      }, HOVER_DEBOUNCE_MS);
+    } else {
+      // 코너 진입은 즉시
+      hoveredCornerRef.current = corner;
+      setHoveredCorner(corner);
+    }
   }
 }, [showHandles, width, height, zoom]);
 
 const handlePointerLeave = useCallback(() => {
+  // pending debounce 취소
+  if (hoverDebounceRef.current) {
+    clearTimeout(hoverDebounceRef.current);
+  }
   if (hoveredCornerRef.current !== null) {
     hoveredCornerRef.current = null;
     setHoveredCorner(null);
   }
 }, []);
+
+// cleanup
+useEffect(() => {
+  return () => {
+    if (hoverDebounceRef.current) {
+      clearTimeout(hoverDebounceRef.current);
+    }
+  };
+}, []);
 ```
 
 ### Step 6: SelectionLayer.tsx 수정
 - 선택된 요소의 borderRadius 값 구독
-- onDragUpdate, onDragEnd 콜백 연결
+- onDragStart, onDragUpdate, onDragEnd, ⚡ **onDragCancel** 콜백 연결
+- ⚡ **useDeferredValue**로 인스펙터 업데이트 분리 (선택적)
 
 ---
 
 ## 6. 테스트 체크리스트
 
+### 기능 테스트
 - [ ] 단일 요소 선택 시 모서리 근처 hover에서 핸들 표시
 - [ ] 다중 선택 시 핸들 숨김
 - [ ] 대각선 드래그로 borderRadius 조절
 - [ ] Shift+드래그로 4개 모서리 동시 조절
+- [ ] 드래그 중 Shift 토글 시 즉시 반영
 - [ ] 줌 레벨 변경 시 핸들 크기 일정
-- [ ] 드래그 중 60fps 유지
-- [ ] ESC 키로 드래그 취소
+- [ ] ESC 키로 드래그 취소 (원래 값 복원)
+- [ ] pointerupoutside에서도 드래그 종료 처리
 - [ ] 최대 radius 제한 (요소 크기의 절반)
+- [ ] percent 값이 있는 요소에서 px 변환/정규화 정책 적용
+- [ ] 드래그 1회당 히스토리 1개만 기록
+
+### 성능 테스트
+- [ ] 드래그 중 60fps 유지
+- [ ] hover 시 깜빡임 없음 (debounce 동작)
+- [ ] 빠른 마우스 이동에도 핸들 안정적 표시
+- [ ] 드래그 종료 후 불필요한 콜백 없음 (cancelUpdate 동작)
 
 ---
 

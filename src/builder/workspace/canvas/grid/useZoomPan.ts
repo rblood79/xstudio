@@ -5,7 +5,7 @@
  *
  * 기능:
  * - 휠 줌 (Ctrl + wheel)
- * - 팬 (Alt + drag, Middle mouse drag, Space + drag)
+ * - 팬 (Space + drag, Middle mouse drag)
  * - 줌 to cursor (커서 위치 중심 줌)
  * - 좌표 변환 (화면 ↔ 캔버스)
  *
@@ -281,8 +281,8 @@ export function useZoomPan(options: UseZoomPanOptions): UseZoomPanReturn {
     };
 
     const handleMouseDown = (e: MouseEvent) => {
-      // Alt + 클릭 또는 중간 버튼 = 팬 시작
-      if ((e.altKey && e.button === 0) || e.button === 1) {
+      // Space + 클릭 또는 중간 버튼 = 팬 시작
+      if ((isSpacePressedRef.current && e.button === 0) || e.button === 1) {
         e.preventDefault();
         isPanningRef.current = true;
         lastPanPointRef.current = { x: e.clientX, y: e.clientY };

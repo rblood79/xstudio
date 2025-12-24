@@ -133,8 +133,8 @@ export function useViewportControl(options: UseViewportControlOptions): UseViewp
     if (!containerEl || !controller) return;
 
     const handleMouseDown = (e: MouseEvent) => {
-      // Alt + 클릭 또는 중간 버튼 = 팬 시작
-      if ((e.altKey && e.button === 0) || e.button === 1) {
+      // Space + 클릭 또는 중간 버튼 = 팬 시작
+      if ((isSpacePressedRef.current && e.button === 0) || e.button === 1) {
         e.preventDefault();
         // 🚀 Phase 6.1: 인터랙션 시작 알림 (ref 사용)
         onInteractionStartRef.current?.();
