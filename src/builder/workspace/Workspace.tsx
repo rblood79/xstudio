@@ -15,6 +15,7 @@
  * @since 2025-12-11 Phase 10 B1.1
  */
 
+import type { Key } from "react";
 import { useRef, useCallback, useState, useEffect, useMemo } from "react";
 import { BuilderCanvas } from "./canvas/BuilderCanvas";
 import { useCanvasSyncStore } from "./canvas/canvasSync";

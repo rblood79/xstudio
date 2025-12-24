@@ -176,7 +176,7 @@ export const createPanelLayoutSlice: StateCreator<
    * 현재 레이아웃을 localStorage에 저장
    */
   savePanelLayoutToStorage: () => {
-    const { panelLayout } = get();
+    const { panelLayout } = _get();
     saveLayoutToStorage(panelLayout);
   },
 
