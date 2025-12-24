@@ -14,8 +14,7 @@ import {
   Switch,
 } from "../../shared/components/list";
 import { MyColorSwatches } from "../../shared/components/TailSwatch";
-import { parseColor } from "react-aria-components";
-import type { Color } from "@react-types/color";
+import { parseColor, type Color } from "react-aria-components";
 import { PreviewElement, RenderContext } from "../types";
 import { saveService } from "../../services/save";
 

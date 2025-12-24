@@ -8,10 +8,11 @@ import {
   TagList,
   TagListProps,
   TagProps,
-  Text
+  Text,
+  type Key,
+  type Selection
 } from 'react-aria-components';
 import { X } from 'lucide-react';
-import type { Key, Selection } from '@react-types/shared';
 import type { DataBinding, ColumnMapping } from '../../types/builder/unified.types';
 import type { DataBindingValue } from '../../builder/panels/common/PropertyDataBinding';
 import { useCollectionData } from '../../builder/hooks/useCollectionData';
