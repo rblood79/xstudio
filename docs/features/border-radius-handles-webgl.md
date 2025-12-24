@@ -322,6 +322,28 @@ import { calculateDiagonalDistance } from './borderRadiusTypes';
 import { TIMING } from '../../../constants/timing';
 
 // ============================================
+// Constants
+// ============================================
+
+/**
+ * 드래그 스로틀 시간 (ms)
+ * TIMING.DRAG_THROTTLE = 16 (60fps 기준)
+ * src/builder/constants/timing.ts에서 import
+ */
+const DRAG_THROTTLE_MS = TIMING.DRAG_THROTTLE; // 16ms
+
+// ============================================
+// Types
+// ============================================
+
+/**
+ * cleanup ref 타입 - keydown 핸들러 저장용
+ */
+interface CleanupRef {
+  keydownHandler?: (e: KeyboardEvent) => void;
+}
+
+// ============================================
 // RAF Throttle (useDragInteraction 패턴)
 // ============================================
 
@@ -418,8 +440,8 @@ export function useBorderRadiusDragPixi(
   // ⚡ RAF 스로틀링
   const { schedule: scheduleUpdate, cancel: cancelUpdate } = useRAFThrottle();
 
-  // ⚡ 순환 참조 방지: cleanup 함수를 ref로 저장
-  const cleanupRef = useRef<(() => void) | null>(null);
+  // ⚡ 순환 참조 방지: keydown 핸들러를 ref로 저장 (나중에 제거용)
+  const cleanupRef = useRef<CleanupRef>({});
 
   const handlePointerMove = useCallback((e: FederatedPointerEvent) => {
     const state = dragStateRef.current;
@@ -428,7 +450,7 @@ export function useBorderRadiusDragPixi(
 
     // ⚡ 시간 기반 스로틀링 (16ms = 60fps)
     const now = performance.now();
-    if (now - lastThrottleTimeRef.current < TIMING.DRAG_THROTTLE) {
+    if (now - lastThrottleTimeRef.current < DRAG_THROTTLE_MS) {
       return;
     }
     lastThrottleTimeRef.current = now;
@@ -459,7 +481,13 @@ export function useBorderRadiusDragPixi(
     stage.off('pointermove', handlePointerMove);
     stage.off('pointerup');
     stage.off('pointerupoutside');
-    window.removeEventListener('keydown', cleanupRef.current?.keydownHandler as EventListener);
+
+    // keydown 리스너 안전하게 제거
+    if (cleanupRef.current.keydownHandler) {
+      window.removeEventListener('keydown', cleanupRef.current.keydownHandler);
+      cleanupRef.current.keydownHandler = undefined;
+    }
+
     dragStateRef.current = { ...initialDragState };
     pointerIdRef.current = null;
   }, [cancelUpdate, handlePointerMove, stage]);
@@ -524,7 +552,7 @@ export function useBorderRadiusDragPixi(
     window.addEventListener('keydown', handleKeyDown);
 
     // ⚡ cleanup ref에 keydown 핸들러 저장 (나중에 제거용)
-    (cleanupRef.current as { keydownHandler?: EventListener }) = { keydownHandler: handleKeyDown };
+    cleanupRef.current.keydownHandler = handleKeyDown;
   }, [bounds, currentBorderRadius, handlePointerMove, handlePointerUp, handleKeyDown, onDragStart, selectionContainer, stage]);
 
   // 컴포넌트 언마운트 시 정리
@@ -580,7 +608,14 @@ export function useBorderRadiusDragPixi(
 >
 > 이 함수는 `elementsMap`/`selectedElementProps`만 갱신하고 `saveService` 및 `historyManager` 호출을 건너뜁니다.
 > 구현 위치는 `src/builder/stores/inspectorActions.ts` (또는 selection 전용 slice)로 둡니다.
-> **신규 액션**: 현재 스토어에는 없으므로 추가가 필요합니다. 추가 전에는 SelectionLayer에서 로컬 preview 상태만 갱신하고 drag end에서만 store를 업데이트합니다.
+>
+> **⚠️ 구현 필요 여부 및 우선순위:**
+> | 방식 | 우선순위 | 설명 |
+> |------|----------|------|
+> | **로컬 state 방식** | P0 (1차 구현) | SelectionLayer에서 `previewRadius` state로 드래그 중 표시, drag end에만 store 업데이트. 가장 단순하고 빠른 구현 |
+> | **Preview 액션 방식** | P1 (2차 개선) | Store에 preview 전용 액션 추가. 인스펙터 패널까지 실시간 동기화 필요 시 적용 |
+>
+> **1차 구현(로컬 state 방식)으로 먼저 진행**하고, 인스펙터 실시간 반영이 필요하면 2차로 Preview 액션을 추가합니다.
 
 #### 3.5.4 값/단위 처리 규칙
 - **기본 단위**: 드래그 조절 값은 **px만 사용**합니다.
@@ -599,6 +634,11 @@ export function useBorderRadiusDragPixi(
 - 파싱 우선순위: **inline style → computed style → 0**
 - 지원 형식: `12px`, `12`, `50%`
 - `bounds`가 없으면 `%`는 0으로 처리합니다.
+
+**복합 값 처리:**
+- `"10px 20px"` 같은 복합 값은 **첫 번째 값만 사용** (전체 borderRadius 표현)
+- 개별 코너가 필요한 경우 `parseCornerRadius(style, corner, bounds)` 사용
+- 개별 코너 속성(`borderTopLeftRadius` 등)이 있으면 우선 적용, 없으면 `borderRadius`로 fallback
 
 **구현:**
 
@@ -821,7 +861,13 @@ const cleanup = useCallback(() => {
   stage.off('pointermove', handlePointerMove);
   stage.off('pointerup');
   stage.off('pointerupoutside');
-  window.removeEventListener('keydown', cleanupRef.current?.keydownHandler);
+
+  // keydown 리스너 안전하게 제거
+  if (cleanupRef.current.keydownHandler) {
+    window.removeEventListener('keydown', cleanupRef.current.keydownHandler);
+    cleanupRef.current.keydownHandler = undefined;
+  }
+
   dragStateRef.current = { ...initialDragState };
   pointerIdRef.current = null;
 }, [cancelUpdate, handlePointerMove, stage]);
