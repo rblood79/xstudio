@@ -151,7 +151,8 @@ export const createPanelLayoutSlice: StateCreator<
   [],
   [],
   PanelLayoutSlice
-> = (set, get, _store) => ({
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+> = (set, _get, _store) => ({
   // 초기 상태: localStorage에서 로드하거나 기본값 사용
   panelLayout: loadLayoutFromStorage() || DEFAULT_PANEL_LAYOUT,
 

@@ -18,8 +18,7 @@ import {
   ListBoxItemProps,
   Popover,
   Text,
-  ValidationResult,
-  composeRenderProps
+  ValidationResult
 } from 'react-aria-components';
 import { ChevronDown } from 'lucide-react';
 import type { ComboBoxVariant, ComponentSize } from '../../types/componentVariants';

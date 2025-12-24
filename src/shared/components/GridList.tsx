@@ -11,8 +11,7 @@ import {
   GridList as AriaGridList,
   GridListItem as AriaGridListItem,
   GridListItemProps,
-  GridListProps,
-  composeRenderProps
+  GridListProps
 } from 'react-aria-components';
 import { MyCheckbox } from './Checkbox';
 import type { GridListVariant, ComponentSize } from '../../types/componentVariants';

@@ -1,4 +1,4 @@
-import {Breadcrumbs as RACBreadcrumbs, BreadcrumbsProps, Breadcrumb, Link, composeRenderProps} from 'react-aria-components';
+import {Breadcrumbs as RACBreadcrumbs, BreadcrumbsProps, Breadcrumb, Link} from 'react-aria-components';
 import type { BreadcrumbsVariant, ComponentSize } from '../../types/componentVariants';
 import type { DataBinding, ColumnMapping } from '../../types/builder/unified.types';
 import type { DataBindingValue } from '../../builder/panels/common/PropertyDataBinding';

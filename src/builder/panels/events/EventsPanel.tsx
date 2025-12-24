@@ -96,7 +96,9 @@ function actionsToBlockActions(
 /**
  * BlockEventAction[] → EventHandler.actions 변환 (역변환)
  * Note: 타입 어서션 사용 - BlockEventAction.type (registry)과 EventAction.type (eventTypes) 간 호환
+ * @todo 향후 이벤트 편집 기능에서 사용 예정
  */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function blockActionsToEventActions(
   blockActions: BlockEventAction[]
 ): EventHandler["actions"] {

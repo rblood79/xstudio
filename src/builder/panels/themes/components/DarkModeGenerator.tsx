@@ -53,6 +53,7 @@ export function DarkModeGenerator({
 
   // Preview state
   const [previewTokens, setPreviewTokens] = useState<DesignToken[]>([]);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [error, setError] = useState<string | null>(null);
 
   // Generate mutation

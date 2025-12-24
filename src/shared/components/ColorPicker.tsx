@@ -2,8 +2,7 @@
 import {
   ColorPicker as AriaColorPicker,
   ColorPickerProps as AriaColorPickerProps,
-  DialogTrigger,
-  composeRenderProps
+  DialogTrigger
 } from "react-aria-components";
 import { Button } from "./Button";
 import { ColorSwatch } from "./ColorSwatch";
