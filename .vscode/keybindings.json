@@ -1,0 +1,6 @@
+[
+  { "key": "tab", "command": "editor.action.inlineSuggest.commit", "when": "editorTextFocus && inlineSuggestionVisible" },
+  { "key": "alt+]", "command": "editor.action.inlineSuggest.showNext", "when": "editorTextFocus && inlineSuggestionVisible" },
+  { "key": "alt+[", "command": "editor.action.inlineSuggest.showPrevious", "when": "editorTextFocus && inlineSuggestionVisible" },
+  { "key": "ctrl+enter", "command": "editor.action.inlineSuggest.trigger", "when": "editorTextFocus" }
+]
