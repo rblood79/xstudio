@@ -298,35 +298,60 @@
     align-items: center;
   }
 
-  /* Zoom Trigger Button */
+  /* Zoom Trigger Container */
   .header_contents .zoom-controls .zoom-trigger-button {
     display: flex;
     align-items: center;
-    gap: var(--spacing-xs);
-    padding: var(--spacing-sm);
+    gap: 0;
     background: var(--outline-variant);
     box-shadow: var(--inset-shadow-sm);
     border: none;
     border-radius: var(--radius-lg);
     cursor: pointer;
+    overflow: hidden;
+  }
+
+  /* Zoom Input (읽기 전용) */
+  .header_contents .zoom-controls .zoom-input {
+    width: 48px;
+    padding: var(--spacing-sm);
+    padding-right: 0;
+    background: transparent;
+    border: none;
     color: var(--on-surface);
     font-size: var(--text-xs);
     line-height: var(--text-xs--line-height);
     font-weight: 500;
-    transition: background-color 0.15s;
+    text-align: center;
+    cursor: pointer;
+    outline: none;
+  }
+
+  .header_contents .zoom-controls .zoom-input[data-focused] {
+    outline: none;
+  }
+
+  /* Zoom Chevron Button */
+  .header_contents .zoom-controls .zoom-chevron-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--spacing-sm);
+    padding-left: 0;
+    background: transparent;
+    border: none;
+    color: var(--on-surface);
+    cursor: pointer;
   }
 
   .header_contents .zoom-controls .zoom-trigger-button:hover {
     background: var(--surface-container-highest);
   }
 
-  .header_contents .zoom-controls .zoom-trigger-button[data-pressed] {
-    background: var(--outline);
-  }
-
-  .header_contents .zoom-controls .zoom-value {
-    min-width: 36px;
-    text-align: center;
+  /* 포커스 링: 컨테이너에 적용 */
+  .header_contents .zoom-controls .zoom-trigger-button:focus-within {
+    outline: 2px solid var(--focus-ring-color);
+    outline-offset: 2px;
   }
 
   /* Zoom Menu Popover */
@@ -372,7 +397,7 @@
     }
   }
 
-  /* Zoom Menu */
+  /* Zoom Menu (ListBox) */
   .zoom-menu {
     padding: var(--spacing-xs);
     outline: none;
@@ -381,7 +406,7 @@
     backface-visibility: hidden;
   }
 
-  /* Zoom Menu Item */
+  /* Zoom Menu Item (ListBoxItem) */
   .zoom-menu-item {
     display: flex;
     align-items: center;
@@ -402,7 +427,8 @@
     background: var(--outline-variant);
   }
 
-  .zoom-menu-item[data-pressed] {
+  .zoom-menu-item[data-pressed],
+  .zoom-menu-item[data-selected] {
     background: var(--surface-container-highest);
   }
 
@@ -415,13 +441,6 @@
     border: none;
     padding: 0;
     margin-left: var(--spacing-lg);
-  }
-
-  /* Menu Separator */
-  .zoom-menu-separator {
-    height: 1px;
-    background: var(--outline-variant);
-    margin: var(--spacing-xs) 0;
   }
 
   /* Publish Button */

@@ -11,15 +11,14 @@
  * @since 2025-12-24
  */
 
-import { useCallback, useRef, memo, useMemo } from "react";
+import { useCallback, useRef, memo, useState, useEffect } from "react";
 import {
+  ComboBox,
   Button,
+  Input,
   Popover,
-  Menu,
-  MenuItem,
-  MenuTrigger,
-  Separator,
-  Keyboard,
+  ListBox,
+  ListBoxItem,
 } from "react-aria-components";
 import { ChevronDown } from "lucide-react";
 import { useCanvasSyncStore } from "./canvas/canvasSync";
@@ -55,6 +54,15 @@ export const ZoomControls = memo(function ZoomControls({
 
   // Fit 모드 추적
   const isFitModeRef = useRef(true);
+
+  // 입력 상태 관리
+  const [inputValue, setInputValue] = useState("");
+  const zoomPercent = Math.round(zoom * 100);
+
+  // zoom 변경 시 입력값 동기화
+  useEffect(() => {
+    setInputValue(`${zoomPercent}%`);
+  }, [zoomPercent]);
 
   // ============================================
   // Zoom Handlers (getState 사용으로 의존성 최소화)
@@ -161,58 +169,121 @@ export const ZoomControls = memo(function ZoomControls({
   );
 
   // ============================================
-  // Render
+  // Input Handlers
   // ============================================
 
-  const zoomPercent = Math.round(zoom * 100);
+  const handleInputChange = useCallback((value: string) => {
+    setInputValue(value);
+  }, []);
 
-  // 🚀 메뉴 아이템 메모이제이션 (팝오버 열릴 때마다 재생성 방지)
-  const menuContent = useMemo(
-    () => (
-      <>
-        <MenuItem id="zoom-in" className="zoom-menu-item">
-          <span>확대</span>
-          <Keyboard>⌘+</Keyboard>
-        </MenuItem>
-        <MenuItem id="zoom-out" className="zoom-menu-item">
-          <span>축소</span>
-          <Keyboard>⌘-</Keyboard>
-        </MenuItem>
-        <Separator className="zoom-menu-separator" />
-        <MenuItem id="zoom-100" className="zoom-menu-item">
-          <span>100%</span>
-          <Keyboard>⌘1</Keyboard>
-        </MenuItem>
-        <MenuItem id="zoom-200" className="zoom-menu-item">
-          <span>200%</span>
-          <Keyboard>⌘2</Keyboard>
-        </MenuItem>
-        <Separator className="zoom-menu-separator" />
-        <MenuItem id="fit-to-screen" className="zoom-menu-item">
-          <span>화면에 맞추기</span>
-          <Keyboard>⌘0</Keyboard>
-        </MenuItem>
-        <MenuItem id="fill-screen" className="zoom-menu-item">
-          <span>화면 채우기</span>
-        </MenuItem>
-      </>
-    ),
+  const handleInputBlur = useCallback(() => {
+    // 숫자 파싱 (%, 공백 제거)
+    const numStr = inputValue.replace(/%/g, "").trim();
+    const num = parseFloat(numStr);
+
+    if (isNaN(num) || num < MIN_ZOOM * 100 || num > MAX_ZOOM * 100) {
+      // 유효하지 않으면 현재 값으로 복원
+      setInputValue(`${zoomPercent}%`);
+      return;
+    }
+
+    // 퍼센트를 줌 레벨로 변환 (100% = 1.0)
+    zoomTo(num / 100);
+  }, [inputValue, zoomPercent, zoomTo]);
+
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        handleInputBlur();
+        (e.target as HTMLInputElement).blur();
+        return;
+      }
+
+      if (e.key === "Escape") {
+        e.preventDefault();
+        setInputValue(`${zoomPercent}%`);
+        (e.target as HTMLInputElement).blur();
+        return;
+      }
+
+      // 화살표 키로 줌 조절
+      const step = e.shiftKey ? 10 : 1;
+      if (e.key === "ArrowUp") {
+        e.preventDefault();
+        const newZoom = Math.min(zoomPercent + step, MAX_ZOOM * 100);
+        zoomTo(newZoom / 100);
+      } else if (e.key === "ArrowDown") {
+        e.preventDefault();
+        const newZoom = Math.max(zoomPercent - step, MIN_ZOOM * 100);
+        zoomTo(newZoom / 100);
+      }
+    },
+    [handleInputBlur, zoomPercent, zoomTo]
+  );
+
+  const handleInputFocus = useCallback(
+    (e: React.FocusEvent<HTMLInputElement>) => {
+      e.target.select();
+    },
     []
   );
 
+  // ============================================
+  // Render
+  // ============================================
+
   return (
     <div className={`zoom-controls ${className || ""}`}>
-      <MenuTrigger>
-        <Button className="zoom-trigger-button">
-          <span className="zoom-value">{zoomPercent}%</span>
-          <ChevronDown size={iconProps.size} />
-        </Button>
+      <ComboBox
+        aria-label="Zoom"
+        inputValue={inputValue}
+        onInputChange={handleInputChange}
+        onSelectionChange={(key) => {
+          if (key !== null) {
+            handleAction(key);
+          }
+        }}
+      >
+        <div className="zoom-trigger-button">
+          <Input
+            className="zoom-input"
+            onBlur={handleInputBlur}
+            onKeyDown={handleKeyDown}
+            onFocus={handleInputFocus}
+          />
+          <Button className="zoom-chevron-button">
+            <ChevronDown size={iconProps.size} />
+          </Button>
+        </div>
         <Popover className="zoom-menu-popover" placement="bottom start">
-          <Menu className="zoom-menu" onAction={handleAction}>
-            {menuContent}
-          </Menu>
+          <ListBox className="zoom-menu">
+            <ListBoxItem id="zoom-in" className="zoom-menu-item" textValue="확대">
+              <span>확대</span>
+              <kbd>⌘+</kbd>
+            </ListBoxItem>
+            <ListBoxItem id="zoom-out" className="zoom-menu-item" textValue="축소">
+              <span>축소</span>
+              <kbd>⌘-</kbd>
+            </ListBoxItem>
+            <ListBoxItem id="zoom-100" className="zoom-menu-item" textValue="100%">
+              <span>100%</span>
+              <kbd>⌘1</kbd>
+            </ListBoxItem>
+            <ListBoxItem id="zoom-200" className="zoom-menu-item" textValue="200%">
+              <span>200%</span>
+              <kbd>⌘2</kbd>
+            </ListBoxItem>
+            <ListBoxItem id="fit-to-screen" className="zoom-menu-item" textValue="화면에 맞추기">
+              <span>화면에 맞추기</span>
+              <kbd>⌘0</kbd>
+            </ListBoxItem>
+            <ListBoxItem id="fill-screen" className="zoom-menu-item" textValue="화면 채우기">
+              <span>화면 채우기</span>
+            </ListBoxItem>
+          </ListBox>
         </Popover>
-      </MenuTrigger>
+      </ComboBox>
     </div>
   );
 });
