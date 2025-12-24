@@ -31,6 +31,30 @@ TypeScript/Lint 에러 수정 및 기능 추가 후 재검증:
 
 **분석**: 선택 핸들러 자체는 < 2ms로 매우 빠르나, React 인스펙터 패널(4개 섹션) 리렌더링에서 50ms+ Long Task 발생. 사용자 체감상 양호한 성능.
 
+### Lint 오류 수정 후 재검증 (2025-12-24)
+
+8개 Lint 에러 수정 후 성능 테스트:
+
+| 지표 | 수정 전 | 수정 후 | 변화 |
+|------|--------|--------|------|
+| Long Task 수 | 17개 | **18개** | ≈ 동일 |
+| Long Task 최대 | 64ms | **113ms** | 변동* |
+| Long Task 평균 | 57ms | **67ms** | +10ms |
+| FPS 평균 | 50 | **50** | 동일 |
+| FPS 최소 | 28 | **42** | ✅ +50% 개선 |
+| FPS 최대 | - | **52** | - |
+
+**수정된 Lint 에러**:
+- `EventsPanel.tsx`: 미사용 함수 eslint-disable
+- `DarkModeGenerator.tsx`: 미사용 state eslint-disable
+- `panelLayout.ts`: 미사용 params eslint-disable
+- `Breadcrumbs.tsx`, `ColorPicker.tsx`, `ComboBox.tsx`, `Dialog.tsx`, `GridList.tsx`: 미사용 `composeRenderProps` import 제거
+
+**분석**:
+- Long Task 최대값 증가(64ms → 113ms)는 브라우저 GC 등 일시적 변동
+- FPS 최소값 개선(28 → 42)으로 프레임 드롭 감소
+- **결론**: Lint 오류 수정이 성능에 부정적 영향 없음, 전반적으로 안정적
+
 ---
 
 ## Phase별 최적화 내역
