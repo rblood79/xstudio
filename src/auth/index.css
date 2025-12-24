@@ -1,91 +1,92 @@
 /* Auth styles - scoped to dashboard layer */
-@layer dashboard {
-  /* Auth Container */
-  .auth-container {
-    min-height: 100vh;
-    background: linear-gradient(
-      48deg,
-      var(--highlight-background) 0%,
-      var(--highlight-overlay) 100%
-    );
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
+.auth-container {
+  min-height: 100vh;
+  background: linear-gradient(
+    48deg,
+    var(--highlight-background) 0%,
+    var(--highlight-overlay) 100%
+  );
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 
-  /* Auth Card */
+/* Auth Card */
+.auth-card {
+  width: 100%;
+  max-width: var(--container-xs);
+  background: var(--color-white);
+  border-radius: var(--radius-4xl);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  padding: var(--spacing-xl);
+}
+
+/* Auth Header */
+.helper-text {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  .react-aria-Button {
+    border-width: 0;
+    background: transparent;
+  }
+}
+
+.auth-header {
+  text-align: center;
+}
+
+.auth-title {
+  font-size: var(--text-2xl);
+}
+
+.auth-subtitle {
+  font-size: var(--text-sm);
+}
+
+/* Auth Form */
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.auth-form .react-aria-TextField {
+  width: 100%;
+}
+
+.auth-form [type="submit"] {
+  background: var(--builder-button-bg);
+  color: var(--builder-button-text);
+  border-color: var(--builder-button-border);
+}
+
+.auth-form [type="submit"]:hover {
+  background: var(--builder-button-hover-bg);
+  color: var(--builder-button-text);
+  border-color: var(--builder-button-border);
+}
+
+.auth-form [type="submit"]:active {
+  background: var(--builder-button-active-bg);
+  color: var(--builder-button-text);
+  border-color: var(--builder-button-border);
+}
+
+/* Responsive Design */
+@media (max-width: 640px) {
   .auth-card {
-    width: 100%;
-    max-width: var(--container-xs);
-    background: var(--color-white);
-    border-radius: var(--radius-4xl);
-    display: flex;
-    flex-direction: column;
-    gap: var(--spacing-md);
-    padding: var(--spacing-xl);
-  }
-
-  /* Auth Header */
-  .helper-text {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-  }
-
-  .auth-header {
-    text-align: center;
+    padding: var(--spacing-lg);
+    margin: var(--spacing);
   }
 
   .auth-title {
-    font-size: var(--text-2xl);
+    font-size: var(--text-xl);
   }
 
-  .auth-subtitle {
-    font-size: var(--text-sm);
-  }
-
-  /* Auth Form */
-  .auth-form {
-    display: flex;
+  .social-buttons {
     flex-direction: column;
-    gap: var(--spacing-md);
-  }
-
-  .auth-form .react-aria-TextField {
-    width: 100%;
-  }
-
-  .auth-form .primary {
-    background: var(--builder-button-bg);
-    color: var(--builder-button-text);
-    border-color: var(--builder-button-border);
-  }
-
-  .auth-form .primary:hover {
-    background: var(--builder-button-hover-bg);
-    color: var(--builder-button-text);
-    border-color: var(--builder-button-border);
-  }
-
-  .auth-form .primary:active {
-    background: var(--builder-button-active-bg);
-    color: var(--builder-button-text);
-    border-color: var(--builder-button-border);
-  }
-
-  /* Responsive Design */
-  @media (max-width: 640px) {
-    .auth-card {
-      padding: var(--spacing-lg);
-      margin: var(--spacing);
-    }
-
-    .auth-title {
-      font-size: var(--text-xl);
-    }
-
-    .social-buttons {
-      flex-direction: column;
-    }
   }
 }
