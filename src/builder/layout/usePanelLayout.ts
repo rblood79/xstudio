@@ -106,20 +106,6 @@ export function usePanelLayout(): UsePanelLayoutReturn {
   );
 
   /**
-   * 사이드바/인스펙터 표시/숨김 토글
-   */
-  const toggleSide = useCallback(
-    (side: PanelSide) => {
-      const showKey = side === "left" ? "showLeft" : "showRight";
-      setPanelLayout({
-        ...layout,
-        [showKey]: !layout[showKey],
-      });
-    },
-    [layout, setPanelLayout]
-  );
-
-  /**
    * 레이아웃 초기화
    */
   const resetLayout = useCallback(() => {
@@ -194,7 +180,6 @@ export function usePanelLayout(): UsePanelLayoutReturn {
     isLoaded: true,
     movePanel,
     togglePanel,
-    toggleSide,
     resetLayout,
     setLayout,
     toggleBottomPanel,

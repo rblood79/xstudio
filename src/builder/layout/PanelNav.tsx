@@ -8,7 +8,6 @@
 import type { PanelSide, PanelId } from "../panels/core/types";
 import { PanelRegistry } from "../panels/core/PanelRegistry";
 import { iconProps } from "../../utils/ui/uiConstants";
-import { ChevronLeft, ChevronRight } from "lucide-react";
 
 export interface PanelNavProps {
   /** 현재 사이드 (left/right) */
@@ -22,9 +21,6 @@ export interface PanelNavProps {
 
   /** 패널 클릭 시 콜백 */
   onPanelClick: (panelId: PanelId) => void;
-
-  /** 사이드 닫기 콜백 */
-  onClose?: () => void;
 }
 
 export function PanelNav({
@@ -32,7 +28,6 @@ export function PanelNav({
   panelIds,
   activePanels,
   onPanelClick,
-  onClose,
 }: PanelNavProps) {
   return (
     <nav className="panel-nav">
@@ -63,30 +58,6 @@ export function PanelNav({
           );
         })}
       </ul>
-
-      {/* 사이드 닫기 버튼 */}
-      {onClose && panelIds.length > 0 && (
-        <button
-          className="nav-button close-all-button active"
-          onClick={onClose}
-          aria-label={`Close ${side} panels`}
-          title={side === "left" ? "사이드바 닫기" : "인스펙터 닫기"}
-        >
-          {side === "left" ? (
-            <ChevronLeft
-              color={iconProps.color}
-              strokeWidth={iconProps.strokeWidth}
-              size={iconProps.size}
-            />
-          ) : (
-            <ChevronRight
-              color={iconProps.color}
-              strokeWidth={iconProps.strokeWidth}
-              size={iconProps.size}
-            />
-          )}
-        </button>
-      )}
     </nav>
   );
 }

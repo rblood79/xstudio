@@ -6,7 +6,6 @@ import {
   Palette,
   WandSparkles,
   Settings,
-  ChevronLeft,
 } from "lucide-react";
 import { iconProps } from "../../utils/ui/uiConstants";
 
@@ -20,13 +19,11 @@ export type Tab =
 interface SidebarNavProps {
   activeTabs: Set<Tab>;
   onTabChange: (tab: Tab) => void;
-  onCloseAll?: () => void;
 }
 
 export const SidebarNav: React.FC<SidebarNavProps> = ({
   activeTabs,
   onTabChange,
-  onCloseAll,
 }) => {
   const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
     {
@@ -101,20 +98,6 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
           </li>
         ))}
       </ul>
-      {onCloseAll && activeTabs.size > 0 && (
-        <button
-          className="nav-button close-all-button active"
-          onClick={onCloseAll}
-          aria-label="Close all tabs"
-          title="전체 닫기"
-        >
-          <ChevronLeft
-            color={iconProps.color}
-            strokeWidth={iconProps.strokeWidth}
-            size={iconProps.size}
-          />
-        </button>
-      )}
     </nav>
   );
 };

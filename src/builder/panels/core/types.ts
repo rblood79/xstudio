@@ -180,9 +180,6 @@ export interface PanelLayoutActions {
   /** 패널 토글 (활성화/비활성화) - Multi toggle 지원 */
   togglePanel: (side: PanelSide, panelId: PanelId) => void;
 
-  /** 사이드바/인스펙터 표시/숨김 토글 */
-  toggleSide: (side: PanelSide) => void;
-
   /** 레이아웃 초기화 */
   resetLayout: () => void;
 

@@ -19,7 +19,7 @@ export interface PanelSlotProps {
 }
 
 export const PanelSlot = memo(function PanelSlot({ side }: PanelSlotProps) {
-  const { layout, togglePanel, toggleSide } = usePanelLayout();
+  const { layout, togglePanel } = usePanelLayout();
 
   // ⭐ 최적화: 현재 사이드의 상태만 useMemo로 캐싱
   const panelState = useMemo(() => ({
@@ -42,10 +42,6 @@ export const PanelSlot = memo(function PanelSlot({ side }: PanelSlotProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [side, togglePanel]);
 
-  const handleClose = useCallback(() => {
-    toggleSide(side);
-  }, [side, toggleSide]);
-
   return (
     <div className={`panel-slot panel-slot-${side}`}>
       {/* Left: Nav → Container, Right: Container → Nav */}
@@ -56,29 +52,27 @@ export const PanelSlot = memo(function PanelSlot({ side }: PanelSlotProps) {
             panelIds={panelState.panelIds}
             activePanels={panelState.activePanels}
             onPanelClick={handlePanelClick}
-            onClose={handleClose}
           />
-          <PanelContainer 
+          <PanelContainer
             side={side}
             panelIds={panelState.panelIds}
-            activePanels={panelState.activePanels} 
-            show={panelState.show} 
+            activePanels={panelState.activePanels}
+            show={panelState.show}
           />
         </>
       ) : (
         <>
-          <PanelContainer 
+          <PanelContainer
             side={side}
             panelIds={panelState.panelIds}
-            activePanels={panelState.activePanels} 
-            show={panelState.show} 
+            activePanels={panelState.activePanels}
+            show={panelState.show}
           />
           <PanelNav
             side={side}
             panelIds={panelState.panelIds}
             activePanels={panelState.activePanels}
             onPanelClick={handlePanelClick}
-            onClose={handleClose}
           />
         </>
       )}
