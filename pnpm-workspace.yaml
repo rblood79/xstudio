@@ -1,8 +1,8 @@
-# pnpm workspace configuration
-# 🚀 Phase 10: Monorepo 구조
-
 packages:
-  # 루트 패키지 (현재 앱)
-  - "."
-  # 향후 분리될 패키지들 (B2에서 구현)
-  - "packages/*"
+  - .
+  - packages/*
+
+onlyBuiltDependencies:
+  - '@swc/core'
+  - esbuild
+  - puppeteer
