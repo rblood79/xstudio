@@ -78,26 +78,30 @@ export function ComponentSelector({
           </Button>
           <Popover className="select-popover">
             <ListBox className="select-listbox">
-              <ListBoxItem key="" id="">
+              <ListBoxItem key="" id="" textValue={placeholder}>
                 {placeholder}
               </ListBoxItem>
 
               {Object.entries(componentsByType).map(([type, components]) => (
                 <div key={type} className="component-group">
                   <div className="group-header">{type}</div>
-                  {components.map((component) => (
-                    <ListBoxItem
-                      key={component.customId || component.id}
-                      id={component.customId || component.id}
-                    >
-                      {component.customId || `${component.tag} (${component.id.slice(0, 8)})`}
-                    </ListBoxItem>
-                  ))}
+                  {components.map((component) => {
+                    const label = component.customId || `${component.tag} (${component.id.slice(0, 8)})`;
+                    return (
+                      <ListBoxItem
+                        key={component.customId || component.id}
+                        id={component.customId || component.id}
+                        textValue={label}
+                      >
+                        {label}
+                      </ListBoxItem>
+                    );
+                  })}
                 </div>
               ))}
 
               {filteredComponents.length === 0 && (
-                <ListBoxItem key="empty" id="empty" isDisabled>
+                <ListBoxItem key="empty" id="empty" isDisabled textValue="No components available">
                   No components available
                   {filterByType && ` (filtered by: ${filterByType.join(", ")})`}
                 </ListBoxItem>

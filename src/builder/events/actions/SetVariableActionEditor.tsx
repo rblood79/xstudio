@@ -91,7 +91,7 @@ export function SetVariableActionEditor({
             <Popover className="select-popover">
               <ListBox className="select-listbox">
                 {variableList.map((variable) => (
-                  <ListBoxItem key={variable.name} id={variable.name}>
+                  <ListBoxItem key={variable.name} id={variable.name} textValue={variable.name}>
                     <span>{variable.name}</span>
                     <span className="variable-type-badge">
                       {variable.type} · {variable.scope}

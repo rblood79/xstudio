@@ -81,7 +81,7 @@ export function SaveToDataTableActionEditor({
           <Popover className="select-popover">
             <ListBox className="select-listbox">
               {sources.map((src) => (
-                <ListBoxItem key={src.value} id={src.value}>
+                <ListBoxItem key={src.value} id={src.value} textValue={src.label}>
                   {src.label}
                 </ListBoxItem>
               ))}
@@ -129,7 +129,7 @@ export function SaveToDataTableActionEditor({
           <Popover className="select-popover">
             <ListBox className="select-listbox">
               {saveModes.map((mode) => (
-                <ListBoxItem key={mode.value} id={mode.value}>
+                <ListBoxItem key={mode.value} id={mode.value} textValue={mode.label}>
                   {mode.label}
                 </ListBoxItem>
               ))}

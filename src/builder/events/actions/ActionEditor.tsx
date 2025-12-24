@@ -141,7 +141,7 @@ export function ActionEditor({ action, onChange }: ActionEditorProps) {
           <Popover className="select-popover">
             <ListBox className="select-listbox">
               {actionTypes.map((type) => (
-                <ListBoxItem key={type.value} id={type.value}>
+                <ListBoxItem key={type.value} id={type.value} textValue={type.label}>
                   {type.label}
                 </ListBoxItem>
               ))}

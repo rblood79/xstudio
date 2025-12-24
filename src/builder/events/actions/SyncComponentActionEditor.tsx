@@ -83,7 +83,7 @@ export function SyncComponentActionEditor({
           <Popover className="select-popover">
             <ListBox className="select-listbox">
               {syncModes.map((mode) => (
-                <ListBoxItem key={mode.value} id={mode.value}>
+                <ListBoxItem key={mode.value} id={mode.value} textValue={mode.label}>
                   {mode.label}
                 </ListBoxItem>
               ))}

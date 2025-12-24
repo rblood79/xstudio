@@ -88,7 +88,7 @@ export function SetComponentStateActionEditor({
           <Popover className="select-popover">
             <ListBox className="select-listbox">
               {sourceOptions.map((option) => (
-                <ListBoxItem key={option.value} id={option.value}>
+                <ListBoxItem key={option.value} id={option.value} textValue={option.label}>
                   {option.label}
                 </ListBoxItem>
               ))}

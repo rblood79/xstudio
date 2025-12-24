@@ -75,6 +75,7 @@ export const PropertySelect = memo(function PropertySelect({
                                     key={option.value}
                                     id={option.value}
                                     className="react-aria-ListBoxItem"
+                                    textValue={option.label}
                                 >
                                     {option.label}
                                 </ListBoxItem>

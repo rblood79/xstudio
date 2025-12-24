@@ -85,7 +85,7 @@ export function APICallActionEditor({
           <Popover className="select-popover">
             <ListBox className="select-listbox">
               {methods.map((method) => (
-                <ListBoxItem key={method} id={method}>
+                <ListBoxItem key={method} id={method} textValue={method}>
                   {method}
                 </ListBoxItem>
               ))}

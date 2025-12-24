@@ -73,7 +73,7 @@ export function ToggleVisibilityActionEditor({
           <Popover className="select-popover">
             <ListBox className="select-listbox">
               {showOptions.map((option) => (
-                <ListBoxItem key={option.value} id={option.value}>
+                <ListBoxItem key={option.value} id={option.value} textValue={option.label}>
                   {option.label}
                 </ListBoxItem>
               ))}
@@ -112,7 +112,7 @@ export function ToggleVisibilityActionEditor({
           <Popover className="select-popover">
             <ListBox className="select-listbox">
               {easingOptions.map((option) => (
-                <ListBoxItem key={option.value} id={option.value}>
+                <ListBoxItem key={option.value} id={option.value} textValue={option.label}>
                   {option.label}
                 </ListBoxItem>
               ))}

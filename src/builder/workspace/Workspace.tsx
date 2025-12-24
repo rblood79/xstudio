@@ -480,6 +480,7 @@ export function Workspace({
                     key={preset}
                     id={preset}
                     className="zoom-combobox-item"
+                    textValue={`${preset}%`}
                   >
                     {preset}%
                   </ListBoxItem>
@@ -567,6 +568,7 @@ export function Workspace({
                   key={preset}
                   id={preset}
                   className="zoom-combobox-item"
+                  textValue={`${preset}%`}
                 >
                   {preset}%
                 </ListBoxItem>

@@ -58,7 +58,7 @@ export function ScrollToActionEditor({
           <Popover className="select-popover">
             <ListBox className="select-listbox">
               {positionOptions.map((option) => (
-                <ListBoxItem key={option.value} id={option.value}>
+                <ListBoxItem key={option.value} id={option.value} textValue={option.label}>
                   {option.label}
                 </ListBoxItem>
               ))}

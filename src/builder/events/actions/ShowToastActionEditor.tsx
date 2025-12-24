@@ -59,7 +59,7 @@ export function ShowToastActionEditor({
           <Popover className="select-popover">
             <ListBox className="select-listbox">
               {types.map((type) => (
-                <ListBoxItem key={type} id={type}>
+                <ListBoxItem key={type} id={type} textValue={type}>
                   {type}
                 </ListBoxItem>
               ))}

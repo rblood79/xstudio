@@ -88,6 +88,7 @@ export const renderListBox = (
           isDisabled={Boolean(listBoxItemTemplate.props.isDisabled)}
           style={listBoxItemTemplate.props.style}
           className={listBoxItemTemplate.props.className}
+          textValue={String(item.name || item.label || item.id || "")}
         >
           {fieldChildren.length > 0
             ? fieldChildren.map((field) => {
@@ -235,6 +236,7 @@ export const renderListBoxItem = (
       isDisabled={Boolean(element.props.isDisabled) || isSkeleton}
       style={element.props.style}
       className={className}
+      textValue={String(element.props.label || element.customId || "")}
     >
       {renderContent()}
     </ListBoxItem>

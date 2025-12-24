@@ -79,7 +79,7 @@ export function FilterCollectionActionEditor({
           <Popover className="select-popover">
             <ListBox className="select-listbox">
               {filterModeOptions.map((option) => (
-                <ListBoxItem key={option.value} id={option.value}>
+                <ListBoxItem key={option.value} id={option.value} textValue={option.label}>
                   {option.label}
                 </ListBoxItem>
               ))}

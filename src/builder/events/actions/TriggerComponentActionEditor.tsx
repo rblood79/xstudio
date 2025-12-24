@@ -81,11 +81,11 @@ export function TriggerComponentActionEditor({
             </Button>
             <Popover className="select-popover">
               <ListBox className="select-listbox">
-                <ListBoxItem key="" id="">
+                <ListBoxItem key="" id="" textValue="Select an action">
                   Select an action
                 </ListBoxItem>
                 {availableActions.map((action) => (
-                  <ListBoxItem key={action} id={action}>
+                  <ListBoxItem key={action} id={action} textValue={action}>
                     {action}
                   </ListBoxItem>
                 ))}
