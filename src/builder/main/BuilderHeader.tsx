@@ -18,6 +18,7 @@ import { ToggleButtonGroup } from "../../shared/components/ToggleButtonGroup";
 import { ToggleButton } from "../../shared/components/ToggleButton";
 import { iconProps } from "../../utils/ui/uiConstants";
 import { usePanelLayout } from "../layout";
+import { ZoomControls } from "../workspace/ZoomControls";
 
 export interface Breakpoint {
   id: string;
@@ -138,6 +139,9 @@ export const BuilderHeader: React.FC<BuilderHeaderProps> = ({
             </ToggleButton>
           ))}
         </ToggleButtonGroup>
+
+        {/* Zoom Controls */}
+        <ZoomControls />
       </div>
 
       <div className="header_contents header_right">

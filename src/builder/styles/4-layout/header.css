@@ -289,6 +289,141 @@
     cursor: not-allowed;
   }
 
+  /* ========================================
+   * Zoom Controls (Adobe Style Menu)
+   * ======================================== */
+
+  .header_contents .zoom-controls {
+    display: flex;
+    align-items: center;
+  }
+
+  /* Zoom Trigger Button */
+  .header_contents .zoom-controls .zoom-trigger-button {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-sm);
+    background: var(--outline-variant);
+    box-shadow: var(--inset-shadow-sm);
+    border: none;
+    border-radius: var(--radius-lg);
+    cursor: pointer;
+    color: var(--on-surface);
+    font-size: var(--text-xs);
+    line-height: var(--text-xs--line-height);
+    font-weight: 500;
+    transition: background-color 0.15s;
+  }
+
+  .header_contents .zoom-controls .zoom-trigger-button:hover {
+    background: var(--surface-container-highest);
+  }
+
+  .header_contents .zoom-controls .zoom-trigger-button[data-pressed] {
+    background: var(--outline);
+  }
+
+  .header_contents .zoom-controls .zoom-value {
+    min-width: 36px;
+    text-align: center;
+  }
+
+  /* Zoom Menu Popover */
+  .zoom-menu-popover {
+    background: var(--surface-container);
+    border: 1px solid var(--outline-variant);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+    z-index: 1000;
+    overflow: hidden;
+    min-width: 180px;
+    /* 🚀 ComboBox 패턴: 레이아웃 격리 + GPU 가속 */
+    contain: layout style paint;
+  }
+
+  .zoom-menu-popover[data-entering] {
+    animation: zoom-menu-enter 0.1s ease-out;
+  }
+
+  .zoom-menu-popover[data-exiting] {
+    animation: zoom-menu-exit 0.08s ease-in;
+  }
+
+  @keyframes zoom-menu-enter {
+    from {
+      opacity: 0;
+      transform: translateY(-2px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes zoom-menu-exit {
+    from {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    to {
+      opacity: 0;
+      transform: translateY(-2px);
+    }
+  }
+
+  /* Zoom Menu */
+  .zoom-menu {
+    padding: var(--spacing-xs);
+    outline: none;
+    /* 🚀 ComboBox 패턴: GPU 가속 */
+    transform: translate3d(0, 0, 0);
+    backface-visibility: hidden;
+  }
+
+  /* Zoom Menu Item */
+  .zoom-menu-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--spacing-sm);
+    font-size: var(--text-xs);
+    color: var(--on-surface);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    outline: none;
+    /* 🚀 ComboBox 패턴: GPU 가속 + 부드러운 전환 */
+    transform: translate3d(0, 0, 0);
+    transition: background-color 0.1s;
+  }
+
+  .zoom-menu-item[data-focused],
+  .zoom-menu-item[data-hovered] {
+    background: var(--outline-variant);
+  }
+
+  .zoom-menu-item[data-pressed] {
+    background: var(--surface-container-highest);
+  }
+
+  /* Keyboard Shortcut */
+  .zoom-menu-item kbd {
+    font-family: inherit;
+    font-size: var(--text-xs);
+    color: var(--on-surface-variant);
+    background: transparent;
+    border: none;
+    padding: 0;
+    margin-left: var(--spacing-lg);
+  }
+
+  /* Menu Separator */
+  .zoom-menu-separator {
+    height: 1px;
+    background: var(--outline-variant);
+    margin: var(--spacing-xs) 0;
+  }
+
   /* Publish Button */
   .header_contents .publish {
     background: linear-gradient(
