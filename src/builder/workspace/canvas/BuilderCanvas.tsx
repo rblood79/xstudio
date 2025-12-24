@@ -187,6 +187,8 @@ function ClickableBackground({ onClick, onLassoStart, onLassoDrag, onLassoEnd, z
 
   // 라쏘 드래그 상태
   const isDragging = useRef(false);
+  // Canvas에서 pointerDown이 시작되었는지 추적 (클릭 감지용)
+  const isPointerDownOnCanvas = useRef(false);
 
   // 화면 좌표를 캔버스 좌표로 변환
   const screenToCanvas = useCallback((screenX: number, screenY: number) => {
@@ -197,6 +199,7 @@ function ClickableBackground({ onClick, onLassoStart, onLassoDrag, onLassoEnd, z
   }, [zoom, panOffset]);
 
   const handlePointerDown = useCallback((e: { global: { x: number; y: number } }) => {
+    isPointerDownOnCanvas.current = true;
     isDragging.current = true;
     const canvasPos = screenToCanvas(e.global.x, e.global.y);
     onLassoStart?.(canvasPos);
@@ -210,6 +213,14 @@ function ClickableBackground({ onClick, onLassoStart, onLassoDrag, onLassoEnd, z
   }, [onLassoDrag, screenToCanvas]);
 
   const handlePointerUp = useCallback(() => {
+    // Canvas에서 pointerDown이 시작되지 않았으면 무시
+    // (패널 등 외부에서 클릭 후 Canvas 위에서 놓는 경우 방지)
+    if (!isPointerDownOnCanvas.current) {
+      return;
+    }
+
+    isPointerDownOnCanvas.current = false;
+
     if (isDragging.current) {
       isDragging.current = false;
       onLassoEnd?.();
