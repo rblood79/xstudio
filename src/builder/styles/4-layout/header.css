@@ -48,6 +48,18 @@
     flex: 0;
   }
 
+  .header_contents .logo-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing);
+    position: relative;
+    flex: 0;
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+  }
+
   .header_contents .aria-ToggleButton {
     padding: var(--spacing) var(--spacing-sm);
   }

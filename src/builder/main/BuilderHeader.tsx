@@ -47,7 +47,7 @@ export interface BuilderHeaderProps {
   onPreview: () => void;
   onPlay: () => void;
   onPublish: () => void;
-  viewMode: 'canvas' | 'workflow';
+  viewMode: "canvas" | "workflow";
   onViewModeToggle: () => void;
 }
 
@@ -69,7 +69,8 @@ export const BuilderHeader: React.FC<BuilderHeaderProps> = ({
   onViewModeToggle,
 }) => {
   const { layout, toggleBottomPanel } = usePanelLayout();
-  const isMonitorOpen = layout.showBottom && layout.activeBottomPanels.includes("monitor");
+  const isMonitorOpen =
+    layout.showBottom && layout.activeBottomPanels.includes("monitor");
 
   return (
     <nav className="header">
@@ -77,6 +78,9 @@ export const BuilderHeader: React.FC<BuilderHeaderProps> = ({
         <button aria-label="Menu">
           <Menu strokeWidth={iconProps.strokeWidth} size={iconProps.size} />
         </button>
+        <div className="logo-container">
+          <img src="/appIcon.svg" alt="logo" />
+        </div>
         <div className="project-info">
           {projectName && <span className="project-name">{projectName}</span>}
           {/*projectId && <code className="project-id">ID: {projectId}</code>*/}
@@ -174,10 +178,12 @@ export const BuilderHeader: React.FC<BuilderHeaderProps> = ({
         </button>
         <ToggleButtonGroup
           selectionMode="multiple"
-          selectedKeys={new Set([
-            ...(isMonitorOpen ? ["monitor"] : []),
-            ...(viewMode === "workflow" ? ["workflow"] : []),
-          ])}
+          selectedKeys={
+            new Set([
+              ...(isMonitorOpen ? ["monitor"] : []),
+              ...(viewMode === "workflow" ? ["workflow"] : []),
+            ])
+          }
           indicator={true}
           onSelectionChange={(keys) => {
             const selectedKeys = new Set(keys);
@@ -206,7 +212,9 @@ export const BuilderHeader: React.FC<BuilderHeaderProps> = ({
           </ToggleButton>
           <ToggleButton
             id="workflow"
-            aria-label={viewMode === "canvas" ? "Switch to Workflow" : "Switch to Canvas"}
+            aria-label={
+              viewMode === "canvas" ? "Switch to Workflow" : "Switch to Canvas"
+            }
           >
             {viewMode === "canvas" ? (
               <GitBranch
