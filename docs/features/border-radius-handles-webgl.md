@@ -1,8 +1,42 @@
 # WebGL BorderRadius 핸들 구현 설계서
 
 > **작성일**: 2025-12-24
-> **상태**: 설계 완료
+> **상태**: ⚠️ 구현 보류 (성능 문제)
 > **참조**: Adobe XD, Figma border-radius 조절 UX
+
+---
+
+## ⚠️ 구현 보류 사유 (2025-12-25)
+
+### 문제점
+1차 구현 완료 후 테스트 결과, **심각한 프레임 드랍**이 발생하여 실사용이 불가능한 수준이었습니다.
+
+### 시도한 최적화
+- console.log 제거
+- 드래그 중 React state 업데이트 제거 (`setPreviewRadius` 삭제)
+- RAF 스케줄링 (프레임당 1회만 콜백)
+- 드래그 종료 시에만 Store 업데이트
+
+### 분석된 원인
+1. **PixiJS stage 이벤트 문제**: `stage.on('pointermove')`가 작동하지 않아 window 이벤트로 대체해야 했음
+2. **좌표 변환 오버헤드**: Pixi 좌표 ↔ DOM 좌표 변환 과정에서 성능 저하
+3. **개별 코너 borderRadius 미지원**: WebGL 캔버스(`graphicsUtils.ts`)가 단일 `borderRadius`만 지원하여 개별 코너 조절이 렌더링에 반영되지 않음
+4. **Store 업데이트 비용**: 드래그 종료 시에도 Store 업데이트가 무거움
+
+### 향후 개선 방향
+1. **완전 imperative 방식**: 드래그 중 React/Store를 완전히 우회하고 PixiJS Graphics만 직접 조작
+2. **개별 코너 borderRadius 렌더링 지원**: `graphicsUtils.ts`에 커스텀 경로 그리기 추가
+3. **드래그 중 preview 분리**: Store와 별개의 preview layer에서 처리
+4. **근본적인 아키텍처 재검토 필요**
+
+### 롤백된 파일
+- `src/builder/workspace/canvas/selection/borderRadiusTypes.ts` (삭제)
+- `src/builder/workspace/canvas/selection/useBorderRadiusDragPixi.ts` (삭제)
+- `src/builder/workspace/canvas/selection/BorderRadiusHandle.tsx` (삭제)
+- `src/builder/workspace/canvas/selection/BorderRadiusHandles.tsx` (삭제)
+- `src/builder/workspace/canvas/selection/SelectionBox.tsx` (원복)
+- `src/builder/workspace/canvas/selection/SelectionLayer.tsx` (원복)
+- `src/builder/workspace/canvas/selection/index.ts` (원복)
 
 ---
 
