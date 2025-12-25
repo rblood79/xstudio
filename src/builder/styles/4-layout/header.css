@@ -43,9 +43,10 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: var(--spacing);
+    gap: var(--spacing-sm);
     position: relative;
     flex: 0;
+    padding: var(--spacing-sm);
   }
 
   .header_contents .logo-container {
@@ -68,11 +69,22 @@
   .header_contents:first-child {
     justify-content: flex-start;
     flex: 1;
+    padding: var(--spacing-sm);
   }
 
   .header_contents:first-child button {
-    padding: var(--spacing-lg);
-    background-color: transparent;
+    position: relative;
+    border: none;
+    background: none;
+    padding: var(--spacing-sm);
+    cursor: pointer;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    stroke: var(--on-surface-variant);
+    border-radius: 6px;
   }
 
   /* Project Info */
