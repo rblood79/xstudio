@@ -1,9 +1,10 @@
 # Drag & Drop 레이어 트리 구현 계획서
 
 > **작성일**: 2025-12-25
-> **수정일**: 2025-12-25 (react-aria Tree 마이그레이션 방향 확정)
+> **수정일**: 2025-12-25 (react-aria-components v1.14 기준 API 업데이트)
 > **상태**: 계획 확정
-> **관련 기술**: react-aria Tree, react-aria Virtualizer, react-aria DnD, PixiJS
+> **관련 기술**: react-aria Tree, @tanstack/react-virtual, react-aria DnD, PixiJS
+> **레퍼런스 기준**: react-aria-components v1.14 (2025년 12월)
 
 ---
 
@@ -120,9 +121,13 @@ export interface LayerTreeProps {
 
 ### 1.3 react-aria Tree 기본 구조
 
+> ⚠️ **주의 (v1.14 기준)**: react-aria Virtualizer는 Tree와의 직접 통합이 공식 지원되지 않음.
+> ListBox, GridList, Table만 Virtualizer 공식 지원. Tree는 `@tanstack/react-virtual` 사용 권장.
+
 ```typescript
 // LayerTree.tsx
-import { Tree, TreeItem, Virtualizer, ListLayout } from 'react-aria-components';
+import { Tree, TreeItem } from 'react-aria-components';
+import { useVirtualizer } from '@tanstack/react-virtual';
 import { useTreeData } from 'react-stately';
 import { LayerTreeContent } from './LayerTreeContent';
 import { useLayerTreeData } from './useLayerTreeData';
@@ -130,9 +135,20 @@ import { useLayerTreeData } from './useLayerTreeData';
 export function LayerTree({ elements, selectedElementId, onItemClick, onItemDelete }: LayerTreeProps) {
   // Zustand elements → react-aria TreeData 변환 및 동기화
   const { tree, syncToStore } = useLayerTreeData(elements);
+  const containerRef = useRef<HTMLDivElement>(null);
 
+  // 옵션 A: @tanstack/react-virtual 사용 (권장, 100+ 요소 시)
+  const flatItems = useMemo(() => flattenTree(tree.items), [tree.items]);
+  const virtualizer = useVirtualizer({
+    count: flatItems.length,
+    getScrollElement: () => containerRef.current,
+    estimateSize: () => 28,
+    overscan: 5,
+  });
+
+  // 옵션 B: react-aria Tree 기본 스크롤링 (요소 적을 때)
   return (
-    <Virtualizer layout={new ListLayout({ rowHeight: 28 })}>
+    <div ref={containerRef} style={{ maxHeight: '400px', overflow: 'auto' }}>
       <Tree
         aria-label="Layers"
         items={tree.items}
@@ -152,7 +168,7 @@ export function LayerTree({ elements, selectedElementId, onItemClick, onItemDele
           />
         )}
       </Tree>
-    </Virtualizer>
+    </div>
   );
 }
 ```
@@ -310,7 +326,11 @@ function convertToLayerTreeNodes(
 
 ---
 
-## Phase 2: DnD 구현 (onReorder + onMove)
+## Phase 2: DnD 구현 (onMove 사용)
+
+> **v1.14 API 기준**: `onMove`만 사용하여 모든 DnD 케이스 처리 권장
+> - `onReorder`: 같은 레벨 순서 변경만 지원
+> - `onMove`: 모든 이동 (순서 변경 + 부모 변경) 지원 ✅
 
 ### 2.1 useDragAndDrop 설정
 
@@ -328,31 +348,25 @@ export function LayerTree({ elements, ... }: LayerTreeProps) {
       'text/plain': tree.getItem(key)?.value.name || '',
     })),
 
-    // 같은 레벨 순서 변경
-    onReorder(e) {
-      const { keys, target, dropPosition } = e;
-
-      // tree.move로 로컬 상태 업데이트
-      tree.move(keys, target.key, dropPosition === 'before' ? 0 : 1);
-
-      // Zustand + DB 동기화
-      const updates = calculateOrderUpdates(tree.items, keys, target.key, dropPosition);
-      syncToStore(updates);
-    },
-
-    // 부모 변경 (다른 레벨로 이동)
+    // ✅ onMove만 사용하여 모든 DnD 케이스 처리 (v1.14 권장)
     onMove(e) {
-      const { keys, target, dropPosition } = e;
+      const { keys, target } = e;
 
-      // dropPosition === 'on' → 타겟의 자식으로 이동
-      if (dropPosition === 'on') {
-        tree.move(keys, target.key, 0); // 첫 번째 자식으로
-      } else {
-        tree.move(keys, target.key, dropPosition === 'before' ? 0 : 1);
+      // 1. 같은 레벨 이동 (before/after)
+      if (target.dropPosition === 'before') {
+        tree.moveBefore(target.key, keys);  // ✅ v1.14 API
+      } else if (target.dropPosition === 'after') {
+        tree.moveAfter(target.key, keys);   // ✅ v1.14 API
+      }
+      // 2. 부모 변경 (on) - 타겟의 자식으로 이동
+      else if (target.dropPosition === 'on') {
+        [...keys].forEach((key, i) => {
+          tree.move(key, target.key, i);    // move(key, toParentKey, index)
+        });
       }
 
-      // Zustand + DB 동기화
-      const updates = calculateMoveUpdates(tree.items, keys, target.key, dropPosition);
+      // 3. Zustand + IndexedDB 동기화
+      const updates = calculateMoveUpdates(keys, target);
       syncToStore(updates);
     },
 
@@ -371,7 +385,7 @@ export function LayerTree({ elements, ... }: LayerTreeProps) {
   });
 
   return (
-    <Virtualizer layout={new ListLayout({ rowHeight: 28 })}>
+    <div ref={containerRef} style={{ maxHeight: '400px', overflow: 'auto' }}>
       <Tree
         aria-label="Layers"
         items={tree.items}
@@ -380,10 +394,18 @@ export function LayerTree({ elements, ... }: LayerTreeProps) {
       >
         {/* ... */}
       </Tree>
-    </Virtualizer>
+    </div>
   );
 }
 ```
+
+### useTreeData 메서드 요약 (v1.14)
+
+| 메서드 | 시그니처 | 용도 |
+|--------|----------|------|
+| `moveBefore` | `tree.moveBefore(targetKey, keys)` | 대상 항목 이전으로 이동 |
+| `moveAfter` | `tree.moveAfter(targetKey, keys)` | 대상 항목 이후로 이동 |
+| `move` | `tree.move(key, parentKey, index)` | 특정 부모의 인덱스로 이동 |
 
 ### 2.2 드롭 유효성 검증
 
@@ -681,6 +703,8 @@ const handleMoveEnd = useCallback((elementId: string, delta: { x: number; y: num
 
 ### 6.1 IndexedDB Adapter 활용
 
+> **API 기준**: `src/lib/db/types.ts` DatabaseAdapter 인터페이스
+
 ```typescript
 // batchUpdateElements.ts
 import { getDB } from '../../../lib/db';
@@ -706,21 +730,16 @@ export async function batchUpdateElementsInDB(
   try {
     const db = await getDB();
 
-    // IndexedDB 트랜잭션으로 배치 업데이트
-    await Promise.all(
-      updates.map(async (update) => {
-        const existing = await db.getElement(update.id);
-        if (!existing) return;
-
-        const updated: Element = {
-          ...existing,
-          ...(update.parent_id !== undefined && { parent_id: update.parent_id }),
-          ...(update.order_num !== undefined && { order_num: update.order_num }),
+    // ✅ 올바른 API: db.elements.updateMany 사용
+    await db.elements.updateMany(
+      updates.map(u => ({
+        id: u.id,
+        data: {
+          ...(u.parent_id !== undefined && { parent_id: u.parent_id }),
+          ...(u.order_num !== undefined && { order_num: u.order_num }),
           updated_at: new Date().toISOString(),
-        };
-
-        await db.upsertElement(updated);
-      })
+        },
+      }))
     );
 
     return { success: true };
@@ -734,6 +753,17 @@ export async function batchUpdateElementsInDB(
 export const debouncedBatchUpdate = debounce(batchUpdateElementsInDB, 300);
 ```
 
+### IndexedDB API 참고 (src/lib/db/types.ts)
+
+```typescript
+// DatabaseAdapter.elements 인터페이스
+elements: {
+  getById(id: string): Promise<Element | null>;           // 단일 조회
+  update(id: string, data: Partial<Element>): Promise<Element>;  // 단일 업데이트
+  updateMany(updates: Array<{ id: string; data: Partial<Element> }>): Promise<Element[]>;  // 배치 업데이트 ✅
+}
+```
+
 ### 6.2 롤백 전략 (IndexedDB 스냅샷)
 
 ```typescript
@@ -744,7 +774,7 @@ const syncToStore = useCallback(async (updates: ElementUpdate[]) => {
   const db = await getDB();
   const snapshots = await Promise.all(
     updates.map(async (u) => {
-      const element = await db.getElement(u.id);
+      const element = await db.elements.getById(u.id);  // ✅ 올바른 API
       return {
         id: u.id,
         parent_id: element?.parent_id,
@@ -962,8 +992,19 @@ function redoTreeMove(entry: DragHistoryEntry) {
 
 ## 참고 자료
 
-- [React Aria Tree](https://react-spectrum.adobe.com/react-aria/Tree.html)
-- [React Aria Virtualizer](https://react-spectrum.adobe.com/react-aria/Virtualizer.html)
-- [React Aria useDragAndDrop](https://react-spectrum.adobe.com/react-aria/useDraggableCollection.html)
-- [React Aria DnD](https://react-aria.adobe.com/dnd)
-- [React Stately useTreeData](https://react-spectrum.adobe.com/react-stately/useTreeData.html)
+> **기준**: react-aria-components v1.14 (2025년 12월)
+
+- [React Aria Tree](https://react-aria.adobe.com/Tree) - Tree 컴포넌트 및 DnD 통합
+- [React Aria Virtualizer](https://react-aria.adobe.com/Virtualizer) - 가상 스크롤링 (ListBox/GridList/Table 지원, Tree 미지원)
+- [React Aria DnD](https://react-aria.adobe.com/dnd) - useDragAndDrop, onMove/onReorder 핸들러
+- [React Stately useTreeData](https://react-spectrum.adobe.com/react-stately/useTreeData.html) - moveBefore/moveAfter/move 메서드
+
+### API 요약 (v1.14)
+
+| 메서드 | 시그니처 | 설명 |
+|--------|----------|------|
+| `moveBefore` | `tree.moveBefore(targetKey, keys)` | 대상 항목 이전으로 이동 |
+| `moveAfter` | `tree.moveAfter(targetKey, keys)` | 대상 항목 이후로 이동 |
+| `move` | `tree.move(key, parentKey, index)` | 특정 부모의 인덱스로 이동 |
+| `onMove` | `useDragAndDrop({ onMove(e) {...} })` | 계층 간 이동 지원 (before/after/on) |
+| `onReorder` | `useDragAndDrop({ onReorder(e) {...} })` | 같은 레벨만 지원 |
