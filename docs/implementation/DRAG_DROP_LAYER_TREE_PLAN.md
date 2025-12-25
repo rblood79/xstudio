@@ -1799,3 +1799,229 @@ src/builder/stores/elements.ts                ← undo/redo 호출
 - [React Aria useDrag](https://react-aria.adobe.com/dnd#usedrag)
 - [React Aria useDrop](https://react-aria.adobe.com/dnd#usedrop)
 - [TanStack Virtual](https://tanstack.com/virtual/latest)
+- [React Aria Tree](https://react-spectrum.adobe.com/react-aria/Tree.html)
+- [React Aria Virtualizer](https://react-spectrum.adobe.com/react-aria/Virtualizer.html)
+
+---
+
+## 부록 A: 커스텀 구현 vs react-aria Tree 마이그레이션 비교 분석
+
+> **분석 요청일**: 2025-12-25
+> **분석 목적**: Phase 3 가상 스크롤 연동 버그 위험 완화 방안 검토
+
+### A.1 현재 구현 분석
+
+#### A.1.1 VirtualizedLayerTree 구조 (497줄)
+
+```
+VirtualizedLayerTree.tsx
+├── FlattenedTreeItem 타입
+├── flattenTree() - 트리 → flat 변환 (Collection 컴포넌트 가상 자식 포함)
+├── TreeItemRow (React.memo) - 개별 아이템 렌더링
+│   ├── 가상 자식 노드 (toggle, checkbox, radio, listbox, gridlist, select, combobox, tree)
+│   └── 일반 트리 아이템
+└── VirtualizedLayerTree (React.memo) - 메인 컴포넌트
+    ├── @tanstack/react-virtual 기반 가상화
+    ├── 50개 미만: 일반 렌더링
+    └── 50개 이상: 가상 스크롤링
+```
+
+#### A.1.2 관련 파일 의존성
+
+| 파일 | 역할 | 영향도 |
+|------|------|--------|
+| `VirtualizedLayerTree.tsx` (497줄) | 가상화 트리 렌더링 | 🔴 직접 |
+| `Layers.tsx` (145줄) | 레이어 패널 wrapper | 🟡 간접 |
+| `treeUtils.ts` (383줄) | 트리 변환 유틸 | 🟡 간접 |
+| `treeHelpers.ts` | 아이콘/타입 헬퍼 | 🟢 낮음 |
+| `NodesPanel.tsx` | 노드 패널 통합 | 🟡 간접 |
+| `sidebar/index.tsx` | 사이드바 export | 🟢 낮음 |
+
+### A.2 react-aria Tree 분석
+
+#### A.2.1 react-aria Tree 기능 (GA 상태)
+
+| 기능 | 상태 | 비고 |
+|------|------|------|
+| Tree 컴포넌트 | ✅ GA | react-aria-components v1.14.0+ |
+| Virtualizer 통합 | ✅ GA | `<Virtualizer>` + `ListLayout` |
+| DnD (onReorder) | ✅ GA | 같은 레벨 순서 변경 |
+| DnD (onMove) | ✅ GA | 다른 레벨로 이동 (부모 변경) |
+| useTreeData | ✅ GA | 트리 상태 관리 훅 |
+| 키보드 접근성 | ✅ 완전 | Arrow keys, Home, End |
+| 스크린 리더 | ✅ 완전 | ARIA 트리 패턴 |
+
+#### A.2.2 react-aria Tree DnD 예시 코드
+
+```typescript
+// react-aria Tree + DnD + Virtualizer 조합
+import { Tree, TreeItem, useDragAndDrop, Virtualizer, ListLayout } from 'react-aria-components';
+import { useTreeData } from 'react-stately';
+
+function LayerTree({ elements }) {
+  let tree = useTreeData({
+    initialItems: convertToTreeData(elements),
+    getKey: (item) => item.id,
+    getChildren: (item) => item.children,
+  });
+
+  let { dragAndDropHooks } = useDragAndDrop({
+    getItems: (keys) => [...keys].map(key => ({
+      'application/x-tree-item': JSON.stringify({ id: key }),
+    })),
+    onMove(e) {
+      // 부모 변경 + 순서 변경 모두 처리
+      const { keys, target } = e;
+      if (target.dropPosition === 'on') {
+        // 타겟 안으로 이동 (자식으로 만들기)
+        tree.move(keys, target.key, 0);
+      } else {
+        // before/after 위치로 이동
+        tree.move(keys, target.key, target.dropPosition === 'before' ? 0 : 1);
+      }
+      // Zustand 스토어 동기화
+      syncToStore(tree.items);
+    },
+    onReorder(e) {
+      // 같은 레벨 내 순서 변경
+      tree.move(e.keys, e.target.key, e.target.dropPosition === 'before' ? 0 : 1);
+      syncToStore(tree.items);
+    },
+  });
+
+  return (
+    <Virtualizer layout={new ListLayout({ rowHeight: 28 })}>
+      <Tree
+        aria-label="Layers"
+        items={tree.items}
+        dragAndDropHooks={dragAndDropHooks}
+        selectionMode="single"
+      >
+        {(item) => (
+          <TreeItem key={item.id} textValue={item.name}>
+            {item.children && <Collection items={item.children}>
+              {(child) => <TreeItem key={child.id}>{child.name}</TreeItem>}
+            </Collection>}
+          </TreeItem>
+        )}
+      </Tree>
+    </Virtualizer>
+  );
+}
+```
+
+### A.3 비교 분석 매트릭스
+
+#### A.3.1 완성도 (Completeness)
+
+| 항목 | 커스텀 구현 | react-aria Tree | 승자 |
+|------|------------|-----------------|------|
+| **DnD 순서 변경** | 직접 구현 필요 (~200줄) | `onReorder` 내장 | 🏆 react-aria |
+| **DnD 부모 변경** | 직접 구현 필요 (~300줄) | `onMove` 내장 | 🏆 react-aria |
+| **드래그 프리뷰** | 직접 구현 필요 | 내장 (커스터마이징 가능) | 🏆 react-aria |
+| **드롭 인디케이터** | 직접 구현 필요 | 내장 (CSS로 스타일링) | 🏆 react-aria |
+| **키보드 접근성** | 부분 구현됨 | 완전 내장 (ARIA 트리) | 🏆 react-aria |
+| **스크린 리더** | 미구현 | 완전 내장 | 🏆 react-aria |
+| **터치 지원** | 미구현 | 내장 | 🏆 react-aria |
+| **Collection 가상 자식** | ✅ 구현됨 (8가지 타입) | ❌ 별도 구현 필요 | 🏆 커스텀 |
+| **Tabs 특수 정렬** | ✅ Tab-Panel 쌍 정렬 | ❌ 별도 구현 필요 | 🏆 커스텀 |
+| **빌더 전용 UI** | ✅ 맞춤형 (Settings, Delete) | ❌ 커스터마이징 필요 | 🏆 커스텀 |
+
+**완성도 점수**: 커스텀 3 vs react-aria 7 → **react-aria 승** (단, 마이그레이션 비용 고려 필요)
+
+#### A.3.2 퍼포먼스 (Performance)
+
+| 항목 | 커스텀 구현 | react-aria Tree | 비고 |
+|------|------------|-----------------|------|
+| **가상 스크롤** | @tanstack/react-virtual | Virtualizer + ListLayout | 동등 |
+| **메모이제이션** | React.memo 적용됨 | 내장 최적화 | 동등 |
+| **렌더링 최적화** | 50개 미만 일반 렌더링 | 항상 가상화 | 커스텀 유리 (소규모) |
+| **드래그 중 성능** | 구현에 따라 다름 | RAF 기반 최적화 내장 | react-aria 유리 |
+| **번들 크기** | ~2KB (가상화만) | ~15KB (Tree + DnD) | 커스텀 유리 |
+| **트리 변환 비용** | O(n) buildTreeFromElements | O(n) useTreeData | 동등 |
+
+**퍼포먼스 점수**: 커스텀 3 vs react-aria 3 → **동등** (번들 크기 vs 드래그 최적화 트레이드오프)
+
+#### A.3.3 빌더 시스템 영향도 (Impact)
+
+| 항목 | 커스텀 구현 | react-aria Tree | 비고 |
+|------|------------|-----------------|------|
+| **수정 파일 수** | 3~5개 (DnD 추가) | 8~12개 (마이그레이션) | 커스텀 유리 |
+| **코드 변경량** | ~800줄 추가 | ~600줄 수정 + 400줄 삭제 | 동등 |
+| **기존 로직 보존** | ✅ 100% 유지 | ❌ 트리 구조 재설계 | 커스텀 유리 |
+| **테스트 영향** | 신규 테스트만 필요 | 기존 테스트 수정 필요 | 커스텀 유리 |
+| **롤백 용이성** | ✅ 쉬움 (분리된 모듈) | ❌ 어려움 (전체 교체) | 커스텀 유리 |
+| **Collection 가상 자식** | ✅ 기존 로직 유지 | ❌ 재구현 필요 | 커스텀 유리 |
+| **Tabs 특수 정렬** | ✅ treeUtils.ts 유지 | ❌ useTreeData 커스터마이징 | 커스텀 유리 |
+| **장기 유지보수** | 직접 버그 수정 필요 | Adobe 커뮤니티 지원 | react-aria 유리 |
+
+**영향도 점수**: 커스텀 6 vs react-aria 2 → **커스텀 유리** (마이그레이션 리스크 높음)
+
+### A.4 마이그레이션 시 필수 재구현 항목
+
+react-aria Tree로 마이그레이션 시 **반드시 재구현**해야 하는 항목:
+
+1. **Collection 컴포넌트 가상 자식 렌더링** (~150줄)
+   - ToggleButtonGroup, CheckboxGroup, RadioGroup
+   - ListBox, GridList, Select, ComboBox, Tree
+   - 각 타입별 아이콘 및 라벨 로직
+
+2. **Tabs 특수 정렬 로직** (~60줄)
+   - Tab-Panel 쌍 매칭 (`sortTabsChildren`)
+   - tabId 기반 그룹화
+
+3. **빌더 전용 액션 버튼** (~30줄)
+   - Settings2 버튼
+   - Trash 버튼 (body 제외)
+
+4. **Zustand 스토어 동기화** (~100줄)
+   - useTreeData → elements store 양방향 바인딩
+   - updateElementOrder, updateElement 호출
+
+5. **ElementTreeItem 타입 변환** (~50줄)
+   - react-aria TreeData 형식 ↔ ElementTreeItem 변환
+
+**총 재구현 예상**: ~390줄
+
+### A.5 결론 및 권장사항
+
+#### A.5.1 종합 점수표
+
+| 기준 | 커스텀 + DnD | react-aria 마이그레이션 | 가중치 |
+|------|-------------|------------------------|--------|
+| 완성도 | 3점 | 7점 | 25% |
+| 퍼포먼스 | 3점 | 3점 | 25% |
+| 영향도 (낮을수록 좋음) | 6점 | 2점 | 50% |
+| **가중 총점** | **4.5점** | **3.5점** | - |
+
+#### A.5.2 권장 전략
+
+```
+🏆 권장: 커스텀 VirtualizedLayerTree + react-aria DnD 훅 조합
+
+이유:
+1. 기존 빌더 전용 로직 (Collection 가상 자식, Tabs 정렬) 100% 보존
+2. 마이그레이션 리스크 최소화 (8~12개 파일 수정 불필요)
+3. react-aria useDrag/useDrop 훅만 활용 (Tree 컴포넌트 교체 불필요)
+4. 점진적 적용 가능 (Phase 1→7 순차 진행)
+5. 롤백 용이 (DnD 모듈 분리)
+```
+
+#### A.5.3 미래 고려사항
+
+react-aria Tree 마이그레이션이 유리해지는 조건:
+- [ ] Collection 컴포넌트 가상 자식이 더 이상 필요 없어질 때
+- [ ] Tabs 특수 정렬이 표준 트리 정렬로 대체될 때
+- [ ] 빌더 UI가 react-aria 표준 패턴으로 재설계될 때
+- [ ] 접근성 인증(WCAG 2.1 AA)이 필수 요구사항이 될 때
+
+**현 시점 결론**: 커스텀 구현 유지 + 본 계획서의 Phase 1~7 순차 진행 권장
+
+---
+
+### A.6 참고 소스
+
+- [React Aria Tree GA Release](https://react-spectrum.adobe.com/releases/2025-06-05.html)
+- [React Aria Tree Documentation](https://react-spectrum.adobe.com/react-aria/Tree.html)
+- [React Aria Virtualizer](https://react-spectrum.adobe.com/react-aria/Virtualizer.html)
+- [React Aria useDragAndDrop](https://react-spectrum.adobe.com/react-aria/useDraggableCollection.html)
