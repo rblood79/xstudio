@@ -1515,6 +1515,284 @@ src/builder/nodes/index.css
 
 ---
 
+## 위험도/난이도/영향도 분석
+
+### Phase별 종합 분석
+
+| Phase | 위험도 | 난이도 | 영향도 | 영향 파일 수 | 권장 순서 |
+|-------|:------:|:------:|:------:|:------------:|:---------:|
+| Phase 1: DnD 인프라 | 🟢 낮음 | 🟡 중간 | 🟢 낮음 | 새 파일 10개 | 1순위 |
+| Phase 2: 순서 변경 | 🟠 중간 | 🟡 중간 | 🟠 중간 | 수정 3개 | 2순위 |
+| Phase 3: 가상 스크롤 | 🟡 중간 | 🟠 높음 | 🟡 중간 | 수정 1개 | 3순위 |
+| Phase 4: 시각적 피드백 | 🟢 낮음 | 🟢 낮음 | 🟢 낮음 | 수정 2개 | 병렬 |
+| Phase 5: WebGL 동기화 | 🟠 중간 | 🟠 높음 | 🟠 중간 | 수정 2개 | 4순위 |
+| Phase 6: 배치 DB | 🔴 높음 | 🟡 중간 | 🟠 중간 | 새 파일 1개 | 5순위 |
+| Phase 7: 히스토리 | 🔴 높음 | 🟠 높음 | 🔴 높음 | 수정 2개 | 6순위 |
+
+---
+
+### Phase 1: DnD 인프라 구축
+
+**위험도**: 🟢 **낮음**
+
+| 항목 | 분석 |
+|------|------|
+| **버그 발생 확률** | 낮음 - 새 파일만 생성, 기존 코드 수정 없음 |
+| **기존 시스템 영향** | 없음 - 독립적인 새 모듈 |
+| **롤백 용이성** | 쉬움 - 새 폴더 삭제만 하면 됨 |
+
+**위험 요소**:
+- react-aria useDrag/useDrop API 학습 곡선
+- 타입 정의 오류 가능성
+
+**완화 전략**:
+```
+✅ 단위 테스트 작성
+✅ Storybook 컴포넌트 테스트
+✅ react-aria 공식 예제 참고
+```
+
+---
+
+### Phase 2: 순서 변경 (elementReorder 확장)
+
+**위험도**: 🟠 **중간**
+
+| 항목 | 분석 |
+|------|------|
+| **버그 발생 확률** | 중간 - 기존 order_num 로직과 충돌 가능 |
+| **기존 시스템 영향** | 중간 - elementReorder.ts 수정 |
+| **롤백 용이성** | 중간 - 함수 추가만이라 제거 가능 |
+
+**영향받는 파일** (6개):
+```
+src/builder/stores/utils/elementReorder.ts    ← 직접 수정
+src/builder/stores/elements.ts                ← 호출부 추가
+src/builder/stores/history/historyActions.ts  ← reorderElements 사용
+src/builder/stores/utils/elementCreation.ts   ← 간접 영향
+src/builder/stores/utils/elementRemoval.ts    ← 간접 영향
+src/builder/hooks/useValidation.ts            ← 간접 영향
+```
+
+**위험 요소**:
+- ⚠️ **order_num 정규화 충돌**: 기존 reorderElements와 다른 결과 생성 가능
+- ⚠️ **Tabs/Collection 특수 정렬**: Tab-Panel 쌍 순서 깨짐 가능
+- ⚠️ **DB 동기화 실패 시 로컬-DB 불일치**
+
+**완화 전략**:
+```
+✅ 기존 normalizeOrderNums() 함수 재사용 (새로 만들지 않음)
+✅ updateElementOrder() 콜백 패턴 유지
+✅ 특수 컴포넌트(Tabs) 이동 시 reorderElements() 호출
+✅ 트랜잭션 실패 시 rollbackData로 복원
+✅ order_num 검증 테스트 케이스 작성
+```
+
+---
+
+### Phase 3: 가상 스크롤 연동
+
+**위험도**: 🟡 **중간**
+
+| 항목 | 분석 |
+|------|------|
+| **버그 발생 확률** | 중간 - @tanstack/react-virtual 내부 동작 이해 필요 |
+| **기존 시스템 영향** | 중간 - VirtualizedLayerTree.tsx 수정 |
+| **롤백 용이성** | 쉬움 - 조건부 렌더링으로 분리 가능 |
+
+**영향받는 파일** (2개):
+```
+src/builder/sidebar/VirtualizedLayerTree.tsx  ← 직접 수정
+src/builder/nodes/Layers.tsx                  ← 간접 영향 (props 전달)
+```
+
+**위험 요소**:
+- ⚠️ **스크롤 위치 점프**: 드래그 중 virtualizer 재계산 시 위치 점프
+- ⚠️ **언마운트된 아이템 참조**: 가상화로 DOM에서 제거된 요소 드롭 처리
+- ⚠️ **자동 스크롤 무한 루프**: RAF 기반 스크롤이 virtualizer 업데이트 트리거
+
+**완화 전략**:
+```
+✅ 드래그 시작 시 현재 스크롤 위치 저장
+✅ getOffsetForIndex()로 언마운트 아이템 위치 계산
+✅ 스크롤 속도 제한 및 안전장치 (MAX_SCROLL_SPEED)
+✅ 드래그 중 overscan 증가 (5 → 10)
+```
+
+---
+
+### Phase 4: 시각적 피드백 & 접근성
+
+**위험도**: 🟢 **낮음**
+
+| 항목 | 분석 |
+|------|------|
+| **버그 발생 확률** | 낮음 - CSS와 순수 렌더링 |
+| **기존 시스템 영향** | 낮음 - 스타일 추가만 |
+| **롤백 용이성** | 매우 쉬움 |
+
+**영향받는 파일** (2개):
+```
+src/builder/nodes/index.css                   ← 스타일 추가
+src/builder/sidebar/VirtualizedLayerTree.tsx  ← 클래스 적용
+```
+
+**위험 요소**:
+- CSS 충돌 가능성 (기존 .element 스타일)
+- 스크린 리더 호환성 테스트 필요
+
+**완화 전략**:
+```
+✅ BEM 네이밍 또는 CSS Module 사용
+✅ 접근성 도구 (axe-core) 테스트
+```
+
+---
+
+### Phase 5: WebGL 캔버스 드래그 동기화
+
+**위험도**: 🟠 **중간**
+
+| 항목 | 분석 |
+|------|------|
+| **버그 발생 확률** | 중간 - position 타입별 분기 복잡 |
+| **기존 시스템 영향** | 중간 - useDragInteraction 확장 |
+| **롤백 용이성** | 중간 - 콜백 추가 방식이라 분리 가능 |
+
+**영향받는 파일** (3개):
+```
+src/builder/workspace/canvas/selection/useDragInteraction.ts  ← 콜백 확장
+src/builder/workspace/canvas/BuilderCanvas.tsx                ← 콜백 연결
+src/builder/workspace/canvas/canvasPositionSync.ts            ← 새 파일
+```
+
+**위험 요소**:
+- ⚠️ **position 타입 미처리**: static/flex/grid 요소 드래그 시 예기치 않은 동작
+- ⚠️ **% 값 파싱 오류**: "50%" → px 변환 시 부모 크기 필요
+- ⚠️ **transform 충돌**: 기존 transform(rotate, scale)과 translate 병합 오류
+
+**완화 전략**:
+```
+✅ position 타입 화이트리스트 (absolute, fixed만 허용)
+✅ 나머지 타입은 경고 표시 후 무시
+✅ transform 파싱 정규식 검증
+✅ 부모 bounds 캐싱으로 성능 최적화
+```
+
+---
+
+### Phase 6: 배치 DB 업데이트
+
+**위험도**: 🔴 **높음**
+
+| 항목 | 분석 |
+|------|------|
+| **버그 발생 확률** | 높음 - 비동기 처리, 실패 복구 복잡 |
+| **기존 시스템 영향** | 중간 - 새 모듈이지만 DB 레이어 접근 |
+| **롤백 용이성** | 어려움 - DB 상태 복구 필요 |
+
+**영향받는 파일** (2개):
+```
+src/builder/stores/utils/batchDbUpdate.ts     ← 새 파일
+src/builder/stores/elements.ts                ← 호출 추가
+```
+
+**위험 요소**:
+- 🔴 **부분 실패 처리**: 10개 중 3개만 실패 시 일관성 깨짐
+- 🔴 **동시 요청 충돌**: 여러 드래그 세션이 동시에 커밋
+- 🔴 **네트워크 지연**: 롤백 데이터가 이미 덮어써진 경우
+- ⚠️ **Supabase Rate Limit**: 빠른 연속 드래그 시 429 오류
+
+**완화 전략**:
+```
+✅ 전체 성공 또는 전체 실패 (all-or-nothing) 트랜잭션 고려
+✅ 동시 요청 큐잉 (1개씩 순차 처리)
+✅ 롤백 데이터를 IndexedDB에 임시 저장
+✅ 디바운스 300ms + 최대 배치 50개 제한
+✅ 실패 시 사용자에게 재시도 옵션 제공
+```
+
+---
+
+### Phase 7: 히스토리 & Undo/Redo
+
+**위험도**: 🔴 **높음**
+
+| 항목 | 분석 |
+|------|------|
+| **버그 발생 확률** | 높음 - 기존 히스토리 시스템과 통합 |
+| **기존 시스템 영향** | 높음 - historyActions.ts 핵심 수정 |
+| **롤백 용이성** | 어려움 - 히스토리 스택 오염 가능 |
+
+**영향받는 파일** (3개):
+```
+src/builder/stores/history/historyActions.ts  ← 핵심 수정
+src/builder/stores/history/index.ts           ← 타입 추가
+src/builder/stores/elements.ts                ← undo/redo 호출
+```
+
+**위험 요소**:
+- 🔴 **기존 히스토리 타입 충돌**: add/update/remove와 tree-move 혼용
+- 🔴 **Coalescing 오류**: 잘못된 병합으로 원본 상태 손실
+- 🔴 **Redo 스택 무효화**: Undo 후 새 드래그 시 Redo 스택 처리
+- ⚠️ **형제 요소 변경 누락**: siblingChanges 불완전 기록
+
+**완화 전략**:
+```
+✅ 기존 히스토리 타입에 영향 없도록 별도 처리 분기
+✅ 새 타입은 DragHistoryEntry로 명확히 분리
+✅ Coalescing은 같은 타입끼리만 허용
+✅ 드래그 시작 시 전체 상태 스냅샷 저장 (안전장치)
+✅ E2E 테스트로 Undo/Redo 시나리오 검증
+```
+
+---
+
+### 종합 위험 매트릭스
+
+```
+          영향도 ↑
+      높음 │         Phase 7 ●
+           │                    Phase 6 ●
+      중간 │    Phase 2 ●    Phase 5 ●
+           │              Phase 3 ●
+      낮음 │ Phase 1 ●    Phase 4 ●
+           └──────────────────────────────→ 위험도
+               낮음      중간       높음
+```
+
+---
+
+### 권장 구현 순서 (위험도 최소화)
+
+```
+1️⃣ Phase 1 (인프라) + Phase 4 (시각) - 병렬 진행 가능, 낮은 위험
+   ↓
+2️⃣ Phase 2 (순서 변경) - 핵심 로직, 테스트 집중
+   ↓
+3️⃣ Phase 3 (가상 스크롤) - Phase 2 안정화 후 진행
+   ↓
+4️⃣ Phase 5 (WebGL) - 독립적 구현 가능
+   ↓
+5️⃣ Phase 6 (배치 DB) - 신중한 검증 필요
+   ↓
+6️⃣ Phase 7 (히스토리) - 마지막, 전체 안정화 후
+```
+
+---
+
+### 테스트 전략
+
+| Phase | 필수 테스트 |
+|-------|------------|
+| Phase 1-2 | 단위 테스트: order_num 정규화, 순환 참조 방지 |
+| Phase 3 | 통합 테스트: 가상 스크롤 + 드래그 |
+| Phase 5 | 시각 테스트: position 타입별 이동 검증 |
+| Phase 6 | 실패 테스트: 네트워크 오류 시뮬레이션 |
+| Phase 7 | E2E 테스트: Undo/Redo 전체 시나리오 |
+
+---
+
 ## 참고 자료
 
 - [React Aria DnD](https://react-aria.adobe.com/dnd)
