@@ -10,10 +10,11 @@ import { isWebGLCanvas, isCanvasCompareMode } from "../../utils/featureFlags";
 import type { ElementTreeItem } from "../../types/builder/stately.types";
 import { buildTreeFromElements } from "../utils/treeUtils";
 import { VirtualizedLayerTree } from "../sidebar/VirtualizedLayerTree";
+import { LayerTree } from "../panels/nodes/tree/LayerTree";
 import "./index.css";
 
 // 🚀 Performance: Virtual Scrolling 임계값 (이 수 이상이면 가상화 적용)
-const VIRTUALIZATION_THRESHOLD = 50;
+const VIRTUALIZATION_THRESHOLD = 100;
 
 interface LayersProps {
   elements: Element[];
@@ -29,7 +30,7 @@ interface LayersProps {
   collapseAllTreeItems?: () => void;
   /** 🚀 Performance: Virtual Scrolling용 props */
   expandedKeys?: Set<string | number>;
-  onToggleExpand?: (key: string) => void;
+  onToggleExpand?: (key: string | number) => void;
   selectedTab?: { parentId: string; tabIndex: number } | null;
   onSelectTabElement?: (parentId: string, props: ElementProps, index: number) => void;
   /** 가상 스크롤링 강제 사용 여부 */
@@ -59,7 +60,21 @@ export function Layers({
 
   // 🚀 Performance: 가상 스크롤링 사용 여부 결정
   const useVirtualization = forceVirtualization || elements.length >= VIRTUALIZATION_THRESHOLD;
-  const hasVirtualizationProps = expandedKeys && onToggleExpand;
+  const hasVirtualizationProps = Boolean(expandedKeys && onToggleExpand);
+
+  const handleExpandedChange = useCallback(
+    (keys: Set<string | number>) => {
+      if (!expandedKeys || !onToggleExpand) return;
+      const next = new Set(keys);
+      expandedKeys.forEach((key) => {
+        if (!next.has(key)) onToggleExpand(key);
+      });
+      next.forEach((key) => {
+        if (!expandedKeys.has(key)) onToggleExpand(key);
+      });
+    },
+    [expandedKeys, onToggleExpand]
+  );
 
   // 아이템 클릭 핸들러 (memoized)
   // 🚀 Phase 19: startTransition으로 선택 업데이트를 비긴급 처리 (INP 개선)
@@ -121,15 +136,26 @@ export function Layers({
           // 🚀 Performance: Virtual Scrolling 사용
           <VirtualizedLayerTree
             tree={elementTree}
-            expandedKeys={expandedKeys}
+            expandedKeys={expandedKeys ?? new Set()}
             selectedElementId={selectedElementId}
             selectedTab={selectedTab}
             onItemClick={handleItemClick}
             onItemDelete={handleItemDelete}
-            onToggleExpand={onToggleExpand}
+            onToggleExpand={onToggleExpand ?? (() => {})}
             onSelectTabElement={onSelectTabElement}
             elements={elements}
             containerHeight={400}
+          />
+        ) : hasVirtualizationProps ? (
+          <LayerTree
+            elements={elements}
+            selectedElementId={selectedElementId}
+            selectedTab={selectedTab}
+            expandedKeys={expandedKeys}
+            onExpandedChange={handleExpandedChange}
+            onItemClick={handleItemClick}
+            onItemDelete={handleItemDelete}
+            onSelectTabElement={onSelectTabElement}
           />
         ) : (
           // 기존 renderElementTree 사용 (적은 요소 또는 가상화 props 없음)

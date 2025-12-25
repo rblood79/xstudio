@@ -1,12 +1,16 @@
-# Drag & Drop 레이어 트리 구현 계획서
+# Drag & Drop 레이어 트리 구현 계획서 (초기 설계)
 
 > **작성일**: 2025-12-25
 > **수정일**: 2025-12-25 (react-aria-components v1.14 기준 API 업데이트)
-> **상태**: 계획 확정
+> **상태**: 초기 설계 문서 (보관)
+> **최신 구현 문서**: `docs/implementation/DRAG_DROP_LAYER_TREE_IMPLEMENTATION.md`
 > **관련 기술**: react-aria Tree, @tanstack/react-virtual, react-aria DnD, PixiJS
 > **레퍼런스 기준**: react-aria-components v1.14 (2025년 12월)
 
 ---
+
+이 문서는 **초기 설계 기록**입니다. 최신 구현 내용과 운영 기준은
+`docs/implementation/DRAG_DROP_LAYER_TREE_IMPLEMENTATION.md`를 참고하세요.
 
 ## 목표
 
@@ -63,16 +67,53 @@
 ```
 📁 src/builder/sidebar/
 ├── LayerTree/
-│   ├── LayerTree.tsx           # react-aria Tree 기반 메인 컴포넌트
-│   ├── LayerTreeItem.tsx       # TreeItem 커스텀 렌더링
-│   ├── LayerTreeContent.tsx    # TreeItemContent (세로 라인 + 아이콘 + 라벨)
-│   ├── VirtualChildItem.tsx    # Collection 가상 자식 렌더링
-│   ├── useLayerTreeData.ts     # useTreeData + Zustand 동기화
+│   ├── LayerTree.tsx           # react-aria Tree 기반 메인 컴포넌트 (상태/드롭/선택)
+│   ├── LayerTreeItem.tsx       # TreeItem 컨테이너 (drag handle + content)
+│   ├── LayerTreeContent.tsx    # TreeItemContent (세로 라인 + 아이콘 + 라벨 + 액션)
+│   ├── VirtualChildItem.tsx    # Collection 가상 자식 렌더링 (선택 전용)
+│   ├── useLayerTreeData.ts     # useTreeData + elements → TreeData 변환
+│   ├── useLayerTreeDnd.ts      # DnD 계산/검증 유틸 (calculateMoveUpdates 포함)
+│   ├── validation.ts           # drop 유효성 검증
 │   ├── types.ts                # 타입 정의
 │   └── index.ts                # 배럴 export
 ├── VirtualizedLayerTree.tsx    # [DEPRECATED] 마이그레이션 후 제거
 └── ...
 ```
+
+### 1.1.1 컴포넌트 역할 분리 (구현 방향)
+
+**LayerTree.tsx**
+- Tree 제어 컴포넌트: `selectedKeys`, `expandedKeys`, `dragAndDropHooks` 연결
+- `useLayerTreeData`로 TreeData 생성, `useLayerTreeDnd`로 이동 계산
+- `onSelectionChange`에서 가상 자식 제외 후 store 업데이트
+
+**LayerTreeItem.tsx**
+- TreeItem wrapper로 렌더링 책임 분리
+- Drag handle 영역 지정 (Settings/Delete와 분리)
+- `TreeItemContent`와 `VirtualChildItem` 분기
+
+**LayerTreeContent.tsx**
+- 세로 라인, 아이콘, 라벨, 액션 버튼 렌더링
+- expand 토글 클릭 처리
+- `selected`/`focus` 상태 스타일 적용
+
+**VirtualChildItem.tsx**
+- Collection 가상 자식 렌더링 전담
+- 선택 전용(`selectedTab`), drag/drop 비활성화
+- `aria-disabled` 적용
+
+**useLayerTreeData.ts**
+- `buildTreeFromElements` 기반 TreeData 생성
+- 가상 자식 삽입, Tabs 정렬 반영
+- elements 변경 시 재초기화 전략 지원
+
+**useLayerTreeDnd.ts**
+- `calculateMoveUpdates`, `collectSiblings`, `computeInsertIndex` 제공
+- dropPosition 처리 및 old/new parent 재정렬
+
+**validation.ts**
+- `isValidDrop` + reason 코드 제공
+- DnD UX 피드백과 연동
 
 ### 1.2 핵심 타입 정의
 
@@ -113,6 +154,9 @@ export interface LayerTreeProps {
   elements: Element[];
   selectedElementId: string | null;
   selectedTab?: { parentId: string; tabIndex: number } | null;
+  expandedKeys?: Set<string | number>;
+  onExpandedChange?: (keys: Set<string | number>) => void;
+  onToggleExpand?: (key: string) => void;
   onItemClick: (element: Element) => void;
   onItemDelete: (element: Element) => Promise<void>;
   onSelectTabElement?: (parentId: string, props: ElementProps, index: number) => void;
@@ -132,7 +176,14 @@ import { useTreeData } from 'react-stately';
 import { LayerTreeContent } from './LayerTreeContent';
 import { useLayerTreeData } from './useLayerTreeData';
 
-export function LayerTree({ elements, selectedElementId, onItemClick, onItemDelete }: LayerTreeProps) {
+export function LayerTree({
+  elements,
+  selectedElementId,
+  expandedKeys,
+  onExpandedChange,
+  onItemClick,
+  onItemDelete,
+}: LayerTreeProps) {
   // Zustand elements → react-aria TreeData 변환 및 동기화
   const { tree, syncToStore } = useLayerTreeData(elements);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -153,8 +204,15 @@ export function LayerTree({ elements, selectedElementId, onItemClick, onItemDele
         aria-label="Layers"
         items={tree.items}
         selectionMode="single"
-        selectedKeys={selectedElementId ? [selectedElementId] : []}
+        selectedKeys={selectedElementId ? new Set([selectedElementId]) : new Set()}
+        expandedKeys={expandedKeys}
+        onExpandedChange={(keys) => {
+          if (onExpandedChange && keys !== 'all') {
+            onExpandedChange(keys as Set<string | number>);
+          }
+        }}
         onSelectionChange={(keys) => {
+          if (keys === 'all') return;
           const id = [...keys][0] as string;
           const node = tree.getItem(id);
           if (node) onItemClick(node.value.element);
@@ -184,9 +242,10 @@ import { ICON_EDIT_PROPS } from '../treeHelpers';
 interface LayerTreeContentProps {
   node: LayerTreeNode;
   onDelete: (element: Element) => Promise<void>;
+  onToggleExpand?: (key: string) => void;
 }
 
-export function LayerTreeContent({ node, onDelete }: LayerTreeContentProps) {
+export function LayerTreeContent({ node, onDelete, onToggleExpand }: LayerTreeContentProps) {
   const { depth, hasChildren, tag, element } = node;
 
   return (
@@ -200,7 +259,12 @@ export function LayerTreeContent({ node, onDelete }: LayerTreeContentProps) {
           />
 
           {/* 아이콘 (펼침/접기) */}
-          <div className="elementItemIcon">
+          <div
+            className="elementItemIcon"
+            onClick={() => {
+              if (hasChildren) onToggleExpand?.(node.id);
+            }}
+          >
             {hasChildren ? (
               <ChevronRight
                 color={ICON_EDIT_PROPS.color}
@@ -275,15 +339,20 @@ export function useLayerTreeData(elements: Element[]) {
   }, [treeNodes]);
 
   // Store 업데이트 함수
-  const updateElementOrder = useStore((state) => state.updateElementOrder);
-  const batchUpdateElements = useStore((state) => state.batchUpdateElementProps);
+  const batchUpdateElements = useStore((state) => state.batchUpdateElements);
 
-  const syncToStore = useCallback((updates: Array<{ id: string; parentId: string | null; orderNum: number }>) => {
-    // Zustand store 업데이트
-    updates.forEach(({ id, parentId, orderNum }) => {
-      updateElementOrder(id, { parent_id: parentId, order_num: orderNum });
-    });
-  }, [updateElementOrder]);
+  const syncToStore = useCallback((updates: Array<{ id: string; parentId?: string | null; orderNum?: number }>) => {
+    // ✅ batchUpdateElements로 parent_id + order_num 동시 업데이트
+    batchUpdateElements(
+      updates.map((update) => ({
+        elementId: update.id,
+        updates: {
+          ...(update.parentId !== undefined && { parent_id: update.parentId }),
+          ...(update.orderNum !== undefined && { order_num: update.orderNum }),
+        },
+      }))
+    );
+  }, [batchUpdateElements]);
 
   return { tree, syncToStore };
 }
@@ -324,6 +393,84 @@ function convertToLayerTreeNodes(
 }
 ```
 
+### 1.6 Tree 상태 동기화 / expandedKeys / selection 모델
+
+**확장 상태**
+- `useTreeExpandState`의 `expandedKeys`를 Tree에 전달해 **완전 제어형**으로 유지
+- 아이콘 클릭은 `onToggleExpand`로 처리하고, 키보드/포커스 확장은 `onExpandedChange`로 수신
+
+**선택 상태**
+- `selectedKeys`는 `Set` 기반 (`new Set([id])`)으로 전달
+- `onSelectionChange`에서 `keys === 'all'` 처리
+- Collection 가상 자식은 **Tree 선택과 분리**하여 `selectedTab`로만 하이라이트
+
+**Tree 데이터 동기화**
+- `useTreeData`는 내부 상태를 가지므로 **elements 변경 시 재초기화 전략** 필요
+- 권장: `LayerTree`에 `key`를 부여해 재마운트하고, 확장/선택은 외부 상태로 유지
+  - 예시: `const treeKey = useMemo(() => `${pageId}:${elements.length}`, [pageId, elements.length]);`
+
+### 1.7 Tree 가상화 전략
+
+> ⚠️ **react-aria Tree는 Virtualizer 공식 통합이 없음**  
+> 현재 기준에서는 **두 가지 모드**를 명확히 분리해 운영하는 것이 안전합니다.
+
+#### 모드 A: 비가상화 (기본)
+- 대상: 요소 수가 적거나 DnD/키보드 내비게이션 안정성이 우선일 때
+- 구현: `<Tree>` 직접 렌더
+- 기준: `flattenedItems.length < 50` 또는 `elements.length < 100`
+
+#### 모드 B: react-virtual 기반 가상화 (대규모)
+- 대상: 100+ 요소에서 렌더링 성능 이슈가 명확할 때
+- 구현: 기존 `VirtualizedLayerTree` 유지 또는 Tree 전환 이후 커스텀 가상화
+- 주의:
+  - Tree 가상화 시 **포커스/키보드 이동/드롭 타겟 계산**이 깨질 수 있음
+  - 드래그 중 자동 확장 및 drop indicator 위치가 안정적인지 별도 검증 필요
+
+#### 선택 기준 요약
+- `elements.length >= 100` → 가상화 고려
+- `DnD/접근성 안정성` 최우선일 때 → 비가상화 유지
+- 실제 성능 문제 재현 시에만 가상화 활성화 (기본 OFF)
+
+### 1.8 VirtualizedLayerTree 단계적 제거 플랜
+
+**Phase A: 병행 운영 (현재)**
+- `LayerTree` 기본 렌더 경로 유지
+- `elements.length >= 100`일 때만 `VirtualizedLayerTree` 사용
+- 목표: Tree 마이그레이션 안정화 + DnD/선택/확장 상태 회귀 확인
+
+**Phase B: 성능 검증**
+- 100+ 요소에서 `LayerTree` 성능 측정 (스크롤 FPS/입력 지연)
+- 가상화 필요성 재평가 (실측 데이터 기반)
+- 필요 시 `LayerTree` 가상화 전략 재검토
+
+**Phase C: 제거 조건**
+- `LayerTree` 성능이 기준 충족 시 `VirtualizedLayerTree` 제거
+- `Layers.tsx` 가상화 분기 삭제
+- 관련 유틸/스타일 정리 (가상화 전용 코드 제거)
+
+**검증 체크리스트**
+- DnD 동작 (same level / parent change) 안정성
+- 키보드 네비게이션/포커스 유지
+- expandedKeys/selection 동기화
+- Collection 가상 자식 표시/선택
+
+### 1.9 가상화 성능 측정 기준
+
+**측정 시나리오**
+- 요소 100/300/500개에서 트리 렌더링/스크롤/선택/드래그 테스트
+- `elements.length >= 100`에서 `LayerTree`와 `VirtualizedLayerTree` 비교
+
+**핵심 지표**
+- 스크롤 FPS (목표: 55~60fps 유지)
+- 클릭/선택 INP 지연 (목표: 200ms 이하)
+- DnD 드래그 시 프레임 드랍 여부 (육안 + FPS)
+
+**검증 체크리스트**
+- 100+ 요소에서 스크롤 중 라벨/아이콘 깜빡임 없음
+- 드래그 중 DropIndicator 위치 안정
+- expandedKeys 변경 시 렌더링 지연 없음
+- 선택 변경 시 inspector/iframe 동기화 지연 없음
+
 ---
 
 ## Phase 2: DnD 구현 (onMove 사용)
@@ -331,6 +478,14 @@ function convertToLayerTreeNodes(
 > **v1.14 API 기준**: `onMove`만 사용하여 모든 DnD 케이스 처리 권장
 > - `onReorder`: 같은 레벨 순서 변경만 지원
 > - `onMove`: 모든 이동 (순서 변경 + 부모 변경) 지원 ✅
+
+### 2.0 DnD 처리 흐름 (현재 코드 기준)
+
+1. **드롭 이벤트 정규화**: `keys`/`target` → `targetParentId`/`insertIndex` 계산
+2. **유효성 검증**: self/descendant/body 이동 금지, root before/after 금지, 가상 자식 드롭 금지, page/layout 컨텍스트 불일치 금지
+3. **업데이트 계산**: oldParent + newParent 형제 리스트 재구성 → `order_num` 재부여
+4. **상태 반영**: `batchUpdateElements`로 `parent_id` + `order_num` 동시 업데이트
+5. **히스토리 기록**: `type: 'move'`로 기존 HistoryEntry에 기록
 
 ### 2.1 useDragAndDrop 설정
 
@@ -351,6 +506,21 @@ export function LayerTree({ elements, ... }: LayerTreeProps) {
     // ✅ onMove만 사용하여 모든 DnD 케이스 처리 (v1.14 권장)
     onMove(e) {
       const { keys, target } = e;
+      if (!target || target.type !== 'item') return;
+
+      // 드롭 유효성 검증
+      for (const key of keys) {
+        const { valid } = isValidDrop(key as string, target.key as string, target.dropPosition, tree);
+        if (!valid) return;
+      }
+
+      // 드롭 위치 계산 (insertIndex 포함)
+      const updates = calculateMoveUpdates({
+        tree,
+        movedKeys: keys,
+        targetKey: target.key,
+        dropPosition: target.dropPosition,
+      });
 
       // 1. 같은 레벨 이동 (before/after)
       if (target.dropPosition === 'before') {
@@ -365,8 +535,7 @@ export function LayerTree({ elements, ... }: LayerTreeProps) {
         });
       }
 
-      // 3. Zustand + IndexedDB 동기화
-      const updates = calculateMoveUpdates(keys, target);
+      // 3. Zustand + IndexedDB 동기화 (batchUpdateElements)
       syncToStore(updates);
     },
 
@@ -395,6 +564,83 @@ export function LayerTree({ elements, ... }: LayerTreeProps) {
         {/* ... */}
       </Tree>
     </div>
+  );
+}
+```
+
+### 2.1.1 Tree 상태/Selection/DnD 연동 예시
+
+```typescript
+// LayerTree.tsx (controlled state 예시)
+import { Tree } from 'react-aria-components';
+import { useTreeExpandState } from '../../hooks/useTreeExpandState';
+
+export function LayerTree({
+  elements,
+  selectedElementId,
+  selectedTab,
+  onItemClick,
+  onItemDelete,
+}: LayerTreeProps) {
+  const { tree, syncToStore } = useLayerTreeData(elements);
+  const { expandedKeys, toggleKey, collapseAll } = useTreeExpandState({
+    selectedElementId,
+    elements,
+  });
+
+  const { dragAndDropHooks } = useDragAndDrop({
+    getItems: (keys) => [...keys].map((key) => ({
+      'application/x-layer-tree-item': JSON.stringify({ id: key }),
+      'text/plain': tree.getItem(key)?.value.name || '',
+    })),
+    onMove(e) {
+      const { keys, target } = e;
+      if (!target || target.type !== 'item') return;
+      for (const key of keys) {
+        const { valid } = isValidDrop(key as string, target.key as string, target.dropPosition, tree);
+        if (!valid) return;
+      }
+      const updates = calculateMoveUpdates({
+        tree,
+        movedKeys: keys,
+        targetKey: target.key,
+        dropPosition: target.dropPosition,
+      });
+      syncToStore(updates);
+    },
+  });
+
+  return (
+    <Tree
+      aria-label="Layers"
+      items={tree.items}
+      selectionMode="single"
+      selectedKeys={selectedElementId ? new Set([selectedElementId]) : new Set()}
+      expandedKeys={expandedKeys}
+      onExpandedChange={(keys) => {
+        if (keys !== 'all') {
+          // useTreeExpandState와 동기화 (키보드/포커스 확장용)
+        }
+      }}
+      onSelectionChange={(keys) => {
+        if (keys === 'all') return;
+        const key = [...keys][0] as string;
+        const node = tree.getItem(key)?.value;
+        if (!node || node.virtualChildType) return;
+        onItemClick(node.element);
+      }}
+      dragAndDropHooks={dragAndDropHooks}
+    >
+      {(node) => (
+        <LayerTreeItem
+          key={node.id}
+          node={node}
+          onDelete={onItemDelete}
+          onToggleExpand={toggleKey}
+          selectedTab={selectedTab}
+        />
+      )}
+    </Tree>
   );
 }
 ```
@@ -439,6 +685,11 @@ export function isValidDrop(
     return { valid: false, reason: 'leaf-inside' };
   }
 
+  // 3-1. 가상 자식 드롭 불가 (Collection children)
+  if (draggedNode.virtualChildType || targetNode.virtualChildType) {
+    return { valid: false, reason: 'virtual-child' };
+  }
+
   // 4. body는 이동 불가
   if (draggedNode.tag === 'body') {
     return { valid: false, reason: 'body-immutable' };
@@ -447,6 +698,16 @@ export function isValidDrop(
   // 5. 루트 레벨로 이동 불가 (body 외)
   if (targetNode.depth === 0 && dropPosition !== 'on') {
     return { valid: false, reason: 'root-level-denied' };
+  }
+
+  // 6. 페이지/레이아웃 컨텍스트 불일치 방지
+  const draggedElement = draggedNode.element;
+  const targetElement = targetNode.element;
+  if (
+    draggedElement.page_id !== targetElement.page_id ||
+    draggedElement.layout_id !== targetElement.layout_id
+  ) {
+    return { valid: false, reason: 'context-mismatch' };
   }
 
   return { valid: true };
@@ -462,38 +723,89 @@ function isDescendant(ancestorId: string, descendantId: string, tree: TreeData<L
 }
 ```
 
+### 2.2.1 DnD 유효성 규칙 요약
+
+| 규칙 | 조건 | 이유 |
+|------|------|------|
+| Self drop 금지 | draggedId === targetId | 순환 방지 |
+| Descendant drop 금지 | isDescendant(draggedId, targetId) | 트리 순환 방지 |
+| Leaf 내부 drop 금지 | dropPosition === 'on' && target.isLeaf | leaf는 자식 불가 |
+| Virtual child drop 금지 | dragged/target virtualChildType 존재 | 가상 자식은 선택 전용 |
+| body 이동 금지 | dragged.tag === 'body' | root 안정성 |
+| root before/after 금지 | target.depth === 0 && dropPosition !== 'on' | 트리 최상단 안정성 |
+| 컨텍스트 불일치 금지 | page_id/layout_id 불일치 | 페이지/레이아웃 경계 유지 |
+
+### 2.2.2 에러 UX 제안
+
+- DropIndicator 숨김: 유효하지 않은 대상에서는 드롭 인디케이터 미표시
+- 커서 피드백: invalid 대상에 `not-allowed` 커서 적용
+- 경고 메시지 최소화: toast는 반복 스팸 방지를 위해 1회/세션 또는 디바운스
+- 키보드 DnD 지원 시: invalid 조건은 `aria-live`로 간단 메시지 제공
+- 개발 모드 로그: dev 환경에서만 reason 코드 출력 (prod는 무음)
+
 ### 2.3 기존 elementReorder.ts 연동
 
 ```typescript
-// 기존 reorderElements 함수 활용
-import { reorderElements } from '../../stores/utils/elementReorder';
+// ✅ DnD에서는 reorderElements를 직접 사용하지 않고
+//    oldParent + newParent 형제 리스트를 재구성하여 업데이트 계산
+function calculateMoveUpdates({
+  tree,
+  movedKeys,
+  targetKey,
+  dropPosition,
+}: {
+  tree: TreeData<LayerTreeNode>;
+  movedKeys: Set<Key>;
+  targetKey: Key;
+  dropPosition: 'before' | 'after' | 'on';
+}): Array<{ id: string; parentId?: string | null; orderNum?: number }> {
+  const movedIds = [...movedKeys].map((k) => String(k));
+  const targetNode = tree.getItem(targetKey)?.value;
+  if (!targetNode) return [];
 
-function calculateOrderUpdates(
-  treeItems: TreeNode<LayerTreeNode>[],
-  movedKeys: Set<Key>,
-  targetKey: Key,
-  dropPosition: 'before' | 'after'
-): Array<{ id: string; parentId: string | null; orderNum: number }> {
-  // 이동된 노드의 새 부모 찾기
-  const targetNode = findNode(treeItems, targetKey);
-  const newParentId = targetNode?.value.parentId || null;
+  // newParentId 결정
+  const newParentId =
+    dropPosition === 'on' ? targetNode.id : targetNode.parentId ?? null;
 
-  // 같은 부모의 형제들 추출
-  const siblings = getSiblings(treeItems, newParentId);
+  // oldParentIds 수집
+  const oldParentIds = new Set<string | null>();
+  movedIds.forEach((id) => {
+    const node = tree.getItem(id)?.value;
+    oldParentIds.add(node?.parentId ?? null);
+  });
 
-  // 기존 reorderElements 로직 재사용
-  const reordered = reorderElements(
-    siblings.map(s => s.value.element),
-    [...movedKeys].map(k => findNode(treeItems, k)!.value.element),
-    targetKey as string,
-    dropPosition
-  );
+  // newParent + oldParent 모두 재정렬 대상
+  const affectedParents = new Set<string | null>([...oldParentIds, newParentId]);
 
-  return reordered.map((el, idx) => ({
-    id: el.id,
-    parentId: newParentId,
-    orderNum: idx,
-  }));
+  const updates: Array<{ id: string; parentId?: string | null; orderNum?: number }> = [];
+
+  affectedParents.forEach((parentId) => {
+    // 현재 parentId 하위 형제들 수집
+    const siblings = collectSiblings(tree, parentId);
+    const filtered = siblings.filter((s) => !movedIds.includes(s.id));
+
+    // dropPosition에 따라 삽입 index 계산
+    const insertIndex = computeInsertIndex(filtered, targetKey, dropPosition, parentId);
+    const next = parentId === newParentId
+      ? insertAt(filtered, movedIds, insertIndex)
+      : filtered;
+
+    // 새 부모인 경우에만 movedIds 삽입
+    const finalList = parentId === newParentId
+      ? insertAt(filtered, movedIds, insertIndex)
+      : filtered;
+
+    finalList.forEach((id, index) => {
+      const isMoved = movedIds.includes(id);
+      updates.push({
+        id,
+        ...(isMoved && parentId === newParentId && { parentId: newParentId }),
+        orderNum: index,
+      });
+    });
+  });
+
+  return updates;
 }
 ```
 
@@ -589,6 +901,26 @@ function getVirtualChildIcon(type: VirtualChildType, data: unknown) {
 | select | Select | `props.children: ListItem[]` |
 | combobox | ComboBox | `props.children: ListItem[]` |
 | tree | Tree | `props.children: TreeItemType[]` |
+
+### 3.3 가상 자식 선택/표시 규칙 (hover/selection/aria)
+
+**선택 상태**
+- 가상 자식은 Tree의 `selectedKeys`에서 제외
+- 선택 하이라이트는 `selectedTab`(parentId + index)만 기준으로 적용
+- 부모 TreeItem 선택과 가상 자식 선택이 **동시에 활성화되지 않도록** 시각적으로 분리
+
+**Hover**
+- hover는 일반 TreeItem과 동일한 스타일을 적용
+- drag handle/expand 아이콘은 가상 자식에 표시하지 않음
+
+**ARIA/접근성**
+- 가상 자식은 `TreeItem`로 렌더하되 `aria-disabled="true"` 적용 (드롭/드래그 방지)
+- `textValue`는 가상 자식의 label과 동일하게 지정
+- 키보드 네비게이션 시 선택 동작은 커스텀 `onSelectTabElement`에서만 처리
+
+**DnD**
+- 가상 자식은 드래그 소스/드롭 타겟 모두 비활성화
+- DropIndicator는 가상 자식 행에서는 숨김
 
 ---
 
@@ -701,106 +1033,30 @@ const handleMoveEnd = useCallback((elementId: string, delta: { x: number; y: num
 
 ## Phase 6: 배치 DB 업데이트 (IndexedDB)
 
-### 6.1 IndexedDB Adapter 활용
+### 6.1 배치 업데이트 경로 (현재 코드 기준)
 
-> **API 기준**: `src/lib/db/types.ts` DatabaseAdapter 인터페이스
-
-```typescript
-// batchUpdateElements.ts
-import { getDB } from '../../../lib/db';
-import type { Element } from '../../../types/core/store.types';
-
-interface ElementUpdate {
-  id: string;
-  parent_id?: string | null;
-  order_num?: number;
-}
-
-/**
- * IndexedDB를 통한 배치 업데이트
- * - 로컬 우선 (Local-first): 1-5ms 응답
- * - 오프라인 지원
- * - Supabase 동기화는 별도 sync 레이어에서 처리
- */
-export async function batchUpdateElementsInDB(
-  updates: ElementUpdate[]
-): Promise<{ success: boolean; error?: string }> {
-  if (updates.length === 0) return { success: true };
-
-  try {
-    const db = await getDB();
-
-    // ✅ 올바른 API: db.elements.updateMany 사용
-    await db.elements.updateMany(
-      updates.map(u => ({
-        id: u.id,
-        data: {
-          ...(u.parent_id !== undefined && { parent_id: u.parent_id }),
-          ...(u.order_num !== undefined && { order_num: u.order_num }),
-          updated_at: new Date().toISOString(),
-        },
-      }))
-    );
-
-    return { success: true };
-  } catch (error) {
-    console.error('IndexedDB batch update failed:', error);
-    return { success: false, error: String(error) };
-  }
-}
-
-// 디바운스 적용 (300ms)
-export const debouncedBatchUpdate = debounce(batchUpdateElementsInDB, 300);
-```
-
-### IndexedDB API 참고 (src/lib/db/types.ts)
-
-```typescript
-// DatabaseAdapter.elements 인터페이스
-elements: {
-  getById(id: string): Promise<Element | null>;           // 단일 조회
-  update(id: string, data: Partial<Element>): Promise<Element>;  // 단일 업데이트
-  updateMany(updates: Array<{ id: string; data: Partial<Element> }>): Promise<Element[]>;  // 배치 업데이트 ✅
-}
-```
-
-### 6.2 롤백 전략 (IndexedDB 스냅샷)
+> **권장 경로**: `batchUpdateElements` 액션 사용  
+> 내부에서 **메모리 업데이트 → 인덱스 재구축 → IndexedDB 저장**을 처리합니다.
 
 ```typescript
 // useLayerTreeData.ts
-
-const syncToStore = useCallback(async (updates: ElementUpdate[]) => {
-  // 1. 롤백용 스냅샷 저장 (IndexedDB에서 현재 상태 읽기)
-  const db = await getDB();
-  const snapshots = await Promise.all(
-    updates.map(async (u) => {
-      const element = await db.elements.getById(u.id);  // ✅ 올바른 API
-      return {
-        id: u.id,
-        parent_id: element?.parent_id,
-        order_num: element?.order_num,
-      };
-    })
+const syncToStore = useCallback((updates: ElementUpdate[]) => {
+  batchUpdateElements(
+    updates.map((u) => ({
+      elementId: u.id,
+      updates: {
+        ...(u.parentId !== undefined && { parent_id: u.parentId }),
+        ...(u.orderNum !== undefined && { order_num: u.orderNum }),
+      },
+    }))
   );
-
-  // 2. 낙관적 업데이트 (Zustand)
-  updates.forEach(({ id, parentId, orderNum }) => {
-    updateElementOrder(id, { parent_id: parentId, order_num: orderNum });
-  });
-
-  // 3. IndexedDB 커밋 (비동기)
-  const result = await debouncedBatchUpdate(updates);
-
-  // 4. 실패 시 롤백
-  if (!result.success) {
-    // Zustand 롤백
-    snapshots.forEach(({ id, parent_id, order_num }) => {
-      updateElementOrder(id, { parent_id, order_num });
-    });
-    toast.error('변경사항 저장 실패. 롤백되었습니다.');
-  }
-}, [updateElementOrder]);
+}, [batchUpdateElements]);
 ```
+
+### 6.2 롤백 전략 (선택)
+
+- `batchUpdateElements`는 내부에서 IndexedDB 오류를 로깅하고 메모리는 유지합니다.
+- 실패 시 롤백이 필요하다면, **업데이트 전 스냅샷을 별도로 보관**한 후 재적용하는 방식으로 구성합니다.
 
 ### 6.3 Supabase 동기화 (선택적)
 
@@ -814,52 +1070,28 @@ const syncToStore = useCallback(async (updates: ElementUpdate[]) => {
 
 ## Phase 7: 히스토리 & Undo/Redo
 
-### 7.1 DragHistoryEntry 타입
+### 7.1 HistoryEntry (move 타입) 사용
 
 ```typescript
-// history/types.ts
-export interface DragHistoryEntry {
-  type: 'tree-move';
-  timestamp: number;
-  elementId: string;
-  changes: {
-    parentId: { from: string | null; to: string | null };
-    orderNum: { from: number; to: number };
-  };
-  siblingChanges: Array<{
-    id: string;
-    orderNum: { from: number; to: number };
-  }>;
-  coalesceKey?: string; // 같은 키면 병합
-}
+// history.ts의 기존 HistoryEntry 타입 활용
+historyManager.addEntry({
+  type: 'move',
+  elementId: movedId,          // 대표 요소
+  elementIds: movedIds,        // 다중 이동 시 사용
+  data: {
+    prevParentId,
+    parentId,
+    prevOrderNum,
+    orderNum,
+  },
+});
 ```
 
 ### 7.2 Coalescing 규칙
 
 ```typescript
-function shouldCoalesce(prev: DragHistoryEntry, next: DragHistoryEntry): boolean {
-  // 1. 같은 요소의 연속 이동만 병합
-  if (prev.elementId !== next.elementId) return false;
-
-  // 2. 500ms 이내만 병합
-  if (next.timestamp - prev.timestamp > 500) return false;
-
-  // 3. 같은 coalesceKey만 병합
-  if (prev.coalesceKey !== next.coalesceKey) return false;
-
-  return true;
-}
-
-function coalesce(prev: DragHistoryEntry, next: DragHistoryEntry): DragHistoryEntry {
-  return {
-    ...next,
-    changes: {
-      parentId: { from: prev.changes.parentId.from, to: next.changes.parentId.to },
-      orderNum: { from: prev.changes.orderNum.from, to: next.changes.orderNum.to },
-    },
-    // siblingChanges는 최신 것 사용
-  };
-}
+// 기존 HistoryEntry 기준으로 coalesce 적용
+// (대표 elementId + 시간 기준으로 병합)
 ```
 
 ### 7.3 Undo/Redo 구현
@@ -867,44 +1099,14 @@ function coalesce(prev: DragHistoryEntry, next: DragHistoryEntry): DragHistoryEn
 ```typescript
 // historyActions.ts
 
-function undoTreeMove(entry: DragHistoryEntry) {
-  const { elementId, changes, siblingChanges } = entry;
-
-  // 1. 메인 요소 복원
-  updateElementOrder(elementId, {
-    parent_id: changes.parentId.from,
-    order_num: changes.orderNum.from,
-  });
-
-  // 2. 형제 요소들 복원
-  siblingChanges.forEach(({ id, orderNum }) => {
-    updateElementOrder(id, { order_num: orderNum.from });
-  });
-
-  // 3. DB 동기화
-  debouncedBatchUpdate([
-    { id: elementId, parent_id: changes.parentId.from, order_num: changes.orderNum.from },
-    ...siblingChanges.map(s => ({ id: s.id, order_num: s.orderNum.from })),
-  ]);
+function undoMove(entry: HistoryEntry) {
+  // elementIds + prevParentId/prevOrderNum 기준으로 복원
+  // batchUpdateElements 사용
 }
 
-function redoTreeMove(entry: DragHistoryEntry) {
-  const { elementId, changes, siblingChanges } = entry;
-
-  // Undo의 역방향
-  updateElementOrder(elementId, {
-    parent_id: changes.parentId.to,
-    order_num: changes.orderNum.to,
-  });
-
-  siblingChanges.forEach(({ id, orderNum }) => {
-    updateElementOrder(id, { order_num: orderNum.to });
-  });
-
-  debouncedBatchUpdate([
-    { id: elementId, parent_id: changes.parentId.to, order_num: changes.orderNum.to },
-    ...siblingChanges.map(s => ({ id: s.id, order_num: s.orderNum.to })),
-  ]);
+function redoMove(entry: HistoryEntry) {
+  // elementIds + parentId/orderNum 기준으로 재적용
+  // batchUpdateElements 사용
 }
 ```
 

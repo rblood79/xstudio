@@ -46,7 +46,7 @@ interface PagesTabProps {
   collapseAllTreeItems?: () => void;
   /** 🚀 Performance: Virtual Scrolling용 props */
   expandedKeys?: Set<string | number>;
-  onToggleExpand?: (key: string) => void;
+  onToggleExpand?: (key: string | number) => void;
   selectedTab?: { parentId: string; tabIndex: number } | null;
   onSelectTabElement?: (parentId: string, props: ElementProps, index: number) => void;
 }

@@ -43,6 +43,7 @@ import { getOutlineVariantColor } from "./utils/cssVariableReader";
 import { useThemeColors } from "./hooks/useThemeColors";
 import { useViewportCulling } from "./hooks/useViewportCulling";
 import { longTaskMonitor } from "../../../utils/longTaskMonitor";
+import type { Element } from "../../../types/core/store.types";
 
 // ============================================
 // Types
@@ -64,6 +65,7 @@ export interface BuilderCanvasProps {
 const DEFAULT_WIDTH = 1920;
 const DEFAULT_HEIGHT = 1080;
 const DEFAULT_BACKGROUND = 0xf8fafc; // slate-50
+const DRAG_DISTANCE_THRESHOLD = 4;
 
 // ============================================
 // Sub-Components
@@ -382,6 +384,7 @@ export function BuilderCanvas({
   const containerRef = useRef<HTMLDivElement>(null);
   // 🚀 Phase 19: SelectionBox imperative handle ref (드래그 중 React 리렌더링 없이 위치 업데이트)
   const selectionBoxRef = useRef<SelectionBoxHandle>(null);
+  const dragPointerRef = useRef<{ x: number; y: number } | null>(null);
   const [containerEl, setContainerEl] = useState<HTMLDivElement | null>(null);
   const [yogaReady, setYogaReady] = useState(false);
 
@@ -418,6 +421,7 @@ export function BuilderCanvas({
   const setSelectedElements = useStore((state) => state.setSelectedElements);
   const clearSelection = useStore((state) => state.clearSelection);
   const updateElementProps = useStore((state) => state.updateElementProps);
+  const batchUpdateElements = useStore((state) => state.batchUpdateElements);
   const currentPageId = useStore((state) => state.currentPageId);
 
   // Settings state (SettingsPanel 연동)
@@ -439,6 +443,37 @@ export function BuilderCanvas({
     if (!currentPageId || !yogaReady) return { positions: new Map() };
     return calculateLayout(elements, currentPageId, pageWidth, pageHeight);
   }, [elements, currentPageId, pageWidth, pageHeight, yogaReady]);
+
+  const elementById = useMemo(
+    () => new Map(elements.map((el) => [el.id, el])),
+    [elements]
+  );
+
+  const depthMap = useMemo(() => {
+    const cache = new Map<string, number>();
+
+    const computeDepth = (id: string | null): number => {
+      if (!id) return 0;
+      const cached = cache.get(id);
+      if (cached !== undefined) return cached;
+
+      const el = elementById.get(id);
+      if (!el || el.tag.toLowerCase() === "body") {
+        cache.set(id, 0);
+        return 0;
+      }
+
+      const depth = 1 + computeDepth(el.parent_id as string | null);
+      cache.set(id, depth);
+      return depth;
+    };
+
+    elements.forEach((el) => {
+      cache.set(el.id, computeDepth(el.id));
+    });
+
+    return cache;
+  }, [elements, elementById]);
 
   // Zoom/Pan은 ViewportControlBridge에서 처리 (Application 내부에서 Container 직접 조작)
 
@@ -483,6 +518,234 @@ export function BuilderCanvas({
     [pageElements, layoutResult]
   );
 
+  const screenToCanvasPoint = useCallback(
+    (position: { x: number; y: number }) => {
+      return {
+        x: (position.x - panOffset.x) / zoom,
+        y: (position.y - panOffset.y) / zoom,
+      };
+    },
+    [panOffset.x, panOffset.y, zoom]
+  );
+
+  const getElementBounds = useCallback(
+    (element: Element): BoundingBox | null => {
+      if (element.tag.toLowerCase() === "body") {
+        return { x: 0, y: 0, width: pageWidth, height: pageHeight };
+      }
+
+      const layoutPos = layoutResult.positions.get(element.id);
+      if (layoutPos) {
+        return {
+          x: layoutPos.x,
+          y: layoutPos.y,
+          width: layoutPos.width,
+          height: layoutPos.height,
+        };
+      }
+
+      const style = element.props?.style as Record<string, unknown> | undefined;
+      const width = Number(style?.width);
+      const height = Number(style?.height);
+      if (!Number.isFinite(width) || !Number.isFinite(height)) {
+        return null;
+      }
+
+      return {
+        x: Number(style?.left) || 0,
+        y: Number(style?.top) || 0,
+        width,
+        height,
+      };
+    },
+    [layoutResult.positions, pageWidth, pageHeight]
+  );
+
+  const getDescendantIds = useCallback((rootId: string) => {
+    const childrenMap = useStore.getState().childrenMap;
+    const result = new Set<string>();
+    const stack = [rootId];
+
+    while (stack.length > 0) {
+      const currentId = stack.pop();
+      if (!currentId) continue;
+      const children = childrenMap.get(currentId) ?? [];
+      for (const child of children) {
+        if (result.has(child.id)) continue;
+        result.add(child.id);
+        stack.push(child.id);
+      }
+    }
+
+    return result;
+  }, []);
+
+  const findDropTarget = useCallback(
+    (point: { x: number; y: number }, draggedId: string) => {
+      const draggedElement = elementById.get(draggedId);
+      if (!draggedElement) return null;
+
+      const excludedIds = getDescendantIds(draggedId);
+      excludedIds.add(draggedId);
+
+      const candidates: Array<{
+        element: Element;
+        bounds: BoundingBox;
+        depth: number;
+      }> = [];
+
+      for (const element of elements) {
+        if (element.deleted) continue;
+        if (element.page_id !== draggedElement.page_id) continue;
+        if (element.layout_id !== draggedElement.layout_id) continue;
+        if (excludedIds.has(element.id)) continue;
+
+        const bounds = getElementBounds(element);
+        if (!bounds) continue;
+
+        const isInside =
+          point.x >= bounds.x &&
+          point.x <= bounds.x + bounds.width &&
+          point.y >= bounds.y &&
+          point.y <= bounds.y + bounds.height;
+
+        if (!isInside) continue;
+
+        candidates.push({
+          element,
+          bounds,
+          depth: depthMap.get(element.id) ?? 0,
+        });
+      }
+
+      if (candidates.length === 0) return null;
+
+      candidates.sort((a, b) => {
+        if (a.depth !== b.depth) return b.depth - a.depth;
+        return (b.element.order_num || 0) - (a.element.order_num || 0);
+      });
+
+      const target = candidates[0];
+      const parent =
+        target.element.parent_id != null
+          ? elementById.get(target.element.parent_id)
+          : null;
+      const parentStyle = parent?.props?.style as Record<string, unknown> | undefined;
+      const flexDirection = parentStyle?.flexDirection;
+      const isHorizontal =
+        flexDirection === "row" || flexDirection === "row-reverse";
+
+      let dropPosition: "before" | "after" | "on" = "on";
+      const size = isHorizontal ? target.bounds.width : target.bounds.height;
+
+      if (size > 0 && target.element.parent_id) {
+        const offset = isHorizontal
+          ? point.x - target.bounds.x
+          : point.y - target.bounds.y;
+        const ratio = offset / size;
+        if (ratio <= 0.25) dropPosition = "before";
+        else if (ratio >= 0.75) dropPosition = "after";
+      }
+
+      if (target.element.tag.toLowerCase() === "body") {
+        dropPosition = "on";
+      }
+
+      return {
+        targetId: target.element.id,
+        dropPosition,
+      };
+    },
+    [elements, elementById, depthMap, getDescendantIds, getElementBounds]
+  );
+
+  const buildReorderUpdates = useCallback(
+    (
+      movedId: string,
+      targetId: string,
+      dropPosition: "before" | "after" | "on"
+    ) => {
+      const movedElement = elementById.get(movedId);
+      const targetElement = elementById.get(targetId);
+      if (!movedElement || !targetElement) return [];
+
+      if (
+        movedElement.page_id !== targetElement.page_id ||
+        movedElement.layout_id !== targetElement.layout_id
+      ) {
+        return [];
+      }
+
+      const oldParentId = movedElement.parent_id ?? null;
+      const newParentId =
+        dropPosition === "on"
+          ? targetElement.id
+          : targetElement.parent_id ?? null;
+
+      if (oldParentId === null && newParentId === null && dropPosition !== "on") {
+        return [];
+      }
+
+      const getSiblings = (parentId: string | null, includeMoved = false) => {
+        return elements
+          .filter((el) => {
+            if (el.deleted) return false;
+            if (el.page_id !== movedElement.page_id) return false;
+            if (el.layout_id !== movedElement.layout_id) return false;
+            if ((el.parent_id ?? null) !== parentId) return false;
+            if (!includeMoved && el.id === movedId) return false;
+            return true;
+          })
+          .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+      };
+
+      const targetSiblings = getSiblings(newParentId);
+      const siblingIds = targetSiblings.map((el) => el.id);
+      let insertIndex = siblingIds.length;
+
+      if (dropPosition !== "on") {
+        const targetIndex = siblingIds.indexOf(targetElement.id);
+        if (targetIndex >= 0) {
+          insertIndex = dropPosition === "before" ? targetIndex : targetIndex + 1;
+        }
+      }
+
+      const nextIds = siblingIds.slice();
+      nextIds.splice(insertIndex, 0, movedId);
+
+      if (oldParentId === newParentId) {
+        const currentIds = getSiblings(oldParentId, true).map((el) => el.id);
+        if (currentIds.length === nextIds.length) {
+          const isSameOrder = currentIds.every(
+            (id, index) => id === nextIds[index]
+          );
+          if (isSameOrder) return [];
+        }
+      }
+
+      const updates = nextIds.map((id, index) => ({
+        elementId: id,
+        updates: {
+          order_num: index,
+          ...(id === movedId && { parent_id: newParentId }),
+        },
+      }));
+
+      if (oldParentId !== newParentId) {
+        const oldSiblings = getSiblings(oldParentId);
+        oldSiblings.forEach((el, index) => {
+          updates.push({
+            elementId: el.id,
+            updates: { order_num: index },
+          });
+        });
+      }
+
+      return updates;
+    },
+    [elements, elementById]
+  );
+
   // 🚀 Phase 5: 드래그 시작/종료 시 해상도 조정
   const handleDragStart = useCallback(() => {
     setIsInteracting(true);
@@ -508,12 +771,46 @@ export function BuilderCanvas({
         // 🚀 Phase 5: 드래그 종료 시 해상도 복원
         handleDragEnd();
 
-        const element = elements.find((el) => el.id === elementId);
+        const element = elementById.get(elementId);
         if (!element) return;
+
+        const dragDistance = Math.hypot(delta.x, delta.y);
+        if (dragDistance < DRAG_DISTANCE_THRESHOLD) {
+          selectionBoxRef.current?.resetPosition();
+          dragPointerRef.current = null;
+          return;
+        }
+
+        if (element.tag.toLowerCase() === "body") {
+          selectionBoxRef.current?.resetPosition();
+          dragPointerRef.current = null;
+          return;
+        }
 
         const style = element.props?.style as
           | Record<string, unknown>
           | undefined;
+        const position = style?.position;
+        const shouldReorder =
+          position !== "absolute" && position !== "fixed";
+
+        if (shouldReorder && dragPointerRef.current) {
+          const drop = findDropTarget(dragPointerRef.current, elementId);
+          if (drop) {
+            const updates = buildReorderUpdates(
+              elementId,
+              drop.targetId,
+              drop.dropPosition
+            );
+            if (updates.length > 0) {
+              batchUpdateElements(updates);
+            }
+          }
+          selectionBoxRef.current?.resetPosition();
+          dragPointerRef.current = null;
+          return;
+        }
+
         const currentX = Number(style?.left) || 0;
         const currentY = Number(style?.top) || 0;
 
@@ -524,8 +821,16 @@ export function BuilderCanvas({
             top: currentY + delta.y,
           },
         });
+        dragPointerRef.current = null;
       },
-      [elements, updateElementProps, handleDragEnd]
+      [
+        batchUpdateElements,
+        buildReorderUpdates,
+        elementById,
+        findDropTarget,
+        handleDragEnd,
+        updateElementProps,
+      ]
     ),
     onResizeEnd: useCallback(
       (elementId: string, _handle: HandlePosition, newBounds: BoundingBox) => {
@@ -548,6 +853,7 @@ export function BuilderCanvas({
             height: newBounds.height,
           },
         });
+        dragPointerRef.current = null;
       },
       [elements, updateElementProps, handleDragEnd]
     ),
@@ -594,21 +900,57 @@ export function BuilderCanvas({
 
   // 리사이즈 시작 핸들러
   const handleResizeStart = useCallback(
-    (elementId: string, handle: HandlePosition, bounds: BoundingBox) => {
-      // TODO: 실제 마우스 위치를 캔버스 좌표로 변환 필요
-      startResize(elementId, handle, bounds, { x: 0, y: 0 });
+    (
+      elementId: string,
+      handle: HandlePosition,
+      bounds: BoundingBox,
+      position: { x: number; y: number }
+    ) => {
+      const canvasPosition = screenToCanvasPoint(position);
+      dragPointerRef.current = canvasPosition;
+      startResize(elementId, handle, bounds, canvasPosition);
     },
-    [startResize]
+    [screenToCanvasPoint, startResize]
   );
 
   // 이동 시작 핸들러
   const handleMoveStart = useCallback(
-    (elementId: string, bounds: BoundingBox) => {
-      // TODO: 실제 마우스 위치를 캔버스 좌표로 변환 필요
-      startMove(elementId, bounds, { x: 0, y: 0 });
+    (elementId: string, bounds: BoundingBox, position: { x: number; y: number }) => {
+      const canvasPosition = screenToCanvasPoint(position);
+      dragPointerRef.current = canvasPosition;
+      startMove(elementId, bounds, canvasPosition);
     },
-    [startMove]
+    [screenToCanvasPoint, startMove]
   );
+
+  useEffect(() => {
+    if (!containerEl) return;
+
+    const handlePointerMove = (event: PointerEvent) => {
+      if (!dragState.isDragging || dragState.operation === "lasso") return;
+      const rect = containerEl.getBoundingClientRect();
+      const screenPosition = {
+        x: event.clientX - rect.left,
+        y: event.clientY - rect.top,
+      };
+      const canvasPosition = screenToCanvasPoint(screenPosition);
+      dragPointerRef.current = canvasPosition;
+      updateDrag(canvasPosition);
+    };
+
+    const handlePointerUp = () => {
+      if (!dragState.isDragging || dragState.operation === "lasso") return;
+      endDrag();
+    };
+
+    window.addEventListener("pointermove", handlePointerMove);
+    window.addEventListener("pointerup", handlePointerUp);
+
+    return () => {
+      window.removeEventListener("pointermove", handlePointerMove);
+      window.removeEventListener("pointerup", handlePointerUp);
+    };
+  }, [containerEl, dragState.isDragging, dragState.operation, endDrag, screenToCanvasPoint, updateDrag]);
 
   // 커서 변경 핸들러
   const handleCursorChange = useCallback((cursor: CursorStyle) => {

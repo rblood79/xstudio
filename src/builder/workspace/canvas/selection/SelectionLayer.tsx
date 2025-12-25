@@ -42,9 +42,18 @@ export interface SelectionLayerProps {
   /** 현재 줌 레벨 (핸들 크기 유지용) */
   zoom?: number;
   /** 드래그 시작 콜백 */
-  onResizeStart?: (elementId: string, handle: HandlePosition, bounds: BoundingBox) => void;
+  onResizeStart?: (
+    elementId: string,
+    handle: HandlePosition,
+    bounds: BoundingBox,
+    position: { x: number; y: number }
+  ) => void;
   /** 이동 시작 콜백 */
-  onMoveStart?: (elementId: string, bounds: BoundingBox) => void;
+  onMoveStart?: (
+    elementId: string,
+    bounds: BoundingBox,
+    position: { x: number; y: number }
+  ) => void;
   /** 커서 변경 콜백 */
   onCursorChange?: (cursor: CursorStyle) => void;
   /**
@@ -199,26 +208,29 @@ export const SelectionLayer = memo(function SelectionLayer({
 
   // 핸들 드래그 시작
   const handleResizeStart = useCallback(
-    (handle: HandlePosition) => {
+    (handle: HandlePosition, position: { x: number; y: number }) => {
       if (!selectionBounds || selectedElements.length === 0) return;
 
       // 단일 선택 시에만 리사이즈 지원
       if (isSingleSelection) {
         const element = selectedElements[0];
-        onResizeStart?.(element.id, handle, selectionBounds);
+        onResizeStart?.(element.id, handle, selectionBounds, position);
       }
     },
     [selectionBounds, selectedElements, isSingleSelection, onResizeStart]
   );
 
   // 이동 드래그 시작
-  const handleMoveStart = useCallback(() => {
-    if (!selectionBounds || selectedElements.length === 0) return;
+  const handleMoveStart = useCallback(
+    (position: { x: number; y: number }) => {
+      if (!selectionBounds || selectedElements.length === 0) return;
 
-    // 단일 선택 또는 다중 선택 모두 이동 지원
-    const element = selectedElements[0];
-    onMoveStart?.(element.id, selectionBounds);
-  }, [selectionBounds, selectedElements, onMoveStart]);
+      // 단일 선택 또는 다중 선택 모두 이동 지원
+      const element = selectedElements[0];
+      onMoveStart?.(element.id, selectionBounds, position);
+    },
+    [selectionBounds, selectedElements, onMoveStart]
+  );
 
   // 커서 변경
   const handleCursorChange = useCallback(

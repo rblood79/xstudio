@@ -44,7 +44,7 @@ interface VirtualizedLayerTreeProps {
   selectedTab?: { parentId: string; tabIndex: number } | null;
   onItemClick: (element: Element) => void;
   onItemDelete: (element: Element) => Promise<void>;
-  onToggleExpand: (key: string) => void;
+  onToggleExpand: (key: string | number) => void;
   onSelectTabElement?: (parentId: string, props: ElementProps, index: number) => void;
   /** 요소 배열 (Table 구조 렌더링용) */
   elements?: Element[];
@@ -224,7 +224,7 @@ interface TreeItemRowProps {
   selectedTab?: { parentId: string; tabIndex: number } | null;
   onItemClick: (element: Element) => void;
   onItemDelete: (element: Element) => Promise<void>;
-  onToggleExpand: (key: string) => void;
+  onToggleExpand: (key: string | number) => void;
   onSelectTabElement?: (parentId: string, props: ElementProps, index: number) => void;
 }
 

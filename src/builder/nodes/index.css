@@ -59,6 +59,18 @@
   }
 }
 
+.layer-expand-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+}
+
 .elementItemLabel {
   color: var(--on-surface-variant);
   flex: 1;
@@ -81,6 +93,23 @@
   padding: var(--spacing-sm);
 }
 
+.elementItemActions .layer-drag-handle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: var(--spacing-2xl);
+  min-height: var(--spacing-2xl);
+  cursor: grab;
+}
+
+.elementItemActions .layer-drag-handle:active {
+  cursor: grabbing;
+}
+
+.elementItemActions .layer-drag-handle svg {
+  pointer-events: none;
+}
+
 .elementItem:hover .elementItemActions,
 .elementItem.active .elementItemActions {
   transform: translateX(0%);
@@ -89,6 +118,21 @@
 .elementItem.active .elementItemLabel {
   color: var(--on-surface);
 }
+
+.layer-drop-indicator {
+  display: block;
+  height: 2px;
+  margin: 4px var(--spacing-sm);
+  margin-left: calc((var(--tree-item-level) - 1) * 8px + var(--spacing-sm));
+  background: var(--border-color-pressed);
+  border-radius: 999px;
+  pointer-events: none;
+}
+
+.layer-drop-indicator--hidden {
+  display: none;
+}
+
 
 .no_element {
   padding: var(--element-padding) calc(var(--element-padding) * 2);

@@ -39,7 +39,7 @@ export interface TransformHandleProps {
   /** 현재 줌 레벨 (핸들 크기 유지용) */
   zoom?: number;
   /** 드래그 시작 콜백 */
-  onDragStart?: (position: HandlePosition) => void;
+  onDragStart?: (position: HandlePosition, origin: { x: number; y: number }) => void;
   /** 호버 시작 콜백 */
   onHoverStart?: (cursor: CursorStyle) => void;
   /** 호버 종료 콜백 */
@@ -94,8 +94,10 @@ export const TransformHandle = memo(function TransformHandle({
   );
 
   // 이벤트 핸들러
-  const handlePointerDown = useCallback(() => {
-    onDragStart?.(config.position);
+  const handlePointerDown = useCallback((e: { global?: { x: number; y: number } }) => {
+    const global = e.global;
+    if (!global) return;
+    onDragStart?.(config.position, { x: global.x, y: global.y });
   }, [config.position, onDragStart]);
 
   const handlePointerOver = useCallback(() => {

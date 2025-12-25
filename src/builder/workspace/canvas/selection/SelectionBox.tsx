@@ -43,9 +43,9 @@ export interface SelectionBoxProps {
   /** 현재 줌 레벨 (핸들/테두리 크기 유지용) */
   zoom?: number;
   /** 드래그 시작 콜백 */
-  onDragStart?: (handle: HandlePosition) => void;
+  onDragStart?: (handle: HandlePosition, position: { x: number; y: number }) => void;
   /** 이동 드래그 시작 콜백 */
-  onMoveStart?: () => void;
+  onMoveStart?: (position: { x: number; y: number }) => void;
   /** 커서 변경 콜백 */
   onCursorChange?: (cursor: CursorStyle) => void;
 }
@@ -174,8 +174,8 @@ export const SelectionBox = memo(
 
   // 핸들 드래그 시작
   const handleDragStart = useCallback(
-    (position: HandlePosition) => {
-      onDragStart?.(position);
+    (position: HandlePosition, origin: { x: number; y: number }) => {
+      onDragStart?.(position, origin);
     },
     [onDragStart]
   );
@@ -194,9 +194,14 @@ export const SelectionBox = memo(
   }, [onCursorChange]);
 
   // 이동 영역 포인터 다운
-  const handleMovePointerDown = useCallback(() => {
-    onMoveStart?.();
-  }, [onMoveStart]);
+  const handleMovePointerDown = useCallback(
+    (e: { global?: { x: number; y: number } }) => {
+      const global = e.global;
+      if (!global) return;
+      onMoveStart?.({ x: global.x, y: global.y });
+    },
+    [onMoveStart]
+  );
 
   // 이동 영역 호버
   const handleMovePointerOver = useCallback(() => {
