@@ -213,6 +213,29 @@ function checkIsDescendant(
 
 ## Phase 2: 순서 변경 (기존 elementReorder 확장)
 
+### 2.0 기존 유틸리티와의 통합 전략
+
+**핵심 원칙**: 새로운 `moveElement`는 기존 코드 경로를 재사용하여 정렬 규칙 충돌을 방지합니다.
+
+| 기존 함수 | 역할 | moveElement와의 관계 |
+|----------|------|---------------------|
+| `reorderElements()` | 전체 order_num 정규화 (0-based 연속) | moveElement 내부에서 호출 |
+| `updateElementOrder()` | 단일 요소 order_num 업데이트 | moveElement가 내부적으로 사용 |
+| `normalizeOrderNums()` | 빈 슬롯/중복 제거 | 기존 로직 그대로 공유 |
+
+```typescript
+// 🔗 통합 아키텍처
+moveElement()
+  ├── updateElementOrder()  // 스토어 업데이트 (기존 액션)
+  ├── normalizeOrderNums()  // 정규화 로직 공유
+  └── reorderElements()     // 특수 컴포넌트 정렬 (Tabs, Collection 등)
+```
+
+**중복 방지 규칙**:
+1. order_num 정규화는 `normalizeOrderNums()` 단일 함수로 처리
+2. 스토어 업데이트는 `updateElementOrder()` 콜백 패턴 유지
+3. 특수 정렬(Tabs Tab-Panel 쌍)은 기존 `reorderElements()` 로직 활용
+
 ### 2.1 기존 유틸리티 확장 (새 파일 생성 X)
 
 **파일**: `src/builder/stores/utils/elementReorder.ts` 확장
@@ -228,6 +251,12 @@ export interface MoveElementParams {
 
 /**
  * 요소 이동 (기존 reorderElements 흐름과 통합)
+ *
+ * 🔗 기존 유틸과의 관계:
+ * - updateElementOrder(): 스토어 업데이트에 사용
+ * - normalizeOrderNums(): 동일한 정규화 로직 공유
+ * - reorderElements(): 특수 컴포넌트(Tabs 등) 처리 시 호출
+ *
  * - 같은 order_num 정규화 로직 사용
  * - 빈 슬롯/중복 방지 검증 포함
  */
@@ -1187,7 +1216,222 @@ async function undoDragEntry(entry: DragHistoryEntry): Promise<void> {
     }
   }
 }
+
+/**
+ * Redo 동작 규칙
+ * - Undo의 반대 방향으로 실행
+ * - from과 to를 교환하여 적용
+ */
+async function redoDragEntry(entry: DragHistoryEntry): Promise<void> {
+  switch (entry.type) {
+    case 'tree-move': {
+      // to 위치로 이동
+      await moveElement({
+        elementId: entry.elementId,
+        newParentId: entry.to.parentId,
+        newOrderNum: entry.to.orderNum,
+      });
+
+      // 형제 요소들도 to 값으로 설정
+      for (const sibling of entry.siblingChanges) {
+        updateElementOrder(sibling.id, sibling.to);
+      }
+      break;
+    }
+
+    case 'position-move': {
+      const element = elementsMap.get(entry.elementId);
+      if (element) {
+        await updateElementProps(entry.elementId, {
+          ...element.props,
+          style: { ...(element.props?.style as object), ...entry.to },
+        });
+      }
+      break;
+    }
+
+    case 'multi-position-move': {
+      const updates = entry.changes.map(change => ({
+        id: change.elementId,
+        props: {
+          ...(elementsMap.get(change.elementId)?.props || {}),
+          style: { ...change.to },
+        },
+      }));
+      await batchUpdateElementProps(updates);
+      break;
+    }
+
+    case 'composite': {
+      // 정순으로 redo (undo의 반대)
+      for (const subEntry of entry.entries) {
+        await redoDragEntry(subEntry);
+      }
+      break;
+    }
+  }
+}
 ```
+
+### 7.4 트랜잭션 묶기 기준
+
+**원칙**: 하나의 드래그 작업은 하나의 히스토리 엔트리로 기록
+
+```typescript
+/**
+ * 드래그 작업 트랜잭션 구조
+ *
+ * 1. 단일 요소 트리 이동 → TreeMoveHistoryEntry
+ * 2. 단일 요소 캔버스 이동 → PositionMoveHistoryEntry
+ * 3. 다중 요소 캔버스 이동 → MultiPositionMoveHistoryEntry
+ * 4. 트리 + 캔버스 동시 → CompositeHistoryEntry
+ */
+
+interface DragTransaction {
+  id: string;
+  startTime: number;
+  entries: DragHistoryEntry[];
+  batchUpdates: BatchPropsUpdate[];
+  committed: boolean;
+}
+
+class DragTransactionManager {
+  private currentTransaction: DragTransaction | null = null;
+
+  /**
+   * 드래그 시작 시 트랜잭션 시작
+   */
+  begin(): string {
+    const txId = crypto.randomUUID();
+    this.currentTransaction = {
+      id: txId,
+      startTime: Date.now(),
+      entries: [],
+      batchUpdates: [],
+      committed: false,
+    };
+    return txId;
+  }
+
+  /**
+   * 히스토리 엔트리 추가 (아직 커밋 안 함)
+   */
+  addEntry(entry: DragHistoryEntry): void {
+    if (!this.currentTransaction) {
+      throw new Error('No active transaction');
+    }
+    this.currentTransaction.entries.push(entry);
+  }
+
+  /**
+   * 배치 업데이트 추가 (아직 커밋 안 함)
+   */
+  addBatchUpdate(update: BatchPropsUpdate): void {
+    if (!this.currentTransaction) {
+      throw new Error('No active transaction');
+    }
+    this.currentTransaction.batchUpdates.push(update);
+  }
+
+  /**
+   * 드래그 종료 시 트랜잭션 커밋
+   * - 모든 배치 업데이트를 하나로 묶어 DB 저장
+   * - 모든 히스토리 엔트리를 하나로 병합
+   */
+  async commit(): Promise<{ success: boolean }> {
+    if (!this.currentTransaction) {
+      return { success: false };
+    }
+
+    const tx = this.currentTransaction;
+
+    try {
+      // 1. 배치 업데이트 실행
+      if (tx.batchUpdates.length > 0) {
+        await batchUpdateElementProps(tx.batchUpdates);
+      }
+
+      // 2. 히스토리 엔트리 병합 및 추가
+      if (tx.entries.length === 1) {
+        historyManager.addEntry(tx.entries[0]);
+      } else if (tx.entries.length > 1) {
+        // 다중 엔트리는 composite로 병합
+        const composite: CompositeHistoryEntry = {
+          type: 'composite',
+          entries: tx.entries as any,
+          description: `Drag operation with ${tx.entries.length} changes`,
+        };
+        historyManager.addEntry(composite);
+      }
+
+      tx.committed = true;
+      this.currentTransaction = null;
+      return { success: true };
+    } catch (error) {
+      // 실패 시 롤백은 moveElement 내부에서 처리됨
+      console.error('Transaction commit failed:', error);
+      this.currentTransaction = null;
+      return { success: false };
+    }
+  }
+
+  /**
+   * 드래그 취소 시 트랜잭션 롤백
+   */
+  rollback(): void {
+    // 로컬 상태는 이미 moveElement의 rollbackData로 복원됨
+    this.currentTransaction = null;
+  }
+}
+
+export const dragTransaction = new DragTransactionManager();
+```
+
+**사용 예시**:
+
+```typescript
+// 드래그 시작
+const onDragStart = () => {
+  dragTransaction.begin();
+};
+
+// 드래그 중 (트리 이동)
+const onTreeDrop = async (draggedId: string, dropPosition: DropPosition) => {
+  const result = await moveElement({ ... });
+  if (result.success) {
+    dragTransaction.addEntry({
+      type: 'tree-move',
+      elementId: draggedId,
+      from: { parentId: oldParentId, orderNum: oldOrderNum },
+      to: { parentId: newParentId, orderNum: newOrderNum },
+      siblingChanges: [...],
+    });
+  }
+};
+
+// 드래그 종료
+const onDragEnd = async () => {
+  const result = await dragTransaction.commit();
+  if (!result.success) {
+    showToast('드래그 작업 저장 실패');
+  }
+};
+
+// 드래그 취소 (Escape)
+const onDragCancel = () => {
+  dragTransaction.rollback();
+};
+```
+
+### 7.5 다중 선택 이동 기록 규칙
+
+| 시나리오 | 히스토리 엔트리 타입 | 병합 여부 |
+|----------|---------------------|----------|
+| 단일 요소 트리 이동 | `tree-move` | - |
+| 다중 요소 트리 이동 | `tree-move[]` → `composite` | 하나로 병합 |
+| 단일 요소 캔버스 이동 | `position-move` | - |
+| 다중 요소 캔버스 이동 | `multi-position-move` | 단일 엔트리로 기록 |
+| 연속 드래그 (500ms 내) | 기존 엔트리와 병합 | coalescing |
 
 ---
 
