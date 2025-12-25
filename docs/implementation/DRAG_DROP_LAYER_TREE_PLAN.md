@@ -677,13 +677,14 @@ const handleMoveEnd = useCallback((elementId: string, delta: { x: number; y: num
 
 ---
 
-## Phase 6: 배치 DB 업데이트
+## Phase 6: 배치 DB 업데이트 (IndexedDB)
 
-### 6.1 Supabase 트랜잭션 전략
+### 6.1 IndexedDB Adapter 활용
 
 ```typescript
 // batchUpdateElements.ts
-import { supabase } from '../../../lib/supabase';
+import { getDB } from '../../../lib/db';
+import type { Element } from '../../../types/core/store.types';
 
 interface ElementUpdate {
   id: string;
@@ -691,33 +692,40 @@ interface ElementUpdate {
   order_num?: number;
 }
 
+/**
+ * IndexedDB를 통한 배치 업데이트
+ * - 로컬 우선 (Local-first): 1-5ms 응답
+ * - 오프라인 지원
+ * - Supabase 동기화는 별도 sync 레이어에서 처리
+ */
 export async function batchUpdateElementsInDB(
   updates: ElementUpdate[]
 ): Promise<{ success: boolean; error?: string }> {
   if (updates.length === 0) return { success: true };
 
-  // 낙관적 업데이트는 이미 Zustand에서 수행됨
-  // DB는 비동기로 커밋
-
   try {
-    // Supabase upsert로 배치 업데이트
-    const { error } = await supabase
-      .from('elements')
-      .upsert(
-        updates.map(u => ({
-          id: u.id,
-          ...(u.parent_id !== undefined && { parent_id: u.parent_id }),
-          ...(u.order_num !== undefined && { order_num: u.order_num }),
-          updated_at: new Date().toISOString(),
-        })),
-        { onConflict: 'id' }
-      );
+    const db = await getDB();
 
-    if (error) throw error;
+    // IndexedDB 트랜잭션으로 배치 업데이트
+    await Promise.all(
+      updates.map(async (update) => {
+        const existing = await db.getElement(update.id);
+        if (!existing) return;
+
+        const updated: Element = {
+          ...existing,
+          ...(update.parent_id !== undefined && { parent_id: update.parent_id }),
+          ...(update.order_num !== undefined && { order_num: update.order_num }),
+          updated_at: new Date().toISOString(),
+        };
+
+        await db.upsertElement(updated);
+      })
+    );
 
     return { success: true };
   } catch (error) {
-    console.error('Batch update failed:', error);
+    console.error('IndexedDB batch update failed:', error);
     return { success: false, error: String(error) };
   }
 }
@@ -726,35 +734,50 @@ export async function batchUpdateElementsInDB(
 export const debouncedBatchUpdate = debounce(batchUpdateElementsInDB, 300);
 ```
 
-### 6.2 롤백 전략
+### 6.2 롤백 전략 (IndexedDB 스냅샷)
 
 ```typescript
 // useLayerTreeData.ts
 
 const syncToStore = useCallback(async (updates: ElementUpdate[]) => {
-  // 1. 롤백용 스냅샷 저장
-  const snapshot = updates.map(u => ({
-    id: u.id,
-    parent_id: elementsMap.get(u.id)?.parent_id,
-    order_num: elementsMap.get(u.id)?.order_num,
-  }));
+  // 1. 롤백용 스냅샷 저장 (IndexedDB에서 현재 상태 읽기)
+  const db = await getDB();
+  const snapshots = await Promise.all(
+    updates.map(async (u) => {
+      const element = await db.getElement(u.id);
+      return {
+        id: u.id,
+        parent_id: element?.parent_id,
+        order_num: element?.order_num,
+      };
+    })
+  );
 
   // 2. 낙관적 업데이트 (Zustand)
   updates.forEach(({ id, parentId, orderNum }) => {
     updateElementOrder(id, { parent_id: parentId, order_num: orderNum });
   });
 
-  // 3. DB 커밋 (비동기)
+  // 3. IndexedDB 커밋 (비동기)
   const result = await debouncedBatchUpdate(updates);
 
   // 4. 실패 시 롤백
   if (!result.success) {
-    snapshot.forEach(({ id, parent_id, order_num }) => {
+    // Zustand 롤백
+    snapshots.forEach(({ id, parent_id, order_num }) => {
       updateElementOrder(id, { parent_id, order_num });
     });
     toast.error('변경사항 저장 실패. 롤백되었습니다.');
   }
-}, [elementsMap, updateElementOrder]);
+}, [updateElementOrder]);
+```
+
+### 6.3 Supabase 동기화 (선택적)
+
+```typescript
+// 기존 projectSync.ts 활용
+// IndexedDB → Supabase 동기화는 별도 sync 레이어에서 자동 처리
+// DnD 작업에서는 IndexedDB만 직접 업데이트
 ```
 
 ---
