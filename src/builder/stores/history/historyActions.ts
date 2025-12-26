@@ -4,7 +4,7 @@ import type { StateCreator } from "zustand";
 import { Element, ComponentElementProps } from "../../../types/core/store.types";
 import { historyManager } from "../history";
 import { supabase } from "../../../env/supabase.client";
-import { sanitizeElement } from "../utils/elementSanitizer";
+import { sanitizeElement, sanitizeElementForSupabase } from "../utils/elementSanitizer";
 import {
   getElementById,
   createCompleteProps,
@@ -517,20 +517,46 @@ export const createUndoAction =
               // IndexedDB에 복원
               try {
                 const db = await getDB();
-                await db.elements.putMany(elementsToRestore.map((el) => sanitizeElement(el)));
+                await db.elements.insertMany(elementsToRestore.map((el) => sanitizeElement(el)));
                 console.log(`✅ Undo: IndexedDB에서 요소 복원 완료 (${elementsToRestore.length}개)`);
               } catch (idbError) {
                 console.warn("⚠️ Undo: IndexedDB 복원 실패:", idbError);
               }
 
-              await supabase
-                .from("elements")
-                .upsert(elementsToRestore.map((el) => sanitizeElement(el)));
-              console.log(
-                `✅ Undo: Supabase에서 요소 복원 완료 (부모 1개 + 자식 ${
-                  entry.data.childElements?.length || 0
-                }개)`
-              );
+              // Supabase에 복원 전 page_id 유효성 확인
+              const pageId = elementsToRestore[0]?.page_id;
+              if (pageId) {
+                const { data: pageExists } = await supabase
+                  .from("pages")
+                  .select("id")
+                  .eq("id", pageId)
+                  .single();
+
+                if (!pageExists) {
+                  console.log(`⏭️ Undo: 페이지가 클라우드에 없음 (로컬 전용), Supabase 저장 skip`);
+                } else {
+                  const sanitizedElements = elementsToRestore.map((el) => sanitizeElementForSupabase(el));
+
+                  const { error: upsertError } = await supabase
+                    .from("elements")
+                    .upsert(sanitizedElements, { onConflict: 'id' });
+
+                  if (upsertError) {
+                    // Foreign Key 에러는 로컬 전용 프로젝트를 의미
+                    if (upsertError.code === '23503') {
+                      console.log(`⏭️ Undo: 로컬 전용 프로젝트, Supabase 저장 skip`);
+                    } else {
+                      console.error("❌ Undo: Supabase upsert 오류:", upsertError);
+                    }
+                  } else {
+                    console.log(
+                      `✅ Undo: Supabase에서 요소 복원 완료 (부모 1개 + 자식 ${
+                        entry.data.childElements?.length || 0
+                      }개)`
+                    );
+                  }
+                }
+              }
             }
             break;
           }
@@ -653,27 +679,41 @@ export const createUndoAction =
               console.warn("⚠️ Undo: Ungroup IndexedDB 동기화 실패:", idbError);
             }
 
-            // 1. 그룹 요소 복원 (Supabase)
-            if (entry.data.element) {
-              await supabase
-                .from("elements")
-                .upsert(sanitizeElement(entry.data.element));
-            }
+            // Supabase에 복원 전 page_id 유효성 확인
+            const ungroupPageId = entry.data.element?.page_id;
+            if (ungroupPageId) {
+              const { data: pageExists } = await supabase
+                .from("pages")
+                .select("id")
+                .eq("id", ungroupPageId)
+                .single();
 
-            // 2. 자식 요소들의 parent_id를 그룹 ID로 업데이트
-            if (entry.data.elements) {
-              for (const prevChild of entry.data.elements) {
-                await supabase
-                  .from("elements")
-                  .update({
-                    parent_id: entry.elementId, // 그룹 ID
-                    order_num: prevChild.order_num,
-                  })
-                  .eq("id", prevChild.id);
+              if (!pageExists) {
+                console.log(`⏭️ Undo: 페이지가 클라우드에 없음 (로컬 전용), Supabase 저장 skip`);
+              } else {
+                // 1. 그룹 요소 복원 (Supabase)
+                if (entry.data.element) {
+                  await supabase
+                    .from("elements")
+                    .upsert(sanitizeElementForSupabase(entry.data.element), { onConflict: 'id' });
+                }
+
+                // 2. 자식 요소들의 parent_id를 그룹 ID로 업데이트
+                if (entry.data.elements) {
+                  for (const prevChild of entry.data.elements) {
+                    await supabase
+                      .from("elements")
+                      .update({
+                        parent_id: entry.elementId, // 그룹 ID
+                        order_num: prevChild.order_num,
+                      })
+                      .eq("id", prevChild.id);
+                  }
+                  console.log(
+                    `✅ Undo: Ungroup 취소 Supabase 동기화 완료 (자식 ${entry.data.elements.length}개)`
+                  );
+                }
               }
-              console.log(
-                `✅ Undo: Ungroup 취소 Supabase 동기화 완료 (자식 ${entry.data.elements.length}개)`
-              );
             }
             break;
           }
@@ -1012,20 +1052,46 @@ export const createRedoAction =
               // IndexedDB에 추가
               try {
                 const db = await getDB();
-                await db.elements.putMany(elementsToAdd.map((el) => sanitizeElement(el)));
+                await db.elements.insertMany(elementsToAdd.map((el) => sanitizeElement(el)));
                 console.log(`✅ Redo: IndexedDB에서 요소 추가 완료 (${elementsToAdd.length}개)`);
               } catch (idbError) {
                 console.warn("⚠️ Redo: IndexedDB 추가 실패:", idbError);
               }
 
-              await supabase
-                .from("elements")
-                .upsert(elementsToAdd.map((el) => sanitizeElement(el)));
-              console.log(
-                `✅ Redo: Supabase에서 요소 추가 완료 (부모 1개 + 자식 ${
-                  entry.data.childElements?.length || 0
-                }개)`
-              );
+              // Supabase에 추가 전 page_id 유효성 확인
+              const pageId = elementsToAdd[0]?.page_id;
+              if (pageId) {
+                const { data: pageExists } = await supabase
+                  .from("pages")
+                  .select("id")
+                  .eq("id", pageId)
+                  .single();
+
+                if (!pageExists) {
+                  console.log(`⏭️ Redo: 페이지가 클라우드에 없음 (로컬 전용), Supabase 저장 skip`);
+                } else {
+                  const { error: upsertError } = await supabase
+                    .from("elements")
+                    .upsert(
+                      elementsToAdd.map((el) => sanitizeElementForSupabase(el)),
+                      { onConflict: 'id' }
+                    );
+
+                  if (upsertError) {
+                    if (upsertError.code === '23503') {
+                      console.log(`⏭️ Redo: 로컬 전용 프로젝트, Supabase 저장 skip`);
+                    } else {
+                      console.error("❌ Redo: Supabase upsert 오류:", upsertError);
+                    }
+                  } else {
+                    console.log(
+                      `✅ Redo: Supabase에서 요소 추가 완료 (부모 1개 + 자식 ${
+                        entry.data.childElements?.length || 0
+                      }개)`
+                    );
+                  }
+                }
+              }
             }
             break;
           }
@@ -1170,27 +1236,41 @@ export const createRedoAction =
               console.warn("⚠️ Redo: Group IndexedDB 동기화 실패:", idbError);
             }
 
-            // 1. 그룹 요소 추가 (Supabase)
-            if (entry.data.element) {
-              await supabase
-                .from("elements")
-                .upsert(sanitizeElement(entry.data.element));
-            }
+            // Supabase에 추가 전 page_id 유효성 확인
+            const groupPageId = entry.data.element?.page_id;
+            if (groupPageId) {
+              const { data: pageExists } = await supabase
+                .from("pages")
+                .select("id")
+                .eq("id", groupPageId)
+                .single();
 
-            // 2. 자식 요소들의 parent_id를 그룹 ID로 업데이트
-            if (entry.data.elements) {
-              for (const prevChild of entry.data.elements) {
-                await supabase
-                  .from("elements")
-                  .update({
-                    parent_id: entry.elementId, // 그룹 ID
-                    order_num: prevChild.order_num,
-                  })
-                  .eq("id", prevChild.id);
+              if (!pageExists) {
+                console.log(`⏭️ Redo: 페이지가 클라우드에 없음 (로컬 전용), Supabase 저장 skip`);
+              } else {
+                // 1. 그룹 요소 추가 (Supabase)
+                if (entry.data.element) {
+                  await supabase
+                    .from("elements")
+                    .upsert(sanitizeElementForSupabase(entry.data.element), { onConflict: 'id' });
+                }
+
+                // 2. 자식 요소들의 parent_id를 그룹 ID로 업데이트
+                if (entry.data.elements) {
+                  for (const prevChild of entry.data.elements) {
+                    await supabase
+                      .from("elements")
+                      .update({
+                        parent_id: entry.elementId, // 그룹 ID
+                        order_num: prevChild.order_num,
+                      })
+                      .eq("id", prevChild.id);
+                  }
+                  console.log(
+                    `✅ Redo: Group 생성 Supabase 동기화 완료 (자식 ${entry.data.elements.length}개)`
+                  );
+                }
               }
-              console.log(
-                `✅ Redo: Group 생성 Supabase 동기화 완료 (자식 ${entry.data.elements.length}개)`
-              );
             }
             break;
           }
