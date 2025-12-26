@@ -1,5 +1,4 @@
-import { useMemo, useCallback, useEffect } from "react";
-import { useTreeData } from "react-stately";
+import { useMemo, useCallback } from "react";
 import type { Page } from "../../../../../types/builder/unified.types";
 import type { PageTreeNode } from "./types";
 import { useStore } from "../../../../stores";
@@ -8,22 +7,34 @@ export function usePageTreeData(pages: Page[]) {
   // 1. 페이지 → 트리 노드 변환
   const treeNodes = useMemo(() => convertToPageTreeNodes(pages), [pages]);
 
-  // 2. react-stately useTreeData
-  const tree = useTreeData<PageTreeNode>({
-    initialItems: treeNodes,
-    getKey: (item) => item.id,
-    getChildren: (item) => item.children ?? [],
-  });
+  // nodeMap: treeNodes 기반 O(1) 조회용 맵
+  const nodeMap = useMemo(() => {
+    const map = new Map<string, PageTreeNode>();
+    const stack = [...treeNodes];
+    while (stack.length > 0) {
+      const node = stack.shift();
+      if (!node) continue;
+      map.set(node.id, node);
+      if (node.children && node.children.length > 0) {
+        stack.unshift(...node.children);
+      }
+    }
+    return map;
+  }, [treeNodes]);
 
-  // 3. treeNodes 변경 시 tree 동기화
-  useEffect(() => {
-    syncTreeData(tree, treeNodes);
-  }, [tree, treeNodes]);
+  // useTreeData 대신 직접 tree 객체 생성
+  // getItem은 nodeMap 기반으로 구현
+  const tree = useMemo(() => ({
+    getItem: (key: string | number) => {
+      const node = nodeMap.get(String(key));
+      return node ? { value: node } : undefined;
+    },
+  }), [nodeMap]);
 
   const setPages = useStore((state) => state.setPages);
   const currentPages = useStore((state) => state.pages);
 
-  // 4. Store 동기화 (Optimistic Update)
+  // Store 동기화 (Optimistic Update)
   const syncToStore = useCallback(
     (
       updates: Array<{
@@ -58,14 +69,6 @@ export function usePageTreeData(pages: Page[]) {
   );
 
   return { tree, treeNodes, syncToStore };
-}
-
-function syncTreeData(tree: unknown, items: PageTreeNode[]) {
-  const treeData = tree as {
-    setItems?: (nextItems: PageTreeNode[]) => void;
-  };
-  if (!treeData.setItems) return;
-  treeData.setItems(items);
 }
 
 function convertToPageTreeNodes(

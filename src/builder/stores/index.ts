@@ -397,3 +397,9 @@ export {
   selectPanelWidths,
   selectWorkableArea,
 } from "./layoutState";
+
+// ============================================
+// Phase 7: 글로벌 Toast 시스템
+// ============================================
+export { useToastStore, globalToast } from "./toast";
+export type { Toast, ToastType, ToastAction } from "./toast";

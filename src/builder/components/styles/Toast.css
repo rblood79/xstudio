@@ -87,6 +87,33 @@
     line-height: 1.4;
   }
 
+  /* Toast Action Button (Undo 등) */
+  .toast-action {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--spacing-xs) var(--spacing-sm);
+    border: none;
+    background: var(--primary);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    color: var(--on-primary);
+    font-size: var(--text-sm);
+    font-weight: 500;
+    transition: background-color 150ms ease, opacity 150ms ease;
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+
+  .toast-action:hover {
+    opacity: 0.9;
+  }
+
+  .toast-action:focus-visible {
+    outline: 2px solid var(--focus-ring-color);
+    outline-offset: 2px;
+  }
+
   /* Toast Dismiss Button */
   .toast-dismiss {
     display: flex;

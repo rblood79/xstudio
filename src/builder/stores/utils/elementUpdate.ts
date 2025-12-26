@@ -6,6 +6,7 @@ import { historyManager } from "../history";
 import { getElementById, createCompleteProps } from "./elementHelpers";
 import type { ElementsState } from "../elements";
 import { getDB } from "../../../lib/db";
+import { globalToast } from "../toast";
 
 // ============================================
 // Types for Batch Operations
@@ -126,7 +127,10 @@ export const createUpdateElementPropsAction =
       await db.elements.update(elementId, { props });
     } catch (error) {
       console.warn("⚠️ [IndexedDB] 요소 저장 중 오류 (메모리는 정상):", error);
-      // IndexedDB 저장 실패해도 메모리 상태는 유지 (오프라인 작업 지속)
+      // 🚀 Phase 7: Toast + Undo 버튼
+      globalToast.error("저장에 실패했습니다. Ctrl+Z로 되돌릴 수 있습니다.", {
+        duration: 8000,
+      });
     }
   };
 
@@ -203,7 +207,10 @@ export const createUpdateElementAction =
       await db.elements.update(elementId, updates);
     } catch (error) {
       console.warn("⚠️ [IndexedDB] 요소 저장 중 오류 (메모리는 정상):", error);
-      // IndexedDB 저장 실패해도 메모리 상태는 유지 (오프라인 작업 지속)
+      // 🚀 Phase 7: Toast + Undo 버튼
+      globalToast.error("저장에 실패했습니다. Ctrl+Z로 되돌릴 수 있습니다.", {
+        duration: 8000,
+      });
     }
   };
 
@@ -310,6 +317,10 @@ export const createBatchUpdateElementPropsAction =
       );
     } catch (error) {
       console.warn("⚠️ [IndexedDB] 배치 저장 중 오류 (메모리는 정상):", error);
+      // 🚀 Phase 7: Toast + Undo 버튼
+      globalToast.error("저장에 실패했습니다. Ctrl+Z로 되돌릴 수 있습니다.", {
+        duration: 8000,
+      });
     }
   };
 
@@ -409,5 +420,9 @@ export const createBatchUpdateElementsAction =
       );
     } catch (error) {
       console.warn("⚠️ [IndexedDB] 배치 저장 중 오류 (메모리는 정상):", error);
+      // 🚀 Phase 7: Toast + Undo 버튼
+      globalToast.error("저장에 실패했습니다. Ctrl+Z로 되돌릴 수 있습니다.", {
+        duration: 8000,
+      });
     }
   };

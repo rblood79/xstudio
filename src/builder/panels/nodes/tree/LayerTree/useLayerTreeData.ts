@@ -1,5 +1,4 @@
-import { useMemo, useEffect, useCallback } from "react";
-import { useTreeData } from "react-stately";
+import { useMemo, useCallback } from "react";
 import { buildTreeFromElements } from "../../../../utils/treeUtils";
 import type { Element } from "../../../../../types/core/store.types";
 import type { ElementTreeItem } from "../../../../../types/builder/stately.types";
@@ -26,15 +25,29 @@ export function useLayerTreeData(elements: Element[]) {
     [elementTree, elements]
   );
 
-  const tree = useTreeData<LayerTreeNode>({
-    initialItems: treeNodes,
-    getKey: (item) => item.id,
-    getChildren: (item) => item.children ?? [],
-  });
+  // nodeMap: treeNodes 기반 O(1) 조회용 맵
+  const nodeMap = useMemo(() => {
+    const map = new Map<string, LayerTreeNode>();
+    const stack = [...treeNodes];
+    while (stack.length > 0) {
+      const node = stack.shift();
+      if (!node) continue;
+      map.set(node.id, node);
+      if (node.children && node.children.length > 0) {
+        stack.unshift(...node.children);
+      }
+    }
+    return map;
+  }, [treeNodes]);
 
-  useEffect(() => {
-    syncTreeData(tree, treeNodes);
-  }, [tree, treeNodes]);
+  // useTreeData 대신 직접 tree 객체 생성
+  // getItem은 nodeMap 기반으로 구현
+  const tree = useMemo(() => ({
+    getItem: (key: string | number) => {
+      const node = nodeMap.get(String(key));
+      return node ? { value: node } : undefined;
+    },
+  }), [nodeMap]);
 
   const batchUpdateElements = useStore((state) => state.batchUpdateElements);
   const syncToStore = useCallback(
@@ -56,13 +69,6 @@ export function useLayerTreeData(elements: Element[]) {
   return { tree, treeNodes, syncToStore };
 }
 
-function syncTreeData(tree: unknown, items: LayerTreeNode[]) {
-  const treeData = tree as {
-    setItems?: (nextItems: LayerTreeNode[]) => void;
-  };
-  if (!treeData.setItems) return;
-  treeData.setItems(items);
-}
 
 function convertToLayerTreeNodes(
   tree: ElementTreeItem[],
