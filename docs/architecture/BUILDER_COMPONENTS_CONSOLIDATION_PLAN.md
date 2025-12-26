@@ -3,10 +3,11 @@
 ## 개요
 
 현재 builder 내 여러 모듈들이 분산되어 있어 관리 및 사용에 혼란이 발생하고 있습니다.
-이 문서는 다음 두 가지 통합 계획을 정의합니다:
+이 문서는 다음 세 가지 통합 계획을 정의합니다:
 
 1. **Components 통합**: `src/builder/components` + `src/builder/panels/common` → `src/builder/components`
 2. **Events 통합**: `src/builder/events` → `src/builder/panels/events`
+3. **Constants 통합**: `src/builder/constants` → `src/builder/utils`
 
 ---
 
@@ -508,3 +509,88 @@ import {
 - Legacy Editor 유지 여부는 사용처 분석 후 결정
 - 각 Phase 완료 후 빌드 검증을 권장합니다
 - Git 커밋은 Phase별로 분리하여 롤백 용이성을 확보합니다
+
+---
+
+# Part 3: Constants → Utils 통합
+
+## 3.1 개요
+
+`src/builder/constants` 폴더에 파일이 하나만 있어 별도 폴더 유지가 비효율적입니다.
+`src/builder/utils`로 통합하여 구조를 단순화합니다.
+
+## 3.2 현재 구조
+
+### `src/builder/constants/` (1개 파일)
+
+| 파일 | 설명 |
+|------|------|
+| `timing.ts` | 성능 최적화 타이밍 상수 (INSPECTOR_DEBOUNCE, INPUT_DEBOUNCE, DRAG_THROTTLE 등) |
+
+### `src/builder/utils/` (15개 파일)
+
+| 파일 | 설명 |
+|------|------|
+| `idGeneration.ts` | ID 생성 유틸리티 |
+| `idValidation.ts` | ID 유효성 검사 |
+| `componentUtils.ts` | 컴포넌트 유틸리티 |
+| `componentMap.ts` | 컴포넌트 맵 |
+| `treeUtils.ts` | 트리 유틸리티 |
+| `HierarchyManager.ts` | 계층 관리자 |
+| `selectionMemory.ts` | 선택 메모리 |
+| `smartSelection.ts` | 스마트 선택 |
+| `multiElementCopy.ts` | 다중 요소 복사 |
+| `canvasDeltaMessenger.ts` | 캔버스 델타 메신저 |
+| `QueryPersister.ts` | 쿼리 퍼시스터 |
+| `LRUPageCache.ts` | LRU 페이지 캐시 |
+| `RequestManager.ts` | 요청 관리자 |
+| `scheduleTask.ts` | 태스크 스케줄러 |
+| `performanceMonitor.ts` | 성능 모니터 |
+
+## 3.3 문제점
+
+1. **불필요한 폴더 분리**: 파일 1개를 위한 별도 폴더
+2. **import 경로 복잡**: `../constants/timing` vs `../utils/timing`
+3. **관련 기능 분산**: `timing.ts`는 `performanceMonitor.ts`, `scheduleTask.ts`와 관련됨
+
+## 3.4 통합 목표
+
+- `src/builder/constants/timing.ts` → `src/builder/utils/timing.ts`
+- `src/builder/constants/` 폴더 제거
+- 관련 상수들을 utils 내에서 관리
+
+## 3.5 마이그레이션 단계
+
+### Phase 1: 파일 이동
+- [ ] `constants/timing.ts` → `utils/timing.ts`
+
+### Phase 2: Import 경로 업데이트
+- [ ] `constants/timing`을 import하는 모든 파일 검색
+- [ ] import 경로를 `utils/timing`으로 변경
+
+### Phase 3: 정리
+- [ ] `src/builder/constants/` 폴더 삭제
+- [ ] 빌드 및 테스트 검증
+
+## 3.6 Import 경로 변경 예시
+
+### Before
+```typescript
+import { TIMING } from '../constants/timing';
+```
+
+### After
+```typescript
+import { TIMING } from '../utils/timing';
+```
+
+## 3.7 검증 체크리스트
+
+- [ ] TypeScript 빌드 성공
+- [ ] TIMING 상수 사용처 정상 동작
+- [ ] 순환 참조 없음 확인
+
+## 3.8 참고사항
+
+- 작업량이 적어 단일 커밋으로 처리 가능
+- 향후 상수가 추가되면 `utils/constants/` 서브폴더 고려
