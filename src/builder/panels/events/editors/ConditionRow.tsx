@@ -7,8 +7,8 @@
 
 import { Button, TextField, Input } from 'react-aria-components';
 import { Trash, GripVertical } from 'lucide-react';
-import type { Condition, ConditionOperand, ConditionOperator } from '../../../events/types/eventBlockTypes';
-import { isUnaryOperator } from '../../../events/types/eventBlockTypes';
+import type { Condition, ConditionOperand, ConditionOperator } from '../types/eventBlockTypes';
+import { isUnaryOperator } from '../types/eventBlockTypes';
 import { iconProps, iconEditProps } from '../../../../utils/ui/uiConstants';
 import { OperatorPicker } from './OperatorPicker';
 

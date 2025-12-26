@@ -7,11 +7,11 @@
 
 import { Button } from 'react-aria-components';
 import { Zap, Settings } from 'lucide-react';
-import type { EventTrigger } from '../../../events/types/eventBlockTypes';
+import type { EventTrigger } from '../types/eventBlockTypes';
 import type { EventType } from '@/types/events/events.types';
 import { iconProps, iconEditProps } from '../../../../utils/ui/uiConstants';
 import { BlockConnector } from './BlockConnector';
-import { EventTypePicker } from '../../../events/pickers/EventTypePicker';
+import { EventTypePicker } from '../pickers/EventTypePicker';
 
 interface WhenBlockProps {
   /** 트리거 설정 */

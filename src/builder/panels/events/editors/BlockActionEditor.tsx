@@ -8,10 +8,10 @@
 import { useState } from 'react';
 import { Button, Switch } from 'react-aria-components';
 import { X, ChevronDown, ChevronRight } from 'lucide-react';
-import type { BlockEventAction } from '../../../events/types/eventBlockTypes';
-import type { EventAction } from '../../../events/types/eventTypes';
-import { ActionEditor } from '../../../events/actions/ActionEditor';
-import { ActionTypePicker } from '../../../events/pickers/ActionTypePicker';
+import type { BlockEventAction } from '../types/eventBlockTypes';
+import type { EventAction } from '../types/eventTypes';
+import { ActionEditor } from '../actions/ActionEditor';
+import { ActionTypePicker } from '../pickers/ActionTypePicker';
 import { iconProps, iconEditProps } from '../../../../utils/ui/uiConstants';
 
 interface BlockActionEditorProps {

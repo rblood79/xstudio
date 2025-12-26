@@ -1,5 +1,5 @@
 import type { ValidateFormConfig } from "../types/eventTypes";
-import { ElementPicker } from "../../panels/events/editors/ElementPicker";
+import { ElementPicker } from '../editors/ElementPicker';
 
 export interface ValidateFormActionEditorProps {
   config: ValidateFormConfig;

@@ -8,7 +8,7 @@
 | Part | 통합 내용 | 상태 |
 |------|----------|------|
 | 1 | `components` + `panels/common` → `components` | ✅ 완료 (2025-12-26) |
-| 2 | `events` → `panels/events` | 🔲 대기 (순환 참조 → 통합으로 해결됨) |
+| 2 | `events` → `panels/events` | ✅ 완료 (2025-12-27) |
 | 3 | `constants` → `utils` | ✅ 완료 (2025-12-26) |
 
 ---
@@ -247,7 +247,10 @@ panels/common → builder/components : 0개 참조
 
 ---
 
-# Part 2: Events 통합
+# Part 2: Events 통합 ✅ 완료
+
+> **완료일**: 2025-12-27
+> **상태**: 마이그레이션 완료, 빌드 검증 통과
 
 ## 2.1 개요
 
@@ -427,32 +430,32 @@ src/builder/panels/events/
 ## 2.6 마이그레이션 단계
 
 ### Phase 1: 폴더 구조 생성
-- [ ] `panels/events/` 하위에 새 폴더들 생성
+- [x] `panels/events/` 하위에 새 폴더들 생성
   - `actions/`, `components/`, `execution/`, `state/`, `pickers/`, `types/`, `utils/`, `data/`
 
 ### Phase 2: 파일 이동
-- [ ] `events/actions/*` → `panels/events/actions/`
-- [ ] `events/components/*` → `panels/events/components/`
-- [ ] `events/execution/*` → `panels/events/execution/`
-- [ ] `events/hooks/*` → `panels/events/hooks/` (기존 hooks와 병합)
-- [ ] `events/state/*` → `panels/events/state/`
-- [ ] `events/pickers/*` → `panels/events/pickers/`
-- [ ] `events/types/*` → `panels/events/types/`
-- [ ] `events/utils/*` → `panels/events/utils/`
-- [ ] `events/data/*` → `panels/events/data/`
-- [ ] `events/EventEditor.tsx`, `EventList.tsx` → **삭제** (사용처 없음 확인됨)
+- [x] `events/actions/*` → `panels/events/actions/`
+- [x] `events/components/*` → `panels/events/components/`
+- [x] `events/execution/*` → `panels/events/execution/`
+- [x] `events/hooks/*` → `panels/events/hooks/` (기존 hooks와 병합)
+- [x] `events/state/*` → `panels/events/state/`
+- [x] `events/pickers/*` → `panels/events/pickers/`
+- [x] `events/types/*` → `panels/events/types/`
+- [x] `events/utils/*` → `panels/events/utils/`
+- [x] `events/data/*` → `panels/events/data/`
+- [x] `events/EventEditor.tsx`, `EventList.tsx` → **삭제** (사용처 없음 확인됨)
 
 ### Phase 3: Export 설정
-- [ ] 각 하위 폴더에 `index.ts` 생성/업데이트
-- [ ] 루트 `panels/events/index.ts` 통합 export 업데이트
+- [x] 각 하위 폴더에 `index.ts` 생성/업데이트
+- [x] 루트 `panels/events/index.ts` 통합 export 업데이트
 
 ### Phase 4: Import 경로 업데이트
-- [ ] `events/`를 import하는 모든 파일 검색
-- [ ] import 경로를 `panels/events/`로 변경
+- [x] `events/`를 import하는 모든 파일 검색
+- [x] import 경로를 `panels/events/`로 변경
 
 ### Phase 5: 정리
-- [ ] `src/builder/events/` 폴더 삭제
-- [ ] 빌드 및 테스트 검증
+- [x] `src/builder/events/` 폴더 삭제
+- [x] 빌드 및 테스트 검증 (TypeScript 빌드 통과)
 
 ## 2.7 Import 경로 변경 예시
 
@@ -551,12 +554,12 @@ panels/events/editors/BlockActionEditor
 
 ## 2.10 검증 체크리스트
 
-- [ ] TypeScript 빌드 성공
-- [ ] EventsPanel 정상 동작
-- [ ] 이벤트 추가/수정/삭제 기능 동작
-- [ ] 액션 에디터들 정상 렌더링
-- [ ] Block-based UI (WHEN/IF/THEN/ELSE) 정상 동작
-- [ ] 순환 참조 없음 확인
+- [x] TypeScript 빌드 성공
+- [ ] EventsPanel 정상 동작 (수동 검증 필요)
+- [ ] 이벤트 추가/수정/삭제 기능 동작 (수동 검증 필요)
+- [ ] 액션 에디터들 정상 렌더링 (수동 검증 필요)
+- [ ] Block-based UI (WHEN/IF/THEN/ELSE) 정상 동작 (수동 검증 필요)
+- [x] 순환 참조 없음 확인 (통합으로 해결됨)
 
 ## 2.11 참고사항
 

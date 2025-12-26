@@ -7,7 +7,7 @@
 
 import { Button } from 'react-aria-components';
 import { ChevronUp, ChevronDown, Plus } from 'lucide-react';
-import type { BlockEventAction } from '../../../events/types/eventBlockTypes';
+import type { BlockEventAction } from '../types/eventBlockTypes';
 import { ActionBlock } from './ActionBlock';
 import { iconProps, iconSmall } from '../../../../utils/ui/uiConstants';
 

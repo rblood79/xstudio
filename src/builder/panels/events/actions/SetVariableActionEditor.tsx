@@ -12,7 +12,7 @@ import {
   Popover,
 } from "react-aria-components";
 import { useState, useMemo } from "react";
-import { useDataStore } from "../../stores/data";
+import { useDataStore } from "../../../stores/data";
 
 export interface SetVariableConfig {
   variableName: string;

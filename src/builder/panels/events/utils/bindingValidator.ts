@@ -7,7 +7,7 @@
  * Phase 4: Events Panel 재설계
  */
 
-import type { VariableSchema, SchemaNode } from '../../panels/events/editors/VariableBindingEditor';
+import type { VariableSchema, SchemaNode } from '../editors/VariableBindingEditor';
 import {
   parseVariables,
   splitPath,

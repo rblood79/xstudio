@@ -1,4 +1,4 @@
-import { ElementPicker } from "../../panels/events/editors/ElementPicker";
+import { ElementPicker } from '../editors/ElementPicker';
 
 export interface SubmitFormConfig {
   formId: string;

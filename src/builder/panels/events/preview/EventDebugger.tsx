@@ -19,7 +19,7 @@ import {
   AlertTriangle,
 } from 'lucide-react';
 import { iconEditProps, iconSmall } from '../../../../utils/ui/uiConstants';
-import type { BlockEventHandler, ConditionOperand } from '../../../events/types/eventBlockTypes';
+import type { BlockEventHandler, ConditionOperand } from '../types/eventBlockTypes';
 
 /**
  * 실행 상태

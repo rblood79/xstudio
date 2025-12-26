@@ -14,21 +14,21 @@ import type { PanelProps } from "../core/types";
 import type { SelectedElement } from "../../inspector/types";
 import type { ActionType, EventType as RegistryEventType } from "@/types/events/events.types";
 import { ACTION_TYPE_LABELS, REGISTRY_ACTION_CATEGORIES } from "@/types/events/events.types";
-import type { EventHandler } from "../../events/types/eventTypes";
+import type { EventHandler } from "./types/eventTypes";
 import type { EventType } from "@/types/events/events.types";
 import type {
   BlockEventAction,
   ConditionGroup,
   EventTrigger,
-} from "../../events/types/eventBlockTypes";
-import { normalizeToInspectorAction } from "../../events/utils/normalizeEventTypes";
+} from "./types/eventBlockTypes";
+import { normalizeToInspectorAction } from "./utils/normalizeEventTypes";
 import { isImplementedEventType } from "@/types/events/events.types";
 import { useDebouncedSelectedElementData, useStore } from "../../stores";
-import { EventTypePicker } from "../../events/pickers/EventTypePicker";
-import { useEventHandlers } from "../../events/state/useEventHandlers";
-import { useActions } from "../../events/state/useActions";
-import { useEventSelection } from "../../events/state/useEventSelection";
-import { DebounceThrottleEditor } from "../../events/components/DebounceThrottleEditor";
+import { EventTypePicker } from "./pickers/EventTypePicker";
+import { useEventHandlers } from "./state/useEventHandlers";
+import { useActions } from "./state/useActions";
+import { useEventSelection } from "./state/useEventSelection";
+import { DebounceThrottleEditor } from "./components/DebounceThrottleEditor";
 // Block-based UI components
 import { WhenBlock } from "./blocks/WhenBlock";
 import { IfBlock } from "./blocks/IfBlock";

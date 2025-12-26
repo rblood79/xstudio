@@ -23,7 +23,7 @@ import {
   getPathPrefix,
   getCurrentInput,
   type VariableType,
-} from '../../../events/utils/variableParser';
+} from '../utils/variableParser';
 
 /**
  * 자동완성 제안 항목

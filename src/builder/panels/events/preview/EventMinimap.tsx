@@ -8,7 +8,7 @@
  */
 
 import { useMemo } from 'react';
-import type { BlockEventHandler } from '../../../events/types/eventBlockTypes';
+import type { BlockEventHandler } from '../types/eventBlockTypes';
 
 interface EventMinimapProps {
   /** 이벤트 핸들러 목록 */

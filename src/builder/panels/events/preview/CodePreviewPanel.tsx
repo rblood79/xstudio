@@ -10,7 +10,7 @@
 import { useState, useMemo, useCallback } from 'react';
 import { Button } from 'react-aria-components';
 import { Copy, Check, Code, ChevronDown, ChevronRight } from 'lucide-react';
-import type { BlockEventHandler, ConditionOperand } from '../../../events/types/eventBlockTypes';
+import type { BlockEventHandler, ConditionOperand } from '../types/eventBlockTypes';
 import { iconProps, iconEditProps } from '../../../../utils/ui/uiConstants';
 import { useCopyPaste } from '../../../hooks/useCopyPaste';
 

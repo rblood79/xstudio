@@ -12,7 +12,7 @@ import {
 import { useState } from "react";
 import type { TriggerComponentActionConfig } from "../types/eventTypes";
 import { ComponentSelector } from "../components/ComponentSelector";
-import { useComponentRegistry, getComponentMethods } from "../../stores/componentRegistry";
+import { useComponentRegistry, getComponentMethods } from "../../../stores/componentRegistry";
 
 export interface TriggerComponentActionEditorProps {
   config: TriggerComponentActionConfig;

@@ -12,7 +12,7 @@ import {
 } from "react-aria-components";
 import { useState } from "react";
 import type { UpdateFormFieldConfig } from "../types/eventTypes";
-import { ElementPicker } from "../../panels/events/editors/ElementPicker";
+import { ElementPicker } from '../editors/ElementPicker';
 
 export interface UpdateFormFieldActionEditorProps {
   config: UpdateFormFieldConfig;

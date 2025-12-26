@@ -10,7 +10,7 @@ import {
   Popover,
 } from "react-aria-components";
 import type { ToggleVisibilityConfig } from "../types/eventTypes";
-import { ElementPicker } from "../../panels/events/editors/ElementPicker";
+import { ElementPicker } from '../editors/ElementPicker';
 
 export interface ToggleVisibilityActionEditorProps {
   config: ToggleVisibilityConfig;

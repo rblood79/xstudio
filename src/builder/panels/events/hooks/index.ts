@@ -16,5 +16,6 @@ export {
   getEventPayloadSchema,
   createDataTableSchema,
 } from "./useVariableSchema";
+export { useBlockKeyboard } from "./useBlockKeyboard";
 export type { RecommendedEvent } from "./useRecommendedEvents";
 export type { ApplyTemplateOptions } from "./useApplyTemplate";

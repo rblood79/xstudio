@@ -25,9 +25,9 @@ import {
   Save,
   Variable,
 } from "lucide-react";
-import type { BlockEventAction } from "../../../events/types/eventBlockTypes";
-import type { ActionType } from "../../../events/types/eventTypes";
-import { ACTION_TYPE_LABELS } from "../../../events/types/eventTypes";
+import type { BlockEventAction } from "../types/eventBlockTypes";
+import type { ActionType } from "../types/eventTypes";
+import { ACTION_TYPE_LABELS } from "../types/eventTypes";
 import { iconProps, iconEditProps } from "../../../../utils/ui/uiConstants";
 
 interface ActionBlockProps {

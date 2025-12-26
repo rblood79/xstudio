@@ -8,8 +8,8 @@
 import { useState, Fragment } from 'react';
 import { Button } from 'react-aria-components';
 import { Search, Plus, Trash, ChevronDown, ChevronRight } from 'lucide-react';
-import type { ConditionGroup, Condition } from '../../../events/types/eventBlockTypes';
-import { createEmptyCondition } from '../../../events/types/eventBlockTypes';
+import type { ConditionGroup, Condition } from '../types/eventBlockTypes';
+import { createEmptyCondition } from '../types/eventBlockTypes';
 import { iconProps, iconEditProps } from '../../../../utils/ui/uiConstants';
 import { BlockConnector } from './BlockConnector';
 import { ConditionRow } from '../editors/ConditionRow';

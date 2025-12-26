@@ -7,8 +7,8 @@
 import { Select, SelectValue, Button, Popover, ListBox, ListBoxItem } from 'react-aria-components';
 import { ChevronDown } from 'lucide-react';
 import { iconSmall } from '../../../../utils/ui/uiConstants';
-import type { ConditionOperator } from '../../../events/types/eventBlockTypes';
-import { CONDITION_OPERATOR_META } from '../../../events/types/eventBlockTypes';
+import type { ConditionOperator } from '../types/eventBlockTypes';
+import { CONDITION_OPERATOR_META } from '../types/eventBlockTypes';
 
 interface OperatorPickerProps {
   /** 현재 선택된 연산자 */

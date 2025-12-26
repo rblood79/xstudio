@@ -8,7 +8,7 @@
  */
 
 import { useMemo } from 'react';
-import type { VariableSchema, SchemaNode } from '../../panels/events/editors/VariableBindingEditor';
+import type { VariableSchema, SchemaNode } from '../editors/VariableBindingEditor';
 
 /**
  * DataTable 스키마 정보
