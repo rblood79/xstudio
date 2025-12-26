@@ -7,6 +7,7 @@ import { useLayerTreeData } from "./useLayerTreeData";
 import { calculateMoveUpdates } from "./useLayerTreeDnd";
 import { isValidDrop } from "./validation";
 import { LayerTreeItemContent } from "./LayerTreeItemContent";
+import { useFocusManagement } from "../hooks";
 
 /**
  * LayerTree - TreeBase 기반 구현
@@ -31,6 +32,35 @@ export function LayerTree({
   const [internalExpandedKeys, setInternalExpandedKeys] = useState<Set<Key>>(
     new Set()
   );
+
+  // 포커스 관리용 nodeMap 생성
+  const focusNodeMap = useMemo(() => {
+    const map = new Map<string, { parentId: string | null; children?: unknown[] }>();
+    const stack = [...treeNodes];
+    while (stack.length > 0) {
+      const node = stack.shift();
+      if (!node) continue;
+      map.set(node.id, { parentId: node.parentId, children: node.children });
+      if (node.children && node.children.length > 0) {
+        stack.unshift(...node.children);
+      }
+    }
+    return map;
+  }, [treeNodes]);
+
+  // 포커스 관리 훅
+  const { focusedKey, handleAfterMove } = useFocusManagement({
+    nodeMap: focusNodeMap,
+    onSelectionChange: (keys) => {
+      const key = [...keys][0] as string;
+      if (key) {
+        const node = treeNodes.find((n) => n.id === key);
+        if (node && !node.virtualChildType) {
+          onItemClick(node.element);
+        }
+      }
+    },
+  });
 
   // VirtualChild 노드들을 disabled로 처리
   const disabledKeys = useMemo(() => {
@@ -115,8 +145,10 @@ export function LayerTree({
         dropPosition: payload.target.dropPosition,
       });
       syncToStore(updates);
+      // DnD 후 포커스 유지
+      handleAfterMove(payload.keys);
     },
-    [tree, treeNodes, syncToStore]
+    [tree, treeNodes, syncToStore, handleAfterMove]
   );
 
   // 드래그 가능 여부
@@ -150,6 +182,7 @@ export function LayerTree({
       }
       expandedKeys={resolvedExpandedKeys}
       disabledKeys={disabledKeys}
+      focusedKey={focusedKey}
       onSelectionChange={handleSelectionChange}
       onExpandedChange={handleExpandedChange}
       dnd={{

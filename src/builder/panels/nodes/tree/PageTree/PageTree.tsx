@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import type { Key } from "react-stately";
 import { TreeBase } from "../TreeBase";
 import type { TreeItemState } from "../TreeBase/types";
@@ -7,6 +7,7 @@ import { usePageTreeData } from "./usePageTreeData";
 import { calculatePageMoveUpdates } from "./usePageTreeDnd";
 import { isValidPageDrop } from "./validation";
 import { PageTreeItemContent } from "./PageTreeItemContent";
+import { useFocusManagement } from "../hooks";
 import "./PageTree.css";
 
 /**
@@ -30,6 +31,45 @@ export function PageTree({
   const [internalExpandedKeys, setInternalExpandedKeys] = useState<Set<Key>>(
     new Set()
   );
+
+  // 포커스 관리용 nodeMap 생성
+  const focusNodeMap = useMemo(() => {
+    const map = new Map<string, { parentId: string | null; children?: unknown[] }>();
+    const stack = [...treeNodes];
+    while (stack.length > 0) {
+      const node = stack.shift();
+      if (!node) continue;
+      map.set(node.id, { parentId: node.parentId, children: node.children });
+      if (node.children && node.children.length > 0) {
+        stack.unshift(...node.children);
+      }
+    }
+    return map;
+  }, [treeNodes]);
+
+  // 포커스 관리 훅
+  const { focusedKey, handleAfterMove } = useFocusManagement({
+    nodeMap: focusNodeMap,
+    onSelectionChange: (keys) => {
+      const key = [...keys][0] as string;
+      if (key) {
+        const findNode = (nodes: PageTreeNode[]): PageTreeNode | undefined => {
+          for (const node of nodes) {
+            if (node.id === key) return node;
+            if (node.children) {
+              const found = findNode(node.children);
+              if (found) return found;
+            }
+          }
+          return undefined;
+        };
+        const node = findNode(treeNodes);
+        if (node) {
+          onPageSelect(node.page);
+        }
+      }
+    },
+  });
 
   const resolvedExpandedKeys = expandedKeys ?? internalExpandedKeys;
 
@@ -98,8 +138,10 @@ export function PageTree({
         dropPosition: payload.target.dropPosition,
       });
       syncToStore(updates);
+      // DnD 후 포커스 유지
+      handleAfterMove(payload.keys);
     },
-    [tree, treeNodes, syncToStore]
+    [tree, treeNodes, syncToStore, handleAfterMove]
   );
 
   // 드래그 가능 여부 (Home 페이지는 드래그 불가)
@@ -129,6 +171,7 @@ export function PageTree({
       renderContent={renderContent}
       selectedKeys={selectedPageId ? new Set([selectedPageId]) : new Set()}
       expandedKeys={resolvedExpandedKeys}
+      focusedKey={focusedKey}
       onSelectionChange={handleSelectionChange}
       onExpandedChange={handleExpandedChange}
       dnd={{
