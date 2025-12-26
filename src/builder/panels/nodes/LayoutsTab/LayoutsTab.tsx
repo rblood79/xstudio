@@ -8,20 +8,20 @@
 import React, { useCallback, useEffect, useMemo } from "react";
 import { useParams } from "react-router-dom";
 import { CirclePlus, CopyMinus, ChevronRight, Box, Trash, Settings2 } from "lucide-react";
-import { iconProps } from "../../../utils/ui/uiConstants";
-import { useLayoutsStore } from "../../stores/layouts";
-import { useEditModeStore } from "../../stores/editMode";
-import { useStore } from "../../stores";
-import { ElementProps } from "../../../types/integrations/supabase.types";
-import { Element } from "../../../types/core/store.types";
-import type { ElementTreeItem } from "../../../types/builder/stately.types";
-import type { Layout } from "../../../types/builder/layout.types";
-import { buildTreeFromElements } from "../../utils/treeUtils";
-import { MessageService } from "../../../utils/messaging";
-import { getDB } from "../../../lib/db";
-import { useTreeExpandState } from "../../hooks/useTreeExpandState";
+import { iconProps } from "../../../../utils/ui/uiConstants";
+import { useLayoutsStore } from "../../../stores/layouts";
+import { useEditModeStore } from "../../../stores/editMode";
+import { useStore } from "../../../stores";
+import { ElementProps } from "../../../../types/integrations/supabase.types";
+import { Element } from "../../../../types/core/store.types";
+import type { ElementTreeItem } from "../../../../types/builder/stately.types";
+import type { Layout } from "../../../../types/builder/layout.types";
+import { buildTreeFromElements } from "../../../utils/treeUtils";
+import { MessageService } from "../../../../utils/messaging";
+import { getDB } from "../../../../lib/db";
+import { useTreeExpandState } from "../../../hooks/useTreeExpandState";
 // 🚀 Phase 11: Feature Flags for WebGL-only mode
-import { isWebGLCanvas, isCanvasCompareMode } from "../../../utils/featureFlags";
+import { isWebGLCanvas, isCanvasCompareMode } from "../../../../utils/featureFlags";
 
 interface LayoutsTabProps {
   // ⭐ renderTree/renderElementTree/collapseAllTreeItems 제거됨

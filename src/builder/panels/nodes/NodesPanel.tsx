@@ -8,14 +8,13 @@
 import { useCallback, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import type { PanelProps } from "../core/types";
-import "../../nodes/index.css";
+import "./NodesPanel.css";
 import { useStore } from "../../stores";
 import { useEditModeStore } from "../../stores/editMode";
 import { usePageManager } from "../../hooks/usePageManager";
 import { useIframeMessenger } from "../../hooks/useIframeMessenger";
-// Issue 1: Layout 탭 복원을 위한 임포트
-import { NodesPanelTabs, type NodesPanelTabType } from "../../nodes/NodesPanelTabs";
-import { LayoutsTab } from "../../nodes/LayoutsTab/LayoutsTab";
+import { NodesPanelTabs, type NodesPanelTabType } from "./NodesPanelTabs";
+import { LayoutsTab } from "./LayoutsTab/LayoutsTab";
 // 🚀 Performance: 분리된 섹션 컴포넌트
 import { PagesSection } from "./PagesSection";
 import { LayersSection } from "./LayersSection";

@@ -7,7 +7,7 @@
 
 import React from "react";
 import { FileText, Layout } from "lucide-react";
-import { iconProps } from "../../utils/ui/uiConstants";
+import { iconProps } from "../../../utils/ui/uiConstants";
 
 export type NodesPanelTabType = "pages" | "layouts";
 
