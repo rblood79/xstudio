@@ -30,7 +30,7 @@ export function PanelNav({
   onPanelClick,
 }: PanelNavProps) {
   return (
-    <nav className="panel-nav">
+    <nav className="panel-nav" data-side={side}>
       <ul className="nav-list">
         {panelIds.map((panelId) => {
           const panelConfig = PanelRegistry.getPanel(panelId);

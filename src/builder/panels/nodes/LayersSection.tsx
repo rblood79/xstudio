@@ -4,7 +4,7 @@
  * NodesPanel에서 분리하여 elements 변경 시에만 리렌더링되도록 최적화
  */
 
-import React, { memo, useCallback, useEffect, useMemo, useState } from "react";
+import React, { memo, useCallback, useMemo, useState } from "react";
 import type { Key } from "react-stately";
 import { Button } from "react-aria-components";
 import { CopyMinus } from "lucide-react";
@@ -32,39 +32,37 @@ export const LayersSection = memo(function LayersSection({
   const setSelectedElement = useStore((state) => state.setSelectedElement);
   const removeElement = useStore((state) => state.removeElement);
 
-  const [expandedKeys, setExpandedKeys] = useState<Set<Key>>(new Set());
+  // 사용자가 직접 조작한 expandedKeys (collapse all, 수동 토글)
+  const [userExpandedKeys, setUserExpandedKeys] = useState<Set<Key>>(new Set());
 
-  // 🚀 WebGL에서 element 선택 시 부모 노드들 자동 펼침
-  useEffect(() => {
-    if (!selectedElementId) return;
+  // 🚀 선택된 요소의 부모 체인 계산 (파생 상태)
+  const autoExpandedParents = useMemo(() => {
+    if (!selectedElementId) return new Set<Key>();
 
-    // 선택된 요소 찾기
     const selectedElement = currentPageElements.find(
       (el) => el.id === selectedElementId
     );
-    if (!selectedElement) return;
+    if (!selectedElement) return new Set<Key>();
 
-    // 부모 체인 수집
-    const parentsToExpand: Key[] = [];
+    const parents = new Set<Key>();
     let currentParentId = selectedElement.parent_id;
 
     while (currentParentId) {
-      parentsToExpand.push(currentParentId);
+      parents.add(currentParentId);
       const parentElement = currentPageElements.find(
         (el) => el.id === currentParentId
       );
       currentParentId = parentElement?.parent_id ?? null;
     }
-
-    // 펼쳐야 할 부모가 있으면 expandedKeys에 추가
-    if (parentsToExpand.length > 0) {
-      setExpandedKeys((prev) => {
-        const next = new Set(prev);
-        parentsToExpand.forEach((key) => next.add(key));
-        return next;
-      });
-    }
+    return parents;
   }, [selectedElementId, currentPageElements]);
+
+  // 🚀 최종 expandedKeys = 사용자 조작 + 자동 펼침 (합집합)
+  const expandedKeys = useMemo(() => {
+    const merged = new Set(userExpandedKeys);
+    autoExpandedParents.forEach((key) => merged.add(key));
+    return merged;
+  }, [userExpandedKeys, autoExpandedParents]);
 
   // 🚀 useCallback으로 메모이제이션 - 매 렌더링마다 새 함수 생성 방지
   const handleItemClick = useCallback(
@@ -83,7 +81,7 @@ export const LayersSection = memo(function LayersSection({
 
   // Collapse All 기능
   const handleCollapseAll = useCallback(() => {
-    setExpandedKeys(new Set());
+    setUserExpandedKeys(new Set());
   }, []);
 
   return (
@@ -109,7 +107,7 @@ export const LayersSection = memo(function LayersSection({
           elements={currentPageElements}
           selectedElementId={selectedElementId}
           expandedKeys={expandedKeys}
-          onExpandedChange={setExpandedKeys}
+          onExpandedChange={setUserExpandedKeys}
           onItemClick={handleItemClick}
           onItemDelete={handleItemDelete}
         />

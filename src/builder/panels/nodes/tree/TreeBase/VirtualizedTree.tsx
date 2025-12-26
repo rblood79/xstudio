@@ -250,11 +250,14 @@ export function VirtualizedTree<TNode extends BaseTreeNode>({
           const isFocusVisible = key === focusedKey;
           const isDropTargetActive = dropTarget?.key === key;
 
+          const textValue = getTextValue(node);
+
           return (
             <div
               key={String(key)}
               data-key={key}
               role="treeitem"
+              aria-label={textValue}
               aria-selected={isSelected}
               aria-expanded={hasChildren ? isExpanded : undefined}
               aria-disabled={isDisabled}

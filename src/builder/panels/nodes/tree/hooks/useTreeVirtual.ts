@@ -35,7 +35,7 @@ interface UseTreeVirtualResult<TNode> {
   /** 전체 높이 (px) */
   totalHeight: number;
   /** 스크롤 컨테이너 ref */
-  scrollRef: React.RefObject<HTMLDivElement>;
+  scrollRef: React.RefObject<HTMLDivElement | null>;
   /** 평탄화된 노드 목록 */
   flattenedNodes: FlattenedNode<TNode>[];
   /** 특정 키로 스크롤 */

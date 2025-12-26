@@ -42,14 +42,13 @@ export function LayerTreeItemContent({
   selectedTab,
   onSelectTabElement,
 }: LayerTreeItemContentProps) {
-  const { isSelected, isFocusVisible } = state;
+  const { isFocusVisible } = state;
 
   // VirtualChild 렌더링
   if (node.virtualChildType) {
     return (
       <VirtualChildContent
         node={node}
-        isSelected={isSelected}
         isFocusVisible={isFocusVisible}
         selectedTab={selectedTab}
         onSelectTabElement={onSelectTabElement}
@@ -167,7 +166,6 @@ function NormalItemContent({
 
 interface VirtualChildContentProps {
   node: LayerTreeNode;
-  isSelected: boolean;
   isFocusVisible: boolean;
   selectedTab?: { parentId: string; tabIndex: number } | null;
   onSelectTabElement?: (
@@ -179,7 +177,6 @@ interface VirtualChildContentProps {
 
 function VirtualChildContent({
   node,
-  isSelected,
   isFocusVisible,
   selectedTab,
   onSelectTabElement,

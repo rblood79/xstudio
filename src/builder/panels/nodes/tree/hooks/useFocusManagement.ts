@@ -1,11 +1,9 @@
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useState, useCallback } from "react";
 import type { Key } from "react-stately";
 
 interface FocusManagementOptions {
   /** 노드 맵 (빠른 조회용) */
   nodeMap: Map<string, { parentId: string | null; children?: unknown[] }>;
-  /** 선택된 키들 */
-  selectedKeys: Set<Key>;
   /** 선택 변경 콜백 */
   onSelectionChange?: (keys: Set<Key>) => void;
 }
@@ -35,28 +33,28 @@ interface FocusManagementResult {
  */
 export function useFocusManagement({
   nodeMap,
-  selectedKeys,
   onSelectionChange,
 }: FocusManagementOptions): FocusManagementResult {
   const [focusedKey, setFocusedKey] = useState<Key | null>(null);
-  const pendingFocusRef = useRef<Key | null>(null);
 
-  // 포커스 대기열 처리 (렌더링 후 포커스 적용)
-  useEffect(() => {
-    if (pendingFocusRef.current !== null) {
-      setFocusedKey(pendingFocusRef.current);
-      pendingFocusRef.current = null;
-    }
-  });
+  // 포커스 예약 (다음 마이크로태스크에서 실행)
+  const scheduleFocus = useCallback((key: Key | null) => {
+    queueMicrotask(() => {
+      setFocusedKey(key);
+    });
+  }, []);
 
   // DnD 완료 후 포커스 처리
-  const handleAfterMove = useCallback((movedKeys: Set<Key>) => {
-    // 이동된 노드들 중 첫 번째로 포커스 유지
-    const firstKey = [...movedKeys][0];
-    if (firstKey) {
-      pendingFocusRef.current = firstKey;
-    }
-  }, []);
+  const handleAfterMove = useCallback(
+    (movedKeys: Set<Key>) => {
+      // 이동된 노드들 중 첫 번째로 포커스 유지
+      const firstKey = [...movedKeys][0];
+      if (firstKey) {
+        scheduleFocus(firstKey);
+      }
+    },
+    [scheduleFocus]
+  );
 
   // 삭제 후 포커스 처리
   const handleAfterDelete = useCallback(
@@ -88,22 +86,22 @@ export function useFocusManagement({
       }
 
       if (nextFocusKey) {
-        pendingFocusRef.current = nextFocusKey;
+        scheduleFocus(nextFocusKey);
         // 선택도 함께 변경
         onSelectionChange?.(new Set([nextFocusKey]));
       }
     },
-    [nodeMap, onSelectionChange]
+    [nodeMap, onSelectionChange, scheduleFocus]
   );
 
   // 추가 후 포커스 처리
   const handleAfterAdd = useCallback(
     (addedKey: Key) => {
-      pendingFocusRef.current = addedKey;
+      scheduleFocus(addedKey);
       // 선택도 함께 변경
       onSelectionChange?.(new Set([addedKey]));
     },
-    [onSelectionChange]
+    [onSelectionChange, scheduleFocus]
   );
 
   return {
