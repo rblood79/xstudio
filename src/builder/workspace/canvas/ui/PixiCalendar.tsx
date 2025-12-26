@@ -47,10 +47,10 @@ export function PixiCalendar({
   const sizePreset = useMemo(() => getCalendarSizePreset(size), [size]);
   const colorPreset = useMemo(() => getCalendarColorPreset(variant), [variant]);
 
-  // State for displayed month
-  const today = new Date();
-  const [displayYear, setDisplayYear] = useState(today.getFullYear());
-  const [displayMonth, setDisplayMonth] = useState(today.getMonth());
+  // State for displayed month (today is stable - only computed once on mount)
+  const today = useMemo(() => new Date(), []);
+  const [displayYear, setDisplayYear] = useState(() => today.getFullYear());
+  const [displayMonth, setDisplayMonth] = useState(() => today.getMonth());
 
   // Parse selected date
   const selectedDate = useMemo(() => {

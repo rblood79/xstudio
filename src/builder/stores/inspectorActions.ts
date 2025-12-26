@@ -111,7 +111,7 @@ export const createInspectorActionsSlice: StateCreator<
         elementId: elementId,
         data: {
           prevProps,
-          newProps: structuredClone(newProps),
+          props: structuredClone(newProps),
           prevElement,
         },
       });

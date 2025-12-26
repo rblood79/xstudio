@@ -270,7 +270,7 @@ export function useViewportControl(options: UseViewportControlOptions): UseViewp
         zoomEndTimeoutRef.current = null;
       }
     };
-  }, [containerEl, controller]);
+  }, [containerEl, controller, setPanOffset]);
 
   // 외부 React state 변경 시 Controller에 반영
   useEffect(() => {

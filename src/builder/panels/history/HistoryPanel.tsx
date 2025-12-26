@@ -141,7 +141,7 @@ function HistoryPanelContent() {
   );
 
   const displayEntries = useMemo<HistoryListItem[]>(() => {
-    const mapped = entries.map((entry, index) => ({
+    const mapped: HistoryListItem[] = entries.map((entry, index) => ({
       id: entry.id,
       index,
       label: getEntryLabel(entry),
@@ -155,6 +155,7 @@ function HistoryPanelContent() {
         id: "history-start",
         index: -1,
         label: "시작 상태",
+        timestamp: undefined,
         isStart: true,
       });
     }

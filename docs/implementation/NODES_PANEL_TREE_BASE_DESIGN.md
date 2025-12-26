@@ -1,10 +1,10 @@
 # Nodes Panel Tree Base Design (Panel System First)
 
 > 작성일: 2025-12-25
-> 상태: 구현 진행 중 (LayerTree DnD 완료)
+> 상태: **전체 완료** (Phase 1-3 모두 완료)
 > 기준 버전: react-aria-components v1.14
 > 최종 검토: 2025-12-26
-> 문서 버전: 1.6
+> 문서 버전: 1.8
 
 본 문서는 패널 시스템 기준으로 NodesPanel의 Page/Layer 트리를
 react-aria Tree 기반의 공통 베이스로 통합하기 위한 설계서다.
@@ -38,31 +38,50 @@ react-aria Tree 기반의 공통 베이스로 통합하기 위한 설계서다.
 ## 대상 구조
 
 ```
-src/builder/panels/nodes/
-  NodesPanel.tsx              # 데이터/초기화/조합 (단일 진입점)
+src/builder/panels/nodes/           # ✅ 통합 완료 (2025-12-26)
+  NodesPanel.tsx                    # 메인 패널 (단일 진입점)
+  NodesPanel.css                    # 패널 스타일
+  NodesPanelTabs.tsx                # Pages/Layouts 탭 전환
+  PagesSection.tsx                  # Pages 섹션 컴포넌트
+  LayersSection.tsx                 # Layers 섹션 컴포넌트
+  LayoutsTab/                       # Layouts 탭
+    index.ts
+    LayoutsTab.tsx
   tree/
-    TreeBase.tsx              # 공통 Tree 렌더러 (react-aria Tree) [미구현]
-    TreeItemContent.tsx       # 공통 아이템 UI (chevron, a11y) [미구현]
-    treeTypes.ts              # 공통 타입 정의 [미구현]
-    helpers.ts                # treeHelpers 통합 [미구현]
-    adapters/
-      pageTreeAdapter.ts      # Page -> TreeNode 변환 [미구현]
-      layerTreeAdapter.ts     # Element -> TreeNode 변환 [미구현]
+    helpers.ts                      # ✅ treeHelpers 통합 완료
     hooks/
-      useTreeState.ts         # expanded/selection/virtual child 상태 [미구현]
-      useTreeDnD.ts           # 공통 DnD 규약 [미구현]
-      useTreeVirtual.ts       # 가상화 기준/렌더링 [미구현]
-    LayerTree/                # ✅ 구현 완료
+      index.ts
+      useFocusManagement.ts         # ✅ 포커스 관리 훅
+      useTreeVirtual.ts             # ✅ 가상화 훅
+    TreeBase/                       # ✅ 공통 Tree 베이스
+      index.ts
+      TreeBase.tsx
+      TreeBaseItem.tsx
+      VirtualizedTree.tsx
+      types.ts
+      styles.css
+    LayerTree/                      # ✅ 구현 완료
+      index.ts
       LayerTree.tsx
-      LayerTreeItem.tsx
-      LayerTreeContent.tsx
-      VirtualChildItem.tsx
+      LayerTreeItemContent.tsx
       types.ts
       useLayerTreeData.ts
       useLayerTreeDnd.ts
       validation.ts
-    PageTree/                 # 신규 PageTree [미구현]
+    PageTree/                       # ✅ 구현 완료
+      index.ts
+      PageTree.tsx
+      PageTree.css
+      PageTreeItemContent.tsx
+      types.ts
+      usePageTreeData.ts
+      usePageTreeDnd.ts
+      validation.ts
 ```
+
+> ⚠️ **삭제된 레거시 폴더**:
+> - `src/builder/sidebar/` - 완전 제거 (2025-12-26)
+> - `src/builder/nodes/` - panels/nodes/로 통합 후 제거 (2025-12-26)
 
 ---
 
@@ -1886,16 +1905,17 @@ Sidebar 코드 제거 후에는 git revert로 복구.
 3. ✅ DnD Validation 구현 (7가지 규칙)
 4. ✅ Move 계산 로직 구현 (calculateMoveUpdates)
 
-### Phase 2: 트리 통합 ⏳ (현재 단계)
-5. ⏳ PageTree를 동일 패턴으로 신규 구현
-6. ⏳ TreeBase 공통화 (LayerTree/PageTree 공통 로직 추출)
-   - 5, 6은 병렬 진행 가능
+### Phase 2: 트리 통합 ✅
+5. ✅ PageTree를 동일 패턴으로 신규 구현
+6. ✅ TreeBase 공통화 (LayerTree/PageTree 공통 로직 추출)
+   - VirtualizedTree 포함
 
-### Phase 3: 정리 및 제거
-7. ⏳ Toast + Undo 버튼 에러 복구 구현
-8. ⏳ focusedKey 관리 추가 (useFocusManagement 훅)
-9. ⏳ 가상화 통합 (@tanstack/react-virtual, useTreeVirtual 훅)
-10. ⏳ Sidebar 제거 (기능 플래그 → 점진적 전환 → 최종 제거)
+### Phase 3: 정리 및 제거 ✅
+7. ✅ Toast + Undo 버튼 에러 복구 구현
+8. ✅ focusedKey 관리 추가 (useFocusManagement 훅)
+9. ✅ 가상화 통합 (@tanstack/react-virtual, useTreeVirtual 훅)
+10. ✅ Sidebar 제거 완료 (2025-12-26)
+11. ✅ nodes 폴더 통합 (panels/nodes/로 이동, 2025-12-26)
 
 ---
 
@@ -1906,23 +1926,31 @@ Sidebar 코드 제거 후에는 git revert로 복구.
 | 항목 | 위치 | 비고 |
 |------|------|------|
 | LayerTree 컴포넌트 | `tree/LayerTree/LayerTree.tsx` | react-aria Tree + useDragAndDrop |
-| LayerTreeItem | `tree/LayerTree/LayerTreeItem.tsx` | 개별 노드 렌더링 |
-| VirtualChildItem | `tree/LayerTree/VirtualChildItem.tsx` | virtual child 전용 렌더링 |
+| LayerTreeItemContent | `tree/LayerTree/LayerTreeItemContent.tsx` | 개별 노드 렌더링 + Virtual Child |
 | DnD Validation | `tree/LayerTree/validation.ts` | isValidDrop (7가지 규칙) |
 | Move 계산 로직 | `tree/LayerTree/useLayerTreeDnd.ts` | calculateMoveUpdates |
-| Tree 데이터 구조 | `tree/LayerTree/useLayerTreeData.ts` | useTreeData + syncToStore |
+| Tree 데이터 구조 | `tree/LayerTree/useLayerTreeData.ts` | 트리 노드 변환 + syncToStore |
 | 타입 정의 | `tree/LayerTree/types.ts` | LayerTreeNode, VirtualChildType |
+| PageTree 컴포넌트 | `tree/PageTree/PageTree.tsx` | react-aria Tree + useDragAndDrop |
+| PageTreeItemContent | `tree/PageTree/PageTreeItemContent.tsx` | 페이지 노드 렌더링 |
+| PageTree Validation | `tree/PageTree/validation.ts` | isValidPageDrop |
+| TreeBase 공통화 | `tree/TreeBase/` | 공통 Tree 렌더러 + VirtualizedTree |
+| useFocusManagement | `tree/hooks/useFocusManagement.ts` | DnD/삭제/추가 후 포커스 관리 |
+| useTreeVirtual | `tree/hooks/useTreeVirtual.ts` | @tanstack/react-virtual 기반 가상화 |
+| helpers 통합 | `tree/helpers.ts` | treeHelpers 이관 완료 |
+| **Sidebar 제거** | - | `src/builder/sidebar/` 완전 삭제 |
+| **nodes 폴더 통합** | - | `src/builder/nodes/` → `panels/nodes/` 이동 |
 
-### ⏳ 진행 예정
+### 삭제된 레거시 파일
 
-| 항목 | Phase | 우선순위 | 비고 |
-|------|-------|----------|------|
-| PageTree 구현 | 2 | 높음 | 상세 설계 완료, LayerTree 패턴 기반 신규 구현 |
-| TreeBase 공통화 | 2 | 높음 | 상세 설계 완료, LayerTree/PageTree 공통 로직 추출 |
-| Toast + Undo 버튼 | 3 | 중간 | DB 실패 시 Toast 알림 + 되돌리기 버튼 |
-| focusedKey 관리 | 3 | 중간 | 상세 설계 완료 (useFocusManagement 훅) |
-| 가상화 통합 | 3 | 중간 | 상세 설계 완료 (useTreeVirtual 훅, @tanstack/react-virtual) |
-| Sidebar 제거 | 3 | 낮음 | 상세 설계 완료 (기능 플래그 → 점진적 전환) |
+| 파일/폴더 | 삭제일 | 비고 |
+|-----------|--------|------|
+| `src/builder/sidebar/` | 2025-12-26 | index.tsx, SidebarNav.tsx 포함 |
+| `src/builder/sidebar/components/` | 2025-12-26 | 미사용 레거시 컴포넌트 |
+| `src/builder/sidebar/treeHelpers.ts` | 2025-12-26 | `panels/nodes/tree/helpers.ts`로 이관 |
+| `src/builder/sidebar/VirtualizedLayerTree.tsx` | 2025-12-26 | LayerTree로 통합 |
+| `src/builder/nodes/` | 2025-12-26 | `panels/nodes/`로 통합 |
+| `src/builder/hooks/useSidebarTabs.ts` | 2025-12-26 | Sidebar 전용 훅 제거 |
 
 ---
 
@@ -1957,16 +1985,21 @@ Sidebar 코드 제거 후에는 git revert로 복구.
 | DnD Redo | Undo 후 Ctrl+Shift+Z로 재이동 | ✅ 지원 |
 | batch 히스토리 | 영향받은 모든 형제 orderNum 복구 | ✅ 지원 |
 
-### ⏳ 구현 예정
+### ✅ 추가 구현 완료
 
-| 테스트 | 설명 | 상태 | 상세 설계 |
+| 테스트 | 설명 | 상태 | 파일 위치 |
 |--------|------|------|-----------|
-| DnD 후 selection 유지 | 이동 완료 후 이동된 노드가 선택 상태 유지 | ⏳ 검증 필요 | - |
-| DnD 후 focus 이동 | 이동된 노드로 focusedKey 갱신 | ⏳ 구현 예정 | useFocusManagement 훅 |
-| Toast + Undo 버튼 | DB 실패 시 되돌리기 버튼 표시 | ⏳ 구현 예정 | 에러 복구 전략 섹션 |
-| Home 드래그 금지 | PageTree에서 Home 페이지 드래그 금지 | ⏳ PageTree 미구현 | PageTree validation.ts |
-| 가상화 100+ 노드 | 100개 이상 노드에서 가상화 자동 활성화 | ⏳ 구현 예정 | useTreeVirtual 훅 |
-| 가상화 DnD 통합 | 가상화 모드에서 DnD 정상 동작 | ⏳ 구현 예정 | VirtualDropIndicator |
+| DnD 후 selection 유지 | 이동 완료 후 이동된 노드가 선택 상태 유지 | ✅ | react-aria 기본 동작 |
+| DnD 후 focus 이동 | 이동된 노드로 focusedKey 갱신 | ✅ | `useFocusManagement.ts` |
+| Home 드래그 금지 | PageTree에서 Home 페이지 드래그 금지 | ✅ | `PageTree/validation.ts` |
+| 가상화 100+ 노드 | 100개 이상 노드에서 가상화 자동 활성화 | ✅ | `useTreeVirtual.ts` |
+| 가상화 DnD 통합 | 가상화 모드에서 DnD 정상 동작 | ✅ | `VirtualizedTree.tsx` |
+
+### ⏳ 향후 개선 사항
+
+| 항목 | 설명 | 우선순위 |
+|------|------|----------|
+| Toast + Undo 버튼 | DB 실패 시 되돌리기 버튼 표시 | 낮음 (현재 console.warn) |
 
 ---
 

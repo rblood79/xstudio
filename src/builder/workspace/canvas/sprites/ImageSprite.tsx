@@ -164,7 +164,7 @@ export const ImageSprite = memo(function ImageSprite({ element, onClick }: Image
       g.clear();
       // Border or other overlay effects can be added here if needed
     },
-    [transform]
+    []
   );
 
   const handleClick = useCallback((e: unknown) => {
