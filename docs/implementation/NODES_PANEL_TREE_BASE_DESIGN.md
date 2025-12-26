@@ -4,7 +4,7 @@
 > 상태: 구현 진행 중 (LayerTree DnD 완료)
 > 기준 버전: react-aria-components v1.14
 > 최종 검토: 2025-12-26
-> 문서 버전: 1.5
+> 문서 버전: 1.6
 
 본 문서는 패널 시스템 기준으로 NodesPanel의 Page/Layer 트리를
 react-aria Tree 기반의 공통 베이스로 통합하기 위한 설계서다.
@@ -439,7 +439,7 @@ src/builder/panels/nodes/tree/PageTree/
 
 ```tsx
 import type { Key } from 'react-stately';
-import type { UnifiedPage } from '../../../../types/builder/unified.types';
+import type { Page } from '../../../../../types/builder/unified.types';
 
 export interface PageTreeNode {
   id: string;
@@ -451,7 +451,7 @@ export interface PageTreeNode {
   hasChildren: boolean;
   isLeaf: boolean;
   children?: PageTreeNode[];
-  page: UnifiedPage;               // 원본 Page 참조
+  page: Page;                      // 원본 Page 참조
 
   // 제약 조건
   isRoot: boolean;                 // Home 페이지 여부
@@ -460,13 +460,13 @@ export interface PageTreeNode {
 }
 
 export interface PageTreeProps {
-  pages: UnifiedPage[];
+  pages: Page[];
   selectedPageId: string | null;
   expandedKeys?: Set<Key>;
   onExpandedChange?: (keys: Set<Key>) => void;
-  onPageSelect: (page: UnifiedPage) => void;
-  onPageDelete: (page: UnifiedPage) => Promise<void>;
-  onPageSettings: (page: UnifiedPage) => void;
+  onPageSelect: (page: Page) => void;
+  onPageDelete: (page: Page) => Promise<void>;
+  onPageSettings: (page: Page) => void;
 }
 ```
 
@@ -477,10 +477,12 @@ export interface PageTreeProps {
 ```tsx
 import { useMemo, useCallback } from 'react';
 import { useTreeData } from 'react-stately';
-import type { UnifiedPage } from '../../../../types/builder/unified.types';
+import type { Page } from '../../../../../types/builder/unified.types';
 import type { PageTreeNode } from './types';
+import { useStore } from '../../../../stores';
+import { useToast } from '../../../../hooks/useToast';
 
-export function usePageTreeData(pages: UnifiedPage[]) {
+export function usePageTreeData(pages: Page[]) {
   // 1. 페이지 → 트리 노드 변환
   const treeNodes = useMemo(
     () => convertToPageTreeNodes(pages),
@@ -494,38 +496,43 @@ export function usePageTreeData(pages: UnifiedPage[]) {
     getChildren: (item) => item.children ?? [],
   });
 
+  const setPages = useStore((state) => state.setPages);
+  const currentPages = useStore((state) => state.pages);
+  const { showToast } = useToast();
+
   // 3. Store 동기화 (Optimistic Update)
   const syncToStore = useCallback(
     async (updates: Array<{ id: string; parentId?: string | null; orderNum?: number }>) => {
       if (updates.length === 0) return;
 
       // 메모리 상태 즉시 반영
-      usePageStore.getState().reorderPages(
-        updates.map(u => ({
-          pageId: u.id,
-          parentId: u.parentId,
-          orderNum: u.orderNum,
-        }))
-      );
+      const updatedPages = currentPages.map(page => {
+        const update = updates.find(u => u.id === page.id);
+        if (!update) return page;
+        return {
+          ...page,
+          ...(update.parentId !== undefined && { parent_id: update.parentId }),
+          ...(update.orderNum !== undefined && { order_num: update.orderNum }),
+        };
+      });
+      setPages(updatedPages);
 
-      // IndexedDB/Supabase 저장
-      try {
-        await pagesAdapter.batchUpdate(updates);
-      } catch (error) {
-        console.warn('⚠️ 페이지 저장 실패:', error);
-        toast.error('저장에 실패했습니다.', {
-          action: { label: '되돌리기', onClick: () => usePageStore.getState().undo() }
-        });
-      }
+      // TODO: IndexedDB/Supabase 저장 구현 시 아래 코드 활성화
+      // try {
+      //   await db.pages.bulkPut(updates);
+      // } catch (error) {
+      //   console.warn('⚠️ 페이지 저장 실패:', error);
+      //   showToast('error', '저장에 실패했습니다. Ctrl+Z로 되돌릴 수 있습니다.');
+      // }
     },
-    []
+    [currentPages, setPages, showToast]
   );
 
   return { tree, treeNodes, syncToStore };
 }
 
 function convertToPageTreeNodes(
-  pages: UnifiedPage[],
+  pages: Page[],
   parentId: string | null = null,
   depth = 0
 ): PageTreeNode[] {
@@ -1299,36 +1306,36 @@ export function useFocusManagement<TNode>({
   // 삭제 후: 다음 형제 → 이전 형제 → 부모 순으로 포커스
   const handleDelete = useCallback(
     (deletedKey: Key) => {
-      const deletedIndex = flatItems.findIndex(
-        (item) => getKey(item) === deletedKey
-      );
-      if (deletedIndex < 0) return;
+      // 인덱스 맵 생성 (O(n) 한 번만)
+      const indexMap = new Map<Key, number>();
+      flatItems.forEach((item, idx) => indexMap.set(getKey(item), idx));
+
+      const deletedIndex = indexMap.get(deletedKey);
+      if (deletedIndex === undefined) return;
 
       const deletedItem = flatItems[deletedIndex];
       const parentId = getParentId(deletedItem);
 
-      // 같은 부모를 가진 형제들
-      const siblings = flatItems.filter(
-        (item) => getParentId(item) === parentId && getKey(item) !== deletedKey
-      );
+      // 같은 부모를 가진 형제들 (인덱스 포함)
+      const siblings: Array<{ item: TNode; index: number }> = [];
+      flatItems.forEach((item, idx) => {
+        if (getParentId(item) === parentId && getKey(item) !== deletedKey) {
+          siblings.push({ item, index: idx });
+        }
+      });
 
-      // 다음 형제 찾기
-      const siblingIndex = siblings.findIndex(
-        (_, idx) =>
-          flatItems.indexOf(siblings[idx]) > deletedIndex
-      );
-
-      if (siblingIndex >= 0) {
-        setFocusedKey(getKey(siblings[siblingIndex]));
+      // 다음 형제 찾기 (삭제된 노드 이후 첫 번째)
+      const nextSibling = siblings.find((s) => s.index > deletedIndex);
+      if (nextSibling) {
+        setFocusedKey(getKey(nextSibling.item));
         return;
       }
 
-      // 이전 형제 찾기
-      const prevSibling = [...siblings]
-        .reverse()
-        .find((s) => flatItems.indexOf(s) < deletedIndex);
-      if (prevSibling) {
-        setFocusedKey(getKey(prevSibling));
+      // 이전 형제 찾기 (삭제된 노드 이전 마지막)
+      const prevSiblings = siblings.filter((s) => s.index < deletedIndex);
+      if (prevSiblings.length > 0) {
+        const prevSibling = prevSiblings[prevSiblings.length - 1];
+        setFocusedKey(getKey(prevSibling.item));
         return;
       }
 
@@ -1479,6 +1486,8 @@ export interface TreeVirtualOptions<TNode> {
   overscan?: number;
   /** key 추출 */
   getKey: (item: TNode) => Key;
+  /** 부모 ID 추출 (타입 안전) */
+  getParentId: (item: TNode) => string | null;
   /** 확장된 키 (가시 아이템 필터링용) */
   expandedKeys: Set<Key>;
 }
@@ -1508,6 +1517,7 @@ export function useTreeVirtual<TNode>({
   estimateSize = 32,
   overscan = 5,
   getKey,
+  getParentId,
   expandedKeys,
 }: TreeVirtualOptions<TNode>): TreeVirtualResult<TNode> {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -1518,7 +1528,7 @@ export function useTreeVirtual<TNode>({
 
     return flatItems.filter((item) => {
       // 루트 레벨은 항상 표시
-      const parentId = (item as any).parentId;
+      const parentId = getParentId(item);
       if (!parentId) return true;
 
       // 모든 조상이 확장되어 있어야 표시
@@ -1528,11 +1538,11 @@ export function useTreeVirtual<TNode>({
         const parent = flatItems.find(
           (i) => String(getKey(i)) === currentParentId
         );
-        currentParentId = parent ? (parent as any).parentId : null;
+        currentParentId = parent ? getParentId(parent) : null;
       }
       return true;
     });
-  }, [flatItems, enabled, expandedKeys, getKey]);
+  }, [flatItems, enabled, expandedKeys, getKey, getParentId]);
 
   // @tanstack/react-virtual 설정
   const virtualizer = useVirtualizer({
@@ -1608,6 +1618,7 @@ export function TreeBase<TNode extends BaseTreeNode>({
     estimateSize: virtual?.estimateSize ?? 32,
     overscan: virtual?.overscan ?? 5,
     getKey,
+    getParentId: (node) => node.parentId,
     expandedKeys: resolvedExpanded,
   });
 
@@ -2005,9 +2016,15 @@ Sidebar 코드 제거 후에는 git revert로 복구.
 | 1.3 | 2025-12-26 | **실제 구현 정합성 반영**: VirtualChild 개념 수정, DnD 규칙 7개로 확장, 미구현 항목 명시 |
 | 1.4 | 2025-12-26 | **에러 복구 + Undo/Redo 계약 추가**: Toast+Undo 버튼 전략, historyManager 기반 DnD Undo 명세 |
 | 1.5 | 2025-12-26 | **Phase 2-3 상세 설계 완성**: PageTree 상세 설계, TreeBase 공통화 설계, focusedKey 관리 훅, 가상화 통합 (@tanstack/react-virtual), Sidebar 제거 계획 |
+| 1.6 | 2025-12-26 | **코드 정합성 검증 및 수정**: UnifiedPage→Page 타입명, useStore API 정합성, useToast 훅 연동, useFocusManagement O(n²)→O(n) 최적화, useTreeVirtual 타입 안전성 개선 |
 
 ### 해결된 이슈
 - ~~PageTree에서 root page reorder 제약 여부~~ → Home 드래그 금지로 결정
 - ~~SyntheticChild 개념 혼란~~ → VirtualChild로 명칭 통일, UI 컴포넌트 자식 개념으로 정리
 - ~~Optimistic Rollback 필요 여부~~ → Toast+Undo 버튼 전략 채택 (자동 rollback 대신 사용자 제어권 유지)
 - ~~Phase 2-3 상세 설계 부족~~ → PageTree, TreeBase, focusedKey, 가상화, Sidebar 제거 상세 설계 완성
+- ~~UnifiedPage 타입 불일치~~ → `Page` 타입으로 통일 (unified.types.ts 정합성)
+- ~~usePageStore/pagesAdapter 미존재~~ → `useStore` + `setPages` 패턴으로 수정
+- ~~toast 라이브러리 미설치~~ → 기존 `useToast` 훅 사용으로 수정
+- ~~useFocusManagement O(n²) 성능~~ → indexMap 기반 O(n) 로직으로 최적화
+- ~~useTreeVirtual 타입 안전성~~ → `getParentId` 함수 옵션 추가로 타입 안전 보장
