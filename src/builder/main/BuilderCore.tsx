@@ -62,15 +62,17 @@ export const BuilderCore: React.FC = () => {
   const viewMode = useStore((state) => state.viewMode);
   const toggleViewMode = useStore((state) => state.toggleViewMode);
 
-  // 히스토리 정보 업데이트
-  // 성능 최적화: elements 의존성 제거 (currentPageId만 필요)
-  // 히스토리 정보는 handleUndo/handleRedo에서 수동으로 업데이트
+  // 히스토리 정보 업데이트 (구독 기반)
   useEffect(() => {
-    if (currentPageId) {
+    const updateHistoryInfo = () => {
       const info = historyManager.getCurrentPageHistory();
       setHistoryInfo(info);
-    }
-  }, [currentPageId, setHistoryInfo]);
+    };
+
+    updateHistoryInfo();
+    const unsubscribe = historyManager.subscribe(updateHistoryInfo);
+    return unsubscribe;
+  }, [setHistoryInfo]);
 
   // Theme Mode 적용 (Builder UI 전용 - Preview와 분리)
   useEffect(() => {
@@ -117,20 +119,12 @@ export const BuilderCore: React.FC = () => {
   const handleUndo = useCallback(async () => {
     const { undo } = useStore.getState();
     await undo(); // ✅ async/await 추가 - 완료 대기
-
-    // 히스토리 정보 업데이트 (undo 완료 후)
-    const info = historyManager.getCurrentPageHistory();
-    setHistoryInfo(info);
-  }, [setHistoryInfo]);
+  }, []);
 
   const handleRedo = useCallback(async () => {
     const { redo } = useStore.getState();
     await redo(); // ✅ async/await 추가 - 완료 대기
-
-    // 히스토리 정보 업데이트 (redo 완료 후)
-    const info = historyManager.getCurrentPageHistory();
-    setHistoryInfo(info);
-  }, [setHistoryInfo]);
+  }, []);
 
   // 훅 사용
   const { error, isLoading, setError, setIsLoading, handleError, clearError } =

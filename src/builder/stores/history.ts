@@ -73,6 +73,7 @@ export class HistoryManager {
         typeof (globalThis as unknown as { indexedDB?: unknown }).indexedDB !== 'undefined';
     private isInitialized = false;
     private initPromise: Promise<void> | null = null;
+    private listeners: Set<() => void> = new Set();
 
     constructor() {
         // IndexedDB 초기화 (백그라운드)
@@ -131,6 +132,8 @@ export class HistoryManager {
                 this.restoreFromIndexedDB(pageId).catch(console.error);
             }
         }
+
+        this.notifyListeners();
     }
 
     /**
@@ -164,6 +167,7 @@ export class HistoryManager {
                     recentEntries.length - 1
                 );
 
+                this.notifyListeners();
                 return true;
             }
 
@@ -231,6 +235,8 @@ export class HistoryManager {
 
         // 🆕 Phase 3: IndexedDB에 저장 (백그라운드)
         this.saveToIndexedDB(this.currentPageId, newEntry, pageHistory.currentIndex);
+
+        this.notifyListeners();
     }
 
     /**
@@ -348,6 +354,7 @@ export class HistoryManager {
         // 🆕 Phase 3: IndexedDB에 저장 (백그라운드)
         this.saveToIndexedDB(this.currentPageId, newEntry, pageHistory.currentIndex);
 
+        this.notifyListeners();
     }
 
     /**
@@ -423,6 +430,7 @@ export class HistoryManager {
         // 🆕 Phase 3: IndexedDB에 저장 (백그라운드)
         this.saveToIndexedDB(this.currentPageId, newEntry, pageHistory.currentIndex);
 
+        this.notifyListeners();
     }
 
     /**
@@ -440,6 +448,7 @@ export class HistoryManager {
         // 🆕 Phase 3: IndexedDB 메타 업데이트 (백그라운드)
         this.updateIndexedDBMeta(this.currentPageId, pageHistory);
 
+        this.notifyListeners();
         return entry;
     }
 
@@ -458,6 +467,7 @@ export class HistoryManager {
         // 🆕 Phase 3: IndexedDB 메타 업데이트 (백그라운드)
         this.updateIndexedDBMeta(this.currentPageId, pageHistory);
 
+        this.notifyListeners();
         return entry;
     }
 
@@ -520,6 +530,15 @@ export class HistoryManager {
     }
 
     /**
+     * 현재 페이지 히스토리 엔트리 목록
+     */
+    getCurrentPageEntries(): HistoryEntry[] {
+        if (!this.currentPageId) return [];
+        const pageHistory = this.pageHistories.get(this.currentPageId);
+        return pageHistory ? [...pageHistory.entries] : [];
+    }
+
+    /**
      * 페이지 히스토리 초기화
      */
     clearPageHistory(pageId: string): void {
@@ -540,6 +559,8 @@ export class HistoryManager {
         // 현재 페이지가 초기화된 페이지라면 새로운 히스토리 생성
         if (this.currentPageId === pageId) {
             this.setCurrentPage(pageId);
+        } else {
+            this.notifyListeners();
         }
     }
 
@@ -561,6 +582,23 @@ export class HistoryManager {
             }
         })();
         }
+
+        this.notifyListeners();
+    }
+
+    /**
+     * 히스토리 변경 구독
+     */
+    subscribe(listener: () => void): () => void {
+        this.listeners.add(listener);
+        return () => this.listeners.delete(listener);
+    }
+
+    /**
+     * 구독자 알림
+     */
+    private notifyListeners(): void {
+        this.listeners.forEach((listener) => listener());
     }
 
     /**

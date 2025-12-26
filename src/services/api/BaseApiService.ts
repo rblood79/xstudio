@@ -302,20 +302,24 @@ export class ElementsApiService extends BaseApiService {
         this.validateInput(elementId, (id) => typeof id === 'string' && id.length > 0, 'deleteElement');
 
         // 삭제 전에 page_id 조회 (캐시 무효화용)
+        // .single() 대신 .maybeSingle()을 사용하여 요소가 없어도 에러가 발생하지 않도록 함
         const { data: element } = await this.supabase
             .from("elements")
             .select("page_id")
             .eq("id", elementId)
-            .single();
+            .maybeSingle();
 
-        await this.handleDeleteCall('deleteElement', async () => {
-            return await this.supabase
-                .from("elements")
-                .delete()
-                .eq("id", elementId);
-        });
+        // 요소가 Supabase에 존재하는 경우에만 삭제 시도
+        if (element) {
+            await this.handleDeleteCall('deleteElement', async () => {
+                return await this.supabase
+                    .from("elements")
+                    .delete()
+                    .eq("id", elementId);
+            });
+        }
 
-        // ✅ 캐시 무효화
+        // ✅ 캐시 무효화 (요소가 있었든 없었든 캐시는 무효화)
         if (element?.page_id) {
             this.invalidateCache(`elements:page:${element.page_id}`);
         }

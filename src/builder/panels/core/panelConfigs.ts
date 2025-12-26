@@ -1,7 +1,7 @@
 /**
  * Panel Configurations
  *
- * 9개 패널의 설정 정의 및 PanelRegistry 등록
+ * 패널 설정 정의 및 PanelRegistry 등록
  */
 
 import {
@@ -16,6 +16,7 @@ import {
   SquareMousePointer,
   FileEdit,
   Activity,
+  History,
 } from "lucide-react";
 import type { PanelConfig } from "./types";
 import { PanelRegistry } from "./PanelRegistry";
@@ -33,12 +34,13 @@ import { DataTableEditorPanel } from "../datatable/DataTableEditorPanel";
 import { PropertiesPanel } from "../properties/PropertiesPanel";
 import { StylesPanel } from "../styles/StylesPanel";
 import { EventsPanel } from "../events/EventsPanel";
+import { HistoryPanel } from "../history/HistoryPanel";
 
 // Bottom panels
 import { MonitorPanel } from "../monitor/MonitorPanel";
 
 /**
- * 9개 패널 설정
+ * 패널 설정
  */
 export const PANEL_CONFIGS: PanelConfig[] = [
   // Navigation panels
@@ -174,6 +176,19 @@ export const PANEL_CONFIGS: PanelConfig[] = [
     maxWidth: 500,
     description: "이벤트 핸들러 관리",
     shortcut: "Ctrl+Shift+E",
+  },
+  {
+    id: "history",
+    name: "히스토리",
+    nameEn: "History",
+    icon: History,
+    component: HistoryPanel,
+    category: "editor",
+    defaultPosition: "right",
+    minWidth: 233,
+    maxWidth: 320,
+    description: "변경 내역 확인 및 복원",
+    shortcut: "Ctrl+Shift+H",
   },
 
   // Bottom panels

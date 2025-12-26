@@ -123,20 +123,24 @@ export class PagesApiService extends BaseApiService {
         this.validateInput(pageId, (id) => typeof id === 'string' && id.length > 0, 'deletePage');
 
         // 삭제 전에 project_id 조회 (캐시 무효화용)
+        // .single() 대신 .maybeSingle()을 사용하여 페이지가 없어도 에러가 발생하지 않도록 함
         const { data: page } = await this.supabase
             .from("pages")
             .select("project_id")
             .eq("id", pageId)
-            .single();
+            .maybeSingle();
 
-        await this.handleDeleteCall('deletePage', async () => {
-            return await this.supabase
-                .from("pages")
-                .delete()
-                .eq("id", pageId);
-        });
+        // 페이지가 Supabase에 존재하는 경우에만 삭제 시도
+        if (page) {
+            await this.handleDeleteCall('deletePage', async () => {
+                return await this.supabase
+                    .from("pages")
+                    .delete()
+                    .eq("id", pageId);
+            });
+        }
 
-        // ✅ 캐시 무효화
+        // ✅ 캐시 무효화 (페이지가 있었든 없었든 캐시는 무효화)
         if (page?.project_id) {
             this.invalidateCache(`pages:project:${page.project_id}`);
         }

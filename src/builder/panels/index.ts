@@ -29,6 +29,7 @@ export { SettingsPanel } from "./settings/SettingsPanel";
 export { PropertiesPanel } from "./properties/PropertiesPanel";
 export { StylesPanel } from "./styles/StylesPanel";
 export { EventsPanel } from "./events/EventsPanel";
+export { HistoryPanel } from "./history/HistoryPanel";
 
 // Side effect: Register all panels when this module is imported
 import "./core/panelConfigs";

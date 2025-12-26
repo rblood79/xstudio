@@ -1,12 +1,22 @@
-import React, { useCallback, useMemo, useRef, useState } from "react";
-import { DropIndicator, Tree, useDragAndDrop } from "react-aria-components";
+import React, { useCallback, useMemo, useState } from "react";
 import type { Key } from "react-stately";
+import { TreeBase } from "../TreeBase";
+import type { TreeItemState } from "../TreeBase/types";
 import type { LayerTreeNode, LayerTreeProps } from "./types";
 import { useLayerTreeData } from "./useLayerTreeData";
 import { calculateMoveUpdates } from "./useLayerTreeDnd";
 import { isValidDrop } from "./validation";
-import { LayerTreeItem } from "./LayerTreeItem";
+import { LayerTreeItemContent } from "./LayerTreeItemContent";
 
+/**
+ * LayerTree - TreeBase 기반 구현
+ *
+ * 도메인 로직:
+ * - LayerTreeNode 변환 (useLayerTreeData)
+ * - VirtualChild 처리
+ * - Validation (isValidDrop)
+ * - Store 동기화 (syncToStore)
+ */
 export function LayerTree({
   elements,
   selectedElementId,
@@ -21,147 +31,134 @@ export function LayerTree({
   const [internalExpandedKeys, setInternalExpandedKeys] = useState<Set<Key>>(
     new Set()
   );
-  const lastDraggedKeysRef = useRef<Set<Key> | null>(null);
-  const nodeMap = useMemo(() => {
-    const map = new Map<string, LayerTreeNode>();
+
+  // VirtualChild 노드들을 disabled로 처리
+  const disabledKeys = useMemo(() => {
+    const keys = new Set<Key>();
     const stack = [...treeNodes];
     while (stack.length > 0) {
       const node = stack.shift();
       if (!node) continue;
-      map.set(node.id, node);
+      if (node.virtualChildType) {
+        keys.add(node.id);
+      }
       if (node.children && node.children.length > 0) {
         stack.unshift(...node.children);
       }
     }
-    return map;
+    return keys;
   }, [treeNodes]);
-  const treeData = {
-    items: treeNodes,
-    getItem: (key: Key | string) => tree.getItem(key),
-  };
 
   const resolvedExpandedKeys = expandedKeys ?? internalExpandedKeys;
 
   const handleExpandedChange = useCallback(
-    (keys: "all" | Set<Key>) => {
-      if (keys === "all") return;
-      const next = new Set(keys);
+    (keys: Set<Key>) => {
       if (!expandedKeys) {
-        setInternalExpandedKeys(next);
+        setInternalExpandedKeys(keys);
       }
-      onExpandedChange?.(next as Set<string | number>);
+      onExpandedChange?.(keys as Set<string | number>);
     },
     [expandedKeys, onExpandedChange]
   );
 
-  const { dragAndDropHooks } = useDragAndDrop({
-    getItems: (keys) => {
-      lastDraggedKeysRef.current = keys;
-      return [...keys].flatMap((key) => {
-        const node = treeData.getItem(key)?.value;
-        if (!node || node.virtualChildType) return [];
-        return [
-          {
-            "application/x-layer-tree-item": JSON.stringify({ id: key }),
-            "text/plain": node.name || "",
-          },
-        ];
-      });
+  const handleSelectionChange = useCallback(
+    (keys: Set<Key>) => {
+      const key = [...keys][0] as string;
+      if (!key) return;
+
+      // treeNodes에서 노드 찾기
+      const findNode = (nodes: LayerTreeNode[]): LayerTreeNode | undefined => {
+        for (const node of nodes) {
+          if (node.id === key) return node;
+          if (node.children) {
+            const found = findNode(node.children);
+            if (found) return found;
+          }
+        }
+        return undefined;
+      };
+
+      const node = findNode(treeNodes);
+      if (!node || node.virtualChildType) return;
+      onItemClick(node.element);
     },
-    acceptedDragTypes: ["application/x-layer-tree-item"],
-    onMove(e) {
-      const { keys, target } = e;
-      if (!target || target.type !== "item") return;
-      for (const key of keys) {
-        const { valid } = isValidDrop(
-          String(key),
-          String(target.key),
-          target.dropPosition,
-          treeData
-        );
-        if (!valid) return;
-      }
+    [treeNodes, onItemClick]
+  );
+
+  // DnD 유효성 검사 (클로저로 tree 캡처)
+  const handleIsValidDrop = useCallback(
+    (draggedKey: Key, targetKey: Key, position: "before" | "after" | "on") => {
+      return isValidDrop(String(draggedKey), String(targetKey), position, {
+        getItem: (key) => tree.getItem(key),
+      }).valid;
+    },
+    [tree]
+  );
+
+  // DnD 이동 처리 (클로저로 tree, syncToStore 캡처)
+  const handleMove = useCallback(
+    (payload: {
+      keys: Set<Key>;
+      target: {
+        key: Key;
+        node: LayerTreeNode;
+        dropPosition: "before" | "after" | "on";
+      };
+    }) => {
       const updates = calculateMoveUpdates({
-        tree: treeData,
-        movedKeys: keys,
-        targetKey: target.key,
-        dropPosition: target.dropPosition,
+        tree: {
+          items: treeNodes,
+          getItem: (key) => tree.getItem(key),
+        },
+        movedKeys: payload.keys,
+        targetKey: payload.target.key,
+        dropPosition: payload.target.dropPosition,
       });
       syncToStore(updates);
     },
-    renderDropIndicator(target) {
-      if (target.type !== "item") {
-        return (
-          <DropIndicator
-            target={target}
-            className="layer-drop-indicator layer-drop-indicator--hidden"
-          />
-        );
-      }
-      const targetNode = treeData.getItem(target.key)?.value;
-      if (targetNode?.virtualChildType) {
-        return (
-          <DropIndicator
-            target={target}
-            className="layer-drop-indicator layer-drop-indicator--hidden"
-          />
-        );
-      }
-      let isInvalid = false;
-      const draggedKeys = lastDraggedKeysRef.current;
-      if (draggedKeys) {
-        for (const key of draggedKeys) {
-          const { valid } = isValidDrop(
-            String(key),
-            String(target.key),
-            target.dropPosition,
-            treeData
-          );
-          if (!valid) {
-            isInvalid = true;
-            break;
-          }
-        }
-      }
-      return (
-        <DropIndicator
-          target={target}
-          className={`layer-drop-indicator${
-            isInvalid ? " layer-drop-indicator--hidden" : ""
-          }`}
-        />
-      );
-    },
-  });
+    [tree, treeNodes, syncToStore]
+  );
+
+  // 드래그 가능 여부
+  const canDrag = useCallback((node: LayerTreeNode) => {
+    return !node.virtualChildType && node.tag !== "body";
+  }, []);
+
+  // 렌더링
+  const renderContent = useCallback(
+    (node: LayerTreeNode, state: TreeItemState) => (
+      <LayerTreeItemContent
+        node={node}
+        state={state}
+        onDelete={onItemDelete}
+        selectedTab={selectedTab}
+        onSelectTabElement={onSelectTabElement}
+      />
+    ),
+    [onItemDelete, selectedTab, onSelectTabElement]
+  );
 
   return (
-    <Tree
+    <TreeBase<LayerTreeNode>
       aria-label="Layers"
       items={treeNodes}
-      selectionMode="single"
+      getKey={(node) => node.id}
+      getTextValue={(node) => node.name}
+      renderContent={renderContent}
       selectedKeys={
         selectedElementId ? new Set([selectedElementId]) : new Set()
       }
       expandedKeys={resolvedExpandedKeys}
+      disabledKeys={disabledKeys}
+      onSelectionChange={handleSelectionChange}
       onExpandedChange={handleExpandedChange}
-      onSelectionChange={(keys) => {
-        if (keys === "all") return;
-        const key = [...keys][0] as string;
-        const node = nodeMap.get(key);
-        if (!node || node.virtualChildType) return;
-        onItemClick(node.element);
+      dnd={{
+        canDrag,
+        isValidDrop: handleIsValidDrop,
+        onMove: handleMove,
+        dragType: "application/x-layer-tree-item",
       }}
-      dragAndDropHooks={dragAndDropHooks}
-    >
-      {(node) => (
-        <LayerTreeItem
-          key={node.id}
-          node={node}
-          onDelete={onItemDelete}
-          selectedTab={selectedTab}
-          onSelectTabElement={onSelectTabElement}
-        />
-      )}
-    </Tree>
+      dropIndicatorClassName="layer-drop-indicator"
+    />
   );
 }
