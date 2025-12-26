@@ -1,5 +1,6 @@
 export { TreeBase } from "./TreeBase";
 export { TreeBaseItem } from "./TreeBaseItem";
+export { VirtualizedTree } from "./VirtualizedTree";
 export type {
   BaseTreeNode,
   TreeBaseProps,

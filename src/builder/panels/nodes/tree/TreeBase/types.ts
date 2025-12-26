@@ -72,6 +72,7 @@ export interface TreeBaseProps<TNode extends BaseTreeNode> {
   selectedKeys?: Set<Key>;
   expandedKeys?: Set<Key>;
   disabledKeys?: Set<Key>;
+  focusedKey?: Key | null;
 
   // Selection 설정
   selectionMode?: "single" | "multiple" | "none";

@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback, useMemo } from "react";
+import React, { useState, useRef, useCallback, useMemo, useEffect } from "react";
 import { Tree, DropIndicator, useDragAndDrop } from "react-aria-components";
 import type { Key } from "react-stately";
 import type { TreeBaseProps, BaseTreeNode, DropPosition } from "./types";
@@ -21,6 +21,7 @@ export function TreeBase<TNode extends BaseTreeNode>({
   selectedKeys,
   expandedKeys,
   disabledKeys,
+  focusedKey,
   selectionMode = "single",
   onSelectionChange,
   onExpandedChange,
@@ -32,8 +33,24 @@ export function TreeBase<TNode extends BaseTreeNode>({
   // 내부 상태 (Uncontrolled 모드용)
   const [internalExpanded, setInternalExpanded] = useState<Set<Key>>(new Set());
   const lastDraggedKeysRef = useRef<Set<Key> | null>(null);
+  const treeRef = useRef<HTMLDivElement>(null);
 
   const resolvedExpanded = expandedKeys ?? internalExpanded;
+
+  // focusedKey 변경 시 해당 노드로 스크롤 및 포커스
+  useEffect(() => {
+    if (focusedKey && treeRef.current) {
+      // data-key 속성으로 TreeItem 찾기
+      const targetElement = treeRef.current.querySelector(
+        `[data-key="${focusedKey}"]`
+      ) as HTMLElement;
+      if (targetElement) {
+        // 스크롤 및 포커스
+        targetElement.scrollIntoView({ block: "nearest", behavior: "smooth" });
+        targetElement.focus({ preventScroll: true });
+      }
+    }
+  }, [focusedKey]);
 
   // 노드 맵 구축 (빠른 조회용)
   const nodeMap = useMemo(() => {
@@ -166,6 +183,7 @@ export function TreeBase<TNode extends BaseTreeNode>({
 
   return (
     <Tree
+      ref={treeRef}
       aria-label={ariaLabel}
       items={items}
       selectionMode={selectionMode}
