@@ -11,7 +11,7 @@ import {
   type RadioItem,
   type ListItem,
   type TreeItem as TreeItemType,
-} from "../../../../sidebar/treeHelpers";
+} from "../helpers";
 import type { LayerTreeNode, VirtualChildType } from "./types";
 
 export function useLayerTreeData(elements: Element[]) {

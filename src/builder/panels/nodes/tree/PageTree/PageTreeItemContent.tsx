@@ -8,7 +8,7 @@ import {
   Trash,
   GripVertical,
 } from "lucide-react";
-import { ICON_EDIT_PROPS } from "../../../../sidebar/treeHelpers";
+import { ICON_EDIT_PROPS } from "../helpers";
 import type { Page } from "../../../../../types/builder/unified.types";
 import type { TreeItemState } from "../TreeBase/types";
 import type { PageTreeNode } from "./types";

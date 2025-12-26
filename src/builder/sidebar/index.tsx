@@ -33,7 +33,7 @@ import {
   type RadioItem,
   type ListItem,
   type TreeItem,
-} from "./treeHelpers";
+} from "../panels/nodes/tree/helpers";
 
 interface SidebarProps {
   pages: Page[];

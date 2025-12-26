@@ -4,7 +4,7 @@
  * 🚀 Performance: 컴포넌트 외부로 추출하여 불필요한 재생성 방지
  */
 
-import type { ElementProps } from "../../types/integrations/supabase.types";
+import type { ElementProps } from "../../../../types/integrations/supabase.types";
 
 // ============================================
 // Types

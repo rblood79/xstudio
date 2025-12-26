@@ -12,7 +12,7 @@ import {
 import {
   ICON_EDIT_PROPS,
   type TreeItem as TreeItemType,
-} from "../../../../sidebar/treeHelpers";
+} from "../helpers";
 import type { Element } from "../../../../../types/core/store.types";
 import type { ElementProps } from "../../../../../types/integrations/supabase.types";
 import type { TreeItemState } from "../TreeBase/types";

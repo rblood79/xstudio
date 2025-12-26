@@ -9,12 +9,8 @@ import { MessageService } from "../../utils/messaging"; // 메시징 서비스 �
 import { isWebGLCanvas, isCanvasCompareMode } from "../../utils/featureFlags";
 import type { ElementTreeItem } from "../../types/builder/stately.types";
 import { buildTreeFromElements } from "../utils/treeUtils";
-import { VirtualizedLayerTree } from "../sidebar/VirtualizedLayerTree";
 import { LayerTree } from "../panels/nodes/tree/LayerTree";
 import "./index.css";
-
-// 🚀 Performance: Virtual Scrolling 임계값 (이 수 이상이면 가상화 적용)
-const VIRTUALIZATION_THRESHOLD = 100;
 
 interface LayersProps {
   elements: Element[];
@@ -28,13 +24,10 @@ interface LayersProps {
   ) => React.ReactNode;
   sendElementSelectedMessage: (id: string, props: ElementProps) => void;
   collapseAllTreeItems?: () => void;
-  /** 🚀 Performance: Virtual Scrolling용 props */
   expandedKeys?: Set<string | number>;
   onToggleExpand?: (key: string | number) => void;
   selectedTab?: { parentId: string; tabIndex: number } | null;
   onSelectTabElement?: (parentId: string, props: ElementProps, index: number) => void;
-  /** 가상 스크롤링 강제 사용 여부 */
-  forceVirtualization?: boolean;
 }
 
 export function Layers({
@@ -48,7 +41,6 @@ export function Layers({
   onToggleExpand,
   selectedTab,
   onSelectTabElement,
-  forceVirtualization = false,
 }: LayersProps) {
   // 🚀 Phase 19: Zustand selector 패턴 적용 (불필요한 리렌더링 방지)
   const removeElement = useStore((state) => state.removeElement);
@@ -58,9 +50,8 @@ export function Layers({
     return buildTreeFromElements(elements);
   }, [elements]);
 
-  // 🚀 Performance: 가상 스크롤링 사용 여부 결정
-  const useVirtualization = forceVirtualization || elements.length >= VIRTUALIZATION_THRESHOLD;
-  const hasVirtualizationProps = Boolean(expandedKeys && onToggleExpand);
+  // LayerTree 사용 여부 (expandedKeys와 onToggleExpand가 있어야 함)
+  const useLayerTree = Boolean(expandedKeys && onToggleExpand);
 
   const handleExpandedChange = useCallback(
     (keys: Set<string | number>) => {
@@ -132,21 +123,7 @@ export function Layers({
       <div className="elements">
         {elements.length === 0 ? (
           <p className="no_element">No element available</p>
-        ) : useVirtualization && hasVirtualizationProps ? (
-          // 🚀 Performance: Virtual Scrolling 사용
-          <VirtualizedLayerTree
-            tree={elementTree}
-            expandedKeys={expandedKeys ?? new Set()}
-            selectedElementId={selectedElementId}
-            selectedTab={selectedTab}
-            onItemClick={handleItemClick}
-            onItemDelete={handleItemDelete}
-            onToggleExpand={onToggleExpand ?? (() => {})}
-            onSelectTabElement={onSelectTabElement}
-            elements={elements}
-            containerHeight={400}
-          />
-        ) : hasVirtualizationProps ? (
+        ) : useLayerTree ? (
           <LayerTree
             elements={elements}
             selectedElementId={selectedElementId}
@@ -158,7 +135,7 @@ export function Layers({
             onSelectTabElement={onSelectTabElement}
           />
         ) : (
-          // 기존 renderElementTree 사용 (적은 요소 또는 가상화 props 없음)
+          // fallback: renderElementTree 사용
           renderElementTree(
             elementTree,
             handleItemClick,
