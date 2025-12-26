@@ -19,7 +19,7 @@
 
 import { useState, useCallback, useRef, useEffect } from 'react';
 import type { DragState, HandlePosition, BoundingBox } from './types';
-import { TIMING } from '../../../constants/timing';
+import { TIMING } from '../../../utils/timing';
 
 // ============================================
 // RAF Throttle

@@ -14,7 +14,7 @@
  */
 
 import { memo } from 'react';
-import { PropertySection, PropertyUnitInput } from '../../common';
+import { PropertySection, PropertyUnitInput } from '../../../components';
 import { Button } from '../../../../shared/components';
 import { iconProps } from '../../../../utils/ui/uiConstants';
 import {

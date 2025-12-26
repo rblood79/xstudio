@@ -1,6 +1,6 @@
 import { memo } from "react";
 
-import { PropertyInput, PropertySelect, PropertyCustomId, PropertySection } from '../../common';
+import { PropertyInput, PropertySelect, PropertyCustomId, PropertySection } from '../../../components';
 import type { CellElementProps } from '../../../../types/core/store.types';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { useStore } from '../../../stores';

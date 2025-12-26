@@ -13,7 +13,7 @@
 import { useEffect, useCallback, useRef, useState, useMemo } from "react";
 import type { KeyboardEvent } from "react";
 import type { PanelProps } from "../core/types";
-import { PanelHeader } from "../common";
+import { PanelHeader } from "../../components";
 import { Button } from "../../../shared/components";
 import { MessageCircle, Trash2, Bot } from "lucide-react";
 import { iconProps } from "../../../utils/ui/uiConstants";

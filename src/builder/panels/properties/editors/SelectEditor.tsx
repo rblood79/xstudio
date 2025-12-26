@@ -1,6 +1,6 @@
 import { useEffect, memo, useCallback, useMemo } from "react";
 import { Tag, SquarePlus, Trash, PointerOff, AlertTriangle, Hash, Focus, CheckSquare, PenOff, Menu, SquareX, SpellCheck2, FileText, Binary, Type, FormInput, Database, List, LayoutList } from 'lucide-react';
-import { PropertyInput, PropertySelect, PropertySwitch, PropertyCustomId, PropertySection, PropertyDataBinding, type DataBindingValue } from '../../common';
+import { PropertyInput, PropertySelect, PropertySwitch, PropertyCustomId, PropertySection, PropertyDataBinding, type DataBindingValue } from '../../../components';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { iconProps } from '../../../../utils/ui/uiConstants';
 import { PROPERTY_LABELS } from '../../../../utils/ui/labels';

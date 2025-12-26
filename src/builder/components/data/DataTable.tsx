@@ -27,8 +27,8 @@
  */
 
 import { memo, useEffect, useRef } from 'react';
-import type { DataTableProps } from '../../types/datatable.types';
-import { useDataTableStore } from '../stores/datatable';
+import type { DataTableProps } from '../../../types/datatable.types';
+import { useDataTableStore } from '../../stores/datatable';
 
 /**
  * DataTable 컴포넌트

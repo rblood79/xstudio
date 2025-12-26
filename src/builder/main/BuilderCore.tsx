@@ -18,7 +18,7 @@ import Grid from "../grid";
 import { Workspace } from "../workspace";
 import { isWebGLCanvas, isCanvasCompareMode } from "../../utils/featureFlags";
 import { PanelSlot, BottomPanelSlot } from "../layout";
-import { ToastContainer } from "../components/ToastContainer";
+import { ToastContainer } from "../components";
 
 import { useErrorHandler } from "../hooks/useErrorHandler";
 // import { useElementCreator } from "../hooks/useElementCreator";  // 사용하지 않음

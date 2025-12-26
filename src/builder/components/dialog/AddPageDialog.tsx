@@ -19,11 +19,11 @@ import {
   TextField,
 } from "react-aria-components";
 import { CirclePlus, FolderTree, Layout, Link, AlertCircle } from "lucide-react";
-import { useStore } from "../stores";
-import { useLayoutsStore } from "../stores/layouts";
-import { generateSlugFromTitle, validateSlug } from "../../utils/slugValidator";
-import { generatePageUrl } from "../../utils/urlGenerator";
-import { iconProps, iconEditProps, iconSmall } from "../../utils/ui/uiConstants";
+import { useStore } from "../../stores";
+import { useLayoutsStore } from "../../stores/layouts";
+import { generateSlugFromTitle, validateSlug } from "../../../utils/slugValidator";
+import { generatePageUrl } from "../../../utils/urlGenerator";
+import { iconProps, iconEditProps, iconSmall } from "../../../utils/ui/uiConstants";
 import "./AddPageDialog.css";
 
 export interface AddPageDialogResult {

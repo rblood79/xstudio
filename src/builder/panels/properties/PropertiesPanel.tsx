@@ -18,7 +18,7 @@ import { getEditor, type EditorContext } from "../../inspector/editors/registry"
 import { useEditModeStore } from "../../stores/editMode";
 import { useDebouncedSelectedElementData } from "../../stores";
 import type { ComponentEditorProps, SelectedElement } from "../../inspector/types";
-import { EmptyState, LoadingSpinner, PanelHeader, MultiSelectStatusIndicator, BatchPropertyEditor, SelectionFilter, KeyboardShortcutsHelp, SmartSelection, SelectionMemory } from "../common";
+import { EmptyState, LoadingSpinner, PanelHeader, MultiSelectStatusIndicator, BatchPropertyEditor, SelectionFilter, KeyboardShortcutsHelp, SmartSelection, SelectionMemory } from "../../components";
 import { ElementSlotSelector } from "./editors/ElementSlotSelector";
 import { Button } from "../../../shared/components";
 import { Copy, ClipboardPaste, Settings2 } from "lucide-react";
@@ -36,7 +36,6 @@ import type { DistributionType } from "../../stores/utils/elementDistribution";
 import { trackBatchUpdate, trackGroupCreation, trackUngroup, trackMultiPaste, trackMultiDelete } from "../../stores/utils/historyHelpers";
 import { supabase } from "../../../env/supabase.client";
 import type { Element } from "../../../types/core/store.types";
-import "../../panels/common/index.css";
 
 /**
  * PropertyEditorWrapper - Editor 컴포넌트를 분리하여 불필요한 리렌더링 방지

@@ -7,7 +7,7 @@
 import { useState } from "react";
 import { Workflow, Plus, Trash2, Edit2, Play } from "lucide-react";
 import { useDataStore, useTransformers } from "../../../stores/data";
-import { SectionHeader } from "../../common/SectionHeader";
+import { SectionHeader } from "../../../components";
 import type { TransformLevel } from "../../../../types/builder/data.types";
 import { iconProps, iconEditProps } from "../../../../utils/ui/uiConstants";
 

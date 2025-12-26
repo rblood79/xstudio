@@ -7,10 +7,10 @@
 
 import { X, AlertCircle, AlertTriangle, CheckCircle, Info } from "lucide-react";
 import { Button } from "react-aria-components";
-import { iconProps, iconEditProps } from "../../utils/ui/uiConstants";
-import type { ToastType } from "../hooks/useToast";
-import type { ToastAction } from "../stores/toast";
-import "./styles/Toast.css";
+import { iconProps, iconEditProps } from "../../../utils/ui/uiConstants";
+import type { ToastType } from "../../hooks/useToast";
+import type { ToastAction } from "../../stores/toast";
+import "./Toast.css";
 
 const ICONS = {
   success: CheckCircle,

@@ -16,7 +16,7 @@ import {
   PropertySelect,
   PropertyCustomId,
   PropertySection,
-} from "../../common";
+} from "../../../components";
 import { PROPERTY_LABELS } from "../../../../utils/ui/labels";
 import { useStore } from "../../../stores";
 

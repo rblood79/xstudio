@@ -9,7 +9,7 @@ import type { Key } from "react-stately";
 import { Button } from "react-aria-components";
 import { CopyMinus } from "lucide-react";
 import { useStore } from "../../stores";
-import { PanelHeader } from "../common/PanelHeader";
+import { PanelHeader } from "../../components";
 import { LayerTree } from "./tree/LayerTree";
 import { iconProps } from "../../../utils/ui/uiConstants";
 

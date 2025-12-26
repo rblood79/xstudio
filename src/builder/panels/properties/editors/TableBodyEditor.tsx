@@ -1,6 +1,6 @@
 import { memo } from "react";
 import { useStore } from '../../../stores';
-import { PropertySelect, PropertyCustomId, PropertySection } from '../../common';
+import { PropertySelect, PropertyCustomId, PropertySection } from '../../../components';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { Table, Grid } from 'lucide-react';
 import { PROPERTY_LABELS } from '../../../../utils/ui/labels';

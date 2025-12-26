@@ -17,7 +17,7 @@ import type {
   DataField,
   DataFieldType,
 } from "../../../../types/builder/data.types";
-import { PropertySwitch } from "../../common";
+import { PropertySwitch } from "../../../components";
 import "./DataTableEditor.css";
 import { iconEditProps, iconSmall } from "../../../../utils/ui/uiConstants";
 

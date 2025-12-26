@@ -11,7 +11,7 @@ import { Plus } from "lucide-react";
 import { useStore } from "../../stores";
 import { useIframeMessenger } from "../../hooks/useIframeMessenger";
 import { usePageManager } from "../../hooks/usePageManager";
-import { PanelHeader } from "../common/PanelHeader";
+import { PanelHeader } from "../../components";
 import { PageTree } from "./tree/PageTree";
 import { pagesApi } from "../../../services/api/PagesApiService";
 import { getDB } from "../../../lib/db";

@@ -1,6 +1,6 @@
 import { memo, useCallback, useMemo } from "react";
 import { ToggleLeft, Eye, PointerOff, PenOff, CheckSquare, Layout, PencilRuler, Focus, Hash, Type, AlertCircle, FileText, Tag } from 'lucide-react';
-import { PropertyInput, PropertySwitch, PropertyCustomId, PropertySelect , PropertySection} from '../../common';
+import { PropertyInput, PropertySwitch, PropertyCustomId, PropertySelect , PropertySection} from '../../../components';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { PROPERTY_LABELS } from '../../../../utils/ui/labels';
 import { useStore } from '../../../stores';

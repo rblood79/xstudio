@@ -14,7 +14,7 @@ import { useVirtualizer } from "@tanstack/react-virtual";
 import { Button, Select, SelectItem } from "./list";
 import type { TableVariant, ComponentSize } from '../../types/componentVariants';
 import type { DataBinding, ColumnMapping } from '../../types/builder/unified.types';
-import type { DataBindingValue } from '../../builder/panels/common/PropertyDataBinding';
+import type { DataBindingValue } from '../../builder/components';
 import { useCollectionData } from '../../builder/hooks/useCollectionData';
 import './styles/Table.css';
 import {

@@ -35,8 +35,7 @@ import {
   ApiEndpointEditor,
   VariableEditor,
 } from "./editors";
-import { EmptyState } from "../common/EmptyState";
-import { PanelHeader } from "../common/PanelHeader";
+import { EmptyState, PanelHeader } from "../../components";
 import type {
   TableEditorTab,
   ApiEditorTab,

@@ -5,7 +5,7 @@
  * 공통 list-group 스타일: ../../../common/list-group.css
  */
 
-@import "../../../common/list-group.css";
+@import "../../../../components/styles/list-group.css";
 
 @layer components {
   /* ========== LayoutPreset Grid Override ========== */

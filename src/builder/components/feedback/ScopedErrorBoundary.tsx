@@ -14,7 +14,7 @@
 
 import { Component, ReactNode } from 'react';
 import { AlertTriangle, RefreshCw, X } from 'lucide-react';
-import { iconProps, iconEditProps, iconLarge } from '../../utils/ui/uiConstants';
+import { iconProps, iconEditProps, iconLarge } from '../../../utils/ui/uiConstants';
 
 // ============================================
 // Types

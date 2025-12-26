@@ -26,7 +26,7 @@ import {
   PropertyInput,
   PropertySelect,
   PropertySwitch,
-} from "../../common";
+} from "../../../components";
 import "./VariableEditor.css";
 import { iconEditProps } from "../../../../utils/ui/uiConstants";
 

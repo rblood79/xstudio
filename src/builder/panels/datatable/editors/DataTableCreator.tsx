@@ -29,7 +29,7 @@ import {
   Factory,
 } from "lucide-react";
 import { useDataStore } from "../../../stores/data";
-import { SectionHeader } from "../../common/SectionHeader";
+import { SectionHeader } from "../../../components";
 import type { DataTablePreset, PresetCategory } from "../presets/types";
 import { PRESET_CATEGORIES } from "../presets/types";
 import { getPresetsByCategory } from "../presets/dataTablePresets";

@@ -12,7 +12,7 @@ import {
 } from "react-aria-components";
 import type { MenuVariant, ComponentSize } from '../../types/componentVariants';
 import type { DataBinding, ColumnMapping } from "../../types/builder/unified.types";
-import type { DataBindingValue } from "../../builder/panels/common/PropertyDataBinding";
+import type { DataBindingValue } from "../../builder/components";
 import { useCollectionData } from "../../builder/hooks/useCollectionData";
 
 import "./styles/Menu.css";

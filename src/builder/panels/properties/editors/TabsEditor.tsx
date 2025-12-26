@@ -6,7 +6,7 @@ import {
   PropertySwitch,
   PropertyCustomId,
   PropertySection,
-} from "../../common";
+} from "../../../components";
 import { PropertyEditorProps } from "../types/editorTypes";
 import { iconProps } from "../../../../utils/ui/uiConstants";
 import { PROPERTY_LABELS } from "../../../../utils/ui/labels";

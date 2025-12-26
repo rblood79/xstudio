@@ -16,7 +16,7 @@ import {
   composeRenderProps
 } from 'react-aria-components';
 import type { DataBinding, ColumnMapping } from '../../types/builder/unified.types';
-import type { DataBindingValue } from '../../builder/panels/common/PropertyDataBinding';
+import type { DataBindingValue } from '../../builder/components';
 import type { ComponentSizeSubset, RadioVariant } from '../../types/builder/componentVariants.types';
 import { useCollectionData } from '../../builder/hooks/useCollectionData';
 

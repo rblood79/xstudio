@@ -8,7 +8,7 @@
 import { Variable, Plus, Trash2, Edit2 } from "lucide-react";
 import { useDataStore, useVariables } from "../../../stores/data";
 import { useDataTableEditorStore } from "../stores/dataTableEditorStore";
-import { SectionHeader } from "../../common/SectionHeader";
+import { SectionHeader } from "../../../components";
 import type { Variable as VariableType } from "../../../../types/builder/data.types";
 import { iconProps, iconEditProps } from "../../../../utils/ui/uiConstants";
 

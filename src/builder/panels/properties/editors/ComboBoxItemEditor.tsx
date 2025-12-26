@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef, useCallback, memo, useMemo } from "react";
 import { Tag, Binary, FileText, PointerOff, Type, Hash, Play } from 'lucide-react';
-import { PropertyInput } from '../../common/PropertyInput';
-import { PropertySwitch } from '../../common/PropertySwitch';
-import { PropertyCustomId , PropertySection} from '../../common';
+import { PropertyInput } from '../../../components';
+import { PropertySwitch } from '../../../components';
+import { PropertyCustomId , PropertySection} from '../../../components';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { PROPERTY_LABELS } from '../../../../utils/ui/labels';
 import { useStore } from '../../../stores';

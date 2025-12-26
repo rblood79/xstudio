@@ -1,5 +1,5 @@
 import { memo, useMemo } from "react";
-import { PropertyInput, PropertyCustomId, PropertySection } from '../../common';
+import { PropertyInput, PropertyCustomId, PropertySection } from '../../../components';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { useStore } from '../../../stores';
 import { Type } from 'lucide-react';

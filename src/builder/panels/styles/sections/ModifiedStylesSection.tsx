@@ -5,7 +5,7 @@
  * 사용자가 수정한 inline style만 표시
  */
 
-import { PropertySection, PropertyUnitInput, PropertyColor, PropertySelect } from '../../common';
+import { PropertySection, PropertyUnitInput, PropertyColor, PropertySelect } from '../../../components';
 import type { SelectedElement } from '../../../inspector/types';
 import { getModifiedProperties } from '../hooks/useStyleSource';
 import { useStyleActions } from '../hooks/useStyleActions';

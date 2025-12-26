@@ -1,6 +1,6 @@
 import { memo, useMemo } from "react";
 import { Upload, FileType, Camera, Type, Hash } from 'lucide-react';
-import { PropertyInput, PropertySwitch, PropertySelect, PropertyCustomId, PropertySection } from '../../common';
+import { PropertyInput, PropertySwitch, PropertySelect, PropertyCustomId, PropertySection } from '../../../components';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { PROPERTY_LABELS } from '../../../../utils/ui/labels';
 import { useStore } from '../../../stores';

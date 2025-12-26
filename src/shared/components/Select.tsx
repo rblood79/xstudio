@@ -30,7 +30,7 @@ import type {
   DataBinding,
   ColumnMapping,
 } from "../../types/builder/unified.types";
-import type { DataBindingValue } from "../../builder/panels/common/PropertyDataBinding";
+import type { DataBindingValue } from "../../builder/components";
 import { useCollectionData } from "../../builder/hooks/useCollectionData";
 import { Skeleton } from "./Skeleton";
 import "./styles/Select.css";

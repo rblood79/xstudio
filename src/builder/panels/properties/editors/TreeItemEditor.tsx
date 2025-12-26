@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, memo } from "react";
 import { Plus, Tag, Binary, PointerOff, FileText, Link2, Type, Hash } from 'lucide-react';
-import { PropertyInput, PropertySwitch, PropertyCustomId , PropertySection} from '../../common';
+import { PropertyInput, PropertySwitch, PropertyCustomId , PropertySection} from '../../../components';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { iconProps } from '../../../../utils/ui/uiConstants';
 import { PROPERTY_LABELS } from '../../../../utils/ui/labels';

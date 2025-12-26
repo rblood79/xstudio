@@ -7,7 +7,7 @@
 
 import { memo, useCallback } from "react";
 import { Monitor, Tablet, Smartphone, Eye, EyeOff } from "lucide-react";
-import { PropertySection } from "../../common";
+import { PropertySection } from "../../../components";
 import type { ResponsiveVisibility, BreakpointName } from "../../../../types/builder/responsive.types";
 import { BREAKPOINTS, BREAKPOINT_ORDER } from "../../../../types/builder/responsive.types";
 import { iconEditProps, iconSmall } from "../../../../utils/ui/uiConstants";

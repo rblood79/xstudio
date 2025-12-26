@@ -7,10 +7,10 @@
  */
 
 import { Toast } from "./Toast";
-import { useToastStore } from "../stores/toast";
-import type { Toast as HookToastType } from "../hooks/useToast";
-import type { Toast as StoreToastType } from "../stores/toast";
-import "./styles/Toast.css";
+import { useToastStore } from "../../stores/toast";
+import type { Toast as HookToastType } from "../../hooks/useToast";
+import type { Toast as StoreToastType } from "../../stores/toast";
+import "./Toast.css";
 
 interface ToastContainerProps {
   /** Hook 기반 토스트 (기존 호환성) */

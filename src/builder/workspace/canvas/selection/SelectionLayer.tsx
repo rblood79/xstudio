@@ -24,7 +24,7 @@ import type { BoundingBox, HandlePosition, CursorStyle, DragState } from './type
 import { calculateCombinedBounds } from './types';
 import type { LayoutResult } from '../layout';
 import type { Element } from '../../../../types/core/store.types';
-import { TIMING } from '../../../constants/timing';
+import { TIMING } from '../../../utils/timing';
 
 // ============================================
 // Types

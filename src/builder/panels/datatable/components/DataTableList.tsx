@@ -10,7 +10,7 @@ import { useMemo } from "react";
 import { Table2, Plus, Trash2, Edit2, Link } from "lucide-react";
 import { Button } from "react-aria-components";
 import { useDataStore } from "../../../stores/data";
-import { SectionHeader } from "../../common/SectionHeader";
+import { SectionHeader } from "../../../components";
 import { iconProps, iconEditProps } from "../../../../utils/ui/uiConstants";
 
 interface DataTableListProps {

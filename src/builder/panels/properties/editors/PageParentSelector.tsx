@@ -10,7 +10,7 @@
 
 import { memo, useMemo, useCallback, useState } from "react";
 import { FolderTree, AlertCircle } from "lucide-react";
-import { PropertySelect, PropertySection, PropertyInput } from "../../common";
+import { PropertySelect, PropertySection, PropertyInput } from "../../../components";
 import { useStore } from "../../../stores";
 import { getDB } from "../../../../lib/db";
 import {

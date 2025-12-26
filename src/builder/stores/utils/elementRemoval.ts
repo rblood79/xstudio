@@ -36,7 +36,10 @@ export const createRemoveElementAction =
     // produce 외부에서는 elementsMap 사용 가능
     const element = getElementById(state.elementsMap, elementId);
     if (!element) {
-      console.log("❌ removeElement: 요소를 찾을 수 없음", { elementId });
+      // 이미 삭제된 요소에 대한 중복 호출은 조용히 무시 (Redo 후 자주 발생)
+      if (import.meta.env.DEV) {
+        console.debug("⚠️ removeElement: 요소를 찾을 수 없음 (이미 삭제됨)", { elementId });
+      }
       return;
     }
     console.log("🔍 삭제할 요소:", {

@@ -1,5 +1,5 @@
 import { memo } from "react";
-import { PropertyInput, PropertySwitch, PropertyCustomId, PropertySection } from '../../common';
+import { PropertyInput, PropertySwitch, PropertyCustomId, PropertySection } from '../../../components';
 import type { ColumnElementProps } from '../../../../types/core/store.types';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { useStore } from '../../../stores';

@@ -7,7 +7,7 @@
 
 import { useState, useMemo } from "react";
 import type { Element } from "../../../types/core/store.types";
-import { PropertyInput, PropertySelect } from "../common";
+import { PropertyInput, PropertySelect } from "../property";
 import { Filter, X } from "lucide-react";
 import { Button } from "../../../shared/components";
 import { iconProps } from "../../../utils/ui/uiConstants";

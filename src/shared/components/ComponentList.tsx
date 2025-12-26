@@ -40,7 +40,7 @@ import {
   Layers,
   Box,
 } from "lucide-react";
-import { PanelHeader } from "../../builder/panels/common/PanelHeader";
+import { PanelHeader } from "../../builder/components";
 import { useEditModeStore } from "../../builder/stores/editMode";
 import { iconProps } from "../../utils/ui/uiConstants";
 import { ComponentSearch } from "./ComponentSearch";

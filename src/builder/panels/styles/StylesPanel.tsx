@@ -20,7 +20,7 @@
  * - 요소 교차 선택 시 불필요한 리렌더 방지
  */
 
-import "../../panels/common/index.css";
+import "../../components/styles";
 import { useState, useMemo, useCallback, memo } from "react";
 import { ToggleButton } from "react-aria-components";
 import type { PanelProps } from "../core/types";
@@ -28,7 +28,7 @@ import { useDebouncedSelectedElementData } from "../../stores";
 import { Button } from "../../../shared/components";
 import { Copy, ClipboardPaste, PencilRuler, Palette } from "lucide-react";
 import { iconProps } from "../../../utils/ui/uiConstants";
-import { EmptyState } from "../common";
+import { EmptyState } from "../../components";
 import {
   TransformSection,
   LayoutSection,

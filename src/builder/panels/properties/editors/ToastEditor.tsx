@@ -1,6 +1,6 @@
 import { memo, useMemo } from "react";
 import { Bell, Tag, FileText, Clock, Type, Hash, Layout } from 'lucide-react';
-import { PropertyInput, PropertySelect, PropertyCustomId, PropertySection } from '../../common';
+import { PropertyInput, PropertySelect, PropertyCustomId, PropertySection } from '../../../components';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { PROPERTY_LABELS } from '../../../../utils/ui/labels';
 import { useStore } from '../../../stores';

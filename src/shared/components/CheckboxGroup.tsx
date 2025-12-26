@@ -10,7 +10,7 @@ import {
 } from 'react-aria-components';
 import { CheckIcon, Minus } from 'lucide-react';
 import type { DataBinding, ColumnMapping } from '../../types/builder/unified.types';
-import type { DataBindingValue } from '../../builder/panels/common/PropertyDataBinding';
+import type { DataBindingValue } from '../../builder/components';
 import type { ComponentSizeSubset, CheckboxVariant } from '../../types/builder/componentVariants.types';
 import { useCollectionData } from '../../builder/hooks/useCollectionData';
 

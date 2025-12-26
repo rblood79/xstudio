@@ -7,7 +7,7 @@
 
 import { memo, useMemo } from "react";
 import { Layers } from "lucide-react";
-import { PropertySelect, PropertySection } from "../../common";
+import { PropertySelect, PropertySection } from "../../../components";
 import { useStore } from "../../../stores";
 import type { SlotInfo } from "../../../../types/builder/layout.types";
 

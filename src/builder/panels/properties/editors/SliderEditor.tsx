@@ -3,7 +3,7 @@ import {
     Type, Layout, NotebookTabs, Ruler, Ratio,
     ArrowDown, ArrowUp, Move, Hash, FileText, Tag, PointerOff, Globe, DollarSign
 } from 'lucide-react';
-import { PropertyInput, PropertySelect, PropertySwitch, PropertyCustomId , PropertySection} from '../../common';
+import { PropertyInput, PropertySelect, PropertySwitch, PropertyCustomId , PropertySection} from '../../../components';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { PROPERTY_LABELS } from '../../../../utils/ui/labels';
 import { useStore } from '../../../stores';

@@ -1,7 +1,7 @@
 import { memo } from "react";
 import { CellElementProps } from '../../../../types/core/store.types';
 import { useStore } from '../../../stores';
-import { PropertyInput, PropertySelect, PropertyCustomId, PropertySection } from '../../common';
+import { PropertyInput, PropertySelect, PropertyCustomId, PropertySection } from '../../../components';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { Ruler, Palette, Grid } from 'lucide-react';
 import { PROPERTY_LABELS } from '../../../../utils/ui/labels';

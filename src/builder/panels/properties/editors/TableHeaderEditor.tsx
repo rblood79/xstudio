@@ -1,7 +1,7 @@
 import { useState, memo } from "react";
 import { ColumnElementProps, Element } from '../../../../types/core/store.types';
 import { useStore } from '../../../stores';
-import { PropertySelect, PropertyInput, PropertyCustomId, PropertySection } from '../../common';
+import { PropertySelect, PropertyInput, PropertyCustomId, PropertySection } from '../../../components';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { iconProps } from '../../../../utils/ui/uiConstants';
 import { Table, Pin, SquarePlus, Trash, Tag, Type } from 'lucide-react';

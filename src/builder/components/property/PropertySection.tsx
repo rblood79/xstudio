@@ -14,7 +14,7 @@
 import React, { memo, useTransition } from "react";
 import { ChevronUp, RotateCcw } from "lucide-react";
 import { iconProps } from "../../../utils/ui/uiConstants";
-import { useSectionCollapse } from "../styles/hooks/useSectionCollapse";
+import { useSectionCollapse } from "../../panels/styles/hooks/useSectionCollapse";
 
 // 🚀 Phase 20: children을 함수로도 받을 수 있도록 타입 확장
 type LazyChildren = React.ReactNode | (() => React.ReactNode);

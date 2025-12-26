@@ -27,7 +27,7 @@ import type {
 import {
   PropertyInput,
   PropertySelect,
-} from "../../common";
+} from "../../../components";
 import { ColumnSelector } from "../components/ColumnSelector";
 import {
   detectColumns,

@@ -11,7 +11,7 @@
 
 import { memo, useState, useCallback } from "react";
 import { Link, AlertCircle, RefreshCw } from "lucide-react";
-import { PropertyInput, PropertySection } from "../../common";
+import { PropertyInput, PropertySection } from "../../../components";
 import { useLayoutsStore } from "../../../stores/layouts";
 import { getDB } from "../../../../lib/db";
 import {

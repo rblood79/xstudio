@@ -41,7 +41,7 @@ import {
   SquareMousePointer,
 } from "lucide-react";
 import { iconProps, iconEditProps, iconLarge } from "../../../utils/ui/uiConstants";
-import { PanelHeader, PropertySection, EmptyState } from "../common";
+import { PanelHeader, PropertySection, EmptyState } from "../../components";
 import { useInitialMountDetection } from "../../hooks/useInitialMountDetection";
 import { useComponentMeta } from "../../inspector/hooks/useComponentMeta";
 import "./EventsPanel.css";

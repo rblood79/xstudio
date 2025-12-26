@@ -13,7 +13,7 @@
 
 import { memo, useCallback, useMemo } from "react";
 import { Type, Layout, Hash } from "lucide-react";
-import { PropertyCustomId, PropertyInput, PropertySection } from "../../common";
+import { PropertyCustomId, PropertyInput, PropertySection } from "../../../components";
 import { PropertyEditorProps } from "../types/editorTypes";
 import { PROPERTY_LABELS } from "../../../../utils/ui/labels";
 import { useStore } from "../../../stores";

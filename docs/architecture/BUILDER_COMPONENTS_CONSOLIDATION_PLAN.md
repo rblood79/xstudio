@@ -5,13 +5,18 @@
 현재 builder 내 여러 모듈들이 분산되어 있어 관리 및 사용에 혼란이 발생하고 있습니다.
 이 문서는 다음 세 가지 통합 계획을 정의합니다:
 
-1. **Components 통합**: `src/builder/components` + `src/builder/panels/common` → `src/builder/components`
-2. **Events 통합**: `src/builder/events` → `src/builder/panels/events`
-3. **Constants 통합**: `src/builder/constants` → `src/builder/utils`
+| Part | 통합 내용 | 상태 |
+|------|----------|------|
+| 1 | `components` + `panels/common` → `components` | ✅ 완료 (2025-12-26) |
+| 2 | `events` → `panels/events` | 🔲 대기 (순환 참조 → 통합으로 해결됨) |
+| 3 | `constants` → `utils` | ✅ 완료 (2025-12-26) |
 
 ---
 
-# Part 1: Components 통합
+# Part 1: Components 통합 ✅ 완료
+
+> **완료일**: 2025-12-26
+> **상태**: 마이그레이션 완료, 빌드 검증 통과
 
 ## 1.1 개요
 
@@ -144,31 +149,31 @@ src/builder/components/
 ## 1.6 마이그레이션 단계
 
 ### Phase 1: 폴더 구조 생성
-- [ ] `src/builder/components/` 하위에 분류별 폴더 생성
+- [x] `src/builder/components/` 하위에 분류별 폴더 생성
   - `property/`, `panel/`, `selection/`, `feedback/`, `dialog/`, `data/`, `help/`, `styles/`
 
 ### Phase 2: 파일 이동
-- [ ] `panels/common/`의 Property* 컴포넌트들 → `components/property/`
-- [ ] `panels/common/`의 PanelHeader, SectionHeader → `components/panel/`
-- [ ] `panels/common/`의 Selection*, Batch*, MultiSelect* → `components/selection/`
-- [ ] `panels/common/`의 EmptyState, LoadingSpinner → `components/feedback/`
-- [ ] `panels/common/`의 KeyboardShortcutsHelp → `components/help/`
-- [ ] 기존 `components/`의 Toast*, ScopedErrorBoundary → `components/feedback/`
-- [ ] 기존 `components/`의 AddPageDialog → `components/dialog/`
-- [ ] 기존 `components/`의 DataTable* → `components/data/`
-- [ ] 스타일 파일들 정리 → `components/styles/` 또는 각 폴더 내
+- [x] `panels/common/`의 Property* 컴포넌트들 → `components/property/`
+- [x] `panels/common/`의 PanelHeader, SectionHeader → `components/panel/`
+- [x] `panels/common/`의 Selection*, Batch*, MultiSelect* → `components/selection/`
+- [x] `panels/common/`의 EmptyState, LoadingSpinner → `components/feedback/`
+- [x] `panels/common/`의 KeyboardShortcutsHelp → `components/help/`
+- [x] 기존 `components/`의 Toast*, ScopedErrorBoundary → `components/feedback/`
+- [x] 기존 `components/`의 AddPageDialog → `components/dialog/`
+- [x] 기존 `components/`의 DataTable* → `components/data/`
+- [x] 스타일 파일들 정리 → `components/styles/` 또는 각 폴더 내
 
 ### Phase 3: Export 설정
-- [ ] 각 하위 폴더에 `index.ts` 생성
-- [ ] 루트 `components/index.ts`에서 모든 컴포넌트 re-export
+- [x] 각 하위 폴더에 `index.ts` 생성
+- [x] 루트 `components/index.ts`에서 모든 컴포넌트 re-export
 
 ### Phase 4: Import 경로 업데이트
-- [ ] `panels/common`을 import하는 모든 파일 검색
-- [ ] import 경로를 `builder/components`로 변경
+- [x] `panels/common`을 import하는 모든 파일 검색
+- [x] import 경로를 `builder/components`로 변경
 
 ### Phase 5: 정리
-- [ ] `src/builder/panels/common/` 폴더 삭제
-- [ ] 빌드 및 테스트 검증
+- [x] `src/builder/panels/common/` 폴더 삭제
+- [x] 빌드 및 테스트 검증
 
 ## 1.7 Import 경로 변경 예시
 
@@ -206,12 +211,23 @@ import { Toast, EmptyState } from '../components/feedback';
 - Import 경로 변경으로 인한 빌드 오류 가능성
 - 순환 참조 발생 가능성 (의존성 분석 필요)
 
+### 🔍 순환 참조 분석 결과 (2025-12-26)
+
+**분석 결과: 순환 참조 위험 없음 ✓**
+
+```
+builder/components → panels/common : 0개 참조
+panels/common → builder/components : 0개 참조
+```
+
+두 디렉토리 간 상호 의존성이 없어 안전하게 통합 가능합니다.
+
 ## 1.9 검증 체크리스트
 
-- [ ] TypeScript 빌드 성공
-- [ ] 모든 컴포넌트 정상 렌더링
-- [ ] 기존 기능 동작 확인
-- [ ] 순환 참조 없음 확인
+- [x] TypeScript 빌드 성공
+- [ ] 모든 컴포넌트 정상 렌더링 (수동 검증 필요)
+- [ ] 기존 기능 동작 확인 (수동 검증 필요)
+- [x] 순환 참조 없음 확인
 
 ## 1.10 일정
 
@@ -240,34 +256,35 @@ import { Toast, EmptyState } from '../components/feedback';
 
 `src/builder/events`를 `src/builder/panels/events`로 통합하여 이벤트 시스템을 한 곳에서 관리합니다.
 
-## 2.2 현재 구조 분석
+## 2.2 현재 구조 분석 (2025-12-26 업데이트)
 
-### `src/builder/events/` (60+ 파일)
+### `src/builder/events/` (75개 파일)
 
 **역할**: 이벤트 시스템의 핵심 로직 + Legacy Editor
 
 | 폴더 | 파일 수 | 설명 |
 |------|---------|------|
-| `actions/` | 21개 | 액션 에디터 (Navigate, SetState, ShowModal 등) |
-| `components/` | 9개 | UI 컴포넌트 (ActionListView, ConditionEditor, visualMode/*) |
+| `actions/` | 25개 | 액션 에디터 (Navigate, SetState, ShowModal, APICall 등) |
+| `components/` | 8개 | UI 컴포넌트 (ActionListView, ConditionEditor, ComponentSelector 등) |
+| `components/visualMode/` | 6개 | 시각적 플로우 (FlowNode, ActionNode, TriggerNode 등) |
 | `execution/` | 3개 | 실행 로직 (eventExecutor, conditionEvaluator, executionLogger) |
 | `hooks/` | 7개 | 커스텀 훅 (useEventFlow, useVariableSchema 등) |
 | `state/` | 3개 | 상태 관리 (useActions, useEventHandlers, useEventSelection) |
-| `types/` | 3개 | 타입 정의 (eventTypes, eventBlockTypes, templateTypes) |
+| `types/` | 4개 | 타입 정의 (eventTypes, eventBlockTypes, templateTypes, index) |
 | `utils/` | 5개 | 유틸리티 함수 (normalizeEventTypes, variableParser 등) |
 | `pickers/` | 2개 | EventTypePicker, ActionTypePicker |
-| `data/` | 3개 | 메타데이터, 카테고리, 템플릿 |
-| 루트 | 5개 | EventEditor, EventList, index.ts/tsx, CSS 파일들 |
+| `data/` | 4개 | 메타데이터, 카테고리, 템플릿, index |
+| 루트 | 7개 | EventEditor, EventList, index.ts/tsx, CSS, IMPLEMENTATION_GUIDE.md |
 
-### `src/builder/panels/events/` (21개 파일)
+### `src/builder/panels/events/` (22개 파일)
 
 **역할**: Block-based UI (Phase 5 - 권장)
 
 | 폴더 | 파일 수 | 설명 |
 |------|---------|------|
-| `blocks/` | 6개 | WhenBlock, IfBlock, ThenElseBlock, ActionBlock, ActionList, BlockConnector |
-| `editors/` | 6개 | ConditionRow, VariableBindingEditor, ElementPicker, OperatorToggle/Picker, BlockActionEditor |
-| `preview/` | 3개 | CodePreviewPanel, EventDebugger, EventMinimap |
+| `blocks/` | 7개 | WhenBlock, IfBlock, ThenElseBlock, ActionBlock, ActionList, BlockConnector, index.ts |
+| `editors/` | 7개 | ConditionRow, VariableBindingEditor, ElementPicker, OperatorToggle/Picker, BlockActionEditor, index.ts |
+| `preview/` | 4개 | CodePreviewPanel, EventDebugger, EventMinimap, index.ts |
 | `hooks/` | 1개 | useBlockKeyboard |
 | 루트 | 3개 | EventsPanel.tsx, index.ts, CSS |
 
@@ -309,7 +326,8 @@ src/builder/panels/events/
 │   ├── NavigateActionEditor.tsx
 │   ├── SetStateActionEditor.tsx
 │   ├── ShowModalActionEditor.tsx
-│   ├── ... (21개 액션 에디터)
+│   ├── APICallActionEditor.tsx
+│   ├── ... (25개 액션 에디터)
 │   └── index.ts
 │
 ├── blocks/                      # 블록 컴포넌트 (기존 유지)
@@ -401,11 +419,6 @@ src/builder/panels/events/
 │   ├── eventTemplates.ts
 │   └── index.ts
 │
-├── legacy/                      # Legacy Editor (선택적 유지)
-│   ├── EventEditor.tsx
-│   ├── EventList.tsx
-│   └── index.ts
-│
 ├── EventsPanel.tsx              # 메인 패널 (기존 유지)
 ├── EventsPanel.css
 └── index.ts                     # 통합 export
@@ -415,7 +428,7 @@ src/builder/panels/events/
 
 ### Phase 1: 폴더 구조 생성
 - [ ] `panels/events/` 하위에 새 폴더들 생성
-  - `actions/`, `components/`, `execution/`, `state/`, `pickers/`, `types/`, `utils/`, `data/`, `legacy/`
+  - `actions/`, `components/`, `execution/`, `state/`, `pickers/`, `types/`, `utils/`, `data/`
 
 ### Phase 2: 파일 이동
 - [ ] `events/actions/*` → `panels/events/actions/`
@@ -427,7 +440,7 @@ src/builder/panels/events/
 - [ ] `events/types/*` → `panels/events/types/`
 - [ ] `events/utils/*` → `panels/events/utils/`
 - [ ] `events/data/*` → `panels/events/data/`
-- [ ] `events/EventEditor.tsx`, `EventList.tsx` → `panels/events/legacy/` (선택적)
+- [ ] `events/EventEditor.tsx`, `EventList.tsx` → **삭제** (사용처 없음 확인됨)
 
 ### Phase 3: Export 설정
 - [ ] 각 하위 폴더에 `index.ts` 생성/업데이트
@@ -473,14 +486,24 @@ import {
 
 `events/EventEditor.tsx`와 `EventList.tsx`는 Legacy Editor로 표시되어 있음:
 
-### 옵션 A: 보존 (권장)
-- `panels/events/legacy/` 폴더에 보관
-- 하위 호환성 유지
-- 점진적 마이그레이션 가능
+### 🔍 사용처 분석 결과 (2025-12-26)
 
-### 옵션 B: 제거
-- Block-based Editor로 완전 전환된 경우
-- 사용처 확인 후 안전하게 제거
+| 파일 | Import 횟수 | 상태 |
+|------|-------------|------|
+| `events/EventEditor.tsx` | **0회** | 사용 안 됨 |
+| `events/EventList.tsx` | **0회** | 사용 안 됨 |
+
+**결론**: 두 파일 모두 어디서도 import되지 않음
+
+### ~~옵션 A: 보존~~
+- ~~`panels/events/legacy/` 폴더에 보관~~
+- ~~하위 호환성 유지~~
+- ~~점진적 마이그레이션 가능~~
+
+### 옵션 B: 제거 ✅ (권장)
+- Block-based Editor로 완전 전환 완료
+- 사용처 없음 확인됨
+- 마이그레이션 시 `legacy/` 폴더 생성 불필요
 
 ## 2.9 영향 범위 분석
 
@@ -491,8 +514,40 @@ import {
 
 ### 리스크
 - Import 경로 변경으로 인한 빌드 오류 가능성
-- Legacy Editor 사용처 누락 가능성
+- ~~Legacy Editor 사용처 누락 가능성~~ → 사용처 없음 확인됨
 - 순환 참조 발생 가능성
+
+### 🔍 순환 참조 분석 결과 (2025-12-26)
+
+**분석 결과: 양방향 의존성 존재 (순환 참조!) ⚠️**
+
+#### `panels/events` → `events/` (26+ 참조)
+```typescript
+// EventsPanel.tsx, blocks/*, editors/*, preview/* 에서 참조
+import type { EventHandler } from "../../events/types/eventTypes";
+import { EventTypePicker } from "../../events/pickers/EventTypePicker";
+import { useEventHandlers } from "../../events/state/useEventHandlers";
+import { ActionEditor } from "../../events/actions/ActionEditor";
+// ... 외 다수
+```
+
+#### `events/` → `panels/events` (12+ 참조)
+```typescript
+// actions/*.tsx 에서 참조 (9개 파일)
+import { ElementPicker } from "../../panels/events/editors/ElementPicker";
+
+// hooks/useVariableSchema.ts, utils/bindingValidator.ts 에서 참조
+import type { VariableSchema } from "../../panels/events/editors/VariableBindingEditor";
+```
+
+#### 순환 경로 예시
+```
+panels/events/editors/BlockActionEditor
+    → events/actions/ActionEditor
+        → panels/events/editors/ElementPicker  ⚠️ 순환!
+```
+
+**결론**: 현재 이미 순환 참조가 존재합니다. **통합하면 이 문제가 자연스럽게 해결**됩니다.
 
 ## 2.10 검증 체크리스트
 
@@ -506,13 +561,16 @@ import {
 ## 2.11 참고사항
 
 - 이 작업은 기능 변경 없이 구조만 개선하는 리팩토링입니다
-- Legacy Editor 유지 여부는 사용처 분석 후 결정
+- Legacy Editor (`EventEditor.tsx`, `EventList.tsx`)는 사용처 없음 확인되어 삭제 예정
 - 각 Phase 완료 후 빌드 검증을 권장합니다
 - Git 커밋은 Phase별로 분리하여 롤백 용이성을 확보합니다
 
 ---
 
-# Part 3: Constants → Utils 통합
+# Part 3: Constants → Utils 통합 ✅ 완료
+
+> **완료일**: 2025-12-26
+> **상태**: 마이그레이션 완료, 빌드 검증 통과
 
 ## 3.1 개요
 
@@ -562,15 +620,17 @@ import {
 ## 3.5 마이그레이션 단계
 
 ### Phase 1: 파일 이동
-- [ ] `constants/timing.ts` → `utils/timing.ts`
+- [x] `constants/timing.ts` → `utils/timing.ts`
 
 ### Phase 2: Import 경로 업데이트
-- [ ] `constants/timing`을 import하는 모든 파일 검색
-- [ ] import 경로를 `utils/timing`으로 변경
+- [x] `constants/timing`을 import하는 모든 파일 검색
+- [x] import 경로를 `utils/timing`으로 변경
+  - `src/builder/workspace/canvas/selection/SelectionLayer.tsx`
+  - `src/builder/workspace/canvas/selection/useDragInteraction.ts`
 
 ### Phase 3: 정리
-- [ ] `src/builder/constants/` 폴더 삭제
-- [ ] 빌드 및 테스트 검증
+- [x] `src/builder/constants/` 폴더 삭제
+- [x] 빌드 및 테스트 검증 (TypeScript 빌드 통과)
 
 ## 3.6 Import 경로 변경 예시
 
@@ -586,9 +646,9 @@ import { TIMING } from '../utils/timing';
 
 ## 3.7 검증 체크리스트
 
-- [ ] TypeScript 빌드 성공
-- [ ] TIMING 상수 사용처 정상 동작
-- [ ] 순환 참조 없음 확인
+- [x] TypeScript 빌드 성공
+- [x] TIMING 상수 사용처 정상 동작
+- [x] 순환 참조 없음 확인
 
 ## 3.8 참고사항
 

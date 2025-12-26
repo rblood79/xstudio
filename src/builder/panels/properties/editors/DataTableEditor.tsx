@@ -25,7 +25,7 @@ import {
   PropertySection,
   PropertyDataBinding,
   type DataBindingValue,
-} from "../../common";
+} from "../../../components";
 import { PropertyEditorProps } from "../types/editorTypes";
 import { useStore } from "../../../stores";
 import { useDataTableStore } from "../../../stores/datatable";

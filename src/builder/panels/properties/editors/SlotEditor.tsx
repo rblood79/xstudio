@@ -19,7 +19,7 @@ import {
   PropertySwitch,
   PropertyCustomId,
   PropertySection,
-} from "../../common";
+} from "../../../components";
 import { PropertyEditorProps } from "../types/editorTypes";
 import { useStore } from "../../../stores";
 import { iconEditProps } from "../../../../utils/ui/uiConstants";

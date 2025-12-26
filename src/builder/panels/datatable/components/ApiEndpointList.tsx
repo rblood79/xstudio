@@ -9,7 +9,7 @@ import { useState } from "react";
 import { Globe, Plus, Trash2, Edit2, Play } from "lucide-react";
 import { useDataStore, useApiEndpoints } from "../../../stores/data";
 import { useDataTableEditorStore } from "../stores/dataTableEditorStore";
-import { SectionHeader } from "../../common/SectionHeader";
+import { SectionHeader } from "../../../components";
 import { iconProps, iconEditProps } from "../../../../utils/ui/uiConstants";
 
 interface ApiEndpointListProps {

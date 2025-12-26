@@ -9,7 +9,7 @@
 
 import { memo, useMemo, useCallback, useEffect } from "react";
 import { Layout, X } from "lucide-react";
-import { PropertySelect, PropertySection } from "../../common";
+import { PropertySelect, PropertySection } from "../../../components";
 import { useLayoutsStore } from "../../../stores/layouts";
 import { useStore } from "../../../stores";
 import { getDB } from "../../../../lib/db";

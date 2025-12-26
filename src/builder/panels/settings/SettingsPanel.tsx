@@ -34,7 +34,7 @@ import {
   PropertySlider,
   PropertySection,
   PanelHeader,
-} from "../common";
+} from "../../components";
 import { useThemes } from "../../../hooks/theme/useThemes";
 import { ThemeService } from "../../../services/theme";
 import { useThemeMessenger } from "../../hooks/useThemeMessenger";

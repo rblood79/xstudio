@@ -16,7 +16,7 @@ import {
   PropertySection,
   PropertyInput,
   EmptyState,
-} from '../common';
+} from '../../components';
 import { Button } from 'react-aria-components';
 import './ThemesPanel.css';
 

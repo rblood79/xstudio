@@ -1,9 +1,8 @@
-import "../../panels/common/index.css";
+import "../../components/styles";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Clock, History, Redo, Trash2, Undo } from "lucide-react";
 import type { PanelProps } from "../core/types";
-import { PanelHeader } from "../common/PanelHeader";
-import { EmptyState } from "../common/EmptyState";
+import { PanelHeader, EmptyState } from "../../components";
 import { Button } from "../../../shared/components";
 import { iconProps, iconSmall } from "../../../utils/ui/uiConstants";
 import { historyManager, type HistoryEntry } from "../../stores/history";

@@ -1,7 +1,7 @@
 import { memo, useMemo } from "react";
 import { Type, Parentheses, Circle, Activity } from 'lucide-react';
 import { PropertyEditorProps } from '../types/editorTypes';
-import { PropertyInput, PropertySwitch, PropertySelect, PropertyCustomId , PropertySection} from '../../common';
+import { PropertyInput, PropertySwitch, PropertySelect, PropertyCustomId , PropertySection} from '../../../components';
 import { PROPERTY_LABELS } from '../../../../utils/ui/labels';
 import { useStore } from '../../../stores';
 

@@ -1,6 +1,6 @@
 import { memo, useMemo } from "react";
 import { Paintbrush, Palette, PointerOff, Type, Hash } from 'lucide-react';
-import { PropertyInput, PropertySwitch, PropertyCustomId, PropertySelect, PropertyColorPicker , PropertySection} from '../../common';
+import { PropertyInput, PropertySwitch, PropertyCustomId, PropertySelect, PropertyColorPicker , PropertySection} from '../../../components';
 import { PropertyEditorProps } from '../types/editorTypes';
 import { PROPERTY_LABELS } from '../../../../utils/ui/labels';
 import { useStore } from '../../../stores';
