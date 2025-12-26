@@ -3,16 +3,16 @@
 .page-tree {
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  padding: 4px;
+  .react-aria-TreeItem {
+    padding: 0;
+  }
 }
 
 /* 페이지 아이템 */
 .pageItem {
+  width: 100%;
   display: flex;
   align-items: center;
-  padding: 4px 8px;
-  border-radius: 4px;
   cursor: pointer;
   user-select: none;
   transition: background-color 0.1s ease;

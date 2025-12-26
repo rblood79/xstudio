@@ -137,7 +137,6 @@
   display: none;
 }
 
-
 .no_element {
   padding: var(--element-padding) calc(var(--element-padding) * 2);
   color: var(--on-surface-variant);
@@ -156,6 +155,25 @@
   flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
+  .section {
+    .section-content {
+      all: unset;
+      .react-aria-Tree {
+        all: unset;
+        .react-aria-TreeItem {
+          padding: 0;
+          .elementItem {
+            width: 100%;
+            .elementItemActions {
+              .layer-drag-handle {
+                all: unset;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
 }
 
 /* NodesPanelTabs */
