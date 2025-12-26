@@ -5,28 +5,20 @@
  * 🚀 Performance: PagesSection/LayersSection 분리로 리렌더링 범위 최소화
  */
 
-import { useCallback, useEffect, useMemo } from "react";
+import { useCallback, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import type { PanelProps } from "../core/types";
-import Sidebar from "../../sidebar";
+import "../../nodes/index.css";
 import { useStore } from "../../stores";
 import { useEditModeStore } from "../../stores/editMode";
-import { useLayoutsStore } from "../../stores/layouts";
 import { usePageManager } from "../../hooks/usePageManager";
-import { useElementCreator } from "../../hooks/useElementCreator";
 import { useIframeMessenger } from "../../hooks/useIframeMessenger";
-import type { Page as UnifiedPage } from "../../../types/builder/unified.types";
 // Issue 1: Layout 탭 복원을 위한 임포트
 import { NodesPanelTabs, type NodesPanelTabType } from "../../nodes/NodesPanelTabs";
 import { LayoutsTab } from "../../nodes/LayoutsTab/LayoutsTab";
 // 🚀 Performance: 분리된 섹션 컴포넌트
 import { PagesSection } from "./PagesSection";
 import { LayersSection } from "./LayersSection";
-
-// 기능 플래그: true면 새 Tree 사용, false면 Sidebar 사용
-const USE_NEW_TREE = true;
-
-const { addElement: storeAddElement } = useStore.getState();
 
 export function NodesPanel({ isActive }: PanelProps) {
   // URL params
@@ -40,12 +32,10 @@ export function NodesPanel({ isActive }: PanelProps) {
 
   // Edit Mode state
   const editMode = useEditModeStore((state) => state.mode);
-  const currentLayoutId = useLayoutsStore((state) => state.currentLayoutId);
 
   // Hooks
   const { requestAutoSelectAfterUpdate, sendElementSelectedMessage } = useIframeMessenger();
-  const { pageList, addPage, addPageWithParams, fetchElements, initializeProject } = usePageManager({ requestAutoSelectAfterUpdate });
-  const { handleAddElement } = useElementCreator();
+  const { initializeProject } = usePageManager({ requestAutoSelectAfterUpdate });
 
   // 프로젝트 초기화 - pages가 비어있으면 초기화
   useEffect(() => {
@@ -53,69 +43,6 @@ export function NodesPanel({ isActive }: PanelProps) {
       initializeProject(projectId);
     }
   }, [projectId, pages.length, isActive, initializeProject]);
-
-  // Convert store pages to UnifiedPage for Sidebar (레거시 Sidebar용)
-  const unifiedPages: UnifiedPage[] = useMemo(() =>
-    pages.map(p => ({
-      id: p.id,
-      title: p.title || 'Untitled',
-      project_id: p.project_id || '',
-      slug: p.slug || '',
-      parent_id: p.parent_id,
-      order_num: p.order_num || 0
-    })),
-    [pages]
-  );
-
-  // addPage wrapper (레거시 Sidebar용)
-  const handleAddPage = useCallback(async () => {
-    if (!projectId) {
-      console.error("프로젝트 ID가 없습니다");
-      return;
-    }
-    await addPage(projectId);
-  }, [projectId, addPage]);
-
-  // fetchElements wrapper (레거시 Sidebar용)
-  const handleFetchElements = useCallback(async (pageId: string) => {
-    await fetchElements(pageId);
-  }, [fetchElements]);
-
-  // handleAddElement wrapper (레거시 Sidebar용)
-  const handleAddElementWrapper = useCallback(
-    async (tag: string) => {
-      const currentElements = useStore.getState().elements;
-      const getPageElements = useStore.getState().getPageElements;
-
-      if (editMode === "layout" && currentLayoutId) {
-        await handleAddElement(
-          tag,
-          "",
-          null,
-          currentElements.filter(el => el.layout_id === currentLayoutId),
-          storeAddElement,
-          () => {},
-          currentLayoutId
-        );
-        return;
-      }
-
-      if (!currentPageId) return;
-      const pageElements = getPageElements(currentPageId);
-      await handleAddElement(
-        tag,
-        currentPageId,
-        null,
-        pageElements,
-        storeAddElement,
-        () => {}
-      );
-    },
-    [currentPageId, currentLayoutId, editMode, handleAddElement]
-  );
-
-  // Force nodes tab to be active (레거시 Sidebar용)
-  const forcedActiveTabs = useMemo(() => new Set(['nodes']), []);
 
   // 🚀 Performance: 탭 관련 상태만 구독
   const setEditMode = useEditModeStore((state) => state.setMode);
@@ -154,48 +81,28 @@ export function NodesPanel({ isActive }: PanelProps) {
     );
   }
 
-  // 🚀 Performance: 새 Tree 사용 - 분리된 컴포넌트로 리렌더링 최소화
-  if (USE_NEW_TREE) {
-    return (
-      <div className="nodes-panel nodes-panel--new-tree">
-        <NodesPanelTabs activeTab={activeTab} onTabChange={handleTabChange} />
-
-        <div className="nodes-panel-content">
-          {activeTab === "pages" ? (
-            // Pages 탭 콘텐츠 - PagesSection/LayersSection 분리로 독립 리렌더링
-            <>
-              <PagesSection projectId={projectId} />
-              {currentPageId && <LayersSection currentPageId={currentPageId} />}
-            </>
-          ) : (
-            // Layouts 탭 콘텐츠
-            <LayoutsTab
-              selectedElementId={selectedElementId}
-              setSelectedElement={setSelectedElement}
-              sendElementSelectedMessage={sendElementSelectedMessage}
-              requestAutoSelectAfterUpdate={requestAutoSelectAfterUpdate}
-              projectId={projectId}
-            />
-          )}
-        </div>
-      </div>
-    );
-  }
-
-  // 기존 Sidebar 사용
   return (
-    <div className="nodes-panel">
-      <Sidebar
-        pages={unifiedPages}
-        pageList={pageList}
-        handleAddPage={handleAddPage}
-        addPageWithParams={addPageWithParams}
-        handleAddElement={handleAddElementWrapper}
-        fetchElements={handleFetchElements}
-        selectedPageId={currentPageId}
-        forcedActiveTabs={forcedActiveTabs}
-        projectId={projectId}
-      />
+    <div className="nodes-panel nodes-panel--new-tree">
+      <NodesPanelTabs activeTab={activeTab} onTabChange={handleTabChange} />
+
+      <div className="nodes-panel-content">
+        {activeTab === "pages" ? (
+          // Pages 탭 콘텐츠 - PagesSection/LayersSection 분리로 독립 리렌더링
+          <>
+            <PagesSection projectId={projectId} />
+            {currentPageId && <LayersSection currentPageId={currentPageId} />}
+          </>
+        ) : (
+          // Layouts 탭 콘텐츠
+          <LayoutsTab
+            selectedElementId={selectedElementId}
+            setSelectedElement={setSelectedElement}
+            sendElementSelectedMessage={sendElementSelectedMessage}
+            requestAutoSelectAfterUpdate={requestAutoSelectAfterUpdate}
+            projectId={projectId}
+          />
+        )}
+      </div>
     </div>
   );
 }
