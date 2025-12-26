@@ -110,6 +110,10 @@
   pointer-events: none;
 }
 
+.elementItemActions .layer-drag-handle--hidden {
+  display: none;
+}
+
 .elementItem:hover .elementItemActions,
 .elementItem.active .elementItemActions {
   transform: translateX(0%);

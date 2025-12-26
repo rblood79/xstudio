@@ -1,0 +1,156 @@
+/* PageTree 스타일 */
+
+.page-tree {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 4px;
+}
+
+/* 페이지 아이템 */
+.pageItem {
+  display: flex;
+  align-items: center;
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  user-select: none;
+  transition: background-color 0.1s ease;
+}
+
+.pageItem:hover {
+  background-color: var(--color-bg-hover, rgba(255, 255, 255, 0.05));
+}
+
+.pageItem.active {
+  background-color: var(--color-bg-selected, rgba(59, 130, 246, 0.2));
+}
+
+.pageItem.focused {
+  outline: 2px solid var(--color-focus, #3b82f6);
+  outline-offset: -2px;
+}
+
+/* 들여쓰기 */
+.pageItemIndent {
+  flex-shrink: 0;
+}
+
+/* 아이콘 */
+.pageItemIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+/* 확장 버튼 */
+.page-expand-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  border-radius: 2px;
+  transition: transform 0.15s ease;
+}
+
+.page-expand-button:hover {
+  background-color: var(--color-bg-hover, rgba(255, 255, 255, 0.1));
+}
+
+.page-expand-button[aria-expanded="true"] svg[data-chevron="true"] {
+  transform: rotate(90deg);
+}
+
+/* 라벨 */
+.pageItemLabel {
+  flex: 1;
+  font-size: 13px;
+  color: var(--color-text, #e5e5e5);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-left: 4px;
+}
+
+/* Slug 표시 */
+.pageItemSlug {
+  font-size: 11px;
+  color: var(--color-text-muted, #888);
+  margin-left: 8px;
+  white-space: nowrap;
+}
+
+/* 액션 버튼들 */
+.pageItemActions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.pageItem:hover .pageItemActions,
+.pageItem.active .pageItemActions {
+  opacity: 1;
+}
+
+.pageItemActions .iconButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  border-radius: 2px;
+}
+
+.pageItemActions .iconButton:hover {
+  background-color: var(--color-bg-hover, rgba(255, 255, 255, 0.1));
+}
+
+/* 드래그 핸들 */
+.page-drag-handle {
+  cursor: grab;
+}
+
+.page-drag-handle:active {
+  cursor: grabbing;
+}
+
+.page-drag-handle--hidden {
+  display: none;
+}
+
+/* Drop Indicator */
+.page-drop-indicator {
+  height: 2px;
+  background-color: var(--color-accent, #3b82f6);
+  border-radius: 1px;
+  margin: 0 8px;
+}
+
+.page-drop-indicator--hidden {
+  display: none;
+}
+
+/* 드래그 중인 아이템 */
+[data-dragging] {
+  opacity: 0.5;
+}
+
+/* 드롭 타겟 */
+[data-drop-target] {
+  background-color: var(--color-bg-drop-target, rgba(59, 130, 246, 0.1));
+  border-radius: 4px;
+}

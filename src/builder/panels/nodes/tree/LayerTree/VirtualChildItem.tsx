@@ -1,6 +1,6 @@
 import React from "react";
-import { TreeItem, TreeItemContent } from "react-aria-components";
-import { Box, Folder, File } from "lucide-react";
+import { Button, TreeItem, TreeItemContent } from "react-aria-components";
+import { Box, Folder, File, GripVertical } from "lucide-react";
 import type { ElementProps } from "../../../../../types/integrations/supabase.types";
 import { ICON_EDIT_PROPS, type TreeItem as TreeItemType } from "../../../../sidebar/treeHelpers";
 import type { LayerTreeNode } from "./types";
@@ -58,7 +58,23 @@ export function VirtualChildItem({
             />
             <div className="elementItemIcon">{icon}</div>
             <div className="elementItemLabel">{node.name}</div>
-            <div className="elementItemActions" />
+            <div className="elementItemActions">
+              {/* react-aria DnD requires slot="drag" on all items for a11y */}
+              <Button
+                slot="drag"
+                className="iconButton layer-drag-handle layer-drag-handle--hidden"
+                aria-label={`Drag ${node.name}`}
+                aria-hidden
+                style={{ pointerEvents: "none" }}
+                isDisabled
+              >
+                <GripVertical
+                  color={ICON_EDIT_PROPS.color}
+                  strokeWidth={ICON_EDIT_PROPS.stroke}
+                  size={ICON_EDIT_PROPS.size}
+                />
+              </Button>
+            </div>
           </div>
         )}
       </TreeItemContent>

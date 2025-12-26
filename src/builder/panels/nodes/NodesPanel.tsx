@@ -2,7 +2,7 @@
  * NodesPanel - 페이지 노드 트리 패널
  *
  * PanelProps 인터페이스를 구현하여 패널 시스템과 통합
- * 내부적으로 Sidebar의 Nodes 섹션을 재사용
+ * 🚀 Performance: PagesSection/LayersSection 분리로 리렌더링 범위 최소화
  */
 
 import { useCallback, useEffect, useMemo } from "react";
@@ -16,6 +16,15 @@ import { usePageManager } from "../../hooks/usePageManager";
 import { useElementCreator } from "../../hooks/useElementCreator";
 import { useIframeMessenger } from "../../hooks/useIframeMessenger";
 import type { Page as UnifiedPage } from "../../../types/builder/unified.types";
+// Issue 1: Layout 탭 복원을 위한 임포트
+import { NodesPanelTabs, type NodesPanelTabType } from "../../nodes/NodesPanelTabs";
+import { LayoutsTab } from "../../nodes/LayoutsTab/LayoutsTab";
+// 🚀 Performance: 분리된 섹션 컴포넌트
+import { PagesSection } from "./PagesSection";
+import { LayersSection } from "./LayersSection";
+
+// 기능 플래그: true면 새 Tree 사용, false면 Sidebar 사용
+const USE_NEW_TREE = true;
 
 const { addElement: storeAddElement } = useStore.getState();
 
@@ -23,17 +32,18 @@ export function NodesPanel({ isActive }: PanelProps) {
   // URL params
   const { projectId } = useParams<{ projectId: string }>();
 
-  // Store state
+  // 🚀 Performance: 최소한의 상태만 구독
   const currentPageId = useStore((state) => state.currentPageId);
   const pages = useStore((state) => state.pages);
-  // 🆕 elements 구독 제거 - 콜백 내에서 getState()로 가져옴 (불필요한 리렌더링 방지)
+  const selectedElementId = useStore((state) => state.selectedElementId);
+  const setSelectedElement = useStore((state) => state.setSelectedElement);
 
   // Edit Mode state
   const editMode = useEditModeStore((state) => state.mode);
   const currentLayoutId = useLayoutsStore((state) => state.currentLayoutId);
 
   // Hooks
-  const { requestAutoSelectAfterUpdate } = useIframeMessenger();
+  const { requestAutoSelectAfterUpdate, sendElementSelectedMessage } = useIframeMessenger();
   const { pageList, addPage, addPageWithParams, fetchElements, initializeProject } = usePageManager({ requestAutoSelectAfterUpdate });
   const { handleAddElement } = useElementCreator();
 
@@ -44,12 +54,12 @@ export function NodesPanel({ isActive }: PanelProps) {
     }
   }, [projectId, pages.length, isActive, initializeProject]);
 
-  // Convert store pages to UnifiedPage for Sidebar
+  // Convert store pages to UnifiedPage for Sidebar (레거시 Sidebar용)
   const unifiedPages: UnifiedPage[] = useMemo(() =>
     pages.map(p => ({
       id: p.id,
       title: p.title || 'Untitled',
-      project_id: p.project_id || '', // Not used by Sidebar
+      project_id: p.project_id || '',
       slug: p.slug || '',
       parent_id: p.parent_id,
       order_num: p.order_num || 0
@@ -57,7 +67,7 @@ export function NodesPanel({ isActive }: PanelProps) {
     [pages]
   );
 
-  // addPage wrapper
+  // addPage wrapper (레거시 Sidebar용)
   const handleAddPage = useCallback(async () => {
     if (!projectId) {
       console.error("프로젝트 ID가 없습니다");
@@ -66,52 +76,68 @@ export function NodesPanel({ isActive }: PanelProps) {
     await addPage(projectId);
   }, [projectId, addPage]);
 
-  // fetchElements wrapper - convert ApiResult to void
+  // fetchElements wrapper (레거시 Sidebar용)
   const handleFetchElements = useCallback(async (pageId: string) => {
     await fetchElements(pageId);
   }, [fetchElements]);
 
-  // handleAddElement wrapper - match Sidebar signature
-  // EditMode에 따라 Page 또는 Layout에 element 추가
+  // handleAddElement wrapper (레거시 Sidebar용)
   const handleAddElementWrapper = useCallback(
     async (tag: string) => {
-      // 🆕 콜백 실행 시점에 최신 elements 가져오기 (구독 대신 getState 사용)
       const currentElements = useStore.getState().elements;
       const getPageElements = useStore.getState().getPageElements;
 
-      // Layout 모드인 경우
       if (editMode === "layout" && currentLayoutId) {
-        console.log(`🏗️ Layout 모드: ${tag}를 Layout ${currentLayoutId}에 추가`);
         await handleAddElement(
           tag,
-          "", // currentPageId - layout 모드에서는 사용 안함
-          null, // selectedElementId
-          currentElements.filter(el => el.layout_id === currentLayoutId), // 현재 레이아웃의 elements만
+          "",
+          null,
+          currentElements.filter(el => el.layout_id === currentLayoutId),
           storeAddElement,
-          () => {}, // sendElementsToIframe - not used here
-          currentLayoutId // layoutId 전달
+          () => {},
+          currentLayoutId
         );
         return;
       }
 
-      // Page 모드인 경우
       if (!currentPageId) return;
-      // 🆕 O(1) 인덱스 기반 조회
       const pageElements = getPageElements(currentPageId);
       await handleAddElement(
         tag,
         currentPageId,
-        null, // selectedElementId
+        null,
         pageElements,
         storeAddElement,
-        () => {} // sendElementsToIframe - not used here
+        () => {}
       );
     },
     [currentPageId, currentLayoutId, editMode, handleAddElement]
   );
 
-  // Force nodes tab to be active
+  // Force nodes tab to be active (레거시 Sidebar용)
   const forcedActiveTabs = useMemo(() => new Set(['nodes']), []);
+
+  // 🚀 Performance: 탭 관련 상태만 구독
+  const setEditMode = useEditModeStore((state) => state.setMode);
+  const setEditModeCurrentPageId = useEditModeStore((state) => state.setCurrentPageId);
+  const setEditModeCurrentLayoutId = useEditModeStore((state) => state.setCurrentLayoutId);
+
+  // 현재 활성 탭 (Edit Mode에서 파생)
+  const activeTab: NodesPanelTabType = editMode === "layout" ? "layouts" : "pages";
+
+  // 탭 변경 핸들러
+  const handleTabChange = useCallback(
+    (tab: NodesPanelTabType) => {
+      if (tab === "pages") {
+        setEditMode("page");
+        setEditModeCurrentLayoutId(null);
+      } else {
+        setEditMode("layout");
+        setEditModeCurrentPageId(null);
+      }
+    },
+    [setEditMode, setEditModeCurrentPageId, setEditModeCurrentLayoutId]
+  );
 
   // 활성 상태가 아니면 렌더링하지 않음 (성능 최적화)
   if (!isActive) {
@@ -120,7 +146,7 @@ export function NodesPanel({ isActive }: PanelProps) {
 
   // Page 모드에서 페이지가 없으면 빈 상태 표시
   // Layout 모드에서는 Sidebar를 렌더링해야 사용자가 레이아웃을 선택/생성할 수 있음
-  if (editMode === "page" && !currentPageId) {
+  if (editMode === "page" && !currentPageId && pages.length === 0) {
     return (
       <div className="panel-empty-state">
         <p className="empty-message">페이지를 선택하세요</p>
@@ -128,6 +154,35 @@ export function NodesPanel({ isActive }: PanelProps) {
     );
   }
 
+  // 🚀 Performance: 새 Tree 사용 - 분리된 컴포넌트로 리렌더링 최소화
+  if (USE_NEW_TREE) {
+    return (
+      <div className="nodes-panel nodes-panel--new-tree">
+        <NodesPanelTabs activeTab={activeTab} onTabChange={handleTabChange} />
+
+        <div className="nodes-panel-content">
+          {activeTab === "pages" ? (
+            // Pages 탭 콘텐츠 - PagesSection/LayersSection 분리로 독립 리렌더링
+            <>
+              <PagesSection projectId={projectId} />
+              {currentPageId && <LayersSection currentPageId={currentPageId} />}
+            </>
+          ) : (
+            // Layouts 탭 콘텐츠
+            <LayoutsTab
+              selectedElementId={selectedElementId}
+              setSelectedElement={setSelectedElement}
+              sendElementSelectedMessage={sendElementSelectedMessage}
+              requestAutoSelectAfterUpdate={requestAutoSelectAfterUpdate}
+              projectId={projectId}
+            />
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // 기존 Sidebar 사용
   return (
     <div className="nodes-panel">
       <Sidebar
