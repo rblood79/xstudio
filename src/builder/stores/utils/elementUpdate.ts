@@ -70,6 +70,7 @@ function hasShallowPatchChanges(
 export const createUpdateElementPropsAction =
   (set: SetState, get: GetState) =>
   async (elementId: string, props: ComponentElementProps) => {
+    console.log('[UpdateElementProps] called:', { elementId, props });
     const currentState = get();
     // produce 외부에서는 elementsMap 사용 가능
     const element = getElementById(currentState.elementsMap, elementId);
@@ -128,8 +129,12 @@ export const createUpdateElementPropsAction =
     } catch (error) {
       console.warn("⚠️ [IndexedDB] 요소 저장 중 오류 (메모리는 정상):", error);
       // 🚀 Phase 7: Toast + Undo 버튼
-      globalToast.error("저장에 실패했습니다. Ctrl+Z로 되돌릴 수 있습니다.", {
+      globalToast.error("저장에 실패했습니다.", {
         duration: 8000,
+        action: {
+          label: "되돌리기",
+          onClick: () => get().undo(),
+        },
       });
     }
   };
@@ -208,8 +213,12 @@ export const createUpdateElementAction =
     } catch (error) {
       console.warn("⚠️ [IndexedDB] 요소 저장 중 오류 (메모리는 정상):", error);
       // 🚀 Phase 7: Toast + Undo 버튼
-      globalToast.error("저장에 실패했습니다. Ctrl+Z로 되돌릴 수 있습니다.", {
+      globalToast.error("저장에 실패했습니다.", {
         duration: 8000,
+        action: {
+          label: "되돌리기",
+          onClick: () => get().undo(),
+        },
       });
     }
   };
@@ -318,8 +327,12 @@ export const createBatchUpdateElementPropsAction =
     } catch (error) {
       console.warn("⚠️ [IndexedDB] 배치 저장 중 오류 (메모리는 정상):", error);
       // 🚀 Phase 7: Toast + Undo 버튼
-      globalToast.error("저장에 실패했습니다. Ctrl+Z로 되돌릴 수 있습니다.", {
+      globalToast.error("저장에 실패했습니다.", {
         duration: 8000,
+        action: {
+          label: "되돌리기",
+          onClick: () => get().undo(),
+        },
       });
     }
   };
@@ -421,8 +434,12 @@ export const createBatchUpdateElementsAction =
     } catch (error) {
       console.warn("⚠️ [IndexedDB] 배치 저장 중 오류 (메모리는 정상):", error);
       // 🚀 Phase 7: Toast + Undo 버튼
-      globalToast.error("저장에 실패했습니다. Ctrl+Z로 되돌릴 수 있습니다.", {
+      globalToast.error("저장에 실패했습니다.", {
         duration: 8000,
+        action: {
+          label: "되돌리기",
+          onClick: () => get().undo(),
+        },
       });
     }
   };

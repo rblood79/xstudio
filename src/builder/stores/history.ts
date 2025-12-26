@@ -117,6 +117,7 @@ export class HistoryManager {
      * 현재 페이지 설정
      */
     setCurrentPage(pageId: string): void {
+        console.log('[History] setCurrentPage:', pageId);
         this.currentPageId = pageId;
 
         // 페이지 히스토리가 없으면 생성
@@ -182,10 +183,18 @@ export class HistoryManager {
      * 히스토리 엔트리 추가 (CommandDataStore 통합)
      */
     addEntry(entry: Omit<HistoryEntry, 'id' | 'timestamp'>): void {
-        if (!this.currentPageId) return;
+        console.log('[History] addEntry called:', { type: entry.type, elementId: entry.elementId, currentPageId: this.currentPageId });
+
+        if (!this.currentPageId) {
+            console.warn('[History] addEntry skipped: no currentPageId');
+            return;
+        }
 
         const pageHistory = this.pageHistories.get(this.currentPageId);
-        if (!pageHistory) return;
+        if (!pageHistory) {
+            console.warn('[History] addEntry skipped: no pageHistory for', this.currentPageId);
+            return;
+        }
 
         // CommandDataStore에 명령어 저장 (메모리 최적화)
         // 🔧 batch/group/ungroup은 update로 매핑

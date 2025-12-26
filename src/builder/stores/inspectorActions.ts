@@ -16,6 +16,7 @@ import type { Element, ComponentElementProps } from "../../types/core/store.type
 import type { SelectedElement, DataBinding, EventHandler } from "../inspector/types";
 import type { ElementEvent } from "../../types/events/events.types";
 import { saveService } from "../../services/save";
+import { historyManager } from "./history";
 
 // ============================================
 // Types
@@ -45,6 +46,7 @@ interface RequiredState {
   selectedElementId: string | null;
   elementsMap: Map<string, Element>;
   elements: Element[];
+  currentPageId: string | null;
   updateElement: (elementId: string, updates: Partial<Element>) => Promise<void>;
   _rebuildIndexes: () => void;
 }
@@ -83,9 +85,13 @@ export const createInspectorActionsSlice: StateCreator<
     propsUpdate: Partial<ComponentElementProps>,
     additionalUpdates?: Partial<Element>
   ) => {
-    const { elementsMap, elements, selectedElementId } = get();
+    const { elementsMap, elements, selectedElementId, currentPageId } = get();
     const element = elementsMap.get(elementId);
     if (!element) return;
+
+    // 🚀 히스토리 저장을 위한 이전 상태 캡처
+    const prevProps = structuredClone(element.props);
+    const prevElement = structuredClone(element);
 
     const newProps = {
       ...element.props,
@@ -97,6 +103,19 @@ export const createInspectorActionsSlice: StateCreator<
       props: newProps,
       ...additionalUpdates,
     };
+
+    // 🚀 히스토리 엔트리 추가 (props 변경 시)
+    if (currentPageId && Object.keys(propsUpdate).length > 0) {
+      historyManager.addEntry({
+        type: "update",
+        elementId: elementId,
+        data: {
+          prevProps,
+          newProps: structuredClone(newProps),
+          prevElement,
+        },
+      });
+    }
 
     // 🚀 O(1) Map 업데이트 (새 Map 생성으로 불변성 유지)
     const newElementsMap = new Map(elementsMap);
