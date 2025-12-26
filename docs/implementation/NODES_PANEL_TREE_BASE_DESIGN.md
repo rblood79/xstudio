@@ -4,6 +4,7 @@
 > 상태: 구현 진행 중 (LayerTree DnD 완료)
 > 기준 버전: react-aria-components v1.14
 > 최종 검토: 2025-12-26
+> 문서 버전: 1.1
 
 본 문서는 패널 시스템 기준으로 NodesPanel의 Page/Layer 트리를
 react-aria Tree 기반의 공통 베이스로 통합하기 위한 설계서다.
@@ -103,6 +104,7 @@ focusedKey?: Key
   - body 자체 이동은 금지
   - body 자식들의 재정렬/이동은 허용
 - 업데이트: `batchUpdateElements(parent_id, order_num)`
+- 에러 복구: Optimistic Update 패턴 (PageTree와 동일)
 
 ### PageTree 규칙
 - drag source: 페이지 노드만
@@ -147,8 +149,30 @@ focusedKey?: Key
 - **Home(root) 페이지는 드래그 금지**
 - drop on self/descendant 금지
 - dropPosition 지원: before/after/on
-- 이동 업데이트: memory state 먼저 적용 후 pages API 저장
-  - 실패 시: 이전 상태 복구 or 오류 표시
+
+### DnD 업데이트 API
+```tsx
+// 페이지 순서/계층 변경 API
+interface PageMoveParams {
+  pageId: string;
+  parentId: string | null;
+  orderNum: number;
+}
+
+// Store 업데이트
+usePageStore.getState().reorderPages(updates: PageMoveParams[])
+
+// DB 동기화 (Supabase/IndexedDB)
+await pagesAdapter.batchUpdate(updates: PageMoveParams[])
+```
+
+### 에러 복구 전략
+이동 업데이트는 **Optimistic Update** 패턴을 따름:
+1. memory state 먼저 적용 (즉시 UI 반영)
+2. pages API 저장 시도
+3. **실패 시**: 이전 상태로 rollback + toast 알림
+   - rollback은 자동 수행 (사용자 개입 불필요)
+   - toast: "페이지 이동에 실패했습니다. 다시 시도해주세요."
 
 ### 에러/UX
 - invalid drop: indicator 숨김 + 1회 안내
@@ -178,6 +202,8 @@ type MovePayload<TNode> = {
   updates: Array<{ id: string; parentId?: string | null; orderNum?: number }>;
 };
 
+type TreeAction = 'settings' | 'delete' | 'duplicate' | 'rename';
+
 type TreeBaseProps<TNode> = {
   items: TNode[];
   getKey: (node: TNode) => Key;
@@ -185,8 +211,10 @@ type TreeBaseProps<TNode> = {
   renderContent: (node: TNode) => React.ReactNode;
   selectedKeys?: Set<Key>;
   expandedKeys?: Set<Key>;
+  disabledKeys?: Set<Key>;              // 비활성화 노드 (선택/드래그 불가)
   onSelectionChange?: (keys: Set<Key>) => void;
   onExpandedChange?: (keys: Set<Key>) => void;
+  onAction?: (key: Key, action: TreeAction) => void;  // 아이템 액션 콜백
   dnd?: {
     getDragItems: (keys: Set<Key>) => DragItem[];
     canDrop: (source: TNode, target: TNode, position: DropPosition) => boolean;
@@ -196,6 +224,10 @@ type TreeBaseProps<TNode> = {
     enabled: boolean;
     estimateSize: number;
     overscan: number;
+  };
+  loading?: {
+    isLoading: boolean;
+    skeleton?: React.ReactNode;         // 로딩 시 표시할 스켈레톤 UI
   };
 };
 ```
@@ -263,10 +295,20 @@ const virtualizer = useVirtualizer({
 
 ## 마이그레이션 순서
 
+> 순서는 의존성 기반이며, 동일 단계는 병렬 진행 가능
+
+### Phase 1: 기반 구축 ✅
 1. ✅ TreeBase + helpers + adapters 확정
-2. ⏳ PageTree를 TreeBase 기반으로 신규 구현
-3. ✅ LayerTree를 TreeBase 위로 통합 (가상 자식/selection/DnD)
-4. ⏳ Sidebar는 TreeBase 호출만 수행 후 단계적 제거
+2. ✅ LayerTree DnD 구현 (react-aria useDragAndDrop + onMove)
+
+### Phase 2: 트리 통합 ⏳ (현재 단계)
+3. ⏳ PageTree를 TreeBase 기반으로 신규 구현
+4. ⏳ TreeBase 공통화 (LayerTree/PageTree 공통 로직 추출)
+   - 3, 4는 병렬 진행 가능
+
+### Phase 3: 정리 및 제거
+5. ⏳ 가상화 통합 (@tanstack/react-virtual 적용)
+6. ⏳ Sidebar 제거 (기능 동등성 확인 후)
 
 ---
 
@@ -283,12 +325,12 @@ const virtualizer = useVirtualizer({
 
 ### ⏳ 진행 예정
 
-| 항목 | 우선순위 | 비고 |
-|------|----------|------|
-| PageTree 구현 | 높음 | TreeBase 기반 신규 구현 |
-| TreeBase 공통화 | 중간 | LayerTree/PageTree 공통 로직 추출 |
-| Sidebar 제거 | 낮음 | 기능 동등성 확인 후 |
-| 가상화 통합 | 중간 | @tanstack/react-virtual 적용 |
+| 항목 | Phase | 우선순위 | 비고 |
+|------|-------|----------|------|
+| PageTree 구현 | 2 | 높음 | TreeBase 기반 신규 구현 |
+| TreeBase 공통화 | 2 | 높음 | LayerTree/PageTree 공통 로직 추출 (병렬 가능) |
+| 가상화 통합 | 3 | 중간 | @tanstack/react-virtual 적용 |
+| Sidebar 제거 | 3 | 낮음 | 기능 동등성 확인 후 |
 
 ---
 
@@ -303,9 +345,34 @@ const virtualizer = useVirtualizer({
 
 ## 오픈 이슈
 
+### 해결됨
 - ~~PageTree에서 root page reorder 제약 여부 (Home 고정 여부)~~ → ✅ 해결: Home 드래그 금지 (PageTree 설계 상세 참조)
-- DnD 안내 UX 위치/표시 방식 표준화
-- WebGL reorder와 Tree reorder 동기화 지연 허용 범위
+
+### 미결 - 우선순위 높음
+- **WebGL 동기화 지연 정책**
+  - 현재: 미정
+  - 제안: **즉시 동기화** (debounce 없음)
+  - 근거: DnD 완료 시점에 단일 이벤트 발생, 빈번한 호출 아님
+  - 대안: 100ms debounce (연속 이동 시 성능 이슈 발생 시 적용)
+
+### 미결 - 우선순위 중간
+- **DnD 안내 UX 표준화**
+  - invalid drop 시 tooltip 위치/스타일 미정
+  - 제안: drop target 근처에 인라인 메시지 (toast 대신)
+
+- **다중 선택 드래그 UX**
+  - `MovePayload.keys`가 `Set<Key>`로 다중 지원하지만 UX 정책 미정
+  - 질문: Shift+Click 범위 선택? Cmd/Ctrl+Click 개별 선택?
+  - 제안: 1차 구현에서는 단일 선택만 지원, 이후 확장
+
+- **Undo/Redo 지원 여부**
+  - DnD 이동 후 실행 취소 필요성 검토
+  - 제안: 1차 구현에서는 미지원, 향후 Command 패턴 도입 시 추가
+
+### 미결 - 우선순위 낮음
+- **로딩 상태 표시**
+  - 트리 데이터 fetch 중 스켈레톤 vs 스피너 결정 필요
+  - 제안: 3개 아이템 스켈레톤 (높이 28px × 3)
 
 ---
 
