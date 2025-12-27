@@ -1,124 +1,195 @@
 # XStudio 문서 (Documentation)
 
-XStudio 프로젝트의 개발 가이드 및 기능 구현 문서 모음입니다.
-
-## 📂 디렉토리 구조
-
-```
-/docs
-  ├── /archive         # 완료된 리팩토링 문서 및 과거 문서
-  ├── /guides          # 개발 가이드
-  ├── /features        # 기능 구현 문서
-  └── /research        # 리서치 및 참고 자료
-```
-
-## 📋 핵심 문서 (Core Documentation)
-
-프로젝트의 주요 문서입니다.
-
-- [CHANGELOG.md](./CHANGELOG.md) - 프로젝트 변경 이력 **⭐ 최신 업데이트 확인**
-  - **2025-11-14**: Theme System & iframe Communication 수정
-    - Theme 교차 선택 버그 수정
-    - Theme 새로고침 적용 수정
-    - iframe stale 참조 감지 개선
-    - Debug 로그 정리
-- [CSS_ARCHITECTURE.md](./CSS_ARCHITECTURE.md) - CSS 아키텍처 (ITCSS, Layer System, Theme Tokens)
-- [REACT_ARIA_INTEGRATION.md](./REACT_ARIA_INTEGRATION.md) - React Aria Components 통합 가이드
-- [API_ENDPOINTS.md](./API_ENDPOINTS.md) - Mock Data API 엔드포인트 레퍼런스
-- [supabase-schema.md](./supabase-schema.md) - Supabase 데이터베이스 스키마
-
-## 📚 가이드 (Guides)
-
-개발 가이드 및 참고 문서입니다.
-
-- [README_prompts.md](./guides/README_prompts.md) - README 작성 가이드
-- [TREE_COMPONENT_GUIDE.md](./guides/TREE_COMPONENT_GUIDE.md) - Tree 컴포넌트 사용 가이드
-
-## ⚙️ 기능 구현 문서 (Features)
-
-각 기능의 구현 과정, 버그 수정, 동작 방식을 설명하는 문서입니다.
-
-### 실시간 저장 모드
-
-- [REALTIME_SAVE_MODE_IMPLEMENTATION.md](./features/REALTIME_SAVE_MODE_IMPLEMENTATION.md) - 실시간 저장 모드 구현
-- [SAVESERVICE_REFACTORING.md](./features/SAVESERVICE_REFACTORING.md) - SaveService 리팩토링 (서비스 레이어 구조 개선)
-- [SAVE_MODE_BEHAVIOR.md](./features/SAVE_MODE_BEHAVIOR.md) - 저장 모드 동작 방식
-- [REALTIME_SAVE_BUG_FIX.md](./features/REALTIME_SAVE_BUG_FIX.md) - 실시간 저장 버그 수정
-
-### Inspector
-
-- [INSPECTOR_REFACTORING.md](./features/INSPECTOR_REFACTORING.md) - Inspector 리팩토링
-- [INSPECTOR_INTEGRATION_TEST.md](./features/INSPECTOR_INTEGRATION_TEST.md) - Inspector 통합 테스트
-- [INSPECTOR_STYLE_SYSTEM.md](./features/INSPECTOR_STYLE_SYSTEM.md) - Inspector 스타일 관리 시스템 ✨
-  - Inline styles 기반 스타일 편집
-  - Computed styles 수집 및 표시
-  - 양방향 동기화 (Inspector ↔ Builder)
-  - 직관적인 Flexbox 컨트롤
-
-### Preview
-
-- [PREVIEW_CHECKBOX_BEHAVIOR.md](./features/PREVIEW_CHECKBOX_BEHAVIOR.md) - Preview Checkbox 동작 방식
-- [PREVIEW_STATE_RESET_BUG.md](./features/PREVIEW_STATE_RESET_BUG.md) - Preview 상태 컴포넌트 리셋 버그 수정 ✅
-
-### Components
-
-- [TOGGLEBUTTONGROUP_INDICATOR.md](./features/TOGGLEBUTTONGROUP_INDICATOR.md) - ToggleButtonGroup Indicator 개선 ✨
-  - Opacity 기반 indicator 숨김
-  - Mutually exclusive groups 지원
-  - MutationObserver 활용
-
-### Collection Components
-
-- [COLLECTION_COMPONENTS_DATA_BINDING.md](./features/COLLECTION_COMPONENTS_DATA_BINDING.md) - Collection Components 데이터 바인딩 시스템 ✨
-  - **ComboBox Filtering**: textValue 기반 자동완성 필터링
-  - **TagGroup ColumnMapping**: 동적 데이터 렌더링 지원
-  - **TagGroup Item Removal**: 비파괴적 항목 제거 (removedItemIds)
-  - **TagGroup Restore**: Inspector에서 제거된 항목 복구
-  - **Initial Component Creation**: 모든 Collection 컴포넌트 1개 child item 통일
-  - 구현 완료: ListBox, GridList, Select, ComboBox, TagGroup
+XStudio 프로젝트의 기술 문서를 [Diátaxis 프레임워크](https://diataxis.fr/)에 따라 구성했습니다.
 
 ---
 
-## 🔬 리서치 (Research)
+## 디렉토리 구조
 
-프로젝트 개발을 위한 리서치 및 참고 자료입니다.
-
-- [claudecodeui-inspiration.md](./research/claudecodeui-inspiration.md) - Claude Code UI 디자인 영감
+```
+docs/
+├── tutorials/        # 학습 중심 실습 가이드
+├── how-to/          # 문제 해결 단계별 가이드
+├── reference/       # API, 스키마, 상태 참조
+├── explanation/     # 아키텍처, 개념 설명
+├── archive/         # 완료된 과거 문서
+├── CHANGELOG.md     # 변경 이력
+└── README.md        # 문서 인덱스
+```
 
 ---
 
-## 📦 아카이브 (Archive)
+## Tutorials (튜토리얼)
+
+> 학습 중심의 실습 가이드입니다. 처음부터 끝까지 따라하며 배울 수 있습니다.
+
+### Getting Started
+- [Electron 설정 가이드](./tutorials/getting-started/ELECTRON_SETUP.md) - Electron 데스크톱 앱 설정
+
+### Features
+- [Tree 컴포넌트 가이드](./tutorials/features/TREE_COMPONENT.md) - Tree 컴포넌트 사용법
+- [이벤트 테스트 가이드](./tutorials/features/EVENT_TESTING.md) - 이벤트 시스템 테스트
+
+---
+
+## How-to Guides (가이드)
+
+> 특정 문제를 해결하기 위한 단계별 가이드입니다.
+
+### Migration (마이그레이션)
+- [React Query 스타일 마이그레이션](./how-to/migration/REACT_QUERY_STYLE.md)
+- [M3 마이그레이션 체크리스트](./how-to/migration/M3_CHECKLIST.md)
+- [React Aria 마이그레이션](./how-to/migration/REACT_ARIA.md)
+- [WebGL 마이그레이션](./how-to/migration/WEBGL.md)
+- [ESM Import 마이그레이션](./how-to/migration/ESM_IMPORTS.md)
+- [Dataset 이름 변경](./how-to/migration/DATASET_RENAME.md)
+
+### Troubleshooting (문제 해결)
+- [TypeScript 에러 해결](./how-to/troubleshooting/TYPESCRIPT_ERRORS.md)
+- [빌드 에러 해결](./how-to/troubleshooting/BUILD_ERRORS.md)
+- [Rate Limit 해결](./how-to/troubleshooting/RATE_LIMIT.md)
+
+### Development (개발)
+- [기여 가이드](./how-to/development/CONTRIBUTING.md)
+- [README 작성 가이드](./how-to/development/README_WRITING.md)
+- [PGlite 퀵스타트](./how-to/development/PGLITE_QUICK_START.md)
+- [PGlite 구현](./how-to/development/PGLITE_IMPLEMENTATION.md)
+- [PGlite 검증](./how-to/development/PGLITE_VALIDATION.md)
+- [Inspector 테스트](./how-to/development/INSPECTOR_TESTING.md)
+- [Canvas Border Box 구현](./how-to/development/CANVAS_BORDER_BOX.md)
+- [Skeleton 시스템 구현](./how-to/development/SKELETON_SYSTEM.md)
+- [PIXI 리팩토링](./how-to/development/PIXI_REFACTORING.md)
+- [P7 구현 계획](./how-to/development/P7_IMPLEMENTATION.md)
+- [패널 최적화](./how-to/development/PANEL_OPTIMIZATION.md)
+- [성능 구현 가이드](./how-to/development/PERFORMANCE_IMPLEMENTATION.md)
+- [Long Task 최적화](./how-to/development/LONG_TASK_OPTIMIZATION.md)
+- [벤치마크 템플릿](./how-to/development/BENCHMARK_TEMPLATE.md)
+- [src 구조 개선](./how-to/development/SRC_STRUCTURE.md)
+- [컴포넌트 통합](./how-to/development/COMPONENT_CONSOLIDATION.md)
+
+---
+
+## Reference (참조)
+
+> 기술적 상세 정보를 제공하는 참조 문서입니다.
+
+### API
+- [API 엔드포인트](./reference/api/ENDPOINTS.md)
+
+### Schemas (스키마)
+- [IndexedDB 스키마](./reference/schemas/INDEXDB.md)
+- [Supabase 스키마](./reference/schemas/SUPABASE.md)
+- [M3 Palette 매핑](./reference/schemas/M3_PALETTE.md)
+- [M3 컴포넌트 템플릿](./reference/schemas/M3_COMPONENT_TEMPLATE.css)
+- [M3 Storybook 템플릿](./reference/schemas/M3_STORYBOOK_TEMPLATE.tsx)
+
+### Components (컴포넌트)
+- [패널 시스템](./reference/components/PANEL_SYSTEM.md)
+- [CSS 아키텍처](./reference/components/CSS_ARCHITECTURE.md)
+- [React Aria 통합](./reference/components/REACT_ARIA.md)
+- [PIXI WebGL 통합](./reference/components/PIXI_WEBGL.md)
+- [Transformer 보안](./reference/components/TRANSFORMER_SECURITY.md)
+- [Custom ID 패턴](./reference/components/CUSTOM_ID_PATTERN.md)
+- [Data Panel](./reference/components/DATA_PANEL.md)
+- [Inspector 스타일](./reference/components/INSPECTOR_STYLE.md)
+- [Inspector 리팩토링](./reference/components/INSPECTOR_REFACTORING.md)
+- [Collection 데이터 바인딩](./reference/components/COLLECTION_DATA_BINDING.md)
+- [Layout Presets](./reference/components/LAYOUT_PRESETS.md)
+- [저장 모드](./reference/components/SAVE_MODE.md)
+- [실시간 저장](./reference/components/REALTIME_SAVE.md)
+- [SaveService](./reference/components/SAVESERVICE.md)
+- [Canvas Interactions](./reference/components/CANVAS_INTERACTIONS.md)
+- [Canvas Isolation](./reference/components/CANVAS_ISOLATION.md)
+- [DataTable Presets](./reference/components/DATATABLE_PRESETS.md)
+- [중첩 라우팅](./reference/components/NESTED_ROUTES.md)
+- [Preview Checkbox](./reference/components/PREVIEW_CHECKBOX.md)
+- [Preview 상태 리셋](./reference/components/PREVIEW_STATE_RESET.md)
+- [실시간 저장 버그 수정](./reference/components/REALTIME_SAVE_FIX.md)
+- [ToggleButtonGroup](./reference/components/TOGGLEBUTTONGROUP.md)
+- [Workflow 동기화](./reference/components/WORKFLOW_SYNC.md)
+- [Border Radius Handles](./reference/components/BORDER_RADIUS_HANDLES.md)
+- [Drag & Drop Layer](./reference/components/DRAG_DROP_LAYER.md)
+- [페이지 네비게이션](./reference/components/PAGE_NAVIGATION.md)
+- [Events Panel](./reference/components/EVENTS_PANEL.md)
+- [Properties Panel](./reference/components/PROPERTIES_PANEL.md)
+- [Monitor Panel](./reference/components/MONITOR_PANEL.md)
+- [Multi Select](./reference/components/MULTI_SELECT.md)
+- [Layout Slots](./reference/components/LAYOUT_SLOTS.md)
+- [Project File Web](./reference/components/PROJECT_FILE_WEB.md)
+
+### Status (상태)
+- [완료된 기능](./reference/status/COMPLETED.md)
+- [계획된 기능](./reference/status/PLANNED.md)
+- [미구현 기능](./reference/status/UNIMPLEMENTED.md)
+- [WebGL 마이그레이션 상태](./reference/status/WEBGL_MIGRATION.md)
+- [M3 Phase 0 완료](./reference/status/M3_PHASE_0.md)
+- [M3 인덱스](./reference/status/M3_INDEX.md)
+- [M3 브라우저 호환성](./reference/status/M3_BROWSER.md)
+- [TypeScript 에러 목록](./reference/status/TYPESCRIPT_ERRORS.md)
+- [React Aria 1.13 업데이트](./reference/status/REACT_ARIA_1.13.md)
+- [성능 벤치마크](./reference/status/PERFORMANCE_BENCHMARK.md)
+- [성능 리포트](./reference/status/PERFORMANCE_REPORT.md)
+- [성능 인덱스](./reference/status/PERFORMANCE_INDEX.md)
+- [성능 태스크](./reference/status/PERFORMANCE_TASKS.md)
+- [성능 Phase 1-4](./reference/status/PERF_PHASE_1_4.md)
+- [성능 Phase 5-8](./reference/status/PERF_PHASE_5_8.md)
+- [성능 보충](./reference/status/PERF_SUPPLEMENT.md)
+- [성능 결정사항](./reference/status/PERF_DECISIONS.md)
+- [성능 아이디어](./reference/status/PERF_IDEAS.md)
+- [Canvas Resize 최적화](./reference/status/CANVAS_RESIZE.md)
+- [WebGL Canvas 최종](./reference/status/WEBGL_CANVAS_FINAL.md)
+- [성능 최적화 계획](./reference/status/PERFORMANCE_PLAN.md)
+- [DB 호환성](./reference/status/DB_COMPATIBILITY.md)
+- [스타일 시스템](./reference/status/STYLE_SYSTEM.md)
+
+---
+
+## Explanation (설명)
+
+> 개념과 아키텍처를 설명하는 문서입니다.
+
+### Architecture (아키텍처)
+- [페이지 타입 분리](./explanation/architecture/PAGE_TYPES.md)
+- [데이터 아키텍처](./explanation/architecture/DATA_ARCHITECTURE.md)
+- [파일 동기화](./explanation/architecture/FILE_SYNC.md)
+- [데이터 동기화](./explanation/architecture/DATA_SYNC.md)
+- [History Panel 설계](./explanation/architecture/HISTORY_PANEL.md)
+- [Nodes Panel 설계](./explanation/architecture/NODES_PANEL_DESIGN.md)
+- [Drag & Drop 설계](./explanation/architecture/DRAG_DROP_DESIGN.md)
+- [성능 문제 분석](./explanation/architecture/PERF_PROBLEM.md)
+- [성능 아키텍처](./explanation/architecture/PERF_ARCHITECTURE.md)
+- [WebGL Builder 아키텍처](./explanation/architecture/WEBGL_BUILDER.md)
+
+### Research (리서치)
+- [빌더 아키텍처 비교](./explanation/research/BUILDER_COMPARISON.md)
+- [React Spectrum 비교](./explanation/research/REACT_SPECTRUM_COMPARISON.md)
+- [스타일 파싱 최적화](./explanation/research/STYLE_PARSING.md)
+- [Visual Builder 데이터](./explanation/research/VISUAL_BUILDER_DATA.md)
+- [리디자인 계획](./explanation/research/REDESIGN_PLAN.md)
+- [Claude Code UI 영감](./explanation/research/CLAUDECODE_UI.md)
+- [PGlite vs SQLite](./explanation/research/PGLITE_VS_SQLITE.md)
+- [Photoshop 벤치마크](./explanation/research/PHOTOSHOP_BENCHMARK.md)
+
+---
+
+## Archive (아카이브)
 
 완료된 리팩토링 문서 및 과거 문서가 보관되어 있습니다.
 
-- [archive/](./archive/) - 완료된 리팩토링 계획 및 요약 문서
-  - REFACTORING_PLAN.md - 초기 리팩토링 계획
-  - PR_DESCRIPTION.md - PR 설명 템플릿
-  - CSS_REFACTORING_SUMMARY.md - CSS 리팩토링 요약
-  - REACT_STATELY_PROGRESS.md - React Stately 진행 상황
-  - REFACTOR_EXECUTION_PLAN.md - 리팩토링 실행 계획
-  - REFACTORING_SUMMARY.md - 리팩토링 요약
-  - CSS_INSPECTOR_ANALYSIS.md - CSS Inspector 분석
+- [archive/](./archive/) - 완료된 과거 문서
 
 ---
 
-## 📝 문서 작성 가이드
+## 문서 작성 가이드
 
-새로운 문서를 추가할 때는 다음 규칙을 따라주세요:
+새로운 문서를 추가할 때는 Diátaxis 프레임워크에 따라 적절한 폴더에 배치해주세요:
 
-### 가이드 문서 (`/docs/guides`)
-
-- 개발 워크플로우
-- 코드 컨벤션
-- 프로젝트 설정
-- 기여 가이드
-
-### 기능 문서 (`/docs/features`)
-
-- 기능 구현 설명
-- 버그 수정 내역
-- 동작 방식 문서
-- 성능 개선
+| 문서 유형 | 폴더 | 예시 |
+|----------|------|------|
+| 학습용 실습 가이드 | `tutorials/` | 시작하기, 첫 컴포넌트 만들기 |
+| 문제 해결 가이드 | `how-to/` | 마이그레이션, 버그 수정 |
+| 기술 참조 | `reference/` | API, 스키마, 상태 |
+| 개념 설명 | `explanation/` | 아키텍처, 설계 결정 |
 
 ### 파일 명명 규칙
 
@@ -126,28 +197,8 @@ XStudio 프로젝트의 개발 가이드 및 기능 구현 문서 모음입니�
 - 간결하고 명확한 이름
 - 날짜 포함 불필요 (Git 히스토리 활용)
 
-### 문서 구조
+---
 
-```markdown
-# 제목
+## 변경 이력
 
-## 개요
-
-간단한 설명
-
-## 문제/배경
-
-해결하려는 문제 또는 배경
-
-## 해결 방법
-
-구현 방법 또는 해결책
-
-## 결과
-
-최종 결과 및 영향
-
-## 참고 자료
-
-관련 링크 또는 참고 자료
-```
+최신 변경사항은 [CHANGELOG.md](./CHANGELOG.md)를 참조하세요.
