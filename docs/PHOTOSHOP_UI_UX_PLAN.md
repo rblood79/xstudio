@@ -96,13 +96,13 @@
 │        src/builder/main/BuilderHeader.tsx                    │
 ├──────────────┬────────────────────────┬─────────────────────┤
 │              │                        │                     │
-│   Sidebar    │      Canvas            │    Inspector        │
+│   Sidebar    │      Workspace         │    Inspector        │
 │   (좌측)     │      (중앙)            │    (우측)           │
 │              │                        │                     │
-│ NodesPanel   │  BuilderCanvas.tsx     │  속성 에디터들      │
-│ Components   │  + SelectionOverlay    │  (100+ 에디터)      │
-│ Theme        │    overlay/index.tsx   │                     │
-│ AI           │                        │  HistoryPanel       │
+│ NodesPanel   │  workspace/canvas/     │  속성 에디터들      │
+│ Components   │  BuilderCanvas.tsx     │  (100+ 에디터)      │
+│ Theme        │  + SelectionLayer      │                     │
+│ AI           │  + TextEditOverlay     │  HistoryPanel       │
 │ Settings     │                        │  AIPanel (탭)       │
 │              │                        │                     │
 ├──────────────┴────────────────────────┴─────────────────────┤
@@ -115,12 +115,23 @@
 
 | 영역 | 현재 파일 | 역할 |
 |------|-----------|------|
-| 선택 오버레이 | `src/builder/overlay/index.tsx` | 요소 선택 시각화, **Contextual Action Bar 추가 위치** |
+| **WebGL 캔버스** | `src/builder/workspace/canvas/BuilderCanvas.tsx` | PixiJS 기반 메인 캔버스 |
+| **선택 레이어** | `src/builder/workspace/canvas/selection/SelectionLayer.tsx` | WebGL 기반 선택 시스템, **Contextual Action Bar 추가 위치** |
+| **텍스트 오버레이** | `src/builder/workspace/overlay/TextEditOverlay.tsx` | DOM 기반 텍스트 편집 |
 | 히스토리 패널 | `src/builder/panels/history/HistoryPanel.tsx` | 변경 이력 표시 |
 | 히스토리 스토어 | `src/builder/stores/history.ts` | IndexedDB 기반 히스토리 관리 |
 | AI 패널 | `src/builder/panels/ai/AIPanel.tsx` | Groq 기반 AI 어시스턴트 |
 | 패널 레지스트리 | `src/builder/panels/core/PanelRegistry.ts` | 패널 등록/관리 |
 | 메인 빌더 | `src/builder/main/BuilderCore.tsx` | 전체 빌더 오케스트레이션 |
+
+### 7.3 레거시 코드 정리 대상
+
+| 경로 | 상태 | 조치 |
+|------|------|------|
+| `src/builder/overlay/` | ⚠️ 레거시 (DOM 기반) | 삭제 예정 - BuilderCore.tsx import 제거 필요 |
+| `src/builder/overlay/index.tsx` | ⚠️ 미사용 | SelectionLayer로 대체됨 |
+| `src/builder/overlay/components/` | ⚠️ 미사용 | workspace/canvas/selection으로 이전됨 |
+| `src/builder/overlay/hooks/` | ⚠️ 미사용 | workspace/canvas/ hooks로 이전됨 |
 
 ---
 
@@ -145,19 +156,44 @@
 
 #### 8.1.2 파일 구조
 
+> ⚠️ **주의**: `src/builder/overlay/`는 레거시 코드입니다.
+> 새로운 구현은 `workspace/` 구조를 사용합니다.
+
 ```
-src/builder/overlay/
-├── index.tsx                          # 기존 SelectionOverlay
-├── components/
-│   ├── BorderRadiusHandles.tsx        # 기존
-│   └── ContextualActionBar.tsx        # 🆕 신규 생성
-├── hooks/
-│   ├── useOverlayRAF.ts               # 기존
-│   ├── useVisibleOverlays.ts          # 기존
-│   └── useContextualActions.ts        # 🆕 요소별 액션 매핑
-└── types/
-    └── actions.ts                     # 🆕 액션 타입 정의
+src/builder/workspace/
+├── overlay/
+│   ├── index.ts                       # 기존 export
+│   ├── TextEditOverlay.tsx            # 기존 텍스트 편집
+│   ├── useTextEdit.ts                 # 기존 텍스트 편집 훅
+│   └── ContextualActionBar.tsx        # 🆕 신규 생성 (DOM 기반)
+│
+├── canvas/
+│   └── selection/
+│       ├── index.ts                   # 기존 export
+│       ├── SelectionLayer.tsx         # 기존 - Action Bar 통합 포인트
+│       ├── SelectionBox.tsx           # 기존
+│       ├── TransformHandle.tsx        # 기존
+│       └── ContextualActionBar.pixi.tsx # 🆕 WebGL 버전 (선택적)
+│
+└── hooks/
+    └── useContextualActions.ts        # 🆕 요소별 액션 매핑
+
+src/builder/actions/                    # 🆕 신규 디렉토리
+├── types.ts                           # 액션 타입 정의
+├── elementActions.ts                  # 요소별 액션 매핑
+└── index.ts                           # export
 ```
+
+**구현 방식 선택**:
+- **Option A (권장)**: DOM 기반 (`workspace/overlay/ContextualActionBar.tsx`)
+  - React Aria 컴포넌트 재사용 가능
+  - 접근성 보장
+  - 기존 스타일 시스템 활용
+
+- **Option B**: WebGL 기반 (`canvas/selection/ContextualActionBar.pixi.tsx`)
+  - 캔버스와 통합 렌더링
+  - 줌/패닝 시 자연스러운 동작
+  - 구현 복잡도 높음
 
 #### 8.1.3 액션 매핑 설계
 
@@ -253,34 +289,69 @@ function calculatePosition(overlayRect: Rect, barHeight: number = 40): CSSProper
 }
 ```
 
-#### 8.1.5 SelectionOverlay 수정 포인트
+#### 8.1.5 통합 포인트
+
+**Option A: DOM 기반 (권장)**
 
 ```typescript
-// src/builder/overlay/index.tsx 수정
+// src/builder/workspace/overlay/ContextualActionBar.tsx
 
-// 1. import 추가
-import { ContextualActionBar } from './components/ContextualActionBar';
-import { useContextualActions } from './hooks/useContextualActions';
+interface ContextualActionBarProps {
+  elementId: string;
+  elementTag: string;
+  bounds: BoundingBox;      // SelectionLayer에서 전달
+  canvasZoom: number;       // 줌 레벨에 따른 위치 보정
+  onAction: (actionId: string) => void;
+}
 
-// 2. 컴포넌트 내부 (single-select 모드 렌더링 부분)
+// src/builder/workspace/canvas/BuilderCanvas.tsx 수정
+
+import { ContextualActionBar } from '../overlay/ContextualActionBar';
+
+// Application 외부에 DOM 오버레이로 렌더링
 return (
-  <div className="overlay">
-    <div className="overlay-element" style={...}>
-      {/* 기존 오버레이 내용 */}
-      <div className="overlay-info">...</div>
-      <BorderRadiusHandles ... />
-    </div>
+  <div className="builder-canvas-container">
+    <Application ...>
+      {/* PixiJS 컨텐츠 */}
+      <SelectionLayer ... />
+    </Application>
 
-    {/* 🆕 Contextual Action Bar */}
-    {overlayRect && selectedElementId && (
+    {/* 🆕 DOM 기반 Contextual Action Bar */}
+    {selectedBounds && selectedElementId && (
       <ContextualActionBar
         elementId={selectedElementId}
-        elementTag={displayTag}
-        overlayRect={overlayRect}
+        elementTag={selectedElementTag}
+        bounds={selectedBounds}
+        canvasZoom={zoom}
         onAction={handleContextualAction}
       />
     )}
   </div>
+);
+```
+
+**Option B: WebGL 기반**
+
+```typescript
+// src/builder/workspace/canvas/selection/SelectionLayer.tsx 수정
+
+import { ContextualActionBarPixi } from './ContextualActionBar.pixi';
+
+// SelectionLayer 내부
+return (
+  <pixiContainer>
+    {/* 기존 SelectionBox */}
+    <SelectionBox ... />
+
+    {/* 🆕 PixiJS 기반 Action Bar */}
+    {selectedElement && (
+      <ContextualActionBarPixi
+        bounds={selectionBounds}
+        elementTag={selectedElement.tag}
+        onAction={handleAction}
+      />
+    )}
+  </pixiContainer>
 );
 ```
 
@@ -702,10 +773,18 @@ test('Quick Action 실행 시 속성 변경', async ({ page }) => {
 
 ## 12. 마이그레이션 체크리스트
 
+### P0-Pre: 레거시 코드 정리 (선행 작업)
+- [ ] `src/builder/overlay/` 사용처 분석
+- [ ] `BuilderCore.tsx`에서 레거시 SelectionOverlay import 제거
+- [ ] 레거시 overlay 기능이 workspace/canvas/selection으로 완전 이전 확인
+- [ ] `src/builder/overlay/` 디렉토리 삭제
+- [ ] 빌드 및 테스트 통과 확인
+
 ### P0 단계
-- [ ] `ContextualActionBar` 컴포넌트 생성
-- [ ] `SelectionOverlay`에 Action Bar 통합
-- [ ] 요소별 액션 매핑 정의
+- [ ] `src/builder/actions/` 디렉토리 생성 (액션 타입, 요소별 매핑)
+- [ ] `workspace/overlay/ContextualActionBar.tsx` 컴포넌트 생성
+- [ ] `BuilderCanvas.tsx`에 Action Bar 통합
+- [ ] 요소별 액션 매핑 정의 (`elementActions.ts`)
 - [ ] History Panel 아이콘 추가
 - [ ] History Panel redo 구간 스타일링
 - [ ] `jumpToIndex` API 구현
