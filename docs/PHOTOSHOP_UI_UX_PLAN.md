@@ -85,8 +85,11 @@
 # 구현 계획 상세 (Implementation Specification)
 
 > 아래는 위 계획을 실제 코드베이스와 화면에 매핑한 구체적인 구현 명세입니다.
+>
+> **⚠️ 적용 범위**: 모든 구현은 **WebGL 모드** (`isWebGLCanvas = true`) 기준입니다.
+> iframe 기반 캔버스 및 레거시 overlay는 현재 상태 유지합니다.
 
-## 7. 코드베이스 구조 분석
+## 7. 코드베이스 구조 분석 (WebGL 모드)
 
 ### 7.1 현재 레이아웃 구조
 
@@ -111,27 +114,18 @@
 └─────────────────────────────────────────────────────────────┘
 ```
 
-### 7.2 핵심 파일 매핑
+### 7.2 WebGL 모드 핵심 파일 매핑
 
-| 영역 | 현재 파일 | 역할 |
+| 영역 | 파일 경로 | 역할 |
 |------|-----------|------|
-| **WebGL 캔버스** | `src/builder/workspace/canvas/BuilderCanvas.tsx` | PixiJS 기반 메인 캔버스 |
-| **선택 레이어** | `src/builder/workspace/canvas/selection/SelectionLayer.tsx` | WebGL 기반 선택 시스템, **Contextual Action Bar 추가 위치** |
+| **Workspace** | `src/builder/workspace/Workspace.tsx` | WebGL 캔버스 컨테이너 |
+| **PixiJS 캔버스** | `src/builder/workspace/canvas/BuilderCanvas.tsx` | PixiJS Application 래퍼 |
+| **선택 레이어** | `src/builder/workspace/canvas/selection/SelectionLayer.tsx` | 선택 박스, 트랜스폼 핸들 |
 | **텍스트 오버레이** | `src/builder/workspace/overlay/TextEditOverlay.tsx` | DOM 기반 텍스트 편집 |
+| **뷰포트 컨트롤** | `src/builder/workspace/canvas/viewport/` | 줌/패닝 제어 |
 | 히스토리 패널 | `src/builder/panels/history/HistoryPanel.tsx` | 변경 이력 표시 |
 | 히스토리 스토어 | `src/builder/stores/history.ts` | IndexedDB 기반 히스토리 관리 |
 | AI 패널 | `src/builder/panels/ai/AIPanel.tsx` | Groq 기반 AI 어시스턴트 |
-| 패널 레지스트리 | `src/builder/panels/core/PanelRegistry.ts` | 패널 등록/관리 |
-| 메인 빌더 | `src/builder/main/BuilderCore.tsx` | 전체 빌더 오케스트레이션 |
-
-### 7.3 레거시 코드 정리 대상
-
-| 경로 | 상태 | 조치 |
-|------|------|------|
-| `src/builder/overlay/` | ⚠️ 레거시 (DOM 기반) | 삭제 예정 - BuilderCore.tsx import 제거 필요 |
-| `src/builder/overlay/index.tsx` | ⚠️ 미사용 | SelectionLayer로 대체됨 |
-| `src/builder/overlay/components/` | ⚠️ 미사용 | workspace/canvas/selection으로 이전됨 |
-| `src/builder/overlay/hooks/` | ⚠️ 미사용 | workspace/canvas/ hooks로 이전됨 |
 
 ---
 
@@ -154,51 +148,43 @@
          ↑ Contextual Action Bar
 ```
 
-#### 8.1.2 파일 구조
-
-> ⚠️ **주의**: `src/builder/overlay/`는 레거시 코드입니다.
-> 새로운 구현은 `workspace/` 구조를 사용합니다.
+#### 8.1.2 파일 구조 (WebGL 모드 전용)
 
 ```
 src/builder/workspace/
 ├── overlay/
-│   ├── index.ts                       # 기존 export
+│   ├── index.ts                       # export
 │   ├── TextEditOverlay.tsx            # 기존 텍스트 편집
 │   ├── useTextEdit.ts                 # 기존 텍스트 편집 훅
-│   └── ContextualActionBar.tsx        # 🆕 신규 생성 (DOM 기반)
+│   └── ContextualActionBar.tsx        # 🆕 DOM 기반 Action Bar
 │
 ├── canvas/
+│   ├── BuilderCanvas.tsx              # Action Bar 통합 포인트
 │   └── selection/
-│       ├── index.ts                   # 기존 export
-│       ├── SelectionLayer.tsx         # 기존 - Action Bar 통합 포인트
-│       ├── SelectionBox.tsx           # 기존
-│       ├── TransformHandle.tsx        # 기존
-│       └── ContextualActionBar.pixi.tsx # 🆕 WebGL 버전 (선택적)
+│       ├── index.ts                   # export
+│       ├── SelectionLayer.tsx         # 선택 상태 제공
+│       ├── SelectionBox.tsx           # 선택 박스 렌더링
+│       └── TransformHandle.tsx        # 변형 핸들
 │
 └── hooks/
     └── useContextualActions.ts        # 🆕 요소별 액션 매핑
 
-src/builder/actions/                    # 🆕 신규 디렉토리
+src/builder/actions/                    # 🆕 공용 액션 정의
 ├── types.ts                           # 액션 타입 정의
 ├── elementActions.ts                  # 요소별 액션 매핑
 └── index.ts                           # export
 ```
 
-**구현 방식 선택**:
-- **Option A (권장)**: DOM 기반 (`workspace/overlay/ContextualActionBar.tsx`)
-  - React Aria 컴포넌트 재사용 가능
-  - 접근성 보장
-  - 기존 스타일 시스템 활용
-
-- **Option B**: WebGL 기반 (`canvas/selection/ContextualActionBar.pixi.tsx`)
-  - 캔버스와 통합 렌더링
-  - 줌/패닝 시 자연스러운 동작
-  - 구현 복잡도 높음
+**구현 방식**: DOM 기반 (`workspace/overlay/ContextualActionBar.tsx`)
+- React Aria 컴포넌트 재사용 가능
+- 접근성(WCAG AA) 보장
+- 기존 스타일 시스템 활용
+- PixiJS Application 외부에 렌더링 (줌 독립적)
 
 #### 8.1.3 액션 매핑 설계
 
 ```typescript
-// src/builder/overlay/types/actions.ts
+// src/builder/actions/types.ts
 
 export interface ContextualAction {
   id: string;
@@ -251,7 +237,7 @@ export const elementActions: ElementActionMap = {
 #### 8.1.4 컴포넌트 구현 명세
 
 ```typescript
-// src/builder/overlay/components/ContextualActionBar.tsx
+// src/builder/workspace/overlay/ContextualActionBar.tsx
 
 interface ContextualActionBarProps {
   elementId: string;
@@ -289,22 +275,10 @@ function calculatePosition(overlayRect: Rect, barHeight: number = 40): CSSProper
 }
 ```
 
-#### 8.1.5 통합 포인트
-
-**Option A: DOM 기반 (권장)**
+#### 8.1.5 BuilderCanvas 통합 (WebGL 모드)
 
 ```typescript
-// src/builder/workspace/overlay/ContextualActionBar.tsx
-
-interface ContextualActionBarProps {
-  elementId: string;
-  elementTag: string;
-  bounds: BoundingBox;      // SelectionLayer에서 전달
-  canvasZoom: number;       // 줌 레벨에 따른 위치 보정
-  onAction: (actionId: string) => void;
-}
-
-// src/builder/workspace/canvas/BuilderCanvas.tsx 수정
+// src/builder/workspace/canvas/BuilderCanvas.tsx
 
 import { ContextualActionBar } from '../overlay/ContextualActionBar';
 
@@ -313,16 +287,22 @@ return (
   <div className="builder-canvas-container">
     <Application ...>
       {/* PixiJS 컨텐츠 */}
-      <SelectionLayer ... />
+      <SelectionLayer
+        onSelectionChange={setSelectionState}
+        ...
+      />
     </Application>
 
-    {/* 🆕 DOM 기반 Contextual Action Bar */}
-    {selectedBounds && selectedElementId && (
+    {/* DOM 기반 오버레이들 */}
+    <TextEditOverlay ... />
+
+    {/* 🆕 Contextual Action Bar */}
+    {selectionState.bounds && selectionState.elementId && (
       <ContextualActionBar
-        elementId={selectedElementId}
-        elementTag={selectedElementTag}
-        bounds={selectedBounds}
-        canvasZoom={zoom}
+        elementId={selectionState.elementId}
+        elementTag={selectionState.elementTag}
+        bounds={selectionState.bounds}
+        canvasZoom={viewportState.zoom}
         onAction={handleContextualAction}
       />
     )}
@@ -330,29 +310,16 @@ return (
 );
 ```
 
-**Option B: WebGL 기반**
-
+**위치 계산**: 캔버스 좌표 → 화면 좌표 변환 필요
 ```typescript
-// src/builder/workspace/canvas/selection/SelectionLayer.tsx 수정
-
-import { ContextualActionBarPixi } from './ContextualActionBar.pixi';
-
-// SelectionLayer 내부
-return (
-  <pixiContainer>
-    {/* 기존 SelectionBox */}
-    <SelectionBox ... />
-
-    {/* 🆕 PixiJS 기반 Action Bar */}
-    {selectedElement && (
-      <ContextualActionBarPixi
-        bounds={selectionBounds}
-        elementTag={selectedElement.tag}
-        onAction={handleAction}
-      />
-    )}
-  </pixiContainer>
-);
+// bounds는 PixiJS 월드 좌표
+// viewportState.offset, zoom을 적용하여 DOM 위치 계산
+const screenPosition = {
+  left: bounds.x * zoom + offset.x,
+  top: bounds.y * zoom + offset.y,
+  width: bounds.width * zoom,
+  height: bounds.height * zoom,
+};
 ```
 
 ---
@@ -486,38 +453,42 @@ src/builder/components/
 │   └── menuItems.ts           # 🆕 메뉴 아이템 정의 (액션 맵 재사용)
 ```
 
-#### 8.3.3 Canvas 통합
+#### 8.3.3 Workspace 통합 (WebGL 모드)
 
 ```typescript
-// src/builder/main/BuilderCanvas.tsx 수정
+// src/builder/workspace/canvas/BuilderCanvas.tsx
 
-import { ContextMenu, useContextMenu } from '../components/ContextMenu';
+import { ContextMenu, useContextMenu } from '../../components/ContextMenu';
 
-function BuilderCanvas() {
-  const { menuPosition, showMenu, hideMenu } = useContextMenu();
+// PixiJS 캔버스 컨테이너에서 우클릭 처리
+return (
+  <div
+    className="builder-canvas-container"
+    onContextMenu={handleContextMenu}
+  >
+    <Application ...>
+      <SelectionLayer
+        onRightClick={(elementId, worldPos) => {
+          // 월드 좌표 → 화면 좌표 변환
+          const screenPos = worldToScreen(worldPos, viewportState);
+          showMenu(screenPos.x, screenPos.y, elementId);
+        }}
+        ...
+      />
+    </Application>
 
-  const handleContextMenu = (e: React.MouseEvent) => {
-    e.preventDefault();
-    const elementId = getElementIdFromEvent(e);
-    if (elementId) {
-      showMenu(e.clientX, e.clientY, elementId);
-    }
-  };
-
-  return (
-    <div onContextMenu={handleContextMenu}>
-      {/* Canvas 내용 */}
-
-      {menuPosition && (
-        <ContextMenu
-          position={menuPosition}
-          elementId={menuPosition.elementId}
-          onClose={hideMenu}
-        />
-      )}
-    </div>
-  );
-}
+    {/* DOM 기반 컨텍스트 메뉴 */}
+    {menuPosition && (
+      <ContextMenu
+        position={menuPosition}
+        elementId={menuPosition.elementId}
+        elementTag={menuPosition.elementTag}
+        onClose={hideMenu}
+        onAction={handleContextualAction}
+      />
+    )}
+  </div>
+);
 ```
 
 ---
@@ -740,8 +711,10 @@ src/builder/layout/
 
 ```
 src/builder/
-├── overlay/components/__tests__/
+├── workspace/overlay/__tests__/
 │   └── ContextualActionBar.test.tsx
+├── actions/__tests__/
+│   └── elementActions.test.ts
 ├── panels/history/__tests__/
 │   └── HistoryPanel.test.tsx
 └── stores/__tests__/
@@ -771,33 +744,31 @@ test('Quick Action 실행 시 속성 변경', async ({ page }) => {
 
 ---
 
-## 12. 마이그레이션 체크리스트
+## 12. 마이그레이션 체크리스트 (WebGL 모드 전용)
 
-### P0-Pre: 레거시 코드 정리 (선행 작업)
-- [ ] `src/builder/overlay/` 사용처 분석
-- [ ] `BuilderCore.tsx`에서 레거시 SelectionOverlay import 제거
-- [ ] 레거시 overlay 기능이 workspace/canvas/selection으로 완전 이전 확인
-- [ ] `src/builder/overlay/` 디렉토리 삭제
-- [ ] 빌드 및 테스트 통과 확인
+> ⚠️ 모든 구현은 WebGL 모드(`isWebGLCanvas = true`)에서만 동작합니다.
+> 레거시 코드(`src/builder/overlay/`)는 현재 상태 유지합니다.
 
-### P0 단계
-- [ ] `src/builder/actions/` 디렉토리 생성 (액션 타입, 요소별 매핑)
+### P0 단계: 컨텍스트 인식 UI
+- [ ] `src/builder/actions/` 디렉토리 생성
+  - [ ] `types.ts` - ContextualAction 인터페이스
+  - [ ] `elementActions.ts` - 요소별 액션 매핑
 - [ ] `workspace/overlay/ContextualActionBar.tsx` 컴포넌트 생성
-- [ ] `BuilderCanvas.tsx`에 Action Bar 통합
-- [ ] 요소별 액션 매핑 정의 (`elementActions.ts`)
+- [ ] `workspace/canvas/BuilderCanvas.tsx`에 Action Bar 통합
+- [ ] 캔버스 좌표 → 화면 좌표 변환 유틸리티
 - [ ] History Panel 아이콘 추가
-- [ ] History Panel redo 구간 스타일링
-- [ ] `jumpToIndex` API 구현
-- [ ] Quick Actions Context Menu 구현
+- [ ] History Panel redo 구간 스타일링 (opacity 50%)
+- [ ] `historyManager.jumpToIndex()` API 구현
+- [ ] Quick Actions Context Menu (WebGL 캔버스용)
 - [ ] 기존 테스트 통과 확인
 
-### P1 단계
-- [ ] AI Panel 변형 생성 기능
-- [ ] Comments Panel MVP
+### P1 단계: 협업/생성형 UX
+- [ ] AI Panel 변형 생성 기능 (`useVariations` 훅)
+- [ ] Comments Panel MVP (Supabase Realtime)
 - [ ] Floating Panel 프로토타입
 - [ ] 버전 히스토리 설계 문서
 
-### P2 단계
-- [ ] 아이콘 스타일 가이드
-- [ ] 색상 대비 감사
+### P2 단계: 안정화
+- [ ] 아이콘 스타일 가이드 (Spectrum 2 스타일)
+- [ ] 색상 대비 감사 (WCAG AA)
 - [ ] Presence/커서 공유 프로토타입
