@@ -468,20 +468,29 @@ builder/hooks/                      # 래퍼만 유지
 
 ## A. 파일 수 통계
 
-| 영역                 | 파일 수    | 비중 |
-| -------------------- | ---------- | ---- |
-| `builder/panels/`    | 301개      | 35%  |
-| `builder/workspace/` | 114개      | 13%  |
-| `shared/`            | 73개       | 9%   |
-| `builder/stores/`    | 38개       | 4%   |
-| `utils/`             | 38개       | 4%   |
-| `builder/hooks/`     | 35개       | 4%   |
-| `services/`          | 23개       | 3%   |
-| `types/`             | 22개       | 3%   |
-| 기타                 | ~211개     | 25%  |
-| **총계**             | **~855개** | 100% |
+| 영역                 | 파일 수     | 비중  | 변화 |
+| -------------------- | ----------- | ----- | ---- |
+| `builder/panels/`    | 332개       | 33%   | +31  |
+| `shared/`            | 155개       | 15%   | +82  |
+| `builder/workspace/` | 115개       | 11%   | +1   |
+| `builder/stores/`    | 38개        | 4%    | -    |
+| `utils/`             | 37개        | 4%    | -1   |
+| `builder/hooks/`     | 36개        | 4%    | +1   |
+| `services/`          | 23개        | 2%    | -    |
+| `types/`             | 22개        | 2%    | -    |
+| `builder/utils/`     | 17개        | 2%    | +1   |
+| `builder/config/`    | 2개         | -     | 🆕   |
+| `builder/devtools/`  | 2개         | -     | 🆕   |
+| `builder/types/`     | 2개         | -     | 🆕   |
+| 기타                 | ~222개      | 22%   | -    |
+| **총계**             | **~1003개** | 100%  | +148 |
 
-> 📅 마지막 업데이트: 2025-12-28
+> 📅 마지막 업데이트: 2025-12-29
+>
+> **신규 폴더**:
+> - `builder/config/` - 키보드 단축키 등 설정 파일
+> - `builder/devtools/` - 개발용 디버거 컴포넌트
+> - `builder/types/` - 빌더 전용 타입 정의
 
 ## B. 의존성 방향 원칙
 
@@ -518,6 +527,76 @@ Types Layer (types)
 ---
 
 ## E. 변경 이력
+
+### 2025-12-29: Keyboard Shortcuts 시스템 리팩토링
+
+#### 키보드 단축키 시스템 재설계 ✅
+
+> 상세 문서: `docs/reference/components/KEYBOARD_SHORTCUTS.md`
+
+**배경**: 22개 파일에 분산된 단축키 정의, 3가지 패턴 혼재, 45%만 중앙화
+
+**구현 완료 (Phase 0-7)**:
+1. **중앙 설정 파일**
+   - `builder/config/keyboardShortcuts.ts` - 51개 단축키 정의
+   - `builder/types/keyboard.ts` - 타입 정의
+
+2. **통합 레지스트리**
+   - `builder/hooks/useKeyboardShortcutsRegistry.ts` - 확장 (scope, priority, capture)
+   - `builder/hooks/useGlobalKeyboardShortcuts.ts` - 통합 훅 (Undo/Redo/Zoom)
+   - `builder/hooks/useActiveScope.ts` - 스코프 감지
+
+3. **개발자 도구**
+   - `builder/devtools/ShortcutDebugger.tsx` - 개발용 디버거
+   - `builder/utils/detectShortcutConflicts.ts` - 충돌 감지
+
+4. **삭제된 파일**
+   - `builder/hooks/useKeyboardShortcuts.ts` → `useGlobalKeyboardShortcuts.ts`로 통합
+   - `builder/workspace/useZoomShortcuts.ts` → `useGlobalKeyboardShortcuts.ts`로 통합
+
+**결과**:
+| Metric | Before | After | 변화 |
+|--------|--------|-------|------|
+| 단축키 관련 파일 | 22개 | 5개 | -77% |
+| 이벤트 리스너 | 17개 | 2개 | -88% |
+| 중앙화 비율 | 45% | 95%+ | ⬆️ |
+| 스코프 시스템 | ❌ | 7개 스코프 | ✅ |
+
+---
+
+### 2025-12-29: Events CSS 통합
+
+#### Events Panel CSS 파일 병합 ✅
+
+**배경**: Events 패널에 3개의 CSS 파일이 중복으로 존재
+- `events-legacy.css` (272줄) - 오래된 레거시 스타일
+- `events.css` (1127줄) - @layer + 레거시 혼합
+- `EventsPanel.css` (2118줄) - 최신 블록 기반 UI
+
+**완료 내용**:
+1. **스타일 분석 및 병합**
+   - events.css의 필수 스타일을 EventsPanel.css로 병합
+   - 추가된 스타일:
+     - Form Field (`.field`, `.field-label`, `.field-input`, `.field-textarea`)
+     - Checkbox/Switch (`.checkbox-field`, `.switch-label`)
+     - Select (`.select-trigger`, `.select-popover`, `.select-listbox`)
+     - Helper/Error (`.helper-text`, `.error-message`)
+     - Action Editor 전용 스타일
+
+2. **삭제된 파일**
+   - `builder/panels/events/events-legacy.css` - 삭제
+   - `builder/panels/events/events.css` - 삭제
+
+3. **수정된 파일**
+   - `builder/panels/events/index.ts` - CSS import 제거
+   - `builder/panels/events/EventsPanel.css` - 스타일 추가 (2118줄 → 2304줄)
+
+**결과**:
+- 파일 수: 3개 → 1개
+- 총 라인: 3517줄 → 2304줄 (약 35% 감소)
+- 중복 스타일 제거 완료
+
+---
 
 ### 2025-12-29: Phase 1 완료
 
@@ -565,4 +644,4 @@ Types Layer (types)
 
 **작성일**: 2025-12-27
 **마지막 업데이트**: 2025-12-29
-**상태**: Phase 1 완료 | Phase 2 대기 | Phase 3.2 불필요
+**상태**: Phase 1 완료 | Keyboard Shortcuts 리팩토링 완료 | Events CSS 통합 완료 | Phase 2 대기 | Phase 3.2 불필요

@@ -7,6 +7,146 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Refactored - Keyboard Shortcuts 시스템 전면 재설계 (2025-12-29)
+
+#### 개요
+22개 파일에 분산되어 있던 키보드 단축키 시스템을 5개 핵심 파일로 통합하고, 중앙 집중식 레지스트리 패턴 적용
+
+#### 구현 내용
+
+**1. 중앙 설정 파일 생성**
+- `src/builder/config/keyboardShortcuts.ts` - 51개 단축키 정의
+- `src/builder/types/keyboard.ts` - 타입 정의
+
+**2. 통합 레지스트리 확장**
+```typescript
+// src/builder/hooks/useKeyboardShortcutsRegistry.ts
+// 기존 기능 + capture phase, priority, scope-aware 필터링 추가
+registerShortcut({
+  id: 'undo',
+  key: 'z',
+  modifiers: ['meta'],
+  handler: handleUndo,
+  scope: 'global',
+  priority: 100,
+  capture: true,
+  allowInInput: false,
+});
+```
+
+**3. 통합 훅 생성**
+- `src/builder/hooks/useGlobalKeyboardShortcuts.ts` - Undo/Redo/Zoom 통합
+- `src/builder/hooks/useActiveScope.ts` - 7개 스코프 감지
+
+**4. 개발자 도구**
+- `src/builder/devtools/ShortcutDebugger.tsx` - 실시간 디버거 (개발 환경 전용)
+- `src/builder/utils/detectShortcutConflicts.ts` - 충돌 감지 유틸리티
+
+**5. 삭제된 파일**
+- `src/builder/hooks/useKeyboardShortcuts.ts` → useGlobalKeyboardShortcuts.ts로 통합
+- `src/builder/workspace/useZoomShortcuts.ts` → useGlobalKeyboardShortcuts.ts로 통합
+
+#### 성능 개선
+
+| Metric | Before | After | 변화 |
+|--------|--------|-------|------|
+| 단축키 관련 파일 | 22개 | 5개 | -77% |
+| 이벤트 리스너 | 17개 | 2개 | -88% |
+| 중앙화 비율 | 45% | 95%+ | ⬆️ |
+| 스코프 시스템 | ❌ | 7개 스코프 | ✅ |
+| 충돌 감지 | ❌ | ✅ 개발 시점 경고 | ✅ |
+
+#### 관련 문서
+- `docs/reference/components/KEYBOARD_SHORTCUTS.md` - 상세 설계 문서
+
+---
+
+### Refactored - Events Panel CSS 통합 (2025-12-29)
+
+#### 개요
+Events 패널의 3개 CSS 파일을 1개로 통합하여 중복 제거 및 유지보수성 향상
+
+#### 구현 내용
+
+**1. 병합된 파일**
+- `events-legacy.css` (272줄) - 삭제됨
+- `events.css` (1127줄) - 삭제됨
+- `EventsPanel.css` (2118줄 → 2304줄) - 필수 스타일 추가
+
+**2. 추가된 스타일 (events.css에서 이동)**
+- Form Field (`.field`, `.field-label`, `.field-input`, `.field-textarea`)
+- Checkbox/Switch (`.checkbox-field`, `.switch-label`)
+- Select (`.select-trigger`, `.select-popover`, `.select-listbox`)
+- Helper/Error (`.helper-text`, `.error-message`)
+- Action Editor 전용 스타일
+
+**3. 수정된 import**
+```typescript
+// src/builder/panels/events/index.ts
+// 제거: import './events.css';
+// 제거: import './events-legacy.css';
+// EventsPanel.tsx에서 직접 import
+```
+
+#### 결과
+- 파일 수: 3개 → 1개
+- 총 라인: 3517줄 → 2304줄 (약 35% 감소)
+
+---
+
+### Refactored - Color Utilities 통합 (2025-12-29)
+
+#### 개요
+2개 위치에 분산된 색상 유틸리티를 1개 파일로 통합
+
+#### 구현 내용
+
+**1. 통합 파일**
+- `src/utils/color/colorUtils.ts` - colord 기반 + 레거시 호환 함수
+
+**2. 추가된 레거시 호환 함수 (12개)**
+```typescript
+export function hslToRgb(hsl: ColorValueHSL): ColorValueRGB;
+export function rgbToHsl(rgb: ColorValueRGB): ColorValueHSL;
+export function hexToRgb(hex: string): ColorValueRGB | null;
+export function rgbToHex(rgb: ColorValueRGB): string;
+export function hslToHex(hsl: ColorValueHSL): string;
+export function hexToHsl(hex: string): ColorValueHSL | null;
+export function hslToString(hsl: ColorValueHSL): string;
+export function rgbToString(rgb: ColorValueRGB): string;
+export function generateDarkVariant(hsl: ColorValueHSL): ColorValueHSL;
+export function parseColorString(colorString: string): ColorValueHSL | null;
+export function adjustLightness(hsl: ColorValueHSL, amount: number): ColorValueHSL;
+export function adjustSaturationHsl(hsl: ColorValueHSL, amount: number): ColorValueHSL;
+export function getSplitComplementaryColors(hsl: ColorValueHSL): [...];
+```
+
+**3. 삭제된 파일**
+- `src/utils/theme/colorUtils.ts`
+
+**4. 수정된 import (8개 파일)**
+- `services/theme/FigmaService.ts`
+- `services/theme/ThemeGenerationService.ts`
+- `services/theme/HctThemeService.ts`
+- `services/theme/ExportService.ts`
+- `services/theme/FigmaPluginService.ts`
+- `builder/panels/themes/components/TokenEditor.tsx`
+- `utils/theme/tokenToCss.ts`
+- `utils/theme/hctUtils.ts`
+
+---
+
+### Added - Builder Hooks Barrel Export (2025-12-29)
+
+#### 개요
+35개 builder hooks에 대한 barrel export 파일 생성
+
+#### 구현 내용
+- `src/builder/hooks/index.ts` 생성
+- 카테고리별 그룹핑: Async Operations, Data Management, UI State, Keyboard & Input, Messaging, Theme, Performance, Error Handling, Utilities
+
+---
+
 ### Optimized - StylesPanel Jotai 마이그레이션 및 성능 최적화 (2025-12-21)
 
 #### 개요
