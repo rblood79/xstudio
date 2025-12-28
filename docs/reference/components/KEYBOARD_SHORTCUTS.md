@@ -284,6 +284,183 @@ if ((e.metaKey || e.ctrlKey) && e.key === 'z') {
 
 ---
 
+## Custom Components with Keyboard Handling
+
+The following components in `src/builder` implement custom keyboard handling, independent of `src/shared/components`:
+
+### Property Input Components
+
+#### 1. PropertyUnitInput
+**Location:** `src/builder/components/property/PropertyUnitInput.tsx`
+
+Custom unit input component with integrated keyboard handling for CSS values.
+
+| Shortcut | Action | Line |
+|----------|--------|------|
+| `Enter` | Confirm value and blur | 210-246 |
+| `Arrow Up` | Increment value (+1, +10 with Shift) | 256-259 |
+| `Arrow Down` | Decrement value (-1, -10 with Shift) | 260-264 |
+
+**Features:**
+- Shorthand CSS value parsing (e.g., `8px 12px` → first value `8px`)
+- Unit switching with ComboBox (px, %, rem, em, vh, vw, reset)
+- RAF throttled updates via `onDrag` prop
+- Duplicate save prevention with `justSavedViaEnterRef`
+
+**Base:** Uses `react-aria-components` (ComboBox, Input, ListBox, Popover) but implements custom keyboard logic.
+
+---
+
+#### 2. PropertyCustomId
+**Location:** `src/builder/components/property/PropertyCustomId.tsx`
+
+Custom ID input with validation and keyboard handling.
+
+| Shortcut | Action | Line |
+|----------|--------|------|
+| `Enter` | Validate and save ID | 78-103 |
+| `Escape` | Revert to original value | 104-110 |
+
+**Features:**
+- Real-time validation via `validateCustomId()`
+- Uniqueness check against all elements
+- Error state display with `aria-invalid`
+
+**Base:** Native `<input>` with `PropertyFieldset` wrapper.
+
+---
+
+#### 3. PropertyColor
+**Location:** `src/builder/components/property/PropertyColor.tsx`
+
+Color picker with keyboard support for hex input.
+
+| Shortcut | Action | Line |
+|----------|--------|------|
+| `Enter` | Confirm color value | 75-85 |
+
+**Features:**
+- Local state management during drag
+- `onChangeEnd` for final value commit
+- Key-based remounting for external value sync
+
+**Base:** Uses `react-aria-components` (ColorPicker, ColorField) + `src/shared/components` (ColorSwatch, ColorArea, ColorSlider, Popover).
+
+---
+
+#### 4. PropertyInput
+**Location:** `src/builder/components/property/PropertyInput.tsx`
+
+Generic text/number input with optional multiline support.
+
+| Shortcut | Action | Line |
+|----------|--------|------|
+| `Enter` | Confirm value (single-line only) | 76-88 |
+
+**Features:**
+- Single-line and multiline (textarea) modes
+- Auto-select on focus
+- Duplicate save prevention
+
+**Base:** Native `<input>` / `<textarea>` with `PropertyFieldset` wrapper.
+
+---
+
+### Keyboard Infrastructure Hooks
+
+#### 5. useKeyboardShortcuts
+**Location:** `src/builder/hooks/useKeyboardShortcuts.ts`
+
+Global undo/redo keyboard handler.
+
+| Shortcut | Action |
+|----------|--------|
+| `Cmd+Z` / `Ctrl+Z` | Undo |
+| `Cmd+Shift+Z` / `Ctrl+Shift+Z` | Redo |
+
+**Implementation:** Direct `document.addEventListener('keydown', ...)` with capture phase.
+
+---
+
+#### 6. useKeyboardShortcutsRegistry
+**Location:** `src/builder/hooks/useKeyboardShortcutsRegistry.ts`
+
+Centralized keyboard shortcut registry system.
+
+**Supported Modifiers:**
+- `'cmd'` - Cmd (Mac) / Ctrl (Windows)
+- `'cmdShift'` - Cmd+Shift / Ctrl+Shift
+- `'alt'` - Alt / Option
+- `'altShift'` - Alt+Shift
+- `'none'` - No modifier
+
+**Features:**
+- Automatic INPUT/TEXTAREA/contentEditable filtering
+- First-match-only execution
+- Optional `disabled` and `preventDefault` per shortcut
+
+---
+
+#### 7. useTreeKeyboardNavigation
+**Location:** `src/builder/hooks/useTreeKeyboardNavigation.ts`
+
+Tree/list keyboard navigation for hierarchical UI.
+
+| Shortcut | Action |
+|----------|--------|
+| `Arrow Down` | Next item |
+| `Arrow Up` | Previous item |
+| `Home` | First item |
+| `End` | Last item |
+| `Enter` / `Space` | Select item |
+| `Arrow Right` | Expand node |
+| `Arrow Left` | Collapse / Parent |
+
+**Usage:** Nodes panel, event handlers list, etc.
+
+---
+
+### Help UI Component
+
+#### 8. KeyboardShortcutsHelp
+**Location:** `src/builder/components/help/KeyboardShortcutsHelp.tsx`
+
+Modal help panel displaying all available shortcuts.
+
+**Features:**
+- Categorized shortcut list (General, Selection, Editing, Properties, Grouping, Alignment, Distribution)
+- Collapsible category sections
+- Platform-aware modifier display (⌘ vs Ctrl)
+- Opens via `Cmd+?` / `Ctrl+?`
+
+**Base:** Uses `src/shared/components/Button` for close button.
+
+---
+
+### Comparison: Shared vs Custom Components
+
+| Component | Shared (`src/shared`) | Custom (`src/builder`) | Keyboard Handling |
+|-----------|----------------------|------------------------|-------------------|
+| Button | ✅ `Button.tsx` | - | React Aria built-in |
+| ColorPicker | ✅ `ColorPicker.tsx` | PropertyColor | Custom `onKeyDown` |
+| TextField | ✅ `TextField.tsx` | PropertyInput | Custom `onKeyDown` |
+| NumberField | ✅ `NumberField.tsx` | PropertyUnitInput | Custom with units |
+| ComboBox | ✅ `ComboBox.tsx` | PropertyUnitInput | Custom with units |
+| Tree | ✅ `Tree.tsx` | useTreeKeyboardNavigation | Custom hook |
+| - | - | PropertyCustomId | Custom validation |
+| - | - | KeyboardShortcutsHelp | Static display |
+| - | - | useKeyboardShortcuts | Global undo/redo |
+| - | - | useKeyboardShortcutsRegistry | Central registry |
+
+**Why Custom?**
+1. **PropertyUnitInput**: Requires unit switching + shorthand CSS parsing not available in shared NumberField
+2. **PropertyCustomId**: Needs real-time validation against all elements
+3. **PropertyColor**: Needs drag state management + `onChangeEnd` pattern
+4. **PropertyInput**: Simpler than shared TextField, with optional multiline
+5. **Keyboard Hooks**: Builder-specific global shortcuts not applicable to shared components
+
+---
+
 ## Related Files
 
 ### Core Implementation
