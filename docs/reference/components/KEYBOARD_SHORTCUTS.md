@@ -78,24 +78,77 @@
 | 단축키당 코드 라인 | ~15줄 | ~5줄 | -67% |
 | 테스트 가능성 | 낮음 | 높음 | ⬆️ |
 
-### 마이그레이션 요약
+### 파일 구조 비교
 
+#### Before (현재)
 ```
-현재 상태                          목표 상태
-─────────────────────────────────────────────────────────
-useKeyboardShortcuts.ts    ──┐
-useZoomShortcuts.ts        ──┤
-useCopyPasteActions.ts     ──┼──▶  useGlobalKeyboardShortcuts.ts
-useBlockKeyboard.ts        ──┤         +
-PropertiesPanel.tsx (일부) ──┘     keyboardShortcuts.json
-─────────────────────────────────────────────────────────
+src/builder/
+├── hooks/
+│   ├── useKeyboardShortcuts.ts       # Undo/Redo (document, capture)
+│   ├── useKeyboardShortcutsRegistry.ts  # 기본 레지스트리 (제한적)
+│   └── useTreeKeyboardNavigation.ts  # Tree 네비게이션
+├── workspace/
+│   ├── useZoomShortcuts.ts           # Zoom (window, capture)
+│   └── ZoomControls.tsx              # Zoom input (onKeyDown)
+├── panels/
+│   ├── properties/
+│   │   └── PropertiesPanel.tsx       # Tab navigation (onKeyDown)
+│   └── events/hooks/
+│       ├── useCopyPasteActions.ts    # Copy/Paste (document)
+│       └── useBlockKeyboard.ts       # Arrow/Escape (document)
+└── components/
+    └── property/
+        ├── PropertyUnitInput.tsx     # Value editing (onKeyDown)
+        ├── PropertyCustomId.tsx      # ID validation (onKeyDown)
+        └── PropertyInput.tsx         # Text input (onKeyDown)
 
-유지 (컴포넌트 로컬):
-• PropertyUnitInput     - 값 조절 (Arrow)
-• PropertyCustomId      - 유효성 검사 (Enter/Escape)
-• TextEditOverlay       - 텍스트 편집
-• AIPanel              - 메시지 전송
+📊 문제점: 22개 파일, 3가지 패턴, 45% 중앙화
 ```
+
+#### After (목표)
+```
+src/builder/
+├── config/
+│   └── keyboardShortcuts.ts          # 📦 67개 단축키 정의 (신규)
+├── types/
+│   └── keyboard.ts                   # 📦 타입 정의 (신규)
+├── hooks/
+│   ├── useKeyboardShortcutsRegistry.ts  # ✨ 확장된 레지스트리
+│   ├── useGlobalKeyboardShortcuts.ts    # 📦 통합 훅 (신규)
+│   ├── useActiveScope.ts             # 📦 스코프 감지 (신규)
+│   └── useTreeKeyboardNavigation.ts  # 유지 (Tree 전용)
+├── devtools/
+│   └── ShortcutDebugger.tsx          # 📦 디버거 (신규, dev only)
+├── components/
+│   ├── help/
+│   │   └── KeyboardHelpPanel.tsx     # ✨ 개선된 도움말
+│   └── property/
+│       ├── PropertyUnitInput.tsx     # 유지 (컴포넌트 로컬)
+│       ├── PropertyCustomId.tsx      # 유지 (컴포넌트 로컬)
+│       └── PropertyInput.tsx         # 유지 (컴포넌트 로컬)
+└── Builder.tsx                       # ✨ useGlobalKeyboardShortcuts 호출
+
+📊 개선: 5개 핵심 파일, 1가지 패턴, 100% 중앙화
+```
+
+### 삭제/이동 대상
+
+| 현재 파일 | 액션 | 대상 |
+|----------|------|------|
+| `useKeyboardShortcuts.ts` | 🗑️ 삭제 | `useGlobalKeyboardShortcuts.ts`로 통합 |
+| `useZoomShortcuts.ts` | 🗑️ 삭제 | `useGlobalKeyboardShortcuts.ts`로 통합 |
+| `useCopyPasteActions.ts` (키보드) | 🔀 이동 | `useGlobalKeyboardShortcuts.ts`로 통합 |
+| `useBlockKeyboard.ts` | 🔀 이동 | `useGlobalKeyboardShortcuts.ts`로 통합 |
+| `PropertiesPanel.tsx` (Tab) | 🔀 이동 | `useGlobalKeyboardShortcuts.ts`로 통합 |
+
+### 유지되는 컴포넌트 로컬 단축키
+
+| 컴포넌트 | 단축키 | 이유 |
+|----------|--------|------|
+| `PropertyUnitInput` | Arrow Up/Down | 값 조절이 컴포넌트 상태에 의존 |
+| `PropertyCustomId` | Enter/Escape | 유효성 검사 로직과 긴밀히 연결 |
+| `TextEditOverlay` | 텍스트 편집 | 콘텐츠 편집 모드 전용 |
+| `AIPanel` | Enter (제출) | 폼 제출 로직과 직접 연결 |
 
 ---
 
