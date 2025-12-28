@@ -25,7 +25,7 @@ import {
   DynamicScheme,
 } from '@material/material-color-utilities';
 import type { ColorValueHSL } from '../../types/theme';
-import { hexToHsl, hslToHex } from './colorUtils';
+import { hexToHsl, hslToHex } from '../color/colorUtils';
 
 // ============================================================================
 // Types

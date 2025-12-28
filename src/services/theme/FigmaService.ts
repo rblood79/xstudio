@@ -17,7 +17,7 @@ import type {
 } from '../../types/theme/figma.types';
 import type { DesignToken, ColorValueRGB, ColorValueHSL } from '../../types/theme';
 import { TokenService } from './TokenService';
-import { rgbToHsl } from '../../utils/theme/colorUtils';
+import { rgbToHsl } from '../../utils/color/colorUtils';
 
 const FIGMA_API_BASE = 'https://api.figma.com/v1';
 

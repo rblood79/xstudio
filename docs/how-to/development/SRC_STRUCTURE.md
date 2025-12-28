@@ -7,7 +7,7 @@
 
 | Phase | 내용                      | 예상 기간 | 상태       |
 | ----- | ------------------------- | --------- | ---------- |
-| 1     | 즉시 개선 (낮은 위험도)   | 1-2일     | 🔄 진행 중 |
+| 1     | 즉시 개선 (낮은 위험도)   | 1-2일     | ✅ 완료    |
 | 2     | 계획적 개선 (중간 위험도) | 1-2주     | 🔲 대기    |
 | 3     | 장기 개선 (높은 위험도)   | 1개월+    | 🔲 대기    |
 
@@ -15,53 +15,40 @@
 
 # Phase 1: 즉시 개선 (낮은 위험도)
 
-## 1.1 색상 유틸리티 통합
+## 1.1 색상 유틸리티 통합 ✅ 완료
 
 ### 현재 상태
 
 ```
-utils/color/colorUtils.ts    ← 최신 (colord 라이브러리 기반)
-utils/theme/colorUtils.ts    ← 구식 (수동 구현, 중복)
+utils/color/colorUtils.ts    ← 통합 완료 (colord + 레거시 호환 함수)
+utils/theme/colorUtils.ts    ← 삭제됨
 ```
 
-### 문제점
+### 완료 내용
 
-1. **동일 기능 중복 구현**
+1. **레거시 호환 함수 추가** (`utils/color/colorUtils.ts`)
+   - `hslToRgb`, `rgbToHsl`, `hexToRgb`, `rgbToHex`
+   - `hslToHex`, `hexToHsl`, `hslToString`
+   - `generateDarkVariant`, `parseColorString`
+   - `adjustLightness`, `adjustSaturationHsl`
+   - `getSplitComplementaryColors`
 
-   - `hslToRgb`, `rgbToHsl`, `hexToRgb` 등 양쪽에 존재
-   - `utils/theme/`는 수동 알고리즘, `utils/color/`는 colord 사용
+2. **Import 경로 변경** (6개 파일)
+   - `services/theme/FigmaService.ts`
+   - `services/theme/ThemeGenerationService.ts`
+   - `services/theme/HctThemeService.ts`
+   - `services/theme/ExportService.ts`
+   - `services/theme/FigmaPluginService.ts`
+   - `builder/panels/themes/components/TokenEditor.tsx`
 
-2. **유지보수 부담**
-   - 버그 수정 시 두 곳 모두 수정 필요
-   - 어떤 것을 사용해야 하는지 혼란
-
-### 개선 방안
-
-```
-✅ utils/color/colorUtils.ts  → 단일 소스로 유지
-❌ utils/theme/colorUtils.ts  → 삭제 (마이그레이션 후)
-```
-
-### 마이그레이션 단계
-
-- [ ] `utils/theme/colorUtils.ts` 사용처 검색
-- [ ] 사용 파일들의 import 경로를 `utils/color/colorUtils`로 변경
-- [ ] `utils/theme/colorUtils.ts` 삭제
-- [ ] 빌드 검증
-
-### 영향 범위
-
-| 파일                        | 변경 내용        |
-| --------------------------- | ---------------- |
-| `utils/theme/tokenToCss.ts` | import 경로 변경 |
-| `utils/theme/hctUtils.ts`   | import 경로 변경 |
-| 기타 2-3개                  | import 경로 변경 |
+3. **중복 파일 삭제**
+   - `utils/theme/colorUtils.ts` 삭제 완료
 
 ### 검증 체크리스트
 
-- [ ] TypeScript 빌드 성공
-- [ ] 색상 변환 기능 정상 동작
-- [ ] 테마 시스템 정상 동작
+- [x] TypeScript 빌드 성공
+- [x] 색상 변환 기능 정상 동작
+- [x] 테마 시스템 정상 동작
 
 ---
 
@@ -124,7 +111,7 @@ export { useSelectionStore } from "./selection";
 
 ---
 
-## 1.3 builder/hooks/index.ts 생성
+## 1.3 builder/hooks/index.ts 생성 ✅ 완료
 
 ### 현재 상태
 
@@ -134,45 +121,33 @@ builder/hooks/            (35개 파일)
 ├── useSelection.ts
 ├── useClipboard.ts
 ├── ...
-└── (index.ts 없음)       ❌
+└── index.ts              ✅ 생성됨
 ```
 
-### 문제점
+### 완료 내용
 
-- 1.2와 동일 (모듈 검색, 자동완성, import 경로)
-
-### 개선 방안
-
-```typescript
-// builder/hooks/index.ts (신규 생성)
-export { usePageManager } from "./usePageManager";
-export { useSelection } from "./useSelection";
-export { useClipboard } from "./useClipboard";
-export { useToast } from "./useToast";
-// ... 기타 hooks exports
-```
+- 35개 hook에 대한 barrel export 생성
+- 카테고리별 그룹핑 (Async, Data, UI State, Keyboard 등)
 
 ### 마이그레이션 단계
 
-- [ ] `builder/hooks/` 내 모든 파일 목록 확인
-- [ ] 각 파일의 주요 export 확인
-- [ ] `builder/hooks/index.ts` 생성
-- [ ] 빌드 검증
-
-### 영향 범위
-
-- 신규 파일 생성 (기존 코드 변경 없음)
+- [x] `builder/hooks/` 내 모든 파일 목록 확인
+- [x] 각 파일의 주요 export 확인
+- [x] `builder/hooks/index.ts` 생성
+- [x] 빌드 검증
 
 ### 검증 체크리스트
 
-- [ ] TypeScript 빌드 성공
-- [ ] 기존 import 경로 정상 동작
+- [x] TypeScript 빌드 성공
+- [x] 기존 import 경로 정상 동작
 
 ---
 
-## 1.4 작은 폴더 통합 (1-2개 파일)
+## 1.4 작은 폴더 통합 (1-2개 파일) ❌ 취소
 
-### 현재 상태
+> **취소 사유**: 현재 폴더 구조 유지 결정. 향후 각 패널에 추가 파일이 생길 가능성 고려.
+
+### 원래 계획 (참고용)
 
 ```
 builder/panels/
@@ -180,35 +155,19 @@ builder/panels/
 │   └── AIPanel.tsx
 ├── history/              (1개 파일)
 │   └── HistoryPanel.tsx
-├── settings/             (1개 파일)
-│   └── SettingsPanel.tsx
-├── components/           (1개 파일)
-│   └── ComponentsPanel.tsx
-└── ...
+...
 ```
 
-### 문제점
-
-1. **불필요한 폴더 깊이**: 파일 1개를 위한 별도 폴더
-2. **탐색 복잡성**: 폴더 구조가 과도하게 깊음
-3. **일관성 부재**: 일부는 폴더, 일부는 직접 파일
-
-### 개선 방안
-
-**옵션 A: 단순 패널들을 직접 배치**
+~~**옵션 A: 단순 패널들을 직접 배치**~~
 
 ```
 builder/panels/
 ├── AIPanel.tsx           (폴더 없이 직접)
 ├── HistoryPanel.tsx      (폴더 없이 직접)
-├── SettingsPanel.tsx     (폴더 없이 직접)
-├── ComponentsPanel.tsx   (폴더 없이 직접)
-├── events/               (복잡한 것은 폴더 유지)
-├── styles/               (복잡한 것은 폴더 유지)
-└── ...
+...
 ```
 
-**옵션 B: 현재 구조 유지 (index.ts만 추가)**
+~~**옵션 B: 현재 구조 유지 (index.ts만 추가)**~~
 
 ```
 builder/panels/
@@ -218,37 +177,17 @@ builder/panels/
 └── ...
 ```
 
-### 권장: 옵션 A
+~~### 권장: 옵션 A~~
 
-단순 패널(파일 1-2개)은 폴더 없이 직접 배치
+~~단순 패널(파일 1-2개)은 폴더 없이 직접 배치~~
 
-### 마이그레이션 단계
+### ~~마이그레이션 단계~~ (취소됨)
 
-- [ ] 대상 폴더 목록 확정
-- [ ] 파일 이동 (폴더 → 상위)
-- [ ] import 경로 업데이트
-- [ ] 빈 폴더 삭제
-- [ ] 빌드 검증
-
-### 대상 폴더
-
-| 폴더                 | 파일 수 | 조치        |
-| -------------------- | ------- | ----------- |
-| `panels/ai/`         | 1개     | 상위로 이동 |
-| `panels/history/`    | 1개     | 상위로 이동 |
-| `panels/settings/`   | 1개     | 상위로 이동 |
-| `panels/components/` | 1개     | 상위로 이동 |
-
-### 영향 범위
-
-- 4개 파일 이동
-- import 경로 변경: ~10개 파일
-
-### 검증 체크리스트
-
-- [ ] TypeScript 빌드 성공
-- [ ] 패널 정상 렌더링
-- [ ] panelConfigs.ts 정상 동작
+- ~~대상 폴더 목록 확정~~
+- ~~파일 이동 (폴더 → 상위)~~
+- ~~import 경로 업데이트~~
+- ~~빈 폴더 삭제~~
+- ~~빌드 검증~~
 
 ---
 
@@ -579,5 +518,5 @@ Types Layer (types)
 ---
 
 **작성일**: 2025-12-27
-**마지막 업데이트**: 2025-12-28
-**상태**: Phase 1 진행 중 (1.2 완료)
+**마지막 업데이트**: 2025-12-29
+**상태**: Phase 1 완료 (1.1 ✅, 1.2 ✅, 1.3 ✅, 1.4 ❌취소)

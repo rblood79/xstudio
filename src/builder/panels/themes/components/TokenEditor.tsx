@@ -8,7 +8,7 @@ import { useTokens, useTokenStats } from '../../../../hooks/theme';
 import type { DesignToken, TokenType, ColorValue } from '../../../../types/theme';
 import { isColorValueHSL } from '../../../../types/theme';
 import { parseTokenName } from '../../../../utils/theme/tokenParser';
-import { generateDarkVariant } from '../../../../utils/theme/colorUtils';
+import { generateDarkVariant } from '../../../../utils/color/colorUtils';
 import '../styles/TokenEditor.css';
 
 /**

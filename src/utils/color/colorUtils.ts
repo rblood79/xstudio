@@ -24,6 +24,7 @@ import hwbPlugin from 'colord/plugins/hwb';
 import labPlugin from 'colord/plugins/lab';
 import mixPlugin from 'colord/plugins/mix';
 import a11yPlugin from 'colord/plugins/a11y';
+import type { ColorValueHSL, ColorValueRGB } from '../../types/theme';
 
 // CSS Color Level 4 지원 및 색상 조작/접근성을 위한 플러그인 확장
 extend([namesPlugin, hwbPlugin, labPlugin, mixPlugin, a11yPlugin]);
@@ -363,6 +364,136 @@ export function pixiHexToCssColor(pixiColor: number): string {
   const g = (pixiColor >> 8) & 0xff;
   const b = pixiColor & 0xff;
   return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+}
+
+// ============================================
+// Legacy Compatibility Functions
+// ============================================
+// utils/theme/colorUtils.ts와 호환되는 함수들
+// ColorValueHSL, ColorValueRGB 타입 기반
+
+/**
+ * HSL → RGB 변환 (레거시 호환)
+ */
+export function hslToRgb(hsl: ColorValueHSL): ColorValueRGB {
+  const color = colord({ h: hsl.h, s: hsl.s, l: hsl.l, a: hsl.a });
+  const rgb = color.toRgb();
+  return { r: rgb.r, g: rgb.g, b: rgb.b, a: rgb.a };
+}
+
+/**
+ * RGB → HSL 변환 (레거시 호환)
+ */
+export function rgbToHsl(rgb: ColorValueRGB): ColorValueHSL {
+  const color = colord({ r: rgb.r, g: rgb.g, b: rgb.b, a: rgb.a });
+  const hsl = color.toHsl();
+  return { h: Math.round(hsl.h), s: Math.round(hsl.s), l: Math.round(hsl.l), a: hsl.a };
+}
+
+/**
+ * HEX → RGB 변환 (레거시 호환)
+ */
+export function hexToRgb(hex: string): ColorValueRGB | null {
+  const parsed = parseColor(hex);
+  if (!parsed) return null;
+  const { r, g, b, a } = parsed.rgb;
+  return { r, g, b, a };
+}
+
+/**
+ * RGB → HEX 변환 (레거시 호환)
+ */
+export function rgbToHex(rgb: ColorValueRGB): string {
+  const color = colord({ r: rgb.r, g: rgb.g, b: rgb.b, a: rgb.a });
+  return color.toHex().slice(0, 7); // #RRGGBB
+}
+
+/**
+ * HSL → HEX 변환 (레거시 호환)
+ */
+export function hslToHex(hsl: ColorValueHSL): string {
+  const color = colord({ h: hsl.h, s: hsl.s, l: hsl.l, a: hsl.a });
+  return color.toHex().slice(0, 7); // #RRGGBB
+}
+
+/**
+ * HEX → HSL 변환 (레거시 호환)
+ */
+export function hexToHsl(hex: string): ColorValueHSL | null {
+  const parsed = parseColor(hex);
+  if (!parsed) return null;
+  const { h, s, l, a } = parsed.hsl;
+  return { h: Math.round(h), s: Math.round(s), l: Math.round(l), a };
+}
+
+/**
+ * HSL → CSS 문자열 (레거시 호환)
+ */
+export function hslToString(hsl: ColorValueHSL): string {
+  return `hsla(${hsl.h}, ${hsl.s}%, ${hsl.l}%, ${hsl.a})`;
+}
+
+/**
+ * RGB → CSS 문자열 (레거시 호환)
+ */
+export function rgbToString(rgb: ColorValueRGB): string {
+  return `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${rgb.a})`;
+}
+
+/**
+ * 다크모드 색상 자동 생성 (레거시 호환)
+ * - Lightness 반전 (100 - L)
+ * - 채도 15% 감소
+ */
+export function generateDarkVariant(hsl: ColorValueHSL): ColorValueHSL {
+  return {
+    h: hsl.h,
+    s: Math.max(0, hsl.s - 15),
+    l: 100 - hsl.l,
+    a: hsl.a,
+  };
+}
+
+/**
+ * 색상 문자열 파싱 (레거시 호환)
+ */
+export function parseColorString(colorString: string): ColorValueHSL | null {
+  const parsed = parseColor(colorString);
+  if (!parsed) return null;
+  const { h, s, l, a } = parsed.hsl;
+  return { h: Math.round(h), s: Math.round(s), l: Math.round(l), a };
+}
+
+/**
+ * 색상 밝기 조정 (레거시 호환)
+ */
+export function adjustLightness(hsl: ColorValueHSL, amount: number): ColorValueHSL {
+  return {
+    ...hsl,
+    l: Math.max(0, Math.min(100, hsl.l + amount)),
+  };
+}
+
+/**
+ * 색상 채도 조정 (레거시 호환) - HSL 타입용
+ */
+export function adjustSaturationHsl(hsl: ColorValueHSL, amount: number): ColorValueHSL {
+  return {
+    ...hsl,
+    s: Math.max(0, Math.min(100, hsl.s + amount)),
+  };
+}
+
+/**
+ * 분할 보색 생성 (레거시 호환)
+ */
+export function getSplitComplementaryColors(hsl: ColorValueHSL): [ColorValueHSL, ColorValueHSL, ColorValueHSL] {
+  const complementary = (hsl.h + 180) % 360;
+  return [
+    hsl,
+    { ...hsl, h: (complementary - 30 + 360) % 360 },
+    { ...hsl, h: (complementary + 30) % 360 },
+  ];
 }
 
 // ============================================

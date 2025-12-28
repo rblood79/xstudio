@@ -4,7 +4,7 @@
  */
 
 import type { DesignToken, ColorValueHSL } from '../../types/theme';
-import { hslToString, hslToHex } from '../../utils/theme/colorUtils';
+import { hslToString, hslToHex } from '../../utils/color/colorUtils';
 import { isShadowValue } from '../../types/theme';
 
 export type ExportFormat = 'css' | 'tailwind' | 'scss' | 'json';

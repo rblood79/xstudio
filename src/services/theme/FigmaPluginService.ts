@@ -4,7 +4,7 @@
  */
 
 import type { DesignToken, ColorValueHSL } from "../../types/theme";
-import { hslToRgb } from "../../utils/theme/colorUtils";
+import { hslToRgb } from "../../utils/color/colorUtils";
 
 export interface FigmaPluginExportOptions {
   /**

@@ -3,7 +3,7 @@
  * 타입별 디자인 토큰을 CSS 변수로 변환
  */
 
-import { hslToString, rgbToString } from './colorUtils';
+import { hslToString, rgbToString } from '../color/colorUtils';
 import type { DesignToken } from '../../types/theme';
 import { isColorValueHSL, isColorValueRGB, isTypographyValue, isShadowValue, isBorderValue } from '../../types/theme';
 

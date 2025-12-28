@@ -13,7 +13,7 @@ import {
   type MaterialScheme,
   type TonalPaletteSet,
 } from '../../utils/theme/hctUtils';
-import { hexToHsl } from '../../utils/theme/colorUtils';
+import { hexToHsl } from '../../utils/color/colorUtils';
 import { ThemeService } from './ThemeService';
 import { TokenService } from './TokenService';
 
