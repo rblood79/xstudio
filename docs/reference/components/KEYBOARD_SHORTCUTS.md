@@ -13,6 +13,135 @@ This document provides a comprehensive audit of all keyboard shortcuts implement
 
 ---
 
+## Current Issues: Decentralized Shortcut Management
+
+### Problem Overview
+
+Despite having a centralized registry (`useKeyboardShortcutsRegistry`), keyboard shortcuts are scattered across **15+ files** with **3 different implementation patterns**:
+
+### Pattern Distribution
+
+| Pattern | Files | Count | Centralized? |
+|---------|-------|-------|--------------|
+| Direct `addEventListener` | 8 files | ~20 shortcuts | ❌ No |
+| React `onKeyDown` | 9 files | ~15 shortcuts | ❌ No |
+| `useKeyboardShortcutsRegistry` | 2 files | ~30 shortcuts | ✅ Yes |
+
+### Direct `addEventListener` Implementations (Not Centralized)
+
+| File | Shortcut | Target |
+|------|----------|--------|
+| `hooks/useKeyboardShortcuts.ts` | Undo/Redo | `document` (capture) |
+| `workspace/useZoomShortcuts.ts` | Zoom +/-/0/1/2 | `window` (capture) |
+| `workspace/canvas/BuilderCanvas.tsx` | Shift (lasso) | `window` |
+| `panels/properties/PropertiesPanel.tsx` | Tab navigation | `window` |
+| `overlay/hooks/useBorderRadiusDrag.ts` | Escape | `document` |
+| `panels/events/hooks/useCopyPasteActions.ts` | Copy/Paste/Delete | `document` |
+| `panels/events/hooks/useBlockKeyboard.ts` | Arrow/Escape | `document` |
+| `panels/events/editors/VariableBindingEditor.tsx` | Escape/Brace | `document` |
+
+### React `onKeyDown` Implementations (Component-Local)
+
+| File | Purpose |
+|------|---------|
+| `components/property/PropertyUnitInput.tsx` | Enter, Arrow Up/Down |
+| `components/property/PropertyCustomId.tsx` | Enter, Escape |
+| `components/property/PropertyColor.tsx` | Enter |
+| `components/property/PropertyInput.tsx` | Enter |
+| `workspace/ZoomControls.tsx` | Enter, Escape, Arrow |
+| `workspace/overlay/TextEditOverlay.tsx` | Enter, Escape |
+| `layout/BottomPanelSlot.tsx` | Arrow Up/Down |
+| `panels/properties/editors/SlotEditor.tsx` | Enter, Space |
+| `panels/ai/AIPanel.tsx` | Enter |
+
+### Using `useKeyboardShortcutsRegistry` (Centralized)
+
+| File | Shortcuts |
+|------|-----------|
+| `panels/properties/PropertiesPanel.tsx` | Copy, Paste, Duplicate, Select All, Group, Align, Distribute, etc. |
+| `layout/BottomPanelSlot.tsx` | Escape (close panel) |
+
+---
+
+## Refactoring Proposal
+
+### Goal
+Consolidate all global keyboard shortcuts into `useKeyboardShortcutsRegistry` for:
+- Single source of truth
+- Conflict detection
+- Easy debugging (`logShortcuts()`)
+- Consistent behavior
+
+### Phase 1: Migrate Global Shortcuts
+
+**Move to registry:**
+```typescript
+// Before (useKeyboardShortcuts.ts)
+document.addEventListener('keydown', handleKeyDown, { capture: true });
+
+// After (use registry)
+useKeyboardShortcutsRegistry([
+  { key: 'z', modifier: 'cmd', handler: handleUndo, description: 'Undo' },
+  { key: 'z', modifier: 'cmdShift', handler: handleRedo, description: 'Redo' },
+]);
+```
+
+**Migration candidates:**
+1. `useKeyboardShortcuts.ts` → Registry (Undo/Redo)
+2. `useZoomShortcuts.ts` → Registry (Zoom controls)
+3. `useCopyPasteActions.ts` → Registry (Event actions)
+4. `useBlockKeyboard.ts` → Registry (Event blocks)
+5. `BuilderCanvas.tsx` → Keep (Shift is modifier state, not shortcut)
+
+### Phase 2: Create Global Shortcuts Config
+
+```typescript
+// src/builder/config/keyboardShortcuts.ts
+export const GLOBAL_SHORTCUTS = {
+  // General
+  undo: { key: 'z', modifier: 'cmd' },
+  redo: { key: 'z', modifier: 'cmdShift' },
+
+  // Zoom
+  zoomIn: { key: '=', modifier: 'cmd' },
+  zoomOut: { key: '-', modifier: 'cmd' },
+  zoomFit: { key: '0', modifier: 'cmd' },
+  zoom100: { key: '1', modifier: 'cmd' },
+  zoom200: { key: '2', modifier: 'cmd' },
+
+  // Edit
+  copy: { key: 'c', modifier: 'cmd' },
+  paste: { key: 'v', modifier: 'cmd' },
+  duplicate: { key: 'd', modifier: 'cmd' },
+  // ... etc
+} as const;
+```
+
+### Phase 3: Enhance Registry
+
+```typescript
+// Add capture phase support
+useKeyboardShortcutsRegistry(shortcuts, deps, {
+  eventType: 'keydown',
+  capture: true,  // NEW: for system-level shortcuts
+  priority: 1,    // NEW: for conflict resolution
+});
+```
+
+### Keep as Component-Local (No Migration Needed)
+
+These should remain as React `onKeyDown`:
+- `PropertyUnitInput` - Arrow keys for value adjustment
+- `PropertyCustomId` - Enter/Escape for validation
+- `PropertyColor` - Enter for color confirm
+- `PropertyInput` - Enter for submit
+- `TextEditOverlay` - Enter/Escape for text editing
+- `AIPanel` - Enter for send message
+
+**Reason:** These are context-specific to input fields and should not be global.
+
+---
+
 ## 1. Core Shortcuts (Undo/Redo)
 
 | Shortcut | Action | File Location |
