@@ -15,18 +15,17 @@
 
 ### Proposed Solution
 - Enhanced registry with **capture phase**, **priority system**, **scope-aware** filtering
-- **8 implementation phases** from basic enhancement to full customization
+- **6 implementation phases** for core functionality
 - Industry-aligned design inspired by **Figma** and **Photoshop Web**
 
 ### Key Metrics
 
-| Metric | Current | After Phase 3 | After Phase 7 |
+| Metric | Current | After Phase 3 | After Phase 5 |
 |--------|---------|---------------|---------------|
 | Centralized Shortcuts | 45% | 95% | 100% |
 | Conflict Detection | ❌ | ✅ | ✅ |
 | Context-Aware | ❌ | ✅ | ✅ |
-| International KB | ❌ | ❌ | ✅ |
-| User Customization | ❌ | ❌ | ✅ |
+| DevTools Debugger | ❌ | ❌ | ✅ |
 
 ---
 
@@ -52,8 +51,6 @@
 | **스코프 시스템** | ❌ 없음 | ✅ 7개 스코프 정의 |
 | **우선순위** | ❌ 등록 순서 의존 | ✅ `priority` 기반 처리 |
 | **충돌 감지** | ❌ 런타임 오류 발생 | ✅ 개발 시점 경고 |
-| **국제 키보드** | ❌ US 레이아웃 고정 | ✅ Keyboard API 레이아웃 감지 |
-| **사용자 커스터마이징** | ❌ 불가능 | ✅ 리맵, 프로필, 워크스페이스 |
 
 ### 개발자 경험 (DX) 비교
 
@@ -61,19 +58,16 @@
 |------|--------------|-----------------|
 | **단축키 추가** | 파일마다 다른 방식 | 통일된 인터페이스 |
 | **디버깅** | console.log 수동 삽입 | DevTools 내장 디버거 |
-| **충돌 해결** | 수동 테스트 필요 | 자동 충돌 리포트 |
+| **충돌 해결** | 수동 테스트 필요 | 자동 충돌 경고 (개발 시점) |
 | **문서화** | 별도 관리 필요 | JSON에서 자동 생성 |
-| **i18n** | 지원 안함 | `i18n` 속성 내장 |
 
 ### 사용자 경험 (UX) 비교
 
 | 항목 | 현재 (Before) | 구현 후 (After) |
 |------|--------------|-----------------|
-| **도움말 패널** | 기본 목록 | 검색 + 카테고리 탭 + 진행률 |
+| **도움말 패널** | 기본 목록 | 검색 + 카테고리 탭 |
 | **입력 필드 충돌** | Cmd+Z 작동 안함 | 컨텍스트 인식 동작 |
 | **동일 키 충돌** | 예측 불가 동작 | 스코프별 분리 |
-| **국제 키보드** | 레이아웃 무시 | 자동 레이아웃 감지 |
-| **개인화** | 불가능 | 완전한 커스터마이징 |
 
 ### 코드 복잡도 비교
 
@@ -112,7 +106,7 @@ PropertiesPanel.tsx (일부) ──┘     keyboardShortcuts.json
 2. [Industry Benchmarks](#part-2-industry-benchmarks)
 3. [Proposed Architecture](#part-3-proposed-architecture)
 4. [Implementation Roadmap](#part-4-implementation-roadmap)
-5. [리뷰 반영 개선사항](#part-5-리뷰-반영-개선사항)
+5. [테스트 전략](#part-5-테스트-전략)
 6. [Appendix A: Shortcuts Reference](#appendix-a-shortcuts-reference)
 7. [Appendix B: Custom Components](#appendix-b-custom-components)
 
@@ -365,16 +359,55 @@ export function detectConflicts(shortcuts: KeyboardShortcut[]): ConflictInfo[] {
 | **2** | JSON Config | 🟡 High | 2 days |
 | **3** | Single Registration Point | 🟡 High | 2 days |
 | **4** | Category & Scope System | 🟡 High | 3 days |
-| **5** | Conflict Detection & DevTools | 🟢 Medium | 2 days |
-| **6** | International Keyboard | 🟢 Medium | 3 days |
-| **7** | User Customization | 🔵 Low | 5 days |
+| **5** | DevTools & Help Panel | 🟢 Medium | 2 days |
+
+**총 예상 소요:** 14일
 
 ---
 
-### Phase 0: Enhance Registry
+### Phase 0: Enhance Registry (2일)
 
-**Goal:** Add missing capabilities to `useKeyboardShortcutsRegistry`
+**목표:** `useKeyboardShortcutsRegistry` 훅에 누락된 기능 추가
 
+#### 0.1 타입 정의 확장
+```typescript
+// src/builder/hooks/useKeyboardShortcutsRegistry.ts
+
+export type KeyboardModifier =
+  | 'cmd' | 'cmdShift' | 'cmdAlt'
+  | 'alt' | 'altShift'
+  | 'shift'           // 신규
+  | 'none';
+
+export interface KeyboardShortcut {
+  key: string;
+  code?: string;      // 물리 키 코드 (선택)
+  modifier: KeyboardModifier;
+  handler: () => void;
+  preventDefault?: boolean;
+  stopPropagation?: boolean;    // 신규
+  allowInInput?: boolean;       // 신규
+  priority?: number;            // 신규 (높을수록 먼저 처리)
+}
+
+export interface RegistryOptions {
+  eventType?: 'keydown' | 'keyup';
+  capture?: boolean;            // 신규
+  target?: 'window' | 'document';
+}
+```
+
+#### 0.2 구현 세부사항
+
+| 작업 | 설명 | 파일 |
+|------|------|------|
+| `capture` 옵션 | 이벤트 캡처 단계 처리 | `useKeyboardShortcutsRegistry.ts` |
+| `allowInInput` | 입력 필드 내 단축키 허용 여부 | `useKeyboardShortcutsRegistry.ts` |
+| `stopPropagation` | 이벤트 전파 중단 | `useKeyboardShortcutsRegistry.ts` |
+| `priority` | 우선순위 기반 정렬 처리 | `useKeyboardShortcutsRegistry.ts` |
+| `shift` modifier | Shift+Tab 등 지원 | `matchesShortcut.ts` |
+
+#### 0.3 구현 코드
 ```typescript
 export function useKeyboardShortcutsRegistry(
   shortcuts: KeyboardShortcut[],
@@ -391,10 +424,13 @@ export function useKeyboardShortcutsRegistry(
         targetEl.tagName === 'TEXTAREA' ||
         targetEl.isContentEditable;
 
-      // Sort by priority (descending)
-      const sorted = [...shortcuts].sort((a, b) => (b.priority || 0) - (a.priority || 0));
+      // 우선순위 기준 정렬 (내림차순)
+      const sorted = [...shortcuts].sort((a, b) =>
+        (b.priority || 0) - (a.priority || 0)
+      );
 
       for (const shortcut of sorted) {
+        // 입력 필드에서 allowInInput이 false면 스킵
         if (isInputField && !shortcut.allowInInput) continue;
 
         if (matchesShortcut(event, shortcut)) {
@@ -413,129 +449,310 @@ export function useKeyboardShortcutsRegistry(
 }
 ```
 
-**접근성(ARIA) 포커스 관리:**
+#### 0.4 테스트 케이스
 ```typescript
-// 단축키가 있는 버튼/메뉴에 aria-keyshortcuts 속성 자동 부여
-export function useAriaKeyboardHint(shortcut: KeyboardShortcut) {
-  const ariaLabel = useMemo(() => {
-    const modifiers = [];
-    if (shortcut.modifier.includes('cmd')) modifiers.push('⌘');
-    if (shortcut.modifier.includes('Shift')) modifiers.push('⇧');
-    if (shortcut.modifier.includes('Alt')) modifiers.push('⌥');
-    return `${modifiers.join('')}${shortcut.key.toUpperCase()}`;
-  }, [shortcut]);
-
-  return {
-    'aria-keyshortcuts': ariaLabel,
-    'aria-label': `${shortcut.description} (${ariaLabel})`,
-  };
-}
+// tests/unit/useKeyboardShortcutsRegistry.test.ts
+describe('useKeyboardShortcutsRegistry', () => {
+  it('capture: true일 때 캡처 단계에서 이벤트 처리', () => {});
+  it('allowInInput: true일 때 입력 필드에서도 동작', () => {});
+  it('priority 높은 단축키가 먼저 실행됨', () => {});
+  it('stopPropagation: true일 때 이벤트 전파 중단', () => {});
+  it('shift modifier 정상 동작', () => {});
+});
 ```
 
 ---
 
-### Phase 1: Migrate Global Shortcuts
+### Phase 1: Migrate Global Shortcuts (3일)
 
-**Files to Migrate:**
+**목표:** 분산된 전역 단축키를 레지스트리로 통합
 
-| File | Shortcuts | Migration Notes |
-|------|-----------|-----------------|
-| `useKeyboardShortcuts.ts` | Undo/Redo | `allowInInput: true`, `capture: true` |
-| `useZoomShortcuts.ts` | Zoom +/-/0/1/2 | `capture: true` |
-| `useCopyPasteActions.ts` | Copy/Paste/Delete | `scope: 'panel:events'` |
-| `useBlockKeyboard.ts` | Arrow/Escape | `scope: 'panel:events'` |
-| `PropertiesPanel.tsx` (Tab) | Tab navigation | `modifier: 'shift'` |
+#### 1.1 마이그레이션 대상
 
-**Keep as Component-Local:**
-- `PropertyUnitInput` - Arrow keys for value adjustment
-- `PropertyCustomId` - Enter/Escape for validation
-- `TextEditOverlay` - Text editing shortcuts
-- `AIPanel` - Message submission
+| 파일 | 단축키 | 옵션 | 우선순위 |
+|------|--------|------|----------|
+| `useKeyboardShortcuts.ts` | Cmd+Z, Cmd+Shift+Z | `allowInInput: true`, `capture: true` | 100 |
+| `useZoomShortcuts.ts` | Cmd+=/-/0/1/2 | `capture: true` | 90 |
+| `useCopyPasteActions.ts` | Cmd+C/V, Delete | `scope: 'panel:events'` | 50 |
+| `useBlockKeyboard.ts` | Arrow, Escape | `scope: 'panel:events'` | 50 |
+| `PropertiesPanel.tsx` | Tab, Shift+Tab | `modifier: 'shift'` | 50 |
 
-**E2E 테스트 (Playwright/Vitest):**
+#### 1.2 마이그레이션 단계
+
+**Day 1: 시스템 단축키**
+```typescript
+// useKeyboardShortcuts.ts → useGlobalKeyboardShortcuts.ts로 이동
+
+// Before (useKeyboardShortcuts.ts)
+document.addEventListener('keydown', (e) => {
+  if ((e.metaKey || e.ctrlKey) && e.key === 'z') {
+    e.preventDefault();
+    if (e.shiftKey) redo();
+    else undo();
+  }
+}, { capture: true });
+
+// After (useGlobalKeyboardShortcuts.ts 내부)
+useKeyboardShortcutsRegistry([
+  {
+    key: 'z',
+    modifier: 'cmd',
+    handler: undo,
+    allowInInput: true,
+    priority: 100,
+  },
+  {
+    key: 'z',
+    modifier: 'cmdShift',
+    handler: redo,
+    allowInInput: true,
+    priority: 100,
+  },
+], [], { capture: true, target: 'document' });
+```
+
+**Day 2: Zoom 단축키**
+```typescript
+// useZoomShortcuts.ts 제거
+
+// After
+useKeyboardShortcutsRegistry([
+  { key: '=', modifier: 'cmd', handler: () => zoomTo(zoom + 0.1), priority: 90 },
+  { key: '-', modifier: 'cmd', handler: () => zoomTo(zoom - 0.1), priority: 90 },
+  { key: '0', modifier: 'cmd', handler: () => fitToScreen(), priority: 90 },
+  { key: '1', modifier: 'cmd', handler: () => zoomTo(1), priority: 90 },
+  { key: '2', modifier: 'cmd', handler: () => zoomTo(2), priority: 90 },
+], [], { capture: true });
+```
+
+**Day 3: 패널 단축키 + 테스트**
+```typescript
+// useCopyPasteActions.ts, useBlockKeyboard.ts 통합
+// E2E 테스트 작성
+```
+
+#### 1.3 유지할 컴포넌트 로컬 단축키
+
+| 컴포넌트 | 단축키 | 이유 |
+|----------|--------|------|
+| PropertyUnitInput | Arrow Up/Down | 값 조절이 컴포넌트 상태에 의존 |
+| PropertyCustomId | Enter/Escape | 유효성 검사 로직 연결 |
+| TextEditOverlay | 텍스트 편집 | 콘텐츠 편집 모드 전용 |
+| AIPanel | Enter (제출) | 폼 제출 로직 연결 |
+
+#### 1.4 E2E 테스트
 ```typescript
 // tests/e2e/keyboard-shortcuts.spec.ts
-import { test, expect } from '@playwright/test';
-
-test.describe('Keyboard Shortcuts', () => {
-  test('allowInInput 옵션별 동작 검증', async ({ page }) => {
-    await page.goto('/builder');
-
-    // 입력 필드 포커스 시 전역 단축키 차단 확인
-    await page.fill('[data-testid="property-input"]', '');
+test.describe('Keyboard Shortcuts Migration', () => {
+  test('Undo/Redo가 입력 필드에서도 동작', async ({ page }) => {
+    await page.fill('[data-testid="property-input"]', 'test');
     await page.keyboard.press('Control+z');
-    // allowInInput: true인 Undo는 동작해야 함
-    expect(await page.evaluate(() => window.__lastShortcut)).toBe('undo');
-
-    // allowInInput: false인 Delete는 차단되어야 함
-    await page.keyboard.press('Delete');
-    expect(await page.evaluate(() => window.__lastShortcut)).not.toBe('delete');
+    await expect(page.locator('[data-testid="toast"]')).toContainText('Undo');
   });
 
-  test('capture/stopPropagation 옵션 검증', async ({ page }) => {
-    await page.goto('/builder');
+  test('Zoom 단축키가 브라우저 확대 차단', async ({ page }) => {
     await page.keyboard.press('Control+=');
-    // capture: true로 브라우저 기본 동작(확대) 차단 확인
-    const zoom = await page.evaluate(() => window.visualViewport?.scale);
-    expect(zoom).toBe(1);
-  });
-
-  test('스코프별 단축키 충돌 없음 확인', async ({ page }) => {
-    // Canvas에서 Cmd+C
-    await page.click('[data-testid="canvas"]');
-    await page.keyboard.press('Control+c');
-    expect(await page.evaluate(() => window.__lastShortcut)).toBe('copyElements');
-
-    // Events 패널에서 Cmd+C
-    await page.click('[data-testid="events-panel"]');
-    await page.keyboard.press('Control+c');
-    expect(await page.evaluate(() => window.__lastShortcut)).toBe('copyActions');
+    const browserZoom = await page.evaluate(() => window.visualViewport?.scale);
+    expect(browserZoom).toBe(1); // 브라우저 확대 안됨
   });
 });
 ```
 
 ---
 
-### Phase 2-3: JSON Config & Single Registration
+### Phase 2: JSON Config (2일)
 
+**목표:** 단축키 정의를 JSON 설정 파일로 분리
+
+#### 2.1 설정 파일 구조
 ```typescript
-// src/builder/hooks/useGlobalKeyboardShortcuts.ts
+// src/builder/config/keyboardShortcuts.ts
+export const SHORTCUT_DEFINITIONS = {
+  // System
+  undo: {
+    key: 'z',
+    modifier: 'cmd',
+    category: 'system',
+    priority: 100,
+    allowInInput: true,
+    description: 'Undo',
+  },
+  redo: {
+    key: 'z',
+    modifier: 'cmdShift',
+    category: 'system',
+    priority: 100,
+    allowInInput: true,
+    description: 'Redo',
+  },
 
-import { SHORTCUT_DEFINITIONS } from '../config/keyboardShortcuts.json';
+  // Navigation
+  zoomIn: {
+    key: '=',
+    modifier: 'cmd',
+    category: 'navigation',
+    priority: 90,
+    description: 'Zoom In',
+  },
+  // ... 67개 단축키
+} as const;
 
-export function useGlobalKeyboardShortcuts() {
-  const { undo, redo } = useStore.getState();
-  const { zoomTo } = useCanvasSyncStore.getState();
-
-  // System shortcuts (capture phase)
-  useKeyboardShortcutsRegistry([
-    { ...SHORTCUT_DEFINITIONS.undo, handler: undo },
-    { ...SHORTCUT_DEFINITIONS.redo, handler: redo },
-    { ...SHORTCUT_DEFINITIONS.zoomIn, handler: () => zoomTo(zoom + 0.1) },
-    // ...
-  ], [], { capture: true, target: 'document' });
-
-  // Normal shortcuts
-  useKeyboardShortcutsRegistry([
-    { ...SHORTCUT_DEFINITIONS.copy, handler: handleCopy },
-    // ...
-  ], []);
-}
+export type ShortcutId = keyof typeof SHORTCUT_DEFINITIONS;
 ```
+
+#### 2.2 작업 목록
+
+| 작업 | 설명 |
+|------|------|
+| 설정 파일 생성 | `keyboardShortcuts.ts` 생성 및 67개 단축키 정의 |
+| 타입 정의 | `ShortcutId`, `ShortcutDefinition` 타입 |
+| 핸들러 분리 | 설정(definition)과 핸들러(handler) 분리 |
+| 도움말 데이터 연동 | `KeyboardShortcutsHelp.tsx`에서 설정 파일 사용 |
 
 ---
 
-### Phase 4: Category & Scope System
+### Phase 3: Single Registration Point (2일)
 
+**목표:** 모든 전역 단축키를 한 곳에서 등록
+
+#### 3.1 통합 훅 구조
+```typescript
+// src/builder/hooks/useGlobalKeyboardShortcuts.ts
+
+import { SHORTCUT_DEFINITIONS } from '../config/keyboardShortcuts';
+
+export function useGlobalKeyboardShortcuts() {
+  const { undo, redo } = useStore.getState();
+  const { zoomTo, fitToScreen } = useCanvasSyncStore.getState();
+  const { copy, paste, deleteSelected } = useClipboard();
+
+  // 핸들러 매핑
+  const handlers: Record<ShortcutId, () => void> = {
+    undo,
+    redo,
+    zoomIn: () => zoomTo(zoom + 0.1),
+    zoomOut: () => zoomTo(zoom - 0.1),
+    zoomReset: fitToScreen,
+    zoom100: () => zoomTo(1),
+    zoom200: () => zoomTo(2),
+    copy,
+    paste,
+    delete: deleteSelected,
+    // ...
+  };
+
+  // 시스템 단축키 (capture phase)
+  const systemShortcuts = useMemo(() =>
+    Object.entries(SHORTCUT_DEFINITIONS)
+      .filter(([_, def]) => def.category === 'system' || def.category === 'navigation')
+      .map(([id, def]) => ({ ...def, handler: handlers[id as ShortcutId] })),
+    [handlers]
+  );
+
+  useKeyboardShortcutsRegistry(systemShortcuts, [], {
+    capture: true,
+    target: 'document'
+  });
+
+  // 일반 단축키
+  const normalShortcuts = useMemo(() =>
+    Object.entries(SHORTCUT_DEFINITIONS)
+      .filter(([_, def]) => def.category !== 'system' && def.category !== 'navigation')
+      .map(([id, def]) => ({ ...def, handler: handlers[id as ShortcutId] })),
+    [handlers]
+  );
+
+  useKeyboardShortcutsRegistry(normalShortcuts, []);
+}
+```
+
+#### 3.2 Builder에 적용
+```typescript
+// src/builder/Builder.tsx
+
+export function Builder() {
+  useGlobalKeyboardShortcuts(); // 단일 등록 포인트
+
+  return (
+    <div className="builder">
+      {/* ... */}
+    </div>
+  );
+}
+```
+
+#### 3.3 레거시 코드 제거
+
+| 삭제 대상 | 대체 |
+|----------|------|
+| `useKeyboardShortcuts.ts` | `useGlobalKeyboardShortcuts` |
+| `useZoomShortcuts.ts` | `useGlobalKeyboardShortcuts` |
+| `useCopyPasteActions.ts` 일부 | `useGlobalKeyboardShortcuts` |
+| `useBlockKeyboard.ts` 일부 | `useGlobalKeyboardShortcuts` |
+
+---
+
+### Phase 4: Category & Scope System (3일)
+
+**목표:** 스코프 기반 단축키 필터링으로 충돌 해결
+
+#### 4.1 스코프 정의
+```typescript
+// src/builder/types/keyboard.ts
+
+export type ShortcutScope =
+  | 'global'           // 항상 활성
+  | 'canvas-focused'   // 캔버스 포커스 시
+  | 'panel:properties' // Properties 패널 활성 시
+  | 'panel:events'     // Events 패널 활성 시
+  | 'panel:nodes'      // Nodes 패널 활성 시
+  | 'modal'            // 모달 열림 시
+  | 'text-editing';    // 텍스트 편집 중
+
+export type ShortcutCategory =
+  | 'system'      // Undo, Redo, Save (priority: 100)
+  | 'navigation'  // Zoom, Pan (priority: 90)
+  | 'panels'      // Panel toggles (priority: 80)
+  | 'canvas'      // Element manipulation (priority: 70)
+  | 'properties'  // Property editing (priority: 50)
+  | 'events'      // Events panel (priority: 50)
+  | 'nodes';      // Nodes panel (priority: 50)
+```
+
+#### 4.2 활성 스코프 감지 훅
+```typescript
+// src/builder/hooks/useActiveScope.ts
+
+export function useActiveScope(): ShortcutScope {
+  const activePanel = useActivePanelStore(s => s.activePanel);
+  const isModalOpen = useModalStore(s => s.isOpen);
+  const isTextEditing = useTextEditStore(s => s.isEditing);
+  const focusedElement = useFocusedElement();
+
+  if (isModalOpen) return 'modal';
+  if (isTextEditing) return 'text-editing';
+  if (focusedElement?.dataset.scope === 'canvas') return 'canvas-focused';
+  if (activePanel === 'properties') return 'panel:properties';
+  if (activePanel === 'events') return 'panel:events';
+  if (activePanel === 'nodes') return 'panel:nodes';
+  return 'global';
+}
+```
+
+#### 4.3 스코프 기반 필터링
 ```typescript
 export function useGlobalKeyboardShortcuts() {
-  const activeScope = useActiveScope(); // 'canvas-focused' | 'panel:events' | etc.
+  const activeScope = useActiveScope();
 
   const activeShortcuts = useMemo(() =>
-    ALL_SHORTCUTS.filter(s =>
-      s.scope === 'global' ||
-      (Array.isArray(s.scope) ? s.scope.includes(activeScope) : s.scope === activeScope)
-    ),
+    ALL_SHORTCUTS.filter(s => {
+      // global은 항상 활성
+      if (s.scope === 'global') return true;
+      // 배열이면 포함 여부 확인
+      if (Array.isArray(s.scope)) return s.scope.includes(activeScope);
+      // 단일 스코프면 일치 확인
+      return s.scope === activeScope;
+    }),
     [activeScope]
   );
 
@@ -546,320 +763,164 @@ export function useGlobalKeyboardShortcuts() {
 }
 ```
 
+#### 4.4 충돌 해결 예시
+```typescript
+// 같은 Cmd+C가 스코프에 따라 다르게 동작
+const shortcuts = [
+  {
+    key: 'c',
+    modifier: 'cmd',
+    scope: 'canvas-focused',  // 캔버스에서만
+    handler: copyElements
+  },
+  {
+    key: 'c',
+    modifier: 'cmd',
+    scope: 'panel:events',    // Events 패널에서만
+    handler: copyActions
+  },
+];
+```
+
 ---
 
-### Phase 5: DevTools & Enhanced Help
+### Phase 5: DevTools & Help Panel (2일)
 
+**목표:** 개발 디버거 및 도움말 패널 개선
+
+#### 5.1 Shortcut Debugger (개발 전용)
 ```typescript
-// Shortcut Debugger (dev only)
+// src/builder/devtools/ShortcutDebugger.tsx
+
 export function ShortcutDebugger() {
+  const [lastEvent, setLastEvent] = useState<KeyboardEvent | null>(null);
+  const [matchedShortcut, setMatchedShortcut] = useState<string | null>(null);
+  const activeScope = useActiveScope();
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      setLastEvent(e);
+      // 매칭된 단축키 찾기
+      const matched = findMatchingShortcut(e, activeScope);
+      setMatchedShortcut(matched?.description || null);
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [activeScope]);
+
   if (process.env.NODE_ENV !== 'development') return null;
 
   return (
     <div className="shortcut-debugger">
-      <div>Last key: {lastEvent?.key}</div>
-      <div>Matched: {matchedShortcut?.description}</div>
-      {conflicts.length > 0 && <div>⚠️ {conflicts.length} conflicts</div>}
+      <div>Scope: {activeScope}</div>
+      <div>Key: {lastEvent?.key}</div>
+      <div>Modifier: {formatModifiers(lastEvent)}</div>
+      <div>Matched: {matchedShortcut || 'None'}</div>
     </div>
   );
 }
+```
 
-// Enhanced Help Panel with usage tracking
-export function EnhancedKeyboardHelp() {
+#### 5.2 Help Panel 개선
+```typescript
+// src/builder/components/help/KeyboardHelpPanel.tsx
+
+export function KeyboardHelpPanel() {
+  const [search, setSearch] = useState('');
+  const [activeTab, setActiveTab] = useState('all');
+
+  const filteredShortcuts = useMemo(() => {
+    let shortcuts = Object.entries(SHORTCUT_DEFINITIONS);
+
+    // 카테고리 필터
+    if (activeTab !== 'all') {
+      shortcuts = shortcuts.filter(([_, def]) => def.category === activeTab);
+    }
+
+    // 검색 필터
+    if (search) {
+      shortcuts = shortcuts.filter(([_, def]) =>
+        def.description.toLowerCase().includes(search.toLowerCase())
+      );
+    }
+
+    return shortcuts;
+  }, [search, activeTab]);
+
   return (
-    <div>
-      <SearchField placeholder="Search shortcuts..." />
-      <Tabs>
+    <DialogContent>
+      <SearchField
+        value={search}
+        onChange={setSearch}
+        placeholder="Search shortcuts..."
+      />
+      <Tabs selectedKey={activeTab} onSelectionChange={setActiveTab}>
         <Tab id="all">All</Tab>
         <Tab id="system">System</Tab>
+        <Tab id="navigation">Navigation</Tab>
         <Tab id="canvas">Canvas</Tab>
+        <Tab id="panels">Panels</Tab>
       </Tabs>
-      <ShortcutsList />
-      <ProgressBar label="67/67 shortcuts mastered" />
-    </div>
+      <div className="shortcuts-list">
+        {filteredShortcuts.map(([id, def]) => (
+          <div key={id} className="shortcut-item">
+            <kbd>{formatShortcut(def)}</kbd>
+            <span>{def.description}</span>
+          </div>
+        ))}
+      </div>
+    </DialogContent>
   );
 }
 ```
 
-**충돌 자동 해결 가이드:**
+#### 5.3 충돌 감지 (개발 시점)
 ```typescript
-// DevTools 패널에서 충돌 발견 시 해결 옵션 제시
-interface ConflictResolution {
-  type: 'priority' | 'scope' | 'alternate';
-  suggestion: string;
-  apply: () => void;
-}
+// src/builder/utils/detectShortcutConflicts.ts
 
-function suggestResolutions(conflict: ConflictInfo): ConflictResolution[] {
-  return [
-    {
-      type: 'priority',
-      suggestion: `우선순위 조정: ${conflict.new.id}를 priority ${conflict.existing.priority + 10}으로 변경`,
-      apply: () => updatePriority(conflict.new.id, conflict.existing.priority + 10),
-    },
-    {
-      type: 'scope',
-      suggestion: `스코프 분리: ${conflict.new.id}를 '${suggestNewScope(conflict)}'로 이동`,
-      apply: () => updateScope(conflict.new.id, suggestNewScope(conflict)),
-    },
-    {
-      type: 'alternate',
-      suggestion: `대체 키 추천: Alt+Shift+${conflict.new.key.toUpperCase()}`,
-      apply: () => updateKey(conflict.new.id, conflict.new.key, 'altShift'),
-    },
-  ];
-}
-```
+export function detectConflicts(): ConflictInfo[] {
+  const conflicts: ConflictInfo[] = [];
+  const keyMap = new Map<string, ShortcutDefinition[]>();
 
-**사용자 충돌 알림 UI:**
-```typescript
-// 사용자에게 충돌 알림 및 선택지 제공
-export function ShortcutConflictDialog({ conflict }: { conflict: ConflictInfo }) {
-  return (
-    <Dialog>
-      <Heading>⚠️ 단축키 충돌 감지</Heading>
-      <Content>
-        <p><kbd>{formatShortcut(conflict.existing)}</kbd>가 이미 다음에 할당되어 있습니다:</p>
-        <p><strong>{conflict.existing.description}</strong></p>
-        <p>새로 할당하려는 동작:</p>
-        <p><strong>{conflict.new.description}</strong></p>
-      </Content>
-      <ButtonGroup>
-        <Button onPress={() => replaceShortcut(conflict)}>교체</Button>
-        <Button onPress={() => keepBoth(conflict)}>둘 다 유지 (스코프 분리)</Button>
-        <Button variant="secondary" onPress={close}>취소</Button>
-      </ButtonGroup>
-    </Dialog>
-  );
-}
-```
+  for (const [id, def] of Object.entries(SHORTCUT_DEFINITIONS)) {
+    const key = `${def.modifier}+${def.key}`;
+    const existing = keyMap.get(key) || [];
 
-**사용량 분석 및 학습 트래킹:**
-```typescript
-// 단축키 사용 빈도 추적
-interface ShortcutUsageMetrics {
-  id: string;
-  usageCount: number;
-  lastUsed: Date | null;
-  avgDailyUsage: number;
-}
-
-export function useShortcutAnalytics() {
-  const trackUsage = useCallback((shortcutId: string) => {
-    const metrics = getMetrics(shortcutId);
-    updateMetrics(shortcutId, {
-      usageCount: metrics.usageCount + 1,
-      lastUsed: new Date(),
-    });
-
-    // 분석 데이터 전송 (선택적)
-    analytics.track('shortcut_used', { shortcutId, timestamp: Date.now() });
-  }, []);
-
-  const getUnusedShortcuts = useCallback(() => {
-    return ALL_SHORTCUTS.filter(s => {
-      const metrics = getMetrics(s.id);
-      return !metrics.lastUsed || daysSince(metrics.lastUsed) > 30;
-    });
-  }, []);
-
-  const getRecommendations = useCallback(() => {
-    // 자주 사용하는 단축키 기반 추천
-    const unused = getUnusedShortcuts();
-    return unused.slice(0, 5).map(s => ({
-      shortcut: s,
-      reason: '이 단축키를 아직 사용해보지 않았습니다',
-    }));
-  }, []);
-
-  return { trackUsage, getUnusedShortcuts, getRecommendations };
-}
-```
-
----
-
-### Phase 6-7: International KB & Customization
-
-**Phase 6: Keyboard Layout Detection**
-```typescript
-async function detectKeyboardLayout() {
-  if ('keyboard' in navigator) {
-    const layoutMap = await navigator.keyboard.getLayoutMap();
-    return inferLayoutFromMap(layoutMap);
-  }
-  return { layout: 'US', confidence: 0.5 };
-}
-```
-
-**레이아웃 변경 감지 및 알림:**
-```typescript
-// 국제 키보드 레이아웃 감지 시 사용자 알림
-export function useKeyboardLayoutNotification() {
-  const [layout, setLayout] = useState<string>('US');
-
-  useEffect(() => {
-    const detectAndNotify = async () => {
-      const detected = await detectKeyboardLayout();
-
-      if (detected.layout !== 'US') {
-        // 도움말 패널 상단에 레이아웃 배지 표시
-        setLayout(detected.layout);
-
-        // 첫 감지 시 토스트 알림
-        if (!localStorage.getItem('keyboard_layout_notified')) {
-          toast.info(`키보드 레이아웃 감지: ${detected.layout}`, {
-            description: '단축키가 해당 레이아웃에 맞게 조정됩니다.',
-            action: {
-              label: '자세히',
-              onClick: () => openKeyboardHelpPanel(),
-            },
-          });
-          localStorage.setItem('keyboard_layout_notified', 'true');
-        }
+    for (const prev of existing) {
+      if (scopesOverlap(prev.scope, def.scope)) {
+        conflicts.push({ existing: prev, new: def });
       }
-    };
-
-    detectAndNotify();
-
-    // 레이아웃 변경 감지 (창 포커스 시)
-    window.addEventListener('focus', detectAndNotify);
-    return () => window.removeEventListener('focus', detectAndNotify);
-  }, []);
-
-  return layout;
-}
-
-// 도움말 패널에 레이아웃 배지 표시
-export function KeyboardLayoutBadge({ layout }: { layout: string }) {
-  if (layout === 'US') return null;
-
-  return (
-    <Badge variant="info" className="keyboard-layout-badge">
-      ⌨️ {layout}
-    </Badge>
-  );
-}
-```
-
-**오프라인 폴백 메커니즘:**
-```typescript
-// 네트워크 문제 시 기본 단축키 보장
-const DEFAULT_SHORTCUTS = await import('./defaultShortcuts.json');
-
-export async function loadShortcutConfig() {
-  try {
-    // 서버에서 사용자 설정 로드 시도
-    const userConfig = await fetchUserShortcuts();
-    localStorage.setItem('shortcuts_cache', JSON.stringify(userConfig));
-    return userConfig;
-  } catch (error) {
-    // 오프라인 시 캐시 또는 기본값 사용
-    const cached = localStorage.getItem('shortcuts_cache');
-    if (cached) {
-      console.info('오프라인 모드: 캐시된 단축키 설정 사용');
-      return JSON.parse(cached);
     }
-    console.info('오프라인 모드: 기본 단축키 설정 사용');
-    return DEFAULT_SHORTCUTS;
+    keyMap.set(key, [...existing, def]);
   }
-}
-```
 
-**Phase 7: User Customization**
-- Remap shortcuts
-- Export/import profiles
-- Workspace-based sets
-- Conflict resolution UI
+  if (process.env.NODE_ENV === 'development' && conflicts.length > 0) {
+    console.warn('⚠️ Keyboard shortcut conflicts detected:', conflicts);
+  }
 
-**역할별 프리셋 시스템:**
-```typescript
-// 역할별 단축키 프리셋 정의
-export const ROLE_PRESETS: Record<string, ShortcutPreset> = {
-  designer: {
-    name: '디자이너',
-    description: '디자인 작업에 최적화된 단축키',
-    shortcuts: {
-      // 정렬/레이아웃 단축키 우선
-      alignLeft: { key: 'l', modifier: 'cmd' },
-      alignCenter: { key: 'c', modifier: 'cmdShift' },
-      // ...
-    },
-  },
-  developer: {
-    name: '개발자',
-    description: '코드 작업에 최적화된 단축키',
-    shortcuts: {
-      // 이벤트/로직 단축키 우선
-      toggleEvents: { key: 'e', modifier: 'cmd' },
-      duplicateAction: { key: 'd', modifier: 'cmdShift' },
-      // ...
-    },
-  },
-  qa: {
-    name: 'QA',
-    description: '테스트/검증에 최적화된 단축키',
-    shortcuts: {
-      // 미리보기/상태 확인 단축키 우선
-      preview: { key: 'p', modifier: 'cmd' },
-      toggleDevTools: { key: 'i', modifier: 'cmdAlt' },
-      // ...
-    },
-  },
-};
-
-// 프리셋 내보내기/불러오기
-export function exportPreset(preset: ShortcutPreset): string {
-  return JSON.stringify(preset, null, 2);
-}
-
-export function importPreset(json: string): ShortcutPreset {
-  const parsed = JSON.parse(json);
-  validatePresetSchema(parsed);
-  return parsed;
-}
-
-// 워크스페이스 공유 링크 생성
-export function generateShareLink(preset: ShortcutPreset): string {
-  const encoded = btoa(JSON.stringify(preset));
-  return `${window.location.origin}/shortcuts/import?preset=${encoded}`;
+  return conflicts;
 }
 ```
 
 ---
 
-## Part 5: 리뷰 반영 개선사항
+## Part 5: 테스트 전략
 
-### 5.1 반영된 리뷰 항목
-
-| 항목 | 설명 | 반영 위치 |
-|------|------|----------|
-| **ARIA 포커스 관리** | `aria-keyshortcuts` 속성 자동 부여, 스크린리더 지원 | Phase 0, Phase 7 |
-| **E2E 테스트** | Playwright 기반 단축키 동작 검증 자동화 | Phase 1 |
-| **사용량 분석** | 단축키 사용 빈도 추적, 미사용 단축키 추천 | Phase 5 |
-| **충돌 알림 UI** | 사용자에게 충돌 안내 및 해결 선택지 제공 | Phase 5 |
-| **충돌 자동 해결 가이드** | 우선순위/스코프/대체 키 자동 추천 | Phase 5 |
-| **오프라인 폴백** | 네트워크 문제 시 캐시/기본값 사용 | Phase 6 |
-| **레이아웃 알림** | 국제 키보드 감지 시 배지/토스트 표시 | Phase 6 |
-| **역할별 프리셋** | 디자이너/개발자/QA용 단축키 세트 | Phase 7 |
-| **프리셋 공유** | 워크스페이스 공유 링크 생성 | Phase 7 |
-
-### 5.2 테스트 커버리지 목표
+### 5.1 테스트 커버리지 목표
 
 | 테스트 유형 | 범위 | 도구 |
 |------------|------|------|
 | **Unit Test** | 레지스트리 로직, 매칭 함수 | Vitest |
 | **Integration** | 스코프 전환, 충돌 감지 | Vitest + Testing Library |
 | **E2E** | 실제 단축키 동작, 입력 필드 상호작용 | Playwright |
-| **Accessibility** | ARIA 속성, 포커스 관리 | axe-core, Playwright |
 
-### 5.3 품질 지표
+### 5.2 품질 지표
 
-| 지표 | 현재 | 목표 (Phase 3) | 목표 (Phase 7) |
+| 지표 | 현재 | 목표 (Phase 3) | 목표 (Phase 5) |
 |------|------|----------------|----------------|
-| 테스트 커버리지 | 0% | 80% | 95% |
-| 접근성 점수 | - | WCAG AA | WCAG AAA |
+| 테스트 커버리지 | 0% | 80% | 90% |
 | 충돌 감지율 | 0% | 100% | 100% |
-| 오프라인 가용성 | ❌ | ✅ 기본값 | ✅ 전체 캐시 |
+| 중앙화율 | 45% | 95% | 100% |
 
 ---
 
