@@ -65,70 +65,276 @@ Despite having a centralized registry (`useKeyboardShortcutsRegistry`), keyboard
 
 ## Refactoring Proposal
 
-### Goal
-Consolidate all global keyboard shortcuts into `useKeyboardShortcutsRegistry` for:
-- Single source of truth
-- Conflict detection
-- Easy debugging (`logShortcuts()`)
-- Consistent behavior
+### Current Registry Limitations
 
-### Phase 1: Migrate Global Shortcuts
+The existing `useKeyboardShortcutsRegistry` cannot handle all use cases:
 
-**Move to registry:**
+| Limitation | Current State | Required | Affected Shortcuts |
+|------------|---------------|----------|-------------------|
+| **Capture Phase** | ❌ Not supported | Intercept browser defaults | Undo/Redo, Zoom |
+| **Input Field Handling** | Always disabled | Conditional allow | Undo/Redo (must work in Input) |
+| **Shift-only Modifier** | ❌ Not supported | `'shift'` modifier | Tab navigation |
+| **Context/Scope** | ❌ None | Panel-specific scopes | Events panel Copy/Paste |
+| **Priority System** | ❌ None | Conflict resolution | Same key, different contexts |
+| **stopPropagation** | ❌ Not supported | Event bubbling control | Undo/Redo |
+
+### Why Separate Implementations Exist
+
 ```typescript
-// Before (useKeyboardShortcuts.ts)
+// useKeyboardShortcuts.ts - Undo/Redo
+// Problem: Must work in Input fields + needs capture phase
 document.addEventListener('keydown', handleKeyDown, { capture: true });
 
-// After (use registry)
-useKeyboardShortcutsRegistry([
-  { key: 'z', modifier: 'cmd', handler: handleUndo, description: 'Undo' },
-  { key: 'z', modifier: 'cmdShift', handler: handleRedo, description: 'Redo' },
-]);
+// useZoomShortcuts.ts - Zoom
+// Problem: Must intercept browser zoom (capture phase required)
+window.addEventListener('keydown', handleKeyDown, { capture: true });
+
+// PropertiesPanel.tsx - Tab navigation
+// Problem: 'shift' modifier not supported
+// Note: Tab navigation requires special handling (Shift+Tab, preventDefault)
+// that useKeyboardShortcutsRegistry doesn't support
 ```
 
-**Migration candidates:**
-1. `useKeyboardShortcuts.ts` → Registry (Undo/Redo)
-2. `useZoomShortcuts.ts` → Registry (Zoom controls)
-3. `useCopyPasteActions.ts` → Registry (Event actions)
-4. `useBlockKeyboard.ts` → Registry (Event blocks)
-5. `BuilderCanvas.tsx` → Keep (Shift is modifier state, not shortcut)
+### Conclusion: Current Design Cannot Centralize
 
-### Phase 2: Create Global Shortcuts Config
+| Question | Answer |
+|----------|--------|
+| Can current registry unify all shortcuts? | ❌ **No** |
+| Can it work after enhancement? | ✅ **Yes** |
+| Required additions | capture, allowInInput, stopPropagation, priority, shift modifier |
+
+---
+
+## Phase 0: Enhance Registry (Required First)
+
+### Enhanced Interface
+
+```typescript
+// src/builder/hooks/useKeyboardShortcutsRegistry.ts
+
+export type KeyboardModifier =
+  | 'cmd'
+  | 'cmdShift'
+  | 'alt'
+  | 'altShift'
+  | 'shift'        // NEW: Shift-only
+  | 'none';
+
+export interface KeyboardShortcut {
+  key: string;
+  code?: string;
+  modifier: KeyboardModifier;
+  handler: () => void;
+  preventDefault?: boolean;
+  stopPropagation?: boolean;     // NEW
+  description?: string;
+  disabled?: boolean;
+
+  // NEW: Advanced options
+  allowInInput?: boolean;        // Allow in INPUT/TEXTAREA
+  scope?: string;                // 'global' | 'events-panel' | etc.
+  priority?: number;             // Higher = first (conflict resolution)
+}
+
+export interface RegistryOptions {
+  eventType?: 'keydown' | 'keyup';
+  capture?: boolean;             // NEW: capture phase
+  target?: 'window' | 'document'; // NEW: event target
+}
+```
+
+### Enhanced Implementation
+
+```typescript
+export function useKeyboardShortcutsRegistry(
+  shortcuts: KeyboardShortcut[],
+  deps: React.DependencyList = [],
+  options: RegistryOptions = {}
+): void {
+  const {
+    eventType = 'keydown',
+    capture = false,
+    target = 'window'
+  } = options;
+
+  useEffect(() => {
+    const handleKeyEvent = (event: KeyboardEvent) => {
+      const targetEl = event.target as HTMLElement;
+      const isInputField =
+        targetEl.tagName === 'INPUT' ||
+        targetEl.tagName === 'TEXTAREA' ||
+        targetEl.isContentEditable;
+
+      // Sort by priority (descending)
+      const sorted = [...shortcuts].sort(
+        (a, b) => (b.priority || 0) - (a.priority || 0)
+      );
+
+      for (const shortcut of sorted) {
+        // Skip if in input field and not allowed
+        if (isInputField && !shortcut.allowInInput) continue;
+
+        if (matchesShortcut(event, shortcut)) {
+          if (shortcut.preventDefault !== false) {
+            event.preventDefault();
+          }
+          if (shortcut.stopPropagation) {
+            event.stopPropagation();
+          }
+          shortcut.handler();
+          break;
+        }
+      }
+    };
+
+    const eventTarget = target === 'document' ? document : window;
+    eventTarget.addEventListener(eventType, handleKeyEvent, { capture });
+
+    return () => {
+      eventTarget.removeEventListener(eventType, handleKeyEvent, { capture });
+    };
+  }, [...deps]);
+}
+```
+
+---
+
+## Phase 1: Migrate Global Shortcuts
+
+### Migration Example
+
+```typescript
+// Before: useKeyboardShortcuts.ts (separate implementation)
+document.addEventListener('keydown', handleKeyDown, { capture: true });
+
+// After: Unified registry
+useKeyboardShortcutsRegistry([
+  {
+    key: 'z',
+    modifier: 'cmd',
+    handler: handleUndo,
+    allowInInput: true,      // Works in Input fields
+    stopPropagation: true,
+    priority: 100,           // Highest priority
+    description: 'Undo'
+  },
+  {
+    key: 'z',
+    modifier: 'cmdShift',
+    handler: handleRedo,
+    allowInInput: true,
+    stopPropagation: true,
+    priority: 100,
+    description: 'Redo'
+  },
+], [], { capture: true, target: 'document' });
+```
+
+### Migration Candidates
+
+| File | Shortcuts | Migration Notes |
+|------|-----------|-----------------|
+| `useKeyboardShortcuts.ts` | Undo/Redo | `allowInInput: true`, `capture: true` |
+| `useZoomShortcuts.ts` | Zoom +/-/0/1/2 | `capture: true` |
+| `useCopyPasteActions.ts` | Copy/Paste/Delete | `scope: 'events-panel'` |
+| `useBlockKeyboard.ts` | Arrow/Escape | `scope: 'events-panel'` |
+| `PropertiesPanel.tsx` | Tab navigation | `modifier: 'shift'` |
+| `BuilderCanvas.tsx` | Shift (lasso) | ❌ Keep (modifier state, not shortcut) |
+
+---
+
+## Phase 2: Create Global Shortcuts Config
 
 ```typescript
 // src/builder/config/keyboardShortcuts.ts
-export const GLOBAL_SHORTCUTS = {
-  // General
-  undo: { key: 'z', modifier: 'cmd' },
-  redo: { key: 'z', modifier: 'cmdShift' },
 
-  // Zoom
-  zoomIn: { key: '=', modifier: 'cmd' },
-  zoomOut: { key: '-', modifier: 'cmd' },
-  zoomFit: { key: '0', modifier: 'cmd' },
-  zoom100: { key: '1', modifier: 'cmd' },
-  zoom200: { key: '2', modifier: 'cmd' },
+export const SHORTCUT_DEFINITIONS = {
+  // === System (highest priority, capture phase) ===
+  undo: {
+    key: 'z', modifier: 'cmd',
+    priority: 100, allowInInput: true, capture: true
+  },
+  redo: {
+    key: 'z', modifier: 'cmdShift',
+    priority: 100, allowInInput: true, capture: true
+  },
 
-  // Edit
-  copy: { key: 'c', modifier: 'cmd' },
-  paste: { key: 'v', modifier: 'cmd' },
-  duplicate: { key: 'd', modifier: 'cmd' },
-  // ... etc
+  // === Zoom (capture phase to override browser) ===
+  zoomIn: { key: '=', modifier: 'cmd', priority: 90, capture: true },
+  zoomOut: { key: '-', modifier: 'cmd', priority: 90, capture: true },
+  zoomFit: { key: '0', modifier: 'cmd', priority: 90, capture: true },
+  zoom100: { key: '1', modifier: 'cmd', priority: 90, capture: true },
+  zoom200: { key: '2', modifier: 'cmd', priority: 90, capture: true },
+
+  // === Edit (normal priority) ===
+  copy: { key: 'c', modifier: 'cmd', priority: 50 },
+  paste: { key: 'v', modifier: 'cmd', priority: 50 },
+  duplicate: { key: 'd', modifier: 'cmd', priority: 50 },
+  delete: { key: 'Backspace', modifier: 'none', priority: 50 },
+
+  // === Selection ===
+  selectAll: { key: 'a', modifier: 'cmd', priority: 50 },
+  clearSelection: { key: 'Escape', modifier: 'none', priority: 40 },
+  nextElement: { key: 'Tab', modifier: 'none', priority: 40 },
+  prevElement: { key: 'Tab', modifier: 'shift', priority: 40 },
+
+  // === Grouping ===
+  group: { key: 'g', modifier: 'cmd', priority: 50 },
+  ungroup: { key: 'g', modifier: 'cmdShift', priority: 50 },
+
+  // === Alignment ===
+  alignLeft: { key: 'l', modifier: 'cmdShift', priority: 50 },
+  alignCenter: { key: 'h', modifier: 'cmdShift', priority: 50 },
+  alignRight: { key: 'r', modifier: 'cmdShift', priority: 50 },
+  alignTop: { key: 't', modifier: 'cmdShift', priority: 50 },
+  alignMiddle: { key: 'm', modifier: 'cmdShift', priority: 50 },
+  alignBottom: { key: 'b', modifier: 'cmdShift', priority: 50 },
+
+  // === Distribution ===
+  distributeH: { key: 'd', modifier: 'cmdShift', priority: 50 },
+  distributeV: { key: 'v', modifier: 'altShift', priority: 50 },
+
+  // === Help ===
+  showHelp: { key: '?', modifier: 'cmd', priority: 30 },
 } as const;
 ```
 
-### Phase 3: Enhance Registry
+---
+
+## Phase 3: Single Registration Point
 
 ```typescript
-// Add capture phase support
-useKeyboardShortcutsRegistry(shortcuts, deps, {
-  eventType: 'keydown',
-  capture: true,  // NEW: for system-level shortcuts
-  priority: 1,    // NEW: for conflict resolution
-});
+// src/builder/hooks/useGlobalKeyboardShortcuts.ts
+
+import { SHORTCUT_DEFINITIONS } from '../config/keyboardShortcuts';
+import { useKeyboardShortcutsRegistry } from './useKeyboardShortcutsRegistry';
+
+export function useGlobalKeyboardShortcuts() {
+  const { undo, redo } = useStore.getState();
+  const { zoomTo, zoomToFit } = useCanvasSyncStore.getState();
+  // ... other handlers
+
+  // System shortcuts (capture phase)
+  useKeyboardShortcutsRegistry([
+    { ...SHORTCUT_DEFINITIONS.undo, handler: undo },
+    { ...SHORTCUT_DEFINITIONS.redo, handler: redo },
+    { ...SHORTCUT_DEFINITIONS.zoomIn, handler: () => zoomTo(zoom + 0.1) },
+    { ...SHORTCUT_DEFINITIONS.zoomOut, handler: () => zoomTo(zoom - 0.1) },
+    // ...
+  ], [], { capture: true, target: 'document' });
+
+  // Normal shortcuts
+  useKeyboardShortcutsRegistry([
+    { ...SHORTCUT_DEFINITIONS.copy, handler: handleCopy },
+    { ...SHORTCUT_DEFINITIONS.paste, handler: handlePaste },
+    // ...
+  ], []);
+}
 ```
 
-### Keep as Component-Local (No Migration Needed)
+---
+
+## Keep as Component-Local (No Migration Needed)
 
 These should remain as React `onKeyDown`:
 - `PropertyUnitInput` - Arrow keys for value adjustment
