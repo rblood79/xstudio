@@ -96,6 +96,7 @@ export interface DatabaseAdapter {
   elements: {
     insert(element: Element): Promise<Element>;
     insertMany(elements: Element[]): Promise<Element[]>;
+    put(element: Element): Promise<Element>;
     update(id: string, data: Partial<Element>): Promise<Element>;
     updateMany(updates: Array<{ id: string; data: Partial<Element> }>): Promise<Element[]>;
     delete(id: string): Promise<void>;

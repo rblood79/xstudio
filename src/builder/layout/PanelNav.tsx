@@ -46,7 +46,6 @@ export function PanelNav({
                 onClick={() => onPanelClick(panelId)}
                 aria-pressed={isActive}
                 aria-label={panelConfig.name}
-                title={panelConfig.name}
               >
                 <Icon
                   color={iconProps.color}

@@ -488,6 +488,7 @@ function Dashboard() {
             value={newProjectName}
             onChange={(value) => setNewProjectName(value)}
             isDisabled={loading}
+            aria-label="New project name"
           >
             <Input type="text" placeholder="New Project" />
           </TextField>

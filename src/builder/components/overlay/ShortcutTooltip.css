@@ -1,52 +1,77 @@
 /**
  * ShortcutTooltip 컴포넌트 스타일
- * react-aria-components Tooltip 스타일링
  *
  * @since Phase 7 구현 (2025-12-29)
  */
 
+/* Wrapper - 상대 위치 지정 */
+.shortcut-tooltip-wrapper {
+  position: relative;
+  display: inline-flex;
+}
+
 /* Base Tooltip Styles */
 .shortcut-tooltip {
+  position: absolute;
   display: inline-flex;
   align-items: center;
   gap: 8px;
   padding: 6px 10px;
-  background: var(--md-sys-color-inverse-surface);
-  color: var(--md-sys-color-inverse-on-surface);
+  background: var(--md-sys-color-inverse-surface, #1a1a1a);
+  color: var(--md-sys-color-inverse-on-surface, #ffffff);
   border-radius: 6px;
   font-size: 12px;
-  font-family: var(--md-sys-typescale-body-small-font);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  font-family: var(--md-sys-typescale-body-small-font, sans-serif);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
   z-index: 10000;
+  white-space: nowrap;
+  pointer-events: none;
 
-  /* react-aria animation */
-  opacity: 0;
-  transform: translateY(4px);
-  transition: opacity 150ms ease-out, transform 150ms ease-out;
+  /* Animation */
+  animation: shortcut-tooltip-fade-in 150ms ease-out;
 }
 
-.shortcut-tooltip[data-entering],
-.shortcut-tooltip[data-exiting] {
-  opacity: 0;
-  transform: translateY(4px);
+@keyframes shortcut-tooltip-fade-in {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
 }
 
+/* Placement: bottom (default) */
 .shortcut-tooltip[data-placement="bottom"] {
-  transform: translateY(-4px);
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-top: 8px;
 }
 
+/* Placement: top */
+.shortcut-tooltip[data-placement="top"] {
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-bottom: 8px;
+}
+
+/* Placement: left */
 .shortcut-tooltip[data-placement="left"] {
-  transform: translateX(4px);
+  right: 100%;
+  top: 50%;
+  transform: translateY(-50%);
+  margin-right: 8px;
 }
 
+/* Placement: right */
 .shortcut-tooltip[data-placement="right"] {
-  transform: translateX(-4px);
-}
-
-/* Visible state */
-.shortcut-tooltip:not([data-entering]):not([data-exiting]) {
-  opacity: 1;
-  transform: translateY(0) translateX(0);
+  left: 100%;
+  top: 50%;
+  transform: translateY(-50%);
+  margin-left: 8px;
 }
 
 /* Tooltip Label */
@@ -64,7 +89,7 @@
   background: rgba(255, 255, 255, 0.15);
   color: inherit;
   border-radius: 4px;
-  font-family: var(--md-sys-typescale-body-small-font);
+  font-family: var(--md-sys-typescale-body-small-font, monospace);
   font-size: 11px;
   font-weight: 500;
   white-space: nowrap;

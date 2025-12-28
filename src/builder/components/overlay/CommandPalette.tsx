@@ -15,7 +15,6 @@
 
 import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import {
-  DialogTrigger,
   Modal,
   Dialog,
   ListBox,
@@ -181,79 +180,81 @@ export function CommandPalette({
   );
 
   return (
-    <DialogTrigger isOpen={isOpen} onOpenChange={handleOpenChange}>
-      <ModalOverlay className="command-palette-overlay">
-        <Modal className="command-palette-modal">
-          <Dialog aria-label="Command Palette" onKeyDown={handleKeyDown}>
-            {/* Search Input */}
-            <div className="command-palette-search">
-              <Search
-                size={iconProps.size}
-                className="command-palette-search-icon"
-              />
-              <input
-                ref={inputRef}
-                type="text"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="명령어 검색..."
-                className="command-palette-input"
-                aria-label="Search commands"
-              />
-            </div>
+    <ModalOverlay
+      isOpen={isOpen}
+      onOpenChange={handleOpenChange}
+      className="command-palette-overlay"
+    >
+      <Modal className="command-palette-modal">
+        <Dialog aria-label="Command Palette" onKeyDown={handleKeyDown}>
+          {/* Search Input */}
+          <div className="command-palette-search">
+            <Search
+              size={iconProps.size}
+              className="command-palette-search-icon"
+            />
+            <input
+              ref={inputRef}
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="명령어 검색..."
+              className="command-palette-input"
+              aria-label="Search commands"
+            />
+          </div>
 
-            {/* Command List */}
-            {filteredCommands.length > 0 ? (
-              <ListBox
-                aria-label="Commands"
-                className="command-palette-list"
-                selectionMode="single"
-                onAction={(key) => executeCommand(key as ShortcutId)}
-              >
-                {filteredCommands.map((cmd) => (
-                  <ListBoxItem
-                    key={cmd.id}
-                    id={cmd.id}
-                    textValue={cmd.label}
-                    className="command-palette-item"
-                  >
-                    <div className="command-palette-item-content">
-                      <span className="command-palette-item-label">
-                        {cmd.label}
-                      </span>
-                      <span className="command-palette-item-category">
-                        {CATEGORY_LABELS[cmd.category]}
-                      </span>
-                    </div>
-                    <kbd className="command-palette-kbd">{cmd.shortcut}</kbd>
-                  </ListBoxItem>
-                ))}
-              </ListBox>
-            ) : (
-              <div className="command-palette-empty">
-                "{search}"에 대한 결과가 없습니다
-              </div>
-            )}
-
-            {/* Footer */}
-            <div className="command-palette-footer">
-              <div className="command-palette-hints">
-                <span className="command-palette-hint">
-                  <kbd>↑↓</kbd> 이동
-                </span>
-                <span className="command-palette-hint">
-                  <kbd>↵</kbd> 실행
-                </span>
-                <span className="command-palette-hint">
-                  <kbd>esc</kbd> 닫기
-                </span>
-              </div>
-              <span>{filteredCommands.length}개 명령어</span>
+          {/* Command List */}
+          {filteredCommands.length > 0 ? (
+            <ListBox
+              aria-label="Commands"
+              className="command-palette-list"
+              selectionMode="single"
+              onAction={(key) => executeCommand(key as ShortcutId)}
+            >
+              {filteredCommands.map((cmd) => (
+                <ListBoxItem
+                  key={cmd.id}
+                  id={cmd.id}
+                  textValue={cmd.label}
+                  className="command-palette-item"
+                >
+                  <div className="command-palette-item-content">
+                    <span className="command-palette-item-label">
+                      {cmd.label}
+                    </span>
+                    <span className="command-palette-item-category">
+                      {CATEGORY_LABELS[cmd.category]}
+                    </span>
+                  </div>
+                  <kbd className="command-palette-kbd">{cmd.shortcut}</kbd>
+                </ListBoxItem>
+              ))}
+            </ListBox>
+          ) : (
+            <div className="command-palette-empty">
+              "{search}"에 대한 결과가 없습니다
             </div>
-          </Dialog>
-        </Modal>
-      </ModalOverlay>
-    </DialogTrigger>
+          )}
+
+          {/* Footer */}
+          <div className="command-palette-footer">
+            <div className="command-palette-hints">
+              <span className="command-palette-hint">
+                <kbd>↑↓</kbd> 이동
+              </span>
+              <span className="command-palette-hint">
+                <kbd>↵</kbd> 실행
+              </span>
+              <span className="command-palette-hint">
+                <kbd>esc</kbd> 닫기
+              </span>
+            </div>
+            <span>{filteredCommands.length}개 명령어</span>
+          </div>
+        </Dialog>
+      </Modal>
+    </ModalOverlay>
   );
 }
 

@@ -16,7 +16,7 @@
  * ```
  */
 
-import { TooltipTrigger, Tooltip } from 'react-aria-components';
+import { useRef, useState, useCallback } from 'react';
 import {
   SHORTCUT_DEFINITIONS,
   type ShortcutId,
@@ -32,7 +32,7 @@ export interface ShortcutTooltipProps {
   /** 단축키 ID */
   shortcutId: ShortcutId;
   /** 트리거 요소 (Button 등) */
-  children: React.ReactElement;
+  children: React.ReactNode;
   /** 툴팁 지연 시간 (ms) */
   delay?: number;
   /** 툴팁 위치 */
@@ -49,27 +49,55 @@ export function ShortcutTooltip({
   shortcutId,
   children,
   delay = 700,
-  placement = 'top',
+  placement = 'bottom',
   label,
 }: ShortcutTooltipProps) {
   const def = SHORTCUT_DEFINITIONS[shortcutId];
+  const [isOpen, setIsOpen] = useState(false);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleMouseEnter = useCallback(() => {
+    timeoutRef.current = setTimeout(() => {
+      setIsOpen(true);
+    }, delay);
+  }, [delay]);
+
+  const handleMouseLeave = useCallback(() => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+    setIsOpen(false);
+  }, []);
 
   // 정의되지 않은 단축키면 children만 반환
   if (!def) {
-    return children;
+    return <>{children}</>;
   }
 
   const display = formatShortcut({ key: def.key, modifier: def.modifier });
   const description = label || def.i18n?.ko || def.description;
 
   return (
-    <TooltipTrigger delay={delay}>
+    <span
+      className="shortcut-tooltip-wrapper"
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+      onFocus={handleMouseEnter}
+      onBlur={handleMouseLeave}
+    >
       {children}
-      <Tooltip placement={placement} className="shortcut-tooltip">
-        <span className="shortcut-tooltip-label">{description}</span>
-        <kbd className="shortcut-tooltip-kbd">{display}</kbd>
-      </Tooltip>
-    </TooltipTrigger>
+      {isOpen && (
+        <div
+          className="shortcut-tooltip"
+          data-placement={placement}
+          role="tooltip"
+        >
+          <span className="shortcut-tooltip-label">{description}</span>
+          <kbd className="shortcut-tooltip-kbd">{display}</kbd>
+        </div>
+      )}
+    </span>
   );
 }
 

@@ -472,6 +472,12 @@ export class IndexedDBAdapter implements DatabaseAdapter {
       });
     },
 
+    put: async (element: Element): Promise<Element> => {
+      const result = await this.putToStore('elements', element);
+      this.elementCache.set(element.id, result);
+      return result;
+    },
+
     update: async (id: string, data: Partial<Element>): Promise<Element> => {
       // Try cache first
       let existing = this.elementCache.get(id);
