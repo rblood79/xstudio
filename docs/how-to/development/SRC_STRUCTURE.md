@@ -517,6 +517,52 @@ Types Layer (types)
 
 ---
 
+## E. 변경 이력
+
+### 2025-12-29: Phase 1 완료
+
+#### 1.1 색상 유틸리티 통합 ✅
+- `utils/color/colorUtils.ts`에 레거시 호환 함수 12개 추가
+  - `hslToRgb`, `rgbToHsl`, `hexToRgb`, `rgbToHex`
+  - `hslToHex`, `hexToHsl`, `hslToString`, `rgbToString`
+  - `generateDarkVariant`, `parseColorString`
+  - `adjustLightness`, `adjustSaturationHsl`, `getSplitComplementaryColors`
+- Import 경로 변경 (8개 파일):
+  - `services/theme/FigmaService.ts`
+  - `services/theme/ThemeGenerationService.ts`
+  - `services/theme/HctThemeService.ts`
+  - `services/theme/ExportService.ts`
+  - `services/theme/FigmaPluginService.ts`
+  - `builder/panels/themes/components/TokenEditor.tsx`
+  - `utils/theme/tokenToCss.ts`
+  - `utils/theme/hctUtils.ts`
+- `utils/theme/colorUtils.ts` 삭제
+
+#### 1.2 builder/stores/index.ts ✅
+- 이미 존재함 (이전에 완료)
+
+#### 1.3 builder/hooks/index.ts ✅
+- 35개 hook에 대한 barrel export 생성
+- 카테고리별 그룹핑 (Async, Data, UI State, Keyboard 등)
+
+#### 1.4 작은 폴더 통합 ❌
+- 취소됨 (현재 폴더 구조 유지 결정)
+
+### Phase 2, 3 분석 결과
+
+#### 2.1 Store 구조 재설계 → 🔲 대기
+- 영향 범위: 69+ 파일
+- 결정: 과도한 변경으로 판단, 보류
+
+#### 3.2 성능 모니터링 모듈 통합 → ❌ 불필요
+- 분석 결과: 실제 중복 아님
+- `utils/performanceMonitor.ts` → 데이터 캐싱/Fetching 성능
+- `builder/utils/performanceMonitor.ts` → UI/렌더링 성능
+- `utils/performance/` → 스타일 패널 성능 측정
+- 각각 다른 목적으로 사용 중, 통합 불필요
+
+---
+
 **작성일**: 2025-12-27
 **마지막 업데이트**: 2025-12-29
-**상태**: Phase 1 완료 (1.1 ✅, 1.2 ✅, 1.3 ✅, 1.4 ❌취소)
+**상태**: Phase 1 완료 | Phase 2 대기 | Phase 3.2 불필요
