@@ -18,7 +18,7 @@ import Grid from "../grid";
 import { Workspace } from "../workspace";
 import { isWebGLCanvas, isCanvasCompareMode } from "../../utils/featureFlags";
 import { PanelSlot, BottomPanelSlot } from "../layout";
-import { ToastContainer } from "../components";
+import { ToastContainer, CommandPalette } from "../components";
 
 import { useErrorHandler } from "../hooks/useErrorHandler";
 // import { useElementCreator } from "../hooks/useElementCreator";  // 사용하지 않음
@@ -870,6 +870,9 @@ export const BuilderCore: React.FC = () => {
 
       {/* 🚀 Phase 7: Toast 알림 컨테이너 */}
       <ToastContainer toasts={toasts} onDismiss={dismissToast} />
+
+      {/* 🚀 Phase 7: 커맨드 팔레트 (Cmd+K) */}
+      <CommandPalette />
     </BuilderViewport>
   );
 };

@@ -4,6 +4,7 @@
  * 전역 키보드 단축키 통합 훅
  * - Undo/Redo (Cmd+Z, Cmd+Shift+Z)
  * - Zoom (Cmd+=/-/0/1/2)
+ * - Copy/Paste/Delete (스코프 기반)
  *
  * 설정 파일(keyboardShortcuts.ts)에서 정의를 가져오고
  * 핸들러만 바인딩하는 방식으로 구현
@@ -11,6 +12,7 @@
  * @since Phase 0+1 구현 (2025-12-28)
  * @updated Phase 2 - JSON Config 연동 (2025-12-28)
  * @updated Phase 4 - 스코프 시스템 연동 (2025-12-28)
+ * @updated Phase 6 - Copy/Paste/Delete 스코프 기반 통합 (2025-12-29)
  */
 
 import { useCallback, useMemo } from 'react';
@@ -25,6 +27,13 @@ import {
   type ShortcutId,
 } from '../config/keyboardShortcuts';
 import { useActiveScope } from './useActiveScope';
+import {
+  copyMultipleElements,
+  pasteMultipleElements,
+  serializeCopiedElements,
+  deserializeCopiedElements,
+} from '../utils/multiElementCopy';
+import { useCopyPaste } from './useCopyPaste';
 
 // ============================================
 // Constants
@@ -150,6 +159,149 @@ export function useGlobalKeyboardShortcuts() {
   const handleZoom200 = useCallback(() => zoomTo(2), [zoomTo]);
 
   // ----------------------------------------
+  // Copy/Paste/Delete Handlers (Phase 6)
+  // ----------------------------------------
+
+  /**
+   * Element Clipboard - useCopyPaste 훅 사용
+   * copyText/pasteText를 통해 직렬화된 요소 데이터 처리
+   */
+  const { copyText, pasteText } = useCopyPaste({
+    onPaste: () => {}, // pasteText 사용으로 직접 처리
+    name: 'elements',
+  });
+
+  /**
+   * Canvas Copy - 선택된 요소들 복사
+   */
+  const handleCanvasCopy = useCallback(async () => {
+    const { selectedElementIds, elementsMap, currentPageId } = useStore.getState();
+
+    if (selectedElementIds.length === 0 || !currentPageId) {
+      console.log('[Keyboard] Copy: No elements selected');
+      return;
+    }
+
+    const copiedData = copyMultipleElements(selectedElementIds, elementsMap);
+    const serialized = serializeCopiedElements(copiedData);
+
+    const success = await copyText(serialized);
+    if (success) {
+      console.log(`[Keyboard] Copied ${copiedData.elements.length} elements`);
+    } else {
+      console.error('[Keyboard] Copy failed');
+    }
+  }, [copyText]);
+
+  /**
+   * Canvas Paste - 클립보드에서 요소 붙여넣기
+   */
+  const handleCanvasPaste = useCallback(async () => {
+    const { currentPageId, addElement } = useStore.getState();
+
+    if (!currentPageId) {
+      console.log('[Keyboard] Paste: No page selected');
+      return;
+    }
+
+    const text = await pasteText();
+    if (!text) {
+      console.log('[Keyboard] Paste: Failed to read clipboard');
+      return;
+    }
+
+    const copiedData = deserializeCopiedElements(text);
+    if (!copiedData) {
+      console.log('[Keyboard] Paste: No valid element data in clipboard');
+      return;
+    }
+
+    const newElements = pasteMultipleElements(copiedData, currentPageId);
+
+    for (const element of newElements) {
+      await addElement(element);
+    }
+
+    console.log(`[Keyboard] Pasted ${newElements.length} elements`);
+  }, [pasteText]);
+
+  /**
+   * Canvas Delete - 선택된 요소들 삭제
+   */
+  const handleCanvasDelete = useCallback(async () => {
+    const { selectedElementIds, removeElement, setSelectedElement } = useStore.getState();
+
+    if (selectedElementIds.length === 0) {
+      console.log('[Keyboard] Delete: No elements selected');
+      return;
+    }
+
+    console.log(`[Keyboard] Deleting ${selectedElementIds.length} elements`);
+
+    // 선택 해제 먼저
+    setSelectedElement(null);
+
+    // 요소들 삭제
+    for (const id of selectedElementIds) {
+      await removeElement(id);
+    }
+  }, []);
+
+  /**
+   * Events Panel Copy - 선택된 액션들 복사
+   * (현재는 placeholder - Events panel에서 구체적 구현 필요)
+   */
+  const handleEventsCopy = useCallback(() => {
+    console.log('[Keyboard] Events Copy: placeholder');
+    // TODO: Events panel과 연동 필요
+    // eventsClipboardRef.current = JSON.stringify(selectedActions);
+  }, []);
+
+  /**
+   * Events Panel Paste - 클립보드에서 액션 붙여넣기
+   */
+  const handleEventsPaste = useCallback(() => {
+    console.log('[Keyboard] Events Paste: placeholder');
+    // TODO: Events panel과 연동 필요
+  }, []);
+
+  /**
+   * Events Panel Delete - 선택된 액션들 삭제
+   */
+  const handleEventsDelete = useCallback(() => {
+    console.log('[Keyboard] Events Delete: placeholder');
+    // TODO: Events panel과 연동 필요
+  }, []);
+
+  /**
+   * Escape - 선택 해제 / 모달 닫기
+   */
+  const handleEscape = useCallback(() => {
+    const { setSelectedElement, selectedElementIds } = useStore.getState();
+
+    if (selectedElementIds.length > 0) {
+      setSelectedElement(null);
+      console.log('[Keyboard] Selection cleared');
+    }
+  }, []);
+
+  /**
+   * 스코프 기반 핸들러 선택
+   */
+  const getScopedHandler = useCallback(
+    (canvasHandler: () => void, eventsHandler: () => void) => {
+      return () => {
+        if (activeScope === 'panel:events') {
+          eventsHandler();
+        } else {
+          canvasHandler();
+        }
+      };
+    },
+    [activeScope]
+  );
+
+  // ----------------------------------------
   // Handler Map
   // ----------------------------------------
 
@@ -166,6 +318,13 @@ export function useGlobalKeyboardShortcuts() {
       zoomToFit: handleZoomToFit,
       zoom100: handleZoom100,
       zoom200: handleZoom200,
+
+      // Canvas (Phase 6: 스코프 기반)
+      copy: getScopedHandler(handleCanvasCopy, handleEventsCopy),
+      paste: getScopedHandler(handleCanvasPaste, handleEventsPaste),
+      delete: getScopedHandler(handleCanvasDelete, handleEventsDelete),
+      deleteAlt: getScopedHandler(handleCanvasDelete, handleEventsDelete),
+      escape: handleEscape,
     }),
     [
       handleUndo,
@@ -175,6 +334,15 @@ export function useGlobalKeyboardShortcuts() {
       handleZoomToFit,
       handleZoom100,
       handleZoom200,
+      // Phase 6
+      getScopedHandler,
+      handleCanvasCopy,
+      handleCanvasPaste,
+      handleCanvasDelete,
+      handleEventsCopy,
+      handleEventsPaste,
+      handleEventsDelete,
+      handleEscape,
     ]
   );
 
@@ -194,6 +362,12 @@ export function useGlobalKeyboardShortcuts() {
       'zoomToFit',
       'zoom100',
       'zoom200',
+      // Canvas (Phase 6)
+      'copy',
+      'paste',
+      'delete',
+      'deleteAlt',
+      'escape',
     ];
 
     return bindHandlersToDefinitions(shortcutIds, handlers);

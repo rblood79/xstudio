@@ -1,8 +1,8 @@
 # XStudio Keyboard Shortcuts System
 
-> **Version:** 3.0
-> **Last Updated:** 2025-12-28
-> **Status:** ✅ Phase 0-5 구현 완료
+> **Version:** 3.1
+> **Last Updated:** 2025-12-29
+> **Status:** ✅ Phase 0-7 구현 완료
 
 ---
 
@@ -140,9 +140,11 @@ src/builder/
 ├── components/
 │   ├── help/
 │   │   └── KeyboardShortcutsHelp.tsx # ✅ 검색 + 탭 필터링 + 설정 연동
-│   ├── overlay/                      # 🔜 Phase 7 예정
-│   │   ├── ShortcutTooltip.css       # 단축키 툴팁 스타일
-│   │   └── ShortcutTooltip.tsx       # 단축키 툴팁 컴포넌트
+│   ├── overlay/                      # ✅ Phase 7 완료
+│   │   ├── ShortcutTooltip.css       # ✅ 단축키 툴팁 스타일
+│   │   ├── ShortcutTooltip.tsx       # ✅ 단축키 툴팁 컴포넌트
+│   │   ├── CommandPalette.css        # ✅ 커맨드 팔레트 스타일
+│   │   └── CommandPalette.tsx        # ✅ 커맨드 팔레트 컴포넌트
 │   └── property/
 │       ├── PropertyUnitInput.tsx     # 유지 (컴포넌트 로컬)
 │       ├── PropertyCustomId.tsx      # 유지 (컴포넌트 로컬)
@@ -1402,22 +1404,29 @@ src/builder/
 - `KeyboardShortcutsHelp.tsx` 개선 (검색, 카테고리 탭, 설정 파일 연동)
 - `detectShortcutConflicts.ts` 충돌 감지 유틸리티
 
----
-
-## 향후 개선 방향 (Phase 6-9)
-
-### Phase Overview (Future)
-
-| Phase | Description | Priority | Effort | 의존성 |
-|-------|-------------|----------|--------|--------|
-| **6** | 패널 단축키 완전 통합 | 🟡 Medium | 3일 | Phase 4 |
-| **7** | 툴팁 & 디스커버러빌리티 | 🟢 Low | 2일 | Phase 2 |
-| **8** | 국제 키보드 지원 | 🟡 Medium | 4일 | Phase 2 |
-| **9** | 사용자 커스터마이징 | 🟢 Low | 5일 | Phase 8 |
+### Phase 6: 패널 단축키 완전 통합 ✅
+- `useGlobalKeyboardShortcuts.ts`에 Copy/Paste/Delete 핸들러 추가
+- 스코프 기반 핸들러 분기 (`getScopedHandler`)
+- Canvas vs Events 패널 자동 분기 처리
+- `multiElementCopy.ts` 유틸리티 연동
 
 ---
 
-### Phase 6: 패널 단축키 완전 통합 (3일)
+## 향후 개선 방향 (Phase 8-9)
+
+### Phase Overview
+
+| Phase | Description | Priority | Effort | 상태 |
+|-------|-------------|----------|--------|------|
+| **7** | 툴팁 & 디스커버러빌리티 | 🟢 Low | 2일 | ✅ 완료 |
+| **8** | 국제 키보드 지원 | 🟡 Medium | 4일 | 📄 문서만 |
+| **9** | 사용자 커스터마이징 | 🟢 Low | 5일 | 📄 문서만 |
+
+---
+
+### Phase 6: 패널 단축키 완전 통합 (3일) ✅
+
+> ✅ **Status: 구현 완료** (2025-12-29)
 
 **목표:** Events/Properties 패널의 단축키를 useGlobalKeyboardShortcuts로 완전 통합
 
@@ -1495,7 +1504,7 @@ describe('Phase 6: 패널 단축키 통합', () => {
 
 ---
 
-### Phase 7: 툴팁 & 디스커버러빌리티 (2일)
+### Phase 7: 툴팁 & 디스커버러빌리티 (2일) ✅
 
 **목표:** 단축키를 UI에서 쉽게 발견할 수 있도록 개선
 
@@ -1653,6 +1662,10 @@ src/builder/components/overlay/
 ```typescript
 // src/builder/components/menu/MenuItem.tsx
 
+import { Item } from 'react-aria-components';
+import { SHORTCUT_DEFINITIONS, type ShortcutId } from '../../config/keyboardShortcuts';
+import { formatShortcut } from '../../hooks/useKeyboardShortcutsRegistry';
+
 interface MenuItemProps {
   label: string;
   shortcutId?: ShortcutId;
@@ -1678,6 +1691,12 @@ export function MenuItem({ label, shortcutId, onAction }: MenuItemProps) {
 ```typescript
 // src/builder/components/CommandPalette.tsx
 
+import { useState, useMemo } from 'react';
+import { DialogTrigger, Modal, Dialog, ListBox, Item } from 'react-aria-components';
+import { SHORTCUT_DEFINITIONS } from '../config/keyboardShortcuts';
+import { formatShortcut } from '../hooks/useKeyboardShortcutsRegistry';
+import { useKeyboardShortcutsRegistry } from '../hooks/useKeyboardShortcutsRegistry';
+
 export function CommandPalette() {
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState('');
@@ -1700,7 +1719,14 @@ export function CommandPalette() {
     <DialogTrigger isOpen={isOpen} onOpenChange={setIsOpen}>
       <Modal>
         <Dialog>
-          <SearchField value={search} onChange={setSearch} autoFocus />
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search commands..."
+            className="command-palette-search"
+            autoFocus
+          />
           <ListBox items={filteredCommands}>
             {([id, def]) => (
               <Item key={id} onAction={() => executeShortcut(id)}>
@@ -1716,18 +1742,37 @@ export function CommandPalette() {
 }
 ```
 
-#### 7.5 작업 목록
+#### 7.5 작업 목록 (구현 완료)
 
-| 작업 | 설명 | 예상 시간 |
-|------|------|----------|
-| `ShortcutTooltip` 컴포넌트 | tsx + css 1:1 매칭 | 2h |
-| 툴바 버튼 적용 | Undo/Redo/Zoom 등 버튼에 ShortcutTooltip 적용 | 2h |
-| `MenuItem` 확장 | 단축키 표시 지원 | 2h |
-| `CommandPalette` 구현 | Cmd+K 커맨드 팔레트 | 4h |
+| 작업 | 설명 | 상태 |
+|------|------|------|
+| `ShortcutTooltip` 컴포넌트 | tsx + css 1:1 매칭 | ✅ |
+| 툴바 버튼 적용 | Undo/Redo 버튼에 ShortcutTooltip 적용 (BuilderHeader, HistoryPanel) | ✅ |
+| `MenuItem` 확장 | shortcutId prop 추가로 단축키 표시 지원 | ✅ |
+| `CommandPalette` 구현 | Cmd+K 커맨드 팔레트 | ✅ |
+
+#### 7.6 구현 파일
+
+```
+src/builder/components/overlay/
+├── ShortcutTooltip.css       # 툴팁 스타일
+├── ShortcutTooltip.tsx       # 단축키 툴팁 컴포넌트
+├── CommandPalette.css        # 커맨드 팔레트 스타일
+├── CommandPalette.tsx        # 커맨드 팔레트 컴포넌트
+└── index.ts                  # 모듈 export
+
+수정된 파일:
+├── src/builder/main/BuilderHeader.tsx      # Undo/Redo에 ShortcutTooltip 적용
+├── src/builder/panels/history/HistoryPanel.tsx  # Undo/Redo에 ShortcutTooltip 적용
+├── src/builder/main/BuilderCore.tsx        # CommandPalette 통합
+└── src/shared/components/Menu.tsx          # MenuItem shortcutId 지원
+```
 
 ---
 
-### Phase 8: 국제 키보드 지원 (4일)
+### Phase 8: 국제 키보드 지원 (4일) 📄
+
+> ⚠️ **Status: 문서만 완성 (구현 보류)** - 오버스펙으로 판단, 필요시 추후 구현
 
 **목표:** 다양한 키보드 레이아웃(QWERTY, AZERTY, QWERTZ 등)에서 일관된 단축키 경험 제공
 
@@ -1877,7 +1922,9 @@ export function KeyboardShortcutsHelp() {
 
 ---
 
-### Phase 9: 사용자 커스터마이징 (5일)
+### Phase 9: 사용자 커스터마이징 (5일) 📄
+
+> ⚠️ **Status: 문서만 완성 (구현 보류)** - 오버스펙으로 판단, 필요시 추후 구현
 
 **목표:** 사용자가 단축키를 변경하고 저장할 수 있도록 지원
 
@@ -1905,6 +1952,10 @@ interface UserShortcutConfig {
 
 ```typescript
 // src/builder/stores/shortcutCustomization.ts
+
+import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
+import type { ShortcutId } from '../config/keyboardShortcuts';
 
 const STORAGE_KEY = 'xstudio-keyboard-shortcuts';
 
@@ -1976,6 +2027,26 @@ export const useShortcutCustomization = create<ShortcutCustomizationState>(
 
 ```typescript
 // src/builder/components/settings/ShortcutCustomizer.tsx
+
+import { useState, useCallback, useEffect } from 'react';
+import { Button } from '../../../shared/components';
+import { SHORTCUT_DEFINITIONS, type ShortcutId } from '../../config/keyboardShortcuts';
+import { formatShortcut } from '../../hooks/useKeyboardShortcutsRegistry';
+import { useShortcutCustomization } from '../../stores/shortcutCustomization';
+import { checkNewShortcutConflict } from '../../utils/detectShortcutConflicts';
+import type { KeyboardModifier } from '../../types/keyboard';
+
+function detectModifier(e: KeyboardEvent): KeyboardModifier {
+  if (e.metaKey && e.shiftKey) return 'cmdShift';
+  if (e.metaKey && e.altKey) return 'cmdAlt';
+  if (e.metaKey) return 'cmd';
+  if (e.ctrlKey && e.shiftKey) return 'ctrlShift';
+  if (e.ctrlKey) return 'ctrl';
+  if (e.altKey && e.shiftKey) return 'altShift';
+  if (e.altKey) return 'alt';
+  if (e.shiftKey) return 'shift';
+  return 'none';
+}
 
 export function ShortcutCustomizer() {
   const { overrides, setOverride, removeOverride, resetAll } = useShortcutCustomization();
@@ -2129,23 +2200,23 @@ function showConflictDialog(
 ### Phase 의존성 다이어그램
 
 ```
-Phase 0-5 (완료)
+Phase 0-5 ✅ (완료)
     │
-    ├── Phase 6: 패널 단축키 통합
+    ├── Phase 6 ✅: 패널 단축키 통합 (완료)
     │       │
-    │       └── Phase 7: 툴팁 & 디스커버러빌리티 (독립적)
+    │       └── Phase 7 ✅: 툴팁 & 디스커버러빌리티 (완료)
     │
-    └── Phase 8: 국제 키보드 지원
-            │
-            └── Phase 9: 사용자 커스터마이징
+    └── Phase 8-9: 문서만 완성 (구현 보류)
 ```
 
 ### 전체 완성도 로드맵
 
-| 완성도 | Phase | 기능 |
-|--------|-------|------|
-| 80% | Phase 0-5 ✅ | 핵심 시스템 완료 |
-| 85% | Phase 6 | 패널 단축키 완전 통합 |
-| 90% | Phase 7 | 툴팁, 커맨드 팔레트 |
-| 95% | Phase 8 | 국제 키보드 지원 |
-| 100% | Phase 9 | 사용자 커스터마이징 |
+| 완성도 | Phase | 기능 | 상태 |
+|--------|-------|------|------|
+| 80% | Phase 0-5 | 핵심 시스템 | ✅ 완료 |
+| 85% | Phase 6 | 패널 단축키 완전 통합 | ✅ 완료 |
+| 90% | Phase 7 | 툴팁, 커맨드 팔레트 | ✅ 완료 |
+| 95% | Phase 8 | 국제 키보드 지원 | 📄 문서만 |
+| 100% | Phase 9 | 사용자 커스터마이징 | 📄 문서만 |
+
+> **Note:** Phase 8, 9는 오버스펙으로 판단하여 문서만 완성. 필요시 추후 구현.

@@ -119,7 +119,7 @@ export function detectConflicts(): ConflictReport {
   }
 
   // 충돌 확인
-  for (const [keyCombo, shortcuts] of keyMap.entries()) {
+  for (const [, shortcuts] of keyMap.entries()) {
     if (shortcuts.length < 2) continue;
 
     // 모든 쌍 비교

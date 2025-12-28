@@ -2,7 +2,7 @@ import "../../components/styles";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Clock, History, Redo, Trash2, Undo } from "lucide-react";
 import type { PanelProps } from "../core/types";
-import { PanelHeader, EmptyState } from "../../components";
+import { PanelHeader, EmptyState, ShortcutTooltip } from "../../components";
 import { Button } from "../../../shared/components";
 import { iconProps, iconSmall } from "../../../utils/ui/uiConstants";
 import { historyManager, type HistoryEntry } from "../../stores/history";
@@ -188,24 +188,28 @@ function HistoryPanelContent() {
             <span className="history-count">
               {Math.max(historyInfo.currentIndex + 1, 0)}/{historyInfo.totalEntries}
             </span>
-            <button
-              className="iconButton"
-              type="button"
-              onClick={handleUndo}
-              disabled={!historyInfo.canUndo || historyOperationInProgress}
-              aria-label="Undo"
-            >
-              <Undo size={iconProps.size} />
-            </button>
-            <button
-              className="iconButton"
-              type="button"
-              onClick={handleRedo}
-              disabled={!historyInfo.canRedo || historyOperationInProgress}
-              aria-label="Redo"
-            >
-              <Redo size={iconProps.size} />
-            </button>
+            <ShortcutTooltip shortcutId="undo" placement="bottom">
+              <button
+                className="iconButton"
+                type="button"
+                onClick={handleUndo}
+                disabled={!historyInfo.canUndo || historyOperationInProgress}
+                aria-label="Undo"
+              >
+                <Undo size={iconProps.size} />
+              </button>
+            </ShortcutTooltip>
+            <ShortcutTooltip shortcutId="redo" placement="bottom">
+              <button
+                className="iconButton"
+                type="button"
+                onClick={handleRedo}
+                disabled={!historyInfo.canRedo || historyOperationInProgress}
+                aria-label="Redo"
+              >
+                <Redo size={iconProps.size} />
+              </button>
+            </ShortcutTooltip>
             <button
               className="iconButton"
               type="button"

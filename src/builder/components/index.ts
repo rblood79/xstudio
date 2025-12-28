@@ -53,5 +53,13 @@ export { DataTable, DataTableMetadata } from './data';
 // Help 컴포넌트
 export { KeyboardShortcutsHelp } from './help';
 
+// Overlay 컴포넌트
+export {
+  ShortcutTooltip,
+  type ShortcutTooltipProps,
+  CommandPalette,
+  type CommandPaletteProps,
+} from './overlay';
+
 // Styles
 import './styles';

@@ -14,6 +14,11 @@ import type { MenuVariant, ComponentSize } from '../../types/componentVariants';
 import type { DataBinding, ColumnMapping } from "../../types/builder/unified.types";
 import type { DataBindingValue } from "../../builder/components";
 import { useCollectionData } from "../../builder/hooks/useCollectionData";
+import {
+  SHORTCUT_DEFINITIONS,
+  type ShortcutId,
+} from "../../builder/config/keyboardShortcuts";
+import { formatShortcut } from "../../builder/hooks/useKeyboardShortcutsRegistry";
 
 import "./styles/Menu.css";
 
@@ -420,17 +425,44 @@ export function MenuButton<T extends object>({
   );
 }
 
-export function MenuItem(
-  props: Omit<MenuItemProps, "children"> & { children?: React.ReactNode }
-) {
+export interface ExtendedMenuItemProps
+  extends Omit<MenuItemProps, "children"> {
+  children?: React.ReactNode;
+  /** 단축키 ID (SHORTCUT_DEFINITIONS에서 조회) */
+  shortcutId?: ShortcutId;
+  /** 직접 지정하는 단축키 문자열 (shortcutId보다 우선) */
+  shortcut?: string;
+}
+
+export function MenuItem({
+  shortcutId,
+  shortcut,
+  children,
+  ...props
+}: ExtendedMenuItemProps) {
   const textValue =
     props.textValue ||
-    (typeof props.children === "string" ? props.children : undefined);
+    (typeof children === "string" ? children : undefined);
+
+  // shortcutId가 있으면 정의에서 가져오고, 없으면 shortcut 직접 사용
+  let shortcutDisplay: string | null = null;
+  if (shortcut) {
+    shortcutDisplay = shortcut;
+  } else if (shortcutId && SHORTCUT_DEFINITIONS[shortcutId]) {
+    const def = SHORTCUT_DEFINITIONS[shortcutId];
+    shortcutDisplay = formatShortcut({ key: def.key, modifier: def.modifier });
+  }
+
   return (
     <AriaMenuItem {...props} textValue={textValue}>
       {({ hasSubmenu }) => (
         <>
-          {props.children}
+          <span className="menu-item-content">
+            <span className="menu-item-label">{children}</span>
+            {shortcutDisplay && (
+              <kbd className="menu-item-shortcut">{shortcutDisplay}</kbd>
+            )}
+          </span>
           {hasSubmenu && (
             <svg className="chevron" viewBox="0 0 24 24">
               <path d="m9 18 6-6-6-6" />

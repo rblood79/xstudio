@@ -1,0 +1,71 @@
+/**
+ * ShortcutTooltip 컴포넌트 스타일
+ * react-aria-components Tooltip 스타일링
+ *
+ * @since Phase 7 구현 (2025-12-29)
+ */
+
+/* Base Tooltip Styles */
+.shortcut-tooltip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  background: var(--md-sys-color-inverse-surface);
+  color: var(--md-sys-color-inverse-on-surface);
+  border-radius: 6px;
+  font-size: 12px;
+  font-family: var(--md-sys-typescale-body-small-font);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  z-index: 10000;
+
+  /* react-aria animation */
+  opacity: 0;
+  transform: translateY(4px);
+  transition: opacity 150ms ease-out, transform 150ms ease-out;
+}
+
+.shortcut-tooltip[data-entering],
+.shortcut-tooltip[data-exiting] {
+  opacity: 0;
+  transform: translateY(4px);
+}
+
+.shortcut-tooltip[data-placement="bottom"] {
+  transform: translateY(-4px);
+}
+
+.shortcut-tooltip[data-placement="left"] {
+  transform: translateX(4px);
+}
+
+.shortcut-tooltip[data-placement="right"] {
+  transform: translateX(-4px);
+}
+
+/* Visible state */
+.shortcut-tooltip:not([data-entering]):not([data-exiting]) {
+  opacity: 1;
+  transform: translateY(0) translateX(0);
+}
+
+/* Tooltip Label */
+.shortcut-tooltip-label {
+  color: inherit;
+}
+
+/* Keyboard Shortcut Badge */
+.shortcut-tooltip-kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  padding: 2px 6px;
+  background: rgba(255, 255, 255, 0.15);
+  color: inherit;
+  border-radius: 4px;
+  font-family: var(--md-sys-typescale-body-small-font);
+  font-size: 11px;
+  font-weight: 500;
+  white-space: nowrap;
+}

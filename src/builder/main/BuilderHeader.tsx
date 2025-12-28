@@ -19,6 +19,7 @@ import { ToggleButton } from "../../shared/components/ToggleButton";
 import { iconProps } from "../../utils/ui/uiConstants";
 import { usePanelLayout } from "../layout";
 import { ZoomControls } from "../workspace/ZoomControls";
+import { ShortcutTooltip } from "../components/overlay";
 
 export interface Breakpoint {
   id: string;
@@ -152,30 +153,34 @@ export const BuilderHeader: React.FC<BuilderHeaderProps> = ({
         <span className="history-info">
           {historyInfo ? `${historyInfo.current}/${historyInfo.total}` : "0/0"}
         </span>
-        <button
-          aria-label="Undo"
-          onClick={onUndo}
-          disabled={!canUndo}
-          className={!canUndo ? "disabled" : ""}
-        >
-          <Undo
-            color={!canUndo ? "#999" : iconProps.color}
-            strokeWidth={iconProps.strokeWidth}
-            size={iconProps.size}
-          />
-        </button>
-        <button
-          aria-label="Redo"
-          onClick={onRedo}
-          disabled={!canRedo}
-          className={!canRedo ? "disabled" : ""}
-        >
-          <Redo
-            color={!canRedo ? "#999" : iconProps.color}
-            strokeWidth={iconProps.strokeWidth}
-            size={iconProps.size}
-          />
-        </button>
+        <ShortcutTooltip shortcutId="undo" placement="bottom">
+          <button
+            aria-label="Undo"
+            onClick={onUndo}
+            disabled={!canUndo}
+            className={!canUndo ? "disabled" : ""}
+          >
+            <Undo
+              color={!canUndo ? "#999" : iconProps.color}
+              strokeWidth={iconProps.strokeWidth}
+              size={iconProps.size}
+            />
+          </button>
+        </ShortcutTooltip>
+        <ShortcutTooltip shortcutId="redo" placement="bottom">
+          <button
+            aria-label="Redo"
+            onClick={onRedo}
+            disabled={!canRedo}
+            className={!canRedo ? "disabled" : ""}
+          >
+            <Redo
+              color={!canRedo ? "#999" : iconProps.color}
+              strokeWidth={iconProps.strokeWidth}
+              size={iconProps.size}
+            />
+          </button>
+        </ShortcutTooltip>
         <ToggleButtonGroup
           selectionMode="multiple"
           selectedKeys={
