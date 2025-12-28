@@ -13,6 +13,439 @@ This document provides a comprehensive audit of all keyboard shortcuts implement
 
 ---
 
+## Industry Analysis: Figma vs Photoshop Web
+
+### Architecture Comparison
+
+| Feature | Figma | Photoshop Web | XStudio (Current) | XStudio (Proposed) |
+|---------|-------|---------------|-------------------|-------------------|
+| **Shortcut Storage** | JSON config + localStorage + DB | .kys files + Workspace | Hardcoded in components | JSON config file |
+| **Category System** | Tab-based categories | 4 categories (Menus, Panels, Tools, Taskspaces) | None | Category-based |
+| **Context-Aware** | ✅ State-based enable/disable | ✅ Taskspaces | ❌ No | ✅ Scope system |
+| **Conflict Detection** | ✅ At runtime | ✅ Warning dialog | ❌ No | ✅ Priority system |
+| **International Keyboards** | ✅ 2.5k+ layouts, Keyboard API | ✅ OS-level | ❌ No | ⚡ Phase 4 |
+| **Customization** | ❌ No (OS-level only) | ✅ Full customization | ❌ No | ⚡ Phase 5 |
+| **Help Panel** | ✅ Gamified (highlights used) | ✅ Searchable list | ✅ Basic modal | ✅ Enhanced |
+| **Temporary Tool** | ❌ No | ✅ Hold-to-activate | ❌ No | ⚡ Phase 6 |
+
+### Figma's Key Innovations
+
+**Source:** [Behind the scenes: international keyboard shortcuts](https://www.figma.com/blog/behind-the-scenes-international-keyboard-shortcuts/)
+
+1. **JSON-based Configuration**
+   - Shortcuts defined in JSON, not hardcoded
+   - Actions vary based on user/product state
+   - Easy to maintain and extend
+
+2. **Keyboard Layout Detection**
+   - Uses experimental Keyboard API for browser detection
+   - Maps character codes to known layouts (Swedish, German, etc.)
+   - Fallback to heuristics when API unavailable
+
+3. **Dual Storage Strategy**
+   - localStorage for device-specific preferences
+   - Backend DB for user preferences across devices
+   - Handles cache clearing gracefully
+
+4. **Inheritance Handling**
+   - Figma exists in browser → OS hierarchy
+   - Carefully avoids conflicting with browser/OS shortcuts
+   - Maintains motor memory from other tools
+
+### Photoshop Web's Key Features
+
+**Source:** [Customize keyboard shortcuts in Photoshop](https://helpx.adobe.com/photoshop/using/customizing-keyboard-shortcuts.html)
+
+1. **4 Category System**
+   ```
+   ├── Application Menus (File, Edit, View, etc.)
+   ├── Panel Menus (Layers, History, etc.)
+   ├── Tools (Brush, Lasso, Pen, etc.)
+   └── Taskspaces (Select & Mask, Content-Aware Fill, etc.)
+   ```
+
+2. **Conflict Warning System**
+   - Alert when shortcut already assigned
+   - "Accept" to reassign, "Cancel" to keep original
+   - Prevents accidental overwrites
+
+3. **Workspace Integration**
+   - Shortcuts saved with Workspace presets
+   - Portable .kys files for sharing/backup
+   - Different shortcuts per workflow
+
+4. **Temporary Tool Selection**
+   - Hold key for temporary tool switch
+   - Release returns to previous tool
+   - Reduces context switching
+
+### UX Best Practices Applied
+
+**Source:** [How to design great keyboard shortcuts](https://knock.app/blog/how-to-design-great-keyboard-shortcuts)
+
+| Practice | Description | XStudio Implementation |
+|----------|-------------|----------------------|
+| **Echo conventions** | ⌘+C, ⌘+V, ⌘+Z are universal | ✅ Already implemented |
+| **Fence novel shortcuts** | B for Brush only when canvas focused | 🔧 Need scope system |
+| **ESC exits modals** | Universal escape behavior | ✅ Implemented |
+| **? shows help** | Universal help shortcut | ✅ Cmd+? implemented |
+| **Single-key caution** | Can conflict with typing | 🔧 Need input field detection |
+| **Discoverability** | Show shortcuts in tooltips/menus | ⚡ Enhancement needed |
+
+---
+
+## Enhanced Design: Lessons from Industry Leaders
+
+### New Category System (Photoshop-Inspired)
+
+```typescript
+// src/builder/config/shortcutCategories.ts
+
+export enum ShortcutCategory {
+  // System-level (highest priority, capture phase)
+  SYSTEM = 'system',           // Undo, Redo, Save
+
+  // Application-level
+  NAVIGATION = 'navigation',   // Zoom, Pan, Page navigation
+  PANELS = 'panels',           // Panel toggles
+
+  // Context-level
+  CANVAS = 'canvas',           // Element selection, manipulation
+  TOOLS = 'tools',             // Tool selection (V, R, T, etc.)
+
+  // Component-level
+  PROPERTIES = 'properties',   // Property editing
+  EVENTS = 'events',           // Events panel actions
+  NODES = 'nodes',             // Nodes panel actions
+}
+
+export const CATEGORY_PRIORITY: Record<ShortcutCategory, number> = {
+  [ShortcutCategory.SYSTEM]: 100,
+  [ShortcutCategory.NAVIGATION]: 90,
+  [ShortcutCategory.PANELS]: 80,
+  [ShortcutCategory.CANVAS]: 70,
+  [ShortcutCategory.TOOLS]: 60,
+  [ShortcutCategory.PROPERTIES]: 50,
+  [ShortcutCategory.EVENTS]: 50,
+  [ShortcutCategory.NODES]: 50,
+};
+```
+
+### Scope System (Figma-Inspired)
+
+```typescript
+// src/builder/config/shortcutScopes.ts
+
+export type ShortcutScope =
+  | 'global'           // Always active
+  | 'canvas-focused'   // Canvas has focus
+  | 'panel:properties' // Properties panel active
+  | 'panel:events'     // Events panel active
+  | 'panel:nodes'      // Nodes panel active
+  | 'modal'            // Modal is open
+  | 'text-editing';    // Text input focused
+
+export interface ScopedShortcut extends KeyboardShortcut {
+  scope: ShortcutScope | ShortcutScope[];
+  category: ShortcutCategory;
+}
+
+// Example: Same key, different scopes
+const SCOPED_SHORTCUTS: ScopedShortcut[] = [
+  // Cmd+C in canvas = copy elements
+  {
+    key: 'c', modifier: 'cmd',
+    scope: 'canvas-focused',
+    category: ShortcutCategory.CANVAS,
+    handler: copyElements,
+  },
+  // Cmd+C in events panel = copy actions
+  {
+    key: 'c', modifier: 'cmd',
+    scope: 'panel:events',
+    category: ShortcutCategory.EVENTS,
+    handler: copyEventActions,
+  },
+];
+```
+
+### JSON Configuration (Figma-Inspired)
+
+```typescript
+// src/builder/config/keyboardShortcuts.json
+{
+  "version": "1.0.0",
+  "shortcuts": {
+    "undo": {
+      "key": "z",
+      "modifier": "cmd",
+      "category": "system",
+      "scope": "global",
+      "priority": 100,
+      "allowInInput": true,
+      "capture": true,
+      "description": "Undo last action",
+      "i18n": {
+        "ko": "실행 취소",
+        "ja": "元に戻す"
+      }
+    },
+    "zoomIn": {
+      "key": "=",
+      "modifier": "cmd",
+      "alternateKeys": ["+", "NumpadAdd"],
+      "category": "navigation",
+      "scope": "global",
+      "priority": 90,
+      "capture": true,
+      "description": "Zoom in",
+      "i18n": {
+        "ko": "확대",
+        "ja": "拡大"
+      }
+    }
+  }
+}
+```
+
+### Conflict Detection (Photoshop-Inspired)
+
+```typescript
+// src/builder/hooks/useShortcutConflictDetection.ts
+
+interface ConflictInfo {
+  existingShortcut: KeyboardShortcut;
+  newShortcut: KeyboardShortcut;
+  resolution: 'override' | 'skip' | 'scope-separated';
+}
+
+export function detectConflicts(
+  shortcuts: KeyboardShortcut[]
+): ConflictInfo[] {
+  const conflicts: ConflictInfo[] = [];
+  const keyMap = new Map<string, KeyboardShortcut[]>();
+
+  for (const shortcut of shortcuts) {
+    const key = `${shortcut.modifier}+${shortcut.key}`;
+    const existing = keyMap.get(key) || [];
+
+    for (const prev of existing) {
+      // Check if scopes overlap
+      if (scopesOverlap(prev.scope, shortcut.scope)) {
+        conflicts.push({
+          existingShortcut: prev,
+          newShortcut: shortcut,
+          resolution: shortcut.priority > prev.priority
+            ? 'override'
+            : 'skip',
+        });
+      }
+    }
+
+    keyMap.set(key, [...existing, shortcut]);
+  }
+
+  return conflicts;
+}
+
+// Dev-time warning
+if (process.env.NODE_ENV === 'development') {
+  const conflicts = detectConflicts(ALL_SHORTCUTS);
+  if (conflicts.length > 0) {
+    console.warn('⚠️ Keyboard shortcut conflicts detected:', conflicts);
+  }
+}
+```
+
+### Enhanced Help Panel (Figma-Inspired)
+
+```typescript
+// src/builder/components/help/EnhancedKeyboardHelp.tsx
+
+interface ShortcutUsageStats {
+  shortcutId: string;
+  usageCount: number;
+  lastUsed: Date | null;
+}
+
+export function EnhancedKeyboardHelp() {
+  const [usageStats, setUsageStats] = useState<Map<string, ShortcutUsageStats>>();
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState<ShortcutCategory | 'all'>('all');
+
+  // Track shortcut usage (Figma-style gamification)
+  const trackUsage = useCallback((shortcutId: string) => {
+    setUsageStats(prev => {
+      const stats = prev.get(shortcutId) || { usageCount: 0, lastUsed: null };
+      return new Map(prev).set(shortcutId, {
+        shortcutId,
+        usageCount: stats.usageCount + 1,
+        lastUsed: new Date(),
+      });
+    });
+  }, []);
+
+  return (
+    <div className="keyboard-help-panel">
+      {/* Search bar */}
+      <SearchField value={searchQuery} onChange={setSearchQuery} />
+
+      {/* Category tabs */}
+      <Tabs selectedKey={selectedCategory} onSelectionChange={setSelectedCategory}>
+        <Tab id="all">All</Tab>
+        <Tab id="system">System</Tab>
+        <Tab id="navigation">Navigation</Tab>
+        <Tab id="canvas">Canvas</Tab>
+        <Tab id="panels">Panels</Tab>
+      </Tabs>
+
+      {/* Shortcuts list with usage indicators */}
+      <div className="shortcuts-list">
+        {filteredShortcuts.map(shortcut => (
+          <ShortcutItem
+            key={shortcut.id}
+            shortcut={shortcut}
+            usageCount={usageStats.get(shortcut.id)?.usageCount || 0}
+            isUsed={usageStats.has(shortcut.id)}  // Highlight if ever used
+          />
+        ))}
+      </div>
+
+      {/* Progress indicator */}
+      <div className="usage-progress">
+        <ProgressBar
+          value={usedShortcuts.length}
+          maxValue={allShortcuts.length}
+          label={`${usedShortcuts.length}/${allShortcuts.length} shortcuts mastered`}
+        />
+      </div>
+    </div>
+  );
+}
+```
+
+### Keyboard Layout Detection (Figma-Inspired)
+
+```typescript
+// src/builder/utils/keyboardLayout.ts
+
+interface KeyboardLayoutInfo {
+  layout: string;           // 'US', 'DE', 'FR', 'KO', etc.
+  confidence: number;       // 0-1
+  detectionMethod: 'api' | 'heuristic' | 'user-selected';
+}
+
+export async function detectKeyboardLayout(): Promise<KeyboardLayoutInfo> {
+  // Method 1: Keyboard API (experimental)
+  if ('keyboard' in navigator && 'getLayoutMap' in (navigator as any).keyboard) {
+    try {
+      const layoutMap = await (navigator as any).keyboard.getLayoutMap();
+      const layout = inferLayoutFromMap(layoutMap);
+      return { layout, confidence: 0.9, detectionMethod: 'api' };
+    } catch (e) {
+      console.warn('Keyboard API not available');
+    }
+  }
+
+  // Method 2: Heuristics from navigator.language
+  const lang = navigator.language.split('-')[0];
+  const layoutGuess = LANGUAGE_TO_LAYOUT[lang] || 'US';
+  return { layout: layoutGuess, confidence: 0.5, detectionMethod: 'heuristic' };
+}
+
+// Store in localStorage (device-specific) + sync to backend (user preference)
+export function saveKeyboardPreference(layout: string): void {
+  localStorage.setItem('xstudio-keyboard-layout', layout);
+
+  // Also sync to backend for cross-device consistency
+  api.updateUserPreference('keyboardLayout', layout);
+}
+```
+
+---
+
+## Revised Implementation Phases
+
+### Phase 0: Enhance Registry ✅
+(Already documented above)
+
+### Phase 1: Migrate Global Shortcuts ✅
+(Already documented above)
+
+### Phase 2: Create JSON Config ✅
+(Already documented above)
+
+### Phase 3: Single Registration Point ✅
+(Already documented above)
+
+### Phase 4: Category & Scope System (NEW)
+
+```typescript
+// src/builder/hooks/useGlobalKeyboardShortcuts.ts
+
+export function useGlobalKeyboardShortcuts() {
+  const activeScope = useActiveScope(); // 'canvas-focused' | 'panel:events' | etc.
+
+  // Filter shortcuts by current scope
+  const activeShortcuts = useMemo(() =>
+    ALL_SHORTCUTS.filter(s =>
+      s.scope === 'global' ||
+      (Array.isArray(s.scope) ? s.scope.includes(activeScope) : s.scope === activeScope)
+    ),
+    [activeScope]
+  );
+
+  useKeyboardShortcutsRegistry(activeShortcuts, [activeScope], {
+    capture: true,
+    target: 'document',
+  });
+}
+```
+
+### Phase 5: Conflict Detection & DevTools (NEW)
+
+```typescript
+// src/builder/devtools/ShortcutDebugger.tsx
+
+export function ShortcutDebugger() {
+  const [lastEvent, setLastEvent] = useState<KeyboardEvent | null>(null);
+  const [matchedShortcut, setMatchedShortcut] = useState<KeyboardShortcut | null>(null);
+  const conflicts = useConflictDetection();
+
+  if (process.env.NODE_ENV !== 'development') return null;
+
+  return (
+    <div className="shortcut-debugger">
+      <h4>Keyboard Debug</h4>
+      <div>Last key: {lastEvent?.key} ({lastEvent?.code})</div>
+      <div>Modifiers: {formatModifiers(lastEvent)}</div>
+      <div>Matched: {matchedShortcut?.description || 'None'}</div>
+      {conflicts.length > 0 && (
+        <div className="conflicts-warning">
+          ⚠️ {conflicts.length} conflicts detected
+        </div>
+      )}
+    </div>
+  );
+}
+```
+
+### Phase 6: International Keyboard Support (NEW)
+
+- Detect keyboard layout using Keyboard API
+- Map positional codes to characters
+- Store layout preference per device
+- Sync to backend for cross-device
+
+### Phase 7: Customization System (NEW - Future)
+
+- Allow users to remap shortcuts
+- Export/import shortcut profiles
+- Workspace-based shortcut sets
+- Conflict resolution UI
+
+---
+
 ## Current Issues: Decentralized Shortcut Management
 
 ### Problem Overview
