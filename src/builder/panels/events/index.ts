@@ -72,7 +72,3 @@ export * from './data';
 
 // Hooks
 export * from './hooks';
-
-// CSS
-import './events.css';
-import './events-legacy.css';

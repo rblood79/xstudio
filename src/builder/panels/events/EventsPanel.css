@@ -2115,3 +2115,190 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+/* ==========================================================================
+   Form Field Styles (events.css에서 병합)
+   ========================================================================== */
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.field-label {
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  color: var(--on-surface);
+}
+
+.field-input,
+.field-textarea {
+  padding: var(--spacing-sm) var(--spacing-md);
+  font-size: var(--font-size-sm);
+  color: var(--on-surface);
+  background: var(--surface-variant);
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--radius-md);
+  transition: all 0.2s ease;
+}
+
+.field-input:focus,
+.field-textarea:focus {
+  outline: none;
+  border-color: var(--focus-ring-color);
+  box-shadow: 0 0 0 3px var(--surface-container-low);
+}
+
+.field-textarea {
+  font-family: "Monaco", "Menlo", "Courier New", monospace;
+  resize: vertical;
+}
+
+.field-textarea.code-editor {
+  min-height: 80px;
+}
+
+.field-hint {
+  font-size: var(--font-size-xs);
+  color: var(--on-surface-variant);
+  margin: 0;
+}
+
+.field-row {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.checkbox-field {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  font-size: var(--font-size-sm);
+  color: var(--on-surface);
+}
+
+.switch-label {
+  font-size: var(--font-size-sm);
+  color: var(--on-surface);
+}
+
+/* ==========================================================================
+   Select Styles (events.css에서 병합)
+   ========================================================================== */
+
+.select-trigger {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-sm) var(--spacing-md);
+  font-size: var(--font-size-sm);
+  color: var(--on-surface);
+  background: var(--surface-variant);
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.select-trigger:hover {
+  border-color: var(--focus-ring-color);
+}
+
+.select-popover {
+  background: var(--surface);
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--radius-md);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.select-listbox {
+  padding: var(--spacing-2xs);
+}
+
+/* ==========================================================================
+   Helper & Error Styles (events.css에서 병합)
+   ========================================================================== */
+
+.helper-text {
+  padding: var(--spacing-sm);
+  font-size: var(--font-size-xs);
+  color: var(--on-surface-variant);
+  background: var(--surface);
+  border-radius: var(--radius-md);
+}
+
+.helper-text p {
+  margin: 0;
+}
+
+.error-message {
+  font-size: var(--font-size-xs);
+  color: var(--on-error-container);
+  padding: var(--spacing-sm);
+  background: var(--error-container);
+  border-radius: var(--radius-sm);
+}
+
+/* ==========================================================================
+   Action Editor Specific Styles (events.css에서 병합)
+   ========================================================================== */
+
+.navigate-action-editor,
+.setstate-action-editor,
+.apicall-action-editor,
+.showmodal-action-editor,
+.showtoast-action-editor,
+.validateform-action-editor,
+.submitform-action-editor,
+.resetform-action-editor,
+.setvariable-action-editor,
+.updatestate-action-editor,
+.filtercollection-action-editor {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.action-editor-fields {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.variable-type-badge {
+  font-size: var(--font-size-xs);
+  padding: 2px 6px;
+  background: var(--surface-variant);
+  border-radius: var(--radius-sm);
+  color: var(--on-surface-variant);
+}
+
+.variable-info {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  font-size: var(--font-size-xs);
+  color: var(--on-surface-variant);
+  padding: var(--spacing-sm);
+  background: var(--surface-variant);
+  border-radius: var(--radius-sm);
+}
+
+.info-label {
+  font-weight: 500;
+}
+
+.info-value {
+  font-family: var(--font-mono);
+}
+
+.boolean-toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
