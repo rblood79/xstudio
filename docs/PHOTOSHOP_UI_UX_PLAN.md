@@ -79,3 +79,696 @@
 - 플로팅/도킹 UI는 레이아웃 저장/복원 복잡도가 증가하므로 기존 panelLayout 스토어와 호환성 검증 필요.
 - 썸네일 캡처는 퍼포먼스 비용이 커서 지연/배치 처리와 해상도 제한을 병행해야 함.
 - AI 생성/스타일 제안은 모델 응답 지연과 품질 편차가 커서, 미리보기와 되돌리기(히스토리 연계) UX가 필수.
+
+---
+
+# 구현 계획 상세 (Implementation Specification)
+
+> 아래는 위 계획을 실제 코드베이스와 화면에 매핑한 구체적인 구현 명세입니다.
+>
+> **⚠️ 적용 범위**: 모든 구현은 **WebGL 모드** (`isWebGLCanvas = true`) 기준입니다.
+> iframe 기반 캔버스 및 레거시 overlay는 현재 상태 유지합니다.
+
+## 7. 코드베이스 구조 분석 (WebGL 모드)
+
+### 7.1 현재 레이아웃 구조
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    BuilderHeader                             │
+│        src/builder/main/BuilderHeader.tsx                    │
+├──────────────┬────────────────────────┬─────────────────────┤
+│              │                        │                     │
+│   Sidebar    │      Workspace         │    Inspector        │
+│   (좌측)     │      (중앙)            │    (우측)           │
+│              │                        │                     │
+│ NodesPanel   │  workspace/canvas/     │  속성 에디터들      │
+│ Components   │  BuilderCanvas.tsx     │  (100+ 에디터)      │
+│ Theme        │  + SelectionLayer      │                     │
+│ AI           │  + TextEditOverlay     │  HistoryPanel       │
+│ Settings     │                        │  AIPanel (탭)       │
+│              │                        │                     │
+├──────────────┴────────────────────────┴─────────────────────┤
+│                  BottomPanelSlot (Monitor)                   │
+│            src/builder/layout/BottomPanelSlot.tsx            │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### 7.2 WebGL 모드 핵심 파일 매핑
+
+| 영역 | 파일 경로 | 역할 |
+|------|-----------|------|
+| **Workspace** | `src/builder/workspace/Workspace.tsx` | WebGL 캔버스 컨테이너 |
+| **PixiJS 캔버스** | `src/builder/workspace/canvas/BuilderCanvas.tsx` | PixiJS Application 래퍼 |
+| **선택 레이어** | `src/builder/workspace/canvas/selection/SelectionLayer.tsx` | 선택 박스, 트랜스폼 핸들 |
+| **텍스트 오버레이** | `src/builder/workspace/overlay/TextEditOverlay.tsx` | DOM 기반 텍스트 편집 |
+| **뷰포트 컨트롤** | `src/builder/workspace/canvas/viewport/` | 줌/패닝 제어 |
+| 히스토리 패널 | `src/builder/panels/history/HistoryPanel.tsx` | 변경 이력 표시 |
+| 히스토리 스토어 | `src/builder/stores/history.ts` | IndexedDB 기반 히스토리 관리 |
+| AI 패널 | `src/builder/panels/ai/AIPanel.tsx` | Groq 기반 AI 어시스턴트 |
+
+---
+
+## 8. P0 구현 명세 (즉시 적용)
+
+### 8.1 Contextual Action Bar
+
+#### 8.1.1 화면 설계
+
+```
+선택된 요소 아래 또는 위에 플로팅 표시:
+
+┌──────────────────────────────────────────┐
+│          [선택된 Button 요소]             │
+└──────────────────────────────────────────┘
+                    ↓
+    ┌─────────────────────────────────┐
+    │ 📝 텍스트 │ 🎨 스타일 │ ⚡ 이벤트 │ ⋮ │
+    └─────────────────────────────────┘
+         ↑ Contextual Action Bar
+```
+
+#### 8.1.2 파일 구조 (WebGL 모드 전용)
+
+```
+src/builder/workspace/
+├── overlay/
+│   ├── index.ts                       # export
+│   ├── TextEditOverlay.tsx            # 기존 텍스트 편집
+│   ├── useTextEdit.ts                 # 기존 텍스트 편집 훅
+│   └── ContextualActionBar.tsx        # 🆕 DOM 기반 Action Bar
+│
+├── canvas/
+│   ├── BuilderCanvas.tsx              # Action Bar 통합 포인트
+│   └── selection/
+│       ├── index.ts                   # export
+│       ├── SelectionLayer.tsx         # 선택 상태 제공
+│       ├── SelectionBox.tsx           # 선택 박스 렌더링
+│       └── TransformHandle.tsx        # 변형 핸들
+│
+└── hooks/
+    └── useContextualActions.ts        # 🆕 요소별 액션 매핑
+
+src/builder/actions/                    # 🆕 공용 액션 정의
+├── types.ts                           # 액션 타입 정의
+├── elementActions.ts                  # 요소별 액션 매핑
+└── index.ts                           # export
+```
+
+**구현 방식**: DOM 기반 (`workspace/overlay/ContextualActionBar.tsx`)
+- React Aria 컴포넌트 재사용 가능
+- 접근성(WCAG AA) 보장
+- 기존 스타일 시스템 활용
+- PixiJS Application 외부에 렌더링 (줌 독립적)
+
+#### 8.1.3 액션 매핑 설계
+
+```typescript
+// src/builder/actions/types.ts
+
+export interface ContextualAction {
+  id: string;
+  icon: React.ComponentType<{ size?: number }>;
+  label: string;
+  shortcut?: string;
+  action: (elementId: string) => void;
+  isActive?: (element: Element) => boolean;
+}
+
+export type ElementActionMap = Record<string, ContextualAction[]>;
+
+// 요소별 액션 정의
+export const elementActions: ElementActionMap = {
+  // 공통 액션
+  '_common': [
+    { id: 'copy', icon: Copy, label: '복사', shortcut: '⌘C' },
+    { id: 'delete', icon: Trash2, label: '삭제', shortcut: '⌫' },
+  ],
+
+  // Button 전용
+  'Button': [
+    { id: 'edit-text', icon: Type, label: '텍스트 편집' },
+    { id: 'change-variant', icon: Palette, label: '스타일 변경' },
+    { id: 'add-event', icon: Zap, label: '이벤트 추가' },
+  ],
+
+  // TextField 전용
+  'TextField': [
+    { id: 'placeholder', icon: Type, label: '플레이스홀더' },
+    { id: 'validation', icon: Shield, label: '유효성 검사' },
+  ],
+
+  // Image 전용
+  'Image': [
+    { id: 'change-src', icon: ImageIcon, label: '이미지 변경' },
+    { id: 'alt-text', icon: FileText, label: '대체 텍스트' },
+    { id: 'resize', icon: Maximize2, label: '크기 조정' },
+  ],
+
+  // Container/Layout
+  'Flex': [
+    { id: 'direction', icon: ArrowRight, label: '방향 전환' },
+    { id: 'alignment', icon: AlignCenter, label: '정렬' },
+    { id: 'gap', icon: Space, label: '간격 조정' },
+  ],
+};
+```
+
+#### 8.1.4 컴포넌트 구현 명세
+
+```typescript
+// src/builder/workspace/overlay/ContextualActionBar.tsx
+
+interface ContextualActionBarProps {
+  elementId: string;
+  elementTag: string;
+  overlayRect: Rect;
+  onAction: (actionId: string) => void;
+}
+
+/**
+ * 위치 계산 로직:
+ * 1. 기본: 선택 영역 하단 8px 아래
+ * 2. 공간 부족 시: 선택 영역 상단 위로 이동
+ * 3. 좌우 경계: 화면 밖으로 나가지 않도록 조정
+ */
+function calculatePosition(overlayRect: Rect, barHeight: number = 40): CSSProperties {
+  const padding = 8;
+  const viewportHeight = window.innerHeight;
+  const viewportWidth = window.innerWidth;
+
+  const bottomSpace = viewportHeight - (overlayRect.top + overlayRect.height);
+  const showAbove = bottomSpace < barHeight + padding * 2;
+
+  return {
+    position: 'fixed',
+    left: Math.max(8, Math.min(
+      overlayRect.left + overlayRect.width / 2,
+      viewportWidth - 150
+    )),
+    top: showAbove
+      ? overlayRect.top - barHeight - padding
+      : overlayRect.top + overlayRect.height + padding,
+    transform: 'translateX(-50%)',
+    zIndex: 1000,
+  };
+}
+```
+
+#### 8.1.5 BuilderCanvas 통합 (WebGL 모드)
+
+```typescript
+// src/builder/workspace/canvas/BuilderCanvas.tsx
+
+import { ContextualActionBar } from '../overlay/ContextualActionBar';
+
+// Application 외부에 DOM 오버레이로 렌더링
+return (
+  <div className="builder-canvas-container">
+    <Application ...>
+      {/* PixiJS 컨텐츠 */}
+      <SelectionLayer
+        onSelectionChange={setSelectionState}
+        ...
+      />
+    </Application>
+
+    {/* DOM 기반 오버레이들 */}
+    <TextEditOverlay ... />
+
+    {/* 🆕 Contextual Action Bar */}
+    {selectionState.bounds && selectionState.elementId && (
+      <ContextualActionBar
+        elementId={selectionState.elementId}
+        elementTag={selectionState.elementTag}
+        bounds={selectionState.bounds}
+        canvasZoom={viewportState.zoom}
+        onAction={handleContextualAction}
+      />
+    )}
+  </div>
+);
+```
+
+**위치 계산**: 캔버스 좌표 → 화면 좌표 변환 필요
+```typescript
+// bounds는 PixiJS 월드 좌표
+// viewportState.offset, zoom을 적용하여 DOM 위치 계산
+const screenPosition = {
+  left: bounds.x * zoom + offset.x,
+  top: bounds.y * zoom + offset.y,
+  width: bounds.width * zoom,
+  height: bounds.height * zoom,
+};
+```
+
+---
+
+### 8.2 History Panel 보완
+
+#### 8.2.1 현재 vs 개선 비교
+
+| 항목 | 현재 상태 | 개선 목표 |
+|------|-----------|-----------|
+| 아이콘 | ❌ 없음 | ✅ 유형별 아이콘 (add/remove/update) |
+| Redo 구분 | ❌ 없음 | ✅ 투명도 50% 처리 |
+| 점프 최적화 | ⚠️ 반복 undo/redo | ✅ targetIndex 직접 점프 |
+| 스냅샷 | ❌ 없음 | ✅ 북마크 기능 |
+| 로딩 상태 | ❌ 없음 | ✅ Skeleton + 동기화 상태 |
+
+#### 8.2.2 파일 수정 목록
+
+```
+src/builder/panels/history/
+├── HistoryPanel.tsx           # 수정: UI 개선
+├── HistoryPanel.css           # 수정: 스타일 추가
+├── components/
+│   ├── HistoryItem.tsx        # 🆕 개별 항목 컴포넌트
+│   ├── HistoryIcon.tsx        # 🆕 유형별 아이콘
+│   ├── HistorySnapshot.tsx    # 🆕 스냅샷 섹션
+│   └── HistorySkeleton.tsx    # 🆕 로딩 스켈레톤
+└── hooks/
+    └── useHistoryJump.ts      # 🆕 최적화된 점프 훅
+
+src/builder/stores/
+├── history.ts                 # 수정: jumpToIndex API 추가
+└── history/
+    └── historyActions.ts      # 수정: 스냅샷 기능 추가
+```
+
+#### 8.2.3 히스토리 아이템 UI 개선
+
+```typescript
+// src/builder/panels/history/components/HistoryItem.tsx
+
+interface HistoryItemProps {
+  entry: HistoryEntry;
+  index: number;
+  currentIndex: number;
+  isRedo: boolean;  // currentIndex보다 큰 경우
+  onJump: (index: number) => void;
+}
+
+// 유형별 아이콘 매핑
+const typeIcons: Record<HistoryEntry['type'], LucideIcon> = {
+  add: Plus,
+  remove: Minus,
+  update: Pencil,
+  move: Move,
+  batch: Layers,
+  group: FolderPlus,
+  ungroup: FolderMinus,
+};
+
+// CSS 클래스
+// .history-item[data-redo="true"] { opacity: 0.5; }
+// .history-item[data-active="true"] { background: var(--accent); }
+```
+
+#### 8.2.4 점프 최적화 API
+
+```typescript
+// src/builder/stores/history.ts 추가
+
+/**
+ * 🆕 targetIndex로 직접 점프 (반복 undo/redo 대신)
+ *
+ * 기존: for loop로 undo/redo 반복 호출
+ * 개선: 단일 API로 대상 상태 직접 복원
+ */
+async jumpToIndex(targetIndex: number): Promise<boolean> {
+  if (!this.currentPageId) return false;
+
+  const pageHistory = this.pageHistories.get(this.currentPageId);
+  if (!pageHistory) return false;
+
+  const currentIndex = pageHistory.currentIndex;
+  if (targetIndex === currentIndex) return true;
+  if (targetIndex < -1 || targetIndex >= pageHistory.entries.length) return false;
+
+  // 직접 인덱스 업데이트 (undo/redo 반복 없이)
+  pageHistory.currentIndex = targetIndex;
+
+  // 상태 복원 로직
+  await this.restoreStateAtIndex(targetIndex);
+
+  this.notifyListeners();
+  return true;
+}
+```
+
+---
+
+### 8.3 Quick Actions Context Menu
+
+#### 8.3.1 화면 설계
+
+```
+우클릭 시 표시되는 컨텍스트 메뉴:
+
+┌─────────────────────────┐
+│ 📝 텍스트 편집          │
+│ 🎨 스타일 변경          │
+│ ⚡ 이벤트 추가          │
+├─────────────────────────┤
+│ 📋 복사          ⌘C    │
+│ 📄 붙여넣기      ⌘V    │
+│ 📑 복제          ⌘D    │
+├─────────────────────────┤
+│ ⬆️ 맨 앞으로           │
+│ ⬇️ 맨 뒤로             │
+├─────────────────────────┤
+│ 🗑️ 삭제          ⌫     │
+└─────────────────────────┘
+```
+
+#### 8.3.2 파일 구조
+
+```
+src/builder/components/
+├── ContextMenu/
+│   ├── index.tsx              # 🆕 메인 컨텍스트 메뉴
+│   ├── ContextMenu.css        # 🆕 스타일
+│   ├── useContextMenu.ts      # 🆕 우클릭 훅
+│   └── menuItems.ts           # 🆕 메뉴 아이템 정의 (액션 맵 재사용)
+```
+
+#### 8.3.3 Workspace 통합 (WebGL 모드)
+
+```typescript
+// src/builder/workspace/canvas/BuilderCanvas.tsx
+
+import { ContextMenu, useContextMenu } from '../../components/ContextMenu';
+
+// PixiJS 캔버스 컨테이너에서 우클릭 처리
+return (
+  <div
+    className="builder-canvas-container"
+    onContextMenu={handleContextMenu}
+  >
+    <Application ...>
+      <SelectionLayer
+        onRightClick={(elementId, worldPos) => {
+          // 월드 좌표 → 화면 좌표 변환
+          const screenPos = worldToScreen(worldPos, viewportState);
+          showMenu(screenPos.x, screenPos.y, elementId);
+        }}
+        ...
+      />
+    </Application>
+
+    {/* DOM 기반 컨텍스트 메뉴 */}
+    {menuPosition && (
+      <ContextMenu
+        position={menuPosition}
+        elementId={menuPosition.elementId}
+        elementTag={menuPosition.elementTag}
+        onClose={hideMenu}
+        onAction={handleContextualAction}
+      />
+    )}
+  </div>
+);
+```
+
+---
+
+## 9. P1 구현 명세 (단기)
+
+### 9.1 Generative Workspace 강화
+
+#### 9.1.1 현재 AIPanel 분석
+
+현재 `src/builder/panels/ai/AIPanel.tsx`는:
+- ✅ Groq 서비스 연동
+- ✅ 프롬프트 기반 요소 생성/수정/삭제
+- ⚠️ 단일 결과만 생성
+- ❌ 변형(Variations) 미지원
+- ❌ 미리보기 미지원
+
+#### 9.1.2 개선 설계
+
+```
+┌─────────────────────────────────────────────┐
+│ 🤖 AI Assistant                    [🗑️]    │
+├─────────────────────────────────────────────┤
+│                                             │
+│  [Quick Actions]                            │
+│  ┌─────┐ ┌─────┐ ┌─────┐ ┌─────┐           │
+│  │ 🔘  │ │ 📝  │ │ 🎨  │ │ 📐  │           │
+│  │버튼 │ │텍스트│ │스타일│ │레이아웃│        │
+│  └─────┘ └─────┘ └─────┘ └─────┘           │
+│                                             │
+│  [Variations] (3개 생성됨)                  │
+│  ┌─────┐ ┌─────┐ ┌─────┐                   │
+│  │ V1  │ │ V2  │ │ V3  │  [+ 더 생성]      │
+│  │ ✓  │ │     │ │     │                   │
+│  └─────┘ └─────┘ └─────┘                   │
+│                                             │
+│  [Chat Messages...]                         │
+│                                             │
+├─────────────────────────────────────────────┤
+│ 메시지 입력...                    [전송]    │
+└─────────────────────────────────────────────┘
+```
+
+#### 9.1.3 파일 수정/추가 목록
+
+```
+src/builder/panels/ai/
+├── AIPanel.tsx                    # 수정: 구조 개선
+├── AIPanel.css                    # 수정: 스타일 추가
+├── components/
+│   ├── QuickActions.tsx           # 🆕 빠른 액션 버튼
+│   ├── VariationsGrid.tsx         # 🆕 변형 그리드
+│   ├── VariationPreview.tsx       # 🆕 변형 미리보기
+│   └── PromptTemplates.tsx        # 🆕 프롬프트 템플릿
+└── hooks/
+    ├── useVariations.ts           # 🆕 변형 생성 관리
+    └── usePromptHistory.ts        # 🆕 프롬프트 히스토리
+```
+
+---
+
+### 9.2 Comments Panel
+
+#### 9.2.1 파일 구조
+
+```
+src/builder/panels/comments/
+├── CommentsPanel.tsx              # 🆕 메인 패널
+├── CommentsPanel.css              # 🆕 스타일
+├── components/
+│   ├── CommentThread.tsx          # 🆕 댓글 쓰레드
+│   ├── CommentItem.tsx            # 🆕 개별 댓글
+│   ├── CommentInput.tsx           # 🆕 댓글 입력
+│   └── CommentIndicator.tsx       # 🆕 캔버스 마커
+├── hooks/
+│   └── useComments.ts             # 🆕 Supabase Realtime 연동
+└── types/
+    └── comment.types.ts           # 🆕 타입 정의
+```
+
+#### 9.2.2 데이터 구조
+
+```typescript
+// src/builder/panels/comments/types/comment.types.ts
+
+export interface Comment {
+  id: string;
+  project_id: string;
+  page_id: string;
+  element_id: string | null;  // null이면 페이지 레벨 코멘트
+
+  author_id: string;
+  author_name: string;
+  author_avatar?: string;
+
+  content: string;
+  resolved: boolean;
+
+  parent_id: string | null;  // 답글인 경우
+
+  position?: {  // 캔버스 위치 (element_id 없을 때)
+    x: number;
+    y: number;
+  };
+
+  created_at: string;
+  updated_at: string;
+}
+```
+
+---
+
+### 9.3 Floating Panel System
+
+#### 9.3.1 설계 개념
+
+```typescript
+// src/builder/layout/types.ts 확장
+
+export interface PanelState {
+  id: string;
+  type: 'docked' | 'floating' | 'minimized';
+
+  // Docked 상태
+  dockPosition?: 'left' | 'right' | 'bottom';
+  dockOrder?: number;
+
+  // Floating 상태
+  floatingPosition?: { x: number; y: number };
+  floatingSize?: { width: number; height: number };
+
+  // 공통
+  isVisible: boolean;
+  isPinned: boolean;
+}
+
+export interface PanelGroup {
+  id: string;
+  panelIds: string[];
+  activeTabId: string;
+}
+```
+
+#### 9.3.2 파일 구조
+
+```
+src/builder/layout/
+├── types.ts                       # 수정: 플로팅 타입 추가
+├── usePanelLayout.ts              # 수정: 플로팅 로직 추가
+├── PanelContainer.tsx             # 수정: 도킹/플로팅 분기
+├── FloatingPanel/
+│   ├── index.tsx                  # 🆕 플로팅 패널 래퍼
+│   ├── FloatingPanel.css          # 🆕 스타일
+│   ├── FloatingHeader.tsx         # 🆕 드래그 가능 헤더
+│   ├── ResizeHandles.tsx          # 🆕 크기 조절 핸들
+│   └── useFloatingDrag.ts         # 🆕 드래그 훅
+└── PanelGroup/
+    ├── index.tsx                  # 🆕 탭 그룹 패널
+    └── PanelTabs.tsx              # 🆕 탭 헤더
+```
+
+---
+
+## 10. P2 구현 명세 (중기)
+
+### 10.1 디자인 시스템 조정
+
+#### 10.1.1 아이콘 커스터마이징
+
+```css
+/* src/styles/icons.css */
+
+/* Lucide 아이콘 Spectrum 2 스타일 적용 */
+.icon-spectrum {
+  --icon-stroke-width: 2.5;  /* 기본 2 → 2.5 */
+  --icon-stroke-linecap: round;
+  --icon-stroke-linejoin: round;
+}
+
+/* 아이콘 크기 스케일 */
+:root {
+  --icon-xs: 12px;
+  --icon-sm: 14px;
+  --icon-md: 16px;
+  --icon-lg: 20px;
+  --icon-xl: 24px;
+}
+```
+
+#### 10.1.2 색상 대비 토큰
+
+```css
+/* src/styles/tokens/contrast.css */
+
+:root {
+  /* WCAG AA 준수 대비 스케일 */
+  --contrast-high: 7:1;     /* 본문 텍스트 */
+  --contrast-medium: 4.5:1; /* 큰 텍스트, 아이콘 */
+  --contrast-low: 3:1;      /* 비활성 요소 */
+
+  /* 상태별 색상 */
+  --color-text-primary: oklch(20% 0 0);
+  --color-text-secondary: oklch(40% 0 0);
+  --color-text-disabled: oklch(60% 0 0);
+
+  /* 다크 모드 */
+  [data-theme="dark"] {
+    --color-text-primary: oklch(95% 0 0);
+    --color-text-secondary: oklch(75% 0 0);
+    --color-text-disabled: oklch(50% 0 0);
+  }
+}
+```
+
+---
+
+## 11. 테스트 전략
+
+### 11.1 단위 테스트
+
+```
+src/builder/
+├── workspace/overlay/__tests__/
+│   └── ContextualActionBar.test.tsx
+├── actions/__tests__/
+│   └── elementActions.test.ts
+├── panels/history/__tests__/
+│   └── HistoryPanel.test.tsx
+└── stores/__tests__/
+    └── historyManager.test.ts  # 기존 확장
+```
+
+### 11.2 E2E 테스트
+
+```typescript
+// e2e/contextual-action-bar.spec.ts
+
+test('요소 선택 시 Contextual Action Bar 표시', async ({ page }) => {
+  await page.goto('/builder');
+  await page.click('[data-element-tag="Button"]');
+
+  await expect(page.locator('.contextual-action-bar')).toBeVisible();
+  await expect(page.locator('[data-action="edit-text"]')).toBeVisible();
+});
+
+test('Quick Action 실행 시 속성 변경', async ({ page }) => {
+  await page.click('[data-action="change-variant"]');
+
+  // 변형 선택 팝오버 표시 확인
+  await expect(page.locator('.variant-popover')).toBeVisible();
+});
+```
+
+---
+
+## 12. 마이그레이션 체크리스트 (WebGL 모드 전용)
+
+> ⚠️ 모든 구현은 WebGL 모드(`isWebGLCanvas = true`)에서만 동작합니다.
+> 레거시 코드(`src/builder/overlay/`)는 현재 상태 유지합니다.
+
+### P0 단계: 컨텍스트 인식 UI
+- [ ] `src/builder/actions/` 디렉토리 생성
+  - [ ] `types.ts` - ContextualAction 인터페이스
+  - [ ] `elementActions.ts` - 요소별 액션 매핑
+- [ ] `workspace/overlay/ContextualActionBar.tsx` 컴포넌트 생성
+- [ ] `workspace/canvas/BuilderCanvas.tsx`에 Action Bar 통합
+- [ ] 캔버스 좌표 → 화면 좌표 변환 유틸리티
+- [ ] History Panel 아이콘 추가
+- [ ] History Panel redo 구간 스타일링 (opacity 50%)
+- [ ] `historyManager.jumpToIndex()` API 구현
+- [ ] Quick Actions Context Menu (WebGL 캔버스용)
+- [ ] 기존 테스트 통과 확인
+
+### P1 단계: 협업/생성형 UX
+- [ ] AI Panel 변형 생성 기능 (`useVariations` 훅)
+- [ ] Comments Panel MVP (Supabase Realtime)
+- [ ] Floating Panel 프로토타입
+- [ ] 버전 히스토리 설계 문서
+
+### P2 단계: 안정화
+- [ ] 아이콘 스타일 가이드 (Spectrum 2 스타일)
+- [ ] 색상 대비 감사 (WCAG AA)
+- [ ] Presence/커서 공유 프로토타입
