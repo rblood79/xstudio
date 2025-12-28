@@ -21,7 +21,7 @@ import { BuilderCanvas } from "./canvas/BuilderCanvas";
 import { useCanvasSyncStore } from "./canvas/canvasSync";
 import { useStore } from "../stores";
 import { isWebGLCanvas, isCanvasCompareMode } from "../../utils/featureFlags";
-import { useZoomShortcuts } from "./useZoomShortcuts";
+// useZoomShortcuts는 useGlobalKeyboardShortcuts로 통합됨 (BuilderCore.tsx)
 import "./Workspace.css";
 // ============================================
 // Types
@@ -64,8 +64,7 @@ export function Workspace({
   const useWebGL = isWebGLCanvas();
   const compareMode = isCanvasCompareMode();
 
-  // 🚀 줌 단축키 (⌘+, ⌘-, ⌘0, ⌘1, ⌘2)
-  useZoomShortcuts();
+  // 🚀 줌 단축키는 useGlobalKeyboardShortcuts로 통합됨 (BuilderCore.tsx)
 
   // ============================================
   // Canvas Size from Breakpoint

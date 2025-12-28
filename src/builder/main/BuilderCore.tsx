@@ -30,7 +30,7 @@ import { useIframeMessenger } from "../hooks/useIframeMessenger";
 import { useThemeManager } from "../hooks/useThemeManager";
 import { useValidation } from "../hooks/useValidation";
 import { useThemeMessenger } from "../hooks/useThemeMessenger";
-import { useKeyboardShortcuts } from "../hooks/useKeyboardShortcuts";
+import { useGlobalKeyboardShortcuts } from "../hooks/useGlobalKeyboardShortcuts";
 // import { projectsApi, type Project } from "../../services/api";  // Supabase 동기화는 대시보드에서만 처리
 import type { Project } from "../../services/api";
 import { useUnifiedThemeStore } from "../../stores/themeStore";
@@ -160,8 +160,8 @@ export const BuilderCore: React.FC = () => {
   // 🚀 Phase 7: Toast 알림
   const { toasts, showToast, dismissToast } = useToast();
 
-  // 🚀 Phase 7: 키보드 단축키 (Ctrl+Z Undo, Ctrl+Shift+Z Redo)
-  useKeyboardShortcuts();
+  // 🚀 Phase 7: 전역 키보드 단축키 (Undo/Redo, Zoom)
+  useGlobalKeyboardShortcuts();
 
   // 🚀 Phase 7: 자동 복구 통합
   const { stats: recoveryStats } = useAutoRecovery({

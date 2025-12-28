@@ -5,11 +5,11 @@
 현재 src 폴더 내부 구조 분석 결과, 중복/분산된 기능과 일관성 없는 패턴이 발견되었습니다.
 이 문서는 단계별 개선 계획을 정의합니다.
 
-| Phase | 내용 | 예상 기간 | 상태 |
-|-------|------|----------|------|
-| 1 | 즉시 개선 (낮은 위험도) | 1-2일 | 🔲 대기 |
-| 2 | 계획적 개선 (중간 위험도) | 1-2주 | 🔲 대기 |
-| 3 | 장기 개선 (높은 위험도) | 1개월+ | 🔲 대기 |
+| Phase | 내용                      | 예상 기간 | 상태    |
+| ----- | ------------------------- | --------- | ------- |
+| 1     | 즉시 개선 (낮은 위험도)   | 1-2일     | 🔲 대기 |
+| 2     | 계획적 개선 (중간 위험도) | 1-2주     | 🔲 대기 |
+| 3     | 장기 개선 (높은 위험도)   | 1개월+    | 🔲 대기 |
 
 ---
 
@@ -27,6 +27,7 @@ utils/theme/colorUtils.ts    ← 구식 (수동 구현, 중복)
 ### 문제점
 
 1. **동일 기능 중복 구현**
+
    - `hslToRgb`, `rgbToHsl`, `hexToRgb` 등 양쪽에 존재
    - `utils/theme/`는 수동 알고리즘, `utils/color/`는 colord 사용
 
@@ -50,11 +51,11 @@ utils/theme/colorUtils.ts    ← 구식 (수동 구현, 중복)
 
 ### 영향 범위
 
-| 파일 | 변경 내용 |
-|------|----------|
+| 파일                        | 변경 내용        |
+| --------------------------- | ---------------- |
 | `utils/theme/tokenToCss.ts` | import 경로 변경 |
-| `utils/theme/hctUtils.ts` | import 경로 변경 |
-| 기타 2-3개 | import 경로 변경 |
+| `utils/theme/hctUtils.ts`   | import 경로 변경 |
+| 기타 2-3개                  | import 경로 변경 |
 
 ### 검증 체크리스트
 
@@ -85,9 +86,9 @@ builder/stores/           (38개 파일)
 3. **import 경로 불일치**:
    ```typescript
    // 현재 - 경로가 다양함
-   import { useStore } from '@/builder/stores';
-   import { useStore } from '../../../stores';
-   import { useDataStore } from '../stores/data';
+   import { useStore } from "@/builder/stores";
+   import { useStore } from "../../../stores";
+   import { useDataStore } from "../stores/data";
    ```
 
 ### 개선 방안
@@ -95,10 +96,10 @@ builder/stores/           (38개 파일)
 ```typescript
 // builder/stores/index.ts (신규 생성)
 // State Management
-export { useStore, type StoreState } from './store';
-export { useDataStore } from './data';
-export { useHistoryStore } from './history';
-export { useSelectionStore } from './selection';
+export { useStore, type StoreState } from "./store";
+export { useDataStore } from "./data";
+export { useHistoryStore } from "./history";
+export { useSelectionStore } from "./selection";
 // ... 기타 store exports
 ```
 
@@ -144,10 +145,10 @@ builder/hooks/            (34개 파일)
 
 ```typescript
 // builder/hooks/index.ts (신규 생성)
-export { usePageManager } from './usePageManager';
-export { useSelection } from './useSelection';
-export { useClipboard } from './useClipboard';
-export { useToast } from './useToast';
+export { usePageManager } from "./usePageManager";
+export { useSelection } from "./useSelection";
+export { useClipboard } from "./useClipboard";
+export { useToast } from "./useToast";
 // ... 기타 hooks exports
 ```
 
@@ -195,6 +196,7 @@ builder/panels/
 ### 개선 방안
 
 **옵션 A: 단순 패널들을 직접 배치**
+
 ```
 builder/panels/
 ├── AIPanel.tsx           (폴더 없이 직접)
@@ -207,6 +209,7 @@ builder/panels/
 ```
 
 **옵션 B: 현재 구조 유지 (index.ts만 추가)**
+
 ```
 builder/panels/
 ├── ai/
@@ -229,12 +232,12 @@ builder/panels/
 
 ### 대상 폴더
 
-| 폴더 | 파일 수 | 조치 |
-|------|--------|------|
-| `panels/ai/` | 1개 | 상위로 이동 |
-| `panels/history/` | 1개 | 상위로 이동 |
-| `panels/settings/` | 1개 | 상위로 이동 |
-| `panels/components/` | 1개 | 상위로 이동 |
+| 폴더                 | 파일 수 | 조치        |
+| -------------------- | ------- | ----------- |
+| `panels/ai/`         | 1개     | 상위로 이동 |
+| `panels/history/`    | 1개     | 상위로 이동 |
+| `panels/settings/`   | 1개     | 상위로 이동 |
+| `panels/components/` | 1개     | 상위로 이동 |
 
 ### 영향 범위
 
@@ -324,14 +327,14 @@ src/stores/                         # 모든 상태 관리 통합
 
 ```typescript
 // 패턴 1 - Named exports (권장)
-export { PropertyInput } from './property/PropertyInput';
+export { PropertyInput } from "./property/PropertyInput";
 
 // 패턴 2 - Wildcard exports (비권장)
-export * from './actions';
+export * from "./actions";
 
 // 패턴 3 - 혼합 (일관성 부족)
-export * from './canvas/store';
-export { useOverlay } from './overlay/useOverlay';
+export * from "./canvas/store";
+export { useOverlay } from "./overlay/useOverlay";
 ```
 
 ### 문제점
@@ -346,13 +349,13 @@ export { useOverlay } from './overlay/useOverlay';
 
 ```typescript
 // Before
-export * from './actions';
-export * from './components';
+export * from "./actions";
+export * from "./components";
 
 // After
-export { ActionEditor } from './actions/ActionEditor';
-export { NavigateActionEditor } from './actions/NavigateActionEditor';
-export { DebounceThrottleEditor } from './components/DebounceThrottleEditor';
+export { ActionEditor } from "./actions/ActionEditor";
+export { NavigateActionEditor } from "./actions/NavigateActionEditor";
+export { DebounceThrottleEditor } from "./components/DebounceThrottleEditor";
 // 내부 전용은 export하지 않음
 ```
 
@@ -526,18 +529,18 @@ builder/hooks/                      # 래퍼만 유지
 
 ## A. 파일 수 통계
 
-| 영역 | 파일 수 | 비중 |
-|------|--------|------|
-| `builder/panels/` | 301개 | 41% |
-| `builder/workspace/` | 115개 | 16% |
-| `shared/` | 73개 | 10% |
-| `builder/stores/` | 38개 | 5% |
-| `utils/` | 38개 | 5% |
-| `builder/hooks/` | 34개 | 5% |
-| `services/` | 23개 | 3% |
-| `types/` | 22개 | 3% |
-| 기타 | ~95개 | 12% |
-| **총계** | **~739개** | 100% |
+| 영역                 | 파일 수    | 비중 |
+| -------------------- | ---------- | ---- |
+| `builder/panels/`    | 301개      | 41%  |
+| `builder/workspace/` | 115개      | 16%  |
+| `shared/`            | 73개       | 10%  |
+| `builder/stores/`    | 38개       | 5%   |
+| `utils/`             | 38개       | 5%   |
+| `builder/hooks/`     | 34개       | 5%   |
+| `services/`          | 23개       | 3%   |
+| `types/`             | 22개       | 3%   |
+| 기타                 | ~95개      | 12%  |
+| **총계**             | **~739개** | 100% |
 
 ## B. 의존성 방향 원칙
 
@@ -557,14 +560,14 @@ Types Layer (types)
 
 ## C. 네이밍 규칙
 
-| 유형 | 패턴 | 예시 |
-|------|------|------|
-| React Hook | `useXxx.ts` | `useSelection.ts` |
-| 유틸리티 | `xxxUtils.ts` | `colorUtils.ts` |
-| 서비스 | `xxxService.ts` | `saveService.ts` |
-| 타입 정의 | `xxx.types.ts` | `events.types.ts` |
-| 상수 | `xxxConstants.ts` | `styleConstants.ts` |
-| Store | `xxxStore.ts` | `themeStore.ts` |
+| 유형       | 패턴              | 예시                |
+| ---------- | ----------------- | ------------------- |
+| React Hook | `useXxx.ts`       | `useSelection.ts`   |
+| 유틸리티   | `xxxUtils.ts`     | `colorUtils.ts`     |
+| 서비스     | `xxxService.ts`   | `saveService.ts`    |
+| 타입 정의  | `xxx.types.ts`    | `events.types.ts`   |
+| 상수       | `xxxConstants.ts` | `styleConstants.ts` |
+| Store      | `xxxStore.ts`     | `themeStore.ts`     |
 
 ## D. 관련 문서
 

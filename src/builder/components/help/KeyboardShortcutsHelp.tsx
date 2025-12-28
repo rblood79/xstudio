@@ -1,21 +1,29 @@
 /**
- * KeyboardShortcutsHelp - Keyboard shortcuts help panel
+ * KeyboardShortcutsHelp - 키보드 단축키 도움말 패널
  *
- * Sprint 3: Keyboard Shortcuts Enhancement
- * Shows all available keyboard shortcuts organized by category
+ * 모든 단축키를 카테고리별로 정리하여 표시
+ * - 설정 파일(keyboardShortcuts.ts)에서 자동 로드
+ * - 검색 기능
+ * - 카테고리 탭 필터링
+ *
+ * @since Sprint 3: Keyboard Shortcuts Enhancement
+ * @updated Phase 5 - 설정 파일 연동 및 검색/탭 추가 (2025-12-28)
  */
 
-import { useState } from "react";
-import { Button } from "../../../shared/components";
-import { Keyboard, X, ChevronDown, ChevronRight } from "lucide-react";
-import { iconProps } from "../../../utils/ui/uiConstants";
+import { useState, useMemo } from 'react';
+import { Button } from '../../../shared/components';
+import { Keyboard, X, ChevronDown, ChevronRight, Search } from 'lucide-react';
+import { iconProps } from '../../../utils/ui/uiConstants';
+import {
+  SHORTCUT_DEFINITIONS,
+  getShortcutsByCategory,
+  type ShortcutId,
+} from '../../config/keyboardShortcuts';
+import { formatShortcut, type ShortcutCategory } from '../../hooks/useKeyboardShortcutsRegistry';
 
-export interface KeyboardShortcut {
-  key: string;
-  modifier?: "cmd" | "cmdShift" | "cmdAlt" | "cmdAltShift" | "shift" | "none";
-  description: string;
-  category: string;
-}
+// ============================================
+// Types
+// ============================================
 
 export interface KeyboardShortcutsHelpProps {
   /** Whether help panel is visible */
@@ -26,75 +34,107 @@ export interface KeyboardShortcutsHelpProps {
   className?: string;
 }
 
-/**
- * All available keyboard shortcuts organized by category
- */
-const SHORTCUTS: KeyboardShortcut[] = [
-  // Properties
-  { key: "C", modifier: "cmdShift", description: "Copy Properties", category: "Properties" },
-  { key: "V", modifier: "cmdShift", description: "Paste Properties", category: "Properties" },
+interface DisplayShortcut {
+  id: ShortcutId;
+  key: string;
+  display: string;
+  description: string;
+  category: ShortcutCategory;
+  i18nDescription?: string;
+}
 
-  // Multi-Element Editing
-  { key: "C", modifier: "cmd", description: "Copy All Elements", category: "Editing" },
-  { key: "V", modifier: "cmd", description: "Paste Elements", category: "Editing" },
-  { key: "D", modifier: "cmd", description: "Duplicate Selection", category: "Editing" },
-  { key: "Backspace", modifier: "none", description: "Delete Selected", category: "Editing" },
+// ============================================
+// Constants
+// ============================================
 
-  // Selection
-  { key: "A", modifier: "cmd", description: "Select All", category: "Selection" },
-  { key: "Esc", modifier: "none", description: "Clear Selection", category: "Selection" },
-  { key: "Tab", modifier: "none", description: "Next Element", category: "Selection" },
-  { key: "Tab", modifier: "shift", description: "Previous Element", category: "Selection" },
+const CATEGORY_LABELS: Record<ShortcutCategory, string> = {
+  system: 'System',
+  navigation: 'Navigation',
+  panels: 'Panels',
+  canvas: 'Canvas',
+  tools: 'Tools',
+  properties: 'Properties',
+  events: 'Events',
+  nodes: 'Nodes',
+};
 
-  // Grouping
-  { key: "G", modifier: "cmd", description: "Group Selection", category: "Grouping" },
-  { key: "G", modifier: "cmdShift", description: "Ungroup Selection", category: "Grouping" },
-
-  // Alignment
-  { key: "L", modifier: "cmdShift", description: "Align Left", category: "Alignment" },
-  { key: "H", modifier: "cmdShift", description: "Align Horizontal Center", category: "Alignment" },
-  { key: "R", modifier: "cmdShift", description: "Align Right", category: "Alignment" },
-  { key: "T", modifier: "cmdShift", description: "Align Top", category: "Alignment" },
-  { key: "M", modifier: "cmdShift", description: "Align Vertical Middle", category: "Alignment" },
-  { key: "B", modifier: "cmdShift", description: "Align Bottom", category: "Alignment" },
-
-  // Distribution
-  { key: "D", modifier: "cmdShift", description: "Distribute Horizontally", category: "Distribution" },
-  { key: "V", modifier: "cmdAltShift", description: "Distribute Vertically", category: "Distribution" },
-
-  // General
-  { key: "Z", modifier: "cmd", description: "Undo", category: "General" },
-  { key: "Z", modifier: "cmdShift", description: "Redo", category: "General" },
-  { key: "S", modifier: "cmd", description: "Save", category: "General" },
-  { key: "?", modifier: "cmd", description: "Show This Help", category: "General" },
+const CATEGORY_ORDER: ShortcutCategory[] = [
+  'system',
+  'navigation',
+  'canvas',
+  'panels',
+  'properties',
+  'events',
+  'nodes',
+  'tools',
 ];
 
+// ============================================
+// Helper Functions
+// ============================================
+
 /**
- * Format modifier key for display
+ * 설정 파일에서 표시용 단축키 목록 생성
  */
-function formatModifier(modifier?: string): string {
-  if (!modifier || modifier === "none") return "";
-
-  const isMac = navigator.platform.toLowerCase().includes("mac");
-  const cmdKey = isMac ? "⌘" : "Ctrl";
-  const altKey = isMac ? "⌥" : "Alt";
-  const shiftKey = "⇧";
-
-  switch (modifier) {
-    case "cmd":
-      return cmdKey;
-    case "cmdShift":
-      return `${cmdKey}${shiftKey}`;
-    case "cmdAlt":
-      return `${cmdKey}${altKey}`;
-    case "cmdAltShift":
-      return `${cmdKey}${altKey}${shiftKey}`;
-    case "shift":
-      return shiftKey;
-    default:
-      return "";
-  }
+function getDisplayShortcuts(): DisplayShortcut[] {
+  return Object.entries(SHORTCUT_DEFINITIONS).map(([id, def]) => ({
+    id: id as ShortcutId,
+    key: def.key,
+    display: formatShortcut({ key: def.key, modifier: def.modifier }),
+    description: def.description,
+    category: def.category,
+    i18nDescription: def.i18n?.ko,
+  }));
 }
+
+/**
+ * 검색어로 단축키 필터링
+ */
+function filterBySearch(shortcuts: DisplayShortcut[], search: string): DisplayShortcut[] {
+  if (!search.trim()) return shortcuts;
+
+  const query = search.toLowerCase();
+  return shortcuts.filter(
+    (s) =>
+      s.description.toLowerCase().includes(query) ||
+      s.i18nDescription?.toLowerCase().includes(query) ||
+      s.key.toLowerCase().includes(query) ||
+      s.id.toLowerCase().includes(query)
+  );
+}
+
+/**
+ * 카테고리로 단축키 필터링
+ */
+function filterByCategory(
+  shortcuts: DisplayShortcut[],
+  category: ShortcutCategory | 'all'
+): DisplayShortcut[] {
+  if (category === 'all') return shortcuts;
+  return shortcuts.filter((s) => s.category === category);
+}
+
+/**
+ * 카테고리별 그룹화
+ */
+function groupByCategory(
+  shortcuts: DisplayShortcut[]
+): Record<ShortcutCategory, DisplayShortcut[]> {
+  const grouped: Partial<Record<ShortcutCategory, DisplayShortcut[]>> = {};
+
+  for (const shortcut of shortcuts) {
+    if (!grouped[shortcut.category]) {
+      grouped[shortcut.category] = [];
+    }
+    grouped[shortcut.category]!.push(shortcut);
+  }
+
+  return grouped as Record<ShortcutCategory, DisplayShortcut[]>;
+}
+
+// ============================================
+// Component
+// ============================================
 
 /**
  * Keyboard Shortcuts Help Panel
@@ -112,24 +152,44 @@ function formatModifier(modifier?: string): string {
 export function KeyboardShortcutsHelp({
   isOpen,
   onClose,
-  className = "",
+  className = '',
 }: KeyboardShortcutsHelpProps) {
-  const [collapsedCategories, setCollapsedCategories] = useState<Set<string>>(new Set());
+  const [search, setSearch] = useState('');
+  const [activeTab, setActiveTab] = useState<ShortcutCategory | 'all'>('all');
+  const [collapsedCategories, setCollapsedCategories] = useState<Set<ShortcutCategory>>(
+    new Set()
+  );
+
+  // 모든 단축키 로드 (설정 파일에서)
+  const allShortcuts = useMemo(() => getDisplayShortcuts(), []);
+
+  // 필터링된 단축키
+  const filteredShortcuts = useMemo(() => {
+    let result = allShortcuts;
+    result = filterBySearch(result, search);
+    result = filterByCategory(result, activeTab);
+    return result;
+  }, [allShortcuts, search, activeTab]);
+
+  // 카테고리별 그룹화
+  const groupedShortcuts = useMemo(
+    () => groupByCategory(filteredShortcuts),
+    [filteredShortcuts]
+  );
+
+  // 카테고리별 개수
+  const categoryCounts = useMemo(() => {
+    const counts: Partial<Record<ShortcutCategory | 'all', number>> = { all: allShortcuts.length };
+    const byCategory = getShortcutsByCategory();
+    for (const cat of CATEGORY_ORDER) {
+      counts[cat] = byCategory[cat]?.length || 0;
+    }
+    return counts;
+  }, [allShortcuts]);
 
   if (!isOpen) return null;
 
-  // Group shortcuts by category
-  const categories = SHORTCUTS.reduce((acc, shortcut) => {
-    if (!acc[shortcut.category]) {
-      acc[shortcut.category] = [];
-    }
-    acc[shortcut.category].push(shortcut);
-    return acc;
-  }, {} as Record<string, KeyboardShortcut[]>);
-
-  const categoryOrder = ["General", "Selection", "Editing", "Properties", "Grouping", "Alignment", "Distribution"];
-
-  const toggleCategory = (category: string) => {
+  const toggleCategory = (category: ShortcutCategory) => {
     setCollapsedCategories((prev) => {
       const next = new Set(prev);
       if (next.has(category)) {
@@ -139,6 +199,14 @@ export function KeyboardShortcutsHelp({
       }
       return next;
     });
+  };
+
+  const handleSearchChange = (value: string) => {
+    setSearch(value);
+    // 검색 시 모든 카테고리 펼치기
+    if (value.trim()) {
+      setCollapsedCategories(new Set());
+    }
   };
 
   return (
@@ -170,53 +238,103 @@ export function KeyboardShortcutsHelp({
           </Button>
         </div>
 
+        {/* Search */}
+        <div className="shortcuts-search">
+          <div className="search-input-wrapper">
+            <Search size={14} className="search-icon" />
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => handleSearchChange(e.target.value)}
+              placeholder="Search shortcuts..."
+              aria-label="Search keyboard shortcuts"
+              className="search-input"
+            />
+            {search && (
+              <button
+                className="search-clear"
+                onClick={() => handleSearchChange('')}
+                aria-label="Clear search"
+              >
+                <X size={12} />
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Category Tabs */}
+        <div className="shortcuts-tabs">
+          <button
+            className={`shortcuts-tab ${activeTab === 'all' ? 'active' : ''}`}
+            onClick={() => setActiveTab('all')}
+          >
+            All ({categoryCounts.all})
+          </button>
+          {CATEGORY_ORDER.map((cat) => (
+            <button
+              key={cat}
+              className={`shortcuts-tab ${activeTab === cat ? 'active' : ''}`}
+              onClick={() => setActiveTab(cat)}
+            >
+              {CATEGORY_LABELS[cat]} ({categoryCounts[cat]})
+            </button>
+          ))}
+        </div>
+
         {/* Content */}
         <div className="shortcuts-content">
-          {categoryOrder.map((category) => {
-            const shortcuts = categories[category];
-            if (!shortcuts) return null;
+          {filteredShortcuts.length === 0 ? (
+            <div className="shortcuts-empty">
+              <p>No shortcuts found for "{search}"</p>
+            </div>
+          ) : (
+            CATEGORY_ORDER.map((category) => {
+              const shortcuts = groupedShortcuts[category];
+              if (!shortcuts || shortcuts.length === 0) return null;
 
-            const isCollapsed = collapsedCategories.has(category);
+              const isCollapsed = collapsedCategories.has(category);
 
-            return (
-              <div key={category} className="shortcuts-category">
-                <button
-                  className="category-header"
-                  onClick={() => toggleCategory(category)}
-                  aria-expanded={!isCollapsed}
-                >
-                  {isCollapsed ? (
-                    <ChevronRight size={iconProps.size} strokeWidth={2} />
-                  ) : (
-                    <ChevronDown size={iconProps.size} strokeWidth={2} />
+              return (
+                <div key={category} className="shortcuts-category">
+                  <button
+                    className="category-header"
+                    onClick={() => toggleCategory(category)}
+                    aria-expanded={!isCollapsed}
+                  >
+                    {isCollapsed ? (
+                      <ChevronRight size={iconProps.size} strokeWidth={2} />
+                    ) : (
+                      <ChevronDown size={iconProps.size} strokeWidth={2} />
+                    )}
+                    <h3>{CATEGORY_LABELS[category]}</h3>
+                    <span className="category-count">({shortcuts.length})</span>
+                  </button>
+
+                  {!isCollapsed && (
+                    <div className="shortcuts-list">
+                      {shortcuts.map((shortcut) => (
+                        <div key={shortcut.id} className="shortcut-item">
+                          <span className="shortcut-description">
+                            {shortcut.i18nDescription || shortcut.description}
+                          </span>
+                          <kbd className="shortcut-keys">{shortcut.display}</kbd>
+                        </div>
+                      ))}
+                    </div>
                   )}
-                  <h3>{category}</h3>
-                  <span className="category-count">({shortcuts.length})</span>
-                </button>
-
-                {!isCollapsed && (
-                  <div className="shortcuts-list">
-                    {shortcuts.map((shortcut, index) => (
-                      <div key={`${category}-${index}`} className="shortcut-item">
-                        <span className="shortcut-description">{shortcut.description}</span>
-                        <kbd className="shortcut-keys">
-                          {formatModifier(shortcut.modifier)}
-                          {formatModifier(shortcut.modifier) && <span className="key-separator">+</span>}
-                          {shortcut.key}
-                        </kbd>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            );
-          })}
+                </div>
+              );
+            })
+          )}
         </div>
 
         {/* Footer */}
         <div className="shortcuts-footer">
           <p className="shortcuts-hint">
-            💡 Press <kbd>⌘?</kbd> anytime to toggle this help panel
+            Press <kbd>⌘?</kbd> anytime to toggle this help panel
+          </p>
+          <p className="shortcuts-count">
+            {filteredShortcuts.length} of {allShortcuts.length} shortcuts
           </p>
         </div>
       </div>

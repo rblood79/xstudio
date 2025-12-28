@@ -335,7 +335,7 @@ export function useViewportControl(options: UseViewportControlOptions): UseViewp
       },
     ],
     [containerEl, applyPanCursor],
-    'keyup'
+    { eventType: 'keyup' }
   );
 
   return {
