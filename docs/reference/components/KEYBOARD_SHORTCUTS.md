@@ -112,8 +112,9 @@ PropertiesPanel.tsx (일부) ──┘     keyboardShortcuts.json
 2. [Industry Benchmarks](#part-2-industry-benchmarks)
 3. [Proposed Architecture](#part-3-proposed-architecture)
 4. [Implementation Roadmap](#part-4-implementation-roadmap)
-5. [Appendix A: Shortcuts Reference](#appendix-a-shortcuts-reference)
-6. [Appendix B: Custom Components](#appendix-b-custom-components)
+5. [리뷰 반영 개선사항](#part-5-리뷰-반영-개선사항)
+6. [Appendix A: Shortcuts Reference](#appendix-a-shortcuts-reference)
+7. [Appendix B: Custom Components](#appendix-b-custom-components)
 
 ---
 
@@ -412,6 +413,25 @@ export function useKeyboardShortcutsRegistry(
 }
 ```
 
+**접근성(ARIA) 포커스 관리:**
+```typescript
+// 단축키가 있는 버튼/메뉴에 aria-keyshortcuts 속성 자동 부여
+export function useAriaKeyboardHint(shortcut: KeyboardShortcut) {
+  const ariaLabel = useMemo(() => {
+    const modifiers = [];
+    if (shortcut.modifier.includes('cmd')) modifiers.push('⌘');
+    if (shortcut.modifier.includes('Shift')) modifiers.push('⇧');
+    if (shortcut.modifier.includes('Alt')) modifiers.push('⌥');
+    return `${modifiers.join('')}${shortcut.key.toUpperCase()}`;
+  }, [shortcut]);
+
+  return {
+    'aria-keyshortcuts': ariaLabel,
+    'aria-label': `${shortcut.description} (${ariaLabel})`,
+  };
+}
+```
+
 ---
 
 ### Phase 1: Migrate Global Shortcuts
@@ -431,6 +451,48 @@ export function useKeyboardShortcutsRegistry(
 - `PropertyCustomId` - Enter/Escape for validation
 - `TextEditOverlay` - Text editing shortcuts
 - `AIPanel` - Message submission
+
+**E2E 테스트 (Playwright/Vitest):**
+```typescript
+// tests/e2e/keyboard-shortcuts.spec.ts
+import { test, expect } from '@playwright/test';
+
+test.describe('Keyboard Shortcuts', () => {
+  test('allowInInput 옵션별 동작 검증', async ({ page }) => {
+    await page.goto('/builder');
+
+    // 입력 필드 포커스 시 전역 단축키 차단 확인
+    await page.fill('[data-testid="property-input"]', '');
+    await page.keyboard.press('Control+z');
+    // allowInInput: true인 Undo는 동작해야 함
+    expect(await page.evaluate(() => window.__lastShortcut)).toBe('undo');
+
+    // allowInInput: false인 Delete는 차단되어야 함
+    await page.keyboard.press('Delete');
+    expect(await page.evaluate(() => window.__lastShortcut)).not.toBe('delete');
+  });
+
+  test('capture/stopPropagation 옵션 검증', async ({ page }) => {
+    await page.goto('/builder');
+    await page.keyboard.press('Control+=');
+    // capture: true로 브라우저 기본 동작(확대) 차단 확인
+    const zoom = await page.evaluate(() => window.visualViewport?.scale);
+    expect(zoom).toBe(1);
+  });
+
+  test('스코프별 단축키 충돌 없음 확인', async ({ page }) => {
+    // Canvas에서 Cmd+C
+    await page.click('[data-testid="canvas"]');
+    await page.keyboard.press('Control+c');
+    expect(await page.evaluate(() => window.__lastShortcut)).toBe('copyElements');
+
+    // Events 패널에서 Cmd+C
+    await page.click('[data-testid="events-panel"]');
+    await page.keyboard.press('Control+c');
+    expect(await page.evaluate(() => window.__lastShortcut)).toBe('copyActions');
+  });
+});
+```
 
 ---
 
@@ -519,6 +581,101 @@ export function EnhancedKeyboardHelp() {
 }
 ```
 
+**충돌 자동 해결 가이드:**
+```typescript
+// DevTools 패널에서 충돌 발견 시 해결 옵션 제시
+interface ConflictResolution {
+  type: 'priority' | 'scope' | 'alternate';
+  suggestion: string;
+  apply: () => void;
+}
+
+function suggestResolutions(conflict: ConflictInfo): ConflictResolution[] {
+  return [
+    {
+      type: 'priority',
+      suggestion: `우선순위 조정: ${conflict.new.id}를 priority ${conflict.existing.priority + 10}으로 변경`,
+      apply: () => updatePriority(conflict.new.id, conflict.existing.priority + 10),
+    },
+    {
+      type: 'scope',
+      suggestion: `스코프 분리: ${conflict.new.id}를 '${suggestNewScope(conflict)}'로 이동`,
+      apply: () => updateScope(conflict.new.id, suggestNewScope(conflict)),
+    },
+    {
+      type: 'alternate',
+      suggestion: `대체 키 추천: Alt+Shift+${conflict.new.key.toUpperCase()}`,
+      apply: () => updateKey(conflict.new.id, conflict.new.key, 'altShift'),
+    },
+  ];
+}
+```
+
+**사용자 충돌 알림 UI:**
+```typescript
+// 사용자에게 충돌 알림 및 선택지 제공
+export function ShortcutConflictDialog({ conflict }: { conflict: ConflictInfo }) {
+  return (
+    <Dialog>
+      <Heading>⚠️ 단축키 충돌 감지</Heading>
+      <Content>
+        <p><kbd>{formatShortcut(conflict.existing)}</kbd>가 이미 다음에 할당되어 있습니다:</p>
+        <p><strong>{conflict.existing.description}</strong></p>
+        <p>새로 할당하려는 동작:</p>
+        <p><strong>{conflict.new.description}</strong></p>
+      </Content>
+      <ButtonGroup>
+        <Button onPress={() => replaceShortcut(conflict)}>교체</Button>
+        <Button onPress={() => keepBoth(conflict)}>둘 다 유지 (스코프 분리)</Button>
+        <Button variant="secondary" onPress={close}>취소</Button>
+      </ButtonGroup>
+    </Dialog>
+  );
+}
+```
+
+**사용량 분석 및 학습 트래킹:**
+```typescript
+// 단축키 사용 빈도 추적
+interface ShortcutUsageMetrics {
+  id: string;
+  usageCount: number;
+  lastUsed: Date | null;
+  avgDailyUsage: number;
+}
+
+export function useShortcutAnalytics() {
+  const trackUsage = useCallback((shortcutId: string) => {
+    const metrics = getMetrics(shortcutId);
+    updateMetrics(shortcutId, {
+      usageCount: metrics.usageCount + 1,
+      lastUsed: new Date(),
+    });
+
+    // 분석 데이터 전송 (선택적)
+    analytics.track('shortcut_used', { shortcutId, timestamp: Date.now() });
+  }, []);
+
+  const getUnusedShortcuts = useCallback(() => {
+    return ALL_SHORTCUTS.filter(s => {
+      const metrics = getMetrics(s.id);
+      return !metrics.lastUsed || daysSince(metrics.lastUsed) > 30;
+    });
+  }, []);
+
+  const getRecommendations = useCallback(() => {
+    // 자주 사용하는 단축키 기반 추천
+    const unused = getUnusedShortcuts();
+    return unused.slice(0, 5).map(s => ({
+      shortcut: s,
+      reason: '이 단축키를 아직 사용해보지 않았습니다',
+    }));
+  }, []);
+
+  return { trackUsage, getUnusedShortcuts, getRecommendations };
+}
+```
+
 ---
 
 ### Phase 6-7: International KB & Customization
@@ -534,11 +691,210 @@ async function detectKeyboardLayout() {
 }
 ```
 
+**레이아웃 변경 감지 및 알림:**
+```typescript
+// 국제 키보드 레이아웃 감지 시 사용자 알림
+export function useKeyboardLayoutNotification() {
+  const [layout, setLayout] = useState<string>('US');
+
+  useEffect(() => {
+    const detectAndNotify = async () => {
+      const detected = await detectKeyboardLayout();
+
+      if (detected.layout !== 'US') {
+        // 도움말 패널 상단에 레이아웃 배지 표시
+        setLayout(detected.layout);
+
+        // 첫 감지 시 토스트 알림
+        if (!localStorage.getItem('keyboard_layout_notified')) {
+          toast.info(`키보드 레이아웃 감지: ${detected.layout}`, {
+            description: '단축키가 해당 레이아웃에 맞게 조정됩니다.',
+            action: {
+              label: '자세히',
+              onClick: () => openKeyboardHelpPanel(),
+            },
+          });
+          localStorage.setItem('keyboard_layout_notified', 'true');
+        }
+      }
+    };
+
+    detectAndNotify();
+
+    // 레이아웃 변경 감지 (창 포커스 시)
+    window.addEventListener('focus', detectAndNotify);
+    return () => window.removeEventListener('focus', detectAndNotify);
+  }, []);
+
+  return layout;
+}
+
+// 도움말 패널에 레이아웃 배지 표시
+export function KeyboardLayoutBadge({ layout }: { layout: string }) {
+  if (layout === 'US') return null;
+
+  return (
+    <Badge variant="info" className="keyboard-layout-badge">
+      ⌨️ {layout}
+    </Badge>
+  );
+}
+```
+
+**오프라인 폴백 메커니즘:**
+```typescript
+// 네트워크 문제 시 기본 단축키 보장
+const DEFAULT_SHORTCUTS = await import('./defaultShortcuts.json');
+
+export async function loadShortcutConfig() {
+  try {
+    // 서버에서 사용자 설정 로드 시도
+    const userConfig = await fetchUserShortcuts();
+    localStorage.setItem('shortcuts_cache', JSON.stringify(userConfig));
+    return userConfig;
+  } catch (error) {
+    // 오프라인 시 캐시 또는 기본값 사용
+    const cached = localStorage.getItem('shortcuts_cache');
+    if (cached) {
+      console.info('오프라인 모드: 캐시된 단축키 설정 사용');
+      return JSON.parse(cached);
+    }
+    console.info('오프라인 모드: 기본 단축키 설정 사용');
+    return DEFAULT_SHORTCUTS;
+  }
+}
+```
+
 **Phase 7: User Customization**
 - Remap shortcuts
 - Export/import profiles
 - Workspace-based sets
 - Conflict resolution UI
+
+**역할별 프리셋 시스템:**
+```typescript
+// 역할별 단축키 프리셋 정의
+export const ROLE_PRESETS: Record<string, ShortcutPreset> = {
+  designer: {
+    name: '디자이너',
+    description: '디자인 작업에 최적화된 단축키',
+    shortcuts: {
+      // 정렬/레이아웃 단축키 우선
+      alignLeft: { key: 'l', modifier: 'cmd' },
+      alignCenter: { key: 'c', modifier: 'cmdShift' },
+      // ...
+    },
+  },
+  developer: {
+    name: '개발자',
+    description: '코드 작업에 최적화된 단축키',
+    shortcuts: {
+      // 이벤트/로직 단축키 우선
+      toggleEvents: { key: 'e', modifier: 'cmd' },
+      duplicateAction: { key: 'd', modifier: 'cmdShift' },
+      // ...
+    },
+  },
+  qa: {
+    name: 'QA',
+    description: '테스트/검증에 최적화된 단축키',
+    shortcuts: {
+      // 미리보기/상태 확인 단축키 우선
+      preview: { key: 'p', modifier: 'cmd' },
+      toggleDevTools: { key: 'i', modifier: 'cmdAlt' },
+      // ...
+    },
+  },
+};
+
+// 프리셋 내보내기/불러오기
+export function exportPreset(preset: ShortcutPreset): string {
+  return JSON.stringify(preset, null, 2);
+}
+
+export function importPreset(json: string): ShortcutPreset {
+  const parsed = JSON.parse(json);
+  validatePresetSchema(parsed);
+  return parsed;
+}
+
+// 워크스페이스 공유 링크 생성
+export function generateShareLink(preset: ShortcutPreset): string {
+  const encoded = btoa(JSON.stringify(preset));
+  return `${window.location.origin}/shortcuts/import?preset=${encoded}`;
+}
+```
+
+**도움말 패널 음성 안내 모드:**
+```typescript
+// 스크린리더 사용자를 위한 음성 안내 토글
+export function KeyboardHelpPanel() {
+  const [voiceMode, setVoiceMode] = useState(false);
+
+  return (
+    <div role="dialog" aria-label="키보드 단축키 도움말">
+      <Switch
+        isSelected={voiceMode}
+        onChange={setVoiceMode}
+        aria-label="음성 안내 모드"
+      >
+        🔊 음성 안내 모드
+      </Switch>
+
+      {shortcuts.map(shortcut => (
+        <div
+          key={shortcut.id}
+          role="listitem"
+          aria-label={voiceMode
+            ? `${shortcut.description}, 단축키 ${formatShortcutForSpeech(shortcut)}`
+            : undefined
+          }
+        >
+          <kbd aria-hidden={voiceMode}>{formatShortcut(shortcut)}</kbd>
+          <span>{shortcut.description}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+```
+
+---
+
+## Part 5: 리뷰 반영 개선사항
+
+### 5.1 반영된 리뷰 항목
+
+| 항목 | 설명 | 반영 위치 |
+|------|------|----------|
+| **ARIA 포커스 관리** | `aria-keyshortcuts` 속성 자동 부여, 스크린리더 지원 | Phase 0, Phase 7 |
+| **E2E 테스트** | Playwright 기반 단축키 동작 검증 자동화 | Phase 1 |
+| **사용량 분석** | 단축키 사용 빈도 추적, 미사용 단축키 추천 | Phase 5 |
+| **충돌 알림 UI** | 사용자에게 충돌 안내 및 해결 선택지 제공 | Phase 5 |
+| **충돌 자동 해결 가이드** | 우선순위/스코프/대체 키 자동 추천 | Phase 5 |
+| **오프라인 폴백** | 네트워크 문제 시 캐시/기본값 사용 | Phase 6 |
+| **레이아웃 알림** | 국제 키보드 감지 시 배지/토스트 표시 | Phase 6 |
+| **역할별 프리셋** | 디자이너/개발자/QA용 단축키 세트 | Phase 7 |
+| **프리셋 공유** | 워크스페이스 공유 링크 생성 | Phase 7 |
+| **음성 안내 모드** | 스크린리더 사용자용 토글 | Phase 7 |
+
+### 5.2 테스트 커버리지 목표
+
+| 테스트 유형 | 범위 | 도구 |
+|------------|------|------|
+| **Unit Test** | 레지스트리 로직, 매칭 함수 | Vitest |
+| **Integration** | 스코프 전환, 충돌 감지 | Vitest + Testing Library |
+| **E2E** | 실제 단축키 동작, 입력 필드 상호작용 | Playwright |
+| **Accessibility** | ARIA 속성, 포커스 관리 | axe-core, Playwright |
+
+### 5.3 품질 지표
+
+| 지표 | 현재 | 목표 (Phase 3) | 목표 (Phase 7) |
+|------|------|----------------|----------------|
+| 테스트 커버리지 | 0% | 80% | 95% |
+| 접근성 점수 | - | WCAG AA | WCAG AAA |
+| 충돌 감지율 | 0% | 100% | 100% |
+| 오프라인 가용성 | ❌ | ✅ 기본값 | ✅ 전체 캐시 |
 
 ---
 
