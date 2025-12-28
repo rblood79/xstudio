@@ -5,11 +5,11 @@
 현재 src 폴더 내부 구조 분석 결과, 중복/분산된 기능과 일관성 없는 패턴이 발견되었습니다.
 이 문서는 단계별 개선 계획을 정의합니다.
 
-| Phase | 내용                      | 예상 기간 | 상태    |
-| ----- | ------------------------- | --------- | ------- |
-| 1     | 즉시 개선 (낮은 위험도)   | 1-2일     | 🔲 대기 |
-| 2     | 계획적 개선 (중간 위험도) | 1-2주     | 🔲 대기 |
-| 3     | 장기 개선 (높은 위험도)   | 1개월+    | 🔲 대기 |
+| Phase | 내용                      | 예상 기간 | 상태       |
+| ----- | ------------------------- | --------- | ---------- |
+| 1     | 즉시 개선 (낮은 위험도)   | 1-2일     | 🔄 진행 중 |
+| 2     | 계획적 개선 (중간 위험도) | 1-2주     | 🔲 대기    |
+| 3     | 장기 개선 (높은 위험도)   | 1개월+    | 🔲 대기    |
 
 ---
 
@@ -65,7 +65,7 @@ utils/theme/colorUtils.ts    ← 구식 (수동 구현, 중복)
 
 ---
 
-## 1.2 builder/stores/index.ts 생성
+## 1.2 builder/stores/index.ts 생성 ✅ 완료
 
 ### 현재 상태
 
@@ -76,7 +76,7 @@ builder/stores/           (38개 파일)
 ├── history.ts
 ├── selection.ts
 ├── ...
-└── (index.ts 없음)       ❌
+└── index.ts              ✅ 생성됨
 ```
 
 ### 문제점
@@ -105,11 +105,11 @@ export { useSelectionStore } from "./selection";
 
 ### 마이그레이션 단계
 
-- [ ] `builder/stores/` 내 모든 파일 목록 확인
-- [ ] 각 파일의 주요 export 확인
-- [ ] `builder/stores/index.ts` 생성
-- [ ] 기존 import 경로 정상 동작 확인 (하위 호환성)
-- [ ] 빌드 검증
+- [x] `builder/stores/` 내 모든 파일 목록 확인
+- [x] 각 파일의 주요 export 확인
+- [x] `builder/stores/index.ts` 생성
+- [x] 기존 import 경로 정상 동작 확인 (하위 호환성)
+- [x] 빌드 검증
 
 ### 영향 범위
 
@@ -118,9 +118,9 @@ export { useSelectionStore } from "./selection";
 
 ### 검증 체크리스트
 
-- [ ] TypeScript 빌드 성공
-- [ ] 기존 import 경로 정상 동작
-- [ ] 새로운 barrel import 동작 확인
+- [x] TypeScript 빌드 성공
+- [x] 기존 import 경로 정상 동작
+- [x] 새로운 barrel import 동작 확인
 
 ---
 
@@ -129,7 +129,7 @@ export { useSelectionStore } from "./selection";
 ### 현재 상태
 
 ```
-builder/hooks/            (34개 파일)
+builder/hooks/            (35개 파일)
 ├── usePageManager.ts
 ├── useSelection.ts
 ├── useClipboard.ts
@@ -531,16 +531,18 @@ builder/hooks/                      # 래퍼만 유지
 
 | 영역                 | 파일 수    | 비중 |
 | -------------------- | ---------- | ---- |
-| `builder/panels/`    | 301개      | 41%  |
-| `builder/workspace/` | 115개      | 16%  |
-| `shared/`            | 73개       | 10%  |
-| `builder/stores/`    | 38개       | 5%   |
-| `utils/`             | 38개       | 5%   |
-| `builder/hooks/`     | 34개       | 5%   |
+| `builder/panels/`    | 301개      | 35%  |
+| `builder/workspace/` | 114개      | 13%  |
+| `shared/`            | 73개       | 9%   |
+| `builder/stores/`    | 38개       | 4%   |
+| `utils/`             | 38개       | 4%   |
+| `builder/hooks/`     | 35개       | 4%   |
 | `services/`          | 23개       | 3%   |
 | `types/`             | 22개       | 3%   |
-| 기타                 | ~95개      | 12%  |
-| **총계**             | **~739개** | 100% |
+| 기타                 | ~211개     | 25%  |
+| **총계**             | **~855개** | 100% |
+
+> 📅 마지막 업데이트: 2025-12-28
 
 ## B. 의존성 방향 원칙
 
@@ -577,4 +579,5 @@ Types Layer (types)
 ---
 
 **작성일**: 2025-12-27
-**상태**: Phase 1 대기 중
+**마지막 업데이트**: 2025-12-28
+**상태**: Phase 1 진행 중 (1.2 완료)

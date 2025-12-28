@@ -140,6 +140,9 @@ src/builder/
 ├── components/
 │   ├── help/
 │   │   └── KeyboardShortcutsHelp.tsx # ✅ 검색 + 탭 필터링 + 설정 연동
+│   ├── overlay/                      # 🔜 Phase 7 예정
+│   │   ├── ShortcutTooltip.css       # 단축키 툴팁 스타일
+│   │   └── ShortcutTooltip.tsx       # 단축키 툴팁 컴포넌트
 │   └── property/
 │       ├── PropertyUnitInput.tsx     # 유지 (컴포넌트 로컬)
 │       ├── PropertyCustomId.tsx      # 유지 (컴포넌트 로컬)
@@ -1401,11 +1404,748 @@ src/builder/
 
 ---
 
-## 향후 개선 방향 (Optional)
+## 향후 개선 방향 (Phase 6-9)
 
-| 항목 | 설명 | 우선순위 |
+### Phase Overview (Future)
+
+| Phase | Description | Priority | Effort | 의존성 |
+|-------|-------------|----------|--------|--------|
+| **6** | 패널 단축키 완전 통합 | 🟡 Medium | 3일 | Phase 4 |
+| **7** | 툴팁 & 디스커버러빌리티 | 🟢 Low | 2일 | Phase 2 |
+| **8** | 국제 키보드 지원 | 🟡 Medium | 4일 | Phase 2 |
+| **9** | 사용자 커스터마이징 | 🟢 Low | 5일 | Phase 8 |
+
+---
+
+### Phase 6: 패널 단축키 완전 통합 (3일)
+
+**목표:** Events/Properties 패널의 단축키를 useGlobalKeyboardShortcuts로 완전 통합
+
+#### 6.1 현재 상태
+
+| 훅 | 위치 | 단축키 | 통합 난이도 |
+|----|------|--------|------------|
+| `useCopyPasteActions` | Events 패널 | Cmd+C/V, Delete | 🟡 Medium |
+| `useBlockKeyboard` | Events 패널 | Arrow, Escape | 🟡 Medium |
+| `useActionKeyboardShortcuts` | Events 패널 | 전체 | 🟡 Medium |
+
+#### 6.2 구현 계획
+
+```typescript
+// src/builder/hooks/useGlobalKeyboardShortcuts.ts 확장
+
+export function useGlobalKeyboardShortcuts() {
+  const activeScope = useActiveScope();
+
+  // 기존 핸들러
+  const systemHandlers = useSystemHandlers();      // Undo/Redo
+  const navigationHandlers = useNavigationHandlers(); // Zoom
+
+  // 📦 Phase 6: 패널 핸들러 추가
+  const canvasHandlers = useCanvasHandlers();      // Copy/Paste/Delete (canvas)
+  const eventsHandlers = useEventsHandlers();      // Copy/Paste/Delete (events)
+
+  // 스코프 기반 핸들러 선택
+  const handlers = useMemo(() => ({
+    ...systemHandlers,
+    ...navigationHandlers,
+    // 스코프에 따라 다른 핸들러 바인딩
+    copy: activeScope === 'panel:events' ? eventsHandlers.copy : canvasHandlers.copy,
+    paste: activeScope === 'panel:events' ? eventsHandlers.paste : canvasHandlers.paste,
+    delete: activeScope === 'panel:events' ? eventsHandlers.delete : canvasHandlers.delete,
+  }), [activeScope, systemHandlers, navigationHandlers, canvasHandlers, eventsHandlers]);
+
+  // 단일 레지스트리 호출
+  useKeyboardShortcutsRegistry(shortcuts, [shortcuts, activeScope], {
+    capture: true,
+    target: 'document',
+    activeScope,
+  });
+}
+```
+
+#### 6.3 작업 목록
+
+| 작업 | 설명 | 예상 시간 |
 |------|------|----------|
-| 패널 단축키 완전 통합 | Copy/Paste/Delete를 useGlobalKeyboardShortcuts로 이동 | 🟢 Low |
-| 국제 키보드 지원 | Keyboard Layout API 활용 | 🟡 Medium |
-| 사용자 커스터마이징 | localStorage 기반 단축키 변경 | 🟢 Low |
-| 툴팁 단축키 표시 | 버튼 hover 시 단축키 표시 | 🟢 Low |
+| `useCanvasHandlers` 훅 분리 | 캔버스 Copy/Paste/Delete 로직 추출 | 4h |
+| `useEventsHandlers` 훅 분리 | Events 패널 Copy/Paste/Delete 로직 추출 | 4h |
+| `useGlobalKeyboardShortcuts` 확장 | 스코프 기반 핸들러 선택 로직 | 4h |
+| 레거시 훅 정리 | `useCopyPasteActions`, `useBlockKeyboard` 제거 | 2h |
+| E2E 테스트 | 스코프별 동작 검증 | 4h |
+
+#### 6.4 삭제 대상
+
+```
+src/builder/panels/events/hooks/
+├── useCopyPasteActions.ts  # 🗑️ useEventsHandlers로 대체
+└── useBlockKeyboard.ts     # 🗑️ useGlobalKeyboardShortcuts로 통합
+```
+
+#### 6.5 테스트 케이스
+
+```typescript
+describe('Phase 6: 패널 단축키 통합', () => {
+  it('canvas-focused에서 Cmd+C → 요소 복사', () => {});
+  it('panel:events에서 Cmd+C → 액션 복사', () => {});
+  it('스코프 전환 시 핸들러 변경 확인', () => {});
+  it('Delete 키가 스코프별로 다르게 동작', () => {});
+});
+```
+
+---
+
+### Phase 7: 툴팁 & 디스커버러빌리티 (2일)
+
+**목표:** 단축키를 UI에서 쉽게 발견할 수 있도록 개선
+
+#### 7.1 구현 기능
+
+| 기능 | 설명 | 위치 |
+|------|------|------|
+| 버튼 툴팁 | hover 시 단축키 표시 | 전역 |
+| 메뉴 아이템 | 단축키 표시 (오른쪽 정렬) | ContextMenu, MenuBar |
+| 커맨드 팔레트 | Cmd+K로 열기, 검색 가능 | 전역 |
+
+#### 7.2 ShortcutTooltip 컴포넌트
+
+> **Note:** `react-aria-components`의 `TooltipTrigger`와 `Tooltip` 사용
+
+```typescript
+// src/builder/components/overlay/ShortcutTooltip.tsx
+
+import { TooltipTrigger, Tooltip } from 'react-aria-components';
+import { SHORTCUT_DEFINITIONS, type ShortcutId } from '../../config/keyboardShortcuts';
+import { formatShortcut } from '../../hooks/useKeyboardShortcutsRegistry';
+import './ShortcutTooltip.css';
+
+interface ShortcutTooltipProps {
+  /** 단축키 ID */
+  shortcutId: ShortcutId;
+  /** 트리거 요소 (Button 등) */
+  children: React.ReactElement;
+  /** 툴팁 지연 시간 (ms) */
+  delay?: number;
+  /** 툴팁 위치 */
+  placement?: 'top' | 'bottom' | 'left' | 'right';
+}
+
+export function ShortcutTooltip({
+  shortcutId,
+  children,
+  delay = 700,
+  placement = 'top',
+}: ShortcutTooltipProps) {
+  const def = SHORTCUT_DEFINITIONS[shortcutId];
+  if (!def) return children;
+
+  const display = formatShortcut({ key: def.key, modifier: def.modifier });
+  const description = def.i18n?.ko || def.description;
+
+  return (
+    <TooltipTrigger delay={delay}>
+      {children}
+      <Tooltip placement={placement} className="shortcut-tooltip">
+        <span className="shortcut-tooltip-label">{description}</span>
+        <kbd className="shortcut-tooltip-kbd">{display}</kbd>
+      </Tooltip>
+    </TooltipTrigger>
+  );
+}
+```
+
+**사용 예시:**
+```tsx
+import { ShortcutTooltip } from '../components/overlay/ShortcutTooltip';
+
+<ShortcutTooltip shortcutId="undo">
+  <Button onPress={handleUndo}>
+    <Undo2 />
+  </Button>
+</ShortcutTooltip>
+```
+
+#### 7.2.1 CSS 스타일
+
+```css
+/* src/builder/components/overlay/ShortcutTooltip.css */
+/*
+ * ShortcutTooltip 컴포넌트 스타일
+ * react-aria-components Tooltip 스타일링
+ */
+
+/* Base Tooltip Styles */
+.shortcut-tooltip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  background: var(--md-sys-color-inverse-surface);
+  color: var(--md-sys-color-inverse-on-surface);
+  border-radius: 6px;
+  font-size: 12px;
+  font-family: var(--md-sys-typescale-body-small-font);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  z-index: 10000;
+
+  /* react-aria animation */
+  opacity: 0;
+  transform: translateY(4px);
+  transition: opacity 150ms ease-out, transform 150ms ease-out;
+}
+
+.shortcut-tooltip[data-entering],
+.shortcut-tooltip[data-exiting] {
+  opacity: 0;
+  transform: translateY(4px);
+}
+
+.shortcut-tooltip[data-placement="bottom"] {
+  transform: translateY(-4px);
+}
+
+.shortcut-tooltip[data-placement="left"] {
+  transform: translateX(4px);
+}
+
+.shortcut-tooltip[data-placement="right"] {
+  transform: translateX(-4px);
+}
+
+/* Tooltip Label */
+.shortcut-tooltip-label {
+  color: inherit;
+}
+
+/* Keyboard Shortcut Badge */
+.shortcut-tooltip-kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  padding: 2px 6px;
+  background: var(--md-sys-color-surface-container-highest);
+  color: var(--md-sys-color-on-surface-variant);
+  border-radius: 4px;
+  font-family: var(--md-sys-typescale-body-small-font);
+  font-size: 11px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+/* Visible state */
+.shortcut-tooltip:not([data-entering]):not([data-exiting]) {
+  opacity: 1;
+  transform: translateY(0) translateX(0);
+}
+```
+
+#### 7.2.2 디렉토리 구조
+
+```
+src/builder/components/overlay/
+├── ShortcutTooltip.css       # 컴포넌트 스타일
+└── ShortcutTooltip.tsx       # 컴포넌트
+```
+
+#### 7.3 MenuItem 단축키 표시
+
+```typescript
+// src/builder/components/menu/MenuItem.tsx
+
+interface MenuItemProps {
+  label: string;
+  shortcutId?: ShortcutId;
+  onAction: () => void;
+}
+
+export function MenuItem({ label, shortcutId, onAction }: MenuItemProps) {
+  const shortcutDisplay = shortcutId
+    ? formatShortcut(SHORTCUT_DEFINITIONS[shortcutId])
+    : null;
+
+  return (
+    <Item onAction={onAction}>
+      <span>{label}</span>
+      {shortcutDisplay && <kbd className="menu-shortcut">{shortcutDisplay}</kbd>}
+    </Item>
+  );
+}
+```
+
+#### 7.4 커맨드 팔레트
+
+```typescript
+// src/builder/components/CommandPalette.tsx
+
+export function CommandPalette() {
+  const [isOpen, setIsOpen] = useState(false);
+  const [search, setSearch] = useState('');
+
+  // Cmd+K로 열기
+  useKeyboardShortcutsRegistry([
+    { key: 'k', modifier: 'cmd', handler: () => setIsOpen(true), priority: 95 }
+  ], [], { capture: true });
+
+  const filteredCommands = useMemo(() => {
+    return Object.entries(SHORTCUT_DEFINITIONS)
+      .filter(([id, def]) =>
+        def.description.toLowerCase().includes(search.toLowerCase()) ||
+        id.toLowerCase().includes(search.toLowerCase())
+      )
+      .slice(0, 10);
+  }, [search]);
+
+  return (
+    <DialogTrigger isOpen={isOpen} onOpenChange={setIsOpen}>
+      <Modal>
+        <Dialog>
+          <SearchField value={search} onChange={setSearch} autoFocus />
+          <ListBox items={filteredCommands}>
+            {([id, def]) => (
+              <Item key={id} onAction={() => executeShortcut(id)}>
+                <span>{def.description}</span>
+                <kbd>{formatShortcut(def)}</kbd>
+              </Item>
+            )}
+          </ListBox>
+        </Dialog>
+      </Modal>
+    </DialogTrigger>
+  );
+}
+```
+
+#### 7.5 작업 목록
+
+| 작업 | 설명 | 예상 시간 |
+|------|------|----------|
+| `ShortcutTooltip` 컴포넌트 | tsx + css 1:1 매칭 | 2h |
+| 툴바 버튼 적용 | Undo/Redo/Zoom 등 버튼에 ShortcutTooltip 적용 | 2h |
+| `MenuItem` 확장 | 단축키 표시 지원 | 2h |
+| `CommandPalette` 구현 | Cmd+K 커맨드 팔레트 | 4h |
+
+---
+
+### Phase 8: 국제 키보드 지원 (4일)
+
+**목표:** 다양한 키보드 레이아웃(QWERTY, AZERTY, QWERTZ 등)에서 일관된 단축키 경험 제공
+
+#### 8.1 문제점
+
+| 키보드 | `=` 키 위치 | `Z` 키 위치 | 영향 |
+|--------|------------|------------|------|
+| US QWERTY | Shift+= | Z | 기준 |
+| French AZERTY | = (별도) | W 위치 | Cmd+Z → Cmd+W 의도 |
+| German QWERTZ | = (별도) | Y 위치 | Cmd+Z → Cmd+Y 의도 |
+
+#### 8.2 Keyboard Layout API 활용
+
+```typescript
+// src/builder/utils/keyboardLayout.ts
+
+interface LayoutInfo {
+  layout: string;           // 'en-US', 'fr-FR', 'de-DE'
+  isAZERTY: boolean;
+  isQWERTZ: boolean;
+}
+
+export async function detectKeyboardLayout(): Promise<LayoutInfo> {
+  // Keyboard API 지원 확인
+  if ('keyboard' in navigator && 'getLayoutMap' in navigator.keyboard) {
+    const layoutMap = await navigator.keyboard.getLayoutMap();
+
+    // 레이아웃 감지 (KeyZ의 실제 문자로 판단)
+    const keyZ = layoutMap.get('KeyZ');
+
+    return {
+      layout: navigator.language,
+      isAZERTY: keyZ === 'w',
+      isQWERTZ: keyZ === 'y',
+    };
+  }
+
+  // Fallback: 언어 기반 추정
+  const lang = navigator.language.toLowerCase();
+  return {
+    layout: lang,
+    isAZERTY: lang.startsWith('fr'),
+    isQWERTZ: lang.startsWith('de') || lang.startsWith('de-ch'),
+  };
+}
+```
+
+#### 8.3 레이아웃별 키 매핑
+
+```typescript
+// src/builder/config/keyboardLayouts.ts
+
+export const LAYOUT_KEY_MAPS: Record<string, Record<string, string>> = {
+  'azerty': {
+    'z': 'w',  // Undo: Cmd+W (물리적 Z 위치)
+    'a': 'q',  // Select All: Cmd+Q (물리적 A 위치)
+    // ...
+  },
+  'qwertz': {
+    'z': 'y',  // Undo: Cmd+Y (물리적 Z 위치)
+    'y': 'z',  // Redo용 (필요시)
+    // ...
+  },
+};
+
+export function getPhysicalKey(logicalKey: string, layout: LayoutInfo): string {
+  if (layout.isAZERTY && LAYOUT_KEY_MAPS.azerty[logicalKey]) {
+    return LAYOUT_KEY_MAPS.azerty[logicalKey];
+  }
+  if (layout.isQWERTZ && LAYOUT_KEY_MAPS.qwertz[logicalKey]) {
+    return LAYOUT_KEY_MAPS.qwertz[logicalKey];
+  }
+  return logicalKey;
+}
+```
+
+#### 8.4 레지스트리 통합
+
+```typescript
+// useKeyboardShortcutsRegistry 확장
+
+export function useKeyboardShortcutsRegistry(
+  shortcuts: KeyboardShortcut[],
+  deps: React.DependencyList = [],
+  options: RegistryOptions = {}
+) {
+  const [layout, setLayout] = useState<LayoutInfo | null>(null);
+
+  useEffect(() => {
+    detectKeyboardLayout().then(setLayout);
+  }, []);
+
+  // 레이아웃 기반 키 변환
+  const adjustedShortcuts = useMemo(() => {
+    if (!layout) return shortcuts;
+
+    return shortcuts.map(s => ({
+      ...s,
+      key: getPhysicalKey(s.key, layout),
+    }));
+  }, [shortcuts, layout]);
+
+  // ... 기존 로직
+}
+```
+
+#### 8.5 도움말 패널 표시 업데이트
+
+```typescript
+// KeyboardShortcutsHelp.tsx
+
+export function KeyboardShortcutsHelp() {
+  const [layout, setLayout] = useState<LayoutInfo | null>(null);
+
+  useEffect(() => {
+    detectKeyboardLayout().then(setLayout);
+  }, []);
+
+  // 레이아웃에 맞는 키 표시
+  const getDisplayKey = (def: ShortcutDefinition) => {
+    const physicalKey = layout ? getPhysicalKey(def.key, layout) : def.key;
+    return formatShortcut({ key: physicalKey, modifier: def.modifier });
+  };
+
+  // ...
+}
+```
+
+#### 8.6 작업 목록
+
+| 작업 | 설명 | 예상 시간 |
+|------|------|----------|
+| `detectKeyboardLayout` 유틸 | Keyboard API 기반 레이아웃 감지 | 4h |
+| `keyboardLayouts.ts` 설정 | AZERTY, QWERTZ 매핑 테이블 | 4h |
+| 레지스트리 통합 | 레이아웃 기반 키 변환 | 4h |
+| 도움말 패널 업데이트 | 레이아웃별 키 표시 | 2h |
+| 테스트 | 다양한 레이아웃 시뮬레이션 | 4h |
+
+#### 8.7 브라우저 지원
+
+| 브라우저 | Keyboard API | Fallback |
+|----------|--------------|----------|
+| Chrome 69+ | ✅ | - |
+| Edge 79+ | ✅ | - |
+| Firefox | ❌ | 언어 기반 추정 |
+| Safari | ❌ | 언어 기반 추정 |
+
+---
+
+### Phase 9: 사용자 커스터마이징 (5일)
+
+**목표:** 사용자가 단축키를 변경하고 저장할 수 있도록 지원
+
+#### 9.1 저장 구조
+
+```typescript
+// src/builder/types/keyboard.ts
+
+interface UserShortcutOverride {
+  shortcutId: ShortcutId;
+  key: string;
+  modifier: KeyboardModifier;
+  disabled?: boolean;
+}
+
+interface UserShortcutConfig {
+  version: string;
+  overrides: UserShortcutOverride[];
+  createdAt: string;
+  updatedAt: string;
+}
+```
+
+#### 9.2 로컬 스토리지 저장
+
+```typescript
+// src/builder/stores/shortcutCustomization.ts
+
+const STORAGE_KEY = 'xstudio-keyboard-shortcuts';
+
+interface ShortcutCustomizationState {
+  overrides: Map<ShortcutId, UserShortcutOverride>;
+
+  // Actions
+  setOverride: (id: ShortcutId, override: Partial<UserShortcutOverride>) => void;
+  removeOverride: (id: ShortcutId) => void;
+  resetAll: () => void;
+  exportConfig: () => string;
+  importConfig: (json: string) => boolean;
+}
+
+export const useShortcutCustomization = create<ShortcutCustomizationState>(
+  persist(
+    (set, get) => ({
+      overrides: new Map(),
+
+      setOverride: (id, override) => {
+        set((state) => {
+          const newOverrides = new Map(state.overrides);
+          const existing = newOverrides.get(id) || { shortcutId: id };
+          newOverrides.set(id, { ...existing, ...override });
+          return { overrides: newOverrides };
+        });
+      },
+
+      removeOverride: (id) => {
+        set((state) => {
+          const newOverrides = new Map(state.overrides);
+          newOverrides.delete(id);
+          return { overrides: newOverrides };
+        });
+      },
+
+      resetAll: () => set({ overrides: new Map() }),
+
+      exportConfig: () => {
+        const config: UserShortcutConfig = {
+          version: '1.0.0',
+          overrides: Array.from(get().overrides.values()),
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+        return JSON.stringify(config, null, 2);
+      },
+
+      importConfig: (json) => {
+        try {
+          const config = JSON.parse(json) as UserShortcutConfig;
+          const newOverrides = new Map<ShortcutId, UserShortcutOverride>();
+          for (const override of config.overrides) {
+            newOverrides.set(override.shortcutId, override);
+          }
+          set({ overrides: newOverrides });
+          return true;
+        } catch {
+          return false;
+        }
+      },
+    }),
+    { name: STORAGE_KEY }
+  )
+);
+```
+
+#### 9.3 커스터마이징 UI
+
+```typescript
+// src/builder/components/settings/ShortcutCustomizer.tsx
+
+export function ShortcutCustomizer() {
+  const { overrides, setOverride, removeOverride, resetAll } = useShortcutCustomization();
+  const [editingId, setEditingId] = useState<ShortcutId | null>(null);
+  const [recording, setRecording] = useState(false);
+
+  // 키 녹화
+  const handleKeyDown = useCallback((e: KeyboardEvent) => {
+    if (!recording || !editingId) return;
+
+    e.preventDefault();
+
+    const modifier = detectModifier(e);
+    const key = e.key;
+
+    // 충돌 확인
+    const conflicts = checkConflicts(editingId, key, modifier);
+    if (conflicts.length > 0) {
+      showConflictWarning(conflicts);
+      return;
+    }
+
+    setOverride(editingId, { key, modifier });
+    setRecording(false);
+    setEditingId(null);
+  }, [recording, editingId, setOverride]);
+
+  return (
+    <div className="shortcut-customizer">
+      <div className="customizer-header">
+        <h3>Keyboard Shortcuts</h3>
+        <div className="customizer-actions">
+          <Button onPress={resetAll}>Reset All</Button>
+          <Button onPress={handleExport}>Export</Button>
+          <Button onPress={handleImport}>Import</Button>
+        </div>
+      </div>
+
+      <div className="shortcut-list">
+        {Object.entries(SHORTCUT_DEFINITIONS).map(([id, def]) => {
+          const override = overrides.get(id as ShortcutId);
+          const isEditing = editingId === id;
+          const displayKey = override?.key || def.key;
+          const displayMod = override?.modifier || def.modifier;
+
+          return (
+            <div key={id} className="shortcut-row">
+              <span className="shortcut-desc">
+                {def.i18n?.ko || def.description}
+              </span>
+
+              <div className="shortcut-key-editor">
+                {isEditing && recording ? (
+                  <kbd className="recording">Press keys...</kbd>
+                ) : (
+                  <kbd
+                    className={override ? 'custom' : 'default'}
+                    onClick={() => startEditing(id as ShortcutId)}
+                  >
+                    {formatShortcut({ key: displayKey, modifier: displayMod })}
+                  </kbd>
+                )}
+
+                {override && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onPress={() => removeOverride(id as ShortcutId)}
+                  >
+                    Reset
+                  </Button>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+```
+
+#### 9.4 레지스트리 통합
+
+```typescript
+// useGlobalKeyboardShortcuts.ts 수정
+
+export function useGlobalKeyboardShortcuts() {
+  const { overrides } = useShortcutCustomization();
+  const activeScope = useActiveScope();
+
+  // 오버라이드 적용
+  const shortcuts = useMemo(() => {
+    return Object.entries(SHORTCUT_DEFINITIONS).map(([id, def]) => {
+      const override = overrides.get(id as ShortcutId);
+
+      // 비활성화된 단축키
+      if (override?.disabled) {
+        return { ...def, id, handler: () => {}, disabled: true };
+      }
+
+      // 오버라이드된 키/modifier
+      return {
+        ...def,
+        id,
+        key: override?.key || def.key,
+        modifier: override?.modifier || def.modifier,
+        handler: handlers[id as ShortcutId],
+      };
+    });
+  }, [overrides, handlers]);
+
+  // ...
+}
+```
+
+#### 9.5 작업 목록
+
+| 작업 | 설명 | 예상 시간 |
+|------|------|----------|
+| `useShortcutCustomization` 스토어 | Zustand persist 기반 저장소 | 4h |
+| `ShortcutCustomizer` UI | 설정 패널 UI 구현 | 8h |
+| 키 녹화 기능 | 실시간 키 입력 감지 | 4h |
+| 충돌 감지 | 커스텀 단축키 충돌 경고 | 4h |
+| Import/Export | JSON 기반 설정 공유 | 4h |
+| 레지스트리 통합 | 오버라이드 적용 로직 | 4h |
+| 테스트 | 커스터마이징 E2E 테스트 | 4h |
+
+#### 9.6 충돌 처리 전략
+
+```typescript
+// 충돌 시 선택지 제공
+interface ConflictResolution {
+  action: 'replace' | 'swap' | 'cancel';
+  targetId?: ShortcutId;
+}
+
+function showConflictDialog(
+  newId: ShortcutId,
+  conflicts: ShortcutId[]
+): Promise<ConflictResolution> {
+  // 다이얼로그 표시
+  // - Replace: 기존 단축키 비활성화
+  // - Swap: 두 단축키 키 교환
+  // - Cancel: 변경 취소
+}
+```
+
+---
+
+### Phase 의존성 다이어그램
+
+```
+Phase 0-5 (완료)
+    │
+    ├── Phase 6: 패널 단축키 통합
+    │       │
+    │       └── Phase 7: 툴팁 & 디스커버러빌리티 (독립적)
+    │
+    └── Phase 8: 국제 키보드 지원
+            │
+            └── Phase 9: 사용자 커스터마이징
+```
+
+### 전체 완성도 로드맵
+
+| 완성도 | Phase | 기능 |
+|--------|-------|------|
+| 80% | Phase 0-5 ✅ | 핵심 시스템 완료 |
+| 85% | Phase 6 | 패널 단축키 완전 통합 |
+| 90% | Phase 7 | 툴팁, 커맨드 팔레트 |
+| 95% | Phase 8 | 국제 키보드 지원 |
+| 100% | Phase 9 | 사용자 커스터마이징 |
