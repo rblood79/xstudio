@@ -825,40 +825,6 @@ export function generateShareLink(preset: ShortcutPreset): string {
 }
 ```
 
-**도움말 패널 음성 안내 모드:**
-```typescript
-// 스크린리더 사용자를 위한 음성 안내 토글
-export function KeyboardHelpPanel() {
-  const [voiceMode, setVoiceMode] = useState(false);
-
-  return (
-    <div role="dialog" aria-label="키보드 단축키 도움말">
-      <Switch
-        isSelected={voiceMode}
-        onChange={setVoiceMode}
-        aria-label="음성 안내 모드"
-      >
-        🔊 음성 안내 모드
-      </Switch>
-
-      {shortcuts.map(shortcut => (
-        <div
-          key={shortcut.id}
-          role="listitem"
-          aria-label={voiceMode
-            ? `${shortcut.description}, 단축키 ${formatShortcutForSpeech(shortcut)}`
-            : undefined
-          }
-        >
-          <kbd aria-hidden={voiceMode}>{formatShortcut(shortcut)}</kbd>
-          <span>{shortcut.description}</span>
-        </div>
-      ))}
-    </div>
-  );
-}
-```
-
 ---
 
 ## Part 5: 리뷰 반영 개선사항
@@ -876,7 +842,6 @@ export function KeyboardHelpPanel() {
 | **레이아웃 알림** | 국제 키보드 감지 시 배지/토스트 표시 | Phase 6 |
 | **역할별 프리셋** | 디자이너/개발자/QA용 단축키 세트 | Phase 7 |
 | **프리셋 공유** | 워크스페이스 공유 링크 생성 | Phase 7 |
-| **음성 안내 모드** | 스크린리더 사용자용 토글 | Phase 7 |
 
 ### 5.2 테스트 커버리지 목표
 
