@@ -1,5 +1,3 @@
-import { getStoreState } from "../../builder/stores";
-import { supabase } from "../../env/supabase.client";
 import { getDB } from "../../lib/db";
 
 /**
@@ -41,53 +39,30 @@ export interface PerformanceMetrics {
 }
 
 /**
- * Supabase 테이블 타입 제한
+ * 테이블 타입 제한
  */
-export type SupabaseTable = "elements" | "pages" | "projects";
+export type SaveTable = "elements" | "pages" | "projects";
 
 /**
  * 저장 페이로드 인터페이스
  */
 export interface SavePayload {
-  table: SupabaseTable;
+  table: SaveTable;
   id: string;
   data: Record<string, unknown>;
 }
 
 /**
- * 저장 제어 옵션
- */
-export interface SaveOptions {
-  /** 저장 여부 (기본값: true) */
-  shouldSave?: boolean;
-  /** 상호작용 소스 (예: 'preview', 'inspector', 'direct') */
-  source?: string;
-  /** 히스토리 기록 여부 (기본값: true) */
-  recordHistory?: boolean;
-  /** 프리뷰 상호작용에서 저장 허용 여부 (기본값: true) */
-  allowPreviewSaves?: boolean;
-  /** 직렬화 검증 수행 여부 (기본값: false) */
-  validateSerialization?: boolean;
-}
-
-/**
- * 검증 실패 정보
- */
-export interface ValidationError {
-  elementId: string;
-  field: string;
-  message: string;
-  timestamp: Date;
-}
-
-/**
  * SaveService 클래스
- * 실시간 모드와 수동 모드를 관리하며 Supabase 저장을 처리합니다.
+ *
+ * 로컬 저장(IndexedDB)을 처리합니다.
+ *
+ * @updated 2025-12-29 - 실시간/수동 모드 분기 제거 (항상 로컬 저장)
  */
 export class SaveService {
   private static instance: SaveService;
   private validationErrors: ValidationError[] = [];
-  private statusMessage: string = ''; // 상태 메시지 (콘솔 대신 UI에 표시)
+  private statusMessage: string = '';
   private metrics: PerformanceMetrics = {
     saveOperations: 0,
     averageSaveTime: 0,
@@ -163,7 +138,7 @@ export class SaveService {
   }
 
   /**
-   * IndexedDB에 데이터 저장 (로컬 우선 저장)
+   * IndexedDB에 데이터 저장 (로컬 저장)
    */
   private async saveToIndexedDB(payload: SavePayload): Promise<void> {
     const { table, id, data } = payload;
@@ -180,7 +155,7 @@ export class SaveService {
   }
 
   /**
-   * 속성 변경 저장 (실시간 모드 확인)
+   * 속성 변경 저장 (IndexedDB에 즉시 저장)
    * @param payload 저장할 데이터 정보
    * @param options 저장 옵션
    */
@@ -208,17 +183,8 @@ export class SaveService {
       }
     }
 
-    // 항상 최신 store 상태 가져오기 (HMR 대응)
-    const { isRealtimeMode, addPendingChange } = getStoreState();
-
-    if (isRealtimeMode) {
-      // 실시간 모드: IndexedDB에 즉시 저장 (로컬 우선)
-      await this.saveToIndexedDB(payload);
-    } else {
-      // 수동 모드: Zustand에만 저장 (나중에 수동 동기화)
-      const changeKey = `${payload.table}:${payload.id}`;
-      addPendingChange(changeKey, payload.data);
-    }
+    // 항상 IndexedDB에 즉시 저장 (로컬 우선)
+    await this.saveToIndexedDB(payload);
 
     // 성능 메트릭 업데이트
     const endTime = performance.now();
@@ -226,64 +192,6 @@ export class SaveService {
     this.metrics.averageSaveTime =
       (this.metrics.averageSaveTime * (this.metrics.saveOperations - 1) + (endTime - startTime)) /
       this.metrics.saveOperations;
-  }
-
-  /**
-   * 보류 중인 모든 변경사항을 클라우드에 동기화
-   * (수동 모드에서 사용자가 "Sync" 버튼을 누를 때 호출됨)
-   */
-  async saveAllPendingChanges(): Promise<void> {
-    const { getPendingChanges, clearPendingChanges } = getStoreState();
-    const changes = getPendingChanges();
-
-    if (changes.size === 0) {
-      this.statusMessage = "💾 저장할 변경사항이 없습니다.";
-      return;
-    }
-
-    this.statusMessage = `💾 ${changes.size}개 변경사항 클라우드 동기화 시작...`;
-
-    const savePromises: Promise<void>[] = [];
-
-    changes.forEach((data: Record<string, unknown>, key: string) => {
-      const [table, id] = key.split(":");
-      if (!table || !id) {
-        this.statusMessage = `⚠️ 잘못된 키 형식: ${key}`;
-        return;
-      }
-
-      savePromises.push(
-        this.syncToCloud({
-          table: table as SupabaseTable,
-          id,
-          data,
-        })
-      );
-    });
-
-    try {
-      await Promise.all(savePromises);
-      clearPendingChanges();
-      this.statusMessage = `✅ ${changes.size}개 변경사항 클라우드 동기화 완료`;
-    } catch (error) {
-      this.statusMessage = `❌ 클라우드 동기화 실패: ${error instanceof Error ? error.message : '알 수 없는 오류'}`;
-      throw error;
-    }
-  }
-
-  /**
-   * 클라우드(Supabase)에 데이터 동기화
-   * (수동 Sync 버튼에서만 사용됨, 실시간 저장은 IndexedDB 사용)
-   */
-  private async syncToCloud(payload: SavePayload): Promise<void> {
-    const { table, id, data } = payload;
-
-    const { error } = await supabase.from(table).update(data).eq("id", id);
-
-    if (error) {
-      this.statusMessage = `❌ 클라우드 동기화 실패: ${error.message}`;
-      throw error;
-    }
   }
 
   /**
@@ -310,8 +218,8 @@ export class SaveService {
     summary: string;
   } {
     const totalSkips = this.metrics.skipCounts.preview + this.metrics.skipCounts.validation;
-    const successRate = this.metrics.saveOperations > 0 ? 
-      ((this.metrics.saveOperations - this.validationErrors.length) / this.metrics.saveOperations * 100).toFixed(2) : 
+    const successRate = this.metrics.saveOperations > 0 ?
+      ((this.metrics.saveOperations - this.validationErrors.length) / this.metrics.saveOperations * 100).toFixed(2) :
       "100.00";
 
     return {

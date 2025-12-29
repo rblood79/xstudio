@@ -1,5 +1,4 @@
-import React, { useEffect, useMemo } from "react";
-import { useStore } from "../stores";
+import React, { useMemo } from "react";
 import { generatePreviewSrcdoc, shouldUseSrcdoc } from "./previewSrcdoc";
 
 export interface BuilderCanvasProps {
@@ -16,6 +15,14 @@ export interface BuilderCanvasProps {
   children?: React.ReactNode;
 }
 
+/**
+ * BuilderCanvas - 레거시 iframe 기반 캔버스
+ *
+ * 주의: 이 컴포넌트는 WebGL Canvas의 fallback으로만 사용됩니다.
+ * WebGL Canvas (isWebGLCanvas() === true) 환경에서는 사용되지 않습니다.
+ *
+ * @deprecated WebGL Canvas 전환 완료 후 제거 예정
+ */
 export const BuilderCanvas: React.FC<BuilderCanvasProps> = ({
   projectId,
   breakpoint,
@@ -27,8 +34,6 @@ export const BuilderCanvas: React.FC<BuilderCanvasProps> = ({
   const currentBreakpoint = breakpoints.find(
     (bp) => bp.id === Array.from(breakpoint)[0]
   );
-  const showElementBorders = useStore((state) => state.showElementBorders);
-  const showElementLabels = useStore((state) => state.showElementLabels);
 
   // srcdoc 모드 여부 및 srcdoc 콘텐츠 생성
   const useSrcdoc = shouldUseSrcdoc();
@@ -58,57 +63,6 @@ export const BuilderCanvas: React.FC<BuilderCanvasProps> = ({
     };
   }, []); // 빈 의존성 배열 = 마운트 시 한 번만
 
-  // Element Borders 및 Labels 시각화
-  useEffect(() => {
-    const iframe = document.getElementById("previewFrame") as HTMLIFrameElement;
-    if (!iframe || !iframe.contentDocument) return;
-
-    const iframeDoc = iframe.contentDocument;
-    let styleElement = iframeDoc.getElementById(
-      "element-visualization-styles"
-    ) as HTMLStyleElement;
-
-    // 스타일 엘리먼트가 없으면 생성
-    if (!styleElement) {
-      styleElement = iframeDoc.createElement("style");
-      styleElement.id = "element-visualization-styles";
-      iframeDoc.head.appendChild(styleElement);
-    }
-
-    // CSS 내용 생성
-    let css = "";
-
-    if (showElementBorders) {
-      css += `
-                [data-element-id] {
-                    outline: 1px dashed rgba(59, 130, 246, 0.5) !important;
-                    outline-offset: -1px !important;
-                }
-            `;
-    }
-
-    if (showElementLabels) {
-      css += `
-                [data-element-id]::before {
-                    content: attr(data-element-id);
-                    position: absolute;
-                    top: 0;
-                    left: 0;
-                    background: rgba(59, 130, 246, 0.9);
-                    color: white;
-                    font-size: 10px;
-                    padding: 2px 4px;
-                    border-radius: 2px;
-                    z-index: 10000;
-                    pointer-events: none;
-                    font-family: monospace;
-                }
-            `;
-    }
-
-    styleElement.textContent = css;
-  }, [showElementBorders, showElementLabels]);
-
   return (
     <main className="workSpace">
       <div
@@ -125,8 +79,6 @@ export const BuilderCanvas: React.FC<BuilderCanvasProps> = ({
          * Preview iframe
          * - srcdoc 모드: 완전히 독립된 Preview Runtime (권장)
          * - src 모드: 기존 방식 (동일 앱 내 /preview 라우트)
-         *
-         * TODO: Phase 1 완료 후 shouldUseSrcdoc()을 true로 변경
          */}
         {useSrcdoc && srcdocContent ? (
           <iframe

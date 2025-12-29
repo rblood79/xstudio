@@ -2,37 +2,31 @@
  * SettingsPanel - 설정 관리 패널
  *
  * PanelProps 인터페이스를 구현하여 패널 시스템과 통합
- * Builder 설정, 테마, 저장 모드 등 시스템 설정 제공
+ * Builder 설정, 테마 등 시스템 설정 제공
+ *
+ * @updated 2025-12-29 - Save Mode, Preview & Overlay, Element Visualization 섹션 제거
+ *   (WebGL 캔버스 전환 및 로컬 저장 방식으로 변경됨에 따라 불필요해짐)
  */
 
-import React from "react";
 import {
-  Eye,
   Grid3x3,
   Magnet,
   Ruler,
-  Square,
-  Tag,
-  Percent,
   Palette,
   ZoomIn,
-  Save,
   Moon,
   Sun,
   Settings,
 } from "lucide-react";
 import { iconProps } from "../../../utils/ui/uiConstants";
-import { Button } from "react-aria-components";
 import { useParams } from "react-router-dom";
 import type { PanelProps } from "../core/types";
 import { useStore } from "../../stores";
 import { useUnifiedThemeStore } from "../../../stores/themeStore";
 import { useUiStore } from "../../../stores/uiStore";
-import { saveService } from "../../../services/save";
 import {
   PropertySwitch,
   PropertySelect,
-  PropertySlider,
   PropertySection,
   PanelHeader,
 } from "../../components";
@@ -44,9 +38,7 @@ function SettingsContent() {
   const { projectId } = useParams<{ projectId: string }>();
   const { sendThemeTokens, sendDarkMode } = useThemeMessenger();
 
-  const showOverlay = useStore((state) => state.showOverlay);
-  const setShowOverlay = useStore((state) => state.setShowOverlay);
-
+  // Grid & Guides 설정
   const showGrid = useStore((state) => state.showGrid);
   const setShowGrid = useStore((state) => state.setShowGrid);
 
@@ -56,29 +48,12 @@ function SettingsContent() {
   const gridSize = useStore((state) => state.gridSize);
   const setGridSize = useStore((state) => state.setGridSize);
 
-  const showElementBorders = useStore((state) => state.showElementBorders);
-  const setShowElementBorders = useStore(
-    (state) => state.setShowElementBorders
-  );
-
-  const showElementLabels = useStore((state) => state.showElementLabels);
-  const setShowElementLabels = useStore((state) => state.setShowElementLabels);
-
-  const overlayOpacity = useStore((state) => state.overlayOpacity);
-  const setOverlayOpacity = useStore((state) => state.setOverlayOpacity);
-
-  // UI 설정 (글로벌 uiStore에서 가져옴 - Phase 1)
+  // UI 설정 (글로벌 uiStore에서 가져옴)
   const themeMode = useUiStore((state) => state.themeMode);
   const setThemeMode = useUiStore((state) => state.setThemeMode);
 
   const uiScale = useUiStore((state) => state.uiScale);
   const setUiScale = useUiStore((state) => state.setUiScale);
-
-  // SaveMode 상태
-  const isRealtimeMode = useStore((state) => state.isRealtimeMode);
-  const pendingChanges = useStore((state) => state.pendingChanges);
-  const setRealtimeMode = useStore((state) => state.setRealtimeMode);
-  const pendingCount = pendingChanges.size;
 
   // Theme 관련 상태
   const activeTheme = useUnifiedThemeStore((state) => state.activeTheme);
@@ -90,8 +65,6 @@ function SettingsContent() {
     enableRealtime: false,
   });
 
-  const [isSaving, setIsSaving] = React.useState(false);
-
   const handleThemeChange = async (themeId: string): Promise<void> => {
     if (!projectId) return;
 
@@ -99,8 +72,6 @@ function SettingsContent() {
       await ThemeService.activateTheme(themeId);
       await loadActiveTheme(projectId);
 
-      // ✅ 수동 전송 (BuilderCore subscribe는 타이밍 이슈로 트리거 안 될 수 있음)
-      // useThemeMessenger가 중복 방지 처리함
       const { tokens } = useUnifiedThemeStore.getState();
       if (tokens.length > 0) {
         sendThemeTokens(tokens);
@@ -109,7 +80,6 @@ function SettingsContent() {
       if (import.meta.env.DEV) {
         console.error("[SettingsPanel] Failed to switch theme:", error);
       }
-      // TODO: Show toast notification
     }
   };
 
@@ -117,7 +87,6 @@ function SettingsContent() {
   const getThemeModeIcon = () => {
     if (themeMode === "dark") return Moon;
     if (themeMode === "light") return Sun;
-    // auto인 경우 시스템 설정 확인
     const prefersDark = window.matchMedia(
       "(prefers-color-scheme: dark)"
     ).matches;
@@ -151,7 +120,6 @@ function SettingsContent() {
     const mode = value as "light" | "dark" | "auto";
     setThemeMode(mode);
 
-    // ✅ 개선: useThemeMessenger 사용 (dynamic import 제거)
     const isDark =
       mode === "dark" ||
       (mode === "auto" &&
@@ -164,70 +132,11 @@ function SettingsContent() {
     setUiScale(scale);
   };
 
-  const handleSave = (): void => {
-    setIsSaving(true);
-    saveService
-      .saveAllPendingChanges()
-      .then(() => {
-        // TODO: Show toast notification - 저장 완료
-      })
-      .catch((error) => {
-        if (import.meta.env.DEV) {
-          console.error("[SettingsPanel] Save failed:", error);
-        }
-        // TODO: Show toast notification - 저장 실패
-      })
-      .finally(() => {
-        setIsSaving(false);
-      });
-  };
-
-  const handleRealtimeModeChange = (enabled: boolean): void => {
-    setRealtimeMode(enabled);
-
-    if (enabled && pendingChanges.size > 0) {
-      // 수동 → 실시간 전환 시 보류 중인 변경사항 자동 저장
-      handleSave();
-    }
-  };
-
   return (
     <div className="settings-panel">
       <PanelHeader icon={<Settings size={iconProps.size} />} title="Settings" />
 
       <div className="panel-settings">
-        {/* Save Mode Section */}
-        <PropertySection title="Save Mode">
-          <PropertySwitch
-            label="Auto Save"
-            isSelected={isRealtimeMode}
-            onChange={handleRealtimeModeChange}
-            icon={Save}
-          />
-
-          {!isRealtimeMode && (
-            <Button
-              onPress={handleSave}
-              isDisabled={pendingCount === 0 || isSaving}
-              className="react-aria-Button primary"
-            >
-              {isSaving
-                ? "Saving..."
-                : `Save${pendingCount > 0 ? ` (${pendingCount})` : ""}`}
-            </Button>
-          )}
-        </PropertySection>
-
-        {/* Preview & Overlay Section */}
-        <PropertySection title="Preview & Overlay">
-          <PropertySwitch
-            label="Show Selection Overlay"
-            isSelected={showOverlay}
-            onChange={setShowOverlay}
-            icon={Eye}
-          />
-        </PropertySection>
-
         {/* Grid & Guides Section */}
         <PropertySection title="Grid & Guides">
           <PropertySwitch
@@ -250,33 +159,6 @@ function SettingsContent() {
             onChange={handleGridSizeChange}
             options={gridSizeOptions}
             icon={Ruler}
-          />
-        </PropertySection>
-
-        {/* Element Visualization Section */}
-        <PropertySection title="Element Visualization">
-          <PropertySwitch
-            label="Show Element Borders"
-            isSelected={showElementBorders}
-            onChange={setShowElementBorders}
-            icon={Square}
-          />
-
-          <PropertySwitch
-            label="Show Element Labels"
-            isSelected={showElementLabels}
-            onChange={setShowElementLabels}
-            icon={Tag}
-          />
-
-          <PropertySlider
-            label="Overlay Opacity"
-            value={overlayOpacity}
-            onChange={setOverlayOpacity}
-            min={0}
-            max={100}
-            step={5}
-            icon={Percent}
           />
         </PropertySection>
 
@@ -318,7 +200,6 @@ function SettingsContent() {
 }
 
 export function SettingsPanel({ isActive }: PanelProps) {
-  // 활성 상태가 아니면 렌더링하지 않음 (성능 최적화)
   if (!isActive) {
     return null;
   }

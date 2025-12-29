@@ -37,7 +37,6 @@ export default function SelectionOverlay() {
   // 🚀 Performance: elementsMap 구독 제거 - 선택 변경 시에만 getState()로 조회
   // 기존: 모든 요소 변경 시 리렌더 발생
   // 개선: selectedElementId/selectedElementIds 변경 시에만 최신 요소 정보 필요
-  const overlayOpacity = useStore((state) => state.overlayOpacity);
 
   // ⭐ Single select state (backward compatibility)
   const [overlayRect, setOverlayRect] = useState<Rect | null>(null);
@@ -383,7 +382,6 @@ export default function SelectionOverlay() {
                 left: overlayData.rect.left,
                 width: overlayData.rect.width,
                 height: overlayData.rect.height,
-                opacity: overlayOpacity / 100,
               }}
             >
               {isPrimary && (
@@ -424,7 +422,6 @@ export default function SelectionOverlay() {
           left: overlayRect.left,
           width: overlayRect.width,
           height: overlayRect.height,
-          opacity: overlayOpacity / 100,
         }}
       >
         <div className="overlay-info">

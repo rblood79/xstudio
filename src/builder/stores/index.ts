@@ -3,7 +3,6 @@ import { create, type StoreApi, type UseBoundStore } from "zustand";
 import { createSelectionSlice, SelectionState } from "./selection";
 import { createElementsSlice, ElementsState } from "./elements";
 import type { Element } from "../../types/core/store.types";
-import { createSaveModeSlice, SaveModeState } from "./saveMode";
 import { createSettingsSlice, SettingsState } from "./canvasSettings";
 import { createPanelLayoutSlice, PanelLayoutSlice } from "./panelLayout";
 import { createElementLoaderSlice, ElementLoaderSlice } from "./elementLoader";
@@ -20,7 +19,6 @@ import type { SelectedElement } from "../inspector/types";
 interface Store
   extends ElementsState,
     SelectionState,
-    SaveModeState,
     SettingsState,
     PanelLayoutSlice,
     ElementLoaderSlice,
@@ -50,7 +48,6 @@ if (hasExistingStore) {
   useStore = create<Store>((set, get, store) => ({
     ...createElementsSlice(set, get, store),
     ...createSelectionSlice(set, get, store),
-    ...createSaveModeSlice(set, get, store),
     ...createSettingsSlice(set, get, store),
     ...createPanelLayoutSlice(set, get, store),
     ...createElementLoaderSlice(set, get),

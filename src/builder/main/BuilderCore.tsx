@@ -56,7 +56,6 @@ export const BuilderCore: React.FC = () => {
   const currentPageId = useStore((state) => state.currentPageId);
   // const selectedElementId = useStore((state) => state.selectedElementId);  // 사용하지 않음
   const setSelectedElement = useStore((state) => state.setSelectedElement);
-  const showOverlay = useStore((state) => state.showOverlay);
   const historyInfo = useStore((state) => state.historyInfo);
 
   // UI 설정 (글로벌 uiStore에서 가져옴 - Phase 1)
@@ -839,7 +838,7 @@ export const BuilderCore: React.FC = () => {
                 onMessage={handleMessage}
               >
                 <Grid />
-                {showOverlay && <SelectionOverlay />}
+                <SelectionOverlay />
               </BuilderCanvas>
             }
           />
@@ -853,7 +852,7 @@ export const BuilderCore: React.FC = () => {
             onMessage={handleMessage}
           >
             <Grid />
-            {showOverlay && <SelectionOverlay />}
+            <SelectionOverlay />
           </BuilderCanvas>
         )
       ) : (
