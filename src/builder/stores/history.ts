@@ -117,7 +117,6 @@ export class HistoryManager {
      * 현재 페이지 설정
      */
     setCurrentPage(pageId: string): void {
-        console.log('[History] setCurrentPage:', pageId);
         this.currentPageId = pageId;
 
         // 페이지 히스토리가 없으면 생성
