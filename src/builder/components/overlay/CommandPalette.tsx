@@ -186,7 +186,8 @@ export function CommandPalette({
       className="command-palette-overlay"
     >
       <Modal className="command-palette-modal">
-        <Dialog aria-label="Command Palette" onKeyDown={handleKeyDown}>
+        <Dialog aria-label="Command Palette">
+          <div onKeyDown={handleKeyDown}>
           {/* Search Input */}
           <div className="command-palette-search">
             <Search
@@ -251,6 +252,7 @@ export function CommandPalette({
               </span>
             </div>
             <span>{filteredCommands.length}개 명령어</span>
+          </div>
           </div>
         </Dialog>
       </Modal>

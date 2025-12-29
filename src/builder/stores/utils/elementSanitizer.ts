@@ -93,10 +93,10 @@ export const sanitizeElementForSupabase = (element: Element): SupabaseElement =>
       custom_id: element.customId,
       tag: element.tag,
       props,
-      parent_id: element.parent_id,
-      page_id: element.page_id,
-      layout_id: element.layout_id,
-      order_num: element.order_num,
+      parent_id: element.parent_id ?? null,
+      page_id: element.page_id ?? "",
+      layout_id: element.layout_id ?? null,
+      order_num: element.order_num ?? 0,
       data_binding: element.dataBinding,
     };
   } catch (error) {
@@ -106,10 +106,10 @@ export const sanitizeElementForSupabase = (element: Element): SupabaseElement =>
       custom_id: element.customId,
       tag: element.tag || "",
       props: {},
-      parent_id: element.parent_id,
-      page_id: element.page_id || "",
-      layout_id: element.layout_id || null,
-      order_num: element.order_num || 0,
+      parent_id: element.parent_id ?? null,
+      page_id: element.page_id ?? "",
+      layout_id: element.layout_id ?? null,
+      order_num: element.order_num ?? 0,
       data_binding: element.dataBinding,
     };
   }

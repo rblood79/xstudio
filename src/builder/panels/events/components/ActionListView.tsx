@@ -4,7 +4,7 @@ import { Trash, GripVertical, ChevronDown, ChevronRight } from "lucide-react";
 import type { EventAction } from "../types/eventTypes";
 import { ACTION_METADATA } from "../data/actionMetadata";
 import { ActionEditor } from "../actions/ActionEditor";
-import { iconProps } from "../../../utils/ui/uiConstants";
+import { iconProps } from "../../../../utils/ui/uiConstants";
 
 export interface ActionListViewProps {
   actions: EventAction[];

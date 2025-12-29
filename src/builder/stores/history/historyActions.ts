@@ -1731,7 +1731,6 @@ async function syncDatabaseForEntries(
   // 변경된 요소들만 DB에 업데이트
 
   const db = await getDB();
-  const currentElements = get().elements;
   const elementsMap = get().elementsMap;
 
   // 영향받은 요소 ID 수집

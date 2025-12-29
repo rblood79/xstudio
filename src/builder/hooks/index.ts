@@ -13,10 +13,10 @@ export { useAsyncQuery } from './useAsyncQuery';
 
 // Data Management
 export { useCollectionData } from './useCollectionData';
-export { useCollectionDataCache } from './useCollectionDataCache';
+export { collectionDataCache, createCacheKey } from './useCollectionDataCache';
 export { useCollectionItemManager } from './useCollectionItemManager';
 export { useColumnLoader } from './useColumnLoader';
-export { useDataQueries } from './useDataQueries';
+export { dataQueryKeys } from './useDataQueries';
 
 // Element & Page
 export { useElementCreator } from './useElementCreator';

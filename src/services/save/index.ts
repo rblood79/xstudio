@@ -4,4 +4,4 @@
  */
 
 export { SaveService, saveService } from "./saveService";
-export type { SavePayload, SupabaseTable } from "./saveService";
+export type { SavePayload, SaveTable } from "./saveService";
