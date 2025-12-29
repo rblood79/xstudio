@@ -14,7 +14,6 @@ import { BuilderCanvas } from "./BuilderCanvas";
 import { BuilderWorkflow } from "./BuilderWorkflow";
 import { BuilderViewport } from "./BuilderViewport";
 import SelectionOverlay from "../overlay";
-import Grid from "../grid";
 import { Workspace } from "../workspace";
 import { isWebGLCanvas, isCanvasCompareMode } from "../../utils/featureFlags";
 import { PanelSlot, BottomPanelSlot } from "../layout";
@@ -837,7 +836,6 @@ export const BuilderCore: React.FC = () => {
                 onIframeLoad={handleIframeLoad}
                 onMessage={handleMessage}
               >
-                <Grid />
                 <SelectionOverlay />
               </BuilderCanvas>
             }
@@ -851,7 +849,6 @@ export const BuilderCore: React.FC = () => {
             onIframeLoad={handleIframeLoad}
             onMessage={handleMessage}
           >
-            <Grid />
             <SelectionOverlay />
           </BuilderCanvas>
         )
