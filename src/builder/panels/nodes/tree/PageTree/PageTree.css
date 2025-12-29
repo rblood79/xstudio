@@ -3,7 +3,9 @@
 .page-tree {
   display: flex;
   flex-direction: column;
+
   .react-aria-TreeItem {
+    all: unset;
     padding: 0;
   }
 }
@@ -38,13 +40,9 @@
 
 /* 아이콘 */
 .pageItemIcon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 20px;
-  height: 20px;
-  flex-shrink: 0;
+  padding: var(--spacing-sm);
 }
+
 
 /* 확장 버튼 */
 .page-expand-button {
@@ -57,7 +55,6 @@
   border: none;
   background: transparent;
   cursor: pointer;
-  border-radius: 2px;
   transition: transform 0.15s ease;
 }
 
@@ -92,7 +89,6 @@
 .pageItemActions {
   display: flex;
   align-items: center;
-  gap: 2px;
   opacity: 0;
   transition: opacity 0.15s ease;
 }
@@ -103,16 +99,7 @@
 }
 
 .pageItemActions .iconButton {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 20px;
-  height: 20px;
-  padding: 0;
-  border: none;
-  background: transparent;
-  cursor: pointer;
-  border-radius: 2px;
+  padding: var(--spacing-sm);
 }
 
 .pageItemActions .iconButton:hover {
@@ -120,15 +107,16 @@
 }
 
 /* 드래그 핸들 */
-.page-drag-handle {
+.pageItemActions .page-drag-handle {
   cursor: grab;
+  padding: 0;
 }
 
-.page-drag-handle:active {
+.pageItemActions .page-drag-handle:active {
   cursor: grabbing;
 }
 
-.page-drag-handle--hidden {
+.pageItemActions .page-drag-handle--hidden {
   display: none;
 }
 
@@ -136,7 +124,6 @@
 .page-drop-indicator {
   height: 2px;
   background-color: var(--color-accent, #3b82f6);
-  border-radius: 1px;
   margin: 0 8px;
 }
 
@@ -152,5 +139,4 @@
 /* 드롭 타겟 */
 [data-drop-target] {
   background-color: var(--color-bg-drop-target, rgba(59, 130, 246, 0.1));
-  border-radius: 4px;
 }

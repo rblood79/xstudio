@@ -2,7 +2,7 @@ import React from "react";
 import { Button } from "react-aria-components";
 import {
   ChevronRight,
-  FileText,
+  File,
   Home,
   Settings2,
   Trash,
@@ -31,7 +31,7 @@ export function PageTreeItemContent({
   onDelete,
   onSettings,
 }: PageTreeItemContentProps) {
-  const { depth, hasChildren, isRoot, page, name, slug, isDraggable } = node;
+  const { depth, hasChildren, isRoot, page, name, isDraggable } = node;
   const { isSelected, isExpanded, isFocusVisible } = state;
 
   return (
@@ -66,7 +66,7 @@ export function PageTreeItemContent({
             style={{ padding: "2px" }}
           />
         ) : (
-          <FileText
+          <File
             color={ICON_EDIT_PROPS.color}
             strokeWidth={ICON_EDIT_PROPS.stroke}
             size={ICON_EDIT_PROPS.size}
@@ -75,7 +75,6 @@ export function PageTreeItemContent({
         )}
       </div>
       <div className="pageItemLabel">{name}</div>
-      {slug && <div className="pageItemSlug">/{slug}</div>}
       <div className="pageItemActions">
         {/* react-aria DnD requires slot="drag" on all items for a11y */}
         <Button
