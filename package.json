@@ -26,7 +26,6 @@
     "@dagrejs/dagre": "^1.1.8",
     "@internationalized/date": "^3.10.1",
     "@internationalized/number": "^3.6.5",
-    "@lucide/lab": "^0.1.2",
     "@material/material-color-utilities": "^0.3.0",
     "@pixi/layout": "^3.2.0",
     "@pixi/react": "^8.0.5",
