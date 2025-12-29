@@ -59,7 +59,6 @@ export const BuilderCore: React.FC = () => {
 
   // UI 설정 (글로벌 uiStore에서 가져옴 - Phase 1)
   const themeMode = useUiStore((state) => state.themeMode);
-  const uiScale = useUiStore((state) => state.uiScale);
   const setHistoryInfo = useStore((state) => state.setHistoryInfo);
   const viewMode = useStore((state) => state.viewMode);
   const toggleViewMode = useStore((state) => state.toggleViewMode);
@@ -103,15 +102,6 @@ export const BuilderCore: React.FC = () => {
       applyTheme(themeMode);
     }
   }, [themeMode]);
-
-  // UI Scale 적용 (Builder UI만, Preview iframe 제외)
-  useEffect(() => {
-    // .app은 display: contents이므로 .contents에 직접 적용
-    const builderContents = document.querySelector('.app .contents') as HTMLElement;
-    if (builderContents) {
-      builderContents.style.fontSize = `${uiScale}%`;
-    }
-  }, [uiScale]);
 
   // Undo/Redo 조건
   const canUndo = historyInfo.canUndo;

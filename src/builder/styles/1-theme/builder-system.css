@@ -6,6 +6,9 @@
 
 @layer builder-system {
   :root {
+    /* ==================== UI Scale ==================== */
+    --ui-scale: 100;
+
     /* ==================== Builder-Specific Sizes ==================== */
     --sizes-inspectorWidth: 320px;
     --sidebar-width: 240px;
@@ -18,6 +21,11 @@
 
     /* Builder Save Button (using primary blue) */
     --builder-save-pending-pulse: pulse 2s infinite;
+  }
+
+  /* UI Scale 적용 (브라우저 줌과 동일한 효과) */
+  .app {
+    zoom: calc(var(--ui-scale) / 100);
   }
 
   /* ==================== Builder UI Scope Override ==================== */

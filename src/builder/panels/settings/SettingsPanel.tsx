@@ -100,9 +100,9 @@ function SettingsContent() {
   ];
 
   const uiScaleOptions = [
-    { value: "80", label: "80%" },
-    { value: "100", label: "100%" },
-    { value: "120", label: "120%" },
+    { value: "80", label: "Small" },
+    { value: "100", label: "Default" },
+    { value: "120", label: "Large" },
   ];
 
   const gridSizeOptions = [

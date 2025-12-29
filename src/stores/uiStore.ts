@@ -62,6 +62,7 @@ export const useUiStore = create<UiState>()(
       },
 
       setUiScale: (scale: UiScale) => {
+        document.documentElement.style.setProperty('--ui-scale', String(scale));
         set({ uiScale: scale });
       },
 
@@ -72,6 +73,11 @@ export const useUiStore = create<UiState>()(
     {
       name: 'xstudio-ui', // localStorage key
       version: 1,
+      onRehydrateStorage: () => (state) => {
+        if (state?.uiScale) {
+          document.documentElement.style.setProperty('--ui-scale', String(state.uiScale));
+        }
+      },
     }
   )
 );
@@ -94,3 +100,4 @@ export const getUiState = (): Pick<UiState, 'themeMode' | 'uiScale'> => {
     uiScale: state.uiScale,
   };
 };
+
