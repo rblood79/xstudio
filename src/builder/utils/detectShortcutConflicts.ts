@@ -16,7 +16,7 @@ import type {
   ShortcutConflict,
   ShortcutDefinition,
 } from '../types/keyboard';
-import { formatShortcut } from '../hooks/useKeyboardShortcutsRegistry';
+import { formatShortcut } from '@/builder/hooks';
 
 // ============================================
 // Types

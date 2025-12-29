@@ -30,9 +30,9 @@ import {
   PropertySection,
   PanelHeader,
 } from "../../components";
-import { useThemes } from "../../../hooks/theme/useThemes";
+import { useThemes } from "@/hooks";
 import { ThemeService } from "../../../services/theme";
-import { useThemeMessenger } from "../../hooks/useThemeMessenger";
+import { useThemeMessenger } from "@/builder/hooks";
 
 function SettingsContent() {
   const { projectId } = useParams<{ projectId: string }>();

@@ -3,6 +3,7 @@
  *
  * 패널 레이아웃 상태 관리 및 액션 제공
  * Zustand store와 연동
+ * @since Phase 2 - 승격 from layout/ (2025-12-30)
  */
 
 import { useCallback } from "react";
@@ -12,7 +13,7 @@ import type {
   PanelSide,
   PanelLayoutState,
 } from "../panels/core/types";
-import type { UsePanelLayoutReturn } from "./types";
+import type { UsePanelLayoutReturn } from "../layout/types";
 
 /**
  * 패널 레이아웃 관리 훅

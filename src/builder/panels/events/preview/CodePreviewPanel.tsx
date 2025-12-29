@@ -12,7 +12,7 @@ import { Button } from 'react-aria-components';
 import { Copy, Check, Code, ChevronDown, ChevronRight } from 'lucide-react';
 import type { BlockEventHandler, ConditionOperand } from '../types/eventBlockTypes';
 import { iconProps, iconEditProps } from '../../../../utils/ui/uiConstants';
-import { useCopyPaste } from '../../../hooks/useCopyPaste';
+import { useCopyPaste } from '@/builder/hooks';
 
 interface CodePreviewPanelProps {
   /** 이벤트 핸들러 목록 */

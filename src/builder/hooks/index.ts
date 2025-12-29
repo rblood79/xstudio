@@ -16,12 +16,16 @@ export { useCollectionData } from './useCollectionData';
 export { collectionDataCache, createCacheKey } from './useCollectionDataCache';
 export { useCollectionItemManager } from './useCollectionItemManager';
 export { useColumnLoader } from './useColumnLoader';
-export { dataQueryKeys } from './useDataQueries';
+export { dataQueryKeys, useDataPanelQuery } from './useDataQueries';
 
 // Element & Page
 export { useElementCreator } from './useElementCreator';
-export { usePageLoader } from './usePageLoader';
+export { usePageLoader, useAdjacentPagePreload } from './usePageLoader';
 export { usePageManager } from './usePageManager';
+
+// Component & Layout (Phase 2 승격)
+export { useComponentMeta } from './useComponentMeta';
+export { usePanelLayout } from './usePanelLayout';
 
 // UI State
 export { useCategoryExpansion } from './useCategoryExpansion';
@@ -33,9 +37,10 @@ export { useTreeExpandState } from './useTreeExpandState';
 export { useTreeKeyboardNavigation } from './useTreeKeyboardNavigation';
 
 // Keyboard & Input
-export { useActiveScope } from './useActiveScope';
+export { useActiveScope, useActiveScopeState } from './useActiveScope';
 export { useGlobalKeyboardShortcuts } from './useGlobalKeyboardShortcuts';
-export { useKeyboardShortcutsRegistry } from './useKeyboardShortcutsRegistry';
+export { useKeyboardShortcutsRegistry, formatShortcut } from './useKeyboardShortcutsRegistry';
+export type { KeyboardModifier, ShortcutCategory } from './useKeyboardShortcutsRegistry';
 
 // Messaging & Communication
 export { useDeltaMessenger } from './useDeltaMessenger';
@@ -58,4 +63,5 @@ export { useErrorHandler } from './useErrorHandler';
 // Utilities
 export { useInitialMountDetection } from './useInitialMountDetection';
 export { useToast } from './useToast';
+export type { Toast, ToastType } from './useToast';
 export { useValidation } from './useValidation';

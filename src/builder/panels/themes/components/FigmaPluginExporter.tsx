@@ -5,13 +5,13 @@
 
 /* eslint-disable local/prefer-copy-paste-hook */
 import { useState } from 'react';
-import { useAsyncMutation } from '../../../hooks/useAsyncMutation';
+import { useAsyncMutation } from '@/builder/hooks';
 import { FigmaPluginService } from '../../../../services/theme/FigmaPluginService';
 import type {
   FigmaPluginExportOptions,
   FigmaPluginExportResult,
 } from '../../../../services/theme/FigmaPluginService';
-import { useTokens } from '../../../../hooks/theme/useTokens';
+import { useTokens } from '@/hooks';
 import '../styles/FigmaPluginExporter.css';
 
 /**

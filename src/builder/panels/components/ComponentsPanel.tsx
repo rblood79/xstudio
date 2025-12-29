@@ -17,8 +17,7 @@ import Components from "../../../shared/components";
 import { useStore } from "../../stores";
 import { useEditModeStore } from "../../stores/editMode";
 import { useLayoutsStore } from "../../stores/layouts";
-import { useElementCreator } from "../../hooks/useElementCreator";
-import { useIframeMessenger } from "../../hooks/useIframeMessenger";
+import { useElementCreator, useIframeMessenger } from "@/builder/hooks";
 
 /**
  * ComponentsPanel - Gateway 컴포넌트

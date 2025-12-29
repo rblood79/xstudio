@@ -38,7 +38,7 @@ import {
 } from "./sections";
 import { useSectionCollapse } from "./hooks/useSectionCollapse";
 import { useStyleActions } from "./hooks/useStyleActions";
-import { useKeyboardShortcutsRegistry } from "../../hooks/useKeyboardShortcutsRegistry";
+import { useKeyboardShortcutsRegistry } from "@/builder/hooks";
 import { useZustandJotaiBridge } from "./hooks/useZustandJotaiBridge";
 import { useAtomValue } from "jotai";
 import {

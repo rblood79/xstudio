@@ -8,7 +8,7 @@
 
 import { Toast } from "./Toast";
 import { useToastStore } from "../../stores/toast";
-import type { Toast as HookToastType } from "../../hooks/useToast";
+import type { Toast as HookToastType } from "@/builder/hooks";
 import type { Toast as StoreToastType } from "../../stores/toast";
 import "./Toast.css";
 

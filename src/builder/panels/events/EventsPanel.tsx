@@ -42,8 +42,8 @@ import {
 } from "lucide-react";
 import { iconProps, iconEditProps, iconLarge } from "../../../utils/ui/uiConstants";
 import { PanelHeader, PropertySection, EmptyState } from "../../components";
-import { useInitialMountDetection } from "../../hooks/useInitialMountDetection";
-import { useComponentMeta } from "../../inspector/hooks/useComponentMeta";
+import { useInitialMountDetection } from "@/builder/hooks";
+import { useComponentMeta } from "../../hooks";
 import "./EventsPanel.css";
 
 // 우선 선택 이벤트 우선순위 (click → change → submit → keyboard → mouse → focus)

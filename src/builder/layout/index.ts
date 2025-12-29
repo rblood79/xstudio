@@ -4,8 +4,8 @@
  * 패널 레이아웃 관리 컴포넌트 및 훅
  */
 
-// Hooks
-export { usePanelLayout } from "./usePanelLayout";
+// Hooks (re-export from @/builder/hooks)
+export { usePanelLayout } from "../hooks";
 
 // Components
 export { PanelNav } from "./PanelNav";

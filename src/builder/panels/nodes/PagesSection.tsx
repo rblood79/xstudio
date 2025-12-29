@@ -7,11 +7,10 @@
 import React, { memo, useCallback, useState } from "react";
 import type { Key } from "react-stately";
 import { Button } from "react-aria-components";
-import { SquarePlus } from "lucide-react";
+import { CirclePlus } from "lucide-react";
 import { iconProps } from "../../../utils/ui/uiConstants";
 import { useStore } from "../../stores";
-import { useIframeMessenger } from "../../hooks/useIframeMessenger";
-import { usePageManager } from "../../hooks/usePageManager";
+import { useIframeMessenger, usePageManager } from "@/builder/hooks";
 import { PanelHeader } from "../../components";
 import { PageTree } from "./tree/PageTree";
 import { pagesApi } from "../../../services/api/PagesApiService";
@@ -129,7 +128,7 @@ export const PagesSection = memo(function PagesSection({
             aria-label="Add Page"
             onPress={handleAddPage}
           >
-            <SquarePlus
+            <CirclePlus
               color={iconProps.color}
               strokeWidth={iconProps.strokeWidth}
               size={iconProps.size}

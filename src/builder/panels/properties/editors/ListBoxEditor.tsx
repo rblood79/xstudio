@@ -28,7 +28,7 @@ import { iconProps } from "../../../../utils/ui/uiConstants";
 import { PROPERTY_LABELS } from "../../../../utils/ui/labels";
 import { useStore } from "../../../stores";
 import { useDataTables } from "../../../stores/data";
-import { useCollectionItemManager } from "../../../hooks/useCollectionItemManager";
+import { useCollectionItemManager } from "@/builder/hooks";
 import { ElementUtils } from "../../../../utils/element/elementUtils";
 import { generateCustomId } from "../../../utils/idGeneration";
 import { getDB } from "../../../../lib/db";

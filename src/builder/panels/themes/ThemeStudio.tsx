@@ -4,7 +4,7 @@
  */
 
 import { useState, useEffect } from 'react';
-import { useThemes, useActiveTheme } from '../../../hooks/theme';
+import { useThemes, useActiveTheme } from '@/hooks';
 import { Moon, Sun } from 'lucide-react';
 import { iconProps, iconEditProps } from '../../../utils/ui/uiConstants';
 

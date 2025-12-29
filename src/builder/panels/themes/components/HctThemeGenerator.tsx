@@ -16,7 +16,7 @@ import type {
   HctGenerationStage,
 } from '../../../../services/theme/HctThemeService';
 import type { SchemeVariant, MaterialScheme, TonalPaletteSet } from '../../../../utils/theme/hctUtils';
-import { useAsyncMutation } from '../../../hooks/useAsyncMutation';
+import { useAsyncMutation } from '@/builder/hooks';
 import '../styles/HctThemeGenerator.css';
 
 /**

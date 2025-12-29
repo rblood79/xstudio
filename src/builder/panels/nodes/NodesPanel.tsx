@@ -11,8 +11,7 @@ import type { PanelProps } from "../core/types";
 import "./NodesPanel.css";
 import { useStore } from "../../stores";
 import { useEditModeStore } from "../../stores/editMode";
-import { usePageManager } from "../../hooks/usePageManager";
-import { useIframeMessenger } from "../../hooks/useIframeMessenger";
+import { usePageManager, useIframeMessenger } from "@/builder/hooks";
 import { NodesPanelTabs, type NodesPanelTabType } from "./NodesPanelTabs";
 import { LayoutsTab } from "./LayoutsTab/LayoutsTab";
 // 🚀 Performance: 분리된 섹션 컴포넌트

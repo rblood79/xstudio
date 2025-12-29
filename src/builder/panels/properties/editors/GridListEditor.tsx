@@ -5,7 +5,7 @@ import { PropertyEditorProps } from '../types/editorTypes';
 import { iconProps } from '../../../../utils/ui/uiConstants';
 import { PROPERTY_LABELS } from '../../../../utils/ui/labels';
 import { useStore } from '../../../stores';
-import { useCollectionItemManager } from '../../../hooks/useCollectionItemManager';
+import { useCollectionItemManager } from '@/builder/hooks';
 
 export const GridListEditor = memo(function GridListEditor({ elementId, currentProps, onUpdate }: PropertyEditorProps) {
     // Collection Item 관리 훅

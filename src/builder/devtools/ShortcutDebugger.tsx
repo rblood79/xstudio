@@ -8,13 +8,12 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
-import { useActiveScopeState } from '../hooks/useActiveScope';
+import { useActiveScopeState, formatShortcut } from '@/builder/hooks';
 import {
   SHORTCUT_DEFINITIONS,
   getShortcutsForScope,
   type ShortcutId,
 } from '../config/keyboardShortcuts';
-import { formatShortcut } from '../hooks/useKeyboardShortcutsRegistry';
 import type { ShortcutScope } from '../types/keyboard';
 
 // ============================================

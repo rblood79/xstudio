@@ -30,7 +30,7 @@ import {
   formatShortcut,
   useKeyboardShortcutsRegistry,
   type ShortcutCategory,
-} from '../../hooks/useKeyboardShortcutsRegistry';
+} from '@/builder/hooks';
 import { iconProps } from '../../../utils/ui/uiConstants';
 import './CommandPalette.css';
 

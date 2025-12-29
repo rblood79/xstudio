@@ -11,7 +11,7 @@
 
 import { useCallback } from 'react';
 import { useStore } from '../../../stores';
-import { useCopyPaste } from '../../../hooks/useCopyPaste';
+import { useCopyPaste } from '@/builder/hooks';
 
 export function useStyleActions() {
   // 🔥 최적화: useCopyPaste hook 사용

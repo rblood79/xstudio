@@ -32,7 +32,7 @@ import { iconProps, iconEditProps } from "../../../utils/ui/uiConstants";
 import type { PanelProps } from "../core/types";
 import { useDataStore } from "../../stores/data";
 import { useDataTableEditorStore } from "./stores/dataTableEditorStore";
-import { useDataPanelQuery } from "../../hooks/useDataQueries";
+import { useDataPanelQuery } from "@/builder/hooks";
 import { PanelHeader, EmptyState, LoadingSpinner } from "../../components";
 import { DataTableList } from "./components/DataTableList";
 import { ApiEndpointList } from "./components/ApiEndpointList";

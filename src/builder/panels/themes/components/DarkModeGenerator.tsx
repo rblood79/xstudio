@@ -4,11 +4,10 @@
  */
 
 import { useState } from 'react';
-import { useAsyncMutation } from '../../../hooks/useAsyncMutation';
+import { useAsyncMutation } from '@/builder/hooks';
 import { DarkModeService } from '../../../../services/theme/DarkModeService';
 import type { DarkModeOptions } from '../../../../services/theme/DarkModeService';
-import { useTokens } from '../../../../hooks/theme/useTokens';
-import { useThemes } from '../../../../hooks/theme/useThemes';
+import { useTokens, useThemes } from '@/hooks';
 import type { DesignToken, ColorValueHSL } from '../../../../types/theme';
 import '../styles/DarkModeGenerator.css';
 

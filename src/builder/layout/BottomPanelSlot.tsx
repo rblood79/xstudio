@@ -11,9 +11,8 @@
 import { memo, useCallback, useEffect, useRef, useState } from "react";
 import { X, GripHorizontal } from "lucide-react";
 import { iconProps, iconEditProps } from "../../utils/ui/uiConstants";
-import { usePanelLayout } from "./usePanelLayout";
+import { usePanelLayout, useKeyboardShortcutsRegistry } from "@/builder/hooks";
 import { PanelRegistry } from "../panels/core/PanelRegistry";
-import { useKeyboardShortcutsRegistry } from "../hooks/useKeyboardShortcutsRegistry";
 
 const MIN_HEIGHT = 150;
 const MAX_HEIGHT = 600;

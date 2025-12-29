@@ -16,7 +16,7 @@ import { useApplication } from '@pixi/react';
 import type { Container } from 'pixi.js';
 import { ViewportController, type ViewportState } from './ViewportController';
 import { useCanvasSyncStore } from '../canvasSync';
-import { useKeyboardShortcutsRegistry } from '../../../hooks/useKeyboardShortcutsRegistry';
+import { useKeyboardShortcutsRegistry } from '@/builder/hooks';
 
 // ============================================
 // Types

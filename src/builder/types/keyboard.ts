@@ -6,7 +6,7 @@
  * @since Phase 2 구현 (2025-12-28)
  */
 
-import type { KeyboardModifier, ShortcutCategory } from '../hooks/useKeyboardShortcutsRegistry';
+import type { KeyboardModifier, ShortcutCategory } from '@/builder/hooks';
 
 // ============================================
 // Scope Types
@@ -151,4 +151,4 @@ export interface ShortcutConflict {
 // Re-exports
 // ============================================
 
-export type { KeyboardModifier, ShortcutCategory } from '../hooks/useKeyboardShortcutsRegistry';
+export type { KeyboardModifier, ShortcutCategory } from '@/builder/hooks';

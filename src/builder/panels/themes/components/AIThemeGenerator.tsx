@@ -4,7 +4,7 @@
  */
 
 import { useState } from 'react';
-import { useAsyncMutation } from '../../../hooks/useAsyncMutation';
+import { useAsyncMutation } from '@/builder/hooks';
 import { createThemeGenerationService } from '../../../../services/theme';
 import type {
   ThemeGenerationRequest,

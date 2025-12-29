@@ -39,7 +39,7 @@ import {
   loadThresholdConfig,
   type ThresholdConfig,
 } from "./utils/thresholdConfig";
-import { useToast } from "../../hooks/useToast";
+import { useToast } from "@/builder/hooks";
 import { ToastContainer } from "../../components";
 
 const MAX_HISTORY_POINTS = 60; // 최대 60개 데이터 포인트 (10분)

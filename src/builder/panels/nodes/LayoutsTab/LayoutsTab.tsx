@@ -5,10 +5,16 @@
  * Layout 목록과 현재 Layout의 Element 트리를 표시.
  */
 
-
 import React, { useCallback, useEffect, useMemo } from "react";
 import { useParams } from "react-router-dom";
-import { SquarePlus, Minimize, ChevronRight, Box, Trash, Settings2 } from "lucide-react";
+import {
+  CirclePlus,
+  Minimize,
+  ChevronRight,
+  Box,
+  Trash,
+  Settings2,
+} from "lucide-react";
 import { iconProps } from "../../../../utils/ui/uiConstants";
 import { useLayoutsStore } from "../../../stores/layouts";
 import { useEditModeStore } from "../../../stores/editMode";
@@ -20,9 +26,12 @@ import type { Layout } from "../../../../types/builder/layout.types";
 import { buildTreeFromElements } from "../../../utils/treeUtils";
 import { MessageService } from "../../../../utils/messaging";
 import { getDB } from "../../../../lib/db";
-import { useTreeExpandState } from "../../../hooks/useTreeExpandState";
+import { useTreeExpandState } from "@/builder/hooks";
 // 🚀 Phase 11: Feature Flags for WebGL-only mode
-import { isWebGLCanvas, isCanvasCompareMode } from "../../../../utils/featureFlags";
+import {
+  isWebGLCanvas,
+  isCanvasCompareMode,
+} from "../../../../utils/featureFlags";
 
 interface LayoutsTabProps {
   // ⭐ renderTree/renderElementTree/collapseAllTreeItems 제거됨
@@ -50,7 +59,9 @@ export function LayoutsTab({
   // Layouts store
   const layouts = useLayoutsStore((state) => state.layouts);
   const currentLayoutId = useLayoutsStore((state) => state.currentLayoutId);
-  const setCurrentLayoutInStore = useLayoutsStore((state) => state.setCurrentLayout);
+  const setCurrentLayoutInStore = useLayoutsStore(
+    (state) => state.setCurrentLayout
+  );
   const createLayout = useLayoutsStore((state) => state.createLayout);
   const deleteLayout = useLayoutsStore((state) => state.deleteLayout);
   const fetchLayouts = useLayoutsStore((state) => state.fetchLayouts);
@@ -58,7 +69,12 @@ export function LayoutsTab({
   // Compute currentLayout from layouts and currentLayoutId
   const currentLayout = useMemo(() => {
     const found = layouts.find((l) => l.id === currentLayoutId) || null;
-    console.log(`📌 [currentLayout] 계산: currentLayoutId=${currentLayoutId?.slice(0,8)}, found=${found?.name}`);
+    console.log(
+      `📌 [currentLayout] 계산: currentLayoutId=${currentLayoutId?.slice(
+        0,
+        8
+      )}, found=${found?.name}`
+    );
     return found;
   }, [layouts, currentLayoutId]);
 
@@ -98,16 +114,25 @@ export function LayoutsTab({
 
     // 이미 로드된 Layout이면 스킵 (handleSelectLayout에서 이미 로드됨)
     if (loadedLayoutIdsRef.current.has(currentLayoutId)) {
-      console.log(`📥 [LayoutsTab] Layout ${currentLayoutId.slice(0, 8)} 이미 로드됨 - 스킵`);
+      console.log(
+        `📥 [LayoutsTab] Layout ${currentLayoutId.slice(
+          0,
+          8
+        )} 이미 로드됨 - 스킵`
+      );
       return;
     }
 
     const loadLayoutElements = async () => {
       try {
-        console.log(`📥 [LayoutsTab] Layout ${currentLayoutId} 요소 로드 시작... (fallback)`);
+        console.log(
+          `📥 [LayoutsTab] Layout ${currentLayoutId} 요소 로드 시작... (fallback)`
+        );
         const db = await getDB();
         const layoutElements = await db.elements.getByLayout(currentLayoutId);
-        console.log(`📥 [LayoutsTab] IndexedDB에서 ${layoutElements.length}개 요소 조회됨`);
+        console.log(
+          `📥 [LayoutsTab] IndexedDB에서 ${layoutElements.length}개 요소 조회됨`
+        );
 
         // 최신 elements 상태 가져오기 (stale closure 방지)
         const currentElements = useStore.getState().elements;
@@ -136,21 +161,39 @@ export function LayoutsTab({
 
   // 현재 Layout의 요소들만 필터링
   const layoutElements = useMemo(() => {
-    console.log(`🎯 [layoutElements] 필터링: currentLayout=${currentLayout?.id?.slice(0,8)}, allElements=${allElements.length}개`);
+    console.log(
+      `🎯 [layoutElements] 필터링: currentLayout=${currentLayout?.id?.slice(
+        0,
+        8
+      )}, allElements=${allElements.length}개`
+    );
     if (!currentLayout) return [];
-    const filtered = allElements.filter((el) => el.layout_id === currentLayout.id);
-    console.log(`🎯 [layoutElements] 필터 결과: ${filtered.length}개 (${filtered.map(el => el.tag).join(', ')})`);
+    const filtered = allElements.filter(
+      (el) => el.layout_id === currentLayout.id
+    );
+    console.log(
+      `🎯 [layoutElements] 필터 결과: ${filtered.length}개 (${filtered
+        .map((el) => el.tag)
+        .join(", ")})`
+    );
     return filtered;
   }, [allElements, currentLayout]);
 
   // Layout 요소 트리 빌드
   const layoutElementTree = useMemo(() => {
-    console.log(`🌳 [layoutElementTree] 트리 빌드: ${layoutElements.length}개 요소`);
+    console.log(
+      `🌳 [layoutElementTree] 트리 빌드: ${layoutElements.length}개 요소`
+    );
     return buildTreeFromElements(layoutElements);
   }, [layoutElements]);
 
   // ⭐ Layout 전용 트리 펼치기/접기 상태 관리
-  const { expandedKeys, toggleKey, collapseAll: collapseLayoutTree, expandKey } = useTreeExpandState({
+  const {
+    expandedKeys,
+    toggleKey,
+    collapseAll: collapseLayoutTree,
+    expandKey,
+  } = useTreeExpandState({
     selectedElementId,
     elements: layoutElements,
   });
@@ -166,17 +209,33 @@ export function LayoutsTab({
     if (layoutChanged && currentLayout?.id) {
       // Layout이 변경되었으면 먼저 모든 확장 상태를 초기화
       collapseLayoutTree();
-      console.log(`📂 [LayoutsTab] Layout 전환: ${prevLayoutIdRef.current?.slice(0, 8)} → ${currentLayout.id.slice(0, 8)}`);
+      console.log(
+        `📂 [LayoutsTab] Layout 전환: ${prevLayoutIdRef.current?.slice(
+          0,
+          8
+        )} → ${currentLayout.id.slice(0, 8)}`
+      );
       prevLayoutIdRef.current = currentLayout.id;
       // ⭐ Layout 변경 시 body 자동 선택 플래그 초기화
       bodyAutoSelectedRef.current = false;
     }
 
     // ⭐ body 요소 자동 펼치기 + 선택 (Layout 전환 후 1회만 실행)
-    if (currentLayout && layoutElements.length > 0 && !bodyAutoSelectedRef.current) {
-      const bodyElement = layoutElements.find(el => el.order_num === 0) || layoutElements.find(el => el.tag === 'body');
+    if (
+      currentLayout &&
+      layoutElements.length > 0 &&
+      !bodyAutoSelectedRef.current
+    ) {
+      const bodyElement =
+        layoutElements.find((el) => el.order_num === 0) ||
+        layoutElements.find((el) => el.tag === "body");
       if (bodyElement) {
-        console.log(`📂 [LayoutsTab] body 자동 펼치기 + 선택: ${bodyElement.id.slice(0, 8)}`);
+        console.log(
+          `📂 [LayoutsTab] body 자동 펼치기 + 선택: ${bodyElement.id.slice(
+            0,
+            8
+          )}`
+        );
         expandKey(bodyElement.id);
         // ⭐ Store 업데이트
         setSelectedElement(bodyElement.id, bodyElement.props as ElementProps);
@@ -186,134 +245,153 @@ export function LayoutsTab({
         bodyAutoSelectedRef.current = true;
       }
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentLayout?.id, layoutElements, expandKey, collapseLayoutTree, setSelectedElement, requestAutoSelectAfterUpdate]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    currentLayout?.id,
+    layoutElements,
+    expandKey,
+    collapseLayoutTree,
+    setSelectedElement,
+    requestAutoSelectAfterUpdate,
+  ]);
 
   // ⭐ Layout 전용 Element Tree 렌더링 함수 (재귀 호출을 위해 내부 함수로 구현)
-  const renderLayoutTree = useCallback((
-    tree: ElementTreeItem[],
-    onClick: (item: Element) => void,
-    onDelete: (item: Element) => Promise<void>,
-    depth: number = 0
-  ): React.ReactNode => {
-    // 재귀 호출을 위한 내부 헬퍼 함수
-    const renderTree = (
-      items: ElementTreeItem[],
-      currentDepth: number
+  const renderLayoutTree = useCallback(
+    (
+      tree: ElementTreeItem[],
+      onClick: (item: Element) => void,
+      onDelete: (item: Element) => Promise<void>,
+      depth: number = 0
     ): React.ReactNode => {
-      if (items.length === 0) return null;
+      // 재귀 호출을 위한 내부 헬퍼 함수
+      const renderTree = (
+        items: ElementTreeItem[],
+        currentDepth: number
+      ): React.ReactNode => {
+        if (items.length === 0) return null;
 
-      return (
-        <>
-          {items.map((item) => {
-            const hasChildNodes = item.children && item.children.length > 0;
-            const isExpanded = expandedKeys.has(item.id);
+        return (
+          <>
+            {items.map((item) => {
+              const hasChildNodes = item.children && item.children.length > 0;
+              const isExpanded = expandedKeys.has(item.id);
 
-            // Element로 변환 (onClick, onDelete용)
-            const element: Element = {
-              id: item.id,
-              tag: item.tag,
-              parent_id: item.parent_id || null,
-              order_num: item.order_num,
-              props: item.props as ElementProps,
-              deleted: item.deleted,
-              layout_id: currentLayout?.id || null,
-              page_id: null,
-              created_at: "",
-              updated_at: "",
-            };
+              // Element로 변환 (onClick, onDelete용)
+              const element: Element = {
+                id: item.id,
+                tag: item.tag,
+                parent_id: item.parent_id || null,
+                order_num: item.order_num,
+                props: item.props as ElementProps,
+                deleted: item.deleted,
+                layout_id: currentLayout?.id || null,
+                page_id: null,
+                created_at: "",
+                updated_at: "",
+              };
 
-            return (
-              <div
-                key={item.id}
-                data-depth={currentDepth}
-                data-has-children={hasChildNodes}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onClick(element);
-                }}
-                className="element"
-              >
+              return (
                 <div
-                  className={`elementItem ${
-                    selectedElementId === item.id ? "active" : ""
-                  }`}
+                  key={item.id}
+                  data-depth={currentDepth}
+                  data-has-children={hasChildNodes}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onClick(element);
+                  }}
+                  className="element"
                 >
                   <div
-                    className="elementItemIndent"
-                    style={{ width: currentDepth > 0 ? `${currentDepth * 8}px` : "0px" }}
-                  ></div>
-                  <div
-                    className="elementItemIcon"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (hasChildNodes) {
-                        toggleKey(item.id);
-                      }
-                    }}
+                    className={`elementItem ${
+                      selectedElementId === item.id ? "active" : ""
+                    }`}
                   >
-                    {hasChildNodes ? (
-                      <ChevronRight
-                        color={iconProps.color}
-                        strokeWidth={iconProps.strokeWidth}
-                        size={iconProps.size}
-                        style={{
-                          transform: isExpanded ? "rotate(90deg)" : "rotate(0deg)",
-                        }}
-                      />
-                    ) : (
-                      <Box
-                        color={iconProps.color}
-                        strokeWidth={iconProps.strokeWidth}
-                        size={iconProps.size}
-                        style={{ padding: "2px" }}
-                      />
-                    )}
-                  </div>
-                  <div className="elementItemLabel">
-                    {item.tag === "Slot" && item.props
-                      ? `Slot: ${(item.props as Record<string, unknown>).name || "unnamed"}`
-                      : item.tag}
-                  </div>
-                  <div className="elementItemActions">
-                    <button className="iconButton" aria-label="Settings">
-                      <Settings2
-                        color={iconProps.color}
-                        strokeWidth={iconProps.strokeWidth}
-                        size={iconProps.size}
-                      />
-                    </button>
-                    {/* body 요소가 아닐 때만 삭제 버튼 표시 */}
-                    {item.tag !== "body" && (
-                      <button
-                        className="iconButton"
-                        aria-label={`Delete ${item.tag}`}
-                        onClick={async (e) => {
-                          e.stopPropagation();
-                          await onDelete(element);
-                        }}
-                      >
-                        <Trash
+                    <div
+                      className="elementItemIndent"
+                      style={{
+                        width:
+                          currentDepth > 0 ? `${currentDepth * 8}px` : "0px",
+                      }}
+                    ></div>
+                    <div
+                      className="elementItemIcon"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (hasChildNodes) {
+                          toggleKey(item.id);
+                        }
+                      }}
+                    >
+                      {hasChildNodes ? (
+                        <ChevronRight
+                          color={iconProps.color}
+                          strokeWidth={iconProps.strokeWidth}
+                          size={iconProps.size}
+                          style={{
+                            transform: isExpanded
+                              ? "rotate(90deg)"
+                              : "rotate(0deg)",
+                          }}
+                        />
+                      ) : (
+                        <Box
+                          color={iconProps.color}
+                          strokeWidth={iconProps.strokeWidth}
+                          size={iconProps.size}
+                          style={{ padding: "2px" }}
+                        />
+                      )}
+                    </div>
+                    <div className="elementItemLabel">
+                      {item.tag === "Slot" && item.props
+                        ? `Slot: ${
+                            (item.props as Record<string, unknown>).name ||
+                            "unnamed"
+                          }`
+                        : item.tag}
+                    </div>
+                    <div className="elementItemActions">
+                      <button className="iconButton" aria-label="Settings">
+                        <Settings2
                           color={iconProps.color}
                           strokeWidth={iconProps.strokeWidth}
                           size={iconProps.size}
                         />
                       </button>
-                    )}
+                      {/* body 요소가 아닐 때만 삭제 버튼 표시 */}
+                      {item.tag !== "body" && (
+                        <button
+                          className="iconButton"
+                          aria-label={`Delete ${item.tag}`}
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            await onDelete(element);
+                          }}
+                        >
+                          <Trash
+                            color={iconProps.color}
+                            strokeWidth={iconProps.strokeWidth}
+                            size={iconProps.size}
+                          />
+                        </button>
+                      )}
+                    </div>
                   </div>
+                  {isExpanded &&
+                    hasChildNodes &&
+                    item.children &&
+                    renderTree(item.children, currentDepth + 1)}
                 </div>
-                {isExpanded && hasChildNodes && item.children && (
-                  renderTree(item.children, currentDepth + 1)
-                )}
-              </div>
-            );
-          })}
-        </>
-      );
-    };
+              );
+            })}
+          </>
+        );
+      };
 
-    return renderTree(tree, depth);
-  }, [expandedKeys, toggleKey, selectedElementId, currentLayout?.id]);
+      return renderTree(tree, depth);
+    },
+    [expandedKeys, toggleKey, selectedElementId, currentLayout?.id]
+  );
 
   // Layout 선택 핸들러
   // ⭐ 요소를 먼저 로드한 후 currentLayoutId 설정 (타이밍 문제 해결)
@@ -326,11 +404,17 @@ export function LayoutsTab({
         // 1. 먼저 Layout 요소들을 Store에 로드
         const db = await getDB();
         const layoutElements = await db.elements.getByLayout(layout.id);
-        console.log(`📥 [LayoutsTab] Layout ${layout.id.slice(0, 8)} 요소 ${layoutElements.length}개 선 로드`);
+        console.log(
+          `📥 [LayoutsTab] Layout ${layout.id.slice(0, 8)} 요소 ${
+            layoutElements.length
+          }개 선 로드`
+        );
 
         // 기존 요소들 중 해당 레이아웃 요소가 아닌 것들 유지 + 새 레이아웃 요소 추가
         const currentElements = useStore.getState().elements;
-        const otherElements = currentElements.filter((el) => el.layout_id !== layout.id);
+        const otherElements = currentElements.filter(
+          (el) => el.layout_id !== layout.id
+        );
         const mergedElements = [...otherElements, ...layoutElements];
         setElements(mergedElements);
 
@@ -429,7 +513,7 @@ export function LayoutsTab({
               aria-label="Add Layout"
               onClick={handleAddLayout}
             >
-              <SquarePlus
+              <CirclePlus
                 color={iconProps.color}
                 strokeWidth={iconProps.strokeWidth}
                 size={iconProps.size}
@@ -453,7 +537,10 @@ export function LayoutsTab({
                     currentLayout?.id === layout.id ? "active" : ""
                   }`}
                 >
-                  <div className="elementItemIndent" style={{ width: "0px" }}></div>
+                  <div
+                    className="elementItemIndent"
+                    style={{ width: "0px" }}
+                  ></div>
                   <div className="elementItemIcon">
                     <Box
                       color={iconProps.color}

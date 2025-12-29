@@ -9,7 +9,7 @@
 
 import { memo, useCallback, useMemo } from "react";
 import type { PanelSide } from "../panels/core/types";
-import { usePanelLayout } from "./usePanelLayout";
+import { usePanelLayout } from "../hooks";
 import { PanelNav } from "./PanelNav";
 import { PanelContainer } from "./PanelContainer";
 

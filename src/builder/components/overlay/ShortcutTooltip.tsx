@@ -21,7 +21,7 @@ import {
   SHORTCUT_DEFINITIONS,
   type ShortcutId,
 } from '../../config/keyboardShortcuts';
-import { formatShortcut } from '../../hooks/useKeyboardShortcutsRegistry';
+import { formatShortcut } from '@/builder/hooks';
 import './ShortcutTooltip.css';
 
 // ============================================

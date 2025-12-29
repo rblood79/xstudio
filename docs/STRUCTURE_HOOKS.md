@@ -33,7 +33,7 @@
 
 ### B. Builder Core Hooks (`src/builder/hooks`)
 
-- **파일 수**: 36개
+- **파일 수**: 38개 (Phase 2 승격 후)
 - **특징**: `src/builder/hooks/index.ts`로 이미 배럴 관리
 - **주요 영역**: async/data, page/element, keyboard, messenger, theme, performance, recovery
 
@@ -78,29 +78,32 @@
 - **Action**: `src/hooks/index.ts` 생성 (App 공용 훅만 노출)
   - `src/hooks/*.ts` export
   - `src/hooks/theme/index.ts` re-export (명시적 export 권장)
-- **Status**: 미완료 (`src/hooks/index.ts` 아직 없음)
+- **Status**: ✅ 완료 (2025-12-30)
 - **유지**: `src/builder/hooks/index.ts`는 그대로 사용 (`@/builder/hooks`)
 - **비권장**: `@/hooks/builder` 추가는 stores/types 관례와 어긋나므로 하지 않음
 
 ### Phase 2: 승격 후보 선정
 
-- **후보 예시**:
-  - `src/builder/inspector/hooks/useComponentMeta.ts`
-  - `src/builder/layout/usePanelLayout.ts`
+- **Status**: ✅ 완료 (2025-12-30)
+- **승격 완료**:
+  - `useComponentMeta` → `@/builder/hooks` (from inspector/hooks)
+  - `usePanelLayout` → `@/builder/hooks` (from layout/)
 - **제외 원칙**:
   - Overlay/Canvas/Panels 스타일/모니터 훅은 기능 전용 유지
   - `src/canvas/**`, `src/i18n/**`, `src/builder/panels/events/**`는 통합 대상에서 제외
 
 ### Phase 3: 점진적 마이그레이션
 
+- **Status**: ✅ 완료 (2025-12-30)
 - 공용 훅은 `@/hooks`로 통일
 - 빌더 훅은 기존 `@/builder/hooks` 유지
-- 파일 단위로 점진 변경 (터치하는 영역부터)
+- 약 30개 파일 import 경로 통일 완료
 
 ### Phase 4: 검증
 
-- `mise hook-env` 활성화 후 `pnpm run lint`, `pnpm exec tsc -b`
-- 필요한 경우 `pnpm run test`
+- **Status**: ✅ 완료 (2025-12-30)
+- `pnpm exec tsc -b`: 통과
+- `pnpm run lint`: 0 errors (25 warnings - 기존)
 
 ## 6. 성능/리스크 검토
 

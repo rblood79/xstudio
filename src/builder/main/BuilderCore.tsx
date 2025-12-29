@@ -19,17 +19,19 @@ import { isWebGLCanvas, isCanvasCompareMode } from "../../utils/featureFlags";
 import { PanelSlot, BottomPanelSlot } from "../layout";
 import { ToastContainer, CommandPalette } from "../components";
 
-import { useErrorHandler } from "../hooks/useErrorHandler";
-// import { useElementCreator } from "../hooks/useElementCreator";  // 사용하지 않음
-import { usePageManager } from "../hooks/usePageManager";
-import { usePageLoader, useAdjacentPagePreload } from "../hooks/usePageLoader";
-import { useAutoRecovery } from "../hooks/useAutoRecovery";
-import { useToast } from "../hooks/useToast";
-import { useIframeMessenger } from "../hooks/useIframeMessenger";
-import { useThemeManager } from "../hooks/useThemeManager";
-import { useValidation } from "../hooks/useValidation";
-import { useThemeMessenger } from "../hooks/useThemeMessenger";
-import { useGlobalKeyboardShortcuts } from "../hooks/useGlobalKeyboardShortcuts";
+import {
+  useErrorHandler,
+  usePageManager,
+  usePageLoader,
+  useAdjacentPagePreload,
+  useAutoRecovery,
+  useToast,
+  useIframeMessenger,
+  useThemeManager,
+  useValidation,
+  useThemeMessenger,
+  useGlobalKeyboardShortcuts,
+} from "@/builder/hooks";
 // import { projectsApi, type Project } from "../../services/api";  // Supabase 동기화는 대시보드에서만 처리
 import type { Project } from "../../services/api";
 import { useUnifiedThemeStore } from "../../stores/themeStore";

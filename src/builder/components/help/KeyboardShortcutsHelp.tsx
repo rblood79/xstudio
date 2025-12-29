@@ -19,7 +19,7 @@ import {
   getShortcutsByCategory,
   type ShortcutId,
 } from '../../config/keyboardShortcuts';
-import { formatShortcut, type ShortcutCategory } from '../../hooks/useKeyboardShortcutsRegistry';
+import { formatShortcut, type ShortcutCategory } from '@/builder/hooks';
 
 // ============================================
 // Types

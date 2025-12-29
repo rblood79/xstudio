@@ -5,7 +5,7 @@ import { PropertyEditorProps } from '../types/editorTypes';
 import { iconProps } from '../../../../utils/ui/uiConstants';
 import { PROPERTY_LABELS } from '../../../../utils/ui/labels';
 import { useStore } from '../../../stores';
-import { useCollectionItemManager } from '../../../hooks/useCollectionItemManager';
+import { useCollectionItemManager } from '@/builder/hooks';
 import { supabase } from '../../../../env/supabase.client';
 
 export const SelectEditor = memo(function SelectEditor({ elementId, currentProps, onUpdate }: PropertyEditorProps) {
