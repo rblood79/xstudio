@@ -6,6 +6,9 @@
  * WebGL Canvas는 이 스토어를 통해 Builder 상태에 직접 접근합니다.
  * 기존 iframe + postMessage 패턴을 대체합니다.
  *
+ * ⚠️ 그리드 설정은 settings.ts (Single Source of Truth)에서 관리
+ * 이 스토어는 뷰포트/편집 상태만 관리
+ *
  * @since 2025-12-11 Phase 10 B2.4
  */
 
@@ -27,16 +30,10 @@ interface CanvasState {
   isEditing: boolean;
   editingElementId: string | null;
 
-  // 그리드 설정
-  showGrid: boolean;
-  snapToGrid: boolean;
-  gridSize: number;
-
   // 액션
   setZoom: (zoom: number) => void;
   setPan: (x: number, y: number) => void;
   setEditing: (isEditing: boolean, elementId?: string | null) => void;
-  setGridSettings: (settings: Partial<{ showGrid: boolean; snapToGrid: boolean; gridSize: number }>) => void;
   resetView: () => void;
 }
 
@@ -52,9 +49,6 @@ export const useCanvasStore = create<CanvasState>()(
     panY: 0,
     isEditing: false,
     editingElementId: null,
-    showGrid: true,
-    snapToGrid: true,
-    gridSize: 20,
 
     // Actions
     setZoom: (zoom) => set({ zoom: Math.max(0.1, Math.min(5, zoom)) }),
@@ -64,16 +58,36 @@ export const useCanvasStore = create<CanvasState>()(
     setEditing: (isEditing, elementId = null) =>
       set({ isEditing, editingElementId: elementId }),
 
-    setGridSettings: (settings) =>
-      set((state) => ({
-        showGrid: settings.showGrid ?? state.showGrid,
-        snapToGrid: settings.snapToGrid ?? state.snapToGrid,
-        gridSize: settings.gridSize ?? state.gridSize,
-      })),
-
     resetView: () => set({ zoom: 1, panX: 0, panY: 0 }),
   }))
 );
+
+// ============================================
+// Grid Settings (from settings.ts - Single Source of Truth)
+// ============================================
+
+/**
+ * 그리드 설정 가져오기 (settings.ts에서)
+ * canvasStore에서 중복 제거, settings.ts를 Single Source of Truth로 사용
+ */
+export function useCanvasGridSettings() {
+  const showGrid = useStore((state) => state.showGrid);
+  const snapToGrid = useStore((state) => state.snapToGrid);
+  const gridSize = useStore((state) => state.gridSize);
+
+  return { showGrid, snapToGrid, gridSize };
+}
+
+/**
+ * 그리드 설정 변경 (settings.ts로 위임)
+ */
+export function useCanvasSetGridSettings() {
+  const setShowGrid = useStore((state) => state.setShowGrid);
+  const setSnapToGrid = useStore((state) => state.setSnapToGrid);
+  const setGridSize = useStore((state) => state.setGridSize);
+
+  return { setShowGrid, setSnapToGrid, setGridSize };
+}
 
 // ============================================
 // Selectors (Direct Builder Store Access)
