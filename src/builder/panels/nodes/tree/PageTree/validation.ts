@@ -34,9 +34,10 @@ export function isValidPageDrop(
     return { valid: false, reason: "home-immutable" };
   }
 
-  // 5. 루트 레벨(depth=0)에 before/after 금지 (Home 앞/뒤 배치 금지)
-  if (targetNode.depth === 0 && dropPosition !== "on") {
-    return { valid: false, reason: "root-level-denied" };
+  // 5. Home 페이지 앞(before)에 배치 금지 (Home은 항상 첫 번째)
+  //    단, Home 뒤(after)나 Home 안(on)에는 드롭 허용
+  if (targetNode.isRoot && dropPosition === "before") {
+    return { valid: false, reason: "before-home-denied" };
   }
 
   return { valid: true };

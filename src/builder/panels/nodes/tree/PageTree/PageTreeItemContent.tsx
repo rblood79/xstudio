@@ -31,24 +31,24 @@ export function PageTreeItemContent({
   onDelete,
   onSettings,
 }: PageTreeItemContentProps) {
-  const { depth, hasChildren, isRoot, page, name, isDraggable } = node;
+  const { depth, hasChildren, isRoot, page, name } = node;
   const { isSelected, isExpanded, isFocusVisible } = state;
 
   return (
     <div
-      className={`pageItem ${isSelected ? "active" : ""} ${
+      className={`elementItem ${isSelected ? "active" : ""} ${
         isFocusVisible ? "focused" : ""
       }`}
     >
       <div
-        className="pageItemIndent"
+        className="elementItemIndent"
         style={{ width: depth > 0 ? `${depth * 8}px` : "0px" }}
       />
-      <div className="pageItemIcon">
+      <div className="elementItemIcon">
         {hasChildren ? (
           <Button
             slot="chevron"
-            className="page-expand-button"
+            className="layer-expand-button"
             aria-label={`${isExpanded ? "Collapse" : "Expand"} ${name}`}
           >
             <ChevronRight
@@ -74,18 +74,18 @@ export function PageTreeItemContent({
           />
         )}
       </div>
-      <div className="pageItemLabel">{name}</div>
-      <div className="pageItemActions">
+      <div className="elementItemLabel">{name}</div>
+      <div className="elementItemActions">
         {/* react-aria DnD requires slot="drag" on all items for a11y */}
         <Button
           slot="drag"
-          className={`iconButton page-drag-handle${
-            !isDraggable ? " page-drag-handle--hidden" : ""
+          className={`iconButton layer-drag-handle${
+            isRoot ? " layer-drag-handle--hidden" : ""
           }`}
           aria-label={`Drag ${name}`}
-          aria-hidden={!isDraggable}
-          style={{ pointerEvents: isDraggable ? "auto" : "none" }}
-          isDisabled={!isDraggable}
+          aria-hidden={isRoot}
+          style={{ pointerEvents: isRoot ? "none" : "auto" }}
+          isDisabled={isRoot}
         >
           <GripVertical
             color={ICON_EDIT_PROPS.color}

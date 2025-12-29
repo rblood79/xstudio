@@ -57,7 +57,7 @@
     --overlay-background: var(--gray-0);
 
     /* ===== Highlight Colors (Primary Blue) ===== */
-    --focus-ring-color: var(--blue-400);
+    --focus-ring-color: var(--blue-300);
     --highlight-background: var(--gray-900);
     --highlight-background-hover: var(--gray-700);
     --highlight-background-pressed: var(--gray-600);
@@ -136,12 +136,8 @@
   [data-builder-theme="dark"] .overlay,
   [data-builder-theme="dark"] .bg,
   [data-builder-theme="dark"] .canvas,
-  [data-builder-theme="dark"]
-    body:not([data-preview="true"])
-    .react-aria-Popover,
-  [data-builder-theme="dark"]
-    body:not([data-preview="true"])
-    .react-aria-Modal {
+  [data-builder-theme="dark"] body:not([data-preview="true"]) .react-aria-Popover,
+  [data-builder-theme="dark"] body:not([data-preview="true"]) .react-aria-Modal {
     /* ===== Core Semantic Colors (Dark Mode) ===== */
     --background-color: var(--gray-900);
     --text-color: var(--gray-100);

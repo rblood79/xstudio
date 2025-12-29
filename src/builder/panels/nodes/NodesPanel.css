@@ -44,8 +44,7 @@
   /*var(--spacing-lg);*/
   position: relative;
 
-  background: linear-gradient(to left, var(--border-color) 1px, transparent 1px)
-    0 0 / 8px 1px;
+  background: linear-gradient(to left, var(--border-color) 1px, transparent 1px) 0 0 / 8px 1px;
 }
 
 .elementItemIcon {
@@ -54,6 +53,7 @@
   height: var(--spacing-lg);
   min-width: var(--spacing-lg);
   min-height: var(--spacing-lg);
+
   svg {
     stroke: inherit;
   }
@@ -94,12 +94,8 @@
 }
 
 .elementItemActions .layer-drag-handle {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: var(--spacing-2xl);
-  min-height: var(--spacing-2xl);
   cursor: grab;
+  padding: 0;
 }
 
 .elementItemActions .layer-drag-handle:active {
@@ -125,11 +121,16 @@
 
 .layer-drop-indicator {
   display: block;
-  height: 2px;
-  margin: 4px var(--spacing-sm);
-  margin-left: calc((var(--tree-item-level) - 1) * 8px + var(--spacing-sm));
-  background: var(--border-color-pressed);
-  border-radius: 999px;
+  height: 32px;
+  margin: 0px;
+  margin-left: calc((var(--tree-item-level) - 1) * 8px);
+  background-color: rgba(59, 130, 246, 0.15);
+  background-size: 4px 4px;
+  background-image: repeating-linear-gradient(45deg,
+      var(--color-accent, var(--focus-ring-color)) 0,
+      var(--color-accent, var(--focus-ring-color)) 1px,
+      transparent 0,
+      transparent 50%);
   pointer-events: none;
 }
 
@@ -155,15 +156,21 @@
   flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
+
   .section {
     .section-content {
       all: unset;
-      .react-aria-Tree {
+
+      .react-aria-Tree,
+      .page-tree {
         all: unset;
+
         .react-aria-TreeItem {
           padding: 0;
+
           .elementItem {
             width: 100%;
+
             .elementItemActions {
               .layer-drag-handle {
                 all: unset;
@@ -199,6 +206,7 @@
   color: var(--text-secondary);
   transition: all 0.2s ease;
 }
+
 .nodes-panel-tab-label {
   font-weight: var(--font-weight-medium);
   color: var(--on-surface-variant);
@@ -371,9 +379,11 @@
 
 /* ARIA role="treeitem" 스타일 */
 .element[role="treeitem"] {
+
   /* 접근성: 포커스 가능하도록 outline 유지 */
   &:focus-visible {
-    outline: none; /* .elementItem에서 처리 */
+    outline: none;
+    /* .elementItem에서 처리 */
   }
 }
 
@@ -388,14 +398,10 @@
 }
 
 /* 펼침/접기 상태 표시 */
-.element[role="treeitem"][aria-expanded="true"]
-  .elementItemIcon
-  svg[data-chevron] {
+.element[role="treeitem"][aria-expanded="true"] .elementItemIcon svg[data-chevron] {
   transform: rotate(90deg);
 }
 
-.element[role="treeitem"][aria-expanded="false"]
-  .elementItemIcon
-  svg[data-chevron] {
+.element[role="treeitem"][aria-expanded="false"] .elementItemIcon svg[data-chevron] {
   transform: rotate(0deg);
 }

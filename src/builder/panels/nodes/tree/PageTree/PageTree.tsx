@@ -8,7 +8,6 @@ import { calculatePageMoveUpdates } from "./usePageTreeDnd";
 import { isValidPageDrop } from "./validation";
 import { PageTreeItemContent } from "./PageTreeItemContent";
 import { useFocusManagement } from "../hooks";
-import "./PageTree.css";
 
 /**
  * PageTree - TreeBase 기반 구현
@@ -181,7 +180,7 @@ export function PageTree({
         dragType: "application/x-page-tree-item",
       }}
       className="page-tree"
-      dropIndicatorClassName="page-drop-indicator"
+      dropIndicatorClassName="layer-drop-indicator"
     />
   );
 }
