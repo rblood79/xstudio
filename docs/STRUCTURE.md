@@ -1,3 +1,5 @@
+# xstudio Store 구조 최적화 계획
+
 ---
 
 ## 1. 현 구조 진단 (As-Is Diagnosis)
@@ -10,7 +12,7 @@
 | **uiStore** | 미존재 | **To-Be**: `src/stores/uiStore.ts` 신설 | **필수**: 글로벌 설정 격리 필요 |
 | **빌더 설정** | **As-Is**: `settings.ts` (명칭 모호) | **To-Be**: `src/builder/stores/canvasSettings.ts` | **개선**: 책임 범위 명확화 |
 | **디렉토리** | `src/builder/stores` | `src/builder/stores` (유지) | **유지**: 기존 구조 보존 |
-| **테마 스토어** | 단일 거대 파일 (736줄) | **To-Be**: Store / Actions / Selectors 분할 | **개선**: 유지보수 효율 증대 |
+| **테마 스토어** | 단일 거대 파일 (736줄) | Store / Actions / Selectors 분할 | **Future Work**: Phase 1-4 이후 진행 |
 
 ### ⚠️ 주요 오염 필드 (Polluted Fields)
 `src/builder/stores/settings.ts` 파일 내에 엔진 도메인이 아닌 필드가 혼재되어 있습니다:
@@ -57,6 +59,7 @@
 
 - **`uiStore.ts`**: (Phase 1 신설 예정) 앱 전역 테마 및 UI 스케일 관리.
 - **`themeStore.ts`**: 디자인 시스템 토큰(CSS Variables) 동기화.
+- **`settingsStore.ts`**: 앱 환경 설정 (syncMode, projectCreation 등).
 
 ### `src/builder/stores` (Engine) - 기존 구조 유지
 
@@ -68,10 +71,12 @@
 
 ## 5. 고성능 유지 규칙 (Performance Implementation Rules)
 
-> [!IMPORTANT] > **100+ 요소 동시 수정 시 Batch Action 필수**
+> [!IMPORTANT]
+> **100+ 요소 동시 수정 시 Batch Action 필수**
 > 단일 `updateElement` 대신 `batchUpdateElements`를 사용하여 한 번의 인덱스 재구축과 한 번의 Zustand 업데이트로 처리하십시오.
 
-> [!TIP] > **Priority-based Hydration**
+> [!TIP]
+> **Priority-based Hydration**
 > WebGL 인터랙션 중 인스펙터 속성 채우기(Hydration)와 같은 비임계 작업은 `scheduleCancelableBackgroundTask`를 사용하여 브라우저 유휴 시간에 실행하십시오.
 
 ---
@@ -113,8 +118,9 @@ src/builder/stores/                 # 빌더 도메인 (기존 구조 유지)
   ├── elementLoader.ts                # LRU 캐시 기반 로딩
   └── ...
 
-src/builder/workspace/canvas/store/ # WebGL 캔버스 전용
-  ├── canvasStore.ts                  # 뷰포트/편집 상태 (그리드 설정은 settings.ts 위임)
+src/builder/workspace/canvas/       # WebGL 캔버스 전용
+  ├── store/
+  │   └── canvasStore.ts              # 뷰포트/편집 상태 (그리드 설정은 settings.ts 위임)
   └── canvasSync.ts                   # React-WebGL 동기화
 ```
 
@@ -279,18 +285,25 @@ settings.ts (Single Source of Truth) ← canvasStore.ts (위임)
 
 ---
 
-## 10. Open Questions (확정 필요)
+## 10. 결정 사항 (Decisions)
 
-### Q1. 디렉토리 이동 범위
+### D1. 디렉토리 이동 범위
 
 **결정**: `src/builder/stores` 구조 유지, 대규모 디렉토리 이동 없음
 
 - 파일 리네임 (`settings.ts` → `canvasSettings.ts`)만 진행
 - `src/stores`에는 `uiStore.ts`만 신설
 
-### Q2. 그리드 설정 SSoT
+### D2. 그리드 설정 SSoT
 
 **결정**: `settings.ts` (→ `canvasSettings.ts`)가 Single Source of Truth
 
 - `canvasStore.ts`는 그리드 설정을 직접 관리하지 않고 `settings.ts`에 위임
 - 이미 `useCanvasGridSettings()`, `useCanvasSetGridSettings()` 훅으로 구현 완료
+
+### D3. 테마 스토어 분할
+
+**결정**: 현재 Phase 범위에서 제외 (Future Work)
+
+- `themeStore.ts` (736줄)의 Store/Actions/Selectors 분할은 현재 최적화 계획 범위 외
+- Phase 1-4 완료 후 별도 리팩토링으로 진행 가능

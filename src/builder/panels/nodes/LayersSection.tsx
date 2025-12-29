@@ -34,6 +34,8 @@ export const LayersSection = memo(function LayersSection({
 
   // 사용자가 직접 조작한 expandedKeys (collapse all, 수동 토글)
   const [userExpandedKeys, setUserExpandedKeys] = useState<Set<Key>>(new Set());
+  // 사용자가 명시적으로 닫은 키 (자동 펼침을 오버라이드)
+  const [userCollapsedKeys, setUserCollapsedKeys] = useState<Set<Key>>(new Set());
 
   // 🚀 선택된 요소의 부모 체인 계산 (파생 상태)
   const autoExpandedParents = useMemo(() => {
@@ -57,12 +59,17 @@ export const LayersSection = memo(function LayersSection({
     return parents;
   }, [selectedElementId, currentPageElements]);
 
-  // 🚀 최종 expandedKeys = 사용자 조작 + 자동 펼침 (합집합)
+  // 🚀 최종 expandedKeys = (사용자 조작 + 자동 펼침) - 사용자가 닫은 키
   const expandedKeys = useMemo(() => {
     const merged = new Set(userExpandedKeys);
-    autoExpandedParents.forEach((key) => merged.add(key));
+    autoExpandedParents.forEach((key) => {
+      // 사용자가 명시적으로 닫지 않은 경우에만 자동 펼침
+      if (!userCollapsedKeys.has(key)) {
+        merged.add(key);
+      }
+    });
     return merged;
-  }, [userExpandedKeys, autoExpandedParents]);
+  }, [userExpandedKeys, autoExpandedParents, userCollapsedKeys]);
 
   // 🚀 useCallback으로 메모이제이션 - 매 렌더링마다 새 함수 생성 방지
   const handleItemClick = useCallback(
@@ -82,7 +89,44 @@ export const LayersSection = memo(function LayersSection({
   // Collapse All 기능
   const handleCollapseAll = useCallback(() => {
     setUserExpandedKeys(new Set());
-  }, []);
+    // 모든 자동 펼침 키를 사용자가 닫은 것으로 처리
+    setUserCollapsedKeys(new Set(autoExpandedParents));
+  }, [autoExpandedParents]);
+
+  // 사용자가 펼침/닫음 토글 시 처리
+  const handleExpandedChange = useCallback(
+    (newKeys: Set<Key>) => {
+      // 이전에 펼쳐져 있었는데 새로 닫힌 키 찾기
+      const closedKeys = new Set<Key>();
+      expandedKeys.forEach((key) => {
+        if (!newKeys.has(key)) {
+          closedKeys.add(key);
+        }
+      });
+
+      // 새로 열린 키 찾기
+      const openedKeys = new Set<Key>();
+      newKeys.forEach((key) => {
+        if (!expandedKeys.has(key)) {
+          openedKeys.add(key);
+        }
+      });
+
+      // userCollapsedKeys 업데이트
+      setUserCollapsedKeys((prev) => {
+        const next = new Set(prev);
+        // 닫힌 키 추가
+        closedKeys.forEach((key) => next.add(key));
+        // 열린 키 제거 (사용자가 다시 열었으므로)
+        openedKeys.forEach((key) => next.delete(key));
+        return next;
+      });
+
+      // userExpandedKeys 업데이트
+      setUserExpandedKeys(newKeys);
+    },
+    [expandedKeys]
+  );
 
   return (
     <div className="section">
@@ -107,7 +151,7 @@ export const LayersSection = memo(function LayersSection({
           elements={currentPageElements}
           selectedElementId={selectedElementId}
           expandedKeys={expandedKeys}
-          onExpandedChange={setUserExpandedKeys}
+          onExpandedChange={handleExpandedChange}
           onItemClick={handleItemClick}
           onItemDelete={handleItemDelete}
         />

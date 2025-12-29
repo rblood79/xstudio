@@ -377,8 +377,8 @@
   outline-color: var(--color-primary-600);
 }
 
-/* ARIA role="treeitem" 스타일 */
-.element[role="treeitem"] {
+/* react-aria TreeItem 스타일 */
+.react-aria-TreeItem {
 
   /* 접근성: 포커스 가능하도록 outline 유지 */
   &:focus-visible {
@@ -388,20 +388,20 @@
 }
 
 /* 트리 아이템 전환 애니메이션 */
-.element[role="treeitem"] .elementItemIcon svg {
+.react-aria-TreeItem .elementItemIcon svg {
   transition: transform 150ms ease;
 }
 
 /* 선택 가능한 요소 시각적 피드백 */
-.element[role="treeitem"][aria-selected="true"] .elementItem {
+.react-aria-TreeItem[aria-selected="true"] .elementItem {
   background-color: var(--button-background-pressed);
 }
 
 /* 펼침/접기 상태 표시 */
-.element[role="treeitem"][aria-expanded="true"] .elementItemIcon svg[data-chevron] {
+.react-aria-TreeItem[aria-expanded="true"] .elementItemIcon svg[data-chevron] {
   transform: rotate(90deg);
 }
 
-.element[role="treeitem"][aria-expanded="false"] .elementItemIcon svg[data-chevron] {
+.react-aria-TreeItem[aria-expanded="false"] .elementItemIcon svg[data-chevron] {
   transform: rotate(0deg);
 }
