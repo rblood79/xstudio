@@ -34,6 +34,7 @@ import { useGlobalKeyboardShortcuts } from "../hooks/useGlobalKeyboardShortcuts"
 // import { projectsApi, type Project } from "../../services/api";  // Supabase 동기화는 대시보드에서만 처리
 import type { Project } from "../../services/api";
 import { useUnifiedThemeStore } from "../../stores/themeStore";
+import { useUiStore } from "../../stores/uiStore";
 import { getDB } from "../../lib/db";
 import { useEditModeStore } from "../stores/editMode";
 import { useLayoutsStore } from "../stores/layouts";
@@ -56,9 +57,11 @@ export const BuilderCore: React.FC = () => {
   // const selectedElementId = useStore((state) => state.selectedElementId);  // 사용하지 않음
   const setSelectedElement = useStore((state) => state.setSelectedElement);
   const showOverlay = useStore((state) => state.showOverlay);
-  const themeMode = useStore((state) => state.themeMode);
-  const uiScale = useStore((state) => state.uiScale);
   const historyInfo = useStore((state) => state.historyInfo);
+
+  // UI 설정 (글로벌 uiStore에서 가져옴 - Phase 1)
+  const themeMode = useUiStore((state) => state.themeMode);
+  const uiScale = useUiStore((state) => state.uiScale);
   const setHistoryInfo = useStore((state) => state.setHistoryInfo);
   const viewMode = useStore((state) => state.viewMode);
   const toggleViewMode = useStore((state) => state.toggleViewMode);

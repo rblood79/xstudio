@@ -13,7 +13,7 @@
  *
  * @since 2025-12-10 Phase 4 Canvas Delta Updates
  * @deprecated 2025-12-11 Phase 10 B2.4 - WebGL Canvas로 대체
- * @see src/builder/workspace/canvas/store/canvasStore.ts
+ * @see src/builder/stores/canvasStore.ts
  */
 
 import { useCallback, useRef, useEffect } from 'react';

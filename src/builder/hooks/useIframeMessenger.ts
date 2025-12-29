@@ -11,7 +11,7 @@
  * - 선택 요소: useCanvasSelectedElement() 사용
  * - 요소 업데이트: useCanvasUpdateElement() 사용
  *
- * @see src/builder/workspace/canvas/store/canvasStore.ts
+ * @see src/builder/stores/canvasStore.ts
  */
 
 import { useState, useCallback, useEffect, useRef, startTransition } from 'react';

@@ -4,7 +4,7 @@ import { createSelectionSlice, SelectionState } from "./selection";
 import { createElementsSlice, ElementsState } from "./elements";
 import type { Element } from "../../types/core/store.types";
 import { createSaveModeSlice, SaveModeState } from "./saveMode";
-import { createSettingsSlice, SettingsState } from "./settings";
+import { createSettingsSlice, SettingsState } from "./canvasSettings";
 import { createPanelLayoutSlice, PanelLayoutSlice } from "./panelLayout";
 import { createElementLoaderSlice, ElementLoaderSlice } from "./elementLoader";
 import {
@@ -403,3 +403,17 @@ export {
 // ============================================
 export { useToastStore, globalToast } from "./toast";
 export type { Toast, ToastType, ToastAction } from "./toast";
+
+// ============================================
+// Canvas Store (뷰포트/편집 상태)
+// ============================================
+export {
+  useCanvasStore,
+  useCanvasGridSettings,
+  useCanvasSetGridSettings,
+  useCanvasElements,
+  useCanvasSelectedElement,
+  useCanvasSelectedElementIds,
+  useCanvasUpdateElement,
+  useCanvasSetSelectedElement,
+} from "./canvasStore";

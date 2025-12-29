@@ -6,15 +6,16 @@
  * WebGL Canvas는 이 스토어를 통해 Builder 상태에 직접 접근합니다.
  * 기존 iframe + postMessage 패턴을 대체합니다.
  *
- * ⚠️ 그리드 설정은 settings.ts (Single Source of Truth)에서 관리
+ * ⚠️ 그리드 설정은 canvasSettings.ts (Single Source of Truth)에서 관리
  * 이 스토어는 뷰포트/편집 상태만 관리
  *
  * @since 2025-12-11 Phase 10 B2.4
+ * @moved 2024-12-29 workspace/canvas/store/ → builder/stores/
  */
 
 import { create } from 'zustand';
 import { subscribeWithSelector } from 'zustand/middleware';
-import { useStore } from '../../../stores';
+import { useStore } from '.';
 
 // ============================================
 // Types
@@ -63,12 +64,12 @@ export const useCanvasStore = create<CanvasState>()(
 );
 
 // ============================================
-// Grid Settings (from settings.ts - Single Source of Truth)
+// Grid Settings (from canvasSettings.ts - Single Source of Truth)
 // ============================================
 
 /**
- * 그리드 설정 가져오기 (settings.ts에서)
- * canvasStore에서 중복 제거, settings.ts를 Single Source of Truth로 사용
+ * 그리드 설정 가져오기 (canvasSettings.ts에서)
+ * canvasStore에서 중복 제거, canvasSettings.ts를 Single Source of Truth로 사용
  */
 export function useCanvasGridSettings() {
   const showGrid = useStore((state) => state.showGrid);
@@ -79,7 +80,7 @@ export function useCanvasGridSettings() {
 }
 
 /**
- * 그리드 설정 변경 (settings.ts로 위임)
+ * 그리드 설정 변경 (canvasSettings.ts로 위임)
  */
 export function useCanvasSetGridSettings() {
   const setShowGrid = useStore((state) => state.setShowGrid);

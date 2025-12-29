@@ -13,7 +13,16 @@ export { BuilderCanvas, BuilderCanvasWithFlag } from './canvas/BuilderCanvas';
 
 // Stores
 export { useCanvasSyncStore, type CanvasSyncState, type GPUMetrics } from './canvas/canvasSync';
-export * from './canvas/store'; // B2.4: Direct Zustand Access
+export {
+  useCanvasStore,
+  useCanvasGridSettings,
+  useCanvasSetGridSettings,
+  useCanvasElements,
+  useCanvasSelectedElement,
+  useCanvasSelectedElementIds,
+  useCanvasUpdateElement,
+  useCanvasSetSelectedElement,
+} from '../stores/canvasStore'; // B2.4: Direct Zustand Access (moved to stores/)
 
 // Utils
 export {

@@ -9,7 +9,7 @@
  * 이 파일은 iframe 기반 Preview를 위한 것입니다.
  * WebGL Canvas (VITE_USE_WEBGL_CANVAS=true)에서는 사용되지 않습니다.
  *
- * @see src/builder/workspace/canvas/store/canvasStore.ts - 직접 스토어 접근 방식
+ * @see src/builder/stores/canvasStore.ts - 직접 스토어 접근 방식
  */
 
 import type { PreviewStoreState, PreviewElement, PreviewPage, PreviewLayout, ThemeVar, DataSource, RuntimeDataTable, RuntimeApiEndpoint, RuntimeVariable } from '../store/types';

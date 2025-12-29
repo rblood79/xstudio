@@ -1,3 +1,14 @@
+/**
+ * Canvas Settings Slice
+ *
+ * 빌더 캔버스 환경 설정 관리
+ * - viewMode, showOverlay, showGrid, snapToGrid, gridSize 등
+ *
+ * Renamed: settings.ts → canvasSettings.ts (Phase 2)
+ *
+ * @since 2024-12-29
+ */
+
 import { StateCreator } from "zustand";
 
 export interface HistoryInfo {
@@ -9,7 +20,9 @@ export interface HistoryInfo {
 
 /**
  * Settings 상태 인터페이스
- * 빌더 환경 설정 관리
+ * 빌더 캔버스 환경 설정 관리
+ *
+ * Note: themeMode, uiScale은 src/stores/uiStore.ts로 이관됨 (Phase 1)
  */
 export interface SettingsState {
   /** 빌더 뷰 모드 (기본값: 'canvas') */
@@ -36,12 +49,6 @@ export interface SettingsState {
   /** Overlay 투명도 (기본값: 100, 범위: 0-100) */
   overlayOpacity: number;
 
-  /** 테마 모드 (기본값: 'auto') */
-  themeMode: 'light' | 'dark' | 'auto';
-
-  /** UI 스케일 (기본값: 100, 범위: 80 | 100 | 120) */
-  uiScale: 80 | 100 | 120;
-
   /** History 정보 (Monitor에서 사용) */
   historyInfo: HistoryInfo;
 
@@ -66,12 +73,6 @@ export interface SettingsState {
   /** Overlay 투명도 설정 */
   setOverlayOpacity: (opacity: number) => void;
 
-  /** 테마 모드 설정 */
-  setThemeMode: (mode: 'light' | 'dark' | 'auto') => void;
-
-  /** UI 스케일 설정 */
-  setUiScale: (scale: 80 | 100 | 120) => void;
-
   /** History 정보 업데이트 */
   setHistoryInfo: (info: HistoryInfo) => void;
 
@@ -94,8 +95,6 @@ export const createSettingsSlice: StateCreator<SettingsState> = (set, get) => ({
   showElementBorders: false,
   showElementLabels: false,
   overlayOpacity: 100,
-  themeMode: 'auto',
-  uiScale: 100,
   historyInfo: {
     canUndo: false,
     canRedo: false,
@@ -150,20 +149,6 @@ export const createSettingsSlice: StateCreator<SettingsState> = (set, get) => ({
    */
   setOverlayOpacity: (opacity: number) => {
     set({ overlayOpacity: opacity });
-  },
-
-  /**
-   * 테마 모드 설정
-   */
-  setThemeMode: (mode: 'light' | 'dark' | 'auto') => {
-    set({ themeMode: mode });
-  },
-
-  /**
-   * UI 스케일 설정
-   */
-  setUiScale: (scale: 80 | 100 | 120) => {
-    set({ uiScale: scale });
   },
 
   /**

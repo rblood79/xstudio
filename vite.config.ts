@@ -1,4 +1,4 @@
-import { defineConfig } from "vitest/config";
+import { defineConfig } from "vite";
 import type { Connect, ViteDevServer } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import type { IncomingMessage, ServerResponse } from "http";
@@ -127,12 +127,6 @@ function apiProxyPlugin() {
 export default defineConfig(({ command }) => {
   return {
     plugins: [apiProxyPlugin(), react()],
-    test: {
-      // 기본 Vitest 설정
-      globals: true,
-      environment: "jsdom",
-      include: ["src/**/*.{test,spec}.{js,ts,jsx,tsx}"],
-    },
     base: command === "build" ? "/xstudio/" : "/",
     build: {
       // 브라우저 호환성 명시 (필요시)

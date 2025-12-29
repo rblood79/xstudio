@@ -7,7 +7,7 @@
 import React, { memo, useCallback, useMemo, useState } from "react";
 import type { Key } from "react-stately";
 import { Button } from "react-aria-components";
-import { CopyMinus } from "lucide-react";
+import { Minimize } from "lucide-react";
 import { useStore } from "../../stores";
 import { PanelHeader } from "../../components";
 import { LayerTree } from "./tree/LayerTree";
@@ -138,7 +138,7 @@ export const LayersSection = memo(function LayersSection({
             aria-label="Collapse All"
             onPress={handleCollapseAll}
           >
-            <CopyMinus
+            <Minimize
               color={iconProps.color}
               strokeWidth={iconProps.strokeWidth}
               size={iconProps.size}

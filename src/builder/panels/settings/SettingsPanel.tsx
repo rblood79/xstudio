@@ -27,6 +27,7 @@ import { useParams } from "react-router-dom";
 import type { PanelProps } from "../core/types";
 import { useStore } from "../../stores";
 import { useUnifiedThemeStore } from "../../../stores/themeStore";
+import { useUiStore } from "../../../stores/uiStore";
 import { saveService } from "../../../services/save";
 import {
   PropertySwitch,
@@ -66,11 +67,12 @@ function SettingsContent() {
   const overlayOpacity = useStore((state) => state.overlayOpacity);
   const setOverlayOpacity = useStore((state) => state.setOverlayOpacity);
 
-  const themeMode = useStore((state) => state.themeMode);
-  const setThemeMode = useStore((state) => state.setThemeMode);
+  // UI 설정 (글로벌 uiStore에서 가져옴 - Phase 1)
+  const themeMode = useUiStore((state) => state.themeMode);
+  const setThemeMode = useUiStore((state) => state.setThemeMode);
 
-  const uiScale = useStore((state) => state.uiScale);
-  const setUiScale = useStore((state) => state.setUiScale);
+  const uiScale = useUiStore((state) => state.uiScale);
+  const setUiScale = useUiStore((state) => state.setUiScale);
 
   // SaveMode 상태
   const isRealtimeMode = useStore((state) => state.isRealtimeMode);
