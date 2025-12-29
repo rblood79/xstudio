@@ -43,9 +43,8 @@
     transition: all 0.2s ease;
     stroke: var(--on-surface-variant);
     border-radius: 6px;
+
     svg {
-      stroke: inherit;
-      stroke-width: 1.5;
       transition: color 0.2s ease;
     }
   }
@@ -62,12 +61,14 @@
 
   /* Panel Slot */
   .panel-slot {
-    position: relative; /* 🔧 absolute 패널의 기준점 */
+    position: relative;
+    /* 🔧 absolute 패널의 기준점 */
     display: flex;
     flex-direction: row;
     height: 100%;
     width: 100%;
-    overflow: hidden; /* 🔧 화면 밖 패널 잘라내기 */
+    overflow: hidden;
+    /* 🔧 화면 밖 패널 잘라내기 */
   }
 
   /* NodesPanel 내부의 Sidebar에서 중복 네비게이션 숨김 */

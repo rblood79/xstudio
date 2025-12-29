@@ -7,7 +7,7 @@
  * 대부분의 UI 아이콘에 적용되는 기본 스타일
  */
 export const iconProps = {
-    color: 'var(--color-gray-500)',
+    color: 'var(--color-gray-400)',
     strokeWidth: 2,
     size: 16
 };

@@ -74,11 +74,12 @@ export function HistoryPanel({ isActive }: PanelProps) {
 }
 
 function HistoryPanelContent() {
-  const undo = useStore((state) => state.undo);
-  const redo = useStore((state) => state.redo);
+  const goToHistoryIndex = useStore((state) => state.goToHistoryIndex);
   const historyOperationInProgress = useStore(
     (state) => state.historyOperationInProgress
   );
+  const undo = useStore((state) => state.undo);
+  const redo = useStore((state) => state.redo);
 
   const [entries, setEntries] = useState<HistoryEntry[]>([]);
   const [historyInfo, setHistoryInfo] = useState(
@@ -124,19 +125,10 @@ function HistoryPanelContent() {
 
       if (targetIndex === currentIndex) return;
 
-      const steps = Math.abs(targetIndex - currentIndex);
-
-      if (targetIndex < currentIndex) {
-        for (let i = 0; i < steps; i += 1) {
-          await undo();
-        }
-      } else {
-        for (let i = 0; i < steps; i += 1) {
-          await redo();
-        }
-      }
+      // 한 번에 목표 인덱스로 이동 (중간 렌더링 없이)
+      await goToHistoryIndex(targetIndex);
     },
-    [historyOperationInProgress, redo, undo]
+    [historyOperationInProgress, goToHistoryIndex]
   );
 
   const displayEntries = useMemo<HistoryListItem[]>(() => {

@@ -7,7 +7,8 @@
 import React, { memo, useCallback, useState } from "react";
 import type { Key } from "react-stately";
 import { Button } from "react-aria-components";
-import { Plus } from "lucide-react";
+import { SquarePlus } from "lucide-react";
+import { iconProps } from "../../../utils/ui/uiConstants";
 import { useStore } from "../../stores";
 import { useIframeMessenger } from "../../hooks/useIframeMessenger";
 import { usePageManager } from "../../hooks/usePageManager";
@@ -128,7 +129,11 @@ export const PagesSection = memo(function PagesSection({
             aria-label="Add Page"
             onPress={handleAddPage}
           >
-            <Plus size={14} />
+            <SquarePlus
+              color={iconProps.color}
+              strokeWidth={iconProps.strokeWidth}
+              size={iconProps.size}
+            />
           </Button>
         }
       />

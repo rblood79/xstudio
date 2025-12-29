@@ -1348,3 +1348,501 @@ export const createRedoAction =
       set({ historyOperationInProgress: false });
     }
   };
+
+/**
+ * 특정 히스토리 인덱스로 직접 이동 (중간 렌더링 없이)
+ *
+ * historyManager.goToIndex로 모든 엔트리를 가져온 후
+ * 한 번에 상태를 업데이트하여 중간 과정이 화면에 표시되지 않도록 합니다.
+ *
+ * @param set - Zustand store의 set 함수
+ * @param get - Zustand store의 get 함수
+ * @returns goToHistoryIndex 함수 구현체
+ */
+export const createGoToHistoryIndexAction =
+  (set: SetState, get: GetState) => async (targetIndex: number) => {
+    try {
+      const state = get();
+      const { currentPageId } = state;
+      if (!currentPageId) return;
+
+      // 히스토리 작업 시작 표시
+      set({ historyOperationInProgress: true });
+
+      console.log("🎯 GoToHistoryIndex 시작:", { targetIndex });
+
+      // historyManager에서 모든 엔트리를 한 번에 가져옴
+      const result = historyManager.goToIndex(targetIndex);
+      if (!result) {
+        console.log("⚠️ GoToHistoryIndex: 이동할 엔트리 없음");
+        set({ historyOperationInProgress: false });
+        return;
+      }
+
+      const { entries, direction } = result;
+      console.log(`🔄 GoToHistoryIndex: ${entries.length}개 엔트리 ${direction}`);
+
+      // 현재 상태를 가져와서 누적 업데이트
+      let updatedElements = state.elements;
+      let updatedSelectedElementId = state.selectedElementId;
+      let updatedSelectedElementProps = state.selectedElementProps;
+
+      // 모든 엔트리를 순차적으로 메모리에 적용 (렌더링 없이)
+      for (const entry of entries) {
+        const applyResult = applyHistoryEntry(
+          entry,
+          direction,
+          updatedElements,
+          updatedSelectedElementId,
+          updatedSelectedElementProps
+        );
+        updatedElements = applyResult.elements;
+        updatedSelectedElementId = applyResult.selectedElementId;
+        updatedSelectedElementProps = applyResult.selectedElementProps;
+      }
+
+      // 최종 상태 한 번에 업데이트 (렌더링은 여기서만 발생)
+      set({
+        elements: updatedElements,
+        selectedElementId: updatedSelectedElementId,
+        selectedElementProps: updatedSelectedElementProps,
+      });
+
+      // elementsMap 재구축
+      get()._rebuildIndexes();
+
+      // iframe 업데이트
+      const isWebGLOnly = isWebGLCanvas() && !isCanvasCompareMode();
+      if (!isWebGLOnly && typeof window !== "undefined" && window.parent) {
+        try {
+          const currentElements = get().elements;
+          window.parent.postMessage(
+            {
+              type: "ELEMENTS_UPDATED",
+              payload: { elements: currentElements.map(sanitizeElement) },
+            },
+            "*"
+          );
+        } catch (error) {
+          console.warn("postMessage 직렬화 실패:", error);
+        }
+      }
+
+      // 데이터베이스 동기화 (마지막 상태만)
+      await syncDatabaseForEntries(entries, direction, get);
+
+      console.log("✅ GoToHistoryIndex 완료");
+
+      // order_num 재정렬
+      const { elements, updateElementOrder } = get();
+      if (currentPageId) {
+        setTimeout(() => {
+          reorderElements(elements, currentPageId, updateElementOrder);
+        }, 100);
+      }
+    } catch (error) {
+      console.error("GoToHistoryIndex 시 오류:", error);
+    } finally {
+      set({ historyOperationInProgress: false });
+    }
+  };
+
+/**
+ * 히스토리 엔트리를 메모리 상태에 적용 (렌더링 없이)
+ */
+function applyHistoryEntry(
+  entry: ReturnType<typeof historyManager.undo>,
+  direction: 'undo' | 'redo',
+  elements: Element[],
+  selectedElementId: string | null,
+  selectedElementProps: ComponentElementProps
+): {
+  elements: Element[];
+  selectedElementId: string | null;
+  selectedElementProps: ComponentElementProps;
+} {
+  if (!entry) {
+    return { elements, selectedElementId, selectedElementProps };
+  }
+
+  let updatedElements = elements;
+  let updatedSelectedElementId = selectedElementId;
+  let updatedSelectedElementProps = selectedElementProps;
+
+  if (direction === 'undo') {
+    switch (entry.type) {
+      case "add": {
+        // 추가된 요소 제거
+        const elementIdsToRemove = [entry.elementId];
+        if (entry.data.childElements?.length) {
+          elementIdsToRemove.push(...entry.data.childElements.map((child: Element) => child.id));
+        }
+        updatedElements = elements.filter((el) => !elementIdsToRemove.includes(el.id));
+        if (elementIdsToRemove.includes(selectedElementId || "")) {
+          updatedSelectedElementId = null;
+          updatedSelectedElementProps = {};
+        }
+        break;
+      }
+
+      case "update": {
+        const prevProps = entry.data.prevProps ? cloneForHistory(entry.data.prevProps) : null;
+        const prevElement = entry.data.prevElement ? cloneForHistory(entry.data.prevElement) : null;
+        const elementIndex = elements.findIndex((el) => el.id === entry.elementId);
+        if (elementIndex >= 0 && prevProps) {
+          updatedElements = elements.map((el, i) =>
+            i === elementIndex ? { ...el, props: prevProps } : el
+          );
+          if (selectedElementId === entry.elementId) {
+            const restoredElement = { ...elements[elementIndex], props: prevProps };
+            updatedSelectedElementProps = createCompleteProps(restoredElement, prevProps);
+          }
+        } else if (elementIndex >= 0 && prevElement) {
+          updatedElements = elements.map((el, i) =>
+            i === elementIndex ? { ...el, ...prevElement } : el
+          );
+        }
+        break;
+      }
+
+      case "remove": {
+        // 삭제된 요소 복원 (중복 방지)
+        const elementsToRestore: Element[] = [];
+        const existingIds = new Set(elements.map(el => el.id));
+        if (entry.data.element && !existingIds.has(entry.data.element.id)) {
+          elementsToRestore.push(cloneForHistory(entry.data.element));
+          existingIds.add(entry.data.element.id);
+        }
+        if (entry.data.childElements?.length) {
+          for (const child of entry.data.childElements) {
+            if (!existingIds.has(child.id)) {
+              elementsToRestore.push(cloneForHistory(child));
+              existingIds.add(child.id);
+            }
+          }
+        }
+        updatedElements = [...elements, ...elementsToRestore];
+        break;
+      }
+
+      case "batch": {
+        if (entry.data.batchUpdates) {
+          const updateMap = new Map<string, ComponentElementProps>();
+          entry.data.batchUpdates.forEach((update: { elementId: string; prevProps: ComponentElementProps }) => {
+            updateMap.set(update.elementId, update.prevProps);
+          });
+          updatedElements = elements.map((el) => {
+            const prevPropsForEl = updateMap.get(el.id);
+            return prevPropsForEl ? { ...el, props: prevPropsForEl } : el;
+          });
+          const selectedPrevProps = updateMap.get(selectedElementId || "");
+          if (selectedPrevProps) {
+            const selectedEl = updatedElements.find((el) => el.id === selectedElementId);
+            if (selectedEl) {
+              updatedSelectedElementProps = createCompleteProps(selectedEl, selectedPrevProps);
+            }
+          }
+        }
+        break;
+      }
+
+      case "group": {
+        // 그룹 삭제 + 자식들 원래 parent로
+        let filteredElements = elements.filter((el) => el.id !== entry.elementId);
+        if (entry.data.elements) {
+          const childUpdates = new Map<string, { parent_id: string | null; order_num: number }>();
+          entry.data.elements.forEach((prevChild: Element) => {
+            childUpdates.set(prevChild.id, {
+              parent_id: prevChild.parent_id ?? null,
+              order_num: prevChild.order_num || 0,
+            });
+          });
+          filteredElements = filteredElements.map((el) => {
+            const update = childUpdates.get(el.id);
+            return update ? { ...el, parent_id: update.parent_id, order_num: update.order_num } : el;
+          });
+        }
+        updatedElements = filteredElements;
+        if (selectedElementId === entry.elementId) {
+          updatedSelectedElementId = null;
+          updatedSelectedElementProps = {};
+        }
+        break;
+      }
+
+      case "ungroup": {
+        // 그룹 복원 + 자식들 그룹 안으로 (중복 방지)
+        const elementsToRestore: Element[] = [];
+        const existingIdsForUngroup = new Set(elements.map(el => el.id));
+        if (entry.data.element && !existingIdsForUngroup.has(entry.data.element.id)) {
+          elementsToRestore.push(cloneForHistory(entry.data.element));
+        }
+        let restoredElements = [...elements, ...elementsToRestore];
+        if (entry.data.elements) {
+          const childUpdates = new Map<string, { order_num: number }>();
+          entry.data.elements.forEach((prevChild: Element) => {
+            childUpdates.set(prevChild.id, { order_num: prevChild.order_num || 0 });
+          });
+          restoredElements = restoredElements.map((el) => {
+            const update = childUpdates.get(el.id);
+            return update ? { ...el, parent_id: entry.elementId, order_num: update.order_num } : el;
+          });
+        }
+        updatedElements = restoredElements;
+        break;
+      }
+    }
+  } else {
+    // Redo 방향
+    switch (entry.type) {
+      case "add": {
+        // 요소 추가 (중복 방지)
+        const existingIdsForAdd = new Set(elements.map(el => el.id));
+        const elementsToAdd: Element[] = [];
+        if (entry.data.element && !existingIdsForAdd.has(entry.data.element.id)) {
+          elementsToAdd.push(cloneForHistory(entry.data.element));
+          existingIdsForAdd.add(entry.data.element.id);
+        }
+        if (entry.data.childElements?.length) {
+          for (const child of entry.data.childElements) {
+            if (!existingIdsForAdd.has(child.id)) {
+              elementsToAdd.push(cloneForHistory(child));
+              existingIdsForAdd.add(child.id);
+            }
+          }
+        }
+        updatedElements = [...elements, ...elementsToAdd];
+        break;
+      }
+
+      case "update": {
+        const propsToUpdate = entry.data.props ? cloneForHistory(entry.data.props) : null;
+        const elementIndex = elements.findIndex((el) => el.id === entry.elementId);
+        if (elementIndex >= 0 && propsToUpdate) {
+          updatedElements = elements.map((el, i) =>
+            i === elementIndex ? { ...el, props: { ...el.props, ...propsToUpdate } } : el
+          );
+        }
+        break;
+      }
+
+      case "remove": {
+        const elementIdsToRemove = [entry.elementId];
+        if (entry.data.childElements?.length) {
+          elementIdsToRemove.push(...entry.data.childElements.map((child: Element) => child.id));
+        }
+        updatedElements = elements.filter((el) => !elementIdsToRemove.includes(el.id));
+        if (elementIdsToRemove.includes(selectedElementId || "")) {
+          updatedSelectedElementId = null;
+          updatedSelectedElementProps = {};
+        }
+        break;
+      }
+
+      case "batch": {
+        if (entry.data.batchUpdates) {
+          const updateMap = new Map<string, ComponentElementProps>();
+          entry.data.batchUpdates.forEach((update: { elementId: string; newProps: ComponentElementProps }) => {
+            updateMap.set(update.elementId, update.newProps);
+          });
+          updatedElements = elements.map((el) => {
+            const newPropsForEl = updateMap.get(el.id);
+            return newPropsForEl ? { ...el, props: { ...el.props, ...newPropsForEl } } : el;
+          });
+          const selectedNewProps = updateMap.get(selectedElementId || "");
+          if (selectedNewProps) {
+            const selectedEl = updatedElements.find((el) => el.id === selectedElementId);
+            if (selectedEl) {
+              updatedSelectedElementProps = createCompleteProps(
+                selectedEl,
+                { ...selectedEl.props, ...selectedNewProps }
+              );
+            }
+          }
+        }
+        break;
+      }
+
+      case "group": {
+        // 그룹 요소 추가 (중복 방지)
+        const existingIdsForGroup = new Set(elements.map(el => el.id));
+        const elementsToAdd: Element[] = [];
+        if (entry.data.element && !existingIdsForGroup.has(entry.data.element.id)) {
+          elementsToAdd.push(cloneForHistory(entry.data.element));
+        }
+        let newElements = [...elements, ...elementsToAdd];
+        if (entry.data.elements) {
+          const childUpdates = new Map<string, { order_num: number }>();
+          entry.data.elements.forEach((prevChild: Element) => {
+            childUpdates.set(prevChild.id, { order_num: prevChild.order_num || 0 });
+          });
+          newElements = newElements.map((el) => {
+            const update = childUpdates.get(el.id);
+            return update ? { ...el, parent_id: entry.elementId, order_num: update.order_num } : el;
+          });
+        }
+        updatedElements = newElements;
+        break;
+      }
+
+      case "ungroup": {
+        let filteredElements = elements.filter((el) => el.id !== entry.elementId);
+        if (entry.data.elements) {
+          const childUpdates = new Map<string, { parent_id: string | null; order_num: number }>();
+          entry.data.elements.forEach((prevChild: Element) => {
+            childUpdates.set(prevChild.id, {
+              parent_id: prevChild.parent_id ?? null,
+              order_num: prevChild.order_num || 0,
+            });
+          });
+          filteredElements = filteredElements.map((el) => {
+            const update = childUpdates.get(el.id);
+            return update ? { ...el, parent_id: update.parent_id, order_num: update.order_num } : el;
+          });
+        }
+        updatedElements = filteredElements;
+        if (selectedElementId === entry.elementId) {
+          updatedSelectedElementId = null;
+          updatedSelectedElementProps = {};
+        }
+        break;
+      }
+    }
+  }
+
+  return {
+    elements: updatedElements,
+    selectedElementId: updatedSelectedElementId,
+    selectedElementProps: updatedSelectedElementProps,
+  };
+}
+
+/**
+ * 마지막 상태를 기준으로 데이터베이스 동기화 (배치)
+ */
+async function syncDatabaseForEntries(
+  entries: ReturnType<typeof historyManager.undo>[],
+  direction: 'undo' | 'redo',
+  get: GetState
+): Promise<void> {
+  // 마지막 엔트리의 최종 상태만 DB에 동기화
+  // 모든 중간 엔트리를 개별적으로 동기화하는 대신
+  // 최종 elements 상태가 이미 메모리에 적용되어 있으므로
+  // 변경된 요소들만 DB에 업데이트
+
+  const db = await getDB();
+  const currentElements = get().elements;
+  const elementsMap = get().elementsMap;
+
+  // 영향받은 요소 ID 수집
+  const affectedElementIds = new Set<string>();
+  const removedElementIds = new Set<string>();
+
+  for (const entry of entries) {
+    if (!entry) continue;
+
+    if (direction === 'undo') {
+      switch (entry.type) {
+        case "add":
+          removedElementIds.add(entry.elementId);
+          entry.data.childElements?.forEach((child: Element) => removedElementIds.add(child.id));
+          break;
+        case "update":
+        case "batch":
+          affectedElementIds.add(entry.elementId);
+          entry.elementIds?.forEach(id => affectedElementIds.add(id));
+          entry.data.batchUpdates?.forEach((u: { elementId: string }) => affectedElementIds.add(u.elementId));
+          break;
+        case "remove":
+          affectedElementIds.add(entry.elementId);
+          entry.data.childElements?.forEach((child: Element) => affectedElementIds.add(child.id));
+          break;
+        case "group":
+          removedElementIds.add(entry.elementId);
+          entry.data.elements?.forEach((el: Element) => affectedElementIds.add(el.id));
+          break;
+        case "ungroup":
+          affectedElementIds.add(entry.elementId);
+          entry.data.elements?.forEach((el: Element) => affectedElementIds.add(el.id));
+          break;
+      }
+    } else {
+      switch (entry.type) {
+        case "add":
+          affectedElementIds.add(entry.elementId);
+          entry.data.childElements?.forEach((child: Element) => affectedElementIds.add(child.id));
+          break;
+        case "update":
+        case "batch":
+          affectedElementIds.add(entry.elementId);
+          entry.elementIds?.forEach(id => affectedElementIds.add(id));
+          entry.data.batchUpdates?.forEach((u: { elementId: string }) => affectedElementIds.add(u.elementId));
+          break;
+        case "remove":
+          removedElementIds.add(entry.elementId);
+          entry.data.childElements?.forEach((child: Element) => removedElementIds.add(child.id));
+          break;
+        case "group":
+          affectedElementIds.add(entry.elementId);
+          entry.data.elements?.forEach((el: Element) => affectedElementIds.add(el.id));
+          break;
+        case "ungroup":
+          removedElementIds.add(entry.elementId);
+          entry.data.elements?.forEach((el: Element) => affectedElementIds.add(el.id));
+          break;
+      }
+    }
+  }
+
+  try {
+    // 삭제된 요소 처리
+    if (removedElementIds.size > 0) {
+      await db.elements.deleteMany([...removedElementIds]);
+      try {
+        await supabase.from("elements").delete().in("id", [...removedElementIds]);
+      } catch {
+        // 로컬 전용 프로젝트 - Supabase 동기화 건너뜀
+      }
+    }
+
+    // 업데이트/추가된 요소 처리
+    const elementsToUpsert: Element[] = [];
+    for (const id of affectedElementIds) {
+      if (removedElementIds.has(id)) continue;
+      const element = getElementById(elementsMap, id);
+      if (element) {
+        elementsToUpsert.push(element);
+      }
+    }
+
+    if (elementsToUpsert.length > 0) {
+      // IndexedDB 업데이트
+      for (const el of elementsToUpsert) {
+        await db.elements.put(sanitizeElement(el));
+      }
+
+      // Supabase 업데이트 (로컬 전용 프로젝트에서는 skip)
+      const pageId = elementsToUpsert[0]?.page_id;
+      if (pageId) {
+        try {
+          const { data: pageExists, error: pageError } = await supabase
+            .from("pages")
+            .select("id")
+            .eq("id", pageId)
+            .single();
+
+          if (!pageError && pageExists) {
+            const sanitizedElements = elementsToUpsert.map((el) => sanitizeElementForSupabase(el));
+            await supabase.from("elements").upsert(sanitizedElements, { onConflict: 'id' });
+          }
+        } catch {
+          // 로컬 전용 프로젝트 - Supabase 동기화 건너뜀
+        }
+      }
+    }
+
+    console.log(`✅ GoToHistoryIndex DB 동기화 완료: ${removedElementIds.size}개 삭제, ${elementsToUpsert.length}개 업데이트`);
+  } catch (error) {
+    console.warn("⚠️ GoToHistoryIndex DB 동기화 실패:", error);
+  }
+}

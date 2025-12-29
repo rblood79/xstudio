@@ -152,13 +152,13 @@ export const DEFAULT_PANEL_LAYOUT: PanelLayoutState = {
     'datatable',
     'datatableEditor',  // DataTable 에디터 (datatable과 함께 사용)
     'theme',
-    'ai',
     'settings',
   ],
   rightPanels: [
     'properties',
     'styles',
     'events',
+    'ai',
     'history',
   ],
   activeLeftPanels: ['nodes'], // Multi toggle 지원: 배열

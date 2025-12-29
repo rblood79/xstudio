@@ -11,7 +11,7 @@ import {
   createCompleteProps,
   findElementById,
 } from "./utils/elementHelpers";
-import { createUndoAction, createRedoAction } from "./history/historyActions";
+import { createUndoAction, createRedoAction, createGoToHistoryIndexAction } from "./history/historyActions";
 import { createRemoveElementAction } from "./utils/elementRemoval";
 import {
   createAddElementAction,
@@ -87,6 +87,7 @@ export interface ElementsState {
   setCurrentPageId: (pageId: string) => void;
   undo: () => Promise<void>;
   redo: () => Promise<void>;
+  goToHistoryIndex: (targetIndex: number) => Promise<void>;
   removeElement: (elementId: string) => Promise<void>;
   removeTabPair: (elementId: string) => void;
   addComplexElement: (
@@ -105,9 +106,10 @@ export interface ElementsState {
 }
 
 export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
-  // undo/redo 함수 생성
+  // undo/redo/goToHistoryIndex 함수 생성
   const undo = createUndoAction(set, get);
   const redo = createRedoAction(set, get);
+  const goToHistoryIndex = createGoToHistoryIndexAction(set, get);
 
   // removeElement 함수 생성
   const removeElement = createRemoveElementAction(set, get);
@@ -392,6 +394,8 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
   undo,
 
   redo,
+
+  goToHistoryIndex,
 
   removeElement,
 

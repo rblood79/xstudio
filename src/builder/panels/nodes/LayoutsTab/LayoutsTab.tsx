@@ -5,9 +5,10 @@
  * Layout 목록과 현재 Layout의 Element 트리를 표시.
  */
 
+
 import React, { useCallback, useEffect, useMemo } from "react";
 import { useParams } from "react-router-dom";
-import { CirclePlus, CopyMinus, ChevronRight, Box, Trash, Settings2 } from "lucide-react";
+import { SquarePlus, Minimize, ChevronRight, Box, Trash, Settings2 } from "lucide-react";
 import { iconProps } from "../../../../utils/ui/uiConstants";
 import { useLayoutsStore } from "../../../stores/layouts";
 import { useEditModeStore } from "../../../stores/editMode";
@@ -428,7 +429,7 @@ export function LayoutsTab({
               aria-label="Add Layout"
               onClick={handleAddLayout}
             >
-              <CirclePlus
+              <SquarePlus
                 color={iconProps.color}
                 strokeWidth={iconProps.strokeWidth}
                 size={iconProps.size}
@@ -495,7 +496,7 @@ export function LayoutsTab({
               aria-label="Collapse All"
               onClick={() => collapseLayoutTree()}
             >
-              <CopyMinus
+              <Minimize
                 color={iconProps.color}
                 strokeWidth={iconProps.strokeWidth}
                 size={iconProps.size}

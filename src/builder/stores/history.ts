@@ -480,6 +480,47 @@ export class HistoryManager {
     }
 
     /**
+     * 특정 인덱스로 직접 이동 (중간 렌더링 없이)
+     *
+     * @param targetIndex 목표 인덱스 (-1은 시작 상태)
+     * @returns 적용할 엔트리들과 방향 정보
+     */
+    goToIndex(targetIndex: number): { entries: HistoryEntry[]; direction: 'undo' | 'redo' } | null {
+        if (!this.currentPageId) return null;
+
+        const pageHistory = this.pageHistories.get(this.currentPageId);
+        if (!pageHistory) return null;
+
+        const currentIndex = pageHistory.currentIndex;
+        if (targetIndex === currentIndex) return null;
+
+        // 유효한 범위 확인
+        if (targetIndex < -1 || targetIndex >= pageHistory.entries.length) return null;
+
+        const entries: HistoryEntry[] = [];
+
+        if (targetIndex < currentIndex) {
+            // Undo 방향: 현재 인덱스부터 목표+1까지 역순으로 수집
+            for (let i = currentIndex; i > targetIndex; i--) {
+                entries.push(pageHistory.entries[i]);
+            }
+            pageHistory.currentIndex = targetIndex;
+            this.updateIndexedDBMeta(this.currentPageId, pageHistory);
+            this.notifyListeners();
+            return { entries, direction: 'undo' };
+        } else {
+            // Redo 방향: 현재+1부터 목표까지 순차적으로 수집
+            for (let i = currentIndex + 1; i <= targetIndex; i++) {
+                entries.push(pageHistory.entries[i]);
+            }
+            pageHistory.currentIndex = targetIndex;
+            this.updateIndexedDBMeta(this.currentPageId, pageHistory);
+            this.notifyListeners();
+            return { entries, direction: 'redo' };
+        }
+    }
+
+    /**
      * 🆕 Phase 3: IndexedDB 메타데이터 업데이트 (백그라운드)
      */
     private updateIndexedDBMeta(pageId: string, pageHistory: PageHistory): void {

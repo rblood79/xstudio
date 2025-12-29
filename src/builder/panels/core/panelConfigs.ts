@@ -116,9 +116,9 @@ export const PANEL_CONFIGS: PanelConfig[] = [
     icon: Bot,
     component: AIPanel,
     category: "tool",
-    defaultPosition: "left",
-    minWidth: 490,
-    maxWidth: 490,
+    defaultPosition: "right",
+    minWidth: 233,
+    maxWidth: 233,
     description: "AI 도구 및 제안",
   },
 
@@ -209,9 +209,16 @@ export const PANEL_CONFIGS: PanelConfig[] = [
  * PanelRegistry에 모든 패널 등록
  */
 export function registerAllPanels() {
+  // 이미 초기화된 경우 건너뛰기 (HMR/Strict Mode 대응)
+  if (PanelRegistry.isInitialized) {
+    return;
+  }
+
   PANEL_CONFIGS.forEach((config) => {
     PanelRegistry.register(config);
   });
+
+  PanelRegistry.markInitialized();
 }
 
 // 앱 시작 시 자동 등록

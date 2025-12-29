@@ -7,7 +7,7 @@
 
 import type { PanelSide, PanelId } from "../panels/core/types";
 import { PanelRegistry } from "../panels/core/PanelRegistry";
-import { iconProps } from "../../utils/ui/uiConstants";
+import { iconProps, iconPropsOn } from "../../utils/ui/uiConstants";
 
 export interface PanelNavProps {
   /** 현재 사이드 (left/right) */
@@ -48,9 +48,9 @@ export function PanelNav({
                 aria-label={panelConfig.name}
               >
                 <Icon
-                  color={iconProps.color}
-                  strokeWidth={iconProps.strokeWidth}
-                  size={iconProps.size}
+                  color={isActive ? iconPropsOn.color : iconProps.color}
+                  strokeWidth={isActive ? iconPropsOn.strokeWidth : iconProps.strokeWidth}
+                  size={isActive ? iconPropsOn.size : iconProps.size}
                 />
               </button>
             </li>
