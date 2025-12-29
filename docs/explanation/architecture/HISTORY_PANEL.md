@@ -267,7 +267,7 @@ Photoshop Web 벤치마크 기반으로 정리한 히스토리 패널의 설계�
 ## 알려진 제약/갭
 
 - `move` 엔트리는 현재 생성 경로가 없어 라벨/표시만 준비된 상태.
-- 리스트 점프는 undo/redo 반복 호출 방식이라 엔트리 수가 많을 때 느릴 수 있음.
+- ~~리스트 점프는 undo/redo 반복 호출 방식이라 엔트리 수가 많을 때 느릴 수 있음.~~ → **해결됨 (2025-12-29)**
 - 썸네일/미리보기 스냅샷 없음.
 - 검색/필터링/분류 없음.
 - 개별 엔트리 삭제 없음(전체 초기화만 제공).
@@ -290,10 +290,52 @@ Photoshop Web 벤치마크 기반으로 정리한 히스토리 패널의 설계�
 
 ### P2 (중장기)
 
-- 대량 점프 단일 복원 API
+- ~~대량 점프 단일 복원 API~~ → **구현됨 (2025-12-29)**
 - 버전 히스토리와 분리된 탭 제공
 - 협업 사용자 태그/필터
 - 히스토리 로그 내보내기
+
+---
+
+## 구현 완료 항목
+
+### 배치 히스토리 점프 (2025-12-29)
+
+#### 문제
+- 히스토리 항목 클릭 시 for 루프로 undo/redo를 한 단계씩 호출
+- 각 단계마다 UI가 업데이트되어 중간 상태가 눈에 보임
+
+#### 해결
+
+**1. History Manager 확장 (`history.ts`)**
+```typescript
+goToIndex(targetIndex: number): { entries: HistoryEntry[]; direction: 'undo' | 'redo' } | null {
+  // 현재 인덱스와 타겟 사이의 모든 엔트리를 한 번에 반환
+  // 인덱스는 원자적으로 업데이트 (중간 렌더링 없음)
+}
+```
+
+**2. 배치 히스토리 액션 (`historyActions.ts`)**
+```typescript
+createGoToHistoryIndexAction() {
+  // 모든 엔트리를 한 번에 적용
+  // Set 기반 중복 방지로 duplicate key 에러 해결
+}
+```
+
+**3. HistoryPanel 업데이트**
+```typescript
+const handleJumpToIndex = useCallback(async (targetIndex: number) => {
+  await goToHistoryIndex(targetIndex); // 단일 호출
+}, [goToHistoryIndex]);
+```
+
+#### 성능 개선
+
+| 시나리오 | 이전 | 이후 |
+|---------|------|------|
+| 10단계 점프 | 10회 렌더링 | 1회 렌더링 |
+| 중간 상태 노출 | 눈에 보임 | 즉시 전환 |
 
 ## 다음 단계
 

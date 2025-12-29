@@ -7,6 +7,119 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Removed - Save Mode, Preview & Overlay, Element Visualization 설정 제거 (2025-12-29)
+
+#### 개요
+WebGL Canvas 전환 및 로컬 우선(Local-first) 아키텍처 변경에 따라 더 이상 필요 없어진 설정 항목들을 제거
+
+#### 제거된 설정
+1. **Save Mode** - Supabase 실시간 동기화 제거로 불필요
+2. **Preview & Overlay** - WebGL Canvas에서 오버레이 불투명도 설정 불필요
+3. **Element Visualization** - iframe 기반 테두리/라벨 표시 WebGL 전환으로 불필요
+
+#### 변경된 파일
+
+**SettingsPanel 정리:**
+- `src/builder/panels/settings/SettingsPanel.tsx` - 3개 섹션 제거, Grid & Guides와 Theme & Appearance만 유지
+
+**SaveService 단순화:**
+- `src/services/save/saveService.ts` - 항상 IndexedDB에 즉시 저장하도록 단순화
+- 삭제: `isRealtimeMode`, `pendingChanges`, `saveAllPendingChanges`, `syncToCloud` 로직
+
+**Store 상태 정리:**
+- `src/builder/stores/saveMode.ts` - **파일 삭제**
+- `src/builder/stores/canvasSettings.ts` - `showOverlay`, `overlayOpacity`, `showElementBorders`, `showElementLabels` 제거
+- `src/builder/stores/index.ts` - `SaveModeState` 슬라이스 제거
+
+**레거시 컴포넌트 정리:**
+- `src/builder/main/BuilderCore.tsx` - `showOverlay` 조건부 렌더링 제거
+- `src/builder/main/BuilderCanvas.tsx` - element visualization 로직 제거 + `@deprecated` 표시
+- `src/builder/overlay/index.tsx` - `overlayOpacity` 참조 제거
+
+#### 아키텍처 변경 배경
+- **WebGL Canvas 전환**: iframe 기반 Preview에서 WebGL 기반 캔버스로 전환
+- **로컬 우선 저장**: Supabase 실시간 동기화에서 IndexedDB 로컬 저장으로 변경
+- **선택 시스템 통합**: WebGL SelectionLayer가 요소 테두리/라벨 표시 담당
+
+---
+
+### Optimized - History Panel 배치 점프 최적화 (2025-12-29)
+
+#### 개요
+History Panel에서 복구 포인트 선택 시 중간 과정이 보이는 문제 해결
+
+#### 문제
+- 히스토리 항목 클릭 시 `for` 루프로 undo/redo를 한 단계씩 호출
+- 각 단계마다 UI가 업데이트되어 중간 상태가 눈에 보임
+
+#### 해결
+
+**1. History Manager 확장**
+```typescript
+// src/builder/stores/history.ts
+goToIndex(targetIndex: number): { entries: HistoryEntry[]; direction: 'undo' | 'redo' } | null {
+  // 현재 인덱스와 타겟 사이의 모든 엔트리를 한 번에 반환
+  // 인덱스는 원자적으로 업데이트 (중간 렌더링 없음)
+}
+```
+
+**2. 배치 히스토리 액션**
+```typescript
+// src/builder/stores/history/historyActions.ts
+createGoToHistoryIndexAction() {
+  // 모든 엔트리를 한 번에 적용
+  // Set 기반 중복 방지로 duplicate key 에러 해결
+  // Supabase 에러 try-catch 처리
+}
+```
+
+**3. HistoryPanel 업데이트**
+```typescript
+// src/builder/panels/history/HistoryPanel.tsx
+const handleJumpToIndex = useCallback(async (targetIndex: number) => {
+  // 기존: for 루프로 undo/redo 반복
+  // 변경: goToHistoryIndex(targetIndex) 단일 호출
+  await goToHistoryIndex(targetIndex);
+}, [goToHistoryIndex]);
+```
+
+#### 수정된 파일
+- `src/builder/stores/history.ts` - `goToIndex` 메서드 추가
+- `src/builder/stores/history/historyActions.ts` - `createGoToHistoryIndexAction` 추가
+- `src/builder/stores/elements.ts` - `goToHistoryIndex` 액션 export
+- `src/builder/panels/history/HistoryPanel.tsx` - 배치 점프 사용
+
+#### 성능 개선
+
+| 시나리오 | 이전 | 이후 |
+|---------|------|------|
+| 10단계 점프 | 10회 렌더링 | 1회 렌더링 |
+| 중간 상태 노출 | 눈에 보임 | 즉시 전환 |
+| 사용자 경험 | 깜빡임 | 부드러움 |
+
+---
+
+### Fixed - PanelRegistry 중복 등록 경고 (2025-12-29)
+
+#### 문제
+HMR 또는 React StrictMode에서 패널이 중복 등록되어 콘솔 경고 발생
+
+#### 해결
+```typescript
+// src/builder/panels/core/panelConfigs.ts
+export function registerAllPanels() {
+  if (PanelRegistry.isInitialized) {
+    return; // 이미 등록된 경우 스킵
+  }
+  PANEL_CONFIGS.forEach((config) => {
+    PanelRegistry.register(config);
+  });
+  PanelRegistry.markInitialized();
+}
+```
+
+---
+
 ### Refactored - Keyboard Shortcuts 시스템 전면 재설계 (2025-12-29)
 
 #### 개요

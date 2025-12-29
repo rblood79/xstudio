@@ -1,5 +1,23 @@
 # 💾 저장 모드 동작 설명
 
+> **⚠️ DEPRECATED (2025-12-29)**
+>
+> 이 문서는 더 이상 유효하지 않습니다.
+>
+> **변경 사유:**
+> - WebGL Canvas 전환 및 로컬 우선(Local-first) 아키텍처로 변경
+> - Supabase 실시간 동기화 제거
+> - 모든 변경사항은 IndexedDB에 즉시 저장됨
+>
+> **관련 변경:**
+> - `src/builder/stores/saveMode.ts` - 삭제됨
+> - `src/services/save/saveService.ts` - IndexedDB 전용으로 단순화
+> - Settings Panel에서 Save Mode 섹션 제거
+>
+> **현재 동작:** 모든 변경사항은 IndexedDB에 즉시 저장됩니다. 실시간/수동 모드 구분이 없습니다.
+
+---
+
 ## 🎯 설계 의도
 
 ### 1. **속성 변경** → 실시간/수동 모드 선택 가능

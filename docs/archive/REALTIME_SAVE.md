@@ -1,5 +1,26 @@
 # 실시간 저장 모드 기능 구현 완료 ✅
 
+> **⚠️ DEPRECATED (2025-12-29)**
+>
+> 이 문서는 더 이상 유효하지 않습니다.
+>
+> **변경 사유:**
+> - WebGL Canvas 전환 및 로컬 우선(Local-first) 아키텍처로 변경
+> - Supabase 실시간 동기화 제거
+> - 모든 변경사항은 IndexedDB에 즉시 저장됨
+>
+> **관련 변경:**
+> - `src/builder/stores/saveMode.ts` - 삭제됨
+> - `src/services/save/saveService.ts` - IndexedDB 전용으로 단순화
+> - Settings Panel에서 Save Mode 섹션 제거
+> - BuilderHeader에서 Save Mode Switch 제거
+>
+> **현재 동작:** 모든 변경사항은 IndexedDB에 즉시 저장됩니다.
+>
+> **참고:** [SAVESERVICE.md](../reference/components/SAVESERVICE.md)
+
+---
+
 ## 📋 구현 내용
 
 ### 1️⃣ **Zustand Store에 SaveMode 상태 추가**
