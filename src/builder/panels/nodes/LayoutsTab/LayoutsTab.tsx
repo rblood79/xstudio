@@ -351,13 +351,15 @@ export function LayoutsTab({
                         : item.tag}
                     </div>
                     <div className="elementItemActions">
-                      <button className="iconButton" aria-label="Settings">
-                        <Settings2
-                          color={iconProps.color}
-                          strokeWidth={iconProps.strokeWidth}
-                          size={iconProps.size}
-                        />
-                      </button>
+                      {item.tag === "body" && (
+                        <button className="iconButton" aria-label="Settings">
+                          <Settings2
+                            color={iconProps.color}
+                            strokeWidth={iconProps.strokeWidth}
+                            size={iconProps.size}
+                          />
+                        </button>
+                      )}
                       {/* body 요소가 아닐 때만 삭제 버튼 표시 */}
                       {item.tag !== "body" && (
                         <button

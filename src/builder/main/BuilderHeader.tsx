@@ -77,7 +77,7 @@ export const BuilderHeader: React.FC<BuilderHeaderProps> = ({
   return (
     <nav className="header">
       <div className="header_contents header_left">
-        <button aria-label="Menu">
+        <button aria-label="menu">
           <Menu strokeWidth={iconProps.strokeWidth} size={iconProps.size} />
         </button>
         <div className="logo-container">
@@ -243,7 +243,11 @@ export const BuilderHeader: React.FC<BuilderHeaderProps> = ({
               size={iconProps.size}
             />
           </ToggleButton>
-          <ToggleButton id="settings" aria-label="Settings" onPress={() => openPanelAsModal('settings')}>
+          <ToggleButton
+            id="settings"
+            aria-label="Settings"
+            onPress={() => openPanelAsModal("settings")}
+          >
             <Settings
               color={iconProps.color}
               strokeWidth={iconProps.strokeWidth}

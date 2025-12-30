@@ -44,7 +44,8 @@
   /*var(--spacing-lg);*/
   position: relative;
 
-  background: linear-gradient(to left, var(--border-color) 1px, transparent 1px) 0 0 / 8px 1px;
+  background: linear-gradient(to left, var(--border-color) 1px, transparent 1px)
+    0 0 / 8px 1px;
 }
 
 .elementItemIcon {
@@ -131,18 +132,17 @@
   outline-offset: -1px;
   border-radius: 0;
   background-color: var(--highlight-overlay);
+  z-index: 1;
 }
 
-.layer-drop-indicator {
+/*.layer-drop-indicator {
   display: block;
   height: 32px;
   outline: 1px solid var(--focus-ring-color);
   outline-offset: -1px;
   border-radius: 0;
   margin: 0px;
-  margin-left:
-    /*calc((var(--tree-item-level) - 1) * 8px)*/
-    0px;
+  margin-left:0px;
   background-color: #fff;
   background-size: 8px 8px;
   background-image: repeating-linear-gradient(45deg,
@@ -151,6 +151,20 @@
       transparent 0,
       transparent 50%);
   pointer-events: none;
+}*/
+.layer-drop-indicator {
+  display: block;
+  &:after {
+    content: "";
+    height: 1px;
+    width: 100%;
+    background-color: var(--focus-ring-color);
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+  }
 }
 
 .layer-drop-indicator--hidden {
@@ -231,7 +245,6 @@
   font-weight: var(--font-weight-medium);
   color: var(--on-surface-variant);
 }
-
 
 .nodes-panel-tab:hover {
   background-color: var(--surface-container-highest);
@@ -400,7 +413,6 @@
 
 /* react-aria TreeItem 스타일 */
 .react-aria-TreeItem {
-
   /* 접근성: 포커스 가능하도록 outline 유지 */
   &:focus-visible {
     outline: none;

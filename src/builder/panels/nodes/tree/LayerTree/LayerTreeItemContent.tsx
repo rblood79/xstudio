@@ -135,13 +135,15 @@ function NormalItemContent({
             size={ICON_EDIT_PROPS.size}
           />
         </Button>
-        <Button className="iconButton" aria-label="Settings">
-          <Settings2
-            color={ICON_EDIT_PROPS.color}
-            strokeWidth={ICON_EDIT_PROPS.stroke}
-            size={ICON_EDIT_PROPS.size}
-          />
-        </Button>
+        {tag === "body" && (
+          <Button className="iconButton" aria-label="Settings">
+            <Settings2
+              color={ICON_EDIT_PROPS.color}
+              strokeWidth={ICON_EDIT_PROPS.stroke}
+              size={ICON_EDIT_PROPS.size}
+            />
+          </Button>
+        )}
         {tag !== "body" && (
           <Button
             className="iconButton"

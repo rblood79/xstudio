@@ -93,17 +93,19 @@ export function PageTreeItemContent({
             size={ICON_EDIT_PROPS.size}
           />
         </Button>
-        <Button
-          className="iconButton"
-          aria-label={`Settings for ${name}`}
-          onPress={() => onSettings?.(page)}
-        >
-          <Settings2
-            color={ICON_EDIT_PROPS.color}
-            strokeWidth={ICON_EDIT_PROPS.stroke}
-            size={ICON_EDIT_PROPS.size}
-          />
-        </Button>
+        {isRoot && (
+          <Button
+            className="iconButton"
+            aria-label={`Settings for ${name}`}
+            onPress={() => onSettings?.(page)}
+          >
+            <Settings2
+              color={ICON_EDIT_PROPS.color}
+              strokeWidth={ICON_EDIT_PROPS.stroke}
+              size={ICON_EDIT_PROPS.size}
+            />
+          </Button>
+        )}
         {!isRoot && (
           <Button
             className="iconButton"
