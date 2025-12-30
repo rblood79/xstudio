@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Docs - 구조 문서 정리 (2025-12-30)
+
+#### 개요
+Hooks 및 Store 구조 문서를 `docs/reference/`로 이동하여 문서 체계 정리
+
+#### 이동된 파일
+| 원본 경로 | 이동 경로 |
+|----------|----------|
+| `docs/STRUCTURE_HOOKS.md` | `docs/reference/STRUCTURE_HOOKS.md` |
+| `docs/STRUCTURE_STORE.md` | `docs/reference/STRUCTURE_STORE.md` |
+
+#### 문서 내용
+- **STRUCTURE_HOOKS.md**: Builder hooks 구조 및 사용 패턴 정리
+- **STRUCTURE_STORE.md**: Zustand store 구조 및 슬라이스 패턴 정리
+
+---
+
 ### Removed - Save Mode, Preview & Overlay, Element Visualization 설정 제거 (2025-12-29)
 
 #### 개요

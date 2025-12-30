@@ -39,8 +39,8 @@ interface PanelConfig {
 
 1. **다양한 표시 모드 지원**
    - `panel`: 기존 사이드바 패널 (기본값)
-   - `dialog`: 모달 다이얼로그 형태 (드래그 가능, 배경 오버레이)
-   - `overlay`: 떠있는 패널 형태 (드래그 가능, 배경 클릭 가능)
+   - `dialog`: 모달 다이얼로그 형태 (드래그 가능, React Aria Components 기반)
+   - `overlay`: 떠있는 패널 형태 (드래그 가능, React Aria Components 기반)
 
 2. **유연한 패널 호출**
    - 동일 패널을 상황에 따라 다른 모드로 표시
@@ -51,6 +51,15 @@ interface PanelConfig {
    - 리사이즈 지원
    - ESC 키로 닫기
    - 다중 floating 패널 지원 (z-index 관리)
+
+---
+
+## 정책 및 UX 규칙
+
+- 패널은 **단일 인스턴스**만 유지하고, 다른 모드로 열기 요청 시 **모드 전환**(기존 닫고 새 모드만 표시)으로 처리
+- dialog/overlay 모두 `react-aria-components`로 구현하며 **포커스 트랩 + 배경 inert/클릭 차단 + ESC 닫기** 기본 적용
+- floating 기본 위치는 **화면 중앙** (필요 시 추후 패널별 예외 옵션 추가)
+- 초기 크기는 `defaultWidth/defaultHeight`를 사용하고, `min/max`는 제약으로만 사용
 
 ---
 
@@ -69,8 +78,8 @@ interface PanelConfig {
 /**
  * 패널 표시 모드
  * - panel: 사이드바/하단에 고정된 패널 (기본)
- * - dialog: 모달 다이얼로그 형태 (드래그 가능, 오버레이 배경)
- * - overlay: 떠있는 패널 형태 (드래그 가능, 배경 클릭 가능)
+ * - dialog: 모달 다이얼로그 형태 (드래그 가능, React Aria Components 기반)
+ * - overlay: 떠있는 패널 형태 (드래그 가능, React Aria Components 기반)
  */
 export type PanelDisplayMode = 'panel' | 'dialog' | 'overlay';
 ```
@@ -80,13 +89,16 @@ export type PanelDisplayMode = 'panel' | 'dialog' | 'overlay';
 interface PanelConfig {
   // ... 기존 속성들
 
-  /** 높이 (px, dialog/overlay 모드에서 사용) */
-  height?: number;
+  /** 기본 너비 (px, dialog/overlay 초기값) */
+  defaultWidth?: number;
 
-  /** 최소 높이 (px) */
+  /** 기본 높이 (px, dialog/overlay 초기값) */
+  defaultHeight?: number;
+
+  /** 최소 높이 (px, floating 제약) */
   minHeight?: number;
 
-  /** 최대 높이 (px) */
+  /** 최대 높이 (px, floating 제약) */
   maxHeight?: number;
 
   /** 지원하는 표시 모드 목록 (기본: ['panel']) */
@@ -250,11 +262,14 @@ Floating 패널 관련 액션 구현
 #### 3.1 openPanelAsDialog 구현
 ```typescript
 const openPanelAsDialog = useCallback((panelId: PanelId) => {
-  // 이미 열려있으면 포커스만
+  // 이미 열려있으면 포커스만 (다른 모드면 닫고 모드 전환)
   const existing = layout.floatingPanels.find((p) => p.panelId === panelId);
   if (existing) {
-    focusFloatingPanel(panelId);
-    return;
+    if (existing.mode === "dialog") {
+      focusFloatingPanel(panelId);
+      return;
+    }
+    closeFloatingPanel(panelId);
   }
 
   // 패널 설정 가져오기
@@ -262,8 +277,8 @@ const openPanelAsDialog = useCallback((panelId: PanelId) => {
   if (!panelConfig) return;
 
   // 초기 위치 및 크기 계산 (화면 중앙)
-  const width = panelConfig.minWidth || 300;
-  const height = panelConfig.height || panelConfig.minHeight || 400;
+  const width = panelConfig.defaultWidth || panelConfig.minWidth || 360;
+  const height = panelConfig.defaultHeight || panelConfig.minHeight || 480;
   const x = Math.max(100, (window.innerWidth - width) / 2);
   const y = Math.max(100, (window.innerHeight - height) / 2);
 
@@ -286,10 +301,8 @@ const openPanelAsDialog = useCallback((panelId: PanelId) => {
 #### 3.2 openPanelAsOverlay 구현
 ```typescript
 const openPanelAsOverlay = useCallback((panelId: PanelId) => {
-  // dialog와 유사하지만 우측 상단에 배치
-  const x = window.innerWidth - width - 60;
-  const y = 60;
-  // ... 나머지 로직 동일
+  // dialog와 유사하지만 기본 위치는 중앙
+  // ... 위치 계산/모드 전환 로직 동일
 }, [layout, setPanelLayout]);
 ```
 
@@ -323,12 +336,8 @@ export const FloatingPanelContainer = memo(function FloatingPanelContainer() {
   const { layout, closeFloatingPanel, focusFloatingPanel, updateFloatingPanelPosition } = usePanelLayout();
   const { floatingPanels } = layout;
 
-  // Dialog 모드 패널이 있으면 배경 오버레이 표시
-  const hasDialogPanel = floatingPanels.some((p) => p.mode === "dialog");
-
   return (
     <div className="floating-panel-container">
-      {hasDialogPanel && <div className="floating-panel-backdrop" onClick={handleBackdropClick} />}
       {floatingPanels.map((panel) => (
         <FloatingPanel key={panel.panelId} panel={panel} ... />
       ))}
@@ -338,26 +347,44 @@ export const FloatingPanelContainer = memo(function FloatingPanelContainer() {
 ```
 
 #### 4.2 FloatingPanel 컴포넌트
+React Aria Components의 `ModalOverlay`/`Dialog`를 사용해 포커스 트랩과 배경 inert 처리를 기본으로 둡니다.
 ```tsx
 const FloatingPanel = memo(function FloatingPanel({ panel, onClose, onFocus, onPositionChange }) {
   const panelConfig = PanelRegistry.getPanel(panel.panelId);
   const PanelComponent = panelConfig.component;
 
   return (
-    <div
-      className={`floating-panel floating-panel--${panel.mode}`}
-      style={{ left: panel.position.x, top: panel.position.y, zIndex: panel.zIndex }}
+    <ModalOverlay
+      className="floating-panel-backdrop"
+      isDismissable={false}
+      isKeyboardDismissDisabled={false}
     >
-      <div className="floating-panel-header" onMouseDown={handleDragStart}>
-        <span>{panelConfig.name}</span>
-        <button onClick={handleClose}><X /></button>
-      </div>
-      <div className="floating-panel-content">
-        <PanelComponent isActive={true} displayMode={panel.mode} onClose={handleClose} />
-      </div>
-    </div>
+      <Dialog
+        className={`floating-panel floating-panel--${panel.mode}`}
+        style={{ left: panel.position.x, top: panel.position.y, zIndex: panel.zIndex }}
+      >
+        <div className="floating-panel-header" onMouseDown={handleDragStart}>
+          <span>{panelConfig.name}</span>
+          <button onClick={handleClose}><X /></button>
+        </div>
+        <div className="floating-panel-content">
+          <PanelComponent isActive={true} displayMode={panel.mode} onClose={handleClose} />
+        </div>
+      </Dialog>
+    </ModalOverlay>
   );
 });
+```
+
+#### 4.2.1 OverlayProvider 위치
+React Aria Components의 오버레이 스택 관리를 위해 앱 루트에 `OverlayProvider`를 배치합니다.
+```tsx
+import { OverlayProvider } from "react-aria-components";
+
+// App 루트 또는 BuilderCore 상위에 배치
+<OverlayProvider>
+  <BuilderCore />
+</OverlayProvider>
 ```
 
 #### 4.3 드래그 기능 구현
@@ -460,21 +487,21 @@ import { FloatingPanelContainer } from "../layout";
   id: "settings",
   name: "설정",
   // ...
-  height: 500,
+  defaultHeight: 500,
   displayModes: ["panel", "dialog"],
 },
 {
   id: "ai",
   name: "AI",
   // ...
-  height: 500,
+  defaultHeight: 500,
   displayModes: ["panel", "overlay"],
 },
 {
   id: "history",
   name: "히스토리",
   // ...
-  height: 450,
+  defaultHeight: 450,
   displayModes: ["panel", "dialog", "overlay"],
 },
 ```
@@ -589,7 +616,7 @@ Ctrl+Shift+, -> Settings 다이얼로그로 열기
 - [ ] 클릭으로 z-index 변경 (포커스)
 - [ ] ESC 키로 닫기
 - [ ] X 버튼으로 닫기
-- [ ] Dialog 배경 클릭으로 닫기
+- [ ] 배경 클릭 차단 확인
 - [ ] 다중 floating 패널 동시 표시
 
 ### 호환성 테스트

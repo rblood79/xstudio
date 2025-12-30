@@ -83,6 +83,10 @@ docs/
 - [M3 컴포넌트 템플릿](./reference/schemas/M3_COMPONENT_TEMPLATE.css)
 - [M3 Storybook 템플릿](./reference/schemas/M3_STORYBOOK_TEMPLATE.tsx)
 
+### Structure (구조)
+- [Hooks 구조](./reference/STRUCTURE_HOOKS.md) - Builder hooks 구조 및 사용 패턴
+- [Store 구조](./reference/STRUCTURE_STORE.md) - Zustand store 구조 및 슬라이스 패턴
+
 ### Components (컴포넌트)
 - [패널 시스템](./reference/components/PANEL_SYSTEM.md)
 - [CSS 아키텍처](./reference/components/CSS_ARCHITECTURE.md)
