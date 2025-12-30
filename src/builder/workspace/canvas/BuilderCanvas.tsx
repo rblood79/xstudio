@@ -164,6 +164,8 @@ function ClickableBackground({ onClick, onLassoStart, onLassoDrag, onLassoEnd, z
       }
     };
 
+    // Shift 키 상태에 따른 커서 변경 (keyup도 필요하므로 useKeyboardShortcutsRegistry 부적합)
+    // eslint-disable-next-line local/prefer-keyboard-shortcuts-registry
     window.addEventListener('keydown', handleKeyDown);
     window.addEventListener('keyup', handleKeyUp);
 

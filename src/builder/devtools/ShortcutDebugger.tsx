@@ -257,7 +257,9 @@ export function ShortcutDebugger() {
     [scopeState.scope]
   );
 
+  // 디버거는 모든 키 이벤트를 캡처해야 하므로 useKeyboardShortcutsRegistry 부적합
   useEffect(() => {
+    // eslint-disable-next-line local/prefer-keyboard-shortcuts-registry
     window.addEventListener('keydown', handleKeyDown, { capture: true });
     return () => {
       window.removeEventListener('keydown', handleKeyDown, { capture: true });

@@ -37,7 +37,7 @@ export const createAddElementAction =
     const hasConflict = siblings.some(sibling => sibling.order_num === element.order_num);
 
     if (hasConflict || element.order_num === undefined || element.order_num === null) {
-      const nextOrderNum = HierarchyManager.calculateNextOrderNum(element.parent_id, state.elements);
+      const nextOrderNum = HierarchyManager.calculateNextOrderNum(element.parent_id ?? null, state.elements);
       elementToAdd = { ...element, order_num: nextOrderNum };
     }
 
@@ -119,7 +119,7 @@ export const createAddComplexElementAction =
     const parentHasConflict = parentSiblings.some(sibling => sibling.order_num === parentElement.order_num);
 
     if (parentHasConflict || parentElement.order_num === undefined || parentElement.order_num === null) {
-      const nextOrderNum = HierarchyManager.calculateNextOrderNum(parentElement.parent_id, state.elements);
+      const nextOrderNum = HierarchyManager.calculateNextOrderNum(parentElement.parent_id ?? null, state.elements);
       parentToAdd = { ...parentElement, order_num: nextOrderNum };
     }
 

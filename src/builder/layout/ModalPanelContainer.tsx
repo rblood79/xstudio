@@ -67,20 +67,10 @@ const ModalPanel = memo(function ModalPanel({
   onFocus,
   onPositionChange,
 }: ModalPanelProps) {
-  const panelConfig = PanelRegistry.getPanel(panel.panelId);
-
   // 드래그 상태
   const isDragging = useRef(false);
   const dragOffset = useRef({ x: 0, y: 0 });
   const panelRef = useRef<HTMLDivElement>(null);
-
-  // 패널이 없으면 렌더링하지 않음
-  if (!panelConfig) {
-    console.warn(`[ModalPanel] Panel config not found: ${panel.panelId}`);
-    return null;
-  }
-
-  const PanelComponent = panelConfig.component;
 
   /**
    * 드래그 시작
@@ -140,6 +130,17 @@ const ModalPanel = memo(function ModalPanel({
   const handlePanelClick = useCallback(() => {
     onFocus();
   }, [onFocus]);
+
+  // 패널 설정 조회 (hooks 호출 후)
+  const panelConfig = PanelRegistry.getPanel(panel.panelId);
+
+  // 패널이 없으면 렌더링하지 않음
+  if (!panelConfig) {
+    console.warn(`[ModalPanel] Panel config not found: ${panel.panelId}`);
+    return null;
+  }
+
+  const PanelComponent = panelConfig.component;
 
   return (
     <ModalOverlay
