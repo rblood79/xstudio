@@ -12,7 +12,9 @@ import type {
   PanelId,
   PanelSide,
   PanelLayoutState,
+  ModalPanelState,
 } from "../panels/core/types";
+import { PanelRegistry } from "../panels/core/PanelRegistry";
 import type { UsePanelLayoutReturn } from "../layout/types";
 
 /**
@@ -175,6 +177,187 @@ export function usePanelLayout(): UsePanelLayoutReturn {
     });
   }, [layout, setPanelLayout]);
 
+  /**
+   * 위치 경계 검사 (화면 밖으로 나가지 않도록 clamp)
+   */
+  const clampPosition = useCallback(
+    (x: number, y: number, width: number, height: number) => ({
+      x: Math.max(0, Math.min(x, window.innerWidth - width)),
+      y: Math.max(0, Math.min(y, window.innerHeight - height)),
+    }),
+    []
+  );
+
+  /**
+   * 패널을 Modal로 열기
+   */
+  const openPanelAsModal = useCallback(
+    (panelId: PanelId) => {
+      // 이미 열려있으면 포커스만
+      const existing = layout.modalPanels.find((p) => p.panelId === panelId);
+      if (existing) {
+        // focusModalPanel 대신 직접 z-index 업데이트 (순환 참조 방지)
+        const maxZIndex = Math.max(...layout.modalPanels.map((p) => p.zIndex));
+        if (existing.zIndex !== maxZIndex) {
+          setPanelLayout({
+            ...layout,
+            modalPanels: layout.modalPanels.map((p) =>
+              p.panelId === panelId
+                ? { ...p, zIndex: layout.nextModalZIndex }
+                : p
+            ),
+            nextModalZIndex: layout.nextModalZIndex + 1,
+          });
+        }
+        return;
+      }
+
+      // 패널 설정 가져오기
+      const panelConfig = PanelRegistry.getPanel(panelId);
+      if (!panelConfig) {
+        console.warn(`[usePanelLayout] Panel "${panelId}" not found in registry`);
+        return;
+      }
+
+      // Modal 모드 지원 여부 확인
+      if (!PanelRegistry.supportsDisplayMode(panelId, "modal")) {
+        console.warn(`[usePanelLayout] Panel "${panelId}" does not support modal mode`);
+        return;
+      }
+
+      // 초기 크기 계산
+      const width = panelConfig.defaultWidth || panelConfig.minWidth || 360;
+      const height = panelConfig.defaultHeight || panelConfig.minHeight || 480;
+
+      // 초기 위치 계산 (화면 중앙)
+      const x = Math.max(100, (window.innerWidth - width) / 2);
+      const y = Math.max(100, (window.innerHeight - height) / 2);
+
+      // 위치 경계 검사
+      const clamped = clampPosition(x, y, width, height);
+
+      const newPanel: ModalPanelState = {
+        panelId,
+        mode: "modal",
+        position: { x: clamped.x, y: clamped.y },
+        size: { width, height },
+        zIndex: layout.nextModalZIndex,
+      };
+
+      setPanelLayout({
+        ...layout,
+        modalPanels: [...layout.modalPanels, newPanel],
+        nextModalZIndex: layout.nextModalZIndex + 1,
+      });
+    },
+    [layout, setPanelLayout, clampPosition]
+  );
+
+  /**
+   * Modal 패널 닫기
+   */
+  const closeModalPanel = useCallback(
+    (panelId: PanelId) => {
+      setPanelLayout({
+        ...layout,
+        modalPanels: layout.modalPanels.filter((p) => p.panelId !== panelId),
+      });
+    },
+    [layout, setPanelLayout]
+  );
+
+  /**
+   * Modal 패널 포커스 (z-index 업데이트)
+   */
+  const focusModalPanel = useCallback(
+    (panelId: PanelId) => {
+      const panel = layout.modalPanels.find((p) => p.panelId === panelId);
+      if (!panel) return;
+
+      // 이미 최상위면 무시
+      const maxZIndex = Math.max(...layout.modalPanels.map((p) => p.zIndex));
+      if (panel.zIndex === maxZIndex) return;
+
+      setPanelLayout({
+        ...layout,
+        modalPanels: layout.modalPanels.map((p) =>
+          p.panelId === panelId
+            ? { ...p, zIndex: layout.nextModalZIndex }
+            : p
+        ),
+        nextModalZIndex: layout.nextModalZIndex + 1,
+      });
+    },
+    [layout, setPanelLayout]
+  );
+
+  /**
+   * Modal 패널 위치 업데이트
+   */
+  const updateModalPanelPosition = useCallback(
+    (panelId: PanelId, position: { x: number; y: number }) => {
+      const panel = layout.modalPanels.find((p) => p.panelId === panelId);
+      if (!panel) return;
+
+      // 위치 경계 검사
+      const clamped = clampPosition(
+        position.x,
+        position.y,
+        panel.size.width,
+        panel.size.height
+      );
+
+      setPanelLayout({
+        ...layout,
+        modalPanels: layout.modalPanels.map((p) =>
+          p.panelId === panelId ? { ...p, position: clamped } : p
+        ),
+      });
+    },
+    [layout, setPanelLayout, clampPosition]
+  );
+
+  /**
+   * Modal 패널 크기 업데이트
+   */
+  const updateModalPanelSize = useCallback(
+    (panelId: PanelId, size: { width: number; height: number }) => {
+      const panel = layout.modalPanels.find((p) => p.panelId === panelId);
+      if (!panel) return;
+
+      // 패널 설정에서 min/max 제약 가져오기
+      const panelConfig = PanelRegistry.getPanel(panelId);
+      const minWidth = panelConfig?.minWidth || 200;
+      const maxWidth = panelConfig?.maxWidth || 800;
+      const minHeight = panelConfig?.minHeight || 200;
+      const maxHeight = panelConfig?.maxHeight || 800;
+
+      // 크기 제약 적용
+      const clampedSize = {
+        width: Math.max(minWidth, Math.min(maxWidth, size.width)),
+        height: Math.max(minHeight, Math.min(maxHeight, size.height)),
+      };
+
+      setPanelLayout({
+        ...layout,
+        modalPanels: layout.modalPanels.map((p) =>
+          p.panelId === panelId ? { ...p, size: clampedSize } : p
+        ),
+      });
+    },
+    [layout, setPanelLayout]
+  );
+
+  /**
+   * 모든 Modal 패널 닫기
+   */
+  const closeAllModalPanels = useCallback(() => {
+    setPanelLayout({
+      ...layout,
+      modalPanels: [],
+    });
+  }, [layout, setPanelLayout]);
+
   return {
     layout,
     isLoading: false, // 나중에 비동기 로딩 추가 시 사용
@@ -186,5 +369,12 @@ export function usePanelLayout(): UsePanelLayoutReturn {
     toggleBottomPanel,
     setBottomHeight,
     closeBottomPanel,
+    // Modal 패널 액션
+    openPanelAsModal,
+    closeModalPanel,
+    focusModalPanel,
+    updateModalPanelPosition,
+    updateModalPanelSize,
+    closeAllModalPanels,
   };
 }

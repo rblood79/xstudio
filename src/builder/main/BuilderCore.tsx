@@ -16,7 +16,7 @@ import { BuilderViewport } from "./BuilderViewport";
 import SelectionOverlay from "../overlay";
 import { Workspace } from "../workspace";
 import { isWebGLCanvas, isCanvasCompareMode } from "../../utils/featureFlags";
-import { PanelSlot, BottomPanelSlot } from "../layout";
+import { PanelSlot, BottomPanelSlot, ModalPanelContainer } from "../layout";
 import { ToastContainer, CommandPalette } from "../components";
 
 import {
@@ -864,6 +864,9 @@ export const BuilderCore: React.FC = () => {
 
       {/* 🚀 Phase 7: 커맨드 팔레트 (Cmd+K) */}
       <CommandPalette />
+
+      {/* Modal 패널 컨테이너 */}
+      <ModalPanelContainer />
     </BuilderViewport>
   );
 };

@@ -12,6 +12,7 @@ export { PanelNav } from "./PanelNav";
 export { PanelContainer } from "./PanelContainer";
 export { PanelSlot } from "./PanelSlot";
 export { BottomPanelSlot } from "./BottomPanelSlot";
+export { ModalPanelContainer } from "./ModalPanelContainer";
 
 // Types
 export * from "./types";

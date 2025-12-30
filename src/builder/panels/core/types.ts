@@ -23,6 +23,13 @@ export type PanelCategory = 'navigation' | 'editor' | 'tool' | 'system';
 export type PanelSide = 'left' | 'right' | 'bottom';
 
 /**
+ * 패널 표시 모드
+ * - panel: 사이드바/하단에 고정된 패널 (기본)
+ * - modal: 떠있는 모달 형태 (드래그 가능, React Aria Components 기반)
+ */
+export type PanelDisplayMode = 'panel' | 'modal';
+
+/**
  * 패널 ID
  * Note: 'data' 패널은 제거되었습니다. 데이터 바인딩은 DataTable 패널과 컴포넌트 Property Editor를 통해 관리합니다.
  */
@@ -80,11 +87,26 @@ export interface PanelConfig {
   /** 최대 너비 (px, 옵션) */
   maxWidth?: number;
 
+  /** 기본 너비 (px, modal 초기값) */
+  defaultWidth?: number;
+
+  /** 기본 높이 (px, modal 초기값) */
+  defaultHeight?: number;
+
+  /** 최소 높이 (px, modal 제약) */
+  minHeight?: number;
+
+  /** 최대 높이 (px, modal 제약) */
+  maxHeight?: number;
+
   /** 설명 (옵션) */
   description?: string;
 
   /** 키보드 단축키 (옵션) */
   shortcut?: string;
+
+  /** 지원하는 표시 모드 목록 (기본: ['panel']) */
+  displayModes?: PanelDisplayMode[];
 }
 
 /**
@@ -99,8 +121,31 @@ export interface PanelProps {
   /** 패널이 위치한 사이드 */
   side?: PanelSide;
 
+  /** 현재 표시 모드 */
+  displayMode?: PanelDisplayMode;
+
   /** 패널 닫기 콜백 (옵션) */
   onClose?: () => void;
+}
+
+/**
+ * Modal 패널 상태
+ */
+export interface ModalPanelState {
+  /** 패널 ID */
+  panelId: PanelId;
+
+  /** 표시 모드 */
+  mode: 'modal';
+
+  /** 위치 (드래그 이동 시 업데이트) */
+  position: { x: number; y: number };
+
+  /** 크기 (리사이즈 시 업데이트) */
+  size: { width: number; height: number };
+
+  /** z-index (포커스 순서) */
+  zIndex: number;
 }
 
 /**
@@ -138,6 +183,12 @@ export interface PanelLayoutState {
 
   /** 하단 패널 높이 (px) */
   bottomHeight: number;
+
+  /** Modal 패널 목록 */
+  modalPanels: ModalPanelState[];
+
+  /** 다음 modal 패널의 z-index */
+  nextModalZIndex: number;
 }
 
 /**
@@ -152,7 +203,6 @@ export const DEFAULT_PANEL_LAYOUT: PanelLayoutState = {
     'datatable',
     'datatableEditor',  // DataTable 에디터 (datatable과 함께 사용)
     'theme',
-    'settings',
   ],
   rightPanels: [
     'properties',
@@ -170,6 +220,9 @@ export const DEFAULT_PANEL_LAYOUT: PanelLayoutState = {
   activeBottomPanels: [], // 기본 닫힘
   showBottom: false,
   bottomHeight: 200,
+  // Modal panel defaults
+  modalPanels: [],
+  nextModalZIndex: 1000,
 };
 
 /**
@@ -196,6 +249,24 @@ export interface PanelLayoutActions {
 
   /** 하단 패널 닫기 */
   closeBottomPanel: () => void;
+
+  /** 패널을 Modal로 열기 */
+  openPanelAsModal: (panelId: PanelId) => void;
+
+  /** Modal 패널 닫기 */
+  closeModalPanel: (panelId: PanelId) => void;
+
+  /** Modal 패널 포커스 (z-index 업데이트) */
+  focusModalPanel: (panelId: PanelId) => void;
+
+  /** Modal 패널 위치 업데이트 */
+  updateModalPanelPosition: (panelId: PanelId, position: { x: number; y: number }) => void;
+
+  /** Modal 패널 크기 업데이트 */
+  updateModalPanelSize: (panelId: PanelId, size: { width: number; height: number }) => void;
+
+  /** 모든 Modal 패널 닫기 */
+  closeAllModalPanels: () => void;
 }
 
 /**

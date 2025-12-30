@@ -38,6 +38,24 @@ export interface UsePanelLayoutReturn extends PanelLayoutActions {
 
   /** 레이아웃이 로컬스토리지에서 로드되었는지 */
   isLoaded: boolean;
+
+  /** 패널을 Modal로 열기 */
+  openPanelAsModal: (panelId: PanelId) => void;
+
+  /** Modal 패널 닫기 */
+  closeModalPanel: (panelId: PanelId) => void;
+
+  /** Modal 패널 포커스 (z-index 업데이트) */
+  focusModalPanel: (panelId: PanelId) => void;
+
+  /** Modal 패널 위치 업데이트 */
+  updateModalPanelPosition: (panelId: PanelId, position: { x: number; y: number }) => void;
+
+  /** Modal 패널 크기 업데이트 */
+  updateModalPanelSize: (panelId: PanelId, size: { width: number; height: number }) => void;
+
+  /** 모든 Modal 패널 닫기 */
+  closeAllModalPanels: () => void;
 }
 
 /**

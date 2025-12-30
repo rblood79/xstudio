@@ -108,6 +108,7 @@
 
 .elementItemActions .layer-drag-handle--hidden {
   display: none;
+  -webkit-user-drag: none;
 }
 
 .elementItem:hover .elementItemActions,
@@ -157,9 +158,10 @@
 }
 
 .no_element {
-  padding: var(--element-padding) calc(var(--element-padding) * 2);
+  padding: var(--spacing-sm);
   color: var(--on-surface-variant);
-  font-size: var(--text-sm);
+  font-size: var(--text-xs);
+  line-height: var(--text-xs--line-height);
 }
 
 /* NodesPanel */
@@ -191,7 +193,6 @@
 
             .elementItemActions {
               .layer-drag-handle {
-                all: unset;
                 cursor: grab;
               }
             }

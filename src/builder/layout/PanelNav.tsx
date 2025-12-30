@@ -37,7 +37,7 @@ export function PanelNav({
           if (!panelConfig) return null;
 
           const Icon = panelConfig.icon;
-          const isActive = activePanels.includes(panelId); // 배열에서 확인
+          const isActive = activePanels.includes(panelId);
 
           return (
             <li key={panelId}>

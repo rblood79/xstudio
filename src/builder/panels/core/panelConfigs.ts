@@ -118,8 +118,11 @@ export const PANEL_CONFIGS: PanelConfig[] = [
     category: "tool",
     defaultPosition: "right",
     minWidth: 233,
-    maxWidth: 233,
+    maxWidth: 400,
+    defaultWidth: 360,
+    defaultHeight: 500,
     description: "AI 도구 및 제안",
+    displayModes: ["panel", "modal"],
   },
 
   // System panels
@@ -133,8 +136,11 @@ export const PANEL_CONFIGS: PanelConfig[] = [
     defaultPosition: "left",
     minWidth: 233,
     maxWidth: 400,
+    defaultWidth: 768,
+    defaultHeight: 500,
     description: "앱 설정 및 환경설정",
     shortcut: "Ctrl+,",
+    displayModes: ["panel", "modal"],
   },
 
   // Editor panels
@@ -186,9 +192,12 @@ export const PANEL_CONFIGS: PanelConfig[] = [
     category: "editor",
     defaultPosition: "right",
     minWidth: 233,
-    maxWidth: 320,
+    maxWidth: 400,
+    defaultWidth: 320,
+    defaultHeight: 450,
     description: "변경 내역 확인 및 복원",
     shortcut: "Ctrl+Shift+H",
+    displayModes: ["panel", "modal"],
   },
 
   // Bottom panels

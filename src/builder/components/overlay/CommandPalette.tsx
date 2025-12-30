@@ -29,6 +29,7 @@ import {
 import {
   formatShortcut,
   useKeyboardShortcutsRegistry,
+  usePanelLayout,
   type ShortcutCategory,
 } from '@/builder/hooks';
 import { iconProps } from '../../../utils/ui/uiConstants';
@@ -152,20 +153,55 @@ export function CommandPalette({
     }
   }, [isOpen]);
 
+  // Modal Panel 액션을 위한 훅
+  const { openPanelAsModal, togglePanel } = usePanelLayout();
+
   // 명령 실행
   const executeCommand = useCallback(
     (commandId: ShortcutId) => {
-      console.log(`[CommandPalette] Execute: ${commandId}`);
-
       // 팔레트 닫기
       handleOpenChange(false);
 
-      // TODO: 실제 핸들러 실행
-      // 현재는 로그만 출력
-      // 실제 구현 시 useGlobalKeyboardShortcuts의 handlers를 공유하거나
-      // 별도의 command registry를 만들어야 함
+      // Modal 패널 명령 처리
+      switch (commandId) {
+        case 'openSettingsModal':
+          openPanelAsModal('settings');
+          return;
+        case 'openHistoryModal':
+          openPanelAsModal('history');
+          return;
+        case 'openAIModal':
+          openPanelAsModal('ai');
+          return;
+        // 일반 패널 토글 명령 처리
+        case 'toggleNodes':
+          togglePanel('left', 'nodes');
+          return;
+        case 'toggleComponents':
+          togglePanel('left', 'components');
+          return;
+        case 'toggleProperties':
+          togglePanel('right', 'properties');
+          return;
+        case 'toggleStyles':
+          togglePanel('right', 'styles');
+          return;
+        case 'toggleEvents':
+          togglePanel('right', 'events');
+          return;
+        case 'toggleHistory':
+          togglePanel('right', 'history');
+          return;
+        case 'openSettings':
+          togglePanel('left', 'settings');
+          return;
+        default:
+          // 다른 명령은 키보드 이벤트로 시뮬레이션
+          // (향후 command registry 통합 시 개선 가능)
+          break;
+      }
     },
-    [handleOpenChange]
+    [handleOpenChange, openPanelAsModal, togglePanel]
   );
 
   // 키보드 내비게이션

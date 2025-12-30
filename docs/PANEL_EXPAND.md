@@ -2,6 +2,35 @@
 
 패널 시스템에 다양한 표시 모드(modal)를 추가하여 패널을 더 유연하게 호출할 수 있도록 확장하는 계획입니다.
 
+## 구현 완료 (2025-12-30)
+
+### 구현된 기능
+- **Phase 1-5**: 모두 완료
+- **Phase 6**: 부분 완료 (CommandPalette, Header 버튼)
+
+### 사용 방법
+| 방법 | 설명 |
+|------|------|
+| Header 버튼 | ⚙️ Settings 아이콘 클릭 |
+| CommandPalette | `Cmd+K` → "설정 창으로 열기" / "히스토리 창으로 열기" / "AI 창으로 열기" |
+
+### 지원 패널
+- Settings (`displayModes: ["panel", "modal"]`)
+- AI (`displayModes: ["panel", "modal"]`)
+- History (`displayModes: ["panel", "modal"]`)
+
+### 주요 변경 파일
+- `src/builder/panels/core/types.ts` - 타입 확장
+- `src/builder/panels/core/PanelRegistry.ts` - displayMode 메서드 추가
+- `src/builder/hooks/usePanelLayout.ts` - Modal 액션 구현
+- `src/builder/layout/ModalPanelContainer.tsx` - Modal 렌더링 (신규)
+- `src/builder/layout/ModalPanelContainer.css` - Modal 스타일 (신규)
+- `src/builder/main/BuilderCore.tsx` - ModalPanelContainer 마운트
+- `src/builder/main/BuilderHeader.tsx` - Settings 버튼 추가
+- `src/builder/components/overlay/CommandPalette.tsx` - Modal 명령 추가
+
+---
+
 ## 현재 상태 분석
 
 ### 기존 패널 시스템 구조

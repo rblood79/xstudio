@@ -5,7 +5,7 @@
  * 싱글톤 패턴으로 구현
  */
 
-import type { PanelConfig, PanelId, PanelCategory, PanelFilter } from "./types";
+import type { PanelConfig, PanelId, PanelCategory, PanelFilter, PanelDisplayMode } from "./types";
 
 /**
  * PanelRegistry 클래스
@@ -100,6 +100,34 @@ class PanelRegistryClass {
    */
   hasPanel(id: PanelId): boolean {
     return this.panels.has(id);
+  }
+
+  /**
+   * 특정 표시 모드를 지원하는 패널 조회
+   */
+  getPanelsByDisplayMode(mode: PanelDisplayMode): PanelConfig[] {
+    return this.getAllPanels().filter((panel) => {
+      const modes = panel.displayModes || ["panel"];
+      return modes.includes(mode);
+    });
+  }
+
+  /**
+   * 패널이 특정 표시 모드를 지원하는지 확인
+   */
+  supportsDisplayMode(panelId: PanelId, mode: PanelDisplayMode): boolean {
+    const panel = this.getPanel(panelId);
+    if (!panel) return false;
+    const modes = panel.displayModes || ["panel"];
+    return modes.includes(mode);
+  }
+
+  /**
+   * 패널의 지원 표시 모드 목록 조회
+   */
+  getDisplayModes(panelId: PanelId): PanelDisplayMode[] {
+    const panel = this.getPanel(panelId);
+    return panel?.displayModes || ["panel"];
   }
 
   /**

@@ -12,6 +12,7 @@ import {
   Activity,
   LayoutGrid,
   GitBranch,
+  Settings,
 } from "lucide-react";
 import { Key } from "react-aria-components";
 import { ToggleButtonGroup } from "../../shared/components/ToggleButtonGroup";
@@ -69,7 +70,7 @@ export const BuilderHeader: React.FC<BuilderHeaderProps> = ({
   viewMode,
   onViewModeToggle,
 }) => {
-  const { layout, toggleBottomPanel } = usePanelLayout();
+  const { layout, toggleBottomPanel, openPanelAsModal } = usePanelLayout();
   const isMonitorOpen =
     layout.showBottom && layout.activeBottomPanels.includes("monitor");
 
@@ -237,6 +238,13 @@ export const BuilderHeader: React.FC<BuilderHeaderProps> = ({
           </ToggleButton>
           <ToggleButton id="preview" aria-label="Preview" onPress={onPreview}>
             <Eye
+              color={iconProps.color}
+              strokeWidth={iconProps.strokeWidth}
+              size={iconProps.size}
+            />
+          </ToggleButton>
+          <ToggleButton id="settings" aria-label="Settings" onPress={() => openPanelAsModal('settings')}>
+            <Settings
               color={iconProps.color}
               strokeWidth={iconProps.strokeWidth}
               size={iconProps.size}
