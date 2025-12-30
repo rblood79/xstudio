@@ -1,6 +1,6 @@
 # Panel Display Modes 확장 계획
 
-패널 시스템에 다양한 표시 모드(dialog, overlay)를 추가하여 패널을 더 유연하게 호출할 수 있도록 확장하는 계획입니다.
+패널 시스템에 다양한 표시 모드(modal)를 추가하여 패널을 더 유연하게 호출할 수 있도록 확장하는 계획입니다.
 
 ## 현재 상태 분석
 
@@ -39,8 +39,7 @@ interface PanelConfig {
 
 1. **다양한 표시 모드 지원**
    - `panel`: 기존 사이드바 패널 (기본값)
-   - `dialog`: 모달 다이얼로그 형태 (드래그 가능, React Aria Components 기반)
-   - `overlay`: 떠있는 패널 형태 (드래그 가능, React Aria Components 기반)
+   - `modal`: 떠있는 모달 형태 (드래그 가능, React Aria Components 기반)
 
 2. **유연한 패널 호출**
    - 동일 패널을 상황에 따라 다른 모드로 표시
@@ -50,15 +49,15 @@ interface PanelConfig {
    - 드래그로 위치 이동
    - 리사이즈 지원
    - ESC 키로 닫기
-   - 다중 floating 패널 지원 (z-index 관리)
+   - 다중 modal 패널 지원 (z-index 관리)
 
 ---
 
 ## 정책 및 UX 규칙
 
 - 패널은 **단일 인스턴스**만 유지하고, 다른 모드로 열기 요청 시 **모드 전환**(기존 닫고 새 모드만 표시)으로 처리
-- dialog/overlay 모두 `react-aria-components`로 구현하며 **포커스 트랩 + 배경 inert/클릭 차단 + ESC 닫기** 기본 적용
-- floating 기본 위치는 **화면 중앙** (필요 시 추후 패널별 예외 옵션 추가)
+- modal은 `react-aria-components`로 구현하며 **포커스 트랩 + 배경 inert/클릭 차단 + ESC 닫기** 기본 적용
+- modal 기본 위치는 **화면 중앙** (필요 시 추후 패널별 예외 옵션 추가)
 - 초기 크기는 `defaultWidth/defaultHeight`를 사용하고, `min/max`는 제약으로만 사용
 
 ---
@@ -78,10 +77,9 @@ interface PanelConfig {
 /**
  * 패널 표시 모드
  * - panel: 사이드바/하단에 고정된 패널 (기본)
- * - dialog: 모달 다이얼로그 형태 (드래그 가능, React Aria Components 기반)
- * - overlay: 떠있는 패널 형태 (드래그 가능, React Aria Components 기반)
+ * - modal: 떠있는 모달 형태 (드래그 가능, React Aria Components 기반)
  */
-export type PanelDisplayMode = 'panel' | 'dialog' | 'overlay';
+export type PanelDisplayMode = 'panel' | 'modal';
 ```
 
 #### 1.2 PanelConfig 확장
@@ -89,16 +87,16 @@ export type PanelDisplayMode = 'panel' | 'dialog' | 'overlay';
 interface PanelConfig {
   // ... 기존 속성들
 
-  /** 기본 너비 (px, dialog/overlay 초기값) */
+  /** 기본 너비 (px, modal 초기값) */
   defaultWidth?: number;
 
-  /** 기본 높이 (px, dialog/overlay 초기값) */
+  /** 기본 높이 (px, modal 초기값) */
   defaultHeight?: number;
 
-  /** 최소 높이 (px, floating 제약) */
+  /** 최소 높이 (px, modal 제약) */
   minHeight?: number;
 
-  /** 최대 높이 (px, floating 제약) */
+  /** 최대 높이 (px, modal 제약) */
   maxHeight?: number;
 
   /** 지원하는 표시 모드 목록 (기본: ['panel']) */
@@ -116,17 +114,17 @@ interface PanelProps {
 }
 ```
 
-#### 1.4 FloatingPanelState 타입 추가
+#### 1.4 ModalPanelState 타입 추가
 ```typescript
 /**
- * Floating 패널 상태 (dialog/overlay)
+ * Modal 패널 상태
  */
-interface FloatingPanelState {
+interface ModalPanelState {
   /** 패널 ID */
   panelId: PanelId;
 
   /** 표시 모드 */
-  mode: 'dialog' | 'overlay';
+  mode: 'modal';
 
   /** 위치 (드래그 이동 시 업데이트) */
   position: { x: number; y: number };
@@ -144,11 +142,11 @@ interface FloatingPanelState {
 interface PanelLayoutState {
   // ... 기존 속성들
 
-  /** Floating 패널 목록 (dialog/overlay 모드) */
-  floatingPanels: FloatingPanelState[];
+  /** Modal 패널 목록 */
+  modalPanels: ModalPanelState[];
 
-  /** 다음 floating 패널의 z-index */
-  nextFloatingZIndex: number;
+  /** 다음 modal 패널의 z-index */
+  nextModalZIndex: number;
 }
 ```
 
@@ -157,26 +155,23 @@ interface PanelLayoutState {
 interface PanelLayoutActions {
   // ... 기존 액션들
 
-  /** 패널을 Dialog로 열기 */
-  openPanelAsDialog: (panelId: PanelId) => void;
+  /** 패널을 Modal로 열기 */
+  openPanelAsModal: (panelId: PanelId) => void;
 
-  /** 패널을 Overlay로 열기 */
-  openPanelAsOverlay: (panelId: PanelId) => void;
+  /** Modal 패널 닫기 */
+  closeModalPanel: (panelId: PanelId) => void;
 
-  /** Floating 패널 닫기 */
-  closeFloatingPanel: (panelId: PanelId) => void;
+  /** Modal 패널 포커스 (z-index 업데이트) */
+  focusModalPanel: (panelId: PanelId) => void;
 
-  /** Floating 패널 포커스 (z-index 업데이트) */
-  focusFloatingPanel: (panelId: PanelId) => void;
+  /** Modal 패널 위치 업데이트 */
+  updateModalPanelPosition: (panelId: PanelId, position: { x: number; y: number }) => void;
 
-  /** Floating 패널 위치 업데이트 */
-  updateFloatingPanelPosition: (panelId: PanelId, position: { x: number; y: number }) => void;
+  /** Modal 패널 크기 업데이트 */
+  updateModalPanelSize: (panelId: PanelId, size: { width: number; height: number }) => void;
 
-  /** Floating 패널 크기 업데이트 */
-  updateFloatingPanelSize: (panelId: PanelId, size: { width: number; height: number }) => void;
-
-  /** 모든 Floating 패널 닫기 */
-  closeAllFloatingPanels: () => void;
+  /** 모든 Modal 패널 닫기 */
+  closeAllModalPanels: () => void;
 }
 ```
 
@@ -184,8 +179,8 @@ interface PanelLayoutActions {
 ```typescript
 const DEFAULT_PANEL_LAYOUT: PanelLayoutState = {
   // ... 기존 값들
-  floatingPanels: [],
-  nextFloatingZIndex: 1000,
+  modalPanels: [],
+  nextModalZIndex: 1000,
 };
 ```
 
@@ -251,7 +246,7 @@ getDisplayModes(panelId: PanelId): PanelDisplayMode[] {
 ## Phase 3: usePanelLayout 훅 확장
 
 ### 목표
-Floating 패널 관련 액션 구현
+Modal 패널 관련 액션 구현
 
 ### 변경 파일
 - `src/builder/hooks/usePanelLayout.ts`
@@ -259,17 +254,17 @@ Floating 패널 관련 액션 구현
 
 ### 작업 내용
 
-#### 3.1 openPanelAsDialog 구현
+#### 3.1 openPanelAsModal 구현
 ```typescript
-const openPanelAsDialog = useCallback((panelId: PanelId) => {
+const openPanelAsModal = useCallback((panelId: PanelId) => {
   // 이미 열려있으면 포커스만 (다른 모드면 닫고 모드 전환)
-  const existing = layout.floatingPanels.find((p) => p.panelId === panelId);
+  const existing = layout.modalPanels.find((p) => p.panelId === panelId);
   if (existing) {
-    if (existing.mode === "dialog") {
-      focusFloatingPanel(panelId);
+    if (existing.mode === "modal") {
+      focusModalPanel(panelId);
       return;
     }
-    closeFloatingPanel(panelId);
+    closeModalPanel(panelId);
   }
 
   // 패널 설정 가져오기
@@ -282,36 +277,57 @@ const openPanelAsDialog = useCallback((panelId: PanelId) => {
   const x = Math.max(100, (window.innerWidth - width) / 2);
   const y = Math.max(100, (window.innerHeight - height) / 2);
 
-  const newPanel: FloatingPanelState = {
+  // 위치 경계 검사 (화면 밖으로 나가지 않도록 clamp)
+  const clampPosition = (x: number, y: number, width: number, height: number) => ({
+    x: Math.max(0, Math.min(x, window.innerWidth - width)),
+    y: Math.max(0, Math.min(y, window.innerHeight - height)),
+  });
+  const clamped = clampPosition(x, y, width, height);
+
+  const newPanel: ModalPanelState = {
     panelId,
-    mode: "dialog",
-    position: { x, y },
+    mode: "modal",
+    position: { x: clamped.x, y: clamped.y },
     size: { width, height },
-    zIndex: layout.nextFloatingZIndex,
+    zIndex: layout.nextModalZIndex,
   };
 
   setPanelLayout({
     ...layout,
-    floatingPanels: [...layout.floatingPanels, newPanel],
-    nextFloatingZIndex: layout.nextFloatingZIndex + 1,
+    modalPanels: [...layout.modalPanels, newPanel],
+    nextModalZIndex: layout.nextModalZIndex + 1,
   });
 }, [layout, setPanelLayout]);
 ```
 
-#### 3.2 openPanelAsOverlay 구현
+#### 3.2 layout/types.ts 확장 상세
 ```typescript
-const openPanelAsOverlay = useCallback((panelId: PanelId) => {
-  // dialog와 유사하지만 기본 위치는 중앙
-  // ... 위치 계산/모드 전환 로직 동일
-}, [layout, setPanelLayout]);
+// layout/types.ts
+export interface UsePanelLayoutReturn extends PanelLayoutActions {
+  layout: PanelLayoutState;
+  isLoading: boolean;
+  isLoaded: boolean;
+  openPanelAsModal: (panelId: PanelId) => void;
+  closeModalPanel: (panelId: PanelId) => void;
+  focusModalPanel: (panelId: PanelId) => void;
+  updateModalPanelPosition: (
+    panelId: PanelId,
+    position: { x: number; y: number }
+  ) => void;
+  updateModalPanelSize: (
+    panelId: PanelId,
+    size: { width: number; height: number }
+  ) => void;
+  closeAllModalPanels: () => void;
+}
 ```
 
 #### 3.3 기타 액션들 구현
-- `closeFloatingPanel`
-- `focusFloatingPanel`
-- `updateFloatingPanelPosition`
-- `updateFloatingPanelSize`
-- `closeAllFloatingPanels`
+- `closeModalPanel`
+- `focusModalPanel`
+- `updateModalPanelPosition`
+- `updateModalPanelSize`
+- `closeAllModalPanels`
 
 ### 검증
 - 액션 호출 시 상태 정상 업데이트 확인
@@ -319,69 +335,74 @@ const openPanelAsOverlay = useCallback((panelId: PanelId) => {
 
 ---
 
-## Phase 4: FloatingPanelContainer 컴포넌트 구현
+## Phase 4: ModalPanelContainer 컴포넌트 구현
 
 ### 목표
-Dialog/Overlay 모드 패널을 렌더링하는 컨테이너 컴포넌트 생성
+Modal 모드 패널을 렌더링하는 컨테이너 컴포넌트 생성
 
 ### 생성 파일
-- `src/builder/layout/FloatingPanelContainer.tsx`
-- `src/builder/layout/FloatingPanelContainer.css`
+- `src/builder/layout/ModalPanelContainer.tsx`
+- `src/builder/layout/ModalPanelContainer.css`
 
 ### 작업 내용
 
-#### 4.1 FloatingPanelContainer 구조
+#### 4.1 ModalPanelContainer 구조
 ```tsx
-export const FloatingPanelContainer = memo(function FloatingPanelContainer() {
-  const { layout, closeFloatingPanel, focusFloatingPanel, updateFloatingPanelPosition } = usePanelLayout();
-  const { floatingPanels } = layout;
+export const ModalPanelContainer = memo(function ModalPanelContainer() {
+  const { layout, closeModalPanel, focusModalPanel, updateModalPanelPosition } = usePanelLayout();
+  const { modalPanels } = layout;
 
   return (
-    <div className="floating-panel-container">
-      {floatingPanels.map((panel) => (
-        <FloatingPanel key={panel.panelId} panel={panel} ... />
+    <div className="modal-panel-container">
+      {modalPanels.map((panel) => (
+        <ModalPanel key={panel.panelId} panel={panel} ... />
       ))}
     </div>
   );
 });
 ```
 
-#### 4.2 FloatingPanel 컴포넌트
-React Aria Components의 `ModalOverlay`/`Dialog`를 사용해 포커스 트랩과 배경 inert 처리를 기본으로 둡니다.
+#### 4.2 ModalPanel 컴포넌트
+React Aria Components 레퍼런스 구조(`ModalOverlay` → `Modal` → `Dialog`)를 사용해 포커스 트랩과 배경 inert 처리를 기본으로 둡니다.
 ```tsx
-const FloatingPanel = memo(function FloatingPanel({ panel, onClose, onFocus, onPositionChange }) {
+import { ModalOverlay, Modal, Dialog, Heading } from "react-aria-components";
+
+const ModalPanel = memo(function ModalPanel({ panel, onClose, onFocus, onPositionChange }) {
   const panelConfig = PanelRegistry.getPanel(panel.panelId);
   const PanelComponent = panelConfig.component;
 
   return (
     <ModalOverlay
-      className="floating-panel-backdrop"
+      className="modal-panel-backdrop"
       isDismissable={false}
       isKeyboardDismissDisabled={false}
     >
-      <Dialog
-        className={`floating-panel floating-panel--${panel.mode}`}
+      <Modal
+        className={`modal-panel modal-panel--${panel.mode}`}
         style={{ left: panel.position.x, top: panel.position.y, zIndex: panel.zIndex }}
       >
-        <div className="floating-panel-header" onMouseDown={handleDragStart}>
-          <span>{panelConfig.name}</span>
-          <button onClick={handleClose}><X /></button>
-        </div>
-        <div className="floating-panel-content">
-          <PanelComponent isActive={true} displayMode={panel.mode} onClose={handleClose} />
-        </div>
-      </Dialog>
+        <Dialog aria-label={panelConfig.name}>
+          <Heading slot="title">{panelConfig.name}</Heading>
+          <div className="modal-panel-header" onMouseDown={handleDragStart}>
+            <span>{panelConfig.name}</span>
+            <button onClick={handleClose}><X /></button>
+          </div>
+          <div className="modal-panel-content">
+            <PanelComponent isActive={true} displayMode={panel.mode} onClose={handleClose} />
+          </div>
+        </Dialog>
+      </Modal>
     </ModalOverlay>
   );
 });
 ```
 
 #### 4.2.1 OverlayProvider 위치
-React Aria Components의 오버레이 스택 관리를 위해 앱 루트에 `OverlayProvider`를 배치합니다.
+React Aria Components의 오버레이 스택 관리를 위해 Builder 전용으로 `OverlayProvider`를 배치합니다.
 ```tsx
 import { OverlayProvider } from "react-aria-components";
 
-// App 루트 또는 BuilderCore 상위에 배치
+// Builder 전용: src/builder/index.tsx에서 감싸기
 <OverlayProvider>
   <BuilderCore />
 </OverlayProvider>
@@ -409,21 +430,21 @@ useEffect(() => {
 
 #### 4.4 CSS 스타일
 ```css
-.floating-panel-container {
+.modal-panel-container {
   position: fixed;
   inset: 0;
   pointer-events: none;
   z-index: 900;
 }
 
-.floating-panel-backdrop {
+.modal-panel-backdrop {
   position: absolute;
   inset: 0;
   background: rgba(0, 0, 0, 0.4);
   pointer-events: auto;
 }
 
-.floating-panel {
+.modal-panel {
   position: absolute;
   display: flex;
   flex-direction: column;
@@ -432,15 +453,21 @@ useEffect(() => {
   border-radius: 8px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.24);
   pointer-events: auto;
+  animation: modalPanelIn 150ms ease-out;
 }
 
-.floating-panel-header {
+.modal-panel-header {
   cursor: grab;
   user-select: none;
 }
 
-.floating-panel-header:active {
+.modal-panel-header:active {
   cursor: grabbing;
+}
+
+@keyframes modalPanelIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
 }
 ```
 
@@ -448,14 +475,14 @@ useEffect(() => {
 - 드래그 동작 확인
 - z-index 포커스 동작 확인
 - ESC 키 닫기 동작 확인
-- Dialog/Overlay 모드 차이 확인
+- Modal 모드 동작 확인
 
 ---
 
 ## Phase 5: 앱 통합 및 패널 설정
 
 ### 목표
-메인 앱에 FloatingPanelContainer 마운트 및 패널 설정 업데이트
+메인 앱에 ModalPanelContainer 마운트 및 패널 설정 업데이트
 
 ### 변경 파일
 - `src/builder/main/BuilderCore.tsx`
@@ -466,17 +493,17 @@ useEffect(() => {
 
 #### 5.1 layout/index.ts export 추가
 ```typescript
-export { FloatingPanelContainer } from "./FloatingPanelContainer";
+export { ModalPanelContainer } from "./ModalPanelContainer";
 ```
 
-#### 5.2 BuilderCore에 FloatingPanelContainer 추가
+#### 5.2 BuilderCore에 ModalPanelContainer 추가
 ```tsx
-import { FloatingPanelContainer } from "../layout";
+import { ModalPanelContainer } from "../layout";
 
 // render 부분
 <>
   {/* ... 기존 컴포넌트들 */}
-  <FloatingPanelContainer />
+  <ModalPanelContainer />
 </>
 ```
 
@@ -488,27 +515,27 @@ import { FloatingPanelContainer } from "../layout";
   name: "설정",
   // ...
   defaultHeight: 500,
-  displayModes: ["panel", "dialog"],
+  displayModes: ["panel", "modal"],
 },
 {
   id: "ai",
   name: "AI",
   // ...
   defaultHeight: 500,
-  displayModes: ["panel", "overlay"],
+  displayModes: ["panel", "modal"],
 },
 {
   id: "history",
   name: "히스토리",
   // ...
   defaultHeight: 450,
-  displayModes: ["panel", "dialog", "overlay"],
+  displayModes: ["panel", "modal"],
 },
 ```
 
 ### 검증
 - 앱 정상 동작 확인
-- 설정된 패널에서 dialog/overlay 모드 동작 확인
+- 설정된 패널에서 modal 모드 동작 확인
 
 ---
 
@@ -525,14 +552,9 @@ import { FloatingPanelContainer } from "../layout";
   <MenuItem onAction={() => togglePanel(side, panelId)}>
     패널에서 열기
   </MenuItem>
-  {supportsDialog && (
-    <MenuItem onAction={() => openPanelAsDialog(panelId)}>
-      다이얼로그로 열기
-    </MenuItem>
-  )}
-  {supportsOverlay && (
-    <MenuItem onAction={() => openPanelAsOverlay(panelId)}>
-      오버레이로 열기
+  {supportsModal && (
+    <MenuItem onAction={() => openPanelAsModal(panelId)}>
+      모달로 열기
     </MenuItem>
   )}
 </ContextMenu>
@@ -542,15 +564,15 @@ import { FloatingPanelContainer } from "../layout";
 ```typescript
 // 기존 단축키 + Shift로 다른 모드
 Ctrl+, -> Settings 패널 열기
-Ctrl+Shift+, -> Settings 다이얼로그로 열기
+Ctrl+Shift+, -> Settings 모달로 열기
 ```
 
 #### 6.3 CommandPalette 통합
 ```typescript
 {
-  id: "open-settings-dialog",
-  label: "설정을 다이얼로그로 열기",
-  action: () => openPanelAsDialog("settings"),
+  id: "open-settings-modal",
+  label: "설정을 모달로 열기",
+  action: () => openPanelAsModal("settings"),
 }
 ```
 
@@ -568,7 +590,7 @@ Ctrl+Shift+, -> Settings 다이얼로그로 열기
 
 ### 7.3 스냅 기능
 - 화면 가장자리에 자동 정렬
-- 다른 floating 패널과 정렬
+- 다른 modal 패널과 정렬
 
 ### 7.4 최소화/최대화
 - 타이틀바 더블클릭으로 최대화
@@ -583,7 +605,7 @@ Ctrl+Shift+, -> Settings 다이얼로그로 열기
 | 1 | 타입 시스템 확장 | 필수 | 낮음 |
 | 2 | PanelRegistry 확장 | 필수 | 낮음 |
 | 3 | usePanelLayout 확장 | 필수 | 중간 |
-| 4 | FloatingPanelContainer | 필수 | 높음 |
+| 4 | ModalPanelContainer | 필수 | 높음 |
 | 5 | 앱 통합 및 패널 설정 | 필수 | 낮음 |
 | 6 | UI 트리거 구현 | 선택 | 중간 |
 | 7 | 고급 기능 | 선택 | 높음 |
@@ -602,22 +624,31 @@ Ctrl+Shift+, -> Settings 다이얼로그로 열기
 7. `src/builder/main/BuilderCore.tsx` - Phase 5
 
 ### 생성 파일
-1. `src/builder/layout/FloatingPanelContainer.tsx` - Phase 4
-2. `src/builder/layout/FloatingPanelContainer.css` - Phase 4
+1. `src/builder/layout/ModalPanelContainer.tsx` - Phase 4
+2. `src/builder/layout/ModalPanelContainer.css` - Phase 4
 
 ---
 
 ## 테스트 체크리스트
 
 ### 기능 테스트
-- [ ] Dialog 모드로 패널 열기
-- [ ] Overlay 모드로 패널 열기
+- [ ] Modal 모드로 패널 열기
 - [ ] 드래그로 위치 이동
 - [ ] 클릭으로 z-index 변경 (포커스)
 - [ ] ESC 키로 닫기
 - [ ] X 버튼으로 닫기
 - [ ] 배경 클릭 차단 확인
-- [ ] 다중 floating 패널 동시 표시
+- [ ] 다중 modal 패널 동시 표시
+
+### 접근성 테스트
+- [ ] 스크린 리더로 패널 제목 읽기
+- [ ] Tab 키로 패널 내 포커스 순환
+- [ ] 포커스 트랩 동작 (modal 모드)
+
+### 엣지 케이스
+- [ ] 창 리사이즈 시 패널 위치 보정
+- [ ] 패널 열린 상태에서 라우트 변경
+- [ ] 드래그 중 마우스가 창 밖으로 나갈 때
 
 ### 호환성 테스트
 - [ ] 기존 패널 기능 정상 동작
