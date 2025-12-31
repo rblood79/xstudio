@@ -4,6 +4,9 @@ dist
 /build
 .env
 
+# Turborepo
+.turbo
+
 /test-results
 
 .cache

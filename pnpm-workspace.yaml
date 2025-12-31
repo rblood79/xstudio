@@ -1,8 +1,29 @@
 packages:
-  - .
-  - packages/*
+  - 'apps/*'
+  - 'packages/*'
 
-onlyBuiltDependencies:
-  - '@swc/core'
-  - esbuild
-  - puppeteer
+# pnpm 10+ 형식: catalogs + default 사용
+catalogs:
+  default:
+    # React 생태계
+    react: ^19.2.3
+    react-dom: ^19.2.3
+    react-router: ^7.11.0
+    react-router-dom: ^7.11.0
+    react-aria-components: ^1.14.0
+
+    # 빌드 도구
+    typescript: ~5.9.3
+    vite: ^7.3.0
+    '@vitejs/plugin-react-swc': ^4.2.2
+    cross-env: ^7.0.3
+
+    # 상태 관리
+    zustand: ^5.0.9
+    jotai: ^2.16.0
+    immer: ^10.1.1
+
+    # 타입 정의
+    '@types/react': ^19.2.7
+    '@types/react-dom': ^19.2.3
+    '@types/node': ^24.10.2

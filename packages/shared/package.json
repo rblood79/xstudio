@@ -2,45 +2,47 @@
   "name": "@xstudio/shared",
   "version": "0.1.0",
   "private": true,
-  "description": "XStudio shared types, utilities, and components",
+  "description": "XStudio shared types, utilities, components, and renderers",
   "type": "module",
-  "main": "./dist/index.js",
-  "module": "./dist/index.js",
-  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "import": "./dist/index.js",
-      "types": "./dist/index.d.ts"
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
     },
     "./types": {
-      "import": "./dist/types/index.js",
-      "types": "./dist/types/index.d.ts"
+      "types": "./src/types/index.ts",
+      "default": "./src/types/index.ts"
     },
     "./utils": {
-      "import": "./dist/utils/index.js",
-      "types": "./dist/utils/index.d.ts"
+      "types": "./src/utils/index.ts",
+      "default": "./src/utils/index.ts"
     },
     "./components": {
-      "import": "./dist/components/index.js",
-      "types": "./dist/components/index.d.ts"
+      "types": "./src/components/index.ts",
+      "default": "./src/components/index.ts"
+    },
+    "./renderers": {
+      "types": "./src/renderers/index.ts",
+      "default": "./src/renderers/index.ts"
     }
   },
-  "files": [
-    "dist"
-  ],
   "scripts": {
-    "build": "tsc",
-    "dev": "tsc --watch",
-    "clean": "rm -rf dist",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "clean": "rm -rf dist"
   },
   "peerDependencies": {
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react": "catalog:",
+    "react-dom": "catalog:"
+  },
+  "dependencies": {
+    "react-aria-components": "catalog:",
+    "clsx": "^2.1.1",
+    "tailwind-merge": "^3.4.0"
   },
   "devDependencies": {
-    "@types/react": "^19.0.0",
-    "@types/react-dom": "^19.0.0",
-    "typescript": "^5.6.3"
+    "@xstudio/config": "workspace:*",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "typescript": "catalog:"
   }
 }

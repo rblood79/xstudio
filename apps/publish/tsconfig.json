@@ -1,0 +1,15 @@
+{
+  "extends": "@xstudio/config/tsconfig/react-app",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@xstudio/shared": ["../../packages/shared/src"],
+      "@xstudio/shared/*": ["../../packages/shared/src/*"]
+    }
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist"],
+  "references": [
+    { "path": "../../packages/shared" }
+  ]
+}

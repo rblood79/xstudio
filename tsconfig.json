@@ -1,15 +1,9 @@
 {
   "files": [],
   "references": [
-    { "path": "./tsconfig.app.json" },
-    { "path": "./tsconfig.node.json" }
-  ],
-  "compilerOptions": {
-    "baseUrl": ".",
-    "paths": {
-      "@/*": ["./src/*"]
-    },
-    "forceConsistentCasingInFileNames": true,
-    "strict": true
-  }
+    { "path": "./apps/builder" },
+    { "path": "./apps/publish" },
+    { "path": "./packages/shared" },
+    { "path": "./packages/config" }
+  ]
 }

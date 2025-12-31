@@ -1,0 +1,11 @@
+{
+  "name": "@xstudio/config",
+  "version": "0.0.0",
+  "private": true,
+  "exports": {
+    "./tsconfig/base": "./tsconfig/base.json",
+    "./tsconfig/react-app": "./tsconfig/react-app.json",
+    "./tsconfig/library": "./tsconfig/library.json",
+    "./eslint": "./eslint/base.js"
+  }
+}
