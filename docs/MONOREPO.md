@@ -188,6 +188,48 @@ dist/
 - 정적 콘텐츠 위주 (블로그, 포트폴리오)
 - CDN 배포로 빠른 로딩 필요
 
+#### 모드별 운영 지표 및 모니터링
+
+| 지표 | 런타임 모드 (SPA) | 정적 빌드 (SSG) | 측정 도구 |
+|-----|-----------------|----------------|----------|
+| First Contentful Paint (FCP) | 1.5-2.5초 | 0.5-1.0초 | Lighthouse |
+| Time to Interactive (TTI) | 2.5-4.0초 | 1.0-2.0초 | Web Vitals |
+| 번들 크기 | ~200KB (React 포함) | ~50KB (하이드레이션 시) | Bundlephobia |
+| SEO 점수 | 60-80 | 90-100 | Lighthouse |
+
+**API 실패 시 폴백 전략 (SPA 전용)**:
+
+```typescript
+// apps/publish/src/utils/dataLoader.ts
+export async function loadProjectData() {
+  try {
+    const response = await fetch('/api/project');
+    if (!response.ok) throw new Error('API 실패');
+    return await response.json();
+  } catch (error) {
+    console.warn('API 실패, 로컬 캐시 사용:', error);
+
+    // 폴백 1: 로컬 스토리지 캐시
+    const cached = localStorage.getItem('project-cache');
+    if (cached) return JSON.parse(cached);
+
+    // 폴백 2: 빌드 시 포함된 정적 데이터
+    return import('./fallback-data.json');
+  }
+}
+```
+
+**모드 선택 가이드라인**:
+
+| 요구사항 | 권장 모드 |
+|---------|----------|
+| SEO 필수 | SSG |
+| 실시간 데이터 표시 | SPA |
+| CDN 캐싱 최대화 | SSG |
+| 사용자 로그인 필요 | SPA |
+| 빠른 초기 로딩 | SSG |
+| API 기반 동적 콘텐츠 | SPA |
+
 #### 퍼블리싱 UI 흐름
 
 ```
@@ -484,6 +526,73 @@ packages/config/
    import { FormRenderers } from '@xstudio/shared/components/renderers';
    ```
 
+**렌더러 계약 검증 테스트 계획**:
+
+렌더러를 `packages/shared`로 이동할 때, Pixi 기반 WebGL과 React 프리뷰/퍼블리시가 동일한 컴포넌트 계약을 유지하는지 확인해야 합니다.
+
+```typescript
+// packages/shared/src/components/renderers/__tests__/contract.test.ts
+
+import { describe, it, expect } from 'vitest';
+import { FormRenderers, LayoutRenderers } from '../index';
+
+// Props 타입 계약 검증
+describe('Renderer Props Contract', () => {
+  it('FormRenderers should accept standard props', () => {
+    const props = {
+      id: 'test-input',
+      value: '',
+      onChange: () => {},
+      disabled: false,
+    };
+    // 타입 체크 통과 확인
+    expect(() => FormRenderers.TextInput(props)).not.toThrow();
+  });
+
+  it('LayoutRenderers should accept children and style props', () => {
+    const props = {
+      children: null,
+      style: { padding: 16 },
+      className: 'container',
+    };
+    expect(() => LayoutRenderers.Container(props)).not.toThrow();
+  });
+});
+
+// 스타일 토큰 계약 검증
+describe('Style Token Contract', () => {
+  it('should use consistent spacing tokens', () => {
+    // 공유 스타일 토큰이 builder/publish에서 동일하게 적용되는지 확인
+    expect(FormRenderers.getSpacing('md')).toBe(16);
+    expect(LayoutRenderers.getSpacing('md')).toBe(16);
+  });
+});
+
+// 이벤트 시그니처 계약 검증
+describe('Event Signature Contract', () => {
+  it('onChange should receive consistent event shape', () => {
+    const mockOnChange = vi.fn();
+    const input = FormRenderers.TextInput({ onChange: mockOnChange });
+
+    // 시뮬레이션된 이벤트가 동일한 형태인지 확인
+    fireEvent.change(input, { target: { value: 'test' } });
+    expect(mockOnChange).toHaveBeenCalledWith(
+      expect.objectContaining({
+        target: expect.objectContaining({ value: 'test' })
+      })
+    );
+  });
+});
+```
+
+**검증 항목 체크리스트**:
+| 항목 | 검증 방법 | 기대 결과 |
+|-----|----------|----------|
+| Props 타입 일치 | `tsc --noEmit` | 타입 오류 없음 |
+| 스타일 토큰 일관성 | 단위 테스트 | 동일 값 반환 |
+| 이벤트 시그니처 | 통합 테스트 | 동일 형태 이벤트 |
+| 시각적 일관성 | Chromatic 스냅샷 | 픽셀 차이 0% |
+
 5. **apps/builder/package.json 생성**
    ```json
    {
@@ -548,6 +657,23 @@ packages/config/
    },
    ```
 
+**검증 체크리스트**:
+```bash
+# 1. workspace 링크 확인
+pnpm list --depth 0
+# @xstudio/shared workspace:* 링크 확인
+
+# 2. TypeScript project references 검증
+pnpm exec tsc --showConfig | head -30
+# "references" 섹션에 shared 패키지 포함 확인
+
+# 3. 빌드 테스트
+pnpm install && pnpm run build
+
+# 4. 타입 체크
+pnpm run check-types
+```
+
 ---
 
 ### Phase 4: apps/publish/ 이동
@@ -592,6 +718,24 @@ packages/config/
      }
    }
    ```
+
+**검증 체크리스트**:
+```bash
+# 1. 의존성 링크 확인
+cd apps/publish && pnpm list --depth 0
+# @xstudio/shared, @xstudio/config 링크 확인
+
+# 2. Vite 버전 호환성 확인
+pnpm exec vite --version
+# Vite 7.x 확인
+
+# 3. 빌드 테스트 (SSG/SPA 모두)
+pnpm run build
+pnpm run build:ssg
+
+# 4. shared 패키지 import 확인
+pnpm exec tsc --noEmit
+```
 
 ---
 
@@ -645,6 +789,24 @@ packages/config/
   },
   "include": ["src"]
 }
+```
+
+**검증 체크리스트**:
+```bash
+# 1. exports 경로 확인
+node -e "console.log(require.resolve('@xstudio/shared'))"
+# packages/shared/src/index.ts 경로 확인
+
+# 2. 타입 내보내기 확인
+pnpm exec tsc --showConfig
+# declaration: true 확인
+
+# 3. builder/publish에서 import 테스트
+cd apps/builder && pnpm exec tsc --noEmit
+cd apps/publish && pnpm exec tsc --noEmit
+
+# 4. 순환 의존성 확인
+pnpm exec madge --circular packages/shared/src
 ```
 
 ---
@@ -809,20 +971,245 @@ git mv src/ apps/builder/src/
 ### 4.3 CI/CD 업데이트
 
 빌드 스크립트의 경로 업데이트 필요:
-- GitHub Actions
-- Vercel/Netlify 배포 설정
+
+#### GitHub Actions 변경 사항
+
+```yaml
+# .github/workflows/ci.yml (변경 전)
+- name: Build
+  run: pnpm build
+  working-directory: .
+
+# .github/workflows/ci.yml (변경 후)
+- name: Build
+  run: pnpm turbo run build
+  env:
+    TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+    TURBO_TEAM: ${{ vars.TURBO_TEAM }}
+
+# 캐시 키 패턴 변경
+- name: Cache turbo build
+  uses: actions/cache@v4
+  with:
+    path: .turbo
+    key: ${{ runner.os }}-turbo-${{ github.sha }}
+    restore-keys: |
+      ${{ runner.os }}-turbo-
+```
+
+#### Vercel 설정 변경
+
+```json
+// vercel.json
+{
+  "buildCommand": "pnpm turbo run build --filter=@xstudio/builder",
+  "outputDirectory": "apps/builder/dist",
+  "installCommand": "pnpm install",
+  "framework": "vite"
+}
+```
+
+#### Netlify 설정 변경
+
+```toml
+# netlify.toml
+[build]
+  command = "pnpm turbo run build --filter=@xstudio/publish"
+  publish = "apps/publish/dist"
+
+[build.environment]
+  NODE_VERSION = "20"
+```
+
+#### 워크스페이스 경로 변경 요약
+
+| 항목 | 기존 경로 | 신규 경로 |
+|-----|----------|----------|
+| 빌더 빌드 출력 | `./dist` | `apps/builder/dist` |
+| 퍼블리시 빌드 출력 | `packages/publish/dist` | `apps/publish/dist` |
+| 캐시 디렉토리 | `node_modules/.cache` | `.turbo` |
 
 ### 4.4 ESLint 설정
 
 현재 `eslint-local-rules/` 위치 결정:
-- 옵션 A: `packages/config/eslint/local-rules/`로 이동
-- 옵션 B: `apps/builder/eslint-local-rules/`로 이동 (builder 전용)
+
+#### 위치 선택 기준
+
+| 규칙 유형 | 권장 위치 | 이유 |
+|----------|----------|------|
+| Pixi.js/Canvas 관련 룰 | `apps/builder/eslint-local-rules/` | Builder 전용 그래픽 로직 |
+| WebGL 메모리 관리 룰 | `apps/builder/eslint-local-rules/` | Builder 전용 |
+| API/데이터 검증 룰 | `packages/config/eslint/` | 전사 공용 |
+| React Aria 접근성 룰 | `packages/config/eslint/` | 전사 공용 |
+| 네이밍 컨벤션 룰 | `packages/config/eslint/` | 전사 공용 |
+
+#### 옵션 A: 전사 공용 설정 (packages/config)
+
+```javascript
+// packages/config/eslint/base.js
+module.exports = {
+  extends: ['eslint:recommended', 'plugin:react/recommended'],
+  plugins: ['@xstudio/eslint-local-rules'],
+  rules: {
+    '@xstudio/eslint-local-rules/no-unsafe-api-call': 'error',
+    '@xstudio/eslint-local-rules/require-aria-label': 'warn',
+  },
+};
+
+// apps/builder/eslint.config.js
+import baseConfig from '@xstudio/config/eslint';
+
+export default [
+  ...baseConfig,
+  {
+    // Builder 전용 규칙 추가
+    plugins: { 'local-rules': localRules },
+    rules: {
+      'local-rules/no-direct-pixi-dispose': 'error',
+      'local-rules/require-webgl-cleanup': 'error',
+    },
+  },
+];
+```
+
+#### 옵션 B: Builder 전용 설정
+
+```javascript
+// apps/builder/eslint-local-rules/index.js
+module.exports = {
+  rules: {
+    'no-direct-pixi-dispose': require('./rules/no-direct-pixi-dispose'),
+    'require-webgl-cleanup': require('./rules/require-webgl-cleanup'),
+  },
+};
+
+// apps/builder/eslint.config.js
+import localRules from './eslint-local-rules';
+
+export default [
+  {
+    plugins: { 'local-rules': localRules },
+    rules: {
+      'local-rules/no-direct-pixi-dispose': 'error',
+    },
+  },
+];
+```
+
+**권장사항**: Pixi/Canvas 관련 규칙은 옵션 B(Builder 전용), API/접근성 규칙은 옵션 A(전사 공용)로 분리
 
 ### 4.5 Storybook
 
 `.storybook/` 설정 경로 업데이트:
 - `apps/builder/.storybook/`으로 이동
 - 또는 루트에 유지하고 경로 수정
+
+#### 이동 후 설정 변경 예시
+
+```typescript
+// apps/builder/.storybook/main.ts
+import type { StorybookConfig } from '@storybook/react-vite';
+import { mergeConfig } from 'vite';
+import path from 'path';
+
+const config: StorybookConfig = {
+  stories: [
+    '../src/**/*.mdx',
+    '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)',
+    // shared 패키지 스토리도 포함
+    '../../../packages/shared/src/**/*.stories.@(js|jsx|mjs|ts|tsx)',
+  ],
+
+  // 정적 에셋 디렉토리 (경로 변경 필수)
+  staticDirs: [
+    '../public',
+    { from: '../../../packages/shared/public', to: '/shared-assets' },
+  ],
+
+  addons: [
+    '@storybook/addon-essentials',
+    '@storybook/addon-a11y',
+  ],
+
+  framework: {
+    name: '@storybook/react-vite',
+    options: {},
+  },
+
+  async viteFinal(config) {
+    return mergeConfig(config, {
+      resolve: {
+        alias: {
+          '@': path.resolve(__dirname, '../src'),
+          '@xstudio/shared': path.resolve(__dirname, '../../../packages/shared/src'),
+        },
+      },
+    });
+  },
+};
+
+export default config;
+```
+
+```typescript
+// apps/builder/.storybook/preview.ts
+import type { Preview } from '@storybook/react';
+
+// import 경로 변경
+import '../src/styles/globals.css';
+import '@xstudio/shared/styles/components.css';
+
+const preview: Preview = {
+  parameters: {
+    controls: {
+      matchers: {
+        color: /(background|color)$/i,
+        date: /Date$/i,
+      },
+    },
+  },
+};
+
+export default preview;
+```
+
+#### Vite 프록시 설정 (API 모킹 시)
+
+```typescript
+// apps/builder/.storybook/main.ts - viteFinal 내부
+async viteFinal(config) {
+  return mergeConfig(config, {
+    server: {
+      proxy: {
+        '/api': {
+          target: 'http://localhost:3001',
+          changeOrigin: true,
+          // Storybook에서 API 모킹 서버 사용 시
+        },
+      },
+    },
+  });
+}
+```
+
+#### package.json 스크립트 변경
+
+```json
+// apps/builder/package.json
+{
+  "scripts": {
+    "storybook": "storybook dev -p 6006",
+    "build-storybook": "storybook build -o storybook-static"
+  }
+}
+
+// 루트 package.json (turbo 연동)
+{
+  "scripts": {
+    "storybook": "turbo run storybook --filter=@xstudio/builder"
+  }
+}
+```
 
 ---
 
