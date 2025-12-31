@@ -1,57 +1,37 @@
-# XStudio 모노레포 구조 표준화
+# XStudio 모노레포 구조
 
 > **작성일**: 2025-12-31
 > **상태**: ✅ 완료 (Completed) - 2025-12-31
 > **관련 문서**: [WEBGL_BUILDER.md](./explanation/architecture/WEBGL_BUILDER.md)
->
-> **마이그레이션 결과**:
-> - Phase 1-7 전체 완료
-> - 남은 작업: packages/shared 내 import 경로 정리 (../../types → @xstudio/shared/types)
 
 ---
 
 ## 1. Executive Summary
 
-### 1.1 현재 상태
+### 1.1 현재 구조
 
 ```
-xstudio/ (불완전한 하이브리드 구조)
-├── src/                    # 메인 빌더 앱 (187K LOC) - 루트에 위치
-├── packages/
-│   ├── shared/            # @xstudio/shared (의존성 미연결)
-│   └── publish/           # @xstudio/publish (Vite 6 사용)
-├── package.json           # 루트가 앱이면서 워크스페이스 (역할 혼합)
-├── pnpm-workspace.yaml    # packages: ['.', 'packages/*']
-├── vite.config.ts         # Vite 7
-├── tsconfig.json          # packages/* 참조 없음
-└── index.html
-```
-
-**문제점:**
-| 문제 | 영향 |
-|------|------|
-| 루트가 앱이면서 워크스페이스 | 역할 혼합, 빌드 범위 불명확 |
-| TypeScript references 미연결 | IDE 타입 추론 불완전 |
-| 의존성 버전 불일치 | TS 5.9.3 vs 5.6.3, Vite 7 vs 6 |
-| shared 패키지 빌드 미포함 | `tsc -b` 대상 제외 |
-| workspace 의존성 미등록 | pnpm 심볼릭 링크 미생성 |
-
-### 1.2 목표 상태
-
-```
-xstudio/ (표준 pnpm + Turborepo 모노레포)
+xstudio/ (pnpm + Turborepo 모노레포)
 ├── apps/
 │   ├── builder/              # 메인 빌더 앱 (@xstudio/builder)
 │   │   ├── src/
 │   │   │   ├── builder/      # Pixi.js 기반 Canvas 편집기
 │   │   │   │   └── workspace/canvas/  # WebGL 편집 화면
-│   │   │   ├── preview/      # React 프리뷰 (COMPARE_MODE용, 구 canvas/)
+│   │   │   ├── preview/      # React 프리뷰 (COMPARE_MODE용)
 │   │   │   │   ├── App.tsx
 │   │   │   │   ├── messaging/
+│   │   │   │   ├── store/
 │   │   │   │   └── router/
+│   │   │   ├── shared/       # Builder 전용 공유 코드
+│   │   │   │   ├── components/  # React 컴포넌트 (builder 의존성 있음)
+│   │   │   │   └── renderers/   # 렌더러 (preview 의존성 있음)
 │   │   │   └── ...
+│   │   ├── .storybook/
+│   │   ├── eslint-local-rules/
+│   │   ├── scripts/
 │   │   ├── public/
 │   │   ├── index.html
+│   │   ├── eslint.config.js
 │   │   ├── package.json
 │   │   ├── vite.config.ts
 │   │   └── tsconfig.json
@@ -63,19 +43,10 @@ xstudio/ (표준 pnpm + Turborepo 모노레포)
 │       └── tsconfig.json
 │
 ├── packages/
-│   ├── shared/               # 공유 라이브러리 (@xstudio/shared)
+│   ├── shared/               # 순수 공유 라이브러리 (@xstudio/shared)
 │   │   ├── src/
-│   │   │   ├── components/   # React 컴포넌트 (Preview & Publish 공용)
-│   │   │   │   ├── TextField.tsx
-│   │   │   │   ├── ListBox.tsx
-│   │   │   │   ├── DatePicker.tsx
-│   │   │   │   └── styles/
-│   │   │   ├── renderers/    # 렌더러 (IndexedDB → React 변환)
-│   │   │   │   ├── FormRenderers.tsx
-│   │   │   │   ├── LayoutRenderers.tsx
-│   │   │   │   └── ...
-│   │   │   ├── types/
-│   │   │   └── utils/
+│   │   │   ├── types/        # 공유 타입 정의
+│   │   │   └── utils/        # 공유 유틸리티
 │   │   └── package.json
 │   │
 │   └── config/               # 공유 설정 (@xstudio/config)
@@ -87,67 +58,94 @@ xstudio/ (표준 pnpm + Turborepo 모노레포)
 │
 ├── pnpm-workspace.yaml       # catalogs 섹션 포함
 ├── turbo.json                # Turborepo 설정
+├── vercel.json               # Vercel 배포 설정
 ├── package.json              # 워크스페이스 전용 (private: true)
-└── tsconfig.json             # solution style (선택)
+└── tsconfig.json             # solution style references
 ```
+
+### 1.2 패키지 구조
+
+| 패키지 | 역할 | 의존성 |
+|--------|------|--------|
+| `@xstudio/builder` | 메인 빌더 앱 | @xstudio/shared, @xstudio/config |
+| `@xstudio/publish` | 배포 런타임 | @xstudio/shared |
+| `@xstudio/shared` | 순수 공유 코드 (types, utils) | 없음 |
+| `@xstudio/config` | 공유 설정 (tsconfig, eslint) | 없음 |
+
+> **Note**: components와 renderers는 builder 앱 전용 의존성(stores, hooks 등)이 있어
+> `apps/builder/src/shared/`에 위치합니다.
 
 ### 1.3 아키텍처 흐름
 
 ```
-                    ┌─────────────────────────────────────────┐
-                    │       packages/shared/components/        │
-                    │  ┌─────────────────────────────────────┐│
-                    │  │  - TextField, ListBox, Tabs...      ││
-                    │  │  - styles/index.css (스타일 정의)    ││
-                    │  │                                     ││
-                    │  │     ★ Single Source of Truth ★      ││
-                    │  └─────────────────────────────────────┘│
-                    └──────────────────┬──────────────────────┘
-                                       │
-           ┌───────────────────────────┼───────────────────────────┐
-           │                           │                           │
-           ▼                           ▼                           ▼
-┌─────────────────────┐    ┌─────────────────────┐    ┌─────────────────────┐
-│  Builder (WebGL)    │    │  Preview (React)    │    │  Publish (React)    │
-│  Pixi.js Canvas     │    │  iframe 렌더링       │    │  최종 배포          │
-├─────────────────────┤    ├─────────────────────┤    ├─────────────────────┤
-│  CSS 파싱 →         │    │  React 컴포넌트     │    │  React 컴포넌트     │
-│  Canvas 시각화      │    │  직접 렌더링        │    │  직접 렌더링        │
-│                     │    │                     │    │                     │
-│  (디자인 일관성)    │    │  (실제 동작)        │    │  (실제 동작)        │
-└──────────┬──────────┘    └──────────┬──────────┘    └──────────┬──────────┘
-           │                          │                          │
-           │                          │                          │
-           ▼                          ▼                          ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                        apps/builder/src/shared/                              │
+│  ┌───────────────────────────────┐  ┌───────────────────────────────┐       │
+│  │  components/                  │  │  renderers/                    │       │
+│  │  - TextField, ListBox, Tabs   │  │  - FormRenderers               │       │
+│  │  - styles/index.css           │  │  - LayoutRenderers             │       │
+│  └───────────────────────────────┘  └───────────────────────────────┘       │
+└──────────────────────────────┬──────────────────────────────────────────────┘
+                               │
+           ┌───────────────────┴───────────────────┐
+           │                                       │
+           ▼                                       ▼
+┌─────────────────────┐              ┌─────────────────────┐
+│  Builder (WebGL)    │              │  Preview (React)    │
+│  Pixi.js Canvas     │              │  iframe 렌더링       │
+├─────────────────────┤              ├─────────────────────┤
+│  CSS 파싱 →         │  ◄────────►  │  React 컴포넌트     │
+│  Canvas 시각화      │   메시징      │  직접 렌더링        │
+│  (디자인 일관성)    │              │  (실제 동작)        │
+└──────────┬──────────┘              └──────────┬──────────┘
+           │                                    │
+           └────────────────┬───────────────────┘
+                            ▼
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │                              IndexedDB                                       │
 │  ┌───────────────┐  ┌───────────────┐  ┌───────────────┐                    │
 │  │ 컴포넌트 트리  │  │ 스타일/속성   │  │ 이벤트 바인딩 │                    │
 │  └───────────────┘  └───────────────┘  └───────────────┘                    │
-│                                                                              │
-│  Builder에서 편집 → 저장 / Preview & Publish에서 읽기                        │
 └─────────────────────────────────────────────────────────────────────────────┘
+
+                    ┌─────────────────────────────────────────┐
+                    │       packages/shared/ (순수 공유)       │
+                    │  ┌─────────────────────────────────────┐│
+                    │  │  types/  - Element, Page 타입       ││
+                    │  │  utils/  - buildElementTree 등      ││
+                    │  └─────────────────────────────────────┘│
+                    └──────────────────┬──────────────────────┘
+                                       │
+                                       ▼
+                          ┌─────────────────────┐
+                          │  Publish (React)    │
+                          │  @xstudio/publish   │
+                          ├─────────────────────┤
+                          │  최종 배포 런타임    │
+                          │  독립 실행          │
+                          └─────────────────────┘
 ```
 
-**데이터 & 스타일 흐름:**
+### 1.4 주요 명령어
 
-```
-packages/shared/components/styles/
-                │
-    ┌───────────┴───────────┐
-    │                       │
-    ▼                       ▼
-Builder (WebGL)         Preview & Publish (React)
-    │                       │
-    │ CSS 파싱              │ CSS import
-    │ → Pixi.js 스타일 적용  │ → React 컴포넌트 스타일
-    │                       │
-    ▼                       ▼
-┌─────────────┐         ┌─────────────┐
-│ Canvas 렌더 │   ≈     │ DOM 렌더    │
-│ (시각적으로  │         │ (실제 동작) │
-│  동일하게)   │         │             │
-└─────────────┘         └─────────────┘
+```bash
+# 개발 서버 실행
+pnpm dev
+
+# 빌드
+pnpm build
+
+# 타입 체크
+pnpm type-check
+
+# 린트
+pnpm lint
+
+# 테스트
+pnpm test
+
+# Storybook
+pnpm storybook
 ```
 
 **핵심 원칙:**
