@@ -2,6 +2,10 @@
 
 XStudio 협업을 위한 간단한 가이드입니다. 변경은 작게, 관측 가능하게, 기존 패턴에 맞춰 진행하세요.
 
+## Assistant Response Language
+
+- Codex의 모든 답변은 코드 블록을 제외하고 한국어로 작성합니다.
+
 ## Project Structure & Module Organization
 
 - `src/builder`: 핵심 빌더 UI(패널, 인스펙터, 캔버스 브리지). Zustand 스토어는 `src/builder/stores`, 유틸은 `src/builder/stores/utils`.

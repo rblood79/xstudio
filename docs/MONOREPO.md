@@ -81,7 +81,7 @@ xstudio/ (표준 pnpm + Turborepo 모노레포)
 │       │   └── library.json
 │       └── eslint/
 │
-├── pnpm-workspace.yaml       # catalog 포함
+├── pnpm-workspace.yaml       # catalogs 섹션 포함
 ├── turbo.json                # Turborepo 설정
 ├── package.json              # 워크스페이스 전용 (private: true)
 └── tsconfig.json             # solution style (선택)
@@ -331,16 +331,51 @@ export async function loadProjectData() {
 {
   "scripts": {
     "build": "vite build",
-    "build:ssg": "BUILD_MODE=ssg vite build",
+    "build:ssg": "cross-env BUILD_MODE=ssg vite build",
     "preview": "vite preview"
+  },
+  "devDependencies": {
+    "cross-env": "catalog:"
   }
 }
 ```
 
+> **Windows 호환성**: `cross-env` 패키지를 사용하여 환경변수를 크로스 플랫폼으로 설정합니다.
+
 ```typescript
 // apps/publish/vite.config.ts
-import { defineConfig } from 'vite';
+import { defineConfig, Plugin } from 'vite';
 import react from '@vitejs/plugin-react-swc';
+// SSG 구현 시 필요한 모듈 (실제 사용 시 import)
+// import fs from 'fs/promises';
+// import path from 'path';
+
+// SSG 플러그인 정의 (예시 구현)
+function ssgPlugin(options: { routes: () => Promise<string[]> }): Plugin {
+  return {
+    name: 'vite-plugin-ssg',
+    apply: 'build',
+    async closeBundle() {
+      if (process.env.BUILD_MODE !== 'ssg') return;
+
+      const routes = await options.routes();
+      console.log(`SSG: ${routes.length} pages to generate`);
+      // 실제 구현은 프로젝트 요구사항에 맞게 작성
+    },
+  };
+}
+
+// 프로젝트 데이터 로드 (예시)
+async function loadProjectData() {
+  // IndexedDB 또는 API에서 페이지 데이터 로드
+  // 실제 구현 시 데이터 소스에 맞게 수정 필요
+  return {
+    pages: [
+      { slug: '/' },
+      { slug: '/about' },
+    ],
+  };
+}
 
 export default defineConfig(({ mode }) => ({
   plugins: [
@@ -356,6 +391,9 @@ export default defineConfig(({ mode }) => ({
 }));
 ```
 
+> **SSG 구현 참고**: 위 `ssgPlugin`과 `loadProjectData`는 예시입니다.
+> 실제 SSG 구현은 [vite-plugin-ssr](https://vite-plugin-ssr.com/) 또는 커스텀 구현을 사용할 수 있습니다.
+
 ---
 
 ## 2. 의존성 버전 정책
@@ -370,33 +408,41 @@ packages:
   - 'apps/*'
   - 'packages/*'
 
-catalog:
-  # React 생태계
-  react: ^19.2.3
-  react-dom: ^19.2.3
-  react-router: ^7.11.0
-  react-router-dom: ^7.11.0
-  react-aria-components: ^1.14.0
+# pnpm 10+ 형식: catalogs + default 사용
+catalogs:
+  default:
+    # React 생태계
+    react: ^19.2.3
+    react-dom: ^19.2.3
+    react-router: ^7.11.0
+    react-router-dom: ^7.11.0
+    react-aria-components: ^1.14.0
 
-  # 빌드 도구
-  typescript: ~5.9.3
-  vite: ^7.3.0
-  '@vitejs/plugin-react-swc': ^4.2.2
+    # 빌드 도구
+    typescript: ~5.9.3
+    vite: ^7.3.0
+    '@vitejs/plugin-react-swc': ^4.2.2
+    cross-env: ^7.0.3
 
-  # 상태 관리
-  zustand: ^5.0.9
-  jotai: ^2.16.0
-  immer: ^10.1.1
+    # 상태 관리
+    zustand: ^5.0.9
+    jotai: ^2.16.0
+    immer: ^10.1.1
 
-  # 타입 정의
-  '@types/react': ^19.2.7
-  '@types/react-dom': ^19.2.3
-  '@types/node': ^24.10.2
+    # 타입 정의
+    '@types/react': ^19.2.7
+    '@types/react-dom': ^19.2.3
+    '@types/node': ^24.10.2
+```
 
-onlyBuiltDependencies:
-  - '@swc/core'
-  - esbuild
-  - puppeteer
+> **Note**: `onlyBuiltDependencies`는 **루트** `.npmrc`에 별도로 설정합니다.
+> 워크스페이스 전체에 적용됩니다.
+
+```ini
+# /.npmrc (루트 디렉토리)
+onlyBuiltDependencies[]=@swc/core
+onlyBuiltDependencies[]=esbuild
+onlyBuiltDependencies[]=puppeteer
 ```
 
 ### 2.2 패키지별 사용
@@ -425,11 +471,14 @@ onlyBuiltDependencies:
 **목표**: pnpm catalog로 의존성 버전 중앙 관리
 
 **작업 내용**:
-1. `pnpm-workspace.yaml`에 catalog 섹션 추가
-2. **packages 경로에서 `.` 제거 준비** (Phase 3 이후 적용)
-3. 모든 패키지에서 `catalog:` 프로토콜 사용
-4. 루트 package.json에 `@xstudio/shared` 의존성 추가
+1. `pnpm-workspace.yaml`에 catalogs 섹션 추가 (pnpm 10+ 형식)
+2. `.npmrc`에 `onlyBuiltDependencies` 설정
+3. **packages 경로에서 `.` 제거 준비** (Phase 3 이후 적용)
+4. 모든 패키지에서 `catalog:` 프로토콜 사용
 5. **Vite 버전 통일** (6 → 7)
+
+> **Note**: 루트 package.json은 워크스페이스 전용이므로 의존성을 추가하지 않습니다.
+> `@xstudio/shared`는 각 앱(apps/builder, apps/publish)의 package.json에서 참조합니다.
 
 **pnpm-workspace.yaml 변경:**
 ```yaml
@@ -823,10 +872,10 @@ grep -r "from.*['\"].*renderers" apps/builder/src/preview/ --include="*.tsx" --i
    import { FormRenderers } from './renderers';
 
    // apps/builder/src/preview/App.tsx (변경 후)
-   import { FormRenderers } from '@xstudio/shared/components/renderers';
+   import { FormRenderers } from '@xstudio/shared/renderers';
 
    // apps/publish/src/App.tsx
-   import { FormRenderers } from '@xstudio/shared/components/renderers';
+   import { FormRenderers } from '@xstudio/shared/renderers';
    ```
 
 **렌더러 계약 검증 테스트 계획**:
@@ -970,11 +1019,13 @@ pnpm list --depth 0
 pnpm exec tsc --showConfig | head -30
 # "references" 섹션에 shared 패키지 포함 확인
 
-# 3. 빌드 테스트
-pnpm install && pnpm run build
+# 3. 빌드 테스트 (앱 단위)
+pnpm -F @xstudio/builder run build
 
-# 4. 타입 체크
-pnpm run check-types
+# 4. 타입 체크 (앱 단위)
+pnpm -F @xstudio/builder run check-types
+# 또는 turbo 사용 시:
+# turbo run check-types --filter=@xstudio/builder
 ```
 
 ---
@@ -999,13 +1050,14 @@ pnpm run check-types
        "react": "catalog:",
        "react-dom": "catalog:"
      },
-     "devDependencies": {
-       "@xstudio/config": "workspace:*",
-       "typescript": "catalog:",
-       "vite": "catalog:"
-     }
-   }
-   ```
+    "devDependencies": {
+      "@xstudio/config": "workspace:*",
+      "typescript": "catalog:",
+      "vite": "catalog:",
+      "cross-env": "catalog:"
+    }
+  }
+  ```
 
 3. **vite.config.ts 업데이트** (Vite 7 호환)
 
@@ -1944,24 +1996,41 @@ git status --ignored
 
 echo "🔄 Import 경로 마이그레이션 시작..."
 
+# 크로스 플랫폼 sed 호환성 처리
+# macOS: sed -i '' / Linux: sed -i
+if [[ "$OSTYPE" == "darwin"* ]]; then
+  SED_INPLACE="sed -i ''"
+else
+  SED_INPLACE="sed -i"
+fi
+
+# sed 래퍼 함수
+sed_replace() {
+  local file=$1
+  shift
+  if [[ "$OSTYPE" == "darwin"* ]]; then
+    sed -i '' "$@" "$file"
+  else
+    sed -i "$@" "$file"
+  fi
+}
+
 # apps/builder 내 src/shared 참조를 @xstudio/shared로 변환
-find apps/builder/src -name "*.ts" -o -name "*.tsx" | while read file; do
+find apps/builder/src \( -name "*.ts" -o -name "*.tsx" \) | while read file; do
   # ../shared/ 또는 ../../shared/ 패턴을 @xstudio/shared로 변환
-  sed -i '' \
+  sed_replace "$file" \
     -e 's|from ["'"'"']\.\./shared/|from "@xstudio/shared/|g' \
     -e 's|from ["'"'"']\.\./\.\./shared/|from "@xstudio/shared/|g' \
-    -e 's|from ["'"'"']\.\./\.\./\.\./shared/|from "@xstudio/shared/|g' \
-    "$file"
+    -e 's|from ["'"'"']\.\./\.\./\.\./shared/|from "@xstudio/shared/|g'
 done
 
 echo "✅ apps/builder import 변환 완료"
 
 # apps/publish 내 참조 변환
-find apps/publish/src -name "*.ts" -o -name "*.tsx" | while read file; do
-  sed -i '' \
+find apps/publish/src \( -name "*.ts" -o -name "*.tsx" \) | while read file; do
+  sed_replace "$file" \
     -e 's|from ["'"'"']\.\./shared/|from "@xstudio/shared/|g' \
-    -e 's|from ["'"'"']\.\./\.\./shared/|from "@xstudio/shared/|g' \
-    "$file"
+    -e 's|from ["'"'"']\.\./\.\./shared/|from "@xstudio/shared/|g'
 done
 
 echo "✅ apps/publish import 변환 완료"
@@ -1972,6 +2041,8 @@ echo "📊 변환 결과 확인:"
 echo "남은 상대 경로 import:"
 grep -r "from ['\"]\.\..*shared" apps/ --include="*.ts" --include="*.tsx" | head -20
 ```
+
+> **크로스 플랫폼**: macOS와 Linux 모두에서 동작하도록 `$OSTYPE` 환경변수로 분기 처리합니다.
 
 **jscodeshift 사용 (정교한 AST 변환):**
 
@@ -2020,8 +2091,8 @@ git stash
 # 변환 실행
 ./scripts/migrate-imports.sh
 
-# 타입 체크로 검증
-pnpm run check-types
+# 타입 체크로 검증 (turbo 사용)
+turbo run check-types
 
 # 문제 발생 시 롤백
 git stash pop
@@ -2096,19 +2167,21 @@ git revert <commit-hash>
 **측정 스크립트:**
 
 ```bash
-# 마이그레이션 전 베이스라인 측정
+# 마이그레이션 전 베이스라인 측정 (루트가 앱 역할일 때)
 echo "=== Before Migration ===" > benchmark.txt
 time pnpm run build 2>&1 | tee -a benchmark.txt
-time pnpm run check-types 2>&1 | tee -a benchmark.txt
+time pnpm exec tsc --noEmit 2>&1 | tee -a benchmark.txt  # 직접 tsc 실행
 du -sh dist/ >> benchmark.txt
 
-# 마이그레이션 후 측정
+# 마이그레이션 후 측정 (turbo 사용)
 echo "=== After Migration ===" >> benchmark.txt
 time turbo run build 2>&1 | tee -a benchmark.txt
 time turbo run build 2>&1 | tee -a benchmark.txt  # 캐시 적중
 time turbo run check-types 2>&1 | tee -a benchmark.txt
 du -sh apps/builder/dist/ >> benchmark.txt
 ```
+
+> **Note**: 마이그레이션 전에는 루트에 스크립트가 없을 수 있으므로 `pnpm exec tsc --noEmit`을 직접 사용합니다.
 
 **성공 기준 체크리스트:**
 
@@ -2320,13 +2393,13 @@ jobs:
         run: ./scripts/verify-catalog.sh
 
       - name: Build all packages
-        run: pnpm turbo run build
+        run: turbo run build
 
       - name: Type check
-        run: pnpm turbo run check-types
+        run: turbo run check-types
 
       - name: Run E2E tests
-        run: pnpm turbo run test:e2e
+        run: turbo run test:e2e
 ```
 
 ---
