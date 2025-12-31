@@ -41,7 +41,7 @@ xstudio/ (표준 pnpm + Turborepo 모노레포)
 │   │   ├── src/
 │   │   │   ├── builder/      # Pixi.js 기반 Canvas 편집기
 │   │   │   │   └── workspace/canvas/  # WebGL 편집 화면
-│   │   │   ├── canvas/       # React 프리뷰 (COMPARE_MODE용)
+│   │   │   ├── preview/      # React 프리뷰 (COMPARE_MODE용, 구 canvas/)
 │   │   │   │   ├── App.tsx
 │   │   │   │   ├── messaging/
 │   │   │   │   └── router/
@@ -99,7 +99,7 @@ xstudio/ (표준 pnpm + Turborepo 모노레포)
 │  프리뷰     │  │  퍼블리싱   │  │  packages/shared        │
 │  (iframe)   │  │  (export)   │  │  /components            │
 │             │  │             │  │  - 공유 렌더러           │
-│  canvas/    │  │  publish/   │  │  - React Aria 기반      │
+│  preview/   │  │  publish/   │  │  - React Aria 기반      │
 │  App.tsx    │  │  App.tsx    │  │                         │
 └──────┬──────┘  └──────┬──────┘  └────────────┬────────────┘
        │                │                      │
@@ -111,9 +111,12 @@ xstudio/ (표준 pnpm + Turborepo 모노레포)
 
 **핵심 원칙:**
 - **Builder**: Pixi.js WebGL로 편집 (빠른 조작)
-- **프리뷰 (canvas/)**: React.js로 실시간 미리보기
+- **프리뷰 (preview/)**: React.js로 실시간 미리보기 (iframe 내 렌더링)
 - **퍼블리싱 (publish/)**: React.js로 최종 배포
 - **공유 렌더러**: 프리뷰와 퍼블리싱이 동일한 결과물 보장
+
+> **디렉토리명 변경**: 기존 `src/canvas/` → `src/preview/`로 리네이밍 권장
+> (Pixi.js의 `workspace/canvas`와 혼동 방지)
 
 ### 1.4 퍼블리싱 모드
 
@@ -365,19 +368,46 @@ onlyBuiltDependencies:
 
 **작업 내용**:
 1. `pnpm-workspace.yaml`에 catalog 섹션 추가
-2. 모든 패키지에서 `catalog:` 프로토콜 사용
-3. 루트 package.json에 `@xstudio/shared` 의존성 추가
+2. **packages 경로에서 `.` 제거 준비** (Phase 3 이후 적용)
+3. 모든 패키지에서 `catalog:` 프로토콜 사용
+4. 루트 package.json에 `@xstudio/shared` 의존성 추가
+5. **Vite 버전 통일** (6 → 7)
+
+**pnpm-workspace.yaml 변경:**
+```yaml
+# 현재 (루트가 앱 역할)
+packages:
+  - '.'           # ← Phase 3 완료 후 제거
+  - 'packages/*'
+
+# Phase 3 이후 (목표 상태)
+packages:
+  - 'apps/*'
+  - 'packages/*'
+```
+
+**Vite 버전 통일:**
+```bash
+# packages/publish의 Vite 6 → 7 업그레이드
+cd packages/publish
+pnpm add -D vite@^7.3.0
+
+# Breaking changes 확인
+# - Vite 7은 Node.js 18+ 필요
+# - vite.config.ts 호환성 확인
+```
 
 **수정 파일**:
 - `/pnpm-workspace.yaml`
 - `/package.json`
 - `/packages/shared/package.json`
-- `/packages/publish/package.json`
+- `/packages/publish/package.json` (Vite 버전 업그레이드)
 
 **검증**:
 ```bash
 pnpm install
 pnpm why typescript  # 모든 패키지에서 동일 버전 확인
+pnpm why vite        # Vite 7.x 통일 확인
 ```
 
 ---
@@ -467,33 +497,64 @@ packages/config/
 
 **목표**: 메인 빌더 앱을 표준 위치로 이전
 
-**작업 내용**:
+**작업 순서** (순서 중요 ⚠️):
 
-1. **디렉토리 생성**
-   ```bash
-   mkdir -p apps/builder
-   ```
+> **주의**: 렌더러 이동은 builder 이동 완료 후 진행해야 import 경로 충돌을 방지할 수 있습니다.
 
-2. **파일 이동** (git mv 사용으로 이력 보존)
-   ```bash
-   git mv src/ apps/builder/src/
-   git mv public/ apps/builder/public/
-   git mv index.html apps/builder/index.html
-   git mv vite.config.ts apps/builder/vite.config.ts
-   git mv vite.preview.config.ts apps/builder/vite.preview.config.ts
-   git mv tsconfig.app.json apps/builder/tsconfig.app.json
-   git mv tsconfig.node.json apps/builder/tsconfig.node.json
-   ```
+**Step 1: 디렉토리 생성**
+```bash
+mkdir -p apps/builder
+```
 
-3. **렌더러 코드 분리** (canvas 프리뷰 & publish 공용)
-   ```bash
-   # 렌더러를 packages/shared로 이동
-   git mv apps/builder/src/canvas/renderers/ packages/shared/src/components/renderers/
-   ```
+**Step 2: Builder 파일 이동** (git mv 사용으로 이력 보존)
+```bash
+git mv src/ apps/builder/src/
+git mv public/ apps/builder/public/
+git mv index.html apps/builder/index.html
+git mv vite.config.ts apps/builder/vite.config.ts
+git mv vite.preview.config.ts apps/builder/vite.preview.config.ts
+git mv tsconfig.app.json apps/builder/tsconfig.app.json
+git mv tsconfig.node.json apps/builder/tsconfig.node.json
+
+# 환경변수 파일 이동
+git mv .env apps/builder/.env
+git mv .env.example apps/builder/.env.example
+```
+
+**Step 2.5: 디렉토리 리네이밍** (혼동 방지)
+```bash
+# canvas/ → preview/ 리네이밍 (Pixi.js workspace/canvas와 구분)
+git mv apps/builder/src/canvas/ apps/builder/src/preview/
+
+# vite.preview.config.ts 내 경로 업데이트
+# entry: 'src/canvas/index.tsx' → 'src/preview/index.tsx'
+```
+
+> **이유**: `src/canvas/`는 React 기반 프리뷰 앱이지만, 이름이 Pixi.js의
+> `src/builder/workspace/canvas/` (WebGL 편집 화면)와 혼동을 줄 수 있음
+
+**Step 3: 빌드 검증** (렌더러 이동 전 중간 검증)
+```bash
+cd apps/builder
+pnpm install
+pnpm run build  # 기존 경로로 빌드 성공 확인
+```
+
+**Step 4: 렌더러 코드 분리** (preview & publish 공용)
+```bash
+# 렌더러를 packages/shared로 이동
+git mv apps/builder/src/preview/renderers/ packages/shared/src/components/renderers/
+```
+
+**Step 5: Import 경로 업데이트** (렌더러 이동 직후 즉시 수행)
+```bash
+# 변경이 필요한 파일 검색
+grep -r "from.*['\"].*renderers" apps/builder/src/preview/ --include="*.tsx" --include="*.ts"
+```
 
    **분리 후 구조**:
    ```
-   apps/builder/src/canvas/           # Builder 프리뷰 전용
+   apps/builder/src/preview/          # Builder 프리뷰 전용 (구 canvas/)
    ├── App.tsx                        # 프리뷰 앱 진입점
    ├── index.tsx                      # srcdoc iframe 진입점
    ├── messaging/                     # postMessage 핸들러
@@ -516,10 +577,10 @@ packages/config/
 
 4. **Import 경로 업데이트**
    ```typescript
-   // apps/builder/src/canvas/App.tsx (변경 전)
+   // apps/builder/src/preview/App.tsx (변경 전)
    import { FormRenderers } from './renderers';
 
-   // apps/builder/src/canvas/App.tsx (변경 후)
+   // apps/builder/src/preview/App.tsx (변경 후)
    import { FormRenderers } from '@xstudio/shared/components/renderers';
 
    // apps/publish/src/App.tsx
@@ -968,7 +1029,49 @@ git mv src/ apps/builder/src/
 
 `@/` alias가 새 경로를 가리키도록 vite.config.ts 수정 필요.
 
-### 4.3 CI/CD 업데이트
+### 4.3 환경변수 파일 위치
+
+모노레포에서 환경변수는 **앱별로 분리**하는 것을 권장합니다:
+
+```
+xstudio/
+├── .env.example              # 루트: 공통 환경변수 템플릿
+├── apps/
+│   ├── builder/
+│   │   ├── .env              # Builder 전용 (VITE_API_URL, VITE_WS_URL 등)
+│   │   ├── .env.local        # 로컬 개발용 (gitignore)
+│   │   └── .env.production   # 프로덕션 빌드용
+│   └── publish/
+│       ├── .env              # Publish 전용
+│       └── .env.production
+└── packages/                  # 라이브러리는 환경변수 사용 지양
+```
+
+**환경변수 분리 기준:**
+
+| 변수 유형 | 위치 | 예시 |
+|----------|------|------|
+| 앱별 API 엔드포인트 | `apps/[app]/.env` | `VITE_API_URL` |
+| 앱별 포트 설정 | `apps/[app]/.env` | `VITE_PORT=5173` |
+| 공통 서비스 키 | 루트 `.env` 또는 CI 시크릿 | `TURBO_TOKEN` |
+| 민감한 정보 | CI/CD 시크릿만 | `DATABASE_URL` |
+
+**Vite 환경변수 로드 순서:**
+```
+.env                # 항상 로드
+.env.local          # 항상 로드, gitignore 대상
+.env.[mode]         # 해당 모드에서만 로드
+.env.[mode].local   # 해당 모드에서만 로드, gitignore 대상
+```
+
+**마이그레이션 시 주의:**
+- 기존 루트 `.env` 파일을 `apps/builder/.env`로 복사
+- `VITE_` 접두사가 있는 변수만 클라이언트에 노출됨
+- `.gitignore`에 `apps/*/.env.local` 패턴 추가
+
+---
+
+### 4.4 CI/CD 업데이트
 
 빌드 스크립트의 경로 업데이트 필요:
 
@@ -1029,7 +1132,7 @@ git mv src/ apps/builder/src/
 | 퍼블리시 빌드 출력 | `packages/publish/dist` | `apps/publish/dist` |
 | 캐시 디렉토리 | `node_modules/.cache` | `.turbo` |
 
-### 4.4 ESLint 설정
+### 4.5 ESLint 설정
 
 현재 `eslint-local-rules/` 위치 결정:
 
@@ -1098,7 +1201,81 @@ export default [
 
 **권장사항**: Pixi/Canvas 관련 규칙은 옵션 B(Builder 전용), API/접근성 규칙은 옵션 A(전사 공용)로 분리
 
-### 4.5 Storybook
+### 4.6 테스트 파일 정리
+
+#### Playwright E2E 테스트
+
+```
+# 기존 구조 (추정)
+xstudio/
+├── e2e/                      # 또는 tests/
+│   └── *.spec.ts
+└── playwright.config.ts
+
+# 목표 구조
+xstudio/
+├── apps/builder/
+│   ├── e2e/                  # Builder E2E 테스트
+│   │   └── *.spec.ts
+│   └── playwright.config.ts
+└── turbo.json                # e2e task 정의
+```
+
+**playwright.config.ts 수정:**
+```typescript
+// apps/builder/playwright.config.ts
+import { defineConfig } from '@playwright/test';
+
+export default defineConfig({
+  testDir: './e2e',
+  webServer: {
+    command: 'pnpm run dev',
+    port: 5173,
+    cwd: __dirname,  // apps/builder 기준
+  },
+  use: {
+    baseURL: 'http://localhost:5173',
+  },
+});
+```
+
+**turbo.json에 e2e task 추가:**
+```json
+{
+  "tasks": {
+    "e2e": {
+      "dependsOn": ["build"],
+      "cache": false
+    }
+  }
+}
+```
+
+#### scripts/ 디렉토리 정리
+
+현재 루트의 `scripts/` 디렉토리는 **테스트/디버깅 목적**으로 생성된 파일들입니다.
+
+**처리 방안:**
+
+| 파일 유형 | 처리 |
+|----------|------|
+| 성능 테스트 스크립트 | `apps/builder/scripts/`로 이동 또는 삭제 |
+| 일회성 마이그레이션 스크립트 | 마이그레이션 완료 후 삭제 |
+| 빌드/배포 스크립트 | 루트 `scripts/`에 유지 (필요 시) |
+
+```bash
+# 마이그레이션 시 정리
+rm -rf scripts/  # 테스트용 스크립트 전체 삭제
+
+# 또는 필요한 것만 이동
+git mv scripts/perf-test.ts apps/builder/scripts/
+```
+
+**권장사항**: 테스트용으로 생성된 스크립트는 마이그레이션 전에 정리하여 이동 대상을 최소화합니다.
+
+---
+
+### 4.7 Storybook
 
 `.storybook/` 설정 경로 업데이트:
 - `apps/builder/.storybook/`으로 이동
