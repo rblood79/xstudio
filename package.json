@@ -17,11 +17,12 @@
     "test:e2e": "playwright test"
   },
   "devDependencies": {
-    "turbo": "^2.5.0",
     "@playwright/mcp": "^0.0.53",
     "@playwright/test": "^1.57.0",
     "playwright": "^1.57.0",
-    "tsx": "^4.21.0"
+    "tsx": "^4.21.0",
+    "turbo": "^2.7.2",
+    "vitest": "^4.0.16"
   },
   "packageManager": "pnpm@10.26.2"
 }
