@@ -3,11 +3,18 @@ dist
 /.cache
 /build
 .env
+.env.local
+.env*.local
 
 # Turborepo
 .turbo
 
+# TypeScript
+*.tsbuildinfo
+
 /test-results
+/playwright-report
+/coverage
 
 .cache
 .vercel
