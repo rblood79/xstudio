@@ -7,6 +7,158 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added - Project Export/Import JSON Functionality (2026-01-02)
+
+#### 프로젝트 데이터 내보내기/가져오기 기능
+
+**목적:**
+- Builder에서 작업한 프로젝트를 JSON 파일로 내보내기
+- Publish 앱에서 JSON 파일을 로드하여 프로젝트 미리보기
+- 로컬 파일 기반 프로젝트 공유 및 백업 지원
+
+**구현된 기능:**
+
+1. **Export Utilities (`packages/shared/src/utils/export.utils.ts`)**
+   - `ExportedProjectData` 인터페이스: 내보내기 데이터 구조 정의
+   - `downloadProjectAsJson()`: 프로젝트 데이터를 JSON 파일로 다운로드
+   - `loadProjectFromUrl()`: URL에서 프로젝트 JSON 로드
+   - `loadProjectFromFile()`: File 객체에서 프로젝트 JSON 로드
+   - `ImportResult` 타입: 로드 결과 (success/error) 처리
+
+   ```typescript
+   export interface ExportedProjectData {
+     version: string;
+     exportedAt: string;
+     project: { id: string; name: string; };
+     pages: Page[];
+     elements: Element[];
+     currentPageId?: string | null;
+   }
+   ```
+
+2. **Builder Export (`apps/builder/src/builder/main/BuilderCore.tsx`)**
+   - `handlePublish` 함수 구현
+   - Publish 버튼 클릭 시 프로젝트 JSON 다운로드
+   - Store에서 elements, pages, currentPageId 추출
+   - 프로젝트 ID와 이름 포함
+
+   ```typescript
+   const handlePublish = useCallback(() => {
+     const state = useStore.getState();
+     const { elements, pages, currentPageId } = state;
+     downloadProjectAsJson(id, name, pages, elements, currentPageId);
+   }, [projectId, projectInfo]);
+   ```
+
+3. **Publish App Rewrite (`apps/publish/src/App.tsx`)**
+   - URL 파라미터에서 프로젝트 로드 (`?url=...`)
+   - 기본 `/project.json` 파일 로드
+   - 드래그 앤 드롭 파일 업로드 지원
+   - 로딩/에러 상태 UI
+   - Dropzone 스타일링
+
+4. **Vite Alias Configuration (`apps/builder/vite.config.ts`)**
+   - 객체 기반 alias에서 배열 + 정규식 패턴으로 변경
+   - `@xstudio/shared/components/styles/*` 경로 지원
+   - `@xstudio/shared/components/*` 경로 지원
+   - 정규식 순서: 가장 구체적인 패턴부터 처리
+
+   ```typescript
+   resolve: {
+     alias: [
+       { find: "@", replacement: `${import.meta.dirname}/src` },
+       { find: /^@xstudio\/shared\/components\/styles\/(.*)$/,
+         replacement: `${import.meta.dirname}/../../packages/shared/src/components/styles/$1` },
+       { find: /^@xstudio\/shared\/components\/(.*)$/,
+         replacement: `${import.meta.dirname}/../../packages/shared/src/components/$1` },
+       { find: "@xstudio/shared/components",
+         replacement: `${import.meta.dirname}/../../packages/shared/src/components/index.tsx` },
+       // ... more aliases
+     ],
+   },
+   ```
+
+**수정된 파일:**
+
+1. `packages/shared/src/utils/export.utils.ts` (신규)
+   - 프로젝트 내보내기/가져오기 유틸리티
+
+2. `packages/shared/src/utils/index.ts`
+   - export.utils 내보내기 추가
+
+3. `apps/builder/src/builder/main/BuilderCore.tsx`
+   - handlePublish 함수 구현
+
+4. `apps/builder/vite.config.ts`
+   - 정규식 기반 alias 패턴 추가
+
+5. `apps/publish/src/App.tsx`
+   - JSON 로딩 및 드롭존 UI로 완전 재작성
+
+6. `apps/publish/src/styles/index.css`
+   - `.publish-dropzone`, `.dropzone-content` 스타일 추가
+
+7. `apps/publish/public/project.json`
+   - 테스트용 샘플 프로젝트 JSON
+
+**Export JSON 구조:**
+
+```json
+{
+  "version": "1.0.0",
+  "exportedAt": "2026-01-02T07:35:52.219Z",
+  "project": {
+    "id": "db1e4339-e9d1-40e5-a268-8df9d4bfc49d",
+    "name": "AAA"
+  },
+  "pages": [
+    {
+      "id": "336554c4-c9ba-48e1-a278-d389c7519b72",
+      "title": "Home",
+      "slug": "/",
+      "project_id": "db1e4339-e9d1-40e5-a268-8df9d4bfc49d",
+      "parent_id": null,
+      "order_num": 0,
+      "layout_id": null
+    }
+  ],
+  "elements": [
+    {
+      "id": "element-id",
+      "tag": "Button",
+      "props": { "children": "Button", "variant": "primary" },
+      "parent_id": "parent-id",
+      "page_id": "page-id",
+      "order_num": 0
+    }
+  ],
+  "currentPageId": "336554c4-c9ba-48e1-a278-d389c7519b72"
+}
+```
+
+**결과:**
+- ✅ Builder에서 Publish 버튼으로 프로젝트 JSON 다운로드
+- ✅ Publish 앱에서 JSON 파일 로드 및 렌더링
+- ✅ Builder와 Publish 앱 동일한 콘텐츠 렌더링 확인
+- ✅ 드래그 앤 드롭 파일 업로드 지원
+- ✅ URL 파라미터로 외부 JSON 로드 지원
+- ✅ TypeScript 에러 없음
+
+**사용 방법:**
+
+1. **내보내기 (Builder)**
+   - Builder에서 프로젝트 편집
+   - 우측 상단 "Publish" 버튼 클릭
+   - `{프로젝트명}.json` 파일 다운로드
+
+2. **가져오기 (Publish)**
+   - `pnpm --filter publish dev` 실행
+   - 방법 1: `public/project.json`에 파일 배치
+   - 방법 2: URL 파라미터 사용 (`?url=https://...`)
+   - 방법 3: 파일을 드롭존에 드래그 앤 드롭
+
+---
+
 ### Fixed - WebGL Canvas Performance Optimization (2025-12-19)
 
 #### Phase 20: INP Performance Fix for Panel Resize
