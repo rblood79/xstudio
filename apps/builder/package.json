@@ -19,6 +19,7 @@
   },
   "dependencies": {
     "@xstudio/shared": "workspace:*",
+    "@xstudio/publish": "workspace:*",
     "@dagrejs/dagre": "^1.1.8",
     "@internationalized/date": "^3.10.1",
     "@internationalized/number": "^3.6.5",

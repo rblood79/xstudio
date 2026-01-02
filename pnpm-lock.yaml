@@ -128,6 +128,9 @@ importers:
       '@types/three':
         specifier: ^0.182.0
         version: 0.182.0
+      '@xstudio/publish':
+        specifier: workspace:*
+        version: link:../publish
       '@xstudio/shared':
         specifier: workspace:*
         version: link:../../packages/shared

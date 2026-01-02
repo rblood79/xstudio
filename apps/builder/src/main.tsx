@@ -1,4 +1,4 @@
-import { useEffect, useState, JSX } from "react";
+import { useEffect, useState, JSX, lazy, Suspense } from "react";
 import ReactDOM from "react-dom/client";
 import {
   BrowserRouter,
@@ -23,6 +23,9 @@ import Dashboard from "./dashboard";
 import Builder from "./builder";
 import Signin from "./auth/Signin";
 import { ThemeStudio } from "./builder/panels/themes/ThemeStudio.tsx";
+
+// Lazy load PublishApp to prevent CSS conflicts (CSS loads only when route is accessed)
+const PublishApp = lazy(() => import("@xstudio/publish"));
 import { supabase } from "./env/supabase.client";
 import { Session } from "@supabase/supabase-js";
 import {
@@ -91,6 +94,14 @@ function AppLayout() {
             <ProtectedRoute>
               <ThemeStudioRoute />
             </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/publish/*"
+          element={
+            <Suspense fallback={<div style={{ padding: '2rem', textAlign: 'center' }}>Loading...</div>}>
+              <PublishApp />
+            </Suspense>
           }
         />
       </Routes>

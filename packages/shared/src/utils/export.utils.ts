@@ -197,7 +197,7 @@ export function parseProjectData(jsonString: string): ImportResult {
   if (!migrationResult.success) {
     return {
       success: false,
-      error: migrationResult.error,
+      error: migrationResult.error || createError(ExportErrorCode.VALIDATION_ERROR, 'Migration failed'),
     };
   }
 
@@ -372,6 +372,252 @@ export async function loadProjectFromFile(file: File): Promise<ImportResult> {
 
     reader.readAsText(file);
   });
+}
+
+// ============================================
+// Static HTML Generation
+// ============================================
+
+/**
+ * 정적 HTML 파일 생성
+ *
+ * 프로젝트 데이터를 인라인으로 포함한 standalone HTML 파일을 생성합니다.
+ */
+export function generateStaticHtml(
+  projectId: string,
+  projectName: string,
+  pages: Page[],
+  elements: Element[],
+  currentPageId?: string | null
+): string {
+  const projectData = {
+    version: CURRENT_VERSION,
+    exportedAt: new Date().toISOString(),
+    project: { id: projectId, name: projectName },
+    pages,
+    elements,
+    currentPageId,
+  };
+
+  return `<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${escapeHtml(projectName)}</title>
+  <style>
+    /* Reset */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    /* Base styles */
+    html, body {
+      width: 100%;
+      height: 100%;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    /* Navigation */
+    .publish-nav {
+      display: flex;
+      gap: 1rem;
+      padding: 1rem;
+      background: #f5f5f5;
+      border-bottom: 1px solid #ddd;
+    }
+    .publish-nav a {
+      color: #333;
+      text-decoration: none;
+      padding: 0.5rem 1rem;
+      border-radius: 4px;
+    }
+    .publish-nav a:hover { background: #e0e0e0; }
+    .publish-nav a.active { background: #333; color: white; }
+
+    /* Page container */
+    .page-container { padding: 1rem; }
+    .page { display: none; }
+    .page.active { display: block; }
+
+    /* Component styles */
+    .component { position: relative; }
+
+    /* Flex/Grid support */
+    [data-layout="flex"] { display: flex; }
+    [data-layout="grid"] { display: grid; }
+
+    /* Button styles */
+    button {
+      padding: 0.5rem 1rem;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      background: white;
+      cursor: pointer;
+    }
+    button:hover { background: #f5f5f5; }
+
+    /* Input styles */
+    input, textarea, select {
+      padding: 0.5rem;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+  <nav class="publish-nav" id="pageNav"></nav>
+  <main class="page-container" id="pageContainer"></main>
+
+  <script type="application/json" id="projectData">${JSON.stringify(projectData)}</script>
+
+  <script>
+    (function() {
+      // 프로젝트 데이터 로드
+      const projectData = JSON.parse(document.getElementById('projectData').textContent);
+      const { pages, elements, currentPageId } = projectData;
+
+      // 네비게이션 렌더링
+      const nav = document.getElementById('pageNav');
+      pages.forEach(page => {
+        const link = document.createElement('a');
+        link.href = '#' + (page.slug || page.id);
+        link.textContent = page.name || page.slug || 'Page';
+        link.dataset.pageId = page.id;
+        nav.appendChild(link);
+      });
+
+      // Element를 DOM으로 변환
+      function renderElement(el, allElements) {
+        const children = allElements
+          .filter(child => child.parent_id === el.id && !child.deleted)
+          .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+
+        const tag = mapTagToHtml(el.tag);
+        const dom = document.createElement(tag);
+        dom.className = 'component';
+        dom.dataset.elementId = el.id;
+
+        // Props 적용
+        if (el.props) {
+          // Style 적용
+          if (el.props.style) {
+            Object.assign(dom.style, el.props.style);
+          }
+
+          // 텍스트 콘텐츠
+          if (el.props.children && typeof el.props.children === 'string') {
+            dom.textContent = el.props.children;
+          }
+
+          // 속성들
+          if (el.props.placeholder) dom.placeholder = el.props.placeholder;
+          if (el.props.src) dom.src = el.props.src;
+          if (el.props.href) dom.href = el.props.href;
+          if (el.props.alt) dom.alt = el.props.alt;
+        }
+
+        // 자식 요소 렌더링
+        children.forEach(child => {
+          dom.appendChild(renderElement(child, allElements));
+        });
+
+        return dom;
+      }
+
+      // Tag 매핑
+      function mapTagToHtml(tag) {
+        const map = {
+          'Container': 'div', 'Box': 'div', 'Flex': 'div', 'Grid': 'div',
+          'Text': 'span', 'Heading': 'h2', 'Paragraph': 'p', 'Label': 'label',
+          'Button': 'button', 'Link': 'a', 'Image': 'img',
+          'Input': 'input', 'TextField': 'input', 'TextArea': 'textarea',
+          'Select': 'select', 'Checkbox': 'input', 'Radio': 'input',
+          'Form': 'form', 'Section': 'section', 'Article': 'article',
+          'Header': 'header', 'Footer': 'footer', 'Nav': 'nav', 'Main': 'main',
+          'Aside': 'aside', 'Div': 'div', 'Span': 'span',
+        };
+        return map[tag] || 'div';
+      }
+
+      // 페이지 렌더링
+      function renderPage(pageId) {
+        const container = document.getElementById('pageContainer');
+        container.innerHTML = '';
+
+        const pageElements = elements.filter(el => el.page_id === pageId && !el.deleted);
+        const rootElements = pageElements
+          .filter(el => !el.parent_id)
+          .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+
+        const pageDiv = document.createElement('div');
+        pageDiv.className = 'page active';
+
+        rootElements.forEach(el => {
+          pageDiv.appendChild(renderElement(el, pageElements));
+        });
+
+        container.appendChild(pageDiv);
+
+        // 네비게이션 활성화
+        nav.querySelectorAll('a').forEach(a => {
+          a.classList.toggle('active', a.dataset.pageId === pageId);
+        });
+      }
+
+      // 해시 변경 처리
+      function handleHashChange() {
+        const hash = window.location.hash.slice(1);
+        const page = pages.find(p => p.slug === hash || p.id === hash);
+        if (page) {
+          renderPage(page.id);
+        } else if (pages.length > 0) {
+          const defaultPage = pages.find(p => p.id === currentPageId) || pages[0];
+          renderPage(defaultPage.id);
+        }
+      }
+
+      window.addEventListener('hashchange', handleHashChange);
+      handleHashChange();
+    })();
+  </script>
+</body>
+</html>`;
+}
+
+/**
+ * HTML 이스케이프
+ */
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+/**
+ * 정적 HTML 파일 다운로드
+ */
+export function downloadStaticHtml(
+  projectId: string,
+  projectName: string,
+  pages: Page[],
+  elements: Element[],
+  currentPageId?: string | null
+): void {
+  const html = generateStaticHtml(projectId, projectName, pages, elements, currentPageId);
+
+  const blob = new Blob([html], { type: 'text/html' });
+  const url = URL.createObjectURL(blob);
+
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `${projectName || 'project'}.html`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+
+  URL.revokeObjectURL(url);
 }
 
 // ============================================

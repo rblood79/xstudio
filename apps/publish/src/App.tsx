@@ -199,16 +199,45 @@ export function App() {
       return false;
     }
 
+    function loadFromSessionStorage(): boolean {
+      const previewData = sessionStorage.getItem('xstudio-preview-data');
+      if (previewData) {
+        try {
+          const parsed = JSON.parse(previewData);
+          // sessionStorage 데이터는 이미 검증된 형식이므로 직접 사용
+          const projectData: ProjectData = {
+            pages: parsed.pages,
+            elements: parsed.elements,
+            currentPageId: parsed.currentPageId || null,
+            projectName: parsed.project?.name || 'Preview',
+            version: parsed.version,
+          };
+          setProjectData(projectData);
+          setLoadingState('loaded');
+          // 사용 후 삭제 (새로고침 시 다시 로드하지 않음)
+          // sessionStorage.removeItem('xstudio-preview-data');
+          return true;
+        } catch (error) {
+          console.warn('[Publish] Failed to parse sessionStorage data:', error);
+        }
+      }
+      return false;
+    }
+
     async function init() {
-      // 1. URL 파라미터에서 로드 시도
+      // 1. sessionStorage에서 로드 시도 (Builder Preview 모드)
+      const loadedFromSession = loadFromSessionStorage();
+      if (loadedFromSession) return;
+
+      // 2. URL 파라미터에서 로드 시도
       const loadedFromUrl = await loadFromUrlParam();
       if (loadedFromUrl) return;
 
-      // 2. /project.json에서 로드 시도
+      // 3. /project.json에서 로드 시도
       const loadedFromDefault = await loadFromDefaultPath();
       if (loadedFromDefault) return;
 
-      // 3. 프로젝트 없음 - 파일 드롭 대기
+      // 4. 프로젝트 없음 - 파일 드롭 대기
       setLoadingState('idle');
     }
 

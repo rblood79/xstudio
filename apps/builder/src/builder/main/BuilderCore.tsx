@@ -44,7 +44,7 @@ import { useDataStore } from "../stores/data";
 
 import { MessageService } from "../../utils/messaging";
 import { getValueByPath, upsertData, appendData, mergeData, safeJsonParse } from "../../utils/dataHelpers";
-import { downloadProjectAsJson } from "@xstudio/shared/utils";
+import { downloadStaticHtml } from "@xstudio/shared/utils";
 
 export const BuilderCore: React.FC = () => {
   const { projectId } = useParams<{ projectId: string }>();
@@ -730,7 +730,29 @@ export const BuilderCore: React.FC = () => {
 
   // 프리뷰 관련 핸들러들
   const handlePreview = useCallback(() => {
-  }, []);
+    // Store에서 현재 상태 가져오기
+    const state = useStore.getState();
+    const { elements, currentPageId: storeCurrentPageId } = state;
+
+    // 프로젝트 데이터 구성 (pages는 usePageManager에서 가져온 것 사용)
+    const previewData = {
+      version: '1.0.0',
+      exportedAt: new Date().toISOString(),
+      project: {
+        id: projectId || 'preview',
+        name: projectInfo?.name || 'Preview',
+      },
+      pages,  // usePageManager에서 가져온 pages 사용
+      elements,
+      currentPageId: storeCurrentPageId,
+    };
+
+    // sessionStorage에 저장 (같은 origin의 새 탭에서 접근 가능)
+    sessionStorage.setItem('xstudio-preview-data', JSON.stringify(previewData));
+
+    // 새 탭에서 publish 앱 열기
+    window.open('/publish/', '_blank');
+  }, [projectId, projectInfo, pages]);
 
   const handlePlay = useCallback(() => {
   }, []);
@@ -738,14 +760,14 @@ export const BuilderCore: React.FC = () => {
   const handlePublish = useCallback(() => {
     // Store에서 현재 상태 가져오기
     const state = useStore.getState();
-    const { elements, pages, currentPageId } = state;
+    const { elements, pages, currentPageId: storeCurrentPageId } = state;
 
     // 프로젝트 ID와 이름
     const id = projectId || 'unknown-project';
     const name = projectInfo?.name || 'Untitled Project';
 
-    // JSON 파일로 다운로드
-    downloadProjectAsJson(id, name, pages, elements, currentPageId);
+    // 정적 HTML 파일로 다운로드
+    downloadStaticHtml(id, name, pages, elements, storeCurrentPageId);
   }, [projectId, projectInfo]);
 
   // 클릭 외부 감지
