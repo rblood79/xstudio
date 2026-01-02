@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import { useParticleBackground } from "./components/ParticleBackground";
 import { ParticleButton } from "./components/ParticleButton";
-import { ToggleButton } from "@/shared/components";
+import { ToggleButton } from "@xstudio/shared/components";
 
 // 회오리 성장 설정
 const VORTEX_GROWTH_RATE = 0.02;

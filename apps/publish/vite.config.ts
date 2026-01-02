@@ -6,7 +6,12 @@ export default defineConfig({
   plugins: [react()],
   resolve: {
     alias: {
-      '@xstudio/shared': path.resolve(__dirname, '../../packages/shared/src'),
+      '@xstudio/shared/components': path.resolve(__dirname, '../../packages/shared/src/components/index.tsx'),
+      '@xstudio/shared/renderers': path.resolve(__dirname, '../../packages/shared/src/renderers/index.ts'),
+      '@xstudio/shared/types': path.resolve(__dirname, '../../packages/shared/src/types/index.ts'),
+      '@xstudio/shared/hooks': path.resolve(__dirname, '../../packages/shared/src/hooks/index.ts'),
+      '@xstudio/shared/utils': path.resolve(__dirname, '../../packages/shared/src/utils/index.ts'),
+      '@xstudio/shared': path.resolve(__dirname, '../../packages/shared/src/index.ts'),
     },
   },
   build: {

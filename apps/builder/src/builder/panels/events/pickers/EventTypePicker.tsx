@@ -15,7 +15,7 @@ import {
   ListBox,
   ListBoxItem,
 } from 'react-aria-components';
-import { Popover } from '@/shared/components/Popover';
+import { Popover } from '@xstudio/shared/components/Popover';
 import { CirclePlus, Search, ChevronDown, Zap } from 'lucide-react';
 import type { EventType } from '@/types/events/events.types';
 import { EVENT_TYPE_LABELS, EVENT_CATEGORIES } from '@/types/events/events.types';

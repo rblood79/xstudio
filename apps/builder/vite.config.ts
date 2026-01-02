@@ -135,9 +135,18 @@ export default defineConfig(({ command }) => {
       target: "baseline-widely-available", // 또는 'modules'
     },
     resolve: {
-      alias: {
-        "@": `${import.meta.dirname}/src`,
-      },
+      alias: [
+        { find: "@", replacement: `${import.meta.dirname}/src` },
+        // @xstudio/shared aliases - must be ordered from most specific to least specific
+        { find: /^@xstudio\/shared\/components\/styles\/(.*)$/, replacement: `${import.meta.dirname}/../../packages/shared/src/components/styles/$1` },
+        { find: /^@xstudio\/shared\/components\/(.*)$/, replacement: `${import.meta.dirname}/../../packages/shared/src/components/$1` },
+        { find: "@xstudio/shared/components", replacement: `${import.meta.dirname}/../../packages/shared/src/components/index.tsx` },
+        { find: "@xstudio/shared/utils", replacement: `${import.meta.dirname}/../../packages/shared/src/utils/index.ts` },
+        { find: "@xstudio/shared/types", replacement: `${import.meta.dirname}/../../packages/shared/src/types/index.ts` },
+        { find: "@xstudio/shared/renderers", replacement: `${import.meta.dirname}/../../packages/shared/src/renderers/index.ts` },
+        { find: "@xstudio/shared/hooks", replacement: `${import.meta.dirname}/../../packages/shared/src/hooks/index.ts` },
+        { find: "@xstudio/shared", replacement: `${import.meta.dirname}/../../packages/shared/src/index.ts` },
+      ],
     },
     optimizeDeps: {
       // 주요 의존성의 사전 번들링 강제 (의존성 스캔 오류 방지)

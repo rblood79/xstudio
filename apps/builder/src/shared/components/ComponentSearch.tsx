@@ -1,8 +1,8 @@
 /* eslint-disable local/prefer-keyboard-shortcuts-registry */
 import { useState, useEffect, useRef, useMemo } from "react";
-import { SearchField } from "./SearchField";
+import { SearchField } from "@xstudio/shared/components/SearchField";
 import { useRecentSearches } from "../../builder/hooks/useRecentSearches";
-import "./styles/ComponentSearch.css";
+import "@xstudio/shared/components/styles/ComponentSearch.css";
 
 interface ComponentSearchProps {
   onSearchChange: (query: string) => void;

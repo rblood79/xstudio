@@ -7,7 +7,7 @@ settings:
 catalogs:
   default:
     '@types/node':
-      specifier: ^24.10.2
+      specifier: 24.10.4
       version: 24.10.4
     '@types/react':
       specifier: ^19.2.7
@@ -339,9 +339,33 @@ importers:
 
   packages/shared:
     dependencies:
+      '@internationalized/date':
+        specifier: ^3.10.1
+        version: 3.10.1
+      '@internationalized/number':
+        specifier: ^3.6.5
+        version: 3.6.5
+      '@react-aria/focus':
+        specifier: ^3.21.3
+        version: 3.21.3(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
+      '@react-aria/utils':
+        specifier: ^3.32.0
+        version: 3.32.0(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
+      '@tanstack/react-table':
+        specifier: ^8.21.3
+        version: 8.21.3(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
+      '@tanstack/react-virtual':
+        specifier: ^3.13.13
+        version: 3.13.13(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
+      '@types/node':
+        specifier: 'catalog:'
+        version: 24.10.4
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
+      lucide-react:
+        specifier: ^0.562.0
+        version: 0.562.0(react@19.2.3)
       react:
         specifier: 'catalog:'
         version: 19.2.3
@@ -351,6 +375,9 @@ importers:
       react-dom:
         specifier: 'catalog:'
         version: 19.2.3(react@19.2.3)
+      react-stately:
+        specifier: ^3.43.0
+        version: 3.43.0(react@19.2.3)
       tailwind-merge:
         specifier: ^3.4.0
         version: 3.4.0

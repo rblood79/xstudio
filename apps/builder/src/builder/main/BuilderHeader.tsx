@@ -15,8 +15,7 @@ import {
   Settings,
 } from "lucide-react";
 import { Key } from "react-aria-components";
-import { ToggleButtonGroup } from "../../shared/components/ToggleButtonGroup";
-import { ToggleButton } from "../../shared/components/ToggleButton";
+import { ToggleButtonGroup, ToggleButton } from "@xstudio/shared/components";
 import { iconProps } from "../../utils/ui/uiConstants";
 import { usePanelLayout } from "../layout";
 import { ZoomControls } from "../workspace/ZoomControls";

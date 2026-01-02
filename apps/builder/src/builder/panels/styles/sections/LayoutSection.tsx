@@ -10,7 +10,7 @@
 
 import { useState, memo } from 'react';
 import { PropertySection, PropertyUnitInput } from '../../../components';
-import { ToggleButton, ToggleButtonGroup, Button } from '../../../../shared/components';
+import { ToggleButton, ToggleButtonGroup, Button } from "@xstudio/shared/components";
 import { Input } from 'react-aria-components';
 import { iconProps } from '../../../../utils/ui/uiConstants';
 import {

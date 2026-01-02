@@ -6,10 +6,16 @@
  * Builder에서 생성된 프로젝트를 렌더링하는 앱입니다.
  *
  * @since 2025-12-11 Phase 10 B2.3
+ * @updated 2026-01-02 JSON 로드 기능 추가
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import type { Element, Page } from '@xstudio/shared';
+import {
+  loadProjectFromUrl,
+  loadProjectFromFile,
+  type ExportedProjectData,
+} from '@xstudio/shared/utils';
 import { PageRenderer } from './renderer';
 import './styles/index.css';
 
@@ -23,6 +29,8 @@ interface ProjectData {
   currentPageId: string | null;
 }
 
+type LoadingState = 'idle' | 'loading' | 'loaded' | 'error';
+
 // ============================================
 // App Component
 // ============================================
@@ -30,105 +38,187 @@ interface ProjectData {
 export function App() {
   const [projectData, setProjectData] = useState<ProjectData | null>(null);
   const [currentPage, setCurrentPage] = useState<Page | null>(null);
+  const [loadingState, setLoadingState] = useState<LoadingState>('idle');
   const [error, setError] = useState<string | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // 프로젝트 데이터 로드 (JSON 파일 또는 API)
-  useEffect(() => {
-    async function loadProjectData() {
-      try {
-        // 실제 구현에서는 API 또는 JSON 파일에서 로드
-        // 지금은 데모 데이터 사용
-        const demoData: ProjectData = {
-          pages: [
-            {
-              id: 'demo-page-1',
-              title: 'Home',
-              project_id: 'demo-project',
-              slug: '/',
-            },
-          ],
-          elements: [
-            {
-              id: 'demo-element-1',
-              tag: 'div',
-              props: {
-                style: {
-                  padding: '20px',
-                  backgroundColor: '#f0f0f0',
-                  minHeight: '100vh',
-                },
-              },
-              parent_id: null,
-              page_id: 'demo-page-1',
-              order_num: 0,
-            },
-            {
-              id: 'demo-element-2',
-              tag: 'h1',
-              props: {
-                children: 'Welcome to XStudio Published App',
-                style: {
-                  color: '#333',
-                  fontSize: '2rem',
-                  marginBottom: '1rem',
-                },
-              },
-              parent_id: 'demo-element-1',
-              page_id: 'demo-page-1',
-              order_num: 0,
-            },
-            {
-              id: 'demo-element-3',
-              tag: 'p',
-              props: {
-                children: 'This is a demo page rendered by the Publish App.',
-                style: {
-                  color: '#666',
-                  fontSize: '1rem',
-                },
-              },
-              parent_id: 'demo-element-1',
-              page_id: 'demo-page-1',
-              order_num: 1,
-            },
-          ],
-          currentPageId: 'demo-page-1',
-        };
+  // 프로젝트 데이터 설정
+  const setProject = useCallback((data: ExportedProjectData) => {
+    const projectData: ProjectData = {
+      pages: data.pages,
+      elements: data.elements,
+      currentPageId: data.currentPageId || null,
+    };
 
-        setProjectData(demoData);
+    setProjectData(projectData);
 
-        // 현재 페이지 설정
-        if (demoData.currentPageId) {
-          const page = demoData.pages.find((p) => p.id === demoData.currentPageId);
-          setCurrentPage(page || null);
-        }
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load project');
-      }
+    // 현재 페이지 설정
+    const pageId = data.currentPageId || data.pages[0]?.id;
+    if (pageId) {
+      const page = data.pages.find((p) => p.id === pageId);
+      setCurrentPage(page || null);
     }
 
-    loadProjectData();
+    setLoadingState('loaded');
+  }, []);
+
+  // URL 파라미터에서 프로젝트 로드
+  useEffect(() => {
+    async function loadFromUrlParam() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const projectUrl = urlParams.get('project');
+
+      if (projectUrl) {
+        setLoadingState('loading');
+        const result = await loadProjectFromUrl(projectUrl);
+
+        if (result.success && result.data) {
+          setProject(result.data);
+        } else {
+          setError(result.error || 'Failed to load project');
+          setLoadingState('error');
+        }
+        return true;
+      }
+      return false;
+    }
+
+    async function loadFromDefaultPath() {
+      // /project.json 파일 시도
+      setLoadingState('loading');
+      const result = await loadProjectFromUrl('/project.json');
+
+      if (result.success && result.data) {
+        setProject(result.data);
+        return true;
+      }
+      return false;
+    }
+
+    async function init() {
+      // 1. URL 파라미터에서 로드 시도
+      const loadedFromUrl = await loadFromUrlParam();
+      if (loadedFromUrl) return;
+
+      // 2. /project.json에서 로드 시도
+      const loadedFromDefault = await loadFromDefaultPath();
+      if (loadedFromDefault) return;
+
+      // 3. 프로젝트 없음 - 파일 드롭 대기
+      setLoadingState('idle');
+    }
+
+    init();
+  }, [setProject]);
+
+  // 파일 드롭 핸들러
+  const handleDrop = useCallback(
+    async (e: React.DragEvent<HTMLDivElement>) => {
+      e.preventDefault();
+      setIsDragging(false);
+
+      const file = e.dataTransfer.files[0];
+      if (!file || !file.name.endsWith('.json')) {
+        setError('Please drop a valid JSON file');
+        return;
+      }
+
+      setLoadingState('loading');
+      const result = await loadProjectFromFile(file);
+
+      if (result.success && result.data) {
+        setProject(result.data);
+        setError(null);
+      } else {
+        setError(result.error || 'Failed to load project file');
+        setLoadingState('error');
+      }
+    },
+    [setProject]
+  );
+
+  // 파일 선택 핸들러
+  const handleFileSelect = useCallback(
+    async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+
+      setLoadingState('loading');
+      const result = await loadProjectFromFile(file);
+
+      if (result.success && result.data) {
+        setProject(result.data);
+        setError(null);
+      } else {
+        setError(result.error || 'Failed to load project file');
+        setLoadingState('error');
+      }
+    },
+    [setProject]
+  );
+
+  // 드래그 이벤트 핸들러
+  const handleDragOver = useCallback((e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(true);
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(false);
   }, []);
 
   // 에러 상태
-  if (error) {
+  if (loadingState === 'error' && error) {
     return (
       <div className="publish-error">
         <h1>Error</h1>
         <p>{error}</p>
+        <button onClick={() => window.location.reload()}>Retry</button>
       </div>
     );
   }
 
   // 로딩 상태
-  if (!projectData || !currentPage) {
+  if (loadingState === 'loading') {
     return (
       <div className="publish-loading">
-        <p>Loading...</p>
+        <p>Loading project...</p>
       </div>
     );
   }
 
+  // 프로젝트 없음 - 파일 드롭 UI
+  if (loadingState === 'idle' || !projectData || !currentPage) {
+    return (
+      <div
+        className={`publish-dropzone ${isDragging ? 'dragging' : ''}`}
+        onDrop={handleDrop}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+      >
+        <div className="dropzone-content">
+          <h1>XStudio Publish</h1>
+          <p>Drop a project JSON file here to preview</p>
+          <p className="or">or</p>
+          <button onClick={() => fileInputRef.current?.click()}>
+            Select File
+          </button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".json"
+            onChange={handleFileSelect}
+            style={{ display: 'none' }}
+          />
+          {error && <p className="error-text">{error}</p>}
+        </div>
+      </div>
+    );
+  }
+
+  // 프로젝트 렌더링
   return (
     <div className="publish-app">
       <PageRenderer

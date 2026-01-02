@@ -20,7 +20,7 @@ import { useDebouncedSelectedElementData } from "../../stores";
 import type { ComponentEditorProps, SelectedElement } from "../../inspector/types";
 import { EmptyState, LoadingSpinner, PanelHeader, MultiSelectStatusIndicator, BatchPropertyEditor, SelectionFilter, KeyboardShortcutsHelp, SmartSelection, SelectionMemory } from "../../components";
 import { ElementSlotSelector } from "./editors/ElementSlotSelector";
-import { Button } from "../../../shared/components";
+import { Button } from "@xstudio/shared/components";
 import { Copy, ClipboardPaste, Settings2 } from "lucide-react";
 import { iconProps } from "../../../utils/ui/uiConstants";
 import { useKeyboardShortcutsRegistry, useCopyPaste } from "@/builder/hooks";

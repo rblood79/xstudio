@@ -1,0 +1,103 @@
+{
+  "version": "1.0.0",
+  "exportedAt": "2026-01-02T07:35:52.219Z",
+  "project": {
+    "id": "db1e4339-e9d1-40e5-a268-8df9d4bfc49d",
+    "name": "AAA"
+  },
+  "pages": [
+    {
+      "id": "336554c4-c9ba-48e1-a278-d389c7519b72",
+      "title": "Home",
+      "slug": "/",
+      "project_id": "db1e4339-e9d1-40e5-a268-8df9d4bfc49d",
+      "parent_id": null,
+      "order_num": 0,
+      "layout_id": null
+    }
+  ],
+  "elements": [
+    {
+      "id": "3a1d3132-61de-47be-998f-87ec3cd26ac1",
+      "tag": "body",
+      "props": {
+        "tag": "body",
+        "style": {
+          "display": "flex",
+          "flexDirection": "column",
+          "justifyContent": "center",
+          "alignItems": "center",
+          "backgroundColor": "#efefef"
+        },
+        "events": []
+      },
+      "parent_id": null,
+      "page_id": "336554c4-c9ba-48e1-a278-d389c7519b72",
+      "order_num": 0
+    },
+    {
+      "id": "element-box-1",
+      "tag": "div",
+      "props": {
+        "style": {
+          "width": "200px",
+          "height": "200px",
+          "backgroundColor": "#e53e3e",
+          "display": "flex",
+          "flexDirection": "column",
+          "justifyContent": "flex-start",
+          "alignItems": "center",
+          "padding": "10px"
+        }
+      },
+      "parent_id": "3a1d3132-61de-47be-998f-87ec3cd26ac1",
+      "page_id": "336554c4-c9ba-48e1-a278-d389c7519b72",
+      "order_num": 0
+    },
+    {
+      "id": "element-button-1",
+      "tag": "Button",
+      "props": {
+        "children": "Button",
+        "variant": "secondary"
+      },
+      "parent_id": "element-box-1",
+      "page_id": "336554c4-c9ba-48e1-a278-d389c7519b72",
+      "order_num": 0
+    },
+    {
+      "id": "element-button-2",
+      "tag": "Button",
+      "props": {
+        "children": "Button",
+        "variant": "primary"
+      },
+      "parent_id": "element-box-1",
+      "page_id": "336554c4-c9ba-48e1-a278-d389c7519b72",
+      "order_num": 1
+    },
+    {
+      "id": "element-button-3",
+      "tag": "Button",
+      "props": {
+        "children": "Button",
+        "variant": "destructive"
+      },
+      "parent_id": "3a1d3132-61de-47be-998f-87ec3cd26ac1",
+      "page_id": "336554c4-c9ba-48e1-a278-d389c7519b72",
+      "order_num": 1
+    },
+    {
+      "id": "element-button-4",
+      "tag": "Button",
+      "props": {
+        "children": "Button",
+        "variant": "destructive"
+      },
+      "parent_id": "3a1d3132-61de-47be-998f-87ec3cd26ac1",
+      "page_id": "336554c4-c9ba-48e1-a278-d389c7519b72",
+      "order_num": 2
+    }
+  ],
+  "currentPageId": "336554c4-c9ba-48e1-a278-d389c7519b72"
+}

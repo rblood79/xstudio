@@ -7,10 +7,10 @@ import {
   Button as AriaButton,
   type Color,
 } from 'react-aria-components';
-import { ColorSwatch } from '../../../shared/components/ColorSwatch';
-import { ColorArea } from '../../../shared/components/ColorArea';
-import { ColorSlider } from '../../../shared/components/ColorSlider';
-import { Popover } from '../../../shared/components/Popover';
+import { ColorSwatch } from "@xstudio/shared/components/ColorSwatch";
+import { ColorArea } from "@xstudio/shared/components/ColorArea";
+import { ColorSlider } from "@xstudio/shared/components/ColorSlider";
+import { Popover } from "@xstudio/shared/components/Popover";
 
 interface PropertyColorProps {
   label?: string;

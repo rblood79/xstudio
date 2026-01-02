@@ -8,7 +8,7 @@
 import { useState, useMemo, useCallback } from "react";
 import type { Element } from "../../../types/core/store.types";
 import { PropertyInput, PropertySelect, PropertySwitch, PropertyFieldset } from "../property";
-import { Button } from "../../../shared/components";
+import { Button } from "@xstudio/shared/components";
 import { RefreshCw, Check } from "lucide-react";
 import { iconProps } from "../../../utils/ui/uiConstants";
 import { findCommonProperties, filterPropertiesByCategory, isBatchEditable, getPropertyType } from "../../panels/properties/utils/batchPropertyUtils";

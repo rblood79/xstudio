@@ -5,7 +5,7 @@
  */
 
 import React from 'react';
-import { Button, Select, SelectItem } from '../shared/components/list';
+import { Button, Select, SelectItem } from "@xstudio/shared/components";
 import { useSettingsStore } from '../stores/settingsStore';
 import { Settings, X } from 'lucide-react';
 import './SettingsPanel.css';

@@ -108,15 +108,9 @@ export interface Page {
 // Component Props Types
 // ============================================
 
-/**
- * 컴포넌트 크기
- */
-export type ComponentSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
-
-/**
- * 컴포넌트 변형
- */
-export type ComponentVariant = 'default' | 'primary' | 'secondary' | 'surface';
+// Note: ComponentSize and ComponentVariant are defined in componentVariants.types.ts
+// to avoid circular dependencies, we re-export them here
+import type { ComponentSize, ComponentVariant } from './componentVariants.types';
 
 /**
  * 공통 컴포넌트 Props
@@ -126,3 +120,6 @@ export interface CommonComponentProps extends BaseElementProps {
   size?: ComponentSize;
   isDisabled?: boolean;
 }
+
+// Re-export for convenience (used by other files that import from element.types)
+export type { ComponentSize, ComponentVariant } from './componentVariants.types';

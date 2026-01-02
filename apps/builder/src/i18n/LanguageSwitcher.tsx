@@ -5,7 +5,7 @@
  */
 
 import React from 'react';
-import { Select, SelectItem } from '../shared/components/Select';
+import { Select, SelectItem } from "@xstudio/shared/components/Select";
 import { useI18n } from './useI18n';
 import { localeConfigs } from './locales';
 import type { SupportedLocale } from './types';

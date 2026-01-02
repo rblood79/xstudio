@@ -1,0 +1,253 @@
+/* Builder System Tokens - XStudio Builder UI Only
+ * These tokens are ONLY for Builder system UI (header, sidebar, inspector)
+ * NOT affected by user theme changes in Preview
+ * Independent dark mode support via [data-builder-theme="dark"]
+ */
+
+@layer builder-system {
+  :root {
+    /* ==================== UI Scale ==================== */
+    --ui-scale: 100;
+
+    /* ==================== Builder-Specific Sizes ==================== */
+    --sizes-inspectorWidth: 320px;
+    --sidebar-width: 240px;
+    --panel-nav-width: 48px;
+
+    /* Inspector control sizes */
+    --header-height: 32px;
+    --inspector-control-size: calc(var(--text-2xl) + var(--spacing));
+    --inspector-label-width: calc(var(--text-2xl) + var(--spacing));
+
+    /* Builder Save Button (using primary blue) */
+    --builder-save-pending-pulse: pulse 2s infinite;
+  }
+
+  /* UI Scale 적용 (브라우저 줌과 동일한 효과) */
+  .app {
+    zoom: calc(var(--ui-scale) / 100);
+  }
+
+  /* ==================== Builder UI Scope Override ==================== */
+  /* Builder 영역에만 적용되는 변수 (Preview와 완전 분리)
+   * Inspector, Sidebar, Header + Builder body에 portal된 Popover 포함
+   * Preview iframe은 body[data-preview="true"]로 제외됨
+   *
+   * 이 섹션은 Preview 테마 변경이 Builder UI 컴포넌트에 영향을 주지 않도록
+   * React Aria 컴포넌트가 사용하는 모든 시맨틱 변수를 Builder 고정값으로 오버라이드 */
+  .inspector,
+  .sidebar,
+  .header,
+  .footer,
+  .overlay,
+  .bg,
+  .canvas,
+  body:not([data-preview="true"]) .react-aria-Popover,
+  body:not([data-preview="true"]) .react-aria-Modal {
+    /* ===== Core Semantic Colors (Light Mode) ===== */
+    --background-color: var(--gray-0);
+    --text-color: var(--gray-750);
+    --text-color-base: var(--gray-750);
+    --text-color-hover: var(--gray-1000);
+    --text-color-disabled: var(--gray-400);
+    --text-color-placeholder: var(--gray-500);
+    --border-color: var(--gray-300);
+    --border-color-hover: var(--gray-100);
+    --border-color-pressed: var(--gray-150);
+    --border-color-disabled: var(--gray-75);
+
+    /* ===== Button & Field Colors ===== */
+    --button-background: var(--gray-50);
+    --button-background-hover: var(--gray-75);
+    --button-background-pressed: var(--gray-100);
+    --field-background: var(--gray-0);
+    --field-text-color: var(--gray-1000);
+    --overlay-background: var(--gray-0);
+
+    /* ===== Highlight Colors (Primary Blue) ===== */
+    --focus-ring-color: var(--blue-300);
+    --highlight-background: var(--gray-900);
+    --highlight-background-hover: var(--gray-700);
+    --highlight-background-pressed: var(--gray-600);
+    --highlight-background-invalid: var(--red-500);
+    --highlight-foreground: var(--gray-0);
+    --highlight-foreground-pressed: var(--gray-50);
+    --highlight-overlay: rgba(2, 133, 255, 0.15);
+
+    /* ===== M3 Primary Role (Blue) ===== */
+    --primary: var(--blue-400);
+    --primary-hover: var(--blue-500);
+    --primary-pressed: var(--blue-600);
+    --on-primary: var(--white);
+    --primary-container: var(--blue-50);
+    --on-primary-container: var(--blue-700);
+
+    /* ===== M3 Secondary Role ===== */
+    --secondary: var(--gray-500);
+    --secondary-hover: var(--gray-600);
+    --secondary-pressed: var(--gray-700);
+    --on-secondary: var(--white);
+    --secondary-container: var(--gray-100);
+    --on-secondary-container: var(--gray-900);
+
+    /* ===== M3 Error Role ===== */
+    --error: var(--red-500);
+    --on-error: var(--white);
+    --error-container: var(--red-50);
+    --on-error-container: var(--red-700);
+
+    /* ===== M3 Surface Role ===== */
+    --surface: var(--gray-0);
+    --on-surface: var(--gray-1000);
+    --surface-variant: var(--gray-50);
+    --on-surface-variant: var(--gray-500);
+    --surface-container-lowest: var(--gray-0);
+    --surface-container-low: var(--gray-25);
+    --surface-container: var(--gray-50);
+    --surface-container-high: var(--gray-75);
+    --surface-container-highest: var(--gray-100);
+
+    /* ===== M3 Outline Role ===== */
+    --outline: var(--gray-400);
+    --outline-variant: var(--gray-150);
+
+    /* ===== Invalid/Error States ===== */
+    --invalid-color: var(--red-500);
+    --invalid-color-pressed: var(--red-600);
+
+    /* ===== Info States (Blue) ===== */
+    --info: var(--blue-500);
+    --info-container: var(--blue-50);
+    --on-info-container: var(--blue-700);
+
+    /* ===== Warning States (Orange) ===== */
+    --warning: var(--orange-500);
+    --warning-container: var(--orange-50);
+    --on-warning-container: var(--orange-700);
+
+    /* ===== Success States (Green) ===== */
+    --success: var(--green-500);
+    --success-container: var(--green-50);
+    --on-success-container: var(--green-700);
+  }
+
+  /* ==================== Builder Dark Mode ==================== */
+  /* Independent of Preview dark mode - toggled via [data-builder-theme="dark"] on :root */
+  /* All builder variables are now replaced with M3 role variables in the override section */
+
+  /* ==================== Builder Dark Mode - Component Overrides ==================== */
+  /* Builder UI 영역의 React Aria 컴포넌트가 Dark Mode에서 Builder 테마를 따르도록 오버라이드 */
+  [data-builder-theme="dark"] .inspector,
+  [data-builder-theme="dark"] .sidebar,
+  [data-builder-theme="dark"] .header,
+  [data-builder-theme="dark"] .footer,
+  [data-builder-theme="dark"] .overlay,
+  [data-builder-theme="dark"] .bg,
+  [data-builder-theme="dark"] .canvas,
+  [data-builder-theme="dark"] body:not([data-preview="true"]) .react-aria-Popover,
+  [data-builder-theme="dark"] body:not([data-preview="true"]) .react-aria-Modal {
+    /* ===== Core Semantic Colors (Dark Mode) ===== */
+    --background-color: var(--gray-900);
+    --text-color: var(--gray-100);
+    --text-color-base: var(--gray-100);
+    --text-color-hover: var(--white);
+    --text-color-disabled: var(--gray-500);
+    --text-color-placeholder: var(--gray-400);
+    --border-color: var(--gray-700);
+    --border-color-hover: var(--gray-600);
+    --border-color-pressed: var(--gray-550);
+    --border-color-disabled: var(--gray-750);
+
+    /* ===== Button & Field Colors (Dark) ===== */
+    --button-background: var(--gray-800);
+    --button-background-hover: var(--gray-700);
+    --button-background-pressed: var(--gray-650);
+    --field-background: var(--gray-850);
+    --field-text-color: var(--gray-100);
+    --overlay-background: var(--gray-850);
+
+    /* ===== Highlight Colors (Dark) ===== */
+    --focus-ring-color: var(--blue-400);
+    --highlight-background: var(--gray-100);
+    --highlight-background-hover: var(--gray-50);
+    --highlight-background-pressed: var(--white);
+    --highlight-background-invalid: var(--red-400);
+    --highlight-foreground: var(--gray-900);
+    --highlight-foreground-pressed: var(--gray-850);
+    --highlight-overlay: rgba(2, 133, 255, 0.2);
+
+    /* ===== M3 Primary Role (Blue - Dark) ===== */
+    --primary: var(--blue-400);
+    --primary-hover: var(--blue-300);
+    --primary-pressed: var(--blue-200);
+    --on-primary: var(--gray-900);
+    --primary-container: rgba(2, 133, 255, 0.2);
+    --on-primary-container: var(--blue-200);
+
+    /* ===== M3 Secondary Role (Dark) ===== */
+    --secondary: var(--gray-400);
+    --secondary-hover: var(--gray-300);
+    --secondary-pressed: var(--gray-200);
+    --on-secondary: var(--gray-900);
+    --secondary-container: var(--gray-800);
+    --on-secondary-container: var(--gray-100);
+
+    /* ===== M3 Error Role (Dark) ===== */
+    --error: var(--red-400);
+    --on-error: var(--gray-900);
+    --error-container: rgba(250, 66, 62, 0.2);
+    --on-error-container: var(--red-200);
+
+    /* ===== M3 Surface Role (Dark) ===== */
+    --surface: var(--gray-900);
+    --on-surface: var(--gray-100);
+    --surface-variant: var(--gray-850);
+    --on-surface-variant: var(--gray-400);
+    --surface-container-lowest: var(--gray-950);
+    --surface-container-low: var(--gray-900);
+    --surface-container: var(--gray-850);
+    --surface-container-high: var(--gray-800);
+    --surface-container-highest: var(--gray-750);
+
+    /* ===== M3 Outline Role (Dark) ===== */
+    --outline: var(--gray-500);
+    --outline-variant: var(--gray-700);
+
+    /* ===== Invalid/Error States (Dark) ===== */
+    --invalid-color: var(--red-400);
+    --invalid-color-pressed: var(--red-300);
+
+    /* ===== Info States (Dark - Blue) ===== */
+    --info: var(--blue-400);
+    --info-container: rgba(2, 133, 255, 0.15);
+    --on-info-container: var(--blue-200);
+
+    /* ===== Warning States (Dark - Orange) ===== */
+    --warning: var(--orange-400);
+    --warning-container: rgba(251, 106, 34, 0.15);
+    --on-warning-container: var(--orange-200);
+
+    /* ===== Success States (Dark - Green) ===== */
+    --success: var(--green-400);
+    --success-container: rgba(4, 184, 76, 0.15);
+    --on-success-container: var(--green-200);
+  }
+
+  /* ==================== Accessibility: High Contrast Mode ==================== */
+  @media (forced-colors: active) {
+    :root {
+      --builder-header-bg: Canvas;
+      --builder-header-text: CanvasText;
+      --builder-sidebar-bg: Canvas;
+      --builder-inspector-bg: Canvas;
+      --builder-canvas-bg: Canvas;
+      --builder-border: CanvasText;
+      --builder-error-bg: Mark;
+      --builder-error-text: MarkText;
+      --builder-button-bg: ButtonFace;
+      --builder-button-text: ButtonText;
+      --builder-button-border: ButtonBorder;
+      --builder-focus-ring: Highlight;
+    }
+  }
+}

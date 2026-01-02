@@ -19,8 +19,8 @@
 
 /* Tailwind base styles (includes :root, @font-face, @layer base, @layer components) */
 
-/* XStudio Component Styles */
-@import "./shared/components/index.css";
+/* XStudio Component Styles (from @xstudio/shared) */
+@import "../../../packages/shared/src/components/index.css";
 
 /* XStudio Builder Styles */
 @import "./builder/styles/index.css";

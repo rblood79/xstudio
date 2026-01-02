@@ -13,7 +13,7 @@
 
 import { useCallback } from "react";
 import type { PanelProps } from "../core/types";
-import Components from "../../../shared/components";
+import ComponentList from "@/shared/components/ComponentList";
 import { useStore } from "../../stores";
 import { useEditModeStore } from "../../stores/editMode";
 import { useLayoutsStore } from "../../stores/layouts";
@@ -105,7 +105,7 @@ function ComponentsPanelContent() {
   }, [currentPageId, currentLayoutId, editMode, selectedElementId, addElement, rawHandleAddElement, sendElementsToIframe]);
 
   return (
-    <Components
+    <ComponentList
       handleAddElement={handleAddElement}
       selectedElementId={selectedElementId}
     />

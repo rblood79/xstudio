@@ -5,3 +5,6 @@
  */
 
 export * from './element.utils';
+export * from './core/dateUtils';
+export * from './core/numberUtils';
+export * from './export.utils';

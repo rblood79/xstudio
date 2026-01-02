@@ -25,7 +25,7 @@ import { useState, useMemo, useCallback, memo } from "react";
 import { ToggleButton } from "react-aria-components";
 import type { PanelProps } from "../core/types";
 import { useDebouncedSelectedElementData } from "../../stores";
-import { Button } from "../../../shared/components";
+import { Button } from "@xstudio/shared/components";
 import { Copy, ClipboardPaste, PencilRuler, Palette } from "lucide-react";
 import { iconProps } from "../../../utils/ui/uiConstants";
 import { EmptyState } from "../../components";

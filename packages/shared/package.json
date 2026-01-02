@@ -18,12 +18,31 @@
       "default": "./src/utils/index.ts"
     },
     "./components": {
-      "types": "./src/components/index.ts",
-      "default": "./src/components/index.ts"
+      "types": "./src/components/index.tsx",
+      "default": "./src/components/index.tsx"
+    },
+    "./components/*": {
+      "types": "./src/components/*.tsx",
+      "default": "./src/components/*.tsx"
+    },
+    "./components/list": {
+      "types": "./src/components/list.ts",
+      "default": "./src/components/list.ts"
+    },
+    "./components/metadata": {
+      "types": "./src/components/metadata.ts",
+      "default": "./src/components/metadata.ts"
+    },
+    "./components/styles/*": {
+      "default": "./src/components/styles/*"
     },
     "./renderers": {
       "types": "./src/renderers/index.ts",
       "default": "./src/renderers/index.ts"
+    },
+    "./hooks": {
+      "types": "./src/hooks/index.ts",
+      "default": "./src/hooks/index.ts"
     }
   },
   "scripts": {
@@ -35,14 +54,23 @@
     "react-dom": "catalog:"
   },
   "dependencies": {
-    "react-aria-components": "catalog:",
+    "@internationalized/date": "^3.10.1",
+    "@internationalized/number": "^3.6.5",
+    "@react-aria/focus": "^3.21.3",
+    "@react-aria/utils": "^3.32.0",
+    "@tanstack/react-table": "^8.21.3",
+    "@tanstack/react-virtual": "^3.13.13",
+    "@types/node": "catalog:",
     "clsx": "^2.1.1",
+    "lucide-react": "^0.562.0",
+    "react-aria-components": "catalog:",
+    "react-stately": "^3.43.0",
     "tailwind-merge": "^3.4.0"
   },
   "devDependencies": {
-    "@xstudio/config": "workspace:*",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
+    "@xstudio/config": "workspace:*",
     "typescript": "catalog:"
   }
 }

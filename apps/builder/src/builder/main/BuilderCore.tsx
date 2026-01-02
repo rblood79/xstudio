@@ -44,6 +44,7 @@ import { useDataStore } from "../stores/data";
 
 import { MessageService } from "../../utils/messaging";
 import { getValueByPath, upsertData, appendData, mergeData, safeJsonParse } from "../../utils/dataHelpers";
+import { downloadProjectAsJson } from "@xstudio/shared/utils";
 
 export const BuilderCore: React.FC = () => {
   const { projectId } = useParams<{ projectId: string }>();
@@ -735,7 +736,17 @@ export const BuilderCore: React.FC = () => {
   }, []);
 
   const handlePublish = useCallback(() => {
-  }, []);
+    // Store에서 현재 상태 가져오기
+    const state = useStore.getState();
+    const { elements, pages, currentPageId } = state;
+
+    // 프로젝트 ID와 이름
+    const id = projectId || 'unknown-project';
+    const name = projectInfo?.name || 'Untitled Project';
+
+    // JSON 파일로 다운로드
+    downloadProjectAsJson(id, name, pages, elements, currentPageId);
+  }, [projectId, projectInfo]);
 
   // 클릭 외부 감지
   useEffect(() => {

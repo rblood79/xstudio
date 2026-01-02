@@ -9,7 +9,7 @@
 
 import { memo } from 'react';
 import { PropertySection, PropertyUnitInput, PropertyColor, PropertySelect } from '../../../components';
-import { Button } from '../../../../shared/components';
+import { Button } from "@xstudio/shared/components";
 import { iconProps } from '../../../../utils/ui/uiConstants';
 import {
   Square,

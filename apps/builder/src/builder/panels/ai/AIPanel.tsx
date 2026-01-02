@@ -14,7 +14,7 @@ import { useEffect, useCallback, useRef, useState, useMemo } from "react";
 import type { KeyboardEvent } from "react";
 import type { PanelProps } from "../core/types";
 import { PanelHeader } from "../../components";
-import { Button } from "../../../shared/components";
+import { Button } from "@xstudio/shared/components";
 import { MessageCircle, Trash2, Bot } from "lucide-react";
 import { iconProps } from "../../../utils/ui/uiConstants";
 import { useConversationStore } from "../../stores/conversation";
@@ -27,9 +27,9 @@ import type {
   ChatMessage as ChatMessageType,
 } from "../../../types/integrations/chat.types";
 import type { Element } from "../../../types/core/store.types";
-import "../../../shared/components/styles/ChatContainer.css";
-import "../../../shared/components/styles/ChatMessage.css";
-import "../../../shared/components/styles/ChatInput.css";
+import "@xstudio/shared/components/styles/ChatContainer.css";
+import "@xstudio/shared/components/styles/ChatMessage.css";
+import "@xstudio/shared/components/styles/ChatInput.css";
 import './AIPanel.css';
 /**
  * ChatMessage - 개별 메시지 표시

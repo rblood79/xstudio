@@ -10,7 +10,7 @@ import { useRuntimeStore, getRuntimeStore } from './store';
 import { CanvasRouter, setGlobalNavigate } from './router';
 import { MessageHandler, messageSender } from './messaging';
 import { useNavigate } from 'react-router-dom';
-import { rendererMap } from '../shared/renderers';
+import { rendererMap } from "@xstudio/shared/renderers";
 import type { PreviewElement, RenderContext } from './types';
 import type { RuntimeElement } from './store/types';
 import { EventEngine } from '../utils/events/eventEngine';

@@ -5,7 +5,7 @@
  * Phase 2: Multi-Element Editing - Status Indicator
  */
 
-import { Button } from "../../../shared/components";
+import { Button } from "@xstudio/shared/components";
 import {
   Copy,
   Trash2,

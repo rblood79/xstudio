@@ -9,6 +9,17 @@
 import type { Element } from '../types/element.types';
 
 // ============================================
+// ID Generation
+// ============================================
+
+/**
+ * 고유 ID 생성
+ */
+export function generateId(): string {
+  return crypto.randomUUID();
+}
+
+// ============================================
 // Element Tree Utilities
 // ============================================
 
