@@ -149,6 +149,13 @@ async function loadProjectFromFile(file: File): Promise<ImportResult>
 
 ## 개선 계획
 
+### 데이터/성능 범위 및 측정 정책
+
+- **지원 한계**: `pages ≤ 200`, `elements ≤ 10,000`, 압축 전 `project.json ≤ 10MB`를 정상 범위로 간주하고, 이를 초과하면 업로드를 차단하며 `EXPORT_LIMIT_EXCEEDED` 코드를 동반한 경고를 노출한다.
+- **처리 시간 목표**: JSON 파싱 ≤ 120ms, Zod 검증 ≤ 180ms, 렌더링 준비(페이지 인덱스/트리 구성) ≤ 250ms를 목표로 하며, 초과 시 경고 레벨 로그를 남긴다.
+- **병목 측정 포인트**: (1) JSON 파싱(`performance.mark/measure`), (2) Zod 검증(`logger.timing('validation')`), (3) 렌더링 준비(`performance.measure('render:init')`). Vercel/Preview에서는 콘솔 + 파일 로그를 모두 남기고, 로컬에서는 콘솔만 기록한다.
+- **샘플 로그 포맷**: `{"type":"perf","phase":"parse","durationMs":115,"pages":120,"elements":5400}`
+
 ### Phase 1: 미구현 기능 분석
 
 #### 1. 데이터 검증 강화 (현재: 40%)
@@ -441,6 +448,24 @@ function decompressProject(compressed: Uint8Array): string {
 | 1.4 | Publish 앱 에러 UI 개선 | `apps/publish/src/App.tsx` | +4% |
 | 1.5 | 유닛 테스트 작성 | `packages/shared/src/utils/__tests__/export.utils.test.ts` | +2% |
 
+**데이터 필드 제약 및 폴백 정책**:
+- **필수 필드**: `version`, `exportedAt`, `project.id`, `project.name`, `pages[].id/title/slug/project_id/order_num`, `elements[].id/tag/page_id/order_num`, `currentPageId`(멀티 페이지일 때).
+- **옵션 필드**: `pages[].parent_id/layout_id`, `elements[].parent_id/props`, `metadata.*`, `assets`.
+
+| 필드 | 타입/패턴/enum | 필수 여부 | 제약 |
+|------|----------------|-----------|------|
+| `version` | Semver 문자열 (`^\d+\.\d+\.\d+$`) | 필수 | 인식 불가 버전 시 마이그레이션 단계에서 차단 |
+| `exportedAt` | ISO 8601 | 필수 | 미래 시각일 경우 경고 로그 기록 |
+| `project.id` | UUID | 필수 | `project.name`은 1~120자 |
+| `pages[].slug` | `/` 또는 `/[a-z0-9-_/]+` | 필수 | 중복/공백/대문자 금지 |
+| `pages[].parent_id` | UUID \| null | 옵션 | 순환 참조 금지, 존재하지 않는 parent 금지 |
+| `elements[].tag` | enum(Component catalog) | 필수 | 미지원 태그는 `UNSUPPORTED_TAG` 코드와 함께 제거 |
+| `elements[].props` | JSON object | 옵션 | 함수/심볼 금지, 직렬화 가능한 값만 허용 |
+| `currentPageId` | UUID | 조건부 필수 | 값이 없으면 `pages[0].id`로 대체 |
+
+- **마이그레이션 실패 폴백**: Zod 검증 전 마이그레이션 단계에서 실패 시 `MIGRATION_FAILED`로 리턴하고 import를 중단하며, `unknown_version`일 경우 `phase1` 플래그를 `unsupported`로 기록해 UI에서 재시도(구버전 업로드)만 노출한다.
+- **에러 로깅 포맷**: `{"code":"VALIDATION_ERROR","message":"pages[2].slug is invalid","field":"pages[2].slug","detail":"pattern:/[a-z0-9-_/]+/"}` 형태로 콘솔/파일에 동일하게 기록하고, 사용자에게는 요약 메시지 + 필드명을 표시한다.
+
 **산출물**:
 ```
 packages/shared/src/
@@ -457,6 +482,20 @@ packages/shared/src/
 - [ ] 필수 필드 누락 시 어떤 필드가 없는지 표시
 - [ ] 타입 불일치 시 기대 타입과 실제 타입 표시
 - [ ] 테스트 커버리지 80% 이상
+
+**테스트 범위/지표 (Phase 1)**:
+- 단위: `ExportedProjectSchema` 검증, `parseProjectData` 에러 포맷터 (커버리지 목표: **utils 80%+**).
+- 통합: 파일 드롭 → 파싱 → 검증 파이프라인, 잘못된 JSON 업로드 시 UI 에러 노출 여부.
+- E2E: Publish에서 손상된 `project.json` 로드 시 차단 및 에러 토스트 확인.
+- 대표 실패 케이스:
+
+| 입력 | 기대 오류 코드 | 메시지 예시 |
+|------|---------------|-------------|
+| `version: "abc"` | `VALIDATION_ERROR` | `"version must follow semver (e.g., 1.0.0)"` |
+| `pages[].slug: "Home Page"` | `VALIDATION_ERROR` | `"pages[0].slug must match /[a-z0-9-_/]+/"` |
+| 누락 필드 `project.id` | `MISSING_FIELD` | `"project.id is required"` |
+| 순환 `pages[].parent_id` | `PARENT_CYCLE` | `"pages[1].parent_id forms a cycle"` |
+| `elements[].tag: "Unknown"` | `UNSUPPORTED_TAG` | `"elements[3].tag is not supported in Publish"` |
 
 ---
 
@@ -495,6 +534,26 @@ apps/publish/src/
 - [ ] 브라우저 뒤로/앞으로 버튼 동작
 - [ ] 중첩 페이지 계층 구조 표시
 
+**UX 플로우/상태 정의 (Phase 2·4 연계)**:
+- **Import 실패 시퀀스**: (1) 파일 파싱 실패 → 토스트 `파일을 불러올 수 없어요` + 세부 메시지(코드) 툴팁 → (2) 재시도 버튼으로 파일 선택 다이얼로그 재오픈 → (3) `logs/import.log`에 `{code,message,field}` 기록 → (4) 동일 오류 3회 이상 시 링크로 가이드 문서 안내.
+- **정상 플로우**: 해시 변경 → `currentPageId` 스토어 업데이트 → 페이지 요소 페치 → 스켈레톤 표시(최소 180ms) → 렌더 완료 후 포커스 복원.
+- **빈 상태**: 페이지 0개 또는 요소 0개일 때 빈 상태 뷰(`"페이지가 없습니다"`/`"이 페이지에 요소가 없습니다"`) 노출, 새 페이지/요소 추가 CTA 버튼 제공.
+- **로딩 스켈레톤 노출 조건**: pages > 0 & elements > 0 이면서 첫 로드 또는 페이지 전환 후 120ms 이상 데이터 fetch가 지연될 때.
+- **페이지 전환 애니메이션 조건**: `pages > 1` AND (`elements ≥ 5` OR 자식 페이지 존재)일 때 페이드/슬라이드 애니메이션 적용, 그 외에는 즉시 전환으로 딜레이 최소화.
+
+**테스트 범위/지표 (Phase 2)**:
+- 단위: `usePageRouting` 해시 파싱/업데이트, `PageNav` 활성 상태 계산 (커버리지 목표: **runtime/nav 75%+**).
+- 통합: 해시 내비게이션 ↔ 렌더 동기화, 빈 페이지/요소에서 Empty State 노출.
+- E2E: 다중 페이지 JSON 로드 → 해시 이동 → 뒤로/앞으로 이동 확인, 로딩 스켈레톤 120ms 이상 지연 시 표시 여부.
+- 대표 실패 케이스:
+
+| 입력 | 기대 오류 코드 | 메시지 예시 |
+|------|---------------|-------------|
+| 존재하지 않는 `currentPageId` | `PAGE_NOT_FOUND` | `"currentPageId does not match any page"` |
+| 해시와 데이터 불일치(`#missing`) | `PAGE_NOT_FOUND` | `"page '#missing' is not available"` |
+| 빈 페이지 배열 | `NO_PAGES` | `"No pages to render"` |
+| 요소만 없는 페이지 | `NO_ELEMENTS` | `"No elements for page <id>"` |
+
 ---
 
 ### Phase 3: 이벤트 런타임 (67% → 92%)
@@ -515,6 +574,23 @@ apps/publish/src/
 | 3.4.4 | └─ SET_STATE (로컬 상태) | `ActionExecutor.ts` | +2% |
 | 3.5 | 이벤트 타입 export에 포함 | `packages/shared/src/utils/export.utils.ts` | +1% |
 
+**이벤트 런타임 지원 범위 및 정책**:
+- **상태 공유 범위**: Publish에서는 **로컬 상태만** 허용하며 글로벌 스토어 공유는 금지한다. SET_STATE는 렌더러 스코프 내 메모리에서만 유지하며 페이지 전환 시 초기화한다.
+- **환경 제약**: CORS 실패 시 API_CALL은 자동 취소하고 토스트 + 폴백 데이터(최근 성공 캐시 또는 빈 응답)로 대체한다. OPEN_URL은 브라우저 팝업 차단 정책을 준수하며 새 탭 열기에 실패하면 동일 창 내 네비게이션으로 폴백한다.
+- **핸들러 라이프사이클**: 페이지 로드 시 등록 → 언마운트/페이지 이동 시 해제 → 동일 요소/이벤트 재등록 시 중복 방지 키(`elementId:eventType`)로 덮어쓴다.
+- **메모리 관리**: 등록된 핸들러 수가 5,000건을 넘으면 경고 로그(`HANDLER_POOL_HIGH`)를 남기고 LRU 정책으로 오래된 핸들러를 제거한다.
+
+| 액션 | 지원 상태 | 제약/대체 전략 |
+|------|-----------|---------------|
+| NAVIGATE_TO_PAGE | ✅ 지원 | 해시 라우팅 사용, 대상 페이지 없으면 `PAGE_NOT_FOUND` 경고 토스트 |
+| SHOW_ALERT | ✅ 지원 | Alert 텍스트는 200자 제한, 초과 시 말줄임 표시 |
+| OPEN_URL | ⚠️ 제약 | 팝업 차단 시 동일 창 이동, CORS 프리플라이트 실패 시 중단 |
+| SET_STATE | ✅ 지원 | 로컬 상태만 허용, 페이지 전환 시 리셋 |
+| CONSOLE_LOG | ✅ 지원 | `console.info`로 강제 다운스케일, PII 필드는 마스킹 |
+| API_CALL | ⚠️ 제약 | CORS 실패 시 토스트 + 캐시/빈 데이터 폴백, 3초 타임아웃 |
+| UPDATE_ELEMENT | ❌ 미지원 | Publish DOM 변경 금지, 에러 코드 `UNSUPPORTED_ACTION` |
+| ADD_ELEMENT | ❌ 미지원 | 렌더 트리 변경 불가, 에러 코드 `UNSUPPORTED_ACTION` |
+
 **산출물**:
 ```
 packages/shared/src/
@@ -530,24 +606,24 @@ apps/publish/src/
     └── PageRenderer.tsx         # 이벤트 바인딩 추가
 ```
 
-**지원 액션 목록**:
-
-| 액션 | Publish 지원 | 비고 |
-|------|--------------|------|
-| NAVIGATE_TO_PAGE | ✅ | 페이지 전환 |
-| SHOW_ALERT | ✅ | alert() |
-| OPEN_URL | ✅ | window.open() |
-| SET_STATE | ✅ | 로컬 상태 변경 |
-| CONSOLE_LOG | ✅ | console.log() |
-| API_CALL | ⚠️ | CORS 제한 있음 |
-| UPDATE_ELEMENT | ❌ | Publish에서 미지원 |
-| ADD_ELEMENT | ❌ | Publish에서 미지원 |
-
 **완료 기준**:
 - [ ] onClick 이벤트가 있는 버튼 클릭 시 액션 실행
 - [ ] 페이지 간 네비게이션 액션 동작
 - [ ] Alert/URL 열기 액션 동작
 - [ ] 이벤트 없는 요소는 정상 렌더링
+
+**테스트 범위/지표 (Phase 3)**:
+- 단위: `ActionExecutor`별 액션 실행 분기, `PublishEventRuntime` 핸들러 등록/해제 (커버리지 목표: **runtime/events 75%+**).
+- 통합: 페이지 전환 시 핸들러 해제 확인, CORS 실패 → 토스트 + 폴백 데이터 적용.
+- E2E: 클릭 → NAVIGATE_TO_PAGE/OPEN_URL 동작, 팝업 차단 환경에서의 폴백 확인.
+- 대표 실패 케이스:
+
+| 입력 | 기대 오류 코드 | 메시지 예시 |
+|------|---------------|-------------|
+| 지원되지 않는 액션 `UPDATE_ELEMENT` | `UNSUPPORTED_ACTION` | `"UPDATE_ELEMENT is not available in Publish runtime"` |
+| CORS 실패(API_CALL) | `API_CALL_FAILED` | `"API call blocked by CORS"` |
+| 팝업 차단으로 OPEN_URL 실패 | `POPUP_BLOCKED` | `"Popup blocked; opened in current tab"` |
+| 이벤트 핸들러 중복 등록 | `HANDLER_DUPLICATE` | `"Handler already registered for elementId:eventType"` |
 
 ---
 
@@ -565,6 +641,21 @@ apps/publish/src/
 | 4.4 | Publish 앱 로딩 UX 개선 | `apps/publish/src/components/LoadingScreen.tsx` | +1% |
 | 4.5 | 프로젝트 정보 표시 UI | `apps/publish/src/components/ProjectInfo.tsx` | +1% |
 | 4.6 | E2E 테스트 | `apps/publish/e2e/export-import.spec.ts` | +1% |
+
+**버전/메타데이터 제약 및 폴백**:
+- **필수 필드**: `version`, `exportedAt`, `project.id/name`, `pages`, `elements` (Phase 1 규칙 준수). 메타데이터는 `builderVersion`만 필수이며 나머지는 옵션.
+- **버전/메타데이터 제약 표**:
+
+| 필드 | 타입/패턴/enum | 필수 여부 | 제약 |
+|------|----------------|-----------|------|
+| `version` | Semver (`^\d+\.\d+\.\d+$`) | 필수 | 미지원 버전 시 `UNKNOWN_VERSION` 반환 및 import 중단 |
+| `builderVersion` | Semver | 필수(메타데이터) | 빌더/퍼블리시 주버전 불일치 시 경고 후 진행 |
+| `exportedBy` | 이메일/ID 문자열 | 옵션 | 최대 120자, PII 마스킹 로그 |
+| `description` | 문자열 | 옵션 | 1,000자 제한, 마크다운 금지 |
+| `thumbnail` | Base64 data URI | 옵션 | 512KB 초과 시 제거 후 경고 로그 |
+
+- **마이그레이션 실패 폴백**: `migration.utils`에서 단계별 적용 후 실패 시 `MIGRATION_FAILED`와 함께 원본 파일을 보존하고, `fallbackMode: 'read-only'`로 로드하여 미리보기는 허용하되 저장은 차단한다.
+- **에러 로깅 포맷**: `{"code":"UNKNOWN_VERSION","message":"version 0.9.0 is not supported","field":"version","detail":"supported: >=1.0.0"}`를 표준으로 사용한다.
 
 **산출물**:
 ```
@@ -605,6 +696,19 @@ interface ExportedProjectData {
 - [ ] 프로젝트 정보 (이름, 내보낸 날짜 등) 표시
 - [ ] 로딩 중 스켈레톤 UI 표시
 - [ ] E2E 테스트 통과
+
+**테스트 범위/지표 (Phase 4)**:
+- 단위: `migration.utils` 버전 체인 검증, 메타데이터 파서 (커버리지 목표: **utils/migration 75%+**).
+- 통합: 구버전 JSON → 최신 스키마 자동 변환, `fallbackMode: 'read-only'` 경로 UI 표시.
+- E2E: 로딩 스켈레톤 표시, 프로젝트 정보 패널에 메타데이터 표시, 미지원 버전 업로드 시 차단 흐름.
+- 대표 실패 케이스:
+
+| 입력 | 기대 오류 코드 | 메시지 예시 |
+|------|---------------|-------------|
+| `version: "0.9.0"` | `UNKNOWN_VERSION` | `"version 0.9.0 is not supported"` |
+| 메타데이터 누락(`builderVersion`) | `MISSING_FIELD` | `"metadata.builderVersion is required"` |
+| `thumbnail` 512KB 초과 | `ASSET_TOO_LARGE` | `"thumbnail exceeds 512KB and was dropped"` |
+| 마이그레이션 단계 중단 | `MIGRATION_FAILED` | `"migration v1.0.0→v1.1.0 failed: <reason>"` |
 
 ---
 
