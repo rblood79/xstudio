@@ -9,7 +9,8 @@ import { createRoot } from 'react-dom/client';
 import { App } from './App';
 
 // React Aria 컴포넌트 스타일 (srcdoc에서 필요)
-import '../shared/components/styles/index.css';
+// ⭐ 모노레포 구조에서는 @xstudio/shared alias 사용
+import '@xstudio/shared/components/styles/index.css';
 
 // ============================================
 // Styles (인라인으로 포함되거나 별도 CSS 파일)

@@ -47,12 +47,14 @@ export function generateDevSrcdoc(projectId: string): string {
   // 개발 모드에서는 ESM import를 사용하여 HMR 지원
   // React Refresh preamble 전역 변수를 먼저 설정해야 함
   // ⭐ React가 document.body에 직접 마운트됨 (DOM/데이터 트리 일치)
+  // ⭐ <base> 태그로 부모 창의 origin을 기준으로 상대 경로 해석
   return `
 <!DOCTYPE html>
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <base href="${typeof window !== 'undefined' ? window.location.origin : 'http://localhost:5173'}/" />
   <title>XStudio Preview</title>
   <style>${BASE_STYLES}</style>
 </head>
