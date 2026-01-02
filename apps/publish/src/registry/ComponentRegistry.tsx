@@ -139,11 +139,11 @@ export function getComponentsByCategory(
  * 기본 HTML 요소들 등록
  */
 export function registerDefaultComponents(): void {
-  // Layout Components
-  const layoutTags = ['div', 'section', 'article', 'header', 'footer', 'main', 'aside', 'nav'];
+  // Layout Components (body 포함)
+  const layoutTags = ['div', 'section', 'article', 'header', 'footer', 'main', 'aside', 'nav', 'body'];
   layoutTags.forEach((tag) => {
     registerComponent(tag, {
-      component: createHtmlElement(tag),
+      component: createHtmlElement(tag === 'body' ? 'div' : tag), // body는 div로 렌더링
       displayName: tag.charAt(0).toUpperCase() + tag.slice(1),
       category: 'layout',
     });
@@ -167,6 +167,13 @@ export function registerDefaultComponents(): void {
       displayName: tag.charAt(0).toUpperCase() + tag.slice(1),
       category: 'input',
     });
+  });
+
+  // Text 컴포넌트 (span으로 렌더링)
+  registerComponent('Text', {
+    component: createHtmlElement('span'),
+    displayName: 'Text',
+    category: 'display',
   });
 }
 

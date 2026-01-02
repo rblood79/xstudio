@@ -7,6 +7,7 @@
  *
  * @since 2025-12-11 Phase 10 B2.3
  * @updated 2026-01-02 JSON 로드 기능 추가
+ * @updated 2026-01-02 Phase 1 - 검증 강화, Phase 2 - 멀티 페이지 네비게이션
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
@@ -15,8 +16,12 @@ import {
   loadProjectFromUrl,
   loadProjectFromFile,
   type ExportedProjectData,
+  type ExportError,
+  ExportErrorCode,
 } from '@xstudio/shared/utils';
 import { PageRenderer } from './renderer';
+import { PageNav } from './components/PageNav';
+import { usePageRouting } from './hooks/usePageRouting';
 import './styles/index.css';
 
 // ============================================
@@ -27,9 +32,93 @@ interface ProjectData {
   pages: Page[];
   elements: Element[];
   currentPageId: string | null;
+  projectName: string;
+  version: string;
 }
 
 type LoadingState = 'idle' | 'loading' | 'loaded' | 'error';
+
+// ============================================
+// Error Display Component
+// ============================================
+
+interface ErrorDisplayProps {
+  error: ExportError;
+  errors?: ExportError[];
+  onRetry: () => void;
+}
+
+function ErrorDisplay({ error, errors, onRetry }: ErrorDisplayProps) {
+  return (
+    <div className="publish-error" role="alert" aria-live="assertive">
+      <div className="error-icon">⚠️</div>
+      <h1>프로젝트를 불러올 수 없습니다</h1>
+      <div className="error-details">
+        <p className="error-message">{error.message}</p>
+        {error.field && (
+          <p className="error-field">
+            <strong>필드:</strong> {error.field}
+          </p>
+        )}
+        {error.detail && (
+          <p className="error-detail">
+            <strong>상세:</strong> {error.detail}
+          </p>
+        )}
+        <p className="error-code">
+          <code>{error.code}</code>
+        </p>
+      </div>
+
+      {errors && errors.length > 1 && (
+        <details className="error-list">
+          <summary>모든 오류 보기 ({errors.length}개)</summary>
+          <ul>
+            {errors.map((err, i) => (
+              <li key={i}>
+                <code>{err.code}</code>: {err.message}
+                {err.field && <span className="error-field"> ({err.field})</span>}
+              </li>
+            ))}
+          </ul>
+        </details>
+      )}
+
+      <button className="retry-button" onClick={onRetry}>
+        다시 시도
+      </button>
+    </div>
+  );
+}
+
+// ============================================
+// Loading Component
+// ============================================
+
+function LoadingScreen() {
+  return (
+    <div className="publish-loading" aria-busy="true" aria-live="polite">
+      <div className="loading-spinner" />
+      <p>프로젝트를 불러오는 중...</p>
+    </div>
+  );
+}
+
+// ============================================
+// Empty State Component
+// ============================================
+
+interface EmptyStateProps {
+  message: string;
+}
+
+function EmptyState({ message }: EmptyStateProps) {
+  return (
+    <div className="publish-empty">
+      <p>{message}</p>
+    </div>
+  );
+}
 
 // ============================================
 // App Component
@@ -37,30 +126,46 @@ type LoadingState = 'idle' | 'loading' | 'loaded' | 'error';
 
 export function App() {
   const [projectData, setProjectData] = useState<ProjectData | null>(null);
-  const [currentPage, setCurrentPage] = useState<Page | null>(null);
   const [loadingState, setLoadingState] = useState<LoadingState>('idle');
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<ExportError | null>(null);
+  const [errors, setErrors] = useState<ExportError[] | undefined>(undefined);
+  const [warnings, setWarnings] = useState<ExportError[] | undefined>(undefined);
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // 페이지 라우팅
+  const { currentPageId, currentPage, setCurrentPageId } = usePageRouting({
+    pages: projectData?.pages || [],
+    defaultPageId: projectData?.currentPageId,
+  });
+
+  // 현재 페이지의 요소들
+  const currentElements = projectData?.elements.filter(
+    (el) => el.page_id === currentPageId
+  ) || [];
+
   // 프로젝트 데이터 설정
-  const setProject = useCallback((data: ExportedProjectData) => {
+  const setProject = useCallback((data: ExportedProjectData, loadWarnings?: ExportError[]) => {
     const projectData: ProjectData = {
       pages: data.pages,
       elements: data.elements,
       currentPageId: data.currentPageId || null,
+      projectName: data.project.name,
+      version: data.version,
     };
 
     setProjectData(projectData);
-
-    // 현재 페이지 설정
-    const pageId = data.currentPageId || data.pages[0]?.id;
-    if (pageId) {
-      const page = data.pages.find((p) => p.id === pageId);
-      setCurrentPage(page || null);
-    }
-
+    setWarnings(loadWarnings);
     setLoadingState('loaded');
+    setError(null);
+    setErrors(undefined);
+  }, []);
+
+  // 에러 설정
+  const setLoadError = useCallback((err: ExportError, allErrors?: ExportError[]) => {
+    setError(err);
+    setErrors(allErrors);
+    setLoadingState('error');
   }, []);
 
   // URL 파라미터에서 프로젝트 로드
@@ -73,11 +178,10 @@ export function App() {
         setLoadingState('loading');
         const result = await loadProjectFromUrl(projectUrl);
 
-        if (result.success && result.data) {
-          setProject(result.data);
+        if (result.success) {
+          setProject(result.data, result.warnings);
         } else {
-          setError(result.error || 'Failed to load project');
-          setLoadingState('error');
+          setLoadError(result.error, result.errors);
         }
         return true;
       }
@@ -85,12 +189,11 @@ export function App() {
     }
 
     async function loadFromDefaultPath() {
-      // /project.json 파일 시도
       setLoadingState('loading');
       const result = await loadProjectFromUrl('/project.json');
 
-      if (result.success && result.data) {
-        setProject(result.data);
+      if (result.success) {
+        setProject(result.data, result.warnings);
         return true;
       }
       return false;
@@ -110,7 +213,7 @@ export function App() {
     }
 
     init();
-  }, [setProject]);
+  }, [setProject, setLoadError]);
 
   // 파일 드롭 핸들러
   const handleDrop = useCallback(
@@ -120,22 +223,24 @@ export function App() {
 
       const file = e.dataTransfer.files[0];
       if (!file || !file.name.endsWith('.json')) {
-        setError('Please drop a valid JSON file');
+        setLoadError({
+          code: ExportErrorCode.VALIDATION_ERROR,
+          message: 'JSON 파일만 업로드할 수 있습니다',
+          severity: 'error',
+        });
         return;
       }
 
       setLoadingState('loading');
       const result = await loadProjectFromFile(file);
 
-      if (result.success && result.data) {
-        setProject(result.data);
-        setError(null);
+      if (result.success) {
+        setProject(result.data, result.warnings);
       } else {
-        setError(result.error || 'Failed to load project file');
-        setLoadingState('error');
+        setLoadError(result.error, result.errors);
       }
     },
-    [setProject]
+    [setProject, setLoadError]
   );
 
   // 파일 선택 핸들러
@@ -147,15 +252,13 @@ export function App() {
       setLoadingState('loading');
       const result = await loadProjectFromFile(file);
 
-      if (result.success && result.data) {
-        setProject(result.data);
-        setError(null);
+      if (result.success) {
+        setProject(result.data, result.warnings);
       } else {
-        setError(result.error || 'Failed to load project file');
-        setLoadingState('error');
+        setLoadError(result.error, result.errors);
       }
     },
-    [setProject]
+    [setProject, setLoadError]
   );
 
   // 드래그 이벤트 핸들러
@@ -169,41 +272,45 @@ export function App() {
     setIsDragging(false);
   }, []);
 
+  // 재시도 핸들러
+  const handleRetry = useCallback(() => {
+    setError(null);
+    setErrors(undefined);
+    setLoadingState('idle');
+  }, []);
+
   // 에러 상태
   if (loadingState === 'error' && error) {
-    return (
-      <div className="publish-error">
-        <h1>Error</h1>
-        <p>{error}</p>
-        <button onClick={() => window.location.reload()}>Retry</button>
-      </div>
-    );
+    return <ErrorDisplay error={error} errors={errors} onRetry={handleRetry} />;
   }
 
   // 로딩 상태
   if (loadingState === 'loading') {
-    return (
-      <div className="publish-loading">
-        <p>Loading project...</p>
-      </div>
-    );
+    return <LoadingScreen />;
   }
 
   // 프로젝트 없음 - 파일 드롭 UI
-  if (loadingState === 'idle' || !projectData || !currentPage) {
+  if (loadingState === 'idle' || !projectData) {
     return (
       <div
         className={`publish-dropzone ${isDragging ? 'dragging' : ''}`}
         onDrop={handleDrop}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
+        role="button"
+        tabIndex={0}
+        aria-label="프로젝트 파일 업로드"
+        aria-describedby="dropzone-instructions"
+        onKeyDown={(e) => e.key === 'Enter' && fileInputRef.current?.click()}
       >
         <div className="dropzone-content">
           <h1>XStudio Publish</h1>
-          <p>Drop a project JSON file here to preview</p>
-          <p className="or">or</p>
+          <p id="dropzone-instructions">
+            JSON 파일을 드래그하거나 Enter 키를 눌러 파일을 선택하세요
+          </p>
+          <p className="or">또는</p>
           <button onClick={() => fileInputRef.current?.click()}>
-            Select File
+            파일 선택
           </button>
           <input
             ref={fileInputRef}
@@ -212,20 +319,56 @@ export function App() {
             onChange={handleFileSelect}
             style={{ display: 'none' }}
           />
-          {error && <p className="error-text">{error}</p>}
         </div>
       </div>
     );
   }
 
+  // 페이지 없음
+  if (projectData.pages.length === 0) {
+    return <EmptyState message="페이지가 없습니다" />;
+  }
+
+  // 현재 페이지가 없음
+  if (!currentPage) {
+    return <EmptyState message="페이지를 찾을 수 없습니다" />;
+  }
+
   // 프로젝트 렌더링
   return (
     <div className="publish-app">
-      <PageRenderer
-        page={currentPage}
-        elements={projectData.elements}
-        className="publish-page"
-      />
+      {/* 경고 표시 */}
+      {warnings && warnings.length > 0 && (
+        <div className="publish-warnings" role="status">
+          {warnings.map((w, i) => (
+            <div key={i} className="warning-item">
+              ⚠️ {w.message}
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div className="publish-layout">
+        {/* 페이지 네비게이션 */}
+        <PageNav
+          pages={projectData.pages}
+          currentPageId={currentPageId}
+          onPageChange={setCurrentPageId}
+        />
+
+        {/* 메인 콘텐츠 */}
+        <main className="publish-content">
+          {currentElements.length === 0 ? (
+            <EmptyState message="이 페이지에 요소가 없습니다" />
+          ) : (
+            <PageRenderer
+              page={currentPage}
+              elements={projectData.elements}
+              className="publish-page"
+            />
+          )}
+        </main>
+      </div>
     </div>
   );
 }

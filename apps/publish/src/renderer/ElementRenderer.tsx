@@ -2,13 +2,46 @@
  * Element Renderer
  *
  * 🚀 Phase 10 B2.3: 단일 Element 렌더링 컴포넌트
+ * 🚀 Phase 3: 이벤트 핸들링 추가
  *
  * @since 2025-12-11 Phase 10 B2.3
+ * @since 2026-01-02 Phase 3 Event Handling
  */
 
 import { memo, useMemo } from 'react';
 import type { Element } from '@xstudio/shared';
 import { getComponent } from '../registry/ComponentRegistry';
+import { ActionExecutor } from '@xstudio/shared';
+import type { EventRuntimeContext } from '@xstudio/shared';
+
+// 이벤트 타입 정의
+interface ElementEvent {
+  trigger: string;
+  actions: Array<{
+    type: string;
+    payload?: Record<string, unknown>;
+  }>;
+}
+
+// 기본 런타임 컨텍스트 생성
+function createDefaultContext(): EventRuntimeContext {
+  const stateMap = new Map<string, unknown>();
+
+  return {
+    navigateToPage: (pageId: string) => {
+      window.location.hash = `page-${pageId}`;
+    },
+    state: {
+      get: (key: string) => stateMap.get(key),
+      set: (key: string, value: unknown) => stateMap.set(key, value),
+    },
+    currentPageId: window.location.hash.replace('#page-', '') || null,
+    projectId: null,
+  };
+}
+
+// ActionExecutor 싱글톤 인스턴스
+const actionExecutor = new ActionExecutor(createDefaultContext());
 
 // ============================================
 // Types
@@ -36,6 +69,36 @@ export const ElementRenderer = memo(function ElementRenderer({
       .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
   }, [elements, element.id]);
 
+  // 이벤트 핸들러 생성
+  const eventHandlers = useMemo(() => {
+    const events = (element as Element & { events?: ElementEvent[] }).events;
+    if (!events || events.length === 0) return {};
+
+    const handlers: Record<string, (e: React.SyntheticEvent) => void> = {};
+
+    for (const event of events) {
+      const handlerName = event.trigger; // 'onClick', 'onMouseEnter', etc.
+      handlers[handlerName] = async (e: React.SyntheticEvent) => {
+        e.stopPropagation();
+        console.log(`[Event] ${element.id} - ${handlerName} triggered`);
+
+        // 모든 액션 순차 실행
+        for (const action of event.actions) {
+          try {
+            await actionExecutor.execute({
+              type: action.type as 'NAVIGATE_TO_PAGE' | 'SHOW_ALERT' | 'OPEN_URL' | 'SET_STATE' | 'CONSOLE_LOG' | 'API_CALL',
+              config: action.payload || {},
+            });
+          } catch (error) {
+            console.error(`[Event] Action ${action.type} failed:`, error);
+          }
+        }
+      };
+    }
+
+    return handlers;
+  }, [element]);
+
   // 컴포넌트 가져오기
   const componentEntry = getComponent(element.tag);
 
@@ -47,6 +110,7 @@ export const ElementRenderer = memo(function ElementRenderer({
         data-element-id={element.id}
         data-element-tag={element.tag}
         style={element.props?.style as React.CSSProperties}
+        {...eventHandlers}
       >
         {children.map((child) => (
           <ElementRenderer
@@ -84,6 +148,7 @@ export const ElementRenderer = memo(function ElementRenderer({
   return (
     <Component
       {...restProps}
+      {...eventHandlers}
       data-element-id={element.id}
       style={style as React.CSSProperties}
     >

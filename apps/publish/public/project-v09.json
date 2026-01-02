@@ -1,0 +1,110 @@
+{
+  "version": "0.9.0",
+  "exportedAt": "2025-12-01T00:00:00.000Z",
+  "project": {
+    "id": "a1b2c3d4-e5f6-4a5b-8c9d-0e1f2a3b4c5d",
+    "name": "Legacy Project v0.9"
+  },
+  "pages": [
+    {
+      "id": "11111111-1111-1111-1111-111111111111",
+      "title": "Legacy Home",
+      "slug": "/",
+      "project_id": "a1b2c3d4-e5f6-4a5b-8c9d-0e1f2a3b4c5d"
+    },
+    {
+      "id": "22222222-2222-2222-2222-222222222222",
+      "title": "Legacy About",
+      "slug": "/about",
+      "project_id": "a1b2c3d4-e5f6-4a5b-8c9d-0e1f2a3b4c5d"
+    }
+  ],
+  "elements": [
+    {
+      "id": "legacy-body",
+      "tag": "body",
+      "props": {
+        "tag": "body",
+        "style": {
+          "display": "flex",
+          "flexDirection": "column",
+          "justifyContent": "center",
+          "alignItems": "center",
+          "backgroundColor": "#fff3e0",
+          "minHeight": "100vh"
+        }
+      },
+      "parent_id": null,
+      "page_id": "11111111-1111-1111-1111-111111111111"
+    },
+    {
+      "id": "legacy-title",
+      "tag": "Text",
+      "props": {
+        "children": "Legacy Project (v0.9.0)",
+        "style": {
+          "fontSize": "28px",
+          "fontWeight": "bold",
+          "color": "#e65100",
+          "marginBottom": "16px"
+        }
+      },
+      "parent_id": "legacy-body",
+      "page_id": "11111111-1111-1111-1111-111111111111"
+    },
+    {
+      "id": "legacy-desc",
+      "tag": "Text",
+      "props": {
+        "children": "This project was migrated from v0.9.0 to v1.0.0!",
+        "style": {
+          "fontSize": "16px",
+          "color": "#666"
+        }
+      },
+      "parent_id": "legacy-body",
+      "page_id": "11111111-1111-1111-1111-111111111111"
+    },
+    {
+      "id": "legacy-button",
+      "tag": "Button",
+      "props": {
+        "children": "Go to About",
+        "variant": "primary"
+      },
+      "parent_id": "legacy-body",
+      "page_id": "11111111-1111-1111-1111-111111111111"
+    },
+    {
+      "id": "legacy-body-2",
+      "tag": "body",
+      "props": {
+        "tag": "body",
+        "style": {
+          "display": "flex",
+          "flexDirection": "column",
+          "justifyContent": "center",
+          "alignItems": "center",
+          "backgroundColor": "#e8f5e9",
+          "minHeight": "100vh"
+        }
+      },
+      "parent_id": null,
+      "page_id": "22222222-2222-2222-2222-222222222222"
+    },
+    {
+      "id": "legacy-about-title",
+      "tag": "Text",
+      "props": {
+        "children": "Legacy About Page",
+        "style": {
+          "fontSize": "28px",
+          "fontWeight": "bold",
+          "color": "#2e7d32"
+        }
+      },
+      "parent_id": "legacy-body-2",
+      "page_id": "22222222-2222-2222-2222-222222222222"
+    }
+  ]
+}

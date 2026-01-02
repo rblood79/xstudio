@@ -14,6 +14,24 @@
       "parent_id": null,
       "order_num": 0,
       "layout_id": null
+    },
+    {
+      "id": "page-about",
+      "title": "About",
+      "slug": "/about",
+      "project_id": "db1e4339-e9d1-40e5-a268-8df9d4bfc49d",
+      "parent_id": null,
+      "order_num": 1,
+      "layout_id": null
+    },
+    {
+      "id": "page-contact",
+      "title": "Contact",
+      "slug": "/contact",
+      "project_id": "db1e4339-e9d1-40e5-a268-8df9d4bfc49d",
+      "parent_id": null,
+      "order_num": 2,
+      "layout_id": null
     }
   ],
   "elements": [
@@ -58,9 +76,20 @@
       "id": "element-button-1",
       "tag": "Button",
       "props": {
-        "children": "Button",
+        "children": "Console Log",
         "variant": "secondary"
       },
+      "events": [
+        {
+          "trigger": "onClick",
+          "actions": [
+            {
+              "type": "CONSOLE_LOG",
+              "payload": { "message": "Button 1 clicked!", "level": "info" }
+            }
+          ]
+        }
+      ],
       "parent_id": "element-box-1",
       "page_id": "336554c4-c9ba-48e1-a278-d389c7519b72",
       "order_num": 0
@@ -69,9 +98,20 @@
       "id": "element-button-2",
       "tag": "Button",
       "props": {
-        "children": "Button",
+        "children": "Show Alert",
         "variant": "primary"
       },
+      "events": [
+        {
+          "trigger": "onClick",
+          "actions": [
+            {
+              "type": "SHOW_ALERT",
+              "payload": { "message": "Hello from Button 2!" }
+            }
+          ]
+        }
+      ],
       "parent_id": "element-box-1",
       "page_id": "336554c4-c9ba-48e1-a278-d389c7519b72",
       "order_num": 1
@@ -80,9 +120,20 @@
       "id": "element-button-3",
       "tag": "Button",
       "props": {
-        "children": "Button",
+        "children": "Open URL",
         "variant": "destructive"
       },
+      "events": [
+        {
+          "trigger": "onClick",
+          "actions": [
+            {
+              "type": "OPEN_URL",
+              "payload": { "url": "https://example.com", "target": "_blank" }
+            }
+          ]
+        }
+      ],
       "parent_id": "3a1d3132-61de-47be-998f-87ec3cd26ac1",
       "page_id": "336554c4-c9ba-48e1-a278-d389c7519b72",
       "order_num": 1
@@ -91,11 +142,210 @@
       "id": "element-button-4",
       "tag": "Button",
       "props": {
-        "children": "Button",
+        "children": "Multi Action",
         "variant": "destructive"
       },
+      "events": [
+        {
+          "trigger": "onClick",
+          "actions": [
+            {
+              "type": "CONSOLE_LOG",
+              "payload": { "message": "Multi-action started", "level": "info" }
+            },
+            {
+              "type": "SHOW_ALERT",
+              "payload": { "message": "Multi-action complete!" }
+            }
+          ]
+        }
+      ],
       "parent_id": "3a1d3132-61de-47be-998f-87ec3cd26ac1",
       "page_id": "336554c4-c9ba-48e1-a278-d389c7519b72",
+      "order_num": 2
+    },
+    {
+      "id": "nav-to-about",
+      "tag": "Button",
+      "props": {
+        "children": "Go to About →",
+        "variant": "primary"
+      },
+      "events": [
+        {
+          "trigger": "onClick",
+          "actions": [
+            {
+              "type": "NAVIGATE_TO_PAGE",
+              "payload": { "pageId": "page-about" }
+            }
+          ]
+        }
+      ],
+      "parent_id": "3a1d3132-61de-47be-998f-87ec3cd26ac1",
+      "page_id": "336554c4-c9ba-48e1-a278-d389c7519b72",
+      "order_num": 3
+    },
+    {
+      "id": "body-about",
+      "tag": "body",
+      "props": {
+        "tag": "body",
+        "style": {
+          "display": "flex",
+          "flexDirection": "column",
+          "justifyContent": "center",
+          "alignItems": "center",
+          "backgroundColor": "#e6f3ff",
+          "minHeight": "100vh"
+        }
+      },
+      "parent_id": null,
+      "page_id": "page-about",
+      "order_num": 0
+    },
+    {
+      "id": "about-title",
+      "tag": "Text",
+      "props": {
+        "children": "About Page",
+        "style": {
+          "fontSize": "32px",
+          "fontWeight": "bold",
+          "color": "#2563eb",
+          "marginBottom": "20px"
+        }
+      },
+      "parent_id": "body-about",
+      "page_id": "page-about",
+      "order_num": 0
+    },
+    {
+      "id": "about-desc",
+      "tag": "Text",
+      "props": {
+        "children": "This is the About page. Multi-page navigation works!",
+        "style": {
+          "fontSize": "16px",
+          "color": "#333"
+        }
+      },
+      "parent_id": "body-about",
+      "page_id": "page-about",
+      "order_num": 1
+    },
+    {
+      "id": "nav-to-home",
+      "tag": "Button",
+      "props": {
+        "children": "← Back to Home",
+        "variant": "secondary"
+      },
+      "events": [
+        {
+          "trigger": "onClick",
+          "actions": [
+            {
+              "type": "NAVIGATE_TO_PAGE",
+              "payload": { "pageId": "336554c4-c9ba-48e1-a278-d389c7519b72" }
+            }
+          ]
+        }
+      ],
+      "parent_id": "body-about",
+      "page_id": "page-about",
+      "order_num": 2
+    },
+    {
+      "id": "nav-to-contact",
+      "tag": "Button",
+      "props": {
+        "children": "Go to Contact →",
+        "variant": "primary"
+      },
+      "events": [
+        {
+          "trigger": "onClick",
+          "actions": [
+            {
+              "type": "NAVIGATE_TO_PAGE",
+              "payload": { "pageId": "page-contact" }
+            }
+          ]
+        }
+      ],
+      "parent_id": "body-about",
+      "page_id": "page-about",
+      "order_num": 3
+    },
+    {
+      "id": "body-contact",
+      "tag": "body",
+      "props": {
+        "tag": "body",
+        "style": {
+          "display": "flex",
+          "flexDirection": "column",
+          "justifyContent": "center",
+          "alignItems": "center",
+          "backgroundColor": "#f0fdf4",
+          "minHeight": "100vh"
+        }
+      },
+      "parent_id": null,
+      "page_id": "page-contact",
+      "order_num": 0
+    },
+    {
+      "id": "contact-title",
+      "tag": "Text",
+      "props": {
+        "children": "Contact Page",
+        "style": {
+          "fontSize": "32px",
+          "fontWeight": "bold",
+          "color": "#16a34a",
+          "marginBottom": "20px"
+        }
+      },
+      "parent_id": "body-contact",
+      "page_id": "page-contact",
+      "order_num": 0
+    },
+    {
+      "id": "contact-desc",
+      "tag": "Text",
+      "props": {
+        "children": "This is the Contact page. You navigated here successfully!",
+        "style": {
+          "fontSize": "16px",
+          "color": "#333"
+        }
+      },
+      "parent_id": "body-contact",
+      "page_id": "page-contact",
+      "order_num": 1
+    },
+    {
+      "id": "nav-back-about",
+      "tag": "Button",
+      "props": {
+        "children": "← Back to About",
+        "variant": "secondary"
+      },
+      "events": [
+        {
+          "trigger": "onClick",
+          "actions": [
+            {
+              "type": "NAVIGATE_TO_PAGE",
+              "payload": { "pageId": "page-about" }
+            }
+          ]
+        }
+      ],
+      "parent_id": "body-contact",
+      "page_id": "page-contact",
       "order_num": 2
     }
   ],

@@ -1,0 +1,30 @@
+{
+  "version": "1.0.0",
+  "exportedAt": "2026-01-02T00:00:00.000Z",
+  "project": {
+    "id": "00000000-0000-0000-0000-000000000001",
+    "name": "Minimal Project"
+  },
+  "pages": [
+    {
+      "id": "page-1",
+      "title": "Home",
+      "slug": "/",
+      "project_id": "00000000-0000-0000-0000-000000000001",
+      "parent_id": null,
+      "order_num": 0,
+      "layout_id": null
+    }
+  ],
+  "elements": [
+    {
+      "id": "element-1",
+      "tag": "Text",
+      "props": { "children": "Hello, World!" },
+      "parent_id": "body",
+      "page_id": "page-1",
+      "order_num": 0
+    }
+  ],
+  "currentPageId": "page-1"
+}

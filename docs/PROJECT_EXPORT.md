@@ -7,6 +7,7 @@
 - **생성일**: 2026-01-02
 - **현재 버전**: 1.0.0
 - **완성도**: 60%
+- **최소 브라우저**: Chrome 90+, Firefox 88+, Safari 14+, Edge 90+
 
 ## 현재 구현 상태
 
@@ -143,6 +144,95 @@ File 객체에서 프로젝트 로드
 
 ```typescript
 async function loadProjectFromFile(file: File): Promise<ImportResult>
+```
+
+---
+
+## 에러 코드 레퍼런스
+
+모든 Phase에서 사용되는 에러 코드 정의입니다.
+
+### 에러 코드 Enum
+
+```typescript
+// packages/shared/src/types/export.types.ts
+export enum ExportErrorCode {
+  // 검증 오류 (Phase 1)
+  VALIDATION_ERROR = 'VALIDATION_ERROR',
+  MISSING_FIELD = 'MISSING_FIELD',
+  INVALID_TYPE = 'INVALID_TYPE',
+  PARENT_CYCLE = 'PARENT_CYCLE',
+  UNSUPPORTED_TAG = 'UNSUPPORTED_TAG',
+  EXPORT_LIMIT_EXCEEDED = 'EXPORT_LIMIT_EXCEEDED',
+
+  // 페이지 오류 (Phase 2)
+  PAGE_NOT_FOUND = 'PAGE_NOT_FOUND',
+  NO_PAGES = 'NO_PAGES',
+  NO_ELEMENTS = 'NO_ELEMENTS',
+
+  // 이벤트 런타임 오류 (Phase 3)
+  UNSUPPORTED_ACTION = 'UNSUPPORTED_ACTION',
+  API_CALL_FAILED = 'API_CALL_FAILED',
+  POPUP_BLOCKED = 'POPUP_BLOCKED',
+  HANDLER_DUPLICATE = 'HANDLER_DUPLICATE',
+  HANDLER_POOL_HIGH = 'HANDLER_POOL_HIGH',
+
+  // 버전/마이그레이션 오류 (Phase 4)
+  UNKNOWN_VERSION = 'UNKNOWN_VERSION',
+  MIGRATION_FAILED = 'MIGRATION_FAILED',
+  ASSET_TOO_LARGE = 'ASSET_TOO_LARGE',
+
+  // 보안 오류
+  SECURITY_BLOCKED = 'SECURITY_BLOCKED',
+  INVALID_URL_SCHEME = 'INVALID_URL_SCHEME',
+  FILE_TOO_LARGE = 'FILE_TOO_LARGE',
+}
+```
+
+### 에러 코드 전체 목록
+
+| 코드 | Phase | 심각도 | 설명 | 사용자 메시지 예시 |
+|------|-------|--------|------|-------------------|
+| `VALIDATION_ERROR` | 1 | Error | 필드 값이 스키마와 불일치 | `"version must follow semver (e.g., 1.0.0)"` |
+| `MISSING_FIELD` | 1 | Error | 필수 필드 누락 | `"project.id is required"` |
+| `INVALID_TYPE` | 1 | Error | 타입 불일치 | `"pages must be an array"` |
+| `PARENT_CYCLE` | 1 | Error | 페이지 순환 참조 | `"pages[1].parent_id forms a cycle"` |
+| `UNSUPPORTED_TAG` | 1 | Warning | 미지원 컴포넌트 태그 | `"elements[3].tag 'CustomWidget' is not supported"` |
+| `EXPORT_LIMIT_EXCEEDED` | 1 | Error | 데이터 한계 초과 | `"Project exceeds limit: 10,500 elements (max: 10,000)"` |
+| `PAGE_NOT_FOUND` | 2 | Warning | 페이지 ID 없음 | `"currentPageId does not match any page"` |
+| `NO_PAGES` | 2 | Error | 페이지 배열 비어있음 | `"No pages to render"` |
+| `NO_ELEMENTS` | 2 | Info | 페이지에 요소 없음 | `"No elements for page 'Home'"` |
+| `UNSUPPORTED_ACTION` | 3 | Warning | 미지원 액션 타입 | `"UPDATE_ELEMENT is not available in Publish"` |
+| `API_CALL_FAILED` | 3 | Warning | API 호출 실패 | `"API call blocked by CORS"` |
+| `POPUP_BLOCKED` | 3 | Info | 팝업 차단됨 | `"Popup blocked; opened in current tab"` |
+| `HANDLER_DUPLICATE` | 3 | Debug | 핸들러 중복 등록 | `"Handler already registered"` |
+| `HANDLER_POOL_HIGH` | 3 | Warning | 핸들러 풀 과다 | `"Handler pool exceeds 5,000"` |
+| `UNKNOWN_VERSION` | 4 | Error | 미지원 버전 | `"version 0.9.0 is not supported"` |
+| `MIGRATION_FAILED` | 4 | Error | 마이그레이션 실패 | `"migration v1.0.0→v1.1.0 failed"` |
+| `ASSET_TOO_LARGE` | 4 | Warning | 에셋 크기 초과 | `"thumbnail exceeds 512KB and was dropped"` |
+| `SECURITY_BLOCKED` | - | Error | 보안 정책 위반 | `"Blocked: potential security risk detected"` |
+| `INVALID_URL_SCHEME` | - | Error | 허용되지 않은 URL 스키마 | `"Only https:// URLs are allowed"` |
+| `FILE_TOO_LARGE` | - | Error | 파일 크기 초과 | `"File exceeds 10MB limit"` |
+
+### 에러 응답 형식
+
+```typescript
+interface ExportError {
+  code: ExportErrorCode;
+  message: string;
+  field?: string;           // 오류 발생 필드 경로
+  detail?: string;          // 추가 상세 정보
+  severity: 'error' | 'warning' | 'info' | 'debug';
+}
+
+// 예시
+{
+  "code": "VALIDATION_ERROR",
+  "message": "pages[2].slug is invalid",
+  "field": "pages[2].slug",
+  "detail": "pattern: /^(\\/|[a-z0-9-_/]+)$/",
+  "severity": "error"
+}
 ```
 
 ---
@@ -731,6 +821,253 @@ Phase 4: 버전 관리 & 마무리    [██████████] 92% → 1
 
 ---
 
+## 보안 정책
+
+Export/Import 기능에서 고려해야 할 보안 위험과 대응 방안입니다.
+
+### 보안 위험 및 대응
+
+| 위험 | 심각도 | 설명 | 대응 방안 |
+|------|--------|------|----------|
+| **Prototype Pollution** | 높음 | `__proto__`, `constructor` 키로 객체 프로토타입 조작 | JSON 파싱 후 위험 키 필터링 |
+| **XSS (Cross-Site Scripting)** | 높음 | `props.children`에 악성 스크립트 삽입 | DOMPurify로 HTML 새니타이징 |
+| **파일 크기 DoS** | 중간 | 초대형 JSON 파일로 브라우저 메모리 고갈 | 10MB 초과 파일 업로드 차단 |
+| **악성 URL 리다이렉트** | 중간 | `OPEN_URL` 액션으로 피싱 사이트 이동 | URL 스키마 및 도메인 필터링 |
+| **무한 루프 이벤트** | 낮음 | 이벤트 체인이 무한 반복 | 이벤트 실행 횟수 제한 (100회/초) |
+
+### JSON 파싱 보안
+
+```typescript
+// packages/shared/src/utils/security.utils.ts
+
+const DANGEROUS_KEYS = ['__proto__', 'constructor', 'prototype'];
+
+/**
+ * 위험한 키를 필터링하는 JSON 파서
+ */
+export function safeJsonParse<T>(jsonString: string): T {
+  return JSON.parse(jsonString, (key, value) => {
+    if (DANGEROUS_KEYS.includes(key)) {
+      console.warn(`[Security] Blocked dangerous key: ${key}`);
+      return undefined;
+    }
+    return value;
+  });
+}
+
+/**
+ * HTML props 새니타이징
+ */
+export function sanitizeHtmlProps(props: Record<string, unknown>): Record<string, unknown> {
+  const htmlKeys = ['children', 'dangerouslySetInnerHTML', 'innerHTML'];
+  const sanitized = { ...props };
+
+  for (const key of htmlKeys) {
+    if (typeof sanitized[key] === 'string') {
+      sanitized[key] = DOMPurify.sanitize(sanitized[key] as string);
+    }
+  }
+
+  return sanitized;
+}
+```
+
+### URL 정책
+
+```typescript
+// OPEN_URL 액션 URL 검증
+const ALLOWED_URL_SCHEMES = ['https:', 'mailto:', 'tel:'];
+const BLOCKED_DOMAINS = ['localhost', '127.0.0.1', '0.0.0.0'];
+
+function isUrlAllowed(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+
+    // 스키마 검증
+    if (!ALLOWED_URL_SCHEMES.includes(parsed.protocol)) {
+      return false;
+    }
+
+    // 로컬호스트 차단
+    if (BLOCKED_DOMAINS.some(d => parsed.hostname.includes(d))) {
+      return false;
+    }
+
+    return true;
+  } catch {
+    return false;
+  }
+}
+```
+
+### 파일 크기 검증
+
+```typescript
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+
+export async function validateFileSize(file: File): Promise<boolean> {
+  if (file.size > MAX_FILE_SIZE) {
+    throw new ExportError({
+      code: ExportErrorCode.FILE_TOO_LARGE,
+      message: `File exceeds ${MAX_FILE_SIZE / 1024 / 1024}MB limit`,
+      severity: 'error',
+    });
+  }
+  return true;
+}
+```
+
+### 이벤트 실행 제한
+
+```typescript
+// 이벤트 실행 횟수 제한 (Rate Limiting)
+const EVENT_RATE_LIMIT = 100; // 초당 최대 실행 횟수
+const eventCounter = new Map<string, number>();
+
+function checkEventRateLimit(eventKey: string): boolean {
+  const count = eventCounter.get(eventKey) || 0;
+  if (count >= EVENT_RATE_LIMIT) {
+    console.warn(`[Security] Event rate limit exceeded: ${eventKey}`);
+    return false;
+  }
+  eventCounter.set(eventKey, count + 1);
+  return true;
+}
+```
+
+---
+
+## 접근성(A11y) 요구사항
+
+WCAG 2.1 AA 수준 준수를 목표로 합니다.
+
+### 접근성 체크리스트
+
+| 요소 | WCAG 기준 | 요구사항 | 구현 방법 |
+|------|----------|----------|----------|
+| 페이지 네비게이션 | 2.1.1 키보드 | 키보드로 모든 기능 접근 가능 | `Tab`, `Arrow` 키 지원 |
+| 현재 페이지 표시 | 4.1.2 이름, 역할, 값 | 현재 위치 명확히 표시 | `aria-current="page"` |
+| 에러 메시지 | 4.1.3 상태 메시지 | 에러 발생 시 스크린 리더 알림 | `role="alert"` |
+| 포커스 표시 | 2.4.7 포커스 가시성 | 포커스된 요소 시각적 표시 | `:focus-visible` 스타일 |
+| 드롭존 안내 | 1.1.1 비텍스트 콘텐츠 | 드래그 앤 드롭 영역 설명 | `aria-label`, `aria-describedby` |
+| 로딩 상태 | 4.1.3 상태 메시지 | 로딩 중임을 알림 | `aria-busy`, `aria-live` |
+
+### 키보드 네비게이션
+
+```typescript
+// apps/publish/src/components/PageNav.tsx
+function PageNav({ pages, currentPageId, onPageChange }: PageNavProps) {
+  const handleKeyDown = (e: KeyboardEvent, pageId: string, index: number) => {
+    switch (e.key) {
+      case 'ArrowDown':
+      case 'ArrowRight':
+        e.preventDefault();
+        // 다음 페이지로 포커스 이동
+        const nextIndex = Math.min(index + 1, pages.length - 1);
+        focusPage(nextIndex);
+        break;
+      case 'ArrowUp':
+      case 'ArrowLeft':
+        e.preventDefault();
+        // 이전 페이지로 포커스 이동
+        const prevIndex = Math.max(index - 1, 0);
+        focusPage(prevIndex);
+        break;
+      case 'Enter':
+      case ' ':
+        e.preventDefault();
+        onPageChange(pageId);
+        break;
+      case 'Home':
+        e.preventDefault();
+        focusPage(0);
+        break;
+      case 'End':
+        e.preventDefault();
+        focusPage(pages.length - 1);
+        break;
+    }
+  };
+
+  return (
+    <nav aria-label="페이지 목록">
+      <ul role="tablist" aria-orientation="vertical">
+        {pages.map((page, index) => (
+          <li key={page.id} role="presentation">
+            <button
+              role="tab"
+              aria-selected={currentPageId === page.id}
+              aria-current={currentPageId === page.id ? 'page' : undefined}
+              tabIndex={currentPageId === page.id ? 0 : -1}
+              onKeyDown={(e) => handleKeyDown(e, page.id, index)}
+              onClick={() => onPageChange(page.id)}
+            >
+              {page.title}
+            </button>
+          </li>
+        ))}
+      </ul>
+    </nav>
+  );
+}
+```
+
+### 스크린 리더 지원
+
+```typescript
+// 에러 알림
+<div role="alert" aria-live="assertive">
+  {error && <p>{error}</p>}
+</div>
+
+// 로딩 상태
+<div aria-busy={isLoading} aria-live="polite">
+  {isLoading && <p>프로젝트를 불러오는 중...</p>}
+</div>
+
+// 드롭존
+<div
+  role="button"
+  tabIndex={0}
+  aria-label="프로젝트 파일 업로드"
+  aria-describedby="dropzone-instructions"
+  onKeyDown={(e) => e.key === 'Enter' && openFileDialog()}
+>
+  <p id="dropzone-instructions">
+    JSON 파일을 드래그하거나 Enter 키를 눌러 파일을 선택하세요
+  </p>
+</div>
+```
+
+### 포커스 관리
+
+```css
+/* apps/publish/src/styles/a11y.css */
+
+/* 포커스 가시성 */
+:focus-visible {
+  outline: 2px solid var(--focus-ring-color, #2563eb);
+  outline-offset: 2px;
+}
+
+/* 고대비 모드 지원 */
+@media (prefers-contrast: high) {
+  :focus-visible {
+    outline-width: 3px;
+  }
+}
+
+/* 모션 감소 선호 */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+```
+
+---
+
 ## 우선순위 권장
 
 **MVP (최소 기능 제품)**: Phase 1 + Phase 2 = 67%
@@ -772,11 +1109,408 @@ http://localhost:5174/?project=https://example.com/my-project.json
 
 ---
 
+## 디버그 모드
+
+개발 및 문제 해결을 위한 디버그 옵션입니다.
+
+### URL 파라미터
+
+| 파라미터 | 값 | 설명 |
+|----------|-----|------|
+| `debug` | `true` | 상세 콘솔 로그 활성화 |
+| `perf` | `true` | 성능 측정 로그 출력 |
+| `validate` | `strict` | 엄격 검증 모드 (모든 경고를 에러로 처리) |
+| `skeleton` | `true` | 강제 스켈레톤 UI 표시 (개발용) |
+
+**사용 예시:**
+```
+http://localhost:5174/?project=./project.json&debug=true&perf=true
+```
+
+### 디버그 로그 형식
+
+```typescript
+// packages/shared/src/utils/debug.utils.ts
+
+type LogLevel = 'debug' | 'info' | 'warn' | 'error' | 'perf';
+
+interface DebugLog {
+  level: LogLevel;
+  phase: string;      // 'parse' | 'validate' | 'render' | 'event'
+  message: string;
+  data?: unknown;
+  timestamp: number;
+  durationMs?: number;
+}
+
+// 로그 출력 예시
+// [PERF] parse: JSON parsed in 115ms {"pages":120,"elements":5400}
+// [DEBUG] validate: Checking page structure...
+// [WARN] validate: Page 'about' has no elements
+```
+
+### 개발자 도구 통합
+
+```typescript
+// 브라우저 콘솔에서 접근 가능한 전역 객체
+declare global {
+  interface Window {
+    __XSTUDIO_DEBUG__: {
+      projectData: ExportedProjectData | null;
+      eventRuntime: PublishEventRuntime | null;
+      logs: DebugLog[];
+      clearLogs: () => void;
+      exportLogs: () => string;
+    };
+  }
+}
+
+// 사용 예시 (브라우저 콘솔)
+// > __XSTUDIO_DEBUG__.projectData
+// > __XSTUDIO_DEBUG__.logs.filter(l => l.level === 'error')
+// > __XSTUDIO_DEBUG__.exportLogs()  // JSON 문자열로 내보내기
+```
+
+---
+
+## 브라우저 호환성
+
+### 지원 브라우저
+
+| 브라우저 | 최소 버전 | 권장 버전 | 비고 |
+|----------|----------|----------|------|
+| Chrome | 90+ | 최신 | ✅ 권장 |
+| Firefox | 88+ | 최신 | ✅ 완전 지원 |
+| Safari | 14+ | 15+ | ⚠️ 일부 CSS 제한 |
+| Edge | 90+ | 최신 | ✅ 완전 지원 |
+| Samsung Internet | 15+ | 최신 | ✅ 모바일 지원 |
+| iOS Safari | 14+ | 15+ | ⚠️ 파일 드롭 제한 |
+
+### 필수 JavaScript 기능
+
+```typescript
+// ES2020+ 기능 사용
+const requiredFeatures = [
+  'Promise.allSettled',      // ES2020
+  'Optional Chaining (?.)',  // ES2020
+  'Nullish Coalescing (??)', // ES2020
+  'BigInt',                  // ES2020
+  'Dynamic import()',        // ES2020
+  'Array.prototype.at',      // ES2022
+];
+```
+
+### Polyfill 필요 여부
+
+| 기능 | 필요 여부 | 대안 |
+|------|----------|------|
+| `structuredClone` | 선택 | `JSON.parse(JSON.stringify())` |
+| `Intl.Segmenter` | 선택 | 텍스트 처리 미사용 시 불필요 |
+| `ResizeObserver` | 필수 | polyfill.io 제공 |
+
+### 알려진 제한사항
+
+| 브라우저 | 제한사항 | 우회 방법 |
+|----------|---------|----------|
+| Safari < 15 | `gap` in Flexbox 미지원 | margin fallback |
+| iOS Safari | 드래그 앤 드롭 미지원 | 파일 선택 버튼 사용 |
+| Firefox | `backdrop-filter` 부분 지원 | 불투명 배경 fallback |
+
+---
+
+## 테스트 Fixtures
+
+테스트 및 개발용 샘플 JSON 파일입니다.
+
+### Fixture 파일 목록
+
+```
+packages/shared/src/__fixtures__/export/
+├── valid/
+│   ├── single-page.json          # 정상 단일 페이지
+│   ├── multi-page.json           # 정상 멀티 페이지 (5페이지)
+│   ├── nested-pages.json         # 중첩 페이지 구조
+│   ├── with-events.json          # 이벤트 포함
+│   ├── with-data-binding.json    # 데이터 바인딩 포함
+│   └── minimal.json              # 최소 구조 (1페이지, 1요소)
+├── invalid/
+│   ├── missing-version.json      # version 필드 누락
+│   ├── missing-pages.json        # pages 필드 누락
+│   ├── invalid-version.json      # 잘못된 버전 형식
+│   ├── circular-parent.json      # 순환 참조 parent_id
+│   ├── invalid-slug.json         # 잘못된 slug 형식
+│   ├── unsupported-tag.json      # 미지원 컴포넌트 태그
+│   └── malformed-json.json       # JSON 구문 오류
+├── edge-cases/
+│   ├── empty-pages.json          # 빈 pages 배열
+│   ├── empty-elements.json       # 빈 elements 배열
+│   ├── max-pages.json            # 최대 페이지 수 (200)
+│   ├── max-elements.json         # 최대 요소 수 (10,000)
+│   └── unicode-content.json      # 유니코드/이모지 포함
+└── performance/
+    ├── large-project.json        # 대규모 (100페이지, 5,000요소)
+    └── stress-test.json          # 스트레스 테스트용 (200페이지, 10,000요소)
+```
+
+### 샘플 Fixture: minimal.json
+
+```json
+{
+  "version": "1.0.0",
+  "exportedAt": "2026-01-02T00:00:00.000Z",
+  "project": {
+    "id": "00000000-0000-0000-0000-000000000001",
+    "name": "Minimal Project"
+  },
+  "pages": [
+    {
+      "id": "page-1",
+      "title": "Home",
+      "slug": "/",
+      "project_id": "00000000-0000-0000-0000-000000000001",
+      "parent_id": null,
+      "order_num": 0,
+      "layout_id": null
+    }
+  ],
+  "elements": [
+    {
+      "id": "element-1",
+      "tag": "Text",
+      "props": { "children": "Hello, World!" },
+      "parent_id": "body",
+      "page_id": "page-1",
+      "order_num": 0
+    }
+  ],
+  "currentPageId": "page-1"
+}
+```
+
+### 샘플 Fixture: circular-parent.json (Invalid)
+
+```json
+{
+  "version": "1.0.0",
+  "exportedAt": "2026-01-02T00:00:00.000Z",
+  "project": {
+    "id": "00000000-0000-0000-0000-000000000002",
+    "name": "Circular Parent Test"
+  },
+  "pages": [
+    {
+      "id": "page-1",
+      "title": "Page A",
+      "slug": "/a",
+      "project_id": "00000000-0000-0000-0000-000000000002",
+      "parent_id": "page-2",
+      "order_num": 0,
+      "layout_id": null
+    },
+    {
+      "id": "page-2",
+      "title": "Page B",
+      "slug": "/b",
+      "project_id": "00000000-0000-0000-0000-000000000002",
+      "parent_id": "page-1",
+      "order_num": 1,
+      "layout_id": null
+    }
+  ],
+  "elements": [],
+  "currentPageId": "page-1"
+}
+```
+
+### Fixture 사용 방법
+
+```typescript
+// 테스트에서 사용
+import minimalProject from '../__fixtures__/export/valid/minimal.json';
+import circularParent from '../__fixtures__/export/invalid/circular-parent.json';
+
+describe('parseProjectData', () => {
+  it('should parse valid minimal project', () => {
+    const result = parseProjectData(JSON.stringify(minimalProject));
+    expect(result.success).toBe(true);
+  });
+
+  it('should reject circular parent reference', () => {
+    const result = parseProjectData(JSON.stringify(circularParent));
+    expect(result.success).toBe(false);
+    expect(result.error?.code).toBe('PARENT_CYCLE');
+  });
+});
+```
+
+---
+
+## 오프라인 및 PWA 로드맵
+
+향후 오프라인 지원을 위한 확장 계획입니다.
+
+### Phase 5: 오프라인 지원 (미래 로드맵)
+
+| # | 작업 | 설명 | 우선순위 |
+|---|------|------|----------|
+| 5.1 | Service Worker 등록 | 정적 자산 캐싱 | 중간 |
+| 5.2 | IndexedDB 저장소 | 프로젝트 로컬 저장 | 중간 |
+| 5.3 | 오프라인 상태 UI | 연결 상태 표시 | 낮음 |
+| 5.4 | PWA Manifest | 설치 가능 앱 | 낮음 |
+| 5.5 | 백그라운드 동기화 | 온라인 복귀 시 동기화 | 낮음 |
+
+### Service Worker 전략
+
+```typescript
+// apps/publish/src/sw.ts (예정)
+
+const CACHE_NAME = 'xstudio-publish-v1';
+const STATIC_ASSETS = [
+  '/',
+  '/index.html',
+  '/assets/main.js',
+  '/assets/main.css',
+];
+
+// 캐시 우선 전략 (정적 자산)
+self.addEventListener('fetch', (event) => {
+  if (STATIC_ASSETS.includes(new URL(event.request.url).pathname)) {
+    event.respondWith(
+      caches.match(event.request).then((cached) => cached || fetch(event.request))
+    );
+  }
+});
+```
+
+### IndexedDB 스키마
+
+```typescript
+// apps/publish/src/storage/projectDB.ts (예정)
+
+interface ProjectDBSchema {
+  projects: {
+    key: string;           // project.id
+    value: {
+      data: ExportedProjectData;
+      savedAt: number;     // timestamp
+      name: string;
+    };
+  };
+  settings: {
+    key: string;
+    value: unknown;
+  };
+}
+
+// 사용 예시
+const db = await openProjectDB();
+await db.put('projects', { key: project.id, value: { data: projectData, savedAt: Date.now() } });
+const saved = await db.get('projects', projectId);
+```
+
+### 오프라인 상태 UI
+
+```typescript
+// apps/publish/src/hooks/useOnlineStatus.ts (예정)
+
+function useOnlineStatus() {
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+
+  return isOnline;
+}
+
+// UI 컴포넌트
+function OfflineIndicator() {
+  const isOnline = useOnlineStatus();
+
+  if (isOnline) return null;
+
+  return (
+    <div className="offline-banner" role="status" aria-live="polite">
+      ⚠️ 오프라인 모드 - 저장된 프로젝트만 사용 가능
+    </div>
+  );
+}
+```
+
+### PWA Manifest
+
+```json
+// apps/publish/public/manifest.json (예정)
+{
+  "name": "XStudio Publish",
+  "short_name": "Publish",
+  "description": "XStudio 프로젝트 미리보기",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#2563eb",
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
+```
+
+---
+
+## 코드-문서 불일치 사항
+
+현재 코드와 문서 간 알려진 차이점입니다.
+
+### 문서화된 불일치
+
+| 항목 | 문서 | 코드 | 상태 |
+|------|------|------|------|
+| 파일명 fallback | 미언급 | `projectName \|\| 'project'` | 문서 업데이트 필요 |
+| 파일 크기 제한 | 10MB 명시 | 미구현 | 코드 구현 필요 (Phase 1) |
+| Zod 검증 | Phase 1 계획 | 미구현 | 코드 구현 필요 (Phase 1) |
+| 멀티 페이지 UI | Phase 2 계획 | 미구현 | 코드 구현 필요 (Phase 2) |
+
+### 파일명 생성 로직
+
+**현재 코드** (`export.utils.ts:100`):
+```typescript
+link.download = `${projectName || 'project'}-${projectId}.json`;
+```
+
+`projectName`이 빈 문자열일 경우 `'project'`로 대체됩니다. 이 동작은 문서에 명시되어 있지 않았으며, 위 표에서 확인할 수 있습니다.
+
+### 향후 동기화 계획
+
+- Phase 1 완료 시: 파일 크기 제한, Zod 검증 코드 구현 후 문서 동기화
+- Phase 2 완료 시: 멀티 페이지 UI 구현 후 문서 동기화
+- 코드 변경 시: 해당 섹션의 문서도 함께 업데이트
+
+---
+
 ## 변경 이력
 
 | 날짜 | 버전 | 변경 내용 |
 |------|------|----------|
 | 2026-01-02 | 1.0.0 | 초기 구현 - 기본 Export/Import |
+| 2026-01-02 | 1.1.0 | 문서 확장 - 보안 정책, 접근성, 에러 코드, 브라우저 호환성, 테스트 Fixtures, 디버그 모드, PWA 로드맵, 코드-문서 불일치 섹션 추가 |
 
 ---
 

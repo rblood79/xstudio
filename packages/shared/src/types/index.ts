@@ -8,3 +8,5 @@ export * from './element.types';
 export * from './renderer.types';
 export * from './componentVariants.types';
 export * from './collection.types';
+export * from './export.types';
+export * from './event.types';

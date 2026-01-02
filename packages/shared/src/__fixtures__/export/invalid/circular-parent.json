@@ -1,0 +1,30 @@
+{
+  "version": "1.0.0",
+  "exportedAt": "2026-01-02T00:00:00.000Z",
+  "project": {
+    "id": "00000000-0000-0000-0000-000000000002",
+    "name": "Circular Parent Test"
+  },
+  "pages": [
+    {
+      "id": "page-1",
+      "title": "Page A",
+      "slug": "/a",
+      "project_id": "00000000-0000-0000-0000-000000000002",
+      "parent_id": "page-2",
+      "order_num": 0,
+      "layout_id": null
+    },
+    {
+      "id": "page-2",
+      "title": "Page B",
+      "slug": "/b",
+      "project_id": "00000000-0000-0000-0000-000000000002",
+      "parent_id": "page-1",
+      "order_num": 1,
+      "layout_id": null
+    }
+  ],
+  "elements": [],
+  "currentPageId": "page-1"
+}
