@@ -40,13 +40,13 @@ import {
   Layers,
   Box,
 } from "lucide-react";
-import { PanelHeader } from "../../builder/components";
-import { useEditModeStore } from "../../builder/stores/editMode";
-import { iconProps } from "../../utils/ui/uiConstants";
+import { PanelHeader } from "../../components";
+import { useEditModeStore } from "../../stores/editMode";
+import { iconProps } from "../../../utils/ui/uiConstants";
 import { ComponentSearch } from "./ComponentSearch";
-import { useRecentComponents } from "../../builder/hooks/useRecentComponents";
-import { useFavoriteComponents } from "../../builder/hooks/useFavoriteComponents";
-import { useCategoryExpansion } from "../../builder/hooks/useCategoryExpansion";
+import { useRecentComponents } from "../../hooks/useRecentComponents";
+import { useFavoriteComponents } from "../../hooks/useFavoriteComponents";
+import { useCategoryExpansion } from "../../hooks/useCategoryExpansion";
 import "@xstudio/shared/components/styles/ComponentList.css";
 import { Badge } from "@xstudio/shared/components/Badge";
 // import { ToggleButton, ToggleButtonGroup, Button, TextField, Label, Input, Description, FieldError, Checkbox, CheckboxGroup } from '../components/list';

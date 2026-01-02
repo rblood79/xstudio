@@ -13,7 +13,7 @@
 
 import { useCallback } from "react";
 import type { PanelProps } from "../core/types";
-import ComponentList from "@/shared/components/ComponentList";
+import ComponentList from "./ComponentList";
 import { useStore } from "../../stores";
 import { useEditModeStore } from "../../stores/editMode";
 import { useLayoutsStore } from "../../stores/layouts";
