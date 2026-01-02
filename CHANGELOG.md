@@ -159,6 +159,75 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+### Refactored - Monorepo Structure Cleanup (2026-01-02)
+
+#### 레거시 파일 정리 및 구조 개선
+
+**삭제된 파일:**
+
+1. **`docs/archive/`** (11개 파일, 7,266줄)
+   - CSS_INSPECTOR_ANALYSIS.md
+   - CSS_REFACTORING_SUMMARY.md
+   - ELECTRON_PUBLISH_FEATURE.md
+   - PR_DESCRIPTION.md
+   - REACT_STATELY_PROGRESS.md
+   - REALTIME_SAVE_FIX.md
+   - REALTIME_SAVE.md
+   - REFACTOR_EXECUTION_PLAN.md
+   - REFACTORING_PLAN.md
+   - REFACTORING_SUMMARY.md
+   - SAVE_MODE.md
+
+2. **`apps/builder/src/types/componentVariants.ts`** (345줄)
+   - M3Variant, TextFieldVariant 타입 미사용
+   - 활성 타입은 `types/builder/componentVariants.types.ts`에 있음
+
+**이동된 파일:**
+
+3. **`apps/builder/src/shared/`** → 적절한 위치로 이동
+   - `ComponentList.tsx` → `apps/builder/src/builder/panels/components/`
+   - `ComponentSearch.tsx` → `apps/builder/src/builder/panels/components/`
+   - `src/shared/` 디렉토리 삭제
+
+**현재 모노레포 구조:**
+
+```
+xstudio/
+├── apps/
+│   ├── builder/          # Builder 앱
+│   │   └── src/
+│   │       ├── builder/  # Builder 전용 로직
+│   │       │   ├── components/  # Builder UI (PanelHeader 등)
+│   │       │   └── panels/      # 패널 (ComponentList 등)
+│   │       └── types/    # Builder 전용 타입
+│   └── publish/          # Publish 앱
+│
+└── packages/
+    ├── shared/           # 공유 패키지 (@xstudio/shared)
+    │   └── src/
+    │       ├── components/  # 공유 UI (Button, Badge 등)
+    │       ├── renderers/   # PageRenderer
+    │       ├── hooks/
+    │       ├── types/
+    │       └── utils/
+    └── config/           # 공유 설정
+```
+
+**분리 원칙:**
+
+| 위치 | 용도 |
+|------|------|
+| `packages/shared/` | 앱 간 공유 (Button, Badge, Element 타입) |
+| `apps/builder/src/builder/` | Builder 전용 (PanelHeader, PropertySection) |
+
+**결과:**
+- ✅ 7,611줄 레거시 코드 삭제
+- ✅ 혼란스러운 `src/shared/` 디렉토리 제거
+- ✅ 모든 @xstudio/shared import 정상 동작 (74개 파일)
+- ✅ TypeScript 에러 없음
+
+---
+
 ### Fixed - WebGL Canvas Performance Optimization (2025-12-19)
 
 #### Phase 20: INP Performance Fix for Panel Resize

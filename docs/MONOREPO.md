@@ -16,15 +16,14 @@ xstudio/ (pnpm + Turborepo 모노레포)
 │   ├── builder/              # 메인 빌더 앱 (@xstudio/builder)
 │   │   ├── src/
 │   │   │   ├── builder/      # Pixi.js 기반 Canvas 편집기
-│   │   │   │   └── workspace/canvas/  # WebGL 편집 화면
+│   │   │   │   ├── workspace/canvas/  # WebGL 편집 화면
+│   │   │   │   ├── components/  # Builder 전용 UI (PanelHeader 등)
+│   │   │   │   └── panels/      # 패널 컴포넌트
 │   │   │   ├── preview/      # React 프리뷰 (COMPARE_MODE용)
 │   │   │   │   ├── App.tsx
 │   │   │   │   ├── messaging/
 │   │   │   │   ├── store/
 │   │   │   │   └── router/
-│   │   │   ├── shared/       # Builder 전용 공유 코드
-│   │   │   │   ├── components/  # React 컴포넌트 (builder 의존성 있음)
-│   │   │   │   └── renderers/   # 렌더러 (preview 의존성 있음)
 │   │   │   └── ...
 │   │   ├── .storybook/
 │   │   ├── eslint-local-rules/
@@ -45,8 +44,11 @@ xstudio/ (pnpm + Turborepo 모노레포)
 ├── packages/
 │   ├── shared/               # 순수 공유 라이브러리 (@xstudio/shared)
 │   │   ├── src/
+│   │   │   ├── components/   # 공유 UI (Button, Badge, TextField 등)
+│   │   │   ├── renderers/    # PageRenderer, ElementRenderer
+│   │   │   ├── hooks/        # 공유 훅
 │   │   │   ├── types/        # 공유 타입 정의
-│   │   │   └── utils/        # 공유 유틸리티
+│   │   │   └── utils/        # 공유 유틸리티 (export.utils 등)
 │   │   └── package.json
 │   │
 │   └── config/               # 공유 설정 (@xstudio/config)
@@ -72,18 +74,18 @@ xstudio/ (pnpm + Turborepo 모노레포)
 | `@xstudio/shared` | 순수 공유 코드 (types, utils) | 없음 |
 | `@xstudio/config` | 공유 설정 (tsconfig, eslint) | 없음 |
 
-> **Note**: components와 renderers는 builder 앱 전용 의존성(stores, hooks 등)이 있어
-> `apps/builder/src/shared/`에 위치합니다.
+> **Note**: 공유 컴포넌트(Button, Badge 등)와 렌더러는 `packages/shared/`에 위치합니다.
+> Builder 전용 UI 컴포넌트(PanelHeader, PropertySection 등)는 `apps/builder/src/builder/components/`에 있습니다.
 
 ### 1.3 아키텍처 흐름
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                        apps/builder/src/shared/                              │
+│                        packages/shared/src/                                  │
 │  ┌───────────────────────────────┐  ┌───────────────────────────────┐       │
 │  │  components/                  │  │  renderers/                    │       │
-│  │  - TextField, ListBox, Tabs   │  │  - FormRenderers               │       │
-│  │  - styles/index.css           │  │  - LayoutRenderers             │       │
+│  │  - Button, Badge, TextField   │  │  - FormRenderers               │       │
+│  │  - styles/*.css               │  │  - LayoutRenderers             │       │
 │  └───────────────────────────────┘  └───────────────────────────────┘       │
 └──────────────────────────────┬──────────────────────────────────────────────┘
                                │
@@ -726,11 +728,10 @@ pnpm install
 pnpm run build  # 기존 경로로 빌드 성공 확인
 ```
 
-**Step 4: 공유 코드 분리**
+**Step 4: 공유 코드 분리** ✅ 완료
 
-> **중요**: `src/shared/components/`는 렌더러의 핵심 의존성입니다.
-> Preview와 Publish가 **동일한 렌더링 결과를 보장**하려면 이 컴포넌트들도
-> `packages/shared/`로 이동해야 합니다.
+> **완료됨 (2026-01-02)**: 공유 컴포넌트와 렌더러가 `packages/shared/`로 이동되었습니다.
+> Preview와 Publish가 동일한 렌더링 결과를 보장합니다.
 
 ```
 데이터 흐름:
