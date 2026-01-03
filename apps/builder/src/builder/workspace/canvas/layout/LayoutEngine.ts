@@ -1013,10 +1013,17 @@ function createYogaNode(
     }
   }
 
-  // 🚀 Panel 요소: CSS .react-aria-Panel { width: 100% } 반영
+  // 🚀 Panel 요소: CSS .react-aria-Panel { width: 100%; display: flex; flex-direction: column; } 반영
   // 명시적 width가 없으면 부모 너비의 100%로 설정
   if (element.tag === 'Panel' && !hasExplicitWidth) {
     node.setWidthPercent(100);
+  }
+
+  // 🚀 Panel 요소: CSS .panel-content { min-height: 64px } 반영
+  // 명시적 height/minHeight가 없으면 기본 min-height 설정
+  // title(약 30px) + content min-height(64px) + padding(32px) = 약 126px
+  if (element.tag === 'Panel' && !style?.height && !style?.minHeight) {
+    node.setMinHeight(126);
   }
 
   // Min/Max 크기 (px 및 % 단위 지원)

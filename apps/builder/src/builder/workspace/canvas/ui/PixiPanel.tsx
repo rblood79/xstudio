@@ -79,14 +79,20 @@ export const PixiPanel = memo(function PixiPanel({
 
   // 패널 크기
   const panelWidth = parseCSSSize(style?.width, undefined, 280);
-  const panelHeight = parseCSSSize(style?.height, undefined, 200);
 
   // 위치
   const posX = parseCSSSize(style?.left, undefined, 0);
   const posY = parseCSSSize(style?.top, undefined, 0);
 
   // 타이틀 높이 계산
+  // CSS: .panel-title { padding: var(--spacing-sm) var(--spacing-md); font-size: var(--text-sm); }
   const titleHeight = title ? sizePreset.titleFontSize + sizePreset.titlePaddingY * 2 : 0;
+
+  // 🚀 패널 높이 계산
+  // CSS: .panel-content { min-height: 64px; padding: var(--spacing-md); }
+  // 명시적 height가 없으면 title + content min-height로 자동 계산
+  const calculatedHeight = titleHeight + sizePreset.minHeight + sizePreset.contentPadding * 2;
+  const panelHeight = parseCSSSize(style?.height, undefined, calculatedHeight);
 
   // 패널 콘텐츠 텍스트 (children)
   const contentText = useMemo(() => {
