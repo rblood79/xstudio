@@ -11,7 +11,8 @@ import { useCallback, useMemo, useRef } from 'react';
 import { useExtend } from '@pixi/react';
 import { PIXI_COMPONENTS } from '../pixiSetup';
 import { Graphics as PixiGraphics, TextStyle } from 'pixi.js';
-import { getTableSizePreset, getTableColorPreset } from '../utils/cssVariableReader';
+import { getTableSizePreset, getTableColorPreset, getVariantColors } from '../utils/cssVariableReader';
+import { useThemeColors } from '../hooks/useThemeColors';
 import type { Element } from '@/types/core/store.types';
 import { useStore } from '@/builder/stores';
 
@@ -48,6 +49,15 @@ export function PixiTable({
   // Get CSS presets
   const sizePreset = useMemo(() => getTableSizePreset(size), [size]);
   const colorPreset = useMemo(() => getTableColorPreset(variant), [variant]);
+
+  // 🚀 테마 색상 동적 로드
+  const themeColors = useThemeColors();
+
+  // 🚀 variant에 따른 테마 색상
+  const variantColors = useMemo(
+    () => getVariantColors(variant, themeColors),
+    [variant, themeColors]
+  );
 
   // 🚀 Performance: useRef로 hover 상태 관리 (리렌더링 없음)
   const rowGraphicsRefs = useRef<Map<string, PixiGraphics>>(new Map());

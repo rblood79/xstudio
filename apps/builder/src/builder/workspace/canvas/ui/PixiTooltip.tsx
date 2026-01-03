@@ -20,7 +20,9 @@ import type { Element } from '@/types/core/store.types';
 import {
   getTooltipSizePreset,
   getTooltipColorPreset,
+  getVariantColors,
 } from '../utils/cssVariableReader';
+import { useThemeColors } from '../hooks/useThemeColors';
 
 export interface PixiTooltipProps {
   element: Element;
@@ -47,6 +49,15 @@ export function PixiTooltip({
   // Get presets from CSS
   const sizePreset = useMemo(() => getTooltipSizePreset(size), [size]);
   const colorPreset = useMemo(() => getTooltipColorPreset(variant), [variant]);
+
+  // 🚀 테마 색상 동적 로드
+  const themeColors = useThemeColors();
+
+  // 🚀 variant에 따른 테마 색상 (selection용)
+  const variantColors = useMemo(
+    () => getVariantColors(variant, themeColors),
+    [variant, themeColors]
+  );
 
   // Calculate dimensions based on content
   const textWidth = Math.min(content.length * sizePreset.fontSize * 0.6, sizePreset.maxWidth - sizePreset.paddingX * 2);
@@ -103,10 +114,10 @@ export function PixiTooltip({
       // Selection indicator
       if (isSelected) {
         g.roundRect(-2, -2, containerWidth + 4, containerHeight + 4, sizePreset.borderRadius + 2);
-        g.stroke({ color: 0x3b82f6, width: 2 });
+        g.stroke({ color: variantColors.bg, width: 2 });
       }
     },
-    [containerWidth, containerHeight, sizePreset, colorPreset, placement, isSelected, arrowSize]
+    [containerWidth, containerHeight, sizePreset, colorPreset, placement, isSelected, arrowSize, variantColors.bg]
   );
 
   // Text style

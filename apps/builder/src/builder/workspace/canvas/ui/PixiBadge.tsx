@@ -27,8 +27,10 @@ import { cssColorToHex, parseCSSSize } from "../sprites/styleConverter";
 import {
   getBadgeSizePreset,
   getBadgeColorPreset,
+  getVariantColors,
 } from "../utils/cssVariableReader";
 import { drawBox } from "../utils";
+import { useThemeColors } from "../hooks/useThemeColors";
 
 // ============================================
 // Types
@@ -80,6 +82,15 @@ export const PixiBadge = memo(function PixiBadge({
   // 🚀 CSS에서 프리셋 읽기
   const sizePreset = useMemo(() => getBadgeSizePreset(size), [size]);
   const colorPreset = useMemo(() => getBadgeColorPreset(variant), [variant]);
+
+  // 🚀 테마 색상 동적 로드
+  const themeColors = useThemeColors();
+
+  // 🚀 variant에 따른 테마 색상 (selection용)
+  const variantColors = useMemo(
+    () => getVariantColors(variant, themeColors),
+    [variant, themeColors]
+  );
 
   // 색상 (inline style 오버라이드 지원)
   const bgColor = useMemo(() => {

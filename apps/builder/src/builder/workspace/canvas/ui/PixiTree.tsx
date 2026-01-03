@@ -11,7 +11,8 @@ import { useCallback, useMemo, useRef, useState } from 'react';
 import { useExtend } from '@pixi/react';
 import { PIXI_COMPONENTS } from '../pixiSetup';
 import { Graphics as PixiGraphics, TextStyle } from 'pixi.js';
-import { getTreeSizePreset, getTreeColorPreset } from '../utils/cssVariableReader';
+import { getTreeSizePreset, getTreeColorPreset, getVariantColors } from '../utils/cssVariableReader';
+import { useThemeColors } from '../hooks/useThemeColors';
 import type { Element } from '@/types/core/store.types';
 import { useStore } from '@/builder/stores';
 
@@ -46,6 +47,15 @@ export function PixiTree({
   // Get CSS presets
   const sizePreset = useMemo(() => getTreeSizePreset(size), [size]);
   const colorPreset = useMemo(() => getTreeColorPreset(variant), [variant]);
+
+  // 🚀 테마 색상 동적 로드
+  const themeColors = useThemeColors();
+
+  // 🚀 variant에 따른 테마 색상
+  const variantColors = useMemo(
+    () => getVariantColors(variant, themeColors),
+    [variant, themeColors]
+  );
 
   // Expanded state (local)
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());

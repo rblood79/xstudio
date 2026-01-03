@@ -20,7 +20,9 @@ import type { Element } from '@/types/core/store.types';
 import {
   getDialogSizePreset,
   getDialogColorPreset,
+  getVariantColors,
 } from '../utils/cssVariableReader';
+import { useThemeColors } from '../hooks/useThemeColors';
 
 export interface PixiDialogProps {
   element: Element;
@@ -50,6 +52,15 @@ export function PixiDialog({
   // Get presets from CSS
   const sizePreset = useMemo(() => getDialogSizePreset(size), [size]);
   const colorPreset = useMemo(() => getDialogColorPreset(variant), [variant]);
+
+  // 🚀 테마 색상 동적 로드
+  const themeColors = useThemeColors();
+
+  // 🚀 variant에 따른 테마 색상
+  const variantColors = useMemo(
+    () => getVariantColors(variant, themeColors),
+    [variant, themeColors]
+  );
 
   // Calculate dimensions
   const containerWidth = (props.width as number) || sizePreset.minWidth;
@@ -118,12 +129,12 @@ export function PixiDialog({
       // Confirm button (filled)
       const confirmBtnX = containerWidth - sizePreset.padding - btnWidth;
       g.roundRect(confirmBtnX, btnY, btnWidth, btnHeight, 6);
-      g.fill({ color: colorPreset.titleColor !== 0x374151 ? colorPreset.titleColor : 0x3b82f6 });
+      g.fill({ color: variantColors.bg });
 
       // Selection indicator
       if (isSelected) {
         g.roundRect(-2, -2, containerWidth + 4, containerHeight + 4, sizePreset.borderRadius + 2);
-        g.stroke({ color: 0x3b82f6, width: 2 });
+        g.stroke({ color: variantColors.bg, width: 2 });
       }
 
       // Hover effect
@@ -132,7 +143,7 @@ export function PixiDialog({
         g.stroke({ color: 0x9ca3af, width: 1 });
       }
     },
-    [containerWidth, containerHeight, titleHeight, buttonAreaHeight, sizePreset, colorPreset, isSelected, isHovered]
+    [containerWidth, containerHeight, titleHeight, buttonAreaHeight, sizePreset, colorPreset, isSelected, isHovered, variantColors.bg]
   );
 
   // Title style

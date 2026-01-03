@@ -17,7 +17,9 @@ import type { Element } from '@/types/core/store.types';
 import {
   getToastSizePreset,
   getToastColorPreset,
+  getVariantColors,
 } from '../utils/cssVariableReader';
+import { useThemeColors } from '../hooks/useThemeColors';
 
 export interface PixiToastProps {
   element: Element;
@@ -43,6 +45,15 @@ export function PixiToast({
   // Get presets from CSS
   const sizePreset = useMemo(() => getToastSizePreset(size), [size]);
   const colorPreset = useMemo(() => getToastColorPreset(toastType), [toastType]);
+
+  // 🚀 테마 색상 동적 로드
+  const themeColors = useThemeColors();
+
+  // 🚀 variant에 따른 테마 색상 (selection용)
+  const variantColors = useMemo(
+    () => getVariantColors('default', themeColors),
+    [themeColors]
+  );
 
   // Calculate dimensions
   const toastWidth = (props.width as number) || Math.min(sizePreset.maxWidth, 300);
@@ -72,10 +83,10 @@ export function PixiToast({
       // Selection indicator
       if (isSelected) {
         g.roundRect(-2, -2, toastWidth + 4, toastHeight + 4, sizePreset.borderRadius + 2);
-        g.stroke({ color: 0x3b82f6, width: 2 });
+        g.stroke({ color: variantColors.bg, width: 2 });
       }
     },
-    [toastWidth, toastHeight, sizePreset, colorPreset, isSelected]
+    [toastWidth, toastHeight, sizePreset, colorPreset, isSelected, variantColors.bg]
   );
 
   // Draw icon based on type
