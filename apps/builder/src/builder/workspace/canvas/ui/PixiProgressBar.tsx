@@ -18,7 +18,8 @@ import { Container, Graphics } from 'pixi.js';
 import type { Element } from '../../../../types/core/store.types';
 import type { CSSStyle } from '../sprites/styleConverter';
 import { cssColorToHex, parseCSSSize } from '../sprites/styleConverter';
-import { getProgressBarSizePreset } from '../utils/cssVariableReader';
+import { getProgressBarSizePreset, getVariantColors } from '../utils/cssVariableReader';
+import { useThemeColors } from '../hooks/useThemeColors';
 
 // ============================================
 // Types
@@ -46,13 +47,25 @@ interface ProgressBarLayoutStyle {
   borderRadius: number;
 }
 
+/** Variant colors type for ProgressBar */
+interface VariantColors {
+  bg: number;
+  text: number;
+}
+
 /**
  * CSS 스타일을 ProgressBar 레이아웃 스타일로 변환
  * 🚀 Phase 0: CSS 동기화 - getProgressBarSizePreset() 사용
+ * 🚀 테마 색상 지원 - variantColors 파라미터 추가
  */
-function convertToProgressBarStyle(style: CSSStyle | undefined, size: string): ProgressBarLayoutStyle {
-  const primaryColor = cssColorToHex(style?.backgroundColor, 0x3b82f6);
-  const trackColor = cssColorToHex(style?.borderColor, 0xe5e7eb);
+function convertToProgressBarStyle(
+  style: CSSStyle | undefined,
+  size: string,
+  variantColors: VariantColors
+): ProgressBarLayoutStyle {
+  // 🚀 테마 색상 사용 (inline style 오버라이드 지원)
+  const primaryColor = cssColorToHex(style?.backgroundColor, variantColors.bg);
+  const trackColor = cssColorToHex(style?.borderColor, 0xe5e7eb); // track은 회색 유지
 
   // 🚀 CSS에서 사이즈 프리셋 읽기
   const sizePreset = getProgressBarSizePreset(size);
@@ -130,11 +143,26 @@ export const PixiProgressBar = memo(function PixiProgressBar({
   const style = element.props?.style as CSSStyle | undefined;
   const props = element.props as Record<string, unknown> | undefined;
 
+  // 🚀 테마 색상 동적 로드
+  const themeColors = useThemeColors();
+
+  // variant에 따른 색상 (default, primary, secondary, tertiary, error, surface)
+  const variant = useMemo(() => {
+    return String(props?.variant || 'default');
+  }, [props?.variant]);
+
+  const variantColors = useMemo(() => {
+    return getVariantColors(variant, themeColors) as VariantColors;
+  }, [variant, themeColors]);
+
   // 🚀 Phase 0: size prop 추출 (기본값: 'md')
   const size = useMemo(() => String(props?.size || 'md'), [props?.size]);
 
-  // 프로그레스바 스타일 (CSS 사이즈 프리셋 적용)
-  const layoutStyle = useMemo(() => convertToProgressBarStyle(style, size), [style, size]);
+  // 프로그레스바 스타일 (CSS 사이즈 프리셋 + 테마 색상 적용)
+  const layoutStyle = useMemo(
+    () => convertToProgressBarStyle(style, size, variantColors),
+    [style, size, variantColors]
+  );
 
   // 프로그레스바 값 설정
   const value = useMemo(() => {

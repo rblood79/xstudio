@@ -17,7 +17,8 @@ import { Graphics as PixiGraphics, TextStyle } from 'pixi.js';
 import type { Element } from '../../../../types/core/store.types';
 import type { CSSStyle } from '../sprites/styleConverter';
 import { cssColorToHex, parseCSSSize } from '../sprites/styleConverter';
-import { getCheckboxSizePreset } from '../utils/cssVariableReader';
+import { getCheckboxSizePreset, getVariantColors } from '../utils/cssVariableReader';
+import { useThemeColors } from '../hooks/useThemeColors';
 import { drawBox } from '../utils';
 
 // ============================================
@@ -36,9 +37,7 @@ export interface PixiCheckboxProps {
 // ============================================
 
 const DEFAULT_BORDER_RADIUS = 4;
-const DEFAULT_PRIMARY_COLOR = 0x3b82f6; // blue-500
-const DEFAULT_BORDER_COLOR = 0xd1d5db; // gray-300
-const DEFAULT_TEXT_COLOR = 0x374151; // gray-700
+const DEFAULT_BORDER_COLOR = 0xd1d5db; // fallback gray-300
 
 // ============================================
 // Component
@@ -52,6 +51,18 @@ export const PixiCheckbox = memo(function PixiCheckbox({
   useExtend(PIXI_COMPONENTS);
   const style = element.props?.style as CSSStyle | undefined;
   const props = element.props as Record<string, unknown> | undefined;
+
+  // 🚀 테마 색상 동적 로드
+  const themeColors = useThemeColors();
+
+  // variant에 따른 색상 (default, primary, secondary, tertiary, error, surface)
+  const variant = useMemo(() => {
+    return String(props?.variant || 'default');
+  }, [props?.variant]);
+
+  const variantColors = useMemo(() => {
+    return getVariantColors(variant, themeColors);
+  }, [variant, themeColors]);
 
   // 체크 상태
   const isChecked = useMemo(() => {
@@ -74,10 +85,11 @@ export const PixiCheckbox = memo(function PixiCheckbox({
   const boxSize = sizePreset.boxSize;
 
   const borderRadius = parseCSSSize(style?.borderRadius, undefined, DEFAULT_BORDER_RADIUS);
-  const primaryColor = cssColorToHex(style?.backgroundColor, DEFAULT_PRIMARY_COLOR);
+  // 🚀 테마 색상 사용 (inline style 오버라이드 지원)
+  const primaryColor = cssColorToHex(style?.backgroundColor, variantColors.bg);
   const borderColor = isChecked ? primaryColor : DEFAULT_BORDER_COLOR;
   const backgroundColor = isChecked ? primaryColor : 0xffffff;
-  const textColor = cssColorToHex(style?.color, DEFAULT_TEXT_COLOR);
+  const textColor = cssColorToHex(style?.color, variantColors.text);
   // fontSize도 CSS 변수 프리셋에서 가져옴 (style에 명시적 값이 없으면)
   const fontSize = parseCSSSize(style?.fontSize, undefined, sizePreset.fontSize);
 

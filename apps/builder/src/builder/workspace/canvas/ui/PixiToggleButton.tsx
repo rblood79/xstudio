@@ -329,7 +329,7 @@ export const PixiToggleButton = memo(function PixiToggleButton({
 
   // Selected 상태 색상 (variant에 맞게)
   const selectedColors = useMemo(() => {
-    const variant = props?.variant || "primary"; // ToggleButton의 기본은 primary
+    const variant = props?.variant || "default"; // CSS와 일치하도록 default 사용
     return getVariantColors(variant, themeColors) as VariantColors;
   }, [props?.variant, themeColors]);
 

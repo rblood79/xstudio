@@ -20,7 +20,8 @@ import type { CSSStyle } from '../sprites/styleConverter';
 import { cssColorToHex, parseCSSSize } from '../sprites/styleConverter';
 import { drawCircle } from '../utils';
 import { useStore } from '../../../stores';
-import { getRadioSizePreset, getLabelStylePreset } from '../utils/cssVariableReader';
+import { getRadioSizePreset, getLabelStylePreset, getVariantColors } from '../utils/cssVariableReader';
+import { useThemeColors } from '../hooks/useThemeColors';
 
 // ============================================
 // Types
@@ -43,9 +44,7 @@ interface RadioOption {
 // ============================================
 
 // 🚀 Phase 0: CSS 동기화 - 하드코딩된 상수 대신 getRadioSizePreset() 사용
-const DEFAULT_PRIMARY_COLOR = 0x3b82f6; // blue-500
-const DEFAULT_BORDER_COLOR = 0xd1d5db; // gray-300
-const DEFAULT_TEXT_COLOR = 0x374151; // gray-700
+const DEFAULT_BORDER_COLOR = 0xd1d5db; // fallback gray-300
 const LABEL_GAP = 8;
 
 // 기본 옵션 (options가 없을 때 placeholder로 표시)
@@ -219,6 +218,18 @@ export const PixiRadio = memo(function PixiRadio({
   const style = element.props?.style as CSSStyle | undefined;
   const props = element.props as Record<string, unknown> | undefined;
 
+  // 🚀 테마 색상 동적 로드
+  const themeColors = useThemeColors();
+
+  // variant에 따른 색상 (default, primary, secondary, tertiary, error, surface)
+  const variant = useMemo(() => {
+    return String(props?.variant || 'default');
+  }, [props?.variant]);
+
+  const variantColors = useMemo(() => {
+    return getVariantColors(variant, themeColors);
+  }, [variant, themeColors]);
+
   // Store에서 자식 Radio 요소들 가져오기
   const elements = useStore((state) => state.elements);
   const childRadios = useMemo(() => {
@@ -288,8 +299,9 @@ export const PixiRadio = memo(function PixiRadio({
   // 스타일 (CSS 사이즈 프리셋 적용)
   const radioSize = sizePreset.radioSize;
   const gap = sizePreset.gap;
-  const primaryColor = cssColorToHex(style?.backgroundColor, DEFAULT_PRIMARY_COLOR);
-  const textColor = cssColorToHex(style?.color, DEFAULT_TEXT_COLOR);
+  // 🚀 테마 색상 사용 (inline style 오버라이드 지원)
+  const primaryColor = cssColorToHex(style?.backgroundColor, variantColors.bg);
+  const textColor = cssColorToHex(style?.color, variantColors.text);
   const fontSize = parseCSSSize(style?.fontSize, undefined, labelPreset.fontSize);
   const fontFamily = labelPreset.fontFamily;
 
