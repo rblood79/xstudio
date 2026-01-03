@@ -244,6 +244,47 @@ React와 Pixi의 근본적 용도/구현 차이:
 
 ## 4. 수정 우선순위
 
+### 4.0 Phase 의존 관계
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                         Phase 의존 관계 다이어그램                        │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                         │
+│  ┌──────────────────┐                                                   │
+│  │   Phase 1        │  CSS 변수 읽기 기반 구축                           │
+│  │   (Critical)     │  - useThemeColors() 훅 활용 ✅                     │
+│  │   15개 컴포넌트   │  - getVariantColors() 패턴 적용                    │
+│  └────────┬─────────┘                                                   │
+│           │                                                             │
+│           ▼                                                             │
+│  ┌──────────────────┐                                                   │
+│  │   Phase 2        │  Phase 1의 패턴을 Color/Date 컴포넌트에 확장        │
+│  │   (High)         │  - variant 시스템 구현                             │
+│  │   12개 컴포넌트   │  - 테마 통합                                       │
+│  └────────┬─────────┘                                                   │
+│           │                                                             │
+│           ▼                                                             │
+│  ┌──────────────────┐                                                   │
+│  │   Phase 3        │  일관성 개선 (Phase 1-2와 독립적으로 진행 가능)      │
+│  │   (Medium)       │  - CSS 정의 추가                                   │
+│  │   10개 컴포넌트   │  - 문서화                                          │
+│  └────────┬─────────┘                                                   │
+│           │                                                             │
+│           ▼                                                             │
+│  ┌──────────────────┐                                                   │
+│  │   Phase 4        │  선택적 개선 (우선순위 낮음)                        │
+│  │   (Low)          │  - 애니메이션 통일                                  │
+│  │   8개 컴포넌트    │  - 최적화                                          │
+│  └──────────────────┘                                                   │
+│                                                                         │
+└─────────────────────────────────────────────────────────────────────────┘
+
+Phase 1 → Phase 2: 필수 의존 (CSS 변수 패턴이 Phase 2 작업의 기반)
+Phase 3: Phase 1-2와 병렬 진행 가능
+Phase 4: 모든 Phase 완료 후 또는 필요 시
+```
+
 ### 4.1 Phase 1: Critical (즉시 수정 필요) - 15개
 
 **목표**: CSS 변수 읽기 및 핵심 variant 시스템 구현
@@ -266,7 +307,7 @@ React와 Pixi의 근본적 용도/구현 차이:
 | 14 | PixiScrollBox | 실데이터 바인딩 추가 | 중간 |
 | 15 | PixiMaskedFrame | L201: async 이미지 로딩 | 중간 |
 
-### 4.2 Phase 2: High (1-2주 내 수정) - 12개
+### 4.2 Phase 2: High (Phase 1 완료 후) - 12개
 
 **목표**: Color/Date 컴포넌트 variant 시스템 및 테마 통합
 
@@ -421,6 +462,23 @@ export function getToggleButtonColorPreset(variant: string): ToggleButtonColorPr
 - `apps/builder/src/builder/workspace/canvas/hooks/useThemeColors.ts`
 - `apps/builder/src/builder/workspace/canvas/utils/index.ts` (drawBox)
 
+#### useThemeColors 훅 현재 상태: ✅ 구현 완료
+
+```typescript
+// 현재 구현된 기능:
+// - MutationObserver로 data-theme, data-builder-theme, class 속성 변경 감지
+// - prefers-color-scheme 미디어 쿼리 변경 감지
+// - getM3ButtonColors()를 통한 CSS 변수 동적 읽기
+
+// 사용 예시:
+import { useThemeColors } from '../hooks/useThemeColors';
+
+const colors = useThemeColors();
+// colors.primaryBg, colors.primaryText, colors.secondaryBg, ...
+```
+
+> **참고**: 이 훅은 Phase 1 작업의 기반이 됩니다. 하드코딩된 색상을 이 훅으로 대체하면 됩니다.
+
 ### 7.2 CSS 스타일
 
 - `packages/shared/src/components/styles/*.css`
@@ -441,3 +499,4 @@ export function getToggleButtonColorPreset(variant: string): ToggleButtonColorPr
 | 날짜 | 버전 | 변경 내용 |
 |------|------|-----------|
 | 2026-01-03 | 1.0 | 초기 분석 및 계획 문서 작성 |
+| 2026-01-03 | 1.1 | Phase 의존 관계 다이어그램 추가, useThemeColors 훅 상태 반영, 일정 표현 개선 |
