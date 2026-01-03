@@ -1013,6 +1013,12 @@ function createYogaNode(
     }
   }
 
+  // 🚀 Panel 요소: CSS .react-aria-Panel { width: 100% } 반영
+  // 명시적 width가 없으면 부모 너비의 100%로 설정
+  if (element.tag === 'Panel' && !hasExplicitWidth) {
+    node.setWidthPercent(100);
+  }
+
   // Min/Max 크기 (px 및 % 단위 지원)
   setNodeMinMaxSize(node, 'minWidth', style?.minWidth);
   setNodeMinMaxSize(node, 'minHeight', style?.minHeight);
