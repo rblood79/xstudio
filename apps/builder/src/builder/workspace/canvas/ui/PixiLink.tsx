@@ -20,8 +20,9 @@ import type { CSSStyle } from "../sprites/styleConverter";
 import { cssColorToHex, parseCSSSize } from "../sprites/styleConverter";
 import {
   getLinkSizePreset,
-  getLinkColorPreset,
+  getVariantColors,
 } from "../utils/cssVariableReader";
+import { useThemeColors } from "../hooks/useThemeColors";
 
 // ============================================
 // Types
@@ -69,9 +70,24 @@ export const PixiLink = memo(function PixiLink({
   const size = useMemo(() => String(props?.size || "md"), [props?.size]);
   const isDisabled = Boolean(props?.isDisabled);
 
+  // 🚀 테마 색상 동적 로드
+  const themeColors = useThemeColors();
+
   // 🚀 CSS에서 프리셋 읽기
   const sizePreset = useMemo(() => getLinkSizePreset(size), [size]);
-  const colorPreset = useMemo(() => getLinkColorPreset(variant), [variant]);
+
+  // 🚀 variant에 따른 테마 색상
+  const variantColors = useMemo(
+    () => getVariantColors(variant, themeColors),
+    [variant, themeColors]
+  );
+
+  // 색상 프리셋 값들 (테마 색상 적용)
+  const colorPreset = useMemo(() => ({
+    color: variantColors.bg,
+    hoverColor: variantColors.bg,
+    pressedColor: variantColors.bg,
+  }), [variantColors]);
 
   // 현재 색상 계산
   const currentColor = useMemo(() => {

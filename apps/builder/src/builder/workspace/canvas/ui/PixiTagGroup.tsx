@@ -11,7 +11,8 @@ import { useCallback, useMemo, useRef } from 'react';
 import { useExtend } from '@pixi/react';
 import { PIXI_COMPONENTS } from '../pixiSetup';
 import { Graphics as PixiGraphics, TextStyle } from 'pixi.js';
-import { getTagGroupSizePreset, getTagGroupColorPreset } from '../utils/cssVariableReader';
+import { getTagGroupSizePreset, getVariantColors } from '../utils/cssVariableReader';
+import { useThemeColors } from '../hooks/useThemeColors';
 import type { Element } from '@/types/core/store.types';
 import { useStore } from '@/builder/stores';
 
@@ -34,9 +35,29 @@ export function PixiTagGroup({
   const size = (props.size as string) || 'md';
   const label = (props.label as string) || '';
 
+  // 🚀 테마 색상 동적 로드
+  const themeColors = useThemeColors();
+
   // Get CSS presets
   const sizePreset = useMemo(() => getTagGroupSizePreset(size), [size]);
-  const colorPreset = useMemo(() => getTagGroupColorPreset(variant), [variant]);
+
+  // 🚀 variant에 따른 테마 색상
+  const variantColors = useMemo(
+    () => getVariantColors(variant, themeColors),
+    [variant, themeColors]
+  );
+
+  // 색상 프리셋 값들 (테마 색상 적용)
+  const colorPreset = useMemo(() => ({
+    backgroundColor: 0xf3f4f6,
+    borderColor: 0xe5e7eb,
+    textColor: variantColors.text,
+    hoverBgColor: 0xe5e7eb,
+    selectedBgColor: variantColors.bg,
+    selectedTextColor: 0xffffff,
+    removeButtonColor: 0x6b7280,
+    focusRingColor: variantColors.bg,
+  }), [variantColors]);
 
   // Get children from store (Tag)
   const allElements = useStore((state) => state.elements);
@@ -106,10 +127,10 @@ export function PixiTagGroup({
       if (isSelected) {
         const maxX = Math.max(...tagPositions.map((p) => p.x + p.width), 100);
         g.roundRect(-4, -4, maxX + 8, containerHeight + 8, 4);
-        g.stroke({ width: 2, color: 0x3b82f6 });
+        g.stroke({ width: 2, color: colorPreset.focusRingColor });
       }
     },
-    [isSelected, tagPositions, containerHeight]
+    [isSelected, tagPositions, containerHeight, colorPreset.focusRingColor]
   );
 
   // Draw tag

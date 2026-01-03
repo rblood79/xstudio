@@ -25,8 +25,9 @@ import type { CSSStyle } from "../sprites/styleConverter";
 import { cssColorToHex, parseCSSSize } from "../sprites/styleConverter";
 import {
   getMenuSizePreset,
-  getMenuColorPreset,
+  getVariantColors,
 } from "../utils/cssVariableReader";
+import { useThemeColors } from "../hooks/useThemeColors";
 import { drawBox } from "../utils";
 import { useStore } from "../../../stores";
 
@@ -85,9 +86,27 @@ export const PixiMenu = memo(function PixiMenu({
   const variant = useMemo(() => String(props?.variant || "default"), [props?.variant]);
   const size = useMemo(() => String(props?.size || "md"), [props?.size]);
 
+  // 🚀 테마 색상 동적 로드
+  const themeColors = useThemeColors();
+
   // 🚀 CSS에서 프리셋 읽기
   const sizePreset = useMemo(() => getMenuSizePreset(size), [size]);
-  const colorPreset = useMemo(() => getMenuColorPreset(variant), [variant]);
+
+  // 🚀 variant에 따른 테마 색상
+  const variantColors = useMemo(
+    () => getVariantColors(variant, themeColors),
+    [variant, themeColors]
+  );
+
+  // 색상 프리셋 값들 (테마 색상 적용)
+  const colorPreset = useMemo(() => ({
+    backgroundColor: 0xffffff,
+    borderColor: 0xe5e7eb,
+    textColor: variantColors.text,
+    hoverBgColor: 0xf3f4f6,
+    hoverTextColor: variantColors.bg,
+    separatorColor: 0x9ca3af,
+  }), [variantColors]);
 
   // hover 상태 관리
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);

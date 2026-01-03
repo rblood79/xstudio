@@ -16,8 +16,9 @@ import type { Graphics as PixiGraphics, TextStyle } from 'pixi.js';
 import type { Element } from '@/types/core/store.types';
 import {
   getTextAreaSizePreset,
-  getTextAreaColorPreset,
+  getVariantColors,
 } from '../utils/cssVariableReader';
+import { useThemeColors } from '../hooks/useThemeColors';
 
 export interface PixiTextAreaProps {
   element: Element;
@@ -47,9 +48,32 @@ export function PixiTextArea({
   const errorMessage = (props.errorMessage as string) || '';
   const rows = (props.rows as number) || 3;
 
+  // 🚀 테마 색상 동적 로드
+  const themeColors = useThemeColors();
+
   // Get presets from CSS
   const sizePreset = useMemo(() => getTextAreaSizePreset(size), [size]);
-  const colorPreset = useMemo(() => getTextAreaColorPreset(variant), [variant]);
+
+  // 🚀 variant에 따른 테마 색상
+  const variantColors = useMemo(
+    () => getVariantColors(variant, themeColors),
+    [variant, themeColors]
+  );
+
+  // 색상 프리셋 값들 (테마 색상 적용)
+  const colorPreset = useMemo(() => ({
+    backgroundColor: 0xffffff,
+    borderColor: 0xd1d5db,
+    focusBorderColor: variantColors.bg,
+    textColor: variantColors.text,
+    placeholderColor: 0x9ca3af,
+    labelColor: variantColors.text,
+    descriptionColor: 0x6b7280,
+    disabledBackgroundColor: 0xf3f4f6,
+    disabledTextColor: 0x9ca3af,
+    errorBorderColor: 0xef4444,
+    errorTextColor: 0xef4444,
+  }), [variantColors]);
 
   // Calculate dimensions
   const fieldWidth = (props.width as number) || 280;

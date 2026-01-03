@@ -20,8 +20,9 @@ import type { CSSStyle } from "../sprites/styleConverter";
 import { cssColorToHex, parseCSSSize } from "../sprites/styleConverter";
 import {
   getBreadcrumbsSizePreset,
-  getBreadcrumbsColorPreset,
+  getVariantColors,
 } from "../utils/cssVariableReader";
+import { useThemeColors } from "../hooks/useThemeColors";
 import { useStore } from "../../../stores";
 
 // ============================================
@@ -66,9 +67,25 @@ export const PixiBreadcrumbs = memo(function PixiBreadcrumbs({
   const size = useMemo(() => String(props?.size || "md"), [props?.size]);
   const separator = useMemo(() => String(props?.separator || "›"), [props?.separator]);
 
+  // 🚀 테마 색상 동적 로드
+  const themeColors = useThemeColors();
+
   // 🚀 CSS에서 프리셋 읽기
   const sizePreset = useMemo(() => getBreadcrumbsSizePreset(size), [size]);
-  const colorPreset = useMemo(() => getBreadcrumbsColorPreset(variant), [variant]);
+
+  // 🚀 variant에 따른 테마 색상
+  const variantColors = useMemo(
+    () => getVariantColors(variant, themeColors),
+    [variant, themeColors]
+  );
+
+  // 색상 프리셋 값들 (테마 색상 적용)
+  const colorPreset = useMemo(() => ({
+    textColor: variantColors.text,
+    currentColor: variantColors.bg,
+    separatorColor: 0x9ca3af,
+    backgroundColor: 0xf3f4f6,
+  }), [variantColors]);
 
   // 텍스트 색상 (inline style 오버라이드 지원)
   const textColor = useMemo(() => {

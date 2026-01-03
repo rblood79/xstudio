@@ -19,8 +19,9 @@ import type { Graphics as PixiGraphics, TextStyle } from 'pixi.js';
 import type { Element } from '@/types/core/store.types';
 import {
   getPopoverSizePreset,
-  getPopoverColorPreset,
+  getVariantColors,
 } from '../utils/cssVariableReader';
+import { useThemeColors } from '../hooks/useThemeColors';
 
 export interface PixiPopoverProps {
   element: Element;
@@ -47,9 +48,28 @@ export function PixiPopover({
 
   const [isHovered, setIsHovered] = useState(false);
 
+  // 🚀 테마 색상 동적 로드
+  const themeColors = useThemeColors();
+
   // Get presets from CSS
   const sizePreset = useMemo(() => getPopoverSizePreset(size), [size]);
-  const colorPreset = useMemo(() => getPopoverColorPreset(variant), [variant]);
+
+  // 🚀 variant에 따른 테마 색상
+  const variantColors = useMemo(
+    () => getVariantColors(variant, themeColors),
+    [variant, themeColors]
+  );
+
+  // 색상 프리셋 값들 (테마 색상 적용)
+  const colorPreset = useMemo(() => ({
+    backgroundColor: 0xffffff,
+    borderColor: 0xe5e7eb,
+    textColor: variantColors.text,
+    shadowColor: 0x00000020,
+    arrowFillColor: 0xffffff,
+    arrowStrokeColor: 0xe5e7eb,
+    focusRingColor: variantColors.bg,
+  }), [variantColors]);
 
   // Calculate dimensions
   const containerWidth = (props.width as number) || sizePreset.maxWidth;
@@ -130,7 +150,7 @@ export function PixiPopover({
       // Selection indicator
       if (isSelected) {
         g.roundRect(-2, -2, containerWidth + 4, containerHeight + 4, sizePreset.borderRadius + 2);
-        g.stroke({ color: 0x3b82f6, width: 2 });
+        g.stroke({ color: colorPreset.focusRingColor, width: 2 });
       }
 
       // Hover effect

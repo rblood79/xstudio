@@ -16,8 +16,9 @@ import type { Graphics as PixiGraphics, TextStyle } from 'pixi.js';
 import type { Element } from '@/types/core/store.types';
 import {
   getFormSizePreset,
-  getFormColorPreset,
+  getVariantColors,
 } from '../utils/cssVariableReader';
+import { useThemeColors } from '../hooks/useThemeColors';
 
 export interface PixiFormProps {
   element: Element;
@@ -40,9 +41,26 @@ export function PixiForm({
   const size = (props.size as string) || 'md';
   const showBorder = (props.showBorder as boolean) ?? true;
 
+  // 🚀 테마 색상 동적 로드
+  const themeColors = useThemeColors();
+
   // Get presets from CSS
   const sizePreset = useMemo(() => getFormSizePreset(size), [size]);
-  const colorPreset = useMemo(() => getFormColorPreset(variant), [variant]);
+
+  // 🚀 variant에 따른 테마 색상
+  const variantColors = useMemo(
+    () => getVariantColors(variant, themeColors),
+    [variant, themeColors]
+  );
+
+  // 색상 프리셋 값들 (테마 색상 적용)
+  const colorPreset = useMemo(() => ({
+    backgroundColor: 0xffffff,
+    borderColor: 0xe5e7eb,
+    labelColor: variantColors.text,
+    separatorColor: 0xe5e7eb,
+    focusRingColor: variantColors.bg,
+  }), [variantColors]);
 
   // Calculate dimensions
   const formWidth = (props.width as number) || 320;
@@ -65,7 +83,7 @@ export function PixiForm({
       // Selection indicator
       if (isSelected) {
         g.roundRect(-2, -2, formWidth + 4, formHeight + 4, sizePreset.borderRadius + 2);
-        g.stroke({ color: 0x3b82f6, width: 2 });
+        g.stroke({ color: colorPreset.focusRingColor, width: 2 });
       }
     },
     [formWidth, formHeight, sizePreset, colorPreset, showBorder, isSelected]

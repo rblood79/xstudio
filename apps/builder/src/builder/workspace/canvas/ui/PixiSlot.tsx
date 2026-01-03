@@ -16,8 +16,9 @@ import type { Graphics as PixiGraphics, TextStyle } from 'pixi.js';
 import type { Element } from '@/types/core/store.types';
 import {
   getSlotSizePreset,
-  getSlotColorPreset,
+  getVariantColors,
 } from '../utils/cssVariableReader';
+import { useThemeColors } from '../hooks/useThemeColors';
 
 export interface PixiSlotProps {
   element: Element;
@@ -43,9 +44,31 @@ export function PixiSlot({
   const isRequired = (props.isRequired as boolean) || (props.required as boolean) || false;
   const isEmpty = (props.isEmpty as boolean) ?? true;
 
+  // 🚀 테마 색상 동적 로드
+  const themeColors = useThemeColors();
+
   // Get presets from CSS
   const sizePreset = useMemo(() => getSlotSizePreset(size), [size]);
-  const colorPreset = useMemo(() => getSlotColorPreset(variant), [variant]);
+
+  // 🚀 variant에 따른 테마 색상
+  const variantColors = useMemo(
+    () => getVariantColors(variant, themeColors),
+    [variant, themeColors]
+  );
+
+  // 색상 프리셋 값들 (테마 색상 적용)
+  const colorPreset = useMemo(() => ({
+    backgroundColor: 0xf9fafb,
+    borderColor: 0xd1d5db,
+    emptyBorderColor: 0x9ca3af,
+    textColor: variantColors.text,
+    iconColor: variantColors.bg,
+    iconBackgroundColor: 0xf3f4f6,
+    selectedBorderColor: variantColors.bg,
+    requiredBorderColor: 0xef4444,
+    requiredBadgeBackgroundColor: 0xfef2f2,
+    requiredBadgeTextColor: 0xef4444,
+  }), [variantColors]);
 
   // Calculate dimensions
   const slotWidth = (props.width as number) || 280;
