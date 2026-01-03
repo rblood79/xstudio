@@ -41,6 +41,9 @@ export interface PixiCardProps {
 interface CardElementProps {
   children?: string;
   title?: string;
+  heading?: string;
+  subheading?: string;
+  description?: string;
   variant?: "default" | "primary" | "secondary" | "surface" | "elevated" | "outlined";
   size?: "sm" | "md" | "lg";
   style?: CSSStyle;
@@ -118,10 +121,15 @@ export const PixiCard = memo(function PixiCard({
   const posX = parseCSSSize(style?.left, undefined, 0);
   const posY = parseCSSSize(style?.top, undefined, 0);
 
-  // 카드 텍스트 (children 또는 title)
-  const cardText = useMemo(() => {
-    return String(props?.children || props?.title || "");
-  }, [props?.children, props?.title]);
+  // 카드 제목 (heading 또는 title)
+  const cardTitle = useMemo(() => {
+    return String(props?.heading || props?.title || "");
+  }, [props?.heading, props?.title]);
+
+  // 카드 설명 (description 또는 children)
+  const cardDescription = useMemo(() => {
+    return String(props?.description || props?.children || "");
+  }, [props?.description, props?.children]);
 
   // 카드 배경 그리기
   const drawCard = useCallback(
@@ -163,8 +171,22 @@ export const PixiCard = memo(function PixiCard({
     [variant, cardWidth, cardHeight, sizePreset.borderRadius, currentBgColor, borderColor]
   );
 
-  // 텍스트 스타일
-  const textStyle = useMemo(
+  // 제목 텍스트 스타일
+  const titleStyle = useMemo(
+    () =>
+      new TextStyle({
+        fontFamily: "Pretendard, sans-serif",
+        fontSize: 16,
+        fill: textColor,
+        fontWeight: "600",
+        wordWrap: true,
+        wordWrapWidth: cardWidth - sizePreset.padding * 2,
+      }),
+    [textColor, cardWidth, sizePreset.padding]
+  );
+
+  // 설명 텍스트 스타일
+  const descriptionStyle = useMemo(
     () =>
       new TextStyle({
         fontFamily: "Pretendard, sans-serif",
@@ -177,14 +199,8 @@ export const PixiCard = memo(function PixiCard({
     [textColor, cardWidth, sizePreset.padding]
   );
 
-  // 텍스트 위치 계산
-  const textPosition = useMemo(() => {
-    if (!cardText) return { x: 0, y: 0 };
-    return {
-      x: sizePreset.padding,
-      y: sizePreset.padding,
-    };
-  }, [cardText, sizePreset.padding]);
+  // 제목 높이 (description 위치 계산용)
+  const titleHeight = cardTitle ? 20 : 0; // fontSize(16) + lineGap(4)
 
   // 이벤트 핸들러
   const handlePointerEnter = useCallback(() => {
@@ -214,13 +230,23 @@ export const PixiCard = memo(function PixiCard({
       {/* 카드 배경 */}
       <pixiGraphics draw={drawCard} />
 
-      {/* 카드 텍스트 */}
-      {cardText && (
+      {/* 카드 제목 */}
+      {cardTitle && (
         <pixiText
-          text={cardText}
-          style={textStyle}
-          x={textPosition.x}
-          y={textPosition.y}
+          text={cardTitle}
+          style={titleStyle}
+          x={sizePreset.padding}
+          y={sizePreset.padding}
+        />
+      )}
+
+      {/* 카드 설명 */}
+      {cardDescription && (
+        <pixiText
+          text={cardDescription}
+          style={descriptionStyle}
+          x={sizePreset.padding}
+          y={sizePreset.padding + titleHeight}
         />
       )}
 
