@@ -1040,6 +1040,31 @@ function createYogaNode(
     node.setMinHeight(panelMinHeight);
   }
 
+  // 🚀 Card 요소: 콘텐츠 기반 높이 계산
+  // CSS box-sizing: border-box로 padding 포함
+  if (element.tag === 'Card' && !style?.height && !style?.minHeight) {
+    const cardSize = (element.props?.size as string) || 'md';
+    const sizePreset = getCardSizePreset(cardSize);
+    const props = element.props as { heading?: string; title?: string; description?: string; children?: string } | undefined;
+
+    // title 높이 (heading 또는 title이 있는 경우)
+    const hasTitle = props?.heading || props?.title;
+    const titleHeight = hasTitle ? 20 : 0; // fontSize(16) + gap(4)
+
+    // description 높이 (description 또는 children이 있는 경우)
+    const descText = props?.description || props?.children || '';
+    const descLineHeight = 18;
+    // 대략적인 줄 수 계산 (폭 200px 기준, 글자당 8px)
+    const estimatedWidth = 200 - sizePreset.padding * 2;
+    const charsPerLine = Math.floor(estimatedWidth / 8);
+    const descLines = descText ? Math.ceil(descText.length / Math.max(charsPerLine, 1)) : 0;
+    const descHeight = descLines * descLineHeight;
+
+    // 최소 높이 = padding * 2 + title + description
+    const cardMinHeight = Math.max(sizePreset.padding * 2 + titleHeight + descHeight, 60);
+    node.setMinHeight(cardMinHeight);
+  }
+
   // Min/Max 크기 (px 및 % 단위 지원)
   setNodeMinMaxSize(node, 'minWidth', style?.minWidth);
   setNodeMinMaxSize(node, 'minHeight', style?.minHeight);
