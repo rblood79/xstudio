@@ -24,9 +24,11 @@ import type { CSSStyle } from "../sprites/styleConverter";
 import { parseCSSSize } from "../sprites/styleConverter";
 import {
   getMeterSizePreset,
-  getMeterColorPreset,
+  getVariantColors,
 } from "../utils/cssVariableReader";
 import { drawBox } from "../utils";
+import { useThemeColors } from "../hooks/useThemeColors";
+import { cssColorToHex } from "../sprites/styleConverter";
 
 // ============================================
 // Types
@@ -111,12 +113,25 @@ export const PixiMeter = memo(function PixiMeter({
   }, [value, minValue, maxValue]);
 
   // variant와 size
-  const variant = useMemo(() => String(props?.variant || "primary"), [props?.variant]);
+  const variant = useMemo(() => String(props?.variant || "default"), [props?.variant]);
   const size = useMemo(() => String(props?.size || "md"), [props?.size]);
 
-  // 🚀 CSS에서 프리셋 읽기
+  // 🚀 테마 색상 동적 로드
+  const themeColors = useThemeColors();
+
+  // 🚀 CSS에서 사이즈 프리셋 읽기
   const sizePreset = useMemo(() => getMeterSizePreset(size), [size]);
-  const colorPreset = useMemo(() => getMeterColorPreset(variant), [variant]);
+
+  // 🚀 variant에 따른 테마 색상 (default, primary, secondary, tertiary, error, surface)
+  const variantColors = useMemo(
+    () => getVariantColors(variant, themeColors),
+    [variant, themeColors]
+  );
+
+  // 트랙 색상 (gray-200)과 라벨/값 색상
+  const trackColor = 0xe5e7eb;
+  const labelColor = cssColorToHex(undefined, variantColors.text);
+  const valueColor = cssColorToHex(undefined, variantColors.text);
 
   // 라벨과 값 표시 여부
   const label = useMemo(() => String(props?.label || ""), [props?.label]);
@@ -149,15 +164,15 @@ export const PixiMeter = memo(function PixiMeter({
       drawBox(g, {
         width: meterWidth,
         height: barHeight,
-        backgroundColor: colorPreset.trackColor,
+        backgroundColor: trackColor,
         backgroundAlpha: 1,
         borderRadius: sizePreset.borderRadius,
       });
     },
-    [meterWidth, barHeight, colorPreset.trackColor, sizePreset.borderRadius]
+    [meterWidth, barHeight, trackColor, sizePreset.borderRadius]
   );
 
-  // 채우기 그리기
+  // 채우기 그리기 - 🚀 테마 색상 사용
   const drawFill = useCallback(
     (g: PixiGraphics) => {
       g.clear();
@@ -166,13 +181,13 @@ export const PixiMeter = memo(function PixiMeter({
         drawBox(g, {
           width: fillWidth,
           height: barHeight,
-          backgroundColor: colorPreset.fillColor,
+          backgroundColor: variantColors.bg,
           backgroundAlpha: 1,
           borderRadius: sizePreset.borderRadius,
         });
       }
     },
-    [fillWidth, barHeight, colorPreset.fillColor, sizePreset.borderRadius]
+    [fillWidth, barHeight, variantColors.bg, sizePreset.borderRadius]
   );
 
   // 클릭 핸들러
@@ -180,26 +195,26 @@ export const PixiMeter = memo(function PixiMeter({
     onClick?.(element.id);
   }, [element.id, onClick]);
 
-  // 라벨 텍스트 스타일
+  // 라벨 텍스트 스타일 - 🚀 테마 색상 사용
   const labelTextStyle = useMemo(
     () =>
       new TextStyle({
         fontFamily: "Pretendard, sans-serif",
         fontSize: sizePreset.fontSize,
-        fill: colorPreset.labelColor,
+        fill: labelColor,
       }),
-    [sizePreset.fontSize, colorPreset.labelColor]
+    [sizePreset.fontSize, labelColor]
   );
 
-  // 값 텍스트 스타일
+  // 값 텍스트 스타일 - 🚀 테마 색상 사용
   const valueTextStyle = useMemo(
     () =>
       new TextStyle({
         fontFamily: "Pretendard, sans-serif",
         fontSize: sizePreset.fontSize,
-        fill: colorPreset.valueColor,
+        fill: valueColor,
       }),
-    [sizePreset.fontSize, colorPreset.valueColor]
+    [sizePreset.fontSize, valueColor]
   );
 
   return (

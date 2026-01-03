@@ -16,8 +16,9 @@ import type { Graphics as PixiGraphics, TextStyle } from 'pixi.js';
 import type { Element } from '@/types/core/store.types';
 import {
   getColorFieldSizePreset,
-  getColorFieldColorPreset,
+  getVariantColors,
 } from '../utils/cssVariableReader';
+import { useThemeColors } from '../hooks/useThemeColors';
 
 export interface PixiColorFieldProps {
   element: Element;
@@ -43,9 +44,28 @@ export function PixiColorField({
   const isDisabled = (props.isDisabled as boolean) || false;
   const isInvalid = (props.isInvalid as boolean) || false;
 
+  // 🚀 테마 색상 동적 로드
+  const themeColors = useThemeColors();
+
   // Get presets from CSS
   const sizePreset = useMemo(() => getColorFieldSizePreset(size), [size]);
-  const colorPreset = useMemo(() => getColorFieldColorPreset(variant), [variant]);
+
+  // 🚀 variant에 따른 테마 색상
+  const variantColors = useMemo(
+    () => getVariantColors(variant, themeColors),
+    [variant, themeColors]
+  );
+
+  // 색상 프리셋 값들 (테마 색상 적용)
+  const colorPreset = useMemo(() => ({
+    backgroundColor: 0xffffff,
+    borderColor: 0xd1d5db,
+    focusBorderColor: variantColors.bg,
+    errorBorderColor: 0xef4444,
+    textColor: variantColors.text,
+    labelColor: variantColors.text,
+    disabledBackgroundColor: 0xf3f4f6,
+  }), [variantColors]);
 
   // Parse color value
   const colorValue = useMemo(() => {

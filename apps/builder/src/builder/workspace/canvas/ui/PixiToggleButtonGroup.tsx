@@ -25,10 +25,12 @@ import type { CSSStyle } from "../sprites/styleConverter";
 import { parseCSSSize } from "../sprites/styleConverter";
 import {
   getToggleButtonSizePreset,
-  getToggleButtonColorPreset,
+  getVariantColors,
 } from "../utils/cssVariableReader";
 import { drawBox } from "../utils";
 import { useStore } from "../../../stores";
+import { useThemeColors } from "../hooks/useThemeColors";
+import { cssColorToHex } from "../sprites/styleConverter";
 
 // ============================================
 // Types
@@ -107,6 +109,12 @@ function parseToggleButtonsFromProps(props: Record<string, unknown> | undefined)
 // Sub-Component: ToggleButtonItem
 // ============================================
 
+/** Variant colors type for ToggleButtonGroup */
+interface VariantColors {
+  bg: number;
+  text: number;
+}
+
 interface ToggleButtonItemProps {
   item: ToggleButtonItem;
   isItemSelected: boolean;
@@ -115,7 +123,8 @@ interface ToggleButtonItemProps {
   width: number;
   height: number;
   sizePreset: ReturnType<typeof getToggleButtonSizePreset>;
-  colorPreset: ReturnType<typeof getToggleButtonColorPreset>;
+  variantColors: VariantColors;
+  borderColor: number;
   onPress: (value: string) => void;
 }
 
@@ -127,19 +136,14 @@ const ToggleButtonItemComponent = memo(function ToggleButtonItemComponent({
   width,
   height,
   sizePreset,
-  colorPreset,
+  variantColors,
+  borderColor,
   onPress,
 }: ToggleButtonItemProps) {
-  // 현재 상태에 따른 색상 선택
-  const bgColor = isItemSelected
-    ? colorPreset.selectedBackground
-    : colorPreset.background;
-  const borderCol = isItemSelected
-    ? colorPreset.selectedBorder
-    : colorPreset.border;
-  const textCol = isItemSelected
-    ? colorPreset.selectedText
-    : colorPreset.text;
+  // 🚀 테마 색상 사용: 선택 상태에 따른 색상 결정
+  const bgColor = isItemSelected ? variantColors.bg : 0xffffff;
+  const borderCol = isItemSelected ? variantColors.bg : borderColor;
+  const textCol = isItemSelected ? 0xffffff : variantColors.text;
 
   // 버튼 그리기
   const drawButton = useCallback(
@@ -257,9 +261,20 @@ export const PixiToggleButtonGroup = memo(function PixiToggleButtonGroup({
   const variant = useMemo(() => String(props?.variant || "default"), [props?.variant]);
   const size = useMemo(() => String(props?.size || "md"), [props?.size]);
 
-  // 🚀 CSS에서 프리셋 읽기
+  // 🚀 테마 색상 동적 로드
+  const themeColors = useThemeColors();
+
+  // 🚀 CSS에서 사이즈 프리셋 읽기
   const sizePreset = useMemo(() => getToggleButtonSizePreset(size), [size]);
-  const colorPreset = useMemo(() => getToggleButtonColorPreset(variant), [variant]);
+
+  // 🚀 variant에 따른 테마 색상 (default, primary, secondary, tertiary, error, surface)
+  const variantColors = useMemo(
+    () => getVariantColors(variant, themeColors) as VariantColors,
+    [variant, themeColors]
+  );
+
+  // 기본 테두리 색상 (gray-300)
+  const defaultBorderColor = 0xd1d5db;
 
   // selectionMode: "single" (기본) | "multiple"
   const selectionMode = useMemo(() => {
@@ -349,19 +364,19 @@ export const PixiToggleButtonGroup = memo(function PixiToggleButtonGroup({
       drawBox(g, {
         width: groupWidth,
         height: groupHeight,
-        backgroundColor: colorPreset.background,
+        backgroundColor: 0xffffff,
         backgroundAlpha: 0.3,
         borderRadius: sizePreset.borderRadius + 2,
         border: {
           width: 1,
-          color: colorPreset.border,
+          color: defaultBorderColor,
           alpha: 0.5,
           style: "solid",
           radius: sizePreset.borderRadius + 2,
         },
       });
     },
-    [groupWidth, groupHeight, colorPreset.background, colorPreset.border, sizePreset.borderRadius]
+    [groupWidth, groupHeight, defaultBorderColor, sizePreset.borderRadius]
   );
 
   // 그룹 클릭 핸들러
@@ -436,7 +451,8 @@ export const PixiToggleButtonGroup = memo(function PixiToggleButtonGroup({
             width={buttonSizes[index].width}
             height={buttonSizes[index].height}
             sizePreset={sizePreset}
-            colorPreset={colorPreset}
+            variantColors={variantColors}
+            borderColor={defaultBorderColor}
             onPress={handleItemPress}
           />
         );
