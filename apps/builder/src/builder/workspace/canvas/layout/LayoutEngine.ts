@@ -1021,9 +1021,16 @@ function createYogaNode(
 
   // 🚀 Panel 요소: CSS .panel-content { min-height: 64px } 반영
   // 명시적 height/minHeight가 없으면 기본 min-height 설정
-  // title(약 30px) + content min-height(64px) + padding(32px) = 약 126px
   if (element.tag === 'Panel' && !style?.height && !style?.minHeight) {
-    node.setMinHeight(126);
+    const panelSize = (element.props?.size as string) || 'md';
+    const sizePreset = getPanelSizePreset(panelSize);
+    // title 높이 (title이 있는 경우)
+    const titleHeight = element.props?.title
+      ? sizePreset.titleFontSize + sizePreset.titlePaddingY * 2 + 1
+      : 0;
+    // min-height = title + content min-height + content padding (top + bottom)
+    const panelMinHeight = titleHeight + sizePreset.minHeight + sizePreset.contentPadding * 2;
+    node.setMinHeight(panelMinHeight);
   }
 
   // Min/Max 크기 (px 및 % 단위 지원)
