@@ -23,8 +23,9 @@ import type { CSSStyle } from "../sprites/styleConverter";
 import { cssColorToHex, parseCSSSize } from "../sprites/styleConverter";
 import {
   getCardSizePreset,
-  getCardColorPreset,
+  getVariantColors,
 } from "../utils/cssVariableReader";
+import { useThemeColors } from "../hooks/useThemeColors";
 import { drawBox } from "../utils";
 
 // ============================================
@@ -66,7 +67,24 @@ export const PixiCard = memo(function PixiCard({
 
   // 🚀 CSS에서 프리셋 읽기
   const sizePreset = useMemo(() => getCardSizePreset(size), [size]);
-  const colorPreset = useMemo(() => getCardColorPreset(variant), [variant]);
+
+  // 🚀 테마 색상 동적 로드
+  const themeColors = useThemeColors();
+
+  // 🚀 variant에 따른 테마 색상
+  const variantColors = useMemo(
+    () => getVariantColors(variant, themeColors),
+    [variant, themeColors]
+  );
+
+  // 색상 프리셋 값들 (테마 색상 적용)
+  const colorPreset = useMemo(() => ({
+    backgroundColor: 0xffffff,
+    hoverBgColor: 0xf9fafb,
+    textColor: variantColors.text,
+    borderColor: 0xe5e7eb,
+    focusRingColor: variantColors.bg,
+  }), [variantColors]);
 
   // 현재 배경색 계산
   const currentBgColor = useMemo(() => {

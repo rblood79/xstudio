@@ -18,7 +18,8 @@ import type { Element } from '../../../../types/core/store.types';
 import type { CSSStyle } from '../sprites/styleConverter';
 import { cssColorToHex, parseCSSSize } from '../sprites/styleConverter';
 import { drawBox, drawCircle } from '../utils';
-import { getSliderSizePreset } from '../utils/cssVariableReader';
+import { getSliderSizePreset, getVariantColors } from '../utils/cssVariableReader';
+import { useThemeColors } from '../hooks/useThemeColors';
 
 // ============================================
 // Types
@@ -51,8 +52,8 @@ interface SliderLayoutStyle {
  * CSS 스타일을 Slider 레이아웃 스타일로 변환
  * 🚀 Phase 0: CSS 동기화 - getSliderSizePreset() 사용
  */
-function convertToSliderStyle(style: CSSStyle | undefined, size: string): SliderLayoutStyle {
-  const primaryColor = cssColorToHex(style?.backgroundColor, 0x3b82f6);
+function convertToSliderStyle(style: CSSStyle | undefined, size: string, themeDefaultColor: number): SliderLayoutStyle {
+  const primaryColor = cssColorToHex(style?.backgroundColor, themeDefaultColor);
   const trackColor = cssColorToHex(style?.borderColor, 0xe5e7eb);
 
   // 🚀 CSS에서 사이즈 프리셋 읽기
@@ -158,9 +159,19 @@ export const PixiSlider = memo(function PixiSlider({
 
   // 🚀 Phase 0: size prop 추출 (기본값: 'md')
   const size = useMemo(() => String(props?.size || 'md'), [props?.size]);
+  const variant = useMemo(() => String(props?.variant || 'default'), [props?.variant]);
 
-  // 슬라이더 스타일 (CSS 사이즈 프리셋 적용)
-  const layoutStyle = useMemo(() => convertToSliderStyle(style, size), [style, size]);
+  // 🚀 테마 색상 동적 로드
+  const themeColors = useThemeColors();
+
+  // 🚀 variant에 따른 테마 색상
+  const variantColors = useMemo(
+    () => getVariantColors(variant, themeColors),
+    [variant, themeColors]
+  );
+
+  // 슬라이더 스타일 (CSS 사이즈 프리셋 + 테마 색상 적용)
+  const layoutStyle = useMemo(() => convertToSliderStyle(style, size, variantColors.bg), [style, size, variantColors.bg]);
 
   // 슬라이더 값 설정
   const min = useMemo(() => Number(props?.min ?? 0), [props?.min]);

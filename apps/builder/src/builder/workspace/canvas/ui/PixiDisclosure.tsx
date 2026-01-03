@@ -16,8 +16,9 @@ import type { Graphics as PixiGraphics, TextStyle } from 'pixi.js';
 import type { Element } from '@/types/core/store.types';
 import {
   getDisclosureSizePreset,
-  getDisclosureColorPreset,
+  getVariantColors,
 } from '../utils/cssVariableReader';
+import { useThemeColors } from '../hooks/useThemeColors';
 
 export interface PixiDisclosureProps {
   element: Element;
@@ -49,7 +50,26 @@ export function PixiDisclosure({
 
   // Get presets from CSS
   const sizePreset = useMemo(() => getDisclosureSizePreset(size), [size]);
-  const colorPreset = useMemo(() => getDisclosureColorPreset(variant), [variant]);
+
+  // 🚀 테마 색상 동적 로드
+  const themeColors = useThemeColors();
+
+  // 🚀 variant에 따른 테마 색상
+  const variantColors = useMemo(
+    () => getVariantColors(variant, themeColors),
+    [variant, themeColors]
+  );
+
+  // 색상 프리셋 값들 (테마 색상 적용)
+  const colorPreset = useMemo(() => ({
+    backgroundColor: 0xffffff,
+    expandedBgColor: 0xf9fafb,
+    borderColor: 0xe5e7eb,
+    textColor: variantColors.text,
+    panelTextColor: 0x6b7280,
+    triggerHoverBgColor: 0xf3f4f6,
+    focusColor: variantColors.bg,
+  }), [variantColors]);
 
   // Calculate dimensions
   const containerWidth = (props.width as number) || 280;

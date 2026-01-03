@@ -18,7 +18,8 @@ import { Container, Graphics, Text, TextStyle } from 'pixi.js';
 import type { Element } from '../../../../types/core/store.types';
 import type { CSSStyle } from '../sprites/styleConverter';
 import { cssColorToHex, parseCSSSize } from '../sprites/styleConverter';
-import { getSwitchSizePreset } from '../utils/cssVariableReader';
+import { getSwitchSizePreset, getVariantColors } from '../utils/cssVariableReader';
+import { useThemeColors } from '../hooks/useThemeColors';
 
 // ============================================
 // Types
@@ -59,7 +60,7 @@ interface SwitcherLayoutStyle {
  * CSS 스타일을 Switcher 레이아웃 스타일로 변환
  * 🚀 Phase 0: CSS 동기화 - getSwitchSizePreset() 사용
  */
-function convertToSwitcherStyle(style: CSSStyle | undefined, itemCount: number, size: string): SwitcherLayoutStyle {
+function convertToSwitcherStyle(style: CSSStyle | undefined, itemCount: number, size: string, themeDefaultColor: number): SwitcherLayoutStyle {
   const width = parseCSSSize(style?.width, undefined, 240);
 
   // 🚀 CSS에서 사이즈 프리셋 읽기
@@ -74,7 +75,7 @@ function convertToSwitcherStyle(style: CSSStyle | undefined, itemCount: number, 
     width,
     height: parseCSSSize(style?.height, undefined, defaultHeight),
     backgroundColor: cssColorToHex(style?.backgroundColor, 0xe5e7eb),
-    activeColor: cssColorToHex(style?.borderColor, 0x3b82f6),
+    activeColor: cssColorToHex(style?.borderColor, themeDefaultColor),
     textColor: cssColorToHex(style?.color, 0x6b7280),
     activeTextColor: 0xffffff,
     fontSize: parseCSSSize(style?.fontSize, undefined, sizePreset.labelFontSize),
@@ -203,9 +204,19 @@ export const PixiSwitcher = memo(function PixiSwitcher({
 
   // 🚀 Phase 0: size prop 추출 (기본값: 'md')
   const size = useMemo(() => String(props?.size || 'md'), [props?.size]);
+  const variant = useMemo(() => String(props?.variant || 'default'), [props?.variant]);
 
-  // Switcher 스타일 (CSS 사이즈 프리셋 적용)
-  const layoutStyle = useMemo(() => convertToSwitcherStyle(style, items.length, size), [style, items.length, size]);
+  // 🚀 테마 색상 동적 로드
+  const themeColors = useThemeColors();
+
+  // 🚀 variant에 따른 테마 색상
+  const variantColors = useMemo(
+    () => getVariantColors(variant, themeColors),
+    [variant, themeColors]
+  );
+
+  // Switcher 스타일 (CSS 사이즈 프리셋 + 테마 색상 적용)
+  const layoutStyle = useMemo(() => convertToSwitcherStyle(style, items.length, size, variantColors.bg), [style, items.length, size, variantColors.bg]);
 
   // 활성 인덱스
   const activeIndex = useMemo(() => {

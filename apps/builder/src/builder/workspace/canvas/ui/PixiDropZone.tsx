@@ -16,8 +16,9 @@ import type { Graphics as PixiGraphics, TextStyle } from 'pixi.js';
 import type { Element } from '@/types/core/store.types';
 import {
   getDropZoneSizePreset,
-  getDropZoneColorPreset,
+  getVariantColors,
 } from '../utils/cssVariableReader';
+import { useThemeColors } from '../hooks/useThemeColors';
 
 export interface PixiDropZoneProps {
   element: Element;
@@ -43,7 +44,25 @@ export function PixiDropZone({
 
   // Get presets from CSS
   const sizePreset = useMemo(() => getDropZoneSizePreset(size), [size]);
-  const colorPreset = useMemo(() => getDropZoneColorPreset(variant), [variant]);
+
+  // 🚀 테마 색상 동적 로드
+  const themeColors = useThemeColors();
+
+  // 🚀 variant에 따른 테마 색상
+  const variantColors = useMemo(
+    () => getVariantColors(variant, themeColors),
+    [variant, themeColors]
+  );
+
+  // 색상 프리셋 값들 (테마 색상 적용)
+  const colorPreset = useMemo(() => ({
+    backgroundColor: 0xf9fafb,
+    borderColor: 0xd1d5db,
+    iconColor: variantColors.bg,
+    labelColor: variantColors.text,
+    textColor: 0x6b7280,
+    focusRingColor: variantColors.bg,
+  }), [variantColors]);
 
   // Calculate dimensions
   const zoneWidth = (props.width as number) || 280;
@@ -69,7 +88,7 @@ export function PixiDropZone({
       // Selection indicator
       if (isSelected) {
         g.roundRect(-2, -2, zoneWidth + 4, zoneHeight + 4, sizePreset.borderRadius + 2);
-        g.stroke({ color: 0x3b82f6, width: 2 });
+        g.stroke({ color: colorPreset.focusRingColor, width: 2 });
       }
     },
     [zoneWidth, zoneHeight, sizePreset, colorPreset, isSelected]

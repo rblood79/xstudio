@@ -16,8 +16,9 @@ import type { Graphics as PixiGraphics } from 'pixi.js';
 import type { Element } from '@/types/core/store.types';
 import {
   getColorSwatchPickerSizePreset,
-  getColorSwatchPickerColorPreset,
+  getVariantColors,
 } from '../utils/cssVariableReader';
+import { useThemeColors } from '../hooks/useThemeColors';
 
 export interface PixiColorSwatchPickerProps {
   element: Element;
@@ -51,7 +52,22 @@ export function PixiColorSwatchPicker({
 
   // Get presets from CSS
   const sizePreset = useMemo(() => getColorSwatchPickerSizePreset(size), [size]);
-  const colorPreset = useMemo(() => getColorSwatchPickerColorPreset(variant), [variant]);
+
+  // 🚀 테마 색상 동적 로드
+  const themeColors = useThemeColors();
+
+  // 🚀 variant에 따른 테마 색상
+  const variantColors = useMemo(
+    () => getVariantColors(variant, themeColors),
+    [variant, themeColors]
+  );
+
+  // 색상 프리셋 값들 (테마 색상 적용)
+  const colorPreset = useMemo(() => ({
+    selectionOuterColor: 0x000000,
+    selectionInnerColor: 0xffffff,
+    focusRingColor: variantColors.bg,
+  }), [variantColors]);
 
   // Calculate dimensions
   const isStack = layout === 'stack';

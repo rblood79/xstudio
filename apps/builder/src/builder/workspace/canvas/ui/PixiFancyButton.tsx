@@ -18,6 +18,8 @@ import { Container, Graphics, Text, TextStyle } from 'pixi.js';
 import type { Element } from '../../../../types/core/store.types';
 import type { CSSStyle } from '../sprites/styleConverter';
 import { parseCSSSize } from '../sprites/styleConverter';
+import { getVariantColors } from '../utils/cssVariableReader';
+import { useThemeColors } from '../hooks/useThemeColors';
 
 // ============================================
 // Types
@@ -52,18 +54,18 @@ interface FancyButtonLayoutStyle {
   paddingBottom: number;
 }
 
-function convertToFancyButtonStyle(style: CSSStyle | undefined): FancyButtonLayoutStyle {
+function convertToFancyButtonStyle(style: CSSStyle | undefined, themeDefaultColor: number): FancyButtonLayoutStyle {
   // Extract RGB from backgroundColor
   const bgColor = (() => {
     const bg = style?.backgroundColor;
-    if (!bg) return 0x3b82f6;
+    if (!bg) return themeDefaultColor;
     if (typeof bg === 'number') return bg;
     if (typeof bg === 'string') {
       if (bg.startsWith('#')) {
         return parseInt(bg.slice(1), 16);
       }
     }
-    return 0x3b82f6;
+    return themeDefaultColor;
   })();
 
   // Extract RGB from color
@@ -156,8 +158,18 @@ export const PixiFancyButton = memo(function PixiFancyButton({
   const style = element.props?.style as CSSStyle | undefined;
   const props = element.props as Record<string, unknown> | undefined;
 
-  // FancyButton 스타일
-  const layoutStyle = useMemo(() => convertToFancyButtonStyle(style), [style]);
+  // 🚀 테마 색상 동적 로드
+  const themeColors = useThemeColors();
+  const variant = useMemo(() => String(props?.variant || 'default'), [props?.variant]);
+
+  // 🚀 variant에 따른 테마 색상
+  const variantColors = useMemo(
+    () => getVariantColors(variant, themeColors),
+    [variant, themeColors]
+  );
+
+  // FancyButton 스타일 (테마 색상 적용)
+  const layoutStyle = useMemo(() => convertToFancyButtonStyle(style, variantColors.bg), [style, variantColors.bg]);
 
   // 버튼 텍스트
   const buttonText = useMemo(() => {

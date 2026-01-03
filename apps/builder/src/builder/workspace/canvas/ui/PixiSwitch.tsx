@@ -18,9 +18,10 @@ import type { CSSStyle } from '../sprites/styleConverter';
 import { parseCSSSize } from '../sprites/styleConverter';
 import {
   getSwitchSizePreset,
-  getSwitchColorPreset,
   getLabelStylePreset,
+  getVariantColors,
 } from '../utils/cssVariableReader';
+import { useThemeColors } from '../hooks/useThemeColors';
 
 export interface PixiSwitchProps {
   element: Element;
@@ -52,7 +53,26 @@ export function PixiSwitch({
 
   // Get presets from CSS
   const sizePreset = useMemo(() => getSwitchSizePreset(size), [size]);
-  const colorPreset = useMemo(() => getSwitchColorPreset(variant), [variant]);
+
+  // 🚀 테마 색상 동적 로드
+  const themeColors = useThemeColors();
+
+  // 🚀 variant에 따른 테마 색상
+  const variantColors = useMemo(
+    () => getVariantColors(variant, themeColors),
+    [variant, themeColors]
+  );
+
+  // 색상 프리셋 값들 (테마 색상 적용)
+  const colorPreset = useMemo(() => ({
+    trackColor: 0xd1d5db,
+    trackSelectedColor: variantColors.bg,
+    thumbColor: 0xffffff,
+    thumbBorderColor: 0x00000020,
+    disabledTrackColor: 0xe5e7eb,
+    disabledThumbColor: 0x9ca3af,
+    focusRingColor: variantColors.bg,
+  }), [variantColors]);
   // 🚀 Phase 19: .react-aria-Label 클래스에서 스타일 읽기
   const labelPreset = useMemo(() => getLabelStylePreset(size), [size]);
 
