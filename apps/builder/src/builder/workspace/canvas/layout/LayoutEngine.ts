@@ -12,7 +12,7 @@
 import type { Element } from '../../../../types/core/store.types';
 import { parsePadding } from '../sprites/paddingUtils';
 import { CanvasTextMetrics, TextStyle, type TextStyleFontWeight } from 'pixi.js';
-import { getRadioSizePreset, getTextFieldSizePreset, getPanelSizePreset } from '../utils/cssVariableReader';
+import { getRadioSizePreset, getTextFieldSizePreset, getPanelSizePreset, getCardSizePreset } from '../utils/cssVariableReader';
 
 // yoga-layout v3.2.1: enums are directly exported from 'yoga-layout/load'
 import {
@@ -1019,6 +1019,12 @@ function createYogaNode(
     node.setWidthPercent(100);
   }
 
+  // 🚀 Card 요소: CSS .react-aria-Card { width: 100%; } 반영
+  // 명시적 width가 없으면 부모 너비의 100%로 설정
+  if (element.tag === 'Card' && !hasExplicitWidth) {
+    node.setWidthPercent(100);
+  }
+
   // 🚀 Panel 요소: CSS .panel-content { min-height: 64px } 반영
   // 명시적 height/minHeight가 없으면 기본 min-height 설정
   // CSS box-sizing: border-box로 min-height에 padding이 포함됨
@@ -1067,10 +1073,18 @@ function createYogaNode(
     }
   }
 
-  const effectivePaddingTop = padding.top + panelTitleOffset + panelContentPadding;
-  const effectivePaddingRight = padding.right + panelContentPadding;
-  const effectivePaddingBottom = padding.bottom + panelContentPadding;
-  const effectivePaddingLeft = padding.left + panelContentPadding;
+  // 🚀 Card 요소: CSS .react-aria-Card { padding: var(--spacing-md); } 반영
+  let cardPadding = 0;
+  if (element.tag === 'Card') {
+    const cardSize = (element.props?.size as string) || 'md';
+    const sizePreset = getCardSizePreset(cardSize);
+    cardPadding = sizePreset.padding;
+  }
+
+  const effectivePaddingTop = padding.top + panelTitleOffset + panelContentPadding + cardPadding;
+  const effectivePaddingRight = padding.right + panelContentPadding + cardPadding;
+  const effectivePaddingBottom = padding.bottom + panelContentPadding + cardPadding;
+  const effectivePaddingLeft = padding.left + panelContentPadding + cardPadding;
 
   if (effectivePaddingTop > 0) node.setPadding(Edge.Top, effectivePaddingTop);
   if (effectivePaddingRight > 0) node.setPadding(Edge.Right, effectivePaddingRight);
