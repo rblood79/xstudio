@@ -20,7 +20,8 @@ import type { CSSStyle } from '../sprites/styleConverter';
 import { cssColorToHex, parseCSSSize } from '../sprites/styleConverter';
 import { drawBox } from '../utils';
 import { useStore } from '../../../stores';
-import { getLabelStylePreset } from '../utils/cssVariableReader';
+import { getLabelStylePreset, getVariantColors } from '../utils/cssVariableReader';
+import { useThemeColors } from '../hooks/useThemeColors';
 
 // ============================================
 // Types
@@ -45,7 +46,6 @@ interface CheckboxOption {
 
 const DEFAULT_CHECKBOX_SIZE = 20;
 const DEFAULT_BORDER_RADIUS = 4;
-const DEFAULT_PRIMARY_COLOR = 0x3b82f6; // blue-500
 const DEFAULT_BORDER_COLOR = 0xd1d5db; // gray-300
 const DEFAULT_TEXT_COLOR = 0x374151; // gray-700
 const DEFAULT_GAP = 12;
@@ -301,12 +301,22 @@ export const PixiCheckboxGroup = memo(function PixiCheckboxGroup({
 
   // 🚀 Phase 19: .react-aria-Label 클래스에서 스타일 읽기
   const size = useMemo(() => String(props?.size || 'md'), [props?.size]);
+  const variant = useMemo(() => String(props?.variant || 'primary'), [props?.variant]);
   const labelPreset = useMemo(() => getLabelStylePreset(size), [size]);
+
+  // 🚀 테마 색상 동적 로드
+  const themeColors = useThemeColors();
+
+  // 🚀 variant에 따른 테마 색상
+  const variantColors = useMemo(
+    () => getVariantColors(variant, themeColors),
+    [variant, themeColors]
+  );
 
   // 스타일
   const checkboxSize = DEFAULT_CHECKBOX_SIZE;
   const borderRadius = DEFAULT_BORDER_RADIUS;
-  const primaryColor = cssColorToHex(style?.backgroundColor, DEFAULT_PRIMARY_COLOR);
+  const primaryColor = cssColorToHex(style?.backgroundColor, variantColors.bg);
   const textColor = cssColorToHex(style?.color, DEFAULT_TEXT_COLOR);
   const fontSize = parseCSSSize(style?.fontSize, undefined, labelPreset.fontSize);
   const fontFamily = labelPreset.fontFamily;

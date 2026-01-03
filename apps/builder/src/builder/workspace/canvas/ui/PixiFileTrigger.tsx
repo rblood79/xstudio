@@ -17,7 +17,9 @@ import type { Element } from '@/types/core/store.types';
 import {
   getFileTriggerSizePreset,
   getFileTriggerColorPreset,
+  getVariantColors,
 } from '../utils/cssVariableReader';
+import { useThemeColors } from '../hooks/useThemeColors';
 
 export interface PixiFileTriggerProps {
   element: Element;
@@ -44,6 +46,15 @@ export function PixiFileTrigger({
   const sizePreset = useMemo(() => getFileTriggerSizePreset(size), [size]);
   const colorPreset = useMemo(() => getFileTriggerColorPreset(variant), [variant]);
 
+  // 🚀 테마 색상 동적 로드
+  const themeColors = useThemeColors();
+
+  // 🚀 variant에 따른 테마 색상
+  const variantColors = useMemo(
+    () => getVariantColors(variant, themeColors),
+    [variant, themeColors]
+  );
+
   // Calculate dimensions
   const buttonWidth = (props.width as number) || 140;
 
@@ -60,10 +71,10 @@ export function PixiFileTrigger({
       // Selection indicator
       if (isSelected) {
         g.roundRect(-2, -2, buttonWidth + 4, sizePreset.height + 4, sizePreset.borderRadius + 2);
-        g.stroke({ color: colorPreset.focusRingColor, width: 2 });
+        g.stroke({ color: variantColors.bg, width: 2 });
       }
     },
-    [buttonWidth, sizePreset, colorPreset, isSelected]
+    [buttonWidth, sizePreset, colorPreset, isSelected, variantColors.bg]
   );
 
   // Draw upload icon

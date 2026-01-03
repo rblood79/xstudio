@@ -24,7 +24,9 @@ import { parseCSSSize } from "../sprites/styleConverter";
 import {
   getComboBoxSizePreset,
   getComboBoxColorPreset,
+  getVariantColors,
 } from "../utils/cssVariableReader";
+import { useThemeColors } from "../hooks/useThemeColors";
 import { useStore } from "../../../stores";
 
 // ============================================
@@ -88,6 +90,15 @@ export const PixiComboBox = memo(function PixiComboBox({
   // 🚀 CSS에서 프리셋 읽기
   const sizePreset = useMemo(() => getComboBoxSizePreset(size), [size]);
   const colorPreset = useMemo(() => getComboBoxColorPreset(variant), [variant]);
+
+  // 🚀 테마 색상 동적 로드
+  const themeColors = useThemeColors();
+
+  // 🚀 variant에 따른 테마 색상
+  const variantColors = useMemo(
+    () => getVariantColors(variant, themeColors),
+    [variant, themeColors]
+  );
 
   // 위치
   const posX = parseCSSSize(style?.left, undefined, 0);

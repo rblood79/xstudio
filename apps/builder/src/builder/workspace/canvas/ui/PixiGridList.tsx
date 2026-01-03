@@ -11,7 +11,8 @@ import { useCallback, useMemo, useRef } from 'react';
 import { useExtend } from '@pixi/react';
 import { PIXI_COMPONENTS } from '../pixiSetup';
 import { Graphics as PixiGraphics, TextStyle } from 'pixi.js';
-import { getGridListSizePreset, getGridListColorPreset } from '../utils/cssVariableReader';
+import { getGridListSizePreset, getGridListColorPreset, getVariantColors } from '../utils/cssVariableReader';
+import { useThemeColors } from '../hooks/useThemeColors';
 import type { Element } from '@/types/core/store.types';
 import { useStore } from '@/builder/stores';
 
@@ -36,6 +37,15 @@ export function PixiGridList({
   // Get CSS presets
   const sizePreset = useMemo(() => getGridListSizePreset(size), [size]);
   const colorPreset = useMemo(() => getGridListColorPreset(variant), [variant]);
+
+  // 🚀 테마 색상 동적 로드
+  const themeColors = useThemeColors();
+
+  // 🚀 variant에 따른 테마 색상
+  const variantColors = useMemo(
+    () => getVariantColors(variant, themeColors),
+    [variant, themeColors]
+  );
 
   // Get children from store (GridListItem)
   const allElements = useStore((state) => state.elements);
@@ -97,10 +107,10 @@ export function PixiGridList({
       // Selection indicator
       if (isSelected) {
         g.roundRect(-2, -2, listWidth + 4, listHeight + 4, sizePreset.borderRadius + 2);
-        g.stroke({ width: 2, color: colorPreset.focusColor });
+        g.stroke({ width: 2, color: variantColors.bg });
       }
     },
-    [listWidth, listHeight, sizePreset.borderRadius, colorPreset, isSelected]
+    [listWidth, listHeight, sizePreset.borderRadius, colorPreset, isSelected, variantColors.bg]
   );
 
   // Draw item background

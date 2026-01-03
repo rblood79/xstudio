@@ -21,7 +21,8 @@ import type { Graphics as PixiGraphicsType, TextStyle } from 'pixi.js';
 import type { Element } from '../../../../types/core/store.types';
 import type { CSSStyle } from '../sprites/styleConverter';
 import { parseCSSSize } from '../sprites/styleConverter';
-import { getTextFieldSizePreset, getTextFieldColorPreset, getLabelStylePreset, getDescriptionStylePreset } from '../utils/cssVariableReader';
+import { getTextFieldSizePreset, getTextFieldColorPreset, getLabelStylePreset, getDescriptionStylePreset, getVariantColors } from '../utils/cssVariableReader';
+import { useThemeColors } from '../hooks/useThemeColors';
 
 // ============================================
 // Types
@@ -76,6 +77,15 @@ export const PixiInput = memo(function PixiInput({
   // 🚀 Phase 19: .react-aria-Label / .react-aria-FieldError 클래스에서 스타일 읽기
   const labelPreset = useMemo(() => getLabelStylePreset(size), [size]);
   const descPreset = useMemo(() => getDescriptionStylePreset(size), [size]);
+
+  // 🚀 테마 색상 동적 로드
+  const themeColors = useThemeColors();
+
+  // 🚀 variant에 따른 테마 색상
+  const variantColors = useMemo(
+    () => getVariantColors(variant, themeColors),
+    [variant, themeColors]
+  );
 
   // 🚀 Phase 19: flexDirection 지원 (row/column)
   const flexDirection = useMemo(() => {
@@ -140,10 +150,10 @@ export const PixiInput = memo(function PixiInput({
       // Selection indicator
       if (isSelected) {
         g.roundRect(-2, -2, fieldWidth + 4, sizePreset.height + 4, sizePreset.borderRadius + 2);
-        g.stroke({ color: colorPreset.focusBorderColor, width: 2 });
+        g.stroke({ color: variantColors.bg, width: 2 });
       }
     },
-    [fieldWidth, sizePreset, colorPreset, isSelected, isDisabled, isInvalid]
+    [fieldWidth, sizePreset, colorPreset, isSelected, isDisabled, isInvalid, variantColors.bg]
   );
 
   // Text styles - 🚀 Phase 19: .react-aria-Label 클래스에서 스타일 읽기

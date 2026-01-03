@@ -18,7 +18,9 @@ import { useStore } from '@/builder/stores';
 import {
   getDisclosureSizePreset,
   getDisclosureColorPreset,
+  getVariantColors,
 } from '../utils/cssVariableReader';
+import { useThemeColors } from '../hooks/useThemeColors';
 
 export interface PixiDisclosureGroupProps {
   element: Element;
@@ -70,6 +72,15 @@ export function PixiDisclosureGroup({
   // Get presets from CSS
   const sizePreset = useMemo(() => getDisclosureSizePreset(size), [size]);
   const colorPreset = useMemo(() => getDisclosureColorPreset(variant), [variant]);
+
+  // 🚀 테마 색상 동적 로드
+  const themeColors = useThemeColors();
+
+  // 🚀 variant에 따른 테마 색상
+  const variantColors = useMemo(
+    () => getVariantColors(variant, themeColors),
+    [variant, themeColors]
+  );
 
   // Calculate dimensions
   const containerWidth = (props.width as number) || 280;
@@ -126,10 +137,10 @@ export function PixiDisclosureGroup({
       // Selection indicator
       if (isSelected) {
         g.roundRect(-2, -2, containerWidth + 4, totalHeight + 4, sizePreset.borderRadius + 2);
-        g.stroke({ color: colorPreset.focusColor, width: 2 });
+        g.stroke({ color: variantColors.bg, width: 2 });
       }
     },
-    [containerWidth, totalHeight, sizePreset, colorPreset, isSelected]
+    [containerWidth, totalHeight, sizePreset, colorPreset, isSelected, variantColors.bg]
   );
 
   // Text styles
