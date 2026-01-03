@@ -113,14 +113,6 @@ export const PixiCard = memo(function PixiCard({
     return colorPreset.borderColor;
   }, [style, colorPreset]);
 
-  // 카드 크기
-  const cardWidth = parseCSSSize(style?.width, undefined, 200);
-  const cardHeight = parseCSSSize(style?.height, undefined, 120);
-
-  // 위치
-  const posX = parseCSSSize(style?.left, undefined, 0);
-  const posY = parseCSSSize(style?.top, undefined, 0);
-
   // 카드 제목 (heading 또는 title)
   const cardTitle = useMemo(() => {
     return String(props?.heading || props?.title || "");
@@ -130,6 +122,28 @@ export const PixiCard = memo(function PixiCard({
   const cardDescription = useMemo(() => {
     return String(props?.description || props?.children || "");
   }, [props?.description, props?.children]);
+
+  // 카드 크기
+  const cardWidth = parseCSSSize(style?.width, undefined, 200);
+
+  // 🚀 카드 높이 계산 (CSS box-sizing: border-box 반영)
+  // padding(top) + title(20px) + description(18px per line) + padding(bottom)
+  const calculatedHeight = useMemo(() => {
+    const titleHeight = cardTitle ? 20 : 0; // fontSize(16) + gap(4)
+    // description 줄 수 계산 (대략적)
+    const descLineHeight = 18; // fontSize(14) + lineHeight
+    const maxCharsPerLine = Math.floor((cardWidth - sizePreset.padding * 2) / 8); // 대략 글자당 8px
+    const descLines = cardDescription ? Math.ceil(cardDescription.length / Math.max(maxCharsPerLine, 1)) : 0;
+    const descHeight = descLines * descLineHeight;
+
+    return sizePreset.padding * 2 + titleHeight + descHeight;
+  }, [cardTitle, cardDescription, cardWidth, sizePreset.padding]);
+
+  const cardHeight = parseCSSSize(style?.height, undefined, Math.max(calculatedHeight, 60));
+
+  // 위치
+  const posX = parseCSSSize(style?.left, undefined, 0);
+  const posY = parseCSSSize(style?.top, undefined, 0);
 
   // 카드 배경 그리기
   const drawCard = useCallback(
