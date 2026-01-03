@@ -431,6 +431,177 @@ export function getToggleButtonColorPreset(variant: string): ToggleButtonColorPr
 }
 ```
 
+### 5.5 Container 컴포넌트 CSS 동기화 패턴 (Panel, Card)
+
+Panel과 Card 같은 컨테이너 컴포넌트는 CSS와 WebGL 간 레이아웃 동기화가 필요합니다.
+
+#### 5.5.1 공통 패턴: LayoutEngine.ts 수정
+
+**1. Width 100% 적용**
+
+CSS에 `width: 100%`가 정의된 컴포넌트는 Yoga 레이아웃에서도 동일하게 설정:
+
+```typescript
+// LayoutEngine.ts - createYogaNode 함수 내
+if (element.tag === 'Panel' && !hasExplicitWidth) {
+  node.setWidthPercent(100);
+}
+
+if (element.tag === 'Card' && !hasExplicitWidth) {
+  node.setWidthPercent(100);
+}
+```
+
+**2. 콘텐츠 기반 높이 계산**
+
+CSS `box-sizing: border-box`로 인해 min-height에 padding이 포함됨:
+
+```typescript
+// Panel: title + content min-height
+if (element.tag === 'Panel' && !style?.height && !style?.minHeight) {
+  const sizePreset = getPanelSizePreset(panelSize);
+  const titleHeight = element.props?.title
+    ? sizePreset.titleFontSize + sizePreset.titlePaddingY * 2 + 1
+    : 0;
+  // padding은 border-box로 포함됨 - 별도로 더하지 않음
+  const panelMinHeight = titleHeight + sizePreset.minHeight;
+  node.setMinHeight(panelMinHeight);
+}
+
+// Card: title + description 줄 수 기반
+if (element.tag === 'Card' && !style?.height && !style?.minHeight) {
+  const sizePreset = getCardSizePreset(cardSize);
+  const titleHeight = hasTitle ? 20 : 0;
+  const descHeight = descLines * 18; // 줄당 18px
+  const cardMinHeight = Math.max(sizePreset.padding * 2 + titleHeight + descHeight, 60);
+  node.setMinHeight(cardMinHeight);
+}
+```
+
+**3. Children 영역 Padding 적용**
+
+컨테이너 내부 구조에 맞게 children 배치 영역 설정:
+
+```typescript
+// Panel: title 영역 + content padding
+let panelTitleOffset = 0;
+let panelContentPadding = 0;
+if (element.tag === 'Panel') {
+  const sizePreset = getPanelSizePreset(panelSize);
+  panelContentPadding = sizePreset.contentPadding;
+  if (element.props?.title) {
+    panelTitleOffset = sizePreset.titleFontSize + sizePreset.titlePaddingY * 2 + 1;
+  }
+}
+
+// Card: 단일 padding
+let cardPadding = 0;
+if (element.tag === 'Card') {
+  const sizePreset = getCardSizePreset(cardSize);
+  cardPadding = sizePreset.padding;
+}
+
+// 모든 padding 합산
+const effectivePaddingTop = padding.top + panelTitleOffset + panelContentPadding + cardPadding;
+const effectivePaddingRight = padding.right + panelContentPadding + cardPadding;
+const effectivePaddingBottom = padding.bottom + panelContentPadding + cardPadding;
+const effectivePaddingLeft = padding.left + panelContentPadding + cardPadding;
+```
+
+#### 5.5.2 Panel 패턴 상세
+
+**CSS 구조:**
+```css
+.react-aria-Panel {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+}
+.panel-title {
+  padding: var(--spacing-sm) var(--spacing-md);
+  font-size: var(--text-sm);
+  border-bottom: 1px solid var(--border-color);
+}
+.panel-content {
+  padding: var(--spacing-md);
+  min-height: 64px;
+}
+```
+
+**PixiPanel.tsx 높이 계산:**
+```typescript
+// CSS box-sizing: border-box 반영
+const titleHeight = title ? sizePreset.titleFontSize + sizePreset.titlePaddingY * 2 : 0;
+const calculatedHeight = titleHeight + sizePreset.minHeight;
+const panelHeight = parseCSSSize(style?.height, undefined, calculatedHeight);
+```
+
+**cssVariableReader.ts 프리셋:**
+```typescript
+export interface PanelSizePreset {
+  borderRadius: number;
+  titleFontSize: number;
+  titlePaddingX: number;
+  titlePaddingY: number;
+  contentFontSize: number;
+  contentPadding: number;
+  minHeight: number;  // 64, 80, 96 (sm, md, lg)
+}
+```
+
+#### 5.5.3 Card 패턴 상세
+
+**CSS 구조:**
+```css
+.react-aria-Card {
+  width: 100%;
+  box-sizing: border-box;
+  padding: var(--spacing-md);
+  border-radius: var(--radius-lg);
+}
+```
+
+**PixiCard.tsx 높이 계산:**
+```typescript
+const calculatedHeight = useMemo(() => {
+  const titleHeight = cardTitle ? 20 : 0;
+  const descLineHeight = 18;
+  const maxCharsPerLine = Math.floor((cardWidth - sizePreset.padding * 2) / 8);
+  const descLines = cardDescription
+    ? Math.ceil(cardDescription.length / Math.max(maxCharsPerLine, 1))
+    : 0;
+  const descHeight = descLines * descLineHeight;
+  return sizePreset.padding * 2 + titleHeight + descHeight;
+}, [cardTitle, cardDescription, cardWidth, sizePreset.padding]);
+
+const cardHeight = parseCSSSize(style?.height, undefined, Math.max(calculatedHeight, 60));
+```
+
+**PixiCard.tsx Props:**
+```typescript
+interface CardElementProps {
+  title?: string;
+  heading?: string;
+  subheading?: string;
+  description?: string;
+  children?: string;
+  variant?: 'default' | 'primary' | 'secondary' | 'surface' | 'elevated' | 'outlined';
+  size?: 'sm' | 'md' | 'lg';
+}
+```
+
+#### 5.5.4 체크리스트
+
+새로운 컨테이너 컴포넌트 추가 시:
+
+- [ ] LayoutEngine.ts에 `setWidthPercent(100)` 추가 (width: 100% 반영)
+- [ ] LayoutEngine.ts에 `setMinHeight()` 추가 (콘텐츠 기반 높이)
+- [ ] LayoutEngine.ts에 padding 처리 추가 (children 영역 offset)
+- [ ] cssVariableReader.ts에 SizePreset 함수 추가
+- [ ] Pixi 컴포넌트에서 동일한 높이 계산 로직 적용
+- [ ] `box-sizing: border-box` 고려 (padding을 min-height에 포함하지 않음)
+
 ---
 
 ## 6. 검증 체크리스트
@@ -500,3 +671,4 @@ const colors = useThemeColors();
 |------|------|-----------|
 | 2026-01-03 | 1.0 | 초기 분석 및 계획 문서 작성 |
 | 2026-01-03 | 1.1 | Phase 의존 관계 다이어그램 추가, useThemeColors 훅 상태 반영, 일정 표현 개선 |
+| 2026-01-04 | 1.2 | Container 컴포넌트 CSS 동기화 패턴 추가 (Panel, Card) - 5.5절 |
