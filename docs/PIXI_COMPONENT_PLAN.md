@@ -57,10 +57,10 @@ Property 패널과 Style 패널에서 변경한 값이 WebGL 컴포넌트에 **�
 | 구분 | 수량 |
 |------|------|
 | 전체 Pixi 컴포넌트 | 62개 |
-| ✅ 정상 (Working) | 32개 (52%) |
-| ⚠️ 부분 (Partial) | 22개 (35%) |
+| ✅ 정상 (Working) | 25개 (40%) |
+| ⚠️ 부분 (Partial) | 29개 (47%) |
 | ❌ 문제 (Broken) | 5개 (8%) |
-| 🔵 Pixi 전용 | 3개 (5%) |
+| 🔵 React 동등 없음 | 3개 (5%) |
 
 ### 1.2 핵심 문제 요약
 
@@ -148,14 +148,16 @@ Property 패널과 Style 패널에서 변경한 값이 WebGL 컴포넌트에 **�
 | PixiColorWheel | ⚠️ | ✅ | ❌ | - | 세그먼트 수 하드코딩 (60) | Medium |
 | PixiColorField | ❌ | ✅ | ❌ | 0개 (5개 누락) | L67-102: 전체 색상 하드코딩 | High |
 | PixiColorPicker | ⚠️ | ✅ | ❌ | 0개 (3개 누락) | L52,151,156,160,164,176: 하드코딩 | High |
-| PixiColorSwatchPicker | ✅ | ✅ | ❌ | grid/stack layout | - | Low |
+| PixiColorSwatchPicker | ⚠️ | ✅ | ❌ | grid/stack layout | - | Low |
 | PixiDateField | ❌ | ✅ | ❌ | 0개 (5개 누락) | L58-68: 하드코딩, variant 시스템 없음 | High |
 | PixiTimeField | ❌ | ✅ | ❌ | 0개 (5개 누락) | L62-78: 하드코딩, variant 시스템 없음 | High |
 | PixiDatePicker | ⚠️ | ✅ | ❌ | 0개 (5개 누락) | L84-88,124: 하드코딩, 정적 렌더링 | High |
 | PixiDateRangePicker | ⚠️ | ✅ | ❌ | 0개 (5개 누락) | 정적 듀얼 캘린더, variant 없음 | High |
 | PixiCalendar | ⚠️ | ✅ | ❌ | 0개 (3개 누락) | L147: 포커스 색상 하드코딩 | Medium |
 
-### 2.6 Pixi 전용 컴포넌트 (5개)
+### 2.6 Pixi 특화 컴포넌트 (5개)
+
+※ 아래 5개는 Pixi 특화 UI지만 ✅/⚠️ 상태로 집계하며, 🔵 표시는 React 동등 컴포넌트가 없는 경우에만 사용합니다.
 
 | 컴포넌트 | 상태 | 용도 | CSS 통합 | 주요 문제 | 우선순위 |
 |----------|------|------|----------|-----------|----------|
@@ -427,6 +429,10 @@ export function getToggleButtonColorPreset(variant: string): ToggleButtonColorPr
 ### 7.3 React 컴포넌트
 
 - `packages/shared/src/components/*.tsx`
+
+### 7.4 문서 요약 자동 검증 / Summary Auto-Check
+
+- `pnpm run check:pixi-plan` (검증 / check) / `pnpm run fix:pixi-plan` (요약 자동 업데이트 / update summary)
 
 ---
 

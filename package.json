@@ -14,7 +14,9 @@
     "storybook": "pnpm -F @xstudio/builder storybook",
     "build-storybook": "pnpm -F @xstudio/builder build-storybook",
     "playwright:install": "npx playwright install",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "check:pixi-plan": "pnpm -F @xstudio/builder check:pixi-plan",
+    "fix:pixi-plan": "pnpm -F @xstudio/builder fix:pixi-plan"
   },
   "devDependencies": {
     "@playwright/mcp": "^0.0.53",
