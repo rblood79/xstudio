@@ -90,8 +90,9 @@ export const PixiPanel = memo(function PixiPanel({
 
   // 🚀 패널 높이 계산
   // CSS: .panel-content { min-height: 64px; padding: var(--spacing-md); }
+  // CSS box-sizing: border-box로 min-height에 padding이 포함됨
   // 명시적 height가 없으면 title + content min-height로 자동 계산
-  const calculatedHeight = titleHeight + sizePreset.minHeight + sizePreset.contentPadding * 2;
+  const calculatedHeight = titleHeight + sizePreset.minHeight;
   const panelHeight = parseCSSSize(style?.height, undefined, calculatedHeight);
 
   // 패널 콘텐츠 텍스트 (children)
