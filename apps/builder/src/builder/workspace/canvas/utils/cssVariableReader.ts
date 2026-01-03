@@ -1611,6 +1611,86 @@ export function getCardColorPreset(variant: string): CardColorPreset {
 }
 
 // ============================================
+// Panel Size Preset
+// ============================================
+
+/**
+ * Panel 사이즈 프리셋
+ */
+export interface PanelSizePreset {
+  borderRadius: number;
+  titleFontSize: number;
+  titlePaddingX: number;
+  titlePaddingY: number;
+  contentFontSize: number;
+  contentPadding: number;
+  minHeight: number;
+}
+
+const PANEL_SIZE_MAPPING: Record<string, { borderRadius: string; spacing: string; fontSize: string }> = {
+  sm: { borderRadius: '--radius-md', spacing: '--spacing-sm', fontSize: '--text-sm' },
+  md: { borderRadius: '--radius-lg', spacing: '--spacing-md', fontSize: '--text-base' },
+  lg: { borderRadius: '--radius-xl', spacing: '--spacing-lg', fontSize: '--text-lg' },
+};
+
+const PANEL_FALLBACKS: Record<string, PanelSizePreset> = {
+  sm: { borderRadius: 8, titleFontSize: 13, titlePaddingX: 8, titlePaddingY: 6, contentFontSize: 13, contentPadding: 12, minHeight: 64 },
+  md: { borderRadius: 12, titleFontSize: 14, titlePaddingX: 12, titlePaddingY: 8, contentFontSize: 14, contentPadding: 16, minHeight: 80 },
+  lg: { borderRadius: 16, titleFontSize: 16, titlePaddingX: 16, titlePaddingY: 12, contentFontSize: 16, contentPadding: 20, minHeight: 96 },
+};
+
+/**
+ * Panel 사이즈 프리셋 읽기
+ */
+export function getPanelSizePreset(size: string): PanelSizePreset {
+  const mapping = PANEL_SIZE_MAPPING[size];
+  const fallback = PANEL_FALLBACKS[size] || PANEL_FALLBACKS.md;
+
+  if (!mapping) {
+    return fallback;
+  }
+
+  const borderRadius = parseCSSValue(getCSSVariable(mapping.borderRadius), fallback.borderRadius);
+  const spacing = parseCSSValue(getCSSVariable(mapping.spacing), fallback.contentPadding);
+  const fontSize = parseCSSValue(getCSSVariable(mapping.fontSize), fallback.contentFontSize);
+
+  return {
+    borderRadius,
+    titleFontSize: fontSize,
+    titlePaddingX: spacing,
+    titlePaddingY: Math.round(spacing * 0.75),
+    contentFontSize: fontSize,
+    contentPadding: spacing,
+    minHeight: fallback.minHeight,
+  };
+}
+
+/**
+ * Panel 색상 프리셋
+ */
+export interface PanelColorPreset {
+  backgroundColor: number;
+  borderColor: number;
+  titleColor: number;
+  textColor: number;
+}
+
+const PANEL_COLOR_FALLBACKS: Record<string, PanelColorPreset> = {
+  default: { backgroundColor: 0xf3f4f6, borderColor: 0xcad3dc, titleColor: 0x374151, textColor: 0x6b7280 },
+  tab: { backgroundColor: 0xf3f4f6, borderColor: 0x00000000, titleColor: 0x374151, textColor: 0x6b7280 },
+  sidebar: { backgroundColor: 0xe5e7eb, borderColor: 0xcad3dc, titleColor: 0x374151, textColor: 0x6b7280 },
+  card: { backgroundColor: 0xffffff, borderColor: 0xcad3dc, titleColor: 0x374151, textColor: 0x6b7280 },
+  modal: { backgroundColor: 0xffffff, borderColor: 0xcad3dc, titleColor: 0x374151, textColor: 0x6b7280 },
+};
+
+/**
+ * Panel 색상 프리셋 읽기
+ */
+export function getPanelColorPreset(variant: string): PanelColorPreset {
+  return PANEL_COLOR_FALLBACKS[variant] || PANEL_COLOR_FALLBACKS.default;
+}
+
+// ============================================
 // Phase 2: Menu Size Preset
 // ============================================
 

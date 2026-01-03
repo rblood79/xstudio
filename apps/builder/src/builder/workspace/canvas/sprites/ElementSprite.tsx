@@ -88,6 +88,7 @@ import {
   PixiColorSwatchPicker,
   PixiGroup,
   PixiSlot,
+  PixiPanel,
 } from '../ui';
 import { useStore } from '../../../stores';
 import { isFlexContainer, isGridContainer } from '../layout';
@@ -184,7 +185,8 @@ const UI_METER_TAGS = new Set(['Meter', 'Gauge']);
 const UI_SEPARATOR_TAGS = new Set(['Separator', 'Divider', 'Hr']);
 const UI_LINK_TAGS = new Set(['Link', 'Anchor', 'A']);
 const UI_BREADCRUMBS_TAGS = new Set(['Breadcrumbs']);
-const UI_CARD_TAGS = new Set(['Card', 'Panel', 'Box']);
+const UI_CARD_TAGS = new Set(['Card', 'Box']);
+const UI_PANEL_TAGS = new Set(['Panel']);
 const UI_MENU_TAGS = new Set(['Menu', 'ContextMenu', 'DropdownMenu']);
 const UI_TABS_TAGS = new Set(['Tabs', 'TabList']);
 
@@ -254,7 +256,7 @@ const UI_SLOT_TAGS = new Set(['Slot']);
 // Sprite Type Detection
 // ============================================
 
-type SpriteType = 'box' | 'text' | 'image' | 'button' | 'fancyButton' | 'checkboxGroup' | 'checkboxItem' | 'radioGroup' | 'radioItem' | 'slider' | 'input' | 'select' | 'progressBar' | 'switcher' | 'scrollBox' | 'list' | 'maskedFrame' | 'flex' | 'grid' | 'toggleButton' | 'toggleButtonGroup' | 'listBox' | 'badge' | 'meter' | 'separator' | 'link' | 'breadcrumbs' | 'card' | 'menu' | 'tabs' | 'numberField' | 'searchField' | 'comboBox' | 'gridList' | 'tagGroup' | 'tree' | 'table' | 'disclosure' | 'disclosureGroup' | 'tooltip' | 'popover' | 'dialog' | 'colorSwatch' | 'colorSlider' | 'timeField' | 'dateField' | 'colorArea' | 'calendar' | 'colorWheel' | 'datePicker' | 'colorPicker' | 'dateRangePicker' | 'textField' | 'switch' | 'textArea' | 'form' | 'toolbar' | 'fileTrigger' | 'dropZone' | 'skeleton' | 'toast' | 'pagination' | 'colorField' | 'colorSwatchPicker' | 'group' | 'slot';
+type SpriteType = 'box' | 'text' | 'image' | 'button' | 'fancyButton' | 'checkboxGroup' | 'checkboxItem' | 'radioGroup' | 'radioItem' | 'slider' | 'input' | 'select' | 'progressBar' | 'switcher' | 'scrollBox' | 'list' | 'maskedFrame' | 'flex' | 'grid' | 'toggleButton' | 'toggleButtonGroup' | 'listBox' | 'badge' | 'meter' | 'separator' | 'link' | 'breadcrumbs' | 'card' | 'panel' | 'menu' | 'tabs' | 'numberField' | 'searchField' | 'comboBox' | 'gridList' | 'tagGroup' | 'tree' | 'table' | 'disclosure' | 'disclosureGroup' | 'tooltip' | 'popover' | 'dialog' | 'colorSwatch' | 'colorSlider' | 'timeField' | 'dateField' | 'colorArea' | 'calendar' | 'colorWheel' | 'datePicker' | 'colorPicker' | 'dateRangePicker' | 'textField' | 'switch' | 'textArea' | 'form' | 'toolbar' | 'fileTrigger' | 'dropZone' | 'skeleton' | 'toast' | 'pagination' | 'colorField' | 'colorSwatchPicker' | 'group' | 'slot';
 
 function getSpriteType(element: Element): SpriteType {
   const tag = element.tag;
@@ -287,6 +289,7 @@ function getSpriteType(element: Element): SpriteType {
   if (UI_LINK_TAGS.has(tag)) return 'link';
   if (UI_BREADCRUMBS_TAGS.has(tag)) return 'breadcrumbs';
   if (UI_CARD_TAGS.has(tag)) return 'card';
+  if (UI_PANEL_TAGS.has(tag)) return 'panel';
   if (UI_MENU_TAGS.has(tag)) return 'menu';
   if (UI_TABS_TAGS.has(tag)) return 'tabs';
 
@@ -648,6 +651,15 @@ export const ElementSprite = memo(function ElementSprite({
     case 'card':
       return (
         <PixiCard
+          element={effectiveElement}
+          isSelected={isSelected}
+          onClick={onClick}
+        />
+      );
+
+    case 'panel':
+      return (
+        <PixiPanel
           element={effectiveElement}
           isSelected={isSelected}
           onClick={onClick}

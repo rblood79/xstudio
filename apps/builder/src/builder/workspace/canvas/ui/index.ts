@@ -100,3 +100,4 @@ export { PixiColorField, type PixiColorFieldProps } from './PixiColorField';
 export { PixiColorSwatchPicker, type PixiColorSwatchPickerProps } from './PixiColorSwatchPicker';
 export { PixiGroup, type PixiGroupProps } from './PixiGroup';
 export { PixiSlot, type PixiSlotProps } from './PixiSlot';
+export { PixiPanel, type PixiPanelProps } from './PixiPanel';
