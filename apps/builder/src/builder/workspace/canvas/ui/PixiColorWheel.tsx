@@ -16,8 +16,9 @@ import type { Graphics as PixiGraphics } from 'pixi.js';
 import type { Element } from '@/types/core/store.types';
 import {
   getColorWheelSizePreset,
-  getColorWheelColorPreset,
+  getVariantColors,
 } from '../utils/cssVariableReader';
+import { useThemeColors } from '../hooks/useThemeColors';
 
 export interface PixiColorWheelProps {
   element: Element;
@@ -40,9 +41,24 @@ export function PixiColorWheel({
   const size = (props.size as string) || 'md';
   const hue = (props.hue as number) ?? 0;
 
+  // 🚀 테마 색상 동적 로드
+  const themeColors = useThemeColors();
+
   // Get presets from CSS
   const sizePreset = useMemo(() => getColorWheelSizePreset(size), [size]);
-  const colorPreset = useMemo(() => getColorWheelColorPreset(variant), [variant]);
+
+  // 🚀 variant에 따른 테마 색상
+  const variantColors = useMemo(
+    () => getVariantColors(variant, themeColors),
+    [variant, themeColors]
+  );
+
+  // 색상 프리셋 값들 (테마 색상 적용)
+  const colorPreset = useMemo(() => ({
+    focusRingColor: variantColors.bg,
+    thumbBorderColor: 0xffffff,
+    thumbInnerBorderColor: 0xcad3dc,
+  }), [variantColors]);
 
   // Calculate thumb position on wheel
   const thumbAngle = (hue * Math.PI) / 180;

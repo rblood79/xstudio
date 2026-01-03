@@ -16,8 +16,9 @@ import type { Graphics as PixiGraphics } from 'pixi.js';
 import type { Element } from '@/types/core/store.types';
 import {
   getColorSliderSizePreset,
-  getColorSliderColorPreset,
+  getVariantColors,
 } from '../utils/cssVariableReader';
+import { useThemeColors } from '../hooks/useThemeColors';
 
 export interface PixiColorSliderProps {
   element: Element;
@@ -41,9 +42,25 @@ export function PixiColorSlider({
   const channel = (props.channel as string) || 'hue';
   const value = (props.value as number) ?? 0.5;
 
+  // 🚀 테마 색상 동적 로드
+  const themeColors = useThemeColors();
+
   // Get presets from CSS
   const sizePreset = useMemo(() => getColorSliderSizePreset(size), [size]);
-  const colorPreset = useMemo(() => getColorSliderColorPreset(variant), [variant]);
+
+  // 🚀 variant에 따른 테마 색상
+  const variantColors = useMemo(
+    () => getVariantColors(variant, themeColors),
+    [variant, themeColors]
+  );
+
+  // 색상 프리셋 값들 (테마 색상 적용)
+  const colorPreset = useMemo(() => ({
+    thumbBorderColor: 0xffffff,
+    thumbInnerBorderColor: 0xcad3dc,
+    focusRingColor: variantColors.bg,
+    trackBorderColor: 0xd1d5db,
+  }), [variantColors]);
 
   // Calculate thumb position
   const thumbX = useMemo(() => {
@@ -77,8 +94,8 @@ export function PixiColorSlider({
           const l = i / segments;
           color = (Math.floor(l * 255) << 16) | (Math.floor(l * 255) << 8) | Math.floor(l * 255);
         } else if (channel === 'alpha') {
-          // Transparency (checker + overlay)
-          color = 0x3b82f6;
+          // Transparency (checker + overlay) - 🚀 테마 색상 사용
+          color = variantColors.bg;
         } else {
           color = hslToHex(i / segments, 1, 0.5);
         }
@@ -87,9 +104,9 @@ export function PixiColorSlider({
         g.fill({ color });
       }
 
-      // Track border
+      // Track border - 🚀 테마 색상 사용
       g.roundRect(0, trackY, sizePreset.trackWidth, trackHeight, sizePreset.borderRadius / 2);
-      g.stroke({ color: 0xcad3dc, width: 1 });
+      g.stroke({ color: colorPreset.trackBorderColor, width: 1 });
 
       // Selection indicator
       if (isSelected) {
@@ -97,7 +114,7 @@ export function PixiColorSlider({
         g.stroke({ color: colorPreset.focusRingColor, width: 2 });
       }
     },
-    [sizePreset, colorPreset, channel, isSelected]
+    [sizePreset, colorPreset, channel, isSelected, variantColors]
   );
 
   // Draw thumb

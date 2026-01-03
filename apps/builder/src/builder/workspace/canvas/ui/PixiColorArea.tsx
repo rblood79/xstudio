@@ -16,8 +16,9 @@ import type { Graphics as PixiGraphics } from 'pixi.js';
 import type { Element } from '@/types/core/store.types';
 import {
   getColorAreaSizePreset,
-  getColorAreaColorPreset,
+  getVariantColors,
 } from '../utils/cssVariableReader';
+import { useThemeColors } from '../hooks/useThemeColors';
 
 export interface PixiColorAreaProps {
   element: Element;
@@ -42,9 +43,25 @@ export function PixiColorArea({
   const xValue = (props.xValue as number) ?? 0.7;
   const yValue = (props.yValue as number) ?? 0.3;
 
+  // 🚀 테마 색상 동적 로드
+  const themeColors = useThemeColors();
+
   // Get presets from CSS
   const sizePreset = useMemo(() => getColorAreaSizePreset(size), [size]);
-  const colorPreset = useMemo(() => getColorAreaColorPreset(variant), [variant]);
+
+  // 🚀 variant에 따른 테마 색상
+  const variantColors = useMemo(
+    () => getVariantColors(variant, themeColors),
+    [variant, themeColors]
+  );
+
+  // 색상 프리셋 값들 (테마 색상 적용)
+  const colorPreset = useMemo(() => ({
+    borderColor: 0xd1d5db,
+    focusRingColor: variantColors.bg,
+    thumbBorderColor: 0xffffff,
+    thumbInnerBorderColor: 0xcad3dc,
+  }), [variantColors]);
 
   // Calculate thumb position
   const thumbX = xValue * sizePreset.width;

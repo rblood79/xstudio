@@ -16,8 +16,9 @@ import type { Graphics as PixiGraphics } from 'pixi.js';
 import type { Element } from '@/types/core/store.types';
 import {
   getColorSwatchSizePreset,
-  getColorSwatchColorPreset,
+  getVariantColors,
 } from '../utils/cssVariableReader';
+import { useThemeColors } from '../hooks/useThemeColors';
 
 export interface PixiColorSwatchProps {
   element: Element;
@@ -28,9 +29,11 @@ export interface PixiColorSwatchProps {
 
 /**
  * Parse color string to hex number
+ * @param color - CSS color string (hex or rgb)
+ * @param fallback - Fallback hex color value
  */
-function parseColor(color: string | undefined): number {
-  if (!color) return 0x3b82f6; // Default blue
+function parseColor(color: string | undefined, fallback: number): number {
+  if (!color) return fallback;
 
   if (color.startsWith('#')) {
     return parseInt(color.slice(1), 16);
@@ -42,7 +45,7 @@ function parseColor(color: string | undefined): number {
       return (r << 16) | (g << 8) | b;
     }
   }
-  return 0x3b82f6;
+  return fallback;
 }
 
 /**
@@ -59,12 +62,27 @@ export function PixiColorSwatch({
   const size = (props.size as string) || 'md';
   const color = props.color as string | undefined;
 
+  // 🚀 테마 색상 동적 로드
+  const themeColors = useThemeColors();
+
   // Get presets from CSS
   const sizePreset = useMemo(() => getColorSwatchSizePreset(size), [size]);
-  const colorPreset = useMemo(() => getColorSwatchColorPreset(variant), [variant]);
 
-  // Parse color value
-  const fillColor = useMemo(() => parseColor(color), [color]);
+  // 🚀 variant에 따른 테마 색상
+  const variantColors = useMemo(
+    () => getVariantColors(variant, themeColors),
+    [variant, themeColors]
+  );
+
+  // 색상 프리셋 값들 (테마 색상 적용)
+  const colorPreset = useMemo(() => ({
+    borderColor: 0xd1d5db,
+    selectedBorderColor: variantColors.bg,
+    checkerColor: 0xe5e7eb,
+  }), [variantColors]);
+
+  // Parse color value (fallback to theme color)
+  const fillColor = useMemo(() => parseColor(color, variantColors.bg), [color, variantColors]);
 
   // Draw swatch
   const drawSwatch = useCallback(

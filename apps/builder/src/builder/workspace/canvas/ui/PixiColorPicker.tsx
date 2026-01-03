@@ -16,8 +16,9 @@ import type { Graphics as PixiGraphics, TextStyle } from 'pixi.js';
 import type { Element } from '@/types/core/store.types';
 import {
   getColorPickerSizePreset,
-  getColorPickerColorPreset,
+  getVariantColors,
 } from '../utils/cssVariableReader';
+import { useThemeColors } from '../hooks/useThemeColors';
 
 export interface PixiColorPickerProps {
   element: Element;
@@ -43,9 +44,29 @@ export function PixiColorPicker({
   const brightness = (props.brightness as number) ?? 0.7;
   const alpha = (props.alpha as number) ?? 1;
 
+  // 🚀 테마 색상 동적 로드
+  const themeColors = useThemeColors();
+
   // Get presets from CSS
   const sizePreset = useMemo(() => getColorPickerSizePreset(size), [size]);
-  const colorPreset = useMemo(() => getColorPickerColorPreset(variant), [variant]);
+
+  // 🚀 variant에 따른 테마 색상
+  const variantColors = useMemo(
+    () => getVariantColors(variant, themeColors),
+    [variant, themeColors]
+  );
+
+  // 색상 프리셋 값들 (테마 색상 적용)
+  const colorPreset = useMemo(() => ({
+    backgroundColor: 0xffffff,
+    borderColor: 0xd1d5db,
+    focusRingColor: variantColors.bg,
+    thumbBorderColor: 0xffffff,
+    thumbInnerBorderColor: 0xcad3dc,
+    labelColor: variantColors.text,
+    sliderBorderColor: 0xcad3dc,
+    checkerColor: 0xe5e7eb,
+  }), [variantColors]);
 
   // Calculate dimensions
   const containerWidth = sizePreset.areaSize + sizePreset.padding * 2;
@@ -96,9 +117,9 @@ export function PixiColorPicker({
 
       // Border
       g.roundRect(0, 0, sizePreset.areaSize, sizePreset.areaSize, 4);
-      g.stroke({ color: 0xcad3dc, width: 1 });
+      g.stroke({ color: colorPreset.sliderBorderColor, width: 1 });
     },
-    [sizePreset, hue]
+    [sizePreset, colorPreset, hue]
   );
 
   // Draw area thumb
@@ -131,9 +152,9 @@ export function PixiColorPicker({
       }
 
       g.roundRect(0, 0, sizePreset.sliderWidth, sizePreset.sliderHeight, 4);
-      g.stroke({ color: 0xcad3dc, width: 1 });
+      g.stroke({ color: colorPreset.sliderBorderColor, width: 1 });
     },
-    [sizePreset]
+    [sizePreset, colorPreset]
   );
 
   // Draw alpha slider
@@ -149,7 +170,7 @@ export function PixiColorPicker({
           g.rect(x + checkerSize, y + checkerSize, checkerSize, checkerSize);
         }
       }
-      g.fill({ color: 0xe5e7eb });
+      g.fill({ color: colorPreset.checkerColor });
 
       // Color gradient overlay
       const segments = 8;
@@ -161,9 +182,9 @@ export function PixiColorPicker({
       }
 
       g.roundRect(0, 0, sizePreset.sliderWidth, sizePreset.sliderHeight, 4);
-      g.stroke({ color: 0xcad3dc, width: 1 });
+      g.stroke({ color: colorPreset.sliderBorderColor, width: 1 });
     },
-    [sizePreset, currentColor]
+    [sizePreset, colorPreset, currentColor]
   );
 
   // Draw slider thumb
@@ -191,16 +212,16 @@ export function PixiColorPicker({
           g.rect(x + checkerSize, y + checkerSize, checkerSize, checkerSize);
         }
       }
-      g.fill({ color: 0xe5e7eb });
+      g.fill({ color: colorPreset.checkerColor });
 
       // Current color
       g.roundRect(0, 0, sizePreset.swatchSize, sizePreset.swatchSize, 4);
       g.fill({ color: currentColor, alpha });
 
       g.roundRect(0, 0, sizePreset.swatchSize, sizePreset.swatchSize, 4);
-      g.stroke({ color: 0xcad3dc, width: 1 });
+      g.stroke({ color: colorPreset.sliderBorderColor, width: 1 });
     },
-    [sizePreset, currentColor, alpha]
+    [sizePreset, colorPreset, currentColor, alpha]
   );
 
   // Text style

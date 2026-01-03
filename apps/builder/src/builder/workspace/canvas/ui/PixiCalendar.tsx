@@ -16,8 +16,9 @@ import type { Graphics as PixiGraphics, TextStyle } from 'pixi.js';
 import type { Element } from '@/types/core/store.types';
 import {
   getCalendarSizePreset,
-  getCalendarColorPreset,
+  getVariantColors,
 } from '../utils/cssVariableReader';
+import { useThemeColors } from '../hooks/useThemeColors';
 
 export interface PixiCalendarProps {
   element: Element;
@@ -43,9 +44,32 @@ export function PixiCalendar({
   const size = (props.size as string) || 'md';
   const value = (props.value as string) || '';
 
+  // 🚀 테마 색상 동적 로드
+  const themeColors = useThemeColors();
+
   // Get presets from CSS
   const sizePreset = useMemo(() => getCalendarSizePreset(size), [size]);
-  const colorPreset = useMemo(() => getCalendarColorPreset(variant), [variant]);
+
+  // 🚀 variant에 따른 테마 색상
+  const variantColors = useMemo(
+    () => getVariantColors(variant, themeColors),
+    [variant, themeColors]
+  );
+
+  // 색상 프리셋 값들 (테마 색상 적용)
+  const colorPreset = useMemo(() => ({
+    backgroundColor: 0xffffff,
+    borderColor: 0xd1d5db,
+    textColor: variantColors.text,
+    headerColor: variantColors.text,
+    weekdayColor: 0x6b7280,
+    selectedBgColor: variantColors.bg,
+    selectedTextColor: 0xffffff,
+    todayBorderColor: variantColors.bg,
+    hoverBgColor: 0xf3f4f6,
+    outsideMonthColor: 0x9ca3af,
+    focusRingColor: variantColors.bg,
+  }), [variantColors]);
 
   // State for displayed month (today is stable - only computed once on mount)
   const today = useMemo(() => new Date(), []);
@@ -141,10 +165,10 @@ export function PixiCalendar({
       g.fill({ color: colorPreset.backgroundColor });
       g.stroke({ color: colorPreset.borderColor, width: 1 });
 
-      // Selection indicator
+      // Selection indicator - 🚀 테마 색상 사용
       if (isSelected) {
         g.roundRect(-2, -2, calendarWidth + 4, calendarHeight + 4, sizePreset.borderRadius + 2);
-        g.stroke({ color: 0x3b82f6, width: 2 });
+        g.stroke({ color: colorPreset.focusRingColor, width: 2 });
       }
     },
     [calendarWidth, calendarHeight, sizePreset, colorPreset, isSelected]

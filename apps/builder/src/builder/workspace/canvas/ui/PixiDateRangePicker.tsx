@@ -16,10 +16,10 @@ import type { Graphics as PixiGraphics, TextStyle } from 'pixi.js';
 import type { Element } from '@/types/core/store.types';
 import {
   getDateRangePickerSizePreset,
-  getDateRangePickerColorPreset,
   getCalendarSizePreset,
-  getCalendarColorPreset,
+  getVariantColors,
 } from '../utils/cssVariableReader';
+import { useThemeColors } from '../hooks/useThemeColors';
 
 export interface PixiDateRangePickerProps {
   element: Element;
@@ -48,11 +48,41 @@ export function PixiDateRangePicker({
   const endValue = (props.endValue as string) || (props.end as string) || '';
   const isOpen = (props.isOpen as boolean) ?? true;
 
+  // 🚀 테마 색상 동적 로드
+  const themeColors = useThemeColors();
+
   // Get presets from CSS
   const sizePreset = useMemo(() => getDateRangePickerSizePreset(size), [size]);
-  const colorPreset = useMemo(() => getDateRangePickerColorPreset(variant), [variant]);
   const calendarSizePreset = useMemo(() => getCalendarSizePreset(size), [size]);
-  const calendarColorPreset = useMemo(() => getCalendarColorPreset(variant), [variant]);
+
+  // 🚀 variant에 따른 테마 색상
+  const variantColors = useMemo(
+    () => getVariantColors(variant, themeColors),
+    [variant, themeColors]
+  );
+
+  // 색상 프리셋 값들 (테마 색상 적용)
+  const colorPreset = useMemo(() => ({
+    fieldBackgroundColor: 0xffffff,
+    fieldBorderColor: 0xd1d5db,
+    focusBorderColor: variantColors.bg,
+    fieldTextColor: variantColors.text,
+    fieldPlaceholderColor: 0x9ca3af,
+    separatorColor: 0x6b7280,
+    popoverBorderColor: 0xd1d5db,
+    rangeBgColor: (variantColors.bg & 0xffffff) | 0x20000000, // 12.5% opacity approximation
+  }), [variantColors]);
+
+  // 캘린더 색상 프리셋 (테마 색상 적용)
+  const calendarColorPreset = useMemo(() => ({
+    backgroundColor: 0xffffff,
+    textColor: variantColors.text,
+    weekdayColor: 0x6b7280,
+    selectedBgColor: variantColors.bg,
+    selectedTextColor: 0xffffff,
+    todayBorderColor: variantColors.bg,
+    outsideMonthColor: 0x9ca3af,
+  }), [variantColors]);
 
   // State
   const today = useMemo(() => new Date(), []);
