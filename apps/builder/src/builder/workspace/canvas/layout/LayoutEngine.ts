@@ -12,7 +12,7 @@
 import type { Element } from '../../../../types/core/store.types';
 import { parsePadding } from '../sprites/paddingUtils';
 import { CanvasTextMetrics, TextStyle, type TextStyleFontWeight } from 'pixi.js';
-import { getRadioSizePreset, getTextFieldSizePreset } from '../utils/cssVariableReader';
+import { getRadioSizePreset, getTextFieldSizePreset, getPanelSizePreset } from '../utils/cssVariableReader';
 
 // yoga-layout v3.2.1: enums are directly exported from 'yoga-layout/load'
 import {
@@ -1040,10 +1040,34 @@ function createYogaNode(
 
   // Padding (shorthand + 개별 값 모두 지원)
   const padding = parsePadding(style as import('../sprites/styleConverter').CSSStyle | undefined);
-  if (padding.top > 0) node.setPadding(Edge.Top, padding.top);
-  if (padding.right > 0) node.setPadding(Edge.Right, padding.right);
-  if (padding.bottom > 0) node.setPadding(Edge.Bottom, padding.bottom);
-  if (padding.left > 0) node.setPadding(Edge.Left, padding.left);
+
+  // 🚀 Panel 요소: CSS 구조 반영
+  // .panel-title { padding; font-size; border-bottom }
+  // .panel-content { padding: var(--spacing-md); }
+  // children이 panel-content 영역에 배치되도록 함
+  let panelTitleOffset = 0;
+  let panelContentPadding = 0;
+  if (element.tag === 'Panel') {
+    const panelSize = (element.props?.size as string) || 'md';
+    const sizePreset = getPanelSizePreset(panelSize);
+    // content padding (CSS .panel-content { padding })
+    panelContentPadding = sizePreset.contentPadding;
+    // title이 있으면 title 높이 추가
+    if (element.props?.title) {
+      // title 높이 = font-size + paddingY * 2 + border(1px)
+      panelTitleOffset = sizePreset.titleFontSize + sizePreset.titlePaddingY * 2 + 1;
+    }
+  }
+
+  const effectivePaddingTop = padding.top + panelTitleOffset + panelContentPadding;
+  const effectivePaddingRight = padding.right + panelContentPadding;
+  const effectivePaddingBottom = padding.bottom + panelContentPadding;
+  const effectivePaddingLeft = padding.left + panelContentPadding;
+
+  if (effectivePaddingTop > 0) node.setPadding(Edge.Top, effectivePaddingTop);
+  if (effectivePaddingRight > 0) node.setPadding(Edge.Right, effectivePaddingRight);
+  if (effectivePaddingBottom > 0) node.setPadding(Edge.Bottom, effectivePaddingBottom);
+  if (effectivePaddingLeft > 0) node.setPadding(Edge.Left, effectivePaddingLeft);
 
   // Flexbox Container 속성
   if (style?.display === 'flex') {
