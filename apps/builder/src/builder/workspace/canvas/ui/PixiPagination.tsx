@@ -17,7 +17,9 @@ import type { Element } from '@/types/core/store.types';
 import {
   getPaginationSizePreset,
   getPaginationColorPreset,
+  getVariantColors,
 } from '../utils/cssVariableReader';
+import { useThemeColors } from '../hooks/useThemeColors';
 
 export interface PixiPaginationProps {
   element: Element;
@@ -45,6 +47,15 @@ export function PixiPagination({
   // Get presets from CSS
   const sizePreset = useMemo(() => getPaginationSizePreset(size), [size]);
   const colorPreset = useMemo(() => getPaginationColorPreset(variant), [variant]);
+
+  // 🚀 테마 색상 동적 로드
+  const themeColors = useThemeColors();
+
+  // 🚀 variant에 따른 테마 색상
+  const variantColors = useMemo(
+    () => getVariantColors(variant, themeColors),
+    [variant, themeColors]
+  );
 
   // Calculate visible pages
   const getVisiblePages = () => {
@@ -122,10 +133,10 @@ export function PixiPagination({
       g.clear();
       if (isSelected) {
         g.roundRect(-2, -2, totalWidth + 4, containerHeight + 4, sizePreset.borderRadius + 2);
-        g.stroke({ color: 0x3b82f6, width: 2 });
+        g.stroke({ color: variantColors.bg, width: 2 });
       }
     },
-    [totalWidth, containerHeight, sizePreset, isSelected]
+    [totalWidth, containerHeight, sizePreset, isSelected, variantColors.bg]
   );
 
   // Text styles

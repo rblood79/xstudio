@@ -17,7 +17,9 @@ import type { Element } from '@/types/core/store.types';
 import {
   getSkeletonSizePreset,
   getSkeletonColorPreset,
+  getVariantColors,
 } from '../utils/cssVariableReader';
+import { useThemeColors } from '../hooks/useThemeColors';
 
 export interface PixiSkeletonProps {
   element: Element;
@@ -43,6 +45,15 @@ export function PixiSkeleton({
   // Get presets from CSS
   const sizePreset = useMemo(() => getSkeletonSizePreset(size), [size]);
   const colorPreset = useMemo(() => getSkeletonColorPreset(variant), [variant]);
+
+  // 🚀 테마 색상 동적 로드
+  const themeColors = useThemeColors();
+
+  // 🚀 variant에 따른 테마 색상
+  const variantColors = useMemo(
+    () => getVariantColors(variant, themeColors),
+    [variant, themeColors]
+  );
 
   // Calculate dimensions based on variant
   const getSkeletonDimensions = () => {
@@ -144,14 +155,14 @@ export function PixiSkeleton({
       if (isSelected) {
         if (dimensions.isCircle) {
           g.circle(dimensions.width / 2, dimensions.height / 2, dimensions.width / 2 + 4);
-          g.stroke({ color: 0x3b82f6, width: 2 });
+          g.stroke({ color: variantColors.bg, width: 2 });
         } else {
           g.roundRect(-2, -2, dimensions.width + 4, dimensions.height + 4, sizePreset.borderRadius + 2);
-          g.stroke({ color: 0x3b82f6, width: 2 });
+          g.stroke({ color: variantColors.bg, width: 2 });
         }
       }
     },
-    [dimensions, sizePreset, colorPreset, skeletonVariant, isSelected]
+    [dimensions, sizePreset, colorPreset, skeletonVariant, isSelected, variantColors.bg]
   );
 
   // Draw shimmer effect overlay (static representation)

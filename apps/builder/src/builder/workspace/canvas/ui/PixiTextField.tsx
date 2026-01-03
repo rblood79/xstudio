@@ -21,7 +21,9 @@ import {
   getTextFieldColorPreset,
   getLabelStylePreset,
   getDescriptionStylePreset,
+  getVariantColors,
 } from '../utils/cssVariableReader';
+import { useThemeColors } from '../hooks/useThemeColors';
 
 export interface PixiTextFieldProps {
   element: Element;
@@ -62,6 +64,15 @@ export function PixiTextField({
   const labelPreset = useMemo(() => getLabelStylePreset(size), [size]);
   const descPreset = useMemo(() => getDescriptionStylePreset(size), [size]);
 
+  // 🚀 테마 색상 동적 로드
+  const themeColors = useThemeColors();
+
+  // 🚀 variant에 따른 테마 색상
+  const variantColors = useMemo(
+    () => getVariantColors(variant, themeColors),
+    [variant, themeColors]
+  );
+
   // 🚀 Phase 19: flexDirection 지원 (row/column)
   const flexDirection = useMemo(() => {
     const dir = style?.flexDirection;
@@ -101,10 +112,10 @@ export function PixiTextField({
       // Selection indicator
       if (isSelected) {
         g.roundRect(-2, -2, fieldWidth + 4, sizePreset.height + 4, sizePreset.borderRadius + 2);
-        g.stroke({ color: colorPreset.focusBorderColor, width: 2 });
+        g.stroke({ color: variantColors.bg, width: 2 });
       }
     },
-    [fieldWidth, sizePreset, colorPreset, isSelected, isDisabled, isInvalid]
+    [fieldWidth, sizePreset, colorPreset, isSelected, isDisabled, isInvalid, variantColors.bg]
   );
 
   // Text styles - 🚀 Phase 19: .react-aria-Label 클래스에서 스타일 읽기

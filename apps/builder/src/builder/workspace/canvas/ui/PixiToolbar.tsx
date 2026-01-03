@@ -17,7 +17,9 @@ import type { Element } from '@/types/core/store.types';
 import {
   getToolbarSizePreset,
   getToolbarColorPreset,
+  getVariantColors,
 } from '../utils/cssVariableReader';
+import { useThemeColors } from '../hooks/useThemeColors';
 
 export interface PixiToolbarProps {
   element: Element;
@@ -44,6 +46,15 @@ export function PixiToolbar({
   const sizePreset = useMemo(() => getToolbarSizePreset(size), [size]);
   const colorPreset = useMemo(() => getToolbarColorPreset(variant), [variant]);
 
+  // 🚀 테마 색상 동적 로드
+  const themeColors = useThemeColors();
+
+  // 🚀 variant에 따른 테마 색상
+  const variantColors = useMemo(
+    () => getVariantColors(variant, themeColors),
+    [variant, themeColors]
+  );
+
   // Calculate dimensions based on orientation
   const isHorizontal = orientation === 'horizontal';
   const toolbarWidth = isHorizontal
@@ -66,10 +77,10 @@ export function PixiToolbar({
       // Selection indicator
       if (isSelected) {
         g.roundRect(-2, -2, toolbarWidth + 4, toolbarHeight + 4, sizePreset.borderRadius + 2);
-        g.stroke({ color: 0x3b82f6, width: 2 });
+        g.stroke({ color: variantColors.bg, width: 2 });
       }
     },
-    [toolbarWidth, toolbarHeight, sizePreset, colorPreset, isSelected]
+    [toolbarWidth, toolbarHeight, sizePreset, colorPreset, isSelected, variantColors.bg]
   );
 
   // Draw toolbar items placeholder
