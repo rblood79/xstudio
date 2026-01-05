@@ -14,7 +14,7 @@
 
 import { useExtend } from '@pixi/react';
 import { PIXI_COMPONENTS } from '../pixiSetup';
-import { memo, useCallback, useEffect, useMemo, useState, lazy, Suspense } from "react";
+import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import {
   Graphics as PixiGraphics,
   TextStyle,
@@ -26,16 +26,9 @@ import { parseCSSSize } from "../sprites/styleConverter";
 import {
   getTabsSizePreset,
   getTabsColorPreset,
-  getPanelSizePreset,
 } from "../utils/cssVariableReader";
 import { useStore } from "../../../stores";
 import { PixiPanel } from "./PixiPanel";
-
-// 🚀 순환 참조 방지: ElementSprite를 lazy import
-// ElementSprite → PixiTabs → ElementSprite 순환을 방지
-const LazyElementSprite = lazy(() =>
-  import("../sprites/ElementSprite").then((mod) => ({ default: mod.ElementSprite }))
-);
 
 // ============================================
 // Types
@@ -283,13 +276,8 @@ export const PixiTabs = memo(function PixiTabs({
     return panelItems[selectedTabIndex];
   }, [selectedTabIndex, panelItems]);
 
-  // 🚀 선택된 Panel의 자식 요소들 가져오기
-  const panelChildren = useMemo(() => {
-    if (!selectedPanel) return [];
-    return elements
-      .filter((el) => el.parent_id === selectedPanel.id)
-      .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
-  }, [elements, selectedPanel]);
+  // 🚀 Panel 자손들은 ElementsLayer에서 렌더링됨 (layoutPosition 사용)
+  // PixiTabs에서는 Panel 자체만 렌더링
 
   // Panel 위치: TabList 아래 (horizontal) 또는 오른쪽 (vertical)
   // CSS 동기화: .react-aria-TabPanel { padding: 16px }
@@ -306,17 +294,6 @@ export const PixiTabs = memo(function PixiTabs({
   const panelContainerWidth = isVertical
     ? tabsWidth - tabsLayout.totalWidth - panelPadding * 2
     : tabsWidth - panelPadding * 2;
-
-  // 🚀 Panel의 size preset 가져오기 (contentPadding 계산용)
-  const panelProps = selectedPanel?.props as Record<string, unknown> | undefined;
-  const panelSize = (panelProps?.size as string) || "md";
-  const panelSizePreset = useMemo(() => getPanelSizePreset(panelSize), [panelSize]);
-
-  // 🚀 Panel title 높이 계산
-  const panelTitle = panelProps?.title as string | undefined;
-  const panelTitleHeight = panelTitle
-    ? panelSizePreset.titleFontSize + panelSizePreset.titlePaddingY * 2
-    : 0;
 
   return (
     <pixiContainer x={posX} y={posY}>
@@ -366,6 +343,7 @@ export const PixiTabs = memo(function PixiTabs({
       })}
 
       {/* 선택된 TabPanel 렌더링 */}
+      {/* 🚀 Panel 자손들은 ElementsLayer에서 layoutPosition과 함께 렌더링됨 */}
       {selectedPanel && (
         <pixiContainer x={panelOffsetX} y={panelOffsetY}>
           <PixiPanel
@@ -374,24 +352,6 @@ export const PixiTabs = memo(function PixiTabs({
             onClick={onClick}
             containerWidth={panelContainerWidth}
           />
-
-          {/* 🚀 Panel 자식 요소들 렌더링 */}
-          {/* Panel의 content 영역 내부에 위치 (titleHeight + contentPadding 적용) */}
-          <pixiContainer
-            x={panelSizePreset.contentPadding}
-            y={panelTitleHeight + panelSizePreset.contentPadding}
-          >
-            <Suspense fallback={null}>
-              {panelChildren.map((child) => (
-                <LazyElementSprite
-                  key={child.id}
-                  element={child}
-                  onClick={onClick}
-                  renderInTabsPanel={true}
-                />
-              ))}
-            </Suspense>
-          </pixiContainer>
         </pixiContainer>
       )}
     </pixiContainer>

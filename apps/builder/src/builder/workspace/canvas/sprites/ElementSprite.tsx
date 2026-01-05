@@ -120,8 +120,6 @@ export interface ElementSpriteProps {
   onClick?: (elementId: string, modifiers?: ClickModifiers) => void;
   onDoubleClick?: (elementId: string) => void;
   onChange?: (elementId: string, value: unknown) => void;
-  /** PixiTabs 내부에서 Panel 자식으로 렌더링되는 경우 true (isDescendantOfTabsPanel 체크 건너뜀) */
-  renderInTabsPanel?: boolean;
 }
 
 // ============================================
@@ -379,7 +377,6 @@ export const ElementSprite = memo(function ElementSprite({
   onClick,
   onDoubleClick,
   onChange,
-  renderInTabsPanel = false,
 }: ElementSpriteProps) {
   useExtend(PIXI_COMPONENTS);
 
@@ -429,30 +426,11 @@ export const ElementSprite = memo(function ElementSprite({
 
   // 🚀 Tabs 자식 요소 처리:
   // - Tab 요소는 PixiTabs에서 직접 렌더링하므로 여기서 skip
-  // - Panel(TabPanel) 요소도 PixiTabs에서 visibility 제어하므로 skip
-  // - Panel의 자손 요소들도 PixiTabs에서 렌더링하므로 skip
+  // - Panel(TabPanel) 요소도 PixiTabs에서 렌더링하므로 skip
+  // - Panel의 자손 요소들은 ElementsLayer에서 렌더링됨 (layoutPosition 사용)
   const isTabsChild = parentElement?.tag === 'Tabs';
   const isTabElement = element.tag === 'Tab';
   const isPanelInTabs = element.tag === 'Panel' && isTabsChild;
-
-  // 🚀 조상 중에 Tabs > Panel이 있는지 확인 (Panel의 자손인지)
-  const isDescendantOfTabsPanel = useStore((state) => {
-    let currentId = element.parent_id;
-    while (currentId) {
-      const ancestor = state.elementsMap.get(currentId);
-      if (!ancestor) break;
-
-      // Panel을 찾았으면, 그 Panel의 부모가 Tabs인지 확인
-      if (ancestor.tag === 'Panel') {
-        const panelParent = state.elementsMap.get(ancestor.parent_id || '');
-        if (panelParent?.tag === 'Tabs') {
-          return true; // Tabs > Panel > ... > element
-        }
-      }
-      currentId = ancestor.parent_id;
-    }
-    return false;
-  });
 
   // Tab 요소는 PixiTabs에서 렌더링하므로 skip
   if (isTabElement && isTabsChild) {
@@ -464,11 +442,8 @@ export const ElementSprite = memo(function ElementSprite({
     return null;
   }
 
-  // 🚀 Panel(Tabs 자식)의 자손 요소도 PixiTabs에서 렌더링하므로 skip
-  // 단, renderInTabsPanel=true인 경우는 PixiTabs 내부에서 호출된 것이므로 렌더링 허용
-  if (isDescendantOfTabsPanel && !renderInTabsPanel) {
-    return null;
-  }
+  // 🚀 Panel의 자손 요소들은 ElementsLayer에서 layoutPosition과 함께 렌더링됨
+  // selectionBox와 렌더링 위치가 일치하도록 함
 
   switch (spriteType) {
     // UI 컴포넌트 (Phase 11 B2.4)
