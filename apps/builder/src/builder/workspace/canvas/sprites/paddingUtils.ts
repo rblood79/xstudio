@@ -124,3 +124,82 @@ export function getTotalPadding(padding: PaddingValues): { horizontal: number; v
 export function hasPadding(padding: PaddingValues): boolean {
   return padding.top > 0 || padding.right > 0 || padding.bottom > 0 || padding.left > 0;
 }
+
+// ============================================
+// Border Parsing
+// ============================================
+
+export interface BorderWidthValues {
+  top: number;
+  right: number;
+  bottom: number;
+  left: number;
+}
+
+/**
+ * CSS borderWidth shorthand 값 파싱
+ *
+ * 지원 형식:
+ * - "2px" → 모든 방향 2px
+ * - "2px 4px" → 상하 2px, 좌우 4px
+ * - "2px 4px 3px" → 상 2px, 좌우 4px, 하 3px
+ * - "2px 4px 3px 1px" → 상 2px, 우 4px, 하 3px, 좌 1px
+ */
+function parseBorderWidthShorthand(value: string | number | undefined): BorderWidthValues | null {
+  if (value === undefined || value === null) return null;
+
+  if (typeof value === 'number') {
+    return { top: value, right: value, bottom: value, left: value };
+  }
+
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+
+  const parts = trimmed.split(/\s+/).map((p) => parseCSSSize(p, undefined, 0));
+
+  switch (parts.length) {
+    case 1:
+      return { top: parts[0], right: parts[0], bottom: parts[0], left: parts[0] };
+    case 2:
+      return { top: parts[0], right: parts[1], bottom: parts[0], left: parts[1] };
+    case 3:
+      return { top: parts[0], right: parts[1], bottom: parts[2], left: parts[1] };
+    case 4:
+      return { top: parts[0], right: parts[1], bottom: parts[2], left: parts[3] };
+    default:
+      return null;
+  }
+}
+
+/**
+ * CSS 스타일에서 borderWidth 값 추출
+ *
+ * 우선순위:
+ * 1. 개별 값 (borderTopWidth, borderRightWidth, borderBottomWidth, borderLeftWidth)
+ * 2. shorthand 값 (borderWidth)
+ * 3. 기본값 (0)
+ */
+export function parseBorderWidth(style: CSSStyle | undefined, defaultValue = 0): BorderWidthValues {
+  if (!style) {
+    return { top: defaultValue, right: defaultValue, bottom: defaultValue, left: defaultValue };
+  }
+
+  // shorthand 먼저 파싱
+  const shorthand = parseBorderWidthShorthand(style.borderWidth as string | number | undefined);
+  const base = shorthand || { top: defaultValue, right: defaultValue, bottom: defaultValue, left: defaultValue };
+
+  // 개별 값으로 오버라이드
+  return {
+    top: style.borderTopWidth !== undefined ? parseCSSSize(style.borderTopWidth, undefined, base.top) : base.top,
+    right: style.borderRightWidth !== undefined ? parseCSSSize(style.borderRightWidth, undefined, base.right) : base.right,
+    bottom: style.borderBottomWidth !== undefined ? parseCSSSize(style.borderBottomWidth, undefined, base.bottom) : base.bottom,
+    left: style.borderLeftWidth !== undefined ? parseCSSSize(style.borderLeftWidth, undefined, base.left) : base.left,
+  };
+}
+
+/**
+ * borderWidth가 있는지 확인
+ */
+export function hasBorderWidth(border: BorderWidthValues): boolean {
+  return border.top > 0 || border.right > 0 || border.bottom > 0 || border.left > 0;
+}

@@ -24,6 +24,10 @@ export interface CSSStyle {
   backgroundColor?: string;
   borderRadius?: number | string;
   borderWidth?: number | string;
+  borderTopWidth?: number | string;
+  borderRightWidth?: number | string;
+  borderBottomWidth?: number | string;
+  borderLeftWidth?: number | string;
   borderColor?: string;
   borderStyle?: string;
   opacity?: number | string;

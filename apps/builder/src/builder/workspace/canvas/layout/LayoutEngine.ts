@@ -10,7 +10,7 @@
  */
 
 import type { Element } from '../../../../types/core/store.types';
-import { parsePadding } from '../sprites/paddingUtils';
+import { parsePadding, parseBorderWidth } from '../sprites/paddingUtils';
 import { CanvasTextMetrics, TextStyle, type TextStyleFontWeight } from 'pixi.js';
 import { getRadioSizePreset, getTextFieldSizePreset, getPanelSizePreset, getCardSizePreset } from '../utils/cssVariableReader';
 
@@ -1116,6 +1116,14 @@ function createYogaNode(
   if (effectivePaddingBottom > 0) node.setPadding(Edge.Bottom, effectivePaddingBottom);
   if (effectivePaddingLeft > 0) node.setPadding(Edge.Left, effectivePaddingLeft);
 
+  // Border (shorthand + 개별 값 모두 지원)
+  // 🚀 Border는 Yoga 레이아웃에서 children 배치 시 offset으로 작용
+  const border = parseBorderWidth(style as import('../sprites/styleConverter').CSSStyle | undefined);
+  if (border.top > 0) node.setBorder(Edge.Top, border.top);
+  if (border.right > 0) node.setBorder(Edge.Right, border.right);
+  if (border.bottom > 0) node.setBorder(Edge.Bottom, border.bottom);
+  if (border.left > 0) node.setBorder(Edge.Left, border.left);
+
   // Flexbox Container 속성
   if (style?.display === 'flex') {
     node.setFlexDirection(toYogaFlexDirection(style.flexDirection));
@@ -1452,6 +1460,14 @@ export function calculateLayout(
   if (bodyPadding.right > 0) rootNode.setPadding(Edge.Right, bodyPadding.right);
   if (bodyPadding.bottom > 0) rootNode.setPadding(Edge.Bottom, bodyPadding.bottom);
   if (bodyPadding.left > 0) rootNode.setPadding(Edge.Left, bodyPadding.left);
+
+  // Border 적용 (shorthand + 개별 값 모두 지원)
+  // 🚀 Border는 Yoga 레이아웃에서 children 배치 시 offset으로 작용
+  const bodyBorder = parseBorderWidth(bodyStyle as import('../sprites/styleConverter').CSSStyle | undefined);
+  if (bodyBorder.top > 0) rootNode.setBorder(Edge.Top, bodyBorder.top);
+  if (bodyBorder.right > 0) rootNode.setBorder(Edge.Right, bodyBorder.right);
+  if (bodyBorder.bottom > 0) rootNode.setBorder(Edge.Bottom, bodyBorder.bottom);
+  if (bodyBorder.left > 0) rootNode.setBorder(Edge.Left, bodyBorder.left);
 
   // 노드 맵 생성
   const nodeMap = new Map<string, YogaNode>();
