@@ -291,6 +291,13 @@ const ElementsLayer = memo(function ElementsLayer({
     [elements]
   );
 
+  const bodyElement = useMemo(() => {
+    if (!currentPageId) return null;
+    return elements.find(
+      (el) => el.page_id === currentPageId && el.tag.toLowerCase() === "body"
+    ) ?? null;
+  }, [elements, currentPageId]);
+
   // 깊이 맵을 한 번 계산하여 정렬 비용 감소
   const depthMap = useMemo(() => {
     const cache = new Map<string, number>();
@@ -330,6 +337,28 @@ const ElementsLayer = memo(function ElementsLayer({
     });
   }, [elements, currentPageId]);
 
+  const pageChildrenMap = useMemo(() => {
+    const map = new Map<string | null, Element[]>();
+    const bodyId = bodyElement?.id ?? null;
+
+    for (const el of pageElements) {
+      const parentId = el.parent_id ?? bodyId;
+      const key = parentId ?? null;
+      const list = map.get(key);
+      if (list) {
+        list.push(el);
+      } else {
+        map.set(key, [el]);
+      }
+    }
+
+    for (const list of map.values()) {
+      list.sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+    }
+
+    return map;
+  }, [pageElements, bodyElement?.id]);
+
   // 깊이 + order_num 기준으로 정렬 (부모 먼저 → 자식 나중에 렌더링)
   // DOM 방식: 자식이 부모 위에 표시됨
   const sortedElements = useMemo(() => {
@@ -354,6 +383,54 @@ const ElementsLayer = memo(function ElementsLayer({
     enabled: true, // 필요시 비활성화 가능
   });
 
+  const renderIdSet = useMemo(() => {
+    const ids = new Set<string>();
+
+    for (const el of visibleElements) {
+      let current: Element | undefined = el;
+      while (current) {
+        if (ids.has(current.id)) break;
+        ids.add(current.id);
+        if (!current.parent_id) break;
+        current = elementById.get(current.parent_id);
+      }
+    }
+
+    return ids;
+  }, [visibleElements, elementById]);
+
+  const renderElementTree = useCallback((parentId: string | null) => {
+    const children = pageChildrenMap.get(parentId) ?? [];
+
+    return children.map((child) => {
+      if (!renderIdSet.has(child.id)) return null;
+
+      const layoutPos = layoutResult.positions.get(child.id);
+      const parentPos = parentId ? layoutResult.positions.get(parentId) : undefined;
+      const localX = layoutPos
+        ? layoutPos.x - (parentPos?.x ?? 0)
+        : 0;
+      const localY = layoutPos
+        ? layoutPos.y - (parentPos?.y ?? 0)
+        : 0;
+      const spriteLayout = layoutPos
+        ? { x: 0, y: 0, width: layoutPos.width, height: layoutPos.height }
+        : undefined;
+
+      return (
+        <pixiContainer key={child.id} x={localX} y={localY}>
+          <ElementSprite
+            element={child}
+            layoutPosition={spriteLayout}
+            onClick={onClick}
+            onDoubleClick={onDoubleClick}
+          />
+          {renderElementTree(child.id)}
+        </pixiContainer>
+      );
+    });
+  }, [pageChildrenMap, renderIdSet, layoutResult.positions, onClick, onDoubleClick]);
+
   return (
     <pixiContainer
       label="ElementsLayer"
@@ -361,16 +438,8 @@ const ElementsLayer = memo(function ElementsLayer({
       interactiveChildren={true}
     >
       {/* 🚀 성능 최적화: isSelected prop 제거 - 각 ElementSprite가 자체 구독 */}
-      {/* 🚀 Phase 11: visibleElements만 렌더링 (뷰포트 컬링) */}
-      {visibleElements.map((element) => (
-        <ElementSprite
-          key={element.id}
-          element={element}
-          layoutPosition={layoutResult.positions.get(element.id)}
-          onClick={onClick}
-          onDoubleClick={onDoubleClick}
-        />
-      ))}
+      {/* 🚀 Phase 11: visibleElements 기준으로 ancestor까지 포함한 계층 렌더링 */}
+      {renderElementTree(bodyElement?.id ?? null)}
     </pixiContainer>
   );
 });

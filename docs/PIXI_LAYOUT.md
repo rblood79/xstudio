@@ -60,6 +60,16 @@ const preset = getCardSizePreset(size);
 
 ---
 
+## 현재 진행 상황
+
+- Phase 1: 완료 (`import "@pixi/layout"` 추가, LayoutEngine setYoga 제거)
+- Phase 2: 완료 (Panel/Card layout 적용, panel-title padding 반영, card children offset 수정)
+- Phase 3: 진행 중 (Button/Badge 텍스트 측정은 localBounds로 교체, LayoutText 전환은 미완)
+- Phase 4: 진행 중 (CheckboxGroup/Radio/Input 내부 레이아웃 전환, item hit area는 기존 방식 유지)
+- Phase 5: 진행 중 (Tabs에서 TabList/Panel layout 적용, 텍스트 측정/엔진 제거는 미완)
+- Phase 6: 착수 (ElementsLayer를 계층 렌더링 + 로컬 오프셋 적용, LayoutEngine 유지)
+- Phase 7: 대기
+
 ## Phase 1: 인프라 설정 및 @pixi/layout 초기화
 
 ### 목표
@@ -96,6 +106,7 @@ const preset = getCardSizePreset(size);
 - `LayoutText` 텍스트 길이 변경 시 intrinsic size 반영 여부 확인
 - LayoutEngine 경로와 @pixi/layout 경로가 동시에 좌표를 덮어쓰지 않는지 확인
 - Yoga 로딩 관련 콘솔 에러/경고 없음 확인
+- **진행 현황:** 완료
 
 ---
 
@@ -135,6 +146,7 @@ const preset = getCardSizePreset(size);
 ### 위험/주의점
 - padding, gap 값이 기존과 동일해야 함
 - 기존 CSS 변수 preset과 @pixi/layout 스타일 값 매핑 필요
+- **진행 현황:** 완료 (Panel title padding 반영, Card children offset 보정 포함)
 
 ---
 
@@ -175,6 +187,7 @@ const preset = getCardSizePreset(size);
 ### 위험/주의점
 - @pixi/layout의 Text intrinsic size 계산이 CanvasTextMetrics와 동일한지 확인 필요
 - 폰트 로딩 타이밍 이슈 가능
+- **진행 현황:** 진행 중 (PixiButton/PixiBadge의 CanvasTextMetrics 제거 완료, LayoutText 전환 미완)
 
 ---
 
@@ -224,6 +237,7 @@ CheckboxGroup, RadioGroup, TextField 등 복잡한 폼 컴포넌트를 선언적
 - LayoutEngine의 `calculateRadioItemPositions()` 등이 자식 요소 절대 위치를 계산했음
 - @pixi/layout으로 전환 시 부모-자식 좌표계 변경 가능
 - Selection/hit area 계산에 영향 줄 수 있음
+- **진행 현황:** 진행 중 (CheckboxGroup/Radio/Input 내부 layout 적용, CheckboxItem/RadioItem hit area는 기존 방식 유지)
 
 ---
 
@@ -276,6 +290,7 @@ CheckboxGroup, RadioGroup, TextField 등 복잡한 폼 컴포넌트를 선언적
 - Tabs는 LayoutEngine에서 가장 복잡한 특수 처리를 받음
 - `applyOffsetToDescendants()`가 자손 요소들의 SelectionBox 위치에 영향
 - Panel 전환 애니메이션이 있다면 레이아웃 전환 시 깨질 수 있음
+- **진행 현황:** 진행 중 (TabList/Panel layout 적용 완료, 텍스트 측정/엔진 제거는 미완)
 
 ---
 
@@ -321,6 +336,7 @@ LayoutEngine.calculateLayout() 호출을 제거하고 @pixi/layout이 자동으�
 - **가장 위험한 Phase** - 핵심 렌더링 파이프라인 변경
 - layoutPosition 의존 코드가 많음 (라쏘 선택, 드래그, 리사이즈 등)
 - 점진적 전환 권장: 일부 요소만 먼저 테스트
+- **진행 현황:** 착수 (ElementsLayer 계층 렌더링 + 로컬 오프셋 적용 완료, LayoutEngine 유지)
 
 ---
 
@@ -367,6 +383,7 @@ LayoutEngine.calculateLayout() 호출을 제거하고 @pixi/layout이 자동으�
 ### 위험/주의점
 - 삭제 전 모든 Phase가 완벽히 작동하는지 확인 필수
 - Git에서 이전 코드 복구 가능하도록 커밋 관리
+- **진행 현황:** 대기
 
 ---
 
@@ -408,4 +425,4 @@ Phase 7: 정리 및 삭제 (낮은 위험)
 
 ---
 
-**이 계획에 동의하면 'Phase 1 시작'이라고 말씀해주세요.**
+**다음 작업은 Phase 6의 레이아웃 엔진 제거/Selection 연동 전환입니다.**
