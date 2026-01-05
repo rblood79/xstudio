@@ -12,7 +12,7 @@
 import type { Element } from '../../../../types/core/store.types';
 import { parsePadding, parseBorderWidth } from '../sprites/paddingUtils';
 import { CanvasTextMetrics, TextStyle, type TextStyleFontWeight } from 'pixi.js';
-import { getRadioSizePreset, getTextFieldSizePreset, getPanelSizePreset, getCardSizePreset } from '../utils/cssVariableReader';
+import { getRadioSizePreset, getTextFieldSizePreset, getPanelSizePreset, getCardSizePreset, getTabsSizePreset } from '../utils/cssVariableReader';
 
 // yoga-layout v3.2.1: enums are directly exported from 'yoga-layout/load'
 import {
@@ -794,6 +794,31 @@ function isCheckboxItemElement(element: Element, elements: Element[]): boolean {
 }
 
 /**
+ * 요소가 Tabs의 직접 자식 Tab 또는 Panel인지 확인
+ * Tab과 Panel만 Yoga 트리에서 제외 (PixiTabs에서 직접 레이아웃 관리)
+ * Panel의 자손들은 일반 레이아웃 시스템으로 처리 (selectionBox 정합성)
+ *
+ * 🚀 Tabs의 직접 자식만 제외하여 Tabs selectionBox 높이가
+ *    Tabs 자체의 minHeight(활성화된 Panel 기준)으로 계산되도록 함
+ */
+function isTabsChildElement(element: Element, elements: Element[]): boolean {
+  // Tab인 경우: 부모가 Tabs인지 확인
+  if (element.tag === 'Tab') {
+    const parent = elements.find((el) => el.id === element.parent_id);
+    return parent?.tag === 'Tabs';
+  }
+
+  // Panel인 경우: 부모가 Tabs인지 확인
+  if (element.tag === 'Panel') {
+    const parent = elements.find((el) => el.id === element.parent_id);
+    return parent?.tag === 'Tabs';
+  }
+
+  // Panel의 자손들은 Yoga 트리에 포함 (일반 레이아웃 시스템으로 처리)
+  return false;
+}
+
+/**
  * Checkbox 아이템의 intrinsic size 측정
  * = checkboxSize + gap + textWidth
  */
@@ -1025,6 +1050,68 @@ function createYogaNode(
     node.setWidthPercent(100);
   }
 
+  // 🚀 Tabs 요소: CSS .react-aria-Tabs { width: 100%; } 반영
+  // 명시적 width가 없으면 부모 너비의 100%로 설정
+  if (element.tag === 'Tabs' && !hasExplicitWidth) {
+    node.setWidthPercent(100);
+  }
+
+  // 🚀 Tabs 요소: minHeight 설정 (TabList + panelPadding*2 + 활성화된 Panel 높이)
+  // Panel들은 position: absolute로 설정되어 Tabs 높이에 영향 안 줌
+  if (element.tag === 'Tabs' && !style?.height && !style?.minHeight) {
+    const tabsProps = element.props as Record<string, unknown> | undefined;
+    const tabsSize = (tabsProps?.size as string) || 'md';
+    const sizePreset = getTabsSizePreset(tabsSize);
+    // TabList 높이: fontSize * lineHeight + paddingY * 2
+    const lineHeight = 1.4;
+    const tabListHeight = Math.ceil(sizePreset.fontSize * lineHeight) + sizePreset.tabPaddingY * 2;
+
+    // Tab, Panel 자식들 가져오기 (order_num 순서로 정렬)
+    const childTabs = elements
+      .filter((el) => el.parent_id === element.id && el.tag === 'Tab')
+      .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+    const childPanels = elements
+      .filter((el) => el.parent_id === element.id && el.tag === 'Panel')
+      .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+
+    // 활성화된 Tab 인덱스 찾기
+    const selectedKey = tabsProps?.selectedKey as string | undefined;
+    let selectedTabIndex = 0;
+    if (selectedKey && childTabs.length > 0) {
+      const idx = childTabs.findIndex((tab) => {
+        const tabProps = tab.props as Record<string, unknown> | undefined;
+        return tabProps?.tabId === selectedKey || tab.id === selectedKey;
+      });
+      if (idx >= 0) selectedTabIndex = idx;
+    }
+
+    // 활성화된 Panel의 높이 계산
+    let activePanelHeight = 64; // 기본 minHeight
+    if (childPanels.length > 0) {
+      const activePanel = childPanels[Math.min(selectedTabIndex, childPanels.length - 1)];
+      const panelProps = activePanel.props as Record<string, unknown> | undefined;
+      const panelStyle = activePanel.props?.style as CSSStyle | undefined;
+      const panelSize = (panelProps?.size as string) || 'md';
+      const panelSizePreset = getPanelSizePreset(panelSize);
+      const panelTitle = panelProps?.title as string | undefined;
+      const titleHeight = panelTitle
+        ? panelSizePreset.titleFontSize + panelSizePreset.titlePaddingY * 2
+        : 0;
+      const calculatedHeight = titleHeight + panelSizePreset.minHeight;
+      activePanelHeight = parseCSSValue(panelStyle?.height, calculatedHeight);
+    }
+
+    // 전체 minHeight = TabList + panelPaddingTop + Panel높이 + panelPaddingBottom
+    // CSS: .react-aria-TabPanel { padding: var(--spacing-lg); } → 상하 동일
+    const panelPaddingTop = sizePreset.panelPadding;
+    const panelPaddingBottom = sizePreset.panelPadding;
+    node.setMinHeight(tabListHeight + panelPaddingTop + activePanelHeight + panelPaddingBottom);
+  }
+
+  // 🚀 Tabs 자식 Panel: 활성화된 Panel만 Yoga 트리에 유지
+  // 비활성화된 Panel은 isTabsChildElement에서 제외됨
+  // 활성화된 Panel은 일반 레이아웃으로 참여하여 Tabs 높이에 영향을 줌
+
   // 🚀 Panel 요소: CSS .panel-content { min-height: 64px } 반영
   // 명시적 height/minHeight가 없으면 기본 min-height 설정
   // CSS box-sizing: border-box로 min-height에 padding이 포함됨
@@ -1201,6 +1288,13 @@ function buildYogaTree(
 
     // CheckboxGroup의 자식 Checkbox는 Yoga 트리에서 제외 (CheckboxGroup에서 렌더링)
     if (isCheckboxItemElement(child, elements)) {
+      visited.add(child.id);
+      continue;
+    }
+
+    // 🚀 Tabs의 자식 Tab만 Yoga 트리에서 제외 (PixiTabs에서 직접 렌더링)
+    // Panel(Tabs 자식)은 Yoga 트리에 포함하여 자식들의 selectionBox 정합성 유지
+    if (child.tag === 'Tab' && isTabsChildElement(child, elements)) {
       visited.add(child.id);
       continue;
     }
@@ -1392,6 +1486,184 @@ function calculateCheckboxItemPositions(
   }
 }
 
+/**
+ * Tabs 자식 요소(Tab, Panel) 위치 계산
+ *
+ * Tabs의 위치를 기준으로 각 Tab과 Panel의 위치를 계산합니다.
+ * - Tab: TabList 영역 내에 가로/세로 배치
+ * - Panel: TabList 아래(horizontal) 또는 오른쪽(vertical)에 배치
+ */
+function calculateTabsChildPositions(
+  elements: Element[],
+  positions: Map<string, LayoutPosition>
+): void {
+  // Tabs 요소들 찾기
+  const tabsElements = elements.filter((el) => el.tag === 'Tabs');
+
+  for (const tabs of tabsElements) {
+    const tabsPosition = positions.get(tabs.id);
+    if (!tabsPosition) continue;
+
+    const tabsProps = tabs.props as Record<string, unknown> | undefined;
+    const tabsStyle = tabs.props?.style as CSSStyle | undefined;
+
+    // orientation
+    const orientation = tabsProps?.orientation || 'horizontal';
+    const isVertical = orientation === 'vertical';
+
+    // size preset
+    const size = (tabsProps?.size as string) || 'md';
+    const sizePreset = getTabsSizePreset(size);
+
+    // Tab 자식들
+    const tabItems = elements
+      .filter((el) => el.parent_id === tabs.id && el.tag === 'Tab')
+      .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+
+    // Panel 자식들
+    const panelItems = elements
+      .filter((el) => el.parent_id === tabs.id && el.tag === 'Panel')
+      .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+
+    // Tab 크기 계산 (PixiTabs와 동일)
+    const lineHeight = 1.4;
+    const tabHeight = Math.ceil(sizePreset.fontSize * lineHeight) + sizePreset.tabPaddingY * 2;
+
+    // Tab 위치 계산
+    let currentX = 0;
+    let currentY = 0;
+    let tabListWidth = 0;
+    let tabListHeight = 0;
+
+    const textStyle = new TextStyle({
+      fontFamily: 'Pretendard, sans-serif',
+      fontSize: sizePreset.fontSize,
+      fontWeight: '500' as TextStyleFontWeight,
+    });
+
+    for (let i = 0; i < tabItems.length; i++) {
+      const tabItem = tabItems[i];
+      const tabProps = tabItem.props as Record<string, unknown> | undefined;
+      const tabText = String(tabProps?.children || tabProps?.text || tabProps?.title || 'Tab');
+
+      const metrics = CanvasTextMetrics.measureText(tabText, textStyle);
+      const tabWidth = metrics.width + sizePreset.tabPaddingX * 2;
+
+      // 위치 설정
+      const itemX = isVertical ? 0 : currentX;
+      const itemY = isVertical ? currentY : 0;
+
+      positions.set(tabItem.id, {
+        x: tabsPosition.x + itemX,
+        y: tabsPosition.y + itemY,
+        width: tabWidth,
+        height: tabHeight,
+      });
+
+      // 다음 Tab 위치 계산
+      if (isVertical) {
+        currentY += tabHeight;
+        tabListWidth = Math.max(tabListWidth, tabWidth);
+        tabListHeight = currentY;
+      } else {
+        currentX += tabWidth;
+        tabListWidth = currentX;
+        tabListHeight = Math.max(tabListHeight, tabHeight);
+      }
+    }
+
+    // Panel 위치 계산
+    const panelPadding = sizePreset.panelPadding;
+    const tabsWidth = parseCSSValue(tabsStyle?.width, tabsPosition.width) || 300;
+
+    // 활성화된 Tab 인덱스 찾기
+    const selectedKey = tabsProps?.selectedKey as string | undefined;
+    let selectedTabIndex = 0;
+    if (selectedKey && tabItems.length > 0) {
+      const idx = tabItems.findIndex((tab) => {
+        const tabProps = tab.props as Record<string, unknown> | undefined;
+        return tabProps?.tabId === selectedKey || tab.id === selectedKey;
+      });
+      if (idx >= 0) selectedTabIndex = idx;
+    }
+
+    for (let i = 0; i < panelItems.length; i++) {
+      const panelItem = panelItems[i];
+      const panelProps = panelItem.props as Record<string, unknown> | undefined;
+      const panelStyle = panelItem.props?.style as CSSStyle | undefined;
+
+      // Panel 위치 (TabList 기준)
+      const panelX = isVertical ? tabListWidth + panelPadding : panelPadding;
+      const panelY = isVertical ? panelPadding : tabListHeight + panelPadding;
+
+      // Panel 크기 계산 (PixiPanel과 동일)
+      const panelWidth = isVertical
+        ? tabsWidth - tabListWidth - panelPadding * 2
+        : tabsWidth - panelPadding * 2;
+
+      // Panel 높이 계산: title + minHeight (PixiPanel과 동기화)
+      const panelSize = (panelProps?.size as string) || 'md';
+      const panelSizePreset = getPanelSizePreset(panelSize);
+      const panelTitle = panelProps?.title as string | undefined;
+      const titleHeight = panelTitle
+        ? panelSizePreset.titleFontSize + panelSizePreset.titlePaddingY * 2
+        : 0;
+      const calculatedHeight = titleHeight + panelSizePreset.minHeight;
+      const panelHeight = parseCSSValue(panelStyle?.height, calculatedHeight);
+
+      // 🚀 Panel의 이전 위치 저장 (Yoga에서 계산된 위치)
+      const oldPanelPos = positions.get(panelItem.id);
+
+      // Panel 절대 위치 계산
+      const newPanelX = tabsPosition.x + panelX;
+      const newPanelY = tabsPosition.y + panelY;
+
+      // Panel 위치 설정
+      positions.set(panelItem.id, {
+        x: newPanelX,
+        y: newPanelY,
+        width: Math.max(0, panelWidth),
+        height: panelHeight,
+      });
+
+      // 🚀 활성화된 Panel의 자손들에 delta offset 적용
+      // Panel이 Yoga 트리에 포함되어 있으므로 이전 위치와 새 위치의 차이로 offset 계산
+      // 이렇게 해야 selectionBox가 실제 렌더링 위치와 일치함
+      if (i === selectedTabIndex && oldPanelPos) {
+        const deltaX = newPanelX - oldPanelPos.x;
+        const deltaY = newPanelY - oldPanelPos.y;
+        applyOffsetToDescendants(panelItem.id, elements, positions, deltaX, deltaY);
+      }
+    }
+  }
+}
+
+/**
+ * 요소의 모든 자손들에게 offset 적용
+ */
+function applyOffsetToDescendants(
+  parentId: string,
+  elements: Element[],
+  positions: Map<string, LayoutPosition>,
+  offsetX: number,
+  offsetY: number
+): void {
+  const children = elements.filter((el) => el.parent_id === parentId);
+  for (const child of children) {
+    const childPos = positions.get(child.id);
+    if (childPos) {
+      positions.set(child.id, {
+        x: childPos.x + offsetX,
+        y: childPos.y + offsetY,
+        width: childPos.width,
+        height: childPos.height,
+      });
+    }
+    // 재귀적으로 자손들도 처리
+    applyOffsetToDescendants(child.id, elements, positions, offsetX, offsetY);
+  }
+}
+
 // ============================================
 // Main API
 // ============================================
@@ -1501,6 +1773,9 @@ export function calculateLayout(
 
   // Checkbox 아이템 위치 계산 (CheckboxGroup 기준 상대 위치)
   calculateCheckboxItemPositions(pageElements, positions);
+
+  // Tabs 자식(Tab, Panel) 위치 계산 (Tabs 기준 상대 위치)
+  calculateTabsChildPositions(pageElements, positions);
 
   // Yoga 노드 정리 (메모리 해제)
   rootNode.freeRecursive();

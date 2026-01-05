@@ -36,6 +36,8 @@ export interface PixiPanelProps {
   element: Element;
   isSelected?: boolean;
   onClick?: (elementId: string) => void;
+  /** 부모 컨테이너 너비 (TabPanel 등에서 전달) */
+  containerWidth?: number;
 }
 
 interface PanelElementProps {
@@ -54,6 +56,7 @@ export const PixiPanel = memo(function PixiPanel({
   element,
   isSelected = false,
   onClick,
+  containerWidth,
 }: PixiPanelProps) {
   useExtend(PIXI_COMPONENTS);
   const style = element.props?.style as CSSStyle | undefined;
@@ -77,8 +80,8 @@ export const PixiPanel = memo(function PixiPanel({
     [variant, themeColors]
   );
 
-  // 패널 크기
-  const panelWidth = parseCSSSize(style?.width, undefined, 280);
+  // 패널 크기 (containerWidth가 있으면 사용, 없으면 style 또는 기본값)
+  const panelWidth = parseCSSSize(style?.width, undefined, containerWidth || 280);
 
   // 위치
   const posX = parseCSSSize(style?.left, undefined, 0);
@@ -106,9 +109,10 @@ export const PixiPanel = memo(function PixiPanel({
       g.clear();
 
       // variant별 스타일 적용
-      const hasBorder = variant !== 'tab';
+      // CSS 동기화: .react-aria-Panel { border-radius: 8px; border: 1px solid #d4d4d4 }
+      const hasBorder = true; // 모든 variant에서 border 적용
       const hasShadow = variant === 'card';
-      const borderRadius = variant === 'tab' ? 0 : sizePreset.borderRadius;
+      const borderRadius = sizePreset.borderRadius; // 모든 variant에서 borderRadius 적용
 
       // 그림자 효과 (card variant)
       if (hasShadow) {

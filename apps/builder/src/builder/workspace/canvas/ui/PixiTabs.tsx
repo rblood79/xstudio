@@ -14,7 +14,7 @@
 
 import { useExtend } from '@pixi/react';
 import { PIXI_COMPONENTS } from '../pixiSetup';
-import { memo, useCallback, useMemo, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useState, lazy, Suspense } from "react";
 import {
   Graphics as PixiGraphics,
   TextStyle,
@@ -25,10 +25,17 @@ import type { CSSStyle } from "../sprites/styleConverter";
 import { parseCSSSize } from "../sprites/styleConverter";
 import {
   getTabsSizePreset,
-  getVariantColors,
+  getTabsColorPreset,
+  getPanelSizePreset,
 } from "../utils/cssVariableReader";
-import { useThemeColors } from "../hooks/useThemeColors";
 import { useStore } from "../../../stores";
+import { PixiPanel } from "./PixiPanel";
+
+// 🚀 순환 참조 방지: ElementSprite를 lazy import
+// ElementSprite → PixiTabs → ElementSprite 순환을 방지
+const LazyElementSprite = lazy(() =>
+  import("../sprites/ElementSprite").then((mod) => ({ default: mod.ElementSprite }))
+);
 
 // ============================================
 // Types
@@ -79,6 +86,13 @@ export const PixiTabs = memo(function PixiTabs({
       .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
   }, [elements, element.id]);
 
+  // Panel(TabPanel) 자식들 가져오기
+  const panelItems = useMemo(() => {
+    return elements
+      .filter((el) => el.parent_id === element.id && el.tag === "Panel")
+      .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+  }, [elements, element.id]);
+
   // variant, size, orientation
   const variant = useMemo(() => String(props?.variant || "default"), [props?.variant]);
   const size = useMemo(() => String(props?.size || "md"), [props?.size]);
@@ -89,35 +103,29 @@ export const PixiTabs = memo(function PixiTabs({
   const isVertical = orientation === "vertical";
 
   // 선택된 탭 (첫 번째 탭이 기본 선택)
-  const [selectedTabId, setSelectedTabId] = useState<string | null>(() => {
-    if (props?.selectedKey) return props.selectedKey;
-    if (tabItems.length > 0) {
-      const firstTabId = tabItems[0].props?.tabId as string | undefined;
-      return firstTabId || tabItems[0].id;
-    }
-    return null;
-  });
+  const [selectedTabId, setSelectedTabId] = useState<string | null>(
+    props?.selectedKey || null
+  );
 
-  // 🚀 테마 색상 동적 로드
-  const themeColors = useThemeColors();
+  // 🚀 tabItems가 로드된 후 초기 선택 설정
+  // useState 초기값은 컴포넌트 마운트 시 한 번만 실행되므로,
+  // tabItems가 비어있을 때 초기화되면 null이 됨
+  // useEffect로 tabItems 로드 후 첫 번째 탭 선택
+  useEffect(() => {
+    if (selectedTabId === null && tabItems.length > 0) {
+      const firstTabId = tabItems[0].props?.tabId as string | undefined;
+      setSelectedTabId(firstTabId || tabItems[0].id);
+    }
+  }, [tabItems, selectedTabId]);
 
   // 🚀 CSS에서 프리셋 읽기
   const sizePreset = useMemo(() => getTabsSizePreset(size), [size]);
 
-  // 🚀 variant에 따른 테마 색상
-  const variantColors = useMemo(
-    () => getVariantColors(variant, themeColors),
-    [variant, themeColors]
+  // 🚀 variant에 따른 Tabs 전용 색상 프리셋
+  const colorPreset = useMemo(
+    () => getTabsColorPreset(variant),
+    [variant]
   );
-
-  // 색상 프리셋 값들 (테마 색상 적용)
-  const colorPreset = useMemo(() => ({
-    textColor: 0x6b7280,
-    selectedTextColor: variantColors.bg,
-    indicatorColor: variantColors.bg,
-    borderColor: 0xe5e7eb,
-    hoverBgColor: 0xf3f4f6,
-  }), [variantColors]);
 
   // hover 상태 관리
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
@@ -149,7 +157,10 @@ export const PixiTabs = memo(function PixiTabs({
 
       const metrics = CanvasTextMetrics.measureText(tabText, textStyle);
       const tabWidth = metrics.width + sizePreset.tabPaddingX * 2;
-      const tabHeight = sizePreset.fontSize + sizePreset.tabPaddingY * 2;
+      // CSS .react-aria-Tab { padding: var(--spacing) var(--spacing-lg); }
+      // 높이 = fontSize * lineHeight + paddingY * 2
+      const lineHeight = 1.4;
+      const tabHeight = Math.ceil(sizePreset.fontSize * lineHeight) + sizePreset.tabPaddingY * 2;
 
       tabs.push({
         id: tab.id,
@@ -180,37 +191,42 @@ export const PixiTabs = memo(function PixiTabs({
     };
   }, [tabItems, sizePreset, isVertical]);
 
+  // Tabs 전체 너비 (CSS width: 100% 또는 명시적 width)
+  const tabsWidth = parseCSSSize(style?.width, undefined, 300);
+
   // 탭 리스트 배경 (border-bottom 또는 border-right)
+  // CSS: .react-aria-TabList { display: flex; } → Tabs 전체 너비를 차지
   const drawTabListBorder = useCallback(
     (g: PixiGraphics) => {
       g.clear();
       g.setStrokeStyle({ width: 1, color: colorPreset.borderColor });
 
       if (isVertical) {
-        // 세로 - 오른쪽 border
+        // 세로 - 오른쪽 border (TabList 너비만큼)
         g.moveTo(tabsLayout.totalWidth, 0);
         g.lineTo(tabsLayout.totalWidth, tabsLayout.totalHeight);
       } else {
-        // 가로 - 아래 border
+        // 가로 - 아래 border (Tabs 전체 너비만큼, CSS display: flex 반영)
         g.moveTo(0, tabsLayout.totalHeight);
-        g.lineTo(tabsLayout.totalWidth, tabsLayout.totalHeight);
+        g.lineTo(tabsWidth, tabsLayout.totalHeight);
       }
       g.stroke();
     },
-    [isVertical, tabsLayout.totalWidth, tabsLayout.totalHeight, colorPreset.borderColor]
+    [isVertical, tabsLayout.totalWidth, tabsLayout.totalHeight, tabsWidth, colorPreset.borderColor]
   );
 
   // 선택 인디케이터 그리기
   const drawIndicator = useCallback(
-    (g: PixiGraphics, tab: TabData) => {
+    (g: PixiGraphics, tab: TabData, isSelected: boolean) => {
       g.clear();
-      const tabId = tab.tabId;
-      if (tabId !== selectedTabId) return;
+      if (!isSelected) return; // 선택되지 않은 탭은 그리지 않음
 
-      g.rect(0, 0, isVertical ? sizePreset.indicatorHeight : tab.width, isVertical ? tab.height : sizePreset.indicatorHeight);
+      const width = isVertical ? sizePreset.indicatorHeight : tab.width;
+      const height = isVertical ? tab.height : sizePreset.indicatorHeight;
+      g.rect(0, 0, width, height);
       g.fill({ color: colorPreset.indicatorColor });
     },
-    [selectedTabId, isVertical, sizePreset.indicatorHeight, colorPreset.indicatorColor]
+    [isVertical, sizePreset.indicatorHeight, colorPreset.indicatorColor]
   );
 
   // 탭 배경 그리기 (hover 효과)
@@ -254,6 +270,54 @@ export const PixiTabs = memo(function PixiTabs({
     [onClick]
   );
 
+  // 선택된 탭의 인덱스 찾기
+  const selectedTabIndex = useMemo(() => {
+    return tabsLayout.tabs.findIndex((tab) => tab.tabId === selectedTabId);
+  }, [tabsLayout.tabs, selectedTabId]);
+
+  // 선택된 Panel 요소 찾기
+  const selectedPanel = useMemo(() => {
+    if (selectedTabIndex < 0 || selectedTabIndex >= panelItems.length) {
+      return null;
+    }
+    return panelItems[selectedTabIndex];
+  }, [selectedTabIndex, panelItems]);
+
+  // 🚀 선택된 Panel의 자식 요소들 가져오기
+  const panelChildren = useMemo(() => {
+    if (!selectedPanel) return [];
+    return elements
+      .filter((el) => el.parent_id === selectedPanel.id)
+      .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+  }, [elements, selectedPanel]);
+
+  // Panel 위치: TabList 아래 (horizontal) 또는 오른쪽 (vertical)
+  // CSS 동기화: .react-aria-TabPanel { padding: 16px }
+  const panelPadding = sizePreset.panelPadding;
+  const panelOffsetX = isVertical
+    ? tabsLayout.totalWidth + panelPadding
+    : panelPadding;
+  const panelOffsetY = isVertical
+    ? panelPadding
+    : tabsLayout.totalHeight + panelPadding;
+
+  // 🚀 Panel의 containerWidth 계산
+  // Tabs 전체 너비에서 TabPanel padding을 뺀 값
+  const panelContainerWidth = isVertical
+    ? tabsWidth - tabsLayout.totalWidth - panelPadding * 2
+    : tabsWidth - panelPadding * 2;
+
+  // 🚀 Panel의 size preset 가져오기 (contentPadding 계산용)
+  const panelProps = selectedPanel?.props as Record<string, unknown> | undefined;
+  const panelSize = (panelProps?.size as string) || "md";
+  const panelSizePreset = useMemo(() => getPanelSizePreset(panelSize), [panelSize]);
+
+  // 🚀 Panel title 높이 계산
+  const panelTitle = panelProps?.title as string | undefined;
+  const panelTitleHeight = panelTitle
+    ? panelSizePreset.titleFontSize + panelSizePreset.titlePaddingY * 2
+    : 0;
+
   return (
     <pixiContainer x={posX} y={posY}>
       {/* 탭 리스트 border */}
@@ -295,11 +359,41 @@ export const PixiTabs = memo(function PixiTabs({
 
             {/* 선택 인디케이터 */}
             <pixiContainer x={indicatorX} y={indicatorY}>
-              <pixiGraphics draw={(g) => drawIndicator(g, tab)} />
+              <pixiGraphics draw={(g) => drawIndicator(g, tab, isSelected)} />
             </pixiContainer>
           </pixiContainer>
         );
       })}
+
+      {/* 선택된 TabPanel 렌더링 */}
+      {selectedPanel && (
+        <pixiContainer x={panelOffsetX} y={panelOffsetY}>
+          <PixiPanel
+            element={selectedPanel}
+            isSelected={false}
+            onClick={onClick}
+            containerWidth={panelContainerWidth}
+          />
+
+          {/* 🚀 Panel 자식 요소들 렌더링 */}
+          {/* Panel의 content 영역 내부에 위치 (titleHeight + contentPadding 적용) */}
+          <pixiContainer
+            x={panelSizePreset.contentPadding}
+            y={panelTitleHeight + panelSizePreset.contentPadding}
+          >
+            <Suspense fallback={null}>
+              {panelChildren.map((child) => (
+                <LazyElementSprite
+                  key={child.id}
+                  element={child}
+                  onClick={onClick}
+                  renderInTabsPanel={true}
+                />
+              ))}
+            </Suspense>
+          </pixiContainer>
+        </pixiContainer>
+      )}
     </pixiContainer>
   );
 });

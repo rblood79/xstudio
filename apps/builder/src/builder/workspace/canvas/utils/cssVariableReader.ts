@@ -1676,8 +1676,9 @@ export interface PanelColorPreset {
 }
 
 const PANEL_COLOR_FALLBACKS: Record<string, PanelColorPreset> = {
-  default: { backgroundColor: 0xf3f4f6, borderColor: 0xcad3dc, titleColor: 0x374151, textColor: 0x6b7280 },
-  tab: { backgroundColor: 0xf3f4f6, borderColor: 0x00000000, titleColor: 0x374151, textColor: 0x6b7280 },
+  // CSS 동기화: .react-aria-Panel background-color
+  default: { backgroundColor: 0xf3edf7, borderColor: 0xcad3dc, titleColor: 0x374151, textColor: 0x6b7280 },
+  tab: { backgroundColor: 0xf3edf7, borderColor: 0xcad3dc, titleColor: 0x374151, textColor: 0x6b7280 },
   sidebar: { backgroundColor: 0xe5e7eb, borderColor: 0xcad3dc, titleColor: 0x374151, textColor: 0x6b7280 },
   card: { backgroundColor: 0xffffff, borderColor: 0xcad3dc, titleColor: 0x374151, textColor: 0x6b7280 },
   modal: { backgroundColor: 0xffffff, borderColor: 0xcad3dc, titleColor: 0x374151, textColor: 0x6b7280 },
