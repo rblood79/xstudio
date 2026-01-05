@@ -106,26 +106,24 @@ function parseRadioOptionsFromChildren(childRadios: Element[]): RadioOption[] | 
 interface RadioItemProps {
   option: RadioOption;
   isOptionSelected: boolean;
-  x: number;
-  y: number;
   radioSize: number;
   primaryColor: number;
   textColor: number;
   fontSize: number;
   fontFamily: string;
+  itemWidth: number;
   onSelect: (value: string) => void;
 }
 
 const RadioItem = memo(function RadioItem({
   option,
   isOptionSelected,
-  x,
-  y,
   radioSize,
   primaryColor,
   textColor,
   fontSize,
   fontFamily,
+  itemWidth,
   onSelect,
 }: RadioItemProps) {
   const borderColor = isOptionSelected ? primaryColor : DEFAULT_BORDER_COLOR;
@@ -182,21 +180,30 @@ const RadioItem = memo(function RadioItem({
   }, [option.value, onSelect]);
 
   return (
-    <pixiContainer x={x} y={y}>
-      {/* 라디오 원 */}
-      <pixiGraphics
-        draw={drawRadio}
-        eventMode="static"
-        cursor="pointer"
-        onPointerDown={handlePointerDown}
-      />
+    <pixiContainer
+      layout={{
+        display: 'flex',
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: LABEL_GAP,
+        width: itemWidth,
+      }}
+    >
+      <pixiContainer layout={{ width: radioSize, height: radioSize }}>
+        {/* 라디오 원 */}
+        <pixiGraphics
+          draw={drawRadio}
+          eventMode="static"
+          cursor="pointer"
+          onPointerDown={handlePointerDown}
+        />
+      </pixiContainer>
 
       {/* 라벨 텍스트 */}
       <pixiText
         text={option.label}
         style={textStyle}
-        x={radioSize + LABEL_GAP}
-        y={(radioSize - fontSize) / 2}
+        layout={{ isLeaf: true }}
         eventMode="static"
         cursor="pointer"
         onPointerDown={handlePointerDown}
@@ -311,24 +318,29 @@ export const PixiRadio = memo(function PixiRadio({
 
   // 라벨이 있으면 옵션들의 Y 오프셋 추가
   const labelHeight = groupLabel ? labelPreset.fontSize + 8 : 0;
+  const itemWidth = 120;
+  const itemsLayout = useMemo(() => ({
+    display: 'flex',
+    flexDirection: isHorizontal ? 'row' : 'column',
+    gap: isHorizontal ? 0 : gap,
+  }), [isHorizontal, gap]);
 
   // 🚀 Phase 19: 전체 그룹 크기 계산 (hitArea용)
   const groupDimensions = useMemo(() => {
     const optionCount = options.length;
-    const optionWidth = 120; // 각 옵션의 대략적인 너비
     const optionHeight = radioSize + gap;
 
     if (isHorizontal) {
       return {
-        width: optionCount * optionWidth,
+        width: optionCount * itemWidth,
         height: labelHeight + radioSize,
       };
     }
     return {
-      width: optionWidth,
+      width: itemWidth,
       height: labelHeight + optionCount * optionHeight,
     };
-  }, [options.length, radioSize, gap, labelHeight, isHorizontal]);
+  }, [options.length, radioSize, gap, labelHeight, isHorizontal, itemWidth]);
 
   // 🚀 Phase 19: 투명 히트 영역
   const drawHitArea = useCallback(
@@ -379,30 +391,26 @@ export const PixiRadio = memo(function PixiRadio({
       )}
 
       {/* Radio 옵션들 */}
-      {options.map((option, index) => {
-        const isOptionSelected = option.value === selectedValue;
+      <pixiContainer x={0} y={labelHeight} layout={itemsLayout}>
+        {options.map((option, index) => {
+          const isOptionSelected = option.value === selectedValue;
 
-        // 위치 계산 (라벨이 있으면 Y 오프셋 추가)
-        // 🚀 Phase 0: CSS 사이즈 프리셋의 gap 값 사용
-        const itemX = isHorizontal ? index * 120 : 0;
-        const itemY = labelHeight + (isHorizontal ? 0 : index * (radioSize + gap));
-
-        return (
-          <RadioItem
-            key={`${option.value}-${index}`}
-            option={option}
-            isOptionSelected={isOptionSelected}
-            x={itemX}
-            y={itemY}
-            radioSize={radioSize}
-            primaryColor={primaryColor}
-            textColor={textColor}
-            fontSize={fontSize}
-            fontFamily={fontFamily}
-            onSelect={handleOptionSelect}
-          />
-        );
-      })}
+          return (
+            <RadioItem
+              key={`${option.value}-${index}`}
+              option={option}
+              isOptionSelected={isOptionSelected}
+              radioSize={radioSize}
+              primaryColor={primaryColor}
+              textColor={textColor}
+              fontSize={fontSize}
+              fontFamily={fontFamily}
+              itemWidth={itemWidth}
+              onSelect={handleOptionSelect}
+            />
+          );
+        })}
+      </pixiContainer>
 
       {/* 🚀 Phase 19: 투명 히트 영역 (그룹 전체 선택용) - 마지막에 렌더링하여 최상단 배치 */}
       <pixiGraphics

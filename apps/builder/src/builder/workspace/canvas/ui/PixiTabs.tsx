@@ -53,8 +53,6 @@ interface TabData {
   tabId: string;
   text: string;
   isDisabled?: boolean;
-  x: number;
-  y: number;
   width: number;
   height: number;
 }
@@ -130,10 +128,8 @@ export const PixiTabs = memo(function PixiTabs({
   // 탭 레이아웃 계산
   const tabsLayout = useMemo(() => {
     const tabs: TabData[] = [];
-    let currentX = 0;
-    let currentY = 0;
-    let maxWidth = 0;
-    let maxHeight = 0;
+    let totalWidth = 0;
+    let totalHeight = 0;
 
     const textStyle = new TextStyle({
       fontFamily: "Pretendard, sans-serif",
@@ -160,32 +156,47 @@ export const PixiTabs = memo(function PixiTabs({
         tabId,
         text: tabText,
         isDisabled,
-        x: isVertical ? 0 : currentX,
-        y: isVertical ? currentY : 0,
         width: tabWidth,
         height: tabHeight,
       });
 
       if (isVertical) {
-        currentY += tabHeight;
-        maxWidth = Math.max(maxWidth, tabWidth);
-        maxHeight = currentY;
+        totalHeight += tabHeight;
+        totalWidth = Math.max(totalWidth, tabWidth);
       } else {
-        currentX += tabWidth;
-        maxWidth = currentX;
-        maxHeight = Math.max(maxHeight, tabHeight);
+        totalWidth += tabWidth;
+        totalHeight = Math.max(totalHeight, tabHeight);
       }
     });
 
     return {
       tabs,
-      totalWidth: maxWidth,
-      totalHeight: maxHeight,
+      totalWidth,
+      totalHeight,
     };
   }, [tabItems, sizePreset, isVertical]);
 
   // Tabs 전체 너비 (CSS width: 100% 또는 명시적 width)
   const tabsWidth = parseCSSSize(style?.width, undefined, 300);
+
+  const rootLayout = useMemo(() => ({
+    display: 'flex',
+    flexDirection: isVertical ? 'row' : 'column',
+    width: tabsWidth,
+  }), [isVertical, tabsWidth]);
+
+  const tabListLayout = useMemo(() => ({
+    display: 'flex',
+    flexDirection: isVertical ? 'column' : 'row',
+    width: isVertical ? tabsLayout.totalWidth : tabsWidth,
+  }), [isVertical, tabsLayout.totalWidth, tabsWidth]);
+
+  const panelLayout = useMemo(() => ({
+    display: 'flex',
+    flexDirection: 'column',
+    width: Math.max(0, isVertical ? tabsWidth - tabsLayout.totalWidth : tabsWidth),
+    padding: sizePreset.panelPadding,
+  }), [isVertical, tabsWidth, tabsLayout.totalWidth, sizePreset.panelPadding]);
 
   // 탭 리스트 배경 (border-bottom 또는 border-right)
   // CSS: .react-aria-TabList { display: flex; } → Tabs 전체 너비를 차지
@@ -282,70 +293,64 @@ export const PixiTabs = memo(function PixiTabs({
   // Panel 위치: TabList 아래 (horizontal) 또는 오른쪽 (vertical)
   // CSS 동기화: .react-aria-TabPanel { padding: 16px }
   const panelPadding = sizePreset.panelPadding;
-  const panelOffsetX = isVertical
-    ? tabsLayout.totalWidth + panelPadding
-    : panelPadding;
-  const panelOffsetY = isVertical
-    ? panelPadding
-    : tabsLayout.totalHeight + panelPadding;
-
-  // 🚀 Panel의 containerWidth 계산
-  // Tabs 전체 너비에서 TabPanel padding을 뺀 값
-  const panelContainerWidth = isVertical
-    ? tabsWidth - tabsLayout.totalWidth - panelPadding * 2
-    : tabsWidth - panelPadding * 2;
+  const panelContainerWidth = Math.max(
+    0,
+    (isVertical ? tabsWidth - tabsLayout.totalWidth : tabsWidth) - panelPadding * 2
+  );
 
   return (
-    <pixiContainer x={posX} y={posY}>
-      {/* 탭 리스트 border */}
-      <pixiGraphics draw={drawTabListBorder} />
+    <pixiContainer x={posX} y={posY} layout={rootLayout}>
+      <pixiContainer layout={tabListLayout}>
+        {/* 탭 리스트 border */}
+        <pixiGraphics draw={drawTabListBorder} />
 
-      {/* 탭들 */}
-      {tabsLayout.tabs.map((tab, index) => {
-        const isHovered = hoveredIndex === index;
-        const isSelected = tab.tabId === selectedTabId;
+        {/* 탭들 */}
+        {tabsLayout.tabs.map((tab, index) => {
+          const isHovered = hoveredIndex === index;
+          const isSelected = tab.tabId === selectedTabId;
 
-        // 인디케이터 위치 계산
-        const indicatorX = isVertical ? tab.width - sizePreset.indicatorHeight : 0;
-        const indicatorY = isVertical ? 0 : tab.height - sizePreset.indicatorHeight;
+          // 인디케이터 위치 계산
+          const indicatorX = isVertical ? tab.width - sizePreset.indicatorHeight : 0;
+          const indicatorY = isVertical ? 0 : tab.height - sizePreset.indicatorHeight;
 
-        return (
-          <pixiContainer key={tab.id} x={tab.x} y={tab.y}>
-            {/* hover 배경 */}
-            <pixiGraphics
-              draw={(g) => drawTabBackground(g, tab, isHovered)}
-              eventMode="static"
-              cursor={tab.isDisabled ? "not-allowed" : "pointer"}
-              onPointerEnter={() => !tab.isDisabled && setHoveredIndex(index)}
-              onPointerLeave={() => setHoveredIndex(null)}
-              onPointerDown={() => handleTabClick(tab)}
-            />
+          return (
+            <pixiContainer key={tab.id} layout={{ width: tab.width, height: tab.height }}>
+              {/* hover 배경 */}
+              <pixiGraphics
+                draw={(g) => drawTabBackground(g, tab, isHovered)}
+                eventMode="static"
+                cursor={tab.isDisabled ? "not-allowed" : "pointer"}
+                onPointerEnter={() => !tab.isDisabled && setHoveredIndex(index)}
+                onPointerLeave={() => setHoveredIndex(null)}
+                onPointerDown={() => handleTabClick(tab)}
+              />
 
-            {/* 탭 텍스트 */}
-            <pixiText
-              text={tab.text}
-              style={createTextStyle(isSelected, isHovered, Boolean(tab.isDisabled))}
-              x={sizePreset.tabPaddingX}
-              y={sizePreset.tabPaddingY}
-              eventMode="static"
-              cursor={tab.isDisabled ? "not-allowed" : "pointer"}
-              onPointerEnter={() => !tab.isDisabled && setHoveredIndex(index)}
-              onPointerLeave={() => setHoveredIndex(null)}
-              onPointerDown={() => handleTabClick(tab)}
-            />
+              {/* 탭 텍스트 */}
+              <pixiText
+                text={tab.text}
+                style={createTextStyle(isSelected, isHovered, Boolean(tab.isDisabled))}
+                x={sizePreset.tabPaddingX}
+                y={sizePreset.tabPaddingY}
+                eventMode="static"
+                cursor={tab.isDisabled ? "not-allowed" : "pointer"}
+                onPointerEnter={() => !tab.isDisabled && setHoveredIndex(index)}
+                onPointerLeave={() => setHoveredIndex(null)}
+                onPointerDown={() => handleTabClick(tab)}
+              />
 
-            {/* 선택 인디케이터 */}
-            <pixiContainer x={indicatorX} y={indicatorY}>
-              <pixiGraphics draw={(g) => drawIndicator(g, tab, isSelected)} />
+              {/* 선택 인디케이터 */}
+              <pixiContainer x={indicatorX} y={indicatorY}>
+                <pixiGraphics draw={(g) => drawIndicator(g, tab, isSelected)} />
+              </pixiContainer>
             </pixiContainer>
-          </pixiContainer>
-        );
-      })}
+          );
+        })}
+      </pixiContainer>
 
       {/* 선택된 TabPanel 렌더링 */}
       {/* 🚀 Panel 자손들은 ElementsLayer에서 layoutPosition과 함께 렌더링됨 */}
       {selectedPanel && (
-        <pixiContainer x={panelOffsetX} y={panelOffsetY}>
+        <pixiContainer layout={panelLayout}>
           <PixiPanel
             element={selectedPanel}
             isSelected={false}

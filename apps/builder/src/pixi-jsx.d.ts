@@ -14,6 +14,8 @@ declare namespace JSX {
       alpha?: number;
       visible?: boolean;
       interactive?: boolean;
+      layout?: Record<string, unknown>;
+      onLayout?: (layout: unknown) => void;
       cursor?: string;
       pointerdown?: (e: unknown) => void;
       pointerup?: (e: unknown) => void;
@@ -44,6 +46,7 @@ declare namespace JSX {
       y?: number;
       alpha?: number;
       visible?: boolean;
+      layout?: Record<string, unknown>;
       key?: string | number;
     };
     pixiSprite: {

@@ -26,9 +26,6 @@ import {
   PositionType,
 } from 'yoga-layout/load';
 
-// @pixi/layout requires yoga instance to be set via setYoga()
-import { setYoga } from '@pixi/layout';
-
 // ============================================
 // Types
 // ============================================
@@ -108,7 +105,6 @@ let yogaLoadPromise: Promise<YogaInstance> | null = null;
  * Yoga 엔진 초기화 (싱글톤)
  * yoga-layout v3.2.1: loadYoga() must be imported from 'yoga-layout/load'
  *
- * Also sets the yoga instance for @pixi/layout via setYoga()
  */
 export async function initYoga(): Promise<YogaInstance> {
   if (Yoga) return Yoga;
@@ -120,11 +116,7 @@ export async function initYoga(): Promise<YogaInstance> {
         const yogaInstance = await module.loadYoga();
         Yoga = yogaInstance;
 
-        // Set yoga instance for @pixi/layout
-        // This is required for LayoutText, LayoutContainer to work
-        setYoga(yogaInstance);
-
-        console.log('[LayoutEngine] Yoga initialized successfully (also set for @pixi/layout)');
+        console.log('[LayoutEngine] Yoga initialized successfully');
         return yogaInstance;
       })
       .catch((error) => {
@@ -1146,9 +1138,10 @@ function createYogaNode(
     const charsPerLine = Math.floor(estimatedWidth / 8);
     const descLines = descText ? Math.ceil(descText.length / Math.max(charsPerLine, 1)) : 0;
     const descHeight = descLines * descLineHeight;
+    const titleDescGap = hasTitle && descText ? 4 : 0;
 
     // 최소 높이 = padding * 2 + title + description
-    const cardMinHeight = Math.max(sizePreset.padding * 2 + titleHeight + descHeight, 60);
+    const cardMinHeight = Math.max(sizePreset.padding * 2 + titleHeight + descHeight + titleDescGap, 60);
     node.setMinHeight(cardMinHeight);
   }
 
@@ -1187,13 +1180,26 @@ function createYogaNode(
 
   // 🚀 Card 요소: CSS .react-aria-Card { padding: var(--spacing-md); } 반영
   let cardPadding = 0;
+  let cardContentOffset = 0;
   if (element.tag === 'Card') {
     const cardSize = (element.props?.size as string) || 'md';
     const sizePreset = getCardSizePreset(cardSize);
     cardPadding = sizePreset.padding;
+
+    const props = element.props as { heading?: string; title?: string; description?: string; children?: string } | undefined;
+    const hasTitle = props?.heading || props?.title;
+    const titleHeight = hasTitle ? 20 : 0;
+    const descText = props?.description || props?.children || '';
+    const descLineHeight = 18;
+    const estimatedWidth = 200 - sizePreset.padding * 2;
+    const charsPerLine = Math.floor(estimatedWidth / 8);
+    const descLines = descText ? Math.ceil(descText.length / Math.max(charsPerLine, 1)) : 0;
+    const descHeight = descLines * descLineHeight;
+    const titleDescGap = hasTitle && descText ? 4 : 0;
+    cardContentOffset = titleHeight + descHeight + titleDescGap;
   }
 
-  const effectivePaddingTop = padding.top + panelTitleOffset + panelContentPadding + cardPadding;
+  const effectivePaddingTop = padding.top + panelTitleOffset + panelContentPadding + cardPadding + cardContentOffset;
   const effectivePaddingRight = padding.right + panelContentPadding + cardPadding;
   const effectivePaddingBottom = padding.bottom + panelContentPadding + cardPadding;
   const effectivePaddingLeft = padding.left + panelContentPadding + cardPadding;

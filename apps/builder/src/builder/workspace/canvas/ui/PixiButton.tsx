@@ -22,7 +22,6 @@ import {
   Graphics as PixiGraphicsClass,
   Text as PixiText,
   TextStyle,
-  CanvasTextMetrics,
 } from "pixi.js";
 import { FancyButton } from "@pixi/ui";
 import type { Element } from "../../../../types/core/store.types";
@@ -126,6 +125,13 @@ interface ButtonLayoutResult {
   isLoading: boolean;
 }
 
+function measureTextSize(text: string, style: TextStyle): { width: number; height: number } {
+  const textView = new PixiText({ text, style });
+  const bounds = textView.getLocalBounds();
+  textView.destroy({ children: true });
+  return { width: bounds.width, height: bounds.height };
+}
+
 /**
  * CSS 스타일과 variant/size에서 버튼 레이아웃 정보 추출
  *
@@ -219,9 +225,7 @@ function getButtonLayout(
 
   // 텍스트 크기 측정 (먼저 측정해야 최소 크기 계산 가능)
   const textStyle = new TextStyle({ fontSize, fontFamily });
-  const metrics = CanvasTextMetrics.measureText(buttonText, textStyle);
-  const textWidth = metrics.width;
-  const textHeight = metrics.height;
+  const { width: textWidth, height: textHeight } = measureTextSize(buttonText, textStyle);
 
   // 최소 필요 크기 계산 (padding + text)
   // Note: border-box 모델에서 border는 총 크기 안에 포함되므로 별도로 더하지 않음

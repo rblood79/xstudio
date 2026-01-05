@@ -112,28 +112,26 @@ function parseCheckboxOptionsFromChildren(childCheckboxes: Element[]): CheckboxO
 interface CheckboxItemProps {
   option: CheckboxOption;
   isOptionChecked: boolean;
-  x: number;
-  y: number;
   checkboxSize: number;
   borderRadius: number;
   primaryColor: number;
   textColor: number;
   fontSize: number;
   fontFamily: string;
+  itemWidth: number;
   onToggle: (value: string) => void;
 }
 
 const CheckboxItem = memo(function CheckboxItem({
   option,
   isOptionChecked,
-  x,
-  y,
   checkboxSize,
   borderRadius,
   primaryColor,
   textColor,
   fontSize,
   fontFamily,
+  itemWidth,
   onToggle,
 }: CheckboxItemProps) {
   const borderColor = isOptionChecked ? primaryColor : DEFAULT_BORDER_COLOR;
@@ -197,21 +195,30 @@ const CheckboxItem = memo(function CheckboxItem({
   }, [option.value, onToggle]);
 
   return (
-    <pixiContainer x={x} y={y}>
-      {/* 체크박스 */}
-      <pixiGraphics
-        draw={drawCheckbox}
-        eventMode="static"
-        cursor="pointer"
-        onPointerDown={handlePointerDown}
-      />
+    <pixiContainer
+      layout={{
+        display: 'flex',
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: LABEL_GAP,
+        width: itemWidth,
+      }}
+    >
+      <pixiContainer layout={{ width: checkboxSize, height: checkboxSize }}>
+        {/* 체크박스 */}
+        <pixiGraphics
+          draw={drawCheckbox}
+          eventMode="static"
+          cursor="pointer"
+          onPointerDown={handlePointerDown}
+        />
+      </pixiContainer>
 
       {/* 라벨 텍스트 */}
       <pixiText
         text={option.label}
         style={textStyle}
-        x={checkboxSize + LABEL_GAP}
-        y={(checkboxSize - fontSize) / 2}
+        layout={{ isLeaf: true }}
         eventMode="static"
         cursor="pointer"
         onPointerDown={handlePointerDown}
@@ -327,24 +334,30 @@ export const PixiCheckboxGroup = memo(function PixiCheckboxGroup({
 
   // 라벨이 있으면 옵션들의 Y 오프셋 추가
   const labelHeight = groupLabel ? labelPreset.fontSize + 8 : 0;
+  const itemWidth = 120;
+  const itemGap = DEFAULT_GAP;
+  const itemsLayout = useMemo(() => ({
+    display: 'flex',
+    flexDirection: isHorizontal ? 'row' : 'column',
+    gap: isHorizontal ? 0 : itemGap,
+  }), [isHorizontal, itemGap]);
 
   // 🚀 Phase 19: 전체 그룹 크기 계산 (hitArea용)
   const groupDimensions = useMemo(() => {
     const optionCount = options.length;
-    const optionWidth = 120; // 각 옵션의 대략적인 너비
     const optionHeight = checkboxSize + DEFAULT_GAP;
 
     if (isHorizontal) {
       return {
-        width: optionCount * optionWidth,
+        width: optionCount * itemWidth,
         height: labelHeight + checkboxSize,
       };
     }
     return {
-      width: optionWidth,
+      width: itemWidth,
       height: labelHeight + optionCount * optionHeight,
     };
-  }, [options.length, checkboxSize, labelHeight, isHorizontal]);
+  }, [options.length, checkboxSize, labelHeight, isHorizontal, itemWidth]);
 
   // 🚀 Phase 19: 투명 히트 영역
   const drawHitArea = useCallback(
@@ -401,30 +414,27 @@ export const PixiCheckboxGroup = memo(function PixiCheckboxGroup({
       )}
 
       {/* Checkbox 옵션들 */}
-      {options.map((option, index) => {
-        const isOptionChecked = selectedValues.includes(option.value);
+      <pixiContainer x={0} y={labelHeight} layout={itemsLayout}>
+        {options.map((option, index) => {
+          const isOptionChecked = selectedValues.includes(option.value);
 
-        // 위치 계산 (라벨이 있으면 Y 오프셋 추가)
-        const itemX = isHorizontal ? index * 120 : 0;
-        const itemY = labelHeight + (isHorizontal ? 0 : index * (checkboxSize + DEFAULT_GAP));
-
-        return (
-          <CheckboxItem
-            key={`${option.value}-${index}`}
-            option={option}
-            isOptionChecked={isOptionChecked}
-            x={itemX}
-            y={itemY}
-            checkboxSize={checkboxSize}
-            borderRadius={borderRadius}
-            primaryColor={primaryColor}
-            textColor={textColor}
-            fontSize={fontSize}
-            fontFamily={fontFamily}
-            onToggle={handleOptionToggle}
-          />
-        );
-      })}
+          return (
+            <CheckboxItem
+              key={`${option.value}-${index}`}
+              option={option}
+              isOptionChecked={isOptionChecked}
+              checkboxSize={checkboxSize}
+              borderRadius={borderRadius}
+              primaryColor={primaryColor}
+              textColor={textColor}
+              fontSize={fontSize}
+              fontFamily={fontFamily}
+              itemWidth={itemWidth}
+              onToggle={handleOptionToggle}
+            />
+          );
+        })}
+      </pixiContainer>
 
       {/* 🚀 Phase 19: 투명 히트 영역 (그룹 전체 선택용) - 마지막에 렌더링하여 최상단 배치 */}
       <pixiGraphics

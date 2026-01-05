@@ -18,7 +18,7 @@ import { memo, useCallback, useMemo, useEffect, useRef } from "react";
 import {
   Graphics as PixiGraphics,
   TextStyle,
-  CanvasTextMetrics,
+  Text as PixiText,
   Container as PixiContainer,
 } from "pixi.js";
 import type { Element } from "../../../../types/core/store.types";
@@ -52,6 +52,13 @@ interface BadgeElementProps {
   dot?: boolean;
   pulsing?: boolean;
   style?: CSSStyle;
+}
+
+function measureTextSize(text: string, style: TextStyle): { width: number; height: number } {
+  const textView = new PixiText({ text, style });
+  const bounds = textView.getLocalBounds();
+  textView.destroy({ children: true });
+  return { width: bounds.width, height: bounds.height };
 }
 
 // ============================================
@@ -106,37 +113,6 @@ export const PixiBadge = memo(function PixiBadge({
     }
     return colorPreset.text;
   }, [style, colorPreset]);
-
-  // 배지 크기 계산
-  const badgeSize = useMemo(() => {
-    if (isDot) {
-      return {
-        width: sizePreset.dotSize,
-        height: sizePreset.dotSize,
-      };
-    }
-
-    // 텍스트 기반 크기 계산
-    const textStyle = new TextStyle({
-      fontFamily: "Pretendard, sans-serif",
-      fontSize: sizePreset.fontSize,
-      fontWeight: "600",
-    });
-
-    if (badgeText) {
-      const metrics = CanvasTextMetrics.measureText(badgeText, textStyle);
-      const width = Math.max(sizePreset.minWidth, metrics.width + sizePreset.paddingX * 2);
-      return {
-        width,
-        height: sizePreset.height,
-      };
-    }
-
-    return {
-      width: sizePreset.minWidth,
-      height: sizePreset.height,
-    };
-  }, [isDot, sizePreset, badgeText]);
 
   // 위치
   const posX = parseCSSSize(style?.left, undefined, 0);
@@ -236,16 +212,42 @@ export const PixiBadge = memo(function PixiBadge({
     [sizePreset.fontSize, textColor]
   );
 
+  const textMetrics = useMemo(() => {
+    if (isDot || !badgeText) return null;
+    return measureTextSize(badgeText, textStyle);
+  }, [isDot, badgeText, textStyle]);
+
+  // 배지 크기 계산
+  const badgeSize = useMemo(() => {
+    if (isDot) {
+      return {
+        width: sizePreset.dotSize,
+        height: sizePreset.dotSize,
+      };
+    }
+
+    if (textMetrics) {
+      const width = Math.max(sizePreset.minWidth, textMetrics.width + sizePreset.paddingX * 2);
+      return {
+        width,
+        height: sizePreset.height,
+      };
+    }
+
+    return {
+      width: sizePreset.minWidth,
+      height: sizePreset.height,
+    };
+  }, [isDot, sizePreset, textMetrics]);
+
   // 텍스트 위치 (중앙 정렬)
   const textPosition = useMemo(() => {
-    if (isDot || !badgeText) return { x: 0, y: 0 };
-
-    const metrics = CanvasTextMetrics.measureText(badgeText, textStyle);
+    if (isDot || !badgeText || !textMetrics) return { x: 0, y: 0 };
     return {
-      x: (badgeSize.width - metrics.width) / 2,
-      y: (badgeSize.height - metrics.height) / 2,
+      x: (badgeSize.width - textMetrics.width) / 2,
+      y: (badgeSize.height - textMetrics.height) / 2,
     };
-  }, [isDot, badgeText, badgeSize.width, badgeSize.height, textStyle]);
+  }, [isDot, badgeText, badgeSize.width, badgeSize.height, textMetrics]);
 
   // 🚀 Phase 19: 투명 히트 영역
   const drawHitArea = useCallback(

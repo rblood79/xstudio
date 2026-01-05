@@ -13,7 +13,7 @@
 
 import { useExtend } from '@pixi/react';
 import { PIXI_COMPONENTS } from '../pixiSetup';
-import { memo, useCallback, useMemo, useState } from "react";
+import { memo, useCallback, useMemo, useRef, useState } from "react";
 import {
   Graphics as PixiGraphics,
   TextStyle,
@@ -126,20 +126,15 @@ export const PixiCard = memo(function PixiCard({
   // 카드 크기
   const cardWidth = parseCSSSize(style?.width, undefined, 200);
 
-  // 🚀 카드 높이 계산 (CSS box-sizing: border-box 반영)
-  // padding(top) + title(20px) + description(18px per line) + padding(bottom)
-  const calculatedHeight = useMemo(() => {
-    const titleHeight = cardTitle ? 20 : 0; // fontSize(16) + gap(4)
-    // description 줄 수 계산 (대략적)
-    const descLineHeight = 18; // fontSize(14) + lineHeight
-    const maxCharsPerLine = Math.floor((cardWidth - sizePreset.padding * 2) / 8); // 대략 글자당 8px
-    const descLines = cardDescription ? Math.ceil(cardDescription.length / Math.max(maxCharsPerLine, 1)) : 0;
-    const descHeight = descLines * descLineHeight;
+  const explicitHeight = useMemo(() => {
+    if (style?.height === undefined) return undefined;
+    return parseCSSSize(style.height, undefined, 0);
+  }, [style?.height]);
 
-    return sizePreset.padding * 2 + titleHeight + descHeight;
-  }, [cardTitle, cardDescription, cardWidth, sizePreset.padding]);
+  const layoutHeightRef = useRef<number | null>(null);
+  const [layoutHeight, setLayoutHeight] = useState<number | null>(null);
 
-  const cardHeight = parseCSSSize(style?.height, undefined, Math.max(calculatedHeight, 60));
+  const cardHeight = layoutHeight ?? explicitHeight ?? 60;
 
   // 위치
   const posX = parseCSSSize(style?.left, undefined, 0);
@@ -213,8 +208,15 @@ export const PixiCard = memo(function PixiCard({
     [textColor, cardWidth, sizePreset.padding]
   );
 
-  // 제목 높이 (description 위치 계산용)
-  const titleHeight = cardTitle ? 20 : 0; // fontSize(16) + lineGap(4)
+  const cardLayout = useMemo(() => ({
+    display: 'flex',
+    flexDirection: 'column',
+    width: cardWidth,
+    ...(explicitHeight !== undefined ? { height: explicitHeight } : {}),
+    padding: sizePreset.padding,
+    gap: cardTitle && cardDescription ? 4 : 0,
+    minHeight: 60,
+  }), [cardWidth, explicitHeight, sizePreset.padding, cardTitle, cardDescription]);
 
   // 이벤트 핸들러
   const handlePointerEnter = useCallback(() => {
@@ -229,6 +231,14 @@ export const PixiCard = memo(function PixiCard({
     onClick?.(element.id);
   }, [element.id, onClick]);
 
+  const handleLayout = useCallback((layout: { computedLayout?: { height?: number } }) => {
+    const nextHeight = layout.computedLayout?.height;
+    if (!nextHeight) return;
+    if (layoutHeightRef.current === nextHeight) return;
+    layoutHeightRef.current = nextHeight;
+    setLayoutHeight(nextHeight);
+  }, []);
+
   // 🚀 Phase 19: 투명 히트 영역
   const drawHitArea = useCallback(
     (g: PixiGraphics) => {
@@ -240,7 +250,7 @@ export const PixiCard = memo(function PixiCard({
   );
 
   return (
-    <pixiContainer x={posX} y={posY}>
+    <pixiContainer x={posX} y={posY} layout={cardLayout} onLayout={handleLayout}>
       {/* 카드 배경 */}
       <pixiGraphics draw={drawCard} />
 
@@ -249,8 +259,7 @@ export const PixiCard = memo(function PixiCard({
         <pixiText
           text={cardTitle}
           style={titleStyle}
-          x={sizePreset.padding}
-          y={sizePreset.padding}
+          layout={{ isLeaf: true }}
         />
       )}
 
@@ -259,8 +268,7 @@ export const PixiCard = memo(function PixiCard({
         <pixiText
           text={cardDescription}
           style={descriptionStyle}
-          x={sizePreset.padding}
-          y={sizePreset.padding + titleHeight}
+          layout={{ isLeaf: true }}
         />
       )}
 

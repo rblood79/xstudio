@@ -14,6 +14,7 @@
  * @updated 2025-12-11 Phase 10 B1.2 - ElementSprite 통합
  */
 
+import "@pixi/layout";
 import { useCallback, useEffect, useRef, useMemo, useState, memo, startTransition } from "react";
 import { Application, useApplication } from "@pixi/react";
 import { Graphics as PixiGraphics } from "pixi.js";

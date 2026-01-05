@@ -116,6 +116,29 @@ export const PixiInput = memo(function PixiInput({
     ? sizePreset.height + (descriptionText ? descPreset.fontSize + sizePreset.gap : 0)
     : labelHeight + sizePreset.height + (descriptionText ? descPreset.fontSize + sizePreset.gap : 0);
 
+  const rootLayout = useMemo(() => ({
+    display: 'flex',
+    flexDirection: 'column',
+    gap: sizePreset.gap,
+  }), [sizePreset.gap]);
+
+  const rowLayout = useMemo(() => ({
+    display: 'flex',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: sizePreset.gap,
+  }), [sizePreset.gap]);
+
+  const inputLayout = useMemo(() => ({
+    width: fieldWidth,
+    height: sizePreset.height,
+  }), [fieldWidth, sizePreset.height]);
+
+  const spacerLayout = useMemo(() => ({
+    width: labelWidth,
+    height: 0,
+  }), [labelWidth]);
+
   // 🚀 Performance: useRef로 hover 상태 관리
   const graphicsRef = useRef<PixiGraphicsType>(null);
 
@@ -217,69 +240,71 @@ export const PixiInput = memo(function PixiInput({
     [totalWidth, totalHeightCalc]
   );
 
-  // 🚀 Phase 19: Row/Column 레이아웃 위치 계산
-  const labelPos = useMemo(() => {
-    if (isRow) {
-      // Row: Label 왼쪽, Input 중앙 정렬
-      return { x: 0, y: (sizePreset.height - labelPreset.fontSize) / 2 };
-    }
-    // Column: Label 위쪽
-    return { x: 0, y: 0 };
-  }, [isRow, sizePreset.height, labelPreset.fontSize]);
-
-  const inputPos = useMemo(() => {
-    if (isRow) {
-      // Row: Label 오른쪽에 Input
-      return { x: labelWidth, y: 0 };
-    }
-    // Column: Label 아래에 Input
-    return { x: 0, y: labelHeight };
-  }, [isRow, labelWidth, labelHeight]);
-
-  const descriptionPos = useMemo(() => {
-    if (isRow) {
-      // Row: Input 아래에 Description
-      return { x: labelWidth, y: sizePreset.height + sizePreset.gap };
-    }
-    // Column: Input 아래에 Description
-    return { x: 0, y: labelHeight + sizePreset.height + sizePreset.gap };
-  }, [isRow, labelWidth, labelHeight, sizePreset]);
-
   return (
-    <pixiContainer x={posX} y={posY}>
-      {/* Label */}
-      {label && (
-        <pixiText
-          text={label}
-          style={labelStyle}
-          x={labelPos.x}
-          y={labelPos.y}
-        />
+    <pixiContainer x={posX} y={posY} layout={rootLayout}>
+      {isRow ? (
+        <pixiContainer layout={rowLayout}>
+          {label && (
+            <pixiText
+              text={label}
+              style={labelStyle}
+              layout={{ isLeaf: true }}
+            />
+          )}
+          <pixiContainer layout={inputLayout}>
+            <pixiGraphics
+              ref={graphicsRef}
+              draw={(g) => drawBackground(g, false)}
+            />
+            <pixiText
+              text={displayText}
+              style={inputStyle}
+              x={sizePreset.paddingX}
+              y={(sizePreset.height - sizePreset.fontSize) / 2}
+            />
+          </pixiContainer>
+        </pixiContainer>
+      ) : (
+        <>
+          {label && (
+            <pixiText
+              text={label}
+              style={labelStyle}
+              layout={{ isLeaf: true }}
+            />
+          )}
+          <pixiContainer layout={inputLayout}>
+            <pixiGraphics
+              ref={graphicsRef}
+              draw={(g) => drawBackground(g, false)}
+            />
+            <pixiText
+              text={displayText}
+              style={inputStyle}
+              x={sizePreset.paddingX}
+              y={(sizePreset.height - sizePreset.fontSize) / 2}
+            />
+          </pixiContainer>
+        </>
       )}
 
-      {/* Input field */}
-      <pixiContainer x={inputPos.x} y={inputPos.y}>
-        <pixiGraphics
-          ref={graphicsRef}
-          draw={(g) => drawBackground(g, false)}
-        />
-        <pixiText
-          text={displayText}
-          style={inputStyle}
-          x={sizePreset.paddingX}
-          y={(sizePreset.height - sizePreset.fontSize) / 2}
-        />
-      </pixiContainer>
-
       {/* Description / Error message */}
-      {descriptionText && (
+      {descriptionText && (isRow ? (
+        <pixiContainer layout={{ display: 'flex', flexDirection: 'row' }}>
+          {label && <pixiContainer layout={spacerLayout} />}
+          <pixiText
+            text={descriptionText}
+            style={descriptionStyle}
+            layout={{ isLeaf: true }}
+          />
+        </pixiContainer>
+      ) : (
         <pixiText
           text={descriptionText}
           style={descriptionStyle}
-          x={descriptionPos.x}
-          y={descriptionPos.y}
+          layout={{ isLeaf: true }}
         />
-      )}
+      ))}
 
       {/* 🚀 Phase 19: 투명 히트 영역 (클릭 감지용) - 마지막에 렌더링하여 최상단 배치 */}
       <pixiGraphics

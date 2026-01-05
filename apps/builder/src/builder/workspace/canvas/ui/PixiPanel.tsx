@@ -103,6 +103,29 @@ export const PixiPanel = memo(function PixiPanel({
     return String(props?.children || '');
   }, [props?.children]);
 
+  const panelLayout = useMemo(() => ({
+    display: 'flex',
+    flexDirection: 'column',
+    width: panelWidth,
+    height: panelHeight,
+  }), [panelWidth, panelHeight]);
+
+  const titleLayout = useMemo(() => ({
+    display: 'flex',
+    flexDirection: 'row',
+    width: panelWidth,
+    paddingBlock: sizePreset.titlePaddingY,
+    paddingInline: sizePreset.titlePaddingX,
+  }), [panelWidth, sizePreset.titlePaddingY, sizePreset.titlePaddingX]);
+
+  const contentLayout = useMemo(() => ({
+    display: 'flex',
+    flexDirection: 'column',
+    width: panelWidth,
+    padding: sizePreset.contentPadding,
+    minHeight: sizePreset.minHeight,
+  }), [panelWidth, sizePreset.contentPadding, sizePreset.minHeight]);
+
   // 패널 배경 그리기
   const drawPanel = useCallback(
     (g: PixiGraphics) => {
@@ -190,28 +213,30 @@ export const PixiPanel = memo(function PixiPanel({
   );
 
   return (
-    <pixiContainer x={posX} y={posY}>
+    <pixiContainer x={posX} y={posY} layout={panelLayout}>
       {/* 패널 배경 */}
       <pixiGraphics draw={drawPanel} />
 
       {/* 타이틀 */}
       {title && (
-        <pixiText
-          text={title}
-          style={titleStyle}
-          x={sizePreset.titlePaddingX}
-          y={sizePreset.titlePaddingY}
-        />
+        <pixiContainer layout={titleLayout}>
+          <pixiText
+            text={title}
+            style={titleStyle}
+            layout={{ isLeaf: true }}
+          />
+        </pixiContainer>
       )}
 
       {/* 콘텐츠 */}
       {contentText && (
-        <pixiText
-          text={contentText}
-          style={contentStyle}
-          x={sizePreset.contentPadding}
-          y={titleHeight + sizePreset.contentPadding}
-        />
+        <pixiContainer layout={contentLayout}>
+          <pixiText
+            text={contentText}
+            style={contentStyle}
+            layout={{ isLeaf: true }}
+          />
+        </pixiContainer>
       )}
 
       {/* 투명 히트 영역 (클릭 감지용) */}
