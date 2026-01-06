@@ -2,6 +2,21 @@
 
 > 목표: LayoutEngine.ts (1,804줄) 완전 삭제, @pixi/layout 선언적 flexbox 전환
 
+## 🎯 진행 상태 (2026-01-06)
+
+| Phase | 내용 | 상태 |
+|-------|------|------|
+| Phase 0 | @pixi/layout 동작 검증 | ✅ 완료 |
+| Phase 1 | ElementRegistry 구축 | ✅ 완료 |
+| Phase 2 | SelectionLayer getBounds() | ✅ 완료 |
+| Phase 3 | useViewportCulling getBounds() | ✅ 완료 |
+| Phase 4 | renderElementTree layout prop | ✅ 완료 |
+| Phase 5 | UI 컴포넌트 x/y 제거 | ✅ 완료 |
+| Phase 6 | calculateLayout() 제거 | ✅ 완료 |
+| Phase 7 | LayoutEngine.ts 삭제 | ✅ 완료 |
+| Phase 7+ | SelectionBox 좌표 변환 수정 | ✅ 완료 |
+| Phase 8 | % 단위 지원 - parseCSSSize 제거 | 🔄 진행 중 (3/28 파일) |
+
 ---
 
 ## @pixi/layout 올바른 사용법 (필독)
@@ -493,3 +508,105 @@ LayoutEngine.ts 완전 삭제 (1,804줄)
 4. **롤백 전략**
    - 각 Phase별로 별도 커밋
    - 문제 발생 시 해당 Phase만 롤백 가능
+
+---
+
+## Phase 7+: SelectionBox 좌표 변환 수정 ✅
+
+### 문제
+- SelectionBox와 렌더링된 요소의 위치가 일치하지 않음
+- `getBounds()`가 글로벌 좌표를 반환하지만, SelectionBox는 Camera Container 안에서 렌더링됨
+
+### 해결
+`SelectionLayer.tsx`에 `panOffset` prop 추가하여 글로벌 → Camera 로컬 좌표 변환
+
+```typescript
+// SelectionLayer.tsx - computeSelectionBounds()
+if (bounds) {
+  // 글로벌 좌표 → Camera 로컬 좌표 변환
+  const localX = (bounds.x - panOffset.x) / zoom;
+  const localY = (bounds.y - panOffset.y) / zoom;
+  const localWidth = bounds.width / zoom;
+  const localHeight = bounds.height / zoom;
+  return { x: localX, y: localY, width: localWidth, height: localHeight };
+}
+```
+
+### 수정된 파일
+- `apps/builder/src/builder/workspace/canvas/selection/SelectionLayer.tsx`
+- `apps/builder/src/builder/workspace/canvas/BuilderCanvas.tsx`
+
+---
+
+## Phase 8: 퍼센트(%) 단위 지원 - parseCSSSize 제거 🔄
+
+### 문제
+- 스타일 패널에서 `width: 100%`를 설정해도 픽셀 값으로만 계산됨
+- `parseCSSSize(style?.width, undefined, 300)` 호출 시 `parentSize`가 `undefined`이므로 % 값이 무시됨
+- @pixi/layout은 % 값을 자동으로 처리하지만, 수동 계산이 이를 덮어씀
+
+### 근본적인 해결책
+- UI 컴포넌트에서 `parseCSSSize` 호출 제거
+- `layout` prop에 `style?.width`를 문자열 그대로 전달
+- @pixi/layout이 부모 크기 기준으로 % 값을 자동 계산하도록 위임
+
+### 적용 패턴
+
+```typescript
+// ❌ 이전 (% 지원 안됨)
+const tabsWidth = parseCSSSize(style?.width, undefined, 300);
+const rootLayout = { width: tabsWidth };
+
+// ✅ 이후 (@pixi/layout이 % 자동 처리)
+const styleWidth = style?.width;
+const fallbackWidth = 300;
+const rootLayout = { width: styleWidth ?? fallbackWidth };
+```
+
+### 핵심 원칙
+
+1. **layout prop에 style 값 직접 전달** - `'100%'`, `'50%'` 등 문자열 그대로 전달
+2. **자식 레이아웃은 `100%` 또는 flex 사용** - `width: '100%'`, `flexGrow: 1`
+3. **Graphics는 fallback 값 사용** - 픽셀 값이 필요한 경우 기본값 사용
+4. **@pixi/layout 내장 스타일 활용** - `backgroundColor`, `borderColor`, `borderRadius`
+
+### 수정 완료 파일 (3개)
+
+| 파일 | 수정 내용 |
+|------|----------|
+| `PixiTabs.tsx` | `parseCSSSize` 제거, layout에 `style?.width` 직접 전달, Graphics border를 layout `backgroundColor`로 대체 |
+| `PixiPanel.tsx` | `parseCSSSize` 제거, Graphics 배경을 layout 기반으로 변경, 히트 영역을 layout `position: 'absolute'`로 변경 |
+| `PixiInput.tsx` | `parseCSSSize` 제거, `inputLayout.width`에 `styleWidth ?? fallbackWidth` 전달 |
+
+### 남은 파일 (25개)
+
+```
+PixiButton, PixiCheckbox, PixiCard, PixiList, PixiListBox,
+PixiSlider, PixiProgressBar, PixiMeter, PixiSeparator,
+PixiSelect, PixiScrollBox, PixiMaskedFrame, PixiToggleButton,
+PixiFancyButton, PixiSwitcher, PixiRadio, PixiRadioItem,
+PixiCheckboxItem, PixiCheckboxGroup, PixiToggleButtonGroup,
+paddingUtils.ts, styleConverter.ts, borderUtils.ts, BodyLayer.tsx
+```
+
+### 작업 템플릿
+
+각 컴포넌트에서 다음 패턴 적용:
+
+```typescript
+// 1. import 제거
+- import { parseCSSSize } from "../sprites/styleConverter";
+
+// 2. 변수 변경
+- const width = parseCSSSize(style?.width, undefined, 200);
++ const styleWidth = style?.width;
++ const fallbackWidth = 200;
+
+// 3. layout에 직접 전달
+- const layout = { width };
++ const layout = { width: styleWidth ?? fallbackWidth };
+
+// 4. Graphics에서는 fallback 사용
+- g.roundRect(0, 0, width, height, radius);
++ g.roundRect(0, 0, fallbackWidth, fallbackHeight, radius);
+```

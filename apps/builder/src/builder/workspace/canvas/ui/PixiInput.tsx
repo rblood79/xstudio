@@ -20,7 +20,6 @@ import { memo, useCallback, useMemo, useRef } from 'react';
 import type { Graphics as PixiGraphicsType, TextStyle } from 'pixi.js';
 import type { Element } from '../../../../types/core/store.types';
 import type { CSSStyle } from '../sprites/styleConverter';
-import { parseCSSSize } from '../sprites/styleConverter';
 import { getTextFieldSizePreset, getTextFieldColorPreset, getLabelStylePreset, getDescriptionStylePreset, getVariantColors } from '../utils/cssVariableReader';
 import { useThemeColors } from '../hooks/useThemeColors';
 
@@ -92,8 +91,9 @@ export const PixiInput = memo(function PixiInput({
 
   const isRow = flexDirection === 'row';
 
-  // Calculate dimensions - 🚀 Phase 19: labelPreset/descPreset 사용
-  const fieldWidth = parseCSSSize(style?.width, undefined, 240);
+  // 🚀 @pixi/layout: style?.width를 그대로 전달 (% 문자열 지원)
+  const styleWidth = style?.width;
+  const fallbackWidth = 240;
 
   // Column 레이아웃용 높이 계산
   const labelHeight = label ? labelPreset.fontSize + sizePreset.gap : 0;
@@ -106,8 +106,8 @@ export const PixiInput = memo(function PixiInput({
   const isPlaceholder = !value && placeholder;
   const descriptionText = isInvalid && errorMessage ? errorMessage : description;
 
-  // 🚀 Phase 19: 전체 영역 계산 (hitArea용)
-  const totalWidth = isRow ? labelWidth + fieldWidth : fieldWidth;
+  // 🚀 Phase 19: 전체 영역 계산 (hitArea용) - fallback 사용
+  const totalWidth = isRow ? labelWidth + fallbackWidth : fallbackWidth;
   const totalHeightCalc = isRow
     ? sizePreset.height + (descriptionText ? descPreset.fontSize + sizePreset.gap : 0)
     : labelHeight + sizePreset.height + (descriptionText ? descPreset.fontSize + sizePreset.gap : 0);
@@ -125,10 +125,11 @@ export const PixiInput = memo(function PixiInput({
     gap: sizePreset.gap,
   }), [sizePreset.gap]);
 
+  // 🚀 @pixi/layout: layout에 style 값 직접 전달 (% 지원)
   const inputLayout = useMemo(() => ({
-    width: fieldWidth,
+    width: styleWidth ?? fallbackWidth,
     height: sizePreset.height,
-  }), [fieldWidth, sizePreset.height]);
+  }), [styleWidth, sizePreset.height]);
 
   const spacerLayout = useMemo(() => ({
     width: labelWidth,
@@ -138,7 +139,7 @@ export const PixiInput = memo(function PixiInput({
   // 🚀 Performance: useRef로 hover 상태 관리
   const graphicsRef = useRef<PixiGraphicsType>(null);
 
-  // Draw input background
+  // Draw input background - 🚀 @pixi/layout: Graphics는 fallback 사용
   const drawBackground = useCallback(
     (g: PixiGraphicsType, isHovered = false) => {
       g.clear();
@@ -151,7 +152,7 @@ export const PixiInput = memo(function PixiInput({
         bgColor = Math.max(0, colorPreset.backgroundColor - 0x0a0a0a);
       }
 
-      g.roundRect(0, 0, fieldWidth, sizePreset.height, sizePreset.borderRadius);
+      g.roundRect(0, 0, fallbackWidth, sizePreset.height, sizePreset.borderRadius);
       g.fill({ color: bgColor });
 
       // Border
@@ -168,11 +169,11 @@ export const PixiInput = memo(function PixiInput({
 
       // Selection indicator
       if (isSelected) {
-        g.roundRect(-2, -2, fieldWidth + 4, sizePreset.height + 4, sizePreset.borderRadius + 2);
+        g.roundRect(-2, -2, fallbackWidth + 4, sizePreset.height + 4, sizePreset.borderRadius + 2);
         g.stroke({ color: variantColors.bg, width: 2 });
       }
     },
-    [fieldWidth, sizePreset, colorPreset, isSelected, isDisabled, isInvalid, variantColors.bg]
+    [fallbackWidth, sizePreset, colorPreset, isSelected, isDisabled, isInvalid, variantColors.bg]
   );
 
   // Text styles - 🚀 Phase 19: .react-aria-Label 클래스에서 스타일 읽기

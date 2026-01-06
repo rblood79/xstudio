@@ -7,6 +7,95 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Refactored - @pixi/layout Migration Phase 7-8: Percentage Unit Support (2026-01-06)
+
+#### Phase 7: SelectionBox 좌표 변환 수정
+
+**문제:**
+- SelectionBox와 렌더링된 요소의 위치가 일치하지 않음
+- `getBounds()`가 글로벌 좌표를 반환하지만, SelectionBox는 Camera Container 안에서 렌더링됨
+
+**해결:**
+- `SelectionLayer.tsx`에 `panOffset` prop 추가
+- 글로벌 좌표 → Camera 로컬 좌표 변환 로직 추가
+
+```typescript
+// 글로벌 좌표 → Camera 로컬 좌표 변환
+const localX = (bounds.x - panOffset.x) / zoom;
+const localY = (bounds.y - panOffset.y) / zoom;
+const localWidth = bounds.width / zoom;
+const localHeight = bounds.height / zoom;
+```
+
+**수정된 파일:**
+- `apps/builder/src/builder/workspace/canvas/selection/SelectionLayer.tsx`
+- `apps/builder/src/builder/workspace/canvas/BuilderCanvas.tsx`
+
+#### Phase 8: 퍼센트(%) 단위 지원 - parseCSSSize 제거
+
+**문제:**
+- 스타일 패널에서 `width: 100%`를 설정해도 픽셀 값으로만 계산됨
+- `parseCSSSize(style?.width, undefined, 300)` 호출 시 `parentSize`가 `undefined`이므로 % 값이 무시됨
+- @pixi/layout은 % 값을 자동으로 처리하지만, 수동 계산이 이를 덮어씀
+
+**근본적인 해결책:**
+- UI 컴포넌트에서 `parseCSSSize` 호출 제거
+- `layout` prop에 `style?.width`를 문자열 그대로 전달
+- @pixi/layout이 부모 크기 기준으로 % 값을 자동 계산하도록 위임
+
+**적용된 패턴:**
+
+```typescript
+// 이전 (% 지원 안됨)
+const tabsWidth = parseCSSSize(style?.width, undefined, 300);
+const rootLayout = { width: tabsWidth };
+
+// 이후 (@pixi/layout이 % 자동 처리)
+const styleWidth = style?.width;
+const fallbackWidth = 300;
+const rootLayout = { width: styleWidth ?? fallbackWidth };
+```
+
+**핵심 원칙:**
+1. **layout prop에 style 값 직접 전달** - `'100%'`, `'50%'` 등 문자열 그대로 전달
+2. **자식 레이아웃은 `100%` 또는 flex 사용** - `width: '100%'`, `flexGrow: 1`
+3. **Graphics는 fallback 값 사용** - 픽셀 값이 필요한 경우 기본값 사용
+4. **@pixi/layout 내장 스타일 활용** - `backgroundColor`, `borderColor`, `borderRadius`
+
+**수정된 파일 (3개):**
+
+1. `apps/builder/src/builder/workspace/canvas/ui/PixiTabs.tsx`
+   - `parseCSSSize` import 제거
+   - `rootLayout.width`에 `style?.width` 직접 전달
+   - `tabListLayout`, `panelLayout`을 flex 기반으로 변경
+   - Graphics border를 @pixi/layout `backgroundColor`로 대체
+
+2. `apps/builder/src/builder/workspace/canvas/ui/PixiPanel.tsx`
+   - `parseCSSSize` import 제거
+   - `panelLayout`에 `styleWidth ?? fallbackWidth` 전달
+   - `titleLayout`, `contentLayout`을 `width: '100%'`, `flexGrow: 1`로 변경
+   - Graphics 배경을 layout `backgroundColor`, `borderColor` 기반으로 대체
+   - 히트 영역을 layout 기반 `position: 'absolute'`로 변경
+
+3. `apps/builder/src/builder/workspace/canvas/ui/PixiInput.tsx`
+   - `parseCSSSize` import 제거
+   - `inputLayout.width`에 `styleWidth ?? fallbackWidth` 전달
+   - Graphics `drawBackground`에서 `fallbackWidth` 사용
+
+**남은 작업 (25개 파일):**
+동일한 패턴으로 수정 필요:
+- PixiButton, PixiCheckbox, PixiCard, PixiList, PixiListBox
+- PixiSlider, PixiProgressBar, PixiMeter, PixiSeparator
+- PixiSelect, PixiScrollBox, PixiMaskedFrame 등
+
+**결과:**
+- ✅ Tabs, Panel, Input 컴포넌트에서 `width: 100%` 정상 동작
+- ✅ @pixi/layout이 부모 크기 기준으로 % 자동 계산
+- ✅ SelectionBox와 요소 위치 일치
+- ✅ TypeScript 에러 없음
+
+---
+
 ### Added - Export/Import Phase 1-4 Complete & Static HTML Generation (2026-01-03)
 
 #### Export/Import 기능 완성 (Phase 1-4)
