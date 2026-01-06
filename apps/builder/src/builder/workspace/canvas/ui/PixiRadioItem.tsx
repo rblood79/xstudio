@@ -55,10 +55,6 @@ export const PixiRadioItem = memo(function PixiRadioItem({
   const radioSize = DEFAULT_RADIO_SIZE;
   const fontSize = parseCSSSize(style?.fontSize, undefined, 14);
 
-  // 위치 (LayoutEngine에서 계산된 위치 사용)
-  const posX = parseCSSSize(style?.left, undefined, 0);
-  const posY = parseCSSSize(style?.top, undefined, 0);
-
   // 크기 (LayoutEngine에서 계산된 크기 우선 사용)
   const layoutWidth = parseCSSSize(style?.width, undefined, 0);
   const layoutHeight = parseCSSSize(style?.height, undefined, 0);
@@ -84,7 +80,7 @@ export const PixiRadioItem = memo(function PixiRadioItem({
   );
 
   return (
-    <pixiContainer x={posX} y={posY}>
+    <pixiContainer>
       {/* 투명 히트 영역 (selection용) */}
       <pixiGraphics
         draw={drawHitArea}

@@ -95,10 +95,6 @@ export const PixiBreadcrumbs = memo(function PixiBreadcrumbs({
     return colorPreset.textColor;
   }, [style, colorPreset]);
 
-  // 위치
-  const posX = parseCSSSize(style?.left, undefined, 0);
-  const posY = parseCSSSize(style?.top, undefined, 0);
-
   // hover 상태 관리 (각 항목별)
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
 
@@ -206,7 +202,7 @@ export const PixiBreadcrumbs = memo(function PixiBreadcrumbs({
   const containerOffset = variant === "filled" ? sizePreset.padding : 0;
 
   return (
-    <pixiContainer x={posX} y={posY}>
+    <pixiContainer>
       {/* 배경 (filled variant) */}
       <pixiGraphics draw={drawBackground} />
 

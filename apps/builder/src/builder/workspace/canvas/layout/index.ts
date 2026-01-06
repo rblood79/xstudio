@@ -2,22 +2,14 @@
  * Layout Module
  *
  * 🚀 Phase 11 B2: PixiJS 레이아웃 시스템
- * 🚀 P7.8: Yoga 기반 Flexbox 레이아웃 엔진으로 리팩토링
+ * 🚀 Phase 7: @pixi/layout 마이그레이션 완료 - LayoutEngine.ts 삭제
  *
- * yoga-layout v3 기반 Flexbox 및 커스텀 CSS Grid 지원
+ * @pixi/layout 기반 선언적 Flexbox 레이아웃
+ * 커스텀 CSS Grid 지원 (GridLayout.utils)
  *
  * @since 2025-12-11 Phase 11 B2
- * @updated 2025-12-13 P7.8 - Yoga 기반 LayoutEngine으로 교체
+ * @updated 2025-01-06 Phase 7 - LayoutEngine.ts 삭제, @pixi/layout 완전 전환
  */
-
-// Layout Engine (Yoga-based Flexbox + Block)
-export {
-  initYoga,
-  calculateLayout,
-  isFlexContainer,
-  type LayoutPosition,
-  type LayoutResult,
-} from './LayoutEngine';
 
 // Grid Layout (Custom)
 export {
@@ -26,6 +18,7 @@ export {
 
 export {
   isGridContainer,
+  isFlexContainer,  // 🚀 Phase 7: LayoutEngine.ts에서 이동
   parseGridTemplate,
   parseGap,
   parseGridArea,
@@ -37,3 +30,10 @@ export {
   type GridCellBounds,
   type GridLayoutProps,
 } from './GridLayout.utils';
+
+// 🚀 Phase 4: Style to Layout Converter
+export {
+  styleToLayout,
+  isEmptyLayout,
+  type LayoutStyle,
+} from './styleToLayout';

@@ -100,10 +100,6 @@ export const PixiComboBox = memo(function PixiComboBox({
     [variant, themeColors]
   );
 
-  // 위치
-  const posX = parseCSSSize(style?.left, undefined, 0);
-  const posY = parseCSSSize(style?.top, undefined, 0);
-
   // 전체 너비/높이 계산
   const inputHeight = sizePreset.paddingY * 2 + sizePreset.fontSize;
   const labelHeight = label ? sizePreset.labelFontSize + 4 : 0;
@@ -263,7 +259,7 @@ export const PixiComboBox = memo(function PixiComboBox({
   const itemHeight = sizePreset.itemPaddingY * 2 + sizePreset.fontSize;
 
   return (
-    <pixiContainer x={posX} y={posY}>
+    <pixiContainer>
       {/* 라벨 */}
       {label && (
         <pixiText text={label} style={labelTextStyle} x={0} y={0} />

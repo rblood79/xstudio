@@ -136,10 +136,6 @@ export const PixiCard = memo(function PixiCard({
 
   const cardHeight = layoutHeight ?? explicitHeight ?? 60;
 
-  // 위치
-  const posX = parseCSSSize(style?.left, undefined, 0);
-  const posY = parseCSSSize(style?.top, undefined, 0);
-
   // 카드 배경 그리기
   const drawCard = useCallback(
     (g: PixiGraphics) => {
@@ -250,7 +246,7 @@ export const PixiCard = memo(function PixiCard({
   );
 
   return (
-    <pixiContainer x={posX} y={posY} layout={cardLayout} onLayout={handleLayout}>
+    <pixiContainer layout={cardLayout} onLayout={handleLayout}>
       {/* 카드 배경 */}
       <pixiGraphics draw={drawCard} />
 

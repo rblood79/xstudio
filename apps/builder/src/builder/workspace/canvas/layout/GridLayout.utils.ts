@@ -69,6 +69,15 @@ export function isGridContainer(element: Element): boolean {
 }
 
 /**
+ * Element가 Flex 컨테이너인지 확인
+ * 🚀 Phase 7: LayoutEngine.ts에서 이동
+ */
+export function isFlexContainer(element: Element): boolean {
+  const style = element.props?.style as CSSStyle | undefined;
+  return style?.display === 'flex';
+}
+
+/**
  * CSS Grid 트랙 값을 파싱
  */
 export function parseGridTemplate(

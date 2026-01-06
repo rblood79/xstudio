@@ -93,9 +93,7 @@ export const PixiCheckbox = memo(function PixiCheckbox({
   // fontSize도 CSS 변수 프리셋에서 가져옴 (style에 명시적 값이 없으면)
   const fontSize = parseCSSSize(style?.fontSize, undefined, sizePreset.fontSize);
 
-  // 위치
-  const posX = parseCSSSize(style?.left, undefined, 0);
-  const posY = parseCSSSize(style?.top, undefined, 0);
+  // 🚀 Phase 5: posX/posY 제거 - ElementSprite에서 layout prop으로 위치 처리
 
   // 체크박스 박스 그리기
   // 🚀 Border-Box v2: drawBox 유틸리티 사용
@@ -174,8 +172,9 @@ export const PixiCheckbox = memo(function PixiCheckbox({
     [hitAreaWidth, hitAreaHeight]
   );
 
+  // 🚀 Phase 5: 루트 컨테이너에서 x/y 제거 - 위치는 ElementSprite에서 처리
   return (
-    <pixiContainer x={posX} y={posY}>
+    <pixiContainer>
       {/* 투명 히트 영역 (전체 클릭 가능) */}
       <pixiGraphics
         draw={drawHitArea}

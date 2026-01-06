@@ -354,10 +354,6 @@ export const PixiListBox = memo(function PixiListBox({
   const containerHeight = parseCSSSize(style?.height, undefined, 200);
   const itemWidth = containerWidth - sizePreset.containerPadding * 2;
 
-  // 위치
-  const posX = parseCSSSize(style?.left, undefined, 0);
-  const posY = parseCSSSize(style?.top, undefined, 0);
-
   // 총 콘텐츠 높이
   const totalContentHeight = useMemo(() => {
     return items.length * (sizePreset.itemHeight + sizePreset.gap) - sizePreset.gap;
@@ -462,8 +458,6 @@ export const PixiListBox = memo(function PixiListBox({
 
   return (
     <pixiContainer
-      x={posX}
-      y={posY}
       eventMode="static"
       onPointerDown={handleContainerClick}
     >

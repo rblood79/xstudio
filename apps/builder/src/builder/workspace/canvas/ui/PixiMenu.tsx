@@ -126,10 +126,6 @@ export const PixiMenu = memo(function PixiMenu({
     return colorPreset.borderColor;
   }, [style, colorPreset]);
 
-  // 위치
-  const posX = parseCSSSize(style?.left, undefined, 0);
-  const posY = parseCSSSize(style?.top, undefined, 0);
-
   // 레이아웃 계산
   const menuLayout = useMemo(() => {
     const items: MenuItemData[] = [];
@@ -275,7 +271,7 @@ export const PixiMenu = memo(function PixiMenu({
   );
 
   return (
-    <pixiContainer x={posX} y={posY}>
+    <pixiContainer>
       {/* 메뉴 배경 */}
       <pixiGraphics draw={drawMenuBackground} />
 

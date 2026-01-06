@@ -121,10 +121,6 @@ export const PixiLink = memo(function PixiLink({
     };
   }, [linkText, textStyle]);
 
-  // 위치
-  const posX = parseCSSSize(style?.left, undefined, 0);
-  const posY = parseCSSSize(style?.top, undefined, 0);
-
   // 밑줄 그리기
   const drawUnderline = useCallback(
     (g: PixiGraphics) => {
@@ -164,7 +160,7 @@ export const PixiLink = memo(function PixiLink({
   }, [isDisabled, element.id, onClick]);
 
   return (
-    <pixiContainer x={posX} y={posY}>
+    <pixiContainer>
       {/* 링크 텍스트 */}
       <pixiText
         text={linkText}

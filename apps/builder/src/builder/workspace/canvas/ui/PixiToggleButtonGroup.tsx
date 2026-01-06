@@ -322,10 +322,6 @@ export const PixiToggleButtonGroup = memo(function PixiToggleButtonGroup({
   // gap
   const gap = parseCSSSize(style?.gap, undefined, DEFAULT_GAP);
 
-  // 위치
-  const posX = parseCSSSize(style?.left, undefined, 0);
-  const posY = parseCSSSize(style?.top, undefined, 0);
-
   // 버튼 크기 계산 (텍스트 기반)
   const buttonSizes = useMemo(() => {
     const textStyle = new TextStyle({
@@ -427,8 +423,6 @@ export const PixiToggleButtonGroup = memo(function PixiToggleButtonGroup({
 
   return (
     <pixiContainer
-      x={posX}
-      y={posY}
       eventMode="static"
       onPointerDown={handleGroupClick}
     >

@@ -11,9 +11,11 @@
  */
 
 import { useExtend } from '@pixi/react';
+import { Container } from 'pixi.js';
 import { PIXI_COMPONENTS } from '../pixiSetup';
-import { memo, useMemo } from 'react';
+import { memo, useMemo, useEffect, useCallback } from 'react';
 import type { Element } from '../../../../types/core/store.types';
+import { registerElement, unregisterElement } from '../elementRegistry';
 import { BoxSprite } from './BoxSprite';
 import { TextSprite } from './TextSprite';
 import { ImageSprite } from './ImageSprite';
@@ -380,11 +382,27 @@ export const ElementSprite = memo(function ElementSprite({
 }: ElementSpriteProps) {
   useExtend(PIXI_COMPONENTS);
 
+  // 🚀 Phase 1: ElementRegistry에 Container 등록/해제
+  // getBounds() 호출을 위해 Container 참조를 저장
+  const elementId = element.id;
+
+  const handleContainerRef = useCallback((container: Container | null) => {
+    if (container) {
+      registerElement(elementId, container);
+    }
+  }, [elementId]);
+
+  // Cleanup: unmount 시 registry에서 해제
+  useEffect(() => {
+    return () => {
+      unregisterElement(elementId);
+    };
+  }, [elementId]);
+
   // 🚀 성능 최적화: 각 ElementSprite가 자신의 선택 상태만 구독
   // 기존: ElementsLayer가 selectedElementIds 구독 → 전체 리렌더 O(n)
   // 개선: 각 ElementSprite가 자신의 선택 여부만 구독 → 변경된 요소만 리렌더 O(2)
   // selector가 boolean을 반환하므로 값이 변경될 때만 리렌더 트리거
-  const elementId = element.id;
   // 🚀 O(1) 최적화: Set.has() 사용 (includes() 대신)
   const isSelected = useStore((state) =>
     state.selectedElementIdsSet.has(elementId)
@@ -445,7 +463,9 @@ export const ElementSprite = memo(function ElementSprite({
   // 🚀 Panel의 자손 요소들은 ElementsLayer에서 layoutPosition과 함께 렌더링됨
   // selectionBox와 렌더링 위치가 일치하도록 함
 
-  switch (spriteType) {
+  // 🚀 Phase 1: 스프라이트 콘텐츠를 변수에 저장하여 pixiContainer로 감싸기
+  const content = (() => {
+    switch (spriteType) {
     // UI 컴포넌트 (Phase 11 B2.4)
     // P5: PixiButton 활성화 (pixiContainer 래퍼로 이벤트 처리)
     case 'button':
@@ -1070,7 +1090,15 @@ export const ElementSprite = memo(function ElementSprite({
     case 'box':
     default:
       return <BoxSprite element={effectiveElement} isSelected={isSelected} onClick={onClick} />;
-  }
+    }
+  })();
+
+  // 🚀 Phase 1: pixiContainer로 감싸서 ref를 registry에 등록
+  return (
+    <pixiContainer ref={handleContainerRef}>
+      {content}
+    </pixiContainer>
+  );
 });
 
 export default ElementSprite;

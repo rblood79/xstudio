@@ -83,10 +83,6 @@ export const PixiPanel = memo(function PixiPanel({
   // 패널 크기 (containerWidth가 있으면 사용, 없으면 style 또는 기본값)
   const panelWidth = parseCSSSize(style?.width, undefined, containerWidth || 280);
 
-  // 위치
-  const posX = parseCSSSize(style?.left, undefined, 0);
-  const posY = parseCSSSize(style?.top, undefined, 0);
-
   // 타이틀 높이 계산
   // CSS: .panel-title { padding: var(--spacing-sm) var(--spacing-md); font-size: var(--text-sm); }
   const titleHeight = title ? sizePreset.titleFontSize + sizePreset.titlePaddingY * 2 : 0;
@@ -213,7 +209,7 @@ export const PixiPanel = memo(function PixiPanel({
   );
 
   return (
-    <pixiContainer x={posX} y={posY} layout={panelLayout}>
+    <pixiContainer layout={panelLayout}>
       {/* 패널 배경 */}
       <pixiGraphics draw={drawPanel} />
 

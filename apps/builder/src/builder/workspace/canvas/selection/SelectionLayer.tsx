@@ -14,7 +14,7 @@
  * @updated 2025-12-23 Phase 19 성능 최적화
  */
 
-import { useCallback, useMemo, memo, type RefObject, useState, useEffect, useRef } from 'react';
+import { useCallback, useMemo, memo, type RefObject, useState, useEffect } from 'react';
 import { useExtend } from '@pixi/react';
 import { PIXI_COMPONENTS } from '../pixiSetup';
 import { useStore } from '../../../stores';
@@ -22,9 +22,8 @@ import { SelectionBox, type SelectionBoxHandle } from './SelectionBox';
 import { LassoSelection } from './LassoSelection';
 import type { BoundingBox, HandlePosition, CursorStyle, DragState } from './types';
 import { calculateCombinedBounds } from './types';
-import type { LayoutResult } from '../layout';
+import { getElementBoundsSimple } from '../elementRegistry';
 import type { Element } from '../../../../types/core/store.types';
-import { TIMING } from '../../../utils/timing';
 
 // ============================================
 // Types
@@ -37,8 +36,6 @@ export interface SelectionLayerProps {
   pageWidth?: number;
   /** 페이지 높이 (Body 선택용) */
   pageHeight?: number;
-  /** 계산된 레이아웃 결과 (부모에서 재사용) */
-  layoutResult: LayoutResult;
   /** 현재 줌 레벨 (핸들 크기 유지용) */
   zoom?: number;
   /** 드래그 시작 콜백 */
@@ -76,7 +73,6 @@ export const SelectionLayer = memo(function SelectionLayer({
   dragState,
   pageWidth = 1920,
   pageHeight = 1080,
-  layoutResult,
   zoom = 1,
   onResizeStart,
   onMoveStart,
@@ -129,7 +125,8 @@ export const SelectionLayer = memo(function SelectionLayer({
     return set;
   }, [selectedElementIds, getChildrenMap]);
 
-  // 🚀 Phase 19: selectionBounds 계산 함수 (재사용)
+  // 🚀 Phase 2: ElementRegistry의 getBounds() 사용으로 전환
+  // 기존 layoutResult.positions 대신 실제 PixiJS Container의 bounds 사용
   const computeSelectionBounds = useCallback(() => {
     if (selectedElements.length === 0) return null;
 
@@ -138,57 +135,28 @@ export const SelectionLayer = memo(function SelectionLayer({
       if (el.tag.toLowerCase() === 'body') {
         return { x: 0, y: 0, width: pageWidth, height: pageHeight };
       }
-      // 레이아웃 계산된 위치 사용
-      const layoutPos = layoutResult.positions.get(el.id);
+      // 🚀 Phase 2: ElementRegistry에서 실제 bounds 조회
+      const bounds = getElementBoundsSimple(el.id);
 
-      if (layoutPos) {
-        return { x: layoutPos.x, y: layoutPos.y, width: layoutPos.width, height: layoutPos.height };
+      if (bounds) {
+        return { x: bounds.x, y: bounds.y, width: bounds.width, height: bounds.height };
       }
       // fallback: 기본값
       return { x: 0, y: 0, width: 100, height: 40 };
     });
 
     return calculateCombinedBounds(boxes);
-  }, [selectedElements, pageWidth, pageHeight, layoutResult]);
+  }, [selectedElements, pageWidth, pageHeight]);
 
-  // 🚀 Phase 19: 선택 변경 시 즉시 bounds 계산 (첫 프레임)
-  // 추가 레이아웃 변경은 requestIdleCallback으로 지연
+  // 🚀 Phase 2: 선택 변경 시 bounds 계산
+  // ElementRegistry의 getBounds()를 사용하여 실제 렌더링된 위치 조회
   const [selectionBounds, setSelectionBounds] = useState<BoundingBox | null>(null);
-  const pendingUpdateRef = useRef<number | null>(null);
 
   // React Compiler 호환: queueMicrotask로 비동기 업데이트
   useEffect(() => {
-    // 첫 번째 프레임: 즉시 계산 (선택 피드백 즉시 표시)
     const bounds = computeSelectionBounds();
     queueMicrotask(() => setSelectionBounds(bounds));
-
-    // cleanup: pending update 취소
-    return () => {
-      if (pendingUpdateRef.current !== null) {
-        cancelIdleCallback(pendingUpdateRef.current);
-        pendingUpdateRef.current = null;
-      }
-    };
   }, [computeSelectionBounds]);
-
-  // 🚀 Phase 19: layoutResult 변경 시에만 지연 업데이트 (드래그 중 등)
-  const layoutResultRef = useRef(layoutResult);
-  useEffect(() => {
-    if (layoutResultRef.current === layoutResult) return;
-    layoutResultRef.current = layoutResult;
-
-    // 레이아웃 변경 시 idle callback으로 bounds 재계산
-    if (pendingUpdateRef.current !== null) {
-      cancelIdleCallback(pendingUpdateRef.current);
-    }
-    pendingUpdateRef.current = requestIdleCallback(
-      () => {
-        setSelectionBounds(computeSelectionBounds());
-        pendingUpdateRef.current = null;
-      },
-      { timeout: TIMING.IDLE_CALLBACK_TIMEOUT }
-    );
-  }, [layoutResult, computeSelectionBounds]);
 
   // 단일 선택 여부
   const isSingleSelection = selectedElements.length === 1;

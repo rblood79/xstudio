@@ -611,10 +611,9 @@ export const PixiButton = memo(function PixiButton({
   const cursorStyle =
     layout.isDisabled || layout.isLoading ? "not-allowed" : "pointer";
 
+  // 🚀 Phase 5: x/y 제거 - 위치는 ElementSprite에서 layout prop으로 처리
   return (
     <pixiContainer
-      x={layout.left}
-      y={layout.top}
       ref={(c: PixiContainer | null) => {
         containerRef.current = c;
       }}

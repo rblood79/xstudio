@@ -1,0 +1,248 @@
+/**
+ * Style to Layout Converter
+ *
+ * 🚀 Phase 4: @pixi/layout 마이그레이션
+ *
+ * Element의 CSS style을 @pixi/layout의 layout prop으로 변환합니다.
+ *
+ * @since 2025-01-06 Phase 4
+ */
+
+import type { Element } from '../../../../types/core/store.types';
+
+// ============================================
+// Types
+// ============================================
+
+/**
+ * @pixi/layout layout prop 타입
+ * CSS Flexbox 속성과 유사한 구조
+ */
+export interface LayoutStyle {
+  // Dimensions
+  width?: number | string;
+  height?: number | string;
+  minWidth?: number | string;
+  minHeight?: number | string;
+  maxWidth?: number | string;
+  maxHeight?: number | string;
+
+  // Position
+  position?: 'relative' | 'absolute';
+  top?: number | string;
+  left?: number | string;
+  right?: number | string;
+  bottom?: number | string;
+
+  // Flexbox Container
+  flexDirection?: 'row' | 'column' | 'row-reverse' | 'column-reverse';
+  flexWrap?: 'nowrap' | 'wrap' | 'wrap-reverse';
+  justifyContent?: 'flex-start' | 'flex-end' | 'center' | 'space-between' | 'space-around' | 'space-evenly';
+  alignItems?: 'flex-start' | 'flex-end' | 'center' | 'stretch' | 'baseline';
+  alignContent?: 'flex-start' | 'flex-end' | 'center' | 'stretch' | 'space-between' | 'space-around';
+
+  // Flexbox Item
+  flexGrow?: number;
+  flexShrink?: number;
+  flexBasis?: number | string;
+  alignSelf?: 'auto' | 'flex-start' | 'flex-end' | 'center' | 'stretch' | 'baseline';
+
+  // Spacing
+  gap?: number | string;
+  rowGap?: number | string;
+  columnGap?: number | string;
+  margin?: number | string;
+  marginTop?: number | string;
+  marginRight?: number | string;
+  marginBottom?: number | string;
+  marginLeft?: number | string;
+  padding?: number | string;
+  paddingTop?: number | string;
+  paddingRight?: number | string;
+  paddingBottom?: number | string;
+  paddingLeft?: number | string;
+}
+
+// ============================================
+// CSS Value Parsing
+// ============================================
+
+/**
+ * CSS 값을 숫자로 파싱 (px, % 등)
+ */
+function parseCSSValue(value: unknown): number | string | undefined {
+  if (value === undefined || value === null || value === '' || value === 'auto') {
+    return undefined;
+  }
+
+  if (typeof value === 'number') {
+    return value;
+  }
+
+  if (typeof value === 'string') {
+    // 퍼센트 값은 문자열로 유지
+    if (value.endsWith('%')) {
+      return value;
+    }
+    // px 값은 숫자로 변환
+    const parsed = parseFloat(value);
+    return isNaN(parsed) ? undefined : parsed;
+  }
+
+  return undefined;
+}
+
+/**
+ * flex 단축 속성 파싱
+ * flex: "1" | "1 0 auto" | "none" 등
+ */
+function parseFlexShorthand(flex: string | number): {
+  flexGrow?: number;
+  flexShrink?: number;
+  flexBasis?: number | string;
+} {
+  if (typeof flex === 'number') {
+    return { flexGrow: flex };
+  }
+
+  if (flex === 'none') {
+    return { flexGrow: 0, flexShrink: 0, flexBasis: 'auto' };
+  }
+
+  if (flex === 'auto') {
+    return { flexGrow: 1, flexShrink: 1, flexBasis: 'auto' };
+  }
+
+  const parts = flex.split(/\s+/);
+  const result: { flexGrow?: number; flexShrink?: number; flexBasis?: number | string } = {};
+
+  if (parts[0]) {
+    result.flexGrow = parseFloat(parts[0]) || 0;
+  }
+  if (parts[1]) {
+    result.flexShrink = parseFloat(parts[1]) || 1;
+  }
+  if (parts[2]) {
+    result.flexBasis = parseCSSValue(parts[2]);
+  }
+
+  return result;
+}
+
+// ============================================
+// Main Converter
+// ============================================
+
+/**
+ * Element의 style을 @pixi/layout layout prop으로 변환
+ *
+ * @param element - Element 객체
+ * @returns layout prop 객체
+ */
+export function styleToLayout(element: Element): LayoutStyle {
+  const style = (element.props?.style || {}) as Record<string, unknown>;
+  const layout: LayoutStyle = {};
+
+  // Dimensions
+  const width = parseCSSValue(style.width);
+  const height = parseCSSValue(style.height);
+  if (width !== undefined) layout.width = width;
+  if (height !== undefined) layout.height = height;
+
+  const minWidth = parseCSSValue(style.minWidth);
+  const minHeight = parseCSSValue(style.minHeight);
+  const maxWidth = parseCSSValue(style.maxWidth);
+  const maxHeight = parseCSSValue(style.maxHeight);
+  if (minWidth !== undefined) layout.minWidth = minWidth;
+  if (minHeight !== undefined) layout.minHeight = minHeight;
+  if (maxWidth !== undefined) layout.maxWidth = maxWidth;
+  if (maxHeight !== undefined) layout.maxHeight = maxHeight;
+
+  // Position
+  if (style.position === 'absolute') {
+    layout.position = 'absolute';
+    const top = parseCSSValue(style.top);
+    const left = parseCSSValue(style.left);
+    const right = parseCSSValue(style.right);
+    const bottom = parseCSSValue(style.bottom);
+    if (top !== undefined) layout.top = top;
+    if (left !== undefined) layout.left = left;
+    if (right !== undefined) layout.right = right;
+    if (bottom !== undefined) layout.bottom = bottom;
+  }
+
+  // Flexbox Container
+  if (style.display === 'flex') {
+    if (style.flexDirection) {
+      layout.flexDirection = style.flexDirection as LayoutStyle['flexDirection'];
+    }
+    if (style.flexWrap) {
+      layout.flexWrap = style.flexWrap as LayoutStyle['flexWrap'];
+    }
+    if (style.justifyContent) {
+      layout.justifyContent = style.justifyContent as LayoutStyle['justifyContent'];
+    }
+    if (style.alignItems) {
+      layout.alignItems = style.alignItems as LayoutStyle['alignItems'];
+    }
+    if (style.alignContent) {
+      layout.alignContent = style.alignContent as LayoutStyle['alignContent'];
+    }
+  }
+
+  // Flexbox Item
+  if (style.flex !== undefined) {
+    const flexProps = parseFlexShorthand(style.flex as string | number);
+    Object.assign(layout, flexProps);
+  } else {
+    if (style.flexGrow !== undefined) layout.flexGrow = Number(style.flexGrow);
+    if (style.flexShrink !== undefined) layout.flexShrink = Number(style.flexShrink);
+    if (style.flexBasis !== undefined) layout.flexBasis = parseCSSValue(style.flexBasis);
+  }
+  if (style.alignSelf) {
+    layout.alignSelf = style.alignSelf as LayoutStyle['alignSelf'];
+  }
+
+  // Gap
+  const gap = parseCSSValue(style.gap);
+  const rowGap = parseCSSValue(style.rowGap);
+  const columnGap = parseCSSValue(style.columnGap);
+  if (gap !== undefined) layout.gap = gap;
+  if (rowGap !== undefined) layout.rowGap = rowGap;
+  if (columnGap !== undefined) layout.columnGap = columnGap;
+
+  // Margin
+  const margin = parseCSSValue(style.margin);
+  if (margin !== undefined) layout.margin = margin;
+  const marginTop = parseCSSValue(style.marginTop);
+  const marginRight = parseCSSValue(style.marginRight);
+  const marginBottom = parseCSSValue(style.marginBottom);
+  const marginLeft = parseCSSValue(style.marginLeft);
+  if (marginTop !== undefined) layout.marginTop = marginTop;
+  if (marginRight !== undefined) layout.marginRight = marginRight;
+  if (marginBottom !== undefined) layout.marginBottom = marginBottom;
+  if (marginLeft !== undefined) layout.marginLeft = marginLeft;
+
+  // Padding
+  const padding = parseCSSValue(style.padding);
+  if (padding !== undefined) layout.padding = padding;
+  const paddingTop = parseCSSValue(style.paddingTop);
+  const paddingRight = parseCSSValue(style.paddingRight);
+  const paddingBottom = parseCSSValue(style.paddingBottom);
+  const paddingLeft = parseCSSValue(style.paddingLeft);
+  if (paddingTop !== undefined) layout.paddingTop = paddingTop;
+  if (paddingRight !== undefined) layout.paddingRight = paddingRight;
+  if (paddingBottom !== undefined) layout.paddingBottom = paddingBottom;
+  if (paddingLeft !== undefined) layout.paddingLeft = paddingLeft;
+
+  return layout;
+}
+
+/**
+ * 빈 layout 객체인지 확인
+ */
+export function isEmptyLayout(layout: LayoutStyle): boolean {
+  return Object.keys(layout).length === 0;
+}
+
+export default styleToLayout;

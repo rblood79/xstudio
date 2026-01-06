@@ -67,10 +67,6 @@ export const PixiInput = memo(function PixiInput({
   const isInvalid = (props.isInvalid as boolean) || false;
   const errorMessage = (props.errorMessage as string) || '';
 
-  // Position (from effectiveElement with layoutPosition applied)
-  const posX = parseCSSSize(style?.left, undefined, 0);
-  const posY = parseCSSSize(style?.top, undefined, 0);
-
   // Get presets from CSS (TextField preset has label/description support)
   const sizePreset = useMemo(() => getTextFieldSizePreset(size), [size]);
   const colorPreset = useMemo(() => getTextFieldColorPreset(variant), [variant]);
@@ -241,7 +237,7 @@ export const PixiInput = memo(function PixiInput({
   );
 
   return (
-    <pixiContainer x={posX} y={posY} layout={rootLayout}>
+    <pixiContainer layout={rootLayout}>
       {isRow ? (
         <pixiContainer layout={rowLayout}>
           {label && (

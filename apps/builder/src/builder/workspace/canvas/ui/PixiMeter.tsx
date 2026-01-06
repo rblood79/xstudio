@@ -152,10 +152,6 @@ export const PixiMeter = memo(function PixiMeter({
   const hasLabelRow = label || showValue;
   const labelRowHeight = hasLabelRow ? sizePreset.fontSize + sizePreset.gap : 0;
 
-  // 위치
-  const posX = parseCSSSize(style?.left, undefined, 0);
-  const posY = parseCSSSize(style?.top, undefined, 0);
-
   // 트랙(배경) 그리기
   const drawTrack = useCallback(
     (g: PixiGraphics) => {
@@ -219,8 +215,6 @@ export const PixiMeter = memo(function PixiMeter({
 
   return (
     <pixiContainer
-      x={posX}
-      y={posY}
       eventMode="static"
       cursor="pointer"
       onPointerDown={handleClick}

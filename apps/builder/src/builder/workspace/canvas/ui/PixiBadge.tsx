@@ -114,10 +114,6 @@ export const PixiBadge = memo(function PixiBadge({
     return colorPreset.text;
   }, [style, colorPreset]);
 
-  // 위치
-  const posX = parseCSSSize(style?.left, undefined, 0);
-  const posY = parseCSSSize(style?.top, undefined, 0);
-
   // 펄싱 애니메이션 ref
   const containerRef = useRef<PixiContainer | null>(null);
   const pulseAnimationRef = useRef<number | null>(null);
@@ -261,8 +257,6 @@ export const PixiBadge = memo(function PixiBadge({
 
   return (
     <pixiContainer
-      x={posX}
-      y={posY}
       ref={(c: PixiContainer | null) => {
         containerRef.current = c;
       }}

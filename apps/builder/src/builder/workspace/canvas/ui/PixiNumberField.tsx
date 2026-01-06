@@ -69,10 +69,6 @@ export const PixiNumberField = memo(function PixiNumberField({
   // hover 상태 관리
   const [hoveredButton, setHoveredButton] = useState<"decrement" | "increment" | null>(null);
 
-  // 위치
-  const posX = parseCSSSize(style?.left, undefined, 0);
-  const posY = parseCSSSize(style?.top, undefined, 0);
-
   // 전체 너비/높이 계산
   const inputHeight = sizePreset.paddingY * 2 + sizePreset.fontSize;
   const labelHeight = label ? sizePreset.labelFontSize + 4 : 0;
@@ -169,7 +165,7 @@ export const PixiNumberField = memo(function PixiNumberField({
   }, [onClick, element.id]);
 
   return (
-    <pixiContainer x={posX} y={posY}>
+    <pixiContainer>
       {/* 라벨 */}
       {label && (
         <pixiText text={label} style={labelTextStyle} x={0} y={0} />

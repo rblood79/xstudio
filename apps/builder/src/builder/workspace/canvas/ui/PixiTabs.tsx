@@ -121,10 +121,6 @@ export const PixiTabs = memo(function PixiTabs({
   // hover 상태 관리
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
 
-  // 위치
-  const posX = parseCSSSize(style?.left, undefined, 0);
-  const posY = parseCSSSize(style?.top, undefined, 0);
-
   // 탭 레이아웃 계산
   const tabsLayout = useMemo(() => {
     const tabs: TabData[] = [];
@@ -299,7 +295,7 @@ export const PixiTabs = memo(function PixiTabs({
   );
 
   return (
-    <pixiContainer x={posX} y={posY} layout={rootLayout}>
+    <pixiContainer layout={rootLayout}>
       <pixiContainer layout={tabListLayout}>
         {/* 탭 리스트 border */}
         <pixiGraphics draw={drawTabListBorder} />

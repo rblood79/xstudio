@@ -53,10 +53,6 @@ export function PixiTextField({
   const isInvalid = (props.isInvalid as boolean) || false;
   const errorMessage = (props.errorMessage as string) || '';
 
-  // 위치 계산
-  const posX = parseCSSSize(style?.left, undefined, 0);
-  const posY = parseCSSSize(style?.top, undefined, 0);
-
   // Get presets from CSS
   const sizePreset = useMemo(() => getTextFieldSizePreset(size), [size]);
   const colorPreset = useMemo(() => getTextFieldColorPreset(variant), [variant]);
@@ -206,7 +202,7 @@ export function PixiTextField({
   }, [isRow, labelWidth, labelHeight, sizePreset]);
 
   return (
-    <pixiContainer x={posX} y={posY}>
+    <pixiContainer>
       {/* Label */}
       {label && (
         <pixiText

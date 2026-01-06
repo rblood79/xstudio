@@ -328,10 +328,6 @@ export const PixiCheckboxGroup = memo(function PixiCheckboxGroup({
   const fontSize = parseCSSSize(style?.fontSize, undefined, labelPreset.fontSize);
   const fontFamily = labelPreset.fontFamily;
 
-  // 위치
-  const posX = parseCSSSize(style?.left, undefined, 0);
-  const posY = parseCSSSize(style?.top, undefined, 0);
-
   // 라벨이 있으면 옵션들의 Y 오프셋 추가
   const labelHeight = groupLabel ? labelPreset.fontSize + 8 : 0;
   const itemWidth = 120;
@@ -401,7 +397,7 @@ export const PixiCheckboxGroup = memo(function PixiCheckboxGroup({
   );
 
   return (
-    <pixiContainer x={posX} y={posY}>
+    <pixiContainer>
       {/* CheckboxGroup 라벨 */}
       {groupLabel && (
         <pixiText

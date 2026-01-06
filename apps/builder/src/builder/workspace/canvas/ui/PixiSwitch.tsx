@@ -47,10 +47,6 @@ export function PixiSwitch({
   const isChecked = (props.isSelected as boolean) || (props.checked as boolean) || false;
   const isDisabled = (props.isDisabled as boolean) || false;
 
-  // 위치 계산
-  const posX = parseCSSSize(style?.left, undefined, 0);
-  const posY = parseCSSSize(style?.top, undefined, 0);
-
   // Get presets from CSS
   const sizePreset = useMemo(() => getSwitchSizePreset(size), [size]);
 
@@ -160,7 +156,7 @@ export function PixiSwitch({
   }, [element.id, onClick, isDisabled]);
 
   return (
-    <pixiContainer x={posX} y={posY}>
+    <pixiContainer>
       {/* Track */}
       <pixiGraphics draw={drawTrack} />
 

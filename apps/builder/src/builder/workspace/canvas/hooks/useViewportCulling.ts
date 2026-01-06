@@ -15,7 +15,7 @@
 
 import { useMemo } from 'react';
 import type { Element } from '../../../../types/core/store.types';
-import type { LayoutResult } from '../layout';
+import { getElementBoundsSimple } from '../elementRegistry';
 
 // ============================================
 // Types
@@ -145,8 +145,6 @@ export function isElementInViewport(
 export interface UseViewportCullingOptions {
   /** 요소 목록 */
   elements: Element[];
-  /** 레이아웃 결과 (위치 정보) */
-  layoutResult: LayoutResult;
   /** 현재 줌 레벨 */
   zoom: number;
   /** 팬 오프셋 */
@@ -168,7 +166,6 @@ export interface UseViewportCullingOptions {
  * ```tsx
  * const { visibleElements, culledCount } = useViewportCulling({
  *   elements: pageElements,
- *   layoutResult,
  *   zoom,
  *   panOffset,
  * });
@@ -179,7 +176,6 @@ export interface UseViewportCullingOptions {
  */
 export function useViewportCulling({
   elements,
-  layoutResult,
   zoom,
   panOffset,
   screenWidth = typeof window !== 'undefined' ? window.innerWidth : 1920,
@@ -205,10 +201,10 @@ export function useViewportCulling({
       panOffset
     );
 
-    // 뷰포트 내 요소 필터링
+    // 🚀 Phase 3: ElementRegistry에서 실제 bounds 조회
     const visibleElements = elements.filter((element) => {
-      const layoutPosition = layoutResult.positions.get(element.id);
-      const bounds = getElementBounds(element, layoutPosition);
+      const registryBounds = getElementBoundsSimple(element.id);
+      const bounds = registryBounds || getElementBounds(element);
       return isElementInViewport(bounds, viewport);
     });
 
@@ -220,7 +216,7 @@ export function useViewportCulling({
       totalCount: elements.length,
       cullingRatio: elements.length > 0 ? culledCount / elements.length : 0,
     };
-  }, [elements, layoutResult, zoom, panOffset, screenWidth, screenHeight, enabled]);
+  }, [elements, zoom, panOffset, screenWidth, screenHeight, enabled]);
 }
 
 // ============================================

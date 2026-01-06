@@ -98,10 +98,6 @@ export const PixiSeparator = memo(function PixiSeparator({
     };
   }, [orientation, style?.width, style?.height, sizePreset.thickness]);
 
-  // 위치
-  const posX = parseCSSSize(style?.left, undefined, 0);
-  const posY = parseCSSSize(style?.top, undefined, 0);
-
   // 구분선 그리기
   const drawSeparator = useCallback(
     (g: PixiGraphics) => {
@@ -169,7 +165,7 @@ export const PixiSeparator = memo(function PixiSeparator({
   }, [element.id, onClick]);
 
   return (
-    <pixiContainer x={posX} y={posY}>
+    <pixiContainer>
       <pixiGraphics
         draw={drawSeparator}
         eventMode="static"

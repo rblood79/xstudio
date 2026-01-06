@@ -39,7 +39,9 @@ import { GridLayer } from "./grid";
 import { ViewportControlBridge } from "./viewport";
 import { BodyLayer } from "./layers";
 import { TextEditOverlay, useTextEdit } from "../overlay";
-import { initYoga, calculateLayout, type LayoutResult } from "./layout";
+// 🚀 Phase 6: calculateLayout 제거 - @pixi/layout이 자동으로 레이아웃 처리
+import { styleToLayout, type LayoutStyle } from "./layout";
+import { getElementBoundsSimple } from "./elementRegistry";
 import { getOutlineVariantColor } from "./utils/cssVariableReader";
 import { useThemeColors } from "./hooks/useThemeColors";
 import { useViewportCulling } from "./hooks/useViewportCulling";
@@ -266,14 +268,13 @@ function ClickableBackground({ onClick, onLassoStart, onLassoDrag, onLassoEnd, z
  * - 뷰포트 외부 요소 렌더링 제외 → GPU 부하 20-40% 감소
  * - 대형 캔버스에서 줌아웃 시 특히 효과적
  */
+// 🚀 Phase 6: layoutResult prop 제거 - @pixi/layout 자동 레이아웃
 const ElementsLayer = memo(function ElementsLayer({
-  layoutResult,
   zoom,
   panOffset,
   onClick,
   onDoubleClick,
 }: {
-  layoutResult: LayoutResult;
   zoom: number;
   panOffset: { x: number; y: number };
   onClick?: (elementId: string) => void;
@@ -375,9 +376,9 @@ const ElementsLayer = memo(function ElementsLayer({
   }, [pageElements, depthMap]);
 
   // 🚀 Phase 11: Viewport Culling - 뷰포트 외부 요소 필터링
+  // 🚀 Phase 3: layoutResult 제거 - ElementRegistry 사용
   const { visibleElements } = useViewportCulling({
     elements: sortedElements,
-    layoutResult,
     zoom,
     panOffset,
     enabled: true, // 필요시 비활성화 가능
@@ -399,29 +400,22 @@ const ElementsLayer = memo(function ElementsLayer({
     return ids;
   }, [visibleElements, elementById]);
 
+  // 🚀 Phase 6: @pixi/layout 완전 전환 - layoutResult 제거
+  // @pixi/layout이 자동으로 flexbox 레이아웃 처리
   const renderElementTree = useCallback((parentId: string | null) => {
     const children = pageChildrenMap.get(parentId) ?? [];
 
     return children.map((child) => {
       if (!renderIdSet.has(child.id)) return null;
 
-      const layoutPos = layoutResult.positions.get(child.id);
-      const parentPos = parentId ? layoutResult.positions.get(parentId) : undefined;
-      const localX = layoutPos
-        ? layoutPos.x - (parentPos?.x ?? 0)
-        : 0;
-      const localY = layoutPos
-        ? layoutPos.y - (parentPos?.y ?? 0)
-        : 0;
-      const spriteLayout = layoutPos
-        ? { x: 0, y: 0, width: layoutPos.width, height: layoutPos.height }
-        : undefined;
+      // Element의 style에서 layout 속성 추출
+      // @pixi/layout이 flexbox 기반으로 자동 배치
+      const containerLayout = styleToLayout(child);
 
       return (
-        <pixiContainer key={child.id} x={localX} y={localY}>
+        <pixiContainer key={child.id} layout={containerLayout}>
           <ElementSprite
             element={child}
-            layoutPosition={spriteLayout}
             onClick={onClick}
             onDoubleClick={onDoubleClick}
           />
@@ -429,7 +423,7 @@ const ElementsLayer = memo(function ElementsLayer({
         </pixiContainer>
       );
     });
-  }, [pageChildrenMap, renderIdSet, layoutResult.positions, onClick, onDoubleClick]);
+  }, [pageChildrenMap, renderIdSet, onClick, onDoubleClick]);
 
   return (
     <pixiContainer
@@ -458,7 +452,7 @@ export function BuilderCanvas({
   const selectionBoxRef = useRef<SelectionBoxHandle>(null);
   const dragPointerRef = useRef<{ x: number; y: number } | null>(null);
   const [containerEl, setContainerEl] = useState<HTMLDivElement | null>(null);
-  const [yogaReady, setYogaReady] = useState(false);
+  // 🚀 Phase 6: yogaReady 제거 - @pixi/layout이 자동으로 Yoga 초기화
 
   // 🚀 Phase 5 + 6.2: 저사양 기기 감지 (모듈 레벨 캐싱으로 useMemo 불필요)
   const isLowEnd = isLowEndDevice();
@@ -471,12 +465,7 @@ export function BuilderCanvas({
     [isInteracting]
   );
 
-  // P7.8: Yoga 엔진 초기화
-  useEffect(() => {
-    initYoga().then(() => {
-      setYogaReady(true);
-    });
-  }, []);
+  // 🚀 Phase 6: initYoga 제거 - @pixi/layout import가 자동으로 Yoga 초기화
 
   // 컨테이너 ref 콜백: 마운트 시점에 DOM 노드를 안전하게 확보
   const setContainerNode = useCallback((node: HTMLDivElement | null) => {
@@ -509,12 +498,7 @@ export function BuilderCanvas({
   const syncPixiVersion = useCanvasSyncStore((state) => state.syncPixiVersion);
   const renderVersion = useCanvasSyncStore((state) => state.renderVersion);
 
-  // 페이지 단위 레이아웃 계산 (재사용)
-  // P7.8: yogaReady 후에만 실제 레이아웃 계산 수행
-  const layoutResult = useMemo(() => {
-    if (!currentPageId || !yogaReady) return { positions: new Map() };
-    return calculateLayout(elements, currentPageId, pageWidth, pageHeight);
-  }, [elements, currentPageId, pageWidth, pageHeight, yogaReady]);
+  // 🚀 Phase 6: calculateLayout 제거 - @pixi/layout이 자동으로 레이아웃 처리
 
   const elementById = useMemo(
     () => new Map(elements.map((el) => [el.id, el])),
@@ -557,22 +541,22 @@ export function BuilderCanvas({
   }, [elements, currentPageId]);
 
   // 라쏘 선택 영역 내 요소 찾기
-  // 🚀 Bug fix: layoutResult.positions 사용 (Yoga 레이아웃 적용된 실제 위치)
+  // 🚀 Phase 6: ElementRegistry의 getBounds() 사용
   const findElementsInLassoArea = useCallback(
     (start: { x: number; y: number }, end: { x: number; y: number }) => {
       return findElementsInLasso(
         pageElements.map((el) => {
-          // layoutResult에서 실제 렌더링 위치 가져오기
-          const layoutPos = layoutResult.positions.get(el.id);
-          if (layoutPos) {
+          // ElementRegistry에서 실제 렌더링 위치 가져오기
+          const bounds = getElementBoundsSimple(el.id);
+          if (bounds) {
             return {
               id: el.id,
               props: {
                 style: {
-                  left: layoutPos.x,
-                  top: layoutPos.y,
-                  width: layoutPos.width,
-                  height: layoutPos.height,
+                  left: bounds.x,
+                  top: bounds.y,
+                  width: bounds.width,
+                  height: bounds.height,
                 },
               },
             };
@@ -587,7 +571,7 @@ export function BuilderCanvas({
         end
       );
     },
-    [pageElements, layoutResult]
+    [pageElements]
   );
 
   const screenToCanvasPoint = useCallback(
@@ -600,22 +584,20 @@ export function BuilderCanvas({
     [panOffset.x, panOffset.y, zoom]
   );
 
+  // 🚀 Phase 6: ElementRegistry의 getBounds() 사용
   const getElementBounds = useCallback(
     (element: Element): BoundingBox | null => {
       if (element.tag.toLowerCase() === "body") {
         return { x: 0, y: 0, width: pageWidth, height: pageHeight };
       }
 
-      const layoutPos = layoutResult.positions.get(element.id);
-      if (layoutPos) {
-        return {
-          x: layoutPos.x,
-          y: layoutPos.y,
-          width: layoutPos.width,
-          height: layoutPos.height,
-        };
+      // ElementRegistry에서 실제 렌더링 bounds 가져오기
+      const bounds = getElementBoundsSimple(element.id);
+      if (bounds) {
+        return bounds;
       }
 
+      // fallback: 원래 스타일 사용
       const style = element.props?.style as Record<string, unknown> | undefined;
       const width = Number(style?.width);
       const height = Number(style?.height);
@@ -630,7 +612,7 @@ export function BuilderCanvas({
         height,
       };
     },
-    [layoutResult.positions, pageWidth, pageHeight]
+    [pageWidth, pageHeight]
   );
 
   const getDescendantIds = useCallback((rootId: string) => {
@@ -1089,13 +1071,13 @@ export function BuilderCanvas({
   );
 
   // Element double click handler (텍스트 편집 시작)
-  // 🚀 Phase 19: layoutPosition 전달 - TextEditOverlay가 올바른 위치에 표시되도록
+  // 🚀 Phase 6: ElementRegistry의 getBounds() 사용
   const handleElementDoubleClick = useCallback(
     (elementId: string) => {
-      const layoutPosition = layoutResult.positions.get(elementId);
+      const layoutPosition = getElementBoundsSimple(elementId);
       startEdit(elementId, layoutPosition);
     },
-    [startEdit, layoutResult.positions]
+    [startEdit]
   );
 
   // WebGL context recovery
@@ -1134,8 +1116,8 @@ export function BuilderCanvas({
 
   return (
     <div ref={setContainerNode} className="canvas-container">
-      {/* Wait for both container and yoga to be ready before rendering PixiJS */}
-      {containerEl && yogaReady && (
+      {/* 🚀 Phase 6: yogaReady 제거 - @pixi/layout이 자동 초기화 */}
+      {containerEl && (
         <Application
           resizeTo={containerEl}
           background={backgroundColor}
@@ -1198,8 +1180,8 @@ export function BuilderCanvas({
             <CanvasBounds width={pageWidth} height={pageHeight} zoom={zoom} />
 
             {/* Elements Layer (ElementSprite 기반) */}
+            {/* 🚀 Phase 6: layoutResult prop 제거 */}
             <ElementsLayer
-              layoutResult={layoutResult}
               zoom={zoom}
               panOffset={panOffset}
               onClick={handleElementClick}
@@ -1207,11 +1189,11 @@ export function BuilderCanvas({
             />
 
             {/* Selection Layer (최상단) */}
+            {/* 🚀 Phase 2: layoutResult prop 제거 - ElementRegistry 사용 */}
             <SelectionLayer
               dragState={dragState}
               pageWidth={pageWidth}
               pageHeight={pageHeight}
-              layoutResult={layoutResult}
               zoom={zoom}
               onResizeStart={handleResizeStart}
               onMoveStart={handleMoveStart}
