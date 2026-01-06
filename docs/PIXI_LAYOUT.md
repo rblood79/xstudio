@@ -2,7 +2,7 @@
 
 > 목표: LayoutEngine.ts (1,804줄) 완전 삭제, @pixi/layout 선언적 flexbox 전환
 
-## 🎯 진행 상태 (2026-01-06)
+## 🎯 진행 상태 (2026-01-07)
 
 | Phase | 내용 | 상태 |
 |-------|------|------|
@@ -16,6 +16,8 @@
 | Phase 7 | LayoutEngine.ts 삭제 | ✅ 완료 |
 | Phase 7+ | SelectionBox 좌표 변환 수정 | ✅ 완료 |
 | Phase 8 | % 단위 지원 - parseCSSSize 제거 | 🔄 진행 중 (3/28 파일) |
+| Phase 9 | children 기본 flex 레이아웃 + UI layout prop | ✅ 완료 |
+| Phase 10 | Container 타입 children 내부 렌더링 | ✅ 완료 |
 
 ---
 
@@ -610,3 +612,197 @@ paddingUtils.ts, styleConverter.ts, borderUtils.ts, BodyLayer.tsx
 - g.roundRect(0, 0, width, height, radius);
 + g.roundRect(0, 0, fallbackWidth, fallbackHeight, radius);
 ```
+
+---
+
+## Phase 9: children 기본 flex 레이아웃 + UI layout prop ✅
+
+### 문제
+
+1. **children이 0,0에 쌓임**: 부모 요소에 `flexDirection`이 없으면 children이 모두 0,0 위치에 겹쳐서 렌더링됨
+2. **UI 컴포넌트 크기 누락**: PixiButton 등 UI 컴포넌트가 `layout` prop 없이 `pixiContainer`를 반환하여 @pixi/layout이 크기를 알 수 없음
+
+### 해결 1: children 기본 flex 레이아웃
+
+`BuilderCanvas.tsx`의 `renderTree`에서 children이 있는 요소에 기본 flex 레이아웃 적용:
+
+```typescript
+// BuilderCanvas.tsx - renderTree()
+const hasChildren = (pageChildrenMap.get(child.id)?.length ?? 0) > 0;
+const containerLayout = hasChildren && !baseLayout.flexDirection
+  ? { display: 'flex' as const, flexDirection: 'column' as const, ...baseLayout }
+  : baseLayout;
+```
+
+### 해결 2: UI 컴포넌트 layout prop 추가
+
+`PixiButton.tsx`에 계산된 크기를 `layout` prop으로 전달:
+
+```typescript
+// PixiButton.tsx
+const buttonLayout = useMemo(() => ({
+  width: layout.width,
+  height: layout.height,
+}), [layout.width, layout.height]);
+
+return (
+  <pixiContainer layout={buttonLayout}>
+    ...
+  </pixiContainer>
+);
+```
+
+### 수정된 파일
+
+| 파일 | 수정 내용 |
+|------|----------|
+| `BuilderCanvas.tsx` | children이 있는 요소에 기본 `display: flex, flexDirection: column` 적용 |
+| `styleToLayout.ts` | `LayoutStyle` 타입에 `display` 속성 추가 |
+| `PixiButton.tsx` | `layout` prop 추가하여 계산된 width/height 전달 |
+
+### 남은 작업
+
+47개 UI 컴포넌트에 동일하게 `layout` prop 추가 필요:
+- PixiBadge, PixiBreadcrumbs, PixiCheckbox, PixiComboBox, PixiDialog 등
+
+---
+
+## Phase 10: Container 타입 children 내부 렌더링 ✅
+
+### 문제
+
+- Card에 Button children을 추가해도 Card 배경에 Button이 포함되지 않음
+- children이 Card의 **형제**로 렌더링되어 Card 배경 바깥에 표시됨
+
+#### 이전 구조 (문제)
+
+```
+<LayoutContainer>  // Card 래퍼
+  <PixiCard>       // Card 배경 + 제목 + 설명만 렌더링
+    배경, 제목, 설명...
+  </PixiCard>
+  <Button1 />      // Card 바깥, 형제로 렌더링 ❌
+  <Button2 />      // Card 바깥, 형제로 렌더링 ❌
+</LayoutContainer>
+```
+
+### 해결
+
+Container 타입 컴포넌트(Card, Panel 등)는 children을 **내부에서 렌더링**:
+
+#### 새로운 구조 (해결)
+
+```
+<LayoutContainer>  // Card 래퍼
+  <PixiCard>
+    <pixiGraphics />     // 배경
+    <pixiText />         // 제목
+    <pixiText />         // 설명
+    <LayoutContainer>    // Button1 (내부 렌더링!) ✅
+      <PixiButton />
+    </LayoutContainer>
+    <LayoutContainer>    // Button2 (내부 렌더링!) ✅
+      <PixiButton />
+    </LayoutContainer>
+    <pixiGraphics />     // 히트 영역
+  </PixiCard>
+</LayoutContainer>
+```
+
+### 구현
+
+#### 1. Container 타입 정의
+
+```typescript
+// BuilderCanvas.tsx
+const CONTAINER_TAGS = useMemo(() => new Set([
+  'Card', 'Box', 'Panel', 'Form', 'Group', 'Dialog', 'Modal',
+  'Disclosure', 'DisclosureGroup', 'Accordion',
+]), []);
+```
+
+#### 2. renderTree에서 Container 타입 처리
+
+```typescript
+// BuilderCanvas.tsx - renderTree()
+const isContainerType = CONTAINER_TAGS.has(child.tag);
+const childElements = isContainerType ? (pageChildrenMap.get(child.id) ?? []) : [];
+
+return (
+  <LayoutContainer key={child.id} elementId={child.id} layout={containerLayout}>
+    <ElementSprite
+      element={child}
+      onClick={onClick}
+      onDoubleClick={onDoubleClick}
+      childElements={isContainerType ? childElements : undefined}
+      renderChildElement={isContainerType ? (childEl) => {
+        // 재귀적으로 children 렌더링
+        return (
+          <LayoutContainer key={childEl.id} elementId={childEl.id} layout={childContainerLayout}>
+            <ElementSprite element={childEl} onClick={onClick} onDoubleClick={onDoubleClick} />
+            {renderTree(childEl.id)}
+          </LayoutContainer>
+        );
+      } : undefined}
+    />
+    {/* Container 타입이 아닌 경우에만 children을 형제로 렌더링 */}
+    {!isContainerType && renderTree(child.id)}
+  </LayoutContainer>
+);
+```
+
+#### 3. ElementSprite에 새 props 추가
+
+```typescript
+// ElementSprite.tsx
+export interface ElementSpriteProps {
+  // ... 기존 props
+  childElements?: Element[];
+  renderChildElement?: (element: Element) => React.ReactNode;
+}
+```
+
+#### 4. Container 컴포넌트에서 children 렌더링
+
+```typescript
+// PixiCard.tsx
+export const PixiCard = memo(function PixiCard({
+  element,
+  onClick,
+  childElements,
+  renderChildElement,
+}: PixiCardProps) {
+  return (
+    <pixiContainer layout={cardLayout} onLayout={handleLayout}>
+      {/* 카드 배경 */}
+      <pixiGraphics draw={drawCard} />
+      {/* 카드 제목 */}
+      {cardTitle && <pixiText ... />}
+      {/* 카드 설명 */}
+      {cardDescription && <pixiText ... />}
+
+      {/* 🚀 Phase 10: Container children 렌더링 */}
+      {childElements?.map((childEl) => renderChildElement?.(childEl))}
+
+      {/* 히트 영역 */}
+      <pixiGraphics draw={drawHitArea} ... />
+    </pixiContainer>
+  );
+});
+```
+
+### 수정된 파일
+
+| 파일 | 수정 내용 |
+|------|----------|
+| `BuilderCanvas.tsx` | `CONTAINER_TAGS` 정의, Container 타입에 `childElements`/`renderChildElement` 전달 |
+| `ElementSprite.tsx` | `childElements`, `renderChildElement` props 추가, Card/Panel에 전달 |
+| `PixiCard.tsx` | `childElements`, `renderChildElement` 수락, children 내부 렌더링 |
+| `PixiPanel.tsx` | 동일 패턴 적용 |
+
+### 효과
+
+- Card/Panel에 children 추가 시 **배경이 자동 확장**
+- children이 **배경 안에서 렌더링**
+- SelectionBox도 children 포함하여 올바르게 표시
+- @pixi/layout의 flex 레이아웃으로 children 자동 배치

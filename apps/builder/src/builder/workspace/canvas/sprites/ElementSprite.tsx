@@ -122,6 +122,10 @@ export interface ElementSpriteProps {
   onClick?: (elementId: string, modifiers?: ClickModifiers) => void;
   onDoubleClick?: (elementId: string) => void;
   onChange?: (elementId: string, value: unknown) => void;
+  /** 🚀 Phase 10: Container 타입 컴포넌트의 children 요소들 */
+  childElements?: Element[];
+  /** 🚀 Phase 10: children 요소 렌더링 함수 */
+  renderChildElement?: (element: Element) => React.ReactNode;
 }
 
 // ============================================
@@ -379,6 +383,8 @@ export const ElementSprite = memo(function ElementSprite({
   onClick,
   onDoubleClick,
   onChange,
+  childElements,
+  renderChildElement,
 }: ElementSpriteProps) {
   useExtend(PIXI_COMPONENTS);
 
@@ -682,6 +688,8 @@ export const ElementSprite = memo(function ElementSprite({
           element={effectiveElement}
           isSelected={isSelected}
           onClick={onClick}
+          childElements={childElements}
+          renderChildElement={renderChildElement}
         />
       );
 
@@ -691,6 +699,8 @@ export const ElementSprite = memo(function ElementSprite({
           element={effectiveElement}
           isSelected={isSelected}
           onClick={onClick}
+          childElements={childElements}
+          renderChildElement={renderChildElement}
         />
       );
 

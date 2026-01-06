@@ -444,9 +444,18 @@ const ElementsLayer = memo(function ElementsLayer({
     return ids;
   }, [visibleElements, elementById]);
 
+  // 🚀 Phase 10: Container 타입 컴포넌트 - children을 내부에서 렌더링
+  // Card, Panel 등은 children을 배경 안에 포함해야 함
+  const CONTAINER_TAGS = useMemo(() => new Set([
+    'Card', 'Box', 'Panel', 'Form', 'Group', 'Dialog', 'Modal',
+    'Disclosure', 'DisclosureGroup', 'Accordion',
+  ]), []);
+
   // 🚀 Phase 6: @pixi/layout 완전 전환 - layoutResult 제거
   // @pixi/layout이 자동으로 flexbox 레이아웃 처리
   // 🚀 Phase 7: LayoutContainer 사용 - layout + registry 등록 통합
+  // 🚀 Phase 9: children이 있는 요소에 기본 flex 레이아웃 적용
+  // 🚀 Phase 10: Container 타입은 children을 내부에서 렌더링
   const renderedTree = useMemo(() => {
     const renderTree = (parentId: string | null): React.ReactNode => {
       const children = pageChildrenMap.get(parentId) ?? [];
@@ -456,7 +465,19 @@ const ElementsLayer = memo(function ElementsLayer({
 
         // Element의 style에서 layout 속성 추출
         // @pixi/layout이 flexbox 기반으로 자동 배치
-        const containerLayout = styleToLayout(child);
+        const baseLayout = styleToLayout(child);
+
+        // 🚀 Phase 9: children이 있지만 flexDirection이 없으면 기본 flex 레이아웃 적용
+        // 이렇게 하면 children이 0,0에 쌓이는 문제 해결
+        const hasChildren = (pageChildrenMap.get(child.id)?.length ?? 0) > 0;
+        const containerLayout = hasChildren && !baseLayout.flexDirection
+          ? { display: 'flex' as const, flexDirection: 'column' as const, ...baseLayout }
+          : baseLayout;
+
+        // 🚀 Phase 10: Container 타입은 children을 ElementSprite에 전달
+        // Container 컴포넌트가 children을 배경 안에 렌더링
+        const isContainerType = CONTAINER_TAGS.has(child.tag);
+        const childElements = isContainerType ? (pageChildrenMap.get(child.id) ?? []) : [];
 
         // LayoutContainer: layout + registry 등록을 함께 처리
         // SelectionBox가 올바른 위치에 표시되도록 함
@@ -466,15 +487,35 @@ const ElementsLayer = memo(function ElementsLayer({
               element={child}
               onClick={onClick}
               onDoubleClick={onDoubleClick}
+              childElements={isContainerType ? childElements : undefined}
+              renderChildElement={isContainerType ? (childEl: Element) => {
+                const childLayout = styleToLayout(childEl);
+                const childHasChildren = (pageChildrenMap.get(childEl.id)?.length ?? 0) > 0;
+                const childContainerLayout = childHasChildren && !childLayout.flexDirection
+                  ? { display: 'flex' as const, flexDirection: 'column' as const, ...childLayout }
+                  : childLayout;
+
+                return (
+                  <LayoutContainer key={childEl.id} elementId={childEl.id} layout={childContainerLayout}>
+                    <ElementSprite
+                      element={childEl}
+                      onClick={onClick}
+                      onDoubleClick={onDoubleClick}
+                    />
+                    {renderTree(childEl.id)}
+                  </LayoutContainer>
+                );
+              } : undefined}
             />
-            {renderTree(child.id)}
+            {/* Container 타입이 아닌 경우에만 children을 형제로 렌더링 */}
+            {!isContainerType && renderTree(child.id)}
           </LayoutContainer>
         );
       });
     };
 
     return renderTree(bodyElement?.id ?? null);
-  }, [pageChildrenMap, renderIdSet, onClick, onDoubleClick, bodyElement?.id]);
+  }, [pageChildrenMap, renderIdSet, onClick, onDoubleClick, bodyElement?.id, CONTAINER_TAGS]);
 
   // 🚀 Phase 7: @pixi/layout 루트 컨테이너 layout 설정
   // Body 요소의 flex 스타일을 적용하여 자식 요소들이 올바르게 배치되도록 함

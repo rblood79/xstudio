@@ -37,6 +37,10 @@ export interface PixiPanelProps {
   onClick?: (elementId: string) => void;
   /** 부모 컨테이너 너비 (TabPanel 등에서 전달) */
   containerWidth?: number;
+  /** 🚀 Phase 10: Container children 요소들 */
+  childElements?: Element[];
+  /** 🚀 Phase 10: children 요소 렌더링 함수 */
+  renderChildElement?: (element: Element) => React.ReactNode;
 }
 
 interface PanelElementProps {
@@ -56,6 +60,8 @@ export const PixiPanel = memo(function PixiPanel({
   isSelected = false,
   onClick,
   containerWidth,
+  childElements,
+  renderChildElement,
 }: PixiPanelProps) {
   useExtend(PIXI_COMPONENTS);
   const style = element.props?.style as CSSStyle | undefined;
@@ -231,6 +237,9 @@ export const PixiPanel = memo(function PixiPanel({
           />
         </pixiContainer>
       )}
+
+      {/* 🚀 Phase 10: Container children 렌더링 */}
+      {childElements && renderChildElement && childElements.map((childEl) => renderChildElement(childEl))}
 
       {/* 🚀 @pixi/layout: 히트 영역을 layout으로 처리 */}
       <pixiContainer

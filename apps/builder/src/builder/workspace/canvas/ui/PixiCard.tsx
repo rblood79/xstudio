@@ -36,6 +36,10 @@ export interface PixiCardProps {
   element: Element;
   isSelected?: boolean;
   onClick?: (elementId: string) => void;
+  /** 🚀 Phase 10: Container children 요소들 */
+  childElements?: Element[];
+  /** 🚀 Phase 10: children 요소 렌더링 함수 */
+  renderChildElement?: (element: Element) => React.ReactNode;
 }
 
 interface CardElementProps {
@@ -56,6 +60,8 @@ interface CardElementProps {
 export const PixiCard = memo(function PixiCard({
   element,
   onClick,
+  childElements,
+  renderChildElement,
 }: PixiCardProps) {
   useExtend(PIXI_COMPONENTS);
   const style = element.props?.style as CSSStyle | undefined;
@@ -246,6 +252,9 @@ export const PixiCard = memo(function PixiCard({
     [cardWidth, cardHeight]
   );
 
+  // 🚀 Phase 10: children이 있으면 배경 크기를 자동으로 조절하기 위해 layout 수정
+  const hasChildren = childElements && childElements.length > 0;
+
   return (
     <pixiContainer layout={cardLayout} onLayout={handleLayout}>
       {/* 카드 배경 */}
@@ -268,6 +277,9 @@ export const PixiCard = memo(function PixiCard({
           layout={{ isLeaf: true }}
         />
       )}
+
+      {/* 🚀 Phase 10: Container children 렌더링 */}
+      {hasChildren && renderChildElement && childElements.map((childEl) => renderChildElement(childEl))}
 
       {/* 🚀 Phase 19: 투명 히트 영역 (클릭 감지용) - 마지막에 렌더링하여 최상단 배치 */}
       <pixiGraphics

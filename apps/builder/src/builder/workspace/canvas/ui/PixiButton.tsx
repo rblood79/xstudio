@@ -611,12 +611,19 @@ export const PixiButton = memo(function PixiButton({
   const cursorStyle =
     layout.isDisabled || layout.isLoading ? "not-allowed" : "pointer";
 
+  // 🚀 Phase 9: @pixi/layout에 크기 전달 - children 레이아웃 계산에 필요
+  const buttonLayout = useMemo(() => ({
+    width: layout.width,
+    height: layout.height,
+  }), [layout.width, layout.height]);
+
   // 🚀 Phase 5: x/y 제거 - 위치는 ElementSprite에서 layout prop으로 처리
   return (
     <pixiContainer
       ref={(c: PixiContainer | null) => {
         containerRef.current = c;
       }}
+      layout={buttonLayout}
     >
       {/* FancyButton, disabled overlay, loading indicator는 useEffect에서 명령형으로 추가됨 */}
 

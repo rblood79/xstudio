@@ -19,6 +19,9 @@ import type { Element } from '../../../../types/core/store.types';
  * CSS Flexbox 속성과 유사한 구조
  */
 export interface LayoutStyle {
+  // Display (@pixi/layout 지원)
+  display?: 'flex' | 'block' | 'none';
+
   // Dimensions
   width?: number | string;
   height?: number | string;
