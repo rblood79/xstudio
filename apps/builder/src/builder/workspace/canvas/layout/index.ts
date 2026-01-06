@@ -37,3 +37,9 @@ export {
   isEmptyLayout,
   type LayoutStyle,
 } from './styleToLayout';
+
+// 🚀 Phase 7: Yoga 초기화 (@pixi/layout용)
+export {
+  initYoga,
+  isYogaInitialized,
+} from './initYoga';

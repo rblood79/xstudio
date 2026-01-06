@@ -20,13 +20,10 @@ import {
 } from "pixi.js";
 import type { Element } from "../../../../types/core/store.types";
 import type { CSSStyle } from "../sprites/styleConverter";
-import { parseCSSSize } from "../sprites/styleConverter";
 import {
   getComboBoxSizePreset,
   getComboBoxColorPreset,
-  getVariantColors,
 } from "../utils/cssVariableReader";
-import { useThemeColors } from "../hooks/useThemeColors";
 import { useStore } from "../../../stores";
 
 // ============================================
@@ -67,7 +64,6 @@ export const PixiComboBox = memo(function PixiComboBox({
   onClick,
 }: PixiComboBoxProps) {
   useExtend(PIXI_COMPONENTS);
-  const style = element.props?.style as CSSStyle | undefined;
   const props = element.props as ComboBoxElementProps | undefined;
 
   // Store에서 자식 요소 읽기
@@ -90,15 +86,6 @@ export const PixiComboBox = memo(function PixiComboBox({
   // 🚀 CSS에서 프리셋 읽기
   const sizePreset = useMemo(() => getComboBoxSizePreset(size), [size]);
   const colorPreset = useMemo(() => getComboBoxColorPreset(variant), [variant]);
-
-  // 🚀 테마 색상 동적 로드
-  const themeColors = useThemeColors();
-
-  // 🚀 variant에 따른 테마 색상
-  const variantColors = useMemo(
-    () => getVariantColors(variant, themeColors),
-    [variant, themeColors]
-  );
 
   // 전체 너비/높이 계산
   const inputHeight = sizePreset.paddingY * 2 + sizePreset.fontSize;

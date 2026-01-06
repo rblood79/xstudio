@@ -19,8 +19,6 @@ import type { Element } from '../../../../types/core/store.types';
 import type { CSSStyle } from '../sprites/styleConverter';
 import { cssColorToHex, parseCSSSize } from '../sprites/styleConverter';
 import { drawBox } from '../utils';
-import { getVariantColors } from '../utils/cssVariableReader';
-import { useThemeColors } from '../hooks/useThemeColors';
 
 // ============================================
 // Types
@@ -232,26 +230,9 @@ export const PixiList = memo(function PixiList({
 
   const style = element.props?.style as CSSStyle | undefined;
   const props = element.props as Record<string, unknown> | undefined;
-  const variant = useMemo(() => String(props?.variant || 'default'), [props?.variant]);
-
-  // 🚀 테마 색상 동적 로드
-  const themeColors = useThemeColors();
-
-  // 🚀 variant에 따른 테마 색상
-  const variantColors = useMemo(
-    () => getVariantColors(variant, themeColors),
-    [variant, themeColors]
-  );
 
   // List 스타일
   const layoutStyle = useMemo(() => convertToListStyle(style), [style]);
-
-  // 🚀 테마 인식 색상
-  const themeAwareColors = useMemo(() => ({
-    focusRingColor: variantColors.bg,
-    selectedBgColor: variantColors.bg,
-    selectedTextColor: variantColors.text,
-  }), [variantColors]);
 
   // 아이템들
   const items = useMemo(() => parseListItems(props), [props]);

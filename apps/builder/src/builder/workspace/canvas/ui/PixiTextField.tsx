@@ -15,7 +15,6 @@ import { PIXI_COMPONENTS } from '../pixiSetup';
 import type { Graphics as PixiGraphics, TextStyle } from 'pixi.js';
 import type { Element } from '@/types/core/store.types';
 import type { CSSStyle } from '../sprites/styleConverter';
-import { parseCSSSize } from '../sprites/styleConverter';
 import {
   getTextFieldSizePreset,
   getTextFieldColorPreset,

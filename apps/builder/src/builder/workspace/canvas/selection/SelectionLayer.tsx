@@ -38,6 +38,8 @@ export interface SelectionLayerProps {
   pageHeight?: number;
   /** 현재 줌 레벨 (핸들 크기 유지용) */
   zoom?: number;
+  /** 🚀 Phase 7: Pan offset for coordinate transformation */
+  panOffset?: { x: number; y: number };
   /** 드래그 시작 콜백 */
   onResizeStart?: (
     elementId: string,
@@ -74,6 +76,7 @@ export const SelectionLayer = memo(function SelectionLayer({
   pageWidth = 1920,
   pageHeight = 1080,
   zoom = 1,
+  panOffset = { x: 0, y: 0 },
   onResizeStart,
   onMoveStart,
   onCursorChange,
@@ -126,12 +129,14 @@ export const SelectionLayer = memo(function SelectionLayer({
   }, [selectedElementIds, getChildrenMap]);
 
   // 🚀 Phase 2: ElementRegistry의 getBounds() 사용으로 전환
-  // 기존 layoutResult.positions 대신 실제 PixiJS Container의 bounds 사용
+  // 🚀 Phase 7: 글로벌 좌표 → Camera 로컬 좌표 변환
+  // getBounds()는 글로벌 좌표를 반환하지만, SelectionBox는 Camera 안에서
+  // 그려지므로 Camera 로컬 좌표로 변환해야 합니다.
   const computeSelectionBounds = useCallback(() => {
     if (selectedElements.length === 0) return null;
 
     const boxes = selectedElements.map((el) => {
-      // Body 요소는 페이지 전체 크기로 설정
+      // Body 요소는 페이지 전체 크기로 설정 (이미 Camera 로컬 좌표)
       if (el.tag.toLowerCase() === 'body') {
         return { x: 0, y: 0, width: pageWidth, height: pageHeight };
       }
@@ -139,14 +144,21 @@ export const SelectionLayer = memo(function SelectionLayer({
       const bounds = getElementBoundsSimple(el.id);
 
       if (bounds) {
-        return { x: bounds.x, y: bounds.y, width: bounds.width, height: bounds.height };
+        // 🚀 Phase 7: 글로벌 좌표 → Camera 로컬 좌표 변환
+        // globalX = panOffset.x + localX * zoom
+        // localX = (globalX - panOffset.x) / zoom
+        const localX = (bounds.x - panOffset.x) / zoom;
+        const localY = (bounds.y - panOffset.y) / zoom;
+        const localWidth = bounds.width / zoom;
+        const localHeight = bounds.height / zoom;
+        return { x: localX, y: localY, width: localWidth, height: localHeight };
       }
       // fallback: 기본값
       return { x: 0, y: 0, width: 100, height: 40 };
     });
 
     return calculateCombinedBounds(boxes);
-  }, [selectedElements, pageWidth, pageHeight]);
+  }, [selectedElements, pageWidth, pageHeight, zoom, panOffset]);
 
   // 🚀 Phase 2: 선택 변경 시 bounds 계산
   // ElementRegistry의 getBounds()를 사용하여 실제 렌더링된 위치 조회

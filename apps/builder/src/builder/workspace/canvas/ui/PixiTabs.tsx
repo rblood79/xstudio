@@ -14,7 +14,7 @@
 
 import { useExtend } from '@pixi/react';
 import { PIXI_COMPONENTS } from '../pixiSetup';
-import { memo, useCallback, useEffect, useMemo, useState } from "react";
+import { memo, useCallback, useMemo, useState } from "react";
 import {
   Graphics as PixiGraphics,
   TextStyle,
@@ -93,21 +93,26 @@ export const PixiTabs = memo(function PixiTabs({
   );
   const isVertical = orientation === "vertical";
 
-  // 선택된 탭 (첫 번째 탭이 기본 선택)
-  const [selectedTabId, setSelectedTabId] = useState<string | null>(
+  // 🚀 React Compiler: 파생 상태 패턴 사용하여 cascading render 방지
+  // useState는 사용자 선택만 저장하고, 실제 활성 탭은 파생 계산
+  const [userSelectedTabId, setUserSelectedTabId] = useState<string | null>(
     props?.selectedKey || null
   );
 
-  // 🚀 tabItems가 로드된 후 초기 선택 설정
-  // useState 초기값은 컴포넌트 마운트 시 한 번만 실행되므로,
-  // tabItems가 비어있을 때 초기화되면 null이 됨
-  // useEffect로 tabItems 로드 후 첫 번째 탭 선택
-  useEffect(() => {
-    if (selectedTabId === null && tabItems.length > 0) {
-      const firstTabId = tabItems[0].props?.tabId as string | undefined;
-      setSelectedTabId(firstTabId || tabItems[0].id);
-    }
-  }, [tabItems, selectedTabId]);
+  // 활성 탭 ID 계산: props > 사용자 선택 > 첫 번째 탭
+  const activeTabId = useMemo(() => {
+    // props에서 제공된 selectedKey가 있으면 우선
+    if (props?.selectedKey) return props.selectedKey;
+    // 사용자가 선택한 탭이 있으면 사용
+    if (userSelectedTabId) return userSelectedTabId;
+    // 기본값: 첫 번째 탭
+    if (tabItems.length === 0) return null;
+    const firstTabId = tabItems[0].props?.tabId as string | undefined;
+    return firstTabId || tabItems[0].id;
+  }, [props?.selectedKey, userSelectedTabId, tabItems]);
+
+  // 탭 선택 핸들러에서 사용할 setter (기존 setSelectedTabId 대체)
+  const setSelectedTabId = setUserSelectedTabId;
 
   // 🚀 CSS에서 프리셋 읽기
   const sizePreset = useMemo(() => getTabsSizePreset(size), [size]);
@@ -233,12 +238,12 @@ export const PixiTabs = memo(function PixiTabs({
   const drawTabBackground = useCallback(
     (g: PixiGraphics, tab: TabData, isHovered: boolean) => {
       g.clear();
-      if (isHovered && !tab.isDisabled && tab.tabId !== selectedTabId) {
+      if (isHovered && !tab.isDisabled && tab.tabId !== activeTabId) {
         g.rect(0, 0, tab.width, tab.height);
         g.fill({ color: colorPreset.hoverBgColor });
       }
     },
-    [selectedTabId, colorPreset.hoverBgColor]
+    [activeTabId, colorPreset.hoverBgColor]
   );
 
   // 텍스트 스타일
@@ -272,8 +277,8 @@ export const PixiTabs = memo(function PixiTabs({
 
   // 선택된 탭의 인덱스 찾기
   const selectedTabIndex = useMemo(() => {
-    return tabsLayout.tabs.findIndex((tab) => tab.tabId === selectedTabId);
-  }, [tabsLayout.tabs, selectedTabId]);
+    return tabsLayout.tabs.findIndex((tab) => tab.tabId === activeTabId);
+  }, [tabsLayout.tabs, activeTabId]);
 
   // 선택된 Panel 요소 찾기
   const selectedPanel = useMemo(() => {
@@ -303,7 +308,7 @@ export const PixiTabs = memo(function PixiTabs({
         {/* 탭들 */}
         {tabsLayout.tabs.map((tab, index) => {
           const isHovered = hoveredIndex === index;
-          const isSelected = tab.tabId === selectedTabId;
+          const isSelected = tab.tabId === activeTabId;
 
           // 인디케이터 위치 계산
           const indicatorX = isVertical ? tab.width - sizePreset.indicatorHeight : 0;

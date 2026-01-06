@@ -11,11 +11,11 @@
  */
 
 import { useExtend } from '@pixi/react';
-import { Container } from 'pixi.js';
 import { PIXI_COMPONENTS } from '../pixiSetup';
-import { memo, useMemo, useEffect, useCallback } from 'react';
+import { memo, useMemo } from 'react';
 import type { Element } from '../../../../types/core/store.types';
-import { registerElement, unregisterElement } from '../elementRegistry';
+// 🚀 Phase 7: registry 등록은 LayoutContainer에서 처리
+// import { registerElement, unregisterElement } from '../elementRegistry';
 import { BoxSprite } from './BoxSprite';
 import { TextSprite } from './TextSprite';
 import { ImageSprite } from './ImageSprite';
@@ -382,22 +382,9 @@ export const ElementSprite = memo(function ElementSprite({
 }: ElementSpriteProps) {
   useExtend(PIXI_COMPONENTS);
 
-  // 🚀 Phase 1: ElementRegistry에 Container 등록/해제
-  // getBounds() 호출을 위해 Container 참조를 저장
+  // 🚀 Phase 7: registry 등록은 LayoutContainer에서 처리
+  // layout이 적용된 Container를 등록해야 SelectionBox 위치가 일치함
   const elementId = element.id;
-
-  const handleContainerRef = useCallback((container: Container | null) => {
-    if (container) {
-      registerElement(elementId, container);
-    }
-  }, [elementId]);
-
-  // Cleanup: unmount 시 registry에서 해제
-  useEffect(() => {
-    return () => {
-      unregisterElement(elementId);
-    };
-  }, [elementId]);
 
   // 🚀 성능 최적화: 각 ElementSprite가 자신의 선택 상태만 구독
   // 기존: ElementsLayer가 selectedElementIds 구독 → 전체 리렌더 O(n)
@@ -1093,12 +1080,8 @@ export const ElementSprite = memo(function ElementSprite({
     }
   })();
 
-  // 🚀 Phase 1: pixiContainer로 감싸서 ref를 registry에 등록
-  return (
-    <pixiContainer ref={handleContainerRef}>
-      {content}
-    </pixiContainer>
-  );
+  // 🚀 Phase 7: registry 등록은 LayoutContainer에서 처리 (wrapper 제거)
+  return content;
 });
 
 export default ElementSprite;

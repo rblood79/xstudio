@@ -27,10 +27,8 @@ import { parseCSSSize } from "../sprites/styleConverter";
 import {
   getListBoxSizePreset,
   getListBoxColorPreset,
-  getVariantColors,
 } from "../utils/cssVariableReader";
 import { drawBox } from "../utils";
-import { useThemeColors } from "../hooks/useThemeColors";
 import { useStore } from "../../../stores";
 
 // ============================================
@@ -304,15 +302,6 @@ export const PixiListBox = memo(function PixiListBox({
   // 🚀 CSS에서 프리셋 읽기
   const sizePreset = useMemo(() => getListBoxSizePreset(size), [size]);
   const colorPreset = useMemo(() => getListBoxColorPreset(variant), [variant]);
-
-  // 🚀 테마 색상 동적 로드
-  const themeColors = useThemeColors();
-
-  // 🚀 variant에 따른 테마 색상
-  const variantColors = useMemo(
-    () => getVariantColors(variant, themeColors),
-    [variant, themeColors]
-  );
 
   // selectionMode: "single" (기본) | "multiple"
   const selectionMode = useMemo(() => {

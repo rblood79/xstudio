@@ -17,7 +17,7 @@
 import "@pixi/layout";
 import { useCallback, useEffect, useRef, useMemo, useState, memo, startTransition } from "react";
 import { Application, useApplication } from "@pixi/react";
-import { Graphics as PixiGraphics } from "pixi.js";
+import { Graphics as PixiGraphics, Container } from "pixi.js";
 import { useStore } from "../../stores";
 
 // P4: useExtend 훅으로 메모이제이션된 컴포넌트 등록
@@ -40,8 +40,9 @@ import { ViewportControlBridge } from "./viewport";
 import { BodyLayer } from "./layers";
 import { TextEditOverlay, useTextEdit } from "../overlay";
 // 🚀 Phase 6: calculateLayout 제거 - @pixi/layout이 자동으로 레이아웃 처리
-import { styleToLayout, type LayoutStyle } from "./layout";
-import { getElementBoundsSimple } from "./elementRegistry";
+// 🚀 Phase 7: initYoga 추가 - @pixi/layout용 Yoga 초기화
+import { styleToLayout, initYoga, type LayoutStyle } from "./layout";
+import { getElementBoundsSimple, registerElement, unregisterElement } from "./elementRegistry";
 import { getOutlineVariantColor } from "./utils/cssVariableReader";
 import { useThemeColors } from "./hooks/useThemeColors";
 import { useViewportCulling } from "./hooks/useViewportCulling";
@@ -254,6 +255,44 @@ function ClickableBackground({ onClick, onLassoStart, onLassoDrag, onLassoEnd, z
 // CanvasSmoothResizeBridge 제거됨 - resizeTo={containerEl}로 대체 (Panel Toggle 성능 최적화)
 
 /**
+ * 🚀 Phase 7: Layout Container
+ *
+ * @pixi/layout의 layout prop과 ElementRegistry 등록을 함께 처리합니다.
+ * SelectionBox가 올바른 위치에 표시되도록 layout이 적용된 Container를 등록합니다.
+ */
+const LayoutContainer = memo(function LayoutContainer({
+  elementId,
+  layout,
+  children,
+}: {
+  elementId: string;
+  layout: LayoutStyle;
+  children: React.ReactNode;
+}) {
+  useExtend(PIXI_COMPONENTS);
+
+  // Layout이 적용된 Container를 registry에 등록
+  const handleContainerRef = useCallback((container: Container | null) => {
+    if (container) {
+      registerElement(elementId, container);
+    }
+  }, [elementId]);
+
+  // Cleanup: unmount 시 registry에서 해제
+  useEffect(() => {
+    return () => {
+      unregisterElement(elementId);
+    };
+  }, [elementId]);
+
+  return (
+    <pixiContainer ref={handleContainerRef} layout={layout}>
+      {children}
+    </pixiContainer>
+  );
+});
+
+/**
  * 요소 레이어 (ElementSprite 사용)
  *
  * 현재 페이지의 모든 요소를 ElementSprite로 렌더링합니다.
@@ -269,12 +308,17 @@ function ClickableBackground({ onClick, onLassoStart, onLassoDrag, onLassoEnd, z
  * - 대형 캔버스에서 줌아웃 시 특히 효과적
  */
 // 🚀 Phase 6: layoutResult prop 제거 - @pixi/layout 자동 레이아웃
+// 🚀 Phase 7: pageWidth/pageHeight 추가 - 루트 layout 설정에 필요
 const ElementsLayer = memo(function ElementsLayer({
+  pageWidth,
+  pageHeight,
   zoom,
   panOffset,
   onClick,
   onDoubleClick,
 }: {
+  pageWidth: number;
+  pageHeight: number;
   zoom: number;
   panOffset: { x: number; y: number };
   onClick?: (elementId: string) => void;
@@ -402,38 +446,61 @@ const ElementsLayer = memo(function ElementsLayer({
 
   // 🚀 Phase 6: @pixi/layout 완전 전환 - layoutResult 제거
   // @pixi/layout이 자동으로 flexbox 레이아웃 처리
-  const renderElementTree = useCallback((parentId: string | null) => {
-    const children = pageChildrenMap.get(parentId) ?? [];
+  // 🚀 Phase 7: LayoutContainer 사용 - layout + registry 등록 통합
+  const renderedTree = useMemo(() => {
+    const renderTree = (parentId: string | null): React.ReactNode => {
+      const children = pageChildrenMap.get(parentId) ?? [];
 
-    return children.map((child) => {
-      if (!renderIdSet.has(child.id)) return null;
+      return children.map((child) => {
+        if (!renderIdSet.has(child.id)) return null;
 
-      // Element의 style에서 layout 속성 추출
-      // @pixi/layout이 flexbox 기반으로 자동 배치
-      const containerLayout = styleToLayout(child);
+        // Element의 style에서 layout 속성 추출
+        // @pixi/layout이 flexbox 기반으로 자동 배치
+        const containerLayout = styleToLayout(child);
 
-      return (
-        <pixiContainer key={child.id} layout={containerLayout}>
-          <ElementSprite
-            element={child}
-            onClick={onClick}
-            onDoubleClick={onDoubleClick}
-          />
-          {renderElementTree(child.id)}
-        </pixiContainer>
-      );
-    });
-  }, [pageChildrenMap, renderIdSet, onClick, onDoubleClick]);
+        // LayoutContainer: layout + registry 등록을 함께 처리
+        // SelectionBox가 올바른 위치에 표시되도록 함
+        return (
+          <LayoutContainer key={child.id} elementId={child.id} layout={containerLayout}>
+            <ElementSprite
+              element={child}
+              onClick={onClick}
+              onDoubleClick={onDoubleClick}
+            />
+            {renderTree(child.id)}
+          </LayoutContainer>
+        );
+      });
+    };
+
+    return renderTree(bodyElement?.id ?? null);
+  }, [pageChildrenMap, renderIdSet, onClick, onDoubleClick, bodyElement?.id]);
+
+  // 🚀 Phase 7: @pixi/layout 루트 컨테이너 layout 설정
+  // Body 요소의 flex 스타일을 적용하여 자식 요소들이 올바르게 배치되도록 함
+  const rootLayout = useMemo(() => {
+    // Body 요소의 layout 스타일 가져오기
+    const bodyLayout = bodyElement ? styleToLayout(bodyElement) : {};
+
+    // Body의 flexbox 속성 적용 (width/height는 page 크기로 고정)
+    return {
+      ...bodyLayout,
+      width: pageWidth,
+      height: pageHeight,
+      position: 'relative' as const,
+    };
+  }, [pageWidth, pageHeight, bodyElement]);
 
   return (
     <pixiContainer
       label="ElementsLayer"
+      layout={rootLayout}
       eventMode="static"
       interactiveChildren={true}
     >
       {/* 🚀 성능 최적화: isSelected prop 제거 - 각 ElementSprite가 자체 구독 */}
       {/* 🚀 Phase 11: visibleElements 기준으로 ancestor까지 포함한 계층 렌더링 */}
-      {renderElementTree(bodyElement?.id ?? null)}
+      {renderedTree}
     </pixiContainer>
   );
 });
@@ -452,7 +519,8 @@ export function BuilderCanvas({
   const selectionBoxRef = useRef<SelectionBoxHandle>(null);
   const dragPointerRef = useRef<{ x: number; y: number } | null>(null);
   const [containerEl, setContainerEl] = useState<HTMLDivElement | null>(null);
-  // 🚀 Phase 6: yogaReady 제거 - @pixi/layout이 자동으로 Yoga 초기화
+  // 🚀 Phase 7: @pixi/layout용 Yoga 초기화 상태
+  const [yogaReady, setYogaReady] = useState(false);
 
   // 🚀 Phase 5 + 6.2: 저사양 기기 감지 (모듈 레벨 캐싱으로 useMemo 불필요)
   const isLowEnd = isLowEndDevice();
@@ -465,7 +533,12 @@ export function BuilderCanvas({
     [isInteracting]
   );
 
-  // 🚀 Phase 6: initYoga 제거 - @pixi/layout import가 자동으로 Yoga 초기화
+  // 🚀 Phase 7: @pixi/layout용 Yoga 초기화
+  useEffect(() => {
+    initYoga().then(() => {
+      setYogaReady(true);
+    });
+  }, []);
 
   // 컨테이너 ref 콜백: 마운트 시점에 DOM 노드를 안전하게 확보
   const setContainerNode = useCallback((node: HTMLDivElement | null) => {
@@ -1116,8 +1189,8 @@ export function BuilderCanvas({
 
   return (
     <div ref={setContainerNode} className="canvas-container">
-      {/* 🚀 Phase 6: yogaReady 제거 - @pixi/layout이 자동 초기화 */}
-      {containerEl && (
+      {/* 🚀 Phase 7: Yoga 로드 완료 대기 */}
+      {containerEl && yogaReady && (
         <Application
           resizeTo={containerEl}
           background={backgroundColor}
@@ -1180,8 +1253,10 @@ export function BuilderCanvas({
             <CanvasBounds width={pageWidth} height={pageHeight} zoom={zoom} />
 
             {/* Elements Layer (ElementSprite 기반) */}
-            {/* 🚀 Phase 6: layoutResult prop 제거 */}
+            {/* 🚀 Phase 7: pageWidth/pageHeight 추가 - @pixi/layout 루트 설정 */}
             <ElementsLayer
+              pageWidth={pageWidth}
+              pageHeight={pageHeight}
               zoom={zoom}
               panOffset={panOffset}
               onClick={handleElementClick}
@@ -1190,11 +1265,13 @@ export function BuilderCanvas({
 
             {/* Selection Layer (최상단) */}
             {/* 🚀 Phase 2: layoutResult prop 제거 - ElementRegistry 사용 */}
+            {/* 🚀 Phase 7: panOffset 추가 - 글로벌→로컬 좌표 변환용 */}
             <SelectionLayer
               dragState={dragState}
               pageWidth={pageWidth}
               pageHeight={pageHeight}
               zoom={zoom}
+              panOffset={panOffset}
               onResizeStart={handleResizeStart}
               onMoveStart={handleMoveStart}
               onCursorChange={handleCursorChange}

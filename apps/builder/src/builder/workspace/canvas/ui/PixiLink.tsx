@@ -17,7 +17,7 @@ import { memo, useCallback, useMemo, useState } from "react";
 import { TextStyle, CanvasTextMetrics, Graphics as PixiGraphics } from "pixi.js";
 import type { Element } from "../../../../types/core/store.types";
 import type { CSSStyle } from "../sprites/styleConverter";
-import { cssColorToHex, parseCSSSize } from "../sprites/styleConverter";
+import { cssColorToHex } from "../sprites/styleConverter";
 import {
   getLinkSizePreset,
   getVariantColors,

@@ -30,7 +30,6 @@ import {
 import { drawBox } from "../utils";
 import { useStore } from "../../../stores";
 import { useThemeColors } from "../hooks/useThemeColors";
-import { cssColorToHex } from "../sprites/styleConverter";
 
 // ============================================
 // Types

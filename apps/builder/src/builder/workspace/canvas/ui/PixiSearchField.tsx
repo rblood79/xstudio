@@ -17,7 +17,6 @@ import { memo, useCallback, useMemo, useState } from "react";
 import { Graphics as PixiGraphics, TextStyle } from "pixi.js";
 import type { Element } from "../../../../types/core/store.types";
 import type { CSSStyle } from "../sprites/styleConverter";
-import { parseCSSSize } from "../sprites/styleConverter";
 import {
   getSearchFieldSizePreset,
   getSearchFieldColorPreset,
@@ -52,7 +51,6 @@ export const PixiSearchField = memo(function PixiSearchField({
   onClick,
 }: PixiSearchFieldProps) {
   useExtend(PIXI_COMPONENTS);
-  const style = element.props?.style as CSSStyle | undefined;
   const props = element.props as SearchFieldElementProps | undefined;
 
   // variant, size

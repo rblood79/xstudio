@@ -127,8 +127,9 @@ export const PixiCard = memo(function PixiCard({
   const cardWidth = parseCSSSize(style?.width, undefined, 200);
 
   const explicitHeight = useMemo(() => {
-    if (style?.height === undefined) return undefined;
-    return parseCSSSize(style.height, undefined, 0);
+    const height = style?.height;
+    if (height === undefined) return undefined;
+    return parseCSSSize(height, undefined, 0);
   }, [style?.height]);
 
   const layoutHeightRef = useRef<number | null>(null);

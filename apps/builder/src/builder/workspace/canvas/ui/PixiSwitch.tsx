@@ -14,8 +14,6 @@ import { useExtend } from '@pixi/react';
 import { PIXI_COMPONENTS } from '../pixiSetup';
 import type { Graphics as PixiGraphics, TextStyle } from 'pixi.js';
 import type { Element } from '@/types/core/store.types';
-import type { CSSStyle } from '../sprites/styleConverter';
-import { parseCSSSize } from '../sprites/styleConverter';
 import {
   getSwitchSizePreset,
   getLabelStylePreset,
@@ -40,7 +38,6 @@ export function PixiSwitch({
 }: PixiSwitchProps) {
   useExtend(PIXI_COMPONENTS);
   const props = element.props || {};
-  const style = props.style as CSSStyle | undefined;
   const variant = (props.variant as string) || 'default';
   const size = (props.size as string) || 'md';
   const label = (props.label as string) || (props.children as string) || '';

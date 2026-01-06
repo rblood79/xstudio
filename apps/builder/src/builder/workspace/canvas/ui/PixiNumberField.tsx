@@ -17,7 +17,6 @@ import { memo, useCallback, useMemo, useState } from "react";
 import { Graphics as PixiGraphics, TextStyle } from "pixi.js";
 import type { Element } from "../../../../types/core/store.types";
 import type { CSSStyle } from "../sprites/styleConverter";
-import { parseCSSSize } from "../sprites/styleConverter";
 import {
   getNumberFieldSizePreset,
   getNumberFieldColorPreset,
@@ -52,7 +51,6 @@ export const PixiNumberField = memo(function PixiNumberField({
   onClick,
 }: PixiNumberFieldProps) {
   useExtend(PIXI_COMPONENTS);
-  const style = element.props?.style as CSSStyle | undefined;
   const props = element.props as NumberFieldElementProps | undefined;
 
   // variant, size

@@ -61,6 +61,18 @@ export interface LayoutStyle {
   paddingRight?: number | string;
   paddingBottom?: number | string;
   paddingLeft?: number | string;
+
+  // Border (@pixi/layout 지원)
+  borderWidth?: number;
+  borderTopWidth?: number;
+  borderRightWidth?: number;
+  borderBottomWidth?: number;
+  borderLeftWidth?: number;
+  borderRadius?: number;
+  borderColor?: string | number;
+
+  // Visual (@pixi/layout 지원)
+  backgroundColor?: string | number;
 }
 
 // ============================================
@@ -159,6 +171,8 @@ export function styleToLayout(element: Element): LayoutStyle {
   if (maxHeight !== undefined) layout.maxHeight = maxHeight;
 
   // Position
+  // position: 'absolute'가 명시적으로 지정된 경우에만 absolute 처리
+  // 그 외에는 모두 flexbox 아이템으로 자동 배치
   if (style.position === 'absolute') {
     layout.position = 'absolute';
     const top = parseCSSValue(style.top);
@@ -172,22 +186,22 @@ export function styleToLayout(element: Element): LayoutStyle {
   }
 
   // Flexbox Container
-  if (style.display === 'flex') {
-    if (style.flexDirection) {
-      layout.flexDirection = style.flexDirection as LayoutStyle['flexDirection'];
-    }
-    if (style.flexWrap) {
-      layout.flexWrap = style.flexWrap as LayoutStyle['flexWrap'];
-    }
-    if (style.justifyContent) {
-      layout.justifyContent = style.justifyContent as LayoutStyle['justifyContent'];
-    }
-    if (style.alignItems) {
-      layout.alignItems = style.alignItems as LayoutStyle['alignItems'];
-    }
-    if (style.alignContent) {
-      layout.alignContent = style.alignContent as LayoutStyle['alignContent'];
-    }
+  // @pixi/layout에서는 display: 'flex' 없이도 flexbox 속성이 적용됨
+  // flexDirection, gap 등이 있으면 자동으로 flex 컨테이너로 동작
+  if (style.flexDirection) {
+    layout.flexDirection = style.flexDirection as LayoutStyle['flexDirection'];
+  }
+  if (style.flexWrap) {
+    layout.flexWrap = style.flexWrap as LayoutStyle['flexWrap'];
+  }
+  if (style.justifyContent) {
+    layout.justifyContent = style.justifyContent as LayoutStyle['justifyContent'];
+  }
+  if (style.alignItems) {
+    layout.alignItems = style.alignItems as LayoutStyle['alignItems'];
+  }
+  if (style.alignContent) {
+    layout.alignContent = style.alignContent as LayoutStyle['alignContent'];
   }
 
   // Flexbox Item
@@ -234,6 +248,31 @@ export function styleToLayout(element: Element): LayoutStyle {
   if (paddingRight !== undefined) layout.paddingRight = paddingRight;
   if (paddingBottom !== undefined) layout.paddingBottom = paddingBottom;
   if (paddingLeft !== undefined) layout.paddingLeft = paddingLeft;
+
+  // Border (@pixi/layout 지원)
+  const borderWidth = parseCSSValue(style.borderWidth);
+  if (typeof borderWidth === 'number') layout.borderWidth = borderWidth;
+  const borderTopWidth = parseCSSValue(style.borderTopWidth);
+  const borderRightWidth = parseCSSValue(style.borderRightWidth);
+  const borderBottomWidth = parseCSSValue(style.borderBottomWidth);
+  const borderLeftWidth = parseCSSValue(style.borderLeftWidth);
+  if (typeof borderTopWidth === 'number') layout.borderTopWidth = borderTopWidth;
+  if (typeof borderRightWidth === 'number') layout.borderRightWidth = borderRightWidth;
+  if (typeof borderBottomWidth === 'number') layout.borderBottomWidth = borderBottomWidth;
+  if (typeof borderLeftWidth === 'number') layout.borderLeftWidth = borderLeftWidth;
+
+  const borderRadius = parseCSSValue(style.borderRadius);
+  if (typeof borderRadius === 'number') layout.borderRadius = borderRadius;
+
+  // borderColor는 CSS 색상 문자열 또는 숫자(hex)
+  if (style.borderColor !== undefined && style.borderColor !== null) {
+    layout.borderColor = style.borderColor as string | number;
+  }
+
+  // Visual (@pixi/layout 지원)
+  if (style.backgroundColor !== undefined && style.backgroundColor !== null) {
+    layout.backgroundColor = style.backgroundColor as string | number;
+  }
 
   return layout;
 }

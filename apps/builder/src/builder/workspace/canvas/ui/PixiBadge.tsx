@@ -23,14 +23,12 @@ import {
 } from "pixi.js";
 import type { Element } from "../../../../types/core/store.types";
 import type { CSSStyle } from "../sprites/styleConverter";
-import { cssColorToHex, parseCSSSize } from "../sprites/styleConverter";
+import { cssColorToHex } from "../sprites/styleConverter";
 import {
   getBadgeSizePreset,
   getBadgeColorPreset,
-  getVariantColors,
 } from "../utils/cssVariableReader";
 import { drawBox } from "../utils";
-import { useThemeColors } from "../hooks/useThemeColors";
 
 // ============================================
 // Types
@@ -89,15 +87,6 @@ export const PixiBadge = memo(function PixiBadge({
   // 🚀 CSS에서 프리셋 읽기
   const sizePreset = useMemo(() => getBadgeSizePreset(size), [size]);
   const colorPreset = useMemo(() => getBadgeColorPreset(variant), [variant]);
-
-  // 🚀 테마 색상 동적 로드
-  const themeColors = useThemeColors();
-
-  // 🚀 variant에 따른 테마 색상 (selection용)
-  const variantColors = useMemo(
-    () => getVariantColors(variant, themeColors),
-    [variant, themeColors]
-  );
 
   // 색상 (inline style 오버라이드 지원)
   const bgColor = useMemo(() => {
@@ -166,35 +155,6 @@ export const PixiBadge = memo(function PixiBadge({
     };
   }, [isPulsing]);
 
-  // 배지 배경 그리기
-  const drawBadge = useCallback(
-    (g: PixiGraphics) => {
-      g.clear();
-
-      if (isDot) {
-        // 원형 점
-        g.circle(badgeSize.width / 2, badgeSize.height / 2, badgeSize.width / 2);
-        g.fill({ color: bgColor });
-      } else {
-        // 둥근 모서리 사각형 (pill 형태)
-        const borderRadius = badgeSize.height / 2;
-        drawBox(g, {
-          width: badgeSize.width,
-          height: badgeSize.height,
-          backgroundColor: bgColor,
-          backgroundAlpha: 1,
-          borderRadius,
-        });
-      }
-    },
-    [isDot, badgeSize.width, badgeSize.height, bgColor]
-  );
-
-  // 클릭 핸들러
-  const handleClick = useCallback(() => {
-    onClick?.(element.id);
-  }, [element.id, onClick]);
-
   // 텍스트 스타일
   const textStyle = useMemo(
     () =>
@@ -235,6 +195,35 @@ export const PixiBadge = memo(function PixiBadge({
       height: sizePreset.height,
     };
   }, [isDot, sizePreset, textMetrics]);
+
+  // 배지 배경 그리기
+  const drawBadge = useCallback(
+    (g: PixiGraphics) => {
+      g.clear();
+
+      if (isDot) {
+        // 원형 점
+        g.circle(badgeSize.width / 2, badgeSize.height / 2, badgeSize.width / 2);
+        g.fill({ color: bgColor });
+      } else {
+        // 둥근 모서리 사각형 (pill 형태)
+        const borderRadius = badgeSize.height / 2;
+        drawBox(g, {
+          width: badgeSize.width,
+          height: badgeSize.height,
+          backgroundColor: bgColor,
+          backgroundAlpha: 1,
+          borderRadius,
+        });
+      }
+    },
+    [isDot, badgeSize.width, badgeSize.height, bgColor]
+  );
+
+  // 클릭 핸들러
+  const handleClick = useCallback(() => {
+    onClick?.(element.id);
+  }, [element.id, onClick]);
 
   // 텍스트 위치 (중앙 정렬)
   const textPosition = useMemo(() => {
