@@ -2,13 +2,19 @@
  * Pixi CheckboxGroup
  *
  * 🚀 Phase 11 B2.4: Graphics 기반 CheckboxGroup
+ * 🚀 Phase 11: CSS 변수 기반 리팩토링
  *
  * Graphics를 사용하여 직접 체크박스 그룹을 그립니다.
  * - PixiRadio(RadioGroup)와 동일한 패턴
  * - options가 없으면 기본 placeholder 표시
  * - 그룹 라벨 지원
  *
+ * CSS 동기화:
+ * - .react-aria-CheckboxGroup: display: flex, flex-direction: column, gap: var(--gap)
+ * - [data-checkbox-size="sm/md/lg"]: --cb-font-size, --cb-box-size
+ *
  * @since 2025-12-15
+ * @updated 2025-01-07 Phase 11 CSS 변수 기반 리팩토링
  */
 
 import { useExtend } from '@pixi/react';
@@ -20,7 +26,7 @@ import type { CSSStyle } from '../sprites/styleConverter';
 import { cssColorToHex } from '../sprites/styleConverter';
 import { drawBox } from '../utils';
 import { useStore } from '../../../stores';
-import { getLabelStylePreset, getVariantColors } from '../utils/cssVariableReader';
+import { getLabelStylePreset, getVariantColors, getCheckboxGroupSizePreset } from '../utils/cssVariableReader';
 import { useThemeColors } from '../hooks/useThemeColors';
 
 // ============================================
@@ -44,12 +50,9 @@ interface CheckboxOption {
 // Constants
 // ============================================
 
-const DEFAULT_CHECKBOX_SIZE = 20;
 const DEFAULT_BORDER_RADIUS = 4;
 const DEFAULT_BORDER_COLOR = 0xd1d5db; // gray-300
 const DEFAULT_TEXT_COLOR = 0x374151; // gray-700
-const DEFAULT_GAP = 12;
-const LABEL_GAP = 8;
 
 // 기본 옵션 (options가 없을 때 placeholder로 표시)
 const DEFAULT_OPTIONS: CheckboxOption[] = [
@@ -119,6 +122,7 @@ interface CheckboxItemProps {
   fontSize: number;
   fontFamily: string;
   itemWidth: number;
+  labelGap: number;
   onToggle: (value: string) => void;
 }
 
@@ -132,6 +136,7 @@ const CheckboxItem = memo(function CheckboxItem({
   fontSize,
   fontFamily,
   itemWidth,
+  labelGap,
   onToggle,
 }: CheckboxItemProps) {
   const borderColor = isOptionChecked ? primaryColor : DEFAULT_BORDER_COLOR;
@@ -200,7 +205,7 @@ const CheckboxItem = memo(function CheckboxItem({
         display: 'flex',
         flexDirection: 'row',
         alignItems: 'center',
-        gap: LABEL_GAP,
+        gap: labelGap,
         width: itemWidth,
       }}
     >
@@ -306,9 +311,10 @@ export const PixiCheckboxGroup = memo(function PixiCheckboxGroup({
     return flexDirection === 'row';
   }, [props?.orientation, style]);
 
-  // 🚀 Phase 19: .react-aria-Label 클래스에서 스타일 읽기
+  // 🚀 Phase 11: CSS 변수 기반 size preset
   const size = useMemo(() => String(props?.size || 'md'), [props?.size]);
   const variant = useMemo(() => String(props?.variant || 'primary'), [props?.variant]);
+  const sizePreset = useMemo(() => getCheckboxGroupSizePreset(size), [size]);
   const labelPreset = useMemo(() => getLabelStylePreset(size), [size]);
 
   // 🚀 테마 색상 동적 로드
@@ -320,41 +326,39 @@ export const PixiCheckboxGroup = memo(function PixiCheckboxGroup({
     [variant, themeColors]
   );
 
-  // 스타일
-  // 🚀 Phase 8: parseCSSSize 제거 - CSS 프리셋 값 사용
-  const checkboxSize = DEFAULT_CHECKBOX_SIZE;
+  // 🚀 Phase 11: CSS 변수 기반 스타일
+  const checkboxSize = sizePreset.boxSize;
   const borderRadius = DEFAULT_BORDER_RADIUS;
   const primaryColor = cssColorToHex(style?.backgroundColor, variantColors.bg);
   const textColor = cssColorToHex(style?.color, DEFAULT_TEXT_COLOR);
-  const fontSize = typeof style?.fontSize === 'number' ? style.fontSize : labelPreset.fontSize;
+  const fontSize = typeof style?.fontSize === 'number' ? style.fontSize : sizePreset.fontSize;
   const fontFamily = labelPreset.fontFamily;
 
   // 라벨이 있으면 옵션들의 Y 오프셋 추가
   const labelHeight = groupLabel ? labelPreset.fontSize + 8 : 0;
   const itemWidth = 120;
-  const itemGap = DEFAULT_GAP;
+
+  // 🚀 Phase 11: CSS 변수 기반 gap
   const itemsLayout = useMemo(() => ({
     display: 'flex',
     flexDirection: isHorizontal ? 'row' : 'column',
-    gap: isHorizontal ? 0 : itemGap,
-  }), [isHorizontal, itemGap]);
+    gap: isHorizontal ? 0 : sizePreset.gap,
+  }), [isHorizontal, sizePreset.gap]);
 
-  // 🚀 Phase 8: 주 컨테이너 layout (iframe CSS와 동기화)
+  // 🚀 Phase 11: CSS .react-aria-CheckboxGroup 동기화
   // CSS: .react-aria-CheckboxGroup { display: flex; flex-direction: column; gap: var(--gap); }
+  // CSS block 요소는 기본적으로 width: 100%
   const groupLayout = useMemo(() => ({
     display: 'flex',
     flexDirection: 'column',
-    gap: DEFAULT_GAP,
-    // 콘텐츠 크기에 맞춤 (부모 flex에서 늘어나지 않도록)
-    flexGrow: 0,
-    flexShrink: 0,
-    alignSelf: 'flex-start',
-  }), []);
+    gap: sizePreset.gap,
+    width: '100%',
+  }), [sizePreset.gap]);
 
-  // 🚀 Phase 19: 전체 그룹 크기 계산 (hitArea용)
+  // 🚀 Phase 11: 전체 그룹 크기 계산 (hitArea용) - CSS 변수 기반
   const groupDimensions = useMemo(() => {
     const optionCount = options.length;
-    const optionHeight = checkboxSize + DEFAULT_GAP;
+    const optionHeight = checkboxSize + sizePreset.gap;
 
     if (isHorizontal) {
       return {
@@ -366,7 +370,7 @@ export const PixiCheckboxGroup = memo(function PixiCheckboxGroup({
       width: itemWidth,
       height: labelHeight + optionCount * optionHeight,
     };
-  }, [options.length, checkboxSize, labelHeight, isHorizontal, itemWidth]);
+  }, [options.length, checkboxSize, sizePreset.gap, labelHeight, isHorizontal, itemWidth]);
 
   // 🚀 Phase 19: 투명 히트 영역
   const drawHitArea = useCallback(
@@ -416,14 +420,13 @@ export const PixiCheckboxGroup = memo(function PixiCheckboxGroup({
         <pixiText
           text={groupLabel}
           style={labelTextStyle}
-          x={0}
-          y={0}
+          layout={{ isLeaf: true }}
           eventMode="none"
         />
       )}
 
       {/* Checkbox 옵션들 */}
-      <pixiContainer x={0} y={labelHeight} layout={itemsLayout}>
+      <pixiContainer layout={itemsLayout}>
         {options.map((option, index) => {
           const isOptionChecked = selectedValues.includes(option.value);
 
@@ -439,15 +442,17 @@ export const PixiCheckboxGroup = memo(function PixiCheckboxGroup({
               fontSize={fontSize}
               fontFamily={fontFamily}
               itemWidth={itemWidth}
+              labelGap={sizePreset.labelGap}
               onToggle={handleOptionToggle}
             />
           );
         })}
       </pixiContainer>
 
-      {/* 🚀 Phase 19: 투명 히트 영역 (그룹 전체 선택용) - 마지막에 렌더링하여 최상단 배치 */}
+      {/* 🚀 Phase 19: 투명 히트 영역 (그룹 전체 선택용) - position: absolute로 레이아웃에서 제외 */}
       <pixiGraphics
         draw={drawHitArea}
+        layout={{ position: 'absolute', top: 0, left: 0 }}
         eventMode="static"
         cursor="pointer"
         onPointerDown={handleClick}

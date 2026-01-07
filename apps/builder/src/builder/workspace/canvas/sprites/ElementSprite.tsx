@@ -453,6 +453,15 @@ export const ElementSprite = memo(function ElementSprite({
     return null;
   }
 
+  // 🚀 Breadcrumbs 자식 요소 처리:
+  // - Breadcrumb 요소는 PixiBreadcrumbs에서 직접 렌더링하므로 skip
+  const isBreadcrumbsChild = parentElement?.tag === 'Breadcrumbs';
+  const isBreadcrumbElement = element.tag === 'Breadcrumb';
+
+  if (isBreadcrumbElement && isBreadcrumbsChild) {
+    return null;
+  }
+
   // 🚀 Panel의 자손 요소들은 ElementsLayer에서 layoutPosition과 함께 렌더링됨
   // selectionBox와 렌더링 위치가 일치하도록 함
 

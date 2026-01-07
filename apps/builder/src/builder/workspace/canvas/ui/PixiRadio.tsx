@@ -2,13 +2,19 @@
  * Pixi Radio
  *
  * 🚀 Phase 11 B2.4: Graphics 기반 RadioGroup
+ * 🚀 Phase 11: CSS 변수 기반 리팩토링
  *
  * Graphics를 사용하여 직접 라디오 버튼을 그립니다.
  * - PixiButton과 동일한 패턴 (명령형 Graphics)
  * - options가 없으면 기본 placeholder 표시
  *
+ * CSS 동기화:
+ * - .react-aria-RadioGroup: display: flex, flex-direction: column, gap: var(--gap)
+ * - [data-radio-size="sm/md/lg"]: --radio-size, --font-size
+ *
  * @since 2025-12-11 Phase 11 B2.4
  * @updated 2025-12-15 P10: Graphics 기반으로 리팩토링
+ * @updated 2025-01-07 Phase 11 CSS 변수 기반 리팩토링
  */
 
 import { useExtend } from '@pixi/react';
@@ -43,9 +49,8 @@ interface RadioOption {
 // Constants
 // ============================================
 
-// 🚀 Phase 0: CSS 동기화 - 하드코딩된 상수 대신 getRadioSizePreset() 사용
+// 🚀 Phase 11: CSS 동기화 - 하드코딩된 상수 대신 getRadioSizePreset() 사용
 const DEFAULT_BORDER_COLOR = 0xd1d5db; // fallback gray-300
-const LABEL_GAP = 8;
 
 // 기본 옵션 (options가 없을 때 placeholder로 표시)
 const DEFAULT_OPTIONS: RadioOption[] = [
@@ -112,6 +117,7 @@ interface RadioItemProps {
   fontSize: number;
   fontFamily: string;
   itemWidth: number;
+  labelGap: number;
   onSelect: (value: string) => void;
 }
 
@@ -124,6 +130,7 @@ const RadioItem = memo(function RadioItem({
   fontSize,
   fontFamily,
   itemWidth,
+  labelGap,
   onSelect,
 }: RadioItemProps) {
   const borderColor = isOptionSelected ? primaryColor : DEFAULT_BORDER_COLOR;
@@ -185,7 +192,7 @@ const RadioItem = memo(function RadioItem({
         display: 'flex',
         flexDirection: 'row',
         alignItems: 'center',
-        gap: LABEL_GAP,
+        gap: labelGap,
         width: itemWidth,
       }}
     >
@@ -316,6 +323,17 @@ export const PixiRadio = memo(function PixiRadio({
   // 라벨이 있으면 옵션들의 Y 오프셋 추가
   const labelHeight = groupLabel ? labelPreset.fontSize + 8 : 0;
   const itemWidth = 120;
+
+  // 🚀 Phase 11: CSS .react-aria-RadioGroup 동기화
+  // CSS: .react-aria-RadioGroup { display: flex; flex-direction: column; gap: var(--gap); }
+  // CSS block 요소는 기본적으로 width: 100%
+  const groupLayout = useMemo(() => ({
+    display: 'flex',
+    flexDirection: 'column',
+    gap,
+    width: '100%',
+  }), [gap]);
+
   const itemsLayout = useMemo(() => ({
     display: 'flex',
     flexDirection: isHorizontal ? 'row' : 'column',
@@ -375,20 +393,19 @@ export const PixiRadio = memo(function PixiRadio({
   );
 
   return (
-    <pixiContainer>
+    <pixiContainer layout={groupLayout}>
       {/* RadioGroup 라벨 */}
       {groupLabel && (
         <pixiText
           text={groupLabel}
           style={labelTextStyle}
-          x={0}
-          y={0}
+          layout={{ isLeaf: true }}
           eventMode="none"
         />
       )}
 
       {/* Radio 옵션들 */}
-      <pixiContainer x={0} y={labelHeight} layout={itemsLayout}>
+      <pixiContainer layout={itemsLayout}>
         {options.map((option, index) => {
           const isOptionSelected = option.value === selectedValue;
 
@@ -403,15 +420,17 @@ export const PixiRadio = memo(function PixiRadio({
               fontSize={fontSize}
               fontFamily={fontFamily}
               itemWidth={itemWidth}
+              labelGap={sizePreset.labelGap}
               onSelect={handleOptionSelect}
             />
           );
         })}
       </pixiContainer>
 
-      {/* 🚀 Phase 19: 투명 히트 영역 (그룹 전체 선택용) - 마지막에 렌더링하여 최상단 배치 */}
+      {/* 🚀 Phase 19: 투명 히트 영역 (그룹 전체 선택용) - position: absolute로 레이아웃에서 제외 */}
       <pixiGraphics
         draw={drawHitArea}
+        layout={{ position: 'absolute', top: 0, left: 0 }}
         eventMode="static"
         cursor="pointer"
         onPointerDown={handleClick}

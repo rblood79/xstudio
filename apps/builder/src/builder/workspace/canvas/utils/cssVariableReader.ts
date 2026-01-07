@@ -685,24 +685,28 @@ export function getSliderSizePreset(size: string): SliderSizePreset {
  * - sm: radioSize: var(--text-lg), fontSize: var(--text-sm), selectedBorderWidth: 5px
  * - md: radioSize: var(--text-xl), fontSize: var(--text-base), selectedBorderWidth: ~10px
  * - lg: radioSize: var(--text-2xl), fontSize: var(--text-lg), selectedBorderWidth: 6px
+ *
+ * CSS 동기화 (RadioGroup.css):
+ * - .react-aria-RadioGroup { display: flex; flex-direction: column; gap: var(--gap); }
  */
 export interface RadioSizePreset {
   radioSize: number;
   fontSize: number;
   selectedBorderWidth: number;
   gap: number;
+  labelGap: number;
 }
 
-const RADIO_SIZE_MAPPING: Record<string, { radioSize: string; fontSize: string }> = {
-  sm: { radioSize: '--text-lg', fontSize: '--text-sm' },
-  md: { radioSize: '--text-xl', fontSize: '--text-base' },
-  lg: { radioSize: '--text-2xl', fontSize: '--text-lg' },
+const RADIO_SIZE_MAPPING: Record<string, { radioSize: string; fontSize: string; gap: string }> = {
+  sm: { radioSize: '--text-lg', fontSize: '--text-sm', gap: '--gap' },
+  md: { radioSize: '--text-xl', fontSize: '--text-base', gap: '--gap' },
+  lg: { radioSize: '--text-2xl', fontSize: '--text-lg', gap: '--gap' },
 };
 
 const RADIO_FALLBACKS: Record<string, RadioSizePreset> = {
-  sm: { radioSize: 18, fontSize: 14, selectedBorderWidth: 5, gap: 8 },
-  md: { radioSize: 20, fontSize: 16, selectedBorderWidth: 6, gap: 8 },
-  lg: { radioSize: 24, fontSize: 18, selectedBorderWidth: 7, gap: 10 },
+  sm: { radioSize: 18, fontSize: 14, selectedBorderWidth: 5, gap: 8, labelGap: 6 },
+  md: { radioSize: 20, fontSize: 16, selectedBorderWidth: 6, gap: 12, labelGap: 8 },
+  lg: { radioSize: 24, fontSize: 18, selectedBorderWidth: 7, gap: 16, labelGap: 10 },
 };
 
 /**
@@ -718,13 +722,14 @@ export function getRadioSizePreset(size: string): RadioSizePreset {
 
   const radioSize = parseCSSValue(getCSSVariable(mapping.radioSize), fallback.radioSize);
   const fontSize = parseCSSValue(getCSSVariable(mapping.fontSize), fallback.fontSize);
-  const gap = parseCSSValue(getCSSVariable('--spacing-sm'), fallback.gap);
+  const gap = parseCSSValue(getCSSVariable(mapping.gap), fallback.gap);
 
   return {
     radioSize,
     fontSize,
     selectedBorderWidth: fallback.selectedBorderWidth,
     gap,
+    labelGap: fallback.labelGap,
   };
 }
 
@@ -4382,4 +4387,59 @@ const SLOT_COLOR_FALLBACKS: Record<string, SlotColorPreset> = {
 
 export function getSlotColorPreset(variant: string): SlotColorPreset {
   return SLOT_COLOR_FALLBACKS[variant] || SLOT_COLOR_FALLBACKS.default;
+}
+
+// ============================================
+// Phase 11: CheckboxGroup Size Preset
+// ============================================
+
+/**
+ * CheckboxGroup 사이즈 프리셋
+ *
+ * CSS 동기화:
+ * - .react-aria-CheckboxGroup { gap: var(--gap); }
+ * - [data-checkbox-size="sm"] { --cb-font-size: var(--text-sm); --cb-box-size: var(--text-lg); }
+ * - [data-checkbox-size="md"] { --cb-font-size: var(--text-base); --cb-box-size: var(--text-xl); }
+ * - [data-checkbox-size="lg"] { --cb-font-size: var(--text-lg); --cb-box-size: var(--text-2xl); }
+ */
+export interface CheckboxGroupSizePreset {
+  fontSize: number;
+  boxSize: number;
+  gap: number;
+  labelGap: number;
+}
+
+const CHECKBOX_GROUP_SIZE_MAPPING: Record<string, { fontSize: string; boxSize: string; gap: string }> = {
+  sm: { fontSize: '--text-sm', boxSize: '--text-lg', gap: '--gap' },
+  md: { fontSize: '--text-base', boxSize: '--text-xl', gap: '--gap' },
+  lg: { fontSize: '--text-lg', boxSize: '--text-2xl', gap: '--gap' },
+};
+
+const CHECKBOX_GROUP_FALLBACKS: Record<string, CheckboxGroupSizePreset> = {
+  sm: { fontSize: 14, boxSize: 18, gap: 8, labelGap: 6 },
+  md: { fontSize: 16, boxSize: 20, gap: 12, labelGap: 8 },
+  lg: { fontSize: 18, boxSize: 24, gap: 16, labelGap: 10 },
+};
+
+/**
+ * CheckboxGroup 사이즈 프리셋 읽기
+ */
+export function getCheckboxGroupSizePreset(size: string): CheckboxGroupSizePreset {
+  const mapping = CHECKBOX_GROUP_SIZE_MAPPING[size];
+  const fallback = CHECKBOX_GROUP_FALLBACKS[size] || CHECKBOX_GROUP_FALLBACKS.md;
+
+  if (!mapping) {
+    return fallback;
+  }
+
+  const fontSize = parseCSSValue(getCSSVariable(mapping.fontSize), fallback.fontSize);
+  const boxSize = parseCSSValue(getCSSVariable(mapping.boxSize), fallback.boxSize);
+  const gap = parseCSSValue(getCSSVariable(mapping.gap), fallback.gap);
+
+  return {
+    fontSize,
+    boxSize,
+    gap,
+    labelGap: fallback.labelGap,
+  };
 }

@@ -2,19 +2,26 @@
  * Pixi Breadcrumbs
  *
  * 🚀 Phase 2: Breadcrumbs WebGL 컴포넌트 (Pattern C)
+ * 🚀 Phase 11: @pixi/layout 기반 리팩토링
  *
  * 네비게이션 경로 표시 컴포넌트
  * - variant (default, primary, secondary, tertiary, error, filled) 지원
  * - size (sm, md, lg) 지원
  * - Store에서 Breadcrumb 자식 요소 읽기
  *
+ * CSS 동기화:
+ * - .react-aria-Breadcrumbs: display: flex, align-items: center
+ * - .react-aria-Breadcrumb:not(:last-child)::after: separator padding
+ * - .filled: background, padding, border-radius
+ *
  * @since 2025-12-16 Phase 2 WebGL Migration
+ * @updated 2025-01-07 Phase 11 @pixi/layout migration
  */
 
 import { useExtend } from '@pixi/react';
 import { PIXI_COMPONENTS } from '../pixiSetup';
-import { memo, useCallback, useMemo, useState } from "react";
-import { TextStyle, CanvasTextMetrics, Graphics as PixiGraphics } from "pixi.js";
+import { memo, useCallback, useMemo, useRef, useState } from "react";
+import { TextStyle, Graphics as PixiGraphics } from "pixi.js";
 import type { Element } from "../../../../types/core/store.types";
 import type { CSSStyle } from "../sprites/styleConverter";
 import { cssColorToHex } from "../sprites/styleConverter";
@@ -98,6 +105,12 @@ export const PixiBreadcrumbs = memo(function PixiBreadcrumbs({
   // hover 상태 관리 (각 항목별)
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
 
+  // 🚀 Phase 11: onLayout으로 계산된 크기 (filled 배경용)
+  const layoutWidthRef = useRef<number | null>(null);
+  const layoutHeightRef = useRef<number | null>(null);
+  const [layoutWidth, setLayoutWidth] = useState<number | null>(null);
+  const [layoutHeight, setLayoutHeight] = useState<number | null>(null);
+
   // 텍스트 스타일
   const createTextStyle = useCallback(
     (isLast: boolean, isHovered: boolean) =>
@@ -122,50 +135,22 @@ export const PixiBreadcrumbs = memo(function PixiBreadcrumbs({
     [sizePreset.fontSize, colorPreset.separatorColor]
   );
 
-  // 레이아웃 계산
-  const layout = useMemo(() => {
-    let currentX = 0;
-    const items: Array<{
-      type: "item" | "separator";
-      text: string;
-      x: number;
-      width: number;
-      index?: number;
-    }> = [];
+  // 🚀 Phase 11: @pixi/layout - CSS .react-aria-Breadcrumbs 동기화
+  // CSS: display: flex; align-items: center;
+  const rootLayout = useMemo(() => ({
+    display: 'flex' as const,
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    // filled variant: padding 적용
+    padding: variant === 'filled' ? sizePreset.padding : 0,
+  }), [variant, sizePreset.padding]);
 
-    childItems.forEach((item, index) => {
-      const itemText = String(
-        item.props?.children || item.props?.text || item.props?.title || "Item"
-      );
-      const isLast = index === childItems.length - 1;
-      const itemStyle = createTextStyle(isLast, false);
-      const metrics = CanvasTextMetrics.measureText(itemText, itemStyle);
-
-      items.push({
-        type: "item",
-        text: itemText,
-        x: currentX,
-        width: metrics.width,
-        index,
-      });
-
-      currentX += metrics.width;
-
-      // 마지막 항목이 아니면 구분자 추가
-      if (!isLast) {
-        const sepMetrics = CanvasTextMetrics.measureText(separator, separatorStyle);
-        items.push({
-          type: "separator",
-          text: separator,
-          x: currentX + sizePreset.gap,
-          width: sepMetrics.width,
-        });
-        currentX += sizePreset.gap * 2 + sepMetrics.width;
-      }
-    });
-
-    return items;
-  }, [childItems, createTextStyle, separatorStyle, separator, sizePreset.gap]);
+  // 🚀 Phase 11: separator 레이아웃
+  // CSS: .react-aria-Breadcrumb:not(:last-child)::after { padding: 0 var(--spacing); }
+  const separatorLayout = useMemo(() => ({
+    paddingLeft: sizePreset.gap,
+    paddingRight: sizePreset.gap,
+  }), [sizePreset.gap]);
 
   // 클릭 핸들러
   const handleItemClick = useCallback(
@@ -178,69 +163,79 @@ export const PixiBreadcrumbs = memo(function PixiBreadcrumbs({
     [childItems, onClick]
   );
 
+  // 🚀 Phase 11: onLayout 콜백 - filled 배경 크기 계산용
+  const handleLayout = useCallback((layout: { computedLayout?: { width?: number; height?: number } }) => {
+    const nextWidth = layout.computedLayout?.width;
+    const nextHeight = layout.computedLayout?.height;
+
+    if (nextWidth && layoutWidthRef.current !== nextWidth) {
+      layoutWidthRef.current = nextWidth;
+      setLayoutWidth(nextWidth);
+    }
+    if (nextHeight && layoutHeightRef.current !== nextHeight) {
+      layoutHeightRef.current = nextHeight;
+      setLayoutHeight(nextHeight);
+    }
+  }, []);
+
   // 배경 그리기 (filled variant용)
   const drawBackground = useCallback(
     (g: PixiGraphics) => {
       g.clear();
-      if (variant === "filled") {
-        const totalWidth = layout.length > 0
-          ? layout[layout.length - 1].x + layout[layout.length - 1].width + sizePreset.padding * 2
-          : 100;
-        g.roundRect(
-          0,
-          0,
-          totalWidth,
-          sizePreset.fontSize + sizePreset.padding * 2,
-          8
-        );
+      if (variant === "filled" && layoutWidth && layoutHeight) {
+        g.roundRect(0, 0, layoutWidth, layoutHeight, 8);
         g.fill({ color: 0xf3f4f6 });
       }
     },
-    [variant, layout, sizePreset.fontSize, sizePreset.padding]
+    [variant, layoutWidth, layoutHeight]
   );
 
-  const containerOffset = variant === "filled" ? sizePreset.padding : 0;
+  // 🚀 Phase 11: 빵부스러기 아이템 데이터 준비
+  const breadcrumbItems = useMemo(() => {
+    return childItems.map((item, index) => ({
+      id: item.id,
+      text: String(item.props?.children || item.props?.text || item.props?.title || "Item"),
+      isLast: index === childItems.length - 1,
+      index,
+    }));
+  }, [childItems]);
 
   return (
-    <pixiContainer>
+    <pixiContainer layout={rootLayout} onLayout={handleLayout}>
       {/* 배경 (filled variant) */}
-      <pixiGraphics draw={drawBackground} />
+      {variant === "filled" && <pixiGraphics draw={drawBackground} />}
 
-      {/* 빵 부스러기 항목들 */}
-      <pixiContainer x={containerOffset} y={containerOffset}>
-        {layout.map((item, idx) => {
-          if (item.type === "separator") {
-            return (
-              <pixiText
-                key={`sep-${idx}`}
-                text={item.text}
-                style={separatorStyle}
-                x={item.x}
-                y={0}
-              />
-            );
-          }
+      {/* 🚀 Phase 11: @pixi/layout flex로 항목 배치 */}
+      {breadcrumbItems.map((item, idx) => {
+        const isHovered = hoveredIndex === item.index;
 
-          const itemIndex = item.index!;
-          const isLast = itemIndex === childItems.length - 1;
-          const isHovered = hoveredIndex === itemIndex;
-
-          return (
+        return (
+          <pixiContainer key={item.id} layout={{ display: 'flex' as const, flexDirection: 'row' as const, alignItems: 'center' as const }}>
+            {/* Breadcrumb 텍스트 */}
             <pixiText
-              key={`item-${idx}`}
               text={item.text}
-              style={createTextStyle(isLast, isHovered)}
-              x={item.x}
-              y={0}
+              style={createTextStyle(item.isLast, isHovered)}
               eventMode="static"
-              cursor={isLast ? "default" : "pointer"}
-              onPointerEnter={() => !isLast && setHoveredIndex(itemIndex)}
+              cursor={item.isLast ? "default" : "pointer"}
+              onPointerEnter={() => !item.isLast && setHoveredIndex(item.index)}
               onPointerLeave={() => setHoveredIndex(null)}
-              onPointerDown={() => !isLast && handleItemClick(itemIndex)}
+              onPointerDown={() => !item.isLast && handleItemClick(item.index)}
+              layout={{ isLeaf: true }}
             />
-          );
-        })}
-      </pixiContainer>
+
+            {/* Separator (마지막 항목 제외) */}
+            {!item.isLast && (
+              <pixiContainer layout={separatorLayout}>
+                <pixiText
+                  text={separator}
+                  style={separatorStyle}
+                  layout={{ isLeaf: true }}
+                />
+              </pixiContainer>
+            )}
+          </pixiContainer>
+        );
+      })}
     </pixiContainer>
   );
 });
