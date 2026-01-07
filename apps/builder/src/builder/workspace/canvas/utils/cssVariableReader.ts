@@ -1800,10 +1800,13 @@ export interface TabsSizePreset {
   panelPadding: number;
 }
 
-const TABS_SIZE_MAPPING: Record<string, { fontSize: string; paddingX: string; paddingY: string }> = {
-  sm: { fontSize: '--text-xs', paddingX: '--spacing-md', paddingY: '--spacing-sm' },
-  md: { fontSize: '--text-sm', paddingX: '--spacing-lg', paddingY: '--spacing' },
-  lg: { fontSize: '--text-base', paddingX: '--spacing-xl', paddingY: '--spacing-md' },
+// 🚀 Phase 11: CSS .react-aria-Tab, .react-aria-TabPanel과 동기화
+// CSS: .react-aria-Tab { padding: var(--spacing) var(--spacing-lg); font-size: var(--text-sm); }
+// CSS: .react-aria-TabPanel { padding: var(--spacing-lg); }
+const TABS_SIZE_MAPPING: Record<string, { fontSize: string; paddingX: string; paddingY: string; panelPadding: string }> = {
+  sm: { fontSize: '--text-xs', paddingX: '--spacing-md', paddingY: '--spacing-sm', panelPadding: '--spacing-md' },
+  md: { fontSize: '--text-sm', paddingX: '--spacing-lg', paddingY: '--spacing', panelPadding: '--spacing-lg' },
+  lg: { fontSize: '--text-base', paddingX: '--spacing-xl', paddingY: '--spacing-md', panelPadding: '--spacing-xl' },
 };
 
 const TABS_FALLBACKS: Record<string, TabsSizePreset> = {
@@ -1826,13 +1829,14 @@ export function getTabsSizePreset(size: string): TabsSizePreset {
   const fontSize = parseCSSValue(getCSSVariable(mapping.fontSize), fallback.fontSize);
   const tabPaddingX = parseCSSValue(getCSSVariable(mapping.paddingX), fallback.tabPaddingX);
   const tabPaddingY = parseCSSValue(getCSSVariable(mapping.paddingY), fallback.tabPaddingY);
+  const panelPadding = parseCSSValue(getCSSVariable(mapping.panelPadding), fallback.panelPadding);
 
   return {
     fontSize,
     tabPaddingX,
     tabPaddingY,
     indicatorHeight: fallback.indicatorHeight,
-    panelPadding: fallback.panelPadding,
+    panelPadding,
   };
 }
 

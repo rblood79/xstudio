@@ -456,7 +456,7 @@ const ElementsLayer = memo(function ElementsLayer({
   // flexBasis: '100%'를 적용해야 함 (CSS width: auto의 block 동작 재현)
   const BLOCK_TAGS = useMemo(() => new Set([
     'Card', 'Panel', 'Form', 'Disclosure', 'DisclosureGroup', 'Accordion',
-    'Dialog', 'Modal', 'Box',
+    'Dialog', 'Modal', 'Box', 'Tabs',
   ]), []);
 
   // 🚀 Phase 6: @pixi/layout 완전 전환 - layoutResult 제거

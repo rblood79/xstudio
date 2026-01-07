@@ -125,6 +125,9 @@ export const PixiTabs = memo(function PixiTabs({
   // hover 상태 관리
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
 
+  // 🚀 Phase 11: TabList의 실제 렌더링된 너비 (onLayout으로 업데이트)
+  const [tabListComputedWidth, setTabListComputedWidth] = useState<number | null>(null);
+
   // 탭 레이아웃 계산
   const tabsLayout = useMemo(() => {
     const tabs: TabData[] = [];
@@ -179,24 +182,37 @@ export const PixiTabs = memo(function PixiTabs({
   // 🚀 @pixi/layout: style?.width를 그대로 전달 (% 문자열 지원)
   // @pixi/layout이 % 값을 부모 크기 기준으로 자동 계산
   const styleWidth = style?.width;
-  // Graphics 그리기 등 픽셀 값이 필요한 경우의 fallback
-  const fallbackWidth = 300;
 
+  // 🚀 Phase 11: CSS .react-aria-Tabs와 동기화
+  // CSS: .react-aria-Tabs { width: 100%; display: flex; }
+  // CSS: [data-orientation="horizontal"] { flex-direction: column; }
+  // CSS: [data-orientation="vertical"] { flex-direction: row; }
   const rootLayout = useMemo(() => ({
     display: 'flex' as const,
     flexDirection: (isVertical ? 'row' : 'column') as 'row' | 'column',
-    width: styleWidth ?? fallbackWidth,
+    width: styleWidth ?? '100%',
+    // 세로 늘어남 방지 (CSS block 요소 동작)
+    flexGrow: 0,
+    flexShrink: 0,
+    alignSelf: 'flex-start' as const,
   }), [isVertical, styleWidth]);
 
-  // 🚀 @pixi/layout: 자식 레이아웃도 flex 기반으로 자동 크기 조절
+  // 🚀 Phase 11: CSS .react-aria-TabList와 동기화
+  // CSS: .react-aria-TabList { display: flex; position: relative; }
+  // CSS: [data-orientation="horizontal"] { border-bottom: 1px solid var(--outline-variant); }
+  // CSS: [data-orientation="vertical"] { flex-direction: column; border-right: 1px solid; }
   const tabListLayout = useMemo(() => ({
     display: 'flex' as const,
     flexDirection: (isVertical ? 'column' : 'row') as 'column' | 'row',
     // vertical: 고정 너비, horizontal: 부모 너비 채움
     width: isVertical ? tabsLayout.totalWidth : '100%',
     flexShrink: 0,
+    position: 'relative' as const,
   }), [isVertical, tabsLayout.totalWidth]);
 
+  // 🚀 Phase 11: CSS .react-aria-TabPanel과 동기화
+  // CSS: .react-aria-TabPanel { padding: var(--spacing-lg); } (md)
+  // CSS: sm: padding: var(--spacing-md), lg: padding: var(--spacing-xl)
   const panelLayout = useMemo(() => ({
     display: 'flex' as const,
     flexDirection: 'column' as const,
@@ -205,16 +221,37 @@ export const PixiTabs = memo(function PixiTabs({
     padding: sizePreset.panelPadding,
   }), [sizePreset.panelPadding]);
 
-  // 🚀 @pixi/layout: TabList border를 별도 레이아웃으로 처리
-  // border 컨테이너도 '100%' 너비를 가지므로 @pixi/layout이 실제 크기 계산
-  const borderLayout = useMemo(() => ({
-    position: 'absolute' as const,
-    width: '100%',
-    height: isVertical ? tabsLayout.totalHeight : 1,
-    top: isVertical ? 0 : tabsLayout.totalHeight,
-    left: isVertical ? tabsLayout.totalWidth : 0,
-    backgroundColor: colorPreset.borderColor,
-  }), [isVertical, tabsLayout.totalWidth, tabsLayout.totalHeight, colorPreset.borderColor]);
+  // 🚀 Phase 11: CSS .react-aria-TabList border 동기화
+  // CSS: [data-orientation="horizontal"] { border-bottom: 1px solid var(--outline-variant); }
+  // CSS: [data-orientation="vertical"] { border-right: 1px solid var(--outline-variant); }
+  // horizontal: TabList 전체 너비(100%)에 border-bottom
+  // vertical: 탭 콘텐츠 너비에 border-right
+  const borderWidth = isVertical ? tabsLayout.totalWidth : (tabListComputedWidth ?? tabsLayout.totalWidth);
+
+  const drawTabListBorder = useCallback(
+    (g: PixiGraphics) => {
+      g.clear();
+      if (isVertical) {
+        // vertical: border-right (오른쪽 세로선)
+        g.moveTo(tabsLayout.totalWidth, 0);
+        g.lineTo(tabsLayout.totalWidth, tabsLayout.totalHeight);
+      } else {
+        // horizontal: border-bottom (하단 가로선) - TabList 전체 너비
+        g.moveTo(0, tabsLayout.totalHeight);
+        g.lineTo(borderWidth, tabsLayout.totalHeight);
+      }
+      g.stroke({ color: colorPreset.borderColor, width: 1 });
+    },
+    [isVertical, tabsLayout.totalWidth, tabsLayout.totalHeight, borderWidth, colorPreset.borderColor]
+  );
+
+  // 🚀 Phase 11: TabList onLayout 콜백 - 실제 렌더링된 너비 가져오기
+  const handleTabListLayout = useCallback((layout: { computedLayout?: { width?: number } }) => {
+    const width = layout.computedLayout?.width;
+    if (width && width !== tabListComputedWidth) {
+      setTabListComputedWidth(width);
+    }
+  }, [tabListComputedWidth]);
 
   // 선택 인디케이터 그리기
   const drawIndicator = useCallback(
@@ -290,9 +327,9 @@ export const PixiTabs = memo(function PixiTabs({
 
   return (
     <pixiContainer layout={rootLayout}>
-      <pixiContainer layout={tabListLayout}>
-        {/* 🚀 @pixi/layout: border를 레이아웃 컨테이너로 대체 */}
-        <pixiContainer layout={borderLayout} />
+      <pixiContainer layout={tabListLayout} onLayout={handleTabListLayout}>
+        {/* 🚀 Phase 11: CSS border-bottom/border-right 동기화 */}
+        <pixiGraphics draw={drawTabListBorder} />
 
         {/* 탭들 */}
         {tabsLayout.tabs.map((tab, index) => {
