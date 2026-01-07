@@ -507,9 +507,21 @@ const ElementsLayer = memo(function ElementsLayer({
               renderChildElement={isContainerType ? (childEl: Element) => {
                 const childLayout = styleToLayout(childEl);
                 const childHasChildren = (pageChildrenMap.get(childEl.id)?.length ?? 0) > 0;
+
+                // 🚀 Phase 11: nested Container 타입 처리
+                // Panel 안의 Card, Card 안의 Panel 등 중첩된 Container도 children 렌더링 지원
+                const isChildContainerType = CONTAINER_TAGS.has(childEl.tag);
+                const isChildBlockElement = BLOCK_TAGS.has(childEl.tag);
+                const childBlockLayout = isChildBlockElement && !childLayout.width
+                  ? { flexBasis: '100%' as const }
+                  : {};
+
                 const childContainerLayout = childHasChildren && !childLayout.flexDirection
-                  ? { display: 'flex' as const, flexDirection: 'column' as const, ...childLayout }
-                  : childLayout;
+                  ? { display: 'flex' as const, flexDirection: 'column' as const, ...childBlockLayout, ...childLayout }
+                  : { ...childBlockLayout, ...childLayout };
+
+                // nested Container의 children
+                const nestedChildElements = isChildContainerType ? (pageChildrenMap.get(childEl.id) ?? []) : [];
 
                 return (
                   <LayoutContainer key={childEl.id} elementId={childEl.id} layout={childContainerLayout}>
@@ -517,8 +529,27 @@ const ElementsLayer = memo(function ElementsLayer({
                       element={childEl}
                       onClick={onClick}
                       onDoubleClick={onDoubleClick}
+                      childElements={isChildContainerType ? nestedChildElements : undefined}
+                      renderChildElement={isChildContainerType ? (nestedEl: Element) => {
+                        // 재귀적으로 nested children 렌더링
+                        const nestedLayout = styleToLayout(nestedEl);
+                        const nestedHasChildren = (pageChildrenMap.get(nestedEl.id)?.length ?? 0) > 0;
+                        const nestedContainerLayout = nestedHasChildren && !nestedLayout.flexDirection
+                          ? { display: 'flex' as const, flexDirection: 'column' as const, ...nestedLayout }
+                          : nestedLayout;
+                        return (
+                          <LayoutContainer key={nestedEl.id} elementId={nestedEl.id} layout={nestedContainerLayout}>
+                            <ElementSprite
+                              element={nestedEl}
+                              onClick={onClick}
+                              onDoubleClick={onDoubleClick}
+                            />
+                            {renderTree(nestedEl.id)}
+                          </LayoutContainer>
+                        );
+                      } : undefined}
                     />
-                    {renderTree(childEl.id)}
+                    {!isChildContainerType && renderTree(childEl.id)}
                   </LayoutContainer>
                 );
               } : undefined}

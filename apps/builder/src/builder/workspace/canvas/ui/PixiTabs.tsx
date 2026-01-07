@@ -28,6 +28,8 @@ import {
 } from "../utils/cssVariableReader";
 import { useStore } from "../../../stores";
 import { PixiPanel } from "./PixiPanel";
+import { ElementSprite } from "../sprites";
+import { styleToLayout } from "../layout";
 
 // ============================================
 // Types
@@ -321,9 +323,28 @@ export const PixiTabs = memo(function PixiTabs({
     return panelItems[selectedTabIndex];
   }, [selectedTabIndex, panelItems]);
 
-  // 🚀 Panel 자손들은 ElementsLayer에서 렌더링됨 (layoutPosition 사용)
-  // PixiTabs에서는 Panel 자체만 렌더링
-  // 🚀 @pixi/layout: panelContainerWidth는 flex로 자동 계산되므로 제거
+  // 🚀 Phase 11: 선택된 Panel의 children 가져오기
+  const selectedPanelChildren = useMemo(() => {
+    if (!selectedPanel) return [];
+    return elements
+      .filter((el) => el.parent_id === selectedPanel.id)
+      .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+  }, [elements, selectedPanel]);
+
+  // 🚀 Panel children 렌더링 함수
+  const renderPanelChild = useCallback((childEl: Element) => {
+    // styleToLayout은 Element 객체를 받음
+    const childLayout = styleToLayout(childEl);
+
+    return (
+      <pixiContainer key={childEl.id} layout={childLayout}>
+        <ElementSprite
+          element={childEl}
+          onClick={onClick}
+        />
+      </pixiContainer>
+    );
+  }, [onClick]);
 
   return (
     <pixiContainer layout={rootLayout}>
@@ -375,14 +396,15 @@ export const PixiTabs = memo(function PixiTabs({
       </pixiContainer>
 
       {/* 선택된 TabPanel 렌더링 */}
-      {/* 🚀 Panel 자손들은 ElementsLayer에서 layoutPosition과 함께 렌더링됨 */}
-      {/* 🚀 @pixi/layout: containerWidth 제거 - flex로 자동 계산 */}
+      {/* 🚀 Phase 11: Panel children을 PixiPanel에 전달 */}
       {selectedPanel && (
         <pixiContainer layout={panelLayout}>
           <PixiPanel
             element={selectedPanel}
             isSelected={false}
             onClick={onClick}
+            childElements={selectedPanelChildren}
+            renderChildElement={renderPanelChild}
           />
         </pixiContainer>
       )}
