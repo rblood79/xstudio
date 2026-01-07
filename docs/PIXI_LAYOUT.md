@@ -19,6 +19,7 @@
 | Phase 9 | children 기본 flex 레이아웃 + UI layout prop | ✅ 완료 |
 | Phase 10 | Container 타입 children 내부 렌더링 | ✅ 완료 |
 | Phase 11 | CSS block/inline-block 동기화 | ✅ 완료 |
+| Phase 12 | UI 컴포넌트 수동 좌표(x, y) 제거 | 🔄 진행중 |
 
 ---
 
@@ -924,3 +925,116 @@ PixiSelect, PixiScrollBox, PixiList, PixiMaskedFrame
 - **Block 요소** (Card, Panel): body에서 한 줄 전체 차지 → 세로 배치
 - **Inline-block 요소** (Button): 콘텐츠 너비만 차지 → 가로 배치
 - CSS의 자연스러운 레이아웃 동작이 @pixi/layout에서 재현됨
+
+---
+
+## Phase 12: UI 컴포넌트 수동 좌표(x, y) 제거 🔄 진행중
+
+### 문제
+
+@pixi/layout 사용 시 수동 좌표(`x`, `y` prop)가 레이아웃과 충돌:
+
+1. **x, y prop이 layout과 충돌** - `x={0} y={labelHeight}` 같은 수동 좌표 설정이 @pixi/layout 자동 배치와 충돌
+2. **pixiText에 layout 누락** - `isLeaf: true` 없이 텍스트 렌더링 시 크기 계산 오류
+3. **hitArea가 레이아웃 공간 차지** - 투명 hitArea가 flex 아이템으로 포함되어 추가 공간 차지
+
+### 해결 원칙
+
+| 요소 | 잘못된 방식 | 올바른 방식 |
+|------|------------|------------|
+| 텍스트 위치 | `<pixiText x={10} y={5} />` | 부모에 `padding`, 자식에 `layout={{ isLeaf: true }}` |
+| 배경 Graphics | 암묵적 (0,0) | `layout={{ position: 'absolute', ... }}` |
+| hitArea | flex 아이템으로 포함 | `layout={{ position: 'absolute', top: 0, left: 0 }}` |
+| 인디케이터 | `x={indicatorX} y={indicatorY}` | `layout={{ position: 'absolute', bottom: 0 }}` |
+
+### 수정 패턴
+
+#### 1. pixiText: x, y 제거 → 부모 padding + isLeaf
+
+```tsx
+// ❌ 기존: 수동 좌표
+<pixiContainer layout={{ width: 100, height: 40 }}>
+  <pixiText text="Tab" x={12} y={8} />
+</pixiContainer>
+
+// ✅ 수정: 부모 padding + isLeaf
+<pixiContainer layout={{
+  width: 100,
+  height: 40,
+  display: 'flex',
+  alignItems: 'center',
+  paddingLeft: 12,
+  paddingRight: 12,
+  paddingTop: 8,
+  paddingBottom: 8,
+}}>
+  <pixiText text="Tab" layout={{ isLeaf: true }} />
+</pixiContainer>
+```
+
+#### 2. 배경 Graphics: position absolute로 레이아웃에서 제외
+
+```tsx
+// ❌ 기존: 레이아웃 흐름에 포함됨
+<pixiContainer layout={{ ... }}>
+  <pixiGraphics draw={drawBackground} />
+  <pixiText ... />
+</pixiContainer>
+
+// ✅ 수정: position absolute로 제외
+<pixiContainer layout={{ ... }}>
+  <pixiGraphics
+    draw={drawBackground}
+    layout={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
+  />
+  <pixiText layout={{ isLeaf: true }} />
+</pixiContainer>
+```
+
+#### 3. hitArea: position absolute 필수
+
+```tsx
+// ❌ 기존: 레이아웃 공간 차지
+<pixiGraphics draw={drawHitArea} eventMode="static" />
+
+// ✅ 수정: position absolute로 레이아웃에서 제외
+<pixiGraphics
+  draw={drawHitArea}
+  layout={{ position: 'absolute', top: 0, left: 0 }}
+  eventMode="static"
+/>
+```
+
+### 수정 완료 파일
+
+| 파일 | 수정 내용 |
+|------|----------|
+| `PixiRadio.tsx` | pixiText `isLeaf`, hitArea `position: absolute` |
+| `PixiCheckboxGroup.tsx` | pixiText `isLeaf`, hitArea `position: absolute` |
+| `PixiBreadcrumbs.tsx` | pixiText `isLeaf` |
+| `PixiTabs.tsx` | 탭 텍스트 `isLeaf`, hover 배경 `position: absolute` |
+
+### 수정 필요 파일 (40+ 파일)
+
+다음 UI 컴포넌트들에서 수동 좌표 사용 중:
+
+```
+PixiDialog, PixiDropZone, PixiGridList, PixiCheckbox,
+PixiSearchField, PixiColorField, PixiDisclosure, PixiDateRangePicker,
+PixiComboBox, PixiNumberField, PixiTextArea, PixiSlot,
+PixiToast, PixiTree, PixiTextField, PixiColorSlider,
+PixiColorWheel, PixiTagGroup, PixiDatePicker, PixiBadge,
+PixiPagination, PixiColorSwatchPicker, PixiCalendar, PixiTable,
+PixiMenu, PixiToggleButton, PixiDateField, PixiForm,
+PixiInput, PixiTimeField, PixiDisclosureGroup, PixiMeter,
+PixiTooltip, PixiListBox, PixiSwitch, PixiPopover,
+PixiColorPicker, PixiToggleButtonGroup, PixiGroup, PixiFileTrigger,
+PixiColorArea
+```
+
+### 검증 방법
+
+1. 타입 체크 통과: `pnpm run type-check`
+2. 각 컴포넌트 렌더링 확인
+3. 선택 시 SelectionBox 위치 정확성 확인
+4. hover/click 이벤트 정상 동작 확인
