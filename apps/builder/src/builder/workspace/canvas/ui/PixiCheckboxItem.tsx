@@ -15,7 +15,7 @@ import { memo, useCallback, useMemo } from 'react';
 import { Graphics as PixiGraphics } from 'pixi.js';
 import type { Element } from '../../../../types/core/store.types';
 import type { CSSStyle } from '../sprites/styleConverter';
-import { parseCSSSize } from '../sprites/styleConverter';
+// 🚀 Phase 8: parseCSSSize 제거
 
 // ============================================
 // Types
@@ -52,12 +52,13 @@ export const PixiCheckboxItem = memo(function PixiCheckboxItem({
   }, [props]);
 
   // 스타일
+  // 🚀 Phase 8: parseCSSSize 제거 - fallback 값 직접 사용
   const checkboxSize = DEFAULT_CHECKBOX_SIZE;
-  const fontSize = parseCSSSize(style?.fontSize, undefined, 14);
+  const fontSize = typeof style?.fontSize === 'number' ? style.fontSize : 14;
 
   // 크기 (LayoutEngine에서 계산된 크기 우선 사용)
-  const layoutWidth = parseCSSSize(style?.width, undefined, 0);
-  const layoutHeight = parseCSSSize(style?.height, undefined, 0);
+  const layoutWidth = typeof style?.width === 'number' ? style.width : 0;
+  const layoutHeight = typeof style?.height === 'number' ? style.height : 0;
 
   // 크기 계산 (layoutPosition 없으면 fallback)
   const estimatedTextWidth = labelText ? Math.max(labelText.length * fontSize * 0.6, 50) : 0;

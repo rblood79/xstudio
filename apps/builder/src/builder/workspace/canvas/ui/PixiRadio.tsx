@@ -17,7 +17,7 @@ import { memo, useCallback, useMemo } from 'react';
 import { Graphics as PixiGraphics, TextStyle } from 'pixi.js';
 import type { Element } from '../../../../types/core/store.types';
 import type { CSSStyle } from '../sprites/styleConverter';
-import { cssColorToHex, parseCSSSize } from '../sprites/styleConverter';
+import { cssColorToHex } from '../sprites/styleConverter';
 import { drawCircle } from '../utils';
 import { useStore } from '../../../stores';
 import { getRadioSizePreset, getLabelStylePreset, getVariantColors } from '../utils/cssVariableReader';
@@ -309,7 +309,8 @@ export const PixiRadio = memo(function PixiRadio({
   // 🚀 테마 색상 사용 (inline style 오버라이드 지원)
   const primaryColor = cssColorToHex(style?.backgroundColor, variantColors.bg);
   const textColor = cssColorToHex(style?.color, variantColors.text);
-  const fontSize = parseCSSSize(style?.fontSize, undefined, labelPreset.fontSize);
+  // 🚀 Phase 8: parseCSSSize 제거 - CSS 프리셋 값 사용
+  const fontSize = typeof style?.fontSize === 'number' ? style.fontSize : labelPreset.fontSize;
   const fontFamily = labelPreset.fontFamily;
 
   // 라벨이 있으면 옵션들의 Y 오프셋 추가

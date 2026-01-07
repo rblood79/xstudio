@@ -18,11 +18,12 @@ import { memo, useCallback, useMemo } from "react";
 import { Graphics as PixiGraphics } from "pixi.js";
 import type { Element } from "../../../../types/core/store.types";
 import type { CSSStyle } from "../sprites/styleConverter";
-import { cssColorToHex, parseCSSSize } from "../sprites/styleConverter";
+import { cssColorToHex } from "../sprites/styleConverter";
 import {
   getSeparatorSizePreset,
   getSeparatorColorPreset,
 } from "../utils/cssVariableReader";
+import { toLayoutSize } from "../layout/styleToLayout";
 
 // ============================================
 // Types
@@ -82,21 +83,32 @@ export const PixiSeparator = memo(function PixiSeparator({
   }, [style, colorPreset]);
 
   // 크기 계산
+  // 🚀 Phase 8: layout prop에 style 값 직접 전달 (% 단위 지원)
+  const fallbackWidth = 200;
+  const fallbackHeight = 100;
+
+  // Graphics 그리기용 픽셀 값 (fallback 사용)
   const separatorSize = useMemo(() => {
     if (orientation === "vertical") {
-      const height = parseCSSSize(style?.height, undefined, 100);
+      const height = typeof style?.height === 'number' ? style.height : fallbackHeight;
       return {
         width: sizePreset.thickness,
         height,
       };
     }
     // horizontal
-    const width = parseCSSSize(style?.width, undefined, 200);
+    const width = typeof style?.width === 'number' ? style.width : fallbackWidth;
     return {
       width,
       height: sizePreset.thickness,
     };
   }, [orientation, style?.width, style?.height, sizePreset.thickness]);
+
+  // 🚀 Phase 8: layout prop에 style 값 직접 전달 (% 단위 지원)
+  const containerLayout = useMemo(() => ({
+    width: orientation === "horizontal" ? toLayoutSize(style?.width, fallbackWidth) : sizePreset.thickness,
+    height: orientation === "vertical" ? toLayoutSize(style?.height, fallbackHeight) : sizePreset.thickness,
+  }), [orientation, style?.width, style?.height, sizePreset.thickness]);
 
   // 구분선 그리기
   const drawSeparator = useCallback(
@@ -165,7 +177,7 @@ export const PixiSeparator = memo(function PixiSeparator({
   }, [element.id, onClick]);
 
   return (
-    <pixiContainer>
+    <pixiContainer layout={containerLayout}>
       <pixiGraphics
         draw={drawSeparator}
         eventMode="static"

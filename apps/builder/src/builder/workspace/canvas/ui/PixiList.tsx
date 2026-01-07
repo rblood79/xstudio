@@ -17,7 +17,7 @@ import { List } from '@pixi/ui';
 import { Container, Graphics, Text, TextStyle } from 'pixi.js';
 import type { Element } from '../../../../types/core/store.types';
 import type { CSSStyle } from '../sprites/styleConverter';
-import { cssColorToHex, parseCSSSize } from '../sprites/styleConverter';
+import { cssColorToHex } from '../sprites/styleConverter';
 import { drawBox } from '../utils';
 
 // ============================================
@@ -57,22 +57,25 @@ interface ListLayoutStyle {
   padding: number;
 }
 
+/**
+ * 🚀 Phase 8: parseCSSSize 제거 - CSS 프리셋 값 사용
+ */
 function convertToListStyle(style: CSSStyle | undefined): ListLayoutStyle {
   return {
-    x: parseCSSSize(style?.left, undefined, 0),
-    y: parseCSSSize(style?.top, undefined, 0),
-    width: parseCSSSize(style?.width, undefined, 200),
-    height: parseCSSSize(style?.height, undefined, 250),
+    x: typeof style?.left === 'number' ? style.left : 0,
+    y: typeof style?.top === 'number' ? style.top : 0,
+    width: typeof style?.width === 'number' ? style.width : 200,
+    height: typeof style?.height === 'number' ? style.height : 250,
     backgroundColor: cssColorToHex(style?.backgroundColor, 0xffffff),
     itemBackgroundColor: 0xf3f4f6,
     itemHoverColor: 0xe5e7eb,
     textColor: cssColorToHex(style?.color, 0x374151),
-    fontSize: parseCSSSize(style?.fontSize, undefined, 14),
+    fontSize: typeof style?.fontSize === 'number' ? style.fontSize : 14,
     fontFamily: style?.fontFamily || 'Pretendard, sans-serif',
-    borderRadius: parseCSSSize(style?.borderRadius, undefined, 8),
+    borderRadius: typeof style?.borderRadius === 'number' ? style.borderRadius : 8,
     itemHeight: 40,
-    gap: parseCSSSize(style?.gap, undefined, 4),
-    padding: parseCSSSize(style?.padding, undefined, 8),
+    gap: typeof style?.gap === 'number' ? style.gap : 4,
+    padding: typeof style?.padding === 'number' ? style.padding : 8,
   };
 }
 

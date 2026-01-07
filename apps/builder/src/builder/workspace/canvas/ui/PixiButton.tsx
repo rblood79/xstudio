@@ -26,7 +26,7 @@ import {
 import { FancyButton } from "@pixi/ui";
 import type { Element } from "../../../../types/core/store.types";
 import type { CSSStyle } from "../sprites/styleConverter";
-import { cssColorToHex, parseCSSSize } from "../sprites/styleConverter";
+import { cssColorToHex } from "../sprites/styleConverter";
 import type {
   ButtonVariant,
   ComponentSize,
@@ -157,41 +157,18 @@ function getButtonLayout(
   const sizePreset = getSizePreset(size) || DEFAULT_SIZE_PRESET;
 
   // 폰트 설정 (inline style > size preset)
-  const fontSize = parseCSSSize(
-    style?.fontSize,
-    undefined,
-    sizePreset.fontSize
-  );
+  // 🚀 Phase 8: parseCSSSize 제거 - CSS 프리셋 값 사용
+  const fontSize = typeof style?.fontSize === 'number' ? style.fontSize : sizePreset.fontSize;
   const fontFamily = style?.fontFamily || "Pretendard, sans-serif";
 
   // 패딩 (inline style > size preset)
-  const paddingTop = parseCSSSize(
-    style?.paddingTop,
-    undefined,
-    sizePreset.paddingY
-  );
-  const paddingRight = parseCSSSize(
-    style?.paddingRight,
-    undefined,
-    sizePreset.paddingX
-  );
-  const paddingBottom = parseCSSSize(
-    style?.paddingBottom,
-    undefined,
-    sizePreset.paddingY
-  );
-  const paddingLeft = parseCSSSize(
-    style?.paddingLeft,
-    undefined,
-    sizePreset.paddingX
-  );
+  const paddingTop = typeof style?.paddingTop === 'number' ? style.paddingTop : sizePreset.paddingY;
+  const paddingRight = typeof style?.paddingRight === 'number' ? style.paddingRight : sizePreset.paddingX;
+  const paddingBottom = typeof style?.paddingBottom === 'number' ? style.paddingBottom : sizePreset.paddingY;
+  const paddingLeft = typeof style?.paddingLeft === 'number' ? style.paddingLeft : sizePreset.paddingX;
 
   // 테두리 반경 (inline style > size preset)
-  const borderRadius = parseCSSSize(
-    style?.borderRadius,
-    undefined,
-    sizePreset.borderRadius
-  );
+  const borderRadius = typeof style?.borderRadius === 'number' ? style.borderRadius : sizePreset.borderRadius;
 
   // 색상 (inline style > variant)
   const hasInlineBg = style?.backgroundColor !== undefined;
@@ -234,8 +211,9 @@ function getButtonLayout(
 
   // 크기 계산
   // 🚀 Fix: 명시적 크기가 최소 필요 크기보다 작으면 auto로 처리
-  const explicitWidth = parseCSSSize(style?.width, undefined, 0);
-  const explicitHeight = parseCSSSize(style?.height, undefined, 0);
+  // 🚀 Phase 8: parseCSSSize 제거
+  const explicitWidth = typeof style?.width === 'number' ? style.width : 0;
+  const explicitHeight = typeof style?.height === 'number' ? style.height : 0;
 
   const isWidthAuto = !style?.width || style?.width === "auto" || explicitWidth < minRequiredWidth;
   const isHeightAuto = !style?.height || style?.height === "auto" || explicitHeight < minRequiredHeight;
@@ -258,8 +236,8 @@ function getButtonLayout(
   }
 
   return {
-    left: parseCSSSize(style?.left, undefined, 0),
-    top: parseCSSSize(style?.top, undefined, 0),
+    left: typeof style?.left === 'number' ? style.left : 0,
+    top: typeof style?.top === 'number' ? style.top : 0,
     width,
     height,
     backgroundColor,

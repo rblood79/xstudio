@@ -17,7 +17,7 @@ import { FancyButton } from '@pixi/ui';
 import { Container, Graphics, Text, TextStyle } from 'pixi.js';
 import type { Element } from '../../../../types/core/store.types';
 import type { CSSStyle } from '../sprites/styleConverter';
-import { parseCSSSize } from '../sprites/styleConverter';
+// 🚀 Phase 8: parseCSSSize 제거
 import { getVariantColors } from '../utils/cssVariableReader';
 import { useThemeColors } from '../hooks/useThemeColors';
 
@@ -81,23 +81,24 @@ function convertToFancyButtonStyle(style: CSSStyle | undefined, themeDefaultColo
     return 0xffffff;
   })();
 
+  // 🚀 Phase 8: parseCSSSize 제거 - fallback 값 직접 사용
   return {
-    x: parseCSSSize(style?.left, undefined, 0),
-    y: parseCSSSize(style?.top, undefined, 0),
-    width: parseCSSSize(style?.width, undefined, 120),
-    height: parseCSSSize(style?.height, undefined, 40),
+    x: typeof style?.left === 'number' ? style.left : 0,
+    y: typeof style?.top === 'number' ? style.top : 0,
+    width: typeof style?.width === 'number' ? style.width : 120,
+    height: typeof style?.height === 'number' ? style.height : 40,
     backgroundColor: bgColor,
     hoverColor: adjustColor(bgColor, 0.9), // 약간 어둡게
     pressedColor: adjustColor(bgColor, 0.8), // 더 어둡게
     disabledColor: 0xcccccc,
     textColor: textColor,
-    fontSize: parseCSSSize(style?.fontSize, undefined, 14),
+    fontSize: typeof style?.fontSize === 'number' ? style.fontSize : 14,
     fontFamily: style?.fontFamily || 'Pretendard, sans-serif',
-    borderRadius: parseCSSSize(style?.borderRadius, undefined, 8),
-    paddingLeft: parseCSSSize(style?.paddingLeft || style?.padding, undefined, 16),
-    paddingRight: parseCSSSize(style?.paddingRight || style?.padding, undefined, 16),
-    paddingTop: parseCSSSize(style?.paddingTop || style?.padding, undefined, 8),
-    paddingBottom: parseCSSSize(style?.paddingBottom || style?.padding, undefined, 8),
+    borderRadius: typeof style?.borderRadius === 'number' ? style.borderRadius : 8,
+    paddingLeft: typeof (style?.paddingLeft || style?.padding) === 'number' ? (style?.paddingLeft || style?.padding) as number : 16,
+    paddingRight: typeof (style?.paddingRight || style?.padding) === 'number' ? (style?.paddingRight || style?.padding) as number : 16,
+    paddingTop: typeof (style?.paddingTop || style?.padding) === 'number' ? (style?.paddingTop || style?.padding) as number : 8,
+    paddingBottom: typeof (style?.paddingBottom || style?.padding) === 'number' ? (style?.paddingBottom || style?.padding) as number : 8,
   };
 }
 

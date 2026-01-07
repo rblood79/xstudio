@@ -17,7 +17,7 @@ import { ProgressBar } from '@pixi/ui';
 import { Container, Graphics } from 'pixi.js';
 import type { Element } from '../../../../types/core/store.types';
 import type { CSSStyle } from '../sprites/styleConverter';
-import { cssColorToHex, parseCSSSize } from '../sprites/styleConverter';
+import { cssColorToHex } from '../sprites/styleConverter';
 import { getProgressBarSizePreset, getVariantColors } from '../utils/cssVariableReader';
 import { useThemeColors } from '../hooks/useThemeColors';
 
@@ -70,16 +70,17 @@ function convertToProgressBarStyle(
   // 🚀 CSS에서 사이즈 프리셋 읽기
   const sizePreset = getProgressBarSizePreset(size);
 
+  // 🚀 Phase 8: parseCSSSize 제거 - CSS 프리셋 값 사용
   return {
-    x: parseCSSSize(style?.left, undefined, 0),
-    y: parseCSSSize(style?.top, undefined, 0),
-    width: parseCSSSize(style?.width, undefined, sizePreset.width),
-    height: parseCSSSize(style?.height, undefined, sizePreset.barHeight),
+    x: typeof style?.left === 'number' ? style.left : 0,
+    y: typeof style?.top === 'number' ? style.top : 0,
+    width: typeof style?.width === 'number' ? style.width : sizePreset.width,
+    height: typeof style?.height === 'number' ? style.height : sizePreset.barHeight,
     backgroundColor: trackColor,
     fillColor: primaryColor,
     borderColor: trackColor,
     borderWidth: 0,
-    borderRadius: parseCSSSize(style?.borderRadius, undefined, sizePreset.borderRadius),
+    borderRadius: typeof style?.borderRadius === 'number' ? style.borderRadius : sizePreset.borderRadius,
   };
 }
 

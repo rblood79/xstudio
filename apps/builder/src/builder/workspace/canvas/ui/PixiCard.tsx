@@ -20,11 +20,12 @@ import {
 } from "pixi.js";
 import type { Element } from "../../../../types/core/store.types";
 import type { CSSStyle } from "../sprites/styleConverter";
-import { cssColorToHex, parseCSSSize } from "../sprites/styleConverter";
+import { cssColorToHex } from "../sprites/styleConverter";
 import {
   getCardSizePreset,
   getVariantColors,
 } from "../utils/cssVariableReader";
+import { toLayoutSize } from "../layout/styleToLayout";
 import { useThemeColors } from "../hooks/useThemeColors";
 import { drawBox } from "../utils";
 
@@ -130,12 +131,15 @@ export const PixiCard = memo(function PixiCard({
   }, [props?.description, props?.children]);
 
   // 카드 크기
-  const cardWidth = parseCSSSize(style?.width, undefined, 200);
+  // 🚀 Phase 8: layout prop에 style 값 직접 전달 (% 단위 지원)
+  const fallbackWidth = 200;
+  // Graphics 그리기용 픽셀 값
+  const cardWidth = typeof style?.width === 'number' ? style.width : fallbackWidth;
 
   const explicitHeight = useMemo(() => {
     const height = style?.height;
     if (height === undefined) return undefined;
-    return parseCSSSize(height, undefined, 0);
+    return typeof height === 'number' ? height : undefined;
   }, [style?.height]);
 
   const layoutHeightRef = useRef<number | null>(null);
@@ -211,15 +215,16 @@ export const PixiCard = memo(function PixiCard({
     [textColor, cardWidth, sizePreset.padding]
   );
 
+  // 🚀 Phase 8: layout prop에 style 값 직접 전달 (% 단위 지원)
   const cardLayout = useMemo(() => ({
     display: 'flex',
     flexDirection: 'column',
-    width: cardWidth,
-    ...(explicitHeight !== undefined ? { height: explicitHeight } : {}),
+    width: toLayoutSize(style?.width, fallbackWidth),
+    ...(style?.height !== undefined ? { height: toLayoutSize(style.height, 60) } : {}),
     padding: sizePreset.padding,
     gap: cardTitle && cardDescription ? 4 : 0,
     minHeight: 60,
-  }), [cardWidth, explicitHeight, sizePreset.padding, cardTitle, cardDescription]);
+  }), [style?.width, style?.height, sizePreset.padding, cardTitle, cardDescription]);
 
   // 이벤트 핸들러
   const handlePointerEnter = useCallback(() => {

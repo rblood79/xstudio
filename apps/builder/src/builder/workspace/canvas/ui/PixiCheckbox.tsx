@@ -16,7 +16,7 @@ import { memo, useCallback, useMemo } from 'react';
 import { Graphics as PixiGraphics, TextStyle } from 'pixi.js';
 import type { Element } from '../../../../types/core/store.types';
 import type { CSSStyle } from '../sprites/styleConverter';
-import { cssColorToHex, parseCSSSize } from '../sprites/styleConverter';
+import { cssColorToHex } from '../sprites/styleConverter';
 import { getCheckboxSizePreset, getVariantColors } from '../utils/cssVariableReader';
 import { useThemeColors } from '../hooks/useThemeColors';
 import { drawBox } from '../utils';
@@ -84,14 +84,15 @@ export const PixiCheckbox = memo(function PixiCheckbox({
 
   const boxSize = sizePreset.boxSize;
 
-  const borderRadius = parseCSSSize(style?.borderRadius, undefined, DEFAULT_BORDER_RADIUS);
+  // 🚀 Phase 8: parseCSSSize 제거 - CSS 프리셋 값 사용, 숫자 타입만 오버라이드 허용
+  const borderRadius = typeof style?.borderRadius === 'number' ? style.borderRadius : DEFAULT_BORDER_RADIUS;
   // 🚀 테마 색상 사용 (inline style 오버라이드 지원)
   const primaryColor = cssColorToHex(style?.backgroundColor, variantColors.bg);
   const borderColor = isChecked ? primaryColor : DEFAULT_BORDER_COLOR;
   const backgroundColor = isChecked ? primaryColor : 0xffffff;
   const textColor = cssColorToHex(style?.color, variantColors.text);
   // fontSize도 CSS 변수 프리셋에서 가져옴 (style에 명시적 값이 없으면)
-  const fontSize = parseCSSSize(style?.fontSize, undefined, sizePreset.fontSize);
+  const fontSize = typeof style?.fontSize === 'number' ? style.fontSize : sizePreset.fontSize;
 
   // 🚀 Phase 5: posX/posY 제거 - ElementSprite에서 layout prop으로 위치 처리
 

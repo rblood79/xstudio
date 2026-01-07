@@ -22,7 +22,7 @@ import {
 } from "pixi.js";
 import type { Element } from "../../../../types/core/store.types";
 import type { CSSStyle } from "../sprites/styleConverter";
-import { parseCSSSize } from "../sprites/styleConverter";
+// 🚀 Phase 8: parseCSSSize 제거
 import {
   getToggleButtonSizePreset,
   getVariantColors,
@@ -319,7 +319,8 @@ export const PixiToggleButtonGroup = memo(function PixiToggleButtonGroup({
   }, [props?.orientation, style]);
 
   // gap
-  const gap = parseCSSSize(style?.gap, undefined, DEFAULT_GAP);
+  // 🚀 Phase 8: parseCSSSize 제거 - fallback 값 직접 사용
+  const gap = typeof style?.gap === 'number' ? style.gap : DEFAULT_GAP;
 
   // 버튼 크기 계산 (텍스트 기반)
   const buttonSizes = useMemo(() => {

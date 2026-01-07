@@ -15,7 +15,7 @@
 | Phase 6 | calculateLayout() 제거 | ✅ 완료 |
 | Phase 7 | LayoutEngine.ts 삭제 | ✅ 완료 |
 | Phase 7+ | SelectionBox 좌표 변환 수정 | ✅ 완료 |
-| Phase 8 | % 단위 지원 - parseCSSSize 제거 | 🔄 진행 중 (3/28 파일) |
+| Phase 8 | % 단위 지원 - parseCSSSize 제거 | ✅ 완료 |
 | Phase 9 | children 기본 flex 레이아웃 + UI layout prop | ✅ 완료 |
 | Phase 10 | Container 타입 children 내부 렌더링 | ✅ 완료 |
 
@@ -540,7 +540,7 @@ if (bounds) {
 
 ---
 
-## Phase 8: 퍼센트(%) 단위 지원 - parseCSSSize 제거 🔄
+## Phase 8: 퍼센트(%) 단위 지원 - parseCSSSize 제거 ✅
 
 ### 문제
 - 스타일 패널에서 `width: 100%`를 설정해도 픽셀 값으로만 계산됨
@@ -572,15 +572,9 @@ const rootLayout = { width: styleWidth ?? fallbackWidth };
 3. **Graphics는 fallback 값 사용** - 픽셀 값이 필요한 경우 기본값 사용
 4. **@pixi/layout 내장 스타일 활용** - `backgroundColor`, `borderColor`, `borderRadius`
 
-### 수정 완료 파일 (3개)
+### 수정 완료 파일 (23개 UI 컴포넌트)
 
-| 파일 | 수정 내용 |
-|------|----------|
-| `PixiTabs.tsx` | `parseCSSSize` 제거, layout에 `style?.width` 직접 전달, Graphics border를 layout `backgroundColor`로 대체 |
-| `PixiPanel.tsx` | `parseCSSSize` 제거, Graphics 배경을 layout 기반으로 변경, 히트 영역을 layout `position: 'absolute'`로 변경 |
-| `PixiInput.tsx` | `parseCSSSize` 제거, `inputLayout.width`에 `styleWidth ?? fallbackWidth` 전달 |
-
-### 남은 파일 (25개)
+모든 UI 컴포넌트에서 `parseCSSSize` import 및 호출 제거 완료:
 
 ```
 PixiButton, PixiCheckbox, PixiCard, PixiList, PixiListBox,
@@ -588,8 +582,19 @@ PixiSlider, PixiProgressBar, PixiMeter, PixiSeparator,
 PixiSelect, PixiScrollBox, PixiMaskedFrame, PixiToggleButton,
 PixiFancyButton, PixiSwitcher, PixiRadio, PixiRadioItem,
 PixiCheckboxItem, PixiCheckboxGroup, PixiToggleButtonGroup,
-paddingUtils.ts, styleConverter.ts, borderUtils.ts, BodyLayer.tsx
+PixiTabs, PixiPanel, PixiInput
 ```
+
+### 유틸리티 파일 (유지)
+
+다음 파일들은 padding/border 파싱 등 다른 용도로 `parseCSSSize` 사용 (제거 불필요):
+
+| 파일 | 용도 |
+|------|------|
+| `paddingUtils.ts` | padding shorthand 파싱 (`padding: "10px 20px"`) |
+| `borderUtils.ts` | border width 파싱 |
+| `styleConverter.ts` | 범용 CSS 크기 변환 유틸리티 (함수 정의) |
+| `BodyLayer.tsx` | Body 요소 borderRadius 파싱 |
 
 ### 작업 템플릿
 

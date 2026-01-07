@@ -21,7 +21,7 @@ import {
 } from "pixi.js";
 import type { Element } from "../../../../types/core/store.types";
 import type { CSSStyle } from "../sprites/styleConverter";
-import { parseCSSSize } from "../sprites/styleConverter";
+import { toLayoutSize } from "../layout/styleToLayout";
 import {
   getMeterSizePreset,
   getVariantColors,
@@ -144,9 +144,14 @@ export const PixiMeter = memo(function PixiMeter({
   }, [value, minValue, maxValue, valueFormat, props?.formatOptions]);
 
   // 크기 계산
-  const meterWidth = parseCSSSize(style?.width, undefined, sizePreset.width);
+  // 🚀 Phase 8: parseCSSSize 제거 - CSS 프리셋 값 사용
+  const meterWidthValue = typeof style?.width === 'number' ? style.width : sizePreset.width;
   const barHeight = sizePreset.barHeight;
-  const fillWidth = (meterWidth * percent) / 100;
+  const fillWidth = (meterWidthValue * percent) / 100;
+
+  // layout prop용
+  const meterLayoutWidth = toLayoutSize(style?.width, sizePreset.width);
+  const meterWidth = meterWidthValue;
 
   // 전체 높이 계산 (라벨/값 + 갭 + 바)
   const hasLabelRow = label || showValue;
@@ -215,6 +220,7 @@ export const PixiMeter = memo(function PixiMeter({
 
   return (
     <pixiContainer
+      layout={{ width: meterLayoutWidth }}
       eventMode="static"
       cursor="pointer"
       onPointerDown={handleClick}

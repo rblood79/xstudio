@@ -16,7 +16,8 @@ import { Slider } from '@pixi/ui';
 import { Container, Graphics } from 'pixi.js';
 import type { Element } from '../../../../types/core/store.types';
 import type { CSSStyle } from '../sprites/styleConverter';
-import { cssColorToHex, parseCSSSize } from '../sprites/styleConverter';
+import { cssColorToHex } from '../sprites/styleConverter';
+import { toLayoutSize } from '../layout/styleToLayout';
 import { drawBox, drawCircle } from '../utils';
 import { getSliderSizePreset, getVariantColors } from '../utils/cssVariableReader';
 import { useThemeColors } from '../hooks/useThemeColors';
@@ -52,6 +53,9 @@ interface SliderLayoutStyle {
  * CSS 스타일을 Slider 레이아웃 스타일로 변환
  * 🚀 Phase 0: CSS 동기화 - getSliderSizePreset() 사용
  */
+/**
+ * 🚀 Phase 8: parseCSSSize 제거 - CSS 프리셋 값 사용
+ */
 function convertToSliderStyle(style: CSSStyle | undefined, size: string, themeDefaultColor: number): SliderLayoutStyle {
   const primaryColor = cssColorToHex(style?.backgroundColor, themeDefaultColor);
   const trackColor = cssColorToHex(style?.borderColor, 0xe5e7eb);
@@ -60,10 +64,10 @@ function convertToSliderStyle(style: CSSStyle | undefined, size: string, themeDe
   const sizePreset = getSliderSizePreset(size);
 
   return {
-    x: parseCSSSize(style?.left, undefined, 0),
-    y: parseCSSSize(style?.top, undefined, 0),
-    width: parseCSSSize(style?.width, undefined, 200),
-    height: parseCSSSize(style?.height, undefined, sizePreset.trackHeight),
+    x: typeof style?.left === 'number' ? style.left : 0,
+    y: typeof style?.top === 'number' ? style.top : 0,
+    width: typeof style?.width === 'number' ? style.width : 200,
+    height: typeof style?.height === 'number' ? style.height : sizePreset.trackHeight,
     trackColor,
     fillColor: primaryColor,
     handleColor: primaryColor,

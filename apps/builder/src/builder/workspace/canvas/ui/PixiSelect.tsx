@@ -17,7 +17,7 @@ import { Select } from '@pixi/ui';
 import { Container, Graphics, TextStyle } from 'pixi.js';
 import type { Element } from '../../../../types/core/store.types';
 import type { CSSStyle } from '../sprites/styleConverter';
-import { cssColorToHex, parseCSSSize } from '../sprites/styleConverter';
+import { cssColorToHex } from '../sprites/styleConverter';
 import { drawBox } from '../utils';
 import { getSelectSizePreset } from '../utils/cssVariableReader';
 
@@ -69,20 +69,21 @@ function convertToSelectStyle(style: CSSStyle | undefined, size: string): Select
   // 높이 계산: fontSize + paddingY * 2 + border (대략적 추정)
   const defaultHeight = sizePreset.fontSize + sizePreset.paddingY * 2 + 8;
 
+  // 🚀 Phase 8: parseCSSSize 제거 - CSS 프리셋 값 사용
   return {
-    x: parseCSSSize(style?.left, undefined, 0),
-    y: parseCSSSize(style?.top, undefined, 0),
-    width: parseCSSSize(style?.width, undefined, 200),
-    height: parseCSSSize(style?.height, undefined, defaultHeight),
+    x: typeof style?.left === 'number' ? style.left : 0,
+    y: typeof style?.top === 'number' ? style.top : 0,
+    width: typeof style?.width === 'number' ? style.width : 200,
+    height: typeof style?.height === 'number' ? style.height : defaultHeight,
     backgroundColor: cssColorToHex(style?.backgroundColor, 0xffffff),
     borderColor: cssColorToHex(style?.borderColor, 0xd1d5db),
-    borderWidth: parseCSSSize(style?.borderWidth, undefined, 1),
-    borderRadius: parseCSSSize(style?.borderRadius, undefined, sizePreset.borderRadius),
+    borderWidth: typeof style?.borderWidth === 'number' ? style.borderWidth : 1,
+    borderRadius: typeof style?.borderRadius === 'number' ? style.borderRadius : sizePreset.borderRadius,
     textColor: cssColorToHex(style?.color, 0x000000),
-    fontSize: parseCSSSize(style?.fontSize, undefined, sizePreset.fontSize),
+    fontSize: typeof style?.fontSize === 'number' ? style.fontSize : sizePreset.fontSize,
     fontFamily: style?.fontFamily || 'Pretendard, sans-serif',
-    paddingLeft: parseCSSSize(style?.paddingLeft || style?.padding, undefined, sizePreset.paddingX),
-    paddingRight: parseCSSSize(style?.paddingRight || style?.padding, undefined, sizePreset.paddingX),
+    paddingLeft: typeof (style?.paddingLeft || style?.padding) === 'number' ? (style?.paddingLeft || style?.padding) as number : sizePreset.paddingX,
+    paddingRight: typeof (style?.paddingRight || style?.padding) === 'number' ? (style?.paddingRight || style?.padding) as number : sizePreset.paddingX,
     chevronSize: sizePreset.chevronSize,
   };
 }

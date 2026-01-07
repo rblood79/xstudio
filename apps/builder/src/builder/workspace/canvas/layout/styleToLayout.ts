@@ -79,13 +79,25 @@ export interface LayoutStyle {
 }
 
 // ============================================
+// Types for @pixi/layout
+// ============================================
+
+/**
+ * @pixi/layout NumberValue 타입
+ * - number: 픽셀 값
+ * - `${number}%`: 퍼센트 값
+ * - `${number}`: 숫자 문자열
+ */
+export type LayoutNumberValue = number | `${number}%` | `${number}`;
+
+// ============================================
 // CSS Value Parsing
 // ============================================
 
 /**
  * CSS 값을 숫자로 파싱 (px, % 등)
  */
-function parseCSSValue(value: unknown): number | string | undefined {
+export function parseCSSValue(value: unknown): number | string | undefined {
   if (value === undefined || value === null || value === '' || value === 'auto') {
     return undefined;
   }
@@ -105,6 +117,49 @@ function parseCSSValue(value: unknown): number | string | undefined {
   }
 
   return undefined;
+}
+
+/**
+ * 🚀 Phase 8: CSS 값을 @pixi/layout NumberValue로 변환
+ *
+ * - number: 그대로 반환
+ * - '100%' 형식: 그대로 반환 (LayoutNumberValue 호환)
+ * - '100px' 형식: 숫자로 변환
+ * - 기타 문자열: fallback 반환
+ * - undefined/null: fallback 반환
+ *
+ * @param value - CSS 값 (number | string | undefined)
+ * @param fallback - 기본값
+ * @returns @pixi/layout 호환 NumberValue
+ */
+export function toLayoutSize(
+  value: number | string | undefined | null,
+  fallback: number
+): LayoutNumberValue {
+  if (value === undefined || value === null || value === '' || value === 'auto') {
+    return fallback;
+  }
+
+  if (typeof value === 'number') {
+    return value;
+  }
+
+  // 퍼센트 값 ('50%', '100%' 등)
+  if (typeof value === 'string' && /^\d+(\.\d+)?%$/.test(value)) {
+    return value as `${number}%`;
+  }
+
+  // 숫자 문자열 ('100', '50.5' 등)
+  if (typeof value === 'string' && /^\d+(\.\d+)?$/.test(value)) {
+    return parseFloat(value);
+  }
+
+  // px 값 ('100px', '50.5px' 등)
+  if (typeof value === 'string' && /^\d+(\.\d+)?px$/.test(value)) {
+    return parseFloat(value);
+  }
+
+  return fallback;
 }
 
 /**

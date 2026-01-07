@@ -17,7 +17,7 @@ import { memo, useCallback, useMemo } from 'react';
 import { Graphics as PixiGraphics, TextStyle } from 'pixi.js';
 import type { Element } from '../../../../types/core/store.types';
 import type { CSSStyle } from '../sprites/styleConverter';
-import { cssColorToHex, parseCSSSize } from '../sprites/styleConverter';
+import { cssColorToHex } from '../sprites/styleConverter';
 import { drawBox } from '../utils';
 import { useStore } from '../../../stores';
 import { getLabelStylePreset, getVariantColors } from '../utils/cssVariableReader';
@@ -321,11 +321,12 @@ export const PixiCheckboxGroup = memo(function PixiCheckboxGroup({
   );
 
   // 스타일
+  // 🚀 Phase 8: parseCSSSize 제거 - CSS 프리셋 값 사용
   const checkboxSize = DEFAULT_CHECKBOX_SIZE;
   const borderRadius = DEFAULT_BORDER_RADIUS;
   const primaryColor = cssColorToHex(style?.backgroundColor, variantColors.bg);
   const textColor = cssColorToHex(style?.color, DEFAULT_TEXT_COLOR);
-  const fontSize = parseCSSSize(style?.fontSize, undefined, labelPreset.fontSize);
+  const fontSize = typeof style?.fontSize === 'number' ? style.fontSize : labelPreset.fontSize;
   const fontFamily = labelPreset.fontFamily;
 
   // 라벨이 있으면 옵션들의 Y 오프셋 추가

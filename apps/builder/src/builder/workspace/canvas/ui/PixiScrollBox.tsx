@@ -17,7 +17,7 @@ import { ScrollBox } from '@pixi/ui';
 import { Container, Graphics, Text, TextStyle } from 'pixi.js';
 import type { Element } from '../../../../types/core/store.types';
 import type { CSSStyle } from '../sprites/styleConverter';
-import { cssColorToHex, parseCSSSize } from '../sprites/styleConverter';
+import { cssColorToHex } from '../sprites/styleConverter';
 import { drawBox } from '../utils';
 
 // ============================================
@@ -48,16 +48,19 @@ interface ScrollBoxLayoutStyle {
   scrollbarBgColor: number;
 }
 
+/**
+ * 🚀 Phase 8: parseCSSSize 제거 - fallback 값 직접 사용
+ */
 function convertToScrollBoxStyle(style: CSSStyle | undefined): ScrollBoxLayoutStyle {
   return {
-    x: parseCSSSize(style?.left, undefined, 0),
-    y: parseCSSSize(style?.top, undefined, 0),
-    width: parseCSSSize(style?.width, undefined, 300),
-    height: parseCSSSize(style?.height, undefined, 200),
+    x: typeof style?.left === 'number' ? style.left : 0,
+    y: typeof style?.top === 'number' ? style.top : 0,
+    width: typeof style?.width === 'number' ? style.width : 300,
+    height: typeof style?.height === 'number' ? style.height : 200,
     backgroundColor: cssColorToHex(style?.backgroundColor, 0xffffff),
     borderColor: cssColorToHex(style?.borderColor, 0xe5e7eb),
-    borderWidth: parseCSSSize(style?.borderWidth, undefined, 1),
-    borderRadius: parseCSSSize(style?.borderRadius, undefined, 8),
+    borderWidth: typeof style?.borderWidth === 'number' ? style.borderWidth : 1,
+    borderRadius: typeof style?.borderRadius === 'number' ? style.borderRadius : 8,
     scrollbarWidth: 8,
     scrollbarColor: 0x9ca3af,
     scrollbarBgColor: 0xe5e7eb,

@@ -17,7 +17,8 @@ import { Switcher } from '@pixi/ui';
 import { Container, Graphics, Text, TextStyle } from 'pixi.js';
 import type { Element } from '../../../../types/core/store.types';
 import type { CSSStyle } from '../sprites/styleConverter';
-import { cssColorToHex, parseCSSSize } from '../sprites/styleConverter';
+import { cssColorToHex } from '../sprites/styleConverter';
+import { toLayoutSize } from '../layout/styleToLayout';
 import { getSwitchSizePreset, getVariantColors } from '../utils/cssVariableReader';
 import { useThemeColors } from '../hooks/useThemeColors';
 
@@ -60,8 +61,12 @@ interface SwitcherLayoutStyle {
  * CSS 스타일을 Switcher 레이아웃 스타일로 변환
  * 🚀 Phase 0: CSS 동기화 - getSwitchSizePreset() 사용
  */
+/**
+ * 🚀 Phase 8: parseCSSSize 제거 - CSS 프리셋 값 사용
+ */
 function convertToSwitcherStyle(style: CSSStyle | undefined, itemCount: number, size: string, themeDefaultColor: number): SwitcherLayoutStyle {
-  const width = parseCSSSize(style?.width, undefined, 240);
+  const defaultWidth = 240;
+  const width = typeof style?.width === 'number' ? style.width : defaultWidth;
 
   // 🚀 CSS에서 사이즈 프리셋 읽기
   const sizePreset = getSwitchSizePreset(size);
@@ -70,17 +75,17 @@ function convertToSwitcherStyle(style: CSSStyle | undefined, itemCount: number, 
   const defaultHeight = sizePreset.trackHeight + 8; // 약간의 패딩 추가
 
   return {
-    x: parseCSSSize(style?.left, undefined, 0),
-    y: parseCSSSize(style?.top, undefined, 0),
+    x: typeof style?.left === 'number' ? style.left : 0,
+    y: typeof style?.top === 'number' ? style.top : 0,
     width,
-    height: parseCSSSize(style?.height, undefined, defaultHeight),
+    height: typeof style?.height === 'number' ? style.height : defaultHeight,
     backgroundColor: cssColorToHex(style?.backgroundColor, 0xe5e7eb),
     activeColor: cssColorToHex(style?.borderColor, themeDefaultColor),
     textColor: cssColorToHex(style?.color, 0x6b7280),
     activeTextColor: 0xffffff,
-    fontSize: parseCSSSize(style?.fontSize, undefined, sizePreset.labelFontSize),
+    fontSize: typeof style?.fontSize === 'number' ? style.fontSize : sizePreset.labelFontSize,
     fontFamily: style?.fontFamily || 'Pretendard, sans-serif',
-    borderRadius: parseCSSSize(style?.borderRadius, undefined, sizePreset.trackHeight / 2),
+    borderRadius: typeof style?.borderRadius === 'number' ? style.borderRadius : sizePreset.trackHeight / 2,
     itemWidth: itemCount > 0 ? width / itemCount : width,
   };
 }

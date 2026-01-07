@@ -17,7 +17,7 @@ import { MaskedFrame } from '@pixi/ui';
 import { Container, Graphics, Sprite, Texture } from 'pixi.js';
 import type { Element } from '../../../../types/core/store.types';
 import type { CSSStyle } from '../sprites/styleConverter';
-import { cssColorToHex, parseCSSSize } from '../sprites/styleConverter';
+import { cssColorToHex } from '../sprites/styleConverter';
 
 // ============================================
 // Types
@@ -59,14 +59,15 @@ function convertToMaskedFrameStyle(style: CSSStyle | undefined, props: Record<st
     maskShape = 'circle';
   }
 
+  // 🚀 Phase 8: parseCSSSize 제거 - fallback 값 직접 사용
   return {
-    x: parseCSSSize(style?.left, undefined, 0),
-    y: parseCSSSize(style?.top, undefined, 0),
-    width: parseCSSSize(style?.width, undefined, 100),
-    height: parseCSSSize(style?.height, undefined, 100),
+    x: typeof style?.left === 'number' ? style.left : 0,
+    y: typeof style?.top === 'number' ? style.top : 0,
+    width: typeof style?.width === 'number' ? style.width : 100,
+    height: typeof style?.height === 'number' ? style.height : 100,
     borderColor: cssColorToHex(style?.borderColor, 0xe5e7eb),
-    borderWidth: parseCSSSize(style?.borderWidth, undefined, 0),
-    borderRadius: parseCSSSize(style?.borderRadius, undefined, 8),
+    borderWidth: typeof style?.borderWidth === 'number' ? style.borderWidth : 0,
+    borderRadius: typeof style?.borderRadius === 'number' ? style.borderRadius : 8,
     maskShape,
   };
 }

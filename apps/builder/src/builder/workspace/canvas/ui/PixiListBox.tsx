@@ -23,7 +23,7 @@ import {
 import { ScrollBox } from "@pixi/ui";
 import type { Element } from "../../../../types/core/store.types";
 import type { CSSStyle } from "../sprites/styleConverter";
-import { parseCSSSize } from "../sprites/styleConverter";
+import { toLayoutSize } from "../layout/styleToLayout";
 import {
   getListBoxSizePreset,
   getListBoxColorPreset,
@@ -339,9 +339,14 @@ export const PixiListBox = memo(function PixiListBox({
   }, [props?.selectedKeys, props?.value, props?.defaultSelectedKeys, childItems]);
 
   // 크기 계산
-  const containerWidth = parseCSSSize(style?.width, undefined, 200);
-  const containerHeight = parseCSSSize(style?.height, undefined, 200);
+  // 🚀 Phase 8: parseCSSSize 제거 - fallback 값 직접 사용
+  const containerWidth = typeof style?.width === 'number' ? style.width : 200;
+  const containerHeight = typeof style?.height === 'number' ? style.height : 200;
   const itemWidth = containerWidth - sizePreset.containerPadding * 2;
+
+  // layout prop용
+  const containerLayoutWidth = toLayoutSize(style?.width, 200);
+  const containerLayoutHeight = toLayoutSize(style?.height, 200);
 
   // 총 콘텐츠 높이
   const totalContentHeight = useMemo(() => {
@@ -447,6 +452,7 @@ export const PixiListBox = memo(function PixiListBox({
 
   return (
     <pixiContainer
+      layout={{ width: containerLayoutWidth, height: containerLayoutHeight }}
       eventMode="static"
       onPointerDown={handleContainerClick}
     >
