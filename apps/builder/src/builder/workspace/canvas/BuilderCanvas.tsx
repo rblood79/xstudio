@@ -451,6 +451,14 @@ const ElementsLayer = memo(function ElementsLayer({
     'Disclosure', 'DisclosureGroup', 'Accordion',
   ]), []);
 
+  // 🚀 Phase 8: CSS display: block 요소 목록
+  // body가 flexDirection: 'row'일 때, block 요소들이 한 줄 전체를 차지하도록
+  // flexBasis: '100%'를 적용해야 함 (CSS width: auto의 block 동작 재현)
+  const BLOCK_TAGS = useMemo(() => new Set([
+    'Card', 'Panel', 'Form', 'Disclosure', 'DisclosureGroup', 'Accordion',
+    'Dialog', 'Modal', 'Box',
+  ]), []);
+
   // 🚀 Phase 6: @pixi/layout 완전 전환 - layoutResult 제거
   // @pixi/layout이 자동으로 flexbox 레이아웃 처리
   // 🚀 Phase 7: LayoutContainer 사용 - layout + registry 등록 통합
@@ -470,9 +478,17 @@ const ElementsLayer = memo(function ElementsLayer({
         // 🚀 Phase 9: children이 있지만 flexDirection이 없으면 기본 flex 레이아웃 적용
         // 이렇게 하면 children이 0,0에 쌓이는 문제 해결
         const hasChildren = (pageChildrenMap.get(child.id)?.length ?? 0) > 0;
+
+        // 🚀 Phase 8: CSS display: block 요소에 flexBasis: '100%' 적용
+        // body가 flexDirection: 'row'일 때, block 요소가 한 줄 전체를 차지하도록
+        const isBlockElement = BLOCK_TAGS.has(child.tag);
+        const blockLayout = isBlockElement && !baseLayout.width
+          ? { flexBasis: '100%' as const }
+          : {};
+
         const containerLayout = hasChildren && !baseLayout.flexDirection
-          ? { display: 'flex' as const, flexDirection: 'column' as const, ...baseLayout }
-          : baseLayout;
+          ? { display: 'flex' as const, flexDirection: 'column' as const, ...blockLayout, ...baseLayout }
+          : { ...blockLayout, ...baseLayout };
 
         // 🚀 Phase 10: Container 타입은 children을 ElementSprite에 전달
         // Container 컴포넌트가 children을 배경 안에 렌더링
@@ -515,7 +531,7 @@ const ElementsLayer = memo(function ElementsLayer({
     };
 
     return renderTree(bodyElement?.id ?? null);
-  }, [pageChildrenMap, renderIdSet, onClick, onDoubleClick, bodyElement?.id, CONTAINER_TAGS]);
+  }, [pageChildrenMap, renderIdSet, onClick, onDoubleClick, bodyElement?.id, CONTAINER_TAGS, BLOCK_TAGS]);
 
   // 🚀 Phase 7: @pixi/layout 루트 컨테이너 layout 설정
   // Body 요소의 flex 스타일을 적용하여 자식 요소들이 올바르게 배치되도록 함
@@ -525,11 +541,15 @@ const ElementsLayer = memo(function ElementsLayer({
 
     // Body의 flexbox 속성 적용 (width/height는 page 크기로 고정)
     // 🚀 Phase 8: CSS body 기본값 동기화
-    // - CSS body는 display: block (자식들 세로 배치)
-    // - @pixi/layout 기본값은 flexDirection: 'row' (가로 배치)
-    // - body에 flexDirection이 없으면 'column'을 기본값으로 사용
+    // - CSS body(block) + inline-block 자식들 → 가로 배치 + 줄바꿈
+    // - @pixi/layout에서 이를 재현: flexDirection: 'row' + flexWrap: 'wrap'
+    // - justifyContent: 'flex-start' → 좌측부터 순서대로 배치 (CSS inline-block 동작)
     return {
-      flexDirection: 'column' as const,  // CSS body 기본 동작 (세로 배치)
+      flexDirection: 'row' as const,
+      flexWrap: 'wrap' as const,
+      justifyContent: 'flex-start' as const,
+      alignItems: 'flex-start' as const,
+      alignContent: 'flex-start' as const,
       ...bodyLayout,
       width: pageWidth,
       height: pageHeight,
