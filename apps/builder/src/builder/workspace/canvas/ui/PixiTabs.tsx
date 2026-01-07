@@ -362,10 +362,23 @@ export const PixiTabs = memo(function PixiTabs({
           const indicatorY = isVertical ? 0 : tab.height - sizePreset.indicatorHeight;
 
           return (
-            <pixiContainer key={tab.id} layout={{ width: tab.width, height: tab.height }}>
-              {/* hover 배경 */}
+            <pixiContainer
+              key={tab.id}
+              layout={{
+                width: tab.width,
+                height: tab.height,
+                display: 'flex',
+                alignItems: 'center',
+                paddingLeft: sizePreset.tabPaddingX,
+                paddingRight: sizePreset.tabPaddingX,
+                paddingTop: sizePreset.tabPaddingY,
+                paddingBottom: sizePreset.tabPaddingY,
+              }}
+            >
+              {/* hover 배경 - position: absolute로 레이아웃에서 제외 */}
               <pixiGraphics
                 draw={(g) => drawTabBackground(g, tab, isHovered)}
+                layout={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
                 eventMode="static"
                 cursor={tab.isDisabled ? "not-allowed" : "pointer"}
                 onPointerEnter={() => !tab.isDisabled && setHoveredIndex(index)}
@@ -377,8 +390,7 @@ export const PixiTabs = memo(function PixiTabs({
               <pixiText
                 text={tab.text}
                 style={createTextStyle(isSelected, isHovered, Boolean(tab.isDisabled))}
-                x={sizePreset.tabPaddingX}
-                y={sizePreset.tabPaddingY}
+                layout={{ isLeaf: true }}
                 eventMode="static"
                 cursor={tab.isDisabled ? "not-allowed" : "pointer"}
                 onPointerEnter={() => !tab.isDisabled && setHoveredIndex(index)}
