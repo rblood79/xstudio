@@ -178,8 +178,22 @@ export function PixiDisclosure({
     onChange?.(element.id, !isExpanded);
   }, [element.id, isExpanded, onClick, onChange]);
 
+  // 🚀 Phase 8: 주 컨테이너 layout (iframe CSS와 동기화)
+  // CSS: .react-aria-Disclosure { width: 100%; padding: var(--spacing-sm); }
+  const disclosureLayout = useMemo(() => ({
+    display: 'flex',
+    flexDirection: 'column',
+    width: '100%',
+    padding: sizePreset.padding,
+    // 콘텐츠 높이에 맞춤 (세로 늘어남 방지)
+    flexGrow: 0,
+    flexShrink: 0,
+    alignSelf: 'flex-start',
+  }), [sizePreset.padding]);
+
   return (
     <pixiContainer
+      layout={disclosureLayout}
       eventMode="static"
       cursor="pointer"
       onPointerEnter={() => setIsHovered(true)}

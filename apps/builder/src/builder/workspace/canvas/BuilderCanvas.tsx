@@ -524,7 +524,12 @@ const ElementsLayer = memo(function ElementsLayer({
     const bodyLayout = bodyElement ? styleToLayout(bodyElement) : {};
 
     // Body의 flexbox 속성 적용 (width/height는 page 크기로 고정)
+    // 🚀 Phase 8: CSS body 기본값 동기화
+    // - CSS body는 display: block (자식들 세로 배치)
+    // - @pixi/layout 기본값은 flexDirection: 'row' (가로 배치)
+    // - body에 flexDirection이 없으면 'column'을 기본값으로 사용
     return {
+      flexDirection: 'column' as const,  // CSS body 기본 동작 (세로 배치)
       ...bodyLayout,
       width: pageWidth,
       height: pageHeight,

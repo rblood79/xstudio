@@ -4,11 +4,22 @@ import { ElementEvent } from "../events/events.types";
 import { TokenValue, DesignToken } from "../theme";
 
 // === 기본 타입 정의 ===
+
+/**
+ * WebGL Layout 시스템에서 계산된 실제 픽셀 크기
+ * @pixi/layout (yoga-layout)에서 계산된 값
+ */
+export interface ComputedLayout {
+  width?: number;
+  height?: number;
+}
+
 export interface BaseElementProps extends Record<string, unknown> {
   id?: string;
   className?: string;
   style?: React.CSSProperties;
-  computedStyle?: Partial<React.CSSProperties>; // Computed styles from browser
+  computedStyle?: Partial<React.CSSProperties>; // Computed styles from browser (iframe)
+  computedLayout?: ComputedLayout; // Computed layout from WebGL (@pixi/layout)
   "data-element-id"?: string;
   events?: ElementEvent[];
   children?: React.ReactNode; // children 속성 추가

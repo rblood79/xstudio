@@ -339,6 +339,18 @@ export const PixiCheckboxGroup = memo(function PixiCheckboxGroup({
     gap: isHorizontal ? 0 : itemGap,
   }), [isHorizontal, itemGap]);
 
+  // 🚀 Phase 8: 주 컨테이너 layout (iframe CSS와 동기화)
+  // CSS: .react-aria-CheckboxGroup { display: flex; flex-direction: column; gap: var(--gap); }
+  const groupLayout = useMemo(() => ({
+    display: 'flex',
+    flexDirection: 'column',
+    gap: DEFAULT_GAP,
+    // 콘텐츠 크기에 맞춤 (부모 flex에서 늘어나지 않도록)
+    flexGrow: 0,
+    flexShrink: 0,
+    alignSelf: 'flex-start',
+  }), []);
+
   // 🚀 Phase 19: 전체 그룹 크기 계산 (hitArea용)
   const groupDimensions = useMemo(() => {
     const optionCount = options.length;
@@ -398,7 +410,7 @@ export const PixiCheckboxGroup = memo(function PixiCheckboxGroup({
   );
 
   return (
-    <pixiContainer>
+    <pixiContainer layout={groupLayout}>
       {/* CheckboxGroup 라벨 */}
       {groupLabel && (
         <pixiText

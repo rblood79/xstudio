@@ -1645,10 +1645,11 @@ const PANEL_SIZE_MAPPING: Record<string, { borderRadius: string; spacing: string
   lg: { borderRadius: '--radius-xl', spacing: '--spacing-lg', fontSize: '--text-lg' },
 };
 
+// CSS: .panel-content { min-height: 64px; } - 고정값
 const PANEL_FALLBACKS: Record<string, PanelSizePreset> = {
   sm: { borderRadius: 8, titleFontSize: 13, titlePaddingX: 8, titlePaddingY: 6, contentFontSize: 13, contentPadding: 12, minHeight: 64 },
-  md: { borderRadius: 12, titleFontSize: 14, titlePaddingX: 12, titlePaddingY: 8, contentFontSize: 14, contentPadding: 16, minHeight: 80 },
-  lg: { borderRadius: 16, titleFontSize: 16, titlePaddingX: 16, titlePaddingY: 12, contentFontSize: 16, contentPadding: 20, minHeight: 96 },
+  md: { borderRadius: 12, titleFontSize: 14, titlePaddingX: 12, titlePaddingY: 8, contentFontSize: 14, contentPadding: 16, minHeight: 64 },
+  lg: { borderRadius: 16, titleFontSize: 16, titlePaddingX: 16, titlePaddingY: 12, contentFontSize: 16, contentPadding: 20, minHeight: 64 },
 };
 
 /**

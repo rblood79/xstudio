@@ -3,6 +3,7 @@ export type {
     Element,
     Page,
     ComponentElementProps,
+    ComputedLayout,
     ElementsState,
     ThemeState,
     SelectionState,

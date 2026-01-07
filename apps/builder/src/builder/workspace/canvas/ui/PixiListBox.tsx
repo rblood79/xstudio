@@ -450,9 +450,24 @@ export const PixiListBox = memo(function PixiListBox({
     return items.map((_, index) => index * (sizePreset.itemHeight + sizePreset.gap));
   }, [items, sizePreset.itemHeight, sizePreset.gap]);
 
+  // 🚀 Phase 8: 주 컨테이너 layout (iframe CSS와 동기화)
+  // CSS: .react-aria-ListBox { display: flex; flex-direction: column; padding: var(--spacing-xs); gap: var(--spacing-2xs); }
+  const containerLayout = useMemo(() => ({
+    display: 'flex',
+    flexDirection: 'column',
+    width: containerLayoutWidth,
+    height: containerLayoutHeight,
+    padding: sizePreset.containerPadding,
+    gap: sizePreset.gap,
+    // 콘텐츠 크기에 맞춤 (부모 flex에서 늘어나지 않도록)
+    flexGrow: 0,
+    flexShrink: 0,
+    alignSelf: 'flex-start',
+  }), [containerLayoutWidth, containerLayoutHeight, sizePreset.containerPadding, sizePreset.gap]);
+
   return (
     <pixiContainer
-      layout={{ width: containerLayoutWidth, height: containerLayoutHeight }}
+      layout={containerLayout}
       eventMode="static"
       onPointerDown={handleContainerClick}
     >

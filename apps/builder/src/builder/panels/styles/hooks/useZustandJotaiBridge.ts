@@ -19,6 +19,7 @@ interface StylePanelSelectedElement {
   type: string;
   style: Record<string, unknown>;
   computedStyle?: Record<string, unknown>;
+  computedLayout?: { width?: number; height?: number }; // 🚀 WebGL computed layout
   className: string;
 }
 
@@ -79,6 +80,7 @@ function buildSelectedElement(
     type: element.tag,
     style: (selectedElementProps?.style ?? (element.props as Record<string, unknown>)?.style ?? {}) as Record<string, unknown>,
     computedStyle: selectedElementProps?.computedStyle as Record<string, unknown> | undefined,
+    computedLayout: selectedElementProps?.computedLayout as { width?: number; height?: number } | undefined,
     className: (selectedElementProps?.className as string) ?? ((element.props as Record<string, unknown>)?.className as string) ?? '',
   };
 }

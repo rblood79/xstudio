@@ -270,8 +270,21 @@ export const PixiMenu = memo(function PixiMenu({
     [onClick]
   );
 
+  // 🚀 Phase 8: 주 컨테이너 layout (iframe CSS와 동기화)
+  // CSS: .react-aria-Menu { padding: var(--spacing); min-width: 150px; }
+  const menuContainerLayout = useMemo(() => ({
+    display: 'flex',
+    flexDirection: 'column',
+    padding: menuLayout.padding,
+    minWidth: 150,
+    // 콘텐츠 크기에 맞춤 (부모 flex에서 늘어나지 않도록)
+    flexGrow: 0,
+    flexShrink: 0,
+    alignSelf: 'flex-start',
+  }), [menuLayout.padding]);
+
   return (
-    <pixiContainer>
+    <pixiContainer layout={menuContainerLayout}>
       {/* 메뉴 배경 */}
       <pixiGraphics draw={drawMenuBackground} />
 

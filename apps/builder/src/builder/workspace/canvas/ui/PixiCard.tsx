@@ -13,7 +13,7 @@
 
 import { useExtend } from '@pixi/react';
 import { PIXI_COMPONENTS } from '../pixiSetup';
-import { memo, useCallback, useMemo, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Graphics as PixiGraphics,
   TextStyle,
@@ -25,9 +25,9 @@ import {
   getCardSizePreset,
   getVariantColors,
 } from "../utils/cssVariableReader";
-import { toLayoutSize } from "../layout/styleToLayout";
 import { useThemeColors } from "../hooks/useThemeColors";
 import { drawBox } from "../utils";
+import { useStore } from "../../../stores";
 
 // ============================================
 // Types
@@ -60,6 +60,7 @@ interface CardElementProps {
 
 export const PixiCard = memo(function PixiCard({
   element,
+  isSelected,
   onClick,
   childElements,
   renderChildElement,
@@ -67,6 +68,9 @@ export const PixiCard = memo(function PixiCard({
   useExtend(PIXI_COMPONENTS);
   const style = element.props?.style as CSSStyle | undefined;
   const props = element.props as CardElementProps | undefined;
+
+  // 🚀 Store 액션 (선택된 요소의 layout 동기화용)
+  const updateSelectedElementLayout = useStore((s) => s.updateSelectedElementLayout);
 
   // 상태
   const [isHovered, setIsHovered] = useState(false);
@@ -133,21 +137,19 @@ export const PixiCard = memo(function PixiCard({
 
   // 카드 크기
   // 🚀 Phase 8+: CSS 기본값 width: 100% 동기화
-  // layout prop에는 '100%' 전달, Graphics 그리기용으로는 픽셀 fallback 사용
-  const fallbackWidthForGraphics = 200;  // Graphics 렌더링용 fallback (layout이 계산 후 덮어씀)
-  // Graphics 그리기용 픽셀 값
-  const cardWidth = typeof style?.width === 'number' ? style.width : fallbackWidthForGraphics;
+  // 🚀 Phase 9: layout에서 계산된 크기 사용 (문자열 '300px' 등 지원)
+  const fallbackWidth = 200;
+  const fallbackHeight = 60;
 
-  const explicitHeight = useMemo(() => {
-    const height = style?.height;
-    if (height === undefined) return undefined;
-    return typeof height === 'number' ? height : undefined;
-  }, [style?.height]);
-
+  // Layout 시스템에서 계산된 크기 (onLayout 콜백으로 업데이트)
+  const layoutWidthRef = useRef<number | null>(null);
   const layoutHeightRef = useRef<number | null>(null);
+  const [layoutWidth, setLayoutWidth] = useState<number | null>(null);
   const [layoutHeight, setLayoutHeight] = useState<number | null>(null);
 
-  const cardHeight = layoutHeight ?? explicitHeight ?? 60;
+  // Graphics 그리기용 픽셀 값 (layout 계산값 우선, fallback 사용)
+  const cardWidth = layoutWidth ?? fallbackWidth;
+  const cardHeight = layoutHeight ?? fallbackHeight;
 
   // 카드 배경 그리기
   const drawCard = useCallback(
@@ -217,17 +219,69 @@ export const PixiCard = memo(function PixiCard({
     [textColor, cardWidth, sizePreset.padding]
   );
 
-  // 🚀 Phase 8+: layout prop에 style 값 직접 전달 (% 단위 지원)
-  // CSS 기본값: width: 100% (.react-aria-Card 동기화)
+  // 🚀 Phase 9: 외부 LayoutContainer가 width/height를 제어
+  // PixiCard는 CSS 기본값과 동기화:
+  // - width: 100% (CSS 기본값 .react-aria-Card { width: 100% })
+  // - height: 미지정 (콘텐츠에 맞춤, CSS에서도 height 미지정)
+  // % 값 이중 적용 방지: style.width='50%' → LayoutContainer(50%) + PixiCard(100%) = 50%
+  //
+  // 🚀 Phase 10: iframe 구조와 동기화
+  // iframe: Card > card-header > card-content(children) > card-footer
+  // CSS: .react-aria-Card { display: block }, .card-content는 스타일 없음 (block 기본)
+  // 🚀 Phase 8: 주 컨테이너 layout (iframe CSS와 동기화)
+  // CSS: .react-aria-Card { display: block; width: 100%; }
   const cardLayout = useMemo(() => ({
     display: 'flex',
     flexDirection: 'column',
-    width: style?.width !== undefined ? toLayoutSize(style.width, '100%') : '100%',
-    ...(style?.height !== undefined ? { height: toLayoutSize(style.height, 60) } : {}),
+    width: '100%',
     padding: sizePreset.padding,
-    gap: cardTitle && cardDescription ? 4 : 0,
     minHeight: 60,
-  }), [style?.width, style?.height, sizePreset.padding, cardTitle, cardDescription]);
+    // 콘텐츠 높이에 맞춤 (세로 늘어남 방지)
+    flexGrow: 0,
+    flexShrink: 0,
+    alignSelf: 'flex-start',
+  }), [sizePreset.padding]);
+
+  // card-header 레이아웃 (제목, 부제목)
+  const headerLayout = useMemo(() => ({
+    display: 'flex',
+    flexDirection: 'column',
+    width: '100%',
+    gap: 2,
+    marginBottom: (cardTitle || props?.subheading) ? 8 : 0,
+  }), [cardTitle, props?.subheading]);
+
+  // card-content 레이아웃 (description + children)
+  // @pixi/layout에서 display: 'block'은 CSS와 다르게 동작
+  // flex column으로 description과 children-row를 수직 배치
+  // alignItems: 'flex-start'로 왼쪽 정렬
+  const contentLayout = useMemo(() => ({
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+    width: '100%',
+  }), []);
+
+  // card-description 레이아웃 (display: block, width: 100%)
+  // iframe: .card-description { display: block }
+  // 전체 너비를 차지하여 다음 요소가 아래로 배치됨
+  // alignItems: 'flex-start'로 텍스트 왼쪽 정렬
+  const descriptionLayout = useMemo(() => ({
+    display: 'flex',
+    alignItems: 'flex-start',
+    width: '100%',
+  }), []);
+
+  // children-row 레이아웃 (가로 배치 + 줄바꿈)
+  // iframe에서 Card 내부 children은 inline-block으로 가로 배치
+  // @pixi/layout에서는 flex row wrap으로 동일한 효과 구현
+  // gap 없음 (iframe CSS와 동일)
+  const childrenRowLayout = useMemo(() => ({
+    display: 'flex',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    width: '100%',
+  }), []);
 
   // 이벤트 핸들러
   const handlePointerEnter = useCallback(() => {
@@ -242,13 +296,47 @@ export const PixiCard = memo(function PixiCard({
     onClick?.(element.id);
   }, [element.id, onClick]);
 
-  const handleLayout = useCallback((layout: { computedLayout?: { height?: number } }) => {
+  // 🚀 Phase 9: width와 height 모두 layout에서 가져오기
+  // 🚀 Phase 20: 선택된 요소의 computed layout을 store에 동기화
+  const handleLayout = useCallback((layout: { computedLayout?: { width?: number; height?: number } }) => {
+    const nextWidth = layout.computedLayout?.width;
     const nextHeight = layout.computedLayout?.height;
-    if (!nextHeight) return;
-    if (layoutHeightRef.current === nextHeight) return;
-    layoutHeightRef.current = nextHeight;
-    setLayoutHeight(nextHeight);
-  }, []);
+
+    let changed = false;
+
+    // Width 업데이트 (변경 시에만)
+    if (nextWidth && layoutWidthRef.current !== nextWidth) {
+      layoutWidthRef.current = nextWidth;
+      setLayoutWidth(nextWidth);
+      changed = true;
+    }
+
+    // Height 업데이트 (변경 시에만)
+    if (nextHeight && layoutHeightRef.current !== nextHeight) {
+      layoutHeightRef.current = nextHeight;
+      setLayoutHeight(nextHeight);
+      changed = true;
+    }
+
+    // 🚀 선택된 요소일 때만 store에 computed layout 동기화
+    if (changed && isSelected && nextWidth && nextHeight) {
+      updateSelectedElementLayout(element.id, {
+        width: nextWidth,
+        height: nextHeight,
+      });
+    }
+  }, [isSelected, element.id, updateSelectedElementLayout]);
+
+  // 🚀 Phase 20: isSelected가 true로 변경될 때 현재 layout 값을 store에 동기화
+  // (선택 전에 handleLayout이 이미 호출되어 layout이 계산되었을 수 있음)
+  useEffect(() => {
+    if (isSelected && layoutWidthRef.current && layoutHeightRef.current) {
+      updateSelectedElementLayout(element.id, {
+        width: layoutWidthRef.current,
+        height: layoutHeightRef.current,
+      });
+    }
+  }, [isSelected, element.id, updateSelectedElementLayout]);
 
   // 🚀 Phase 19: 투명 히트 영역
   const drawHitArea = useCallback(
@@ -263,31 +351,61 @@ export const PixiCard = memo(function PixiCard({
   // 🚀 Phase 10: children이 있으면 배경 크기를 자동으로 조절하기 위해 layout 수정
   const hasChildren = childElements && childElements.length > 0;
 
+  // 🚀 Phase 10: card-header 표시 여부 (heading, subheading, title 중 하나라도 있으면)
+  const hasHeader = cardTitle || props?.subheading;
+
+  // 🚀 Phase 10: card-content 표시 여부 (description 또는 children이 있으면)
+  const hasContent = cardDescription || hasChildren;
+
   return (
     <pixiContainer layout={cardLayout} onLayout={handleLayout}>
       {/* 카드 배경 */}
       <pixiGraphics draw={drawCard} />
 
-      {/* 카드 제목 */}
-      {cardTitle && (
-        <pixiText
-          text={cardTitle}
-          style={titleStyle}
-          layout={{ isLeaf: true }}
-        />
+      {/* 🚀 Phase 10: card-header (iframe 구조 동기화) */}
+      {hasHeader && (
+        <pixiContainer layout={headerLayout}>
+          {/* heading (또는 title) */}
+          {cardTitle && (
+            <pixiText
+              text={cardTitle}
+              style={titleStyle}
+              layout={{ isLeaf: true }}
+            />
+          )}
+          {/* subheading */}
+          {props?.subheading && (
+            <pixiText
+              text={String(props.subheading)}
+              style={descriptionStyle}
+              layout={{ isLeaf: true }}
+            />
+          )}
+        </pixiContainer>
       )}
 
-      {/* 카드 설명 */}
-      {cardDescription && (
-        <pixiText
-          text={cardDescription}
-          style={descriptionStyle}
-          layout={{ isLeaf: true }}
-        />
+      {/* 🚀 Phase 10: card-content (iframe 구조 동기화) */}
+      {/* description과 children이 card-content 안에 수직 배치됨 */}
+      {hasContent && (
+        <pixiContainer layout={contentLayout}>
+          {/* card-description (width: 100%) - 전체 너비 차지 */}
+          {cardDescription && (
+            <pixiContainer layout={descriptionLayout}>
+              <pixiText
+                text={cardDescription}
+                style={descriptionStyle}
+                layout={{ isLeaf: true }}
+              />
+            </pixiContainer>
+          )}
+          {/* children-row: 가로 배치 (flex row wrap) - description 아래 */}
+          {hasChildren && renderChildElement && (
+            <pixiContainer layout={childrenRowLayout}>
+              {childElements.map((childEl) => renderChildElement(childEl))}
+            </pixiContainer>
+          )}
+        </pixiContainer>
       )}
-
-      {/* 🚀 Phase 10: Container children 렌더링 */}
-      {hasChildren && renderChildElement && childElements.map((childEl) => renderChildElement(childEl))}
 
       {/* 🚀 Phase 19: 투명 히트 영역 (클릭 감지용) - 마지막에 렌더링하여 최상단 배치 */}
       <pixiGraphics

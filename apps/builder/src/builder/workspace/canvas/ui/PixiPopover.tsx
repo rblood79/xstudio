@@ -185,8 +185,21 @@ export function PixiPopover({
     [sizePreset, colorPreset, containerWidth]
   );
 
+  // 🚀 Phase 8: 주 컨테이너 layout (iframe CSS와 동기화)
+  // CSS: .react-aria-Popover { max-width: 250px; }
+  const popoverLayout = useMemo(() => ({
+    display: 'flex',
+    flexDirection: 'column',
+    maxWidth: sizePreset.maxWidth,
+    // 콘텐츠 크기에 맞춤 (부모 flex에서 늘어나지 않도록)
+    flexGrow: 0,
+    flexShrink: 0,
+    alignSelf: 'flex-start',
+  }), [sizePreset.maxWidth]);
+
   return (
     <pixiContainer
+      layout={popoverLayout}
       eventMode="static"
       cursor="pointer"
       onPointerEnter={() => setIsHovered(true)}

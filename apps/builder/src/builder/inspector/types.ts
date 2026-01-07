@@ -2,6 +2,15 @@ import type { ColumnMapping } from "../../types/builder/unified.types";
 import type { EventHandler } from "../panels/events/types/eventTypes";
 
 /**
+ * WebGL Layout 시스템에서 계산된 실제 픽셀 크기
+ * @pixi/layout (yoga-layout)에서 계산된 값
+ */
+export interface ComputedLayout {
+  width?: number;
+  height?: number;
+}
+
+/**
  * Inspector에서 관리하는 선택된 요소
  */
 export interface SelectedElement {
@@ -19,6 +28,7 @@ export interface SelectedElement {
   // StyleSection - Inline Styles + Computed Styles
   style?: React.CSSProperties; // Inline styles (사용자가 직접 설정)
   computedStyle?: Partial<React.CSSProperties>; // Computed styles (브라우저 계산값)
+  computedLayout?: ComputedLayout; // 🚀 WebGL computed layout (실제 픽셀 크기)
 
   // StyleSection - 의미 클래스 + CSS 변수 (deprecated - inline style로 마이그레이션 중)
   semanticClasses?: string[];

@@ -78,15 +78,139 @@ export function getStyleValueFromAtoms(
 // Transform Section Atoms (4개 속성)
 // ============================================
 
+/**
+ * 🚀 컴포넌트별 기본 CSS 값
+ * CSS 클래스에서 정의된 기본값 (inline style이 없을 때 표시)
+ *
+ * 참고: 대부분의 컴포넌트는 fit-content 또는 auto를 사용
+ * 명시적 크기가 있는 컴포넌트만 여기에 정의
+ */
+const DEFAULT_CSS_VALUES: Record<string, { width?: string; height?: string }> = {
+  // === 컨테이너 (width: 100%) ===
+  Card: { width: '100%' },
+  Box: { width: '100%' },
+  Panel: { width: '100%' },
+  Table: { width: '100%' },
+  Tree: { width: '100%' },
+  Tabs: { width: '100%' },
+  Disclosure: { width: '100%' },
+  DropZone: { width: '100%', height: '120px' },
+  Separator: { width: '100%' },
+
+  // === 입력 필드 (fit-content) ===
+  Button: { width: 'fit-content' },
+  TextField: { width: 'fit-content' },
+  TextArea: { width: 'fit-content' },
+  Select: { width: 'fit-content' },
+  ComboBox: { width: 'fit-content' },
+  NumberField: { width: '120px' },
+  SearchField: { width: 'fit-content' },
+
+  // === 체크박스/라디오/스위치 (fit-content) ===
+  Checkbox: { width: 'fit-content' },
+  CheckboxGroup: { width: 'fit-content' },
+  Radio: { width: 'fit-content' },
+  RadioGroup: { width: 'fit-content' },
+  Switch: { width: 'fit-content' },
+
+  // === 슬라이더/프로그레스 (고정 width) ===
+  Slider: { width: '300px' },
+  ProgressBar: { width: '250px' },
+  Meter: { width: '250px' },
+
+  // === 토글 버튼 ===
+  ToggleButton: { width: 'fit-content' },
+  ToggleButtonGroup: { width: 'fit-content' },
+
+  // === 리스트/그리드 ===
+  ListBox: { width: 'fit-content' },
+  GridList: { width: 'fit-content' },
+  Menu: { width: 'fit-content' },
+  TagGroup: { width: 'fit-content' },
+
+  // === 네비게이션 ===
+  Link: { width: 'fit-content' },
+  Breadcrumbs: { width: 'fit-content' },
+  Toolbar: { width: 'fit-content' },
+
+  // === 오버레이 ===
+  Tooltip: { width: 'fit-content' },
+  Popover: { width: 'fit-content' },
+  Dialog: { width: 'fit-content' },
+
+  // === 날짜/시간 ===
+  Calendar: { width: 'fit-content' },
+  DatePicker: { width: 'fit-content' },
+  DateRangePicker: { width: 'fit-content' },
+  DateField: { width: 'fit-content' },
+  TimeField: { width: 'fit-content' },
+
+  // === 색상 ===
+  ColorPicker: { width: 'fit-content' },
+  ColorSwatch: { width: 'fit-content' },
+  ColorSlider: { width: 'fit-content' },
+  ColorArea: { width: 'fit-content' },
+  ColorWheel: { width: 'fit-content' },
+  ColorField: { width: 'fit-content' },
+  ColorSwatchPicker: { width: 'fit-content' },
+
+  // === 기타 ===
+  Badge: { width: 'fit-content' },
+  Form: { width: '100%' },
+  FileTrigger: { width: 'fit-content' },
+  Skeleton: { width: '100%' },
+  Toast: { width: 'fit-content' },
+  Pagination: { width: 'fit-content' },
+  Group: { width: 'fit-content' },
+  Slot: { width: '100%' },
+
+  // === 레이아웃 ===
+  Div: { width: 'auto' },
+  Section: { width: '100%' },
+  Nav: { width: '100%' },
+};
+
+/**
+ * 🚀 Transform 값 결정 로직:
+ * 1. inline style이 있으면 inline 표시 (사용자가 직접 설정한 값)
+ * 2. 없으면 컴포넌트 기본 CSS 값 표시
+ * 3. 둘 다 없으면 'auto'
+ *
+ * @param elementType 컴포넌트 타입 (예: 'Card', 'Button')
+ * @param inlineValue inline style 값
+ * @param prop 'width' | 'height'
+ */
+function getTransformValue(
+  elementType: string | undefined,
+  inlineValue: unknown,
+  prop: 'width' | 'height'
+): string {
+  // 1. inline style 우선 (사용자가 직접 설정한 값)
+  if (inlineValue !== undefined && inlineValue !== null && inlineValue !== '') {
+    return String(inlineValue);
+  }
+
+  // 2. 컴포넌트 기본 CSS 값
+  if (elementType) {
+    const defaultCss = DEFAULT_CSS_VALUES[elementType];
+    if (defaultCss?.[prop]) {
+      return defaultCss[prop]!;
+    }
+  }
+
+  // 3. 기본값
+  return 'auto';
+}
+
 export const widthAtom = selectAtom(
   selectedElementAtom,
-  (element) => element?.style?.width ?? 'auto',
+  (element) => getTransformValue(element?.type, element?.style?.width, 'width'),
   (a, b) => a === b
 );
 
 export const heightAtom = selectAtom(
   selectedElementAtom,
-  (element) => element?.style?.height ?? 'auto',
+  (element) => getTransformValue(element?.type, element?.style?.height, 'height'),
   (a, b) => a === b
 );
 
@@ -105,14 +229,15 @@ export const leftAtom = selectAtom(
 /**
  * Transform 섹션 전체 값 (그룹 atom)
  * 🚀 selectAtom으로 equality 체크 추가 - 불필요한 리렌더링 방지
+ * 🚀 컴포넌트 기본 CSS 값 표시 (inline style이 없을 때)
  */
 export const transformValuesAtom = selectAtom(
   selectedElementAtom,
   (element) => {
     if (!element) return null;
     return {
-      width: String(element.style?.width ?? 'auto'),
-      height: String(element.style?.height ?? 'auto'),
+      width: getTransformValue(element.type, element.style?.width, 'width'),
+      height: getTransformValue(element.type, element.style?.height, 'height'),
       top: String(element.style?.top ?? 'auto'),
       left: String(element.style?.left ?? 'auto'),
     };

@@ -3,7 +3,7 @@ import { create } from "zustand";
 // 🚀 Phase 1: Immer 제거 - 함수형 업데이트로 전환
 // import { produce } from "immer"; // REMOVED
 import { StateCreator } from "zustand";
-import { Element, ComponentElementProps } from "../../types/core/store.types";
+import { Element, ComponentElementProps, ComputedLayout } from "../../types/core/store.types";
 import { Page } from "../../types/builder/unified.types";
 import { historyManager } from "./history";
 import { reorderElements } from "./utils/elementReorder";
@@ -103,6 +103,9 @@ export interface ElementsState {
   // 🚀 배치 업데이트 (100+ 요소 최적화)
   batchUpdateElementProps: (updates: BatchPropsUpdate[]) => Promise<void>;
   batchUpdateElements: (updates: BatchElementUpdate[]) => Promise<void>;
+
+  // 🚀 WebGL computed layout 동기화
+  updateSelectedElementLayout: (elementId: string, layout: ComputedLayout) => void;
 }
 
 export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
@@ -533,6 +536,32 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
   // 🚀 배치 업데이트 (Factory 함수로 생성)
   batchUpdateElementProps,
   batchUpdateElements,
+
+  // 🚀 WebGL computed layout 동기화
+  // Canvas에서 layout 계산 완료 시 호출하여 stylePanel과 동기화
+  updateSelectedElementLayout: (elementId: string, layout: ComputedLayout) => {
+    const state = get();
+
+    // 현재 선택된 요소만 업데이트 (성능 최적화)
+    if (state.selectedElementId !== elementId) return;
+
+    // computedLayout이 변경되었는지 확인
+    const currentLayout = state.selectedElementProps?.computedLayout;
+    if (
+      currentLayout?.width === layout.width &&
+      currentLayout?.height === layout.height
+    ) {
+      return; // 변경 없음
+    }
+
+    // selectedElementProps에 computedLayout 추가/업데이트
+    set({
+      selectedElementProps: {
+        ...state.selectedElementProps,
+        computedLayout: layout,
+      },
+    });
+  },
   };
 };
 
