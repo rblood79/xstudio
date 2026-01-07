@@ -2,7 +2,7 @@
 
 > 목표: LayoutEngine.ts (1,804줄) 완전 삭제, @pixi/layout 선언적 flexbox 전환
 
-## 🎯 진행 상태 (2026-01-07)
+## 🎯 진행 상태 (2026-01-07 업데이트)
 
 | Phase | 내용 | 상태 |
 |-------|------|------|
@@ -18,6 +18,7 @@
 | Phase 8 | % 단위 지원 - parseCSSSize 제거 | ✅ 완료 |
 | Phase 9 | children 기본 flex 레이아웃 + UI layout prop | ✅ 완료 |
 | Phase 10 | Container 타입 children 내부 렌더링 | ✅ 완료 |
+| Phase 11 | CSS block/inline-block 동기화 | ✅ 완료 |
 
 ---
 
@@ -811,3 +812,115 @@ export const PixiCard = memo(function PixiCard({
 - children이 **배경 안에서 렌더링**
 - SelectionBox도 children 포함하여 올바르게 표시
 - @pixi/layout의 flex 레이아웃으로 children 자동 배치
+
+---
+
+## Phase 11: CSS block/inline-block 동기화 ✅
+
+### 문제
+
+CSS에서 body는 `display: block`이고:
+- **block 요소** (Card, Panel): 자동으로 `width: 100%`, 세로 배치
+- **inline-block 요소** (Button, Badge): 콘텐츠 너비만 차지, 가로 배치
+
+그러나 @pixi/layout(Yoga)에서는:
+- 기본 `flexDirection`이 `column` (CSS와 다름)
+- width 미지정 시 콘텐츠에 맞춤 (block 동작과 다름)
+
+### 해결 1: body 레이아웃 설정
+
+body를 `flexDirection: 'row'`, `flexWrap: 'wrap'`으로 설정하여 CSS inline-block 동작 재현:
+
+```typescript
+// BuilderCanvas.tsx - rootLayout
+const rootLayout = useMemo(() => {
+  const bodyLayout = bodyElement ? styleToLayout(bodyElement) : {};
+  return {
+    flexDirection: 'row' as const,      // inline-block 가로 배치
+    flexWrap: 'wrap' as const,          // 줄바꿈
+    justifyContent: 'flex-start' as const,
+    alignItems: 'flex-start' as const,
+    alignContent: 'flex-start' as const,
+    ...bodyLayout,
+    width: pageWidth,
+    height: pageHeight,
+    position: 'relative' as const,
+  };
+}, [pageWidth, pageHeight, bodyElement]);
+```
+
+### 해결 2: block 요소에 flexBasis: '100%' 적용
+
+CSS `display: block` 요소가 `flexDirection: 'row'` 부모에서 한 줄 전체를 차지하도록:
+
+```typescript
+// BuilderCanvas.tsx
+// CSS display: block 요소 목록
+const BLOCK_TAGS = useMemo(() => new Set([
+  'Card', 'Panel', 'Form', 'Disclosure', 'DisclosureGroup', 'Accordion',
+  'Dialog', 'Modal', 'Box',
+]), []);
+
+// renderTree에서 block 요소에 flexBasis: '100%' 자동 적용
+const isBlockElement = BLOCK_TAGS.has(child.tag);
+const blockLayout = isBlockElement && !baseLayout.width
+  ? { flexBasis: '100%' as const }
+  : {};
+
+const containerLayout = hasChildren && !baseLayout.flexDirection
+  ? { display: 'flex' as const, flexDirection: 'column' as const, ...blockLayout, ...baseLayout }
+  : { ...blockLayout, ...baseLayout };
+```
+
+### CSS와 @pixi/layout 동작 비교
+
+| CSS 속성 | CSS 동작 | @pixi/layout 재현 |
+|---------|---------|------------------|
+| `display: block` | 한 줄 전체 차지, 세로 배치 | `flexBasis: '100%'` |
+| `display: inline-block` | 콘텐츠 너비, 가로 배치 | 기본 동작 (flexBasis 없음) |
+| body 기본 | block, 세로 배치 | `flexDirection: 'row'`, `flexWrap: 'wrap'` |
+
+### UI 컴포넌트 layout 동기화
+
+각 UI 컴포넌트가 iframe CSS와 동일하게 동작하도록 layout 설정:
+
+```typescript
+// PixiCard.tsx - CSS .react-aria-Card와 동기화
+const cardLayout = useMemo(() => ({
+  display: 'flex',
+  flexDirection: 'column',
+  width: '100%',
+  padding: sizePreset.padding,
+  minHeight: 60,
+  flexGrow: 0,
+  flexShrink: 0,
+  alignSelf: 'flex-start',  // 세로 늘어남 방지
+}), [sizePreset.padding]);
+```
+
+### 수정된 파일
+
+| 파일 | 수정 내용 |
+|------|----------|
+| `BuilderCanvas.tsx` | `BLOCK_TAGS` 추가, block 요소에 `flexBasis: '100%'` 자동 적용 |
+| `BuilderCanvas.tsx` | body rootLayout을 `flexDirection: 'row'`, `flexWrap: 'wrap'`으로 변경 |
+| 23개 UI 컴포넌트 | iframe CSS와 동기화된 layout 설정 추가 |
+
+### 동기화된 UI 컴포넌트
+
+다음 컴포넌트들의 layout이 iframe CSS와 동기화됨:
+
+```
+PixiCard, PixiPanel, PixiDisclosure, PixiForm,
+PixiCheckboxGroup, PixiRadio, PixiListBox, PixiMenu,
+PixiToolbar, PixiDialog, PixiPopover, PixiButton,
+PixiFancyButton, PixiCheckbox, PixiToggleButton,
+PixiSlider, PixiProgressBar, PixiMeter, PixiSeparator,
+PixiSelect, PixiScrollBox, PixiList, PixiMaskedFrame
+```
+
+### 효과
+
+- **Block 요소** (Card, Panel): body에서 한 줄 전체 차지 → 세로 배치
+- **Inline-block 요소** (Button): 콘텐츠 너비만 차지 → 가로 배치
+- CSS의 자연스러운 레이아웃 동작이 @pixi/layout에서 재현됨
