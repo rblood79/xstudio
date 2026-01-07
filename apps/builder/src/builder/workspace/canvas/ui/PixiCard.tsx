@@ -87,14 +87,15 @@ export const PixiCard = memo(function PixiCard({
     [variant, themeColors]
   );
 
-  // 색상 프리셋 값들 (테마 색상 적용)
+  // 색상 프리셋 값들 (CSS 변수에서 읽어온 테마 색상 적용)
+  // 🚀 Phase 8+: .react-aria-Card CSS와 동기화
   const colorPreset = useMemo(() => ({
-    backgroundColor: 0xffffff,
-    hoverBgColor: 0xf9fafb,
-    textColor: variantColors.text,
-    borderColor: 0xe5e7eb,
+    backgroundColor: themeColors.cardBg,        // CSS: var(--surface-container)
+    hoverBgColor: themeColors.cardBgHover,      // CSS: color-mix(--surface-container, black)
+    textColor: variantColors.text,              // CSS: var(--on-surface)
+    borderColor: themeColors.cardBorder,        // CSS: var(--outline-variant)
     focusRingColor: variantColors.bg,
-  }), [variantColors]);
+  }), [themeColors, variantColors]);
 
   // 현재 배경색 계산
   const currentBgColor = useMemo(() => {
@@ -131,10 +132,11 @@ export const PixiCard = memo(function PixiCard({
   }, [props?.description, props?.children]);
 
   // 카드 크기
-  // 🚀 Phase 8: layout prop에 style 값 직접 전달 (% 단위 지원)
-  const fallbackWidth = 200;
+  // 🚀 Phase 8+: CSS 기본값 width: 100% 동기화
+  // layout prop에는 '100%' 전달, Graphics 그리기용으로는 픽셀 fallback 사용
+  const fallbackWidthForGraphics = 200;  // Graphics 렌더링용 fallback (layout이 계산 후 덮어씀)
   // Graphics 그리기용 픽셀 값
-  const cardWidth = typeof style?.width === 'number' ? style.width : fallbackWidth;
+  const cardWidth = typeof style?.width === 'number' ? style.width : fallbackWidthForGraphics;
 
   const explicitHeight = useMemo(() => {
     const height = style?.height;
@@ -215,11 +217,12 @@ export const PixiCard = memo(function PixiCard({
     [textColor, cardWidth, sizePreset.padding]
   );
 
-  // 🚀 Phase 8: layout prop에 style 값 직접 전달 (% 단위 지원)
+  // 🚀 Phase 8+: layout prop에 style 값 직접 전달 (% 단위 지원)
+  // CSS 기본값: width: 100% (.react-aria-Card 동기화)
   const cardLayout = useMemo(() => ({
     display: 'flex',
     flexDirection: 'column',
-    width: toLayoutSize(style?.width, fallbackWidth),
+    width: style?.width !== undefined ? toLayoutSize(style.width, '100%') : '100%',
     ...(style?.height !== undefined ? { height: toLayoutSize(style.height, 60) } : {}),
     padding: sizePreset.padding,
     gap: cardTitle && cardDescription ? 4 : 0,

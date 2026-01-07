@@ -67,6 +67,11 @@ export interface M3ButtonColors {
   ghostBgHover: number;
   ghostBgPressed: number;
   ghostText: number;
+
+  // Card (surface-container 기반)
+  cardBg: number;
+  cardBgHover: number;
+  cardBorder: number;
 }
 
 // ============================================
@@ -158,6 +163,7 @@ const FALLBACK_COLORS = {
   onTertiary: 0xffffff,
   error: 0xb3261e,
   onError: 0xffffff,
+  surfaceContainer: 0xf3edf7,       // --surface-container (Card 기본 배경)
   surfaceContainerHigh: 0xece6f0,
   surfaceContainerHighest: 0xe6e0e9,
   onSurface: 0x1d1b20,
@@ -307,6 +313,7 @@ export function getM3ButtonColors(): M3ButtonColors {
   const onTertiary = cssColorToHex(getCSSVariable('--on-tertiary'), FALLBACK_COLORS.onTertiary);
   const error = cssColorToHex(getCSSVariable('--error'), FALLBACK_COLORS.error);
   const onError = cssColorToHex(getCSSVariable('--on-error'), FALLBACK_COLORS.onError);
+  const surfaceContainer = cssColorToHex(getCSSVariable('--surface-container'), FALLBACK_COLORS.surfaceContainer);
   const surfaceContainerHigh = cssColorToHex(getCSSVariable('--surface-container-high'), FALLBACK_COLORS.surfaceContainerHigh);
   const surfaceContainerHighest = cssColorToHex(getCSSVariable('--surface-container-highest'), FALLBACK_COLORS.surfaceContainerHighest);
   const onSurface = cssColorToHex(getCSSVariable('--on-surface'), FALLBACK_COLORS.onSurface);
@@ -364,6 +371,11 @@ export function getM3ButtonColors(): M3ButtonColors {
     ghostBgHover: mixWithWhite(primary, 8),
     ghostBgPressed: mixWithWhite(primary, 12),
     ghostText: primary,
+
+    // Card (surface-container 기반 - .react-aria-Card 동기화)
+    cardBg: surfaceContainer,
+    cardBgHover: mixWithBlack(surfaceContainer, 92),
+    cardBorder: outlineVariant,
   };
 }
 
