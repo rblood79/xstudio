@@ -2,7 +2,7 @@
 
 > 목표: LayoutEngine.ts (1,804줄) 완전 삭제, @pixi/layout 선언적 flexbox 전환
 
-## 🎯 진행 상태 (2026-01-07 업데이트)
+## 🎯 진행 상태 (2026-01-09 업데이트)
 
 | Phase | 내용 | 상태 |
 |-------|------|------|
@@ -19,7 +19,7 @@
 | Phase 9 | children 기본 flex 레이아웃 + UI layout prop | ✅ 완료 |
 | Phase 10 | Container 타입 children 내부 렌더링 | ✅ 완료 |
 | Phase 11 | CSS block/inline-block 동기화 | ✅ 완료 |
-| Phase 12 | UI 컴포넌트 수동 좌표(x, y) 제거 | 🔄 진행중 |
+| Phase 12 | UI 컴포넌트 수동 좌표(x, y) 제거 | ✅ 완료 |
 
 ---
 
@@ -928,7 +928,7 @@ PixiSelect, PixiScrollBox, PixiList, PixiMaskedFrame
 
 ---
 
-## Phase 12: UI 컴포넌트 수동 좌표(x, y) 제거 🔄 진행중
+## Phase 12: UI 컴포넌트 수동 좌표(x, y) 제거 ✅ 완료
 
 ### 문제
 
@@ -1062,3 +1062,112 @@ PixiDropZone, PixiForm, PixiGroup, PixiPopover, PixiTooltip, PixiInput
 2. 각 컴포넌트 렌더링 확인
 3. 선택 시 SelectionBox 위치 정확성 확인
 4. hover/click 이벤트 정상 동작 확인
+
+### 최종 수정 (2026-01-09)
+
+Phase 12 마무리 작업에서 발견된 문제점들을 수정:
+
+#### 1. PixiTabs 세로 영역 문제 수정
+
+**문제**: Tabs 컴포넌트가 콘텐츠보다 더 큰 세로 영역을 차지함
+
+**원인**:
+- `rootLayout`에 `height`가 명시되지 않음
+- `panelLayout`에 `flexGrow: 1`이 있어서 불필요하게 확장
+
+**해결**:
+```typescript
+// PixiTabs.tsx - rootLayout
+const rootLayout = useMemo(() => ({
+  display: 'flex' as const,
+  flexDirection: (isVertical ? 'row' : 'column') as 'row' | 'column',
+  width: styleWidth ?? '100%',
+  height: 'auto' as const,  // 🚀 Phase 12: 콘텐츠 기반 높이
+  flexGrow: 0,
+  flexShrink: 0,
+  alignSelf: 'flex-start' as const,
+}), [isVertical, styleWidth]);
+
+// panelLayout - flexGrow 제거
+const panelLayout = useMemo(() => ({
+  display: 'flex' as const,
+  flexDirection: 'column' as const,
+  // 🚀 Phase 12: 콘텐츠 기반 높이로 변경 (flexGrow 제거)
+  padding: sizePreset.panelPadding,
+}), [sizePreset.panelPadding]);
+```
+
+#### 2. PixiTable 레이아웃 높이 문제 수정
+
+**문제**: Table 컴포넌트가 캔버스에서 올바르게 표시되지 않음
+
+**원인**: `tableLayout`에 `height`가 명시되지 않아 레이아웃과 Graphics 영역 불일치
+
+**해결**:
+```typescript
+// PixiTable.tsx - tableLayout
+const tableLayout = useMemo(() => ({
+  display: 'flex' as const,
+  flexDirection: 'column' as const,
+  width: totalWidth,
+  height: totalHeight,  // 🚀 Phase 12: 명시적 높이 추가
+  position: 'relative' as const,
+}), [totalWidth, totalHeight]);
+```
+
+### 브라우저 검증 결과 (2026-01-09)
+
+| 컴포넌트 | 상태 | 검증 내용 |
+|---------|------|----------|
+| **Tabs** | ✅ 정상 | 세로 영역이 콘텐츠에 맞게 렌더링, Tab 1/Tab 2 전환 정상 |
+| **Table** | ✅ 정상 | "Column 1 \| Column 2" 헤더 + "No data" empty state 표시 |
+| **DatePicker** | ✅ 정상 | 캘린더 팝업 (Jan 2026 + 날짜 그리드) 렌더링 |
+
+### TypeScript 컴파일 결과
+
+```bash
+$ npx tsc --noEmit
+# 오류 없음 ✅
+```
+
+### 세로 확장 방지 핵심 패턴
+
+@pixi/layout에서 컴포넌트가 세로로 불필요하게 확장되는 것을 방지하는 패턴:
+
+```typescript
+// ✅ 콘텐츠 기반 높이 패턴
+const rootLayout = useMemo(() => ({
+  display: 'flex' as const,
+  flexDirection: 'column' as const,
+  height: 'auto' as const,      // 콘텐츠 기반 높이
+  flexGrow: 0,                   // 남은 공간 차지 안함
+  flexShrink: 0,                 // 축소 안함
+  alignSelf: 'flex-start' as const,  // 부모에서 stretch 방지
+}), []);
+
+// ❌ 세로 확장되는 패턴 (피해야 함)
+const badLayout = {
+  flexGrow: 1,       // 남은 공간 모두 차지
+  height: undefined, // 높이 미지정 시 부모에 맞춤
+};
+```
+
+---
+
+## 마이그레이션 완료 요약
+
+### 삭제된 코드
+- `LayoutEngine.ts`: **1,804줄 완전 삭제**
+- `calculateLayout()` 호출: **모두 제거**
+- 수동 `x`, `y` prop: **대부분 제거** (동적 위치 컴포넌트 제외)
+
+### 새로운 아키텍처
+- **@pixi/layout** 기반 선언적 flexbox 레이아웃
+- `layout` prop으로 모든 레이아웃 정보 전달
+- `getBounds()` 기반 SelectionBox/Culling
+
+### 성과
+- 코드 복잡도 대폭 감소
+- CSS와 동일한 레이아웃 동작
+- 자동 재배치 (부모 크기 변경 시)
+- 선언적 레이아웃으로 유지보수 용이
