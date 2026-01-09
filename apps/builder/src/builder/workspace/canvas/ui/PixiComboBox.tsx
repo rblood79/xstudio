@@ -238,66 +238,101 @@ export const PixiComboBox = memo(function PixiComboBox({
     [sizePreset.inputWidth, totalHeight]
   );
 
-  // 버튼 위치
-  const buttonX = sizePreset.inputWidth - sizePreset.buttonSize - sizePreset.paddingX;
-  const buttonY = (inputHeight - sizePreset.buttonSize) / 2;
-
   // 아이템 높이
   const itemHeight = sizePreset.itemPaddingY * 2 + sizePreset.fontSize;
 
+  // 🚀 Phase 12: 루트 레이아웃
+  const rootLayout = useMemo(() => ({
+    display: 'flex' as const,
+    flexDirection: 'column' as const,
+    width: sizePreset.inputWidth,
+  }), [sizePreset.inputWidth]);
+
+  // 🚀 Phase 12: 입력 필드 레이아웃
+  const inputContainerLayout = useMemo(() => ({
+    display: 'flex' as const,
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    width: sizePreset.inputWidth,
+    height: inputHeight,
+    paddingLeft: sizePreset.paddingX,
+    paddingRight: sizePreset.paddingX,
+    position: 'relative' as const,
+  }), [sizePreset.inputWidth, inputHeight, sizePreset.paddingX]);
+
+  // 🚀 Phase 12: 드롭다운 레이아웃
+  const dropdownContainerLayout = useMemo(() => ({
+    display: 'flex' as const,
+    flexDirection: 'column' as const,
+    width: sizePreset.inputWidth,
+    paddingTop: sizePreset.paddingY,
+    paddingBottom: sizePreset.paddingY,
+    marginTop: 4,
+    position: 'relative' as const,
+  }), [sizePreset.inputWidth, sizePreset.paddingY]);
+
+  // 🚀 Phase 12: 아이템 레이아웃
+  const itemLayout = useMemo(() => ({
+    display: 'flex' as const,
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    width: sizePreset.inputWidth,
+    height: itemHeight,
+    paddingLeft: sizePreset.itemPaddingX,
+    paddingRight: sizePreset.itemPaddingX,
+    position: 'relative' as const,
+  }), [sizePreset.inputWidth, itemHeight, sizePreset.itemPaddingX]);
+
   return (
-    <pixiContainer>
+    <pixiContainer layout={rootLayout}>
       {/* 라벨 */}
       {label && (
-        <pixiText text={label} style={labelTextStyle} x={0} y={0} />
+        <pixiText text={label} style={labelTextStyle} layout={{ isLeaf: true }} />
       )}
 
       {/* ComboBox 그룹 */}
-      <pixiContainer y={labelHeight}>
+      <pixiContainer layout={{ display: 'flex', flexDirection: 'column' }}>
         {/* Input 영역 */}
-        <pixiGraphics draw={drawInput} />
+        <pixiContainer layout={inputContainerLayout}>
+          <pixiGraphics
+            draw={drawInput}
+            layout={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
+          />
 
-        {/* 값 또는 placeholder */}
-        <pixiText
-          text={value || placeholder}
-          style={valueTextStyle}
-          x={sizePreset.paddingX}
-          y={inputHeight / 2}
-          anchor={{ x: 0, y: 0.5 }}
-        />
+          {/* 값 또는 placeholder */}
+          <pixiText
+            text={value || placeholder}
+            style={valueTextStyle}
+            layout={{ isLeaf: true, flexGrow: 1 }}
+          />
 
-        {/* Chevron 버튼 */}
-        <pixiGraphics
-          draw={drawButton}
-          x={buttonX}
-          y={buttonY}
-        />
+          {/* Chevron 버튼 */}
+          <pixiGraphics draw={drawButton} />
+        </pixiContainer>
 
         {/* 드롭다운 (isOpen일 때만) */}
         {isOpen && (
-          <pixiContainer y={inputHeight + 4}>
+          <pixiContainer layout={dropdownContainerLayout}>
             {/* 드롭다운 배경 */}
-            <pixiGraphics draw={drawDropdown} />
+            <pixiGraphics
+              draw={drawDropdown}
+              layout={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
+            />
 
             {/* 아이템들 */}
-            {itemsData.map((item, index) => (
-              <pixiContainer
-                key={item.id}
-                x={0}
-                y={sizePreset.paddingY + index * itemHeight}
-              >
+            {itemsData.map((item) => (
+              <pixiContainer key={item.id} layout={itemLayout}>
                 {/* 아이템 배경 */}
                 <pixiGraphics
                   draw={(g) => drawItemBackground(g, item)}
+                  layout={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
                 />
 
                 {/* 아이템 텍스트 */}
                 <pixiText
                   text={item.text}
                   style={createItemTextStyle(item)}
-                  x={sizePreset.itemPaddingX}
-                  y={itemHeight / 2}
-                  anchor={{ x: 0, y: 0.5 }}
+                  layout={{ isLeaf: true }}
                 />
               </pixiContainer>
             ))}
@@ -311,6 +346,7 @@ export const PixiComboBox = memo(function PixiComboBox({
         eventMode="static"
         cursor={isDisabled ? "not-allowed" : "pointer"}
         onPointerDown={handleClick}
+        layout={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
       />
     </pixiContainer>
   );

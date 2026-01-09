@@ -104,8 +104,6 @@ function parseListBoxItemsFromProps(props: Record<string, unknown> | undefined):
 interface ListBoxItemComponentProps {
   item: ListBoxItem;
   isItemSelected: boolean;
-  x: number;
-  y: number;
   width: number;
   height: number;
   sizePreset: ReturnType<typeof getListBoxSizePreset>;
@@ -116,8 +114,6 @@ interface ListBoxItemComponentProps {
 const ListBoxItemComponent = memo(function ListBoxItemComponent({
   item,
   isItemSelected,
-  x,
-  y,
   width,
   height,
   sizePreset,
@@ -207,18 +203,36 @@ const ListBoxItemComponent = memo(function ListBoxItemComponent({
     }
   }, [bgColor, width, height, sizePreset.borderRadius]);
 
-  // 텍스트 위치 (패딩 적용)
-  const textX = sizePreset.itemPaddingX;
-  const textY = (height - sizePreset.fontSize) / 2;
-
   const cursorStyle = item.isDisabled ? "not-allowed" : "pointer";
   const alpha = item.isDisabled ? 0.5 : 1;
 
+  // 🚀 Phase 12: 아이템 레이아웃
+  const itemLayout = useMemo(() => ({
+    display: 'flex' as const,
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    justifyContent: 'space-between' as const,
+    width,
+    height,
+    paddingLeft: sizePreset.itemPaddingX,
+    paddingRight: sizePreset.itemPaddingX,
+    position: 'relative' as const,
+  }), [width, height, sizePreset.itemPaddingX]);
+
+  // 체크마크 스타일
+  const checkmarkStyle = useMemo(() => new TextStyle({
+    fontFamily: "Pretendard, sans-serif",
+    fontSize: sizePreset.fontSize,
+    fill: textCol,
+    fontWeight: "600",
+  }), [sizePreset.fontSize, textCol]);
+
   return (
-    <pixiContainer x={x} y={y} alpha={alpha}>
-      {/* 아이템 배경 */}
+    <pixiContainer layout={itemLayout} alpha={alpha}>
+      {/* 아이템 배경 - position: absolute */}
       <pixiGraphics
         draw={drawItem}
+        layout={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
         eventMode="static"
         cursor={cursorStyle}
         onPointerDown={handlePointerDown}
@@ -230,8 +244,7 @@ const ListBoxItemComponent = memo(function ListBoxItemComponent({
       <pixiText
         text={item.label}
         style={textStyle}
-        x={textX}
-        y={textY}
+        layout={{ isLeaf: true }}
         eventMode="static"
         cursor={cursorStyle}
         onPointerDown={handlePointerDown}
@@ -241,14 +254,8 @@ const ListBoxItemComponent = memo(function ListBoxItemComponent({
       {isItemSelected && (
         <pixiText
           text="✓"
-          style={new TextStyle({
-            fontFamily: "Pretendard, sans-serif",
-            fontSize: sizePreset.fontSize,
-            fill: textCol,
-            fontWeight: "600",
-          })}
-          x={width - sizePreset.itemPaddingX - 12}
-          y={textY}
+          style={checkmarkStyle}
+          layout={{ isLeaf: true }}
           eventMode="none"
         />
       )}
@@ -445,11 +452,6 @@ export const PixiListBox = memo(function PixiListBox({
     };
   }, [needsScroll]);
 
-  // 아이템 위치 계산
-  const itemPositions = useMemo(() => {
-    return items.map((_, index) => index * (sizePreset.itemHeight + sizePreset.gap));
-  }, [items, sizePreset.itemHeight, sizePreset.gap]);
-
   // 🚀 Phase 8: 주 컨테이너 layout (iframe CSS와 동기화)
   // CSS: .react-aria-ListBox { display: flex; flex-direction: column; padding: var(--spacing-xs); gap: var(--spacing-2xs); }
   const containerLayout = useMemo(() => ({
@@ -465,19 +467,33 @@ export const PixiListBox = memo(function PixiListBox({
     alignSelf: 'flex-start',
   }), [containerLayoutWidth, containerLayoutHeight, sizePreset.containerPadding, sizePreset.gap]);
 
+  // 🚀 Phase 12: 아이템 목록 컨테이너 레이아웃
+  const itemsContainerLayout = useMemo(() => ({
+    display: 'flex' as const,
+    flexDirection: 'column' as const,
+    gap: sizePreset.gap,
+    paddingTop: sizePreset.containerPadding,
+    paddingBottom: sizePreset.containerPadding,
+    paddingLeft: sizePreset.containerPadding,
+    paddingRight: sizePreset.containerPadding,
+  }), [sizePreset.containerPadding, sizePreset.gap]);
+
   return (
     <pixiContainer
       layout={containerLayout}
       eventMode="static"
       onPointerDown={handleContainerClick}
     >
-      {/* 컨테이너 배경 */}
-      <pixiGraphics draw={drawContainerBackground} eventMode="none" />
+      {/* 컨테이너 배경 - position: absolute */}
+      <pixiGraphics
+        draw={drawContainerBackground}
+        layout={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
+        eventMode="none"
+      />
 
-      {/* 아이템 컨테이너 (마스크 영역) */}
+      {/* 아이템 컨테이너 */}
       <pixiContainer
-        x={sizePreset.containerPadding}
-        y={sizePreset.containerPadding}
+        layout={itemsContainerLayout}
         ref={(c: PixiContainer | null) => {
           scrollContainerRef.current = c;
         }}
@@ -490,12 +506,13 @@ export const PixiListBox = memo(function PixiListBox({
               g.rect(0, 0, containerWidth - sizePreset.containerPadding * 2, containerHeight - sizePreset.containerPadding * 2);
               g.fill({ color: 0xffffff });
             }}
+            layout={{ position: 'absolute', top: 0, left: 0 }}
             eventMode="none"
           />
         )}
 
         {/* ListBox 아이템들 */}
-        {items.map((item, index) => {
+        {items.map((item) => {
           const isItemSelected = selectedKeys.includes(item.value);
 
           return (
@@ -503,8 +520,6 @@ export const PixiListBox = memo(function PixiListBox({
               key={item.id}
               item={item}
               isItemSelected={isItemSelected}
-              x={0}
-              y={itemPositions[index]}
               width={itemWidth}
               height={sizePreset.itemHeight}
               sizePreset={sizePreset}

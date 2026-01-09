@@ -144,53 +144,77 @@ export const PixiSearchField = memo(function PixiSearchField({
   const clearButtonX = sizePreset.inputWidth - sizePreset.clearButtonSize - sizePreset.paddingX;
   const clearButtonY = (inputHeight - sizePreset.clearButtonSize) / 2;
 
+  // 🚀 Phase 12: 루트 레이아웃
+  const rootLayout = useMemo(() => ({
+    display: 'flex' as const,
+    flexDirection: 'column' as const,
+    gap: 4,
+  }), []);
+
+  // 🚀 Phase 12: Input 레이아웃
+  const inputLayout = useMemo(() => ({
+    display: 'flex' as const,
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    width: sizePreset.inputWidth,
+    height: inputHeight,
+    paddingLeft: sizePreset.paddingX,
+    paddingRight: sizePreset.paddingX,
+    gap: 4,
+    position: 'relative' as const,
+  }), [sizePreset.inputWidth, inputHeight, sizePreset.paddingX]);
+
+  // 🚀 Phase 12: 검색 아이콘 스타일
+  const iconTextStyle = useMemo(() => new TextStyle({
+    fontFamily: "Pretendard, sans-serif",
+    fontSize: sizePreset.fontSize - 2,
+    fill: colorPreset.placeholderColor,
+  }), [sizePreset.fontSize, colorPreset.placeholderColor]);
+
+  // 🚀 Phase 12: Clear 버튼 레이아웃
+  const clearButtonLayout = useMemo(() => ({
+    position: 'absolute' as const,
+    right: sizePreset.paddingX,
+    top: (inputHeight - sizePreset.clearButtonSize) / 2,
+  }), [sizePreset.paddingX, inputHeight, sizePreset.clearButtonSize]);
+
   return (
-    <pixiContainer>
+    <pixiContainer layout={rootLayout}>
       {/* 라벨 */}
       {label && (
-        <pixiText text={label} style={labelTextStyle} x={0} y={0} />
+        <pixiText text={label} style={labelTextStyle} layout={{ isLeaf: true }} />
       )}
 
       {/* SearchField 그룹 */}
-      <pixiContainer y={labelHeight}>
-        {/* Input 영역 */}
+      <pixiContainer layout={inputLayout}>
+        {/* Input 배경 - position: absolute */}
         <pixiGraphics
           draw={drawInput}
+          layout={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
           eventMode="static"
           cursor="text"
           onPointerDown={handleClick}
         />
 
-        {/* 검색 아이콘 (간단한 돋보기) */}
+        {/* 검색 아이콘 */}
         <pixiText
           text="🔍"
-          style={
-            new TextStyle({
-              fontFamily: "Pretendard, sans-serif",
-              fontSize: sizePreset.fontSize - 2,
-              fill: colorPreset.placeholderColor,
-            })
-          }
-          x={sizePreset.paddingX}
-          y={inputHeight / 2}
-          anchor={{ x: 0, y: 0.5 }}
+          style={iconTextStyle}
+          layout={{ isLeaf: true }}
         />
 
         {/* 값 또는 placeholder */}
         <pixiText
           text={hasValue ? value : placeholder}
           style={valueTextStyle}
-          x={sizePreset.paddingX + sizePreset.fontSize + 4}
-          y={inputHeight / 2}
-          anchor={{ x: 0, y: 0.5 }}
+          layout={{ isLeaf: true, flexGrow: 1 }}
         />
 
         {/* Clear 버튼 */}
         {hasValue && (
           <pixiGraphics
             draw={drawClearButton}
-            x={clearButtonX}
-            y={clearButtonY}
+            layout={clearButtonLayout}
             eventMode="static"
             cursor="pointer"
             onPointerEnter={() => setIsClearHovered(true)}

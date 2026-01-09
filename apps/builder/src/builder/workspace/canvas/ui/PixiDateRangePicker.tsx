@@ -248,33 +248,78 @@ export function PixiDateRangePicker({
     });
   };
 
+  // 🚀 Phase 12: 필드 행 레이아웃
+  const fieldRowLayout = useMemo(() => ({
+    display: 'flex' as const,
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    gap: sizePreset.gap,
+    position: 'relative' as const,
+  }), [sizePreset.gap]);
+
+  // 🚀 Phase 12: 개별 필드 레이아웃
+  const singleFieldLayout = useMemo(() => ({
+    display: 'flex' as const,
+    alignItems: 'center' as const,
+    width: fieldWidth,
+    height: sizePreset.fieldHeight,
+    paddingLeft: sizePreset.fieldPadding,
+    paddingRight: sizePreset.fieldPadding,
+    position: 'relative' as const,
+  }), [fieldWidth, sizePreset.fieldHeight, sizePreset.fieldPadding]);
+
+  // 🚀 Phase 12: Separator 레이아웃
+  const separatorLayout = useMemo(() => ({
+    display: 'flex' as const,
+    justifyContent: 'center' as const,
+    alignItems: 'center' as const,
+    width: sizePreset.separatorWidth,
+    height: sizePreset.fieldHeight,
+  }), [sizePreset.separatorWidth, sizePreset.fieldHeight]);
+
   return (
     <pixiContainer
       eventMode="static"
       cursor="pointer"
       onPointerTap={() => onClick?.(element.id)}
     >
-      {/* Start field */}
-      <pixiGraphics draw={(g) => drawField(g, fieldWidth)} />
-      <pixiText text={startText} style={fieldTextStyle} x={sizePreset.fieldPadding} y={sizePreset.fieldHeight / 2 - sizePreset.fieldFontSize / 2} />
+      {/* Fields row */}
+      <pixiContainer layout={fieldRowLayout}>
+        {/* Start field */}
+        <pixiContainer layout={singleFieldLayout}>
+          <pixiGraphics
+            draw={(g) => drawField(g, fieldWidth)}
+            layout={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
+          />
+          <pixiText text={startText} style={fieldTextStyle} layout={{ isLeaf: true }} />
+        </pixiContainer>
 
-      {/* Separator */}
-      <pixiText text="→" style={separatorStyle} x={fieldWidth + sizePreset.gap + sizePreset.separatorWidth / 2} y={sizePreset.fieldHeight / 2} anchor={0.5} />
+        {/* Separator */}
+        <pixiContainer layout={separatorLayout}>
+          <pixiText text="→" style={separatorStyle} layout={{ isLeaf: true }} />
+        </pixiContainer>
 
-      {/* End field */}
-      <pixiContainer x={fieldWidth + sizePreset.separatorWidth + sizePreset.gap * 2}>
-        <pixiGraphics draw={(g) => drawField(g, fieldWidth)} />
-        <pixiText text={endText} style={fieldTextStyle} x={sizePreset.fieldPadding} y={sizePreset.fieldHeight / 2 - sizePreset.fieldFontSize / 2} />
+        {/* End field */}
+        <pixiContainer layout={singleFieldLayout}>
+          <pixiGraphics
+            draw={(g) => drawField(g, fieldWidth)}
+            layout={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
+          />
+          <pixiText text={endText} style={fieldTextStyle} layout={{ isLeaf: true }} />
+        </pixiContainer>
+
+        {/* Selection indicator */}
+        {isSelected && (
+          <pixiGraphics
+            draw={(g) => {
+              g.clear();
+              g.roundRect(-2, -2, totalFieldWidth + 4, sizePreset.fieldHeight + 4, sizePreset.fieldBorderRadius + 2);
+              g.stroke({ color: colorPreset.focusBorderColor, width: 2 });
+            }}
+            layout={{ position: 'absolute', top: 0, left: 0 }}
+          />
+        )}
       </pixiContainer>
-
-      {/* Selection indicator */}
-      {isSelected && (
-        <pixiGraphics draw={(g) => {
-          g.clear();
-          g.roundRect(-2, -2, totalFieldWidth + 4, sizePreset.fieldHeight + 4, sizePreset.fieldBorderRadius + 2);
-          g.stroke({ color: colorPreset.focusBorderColor, width: 2 });
-        }} />
-      )}
 
       {/* Dual calendar popup */}
       {isOpen && (

@@ -212,6 +212,17 @@ export function PixiDatePicker({
     [calendarSizePreset, calendarColorPreset]
   );
 
+  // 🚀 Phase 12: 필드 레이아웃
+  const fieldLayout = useMemo(() => ({
+    display: 'flex' as const,
+    alignItems: 'center' as const,
+    width: fieldWidth,
+    height: sizePreset.fieldHeight,
+    paddingLeft: sizePreset.fieldPadding,
+    paddingRight: sizePreset.fieldPadding,
+    position: 'relative' as const,
+  }), [fieldWidth, sizePreset.fieldHeight, sizePreset.fieldPadding]);
+
   return (
     <pixiContainer
       eventMode="static"
@@ -219,13 +230,17 @@ export function PixiDatePicker({
       onPointerTap={() => onClick?.(element.id)}
     >
       {/* Date field */}
-      <pixiGraphics draw={drawField} />
-      <pixiText
-        text={displayText}
-        style={fieldTextStyle}
-        x={sizePreset.fieldPadding}
-        y={sizePreset.fieldHeight / 2 - sizePreset.fieldFontSize / 2}
-      />
+      <pixiContainer layout={fieldLayout}>
+        <pixiGraphics
+          draw={drawField}
+          layout={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
+        />
+        <pixiText
+          text={displayText}
+          style={fieldTextStyle}
+          layout={{ isLeaf: true }}
+        />
+      </pixiContainer>
 
       {/* Calendar popup (shown in builder) */}
       {isOpen && (

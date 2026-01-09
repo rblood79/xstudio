@@ -218,23 +218,45 @@ export const PixiMeter = memo(function PixiMeter({
     [sizePreset.fontSize, valueColor]
   );
 
+  // 🚀 Phase 12: 루트 레이아웃
+  const rootLayout = useMemo(() => ({
+    display: 'flex' as const,
+    flexDirection: 'column' as const,
+    width: meterLayoutWidth,
+    gap: sizePreset.gap,
+  }), [meterLayoutWidth, sizePreset.gap]);
+
+  // 🚀 Phase 12: 라벨 행 레이아웃
+  const labelRowLayout = useMemo(() => ({
+    display: 'flex' as const,
+    flexDirection: 'row' as const,
+    justifyContent: 'space-between' as const,
+    alignItems: 'center' as const,
+  }), []);
+
+  // 🚀 Phase 12: 바 컨테이너 레이아웃
+  const barContainerLayout = useMemo(() => ({
+    width: '100%' as const,
+    height: barHeight,
+    position: 'relative' as const,
+  }), [barHeight]);
+
   return (
     <pixiContainer
-      layout={{ width: meterLayoutWidth }}
+      layout={rootLayout}
       eventMode="static"
       cursor="pointer"
       onPointerDown={handleClick}
     >
       {/* 라벨과 값 행 */}
       {hasLabelRow && (
-        <pixiContainer x={0} y={0}>
+        <pixiContainer layout={labelRowLayout}>
           {/* 라벨 (왼쪽) */}
           {label && (
             <pixiText
               text={label}
               style={labelTextStyle}
-              x={0}
-              y={0}
+              layout={{ isLeaf: true }}
               eventMode="none"
             />
           )}
@@ -244,8 +266,7 @@ export const PixiMeter = memo(function PixiMeter({
             <pixiText
               text={formattedValue}
               style={valueTextStyle}
-              x={meterWidth - formattedValue.length * (sizePreset.fontSize * 0.6)}
-              y={0}
+              layout={{ isLeaf: true }}
               eventMode="none"
             />
           )}
@@ -253,12 +274,20 @@ export const PixiMeter = memo(function PixiMeter({
       )}
 
       {/* 바 컨테이너 */}
-      <pixiContainer x={0} y={labelRowHeight}>
-        {/* 트랙 (배경) */}
-        <pixiGraphics draw={drawTrack} eventMode="none" />
+      <pixiContainer layout={barContainerLayout}>
+        {/* 트랙 (배경) - position: absolute */}
+        <pixiGraphics
+          draw={drawTrack}
+          layout={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
+          eventMode="none"
+        />
 
-        {/* 채우기 */}
-        <pixiGraphics draw={drawFill} eventMode="none" />
+        {/* 채우기 - position: absolute */}
+        <pixiGraphics
+          draw={drawFill}
+          layout={{ position: 'absolute', top: 0, left: 0 }}
+          eventMode="none"
+        />
       </pixiContainer>
     </pixiContainer>
   );

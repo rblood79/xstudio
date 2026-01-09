@@ -259,117 +259,178 @@ export function PixiTable({
     }
   }, [element.id, onClick]);
 
+  // 🚀 Phase 12: 테이블 루트 레이아웃
+  const tableLayout = useMemo(() => ({
+    display: 'flex' as const,
+    flexDirection: 'column' as const,
+    width: totalWidth,
+    height: totalHeight,
+    position: 'relative' as const,
+  }), [totalWidth, totalHeight]);
+
+  // 🚀 Phase 12: 헤더 행 레이아웃
+  const headerRowLayout = useMemo(() => ({
+    display: 'flex' as const,
+    flexDirection: 'row' as const,
+    width: totalWidth,
+    height: headerHeight,
+    position: 'relative' as const,
+  }), [totalWidth, headerHeight]);
+
+  // 🚀 Phase 12: 데이터 행 레이아웃
+  const dataRowLayout = useMemo(() => ({
+    display: 'flex' as const,
+    flexDirection: 'row' as const,
+    width: totalWidth,
+    height: sizePreset.rowMinHeight,
+    position: 'relative' as const,
+  }), [totalWidth, sizePreset.rowMinHeight]);
+
+  // 🚀 Phase 12: Empty state 레이아웃
+  const emptyStateLayout = useMemo(() => ({
+    display: 'flex' as const,
+    justifyContent: 'center' as const,
+    alignItems: 'center' as const,
+    width: totalWidth,
+    height: 40,
+  }), [totalWidth]);
+
   return (
     <pixiContainer
+      layout={tableLayout}
       eventMode="static"
       cursor="pointer"
       onPointerDown={handleContainerClick}
     >
       {/* Container */}
-      <pixiGraphics draw={drawContainer} />
+      <pixiGraphics
+        draw={drawContainer}
+        layout={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
+      />
 
       {/* Header */}
-      <pixiContainer y={0}>
-        <pixiGraphics draw={drawHeaderBg} />
+      <pixiContainer layout={headerRowLayout}>
+        <pixiGraphics
+          draw={drawHeaderBg}
+          layout={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
+        />
 
         {/* Header cells */}
-        {columns.map((col, colIndex) => {
-          const x = columns.slice(0, colIndex).reduce((sum, c) => sum + c.width, 0);
-
-          return (
-            <pixiContainer key={col.id} x={x}>
-              {/* Column separator */}
-              {colIndex > 0 && <pixiGraphics draw={(g) => drawColumnSeparator(g, headerHeight)} />}
-
-              {/* Header text */}
-              <pixiText
-                text={col.label}
-                style={headerTextStyle}
-                x={sizePreset.cellPaddingX}
-                y={(headerHeight - sizePreset.headerFontSize) / 2}
+        {columns.map((col, colIndex) => (
+          <pixiContainer
+            key={col.id}
+            layout={{
+              display: 'flex',
+              alignItems: 'center',
+              width: col.width,
+              height: headerHeight,
+              paddingLeft: sizePreset.cellPaddingX,
+              position: 'relative',
+            }}
+          >
+            {/* Column separator */}
+            {colIndex > 0 && (
+              <pixiGraphics
+                draw={(g) => drawColumnSeparator(g, headerHeight)}
+                layout={{ position: 'absolute', top: 0, left: 0 }}
               />
-            </pixiContainer>
-          );
-        })}
+            )}
+
+            {/* Header text */}
+            <pixiText
+              text={col.label}
+              style={headerTextStyle}
+              layout={{ isLeaf: true }}
+            />
+          </pixiContainer>
+        ))}
       </pixiContainer>
 
       {/* Rows */}
-      {rows.map((row, rowIndex) => {
-        const rowY = headerHeight + rowIndex * sizePreset.rowMinHeight;
-
-        return (
-          <pixiContainer
-            key={row.id}
-            y={rowY}
-            eventMode="static"
-            cursor="pointer"
-            onPointerOver={() => {
-              // 🚀 Performance: 직접 그래픽스 업데이트 (리렌더링 없음)
-              const g = rowGraphicsRefs.current.get(row.id);
-              if (g) drawRowBg(g, totalWidth, sizePreset.rowMinHeight, true, row.isSelected || false);
+      {rows.map((row) => (
+        <pixiContainer
+          key={row.id}
+          layout={dataRowLayout}
+          eventMode="static"
+          cursor="pointer"
+          onPointerOver={() => {
+            // 🚀 Performance: 직접 그래픽스 업데이트 (리렌더링 없음)
+            const g = rowGraphicsRefs.current.get(row.id);
+            if (g) drawRowBg(g, totalWidth, sizePreset.rowMinHeight, true, row.isSelected || false);
+          }}
+          onPointerOut={() => {
+            // 🚀 Performance: 직접 그래픽스 업데이트 (리렌더링 없음)
+            const g = rowGraphicsRefs.current.get(row.id);
+            if (g) drawRowBg(g, totalWidth, sizePreset.rowMinHeight, false, row.isSelected || false);
+          }}
+          onPointerDown={(e: { stopPropagation: () => void }) => {
+            e.stopPropagation();
+            handleRowClick(row.id);
+          }}
+        >
+          {/* Row background */}
+          <pixiGraphics
+            ref={(g) => {
+              if (g) rowGraphicsRefs.current.set(row.id, g);
             }}
-            onPointerOut={() => {
-              // 🚀 Performance: 직접 그래픽스 업데이트 (리렌더링 없음)
-              const g = rowGraphicsRefs.current.get(row.id);
-              if (g) drawRowBg(g, totalWidth, sizePreset.rowMinHeight, false, row.isSelected || false);
-            }}
-            onPointerDown={(e: { stopPropagation: () => void }) => {
-              e.stopPropagation();
-              handleRowClick(row.id);
-            }}
-          >
-            {/* Row background */}
-            <pixiGraphics
-              ref={(g) => {
-                if (g) rowGraphicsRefs.current.set(row.id, g);
-              }}
-              draw={(g) =>
-                drawRowBg(g, totalWidth, sizePreset.rowMinHeight, false, row.isSelected || false)
-              }
-            />
+            draw={(g) =>
+              drawRowBg(g, totalWidth, sizePreset.rowMinHeight, false, row.isSelected || false)
+            }
+            layout={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
+          />
 
-            {/* Cells */}
-            {columns.map((col, colIndex) => {
-              const x = columns.slice(0, colIndex).reduce((sum, c) => sum + c.width, 0);
-              const cellValue = row.cells[colIndex]?.value || '';
+          {/* Cells */}
+          {columns.map((col, colIndex) => {
+            const cellValue = row.cells[colIndex]?.value || '';
 
-              return (
-                <pixiContainer key={`${row.id}-${col.id}`} x={x}>
-                  {/* Column separator */}
-                  {colIndex > 0 && (
-                    <pixiGraphics draw={(g) => drawColumnSeparator(g, sizePreset.rowMinHeight)} />
-                  )}
-
-                  {/* Cell text */}
-                  <pixiText
-                    text={cellValue}
-                    style={row.isSelected ? selectedCellTextStyle : cellTextStyle}
-                    x={sizePreset.cellPaddingX}
-                    y={(sizePreset.rowMinHeight - sizePreset.fontSize) / 2}
+            return (
+              <pixiContainer
+                key={`${row.id}-${col.id}`}
+                layout={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  width: col.width,
+                  height: sizePreset.rowMinHeight,
+                  paddingLeft: sizePreset.cellPaddingX,
+                  position: 'relative',
+                }}
+              >
+                {/* Column separator */}
+                {colIndex > 0 && (
+                  <pixiGraphics
+                    draw={(g) => drawColumnSeparator(g, sizePreset.rowMinHeight)}
+                    layout={{ position: 'absolute', top: 0, left: 0 }}
                   />
-                </pixiContainer>
-              );
-            })}
-          </pixiContainer>
-        );
-      })}
+                )}
+
+                {/* Cell text */}
+                <pixiText
+                  text={cellValue}
+                  style={row.isSelected ? selectedCellTextStyle : cellTextStyle}
+                  layout={{ isLeaf: true }}
+                />
+              </pixiContainer>
+            );
+          })}
+        </pixiContainer>
+      ))}
 
       {/* Empty state */}
       {rows.length === 0 && (
-        <pixiText
-          text="No data"
-          style={
-            new TextStyle({
-              fontSize: sizePreset.fontSize,
-              fill: 0x9ca3af,
-              fontFamily: 'Inter, system-ui, sans-serif',
-              fontStyle: 'italic',
-            })
-          }
-          x={totalWidth / 2}
-          y={headerHeight + 20}
-          anchor={{ x: 0.5, y: 0 }}
-        />
+        <pixiContainer layout={emptyStateLayout}>
+          <pixiText
+            text="No data"
+            style={
+              new TextStyle({
+                fontSize: sizePreset.fontSize,
+                fill: 0x9ca3af,
+                fontFamily: 'Inter, system-ui, sans-serif',
+                fontStyle: 'italic',
+              })
+            }
+            layout={{ isLeaf: true }}
+          />
+        </pixiContainer>
       )}
     </pixiContainer>
   );

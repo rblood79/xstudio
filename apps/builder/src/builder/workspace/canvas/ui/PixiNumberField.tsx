@@ -162,69 +162,100 @@ export const PixiNumberField = memo(function PixiNumberField({
     onClick?.(element.id);
   }, [onClick, element.id]);
 
+  // 🚀 Phase 12: 루트 레이아웃
+  const rootLayout = useMemo(() => ({
+    display: 'flex' as const,
+    flexDirection: 'column' as const,
+    gap: 4,
+  }), []);
+
+  // 🚀 Phase 12: 필드 그룹 레이아웃
+  const fieldGroupLayout = useMemo(() => ({
+    display: 'flex' as const,
+    flexDirection: 'row' as const,
+    alignItems: 'stretch' as const,
+  }), []);
+
+  // 🚀 Phase 12: 버튼 레이아웃
+  const buttonLayout = useMemo(() => ({
+    display: 'flex' as const,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+    width: sizePreset.buttonWidth,
+    height: inputHeight,
+    position: 'relative' as const,
+  }), [sizePreset.buttonWidth, inputHeight]);
+
+  // 🚀 Phase 12: Input 레이아웃
+  const inputAreaLayout = useMemo(() => ({
+    display: 'flex' as const,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+    width: sizePreset.inputWidth,
+    height: inputHeight,
+    position: 'relative' as const,
+  }), [sizePreset.inputWidth, inputHeight]);
+
   return (
-    <pixiContainer>
+    <pixiContainer layout={rootLayout}>
       {/* 라벨 */}
       {label && (
-        <pixiText text={label} style={labelTextStyle} x={0} y={0} />
+        <pixiText text={label} style={labelTextStyle} layout={{ isLeaf: true }} />
       )}
 
       {/* NumberField 그룹 */}
-      <pixiContainer y={labelHeight}>
+      <pixiContainer layout={fieldGroupLayout}>
         {/* Decrement 버튼 */}
-        <pixiGraphics
-          draw={drawDecrementButton}
-          x={0}
-          y={0}
-          eventMode="static"
-          cursor={isDisabled ? "not-allowed" : "pointer"}
-          onPointerEnter={() => !isDisabled && setHoveredButton("decrement")}
-          onPointerLeave={() => setHoveredButton(null)}
-          onPointerDown={handleClick}
-        />
-        <pixiText
-          text="−"
-          style={buttonTextStyle}
-          x={sizePreset.buttonWidth / 2}
-          y={inputHeight / 2}
-          anchor={0.5}
-        />
+        <pixiContainer layout={buttonLayout}>
+          <pixiGraphics
+            draw={drawDecrementButton}
+            layout={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
+            eventMode="static"
+            cursor={isDisabled ? "not-allowed" : "pointer"}
+            onPointerEnter={() => !isDisabled && setHoveredButton("decrement")}
+            onPointerLeave={() => setHoveredButton(null)}
+            onPointerDown={handleClick}
+          />
+          <pixiText
+            text="−"
+            style={buttonTextStyle}
+            layout={{ isLeaf: true }}
+          />
+        </pixiContainer>
 
         {/* Input 영역 */}
-        <pixiGraphics
-          draw={drawInput}
-          x={sizePreset.buttonWidth}
-          y={0}
-          eventMode="static"
-          cursor="text"
-          onPointerDown={handleClick}
-        />
-        <pixiText
-          text={String(value)}
-          style={valueTextStyle}
-          x={sizePreset.buttonWidth + sizePreset.inputWidth / 2}
-          y={inputHeight / 2}
-          anchor={0.5}
-        />
+        <pixiContainer layout={inputAreaLayout}>
+          <pixiGraphics
+            draw={drawInput}
+            layout={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
+            eventMode="static"
+            cursor="text"
+            onPointerDown={handleClick}
+          />
+          <pixiText
+            text={String(value)}
+            style={valueTextStyle}
+            layout={{ isLeaf: true }}
+          />
+        </pixiContainer>
 
         {/* Increment 버튼 */}
-        <pixiGraphics
-          draw={drawIncrementButton}
-          x={sizePreset.buttonWidth + sizePreset.inputWidth}
-          y={0}
-          eventMode="static"
-          cursor={isDisabled ? "not-allowed" : "pointer"}
-          onPointerEnter={() => !isDisabled && setHoveredButton("increment")}
-          onPointerLeave={() => setHoveredButton(null)}
-          onPointerDown={handleClick}
-        />
-        <pixiText
-          text="+"
-          style={buttonTextStyle}
-          x={sizePreset.buttonWidth + sizePreset.inputWidth + sizePreset.buttonWidth / 2}
-          y={inputHeight / 2}
-          anchor={0.5}
-        />
+        <pixiContainer layout={buttonLayout}>
+          <pixiGraphics
+            draw={drawIncrementButton}
+            layout={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
+            eventMode="static"
+            cursor={isDisabled ? "not-allowed" : "pointer"}
+            onPointerEnter={() => !isDisabled && setHoveredButton("increment")}
+            onPointerLeave={() => setHoveredButton(null)}
+            onPointerDown={handleClick}
+          />
+          <pixiText
+            text="+"
+            style={buttonTextStyle}
+            layout={{ isLeaf: true }}
+          />
+        </pixiContainer>
       </pixiContainer>
     </pixiContainer>
   );

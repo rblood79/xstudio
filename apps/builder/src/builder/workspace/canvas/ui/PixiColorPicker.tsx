@@ -234,48 +234,90 @@ export function PixiColorPicker({
     [colorPreset]
   );
 
-  // Calculate positions
-  const areaX = sizePreset.padding;
-  const areaY = sizePreset.padding;
-  const hueSliderY = areaY + sizePreset.areaSize + sizePreset.gap;
-  const alphaSliderY = hueSliderY + sizePreset.sliderHeight + sizePreset.gap;
-  const swatchY = alphaSliderY + sizePreset.sliderHeight + sizePreset.gap;
+  // 🚀 Phase 12: 루트 레이아웃
+  const rootLayout = useMemo(() => ({
+    display: 'flex' as const,
+    flexDirection: 'column' as const,
+    width: containerWidth,
+    height: containerHeight,
+    padding: sizePreset.padding,
+    gap: sizePreset.gap,
+    position: 'relative' as const,
+  }), [containerWidth, containerHeight, sizePreset.padding, sizePreset.gap]);
+
+  // 🚀 Phase 12: 색상 영역 레이아웃
+  const colorAreaLayout = useMemo(() => ({
+    width: sizePreset.areaSize,
+    height: sizePreset.areaSize,
+    position: 'relative' as const,
+  }), [sizePreset.areaSize]);
+
+  // 🚀 Phase 12: 슬라이더 레이아웃
+  const sliderLayout = useMemo(() => ({
+    width: sizePreset.sliderWidth,
+    height: sizePreset.sliderHeight,
+    position: 'relative' as const,
+  }), [sizePreset.sliderWidth, sizePreset.sliderHeight]);
+
+  // 🚀 Phase 12: Swatch 행 레이아웃
+  const swatchRowLayout = useMemo(() => ({
+    display: 'flex' as const,
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    gap: sizePreset.gap,
+  }), [sizePreset.gap]);
 
   return (
     <pixiContainer
+      layout={rootLayout}
       eventMode="static"
       cursor="pointer"
       onPointerTap={() => onClick?.(element.id)}
     >
       {/* Container */}
-      <pixiGraphics draw={drawContainer} />
+      <pixiGraphics
+        draw={drawContainer}
+        layout={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
+      />
 
       {/* Color area */}
-      <pixiContainer x={areaX} y={areaY}>
+      <pixiContainer layout={colorAreaLayout}>
         <pixiGraphics draw={drawColorArea} />
-        <pixiGraphics draw={drawAreaThumb} x={saturation * sizePreset.areaSize} y={(1 - brightness) * sizePreset.areaSize} />
+        {/* Thumb - 동적 위치 (value 기반) */}
+        <pixiGraphics
+          draw={drawAreaThumb}
+          x={saturation * sizePreset.areaSize}
+          y={(1 - brightness) * sizePreset.areaSize}
+        />
       </pixiContainer>
 
       {/* Hue slider */}
-      <pixiContainer x={areaX} y={hueSliderY}>
+      <pixiContainer layout={sliderLayout}>
         <pixiGraphics draw={drawHueSlider} />
-        <pixiGraphics draw={(g) => drawSliderThumb(g, hsbToHex(hue, 1, 1))} x={(hue / 360) * sizePreset.sliderWidth} />
+        {/* Thumb - 동적 위치 (hue 기반) */}
+        <pixiGraphics
+          draw={(g) => drawSliderThumb(g, hsbToHex(hue, 1, 1))}
+          x={(hue / 360) * sizePreset.sliderWidth}
+        />
       </pixiContainer>
 
       {/* Alpha slider */}
-      <pixiContainer x={areaX} y={alphaSliderY}>
+      <pixiContainer layout={sliderLayout}>
         <pixiGraphics draw={drawAlphaSlider} />
-        <pixiGraphics draw={(g) => drawSliderThumb(g, currentColor)} x={alpha * sizePreset.sliderWidth} />
+        {/* Thumb - 동적 위치 (alpha 기반) */}
+        <pixiGraphics
+          draw={(g) => drawSliderThumb(g, currentColor)}
+          x={alpha * sizePreset.sliderWidth}
+        />
       </pixiContainer>
 
       {/* Color swatch and hex value */}
-      <pixiContainer x={areaX} y={swatchY}>
+      <pixiContainer layout={swatchRowLayout}>
         <pixiGraphics draw={drawSwatch} />
         <pixiText
           text={`#${currentColor.toString(16).padStart(6, '0').toUpperCase()}`}
           style={labelStyle}
-          x={sizePreset.swatchSize + sizePreset.gap}
-          y={sizePreset.swatchSize / 2 - 6}
+          layout={{ isLeaf: true }}
         />
       </pixiContainer>
     </pixiContainer>

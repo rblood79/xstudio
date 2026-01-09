@@ -193,7 +193,8 @@ export const PixiTabs = memo(function PixiTabs({
     display: 'flex' as const,
     flexDirection: (isVertical ? 'row' : 'column') as 'row' | 'column',
     width: styleWidth ?? '100%',
-    // 세로 늘어남 방지 (CSS block 요소 동작)
+    // 🚀 Phase 12: 콘텐츠 기반 높이 - 세로 늘어남 방지
+    height: 'auto' as const,
     flexGrow: 0,
     flexShrink: 0,
     alignSelf: 'flex-start' as const,
@@ -218,8 +219,7 @@ export const PixiTabs = memo(function PixiTabs({
   const panelLayout = useMemo(() => ({
     display: 'flex' as const,
     flexDirection: 'column' as const,
-    // @pixi/layout flex로 남은 공간 채움
-    flexGrow: 1,
+    // 🚀 Phase 12: 콘텐츠 기반 높이로 변경 (flexGrow 제거)
     padding: sizePreset.panelPadding,
   }), [sizePreset.panelPadding]);
 
@@ -357,10 +357,6 @@ export const PixiTabs = memo(function PixiTabs({
           const isHovered = hoveredIndex === index;
           const isSelected = tab.tabId === activeTabId;
 
-          // 인디케이터 위치 계산
-          const indicatorX = isVertical ? tab.width - sizePreset.indicatorHeight : 0;
-          const indicatorY = isVertical ? 0 : tab.height - sizePreset.indicatorHeight;
-
           return (
             <pixiContainer
               key={tab.id}
@@ -398,10 +394,16 @@ export const PixiTabs = memo(function PixiTabs({
                 onPointerDown={() => handleTabClick(tab)}
               />
 
-              {/* 선택 인디케이터 */}
-              <pixiContainer x={indicatorX} y={indicatorY}>
-                <pixiGraphics draw={(g) => drawIndicator(g, tab, isSelected)} />
-              </pixiContainer>
+              {/* 선택 인디케이터 - position: absolute로 레이아웃에서 제외 */}
+              <pixiGraphics
+                draw={(g) => drawIndicator(g, tab, isSelected)}
+                layout={{
+                  position: 'absolute',
+                  ...(isVertical
+                    ? { right: 0, top: 0 }
+                    : { bottom: 0, left: 0 }),
+                }}
+              />
             </pixiContainer>
           );
         })}

@@ -197,28 +197,51 @@ export function PixiToast({
   const dismissX = toastWidth - sizePreset.paddingX - sizePreset.dismissButtonSize;
   const dismissY = (toastHeight - sizePreset.dismissButtonSize) / 2;
 
+  // 🚀 Phase 12: 루트 레이아웃
+  const rootLayout = useMemo(() => ({
+    display: 'flex' as const,
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    width: toastWidth,
+    height: toastHeight,
+    paddingLeft: sizePreset.paddingX + 4,
+    paddingRight: sizePreset.paddingX,
+    gap: sizePreset.gap,
+    position: 'relative' as const,
+  }), [toastWidth, toastHeight, sizePreset.paddingX, sizePreset.gap]);
+
+  // 🚀 Phase 12: Dismiss 버튼 레이아웃
+  const dismissLayout = useMemo(() => ({
+    position: 'absolute' as const,
+    right: sizePreset.paddingX,
+    top: (toastHeight - sizePreset.dismissButtonSize) / 2,
+  }), [sizePreset.paddingX, toastHeight, sizePreset.dismissButtonSize]);
+
   return (
     <pixiContainer
+      layout={rootLayout}
       eventMode="static"
       cursor="pointer"
       onPointerTap={() => onClick?.(element.id)}
     >
-      {/* Toast container */}
-      <pixiGraphics draw={drawContainer} />
+      {/* Toast container - position: absolute */}
+      <pixiGraphics
+        draw={drawContainer}
+        layout={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
+      />
 
       {/* Icon */}
-      <pixiGraphics draw={drawIcon} x={iconX} y={iconY} />
+      <pixiGraphics draw={drawIcon} />
 
       {/* Message */}
       <pixiText
         text={message}
         style={textStyle}
-        x={textX}
-        y={textY}
+        layout={{ isLeaf: true, flexGrow: 1 }}
       />
 
-      {/* Dismiss button */}
-      <pixiGraphics draw={drawDismissButton} x={dismissX} y={dismissY} />
+      {/* Dismiss button - position: absolute */}
+      <pixiGraphics draw={drawDismissButton} layout={dismissLayout} />
     </pixiContainer>
   );
 }

@@ -152,27 +152,56 @@ export function PixiSwitch({
     }
   }, [element.id, onClick, isDisabled]);
 
-  return (
-    <pixiContainer>
-      {/* Track */}
-      <pixiGraphics draw={drawTrack} />
+  // 🚀 Phase 12: 루트 컨테이너 레이아웃
+  const rootLayout = useMemo(() => ({
+    display: 'flex' as const,
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    gap: sizePreset.gap,
+    position: 'relative' as const,
+  }), [sizePreset.gap]);
 
-      {/* Thumb */}
-      <pixiGraphics draw={drawThumb} x={thumbX} y={thumbY} />
+  // 🚀 Phase 12: 트랙 컨테이너 레이아웃 (thumb 배치용)
+  const trackLayout = useMemo(() => ({
+    width: sizePreset.trackWidth,
+    height: sizePreset.trackHeight,
+    position: 'relative' as const,
+  }), [sizePreset.trackWidth, sizePreset.trackHeight]);
+
+  // 🚀 Phase 12: Thumb 레이아웃 (position: absolute)
+  const thumbLayout = useMemo(() => ({
+    position: 'absolute' as const,
+    left: thumbX,
+    top: thumbY,
+  }), [thumbX, thumbY]);
+
+  return (
+    <pixiContainer layout={rootLayout}>
+      {/* Track + Thumb 컨테이너 */}
+      <pixiContainer layout={trackLayout}>
+        {/* Track - position: absolute */}
+        <pixiGraphics
+          draw={drawTrack}
+          layout={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
+        />
+
+        {/* Thumb - position: absolute */}
+        <pixiGraphics draw={drawThumb} layout={thumbLayout} />
+      </pixiContainer>
 
       {/* Label */}
       {label && (
         <pixiText
           text={label}
           style={labelStyle}
-          x={sizePreset.trackWidth + sizePreset.gap}
-          y={(sizePreset.trackHeight - labelPreset.fontSize) / 2}
+          layout={{ isLeaf: true }}
         />
       )}
 
-      {/* 🚀 Phase 19: 투명 히트 영역 (클릭 감지용) - 마지막에 렌더링하여 최상단 배치 */}
+      {/* 🚀 Phase 19: 투명 히트 영역 (클릭 감지용) - position: absolute */}
       <pixiGraphics
         draw={drawHitArea}
+        layout={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
         eventMode="static"
         cursor={isDisabled ? 'not-allowed' : 'pointer'}
         onPointerDown={handleClick}

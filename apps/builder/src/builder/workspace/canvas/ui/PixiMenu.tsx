@@ -273,66 +273,94 @@ export const PixiMenu = memo(function PixiMenu({
   // 🚀 Phase 8: 주 컨테이너 layout (iframe CSS와 동기화)
   // CSS: .react-aria-Menu { padding: var(--spacing); min-width: 150px; }
   const menuContainerLayout = useMemo(() => ({
-    display: 'flex',
-    flexDirection: 'column',
-    padding: menuLayout.padding,
+    display: 'flex' as const,
+    flexDirection: 'column' as const,
+    width: menuLayout.totalWidth,
+    height: menuLayout.totalHeight,
     minWidth: 150,
+    position: 'relative' as const,
     // 콘텐츠 크기에 맞춤 (부모 flex에서 늘어나지 않도록)
     flexGrow: 0,
     flexShrink: 0,
-    alignSelf: 'flex-start',
-  }), [menuLayout.padding]);
+    alignSelf: 'flex-start' as const,
+  }), [menuLayout.totalWidth, menuLayout.totalHeight]);
+
+  // 🚀 Phase 12: 아이템 목록 컨테이너 레이아웃
+  const itemsContainerLayout = useMemo(() => ({
+    display: 'flex' as const,
+    flexDirection: 'column' as const,
+    paddingTop: sizePreset.containerPadding,
+    paddingBottom: sizePreset.containerPadding,
+  }), [sizePreset.containerPadding]);
 
   return (
     <pixiContainer layout={menuContainerLayout}>
-      {/* 메뉴 배경 */}
-      <pixiGraphics draw={drawMenuBackground} />
+      {/* 메뉴 배경 - position: absolute */}
+      <pixiGraphics
+        draw={drawMenuBackground}
+        layout={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
+      />
 
       {/* 메뉴 아이템들 */}
-      {menuLayout.items.map((item, index) => {
-        const isHovered = hoveredIndex === index;
+      <pixiContainer layout={itemsContainerLayout}>
+        {menuLayout.items.map((item, index) => {
+          const isHovered = hoveredIndex === index;
 
-        return (
-          <pixiContainer key={item.id} x={0} y={item.y}>
-            {/* 아이템 배경 */}
-            <pixiGraphics
-              draw={(g) => drawItemBackground(g, item, isHovered)}
-              eventMode="static"
-              cursor={item.isSeparator || item.isDisabled ? "default" : "pointer"}
-              onPointerEnter={() => !item.isSeparator && setHoveredIndex(index)}
-              onPointerLeave={() => setHoveredIndex(null)}
-              onPointerDown={() => handleItemClick(item)}
-            />
+          // 🚀 Phase 12: 각 아이템 레이아웃
+          const itemLayout = {
+            display: 'flex' as const,
+            flexDirection: 'row' as const,
+            alignItems: 'center' as const,
+            justifyContent: 'space-between' as const,
+            height: item.height,
+            paddingLeft: sizePreset.containerPadding + sizePreset.itemPaddingX,
+            paddingRight: sizePreset.containerPadding + sizePreset.itemPaddingX,
+            paddingTop: item.isSeparator ? sizePreset.itemPaddingY : 0,
+            paddingBottom: item.isSeparator ? sizePreset.itemPaddingY : 0,
+            position: 'relative' as const,
+          };
 
-            {/* 아이템 텍스트 */}
-            {!item.isSeparator && (
-              <>
-                <pixiText
-                  text={item.text}
-                  style={createTextStyle(isHovered, Boolean(item.isDisabled))}
-                  x={sizePreset.containerPadding + sizePreset.itemPaddingX}
-                  y={sizePreset.itemPaddingY}
-                  eventMode="static"
-                  cursor={item.isDisabled ? "default" : "pointer"}
-                  onPointerEnter={() => setHoveredIndex(index)}
-                  onPointerLeave={() => setHoveredIndex(null)}
-                  onPointerDown={() => handleItemClick(item)}
-                />
+          return (
+            <pixiContainer key={item.id} layout={itemLayout}>
+              {/* 아이템 배경 - position: absolute */}
+              <pixiGraphics
+                draw={(g) => drawItemBackground(g, item, isHovered)}
+                layout={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
+                eventMode="static"
+                cursor={item.isSeparator || item.isDisabled ? "default" : "pointer"}
+                onPointerEnter={() => !item.isSeparator && setHoveredIndex(index)}
+                onPointerLeave={() => setHoveredIndex(null)}
+                onPointerDown={() => handleItemClick(item)}
+              />
 
-                {/* 단축키 */}
-                {item.shortcut && (
+              {/* 아이템 텍스트 */}
+              {!item.isSeparator && (
+                <>
                   <pixiText
-                    text={item.shortcut}
-                    style={shortcutStyle}
-                    x={menuLayout.totalWidth - sizePreset.containerPadding - sizePreset.itemPaddingX - 40}
-                    y={sizePreset.itemPaddingY + 1}
+                    text={item.text}
+                    style={createTextStyle(isHovered, Boolean(item.isDisabled))}
+                    layout={{ isLeaf: true }}
+                    eventMode="static"
+                    cursor={item.isDisabled ? "default" : "pointer"}
+                    onPointerEnter={() => setHoveredIndex(index)}
+                    onPointerLeave={() => setHoveredIndex(null)}
+                    onPointerDown={() => handleItemClick(item)}
                   />
-                )}
-              </>
-            )}
-          </pixiContainer>
-        );
-      })}
+
+                  {/* 단축키 */}
+                  {item.shortcut && (
+                    <pixiText
+                      text={item.shortcut}
+                      style={shortcutStyle}
+                      layout={{ isLeaf: true }}
+                    />
+                  )}
+                </>
+              )}
+            </pixiContainer>
+          );
+        })}
+      </pixiContainer>
     </pixiContainer>
   );
 });

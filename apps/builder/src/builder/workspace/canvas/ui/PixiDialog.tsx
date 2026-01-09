@@ -189,25 +189,74 @@ export function PixiDialog({
     []
   );
 
-  // Button positions
+  // Button dimensions
   const btnWidth = 80;
   const btnHeight = 32;
-  const buttonY = containerHeight - buttonAreaHeight;
-  const btnY = buttonY + (buttonAreaHeight - btnHeight) / 2;
-  const cancelBtnX = containerWidth - sizePreset.padding - btnWidth * 2 - 8;
-  const confirmBtnX = containerWidth - sizePreset.padding - btnWidth;
 
   // 🚀 Phase 8: 주 컨테이너 layout (iframe CSS와 동기화)
   // CSS: .react-aria-Dialog { padding: var(--spacing-lg); }
   const dialogLayout = useMemo(() => ({
-    display: 'flex',
-    flexDirection: 'column',
-    padding: sizePreset.padding,
+    display: 'flex' as const,
+    flexDirection: 'column' as const,
+    width: totalWidth,
+    height: totalHeight,
+    position: 'relative' as const,
     // 콘텐츠 크기에 맞춤 (부모 flex에서 늘어나지 않도록)
     flexGrow: 0,
     flexShrink: 0,
-    alignSelf: 'flex-start',
+    alignSelf: 'flex-start' as const,
+  }), [totalWidth, totalHeight]);
+
+  // 🚀 Phase 12: Dialog 내부 컨테이너 레이아웃
+  const dialogInnerLayout = useMemo(() => ({
+    display: 'flex' as const,
+    flexDirection: 'column' as const,
+    position: 'absolute' as const,
+    top: showBackdrop ? backdropPadding : 0,
+    left: showBackdrop ? backdropPadding : 0,
+    width: containerWidth,
+    height: containerHeight,
+  }), [showBackdrop, backdropPadding, containerWidth, containerHeight]);
+
+  // 🚀 Phase 12: 타이틀 영역 레이아웃
+  const titleAreaLayout = useMemo(() => ({
+    display: 'flex' as const,
+    alignItems: 'center' as const,
+    paddingLeft: sizePreset.padding,
+    paddingRight: sizePreset.padding,
+    paddingTop: sizePreset.padding,
+    height: titleHeight,
+  }), [sizePreset.padding, titleHeight]);
+
+  // 🚀 Phase 12: 콘텐츠 영역 레이아웃
+  const contentAreaLayout = useMemo(() => ({
+    display: 'flex' as const,
+    paddingLeft: sizePreset.padding,
+    paddingRight: sizePreset.padding,
+    paddingTop: sizePreset.padding * 0.5,
+    flexGrow: 1,
   }), [sizePreset.padding]);
+
+  // 🚀 Phase 12: 버튼 영역 레이아웃
+  const buttonAreaLayout = useMemo(() => ({
+    display: 'flex' as const,
+    flexDirection: 'row' as const,
+    justifyContent: 'flex-end' as const,
+    alignItems: 'center' as const,
+    gap: 8,
+    paddingLeft: sizePreset.padding,
+    paddingRight: sizePreset.padding,
+    height: buttonAreaHeight,
+  }), [sizePreset.padding, buttonAreaHeight]);
+
+  // 🚀 Phase 12: 버튼 레이아웃
+  const buttonLayout = useMemo(() => ({
+    display: 'flex' as const,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+    width: btnWidth,
+    height: btnHeight,
+  }), [btnWidth, btnHeight]);
 
   return (
     <pixiContainer
@@ -218,47 +267,60 @@ export function PixiDialog({
       onPointerLeave={() => setIsHovered(false)}
       onPointerTap={() => onClick?.(element.id)}
     >
-      {/* Backdrop (optional visual representation) */}
-      {showBackdrop && <pixiGraphics draw={drawBackdrop} />}
+      {/* Backdrop (optional visual representation) - position: absolute */}
+      {showBackdrop && (
+        <pixiGraphics
+          draw={drawBackdrop}
+          layout={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
+        />
+      )}
 
-      {/* Dialog container */}
-      <pixiContainer x={showBackdrop ? backdropPadding : 0} y={showBackdrop ? backdropPadding : 0}>
-        {/* Dialog background */}
-        <pixiGraphics draw={drawDialog} />
-
-        {/* Title */}
-        <pixiText
-          text={title}
-          style={titleStyle}
-          x={sizePreset.padding}
-          y={sizePreset.padding}
+      {/* Dialog container - position: absolute */}
+      <pixiContainer layout={dialogInnerLayout}>
+        {/* Dialog background - position: absolute */}
+        <pixiGraphics
+          draw={drawDialog}
+          layout={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
         />
 
-        {/* Content */}
-        <pixiText
-          text={content}
-          style={contentStyle}
-          x={sizePreset.padding}
-          y={titleHeight + sizePreset.padding * 1.5}
-        />
+        {/* Title area */}
+        <pixiContainer layout={titleAreaLayout}>
+          <pixiText
+            text={title}
+            style={titleStyle}
+            layout={{ isLeaf: true }}
+          />
+        </pixiContainer>
 
-        {/* Cancel button text */}
-        <pixiText
-          text="Cancel"
-          style={cancelBtnStyle}
-          x={cancelBtnX + btnWidth / 2}
-          y={btnY + btnHeight / 2}
-          anchor={0.5}
-        />
+        {/* Content area */}
+        <pixiContainer layout={contentAreaLayout}>
+          <pixiText
+            text={content}
+            style={contentStyle}
+            layout={{ isLeaf: true }}
+          />
+        </pixiContainer>
 
-        {/* Confirm button text */}
-        <pixiText
-          text="Confirm"
-          style={confirmBtnStyle}
-          x={confirmBtnX + btnWidth / 2}
-          y={btnY + btnHeight / 2}
-          anchor={0.5}
-        />
+        {/* Button area */}
+        <pixiContainer layout={buttonAreaLayout}>
+          {/* Cancel button */}
+          <pixiContainer layout={buttonLayout}>
+            <pixiText
+              text="Cancel"
+              style={cancelBtnStyle}
+              layout={{ isLeaf: true }}
+            />
+          </pixiContainer>
+
+          {/* Confirm button */}
+          <pixiContainer layout={buttonLayout}>
+            <pixiText
+              text="Confirm"
+              style={confirmBtnStyle}
+              layout={{ isLeaf: true }}
+            />
+          </pixiContainer>
+        </pixiContainer>
       </pixiContainer>
     </pixiContainer>
   );

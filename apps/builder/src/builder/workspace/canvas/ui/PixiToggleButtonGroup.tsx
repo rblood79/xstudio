@@ -117,8 +117,6 @@ interface VariantColors {
 interface ToggleButtonItemProps {
   item: ToggleButtonItem;
   isItemSelected: boolean;
-  x: number;
-  y: number;
   width: number;
   height: number;
   sizePreset: ReturnType<typeof getToggleButtonSizePreset>;
@@ -130,8 +128,6 @@ interface ToggleButtonItemProps {
 const ToggleButtonItemComponent = memo(function ToggleButtonItemComponent({
   item,
   isItemSelected,
-  x,
-  y,
   width,
   height,
   sizePreset,
@@ -186,19 +182,25 @@ const ToggleButtonItemComponent = memo(function ToggleButtonItemComponent({
     }
   }, [item.value, item.isDisabled, onPress]);
 
-  // 텍스트 중앙 정렬
-  const textMetrics = CanvasTextMetrics.measureText(item.label, textStyle);
-  const textX = (width - textMetrics.width) / 2;
-  const textY = (height - textMetrics.height) / 2;
-
   const cursorStyle = item.isDisabled ? "not-allowed" : "pointer";
   const alpha = item.isDisabled ? 0.5 : 1;
 
+  // 🚀 Phase 12: 버튼 레이아웃
+  const buttonLayout = useMemo(() => ({
+    display: 'flex' as const,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+    width,
+    height,
+    position: 'relative' as const,
+  }), [width, height]);
+
   return (
-    <pixiContainer x={x} y={y} alpha={alpha}>
-      {/* 버튼 배경 */}
+    <pixiContainer layout={buttonLayout} alpha={alpha}>
+      {/* 버튼 배경 - position: absolute */}
       <pixiGraphics
         draw={drawButton}
+        layout={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
         eventMode="static"
         cursor={cursorStyle}
         onPointerDown={handlePointerDown}
@@ -208,8 +210,7 @@ const ToggleButtonItemComponent = memo(function ToggleButtonItemComponent({
       <pixiText
         text={item.label}
         style={textStyle}
-        x={textX}
-        y={textY}
+        layout={{ isLeaf: true }}
         eventMode="static"
         cursor={cursorStyle}
         onPointerDown={handlePointerDown}
@@ -408,29 +409,20 @@ export const PixiToggleButtonGroup = memo(function PixiToggleButtonGroup({
     [element.id, onClick, onChange, selectionMode, selectedKeys]
   );
 
-  // 아이템 위치 계산 (reduce로 누적 계산하여 변수 재할당 방지)
-  const itemPositions = useMemo(() => {
-    return buttonSizes.reduce<number[]>((positions, size, index) => {
-      if (index === 0) {
-        return [0];
-      }
-      const prevPos = positions[index - 1];
-      const prevSize = buttonSizes[index - 1];
-      const newPos = prevPos + (isHorizontal ? prevSize.width : prevSize.height) + gap;
-      return [...positions, newPos];
-    }, []);
-  }, [buttonSizes, isHorizontal, gap]);
-
   // 🚀 Phase 8: 주 컨테이너 layout (iframe CSS와 동기화)
   // CSS: .react-aria-ToggleButtonGroup { display: flex }
   const groupLayout = useMemo(() => ({
-    display: 'flex',
-    flexDirection: isHorizontal ? 'row' : 'column',
+    display: 'flex' as const,
+    flexDirection: (isHorizontal ? 'row' : 'column') as 'row' | 'column',
+    gap,
+    width: groupWidth,
+    height: groupHeight,
+    position: 'relative' as const,
     // 콘텐츠 크기에 맞춤 (부모 flex에서 늘어나지 않도록)
     flexGrow: 0,
     flexShrink: 0,
-    alignSelf: 'flex-start',
-  }), [isHorizontal]);
+    alignSelf: 'flex-start' as const,
+  }), [isHorizontal, gap, groupWidth, groupHeight]);
 
   return (
     <pixiContainer
@@ -438,22 +430,22 @@ export const PixiToggleButtonGroup = memo(function PixiToggleButtonGroup({
       eventMode="static"
       onPointerDown={handleGroupClick}
     >
-      {/* 그룹 배경 */}
-      <pixiGraphics draw={drawGroupBackground} eventMode="none" />
+      {/* 그룹 배경 - position: absolute */}
+      <pixiGraphics
+        draw={drawGroupBackground}
+        layout={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
+        eventMode="none"
+      />
 
       {/* 토글 버튼 아이템들 */}
       {items.map((item, index) => {
         const isItemSelected = selectedKeys.includes(item.value);
-        const itemX = isHorizontal ? itemPositions[index] : 0;
-        const itemY = isHorizontal ? 0 : itemPositions[index];
 
         return (
           <ToggleButtonItemComponent
             key={item.id}
             item={item}
             isItemSelected={isItemSelected}
-            x={itemX}
-            y={itemY}
             width={buttonSizes[index].width}
             height={buttonSizes[index].height}
             sizePreset={sizePreset}

@@ -200,42 +200,74 @@ export function PixiTextField({
     return { x: 0, y: labelHeight + sizePreset.height + sizePreset.gap };
   }, [isRow, labelWidth, labelHeight, sizePreset]);
 
+  // 🚀 Phase 12: 루트 레이아웃
+  const rootLayout = useMemo(() => ({
+    display: 'flex' as const,
+    flexDirection: (isRow ? 'row' : 'column') as 'row' | 'column',
+    alignItems: isRow ? ('center' as const) : ('flex-start' as const),
+    gap: sizePreset.gap,
+    position: 'relative' as const,
+  }), [isRow, sizePreset.gap]);
+
+  // 🚀 Phase 12: Input 컨테이너 레이아웃
+  const inputContainerLayout = useMemo(() => ({
+    display: 'flex' as const,
+    flexDirection: 'column' as const,
+    gap: sizePreset.gap,
+  }), [sizePreset.gap]);
+
+  // 🚀 Phase 12: Input 필드 레이아웃
+  const inputFieldLayout = useMemo(() => ({
+    display: 'flex' as const,
+    alignItems: 'center' as const,
+    width: fieldWidth,
+    height: sizePreset.height,
+    paddingLeft: sizePreset.paddingX,
+    paddingRight: sizePreset.paddingX,
+    position: 'relative' as const,
+  }), [fieldWidth, sizePreset.height, sizePreset.paddingX]);
+
   return (
-    <pixiContainer>
+    <pixiContainer layout={rootLayout}>
       {/* Label */}
       {label && (
         <pixiText
           text={label}
           style={labelStyle}
-          x={labelPos.x}
-          y={labelPos.y}
+          layout={{ isLeaf: true }}
         />
       )}
 
-      {/* Input field */}
-      <pixiContainer x={inputPos.x} y={inputPos.y}>
-        <pixiGraphics draw={drawField} />
-        <pixiText
-          text={displayText}
-          style={inputStyle}
-          x={sizePreset.paddingX}
-          y={(sizePreset.height - sizePreset.fontSize) / 2}
-        />
+      {/* Input container */}
+      <pixiContainer layout={inputContainerLayout}>
+        {/* Input field */}
+        <pixiContainer layout={inputFieldLayout}>
+          {/* Field background - position: absolute */}
+          <pixiGraphics
+            draw={drawField}
+            layout={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
+          />
+          <pixiText
+            text={displayText}
+            style={inputStyle}
+            layout={{ isLeaf: true }}
+          />
+        </pixiContainer>
+
+        {/* Description / Error message */}
+        {descriptionText && (
+          <pixiText
+            text={descriptionText}
+            style={descriptionStyle}
+            layout={{ isLeaf: true }}
+          />
+        )}
       </pixiContainer>
 
-      {/* Description / Error message */}
-      {descriptionText && (
-        <pixiText
-          text={descriptionText}
-          style={descriptionStyle}
-          x={descriptionPos.x}
-          y={descriptionPos.y}
-        />
-      )}
-
-      {/* 🚀 Phase 19: 투명 히트 영역 (클릭 감지용) - 마지막에 렌더링하여 최상단 배치 */}
+      {/* 🚀 Phase 19: 투명 히트 영역 (클릭 감지용) - position: absolute */}
       <pixiGraphics
         draw={drawHitArea}
+        layout={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
         eventMode="static"
         cursor="pointer"
         onPointerDown={handleClick}

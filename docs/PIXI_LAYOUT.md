@@ -1005,31 +1005,55 @@ PixiSelect, PixiScrollBox, PixiList, PixiMaskedFrame
 />
 ```
 
-### 수정 완료 파일
+### 수정 완료 파일 (2026-01-09 업데이트)
+
+**Phase 12 진행 상황: 48개 → flexbox 변환 가능 컴포넌트 대부분 완료**
 
 | 파일 | 수정 내용 |
 |------|----------|
 | `PixiRadio.tsx` | pixiText `isLeaf`, hitArea `position: absolute` |
 | `PixiCheckboxGroup.tsx` | pixiText `isLeaf`, hitArea `position: absolute` |
 | `PixiBreadcrumbs.tsx` | pixiText `isLeaf` |
-| `PixiTabs.tsx` | 탭 텍스트 `isLeaf`, hover 배경 `position: absolute` |
+| `PixiTabs.tsx` | 인디케이터 `position: absolute`, hover 배경 제거 |
+| `PixiDisclosure.tsx` | 전체 레이아웃 재설계, flexbox + padding 사용 |
+| `PixiDialog.tsx` | 다이얼로그 내부 구조 flexbox로 변환 |
+| `PixiMenu.tsx` | 메뉴 아이템 flexbox 배치 |
+| `PixiListBox.tsx` | 리스트 아이템 flexbox 배치, x/y prop 제거 |
+| `PixiToggleButtonGroup.tsx` | 버튼 그룹 flexbox 배치 |
+| `PixiMeter.tsx` | 라벨/바 flexbox 배치 |
+| `PixiSwitch.tsx` | 트랙+썸+라벨 flexbox 배치 |
+| `PixiTextField.tsx` | 라벨+인풋+설명 flexbox 배치 |
+| `PixiSearchField.tsx` | 검색창 flexbox 배치 |
+| `PixiNumberField.tsx` | +/- 버튼+인풋 flexbox 배치 |
+| `PixiTextArea.tsx` | 라벨+텍스트에어리어+설명 flexbox 배치 |
+| `PixiColorField.tsx` | 스와치+값 flexbox 배치 |
+| `PixiToast.tsx` | 아이콘+메시지+닫기버튼 flexbox 배치 |
+| `PixiComboBox.tsx` | 입력+드롭다운+아이템 flexbox 배치 |
+| `PixiTable.tsx` | 헤더/행/셀 flexbox row 배치 |
+| `PixiColorPicker.tsx` | 메인 구조 flexbox (thumbs는 동적 위치) |
+| `PixiDateRangePicker.tsx` | 필드 영역 flexbox (캘린더는 그리드) |
+| `PixiDatePicker.tsx` | 필드 영역 flexbox (캘린더는 그리드) |
+| `PixiSlot.tsx` | 중앙 정렬 콘텐츠 flexbox |
+| `PixiFileTrigger.tsx` | 아이콘+라벨 flexbox row 배치 |
 
-### 수정 필요 파일 (40+ 파일)
+### 수동 좌표가 필수인 컴포넌트 (21개 파일)
 
-다음 UI 컴포넌트들에서 수동 좌표 사용 중:
+다음 컴포넌트들은 **동적 위치 계산**이나 **그리드 레이아웃**으로 인해 수동 좌표가 필수:
 
 ```
-PixiDialog, PixiDropZone, PixiGridList, PixiCheckbox,
-PixiSearchField, PixiColorField, PixiDisclosure, PixiDateRangePicker,
-PixiComboBox, PixiNumberField, PixiTextArea, PixiSlot,
-PixiToast, PixiTree, PixiTextField, PixiColorSlider,
-PixiColorWheel, PixiTagGroup, PixiDatePicker, PixiBadge,
-PixiPagination, PixiColorSwatchPicker, PixiCalendar, PixiTable,
-PixiMenu, PixiToggleButton, PixiDateField, PixiForm,
-PixiInput, PixiTimeField, PixiDisclosureGroup, PixiMeter,
-PixiTooltip, PixiListBox, PixiSwitch, PixiPopover,
-PixiColorPicker, PixiToggleButtonGroup, PixiGroup, PixiFileTrigger,
-PixiColorArea
+# 그리드/플로우 레이아웃 (자동 줄바꿈, 날짜 셀 등)
+PixiCalendar, PixiDatePicker, PixiDateRangePicker, PixiTagGroup,
+PixiColorSwatchPicker, PixiGridList, PixiTree, PixiDisclosureGroup,
+PixiPagination
+
+# 동적 값 기반 위치 (슬라이더 thumbs, 색상 선택기 등)
+PixiColorPicker, PixiColorWheel, PixiColorArea, PixiColorSlider
+
+# 세그먼트 기반 (날짜/시간 입력)
+PixiDateField, PixiTimeField
+
+# 특수 레이아웃 (중앙 정렬, 라벨 배지 등)
+PixiDropZone, PixiForm, PixiGroup, PixiPopover, PixiTooltip, PixiInput
 ```
 
 ### 검증 방법

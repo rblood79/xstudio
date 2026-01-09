@@ -147,8 +147,28 @@ export function PixiTextArea({
   const displayText = value || placeholder;
   const descriptionText = isInvalid && errorMessage ? errorMessage : description;
 
+  // 🚀 Phase 12: 루트 레이아웃
+  const rootLayout = useMemo(() => ({
+    display: 'flex' as const,
+    flexDirection: 'column' as const,
+    gap: sizePreset.gap,
+  }), [sizePreset.gap]);
+
+  // 🚀 Phase 12: 필드 레이아웃
+  const fieldLayout = useMemo(() => ({
+    display: 'flex' as const,
+    width: fieldWidth,
+    height: fieldHeight,
+    paddingLeft: sizePreset.paddingX,
+    paddingRight: sizePreset.paddingX,
+    paddingTop: sizePreset.padding,
+    paddingBottom: sizePreset.padding,
+    position: 'relative' as const,
+  }), [fieldWidth, fieldHeight, sizePreset.paddingX, sizePreset.padding]);
+
   return (
     <pixiContainer
+      layout={rootLayout}
       eventMode="static"
       cursor="pointer"
       onPointerTap={() => onClick?.(element.id)}
@@ -158,19 +178,20 @@ export function PixiTextArea({
         <pixiText
           text={label}
           style={labelStyle}
-          x={0}
-          y={0}
+          layout={{ isLeaf: true }}
         />
       )}
 
       {/* TextArea field */}
-      <pixiContainer y={labelHeight}>
-        <pixiGraphics draw={drawField} />
+      <pixiContainer layout={fieldLayout}>
+        <pixiGraphics
+          draw={drawField}
+          layout={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
+        />
         <pixiText
           text={displayText}
           style={inputStyle}
-          x={sizePreset.paddingX}
-          y={sizePreset.padding}
+          layout={{ isLeaf: true }}
         />
       </pixiContainer>
 
@@ -179,8 +200,7 @@ export function PixiTextArea({
         <pixiText
           text={descriptionText}
           style={descriptionStyle}
-          x={0}
-          y={labelHeight + fieldHeight + sizePreset.gap}
+          layout={{ isLeaf: true }}
         />
       )}
     </pixiContainer>
