@@ -146,7 +146,7 @@ export function Workspace({
   const centerCanvasRef = useRef<() => boolean>(() => false);
 
   // 🚀 Fit 모드 추적: zoom이 fit 상태일 때 리사이즈 시 center 유지
-  const isFitModeRef = useRef(true); // 초기 로드 시 fit 모드로 시작
+  const isFitModeRef = useRef(false); // 초기 로드 시 100% 모드로 시작
 
   // 🚀 패널 토글 감지: 패널 리사이즈 시 centerCanvas 스킵
   const isPanelResizingRef = useRef(false);
@@ -168,10 +168,26 @@ export function Workspace({
     return true;
   }, [canvasSize.width, canvasSize.height, setZoom, setPanOffset]);
 
+  // 100% 줌으로 캔버스 중앙 배치 (초기 로드용)
+  const centerCanvasAt100 = useCallback(() => {
+    const containerSize = containerSizeRef.current;
+    if (containerSize.width <= 0 || containerSize.height <= 0) return false;
+
+    const zoom100 = 1; // 100%
+    setZoom(zoom100);
+    setPanOffset({
+      x: (containerSize.width - canvasSize.width * zoom100) / 2,
+      y: (containerSize.height - canvasSize.height * zoom100) / 2,
+    });
+    return true;
+  }, [canvasSize.width, canvasSize.height, setZoom, setPanOffset]);
+
   // ref 동기화 (useEffect에서 stale closure 방지)
+  const centerCanvasAt100Ref = useRef<() => boolean>(() => false);
   useEffect(() => {
     centerCanvasRef.current = centerCanvas;
-  }, [centerCanvas]);
+    centerCanvasAt100Ref.current = centerCanvasAt100;
+  }, [centerCanvas, centerCanvasAt100]);
 
   // 🚀 패널 토글 감지: panelLayout 변경 시 플래그 설정
   useEffect(() => {
@@ -260,8 +276,10 @@ export function Workspace({
           setContainerSizeForPercent({ width, height });
         }
 
-        // 🚀 초기 로드 또는 fit 모드일 때 센터링 수행
-        if (isInitialLoad || isFitModeRef.current) {
+        // 🚀 초기 로드 시 100%로, fit 모드일 때는 화면에 맞추기
+        if (isInitialLoad) {
+          centerCanvasAt100Ref.current();
+        } else if (isFitModeRef.current) {
           centerCanvasRef.current();
         }
       });
@@ -278,8 +296,8 @@ export function Workspace({
       if (usesPercentBreakpointRef.current) {
         setContainerSizeForPercent({ width: initialWidth, height: initialHeight });
       }
-      // 🚀 초기 센터링 수행 (ref 사용 - 의존성 불필요)
-      centerCanvasRef.current();
+      // 🚀 초기 100% 센터링 수행 (ref 사용 - 의존성 불필요)
+      centerCanvasAt100Ref.current();
     }
 
     return () => {
