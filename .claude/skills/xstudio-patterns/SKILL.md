@@ -79,9 +79,9 @@ XStudio Builder 애플리케이션의 코드 패턴, 규칙 및 모범 사례를
 
 | 영역 | 기술 |
 |------|------|
-| UI Framework | React 18, React-Aria Components |
+| UI Framework | React 19, React-Aria Components |
 | State | Zustand, TanStack Query |
-| Styling | Tailwind CSS, tailwind-variants |
+| Styling | Tailwind CSS v4, tailwind-variants |
 | Canvas | PixiJS 8, @pixi/layout, @pixi/react |
 | Backend | Supabase (Auth, Database, RLS) |
 | Build | Vite, TypeScript 5 |
