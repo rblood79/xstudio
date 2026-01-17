@@ -6,7 +6,7 @@ tags: [style, css, reuse]
 ---
 
 새 CSS 파일 생성을 지양하고 기존 CSS 클래스를 재사용합니다.
-`src/builder/components/components.css` 확인 후 기존 클래스 활용.
+`apps/builder/src/builder/components/styles/index.css` 확인 후 기존 클래스 활용.
 
 ## Incorrect
 
