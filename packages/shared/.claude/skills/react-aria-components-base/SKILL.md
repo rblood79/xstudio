@@ -7,8 +7,7 @@ TanStack Table/Virtual, Lucide 아이콘, 국제화 라이브러리와의 조합
 ## Negative Rules (절대 하지 말아야 할 것)
 
 ### 스타일/CSS
-- .tsx 파일에서 inline Tailwind 클래스 사용 금지 (semantic classes + CSS @apply 필수)
-- Tailwind 클래스 문자열 직접 합치지 말 것 (tv() from tailwind-variants 필수)
+- .tsx 파일에서 inline Tailwind 클래스 사용 금지 (semantic classes + CSS 변수 기반 표준 CSS 사용)
 - 새 CSS 파일 생성 지양 - 기존 CSS 패턴 재사용 우선
 
 ### 타입/코드 품질
@@ -30,8 +29,9 @@ TanStack Table/Virtual, Lucide 아이콘, 국제화 라이브러리와의 조합
 ## Positive Rules (항상 해야 할 것)
 
 ### 스타일/CSS
-- 클래스명은 tv() (tailwind-variants) 사용, semantic class names만 생성 (예: primary, outline, sm)
 - CSS 클래스명은 `react-aria-*` prefix 사용 (예: react-aria-Button, react-aria-ComboBox)
+- 스타일 변형은 `data-variant`, `data-size` 등 data 속성으로 제어
+- CSS 파일은 표준 CSS 속성과 CSS 변수 사용 (예: `var(--primary)`, `var(--spacing-md)`)
 - 기존 CSS 클래스 재사용 (combobox-container, control-label 등)
 - Runtime 커스터마이징은 props.className으로 허용
 
@@ -51,6 +51,6 @@ TanStack Table/Virtual, Lucide 아이콘, 국제화 라이브러리와의 조합
 - 긴 데이터 목록은 TanStack React-Virtual 필수 적용
 
 ### 테스트/품질
-- 새 컴포넌트는 .tsx + .stories.tsx + .test.tsx 함께 제공
+- 새 컴포넌트는 구현(.tsx)과 함께 스토리북 스토리 및 테스트 코드를 작성할 것 (파일 패턴은 팀 컨벤션에 따름)
 - 모든 컴포넌트 props에 Zod 스키마 검증 추가
 - 테스트 코드에는 React-Aria의 키보드/포커스 시뮬레이션 포함
