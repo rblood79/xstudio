@@ -29,8 +29,8 @@ tags: [style, css, reuse]
 
 ```tsx
 // ✅ 기존 클래스 재사용
-// 먼저 components.css 확인
-import './components.css';
+// 먼저 styles/index.css 확인
+import './styles/index.css';
 
 <div className="combobox-container">
   <label className="control-label">Label</label>
@@ -39,7 +39,7 @@ import './components.css';
 ```
 
 ```css
-/* components.css - 기존 클래스 활용 */
+/* styles/index.css - 기존 클래스 활용 */
 .combobox-container { /* 이미 정의됨 */ }
 .control-label { /* 이미 정의됨 */ }
 
