@@ -1,0 +1,34 @@
+---
+alwaysApply: true
+---
+
+# PIXI / Canvas Rules
+[globs]: ["apps/builder/src/builder/workspace/canvas/**"]
+
+## @pixi/layout Import (CRITICAL)
+- **Always import first**: `import '@pixi/layout';`
+- Must come before any @pixi/react imports
+
+## No x/y Props (CRITICAL)
+- **Never use x/y props** on Container/Sprite
+- Use `style` prop for positioning
+
+```tsx
+// ❌ Wrong
+<Container x={100} y={50} />
+
+// ✅ Correct
+<Container style={{ marginLeft: 100, marginTop: 50 }} />
+```
+
+## Text Elements
+- **Always set isLeaf**: `<Text text="Hello" isLeaf />`
+- Text cannot have children
+
+## Hit Area
+- Use `position: 'absolute'` for interactive overlays
+- Set explicit width/height for hit detection
+
+## Flex + Height
+- Avoid `flex` + percentage `height` combination
+- Use `flex: 1` instead of `height: '50%'`

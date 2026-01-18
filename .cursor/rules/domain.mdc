@@ -1,0 +1,34 @@
+---
+alwaysApply: true
+---
+
+# Domain Rules (Business Logic)
+[globs]: ["apps/builder/src/builder/**"]
+
+## Element Hierarchy
+- Page → Body → Frame/Container → Component → Leaf (Text, Image)
+- `page_id` and `layout_id` are mutually exclusive
+- Use `findBodyByContext()` for parent resolution
+
+## O(1) Lookup (CRITICAL)
+- **Always use Maps**: `elementsMap.get(id)`, not `elements.find()`
+- Use `childrenMap` for parent→children queries
+- Use `pageIndex` for page-scoped queries
+- Rebuild indexes after mutations: `get()._rebuildIndexes()`
+
+## History Integration (CRITICAL)
+- **Record BEFORE mutation**: `historyManager.addEntry()` or `addDiffEntry()`
+- Use `structuredClone()` for history data
+- Diff-based entries save 80% memory
+
+## Async Pipeline Order
+1. Memory Update (즉시) → UI 반응
+2. Index Rebuild (즉시) → 검색 가능
+3. History Record (즉시) → Undo 가능
+4. IndexedDB Persist (백그라운드)
+5. Preview Sync (백그라운드)
+
+## Delta Messaging
+- Send only changed elements, not full tree
+- Use `deltaMessenger.sendElementUpdated(id, propsChanges)`
+- Full sync only on page switch
