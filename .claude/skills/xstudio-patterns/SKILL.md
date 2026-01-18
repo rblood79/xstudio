@@ -13,6 +13,19 @@ XStudio Builder 애플리케이션의 코드 패턴, 규칙 및 모범 사례를
 
 ### CRITICAL (즉시 적용 필수)
 
+#### Domain (domain-*) - 비즈니스 로직
+- **[domain-element-hierarchy](rules/domain-element-hierarchy.md)** - Element 계층 구조 규칙
+- **[domain-o1-lookup](rules/domain-o1-lookup.md)** - O(1) 인덱스 기반 검색
+- **[domain-history-integration](rules/domain-history-integration.md)** - 히스토리 기록 필수
+- **[domain-async-pipeline](rules/domain-async-pipeline.md)** - 비동기 파이프라인 순서
+- **[domain-layout-resolution](rules/domain-layout-resolution.md)** - Page/Layout 합성 규칙
+- **[domain-delta-messaging](rules/domain-delta-messaging.md)** - Delta 메시징 패턴
+- **[domain-component-lifecycle](rules/domain-component-lifecycle.md)** - 컴포넌트 생명주기
+
+#### Validation (validation-*) - 입력 검증/에러 처리
+- **[validation-input-boundary](rules/validation-input-boundary.md)** - 경계 입력 검증 (Zod)
+- **[validation-error-boundary](rules/validation-error-boundary.md)** - Error Boundary 필수
+
 #### Styling (style-*)
 - **[style-no-inline-tailwind](rules/style-no-inline-tailwind.md)** - 인라인 Tailwind 클래스 금지
 - **[style-tv-variants](rules/style-tv-variants.md)** - tv() 사용 필수
