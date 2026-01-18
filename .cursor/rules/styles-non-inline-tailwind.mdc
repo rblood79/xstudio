@@ -5,9 +5,10 @@ alwaysApply: true
 # Styles: Non-Inline TailwindCSS
 [globs]: ["**/*.{tsx,css}"]
 - **NEVER use inline Tailwind** in .tsx files
-- Use semantic classes from tv(); apply utilities in CSS via @apply
+- Use semantic classes from tv() (tailwind-variants)
+- **No @apply** (Tailwind v4 금지); use @layer + CSS variables instead
 - Runtime customization via props.className (from Property Editor) is allowed
 - **React Aria CSS naming**: Always use `react-aria-*` prefix (e.g., `react-aria-Button`)
-- Check existing patterns in `src/builder/components/` before creating new CSS
+- Check existing patterns in `apps/builder/src/builder/components/styles/` before creating new CSS
 - Reuse existing classes (e.g., `combobox-container`, `control-label`)
-- Only add variant classes if needed (e.g., `react-aria-UnitComboBox`)
+- Use CSS tokens: `--builder-*` for Builder UI, `--action-*` for Preview

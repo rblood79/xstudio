@@ -1,0 +1,35 @@
+---
+alwaysApply: true
+---
+
+# Validation Rules
+[globs]: ["apps/builder/src/**"]
+
+## Input Boundary Validation (CRITICAL)
+- Validate ALL external inputs at system boundaries
+- Use Zod schemas for PostMessage, API responses, URL params
+- Never trust unvalidated data
+
+```typescript
+// PostMessage validation
+const result = messageSchema.safeParse(event.data);
+if (!result.success) return;
+```
+
+## Error Boundary (CRITICAL)
+- Wrap major UI sections with ScopedErrorBoundary
+- Provide recovery UI (retry button)
+- Log errors for debugging
+
+```tsx
+<ScopedErrorBoundary fallback={<PanelError onRetry={reload} />}>
+  <InspectorPanel />
+</ScopedErrorBoundary>
+```
+
+## Boundaries to Validate
+1. PostMessage (Preview ↔ Builder)
+2. API responses (Supabase, External)
+3. URL parameters (routing)
+4. User input (forms, editors)
+5. LocalStorage / IndexedDB
