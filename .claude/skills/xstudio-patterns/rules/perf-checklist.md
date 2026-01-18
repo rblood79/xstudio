@@ -1,0 +1,122 @@
+---
+title: Performance Checklist
+impact: MEDIUM
+impactDescription: 성능 체크리스트 = 일관된 품질, 문제 사전 방지
+tags: [performance, checklist, optimization]
+---
+
+새 기능 추가 시 확인해야 할 성능 체크리스트입니다.
+
+## 렌더링 체크리스트
+
+### React 컴포넌트
+- [ ] **React.memo**: 순수 컴포넌트에 적용 검토
+- [ ] **useMemo**: 비용이 큰 계산에 적용
+- [ ] **useCallback**: 자식에 전달하는 콜백에 적용
+- [ ] **Key 안정성**: 리스트 key가 안정적인 ID 사용
+
+```typescript
+// ✅ 안정적인 key
+{elements.map(el => <Item key={el.id} />)}
+
+// ❌ 불안정한 key
+{elements.map((el, index) => <Item key={index} />)}
+```
+
+### 리스트 가상화
+- [ ] **100+ 항목**: react-window 또는 @tanstack/virtual 검토
+- [ ] **무한 스크롤**: 페이지네이션 또는 가상화 적용
+
+## 번들 체크리스트
+
+### 코드 분할
+- [ ] **라우트 분할**: 페이지별 동적 import
+- [ ] **큰 라이브러리**: lazy loading 적용
+
+```typescript
+// ✅ 동적 import
+const MonacoEditor = lazy(() => import('./MonacoEditor'));
+
+// ❌ 정적 import (번들에 포함)
+import MonacoEditor from './MonacoEditor';
+```
+
+### Import 최적화
+- [ ] **Barrel import 지양**: 직접 경로 import
+- [ ] **Tree-shaking 확인**: 사용하지 않는 export 제거
+
+## 데이터 체크리스트
+
+### Store 접근
+- [ ] **O(1) 검색**: elementsMap 사용
+- [ ] **선택적 구독**: 필요한 상태만 구독
+
+```typescript
+// ✅ 선택적 구독
+const element = useStore(state => state.elementsMap.get(id));
+
+// ❌ 전체 구독
+const { elements } = useStore();
+const element = elements.find(el => el.id === id);
+```
+
+### 네트워크
+- [ ] **캐싱**: TanStack Query staleTime 설정
+- [ ] **중복 요청 방지**: queryKey 올바르게 설정
+- [ ] **병렬 요청**: Promise.all 활용
+
+## Canvas 체크리스트
+
+### PIXI 렌더링
+- [ ] **isLeaf**: Text 요소에 설정
+- [ ] **Texture 재사용**: 동일 이미지 공유
+- [ ] **컬링**: 뷰포트 외 요소 렌더링 스킵
+
+### 애니메이션
+- [ ] **requestAnimationFrame**: setInterval 대신 사용
+- [ ] **60fps 목표**: stats.js로 모니터링
+
+## 메모리 체크리스트
+
+- [ ] **이벤트 리스너**: 정리(cleanup) 확인
+- [ ] **구독 해제**: useEffect cleanup
+- [ ] **큰 객체**: 사용 후 참조 해제
+
+```typescript
+useEffect(() => {
+  const handler = () => { /* ... */ };
+  window.addEventListener('resize', handler);
+
+  return () => window.removeEventListener('resize', handler);  // ✅ cleanup
+}, []);
+```
+
+## 성능 기준
+
+| 영역 | 목표 | 측정 방법 |
+|------|------|----------|
+| Canvas FPS | 60fps | stats.js |
+| 초기 로드 | < 3초 | Lighthouse |
+| 번들 (초기) | < 500KB | vite-bundle-analyzer |
+| 인터랙션 | < 100ms | Chrome DevTools |
+| 메모리 | 안정적 | Performance Monitor |
+
+## 측정 도구
+
+```bash
+# 번들 분석
+pnpm run build --mode analyze
+
+# Lighthouse 실행
+pnpm lighthouse
+
+# 프로파일링
+Chrome DevTools → Performance 탭
+```
+
+## 참조
+
+- `perf-barrel-imports.md` - Barrel import 규칙
+- `perf-promise-all.md` - 병렬 처리 규칙
+- `perf-dynamic-imports.md` - 동적 import 규칙
+- `perf-map-set-lookups.md` - O(1) 검색 규칙
