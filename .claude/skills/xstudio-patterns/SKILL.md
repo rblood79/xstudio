@@ -137,10 +137,10 @@ tags: [tag1, tag2]
 ## 아키텍처 결정 기록 (ADR)
 
 주요 기술 결정의 배경과 근거:
-- **[ADR-001](../../docs/adr/001-state-management.md)** - Zustand 선택 이유
-- **[ADR-002](../../docs/adr/002-styling-approach.md)** - ITCSS + tv() 선택 이유
-- **[ADR-003](../../docs/adr/003-canvas-rendering.md)** - PixiJS 선택 이유
-- **[ADR-004](../../docs/adr/004-preview-isolation.md)** - iframe 격리 이유
+- **[ADR-001](../../../docs/adr/001-state-management.md)** - Zustand 선택 이유
+- **[ADR-002](../../../docs/adr/002-styling-approach.md)** - ITCSS + tv() 선택 이유
+- **[ADR-003](../../../docs/adr/003-canvas-rendering.md)** - PixiJS 선택 이유
+- **[ADR-004](../../../docs/adr/004-preview-isolation.md)** - iframe 격리 이유
 
 ## 기여
 
