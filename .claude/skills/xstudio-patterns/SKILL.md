@@ -44,6 +44,9 @@ XStudio Builder 애플리케이션의 코드 패턴, 규칙 및 모범 사례를
 
 ### HIGH (강력 권장)
 
+#### Architecture (arch-*)
+- **[arch-reference-impl](rules/arch-reference-impl.md)** - 참조 구현 모음
+
 #### Styling (style-*)
 - **[style-css-reuse](rules/style-css-reuse.md)** - CSS 클래스 재사용
 
@@ -80,6 +83,7 @@ XStudio Builder 애플리케이션의 코드 패턴, 규칙 및 모범 사례를
 ### MEDIUM (권장)
 
 #### Performance (perf-*)
+- **[perf-checklist](rules/perf-checklist.md)** - 성능 체크리스트
 - **[perf-barrel-imports](rules/perf-barrel-imports.md)** - Barrel import 지양
 - **[perf-promise-all](rules/perf-promise-all.md)** - Promise.all 병렬 처리
 - **[perf-dynamic-imports](rules/perf-dynamic-imports.md)** - 동적 import 활용
@@ -129,6 +133,14 @@ tags: [tag1, tag2]
 ## Correct
 올바른 코드 예시
 ```
+
+## 아키텍처 결정 기록 (ADR)
+
+주요 기술 결정의 배경과 근거:
+- **[ADR-001](../../docs/adr/001-state-management.md)** - Zustand 선택 이유
+- **[ADR-002](../../docs/adr/002-styling-approach.md)** - ITCSS + tv() 선택 이유
+- **[ADR-003](../../docs/adr/003-canvas-rendering.md)** - PixiJS 선택 이유
+- **[ADR-004](../../docs/adr/004-preview-isolation.md)** - iframe 격리 이유
 
 ## 기여
 
