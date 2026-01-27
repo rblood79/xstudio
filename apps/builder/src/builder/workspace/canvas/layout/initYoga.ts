@@ -21,8 +21,10 @@ let isInitialized = false;
  * 여러 번 호출해도 한 번만 초기화됩니다.
  */
 export async function initYoga(): Promise<void> {
-  // 이미 초기화됨
-  if (isInitialized && getYoga()) {
+  const existingYoga = getYoga();
+  // 이미 초기화됨 (HMR 포함)
+  if (existingYoga) {
+    isInitialized = true;
     return;
   }
 

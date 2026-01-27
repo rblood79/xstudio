@@ -13,6 +13,20 @@ import type {
 import { Skeleton } from "./Skeleton";
 import "./styles/Button.css";
 
+/**
+ * Size별 border-radius 매핑 (CSS 변수 값 기준)
+ * --radius-sm: 0.25rem = 4px
+ * --radius-md: 0.375rem = 6px
+ * --radius-lg: 0.5rem = 8px
+ */
+const SIZE_BORDER_RADIUS: Record<ComponentSize, number> = {
+  xs: 4,  // --radius-sm
+  sm: 4,  // --radius-sm
+  md: 6,  // --radius-md
+  lg: 8,  // --radius-lg
+  xl: 8,  // --radius-lg
+};
+
 export interface ButtonProps extends RACButtonProps {
   variant?: ButtonVariant;
   size?: ComponentSize;
@@ -36,9 +50,13 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       variant = "default",
       size = "sm",
       className,
+      style,
       ...restProps
     } = props;
     const { focusProps, isFocusVisible } = useFocusRing();
+
+    // Size에 따른 border-radius 인라인 스타일 적용
+    const borderRadius = SIZE_BORDER_RADIUS[size];
 
     return (
       <RACButton
@@ -54,6 +72,10 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         className={composeRenderProps(className, (cls) =>
           cls ? `react-aria-Button ${cls}` : "react-aria-Button"
         )}
+        style={composeRenderProps(style, (baseStyle) => ({
+          ...baseStyle,
+          borderRadius: baseStyle?.borderRadius ?? borderRadius,
+        }))}
       >
         {isLoading ? (
           <>

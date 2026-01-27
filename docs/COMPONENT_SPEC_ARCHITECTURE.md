@@ -1,7 +1,7 @@
 # Component Spec Architecture - 상세 설계 문서
 
 > **작성일**: 2026-01-27
-> **상태**: 설계 완료
+> **상태**: Phase 1 구현 진행 중 (Button 완료)
 > **목표**: Builder(WebGL)와 Publish(React)의 100% 시각적 일치
 
 ---
@@ -2399,9 +2399,9 @@ export const PixiButton = memo(function PixiButton({ element, onClick }: PixiBut
 
 ### 4.6 Phase 1 체크리스트
 
-- [ ] Button.spec.ts 작성
-- [ ] Button.tsx 마이그레이션
-- [ ] PixiButton.tsx 마이그레이션
+- [x] Button.spec.ts 작성 ✅
+- [x] Button.tsx 마이그레이션 ✅
+- [x] PixiButton.tsx 마이그레이션 ✅
 - [ ] Badge.spec.ts 작성 및 마이그레이션
 - [ ] Card.spec.ts 작성 및 마이그레이션
 - [ ] Link.spec.ts 작성 및 마이그레이션
@@ -2412,6 +2412,108 @@ export const PixiButton = memo(function PixiButton({ element, onClick }: PixiBut
 - [ ] Popover.spec.ts 작성 및 마이그레이션
 - [ ] Dialog.spec.ts 작성 및 마이그레이션
 - [ ] Visual Regression Test 작성
+
+### 4.7 구현 진행 내역 (2026-01-27)
+
+#### 4.7.1 packages/specs 패키지 생성
+
+Spec 아키텍처의 핵심 패키지 구조 완성:
+
+```
+packages/specs/
+├── src/
+│   ├── types/           # 타입 정의
+│   │   └── index.ts     # ComponentSpec, SizeSpec 등
+│   ├── primitives/      # 기본 토큰
+│   │   └── index.ts     # spacing, radius 등
+│   ├── renderers/       # 렌더러 유틸리티
+│   │   └── index.ts     # getSizePreset, resolveRadius 등
+│   ├── components/      # 컴포넌트 스펙
+│   │   └── Button.spec.ts
+│   └── index.ts         # 통합 export
+├── package.json
+└── tsconfig.json
+```
+
+#### 4.7.2 ButtonSpec 구현
+
+- **파일**: `packages/specs/src/components/Button.spec.ts`
+- **구현 내용**:
+  - 8개 variant 정의 (default, primary, secondary, tertiary, error, surface, outline, ghost)
+  - 5개 size 정의 (xs, sm, md, lg, xl)
+  - size별 borderRadius 매핑 (CSS 변수 기준)
+  - `getSizePreset()` 함수로 렌더러에서 통합 조회
+
+#### 4.7.3 PixiButton.tsx Feature Flag 마이그레이션
+
+- **ENABLE_BUTTON_SPEC** 플래그로 점진적 전환
+- 기존 cssVariableReader 방식과 새 Spec 방식 병행
+- `getSizePreset(ButtonSpec, size, theme)`로 통합 스타일 조회
+
+```typescript
+// Feature Flag 기반 마이그레이션
+if (ENABLE_BUTTON_SPEC) {
+  const sizePreset = getSizePreset(ButtonSpec.sizes[size], theme);
+  // Spec 기반 렌더링
+} else {
+  // 기존 cssVariableReader 방식
+}
+```
+
+#### 4.7.4 WebGL computedStyle 동기화 수정
+
+**문제**: WebGL 요소 선택 시 Style Panel의 borderRadius가 업데이트되지 않음
+
+**원인 분석**:
+- React 컴포넌트: Preview iframe에서 `window.getComputedStyle()` → postMessage로 전송
+- WebGL 컴포넌트: `createCompleteProps()`에 computedStyle 미포함
+
+**해결**:
+1. `computeCanvasElementStyle()` 함수 생성 (`elementHelpers.ts`)
+   - inline style에서 borderRadius 추출 (우선순위 1)
+   - 컴포넌트별 Spec에서 size 기반 계산 (우선순위 2)
+
+2. `scheduleHydrateSelectedProps()`에서 computedStyle 포함
+   ```typescript
+   const computedStyle = computeCanvasElementStyle(element);
+   set({ selectedElementProps: { ...createCompleteProps(element), computedStyle } });
+   ```
+
+#### 4.7.5 smoothRoundRect 구현 (WebGL 렌더링 품질 개선)
+
+**문제**: PixiJS 기본 `roundRect()`이 제한된 bezier 세그먼트로 확대 시 계단 현상 발생
+
+**해결**: `smoothRoundRect()` 함수 구현 (`graphicsUtils.ts`)
+
+```typescript
+export function smoothRoundRect(
+  g: PixiGraphics,
+  x: number, y: number,
+  width: number, height: number,
+  radius: number,
+  segments?: number
+): void
+```
+
+**특징**:
+- 반경 기반 동적 세그먼트 계산 (8~48개)
+- 저사양 기기 대응 (6~24개)
+- devicePixelRatio 고려한 품질 조정
+- 모든 border style (solid, dashed, dotted, double)에 적용
+
+**참고**: Figma는 "squircle" 방식으로 3개의 bezier 곡선으로 부드러운 곡률 전환 구현
+
+#### 4.7.6 수정된 파일 목록
+
+| 파일 | 변경 내용 |
+|------|----------|
+| `packages/specs/` | 새 패키지 생성 |
+| `packages/shared/src/components/Button.tsx` | size별 borderRadius 인라인 스타일 |
+| `packages/shared/src/components/styles/Button.css` | size별 borderRadius CSS |
+| `apps/builder/.../stores/elements.ts` | computedStyle 포함 |
+| `apps/builder/.../stores/utils/elementHelpers.ts` | computeCanvasElementStyle 추가 |
+| `apps/builder/.../canvas/ui/PixiButton.tsx` | Feature Flag 마이그레이션 |
+| `apps/builder/.../canvas/utils/graphicsUtils.ts` | smoothRoundRect 구현 |
 
 ---
 

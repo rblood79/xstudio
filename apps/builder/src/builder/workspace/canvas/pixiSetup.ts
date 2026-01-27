@@ -113,17 +113,61 @@ export function isLowEndDevice(): boolean {
  * @param isInteracting - 사용자 인터랙션 중 여부 (드래그, 줌 등)
  * @returns 최적화된 해상도
  */
-export function getDynamicResolution(isInteracting: boolean): number {
+type CanvasSize = { width: number; height: number };
+
+const MIN_RESOLUTION = 1;
+const MAX_RENDER_PIXELS_IDLE_HIGH = 16_000_000;
+const MAX_RENDER_PIXELS_IDLE_LOW = 6_000_000;
+const MAX_RENDER_PIXELS_INTERACT_HIGH = 10_000_000;
+const MAX_RENDER_PIXELS_INTERACT_LOW = 4_000_000;
+
+function clampResolutionByPixelBudget(
+  resolution: number,
+  size: CanvasSize,
+  maxPixels: number
+): number {
+  if (size.width <= 0 || size.height <= 0) {
+    return resolution;
+  }
+
+  const maxByBudget = Math.sqrt(maxPixels / (size.width * size.height));
+  return Math.min(resolution, maxByBudget);
+}
+
+export function getDynamicResolution(
+  isInteracting: boolean,
+  size?: CanvasSize
+): number {
   const devicePixelRatio = window.devicePixelRatio || 1;
   const isLowEnd = isLowEndDevice();
 
   if (isInteracting) {
     // 인터랙션 중: 해상도 낮춤 (60fps 유지)
-    return isLowEnd ? 1 : Math.min(devicePixelRatio, 1.5);
+    const baseResolution = isLowEnd ? 1 : Math.min(devicePixelRatio, 1.5);
+    if (!size) return baseResolution;
+
+    const maxPixels = isLowEnd
+      ? MAX_RENDER_PIXELS_INTERACT_LOW
+      : MAX_RENDER_PIXELS_INTERACT_HIGH;
+    return Math.max(
+      MIN_RESOLUTION,
+      clampResolutionByPixelBudget(baseResolution, size, maxPixels)
+    );
   }
 
   // 유휴 상태: 고해상도
-  return isLowEnd ? Math.min(devicePixelRatio, 1.5) : Math.min(devicePixelRatio, 2);
+  const baseResolution = isLowEnd
+    ? Math.min(devicePixelRatio, 1.5)
+    : Math.min(devicePixelRatio, 2);
+  if (!size) return baseResolution;
+
+  const maxPixels = isLowEnd
+    ? MAX_RENDER_PIXELS_IDLE_LOW
+    : MAX_RENDER_PIXELS_IDLE_HIGH;
+  return Math.max(
+    MIN_RESOLUTION,
+    clampResolutionByPixelBudget(baseResolution, size, maxPixels)
+  );
 }
 
 // 모듈 로드 시점에 전역 설정 적용

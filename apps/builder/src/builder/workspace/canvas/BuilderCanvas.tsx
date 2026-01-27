@@ -622,12 +622,14 @@ export function BuilderCanvas({
   // 🚀 Phase 5 + 6.2: 저사양 기기 감지 (모듈 레벨 캐싱으로 useMemo 불필요)
   const isLowEnd = isLowEndDevice();
 
+  const containerSize = useCanvasSyncStore((state) => state.containerSize);
+
   // 🚀 Phase 5 + 6.1: 동적 해상도 (드래그/줌/팬 중에는 낮춤)
   // dragState가 active일 때 해상도 낮춤
   const [isInteracting, setIsInteracting] = useState(false);
   const resolution = useMemo(
-    () => getDynamicResolution(isInteracting),
-    [isInteracting]
+    () => getDynamicResolution(isInteracting, containerSize),
+    [isInteracting, containerSize]
   );
 
   // 🚀 Phase 7: @pixi/layout용 Yoga 초기화
@@ -1296,7 +1298,7 @@ export function BuilderCanvas({
           // 🚀 Phase 5: 동적 해상도 (인터랙션 중 낮춤)
           resolution={resolution}
           autoDensity={true}
-          roundPixels={true}
+          roundPixels={false}
           // 🚀 Phase 5: GPU 성능 최적화
           powerPreference="high-performance"
         >

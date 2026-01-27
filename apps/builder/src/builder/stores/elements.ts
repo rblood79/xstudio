@@ -10,6 +10,7 @@ import { reorderElements } from "./utils/elementReorder";
 import {
   createCompleteProps,
   findElementById,
+  computeCanvasElementStyle,
 } from "./utils/elementHelpers";
 import { createUndoAction, createRedoAction, createGoToHistoryIndexAction } from "./history/historyActions";
 import { createRemoveElementAction } from "./utils/elementRemoval";
@@ -179,7 +180,9 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
         state.elementsMap.get(elementId) ??
         findElementById(state.elements, elementId);
       if (!element) return;
-      set({ selectedElementProps: createCompleteProps(element) });
+      // 🚀 WebGL 요소의 computedStyle 포함 (borderRadius 등)
+      const computedStyle = computeCanvasElementStyle(element);
+      set({ selectedElementProps: { ...createCompleteProps(element), computedStyle } });
       return;
     }
 
@@ -200,7 +203,9 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
       if (!element) return;
 
       longTaskMonitor.measure("interaction.select:hydrate-selected-props", () => {
-        set({ selectedElementProps: createCompleteProps(element) });
+        // 🚀 WebGL 요소의 computedStyle 포함 (borderRadius 등)
+        const computedStyle = computeCanvasElementStyle(element);
+        set({ selectedElementProps: { ...createCompleteProps(element), computedStyle } });
       });
     }, { timeout: 50 }); // 50ms 내에 실행 보장
   };

@@ -1,8 +1,21 @@
 import { Element, ComponentElementProps } from "../../../types/core/store.types";
+import { ButtonSpec, getSizePreset } from '@xstudio/specs';
 
 /**
  * Element 조회 및 속성 관리 헬퍼 함수들
  */
+
+/**
+ * Size별 border-radius 기본값 (CSS 변수 기준)
+ * --radius-sm: 4px, --radius-md: 6px, --radius-lg: 8px
+ */
+const SIZE_BORDER_RADIUS: Record<string, number> = {
+  xs: 4,  // --radius-sm
+  sm: 4,  // --radius-sm
+  md: 6,  // --radius-md
+  lg: 8,  // --radius-lg
+  xl: 8,  // --radius-lg
+};
 
 /**
  * ID로 요소를 찾는 헬퍼 함수 (배열 기반 - O(n))
@@ -65,3 +78,50 @@ export const createCompleteProps = (
   ...props,
   tag: element.tag,
 });
+
+/**
+ * WebGL 요소의 computedStyle 계산
+ *
+ * Canvas에서 선택된 요소의 computed style을 계산합니다.
+ * Preview(React)에서는 window.getComputedStyle()로 추출하지만,
+ * WebGL에서는 spec/inline style에서 직접 계산해야 합니다.
+ *
+ * @param element - 대상 Element 객체
+ * @returns computedStyle 객체 (borderRadius 등)
+ */
+export const computeCanvasElementStyle = (
+  element: Element
+): Record<string, string> => {
+  const computedStyle: Record<string, string> = {};
+  const props = element.props as Record<string, unknown> | undefined;
+  const style = props?.style as Record<string, unknown> | undefined;
+  const tag = element.tag.toLowerCase();
+
+  // 1. Inline style에서 borderRadius 추출 (최우선)
+  if (style?.borderRadius !== undefined) {
+    const value = style.borderRadius;
+    computedStyle.borderRadius = typeof value === 'number' ? `${value}px` : String(value);
+    return computedStyle;
+  }
+
+  // 2. 컴포넌트별 spec에서 borderRadius 계산
+  const size = String(props?.size || 'sm');
+
+  switch (tag) {
+    case 'button': {
+      // Button: ButtonSpec에서 size별 borderRadius 가져오기
+      const sizeSpec = ButtonSpec.sizes[size as keyof typeof ButtonSpec.sizes] || ButtonSpec.sizes[ButtonSpec.defaultSize];
+      const sizePreset = getSizePreset(sizeSpec, 'light');
+      computedStyle.borderRadius = `${sizePreset.borderRadius}px`;
+      break;
+    }
+    default: {
+      // 다른 컴포넌트: SIZE_BORDER_RADIUS 기본값 사용
+      const borderRadius = SIZE_BORDER_RADIUS[size] ?? SIZE_BORDER_RADIUS.sm;
+      computedStyle.borderRadius = `${borderRadius}px`;
+      break;
+    }
+  }
+
+  return computedStyle;
+};

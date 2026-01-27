@@ -12,6 +12,7 @@
  * @since 2025-12-11 Phase 11 B2.4
  * @updated 2025-12-14 P8: useEffect 명령형 FancyButton 생성
  * @updated 2025-12-15 P9: variant, size, isDisabled, isLoading 지원 추가
+ * @updated 2026-01-27 Component Spec 마이그레이션 (Feature Flag)
  */
 
 import { useExtend } from '@pixi/react';
@@ -32,8 +33,26 @@ import type {
   ComponentSize,
 } from "../../../../types/builder/componentVariants.types";
 import { useThemeColors } from "../hooks/useThemeColors";
-import { getVariantColors, getSizePreset, type SizePreset } from "../utils/cssVariableReader";
+import { getVariantColors as getLegacyVariantColors, getSizePreset as getLegacySizePreset, type SizePreset } from "../utils/cssVariableReader";
 import { drawBox } from "../utils";
+
+// ============================================
+// 🚀 Component Spec Feature Flag
+// ============================================
+
+/**
+ * Feature Flag: Component Spec 사용 여부
+ * - true: @xstudio/specs에서 ButtonSpec 사용
+ * - false: 기존 cssVariableReader 사용 (롤백용)
+ */
+const USE_SPEC_RENDERER = true;
+
+// Spec imports (conditionally used based on feature flag)
+import {
+  ButtonSpec,
+  getVariantColors as getSpecVariantColors,
+  getSizePreset as getSpecSizePreset,
+} from '@xstudio/specs';
 
 // ============================================
 // Constants (CSS 브라우저 기본값 기반)
@@ -132,6 +151,17 @@ function measureTextSize(text: string, style: TextStyle): { width: number; heigh
   return { width: bounds.width, height: bounds.height };
 }
 
+/** Size 프리셋 인터페이스 (Spec/Legacy 공통) */
+interface SizePresetResolved {
+  fontSize: number;
+  paddingX: number;
+  paddingY: number;
+  borderRadius: number;
+  height?: number;
+  iconSize?: number;
+  gap?: number;
+}
+
 /**
  * CSS 스타일과 variant/size에서 버튼 레이아웃 정보 추출
  *
@@ -141,20 +171,17 @@ function measureTextSize(text: string, style: TextStyle): { width: number; heigh
  * 3. 기본값 - 최후
  *
  * @param variantColors - 테마에서 동적으로 가져온 색상
+ * @param sizePreset - Spec 또는 Legacy에서 resolve된 사이즈 프리셋
  */
 function getButtonLayout(
   style: CSSStyle | undefined,
   buttonProps: ButtonElementProps,
   buttonText: string,
-  variantColors: VariantColors
+  variantColors: VariantColors,
+  sizePreset: SizePresetResolved
 ): ButtonLayoutResult {
-  // variant와 size 추출
-  const size = buttonProps.size || "sm";
   const isDisabled = Boolean(buttonProps.isDisabled);
   const isLoading = Boolean(buttonProps.isLoading);
-
-  // size 프리셋 가져오기 (CSS 변수에서 동적으로 읽어옴)
-  const sizePreset = getSizePreset(size) || DEFAULT_SIZE_PRESET;
 
   // 폰트 설정 (inline style > size preset)
   // 🚀 Phase 8: parseCSSSize 제거 - CSS 프리셋 값 사용
@@ -361,10 +388,36 @@ export const PixiButton = memo(function PixiButton({
   const themeColors = useThemeColors();
 
   // variant에 맞는 색상 가져오기
+  // 🚀 Feature Flag: Spec vs Legacy 분기
   const variantColors = useMemo(() => {
     const variant = props?.variant || "default";
-    return getVariantColors(variant, themeColors) as VariantColors;
+
+    if (USE_SPEC_RENDERER) {
+      // 🚀 Spec 기반: ButtonSpec에서 variant 정보 가져와서 색상 변환
+      const variantSpec = ButtonSpec.variants[variant] || ButtonSpec.variants[ButtonSpec.defaultVariant];
+      // TODO: 테마 감지 로직 추가 (현재는 'light' 고정)
+      return getSpecVariantColors(variantSpec, 'light');
+    } else {
+      // 기존 방식: cssVariableReader 사용
+      return getLegacyVariantColors(variant, themeColors) as VariantColors;
+    }
   }, [props?.variant, themeColors]);
+
+  // size에 맞는 프리셋 가져오기
+  // 🚀 Feature Flag: Spec vs Legacy 분기
+  const sizePreset = useMemo(() => {
+    const size = props?.size || "sm";
+
+    if (USE_SPEC_RENDERER) {
+      // 🚀 Spec 기반: ButtonSpec에서 size 정보 가져와서 프리셋 변환
+      const sizeSpec = ButtonSpec.sizes[size] || ButtonSpec.sizes[ButtonSpec.defaultSize];
+      // TODO: 테마 감지 로직 추가 (현재는 'light' 고정)
+      return getSpecSizePreset(sizeSpec, 'light');
+    } else {
+      // 기존 방식: cssVariableReader 사용
+      return getLegacySizePreset(size) || DEFAULT_SIZE_PRESET;
+    }
+  }, [props?.size]);
 
   // 버튼 텍스트 (isLoading일 때는 빈 문자열)
   const buttonText = useMemo(() => {
@@ -378,9 +431,10 @@ export const PixiButton = memo(function PixiButton({
       style,
       props || {},
       buttonText || "Button",
-      variantColors
+      variantColors,
+      sizePreset
     );
-  }, [style, props, buttonText, variantColors]);
+  }, [style, props, buttonText, variantColors, sizePreset]);
 
   // Container ref
   const containerRef = useRef<PixiContainer | null>(null);
