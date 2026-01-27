@@ -84,7 +84,7 @@
 │  │   ├── colors.ts         # 색상 토큰                       │
 │  │   ├── spacing.ts        # 간격 토큰                       │
 │  │   ├── typography.ts     # 타이포그래피 토큰               │
-│  │   └── effects.ts        # 그림자, 테두리 등               │
+│  │   └── shadows.ts        # 그림자 토큰                     │
 │  │                                                           │
 │  ├── components/           # 컴포넌트 스펙                   │
 │  │   ├── Button.spec.ts                                      │
@@ -183,7 +183,7 @@ packages/
     │   │   ├── spacing.ts           # 간격 토큰
     │   │   ├── typography.ts        # 폰트 토큰
     │   │   ├── radius.ts            # 둥근 모서리 토큰
-    │   │   └── effects.ts           # 그림자, 테두리
+    │   │   └── shadows.ts           # 그림자 토큰
     │   │
     │   ├── renderers/
     │   │   ├── index.ts
@@ -191,8 +191,7 @@ packages/
     │   │   ├── PixiRenderer.ts      # Spec → PIXI Graphics
     │   │   ├── CSSGenerator.ts      # Spec → CSS 파일
     │   │   └── utils/
-    │   │       ├── colorResolver.ts # 토큰 → 실제 색상
-    │   │       └── sizeResolver.ts  # 토큰 → 실제 크기
+    │   │       └── tokenResolver.ts # 토큰 → 실제 값 (색상, 크기, 그림자 등)
     │   │
     │   └── components/
     │       └── (Phase 1에서 추가)
@@ -224,7 +223,37 @@ export interface ComponentSpec<Props = Record<string, unknown>> {
   description?: string;
 
   /** 기본 HTML 태그 (React용) */
-  element: keyof HTMLElementTagNameMap;
+  element: keyof HTMLElementTagNameMap | 'fragment';
+
+  /**
+   * 포털/오버레이 설정 (Dialog, Tooltip, Popover 등)
+   * React에서는 createPortal, PIXI에서는 별도 레이어로 처리
+   */
+  overlay?: {
+    /** 포털 사용 여부 */
+    usePortal: boolean;
+
+    /** 포털 컨테이너 (기본: document.body) */
+    portalContainer?: string;
+
+    /** 오버레이 타입 */
+    type: 'modal' | 'popover' | 'tooltip' | 'drawer' | 'toast';
+
+    /** 백드롭 표시 여부 */
+    hasBackdrop?: boolean;
+
+    /** 백드롭 클릭 시 닫기 */
+    closeOnBackdropClick?: boolean;
+
+    /** ESC 키로 닫기 */
+    closeOnEscape?: boolean;
+
+    /** 포커스 트랩 사용 */
+    trapFocus?: boolean;
+
+    /** PIXI에서의 렌더링 레이어 (z-index 개념) */
+    pixiLayer?: 'content' | 'overlay' | 'modal' | 'toast';
+  };
 
   /** Variant 정의 */
   variants: Record<string, VariantSpec>;
@@ -247,22 +276,36 @@ export interface ComponentSpec<Props = Record<string, unknown>> {
 
 /**
  * Variant 스펙
+ *
+ * [상태 스타일 우선순위 규칙]
+ * VariantSpec의 색상은 "variant별 색상 토큰"을 정의합니다.
+ * states의 스타일은 "공통 상태 효과"(transform, shadow, opacity 등)를 정의합니다.
+ *
+ * 우선순위: VariantSpec 색상 > states 효과 (합성)
+ * - hover 시: VariantSpec.backgroundHover + states.hover 효과
+ * - pressed 시: VariantSpec.backgroundPressed + states.pressed 효과
  */
 export interface VariantSpec {
-  /** 배경색 (토큰 참조) */
+  /** 배경색 (토큰 참조) - default 상태 */
   background: TokenRef;
 
-  /** 배경색 hover */
+  /** 배경색 hover - hover 상태의 색상 (states.hover와 합성됨) */
   backgroundHover: TokenRef;
 
-  /** 배경색 pressed */
+  /** 배경색 pressed - pressed 상태의 색상 (states.pressed와 합성됨) */
   backgroundPressed: TokenRef;
 
   /** 텍스트 색상 */
   text: TokenRef;
 
+  /** 텍스트 색상 hover (optional, 미지정 시 text 사용) */
+  textHover?: TokenRef;
+
   /** 테두리 색상 (optional) */
   border?: TokenRef;
+
+  /** 테두리 색상 hover (optional) */
+  borderHover?: TokenRef;
 
   /** 배경 투명도 (optional, 0-1) */
   backgroundAlpha?: number;
@@ -295,14 +338,31 @@ export interface SizeSpec {
 }
 
 /**
+ * 컴포넌트 상태
+ * - default: 기본 상태
+ * - hover: 마우스 오버
+ * - pressed: 클릭/터치 중
+ * - focused: 포커스 (마우스/터치)
+ * - focusVisible: 키보드 포커스 (접근성)
+ * - disabled: 비활성화
+ */
+export type ComponentState = 'default' | 'hover' | 'pressed' | 'focused' | 'focusVisible' | 'disabled';
+
+/**
  * 렌더링 스펙
  */
 export interface RenderSpec<Props> {
   /**
    * 공통 도형 정의
    * React와 PIXI 모두에서 사용하는 도형 구조
+   *
+   * @param props - 컴포넌트 props
+   * @param variant - 현재 variant 스펙
+   * @param size - 현재 size 스펙
+   * @param state - 현재 상태 (default, hover, pressed, focused, focusVisible, disabled)
+   * @returns 렌더링할 도형 배열
    */
-  shapes: (props: Props, variant: VariantSpec, size: SizeSpec) => Shape[];
+  shapes: (props: Props, variant: VariantSpec, size: SizeSpec, state: ComponentState) => Shape[];
 
   /**
    * React 특화 속성
@@ -318,6 +378,66 @@ export interface RenderSpec<Props> {
 }
 ```
 
+```typescript
+// packages/specs/src/types/state.types.ts
+
+/**
+ * 상태별 스타일 정의
+ *
+ * [역할 분리]
+ * - VariantSpec: variant별 "색상" 정의 (background, text, border)
+ * - StateStyles: 상태별 "효과" 정의 (transform, shadow, opacity 등)
+ *
+ * 두 가지가 합성되어 최종 스타일이 결정됩니다.
+ */
+export interface StateStyles {
+  /** hover 상태 효과 (VariantSpec.backgroundHover와 합성) */
+  hover?: StateEffect;
+
+  /** pressed 상태 효과 (VariantSpec.backgroundPressed와 합성) */
+  pressed?: StateEffect;
+
+  /** focused 상태 효과 */
+  focused?: StateEffect;
+
+  /** disabled 상태 효과 */
+  disabled?: StateEffect;
+
+  /** focus-visible 상태 효과 (키보드 포커스) */
+  focusVisible?: StateEffect;
+}
+
+/**
+ * 상태 효과 (색상 제외 - 색상은 VariantSpec에서 정의)
+ */
+export interface StateEffect {
+  /** 변형 */
+  transform?: string;
+
+  /** 그림자 (CSS box-shadow 형식 또는 토큰 참조 {shadow.md}) */
+  boxShadow?: string | ShadowTokenRef;
+
+  /** 투명도 (0-1) */
+  opacity?: number;
+
+  /** 스케일 (1 = 100%) */
+  scale?: number;
+
+  /** 아웃라인 (focus ring) */
+  outline?: string;
+  outlineOffset?: string;
+
+  /** 커서 */
+  cursor?: string;
+
+  /** 트랜지션 (기본값 사용 시 생략) */
+  transition?: string;
+
+  /** 포인터 이벤트 */
+  pointerEvents?: 'none' | 'auto';
+}
+```
+
 #### 3.3.2 Shape 타입
 
 ```typescript
@@ -326,14 +446,30 @@ export interface RenderSpec<Props> {
 /**
  * 기본 도형 타입
  */
+/**
+ * 모든 Shape의 공통 속성
+ * Border/Shadow 타겟팅을 위한 id 포함
+ */
+export interface ShapeBase {
+  /** 고유 식별자 (Border/Shadow 적용 대상 지정용) */
+  id?: string;
+}
+
+/**
+ * Shape 유니온 타입
+ * 모든 Shape는 ShapeBase를 포함 (& 교차 타입)
+ */
 export type Shape =
-  | RectShape
-  | RoundRectShape
-  | CircleShape
-  | TextShape
-  | ShadowShape
-  | BorderShape
-  | ContainerShape;
+  | (RectShape & ShapeBase)
+  | (RoundRectShape & ShapeBase)
+  | (CircleShape & ShapeBase)
+  | (TextShape & ShapeBase)
+  | (ShadowShape & ShapeBase)
+  | (BorderShape & ShapeBase)
+  | (ContainerShape & ShapeBase)
+  | (GradientShape & ShapeBase)
+  | (ImageShape & ShapeBase)
+  | (LineShape & ShapeBase);
 
 /**
  * 사각형
@@ -385,34 +521,111 @@ export interface TextShape {
   fontSize: number;
   fontFamily: string;
   fontWeight?: string | number;
+  fontStyle?: 'normal' | 'italic';
   fill?: ColorValue;
   align?: 'left' | 'center' | 'right';
   baseline?: 'top' | 'middle' | 'bottom';
+
+  /** 줄 높이 (배수, 예: 1.5) */
+  lineHeight?: number;
+
+  /** 자간 (px) */
+  letterSpacing?: number;
+
+  /** 텍스트 장식 */
+  textDecoration?: 'none' | 'underline' | 'line-through';
+
+  /** 텍스트 변환 */
+  textTransform?: 'none' | 'uppercase' | 'lowercase' | 'capitalize';
+
+  /** 최대 너비 (말줄임 처리) */
+  maxWidth?: number;
+
+  /** 오버플로우 처리 */
+  overflow?: 'visible' | 'ellipsis' | 'clip';
+
+  /** 줄 수 제한 (multiline 텍스트) */
+  maxLines?: number;
 }
 
 /**
  * 그림자
+ *
+ * [적용 방식]
+ * - target이 없으면: shapes 배열에서 바로 앞의 도형에 적용
+ * - target이 있으면: 해당 id를 가진 도형에 적용
  */
 export interface ShadowShape {
   type: 'shadow';
+
+  /** 적용 대상 shape의 id (없으면 이전 shape에 적용) */
+  target?: string;
+
+  /** 그림자가 적용될 영역 (target 없이 직접 지정 시) */
+  x?: number;
+  y?: number;
+  width?: number | 'auto';
+  height?: number | 'auto';
+  radius?: number | [number, number, number, number];
+
+  /** 그림자 오프셋 */
   offsetX: number;
   offsetY: number;
+
+  /** 블러 반경 */
   blur: number;
+
+  /** 확산 (CSS spread) */
   spread?: number;
+
+  /** 그림자 색상 */
   color: ColorValue;
+
+  /** 투명도 */
   alpha?: number;
+
+  /** 내부 그림자 여부 */
   inset?: boolean;
 }
 
 /**
  * 테두리
+ *
+ * [적용 방식]
+ * - target이 없으면: shapes 배열에서 바로 앞의 도형 윤곽에 적용
+ * - target이 있으면: 해당 id를 가진 도형에 적용
  */
 export interface BorderShape {
   type: 'border';
-  width: number;
+
+  /** 적용 대상 shape의 id (없으면 이전 shape에 적용) */
+  target?: string;
+
+  /** 테두리가 적용될 영역 (target 없이 직접 지정 시) */
+  x?: number;
+  y?: number;
+  width?: number | 'auto';
+  height?: number | 'auto';
+
+  /** 테두리 두께 */
+  borderWidth: number;
+
+  /** 테두리 색상 */
   color: ColorValue;
+
+  /** 테두리 스타일 */
   style?: 'solid' | 'dashed' | 'dotted';
+
+  /** 모서리 반경 */
   radius?: number | [number, number, number, number];
+
+  /** 특정 변만 적용 */
+  sides?: {
+    top?: boolean;
+    right?: boolean;
+    bottom?: boolean;
+    left?: boolean;
+  };
 }
 
 /**
@@ -422,8 +635,107 @@ export interface ContainerShape {
   type: 'container';
   x: number;
   y: number;
+  width?: number | 'auto';
+  height?: number | 'auto';
   children: Shape[];
   clip?: boolean;
+
+  /** 레이아웃 설정 (@pixi/layout 연동) */
+  layout?: ContainerLayout;
+}
+
+/**
+ * 컨테이너 레이아웃 설정
+ */
+export interface ContainerLayout {
+  /** 레이아웃 타입 */
+  display?: 'flex' | 'block' | 'grid' | 'none';
+
+  /** 포지션 타입 */
+  position?: 'relative' | 'absolute';
+
+  /** absolute 포지션일 때 위치 */
+  top?: number;
+  right?: number;
+  bottom?: number;
+  left?: number;
+
+  /** z-index (레이어 순서) */
+  zIndex?: number;
+
+  // ─── Flex 레이아웃 ───
+  flexDirection?: 'row' | 'column' | 'row-reverse' | 'column-reverse';
+  flexWrap?: 'nowrap' | 'wrap' | 'wrap-reverse';
+  justifyContent?: 'flex-start' | 'center' | 'flex-end' | 'space-between' | 'space-around' | 'space-evenly';
+  alignItems?: 'flex-start' | 'center' | 'flex-end' | 'stretch' | 'baseline';
+  alignContent?: 'flex-start' | 'center' | 'flex-end' | 'stretch' | 'space-between' | 'space-around';
+
+  // ─── Grid 레이아웃 ───
+  gridTemplateColumns?: string; // "1fr 1fr" | "repeat(3, 100px)"
+  gridTemplateRows?: string;
+  gridGap?: number | [number, number]; // [rowGap, columnGap]
+  gridAutoFlow?: 'row' | 'column' | 'dense';
+
+  // ─── 공통 ───
+  gap?: number;
+  rowGap?: number;
+  columnGap?: number;
+  padding?: number | [number, number, number, number];
+  margin?: number | [number, number, number, number];
+
+  // ─── 자식 요소용 (flex item) ───
+  flexGrow?: number;
+  flexShrink?: number;
+  flexBasis?: number | 'auto';
+  alignSelf?: 'auto' | 'flex-start' | 'center' | 'flex-end' | 'stretch';
+}
+
+/**
+ * 그라디언트 (ColorPicker, Slider 등에서 사용)
+ */
+export interface GradientShape {
+  type: 'gradient';
+  x: number;
+  y: number;
+  width: number | 'auto';
+  height: number | 'auto';
+  radius?: number | [number, number, number, number];
+  gradient: {
+    type: 'linear' | 'radial';
+    angle?: number; // linear gradient 각도 (0-360)
+    stops: Array<{
+      offset: number; // 0-1
+      color: ColorValue;
+    }>;
+  };
+}
+
+/**
+ * 이미지
+ */
+export interface ImageShape {
+  type: 'image';
+  x: number;
+  y: number;
+  width: number | 'auto';
+  height: number | 'auto';
+  src: string;
+  fit?: 'contain' | 'cover' | 'fill' | 'none';
+  radius?: number | [number, number, number, number];
+}
+
+/**
+ * 선
+ */
+export interface LineShape {
+  type: 'line';
+  x1: number;
+  y1: number;
+  x2: number;
+  y2: number;
+  stroke: ColorValue;
+  strokeWidth: number;
+  strokeDasharray?: number[];
 }
 
 /**
@@ -442,6 +754,34 @@ export type ColorValue = TokenRef | string | number;
  * 예: '{color.primary}', '{spacing.md}', '{radius.lg}'
  */
 export type TokenRef = `{${string}}`;
+
+/**
+ * 타입 안전한 토큰 참조 (권장)
+ * 컴파일 타임에 유효한 토큰만 허용
+ */
+export type ColorTokenRef = `{color.${keyof ColorTokens}}`;
+export type SpacingTokenRef = `{spacing.${keyof SpacingTokens}}`;
+export type TypographyTokenRef = `{typography.${keyof TypographyTokens}}`;
+export type RadiusTokenRef = `{radius.${keyof RadiusTokens}}`;
+export type ShadowTokenRef = `{shadow.${keyof ShadowTokens}}`;
+
+/**
+ * 모든 유효한 토큰 참조 유니온
+ */
+export type StrictTokenRef =
+  | ColorTokenRef
+  | SpacingTokenRef
+  | TypographyTokenRef
+  | RadiusTokenRef
+  | ShadowTokenRef;
+
+/**
+ * 토큰 참조 유효성 검사 유틸리티
+ */
+export function isValidTokenRef(ref: string): ref is TokenRef {
+  const pattern = /^\{(color|spacing|typography|radius|shadow)\.[a-zA-Z0-9-]+\}$/;
+  return pattern.test(ref);
+}
 
 /**
  * 토큰 카테고리
@@ -528,6 +868,32 @@ export interface RadiusTokens {
   lg: number;    // 12
   xl: number;    // 16
   full: number;  // 9999
+}
+
+/**
+ * 그림자 토큰
+ */
+export interface ShadowTokens {
+  /** 그림자 없음 */
+  none: string;
+
+  /** 작은 그림자 (elevation 1) */
+  sm: string;
+
+  /** 중간 그림자 (elevation 2) */
+  md: string;
+
+  /** 큰 그림자 (elevation 3) */
+  lg: string;
+
+  /** 매우 큰 그림자 (elevation 4) */
+  xl: string;
+
+  /** 내부 그림자 (inset) */
+  inset: string;
+
+  /** 포커스 링 */
+  'focus-ring': string;
 }
 ```
 
@@ -689,6 +1055,51 @@ export function getRadiusToken(name: keyof RadiusTokens): number {
 }
 ```
 
+```typescript
+// packages/specs/src/primitives/shadows.ts
+
+import type { ShadowTokens } from '../types/token.types';
+
+/**
+ * Light 모드 그림자 토큰
+ * Material Design 3 elevation 기반
+ */
+export const lightShadows: ShadowTokens = {
+  none: 'none',
+  sm: '0 1px 2px rgba(0, 0, 0, 0.1)',
+  md: '0 2px 4px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06)',
+  lg: '0 4px 8px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.06)',
+  xl: '0 8px 16px rgba(0, 0, 0, 0.1), 0 4px 8px rgba(0, 0, 0, 0.06)',
+  inset: 'inset 0 1px 2px rgba(0, 0, 0, 0.1)',
+  'focus-ring': '0 0 0 2px var(--primary)',
+};
+
+/**
+ * Dark 모드 그림자 토큰
+ */
+export const darkShadows: ShadowTokens = {
+  none: 'none',
+  sm: '0 1px 2px rgba(0, 0, 0, 0.3)',
+  md: '0 2px 4px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.2)',
+  lg: '0 4px 8px rgba(0, 0, 0, 0.3), 0 2px 4px rgba(0, 0, 0, 0.2)',
+  xl: '0 8px 16px rgba(0, 0, 0, 0.3), 0 4px 8px rgba(0, 0, 0, 0.2)',
+  inset: 'inset 0 1px 2px rgba(0, 0, 0, 0.3)',
+  'focus-ring': '0 0 0 2px var(--primary)',
+};
+
+/**
+ * 테마별 그림자 객체
+ */
+export const shadows = {
+  light: lightShadows,
+  dark: darkShadows,
+};
+
+export function getShadowToken(name: keyof ShadowTokens, theme: 'light' | 'dark' = 'light'): string {
+  return theme === 'dark' ? darkShadows[name] : lightShadows[name];
+}
+```
+
 ### 3.5 렌더러 구현
 
 #### 3.5.1 Token Resolver
@@ -701,6 +1112,7 @@ import { lightColors, darkColors } from '../../primitives/colors';
 import { spacing } from '../../primitives/spacing';
 import { typography } from '../../primitives/typography';
 import { radius } from '../../primitives/radius';
+import { shadows } from '../../primitives/shadows';
 
 /**
  * 토큰 참조를 실제 값으로 변환
@@ -726,6 +1138,10 @@ export function resolveToken(ref: TokenRef, theme: 'light' | 'dark' = 'light'): 
       return typography[name as keyof typeof typography];
     case 'radius':
       return radius[name as keyof typeof radius];
+    case 'shadow':
+      return theme === 'dark'
+        ? shadows.dark[name as keyof typeof shadows.dark]
+        : shadows.light[name as keyof typeof shadows.light];
     default:
       console.warn(`Unknown token category: ${category}`);
       return ref;
@@ -762,6 +1178,8 @@ export function tokenToCSSVar(ref: TokenRef): string {
       return `var(--${name})`;
     case 'radius':
       return `var(--radius-${name})`;
+    case 'shadow':
+      return `var(--shadow-${name})`;
     default:
       return `var(--${name})`;
   }
@@ -873,6 +1291,8 @@ export interface PixiRenderContext {
   theme: 'light' | 'dark';
   width: number;
   height: number;
+  /** 현재 상태 (기본값: 'default') */
+  state?: ComponentState;
 }
 
 /**
@@ -883,7 +1303,7 @@ export function renderToPixi<Props extends Record<string, unknown>>(
   props: Props,
   context: PixiRenderContext
 ): void {
-  const { graphics, theme, width, height } = context;
+  const { graphics, theme, width, height, state = 'default' } = context;
 
   const variant = (props.variant as string) || spec.defaultVariant;
   const size = (props.size as string) || spec.defaultSize;
@@ -896,8 +1316,8 @@ export function renderToPixi<Props extends Record<string, unknown>>(
     return;
   }
 
-  // Shapes 생성
-  const shapes = spec.render.shapes(props, variantSpec, sizeSpec);
+  // Shapes 생성 (state 파라미터 전달)
+  const shapes = spec.render.shapes(props, variantSpec, sizeSpec, state);
 
   // Graphics 초기화
   graphics.clear();
@@ -969,10 +1389,18 @@ function renderShape(
       const color = resolveColor(shape.color, theme);
       const colorNum = typeof color === 'string' ? hexStringToNumber(color) : color;
 
+      // 타겟 영역 또는 이전 shape 영역에 테두리 그리기
+      const borderX = shape.x ?? 0;
+      const borderY = shape.y ?? 0;
+      const borderW = shape.width === 'auto' ? containerWidth : (shape.width ?? containerWidth);
+      const borderH = shape.height === 'auto' ? containerHeight : (shape.height ?? containerHeight);
+      const borderR = typeof shape.radius === 'number' ? shape.radius : (shape.radius?.[0] ?? 0);
+
+      g.roundRect(borderX, borderY, borderW, borderH, borderR);
       g.stroke({
         color: colorNum,
-        width: shape.width,
-        // TODO: dashed/dotted 지원
+        width: shape.borderWidth, // borderWidth 필드 사용
+        // TODO: dashed/dotted 지원 (PIXI v8 Graphics API)
       });
       break;
     }
@@ -994,17 +1422,83 @@ function renderShape(
 }
 
 /**
- * '#ffffff' → 0xffffff
+ * CSS 색상 문자열 → PixiJS hex 숫자 변환
+ * colord 라이브러리로 모든 CSS 색상 포맷 지원
  */
-function hexStringToNumber(hex: string): number {
-  if (hex.startsWith('#')) {
-    return parseInt(hex.slice(1), 16);
+import { colord, extend } from 'colord';
+import mixPlugin from 'colord/plugins/mix';
+
+// color-mix() 지원을 위한 플러그인 확장
+extend([mixPlugin]);
+
+function cssColorToPixiHex(color: string, fallback: number = 0x000000): number {
+  // 1. 빈 값 처리
+  if (!color || color === 'transparent') {
+    return fallback;
   }
-  if (hex.startsWith('0x')) {
-    return parseInt(hex, 16);
+
+  // 2. 이미 숫자인 경우
+  if (typeof color === 'number') {
+    return color;
   }
-  // rgb() 등은 colord로 처리
-  return 0x000000;
+
+  // 3. 0x 접두사 hex
+  if (color.startsWith('0x')) {
+    return parseInt(color, 16);
+  }
+
+  // 4. # 접두사 hex
+  if (color.startsWith('#')) {
+    const parsed = colord(color);
+    if (parsed.isValid()) {
+      return parseInt(parsed.toHex().slice(1), 16);
+    }
+    return fallback;
+  }
+
+  // 5. rgb(), rgba(), hsl(), hsla() 등
+  const parsed = colord(color);
+  if (parsed.isValid()) {
+    return parseInt(parsed.toHex().slice(1), 16);
+  }
+
+  // 6. color-mix() 처리 (브라우저 계산값 읽기)
+  if (color.includes('color-mix')) {
+    return parseColorMix(color, fallback);
+  }
+
+  return fallback;
+}
+
+/**
+ * color-mix() CSS 함수 파싱
+ * 브라우저의 계산된 값을 읽어서 변환
+ */
+function parseColorMix(colorMixStr: string, fallback: number): number {
+  // 서버 사이드에서는 fallback 반환
+  if (typeof document === 'undefined') {
+    return fallback;
+  }
+
+  try {
+    // 임시 DOM 요소로 브라우저 계산값 읽기
+    const temp = document.createElement('div');
+    temp.style.color = colorMixStr;
+    document.body.appendChild(temp);
+    const computed = getComputedStyle(temp).color;
+    document.body.removeChild(temp);
+
+    // rgb(r, g, b) 형식 파싱
+    const match = computed.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
+    if (match) {
+      const [, r, g, b] = match.map(Number);
+      return (r << 16) | (g << 8) | b;
+    }
+  } catch (e) {
+    console.warn('color-mix parsing failed:', e);
+  }
+
+  return fallback;
 }
 
 /**
@@ -1094,13 +1588,22 @@ export function generateCSS<Props>(spec: ComponentSpec<Props>): string {
     lines.push(`  .react-aria-${spec.name}[data-variant="${variantName}"] {`);
     lines.push(...generateVariantStyles(variantSpec));
     lines.push('');
+
+    // hover 상태
     lines.push('    &[data-hovered] {');
     lines.push(`      background: ${tokenToCSSVar(variantSpec.backgroundHover)};`);
-    if (variantSpec.border) {
+    if (variantSpec.textHover) {
+      lines.push(`      color: ${tokenToCSSVar(variantSpec.textHover)};`);
+    }
+    if (variantSpec.borderHover) {
+      lines.push(`      border-color: ${tokenToCSSVar(variantSpec.borderHover)};`);
+    } else if (variantSpec.border) {
       lines.push(`      border-color: ${tokenToCSSVar(variantSpec.backgroundHover)};`);
     }
     lines.push('    }');
     lines.push('');
+
+    // pressed 상태
     lines.push('    &[data-pressed] {');
     lines.push(`      background: ${tokenToCSSVar(variantSpec.backgroundPressed)};`);
     if (variantSpec.border) {
@@ -1184,19 +1687,125 @@ function generateSizeStyles(size: SizeSpec): string[] {
   ];
 }
 
+/**
+ * boxShadow 값 해석 (토큰 또는 CSS 문자열)
+ *
+ * ShadowTokenRef는 `{shadow.${keyof ShadowTokens}}` 형식의 문자열 리터럴 타입이므로
+ * 모든 값이 문자열로 처리됩니다.
+ */
+function resolveBoxShadow(value: string | ShadowTokenRef | undefined): string | undefined {
+  if (!value) return undefined;
+
+  // ShadowTokenRef도 문자열 리터럴 타입이므로 동일하게 처리
+  // 토큰 참조 형식 {shadow.md}, {shadow.lg} 등
+  if (value.startsWith('{shadow.')) {
+    const name = value.slice(8, -1); // "md", "lg" 등
+    return `var(--shadow-${name})`;
+  }
+
+  // 일반 CSS box-shadow 문자열
+  return value;
+}
+
 function generateStateStyles<Props>(spec: ComponentSpec<Props>): string[] {
-  return [
-    `  .react-aria-${spec.name}[data-focus-visible] {`,
-    `    outline: 2px solid var(--primary);`,
-    `    outline-offset: 2px;`,
-    `  }`,
-    ``,
-    `  .react-aria-${spec.name}[data-disabled] {`,
-    `    opacity: 0.38;`,
-    `    cursor: not-allowed;`,
-    `    pointer-events: none;`,
-    `  }`,
-  ];
+  const lines: string[] = [];
+  const states = spec.states;
+
+  // hover 상태 효과 (색상은 variant에서 처리, 여기선 효과만)
+  if (states?.hover) {
+    lines.push(`  .react-aria-${spec.name}[data-hovered] {`);
+    if (states.hover.boxShadow) {
+      lines.push(`    box-shadow: ${resolveBoxShadow(states.hover.boxShadow)};`);
+    }
+    if (states.hover.transform) {
+      lines.push(`    transform: ${states.hover.transform};`);
+    }
+    if (states.hover.scale !== undefined) {
+      lines.push(`    transform: scale(${states.hover.scale});`);
+    }
+    if (states.hover.opacity !== undefined) {
+      lines.push(`    opacity: ${states.hover.opacity};`);
+    }
+    lines.push(`  }`);
+    lines.push(``);
+  }
+
+  // focused 상태 효과
+  if (states?.focused) {
+    lines.push(`  .react-aria-${spec.name}[data-focused] {`);
+    if (states.focused.outline) {
+      lines.push(`    outline: ${states.focused.outline};`);
+    }
+    if (states.focused.outlineOffset) {
+      lines.push(`    outline-offset: ${states.focused.outlineOffset};`);
+    }
+    if (states.focused.boxShadow) {
+      lines.push(`    box-shadow: ${resolveBoxShadow(states.focused.boxShadow)};`);
+    }
+    if (states.focused.transform) {
+      lines.push(`    transform: ${states.focused.transform};`);
+    }
+    lines.push(`  }`);
+    lines.push(``);
+  }
+
+  // focusVisible 상태 (키보드 포커스 - 기본값 제공)
+  lines.push(`  .react-aria-${spec.name}[data-focus-visible] {`);
+  if (states?.focusVisible) {
+    if (states.focusVisible.outline) {
+      lines.push(`    outline: ${states.focusVisible.outline};`);
+    } else {
+      lines.push(`    outline: 2px solid var(--primary);`);
+    }
+    if (states.focusVisible.outlineOffset) {
+      lines.push(`    outline-offset: ${states.focusVisible.outlineOffset};`);
+    } else {
+      lines.push(`    outline-offset: 2px;`);
+    }
+    if (states.focusVisible.boxShadow) {
+      lines.push(`    box-shadow: ${resolveBoxShadow(states.focusVisible.boxShadow)};`);
+    }
+  } else {
+    lines.push(`    outline: 2px solid var(--primary);`);
+    lines.push(`    outline-offset: 2px;`);
+  }
+  lines.push(`  }`);
+  lines.push(``);
+
+  // pressed 상태 효과 (색상 외의 효과)
+  if (states?.pressed) {
+    lines.push(`  .react-aria-${spec.name}[data-pressed] {`);
+    if (states.pressed.boxShadow) {
+      lines.push(`    box-shadow: ${resolveBoxShadow(states.pressed.boxShadow)};`);
+    }
+    if (states.pressed.transform) {
+      lines.push(`    transform: ${states.pressed.transform};`);
+    }
+    if (states.pressed.scale !== undefined) {
+      lines.push(`    transform: scale(${states.pressed.scale});`);
+    }
+    lines.push(`  }`);
+    lines.push(``);
+  }
+
+  // disabled 상태
+  lines.push(`  .react-aria-${spec.name}[data-disabled] {`);
+  if (states?.disabled) {
+    lines.push(`    opacity: ${states.disabled.opacity ?? 0.38};`);
+    lines.push(`    cursor: ${states.disabled.cursor ?? 'not-allowed'};`);
+    if (states.disabled.pointerEvents) {
+      lines.push(`    pointer-events: ${states.disabled.pointerEvents};`);
+    } else {
+      lines.push(`    pointer-events: none;`);
+    }
+  } else {
+    lines.push(`    opacity: 0.38;`);
+    lines.push(`    cursor: not-allowed;`);
+    lines.push(`    pointer-events: none;`);
+  }
+  lines.push(`  }`);
+
+  return lines;
 }
 
 /**
@@ -1241,6 +1850,173 @@ export async function generateAllCSS(
 - [ ] CSS Generator 구현
 - [ ] 빌드 스크립트 작성
 - [ ] 단위 테스트 작성
+
+### 3.8 Phase 0 → Phase 1 검증 게이트
+
+**Phase 1 시작 전 반드시 통과해야 하는 검증 항목:**
+
+#### 3.8.1 필수 통과 조건 (Blocking)
+
+| # | 검증 항목 | 기준 | 검증 방법 |
+|---|----------|------|----------|
+| 1 | 타입 시스템 완전성 | 모든 타입 export | `tsc --noEmit` 성공 |
+| 2 | 토큰 일관성 | CSS 변수와 1:1 매핑 | 자동화 검증 스크립트 |
+| 3 | React Renderer 동작 | Button Props 변환 | 단위 테스트 100% |
+| 4 | PIXI Renderer 동작 | Button Graphics 생성 | 단위 테스트 100% |
+| 5 | CSS Generator 동작 | Button.css 자동 생성 | diff 검증 |
+| 6 | 빌드 성공 | pnpm build 성공 | CI 파이프라인 |
+
+#### 3.8.2 품질 게이트 (Quality Gates)
+
+```typescript
+// scripts/validate-phase0.ts
+
+interface Phase0ValidationResult {
+  passed: boolean;
+  blockers: string[];
+  warnings: string[];
+}
+
+async function validatePhase0(): Promise<Phase0ValidationResult> {
+  const result: Phase0ValidationResult = {
+    passed: true,
+    blockers: [],
+    warnings: [],
+  };
+
+  // 1. 타입 검사
+  const tscResult = await runCommand('pnpm tsc --noEmit');
+  if (!tscResult.success) {
+    result.blockers.push('TypeScript 컴파일 실패');
+    result.passed = false;
+  }
+
+  // 2. 토큰 검증 - CSS 변수와 매핑 확인
+  const tokenValidation = await validateTokenMapping();
+  if (!tokenValidation.allMapped) {
+    result.blockers.push(`누락된 토큰: ${tokenValidation.missing.join(', ')}`);
+    result.passed = false;
+  }
+
+  // 3. Renderer 테스트
+  const testResult = await runCommand('pnpm vitest run --coverage');
+  if (testResult.coverage < 80) {
+    result.blockers.push(`테스트 커버리지 부족: ${testResult.coverage}% (최소 80%)`);
+    result.passed = false;
+  }
+
+  // 4. CSS 생성 검증
+  const cssValidation = await validateGeneratedCSS();
+  if (!cssValidation.valid) {
+    result.blockers.push('생성된 CSS 검증 실패');
+    result.passed = false;
+  }
+
+  // 5. 성능 벤치마크
+  const perfResult = await runPerformanceBenchmark();
+  if (perfResult.renderTime > 16) { // 60fps 기준
+    result.warnings.push(`렌더링 성능 저하: ${perfResult.renderTime}ms (권장 <16ms)`);
+  }
+
+  return result;
+}
+
+// 토큰 매핑 검증
+async function validateTokenMapping(): Promise<{ allMapped: boolean; missing: string[] }> {
+  const cssVariables = await extractCSSVariables('packages/shared/src/styles/tokens.css');
+  const specTokens = await extractSpecTokens('packages/specs/src/primitives');
+
+  const missing: string[] = [];
+
+  for (const cssVar of cssVariables) {
+    const tokenName = cssVarToTokenName(cssVar); // --primary → color.primary
+    if (!specTokens.includes(tokenName)) {
+      missing.push(tokenName);
+    }
+  }
+
+  return { allMapped: missing.length === 0, missing };
+}
+```
+
+#### 3.8.3 검증 자동화
+
+```yaml
+# .github/workflows/phase0-gate.yml
+name: Phase 0 Validation Gate
+
+on:
+  pull_request:
+    paths:
+      - 'packages/specs/**'
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Type Check
+        run: pnpm --filter @xstudio/specs tsc --noEmit
+
+      - name: Unit Tests
+        run: pnpm --filter @xstudio/specs test:coverage
+        env:
+          MIN_COVERAGE: 80
+
+      - name: Token Validation
+        run: pnpm --filter @xstudio/specs validate:tokens
+
+      - name: CSS Generation Test
+        run: pnpm --filter @xstudio/specs generate:css --dry-run
+
+      - name: Phase 0 Gate Check
+        run: pnpm --filter @xstudio/specs validate:phase0
+```
+
+#### 3.8.4 검증 리포트 템플릿
+
+```markdown
+## Phase 0 검증 리포트
+
+**날짜**: YYYY-MM-DD
+**검증자**: @username
+
+### 필수 항목 (Blockers)
+
+| 항목 | 상태 | 비고 |
+|------|------|------|
+| TypeScript 컴파일 | ✅ / ❌ | |
+| 토큰 매핑 완전성 | ✅ / ❌ | 누락: |
+| React Renderer 테스트 | ✅ / ❌ | Coverage: %|
+| PIXI Renderer 테스트 | ✅ / ❌ | Coverage: % |
+| CSS Generator 검증 | ✅ / ❌ | |
+| 빌드 성공 | ✅ / ❌ | |
+
+### 품질 항목 (Warnings)
+
+| 항목 | 값 | 권장 | 상태 |
+|------|-----|------|------|
+| 테스트 커버리지 | % | ≥80% | |
+| 렌더링 시간 | ms | <16ms | |
+| 번들 크기 증가 | KB | <50KB | |
+
+### 결론
+
+- [ ] **Phase 1 진행 승인**
+- [ ] **수정 후 재검증 필요**
+
+### 서명
+
+- 기술 리드: _______________
+- QA 담당: _______________
+```
 
 ---
 
@@ -1412,31 +2188,48 @@ export const ButtonSpec: ComponentSpec<ButtonProps> = {
   },
 
   render: {
-    shapes: (props, variant, size) => {
+    shapes: (props, variant, size, state = 'default') => {
       const width = (props.style?.width as number) || 'auto';
       const height = size.height;
       const borderRadius = size.borderRadius;
 
-      const shapes = [
+      // 상태에 따른 배경색 선택
+      const bgColor = state === 'hover' ? variant.backgroundHover
+                    : state === 'pressed' ? variant.backgroundPressed
+                    : variant.background;
+
+      // 상태에 따른 텍스트색 선택
+      const textColor = (state === 'hover' && variant.textHover)
+                      ? variant.textHover
+                      : variant.text;
+
+      // 상태에 따른 테두리색 선택
+      const borderColor = (state === 'hover' && variant.borderHover)
+                        ? variant.borderHover
+                        : variant.border;
+
+      const shapes: Shape[] = [
         // 배경
         {
+          id: 'bg',
           type: 'roundRect' as const,
           x: 0,
           y: 0,
           width,
           height,
           radius: borderRadius,
-          fill: variant.background,
+          fill: bgColor,
           fillAlpha: variant.backgroundAlpha ?? 1,
         },
       ];
 
       // 테두리 (있는 경우)
-      if (variant.border) {
+      if (borderColor) {
         shapes.push({
           type: 'border' as const,
-          width: 1,
-          color: variant.border,
+          target: 'bg', // 배경 shape에 적용
+          borderWidth: 1,
+          color: borderColor,
           radius: borderRadius,
         });
       }
@@ -1451,7 +2244,7 @@ export const ButtonSpec: ComponentSpec<ButtonProps> = {
           fontSize: size.fontSize,
           fontFamily: 'Inter, system-ui, sans-serif',
           fontWeight: 500,
-          fill: variant.text,
+          fill: textColor,
           align: 'center' as const,
           baseline: 'middle' as const,
         });
@@ -1730,8 +2523,15 @@ export const TextFieldSpec: ComponentSpec<TextFieldProps> = {
   },
 
   render: {
-    shapes: (props, variant, size) => {
-      const shapes = [];
+    shapes: (props, variant, size, state = 'default') => {
+      const shapes: Shape[] = [];
+
+      // 상태에 따른 테두리 스타일
+      const isFocused = state === 'focused' || state === 'focusVisible';
+      const borderWidth = isFocused ? 2 : (props.isInvalid ? 2 : 1);
+      const borderColor = props.isInvalid ? '{color.error}'
+                        : isFocused ? '{color.primary}'
+                        : variant.border!;
 
       // 레이블
       if (props.label) {
@@ -1749,6 +2549,7 @@ export const TextFieldSpec: ComponentSpec<TextFieldProps> = {
 
       // 입력 필드 배경
       shapes.push({
+        id: 'input-bg',
         type: 'roundRect' as const,
         x: 0,
         y: props.label ? 24 : 0,
@@ -1761,8 +2562,9 @@ export const TextFieldSpec: ComponentSpec<TextFieldProps> = {
       // 테두리
       shapes.push({
         type: 'border' as const,
-        width: props.isInvalid ? 2 : 1,
-        color: props.isInvalid ? '{color.error}' : variant.border!,
+        target: 'input-bg',
+        borderWidth,
+        color: borderColor,
         radius: size.borderRadius,
       });
 
@@ -1947,8 +2749,8 @@ export const TableSpec: ComponentSpec<TableProps> = {
 
   // 테이블은 복합 shapes 구조
   render: {
-    shapes: (props, variant, size) => {
-      const shapes = [];
+    shapes: (props, variant, size, state = 'default') => {
+      const shapes: Shape[] = [];
       const { columns, rows } = props;
 
       // 컨테이너
@@ -1960,7 +2762,7 @@ export const TableSpec: ComponentSpec<TableProps> = {
           // 테두리
           {
             type: 'border' as const,
-            width: 1,
+            borderWidth: 1,
             color: variant.border!,
             radius: size.borderRadius,
           },
@@ -2167,8 +2969,8 @@ export const ColorPickerSpec: ComponentSpec<ColorPickerProps> = {
   },
 
   render: {
-    shapes: (props, variant, size) => {
-      const shapes = [];
+    shapes: (props, variant, size, state = 'default') => {
+      const shapes: Shape[] = [];
 
       // 컨테이너 배경
       shapes.push({
@@ -2184,7 +2986,7 @@ export const ColorPickerSpec: ComponentSpec<ColorPickerProps> = {
       // 테두리
       shapes.push({
         type: 'border' as const,
-        width: 1,
+        borderWidth: 1,
         color: variant.border!,
         radius: size.borderRadius,
       });
@@ -2273,12 +3075,159 @@ export const ColorPickerSpec: ComponentSpec<ColorPickerProps> = {
 
 ### 8.1 Visual Regression Testing
 
+#### 8.1.1 Playwright 설정 (플래키 방지)
+
 ```typescript
-// packages/specs/tests/visual-regression.test.ts
+// packages/specs/playwright.config.ts
+
+import { defineConfig, devices } from '@playwright/test';
+
+export default defineConfig({
+  testDir: './tests/visual',
+  fullyParallel: false, // 순차 실행으로 리소스 경쟁 방지
+
+  // 플래키 방지 설정
+  retries: 2, // 실패 시 2회 재시도
+  timeout: 30000,
+
+  expect: {
+    // 스냅샷 비교 허용치
+    toMatchSnapshot: {
+      maxDiffPixels: 50, // 최대 50픽셀 차이 허용
+      maxDiffPixelRatio: 0.01, // 또는 1% 비율
+    },
+  },
+
+  use: {
+    // 일관된 뷰포트
+    viewport: { width: 1280, height: 720 },
+
+    // 디바이스 스케일 고정
+    deviceScaleFactor: 1,
+
+    // 애니메이션 비활성화
+    actionTimeout: 10000,
+
+    // 스크린샷 설정
+    screenshot: 'only-on-failure',
+  },
+
+  projects: [
+    {
+      name: 'chromium',
+      use: {
+        ...devices['Desktop Chrome'],
+        // 일관된 폰트 렌더링을 위한 설정
+        launchOptions: {
+          args: [
+            '--font-render-hinting=none',
+            '--disable-font-subpixel-positioning',
+          ],
+        },
+      },
+    },
+  ],
+});
+```
+
+#### 8.1.2 테스트 헬퍼 (플래키 가드)
+
+```typescript
+// packages/specs/tests/visual/helpers.ts
+
+import { Page } from '@playwright/test';
+
+/**
+ * 폰트 로딩 대기
+ */
+export async function waitForFonts(page: Page): Promise<void> {
+  await page.evaluate(async () => {
+    await document.fonts.ready;
+    // 추가 대기 (폰트 렌더링 완료)
+    await new Promise(resolve => setTimeout(resolve, 100));
+  });
+}
+
+/**
+ * 애니메이션 완료 대기
+ */
+export async function waitForAnimations(page: Page): Promise<void> {
+  await page.evaluate(() => {
+    return new Promise<void>(resolve => {
+      // CSS 애니메이션 완료 대기
+      const animations = document.getAnimations();
+      if (animations.length === 0) {
+        resolve();
+        return;
+      }
+      Promise.all(animations.map(a => a.finished)).then(() => resolve());
+    });
+  });
+}
+
+/**
+ * PIXI 캔버스 렌더링 완료 대기
+ */
+export async function waitForPixiRender(page: Page): Promise<void> {
+  await page.waitForFunction(() => {
+    const canvas = document.querySelector('canvas');
+    if (!canvas) return false;
+    // WebGL 컨텍스트 확인
+    const gl = canvas.getContext('webgl2') || canvas.getContext('webgl');
+    return gl !== null;
+  });
+  // 추가 프레임 대기 (렌더링 안정화)
+  await page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
+}
+
+/**
+ * 안정적인 스크린샷 촬영
+ */
+export async function stableScreenshot(
+  page: Page,
+  selector: string
+): Promise<Buffer> {
+  await waitForFonts(page);
+  await waitForAnimations(page);
+
+  const element = page.locator(selector);
+  await element.waitFor({ state: 'visible' });
+
+  // 레이아웃 안정화 대기
+  await page.waitForTimeout(50);
+
+  return element.screenshot({
+    animations: 'disabled',
+    caret: 'hide',
+  });
+}
+```
+
+#### 8.1.3 테스트 코드 (플래키 가드 적용)
+
+```typescript
+// packages/specs/tests/visual/button.test.ts
 
 import { test, expect } from '@playwright/test';
-import { ButtonSpec } from '../src/components/Button.spec';
-import { renderToReact } from '../src/renderers/ReactRenderer';
+import { ButtonSpec } from '../../src/components/Button.spec';
+import {
+  waitForFonts,
+  waitForPixiRender,
+  stableScreenshot,
+} from './helpers';
+
+// 테스트 전 공통 설정
+test.beforeEach(async ({ page }) => {
+  // CSS 애니메이션/트랜지션 비활성화
+  await page.addStyleTag({
+    content: `
+      *, *::before, *::after {
+        animation-duration: 0s !important;
+        transition-duration: 0s !important;
+      }
+    `,
+  });
+});
 
 test.describe('Button Visual Regression', () => {
   const variants = Object.keys(ButtonSpec.variants);
@@ -2289,24 +3238,62 @@ test.describe('Button Visual Regression', () => {
       test(`Button ${variant}/${size} matches snapshot`, async ({ page }) => {
         // React 버전 렌더링
         await page.goto(`/storybook/button?variant=${variant}&size=${size}`);
-        const reactButton = await page.locator('.react-aria-Button');
-        const reactScreenshot = await reactButton.screenshot();
+        await waitForFonts(page);
+        const reactScreenshot = await stableScreenshot(page, '.react-aria-Button');
 
         // PIXI 버전 렌더링
         await page.goto(`/builder-preview/button?variant=${variant}&size=${size}`);
-        const pixiCanvas = await page.locator('canvas');
-        const pixiScreenshot = await pixiCanvas.screenshot();
+        await waitForPixiRender(page);
+        const pixiScreenshot = await stableScreenshot(page, 'canvas');
 
-        // 비교 (픽셀 차이 허용치: 1%)
+        // 스냅샷 비교
         expect(reactScreenshot).toMatchSnapshot(`button-${variant}-${size}-react.png`);
         expect(pixiScreenshot).toMatchSnapshot(`button-${variant}-${size}-pixi.png`);
 
         // React와 PIXI 간 차이 비교
-        // TODO: pixelmatch로 정량적 비교
+        const diffResult = await compareScreenshots(reactScreenshot, pixiScreenshot);
+        expect(diffResult.diffPercent).toBeLessThan(1);
       });
     }
   }
 });
+
+/**
+ * 두 스크린샷 간 픽셀 비교
+ */
+async function compareScreenshots(
+  img1: Buffer,
+  img2: Buffer
+): Promise<{ diffPercent: number; diffImage: Buffer }> {
+  const { PNG } = await import('pngjs');
+  const pixelmatch = (await import('pixelmatch')).default;
+
+  const png1 = PNG.sync.read(img1);
+  const png2 = PNG.sync.read(img2);
+
+  // 크기가 다르면 리사이즈
+  const width = Math.max(png1.width, png2.width);
+  const height = Math.max(png1.height, png2.height);
+
+  const diff = new PNG({ width, height });
+
+  const numDiffPixels = pixelmatch(
+    png1.data,
+    png2.data,
+    diff.data,
+    width,
+    height,
+    { threshold: 0.1, includeAA: false }
+  );
+
+  const totalPixels = width * height;
+  const diffPercent = (numDiffPixels / totalPixels) * 100;
+
+  return {
+    diffPercent,
+    diffImage: PNG.sync.write(diff),
+  };
+}
 ```
 
 ### 8.2 성능 최적화
@@ -2378,20 +3365,45 @@ export type { ComponentSpec, Shape, TokenRef } from './types';
   "name": "@xstudio/specs",
   "version": "1.0.0",
   "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
-    ".": "./src/index.ts",
-    "./renderers": "./src/renderers/index.ts",
-    "./primitives": "./src/primitives/index.ts",
-    "./types": "./src/types/index.ts"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./renderers": {
+      "types": "./dist/renderers/index.d.ts",
+      "import": "./dist/renderers/index.js"
+    },
+    "./primitives": {
+      "types": "./dist/primitives/index.d.ts",
+      "import": "./dist/primitives/index.js"
+    },
+    "./types": {
+      "types": "./dist/types/index.d.ts",
+      "import": "./dist/types/index.js"
+    },
+    "./adapters": {
+      "types": "./dist/adapters/index.d.ts",
+      "import": "./dist/adapters/index.js"
+    }
   },
+  "files": ["dist"],
   "dependencies": {
     "colord": "^2.9.3"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
     "typescript": "^5.3.0",
+    "tsup": "^8.0.0",
+    "tsx": "^4.7.0",
     "vitest": "^1.0.0",
-    "@playwright/test": "^1.40.0"
+    "@vitest/coverage-v8": "^1.0.0",
+    "@playwright/test": "^1.40.0",
+    "pixelmatch": "^5.3.0",
+    "pngjs": "^7.0.0"
   }
 }
 ```
@@ -2426,12 +3438,403 @@ export type { ComponentSpec, Shape, TokenRef } from './types';
     "build": "tsc",
     "dev": "tsc --watch",
     "test": "vitest",
+    "test:coverage": "vitest --coverage",
     "test:visual": "playwright test",
     "generate:css": "tsx scripts/generate-css.ts",
     "validate": "tsx scripts/validate-specs.ts",
+    "validate:tokens": "tsx scripts/validate-tokens.ts",
+    "validate:phase0": "tsx scripts/validate-phase0.ts",
     "lint": "eslint src/"
   }
 }
+```
+
+### 9.4 Zustand 상태 관리 연동
+
+#### 9.4.1 Store와 Spec 연동 아키텍처
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                 Zustand Store ↔ Spec 연동                   │
+├─────────────────────────────────────────────────────────────┤
+│                                                              │
+│  Zustand Store                                               │
+│  ├── elementsMap: Map<string, Element>                      │
+│  │   └── element.props: { variant, size, children, ... }    │
+│  │                                                          │
+│  └── selectedElementId: string                              │
+│                                                              │
+│         │                                                    │
+│         ▼                                                    │
+│  ┌─────────────────┐                                        │
+│  │ Spec Adapter    │ ← element.props 를 Spec Props로 변환   │
+│  └────────┬────────┘                                        │
+│           │                                                  │
+│           ▼                                                  │
+│  ┌─────────────────┐                                        │
+│  │ Component Spec  │ ← ButtonSpec, TextFieldSpec 등         │
+│  └────────┬────────┘                                        │
+│           │                                                  │
+│    ┌──────┴──────┐                                          │
+│    ▼             ▼                                          │
+│  React         PIXI                                         │
+│  Renderer      Renderer                                     │
+│                                                              │
+└─────────────────────────────────────────────────────────────┘
+```
+
+#### 9.4.2 Spec Adapter 구현
+
+```typescript
+// packages/specs/src/adapters/storeAdapter.ts
+
+import type { Element } from '@xstudio/builder/types';
+import type { ComponentSpec } from '../types';
+import { ButtonSpec } from '../components/Button.spec';
+import { TextFieldSpec } from '../components/TextField.spec';
+
+/**
+ * Element 타입 → Component Spec 매핑
+ */
+const specRegistry: Record<string, ComponentSpec<unknown>> = {
+  Button: ButtonSpec,
+  TextField: TextFieldSpec,
+  // ... 추가 컴포넌트
+};
+
+/**
+ * Zustand Element를 Spec Props로 변환
+ */
+export function elementToSpecProps<T>(element: Element): T {
+  const spec = specRegistry[element.type];
+  if (!spec) {
+    console.warn(`No spec found for element type: ${element.type}`);
+    return element.props as T;
+  }
+
+  // props 정규화 (기본값 적용)
+  return {
+    variant: element.props.variant || spec.defaultVariant,
+    size: element.props.size || spec.defaultSize,
+    ...element.props,
+  } as T;
+}
+
+/**
+ * Element 타입에 해당하는 Spec 반환
+ */
+export function getSpecForElement(element: Element): ComponentSpec<unknown> | undefined {
+  return specRegistry[element.type];
+}
+
+/**
+ * Spec 변경 시 Element 업데이트 (역방향)
+ */
+export function specPropsToElement<T>(
+  elementId: string,
+  specProps: T,
+  updateElement: (id: string, props: Partial<Element['props']>) => void
+): void {
+  updateElement(elementId, specProps as Partial<Element['props']>);
+}
+```
+
+#### 9.4.3 PixiButton에서 사용 예시
+
+```typescript
+// apps/builder/src/builder/workspace/canvas/ui/PixiButton.tsx
+
+import { useEditorStore } from '../../../../store/editorStore';
+import { elementToSpecProps, getSpecForElement } from '@xstudio/specs/adapters';
+import { renderToPixi, getVariantColors, getSizePreset } from '@xstudio/specs/renderers';
+import type { ButtonProps } from '@xstudio/specs';
+
+export const PixiButton = memo(function PixiButton({ elementId }: { elementId: string }) {
+  // Zustand에서 element 가져오기
+  const element = useEditorStore(state => state.elementsMap.get(elementId));
+
+  if (!element) return null;
+
+  // Spec Adapter로 props 변환
+  const props = elementToSpecProps<ButtonProps>(element);
+  const spec = getSpecForElement(element);
+
+  if (!spec) return null;
+
+  // Spec에서 variant/size 정보 가져오기
+  const variantSpec = spec.variants[props.variant!];
+  const sizeSpec = spec.sizes[props.size!];
+
+  const colors = getVariantColors(variantSpec, theme);
+  const sizePreset = getSizePreset(sizeSpec);
+
+  // ... 렌더링 로직
+});
+```
+
+#### 9.4.4 히스토리 연동
+
+```typescript
+// Spec 변경 시 히스토리 기록 (CRITICAL 규칙 준수)
+
+import { useEditorStore } from '../../../../store/editorStore';
+
+function updateElementFromSpec(elementId: string, newProps: Partial<ButtonProps>) {
+  const store = useEditorStore.getState();
+
+  // 1. 히스토리 기록 (상태 변경 전)
+  store.recordHistory();
+
+  // 2. Memory Update (즉시)
+  store.updateElement(elementId, { props: newProps });
+
+  // 3. Index Rebuild (자동)
+  // 4. DB Persist (백그라운드)
+  // 5. Preview Sync (백그라운드)
+}
+```
+
+### 9.5 테스트 전략
+
+#### 9.5.1 테스트 피라미드
+
+```
+                    ┌─────────────┐
+                    │   E2E      │  Playwright (Visual Regression)
+                    │   Tests    │  - React ↔ PIXI 비교
+                    └─────────────┘  - 5% of tests
+                   ┌───────────────┐
+                   │  Integration  │  Vitest + React Testing Library
+                   │    Tests      │  - Renderer + Store 연동
+                   └───────────────┘  - 15% of tests
+              ┌─────────────────────────┐
+              │       Unit Tests        │  Vitest
+              │   (render.shapes 함수)  │  - 순수 함수 테스트
+              └─────────────────────────┘  - 80% of tests
+```
+
+#### 9.5.2 Unit Test 범위
+
+```typescript
+// packages/specs/tests/unit/Button.spec.test.ts
+
+import { describe, it, expect } from 'vitest';
+import { ButtonSpec } from '../../src/components/Button.spec';
+
+describe('ButtonSpec', () => {
+  describe('variants', () => {
+    it('모든 variant가 필수 속성을 가짐', () => {
+      const requiredKeys = ['background', 'backgroundHover', 'backgroundPressed', 'text'];
+
+      Object.entries(ButtonSpec.variants).forEach(([name, variant]) => {
+        requiredKeys.forEach(key => {
+          expect(variant).toHaveProperty(key);
+          expect(variant[key]).toMatch(/^\{color\./);
+        });
+      });
+    });
+
+    it('모든 토큰 참조가 유효함', () => {
+      Object.values(ButtonSpec.variants).forEach(variant => {
+        expect(isValidTokenRef(variant.background)).toBe(true);
+        expect(isValidTokenRef(variant.text)).toBe(true);
+      });
+    });
+  });
+
+  describe('sizes', () => {
+    it('모든 size가 필수 속성을 가짐', () => {
+      Object.entries(ButtonSpec.sizes).forEach(([name, size]) => {
+        expect(size.height).toBeGreaterThan(0);
+        expect(size.paddingX).toBeGreaterThan(0);
+        expect(size.fontSize).toMatch(/^\{typography\./);
+        expect(size.borderRadius).toMatch(/^\{radius\./);
+      });
+    });
+
+    it('size 순서가 오름차순임', () => {
+      const sizes = ['xs', 'sm', 'md', 'lg', 'xl'];
+      const heights = sizes.map(s => ButtonSpec.sizes[s].height);
+
+      for (let i = 1; i < heights.length; i++) {
+        expect(heights[i]).toBeGreaterThan(heights[i - 1]);
+      }
+    });
+  });
+
+  describe('render.shapes()', () => {
+    it('기본 shapes를 반환함 (default state)', () => {
+      const props = { variant: 'primary', size: 'md', children: 'Click' };
+      const variant = ButtonSpec.variants.primary;
+      const size = ButtonSpec.sizes.md;
+
+      const shapes = ButtonSpec.render.shapes(props, variant, size, 'default');
+
+      expect(shapes.length).toBeGreaterThan(0);
+      expect(shapes[0].type).toBe('roundRect');
+    });
+
+    it('hover state에서 올바른 색상 사용', () => {
+      const props = { variant: 'primary', size: 'md', children: 'Click' };
+      const variant = ButtonSpec.variants.primary;
+      const size = ButtonSpec.sizes.md;
+
+      const shapes = ButtonSpec.render.shapes(props, variant, size, 'hover');
+
+      const bgShape = shapes.find(s => s.type === 'roundRect');
+      expect(bgShape?.fill).toBe(variant.backgroundHover);
+    });
+
+    it('border variant는 border shape 포함', () => {
+      const props = { variant: 'outline', size: 'md' };
+      const variant = ButtonSpec.variants.outline;
+      const size = ButtonSpec.sizes.md;
+
+      const shapes = ButtonSpec.render.shapes(props, variant, size, 'default');
+
+      const borderShape = shapes.find(s => s.type === 'border');
+      expect(borderShape).toBeDefined();
+      expect(borderShape?.borderWidth).toBe(1);
+    });
+
+    it('children이 있으면 text shape 포함', () => {
+      const props = { variant: 'primary', size: 'md', children: 'Submit' };
+      const variant = ButtonSpec.variants.primary;
+      const size = ButtonSpec.sizes.md;
+
+      const shapes = ButtonSpec.render.shapes(props, variant, size, 'default');
+
+      const textShape = shapes.find(s => s.type === 'text');
+      expect(textShape).toBeDefined();
+      expect(textShape?.text).toBe('Submit');
+    });
+
+    it('focusVisible state에서 올바른 처리', () => {
+      const props = { variant: 'primary', size: 'md', children: 'Focus' };
+      const variant = ButtonSpec.variants.primary;
+      const size = ButtonSpec.sizes.md;
+
+      // focusVisible state 지원 확인
+      const shapes = ButtonSpec.render.shapes(props, variant, size, 'focusVisible');
+      expect(shapes.length).toBeGreaterThan(0);
+    });
+  });
+});
+```
+
+#### 9.5.3 Integration Test 범위
+
+```typescript
+// packages/specs/tests/integration/ReactRenderer.test.ts
+
+import { describe, it, expect } from 'vitest';
+import { render } from '@testing-library/react';
+import { renderToReact } from '../../src/renderers/ReactRenderer';
+import { ButtonSpec } from '../../src/components/Button.spec';
+
+describe('ReactRenderer Integration', () => {
+  it('renderToReact가 올바른 className 반환', () => {
+    const result = renderToReact(ButtonSpec, { variant: 'primary', size: 'md' });
+
+    expect(result.className).toBe('react-aria-Button');
+  });
+
+  it('data-* 속성이 올바르게 설정됨', () => {
+    const result = renderToReact(ButtonSpec, { variant: 'primary', size: 'lg' });
+
+    expect(result.dataAttributes['data-variant']).toBe('primary');
+    expect(result.dataAttributes['data-size']).toBe('lg');
+  });
+});
+```
+
+#### 9.5.4 Visual Regression Test (확장)
+
+```typescript
+// packages/specs/tests/visual/consistency.test.ts
+
+import { test, expect } from '@playwright/test';
+import pixelmatch from 'pixelmatch';
+import { PNG } from 'pngjs';
+
+test.describe('React ↔ PIXI Visual Consistency', () => {
+  const MAX_DIFF_PERCENT = 1; // 최대 1% 차이 허용
+
+  test('Button primary/md가 일치함', async ({ page }) => {
+    // React 버전 캡처
+    await page.goto('/test/button-react?variant=primary&size=md');
+    const reactScreenshot = await page.locator('.react-aria-Button').screenshot();
+
+    // PIXI 버전 캡처
+    await page.goto('/test/button-pixi?variant=primary&size=md');
+    await page.waitForSelector('canvas');
+    const pixiScreenshot = await page.locator('canvas').screenshot();
+
+    // 픽셀 비교
+    const reactImg = PNG.sync.read(reactScreenshot);
+    const pixiImg = PNG.sync.read(pixiScreenshot);
+
+    const diff = new PNG({ width: reactImg.width, height: reactImg.height });
+    const numDiffPixels = pixelmatch(
+      reactImg.data,
+      pixiImg.data,
+      diff.data,
+      reactImg.width,
+      reactImg.height,
+      { threshold: 0.1 }
+    );
+
+    const totalPixels = reactImg.width * reactImg.height;
+    const diffPercent = (numDiffPixels / totalPixels) * 100;
+
+    expect(diffPercent).toBeLessThan(MAX_DIFF_PERCENT);
+  });
+});
+```
+
+#### 9.5.5 테스트 커버리지 목표
+
+| 영역 | 최소 커버리지 | 목표 커버리지 |
+|------|-------------|-------------|
+| types/*.ts | 100% | 100% |
+| primitives/*.ts | 100% | 100% |
+| renderers/*.ts | 80% | 90% |
+| components/*.spec.ts | 80% | 95% |
+| adapters/*.ts | 70% | 85% |
+| **전체** | **80%** | **90%** |
+
+#### 9.5.6 CI 테스트 파이프라인
+
+```yaml
+# .github/workflows/test.yml
+name: Test Suite
+
+on: [push, pull_request]
+
+jobs:
+  unit-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v2
+      - run: pnpm install
+      - run: pnpm --filter @xstudio/specs test:coverage
+      - uses: codecov/codecov-action@v3
+
+  visual-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v2
+      - run: pnpm install
+      - run: pnpm --filter @xstudio/specs build
+      - run: npx playwright install --with-deps
+      - run: pnpm --filter @xstudio/specs test:visual
+      - uses: actions/upload-artifact@v3
+        if: failure()
+        with:
+          name: visual-diff-report
+          path: packages/specs/test-results/
 ```
 
 ---
@@ -2511,51 +3914,61 @@ function PixiButton({ element }) {
 | 15 | Checkbox | 2 | 중간 |
 | 16 | CheckboxGroup | 2 | 높음 |
 | 17 | Radio | 2 | 중간 |
-| 18 | Switch | 2 | 중간 |
-| 19 | Select | 2 | 높음 |
-| 20 | ComboBox | 2 | 높음 |
-| 21 | ListBox | 2 | 높음 |
-| 22 | Slider | 2 | 높음 |
-| 23 | Meter | 2 | 중간 |
-| 24 | ProgressBar | 2 | 중간 |
-| 25 | Form | 2 | 낮음 |
-| 26 | Table | 3 | 매우 높음 |
-| 27 | Tree | 3 | 높음 |
-| 28 | Tabs | 3 | 높음 |
-| 29 | Menu | 3 | 높음 |
-| 30 | Breadcrumbs | 3 | 중간 |
-| 31 | Pagination | 3 | 중간 |
-| 32 | TagGroup | 3 | 중간 |
-| 33 | GridList | 3 | 높음 |
-| 34 | Disclosure | 3 | 중간 |
-| 35 | DisclosureGroup | 3 | 높음 |
-| 36 | Toolbar | 3 | 중간 |
-| 37 | Toast | 3 | 중간 |
-| 38 | Panel | 3 | 중간 |
-| 39 | Group | 3 | 낮음 |
-| 40 | Slot | 3 | 낮음 |
-| 41 | Skeleton | 3 | 낮음 |
-| 42 | DropZone | 3 | 중간 |
-| 43 | FileTrigger | 3 | 중간 |
-| 44 | ScrollBox | 3 | 높음 |
-| 45 | MaskedFrame | 3 | 높음 |
-| 46 | DatePicker | 4 | 매우 높음 |
-| 47 | DateRangePicker | 4 | 매우 높음 |
-| 48 | DateField | 4 | 높음 |
-| 49 | TimeField | 4 | 높음 |
-| 50 | Calendar | 4 | 높음 |
-| 51 | ColorPicker | 4 | 매우 높음 |
-| 52 | ColorField | 4 | 높음 |
-| 53 | ColorSlider | 4 | 높음 |
-| 54 | ColorArea | 4 | 높음 |
-| 55 | ColorWheel | 4 | 높음 |
-| 56 | ColorSwatch | 4 | 중간 |
-| 57 | ColorSwatchPicker | 4 | 중간 |
-| 58 | List | 4 | 중간 |
-| 59 | Input | 4 | 낮음 |
-| 60 | FancyButton | 4 | 중간 |
-| 61 | Switcher | 4 | 중간 |
-| 62 | RangeCalendar | 4 | 높음 |
+| 18 | RadioGroup | 2 | 높음 |
+| 19 | Switch | 2 | 중간 |
+| 20 | Select | 2 | 높음 |
+| 21 | ComboBox | 2 | 높음 |
+| 22 | ListBox | 2 | 높음 |
+| 23 | Slider | 2 | 높음 |
+| 24 | Meter | 2 | 중간 |
+| 25 | ProgressBar | 2 | 중간 |
+| 26 | Form | 2 | 낮음 |
+| 27 | Label | 2 | 낮음 |
+| 28 | Table | 3 | 매우 높음 |
+| 29 | Tree | 3 | 높음 |
+| 30 | Tabs | 3 | 높음 |
+| 31 | Menu | 3 | 높음 |
+| 32 | Breadcrumbs | 3 | 중간 |
+| 33 | Pagination | 3 | 중간 |
+| 34 | TagGroup | 3 | 중간 |
+| 35 | GridList | 3 | 높음 |
+| 36 | Disclosure | 3 | 중간 |
+| 37 | DisclosureGroup | 3 | 높음 |
+| 38 | Toolbar | 3 | 중간 |
+| 39 | Toast | 3 | 중간 |
+| 40 | Panel | 3 | 중간 |
+| 41 | Group | 3 | 낮음 |
+| 42 | Slot | 3 | 낮음 |
+| 43 | Skeleton | 3 | 낮음 |
+| 44 | DropZone | 3 | 중간 |
+| 45 | FileTrigger | 3 | 중간 |
+| 46 | ScrollBox | 3 | 높음 |
+| 47 | MaskedFrame | 3 | 높음 |
+| 48 | Avatar | 3 | 낮음 |
+| 49 | IconButton | 3 | 중간 |
+| 50 | Spinner | 3 | 낮음 |
+| 51 | Alert | 3 | 중간 |
+| 52 | DatePicker | 4 | 매우 높음 |
+| 53 | DateRangePicker | 4 | 매우 높음 |
+| 54 | DateField | 4 | 높음 |
+| 55 | TimeField | 4 | 높음 |
+| 56 | Calendar | 4 | 높음 |
+| 57 | RangeCalendar | 4 | 높음 |
+| 58 | ColorPicker | 4 | 매우 높음 |
+| 59 | ColorField | 4 | 높음 |
+| 60 | ColorSlider | 4 | 높음 |
+| 61 | ColorArea | 4 | 높음 |
+| 62 | ColorWheel | 4 | 높음 |
+| 63 | ColorSwatch | 4 | 중간 |
+| 64 | ColorSwatchPicker | 4 | 중간 |
+| 65 | List | 4 | 중간 |
+| 66 | Input | 4 | 낮음 |
+| 67 | FancyButton | 4 | 중간 |
+| 68 | Switcher | 4 | 중간 |
+| 69 | Modal | 4 | 높음 |
+| 70 | Drawer | 4 | 높음 |
+| 71 | Accordion | 4 | 중간 |
+| 72 | Overlay | 4 | 중간 |
 
 </details>
 
@@ -2573,3 +3986,9 @@ function PixiButton({ element }) {
 | 날짜 | 버전 | 변경 내용 |
 |------|------|-----------|
 | 2026-01-27 | 1.0 | 초기 설계 문서 작성 |
+| 2026-01-27 | 1.1 | 문서 보완: Shape 타입 확장, TokenRef 타입 강화, Phase 0 검증 게이트, Zustand 연동, 테스트 전략 보강 |
+| 2026-01-27 | 1.2 | 리뷰 반영: states/VariantSpec 역할 분리, ShadowTokens 추가, 컴포넌트 72개 완성, Shape target 속성, TextShape 확장, ContainerLayout grid/position, overlay 설정, 패키지 exports 수정, Visual test 플래키 가드 |
+| 2026-01-27 | 1.3 | 2차 리뷰 반영: (1) ComponentState에 'focusVisible' 추가, (2) Shape 유니온에 ShapeBase 교차 타입 결합, (3) resolveToken에 shadow 카테고리 처리 + shadows primitive 추가, (4) BorderShape.borderWidth로 PIXI 렌더러 통일, (5) 모든 shapes 호출부에 state 파라미터 추가 (기본값 'default'), (6) CSS 생성기에 textHover/borderHover 반영, (7) generateStateStyles가 spec.states를 동적으로 사용, (8) 테스트 코드 state 파라미터 추가 + focusVisible 테스트 케이스 |
+| 2026-01-27 | 1.4 | 3차 리뷰 반영: (1) PixiRenderContext에 state 필드 추가, (2) renderToPixi에서 shapes 호출 시 state 파라미터 전달, (3) generateStateStyles에 hover/focused 상태 처리 추가, (4) StateEffect.boxShadow에 ShadowTokenRef 지원 + resolveBoxShadow 헬퍼 함수 추가, (5) RenderSpec JSDoc에 'focusVisible' 추가 |
+| 2026-01-27 | 1.5 | 4차 리뷰 반영: (1) 디렉토리 구조 effects.ts → shadows.ts 수정, (2) renderers/utils를 tokenResolver.ts 단일 파일로 통일, (3) resolveBoxShadow에서 ShadowTokenRef가 문자열 리터럴 타입임을 반영하여 불필요한 .ref 분기 제거 |
+| 2026-01-27 | 1.6 | 5차 리뷰 반영: (1) 아키텍처 개요 다이어그램 effects.ts → shadows.ts 수정, (2) tokenToCSSVar에 shadow 카테고리 처리 추가 |
