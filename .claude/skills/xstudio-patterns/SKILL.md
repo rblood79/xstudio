@@ -47,6 +47,11 @@ XStudio Builder 애플리케이션의 코드 패턴, 규칙 및 모범 사례를
 #### Architecture (arch-*)
 - **[arch-reference-impl](rules/arch-reference-impl.md)** - 참조 구현 모음
 
+#### Component Spec (spec-*)
+- **[spec-single-source-truth](rules/spec-single-source-truth.md)** - ComponentSpec 단일 소스 패턴
+- **[spec-shape-rendering](rules/spec-shape-rendering.md)** - Shape 기반 렌더링
+- **[spec-token-usage](rules/spec-token-usage.md)** - 토큰 참조 형식
+
 #### Styling (style-*)
 - **[style-css-reuse](rules/style-css-reuse.md)** - CSS 클래스 재사용
 
@@ -141,6 +146,7 @@ tags: [tag1, tag2]
 - **[ADR-002](../../../docs/adr/002-styling-approach.md)** - ITCSS + tv() 선택 이유
 - **[ADR-003](../../../docs/adr/003-canvas-rendering.md)** - PixiJS 선택 이유
 - **[ADR-004](../../../docs/adr/004-preview-isolation.md)** - iframe 격리 이유
+- **[Component Spec Architecture](../../../docs/COMPONENT_SPEC_ARCHITECTURE.md)** - 단일 소스 컴포넌트 스펙 설계
 
 ## 기여
 

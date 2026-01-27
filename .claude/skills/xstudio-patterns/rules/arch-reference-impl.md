@@ -9,6 +9,22 @@ tags: [architecture, reference, patterns]
 
 > **Note**: 모든 경로는 `apps/builder/src/` 기준입니다.
 
+## Component Spec 패턴
+
+> **Note**: Component Spec 경로는 `packages/specs/src/` 기준입니다.
+
+| 패턴 | 참조 파일 | 설명 |
+|------|----------|------|
+| ComponentSpec 정의 | `components/Button.spec.ts` | Spec 표준 구조 (Single Source) |
+| React 렌더러 | `renderers/ReactRenderer.ts` | Spec → React Props 변환 |
+| PIXI 렌더러 | `renderers/PixiRenderer.ts` | Spec → PIXI Graphics 변환 |
+| CSS 생성기 | `renderers/CSSGenerator.ts` | Spec → CSS 파일 생성 |
+| 토큰 리졸버 | `renderers/utils/tokenResolver.ts` | 토큰 → 실제 값 변환 |
+| 색상 토큰 | `primitives/colors.ts` | 디자인 토큰 정의 |
+| 그림자 토큰 | `primitives/shadows.ts` | 그림자 토큰 정의 |
+
+자세한 설계는 `docs/COMPONENT_SPEC_ARCHITECTURE.md` 참조.
+
 ## 컴포넌트 패턴
 
 | 패턴 | 참조 파일 | 설명 |
