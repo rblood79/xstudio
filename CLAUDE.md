@@ -1,5 +1,7 @@
 # XStudio - Claude Code Context
 
+> **⚠️ 필수**: 코드 작업 시작 전 반드시 `.claude/skills/xstudio-patterns/SKILL.md`를 읽으세요.
+
 XStudio는 **노코드 웹 빌더** 애플리케이션입니다.
 
 ## 프로젝트 구조
