@@ -49,6 +49,8 @@ export interface LayoutContext {
   viewportWidth?: number;
   /** Viewport 높이 (vh/vw 계산용) */
   viewportHeight?: number;
+  /** 부모 요소의 display 값 (CSS blockification 계산용) */
+  parentDisplay?: string;
 }
 
 /**

@@ -185,9 +185,12 @@ export class BlockEngine implements LayoutEngine {
       const childTag = (child.tag ?? '').toLowerCase();
 
       // 🚀 Phase 6 Fix: 기본 inline-block 요소 처리
-      // display가 명시적으로 block이면 block으로, 그 외는 태그 기본값 확인
-      const isInlineBlock = childDisplay === 'inline-block' ||
-        (childDisplay === undefined && DEFAULT_INLINE_BLOCK_TAGS.has(childTag));
+      // 🚀 Phase 7: CSS Blockification 적용 (flex 자식의 inline-block → block)
+      const isInlineBlock = this.computeEffectiveDisplay(
+        childDisplay,
+        childTag,
+        context?.parentDisplay
+      ) === 'inline-block';
       const margin = parseMargin(style);
       const boxModel = parseBoxModel(
         child,
@@ -419,6 +422,42 @@ export class BlockEngine implements LayoutEngine {
         // line box baseline 위치 - 요소의 baseline 위치 = 요소 상단 위치
         return lineBox.y + lineBox.baseline - baseline;
     }
+  }
+
+  /**
+   * CSS Blockification 적용한 effective display 계산
+   *
+   * CSS Display Level 3 명세:
+   * - flex/inline-flex 자식의 inline, inline-block → block
+   * - grid/inline-grid 자식도 동일하게 blockified
+   *
+   * @param childDisplay - 자식의 명시적 display 값
+   * @param childTag - 자식의 태그 이름
+   * @param parentDisplay - 부모의 display 값
+   * @returns effective display ('block' | 'inline-block')
+   */
+  private computeEffectiveDisplay(
+    childDisplay: string | undefined,
+    childTag: string,
+    parentDisplay: string | undefined
+  ): 'block' | 'inline-block' {
+    // 기본 display 결정 (명시적 값 또는 태그 기본값)
+    const baseDisplay = childDisplay ??
+      (DEFAULT_INLINE_BLOCK_TAGS.has(childTag) ? 'inline-block' : 'block');
+
+    // CSS Blockification: flex/inline-flex/grid/inline-grid 자식
+    if (
+      parentDisplay === 'flex' ||
+      parentDisplay === 'inline-flex' ||
+      parentDisplay === 'grid' ||
+      parentDisplay === 'inline-grid'
+    ) {
+      if (baseDisplay === 'inline' || baseDisplay === 'inline-block') {
+        return 'block';
+      }
+    }
+
+    return baseDisplay === 'inline-block' ? 'inline-block' : 'block';
   }
 
   /**

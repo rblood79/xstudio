@@ -492,12 +492,13 @@ const ElementsLayer = memo(function ElementsLayer({
       const availableHeight = pageHeight - parentPadding.top - parentPadding.bottom;
 
       // 레이아웃 계산 (padding이 적용된 content-box 크기 사용)
+      // 🚀 Phase 7: parentDisplay 전달로 CSS blockification 지원
       const layouts = engine.calculate(
         parentElement,
         children,
         availableWidth,
         availableHeight,
-        { bfcId: parentElement.id }
+        { bfcId: parentElement.id, parentDisplay }
       );
       const layoutMap = new Map<string, ComputedLayout>(
         layouts.map((l) => [l.elementId, l])

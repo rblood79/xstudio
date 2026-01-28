@@ -35,6 +35,11 @@
 | `writing-mode` (세로 쓰기) | RTL/세로 쓰기 지원은 별도 프로젝트 |
 | CSS 단위 `rem`, `em`, `calc()` | 차후 지원 예정 |
 | Grid `repeat()`, `minmax()`, auto-placement | 기본 Grid만 지원, 고급 기능은 P2 |
+| `z-index` / stacking context | 렌더링 순서만 영향, PixiJS zIndex로 대체 가능 |
+| `position: sticky` | 스크롤 컨텍스트 필요, 복잡도 높음 |
+| `white-space` 상호작용 | 텍스트 레이아웃 엔진 필요 |
+| `inherit`, `initial`, `unset` 키워드 | CSS 캐스케이드 엔진 필요 |
+| 폰트 메트릭 기반 baseline 계산 | 텍스트 측정 엔진 필요, P2+ |
 
 ---
 
@@ -226,6 +231,40 @@ CSS의 가장 복잡한 기능 중 하나. Yoga는 **지원하지 않음**.
 | margin/padding | 상하좌우 | 상하좌우 | 좌우만 |
 | 새 줄 시작 | 항상 | X | X |
 | width/height 설정 | O | O | **X** |
+
+#### 1.4.0 CSS Blockification (Flex/Grid 자식 요소) ⚠️
+
+**CSS Display Level 3 명세**: Flex 또는 Grid 컨테이너의 자식 요소들은 자동으로 "blockified" 됩니다.
+
+| 원래 display | blockified display |
+|--------------|-------------------|
+| `inline` | `block` |
+| `inline-block` | `block` |
+| `inline-table` | `table` |
+| `inline-flex` | `flex` |
+| `inline-grid` | `grid` |
+
+```css
+/* 예시 */
+.parent { display: flex; }
+.child { display: inline-block; }  /* 브라우저에서는 block으로 계산됨 */
+```
+
+**브라우저 동작 확인:**
+```javascript
+// button은 기본적으로 inline-block
+const parent = document.body;
+parent.style.display = 'block';
+console.log(getComputedStyle(button).display); // "inline-block"
+
+parent.style.display = 'flex';
+console.log(getComputedStyle(button).display); // "block" (blockified!)
+```
+
+**XStudio 구현:**
+- `BlockEngine.computeEffectiveDisplay()` 메서드에서 부모 display에 따라 자식 display 변환
+- `LayoutContext.parentDisplay` 필드로 부모 display 전달
+- flex, inline-flex, grid, inline-grid 컨테이너에서 blockification 적용
 
 #### 1.4.1 vertical-align 속성 (P2)
 
@@ -1725,6 +1764,273 @@ if (style.display === 'flex' || style.display === 'inline-flex') {
 
 ---
 
+### 8.2 Phase 10: CSS Blockification 지원 (2026-01-28)
+
+#### 이슈 5: Flex 컨테이너 자식의 display가 WebGL에서 변환되지 않음
+
+**증상:**
+- body에 `display: flex` 설정 시
+- CSS Preview에서는 button(기본 inline-block)이 block으로 동작
+- WebGL 캔버스에서는 여전히 inline-block으로 처리되어 가로 배치됨
+
+**원인:**
+- CSS Blockification 규칙 미구현
+- `BlockEngine`이 부모 display 값을 고려하지 않고 자식의 명시적 display만 확인
+- `LayoutContext`에 parentDisplay 필드 없음
+
+**해결:**
+```typescript
+// LayoutEngine.ts - LayoutContext에 parentDisplay 추가
+export interface LayoutContext {
+  bfcId: string;
+  // ...
+  parentDisplay?: string;  // CSS blockification 계산용
+}
+
+// BlockEngine.ts - computeEffectiveDisplay 메서드 추가
+private computeEffectiveDisplay(
+  childDisplay: string | undefined,
+  childTag: string,
+  parentDisplay: string | undefined
+): 'block' | 'inline-block' {
+  const baseDisplay = childDisplay ??
+    (DEFAULT_INLINE_BLOCK_TAGS.has(childTag) ? 'inline-block' : 'block');
+
+  // CSS Blockification: flex/grid 자식의 inline-block → block
+  if (
+    parentDisplay === 'flex' ||
+    parentDisplay === 'inline-flex' ||
+    parentDisplay === 'grid' ||
+    parentDisplay === 'inline-grid'
+  ) {
+    if (baseDisplay === 'inline' || baseDisplay === 'inline-block') {
+      return 'block';
+    }
+  }
+
+  return baseDisplay === 'inline-block' ? 'inline-block' : 'block';
+}
+
+// BuilderCanvas.tsx - parentDisplay 전달
+const layouts = engine.calculate(
+  parentElement, children, availableWidth, availableHeight,
+  { bfcId: parentElement.id, parentDisplay }
+);
+```
+
+---
+
+### 8.3 Phase 11: CSS 명세 누락 케이스 보완 (계획)
+
+CSS 명세와 WebGL 구현 간 불일치 조사 결과 발견된 누락 케이스들입니다.
+
+#### 이슈 6: Position absolute/fixed일 때 Blockification 제외 필요
+
+**CSS 명세:**
+- out-of-flow 요소(absolute, fixed)는 부모가 flex/grid라도 blockification이 적용되지 않음
+
+**현재 문제:**
+- `computeEffectiveDisplay()`가 position을 확인하지 않음
+- flex 부모의 absolute 자식이 잘못 blockify될 수 있음
+
+**해결 계획:**
+```typescript
+// BlockEngine.ts - computeEffectiveDisplay() 수정
+private computeEffectiveDisplay(
+  childDisplay: string | undefined,
+  childTag: string,
+  parentDisplay: string | undefined,
+  childPosition: string | undefined  // 추가
+): 'block' | 'inline-block' {
+  // out-of-flow 요소는 blockification 제외
+  if (childPosition === 'absolute' || childPosition === 'fixed') {
+    const baseDisplay = childDisplay ??
+      (DEFAULT_INLINE_BLOCK_TAGS.has(childTag) ? 'inline-block' : 'block');
+    return baseDisplay === 'inline-block' ? 'inline-block' : 'block';
+  }
+
+  // 기존 blockification 로직...
+}
+```
+
+---
+
+#### 이슈 7: min/max width/height 크기 제한 미적용
+
+**CSS 명세:**
+- 요소 크기는 `clamp(min, base, max)` 형태로 제한됨
+
+**현재 문제:**
+- `parseBoxModel()`에서 min/max 파싱하지만 실제 계산에 사용 안 함
+
+**해결 계획:**
+```typescript
+// types.ts - BoxModel 확장
+export interface BoxModel {
+  width?: number;
+  height?: number;
+  minWidth?: number;
+  maxWidth?: number;
+  minHeight?: number;
+  maxHeight?: number;
+  // ...
+}
+
+// BlockEngine.ts - clamp 로직 추가
+function clampSize(value: number, min?: number, max?: number): number {
+  let result = value;
+  if (min !== undefined) result = Math.max(result, min);
+  if (max !== undefined) result = Math.min(result, max);
+  return result;
+}
+
+// calculate() 내
+const baseWidth = boxModel.width ?? availableWidth - margin.left - margin.right;
+const childWidth = clampSize(baseWidth, boxModel.minWidth, boxModel.maxWidth);
+```
+
+---
+
+#### 이슈 8: box-sizing: border-box 미지원
+
+**CSS 명세:**
+- `border-box`: width/height가 padding + border 포함
+- `content-box` (기본): width/height가 콘텐츠만
+
+**현재 문제:**
+- content-box만 지원, border-box 무시
+
+**해결 계획:**
+```typescript
+// utils.ts - parseBoxModel() 수정
+export function parseBoxModel(...): BoxModel {
+  const boxSizing = style?.boxSizing as string | undefined;
+
+  let effectiveWidth = width;
+  let effectiveHeight = height;
+
+  // border-box인 경우 padding/border 제외
+  if (boxSizing === 'border-box' && width !== undefined) {
+    effectiveWidth = width - padding.left - padding.right - border.left - border.right;
+    effectiveWidth = Math.max(0, effectiveWidth);
+  }
+  if (boxSizing === 'border-box' && height !== undefined) {
+    effectiveHeight = height - padding.top - padding.bottom - border.top - border.bottom;
+    effectiveHeight = Math.max(0, effectiveHeight);
+  }
+
+  return { width: effectiveWidth, height: effectiveHeight, ... };
+}
+```
+
+---
+
+#### 이슈 9: overflow-x/y 혼합 처리 안 됨
+
+**CSS 명세:**
+- `overflow-x`와 `overflow-y`는 독립적으로 처리 가능
+- 둘 중 하나라도 `visible`이 아니면 BFC 생성
+
+**현재 문제:**
+- `createsBFC()`에서 overflow-x/y 혼합 케이스 미처리
+
+**해결 계획:**
+```typescript
+// BlockEngine.ts - createsBFC() 수정
+createsBFC(element: Element): boolean {
+  // overflow 혼합 처리 개선
+  const effectiveOverflowX = overflowX ?? overflow ?? 'visible';
+  const effectiveOverflowY = overflowY ?? overflow ?? 'visible';
+
+  // 둘 중 하나라도 visible이 아니면 BFC 생성
+  if (effectiveOverflowX !== 'visible' || effectiveOverflowY !== 'visible') {
+    return true;
+  }
+  // ...
+}
+```
+
+---
+
+#### 이슈 10: visibility 레이아웃 미적용
+
+**CSS 명세:**
+- `visibility: hidden`은 요소를 숨기지만 공간은 차지함
+- `display: none`과 다름
+
+**현재 문제:**
+- `computedStyleExtractor.ts`의 WHITELIST에 visibility 없음
+- 레이아웃 계산에서 visibility 고려 안 함
+
+**해결 계획:**
+```typescript
+// computedStyleExtractor.ts - WHITELIST에 추가
+export const COMPUTED_STYLE_WHITELIST = [
+  'display',
+  'visibility',  // 추가
+  // ...
+] as const;
+```
+
+**참고:** visibility는 레이아웃 계산에는 영향 없음 (공간 차지). 렌더링 단계(BuilderCanvas/ElementSprite)에서 숨김 처리 필요.
+
+---
+
+#### 이슈 11: Grid align-self, justify-self 미지원
+
+**CSS 명세:**
+- Grid 자식은 `align-self`, `justify-self`로 셀 내 개별 정렬 가능
+
+**현재 문제:**
+- `GridEngine.ts`에서 개별 정렬 미구현
+
+**해결 계획:**
+```typescript
+// GridEngine.ts - calculate() 수정
+const alignSelf = childStyle?.alignSelf as string | undefined;
+const justifySelf = childStyle?.justifySelf as string | undefined;
+
+// 셀 내에서 정렬 위치 계산
+let finalX = cellBounds.x;
+let finalY = cellBounds.y;
+
+// justify-self (가로 정렬)
+if (justifySelf === 'center') {
+  finalX = cellBounds.x + (cellBounds.width - childWidth) / 2;
+} else if (justifySelf === 'end') {
+  finalX = cellBounds.x + cellBounds.width - childWidth;
+}
+
+// align-self (세로 정렬) - 유사하게 처리
+```
+
+---
+
+#### 수정 파일 요약
+
+| 파일 | 이슈 |
+|------|------|
+| `BlockEngine.ts` | 6, 7, 9 |
+| `types.ts` | 7 |
+| `utils.ts` | 7, 8 |
+| `GridEngine.ts` | 11 |
+| `computedStyleExtractor.ts` | 10 |
+
+---
+
+#### 검증 방법
+
+| 이슈 | 테스트 케이스 | 기대 결과 |
+|------|--------------|----------|
+| 6 | body(flex) + button(absolute) | button이 inline-block 유지 (blockification 안 됨) |
+| 7 | 요소에 min-width: 100px, max-width: 200px 설정 | 너비가 100~200px 범위로 제한됨 |
+| 8 | width: 200px, padding: 20px, box-sizing: border-box | content width가 160px (200 - 20*2)로 계산됨 |
+| 9 | overflow-x: hidden, overflow-y: visible 설정 | BFC 생성됨 (둘 중 하나라도 visible 아니면) |
+| 10 | visibility: hidden 설정 | 공간은 차지하지만 렌더링에서 숨겨짐 |
+| 11 | Grid 자식에 align-self: center, justify-self: end 설정 | 셀 내에서 세로 중앙, 가로 끝 정렬됨 |
+
+---
+
 ## 9. 변경 이력
 
 | 날짜 | 버전 | 변경 내용 |
@@ -1746,3 +2052,5 @@ if (style.display === 'flex' || style.display === 'inline-flex') {
 | 2026-01-28 | 1.14 | vh/vw 단위 지원 추가, rem/em은 차후 지원으로 Non-goals 이동 |
 | 2026-01-28 | 1.15 | Phase 6 구현 완료: vertical-align (baseline/top/bottom/middle), LineBox 기반 inline-block 배치 |
 | 2026-01-28 | 1.16 | Phase 9 CSS/WebGL 정합성 개선: BUTTON_SIZE_CONFIG를 ButtonSpec과 동기화, PropertyUnitInput에 fit-content/min-content/max-content 키워드 추가, renderWithCustomEngine에 부모 padding 처리 추가, rootLayout에 display: 'flex' 기본값 명시 |
+| 2026-01-28 | 1.17 | Phase 10 CSS Blockification 지원: flex/grid 컨테이너 자식의 inline-block → block 변환 구현, LayoutContext.parentDisplay 필드 추가, BlockEngine.computeEffectiveDisplay() 메서드 추가 |
+| 2026-01-28 | 1.18 | Phase 11 CSS 명세 누락 케이스 계획 추가: position absolute/fixed blockification 제외, min/max width/height, box-sizing border-box, overflow-x/y 혼합, visibility, Grid align-self/justify-self. Non-goals에 z-index, sticky, white-space, inherit/initial/unset 추가. 검증 방법 테이블 추가 |
