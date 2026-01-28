@@ -41,9 +41,11 @@ export const BORDER_STYLES: { value: string; label: string }[] = [
 ];
 
 export const UNIT_OPTIONS = {
-  size: ['px', '%', 'rem', 'em', 'vh', 'vw', 'auto'],
-  spacing: ['auto', 'px', 'rem', 'em'],
+  size: ['px', '%', 'vh', 'vw', 'auto'],
+  spacing: ['auto', 'px'],
   border: ['auto', 'px'],
-  font: ['auto', 'px', 'rem', 'em', 'pt'],
-  lineHeight: ['auto', 'px', 'rem', 'em', ''],
+  font: ['auto', 'px', 'pt'],
+  lineHeight: ['auto', 'px', ''],
 } as const;
+
+// TODO: rem, em 단위는 차후 지원 예정

@@ -1,12 +1,40 @@
-# @pixi/layout 하이브리드 포크: CSS 100% 호환 레이아웃 구현
+# @pixi/layout 하이브리드 포크: CSS 호환 레이아웃 구현
 
-> XStudio WebGL 캔버스에서 브라우저 CSS와 픽셀 단위 동일한 레이아웃 구현
+> XStudio WebGL 캔버스에서 브라우저 CSS와 유사한 레이아웃 구현
 
 ## 목표
 
-**WYSIWYG 보장**: 캔버스에서 보이는 것 = 브라우저에서 보이는 것
+**WYSIWYG 보장**: 캔버스에서 보이는 것 ≈ 브라우저에서 보이는 것 (지원 범위 내)
 
-현재 @pixi/layout(Yoga 기반)은 CSS의 일부만 지원합니다. 이 문서는 CSS 100% 호환을 위한 하이브리드 엔진 아키텍처를 정의합니다.
+현재 @pixi/layout(Yoga 기반)은 CSS의 일부만 지원합니다. 이 문서는 주요 CSS 레이아웃 기능을 지원하기 위한 하이브리드 엔진 아키텍처를 정의합니다.
+
+### 범위 (Scope)
+
+**P0 지원 대상 (신규 구현):**
+- `display: block` - 수직 쌓임, width 100% 기본값
+- Margin collapse - 인접 형제 블록 간 (양수/음수/혼합)
+
+**P0 유지 (기존 동작):**
+- `display: flex` - Yoga 엔진 위임 (현재 동작 유지)
+
+**P1 지원 대상:**
+- `display: inline-block` - 가로 배치, 줄바꿈 (BlockEngine 확장)
+- `display: grid` - 기존 GridEngine을 LayoutEngine 인터페이스로 통합
+- Margin collapse - 부모-자식, 빈 블록
+- BFC 생성 조건 (overflow, flow-root 등)
+
+### Non-goals (지원하지 않음)
+
+다음 기능은 이 문서의 범위에 포함되지 않습니다:
+
+| 기능 | 사유 |
+|------|------|
+| `display: inline` | 텍스트 흐름 엔진 필요, 복잡도 높음 |
+| `float` | 레거시 레이아웃, 현대 CSS에서 권장하지 않음 |
+| `vertical-align` (baseline 정렬) | 폰트 메트릭 계산 필요, P2 이후 검토 |
+| `writing-mode` (세로 쓰기) | RTL/세로 쓰기 지원은 별도 프로젝트 |
+| CSS 단위 `rem`, `em`, `calc()` | 차후 지원 예정 |
+| Grid `repeat()`, `minmax()`, auto-placement | 기본 Grid만 지원, 고급 기능은 P2 |
 
 ---
 
@@ -162,9 +190,11 @@ CSS의 가장 복잡한 기능 중 하나. Yoga는 **지원하지 않음**.
 4. float나 absolute positioned **아님**
 5. **수직 마진만** (수평 마진은 절대 collapse 안함)
 
-#### 1.3.6 마진 병합 차단 조건 (BFC 생성)
+#### 1.3.6 마진 병합 차단 조건
 
-다음 중 하나라도 해당하면 **새 BFC 생성** → 마진 병합 안됨:
+마진 병합을 막는 조건은 두 가지로 분류됩니다:
+
+**A. 새 BFC(Block Formatting Context) 생성:**
 
 | 조건 | 설명 |
 |------|------|
@@ -174,9 +204,16 @@ CSS의 가장 복잡한 기능 중 하나. Yoga는 **지원하지 않음**.
 | `display: flow-root` | **모던 방법** (부작용 없음) |
 | `float: left/right` | Float 요소 |
 | `position: absolute/fixed` | Out-of-flow 요소 |
-| 부모에 `padding` 있음 | 물리적 분리 |
-| 부모에 `border` 있음 | 물리적 분리 |
 | `contain: layout/content/paint` | CSS Containment |
+
+**B. 물리적 분리 (부모-자식 마진 병합만 차단):**
+
+| 조건 | 설명 |
+|------|------|
+| 부모에 `padding-top/bottom` 있음 | 마진 사이에 공간 생성 |
+| 부모에 `border-top/bottom` 있음 | 마진 사이에 경계 생성 |
+
+> **참고**: padding/border는 BFC를 생성하지 않습니다. 부모-자식 간 마진 병합만 막으며, 형제 간 마진 병합에는 영향 없습니다.
 
 ### 1.4 Inline-Block 동작
 
@@ -249,8 +286,10 @@ const rootLayout = useMemo(() => ({
 |------|--------|--------------|
 | width/height | **무시됨** | 적용됨 |
 | margin-top/bottom | **무시됨** | 적용됨 |
-| padding-top/bottom | 시각적으로만 (레이아웃 영향 X) | 레이아웃에 영향 |
+| padding-top/bottom | 시각적 영역만 확장 (line box 높이에 영향 가능) | 레이아웃에 영향 |
 | line-height 영향 | 받음 | 자체 height 사용 |
+
+> **참고**: inline 요소의 padding-top/bottom은 배경/테두리 영역만 확장하고 일반적으로 line box 높이에 영향을 주지 않지만, 일부 케이스(replaced elements, 특정 브라우저)에서 line box에 영향을 줄 수 있습니다.
 
 ### 1.5 현재 Grid 구현 상태
 
@@ -265,7 +304,22 @@ gap, rowGap, columnGap: number | string;
 gridColumn, gridRow, gridArea: string;
 ```
 
-**장점**: CSS Grid 명세 대부분 지원
+**지원 범위 (체크리스트):**
+
+| 기능 | 지원 | 비고 |
+|------|:----:|------|
+| `fr` 단위 | ✅ | |
+| `px`, `auto` | ✅ | |
+| `%` 단위 | ✅ | |
+| `gridTemplateAreas` | ✅ | |
+| `gap`, `rowGap`, `columnGap` | ✅ | |
+| `gridColumn`, `gridRow` | ✅ | span 포함 |
+| `repeat()` | ❌ | 수동 전개 필요 |
+| `minmax()` | ❌ | |
+| `auto-fit`, `auto-fill` | ❌ | |
+| auto-placement (암시적 그리드) | ❌ | 명시적 배치만 |
+| subgrid | ❌ | |
+
 **제한**: @pixi/layout과 통합 안됨 (별도 계산)
 
 ---
@@ -292,7 +346,7 @@ gridColumn, gridRow, gridArea: string;
 | BFC 생성 조건 | 미지원 | flow-root, overflow 등 | 높음 |
 | Grid 엔진 통합 | 별도 계산 | 엔진 인터페이스 | 낮음 |
 
-### P2 (향후 - 완전한 CSS 호환)
+### P2 (향후 - 고급 레이아웃)
 
 | 항목 | 현재 상태 | 목표 | 구현 복잡도 |
 |------|----------|------|------------|
@@ -338,7 +392,51 @@ gridColumn, gridRow, gridArea: string;
 └─────────────────────────────────────────────────────────┘
 ```
 
-### 3.2 엔진 인터페이스 설계
+### 3.2 공통 타입 정의
+
+```typescript
+// layout/engines/types.ts
+
+/**
+ * 마진 값
+ */
+export interface Margin {
+  top: number;
+  right: number;
+  bottom: number;
+  left: number;
+}
+
+/**
+ * 박스 모델 계산 결과
+ */
+export interface BoxModel {
+  /** 명시적 width (undefined면 auto) */
+  width?: number;
+  /** 명시적 height (undefined면 auto) */
+  height?: number;
+  /** 콘텐츠 기반 너비 (자식/텍스트 등) */
+  contentWidth: number;
+  /** 콘텐츠 기반 높이 */
+  contentHeight: number;
+  /** padding */
+  padding: {
+    top: number;
+    right: number;
+    bottom: number;
+    left: number;
+  };
+  /** border width */
+  border: {
+    top: number;
+    right: number;
+    bottom: number;
+    left: number;
+  };
+}
+```
+
+### 3.3 엔진 인터페이스 설계
 
 ```typescript
 // layout/engines/LayoutEngine.ts
@@ -413,7 +511,344 @@ export interface LayoutContext {
 }
 ```
 
-### 3.3 엔진 디스패처
+### 3.4 유틸리티 함수
+
+> **입력 규약 (P0)**:
+> - `width`, `height`: `px`, `%`, `vh`, `vw`, `number`, `auto` 지원 (`%`는 부모 content-box 기준, `vh`/`vw`는 viewport 기준)
+> - `margin`, `padding`, `border-width`: `px`, `number`만 지원 (`%` 미지원)
+> - `rem`, `em`, `vw`, `vh`, `calc()` 등은 지원하지 않음
+>
+> **미지원 값 처리 정책**:
+> - 개별 속성(`marginTop` 등): 미지원 단위 → `undefined` 반환 → 기본값(0 또는 auto) 적용
+> - shorthand 내부 토큰(`margin: "10px 1rem"`): 미지원 단위 → 해당 토큰만 `0`으로 폴백
+> - 파싱 불가 문자열(`"invalid"`): `undefined` 반환
+> - 예시 코드는 정규식으로 단위 검증 후 파싱:
+>   - px/number: `/^-?\d+(\.\d+)?(px)?$/`
+>   - % (width/height만): `/^-?\d+(\.\d+)?%$/`
+>   - vh/vw (width/height만): `/^-?\d+(\.\d+)?(vh|vw)$/`
+>
+> **운영 가이드**: shorthand 0 폴백은 조용히 처리되어 디버깅이 어려울 수 있음.
+> 구현 시 `import.meta.env.DEV`에서 미지원 토큰 경고 로그 권장.
+> 경고가 반복될 수 있으니 동일 토큰은 1회만 경고하도록 Set 등으로 중복 방지 권장.
+>
+> **스타일 입력 전제**: 빌더는 개별 속성으로 스타일을 저장합니다.
+> - `borderTopWidth: 1` (O) - 개별 속성
+> - `border: "1px solid red"` (X) - CSS shorthand 미지원
+
+```typescript
+// layout/engines/utils.ts
+
+import type { Margin, BoxModel } from './types';
+import type { Element } from '../../../../../types/core/store.types';
+
+/**
+ * 스타일에서 마진 파싱
+ *
+ * 개별 속성(marginTop 등)이 shorthand(margin)보다 우선합니다.
+ * shorthand는 개별 속성이 없는 방향에만 적용됩니다.
+ */
+export function parseMargin(
+  style: Record<string, unknown> | undefined
+): Margin {
+  if (!style) {
+    return { top: 0, right: 0, bottom: 0, left: 0 };
+  }
+
+  // shorthand를 기본값으로 파싱
+  const base = style.margin !== undefined
+    ? parseShorthand(style.margin)
+    : { top: 0, right: 0, bottom: 0, left: 0 };
+
+  // 개별 속성으로 override
+  return {
+    top: parseNumericValue(style.marginTop) ?? base.top,
+    right: parseNumericValue(style.marginRight) ?? base.right,
+    bottom: parseNumericValue(style.marginBottom) ?? base.bottom,
+    left: parseNumericValue(style.marginLeft) ?? base.left,
+  };
+}
+
+/**
+ * 스타일에서 패딩 파싱
+ */
+export function parsePadding(
+  style: Record<string, unknown> | undefined
+): Margin {
+  if (!style) {
+    return { top: 0, right: 0, bottom: 0, left: 0 };
+  }
+
+  const base = style.padding !== undefined
+    ? parseShorthand(style.padding)
+    : { top: 0, right: 0, bottom: 0, left: 0 };
+
+  return {
+    top: parseNumericValue(style.paddingTop) ?? base.top,
+    right: parseNumericValue(style.paddingRight) ?? base.right,
+    bottom: parseNumericValue(style.paddingBottom) ?? base.bottom,
+    left: parseNumericValue(style.paddingLeft) ?? base.left,
+  };
+}
+
+/**
+ * 스타일에서 보더 너비 파싱
+ *
+ * 주의: CSS shorthand `border: "1px solid red"`는 지원하지 않습니다.
+ * 빌더는 개별 속성(borderTopWidth 등)으로 저장하는 것을 전제로 합니다.
+ * borderWidth shorthand("1px" 또는 "1px 2px")는 지원합니다.
+ */
+export function parseBorder(
+  style: Record<string, unknown> | undefined
+): Margin {
+  if (!style) {
+    return { top: 0, right: 0, bottom: 0, left: 0 };
+  }
+
+  // borderWidth shorthand (숫자만, "1px solid red" 형태 미지원)
+  const base = style.borderWidth !== undefined
+    ? parseShorthand(style.borderWidth)
+    : { top: 0, right: 0, bottom: 0, left: 0 };
+
+  return {
+    top: parseNumericValue(style.borderTopWidth) ?? base.top,
+    right: parseNumericValue(style.borderRightWidth) ?? base.right,
+    bottom: parseNumericValue(style.borderBottomWidth) ?? base.bottom,
+    left: parseNumericValue(style.borderLeftWidth) ?? base.left,
+  };
+}
+
+/**
+ * 요소의 콘텐츠 너비 계산
+ *
+ * 실제 구현에서는 자식 요소들의 레이아웃을 재귀적으로 계산해야 합니다.
+ * 텍스트 요소의 경우 폰트 메트릭 기반 측정이 필요합니다.
+ *
+ * @returns 콘텐츠 기반 너비 (자식이 없으면 0)
+ */
+export function calculateContentWidth(element: Element): number {
+  // TODO: 실제 구현 시 다음을 고려:
+  // 1. 자식 요소들의 너비 합계 (inline-block) 또는 최대값 (block)
+  // 2. 텍스트 콘텐츠의 경우 Canvas.measureText() 사용
+  // 3. 이미지의 경우 naturalWidth 사용
+
+  // 임시: props에 명시된 width가 있으면 사용
+  const style = element.props?.style as Record<string, unknown> | undefined;
+  const explicitWidth = parseNumericValue(style?.width);
+  if (explicitWidth !== undefined) return explicitWidth;
+
+  // 기본값: 0 (콘텐츠 없음으로 간주)
+  return 0;
+}
+
+/**
+ * 요소의 콘텐츠 높이 계산
+ *
+ * @returns 콘텐츠 기반 높이 (자식이 없으면 0)
+ */
+export function calculateContentHeight(element: Element): number {
+  // TODO: 실제 구현 시 다음을 고려:
+  // 1. 자식 요소들의 높이 합계 (block) 또는 최대값 (inline-block 한 줄)
+  // 2. 텍스트 콘텐츠의 경우 lineHeight * 줄 수
+  // 3. 이미지의 경우 naturalHeight 사용
+
+  const style = element.props?.style as Record<string, unknown> | undefined;
+  const explicitHeight = parseNumericValue(style?.height);
+  if (explicitHeight !== undefined) return explicitHeight;
+
+  return 0;
+}
+
+/**
+ * 요소의 박스 모델 계산
+ *
+ * @param element - 대상 요소
+ * @param availableWidth - 사용 가능한 너비 (% 계산용)
+ * @param availableHeight - 사용 가능한 높이 (% 계산용)
+ */
+export function parseBoxModel(
+  element: Element,
+  availableWidth: number,
+  availableHeight: number
+): BoxModel {
+  const style = element.props?.style as Record<string, unknown> | undefined;
+
+  // width/height 파싱 (%, px, auto 지원)
+  const width = parseSize(style?.width, availableWidth);
+  const height = parseSize(style?.height, availableHeight);
+
+  // padding 파싱
+  const padding = parsePadding(style);
+
+  // border 파싱
+  const border = parseBorder(style);
+
+  // 콘텐츠 크기 계산
+  const contentWidth = calculateContentWidth(element);
+  const contentHeight = calculateContentHeight(element);
+
+  return {
+    width,
+    height,
+    contentWidth,
+    contentHeight,
+    padding,
+    border,
+  };
+}
+
+/**
+ * 중복 경고 방지용 Set
+ *
+ * 주의: 모듈 전역이므로 장시간 세션에서 메모리 누적 가능.
+ * 필요 시 크기 제한(예: 100개 초과 시 clear) 또는 테스트 시 초기화 권장.
+ */
+const warnedTokens = new Set<string>();
+
+/**
+ * 동일 메시지는 1회만 경고
+ *
+ * 트레이드오프: 100개 초과 시 전체 clear하므로 동일 경고가 주기적으로 재출력될 수 있음.
+ * 메모리 제한을 위한 단순 정책으로, 정밀한 LRU가 필요하면 별도 구현 권장.
+ */
+function warnOnce(message: string): void {
+  if (warnedTokens.size > 100) {
+    warnedTokens.clear();
+  }
+  if (!warnedTokens.has(message)) {
+    warnedTokens.add(message);
+    console.warn(message);
+  }
+}
+
+/** 테스트용 초기화 */
+export function resetWarnedTokens(): void {
+  warnedTokens.clear();
+}
+
+/** 허용되는 단위 패턴 */
+const PX_NUMBER_PATTERN = /^-?\d+(\.\d+)?(px)?$/;
+const PERCENT_PATTERN = /^-?\d+(\.\d+)?%$/;
+const VIEWPORT_PATTERN = /^-?\d+(\.\d+)?(vh|vw)$/;
+
+/**
+ * 숫자 값 파싱 (px, number만 허용)
+ *
+ * @returns 파싱된 숫자 또는 undefined (미지원 단위)
+ */
+function parseNumericValue(value: unknown): number | undefined {
+  if (typeof value === 'number') return value;
+  if (typeof value === 'string') {
+    // px 또는 숫자만 허용
+    if (!PX_NUMBER_PATTERN.test(value.trim())) {
+      return undefined; // rem, em, %, calc 등 미지원
+    }
+    return parseFloat(value);
+  }
+  return undefined;
+}
+
+/**
+ * 크기 값 파싱 (width/height용: px, %, vh, vw, number, auto 허용)
+ *
+ * @param value - 파싱할 값
+ * @param available - % 계산 시 기준값 (부모 content-box)
+ * @param viewportWidth - vw 계산 시 기준값
+ * @param viewportHeight - vh 계산 시 기준값
+ * @returns 파싱된 숫자 또는 undefined (auto 또는 미지원 단위)
+ */
+function parseSize(
+  value: unknown,
+  available: number,
+  viewportWidth?: number,
+  viewportHeight?: number
+): number | undefined {
+  if (value === undefined || value === 'auto') return undefined;
+  if (typeof value === 'number') return value;
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+
+    // % 허용 (부모 content-box 기준)
+    if (PERCENT_PATTERN.test(trimmed)) {
+      return (parseFloat(trimmed) / 100) * available;
+    }
+
+    // vh/vw 허용 (viewport 기준)
+    if (VIEWPORT_PATTERN.test(trimmed)) {
+      const num = parseFloat(trimmed);
+      if (trimmed.endsWith('vh') && viewportHeight !== undefined) {
+        return (num / 100) * viewportHeight;
+      }
+      if (trimmed.endsWith('vw') && viewportWidth !== undefined) {
+        return (num / 100) * viewportWidth;
+      }
+      // viewport 크기 미제공 시 undefined
+      return undefined;
+    }
+
+    // px 또는 숫자만 허용
+    if (PX_NUMBER_PATTERN.test(trimmed)) {
+      return parseFloat(trimmed);
+    }
+
+    // rem, em, calc 등 미지원
+    return undefined;
+  }
+  return undefined;
+}
+
+/**
+ * shorthand 개별 값 파싱 (px, number만 허용)
+ *
+ * @returns 파싱된 숫자 또는 undefined
+ */
+function parseShorthandValue(value: string): number | undefined {
+  const trimmed = value.trim();
+  if (!PX_NUMBER_PATTERN.test(trimmed)) {
+    return undefined; // 미지원 단위
+  }
+  return parseFloat(trimmed);
+}
+
+/**
+ * shorthand 속성 파싱 (margin, padding, borderWidth)
+ * "10px" → 모두 10
+ * "10px 20px" → 상하 10, 좌우 20
+ * "10px 20px 30px" → 상 10, 좌우 20, 하 30
+ * "10px 20px 30px 40px" → 상 10, 우 20, 하 30, 좌 40
+ *
+ * 미지원 단위가 포함되면 해당 값은 0으로 처리
+ */
+function parseShorthand(value: unknown): Margin {
+  const zero = { top: 0, right: 0, bottom: 0, left: 0 };
+  if (typeof value === 'number') {
+    return { top: value, right: value, bottom: value, left: value };
+  }
+  if (typeof value !== 'string') return zero;
+
+  const tokens = value.split(/\s+/);
+  const parts = tokens.map((token, i) => {
+    const parsed = parseShorthandValue(token);
+    if (parsed === undefined) {
+      // 개발 모드에서만 경고 (디버깅 용이성, 중복 방지)
+      if (import.meta.env.DEV) {
+        warnOnce(`[parseShorthand] Unsupported token "${token}", fallback to 0`);
+      }
+      return 0;
+    }
+    return parsed;
+  });
+
+  switch (parts.length) {
+    case 1: return { top: parts[0], right: parts[0], bottom: parts[0], left: parts[0] };
+    case 2: return { top: parts[0], right: parts[1], bottom: parts[0], left: parts[1] };
+    case 3: return { top: parts[0], right: parts[1], bottom: parts[2], left: parts[1] };
+    case 4: return { top: parts[0], right: parts[1], bottom: parts[2], left: parts[3] };
+    default: return zero;
+  }
+}
+```
+
+### 3.5 엔진 디스패처
 
 ```typescript
 // layout/engines/index.ts
@@ -421,8 +856,12 @@ export interface LayoutContext {
 import type { Element } from '../../../../../types/core/store.types';
 import type { LayoutEngine, ComputedLayout, LayoutContext } from './LayoutEngine';
 import { BlockEngine } from './BlockEngine';
-import { FlexEngine } from './FlexEngine';
+import { FlexEngine, shouldDelegateToPixiLayout } from './FlexEngine';
 import { GridEngine } from './GridEngine';
+
+// Re-export
+export { shouldDelegateToPixiLayout };
+export type { LayoutEngine, ComputedLayout, LayoutContext };
 
 // 싱글톤 엔진 인스턴스
 const blockEngine = new BlockEngine();
@@ -431,6 +870,14 @@ const gridEngine = new GridEngine();
 
 /**
  * display 속성에 따라 적절한 레이아웃 엔진 선택
+ *
+ * @example
+ * const engine = selectEngine('flex');
+ * if (shouldDelegateToPixiLayout(engine)) {
+ *   // @pixi/layout 사용
+ * } else {
+ *   // engine.calculate() 호출
+ * }
  */
 export function selectEngine(display: string | undefined): LayoutEngine {
   switch (display) {
@@ -455,6 +902,9 @@ export function selectEngine(display: string | undefined): LayoutEngine {
 
 /**
  * 요소의 자식들에 대한 레이아웃 계산
+ *
+ * 주의: Flex 엔진은 shouldDelegate === true이므로
+ * 이 함수 대신 @pixi/layout을 직접 사용해야 함
  */
 export function calculateChildrenLayout(
   parent: Element,
@@ -467,17 +917,29 @@ export function calculateChildrenLayout(
   const display = style?.display as string | undefined;
 
   const engine = selectEngine(display);
+
+  // Flex 엔진은 @pixi/layout에 위임
+  if (shouldDelegateToPixiLayout(engine)) {
+    if (import.meta.env.DEV) {
+      console.warn(
+        '[calculateChildrenLayout] Flex layout should use @pixi/layout directly'
+      );
+    }
+    return [];
+  }
+
   return engine.calculate(parent, children, availableWidth, availableHeight, context);
 }
 ```
 
-### 3.4 BlockEngine 상세 설계
+### 3.6 BlockEngine 상세 설계
 
 ```typescript
 // layout/engines/BlockEngine.ts
 
 import type { Element } from '../../../../../types/core/store.types';
 import type { LayoutEngine, ComputedLayout, LayoutContext } from './LayoutEngine';
+import type { Margin, BoxModel } from './types';
 import { parseMargin, parseBoxModel } from './utils';
 
 /**
@@ -486,7 +948,7 @@ import { parseMargin, parseBoxModel } from './utils';
  * 구현 기능:
  * - Block: 수직 쌓임, width 100% 기본값
  * - Inline-Block: 가로 배치, 콘텐츠 기반 너비
- * - Margin Collapse: 인접 블록 마진 병합
+ * - Margin Collapse: 인접 블록 마진 병합, 빈 블록 자기 collapse
  */
 export class BlockEngine implements LayoutEngine {
   readonly displayTypes = ['block', 'inline-block'];
@@ -516,11 +978,13 @@ export class BlockEngine implements LayoutEngine {
       const boxModel = parseBoxModel(child, availableWidth, availableHeight);
 
       if (isInlineBlock) {
-        // Inline-block: 가로 배치
+        // Inline-block: 가로 배치 (마진 collapse 없음)
         const childWidth = boxModel.width ?? boxModel.contentWidth;
+        // 마진 포함 전체 너비
+        const totalWidth = childWidth + margin.left + margin.right;
 
-        // 줄바꿈 필요 여부 확인
-        if (currentX + childWidth > availableWidth && currentX > 0) {
+        // 줄바꿈 필요 여부 확인 (마진 포함)
+        if (currentX + totalWidth > availableWidth && currentX > 0) {
           currentY += lineHeight;
           currentX = 0;
           lineHeight = 0;
@@ -540,6 +1004,9 @@ export class BlockEngine implements LayoutEngine {
           lineHeight,
           (boxModel.height ?? boxModel.contentHeight) + margin.top + margin.bottom
         );
+
+        // inline-block 이후에는 마진 collapse 리셋
+        prevMarginBottom = 0;
       } else {
         // Block: 수직 쌓임 + 마진 collapse
 
@@ -550,7 +1017,31 @@ export class BlockEngine implements LayoutEngine {
           lineHeight = 0;
         }
 
-        // Margin Collapse 계산
+        // 빈 블록 처리: 자기 top/bottom 마진 collapse
+        if (this.isEmptyBlock(child, boxModel)) {
+          const collapsedSelfMargin = this.collapseEmptyBlockMargins(margin);
+          // 이전 형제 마진과 빈 블록의 collapsed 마진을 다시 collapse
+          const finalMargin = this.collapseMargins(prevMarginBottom, collapsedSelfMargin);
+
+          layouts.push({
+            elementId: child.id,
+            x: margin.left,
+            y: currentY + finalMargin,
+            width: availableWidth - margin.left - margin.right,
+            height: 0,
+            margin: {
+              ...margin,
+              collapsedTop: finalMargin,
+              collapsedBottom: 0, // 빈 블록은 하나로 합쳐짐
+            },
+          });
+
+          // 빈 블록의 collapsed 마진이 다음 형제에게 전달됨
+          prevMarginBottom = collapsedSelfMargin;
+          continue;
+        }
+
+        // 일반 블록: Margin Collapse 계산
         const collapsedMarginTop = this.collapseMargins(prevMarginBottom, margin.top);
         currentY += collapsedMarginTop;
 
@@ -579,27 +1070,30 @@ export class BlockEngine implements LayoutEngine {
   }
 
   /**
-   * 두 마진 중 큰 값 반환 (마진 collapse)
+   * 두 마진 값 collapse (CSS 명세)
    *
-   * CSS 명세: 인접 block 마진은 병합되어 큰 값만 적용
+   * - 둘 다 양수: 큰 값
+   * - 둘 다 음수: 절대값이 큰 값 (더 작은 값)
+   * - 양수/음수 혼합: 합산
    */
   private collapseMargins(marginA: number, marginB: number): number {
-    // 둘 다 양수: 큰 값
     if (marginA >= 0 && marginB >= 0) {
       return Math.max(marginA, marginB);
     }
-    // 둘 다 음수: 작은 값 (절대값이 큰 값)
     if (marginA < 0 && marginB < 0) {
       return Math.min(marginA, marginB);
     }
-    // 하나만 음수: 합산
     return marginA + marginB;
   }
 
   /**
-   * 빈 블록인지 확인 (자기 마진 collapse 대상)
+   * 빈 블록인지 확인
    *
-   * CSS 명세: height/min-height, border, padding, inline 콘텐츠 없는 블록
+   * CSS 명세: 다음 조건을 모두 만족하면 빈 블록
+   * - height/min-height 없음
+   * - border-top/bottom 없음
+   * - padding-top/bottom 없음
+   * - 콘텐츠 높이 0
    */
   private isEmptyBlock(element: Element, boxModel: BoxModel): boolean {
     const style = element.props?.style as Record<string, unknown> | undefined;
@@ -609,12 +1103,10 @@ export class BlockEngine implements LayoutEngine {
     if (style?.minHeight) return false;
 
     // border 있으면 빈 블록 아님
-    if (style?.borderTopWidth || style?.borderBottomWidth) return false;
-    if (style?.border) return false;
+    if (boxModel.border.top > 0 || boxModel.border.bottom > 0) return false;
 
     // padding 있으면 빈 블록 아님
-    if (style?.paddingTop || style?.paddingBottom) return false;
-    if (style?.padding) return false;
+    if (boxModel.padding.top > 0 || boxModel.padding.bottom > 0) return false;
 
     // 콘텐츠 높이가 0이면 빈 블록
     return boxModel.contentHeight === 0;
@@ -626,13 +1118,12 @@ export class BlockEngine implements LayoutEngine {
    * CSS 명세: 빈 블록의 top/bottom 마진은 하나로 collapse
    */
   private collapseEmptyBlockMargins(margin: Margin): number {
-    // 빈 블록은 top/bottom 마진이 collapse되어 하나만 남음
     return this.collapseMargins(margin.top, margin.bottom);
   }
 }
 ```
 
-### 3.5 FlexEngine (Yoga 래퍼)
+### 3.7 FlexEngine (Yoga 위임)
 
 ```typescript
 // layout/engines/FlexEngine.ts
@@ -641,39 +1132,62 @@ import type { Element } from '../../../../../types/core/store.types';
 import type { LayoutEngine, ComputedLayout, LayoutContext } from './LayoutEngine';
 
 /**
- * Flexbox 레이아웃 엔진 (Yoga/@pixi/layout 래퍼)
+ * Flexbox 레이아웃 엔진
  *
- * 현재 @pixi/layout이 잘 동작하므로, 이 엔진은 주로
- * 인터페이스 통합 목적으로 사용됩니다.
+ * @pixi/layout(Yoga 기반)이 Flexbox를 완벽히 지원하므로,
+ * 이 엔진은 "위임 마커" 역할만 수행합니다.
  *
- * 실제 계산은 @pixi/layout의 Yoga 엔진에 위임됩니다.
+ * ## 위임 동작 방식
+ *
+ * BuilderCanvas에서 엔진 선택 시:
+ * 1. selectEngine('flex') → FlexEngine 반환
+ * 2. FlexEngine.shouldDelegate === true 확인
+ * 3. 커스텀 calculate() 호출 대신 @pixi/layout의 layout prop 사용
+ *
+ * 이 방식의 장점:
+ * - 기존 @pixi/layout 동작 유지 (검증된 Yoga 엔진)
+ * - 하이브리드 아키텍처 인터페이스 통일
+ * - 향후 필요 시 Yoga API 직접 호출로 전환 가능
  */
 export class FlexEngine implements LayoutEngine {
   readonly displayTypes = ['flex', 'inline-flex'];
 
+  /**
+   * @pixi/layout에 위임해야 함을 표시
+   *
+   * BuilderCanvas에서 이 플래그를 확인하여
+   * calculate() 대신 기존 layout prop 방식 사용
+   */
+  readonly shouldDelegate = true;
+
   calculate(
-    parent: Element,
-    children: Element[],
-    availableWidth: number,
-    availableHeight: number,
+    _parent: Element,
+    _children: Element[],
+    _availableWidth: number,
+    _availableHeight: number,
     _context?: LayoutContext
   ): ComputedLayout[] {
-    // @pixi/layout이 자동으로 처리하므로
-    // 이 메서드는 BuilderCanvas의 기존 로직과 연동
-    //
-    // 하이브리드 아키텍처에서는 다음과 같이 동작:
-    // 1. display: flex인 경우 이 엔진 선택
-    // 2. @pixi/layout의 layout prop 그대로 사용
-    // 3. getBounds()로 결과 레이아웃 조회
-
-    // 현재는 빈 배열 반환 (@pixi/layout에 위임)
-    // 향후 필요 시 Yoga API 직접 호출로 전환 가능
+    // 이 메서드는 호출되지 않음 (shouldDelegate === true)
+    // 만약 호출된다면 경고 로그 출력 (개발 모드에서만)
+    if (import.meta.env.DEV) {
+      console.warn(
+        '[FlexEngine] calculate() called directly. ' +
+        'Use @pixi/layout instead (shouldDelegate === true)'
+      );
+    }
     return [];
   }
 }
+
+/**
+ * 엔진이 @pixi/layout에 위임해야 하는지 확인
+ */
+export function shouldDelegateToPixiLayout(engine: LayoutEngine): boolean {
+  return 'shouldDelegate' in engine && (engine as FlexEngine).shouldDelegate;
+}
 ```
 
-### 3.6 GridEngine (기존 로직 통합)
+### 3.8 GridEngine (기존 로직 통합)
 
 ```typescript
 // layout/engines/GridEngine.ts
@@ -779,39 +1293,81 @@ const renderTree = useCallback((parentId: string | null) => {
 
 ```typescript
 // BuilderCanvas.tsx 하이브리드 로직
+
+import { Container } from '@pixi/react';
+import { selectEngine, shouldDelegateToPixiLayout } from './layout/engines';
+
 const renderTree = useCallback((parentId: string | null) => {
   const parent = elementsMap.get(parentId);
   const children = pageChildrenMap.get(parentId) ?? [];
-  const display = parent?.props?.style?.display;
+  const style = parent?.props?.style as Record<string, unknown> | undefined;
+  const display = style?.display as string | undefined;
 
-  // display: flex인 경우 @pixi/layout 사용 (현재와 동일)
-  if (display === 'flex' || display === 'inline-flex') {
+  // 엔진 선택
+  const engine = selectEngine(display);
+
+  // @pixi/layout 위임 여부 확인 (flex, inline-flex)
+  if (shouldDelegateToPixiLayout(engine)) {
     return renderWithPixiLayout(parent, children);
   }
 
-  // display: grid인 경우 GridEngine 사용
-  if (display === 'grid' || display === 'inline-grid') {
-    return renderWithGridEngine(parent, children);
-  }
-
-  // display: block/inline-block인 경우 BlockEngine 사용
-  return renderWithBlockEngine(parent, children);
+  // 커스텀 엔진 사용 (block, inline-block, grid)
+  return renderWithCustomEngine(engine, parent, children);
 }, [/* deps */]);
 
-const renderWithBlockEngine = (parent, children) => {
-  const layouts = blockEngine.calculate(
+/**
+ * @pixi/layout 사용 (기존 로직 유지)
+ */
+const renderWithPixiLayout = (
+  parent: Element | undefined,
+  children: Element[]
+) => {
+  const baseLayout = styleToLayout(parent?.props?.style);
+
+  return (
+    <LayoutContainer layout={baseLayout}>
+      {children.map((child) => (
+        <Fragment key={child.id}>
+          <ElementSprite element={child} />
+          {renderTree(child.id)}
+        </Fragment>
+      ))}
+    </LayoutContainer>
+  );
+};
+
+/**
+ * 커스텀 엔진 사용 (Block, Grid)
+ *
+ * 엔진이 계산한 절대 위치를 @pixi/layout의 absolute 포지셔닝으로 적용
+ */
+const renderWithCustomEngine = (
+  engine: LayoutEngine,
+  parent: Element | undefined,
+  children: Element[]
+) => {
+  if (!parent || children.length === 0) return null;
+
+  const layouts = engine.calculate(
     parent,
     children,
     containerWidth,
     containerHeight
   );
 
+  // 레이아웃 결과를 Map으로 변환 (O(1) 조회)
+  const layoutMap = new Map(
+    layouts.map((layout) => [layout.elementId, layout])
+  );
+
   return (
-    <pixiContainer>
-      {children.map((child, index) => {
-        const layout = layouts[index];
+    <Container>
+      {children.map((child) => {
+        const layout = layoutMap.get(child.id);
+        if (!layout) return null;
+
         return (
-          <pixiContainer
+          <LayoutContainer
             key={child.id}
             layout={{
               position: 'absolute',
@@ -823,10 +1379,10 @@ const renderWithBlockEngine = (parent, children) => {
           >
             <ElementSprite element={child} />
             {renderTree(child.id)}
-          </pixiContainer>
+          </LayoutContainer>
         );
       })}
-    </pixiContainer>
+    </Container>
   );
 };
 ```
@@ -834,6 +1390,10 @@ const renderWithBlockEngine = (parent, children) => {
 ### 4.3 점진적 마이그레이션 전략
 
 ```
+┌─────────────────────────────────────────────────────────┐
+│ Phase 1-4: P0 (필수 - WYSIWYG 핵심)                     │
+├─────────────────────────────────────────────────────────┤
+
 Phase 1 (현재 문서)
 └── 요구 동작 문서화 ✅
 
@@ -853,11 +1413,32 @@ Phase 4 (통합)
 ├── display 속성별 엔진 선택
 └── 기존 테스트 통과 확인
 
-Phase 5 (고급 기능)
+├─────────────────────────────────────────────────────────┤
+│ Phase 5: P1 (중요 - 정확한 레이아웃)                    │
+├─────────────────────────────────────────────────────────┤
+
+Phase 5 (P1 기능)
 ├── Inline-block 완전 구현
-├── Margin collapse (부모-자식)
-└── BFC 지원
+├── Grid 엔진 통합
+├── Margin collapse (부모-자식, 빈 블록)
+└── BFC 생성 조건 (overflow, flow-root 등)
+
+├─────────────────────────────────────────────────────────┤
+│ Phase 6: P2 (향후 - 고급 레이아웃)                      │
+├─────────────────────────────────────────────────────────┤
+
+Phase 6 (P2 기능)
+├── display: inline
+├── vertical-align (baseline, top, middle 등)
+├── inline-block baseline 계산
+├── float
+├── line-height 영향
+└── writing-mode (별도 프로젝트로 분리 가능)
+
+└─────────────────────────────────────────────────────────┘
 ```
+
+> **참고**: Phase 6(P2) 완료 후에도 Non-goals(rem/em/vw/calc, Grid repeat/minmax 등)는 미지원
 
 ---
 
@@ -973,12 +1554,13 @@ describe('Browser CSS Comparison', () => {
 ```
 apps/builder/src/builder/workspace/canvas/layout/
 ├── engines/
-│   ├── LayoutEngine.ts        # 인터페이스 정의
+│   ├── types.ts               # 공통 타입 (Margin, BoxModel)
+│   ├── LayoutEngine.ts        # 엔진 인터페이스 (ComputedLayout, LayoutContext)
 │   ├── BlockEngine.ts         # Block/Inline-Block 엔진
-│   ├── FlexEngine.ts          # Yoga 래퍼
+│   ├── FlexEngine.ts          # Yoga 위임 마커 (shouldDelegate)
 │   ├── GridEngine.ts          # Grid 엔진 (기존 로직 통합)
-│   ├── utils.ts               # 공유 유틸리티 (마진 파싱 등)
-│   └── index.ts               # 엔진 디스패처
+│   ├── utils.ts               # 공유 유틸리티 (parseMargin, parseBoxModel)
+│   └── index.ts               # 엔진 디스패처 (selectEngine, shouldDelegateToPixiLayout)
 ├── GridLayout.utils.ts        # 기존 Grid 유틸리티 (유지)
 ├── styleToLayout.ts           # 기존 스타일 변환 (유지)
 └── index.ts                   # 공개 API
@@ -1014,3 +1596,16 @@ apps/builder/src/builder/workspace/canvas/layout/
 |------|------|----------|
 | 2026-01-28 | 1.0 | 초기 문서 작성 |
 | 2026-01-28 | 1.1 | Chrome CSS 동작 검토 후 보완: BFC 생성 조건, 빈 블록 margin collapse, vertical-align/baseline 규칙, 수평 마진 collapse 방지 명시 |
+| 2026-01-28 | 1.2 | 코드 리뷰 반영: 공통 타입 정의(Margin, BoxModel), 유틸리티 함수 명세, BlockEngine 빈 블록 처리 통합, FlexEngine 위임 방식 명확화, BuilderCanvas 통합 코드 수정 |
+| 2026-01-28 | 1.3 | 추가 리뷰 반영: 범위/Non-goals 섹션 추가, BFC/물리적 분리 용어 정리, Grid 지원 범위 체크리스트, utils.ts 누락 함수 추가(parsePadding, parseBorder, calculateContentWidth/Height), 입력 규약(px/number만) 명시, inline padding 표현 완화, console.warn dev-only 처리 |
+| 2026-01-28 | 1.4 | 최종 리뷰 반영: 스코프 P0/P1 구분 명확화(inline-block/grid → P1), 입력 규약 세분화(margin/padding/border는 %미지원), inline-block 줄바꿈 조건에 마진 포함, parseBorder CSS shorthand 미지원 명시, 스타일 입력 전제 추가 |
+| 2026-01-28 | 1.5 | 경미 리뷰 반영: Non-goals % 지원 범위 명확화(width/height만), 미지원 값 처리 정책 추가(undefined 반환, parseFloat 함정 경고) |
+| 2026-01-28 | 1.6 | 정책-코드 일치: parseNumericValue/parseSize/parseShorthand에 정규식 기반 단위 검증 추가, 미지원 단위는 undefined 반환 |
+| 2026-01-28 | 1.7 | 정책 정합성: shorthand 내부 토큰 0 폴백 정책 명시 |
+| 2026-01-28 | 1.8 | 운영 가이드: shorthand 0 폴백 시 dev 모드 경고 로그 권장, parseShorthand 예시에 경고 추가 |
+| 2026-01-28 | 1.9 | 정책에 % 패턴 추가, warnOnce 헬퍼로 중복 경고 방지 |
+| 2026-01-28 | 1.10 | warnedTokens 크기 제한(100개) 및 테스트용 초기화 함수 추가 |
+| 2026-01-28 | 1.11 | warnOnce 트레이드오프 명시 (주기적 재출력 가능성) |
+| 2026-01-28 | 1.12 | P2 제목 수정: "완전한 CSS 호환" → "고급 레이아웃" (Non-goals 존재로 100% 호환 아님) |
+| 2026-01-28 | 1.13 | 마이그레이션 전략에 Phase 6(P2) 추가, Phase와 P0/P1/P2 매핑 명시 |
+| 2026-01-28 | 1.14 | vh/vw 단위 지원 추가, rem/em은 차후 지원으로 Non-goals 이동 |
