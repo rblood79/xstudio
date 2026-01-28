@@ -1609,3 +1609,4 @@ apps/builder/src/builder/workspace/canvas/layout/
 | 2026-01-28 | 1.12 | P2 제목 수정: "완전한 CSS 호환" → "고급 레이아웃" (Non-goals 존재로 100% 호환 아님) |
 | 2026-01-28 | 1.13 | 마이그레이션 전략에 Phase 6(P2) 추가, Phase와 P0/P1/P2 매핑 명시 |
 | 2026-01-28 | 1.14 | vh/vw 단위 지원 추가, rem/em은 차후 지원으로 Non-goals 이동 |
+| 2026-01-28 | 1.15 | Phase 6 구현 완료: vertical-align (baseline/top/bottom/middle), LineBox 기반 inline-block 배치 |

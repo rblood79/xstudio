@@ -41,7 +41,15 @@ import { BodyLayer } from "./layers";
 import { TextEditOverlay, useTextEdit } from "../overlay";
 // 🚀 Phase 6: calculateLayout 제거 - @pixi/layout이 자동으로 레이아웃 처리
 // 🚀 Phase 7: initYoga 추가 - @pixi/layout용 Yoga 초기화
-import { styleToLayout, initYoga, type LayoutStyle } from "./layout";
+// 🚀 Phase 4 (2026-01-28): 하이브리드 레이아웃 엔진 통합
+import {
+  styleToLayout,
+  initYoga,
+  selectEngine,
+  shouldDelegateToPixiLayout,
+  type LayoutStyle,
+  type ComputedLayout,
+} from "./layout";
 import { getElementBoundsSimple, registerElement, unregisterElement } from "./elementRegistry";
 import { getOutlineVariantColor } from "./utils/cssVariableReader";
 import { useThemeColors } from "./hooks/useThemeColors";
@@ -464,10 +472,79 @@ const ElementsLayer = memo(function ElementsLayer({
   // 🚀 Phase 7: LayoutContainer 사용 - layout + registry 등록 통합
   // 🚀 Phase 9: children이 있는 요소에 기본 flex 레이아웃 적용
   // 🚀 Phase 10: Container 타입은 children을 내부에서 렌더링
+  // 🚀 Phase 4 (2026-01-28): 하이브리드 레이아웃 엔진 (Grid/Block은 커스텀 엔진)
   const renderedTree = useMemo(() => {
-    const renderTree = (parentId: string | null): React.ReactNode => {
-      const children = pageChildrenMap.get(parentId) ?? [];
+    // 🚀 Phase 4: 커스텀 엔진으로 렌더링 (display: grid/block)
+    // Grid/Block은 @pixi/layout 대신 커스텀 엔진으로 레이아웃 계산 후 absolute 배치
+    function renderWithCustomEngine(
+      parentElement: Element,
+      children: Element[],
+      renderTreeFn: (parentId: string | null) => React.ReactNode
+    ): React.ReactNode {
+      const parentStyle = parentElement.props?.style as Record<string, unknown> | undefined;
+      const parentDisplay = parentStyle?.display as string | undefined;
+      const engine = selectEngine(parentDisplay);
 
+      // 레이아웃 계산
+      const layouts = engine.calculate(
+        parentElement,
+        children,
+        pageWidth,
+        pageHeight,
+        { bfcId: parentElement.id }
+      );
+      const layoutMap = new Map<string, ComputedLayout>(
+        layouts.map((l) => [l.elementId, l])
+      );
+
+      return children.map((child) => {
+        if (!renderIdSet.has(child.id)) return null;
+
+        const layout = layoutMap.get(child.id);
+        if (!layout) return null;
+
+        return (
+          <LayoutContainer
+            key={child.id}
+            elementId={child.id}
+            layout={{
+              position: 'absolute',
+              left: layout.x,
+              top: layout.y,
+              width: layout.width,
+              height: layout.height,
+            }}
+          >
+            <ElementSprite
+              element={child}
+              onClick={onClick}
+              onDoubleClick={onDoubleClick}
+            />
+            {renderTreeFn(child.id)}
+          </LayoutContainer>
+        );
+      });
+    }
+
+    function renderTree(parentId: string | null): React.ReactNode {
+      const children = pageChildrenMap.get(parentId) ?? [];
+      if (children.length === 0) return null;
+
+      // 🚀 Phase 4: 부모의 display 확인하여 엔진 선택
+      const parentElement = parentId ? elementById.get(parentId) : bodyElement;
+      const parentStyle = parentElement?.props?.style as Record<string, unknown> | undefined;
+      const parentDisplay = parentStyle?.display as string | undefined;
+
+      // 엔진 선택
+      const engine = selectEngine(parentDisplay);
+
+      // Grid/Block은 커스텀 엔진 사용 (명시적 display만)
+      // Flex 및 암시적 flex(undefined)는 @pixi/layout에 위임
+      if (!shouldDelegateToPixiLayout(engine) && parentElement) {
+        return renderWithCustomEngine(parentElement, children, renderTree);
+      }
+
+      // Flex 및 기본(암시적 flex)은 기존 @pixi/layout 방식
       return children.map((child) => {
         if (!renderIdSet.has(child.id)) return null;
 
@@ -559,10 +636,10 @@ const ElementsLayer = memo(function ElementsLayer({
           </LayoutContainer>
         );
       });
-    };
+    }
 
     return renderTree(bodyElement?.id ?? null);
-  }, [pageChildrenMap, renderIdSet, onClick, onDoubleClick, bodyElement?.id, CONTAINER_TAGS, BLOCK_TAGS]);
+  }, [pageChildrenMap, renderIdSet, onClick, onDoubleClick, bodyElement?.id, elementById, pageWidth, pageHeight, CONTAINER_TAGS, BLOCK_TAGS]);
 
   // 🚀 Phase 7: @pixi/layout 루트 컨테이너 layout 설정
   // Body 요소의 flex 스타일을 적용하여 자식 요소들이 올바르게 배치되도록 함
