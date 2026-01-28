@@ -7,6 +7,108 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed - Hybrid Layout Engine CSS/WebGL Parity (2026-01-28)
+
+#### Phase 9: display: flex 지원 및 CSS/WebGL 레이아웃 정합성 개선
+
+**문제 1: Button 크기 불일치**
+- WebGL에서 버튼들이 겹치거나 잘못된 위치에 렌더링됨
+- BUTTON_SIZE_CONFIG 값이 @xstudio/specs ButtonSpec과 일치하지 않음
+
+**해결:**
+- `utils.ts`의 BUTTON_SIZE_CONFIG를 ButtonSpec 값으로 동기화
+- padding 구조를 `paddingLeft`/`paddingRight`로 분리하여 유연성 확보
+
+```typescript
+const BUTTON_SIZE_CONFIG = {
+  xs: { paddingLeft: 8, paddingRight: 8, fontSize: 12, height: 24 },
+  sm: { paddingLeft: 12, paddingRight: 12, fontSize: 14, height: 32 },
+  md: { paddingLeft: 16, paddingRight: 16, fontSize: 16, height: 40 },
+  lg: { paddingLeft: 24, paddingRight: 24, fontSize: 18, height: 48 },
+  xl: { paddingLeft: 32, paddingRight: 32, fontSize: 20, height: 56 },
+};
+```
+
+**문제 2: StylesPanel에서 width가 0으로 표시됨**
+- `fit-content` 등 CSS intrinsic sizing 키워드가 KEYWORDS에 없어서 파싱 실패
+
+**해결:**
+- `PropertyUnitInput.tsx`의 KEYWORDS에 intrinsic sizing 키워드 추가
+
+```typescript
+const KEYWORDS = [
+  "reset", "auto", "inherit", "initial", "unset", "normal",
+  "fit-content", "min-content", "max-content",  // CSS intrinsic sizing
+];
+```
+
+**문제 3: Page padding이 WebGL에 적용되지 않음**
+- CSS에서는 page padding이 적용되지만 WebGL에서는 무시됨
+
+**해결:**
+- `BuilderCanvas.tsx`의 `renderWithCustomEngine`에 padding 처리 추가
+- 부모의 padding을 파싱하여 자식 요소의 사용 가능 공간 계산
+- 자식 위치에 padding offset 적용
+
+```typescript
+const parentPadding = parsePadding(parentStyle);
+const availableWidth = pageWidth - parentPadding.left - parentPadding.right;
+const availableHeight = pageHeight - parentPadding.top - parentPadding.bottom;
+// 자식 위치에 padding offset 적용
+left: layout.x + parentPadding.left,
+top: layout.y + parentPadding.top,
+```
+
+**문제 4: display: flex가 WebGL에서 작동하지 않음**
+- page나 component에 `display: flex`를 적용해도 시각적 변화 없음
+- `rootLayout`에 `display: 'flex'`가 기본값으로 없어서 @pixi/layout이 flex 컨테이너로 인식하지 못함
+
+**해결:**
+- `rootLayout` 기본값에 `display: 'flex'` 명시적 추가
+- `styleToLayout`에서 `display: 'flex'`와 `flexDirection` 처리 추가
+
+```typescript
+// rootLayout 기본값
+const result = {
+  display: 'flex' as const,  // 🚀 Phase 9: 명시적 추가
+  flexDirection: 'row' as const,
+  flexWrap: 'wrap' as const,
+  // ...bodyLayout으로 덮어쓰기
+  ...bodyLayout,
+};
+
+// styleToLayout에서 display: flex 처리
+if (style.display === 'flex' || style.display === 'inline-flex') {
+  layout.display = 'flex';
+  layout.flexDirection = (style.flexDirection as LayoutStyle['flexDirection']) ?? 'row';
+}
+```
+
+**수정된 파일:**
+
+1. `apps/builder/src/builder/workspace/canvas/layout/engines/utils.ts`
+   - BUTTON_SIZE_CONFIG를 @xstudio/specs ButtonSpec과 동기화
+   - padding → paddingLeft/paddingRight 구조 변경
+
+2. `apps/builder/src/builder/components/property/PropertyUnitInput.tsx`
+   - KEYWORDS에 `fit-content`, `min-content`, `max-content` 추가
+
+3. `apps/builder/src/builder/workspace/canvas/BuilderCanvas.tsx`
+   - `renderWithCustomEngine`에 부모 padding 처리 추가
+   - `rootLayout`에 `display: 'flex'` 기본값 추가
+
+4. `apps/builder/src/builder/workspace/canvas/layout/styleToLayout.ts`
+   - `display: 'flex'` 및 `inline-flex` 처리 추가
+
+**결과:**
+- ✅ Button 크기가 CSS와 WebGL에서 일치
+- ✅ StylesPanel에서 fit-content 등 intrinsic sizing 값 정상 표시
+- ✅ Page/Component padding이 WebGL에 정상 적용
+- ✅ display: flex, flexDirection이 WebGL에서 정상 동작
+- ✅ TypeScript 에러 없음
+
+---
+
 ### Refactored - @pixi/layout Migration Phase 7-8: Percentage Unit Support (2026-01-06)
 
 #### Phase 7: SelectionBox 좌표 변환 수정

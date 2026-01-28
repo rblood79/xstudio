@@ -243,6 +243,14 @@ export function styleToLayout(element: Element): LayoutStyle {
     if (bottom !== undefined) layout.bottom = bottom;
   }
 
+  // Display
+  // @pixi/layout은 display: 'flex', 'block', 'none' 지원
+  if (style.display === 'flex' || style.display === 'inline-flex') {
+    layout.display = 'flex';
+    // CSS flex의 기본 flexDirection은 'row'
+    layout.flexDirection = (style.flexDirection as LayoutStyle['flexDirection']) ?? 'row';
+  }
+
   // Flexbox Container
   // @pixi/layout에서는 display: 'flex' 없이도 flexbox 속성이 적용됨
   // flexDirection, gap 등이 있으면 자동으로 flex 컨테이너로 동작

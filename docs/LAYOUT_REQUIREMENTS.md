@@ -1590,7 +1590,142 @@ apps/builder/src/builder/workspace/canvas/layout/
 
 ---
 
-## 8. 변경 이력
+## 8. 이슈 사항 및 해결 내역
+
+### 8.1 Phase 9: CSS/WebGL 레이아웃 정합성 개선 (2026-01-28)
+
+#### 이슈 1: Button 크기 CSS/WebGL 불일치
+
+**증상:**
+- WebGL 캔버스에서 버튼들이 겹치거나 잘못된 위치에 렌더링됨
+- CSS에서는 정상적으로 배치되지만 WebGL에서는 레이아웃이 깨짐
+
+**원인:**
+- `utils.ts`의 `BUTTON_SIZE_CONFIG` 값이 `@xstudio/specs ButtonSpec`과 일치하지 않음
+- 예: md 사이즈가 padding: 50, height: 36으로 설정되어 있었으나 실제 ButtonSpec은 padding: 32, height: 40
+
+**해결:**
+```typescript
+// utils.ts - BUTTON_SIZE_CONFIG를 ButtonSpec과 동기화
+const BUTTON_SIZE_CONFIG = {
+  xs: { paddingLeft: 8, paddingRight: 8, fontSize: 12, height: 24 },
+  sm: { paddingLeft: 12, paddingRight: 12, fontSize: 14, height: 32 },
+  md: { paddingLeft: 16, paddingRight: 16, fontSize: 16, height: 40 },
+  lg: { paddingLeft: 24, paddingRight: 24, fontSize: 18, height: 48 },
+  xl: { paddingLeft: 32, paddingRight: 32, fontSize: 20, height: 56 },
+};
+```
+
+---
+
+#### 이슈 2: StylesPanel에서 width가 0으로 표시됨
+
+**증상:**
+- Button 등 컴포넌트 선택 시 StylesPanel의 width 필드에 0이 표시됨
+- height는 정상적으로 "auto"로 표시됨
+
+**원인:**
+- `PropertyUnitInput.tsx`의 `KEYWORDS` 배열에 CSS intrinsic sizing 키워드가 없음
+- `fit-content` 값이 키워드로 인식되지 않아 숫자 파싱 실패 → 0으로 폴백
+
+**해결:**
+```typescript
+// PropertyUnitInput.tsx
+const KEYWORDS = [
+  "reset", "auto", "inherit", "initial", "unset", "normal",
+  "fit-content", "min-content", "max-content",  // CSS intrinsic sizing 추가
+];
+```
+
+---
+
+#### 이슈 3: Page padding이 WebGL에 적용되지 않음
+
+**증상:**
+- CSS Preview에서는 page에 설정한 padding이 적용됨
+- WebGL 캔버스에서는 padding이 무시되어 자식 요소가 좌상단에 붙음
+
+**원인:**
+- `BuilderCanvas.tsx`의 `renderWithCustomEngine`에서 부모의 padding을 고려하지 않고 `pageWidth`, `pageHeight`를 그대로 사용
+
+**해결:**
+```typescript
+// BuilderCanvas.tsx - renderWithCustomEngine
+function renderWithCustomEngine(...) {
+  // 부모의 padding 파싱
+  const parentPadding = parsePadding(parentStyle);
+
+  // padding이 적용된 content-box 크기 계산
+  const availableWidth = pageWidth - parentPadding.left - parentPadding.right;
+  const availableHeight = pageHeight - parentPadding.top - parentPadding.bottom;
+
+  // 레이아웃 계산 시 content-box 크기 사용
+  const layouts = engine.calculate(
+    parentElement, children,
+    availableWidth, availableHeight, ...
+  );
+
+  // 자식 위치에 padding offset 적용
+  return children.map((child) => (
+    <LayoutContainer
+      layout={{
+        left: layout.x + parentPadding.left,
+        top: layout.y + parentPadding.top,
+        ...
+      }}
+    />
+  ));
+}
+```
+
+---
+
+#### 이슈 4: display: flex가 WebGL에서 작동하지 않음
+
+**증상:**
+- Page나 Component에 `display: flex`와 `flexDirection: column` 설정
+- CSS Preview에서는 정상 동작
+- WebGL 캔버스에서는 여전히 가로 배치 (flex 적용 안됨)
+
+**원인:**
+- `rootLayout`의 기본값에 `display: 'flex'`가 명시되지 않음
+- `@pixi/layout`이 명시적 `display: 'flex'` 없이는 flex 컨테이너로 인식하지 못함
+- `bodyLayout`에서 spread로 `display: 'flex'`가 전달되어도 기본값이 없으면 동작하지 않는 경우 발생
+
+**해결:**
+```typescript
+// BuilderCanvas.tsx - rootLayout
+const rootLayout = useMemo(() => {
+  const bodyLayout = bodyElement ? styleToLayout(bodyElement) : {};
+
+  const result = {
+    display: 'flex' as const,  // 🚀 Phase 9: 명시적 추가
+    flexDirection: 'row' as const,
+    flexWrap: 'wrap' as const,
+    justifyContent: 'flex-start' as const,
+    alignItems: 'flex-start' as const,
+    alignContent: 'flex-start' as const,
+    ...bodyLayout,  // bodyLayout의 display, flexDirection으로 덮어쓰기
+    width: pageWidth,
+    height: pageHeight,
+    position: 'relative' as const,
+  };
+
+  return result;
+}, [pageWidth, pageHeight, bodyElement]);
+```
+
+```typescript
+// styleToLayout.ts - display: flex 처리 추가
+if (style.display === 'flex' || style.display === 'inline-flex') {
+  layout.display = 'flex';
+  layout.flexDirection = (style.flexDirection as LayoutStyle['flexDirection']) ?? 'row';
+}
+```
+
+---
+
+## 9. 변경 이력
 
 | 날짜 | 버전 | 변경 내용 |
 |------|------|----------|
@@ -1610,3 +1745,4 @@ apps/builder/src/builder/workspace/canvas/layout/
 | 2026-01-28 | 1.13 | 마이그레이션 전략에 Phase 6(P2) 추가, Phase와 P0/P1/P2 매핑 명시 |
 | 2026-01-28 | 1.14 | vh/vw 단위 지원 추가, rem/em은 차후 지원으로 Non-goals 이동 |
 | 2026-01-28 | 1.15 | Phase 6 구현 완료: vertical-align (baseline/top/bottom/middle), LineBox 기반 inline-block 배치 |
+| 2026-01-28 | 1.16 | Phase 9 CSS/WebGL 정합성 개선: BUTTON_SIZE_CONFIG를 ButtonSpec과 동기화, PropertyUnitInput에 fit-content/min-content/max-content 키워드 추가, renderWithCustomEngine에 부모 padding 처리 추가, rootLayout에 display: 'flex' 기본값 명시 |

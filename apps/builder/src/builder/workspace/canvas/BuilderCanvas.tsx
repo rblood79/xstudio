@@ -557,6 +557,9 @@ const ElementsLayer = memo(function ElementsLayer({
       }
 
       // Flex 및 기본(암시적 flex)은 기존 @pixi/layout 방식
+      // 🚀 부모의 flex 속성을 가져와서 자식 배치에 활용
+      const parentLayout = parentElement ? styleToLayout(parentElement) : {};
+
       return children.map((child) => {
         if (!renderIdSet.has(child.id)) return null;
 
@@ -569,13 +572,15 @@ const ElementsLayer = memo(function ElementsLayer({
         const hasChildren = (pageChildrenMap.get(child.id)?.length ?? 0) > 0;
 
         // 🚀 Phase 8: CSS display: block 요소에 flexBasis: '100%' 적용
-        // body가 flexDirection: 'row'일 때, block 요소가 한 줄 전체를 차지하도록
+        // 부모가 flexDirection: 'row'일 때, block 요소가 한 줄 전체를 차지하도록
         const isBlockElement = BLOCK_TAGS.has(child.tag);
-        const blockLayout = isBlockElement && !baseLayout.width
+        const isParentFlexRow = parentLayout.flexDirection === 'row' || (!parentLayout.flexDirection && parentLayout.display === 'flex');
+        const blockLayout = isBlockElement && !baseLayout.width && isParentFlexRow
           ? { flexBasis: '100%' as const }
           : {};
 
-        const containerLayout = hasChildren && !baseLayout.flexDirection
+        // 🚀 자식 요소에 display: flex가 있으면 해당 속성 적용
+        const containerLayout = hasChildren && !baseLayout.display && !baseLayout.flexDirection
           ? { display: 'flex' as const, flexDirection: 'column' as const, ...blockLayout, ...baseLayout }
           : { ...blockLayout, ...baseLayout };
 
@@ -659,12 +664,15 @@ const ElementsLayer = memo(function ElementsLayer({
     // Body 요소의 layout 스타일 가져오기
     const bodyLayout = bodyElement ? styleToLayout(bodyElement) : {};
 
+
     // Body의 flexbox 속성 적용 (width/height는 page 크기로 고정)
     // 🚀 Phase 8: CSS body 기본값 동기화
     // - CSS body(block) + inline-block 자식들 → 가로 배치 + 줄바꿈
     // - @pixi/layout에서 이를 재현: flexDirection: 'row' + flexWrap: 'wrap'
     // - justifyContent: 'flex-start' → 좌측부터 순서대로 배치 (CSS inline-block 동작)
-    return {
+    // 🚀 Phase 9: display: 'flex' 명시적 추가 - @pixi/layout이 flex 컨테이너로 인식하도록
+    const result = {
+      display: 'flex' as const,
       flexDirection: 'row' as const,
       flexWrap: 'wrap' as const,
       justifyContent: 'flex-start' as const,
@@ -675,6 +683,8 @@ const ElementsLayer = memo(function ElementsLayer({
       height: pageHeight,
       position: 'relative' as const,
     };
+
+    return result;
   }, [pageWidth, pageHeight, bodyElement]);
 
   return (
