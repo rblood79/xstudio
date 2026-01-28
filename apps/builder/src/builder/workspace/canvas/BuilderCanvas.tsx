@@ -47,6 +47,7 @@ import {
   initYoga,
   selectEngine,
   shouldDelegateToPixiLayout,
+  parsePadding,
   type LayoutStyle,
   type ComputedLayout,
 } from "./layout";
@@ -485,12 +486,17 @@ const ElementsLayer = memo(function ElementsLayer({
       const parentDisplay = parentStyle?.display as string | undefined;
       const engine = selectEngine(parentDisplay);
 
-      // 레이아웃 계산
+      // 🚀 부모의 padding 파싱 (자식 요소들의 사용 가능 공간 계산)
+      const parentPadding = parsePadding(parentStyle);
+      const availableWidth = pageWidth - parentPadding.left - parentPadding.right;
+      const availableHeight = pageHeight - parentPadding.top - parentPadding.bottom;
+
+      // 레이아웃 계산 (padding이 적용된 content-box 크기 사용)
       const layouts = engine.calculate(
         parentElement,
         children,
-        pageWidth,
-        pageHeight,
+        availableWidth,
+        availableHeight,
         { bfcId: parentElement.id }
       );
       const layoutMap = new Map<string, ComputedLayout>(
@@ -509,8 +515,9 @@ const ElementsLayer = memo(function ElementsLayer({
             elementId={child.id}
             layout={{
               position: 'absolute',
-              left: layout.x,
-              top: layout.y,
+              // padding offset 적용
+              left: layout.x + parentPadding.left,
+              top: layout.y + parentPadding.top,
               width: layout.width,
               height: layout.height,
             }}
@@ -540,7 +547,12 @@ const ElementsLayer = memo(function ElementsLayer({
 
       // Grid/Block은 커스텀 엔진 사용 (명시적 display만)
       // Flex 및 암시적 flex(undefined)는 @pixi/layout에 위임
-      if (!shouldDelegateToPixiLayout(engine) && parentElement) {
+      // 🚀 Phase 6 Fix: display가 명시적으로 설정된 경우만 커스텀 엔진 사용
+      const useCustomEngine = parentDisplay !== undefined &&
+        !shouldDelegateToPixiLayout(engine) &&
+        parentElement !== null;
+
+      if (useCustomEngine && parentElement) {
         return renderWithCustomEngine(parentElement, children, renderTree);
       }
 

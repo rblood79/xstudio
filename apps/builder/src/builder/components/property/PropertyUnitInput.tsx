@@ -29,7 +29,10 @@ interface PropertyUnitInputProps {
 }
 
 const DEFAULT_UNITS = ["px", "%", "rem", "em", "vh", "vw", "reset"];
-const KEYWORDS = ["reset", "auto", "inherit", "initial", "unset", "normal"];
+const KEYWORDS = [
+  "reset", "auto", "inherit", "initial", "unset", "normal",
+  "fit-content", "min-content", "max-content",  // CSS intrinsic sizing
+];
 
 function parseUnitValue(value: string): {
   numericValue: number | null;

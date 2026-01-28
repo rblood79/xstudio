@@ -11,11 +11,12 @@
  * @since 2026-01-28 Phase 3 - 하이브리드 레이아웃 엔진
  * @updated 2026-01-28 Phase 5 - P1 기능 (BFC, 부모-자식 margin collapse)
  * @updated 2026-01-28 Phase 6 - P2 기능 (vertical-align, LineBox)
+ * @updated 2026-01-28 Phase 6 Fix - 기본 inline-block 요소 처리
  */
 
 import type { Element } from '../../../../../types/core/store.types';
 import type { LayoutEngine, ComputedLayout, LayoutContext } from './LayoutEngine';
-import type { Margin, BoxModel, LineBoxItem, LineBox, VerticalAlign } from './types';
+import type { Margin, BoxModel, LineBoxItem, LineBox } from './types';
 import {
   parseMargin,
   parseBoxModel,
@@ -24,6 +25,37 @@ import {
   parseVerticalAlign,
   calculateBaseline,
 } from './utils';
+
+/**
+ * CSS에서 기본적으로 inline-block으로 동작하는 요소들
+ *
+ * 이 요소들은 display가 명시되지 않아도 inline-block으로 취급
+ * https://developer.mozilla.org/en-US/docs/Web/HTML/Element/input
+ */
+const DEFAULT_INLINE_BLOCK_TAGS = new Set([
+  // 폼 요소
+  'button',
+  'input',
+  'select',
+  'textarea',
+  // 미디어/대체 요소 (replaced elements)
+  'img',
+  'video',
+  'audio',
+  'canvas',
+  'iframe',
+  'embed',
+  'object',
+  // 인라인 요소
+  'span',
+  'a',
+  'label',
+  'code',
+  'strong',
+  'em',
+  'small',
+  'abbr',
+]);
 
 /**
  * BlockEngine 계산 결과 (내부용)
@@ -150,8 +182,12 @@ export class BlockEngine implements LayoutEngine {
       const child = children[i];
       const style = child.props?.style as Record<string, unknown> | undefined;
       const childDisplay = style?.display as string | undefined;
+      const childTag = (child.tag ?? '').toLowerCase();
 
-      const isInlineBlock = childDisplay === 'inline-block';
+      // 🚀 Phase 6 Fix: 기본 inline-block 요소 처리
+      // display가 명시적으로 block이면 block으로, 그 외는 태그 기본값 확인
+      const isInlineBlock = childDisplay === 'inline-block' ||
+        (childDisplay === undefined && DEFAULT_INLINE_BLOCK_TAGS.has(childTag));
       const margin = parseMargin(style);
       const boxModel = parseBoxModel(
         child,

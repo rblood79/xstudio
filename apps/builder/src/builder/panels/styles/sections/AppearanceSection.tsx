@@ -84,7 +84,7 @@ const AppearanceSectionContent = memo(function AppearanceSectionContent() {
           label="Border Radius"
           className="border-radius"
           value={styleValues.borderRadius}
-          units={['reset', 'px', '%', 'rem', 'em']}
+          units={['reset', 'px']}
           onChange={(value) => updateStyleImmediate('borderRadius', value)}
           onDrag={(value) => updateStyleRAF('borderRadius', value)}
           min={0}

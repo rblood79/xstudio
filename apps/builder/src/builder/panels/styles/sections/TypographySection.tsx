@@ -91,7 +91,7 @@ const TypographySectionContent = memo(function TypographySectionContent() {
         label="Font Size"
         className="font-size"
         value={styleValues.fontSize}
-        units={['reset', 'px', 'rem', 'em', 'pt']}
+        units={['reset', 'px', 'pt']}
         onChange={(value) => updateStyleImmediate('fontSize', value)}
         onDrag={(value) => updateStyleRAF('fontSize', value)}
         min={8}
@@ -102,7 +102,7 @@ const TypographySectionContent = memo(function TypographySectionContent() {
         label="Line Height"
         className="line-height"
         value={styleValues.lineHeight}
-        units={['reset', 'px', 'rem', 'em', '']}
+        units={['reset', 'px']}
         onChange={(value) => updateStyleImmediate('lineHeight', value)}
         onDrag={(value) => updateStyleRAF('lineHeight', value)}
         min={0}
@@ -136,7 +136,7 @@ const TypographySectionContent = memo(function TypographySectionContent() {
         label="Letter Spacing"
         className="letter-spacing"
         value={styleValues.letterSpacing}
-        units={['reset', 'px', 'rem', 'em']}
+        units={['reset', 'px']}
         onChange={(value) => updateStyleImmediate('letterSpacing', value)}
         onDrag={(value) => updateStyleRAF('letterSpacing', value)}
         min={-10}

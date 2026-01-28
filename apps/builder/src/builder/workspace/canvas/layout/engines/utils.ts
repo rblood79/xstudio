@@ -242,44 +242,285 @@ export function parseBorder(style: Record<string, unknown> | undefined): Margin 
 }
 
 /**
+ * 요소 태그별 기본 너비 (텍스트 없을 때)
+ *
+ * width가 명시되지 않고 텍스트 콘텐츠도 없는 요소에 대한 폴백 너비
+ */
+const DEFAULT_ELEMENT_WIDTHS: Record<string, number> = {
+  // 폼 요소 (기본 크기)
+  input: 180,
+  select: 150,
+  textarea: 200,
+  // 미디어 계열
+  img: 150,
+  video: 300,
+  canvas: 200,
+  iframe: 300,
+};
+
+/** 기본 너비 (알 수 없는 태그, 텍스트 없을 때) */
+const DEFAULT_WIDTH = 80;
+
+/**
+ * 버튼 size별 설정
+ *
+ * @xstudio/specs ButtonSpec.sizes와 1:1 동기화
+ * paddingLeft/paddingRight: ButtonSpec.sizes[size].paddingX (좌우 동일)
+ * height: ButtonSpec.sizes[size].height
+ * fontSize: typography 토큰 resolved 값
+ *
+ * 참고: ButtonSpec은 paddingX만 정의 (좌우 동일)
+ * 향후 좌우 패딩이 다른 경우 paddingLeft/paddingRight 분리 가능
+ */
+const BUTTON_SIZE_CONFIG: Record<string, {
+  paddingLeft: number;
+  paddingRight: number;
+  fontSize: number;
+  height: number;
+}> = {
+  xs: { paddingLeft: 8, paddingRight: 8, fontSize: 12, height: 24 },
+  sm: { paddingLeft: 12, paddingRight: 12, fontSize: 14, height: 32 },
+  md: { paddingLeft: 16, paddingRight: 16, fontSize: 16, height: 40 },
+  lg: { paddingLeft: 24, paddingRight: 24, fontSize: 18, height: 48 },
+  xl: { paddingLeft: 32, paddingRight: 32, fontSize: 20, height: 56 },
+};
+
+/**
+ * Canvas 2D 텍스트 측정용 컨텍스트 (싱글톤)
+ *
+ * PixiButton의 measureTextSize()와 동일한 결과를 위해
+ * Canvas 2D measureText() 사용
+ */
+let measureCanvas: HTMLCanvasElement | null = null;
+let measureContext: CanvasRenderingContext2D | null = null;
+
+function getMeasureContext(): CanvasRenderingContext2D | null {
+  if (!measureContext) {
+    measureCanvas = document.createElement('canvas');
+    measureContext = measureCanvas.getContext('2d');
+  }
+  return measureContext;
+}
+
+/**
+ * Canvas 2D를 사용하여 텍스트 너비 측정
+ *
+ * PixiButton의 measureTextSize()와 동일한 결과를 반환
+ *
+ * @param text - 측정할 텍스트
+ * @param fontSize - 폰트 크기 (기본 14px)
+ * @param fontFamily - 폰트 패밀리 (기본 Pretendard)
+ */
+function measureTextWidth(
+  text: string,
+  fontSize: number = 14,
+  fontFamily: string = 'Pretendard, Arial, sans-serif'
+): number {
+  if (!text) return 0;
+
+  const ctx = getMeasureContext();
+  if (!ctx) {
+    // Canvas 미지원 환경: 추정값 사용
+    return text.length * (fontSize * 0.5);
+  }
+
+  ctx.font = `${fontSize}px ${fontFamily}`;
+  const metrics = ctx.measureText(text);
+  return metrics.width;
+}
+
+/**
+ * 텍스트 콘텐츠 추출
+ *
+ * 다양한 prop에서 텍스트 문자열 추출
+ * 우선순위: children > text > label > title > placeholder > value
+ */
+function extractTextContent(props: Record<string, unknown> | undefined): string {
+  if (!props) return '';
+
+  // 우선순위에 따라 텍스트 소스 확인
+  const textSources = [
+    props.children,
+    props.text,
+    props.label,
+    props.title,
+    props.placeholder,
+    props.value,
+  ];
+
+  for (const source of textSources) {
+    const text = extractFromValue(source);
+    if (text) return text;
+  }
+
+  return '';
+}
+
+/**
+ * 단일 값에서 텍스트 추출
+ */
+function extractFromValue(value: unknown): string {
+  if (value === undefined || value === null) return '';
+
+  // 문자열
+  if (typeof value === 'string') return value;
+
+  // 숫자
+  if (typeof value === 'number') return String(value);
+
+  // 배열 (복수 children)
+  if (Array.isArray(value)) {
+    return value
+      .map((item) => {
+        if (typeof item === 'string') return item;
+        if (typeof item === 'number') return String(item);
+        return '';
+      })
+      .join('');
+  }
+
+  return '';
+}
+
+/**
+ * 텍스트 기반 너비 계산
+ *
+ * Canvas 2D measureText()를 사용하여 정확한 텍스트 너비 측정
+ * PixiButton의 measureTextSize()와 동일한 결과
+ *
+ * @param text - 텍스트 콘텐츠
+ * @param fontSize - 폰트 크기 (기본 14px)
+ * @param padding - 좌우 패딩 합계
+ */
+function calculateTextWidth(text: string, fontSize: number = 14, padding: number = 0): number {
+  if (!text) return 0;
+
+  const textWidth = measureTextWidth(text, fontSize);
+  return Math.ceil(textWidth + padding);
+}
+
+/**
  * 요소의 콘텐츠 너비 계산
  *
- * 실제 구현에서는 자식 요소들의 레이아웃을 재귀적으로 계산해야 합니다.
- * 텍스트 요소의 경우 폰트 메트릭 기반 측정이 필요합니다.
+ * CSS width: auto 동작 모방:
+ * 1. 텍스트 콘텐츠가 있으면 텍스트 기반 너비 추정
+ * 2. 텍스트가 없으면 태그별 기본 너비 사용
  *
- * @returns 콘텐츠 기반 너비 (자식이 없으면 0)
+ * @returns 콘텐츠 기반 너비
  */
 export function calculateContentWidth(element: Element): number {
-  // TODO: 실제 구현 시 다음을 고려:
-  // 1. 자식 요소들의 너비 합계 (inline-block) 또는 최대값 (block)
-  // 2. 텍스트 콘텐츠의 경우 Canvas.measureText() 사용
-  // 3. 이미지의 경우 naturalWidth 사용
-
-  // 임시: props에 명시된 width가 있으면 사용
   const style = element.props?.style as Record<string, unknown> | undefined;
+  const tag = (element.tag ?? '').toLowerCase();
+
+  // 1. 명시적 width가 있으면 사용
   const explicitWidth = parseNumericValue(style?.width);
   if (explicitWidth !== undefined) return explicitWidth;
 
-  // 기본값: 0 (콘텐츠 없음으로 간주)
-  return 0;
+  // 2. 텍스트 콘텐츠 기반 너비 측정 (Canvas 2D measureText 사용)
+  const text = extractTextContent(element.props as Record<string, unknown>);
+
+  if (text) {
+    const props = element.props as Record<string, unknown> | undefined;
+
+    // 버튼, 인풋 등은 size prop에 따라 padding/fontSize 결정
+    const needsPadding = ['button', 'input', 'select', 'a', 'label'].includes(tag);
+    if (needsPadding) {
+      const size = (props?.size as string) ?? 'sm';
+      const sizeConfig = BUTTON_SIZE_CONFIG[size] ?? BUTTON_SIZE_CONFIG.sm;
+      const fontSize = parseNumericValue(style?.fontSize) ?? sizeConfig.fontSize;
+      const totalPadding = sizeConfig.paddingLeft + sizeConfig.paddingRight;
+      return calculateTextWidth(text, fontSize, totalPadding);
+    }
+
+    // 일반 요소
+    const fontSize = parseNumericValue(style?.fontSize) ?? 14;
+    return calculateTextWidth(text, fontSize, 0);
+  }
+
+  // 3. 태그별 기본 너비 사용
+  const defaultWidth = DEFAULT_ELEMENT_WIDTHS[tag];
+  if (defaultWidth !== undefined) return defaultWidth;
+
+  // 4. 알 수 없는 태그는 기본값 사용
+  return DEFAULT_WIDTH;
 }
+
+/**
+ * 요소 태그별 기본 높이
+ *
+ * height가 명시되지 않은 요소에 대한 추정 높이
+ * 브라우저 CSS와 유사한 기본 크기 적용
+ */
+const DEFAULT_ELEMENT_HEIGHTS: Record<string, number> = {
+  // 버튼/인풋 계열
+  button: 36,
+  input: 36,
+  select: 36,
+  textarea: 80,
+  // 텍스트 계열
+  p: 24,
+  span: 20,
+  label: 20,
+  h1: 40,
+  h2: 36,
+  h3: 32,
+  h4: 28,
+  h5: 24,
+  h6: 20,
+  // 컨테이너 계열 (auto, 자식 기반)
+  div: 0,
+  section: 0,
+  article: 0,
+  header: 0,
+  footer: 0,
+  nav: 0,
+  aside: 0,
+  main: 0,
+  // 미디어 계열
+  img: 150,
+  video: 200,
+  canvas: 150,
+  // 리스트 계열
+  ul: 0,
+  ol: 0,
+  li: 24,
+  // 테이블 계열
+  table: 0,
+  tr: 36,
+  td: 36,
+  th: 36,
+};
+
+/** 기본 높이 (알 수 없는 태그) */
+const DEFAULT_HEIGHT = 36;
 
 /**
  * 요소의 콘텐츠 높이 계산
  *
- * @returns 콘텐츠 기반 높이 (자식이 없으면 0)
+ * @returns 콘텐츠 기반 높이 (자식이 없으면 태그별 기본 높이)
  */
 export function calculateContentHeight(element: Element): number {
-  // TODO: 실제 구현 시 다음을 고려:
-  // 1. 자식 요소들의 높이 합계 (block) 또는 최대값 (inline-block 한 줄)
-  // 2. 텍스트 콘텐츠의 경우 lineHeight * 줄 수
-  // 3. 이미지의 경우 naturalHeight 사용
-
   const style = element.props?.style as Record<string, unknown> | undefined;
+
+  // 1. 명시적 height가 있으면 사용
   const explicitHeight = parseNumericValue(style?.height);
   if (explicitHeight !== undefined) return explicitHeight;
 
-  return 0;
+  // 2. 버튼은 size prop에 따라 높이 결정
+  const tag = (element.tag ?? '').toLowerCase();
+  if (tag === 'button') {
+    const props = element.props as Record<string, unknown> | undefined;
+    const size = (props?.size as string) ?? 'sm';
+    const sizeConfig = BUTTON_SIZE_CONFIG[size] ?? BUTTON_SIZE_CONFIG.sm;
+    return sizeConfig.height;
+  }
+
+  // 3. 태그별 기본 높이 사용
+  const defaultHeight = DEFAULT_ELEMENT_HEIGHTS[tag];
+  if (defaultHeight !== undefined) return defaultHeight;
+
+  // 4. 알 수 없는 태그는 기본값 사용
+  return DEFAULT_HEIGHT;
 }
 
 /**
@@ -385,12 +626,12 @@ export function parseLineHeight(
   if (typeof value === 'string') {
     const trimmed = value.trim();
 
-    // px 값
-    if (PX_NUMBER_PATTERN.test(trimmed)) {
+    // px 값 (명시적으로 'px'가 있는 경우만)
+    if (trimmed.endsWith('px')) {
       return parseFloat(trimmed);
     }
 
-    // 숫자만 (배율)
+    // 숫자만 (배율) - CSS에서 line-height 숫자는 배율
     const num = parseFloat(trimmed);
     if (!isNaN(num)) {
       const baseFontSize = fontSize ?? 16;

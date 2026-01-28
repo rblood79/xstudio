@@ -47,7 +47,7 @@ const TransformSectionContent = memo(function TransformSectionContent() {
         label="Width"
         className="width"
         value={styleValues.width}
-        units={['reset', 'px', '%', 'rem', 'em', 'vh', 'vw']}
+        units={['reset', 'px', '%', 'vh', 'vw']}
         onChange={(value) => updateStyleImmediate('width', value)}
         onDrag={(value) => updateStyleRAF('width', value)}
         min={0}
@@ -58,7 +58,7 @@ const TransformSectionContent = memo(function TransformSectionContent() {
         label="Height"
         className="height"
         value={styleValues.height}
-        units={['reset', 'px', '%', 'rem', 'em', 'vh', 'vw']}
+        units={['reset', 'px', '%', 'vh', 'vw']}
         onChange={(value) => updateStyleImmediate('height', value)}
         onDrag={(value) => updateStyleRAF('height', value)}
         min={0}
@@ -79,7 +79,7 @@ const TransformSectionContent = memo(function TransformSectionContent() {
         label="Left"
         className="left"
         value={styleValues.left}
-        units={['reset', 'px', '%', 'rem', 'em', 'vh', 'vw']}
+        units={['reset', 'px', '%', 'vh', 'vw']}
         onChange={(value) => updateStyleImmediate('left', value)}
         onDrag={(value) => updateStyleRAF('left', value)}
         min={-9999}
@@ -90,7 +90,7 @@ const TransformSectionContent = memo(function TransformSectionContent() {
         label="Top"
         className="top"
         value={styleValues.top}
-        units={['reset', 'px', '%', 'rem', 'em', 'vh', 'vw']}
+        units={['reset', 'px', '%', 'vh', 'vw']}
         onChange={(value) => updateStyleImmediate('top', value)}
         onDrag={(value) => updateStyleRAF('top', value)}
         min={-9999}

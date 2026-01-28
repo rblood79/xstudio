@@ -323,7 +323,7 @@ const LayoutSectionContent = memo(function LayoutSectionContent() {
           label="Gap"
           className="displayGap"
           value={styleValues.gap}
-          units={['reset', 'px', 'rem', 'em']}
+          units={['reset', 'px']}
           onChange={(value) => updateStyleImmediate('gap', value)}
           onDrag={(value) => updateStyleRAF('gap', value)}
           min={0}
@@ -340,7 +340,7 @@ const LayoutSectionContent = memo(function LayoutSectionContent() {
             label="Padding"
             className="padding"
             value={styleValues.padding}
-            units={['reset', 'px', 'rem', 'em']}
+            units={['reset', 'px']}
             onChange={(value) => updateStyleImmediate('padding', value)}
             onDrag={(value) => updateStyleRAF('padding', value)}
             min={0}
@@ -351,7 +351,7 @@ const LayoutSectionContent = memo(function LayoutSectionContent() {
             label="Margin"
             className="margin"
             value={styleValues.margin}
-            units={['reset', 'px', 'rem', 'em']}
+            units={['reset', 'px']}
             onChange={(value) => updateStyleImmediate('margin', value)}
             onDrag={(value) => updateStyleRAF('margin', value)}
             min={0}
