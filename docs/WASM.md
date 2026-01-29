@@ -546,10 +546,7 @@ if (WASM_FLAGS.SPATIAL_INDEX) {
 
   // ★ 렌더/스태킹 순서 보존:
   // SpatialIndex는 셀 순회 순서로 ID를 반환하므로 원래 렌더 순서가 유실된다.
-  // childrenMap(부모→자식 ID 배열)의 순서가 곧 렌더 순서이므로,
-  // visibleElements를 원본 children 배열 내 인덱스 기준으로 정렬해야 한다.
-  // 방법: 부모별 childrenMap 인덱스를 조회하거나,
-  //       전체 elements 배열의 인덱스를 사전에 Map<id, index>로 캐시해 O(k log k) 정렬.
+  // elementOrderIndex(Map<id, number>)를 사용해 O(k log k) 정렬로 원래 순서를 복원한다.
   const orderIndex = useStore.getState().elementOrderIndex; // Map<string, number>
   visibleElements.sort((a, b) => (orderIndex.get(a.id) ?? 0) - (orderIndex.get(b.id) ?? 0));
   // ...
@@ -557,6 +554,45 @@ if (WASM_FLAGS.SPATIAL_INDEX) {
 
 // ※ 기존 elements.filter(el => ...) 경로는 WASM_FLAGS.SPATIAL_INDEX=false일 때만 실행 (JS 폴백)
 ```
+
+**`elementOrderIndex` 생성 및 갱신:**
+
+`elementOrderIndex`는 전체 요소의 렌더 순서(= DFS 트리 순회 순서)를
+`Map<string, number>`로 캐시한 파생 인덱스이다.
+
+```typescript
+// store/derived/elementOrderIndex.ts
+
+/**
+ * elements 배열의 렌더 순서를 Map<id, index>로 캐시한다.
+ * elements 배열은 이미 페이지 → 자식 순서의 DFS 트리 순회 결과이므로,
+ * 배열 인덱스가 곧 렌더/스태킹 순서이다.
+ *
+ * 갱신 시점: elements 배열이 변경될 때 (요소 추가/삭제/순서 변경)
+ * Zustand 미들웨어 또는 rebuildIndexes() 내부에서 호출.
+ */
+export function buildElementOrderIndex(elements: Element[]): Map<string, number> {
+  const index = new Map<string, number>();
+  for (let i = 0; i < elements.length; i++) {
+    index.set(elements[i].id, i);
+  }
+  return index;
+}
+
+// Zustand store 슬라이스에서 파생 인덱스로 등록:
+// (기존 elementsMap, childrenMap, pageIndex 리빌드와 동일한 시점)
+rebuildIndexes(elements) {
+  set({
+    elementsMap: buildElementsMap(elements),
+    childrenMap: buildChildrenMap(elements),
+    pageIndex: buildPageIndex(elements),
+    elementOrderIndex: buildElementOrderIndex(elements), // ← 추가
+  });
+}
+```
+
+> **갱신 비용:** O(n) 순회 1회. 기존 `rebuildIndexes()`에서 `elementsMap`을 빌드하는 것과
+> 동일한 시점에 함께 수행하므로, 추가 비용은 Map.set() n회뿐이다.
 
 **`SelectionLayer.utils.ts` 수정 (라쏘 선택):**
 ```typescript
@@ -773,7 +809,8 @@ impl BlockLayoutEngine {
     ///   3. inline-block 요소는 LineBox로 그룹화하여 단일 블록으로 변환
     ///   4. CSS Blockification (flex/grid 자식의 inline → block)
     ///   5. BFC 경계 판별 — BFC를 생성하는 자식은 margin collapse를 차단
-    ///   6. float 요소 별도 처리
+    ///
+    ///   ※ float는 xstudio 노코드 빌더에서 지원하지 않으므로 전처리 범위에서 제외.
     ///
     /// 즉, WASM calculate()는 "이미 정규화된 block-level 박스의 수직 배치"만 수행하며,
     /// 복잡한 CSS 분기 로직은 JS BlockEngine.ts에 그대로 유지된다.
@@ -1048,6 +1085,7 @@ calculate(parent, children, availableWidth, availableHeight, context?): Computed
 // JS 전처리: 복잡한 CSS 분기를 처리하고 정규화된 블록 레벨 자식만 반환
 // WASM calculate()는 "모든 자식이 블록 레벨"인 정규화된 입력만 처리한다.
 // 따라서 아래 5가지 책임을 모두 이 단계에서 해결해야 한다.
+// (float는 xstudio에서 미지원이므로 전처리 범위 밖)
 private preprocess(children: Element[], parent: Element): {
   normalizedChildren: Element[];
   outOfFlowLayouts: ComputedLayout[];

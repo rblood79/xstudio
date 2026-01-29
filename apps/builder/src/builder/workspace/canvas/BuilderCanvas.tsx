@@ -497,6 +497,16 @@ const ElementsLayer = memo(function ElementsLayer({
     'Dialog', 'Modal', 'Box', 'Tabs', 'CheckboxGroup', 'RadioGroup',
   ]), []);
 
+  // 🚀 자체 padding/border 렌더링 컴포넌트 (leaf UI)
+  // 이 태그들은 자체적으로 padding/border를 그래픽 크기에 반영하므로
+  // 외부 LayoutContainer(Yoga)에 padding/border를 전달하면 이중 적용됨
+  // → Yoga가 내부 콘텐츠를 오프셋 + 컴포넌트가 자체 크기에 반영 = 이중
+  const SELF_PADDING_TAGS = useMemo(() => new Set([
+    'Button', 'SubmitButton',
+    // 향후 자체 padding/border 렌더링하는 컴포넌트 추가:
+    // 'ToggleButton', 'FancyButton', 'Slider', 'ProgressBar', 'Meter', etc.
+  ]), []);
+
   // 🚀 Phase 6: @pixi/layout 완전 전환 - layoutResult 제거
   // @pixi/layout이 자동으로 flexbox 레이아웃 처리
   // 🚀 Phase 7: LayoutContainer 사용 - layout + registry 등록 통합
@@ -506,6 +516,19 @@ const ElementsLayer = memo(function ElementsLayer({
   const renderedTree = useMemo(() => {
     // viewport 정보 (vh/vw 단위 변환용)
     const viewport = { width: pageWidth, height: pageHeight };
+
+    // 🚀 자체 padding/border 렌더링 컴포넌트용 layout 정리
+    // Yoga가 padding/border를 inset으로 처리하면 이중 적용됨
+    // → 컴포넌트 자체가 처리하는 속성은 외부 LayoutContainer에서 제거
+    function stripSelfRenderedProps(layout: LayoutStyle): LayoutStyle {
+      const {
+        padding: _p, paddingTop: _pt, paddingRight: _pr, paddingBottom: _pb, paddingLeft: _pl,
+        borderWidth: _bw, borderTopWidth: _btw, borderRightWidth: _brw, borderBottomWidth: _bbw, borderLeftWidth: _blw,
+        borderRadius: _br, borderColor: _bc, backgroundColor: _bg,
+        ...rest
+      } = layout;
+      return rest;
+    }
 
     // 🚀 Phase 4: 커스텀 엔진으로 렌더링 (display: grid/block)
     // Grid/Block은 @pixi/layout 대신 커스텀 엔진으로 레이아웃 계산 후 absolute 배치
@@ -600,6 +623,13 @@ const ElementsLayer = memo(function ElementsLayer({
         // @pixi/layout이 flexbox 기반으로 자동 배치
         const baseLayout = styleToLayout(child, viewport);
 
+        // 🚀 자체 padding/border 렌더링 컴포넌트: 외부 LayoutContainer에서 padding/border 제거
+        // PixiButton 등은 자체적으로 padding/border를 그래픽 크기에 반영하므로
+        // Yoga에도 전달하면 이중 적용 (위치 이동 + 크기 변경)
+        const effectiveLayout = SELF_PADDING_TAGS.has(child.tag)
+          ? stripSelfRenderedProps(baseLayout)
+          : baseLayout;
+
         // 🚀 Phase 9: children이 있지만 flexDirection이 없으면 기본 flex 레이아웃 적용
         // 이렇게 하면 children이 0,0에 쌓이는 문제 해결
         const hasChildren = (pageChildrenMap.get(child.id)?.length ?? 0) > 0;
@@ -608,7 +638,7 @@ const ElementsLayer = memo(function ElementsLayer({
         // 부모가 flexDirection: 'row'일 때, block 요소가 한 줄 전체를 차지하도록
         const isBlockElement = BLOCK_TAGS.has(child.tag);
         const isParentFlexRow = parentLayout.flexDirection === 'row' || (!parentLayout.flexDirection && parentLayout.display === 'flex');
-        const blockLayout = isBlockElement && !baseLayout.width && isParentFlexRow
+        const blockLayout = isBlockElement && !effectiveLayout.width && isParentFlexRow
           ? { flexBasis: '100%' as const }
           : {};
 
@@ -623,10 +653,10 @@ const ElementsLayer = memo(function ElementsLayer({
         // Yoga: min-width 기본값 = 0 (아이템이 0까지 축소 가능 → 겹침 발생)
         // flexShrink: 0으로 축소를 방지하여 CSS 오버플로 동작 재현
         // 사용자가 명시적으로 flexShrink를 설정하면 그 값이 우선
-        const flexShrinkDefault = baseLayout.flexShrink !== undefined ? {} : { flexShrink: 0 };
-        const containerLayout = hasChildren && !baseLayout.display && !baseLayout.flexDirection
-          ? { position: 'relative' as const, flexShrink: 0, display: 'flex' as const, flexDirection: 'column' as const, ...blockLayout, ...baseLayout }
-          : { position: 'relative' as const, ...flexShrinkDefault, ...blockLayout, ...baseLayout };
+        const flexShrinkDefault = effectiveLayout.flexShrink !== undefined ? {} : { flexShrink: 0 };
+        const containerLayout = hasChildren && !effectiveLayout.display && !effectiveLayout.flexDirection
+          ? { position: 'relative' as const, flexShrink: 0, display: 'flex' as const, flexDirection: 'column' as const, ...blockLayout, ...effectiveLayout }
+          : { position: 'relative' as const, ...flexShrinkDefault, ...blockLayout, ...effectiveLayout };
 
         // 🚀 Phase 10: Container 타입은 children을 ElementSprite에 전달
         // Container 컴포넌트가 children을 배경 안에 렌더링
@@ -644,20 +674,23 @@ const ElementsLayer = memo(function ElementsLayer({
               childElements={isContainerType ? childElements : undefined}
               renderChildElement={isContainerType ? (childEl: Element) => {
                 const childLayout = styleToLayout(childEl, viewport);
+                const effectiveChildLayout = SELF_PADDING_TAGS.has(childEl.tag)
+                  ? stripSelfRenderedProps(childLayout)
+                  : childLayout;
                 const childHasChildren = (pageChildrenMap.get(childEl.id)?.length ?? 0) > 0;
 
                 // 🚀 Phase 11: nested Container 타입 처리
                 // Panel 안의 Card, Card 안의 Panel 등 중첩된 Container도 children 렌더링 지원
                 const isChildContainerType = CONTAINER_TAGS.has(childEl.tag);
                 const isChildBlockElement = BLOCK_TAGS.has(childEl.tag);
-                const childBlockLayout = isChildBlockElement && !childLayout.width
+                const childBlockLayout = isChildBlockElement && !effectiveChildLayout.width
                   ? { flexBasis: '100%' as const }
                   : {};
 
-                const childFlexShrinkDefault = childLayout.flexShrink !== undefined ? {} : { flexShrink: 0 };
-                const childContainerLayout = childHasChildren && !childLayout.flexDirection
-                  ? { position: 'relative' as const, flexShrink: 0, display: 'flex' as const, flexDirection: 'column' as const, ...childBlockLayout, ...childLayout }
-                  : { position: 'relative' as const, ...childFlexShrinkDefault, ...childBlockLayout, ...childLayout };
+                const childFlexShrinkDefault = effectiveChildLayout.flexShrink !== undefined ? {} : { flexShrink: 0 };
+                const childContainerLayout = childHasChildren && !effectiveChildLayout.flexDirection
+                  ? { position: 'relative' as const, flexShrink: 0, display: 'flex' as const, flexDirection: 'column' as const, ...childBlockLayout, ...effectiveChildLayout }
+                  : { position: 'relative' as const, ...childFlexShrinkDefault, ...childBlockLayout, ...effectiveChildLayout };
 
                 // nested Container의 children
                 const nestedChildElements = isChildContainerType ? (pageChildrenMap.get(childEl.id) ?? []) : [];
@@ -672,11 +705,14 @@ const ElementsLayer = memo(function ElementsLayer({
                       renderChildElement={isChildContainerType ? (nestedEl: Element) => {
                         // 재귀적으로 nested children 렌더링
                         const nestedLayout = styleToLayout(nestedEl, viewport);
+                        const effectiveNestedLayout = SELF_PADDING_TAGS.has(nestedEl.tag)
+                          ? stripSelfRenderedProps(nestedLayout)
+                          : nestedLayout;
                         const nestedHasChildren = (pageChildrenMap.get(nestedEl.id)?.length ?? 0) > 0;
-                        const nestedFlexShrinkDefault = nestedLayout.flexShrink !== undefined ? {} : { flexShrink: 0 };
-                        const nestedContainerLayout = nestedHasChildren && !nestedLayout.flexDirection
-                          ? { position: 'relative' as const, flexShrink: 0, display: 'flex' as const, flexDirection: 'column' as const, ...nestedLayout }
-                          : { position: 'relative' as const, ...nestedFlexShrinkDefault, ...nestedLayout };
+                        const nestedFlexShrinkDefault = effectiveNestedLayout.flexShrink !== undefined ? {} : { flexShrink: 0 };
+                        const nestedContainerLayout = nestedHasChildren && !effectiveNestedLayout.flexDirection
+                          ? { position: 'relative' as const, flexShrink: 0, display: 'flex' as const, flexDirection: 'column' as const, ...effectiveNestedLayout }
+                          : { position: 'relative' as const, ...nestedFlexShrinkDefault, ...effectiveNestedLayout };
                         return (
                           <LayoutContainer key={nestedEl.id} elementId={nestedEl.id} layout={nestedContainerLayout}>
                             <ElementSprite
