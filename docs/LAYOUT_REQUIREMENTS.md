@@ -30,9 +30,9 @@
 | 기능 | 사유 |
 |------|------|
 | `display: inline` | 텍스트 흐름 엔진 필요, 복잡도 높음 |
-| `float` | 레거시 레이아웃, 현대 CSS에서 권장하지 않음 |
+| `float` | 레거시 레이아웃, Flex/Grid로 대체 — 지원하지 않음 |
 | `vertical-align` (baseline 정렬) | 폰트 메트릭 계산 필요, P2 이후 검토 |
-| `writing-mode` (세로 쓰기) | RTL/세로 쓰기 지원은 별도 프로젝트 |
+| `writing-mode` (세로 쓰기) | RTL/세로 쓰기, 노코드 빌더 범위 외 — 지원하지 않음 |
 | CSS 단위 `rem`, `em`, `calc()` | 차후 지원 예정 |
 | Grid `repeat()`, `minmax()`, auto-placement | 기본 Grid만 지원, 고급 기능은 P2 |
 | `z-index` / stacking context | 렌더링 순서만 영향, PixiJS zIndex로 대체 가능 |
@@ -392,8 +392,6 @@ gridColumn, gridRow, gridArea: string;
 | `display: inline` | 미지원 | 지원 | 높음 |
 | vertical-align (baseline) | 미지원 | baseline, top, middle 등 | 높음 |
 | inline-block baseline 계산 | 미지원 | overflow에 따른 baseline 변경 | 높음 |
-| float | 미지원 | 지원 | 매우 높음 |
-| writing-mode (세로 쓰기) | 미지원 | 지원 | 높음 |
 | line-height 영향 | 미지원 | inline 요소 높이 계산 | 중간 |
 
 ---
@@ -1470,9 +1468,7 @@ Phase 6 (P2 기능)
 ├── display: inline
 ├── vertical-align (baseline, top, middle 등)
 ├── inline-block baseline 계산
-├── float
-├── line-height 영향
-└── writing-mode (별도 프로젝트로 분리 가능)
+└── line-height 영향
 
 └─────────────────────────────────────────────────────────┘
 ```
