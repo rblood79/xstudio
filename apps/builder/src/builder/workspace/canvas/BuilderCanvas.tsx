@@ -504,6 +504,9 @@ const ElementsLayer = memo(function ElementsLayer({
   // 🚀 Phase 10: Container 타입은 children을 내부에서 렌더링
   // 🚀 Phase 4 (2026-01-28): 하이브리드 레이아웃 엔진 (Grid/Block은 커스텀 엔진)
   const renderedTree = useMemo(() => {
+    // viewport 정보 (vh/vw 단위 변환용)
+    const viewport = { width: pageWidth, height: pageHeight };
+
     // 🚀 Phase 4: 커스텀 엔진으로 렌더링 (display: grid/block)
     // Grid/Block은 @pixi/layout 대신 커스텀 엔진으로 레이아웃 계산 후 absolute 배치
     function renderWithCustomEngine(
@@ -588,14 +591,14 @@ const ElementsLayer = memo(function ElementsLayer({
 
       // Flex 및 기본(암시적 flex)은 기존 @pixi/layout 방식
       // 🚀 부모의 flex 속성을 가져와서 자식 배치에 활용
-      const parentLayout = parentElement ? styleToLayout(parentElement) : {};
+      const parentLayout = parentElement ? styleToLayout(parentElement, viewport) : {};
 
       return children.map((child) => {
         if (!renderIdSet.has(child.id)) return null;
 
         // Element의 style에서 layout 속성 추출
         // @pixi/layout이 flexbox 기반으로 자동 배치
-        const baseLayout = styleToLayout(child);
+        const baseLayout = styleToLayout(child, viewport);
 
         // 🚀 Phase 9: children이 있지만 flexDirection이 없으면 기본 flex 레이아웃 적용
         // 이렇게 하면 children이 0,0에 쌓이는 문제 해결
@@ -640,7 +643,7 @@ const ElementsLayer = memo(function ElementsLayer({
               onDoubleClick={onDoubleClick}
               childElements={isContainerType ? childElements : undefined}
               renderChildElement={isContainerType ? (childEl: Element) => {
-                const childLayout = styleToLayout(childEl);
+                const childLayout = styleToLayout(childEl, viewport);
                 const childHasChildren = (pageChildrenMap.get(childEl.id)?.length ?? 0) > 0;
 
                 // 🚀 Phase 11: nested Container 타입 처리
@@ -668,7 +671,7 @@ const ElementsLayer = memo(function ElementsLayer({
                       childElements={isChildContainerType ? nestedChildElements : undefined}
                       renderChildElement={isChildContainerType ? (nestedEl: Element) => {
                         // 재귀적으로 nested children 렌더링
-                        const nestedLayout = styleToLayout(nestedEl);
+                        const nestedLayout = styleToLayout(nestedEl, viewport);
                         const nestedHasChildren = (pageChildrenMap.get(nestedEl.id)?.length ?? 0) > 0;
                         const nestedFlexShrinkDefault = nestedLayout.flexShrink !== undefined ? {} : { flexShrink: 0 };
                         const nestedContainerLayout = nestedHasChildren && !nestedLayout.flexDirection
@@ -705,7 +708,7 @@ const ElementsLayer = memo(function ElementsLayer({
   // Body 요소의 flex 스타일을 적용하여 자식 요소들이 올바르게 배치되도록 함
   const rootLayout = useMemo(() => {
     // Body 요소의 layout 스타일 가져오기
-    const bodyLayout = bodyElement ? styleToLayout(bodyElement) : {};
+    const bodyLayout = bodyElement ? styleToLayout(bodyElement, { width: pageWidth, height: pageHeight }) : {};
 
 
     // Body의 flexbox 속성 적용 (width/height는 page 크기로 고정)

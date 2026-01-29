@@ -2525,7 +2525,75 @@ if (ENABLE_BUTTON_SPEC) {
 }
 ```
 
-#### 4.7.4 WebGL computedStyle 동기화 수정
+#### 4.7.4 Pixi UI 컴포넌트 CSS 단위 해석 규칙 (CRITICAL)
+
+모든 Pixi UI 컴포넌트(PixiButton, PixiToggleButton, PixiSlider 등)에서 inline style의 CSS 값을
+WebGL 그래픽 크기로 변환할 때 반드시 아래 규칙을 따라야 합니다.
+
+**❌ 금지 패턴 (버그 원인)**:
+```typescript
+// typeof === 'number'는 CSS 문자열 값("200px", "50%", "100vw")을 무시함
+const width = typeof style?.width === 'number' ? style.width : fallback;
+```
+
+**✅ 필수 패턴**:
+```typescript
+import { parseCSSSize } from "../sprites/styleConverter";
+import { parsePadding, parseBorderWidth } from "../sprites/paddingUtils";
+import { useStore } from "../../../stores";
+import { useCanvasSyncStore } from "../canvasSync";
+
+// 1. 뷰포트 + 부모 요소 조회
+const canvasSize = useCanvasSyncStore((s) => s.canvasSize);
+const parentElement = useStore((state) => {
+  if (!element.parent_id) return null;
+  return state.elementsMap.get(element.parent_id) ?? null;
+});
+
+// 2. 부모 content area 계산 (% 및 vw/vh 해석 기준)
+const parentContentArea = useMemo(() => {
+  if (!parentElement) return { width: canvasSize.width, height: canvasSize.height };
+  const parentStyle = parentElement.props?.style;
+  const isBody = parentElement.tag.toLowerCase() === 'body';
+  const pw = isBody ? canvasSize.width : parseCSSSize(parentStyle?.width, canvasSize.width, canvasSize.width, canvasSize);
+  const ph = isBody ? canvasSize.height : parseCSSSize(parentStyle?.height, canvasSize.height, canvasSize.height, canvasSize);
+  const pp = parsePadding(parentStyle);
+  const pb = parseBorderWidth(parentStyle);
+  return {
+    width: Math.max(0, pw - pp.left - pp.right - pb.left - pb.right),
+    height: Math.max(0, ph - pp.top - pp.bottom - pb.top - pb.bottom),
+  };
+}, [parentElement, canvasSize]);
+
+// 3. CSS 값 파싱 (% → parentContentArea, vw/vh → parentContentArea, px → 절대값)
+const width = parseCSSSize(style?.width, parentContentArea.width, fallback, parentContentArea);
+const height = parseCSSSize(style?.height, parentContentArea.height, fallback, parentContentArea);
+
+// 4. padding shorthand + 개별 속성 지원
+const parsedPadding = parsePadding(style);  // "8px" → 4방향, paddingTop 등으로 override
+
+// 5. border width 4방향 파싱
+const parsedBorder = parseBorderWidth(style);  // "2px" → 4방향, borderTopWidth 등으로 override
+```
+
+**단위별 해석 기준**:
+
+| 단위 | parseCSSSize 해석 | Yoga (styleToLayout) 해석 |
+|------|------------------|--------------------------|
+| `px` | 절대 픽셀값 | 절대 픽셀값 |
+| `%` | parentContentArea 기준 | 부모 content area 기준 (문자열 유지) |
+| `vw` | parentContentArea.width 기준 | `%` 문자열로 변환 → 부모 기준 |
+| `vh` | parentContentArea.height 기준 | `%` 문자열로 변환 → 부모 기준 |
+| `rem` | × 16 (절대값) | × 16 (절대값) |
+| `auto` | fallback 값 | undefined (Yoga 자동 계산) |
+
+**적용 필수 컴포넌트 목록** (18개, PixiButton 완료):
+- PixiToggleButton, PixiToggleButtonGroup, PixiSlider, PixiSwitcher
+- PixiSelect, PixiSeparator, PixiMeter, PixiProgressBar
+- PixiRadio, PixiRadioItem, PixiScrollBox, PixiList, PixiListBox
+- PixiMaskedFrame, PixiFancyButton, PixiCheckbox, PixiCheckboxGroup, PixiCheckboxItem
+
+#### 4.7.5 WebGL computedStyle 동기화 수정
 
 **문제**: WebGL 요소 선택 시 Style Panel의 borderRadius가 업데이트되지 않음
 
@@ -2544,7 +2612,7 @@ if (ENABLE_BUTTON_SPEC) {
    set({ selectedElementProps: { ...createCompleteProps(element), computedStyle } });
    ```
 
-#### 4.7.5 smoothRoundRect 구현 (WebGL 렌더링 품질 개선)
+#### 4.7.6 smoothRoundRect 구현 (WebGL 렌더링 품질 개선)
 
 **문제**: PixiJS 기본 `roundRect()`이 제한된 bezier 세그먼트로 확대 시 계단 현상 발생
 
@@ -2568,7 +2636,7 @@ export function smoothRoundRect(
 
 **참고**: Figma는 "squircle" 방식으로 3개의 bezier 곡선으로 부드러운 곡률 전환 구현
 
-#### 4.7.6 수정된 파일 목록
+#### 4.7.7 수정된 파일 목록
 
 | 파일 | 변경 내용 |
 |------|----------|
@@ -4161,3 +4229,4 @@ function PixiButton({ element }) {
 | 2026-01-27 | 1.6 | 5차 리뷰 반영: (1) 아키텍처 개요 다이어그램 effects.ts → shadows.ts 수정, (2) tokenToCSSVar에 shadow 카테고리 처리 추가 |
 | 2026-01-29 | 1.7 | 하이브리드 레이아웃 엔진 완료 반영: (1) ContainerLayout 인터페이스에 레이아웃 엔진 지원 CSS 속성 추가 (inline-block, flow-root, box-sizing, min/max 크기, overflow-x/y, lineHeight, verticalAlign, visibility, justifySelf), (2) 데이터 흐름 다이어그램에 하이브리드 레이아웃 엔진 계층(BlockEngine/FlexEngine/GridEngine) 추가 및 내부/외부 레이아웃 계층 분리 설명 |
 | 2026-01-29 | 1.8 | Button 구현 점검 — 코드↔문서 동기화: (1) RadiusTokens 값 교정 (md:8→6, lg:12→8, xl:16→12, CSS 변수 기준), (2) typography에 fontWeight/lineHeight 객체 추가, (3) ButtonProps에 text/label 필드 추가 및 style 타입을 Record로 변경, (4) ButtonSpec variants/sizes에 `as TokenRef` 캐스트 추가, (5) lg size borderRadius를 `{radius.lg}`로 수정, (6) disabled state에 pointerEvents 추가, (7) focusVisible outline을 var(--primary) 형식으로 수정, (8) render.shapes에 text 폴백 체인(children → text → label) 반영 |
+| 2026-01-29 | 1.9 | Pixi UI 컴포넌트 CSS 단위 해석 규칙 추가 (Section 4.7.4): (1) typeof === 'number' 패턴 사용 금지 → parseCSSSize() 필수, (2) % / vw / vh는 부모 content area 기준 해석 (parentContentArea = 부모 width - padding - border), (3) padding shorthand(parsePadding) + border width 4방향(parseBorderWidth) 파싱 필수, (4) 적용 필수 컴포넌트 18개 목록 명시, (5) Yoga 경로에서 vh/vw → % 문자열 변환 정책 (styleToLayout.ts) |

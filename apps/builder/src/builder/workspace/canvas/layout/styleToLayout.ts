@@ -95,9 +95,18 @@ export type LayoutNumberValue = number | `${number}%` | `${number}`;
 // ============================================
 
 /**
- * CSS 값을 숫자로 파싱 (px, % 등)
+ * CSS 값을 숫자로 파싱 (px, %, vh, vw 등)
+ *
+ * - %: 문자열로 유지 (@pixi/layout이 직접 처리)
+ * - vh/vw: % 문자열로 변환 (@pixi/layout이 부모 기준으로 처리)
+ *   빌더에서는 viewport = 페이지 = body이므로 vw/vh를 %로 변환하면
+ *   Yoga가 부모의 padding/border를 고려하여 content area 기준으로 계산
+ * - px, rem: 숫자로 변환
  */
-export function parseCSSValue(value: unknown): number | string | undefined {
+export function parseCSSValue(
+  value: unknown,
+  viewport?: { width: number; height: number }
+): number | string | undefined {
   if (value === undefined || value === null || value === '' || value === 'auto') {
     return undefined;
   }
@@ -107,11 +116,25 @@ export function parseCSSValue(value: unknown): number | string | undefined {
   }
 
   if (typeof value === 'string') {
-    // 퍼센트 값은 문자열로 유지
+    // 퍼센트 값은 문자열로 유지 (@pixi/layout이 Yoga를 통해 처리)
     if (value.endsWith('%')) {
       return value;
     }
-    // px 값은 숫자로 변환
+    // vh 단위: % 문자열로 변환 (Yoga가 부모 기준으로 처리)
+    // 빌더에서 viewport height ≈ body height이므로 Xvh → "X%" 변환
+    if (value.endsWith('vh')) {
+      return `${parseFloat(value)}%`;
+    }
+    // vw 단위: % 문자열로 변환 (Yoga가 부모 기준으로 처리)
+    // 빌더에서 viewport width ≈ body width이므로 Xvw → "X%" 변환
+    if (value.endsWith('vw')) {
+      return `${parseFloat(value)}%`;
+    }
+    // rem 단위 (기본 16px 기준)
+    if (value.endsWith('rem')) {
+      return parseFloat(value) * 16;
+    }
+    // px 값 또는 숫자 문자열
     const parsed = parseFloat(value);
     return isNaN(parsed) ? undefined : parsed;
   }
@@ -207,22 +230,29 @@ function parseFlexShorthand(flex: string | number): {
  * Element의 style을 @pixi/layout layout prop으로 변환
  *
  * @param element - Element 객체
+ * @param viewport - 뷰포트 크기 (vh/vw 단위 변환용, 선택사항)
  * @returns layout prop 객체
  */
-export function styleToLayout(element: Element): LayoutStyle {
+export function styleToLayout(
+  element: Element,
+  viewport?: { width: number; height: number }
+): LayoutStyle {
   const style = (element.props?.style || {}) as Record<string, unknown>;
   const layout: LayoutStyle = {};
 
+  // viewport를 포함하는 로컬 래퍼 (모든 CSS 값 파싱에 사용)
+  const parse = (value: unknown) => parseCSSValue(value, viewport);
+
   // Dimensions
-  const width = parseCSSValue(style.width);
-  const height = parseCSSValue(style.height);
+  const width = parse(style.width);
+  const height = parse(style.height);
   if (width !== undefined) layout.width = width;
   if (height !== undefined) layout.height = height;
 
-  const minWidth = parseCSSValue(style.minWidth);
-  const minHeight = parseCSSValue(style.minHeight);
-  const maxWidth = parseCSSValue(style.maxWidth);
-  const maxHeight = parseCSSValue(style.maxHeight);
+  const minWidth = parse(style.minWidth);
+  const minHeight = parse(style.minHeight);
+  const maxWidth = parse(style.maxWidth);
+  const maxHeight = parse(style.maxHeight);
   if (minWidth !== undefined) layout.minWidth = minWidth;
   if (minHeight !== undefined) layout.minHeight = minHeight;
   if (maxWidth !== undefined) layout.maxWidth = maxWidth;
@@ -233,10 +263,10 @@ export function styleToLayout(element: Element): LayoutStyle {
   // 그 외에는 모두 flexbox 아이템으로 자동 배치
   if (style.position === 'absolute') {
     layout.position = 'absolute';
-    const top = parseCSSValue(style.top);
-    const left = parseCSSValue(style.left);
-    const right = parseCSSValue(style.right);
-    const bottom = parseCSSValue(style.bottom);
+    const top = parse(style.top);
+    const left = parse(style.left);
+    const right = parse(style.right);
+    const bottom = parse(style.bottom);
     if (top !== undefined) layout.top = top;
     if (left !== undefined) layout.left = left;
     if (right !== undefined) layout.right = right;
@@ -280,57 +310,57 @@ export function styleToLayout(element: Element): LayoutStyle {
   } else {
     if (style.flexGrow !== undefined) layout.flexGrow = Number(style.flexGrow);
     if (style.flexShrink !== undefined) layout.flexShrink = Number(style.flexShrink);
-    if (style.flexBasis !== undefined) layout.flexBasis = parseCSSValue(style.flexBasis);
+    if (style.flexBasis !== undefined) layout.flexBasis = parse(style.flexBasis);
   }
   if (style.alignSelf) {
     layout.alignSelf = style.alignSelf as LayoutStyle['alignSelf'];
   }
 
   // Gap
-  const gap = parseCSSValue(style.gap);
-  const rowGap = parseCSSValue(style.rowGap);
-  const columnGap = parseCSSValue(style.columnGap);
+  const gap = parse(style.gap);
+  const rowGap = parse(style.rowGap);
+  const columnGap = parse(style.columnGap);
   if (gap !== undefined) layout.gap = gap;
   if (rowGap !== undefined) layout.rowGap = rowGap;
   if (columnGap !== undefined) layout.columnGap = columnGap;
 
   // Margin
-  const margin = parseCSSValue(style.margin);
+  const margin = parse(style.margin);
   if (margin !== undefined) layout.margin = margin;
-  const marginTop = parseCSSValue(style.marginTop);
-  const marginRight = parseCSSValue(style.marginRight);
-  const marginBottom = parseCSSValue(style.marginBottom);
-  const marginLeft = parseCSSValue(style.marginLeft);
+  const marginTop = parse(style.marginTop);
+  const marginRight = parse(style.marginRight);
+  const marginBottom = parse(style.marginBottom);
+  const marginLeft = parse(style.marginLeft);
   if (marginTop !== undefined) layout.marginTop = marginTop;
   if (marginRight !== undefined) layout.marginRight = marginRight;
   if (marginBottom !== undefined) layout.marginBottom = marginBottom;
   if (marginLeft !== undefined) layout.marginLeft = marginLeft;
 
   // Padding
-  const padding = parseCSSValue(style.padding);
+  const padding = parse(style.padding);
   if (padding !== undefined) layout.padding = padding;
-  const paddingTop = parseCSSValue(style.paddingTop);
-  const paddingRight = parseCSSValue(style.paddingRight);
-  const paddingBottom = parseCSSValue(style.paddingBottom);
-  const paddingLeft = parseCSSValue(style.paddingLeft);
+  const paddingTop = parse(style.paddingTop);
+  const paddingRight = parse(style.paddingRight);
+  const paddingBottom = parse(style.paddingBottom);
+  const paddingLeft = parse(style.paddingLeft);
   if (paddingTop !== undefined) layout.paddingTop = paddingTop;
   if (paddingRight !== undefined) layout.paddingRight = paddingRight;
   if (paddingBottom !== undefined) layout.paddingBottom = paddingBottom;
   if (paddingLeft !== undefined) layout.paddingLeft = paddingLeft;
 
   // Border (@pixi/layout 지원)
-  const borderWidth = parseCSSValue(style.borderWidth);
+  const borderWidth = parse(style.borderWidth);
   if (typeof borderWidth === 'number') layout.borderWidth = borderWidth;
-  const borderTopWidth = parseCSSValue(style.borderTopWidth);
-  const borderRightWidth = parseCSSValue(style.borderRightWidth);
-  const borderBottomWidth = parseCSSValue(style.borderBottomWidth);
-  const borderLeftWidth = parseCSSValue(style.borderLeftWidth);
+  const borderTopWidth = parse(style.borderTopWidth);
+  const borderRightWidth = parse(style.borderRightWidth);
+  const borderBottomWidth = parse(style.borderBottomWidth);
+  const borderLeftWidth = parse(style.borderLeftWidth);
   if (typeof borderTopWidth === 'number') layout.borderTopWidth = borderTopWidth;
   if (typeof borderRightWidth === 'number') layout.borderRightWidth = borderRightWidth;
   if (typeof borderBottomWidth === 'number') layout.borderBottomWidth = borderBottomWidth;
   if (typeof borderLeftWidth === 'number') layout.borderLeftWidth = borderLeftWidth;
 
-  const borderRadius = parseCSSValue(style.borderRadius);
+  const borderRadius = parse(style.borderRadius);
   if (typeof borderRadius === 'number') layout.borderRadius = borderRadius;
 
   // borderColor는 CSS 색상 문자열 또는 숫자(hex)

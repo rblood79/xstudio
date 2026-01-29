@@ -1,7 +1,7 @@
 # xstudio WASM 최적화 계획
 
 > 작성일: 2026-01-29
-> 최종 수정: 2026-01-29 (설계 검토 반영)
+> 최종 수정: 2026-01-29 (3차 검토 반영 — JS 전처리/WASM 범위 분리, init import 누락, O(k) elementsMap 경로, Worker SpatialIndex 제거, 음수 마진 폴백)
 > 대상: `apps/builder/src/builder/workspace/canvas/`
 > 현재 스택: PixiJS v8.14.3 + @pixi/react v8.0.5 + Yoga WASM v3.2.1 + Zustand
 > 참고: Pencil Desktop v1.1.10 아키텍처 분석 기반
@@ -61,22 +61,18 @@ apps/builder/src/builder/workspace/canvas/
 │   ├── Cargo.toml
 │   ├── src/
 │   │   ├── lib.rs                     # WASM 엔트리포인트
-│   │   ├── bounds_cache.rs            # Phase 1
 │   │   ├── spatial_index.rs           # Phase 1
-│   │   ├── layout_engine.rs           # Phase 2
 │   │   ├── block_layout.rs            # Phase 2
-│   │   ├── grid_layout.rs             # Phase 2
-│   │   ├── text_engine.rs             # Phase 3
-│   │   └── css_parser.rs              # Phase 3
+│   │   └── grid_layout.rs             # Phase 2
 │   └── tests/
-│       ├── bounds_test.rs
-│       ├── layout_test.rs
-│       └── text_test.rs
+│       ├── spatial_test.rs
+│       └── layout_test.rs
 ├── wasm-bindings/                     # TypeScript 바인딩
 │   ├── init.ts                        # 전체 WASM 초기화
-│   ├── boundsCache.ts                 # Phase 1 바인딩
-│   ├── layoutAccelerator.ts           # Phase 2 바인딩
-│   └── textEngine.ts                  # Phase 3 바인딩
+│   ├── idMapper.ts                    # Phase 1 string↔u32 매핑
+│   ├── spatialIndex.ts                # Phase 1 바인딩
+│   ├── featureFlags.ts                # Feature Flag 관리
+│   └── layoutAccelerator.ts           # Phase 2 바인딩
 ```
 
 **Cargo.toml:**
@@ -178,15 +174,13 @@ performance.measure('bounds-lookup', 'bounds-lookup-start', 'bounds-lookup-end')
 // wasm-bindings/featureFlags.ts
 
 export const WASM_FLAGS = {
-  BOUNDS_CACHE: import.meta.env.VITE_WASM_BOUNDS === 'true',
+  SPATIAL_INDEX: import.meta.env.VITE_WASM_SPATIAL === 'true',
   LAYOUT_ENGINE: import.meta.env.VITE_WASM_LAYOUT === 'true',
-  TEXT_ENGINE: import.meta.env.VITE_WASM_TEXT === 'true',
 } as const;
 
 // .env.development
-VITE_WASM_BOUNDS=true
+VITE_WASM_SPATIAL=true
 VITE_WASM_LAYOUT=false
-VITE_WASM_TEXT=false
 ```
 
 ### 0.4 Phase 0 산출물
@@ -247,6 +241,11 @@ class ElementIdMapper {
 
   getStringId(numId: number): string | undefined {
     return this.numToString.get(numId);
+  }
+
+  /** 기존 매핑만 조회 (미존재 시 undefined 반환, 신규 할당하지 않음) */
+  tryGetNumericId(stringId: string): number | undefined {
+    return this.stringToNum.get(stringId);
   }
 
   remove(stringId: string): void {
@@ -322,7 +321,7 @@ impl SpatialIndex {
         }
     }
 
-    /// 뷰포트 내 요소 ID 반환
+    /// 뷰포트 내 요소 ID 반환 (AABB 교차 검증 포함 — false positive 제거)
     pub fn query_viewport(&self, left: f32, top: f32, right: f32, bottom: f32) -> Box<[u32]> {
         let mut result = Vec::new();
         let mut seen = HashSet::new();
@@ -338,7 +337,17 @@ impl SpatialIndex {
                 if let Some(ids) = self.cells.get(&key) {
                     for &id in ids {
                         if seen.insert(id) {
-                            result.push(id);
+                            // 실제 AABB 교차 검증 — 셀 경계에 걸리지만
+                            // 뷰포트와 겹치지 않는 요소를 제거
+                            if let Some(b) = self.bounds.get(&id) {
+                                let el_right = b[0] + b[2];
+                                let el_bottom = b[1] + b[3];
+                                if b[0] <= right && el_right >= left
+                                    && b[1] <= bottom && el_bottom >= top
+                                {
+                                    result.push(id);
+                                }
+                            }
                         }
                     }
                 }
@@ -367,6 +376,41 @@ impl SpatialIndex {
         }
 
         hits.into_boxed_slice()
+    }
+
+    /// 영역 내 요소 반환 (라쏘 선택용 — 실제 AABB 교차 검증 포함)
+    pub fn query_rect(&self, left: f32, top: f32, right: f32, bottom: f32) -> Box<[u32]> {
+        let mut result = Vec::new();
+        let mut seen = HashSet::new();
+
+        let min_cx = (left / self.cell_size).floor() as i32;
+        let max_cx = (right / self.cell_size).floor() as i32;
+        let min_cy = (top / self.cell_size).floor() as i32;
+        let max_cy = (bottom / self.cell_size).floor() as i32;
+
+        for cx in min_cx..=max_cx {
+            for cy in min_cy..=max_cy {
+                let key = cell_key(cx, cy);
+                if let Some(ids) = self.cells.get(&key) {
+                    for &id in ids {
+                        if seen.insert(id) {
+                            // 실제 AABB 교차 검증
+                            if let Some(b) = self.bounds.get(&id) {
+                                let el_right = b[0] + b[2];
+                                let el_bottom = b[1] + b[3];
+                                if b[0] <= right && el_right >= left
+                                    && b[1] <= bottom && el_bottom >= top
+                                {
+                                    result.push(id);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        result.into_boxed_slice()
     }
 
     pub fn remove(&mut self, id: u32) {
@@ -448,6 +492,16 @@ export function queryVisibleElements(
     .filter((id): id is string => id !== undefined);
 }
 
+export function queryRect(
+  left: number, top: number, right: number, bottom: number
+): string[] {
+  if (!spatialIndex) return [];
+  const numIds = spatialIndex.query_rect(left, top, right, bottom);
+  return Array.from(numIds)
+    .map(id => idMapper.getStringId(id))
+    .filter((id): id is string => id !== undefined);
+}
+
 export function hitTestPoint(x: number, y: number): string[] {
   if (!spatialIndex) return [];
   const numIds = spatialIndex.query_point(x, y);
@@ -458,7 +512,8 @@ export function hitTestPoint(x: number, y: number): string[] {
 
 export function removeElement(stringId: string): void {
   if (!spatialIndex) return;
-  const numId = idMapper.getNumericId(stringId);
+  const numId = idMapper.tryGetNumericId(stringId);
+  if (numId === undefined) return; // 미등록 ID — 신규 할당 방지
   spatialIndex.remove(numId);
   idMapper.remove(stringId);
 }
@@ -479,11 +534,58 @@ import { queryVisibleElements } from '../wasm-bindings/spatialIndex';
 // useMemo 내부 (205행 대체):
 if (WASM_FLAGS.SPATIAL_INDEX) {
   const viewport = calculateViewportBounds(screenWidth, screenHeight, zoom, panOffset);
-  const visibleIdSet = new Set(
-    queryVisibleElements(viewport.left, viewport.top, viewport.right, viewport.bottom)
+  // SpatialIndex가 반환하는 ID 배열을 직접 사용 — O(k)
+  const visibleIds = queryVisibleElements(
+    viewport.left, viewport.top, viewport.right, viewport.bottom
   );
-  const visibleElements = elements.filter(el => visibleIdSet.has(el.id));
+  // elementsMap(Zustand store)에서 O(1) 조회로 element 객체 수집 — 전체 O(k)
+  const elementsMap = useStore.getState().elementsMap;
+  const visibleElements = visibleIds
+    .map(id => elementsMap.get(id))
+    .filter((el): el is Element => el !== undefined);
+
+  // ★ 렌더/스태킹 순서 보존:
+  // SpatialIndex는 셀 순회 순서로 ID를 반환하므로 원래 렌더 순서가 유실된다.
+  // childrenMap(부모→자식 ID 배열)의 순서가 곧 렌더 순서이므로,
+  // visibleElements를 원본 children 배열 내 인덱스 기준으로 정렬해야 한다.
+  // 방법: 부모별 childrenMap 인덱스를 조회하거나,
+  //       전체 elements 배열의 인덱스를 사전에 Map<id, index>로 캐시해 O(k log k) 정렬.
+  const orderIndex = useStore.getState().elementOrderIndex; // Map<string, number>
+  visibleElements.sort((a, b) => (orderIndex.get(a.id) ?? 0) - (orderIndex.get(b.id) ?? 0));
   // ...
+}
+
+// ※ 기존 elements.filter(el => ...) 경로는 WASM_FLAGS.SPATIAL_INDEX=false일 때만 실행 (JS 폴백)
+```
+
+**`SelectionLayer.utils.ts` 수정 (라쏘 선택):**
+```typescript
+import { WASM_FLAGS } from '../../wasm-bindings/featureFlags';
+import { queryRect } from '../../wasm-bindings/spatialIndex';
+
+function findElementsInLasso(
+  elements: Element[],
+  lassoStart: Point,
+  lassoCurrent: Point,
+): string[] {
+  const lassoBounds = getLassoBounds(lassoStart, lassoCurrent);
+
+  if (WASM_FLAGS.SPATIAL_INDEX) {
+    // SpatialIndex: O(k) — AABB 교차 검증 포함
+    return queryRect(
+      lassoBounds.x, lassoBounds.y,
+      lassoBounds.x + lassoBounds.width,
+      lassoBounds.y + lassoBounds.height,
+    );
+  }
+
+  // JS 폴백: O(n) 전체 순회
+  return elements
+    .filter((el) => {
+      const elementBounds = calculateBounds(el.props?.style);
+      return boxesIntersect(lassoBounds, elementBounds);
+    })
+    .map((el) => el.id);
 }
 ```
 
@@ -518,7 +620,8 @@ export function unregisterElement(id: string): void {
 - [ ] `spatialIndex.ts` TypeScript 바인딩
 - [ ] `elementRegistry.ts` 수정 (SpatialIndex 동기화)
 - [ ] `useViewportCulling.ts` 수정 (SpatialIndex 쿼리)
-- [ ] 단위 테스트: Rust `wasm-pack test` (삽입, 삭제, 쿼리, 엣지 케이스)
+- [ ] `SelectionLayer.utils.ts` 수정 (라쏘 선택에 SpatialIndex `query_rect` 적용)
+- [ ] 단위 테스트: Rust `wasm-pack test` (삽입, 삭제, 쿼리, query_rect, 엣지 케이스)
 - [ ] 통합 테스트: 1,000개 요소 뷰포트 쿼리 벤치마크
 - [ ] Feature Flag (`VITE_WASM_SPATIAL`)로 A/B 비교
 
@@ -529,7 +632,7 @@ export function unregisterElement(id: string): void {
 | 지표 | 현재 (추정) | 목표 | 검증 방법 |
 |------|-----------|------|----------|
 | Viewport Culling (1,000개) | 측정 필요 | O(n) → O(k) (k=뷰포트 내 요소) | performance.measure |
-| 히트 테스트 (클릭) | 측정 필요 | O(n) → O(1) 평균 | performance.measure |
+| 라쏘 선택 (1,000개) | 측정 필요 | O(n) → O(k) (query_rect) | performance.measure |
 | SpatialIndex 메모리 오버헤드 | - | < 5MB (5,000개 기준) | Chrome DevTools |
 
 ---
@@ -661,8 +764,22 @@ impl BlockLayoutEngine {
         vec![final_height, max_baseline_from_top].into_boxed_slice()
     }
 
-    /// 블록 레이아웃 전체 계산
-    /// children_data: 평탄화된 배열 [display, width, height, m_t, m_r, m_b, m_l, ...]
+    /// **정규화된** 블록 자식의 배치 계산 (단순 수직 스태킹 + margin collapse)
+    ///
+    /// **WASM 범위:** 이 함수는 JS 측에서 전처리가 완료된 "정규화된 블록 흐름" 자식만 받는다.
+    /// **JS 측 전처리 책임 (WASM에 넘기기 전):**
+    ///   1. out-of-flow 요소 (absolute/fixed) 제외
+    ///   2. display:none 제외
+    ///   3. inline-block 요소는 LineBox로 그룹화하여 단일 블록으로 변환
+    ///   4. CSS Blockification (flex/grid 자식의 inline → block)
+    ///   5. BFC 경계 판별 — BFC를 생성하는 자식은 margin collapse를 차단
+    ///   6. float 요소 별도 처리
+    ///
+    /// 즉, WASM calculate()는 "이미 정규화된 block-level 박스의 수직 배치"만 수행하며,
+    /// 복잡한 CSS 분기 로직은 JS BlockEngine.ts에 그대로 유지된다.
+    ///
+    /// children_data: 전처리된 평탄화 배열 [display, width, height, m_t, m_r, m_b, m_l, bfc_flag, ...]
+    ///   bfc_flag: 0=collapse 허용, 1=BFC 경계(collapse 차단)
     /// 반환: [x, y, w, h, x, y, w, h, ...] 계산된 위치
     pub fn calculate(
         &self,
@@ -679,18 +796,24 @@ impl BlockLayoutEngine {
 
         for i in 0..child_count {
             let offset = i * fc;
-            let display = children_data[offset] as u8;
+            let _display = children_data[offset] as u8;
             let child_width = children_data[offset + 1];
             let child_height = children_data[offset + 2];
             let margin_top = children_data[offset + 3];
             let margin_bottom = children_data[offset + 5];
             let margin_left = children_data[offset + 6];
+            let bfc_flag = if fc > 7 { children_data[offset + 7] as u8 } else { 0 };
 
-            // Margin collapse
-            let collapsed_top = self.collapse_margins(prev_margin_bottom, margin_top);
-            current_y += collapsed_top;
+            // Margin collapse (BFC 경계에서는 차단)
+            let effective_top = if bfc_flag == 1 {
+                // BFC 자식: collapse 하지 않음 — 이전 마진 + 현재 마진 모두 적용
+                prev_margin_bottom + margin_top
+            } else {
+                self.collapse_margins(prev_margin_bottom, margin_top)
+            };
+            current_y += effective_top;
 
-            // Width: auto → available_width, 아니면 지정값
+            // Width: auto(≤0) → available_width, 아니면 지정값
             let final_width = if child_width <= 0.0 { available_width } else { child_width };
 
             layouts.push(margin_left);              // x
@@ -722,10 +845,16 @@ impl GridLayoutEngine {
     }
 
     /// Grid Template 트랙 크기 계산
-    /// template: "1fr 2fr 200px" 형태의 문자열
+    /// template: "1fr 2fr 200px" 형태의 문자열 (auto 지원)
     /// available: 사용 가능한 공간 (px)
     pub fn parse_tracks(&self, template: &str, available: f32, gap: f32) -> Box<[f32]> {
-        let parts: Vec<&str> = template.split_whitespace().collect();
+        // "auto"만 전달된 경우 → 단일 트랙(전체 공간) 반환
+        let trimmed = template.trim();
+        if trimmed == "auto" || trimmed.is_empty() {
+            return vec![available].into_boxed_slice();
+        }
+
+        let parts: Vec<&str> = trimmed.split_whitespace().collect();
         let track_count = parts.len();
         let total_gap = gap * (track_count as f32 - 1.0).max(0.0);
         let remaining = available - total_gap;
@@ -735,7 +864,11 @@ impl GridLayoutEngine {
         let mut tracks: Vec<(bool, f32)> = Vec::new(); // (is_fr, value)
 
         for part in &parts {
-            if part.ends_with("fr") {
+            if *part == "auto" {
+                // auto는 1fr와 동일하게 처리 (남은 공간을 균등 분배)
+                fr_total += 1.0;
+                tracks.push((true, 1.0));
+            } else if part.ends_with("fr") {
                 let fr: f32 = part.trim_end_matches("fr").parse().unwrap_or(1.0);
                 fr_total += fr;
                 tracks.push((true, fr));
@@ -805,7 +938,7 @@ impl GridLayoutEngine {
 
 **`wasm-bindings/layoutAccelerator.ts`:**
 ```typescript
-import { BlockLayoutEngine, GridLayoutEngine } from './pkg/xstudio_wasm';
+import init, { BlockLayoutEngine, GridLayoutEngine } from './pkg/xstudio_wasm';
 import { WASM_FLAGS } from './featureFlags';
 
 let blockEngine: BlockLayoutEngine | null = null;
@@ -813,6 +946,7 @@ let gridEngine: GridLayoutEngine | null = null;
 
 export async function initLayoutWasm(): Promise<void> {
   if (!WASM_FLAGS.LAYOUT_ENGINE) return;
+  await init(); // WASM 바이너리 로드 (SPATIAL=false일 때도 독립 초기화 보장)
   blockEngine = new BlockLayoutEngine();
   gridEngine = new GridLayoutEngine();
 }
@@ -820,7 +954,12 @@ export async function initLayoutWasm(): Promise<void> {
 // --- Block Layout ---
 
 export function wasmCollapseMargins(a: number, b: number): number {
-  if (!blockEngine) return Math.max(a, b); // JS 폴백
+  if (!blockEngine) {
+    // JS 폴백 — CSS 2.1 §8.3.1 margin collapse 규칙 준수
+    if (a >= 0 && b >= 0) return Math.max(a, b);
+    if (a < 0 && b < 0) return Math.min(a, b);
+    return a + b;
+  }
   return blockEngine.collapse_margins(a, b);
 }
 
@@ -886,17 +1025,90 @@ import { wasmBlockLayout } from '../../wasm-bindings/layoutAccelerator';
 calculate(parent, children, availableWidth, availableHeight, context?): ComputedLayout[] {
   if (WASM_FLAGS.LAYOUT_ENGINE && children.length > 10) {
     // 요소 10개 이하에서는 JS가 더 빠름 (경계 넘기 + 마샬링 비용)
-    const childrenData = this.serializeChildren(children);
-    const result = wasmBlockLayout(availableWidth, availableHeight, childrenData, 7);
-    return this.deserializeLayouts(children, result);
+
+    // ★ JS 전처리: WASM에 넘기기 전에 복잡한 CSS 분기를 처리한다.
+    //   1. out-of-flow (absolute/fixed) 요소 분리 → JS에서 별도 배치
+    //   2. display:none 제외
+    //   3. inline-block 요소 → LineBox로 그룹화 (JS calculateLineBox 유지)
+    //   4. CSS Blockification 적용
+    //   5. BFC 경계 판별 → bfc_flag로 WASM에 전달
+    const { normalizedChildren, outOfFlowLayouts, lineBoxLayouts } = this.preprocess(children, parent);
+
+    const childrenData = this.serializeChildren(normalizedChildren);
+    const result = wasmBlockLayout(availableWidth, availableHeight, childrenData, 8); // 8 fields
+    const blockLayouts = this.deserializeLayouts(normalizedChildren, result);
+
+    // out-of-flow + inline LineBox + block 레이아웃 병합
+    return [...blockLayouts, ...outOfFlowLayouts, ...lineBoxLayouts];
   }
   // 기존 JS 로직 유지 (폴백)
   // ...
 }
 
+// JS 전처리: 복잡한 CSS 분기를 처리하고 정규화된 블록 레벨 자식만 반환
+// WASM calculate()는 "모든 자식이 블록 레벨"인 정규화된 입력만 처리한다.
+// 따라서 아래 5가지 책임을 모두 이 단계에서 해결해야 한다.
+private preprocess(children: Element[], parent: Element): {
+  normalizedChildren: Element[];
+  outOfFlowLayouts: ComputedLayout[];
+  lineBoxLayouts: ComputedLayout[];
+} {
+  const normalizedChildren: Element[] = [];
+  const outOfFlowLayouts: ComputedLayout[] = [];
+  const inlineBuffer: Element[] = []; // inline-block 연속 요소 누적용
+  const lineBoxLayouts: ComputedLayout[] = [];
+
+  for (const child of children) {
+    const style = child.props?.style;
+
+    // 1. out-of-flow (absolute/fixed) → JS에서 별도 배치, WASM 입력에서 제외
+    if (style?.position === 'absolute' || style?.position === 'fixed') {
+      this.flushInlineBuffer(inlineBuffer, lineBoxLayouts, parent); // 누적 inline 처리
+      outOfFlowLayouts.push(this.computeOutOfFlowLayout(child, parent));
+      continue;
+    }
+
+    // 2. display:none → 제외
+    if (style?.display === 'none') continue;
+
+    // 3. inline-block 요소 → LineBox로 그룹화 (기존 JS calculateLineBox 유지)
+    //    연속된 inline-block 요소를 버퍼에 모아, 블록 레벨 요소를 만나면 flush
+    if (this.isInlineLevel(child)) {
+      inlineBuffer.push(child);
+      continue;
+    }
+
+    // 블록 레벨 요소를 만났으므로 누적된 inline 버퍼를 LineBox로 변환
+    this.flushInlineBuffer(inlineBuffer, lineBoxLayouts, parent);
+
+    // 4. CSS Blockification: flex/grid 컨테이너의 자식 중
+    //    inline 레벨이 블록으로 승격되는 경우 (§9.7)
+    //    → 이미 isInlineLevel 분기에서 걸러졌으므로, 여기 도달한 요소는 블록 레벨
+    const blockified = this.applyBlockification(child, parent);
+
+    // 5. BFC 경계 판별 → serializeChildren에서 bfc_flag로 WASM에 전달
+    //    (createsBFC 결과는 serializeChildren 단계에서 읽음)
+    normalizedChildren.push(blockified);
+  }
+
+  // 마지막 inline 버퍼 flush
+  this.flushInlineBuffer(inlineBuffer, lineBoxLayouts, parent);
+
+  return { normalizedChildren, outOfFlowLayouts, lineBoxLayouts };
+}
+
+// inline-block 버퍼를 LineBox로 변환 (기존 JS calculateLineBox 로직 위임)
+private flushInlineBuffer(
+  buffer: Element[], lineBoxLayouts: ComputedLayout[], parent: Element
+): void {
+  if (buffer.length === 0) return;
+  lineBoxLayouts.push(...this.calculateLineBox(buffer, parent));
+  buffer.length = 0;
+}
+
 // 데이터 마샬링 헬퍼:
 private serializeChildren(children: Element[]): Float32Array {
-  const FIELDS = 7; // display, width, height, m_top, m_right, m_bottom, m_left
+  const FIELDS = 8; // display, width, height, m_top, m_right, m_bottom, m_left, bfc_flag
   const data = new Float32Array(children.length * FIELDS);
   children.forEach((child, i) => {
     const style = child.props?.style;
@@ -909,6 +1121,7 @@ private serializeChildren(children: Element[]): Float32Array {
     data[offset + 4] = boxModel.margin.right;
     data[offset + 5] = boxModel.margin.bottom;
     data[offset + 6] = boxModel.margin.left;
+    data[offset + 7] = this.createsBFC(style) ? 1 : 0; // BFC 경계 플래그
   });
   return data;
 }
@@ -1054,7 +1267,6 @@ calculate(parent, children, availableWidth, availableHeight): ComputedLayout[] {
 │  │ Web Worker (비동기 - 중량 연산)  │        │
 │  │ - calculateBlockLayout          │        │
 │  │ - calculateGridLayout           │        │
-│  │ - rebuildSpatialIndex           │        │
 │  └─────────────────────────────────┘        │
 └─────────────────────────────────────────────┘
 ```
@@ -1103,12 +1315,14 @@ class LayoutScheduler {
 
   private applyLayout(children: Element[], result: Float32Array): void {
     children.forEach((child, i) => {
-      this.lastValidLayout.set(child.id, {
+      const layout = {
         x: result[i * 4], y: result[i * 4 + 1],
         width: result[i * 4 + 2], height: result[i * 4 + 3],
-      });
+      };
+      this.lastValidLayout.set(child.id, layout);
+      // 메인 스레드 SpatialIndex 갱신 (4.7절: 인덱스는 메인 스레드에만 존재)
+      updateElement(child.id, layout.x, layout.y, layout.width, layout.height);
     });
-    // SpatialIndex도 업데이트
     // renderVersion 증가 → React 리렌더 트리거
   }
 }
@@ -1120,18 +1334,12 @@ class LayoutScheduler {
 // wasm-worker/protocol.ts
 
 type WorkerRequest =
-  | { type: 'BATCH_UPDATE_BOUNDS'; data: Float32Array }
-  | { type: 'REBUILD_SPATIAL_INDEX' }
   | { type: 'CALCULATE_BLOCK_LAYOUT'; parent: SerializedElement; children: SerializedElement[]; width: number; height: number }
-  | { type: 'CALCULATE_GRID_LAYOUT'; parent: SerializedElement; children: SerializedElement[]; width: number; height: number }
-  | { type: 'BATCH_PARSE_CSS'; values: string[] };
+  | { type: 'CALCULATE_GRID_LAYOUT'; parent: SerializedElement; children: SerializedElement[]; width: number; height: number };
 
 type WorkerResponse =
-  | { type: 'BOUNDS_UPDATED'; generation: number }
-  | { type: 'SPATIAL_INDEX_REBUILT'; elementCount: number }
   | { type: 'BLOCK_LAYOUT_RESULT'; layouts: Float32Array }
-  | { type: 'GRID_LAYOUT_RESULT'; layouts: Float32Array }
-  | { type: 'CSS_PARSED'; results: Float32Array };
+  | { type: 'GRID_LAYOUT_RESULT'; layouts: Float32Array };
 ```
 
 ### 4.3 Worker 구현
@@ -1139,19 +1347,16 @@ type WorkerResponse =
 ```typescript
 // wasm-worker/layoutWorker.ts
 
-import init, { BlockLayoutEngine, GridLayoutEngine, BoundsCache, SpatialIndex } from '../wasm-bindings/pkg/xstudio_wasm';
+import init, { BlockLayoutEngine, GridLayoutEngine } from '../wasm-bindings/pkg/xstudio_wasm';
+// SpatialIndex는 메인 스레드 전용 — Worker에서는 사용하지 않음 (4.7절 참조)
 
 let blockEngine: BlockLayoutEngine;
 let gridEngine: GridLayoutEngine;
-let boundsCache: BoundsCache;
-let spatialIndex: SpatialIndex;
 
 async function initialize() {
   await init();
   blockEngine = new BlockLayoutEngine();
   gridEngine = new GridLayoutEngine();
-  boundsCache = new BoundsCache(5000);
-  spatialIndex = new SpatialIndex(256);
 }
 
 const initPromise = initialize();
@@ -1161,21 +1366,16 @@ self.onmessage = async (event: MessageEvent<WorkerRequest>) => {
   const { type } = event.data;
 
   switch (type) {
-    case 'BATCH_UPDATE_BOUNDS': {
-      boundsCache.batch_update(event.data.data);
-      // Spatial Index 재구축
-      // ...
-      self.postMessage({ type: 'BOUNDS_UPDATED', generation: boundsCache.generation() });
-      break;
-    }
-
     case 'CALCULATE_BLOCK_LAYOUT': {
       const { parent, children, width, height } = event.data;
       const childrenData = serializeChildren(children);
-      const result = blockEngine.calculate(width, height, childrenData, 7);
+      const wasmResult = blockEngine.calculate(width, height, childrenData, 7);
+      // WASM 반환값은 선형 메모리의 뷰이므로 직접 transfer하면 메모리가 분리된다.
+      // 반드시 새 버퍼에 복사한 뒤 transfer해야 한다.
+      const result = new Float32Array(wasmResult);
       self.postMessage(
         { type: 'BLOCK_LAYOUT_RESULT', layouts: result },
-        { transfer: [result.buffer] }  // Zero-copy transfer
+        { transfer: [result.buffer] }
       );
       break;
     }
@@ -1185,7 +1385,8 @@ self.onmessage = async (event: MessageEvent<WorkerRequest>) => {
       const style = parent.props?.style;
       const tracksX = gridEngine.parse_tracks(style.gridTemplateColumns, width, 0);
       const tracksY = gridEngine.parse_tracks(style.gridTemplateRows ?? 'auto', height, 0);
-      const result = gridEngine.calculate_cell_positions(tracksX, tracksY, 0, 0, children.length);
+      const wasmResult = gridEngine.calculate_cell_positions(tracksX, tracksY, 0, 0, children.length);
+      const result = new Float32Array(wasmResult); // WASM 메모리에서 복사
       self.postMessage(
         { type: 'GRID_LAYOUT_RESULT', layouts: result },
         { transfer: [result.buffer] }
@@ -1217,10 +1418,6 @@ class WasmWorkerBridge {
     // 응답 매칭 및 Promise resolve
   }
 
-  async batchUpdateBounds(data: Float32Array): Promise<number> {
-    return this.send({ type: 'BATCH_UPDATE_BOUNDS', data });
-  }
-
   async calculateBlockLayout(
     parent: SerializedElement,
     children: SerializedElement[],
@@ -1243,7 +1440,7 @@ export const wasmBridge = new WasmWorkerBridge();
 - [ ] `layoutWorker.ts` Web Worker 구현
 - [ ] `protocol.ts` 메시지 프로토콜 정의
 - [ ] `bridge.ts` 메인 스레드 브릿지
-- [ ] Transferable 객체 활용 (zero-copy Float32Array 전달)
+- [ ] Transferable 객체 활용 (WASM 결과를 새 Float32Array에 복사 후 transfer — WASM 선형 메모리 직접 transfer 금지)
 - [ ] Worker 초기화 실패 시 메인 스레드 폴백
 - [ ] 메인 스레드 WASM 호출과 Worker 비동기 호출 분리 기준 문서화
 - [ ] 통합 테스트: Worker 통신 안정성
@@ -1253,13 +1450,48 @@ export const wasmBridge = new WasmWorkerBridge();
 
 | 연산 | 실행 위치 | 이유 |
 |------|----------|------|
-| hitTestPoint | 메인 스레드 (동기) | 클릭 응답 즉시 필요 (< 0.1ms) |
-| getCachedBounds | 메인 스레드 (동기) | 렌더링 루프 내 사용 |
+| queryPoint / queryRect | 메인 스레드 (동기) | 라쏘/호버 응답 즉시 필요 (< 0.1ms) |
+| queryViewport | 메인 스레드 (동기) | 렌더링 루프 내 사용 |
 | collapseMargins | 메인 스레드 (동기) | 단일 연산 (< 0.01ms) |
-| batchUpdateBounds | Worker (비동기) | 대량 데이터 처리 |
 | calculateBlockLayout | Worker (비동기) | 복잡한 레이아웃 계산 (> 5ms) |
 | calculateGridLayout | Worker (비동기) | 트랙 파싱 + 셀 계산 |
-| rebuildSpatialIndex | Worker (비동기) | 전체 인덱스 재구축 |
+
+### 4.7 SpatialIndex 인스턴스 역할 분리
+
+> **핵심:** SpatialIndex는 **메인 스레드에만 존재**한다. Worker는 SpatialIndex를 보유하지 않는다.
+
+```
+┌─────────────────────────────────────────────────────────┐
+│  Main Thread                                            │
+│  ┌──────────────────────────────────┐                  │
+│  │ SpatialIndex (유일한 인스턴스)     │                  │
+│  │ - queryViewport (컬링)           │                  │
+│  │ - queryRect (라쏘)               │                  │
+│  │ - queryPoint (호버)              │                  │
+│  │ - upsert/remove (요소 변경 시)   │                  │
+│  └──────────────────────────────────┘                  │
+│           ↕ postMessage                                 │
+│  ┌──────────────────────────────────┐                  │
+│  │ Worker (레이아웃 전용)            │                  │
+│  │ - calculateBlockLayout           │                  │
+│  │ - calculateGridLayout            │                  │
+│  │ - SpatialIndex 없음              │                  │
+│  └──────────────────────────────────┘                  │
+│                                                         │
+│  레이아웃 결과 수신 후 메인 스레드에서:                   │
+│  → SpatialIndex.upsert() 호출하여 인덱스 갱신           │
+└─────────────────────────────────────────────────────────┘
+```
+
+**흐름:**
+1. 요소 변경 → 메인 스레드 `SpatialIndex.upsert()` (즉시 반영)
+2. 복잡 레이아웃 필요 → Worker에 `calculateBlockLayout` 요청
+3. Worker 결과 수신 → 메인 스레드에서 `SpatialIndex.upsert()` 로 위치 갱신
+4. 동기 쿼리(queryViewport 등) → 항상 메인 스레드 인덱스를 사용
+
+이 구조는 스테일 데이터 문제를 방지한다:
+- SpatialIndex는 메인 스레드에서만 읽기/쓰기하므로 동기화 이슈가 없다
+- Worker는 레이아웃 계산만 수행하고, 결과를 메인 스레드에 반환할 뿐이다
 
 ---
 
@@ -1282,6 +1514,9 @@ export async function initAllWasm(): Promise<void> {
   try {
     const tasks: Promise<void>[] = [];
 
+    // 각 init*Wasm()이 내부에서 init()을 호출하므로
+    // 어떤 플래그 조합이든 WASM 바이너리 로드가 보장된다.
+    // wasm-pack의 init()은 멱등(중복 호출 안전)하므로 병렬 실행해도 무방하다.
     if (WASM_FLAGS.SPATIAL_INDEX) tasks.push(initSpatialWasm());
     if (WASM_FLAGS.LAYOUT_ENGINE) tasks.push(initLayoutWasm());
 
@@ -1379,17 +1614,19 @@ Phase 0: 환경 구축 및 벤치마크 기준선
   └─ 실측 기준선 수집 → 이후 Phase 필요성 판단
       │
 Phase 1: Spatial Index (축소됨)
-  └─ spatial_index.rs (i64 키 인코딩)
-  └─ idMapper.ts (string ↔ u32 양방향 매핑)
+  └─ spatial_index.rs (i64 키 인코딩, AABB 교차 검증 포함)
+  └─ idMapper.ts (string ↔ u32 양방향 매핑, tryGetNumericId 안전 조회)
   └─ elementRegistry.ts — SpatialIndex 동기화 추가
-  └─ useViewportCulling.ts — SpatialIndex 쿼리로 대체
+  └─ useViewportCulling.ts — query_viewport로 대체
+  └─ SelectionLayer.utils.ts — query_rect로 라쏘 선택 O(n) → O(k)
   └─ ~~BoundsCache~~ 제거 (기존 layoutBoundsRegistry로 충분)
       │
 Phase 2: Layout Engine 배치 가속 (수정됨)
-  └─ block_layout.rs / grid_layout.rs
-  └─ calculate() 전체 루프만 WASM 위임 (경계 넘기 1회)
-  └─ ~~collapseMargins, createsBFC 개별 위임~~ 제거
-  └─ 데이터 마샬링 헬퍼 (serialize/deserialize)
+  └─ block_layout.rs — 정규화된 블록 배치 (수직 스태킹 + margin collapse + BFC 경계)
+  └─ grid_layout.rs — 트랙 파싱(auto 포함) + 셀 위치 계산
+  └─ JS 전처리 책임: out-of-flow 분리, inline-block LineBox 그룹화, blockification, BFC 판별
+  └─ WASM calculate()는 전처리된 데이터만 수신 (경계 넘기 1회)
+  └─ 데이터 마샬링 헬퍼 (serialize/deserialize, 8 fields with bfc_flag)
   └─ 최소 요소 수 임계값 결정 (마샬링 비용 경계점)
       │
 Phase 3: 제거됨
@@ -1408,7 +1645,7 @@ Phase 4: Web Worker 통합 (수정됨)
 | 지표 | 목표 | 검증 시점 |
 |------|------|----------|
 | Viewport Culling | O(n) → O(k) | Phase 1 완료 후 |
-| 히트 테스트 | O(n) → O(1) 평균 | Phase 1 완료 후 |
+| 라쏘 선택 | O(n) → O(k) (query_rect) | Phase 1 완료 후 |
 | 레이아웃 재계산 | 실측 기준선 대비 개선 | Phase 2 완료 후 |
 | 메인 스레드 부하 | UI jank 제거 | Phase 4 완료 후 |
 | WASM 바이너리 | < 60KB (gzip) | 전체 |
@@ -1418,3 +1655,60 @@ Phase 4: Web Worker 통합 (수정됨)
 > 2. WASM 경계 넘기는 최소화한다 — 배치 단위로만 호출한다.
 > 3. 기존 JS 캐시로 충분하면 WASM을 도입하지 않는다 — 복잡도 비용을 고려한다.
 > 4. 모든 WASM 경로에 JS 폴백을 유지한다 — Feature Flag로 즉시 롤백 가능.
+
+---
+
+## 검토 Q&A
+
+### Q1: SpatialIndex 결과를 O(k)로 활용하기 위해 id → element 맵을 별도 유지할 계획인가?
+
+`query_viewport`와 `query_rect`는 string ID 배열을 반환한다.
+별도 맵은 불필요하며, Zustand store의 기존 `elementsMap` (O(1) 인덱스)을 `useStore.getState().elementsMap`으로 조회한다.
+
+**useViewportCulling에서의 O(k) 수집 경로:**
+```typescript
+const visibleIds = queryVisibleElements(...);                  // O(k) — SpatialIndex 반환
+const elementsMap = useStore.getState().elementsMap;            // 구독이 아닌 getState() 직접 조회
+const visibleElements = visibleIds
+  .map(id => elementsMap.get(id))                              // O(1) × k = O(k)
+  .filter((el): el is Element => el !== undefined);
+```
+`getState()` 경로를 사용하는 이유: `useViewportCulling`은 `useMemo` 내부에서 실행되므로
+`elementsMap`을 React 구독 대상으로 추가하면 불필요한 리렌더가 발생한다.
+`getState()`는 스냅샷 조회만 수행하여 리렌더 의존성을 추가하지 않는다.
+
+라쏘 선택의 경우 `queryRect`가 직접 ID 배열을 반환하므로 element 순회 자체가 불필요하다.
+
+### Q2: Grid 템플릿 파싱 지원 범위
+
+현재 Phase 2 범위:
+- **지원:** `fr`, `px`, `%`, 숫자 리터럴, `auto`
+- **미지원:** `minmax()`, `repeat()`, `fit-content()`, `min-content`, `max-content`
+
+`minmax()`/`repeat()`은 xstudio의 GridEngine.ts에서도 미지원이므로 WASM 포팅 범위에서 제외한다.
+향후 GridEngine.ts에 해당 기능이 추가되면 `grid_layout.rs`도 함께 확장한다.
+
+### Q3: Worker 결과 전달 방식
+
+`result.buffer`를 직접 transfer하면 WASM 선형 메모리(WebAssembly.Memory)가 분리되어 이후 모든 WASM 호출이 실패한다.
+본 문서의 Worker 구현을 **"복사 후 transfer"** 패턴으로 수정 완료하였다:
+```typescript
+const wasmResult = blockEngine.calculate(...);
+const result = new Float32Array(wasmResult); // WASM 메모리에서 JS 힙으로 복사
+self.postMessage({ layouts: result }, { transfer: [result.buffer] }); // 복사본만 transfer
+```
+
+### Q4: Worker rebuildSpatialIndex의 역할
+
+3차 검토에서 역할 분리를 명확히 하였다 (4.7절 참조):
+- **SpatialIndex는 메인 스레드에만 존재한다.** Worker에는 SpatialIndex 인스턴스가 없다.
+- Worker는 **레이아웃 계산(Block/Grid)만** 수행하고 결과를 메인 스레드에 반환한다.
+- 레이아웃 결과 수신 후 메인 스레드의 `LayoutScheduler.applyLayout()`에서 `SpatialIndex.upsert()`를 호출하여 인덱스를 갱신한다.
+- 이 구조는 두 인덱스 간 동기화 문제를 원천 제거한다.
+
+### Q5: useViewportCulling에서 elementsMap 접근 경로
+
+`useStore.getState().elementsMap`으로 직접 조회한다 (구독이 아닌 스냅샷).
+`useMemo` 내부에서 실행되므로 `useStore(state => state.elementsMap)` 구독을 사용하면
+elementsMap 변경 시 불필요한 리렌더가 발생한다. `getState()`는 리렌더 의존성을 추가하지 않으므로
+기존 `useMemo` 의존성(zoom, panOffset)만으로 재계산 타이밍을 제어할 수 있다.

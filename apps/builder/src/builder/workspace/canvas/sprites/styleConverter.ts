@@ -139,11 +139,14 @@ export function cssColorToAlpha(color: string | undefined): number {
  * parseCSSSize('100px') // 100
  * parseCSSSize('50%', 800) // 400
  * parseCSSSize(200) // 200
+ * parseCSSSize('100vh', undefined, 0, { width: 1920, height: 1080 }) // 1080
+ * parseCSSSize('50vw', undefined, 0, { width: 1920, height: 1080 }) // 960
  */
 export function parseCSSSize(
   value: string | number | undefined,
   parentSize?: number,
-  fallback = 0
+  fallback = 0,
+  viewport?: { width: number; height: number }
 ): number {
   if (value === undefined || value === null) return fallback;
   if (typeof value === 'number') return value;
@@ -158,7 +161,20 @@ export function parseCSSSize(
     return parseFloat(value) * 16;
   }
 
+  // vh 단위 (viewport height 기준)
+  if (value.endsWith('vh')) {
+    const vh = viewport?.height ?? 1080;
+    return (parseFloat(value) / 100) * vh;
+  }
+
+  // vw 단위 (viewport width 기준)
+  if (value.endsWith('vw')) {
+    const vw = viewport?.width ?? 1920;
+    return (parseFloat(value) / 100) * vw;
+  }
+
   // em 단위 (parentSize가 있으면 사용, 없으면 16px)
+  // Note: 'rem' check must come before 'em' check (rem endsWith em)
   if (value.endsWith('em')) {
     const base = parentSize !== undefined ? parentSize : 16;
     return parseFloat(value) * base;

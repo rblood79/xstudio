@@ -27,7 +27,7 @@ import {
 import { FancyButton } from "@pixi/ui";
 import type { Element } from "../../../../types/core/store.types";
 import type { CSSStyle } from "../sprites/styleConverter";
-import { cssColorToHex } from "../sprites/styleConverter";
+import { cssColorToHex, parseCSSSize } from "../sprites/styleConverter";
 import type {
   ButtonVariant,
   ComponentSize,
@@ -35,6 +35,9 @@ import type {
 import { useThemeColors } from "../hooks/useThemeColors";
 import { getVariantColors as getLegacyVariantColors, getSizePreset as getLegacySizePreset, type SizePreset } from "../utils/cssVariableReader";
 import { drawBox } from "../utils";
+import { useCanvasSyncStore } from "../canvasSync";
+import { parsePadding, parseBorderWidth } from "../sprites/paddingUtils";
+import { useStore } from "../../../stores";
 
 // ============================================
 // 🚀 Component Spec Feature Flag
@@ -137,6 +140,7 @@ interface ButtonLayoutResult {
   textColor: number;
   borderColor: number | null;
   borderRadius: number;
+  borderWidth: number;
   fontSize: number;
   fontFamily: string;
   // State
@@ -178,24 +182,44 @@ function getButtonLayout(
   buttonProps: ButtonElementProps,
   buttonText: string,
   variantColors: VariantColors,
-  sizePreset: SizePresetResolved
+  sizePreset: SizePresetResolved,
+  viewport?: { width: number; height: number },
+  parentContentArea?: { width: number; height: number }
 ): ButtonLayoutResult {
   const isDisabled = Boolean(buttonProps.isDisabled);
   const isLoading = Boolean(buttonProps.isLoading);
 
   // 폰트 설정 (inline style > size preset)
-  // 🚀 Phase 8: parseCSSSize 제거 - CSS 프리셋 값 사용
-  const fontSize = typeof style?.fontSize === 'number' ? style.fontSize : sizePreset.fontSize;
+  // parseCSSSize로 CSS 문자열 값("14px", "1rem", "2vh" 등)도 올바르게 파싱
+  const fontSize = style?.fontSize !== undefined
+    ? parseCSSSize(style.fontSize, undefined, sizePreset.fontSize, viewport)
+    : sizePreset.fontSize;
   const fontFamily = style?.fontFamily || "Pretendard, sans-serif";
 
-  // 패딩 (inline style > size preset)
-  const paddingTop = typeof style?.paddingTop === 'number' ? style.paddingTop : sizePreset.paddingY;
-  const paddingRight = typeof style?.paddingRight === 'number' ? style.paddingRight : sizePreset.paddingX;
-  const paddingBottom = typeof style?.paddingBottom === 'number' ? style.paddingBottom : sizePreset.paddingY;
-  const paddingLeft = typeof style?.paddingLeft === 'number' ? style.paddingLeft : sizePreset.paddingX;
+  // 패딩 (shorthand + 개별 속성 모두 지원)
+  // parsePadding: shorthand "8px" → 4방향, 개별 paddingTop 등으로 오버라이드
+  const hasPaddingStyle = style?.padding !== undefined ||
+    style?.paddingTop !== undefined || style?.paddingRight !== undefined ||
+    style?.paddingBottom !== undefined || style?.paddingLeft !== undefined;
+  const parsedPadding = hasPaddingStyle
+    ? parsePadding(style)
+    : null;
+  const paddingTop = parsedPadding?.top ?? sizePreset.paddingY;
+  const paddingRight = parsedPadding?.right ?? sizePreset.paddingX;
+  const paddingBottom = parsedPadding?.bottom ?? sizePreset.paddingY;
+  const paddingLeft = parsedPadding?.left ?? sizePreset.paddingX;
+
+  // 테두리 너비 (shorthand + 개별 속성 모두 지원)
+  const parsedBorder = parseBorderWidth(style);
+  const borderWidthTop = parsedBorder.top;
+  const borderWidthRight = parsedBorder.right;
+  const borderWidthBottom = parsedBorder.bottom;
+  const borderWidthLeft = parsedBorder.left;
 
   // 테두리 반경 (inline style > size preset)
-  const borderRadius = typeof style?.borderRadius === 'number' ? style.borderRadius : sizePreset.borderRadius;
+  const borderRadius = style?.borderRadius !== undefined
+    ? parseCSSSize(style.borderRadius, undefined, sizePreset.borderRadius, viewport)
+    : sizePreset.borderRadius;
 
   // 색상 (inline style > variant)
   const hasInlineBg = style?.backgroundColor !== undefined;
@@ -224,26 +248,37 @@ function getButtonLayout(
     pressedColor = variantColors.bgPressed;
   }
 
-  // Border 색상 (outline variant)
-  const borderColor = variantColors.border ?? null;
+  // Border 색상 (inline style > variant)
+  const hasInlineBorderColor = style?.borderColor !== undefined;
+  const borderColor = hasInlineBorderColor
+    ? cssColorToHex(style?.borderColor, variantColors.border ?? 0x000000)
+    : (variantColors.border ?? null);
 
   // 텍스트 크기 측정 (먼저 측정해야 최소 크기 계산 가능)
   const textStyle = new TextStyle({ fontSize, fontFamily });
   const { width: textWidth, height: textHeight } = measureTextSize(buttonText, textStyle);
 
-  // 최소 필요 크기 계산 (padding + text)
-  // Note: border-box 모델에서 border는 총 크기 안에 포함되므로 별도로 더하지 않음
-  const minRequiredWidth = paddingLeft + textWidth + paddingRight;
-  const minRequiredHeight = paddingTop + textHeight + paddingBottom;
+  // 최소 필요 크기 계산 (border + padding + text)
+  // border-box 모델: width = border + padding + content
+  const minRequiredWidth = borderWidthLeft + paddingLeft + textWidth + paddingRight + borderWidthRight;
+  const minRequiredHeight = borderWidthTop + paddingTop + textHeight + paddingBottom + borderWidthBottom;
 
   // 크기 계산
-  // 🚀 Fix: 명시적 크기가 최소 필요 크기보다 작으면 auto로 처리
-  // 🚀 Phase 8: parseCSSSize 제거
-  const explicitWidth = typeof style?.width === 'number' ? style.width : 0;
-  const explicitHeight = typeof style?.height === 'number' ? style.height : 0;
+  // parseCSSSize로 CSS 문자열 값("200px", "50%", "100vw" 등)도 올바르게 파싱
+  // %, vw, vh는 부모의 content area 기준으로 계산 (CSS box model)
+  // parentContentArea: 부모의 width - padding - border (Yoga border-box 모델)
+  // vw/vh도 parentContentArea 기준 (빌더에서 viewport ≈ body, 부모 내 수용 보장)
+  const pctRefWidth = parentContentArea?.width ?? viewport?.width;
+  const pctRefHeight = parentContentArea?.height ?? viewport?.height;
+  const resolveViewport = parentContentArea ?? viewport;
+  const explicitWidth = parseCSSSize(style?.width, pctRefWidth, 0, resolveViewport);
+  const explicitHeight = parseCSSSize(style?.height, pctRefHeight, 0, resolveViewport);
 
-  const isWidthAuto = !style?.width || style?.width === "auto" || explicitWidth < minRequiredWidth;
-  const isHeightAuto = !style?.height || style?.height === "auto" || explicitHeight < minRequiredHeight;
+  // 명시적 크기가 있으면 (%, vh, vw 포함) auto 비활성화
+  const hasExplicitWidth = style?.width !== undefined && style?.width !== "" && style?.width !== "auto";
+  const hasExplicitHeight = style?.height !== undefined && style?.height !== "" && style?.height !== "auto";
+  const isWidthAuto = !hasExplicitWidth || explicitWidth < minRequiredWidth;
+  const isHeightAuto = !hasExplicitHeight || explicitHeight < minRequiredHeight;
 
   let width: number;
   let height: number;
@@ -262,9 +297,12 @@ function getButtonLayout(
     height = explicitHeight;
   }
 
+  // border-box 모델의 대표 borderWidth (4방향 중 최대값 사용)
+  const borderWidth = Math.max(borderWidthTop, borderWidthRight, borderWidthBottom, borderWidthLeft);
+
   return {
-    left: typeof style?.left === 'number' ? style.left : 0,
-    top: typeof style?.top === 'number' ? style.top : 0,
+    left: parseCSSSize(style?.left, pctRefWidth, 0, resolveViewport),
+    top: parseCSSSize(style?.top, pctRefHeight, 0, resolveViewport),
     width,
     height,
     backgroundColor,
@@ -274,6 +312,7 @@ function getButtonLayout(
     textColor,
     borderColor,
     borderRadius,
+    borderWidth,
     fontSize,
     fontFamily,
     isDisabled,
@@ -386,6 +425,41 @@ export const PixiButton = memo(function PixiButton({
 
   // 테마 색상 (동적으로 CSS 변수에서 읽어옴)
   const themeColors = useThemeColors();
+  // 페이지/뷰포트 크기 (%, vh, vw 단위 계산용)
+  const canvasSize = useCanvasSyncStore((s) => s.canvasSize);
+
+  // 부모 요소 조회 (% 단위 해석 시 부모 content area 기준 필요)
+  const parentElement = useStore((state) => {
+    if (!element.parent_id) return null;
+    return state.elementsMap.get(element.parent_id) ?? null;
+  });
+
+  // 부모의 content area 계산 (부모 너비 - padding - border)
+  // CSS box model: 자식의 % 크기는 부모의 content area 기준
+  const parentContentArea = useMemo(() => {
+    const vw = canvasSize.width;
+    const vh = canvasSize.height;
+
+    if (!parentElement) {
+      return { width: vw, height: vh };
+    }
+
+    const parentStyle = parentElement.props?.style as CSSStyle | undefined;
+    const isBody = parentElement.tag.toLowerCase() === 'body';
+
+    // 부모의 외곽 크기 (body는 페이지 크기, 그 외는 CSS 값)
+    const pw = isBody ? vw : parseCSSSize(parentStyle?.width, vw, vw, canvasSize);
+    const ph = isBody ? vh : parseCSSSize(parentStyle?.height, vh, vh, canvasSize);
+
+    // padding + border 차감 (Yoga border-box 모델)
+    const pp = parsePadding(parentStyle);
+    const pb = parseBorderWidth(parentStyle);
+
+    return {
+      width: Math.max(0, pw - pp.left - pp.right - pb.left - pb.right),
+      height: Math.max(0, ph - pp.top - pp.bottom - pb.top - pb.bottom),
+    };
+  }, [parentElement, canvasSize]);
 
   // variant에 맞는 색상 가져오기
   // 🚀 Feature Flag: Spec vs Legacy 분기
@@ -432,9 +506,11 @@ export const PixiButton = memo(function PixiButton({
       props || {},
       buttonText || "Button",
       variantColors,
-      sizePreset
+      sizePreset,
+      canvasSize,
+      parentContentArea
     );
-  }, [style, props, buttonText, variantColors, sizePreset]);
+  }, [style, props, buttonText, variantColors, sizePreset, canvasSize, parentContentArea]);
 
   // Container ref
   const containerRef = useRef<PixiContainer | null>(null);
@@ -468,7 +544,7 @@ export const PixiButton = memo(function PixiButton({
     const graphicsOptions = {
       alpha: layout.backgroundAlpha,
       borderColor: layout.borderColor,
-      borderWidth: 1,
+      borderWidth: layout.borderWidth,
     };
 
     // 배경 Graphics 생성

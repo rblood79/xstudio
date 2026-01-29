@@ -551,9 +551,24 @@ export interface LayoutContext {
 ### 3.4 유틸리티 함수
 
 > **입력 규약 (P0)**:
-> - `width`, `height`: `px`, `%`, `vh`, `vw`, `number`, `auto` 지원 (`%`는 부모 content-box 기준, `vh`/`vw`는 viewport 기준)
+> - `width`, `height`: `px`, `%`, `vh`, `vw`, `number`, `auto` 지원 (`%`는 부모 content-box 기준)
 > - `margin`, `padding`, `border-width`: `px`, `number`만 지원 (`%` 미지원)
-> - `rem`, `em`, `vw`, `vh`, `calc()` 등은 지원하지 않음
+> - `rem`, `em`, `calc()` 등은 지원하지 않음
+>
+> **🚀 vh/vw → % 변환 정책 (Yoga/@pixi/layout)**:
+> - `styleToLayout.ts`의 `parseCSSValue()`에서 `vh`/`vw`를 `%` 문자열로 변환
+> - 예: `100vw` → `"100%"`, `50vh` → `"50%"`
+> - **이유**: Yoga는 vh/vw 미지원. 빌더에서 viewport = 페이지 = body이므로 부모 기준 %로 변환하면
+>   Yoga가 부모의 padding/border를 자동 차감하여 content area 내에 수용
+> - **한계**: 교차 차원(width에 vh, height에 vw)은 부모의 해당 축 기준으로 해석됨 (빌더 한정 trade-off)
+>
+> **🚀 Pixi 컴포넌트 CSS 단위 해석 규칙 (getButtonLayout 패턴)**:
+> - 모든 Pixi UI 컴포넌트(PixiButton, PixiToggleButton 등)는 CSS 문자열 값을 `parseCSSSize()`로 파싱해야 함
+> - `typeof style?.width === 'number'` 패턴 사용 금지 → CSS 문자열 값("200px", "50%")을 무시함
+> - **% 해석 기준**: 부모의 content area (부모 width - padding - border), viewport가 아님
+> - **vw/vh 해석 기준**: 부모의 content area (빌더에서 부모 내 수용 보장)
+> - **부모 content area 계산**: `useStore`로 부모 요소 조회 → `parsePadding()` + `parseBorderWidth()` 차감
+> - px, rem: viewport/부모 무관하게 절대값으로 파싱
 >
 > **미지원 값 처리 정책**:
 > - 개별 속성(`marginTop` 등): 미지원 단위 → `undefined` 반환 → 기본값(0 또는 auto) 적용
@@ -809,7 +824,12 @@ function parseSize(
       return (parseFloat(trimmed) / 100) * available;
     }
 
-    // vh/vw 허용 (viewport 기준)
+    // vh/vw 허용
+    // ⚠️ 주의: 이 함수는 커스텀 엔진(BlockEngine/GridEngine)용
+    // Yoga/@pixi/layout 경로에서는 styleToLayout.ts의 parseCSSValue()가
+    // vh/vw를 % 문자열로 변환하여 Yoga가 부모 기준으로 처리
+    // Pixi UI 컴포넌트(PixiButton 등)에서는 parseCSSSize()로
+    // parentContentArea 기준 해석 (부모 내 수용 보장)
     if (VIEWPORT_PATTERN.test(trimmed)) {
       const num = parseFloat(trimmed);
       if (trimmed.endsWith('vh') && viewportHeight !== undefined) {
@@ -2149,3 +2169,4 @@ function estimateTextHeight(fontSize: number): number {
 | 2026-01-29 | 1.24 | Phase 11 이슈 10+11 구현 완료: COMPUTED_STYLE_WHITELIST에 visibility 추가, GridEngine에 align-self/justify-self 셀 내 정렬 지원 (start/center/end, parseBoxModel 기반 자식 크기 계산) |
 | 2026-01-29 | 1.25 | P2 line-height 레이아웃 반영: estimateTextHeight에 lineHeight 매개변수 추가, calculateContentHeight에서 parseLineHeight 결과 우선 반영, LineBoxItem에 lineHeight 필드 추가, calculateLineBox에서 lineHeight 기반 line box 최소 높이 계산 |
 | 2026-01-29 | 1.26 | SelectionLayer bounds 갱신 버그 수정: 스타일/display 변경 시 selectionLayer가 0,0에 고정되는 문제 해결. elementRegistry에 layoutBoundsRegistry 추가하여 layout bounds 직접 저장, LayoutContainer에서 layout prop 변경 시 RAF로 bounds 캐싱, SelectionLayer에 selectedStyleSignature 구독 추가로 스타일 변경 감지 |
+| 2026-01-29 | 1.27 | Pixi UI 컴포넌트 CSS 단위 해석 규칙 추가: (1) vh/vw → % 변환 정책 (styleToLayout.ts parseCSSValue에서 Yoga가 부모 기준으로 처리), (2) Pixi 컴포넌트 getButtonLayout 패턴 (parseCSSSize + parentContentArea 기준 해석, typeof === 'number' 사용 금지), (3) 부모 content area 계산 필수 (useStore → parsePadding + parseBorderWidth 차감), (4) padding shorthand + border width 4방향 계산 포함 |
