@@ -210,11 +210,18 @@ function getButtonLayout(
   const paddingLeft = parsedPadding?.left ?? sizePreset.paddingX;
 
   // 테두리 너비 (shorthand + 개별 속성 모두 지원)
-  const parsedBorder = parseBorderWidth(style);
-  const borderWidthTop = parsedBorder.top;
-  const borderWidthRight = parsedBorder.right;
-  const borderWidthBottom = parsedBorder.bottom;
-  const borderWidthLeft = parsedBorder.left;
+  // padding과 동일한 패턴: inline style이 없으면 spec 기본값 사용
+  // Button.spec.ts: borderWidth: 1 (variant에 border 색상이 있을 때)
+  // CSS: .react-aria-Button { border: 1px solid var(--outline-variant); }
+  const hasBorderWidthStyle = style?.borderWidth !== undefined ||
+    style?.borderTopWidth !== undefined || style?.borderRightWidth !== undefined ||
+    style?.borderBottomWidth !== undefined || style?.borderLeftWidth !== undefined;
+  const parsedBorder = hasBorderWidthStyle ? parseBorderWidth(style) : null;
+  const specDefaultBorderWidth = variantColors.border != null ? 1 : 0;
+  const borderWidthTop = parsedBorder?.top ?? specDefaultBorderWidth;
+  const borderWidthRight = parsedBorder?.right ?? specDefaultBorderWidth;
+  const borderWidthBottom = parsedBorder?.bottom ?? specDefaultBorderWidth;
+  const borderWidthLeft = parsedBorder?.left ?? specDefaultBorderWidth;
 
   // 테두리 반경 (inline style > size preset)
   const borderRadius = style?.borderRadius !== undefined

@@ -503,8 +503,9 @@ const ElementsLayer = memo(function ElementsLayer({
   // → Yoga가 내부 콘텐츠를 오프셋 + 컴포넌트가 자체 크기에 반영 = 이중
   const SELF_PADDING_TAGS = useMemo(() => new Set([
     'Button', 'SubmitButton',
-    // 향후 자체 padding/border 렌더링하는 컴포넌트 추가:
-    // 'ToggleButton', 'FancyButton', 'Slider', 'ProgressBar', 'Meter', etc.
+    'FancyButton',
+    'ToggleButton',
+    // 향후 자체 padding/border 렌더링하는 컴포넌트 추가 시 여기에 등록
   ]), []);
 
   // 🚀 Phase 6: @pixi/layout 완전 전환 - layoutResult 제거

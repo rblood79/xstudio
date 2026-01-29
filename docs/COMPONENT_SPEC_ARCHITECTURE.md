@@ -2587,11 +2587,137 @@ const parsedBorder = parseBorderWidth(style);  // "2px" → 4방향, borderTopWi
 | `rem` | × 16 (절대값) | × 16 (절대값) |
 | `auto` | fallback 값 | undefined (Yoga 자동 계산) |
 
-**적용 필수 컴포넌트 목록** (18개, PixiButton 완료):
-- PixiToggleButton, PixiToggleButtonGroup, PixiSlider, PixiSwitcher
-- PixiSelect, PixiSeparator, PixiMeter, PixiProgressBar
-- PixiRadio, PixiRadioItem, PixiScrollBox, PixiList, PixiListBox
-- PixiMaskedFrame, PixiFancyButton, PixiCheckbox, PixiCheckboxGroup, PixiCheckboxItem
+**적용 필수 컴포넌트 목록** (18개):
+
+| 컴포넌트 | CSS 단위 파싱 | SELF_PADDING_TAGS | 잔여 작업 |
+|----------|:----------:|:-----------------:|----------|
+| **PixiButton** | ✅ 완료 | ✅ 등록됨 | — |
+| **PixiFancyButton** | ❌ typeof 사용 중 | ✅ 등록됨 | parseCSSSize/parsePadding/parseBorderWidth 전환 필요 |
+| **PixiToggleButton** | ❌ typeof 사용 중 | ✅ 등록됨 | parseCSSSize/parsePadding/parseBorderWidth 전환 필요 |
+| PixiToggleButtonGroup | ❌ | — | 전체 마이그레이션 |
+| PixiSlider | ❌ | — | 전체 마이그레이션 |
+| PixiSwitcher | ❌ | — | 전체 마이그레이션 |
+| PixiSelect | ❌ | — | 전체 마이그레이션 |
+| PixiSeparator | ❌ | — | 전체 마이그레이션 |
+| PixiMeter | ❌ | — | 전체 마이그레이션 |
+| PixiProgressBar | ❌ | — | 전체 마이그레이션 |
+| PixiRadio | ❌ | — | 전체 마이그레이션 |
+| PixiRadioItem | ❌ | — | 전체 마이그레이션 |
+| PixiScrollBox | ❌ | — | 전체 마이그레이션 |
+| PixiList | ❌ | — | 전체 마이그레이션 |
+| PixiListBox | ❌ | — | 전체 마이그레이션 |
+| PixiMaskedFrame | ❌ | — | 전체 마이그레이션 |
+| PixiCheckbox | ❌ | — | 전체 마이그레이션 |
+| PixiCheckboxGroup | ❌ | — | 전체 마이그레이션 |
+| PixiCheckboxItem | ❌ | — | 전체 마이그레이션 |
+
+> **Note**: PixiFancyButton, PixiToggleButton은 `SELF_PADDING_TAGS` 등록으로 이중 padding 방지는 완료.
+> 그러나 `typeof === 'number'` → `parseCSSSize()`/`parsePadding()`/`parseBorderWidth()` 전환은 미완료 상태.
+> CSS 문자열 값("16px", "50%", "100vw")이 무시되는 버그가 잔존.
+
+#### 4.7.4.1 Padding/Border 이중 적용 방지 (CRITICAL)
+
+자체적으로 padding/border를 그래픽 크기에 반영하는 Pixi UI 컴포넌트(PixiButton 등)는
+외부 LayoutContainer(Yoga)에 padding/border를 전달하면 **이중 적용**됩니다.
+
+- **Yoga 경로**: `styleToLayout()`이 padding/border를 LayoutContainer에 전달
+  → Yoga가 내부 콘텐츠를 해당 값만큼 오프셋
+- **컴포넌트 자체**: padding/border를 Graphics 크기에 반영
+- **결과**: 위치 이동 + 크기 변경 이중 발생
+
+**해결**: `BuilderCanvas.tsx`의 `stripSelfRenderedProps()` + `SELF_PADDING_TAGS`
+
+```typescript
+// 자체 padding/border 렌더링 컴포넌트 (leaf UI)
+const SELF_PADDING_TAGS = new Set([
+  'Button', 'SubmitButton', 'FancyButton', 'ToggleButton',
+]);
+
+// 외부 LayoutContainer에서 padding/border/visual 속성 제거
+function stripSelfRenderedProps(layout: LayoutStyle): LayoutStyle {
+  const {
+    padding: _p, paddingTop: _pt, paddingRight: _pr, paddingBottom: _pb, paddingLeft: _pl,
+    borderWidth: _bw, borderTopWidth: _btw, borderRightWidth: _brw,
+    borderBottomWidth: _bbw, borderLeftWidth: _blw,
+    borderRadius: _br, borderColor: _bc, backgroundColor: _bg,
+    ...rest
+  } = layout;
+  return rest;
+}
+
+// renderTree에서 적용
+const effectiveLayout = SELF_PADDING_TAGS.has(child.tag)
+  ? stripSelfRenderedProps(baseLayout)
+  : baseLayout;
+```
+
+**새 컴포넌트가 자체 padding/border 렌더링을 구현하면 반드시 `SELF_PADDING_TAGS`에 추가**
+
+#### 4.7.4.2 BlockEngine Border-Box 크기 계산 (CRITICAL)
+
+`BlockEngine.calculate()`에서 `parseBoxModel()`이 반환하는 **content-box** 크기를
+그대로 사용하면 padding/border를 포함한 실제 차지 공간이 누락되어 요소가 겹칩니다.
+
+**해결**: content-box → border-box 변환 (`BlockEngine.ts`)
+
+```typescript
+// border-box 크기 = content + padding + border
+const { padding, border } = boxModel;
+const padBorderH = padding.left + padding.right + border.left + border.right;
+const padBorderV = padding.top + padding.bottom + border.top + border.bottom;
+
+// Block: Auto-width는 이미 border-box, Explicit width는 content-box + padding/border
+const childWidth = boxModel.width !== undefined
+  ? childContentWidth + padBorderH
+  : childContentWidth;  // auto: availableWidth - margins (이미 border-box)
+const childHeight = childContentHeight + padBorderV;
+
+currentY += childHeight;  // border-box 높이로 진행
+```
+
+inline-block 경로도 동일하게 border-box 크기 사용.
+
+#### 4.7.4.3 Baseline 정렬: 버튼 수직 중앙 정렬
+
+`display: block` 부모에서 다른 높이의 inline-block 버튼들이 배치될 때,
+CSS 웹 모드에서는 텍스트가 수직 중앙 정렬된 버튼들이 서로 중앙 정렬됩니다.
+
+**원인**: 기존 `calculateBaseline()`이 `height * 0.8` (일반 텍스트 블록용)을 사용하여
+버튼처럼 텍스트가 수직 중앙 정렬된 요소에 맞지 않음.
+
+**해결**: `VERTICALLY_CENTERED_TAGS`에 해당하는 요소는 `height / 2` 반환 (`utils.ts`)
+
+```typescript
+const VERTICALLY_CENTERED_TAGS = new Set([
+  'button', 'submitbutton', 'fancybutton', 'togglebutton',
+  'input', 'select',
+]);
+
+// calculateBaseline 내부
+if (VERTICALLY_CENTERED_TAGS.has(tag)) {
+  return height / 2;  // 수직 중앙 정렬 요소: baseline ≈ 중앙
+}
+```
+
+**검증**: Button 1(h=100), Button 2(h=200)
+- baseline: 50, 100 → Button 1 y = 100 - 50 = **50** (수직 중앙 ✓)
+
+#### 4.7.4.4 Spec 기본 borderWidth 적용
+
+CSS 모드에서는 `.react-aria-Button { border: 1px solid var(--outline-variant); }`가
+기본 border를 제공하지만, WebGL 모드는 inline style만 읽으므로 기본 border가 누락됩니다.
+
+**해결**: padding fallback 패턴과 동일하게 적용 (`PixiButton.tsx`)
+
+```typescript
+// inline style에 borderWidth가 없으면 spec 기본값 사용
+const hasBorderWidthStyle = style?.borderWidth !== undefined ||
+  style?.borderTopWidth !== undefined || /* ... */;
+const parsedBorder = hasBorderWidthStyle ? parseBorderWidth(style) : null;
+const specDefaultBorderWidth = variantColors.border != null ? 1 : 0;
+const borderWidthTop = parsedBorder?.top ?? specDefaultBorderWidth;
+// ... (4방향 동일)
+```
 
 #### 4.7.5 WebGL computedStyle 동기화 수정
 
@@ -2645,8 +2771,11 @@ export function smoothRoundRect(
 | `packages/shared/src/components/styles/Button.css` | size별 borderRadius CSS |
 | `apps/builder/.../stores/elements.ts` | computedStyle 포함 |
 | `apps/builder/.../stores/utils/elementHelpers.ts` | computeCanvasElementStyle 추가 |
-| `apps/builder/.../canvas/ui/PixiButton.tsx` | Feature Flag 마이그레이션 |
+| `apps/builder/.../canvas/ui/PixiButton.tsx` | Feature Flag 마이그레이션, spec 기본 borderWidth 적용 (v1.10) |
 | `apps/builder/.../canvas/utils/graphicsUtils.ts` | smoothRoundRect 구현 |
+| `apps/builder/.../canvas/BuilderCanvas.tsx` | `SELF_PADDING_TAGS` + `stripSelfRenderedProps` 추가 (v1.10) |
+| `apps/builder/.../canvas/layout/engines/BlockEngine.ts` | content-box → border-box 크기 변환 (v1.10) |
+| `apps/builder/.../canvas/layout/engines/utils.ts` | `VERTICALLY_CENTERED_TAGS` baseline 수정 (v1.10) |
 
 ---
 
@@ -4230,3 +4359,4 @@ function PixiButton({ element }) {
 | 2026-01-29 | 1.7 | 하이브리드 레이아웃 엔진 완료 반영: (1) ContainerLayout 인터페이스에 레이아웃 엔진 지원 CSS 속성 추가 (inline-block, flow-root, box-sizing, min/max 크기, overflow-x/y, lineHeight, verticalAlign, visibility, justifySelf), (2) 데이터 흐름 다이어그램에 하이브리드 레이아웃 엔진 계층(BlockEngine/FlexEngine/GridEngine) 추가 및 내부/외부 레이아웃 계층 분리 설명 |
 | 2026-01-29 | 1.8 | Button 구현 점검 — 코드↔문서 동기화: (1) RadiusTokens 값 교정 (md:8→6, lg:12→8, xl:16→12, CSS 변수 기준), (2) typography에 fontWeight/lineHeight 객체 추가, (3) ButtonProps에 text/label 필드 추가 및 style 타입을 Record로 변경, (4) ButtonSpec variants/sizes에 `as TokenRef` 캐스트 추가, (5) lg size borderRadius를 `{radius.lg}`로 수정, (6) disabled state에 pointerEvents 추가, (7) focusVisible outline을 var(--primary) 형식으로 수정, (8) render.shapes에 text 폴백 체인(children → text → label) 반영 |
 | 2026-01-29 | 1.9 | Pixi UI 컴포넌트 CSS 단위 해석 규칙 추가 (Section 4.7.4): (1) typeof === 'number' 패턴 사용 금지 → parseCSSSize() 필수, (2) % / vw / vh는 부모 content area 기준 해석 (parentContentArea = 부모 width - padding - border), (3) padding shorthand(parsePadding) + border width 4방향(parseBorderWidth) 파싱 필수, (4) 적용 필수 컴포넌트 18개 목록 명시, (5) Yoga 경로에서 vh/vw → % 문자열 변환 정책 (styleToLayout.ts) |
+| 2026-01-29 | 1.10 | Button 레이아웃 버그 패치 4건 + 컴포넌트 상태 추적표 (Section 4.7.4.1~4.7.4.4): (1) padding/border 이중 적용 방지 — SELF_PADDING_TAGS(Button, SubmitButton, FancyButton, ToggleButton) + stripSelfRenderedProps (BuilderCanvas.tsx), (2) BlockEngine border-box 크기 계산 — content-box → border-box 변환으로 block/inline-block 요소 겹침 해결 (BlockEngine.ts), (3) baseline 정렬 수정 — VERTICALLY_CENTERED_TAGS(button/fancybutton/togglebutton/input/select) height/2 반환으로 CSS 웹 모드와 동일한 수직 중앙 정렬 (utils.ts), (4) spec 기본 borderWidth 적용 — inline style 미지정 시 variantColors.border 존재하면 1px 기본값 (PixiButton.tsx), (5) 적용 필수 컴포넌트 18개 상태 추적표 추가 — PixiFancyButton/PixiToggleButton은 SELF_PADDING_TAGS 등록 완료, typeof 패턴 전환은 미완료(잔여 작업) |

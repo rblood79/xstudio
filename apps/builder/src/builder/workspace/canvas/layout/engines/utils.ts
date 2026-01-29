@@ -731,7 +731,8 @@ export function parseLineHeight(
 // CSS에서 button/input은 내부 텍스트가 수직 중앙 정렬되므로
 // baseline이 요소의 수직 중앙 근처에 위치
 const VERTICALLY_CENTERED_TAGS = new Set([
-  'button', 'submitbutton', 'input', 'select',
+  'button', 'submitbutton', 'fancybutton', 'togglebutton',
+  'input', 'select',
 ]);
 
 export function calculateBaseline(

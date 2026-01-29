@@ -1,7 +1,7 @@
 # xstudio WASM 최적화 계획
 
 > 작성일: 2026-01-29
-> 최종 수정: 2026-01-29 (3차 검토 반영 — JS 전처리/WASM 범위 분리, init import 누락, O(k) elementsMap 경로, Worker SpatialIndex 제거, 음수 마진 폴백)
+> 최종 수정: 2026-01-29 (6차 검토 반영)
 > 대상: `apps/builder/src/builder/workspace/canvas/`
 > 현재 스택: PixiJS v8.14.3 + @pixi/react v8.0.5 + Yoga WASM v3.2.1 + Zustand
 > 참고: Pencil Desktop v1.1.10 아키텍처 분석 기반
@@ -335,6 +335,7 @@ impl SpatialIndex {
     }
 
     /// 뷰포트 내 요소 ID 반환 (AABB 교차 검증 포함 — false positive 제거)
+    /// ※ query_rect()와 로직이 동일함 — 향후 공통 내부 함수 _query_region()으로 추출 가능
     pub fn query_viewport(&self, left: f32, top: f32, right: f32, bottom: f32) -> Box<[u32]> {
         let mut result = Vec::new();
         let mut seen = HashSet::new();
@@ -615,8 +616,8 @@ rebuildIndexes(elements) {
 > **갱신 비용:** O(n) 순회 1회. 기존 `rebuildIndexes()`에서 `elementsMap`을 빌드하는 것과
 > 동일한 시점에 함께 수행하므로, 추가 비용은 Map.set() n회뿐이다.
 
-> **⚠️ 배치 리빌드 주의:** 현재 `_rebuildIndexes()`는 20+ 위치에서 호출된다
-> (elementCreation, elementUpdate, elementRemoval, historyActions 등).
+> **⚠️ 배치 리빌드 주의:** 현재 `_rebuildIndexes()`는 14곳에서 호출된다
+> (elements.ts, elementCreation.ts, elementUpdate.ts, elementRemoval.ts, elementLoader.ts, historyActions.ts).
 > 배치 작업(복붙, 페이지 로드, Undo/Redo) 시 매 요소마다 호출되면
 > O(n) × m = **O(n·m)** 비용이 발생한다 (m = 배치 내 요소 수).
 > `elementOrderIndex` 추가로 인해 리빌드 비용이 기존 대비 ~25% 증가하므로,
@@ -738,7 +739,7 @@ export function unregisterElement(id: string): void {
 - 194-358행: 메인 레이아웃 루프 (164줄, margin collapse + inline-block 분기)
 - 387-436행: LineBox baseline 계산 (수학 연산 집약)
 
-> `collapseMargins()` (626행)은 3줄 산술 연산이라 개별 WASM 위임 시
+> `collapseMargins()` (648행)은 단순 조건 분기(if/else 3분기)라 개별 WASM 위임 시
 > 경계 넘기 오버헤드(~0.1-1μs/call)가 연산 비용을 초과한다.
 > 따라서 `calculate()` 전체 루프를 WASM에서 일괄 수행하여 경계를 1회만 넘긴다.
 
@@ -769,7 +770,7 @@ pub struct ElementStyle {
     pub border_width: f32,
     pub position: u8,         // 0=static, 1=relative, 2=absolute, 3=fixed
     pub overflow: u8,         // 0=visible, 1=hidden, 2=scroll, 3=auto
-    pub float_type: u8,       // 0=none, 1=left, 2=right
+    pub float_type: u8,       // 0=none, 1=left, 2=right (xstudio 미지원 — CSS 명세 완전성을 위해 유지, 항상 0)
     pub vertical_align: u8,   // 0=baseline, 1=top, 2=middle, 3=bottom
 }
 
@@ -896,6 +897,7 @@ impl BlockLayoutEngine {
             let child_width = children_data[offset + 1];
             let child_height = children_data[offset + 2];
             let margin_top = children_data[offset + 3];
+            let margin_right = children_data[offset + 4];
             let margin_bottom = children_data[offset + 5];
             let margin_left = children_data[offset + 6];
             let bfc_flag = if fc > 7 { children_data[offset + 7] as u8 } else { 0 };
@@ -909,8 +911,12 @@ impl BlockLayoutEngine {
             };
             current_y += effective_top;
 
-            // Width: auto(≤0) → available_width, 아니면 지정값
-            let final_width = if child_width <= 0.0 { available_width } else { child_width };
+            // Width: auto(≤0) → available_width - margin_left - margin_right (CSS 2.1 §10.3.3)
+            let final_width = if child_width <= 0.0 {
+                (available_width - margin_left - margin_right).max(0.0)
+            } else {
+                child_width
+            };
 
             layouts.push(margin_left);              // x
             layouts.push(current_y);                // y
@@ -1145,8 +1151,13 @@ calculate(parent, children, availableWidth, availableHeight, context?): Computed
     const result = wasmBlockLayout(availableWidth, availableHeight, childrenData, 8); // 8 fields
     const blockLayouts = this.deserializeLayouts(normalizedChildren, result);
 
-    // out-of-flow + inline LineBox + block 레이아웃 병합
-    return [...blockLayouts, ...outOfFlowLayouts, ...lineBoxLayouts];
+    // ★ synthetic LineBox의 y좌표를 개별 inline-block 요소에 전파
+    const resolvedLineBoxLayouts = this.resolveLineBoxPositions(blockLayouts, lineBoxLayouts);
+
+    // out-of-flow + inline LineBox(위치 확정) + block 레이아웃 병합
+    // synthetic LineBox 자체는 최종 결과에서 제거 (실제 렌더 대상 아님)
+    const realBlockLayouts = blockLayouts.filter(l => !l.elementId.startsWith('__linebox_'));
+    return [...realBlockLayouts, ...outOfFlowLayouts, ...resolvedLineBoxLayouts];
   }
   // 기존 JS 로직 유지 (폴백)
   // ...
@@ -1171,7 +1182,7 @@ private preprocess(children: Element[], parent: Element): {
 
     // 1. out-of-flow (absolute/fixed) → JS에서 별도 배치, WASM 입력에서 제외
     if (style?.position === 'absolute' || style?.position === 'fixed') {
-      this.flushInlineBuffer(inlineBuffer, lineBoxLayouts, parent); // 누적 inline 처리
+      this.flushInlineBuffer(inlineBuffer, normalizedChildren, lineBoxLayouts, parent);
       outOfFlowLayouts.push(this.computeOutOfFlowLayout(child, parent));
       continue;
     }
@@ -1187,7 +1198,7 @@ private preprocess(children: Element[], parent: Element): {
     }
 
     // 블록 레벨 요소를 만났으므로 누적된 inline 버퍼를 LineBox로 변환
-    this.flushInlineBuffer(inlineBuffer, lineBoxLayouts, parent);
+    this.flushInlineBuffer(inlineBuffer, normalizedChildren, lineBoxLayouts, parent);
 
     // 4. CSS Blockification: flex/grid 컨테이너의 자식 중
     //    inline 레벨이 블록으로 승격되는 경우 (§9.7)
@@ -1200,17 +1211,52 @@ private preprocess(children: Element[], parent: Element): {
   }
 
   // 마지막 inline 버퍼 flush
-  this.flushInlineBuffer(inlineBuffer, lineBoxLayouts, parent);
+  this.flushInlineBuffer(inlineBuffer, normalizedChildren, lineBoxLayouts, parent);
 
   return { normalizedChildren, outOfFlowLayouts, lineBoxLayouts };
 }
 
-// inline-block 버퍼를 LineBox로 변환 (기존 JS calculateLineBox 로직 위임)
+// inline-block 버퍼를 LineBox로 변환하고, synthetic 블록 요소를 normalizedChildren에 삽입
+// ★ LineBox가 차지하는 수직 공간을 WASM calculate()에 반영하기 위해
+//   normalizedChildren에 synthetic 블록 요소를 추가한다.
+//   이렇게 하지 않으면 inline-block 요소 뒤의 블록 요소 y좌표가 잘못 계산된다.
+//
+// 예시: [blockA, inlineB, inlineC, blockD]
+//   → normalizedChildren = [A, syntheticLineBox(height=30), D]
+//   → WASM 결과: A@y=0, syntheticLineBox@y=50, D@y=80+margin (올바른 흐름)
+//   → syntheticLineBox의 y좌표를 lineBoxLayouts의 개별 요소에 전파
 private flushInlineBuffer(
-  buffer: Element[], lineBoxLayouts: ComputedLayout[], parent: Element
+  buffer: Element[],
+  normalizedChildren: Element[],
+  lineBoxLayouts: ComputedLayout[],
+  parent: Element
 ): void {
   if (buffer.length === 0) return;
-  lineBoxLayouts.push(...this.calculateLineBox(buffer, parent));
+
+  // 1. LineBox 내부 배치 계산 (기존 JS calculateLineBox — baseline 정렬 포함)
+  const lineBoxResult = this.calculateLineBox(buffer, parent);
+
+  // 2. Synthetic 블록 요소 생성 — WASM이 수직 공간을 할당하도록
+  //    LineBox는 margin collapse에 참여하지 않으므로 margin=0으로 설정
+  const syntheticId = `__linebox_${normalizedChildren.length}`;
+  const syntheticLineBox: Element = {
+    id: syntheticId,
+    type: '__synthetic_linebox',
+    props: { style: {
+      display: 'block',
+      width: '100%',
+      height: `${lineBoxResult.lineHeight}px`,
+    }},
+  };
+  normalizedChildren.push(syntheticLineBox);
+
+  // 3. lineBoxLayouts에 저장 (y좌표는 WASM 결과에서 역전파)
+  //    각 inline-block 요소의 lineBox 내부 상대 위치 + syntheticId를 기록
+  lineBoxLayouts.push({
+    syntheticId,
+    elements: lineBoxResult.elements, // 개별 요소의 lineBox 내부 상대 좌표
+  });
+
   buffer.length = 0;
 }
 
@@ -1242,6 +1288,33 @@ private deserializeLayouts(children: Element[], result: Float32Array): ComputedL
     width: result[i * 4 + 2],
     height: result[i * 4 + 3],
   }));
+}
+
+// ★ synthetic LineBox의 WASM 계산 결과(y좌표)를 개별 inline-block 요소에 전파
+private resolveLineBoxPositions(
+  blockLayouts: ComputedLayout[],
+  lineBoxGroups: { syntheticId: string; elements: ComputedLayout[] }[],
+): ComputedLayout[] {
+  const resolved: ComputedLayout[] = [];
+
+  for (const group of lineBoxGroups) {
+    // synthetic 블록 요소의 WASM 결과에서 y좌표 추출
+    const syntheticLayout = blockLayouts.find(l => l.elementId === group.syntheticId);
+    if (!syntheticLayout) continue;
+
+    // 각 inline-block 요소의 lineBox 내부 상대 좌표에 synthetic y를 더함
+    for (const el of group.elements) {
+      resolved.push({
+        elementId: el.elementId,
+        x: syntheticLayout.x + el.x,       // lineBox x + 내부 x offset
+        y: syntheticLayout.y + el.y,        // lineBox y + 내부 baseline 정렬 y offset
+        width: el.width,
+        height: el.height,
+      });
+    }
+  }
+
+  return resolved;
 }
 ```
 
@@ -1340,7 +1413,7 @@ calculate(parent, children, availableWidth, availableHeight): ComputedLayout[] {
 **styleToLayout.ts 핫 패스:**
 - `parseCSSValue()` — 요소별 반복 호출
 - `parseFlexShorthand()` — flex 축약형 파싱
-- `styleToLayout()` — 전체 변환 (357줄)
+- `styleToLayout()` — Flexbox 레이아웃 변환 (약 140줄)
 
 ### 3.2 대안: WASM 대신 권장하는 최적화
 
@@ -1416,10 +1489,10 @@ class LayoutScheduler {
 
     // Worker에 비동기 요청
     wasmBridge.calculateBlockLayout(parent, children, width, height)
-      .then(result => {
+      .then(({ layouts, outOfFlowLayouts, lineBoxLayouts }) => {
         // RAF에서 적용 (렌더 타이밍에 맞춤)
         this.pendingRequest = requestAnimationFrame(() => {
-          this.applyLayout(children, result);
+          this.applyLayout(layouts, outOfFlowLayouts, lineBoxLayouts);
           this.pendingRequest = null;
         });
       });
@@ -1430,15 +1503,19 @@ class LayoutScheduler {
     return this.lastValidLayout.get(elementId) ?? null;
   }
 
-  private applyLayout(children: Element[], result: Float32Array): void {
-    children.forEach((child, i) => {
-      const layout = {
-        x: result[i * 4], y: result[i * 4 + 1],
-        width: result[i * 4 + 2], height: result[i * 4 + 3],
-      };
-      this.lastValidLayout.set(child.id, layout);
+  // ★ preprocess 3그룹(block + outOfFlow + lineBox)을 모두 처리
+  //   Worker가 preprocess()를 수행하고 3그룹을 모두 반환하므로,
+  //   이 메서드는 각 그룹의 레이아웃을 적용한다.
+  private applyLayout(
+    blockLayouts: ComputedLayout[],
+    outOfFlowLayouts: ComputedLayout[],
+    lineBoxLayouts: ComputedLayout[],
+  ): void {
+    const allLayouts = [...blockLayouts, ...outOfFlowLayouts, ...lineBoxLayouts];
+    allLayouts.forEach(layout => {
+      this.lastValidLayout.set(layout.elementId, layout);
       // 메인 스레드 SpatialIndex 갱신 (4.7절: 인덱스는 메인 스레드에만 존재)
-      updateElement(child.id, layout.x, layout.y, layout.width, layout.height);
+      updateElement(layout.elementId, layout.x, layout.y, layout.width, layout.height);
     });
     // renderVersion 증가 → React 리렌더 트리거
   }
@@ -1455,7 +1532,7 @@ type WorkerRequest =
   | { type: 'CALCULATE_GRID_LAYOUT'; parent: SerializedElement; children: SerializedElement[]; width: number; height: number };
 
 type WorkerResponse =
-  | { type: 'BLOCK_LAYOUT_RESULT'; layouts: Float32Array }
+  | { type: 'BLOCK_LAYOUT_RESULT'; layouts: Float32Array; outOfFlowLayouts: ComputedLayout[]; lineBoxLayouts: ComputedLayout[] }
   | { type: 'GRID_LAYOUT_RESULT'; layouts: Float32Array };
 ```
 
@@ -1485,13 +1562,16 @@ self.onmessage = async (event: MessageEvent<WorkerRequest>) => {
   switch (type) {
     case 'CALCULATE_BLOCK_LAYOUT': {
       const { parent, children, width, height } = event.data;
-      const childrenData = serializeChildren(children);
+      // ★ 메인 스레드와 동일한 전처리 수행 — raw children을 직접 WASM에 넘기면 안 됨
+      //   (absolute/fixed, display:none, inline-block 요소가 블록 흐름에 혼입)
+      const { normalizedChildren, outOfFlowLayouts, lineBoxLayouts } = preprocess(children, parent);
+      const childrenData = serializeChildren(normalizedChildren);
       const wasmResult = blockEngine.calculate(width, height, childrenData, 8); // 8 fields (bfc_flag 포함)
       // WASM 반환값은 선형 메모리의 뷰이므로 직접 transfer하면 메모리가 분리된다.
       // 반드시 새 버퍼에 복사한 뒤 transfer해야 한다.
       const result = new Float32Array(wasmResult);
       self.postMessage(
-        { type: 'BLOCK_LAYOUT_RESULT', layouts: result },
+        { type: 'BLOCK_LAYOUT_RESULT', layouts: result, outOfFlowLayouts, lineBoxLayouts },
         { transfer: [result.buffer] }
       );
       break;
@@ -1500,9 +1580,11 @@ self.onmessage = async (event: MessageEvent<WorkerRequest>) => {
     case 'CALCULATE_GRID_LAYOUT': {
       const { parent, children, width, height } = event.data;
       const style = parent.props?.style;
-      const tracksX = gridEngine.parse_tracks(style.gridTemplateColumns, width, 0);
-      const tracksY = gridEngine.parse_tracks(style.gridTemplateRows ?? 'auto', height, 0);
-      const wasmResult = gridEngine.calculate_cell_positions(tracksX, tracksY, 0, 0, children.length);
+      const columnGap = parseGap(style?.columnGap) ?? parseGap(style?.gap) ?? 0;
+      const rowGap = parseGap(style?.rowGap) ?? parseGap(style?.gap) ?? 0;
+      const tracksX = gridEngine.parse_tracks(style.gridTemplateColumns, width, columnGap);
+      const tracksY = gridEngine.parse_tracks(style.gridTemplateRows ?? 'auto', height, rowGap);
+      const wasmResult = gridEngine.calculate_cell_positions(tracksX, tracksY, columnGap, rowGap, children.length);
       const result = new Float32Array(wasmResult); // WASM 메모리에서 복사
       self.postMessage(
         { type: 'GRID_LAYOUT_RESULT', layouts: result },
