@@ -727,11 +727,19 @@ export function parseLineHeight(
  * // 높이 100px, baseline이 하단에서 20px 위
  * calculateBaseline(element, 100) // → 80 (상단에서 80px 아래)
  */
+// 🚀 텍스트가 수직 중앙 정렬되는 요소 (CSS baseline ≈ height/2)
+// CSS에서 button/input은 내부 텍스트가 수직 중앙 정렬되므로
+// baseline이 요소의 수직 중앙 근처에 위치
+const VERTICALLY_CENTERED_TAGS = new Set([
+  'button', 'submitbutton', 'input', 'select',
+]);
+
 export function calculateBaseline(
   element: Element,
   height: number
 ): number {
   const style = element.props?.style as Record<string, unknown> | undefined;
+  const tag = (element.tag ?? '').toLowerCase();
 
   // overflow가 visible이 아니면 하단이 baseline
   const overflow = style?.overflow as string | undefined;
@@ -751,6 +759,15 @@ export function calculateBaseline(
   // 현재는 높이가 0이면 콘텐츠 없음으로 간주
   if (height === 0) {
     return 0;
+  }
+
+  // 🚀 버튼/input 등 텍스트 수직 중앙 정렬 요소
+  // CSS에서 이 요소들의 baseline은 수직 중앙의 텍스트 baseline
+  // 텍스트가 중앙에 위치하므로 baseline ≈ height / 2
+  // (동일 폰트 크기의 다른 높이 요소들 간 baseline 정렬 시
+  //  결과적으로 수직 중앙 정렬과 동일한 효과)
+  if (VERTICALLY_CENTERED_TAGS.has(tag)) {
+    return height / 2;
   }
 
   // 일반적인 경우: 텍스트 baseline 계산

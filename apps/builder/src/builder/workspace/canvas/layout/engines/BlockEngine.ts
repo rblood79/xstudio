@@ -222,16 +222,25 @@ export class BlockEngine implements LayoutEngine {
       if (isInlineBlock) {
         // 🚀 Phase 6: Inline-block + vertical-align
         // 🚀 Phase 11: min/max clamp 적용
-        const childWidth = clampSize(
+        const childContentWidth = clampSize(
           boxModel.width ?? boxModel.contentWidth,
           boxModel.minWidth,
           boxModel.maxWidth
         );
-        const childHeight = clampSize(
+        const childContentHeight = clampSize(
           boxModel.height ?? boxModel.contentHeight,
           boxModel.minHeight,
           boxModel.maxHeight
         );
+
+        // 🚀 Border-box 크기 계산 (content + padding + border)
+        // CSS에서 inline-block 요소는 border-box 크기로 공간을 차지
+        const { padding: ibPad, border: ibBdr } = boxModel;
+        const ibPadBorderH = ibPad.left + ibPad.right + ibBdr.left + ibBdr.right;
+        const ibPadBorderV = ibPad.top + ibPad.bottom + ibBdr.top + ibBdr.bottom;
+        const childWidth = childContentWidth + ibPadBorderH;
+        const childHeight = childContentHeight + ibPadBorderV;
+
         const totalWidth = childWidth + margin.left + margin.right;
 
         // 줄바꿈 필요 여부 확인
@@ -321,16 +330,29 @@ export class BlockEngine implements LayoutEngine {
 
         // Block 너비: 명시적 width 또는 100%
         // 🚀 Phase 11: min/max clamp 적용
-        const childWidth = clampSize(
+        const childContentWidth = clampSize(
           boxModel.width ?? availableWidth - margin.left - margin.right,
           boxModel.minWidth,
           boxModel.maxWidth
         );
-        const childHeight = clampSize(
+        const childContentHeight = clampSize(
           boxModel.height ?? boxModel.contentHeight,
           boxModel.minHeight,
           boxModel.maxHeight
         );
+
+        // 🚀 Border-box 크기 계산 (content + padding + border)
+        // CSS에서 블록 요소는 border-box 크기로 수직 공간을 차지
+        const { padding: blkPad, border: blkBdr } = boxModel;
+        const blkPadBorderH = blkPad.left + blkPad.right + blkBdr.left + blkBdr.right;
+        const blkPadBorderV = blkPad.top + blkPad.bottom + blkBdr.top + blkBdr.bottom;
+
+        // Auto-width: 'availableWidth - margins'는 이미 border-box 크기
+        // Explicit width: content-box이므로 padding+border 추가
+        const childWidth = boxModel.width !== undefined
+          ? childContentWidth + blkPadBorderH
+          : childContentWidth;
+        const childHeight = childContentHeight + blkPadBorderV;
 
         layouts.push({
           elementId: child.id,

@@ -168,6 +168,15 @@ performance.measure('bounds-lookup', 'bounds-lookup-start', 'bounds-lookup-end')
 | 대규모 페이지 | 2,000개 | 프레임 타임, 컬링 비율, 메모리 사용량 |
 | 스트레스 테스트 | 5,000개 | 프레임 드롭 시점, 최대 프레임 타임 |
 
+**추가 측정 항목 (WASM 도입 효과 판단용):**
+
+| 항목 | 측정 방법 | 의의 |
+|------|----------|------|
+| panOffset 변경 빈도 | ViewportController.syncToReactState() 호출 횟수/초 | throttle 필요성 판단 |
+| _rebuildIndexes 호출 빈도 | 배치 작업 시 호출 횟수 | 배치 리빌드 최적화 우선순위 |
+| SpritePool 히트율 | acquire/release 비율 vs destroy 비율 | maxPoolSize 적정성 |
+| CSS 파싱 반복률 | parseCSSValue 동일 입력 호출 비율 | 캐싱 ROI |
+
 ### 0.3 Feature Flag 인프라
 
 ```typescript
@@ -213,6 +222,10 @@ VITE_WASM_LAYOUT=false
 - `useViewportCulling` — 매 팬/줌 변경마다 (useMemo 의존성: zoom, panOffset)
 - 라쏘 선택 — 드래그 종료 시 1회 (`findElementsInLasso()`)
 - 개별 클릭 — PixiJS가 처리하므로 SpatialIndex 불필요
+
+**범위 주의:** `elements` 배열은 **모든 페이지**의 요소를 단일 배열에 저장한다 (`elements.ts:41`).
+SpatialIndex에 전체 페이지 요소를 등록하면 불필요한 메모리 사용과 쿼리 비용이 발생한다.
+페이지 전환 시 `clearAll()` + 현재 페이지 요소만 `batch_upsert()` 하는 전략을 적용해야 한다.
 
 ### 1.2 WASM 모듈 설계
 
@@ -555,6 +568,14 @@ if (WASM_FLAGS.SPATIAL_INDEX) {
 // ※ 기존 elements.filter(el => ...) 경로는 WASM_FLAGS.SPATIAL_INDEX=false일 때만 실행 (JS 폴백)
 ```
 
+> **⚠️ 사전 최적화 필요: ViewportController throttle**
+> 현재 `ViewportController.updatePan()`은 마우스 move마다 호출되어 초당 60~240회
+> `syncToReactState()`를 실행하고, 매번 새로운 panOffset 객체를 생성한다.
+> 이로 인해 `useMemo` 의존성이 무효화되어 SpatialIndex 쿼리 + O(k log k) 정렬이
+> 초당 240회 실행될 수 있다. WASM SpatialIndex 도입 전에 다음을 적용해야 한다:
+> - `syncToReactState()`에 **16ms throttle** 적용 (60fps 상한)
+> - panOffset 객체를 **shallow equal 비교**하여 값이 동일하면 React state 업데이트 스킵
+
 **`elementOrderIndex` 생성 및 갱신:**
 
 `elementOrderIndex`는 전체 요소의 렌더 순서(= DFS 트리 순회 순서)를
@@ -594,6 +615,21 @@ rebuildIndexes(elements) {
 > **갱신 비용:** O(n) 순회 1회. 기존 `rebuildIndexes()`에서 `elementsMap`을 빌드하는 것과
 > 동일한 시점에 함께 수행하므로, 추가 비용은 Map.set() n회뿐이다.
 
+> **⚠️ 배치 리빌드 주의:** 현재 `_rebuildIndexes()`는 20+ 위치에서 호출된다
+> (elementCreation, elementUpdate, elementRemoval, historyActions 등).
+> 배치 작업(복붙, 페이지 로드, Undo/Redo) 시 매 요소마다 호출되면
+> O(n) × m = **O(n·m)** 비용이 발생한다 (m = 배치 내 요소 수).
+> `elementOrderIndex` 추가로 인해 리빌드 비용이 기존 대비 ~25% 증가하므로,
+> 배치 작업 시에는 개별 호출 대신 최종 1회만 리빌드하는 전략을 적용해야 한다:
+> ```typescript
+> // 배치 작업 패턴
+> function batchOperation(operations: () => void) {
+>   suspendIndexRebuild();   // _rebuildIndexes() 내부에서 early return
+>   operations();            // 개별 요소 작업 (리빌드 스킵)
+>   resumeAndRebuildIndexes(); // 최종 1회 O(n) 리빌드
+> }
+> ```
+
 **`SelectionLayer.utils.ts` 수정 (라쏘 선택):**
 ```typescript
 import { WASM_FLAGS } from '../../wasm-bindings/featureFlags';
@@ -608,6 +644,9 @@ function findElementsInLasso(
 
   if (WASM_FLAGS.SPATIAL_INDEX) {
     // SpatialIndex: O(k) — AABB 교차 검증 포함
+    // ※ bounds 소스: SpatialIndex는 layoutBoundsRegistry 기준 (레이아웃 엔진 계산 결과).
+    //   JS 폴백의 calculateBounds(style)와 다른 소스이므로, 결과가 미세하게 다를 수 있다.
+    //   (예: style에 width:50%가 있으면 JS 폴백은 raw 값, WASM은 resolved px 값 사용)
     return queryRect(
       lassoBounds.x, lassoBounds.y,
       lassoBounds.x + lassoBounds.width,
@@ -649,17 +688,31 @@ export function unregisterElement(id: string): void {
 }
 ```
 
+> **⚠️ RAF 타이밍 경쟁:**
+> 현재 `updateElementBounds()`는 `BuilderCanvas.tsx:299-317`의 RAF 콜백 내에서 호출된다.
+> SpatialIndex 동기화도 이 경로에 포함되므로, `useViewportCulling`의 `useMemo` 재계산이
+> RAF 콜백보다 먼저 실행되면 **SpatialIndex가 이전 프레임 bounds를 반환**한다.
+>
+> **대책 (택 1):**
+> 1. **VIEWPORT_MARGIN 확장:** 100px → 200px로 늘려 1프레임 지연을 시각적으로 흡수
+> 2. **동기 갱신 경로:** 레이아웃 엔진이 bounds를 계산한 직후 SpatialIndex.upsert()를
+>    동기적으로 호출하는 별도 경로 추가 (RAF 의존 제거)
+> 3. **batch_upsert 타이밍:** PixiJS 렌더 루프(`Application.ticker`) 시작 시점에
+>    변경된 요소들을 일괄 갱신하여 쿼리 전에 인덱스 최신화 보장
+
 ### 1.5 Phase 1 산출물
 
 - [ ] `spatial_index.rs` 구현 (i64 키 인코딩, 내부 bounds 캐시 포함)
 - [ ] `idMapper.ts` 구현 (string ↔ u32 양방향 매핑)
 - [ ] `spatialIndex.ts` TypeScript 바인딩
-- [ ] `elementRegistry.ts` 수정 (SpatialIndex 동기화)
+- [ ] `elementRegistry.ts` 수정 (SpatialIndex 동기화 + RAF 타이밍 대책)
 - [ ] `useViewportCulling.ts` 수정 (SpatialIndex 쿼리)
 - [ ] `SelectionLayer.utils.ts` 수정 (라쏘 선택에 SpatialIndex `query_rect` 적용)
 - [ ] 단위 테스트: Rust `wasm-pack test` (삽입, 삭제, 쿼리, query_rect, 엣지 케이스)
 - [ ] 통합 테스트: 1,000개 요소 뷰포트 쿼리 벤치마크
 - [ ] Feature Flag (`VITE_WASM_SPATIAL`)로 A/B 비교
+- [ ] 페이지별 SpatialIndex 범위 관리 (페이지 전환 시 clearAll + 현재 페이지 batch_upsert)
+- [ ] 배치 인덱스 리빌드 최적화 (suspendIndexRebuild/resumeAndRebuildIndexes 패턴)
 
 ### 1.6 성능 검증 대상
 
@@ -753,6 +806,12 @@ impl BlockLayoutEngine {
     }
 
     /// BFC (Block Formatting Context) 생성 여부 판별
+    ///
+    /// ※ 이 함수는 외부 API로 노출하지만, 실제 레이아웃 경로에서는
+    ///   JS 측 `serializeChildren()`이 `createsBFC()` 결과를 `bfc_flag`로 사전 계산하여
+    ///   `calculate()`의 children_data에 포함시킨다.
+    ///   따라서 이 외부 API는 디버깅/테스트 용도이며,
+    ///   핫 패스에서는 `serde_wasm_bindgen::from_value()` 디시리얼라이즈 오버헤드를 피한다.
     pub fn creates_bfc(&self, style: &JsValue) -> bool {
         let s: ElementStyle = serde_wasm_bindgen::from_value(style.clone()).unwrap();
         matches!(s.display, 2 | 3) ||         // flex, grid
@@ -866,6 +925,17 @@ impl BlockLayoutEngine {
     }
 }
 ```
+
+> **⚠️ Float32 정밀도:**
+> Rust `f32`는 IEEE 754 single precision (유효 숫자 ~7자리).
+> JS의 `number`(Float64, ~15자리)와 미세한 차이가 누적될 수 있다.
+> - `current_y`가 수백 요소를 거치면서 f32 반올림이 누적 → 최대 ~0.5px 오차
+> - JS 폴백과의 출력 비교 테스트에서 false negative 발생 가능
+>
+> **대책:**
+> 1. 통합 테스트에서 epsilon 허용 범위 적용: `|js_y - wasm_y| < 0.5px`
+> 2. 정밀도가 중요한 경우 `f64`로 전환 가능 (WASM에서 f64는 f32 대비 ~10% 느림, 허용 범위)
+> 3. `children_data`를 `&[f64]`로 변경 시 마샬링은 `Float64Array` 사용
 
 **Grid Layout (`grid_layout.rs`):**
 ```rust
@@ -1228,7 +1298,9 @@ calculate(parent, children, availableWidth, availableHeight): ComputedLayout[] {
   - [ ] out-of-flow 요소 제외 (absolute/fixed — `BlockEngine.ts:493-497`)
   - [ ] vertical-align 4종 (baseline/top/bottom/middle — `BlockEngine.ts:445-467`)
   - [ ] margin collapse 중첩: 부모-자식, 형제 간, 빈 블록 — `BlockEngine.ts:273-355`
+  - [ ] Float32 정밀도 테스트: 100+ 요소 수직 스태킹에서 JS(f64) vs WASM(f32) 누적 오차 < 0.5px
 - [ ] 벤치마크: 요소 수별(10, 50, 100, 500) 레이아웃 재계산 시간 비교
+- [ ] CSS 파싱 결과 캐싱 (preprocess/serializeChildren에서 반복 파싱 방지 — WeakMap 기반)
 
 ### 2.6 성능 검증 대상
 
@@ -1277,9 +1349,16 @@ calculate(parent, children, availableWidth, availableHeight): ComputedLayout[] {
 | 텍스트 렌더링 | PixiJS BitmapText 전환 | 래스터 기반, GPU 텍스처 캐시 활용 |
 | CSS 파싱 반복 | 결과 메모이제이션 (JS Map 캐시) | 동일 스타일 반복 파싱 방지 |
 | 데코레이션 계산 | 결과 캐싱 (fontSize+textHeight 키) | 변경 시에만 재계산 |
+| createsBFC contain 파싱 | bitmask 사전 변환 | `contain.split(/\s+/)` 정규식+배열 할당 제거 |
 
 > Phase 3의 Rust/TS 구현 코드와 통합 코드는 제거됨 (WASM 부적합 판정).
 > Phase 0 벤치마크에서 이 영역이 병목으로 확인되면 위 대안 표의 JS 최적화를 먼저 적용한다.
+
+> **⚠️ Phase 2 사전 조건:** CSS 파싱 캐싱은 Phase 2 `preprocess()` + `serializeChildren()`의
+> 성능에 직접 영향을 준다. 현재 `parseCSSValue()`, `parseBoxModel()`, `createsBFC()`가
+> 매 자식마다 호출되어 동일 스타일을 반복 파싱한다.
+> Phase 2 착수 전에 최소한 `WeakMap<CSSStyleObject, ParsedResult>` 기반 캐싱을 적용해야
+> WASM 경계 넘기 전 JS 측 병목을 제거할 수 있다.
 
 ---
 
@@ -1407,7 +1486,7 @@ self.onmessage = async (event: MessageEvent<WorkerRequest>) => {
     case 'CALCULATE_BLOCK_LAYOUT': {
       const { parent, children, width, height } = event.data;
       const childrenData = serializeChildren(children);
-      const wasmResult = blockEngine.calculate(width, height, childrenData, 7);
+      const wasmResult = blockEngine.calculate(width, height, childrenData, 8); // 8 fields (bfc_flag 포함)
       // WASM 반환값은 선형 메모리의 뷰이므로 직접 transfer하면 메모리가 분리된다.
       // 반드시 새 버퍼에 복사한 뒤 transfer해야 한다.
       const result = new Float32Array(wasmResult);
