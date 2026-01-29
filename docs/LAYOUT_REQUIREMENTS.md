@@ -2024,6 +2024,44 @@ if (justifySelf === 'center') {
 
 ---
 
+### 8.4 Phase 12: 스타일 패널 Alignment 축 매핑 수정 (2026-01-29)
+
+#### 이슈 12: flex-direction: column일 때 Alignment 토글 활성 위치 불일치 ✅ (구현 완료)
+
+**증상:**
+- `flex-direction: row`에서는 Alignment 9-grid 토글의 활성 위치와 화면 배치가 일치
+- `flex-direction: column`에서는 활성 위치와 실제 화면 배치가 불일치
+
+**원인:**
+- `flexAlignmentKeysAtom`에서 활성 버튼 키를 도출할 때, `column` 방향의 축 교환이 누락
+- `handleFlexAlignment`(쓰기)에서는 `column`일 때 `justifyContent ↔ alignItems`를 올바르게 교환
+- `flexAlignmentKeysAtom`(읽기)에서는 `column`에서도 `row`와 동일한 매핑 사용
+
+**CSS 축 동작:**
+
+| 방향 | justifyContent 제어 축 | alignItems 제어 축 |
+|------|----------------------|-------------------|
+| `row` | 가로 (main axis) | 세로 (cross axis) |
+| `column` | 세로 (main axis) | 가로 (cross axis) |
+
+**구현 내용:**
+- `styleAtoms.ts`: `flexAlignmentKeysAtom`에서 `column` 방향일 때 매핑 교환
+
+```typescript
+// styleAtoms.ts - flexAlignmentKeysAtom
+if (flexDirection === 'column') {
+  // column: justifyContent = main axis (세로), alignItems = cross axis (가로)
+  vertical = verticalMap[justifyContent] || '';
+  horizontal = horizontalMap[alignItems] || '';
+} else {
+  // row: justifyContent = main axis (가로), alignItems = cross axis (세로)
+  vertical = verticalMap[alignItems] || '';
+  horizontal = horizontalMap[justifyContent] || '';
+}
+```
+
+---
+
 ## 9. 변경 이력
 
 | 날짜 | 버전 | 변경 내용 |
@@ -2048,3 +2086,4 @@ if (justifySelf === 'center') {
 | 2026-01-28 | 1.17 | Phase 10 CSS Blockification 지원: flex/grid 컨테이너 자식의 inline-block → block 변환 구현, LayoutContext.parentDisplay 필드 추가, BlockEngine.computeEffectiveDisplay() 메서드 추가 |
 | 2026-01-28 | 1.18 | Phase 11 CSS 명세 누락 케이스 계획 추가: position absolute/fixed blockification 제외, min/max width/height, box-sizing border-box, overflow-x/y 혼합, visibility, Grid align-self/justify-self. Non-goals에 z-index, sticky, white-space, inherit/initial/unset 추가. 검증 방법 테이블 추가 |
 | 2026-01-29 | 1.19 | Phase 11 이슈 7+8 구현 완료: BoxModel에 min/max 필드 추가, parseBoxModel에서 min/max 파싱 및 box-sizing: border-box 처리, BlockEngine에 clampSize 적용 (block/inline-block 양쪽) |
+| 2026-01-29 | 1.20 | Phase 12 이슈 12 구현 완료: flex-direction: column일 때 flexAlignmentKeysAtom의 축 매핑 교환 (justifyContent↔alignItems), 스타일 패널 Alignment 토글 활성 위치가 화면 배치와 일치하도록 수정 |

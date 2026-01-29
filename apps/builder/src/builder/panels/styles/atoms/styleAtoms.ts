@@ -635,15 +635,17 @@ export const flexAlignmentKeysAtom = selectAtom(
     const justifyContent = String(style.justifyContent ?? computed.justifyContent ?? '');
     const flexDirection = String(style.flexDirection ?? computed.flexDirection ?? 'row');
 
-    // Map alignItems/justifyContent to grid position
-    const alignMap: Record<string, string> = {
+    // Map CSS values to grid position labels
+    // verticalMap: CSS value → Top/Center/Bottom (세로 위치)
+    // horizontalMap: CSS value → left/center/right (가로 위치)
+    const verticalMap: Record<string, string> = {
       'flex-start': 'Top',
       'start': 'Top',
       'center': 'Center',
       'flex-end': 'Bottom',
       'end': 'Bottom',
     };
-    const justifyMap: Record<string, string> = {
+    const horizontalMap: Record<string, string> = {
       'flex-start': 'left',
       'start': 'left',
       'center': 'center',
@@ -651,15 +653,20 @@ export const flexAlignmentKeysAtom = selectAtom(
       'end': 'right',
     };
 
-    const vertical = alignMap[alignItems] || '';
-    const horizontal = justifyMap[justifyContent] || '';
+    let vertical: string;
+    let horizontal: string;
+
+    if (flexDirection === 'column') {
+      // column: justifyContent = main axis (세로), alignItems = cross axis (가로)
+      vertical = verticalMap[justifyContent] || '';
+      horizontal = horizontalMap[alignItems] || '';
+    } else {
+      // row: justifyContent = main axis (가로), alignItems = cross axis (세로)
+      vertical = verticalMap[alignItems] || '';
+      horizontal = horizontalMap[justifyContent] || '';
+    }
 
     if (!vertical && !horizontal) return [];
-
-    // For column direction, swap horizontal/vertical interpretation
-    if (flexDirection === 'column') {
-      return [`${horizontal}${vertical}`];
-    }
     return [`${horizontal}${vertical}`];
   },
   (a, b) => a.length === b.length && a.every((v, i) => v === b[i])
