@@ -32,6 +32,13 @@ export interface ElementBounds {
  */
 const elementRegistry = new Map<string, Container>();
 
+/**
+ * Element ID → 직접 계산된 layout bounds 매핑
+ * getBounds()가 layout 적용 전 0,0을 반환하는 문제 해결용.
+ * LayoutContainer에서 layout prop 변경 시 직접 저장.
+ */
+const layoutBoundsRegistry = new Map<string, ElementBounds>();
+
 // ============================================
 // Registry API
 // ============================================
@@ -47,12 +54,22 @@ export function registerElement(id: string, container: Container): void {
 }
 
 /**
+ * 요소의 layout bounds를 직접 저장
+ * LayoutContainer에서 layout prop이 변경될 때 호출.
+ * getBounds()의 타이밍 문제를 우회.
+ */
+export function updateElementBounds(id: string, bounds: ElementBounds): void {
+  layoutBoundsRegistry.set(id, bounds);
+}
+
+/**
  * Container를 registry에서 해제
  *
  * @param id - Element ID
  */
 export function unregisterElement(id: string): void {
   elementRegistry.delete(id);
+  layoutBoundsRegistry.delete(id);
 }
 
 /**
@@ -90,6 +107,11 @@ export function getElementBounds(id: string): Rectangle | null {
  * @returns ElementBounds 또는 null
  */
 export function getElementBoundsSimple(id: string): ElementBounds | null {
+  // 직접 저장된 layout bounds 우선 사용 (getBounds() 타이밍 문제 우회)
+  const layoutBounds = layoutBoundsRegistry.get(id);
+  if (layoutBounds) return layoutBounds;
+
+  // fallback: PixiJS Container의 getBounds()
   const bounds = getElementBounds(id);
   if (!bounds) return null;
 
@@ -124,6 +146,7 @@ export function getRegistrySize(): number {
  */
 export function clearRegistry(): void {
   elementRegistry.clear();
+  layoutBoundsRegistry.clear();
 }
 
 // ============================================

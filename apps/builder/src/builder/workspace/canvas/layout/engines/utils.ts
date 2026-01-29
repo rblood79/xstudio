@@ -511,7 +511,11 @@ const DEFAULT_HEIGHT = 36;
  * @param fontSize - 폰트 크기 (px)
  * @returns 추정 텍스트 높이
  */
-function estimateTextHeight(fontSize: number): number {
+function estimateTextHeight(fontSize: number, lineHeight?: number): number {
+  // 명시적 lineHeight가 있으면 그 값 사용
+  if (lineHeight !== undefined) {
+    return Math.round(lineHeight);
+  }
   // CSS default line-height: normal ≈ 1.2
   // PixiJS Text bounds도 유사한 비율 사용
   return Math.round(fontSize * 1.2);
@@ -539,15 +543,23 @@ export function calculateContentHeight(element: Element): number {
     const size = (props?.size as string) ?? 'sm';
     const sizeConfig = BUTTON_SIZE_CONFIG[size] ?? BUTTON_SIZE_CONFIG.sm;
     const fontSize = parseNumericValue(style?.fontSize) ?? sizeConfig.fontSize;
-    const textHeight = estimateTextHeight(fontSize);
+    const resolvedLineHeight = parseLineHeight(style, fontSize);
+    const textHeight = estimateTextHeight(fontSize, resolvedLineHeight);
     return Math.max(sizeConfig.paddingY * 2 + textHeight, MIN_BUTTON_HEIGHT);
   }
 
-  // 3. 태그별 기본 높이 사용
+  // 3. lineHeight가 명시적으로 지정되어 있으면 최소 높이로 사용
+  const fontSize = parseNumericValue(style?.fontSize);
+  const resolvedLineHeight = parseLineHeight(style, fontSize);
+  if (resolvedLineHeight !== undefined) {
+    return Math.round(resolvedLineHeight);
+  }
+
+  // 4. 태그별 기본 높이 사용
   const defaultHeight = DEFAULT_ELEMENT_HEIGHTS[tag];
   if (defaultHeight !== undefined) return defaultHeight;
 
-  // 4. 알 수 없는 태그는 기본값 사용
+  // 5. 알 수 없는 태그는 기본값 사용
   return DEFAULT_HEIGHT;
 }
 

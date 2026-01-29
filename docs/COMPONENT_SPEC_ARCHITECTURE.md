@@ -132,6 +132,18 @@
 │ (빌드 시 생성)│     │ (Props 적용) │     │ (Graphics)   │
 └──────────────┘     └──────────────┘     └──────────────┘
        │                    │                    │
+       │              브라우저 CSS               │
+       │              레이아웃 엔진              │
+       │                    │           ┌────────┴────────┐
+       │                    │           │ Hybrid Layout   │
+       │                    │           │ Engine          │
+       │                    │           │ ┌─────────────┐ │
+       │                    │           │ │ BlockEngine │ │
+       │                    │           │ │ FlexEngine  │ │
+       │                    │           │ │ GridEngine  │ │
+       │                    │           │ └─────────────┘ │
+       │                    │           └────────┬────────┘
+       │                    │                    │
        └────────────────────┴────────────────────┘
                             │
                             ▼
@@ -140,6 +152,11 @@
                    │     결과물       │
                    └──────────────────┘
 ```
+
+> **레이아웃 계층 분리**: Spec은 컴포넌트 **내부** Shape 배치를 정의하고,
+> **외부** 컨테이너 간 배치는 하이브리드 레이아웃 엔진(BlockEngine/FlexEngine/GridEngine)이 담당합니다.
+> React 경로는 브라우저 CSS 레이아웃을, PIXI 경로는 하이브리드 엔진을 사용하여 동일한 결과를 보장합니다.
+> 자세한 내용은 [LAYOUT_REQUIREMENTS.md](./LAYOUT_REQUIREMENTS.md)를 참조하세요.
 
 ### 2.3 핵심 원칙
 
@@ -648,13 +665,13 @@ export interface ContainerShape {
  * 컨테이너 레이아웃 설정
  */
 export interface ContainerLayout {
-  /** 레이아웃 타입 */
-  display?: 'flex' | 'block' | 'grid' | 'none';
+  /** 레이아웃 타입 (하이브리드 엔진: block/inline-block→BlockEngine, flex→FlexEngine, grid→GridEngine) */
+  display?: 'flex' | 'block' | 'inline-block' | 'grid' | 'flow-root' | 'none';
 
   /** 포지션 타입 */
-  position?: 'relative' | 'absolute';
+  position?: 'relative' | 'absolute' | 'fixed';
 
-  /** absolute 포지션일 때 위치 */
+  /** absolute/fixed 포지션일 때 위치 */
   top?: number;
   right?: number;
   bottom?: number;
@@ -662,6 +679,23 @@ export interface ContainerLayout {
 
   /** z-index (레이어 순서) */
   zIndex?: number;
+
+  // ─── Box Model (Phase 11) ───
+  boxSizing?: 'content-box' | 'border-box';
+  minWidth?: number;
+  maxWidth?: number;
+  minHeight?: number;
+  maxHeight?: number;
+
+  // ─── Overflow / BFC ───
+  overflow?: 'visible' | 'hidden' | 'scroll' | 'auto';
+  overflowX?: 'visible' | 'hidden' | 'scroll' | 'auto';
+  overflowY?: 'visible' | 'hidden' | 'scroll' | 'auto';
+
+  // ─── Typography / Inline ───
+  lineHeight?: number | string;
+  verticalAlign?: 'baseline' | 'top' | 'middle' | 'bottom';
+  visibility?: 'visible' | 'hidden';
 
   // ─── Flex 레이아웃 ───
   flexDirection?: 'row' | 'column' | 'row-reverse' | 'column-reverse';
@@ -683,11 +717,12 @@ export interface ContainerLayout {
   padding?: number | [number, number, number, number];
   margin?: number | [number, number, number, number];
 
-  // ─── 자식 요소용 (flex item) ───
+  // ─── 자식 요소용 (flex/grid item) ───
   flexGrow?: number;
   flexShrink?: number;
   flexBasis?: number | 'auto';
-  alignSelf?: 'auto' | 'flex-start' | 'center' | 'flex-end' | 'stretch';
+  alignSelf?: 'auto' | 'flex-start' | 'center' | 'flex-end' | 'stretch' | 'start' | 'end';
+  justifySelf?: 'auto' | 'start' | 'center' | 'end' | 'stretch' | 'normal';
 }
 
 /**
@@ -4094,3 +4129,4 @@ function PixiButton({ element }) {
 | 2026-01-27 | 1.4 | 3차 리뷰 반영: (1) PixiRenderContext에 state 필드 추가, (2) renderToPixi에서 shapes 호출 시 state 파라미터 전달, (3) generateStateStyles에 hover/focused 상태 처리 추가, (4) StateEffect.boxShadow에 ShadowTokenRef 지원 + resolveBoxShadow 헬퍼 함수 추가, (5) RenderSpec JSDoc에 'focusVisible' 추가 |
 | 2026-01-27 | 1.5 | 4차 리뷰 반영: (1) 디렉토리 구조 effects.ts → shadows.ts 수정, (2) renderers/utils를 tokenResolver.ts 단일 파일로 통일, (3) resolveBoxShadow에서 ShadowTokenRef가 문자열 리터럴 타입임을 반영하여 불필요한 .ref 분기 제거 |
 | 2026-01-27 | 1.6 | 5차 리뷰 반영: (1) 아키텍처 개요 다이어그램 effects.ts → shadows.ts 수정, (2) tokenToCSSVar에 shadow 카테고리 처리 추가 |
+| 2026-01-29 | 1.7 | 하이브리드 레이아웃 엔진 완료 반영: (1) ContainerLayout 인터페이스에 레이아웃 엔진 지원 CSS 속성 추가 (inline-block, flow-root, box-sizing, min/max 크기, overflow-x/y, lineHeight, verticalAlign, visibility, justifySelf), (2) 데이터 흐름 다이어그램에 하이브리드 레이아웃 엔진 계층(BlockEngine/FlexEngine/GridEngine) 추가 및 내부/외부 레이아웃 계층 분리 설명 |

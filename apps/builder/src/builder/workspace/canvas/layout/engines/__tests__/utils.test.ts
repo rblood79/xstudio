@@ -16,6 +16,7 @@ import {
   parseVerticalAlign,
   parseLineHeight,
   calculateBaseline,
+  calculateContentHeight,
   resetWarnedTokens,
 } from '../utils';
 import type { Element } from '../../../../../../types/core/store.types';
@@ -343,6 +344,94 @@ describe('calculateBaseline', () => {
     const baseline = calculateBaseline(element, 0);
 
     expect(baseline).toBe(0);
+  });
+});
+
+describe('calculateContentHeight (line-height 반영)', () => {
+  it('lineHeight px값이 있으면 해당 값 반환', () => {
+    const element = createElement({ lineHeight: '40px' });
+    const result = calculateContentHeight(element);
+    expect(result).toBe(40);
+  });
+
+  it('lineHeight 배율이 있으면 fontSize × 배율 반환', () => {
+    const element = createElement({ lineHeight: 1.5, fontSize: 20 });
+    const result = calculateContentHeight(element);
+    // parseLineHeight(style, 20) = 1.5 * 20 = 30
+    expect(result).toBe(30);
+  });
+
+  it('lineHeight normal이면 태그별 기본 높이 사용', () => {
+    const element = {
+      id: 'test',
+      type: 'div',
+      tag: 'p',
+      props: { style: { lineHeight: 'normal' } },
+      children: [],
+    } as unknown as Element;
+    const result = calculateContentHeight(element);
+    // p 태그 기본 높이 24
+    expect(result).toBe(24);
+  });
+
+  it('lineHeight 미지정이면 태그별 기본 높이 사용', () => {
+    const element = {
+      id: 'test',
+      type: 'div',
+      tag: 'p',
+      props: { style: {} },
+      children: [],
+    } as unknown as Element;
+    const result = calculateContentHeight(element);
+    expect(result).toBe(24);
+  });
+
+  it('명시적 height가 있으면 lineHeight보다 우선', () => {
+    const element = createElement({ height: 60, lineHeight: '40px' });
+    const result = calculateContentHeight(element);
+    expect(result).toBe(60);
+  });
+});
+
+describe('parseBoxModel (Phase 11)', () => {
+  it('box-sizing: border-box에서 padding/border가 width에서 차감', () => {
+    const element = createElement({
+      width: 200,
+      height: 100,
+      boxSizing: 'border-box',
+      paddingLeft: 10,
+      paddingRight: 10,
+      borderLeftWidth: 2,
+      borderRightWidth: 2,
+      paddingTop: 5,
+      paddingBottom: 5,
+      borderTopWidth: 1,
+      borderBottomWidth: 1,
+    });
+
+    const result = parseBoxModel(element, 400, 800);
+
+    // content-box width: 200 - 10 - 10 - 2 - 2 = 176
+    expect(result.width).toBe(176);
+    // content-box height: 100 - 5 - 5 - 1 - 1 = 88
+    expect(result.height).toBe(88);
+  });
+
+  it('min/max width/height 파싱', () => {
+    const element = createElement({
+      width: 200,
+      minWidth: 100,
+      maxWidth: 300,
+      minHeight: 50,
+      maxHeight: 400,
+    });
+
+    const result = parseBoxModel(element, 400, 800);
+
+    expect(result.minWidth).toBe(100);
+    expect(result.maxWidth).toBe(300);
+    expect(result.minHeight).toBe(50);
+    expect(result.maxHeight).toBe(400);
   });
 });
 

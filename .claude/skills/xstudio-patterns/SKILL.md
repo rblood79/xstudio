@@ -38,6 +38,7 @@ XStudio Builder 애플리케이션의 코드 패턴, 규칙 및 모범 사례를
 #### PIXI Layout (pixi-*)
 - **[pixi-no-xy-props](rules/pixi-no-xy-props.md)** - x/y props 금지
 - **[pixi-layout-import-first](rules/pixi-layout-import-first.md)** - @pixi/layout 최우선 import
+- **[pixi-hybrid-layout-engine](rules/pixi-hybrid-layout-engine.md)** - 하이브리드 레이아웃 엔진 display 선택
 
 #### Security (postmessage-*)
 - **[postmessage-origin-verify](rules/postmessage-origin-verify.md)** - origin 검증 필수
@@ -105,6 +106,7 @@ XStudio Builder 애플리케이션의 코드 패턴, 규칙 및 모범 사례를
 | State | Zustand, TanStack Query |
 | Styling | Tailwind CSS v4, tailwind-variants |
 | Canvas | PixiJS 8, @pixi/layout, @pixi/react |
+| Layout Engine | 하이브리드 (BlockEngine, FlexEngine, GridEngine) |
 | Backend | Supabase (Auth, Database, RLS) |
 | Build | Vite, TypeScript 5 |
 | Testing | Storybook, Vitest |
@@ -147,6 +149,7 @@ tags: [tag1, tag2]
 - **[ADR-003](../../../docs/adr/003-canvas-rendering.md)** - PixiJS 선택 이유
 - **[ADR-004](../../../docs/adr/004-preview-isolation.md)** - iframe 격리 이유
 - **[Component Spec Architecture](../../../docs/COMPONENT_SPEC_ARCHITECTURE.md)** - 단일 소스 컴포넌트 스펙 설계
+- **[Layout Requirements](../../../docs/LAYOUT_REQUIREMENTS.md)** - 하이브리드 레이아웃 엔진 CSS 호환 구현
 
 ## 기여
 

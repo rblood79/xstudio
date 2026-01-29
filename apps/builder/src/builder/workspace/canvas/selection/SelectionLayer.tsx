@@ -85,12 +85,26 @@ export const SelectionLayer = memo(function SelectionLayer({
   useExtend(PIXI_COMPONENTS);
 
   // Store state
-  // 🚀 성능 최적화: elementsMap 구독 제거
+  // 🚀 성능 최적화: elementsMap 전체 구독 제거
   // 기존: elementsMap 구독 → 어떤 요소든 변경되면 SelectionLayer 리렌더
-  // 개선: selectedElementIds만 구독 → 선택 변경 시에만 리렌더
-  // elementsMap은 getState()로 필요할 때만 읽음
+  // 개선: selectedElementIds + 선택된 요소의 스타일 변경만 구독
   const selectedElementIds = useStore((state) => state.selectedElementIds);
   const currentPageId = useStore((state) => state.currentPageId);
+
+  // 🚀 선택된 요소의 스타일 변경 감지용 시그니처
+  // 선택된 요소의 style이 변경되면 bounds 재계산 트리거
+  const selectedStyleSignature = useStore((state) => {
+    if (state.selectedElementIds.length === 0) return '';
+    const parts: string[] = [];
+    for (const id of state.selectedElementIds) {
+      const el = state.elementsMap.get(id);
+      if (el) {
+        const style = el.props?.style as Record<string, unknown> | undefined;
+        parts.push(JSON.stringify(style ?? {}));
+      }
+    }
+    return parts.join('|');
+  });
 
   // 🚀 최적화: elementsMap은 구독하지 않고 getState()로 읽음
   const getElementsMap = useCallback(() => useStore.getState().elementsMap, []);
@@ -158,16 +172,24 @@ export const SelectionLayer = memo(function SelectionLayer({
     });
 
     return calculateCombinedBounds(boxes);
-  }, [selectedElements, pageWidth, pageHeight, zoom, panOffset]);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- 의존성 트리거용
+  }, [selectedElements, pageWidth, pageHeight, zoom, panOffset, selectedStyleSignature]);
 
   // 🚀 Phase 2: 선택 변경 시 bounds 계산
   // ElementRegistry의 getBounds()를 사용하여 실제 렌더링된 위치 조회
   const [selectionBounds, setSelectionBounds] = useState<BoundingBox | null>(null);
 
-  // React Compiler 호환: queueMicrotask로 비동기 업데이트
+  // layoutBoundsRegistry에 직접 저장된 bounds를 사용하므로 getBounds() 타이밍 문제 없음.
+  // LayoutContainer의 useEffect(RAF)가 bounds를 저장한 후, 다음 프레임에서 조회.
   useEffect(() => {
-    const bounds = computeSelectionBounds();
-    queueMicrotask(() => setSelectionBounds(bounds));
+    let cancelled = false;
+    requestAnimationFrame(() => {
+      if (!cancelled) {
+        const bounds = computeSelectionBounds();
+        setSelectionBounds(bounds);
+      }
+    });
+    return () => { cancelled = true; };
   }, [computeSelectionBounds]);
 
   // 단일 선택 여부

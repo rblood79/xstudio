@@ -303,4 +303,128 @@ describe('BlockEngine', () => {
       expect(layouts).toEqual([]);
     });
   });
+
+  describe('Phase 11: Position blockification 제외', () => {
+    it('flex 부모의 inline-block 자식은 block으로 변환', () => {
+      const parent = createElement('parent');
+      const children = [
+        createElement('1', { display: 'inline-block', width: 100, height: 50 }),
+        createElement('2', { display: 'inline-block', width: 100, height: 50 }),
+      ];
+
+      const layouts = engine.calculate(parent, children, 400, 800, {
+        parentDisplay: 'flex',
+      });
+
+      // blockify되어 수직 쌓임
+      expect(layouts[0].y).toBe(0);
+      expect(layouts[1].y).toBe(50);
+    });
+
+    it('absolute 자식은 flex 부모여도 blockify 안됨', () => {
+      const parent = createElement('parent');
+      const children = [
+        createElement('1', { display: 'inline-block', width: 100, height: 50, position: 'absolute' }),
+        createElement('2', { display: 'inline-block', width: 100, height: 50, position: 'absolute' }),
+      ];
+
+      const layouts = engine.calculate(parent, children, 400, 800, {
+        parentDisplay: 'flex',
+      });
+
+      // absolute는 blockify 제외 → inline-block 유지 → 가로 배치
+      expect(layouts[0].x).toBe(0);
+      expect(layouts[1].x).toBe(100);
+      expect(layouts[0].y).toBe(layouts[1].y);
+    });
+  });
+
+  describe('Phase 11: overflow-x/y BFC', () => {
+    it('overflowX만 hidden이어도 BFC 생성', () => {
+      const element = createElement('test', { overflowX: 'hidden' });
+      expect(engine.createsBFC(element)).toBe(true);
+    });
+
+    it('overflowY만 auto이어도 BFC 생성', () => {
+      const element = createElement('test', { overflowY: 'auto' });
+      expect(engine.createsBFC(element)).toBe(true);
+    });
+
+    it('overflow shorthand이 overflowX/Y에 fallback', () => {
+      const element = createElement('test', { overflow: 'scroll' });
+      expect(engine.createsBFC(element)).toBe(true);
+    });
+
+    it('overflow: visible이면 BFC 안 생성', () => {
+      const element = createElement('test', { overflow: 'visible' });
+      expect(engine.createsBFC(element)).toBe(false);
+    });
+  });
+
+  describe('Phase 11: min/max 크기 제한', () => {
+    it('block 자식에 minWidth 적용', () => {
+      const parent = createElement('parent');
+      const children = [
+        createElement('1', { width: 50, height: 100, minWidth: 200 }),
+      ];
+
+      const layouts = engine.calculate(parent, children, 400, 800);
+
+      expect(layouts[0].width).toBe(200);
+    });
+
+    it('block 자식에 maxWidth 적용', () => {
+      const parent = createElement('parent');
+      const children = [
+        createElement('1', { width: 500, height: 100, maxWidth: 300 }),
+      ];
+
+      const layouts = engine.calculate(parent, children, 400, 800);
+
+      expect(layouts[0].width).toBe(300);
+    });
+  });
+
+  describe('line-height 레이아웃 반영', () => {
+    it('inline-block의 lineHeight가 height보다 크면 line box 확장', () => {
+      const parent = createElement('parent');
+      const children = [
+        createElement('1', { display: 'inline-block', width: 100, height: 30, lineHeight: '50px' }),
+        createElement('2', { display: 'inline-block', width: 100, height: 30 }),
+      ];
+
+      const layouts = engine.calculate(parent, children, 400, 800);
+
+      // 같은 줄에 배치되어야 함
+      expect(layouts[0].y).toBe(layouts[1].y);
+    });
+
+    it('lineHeight가 있는 요소 다음 줄의 y가 lineHeight 기반', () => {
+      const parent = createElement('parent');
+      const children = [
+        createElement('1', { display: 'inline-block', width: 400, height: 30, lineHeight: '50px' }),
+        createElement('2', { display: 'inline-block', width: 100, height: 30 }),
+      ];
+
+      const layouts = engine.calculate(parent, children, 400, 800);
+
+      // 두 번째 요소는 다음 줄로 → y가 50 이상 (lineHeight 반영)
+      expect(layouts[1].y).toBeGreaterThanOrEqual(50);
+    });
+
+    it('block 자식의 lineHeight가 contentHeight에 반영', () => {
+      const parent = createElement('parent');
+      const children = [
+        createElement('1', { lineHeight: '40px' }),
+        createElement('2', { height: 100 }),
+      ];
+
+      const layouts = engine.calculate(parent, children, 400, 800);
+
+      // 첫 번째 요소 높이가 40 (lineHeight 반영)
+      expect(layouts[0].height).toBe(40);
+      // 두 번째 요소 y = 40
+      expect(layouts[1].y).toBe(40);
+    });
+  });
 });

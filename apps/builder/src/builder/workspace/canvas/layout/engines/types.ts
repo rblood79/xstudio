@@ -52,6 +52,8 @@ export interface LineBoxItem {
    * - 콘텐츠 없음 → 하단
    */
   baseline: number;
+  /** CSS line-height 해석 값 (px). undefined면 normal/미지정. */
+  lineHeight?: number;
 }
 
 /**

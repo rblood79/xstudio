@@ -23,6 +23,7 @@ import {
   parsePadding,
   parseBorder,
   parseVerticalAlign,
+  parseLineHeight,
   calculateBaseline,
 } from './utils';
 
@@ -238,9 +239,10 @@ export class BlockEngine implements LayoutEngine {
           flushLineBox();
         }
 
-        // vertical-align 및 baseline 계산
+        // vertical-align, baseline, lineHeight 계산
         const verticalAlign = parseVerticalAlign(style);
         const baseline = calculateBaseline(child, childHeight);
+        const childLineHeight = parseLineHeight(style);
 
         // LineBox에 요소 추가
         currentLineBox.push({
@@ -252,6 +254,7 @@ export class BlockEngine implements LayoutEngine {
           margin,
           verticalAlign,
           baseline,
+          lineHeight: childLineHeight,
         });
 
         currentX += totalWidth;
@@ -393,6 +396,12 @@ export class BlockEngine implements LayoutEngine {
     for (const item of items) {
       const totalHeight = item.height + item.margin.top + item.margin.bottom;
       maxTotalHeight = Math.max(maxTotalHeight, totalHeight);
+
+      // CSS 명세: lineHeight가 요소 높이보다 크면 line box 최소 높이에 영향
+      if (item.lineHeight !== undefined) {
+        const lineHeightWithMargin = item.lineHeight + item.margin.top + item.margin.bottom;
+        maxTotalHeight = Math.max(maxTotalHeight, lineHeightWithMargin);
+      }
 
       // baseline 정렬 요소의 baseline 위치 추적
       if (item.verticalAlign === 'baseline') {

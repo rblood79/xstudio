@@ -390,9 +390,9 @@ gridColumn, gridRow, gridArea: string;
 | 항목 | 현재 상태 | 목표 | 구현 복잡도 |
 |------|----------|------|------------|
 | `display: inline` | 미지원 | 지원 | 높음 |
-| vertical-align (baseline) | 미지원 | baseline, top, middle 등 | 높음 |
-| inline-block baseline 계산 | 미지원 | overflow에 따른 baseline 변경 | 높음 |
-| line-height 영향 | 미지원 | inline 요소 높이 계산 | 중간 |
+| vertical-align (baseline) | ✅ 지원 (Phase 6) | baseline, top, middle 등 | 높음 |
+| inline-block baseline 계산 | ✅ 지원 (Phase 6) | overflow에 따른 baseline 변경 | 높음 |
+| line-height 영향 | ✅ 지원 | inline 요소 높이 계산 | 중간 |
 
 ---
 
@@ -1468,7 +1468,7 @@ Phase 6 (P2 기능)
 ├── display: inline
 ├── vertical-align (baseline, top, middle 등)
 ├── inline-block baseline 계산
-└── line-height 영향
+└── line-height 영향 ✅
 
 └─────────────────────────────────────────────────────────┘
 ```
@@ -2147,3 +2147,5 @@ function estimateTextHeight(fontSize: number): number {
 | 2026-01-29 | 1.22 | Phase 12 이슈 14 구현 완료: inline-block 버튼 가로/세로 여백 불일치 수정. BUTTON_SIZE_CONFIG에서 height→paddingY 변경, calculateTextWidth Math.ceil→Math.round, calculateContentHeight를 PixiButton과 동일 공식(max(paddingY*2+textHeight, 24))으로 변경 |
 | 2026-01-29 | 1.23 | Phase 11 이슈 6+9 구현 완료: computeEffectiveDisplay()에 childPosition 매개변수 추가하여 absolute/fixed 요소의 blockification 제외, createsBFC()의 overflow-x/y 처리를 shorthand fallback cascade 방식으로 개선 |
 | 2026-01-29 | 1.24 | Phase 11 이슈 10+11 구현 완료: COMPUTED_STYLE_WHITELIST에 visibility 추가, GridEngine에 align-self/justify-self 셀 내 정렬 지원 (start/center/end, parseBoxModel 기반 자식 크기 계산) |
+| 2026-01-29 | 1.25 | P2 line-height 레이아웃 반영: estimateTextHeight에 lineHeight 매개변수 추가, calculateContentHeight에서 parseLineHeight 결과 우선 반영, LineBoxItem에 lineHeight 필드 추가, calculateLineBox에서 lineHeight 기반 line box 최소 높이 계산 |
+| 2026-01-29 | 1.26 | SelectionLayer bounds 갱신 버그 수정: 스타일/display 변경 시 selectionLayer가 0,0에 고정되는 문제 해결. elementRegistry에 layoutBoundsRegistry 추가하여 layout bounds 직접 저장, LayoutContainer에서 layout prop 변경 시 RAF로 bounds 캐싱, SelectionLayer에 selectedStyleSignature 구독 추가로 스타일 변경 감지 |

@@ -50,7 +50,7 @@ import {
   type LayoutStyle,
   type ComputedLayout,
 } from "./layout";
-import { getElementBoundsSimple, registerElement, unregisterElement } from "./elementRegistry";
+import { getElementBoundsSimple, registerElement, unregisterElement, updateElementBounds } from "./elementRegistry";
 import { getOutlineVariantColor } from "./utils/cssVariableReader";
 import { useThemeColors } from "./hooks/useThemeColors";
 import { useViewportCulling } from "./hooks/useViewportCulling";
@@ -280,11 +280,41 @@ const LayoutContainer = memo(function LayoutContainer({
   useExtend(PIXI_COMPONENTS);
 
   // Layout이 적용된 Container를 registry에 등록
+  const containerRef = useRef<Container | null>(null);
   const handleContainerRef = useCallback((container: Container | null) => {
+    containerRef.current = container;
     if (container) {
       registerElement(elementId, container);
     }
   }, [elementId]);
+
+  // layout prop 변경 시 Container의 global bounds를 직접 계산하여 저장
+  // getBounds()는 @pixi/layout 타이밍 문제로 0,0을 반환할 수 있으므로,
+  // parent의 worldTransform을 사용해 global 좌표를 직접 계산
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    // @pixi/layout이 position을 업데이트할 때까지 대기 후 global bounds 저장
+    const rafId = requestAnimationFrame(() => {
+      if (!container.destroyed) {
+        try {
+          const bounds = container.getBounds();
+          if (bounds.width > 0 || bounds.height > 0) {
+            updateElementBounds(elementId, {
+              x: bounds.x,
+              y: bounds.y,
+              width: bounds.width,
+              height: bounds.height,
+            });
+          }
+        } catch {
+          // Container destroyed 또는 아직 미렌더링
+        }
+      }
+    });
+    return () => cancelAnimationFrame(rafId);
+  }, [elementId, layout]);
 
   // Cleanup: unmount 시 registry에서 해제
   useEffect(() => {
