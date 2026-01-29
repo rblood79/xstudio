@@ -266,24 +266,29 @@ const DEFAULT_WIDTH = 80;
  *
  * @xstudio/specs ButtonSpec.sizes와 1:1 동기화
  * paddingLeft/paddingRight: ButtonSpec.sizes[size].paddingX (좌우 동일)
- * height: ButtonSpec.sizes[size].height
+ * paddingY: ButtonSpec.sizes[size].paddingY (상하 동일)
  * fontSize: typography 토큰 resolved 값
  *
- * 참고: ButtonSpec은 paddingX만 정의 (좌우 동일)
- * 향후 좌우 패딩이 다른 경우 paddingLeft/paddingRight 분리 가능
+ * 🚀 Phase 12 Fix: height 제거, paddingY 추가
+ * 기존 height는 ButtonSpec.height (예: sm=32)였으나 PixiButton 실제 렌더링은
+ * max(paddingY*2 + textHeight, MIN_HEIGHT) 공식으로 계산되어 불일치 발생.
+ * 동일 공식을 사용하여 CSS/WebGL 정합성 보장.
  */
 const BUTTON_SIZE_CONFIG: Record<string, {
   paddingLeft: number;
   paddingRight: number;
+  paddingY: number;
   fontSize: number;
-  height: number;
 }> = {
-  xs: { paddingLeft: 8, paddingRight: 8, fontSize: 12, height: 24 },
-  sm: { paddingLeft: 12, paddingRight: 12, fontSize: 14, height: 32 },
-  md: { paddingLeft: 16, paddingRight: 16, fontSize: 16, height: 40 },
-  lg: { paddingLeft: 24, paddingRight: 24, fontSize: 18, height: 48 },
-  xl: { paddingLeft: 32, paddingRight: 32, fontSize: 20, height: 56 },
+  xs: { paddingLeft: 8, paddingRight: 8, paddingY: 2, fontSize: 12 },
+  sm: { paddingLeft: 12, paddingRight: 12, paddingY: 4, fontSize: 14 },
+  md: { paddingLeft: 16, paddingRight: 16, paddingY: 8, fontSize: 16 },
+  lg: { paddingLeft: 24, paddingRight: 24, paddingY: 12, fontSize: 18 },
+  xl: { paddingLeft: 32, paddingRight: 32, paddingY: 16, fontSize: 20 },
 };
+
+/** PixiButton MIN_BUTTON_HEIGHT과 동일 */
+const MIN_BUTTON_HEIGHT = 24;
 
 /**
  * Canvas 2D 텍스트 측정용 컨텍스트 (싱글톤)
@@ -396,7 +401,10 @@ function calculateTextWidth(text: string, fontSize: number = 14, padding: number
   if (!text) return 0;
 
   const textWidth = measureTextWidth(text, fontSize);
-  return Math.ceil(textWidth + padding);
+  // 🚀 Phase 12 Fix: Math.ceil → Math.round
+  // Math.ceil은 항상 +1px 올림되어 inline-block 버튼 간 ~1px 가로 여백 발생
+  // Math.round로 변경하여 CSS와 동일한 정합성 확보
+  return Math.round(textWidth + padding);
 }
 
 /**
@@ -495,6 +503,21 @@ const DEFAULT_ELEMENT_HEIGHTS: Record<string, number> = {
 const DEFAULT_HEIGHT = 36;
 
 /**
+ * 텍스트 높이 추정
+ *
+ * Canvas 2D measureText()는 width만 정확하고 height는 브라우저마다 다름.
+ * CSS/PixiJS의 텍스트 높이와 동일하게 fontSize * lineHeight 비율로 추정.
+ *
+ * @param fontSize - 폰트 크기 (px)
+ * @returns 추정 텍스트 높이
+ */
+function estimateTextHeight(fontSize: number): number {
+  // CSS default line-height: normal ≈ 1.2
+  // PixiJS Text bounds도 유사한 비율 사용
+  return Math.round(fontSize * 1.2);
+}
+
+/**
  * 요소의 콘텐츠 높이 계산
  *
  * @returns 콘텐츠 기반 높이 (자식이 없으면 태그별 기본 높이)
@@ -507,12 +530,17 @@ export function calculateContentHeight(element: Element): number {
   if (explicitHeight !== undefined) return explicitHeight;
 
   // 2. 버튼은 size prop에 따라 높이 결정
+  // 🚀 Phase 12 Fix: PixiButton과 동일한 공식 사용
+  // 기존: BUTTON_SIZE_CONFIG[size].height (고정값, 실제 렌더링과 불일치)
+  // 수정: max(paddingY*2 + textHeight, MIN_BUTTON_HEIGHT) (PixiButton 공식과 동일)
   const tag = (element.tag ?? '').toLowerCase();
   if (tag === 'button') {
     const props = element.props as Record<string, unknown> | undefined;
     const size = (props?.size as string) ?? 'sm';
     const sizeConfig = BUTTON_SIZE_CONFIG[size] ?? BUTTON_SIZE_CONFIG.sm;
-    return sizeConfig.height;
+    const fontSize = parseNumericValue(style?.fontSize) ?? sizeConfig.fontSize;
+    const textHeight = estimateTextHeight(fontSize);
+    return Math.max(sizeConfig.paddingY * 2 + textHeight, MIN_BUTTON_HEIGHT);
   }
 
   // 3. 태그별 기본 높이 사용

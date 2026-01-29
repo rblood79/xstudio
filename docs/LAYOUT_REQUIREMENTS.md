@@ -2060,6 +2060,74 @@ if (flexDirection === 'column') {
 }
 ```
 
+#### 이슈 13: flex-direction: row + nowrap에서 오버플로 시 버튼 겹침 ✅ (구현 완료)
+
+**증상:**
+- body에 `display: flex`, `flex-direction: row`, 버튼 6개 배치
+- CSS 웹모드: 버튼이 가로 배치되고, body 너비를 초과하면 스크롤 발생
+- WebGL 캔버스: 버튼이 body 안에서 겹쳐서 배치됨 (축소)
+
+**원인:**
+- CSS: flex 아이템의 `min-width` 기본값 = `auto` (min-content 크기 이하로 축소 안 됨)
+- Yoga(@pixi/layout): `min-width` 기본값 = `0` (아이템이 0까지 축소 가능)
+- `flex-shrink: 1` (기본값) + Yoga의 `min-width: 0` → 버튼이 콘텐츠 크기 이하로 압축되어 겹침
+
+**구현 내용:**
+- `BuilderCanvas.tsx`: @pixi/layout 경로의 모든 flex 자식에 `flexShrink: 0` 기본값 설정
+- 3개 렌더링 경로(containerLayout, childContainerLayout, nestedContainerLayout) 모두 적용
+- 사용자가 명시적으로 `flexShrink`를 설정하면 그 값이 우선
+
+```typescript
+// BuilderCanvas.tsx - @pixi/layout 경로
+const flexShrinkDefault = baseLayout.flexShrink !== undefined ? {} : { flexShrink: 0 };
+const containerLayout = hasChildren && !baseLayout.display && !baseLayout.flexDirection
+  ? { position: 'relative', flexShrink: 0, display: 'flex', flexDirection: 'column', ...blockLayout, ...baseLayout }
+  : { position: 'relative', ...flexShrinkDefault, ...blockLayout, ...baseLayout };
+```
+
+---
+
+#### 이슈 14: display: block 시 inline-block 버튼 간 가로/세로 여백 불일치 ✅ (구현 완료)
+
+**증상:**
+- body에 `display: block`, 버튼 5개 배치 → 2줄로 정상 줄바꿈
+- CSS 웹모드: 버튼이 가로/세로 모두 간격 없이 밀착 렌더링
+- WebGL 캔버스: 가로 ~1px 여백, 세로 큰 여백(~7px) 발생
+
+**원인 1 - 가로 ~1px 여백:**
+- `calculateTextWidth()`의 `Math.ceil(textWidth + padding)`이 항상 올림하여 각 버튼마다 ~1px 초과
+- 인접 버튼 간 시각적 갭 누적
+
+**원인 2 - 세로 큰 여백:**
+- `calculateContentHeight()`가 `BUTTON_SIZE_CONFIG[size].height` 고정값 반환 (sm = 32px)
+- `PixiButton`의 실제 렌더링 높이 = `max(paddingY*2 + textHeight, 24)` ≈ 25px
+- LineBox 높이 32px vs 실제 버튼 25px → 행 간 ~7px 시각적 갭
+
+**구현 내용:**
+- `utils.ts`: `BUTTON_SIZE_CONFIG`에서 `height` 필드 제거, `paddingY` 추가 (ButtonSpec.paddingY와 동기화)
+- `utils.ts`: `calculateTextWidth()`에서 `Math.ceil` → `Math.round` (±0.5px 오차로 축소)
+- `utils.ts`: `calculateContentHeight()`에서 버튼 높이를 PixiButton과 동일 공식으로 계산
+- `utils.ts`: `estimateTextHeight()` 헬퍼 추가 (`fontSize * 1.2`, CSS default line-height와 동일)
+
+```typescript
+// BUTTON_SIZE_CONFIG - height 제거, paddingY 추가
+const BUTTON_SIZE_CONFIG = {
+  sm: { paddingLeft: 12, paddingRight: 12, paddingY: 4, fontSize: 14 },
+  // ...
+};
+
+// calculateTextWidth - Math.ceil → Math.round
+return Math.round(textWidth + padding);
+
+// calculateContentHeight - PixiButton과 동일 공식
+function estimateTextHeight(fontSize: number): number {
+  return Math.round(fontSize * 1.2);
+}
+
+// 버튼 높이: max(paddingY*2 + textHeight, MIN_BUTTON_HEIGHT)
+// sm: max(4*2 + Math.round(14*1.2), 24) = max(8 + 17, 24) = 25px
+```
+
 ---
 
 ## 9. 변경 이력
@@ -2087,3 +2155,5 @@ if (flexDirection === 'column') {
 | 2026-01-28 | 1.18 | Phase 11 CSS 명세 누락 케이스 계획 추가: position absolute/fixed blockification 제외, min/max width/height, box-sizing border-box, overflow-x/y 혼합, visibility, Grid align-self/justify-self. Non-goals에 z-index, sticky, white-space, inherit/initial/unset 추가. 검증 방법 테이블 추가 |
 | 2026-01-29 | 1.19 | Phase 11 이슈 7+8 구현 완료: BoxModel에 min/max 필드 추가, parseBoxModel에서 min/max 파싱 및 box-sizing: border-box 처리, BlockEngine에 clampSize 적용 (block/inline-block 양쪽) |
 | 2026-01-29 | 1.20 | Phase 12 이슈 12 구현 완료: flex-direction: column일 때 flexAlignmentKeysAtom의 축 매핑 교환 (justifyContent↔alignItems), 스타일 패널 Alignment 토글 활성 위치가 화면 배치와 일치하도록 수정 |
+| 2026-01-29 | 1.21 | Phase 12 이슈 13 구현 완료: flex nowrap 오버플로 시 Yoga 축소로 인한 버튼 겹침 수정. @pixi/layout 경로의 flex 자식에 flexShrink: 0 기본값 설정 (CSS min-width: auto 에뮬레이션), 3개 렌더링 경로 모두 적용 |
+| 2026-01-29 | 1.22 | Phase 12 이슈 14 구현 완료: inline-block 버튼 가로/세로 여백 불일치 수정. BUTTON_SIZE_CONFIG에서 height→paddingY 변경, calculateTextWidth Math.ceil→Math.round, calculateContentHeight를 PixiButton과 동일 공식(max(paddingY*2+textHeight, 24))으로 변경 |

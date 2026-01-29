@@ -74,6 +74,8 @@ export const PropertyUnitInput = memo(function PropertyUnitInput({
   const [unit, setUnit] = useState<string>("px");
   const [isKeyword, setIsKeyword] = useState(false);
   const [inputValue, setInputValue] = useState("");
+  // ⭐ Fix: 명시적 isOpen 관리로 "reset" 선택 시 팝업 닫힘 보장
+  const [isUnitOpen, setIsUnitOpen] = useState(false);
 
   // ⭐ useRef로 변경: Enter 키로 저장했는지 추적 (useState는 비동기!)
   const justSavedViaEnterRef = useRef(false);
@@ -284,6 +286,8 @@ export const PropertyUnitInput = memo(function PropertyUnitInput({
         )}
         <AriaComboBox
           className="react-aria-ComboBox react-aria-UnitComboBox"
+          isOpen={isUnitOpen}
+          onOpenChange={setIsUnitOpen}
           inputValue={unit === "" ? "—" : unit}
           onSelectionChange={(key) => {
             if (key !== null) {
@@ -291,7 +295,7 @@ export const PropertyUnitInput = memo(function PropertyUnitInput({
               handleUnitChange(selectedUnit);
             }
           }}
-          selectedKey={unit === "" ? "—" : unit}
+          selectedKey={value === "" && units.includes("reset") ? "reset" : (unit === "" ? "—" : unit)}
           aria-label="Unit"
         >
           <div className="combobox-container" ref={comboBoxRef}>

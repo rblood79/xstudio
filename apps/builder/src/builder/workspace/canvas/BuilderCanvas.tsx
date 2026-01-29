@@ -584,9 +584,16 @@ const ElementsLayer = memo(function ElementsLayer({
         // custom engine(block/grid) → @pixi/layout(flex) 전환 시
         // Yoga가 이전 position: 'absolute'를 유지하는 문제 방지
         // baseLayout에 position: 'absolute'가 있으면 그것으로 override됨
+        //
+        // 🚀 Phase 12 Fix: flexShrink: 0 기본값 (CSS min-width: auto 에뮬레이션)
+        // CSS: flex 아이템의 min-width 기본값 = auto (min-content 크기 이하로 축소 안 됨)
+        // Yoga: min-width 기본값 = 0 (아이템이 0까지 축소 가능 → 겹침 발생)
+        // flexShrink: 0으로 축소를 방지하여 CSS 오버플로 동작 재현
+        // 사용자가 명시적으로 flexShrink를 설정하면 그 값이 우선
+        const flexShrinkDefault = baseLayout.flexShrink !== undefined ? {} : { flexShrink: 0 };
         const containerLayout = hasChildren && !baseLayout.display && !baseLayout.flexDirection
-          ? { position: 'relative' as const, display: 'flex' as const, flexDirection: 'column' as const, ...blockLayout, ...baseLayout }
-          : { position: 'relative' as const, ...blockLayout, ...baseLayout };
+          ? { position: 'relative' as const, flexShrink: 0, display: 'flex' as const, flexDirection: 'column' as const, ...blockLayout, ...baseLayout }
+          : { position: 'relative' as const, ...flexShrinkDefault, ...blockLayout, ...baseLayout };
 
         // 🚀 Phase 10: Container 타입은 children을 ElementSprite에 전달
         // Container 컴포넌트가 children을 배경 안에 렌더링
@@ -614,9 +621,10 @@ const ElementsLayer = memo(function ElementsLayer({
                   ? { flexBasis: '100%' as const }
                   : {};
 
+                const childFlexShrinkDefault = childLayout.flexShrink !== undefined ? {} : { flexShrink: 0 };
                 const childContainerLayout = childHasChildren && !childLayout.flexDirection
-                  ? { position: 'relative' as const, display: 'flex' as const, flexDirection: 'column' as const, ...childBlockLayout, ...childLayout }
-                  : { position: 'relative' as const, ...childBlockLayout, ...childLayout };
+                  ? { position: 'relative' as const, flexShrink: 0, display: 'flex' as const, flexDirection: 'column' as const, ...childBlockLayout, ...childLayout }
+                  : { position: 'relative' as const, ...childFlexShrinkDefault, ...childBlockLayout, ...childLayout };
 
                 // nested Container의 children
                 const nestedChildElements = isChildContainerType ? (pageChildrenMap.get(childEl.id) ?? []) : [];
@@ -632,9 +640,10 @@ const ElementsLayer = memo(function ElementsLayer({
                         // 재귀적으로 nested children 렌더링
                         const nestedLayout = styleToLayout(nestedEl);
                         const nestedHasChildren = (pageChildrenMap.get(nestedEl.id)?.length ?? 0) > 0;
+                        const nestedFlexShrinkDefault = nestedLayout.flexShrink !== undefined ? {} : { flexShrink: 0 };
                         const nestedContainerLayout = nestedHasChildren && !nestedLayout.flexDirection
-                          ? { position: 'relative' as const, display: 'flex' as const, flexDirection: 'column' as const, ...nestedLayout }
-                          : { position: 'relative' as const, ...nestedLayout };
+                          ? { position: 'relative' as const, flexShrink: 0, display: 'flex' as const, flexDirection: 'column' as const, ...nestedLayout }
+                          : { position: 'relative' as const, ...nestedFlexShrinkDefault, ...nestedLayout };
                         return (
                           <LayoutContainer key={nestedEl.id} elementId={nestedEl.id} layout={nestedContainerLayout}>
                             <ElementSprite

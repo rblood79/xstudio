@@ -1,4 +1,4 @@
-import React, { memo } from 'react';
+import React, { memo, useState, useCallback } from 'react';
 import {
     Select as AriaSelect,
     Button,
@@ -33,7 +33,12 @@ export const PropertySelect = memo(function PropertySelect({
     icon: Icon,
     className
 }: PropertySelectProps) {
-    const handleChange = (key: React.Key | null) => {
+    // 🚀 Fix: 명시적 isOpen 관리로 "reset" 선택 시 팝업 닫힘 보장
+    // React Aria의 controlled Select에서 onSelectionChange 내 onChange("") 호출이
+    // 상태 변경을 유발하여 팝업 자동 닫힘을 방해하는 문제 해결
+    const [isOpen, setIsOpen] = useState(false);
+
+    const handleChange = useCallback((key: React.Key | null) => {
         const selectedValue = key as string;
         // "reset" 선택 시 inline style 제거 (빈 문자열 전달)
         if (selectedValue === "reset") {
@@ -41,7 +46,7 @@ export const PropertySelect = memo(function PropertySelect({
         } else {
             onChange(selectedValue);
         }
-    };
+    }, [onChange]);
 
     return (
         <fieldset className={`properties-aria ${className || ''}`}>
@@ -49,7 +54,9 @@ export const PropertySelect = memo(function PropertySelect({
             <div className='react-aria-control react-aria-Group'>
                 <AriaSelect
                     className='react-aria-Select'
-                    selectedKey={value}
+                    isOpen={isOpen}
+                    onOpenChange={setIsOpen}
+                    selectedKey={value === "" ? (options.some(opt => opt.value === "reset") ? "reset" : null) : value}
                     onSelectionChange={handleChange}
                     aria-label={label}
                 >
