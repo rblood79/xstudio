@@ -458,3 +458,117 @@ WASM 계획과 무관하게, JS만으로 즉시 적용 가능한 최적화:
 | 이미지 플레이스홀더 (줌 < 0.25) | 이미지 多 시 50% 절감 | 낮음 | ImageSprite.tsx |
 | VRAM 사용량 경고 임계값 | 메모리 폭주 방지 | 낮음 | gpuProfilerCore.ts |
 | SpritePool 크기 동적 조절 | 대규모 페이지 적응 | 낮음 | SpritePool.ts |
+
+---
+
+## 8. 종합 비교 분석: 현재 코드 vs WASM 최적화 적용
+
+> 기준일: 2026-01-29
+> 대상: `docs/WASM.md` (6차 검토 반영) 기준 WASM 최적화 계획
+> 비교 방법: 현재 코드베이스 실측 구조 기반 추정 (Phase 0 벤치마크 후 실측값으로 대체 예정)
+
+### 8.1 핵심 연산별 성능 비교
+
+| 영역 | 현재 (JS) | WASM 적용 후 | 개선 효과 |
+|------|----------|-------------|----------|
+| **뷰포트 컬링** | `elements.filter()` O(n) 전수 순회 — useMemo 6개 의존성, 매 pan/zoom마다 전체 요소 검사 | `SpatialIndex.query_viewport()` O(k) — Grid 셀 기반 공간 탐색 + AABB 교차 검증 | n=1,000일 때 k≈50~100이면 **10~20배 감소** |
+| **라쏘 선택** | `elements.filter()` O(n) — 드래그 종료 시 전체 순회, `calculateBounds(style)` 매번 CSS 파싱 | `SpatialIndex.query_rect()` O(k) — 내부 bounds 캐시 사용, CSS 파싱 불필요 | 드래그 선택 응답 시간 **10배+ 감소** |
+| **블록 레이아웃** | JS `BlockEngine.calculate()` 692줄 — 매 자식마다 style 파싱 25~30회 속성 조회, V8 JIT 의존 | WASM `calculate()` — Float32Array 평탄화 입력, Rust 네이티브 루프 | 100+ 자식 시 **2~5배** (마샬링 비용 상쇄 후) |
+| **그리드 레이아웃** | JS `parseGridTemplate()` regex split + `calculateGridCellBounds()` 4중 루프 O(n×√(cols×rows)) | WASM `parse_tracks()` + `calculate_cell_positions()` 일괄 계산 | 트랙 파싱 + 셀 배치 **3~8배** |
+| **마진 콜랩스** | JS `collapseMargins()` O(1) 단일 호출 — 이미 충분히 빠름 | WASM `calculate()` 내부에서 일괄 처리 — JS↔WASM 경계 넘기 0회 | 개별 위임 없이 배치 포함 → **경계 비용 절감** |
+| **히트 테스트 (클릭)** | PixiJS `FederatedPointerEvent` O(1)~O(log n) — 이미 최적 | 변경 없음 | — |
+| **CSS 파싱** | `parseCSSValue()` 매번 parseFloat + endsWith, 동일 스타일 반복 파싱 | WeakMap 캐싱 + createsBFC bitmask 사전 변환 (JS 최적화) | 반복 파싱 **제거** |
+
+### 8.2 요소 규모별 예상 프레임 타임 비교
+
+| 요소 수 | 연산 | 현재 JS 예상 비용 | WASM 적용 후 예상 비용 | 개선 비율 |
+|---------|------|------------------|---------------------|----------|
+| **50개** (소규모) | 뷰포트 컬링 | ~0.05ms | ~0.02ms | 2.5x |
+| | 블록 레이아웃 | ~0.3ms | ~0.5ms (마샬링 오버헤드 > 이득) | **JS가 빠름** |
+| **500개** (중규모) | 뷰포트 컬링 | ~0.5ms (500 AABB 체크) | ~0.05ms (k≈50 SpatialIndex 쿼리) | **10x** |
+| | 블록 레이아웃 | ~3ms | ~1.5ms | 2x |
+| | 라쏘 선택 | ~0.5ms | ~0.05ms | **10x** |
+| **2,000개** (대규모) | 뷰포트 컬링 | ~2ms (2,000 AABB 체크) | ~0.08ms (k≈80 쿼리) | **25x** |
+| | 블록 레이아웃 | ~12ms | ~3ms | **4x** |
+| | 라쏘 선택 | ~2ms | ~0.1ms | **20x** |
+| **5,000개** (스트레스) | 뷰포트 컬링 | ~5ms (프레임 드롭 위험) | ~0.1ms | **50x** |
+| | 블록 레이아웃 | ~30ms (UI jank 발생) | ~8ms (Worker 분리 시 메인 스레드 0ms) | **∞** (Worker) |
+
+> **주의:** 수치는 코드 구조 기반 추정치이며, Phase 0 벤치마크에서 실측값으로 대체해야 한다.
+> 블록 레이아웃 50개 이하에서는 JS↔WASM 마샬링 비용이 연산 이득을 상쇄하므로, 임계값(>10 자식) 분기가 필수.
+
+### 8.3 아키텍처별 장점 비교
+
+| 영역 | 현재 상태 | WASM 적용 후 | 장점 |
+|------|----------|-------------|------|
+| **공간 검색** | 인덱스 없음 — `elements.filter()` 배열 순회만 존재 | Grid 기반 SpatialIndex (cell_size=256, i64 키 인코딩) | O(n)→O(k) 전환, 요소 수와 무관한 쿼리 성능 |
+| **렌더 순서** | `elements` 배열 순서에 암묵적 의존 | `elementOrderIndex` Map — `rebuildIndexes()` 시 동기 갱신 | SpatialIndex 결과에 O(k log k) 정렬로 렌더/스태킹 순서 보존 |
+| **인덱스 리빌드** | `_rebuildIndexes()` 14곳에서 개별 호출, 배치 최적화 없음 | `suspendIndexRebuild()`/`resumeAndRebuildIndexes()` 패턴 | 100개 요소 복붙 시 100회→1회 리빌드 (O(n·m)→O(n)) |
+| **메인 스레드 부하** | 모든 레이아웃이 메인 스레드에서 동기 실행 | 중량 레이아웃(>10 요소)을 Worker로 분리, Stale-While-Revalidate 전략 | 레이아웃 계산 중 UI 프리징 제거 |
+| **폴백 안전성** | JS 단일 경로 | Feature Flag (`VITE_WASM_SPATIAL`, `VITE_WASM_LAYOUT`) + JS 폴백 100% 유지 | WASM 실패/비활성 시 즉시 롤백, A/B 비교 가능 |
+| **ID 매핑** | string UUID만 사용 (메모리/비교 비용 높음) | `ElementIdMapper` string↔u32 양방향, `tryGetNumericId()` 안전 조회 | WASM 경계에서 4바이트 u32 사용 → 메모리/비교 최적화 |
+| **Bounds 소스 통일** | `layoutBoundsRegistry` (JS Map) + `calculateBounds(style)` 혼재 | SpatialIndex 내부 bounds 캐시 + registry 동기화 | 단일 소스 기반 일관된 bounds 조회 |
+| **페이지 범위 관리** | `elements` 배열이 전체 페이지 포함 — 컬링/쿼리에 불필요한 요소 포함 | 페이지 전환 시 `clearAll()` + 현재 페이지 `batch_upsert()` | SpatialIndex 메모리/쿼리 범위를 현재 페이지로 한정 |
+
+### 8.4 메모리 및 번들 영향
+
+| 항목 | 현재 | WASM 적용 후 | 변화량 |
+|------|------|-------------|-------|
+| WASM 바이너리 | yoga-layout ~296KB | yoga + xstudio-wasm ~326KB (+30KB gzip) | **+30KB** (60KB 한도 이내) |
+| SpatialIndex 메모리 | — | HashMap 3개 (cells, element_cells, bounds) | **+~5MB** (5,000요소 기준) |
+| ElementIdMapper | — | Map 2개 (string↔u32 양방향) | **+~0.5MB** (5,000요소 기준) |
+| elementOrderIndex | — | Map 1개 (string→number) | **+~0.3MB** (5,000요소 기준) |
+| CSS 캐싱 (WeakMap) | — | WeakMap (자동 GC 대상) | 미미 |
+| Worker 스레드 | — | Worker 1개 + WASM 인스턴스 복사 | **+~300KB** |
+| **총 추가 메모리** | — | — | **+6~7MB** (5,000요소 기준) |
+
+> 현대 브라우저 기준(탭당 ~1~4GB 할당)에서 +6~7MB는 허용 범위.
+
+### 8.5 현재 SLO 대비 예상 효과
+
+| 연산 | 현재 SLO | 현재 예상 (500요소) | WASM 적용 후 (500요소) | 여유도 변화 |
+|------|---------|-------------------|---------------------|-----------|
+| 드래그 이동 | 16ms | 10~15ms | 3~5ms | 위험→**3x 여유** |
+| 클릭 선택 | 50ms | 5~10ms | 5~10ms | 이미 충분 (PixiJS 기반) |
+| 페이지 전환 | 100ms | 50~80ms (2,000요소) | 20~40ms | 보통→**2x 여유** |
+| Undo/Redo | 50ms | 30~50ms | 15~25ms (배치 리빌드) | 위험→**2x 여유** |
+| 줌/팬 응답 | 16ms | 5~8ms (500), 15ms+ (2,000) | 1~2ms (SpatialIndex) | 보통→**10x 여유** |
+
+### 8.6 개발 복잡도 및 리스크
+
+| 항목 | 현재 | WASM 적용 후 | 트레이드오프 |
+|------|------|-------------|------------|
+| 빌드 파이프라인 | Vite + TypeScript | + Rust/wasm-pack + vite-plugin-wasm | CI에 Rust 툴체인 추가 필요 |
+| 디버깅 | Chrome DevTools에서 JS 직접 디버깅 | WASM은 소스맵 제한, JS 폴백으로 디버깅 | Feature Flag로 경로 전환 |
+| 테스트 | Vitest (JS만) | + `wasm-pack test --node` (Rust 단위 테스트) | 이중 테스트 인프라 유지 |
+| 코드 동기화 | JS 단일 소스 | JS preprocess + WASM calculate 분리 | 전처리/후처리 경계 명확화 필수 |
+| SharedArrayBuffer | COOP/COEP 비활성 (Supabase 인증 충돌) | 사용 불가 → copy-before-transfer 패턴 | 제로카피 불가, 복사 오버헤드 발생 |
+| 팀 기술 스택 | TypeScript/React | + Rust 기본 지식 필요 | 학습 곡선 존재 |
+
+### 8.7 Phase별 예상 ROI 요약
+
+| Phase | 투자 내용 | 주요 장점 | ROI 판단 |
+|-------|----------|----------|---------|
+| **Phase 0** (환경+벤치마크) | Rust/wasm-pack 설정, 측정 도구 구축 | 실측 기준선 확보 → 이후 Phase 필요성 데이터 기반 판단 | **필수** — 이후 모든 Phase의 의사결정 근거 |
+| **Phase 1** (SpatialIndex) | spatial_index.rs + idMapper + 통합 5개 파일 | 뷰포트 컬링 O(n)→O(k), 라쏘 O(n)→O(k) | **가장 높은 ROI** — 500+ 요소에서 즉시 체감 |
+| **Phase 2** (Layout Engine) | block_layout.rs + grid_layout.rs + preprocess 설계 | 블록/그리드 레이아웃 2~5배 가속 | **조건부** — 100+ 자식 복잡 레이아웃에서 유효 |
+| ~~Phase 3~~ (제거됨) | 텍스트/CSS 파싱은 WASM 부적합 판정 | JS 캐싱으로 대체 (WeakMap, bitmask) | WASM 불필요 |
+| **Phase 4** (Worker) | Worker + Bridge + LayoutScheduler | 메인 스레드 레이아웃 부하 완전 제거 | **대규모 전용** — 2,000+ 요소 프로젝트에서 가치 |
+
+### 8.8 최종 판단
+
+```
+현재 JS 코드의 주요 병목:
+  1. 뷰포트 컬링: O(n) 전수 순회 ← Phase 1 SpatialIndex로 해결 (최대 50x 개선)
+  2. 라쏘 선택: O(n) 전수 순회 ← Phase 1 query_rect로 해결 (최대 20x 개선)
+  3. 레이아웃 계산: JS 메인 스레드 동기 실행 ← Phase 2+4로 해결 (2~5x + Worker 분리)
+  4. 인덱스 리빌드: 배치 작업 시 반복 호출 ← 배치 리빌드 패턴으로 해결 (m회→1회)
+  5. CSS 파싱 반복: 동일 스타일 매번 재파싱 ← WeakMap 캐싱으로 해결 (JS 최적화)
+
+WASM 최적화의 핵심 가치:
+  ✓ 요소 수 증가에 강건한 성능 (O(n)→O(k) 전환)
+  ✓ 메인 스레드 부하 분리 (Worker)
+  ✓ Feature Flag 기반 점진적 도입 + 즉시 롤백
+  ✗ 소규모(50개 이하) 프로젝트에서는 마샬링 비용이 이득을 상쇄
+  ✗ Rust 빌드 인프라 + 이중 테스트 유지 비용
+```
