@@ -33,7 +33,7 @@
 |------|----------|----------|--------|
 | Viewport Culling | `Array.filter()` O(n) 순회 | 요소 수 증가 시 선형 탐색 비용 | **높음** |
 | Block 레이아웃 | JS 메인 루프 671줄 (margin collapse + baseline) | 복잡 중첩 레이아웃 재계산 비용 | **중간** |
-| 히트 테스트 | 전체 요소 순회 방식 | 클릭 시 O(n) 탐색 | **중간** |
+| 히트 테스트 (라쏘/호버) | `SelectionLayer.utils.ts` `elements.filter()` O(n) 순회 | 라쏘 선택·호버 시 O(n) 탐색 (개별 클릭은 PixiJS `FederatedPointerEvent` 기반 O(1)~O(log n)으로 병목 아님) | **중간** |
 | 텍스트 래스터라이즈 | `textRef.getBounds()` (브라우저 Canvas API 의존) | WASM으로 해결 불가 | **낮음 (WASM 부적합)** |
 | CSS 파싱 | `parseCSSValue()` (V8 JIT 최적화됨) | WASM 경계 넘기 비용이 이득 상쇄 | **낮음 (WASM 부적합)** |
 
@@ -212,11 +212,13 @@ VITE_WASM_TEXT=false
 **실제 병목 (수정됨):**
 - `getElementBoundsSimple()` 자체는 `layoutBoundsRegistry` 캐시로 O(1) → **병목 아님**
 - **진짜 병목:** `useViewportCulling.ts:205`의 `elements.filter()` — 전체 배열을 O(n) 순회
-- **진짜 병목:** 히트 테스트 — 클릭 시 전체 요소를 순회하여 교차 판정
+- **진짜 병목:** 라쏘(드래그) 선택 — `SelectionLayer.utils.ts:11-16`의 `elements.filter()`로 O(n) 순회
+- **병목 아님:** 개별 요소 클릭 — PixiJS `FederatedPointerEvent` + `eventMode="static"`으로 O(1)~O(log n) (PixiJS 내부 히트 테스트 시스템이 처리)
 
 **호출 빈도:**
 - `useViewportCulling` — 매 팬/줌 변경마다 (useMemo 의존성: zoom, panOffset)
-- 히트 테스트 — 매 클릭/호버 이벤트마다
+- 라쏘 선택 — 드래그 종료 시 1회 (`findElementsInLasso()`)
+- 개별 클릭 — PixiJS가 처리하므로 SpatialIndex 불필요
 
 ### 1.2 WASM 모듈 설계
 
@@ -968,7 +970,13 @@ calculate(parent, children, availableWidth, availableHeight): ComputedLayout[] {
 - [ ] 데이터 마샬링 헬퍼 (`serialize/deserialize`) 구현
 - [ ] 최소 요소 수 임계값 결정 (마샬링 비용 > WASM 이득인 경계점)
 - [ ] 단위 테스트: margin collapse, LineBox, BFC 엣지 케이스
-- [ ] 통합 테스트: JS vs WASM 레이아웃 출력 일치 검증
+- [ ] 통합 테스트: JS vs WASM 레이아웃 출력 일치 검증 (아래 edge case 필수 포함)
+  - [ ] inline-block 요소 판별 (input, button, img, span, a 등 — `BlockEngine.ts:48-71`)
+  - [ ] CSS Blockification (flex/grid 자식의 inline → block 변환 — `BlockEngine.ts:483-512`)
+  - [ ] BFC(Block Formatting Context) 생성 조건 — `BlockEngine.ts:526-568`
+  - [ ] out-of-flow 요소 제외 (absolute/fixed — `BlockEngine.ts:493-497`)
+  - [ ] vertical-align 4종 (baseline/top/bottom/middle — `BlockEngine.ts:445-467`)
+  - [ ] margin collapse 중첩: 부모-자식, 형제 간, 빈 블록 — `BlockEngine.ts:273-355`
 - [ ] 벤치마크: 요소 수별(10, 50, 100, 500) 레이아웃 재계산 시간 비교
 
 ### 2.6 성능 검증 대상

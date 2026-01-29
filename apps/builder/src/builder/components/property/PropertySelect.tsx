@@ -76,7 +76,7 @@ export const PropertySelect = memo(function PropertySelect({
                         </span>
                     </Button>
                     <Popover className="react-aria-Popover">
-                        <ListBox className="react-aria-ListBox" onAction={() => setIsOpen(false)}>
+                        <ListBox className="react-aria-ListBox">
                             {options.map((option) => (
                                 <ListBoxItem
                                     key={option.value}

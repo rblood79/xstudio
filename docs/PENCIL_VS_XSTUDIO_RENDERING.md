@@ -3,6 +3,8 @@
 > 분석일: 2026-01-29
 > Pencil: v1.1.10 (Electron + PixiJS v8)
 > xstudio: PixiJS v8.14.3 + @pixi/react v8.0.5
+>
+> **주의:** Pencil 기능 중 "✅ (추정)"으로 표기된 항목은 바이너리 분석에서 확인된 것이 아니라 코드 패턴 기반 추정이다. 이에 따라 커버리지 계산(55% → 95%)의 분모가 추정치를 포함하고 있으므로, 실제 커버리지는 표기된 수치와 다를 수 있다.
 
 ---
 
@@ -120,7 +122,7 @@
 | **RenderTexture 풀링** | WASM 계획에 미포함 | **중간** — GPU 메모리 재사용 |
 | **커스텀 셰이더** | WASM 계획에 미포함 | **낮음** — 특수 효과용 |
 | **OffscreenCanvas** | Phase 4에서 Worker만 다룸 | **중간** — 렌더링 자체의 오프스크린 이전 |
-| **SharedArrayBuffer** | WASM 계획에 미포함 | **중간** — 메인-워커 데이터 공유 |
+| **SharedArrayBuffer** | xstudio 환경에서 사용 불가 — Vite 설정에서 COOP/COEP 헤더를 Supabase 인증 호환을 위해 제거하고 있으며, SharedArrayBuffer는 이 헤더가 필수 | **중간** — 메인-워커 데이터 공유 |
 | **Scissor 클리핑** | WASM 계획에 미포함 | **낮음** — GPU 레벨 최적화 |
 
 ### 3.3 종합 커버리지
