@@ -899,9 +899,9 @@ export interface TypographyTokens {
 export interface RadiusTokens {
   none: number;  // 0
   sm: number;    // 4
-  md: number;    // 8
-  lg: number;    // 12
-  xl: number;    // 16
+  md: number;    // 6
+  lg: number;    // 8
+  xl: number;    // 12
   full: number;  // 9999
 }
 
@@ -1066,6 +1066,25 @@ export const fontFamily = {
   mono: 'JetBrains Mono, Consolas, monospace',
 };
 
+/**
+ * 폰트 두께
+ */
+export const fontWeight = {
+  normal: 400,
+  medium: 500,
+  semibold: 600,
+  bold: 700,
+};
+
+/**
+ * 줄 높이 (배수)
+ */
+export const lineHeight = {
+  tight: 1.25,
+  normal: 1.5,
+  relaxed: 1.75,
+};
+
 export function getTypographyToken(name: keyof TypographyTokens): number {
   return typography[name];
 }
@@ -1076,12 +1095,19 @@ export function getTypographyToken(name: keyof TypographyTokens): number {
 
 import type { RadiusTokens } from '../types/token.types';
 
+/**
+ * CSS 변수 기준:
+ * --radius-sm: 0.25rem = 4px
+ * --radius-md: 0.375rem = 6px
+ * --radius-lg: 0.5rem = 8px
+ * --radius-xl: 0.75rem = 12px
+ */
 export const radius: RadiusTokens = {
   none: 0,
-  sm: 4,
-  md: 8,
-  lg: 12,
-  xl: 16,
+  sm: 4,    // 0.25rem
+  md: 6,    // 0.375rem
+  lg: 8,    // 0.5rem
+  xl: 12,   // 0.75rem
   full: 9999,
 };
 
@@ -2082,15 +2108,17 @@ jobs:
 ```typescript
 // packages/specs/src/components/Button.spec.ts
 
-import type { ComponentSpec } from '../types';
+import type { ComponentSpec, Shape, TokenRef } from '../types';
 
 export interface ButtonProps {
   variant?: 'default' | 'primary' | 'secondary' | 'tertiary' | 'error' | 'surface' | 'outline' | 'ghost';
   size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl';
   children?: string;
+  text?: string;
+  label?: string;
   isDisabled?: boolean;
   isLoading?: boolean;
-  style?: React.CSSProperties;
+  style?: Record<string, string | number | undefined>;
 }
 
 export const ButtonSpec: ComponentSpec<ButtonProps> = {
@@ -2103,56 +2131,56 @@ export const ButtonSpec: ComponentSpec<ButtonProps> = {
 
   variants: {
     default: {
-      background: '{color.surface-container-high}',
-      backgroundHover: '{color.surface-container-highest}',
-      backgroundPressed: '{color.surface-container-highest}',
-      text: '{color.on-surface}',
-      border: '{color.outline-variant}',
+      background: '{color.surface-container-high}' as TokenRef,
+      backgroundHover: '{color.surface-container-highest}' as TokenRef,
+      backgroundPressed: '{color.surface-container-highest}' as TokenRef,
+      text: '{color.on-surface}' as TokenRef,
+      border: '{color.outline-variant}' as TokenRef,
     },
     primary: {
-      background: '{color.primary}',
-      backgroundHover: '{color.primary-hover}',
-      backgroundPressed: '{color.primary-pressed}',
-      text: '{color.on-primary}',
+      background: '{color.primary}' as TokenRef,
+      backgroundHover: '{color.primary-hover}' as TokenRef,
+      backgroundPressed: '{color.primary-pressed}' as TokenRef,
+      text: '{color.on-primary}' as TokenRef,
     },
     secondary: {
-      background: '{color.secondary}',
-      backgroundHover: '{color.secondary-hover}',
-      backgroundPressed: '{color.secondary-pressed}',
-      text: '{color.on-secondary}',
+      background: '{color.secondary}' as TokenRef,
+      backgroundHover: '{color.secondary-hover}' as TokenRef,
+      backgroundPressed: '{color.secondary-pressed}' as TokenRef,
+      text: '{color.on-secondary}' as TokenRef,
     },
     tertiary: {
-      background: '{color.tertiary}',
-      backgroundHover: '{color.tertiary-hover}',
-      backgroundPressed: '{color.tertiary-pressed}',
-      text: '{color.on-tertiary}',
+      background: '{color.tertiary}' as TokenRef,
+      backgroundHover: '{color.tertiary-hover}' as TokenRef,
+      backgroundPressed: '{color.tertiary-pressed}' as TokenRef,
+      text: '{color.on-tertiary}' as TokenRef,
     },
     error: {
-      background: '{color.error}',
-      backgroundHover: '{color.error-hover}',
-      backgroundPressed: '{color.error-pressed}',
-      text: '{color.on-error}',
+      background: '{color.error}' as TokenRef,
+      backgroundHover: '{color.error-hover}' as TokenRef,
+      backgroundPressed: '{color.error-pressed}' as TokenRef,
+      text: '{color.on-error}' as TokenRef,
     },
     surface: {
-      background: '{color.surface-container-highest}',
-      backgroundHover: '{color.surface-container-highest}',
-      backgroundPressed: '{color.surface-container-highest}',
-      text: '{color.on-surface}',
-      border: '{color.outline-variant}',
+      background: '{color.surface-container-highest}' as TokenRef,
+      backgroundHover: '{color.surface-container-highest}' as TokenRef,
+      backgroundPressed: '{color.surface-container-highest}' as TokenRef,
+      text: '{color.on-surface}' as TokenRef,
+      border: '{color.outline-variant}' as TokenRef,
     },
     outline: {
-      background: '{color.surface}',
-      backgroundHover: '{color.surface-container}',
-      backgroundPressed: '{color.surface-container-high}',
-      text: '{color.primary}',
-      border: '{color.outline}',
+      background: '{color.surface}' as TokenRef,
+      backgroundHover: '{color.surface-container}' as TokenRef,
+      backgroundPressed: '{color.surface-container-high}' as TokenRef,
+      text: '{color.primary}' as TokenRef,
+      border: '{color.outline}' as TokenRef,
       backgroundAlpha: 0,
     },
     ghost: {
-      background: '{color.surface}',
-      backgroundHover: '{color.surface-container}',
-      backgroundPressed: '{color.surface-container-high}',
-      text: '{color.primary}',
+      background: '{color.surface}' as TokenRef,
+      backgroundHover: '{color.surface-container}' as TokenRef,
+      backgroundPressed: '{color.surface-container-high}' as TokenRef,
+      text: '{color.primary}' as TokenRef,
       backgroundAlpha: 0,
     },
   },
@@ -2162,8 +2190,8 @@ export const ButtonSpec: ComponentSpec<ButtonProps> = {
       height: 24,
       paddingX: 8,
       paddingY: 2,
-      fontSize: '{typography.text-xs}',
-      borderRadius: '{radius.sm}',
+      fontSize: '{typography.text-xs}' as TokenRef,
+      borderRadius: '{radius.sm}' as TokenRef,
       iconSize: 12,
       gap: 4,
     },
@@ -2171,8 +2199,8 @@ export const ButtonSpec: ComponentSpec<ButtonProps> = {
       height: 32,
       paddingX: 12,
       paddingY: 4,
-      fontSize: '{typography.text-sm}',
-      borderRadius: '{radius.sm}',
+      fontSize: '{typography.text-sm}' as TokenRef,
+      borderRadius: '{radius.sm}' as TokenRef,
       iconSize: 14,
       gap: 6,
     },
@@ -2180,8 +2208,8 @@ export const ButtonSpec: ComponentSpec<ButtonProps> = {
       height: 40,
       paddingX: 16,
       paddingY: 8,
-      fontSize: '{typography.text-md}',
-      borderRadius: '{radius.md}',
+      fontSize: '{typography.text-md}' as TokenRef,
+      borderRadius: '{radius.md}' as TokenRef,
       iconSize: 16,
       gap: 8,
     },
@@ -2189,8 +2217,8 @@ export const ButtonSpec: ComponentSpec<ButtonProps> = {
       height: 48,
       paddingX: 24,
       paddingY: 12,
-      fontSize: '{typography.text-lg}',
-      borderRadius: '{radius.md}',
+      fontSize: '{typography.text-lg}' as TokenRef,
+      borderRadius: '{radius.lg}' as TokenRef,
       iconSize: 20,
       gap: 10,
     },
@@ -2198,8 +2226,8 @@ export const ButtonSpec: ComponentSpec<ButtonProps> = {
       height: 56,
       paddingX: 32,
       paddingY: 16,
-      fontSize: '{typography.text-xl}',
-      borderRadius: '{radius.lg}',
+      fontSize: '{typography.text-xl}' as TokenRef,
+      borderRadius: '{radius.lg}' as TokenRef,
       iconSize: 24,
       gap: 12,
     },
@@ -2215,9 +2243,10 @@ export const ButtonSpec: ComponentSpec<ButtonProps> = {
     disabled: {
       opacity: 0.38,
       cursor: 'not-allowed',
+      pointerEvents: 'none',
     },
     focusVisible: {
-      outline: '2px solid {color.primary}',
+      outline: '2px solid var(--primary)',
       outlineOffset: '2px',
     },
   },
@@ -2270,12 +2299,13 @@ export const ButtonSpec: ComponentSpec<ButtonProps> = {
       }
 
       // 텍스트
-      if (props.children) {
+      const text = props.children || props.text || props.label;
+      if (text) {
         shapes.push({
           type: 'text' as const,
           x: 0,
           y: 0,
-          text: props.children,
+          text,
           fontSize: size.fontSize,
           fontFamily: 'Inter, system-ui, sans-serif',
           fontWeight: 500,
@@ -4130,3 +4160,4 @@ function PixiButton({ element }) {
 | 2026-01-27 | 1.5 | 4차 리뷰 반영: (1) 디렉토리 구조 effects.ts → shadows.ts 수정, (2) renderers/utils를 tokenResolver.ts 단일 파일로 통일, (3) resolveBoxShadow에서 ShadowTokenRef가 문자열 리터럴 타입임을 반영하여 불필요한 .ref 분기 제거 |
 | 2026-01-27 | 1.6 | 5차 리뷰 반영: (1) 아키텍처 개요 다이어그램 effects.ts → shadows.ts 수정, (2) tokenToCSSVar에 shadow 카테고리 처리 추가 |
 | 2026-01-29 | 1.7 | 하이브리드 레이아웃 엔진 완료 반영: (1) ContainerLayout 인터페이스에 레이아웃 엔진 지원 CSS 속성 추가 (inline-block, flow-root, box-sizing, min/max 크기, overflow-x/y, lineHeight, verticalAlign, visibility, justifySelf), (2) 데이터 흐름 다이어그램에 하이브리드 레이아웃 엔진 계층(BlockEngine/FlexEngine/GridEngine) 추가 및 내부/외부 레이아웃 계층 분리 설명 |
+| 2026-01-29 | 1.8 | Button 구현 점검 — 코드↔문서 동기화: (1) RadiusTokens 값 교정 (md:8→6, lg:12→8, xl:16→12, CSS 변수 기준), (2) typography에 fontWeight/lineHeight 객체 추가, (3) ButtonProps에 text/label 필드 추가 및 style 타입을 Record로 변경, (4) ButtonSpec variants/sizes에 `as TokenRef` 캐스트 추가, (5) lg size borderRadius를 `{radius.lg}`로 수정, (6) disabled state에 pointerEvents 추가, (7) focusVisible outline을 var(--primary) 형식으로 수정, (8) render.shapes에 text 폴백 체인(children → text → label) 반영 |
