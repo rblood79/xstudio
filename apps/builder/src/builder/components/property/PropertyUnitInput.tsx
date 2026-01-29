@@ -315,7 +315,7 @@ export const PropertyUnitInput = memo(function PropertyUnitInput({
             </Button>
           </div>
           <Popover className="react-aria-Popover">
-            <ListBox className="react-aria-ListBox">
+            <ListBox className="react-aria-ListBox" onAction={() => setIsUnitOpen(false)}>
               {units.map((u) => (
                 <ListBoxItem key={u === "" ? "—" : u} id={u === "" ? "—" : u} className="react-aria-ListBoxItem" textValue={u === "" ? "—" : u}>
                   {u === "" ? "—" : u}

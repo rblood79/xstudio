@@ -15,6 +15,7 @@ import {
   calculateGridCellBounds,
   type GridStyle,
 } from '../GridLayout.utils';
+import { parseBoxModel } from './utils';
 
 /**
  * CSS Grid 레이아웃 엔진
@@ -68,12 +69,50 @@ export class GridEngine implements LayoutEngine {
         index
       );
 
+      // align-self / justify-self 셀 내 정렬
+      const alignSelf = childStyle?.alignSelf as string | undefined;
+      const justifySelf = childStyle?.justifySelf as string | undefined;
+
+      let finalX = cellBounds.x;
+      let finalY = cellBounds.y;
+      let finalWidth = cellBounds.width;
+      let finalHeight = cellBounds.height;
+
+      // justify-self 또는 align-self가 stretch가 아닌 값이면 자식 고유 크기 사용
+      if (justifySelf && justifySelf !== 'stretch' && justifySelf !== 'normal') {
+        const boxModel = parseBoxModel(child, cellBounds.width, cellBounds.height);
+        const childWidth = boxModel.width ?? boxModel.contentWidth;
+        if (childWidth < cellBounds.width) {
+          finalWidth = childWidth;
+          if (justifySelf === 'center') {
+            finalX = cellBounds.x + (cellBounds.width - childWidth) / 2;
+          } else if (justifySelf === 'end') {
+            finalX = cellBounds.x + cellBounds.width - childWidth;
+          }
+          // 'start'는 기본 위치 유지
+        }
+      }
+
+      if (alignSelf && alignSelf !== 'stretch' && alignSelf !== 'normal') {
+        const boxModel = parseBoxModel(child, cellBounds.width, cellBounds.height);
+        const childHeight = boxModel.height ?? boxModel.contentHeight;
+        if (childHeight < cellBounds.height) {
+          finalHeight = childHeight;
+          if (alignSelf === 'center') {
+            finalY = cellBounds.y + (cellBounds.height - childHeight) / 2;
+          } else if (alignSelf === 'end') {
+            finalY = cellBounds.y + cellBounds.height - childHeight;
+          }
+          // 'start'는 기본 위치 유지
+        }
+      }
+
       return {
         elementId: child.id,
-        x: cellBounds.x,
-        y: cellBounds.y,
-        width: cellBounds.width,
-        height: cellBounds.height,
+        x: finalX,
+        y: finalY,
+        width: finalWidth,
+        height: finalHeight,
       };
     });
   }

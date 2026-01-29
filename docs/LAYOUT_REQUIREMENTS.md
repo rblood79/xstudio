@@ -1824,16 +1824,16 @@ const layouts = engine.calculate(
 
 CSS 명세와 WebGL 구현 간 불일치 조사 결과 발견된 누락 케이스들입니다.
 
-#### 이슈 6: Position absolute/fixed일 때 Blockification 제외 필요
+#### 이슈 6: Position absolute/fixed일 때 Blockification 제외 필요 ✅ (구현 완료)
 
 **CSS 명세:**
 - out-of-flow 요소(absolute, fixed)는 부모가 flex/grid라도 blockification이 적용되지 않음
 
-**현재 문제:**
-- `computeEffectiveDisplay()`가 position을 확인하지 않음
-- flex 부모의 absolute 자식이 잘못 blockify될 수 있음
+**구현 내용:**
+- `BlockEngine.ts`: `computeEffectiveDisplay()`에 `childPosition` 매개변수 추가
+- absolute/fixed 요소는 blockification 건너뛰고 원래 display 값 유지
+- 호출부에서 `style?.position` 전달
 
-**해결 계획:**
 ```typescript
 // BlockEngine.ts - computeEffectiveDisplay() 수정
 private computeEffectiveDisplay(
@@ -1842,10 +1842,11 @@ private computeEffectiveDisplay(
   parentDisplay: string | undefined,
   childPosition: string | undefined  // 추가
 ): 'block' | 'inline-block' {
+  const baseDisplay = childDisplay ??
+    (DEFAULT_INLINE_BLOCK_TAGS.has(childTag) ? 'inline-block' : 'block');
+
   // out-of-flow 요소는 blockification 제외
   if (childPosition === 'absolute' || childPosition === 'fixed') {
-    const baseDisplay = childDisplay ??
-      (DEFAULT_INLINE_BLOCK_TAGS.has(childTag) ? 'inline-block' : 'block');
     return baseDisplay === 'inline-block' ? 'inline-block' : 'block';
   }
 
@@ -1918,96 +1919,87 @@ if (boxSizing === 'border-box') {
 
 ---
 
-#### 이슈 9: overflow-x/y 혼합 처리 안 됨
+#### 이슈 9: overflow-x/y 혼합 처리 안 됨 ✅ (구현 완료)
 
 **CSS 명세:**
 - `overflow-x`와 `overflow-y`는 독립적으로 처리 가능
 - 둘 중 하나라도 `visible`이 아니면 BFC 생성
 
-**현재 문제:**
-- `createsBFC()`에서 overflow-x/y 혼합 케이스 미처리
+**구현 내용:**
+- `BlockEngine.ts`: `createsBFC()`에서 개별 overflow 체크 3개를 shorthand fallback cascade로 교체
+- `overflowX ?? overflow ?? 'visible'` 패턴으로 CSS cascade 재현
 
-**해결 계획:**
 ```typescript
 // BlockEngine.ts - createsBFC() 수정
-createsBFC(element: Element): boolean {
-  // overflow 혼합 처리 개선
-  const effectiveOverflowX = overflowX ?? overflow ?? 'visible';
-  const effectiveOverflowY = overflowY ?? overflow ?? 'visible';
-
-  // 둘 중 하나라도 visible이 아니면 BFC 생성
-  if (effectiveOverflowX !== 'visible' || effectiveOverflowY !== 'visible') {
-    return true;
-  }
-  // ...
-}
+// overflow 기반 BFC (visible 외) - overflow-x/y가 shorthand을 올바르게 fallback
+const effectiveOverflowX = overflowX ?? overflow ?? 'visible';
+const effectiveOverflowY = overflowY ?? overflow ?? 'visible';
+if (effectiveOverflowX !== 'visible' || effectiveOverflowY !== 'visible') return true;
 ```
 
 ---
 
-#### 이슈 10: visibility 레이아웃 미적용
+#### 이슈 10: visibility 레이아웃 미적용 ✅ (구현 완료)
 
 **CSS 명세:**
 - `visibility: hidden`은 요소를 숨기지만 공간은 차지함
 - `display: none`과 다름
 
-**현재 문제:**
-- `computedStyleExtractor.ts`의 WHITELIST에 visibility 없음
-- 레이아웃 계산에서 visibility 고려 안 함
+**구현 내용:**
+- `computedStyleExtractor.ts`: `COMPUTED_STYLE_WHITELIST`에 `'visibility'` 추가
+- 레이아웃 계산에는 영향 없음 (공간 차지) — 렌더링 단계에서 숨김 처리 가능
 
-**해결 계획:**
 ```typescript
 // computedStyleExtractor.ts - WHITELIST에 추가
-export const COMPUTED_STYLE_WHITELIST = [
-  'display',
-  'visibility',  // 추가
-  // ...
-] as const;
+// Visibility
+'visibility',
 ```
-
-**참고:** visibility는 레이아웃 계산에는 영향 없음 (공간 차지). 렌더링 단계(BuilderCanvas/ElementSprite)에서 숨김 처리 필요.
 
 ---
 
-#### 이슈 11: Grid align-self, justify-self 미지원
+#### 이슈 11: Grid align-self, justify-self 미지원 ✅ (구현 완료)
 
 **CSS 명세:**
 - Grid 자식은 `align-self`, `justify-self`로 셀 내 개별 정렬 가능
 
-**현재 문제:**
-- `GridEngine.ts`에서 개별 정렬 미구현
+**구현 내용:**
+- `GridEngine.ts`: `calculate()`에서 셀 바운드 계산 후 `alignSelf`/`justifySelf` 적용
+- `parseBoxModel()`로 자식 고유 크기 계산, 셀 크기보다 작으면 정렬 위치 조정
+- `start`, `center`, `end` 지원 (stretch/normal은 기존 동작 유지)
 
-**해결 계획:**
 ```typescript
 // GridEngine.ts - calculate() 수정
 const alignSelf = childStyle?.alignSelf as string | undefined;
 const justifySelf = childStyle?.justifySelf as string | undefined;
 
-// 셀 내에서 정렬 위치 계산
-let finalX = cellBounds.x;
-let finalY = cellBounds.y;
-
 // justify-self (가로 정렬)
-if (justifySelf === 'center') {
-  finalX = cellBounds.x + (cellBounds.width - childWidth) / 2;
-} else if (justifySelf === 'end') {
-  finalX = cellBounds.x + cellBounds.width - childWidth;
+if (justifySelf && justifySelf !== 'stretch' && justifySelf !== 'normal') {
+  const boxModel = parseBoxModel(child, cellBounds.width, cellBounds.height);
+  const childWidth = boxModel.width ?? boxModel.contentWidth;
+  if (childWidth < cellBounds.width) {
+    finalWidth = childWidth;
+    if (justifySelf === 'center') {
+      finalX = cellBounds.x + (cellBounds.width - childWidth) / 2;
+    } else if (justifySelf === 'end') {
+      finalX = cellBounds.x + cellBounds.width - childWidth;
+    }
+  }
 }
 
-// align-self (세로 정렬) - 유사하게 처리
+// align-self (세로 정렬) - 동일 패턴
 ```
 
 ---
 
 #### 수정 파일 요약
 
-| 파일 | 이슈 |
-|------|------|
-| `BlockEngine.ts` | 6, 7, 9 |
-| `types.ts` | 7 |
-| `utils.ts` | 7, 8 |
-| `GridEngine.ts` | 11 |
-| `computedStyleExtractor.ts` | 10 |
+| 파일 | 이슈 | 상태 |
+|------|------|------|
+| `BlockEngine.ts` | 6, 7, 9 | ✅ |
+| `types.ts` | 7 | ✅ |
+| `utils.ts` | 7, 8 | ✅ |
+| `GridEngine.ts` | 11 | ✅ |
+| `computedStyleExtractor.ts` | 10 | ✅ |
 
 ---
 
@@ -2157,3 +2149,5 @@ function estimateTextHeight(fontSize: number): number {
 | 2026-01-29 | 1.20 | Phase 12 이슈 12 구현 완료: flex-direction: column일 때 flexAlignmentKeysAtom의 축 매핑 교환 (justifyContent↔alignItems), 스타일 패널 Alignment 토글 활성 위치가 화면 배치와 일치하도록 수정 |
 | 2026-01-29 | 1.21 | Phase 12 이슈 13 구현 완료: flex nowrap 오버플로 시 Yoga 축소로 인한 버튼 겹침 수정. @pixi/layout 경로의 flex 자식에 flexShrink: 0 기본값 설정 (CSS min-width: auto 에뮬레이션), 3개 렌더링 경로 모두 적용 |
 | 2026-01-29 | 1.22 | Phase 12 이슈 14 구현 완료: inline-block 버튼 가로/세로 여백 불일치 수정. BUTTON_SIZE_CONFIG에서 height→paddingY 변경, calculateTextWidth Math.ceil→Math.round, calculateContentHeight를 PixiButton과 동일 공식(max(paddingY*2+textHeight, 24))으로 변경 |
+| 2026-01-29 | 1.23 | Phase 11 이슈 6+9 구현 완료: computeEffectiveDisplay()에 childPosition 매개변수 추가하여 absolute/fixed 요소의 blockification 제외, createsBFC()의 overflow-x/y 처리를 shorthand fallback cascade 방식으로 개선 |
+| 2026-01-29 | 1.24 | Phase 11 이슈 10+11 구현 완료: COMPUTED_STYLE_WHITELIST에 visibility 추가, GridEngine에 align-self/justify-self 셀 내 정렬 지원 (start/center/end, parseBoxModel 기반 자식 크기 계산) |

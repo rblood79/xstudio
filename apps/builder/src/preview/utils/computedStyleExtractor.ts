@@ -81,6 +81,9 @@ export const COMPUTED_STYLE_WHITELIST = [
   'borderColor',
   'borderStyle',
 
+  // Visibility
+  'visibility',
+
   // Effects
   'opacity',
   'overflow',

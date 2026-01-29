@@ -195,13 +195,16 @@ export class BlockEngine implements LayoutEngine {
       const style = child.props?.style as Record<string, unknown> | undefined;
       const childDisplay = style?.display as string | undefined;
       const childTag = (child.tag ?? '').toLowerCase();
+      const childPosition = style?.position as string | undefined;
 
       // 🚀 Phase 6 Fix: 기본 inline-block 요소 처리
       // 🚀 Phase 7: CSS Blockification 적용 (flex 자식의 inline-block → block)
+      // 🚀 Phase 11: absolute/fixed는 blockification 제외
       const isInlineBlock = this.computeEffectiveDisplay(
         childDisplay,
         childTag,
-        context?.parentDisplay
+        context?.parentDisplay,
+        childPosition
       ) === 'inline-block';
       const margin = parseMargin(style);
       const boxModel = parseBoxModel(
@@ -460,20 +463,29 @@ export class BlockEngine implements LayoutEngine {
    * CSS Display Level 3 명세:
    * - flex/inline-flex 자식의 inline, inline-block → block
    * - grid/inline-grid 자식도 동일하게 blockified
+   * - 🚀 Phase 11: out-of-flow 요소(absolute, fixed)는 blockification 제외
    *
    * @param childDisplay - 자식의 명시적 display 값
    * @param childTag - 자식의 태그 이름
    * @param parentDisplay - 부모의 display 값
+   * @param childPosition - 자식의 position 값
    * @returns effective display ('block' | 'inline-block')
    */
   private computeEffectiveDisplay(
     childDisplay: string | undefined,
     childTag: string,
-    parentDisplay: string | undefined
+    parentDisplay: string | undefined,
+    childPosition: string | undefined
   ): 'block' | 'inline-block' {
     // 기본 display 결정 (명시적 값 또는 태그 기본값)
     const baseDisplay = childDisplay ??
       (DEFAULT_INLINE_BLOCK_TAGS.has(childTag) ? 'inline-block' : 'block');
+
+    // 🚀 Phase 11 이슈 6: out-of-flow 요소는 blockification 제외
+    // CSS 명세: position: absolute/fixed 요소는 부모가 flex/grid라도 blockify되지 않음
+    if (childPosition === 'absolute' || childPosition === 'fixed') {
+      return baseDisplay === 'inline-block' ? 'inline-block' : 'block';
+    }
 
     // CSS Blockification: flex/inline-flex/grid/inline-grid 자식
     if (
@@ -520,10 +532,10 @@ export class BlockEngine implements LayoutEngine {
     if (display === 'grid' || display === 'inline-grid') return true;
     if (display === 'inline-block') return true;
 
-    // overflow 기반 BFC (visible 외)
-    if (overflow && overflow !== 'visible') return true;
-    if (overflowX && overflowX !== 'visible') return true;
-    if (overflowY && overflowY !== 'visible') return true;
+    // overflow 기반 BFC (visible 외) - overflow-x/y가 shorthand을 올바르게 fallback
+    const effectiveOverflowX = overflowX ?? overflow ?? 'visible';
+    const effectiveOverflowY = overflowY ?? overflow ?? 'visible';
+    if (effectiveOverflowX !== 'visible' || effectiveOverflowY !== 'visible') return true;
 
     // float 기반 BFC
     if (float === 'left' || float === 'right') return true;
