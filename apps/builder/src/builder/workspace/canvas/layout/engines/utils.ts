@@ -526,6 +526,8 @@ export function calculateContentHeight(element: Element): number {
 /**
  * 요소의 박스 모델 계산
  *
+ * 🚀 Phase 11: min/max width/height 파싱, box-sizing: border-box 지원
+ *
  * @param element - 대상 요소
  * @param availableWidth - 사용 가능한 너비 (% 계산용)
  * @param availableHeight - 사용 가능한 높이 (% 계산용)
@@ -542,14 +544,37 @@ export function parseBoxModel(
   const style = element.props?.style as Record<string, unknown> | undefined;
 
   // width/height 파싱 (%, px, vh, vw, auto 지원)
-  const width = parseSize(style?.width, availableWidth, viewportWidth, viewportHeight);
-  const height = parseSize(style?.height, availableHeight, viewportWidth, viewportHeight);
+  let width = parseSize(style?.width, availableWidth, viewportWidth, viewportHeight);
+  let height = parseSize(style?.height, availableHeight, viewportWidth, viewportHeight);
+
+  // min/max 파싱
+  const minWidth = parseSize(style?.minWidth, availableWidth, viewportWidth, viewportHeight);
+  const maxWidth = parseSize(style?.maxWidth, availableWidth, viewportWidth, viewportHeight);
+  const minHeight = parseSize(style?.minHeight, availableHeight, viewportWidth, viewportHeight);
+  const maxHeight = parseSize(style?.maxHeight, availableHeight, viewportWidth, viewportHeight);
 
   // padding 파싱
   const padding = parsePadding(style);
 
   // border 파싱
   const border = parseBorder(style);
+
+  // 🚀 Phase 11: box-sizing: border-box 처리
+  // border-box인 경우 width/height에서 padding + border 제외하여 content-box 크기로 변환
+  const boxSizing = style?.boxSizing as string | undefined;
+  if (boxSizing === 'border-box') {
+    const paddingH = padding.left + padding.right;
+    const borderH = border.left + border.right;
+    const paddingV = padding.top + padding.bottom;
+    const borderV = border.top + border.bottom;
+
+    if (width !== undefined) {
+      width = Math.max(0, width - paddingH - borderH);
+    }
+    if (height !== undefined) {
+      height = Math.max(0, height - paddingV - borderV);
+    }
+  }
 
   // 콘텐츠 크기 계산
   const contentWidth = calculateContentWidth(element);
@@ -558,6 +583,10 @@ export function parseBoxModel(
   return {
     width,
     height,
+    minWidth,
+    maxWidth,
+    minHeight,
+    maxHeight,
     contentWidth,
     contentHeight,
     padding,

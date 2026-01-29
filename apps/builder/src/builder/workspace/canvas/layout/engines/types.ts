@@ -78,6 +78,14 @@ export interface BoxModel {
   width?: number;
   /** 명시적 height (undefined면 auto) */
   height?: number;
+  /** min-width 제한 */
+  minWidth?: number;
+  /** max-width 제한 */
+  maxWidth?: number;
+  /** min-height 제한 */
+  minHeight?: number;
+  /** max-height 제한 */
+  maxHeight?: number;
   /** 콘텐츠 기반 너비 (자식/텍스트 등) */
   contentWidth: number;
   /** 콘텐츠 기반 높이 */

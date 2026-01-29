@@ -39,8 +39,8 @@ export class GridEngine implements LayoutEngine {
 
     // Gap 파싱
     const gap = parseGap(style?.gap);
-    const columnGap = parseGap(style?.columnGap) || gap;
-    const rowGap = parseGap(style?.rowGap) || gap;
+    const columnGap = parseGap(style?.columnGap) ?? gap;
+    const rowGap = parseGap(style?.rowGap) ?? gap;
 
     // Template Areas 파싱
     const templateAreas = parseGridTemplateAreas(style?.gridTemplateAreas);

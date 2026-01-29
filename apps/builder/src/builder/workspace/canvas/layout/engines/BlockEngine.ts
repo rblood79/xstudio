@@ -27,6 +27,18 @@ import {
 } from './utils';
 
 /**
+ * 🚀 Phase 11: 크기를 min/max로 제한
+ *
+ * CSS 명세: resolved size = clamp(min, base, max)
+ */
+function clampSize(value: number, min?: number, max?: number): number {
+  let result = value;
+  if (min !== undefined) result = Math.max(result, min);
+  if (max !== undefined) result = Math.min(result, max);
+  return result;
+}
+
+/**
  * CSS에서 기본적으로 inline-block으로 동작하는 요소들
  *
  * 이 요소들은 display가 명시되지 않아도 inline-block으로 취급
@@ -205,8 +217,17 @@ export class BlockEngine implements LayoutEngine {
 
       if (isInlineBlock) {
         // 🚀 Phase 6: Inline-block + vertical-align
-        const childWidth = boxModel.width ?? boxModel.contentWidth;
-        const childHeight = boxModel.height ?? boxModel.contentHeight;
+        // 🚀 Phase 11: min/max clamp 적용
+        const childWidth = clampSize(
+          boxModel.width ?? boxModel.contentWidth,
+          boxModel.minWidth,
+          boxModel.maxWidth
+        );
+        const childHeight = clampSize(
+          boxModel.height ?? boxModel.contentHeight,
+          boxModel.minHeight,
+          boxModel.maxHeight
+        );
         const totalWidth = childWidth + margin.left + margin.right;
 
         // 줄바꿈 필요 여부 확인
@@ -293,8 +314,17 @@ export class BlockEngine implements LayoutEngine {
         currentY += collapsedMarginTop;
 
         // Block 너비: 명시적 width 또는 100%
-        const childWidth = boxModel.width ?? availableWidth - margin.left - margin.right;
-        const childHeight = boxModel.height ?? boxModel.contentHeight;
+        // 🚀 Phase 11: min/max clamp 적용
+        const childWidth = clampSize(
+          boxModel.width ?? availableWidth - margin.left - margin.right,
+          boxModel.minWidth,
+          boxModel.maxWidth
+        );
+        const childHeight = clampSize(
+          boxModel.height ?? boxModel.contentHeight,
+          boxModel.minHeight,
+          boxModel.maxHeight
+        );
 
         layouts.push({
           elementId: child.id,

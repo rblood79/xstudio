@@ -315,8 +315,8 @@ export function useGridLayout(
     const rowTracks = parseGridTemplate(gridStyle?.gridTemplateRows, containerHeight);
 
     const gap = parseGap(gridStyle?.gap);
-    const columnGap = parseGap(gridStyle?.columnGap) || gap;
-    const rowGap = parseGap(gridStyle?.rowGap) || gap;
+    const columnGap = parseGap(gridStyle?.columnGap) ?? gap;
+    const rowGap = parseGap(gridStyle?.rowGap) ?? gap;
 
     const templateAreas = parseGridTemplateAreas(gridStyle?.gridTemplateAreas);
 

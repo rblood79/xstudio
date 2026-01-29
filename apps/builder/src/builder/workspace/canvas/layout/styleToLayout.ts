@@ -252,18 +252,21 @@ export function styleToLayout(element: Element): LayoutStyle {
   }
 
   // Flexbox Container
-  // @pixi/layout에서는 display: 'flex' 없이도 flexbox 속성이 적용됨
-  // flexDirection, gap 등이 있으면 자동으로 flex 컨테이너로 동작
+  // 🚀 Phase 12: flexDirection이 있으면 display: flex 자동 설정 (웹모드와 동일)
+  // 빌더 편의 기능: flex-direction 설정 시 자동으로 flex 컨테이너로 전환
   if (style.flexDirection) {
+    layout.display = 'flex';
     layout.flexDirection = style.flexDirection as LayoutStyle['flexDirection'];
   }
   if (style.flexWrap) {
     layout.flexWrap = style.flexWrap as LayoutStyle['flexWrap'];
   }
   if (style.justifyContent) {
+    layout.display = 'flex';
     layout.justifyContent = style.justifyContent as LayoutStyle['justifyContent'];
   }
   if (style.alignItems) {
+    layout.display = 'flex';
     layout.alignItems = style.alignItems as LayoutStyle['alignItems'];
   }
   if (style.alignContent) {

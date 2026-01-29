@@ -1266,8 +1266,8 @@ export class GridEngine implements LayoutEngine {
 
     // Gap 파싱
     const gap = parseGap(style?.gap);
-    const columnGap = parseGap(style?.columnGap) || gap;
-    const rowGap = parseGap(style?.rowGap) || gap;
+    const columnGap = parseGap(style?.columnGap) ?? gap;
+    const rowGap = parseGap(style?.rowGap) ?? gap;
 
     // Template Areas 파싱
     const templateAreas = parseGridTemplateAreas(style?.gridTemplateAreas);
@@ -1855,28 +1855,18 @@ private computeEffectiveDisplay(
 
 ---
 
-#### 이슈 7: min/max width/height 크기 제한 미적용
+#### 이슈 7: min/max width/height 크기 제한 미적용 ✅ (구현 완료)
 
 **CSS 명세:**
 - 요소 크기는 `clamp(min, base, max)` 형태로 제한됨
 
-**현재 문제:**
-- `parseBoxModel()`에서 min/max 파싱하지만 실제 계산에 사용 안 함
+**구현 내용:**
+- `types.ts`: `BoxModel`에 `minWidth`, `maxWidth`, `minHeight`, `maxHeight` 필드 추가
+- `utils.ts`: `parseBoxModel()`에서 `parseSize()`로 min/max 값 파싱
+- `BlockEngine.ts`: `clampSize()` 유틸리티 함수 추가, block/inline-block 양쪽에서 적용
 
-**해결 계획:**
 ```typescript
-// types.ts - BoxModel 확장
-export interface BoxModel {
-  width?: number;
-  height?: number;
-  minWidth?: number;
-  maxWidth?: number;
-  minHeight?: number;
-  maxHeight?: number;
-  // ...
-}
-
-// BlockEngine.ts - clamp 로직 추가
+// BlockEngine.ts - clampSize 유틸리티
 function clampSize(value: number, min?: number, max?: number): number {
   let result = value;
   if (min !== undefined) result = Math.max(result, min);
@@ -1884,42 +1874,45 @@ function clampSize(value: number, min?: number, max?: number): number {
   return result;
 }
 
-// calculate() 내
-const baseWidth = boxModel.width ?? availableWidth - margin.left - margin.right;
-const childWidth = clampSize(baseWidth, boxModel.minWidth, boxModel.maxWidth);
+// block 경로
+const childWidth = clampSize(
+  boxModel.width ?? availableWidth - margin.left - margin.right,
+  boxModel.minWidth, boxModel.maxWidth
+);
+const childHeight = clampSize(
+  boxModel.height ?? boxModel.contentHeight,
+  boxModel.minHeight, boxModel.maxHeight
+);
+
+// inline-block 경로도 동일하게 적용
 ```
 
 ---
 
-#### 이슈 8: box-sizing: border-box 미지원
+#### 이슈 8: box-sizing: border-box 미지원 ✅ (구현 완료)
 
 **CSS 명세:**
 - `border-box`: width/height가 padding + border 포함
 - `content-box` (기본): width/height가 콘텐츠만
 
-**현재 문제:**
-- content-box만 지원, border-box 무시
+**구현 내용:**
+- `utils.ts`: `parseBoxModel()`에서 `boxSizing === 'border-box'` 확인 후 padding + border 제외
 
-**해결 계획:**
 ```typescript
-// utils.ts - parseBoxModel() 수정
-export function parseBoxModel(...): BoxModel {
-  const boxSizing = style?.boxSizing as string | undefined;
+// utils.ts - parseBoxModel() 내부
+const boxSizing = style?.boxSizing as string | undefined;
+if (boxSizing === 'border-box') {
+  const paddingH = padding.left + padding.right;
+  const borderH = border.left + border.right;
+  const paddingV = padding.top + padding.bottom;
+  const borderV = border.top + border.bottom;
 
-  let effectiveWidth = width;
-  let effectiveHeight = height;
-
-  // border-box인 경우 padding/border 제외
-  if (boxSizing === 'border-box' && width !== undefined) {
-    effectiveWidth = width - padding.left - padding.right - border.left - border.right;
-    effectiveWidth = Math.max(0, effectiveWidth);
+  if (width !== undefined) {
+    width = Math.max(0, width - paddingH - borderH);
   }
-  if (boxSizing === 'border-box' && height !== undefined) {
-    effectiveHeight = height - padding.top - padding.bottom - border.top - border.bottom;
-    effectiveHeight = Math.max(0, effectiveHeight);
+  if (height !== undefined) {
+    height = Math.max(0, height - paddingV - borderV);
   }
-
-  return { width: effectiveWidth, height: effectiveHeight, ... };
 }
 ```
 
@@ -2054,3 +2047,4 @@ if (justifySelf === 'center') {
 | 2026-01-28 | 1.16 | Phase 9 CSS/WebGL 정합성 개선: BUTTON_SIZE_CONFIG를 ButtonSpec과 동기화, PropertyUnitInput에 fit-content/min-content/max-content 키워드 추가, renderWithCustomEngine에 부모 padding 처리 추가, rootLayout에 display: 'flex' 기본값 명시 |
 | 2026-01-28 | 1.17 | Phase 10 CSS Blockification 지원: flex/grid 컨테이너 자식의 inline-block → block 변환 구현, LayoutContext.parentDisplay 필드 추가, BlockEngine.computeEffectiveDisplay() 메서드 추가 |
 | 2026-01-28 | 1.18 | Phase 11 CSS 명세 누락 케이스 계획 추가: position absolute/fixed blockification 제외, min/max width/height, box-sizing border-box, overflow-x/y 혼합, visibility, Grid align-self/justify-self. Non-goals에 z-index, sticky, white-space, inherit/initial/unset 추가. 검증 방법 테이블 추가 |
+| 2026-01-29 | 1.19 | Phase 11 이슈 7+8 구현 완료: BoxModel에 min/max 필드 추가, parseBoxModel에서 min/max 파싱 및 box-sizing: border-box 처리, BlockEngine에 clampSize 적용 (block/inline-block 양쪽) |

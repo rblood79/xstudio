@@ -40,11 +40,10 @@ import { ViewportControlBridge } from "./viewport";
 import { BodyLayer } from "./layers";
 import { TextEditOverlay, useTextEdit } from "../overlay";
 // 🚀 Phase 6: calculateLayout 제거 - @pixi/layout이 자동으로 레이아웃 처리
-// 🚀 Phase 7: initYoga 추가 - @pixi/layout용 Yoga 초기화
+// 🚀 Phase 7: Yoga 초기화는 LayoutSystem.init()에 위임 (Application onInit 콜백으로 감지)
 // 🚀 Phase 4 (2026-01-28): 하이브리드 레이아웃 엔진 통합
 import {
   styleToLayout,
-  initYoga,
   selectEngine,
   shouldDelegateToPixiLayout,
   parsePadding,
@@ -512,7 +511,7 @@ const ElementsLayer = memo(function ElementsLayer({
 
         return (
           <LayoutContainer
-            key={child.id}
+            key={`custom-${child.id}`}
             elementId={child.id}
             layout={{
               position: 'absolute',
@@ -581,9 +580,13 @@ const ElementsLayer = memo(function ElementsLayer({
           : {};
 
         // 🚀 자식 요소에 display: flex가 있으면 해당 속성 적용
+        // 🚀 Phase 12: position: 'relative' 명시적 설정
+        // custom engine(block/grid) → @pixi/layout(flex) 전환 시
+        // Yoga가 이전 position: 'absolute'를 유지하는 문제 방지
+        // baseLayout에 position: 'absolute'가 있으면 그것으로 override됨
         const containerLayout = hasChildren && !baseLayout.display && !baseLayout.flexDirection
-          ? { display: 'flex' as const, flexDirection: 'column' as const, ...blockLayout, ...baseLayout }
-          : { ...blockLayout, ...baseLayout };
+          ? { position: 'relative' as const, display: 'flex' as const, flexDirection: 'column' as const, ...blockLayout, ...baseLayout }
+          : { position: 'relative' as const, ...blockLayout, ...baseLayout };
 
         // 🚀 Phase 10: Container 타입은 children을 ElementSprite에 전달
         // Container 컴포넌트가 children을 배경 안에 렌더링
@@ -612,8 +615,8 @@ const ElementsLayer = memo(function ElementsLayer({
                   : {};
 
                 const childContainerLayout = childHasChildren && !childLayout.flexDirection
-                  ? { display: 'flex' as const, flexDirection: 'column' as const, ...childBlockLayout, ...childLayout }
-                  : { ...childBlockLayout, ...childLayout };
+                  ? { position: 'relative' as const, display: 'flex' as const, flexDirection: 'column' as const, ...childBlockLayout, ...childLayout }
+                  : { position: 'relative' as const, ...childBlockLayout, ...childLayout };
 
                 // nested Container의 children
                 const nestedChildElements = isChildContainerType ? (pageChildrenMap.get(childEl.id) ?? []) : [];
@@ -630,8 +633,8 @@ const ElementsLayer = memo(function ElementsLayer({
                         const nestedLayout = styleToLayout(nestedEl);
                         const nestedHasChildren = (pageChildrenMap.get(nestedEl.id)?.length ?? 0) > 0;
                         const nestedContainerLayout = nestedHasChildren && !nestedLayout.flexDirection
-                          ? { display: 'flex' as const, flexDirection: 'column' as const, ...nestedLayout }
-                          : nestedLayout;
+                          ? { position: 'relative' as const, display: 'flex' as const, flexDirection: 'column' as const, ...nestedLayout }
+                          : { position: 'relative' as const, ...nestedLayout };
                         return (
                           <LayoutContainer key={nestedEl.id} elementId={nestedEl.id} layout={nestedContainerLayout}>
                             <ElementSprite
@@ -672,13 +675,19 @@ const ElementsLayer = memo(function ElementsLayer({
     // - @pixi/layout에서 이를 재현: flexDirection: 'row' + flexWrap: 'wrap'
     // - justifyContent: 'flex-start' → 좌측부터 순서대로 배치 (CSS inline-block 동작)
     // 🚀 Phase 9: display: 'flex' 명시적 추가 - @pixi/layout이 flex 컨테이너로 인식하도록
+    // 🚀 Phase 12: body가 display: flex를 명시한 경우 CSS flex 기본값 사용
+    // - CSS flex 기본값: flexWrap: 'nowrap', alignItems: 'stretch', alignContent: 'stretch'
+    // - 암시적(block) 기본값: flexWrap: 'wrap', alignItems: 'flex-start', alignContent: 'flex-start'
+    // - Yoga에서 flexWrap: 'wrap' + alignContent: 'flex-start'는 alignItems를 무시하므로
+    //   body가 flex일 때 CSS 기본값을 적용해야 justify-content/align-items가 정상 동작
+    const isBodyFlex = bodyLayout.display === 'flex';
     const result = {
       display: 'flex' as const,
       flexDirection: 'row' as const,
-      flexWrap: 'wrap' as const,
+      flexWrap: isBodyFlex ? ('nowrap' as const) : ('wrap' as const),
       justifyContent: 'flex-start' as const,
-      alignItems: 'flex-start' as const,
-      alignContent: 'flex-start' as const,
+      alignItems: isBodyFlex ? ('stretch' as const) : ('flex-start' as const),
+      alignContent: isBodyFlex ? ('stretch' as const) : ('flex-start' as const),
       ...bodyLayout,
       width: pageWidth,
       height: pageHeight,
@@ -732,12 +741,10 @@ export function BuilderCanvas({
     [isInteracting, containerSize]
   );
 
-  // 🚀 Phase 7: @pixi/layout용 Yoga 초기화
-  useEffect(() => {
-    initYoga().then(() => {
-      setYogaReady(true);
-    });
-  }, []);
+  // 🚀 Phase 7: Yoga 초기화는 LayoutSystem.init()에 위임
+  // Application의 onInit 콜백에서 yogaReady 설정 (아래 onInit prop 참고)
+  // 수동 initYoga() 호출 제거: LayoutSystem.init()와 이중 loadYoga() 호출로
+  // "Expected null or instance of Node" BindingError 발생 방지
 
   // 컨테이너 ref 콜백: 마운트 시점에 DOM 노드를 안전하게 확보
   const setContainerNode = useCallback((node: HTMLDivElement | null) => {
@@ -1388,8 +1395,8 @@ export function BuilderCanvas({
 
   return (
     <div ref={setContainerNode} className="canvas-container">
-      {/* 🚀 Phase 7: Yoga 로드 완료 대기 */}
-      {containerEl && yogaReady && (
+      {/* 🚀 Phase 7: Application 즉시 렌더링, Yoga는 LayoutSystem.init()에서 로드 */}
+      {containerEl && (
         <Application
           resizeTo={containerEl}
           background={backgroundColor}
@@ -1401,6 +1408,9 @@ export function BuilderCanvas({
           roundPixels={false}
           // 🚀 Phase 5: GPU 성능 최적화
           powerPreference="high-performance"
+          // 🚀 Phase 7 Fix: LayoutSystem.init() 완료 후 Yoga 준비 완료 콜백
+          // LayoutSystem.init()이 유일한 loadYoga() 호출 경로 → 인스턴스 중복 방지
+          onInit={() => setYogaReady(true)}
         >
           {/* P4: 메모이제이션된 컴포넌트 등록 (첫 번째 자식) */}
           <PixiExtendBridge />
@@ -1452,15 +1462,17 @@ export function BuilderCanvas({
             <CanvasBounds width={pageWidth} height={pageHeight} zoom={zoom} />
 
             {/* Elements Layer (ElementSprite 기반) */}
-            {/* 🚀 Phase 7: pageWidth/pageHeight 추가 - @pixi/layout 루트 설정 */}
-            <ElementsLayer
-              pageWidth={pageWidth}
-              pageHeight={pageHeight}
-              zoom={zoom}
-              panOffset={panOffset}
-              onClick={handleElementClick}
-              onDoubleClick={handleElementDoubleClick}
-            />
+            {/* 🚀 Phase 7: Yoga 준비 후에만 렌더링 (layout prop에 Yoga 필요) */}
+            {yogaReady && (
+              <ElementsLayer
+                pageWidth={pageWidth}
+                pageHeight={pageHeight}
+                zoom={zoom}
+                panOffset={panOffset}
+                onClick={handleElementClick}
+                onDoubleClick={handleElementDoubleClick}
+              />
+            )}
 
             {/* Selection Layer (최상단) */}
             {/* 🚀 Phase 2: layoutResult prop 제거 - ElementRegistry 사용 */}
