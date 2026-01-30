@@ -1,10 +1,105 @@
-# xstudio WASM 최적화 계획
+# xstudio WASM 렌더링 아키텍처 전환 계획
 
 > 작성일: 2026-01-29
-> 최종 수정: 2026-01-29 (6차 검토 반영)
+> 최종 수정: 2026-01-30 (아키텍처 정정 반영 — 7차 검토)
 > 대상: `apps/builder/src/builder/workspace/canvas/`
 > 현재 스택: PixiJS v8.14.3 + @pixi/react v8.0.5 + Yoga WASM v3.2.1 + Zustand
-> 참고: Pencil Desktop v1.1.10 아키텍처 분석 기반
+> 참고: Pencil Desktop v1.1.10 아키텍처 분석 기반 (`docs/PENCIL_APP_ANALYSIS.md` §11)
+
+---
+
+## ⚠️ 아키텍처 정정 (2026-01-30)
+
+초기 분석에서 "PixiJS가 메인 렌더러, pencil.wasm이 보조 최적화"로 기술하여,
+본 문서가 **PixiJS를 메인 렌더러로 유지하면서 보조 WASM 모듈만 추가하는 계획**으로 수립되었다.
+
+그러나 `renderSkia()` 메서드 역공학 결과, 실제 Pencil 아키텍처는:
+
+| 계층 | 역할 | 기술 |
+|------|------|------|
+| **메인 렌더러** | 모든 디자인 노드의 벡터/텍스트/이미지/이펙트 렌더링 | **CanvasKit/Skia WASM** (7.8MB) |
+| 씬 그래프/이벤트 | 씬 트리 관리 + EventBoundary (Hit Testing) 전용 | PixiJS v8 |
+| 레이아웃 | Flexbox 계산 | Yoga WASM |
+
+```
+Pencil 실제 구조:                    현재 xstudio:
+┌──────────────────────┐             ┌──────────────────────┐
+│ CanvasKit/Skia WASM  │ ← 메인      │ PixiJS v8 (WebGL)    │ ← 메인 (렌더링+씬+이벤트)
+│ (renderSkia 파이프라인)│             │                      │
+├──────────────────────┤             ├──────────────────────┤
+│ PixiJS v8            │ ← 보조      │ Yoga WASM            │ ← 레이아웃만
+│ (씬 그래프 + 이벤트)   │             │                      │
+├──────────────────────┤             └──────────────────────┘
+│ Yoga WASM            │ ← 레이아웃
+└──────────────────────┘
+```
+
+**본 문서의 최종 목표:** Pencil §11 아키텍처를 xstudio에 적용하여, **CanvasKit/Skia WASM을 메인 렌더러로 도입**하고 PixiJS는 씬 그래프/이벤트 레이어로 전환한다.
+
+- **Phase 0–4** (기존): 현재 PixiJS 아키텍처 위에서의 점진적 WASM 최적화 (Spatial Index, Layout 가속, Worker). CanvasKit 전환 전에도 독립적으로 유효하다.
+- **Phase 5** (신규): CanvasKit/Skia WASM 메인 렌더러 도입 — Pencil의 renderSkia 패턴 적용
+- **Phase 6** (신규): 고급 렌더링 기능 — 이중 Surface 캐싱, Dirty Rect, 이펙트 파이프라인
+
+---
+
+## CanvasKit/Skia 전환 장점 분석
+
+### 렌더링 품질
+
+| 영역 | 현재 (PixiJS) | 전환 후 (CanvasKit) | 개선 |
+|------|--------------|-------------------|------|
+| **벡터 도형** | PixiJS Graphics (제한적 Path) | Skia Path — 베지어, PathOp(Union/Intersect/Difference), Boolean 연산 | 디자인 툴 수준 벡터 정밀도 |
+| **텍스트 렌더링** | 브라우저 Canvas2D 래스터 | ParagraphBuilder — 서브픽셀 렌더링, StrutStyle, 정밀 커닝 | Figma/Sketch 급 텍스트 품질 |
+| **안티앨리어싱** | PixiJS 기본 (저사양 비활성화) | `paint.setAntiAlias(true)` + `font.setSubpixel(true)` 전역 적용 | 모든 도형/텍스트에 일관된 AA |
+| **Fill 시스템** | Color, LinearGradient 정도 | 6종 Shader: Color/Linear/Radial/Angular/MeshGradient/Image | Figma Fill과 동등 |
+| **블렌드 모드** | PixiJS 기본 (제한적) | 18종 네이티브 (Multiply, Screen, Overlay 등) | 포토샵급 합성 |
+| **이펙트** | PixiJS 기본 필터 | saveLayer 기반 — Opacity, BackgroundBlur, LayerBlur, DropShadow(Inner+Outer) | 실시간 이펙트 파이프라인 |
+| **Stroke** | 기본 선 그리기 | `path.makeStroked()` + PathOp으로 Inside/Outside/Center 정렬 | CSS stroke-alignment 구현 가능 |
+
+### 렌더링 성능
+
+| 영역 | 현재 (PixiJS) | 전환 후 (CanvasKit) | 예상 개선폭 |
+|------|--------------|-------------------|-----------|
+| **줌/패닝** | 매 프레임 전체 씬 재렌더링 | 이중 Surface 캐싱 — contentSurface 블리팅만 | **10x+** (< 1ms vs ~16ms) |
+| **정적 프레임** | 변경 없어도 전체 렌더 | contentSurface 캐시 히트 → GPU 제출만 | **< 1ms** |
+| **부분 변경** | 전체 캔버스 다시 그림 | Dirty Rect — 변경 영역만 재렌더링 | GPU 부하 **40-60% 감소** |
+| **뷰포트 컬링** | JS에서 AABB 검사 | renderSkia() 첫 줄에서 네이티브 AABB 컬링 | WASM 내부에서 처리 |
+| **텍스처 관리** | PixiJS 개별 텍스처 업로드 | CanvasKit 내부 GPU 리소스 관리 | 드로 콜 감소 |
+
+### 아키텍처 이점
+
+| 영역 | 현재 (PixiJS) | 전환 후 (CanvasKit) | 의미 |
+|------|--------------|-------------------|------|
+| **렌더링-이벤트 분리** | PixiJS가 렌더링+씬+이벤트 모두 담당 | 렌더링(CanvasKit) ↔ 이벤트(PixiJS) 완전 분리 | 각 계층 독립 최적화 가능 |
+| **Export 품질** | PixiJS → Canvas2D → 이미지 | CanvasKit 오프스크린 Surface → 벡터 정밀 Export | PNG/JPEG/WEBP 고품질 Export |
+| **플랫폼 일관성** | 브라우저 Canvas2D 의존 → 렌더링 차이 | Skia 엔진 직접 사용 → 모든 브라우저 동일 출력 | 크로스 브라우저 렌더링 일치 |
+| **확장성** | 새 이펙트 = PixiJS 필터 제약 | CanvasKit API 직접 사용 → 자유로운 이펙트 | 커스텀 셰이더, 마스킹, 클리핑 |
+| **Pencil 호환** | 렌더링 구조 상이 | 동일 아키텍처 → .pen 파일 렌더링 호환 가능 | 경쟁 제품 파일 호환 |
+
+### 비용 및 리스크
+
+| 항목 | 내용 | 심각도 | 완화 전략 |
+|------|------|--------|----------|
+| **번들 크기 증가** | +1.5MB (slim) ~ +3.5MB (full) | 중간 | Lazy loading + 브라우저 캐싱 |
+| **초기 로드** | CanvasKit WASM 초기화 오버헤드 | 중간 | 병렬 초기화 + 프리로드 |
+| **메모리 관리** | CanvasKit 객체 수동 `.delete()` 필요 (GC 아님) | 높음 | Disposable 패턴 래퍼 도입 |
+| **학습 곡선** | Skia Canvas API 학습 필요 | 중간 | Google CanvasKit 공식 문서 + Pencil 코드 참조 |
+| **이중 렌더러 복잡도** | PixiJS 씬 + CanvasKit 렌더 동기화 | 높음 | Feature Flag로 점진적 전환 |
+| **PixiJS 생태계** | @pixi/react, @pixi/layout 등 활용도 감소 | 낮음 | 씬 그래프/이벤트 레이어로 유지 |
+
+### 종합 평가
+
+| 평가 항목 | 점수 | 근거 |
+|----------|------|------|
+| 렌더링 품질 향상 | ★★★★★ | 벡터/텍스트/이펙트/Fill/블렌드 모두 디자인 툴 수준 |
+| 성능 향상 | ★★★★☆ | 이중 Surface + Dirty Rect로 대폭 개선, 단 초기 로드 비용 |
+| 아키텍처 정합성 | ★★★★★ | Pencil과 동일 구조 → 검증된 패턴 |
+| 구현 난이도 | ★★★☆☆ | 점진적 전환(Feature Flag)으로 리스크 관리 가능 |
+| 번들 비용 | ★★☆☆☆ | +1.5MB는 웹 앱에 부담이나, 디자인 툴 특성상 수용 가능 |
+
+> **핵심 판단:** PixiJS는 **게임 엔진** 기반으로 디자인 툴에 필요한 벡터 정밀도, 이펙트, Fill 다양성이 부족하다.
+> CanvasKit/Skia는 **2D 그래픽 엔진**으로 Figma, Pencil이 채택한 검증된 선택이며,
+> xstudio가 디자인 툴 품질 경쟁력을 확보하려면 렌더러 전환이 필수적이다.
 
 ---
 
@@ -1694,15 +1789,522 @@ export const wasmBridge = new WasmWorkerBridge();
 
 ---
 
+## Phase 5: CanvasKit/Skia WASM 메인 렌더러 도입
+
+> **목표:** Pencil §11 아키텍처를 적용하여 CanvasKit/Skia WASM을 메인 렌더러로 도입.
+> PixiJS는 씬 그래프 관리 + EventBoundary(Hit Testing)에만 사용하고, 모든 디자인 노드의 실제 렌더링은 CanvasKit이 담당한다.
+> **전제 조건:** Phase 0 벤치마크 완료 (현재 PixiJS 렌더링 성능 기준선 확보)
+> **참고:** `docs/PENCIL_APP_ANALYSIS.md` §11, `docs/PENCIL_VS_XSTUDIO_RENDERING.md` §10.9
+
+### 5.1 아키텍처 전환 개요
+
+**현재 (단일 렌더러):**
+```
+React Component → @pixi/react → PixiJS Container → PixiJS WebGL 렌더링
+```
+
+**목표 (이중 렌더러 — Pencil 패턴):**
+```
+React Component → @pixi/react → PixiJS Container (씬 그래프 + 이벤트만)
+                                      │
+                                      ▼ renderSkia()
+                              CanvasKit Surface → GPU 출력
+```
+
+### 5.2 CanvasKit WASM 로드 및 Surface 생성
+
+**의존성:**
+```json
+{
+  "dependencies": {
+    "canvaskit-wasm": "^0.39.0"
+  }
+}
+```
+
+> `canvaskit-wasm`은 Google 공식 npm 패키지이며, Skia의 WebAssembly 빌드이다.
+> gzip 기준 ~3.5MB (full) 또는 ~1.5MB (slim — GPU 전용, CPU 폴백 제외).
+
+**초기화:**
+```typescript
+// canvas/skia/initCanvasKit.ts
+
+import CanvasKitInit from 'canvaskit-wasm';
+import type { CanvasKit, Surface, Canvas } from 'canvaskit-wasm';
+
+let canvasKit: CanvasKit | null = null;
+
+export async function initCanvasKit(): Promise<CanvasKit> {
+  if (canvasKit) return canvasKit;
+
+  canvasKit = await CanvasKitInit({
+    locateFile: (file: string) => `/wasm/${file}`,
+  });
+
+  return canvasKit;
+}
+
+export function getCanvasKit(): CanvasKit {
+  if (!canvasKit) throw new Error('CanvasKit not initialized');
+  return canvasKit;
+}
+```
+
+**Surface 생성 (Pencil §10.9.2 패턴):**
+```typescript
+// canvas/skia/createSurface.ts
+
+export function createGPUSurface(
+  ck: CanvasKit,
+  canvas: HTMLCanvasElement,
+  width: number,
+  height: number,
+): Surface {
+  // 우선순위: WebGL GPU → SW 폴백 (Pencil 동일 패턴)
+  const surface = ck.MakeWebGLCanvasSurface(canvas);
+  if (surface) return surface;
+
+  console.warn('[Skia] WebGL surface 생성 실패, SW 폴백');
+  const swSurface = ck.MakeSWCanvasSurface(canvas);
+  if (swSurface) return swSurface;
+
+  throw new Error('Surface 생성 불가');
+}
+```
+
+### 5.3 renderSkia() 패턴 도입
+
+Pencil의 모든 씬 노드가 구현하는 `renderSkia(renderer, canvas, cullingBounds)` 패턴을
+xstudio의 Sprite 계층에 도입한다.
+
+**인터페이스:**
+```typescript
+// canvas/skia/types.ts
+
+import type { Canvas, Paint, Path } from 'canvaskit-wasm';
+
+interface SkiaRenderable {
+  /** CanvasKit Canvas에 직접 렌더링 */
+  renderSkia(canvas: Canvas, cullingBounds: DOMRect): void;
+}
+
+interface SkiaRenderContext {
+  canvasKit: CanvasKit;
+  canvas: Canvas;
+  cullingBounds: DOMRect;
+}
+```
+
+**ElementSprite 확장 (공통 패턴):**
+```typescript
+// Pencil renderSkia() 공통 패턴 — xstudio 적용
+renderSkia(canvas: Canvas, cullingBounds: DOMRect): void {
+  // 1) 활성화 + 뷰포트 컬링 (AABB)
+  if (!this.visible || !intersectsAABB(cullingBounds, this.getWorldBounds())) return;
+
+  // 2) 캔버스 상태 저장 + 로컬 변환
+  const saveCount = canvas.getSaveCount();
+  canvas.save();
+  canvas.concat(this.getLocalMatrix());
+
+  // 3) 이펙트 시작 (Opacity, Blur, Shadow)
+  this.beginRenderEffects(canvas);
+
+  // 4) 노드별 렌더링 (Fill, Stroke, 자식)
+  this.renderContent(canvas, cullingBounds);
+
+  // 5) 자식 노드 재귀 렌더링
+  for (const child of this.children) {
+    if ('renderSkia' in child) {
+      (child as SkiaRenderable).renderSkia(canvas, cullingBounds);
+    }
+  }
+
+  // 6) 캔버스 상태 복원
+  canvas.restoreToCount(saveCount);
+}
+```
+
+**노드별 renderContent 구현:**
+
+| 노드 타입 | CanvasKit API | 현재 xstudio 대응 |
+|----------|---------------|-------------------|
+| BoxSprite | `canvas.drawRRect()`, `canvas.drawPath()` | PixiJS Graphics |
+| TextSprite | `ParagraphBuilder` → `canvas.drawParagraph()` | PixiJS Text |
+| ImageSprite | `canvas.drawImageRect()` | PixiJS Sprite |
+| 컨테이너 | 자식 재귀 renderSkia() | PixiJS Container |
+
+### 5.4 SkiaRenderer 렌더 루프
+
+Pencil §10.9.3의 렌더 루프를 xstudio에 적용한다.
+
+```typescript
+// canvas/skia/SkiaRenderer.ts
+
+export class SkiaRenderer {
+  private surface: Surface;
+  private canvas: Canvas;
+  private rootNode: SkiaRenderable;
+
+  render(cullingBounds: DOMRect): void {
+    // CanvasKit Canvas에 직접 렌더링
+    this.canvas.clear(this.backgroundColor);
+
+    // 전체 씬 트리 renderSkia() 실행
+    this.rootNode.renderSkia(this.canvas, cullingBounds);
+
+    // GPU 제출
+    this.surface.flush();
+  }
+}
+```
+
+**PixiJS 렌더 루프와의 통합:**
+```
+매 프레임 (requestAnimationFrame):
+1. PixiJS ticker 콜백
+2. Zustand 상태 → PixiJS 씬 그래프 동기화 (기존 canvasSync.ts)
+3. PixiJS 씬 그래프에서 변경 감지
+4. ★ SkiaRenderer.render() 호출 — CanvasKit이 실제 렌더링 수행
+5. PixiJS는 씬 그래프/이벤트만 유지 (자체 렌더링 비활성화)
+```
+
+### 5.5 Fill 시스템 (6종, Shader 기반)
+
+Pencil §10.9.6의 Fill 시스템을 구현한다.
+
+```typescript
+// canvas/skia/fills.ts
+
+export function applyFill(
+  ck: CanvasKit,
+  paint: Paint,
+  fill: FillStyle,
+  bounds: Rect,
+): void {
+  switch (fill.type) {
+    case 'color':
+      paint.setColor(ck.Color4f(...fill.rgba));
+      break;
+    case 'linear-gradient':
+      paint.setShader(ck.Shader.MakeLinearGradient(
+        fill.start, fill.end, fill.colors, fill.positions, ck.TileMode.Clamp,
+      ));
+      break;
+    case 'radial-gradient':
+      paint.setShader(ck.Shader.MakeTwoPointConicalGradient(
+        fill.center, fill.startRadius, fill.center, fill.endRadius,
+        fill.colors, fill.positions, ck.TileMode.Clamp,
+      ));
+      break;
+    case 'angular-gradient':
+      paint.setShader(ck.Shader.MakeSweepGradient(
+        fill.cx, fill.cy, fill.colors, fill.positions,
+      ));
+      break;
+    case 'image':
+      // MakeImageShader — Fill/Fit/Crop/Tile 모드
+      paint.setShader(ck.Shader.MakeImageShader(
+        fill.image, fill.tileMode, fill.tileMode, fill.sampling, fill.matrix,
+      ));
+      break;
+    case 'mesh-gradient':
+      // Coons 패치 기반 메시 보간 (향후)
+      break;
+  }
+}
+```
+
+### 5.6 이펙트 파이프라인 (beginRenderEffects)
+
+Pencil §10.9.5의 이펙트 파이프라인을 구현한다.
+
+```typescript
+// canvas/skia/effects.ts
+
+export function beginRenderEffects(
+  ck: CanvasKit,
+  canvas: Canvas,
+  effects: EffectStyle[],
+): number {
+  let layerCount = 0;
+
+  for (const effect of effects) {
+    switch (effect.type) {
+      case 'opacity': {
+        const paint = new ck.Paint();
+        paint.setAlphaf(effect.value);
+        canvas.saveLayer(null, paint);
+        paint.delete();
+        layerCount++;
+        break;
+      }
+      case 'background-blur': {
+        const filter = ck.ImageFilter.MakeBlur(
+          effect.sigma, effect.sigma, ck.TileMode.Clamp, null,
+        );
+        const paint = new ck.Paint();
+        paint.setImageFilter(filter);
+        canvas.saveLayer(null, paint);
+        filter.delete();
+        paint.delete();
+        layerCount++;
+        break;
+      }
+      case 'drop-shadow': {
+        const filter = effect.inner
+          ? ck.ImageFilter.MakeDropShadowOnly(
+              effect.dx, effect.dy, effect.sigmaX, effect.sigmaY, effect.color,
+            )
+          : ck.ImageFilter.MakeDropShadow(
+              effect.dx, effect.dy, effect.sigmaX, effect.sigmaY, effect.color,
+            );
+        const paint = new ck.Paint();
+        paint.setImageFilter(filter);
+        canvas.saveLayer(null, paint);
+        filter.delete();
+        paint.delete();
+        layerCount++;
+        break;
+      }
+    }
+  }
+
+  return layerCount;
+}
+```
+
+### 5.7 PixiJS 역할 전환
+
+CanvasKit 도입 후 PixiJS의 역할을 제한한다:
+
+| 기능 | 전환 전 (현재) | 전환 후 (목표) |
+|------|---------------|---------------|
+| 디자인 노드 렌더링 | PixiJS WebGL | CanvasKit/Skia WASM |
+| 씬 그래프 관리 | PixiJS Container | PixiJS Container (유지) |
+| Hit Testing | PixiJS EventBoundary | PixiJS EventBoundary (유지) |
+| 텍스트 렌더링 | PixiJS Text | CanvasKit ParagraphBuilder |
+| 텍스트 측정 | PixiJS TextMetrics | PixiJS TextMetrics (유지 — 보조) |
+| 텍스처 캐싱 | PixiJS cacheAsTexture | CanvasKit Surface 캐싱 |
+
+**PixiJS 렌더링 비활성화:**
+```typescript
+// BuilderCanvas.tsx에서 PixiJS 자체 렌더링을 중지하고
+// CanvasKit 렌더 루프로 대체
+
+// 방법 1: PixiJS renderer를 headless 모드로 전환
+app.renderer.render = () => {}; // 렌더링 noop 처리
+// PixiJS 씬 그래프는 유지 (이벤트, hit test용)
+
+// 방법 2: 별도 캔버스에 CanvasKit Surface 생성
+// PixiJS 캔버스 위에 CanvasKit 캔버스를 오버레이
+```
+
+### 5.8 전환 전략 (점진적)
+
+한 번에 전체 전환하지 않고 노드 타입별로 점진적 전환한다:
+
+```
+Step 1: BoxSprite → renderSkia (가장 단순한 도형)
+Step 2: ImageSprite → renderSkia
+Step 3: TextSprite → renderSkia (ParagraphBuilder 전환)
+Step 4: 컨테이너/재귀 렌더링 완성
+Step 5: PixiJS 자체 렌더링 비활성화
+```
+
+각 Step에서 Feature Flag로 CanvasKit/PixiJS 렌더링 경로를 선택할 수 있다:
+```typescript
+const RENDER_MODE = import.meta.env.VITE_RENDER_MODE; // 'pixi' | 'skia' | 'hybrid'
+```
+
+### 5.9 Phase 5 산출물
+
+| 산출물 | 내용 |
+|--------|------|
+| `canvas/skia/initCanvasKit.ts` | CanvasKit WASM 초기화 |
+| `canvas/skia/createSurface.ts` | GPU Surface 생성 (WebGL → SW 폴백) |
+| `canvas/skia/SkiaRenderer.ts` | 렌더 루프 (renderSkia 트리 순회) |
+| `canvas/skia/fills.ts` | 6종 Fill Shader 구현 |
+| `canvas/skia/effects.ts` | 이펙트 파이프라인 (opacity, blur, shadow) |
+| `canvas/skia/types.ts` | SkiaRenderable 인터페이스 |
+| BoxSprite renderSkia() | 사각형/RoundedRect CanvasKit 렌더링 |
+| TextSprite renderSkia() | ParagraphBuilder 텍스트 렌더링 |
+| ImageSprite renderSkia() | drawImageRect 이미지 렌더링 |
+| Feature Flag | `VITE_RENDER_MODE=pixi\|skia\|hybrid` |
+
+### 5.10 성능 검증 대상
+
+| 지표 | 기준 (PixiJS) | 목표 (CanvasKit) | 비고 |
+|------|---------------|------------------|------|
+| 프레임 타임 1,000 요소 | Phase 0 실측 | 동등 이상 | 전환 초기에는 PixiJS와 동등하면 충분 |
+| 텍스트 렌더링 품질 | 브라우저 Canvas2D | CanvasKit ParagraphBuilder | 서브픽셀 렌더링 품질 향상 기대 |
+| 벡터 도형 정밀도 | PixiJS Graphics | CanvasKit Path | 베지어/클리핑 정밀도 향상 |
+| GPU 메모리 | Phase 0 실측 | +3.5MB (CanvasKit WASM) | slim 빌드 사용 시 ~1.5MB |
+| 초기 로드 | < 3초 목표 | CanvasKit 초기화 오버헤드 측정 | Lazy loading으로 완화 |
+
+---
+
+## Phase 6: 고급 렌더링 기능 (CanvasKit 활용)
+
+> **목표:** CanvasKit 메인 렌더러 도입 후, Pencil의 고급 렌더링 최적화를 적용한다.
+> **전제 조건:** Phase 5 완료 (CanvasKit 렌더 루프 동작)
+> **참고:** `docs/PENCIL_VS_XSTUDIO_RENDERING.md` §2.1, §4
+
+### 6.1 이중 Surface 캐싱 (Pencil §10.9.1)
+
+Pencil의 핵심 최적화: contentSurface + mainSurface 분리.
+
+```
+┌─────────────────────────────────┐
+│ contentSurface                   │
+│ (모든 디자인 노드 renderSkia)     │
+│                                  │
+│ 변경 시에만 전체 재렌더링          │
+│ 줌/패닝 시 블리팅만 수행           │
+└──────────────┬──────────────────┘
+               │ blit
+┌──────────────▼──────────────────┐
+│ mainSurface                      │
+│ (오버레이: 선택 박스, 가이드라인)   │
+│                                  │
+│ 매 프레임 갱신                    │
+└──────────────┬──────────────────┘
+               │ flush
+         ┌─────▼─────┐
+         │ GPU Output │
+         └───────────┘
+```
+
+**효과:**
+- 줌/패닝 시 전체 씬 재렌더링 불필요 → contentSurface 블리팅만 수행
+- 오버레이(선택 박스, 가이드라인)만 mainSurface에서 재렌더링
+- 대규모 캔버스에서 줌/패닝 응답 시간 대폭 개선
+
+### 6.2 Dirty Rect 렌더링
+
+변경된 영역만 다시 렌더링하는 최적화.
+
+```
+전체 렌더링 (현재):           Dirty Rect (목표):
+┌─────────────────┐         ┌─────────────────┐
+│ ██████████████  │         │ ·····█████····  │
+│ ██████████████  │         │ ·····█████····  │
+│ ██████████████  │    →    │ ·············   │
+│ ██████████████  │         │ ·············   │
+└─────────────────┘         └─────────────────┘
+GPU 전체 사용                변경 영역만 GPU 사용
+```
+
+CanvasKit의 `canvas.clipRect()` + `canvas.save()/restore()`로 구현:
+```typescript
+renderDirtyRect(canvas: Canvas, dirtyRect: Rect): void {
+  canvas.save();
+  canvas.clipRect(dirtyRect, ck.ClipOp.Intersect, false);
+  // dirtyRect과 교차하는 노드만 renderSkia()
+  this.rootNode.renderSkia(canvas, dirtyRectToDOMRect(dirtyRect));
+  canvas.restore();
+}
+```
+
+### 6.3 블렌드 모드 (18종, Pencil §10.9.8)
+
+```typescript
+// canvas/skia/blendModes.ts
+
+const BLEND_MODE_MAP: Record<string, BlendMode> = {
+  'normal': ck.BlendMode.SrcOver,
+  'multiply': ck.BlendMode.Multiply,
+  'screen': ck.BlendMode.Screen,
+  'overlay': ck.BlendMode.Overlay,
+  'darken': ck.BlendMode.Darken,
+  'lighten': ck.BlendMode.Lighten,
+  'color-dodge': ck.BlendMode.ColorDodge,
+  'color-burn': ck.BlendMode.ColorBurn,
+  'hard-light': ck.BlendMode.HardLight,
+  'soft-light': ck.BlendMode.SoftLight,
+  'difference': ck.BlendMode.Difference,
+  'exclusion': ck.BlendMode.Exclusion,
+  'hue': ck.BlendMode.Hue,
+  'saturation': ck.BlendMode.Saturation,
+  'color': ck.BlendMode.Color,
+  'luminosity': ck.BlendMode.Luminosity,
+  'plus-darker': ck.BlendMode.Plus,
+  'plus-lighter': ck.BlendMode.Plus,
+};
+```
+
+### 6.4 Export 파이프라인 (Pencil §10.9.12)
+
+CanvasKit 기반 고품질 이미지 Export:
+
+```typescript
+// canvas/skia/export.ts
+
+export function exportToImage(
+  ck: CanvasKit,
+  rootNode: SkiaRenderable,
+  width: number,
+  height: number,
+  format: 'png' | 'jpeg' | 'webp',
+  quality?: number,
+): Uint8Array {
+  // 1) 오프스크린 Surface 생성
+  const surface = ck.MakeSurface(width, height);
+  const canvas = surface.getCanvas();
+
+  // 2) 전체 씬 렌더링 (뷰포트 컬링 OFF)
+  const fullBounds = new DOMRect(0, 0, width, height);
+  rootNode.renderSkia(canvas, fullBounds);
+
+  // 3) 이미지 스냅샷
+  const image = surface.makeImageSnapshot();
+
+  // 4) 인코딩
+  const encoded = image.encodeToBytes(
+    format === 'png' ? ck.ImageFormat.PNG
+      : format === 'jpeg' ? ck.ImageFormat.JPEG
+      : ck.ImageFormat.WEBP,
+    quality ?? 100,
+  );
+
+  // 5) 리소스 정리
+  image.delete();
+  surface.delete();
+
+  return encoded;
+}
+```
+
+### 6.5 Phase 6 산출물
+
+| 산출물 | 내용 |
+|--------|------|
+| 이중 Surface 캐싱 | contentSurface + mainSurface 분리 |
+| Dirty Rect 렌더링 | 변경 영역만 재렌더링 |
+| 블렌드 모드 18종 | CanvasKit BlendMode 매핑 |
+| Export 파이프라인 | PNG/JPEG/WEBP 오프스크린 Export |
+
+### 6.6 성능 검증 대상
+
+| 지표 | 목표 | 비고 |
+|------|------|------|
+| 줌/패닝 프레임 타임 | < 8ms (120fps) | 이중 Surface 블리팅 |
+| 변경 없는 프레임 | < 1ms | contentSurface 캐시 히트 |
+| Dirty Rect 효율 | GPU 사용량 40-60% 감소 | 부분 영역만 렌더링 |
+| Export 품질 | 벡터 정밀도 보장 | CanvasKit Path 기반 |
+
+---
+
 ## WASM 초기화 통합
 
-### 전체 초기화 순서
+### 전체 초기화 순서 (수정됨 — Phase 5 포함)
 
 ```typescript
 // wasm-bindings/init.ts
 
 import { initSpatialWasm } from './spatialIndex';
 import { initLayoutWasm } from './layoutAccelerator';
+import { initCanvasKit } from '../skia/initCanvasKit';
 import { WASM_FLAGS } from './featureFlags';
 
 let wasmReady = false;
@@ -1713,17 +2315,19 @@ export async function initAllWasm(): Promise<void> {
   try {
     const tasks: Promise<void>[] = [];
 
-    // 각 init*Wasm()이 내부에서 init()을 호출하므로
-    // 어떤 플래그 조합이든 WASM 바이너리 로드가 보장된다.
-    // wasm-pack의 init()은 멱등(중복 호출 안전)하므로 병렬 실행해도 무방하다.
+    // Phase 1-2: 커스텀 Rust WASM 모듈
     if (WASM_FLAGS.SPATIAL_INDEX) tasks.push(initSpatialWasm());
     if (WASM_FLAGS.LAYOUT_ENGINE) tasks.push(initLayoutWasm());
+
+    // Phase 5: CanvasKit/Skia WASM (메인 렌더러)
+    if (WASM_FLAGS.CANVASKIT_RENDERER) tasks.push(initCanvasKit().then(() => {}));
 
     await Promise.all(tasks);
     wasmReady = true;
     console.log('[WASM] 모듈 초기화 완료', {
       spatial: WASM_FLAGS.SPATIAL_INDEX,
       layout: WASM_FLAGS.LAYOUT_ENGINE,
+      canvaskit: WASM_FLAGS.CANVASKIT_RENDERER,
     });
   } catch (error) {
     console.error('[WASM] 초기화 실패, JS 폴백 사용:', error);
@@ -1735,18 +2339,21 @@ export function isWasmReady(): boolean {
 }
 ```
 
-**Feature Flag (수정됨):**
+**Feature Flag (수정됨 — Phase 5 포함):**
 ```typescript
 // wasm-bindings/featureFlags.ts
 
 export const WASM_FLAGS = {
   SPATIAL_INDEX: import.meta.env.VITE_WASM_SPATIAL === 'true',
   LAYOUT_ENGINE: import.meta.env.VITE_WASM_LAYOUT === 'true',
+  CANVASKIT_RENDERER: import.meta.env.VITE_RENDER_MODE === 'skia'
+    || import.meta.env.VITE_RENDER_MODE === 'hybrid',
 } as const;
 
 // .env.development
 VITE_WASM_SPATIAL=true
 VITE_WASM_LAYOUT=false
+VITE_RENDER_MODE=pixi          // 'pixi' | 'skia' | 'hybrid'
 ```
 
 **앱 진입점에서 호출:**
@@ -1757,7 +2364,7 @@ import { initAllWasm } from '../wasm-bindings/init';
 import { initYoga } from '../canvas/layout/initYoga';
 
 useEffect(() => {
-  // Yoga와 커스텀 WASM 모듈 병렬 초기화
+  // Yoga와 모든 WASM 모듈 병렬 초기화 (Phase 1-2 + Phase 5)
   Promise.all([initYoga(), initAllWasm()]);
 }, []);
 ```
@@ -1790,21 +2397,30 @@ function someOperation(args) {
 | 성능 회귀 테스트 | 벤치마크 자동화 | 프레임 타임 임계값 |
 | 메모리 누수 테스트 | Chrome DevTools | WASM 메모리 증가 추적 |
 
-### WASM 바이너리 크기 예산 (수정됨)
+### WASM 바이너리 크기 예산 (수정됨 — Phase 5 포함)
 
-| 모듈 | 예상 크기 (gzip) | 한도 |
-|------|-----------------|------|
-| spatial_index | ~10KB | 20KB |
-| block_layout + grid_layout | ~20KB | 40KB |
-| **합계** | **~30KB** | **60KB** |
+| 모듈 | Phase | 예상 크기 (gzip) | 한도 |
+|------|-------|-----------------|------|
+| spatial_index | 1 | ~10KB | 20KB |
+| block_layout + grid_layout | 2 | ~20KB | 40KB |
+| **Phase 1-4 소계** | - | **~30KB** | **60KB** |
+| canvaskit-wasm (slim) | 5 | ~1.5MB | 2MB |
+| canvaskit-wasm (full) | 5 | ~3.5MB | 4MB |
+| **Phase 5 포함 합계** | - | **~1.53MB (slim)** | **~2.06MB** |
 
-> Phase 3(text_engine + css_parser)이 제거되어 바이너리 크기가 ~15KB 감소.
+> **주의:** Phase 5 CanvasKit WASM은 기존 Phase 1-4의 커스텀 Rust WASM (~30KB)과는 규모가 다르다.
+> Pencil 앱의 pencil.wasm이 7.8MB인 점과 비교하면, Google 공식 canvaskit-wasm slim 빌드 (~1.5MB)는 합리적이다.
+> Lazy loading + 캐싱으로 초기 로드 영향을 최소화한다.
 
 ---
 
-## 전체 로드맵 요약 (수정됨)
+## 전체 로드맵 요약 (수정됨 — Phase 5-6 추가)
 
 ```
+═══════════════════════════════════════════════════════════════
+  Phase 0–4: 현재 PixiJS 아키텍처 위 점진적 WASM 최적화
+═══════════════════════════════════════════════════════════════
+
 Phase 0: 환경 구축 및 벤치마크 기준선
   └─ Rust + wasm-pack 설정
   └─ Vite WASM 플러그인
@@ -1837,6 +2453,28 @@ Phase 4: Web Worker 통합 (수정됨)
   └─ Stale-While-Revalidate 동기화 전략
   └─ 초기 레이아웃은 메인 스레드, 변경분만 Worker
   └─ LayoutScheduler 구현 (RAF 기반 결과 적용)
+
+═══════════════════════════════════════════════════════════════
+  Phase 5–6: CanvasKit/Skia WASM 메인 렌더러 전환 (Pencil §11)
+═══════════════════════════════════════════════════════════════
+      │
+Phase 5: CanvasKit/Skia WASM 메인 렌더러 도입
+  └─ canvaskit-wasm 의존성 추가 (~1.5MB slim)
+  └─ initCanvasKit.ts — WASM 초기화
+  └─ createSurface.ts — GPU Surface 생성 (WebGL → SW 폴백)
+  └─ SkiaRenderer.ts — 렌더 루프 (renderSkia 트리 순회)
+  └─ fills.ts — 6종 Fill Shader (Color/Linear/Radial/Angular/Mesh/Image)
+  └─ effects.ts — 이펙트 파이프라인 (Opacity/Blur/Shadow)
+  └─ 노드별 renderSkia() — BoxSprite, TextSprite, ImageSprite
+  └─ PixiJS → 씬 그래프/이벤트 전용으로 역할 축소
+  └─ Feature Flag: VITE_RENDER_MODE=pixi|skia|hybrid
+  └─ 점진적 전환: Box → Image → Text → 컨테이너 → PixiJS 렌더링 비활성화
+      │
+Phase 6: 고급 렌더링 기능 (CanvasKit 활용)
+  └─ 이중 Surface 캐싱 (contentSurface + mainSurface)
+  └─ Dirty Rect 렌더링 (변경 영역만 재렌더링)
+  └─ 블렌드 모드 18종 (CanvasKit BlendMode)
+  └─ Export 파이프라인 (PNG/JPEG/WEBP 오프스크린)
 ```
 
 ### 성능 목표 (Phase 0 이후 업데이트)
@@ -1847,13 +2485,17 @@ Phase 4: Web Worker 통합 (수정됨)
 | 라쏘 선택 | O(n) → O(k) (query_rect) | Phase 1 완료 후 |
 | 레이아웃 재계산 | 실측 기준선 대비 개선 | Phase 2 완료 후 |
 | 메인 스레드 부하 | UI jank 제거 | Phase 4 완료 후 |
-| WASM 바이너리 | < 60KB (gzip) | 전체 |
+| Phase 1-4 WASM 바이너리 | < 60KB (gzip) | Phase 4 완료 후 |
+| **렌더링 품질** | **Pencil 동등 수준** (벡터/텍스트/이펙트) | **Phase 5 완료 후** |
+| **줌/패닝 프레임 타임** | **< 8ms** (이중 Surface 블리팅) | **Phase 6 완료 후** |
+| **Dirty Rect 효율** | **GPU 사용량 40-60% 감소** | **Phase 6 완료 후** |
 
 > **핵심 원칙:**
 > 1. 벤치마크 없는 추정치를 신뢰하지 않는다 — Phase 0에서 실측한다.
 > 2. WASM 경계 넘기는 최소화한다 — 배치 단위로만 호출한다.
 > 3. 기존 JS 캐시로 충분하면 WASM을 도입하지 않는다 — 복잡도 비용을 고려한다.
 > 4. 모든 WASM 경로에 JS 폴백을 유지한다 — Feature Flag로 즉시 롤백 가능.
+> 5. **Phase 5-6은 Phase 0-4와 독립적으로 진행 가능하다** — CanvasKit 도입은 커스텀 WASM 모듈과 병행한다.
 
 ---
 
