@@ -1037,3 +1037,331 @@ interface VariableStore {
 | **사용자 기대** | Figma/Sketch 수준의 시각 편집 | Webflow/Framer 수준의 CSS 제어 |
 
 Pencil의 디자인 변수/테마 시스템을 CSS Custom Properties 형태로 도입하면, xstudio는 **웹 빌더의 CSS 표준 강점**과 **디자인 도구의 토큰/테마 강점**을 결합할 수 있다.
+
+---
+
+## 10. Pencil 에디터 UI 컴포넌트 구조 분석
+
+> 분석일: 2026-01-30
+> 대상: `/tmp/pencil-asar-extracted/out/editor/assets/index.js` (5.7MB, 40,042줄 minified)
+> 방법: esbuild minified 번들 역공학 — grep 패턴 매칭 + 코드 세그먼트 추출
+
+### 10.1 앱 진입점 및 라우팅
+
+```
+App Root (vKt)
+├── PostHog Analytics Provider — 사용자 행동 추적
+├── Sentry Error Tracking — 에러 모니터링
+├── IPC Provider — Electron 메인↔렌더러 통신
+└── HashRouter (bKt)
+    ├── /editor/:fileName?  → EditorPage (hY)
+    ├── /generator           → Generator (yKt)
+    └── /                    → Home/Landing
+```
+
+- **HashRouter** 사용 — Electron 파일 프로토콜(`file://`) 호환을 위해 BrowserRouter 대신 Hash 기반 라우팅
+- 메인 에디터는 `/editor/:fileName?` 경로로 진입, 선택적 파일명 파라미터
+
+---
+
+### 10.2 메인 에디터 레이아웃
+
+```
+EditorPage (hY) — 파일 로드 + IPC 파일 이벤트 처리
+└── MainEditor (gKt) — ref forwarded, CanvasKit/Skia + PixiJS 초기화
+    │
+    ├── TitleBar (YIt) ← Electron 전용
+    │   └── 윈도우 컨트롤 (최소화/최대화/닫기)
+    │
+    ├── Left Panel (mKt) — 기본 200px 너비, 리사이즈 가능
+    │   ├── Layers Toggle Button (ENe)
+    │   ├── Design Kits & Style Guides Button (ANe)
+    │   └── Layer List — TreeView 기반, 키보드 탐색 지원
+    │       ├── ArrowDown/Up: 포커스 이동
+    │       ├── ArrowRight: 확장 또는 하위 이동
+    │       ├── ArrowLeft: 축소 또는 상위 이동
+    │       └── Home/End: 처음/끝 이동
+    │
+    ├── Canvas Area — 중앙 전체 영역
+    │   ├── PixiJS v8 Manager — WebGL 렌더링 컨텍스트
+    │   ├── SkiaRenderer — CanvasKit WASM (pencil.wasm, 7.8MB)
+    │   ├── Zoom Controls (fKt) — 줌 버튼 + 레벨 % 표시
+    │   └── Tool Overlay (p$t) — 현재 도구별 인터랙션 레이어
+    │
+    ├── Right Panel / Properties Panel (eKt) — 우측 인스펙터
+    │   ├── Transform: x, y, width, height, rotation
+    │   ├── Layout: hugWidth/Height, fillContainer, childSpacing, padding
+    │   ├── Corner Radius: 단일 또는 개별 4모서리 편집
+    │   │   └── "Edit corners individually" 토글 버튼 (dh 함수)
+    │   ├── Fill: 다중 fills 배열 (Color/Image/Gradient)
+    │   ├── Stroke: align, thickness, fill
+    │   ├── Effect: shadow (inner/outer), blur, spread
+    │   └── Constraints: 부모 기준 제약 조건
+    │
+    ├── Variables Panel (cKt) — React Portal, 드래그 가능 Dialog
+    │   ├── Toolbar: 핸들 바 (cursor-grab)
+    │   ├── 변수 테이블: Name | Theme Values | Actions
+    │   └── Add Dropdown: Color, Number, String 타입 선택
+    │
+    ├── AI Chat Panel (ARt) — Claude 통합
+    │   ├── 모델 선택 (환경별 분기)
+    │   ├── 프롬프트 입력 + 제출
+    │   └── 프레임 → 코드 생성 기능
+    │
+    └── Activation Dialog (pKt) — 라이선스 관리
+```
+
+---
+
+### 10.3 도구 시스템
+
+Pencil의 도구 시스템은 `x_t` 클래스로 관리되며, 단축키 기반 도구 전환을 지원한다.
+
+| 도구 | 단축키 | 생성 노드 | 기본 스타일 |
+|------|--------|----------|-----------|
+| **Move** | `V` | — | 선택/이동 (기본 도구) |
+| **Hand** | `H` | — | grab/grabbing 커서 |
+| **Rectangle** | `R` | `rectangle` | `fills: [{type: Color, color: "#CCCCCC"}]` |
+| **Ellipse** | `O` | `ellipse` | `fills: [{type: Color, color: "#CCCCCC"}]` |
+| **Frame** | `F` | `frame` | 레이아웃 컨테이너 |
+| **Text** | `T` | text | 텍스트 편집 모드 |
+| **Sticky Note** | `N` | sticky_note | 250×219px, `#E8F6FFcc` 배경, `#009DFFcc` 테두리 |
+| **Icon Font** | `L` | icon_font | 24×24px, Lucide Icons |
+
+**도구 상태 관리:**
+```javascript
+class x_t {
+  activeTool = "move";  // 기본값
+
+  setActiveTool(tool) {
+    iC.capture("set-active-tool", { tool }); // PostHog 이벤트
+    this.activeTool = tool;
+    this.eventEmitter.emit("toolChange", this.activeTool);
+  }
+}
+```
+
+---
+
+### 10.4 키보드 단축키 체계
+
+`mUt` 배열에 전체 단축키가 정의되어 있다.
+
+| 카테고리 | 단축키 | 기능 |
+|---------|--------|------|
+| **General** | `Cmd+C` | Copy |
+| | `Cmd+V` | Paste |
+| | `Cmd+X` | Cut |
+| | `Cmd+D` | 선택 노드 복제 (`duplicateSelectedNodes()`) |
+| | `Cmd+'` | 픽셀 그리드 토글 (`showPixelGrid`) |
+| | `Cmd+Shift+'` | 픽셀 스냅 토글 (`roundToPixels`) |
+| **Selection** | `Cmd+A` | 전체 선택 |
+| | `Cmd+Click` | Deep Select (하위 요소 직접 선택) |
+| | `Esc` | 선택 해제 |
+| | `Shift+Enter` | 부모 선택 |
+| **Navigation** | `Cmd+Scroll` | 줌 |
+| | `Space+Drag` | 패닝 |
+| | `=` | 줌 인 |
+| **Tools** | `V` | Move |
+| | `H` | Hand |
+| | `R` | Rectangle |
+| | `O` | Ellipse |
+| | `T` | Text |
+| | `F` | Frame |
+| | `N` | Sticky Note |
+| | `L` | Icon Font |
+
+---
+
+### 10.5 에디터 설정 시스템
+
+설정은 `localStorage("pencil-config")`에 JSON으로 저장되며, `Jfe` 객체가 기본값을 정의한다.
+
+```javascript
+const Jfe = {
+  snapToObjects: true,           // 객체 스냅
+  roundToPixels: true,           // 픽셀 그리드 스냅
+  showPixelGrid: true,           // 픽셀 그리드 표시
+  scrollWheelZoom: false,        // 스크롤 휠 줌
+  invertZoomDirection: false,    // 줌 방향 반전
+  leftPanelWidth: 200,           // 좌측 패널 너비 (px)
+  leftPanelOpen: true,           // 좌측 패널 열림 상태
+  hideSidebarWhenLayersAreOpen: false, // 레이어 열림 시 사이드바 숨김
+  generatingEffectEnabled: true  // 생성 이펙트 활성화
+};
+```
+
+---
+
+### 10.6 UI 라이브러리 스택
+
+| 라이브러리 | 역할 | 사용 위치 |
+|-----------|------|----------|
+| **React** | UI 레이어 | 전체 에디터 (HashRouter, Context, Hooks) |
+| **Radix UI** | 헤드리스 컴포넌트 | DropdownMenu, Popover, Dialog, AlertDialog |
+| **Tailwind CSS** | 유틸리티 퍼스트 스타일링 | 전체 UI (`focus-visible:border-[#3D99FF]` 등) |
+| **Lucide Icons** | 아이콘 시스템 | 도구바, 패널, 버튼 |
+| **Sonner** | Toast 알림 | 작업 완료/에러 피드백 |
+| **PostHog** | 사용자 분석 | 도구 전환, 기능 사용 추적 |
+| **Sentry** | 에러 추적 | 런타임 에러 모니터링 |
+
+**Radix UI 컴포넌트 상세:**
+- `DropdownMenu`: Trigger, Portal, Content, Group, Label, Item, CheckboxItem, RadioGroup, RadioItem
+- `Popover`: Root, Anchor, Trigger, Portal, Content (Modal/Non-modal)
+- `AlertDialog`: role="alertdialog", backdrop-blur-sm, bg-black/50
+
+---
+
+### 10.7 다이얼로그/모달 시스템
+
+| 다이얼로그 | 방식 | 특징 |
+|-----------|------|------|
+| **Alert Dialog** | Radix AlertDialog | `role="alertdialog"`, `backdrop-blur-sm bg-black/50` |
+| **Variables Panel** | React Portal | `role="dialog"`, 드래그 가능 (`cursor-grab active:cursor-grabbing`) |
+| **Activation Dialog** | 커스텀 | 라이선스 활성화/관리 |
+| **MCP Setup** | 커스텀 | Claude Code 연동 설정 |
+
+**플랫폼별 모서리 스타일:**
+```javascript
+style: {
+  cornerShape: Or.isElectron ? "squircle" : "round",
+  borderRadius: Or.isElectron ? "80px" : "32px"
+}
+```
+- **Electron**: macOS 네이티브 느낌의 squircle 모서리 (80px)
+- **웹**: 일반 round 모서리 (32px)
+
+---
+
+### 10.8 AI 통합 (Claude)
+
+Pencil은 Claude AI를 에디터에 직접 통합하여 디자인-코드 변환을 지원한다.
+
+**환경별 모델 지원:**
+
+| 환경 | 사용 가능 모델 | 기본 모델 |
+|------|--------------|----------|
+| **Electron** (데스크톱) | Sonnet 4.5, Haiku 4.5, Opus 4.5 | Opus 4.5 |
+| **Cursor** (IDE 통합) | Sonnet 4.5, Haiku 4.5, Composer | Composer |
+| **기타** (웹) | — | — |
+
+**통신 방식:**
+```javascript
+// 프롬프트 제출 — IPC 기반
+submitPrompt(prompt, model) {
+  this.ipc.notify("submit-prompt", { prompt, model });
+}
+
+// 모델 선택
+getAvailableModels() {
+  if (mR === "Electron") {
+    return {
+      models: [
+        { label: "Sonnet 4.5", id: "claude-4.5-sonnet" },
+        { label: "Haiku 4.5", id: "claude-4.5-haiku" },
+        { label: "Opus 4.5", id: "claude-4.5-opus" }
+      ],
+      defaultModel: { label: "Opus 4.5", id: "claude-4.5-opus" }
+    };
+  }
+}
+```
+
+**주요 AI 기능:**
+- Claude Code CLI 연동 (`curl -fsSL https://claude.ai/install.sh | bash`)
+- API Key 직접 입력 (`console.anthropic.com/settings/keys`)
+- MCP 도구 연동 (`/mcp` 명령어)
+- 프레임 → 코드 생성: "Generate code from 'Step 3 Frame'"
+- 디자인 프롬프트: "Design a modern technical looking web app for managing renewable energy usage."
+
+---
+
+### 10.9 렌더링 파이프라인
+
+```
+React UI Layer (DOM)
+    │
+    ↓ 사용자 이벤트 / 상태 변경
+    │
+SceneManager (CNe) — React Context
+    │ SceneGraph 노드 트리 관리
+    │ FileManager — .pen 파일 I/O
+    │ VariableManager — $-- 변수 resolve
+    │ UndoManager — 트랜잭션 기반 undo/redo
+    │
+    ↓ 노드 데이터 (resolved properties)
+    │
+SkiaRenderer — CanvasKit WASM (pencil.wasm, 7.8MB)
+    │ 벡터 도형, 텍스트, 이미지, 효과 렌더링
+    │ 안티앨리어싱, 패스 연산, 블렌드 모드
+    │
+    ↓ 래스터라이즈된 텍스처
+    │
+PixiJS v8 Manager — WebGL 컨텍스트
+    │ 배치 렌더링, 텍스처 관리
+    │ 뷰포트 변환 (줌/패닝)
+    │
+    ↓ GPU 출력
+    │
+Canvas Element (화면)
+```
+
+---
+
+### 10.10 내장 디자인 킷 (Design System JSON)
+
+에디터 번들에 4개의 디자인 킷이 JSON으로 임베딩되어 있다.
+
+| 디자인 킷 | 컴포넌트 수 | 특징 |
+|----------|-----------|------|
+| **HALO** | 20+ | 라운드 스타일, 보라/파랑 계열 |
+| **Lunaris** | 20+ | 다크 테마 중심 |
+| **Nitro** | 20+ | 미니멀 스타일 |
+| **Shadcn** | 20+ | shadcn/ui 호환, 50+ 시맨틱 변수 |
+
+**공통 컴포넌트 목록:**
+- Navigation: Sidebar, Breadcrumb, Menu
+- Forms: Input, Select, Textarea, OTP Input, Checkbox, Radio, Switch
+- Data: Data Table (Header/Content/Footer), Progress, Badge
+- Feedback: Alert (Info/Error/Success/Warning), Tooltip
+- Layout: Card (Header/Content/Actions), Avatar (Text/Image), Accordion
+- Interactive: Dropdown, Toggle
+
+각 디자인 킷은 재사용 가능 컴포넌트(`reusable: true`)와 변수(`$--` 접두사)를 포함하며, 사용자가 킷을 선택하면 해당 컴포넌트와 변수가 프로젝트에 로드된다.
+
+---
+
+### 10.11 컴포넌트 아키텍처 특징 요약
+
+| 특징 | 구현 방식 | 비고 |
+|------|----------|------|
+| **React + HashRouter** | Electron file:// 호환 SPA | BrowserRouter 대신 Hash 기반 |
+| **Radix UI 기반** | 접근성(A11y) 준수 헤드리스 컴포넌트 | ARIA role, keyboard navigation |
+| **Tailwind CSS** | 유틸리티 퍼스트 스타일링 | 빠른 UI 개발, 일관된 디자인 |
+| **React Portal** | 오버레이 UI (Variables Panel, Alert Dialog) | z-index 관리 단순화 |
+| **React Context** | SceneManager, IPC Provider | 전역 상태 공유 |
+| **IPC 통신** | `@ha/ipc` 프로토콜 | Electron 메인↔렌더러 양방향 |
+| **localStorage 설정** | `pencil-config` 키 | 에디터 설정 영속화 |
+| **Squircle 디자인** | Electron에서 macOS 느낌 | `cornerShape: "squircle"` |
+| **PostHog + Sentry** | 분석 + 에러 추적 | 프로덕션 모니터링 |
+| **Claude AI 내장** | Opus/Sonnet/Haiku 모델 | 디자인→코드 변환 |
+| **4개 디자인 킷** | JSON 임베딩 | HALO, Lunaris, Nitro, Shadcn |
+
+---
+
+### 10.12 xstudio와의 에디터 UI 구조 비교
+
+| 항목 | Pencil | xstudio |
+|------|--------|---------|
+| **라우팅** | HashRouter (`/editor/:fileName?`) | BrowserRouter (웹 앱) |
+| **상태 관리** | React Context (SceneManager) + EventEmitter3 | Zustand + Jotai 하이브리드 |
+| **UI 컴포넌트** | Radix UI + Tailwind CSS | shadcn/ui + Tailwind CSS |
+| **레이어 패널** | TreeView 기반, 키보드 탐색(Arrow/Home/End) | 트리 뷰 (구현 방식 확인 필요) |
+| **속성 패널** | Fill/Stroke/Effect/Layout/Corner 통합 인스펙터 | Transform/Layout/Appearance/Typography 4섹션 |
+| **도구 시스템** | 8개 도구 + 단축키 (`V/H/R/O/F/T/N/L`) | 웹 빌더 도구 (선택/텍스트/컴포넌트) |
+| **설정 저장** | `localStorage("pencil-config")` | 서버 기반 (Supabase) |
+| **AI 통합** | Claude (Opus/Sonnet/Haiku) IPC 기반 | 구현 중 |
+| **디자인 킷** | 4개 내장 (HALO/Lunaris/Nitro/Shadcn) | 컴포넌트 라이브러리 |
+| **다이얼로그** | Radix AlertDialog + Portal | (확인 필요) |
+| **플랫폼 분기** | Electron/Cursor/Web 3가지 | 웹 전용 |
+| **번들 구조** | 단일 index.js (5.7MB) + WASM (7.8MB) | Vite 코드 스플리팅 |
