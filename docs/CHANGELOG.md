@@ -7,6 +7,56 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed - Button 레이아웃 버그 및 빌드 동기화 수정 (2026-01-31)
+
+#### 개요
+1. display:block 부모 내 width:100% 버튼과 다음 버튼 사이 불필요한 수직 여백 발생 — `calculateContentHeight` padding 이중 계산 수정
+2. 다른 PC에서 `@xstudio/specs` 빌드 산출물 미동기화 — turbo.json dev task 의존성 추가
+3. `@xstudio/publish` 빌드 실패 — 누락된 컴포넌트 export 및 타입 에러 수정
+4. 서로 다른 명시적 높이의 inline-block 버튼 수직 정렬 실패 — `parseBoxModel` border-box 처리 추가
+
+#### 수정 내용
+
+**1. Button contentHeight padding 이중 계산 (핵심 버그)**
+- `calculateContentHeight`가 버튼 높이에 `paddingY * 2`를 포함하여 반환
+- BlockEngine이 `contentHeight + padding + border`를 계산할 때 padding 이중 합산
+- 결과: BlockEngine 할당 높이(35px) > PixiButton 렌더링 높이(27px) → 8px 여백
+- 수정: `contentHeight`를 텍스트 높이만 반환, `MIN_BUTTON_HEIGHT`는 content-box 기준으로 변환
+
+**2. turbo.json dev task 의존성 누락**
+- `pnpm dev` 실행 시 `@xstudio/specs` 빌드가 트리거되지 않음
+- `dist/`가 `.gitignore`에 포함되어 git에 추적되지 않음
+- 다른 PC에서 clone 후 `pnpm dev` 시 specs dist 부재로 import 실패
+- 수정: dev task에 `"dependsOn": ["^build"]` 추가
+
+**3. @xstudio/shared 컴포넌트 export 누락**
+- `list.ts`에 Form, RangeCalendar, Pagination, Disclosure, DisclosureGroup export 누락
+- `Table`은 default export이나 `export *`로 재수출 불가
+- publish tsconfig의 paths가 `index.ts`(list.ts 경유)를 우선 해석하여 빌드 실패
+- 수정: `list.ts`에 누락 export 추가 + `export { default as Table }` 추가
+
+**4. @xstudio/publish 타입 에러**
+- ComponentRegistry: Radio, Switch, Popover, Table, Pagination의 `as ComponentType<Record<string, unknown>>` 캐스팅 실패 → `as unknown as` 중간 단계 추가
+- ElementRenderer: `state` 속성이 `{ get, set }` 객체로 생성되었으나 `Map<string, unknown>` 필요 → `new Map()` 사용
+- ElementRenderer: `Action` 타입 config 불일치 → `as Action` 캐스팅 적용
+
+**5. parseBoxModel border-box 처리 누락 (센터링 버그)**
+- display:block 부모 내 button1(height:200px), button2(height:100px)가 inline-block으로 배치될 때 수직 센터링 미작동
+- 원인: PixiButton은 명시적 height를 border-box(총 렌더링 높이)로 처리하나, `parseBoxModel`은 content-box로 취급
+- BlockEngine이 content height(200) + padding(8) + border(2) = 210px를 할당 → PixiButton은 200px로 렌더링 → 10px 오차
+- width:100%에서도 동일: 부모 800px → content(800) + padding(24) + border(2) = 826px → 26px 오버플로우
+- Flex 경로는 `SELF_PADDING_TAGS` + `stripSelfRenderedProps()`로 자체 렌더링 요소의 padding/border를 제거하나 Block 경로에는 동등한 처리 부재
+- 수정: `parseBoxModel`에 `treatAsBorderBox` 조건 추가 — 폼 요소(button, input, select)에 명시적 width/height가 있으면 border-box로 변환하여 padding/border를 차감
+
+#### 변경된 파일
+- `turbo.json` — dev task에 `"dependsOn": ["^build"]` 추가
+- `packages/shared/src/components/list.ts` — Form, RangeCalendar, Pagination, Disclosure, DisclosureGroup, Table export 추가
+- `apps/publish/src/registry/ComponentRegistry.tsx` — Radio, Switch, Popover, Table, Pagination 타입 캐스팅 수정
+- `apps/publish/src/renderer/ElementRenderer.tsx` — state를 Map 인스턴스로 변경, Action 타입 캐스팅 수정
+- `apps/builder/src/builder/workspace/canvas/layout/engines/utils.ts` — calculateContentHeight 버튼 padding 이중 계산 제거, parseBoxModel 폼 요소 border-box 변환 추가
+
+---
+
 ### Fixed - Button borderWidth/레이아웃 이중 계산 수정 (2026-01-30)
 
 #### 개요

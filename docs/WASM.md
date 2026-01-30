@@ -220,14 +220,20 @@ lto = true
 ```json
 {
   "scripts": {
-    "wasm:build": "wasm-pack build apps/builder/src/builder/workspace/canvas/wasm --target web --out-dir ../wasm-bindings/pkg",
-    "wasm:dev": "wasm-pack build apps/builder/src/builder/workspace/canvas/wasm --target web --dev --out-dir ../wasm-bindings/pkg",
+    "wasm:build": "wasm-pack build apps/builder/src/builder/workspace/canvas/wasm --target bundler --out-dir ../wasm-bindings/pkg",
+    "wasm:dev": "wasm-pack build apps/builder/src/builder/workspace/canvas/wasm --target bundler --dev --out-dir ../wasm-bindings/pkg",
     "wasm:test": "wasm-pack test --node apps/builder/src/builder/workspace/canvas/wasm"
   }
 }
 ```
 
 **Vite 설정 추가 (`vite.config.ts`):**
+
+> **wasm-pack target 선택:** `--target bundler`를 사용한다.
+> - `--target web`: 직접 `<script type="module">`에서 사용. Vite 번들러와 경로/로딩 충돌 잦음.
+> - `--target bundler` (권장): ES module 출력 → Vite가 import 경로를 자동 해석. `.wasm` 파일도 Vite 에셋 파이프라인으로 처리.
+> - `--target nodejs`: 브라우저 사용 불가.
+
 ```typescript
 import wasm from 'vite-plugin-wasm';
 import topLevelAwait from 'vite-plugin-top-level-await';
@@ -239,7 +245,9 @@ export default defineConfig({
     // ... 기존 플러그인
   ],
   optimizeDeps: {
-    exclude: ['xstudio-wasm'],
+    // wasm-bindings/pkg의 실제 패키지명과 일치시킨다.
+    // wasm-pack --target bundler 출력의 package.json "name" 필드를 확인.
+    exclude: ['xstudio-spatial-index', 'xstudio-layout'],
   },
 });
 ```
@@ -769,9 +777,13 @@ function findElementsInLasso(
 
   if (WASM_FLAGS.SPATIAL_INDEX) {
     // SpatialIndex: O(k) — AABB 교차 검증 포함
-    // ※ bounds 소스: SpatialIndex는 layoutBoundsRegistry 기준 (레이아웃 엔진 계산 결과).
-    //   JS 폴백의 calculateBounds(style)와 다른 소스이므로, 결과가 미세하게 다를 수 있다.
-    //   (예: style에 width:50%가 있으면 JS 폴백은 raw 값, WASM은 resolved px 값 사용)
+    // ※ bounds 소스 기준:
+    //   - SpatialIndex: layoutBoundsRegistry 기준 (Yoga 레이아웃 엔진이 계산한 resolved px 값).
+    //   - JS 폴백: calculateBounds(style) — raw style 값 기반 계산.
+    //   → **layoutBoundsRegistry가 정답(ground truth)이다.**
+    //     Yoga가 계산한 레이아웃 결과가 실제 렌더링 위치이므로, SpatialIndex의 결과가 정확하다.
+    //     JS 폴백은 상대값(%, auto 등)을 해석하지 못해 미세한 차이가 발생할 수 있다.
+    //     Feature Flag 전환 시 선택 결과가 달라질 수 있으므로, Phase 1 검증에서 확인한다.
     return queryRect(
       lassoBounds.x, lassoBounds.y,
       lassoBounds.x + lassoBounds.width,
@@ -1885,9 +1897,17 @@ let canvasKit: CanvasKit | null = null;
 export async function initCanvasKit(): Promise<CanvasKit> {
   if (canvasKit) return canvasKit;
 
+  // ⚠️ locateFile 경로 전략:
+  // `/wasm/${file}` 하드코딩은 Vite base 경로나 CDN 배포 시 404 발생.
+  // Vite의 import.meta.url 기반 에셋 해석을 사용한다.
   canvasKit = await CanvasKitInit({
-    locateFile: (file: string) => `/wasm/${file}`,
+    locateFile: (file: string) =>
+      new URL(`/wasm/${file}`, import.meta.url).href,
   });
+
+  // 대안: public/ 디렉토리에 WASM 파일 배치 시
+  // Vite가 자동으로 base 경로를 적용하므로 아래도 가능:
+  // locateFile: (file) => `${import.meta.env.BASE_URL}wasm/${file}`
 
   return canvasKit;
 }
@@ -2057,7 +2077,12 @@ export function applyFill(
       ));
       break;
     case 'mesh-gradient':
-      // Coons 패치 기반 메시 보간 (향후)
+      // ⚠️ CanvasKit 공개 API에 직접 mesh gradient 매핑이 없다.
+      // 대체 전략 (구현 시 선택):
+      // 1. CanvasKit.Shader.MakeSweepGradient + 다중 색상 정지점으로 근사
+      // 2. 런타임에 Coons 패치를 ImageData로 전처리 → MakeImageShader
+      // 3. 커스텀 SkSL(RuntimeEffect) 셰이더로 메시 보간 구현
+      // 구현 범위는 Phase 5 착수 시 Figma/Pencil의 mesh gradient 지원 수준을 조사하여 결정.
       break;
   }
 }
@@ -2132,22 +2157,40 @@ CanvasKit 도입 후 PixiJS의 역할을 제한한다:
 | 씬 그래프 관리 | PixiJS Container | PixiJS Container (유지) | — |
 | Hit Testing | PixiJS EventBoundary | PixiJS EventBoundary (유지) | — |
 | 텍스트 렌더링 | PixiJS Text | CanvasKit ParagraphBuilder | — |
-| 텍스트 측정 | PixiJS TextMetrics | PixiJS TextMetrics (유지 — 보조) | — |
+| 텍스트 측정 | PixiJS TextMetrics | CanvasKit Paragraph 측정 (주), PixiJS TextMetrics (pixi 모드 폴백) | TextSprite 측정 경로 전환 필요 |
 | 텍스처 캐싱 | PixiJS cacheAsTexture | CanvasKit Surface 캐싱 | SpritePool, autoGarbageCollect |
 | 뷰포트 컬링 | JS AABB Array.filter() | renderSkia() 내부 네이티브 AABB | useViewportCulling.ts |
 | 뷰포트 조작 | ViewportController (Container.x/y) | canvas.concat(matrix) | ViewportController.ts 수정 필요 |
 
 **PixiJS 렌더링 비활성화:**
+
+> **⚠️ 주의:** `app.renderer.render = () => {}` 단순 noop 처리는 **금지**.
+> PixiJS의 `render()` 내부에서 Transform/Bounds 갱신(`updateTransform`, `getBounds`)이 수행되므로,
+> noop 처리 시 `EventBoundary` 히트테스트와 `getWorldBounds()` 기반 컬링이 깨진다.
+
 ```typescript
-// BuilderCanvas.tsx에서 PixiJS 자체 렌더링을 중지하고
-// CanvasKit 렌더 루프로 대체
+// BuilderCanvas.tsx — PixiJS "업데이트만 유지" 경로
 
-// 방법 1: PixiJS renderer를 headless 모드로 전환
-app.renderer.render = () => {}; // 렌더링 noop 처리
-// PixiJS 씬 그래프는 유지 (이벤트, hit test용)
+// 방법 1: Ticker에서 업데이트 분리 (권장)
+// PixiJS v8에서는 Ticker가 update와 render를 분리할 수 있다.
+app.ticker.add(() => {
+  // 씬 그래프 Transform/Bounds 갱신은 유지
+  app.stage.updateTransform();
+  // GPU 렌더링은 수행하지 않음 — CanvasKit이 담당
+});
+app.ticker.autoStart = true;
+// app.render()를 호출하지 않으면 GPU 제출만 스킵
 
-// 방법 2: 별도 캔버스에 CanvasKit Surface 생성
+// 방법 2: 별도 캔버스에 CanvasKit Surface 생성 (§5.7.1 참조)
 // PixiJS 캔버스 위에 CanvasKit 캔버스를 오버레이
+// PixiJS 캔버스: visibility: hidden, pointer-events: none
+// PixiJS Application.render()는 호출하되 캔버스가 hidden이므로 GPU 부하 최소화
+
+// ⚠️ 두 방법 모두 PixiJS의 씬 그래프 업데이트(Transform, Bounds, EventBoundary)를
+// 정상 유지해야 한다. 최종 구현 시 다음을 검증:
+// - app.stage.getBounds()가 정확한 값을 반환하는지
+// - eventMode="static" 요소의 히트테스트가 정상 동작하는지
+// - 드래그 인터랙션(useDragInteraction.ts)이 정상 동작하는지
 ```
 
 #### 5.7.1 WebGL 컨텍스트 충돌 전략
@@ -2170,16 +2213,49 @@ app.renderer.render = () => {}; // 렌더링 noop 처리
 
 **구현:**
 1. CanvasKit 전용 `<canvas>` 엘리먼트를 PixiJS 캔버스 **위에** 오버레이 (`position: absolute; z-index` 사용)
-2. PixiJS 캔버스: `visibility: hidden; pointer-events: none` — WebGL 컨텍스트는 유지하되 렌더링은 noop 처리
-3. CanvasKit 캔버스에서 수신한 포인터 이벤트를 PixiJS `EventBoundary`로 포워딩:
+2. PixiJS 캔버스: `visibility: hidden; pointer-events: none` — WebGL 컨텍스트는 유지하되 렌더링은 비활성화
+3. **이벤트 브리징 전략** — CanvasKit 캔버스의 DOM 이벤트를 PixiJS 캔버스로 재전달:
+
+   > **⚠️ `FederatedPointerEvent` 직접 생성은 PixiJS 내부 API 의존.**
+   > xstudio의 현재 코드는 `FederatedPointerEvent`를 직접 생성하지 않으며,
+   > `eventMode="static"` 기반 자동 이벤트 처리를 사용한다.
+   > 이벤트 포워딩은 **DOM 레벨에서 수행**하여 내부 API 의존을 피한다.
+
    ```typescript
-   canvaskitCanvas.addEventListener('pointermove', (e) => {
-     // PixiJS EventBoundary에 합성 이벤트 전달
-     app.renderer.events.rootBoundary.mapEvent(
-       new FederatedPointerEvent(app.renderer.events, e)
+   // canvas/skia/eventBridge.ts
+
+   const FORWARDED_EVENTS = [
+     'pointerdown', 'pointermove', 'pointerup', 'pointercancel',
+     'pointerenter', 'pointerleave', 'pointerover', 'pointerout',
+     'wheel', 'click', 'dblclick', 'contextmenu',
+   ] as const;
+
+   export function bridgeEvents(
+     source: HTMLCanvasElement,  // CanvasKit 캔버스
+     target: HTMLCanvasElement,  // PixiJS 캔버스
+   ): () => void {
+     const handlers = FORWARDED_EVENTS.map((type) => {
+       const handler = (e: Event) => {
+         // DOM 이벤트를 PixiJS 캔버스로 재디스패치
+         // PixiJS EventSystem이 자동으로 FederatedEvent를 생성
+         const clone = new (e.constructor as typeof Event)(e.type, e);
+         target.dispatchEvent(clone);
+         e.preventDefault();
+       };
+       source.addEventListener(type, handler);
+       return { type, handler };
+     });
+     // cleanup 함수 반환
+     return () => handlers.forEach(({ type, handler }) =>
+       source.removeEventListener(type, handler)
      );
-   });
+   }
    ```
+
+   > **포인터 캡처:** `setPointerCapture`/`releasePointerCapture`도 브리징해야
+   > 드래그 인터랙션(`useDragInteraction.ts`)이 정상 동작한다.
+   > **키보드:** 키보드 이벤트는 캔버스가 아닌 `document` 레벨에서 처리하므로 브리징 불필요.
+
 4. `skia` 모드(단독)에서는 PixiJS WebGL 컨텍스트를 `loseContext()`로 해제하여 GPU 리소스 회수
 
 > **`pixi` 모드 전환 시:** CanvasKit 캔버스를 제거하고 PixiJS 캔버스를 활성화한다.
@@ -2193,9 +2269,45 @@ app.renderer.render = () => {}; // 렌더링 noop 처리
 Step 1: BoxSprite → renderSkia (가장 단순한 도형)
 Step 2: ImageSprite → renderSkia
 Step 3: TextSprite → renderSkia (ParagraphBuilder 전환)
+        ⚠️ 텍스트 측정도 CanvasKit으로 전환 필수 (아래 참조)
 Step 4: 컨테이너/재귀 렌더링 완성
 Step 5: PixiJS 자체 렌더링 비활성화
 ```
+
+> **⚠️ Step 3 텍스트 측정 전환:**
+> 텍스트 렌더링을 CanvasKit `ParagraphBuilder`로 전환하면서 측정은 PixiJS `TextMetrics`를 유지하면
+> **레이아웃/선택 박스가 어긋난다** (폰트 힌팅, 서브픽셀 렌더링, 자간 계산 차이).
+>
+> Step 3에서 반드시 **측정 경로도 함께 전환**해야 한다:
+> ```typescript
+> // canvas/skia/textMeasure.ts
+>
+> function measureText(
+>   ck: CanvasKit,
+>   fontMgr: FontMgr,
+>   text: string,
+>   style: TextStyle,
+>   maxWidth: number,
+> ): { width: number; height: number; lineCount: number } {
+>   const paraStyle = new ck.ParagraphStyle({ textStyle: style });
+>   const builder = ck.ParagraphBuilder.Make(paraStyle, fontMgr);
+>   builder.addText(text);
+>   const paragraph = builder.build();
+>   paragraph.layout(maxWidth);
+>
+>   const result = {
+>     width: paragraph.getMaxWidth(),
+>     height: paragraph.getHeight(),
+>     lineCount: paragraph.getLineMetrics().length,
+>   };
+>
+>   paragraph.delete();
+>   builder.delete();
+>   return result;
+> }
+> ```
+> 이 측정 결과를 Yoga 레이아웃의 `measureFunc`에 연결하여
+> **렌더링과 측정이 동일 엔진(CanvasKit)**을 사용하도록 보장한다.
 
 각 Step에서 Feature Flag로 CanvasKit/PixiJS 렌더링 경로를 선택할 수 있다:
 ```typescript
@@ -2214,6 +2326,8 @@ const RENDER_MODE = import.meta.env.VITE_RENDER_MODE; // 'pixi' | 'skia' | 'hybr
 | `canvas/skia/types.ts` | SkiaRenderable 인터페이스 |
 | `canvas/skia/disposable.ts` | CanvasKit 리소스 수동 해제 래퍼 (Disposable 패턴) |
 | `canvas/skia/fontManager.ts` | CanvasKit 폰트 등록/캐싱 파이프라인 |
+| `canvas/skia/textMeasure.ts` | CanvasKit Paragraph 기반 텍스트 측정 (Yoga measureFunc 연결) |
+| `canvas/skia/eventBridge.ts` | DOM 이벤트 브리징 (CanvasKit 캔버스 → PixiJS 캔버스) |
 | BoxSprite renderSkia() | 사각형/RoundedRect CanvasKit 렌더링 |
 | TextSprite renderSkia() | ParagraphBuilder 텍스트 렌더링 |
 | ImageSprite renderSkia() | drawImageRect 이미지 렌더링 |
@@ -2249,11 +2363,22 @@ function renderNode(ck: CanvasKit, canvas: Canvas): void {
 }
 ```
 
-> **TC39 미지원 환경:** TypeScript 5.2+ `using` 미사용 시 try/finally로 폴백:
+> **⚠️ xstudio 빌드 호환성:**
+> 현재 `tsconfig.app.json`은 `target: "ES2020"`, `lib`에 `"esnext.disposable"` 미포함이므로
+> `using` 키워드가 **컴파일되지 않는다.** Phase 5 착수 시 다음 중 하나를 선택:
+>
+> **방법 A (권장):** try/finally 패턴으로 구현 (tsconfig 변경 불필요):
 > ```typescript
 > const scope = new SkiaDisposable();
 > try { /* ... */ } finally { scope[Symbol.dispose](); }
 > ```
+>
+> **방법 B:** tsconfig를 업데이트하여 `using` 키워드 활성화:
+> ```json
+> // tsconfig.app.json
+> { "compilerOptions": { "target": "ES2022", "lib": ["ES2022", "DOM", "DOM.Iterable", "esnext.disposable"] } }
+> ```
+> 방법 B는 target 상향에 따른 다른 빌드 영향을 사전 검증해야 한다.
 
 > **고급 최적화 (Post-Phase 6):** Figma는 Paint/Path 객체를 프레임 간 재사용하여 delete() 호출 빈도를 줄이고,
 > Rust 커스텀 할당기로 WASM 힙을 최적화한다. Adobe는 대규모 레이어 시 메모리 풀링을 적용한다.
@@ -2450,6 +2575,11 @@ export function exportToImage(
 > Phase 6.4 완료 후 SVG/PDF Export를 별도 태스크로 추가한다.
 > - **SVG:** `SkPictureRecorder` → `SkPicture` → SVG serializer
 > - **PDF:** `CanvasKit.MakePDFDocument()` → 페이지별 렌더링 → PDF 바이너리
+>
+> **⚠️ 빌드 타입 제약:** SVG/PDF API는 **canvaskit-wasm full 빌드에서만 사용 가능**하다.
+> slim 빌드는 GPU 렌더링에 집중하며 일부 유틸리티 API가 비활성화된다.
+> Phase 5.2의 빌드 선택 기준에 따라 초기에는 full 빌드를 사용하므로 문제없으나,
+> slim 전환 시 Export 기능이 별도 full 빌드 런타임 로드가 필요할 수 있다.
 
 ### 6.5 Phase 6 산출물
 
@@ -2596,14 +2726,22 @@ VITE_RENDER_MODE=pixi          // 'pixi' | 'skia' | 'hybrid'
 ```
 
 **앱 진입점에서 호출:**
+
+> **⚠️ Yoga 초기화 주의:** 현재 `initYoga.ts`는 `@pixi/layout`의 `getYoga()` 확인,
+> `window.__XSTUDIO_YOGA_INSTANCE__` 글로벌 캐시, Promise 중복 방지 등 3단계 가드를 갖추고 있다.
+> `LayoutSystem`이 내부적으로 `loadYoga()`를 호출하므로, 여기서 `initYoga()`를 직접 호출하면
+> **중복 초기화 충돌**이 발생할 수 있다. 기존 `initYoga.ts`의 가드 로직을 활용하여 안전하게 통합한다.
+
 ```typescript
 // BuilderCanvas.tsx 또는 Workspace.tsx
 
 import { initAllWasm } from '../wasm-bindings/init';
-import { initYoga } from '../canvas/layout/initYoga';
+import { initYoga, isYogaInitialized } from '../canvas/layout/initYoga';
 
 useEffect(() => {
-  // Yoga와 모든 WASM 모듈 병렬 초기화 (Phase 1-2 + Phase 5)
+  // initYoga()는 내부적으로 중복 초기화를 방지한다 (3단계 가드).
+  // LayoutSystem이 이미 Yoga를 초기화했으면 즉시 반환.
+  // initAllWasm()은 커스텀 WASM 모듈(SpatialIndex, Layout, CanvasKit)만 초기화.
   Promise.all([initYoga(), initAllWasm()]);
 }, []);
 ```

@@ -540,8 +540,9 @@ export function calculateContentHeight(element: Element): number {
 
   // 2. 버튼은 size prop에 따라 높이 결정
   // 🚀 Phase 12 Fix: PixiButton과 동일한 공식 사용
-  // 기존: BUTTON_SIZE_CONFIG[size].height (고정값, 실제 렌더링과 불일치)
-  // 수정: max(paddingY*2 + textHeight, MIN_BUTTON_HEIGHT) (PixiButton 공식과 동일)
+  // contentHeight는 content-box 높이(텍스트 영역)만 반환해야 함
+  // padding/border는 parseBoxModel에서 별도 관리 → BlockEngine이 합산
+  // 이전 버그: paddingY를 여기서 포함 → BlockEngine에서 padding 이중 계산 → 여백 발생
   const tag = (element.tag ?? '').toLowerCase();
   if (tag === 'button') {
     const props = element.props as Record<string, unknown> | undefined;
@@ -550,7 +551,9 @@ export function calculateContentHeight(element: Element): number {
     const fontSize = parseNumericValue(style?.fontSize) ?? sizeConfig.fontSize;
     const resolvedLineHeight = parseLineHeight(style, fontSize);
     const textHeight = estimateTextHeight(fontSize, resolvedLineHeight);
-    return Math.max(sizeConfig.paddingY * 2 + textHeight, MIN_BUTTON_HEIGHT);
+    // MIN_BUTTON_HEIGHT는 border-box 기준 → content-box 최소값으로 변환
+    const minContentHeight = Math.max(0, MIN_BUTTON_HEIGHT - sizeConfig.paddingY * 2 - sizeConfig.borderWidth * 2);
+    return Math.max(textHeight, minContentHeight);
   }
 
   // 3. lineHeight가 명시적으로 지정되어 있으면 최소 높이로 사용
@@ -639,8 +642,17 @@ export function parseBoxModel(
 
   // 🚀 Phase 11: box-sizing: border-box 처리
   // border-box인 경우 width/height에서 padding + border 제외하여 content-box 크기로 변환
+  //
+  // 🚀 Self-rendering 요소(button, input, select)도 border-box로 처리:
+  // PixiButton 등은 명시적 width/height를 총 렌더링 크기(border-box)로 취급하지만,
+  // BlockEngine은 content-box + padding + border로 합산하므로 이중 계산 발생.
+  // Flex 경로에서는 stripSelfRenderedProps()로 해결하지만,
+  // BlockEngine 경로에서는 parseBoxModel 단계에서 border-box 변환으로 해결.
   const boxSizing = style?.boxSizing as string | undefined;
-  if (boxSizing === 'border-box') {
+  const treatAsBorderBox = boxSizing === 'border-box' ||
+    (isFormElement && (width !== undefined || height !== undefined));
+
+  if (treatAsBorderBox) {
     const paddingH = padding.left + padding.right;
     const borderH = border.left + border.right;
     const paddingV = padding.top + padding.bottom;
