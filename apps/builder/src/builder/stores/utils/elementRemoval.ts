@@ -369,11 +369,22 @@ export const createRemoveElementAction =
     // 선택된 요소가 제거된 경우 선택 해제
     const isSelectedRemoved = elementIdsToRemove.includes(currentState.selectedElementId || "");
 
+    // selectedElementIds에서 삭제된 요소 필터링
+    const removeSet = new Set(elementIdsToRemove);
+    const filteredSelectedIds = currentState.selectedElementIds.filter(
+      (id: string) => !removeSet.has(id)
+    );
+    const hasSelectedIdsChanged = filteredSelectedIds.length !== currentState.selectedElementIds.length;
+
     set({
       elements: filteredElements,
       ...(isSelectedRemoved && {
         selectedElementId: null,
         selectedElementProps: {},
+      }),
+      ...(hasSelectedIdsChanged && {
+        selectedElementIds: filteredSelectedIds,
+        selectedElementIdsSet: new Set(filteredSelectedIds),
       }),
     });
 

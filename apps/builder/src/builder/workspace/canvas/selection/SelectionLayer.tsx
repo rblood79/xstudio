@@ -245,7 +245,7 @@ export const SelectionLayer = memo(function SelectionLayer({
   return (
     <pixiContainer label="SelectionLayer">
       {/* 선택 박스 (선택된 요소가 있을 때) */}
-      {selectionBounds && (
+      {selectionBounds && selectedElements.length > 0 && (
         <SelectionBox
           ref={selectionBoxRef}
           bounds={selectionBounds}

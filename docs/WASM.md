@@ -1897,17 +1897,14 @@ let canvasKit: CanvasKit | null = null;
 export async function initCanvasKit(): Promise<CanvasKit> {
   if (canvasKit) return canvasKit;
 
-  // ⚠️ locateFile 경로 전략:
-  // `/wasm/${file}` 하드코딩은 Vite base 경로나 CDN 배포 시 404 발생.
-  // Vite의 import.meta.url 기반 에셋 해석을 사용한다.
+  // CanvasKit WASM 파일 배치: public/wasm/ 디렉토리에 고정.
+  // - canvaskit.wasm (~3.5MB full / ~1.5MB slim)은 번들러 에셋 파이프라인에 부적합 (용량, 해싱 불필요).
+  // - public/ 파일은 Vite가 빌드 시 그대로 복사하며, BASE_URL을 통해 배포 환경에 맞는 경로를 보장.
+  // - CDN/서브 경로 배포 시에도 import.meta.env.BASE_URL이 자동으로 올바른 prefix를 제공.
   canvasKit = await CanvasKitInit({
     locateFile: (file: string) =>
-      new URL(`/wasm/${file}`, import.meta.url).href,
+      `${import.meta.env.BASE_URL}wasm/${file}`,
   });
-
-  // 대안: public/ 디렉토리에 WASM 파일 배치 시
-  // Vite가 자동으로 base 경로를 적용하므로 아래도 가능:
-  // locateFile: (file) => `${import.meta.env.BASE_URL}wasm/${file}`
 
   return canvasKit;
 }
@@ -1925,9 +1922,9 @@ export function getCanvasKit(): CanvasKit {
 export function createGPUSurface(
   ck: CanvasKit,
   canvas: HTMLCanvasElement,
-  width: number,
-  height: number,
 ): Surface {
+  // ⚠️ MakeWebGLCanvasSurface는 canvas.width/height를 내부적으로 읽는다.
+  // 호출 전에 canvas.width = deviceWidth, canvas.height = deviceHeight를 설정할 것.
   // 우선순위: WebGL GPU → SW 폴백 (Pencil 동일 패턴)
   const surface = ck.MakeWebGLCanvasSurface(canvas);
   if (surface) return surface;
@@ -1961,6 +1958,20 @@ interface SkiaRenderContext {
   canvas: Canvas;
   cullingBounds: DOMRect;
 }
+
+/**
+ * PixiJS Matrix (2x3) → CanvasKit SkMatrix (3x3 flat array) 변환
+ *
+ * PixiJS: { a, b, c, d, tx, ty } → 2x3 affine
+ * CanvasKit: Float32Array(9) → [scaleX, skewX, transX, skewY, scaleY, transY, persp0, persp1, persp2]
+ */
+function toSkMatrix(m: Matrix): Float32Array {
+  return Float32Array.of(
+    m.a,  m.c,  m.tx,   // row 0: scaleX, skewX, transX
+    m.b,  m.d,  m.ty,   // row 1: skewY, scaleY, transY
+    0,    0,    1,      // row 2: perspective (항상 identity)
+  );
+}
 ```
 
 **ElementSprite 확장 (공통 패턴):**
@@ -1973,7 +1984,10 @@ renderSkia(canvas: Canvas, cullingBounds: DOMRect): void {
   // 2) 캔버스 상태 저장 + 로컬 변환
   const saveCount = canvas.getSaveCount();
   canvas.save();
-  canvas.concat(this.getLocalMatrix());
+  // ⚠️ PixiJS Matrix → CanvasKit SkMatrix 변환 필수
+  // PixiJS Matrix는 [a, b, c, d, tx, ty] (2x3),
+  // CanvasKit은 3x3 행렬 [scaleX, skewX, transX, skewY, scaleY, transY, 0, 0, 1].
+  canvas.concat(toSkMatrix(this.getLocalMatrix()));
 
   // 3) 이펙트 시작 (Opacity, Blur, Shadow)
   this.beginRenderEffects(canvas);
@@ -2174,8 +2188,22 @@ CanvasKit 도입 후 PixiJS의 역할을 제한한다:
 // 방법 1: Ticker에서 업데이트 분리 (권장)
 // PixiJS v8에서는 Ticker가 update와 render를 분리할 수 있다.
 app.ticker.add(() => {
-  // 씬 그래프 Transform/Bounds 갱신은 유지
+  // 씬 그래프 Transform/Bounds 갱신
   app.stage.updateTransform();
+
+  // EventBoundary 갱신 — updateTransform()만으로는 히트테스트 영역이
+  // 갱신되지 않을 수 있다. EventSystem의 내부 상태도 업데이트한다.
+  // PixiJS v8의 EventSystem은 포인터 이벤트 발생 시 자동으로 히트테스트를
+  // 수행하므로, DOM 이벤트 브리징(eventBridge.ts)이 정상 동작하면
+  // 별도 호출 없이도 갱신된다.
+  // 그러나 드래그 중 포인터가 캔버스 밖으로 나갈 때를 대비하여:
+  if (app.renderer.events) {
+    app.renderer.events.rootBoundary.hitTest(
+      app.renderer.events.pointer.global.x,
+      app.renderer.events.pointer.global.y,
+    );
+  }
+
   // GPU 렌더링은 수행하지 않음 — CanvasKit이 담당
 });
 app.ticker.autoStart = true;
@@ -2191,6 +2219,10 @@ app.ticker.autoStart = true;
 // - app.stage.getBounds()가 정확한 값을 반환하는지
 // - eventMode="static" 요소의 히트테스트가 정상 동작하는지
 // - 드래그 인터랙션(useDragInteraction.ts)이 정상 동작하는지
+// - 캔버스 밖으로 포인터가 나갔다가 돌아올 때 EventBoundary 상태 동기화
+// - pointerover/pointerout 이벤트가 PixiJS 측에서 정상 발화하는지
+// - updateTransform() 없이 render()만 스킵 시 vs 둘 다 호출하되 hidden 캔버스 시
+//   성능/정합성 비교 테스트 (Phase 5 프로토타입에서 수행)
 ```
 
 #### 5.7.1 WebGL 컨텍스트 충돌 전략
@@ -2242,7 +2274,9 @@ app.ticker.autoStart = true;
          target.dispatchEvent(clone);
          e.preventDefault();
        };
-       source.addEventListener(type, handler);
+       // passive: false — wheel/pointer 이벤트에서 preventDefault()가
+       // 무시되지 않도록 보장. 캔버스 내 스크롤/줌 동작을 CanvasKit이 처리할 때 필수.
+       source.addEventListener(type, handler, { passive: false });
        return { type, handler };
      });
      // cleanup 함수 반환
@@ -2295,8 +2329,10 @@ Step 5: PixiJS 자체 렌더링 비활성화
 >   const paragraph = builder.build();
 >   paragraph.layout(maxWidth);
 >
+>   // ⚠️ getMaxWidth()는 layout()에 전달한 maxWidth를 반환하므로 실제 텍스트 폭이 아님.
+>   // getLongestLine()으로 실제 콘텐츠 폭을 사용해야 선택 박스/레이아웃이 정확하다.
 >   const result = {
->     width: paragraph.getMaxWidth(),
+>     width: paragraph.getLongestLine(),
 >     height: paragraph.getHeight(),
 >     lineCount: paragraph.getLineMetrics().length,
 >   };

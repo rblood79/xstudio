@@ -57,6 +57,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+### Fixed - SelectionLayer 삭제 후 (0,0) 잔존 버그 수정 (2026-01-31)
+
+#### 개요
+컴포넌트 선택 후 삭제 시 WebGL 캔버스에 SelectionLayer가 좌표 (0,0)에 남는 버그 수정
+
+#### 수정 내용
+
+**1. `removeElement`에서 `selectedElementIds` 미초기화 (근본 원인)**
+- `removeElement`가 삭제 시 `selectedElementId`(단수)와 `selectedElementProps`만 초기화
+- `selectedElementIds`(복수 배열)와 `selectedElementIdsSet`은 초기화하지 않음
+- `SelectionLayer`는 `selectedElementIds`를 구독하므로 삭제된 요소 ID가 배열에 잔존
+- `computeSelectionBounds`에서 삭제된 요소의 bounds 조회 실패 → fallback `{x:0, y:0}` 반환
+- 수정: `selectedElementIds`에서 삭제된 요소 ID를 필터링하고 `selectedElementIdsSet`도 함께 갱신
+
+**2. `SelectionLayer` 렌더링 가드 부재**
+- `selectionBounds`가 `requestAnimationFrame` 콜백으로만 비동기 갱신됨
+- 선택 해제 후 RAF 실행 전까지 stale bounds로 `SelectionBox`가 1프레임 이상 표시
+- 수정: 렌더링 조건에 `selectedElements.length > 0` 가드 추가
+
+#### 변경된 파일
+- `apps/builder/src/builder/stores/utils/elementRemoval.ts` — 삭제된 요소를 `selectedElementIds`/`selectedElementIdsSet`에서 제거
+- `apps/builder/src/builder/workspace/canvas/selection/SelectionLayer.tsx` — SelectionBox 렌더링 조건에 `selectedElements.length > 0` 추가
+
+---
+
 ### Fixed - Button borderWidth/레이아웃 이중 계산 수정 (2026-01-30)
 
 #### 개요
