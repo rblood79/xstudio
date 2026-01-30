@@ -12,6 +12,7 @@
 
 import type { Margin, BoxModel, VerticalAlign } from './types';
 import type { Element } from '../../../../../types/core/store.types';
+import { fontFamily as specFontFamily } from '@xstudio/specs';
 
 /**
  * 중복 경고 방지용 Set
@@ -280,11 +281,12 @@ const BUTTON_SIZE_CONFIG: Record<string, {
   paddingY: number;
   fontSize: number;
 }> = {
-  xs: { paddingLeft: 8, paddingRight: 8, paddingY: 2, fontSize: 12 },
-  sm: { paddingLeft: 12, paddingRight: 12, paddingY: 4, fontSize: 14 },
-  md: { paddingLeft: 16, paddingRight: 16, paddingY: 8, fontSize: 16 },
-  lg: { paddingLeft: 24, paddingRight: 24, paddingY: 12, fontSize: 18 },
-  xl: { paddingLeft: 32, paddingRight: 32, paddingY: 16, fontSize: 20 },
+  // @sync Button.css [data-size] padding 값과 일치해야 함
+  xs: { paddingLeft: 8, paddingRight: 8, paddingY: 2, fontSize: 12 },     // --spacing-sm = 8px
+  sm: { paddingLeft: 12, paddingRight: 12, paddingY: 4, fontSize: 14 },   // --spacing-md = 12px
+  md: { paddingLeft: 24, paddingRight: 24, paddingY: 8, fontSize: 16 },   // --spacing-xl = 24px
+  lg: { paddingLeft: 32, paddingRight: 32, paddingY: 12, fontSize: 18 },  // --spacing-2xl = 32px
+  xl: { paddingLeft: 40, paddingRight: 40, paddingY: 16, fontSize: 20 },  // --spacing-3xl = 40px
 };
 
 /** PixiButton MIN_BUTTON_HEIGHT과 동일 */
@@ -319,7 +321,7 @@ function getMeasureContext(): CanvasRenderingContext2D | null {
 function measureTextWidth(
   text: string,
   fontSize: number = 14,
-  fontFamily: string = 'Pretendard, Arial, sans-serif'
+  fontFamily: string = specFontFamily.sans
 ): number {
   if (!text) return 0;
 

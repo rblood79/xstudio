@@ -43,6 +43,10 @@ XStudio Builder 애플리케이션의 코드 패턴, 규칙 및 모범 사례를
 #### Security (postmessage-*)
 - **[postmessage-origin-verify](rules/postmessage-origin-verify.md)** - origin 검증 필수
 
+#### Component Spec (spec-*)
+- **[spec-build-sync](rules/spec-build-sync.md)** - @xstudio/specs 빌드 동기화 필수
+- **[spec-value-sync](rules/spec-value-sync.md)** - Spec ↔ Builder ↔ CSS 값 동기화
+
 ### HIGH (강력 권장)
 
 #### Architecture (arch-*)

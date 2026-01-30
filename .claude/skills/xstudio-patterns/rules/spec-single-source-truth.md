@@ -66,3 +66,5 @@ renderToPixi(ButtonSpec, props, context);
 
 - `docs/COMPONENT_SPEC_ARCHITECTURE.md` - 전체 설계 문서
 - `packages/specs/src/components/Button.spec.ts` - 참조 구현
+- [spec-build-sync](spec-build-sync.md) - Spec 수정 후 빌드 필수
+- [spec-value-sync](spec-value-sync.md) - Spec ↔ Builder ↔ CSS 값 동기화

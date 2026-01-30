@@ -165,6 +165,7 @@
 3. **Token Reference**: 값은 토큰으로 참조 (하드코딩 금지)
 4. **Renderer Agnostic**: Spec은 렌더러에 독립적
 5. **Type Safe**: 모든 Spec은 TypeScript로 타입 검증
+6. **Build-Sync**: Spec 소스 변경 후 반드시 `@xstudio/specs` 빌드 실행 (dist 미갱신 시 소비자가 구 버전 참조)
 
 ---
 
@@ -2206,7 +2207,7 @@ export const ButtonSpec: ComponentSpec<ButtonProps> = {
     },
     md: {
       height: 40,
-      paddingX: 16,
+      paddingX: 24,
       paddingY: 8,
       fontSize: '{typography.text-md}' as TokenRef,
       borderRadius: '{radius.md}' as TokenRef,
@@ -2215,7 +2216,7 @@ export const ButtonSpec: ComponentSpec<ButtonProps> = {
     },
     lg: {
       height: 48,
-      paddingX: 24,
+      paddingX: 32,
       paddingY: 12,
       fontSize: '{typography.text-lg}' as TokenRef,
       borderRadius: '{radius.lg}' as TokenRef,
@@ -2224,7 +2225,7 @@ export const ButtonSpec: ComponentSpec<ButtonProps> = {
     },
     xl: {
       height: 56,
-      paddingX: 32,
+      paddingX: 40,
       paddingY: 16,
       fontSize: '{typography.text-xl}' as TokenRef,
       borderRadius: '{radius.lg}' as TokenRef,
@@ -2615,6 +2616,62 @@ const parsedBorder = parseBorderWidth(style);  // "2px" → 4방향, borderTopWi
 > 그러나 `typeof === 'number'` → `parseCSSSize()`/`parsePadding()`/`parseBorderWidth()` 전환은 미완료 상태.
 > CSS 문자열 값("16px", "50%", "100vw")이 무시되는 버그가 잔존.
 
+#### 4.7.4.0 `@xstudio/specs` 빌드 동기화 (CRITICAL)
+
+`@xstudio/specs` 패키지는 **tsup으로 빌드된 `dist/`** 를 통해 내보냅니다.
+`src/` 파일을 수정한 후 빌드하지 않으면, 소비자(`@xstudio/builder` 등)는
+**이전 dist의 값을 계속 참조**합니다.
+
+```
+⚠️ 실제 발생한 버그 사례 (Button auto width 불일치):
+
+1. Button.spec.ts (src) paddingX: 16 → 24 수정  ✅ 소스 변경
+2. utils.ts (builder 내부) BUTTON_SIZE_CONFIG padding: 16 → 24  ✅ 즉시 반영
+3. pnpm --filter @xstudio/specs build 미실행  ❌ dist 미갱신
+4. PixiButton이 import하는 ButtonSpec은 dist/의 구 버전 (paddingX=16)
+5. Layout 엔진은 새 padding(24) 적용, PixiButton은 구 padding(16) → 공백 발생
+
+원인: dist/ 와 src/ 의 값 불일치 (layout=새값, rendering=구값)
+```
+
+**규칙**:
+
+| 변경 대상 | 필요 작업 |
+|-----------|----------|
+| `packages/specs/src/**` 파일 수정 | `pnpm --filter @xstudio/specs build` 실행 필수 |
+| `apps/builder/src/**` 파일 수정 | 추가 빌드 불필요 (Vite HMR 즉시 반영) |
+| specs + builder 동시 수정 | specs 빌드 후 builder 개발 서버 재시작 |
+
+**개발 시 권장**: `pnpm --filter @xstudio/specs dev` (watch 모드)를 별도 터미널에서 실행하면
+소스 변경 시 자동으로 dist가 갱신됩니다.
+
+```bash
+# 터미널 1: specs watch 모드
+pnpm --filter @xstudio/specs dev
+
+# 터미널 2: builder 개발 서버
+pnpm --filter @xstudio/builder dev
+```
+
+**새 컴포넌트 Spec 작성 시 체크리스트**:
+
+1. ✅ `packages/specs/src/components/Xxx.spec.ts` 작성
+2. ✅ `packages/specs/src/index.ts`에서 export 추가
+3. ✅ `pnpm --filter @xstudio/specs build` 실행
+4. ✅ builder에서 import 후 동작 확인
+5. ✅ `BUTTON_SIZE_CONFIG` 등 builder 내부 상수와 Spec 값이 **동일한지** 확인
+
+**값 동기화 대상** (`@sync` 주석으로 표시):
+
+| Spec 값 | Builder 내부 상수 | CSS 토큰 |
+|---------|-------------------|----------|
+| `ButtonSpec.sizes[size].paddingX` | `BUTTON_SIZE_CONFIG[size].paddingLeft/Right` | `Button.css [data-size] padding` |
+| `ButtonSpec.sizes[size].fontSize` | `BUTTON_SIZE_CONFIG[size].fontSize` | `Button.css [data-size] font-size` |
+| `fontFamily.sans` (typography.ts) | `measureTextWidth()` 기본 폰트 | `body { font-family }` |
+
+위 3곳의 값이 불일치하면 CSS↔WebGL 렌더링 차이가 발생합니다.
+코드에 `// @sync` 주석이 있는 곳은 반드시 연관된 다른 소스와 값을 맞춰야 합니다.
+
 #### 4.7.4.1 Padding/Border 이중 적용 방지 (CRITICAL)
 
 자체적으로 padding/border를 그래픽 크기에 반영하는 Pixi UI 컴포넌트(PixiButton 등)는
@@ -2775,7 +2832,10 @@ export function smoothRoundRect(
 | `apps/builder/.../canvas/utils/graphicsUtils.ts` | smoothRoundRect 구현 |
 | `apps/builder/.../canvas/BuilderCanvas.tsx` | `SELF_PADDING_TAGS` + `stripSelfRenderedProps` 추가 (v1.10) |
 | `apps/builder/.../canvas/layout/engines/BlockEngine.ts` | content-box → border-box 크기 변환 (v1.10) |
-| `apps/builder/.../canvas/layout/engines/utils.ts` | `VERTICALLY_CENTERED_TAGS` baseline 수정 (v1.10) |
+| `apps/builder/.../canvas/layout/engines/utils.ts` | `VERTICALLY_CENTERED_TAGS` baseline 수정 (v1.10), `BUTTON_SIZE_CONFIG` padding 동기화 + fontFamily specs 참조 (v1.11) |
+| `packages/specs/src/components/Button.spec.ts` | paddingX md:16→24, lg:24→32, xl:32→40, fontFamily specs 상수 사용 (v1.11) |
+| `packages/specs/src/primitives/typography.ts` | fontFamily.sans에 Pretendard 추가 (v1.11) |
+| `apps/builder/.../canvas/ui/PixiButton.tsx` | fontFamily를 specs 상수로 교체 (v1.11) |
 
 ---
 
@@ -3797,21 +3857,27 @@ export type { ComponentSpec, Shape, TokenRef } from './types';
 
 ```json
 // packages/specs/package.json (scripts)
+// ⚠️ 빌드 도구: tsup (tsc가 아님). dist/ 출력이 esm + cjs + dts
 {
   "scripts": {
-    "build": "tsc",
-    "dev": "tsc --watch",
+    "build": "tsup src/index.ts --format esm,cjs --dts",
+    "dev": "tsup src/index.ts --format esm,cjs --dts --watch",
     "test": "vitest",
     "test:coverage": "vitest --coverage",
     "test:visual": "playwright test",
     "generate:css": "tsx scripts/generate-css.ts",
     "validate": "tsx scripts/validate-specs.ts",
     "validate:tokens": "tsx scripts/validate-tokens.ts",
-    "validate:phase0": "tsx scripts/validate-phase0.ts",
-    "lint": "eslint src/"
+    "lint": "eslint src/",
+    "typecheck": "tsc --noEmit"
   }
 }
 ```
+
+> **CRITICAL**: `@xstudio/specs`는 `dist/`를 통해 내보내므로, 소스 수정 후 반드시
+> `pnpm --filter @xstudio/specs build`를 실행해야 합니다. 미실행 시 소비자 앱이
+> 구 버전을 참조하여 레이아웃↔렌더링 불일치가 발생합니다.
+> 자세한 내용은 [4.7.4.0 빌드 동기화](#4740-xstudiospecs-빌드-동기화-critical) 참조.
 
 ### 9.4 Zustand 상태 관리 연동
 
@@ -4360,3 +4426,4 @@ function PixiButton({ element }) {
 | 2026-01-29 | 1.8 | Button 구현 점검 — 코드↔문서 동기화: (1) RadiusTokens 값 교정 (md:8→6, lg:12→8, xl:16→12, CSS 변수 기준), (2) typography에 fontWeight/lineHeight 객체 추가, (3) ButtonProps에 text/label 필드 추가 및 style 타입을 Record로 변경, (4) ButtonSpec variants/sizes에 `as TokenRef` 캐스트 추가, (5) lg size borderRadius를 `{radius.lg}`로 수정, (6) disabled state에 pointerEvents 추가, (7) focusVisible outline을 var(--primary) 형식으로 수정, (8) render.shapes에 text 폴백 체인(children → text → label) 반영 |
 | 2026-01-29 | 1.9 | Pixi UI 컴포넌트 CSS 단위 해석 규칙 추가 (Section 4.7.4): (1) typeof === 'number' 패턴 사용 금지 → parseCSSSize() 필수, (2) % / vw / vh는 부모 content area 기준 해석 (parentContentArea = 부모 width - padding - border), (3) padding shorthand(parsePadding) + border width 4방향(parseBorderWidth) 파싱 필수, (4) 적용 필수 컴포넌트 18개 목록 명시, (5) Yoga 경로에서 vh/vw → % 문자열 변환 정책 (styleToLayout.ts) |
 | 2026-01-29 | 1.10 | Button 레이아웃 버그 패치 4건 + 컴포넌트 상태 추적표 (Section 4.7.4.1~4.7.4.4): (1) padding/border 이중 적용 방지 — SELF_PADDING_TAGS(Button, SubmitButton, FancyButton, ToggleButton) + stripSelfRenderedProps (BuilderCanvas.tsx), (2) BlockEngine border-box 크기 계산 — content-box → border-box 변환으로 block/inline-block 요소 겹침 해결 (BlockEngine.ts), (3) baseline 정렬 수정 — VERTICALLY_CENTERED_TAGS(button/fancybutton/togglebutton/input/select) height/2 반환으로 CSS 웹 모드와 동일한 수직 중앙 정렬 (utils.ts), (4) spec 기본 borderWidth 적용 — inline style 미지정 시 variantColors.border 존재하면 1px 기본값 (PixiButton.tsx), (5) 적용 필수 컴포넌트 18개 상태 추적표 추가 — PixiFancyButton/PixiToggleButton은 SELF_PADDING_TAGS 등록 완료, typeof 패턴 전환은 미완료(잔여 작업) |
+| 2026-01-30 | 1.11 | Button auto width 불일치 수정 + Spec 빌드 동기화 규칙 (Section 4.7.4.0): (1) ButtonSpec sizes paddingX 수정 — md:16→24, lg:24→32, xl:32→40 (CSS 토큰과 일치), (2) BUTTON_SIZE_CONFIG paddingLeft/Right 동기화, (3) fontFamily 통일 — Pretendard를 specs fontFamily.sans에 추가, PixiButton·utils.ts·Button.spec.ts에서 specs 상수 참조로 교체, (4) `@xstudio/specs` 빌드 동기화 규칙 추가 (CRITICAL) — dist/ 미갱신 시 layout↔rendering 값 불일치 발생 사례 문서화, (5) 핵심 원칙에 Build-Sync 추가, (6) 9.3 스크립트 섹션을 실제 tsup 빌드 도구와 동기화, (7) 값 동기화 대상 테이블 (Spec↔Builder 내부 상수↔CSS 토큰) 및 @sync 주석 정책 명시 |

@@ -572,3 +572,468 @@ WASM 최적화의 핵심 가치:
   ✗ 소규모(50개 이하) 프로젝트에서는 마샬링 비용이 이득을 상쇄
   ✗ Rust 빌드 인프라 + 이중 테스트 유지 비용
 ```
+
+---
+
+## 9. 스타일 관리 체계 비교 분석
+
+> 분석일: 2026-01-30
+> Pencil: `.pen` JSON + VariableManager + SceneGraph
+> xstudio: Zustand + Jotai 하이브리드 + CSS inline style
+
+### 9.1 데이터 모델 비교
+
+| 항목 | Pencil | xstudio |
+|------|--------|---------|
+| **저장 형식** | `.pen` JSON — 노드 트리에 스타일 인라인 | 컴포넌트 props + `element.style` 객체 |
+| **스타일 위치** | 노드 자체에 플랫 프로퍼티로 직접 보유 | `element.style` (inline) + `element.computedStyle` (CSS class) 분리 |
+| **프로퍼티 수** | 무제한 (커스텀 프로퍼티 자유 정의) | 36개 고정 (Transform 4 + Layout 16 + Appearance 5 + Typography 11) |
+| **값 표현** | 직접값 또는 `$--변수명` 참조 | CSS 값 문자열 (`"500px"`, `"100%"`, `"flex-start"`) |
+| **단위 시스템** | px 중심 (%, vh/vw 없음) | CSS 표준 단위 (px, %, vh, vw, auto, fit-content) |
+
+**Pencil 노드 스타일 예시:**
+```json
+{
+  "type": "frame",
+  "fill": "$--popover",
+  "cornerRadius": "$--radius-m",
+  "stroke": { "align": "inside", "thickness": 1, "fill": "$--border" },
+  "effect": { "type": "shadow", "shadowType": "outer", "color": "#0000000f",
+              "offset": {"x":0,"y":2}, "blur": 3.5, "spread": -1 },
+  "layout": "vertical",
+  "gap": 8
+}
+```
+
+**xstudio 요소 스타일 예시:**
+```typescript
+element = {
+  type: "Card",
+  style: { width: "500px", backgroundColor: "#f5f5f5" },       // inline
+  computedStyle: { display: "flex", borderRadius: "8px" },      // CSS class
+  computedLayout: { width: 500, height: 300, x: 0, y: 0 }      // WebGL 렌더링용
+}
+```
+
+---
+
+### 9.2 디자인 변수/토큰 시스템
+
+| 항목 | Pencil | xstudio |
+|------|--------|---------|
+| **변수 시스템** | `$--` 접두사 참조 시스템 완비 | **미구현** (정적 상수 옵션만) |
+| **변수 타입** | `color`, `string`, `number` 3종 | N/A |
+| **테마 지원** | Light/Dark 테마별 변수값 자동 전환 | **미구현** |
+| **런타임 해석** | `properties.resolved`로 변수→실제값 resolve | CSS 직접값만 사용 |
+| **토큰 체계** | shadcn/ui 호환 50개+ 시맨틱 토큰 | 폰트 7개, 웨이트 12개 등 정적 옵션 |
+
+**Pencil 변수 정의 (테마별 자동 전환):**
+```json
+{
+  "themes": { "Mode": ["Light", "Dark"] },
+  "variables": {
+    "--primary": {
+      "type": "color",
+      "value": [
+        { "value": "#5749F4", "theme": { "Mode": "Light" } },
+        { "value": "#5749F4", "theme": { "Mode": "Dark" } }
+      ]
+    },
+    "--background": {
+      "type": "color",
+      "value": [
+        { "value": "#FFFFFF", "theme": { "Mode": "Light" } },
+        { "value": "#131124", "theme": { "Mode": "Dark" } }
+      ]
+    },
+    "--font-primary": { "type": "string", "value": [
+      { "value": "Inter", "theme": { "Mode": "Light" } },
+      { "value": "Inter", "theme": { "Mode": "Dark" } }
+    ]},
+    "--radius-m": { "type": "number", "value": 24 },
+    "--radius-pill": { "type": "number", "value": 999 }
+  }
+}
+```
+
+**Pencil 시맨틱 토큰 목록:**
+
+| 카테고리 | 토큰 |
+|----------|------|
+| 기본 색상 | `--background`, `--foreground`, `--primary`, `--secondary`, `--accent`, `--muted` |
+| 컴포넌트 색상 | `--card`, `--popover`, `--border`, `--ring`, `--destructive` |
+| 상태 색상 | `--color-success`, `--color-warning`, `--color-error`, `--color-info` |
+| 사이드바 | `--sidebar`, `--sidebar-foreground`, `--sidebar-primary`, `--sidebar-accent`, `--sidebar-border` |
+| 폰트 | `--font-primary`, `--font-secondary` |
+| 라운딩 | `--radius-none(0)`, `--radius-xs(6)`, `--radius-m(24)`, `--radius-l(40)`, `--radius-pill(999)` |
+| 유틸리티 | `--white`, `--black`, `--tile` |
+
+**xstudio는 정적 상수만 존재:**
+```typescript
+// styleOptions.ts
+export const FONT_FAMILIES = [
+  { value: 'Arial', label: 'Arial' },
+  { value: 'Helvetica', label: 'Helvetica' },
+  // ... 7개 고정
+];
+export const UNIT_OPTIONS = {
+  size: ['px', '%', 'vh', 'vw', 'auto'],
+  spacing: ['auto', 'px'],
+  font: ['auto', 'px', 'pt'],
+};
+```
+
+---
+
+### 9.3 상태 관리 아키텍처
+
+| 항목 | Pencil | xstudio |
+|------|--------|---------|
+| **핵심 패턴** | SceneGraph + FileManager + VariableManager | Zustand + Jotai 하이브리드 |
+| **트랜잭션** | `beginUpdate → update → commitBlock` 원자적 | RAF/Idle 기반 스로틀링 |
+| **Undo/Redo** | UndoManager (트랜잭션 블록 단위) | 스타일 패널 자체에 없음 (외부 관리) |
+| **구독 최적화** | EventEmitter3 기반 이벤트 구독 | selectAtom + equalityFn 세밀한 비교 |
+| **성능 최적화** | 트랜잭션 배치 커밋 | Gateway 패턴 + RAF/Idle/Transition 3단계 |
+
+**Pencil 변경 흐름:**
+```
+beginUpdate()
+  → block.update(node, { fill: "#FF0000" })
+  → block.update(node, { cornerRadius: 12 })
+  → commitBlock({ undo: true })   // 원자적 커밋, undo 포인트 생성
+        ↓
+  VariableManager가 $-- 변수 resolve
+        ↓
+  properties.resolved 갱신
+        ↓
+  SkiaRenderer가 resolved 값으로 렌더
+```
+
+**xstudio 변경 흐름:**
+```
+사용자 입력
+  ├─ updateStyleImmediate(prop, value)    // 즉시 (텍스트 확정)
+  ├─ updateStyleRAF(prop, value)          // RAF 스로틀 (드래그/슬라이더)
+  └─ updateStyleIdle(prop, value)         // Idle 지연 (타이핑)
+        ↓
+  Zustand store.updateSelectedStyle()
+        ↓
+  useZustandJotaiBridge → selectedElementAtom 갱신
+        ↓
+  selectAtom equalityFn → 변경된 속성만 리렌더
+```
+
+**xstudio 최적화 상세 (useOptimizedStyleActions):**
+```typescript
+// RAF: 프레임당 1회만 실행 (드래그 중 사용)
+const updateStyleRAF = useCallback((property, value) => {
+  pendingUpdateRef.current = { property, value };
+  if (rafIdRef.current === null) {
+    rafIdRef.current = requestAnimationFrame(() => {
+      const pending = pendingUpdateRef.current;
+      if (pending) updateSelectedStyle(pending.property, pending.value);
+      rafIdRef.current = null;
+    });
+  }
+}, []);
+
+// Idle: CPU 여유 시점에 실행, 최대 100ms 대기 (타이핑 중 사용)
+const updateStyleIdle = useCallback((property, value) => {
+  pendingUpdateRef.current = { property, value };
+  if (idleIdRef.current !== null) cancelIdleCallback(idleIdRef.current);
+  idleIdRef.current = requestIdleCallback(() => {
+    const pending = pendingUpdateRef.current;
+    if (pending) updateSelectedStyle(pending.property, pending.value);
+    idleIdRef.current = null;
+  }, { timeout: 100 });
+}, []);
+```
+
+---
+
+### 9.4 스타일 우선순위 및 오버라이드
+
+| 항목 | Pencil | xstudio |
+|------|--------|---------|
+| **우선순위 계층** | 인스턴스 descendants > 노드 직접값 > 변수 기본값 | Inline > Computed(CSS class) > Component Default |
+| **컴포넌트 인스턴스** | `ref` + `descendants` 하위 노드별 오버라이드 | `element.style` vs `element.computedStyle` 분리 |
+| **리셋** | 변수 참조로 자연스럽게 리셋 | `resetStyles()` → inline 제거 → computed 값 복귀 |
+| **Modified 추적** | 없음 (모든 값이 명시적) | "Modified" 탭으로 변경된 inline 속성 필터링 |
+| **Source 표시** | 없음 | `getStyleSource()` — inline/computed/default 표시 |
+
+**Pencil 컴포넌트 → 인스턴스 오버라이드:**
+```json
+{
+  "type": "ref",
+  "ref": "bBmNI",
+  "descendants": {
+    "rxL1P": { "fontSize": 20, "fill": "#FF0000" },
+    "xyq4X": { "content": "변경된 텍스트" }
+  }
+}
+```
+
+**xstudio 스타일 우선순위 해석:**
+```typescript
+// styleAtoms.ts
+function getTransformValue(elementType, inlineValue, prop) {
+  if (inlineValue !== undefined) return String(inlineValue);           // 1. inline 우선
+  if (DEFAULT_CSS_VALUES[elementType]?.[prop]) return /* default */;   // 2. 컴포넌트 기본
+  return 'auto';                                                       // 3. 폴백
+}
+
+// 130개 컴포넌트 기본값 매핑
+const DEFAULT_CSS_VALUES = {
+  Card:        { width: '100%' },
+  Button:      { width: 'fit-content' },
+  Slider:      { width: '300px' },
+  DropZone:    { width: '100%', height: '120px' },
+  NumberField: { width: '120px' },
+  // ... 130개+
+};
+```
+
+---
+
+### 9.5 스타일 프로퍼티 커버리지
+
+| 카테고리 | Pencil | xstudio |
+|----------|--------|---------|
+| **위치/크기** | `x`, `y`, `width`, `height`, `rotation` | `width`, `height`, `top`, `left` |
+| **채우기** | `fill` (단일/변수), `fills[]` (다중 Image/Gradient) | `backgroundColor` (단일) |
+| **선** | `stroke.align/thickness/fill` | `borderWidth/Color/Style/Radius` |
+| **효과** | `effect` (shadow inner/outer, blur, spread) | 없음 |
+| **모서리** | `cornerRadius` (단일 또는 4개 배열, 변수 참조) | `borderRadius` (단일 CSS 값) |
+| **레이아웃** | `layout` (none/vertical/horizontal), `gap` | `display`, `flexDirection`, `flexWrap`, `gap`, padding/margin 개별 4방향 |
+| **텍스트** | `fontSize/Family/Weight`, `lineHeight`, `textGrowth` | 11개 (fontFamily ~ verticalAlign) |
+| **사이징** | `"fill_container"`, 고정 px값 | `"100%"`, `"fit-content"`, `"auto"`, CSS 단위 |
+| **이미지 필** | `fills[].type:Image, url, mode` | 없음 (별도 컴포넌트로 처리) |
+| **그라디언트** | `fills[].type:Linear/Radial/AngularGradient` | 없음 |
+
+**Pencil 다중 Fill 구조:**
+```json
+{
+  "fills": [
+    { "enabled": true, "type": "Image", "url": "photo.jpg", "mode": "Fill", "opacityPercent": 100 },
+    { "enabled": true, "type": "LinearGradient", "stops": [...], "opacityPercent": 50 }
+  ]
+}
+```
+
+**Pencil 개별 모서리 cornerRadius:**
+```json
+{
+  "cornerRadius": [
+    "$--radius-pill",
+    "$--radius-xs",
+    "$--radius-xs",
+    "$--radius-pill"
+  ]
+}
+```
+
+---
+
+### 9.6 스타일 패널 UI 구조 비교
+
+**xstudio 스타일 패널 구조:**
+```
+StylesPanel.tsx (진입점)
+├─ Gateway 패턴: isActive 체크 → Content 분리 (훅 실행 최소화)
+├─ ZustandJotaiBridge (단방향 동기화)
+├─ Filter: "All" | "Modified" 탭
+│
+├─ TransformSection (4개 속성)
+│   └─ PropertyUnitInput × 4 (width, height, top, left)
+│
+├─ LayoutSection (16개 속성)
+│   ├─ display, flexDirection, flexWrap
+│   ├─ AlignmentGrid (3×3 위치 선택)
+│   ├─ gap
+│   └─ padding/margin (개별 4방향)
+│
+├─ AppearanceSection (5개 속성)
+│   ├─ PropertyColor (backgroundColor, borderColor)
+│   ├─ PropertyUnitInput (borderWidth, borderRadius)
+│   └─ PropertySelect (borderStyle)
+│
+└─ TypographySection (11개 속성)
+    ├─ PropertySelect (fontFamily, fontWeight, fontStyle)
+    ├─ PropertyUnitInput (fontSize, lineHeight, letterSpacing)
+    ├─ PropertyColor (color)
+    └─ AlignmentToggle (textAlign, textDecoration, textTransform)
+```
+
+**Pencil Inspector (추정 구조):**
+```
+Inspector Panel
+├─ Properties (노드 프로퍼티 직접 편집)
+│   ├─ Transform: x, y, width, height, rotation
+│   ├─ Fill: 다중 fills 배열 (Solid/Image/Gradient)
+│   ├─ Stroke: align, thickness, fill
+│   ├─ Effect: shadow (inner/outer), blur, spread
+│   ├─ Corner Radius: 단일 또는 4개 개별
+│   └─ Layout: none/vertical/horizontal, gap, padding
+│
+├─ Text Properties
+│   ├─ fontFamily, fontSize, fontWeight
+│   ├─ lineHeight, letterSpacing
+│   ├─ textGrowth (fixed-width / auto)
+│   └─ fill (텍스트 색상)
+│
+├─ Variables Panel
+│   └─ 변수 CRUD (추가/수정/삭제) + 테마별 값 편집
+│
+└─ Component Panel
+    ├─ reusable 토글 (컴포넌트 등록)
+    └─ descendants 오버라이드 편집
+```
+
+---
+
+### 9.7 Jotai Atom 기반 세밀한 구독 (xstudio 고유 장점)
+
+xstudio는 Zustand+Jotai 하이브리드로 **속성 단위 리렌더 제어**를 구현:
+
+```typescript
+// styleAtoms.ts — 50개+ atom 정의
+
+// 개별 속성 atom (변경 시 해당 input만 리렌더)
+export const widthAtom = selectAtom(
+  selectedElementAtom,
+  (el) => getTransformValue(el?.type, el?.style?.width, 'width'),
+  (a, b) => a === b  // 동등성 체크
+);
+
+// 섹션 그룹 atom (전체 섹션 값을 한 번에 읽기)
+export const transformValuesAtom = selectAtom(
+  selectedElementAtom,
+  (el) => ({
+    width:  getTransformValue(el?.type, el?.style?.width, 'width'),
+    height: getTransformValue(el?.type, el?.style?.height, 'height'),
+    top:    String(el?.style?.top ?? 'auto'),
+    left:   String(el?.style?.left ?? 'auto'),
+  }),
+  (a, b) => a?.width === b?.width && a?.height === b?.height
+             && a?.top === b?.top && a?.left === b?.left
+);
+```
+
+이 패턴으로 **width만 변경되면 width input만 리렌더**, 다른 섹션은 영향 없음.
+
+---
+
+### 9.8 핵심 차이점 요약
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                    Pencil (디자인 도구 — Figma 유사)                 │
+│  ✅ 디자인 변수 시스템 ($--변수명, color/string/number 3타입)        │
+│  ✅ Light/Dark 테마 자동 전환 (변수별 테마값 정의)                   │
+│  ✅ 다중 Fill (Solid/Image/Linear/Radial/AngularGradient)           │
+│  ✅ Effect (Shadow inner/outer, blur, spread)                       │
+│  ✅ 컴포넌트→인스턴스 descendants 오버라이드                         │
+│  ✅ 트랜잭션 기반 원자적 Undo/Redo                                  │
+│  ✅ cornerRadius 배열 (모서리별 독립 + 변수 참조)                    │
+│  ✅ textGrowth (fixed-width / auto) 텍스트 사이징 모드               │
+│  ❌ CSS 단위 시스템 없음 (px만, %/vh/vw 미지원)                     │
+│  ❌ CSS Grid/Block 레이아웃 없음 (none/vertical/horizontal만)       │
+│  ❌ 세밀한 padding/margin 개별 4방향 없음                            │
+│  ❌ Modified 필터 / Style Source 감지 없음                           │
+│  ❌ 속성 단위 리렌더 최적화 없음 (EventEmitter 기반)                 │
+└─────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────┐
+│                    xstudio (웹 빌더 — Webflow 유사)                  │
+│  ✅ CSS 표준 단위 (px, %, vh, vw, auto, fit-content)                │
+│  ✅ 세밀한 padding/margin (개별 4방향)                               │
+│  ✅ 130개 컴포넌트 기본값 시스템 (DEFAULT_CSS_VALUES)                │
+│  ✅ Style Source 감지 (inline/computed/default 3단계)               │
+│  ✅ Modified 필터 (변경된 inline 속성만 표시)                        │
+│  ✅ RAF/Idle/Transition 3단계 업데이트 최적화                        │
+│  ✅ Zustand+Jotai 하이브리드 속성 단위 리렌더 제어                   │
+│  ✅ Gateway 패턴으로 비활성 섹션 훅 실행 방지                        │
+│  ❌ 디자인 변수/토큰 시스템 없음                                     │
+│  ❌ Light/Dark 테마 시스템 없음                                      │
+│  ❌ 다중 Fill/Gradient/Effect 없음                                   │
+│  ❌ 컴포넌트-인스턴스 오버라이드 시스템 없음                          │
+│  ❌ cornerRadius 개별 모서리 제어 없음                                │
+│  ❌ rotation 속성 없음                                               │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+### 9.9 xstudio에 도입 가능한 Pencil 스타일 관리 기능
+
+| 우선순위 | 기능 | 설명 | 구현 방향 |
+|----------|------|------|----------|
+| **높음** | 디자인 변수 시스템 | `$--변수명` 참조, CSS Custom Properties로 매핑 | `VariableManager` 클래스 + Zustand store 추가, `var(--primary)` 형태로 CSS 출력 |
+| **높음** | 테마(Light/Dark) | 변수별 테마 값 정의 + 자동 전환 | `themeAtom` + `prefers-color-scheme` 미디어 쿼리 연동 |
+| **중간** | 다중 Fill/Effect | fills 배열 + effect 배열로 레이어 중첩 | Appearance Section 확장, `background` CSS shorthand 또는 `box-shadow` 다중 값 |
+| **중간** | cornerRadius 개별 제어 | 4개 값 배열 `[TL, TR, BR, BL]` | `border-radius` 4값 shorthand 지원 추가 |
+| **중간** | 그라디언트 Fill | Linear/Radial/Angular | `background-image: linear-gradient(...)` CSS 매핑 |
+| **낮음** | 트랜잭션 Undo | `beginUpdate → commitBlock` 패턴 | 기존 undo 시스템과 통합 |
+| **낮음** | 인스턴스 descendants 오버라이드 | 컴포넌트 인스턴스별 부분 스타일 변경 | 컴포넌트 시스템 구축 후 적용 |
+
+### 9.10 디자인 변수 시스템 도입 설계 (제안)
+
+Pencil의 변수 시스템을 xstudio의 CSS 기반 아키텍처에 맞게 변환:
+
+```typescript
+// 제안: stores/variableStore.ts
+
+interface DesignVariable {
+  name: string;                    // "--primary"
+  type: 'color' | 'string' | 'number';
+  values: ThemeValue[];
+}
+
+interface ThemeValue {
+  value: string;                   // "#5749F4"
+  theme?: Record<string, string>; // { "Mode": "Light" }
+}
+
+interface VariableStore {
+  variables: Map<string, DesignVariable>;
+  themes: Map<string, string[]>;   // "Mode" → ["Light", "Dark"]
+  activeTheme: Record<string, string>; // { "Mode": "Light" }
+
+  // Actions
+  addVariable: (name: string, type: string, values: ThemeValue[]) => void;
+  setActiveTheme: (dimension: string, value: string) => void;
+  resolveVariable: (ref: string) => string | undefined;
+}
+
+// CSS 출력: var(--primary) → CSS Custom Properties로 매핑
+// .pen 호환: "$--primary" → "var(--primary)" 자동 변환
+```
+
+**CSS 출력 예시:**
+```css
+:root {
+  --primary: #5749F4;
+  --background: #FFFFFF;
+  --font-primary: 'Inter';
+  --radius-m: 24px;
+}
+
+[data-theme="dark"] {
+  --background: #131124;
+  --foreground: #E8E8EA;
+}
+```
+
+---
+
+### 9.11 본질적 차이 — 디자인 도구 vs 웹 빌더
+
+| 관점 | Pencil | xstudio |
+|------|--------|---------|
+| **스타일 모델** | 시각적 프로퍼티 중심 (fill, stroke, effect) | CSS 표준 중심 (background, border, box-shadow) |
+| **레이아웃 모델** | 캔버스 좌표 (`x`, `y`) + 선택적 자동 레이아웃 | CSS 레이아웃 (`display`, `flexDirection`, `grid`) |
+| **출력 대상** | 캔버스 렌더링 (Skia) | HTML/CSS 코드 생성 |
+| **확장 방향** | 더 많은 시각 효과 (블러, 블렌드 모드) | 더 많은 CSS 속성/반응형 |
+| **사용자 기대** | Figma/Sketch 수준의 시각 편집 | Webflow/Framer 수준의 CSS 제어 |
+
+Pencil의 디자인 변수/테마 시스템을 CSS Custom Properties 형태로 도입하면, xstudio는 **웹 빌더의 CSS 표준 강점**과 **디자인 도구의 토큰/테마 강점**을 결합할 수 있다.

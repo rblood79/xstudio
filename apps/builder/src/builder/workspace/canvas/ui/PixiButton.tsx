@@ -53,6 +53,7 @@ const USE_SPEC_RENDERER = true;
 // Spec imports (conditionally used based on feature flag)
 import {
   ButtonSpec,
+  fontFamily as specFontFamily,
   getVariantColors as getSpecVariantColors,
   getSizePreset as getSpecSizePreset,
 } from '@xstudio/specs';
@@ -194,7 +195,7 @@ function getButtonLayout(
   const fontSize = style?.fontSize !== undefined
     ? parseCSSSize(style.fontSize, undefined, sizePreset.fontSize, viewport)
     : sizePreset.fontSize;
-  const fontFamily = style?.fontFamily || "Pretendard, sans-serif";
+  const fontFamily = style?.fontFamily || specFontFamily.sans;
 
   // 패딩 (shorthand + 개별 속성 모두 지원)
   // parsePadding: shorthand "8px" → 4방향, 개별 paddingTop 등으로 오버라이드

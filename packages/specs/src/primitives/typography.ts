@@ -24,7 +24,7 @@ export const typography: TypographyTokens = {
  * 폰트 패밀리
  */
 export const fontFamily = {
-  sans: 'Inter, system-ui, -apple-system, sans-serif',
+  sans: 'Pretendard, Inter, system-ui, -apple-system, sans-serif',
   mono: 'JetBrains Mono, Consolas, monospace',
 };
 

@@ -8,6 +8,7 @@
  */
 
 import type { ComponentSpec, Shape, TokenRef } from '../types';
+import { fontFamily } from '../primitives/typography';
 
 /**
  * Button Props
@@ -111,7 +112,7 @@ export const ButtonSpec: ComponentSpec<ButtonProps> = {
     },
     md: {
       height: 40,
-      paddingX: 16,
+      paddingX: 24,
       paddingY: 8,
       fontSize: '{typography.text-md}' as TokenRef,
       borderRadius: '{radius.md}' as TokenRef,
@@ -120,7 +121,7 @@ export const ButtonSpec: ComponentSpec<ButtonProps> = {
     },
     lg: {
       height: 48,
-      paddingX: 24,
+      paddingX: 32,
       paddingY: 12,
       fontSize: '{typography.text-lg}' as TokenRef,
       borderRadius: '{radius.lg}' as TokenRef,
@@ -129,7 +130,7 @@ export const ButtonSpec: ComponentSpec<ButtonProps> = {
     },
     xl: {
       height: 56,
-      paddingX: 32,
+      paddingX: 40,
       paddingY: 16,
       fontSize: '{typography.text-xl}' as TokenRef,
       borderRadius: '{radius.lg}' as TokenRef,
@@ -212,7 +213,7 @@ export const ButtonSpec: ComponentSpec<ButtonProps> = {
           y: 0,
           text,
           fontSize: size.fontSize as unknown as number,
-          fontFamily: 'Inter, system-ui, sans-serif',
+          fontFamily: fontFamily.sans,
           fontWeight: 500,
           fill: textColor,
           align: 'center' as const,
