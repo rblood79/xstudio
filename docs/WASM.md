@@ -1948,6 +1948,10 @@ console.log(`✅ canvaskit.wasm → ${dest}`);
 > Node.js 모듈 해석을 수행한다. `canvaskit-wasm`이 `apps/builder`의 의존성이므로,
 > pnpm strict 모드에서 루트에 hoist되지 않더라도 `apps/builder/node_modules`에서 정확히 찾는다.
 > `createRequire(import.meta.url)` (스크립트 위치 기준)은 루트에 패키지가 없으면 실패하므로 사용하지 않는다.
+>
+> **⚠️ 빌드 타입 전환 시 확인:** 위 스크립트는 `canvaskit-wasm/bin/canvaskit.wasm` 경로를 고정한다.
+> slim 빌드 전환 또는 패키지 메이저 버전 업그레이드 시 내부 파일 경로/파일명이 변경될 수 있으므로,
+> `node_modules/canvaskit-wasm/bin/` 디렉토리 구조를 확인하고 복사 대상을 갱신해야 한다.
 
 ```json
 // 루트 package.json — scripts에 추가
