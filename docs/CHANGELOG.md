@@ -82,6 +82,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+### Fixed - Body borderWidth 시 자식 요소 border 영역 겹침 수정 (2026-01-31)
+
+#### 개요
+display:block 부모에 borderWidth 적용 시 자식 버튼이 부모의 border 영역까지 확장되어 겹치는 버그 수정
+
+#### 수정 내용
+
+**`renderWithCustomEngine`에서 부모 border 미반영**
+- `availableWidth` 계산 시 부모의 padding만 차감하고 border는 차감하지 않음
+- 예: body width=800, borderWidth=24 → availableWidth=800 (정상: 752)
+- 자식 요소가 content 영역(border 안쪽)을 초과하여 border와 겹침
+- 수정: `availableWidth`/`availableHeight` 계산에 `parseBorder` 결과 차감
+- 자식 offset(`left`/`top`)은 padding만 적용 — Yoga(@pixi/layout)가 `rootLayout`의 `borderWidth`를 기반으로 absolute 자식을 padding box 내에 자동 배치하므로 border offset 불필요
+
+#### 변경된 파일
+- `apps/builder/src/builder/workspace/canvas/BuilderCanvas.tsx` — `parseBorder` import 추가, `availableWidth`/`availableHeight`에 border 차감
+
+---
+
 ### Fixed - Button borderWidth/레이아웃 이중 계산 수정 (2026-01-30)
 
 #### 개요

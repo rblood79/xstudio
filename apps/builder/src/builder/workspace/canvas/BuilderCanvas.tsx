@@ -47,6 +47,7 @@ import {
   selectEngine,
   shouldDelegateToPixiLayout,
   parsePadding,
+  parseBorder,
   type LayoutStyle,
   type ComputedLayout,
 } from "./layout";
@@ -542,10 +543,11 @@ const ElementsLayer = memo(function ElementsLayer({
       const parentDisplay = parentStyle?.display as string | undefined;
       const engine = selectEngine(parentDisplay);
 
-      // 🚀 부모의 padding 파싱 (자식 요소들의 사용 가능 공간 계산)
+      // 🚀 부모의 padding/border 파싱 (자식 요소들의 사용 가능 공간 계산)
       const parentPadding = parsePadding(parentStyle);
-      const availableWidth = pageWidth - parentPadding.left - parentPadding.right;
-      const availableHeight = pageHeight - parentPadding.top - parentPadding.bottom;
+      const parentBorder = parseBorder(parentStyle);
+      const availableWidth = pageWidth - parentPadding.left - parentPadding.right - parentBorder.left - parentBorder.right;
+      const availableHeight = pageHeight - parentPadding.top - parentPadding.bottom - parentBorder.top - parentBorder.bottom;
 
       // 레이아웃 계산 (padding이 적용된 content-box 크기 사용)
       // 🚀 Phase 7: parentDisplay 전달로 CSS blockification 지원
@@ -572,7 +574,7 @@ const ElementsLayer = memo(function ElementsLayer({
             elementId={child.id}
             layout={{
               position: 'absolute',
-              // padding offset 적용
+              // padding offset 적용 (border offset은 Yoga가 처리)
               left: layout.x + parentPadding.left,
               top: layout.y + parentPadding.top,
               width: layout.width,

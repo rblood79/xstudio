@@ -113,7 +113,8 @@ Pencil 실제 구조:                    현재 xstudio:
 | **멀티스레딩** | Workers + SharedArrayBuffer (렌더링/네트워크 분리) | 기본 Worker + off-main-thread painting | WASM Pthreads + GPU 오프로드 | Worker 활용 (대규모 문서) |
 | **메모리 관리** | Rust 커스텀 할당기, 객체 재사용 | SkSurface 관리 + delete() 최적화 | WASM 힙 최적화, 메모리 풀링 | 배열 기반 JSO 기법, GC 최소화 |
 | **대규모 요소 (10만+)** | Virtualization, LOD, Canvas Chunking | RepaintBoundary, Skia tiling | 레이어 청킹 + GPU 텍스처 atlasing | Canvas 클리핑, lazy loading |
-| **고급 렌더링** | 커스텀 GPU 파이프라인 (WebGL 직접 제어) | Skwasm (WASM 기반 신규 렌더러 실험) | GPU 셰이더 직접 작성 | 동적 클리핑 최적화 |
+| **고급 렌더링** | WebGPU 전환 (2025, Compute shaders + RenderBundles) | Skwasm (1.1MB, 브라우저 컴포지터 직접 통합) | WASM SIMD (이미지 처리 3-80x↑) + GPU 셰이더 | 동적 클리핑 최적화 |
+| **대규모 파일** | Incremental Frame Loading (visible-only + eviction) | Deferred loading + tree shaking | Virtual Memory + Tiling (Mipmap pyramid) | Lazy loading |
 
 **xstudio 적용 전략:**
 
@@ -121,10 +122,11 @@ Pencil 실제 구조:                    현재 xstudio:
 |------|------|----------|--------------|
 | **1단계** | 공식 CanvasKit으로 안정성 확보 | Flutter Web | Phase 5-6 |
 | **2단계** | Skia 포크 + Web Worker 고도화 → 대규모 스케일링 | Figma | Post-Phase 6 (§장기 최적화) |
-| **3단계** | Rust 메모리 최적화 + 커스텀 할당기 | Figma + Adobe | Post-Phase 6 (§장기 최적화) |
+| **3단계** | Rust 메모리 최적화 + WASM SIMD + 커스텀 할당기 | Figma + Adobe | Post-Phase 6 (§장기 최적화) |
+| **4단계** | WebGPU 전환 (Compute shaders, 차세대 GPU API) | Figma (2025~) | §장기 최적화 7.5 |
 
 > **현재 WASM.md 커버리지:** 1단계(Phase 5-6)는 완전히 설계됨.
-> 2-3단계는 Phase 6 완료 후 실측 데이터에 기반하여 착수 여부를 판단한다.
+> 2-4단계는 Phase 6 완료 후 실측 데이터에 기반하여 착수 여부를 판단한다.
 
 ---
 
@@ -1897,7 +1899,7 @@ let canvasKit: CanvasKit | null = null;
 export async function initCanvasKit(): Promise<CanvasKit> {
   if (canvasKit) return canvasKit;
 
-  // CanvasKit WASM 파일 배치: public/wasm/ 디렉토리에 고정.
+  // CanvasKit WASM 파일 배치: apps/builder/public/wasm/ 디렉토리에 고정.
   // - canvaskit.wasm (~3.5MB full / ~1.5MB slim)은 번들러 에셋 파이프라인에 부적합 (용량, 해싱 불필요).
   // - public/ 파일은 Vite가 빌드 시 그대로 복사하며, BASE_URL을 통해 배포 환경에 맞는 경로를 보장.
   // - CDN/서브 경로 배포 시에도 import.meta.env.BASE_URL이 자동으로 올바른 prefix를 제공.
@@ -1914,6 +1916,54 @@ export function getCanvasKit(): CanvasKit {
   return canvasKit;
 }
 ```
+
+**WASM 파일 복사 설정:**
+
+canvaskit-wasm npm 패키지의 `.wasm` 파일을 `apps/builder/public/wasm/`에 자동 복사한다.
+
+```javascript
+// scripts/prepare-wasm.mjs — 크로스 플랫폼 WASM 복사 스크립트
+import { cpSync, mkdirSync } from 'node:fs';
+import { resolve, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const src = resolve(__dirname, '../node_modules/canvaskit-wasm/bin/canvaskit.wasm');
+const dest = resolve(__dirname, '../apps/builder/public/wasm/canvaskit.wasm');
+
+mkdirSync(dirname(dest), { recursive: true });
+cpSync(src, dest);
+console.log(`✅ canvaskit.wasm → ${dest}`);
+```
+
+```json
+// 루트 package.json — scripts에 추가
+{
+  "scripts": {
+    "prepare:wasm": "node scripts/prepare-wasm.mjs",
+    "postinstall": "pnpm run prepare:wasm"
+  }
+}
+```
+
+> **배치 경로:** `apps/builder/public/wasm/canvaskit.wasm`
+> **런타임 URL:** `{BASE_URL}wasm/canvaskit.wasm` (예: `/wasm/canvaskit.wasm`)
+>
+> **크로스 플랫폼:** Node.js `fs.cpSync`/`mkdirSync` 사용으로 Windows/macOS/Linux 모두 동작.
+> `postinstall`로 `pnpm install` 시 자동 복사된다.
+>
+> **CI 안전성:** `pnpm install --ignore-scripts` 사용 시 `postinstall`이 실행되지 않는다.
+> 이 경우를 대비하여:
+> 1. CI 파이프라인에 `pnpm run prepare:wasm`을 빌드 전 단계로 명시적 추가.
+> 2. `initCanvasKit()`에 런타임 파일 존재 체크 + 에러 메시지 추가:
+>    ```typescript
+>    // initCanvasKit() 실패 시 메시지
+>    throw new Error(
+>      'canvaskit.wasm not found. Run `pnpm run prepare:wasm` or `pnpm install` without --ignore-scripts.'
+>    );
+>    ```
+>
+> `.gitignore`에 `apps/builder/public/wasm/` 추가하여 바이너리를 저장소에 포함하지 않는다.
 
 **Surface 생성 (Pencil §10.9.2 패턴):**
 ```typescript
@@ -2191,18 +2241,16 @@ app.ticker.add(() => {
   // 씬 그래프 Transform/Bounds 갱신
   app.stage.updateTransform();
 
-  // EventBoundary 갱신 — updateTransform()만으로는 히트테스트 영역이
-  // 갱신되지 않을 수 있다. EventSystem의 내부 상태도 업데이트한다.
-  // PixiJS v8의 EventSystem은 포인터 이벤트 발생 시 자동으로 히트테스트를
-  // 수행하므로, DOM 이벤트 브리징(eventBridge.ts)이 정상 동작하면
-  // 별도 호출 없이도 갱신된다.
-  // 그러나 드래그 중 포인터가 캔버스 밖으로 나갈 때를 대비하여:
-  if (app.renderer.events) {
-    app.renderer.events.rootBoundary.hitTest(
-      app.renderer.events.pointer.global.x,
-      app.renderer.events.pointer.global.y,
-    );
-  }
+  // EventBoundary 갱신:
+  // PixiJS v8의 EventSystem은 포인터 이벤트(pointermove 등) 발생 시
+  // 자동으로 히트테스트를 수행한다. eventBridge.ts가 DOM 이벤트를
+  // PixiJS 캔버스로 재디스패치하면, EventSystem이 자동으로
+  // rootBoundary를 갱신하므로 별도 호출이 불필요하다.
+  //
+  // ⚠️ rootBoundary.hitTest() 직접 호출은 PixiJS 내부 API 의존이므로 금지.
+  // 대신 eventBridge.ts의 DOM 이벤트 재디스패치에 의존한다.
+  // 드래그 중 캔버스 밖으로 포인터가 나가는 경우도 pointerleave/pointerenter
+  // 이벤트가 브리징되므로 EventSystem이 자동으로 상태를 추적한다.
 
   // GPU 렌더링은 수행하지 않음 — CanvasKit이 담당
 });
@@ -2270,7 +2318,41 @@ app.ticker.autoStart = true;
        const handler = (e: Event) => {
          // DOM 이벤트를 PixiJS 캔버스로 재디스패치
          // PixiJS EventSystem이 자동으로 FederatedEvent를 생성
-         const clone = new (e.constructor as typeof Event)(e.type, e);
+         let clone: Event;
+         try {
+           // 대부분의 브라우저: 원본 이벤트 생성자로 클론
+           clone = new (e.constructor as typeof Event)(e.type, e);
+         } catch {
+           // 생성자 클론 실패 시 타입별 수동 매핑으로 폴백.
+           // typeof 가드: 구형 Safari/테스트 환경에서 PointerEvent/WheelEvent
+           // 전역이 없으면 instanceof 자체가 ReferenceError로 터진다.
+           if (typeof PointerEvent !== 'undefined' && e instanceof PointerEvent) {
+             clone = new PointerEvent(e.type, {
+               bubbles: e.bubbles, cancelable: e.cancelable,
+               clientX: e.clientX, clientY: e.clientY,
+               pointerId: e.pointerId, pointerType: e.pointerType,
+               button: e.button, buttons: e.buttons,
+               ctrlKey: e.ctrlKey, shiftKey: e.shiftKey,
+               altKey: e.altKey, metaKey: e.metaKey,
+             });
+           } else if (typeof WheelEvent !== 'undefined' && e instanceof WheelEvent) {
+             clone = new WheelEvent(e.type, {
+               bubbles: e.bubbles, cancelable: e.cancelable,
+               clientX: e.clientX, clientY: e.clientY,
+               deltaX: e.deltaX, deltaY: e.deltaY, deltaMode: e.deltaMode,
+               ctrlKey: e.ctrlKey, shiftKey: e.shiftKey,
+             });
+           } else if (typeof MouseEvent !== 'undefined' && e instanceof MouseEvent) {
+             clone = new MouseEvent(e.type, {
+               bubbles: e.bubbles, cancelable: e.cancelable,
+               clientX: e.clientX, clientY: e.clientY,
+               button: e.button, buttons: e.buttons,
+               ctrlKey: e.ctrlKey, shiftKey: e.shiftKey,
+             });
+           } else {
+             clone = new Event(e.type, { bubbles: e.bubbles, cancelable: e.cancelable });
+           }
+         }
          target.dispatchEvent(clone);
          e.preventDefault();
        };
@@ -2627,8 +2709,9 @@ export function exportToImage(
 | Export 파이프라인 | PNG/JPEG/WEBP 오프스크린 Export + SVG/PDF 향후 확장 |
 
 > **선두 기업 참고 — GPU 셰이더:**
-> Adobe Photoshop Web은 WebGL 셰이더를 직접 작성하여 GPU 가속 필터/이펙트를 구현한다.
-> Figma는 커스텀 GPU 파이프라인으로 WebGL을 직접 제어한다.
+> Adobe Photoshop Web은 WebGL 셰이더를 직접 작성하여 GPU 가속 필터/이펙트를 구현하며,
+> WASM SIMD로 이미지 처리 연산을 3-80x 가속한다 (상세: §7.3).
+> Figma는 2025년부터 WebGPU로 전환하여 Compute shaders + RenderBundles를 활용한다 (상세: §7.5).
 > xstudio는 Phase 6의 CanvasKit 기본 이펙트 파이프라인으로 시작하고,
 > 부족한 이펙트가 식별되면 커스텀 SkSL(Skia Shading Language) 셰이더를 추가한다.
 
@@ -2661,6 +2744,10 @@ export function exportToImage(
 | **포크 전환 기준** | 공식 빌드 대비 30%+ 성능 개선이 실측으로 확인될 때 |
 
 > **리스크:** Skia 업스트림 업데이트 추적 부담. 포크 유지 비용을 성능 이득과 비교하여 판단.
+>
+> **WebGPU 연계:** Figma는 2025년부터 WebGL → WebGPU 전환을 진행 중이다.
+> Skia 포크 단계에서 WebGPU 백엔드를 함께 고려하면 이중 전환을 방지할 수 있다.
+> 상세는 §7.5 WebGPU 전환 경로를 참조한다.
 
 ### 7.2 고급 멀티스레딩
 
@@ -2685,18 +2772,85 @@ export function exportToImage(
 | **메모리 풀링** | Adobe | 대규모 레이어 시 고정 크기 버퍼 풀 재사용 |
 | **객체 재사용 패턴** | Figma | Paint/Path 객체를 프레임 간 재사용 (delete() 호출 최소화) |
 | **WASM 힙 예산 관리** | Adobe | 최대 힙 크기 설정 + LRU 캐시로 메모리 압력 관리 |
+| **WASM SIMD** | Adobe | 128-bit SIMD 명령어로 이미지 처리/필터 연산 병렬화 (3-80x 속도 향상). `-msimd128` 컴파일 플래그 필요. Chrome 91+, Firefox 89+, Safari 16.4+ 지원 |
 
 > §5.9.1 Disposable 패턴은 "올바른 해제"에 집중한다.
 > 이 단계는 "해제 빈도 자체를 줄이는" 최적화로, 상호 보완적이다.
+>
+> **SIMD 적용 우선순위:** Adobe 사례에서 가장 큰 효과를 본 영역은 이미지 리사이징/리샘플링,
+> 블러/필터 연산, 색상 공간 변환이다. CanvasKit은 Skia 내부에서 SIMD를 이미 활용하므로,
+> xstudio에서 SIMD가 추가로 필요한 영역은 커스텀 이미지 처리 파이프라인에 한정된다.
 
-### 7.4 브라우저 컴포지터 통합 (실험적)
+### 7.4 브라우저 컴포지터 통합 + 색상 정밀도
 
 | 기법 | 출처 | 내용 |
 |------|------|------|
-| **Skwasm** | Flutter Web | WASM 기반 렌더러가 브라우저 컴포지터와 직접 통합 |
+| **Skwasm** | Flutter Web | WASM 기반 렌더러 (1.1MB, CanvasKit 1.5MB 대비 27% 경량). 브라우저 컴포지터와 직접 통합하여 이중 래스터화 제거. `flutter build web --wasm` 플래그로 활성화 |
 | **CSS Transform 레이어** | Google Docs | Canvas 위 CSS transform으로 스크롤/줌 하드웨어 가속 |
+| **Display P3 Canvas** | Adobe | `canvas.getContext('2d', { colorSpace: 'display-p3' })`로 광색역 지원. sRGB 대비 25% 넓은 색 공간으로 디자인 도구 색상 정확도 향상 |
 
-> Skwasm은 2024-2025 실험 단계이며, 안정성 확인 후 xstudio 적용 가능성을 재평가한다.
+> Skwasm은 Flutter 3.22+ (2024)에서 안정화되었으며, SharedArrayBuffer(COOP/COEP)를 전제로 한다.
+> xstudio의 COOP/COEP 제약(§7.2 참조)이 해소되면 Skwasm 아키텍처 참고 가능성을 재평가한다.
+>
+> **Display P3 적용 시점:** CanvasKit은 기본적으로 sRGB 색 공간을 사용한다.
+> Phase 6 완료 후 디자인 도구로서 색상 정확도 요구가 확인되면,
+> WebGL Surface 생성 시 P3 색 공간을 명시적으로 설정할 수 있다.
+
+### 7.5 WebGPU 전환 경로
+
+**진입 기준:** Phase 6 완료 + WebGPU 브라우저 지원 안정화 + Skia의 WebGPU 백엔드(Dawn) 성숙
+
+> **배경:** Figma는 2025년부터 WebGL → WebGPU 전환을 공개적으로 진행 중이다.
+> WebGPU는 Compute shaders, RenderBundles, 명시적 메모리 관리 등
+> WebGL 대비 근본적인 GPU 활용 개선을 제공한다.
+
+| 항목 | 내용 |
+|------|------|
+| **Compute Shaders** | 레이아웃 계산, 패스파인딩, 파티클 시뮬레이션 등을 GPU에서 병렬 처리. WebGL에서는 불가능했던 범용 GPU 연산(GPGPU) 지원 |
+| **RenderBundles** | 정적 씬의 draw call을 사전 인코딩하여 반복 재생. 대규모 정적 요소가 많은 디자인 캔버스에서 CPU 오버헤드 대폭 감소 |
+| **GLSL → WGSL** | 셰이더 언어 전환 필요. Skia는 SkSL → WGSL 자동 변환을 지원하므로 CanvasKit 사용 시 영향 최소화 |
+| **명시적 리소스 관리** | GPU 버퍼/텍스처 생명주기를 명시적으로 제어. WebGL의 암시적 상태 머신 대비 예측 가능한 성능 |
+| **Skia Dawn 백엔드** | Skia의 `graphite` 프로젝트가 WebGPU/Dawn 기반 차세대 백엔드 개발 중 |
+
+**xstudio 전환 전략:**
+
+```
+단계 1: WebGL (현재, Phase 5-6)
+  └─ CanvasKit MakeWebGLCanvasSurface
+  └─ 안정성 + 호환성 우선
+
+단계 2: WebGPU 감지 + 폴백 (§7.5 진입 시)
+  └─ navigator.gpu 존재 여부 확인
+  └─ WebGPU 지원 시: MakeGPUCanvasSurface (Dawn 백엔드)
+  └─ 미지원 시: WebGL 폴백 유지
+
+단계 3: WebGPU 전용 최적화
+  └─ Compute shaders로 레이아웃/히트테스트 GPU 오프로드
+  └─ RenderBundles로 정적 레이어 최적화
+  └─ 커스텀 WGSL 셰이더 (SkSL 한계 시)
+```
+
+> **타이밍:** WebGPU는 Chrome 113+ (2023.04), Firefox Nightly, Safari Technology Preview에서 지원.
+> 그러나 Safari 안정 버전과 모바일 브라우저 지원이 아직 제한적이므로,
+> WebGL 폴백을 반드시 유지하면서 점진적으로 전환한다.
+
+### 7.6 대규모 파일 지원
+
+**진입 기준:** 대규모 프로젝트(수백 페이지, 고해상도 이미지 다수)에서 로딩/메모리 문제가 확인될 때
+
+| 기법 | 출처 | 내용 |
+|------|------|------|
+| **Incremental Frame Loading** | Figma | 전체 파일을 한 번에 로드하지 않고, 뷰포트에 보이는 프레임/컴포넌트만 우선 로드. 화면 밖 데이터는 eviction(퇴거) 처리하여 메모리 해제. 서브트리 subscription으로 필요 시 재로드 |
+| **Virtual Memory + Tiling** | Adobe | 대규모 이미지를 타일(256×256 등)로 분할하여 Mipmap pyramid 구성. 줌 레벨에 따라 적절한 해상도 타일만 로드. 페이지 기반 load/flush로 메모리 사용량 일정 유지 |
+| **Origin Private File System (OPFS)** | Adobe | 브라우저 로컬에 대규모 파일을 저장하여 네트워크 재다운로드 방지. `navigator.storage.getDirectory()` API 사용. Worker에서 동기 접근 가능(`createSyncAccessHandle()`) |
+
+> **Incremental Loading과 기존 Virtualization 관계:**
+> 추가 개선 항목의 Virtualization은 "렌더링 스킵"에 집중하고,
+> Incremental Loading은 "데이터 로딩 자체를 지연"하는 상위 개념이다.
+> Virtualization → Incremental Loading 순으로 도입하는 것이 자연스럽다.
+>
+> **OPFS 적용 시점:** 현재 xstudio는 Supabase Storage에서 에셋을 로드한다.
+> 대규모 프로젝트에서 반복 로딩이 병목이 되면 OPFS 캐싱 레이어를 도입한다.
 
 ---
 
@@ -2824,6 +2978,9 @@ function someOperation(args) {
 > **주의:** Phase 5 CanvasKit WASM은 기존 Phase 1-4의 커스텀 Rust WASM (~30KB)과는 규모가 다르다.
 > Pencil 앱의 pencil.wasm이 7.8MB인 점과 비교하면, Google 공식 canvaskit-wasm slim 빌드 (~1.5MB)는 합리적이다.
 > Lazy loading + 캐싱으로 초기 로드 영향을 최소화한다.
+>
+> **참고 — Flutter Skwasm:** Flutter Web의 Skwasm 렌더러는 1.1MB로 CanvasKit(1.5MB) 대비 27% 경량이다.
+> 그러나 SharedArrayBuffer(COOP/COEP)를 필수로 요구하므로, xstudio의 현재 제약 하에서는 사용 불가하다.
 
 ---
 
@@ -2911,8 +3068,10 @@ Phase 6: 고급 렌더링 기능 (CanvasKit 활용)
   ┌───┴─── 장기 최적화 경로 (Phase 6 완료 + 실측 데이터 기반) ──┐
   │  §7.1 Skia 포크 + 커스텀 빌드 (Figma 접근법)               │
   │  §7.2 고급 멀티스레딩 (SharedArrayBuffer/Pthreads)          │
-  │  §7.3 Rust 메모리 최적화 + 커스텀 할당기                     │
-  │  §7.4 브라우저 컴포지터 통합 (Skwasm, 실험적)                │
+  │  §7.3 Rust 메모리 최적화 + WASM SIMD + 커스텀 할당기        │
+  │  §7.4 브라우저 컴포지터 통합 + 색상 정밀도 (Display P3)      │
+  │  §7.5 WebGPU 전환 (Compute shaders, RenderBundles)         │
+  │  §7.6 대규모 파일 지원 (Incremental Loading, OPFS, Tiling)  │
   │  ★ 진입 기준: Phase 6 완료 + 성능 병목 실측 확인             │
   └─────────────────────────────────────────────────────────────┘
 
@@ -2924,6 +3083,7 @@ Phase 6: 고급 렌더링 기능 (CanvasKit 활용)
   [높음] LOD 스위칭 — 줌 레벨별 디테일 조절 (§4.3)
   [높음] 텍스처 아틀라싱 — 다수 이미지를 단일 GPU 텍스처로 합침 (§4.2)
   [높음] Virtualization — 화면 밖 요소 렌더링 완전 스킵 (Figma 참고)
+  [높음] Incremental Loading — 뷰포트 기반 데이터 지연 로드 + eviction (Figma 참고, §7.6)
   [중간] Canvas Chunking — 대규모 씬을 타일 분할 렌더링 (Figma 참고)
   [중간] RepaintBoundary — 변경 없는 서브트리 재렌더 방지 (Flutter 참고)
   [중간] RenderTexture 풀링 — GPU 텍스처 재사용 (§4.4)
@@ -3025,3 +3185,40 @@ elementsMap 변경 시 불필요한 리렌더가 발생한다. `getState()`는 �
 | 외부 파일 임포트 | 후순위 | 미구현 | .fig/.sketch 파서 (서비스 런칭 후 검토) |
 
 > 이 항목들은 Phase 5-6 렌더링 전환과 독립적이며, 별도 로드맵에서 우선순위를 결정한다.
+
+---
+
+## 참고 자료 — 선두 기업 엔지니어링 블로그
+
+> 장기 최적화 경로(§7)의 기법들은 아래 공개 엔지니어링 블로그를 근거로 한다.
+
+### Figma
+
+| 주제 | 출처 |
+|------|------|
+| WebGL → WebGPU 전환 (2025) | Figma 공식 블로그 "How Figma's infrastructure team is…" |
+| Skia 포크 + WASM 최적화 | "Building a professional design tool on the web" |
+| Incremental Frame Loading | "Figma's journey to TypeScript" 및 커뮤니티 발표 |
+| Multiplayer / Time-slicing | "How Figma's multiplayer technology works" |
+| Fractional Indexing (협업 요소 순서) | "Realtime Editing of Ordered Sequences" |
+
+### Flutter Web
+
+| 주제 | 출처 |
+|------|------|
+| CanvasKit 렌더러 아키텍처 | Flutter docs: "Web renderers" |
+| Skwasm (1.1MB, WASM 기반 렌더러) | Flutter 3.22 릴리즈 노트, `flutter build web --wasm` |
+| SharedArrayBuffer 멀티스레딩 | Flutter Engine GitHub issues / design docs |
+
+### Adobe Photoshop Web
+
+| 주제 | 출처 |
+|------|------|
+| C++ → WASM Emscripten 포팅 | Chrome Dev Summit 발표: "Photoshop's journey to the web" |
+| WASM SIMD (3-80x 속도 향상) | web.dev: "Porting Photoshop to the web" |
+| Virtual Memory + Tiling | Adobe 엔지니어링 블로그: PSWeb 아키텍처 |
+| Origin Private File System (OPFS) | web.dev: "The File System Access API" |
+| Display P3 Canvas | MDN: "Canvas color space" |
+
+> **주의:** 블로그 URL은 시간에 따라 변경될 수 있다. 제목으로 검색하면 최신 URL을 확인할 수 있다.
+> Figma의 내부 구현 상세 일부는 비공개이며, 공개 발표/블로그에서 추론한 내용을 포함한다.
