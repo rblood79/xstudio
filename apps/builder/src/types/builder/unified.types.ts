@@ -623,6 +623,11 @@ export function createDefaultButtonProps(): ButtonElementProps {
     variant: "default",
     size: "sm",
     isDisabled: false,
+    // CSS base rule: border: 1px solid var(--outline-variant)
+    // 스타일 패널에서 borderWidth 값 정상 표시를 위해 기본값 설정
+    style: {
+      borderWidth: '1px',
+    },
   };
 }
 

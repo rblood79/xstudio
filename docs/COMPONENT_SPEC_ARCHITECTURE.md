@@ -2143,24 +2143,32 @@ export const ButtonSpec: ComponentSpec<ButtonProps> = {
       backgroundHover: '{color.primary-hover}' as TokenRef,
       backgroundPressed: '{color.primary-pressed}' as TokenRef,
       text: '{color.on-primary}' as TokenRef,
+      border: '{color.primary}' as TokenRef,
+      borderHover: '{color.primary-hover}' as TokenRef,
     },
     secondary: {
       background: '{color.secondary}' as TokenRef,
       backgroundHover: '{color.secondary-hover}' as TokenRef,
       backgroundPressed: '{color.secondary-pressed}' as TokenRef,
       text: '{color.on-secondary}' as TokenRef,
+      border: '{color.secondary}' as TokenRef,
+      borderHover: '{color.secondary-hover}' as TokenRef,
     },
     tertiary: {
       background: '{color.tertiary}' as TokenRef,
       backgroundHover: '{color.tertiary-hover}' as TokenRef,
       backgroundPressed: '{color.tertiary-pressed}' as TokenRef,
       text: '{color.on-tertiary}' as TokenRef,
+      border: '{color.tertiary}' as TokenRef,
+      borderHover: '{color.tertiary-hover}' as TokenRef,
     },
     error: {
       background: '{color.error}' as TokenRef,
       backgroundHover: '{color.error-hover}' as TokenRef,
       backgroundPressed: '{color.error-pressed}' as TokenRef,
       text: '{color.on-error}' as TokenRef,
+      border: '{color.error}' as TokenRef,
+      borderHover: '{color.error-hover}' as TokenRef,
     },
     surface: {
       background: '{color.surface-container-highest}' as TokenRef,
@@ -2308,7 +2316,7 @@ export const ButtonSpec: ComponentSpec<ButtonProps> = {
           y: 0,
           text,
           fontSize: size.fontSize,
-          fontFamily: 'Inter, system-ui, sans-serif',
+          fontFamily: fontFamily.sans,
           fontWeight: 500,
           fill: textColor,
           align: 'center' as const,
@@ -2668,8 +2676,10 @@ pnpm --filter @xstudio/builder dev
 | `ButtonSpec.sizes[size].paddingX` | `BUTTON_SIZE_CONFIG[size].paddingLeft/Right` | `Button.css [data-size] padding` |
 | `ButtonSpec.sizes[size].fontSize` | `BUTTON_SIZE_CONFIG[size].fontSize` | `Button.css [data-size] font-size` |
 | `fontFamily.sans` (typography.ts) | `measureTextWidth()` 기본 폰트 | `body { font-family }` |
+| CSS base `border: 1px solid` | `BUTTON_SIZE_CONFIG[size].borderWidth` (=1) | `Button.css base: border: 1px solid` |
+| `ButtonSpec.variants[v].border` | `PixiButton specDefaultBorderWidth` (=1) | `Button.css border-color` |
 
-위 3곳의 값이 불일치하면 CSS↔WebGL 렌더링 차이가 발생합니다.
+위 값들이 불일치하면 CSS↔WebGL 렌더링 차이가 발생합니다.
 코드에 `// @sync` 주석이 있는 곳은 반드시 연관된 다른 소스와 값을 맞춰야 합니다.
 
 #### 4.7.4.1 Padding/Border 이중 적용 방지 (CRITICAL)
@@ -2762,18 +2772,147 @@ if (VERTICALLY_CENTERED_TAGS.has(tag)) {
 #### 4.7.4.4 Spec 기본 borderWidth 적용
 
 CSS 모드에서는 `.react-aria-Button { border: 1px solid var(--outline-variant); }`가
-기본 border를 제공하지만, WebGL 모드는 inline style만 읽으므로 기본 border가 누락됩니다.
+**모든 variant에** 기본 border를 제공하지만, WebGL 모드는 inline style만 읽으므로 기본 border가 누락됩니다.
 
-**해결**: padding fallback 패턴과 동일하게 적용 (`PixiButton.tsx`)
+**v1.12 수정**: CSS는 모든 variant에 `border: 1px solid`를 적용하므로, `specDefaultBorderWidth`를
+variant의 `border` 존재 여부와 무관하게 항상 `1`로 설정합니다.
 
 ```typescript
-// inline style에 borderWidth가 없으면 spec 기본값 사용
-const hasBorderWidthStyle = style?.borderWidth !== undefined ||
-  style?.borderTopWidth !== undefined || /* ... */;
-const parsedBorder = hasBorderWidthStyle ? parseBorderWidth(style) : null;
-const specDefaultBorderWidth = variantColors.border != null ? 1 : 0;
-const borderWidthTop = parsedBorder?.top ?? specDefaultBorderWidth;
-// ... (4방향 동일)
+// PixiButton.tsx — CSS base: border: 1px solid (all variants)
+const specDefaultBorderWidth = 1;
+
+// 모든 variant에 border/borderHover 추가 (Button.spec.ts)
+// primary, secondary, tertiary, error → border: 배경색과 동일 (시각적으로 투명)
+// default, surface → border: outline-variant
+// outline → border: outline
+// ghost → border 없음 (backgroundAlpha: 0)
+```
+
+**v1.12 추가 — borderHover 분리**: hover/pressed 상태에서 border 색상이 다른 경우를 지원합니다.
+
+```typescript
+// PixiButton.tsx — hover 시 별도 border 색상
+const borderHoverColor = hasInlineBorderColor
+  ? borderColor
+  : (variantColors.borderHover ?? borderColor);
+
+// default vs hover graphics 옵션 분리
+const defaultGraphicsOptions = { borderColor: layout.borderColor, ... };
+const hoverGraphicsOptions = { borderColor: layout.borderHoverColor, ... };
+```
+
+#### 4.7.4.5 parseBoxModel 폼 요소 기본값 적용 (v1.12)
+
+`parseBoxModel()`은 inline style만으로 padding/border를 계산합니다.
+Button 등 self-rendering 요소는 inline style이 없어도 **BUTTON_SIZE_CONFIG 기본값**이 적용되어야 합니다.
+
+**문제**: `calculateContentWidth`가 padding을 포함했고, `parseBoxModel`도 inline padding을 반환
+→ 사용자가 style panel에서 padding을 변경하면 이중 계산 발생
+
+**해결**: `calculateContentWidth`는 순수 텍스트 너비만 반환하고,
+`parseBoxModel`이 BUTTON_SIZE_CONFIG 기본값을 제공하도록 분리
+
+```typescript
+// utils.ts parseBoxModel()
+const tag = (element.tag ?? '').toLowerCase();
+const isFormElement = ['button', 'input', 'select'].includes(tag);
+if (isFormElement) {
+  const size = (props?.size as string) ?? 'sm';
+  const sizeConfig = BUTTON_SIZE_CONFIG[size] ?? BUTTON_SIZE_CONFIG.sm;
+
+  // inline padding이 없으면 BUTTON_SIZE_CONFIG 기본값 적용
+  const hasInlinePadding = style?.padding !== undefined ||
+    style?.paddingTop !== undefined || /* ... */;
+  if (!hasInlinePadding) {
+    padding = {
+      top: sizeConfig.paddingY,
+      right: sizeConfig.paddingRight,
+      bottom: sizeConfig.paddingY,
+      left: sizeConfig.paddingLeft,
+    };
+  }
+
+  // inline border가 없으면 BUTTON_SIZE_CONFIG 기본값 적용
+  const hasInlineBorder = style?.borderWidth !== undefined || /* ... */;
+  if (!hasInlineBorder) {
+    border = {
+      top: sizeConfig.borderWidth,
+      right: sizeConfig.borderWidth,
+      bottom: sizeConfig.borderWidth,
+      left: sizeConfig.borderWidth,
+    };
+  }
+}
+```
+
+**결과**: BlockEngine의 `childWidth = contentWidth + padding + border` 계산에서:
+- **기본 상태**: `textWidth + BUTTON_SIZE_CONFIG.padding + BUTTON_SIZE_CONFIG.border`
+- **inline 변경 시**: `textWidth + inlinePadding + inlineBorder` (이중 계산 없음)
+
+#### 4.7.4.6 calculateContentWidth 순수 텍스트 너비 반환 (v1.12)
+
+폼 요소(`button`, `input`, `select`, `a`, `label`)에 대해 `calculateContentWidth()`는
+padding/border를 포함하지 않고 **순수 텍스트 너비만** 반환합니다.
+
+```typescript
+// utils.ts calculateContentWidth()
+const isFormElement = ['button', 'input', 'select', 'a', 'label'].includes(tag);
+if (isFormElement) {
+  const size = (props?.size as string) ?? 'sm';
+  const sizeConfig = BUTTON_SIZE_CONFIG[size] ?? BUTTON_SIZE_CONFIG.sm;
+  const fontSize = parseNumericValue(style?.fontSize) ?? sizeConfig.fontSize;
+  return calculateTextWidth(text, fontSize, 0); // padding=0, border는 parseBoxModel에서 처리
+}
+```
+
+이는 §4.7.4.5 (`parseBoxModel` 기본값)과 짝을 이루어 이중 계산을 방지합니다.
+
+#### 4.7.4.7 텍스트 측정 엔진 통일 (v1.12)
+
+CSS, BlockEngine, PixiButton이 각각 다른 텍스트 측정 엔진을 사용하여 `display: block`
+부모에서 자식 버튼 간 간격이 발생했습니다.
+
+| 구성 요소 | 측정 엔진 | 비고 |
+|-----------|-----------|------|
+| CSS | 브라우저 네이티브 | 기준 |
+| BlockEngine (utils.ts) | Canvas 2D `ctx.measureText()` | |
+| PixiButton | PixiJS `PixiText.getLocalBounds()` | 불일치 |
+
+**해결**: PixiButton의 **너비 측정**을 Canvas 2D로 통일하고, **높이 측정**만 PixiJS 유지
+
+```typescript
+// PixiButton.tsx — Canvas 2D 텍스트 너비 측정 사용
+import { measureTextWidth as measureTextWidthCanvas } from '../layout/engines/utils';
+
+const textWidth = measureTextWidthCanvas(buttonText, fontSize, fontFamily);
+const textStyle = new TextStyle({ fontSize, fontFamily });
+const textHeight = measureTextSize(buttonText, textStyle).height;
+```
+
+`measureTextWidth()`는 utils.ts에서 `export`하여 공유합니다.
+
+#### 4.7.4.8 createDefaultButtonProps borderWidth 기본값 (v1.12)
+
+버튼 추가 시 Style Panel에서 `borderWidth`가 0으로 표시되는 문제를 해결합니다.
+
+**원인**: Style Panel이 `element.style.borderWidth ?? computedStyle.borderWidth ?? '0px'`를 읽는데,
+새로 생성된 버튼의 props에 `borderWidth`가 없었음
+
+**해결**: `createDefaultButtonProps()`에 기본 style 추가
+
+```typescript
+// unified.types.ts
+export function createDefaultButtonProps(): ButtonElementProps {
+  return {
+    children: "Button",
+    variant: "default",
+    size: "sm",
+    isDisabled: false,
+    style: {
+      borderWidth: '1px',
+    },
+  };
+}
 ```
 
 #### 4.7.5 WebGL computedStyle 동기화 수정
@@ -2832,10 +2971,12 @@ export function smoothRoundRect(
 | `apps/builder/.../canvas/utils/graphicsUtils.ts` | smoothRoundRect 구현 |
 | `apps/builder/.../canvas/BuilderCanvas.tsx` | `SELF_PADDING_TAGS` + `stripSelfRenderedProps` 추가 (v1.10) |
 | `apps/builder/.../canvas/layout/engines/BlockEngine.ts` | content-box → border-box 크기 변환 (v1.10) |
-| `apps/builder/.../canvas/layout/engines/utils.ts` | `VERTICALLY_CENTERED_TAGS` baseline 수정 (v1.10), `BUTTON_SIZE_CONFIG` padding 동기화 + fontFamily specs 참조 (v1.11) |
-| `packages/specs/src/components/Button.spec.ts` | paddingX md:16→24, lg:24→32, xl:32→40, fontFamily specs 상수 사용 (v1.11) |
+| `apps/builder/.../canvas/layout/engines/utils.ts` | `VERTICALLY_CENTERED_TAGS` baseline 수정 (v1.10), `BUTTON_SIZE_CONFIG` padding 동기화 + fontFamily specs 참조 (v1.11), `BUTTON_SIZE_CONFIG.borderWidth` 추가 + `calculateContentWidth` 순수 텍스트 반환 + `parseBoxModel` 폼 요소 기본값 + `measureTextWidth` export (v1.12) |
+| `packages/specs/src/components/Button.spec.ts` | paddingX md:16→24, lg:24→32, xl:32→40, fontFamily specs 상수 사용 (v1.11), 전 variant border/borderHover 추가 (v1.12) |
 | `packages/specs/src/primitives/typography.ts` | fontFamily.sans에 Pretendard 추가 (v1.11) |
-| `apps/builder/.../canvas/ui/PixiButton.tsx` | fontFamily를 specs 상수로 교체 (v1.11) |
+| `packages/specs/src/renderers/PixiRenderer.ts` | `getVariantColors()` borderHover 반환 추가 (v1.12) |
+| `apps/builder/.../canvas/ui/PixiButton.tsx` | fontFamily를 specs 상수로 교체 (v1.11), `specDefaultBorderWidth=1` 고정 + borderHoverColor 분리 + Canvas 2D 텍스트 측정 통일 (v1.12) |
+| `apps/builder/src/types/builder/unified.types.ts` | `createDefaultButtonProps()` style.borderWidth 기본값 추가 (v1.12) |
 
 ---
 
@@ -4427,3 +4568,4 @@ function PixiButton({ element }) {
 | 2026-01-29 | 1.9 | Pixi UI 컴포넌트 CSS 단위 해석 규칙 추가 (Section 4.7.4): (1) typeof === 'number' 패턴 사용 금지 → parseCSSSize() 필수, (2) % / vw / vh는 부모 content area 기준 해석 (parentContentArea = 부모 width - padding - border), (3) padding shorthand(parsePadding) + border width 4방향(parseBorderWidth) 파싱 필수, (4) 적용 필수 컴포넌트 18개 목록 명시, (5) Yoga 경로에서 vh/vw → % 문자열 변환 정책 (styleToLayout.ts) |
 | 2026-01-29 | 1.10 | Button 레이아웃 버그 패치 4건 + 컴포넌트 상태 추적표 (Section 4.7.4.1~4.7.4.4): (1) padding/border 이중 적용 방지 — SELF_PADDING_TAGS(Button, SubmitButton, FancyButton, ToggleButton) + stripSelfRenderedProps (BuilderCanvas.tsx), (2) BlockEngine border-box 크기 계산 — content-box → border-box 변환으로 block/inline-block 요소 겹침 해결 (BlockEngine.ts), (3) baseline 정렬 수정 — VERTICALLY_CENTERED_TAGS(button/fancybutton/togglebutton/input/select) height/2 반환으로 CSS 웹 모드와 동일한 수직 중앙 정렬 (utils.ts), (4) spec 기본 borderWidth 적용 — inline style 미지정 시 variantColors.border 존재하면 1px 기본값 (PixiButton.tsx), (5) 적용 필수 컴포넌트 18개 상태 추적표 추가 — PixiFancyButton/PixiToggleButton은 SELF_PADDING_TAGS 등록 완료, typeof 패턴 전환은 미완료(잔여 작업) |
 | 2026-01-30 | 1.11 | Button auto width 불일치 수정 + Spec 빌드 동기화 규칙 (Section 4.7.4.0): (1) ButtonSpec sizes paddingX 수정 — md:16→24, lg:24→32, xl:32→40 (CSS 토큰과 일치), (2) BUTTON_SIZE_CONFIG paddingLeft/Right 동기화, (3) fontFamily 통일 — Pretendard를 specs fontFamily.sans에 추가, PixiButton·utils.ts·Button.spec.ts에서 specs 상수 참조로 교체, (4) `@xstudio/specs` 빌드 동기화 규칙 추가 (CRITICAL) — dist/ 미갱신 시 layout↔rendering 값 불일치 발생 사례 문서화, (5) 핵심 원칙에 Build-Sync 추가, (6) 9.3 스크립트 섹션을 실제 tsup 빌드 도구와 동기화, (7) 값 동기화 대상 테이블 (Spec↔Builder 내부 상수↔CSS 토큰) 및 @sync 주석 정책 명시 |
+| 2026-01-30 | 1.12 | Button borderWidth/레이아웃 이중 계산 수정 (Section 4.7.4.4~4.7.4.8): (1) 전 variant에 border/borderHover 추가 — CSS `border: 1px solid`와 동기화 (Button.spec.ts), (2) specDefaultBorderWidth=1 고정 — variant.border 유무 무관 (PixiButton.tsx), (3) borderHoverColor 분리 — hover/pressed 상태 별도 border 색상 (PixiButton.tsx, PixiRenderer.ts), (4) parseBoxModel 폼 요소 기본값 — inline style 미지정 시 BUTTON_SIZE_CONFIG padding/border 적용 (utils.ts), (5) calculateContentWidth 순수 텍스트 반환 — 폼 요소 padding/border를 parseBoxModel으로 분리하여 이중 계산 제거 (utils.ts), (6) 텍스트 측정 엔진 통일 — PixiButton 너비 측정을 Canvas 2D measureTextWidth로 교체 (PixiButton.tsx), (7) createDefaultButtonProps borderWidth:'1px' 기본값 — Style Panel 0 표시 해결 (unified.types.ts), (8) BUTTON_SIZE_CONFIG에 borderWidth:1 필드 추가 (utils.ts), (9) 값 동기화 테이블에 borderWidth 항목 추가 |

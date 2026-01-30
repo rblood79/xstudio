@@ -240,32 +240,40 @@ Pencil은 **Electron + React + WebAssembly** 기반의 디자인 도구로, High
 
 ## 11. Pencil WASM 그래픽 엔진 심층 분석
 
-### 11.1 그래픽 아키텍처 (수정된 분석)
+### 11.1 그래픽 아키텍처 (2차 수정 — 2026-01-30 심층 분석 반영)
 
-기존 분석에서 "WebAssembly 그래픽 렌더링"으로 기술했으나, 심층 분석 결과 Pencil의 실제 렌더링 구조는 **하이브리드 방식**이다.
+초기 분석에서 "PixiJS가 메인 렌더러, pencil.wasm이 보조"로 기술했으나, `renderSkia()` 메서드 역공학 결과 실제 구조는 **CanvasKit/Skia WASM이 메인 렌더러, PixiJS는 씬 그래프/이벤트 레이어**이다.
 
 ```
 ┌─────────────────────────────────────────────────────────┐
 │  Renderer Process (editor/index.html)                  │
 │  ├─ React Components (Sidebar, Inspector)             │
-│  ├─ @pixi/react v8 (WebGL 기반 메인 렌더러)            │
-│  │   ├─ PixiJS Graphics Engine (GPU 가속 2D)          │
-│  │   ├─ @pixi/layout (Yoga WASM 레이아웃)             │
-│  │   └─ ElementSprite 렌더링                          │
-│  ├─ pencil.wasm (보조 연산 모듈)                       │
-│  │   ├─ 벡터 도형 래스터라이즈                          │
-│  │   ├─ 텍스트 메트릭 계산                             │
-│  │   ├─ 기하 연산 (히트 테스트, 바운딩박스)              │
-│  │   └─ 컴포지팅/블렌딩 연산                           │
+│  │                                                     │
+│  ├─ [메인 렌더러] CanvasKit/Skia WASM (pencil.wasm)    │
+│  │   ├─ Surface → Canvas API로 모든 디자인 노드 렌더링  │
+│  │   ├─ 벡터 패스 (PathBuilder, drawPath, drawRRect)   │
+│  │   ├─ 텍스트 (ParagraphBuilder, drawTextBlob)        │
+│  │   ├─ 효과 (ImageFilter, saveLayer, blendMode)       │
+│  │   ├─ 그라디언트 (Shader.MakeLinear/Radial/Sweep)    │
+│  │   └─ GPU 출력 (GrDirectContext → flush)             │
+│  │                                                     │
+│  ├─ [씬 그래프/이벤트] PixiJS v8                       │
+│  │   ├─ Container/RenderGroup (씬 그래프 관리)          │
+│  │   ├─ EventBoundary (Hit Testing)                    │
+│  │   ├─ TexturePool, CacheAsTexture                    │
+│  │   └─ WebGPU/WebGL 렌더러 선택                       │
+│  │                                                     │
+│  ├─ @pixi/layout (Yoga WASM 레이아웃)                  │
 │  └─ Web Workers (webworkerAll.js)                     │
 │      └─ 오프메인스레드 연산                             │
 └─────────────────────────────────────────────────────────┘
 ```
 
 **핵심 포인트:**
-- **주 렌더러**: PixiJS v8 (WebGL) — GPU 가속 2D 렌더링 담당
-- **보조 모듈**: pencil.wasm — 연산 집약적 작업 가속 (렌더링 자체가 아닌 계산 보조)
+- **메인 렌더러**: CanvasKit/Skia WASM — 모든 디자인 노드의 실제 렌더링 (벡터, 텍스트, 이미지, 효과)
+- **씬 그래프/이벤트**: PixiJS v8 — Container 계층, Hit Testing, 텍스처 관리 (디자인 노드 렌더링에는 불참여)
 - **레이아웃**: @pixi/layout (Yoga WASM) — Flexbox 레이아웃 계산
+- **증거**: 모든 씬 노드가 `renderSkia(renderer, canvas, cullingBounds)` 메서드를 구현, CanvasKit Canvas API 직접 호출
 
 ### 11.2 pencil.wasm의 역할
 
@@ -1154,46 +1162,365 @@ submitPrompt(prompt, model) {
 
 ---
 
-## 21. 렌더링 파이프라인 상세
+## 21. 렌더링 파이프라인 심층 분석
 
-### 21.1 전체 파이프라인
+> 분석일: 2026-01-30
+> 분석 방법: `renderSkia()`, `beginRenderEffects()`, `renderFills()` 등 핵심 메서드 역공학
+> **중요 정정**: Skia가 메인 렌더러이며, PixiJS는 씬 그래프/이벤트 레이어로만 사용됨
+
+### 21.1 이중 렌더링 아키텍처
+
+| 역할 | 기술 | 상세 |
+|------|------|------|
+| **메인 렌더러** | CanvasKit/Skia WASM | 모든 디자인 노드의 실제 렌더링 — 벡터 패스, 텍스트, 이미지, 효과, 그라디언트 |
+| **씬 그래프/이벤트** | PixiJS v8 | Container 계층, EventBoundary (hit testing), TexturePool, CacheAsTexture |
+| **레이아웃** | @pixi/layout (Yoga WASM) | Flexbox 레이아웃 계산 |
+| **오프스크린** | Web Workers | webworkerAll.js — PixiJS 확장 등록 |
+
+**증거**: 모든 씬 노드(`FrameNode`, `ShapeNode`, `TextNode`, `GroupNode`, `IconFontNode`, `StickyNode`)가 `renderSkia(renderer, canvas, cullingBounds)` 메서드를 구현하며, CanvasKit Canvas API(`drawPath`, `clipPath`, `saveLayer` 등)를 직접 호출한다. PixiJS의 `Sprite.render()`나 `Graphics.render()`는 디자인 노드 렌더링에 사용되지 않는다.
+
+### 21.2 렌더 루프 전체 흐름
 
 ```
-React UI Layer (DOM)
-    │
-    ↓ 사용자 이벤트 / 상태 변경
-    │
-SceneManager (CNe) — React Context
-    │ SceneGraph 노드 트리 관리
-    │ FileManager — .pen 파일 I/O
-    │ VariableManager — $-- 변수 resolve
-    │ UndoManager — 트랜잭션 기반 undo/redo
-    │
-    ↓ 노드 데이터 (resolved properties)
-    │
-SkiaRenderer — CanvasKit WASM (pencil.wasm, 7.8MB)
-    │ 벡터 도형, 텍스트, 이미지, 효과 렌더링
-    │ 안티앨리어싱, 패스 연산, 블렌드 모드
-    │
-    ↓ 래스터라이즈된 텍스처
-    │
-PixiJS v8 Manager — WebGL 컨텍스트
-    │ 배치 렌더링, 텍스처 관리
-    │ 뷰포트 변환 (줌/패닝)
-    │
-    ↓ GPU 출력
-    │
-Canvas Element (화면)
+requestFrame()
+│
+↓
+render()
+├── surfaceCanvas.clear(backgroundColor)
+│
+├── displayContentCanvas()                    ← 캐시된 콘텐츠 블리팅
+│   └── redrawContentIfNeeded()               ← contentNeedsRedraw 시 실행
+│       ├── contentCanvas.clear([0,0,0,0])
+│       ├── contentCanvas.save()
+│       ├── canvas.translate(contentRenderPadding)
+│       ├── canvas.scale(dpi, dpi)            ← DPI 스케일링
+│       ├── canvas.concat(camera.worldTransform)  ← 카메라 변환
+│       ├── viewport.children.forEach(child →
+│       │   child.renderSkia(this, canvas, contentRenderedBounds))
+│       │   ├── 뷰포트 컬링 검사 (intersects)
+│       │   ├── canvas.save() + localMatrix 적용
+│       │   ├── beginRenderEffects()          ← opacity/blur/shadow
+│       │   ├── renderFills()                 ← Color/Gradient/Image/Mesh
+│       │   ├── strokePath.render()           ← 스트로크
+│       │   ├── 자식 재귀 renderSkia()
+│       │   └── canvas.restoreToCount()
+│       └── contentCanvas.restore()
+│
+├── renderGeneratingEffects()                 ← AI 생성 이펙트 (블러+파티클)
+├── renderFlashes()                           ← 시각적 피드백 애니메이션
+├── renderScrollbars()
+└── surface.flush()                           ← GPU 커밋
 ```
 
-### 21.2 렌더링 계층 분리
+### 21.3 이중 Surface 캐싱 패턴
+
+Pencil은 **contentSurface**와 **mainSurface** 두 개의 Skia Surface를 운용한다:
+
+```
+mainSurface (화면 출력용)
+├── contentSurface 이미지 블리팅 (캐시됨)
+│   └── 디자인 노드 전체 렌더링 결과
+├── 생성 이펙트 오버레이
+├── 플래시 애니메이션 오버레이
+└── 스크롤바 오버레이
+```
+
+**블리팅 방식:**
+```javascript
+displayContentCanvas() {
+    const image = this.contentSurface.makeImageSnapshot();
+    // 줌 변경 시: drawImageCubic (cubic 보간으로 부드럽게)
+    // 줌 동일 시: drawImage (nearest로 빠르게)
+    canvas.drawImageCubic(image, dx, dy, 1/3, 1/3, paint);
+    image.delete();
+}
+```
+
+**이점**: 줌/패닝만 변경된 경우 콘텐츠를 다시 그리지 않고 캐시된 이미지만 블리팅 → 프레임 비용 대폭 절감.
+
+### 21.4 GPU Surface 생성 체인
+
+```
+1. k.MakeWebGLCanvasSurface(canvasElement)
+   ↓
+2. k.GetWebGLContext(canvas, contextAttrs)     ← WebGL 컨텍스트 획득
+   ↓
+3. k.MakeWebGLContext(glContext)               ← GrDirectContext 생성
+   ↓
+4. k.MakeOnScreenGLSurface(grContext, w, h, colorSpace)
+   ↓ (실패 시)
+5. k.MakeSWCanvasSurface(canvas)              ← 소프트웨어 폴백
+   → Canvas 2D putImageData로 출력
+```
+
+**GPU 리소스 관리:**
+```javascript
+k.GrDirectContext.prototype.setResourceCacheLimitBytes(bytes)  // GPU 캐시 한도
+k.GrDirectContext.prototype.releaseResourcesAndAbandonContext() // 리소스 해제
+```
+
+**소프트웨어 폴백:**
+```javascript
+k.Surface.prototype.flush = function(clipRect) {
+    this._flush();
+    if (this.Hd) {  // canvas 2D element = SW 모드
+        const pixels = new Uint8ClampedArray(k.HEAPU8.buffer, this.Te, this.rf);
+        const imageData = new ImageData(pixels, this.tf, this.pf);
+        if (clipRect)
+            ctx.putImageData(imageData, 0, 0, clipRect[0], clipRect[1], ...);
+        else
+            ctx.putImageData(imageData, 0, 0);
+    }
+};
+```
+
+### 21.5 노드별 renderSkia 상세
+
+**공통 패턴 (모든 노드):**
+```javascript
+renderSkia(renderer, canvas, cullingBounds) {
+    if (!this.properties.resolved.enabled ||
+        !cullingBounds.intersects(this.getVisualWorldBounds())) return;  // 컬링
+    const saveCount = canvas.getSaveCount();
+    canvas.save();
+    canvas.concat(this.localMatrix.toArray());  // 로컬 변환
+    this.beginRenderEffects(canvas);            // 이펙트
+    // ... 노드 타입별 렌더링 ...
+    canvas.restoreToCount(saveCount);
+}
+```
+
+| 노드 타입 | 클래스 | 렌더링 내용 |
+|----------|--------|-----------|
+| **Frame** | `jx` | renderFills → clipPath (clip=true) → 자식 재귀 → strokePath → 슬롯 렌더링 |
+| **Shape** | Path계열 | fillRule (EvenOdd/Winding) → renderFills → strokePath |
+| **Text** | Text | getParagraphPosition → renderFills (텍스트 형상에 fill 적용) |
+| **Group** | `z_` | localMatrix 적용 → 자식 재귀만 |
+| **IconFont** | 아이콘 | getIconTransform → paragraph 렌더링 (Lucide) |
+| **StickyNote** | `zf` 뷰 | getView().render() — 별도 뷰 시스템 |
+
+### 21.6 이펙트 렌더링 시스템 (`beginRenderEffects`)
+
+```
+beginRenderEffects(canvas)
+├── Opacity < 1.0
+│   └── canvas.saveLayer(alphaPaint, bounds)    ← 별도 레이어
+│
+├── BackgroundBlur (Nr=3)
+│   ├── canvas.clipPath(maskPath, Intersect)
+│   └── canvas.saveLayer(paint, bounds, MakeBlur(sigma, sigma))
+│
+├── LayerBlur (Nr=2)
+│   └── canvas.saveLayer(paint, bounds, MakeBlur(sigma, sigma))
+│
+└── DropShadow (Nr=1)
+    ├── Inner Shadow:
+    │   ├── canvas.clipPath(maskPath, Difference)
+    │   └── canvas.drawPath(maskPath, shadowPaint)
+    └── Outer Shadow:
+        └── ImageFilter.MakeDropShadow(offsetX, offsetY, sigma, sigma, color)
+```
+
+**이펙트 타입 enum:**
+```javascript
+var Nr = { DropShadow: 1, LayerBlur: 2, BackgroundBlur: 3 };
+```
+
+**블러 시그마 변환:** `function gC(radius) { return radius / 2; }` (CSS radius → Skia sigma)
+
+### 21.7 Fill 렌더링 상세 (`renderFills`)
+
+| Fill 타입 | CanvasKit API | 처리 방식 |
+|----------|--------------|----------|
+| **Color** (`Rt.Color`) | `paint.setColor()` → `canvas.drawPath()` | 단색 직접 적용 |
+| **LinearGradient** | `Shader.MakeLinearGradient(start, end, colors, positions)` | 선형 셰이더 |
+| **RadialGradient** | `Shader.MakeRadialGradient(center, radius, colors, positions)` | 방사형 셰이더 |
+| **AngularGradient** | `Shader.MakeSweepGradient(cx, cy, colors, positions)` | 각도 셰이더 |
+| **MeshGradient** | `canvas.clipPath()` → `drawPatch()` (12 cubic points, 4 colors) | 메시 패치 |
+| **Image** | `image.makeShaderOptions(TileMode, FilterMode, MipmapMode, matrix)` | 이미지 셰이더 |
+
+**이미지 Fill 모드:**
+- `Stretch`: 늘리기 — 원본 비율 무시
+- `Fill`: 채우기 — 크롭하여 전체 영역 덮기
+- `Fit`: 맞추기 — 영역 안에 전부 보이기
+- `Tile`: 타일 — `TileMode.Repeat`
+
+**이미지 로드 실패 시:** 체커보드 패턴 폴백 렌더링
+
+### 21.8 스트로크 렌더링 (`StrokePath`)
+
+스트로크를 Fill로 변환하여 렌더링 — **스트로크에도 그라디언트/이미지 fill 적용 가능**:
+
+```javascript
+// Stroke Alignment별 PathOp
+switch (alignment) {
+    case Center:  return strokePath;                                  // 중심선
+    case Inside:  return Path.MakeFromOp(fillPath, strokePath, Intersect); // 내부
+    case Outside: return Path.MakeFromOp(fillPath, strokePath, Difference); // 외부
+}
+
+// 스트로크 경로 생성
+path.makeStroked({
+    width: strokeWidth,
+    miter_limit: 4,
+    cap: StrokeCap.Butt,     // Butt / Round / Square
+    join: StrokeJoin.Miter,  // Miter / Round / Bevel
+    precision: 0.3
+})
+```
+
+### 21.9 텍스트 렌더링 (이중 시스템)
+
+**CanvasKit Paragraph API (메인 — 디자인 노드 렌더링):**
+```
+ParagraphBuilder.Make(paragraphStyle, fontCollection)
+  → addText(text)
+  → pushStyle(textStyle)
+  → build()
+  → paragraph.layout(maxWidth)
+```
+
+| 텍스트 속성 | 지원 |
+|------------|------|
+| `textAlign` | Start, End, Center, Justify, Left, Right |
+| `textDirection` | LTR, RTL |
+| `fontStyle` | Upright, Italic + weight (100-900) |
+| `decoration` | Underline, Overline, LineThrough |
+| `letterSpacing`, `wordSpacing` | 지원 |
+| `heightMultiplier` | 줄 높이 배수 |
+| `lineBreak/GraphemeBreak` | UTF-8/UTF-16 수동 지정 가능 |
+
+**PixiJS TextMetrics (보조 — 측정/UI 텍스트):**
+- `measureText()`, `_wordWrap()`, `_measureText()`
+- `graphemeSegmenter()` — 유니코드 그래핌 분할
+- `experimentalLetterSpacingSupported` 감지
+
+### 21.10 뷰포트 컬링
+
+모든 `renderSkia` 첫 줄에서 **AABB 교차 검사**:
+
+```javascript
+if (!cullingBounds.intersects(this.getVisualWorldBounds())) return;
+
+// Bounds.intersects:
+intersects(other) {
+    return this.minX < other.maxX && this.maxX > other.minX &&
+           this.minY < other.maxY && this.maxY > other.minY;
+}
+```
+
+- `cullingBounds`: 현재 뷰포트 영역 (`contentRenderedBounds`)
+- `getVisualWorldBounds()`: 노드의 월드 좌표 바운딩 박스 (이펙트 크기 포함)
+- **재귀적 컬링**: 부모가 컬링되면 자식도 자동 스킵
+
+### 21.11 Hit Testing (PixiJS EventBoundary)
+
+```
+hitTest(x, y)
+└── hitTestRecursive(rootTarget, eventMode, point, hitTestFn, hitPruneFn)
+    ├── _interactivePrune(element)     ← visible/renderable/measurable 체크
+    ├── hitPruneFn(element, point)      ← hitArea + effects.containsPoint
+    │   └── worldTransform.applyInverse(point)  ← 스크린→로컬 변환
+    ├── children (역순, z-top 우선)
+    │   └── hitTestRecursive(child, ...) ← 재귀
+    └── hitTestFn(element, point)       ← containsPoint 최종 판정
+```
+
+**containsPoint 계층:**
+- `Bounds.containsPoint()` — AABB 사전 검사
+- `Rectangle.containsPoint()` — cornerRadius 포함 라운드 렉트
+- `GraphicsContext.containsPoint()` — stroke path 포함 정밀 판정
+
+### 21.12 블렌드 모드 매핑 (`l1e`)
+
+| Pencil | CanvasKit | Pencil | CanvasKit |
+|--------|-----------|--------|-----------|
+| `normal` | `SrcOver` | `overlay` | `Overlay` |
+| `darken` | `Darken` | `softLight` | `SoftLight` |
+| `multiply` | `Multiply` | `hardLight` | `HardLight` |
+| `linearBurn` | `Multiply` | `difference` | `Difference` |
+| `colorBurn` | `ColorBurn` | `exclusion` | `Exclusion` |
+| `light` | `Lighten` | `hue` | `Hue` |
+| `screen` | `Screen` | `saturation` | `Saturation` |
+| `linearDodge` | `Plus` | `color` | `Color` |
+| `colorDodge` | `ColorDodge` | `luminosity` | `Luminosity` |
+
+### 21.13 Export/래스터화
+
+```javascript
+exportToImage(nodes, { type, dpi, maxResolution }) {
+    // 1. 바운딩 박스 합산
+    // 2. 오프스크린 Surface 생성 (dpi 배율 적용, maxResolution 제한)
+    // 3. 각 노드 renderSkia() 호출
+    // 4. makeImageSnapshot() → encodeToBytes(format, quality)
+}
+```
+
+| 포맷 | type | 용도 |
+|------|------|------|
+| PNG | `0` | 투명 배경 지원 |
+| JPEG | `1` | 사진 |
+| WEBP | `2` | 최적화 웹 |
+
+**readPixel**: `surfaceCanvas.readPixels(x * dpi, y * dpi, ...)` — 특정 좌표 픽셀 색상 읽기 (컬러 피커)
+
+### 21.14 시각적 피드백 시스템
+
+**Flash 애니메이션** (노드 변경 시):
+```javascript
+addFlashForNode(node, {
+    color: [96/255, 125/255, 255/255],  // 라이트 블루
+    strokeWidth: 2,
+    longHold: false,
+    scanLine: true
+})
+```
+- 스캔라인 그라디언트 + 스트로크 RRect 애니메이션
+- AI batch-design 후 변경 노드에 자동 적용
+
+**Generating Effect** (AI 생성 중):
+- `placeholder: true` 노드에 자동 추가
+- 블러 레이어 + 회전하는 파란색 원형 파티클
+- `currentTime / 2000`으로 각도 회전
+- AI 응답 완료 시 제거
+
+### 21.15 WASM 메모리 관리
+
+```javascript
+// 사전 할당 버퍼 (핫 경로 malloc 회피)
+_f  = k.Malloc(Float32Array, 4)     // 색상/좌표
+Jv  = k.Malloc(Float32Array, 16)    // 4x4 매트릭스
+Wm  = k.Malloc(Float32Array, 9)     // 3x3 매트릭스
+at  = k.Malloc(Float32Array, 12)    // RRect
+
+// JS → WASM 복사 헬퍼
+Ye(array, "HEAPF32", destPtr)       // Float32Array → HEAP
+St(colors)                           // Color 배열 → HEAP (RGBA_F32)
+$t(matrix)                           // Matrix → HEAP
+
+// WASM → JS 해제
+Pe(ptr, originalArray)               // _ck 플래그 없으면 _free
+```
+
+### 21.16 안티앨리어싱
+
+| 설정 | 값 | 위치 |
+|------|-----|------|
+| Paint 안티앨리어싱 | `setAntiAlias(true)` | CanvasKit Paint 기본 |
+| 서브픽셀 텍스트 | `setSubpixel(true)` | Font 렌더링 |
+| 이미지 스무딩 | `imageSmoothingEnabled: true` | Canvas 2D 폴백 |
+| 이미지 품질 | `imageSmoothingQuality: "high"` | Canvas 2D 폴백 |
+| PixiJS Filter | `antialias: "on" / "off"` | Filter 파이프라인 |
+
+### 21.17 렌더링 계층 종합
 
 | 계층 | 기술 | 역할 |
 |------|------|------|
 | **DOM Layer** | React + Radix UI + Tailwind | 패널, 도구바, 다이얼로그 등 UI |
 | **Scene Layer** | SceneManager (Context) | 노드 트리, 변수, 트랜잭션 관리 |
-| **Vector Layer** | CanvasKit/Skia (WASM) | 벡터 래스터라이즈, 텍스트, 효과 |
-| **Render Layer** | PixiJS v8 (WebGL) | GPU 배치 렌더링, 텍스처 관리 |
+| **Vector Layer** | CanvasKit/Skia (WASM) — **메인 렌더러** | 모든 디자인 노드 렌더링 |
+| **Event Layer** | PixiJS v8 EventBoundary | Hit testing, 마우스/터치 이벤트 |
+| **Cache Layer** | 이중 Surface (content + main) | 콘텐츠 캐싱, 줌/패닝 최적화 |
 | **Worker Layer** | Web Workers (webworkerAll.js) | 오프메인스레드 연산 |
 
 ---
@@ -1314,14 +1641,20 @@ Canvas Element (화면)
 
 | 영역 | 발견 | 의미 |
 |------|------|------|
+| **렌더링 아키텍처** | **Skia WASM = 메인 렌더러**, PixiJS = 씬 그래프/이벤트만 | Figma와 동일한 접근 (C++ Skia → WebGL) |
+| **이중 Surface** | content + main 두 Surface 캐싱 패턴 | 줌/패닝 시 콘텐츠 리드로우 없이 블리팅만 |
+| **renderSkia()** | 모든 노드가 CanvasKit Canvas API 직접 호출 | PixiJS render() 미사용, Skia 전용 렌더 패스 |
+| **이펙트 시스템** | saveLayer + ImageFilter 기반 (Opacity/Blur/Shadow) | GPU 레이어 합성으로 고품질 이펙트 |
+| **Fill 렌더링** | 6종 (Color/Linear/Radial/Angular/Mesh/Image) Shader 기반 | 스트로크에도 그라디언트/이미지 fill 가능 |
 | **파일 포맷** | `.pen` = JSON 텍스트, 노드 트리 + 인라인 스타일 + 변수 + 테마 | 인간 가독성 높음, 바이너리 아닌 텍스트 기반 |
 | **변수 시스템** | `$--` 접두사 참조, 3타입(color/string/number), 테마별 분기 | shadcn/ui CSS Custom Properties와 호환 설계 |
-| **렌더링** | Skia WASM + PixiJS WebGL 이중 파이프라인 | 벡터 정밀 렌더링 + GPU 가속 동시 달성 |
 | **AI 통합** | Claude Opus/Sonnet/Haiku 내장, 환경별 분기 | 디자인→코드 변환이 핵심 워크플로우 |
 | **디자인 킷** | 4개 킷 JSON 임베딩 (HALO/Lunaris/Nitro/Shadcn) | 바로 사용 가능한 컴포넌트 라이브러리 |
 | **컴포넌트 시스템** | `reusable: true` + `ref` + `descendants` 오버라이드 | Figma 컴포넌트/인스턴스와 동일한 패턴 |
 | **트랜잭션 패턴** | `beginUpdate → block.update → commitBlock` | 원자적 변경 + undo 포인트 = 안정적 편집 |
 | **플랫폼 분기** | Electron/Cursor/Web 3가지 환경 대응 | IDE 통합(Cursor) + 데스크톱 + 웹 멀티타겟 |
+| **WASM 메모리** | 사전 할당 버퍼 (Float32x4/9/16) + Malloc/Free | 핫 경로 malloc 회피, 성능 최적화 |
+| **GPU 폴백** | WebGL → 소프트웨어(putImageData) 자동 폴백 | GPU 미지원 환경 대응 |
 
 ### 23.3 기존 분석 대비 추가된 내용
 
@@ -1330,7 +1663,8 @@ Canvas Element (화면)
 | §8 파일 포맷 (간략) | §15 `.pen` JSON 상세 구조, 노드 타입, 다중 Fill, Effect, cornerRadius |
 | §4.3 Claude AI (간략) | §20 환경별 모델 분기, IPC 프롬프트, MCP 연동 상세 |
 | §3 아키텍처 (개요) | §17 에디터 UI 전체 컴포넌트 트리, Radix UI, Portal 패턴 |
-| §11 WASM 분석 | §21 SceneManager→Skia→PixiJS 전체 렌더링 파이프라인 |
+| §11.1 WASM 아키텍처 | **정정**: PixiJS 메인 → Skia 메인으로 수정 (renderSkia 역공학 증거) |
+| §21 렌더링 (개요) | §21 전면 교체: 렌더 루프, 이중 Surface, GPU 체인, 노드별 렌더링, 이펙트, Fill/Stroke, 텍스트, 컬링, Hit Test, 블렌드 모드, Export, 피드백 이펙트, WASM 메모리, 안티앨리어싱 |
 | 없음 | §16 스타일 관리 (변수, 테마, 트랜잭션, 우선순위) |
 | 없음 | §18 도구 시스템 + 키보드 단축키 전체 매핑 |
 | 없음 | §19 에디터 설정 시스템 (localStorage) |

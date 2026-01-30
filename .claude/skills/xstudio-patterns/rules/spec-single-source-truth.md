@@ -62,9 +62,18 @@ import { renderToPixi } from '@xstudio/specs/renderers';
 renderToPixi(ButtonSpec, props, context);
 ```
 
+## Self-Rendering 컴포넌트 레이아웃 규칙
+
+Button 등 self-rendering 컴포넌트는 Spec 기본값과 inline style이 올바르게 분리되어야 합니다:
+
+- `calculateContentWidth()` → 순수 텍스트 너비만 반환 (padding/border 미포함)
+- `parseBoxModel()` → inline style이 없으면 `BUTTON_SIZE_CONFIG` 기본값 적용
+- `PixiButton` → `specDefaultBorderWidth = 1` (CSS base `border: 1px solid`와 동기화)
+- 모든 variant에 `border`/`borderHover` 정의 필요 (CSS가 모든 variant에 border 적용하므로)
+
 ## 참조
 
-- `docs/COMPONENT_SPEC_ARCHITECTURE.md` - 전체 설계 문서
+- `docs/COMPONENT_SPEC_ARCHITECTURE.md` - 전체 설계 문서 (§4.7.4.4~4.7.4.8)
 - `packages/specs/src/components/Button.spec.ts` - 참조 구현
 - [spec-build-sync](spec-build-sync.md) - Spec 수정 후 빌드 필수
 - [spec-value-sync](spec-value-sync.md) - Spec ↔ Builder ↔ CSS 값 동기화

@@ -28,8 +28,14 @@ pnpm --filter @xstudio/specs dev
 
 ## 실제 버그 사례
 
+**사례 1 — padding 불일치 (v1.11)**:
 - **증상**: 버튼 간 공백 발생 (button_width + gap = CSS button width)
 - **원인**: ButtonSpec paddingX 수정 후 dist/ 미빌드 → layout engine(새 값) vs PixiButton(구 값) 불일치
+- **해결**: `pnpm --filter @xstudio/specs build` 실행
+
+**사례 2 — borderWidth 누락 (v1.12)**:
+- **증상**: WebGL 모드에서 border가 일부 variant(primary 등)에서 표시되지 않음
+- **원인**: ButtonSpec variants에 border/borderHover 추가 후 dist/ 미빌드 → PixiButton이 구 Spec 참조
 - **해결**: `pnpm --filter @xstudio/specs build` 실행
 
 ## 참조

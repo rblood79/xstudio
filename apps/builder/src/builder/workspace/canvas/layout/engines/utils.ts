@@ -434,15 +434,15 @@ export function calculateContentWidth(element: Element): number {
   if (text) {
     const props = element.props as Record<string, unknown> | undefined;
 
-    // 버튼, 인풋 등은 size prop에 따라 padding/fontSize 결정
-    const needsPadding = ['button', 'input', 'select', 'a', 'label'].includes(tag);
-    if (needsPadding) {
+    // 버튼, 인풋 등은 size prop에 따라 fontSize 결정
+    // padding/border는 parseBoxModel에서 처리 → 여기서는 텍스트 너비만 반환
+    // (inline padding 변경 시 이중 계산 방지)
+    const isFormElement = ['button', 'input', 'select', 'a', 'label'].includes(tag);
+    if (isFormElement) {
       const size = (props?.size as string) ?? 'sm';
       const sizeConfig = BUTTON_SIZE_CONFIG[size] ?? BUTTON_SIZE_CONFIG.sm;
       const fontSize = parseNumericValue(style?.fontSize) ?? sizeConfig.fontSize;
-      const borderTotal = (sizeConfig.borderWidth ?? 0) * 2; // CSS: border-box, left + right
-      const totalPadding = sizeConfig.paddingLeft + sizeConfig.paddingRight + borderTotal;
-      return calculateTextWidth(text, fontSize, totalPadding);
+      return calculateTextWidth(text, fontSize, 0);
     }
 
     // 일반 요소
@@ -599,10 +599,43 @@ export function parseBoxModel(
   const maxHeight = parseSize(style?.maxHeight, availableHeight, viewportWidth, viewportHeight);
 
   // padding 파싱
-  const padding = parsePadding(style);
+  let padding = parsePadding(style);
 
   // border 파싱
-  const border = parseBorder(style);
+  let border = parseBorder(style);
+
+  // Button/input 등 self-rendering 요소: inline style이 없으면 BUTTON_SIZE_CONFIG 기본값 적용
+  const tag = (element.tag ?? '').toLowerCase();
+  const isFormElement = ['button', 'input', 'select'].includes(tag);
+  if (isFormElement) {
+    const props = element.props as Record<string, unknown> | undefined;
+    const size = (props?.size as string) ?? 'sm';
+    const sizeConfig = BUTTON_SIZE_CONFIG[size] ?? BUTTON_SIZE_CONFIG.sm;
+
+    const hasInlinePadding = style?.padding !== undefined ||
+      style?.paddingTop !== undefined || style?.paddingRight !== undefined ||
+      style?.paddingBottom !== undefined || style?.paddingLeft !== undefined;
+    if (!hasInlinePadding) {
+      padding = {
+        top: sizeConfig.paddingY,
+        right: sizeConfig.paddingRight,
+        bottom: sizeConfig.paddingY,
+        left: sizeConfig.paddingLeft,
+      };
+    }
+
+    const hasInlineBorder = style?.borderWidth !== undefined ||
+      style?.borderTopWidth !== undefined || style?.borderRightWidth !== undefined ||
+      style?.borderBottomWidth !== undefined || style?.borderLeftWidth !== undefined;
+    if (!hasInlineBorder) {
+      border = {
+        top: sizeConfig.borderWidth,
+        right: sizeConfig.borderWidth,
+        bottom: sizeConfig.borderWidth,
+        left: sizeConfig.borderWidth,
+      };
+    }
+  }
 
   // 🚀 Phase 11: box-sizing: border-box 처리
   // border-box인 경우 width/height에서 padding + border 제외하여 content-box 크기로 변환
