@@ -1487,7 +1487,8 @@ calculate(parent, children, availableWidth, availableHeight): ComputedLayout[] {
 
 ## ~~Phase 3: Text Engine + CSS Parser~~ → 제거 (후순위)
 
-> **제거 사유:** 대상 연산이 WASM 최적화에 부적합하다.
+> **원래 제안:** `docs/PENCIL_APP_ANALYSIS.md` §13.5에서 "Phase 3: 텍스트 메트릭 WASM 모듈 (fontkit-wasm 또는 커스텀 구축)"로 제안됨.
+> **제거 사유:** 성능 병목 분석(본 문서 §성능 병목 분석) 결과, 대상 연산이 WASM 최적화에 부적합하다.
 >
 > 1. **텍스트 데코레이션** (`TextSprite.tsx:139-160`): 곱셈 1회 + 직선 그리기.
 >    WASM 경계 넘기 비용이 연산 비용을 초과한다.
@@ -1534,6 +1535,7 @@ calculate(parent, children, availableWidth, availableHeight): ComputedLayout[] {
 
 > 목표: 무거운 WASM 연산을 메인 스레드에서 분리
 > 핵심 과제: **비동기 레이아웃 결과의 동기 렌더링 파이프라인 통합**
+> **제약:** SharedArrayBuffer 사용 불가 — xstudio는 Supabase 인증 호환을 위해 Vite 설정에서 COOP/COEP 헤더를 제거하고 있으며, SharedArrayBuffer는 이 헤더가 필수이다 (`docs/PENCIL_VS_XSTUDIO_RENDERING.md` §3.2 참조). Worker 통신은 `postMessage` + `Transferable` (ArrayBuffer transfer)로 한정한다.
 
 ### 4.1 Worker 아키텍처
 
@@ -2078,14 +2080,16 @@ export function beginRenderEffects(
 
 CanvasKit 도입 후 PixiJS의 역할을 제한한다:
 
-| 기능 | 전환 전 (현재) | 전환 후 (목표) |
-|------|---------------|---------------|
-| 디자인 노드 렌더링 | PixiJS WebGL | CanvasKit/Skia WASM |
-| 씬 그래프 관리 | PixiJS Container | PixiJS Container (유지) |
-| Hit Testing | PixiJS EventBoundary | PixiJS EventBoundary (유지) |
-| 텍스트 렌더링 | PixiJS Text | CanvasKit ParagraphBuilder |
-| 텍스트 측정 | PixiJS TextMetrics | PixiJS TextMetrics (유지 — 보조) |
-| 텍스처 캐싱 | PixiJS cacheAsTexture | CanvasKit Surface 캐싱 |
+| 기능 | 전환 전 (현재) | 전환 후 (목표) | 대체되는 기존 구현 |
+|------|---------------|---------------|-------------------|
+| 디자인 노드 렌더링 | PixiJS WebGL | CanvasKit/Skia WASM | cacheAsTexture, 배치 렌더링, Fill/이펙트 |
+| 씬 그래프 관리 | PixiJS Container | PixiJS Container (유지) | — |
+| Hit Testing | PixiJS EventBoundary | PixiJS EventBoundary (유지) | — |
+| 텍스트 렌더링 | PixiJS Text | CanvasKit ParagraphBuilder | — |
+| 텍스트 측정 | PixiJS TextMetrics | PixiJS TextMetrics (유지 — 보조) | — |
+| 텍스처 캐싱 | PixiJS cacheAsTexture | CanvasKit Surface 캐싱 | SpritePool, autoGarbageCollect |
+| 뷰포트 컬링 | JS AABB Array.filter() | renderSkia() 내부 네이티브 AABB | useViewportCulling.ts |
+| 뷰포트 조작 | ViewportController (Container.x/y) | canvas.concat(matrix) | ViewportController.ts 수정 필요 |
 
 **PixiJS 렌더링 비활성화:**
 ```typescript
@@ -2475,6 +2479,17 @@ Phase 6: 고급 렌더링 기능 (CanvasKit 활용)
   └─ Dirty Rect 렌더링 (변경 영역만 재렌더링)
   └─ 블렌드 모드 18종 (CanvasKit BlendMode)
   └─ Export 파이프라인 (PNG/JPEG/WEBP 오프스크린)
+
+═══════════════════════════════════════════════════════════════
+  추가 개선 항목 (WASM 불필요, JS 구현)
+  → 상세: docs/PENCIL_VS_XSTUDIO_RENDERING.md §4, §7
+═══════════════════════════════════════════════════════════════
+
+  [높음] LOD 스위칭 — 줌 레벨별 디테일 조절 (§4.3)
+  [높음] 텍스처 아틀라싱 — 다수 이미지를 단일 GPU 텍스처로 합침 (§4.2)
+  [중간] RenderTexture 풀링 — GPU 텍스처 재사용 (§4.4)
+  [중간] OffscreenCanvas — 오프스크린 렌더링 (§4.5, Phase 4 Worker 확장)
+  [낮음] VRAM 예산 관리 — GPU 메모리 LRU 관리 (§4.6)
 ```
 
 ### 성능 목표 (Phase 0 이후 업데이트)

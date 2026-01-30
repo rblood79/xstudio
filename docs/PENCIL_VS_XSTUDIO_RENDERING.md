@@ -33,6 +33,14 @@
 - ❌ 미구현
 - 📋 WASM 계획에 포함
 
+### 전환 영향도 (Phase 5-6 CanvasKit 전환 시)
+
+> 아래 비교표의 비고 컬럼에 다음 태그로 CanvasKit 전환 영향을 표기한다.
+
+- 🔄 **대체**: PixiJS 한정 구현 → CanvasKit API로 대체/재구현 필요
+- ✅ **유지**: 렌더러 무관 (React/JS/Zustand 레이어) → 코드 변경 없이 유지
+- ⬆️ **강화**: 현재 구현(로직) 유지 + CanvasKit으로 품질/성능 향상
+
 ### 2.1 렌더링 파이프라인
 
 > **Pencil 핵심 구조:** CanvasKit/Skia WASM이 메인 렌더러. 모든 씬 노드가 `renderSkia()` 메서드로 CanvasKit Canvas API 직접 호출. PixiJS는 씬 그래프/이벤트 전용.
@@ -41,22 +49,22 @@
 |------------|--------|---------|----------|------|
 | **Skia WASM 렌더링** | ✅ renderSkia() — 모든 노드 | ❌ | ❌ | Pencil: CanvasKit이 벡터/텍스트/이미지/이펙트 전담 |
 | **이중 Surface 캐싱** | ✅ contentSurface + mainSurface | ❌ | ❌ | 줌/패닝 시 contentSurface 블리팅만 수행 |
-| WebGL 배치 렌더링 | ✅ (236 refs) | 🔶 PixiJS 기본 | - | Pencil은 커스텀 배치 레이어 보유 |
+| WebGL 배치 렌더링 | ✅ (236 refs) | 🔶 PixiJS 기본 | - | Pencil은 커스텀 배치 레이어 보유 — 🔄 Phase 5에서 CanvasKit 드로우로 대체 |
 | Dirty Rect 렌더링 | ✅ (104 refs) | ❌ | ❌ | 변경 영역만 다시 그리기 |
-| GPU 텍스처 캐싱 | ✅ (104 refs) | ✅ cacheAsTexture | - | xstudio Phase F 구현 |
+| GPU 텍스처 캐싱 | ✅ (104 refs) | ✅ cacheAsTexture | - | xstudio Phase F 구현 — 🔄 Phase 5에서 CanvasKit Surface 캐싱으로 대체 |
 | 텍스처 아틀라싱 | ✅ | ❌ | ❌ | 다수 텍스처를 단일 시트로 합치기 |
 | RenderTexture 풀링 | ✅ | ❌ | ❌ | 렌더 텍스처 재사용 |
 | LOD (Level of Detail) | ✅ (추정) | ❌ | ❌ | 줌 레벨별 디테일 조절 |
-| 블렌드 모드 최적화 | ✅ 18종 (l1e 함수 매핑) | 🔶 PixiJS 기본 | - | normal→SrcOver, multiply→Multiply 등 |
+| 블렌드 모드 최적화 | ✅ 18종 (l1e 함수 매핑) | 🔶 PixiJS 기본 | - | normal→SrcOver, multiply→Multiply 등 — 🔄 Phase 6.3에서 CanvasKit BlendMode 18종으로 대체 |
 | 커스텀 셰이더 | ✅ (GLSL+WebGPU) | ❌ | ❌ | 특수 효과 GPU 가속 |
-| **6종 Fill 시스템** | ✅ Shader 기반 | 🔶 Color/Gradient | ❌ | Pencil: Color/Linear/Radial/Angular/MeshGradient/Image |
-| **이펙트 파이프라인** | ✅ beginRenderEffects | 🔶 기본 | ❌ | Opacity(saveLayer)/BackgroundBlur/LayerBlur/DropShadow(Inner+Outer) |
+| **6종 Fill 시스템** | ✅ Shader 기반 | 🔶 Color/Gradient | ❌ | Pencil: Color/Linear/Radial/Angular/MeshGradient/Image — 🔄 Phase 5.5에서 CanvasKit Shader 6종으로 대체 |
+| **이펙트 파이프라인** | ✅ beginRenderEffects | 🔶 기본 | ❌ | Opacity(saveLayer)/BackgroundBlur/LayerBlur/DropShadow(Inner+Outer) — 🔄 Phase 5.6에서 CanvasKit saveLayer로 대체 |
 
 ### 2.2 공간 및 히트 테스트
 
 | 최적화 기법 | Pencil | xstudio | WASM 계획 | 비고 |
 |------------|--------|---------|----------|------|
-| 뷰포트 컬링 | ✅ | ✅ AABB 기반 | 📋 Phase 1 | xstudio: 100px 마진, 20-40% GPU 절감 |
+| 뷰포트 컬링 | ✅ | ✅ AABB 기반 | 📋 Phase 1 | xstudio: 100px 마진, 20-40% GPU 절감 — 🔄 Phase 5에서 renderSkia() 내부 네이티브 컬링으로 대체 |
 | 공간 인덱스 (Spatial Index) | ✅ (추정) | ❌ | 📋 Phase 1 | O(n) → O(k) 쿼리 개선 |
 | 히트 테스트 가속 | ✅ PixiJS EventBoundary — hitTestRecursive, 역순 z-order, Prune+Cull | ❌ 전체 순회 | 📋 Phase 1 | Pencil: PixiJS가 이벤트/히트테스트 전담 |
 | Scissor 클리핑 | ✅ clipToViewport | ❌ | ❌ | GPU 레벨 클리핑 |
@@ -65,9 +73,9 @@
 
 | 최적화 기법 | Pencil | xstudio | WASM 계획 | 비고 |
 |------------|--------|---------|----------|------|
-| Flexbox (Yoga WASM) | ✅ | ✅ | - | 동일 |
-| Grid 레이아웃 | ✅ (추정) | ✅ 커스텀 엔진 | 📋 Phase 2 | xstudio GridEngine 120줄 |
-| Block 레이아웃 | ✅ (추정) | ✅ 커스텀 엔진 | 📋 Phase 2 | xstudio BlockEngine 671줄 |
+| Flexbox (Yoga WASM) | ✅ | ✅ | - | 동일 — ✅ 유지 |
+| Grid 레이아웃 | ✅ (추정) | ✅ 커스텀 엔진 | 📋 Phase 2 | xstudio GridEngine 120줄 — ⬆️ Phase 2에서 WASM 가속 |
+| Block 레이아웃 | ✅ (추정) | ✅ 커스텀 엔진 | 📋 Phase 2 | xstudio BlockEngine 671줄 — ⬆️ Phase 2에서 WASM 가속 |
 | WASM 연산 가속 | ✅ pencil.wasm | ❌ | 📋 Phase 2 | 레이아웃 배치 계산 |
 | 레이아웃 캐싱 | ✅ | 🔶 layoutBoundsRegistry | - | xstudio: JS Map 캐시 |
 
@@ -75,8 +83,8 @@
 
 | 최적화 기법 | Pencil | xstudio | WASM 계획 | 비고 |
 |------------|--------|---------|----------|------|
-| 오브젝트 풀링 | ✅ | ✅ SpritePool | - | xstudio: max 100개 |
-| 텍스처 GC | ✅ | ✅ autoGarbageCollect | - | PixiJS 기본 설정 활용 |
+| 오브젝트 풀링 | ✅ | ✅ SpritePool | - | xstudio: max 100개 (PixiJS Sprite/Container) — 🔄 Phase 5에서 CanvasKit 객체 관리로 대체 |
+| 텍스처 GC | ✅ | ✅ autoGarbageCollect | - | PixiJS autoGarbageCollect — 🔄 Phase 5에서 CanvasKit .delete() Disposable 패턴으로 대체 |
 | WeakMap 추적 | ✅ | ❌ | ❌ | 약한 참조 기반 메모리 관리 |
 | VRAM 예산 관리 | ✅ (추정) | 🔶 메트릭 추적만 | ❌ | xstudio: 모니터링만 |
 
@@ -84,22 +92,22 @@
 
 | 최적화 기법 | Pencil | xstudio | WASM 계획 | 비고 |
 |------------|--------|---------|----------|------|
-| 동적 해상도 | ✅ | ✅ getDynamicResolution | - | xstudio: 픽셀 버짓 기반 |
-| 저사양 기기 감지 | ✅ (추정) | ✅ isLowEnd 캐싱 | - | CPU 코어, 메모리, 모바일 |
-| 안티앨리어싱 조건부 | ✅ (60 refs) | ✅ !isLowEnd | - | 저사양에서 비활성화 |
+| 동적 해상도 | ✅ | ✅ getDynamicResolution | - | xstudio: 픽셀 버짓 기반 — ⬆️ 알고리즘 유지, CanvasKit Surface 해상도로 적용 대상 변경 |
+| 저사양 기기 감지 | ✅ (추정) | ✅ isLowEnd 캐싱 | - | CPU 코어, 메모리, 모바일 — ✅ 유지 (렌더러 무관 유틸리티) |
+| 안티앨리어싱 조건부 | ✅ (60 refs) | ✅ !isLowEnd | - | 저사양에서 비활성화 — 🔄 Phase 5에서 paint.setAntiAlias()로 API 변경 |
 | 프레임 스로틀링 | ✅ (추정) | 🔶 RAF 기반 | - | 명시적 프레임 스킵 없음 |
 | OffscreenCanvas | ✅ webworkerAll.js | ❌ | ❌ | 오프스크린 렌더링 |
-| powerPreference | ✅ | ✅ "high-performance" | - | GPU 선택 힌트 |
+| powerPreference | ✅ | ✅ "high-performance" | - | GPU 선택 힌트 — 🔄 Phase 5에서 CanvasKit 자체 WebGL context로 이전 |
 
 ### 2.6 React 최적화
 
 | 최적화 기법 | Pencil | xstudio | WASM 계획 | 비고 |
 |------------|--------|---------|----------|------|
-| 메모이제이션 | ✅ | ✅ (900+ instances) | - | memo, useMemo, useCallback |
-| 직접 컨테이너 조작 | ✅ | ✅ ViewportController | - | 드래그 중 React 우회 |
-| 선택 상태 개별 구독 | ✅ (추정) | ✅ O(2) 최적화 | - | Set.has() 기반 |
-| startTransition | ❌ (Electron) | ✅ Phase 18 | - | 비긴급 업데이트 분리 |
-| Imperative Handle | ✅ (추정) | ✅ SelectionBox | - | 드래그 중 직접 위치 갱신 |
+| 메모이제이션 | ✅ | ✅ (900+ instances) | - | memo, useMemo, useCallback — ✅ 유지 |
+| 직접 컨테이너 조작 | ✅ | ✅ ViewportController | - | 드래그 중 React 우회 — 🔄 Phase 5에서 CanvasKit transform으로 수정 필요 |
+| 선택 상태 개별 구독 | ✅ (추정) | ✅ O(2) 최적화 | - | Set.has() 기반 — ✅ 유지 |
+| startTransition | ❌ (Electron) | ✅ Phase 18 | - | 비긴급 업데이트 분리 — ✅ 유지 |
+| Imperative Handle | ✅ (추정) | ✅ SelectionBox | - | 드래그 중 직접 위치 갱신 — ✅ 유지 |
 
 ### 2.7 Web Worker / 멀티스레딩
 
@@ -147,6 +155,12 @@ Pencil 렌더링 최적화 전체: 100%
 
 **WASM 계획 완료 시 Pencil 대비 약 70% 수준의 렌더링 최적화를 달성.**
 나머지 20%는 아래 추가 개선 항목으로 보완 가능.
+
+> **⚠️ 전환 영향:** "xstudio 이미 구현 55%" 중 약 **절반(~25-30%)**은 PixiJS 한정 구현(🔄 대체 필요)이다.
+> Phase 5-6 CanvasKit 전환 시 이 항목들은 CanvasKit API로 **재구현**해야 하며,
+> 단순히 "이미 적용됨 → 추가 작업 불필요"가 아님에 주의.
+> React/Zustand 레이어 최적화(~25-30%)만 전환 후에도 코드 변경 없이 유지된다(✅ 유지).
+> 상세 분류는 §2 비교표의 전환 영향도 태그(🔄/✅/⬆️) 참조.
 
 ---
 
