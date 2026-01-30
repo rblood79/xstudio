@@ -310,11 +310,12 @@ Pencil 앱 내에 pencil.wasm 외에도 추가 WASM 모듈 존재:
 
 | 항목 | Pencil | xstudio |
 |------|--------|---------|
-| 렌더링 엔진 | PixiJS v8 (WebGL) | PixiJS v8.14.3 (WebGL) |
+| **메인 렌더러** | **CanvasKit/Skia WASM** (pencil.wasm, 7.8MB) — 벡터/텍스트/이미지/이펙트 전담 | PixiJS v8.14.3 (WebGL) |
+| 씬 그래프/이벤트 | PixiJS v8 — 씬 트리 관리 + EventBoundary (Hit Testing) 전용 | PixiJS가 렌더링도 담당 |
 | React 바인딩 | @pixi/react v8 | @pixi/react v8.0.5 |
 | 레이아웃 엔진 | @pixi/layout (Yoga WASM) | @pixi/layout v3.2.0 (Yoga WASM) |
 | 상태 관리 | Zustand | Zustand |
-| WASM 모듈 | pencil.wasm + Yoga | Yoga만 사용 |
+| WASM 모듈 | **CanvasKit/Skia WASM** (메인 렌더 엔진) + Yoga | Yoga만 사용 |
 | 플랫폼 | Electron 데스크톱 | 웹 애플리케이션 (Vite) |
 
 ### 12.2 xstudio 캔버스 현재 구조
@@ -410,11 +411,18 @@ BuilderCanvas (<Application>)
 | 바이너리 접근 불가 | `app.asar` 아카이브 내부에 패킹, 소스코드 없음 |
 | API 문서 없음 | export 함수 시그니처, 메모리 레이아웃 비공개 |
 | 라이센스 문제 | High Agency, Inc. 독점 지적재산권 |
-| 역할 한정적 | 주 렌더러가 아닌 연산 가속용 보조 모듈 |
+| **역할 정정** | ~~주 렌더러가 아닌 연산 가속용 보조 모듈~~ → **CanvasKit/Skia WASM 메인 렌더러** (§11.1, §21 참조) |
 
-### 13.2 간접 적용: 이미 대부분 완료
+### 13.2 간접 적용: 부분적 완료 (렌더링 아키텍처는 상이)
 
-두 시스템이 동일한 핵심 기술 스택(PixiJS v8 + Yoga WASM + Zustand + React)을 사용하고 있어, Pencil의 렌더링 아키텍처는 이미 xstudio에 적용되어 있다.
+두 시스템이 공통 기반 기술(PixiJS v8, Yoga WASM, Zustand, React)을 공유하지만, **렌더링 아키텍처는 근본적으로 다르다:**
+
+| 구분 | Pencil | xstudio |
+|------|--------|---------|
+| **메인 렌더러** | CanvasKit/Skia WASM (pencil.wasm) | PixiJS v8 (WebGL) |
+| PixiJS 역할 | 씬 그래프 관리 + EventBoundary 전용 | 렌더링 + 씬 그래프 + 이벤트 모두 담당 |
+
+Pencil의 CanvasKit/Skia 기반 렌더링(renderSkia, 이중 Surface 캐싱, 6종 Fill Shader, saveLayer 이펙트 파이프라인)은 xstudio에 적용되어 있지 않으며, 이를 도입하려면 렌더러 계층의 구조적 변경이 필요하다.
 
 ### 13.3 추가 WASM 최적화 가능 영역
 
@@ -523,7 +531,12 @@ Phase 4: 레이아웃 엔진 WASM화 (선택)
 
 ## 14. 종합 결론
 
-Pencil과 xstudio는 **동일한 핵심 기술 스택**(PixiJS v8 + Yoga WASM + Zustand + React)을 기반으로 구축되어 있다. Pencil의 `pencil.wasm`은 독점 바이너리로 직접 재사용이 불가능하지만, xstudio는 이미 동일한 렌더링 아키텍처를 갖추고 있으므로 추가적인 WASM 최적화는 **성능 병목이 실증된 영역에 한정하여 선택적으로 적용**하는 것이 효과적이다.
+Pencil과 xstudio는 공통 기반 기술(PixiJS v8, Yoga WASM, Zustand, React)을 공유하지만, **렌더링 아키텍처는 근본적으로 다르다:**
+
+- **Pencil**: CanvasKit/Skia WASM이 **메인 렌더러**이며, 모든 디자인 노드가 `renderSkia()` 메서드로 CanvasKit Canvas API를 직접 호출한다. PixiJS는 씬 그래프 관리와 EventBoundary(히트 테스트)에만 사용된다.
+- **xstudio**: PixiJS v8이 렌더링, 씬 그래프, 이벤트를 모두 담당하는 단일 렌더러 구조이다.
+
+Pencil의 `pencil.wasm`(CanvasKit/Skia)은 독점 바이너리로 직접 재사용이 불가능하며, xstudio와는 **렌더러 계층이 상이**하므로 Pencil의 렌더링 최적화(이중 Surface 캐싱, 6종 Fill Shader, saveLayer 이펙트 파이프라인)를 도입하려면 구조적 변경이 필요하다. 추가적인 WASM 최적화는 **성능 병목이 실증된 영역에 한정하여 선택적으로 적용**하는 것이 효과적이다.
 
 현재 xstudio의 최적화 수준(Viewport Culling, 동적 해상도, SpritePool, memo 전략)은 이미 상당히 높으며, 5,000개 이상의 요소를 다루는 시나리오에서 히트 테스트와 레이아웃 계산 병목이 발생할 경우 Rust 기반 WASM 모듈 도입을 검토하는 것이 합리적이다.
 
