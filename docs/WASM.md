@@ -42,6 +42,67 @@ Pencil 실제 구조:                    현재 xstudio:
 
 ---
 
+## CanvasKit/Skia 전환 장점 분석
+
+### 렌더링 품질
+
+| 영역 | 현재 (PixiJS) | 전환 후 (CanvasKit) | 개선 |
+|------|--------------|-------------------|------|
+| **벡터 도형** | PixiJS Graphics (제한적 Path) | Skia Path — 베지어, PathOp(Union/Intersect/Difference), Boolean 연산 | 디자인 툴 수준 벡터 정밀도 |
+| **텍스트 렌더링** | 브라우저 Canvas2D 래스터 | ParagraphBuilder — 서브픽셀 렌더링, StrutStyle, 정밀 커닝 | Figma/Sketch 급 텍스트 품질 |
+| **안티앨리어싱** | PixiJS 기본 (저사양 비활성화) | `paint.setAntiAlias(true)` + `font.setSubpixel(true)` 전역 적용 | 모든 도형/텍스트에 일관된 AA |
+| **Fill 시스템** | Color, LinearGradient 정도 | 6종 Shader: Color/Linear/Radial/Angular/MeshGradient/Image | Figma Fill과 동등 |
+| **블렌드 모드** | PixiJS 기본 (제한적) | 18종 네이티브 (Multiply, Screen, Overlay 등) | 포토샵급 합성 |
+| **이펙트** | PixiJS 기본 필터 | saveLayer 기반 — Opacity, BackgroundBlur, LayerBlur, DropShadow(Inner+Outer) | 실시간 이펙트 파이프라인 |
+| **Stroke** | 기본 선 그리기 | `path.makeStroked()` + PathOp으로 Inside/Outside/Center 정렬 | CSS stroke-alignment 구현 가능 |
+
+### 렌더링 성능
+
+| 영역 | 현재 (PixiJS) | 전환 후 (CanvasKit) | 예상 개선폭 |
+|------|--------------|-------------------|-----------|
+| **줌/패닝** | 매 프레임 전체 씬 재렌더링 | 이중 Surface 캐싱 — contentSurface 블리팅만 | **10x+** (< 1ms vs ~16ms) |
+| **정적 프레임** | 변경 없어도 전체 렌더 | contentSurface 캐시 히트 → GPU 제출만 | **< 1ms** |
+| **부분 변경** | 전체 캔버스 다시 그림 | Dirty Rect — 변경 영역만 재렌더링 | GPU 부하 **40-60% 감소** |
+| **뷰포트 컬링** | JS에서 AABB 검사 | renderSkia() 첫 줄에서 네이티브 AABB 컬링 | WASM 내부에서 처리 |
+| **텍스처 관리** | PixiJS 개별 텍스처 업로드 | CanvasKit 내부 GPU 리소스 관리 | 드로 콜 감소 |
+
+### 아키텍처 이점
+
+| 영역 | 현재 (PixiJS) | 전환 후 (CanvasKit) | 의미 |
+|------|--------------|-------------------|------|
+| **렌더링-이벤트 분리** | PixiJS가 렌더링+씬+이벤트 모두 담당 | 렌더링(CanvasKit) ↔ 이벤트(PixiJS) 완전 분리 | 각 계층 독립 최적화 가능 |
+| **Export 품질** | PixiJS → Canvas2D → 이미지 | CanvasKit 오프스크린 Surface → 벡터 정밀 Export | PNG/JPEG/WEBP 고품질 Export |
+| **플랫폼 일관성** | 브라우저 Canvas2D 의존 → 렌더링 차이 | Skia 엔진 직접 사용 → 모든 브라우저 동일 출력 | 크로스 브라우저 렌더링 일치 |
+| **확장성** | 새 이펙트 = PixiJS 필터 제약 | CanvasKit API 직접 사용 → 자유로운 이펙트 | 커스텀 셰이더, 마스킹, 클리핑 |
+| **Pencil 호환** | 렌더링 구조 상이 | 동일 아키텍처 → .pen 파일 렌더링 호환 가능 | 경쟁 제품 파일 호환 |
+
+### 비용 및 리스크
+
+| 항목 | 내용 | 심각도 | 완화 전략 |
+|------|------|--------|----------|
+| **번들 크기 증가** | +1.5MB (slim) ~ +3.5MB (full) | 중간 | Lazy loading + 브라우저 캐싱 |
+| **초기 로드** | CanvasKit WASM 초기화 오버헤드 | 중간 | 병렬 초기화 + 프리로드 |
+| **메모리 관리** | CanvasKit 객체 수동 `.delete()` 필요 (GC 아님) | 높음 | Disposable 패턴 래퍼 도입 |
+| **학습 곡선** | Skia Canvas API 학습 필요 | 중간 | Google CanvasKit 공식 문서 + Pencil 코드 참조 |
+| **이중 렌더러 복잡도** | PixiJS 씬 + CanvasKit 렌더 동기화 | 높음 | Feature Flag로 점진적 전환 |
+| **PixiJS 생태계** | @pixi/react, @pixi/layout 등 활용도 감소 | 낮음 | 씬 그래프/이벤트 레이어로 유지 |
+
+### 종합 평가
+
+| 평가 항목 | 점수 | 근거 |
+|----------|------|------|
+| 렌더링 품질 향상 | ★★★★★ | 벡터/텍스트/이펙트/Fill/블렌드 모두 디자인 툴 수준 |
+| 성능 향상 | ★★★★☆ | 이중 Surface + Dirty Rect로 대폭 개선, 단 초기 로드 비용 |
+| 아키텍처 정합성 | ★★★★★ | Pencil과 동일 구조 → 검증된 패턴 |
+| 구현 난이도 | ★★★☆☆ | 점진적 전환(Feature Flag)으로 리스크 관리 가능 |
+| 번들 비용 | ★★☆☆☆ | +1.5MB는 웹 앱에 부담이나, 디자인 툴 특성상 수용 가능 |
+
+> **핵심 판단:** PixiJS는 **게임 엔진** 기반으로 디자인 툴에 필요한 벡터 정밀도, 이펙트, Fill 다양성이 부족하다.
+> CanvasKit/Skia는 **2D 그래픽 엔진**으로 Figma, Pencil이 채택한 검증된 선택이며,
+> xstudio가 디자인 툴 품질 경쟁력을 확보하려면 렌더러 전환이 필수적이다.
+
+---
+
 ## 현황 요약
 
 ### 현재 WASM 사용
