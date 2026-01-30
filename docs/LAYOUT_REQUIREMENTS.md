@@ -678,18 +678,26 @@ export function parseBorder(
  * @returns 콘텐츠 기반 너비 (자식이 없으면 0)
  */
 export function calculateContentWidth(element: Element): number {
-  // TODO: 실제 구현 시 다음을 고려:
-  // 1. 자식 요소들의 너비 합계 (inline-block) 또는 최대값 (block)
-  // 2. 텍스트 콘텐츠의 경우 Canvas.measureText() 사용
-  // 3. 이미지의 경우 naturalWidth 사용
+  // 구현됨 — Canvas 2D ctx.measureText() 사용
+  // v1.12: 폼 요소(button, input, select, a, label)는
+  // 순수 텍스트 너비만 반환 (padding/border는 parseBoxModel에서 처리)
+  // 상세: docs/COMPONENT_SPEC_ARCHITECTURE.md §4.7.4.6
 
-  // 임시: props에 명시된 width가 있으면 사용
   const style = element.props?.style as Record<string, unknown> | undefined;
   const explicitWidth = parseNumericValue(style?.width);
   if (explicitWidth !== undefined) return explicitWidth;
 
-  // 기본값: 0 (콘텐츠 없음으로 간주)
-  return 0;
+  const text = extractTextContent(element.props);
+  if (text) {
+    const isFormElement = ['button', 'input', 'select', 'a', 'label'].includes(tag);
+    if (isFormElement) {
+      // padding/border는 parseBoxModel이 제공 → 이중 계산 방지
+      return calculateTextWidth(text, fontSize, 0);
+    }
+    return calculateTextWidth(text, fontSize, 0);
+  }
+
+  return DEFAULT_ELEMENT_WIDTHS[tag] ?? DEFAULT_WIDTH;
 }
 
 /**
@@ -729,10 +737,14 @@ export function parseBoxModel(
   const height = parseSize(style?.height, availableHeight);
 
   // padding 파싱
-  const padding = parsePadding(style);
+  let padding = parsePadding(style);
 
   // border 파싱
-  const border = parseBorder(style);
+  let border = parseBorder(style);
+
+  // v1.12: 폼 요소(button, input, select)에 inline style이 없으면
+  // BUTTON_SIZE_CONFIG 기본값 적용 (calculateContentWidth와 이중 계산 방지)
+  // 상세: docs/COMPONENT_SPEC_ARCHITECTURE.md §4.7.4.5
 
   // 콘텐츠 크기 계산
   const contentWidth = calculateContentWidth(element);
@@ -1662,12 +1674,13 @@ apps/builder/src/builder/workspace/canvas/layout/
 **해결:**
 ```typescript
 // utils.ts - BUTTON_SIZE_CONFIG를 ButtonSpec과 동기화
+// ⚠️ 최신 형태는 Phase 12(이슈 14) 및 v1.12 참조: height→paddingY, borderWidth 추가, paddingX CSS 동기화
 const BUTTON_SIZE_CONFIG = {
-  xs: { paddingLeft: 8, paddingRight: 8, fontSize: 12, height: 24 },
-  sm: { paddingLeft: 12, paddingRight: 12, fontSize: 14, height: 32 },
-  md: { paddingLeft: 16, paddingRight: 16, fontSize: 16, height: 40 },
-  lg: { paddingLeft: 24, paddingRight: 24, fontSize: 18, height: 48 },
-  xl: { paddingLeft: 32, paddingRight: 32, fontSize: 20, height: 56 },
+  xs: { paddingLeft: 8, paddingRight: 8, paddingY: 2, fontSize: 12, borderWidth: 1 },
+  sm: { paddingLeft: 12, paddingRight: 12, paddingY: 4, fontSize: 14, borderWidth: 1 },
+  md: { paddingLeft: 24, paddingRight: 24, paddingY: 8, fontSize: 16, borderWidth: 1 },
+  lg: { paddingLeft: 32, paddingRight: 32, paddingY: 12, fontSize: 18, borderWidth: 1 },
+  xl: { paddingLeft: 40, paddingRight: 40, paddingY: 16, fontSize: 20, borderWidth: 1 },
 };
 ```
 
@@ -2118,9 +2131,9 @@ const containerLayout = hasChildren && !baseLayout.display && !baseLayout.flexDi
 - `utils.ts`: `estimateTextHeight()` 헬퍼 추가 (`fontSize * 1.2`, CSS default line-height와 동일)
 
 ```typescript
-// BUTTON_SIZE_CONFIG - height 제거, paddingY 추가
+// BUTTON_SIZE_CONFIG - height 제거, paddingY 추가, borderWidth 추가 (v1.12)
 const BUTTON_SIZE_CONFIG = {
-  sm: { paddingLeft: 12, paddingRight: 12, paddingY: 4, fontSize: 14 },
+  sm: { paddingLeft: 12, paddingRight: 12, paddingY: 4, fontSize: 14, borderWidth: 1 },
   // ...
 };
 
@@ -2170,3 +2183,4 @@ function estimateTextHeight(fontSize: number): number {
 | 2026-01-29 | 1.25 | P2 line-height 레이아웃 반영: estimateTextHeight에 lineHeight 매개변수 추가, calculateContentHeight에서 parseLineHeight 결과 우선 반영, LineBoxItem에 lineHeight 필드 추가, calculateLineBox에서 lineHeight 기반 line box 최소 높이 계산 |
 | 2026-01-29 | 1.26 | SelectionLayer bounds 갱신 버그 수정: 스타일/display 변경 시 selectionLayer가 0,0에 고정되는 문제 해결. elementRegistry에 layoutBoundsRegistry 추가하여 layout bounds 직접 저장, LayoutContainer에서 layout prop 변경 시 RAF로 bounds 캐싱, SelectionLayer에 selectedStyleSignature 구독 추가로 스타일 변경 감지 |
 | 2026-01-29 | 1.27 | Pixi UI 컴포넌트 CSS 단위 해석 규칙 추가: (1) vh/vw → % 변환 정책 (styleToLayout.ts parseCSSValue에서 Yoga가 부모 기준으로 처리), (2) Pixi 컴포넌트 getButtonLayout 패턴 (parseCSSSize + parentContentArea 기준 해석, typeof === 'number' 사용 금지), (3) 부모 content area 계산 필수 (useStore → parsePadding + parseBorderWidth 차감), (4) padding shorthand + border width 4방향 계산 포함 |
+| 2026-01-30 | 1.28 | Button borderWidth/레이아웃 이중 계산 수정: (1) BUTTON_SIZE_CONFIG에 borderWidth:1 필드 추가, (2) Phase 9 BUTTON_SIZE_CONFIG 코드 최신화 (paddingY + borderWidth + CSS paddingX 동기화), (3) parseBoxModel에 폼 요소 BUTTON_SIZE_CONFIG 기본값 적용 (inline style 미지정 시), (4) calculateContentWidth가 폼 요소에서 순수 텍스트 너비만 반환 (padding/border를 parseBoxModel으로 분리하여 이중 계산 제거), (5) 상세: docs/COMPONENT_SPEC_ARCHITECTURE.md §4.7.4.4~4.7.4.8 |

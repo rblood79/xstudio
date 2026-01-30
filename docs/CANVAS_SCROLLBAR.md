@@ -95,6 +95,13 @@ addUpdateListener(listener: (state: ViewportState) => void): () => void {
 }
 
 /**
+ * onStateSync 콜백 업데이트 (싱글톤에서 지연 설정용)
+ */
+setOnStateSync(callback: (state: ViewportState) => void): void {
+  this.options.onStateSync = callback;
+}
+
+/**
  * 모든 등록된 리스너에게 현재 상태 전달
  * pan/zoom/setPosition 호출 시 자동 실행
  */
@@ -106,7 +113,35 @@ private notifyUpdateListeners(): void {
 }
 ```
 
-#### 1.3 `notifyUpdateListeners()` 호출 위치
+#### 1.3 싱글톤 인스턴스 공유 (버그 수정)
+
+> **⚠️ 구현 중 발견된 버그**: `useViewportControl` 훅이 `new ViewportController()`로 별도 인스턴스를 생성하여 싱글톤(`getViewportController()`)과 불일치 발생. 스크롤바는 싱글톤을 구독하지만, 실제 pan/zoom 이벤트는 별도 인스턴스에서 발생하여 리스너가 호출되지 않았음.
+
+**수정 파일**: `apps/builder/src/builder/workspace/canvas/viewport/useViewportControl.ts`
+
+```typescript
+// 변경 전: 별도 인스턴스 생성
+const controller = useMemo(() => {
+  if (!app?.stage) return null;
+  return new ViewportController({ minZoom, maxZoom, onStateSync: handleStateSync });
+}, [app, minZoom, maxZoom, handleStateSync]);
+
+// 변경 후: 싱글톤 사용 + onStateSync 지연 바인딩
+const controller = useMemo(() => {
+  if (!app?.stage) return null;
+  return getViewportController({ minZoom, maxZoom });
+}, [app, minZoom, maxZoom]);
+
+useEffect(() => {
+  if (controller) {
+    controller.setOnStateSync(handleStateSync);
+  }
+}, [controller, handleStateSync]);
+```
+
+이로써 스크롤바와 뷰포트 훅이 **동일한 싱글톤 인스턴스**를 공유하며, pan/zoom 이벤트가 스크롤바 리스너에 정상 전달됩니다.
+
+#### 1.4 `notifyUpdateListeners()` 호출 위치
 
 | 메서드 | 위치 | 트리거 상황 |
 |--------|------|-------------|
@@ -153,12 +188,15 @@ Ctrl+휠 줌:
 ### World Bounds 정의
 
 ```
-World = union(
+Content = union(
   Canvas 영역 (0,0 ~ canvasSize.width × canvasSize.height),
-  모든 요소의 bounds 합집합 (world 좌표로 역변환),
-  현재 Visible Viewport 영역 (world 좌표)
-) + 사방 500px 패딩
+  모든 요소의 bounds 합집합 (world 좌표로 역변환)
+) + 사방 200px 패딩
+
+World = Content를 기본으로, Viewport가 Content를 넘으면 동적 확장
 ```
+
+> **⚠️ 구현 중 발견된 버그**: 초기 설계에서는 Viewport를 항상 World에 포함시켰으나, 이 경우 팬할수록 World가 커져 thumb 비율(ratio)이 항상 ~0.5에 수렴하는 문제가 있었음. Content 기반으로 먼저 범위를 결정하고, Viewport 초과분만 확장하도록 수정.
 
 ### 신규 파일
 
@@ -184,7 +222,7 @@ export function calculateWorldBounds(
   canvasSize: { width: number; height: number },
   viewportBounds: { x: number; y: number; width: number; height: number },
   cameraState: { x: number; y: number; scale: number },
-  padding?: number  // 기본값: 500
+  padding?: number  // 기본값: 200
 ): WorldBounds
 ```
 
@@ -204,16 +242,18 @@ export function calculateWorldBounds(
        min = min(min, worldBounds.topLeft)
        max = max(max, worldBounds.bottomRight)
 
-3. 현재 Visible Viewport 영역 포함 (이미 world 좌표):
-   min = min(min, viewportBounds.topLeft)
-   max = max(max, viewportBounds.bottomRight)
-
-4. 패딩 추가:
+3. Content 기반 패딩 추가:
    min -= padding
    max += padding
 
+4. Viewport가 Content+Padding을 넘으면 world 확장:
+   min = min(min, viewportBounds.topLeft)
+   max = max(max, viewportBounds.bottomRight)
+
 5. 반환: { minX, minY, maxX, maxY, width, height }
 ```
+
+> **순서 주의**: 패딩(3)을 먼저 적용하고 viewport 확장(4)을 나중에 합니다. viewport가 content+padding 범위 안에 있으면 world가 고정되어 thumb 비율이 정확하게 반영됩니다. viewport가 범위를 넘으면 동적으로 확장하여 edge-case를 처리합니다.
 
 ### 설계 결정
 
@@ -221,8 +261,8 @@ export function calculateWorldBounds(
 |------|------|
 | **유틸 함수** (React hook 아님) | RAF 콜백 내에서 직접 호출하기 위해. 외부 상태(cameraState)를 인자로 받으므로 순수 함수는 아님 |
 | **매 프레임 전체 재계산** | 요소 추가/삭제/이동 시 자동 반영, 캐싱 복잡도 회피 |
-| **Visible Viewport 포함** | 사용자가 콘텐츠 밖으로 팬할 때도 스크롤바가 유효하게 |
-| **500px 패딩** | 콘텐츠 경계 근처에서 자연스러운 여유 공간 |
+| **Visible Viewport 조건부 확장** | content+padding 범위를 넘을 때만 world 확장. 항상 포함하면 ratio가 ~0.5에 고정됨 |
+| **200px 패딩** | 콘텐츠 경계 근처에서 자연스러운 여유 공간. 500px은 과도하여 스크롤바 반응성 저하 |
 
 ### ElementRegistry 의존 및 좌표계 주의
 
@@ -538,23 +578,36 @@ CSS:
 
 ### 4.2 패널 열림/닫힘 감지
 
-`useStore`의 `panelLayout.showLeft` / `panelLayout.showRight` 구독:
+`useStore`의 `panelLayout` 구독 — `showLeft`/`showRight` 토글 + `activeLeftPanels`/`activeRightPanels` 개수 변경 모두 감지:
 
 ```typescript
 // useStore는 subscribeWithSelector 미사용 → 직접 비교
 let prevShowLeft = useStore.getState().panelLayout.showLeft;
 let prevShowRight = useStore.getState().panelLayout.showRight;
+let prevActiveLeftCount = useStore.getState().panelLayout.activeLeftPanels?.length ?? 0;
+let prevActiveRightCount = useStore.getState().panelLayout.activeRightPanels?.length ?? 0;
 
 const unsubPanel = useStore.subscribe((state) => {
-  const { showLeft, showRight } = state.panelLayout;
-  if (showLeft !== prevShowLeft || showRight !== prevShowRight) {
+  const { showLeft, showRight, activeLeftPanels, activeRightPanels } = state.panelLayout;
+  const activeLeftCount = activeLeftPanels?.length ?? 0;
+  const activeRightCount = activeRightPanels?.length ?? 0;
+  if (
+    showLeft !== prevShowLeft ||
+    showRight !== prevShowRight ||
+    activeLeftCount !== prevActiveLeftCount ||
+    activeRightCount !== prevActiveRightCount
+  ) {
     prevShowLeft = showLeft;
     prevShowRight = showRight;
-    // 패널 애니메이션 후 측정 (200ms 대기)
-    setTimeout(updatePanelOffset, 200);
+    prevActiveLeftCount = activeLeftCount;
+    prevActiveRightCount = activeRightCount;
+    // 패널 애니메이션(0.3s) 이후 재측정
+    setTimeout(updatePanelOffset, 350);
   }
 });
 ```
+
+> **⚠️ 구현 중 발견된 버그**: 초기 설계에서는 `showLeft`/`showRight` 토글만 감지했으나, 우측에 복수 패널을 활성화해도 `showRight`는 `true`로 유지되어 스크롤바 위치가 갱신되지 않았음. `activeRightPanels.length` 변경도 감지하도록 수정.
 
 ### 4.3 패널 너비 측정
 
@@ -618,17 +671,17 @@ const updatePanelOffset = () => {
  * left/right 값은 패널 상태에 따라 JS에서 동적 설정
  * ============================================ */
 .canvas-scrollbar--horizontal {
-  bottom: 0;
+  bottom: 2px;
   left: 0;        /* JS에서 패널 너비로 조정 */
   right: 0;       /* JS에서 패널 너비로 조정 */
-  height: 12px;
+  height: 6px;
 }
 
 .canvas-scrollbar--vertical {
   top: 0;
-  right: 0;       /* JS에서 패널 너비로 조정 */
-  bottom: 12px;   /* 하단 수평 스크롤바와 겹침 방지 */
-  width: 12px;
+  right: 2px;     /* JS에서 패널 너비로 조정 */
+  bottom: 6px;    /* 하단 수평 스크롤바와 겹침 방지 */
+  width: 6px;
 }
 
 /* ============================================
@@ -642,14 +695,14 @@ const updatePanelOffset = () => {
 }
 
 .canvas-scrollbar--horizontal .canvas-scrollbar__thumb {
-  top: 2px;
-  height: 8px;
+  top: 1px;
+  height: 4px;
   /* width, transform: JS에서 설정 */
 }
 
 .canvas-scrollbar--vertical .canvas-scrollbar__thumb {
-  left: 2px;
-  width: 8px;
+  left: 1px;
+  width: 4px;
   /* height, transform: JS에서 설정 */
 }
 
@@ -786,8 +839,22 @@ useEffect cleanup에서 모든 리소스 해제:
 | 파일 | 변경 유형 | Phase |
 |------|----------|-------|
 | `apps/builder/src/builder/workspace/canvas/viewport/ViewportController.ts` | 수정 | 1 |
+| `apps/builder/src/builder/workspace/canvas/viewport/useViewportControl.ts` | 수정 | 1 (버그 수정) |
 | `apps/builder/src/builder/workspace/scrollbar/calculateWorldBounds.ts` | 신규 | 2 |
 | `apps/builder/src/builder/workspace/scrollbar/CanvasScrollbar.tsx` | 신규 | 3 |
 | `apps/builder/src/builder/workspace/scrollbar/CanvasScrollbar.css` | 신규 | 4 |
 | `apps/builder/src/builder/workspace/scrollbar/index.ts` | 신규 | 4 |
 | `apps/builder/src/builder/workspace/Workspace.tsx` | 수정 | 4 |
+
+---
+
+## 변경 이력
+
+| 날짜 | 변경 내용 |
+|------|----------|
+| 2026-01-30 | 초기 설계 문서 작성 (Phase 1~5) |
+| 2026-01-30 | 구현 완료 후 버그 수정 3건 반영 |
+| | - **ViewportController 싱글톤 불일치**: `useViewportControl`이 별도 인스턴스를 생성하여 스크롤바 리스너에 이벤트 미전달 → 싱글톤 공유로 수정 |
+| | - **World Bounds 계산**: viewport를 항상 world에 포함 → ratio 고정(~0.5) → content 기반 계산 + viewport 조건부 확장으로 수정, 패딩 500→200 |
+| | - **패널 구독 누락**: `showLeft`/`showRight` 토글만 감지 → `activeLeftPanels`/`activeRightPanels` 개수 변경도 감지 |
+| | - **CSS 크기 축소**: Track 12→6px, Thumb 8→4px, 여백 2→1px, bottom/right 2px 오프셋 추가 |

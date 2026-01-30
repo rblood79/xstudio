@@ -53,6 +53,9 @@ export class ViewportController {
   private isPanning = false;
   private lastPanPoint: { x: number; y: number } | null = null;
 
+  // 외부 리스너 (스크롤바 등이 pan/zoom 중 실시간 추적)
+  private updateListeners: Set<(state: ViewportState) => void> = new Set();
+
   constructor(options: ViewportControllerOptions = {}) {
     this.options = {
       minZoom: options.minZoom ?? 0.1,
@@ -92,6 +95,13 @@ export class ViewportController {
     return this.container !== null;
   }
 
+  /**
+   * onStateSync 콜백 업데이트 (싱글톤에서 지연 설정용)
+   */
+  setOnStateSync(callback: (state: ViewportState) => void): void {
+    this.options.onStateSync = callback;
+  }
+
   // ============================================
   // 직접 조작 API
   // ============================================
@@ -123,6 +133,8 @@ export class ViewportController {
     this.currentState.y = this.container.y;
 
     this.lastPanPoint = { x: clientX, y: clientY };
+
+    this.notifyUpdateListeners();
   }
 
   /**
@@ -184,6 +196,8 @@ export class ViewportController {
     // 내부 상태 업데이트
     this.currentState = { x: newX, y: newY, scale: newScale };
 
+    this.notifyUpdateListeners();
+
     // 즉시 동기화 (휠 줌은 즉시 동기화)
     if (syncImmediately) {
       this.syncToReactState();
@@ -201,6 +215,8 @@ export class ViewportController {
     this.container.scale.set(scale);
 
     this.currentState = { x, y, scale };
+
+    this.notifyUpdateListeners();
   }
 
   /**
@@ -218,8 +234,35 @@ export class ViewportController {
   }
 
   // ============================================
+  // Update Listeners
+  // ============================================
+
+  /**
+   * 뷰포트 상태 변경 리스너 등록
+   * 스크롤바 등 외부 컴포넌트가 pan/zoom 중 실시간으로 상태를 추적할 수 있게 함
+   *
+   * @returns cleanup 함수 (리스너 해제)
+   */
+  addUpdateListener(listener: (state: ViewportState) => void): () => void {
+    this.updateListeners.add(listener);
+    return () => {
+      this.updateListeners.delete(listener);
+    };
+  }
+
+  // ============================================
   // 내부 메서드
   // ============================================
+
+  /**
+   * 모든 등록된 리스너에게 현재 상태 전달
+   */
+  private notifyUpdateListeners(): void {
+    const state = this.currentState;
+    for (const listener of this.updateListeners) {
+      listener(state);
+    }
+  }
 
   /**
    * React state로 동기화

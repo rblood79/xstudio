@@ -659,28 +659,54 @@ React 리렌더 없이 팬/줌 처리:
 
 ```
 src/builder/workspace/canvas/viewport/
-├── ViewportController.ts      # 핵심 클래스
-├── useViewportControl.ts      # React hook
+├── ViewportController.ts      # 핵심 클래스 (싱글톤)
+├── useViewportControl.ts      # React hook (싱글톤 사용)
 ├── ViewportControlBridge.tsx  # Application 내부 브릿지
 └── index.ts
 ```
+
+**싱글톤 패턴**: `getViewportController()`로 단일 인스턴스를 관리합니다. `useViewportControl` 훅과 `CanvasScrollbar` 등 외부 컴포넌트가 동일한 인스턴스를 공유하여 상태 동기화를 보장합니다.
 
 ```typescript
 // ViewportController.ts
 class ViewportController {
   private container: Container | null = null;
+  private updateListeners: Set<(state: ViewportState) => void> = new Set();
 
   // 팬 중: Container 직접 조작 (React state 변경 없음)
   updatePan(clientX: number, clientY: number): void {
     this.container.x += deltaX;
     this.container.y += deltaY;
+    this.notifyUpdateListeners(); // 스크롤바 등 외부 컴포넌트에 알림
   }
 
   // 팬 종료: React state 동기화
   endPan(): void {
     this.options.onStateSync(this.currentState);
   }
+
+  // 외부 리스너 등록 (스크롤바, 미니맵 등)
+  addUpdateListener(listener): () => void { ... }
+
+  // onStateSync 콜백 지연 바인딩 (싱글톤에서 사용)
+  setOnStateSync(callback): void { ... }
 }
+
+// 싱글톤 인스턴스
+export function getViewportController(options?): ViewportController { ... }
+```
+
+```typescript
+// useViewportControl.ts — 싱글톤 사용
+const controller = useMemo(() => {
+  if (!app?.stage) return null;
+  return getViewportController({ minZoom, maxZoom }); // 싱글톤 반환
+}, [app, minZoom, maxZoom]);
+
+// onStateSync는 지연 바인딩 (싱글톤 생성 후 설정)
+useEffect(() => {
+  if (controller) controller.setOnStateSync(handleStateSync);
+}, [controller, handleStateSync]);
 ```
 
 ```tsx
@@ -697,6 +723,16 @@ class ViewportController {
 </Application>
 ```
 
+#### 외부 리스너 패턴 (스크롤바 연동)
+
+ViewportController의 `addUpdateListener()`를 통해 외부 컴포넌트가 pan/zoom 상태를 실시간으로 추적할 수 있습니다. 상세 설계는 [CANVAS_SCROLLBAR.md](../../CANVAS_SCROLLBAR.md) Phase 1 참조.
+
+```
+Pan/Zoom 이벤트 → ViewportController → notifyUpdateListeners()
+                                          ├─ CanvasScrollbar (DOM 직접 업데이트)
+                                          └─ (향후 미니맵 등 추가 가능)
+```
+
 #### 성능 비교
 
 | 항목 | useZoomPan (이전) | ViewportController (현재) |
@@ -705,6 +741,7 @@ class ViewportController {
 | 줌 중 React 리렌더 | 매 RAF | 종료 시 1회 |
 | Container 업데이트 | React props | 직접 조작 |
 | ResizeObserver | 필요 | 불필요 (resizeTo) |
+| 외부 리스너 | 없음 | addUpdateListener() |
 
 ### B3.3 Selection System 개선
 

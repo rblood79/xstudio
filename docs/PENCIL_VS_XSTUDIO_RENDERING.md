@@ -1587,3 +1587,164 @@ font.setSubpixel(true);
 | **다이얼로그** | Radix AlertDialog + Portal | (확인 필요) |
 | **플랫폼 분기** | Electron/Cursor/Web 3가지 | 웹 전용 |
 | **번들 구조** | 단일 index.js (5.7MB) + WASM (7.8MB) | Vite 코드 스플리팅 |
+
+---
+
+### 10.13 씬 그래프 노드 타입 구조
+
+#### 10.13.1 노드 클래스 계층
+
+Pencil의 씬 그래프는 **6개 구체 클래스**가 **12개 타입 문자열**을 처리하는 간결한 구조이다.
+
+```
+z_ (Base Node)
+├── jx   — FrameNode      ("frame")         — 컨테이너, 오토 레이아웃, 클리핑, 슬롯
+├── vXe  — GroupNode       ("group")         — 논리적 그룹, 이펙트만 적용
+├── Kke  — ShapeNode       (5종 다형성)      — rectangle, ellipse, line, path, polygon
+├── Ux   — TextNode        ("text")          — ParagraphBuilder 기반 텍스트
+├── oI   — StickyNode      (3종 서브타입)    — note, prompt, context
+└── _Xe  — IconFontNode    ("icon_font")     — Material Symbols/Lucide 아이콘
+```
+
+#### 10.13.2 기능 지원 매트릭스
+
+| 기능 | frame | group | rect | ellipse | line | path | polygon | text | icon | sticky |
+|------|:-----:|:-----:|:----:|:-------:|:----:|:----:|:-------:|:----:|:----:|:------:|
+| 자식 | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Fills | ✅ | ❌ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ |
+| Strokes | ✅ | ❌ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ |
+| Effects | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ |
+| Clip | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Layout | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Slot | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+
+#### 10.13.3 도형별 Fill Path 생성
+
+| 도형 | Path 생성 방식 | 고유 프로퍼티 |
+|------|---------------|-------------|
+| rectangle | rect + cornerRadius → `CG()` | `cornerRadius: number[]` |
+| ellipse | arc(startAngle, sweep, innerRadius) | `ellipseInnerRadius`, `ellipseStartAngle`, `ellipseSweep` |
+| line | moveTo(0,0).lineTo(w,h) | (없음) |
+| path | `Ue.Path.MakeFromSVGString(pathData)` | `pathData: string`, `fillRule` |
+| polygon | `Q1t()` 정다각형 + cornerRadius | `polygonCount`, `cornerRadius` |
+
+#### 10.13.4 컴포넌트/인스턴스 시스템
+
+- **Component**: `reusable: true` → 컴포넌트 등록
+- **Instance**: `type: "ref"` (직렬화), `_prototype` → 원본 연결
+- **Override**: `overriddenProperties: Set<string>` — 변경 속성만 추적
+- **Slot**: FrameNode 전용, 컴포넌트 내 교체 가능 영역
+
+#### 10.13.5 오토 레이아웃
+
+| 프로퍼티 | 값 | 설명 |
+|---------|-----|------|
+| `layoutMode` | None(0) / Horizontal(1) / Vertical(2) | 방향 |
+| `layoutChildSpacing` | number | gap |
+| `layoutPadding` | number/array | 패딩 |
+| `horizontalSizing` | Fixed(0) / FitContent(2) / FillContainer(3) | 수평 크기 |
+| `verticalSizing` | Fixed(0) / FitContent(2) / FillContainer(3) | 수직 크기 |
+| `layoutJustifyContent` | Start / Center / SpaceBetween / SpaceAround / End | 주축 배분 |
+| `layoutAlignItems` | Start / Center / End | 교차축 정렬 |
+
+#### 10.13.6 xstudio 노드 구조와 비교
+
+| 항목 | Pencil | xstudio |
+|------|--------|---------|
+| **노드 클래스** | 6개 구체 클래스, 단일 Base | PixiJS Container 기반 확장 |
+| **다형성** | ShapeNode 1개 클래스 = 5종 도형 | 각 도형별 별도 컴포넌트 |
+| **타입 판별** | `this.type` 문자열 판별자 | React 컴포넌트 타입 |
+| **레이아웃** | Yoga WASM (Flexbox) + Auto Layout | @pixi/layout (Yoga WASM) + 커스텀 Grid/Block |
+| **사이징** | Fixed / FitContent / FillContainer | 유사 (확인 필요) |
+| **컴포넌트 시스템** | prototype + overriddenProperties Set | Zustand store 기반 |
+| **슬롯** | FrameNode 전용 Slot 시스템 | (미확인) |
+| **직렬화** | JSON (.pen) — `ref` 타입으로 인스턴스 표현 | 서버 DB (Supabase) |
+| **Fill 시스템** | 6종 (Color~MeshGradient) Shader 기반 | Color/Gradient 기본 |
+| **Effects** | 5종 (DropShadow/LayerBlur/BackgroundBlur + Inner Shadow) | PixiJS 필터 기반 |
+| **Hit Testing** | 노드별 fillPath/strokePath containment | PixiJS 기본 + 커스텀 |
+| **SVG Import** | SVG → 네이티브 노드 매핑 | (확인 필요) |
+
+---
+
+### 10.14 이벤트 시스템 분석
+
+#### 10.14.1 이벤트 아키텍처 개요
+
+Pencil의 이벤트 시스템은 3계층으로 구성된다:
+
+```
+DOM Events → InputManager(b_t) → StateManager(y_t) 상태 머신
+                                       ↓
+                              SceneGraph 조작 + Undo
+                                       ↓
+                              EventEmitter3 알림 (65종)
+                                       ↓
+                              React useEffect 구독 → UI 갱신
+```
+
+#### 10.14.2 상태 머신 (9개 상태)
+
+| 상태 | 역할 | 전이 조건 |
+|------|------|----------|
+| **IdleState** (tl) | 허브 — 선택, 더블클릭, 분기 | 기본 상태 |
+| **DraggingState** (eQ) | 노드 이동/재배치 | 노드 드래그 5px 초과 |
+| **MarqueeSelectState** (syt) | 범위 선택 | 빈 공간 드래그 |
+| **DrawShapeState** (oyt) | 도형 생성 | 도형 도구 + 드래그 |
+| **ResizeState** (lyt) | 리사이즈 핸들 | 핸들 드래그 |
+| **RotateState** (fyt) | 회전 핸들 | 회전 핸들 드래그 |
+| **EditTextState** (xV) | 텍스트 진입 | 텍스트 더블클릭 |
+| **TextEditorState** (tq) | Quill 편집 | EditText → 진입 |
+| **DrawStickyNoteState** (ayt) | 스티키 노트 | N 도구 + 클릭 |
+| **FillEditorState** (fx) | 그라디언트 편집 | Fill 포인트 클릭 |
+
+모든 상태가 `onPointerDown/Move/Up`, `onKeyDown/Up`, `onToolChange`, `onEnter/Exit`, `render` 인터페이스를 구현한다.
+
+#### 10.14.3 EventEmitter3 핵심 이벤트
+
+| 이벤트 | 구독 수 | 용도 |
+|--------|---------|------|
+| `selectionChange` | 3 | 노드 선택 변경 |
+| `selectionChangeDebounced` | 2 | 프레임 배칭 디바운스 |
+| `nodePropertyChange` | 3 | 속성 변경 |
+| `toolChange` | 1 | 도구 전환 |
+| `document-modified` | 1 | 문서 변경 |
+| `startTextEdit` / `finishTextEdit` | 각 1 | 텍스트 모드 |
+| `chat-*` (9종) | 각 1 | AI 채팅 |
+
+15개 클래스가 EventEmitter3 상속. 총 65종 emit, 67종 on 구독.
+
+#### 10.14.4 프레임 배칭 디바운스
+
+```javascript
+// 고빈도 이벤트를 RAF 단위로 합산
+queuedFrameEvents = new Set();
+on("selectionChange", () => queuedFrameEvents.add("selectionChangeDebounced"));
+// 매 프레임: flush → emit → clear → emit("afterUpdate")
+```
+
+#### 10.14.5 IPC 이벤트 (47종)
+
+| 방향 | 유형 | 수량 | 예시 |
+|------|------|------|------|
+| 렌더러→호스트 | notify (단방향) | 18 | `submit-prompt`, `file-changed`, `sign-out` |
+| 렌더러→호스트 | request (응답 대기) | 11 | `save`, `import-file`, `get-license` |
+| 호스트→렌더러 | handle (요청 처리) | 18 | `batch-design`, `get-selection`, `get-screenshot` |
+
+3가지 전송 모드: Electron (`electronAPI`), VS Code (`vscodeapi`), Web (`webappapi`)
+
+#### 10.14.6 xstudio 이벤트 시스템과 비교
+
+| 항목 | Pencil | xstudio |
+|------|--------|---------|
+| **이벤트 버스** | EventEmitter3 (65종) | Zustand subscribe + Jotai atom |
+| **상태 머신** | 9개 상태 클래스, 명시적 전이 | (확인 필요) |
+| **히트 테스트** | PixiJS EventBoundary (씬 그래프) | PixiJS 기본 + 커스텀 |
+| **디바운스** | queuedFrameEvents (RAF 배칭) | React startTransition / useDeferredValue |
+| **키보드** | window keydown + InputManager + pressedKeys Set | (확인 필요) |
+| **Undo/Redo** | UndoManager (EventEmitter3) + UpdateBlock 트랜잭션 | Zustand middleware 기반 |
+| **IPC** | 커스텀 IPC (47종, 3환경) | 없음 (웹 전용) |
+| **드래그** | 5px 임계값 → DraggingState 전이 | (확인 필요) |
+| **줌/패닝** | Ctrl+휠(줌) / 휠(패닝) / Space+드래그(핸드) | (유사 예상) |
+| **클립보드** | window copy/cut/paste + 노드 직렬화 | (확인 필요) |
+| **eventMode 제어** | 도구별 static/passive/none 동적 전환 | (확인 필요) |
+| **React 통합** | useEffect + EventEmitter3 on/off | useEffect + Zustand subscribe |

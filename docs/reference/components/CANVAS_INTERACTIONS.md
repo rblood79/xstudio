@@ -25,17 +25,54 @@ XStudio의 WebGL 캔버스는 PixiJS 기반으로 구현되며, 줌(Zoom)과 팬
 ```
 src/builder/workspace/
 ├── Workspace.tsx                    # 워크스페이스 컨테이너
-│   └── zoomTo(), zoomToFit()        # 버튼 줌 (중앙 기준)
+│   ├── zoomTo(), zoomToFit()        # 버튼 줌 (중앙 기준)
+│   └── <CanvasScrollbar />          # 스크롤바 마운트
 │
-└── canvas/
-    ├── BuilderCanvas.tsx            # PixiJS Application
-    │   └── useZoomPan() 호출
-    │
-    ├── canvasSync.ts                # Zustand Store (zoom, panOffset)
-    │
-    └── grid/
-        └── useZoomPan.ts            # 줌/팬 인터랙션 훅
+├── canvas/
+│   ├── BuilderCanvas.tsx            # PixiJS Application
+│   │   └── useViewportControl() 호출
+│   │
+│   ├── canvasSync.ts                # Zustand Store (zoom, panOffset)
+│   │
+│   ├── viewport/
+│   │   ├── ViewportController.ts    # Camera Container 제어 (싱글턴)
+│   │   └── useViewportControl.ts    # 줌/팬 인터랙션 훅
+│   │
+│   └── grid/
+│       └── useZoomPan.ts            # (레거시) 줌/팬 훅
+│
+└── scrollbar/
+    ├── CanvasScrollbar.tsx          # Figma 스타일 스크롤바 (DOM 직접 조작)
+    ├── CanvasScrollbar.css          # 스크롤바 스타일
+    ├── calculateWorldBounds.ts      # World Bounds 계산
+    └── index.ts                     # 배럴 export
 ```
+
+### ViewportController (싱글턴)
+
+Camera Container의 pan/zoom/scale을 제어하는 핵심 컨트롤러입니다.
+`getViewportController()`로 모듈 레벨 싱글턴 인스턴스를 공유합니다.
+
+```typescript
+// 싱글턴 취득
+const vc = getViewportController();
+
+// 현재 상태 읽기
+const { x, y, scale } = vc.getState();
+
+// 외부 리스너 등록 (스크롤바 등)
+const remove = vc.addUpdateListener(() => {
+  // pan/zoom/setPosition 변경 시 호출
+});
+
+// 지연 콜백 바인딩 (Zustand ↔ Pixi 동기화)
+vc.setOnStateSync((state) => {
+  useCanvasSyncStore.getState().setZoom(state.scale);
+  useCanvasSyncStore.getState().setPanOffset({ x: state.x, y: state.y });
+});
+```
+
+> **주의**: `useViewportControl` 훅도 동일 싱글턴을 사용합니다. `new ViewportController()`를 직접 생성하면 리스너가 분리되어 스크롤바 등 외부 소비자가 상태를 받지 못합니다.
 
 ### 상태 관리 (canvasSync.ts)
 
@@ -259,6 +296,101 @@ const lastPanPointRef = useRef<{ x: number; y: number } | null>(null);
 1. `containerEl`을 dependency로 사용하여 DOM 준비 후 등록
 2. `capture: true`로 이벤트 먼저 가로채기
 
+## Selection System (Figma-style)
+
+### 개요
+
+캔버스에서 요소를 선택하면 SelectionLayer가 표시되며, Figma 스타일의 핸들 시스템을 사용합니다.
+
+### 파일 구조
+
+```
+src/builder/workspace/canvas/selection/
+├── SelectionLayer.tsx        # 최상위 선택 레이어 (Store 연결, bounds 계산)
+├── SelectionBox.tsx          # 선택 박스 + 핸들 렌더링 (imperative 업데이트)
+├── TransformHandle.tsx       # 개별 리사이즈 핸들 (코너/엣지)
+├── types.ts                  # 타입 정의, HANDLE_CONFIGS, 상수
+├── useDragInteraction.ts     # Move/Resize/Lasso 드래그 훅
+├── LassoSelection.tsx        # 라쏘 선택 시각화
+├── SelectionLayer.utils.ts   # 라쏘 유틸
+├── LassoSelection.utils.ts   # 라쏘 바운딩박스 계산
+└── index.ts                  # 모듈 내보내기
+```
+
+### 핸들 배치 (Figma 스타일)
+
+```
+■ ──────────────────── ■      ■ = 코너 핸들 (시각적으로 표시)
+│                      │      ─ = 엣지 핸들 (보이지 않음, 호버 시 커서 변경)
+│                      │
+■ ──────────────────── ■
+```
+
+| 핸들 | 위치 | 타입 | 표시 | 커서 |
+|------|------|------|------|------|
+| top-left | (0, 0) | 코너 | 보임 | `nwse-resize` ↘↖ |
+| top-right | (1, 0) | 코너 | 보임 | `nesw-resize` ↗↙ |
+| bottom-right | (1, 1) | 코너 | 보임 | `nwse-resize` ↘↖ |
+| bottom-left | (0, 1) | 코너 | 보임 | `nesw-resize` ↗↙ |
+| top-center | (0.5, 0) | 엣지 | 숨김 | `ns-resize` ↕ |
+| middle-right | (1, 0.5) | 엣지 | 숨김 | `ew-resize` ↔ |
+| bottom-center | (0.5, 1) | 엣지 | 숨김 | `ew-resize` ↔ |
+| middle-left | (0, 0.5) | 엣지 | 숨김 | `ew-resize` ↔ |
+
+### 코너 vs 엣지 핸들
+
+**코너 핸들** (`isCorner: true`):
+- 6×6px 흰색 정사각형 + 파란 테두리
+- 줌 독립적 크기 (`HANDLE_SIZE / zoom`)
+- 양방향 대각선 화살표 커서 (`nwse-resize`, `nesw-resize`)
+
+**엣지 핸들** (`isCorner: false`):
+- 투명 히트 영역 (alpha: 0.001, 시각적으로 보이지 않음)
+- 상단/하단: `width=boundsWidth`, `height=EDGE_HIT_THICKNESS(8px)`
+- 좌측/우측: `width=EDGE_HIT_THICKNESS(8px)`, `height=boundsHeight`
+- 양방향 수직/수평 화살표 커서 (`ns-resize`, `ew-resize`)
+
+### 상수
+
+```typescript
+HANDLE_SIZE = 6;              // 코너 핸들 크기 (px)
+EDGE_HIT_THICKNESS = 8;      // 엣지 히트 영역 두께 (px)
+SELECTION_COLOR = 0x3b82f6;   // 선택 테두리 (Blue-500)
+HANDLE_FILL_COLOR = 0xffffff; // 코너 핸들 배경 (흰색)
+HANDLE_STROKE_COLOR = 0x3b82f6; // 코너 핸들 테두리 (Blue-500)
+```
+
+### 커서 스타일 (양방향 화살표)
+
+```typescript
+type CursorStyle =
+  | 'default'
+  | 'move'
+  | 'nwse-resize'  // ↘↖ 대각선 (TL, BR)
+  | 'nesw-resize'  // ↗↙ 대각선 (TR, BL)
+  | 'ns-resize'    // ↕ 수직 (TC, BC)
+  | 'ew-resize';   // ↔ 수평 (MR, ML)
+```
+
+### Z-Order (렌더링 순서)
+
+`HANDLE_CONFIGS` 배열에서 코너가 먼저, 엣지가 나중에 정의되어 있어 PixiJS 렌더링 시 코너 핸들이 엣지 히트 영역 위에 표시됩니다:
+
+```
+1. 이동 영역 (투명 배경)
+2. 선택 테두리 (파란색 1px)
+3. 엣지 핸들 4개 (투명 히트 영역)  ← 먼저 렌더링
+4. 코너 핸들 4개 (흰색 정사각형)   ← 위에 렌더링
+```
+
+### 성능 최적화 (Phase 19)
+
+- **Imperative 업데이트**: 드래그 중 React 리렌더링 없이 PixiJS 직접 조작
+- **RAF 스로틀링**: 프레임당 1회만 위치 업데이트
+- **선택적 구독**: `elementsMap` 전체가 아닌 선택된 요소만 구독
+
+---
+
 ## 레이아웃 시스템
 
 ### Layout Calculator
@@ -305,6 +437,33 @@ StylesPanel → useStyleActions → useInspectorState
                                       ↓
                           BuilderCanvas (layoutResult)
 ```
+
+## 스크롤바 연동
+
+줌/팬 상태 변경 시 Figma 스타일 스크롤바가 연동됩니다.
+
+### 상태 전파 흐름
+
+```
+ViewportController.pan/zoom/setPosition
+  ↓ notifyUpdateListeners()
+CanvasScrollbar (scheduleUpdate)
+  ↓ RAF throttle
+updateThumb() — DOM 직접 조작 (transform, width/height)
+```
+
+### 변경 감지 소스
+
+| 소스 | 역할 |
+|------|------|
+| `ViewportController.addUpdateListener()` | pan/zoom/setPosition 실시간 변경 |
+| `useCanvasSyncStore.subscribe()` | 외부 zoom/pan 변경 (버튼, fit-to-screen) |
+| `ResizeObserver(track)` | 창 리사이즈, 패널 애니메이션 |
+| `useStore.subscribe(panelLayout)` | 패널 열림/닫힘 → 오프셋 재측정 |
+
+> 상세 설계: [CANVAS_SCROLLBAR.md](../../CANVAS_SCROLLBAR.md)
+
+---
 
 ## Canvas Resize (Figma-style)
 
@@ -355,8 +514,9 @@ CSS transform 제거 + WebGL resize(1160px)
 ---
 
 **관련 문서:**
+- [CANVAS_SCROLLBAR.md](../../CANVAS_SCROLLBAR.md) - 캔버스 스크롤바 설계
 - [CANVAS_RUNTIME_ISOLATION.md](./CANVAS_RUNTIME_ISOLATION.md) - 캔버스 런타임 격리
 - [PIXI_WEBGL_INTEGRATION.md](../PIXI_WEBGL_INTEGRATION.md) - PixiJS WebGL 통합
 - [Phase 10 B1.4](../phases/PHASE_10.md) - 줌/팬 구현 스펙
 
-**최종 업데이트:** 2025-12-12
+**최종 업데이트:** 2026-01-30

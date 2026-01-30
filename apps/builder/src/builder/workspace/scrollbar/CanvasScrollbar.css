@@ -1,0 +1,64 @@
+/* ============================================
+ * Canvas Scrollbar (Figma-style)
+ *
+ * Track: position absolute, workspace 기준 배치
+ * Thumb: DOM 직접 조작 (transform + width/height)
+ * z-index: 10 = Workspace 스태킹 컨텍스트 내부 기준
+ * ============================================ */
+
+/* Track */
+.canvas-scrollbar {
+  position: absolute;
+  z-index: 10;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+
+.canvas-scrollbar--visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* 방향별 위치 (left/right는 패널 상태에 따라 JS에서 동적 설정) */
+.canvas-scrollbar--horizontal {
+  bottom: 2px;
+  left: 0;
+  right: 0;
+  height: 6px;
+}
+
+.canvas-scrollbar--vertical {
+  top: 0;
+  right: 2px;
+  bottom: 6px;
+  width: 6px;
+}
+
+/* Thumb */
+.canvas-scrollbar__thumb {
+  position: absolute;
+  border-radius: 3px;
+  background: var(--scrollbar-thumb, rgba(0, 0, 0, 0.25));
+  will-change: transform;
+}
+
+.canvas-scrollbar--horizontal .canvas-scrollbar__thumb {
+  top: 1px;
+  height: 4px;
+}
+
+.canvas-scrollbar--vertical .canvas-scrollbar__thumb {
+  left: 1px;
+  width: 4px;
+}
+
+/* Thumb 상태 */
+.canvas-scrollbar__thumb:hover {
+  background: var(--scrollbar-thumb-hover, rgba(0, 0, 0, 0.4));
+}
+
+.canvas-scrollbar__thumb:active,
+.canvas-scrollbar__thumb--dragging {
+  background: var(--scrollbar-thumb-active, rgba(0, 0, 0, 0.55));
+}

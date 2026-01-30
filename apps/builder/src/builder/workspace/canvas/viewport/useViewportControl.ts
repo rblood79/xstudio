@@ -14,7 +14,7 @@
 import { useEffect, useRef, useCallback, useMemo, type RefObject } from 'react';
 import { useApplication } from '@pixi/react';
 import type { Container } from 'pixi.js';
-import { ViewportController, type ViewportState } from './ViewportController';
+import { type ViewportState, getViewportController } from './ViewportController';
 import { useCanvasSyncStore } from '../canvasSync';
 import { useKeyboardShortcutsRegistry } from '@/builder/hooks';
 
@@ -90,12 +90,15 @@ export function useViewportControl(options: UseViewportControlOptions): UseViewp
 
   const controller = useMemo(() => {
     if (!app?.stage) return null;
-    return new ViewportController({
-      minZoom,
-      maxZoom,
-      onStateSync: handleStateSync,
-    });
-  }, [app, minZoom, maxZoom, handleStateSync]);
+    return getViewportController({ minZoom, maxZoom });
+  }, [app, minZoom, maxZoom]);
+
+  // onStateSync 콜백을 싱글톤에 설정 (싱글톤 생성 후 지연 바인딩)
+  useEffect(() => {
+    if (controller) {
+      controller.setOnStateSync(handleStateSync);
+    }
+  }, [controller, handleStateSync]);
 
   const containerElRef = useRef<HTMLElement | null>(null);
   useEffect(() => {

@@ -22,6 +22,7 @@ import { useCanvasSyncStore } from "./canvas/canvasSync";
 import { useStore } from "../stores";
 import { isWebGLCanvas, isCanvasCompareMode } from "../../utils/featureFlags";
 // useZoomShortcuts는 useGlobalKeyboardShortcuts로 통합됨 (BuilderCore.tsx)
+import { CanvasScrollbar } from "./scrollbar";
 import "./Workspace.css";
 // ============================================
 // Types
@@ -366,6 +367,10 @@ export function Workspace({
       <div className="workspace-overlay">
         {/* TextEditOverlay will be added in B1.5 */}
       </div>
+
+      {/* Figma-style Canvas Scrollbars */}
+      <CanvasScrollbar direction="horizontal" />
+      <CanvasScrollbar direction="vertical" />
 
       {/* Status Indicator */}
       {(isContextLost || !isCanvasReady) && (

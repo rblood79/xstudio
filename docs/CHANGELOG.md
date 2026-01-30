@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed - Button borderWidth/레이아웃 이중 계산 수정 (2026-01-30)
+
+#### 개요
+WebGL 모드에서 Button borderWidth 누락, display:block 부모에서 padding 변경 시 버튼 간격 발생,
+Style Panel borderWidth 0 표시 등 3건의 CSS/WebGL 정합성 버그를 수정합니다.
+
+#### 수정 내용
+1. **전 variant border/borderHover 추가** — CSS `border: 1px solid`가 모든 variant에 적용되므로 ButtonSpec에도 동일하게 border/borderHover 정의
+2. **specDefaultBorderWidth=1 고정** — variant의 border 존재 여부와 무관하게 항상 1px
+3. **borderHoverColor 분리** — hover/pressed 상태에서 별도 border 색상 지원
+4. **parseBoxModel 폼 요소 기본값** — inline style 미지정 시 BUTTON_SIZE_CONFIG padding/border 적용
+5. **calculateContentWidth 순수 텍스트 반환** — 폼 요소 padding/border를 parseBoxModel으로 분리하여 이중 계산 제거
+6. **텍스트 측정 엔진 통일** — PixiButton 너비 측정을 Canvas 2D measureTextWidth로 교체
+7. **createDefaultButtonProps borderWidth 기본값** — Style Panel 0 표시 해결
+
+#### 변경된 파일
+- `packages/specs/src/components/Button.spec.ts` — 전 variant border/borderHover 추가
+- `packages/specs/src/renderers/PixiRenderer.ts` — getVariantColors() borderHover 반환
+- `apps/builder/src/builder/workspace/canvas/ui/PixiButton.tsx` — specDefaultBorderWidth=1, borderHoverColor, Canvas 2D 측정
+- `apps/builder/src/builder/workspace/canvas/layout/engines/utils.ts` — BUTTON_SIZE_CONFIG.borderWidth, parseBoxModel 기본값, calculateContentWidth 순수 텍스트, measureTextWidth export
+- `apps/builder/src/types/builder/unified.types.ts` — createDefaultButtonProps style.borderWidth
+
+---
+
 ### Docs - 구조 문서 정리 (2025-12-30)
 
 #### 개요

@@ -592,17 +592,25 @@ Pencil과 xstudio는 **동일한 핵심 기술 스택**(PixiJS v8 + Yoga WASM + 
 
 ### 15.4 노드 타입
 
-| 타입 | 설명 |
-|------|------|
-| `frame` | 레이아웃 컨테이너 (Figma Frame과 동일) |
-| `rectangle` | 사각형 도형 |
-| `ellipse` | 타원 도형 |
-| `text` | 텍스트 노드 |
-| `ref` | 컴포넌트 인스턴스 (참조) |
-| `sticky_note` | 스티키 노트 |
-| `icon_font` | 아이콘 (Lucide Icons) |
-| `image` | 이미지 노드 |
-| `group` | 그룹 컨테이너 |
+> **심층 분석:** 각 노드 타입의 클래스 계층, 프로퍼티, 렌더링, 히트테스트 상세는 **§23** 참조
+
+6개 구체 클래스가 12개 타입 문자열을 처리한다:
+
+| 타입 | 클래스 | 설명 |
+|------|--------|------|
+| `frame` | `jx (FrameNode)` | 레이아웃 컨테이너, 클리핑, 슬롯 (Figma Frame) |
+| `group` | `vXe (GroupNode)` | 논리적 그룹, 이펙트만 적용 |
+| `rectangle` | `Kke (ShapeNode)` | 사각형 + cornerRadius |
+| `ellipse` | `Kke (ShapeNode)` | 타원/도넛/부채꼴 |
+| `line` | `Kke (ShapeNode)` | 직선 |
+| `path` | `Kke (ShapeNode)` | SVG path 벡터 도형 |
+| `polygon` | `Kke (ShapeNode)` | 정다각형 + cornerRadius |
+| `text` | `Ux (TextNode)` | ParagraphBuilder 기반 텍스트 |
+| `icon_font` | `_Xe (IconFontNode)` | Material Symbols/Lucide 아이콘 |
+| `note` | `oI (StickyNode)` | 스티키 노트 |
+| `prompt` | `oI (StickyNode)` | AI 프롬프트 노트 |
+| `context` | `oI (StickyNode)` | 컨텍스트 노트 |
+| `ref` | (직렬화 전용) | 컴포넌트 인스턴스 참조 |
 
 ### 15.5 컴포넌트-인스턴스 시스템
 
@@ -651,14 +659,15 @@ Pencil과 xstudio는 **동일한 핵심 기술 스택**(PixiJS v8 + Yoga WASM + 
 }
 ```
 
-**Fill 타입:**
-| 타입 | 설명 |
-|------|------|
-| `Color` | 단색 (hex, 변수 참조) |
-| `Image` | 이미지 (url, mode: Fill/Fit/Tile) |
-| `LinearGradient` | 선형 그라디언트 (stops, angle) |
-| `RadialGradient` | 방사형 그라디언트 (stops, center) |
-| `AngularGradient` | 각도 그라디언트 |
+**Fill 타입 (6종, Enum `Rt`):**
+| 타입 | Enum 값 | 설명 |
+|------|---------|------|
+| `Color` | 1 | 단색 (hex, 변수 참조) |
+| `Image` | 2 | 이미지 (url, mode: Stretch/Fill/Fit) |
+| `LinearGradient` | 3 | 선형 그라디언트 (stops, angle) |
+| `RadialGradient` | 4 | 방사형 그라디언트 (stops, center) |
+| `AngularGradient` | 5 | 각도 그라디언트 (Sweep) |
+| `MeshGradient` | 6 | 메시 그라디언트 (Coons 패치 보간) |
 
 ### 15.7 Effect 시스템
 
@@ -1591,9 +1600,922 @@ Pe(ptr, originalArray)               // _ck 플래그 없으면 _free
 
 ---
 
-## 23. 종합 분석 업데이트 (2026-01-30)
+## 23. 씬 그래프 노드 타입별 구조 분석
 
-### 23.1 Pencil 앱 전체 아키텍처 다이어그램
+> 분석일: 2026-01-30
+> 분석 방법: `index.js` 번들 내 노드 팩토리, 클래스 계층, renderSkia, 직렬화 코드 역공학
+
+### 23.1 노드 클래스 계층 구조
+
+모든 씬 노드는 단일 베이스 클래스 `z_`를 상속하며, **6개 구체 클래스**가 **12개 타입 문자열**을 처리한다.
+
+```
+z_ (Base Node — id, type, properties, layout, children)
+│
+├── jx   — FrameNode      ("frame")
+│         컨테이너, 오토 레이아웃, 클리핑, 슬롯
+│
+├── vXe  — GroupNode       ("group")
+│         논리적 그룹 컨테이너, 이펙트만 적용
+│
+├── Kke  — ShapeNode       ("rectangle", "ellipse", "line", "path", "polygon")
+│         다형성 — type 판별자로 5종 도형 처리
+│
+├── Ux   — TextNode        ("text")
+│         ParagraphBuilder 기반 텍스트 렌더링
+│
+├── oI   — StickyNode      ("note", "prompt", "context")
+│         AI 프롬프트/노트, 내부 뷰 시스템
+│
+└── _Xe  — IconFontNode    ("icon_font")
+          Material Symbols/Lucide 아이콘 글리프
+```
+
+### 23.2 노드 팩토리 (`Io.createNode`)
+
+```javascript
+// Scenegraph 클래스(Io)의 정적 팩토리 메서드
+if (type === "text")
+    → new Ux(id, props)                               // TextNode
+else if (type === "note" || "prompt" || "context")
+    → new oI(id, type, props)                          // StickyNode (3 서브타입)
+else if (type === "path" || "rectangle" || "ellipse" || "line" || "polygon")
+    → new Kke(id, type, props)                         // ShapeNode (5 서브타입)
+// else → frame: jx, group: vXe, icon_font: _Xe
+```
+
+**직렬화 전용 의사 타입:**
+- `"ref"` — 컴포넌트 인스턴스 참조 (별도 클래스가 아닌 직렬화 형식)
+- `"sticky_note"` — 레거시 타입 (내부적으로 `"note"`로 매핑)
+- `"image"` — 툴바에서 파일 임포트 트리거 (별도 노드 클래스 없음, `"rectangle"` + image fill로 처리)
+
+### 23.3 공통 베이스 프로퍼티 (`sf()` 함수)
+
+모든 노드 타입이 공유하는 기본 속성 (프로퍼티 객체 `tyt`로 관리):
+
+```javascript
+sf(type, overrides = {}) → {
+    // 변환
+    enabled: true,
+    x: 0, y: 0,
+    width: 0, height: 0,
+    rotation: 0,
+    flipX: false, flipY: false,
+
+    // 외관
+    opacity: 1,
+    clip: false,
+
+    // 레이아웃
+    layoutMode: ii.None,            // 0 = 오토 레이아웃 없음
+    layoutAlignItems: fr.Start,     // 0
+    layoutJustifyContent: hi.Start, // 0
+    horizontalSizing: Zt.Fixed,     // 0
+    verticalSizing: Zt.Fixed,       // 0
+    placeholder: false,
+
+    // 텍스트 (모든 타입에 포함)
+    textAlign: "left",
+    textAlignVertical: "top",
+    fontSize: 14,
+    letterSpacing: 0,
+    fontFamily: "Inter",
+    fontWeight: "normal",
+    fontStyle: "normal",
+    textGrowth: "auto",
+    lineHeight: 0,
+
+    ...overrides  // 타입별 오버라이드
+}
+```
+
+### 23.4 노드 타입별 고유 프로퍼티
+
+#### FrameNode (`"frame"`)
+
+| 프로퍼티 | 타입 | 기본값 | 설명 |
+|---------|------|--------|------|
+| `cornerRadius` | `number[]` | - | 4개 꼭짓점 반경 배열 |
+| `clip` | `boolean` | `false` | 자식 클리핑 |
+| `fills` | `Fill[]` | - | Fill 배열 (6종) |
+| `strokeFills` | `Fill[]` | - | 스트로크 Fill |
+| `strokeWidth` | `number` | - | 스트로크 두께 |
+| `strokeAlignment` | `Rr` | - | Inside/Center/Outside |
+| `lineJoin` | `string` | - | Miter/Round/Bevel |
+| `lineCap` | `string` | - | Butt/Round/Square |
+| `effects` | `Effect[]` | - | 이펙트 배열 |
+| `slot` | `object` | - | 슬롯 정의 |
+| `layoutMode` | `ii` | `Horizontal(1)` | **프레임 기본값 오버라이드** |
+| `horizontalSizing` | `Zt` | `FitContent(2)` | **프레임 기본값 오버라이드** |
+| `verticalSizing` | `Zt` | `FitContent(2)` | **프레임 기본값 오버라이드** |
+| `layoutChildSpacing` | `number` | - | 자식 간격 (gap) |
+| `layoutPadding` | `number/array` | - | 패딩 (1/2/4 값) |
+| `layoutIncludeStroke` | `boolean` | - | 레이아웃에 스트로크 포함 |
+| `frameMaskDisabled` | `boolean` | - | 레거시: clip 매핑 |
+
+#### ShapeNode (5종 도형 공통)
+
+| 프로퍼티 | 타입 | 설명 |
+|---------|------|------|
+| `fills` | `Fill[]` | Fill 배열 (6종) |
+| `strokeFills` | `Fill[]` | 스트로크 Fill |
+| `strokeWidth` | `number` | 스트로크 두께 |
+| `strokeAlignment` | `Rr` | Inside/Center/Outside |
+| `lineJoin`, `lineCap` | `string` | 선 조인/캡 |
+| `effects` | `Effect[]` | 이펙트 배열 |
+
+**도형별 추가 프로퍼티:**
+
+| 도형 | 고유 프로퍼티 | 설명 |
+|------|-------------|------|
+| `"rectangle"` | `cornerRadius: number[]` | 4개 꼭짓점 반경 |
+| `"ellipse"` | `ellipseInnerRadius`, `ellipseStartAngle`, `ellipseSweep` | 도넛/부채꼴 지원 |
+| `"line"` | (없음) | 시작점(0,0) → 끝점(w,h) |
+| `"path"` | `pathData: string`, `fillRule: "nonzero"/"evenodd"` | SVG path 문자열 |
+| `"polygon"` | `polygonCount: number`, `cornerRadius` | 정다각형 + 코너 반경 |
+
+#### TextNode (`"text"`)
+
+| 프로퍼티 | 기본값 | 설명 |
+|---------|--------|------|
+| `textContent` | - | 텍스트 내용 |
+| `textGrowth` | `"auto"` | `"auto"` / `"fixed-width"` / `"fixed-width-height"` |
+| `textAlignVertical` | `"top"` | 수직 정렬 |
+| `letterSpacing` | `0` | 자간 |
+| `lineHeight` | `0` | 행간 |
+| `fills` | - | 텍스트 색상 (Fill 배열) |
+| `strokeFills`, `strokeWidth` | - | 텍스트 스트로크 |
+| `effects` | - | 이펙트 배열 |
+
+#### IconFontNode (`"icon_font"`)
+
+| 프로퍼티 | 기본값 | 설명 |
+|---------|--------|------|
+| `iconFontName` | - | 아이콘 이름 |
+| `iconFontFamily` | `"Material Symbols Rounded"` | 폰트 패밀리 |
+| `iconFontWeight` | - | 아이콘 무게 |
+| `fills` | - | 아이콘 색상 |
+| `effects` | - | 이펙트 배열 |
+
+#### StickyNode (`"note"` / `"prompt"` / `"context"`)
+
+| 프로퍼티 | 기본값 | 설명 |
+|---------|--------|------|
+| `textContent` | - | 노트/프롬프트 내용 |
+| `color` | - | 배경 색상 (fills 배열이 아님) |
+| `fontSize` | `16` | 기본값 오버라이드 (일반 노드는 14) |
+| `fontWeight` | `"400"` | 기본값 오버라이드 |
+| `modelName` | - | AI 모델명 (`"prompt"` 전용) |
+
+### 23.5 기능 지원 매트릭스
+
+| 기능 | frame | group | rect | ellipse | line | path | polygon | text | icon_font | sticky |
+|------|:-----:|:-----:|:----:|:-------:|:----:|:----:|:-------:|:----:|:---------:|:------:|
+| **자식 노드** | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| **Fills** | ✅ | ❌ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ |
+| **Strokes** | ✅ | ❌ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ |
+| **Effects** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ |
+| **Clip** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| **Auto Layout** | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| **Corner Radius** | ✅ | ❌ | ✅ | ❌ | ❌ | ❌ | ✅ | ❌ | ❌ | ❌ |
+| **Slot** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| **getMaskPath** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | ✅ | ❌ |
+| **Custom Hit Test** | ✅ | ❌ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ | ✅ |
+
+### 23.6 열거형 (Enum) 정의
+
+```javascript
+// Fill 타입
+var Rt = { Color: 1, Image: 2, LinearGradient: 3, RadialGradient: 4, AngularGradient: 5, MeshGradient: 6 };
+
+// 이미지 Fill 모드
+var Ea = { Stretch: 1, Fill: 2, Fit: 3 };
+
+// Effect 타입
+var Nr = { DropShadow: 1, LayerBlur: 2, BackgroundBlur: 3 };
+
+// 레이아웃 모드
+var ii = { None: 0, Horizontal: 1, Vertical: 2 };
+
+// 사이징 동작
+var Zt = { Fixed: 0, FitContent: 2, FillContainer: 3 };
+
+// 주축 배분
+var hi = { Start: 0, Center: 1, SpaceBetween: 2, SpaceAround: 3, End: 4 };
+
+// 교차축 정렬
+var fr = { Start: 0, Center: 1, End: 2 };
+```
+
+### 23.7 노드별 renderSkia 차이점
+
+| 노드 | renderSkia 구현 | Fill Path 생성 방식 |
+|------|----------------|-------------------|
+| **FrameNode** | fillPath → renderFills → clipPath(clip 시) → 자식 순회 → strokePath → 슬롯 표시 | rect + cornerRadius → `CG()` 함수 |
+| **GroupNode** | 이펙트만 적용 → 자식 순회 (fill/stroke 없음) | 자식 mask path union |
+| **ShapeNode(rect)** | getFillPath → renderFills → strokePath | rect + cornerRadius |
+| **ShapeNode(ellipse)** | getFillPath → renderFills → strokePath | arc(startAngle, sweep, innerRadius) |
+| **ShapeNode(line)** | getFillPath → renderFills → strokePath | moveTo(0,0).lineTo(w,h) |
+| **ShapeNode(path)** | getFillPath → renderFills → strokePath | `Ue.Path.MakeFromSVGString(pathData)` |
+| **ShapeNode(polygon)** | getFillPath → renderFills → strokePath | `Q1t()` 정다각형 + cornerRadius |
+| **TextNode** | fills → ParagraphBuilder.build().layout() → 텍스트 렌더 | paragraph bounds |
+| **IconFontNode** | getIconTransform → renderFills → 글리프 렌더 | font glyph path |
+| **StickyNode** | getView().render() (내부 뷰 시스템) | 뷰 시스템 자체 처리 |
+
+### 23.8 컴포넌트/인스턴스 시스템 상세
+
+```
+┌─────────────────────────────────────────────────────┐
+│              Component (reusable: true)               │
+│                                                       │
+│  setReusable(rollback, true) → 컴포넌트 등록          │
+│  ensurePrototypeReusability(rollback) → 구조 검증     │
+└───────────────────────┬───────────────────────────────┘
+                        │ attachToPrototype()
+                        ▼
+┌─────────────────────────────────────────────────────┐
+│              Instance (type: "ref" in .pen)           │
+│                                                       │
+│  _prototype: {                                        │
+│      node: <원본 컴포넌트 참조>,                       │
+│      overriddenProperties: Set<string>,               │
+│      childrenOverridden: boolean                      │
+│  }                                                    │
+│                                                       │
+│  isUnique: (this.id !== prototype.node.id)            │
+│  isInstanceBoundary: (prototype 존재 + 고유 id)       │
+└───────────────────────────────────────────────────────┘
+```
+
+**핵심 메서드:**
+
+| 메서드 | 설명 |
+|--------|------|
+| `attachToPrototype(rollback, node, overrides, childrenOverridden)` | 인스턴스↔프로토타입 연결 |
+| `detachFromPrototype(rollback)` | 연결 해제 |
+| `prototypePropertyChanged(prop)` | 프로토타입 변경 → 인스턴스 전파 (오버라이드 속성 제외) |
+| `collectOverrides(target, traverse)` | 프로토타입 대비 차이점만 직렬화 |
+| `setChildrenOverridden(rollback, boolean)` | 자식 구조 변경 표시 |
+| `canAcceptChildren(node)` | 프로토타입 보호: childrenOverridden이 아니면 자식 추가 불가 |
+
+**슬롯 시스템 (FrameNode 전용):**
+
+| 메서드/속성 | 설명 |
+|------------|------|
+| `setSlot(rollback, definition)` | 슬롯 정의 할당 |
+| `isSlotInstance` | 프로토타입 체인에서 슬롯 존재 확인 |
+| `getSlotPath()` | 슬롯 영역 Skia 패스 반환 |
+| `renderSlot(canvas, path, isOwner)` | 보라색 플레이스홀더 렌더링 |
+
+### 23.9 오토 레이아웃 시스템
+
+| 프로퍼티 | 열거형 | 값 | 설명 |
+|---------|--------|-----|------|
+| `layoutMode` | `ii` | None(0), Horizontal(1), Vertical(2) | 레이아웃 방향 |
+| `layoutChildSpacing` | `number` | - | 자식 간격 (gap) |
+| `layoutPadding` | `number/array` | - | 패딩 (1값/2값/4값) |
+| `layoutAlignItems` | `fr` | Start(0), Center(1), End(2) | 교차축 정렬 |
+| `layoutJustifyContent` | `hi` | Start(0), Center(1), SpaceBetween(2), SpaceAround(3), End(4) | 주축 배분 |
+| `layoutIncludeStroke` | `boolean` | - | 스트로크 포함 여부 |
+| `horizontalSizing` | `Zt` | Fixed(0), FitContent(2), FillContainer(3) | 수평 크기 모드 |
+| `verticalSizing` | `Zt` | Fixed(0), FitContent(2), FillContainer(3) | 수직 크기 모드 |
+
+**사이징 직렬화 형식:**
+- `100` → Fixed 100px
+- `"fit_content"` → 콘텐츠에 맞춤
+- `"fit_content(100)"` → 콘텐츠에 맞춤 (폴백 100px)
+- `"fill_container"` → 부모 채움
+- `"fill_container(100)"` → 부모 채움 (폴백 100px)
+
+**레이아웃 엔진 흐름:**
+```
+updateLayoutConfiguration() → 속성 → 레이아웃 설정 변환
+invalidateLayout() → 서브트리 재레이아웃 마킹
+Yoga WASM 계산 → Flexbox 레이아웃 수행
+layoutCommitSize() → 계산된 크기 적용
+layoutCommitPosition() → 계산된 위치 적용
+```
+
+### 23.10 Hit Testing (노드별)
+
+| 노드 | pointerHitTest 방식 |
+|------|---------------------|
+| **Base(z_)** | `containsPointInBoundingBox()` — worldMatrix 역변환 → localBounds 포함 검사 |
+| **FrameNode** | getVisualWorldBounds → fillPath.contains(local) + strokePath.contains(local) + 자식 재귀 |
+| **ShapeNode** | fillPath containment + strokePath containment |
+| **StickyNode** | `handleViewClick(event, x, y)` — 내부 뷰 시스템 클릭 처리 |
+| **GroupNode** | getMaskPath() — 자식 마스크 패스 합산 |
+| **TextNode** | 바운딩 박스 기반 (Base 동작) |
+| **IconFontNode** | 바운딩 박스 기반 (Base 동작) |
+
+### 23.11 직렬화 공통 프로퍼티 (`y4()` 함수)
+
+```javascript
+// 모든 노드의 직렬화 시 조건부 포함 프로퍼티
+y4(node) → {
+    x, y,                    // 레이아웃 내부가 아닌 경우만
+    name,                    // 노드 이름
+    context,                 // 컨텍스트 태그 배열
+    theme,                   // 변수 테마 맵
+    reusable,                // true인 경우만
+    enabled,                 // true가 아닌 경우만
+    opacity,                 // 1이 아닌 경우만
+    rotation,                // 0이 아닌 경우만
+    flipX, flipY,            // true인 경우만
+    metadata                 // 메타데이터 객체
+}
+```
+
+### 23.12 SVG Import → 노드 매핑
+
+| SVG 요소 | Pencil 노드 타입 | 비고 |
+|----------|-----------------|------|
+| `<svg>` | `"frame"` | 루트 컨테이너 |
+| `<rect>` | `"rectangle"` | |
+| `<circle>`, `<ellipse>` | `"ellipse"` | |
+| `<path>` | `"path"` | pathData 변환 |
+| `<line>`, `<polyline>`, `<polygon>` | `"path"` | path로 통합 |
+| `<g>`, `<a>` | `"group"` | |
+| `<text>` | `"text"` | |
+| `<use>` | `"group"` | ref 해석 후 인라인화 |
+| `<image>` | `"rectangle"` + image fill | 이미지를 Fill로 처리 |
+
+---
+
+## 24. 이벤트 시스템 분석
+
+> 분석일: 2026-01-30
+> 분석 방법: `index.js` 번들 내 EventEmitter3, InputManager, StateManager, IPC 코드 역공학
+
+### 24.1 이벤트 아키텍처 전체 흐름
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                   DOM Events (window / container)             │
+│  keydown, keyup, pointerdown, pointermove, pointerup,        │
+│  wheel, copy, cut, paste, drop, dragover, contextmenu        │
+└──────────────────────────┬──────────────────────────────────┘
+                           ▼
+┌─────────────────────────────────────────────────────────────┐
+│              InputManager (b_t)                               │
+│  ├── pressedKeys: Set<string> — 현재 눌린 키 추적            │
+│  ├── mouse: { canvas: {x,y}, screen: {x,y}, pointerDown }   │
+│  ├── keydown/keyup → stateManager.handleKeydown(e)           │
+│  ├── pointer* → stateManager.handlePointer*(e)               │
+│  ├── wheel → camera.zoomTowardsPoint / translate             │
+│  ├── copy/cut/paste → selectionManager.handle*(e)            │
+│  └── drop → 파일/컴포넌트 드롭 처리                           │
+└──────────────────────────┬──────────────────────────────────┘
+                           ▼
+┌─────────────────────────────────────────────────────────────┐
+│              StateManager (y_t) — 상태 머신                   │
+│  ├── handState (r_t) — Space/중간 버튼 인터셉트              │
+│  └── state → 현재 상태에 위임:                                │
+│      ├── IdleState (tl) — 선택, 더블클릭, 마키 시작           │
+│      ├── DraggingState (eQ) — 노드 이동/재배치               │
+│      ├── MarqueeSelectState (syt) — 범위 선택                │
+│      ├── DrawShapeState (oyt) — 도형 생성                    │
+│      ├── ResizeState (lyt) — 리사이즈 핸들                   │
+│      ├── RotateState (fyt) — 회전 핸들                       │
+│      ├── TextEditorState (tq) — Quill 텍스트 편집            │
+│      ├── EditTextState (xV) — 텍스트 진입                    │
+│      ├── DrawStickyNoteState (ayt) — 스티키 노트 생성        │
+│      └── FillEditorState (fx) — 그라디언트 편집              │
+└──────────────────────────┬──────────────────────────────────┘
+                           ▼
+┌─────────────────────────────────────────────────────────────┐
+│              SceneGraph 조작                                  │
+│  beginUpdate() → UpdateBlock (eyt) → commitBlock()           │
+│  emit: "nodePropertyChange", "nodeAdded", "nodeRemoved"      │
+│  → undoManager.pushUndo() + documentModified()               │
+└──────────────────────────┬──────────────────────────────────┘
+                           ▼
+┌─────────────────────────────────────────────────────────────┐
+│              EventEmitter3 알림 (65종 이벤트)                 │
+│  "selectionChange" → React UI                                │
+│  "toolChange" → 툴바 갱신                                    │
+│  "document-modified" → 더티 상태                              │
+│  Debounced → "selectionChangeDebounced"                      │
+│              "selectedNodePropertyChangeDebounced"            │
+│  "afterUpdate" — 프레임 배칭 완료                             │
+└──────────────────────────┬──────────────────────────────────┘
+                           ▼
+┌─────────────────────────────────────────────────────────────┐
+│              React State 갱신                                 │
+│  useEffect 구독 → setState → UI 리렌더                       │
+│  (속성 패널, 툴바, 레이어 목록, AI 채팅)                      │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### 24.2 EventEmitter3 — 핵심 이벤트 버스
+
+15개 클래스가 `EventEmitter3 (wl)`을 상속한다. 주요 상속 클래스:
+- `xyt` (UndoManager) — `changed` 이벤트
+- `Io` (Scenegraph) — `nodePropertyChange`, `nodeAdded`, `nodeRemoved`
+- `mX` (PixiJS Container) — 씬 그래프 이벤트
+- `_wt`, `A2t`, `df`, `ebe`, `H6`, `k1e`, `Mg`, `NF`, `O_`, `q1e`, `v2t`, `x1e`
+
+**주요 이벤트 목록 (65종 중 핵심):**
+
+| 이벤트 | 구독 수 | 용도 |
+|--------|---------|------|
+| `selectionChange` | 3 | 노드 선택 변경 |
+| `selectionChangeDebounced` | 2 | 선택 변경 디바운스 |
+| `selectedNodePropertyChangeDebounced` | 2 | 선택 노드 속성 변경 디바운스 |
+| `nodePropertyChange` | 3 | 씬 그래프 노드 속성 변경 |
+| `toolChange` | 1 | 도구 전환 |
+| `zoom` | 1 | 줌 변경 |
+| `startTextEdit` / `finishTextEdit` | 각 1 | 텍스트 편집 모드 |
+| `document-modified` | 1 | 문서 변경 (더티) |
+| `showSelectUI` | 1 | 모델 선택 UI |
+| `dirty-changed` | 1 | 저장 필요 상태 |
+| `chat-*` (9종) | 각 1 | AI 채팅 이벤트 |
+| `file-update` / `file-error` | 각 1 | 파일 I/O |
+| `toggle-ui-visibility` | 1 | UI 토글 |
+| `toggle-theme` / `color-theme-changed` | 각 1 | 테마 변경 |
+| `fullscreen-change` | 1 | 전체화면 |
+| `desktop-update-ready` / `available` | 각 1 | 데스크톱 업데이트 |
+| `did-sign-out` | 1 | 로그아웃 |
+| `telemetry` | 33 | 분석 추적 |
+
+### 24.3 상태 머신 (StateManager = `y_t`)
+
+#### 24.3.1 상태 머신 구조
+
+```javascript
+class y_t {
+    state = new tl(manager);      // 기본: IdleState
+    handState = new r_t();         // Hand/Pan 항상 활성
+
+    handlePointerDown(e) {
+        // 1) Hand/Pan 인터셉트
+        if (activeTool === "hand" ||
+            pressedKeys.has("Space") && e.button === 0 ||
+            e.button === 1) {
+            this.handState.handlePointerDown(e, manager);
+            return;
+        }
+        // 2) 현재 상태에 위임
+        this.state.onPointerDown(e);
+    }
+
+    transitionTo(newState) {
+        this.state.onExit();
+        this.state = newState;
+        this.state.onEnter();
+        manager.requestFrame();
+    }
+}
+```
+
+#### 24.3.2 상태 전이 다이어그램
+
+| 현재 상태 | 트리거 | 다음 상태 |
+|----------|--------|----------|
+| **IdleState** | 노드 드래그 (5px 임계값) | DraggingState |
+| **IdleState** | 빈 공간 드래그 | MarqueeSelectState |
+| **IdleState** | 도형 도구 + 드래그 | DrawShapeState |
+| **IdleState** | 텍스트 더블클릭 | EditTextState → TextEditorState |
+| **IdleState** | 스티키 노트 도구 | DrawStickyNoteState |
+| **IdleState** | 리사이즈 핸들 드래그 | ResizeState |
+| **IdleState** | 회전 핸들 드래그 | RotateState |
+| **IdleState** | Fill 그라디언트 클릭 | FillEditorState |
+| **DraggingState** | pointerUp | IdleState |
+| **MarqueeSelectState** | pointerUp | IdleState |
+| **DrawShapeState** | pointerUp | IdleState |
+| **ResizeState** | pointerUp | IdleState |
+| **RotateState** | pointerUp | IdleState |
+| **TextEditorState** | Escape / 외부 클릭 | IdleState |
+
+#### 24.3.3 상태 인터페이스
+
+모든 상태 클래스가 구현하는 메서드:
+
+```javascript
+onPointerDown(e)   // 포인터 누름
+onPointerMove(e)   // 포인터 이동
+onPointerUp(e)     // 포인터 뗌
+onKeyDown(e)       // 키 누름
+onKeyUp(e)         // 키 뗌
+onToolChange(e)    // 도구 전환
+onEnter()          // 상태 진입
+onExit()           // 상태 종료
+render(canvas, renderer) // 오버레이 렌더링
+```
+
+#### 24.3.4 IdleState (tl) — 허브 상태
+
+```javascript
+class tl {
+    dragStartPoint = null;
+    didMovePastThreshold = false;   // 5px 드래그 임계값
+    nodeUnderCursor = null;
+    selectionBoundingBoxUnderCursor = false;
+    pointerDownNode = null;
+    didMouseDown = false;
+    doubleClicked = false;
+    selectNodeOnMouseUp = false;
+
+    // onPointerDown: 히트 대상 판별 → 선택/드래그/그리기 분기
+    // onPointerMove: 커서 갱신, 드래그 임계값 감지, 마키 시작
+    // onPointerUp: 선택 완료, 더블클릭으로 텍스트 편집 진입
+}
+```
+
+#### 24.3.5 DraggingState (eQ) — 노드 드래그
+
+```javascript
+class eQ {
+    nodes = [];                    // 드래그 중인 노드들
+    nodeSet = new Set;
+    mouseBoundsOffset = [0, 0];
+    deferredDropNode;              // 드롭 시 재배치 대상
+    deferredDropChildIndex;
+
+    onPointerMove(e) {
+        translateNodes(e);         // 노드 위치 갱신
+        findDropFrame();           // 드롭 프레임 탐색 (재배치용)
+    }
+
+    onPointerUp() {
+        commitTransaction();       // undo 가능한 트랜잭션 커밋
+        transitionTo(new IdleState());
+    }
+}
+```
+
+### 24.4 PixiJS 이벤트 시스템
+
+#### 24.4.1 EventBoundary 제어
+
+```javascript
+// eventMode 토글
+disableInteractions() → mainContainer.eventMode = "none"
+enableInteractions()  → mainContainer.eventMode = "passive" / "static"
+
+// 조건부 eventMode (도구에 따라)
+eventMode = activeTool === "move" ? "static" : "none"
+```
+
+#### 24.4.2 eventMode 5단계
+
+| 모드 | 동작 | 사용처 |
+|------|------|--------|
+| `"static"` | 이벤트 수신 + 히트 테스트 | Move 도구 시 노드 |
+| `"dynamic"` | static + 매 프레임 업데이트 | 동적 컨텐츠 |
+| `"passive"` | 전파만, 자체 수신 안함 | 기본 컨테이너 |
+| `"none"` | 완전 비활성 | Hand/패닝 중 |
+| `interactiveChildren` | 자식 이벤트 토글 | 서브트리 제어 |
+
+#### 24.4.3 PixiJS 지원 이벤트 (31종)
+
+```
+포인터:  pointerdown, pointerup, pointermove, pointerover, pointerout,
+         pointerenter, pointerleave, pointertap, pointerupoutside,
+         globalpointermove
+마우스:  mousedown, mouseup, mousemove, mouseover, mouseout,
+         mouseenter, mouseleave, mouseupoutside
+터치:    touchstart, touchend, touchmove, touchcancel
+클릭:    click, dblclick, tap, rightclick, rightdown, rightup, rightupoutside
+기타:    wheel
+```
+
+### 24.5 키보드 이벤트 시스템
+
+#### 24.5.1 입력 등록
+
+```javascript
+window.addEventListener("keydown", handleKeydown)
+window.addEventListener("keyup", handleKeyup)
+
+handleKeydown = (e) => {
+    pressedKeys.add(e.code);
+    stateManager.handleKeydown(e);
+}
+
+// 포커스 게이팅 — 텍스트 입력 중 단축키 무시
+if (document.activeElement instanceof HTMLInputElement ||
+    document.activeElement instanceof HTMLTextAreaElement) return;
+```
+
+#### 24.5.2 Space 키 핸드 모드
+
+```javascript
+// StateManager 키보드 핸들링
+handleKeydown(e) {
+    if (e.code === "Space" && !mouse.pointerDown)
+        handState.activate(manager);  // → cursor: "grab", 인터랙션 비활성
+}
+
+handleKeyup(e) {
+    if (e.code === "Space" && !handState.canvasDragging && activeTool !== "hand")
+        handState.exit(manager);      // → 인터랙션 복원, cursor: "default"
+}
+```
+
+### 24.6 줌/패닝 이벤트
+
+#### 24.6.1 휠 이벤트
+
+```javascript
+// 두 리스너 등록
+window.addEventListener("wheel", handleWindowWheel, {passive: false})
+containerElement.addEventListener("wheel", handleContainerWheel, {passive: false})
+
+// handleContainerWheel:
+if (e.ctrlKey || e.metaKey) {
+    // Ctrl+휠 / 트랙패드 핀치 → 줌
+    camera.zoomTowardsPoint(cursor.x, cursor.y, zoom + delta * zoom);
+} else {
+    // 일반 휠 → 패닝
+    camera.translate(deltaX / zoom, deltaY / zoom);
+}
+```
+
+#### 24.6.2 HandState (r_t) — Space+드래그 패닝
+
+```javascript
+class r_t {
+    canvasDragging = false;
+
+    activate(manager) {
+        manager.setCursor("grab");
+        manager.pixiManager.disableInteractions();
+    }
+
+    handlePointerMove(e, manager) {
+        camera.translate(-deltaX / zoom, -deltaY / zoom);
+    }
+
+    exit(manager) {
+        manager.pixiManager.enableInteractions();
+        manager.setCursor("default");
+    }
+}
+```
+
+#### 24.6.3 카메라 이벤트
+
+```javascript
+camera.on("zoom", ...)    // FillEditorState 구독
+camera.on("change", ...)  // 가이드/커넥션 리드로우
+```
+
+### 24.7 선택 이벤트
+
+```javascript
+// 단일 선택: 클릭
+selectNode(node, shiftKey=false)
+
+// 추가 선택: Shift+클릭 → addNode(node)
+// 범위 선택: 빈 공간 드래그 → MarqueeSelectState
+// 전체 선택: Cmd+A (프레임 내부면 자식만)
+// 선택 해제: Escape → clearSelection()
+```
+
+**디바운스 패턴 (프레임 기반 배칭):**
+
+```javascript
+queuedFrameEvents = new Set();
+
+on("selectionChange", () => {
+    queuedFrameEvents.add("selectionChangeDebounced");
+    requestFrame();
+});
+
+on("nodePropertyChange", node => {
+    if (selectedNodes.has(node)) {
+        queuedFrameEvents.add("selectedNodePropertyChangeDebounced");
+        requestFrame();
+    }
+});
+
+// 매 프레임 flush:
+for (const e of queuedFrameEvents) eventEmitter.emit(e);
+queuedFrameEvents.clear();
+eventEmitter.emit("afterUpdate");
+```
+
+### 24.8 드래그 앤 드롭
+
+#### 24.8.1 캔버스 드롭 (HTML5)
+
+```javascript
+containerElement.addEventListener("drop", handleDrop)
+containerElement.addEventListener("dragover", handleDragOver)
+containerElement.addEventListener("dragleave", handleDragLeave)
+containerElement.addEventListener("dragend", handleDragEnd)
+
+// handleDragOver: preventDefault + 마우스 위치 갱신
+// handleDrop: 파일(이미지, 디자인 파일) 드롭 처리
+```
+
+#### 24.8.2 드래그 임계값
+
+```javascript
+const wle = 5;  // 5px 임계값
+// IdleState에서 pointerMove 시 임계값 초과 여부 확인
+// 초과 시 DraggingState로 전이
+```
+
+### 24.9 클립보드 이벤트
+
+```javascript
+window.addEventListener("copy", handleCopy)
+window.addEventListener("cut", handleCut)
+window.addEventListener("paste", handlePaste)
+
+// Copy: 선택 노드 직렬화 + text/plain에 노드 ID 설정
+//   e.clipboardData.setData("text/plain", "Node ID: " + paths.join(", "))
+// Cut: Copy + removeSelectedNodes()
+// Paste: 클립보드 데이터 → 노드 생성 (내부 직렬화 / 외부 이미지)
+
+// 게이팅: HTMLInputElement/HTMLTextAreaElement 포커스 시 브라우저 기본 동작
+isClipboardEventAllowed() {
+    // 텍스트 입력 중이면 false → 브라우저에 위임
+}
+```
+
+### 24.10 Undo/Redo 트랜잭션
+
+#### 24.10.1 UndoManager (`xyt extends EventEmitter3`)
+
+```javascript
+class xyt extends wl {
+    undoStack = [];
+    redoStack = [];
+
+    undo() { /* undoStack pop → rollback 적용 */ }
+    redo() { /* redoStack pop → 재적용 */ }
+    pushUndo(rollback) { /* undoStack push, redoStack clear */ }
+    // emit "changed" 후 처리
+}
+```
+
+#### 24.10.2 UpdateBlock (`eyt`) 지원 작업
+
+| 메서드 | 설명 |
+|--------|------|
+| `update(node, properties)` | 스냅샷 + 속성 변경 |
+| `deleteNode(node, remove)` | 씬에서 제거 |
+| `addNode(node, parent, index)` | 씬에 삽입 |
+| `changeParent(node, parent, index)` | 부모 변경 (재배치) |
+| `snapshotProperties(node, keys)` | undo용 속성 캡처 |
+| `snapshotParent(node)` | undo용 부모 캡처 |
+| `addVariable(id, data)` | 변수 추가 |
+| `setVariable(variable, values)` | 변수 변경 |
+| `deleteVariable(variable)` | 변수 삭제 |
+
+#### 24.10.3 커밋 흐름
+
+```javascript
+const block = scenegraph.beginUpdate();
+block.update(node, { width: 200 });
+commitBlock(block, { undo: true });
+// → undoManager.pushUndo(block.rollback)
+// → scenegraph.documentModified()
+// → skiaRenderer.invalidateContent()
+// → eventEmitter.emit("document-modified")
+```
+
+### 24.11 IPC 이벤트 (Electron)
+
+#### 24.11.1 전송 모드 3종
+
+| 모드 | 감지 | 전송 방식 |
+|------|------|----------|
+| VS Code | `window.vscodeapi` | `postMessage` |
+| Electron | `window.electronAPI` | `onMessageReceived / sendMessage` |
+| Web (iframe) | `window.webappapi` | `postMessage to parent` |
+
+메시지 타입: `"notification"` (단방향), `"request"` (응답 대기, 30초 타임아웃), `"response"`
+
+#### 24.11.2 IPC Notify (렌더러→호스트, 18종)
+
+| 메서드 | 용도 | 메서드 | 용도 |
+|--------|------|--------|------|
+| `initialized` | 앱 준비 | `load-file` | 파일 열기 |
+| `file-changed` | 파일 변경 | `submit-prompt` | AI 프롬프트 |
+| `send-prompt` | 에이전트 프롬프트 | `toggle-design-mode` | 디자인 모드 |
+| `set-license` | 라이선스 | `sign-out` | 로그아웃 |
+| `enter-claude-api-key` | API 키 설정 | `clear-claude-api-key` | API 키 삭제 |
+| `clear-recent-files` | 최근 파일 | `desktop-update-install` | 업데이트 |
+| `desktop-open-terminal` | 터미널 | `set-left-sidebar-visible` | 사이드바 |
+| `add-to-chat` | 채팅 컨텍스트 | `add-extension-to-ide` | IDE 확장 |
+| `open-document` | 문서 열기 | `claude-status-help-triggered` | 도움말 |
+
+#### 24.11.3 IPC Request (렌더러→호스트, 11종)
+
+| 메서드 | 용도 |
+|--------|------|
+| `save` | 파일 저장 |
+| `read-file` | 파일 읽기 |
+| `import-file` | 디자인 파일 임포트 |
+| `import-uri` | URI 임포트 |
+| `get-license` | 라이선스 조회 |
+| `agent-stop` | AI 에이전트 중지 |
+| `show-open-dialog` | 파일 열기 대화상자 |
+| `save-generated-image` | AI 생성 이미지 저장 |
+| `get-recent-files` | 최근 파일 목록 |
+| `get-fullscreen` | 전체화면 상태 |
+| `export-design-files` | 디자인 내보내기 |
+
+#### 24.11.4 IPC Handle (호스트→렌더러, 18종)
+
+| 메서드 | 용도 |
+|--------|------|
+| `get-editor-state` | 에디터 상태 반환 |
+| `get-selection` | 선택 노드 반환 |
+| `get-screenshot` | 뷰포트 캡처 |
+| `export-viewport` | 뷰포트 내보내기 |
+| `get-variables` | 디자인 변수 반환 |
+| `set-variables` | 디자인 변수 설정 |
+| `get-guidelines` | 가이드 반환 |
+| `get-style-guide` | 스타일 가이드 |
+| `get-style-guide-tags` | 스타일 태그 |
+| `search-design-nodes` | 노드 검색 |
+| `search-all-unique-properties` | 속성 검색 |
+| `replace-all-matching-properties` | 속성 일괄 교체 |
+| `batch-design` | 배치 디자인 작업 |
+| `copy-nodes-by-id` | ID로 노드 복사 |
+| `paste-clipboard-data` | 클립보드 붙여넣기 |
+| `snapshot-layout` | 레이아웃 캡처 |
+| `find-empty-space-on-canvas` | 빈 공간 탐색 |
+| `internal-export-top-level-nodes` | 최상위 노드 내보내기 |
+
+#### 24.11.5 IPC 수신 이벤트 (호스트→렌더러)
+
+| 카테고리 | 이벤트 |
+|----------|--------|
+| AI 채팅 | `chat-tool-use-start`, `chat-tool-use`, `chat-tool-result`, `chat-session`, `chat-assistant-delta`, `chat-assistant-final`, `chat-error`, `chat-agent-message`, `chat-question-answered` |
+| 데스크톱 | `desktop-update-ready`, `desktop-update-available` |
+| 파일 | `file-update`, `file-error` |
+| UI | `toggle-ui-visibility`, `toggle-theme`, `fullscreen-change`, `color-theme-changed` |
+| 인증 | `did-sign-out` |
+| AI | `claude-status`, `add-to-chat` |
+| IDE | `ide-name-changed`, `active-integrations` |
+
+### 24.12 React 이벤트 통합
+
+#### 24.12.1 useEffect 구독 패턴
+
+```javascript
+useEffect(() => {
+    const handler = () => { /* setState 호출 */ };
+    sceneManager.eventEmitter.on("selectionChange", handler);
+    sceneManager.scenegraph.on("nodePropertyChange", handler);
+    sceneManager.scenegraph.on("nodeAdded", handler);
+    sceneManager.scenegraph.on("nodeRemoved", handler);
+    return () => {
+        sceneManager.eventEmitter.off("selectionChange", handler);
+        sceneManager.scenegraph.off("nodePropertyChange", handler);
+        // ... cleanup
+    };
+}, [sceneManager]);
+```
+
+#### 24.12.2 React 구독 이벤트 목록
+
+| 이벤트 | React 반응 |
+|--------|-----------|
+| `selectionChange` | Properties Panel, Layer List 갱신 |
+| `selectionChangeDebounced` | 디바운스된 UI 갱신 |
+| `selectedNodePropertyChangeDebounced` | 속성 패널 갱신 |
+| `toolChange` | 툴바 활성 상태 갱신 |
+| `startTextEdit` / `finishTextEdit` | 텍스트 편집 오버레이 표시/숨김 |
+| `showSelectUI` | 모델/타입 선택 팝업 |
+| `zoom` | 줌 레벨 표시 갱신 |
+
+### 24.13 Resize/Observer 패턴
+
+| Observer | 인스턴스 수 | 용도 |
+|----------|-----------|------|
+| `ResizeObserver` | 9 | 캔버스 리사이즈, UI 패널, 가상 리스트 |
+| `IntersectionObserver` | 3 | 라우터 프리페치, 요소 가시성 |
+| `window.resize` | 2 | 전역 리사이즈 |
+
+### 24.14 이벤트 수량 요약
+
+| 카테고리 | 수량 |
+|----------|------|
+| EventEmitter3 emit 이벤트 | 65종 |
+| EventEmitter3 on 구독 | 67종 |
+| DOM addEventListener | 61건 |
+| removeEventListener 정리 | 54건 |
+| PixiJS 포인터 이벤트 | 31종 |
+| 키보드 단축키 | 30+개 |
+| IPC notify | 18종 |
+| IPC request | 11종 |
+| IPC handle | 18종 |
+| 상태 머신 상태 | 9개 클래스 |
+| ResizeObserver | 9개 |
+| IntersectionObserver | 3개 |
+
+---
+
+## 25. 종합 분석 업데이트 (2026-01-30)
+
+### 25.1 Pencil 앱 전체 아키텍처 다이어그램
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
@@ -1637,7 +2559,7 @@ Pe(ptr, originalArray)               // _ck 플래그 없으면 _free
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
-### 23.2 핵심 발견 사항
+### 25.2 핵심 발견 사항
 
 | 영역 | 발견 | 의미 |
 |------|------|------|
@@ -1655,8 +2577,16 @@ Pe(ptr, originalArray)               // _ck 플래그 없으면 _free
 | **플랫폼 분기** | Electron/Cursor/Web 3가지 환경 대응 | IDE 통합(Cursor) + 데스크톱 + 웹 멀티타겟 |
 | **WASM 메모리** | 사전 할당 버퍼 (Float32x4/9/16) + Malloc/Free | 핫 경로 malloc 회피, 성능 최적화 |
 | **GPU 폴백** | WebGL → 소프트웨어(putImageData) 자동 폴백 | GPU 미지원 환경 대응 |
+| **씬 그래프** | 6개 클래스 / 12개 타입 문자열, 단일 베이스 클래스 상속 | Figma와 유사한 간결한 노드 계층 |
+| **ShapeNode 다형성** | 단일 클래스가 rect/ellipse/line/path/polygon 5종 처리 | type 판별자 기반 분기 |
+| **오토 레이아웃** | Yoga WASM + Fixed/FitContent/FillContainer 3모드 | Figma Auto Layout과 동일 패턴 |
+| **슬롯 시스템** | FrameNode 전용, 컴포넌트 내 교체 가능 영역 | 디자인 시스템 유연성 확보 |
+| **이벤트 아키텍처** | EventEmitter3 (65종 이벤트) + PixiJS EventBoundary + 상태 머신 | 3계층 이벤트 시스템 |
+| **상태 머신** | 9개 상태 클래스, IdleState 허브, 전이 기반 도구 인터랙션 | 복잡한 에디터 인터랙션을 깔끔하게 분리 |
+| **IPC 체계** | notify(18) + request(11) + handle(18) = 47종 IPC 메서드 | Electron/VSCode/Web 3환경 추상화 |
+| **프레임 배칭** | queuedFrameEvents Set → RAF flush → 디바운스 | 고빈도 이벤트의 프레임 단위 합산 |
 
-### 23.3 기존 분석 대비 추가된 내용
+### 25.3 기존 분석 대비 추가된 내용
 
 | 기존 섹션 | 추가된 심층 분석 |
 |----------|----------------|
@@ -1669,3 +2599,5 @@ Pe(ptr, originalArray)               // _ck 플래그 없으면 _free
 | 없음 | §18 도구 시스템 + 키보드 단축키 전체 매핑 |
 | 없음 | §19 에디터 설정 시스템 (localStorage) |
 | 없음 | §22 내장 디자인 킷 4개 (HALO/Lunaris/Nitro/Shadcn) |
+| §15.4 노드 타입 (간략) | §23 씬 그래프 노드 타입별 구조: 클래스 계층, 프로퍼티, 렌더링, 히트테스트, 컴포넌트/인스턴스, 오토 레이아웃, 열거형, SVG 매핑 |
+| 없음 | §24 이벤트 시스템: EventEmitter3, 상태 머신(9상태), PixiJS EventBoundary, 키보드, 줌/패닝, 선택, 드래그, 클립보드, Undo/Redo, IPC(47종), React 통합 |

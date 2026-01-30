@@ -468,19 +468,24 @@ function createButtonGraphics(...): PixiGraphicsClass {
 
 ---
 
-## Phase 4: Auto-size 통합 (선택적)
+## Phase 4: Auto-size 통합 (부분 구현됨)
 
-### 4.1 현재 중복
+### 4.1 현재 상태 (v1.12 업데이트)
 
-| 위치 | 용도 |
-|------|------|
-| `PixiButton.tsx:218-239` | 버튼 텍스트 크기 측정 |
-| `LayoutEngine.ts:328-400` | Yoga 레이아웃용 텍스트 크기 |
+| 위치 | 용도 | 측정 엔진 |
+|------|------|-----------|
+| `utils.ts:measureTextWidth()` | BlockEngine 텍스트 너비 | Canvas 2D `ctx.measureText()` |
+| `PixiButton.tsx` | 버튼 텍스트 너비 | Canvas 2D (utils.ts import) |
+| `PixiButton.tsx` | 버튼 텍스트 높이 | PixiJS `TextStyle.getLocalBounds()` |
 
-### 4.2 통합 방안
+> **v1.12**: PixiButton의 **너비 측정**을 Canvas 2D (`measureTextWidth`)로 통일하여
+> BlockEngine과 동일한 결과를 반환합니다. 높이 측정만 PixiJS를 유지합니다.
+> `measureTextWidth()`는 `utils.ts`에서 `export`하여 공유합니다.
+
+### 4.2 통합 방안 (잔여)
 
 ```typescript
-// utils/textMeasure.ts
+// utils/textMeasure.ts (향후 완전 통합 시)
 
 export interface TextMeasureOptions {
   text: string;
@@ -497,12 +502,13 @@ export interface TextMeasureResult {
 }
 
 /**
- * PixiJS CanvasTextMetrics로 텍스트 크기 측정
+ * Canvas 2D ctx.measureText()로 텍스트 크기 측정
+ * (v1.12: PixiButton과 BlockEngine 모두 Canvas 2D 사용)
  */
 export function measureText(options: TextMeasureOptions): TextMeasureResult {
   const textStyle = new TextStyle({
     fontSize: options.fontSize,
-    fontFamily: options.fontFamily || 'Pretendard, sans-serif',
+    fontFamily: options.fontFamily || 'Pretendard, Inter, system-ui, -apple-system, sans-serif',
     fontWeight: options.fontWeight || 'normal',
     fontStyle: options.fontStyle || 'normal',
     letterSpacing: options.letterSpacing || 0,
