@@ -1,7 +1,7 @@
 # xstudio WASM 렌더링 아키텍처 전환 계획
 
 > 작성일: 2026-01-29
-> 최종 수정: 2026-01-30 (아키텍처 정정 반영 — 7차 검토)
+> 최종 수정: 2026-01-30 (최적성 검토 반영 — 8차 수정)
 > 대상: `apps/builder/src/builder/workspace/canvas/`
 > 현재 스택: PixiJS v8.14.3 + @pixi/react v8.0.5 + Yoga WASM v3.2.1 + Zustand
 > 참고: Pencil Desktop v1.1.10 아키텍처 분석 기반 (`docs/PENCIL_APP_ANALYSIS.md` §11)
@@ -86,6 +86,7 @@ Pencil 실제 구조:                    현재 xstudio:
 | **학습 곡선** | Skia Canvas API 학습 필요 | 중간 | Google CanvasKit 공식 문서 + Pencil 코드 참조 |
 | **이중 렌더러 복잡도** | PixiJS 씬 + CanvasKit 렌더 동기화 | 높음 | Feature Flag로 점진적 전환 |
 | **PixiJS 생태계** | @pixi/react, @pixi/layout 등 활용도 감소 | 낮음 | 씬 그래프/이벤트 레이어로 유지 |
+| **WebGL 컨텍스트 충돌** | hybrid 모드에서 PixiJS + CanvasKit 동시 WebGL 컨텍스트 (~16개 제한) | 중간 | §5.7.1 캔버스 오버레이 + 이벤트 포워딩 전략 |
 
 ### 종합 평가
 
@@ -304,6 +305,10 @@ VITE_WASM_LAYOUT=false
 > 목표: O(n) 선형 탐색을 공간 인덱스 쿼리로 대체
 > 적용 대상: `useViewportCulling.ts`, 히트 테스트 로직
 > ~~BoundsCache~~ → 제거: 기존 `layoutBoundsRegistry` (JS Map)가 이미 O(1) 캐시 제공
+>
+> ⚠️ **Phase 5 이후 역할 변경:** CanvasKit 도입(Phase 5) 후 `renderSkia()`가 각 노드의 AABB 컬링을
+> 내부에서 처리하므로, SpatialIndex의 뷰포트 컬링(`query_viewport`) 역할은 대폭 축소된다.
+> Phase 5 이후에는 **라쏘 선택(`query_rect`)** 및 **호버 히트 테스트(`query_point`) 가속**에 집중한다.
 
 ### 1.1 문제 정의
 
@@ -1826,6 +1831,13 @@ React Component → @pixi/react → PixiJS Container (씬 그래프 + 이벤트�
 
 > `canvaskit-wasm`은 Google 공식 npm 패키지이며, Skia의 WebAssembly 빌드이다.
 > gzip 기준 ~3.5MB (full) 또는 ~1.5MB (slim — GPU 전용, CPU 폴백 제외).
+>
+> **빌드 선택 기준:**
+> - **초기 도입: full 빌드 사용** — CPU 폴백(SW 렌더링)을 포함하여 WebGL 미지원 환경에서도 렌더링을 보장한다.
+>   xstudio는 웹 앱이므로 다양한 디바이스/브라우저에서 접근 가능하며, slim 빌드는 WebGL 실패 시 완전히 렌더링 불가.
+> - **slim 전환 조건:** Phase 5 완료 후 실사용 WebGL 지원율 데이터를 수집하고,
+>   WebGL 가용률 99%+ 확인 시 slim으로 전환하여 번들 크기 ~2MB 절감.
+>   `createSurface.ts`의 SW 폴백 호출 빈도를 모니터링하여 판단한다.
 
 **초기화:**
 ```typescript
@@ -2104,6 +2116,41 @@ app.renderer.render = () => {}; // 렌더링 noop 처리
 // PixiJS 캔버스 위에 CanvasKit 캔버스를 오버레이
 ```
 
+#### 5.7.1 WebGL 컨텍스트 충돌 전략
+
+`hybrid` 모드에서 PixiJS와 CanvasKit이 **동시에 별도 WebGL 컨텍스트**를 사용한다.
+브라우저는 보통 ~16개 WebGL 컨텍스트를 허용하며, 동일 `<canvas>` 엘리먼트에 두 렌더러가 공존할 수 없다.
+
+**권장 전략: 캔버스 오버레이 + 이벤트 포워딩**
+
+```
+┌─────────────────────────────────┐
+│ CanvasKit <canvas>               │  z-index: 2  ← 실제 GPU 렌더링
+│ pointer-events: auto             │  사용자 이벤트 수신
+├─────────────────────────────────┤
+│ PixiJS <canvas>                  │  z-index: 1  ← 숨김 (렌더링 비활성화)
+│ pointer-events: none             │  씬 그래프 + 이벤트 시스템만 유지
+│ visibility: hidden               │
+└─────────────────────────────────┘
+```
+
+**구현:**
+1. CanvasKit 전용 `<canvas>` 엘리먼트를 PixiJS 캔버스 **위에** 오버레이 (`position: absolute; z-index` 사용)
+2. PixiJS 캔버스: `visibility: hidden; pointer-events: none` — WebGL 컨텍스트는 유지하되 렌더링은 noop 처리
+3. CanvasKit 캔버스에서 수신한 포인터 이벤트를 PixiJS `EventBoundary`로 포워딩:
+   ```typescript
+   canvaskitCanvas.addEventListener('pointermove', (e) => {
+     // PixiJS EventBoundary에 합성 이벤트 전달
+     app.renderer.events.rootBoundary.mapEvent(
+       new FederatedPointerEvent(app.renderer.events, e)
+     );
+   });
+   ```
+4. `skia` 모드(단독)에서는 PixiJS WebGL 컨텍스트를 `loseContext()`로 해제하여 GPU 리소스 회수
+
+> **`pixi` 모드 전환 시:** CanvasKit 캔버스를 제거하고 PixiJS 캔버스를 활성화한다.
+> Feature Flag 전환은 페이지 리로드 없이 동적으로 수행 가능하도록 설계한다.
+
 ### 5.8 전환 전략 (점진적)
 
 한 번에 전체 전환하지 않고 노드 타입별로 점진적 전환한다:
@@ -2131,10 +2178,90 @@ const RENDER_MODE = import.meta.env.VITE_RENDER_MODE; // 'pixi' | 'skia' | 'hybr
 | `canvas/skia/fills.ts` | 6종 Fill Shader 구현 |
 | `canvas/skia/effects.ts` | 이펙트 파이프라인 (opacity, blur, shadow) |
 | `canvas/skia/types.ts` | SkiaRenderable 인터페이스 |
+| `canvas/skia/disposable.ts` | CanvasKit 리소스 수동 해제 래퍼 (Disposable 패턴) |
+| `canvas/skia/fontManager.ts` | CanvasKit 폰트 등록/캐싱 파이프라인 |
 | BoxSprite renderSkia() | 사각형/RoundedRect CanvasKit 렌더링 |
 | TextSprite renderSkia() | ParagraphBuilder 텍스트 렌더링 |
 | ImageSprite renderSkia() | drawImageRect 이미지 렌더링 |
 | Feature Flag | `VITE_RENDER_MODE=pixi\|skia\|hybrid` |
+
+#### 5.9.1 Disposable 패턴 (`canvas/skia/disposable.ts`)
+
+CanvasKit의 Paint, Path, Surface, Image 등은 모두 C++ 힙 객체로 JS GC가 관리하지 않는다.
+수동 `.delete()` 누락 시 WASM 메모리 누수가 발생한다.
+
+```typescript
+class SkiaDisposable implements Disposable {
+  private resources: Set<{ delete(): void }> = new Set();
+
+  track<T extends { delete(): void }>(resource: T): T {
+    this.resources.add(resource);
+    return resource;
+  }
+
+  [Symbol.dispose](): void {
+    for (const r of this.resources) r.delete();
+    this.resources.clear();
+  }
+}
+
+// renderSkia() 내에서 사용 (TC39 Explicit Resource Management):
+function renderNode(ck: CanvasKit, canvas: Canvas): void {
+  using scope = new SkiaDisposable();
+  const paint = scope.track(new ck.Paint());
+  paint.setColor(ck.Color4f(1, 0, 0, 1));
+  canvas.drawRect(rect, paint);
+  // 스코프 종료 시 paint.delete() 자동 호출
+}
+```
+
+> **TC39 미지원 환경:** TypeScript 5.2+ `using` 미사용 시 try/finally로 폴백:
+> ```typescript
+> const scope = new SkiaDisposable();
+> try { /* ... */ } finally { scope[Symbol.dispose](); }
+> ```
+
+#### 5.9.2 폰트 관리 파이프라인 (`canvas/skia/fontManager.ts`)
+
+CanvasKit은 브라우저의 CSS `@font-face`를 사용할 수 없다.
+`Typeface.MakeFreeTypeFaceFromData(fontBuffer)`로 폰트 바이너리를 직접 로드해야 한다.
+
+**현재 xstudio:** `useCanvasFonts.ts`에서 `document.fonts.ready`로 브라우저 폰트 로딩을 감지.
+이 방식은 CanvasKit에서 작동하지 않으므로 별도 폰트 관리가 필요하다.
+
+```typescript
+class SkiaFontManager {
+  private fontMgr: FontMgr | null = null;
+  private cache: Map<string, ArrayBuffer> = new Map();
+
+  async loadFont(family: string, url: string): Promise<void> {
+    // 1. IndexedDB 캐시 확인
+    let buffer = await this.getFromCache(family);
+    if (!buffer) {
+      // 2. 네트워크에서 .woff2/.ttf fetch
+      const response = await fetch(url);
+      buffer = await response.arrayBuffer();
+      await this.saveToCache(family, buffer);
+    }
+    // 3. CanvasKit에 등록
+    const ck = getCanvasKit();
+    const typeface = ck.Typeface.MakeFreeTypeFaceFromData(buffer);
+    if (!typeface) throw new Error(`Failed to load font: ${family}`);
+    this.cache.set(family, buffer);
+  }
+
+  getFontMgr(): FontMgr {
+    if (!this.fontMgr) {
+      const ck = getCanvasKit();
+      const buffers = Array.from(this.cache.values());
+      this.fontMgr = ck.FontMgr.FromData(...buffers)!;
+    }
+    return this.fontMgr;
+  }
+}
+```
+
+> `ParagraphBuilder`에서 `getFontMgr()` 반환값을 사용하여 텍스트를 렌더링한다.
 
 ### 5.10 성능 검증 대상
 
@@ -2279,6 +2406,13 @@ export function exportToImage(
 }
 ```
 
+> **향후 확장 (SVG/PDF):**
+> CanvasKit은 `SkPictureRecorder`를 통해 벡터 기반 SVG 생성과, `SkDocument::MakePDF()`를 통해
+> PDF 생성을 지원한다. 디자인 툴 수준의 Export 지원(PNG, JPEG, SVG, PDF)을 위해
+> Phase 6.4 완료 후 SVG/PDF Export를 별도 태스크로 추가한다.
+> - **SVG:** `SkPictureRecorder` → `SkPicture` → SVG serializer
+> - **PDF:** `CanvasKit.MakePDFDocument()` → 페이지별 렌더링 → PDF 바이너리
+
 ### 6.5 Phase 6 산출물
 
 | 산출물 | 내용 |
@@ -2286,7 +2420,7 @@ export function exportToImage(
 | 이중 Surface 캐싱 | contentSurface + mainSurface 분리 |
 | Dirty Rect 렌더링 | 변경 영역만 재렌더링 |
 | 블렌드 모드 18종 | CanvasKit BlendMode 매핑 |
-| Export 파이프라인 | PNG/JPEG/WEBP 오프스크린 Export |
+| Export 파이프라인 | PNG/JPEG/WEBP 오프스크린 Export + SVG/PDF 향후 확장 |
 
 ### 6.6 성능 검증 대상
 
@@ -2418,11 +2552,30 @@ function someOperation(args) {
 
 ---
 
-## 전체 로드맵 요약 (수정됨 — Phase 5-6 추가)
+## 전체 로드맵 요약 (수정됨 — Phase 5-6 추가, 병렬 경로 명시)
 
 ```
 ═══════════════════════════════════════════════════════════════
-  Phase 0–4: 현재 PixiJS 아키텍처 위 점진적 WASM 최적화
+  실행 경로 (Phase 0 이후 병렬)
+═══════════════════════════════════════════════════════════════
+
+  Phase 0 (환경 구축 + 벤치마크)
+      │
+      ├──── 품질 경로 (최우선) ──────────────────────────────
+      │     Phase 5 → Phase 6
+      │     (CanvasKit/Skia 메인 렌더러 → 고급 렌더링)
+      │     ★ 핵심 목표: 렌더링 품질 Pencil 수준 달성
+      │
+      └──── 성능 경로 (병렬) ───────────────────────────────
+            Phase 1 → Phase 2 → Phase 4
+            (SpatialIndex → Layout WASM → Worker)
+            ★ PixiJS 아키텍처 위 점진적 WASM 최적화
+
+  두 경로는 독립적으로 진행 가능하다.
+  Phase 5는 Phase 1-4에 의존하지 않으며, Phase 0만 전제 조건이다.
+
+═══════════════════════════════════════════════════════════════
+  성능 경로: Phase 0–4 (현재 PixiJS 아키텍처 위 점진적 WASM 최적화)
 ═══════════════════════════════════════════════════════════════
 
 Phase 0: 환경 구축 및 벤치마크 기준선
@@ -2459,7 +2612,7 @@ Phase 4: Web Worker 통합 (수정됨)
   └─ LayoutScheduler 구현 (RAF 기반 결과 적용)
 
 ═══════════════════════════════════════════════════════════════
-  Phase 5–6: CanvasKit/Skia WASM 메인 렌더러 전환 (Pencil §11)
+  품질 경로: Phase 5–6 (CanvasKit/Skia WASM 메인 렌더러 전환)
 ═══════════════════════════════════════════════════════════════
       │
 Phase 5: CanvasKit/Skia WASM 메인 렌더러 도입
@@ -2568,3 +2721,21 @@ self.postMessage({ layouts: result }, { transfer: [result.buffer] }); // 복사�
 `useMemo` 내부에서 실행되므로 `useStore(state => state.elementsMap)` 구독을 사용하면
 elementsMap 변경 시 불필요한 리렌더가 발생한다. `getState()`는 리렌더 의존성을 추가하지 않으므로
 기존 `useMemo` 의존성(zoom, panOffset)만으로 재계산 타이밍을 제어할 수 있다.
+
+---
+
+## 범위 외 항목 (렌더링 외 기능 — 본 문서 범위 밖)
+
+본 문서는 **렌더링 품질/성능 최적화**에 집중한다. 아래 항목들은 디자인 툴 완성도에 필요하지만
+별도 ADR/설계 문서에서 다뤄야 한다.
+
+| 기능 | 중요도 | 현재 상태 | 필요한 조치 |
+|------|--------|----------|------------|
+| 컴포넌트/인스턴스 시스템 | 높음 | 미구현 | 별도 ADR 필요 — 마스터 컴포넌트 ↔ 인스턴스 동기화 |
+| Constraint 시스템 | 중간 | Yoga Flexbox만 | Layout 확장 검토 — absolute+constraint 혼합 |
+| Auto Layout 고급 기능 | 중간 | 기본 Flexbox | min/max, wrap 등 고급 레이아웃 |
+| 실시간 협업 (CRDT) | 후순위 | 미구현 | 별도 아키텍처 설계 — Yjs/Automerge 등 |
+| 프로토타이핑/인터랙션 | 후순위 | 미구현 | 별도 런타임 엔진 필요 |
+| 외부 파일 임포트 | 후순위 | 미구현 | .fig/.sketch 파서 (서비스 런칭 후 검토) |
+
+> 이 항목들은 Phase 5-6 렌더링 전환과 독립적이며, 별도 로드맵에서 우선순위를 결정한다.
