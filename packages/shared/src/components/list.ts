@@ -26,6 +26,7 @@ export * from "./DateField";
 export * from "./TimeField";
 export * from "./Switch";
 export * from "./Table";
+export { default as Table } from "./Table";
 export * from "./Card";
 export * from "./TagGroup";
 export * from "./Menu";
@@ -45,6 +46,13 @@ export * from "./Popover";
 export * from "./Skeleton";
 export * from "./types";
 export type { Key } from "react-aria-components";
+
+// Missing re-exports (index.tsx에는 있지만 list.ts에 누락됐던 항목)
+export * from "./Form";
+export * from "./RangeCalendar";
+export * from "./Pagination";
+export * from "./Disclosure";
+export * from "./DisclosureGroup";
 
 // Metadata exports
 export * from "./metadata";

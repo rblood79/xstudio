@@ -102,6 +102,30 @@ Pencil 실제 구조:                    현재 xstudio:
 > CanvasKit/Skia는 **2D 그래픽 엔진**으로 Figma, Pencil이 채택한 검증된 선택이며,
 > xstudio가 디자인 툴 품질 경쟁력을 확보하려면 렌더러 전환이 필수적이다.
 
+### 선두 기업 최적화 벤치마킹
+
+> **조사 대상:** Figma, Flutter Web (CanvasKit), Adobe Photoshop Web, Google Docs/Slides
+> Figma와 Flutter Web이 Skia 기반, Adobe는 자체 C++ 포팅, Google Docs는 Canvas 전환.
+
+| 영역 | Figma | Flutter Web | Adobe PS Web | Google Docs |
+|------|-------|-------------|-------------|-------------|
+| **WASM 전략** | Skia 포크 + 커스텀 GPU 코드 (WASM 버그 패치로 3x 속도↑) | 공식 CanvasKit (tree shaking + deferred loading) | 자체 C++ Emscripten 포팅 (Skia 미사용) | Canvas 기반 전환 (DOM → Canvas migration) |
+| **멀티스레딩** | Workers + SharedArrayBuffer (렌더링/네트워크 분리) | 기본 Worker + off-main-thread painting | WASM Pthreads + GPU 오프로드 | Worker 활용 (대규모 문서) |
+| **메모리 관리** | Rust 커스텀 할당기, 객체 재사용 | SkSurface 관리 + delete() 최적화 | WASM 힙 최적화, 메모리 풀링 | 배열 기반 JSO 기법, GC 최소화 |
+| **대규모 요소 (10만+)** | Virtualization, LOD, Canvas Chunking | RepaintBoundary, Skia tiling | 레이어 청킹 + GPU 텍스처 atlasing | Canvas 클리핑, lazy loading |
+| **고급 렌더링** | 커스텀 GPU 파이프라인 (WebGL 직접 제어) | Skwasm (WASM 기반 신규 렌더러 실험) | GPU 셰이더 직접 작성 | 동적 클리핑 최적화 |
+
+**xstudio 적용 전략:**
+
+| 단계 | 전략 | 참고 기업 | WASM.md Phase |
+|------|------|----------|--------------|
+| **1단계** | 공식 CanvasKit으로 안정성 확보 | Flutter Web | Phase 5-6 |
+| **2단계** | Skia 포크 + Web Worker 고도화 → 대규모 스케일링 | Figma | Post-Phase 6 (§장기 최적화) |
+| **3단계** | Rust 메모리 최적화 + 커스텀 할당기 | Figma + Adobe | Post-Phase 6 (§장기 최적화) |
+
+> **현재 WASM.md 커버리지:** 1단계(Phase 5-6)는 완전히 설계됨.
+> 2-3단계는 Phase 6 완료 후 실측 데이터에 기반하여 착수 여부를 판단한다.
+
 ---
 
 ## 현황 요약
@@ -1541,6 +1565,11 @@ calculate(parent, children, availableWidth, availableHeight): ComputedLayout[] {
 > 목표: 무거운 WASM 연산을 메인 스레드에서 분리
 > 핵심 과제: **비동기 레이아웃 결과의 동기 렌더링 파이프라인 통합**
 > **제약:** SharedArrayBuffer 사용 불가 — xstudio는 Supabase 인증 호환을 위해 Vite 설정에서 COOP/COEP 헤더를 제거하고 있으며, SharedArrayBuffer는 이 헤더가 필수이다 (`docs/PENCIL_VS_XSTUDIO_RENDERING.md` §3.2 참조). Worker 통신은 `postMessage` + `Transferable` (ArrayBuffer transfer)로 한정한다.
+>
+> **선두 기업 참고:** Figma는 Workers + SharedArrayBuffer로 렌더링/네트워크/협업 스레드를 완전 분리한다.
+> Adobe는 WASM Pthreads로 진정한 멀티스레딩을 구현했다.
+> xstudio는 Phase 4에서 기본 Worker 통합 후, COOP/COEP 제약 해소 시
+> §장기 최적화 경로 7.2의 고급 멀티스레딩으로 확장한다.
 
 ### 4.1 Worker 아키텍처
 
@@ -1838,6 +1867,11 @@ React Component → @pixi/react → PixiJS Container (씬 그래프 + 이벤트�
 > - **slim 전환 조건:** Phase 5 완료 후 실사용 WebGL 지원율 데이터를 수집하고,
 >   WebGL 가용률 99%+ 확인 시 slim으로 전환하여 번들 크기 ~2MB 절감.
 >   `createSurface.ts`의 SW 폴백 호출 빈도를 모니터링하여 판단한다.
+>
+> **장기 경로 — Skia 포크:**
+> Figma는 공식 CanvasKit 대신 Skia를 포크하여 커스텀 GPU 코드와 WASM 버그 패치로 3x 속도 향상을 달성했다.
+> xstudio는 **1단계에서 공식 빌드로 안정성을 확보**한 후, 실측 성능 한계가 확인되면
+> §장기 최적화 경로 7.1에 따라 Skia 포크 전환을 검토한다.
 
 **초기화:**
 ```typescript
@@ -2221,6 +2255,10 @@ function renderNode(ck: CanvasKit, canvas: Canvas): void {
 > try { /* ... */ } finally { scope[Symbol.dispose](); }
 > ```
 
+> **고급 최적화 (Post-Phase 6):** Figma는 Paint/Path 객체를 프레임 간 재사용하여 delete() 호출 빈도를 줄이고,
+> Rust 커스텀 할당기로 WASM 힙을 최적화한다. Adobe는 대규모 레이어 시 메모리 풀링을 적용한다.
+> 이 기법들은 §장기 최적화 경로 7.3에서 다룬다.
+
 #### 5.9.2 폰트 관리 파이프라인 (`canvas/skia/fontManager.ts`)
 
 CanvasKit은 브라우저의 CSS `@font-face`를 사용할 수 없다.
@@ -2422,6 +2460,12 @@ export function exportToImage(
 | 블렌드 모드 18종 | CanvasKit BlendMode 매핑 |
 | Export 파이프라인 | PNG/JPEG/WEBP 오프스크린 Export + SVG/PDF 향후 확장 |
 
+> **선두 기업 참고 — GPU 셰이더:**
+> Adobe Photoshop Web은 WebGL 셰이더를 직접 작성하여 GPU 가속 필터/이펙트를 구현한다.
+> Figma는 커스텀 GPU 파이프라인으로 WebGL을 직접 제어한다.
+> xstudio는 Phase 6의 CanvasKit 기본 이펙트 파이프라인으로 시작하고,
+> 부족한 이펙트가 식별되면 커스텀 SkSL(Skia Shading Language) 셰이더를 추가한다.
+
 ### 6.6 성능 검증 대상
 
 | 지표 | 목표 | 비고 |
@@ -2430,6 +2474,63 @@ export function exportToImage(
 | 변경 없는 프레임 | < 1ms | contentSurface 캐시 히트 |
 | Dirty Rect 효율 | GPU 사용량 40-60% 감소 | 부분 영역만 렌더링 |
 | Export 품질 | 벡터 정밀도 보장 | CanvasKit Path 기반 |
+
+---
+
+## 장기 최적화 경로 (Phase 6 이후)
+
+> Phase 5-6 완료 후, 실측 데이터에 기반하여 아래 고급 최적화를 단계적으로 도입한다.
+> Figma가 수년간 축적한 커스텀 최적화가 이 경로의 핵심 참고 대상이다.
+
+### 7.1 Skia 포크 + 커스텀 빌드 (Figma 접근법)
+
+**진입 기준:** Phase 5-6 완료 + 공식 CanvasKit의 성능 한계가 실측으로 확인될 때
+
+| 항목 | 내용 |
+|------|------|
+| **Skia 포크** | `chromium/skia` 레포를 포크하여 xstudio 전용 빌드 생성 |
+| **커스텀 GPU 코드** | WebGL 직접 제어로 CanvasKit 기본 렌더 파이프라인 우회 |
+| **WASM 버그 패치** | Emscripten/WASM 런타임 레벨 최적화 (Figma 사례: 3x 속도 향상) |
+| **Tree Shaking** | 미사용 Skia 기능 제거로 번들 크기 최적화 (Flutter Web 참고) |
+| **포크 전환 기준** | 공식 빌드 대비 30%+ 성능 개선이 실측으로 확인될 때 |
+
+> **리스크:** Skia 업스트림 업데이트 추적 부담. 포크 유지 비용을 성능 이득과 비교하여 판단.
+
+### 7.2 고급 멀티스레딩
+
+**진입 기준:** Phase 4 Worker 통합 완료 + 메인 스레드 병목이 Worker 분리만으로 해소되지 않을 때
+
+| 기법 | 출처 | 내용 | 전제 조건 |
+|------|------|------|----------|
+| **SharedArrayBuffer 고도화** | Figma | 렌더링/네트워크/협업 스레드 분리 | COOP/COEP 헤더 활성화 (Supabase 인증 호환 해결 필요) |
+| **WASM Pthreads** | Adobe | wasm-bindgen-rayon 기반 병렬 레이아웃 계산 | SharedArrayBuffer 전제 |
+| **OffscreenCanvas Worker** | Flutter | 렌더링 자체를 Worker로 이동 | 브라우저 OffscreenCanvas + WebGL 지원 |
+
+> **제약 재확인:** xstudio는 현재 Supabase 인증 호환을 위해 COOP/COEP 헤더를 제거 중 (Phase 4 제약 참조).
+> SharedArrayBuffer 기반 최적화는 이 제약 해소 후에만 가능하다.
+
+### 7.3 Rust 메모리 최적화 + 커스텀 할당기
+
+**진입 기준:** 10만+ 요소 씬에서 메모리 사용량이 문제로 확인될 때
+
+| 기법 | 출처 | 내용 |
+|------|------|------|
+| **커스텀 WASM 할당기** | Figma | wee_alloc → dlmalloc → 커스텀 할당기로 WASM 힙 최적화 |
+| **메모리 풀링** | Adobe | 대규모 레이어 시 고정 크기 버퍼 풀 재사용 |
+| **객체 재사용 패턴** | Figma | Paint/Path 객체를 프레임 간 재사용 (delete() 호출 최소화) |
+| **WASM 힙 예산 관리** | Adobe | 최대 힙 크기 설정 + LRU 캐시로 메모리 압력 관리 |
+
+> §5.9.1 Disposable 패턴은 "올바른 해제"에 집중한다.
+> 이 단계는 "해제 빈도 자체를 줄이는" 최적화로, 상호 보완적이다.
+
+### 7.4 브라우저 컴포지터 통합 (실험적)
+
+| 기법 | 출처 | 내용 |
+|------|------|------|
+| **Skwasm** | Flutter Web | WASM 기반 렌더러가 브라우저 컴포지터와 직접 통합 |
+| **CSS Transform 레이어** | Google Docs | Canvas 위 CSS transform으로 스크롤/줌 하드웨어 가속 |
+
+> Skwasm은 2024-2025 실험 단계이며, 안정성 확인 후 xstudio 적용 가능성을 재평가한다.
 
 ---
 
@@ -2632,6 +2733,14 @@ Phase 6: 고급 렌더링 기능 (CanvasKit 활용)
   └─ Dirty Rect 렌더링 (변경 영역만 재렌더링)
   └─ 블렌드 모드 18종 (CanvasKit BlendMode)
   └─ Export 파이프라인 (PNG/JPEG/WEBP 오프스크린)
+      │
+  ┌───┴─── 장기 최적화 경로 (Phase 6 완료 + 실측 데이터 기반) ──┐
+  │  §7.1 Skia 포크 + 커스텀 빌드 (Figma 접근법)               │
+  │  §7.2 고급 멀티스레딩 (SharedArrayBuffer/Pthreads)          │
+  │  §7.3 Rust 메모리 최적화 + 커스텀 할당기                     │
+  │  §7.4 브라우저 컴포지터 통합 (Skwasm, 실험적)                │
+  │  ★ 진입 기준: Phase 6 완료 + 성능 병목 실측 확인             │
+  └─────────────────────────────────────────────────────────────┘
 
 ═══════════════════════════════════════════════════════════════
   추가 개선 항목 (WASM 불필요, JS 구현)
@@ -2640,6 +2749,9 @@ Phase 6: 고급 렌더링 기능 (CanvasKit 활용)
 
   [높음] LOD 스위칭 — 줌 레벨별 디테일 조절 (§4.3)
   [높음] 텍스처 아틀라싱 — 다수 이미지를 단일 GPU 텍스처로 합침 (§4.2)
+  [높음] Virtualization — 화면 밖 요소 렌더링 완전 스킵 (Figma 참고)
+  [중간] Canvas Chunking — 대규모 씬을 타일 분할 렌더링 (Figma 참고)
+  [중간] RepaintBoundary — 변경 없는 서브트리 재렌더 방지 (Flutter 참고)
   [중간] RenderTexture 풀링 — GPU 텍스처 재사용 (§4.4)
   [중간] OffscreenCanvas — 오프스크린 렌더링 (§4.5, Phase 4 Worker 확장)
   [낮음] VRAM 예산 관리 — GPU 메모리 LRU 관리 (§4.6)

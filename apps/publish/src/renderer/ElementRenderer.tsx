@@ -25,18 +25,12 @@ interface ElementEvent {
 
 // 기본 런타임 컨텍스트 생성
 function createDefaultContext(): EventRuntimeContext {
-  const stateMap = new Map<string, unknown>();
-
   return {
     navigateToPage: (pageId: string) => {
       window.location.hash = `page-${pageId}`;
     },
-    state: {
-      get: (key: string) => stateMap.get(key),
-      set: (key: string, value: unknown) => stateMap.set(key, value),
-    },
+    state: new Map<string, unknown>(),
     currentPageId: window.location.hash.replace('#page-', '') || null,
-    projectId: null,
   };
 }
 
@@ -86,9 +80,9 @@ export const ElementRenderer = memo(function ElementRenderer({
         for (const action of event.actions) {
           try {
             await actionExecutor.execute({
-              type: action.type as 'NAVIGATE_TO_PAGE' | 'SHOW_ALERT' | 'OPEN_URL' | 'SET_STATE' | 'CONSOLE_LOG' | 'API_CALL',
+              type: action.type,
               config: action.payload || {},
-            });
+            } as import('@xstudio/shared').Action);
           } catch (error) {
             console.error(`[Event] Action ${action.type} failed:`, error);
           }

@@ -231,7 +231,7 @@ export function registerSharedComponents(): void {
     category: 'input',
   });
   registerComponent('Radio', {
-    component: Radio as ComponentType<Record<string, unknown>>,
+    component: Radio as unknown as ComponentType<Record<string, unknown>>,
     displayName: 'Radio',
     category: 'input',
   });
@@ -241,7 +241,7 @@ export function registerSharedComponents(): void {
     category: 'input',
   });
   registerComponent('Switch', {
-    component: Switch as ComponentType<Record<string, unknown>>,
+    component: Switch as unknown as ComponentType<Record<string, unknown>>,
     displayName: 'Switch',
     category: 'input',
   });
@@ -335,7 +335,7 @@ export function registerSharedComponents(): void {
     category: 'collection',
   });
   registerComponent('Table', {
-    component: Table as ComponentType<Record<string, unknown>>,
+    component: Table as unknown as ComponentType<Record<string, unknown>>,
     displayName: 'Table',
     category: 'collection',
   });
@@ -357,7 +357,7 @@ export function registerSharedComponents(): void {
     category: 'navigation',
   });
   registerComponent('Pagination', {
-    component: Pagination as ComponentType<Record<string, unknown>>,
+    component: Pagination as unknown as ComponentType<Record<string, unknown>>,
     displayName: 'Pagination',
     category: 'navigation',
   });
@@ -428,7 +428,7 @@ export function registerSharedComponents(): void {
     category: 'display',
   });
   registerComponent('Popover', {
-    component: Popover as ComponentType<Record<string, unknown>>,
+    component: Popover as unknown as ComponentType<Record<string, unknown>>,
     displayName: 'Popover',
     category: 'display',
   });
