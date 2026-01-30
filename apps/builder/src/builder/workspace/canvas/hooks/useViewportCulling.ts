@@ -11,28 +11,29 @@
  * - 대형 캔버스에서 줌아웃 시 특히 효과적
  *
  * @since 2025-12-20 Phase 11 Viewport Culling
+ * @updated 2026-01-31 스크린 좌표 기반 culling으로 전환 (pan 깜빡임 수정)
  */
 
 import { useMemo } from 'react';
 import type { Element } from '../../../../types/core/store.types';
-import { getElementBoundsSimple } from '../elementRegistry';
+import { getElementContainer } from '../elementRegistry';
 
 // ============================================
 // Types
 // ============================================
 
 export interface ViewportBounds {
-  /** 뷰포트 좌측 경계 (캔버스 좌표) */
+  /** 뷰포트 좌측 경계 */
   left: number;
-  /** 뷰포트 상단 경계 (캔버스 좌표) */
+  /** 뷰포트 상단 경계 */
   top: number;
-  /** 뷰포트 우측 경계 (캔버스 좌표) */
+  /** 뷰포트 우측 경계 */
   right: number;
-  /** 뷰포트 하단 경계 (캔버스 좌표) */
+  /** 뷰포트 하단 경계 */
   bottom: number;
-  /** 뷰포트 너비 (캔버스 좌표) */
+  /** 뷰포트 너비 */
   width: number;
-  /** 뷰포트 높이 (캔버스 좌표) */
+  /** 뷰포트 높이 */
   height: number;
 }
 
@@ -69,35 +70,30 @@ const VIEWPORT_MARGIN = 100;
 // ============================================
 
 /**
- * 화면 좌표를 캔버스 좌표로 변환하여 뷰포트 경계 계산
+ * 스크린 좌표 기반 뷰포트 경계 계산
+ *
+ * container.getBounds()가 스크린(글로벌) 좌표를 반환하므로,
+ * 뷰포트도 스크린 좌표로 계산하면 좌표 변환이 불필요합니다.
  */
 export function calculateViewportBounds(
   screenWidth: number,
   screenHeight: number,
-  zoom: number,
-  panOffset: { x: number; y: number },
+  _zoom?: number,
+  _panOffset?: { x: number; y: number },
   margin: number = VIEWPORT_MARGIN
 ): ViewportBounds {
-  // 화면 좌표 → 캔버스 좌표 변환
-  // 캔버스좌표 = (화면좌표 - panOffset) / zoom
-  const left = (-panOffset.x - margin) / zoom;
-  const top = (-panOffset.y - margin) / zoom;
-  const right = (screenWidth - panOffset.x + margin) / zoom;
-  const bottom = (screenHeight - panOffset.y + margin) / zoom;
-
   return {
-    left,
-    top,
-    right,
-    bottom,
-    width: right - left,
-    height: bottom - top,
+    left: -margin,
+    top: -margin,
+    right: screenWidth + margin,
+    bottom: screenHeight + margin,
+    width: screenWidth + 2 * margin,
+    height: screenHeight + 2 * margin,
   };
 }
 
 /**
- * 요소의 경계 박스 추출
- * layoutPosition이 있으면 우선 사용, 없으면 style에서 추출
+ * 요소의 경계 박스 추출 (style 기반 fallback)
  */
 export function getElementBounds(
   element: Element,
@@ -162,6 +158,11 @@ export interface UseViewportCullingOptions {
  *
  * 뷰포트 외부에 있는 요소를 필터링하여 렌더링 성능을 최적화합니다.
  *
+ * 🔧 스크린 좌표 기반 culling:
+ * - 뷰포트: 스크린 좌표 (화면 크기 + margin)
+ * - 요소 bounds: container.getBounds() 실시간 스크린 좌표
+ * - 좌표 변환 불필요 → pan/zoom 시 stale 좌표 문제 없음
+ *
  * @example
  * ```tsx
  * const { visibleElements, culledCount } = useViewportCulling({
@@ -193,19 +194,70 @@ export function useViewportCulling({
       };
     }
 
-    // 뷰포트 경계 계산
-    const viewport = calculateViewportBounds(
-      screenWidth,
-      screenHeight,
-      zoom,
-      panOffset
-    );
+    // 뷰포트를 스크린 좌표로 계산
+    // container.getBounds()가 스크린 좌표를 반환하므로 좌표 변환 불필요
+    const viewport = calculateViewportBounds(screenWidth, screenHeight);
 
-    // 🚀 Phase 3: ElementRegistry에서 실제 bounds 조회
+    // 실시간 container.getBounds()로 현재 스크린 좌표 비교
+    // layoutBoundsRegistry는 stale 글로벌 좌표를 가질 수 있으므로 사용하지 않음
+    //
+    // 부모-자식 관계 고려:
+    // - 자식이 부모보다 클 수 있음 (overflow: visible 기본)
+    // - 요소가 culled → unmount → unregister → 다음 체크에서 재포함 → render → cull → 무한 cycle
+    // - 부모가 화면에 있으면 자식은 overflow 가능성이 있으므로 cull하지 않음
+    const parentVisibilityCache = new Map<string, boolean>();
+
+    const isParentOnScreen = (parentId: string | null | undefined): boolean => {
+      if (!parentId) return true; // 부모 없음(body 직접 자식) → body는 항상 화면에 있음
+      const cached = parentVisibilityCache.get(parentId);
+      if (cached !== undefined) return cached;
+
+      const parentContainer = getElementContainer(parentId);
+      if (!parentContainer) {
+        // 부모 container 미등록 (body 등 항상 렌더링되는 요소) → 화면에 있다고 간주
+        parentVisibilityCache.set(parentId, true);
+        return true;
+      }
+      try {
+        const bounds = parentContainer.getBounds();
+        if (bounds.width <= 0 && bounds.height <= 0) {
+          parentVisibilityCache.set(parentId, true);
+          return true;
+        }
+        const visible = isElementInViewport(
+          { x: bounds.x, y: bounds.y, width: bounds.width, height: bounds.height },
+          viewport
+        );
+        parentVisibilityCache.set(parentId, visible);
+        return visible;
+      } catch {
+        parentVisibilityCache.set(parentId, true);
+        return true;
+      }
+    };
+
     const visibleElements = elements.filter((element) => {
-      const registryBounds = getElementBoundsSimple(element.id);
-      const bounds = registryBounds || getElementBounds(element);
-      return isElementInViewport(bounds, viewport);
+      const container = getElementContainer(element.id);
+      if (!container) return true; // 컨테이너 미등록 → 렌더링 포함 (cull하지 않음)
+
+      try {
+        const bounds = container.getBounds();
+        // 아직 렌더링되지 않은 요소 (bounds 0) → 포함
+        if (bounds.width <= 0 && bounds.height <= 0) return true;
+        // 요소 자체가 뷰포트에 있으면 포함
+        if (isElementInViewport(
+          { x: bounds.x, y: bounds.y, width: bounds.width, height: bounds.height },
+          viewport
+        )) return true;
+
+        // 요소는 뷰포트 밖이지만, 부모가 화면에 있으면 포함
+        // (자식이 부모를 overflow하여 화면에 보일 가능성)
+        if (isParentOnScreen(element.parent_id)) return true;
+
+        return false;
+      } catch {
+        return true; // getBounds 실패 → 포함
+      }
     });
 
     const culledCount = elements.length - visibleElements.length;
@@ -216,6 +268,8 @@ export function useViewportCulling({
       totalCount: elements.length,
       cullingRatio: elements.length > 0 ? culledCount / elements.length : 0,
     };
+  // zoom/panOffset은 직접 사용하지 않지만 뷰 변경 시 재계산 트리거
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [elements, zoom, panOffset, screenWidth, screenHeight, enabled]);
 }
 

@@ -1924,17 +1924,30 @@ canvaskit-wasm npm 패키지의 `.wasm` 파일을 `apps/builder/public/wasm/`에
 ```javascript
 // scripts/prepare-wasm.mjs — 크로스 플랫폼 WASM 복사 스크립트
 import { cpSync, mkdirSync } from 'node:fs';
-import { resolve, dirname } from 'node:path';
+import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { createRequire } from 'node:module';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const src = resolve(__dirname, '../node_modules/canvaskit-wasm/bin/canvaskit.wasm');
+
+// createRequire의 기준을 apps/builder/package.json으로 설정한다.
+// canvaskit-wasm은 apps/builder의 의존성이므로,
+// pnpm strict(non-hoist) 모드에서도 apps/builder 기준으로 해석해야 찾을 수 있다.
+const builderPkg = resolve(__dirname, '../apps/builder/package.json');
+const require = createRequire(builderPkg);
+const src = require.resolve('canvaskit-wasm/bin/canvaskit.wasm');
+
 const dest = resolve(__dirname, '../apps/builder/public/wasm/canvaskit.wasm');
 
 mkdirSync(dirname(dest), { recursive: true });
 cpSync(src, dest);
 console.log(`✅ canvaskit.wasm → ${dest}`);
 ```
+
+> **경로 해석 전략:** `createRequire(builderPkg).resolve()`는 `apps/builder/package.json` 위치를 기준으로
+> Node.js 모듈 해석을 수행한다. `canvaskit-wasm`이 `apps/builder`의 의존성이므로,
+> pnpm strict 모드에서 루트에 hoist되지 않더라도 `apps/builder/node_modules`에서 정확히 찾는다.
+> `createRequire(import.meta.url)` (스크립트 위치 기준)은 루트에 패키지가 없으면 실패하므로 사용하지 않는다.
 
 ```json
 // 루트 package.json — scripts에 추가
@@ -2354,11 +2367,21 @@ app.ticker.autoStart = true;
            }
          }
          target.dispatchEvent(clone);
-         e.preventDefault();
+         // preventDefault()는 wheel/pointer* 이벤트에만 적용한다.
+         // click/dblclick/contextmenu의 기본 동작을 막으면
+         // 텍스트 선택, 링크 클릭, 우클릭 메뉴 등 UX 회귀가 발생한다.
+         const PREVENT_DEFAULT_TYPES = new Set([
+           'wheel', 'pointerdown', 'pointermove', 'pointerup', 'pointercancel',
+         ]);
+         if (PREVENT_DEFAULT_TYPES.has(type)) {
+           e.preventDefault();
+         }
        };
        // passive: false — wheel/pointer 이벤트에서 preventDefault()가
        // 무시되지 않도록 보장. 캔버스 내 스크롤/줌 동작을 CanvasKit이 처리할 때 필수.
-       source.addEventListener(type, handler, { passive: false });
+       // click/dblclick/contextmenu는 passive 기본값(false)으로 충분하다.
+       const needsNonPassive = type.startsWith('pointer') || type === 'wheel';
+       source.addEventListener(type, handler, needsNonPassive ? { passive: false } : undefined);
        return { type, handler };
      });
      // cleanup 함수 반환

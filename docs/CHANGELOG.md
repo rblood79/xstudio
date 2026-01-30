@@ -57,6 +57,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+### Fixed - Viewport Culling 깜빡임 및 요소 사라짐 수정 (2026-01-31)
+
+#### 개요
+캔버스 pan 이동 시 요소 깜빡임, 페이지보다 큰 자식 요소가 페이지 이동 시 사라지는 버그 수정
+
+#### 수정 내용
+
+**1. 좌표 시스템 불일치 → 스크린 좌표 기반 culling 전환**
+- 기존: 뷰포트를 캔버스 로컬 좌표로 계산, 요소 bounds는 글로벌(스크린) 좌표로 반환 → 직접 비교 시 pan 이동량만큼 오차
+- `layoutBoundsRegistry`의 stale 글로벌 좌표를 현재 panOffset으로 변환해도 저장 시점의 Camera 위치가 다르므로 틀린 결과
+- 수정: 뷰포트를 스크린 좌표(화면 크기 + margin)로 계산, `container.getBounds()` 실시간 호출로 비교 → 좌표 변환 자체 불필요
+
+**2. Cull/Render 무한 cycle**
+- 요소가 culled → LayoutContainer unmount → `unregisterElement` → container 삭제
+- 다음 culling: container 없음 → 재포함 → render → register → getBounds off-screen → cull → cycle 반복 = 깜빡임
+- 수정: 부모 가시성 체크로 cycle 방지 — 부모가 화면에 있으면 자식은 항상 포함
+
+**3. 부모-자식 overflow 미고려**
+- CSS 기본값 `overflow: visible` — 자식이 부모 범위를 넘어서 보일 수 있음
+- 버튼이 page보다 넓어도 overflow로 화면에 보이지만, culling은 각 요소를 독립 판단
+- 수정: 요소가 뷰포트 밖이지만 부모가 화면에 있으면 포함 (부모 가시성 캐시로 중복 계산 방지)
+
+#### 변경된 파일
+- `apps/builder/src/builder/workspace/canvas/hooks/useViewportCulling.ts` — 스크린 좌표 기반 culling, `getElementContainer` 실시간 getBounds, 부모 가시성 체크 추가
+
+---
+
 ### Fixed - SelectionLayer 삭제 후 (0,0) 잔존 버그 수정 (2026-01-31)
 
 #### 개요
