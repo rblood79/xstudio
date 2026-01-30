@@ -1748,3 +1748,84 @@ on("selectionChange", () => queuedFrameEvents.add("selectionChangeDebounced"));
 | **클립보드** | window copy/cut/paste + 노드 직렬화 | (확인 필요) |
 | **eventMode 제어** | 도구별 static/passive/none 동적 전환 | (확인 필요) |
 | **React 통합** | useEffect + EventEmitter3 on/off | useEffect + Zustand subscribe |
+
+---
+
+### 10.15 파일 저장/로드 시스템
+
+#### 10.15.1 파일 I/O 아키텍처
+
+```
+Electron Main (PencilApp + DesktopResourceDevice)
+    │ fs.readFileSync / fs.writeFileSync
+    │ dialog.showOpenDialog / showSaveDialog
+    ↕ IPC (16종 파일 관련)
+Editor (FileManager lXe + SceneManager CNe)
+    │ serialize() / deserialize()
+    │ Y$e() 관대한 JSON 파서
+    │ HYe() 7단계 버전 마이그레이션
+    ↓
+.pen 파일 (JSON, 2-space 들여쓰기, v2.6)
+```
+
+#### 10.15.2 .pen 파일 포맷
+
+```json
+{
+  "version": "2.6",
+  "themes": { "mode": ["light", "dark"] },
+  "variables": { "$--primary": { "type": "color", "value": "#3B82F6" } },
+  "children": [ /* 노드 트리 + 커넥션 */ ]
+}
+```
+
+- 이미지: 외부 파일 참조 (`images/photo.png`), base64 인라인 아님
+- 버전 마이그레이션: 1.0 → 2.0 → 2.1 → 2.2 → 2.3 → 2.4 → 2.5 → 2.6 (7단계)
+- 저장: `JSON.stringify(data, null, 2)` — 2-space pretty-print
+- 파싱: `Y$e()` — trailing comma 등 허용하는 관대한 파서
+
+#### 10.15.3 저장 흐름
+
+```
+Cmd+S → saveDocument() → FileManager.export()
+  → serialize() → JSON.stringify
+  → IPC "save" → DesktopResourceDevice.saveResource()
+  → fs.writeFileSync(filePath, content, "utf8")
+  → emit("dirty-changed", false)
+```
+
+자동 저장 없음. `file-changed` IPC(300ms 디바운스)는 in-memory만 갱신.
+
+#### 10.15.4 클립보드
+
+| MIME | 소스 | 처리 |
+|------|------|------|
+| `application/x-ha` | Pencil 내부 | 같은 문서: 경로 복제 / 다른 문서: 전체 역직렬화 |
+| `text/html` | Figma | HTML 파싱 → 노드 변환 |
+| `text/plain` | SVG / 텍스트 | SVG 감지 → 노드 매핑 / 텍스트 노드 |
+
+#### 10.15.5 임포트/익스포트
+
+| 임포트 | 익스포트 |
+|--------|---------|
+| .pen (네이티브) | PNG (1x/2x/3x) |
+| PNG/JPG/JPEG (image fill) | JPEG (품질 선택) |
+| SVG (노드 매핑) | WEBP (품질 선택) |
+| Figma (클립보드) | (SVG/PDF 미지원) |
+
+#### 10.15.6 xstudio 파일 시스템과 비교
+
+| 항목 | Pencil | xstudio |
+|------|--------|---------|
+| **파일 포맷** | `.pen` JSON 텍스트 (v2.6) | 서버 DB (Supabase) |
+| **저장 방식** | 로컬 파일 (fs.writeFileSync) | 클라우드 자동 저장 |
+| **더티 추적** | DesktopResourceDevice + 창 닫기 체크 | (서버 동기화) |
+| **이미지 저장** | 외부 파일 (`images/` 디렉토리) | (확인 필요) |
+| **버전 관리** | 7단계 마이그레이션 체인 | DB 스키마 마이그레이션 |
+| **클립보드** | `application/x-ha` + Figma/SVG 파싱 | (확인 필요) |
+| **임포트** | .pen, PNG/JPG/SVG, Figma(클립보드) | (확인 필요) |
+| **익스포트** | PNG/JPEG/WEBP (1-3x) | (확인 필요) |
+| **최근 파일** | electron-store (최대 14개) | 서버 프로젝트 목록 |
+| **자동 저장** | 없음 (명시적 Cmd+S) | 서버 자동 동기화 |
+| **오프라인** | 완전 로컬 (Electron) | 웹 의존 |
+| **템플릿** | 7종 내장 (new, welcome, 4 kits) | (확인 필요) |

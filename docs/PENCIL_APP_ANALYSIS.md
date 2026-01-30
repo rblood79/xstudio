@@ -2513,9 +2513,357 @@ useEffect(() => {
 
 ---
 
-## 25. 종합 분석 업데이트 (2026-01-30)
+## 25. 파일 저장/로드 시스템
 
-### 25.1 Pencil 앱 전체 아키텍처 다이어그램
+> 분석일: 2026-01-30
+> 분석 방법: `index.js` (FileManager lXe), `app.js` (PencilApp), `desktop-resource-device.js`, `ipc-electron.js` 역공학
+
+### 25.1 파일 I/O 아키텍처
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  Electron Main Process                                       │
+│  ├── PencilApp (app.js) — 파일 열기/닫기 조율                │
+│  ├── DesktopResourceDevice — fs 읽기/쓰기, 더티 상태        │
+│  ├── electron-store (config.js) — 최근 파일 목록             │
+│  └── dialog — 네이티브 열기/저장 다이얼로그                   │
+└──────────────────────────┬──────────────────────────────────┘
+                           │ IPC (16종 파일 관련 메시지)
+                           ▼
+┌─────────────────────────────────────────────────────────────┐
+│  Editor / Renderer Process                                   │
+│  ├── FileManager (lXe) — 직렬화/역직렬화                     │
+│  ├── SceneManager (CNe) — 씬 그래프 CRUD                    │
+│  ├── VariableManager (LYe) — 변수/테마 복원                 │
+│  ├── AssetManager (Mwt) — 이미지 에셋 로드/캐시             │
+│  └── UndoManager (xyt) — 트랜잭션 기록                      │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### 25.2 .pen 파일 포맷 (v2.6)
+
+#### 25.2.1 최상위 구조
+
+```json
+{
+  "version": "2.6",
+  "fonts": [{ "name": "CustomFont", "url": "fonts/custom.woff2" }],
+  "themes": {
+    "device": ["phone", "tablet", "desktop"],
+    "mode": ["light", "dark"]
+  },
+  "variables": {
+    "$--primary": {
+      "type": "color",
+      "value": [
+        { "value": "#3B82F6", "theme": { "mode": "light" } },
+        { "value": "#60A5FA", "theme": { "mode": "dark" } }
+      ]
+    },
+    "$--radius-m": { "type": "number", "value": 8 }
+  },
+  "children": [ /* 노드 트리 + 커넥션 */ ]
+}
+```
+
+#### 25.2.2 변수 직렬화 (`D2e`)
+
+```javascript
+// 단일 값: { type: "color", value: "#3B82F6" }
+// 테마별 값: { type: "color", value: [
+//   { value: "#3B82F6", theme: { mode: "light" } },
+//   { value: "#60A5FA", theme: { mode: "dark" } }
+// ]}
+```
+
+#### 25.2.3 커넥션 노드
+
+씬 그래프 최상위 children에 노드와 함께 직렬화:
+
+```json
+{
+  "id": "conn1",
+  "type": "connection",
+  "x": 0, "y": 0,
+  "source": { "path": "nodeId1", "anchor": "center" },
+  "target": { "path": "nodeId2", "anchor": "center" }
+}
+```
+
+#### 25.2.4 버전 마이그레이션 체인 (`HYe`)
+
+| 버전 | 주요 변경 |
+|------|----------|
+| 1.0 → 2.0 (`VYe`) | 노드 구조 평탄화 (`{id, properties:{...}}` → `{id, x, y, ...}`), 커넥션을 children으로 이동 |
+| 2.0 → 2.1 (`qYe`) | `frameMaskDisabled` → `clip` (반전), `disabled` → `enabled` (반전) |
+| 2.1 → 2.2 (`WYe`) | 컴포넌트 오버라이드: `overrides` 배열 → `descendants` 맵 |
+| 2.2 → 2.3 (`XYe`) | (마이너 조정) |
+| 2.3 → 2.4 (`KYe`) | (마이너 조정) |
+| 2.4 → 2.5 (`ZYe`) | (마이너 조정) |
+| 2.5 → 2.6 | 그라디언트 `center`/`size` 정규화 |
+
+### 25.3 파일 열기 흐름
+
+```
+1. 사용자 트리거 (Cmd+O, 더블클릭, 최근 파일, CLI --file)
+       │
+2. PencilApp.openFile({ filePath, prompt, agentType })
+       │
+3. PencilApp.loadFile(filePath, true)
+   ├── fs.readFileSync(filePath, "utf8")
+   ├── DesktopResourceDevice 생성 (in-memory 콘텐츠 보관)
+   ├── IPC 핸들러 설정
+   ├── 최근 파일 목록 추가
+   └── ipc.notify("file-update", { content, filePath, zoomToFit })
+       │
+4. Editor: ipc.on("file-update") 수신
+       │
+5. FileManager.open(content, filePath, isNew)
+   ├── UndoManager, VariableManager, AssetManager 초기화
+   ├── 트랜잭션 시작: scenegraph.beginUpdate()
+   ├── Y$e() — 관대한 JSON 파서 (trailing comma 허용)
+   ├── 버전 검사 → HYe() 마이그레이션 체인
+   ├── 기존 씬 그래프 파괴
+   ├── 테마 복원: variableManager.unsafeSetThemes()
+   ├── 변수 복원 (타입별 역직렬화)
+   ├── 자식 노드 재귀 역직렬화
+   ├── 컴포넌트 인스턴스 프로토타입 링킹 (ref → reusable)
+   └── 트랜잭션 커밋
+```
+
+### 25.4 파일 저장 흐름
+
+```
+1. 사용자 트리거 (Cmd+S) 또는 창 닫기 더티 체크
+       │
+2. SceneManager.saveDocument()
+   ├── placeholder 플래그 제거 (모든 노드)
+   ├── FileManager.export()
+   │   ├── serialize() — 씬 그래프 → JavaScript 객체
+   │   │   ├── 뷰포트 자식 노드 순회 → serializeNode() 재귀
+   │   │   ├── 커넥션 직렬화
+   │   │   ├── 테마 직렬화 (L2e)
+   │   │   └── 변수 직렬화 (D2e)
+   │   └── JSON.stringify(data, null, 2) — 2-space 들여쓰기
+   └── ipc.request("save", { content }, timeout=-1)
+       │
+3. Main Process: ipc.handle("save")
+   ├── device.replaceFileContents(content)
+   └── device.saveResource({ userAction: true })
+       │
+4. DesktopResourceDevice.saveResource()
+   ├── 임시 파일이면 → dialog.showSaveDialog(defaultPath: "untitled.pen")
+   ├── 일반 파일이면 → fs.writeFileSync(filePath, content, "utf8")
+   ├── emit("dirty-changed", false)
+   └── isDirty = false
+```
+
+**자동 저장:** 디스크 자동 저장은 없음. `"file-changed"` IPC(300ms 디바운스)는 in-memory 콘텐츠만 갱신하고 `isDirty = true`로 표시. 실제 디스크 쓰기는 명시적 저장(Cmd+S) 또는 창 닫기 시에만 수행.
+
+### 25.5 더티 상태 추적
+
+```javascript
+// DesktopResourceDevice
+replaceFileContents(content) {
+    this.fileContent = content;
+    if (!this.isDirty) {
+        this.emit("dirty-changed", true);  // → 타이틀바 "●" 표시
+        this.isDirty = true;
+    }
+}
+
+saveResource() {
+    // ... 저장 성공 후:
+    this.emit("dirty-changed", false);
+    this.isDirty = false;
+}
+
+// 창 닫기 시 더티 체크
+mainWindow.on("close", async (event) => {
+    if (device.getIsDirty()) {
+        event.preventDefault();
+        // Save/Don't Save/Cancel 다이얼로그 표시
+        const cancelled = await device.saveResource({ userAction: false });
+        if (!cancelled) mainWindow.close();
+    }
+});
+```
+
+### 25.6 에셋 관리 (AssetManager = `Mwt`)
+
+#### 25.6.1 이미지 저장 방식
+
+이미지는 .pen 파일 **외부**에 별도 파일로 저장된다 (base64 인라인 아님):
+
+```
+project/
+├── design.pen          ← JSON 텍스트
+└── images/
+    ├── photo.png       ← 외부 이미지 파일
+    ├── logo.svg
+    └── generated-1706...png  ← AI 생성 이미지
+```
+
+.pen 내부 참조: `{ "type": "Image", "url": "images/photo.png", "mode": "Fill" }`
+
+#### 25.6.2 에셋 상태 머신
+
+```
+init → loading → loaded (decodedImage: Ue.MakeImageFromEncoded())
+                → error (로드 실패)
+loaded → destroyed (정리)
+```
+
+#### 25.6.3 이미지 임포트 흐름
+
+```javascript
+// importFileByName: 충돌 회피 네이밍
+// "photo.png" → 이미 존재하면 "photo-1.png", "photo-2.png" ...
+// 동일 이름 + 동일 내용이면 기존 파일 재사용
+// 반환: .pen 파일 기준 상대 경로
+```
+
+#### 25.6.4 AI 생성 이미지
+
+```javascript
+// save-generated-image IPC 핸들러
+const buffer = Buffer.from(image, "base64");
+const filename = `generated-${Date.now()}.png`;
+// images/ 디렉토리에 저장, 상대 경로 반환
+```
+
+### 25.7 임포트/익스포트
+
+#### 25.7.1 지원 임포트 형식
+
+| 형식 | 방식 | 변환 |
+|------|------|------|
+| `.pen` | 네이티브 열기 | 직접 로드 |
+| PNG/JPG/JPEG | 파일 대화상자 또는 드래그 | rectangle + image fill |
+| SVG | 파일 대화상자 또는 붙여넣기 | `Xke()` → 네이티브 노드 매핑 |
+| Figma | 클립보드 붙여넣기 (text/html) | `n_t()`, `i_t()` 파서 |
+
+#### 25.7.2 지원 익스포트 형식
+
+| 형식 | 스케일 | 용도 |
+|------|--------|------|
+| PNG | 1x/2x/3x | 무손실, 투명 배경 |
+| JPEG | 1x/2x/3x (품질: High/Medium/Low) | 손실 압축 |
+| WEBP | 1x/2x/3x (품질: High/Medium/Low) | 최신 압축 |
+
+SVG, PDF 익스포트는 미지원.
+
+#### 25.7.3 익스포트 흐름
+
+```javascript
+// 선택 노드별:
+const imageData = await skiaRenderer.exportToImage([node], {
+    type: sa.PNG,        // 0=PNG, 1=JPEG, 2=WEBP
+    dpi: scale,          // 1, 2, 3
+    maxResolution: 4096,
+    quality: value
+});
+// 단일 파일 → 직접 다운로드
+// 다수 파일 → ZIP으로 묶어 "export.zip" 다운로드
+```
+
+### 25.8 클립보드 데이터 포맷
+
+#### 25.8.1 커스텀 MIME 타입: `application/x-ha`
+
+```javascript
+// Copy 시 설정:
+clipboardData.setData("application/x-ha", JSON.stringify({
+    source: clipboardSourceId,  // 문서 UUID
+    localData: paths,           // 같은 문서 붙여넣기용 경로 배열
+    remoteData: {               // 다른 문서 붙여넣기용 전체 데이터
+        themes: serializedThemes,
+        variables: serializedVars,
+        nodes: serializedNodes   // resolveInstances: true로 직렬화
+    }
+}));
+clipboardData.setData("text/plain", nodeIdList);  // 디버깅/MCP용
+```
+
+#### 25.8.2 붙여넣기 소스 5종
+
+| 소스 | MIME 타입 | 처리 |
+|------|----------|------|
+| Pencil (같은 문서) | `application/x-ha` | localData → 경로로 노드 복제 |
+| Pencil (다른 문서) | `application/x-ha` | remoteData → 테마/변수/노드 역직렬화 |
+| Figma | `text/html` | HTML 파싱 → 노드 변환 |
+| SVG | `text/plain` | DOMParser → SVG 노드 매핑 |
+| 텍스트 | `text/plain` | 텍스트 노드 생성 |
+
+### 25.9 최근 파일 관리
+
+```javascript
+const MAX_RECENT_FILES = 14;
+
+addRecentFile(filePath) {
+    // 절대 경로만 추적 (템플릿 제외)
+    const updated = [filePath, ...filtered].slice(0, MAX_RECENT_FILES);
+    desktopConfig.set("recentFiles", updated);
+}
+
+getRecentFiles() {
+    return recentFiles.filter(f => fs.existsSync(f));  // 존재하는 파일만
+}
+
+// 시작 시: 가장 최근 파일 열기, 없으면 "pencil-welcome-desktop.pen"
+```
+
+저장소: `electron-store` → `config.json` (사용자 데이터 디렉토리)
+
+### 25.10 내장 문서 템플릿
+
+| 템플릿 | 용도 |
+|--------|------|
+| `pencil-new.pen` | 빈 새 문서 |
+| `pencil-welcome-desktop.pen` | 시작 화면 |
+| `pencil-shadcn.pen` | Shadcn 디자인 킷 |
+| `pencil-halo.pen` | HALO 디자인 킷 |
+| `pencil-lunaris.pen` | Lunaris 디자인 킷 |
+| `pencil-nitro.pen` | Nitro 디자인 킷 |
+
+비절대 경로이고 `"pencil-"`로 시작하면 `isTemporary() = true` → 임시 작업 디렉토리(`~/.pencil/resources/{uuid}/`) 사용.
+
+### 25.11 오류 처리
+
+| 상황 | 처리 |
+|------|------|
+| 파일 읽기 실패 | `file-error` IPC → 토스트 알림 (에러 메시지 포함) |
+| 버전 불일치 | `HYe()` 마이그레이션 체인 실행 → 지원 안되면 에러 로그 |
+| 저장 실패 | Sentry 캡처 + 토스트 에러 (`pm.error()`) |
+| JSON 파싱 오류 | `Y$e()` 관대한 파서가 trailing comma 등 허용 |
+| 에디터 미초기화 | 지연 전달: `waitForDocumentReady()` 후 재전송 |
+
+### 25.12 파일 관련 IPC 메시지 전체 목록
+
+| IPC 메시지 | 방향 | 용도 |
+|-----------|------|------|
+| `file-update` | Main→Renderer | 문서 콘텐츠 로드 |
+| `file-error` | Main→Renderer | 파일 읽기 실패 알림 |
+| `file-changed` | Renderer→Main | 콘텐츠 변경 동기화 (300ms 디바운스, 디스크 미기록) |
+| `save` | Renderer→Main | 명시적 디스크 저장 |
+| `load-file` | Renderer→Main | 다른 파일 로드 요청 |
+| `read-file` | Renderer→Main | 에셋 파일 읽기 (이미지) |
+| `import-file` | Renderer→Main | 파일명+내용으로 임포트 |
+| `import-uri` | Renderer→Main | URI로 임포트 |
+| `import-images` | Main→Renderer | 이미지 임포트 대화상자 결과 |
+| `dirty-changed` | Main→Renderer | 더티 상태 변경 알림 |
+| `get-recent-files` | Renderer→Main | 최근 파일 목록 조회 |
+| `clear-recent-files` | Renderer→Main | 최근 파일 목록 초기화 |
+| `initialized` | Renderer→Main | 에디터 준비 완료 |
+| `save-generated-image` | Renderer→Main | AI 생성 이미지 디스크 저장 |
+| `export-viewport` | External→Renderer | 뷰포트 PNG 익스포트 (MCP) |
+| `show-open-dialog` | Renderer→Main | 네이티브 파일 열기 대화상자 |
+
+---
+
+## 26. 종합 분석 업데이트 (2026-01-30)
+
+### 26.1 Pencil 앱 전체 아키텍처 다이어그램
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
@@ -2559,7 +2907,7 @@ useEffect(() => {
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
-### 25.2 핵심 발견 사항
+### 26.2 핵심 발견 사항
 
 | 영역 | 발견 | 의미 |
 |------|------|------|
@@ -2585,8 +2933,12 @@ useEffect(() => {
 | **상태 머신** | 9개 상태 클래스, IdleState 허브, 전이 기반 도구 인터랙션 | 복잡한 에디터 인터랙션을 깔끔하게 분리 |
 | **IPC 체계** | notify(18) + request(11) + handle(18) = 47종 IPC 메서드 | Electron/VSCode/Web 3환경 추상화 |
 | **프레임 배칭** | queuedFrameEvents Set → RAF flush → 디바운스 | 고빈도 이벤트의 프레임 단위 합산 |
+| **파일 포맷** | .pen v2.6, JSON 텍스트, 7단계 마이그레이션 체인 | 1.0→2.6 하위 호환, 관대한 JSON 파서 |
+| **에셋 관리** | 이미지 외부 파일 저장 (base64 아님), AssetManager 상태 머신 | Skia MakeImageFromEncoded 디코딩 |
+| **클립보드** | `application/x-ha` 커스텀 MIME, 5종 소스 (Pencil/Figma/SVG/텍스트/이미지) | 크로스 문서/앱 복사-붙여넣기 |
+| **더티 추적** | DesktopResourceDevice + 창 닫기 Save/Don't Save/Cancel | 자동 저장 없음, 명시적 Cmd+S만 |
 
-### 25.3 기존 분석 대비 추가된 내용
+### 26.3 기존 분석 대비 추가된 내용
 
 | 기존 섹션 | 추가된 심층 분석 |
 |----------|----------------|
@@ -2601,3 +2953,4 @@ useEffect(() => {
 | 없음 | §22 내장 디자인 킷 4개 (HALO/Lunaris/Nitro/Shadcn) |
 | §15.4 노드 타입 (간략) | §23 씬 그래프 노드 타입별 구조: 클래스 계층, 프로퍼티, 렌더링, 히트테스트, 컴포넌트/인스턴스, 오토 레이아웃, 열거형, SVG 매핑 |
 | 없음 | §24 이벤트 시스템: EventEmitter3, 상태 머신(9상태), PixiJS EventBoundary, 키보드, 줌/패닝, 선택, 드래그, 클립보드, Undo/Redo, IPC(47종), React 통합 |
+| §8, §15 파일 포맷 (간략) | §25 파일 저장/로드: FileManager(lXe), 직렬화/역직렬화, .pen v2.6 포맷, 7단계 마이그레이션, 에셋 관리, 임포트/익스포트, 클립보드 `application/x-ha`, 더티 상태, IPC 16종, 최근 파일, 내장 템플릿 |
