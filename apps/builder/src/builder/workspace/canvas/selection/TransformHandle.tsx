@@ -19,6 +19,7 @@ import {
   HANDLE_SIZE,
   HANDLE_FILL_COLOR,
   HANDLE_STROKE_COLOR,
+  EDGE_HIT_THICKNESS,
 } from './types';
 
 // ============================================
@@ -68,29 +69,63 @@ export const TransformHandle = memo(function TransformHandle({
 }: TransformHandleProps) {
   useExtend(PIXI_COMPONENTS);
 
-  // 줌에 독립적인 핸들 크기 (화면상 항상 동일 크기)
-  const adjustedSize = HANDLE_SIZE / zoom;
+  const { isCorner } = config;
+
+  // 줌에 독립적인 크기
+  const cornerSize = HANDLE_SIZE / zoom;
+  const edgeThickness = EDGE_HIT_THICKNESS / zoom;
   const strokeWidth = 1 / zoom;
 
-  // 핸들 중심 좌표 계산
-  const handleX = boundsX + boundsWidth * config.relativeX - adjustedSize / 2;
-  const handleY = boundsY + boundsHeight * config.relativeY - adjustedSize / 2;
+  // 핸들 위치 & 크기 계산
+  let handleX: number;
+  let handleY: number;
+  let handleW: number;
+  let handleH: number;
+
+  if (isCorner) {
+    // 코너 핸들: 6×6 정사각형
+    handleX = boundsX + boundsWidth * config.relativeX - cornerSize / 2;
+    handleY = boundsY + boundsHeight * config.relativeY - cornerSize / 2;
+    handleW = cornerSize;
+    handleH = cornerSize;
+  } else {
+    // 엣지 핸들: 보이지 않는 히트 영역 (엣지 전체 길이)
+    const isHorizontal = config.relativeY === 0 || config.relativeY === 1;
+    if (isHorizontal) {
+      // 상단/하단 엣지: 전체 너비, 얇은 높이
+      handleX = boundsX;
+      handleY = boundsY + boundsHeight * config.relativeY - edgeThickness / 2;
+      handleW = boundsWidth;
+      handleH = edgeThickness;
+    } else {
+      // 좌측/우측 엣지: 얇은 너비, 전체 높이
+      handleX = boundsX + boundsWidth * config.relativeX - edgeThickness / 2;
+      handleY = boundsY;
+      handleW = edgeThickness;
+      handleH = boundsHeight;
+    }
+  }
 
   // 핸들 그리기
   const draw = useCallback(
     (g: PixiGraphics) => {
       g.clear();
 
-      // 배경 (흰색) - v8 Pattern: shape → fill
-      g.rect(0, 0, adjustedSize, adjustedSize);
-      g.fill({ color: HANDLE_FILL_COLOR, alpha: 1 });
+      if (isCorner) {
+        // 코너: 흰색 배경 + 파란 테두리 (시각적으로 표시)
+        g.rect(0, 0, handleW, handleH);
+        g.fill({ color: HANDLE_FILL_COLOR, alpha: 1 });
 
-      // 테두리 (파란색) - 줌에 관계없이 화면상 1px 유지
-      g.setStrokeStyle({ width: strokeWidth, color: HANDLE_STROKE_COLOR, alpha: 1 });
-      g.rect(0, 0, adjustedSize, adjustedSize);
-      g.stroke();
+        g.setStrokeStyle({ width: strokeWidth, color: HANDLE_STROKE_COLOR, alpha: 1 });
+        g.rect(0, 0, handleW, handleH);
+        g.stroke();
+      } else {
+        // 엣지: 투명 히트 영역 (시각적으로 보이지 않음)
+        g.rect(0, 0, handleW, handleH);
+        g.fill({ color: 0x000000, alpha: 0.001 });
+      }
     },
-    [adjustedSize, strokeWidth]
+    [isCorner, handleW, handleH, strokeWidth]
   );
 
   // 이벤트 핸들러

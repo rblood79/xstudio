@@ -48,24 +48,32 @@ export const ButtonSpec: ComponentSpec<ButtonProps> = {
       backgroundHover: '{color.primary-hover}' as TokenRef,
       backgroundPressed: '{color.primary-pressed}' as TokenRef,
       text: '{color.on-primary}' as TokenRef,
+      border: '{color.primary}' as TokenRef, // CSS: border-color: var(--primary) → 배경과 동일 → 투명
+      borderHover: '{color.primary-hover}' as TokenRef,
     },
     secondary: {
       background: '{color.secondary}' as TokenRef,
       backgroundHover: '{color.secondary-hover}' as TokenRef,
       backgroundPressed: '{color.secondary-pressed}' as TokenRef,
       text: '{color.on-secondary}' as TokenRef,
+      border: '{color.secondary}' as TokenRef,
+      borderHover: '{color.secondary-hover}' as TokenRef,
     },
     tertiary: {
       background: '{color.tertiary}' as TokenRef,
       backgroundHover: '{color.tertiary-hover}' as TokenRef,
       backgroundPressed: '{color.tertiary-pressed}' as TokenRef,
       text: '{color.on-tertiary}' as TokenRef,
+      border: '{color.tertiary}' as TokenRef,
+      borderHover: '{color.tertiary-hover}' as TokenRef,
     },
     error: {
       background: '{color.error}' as TokenRef,
       backgroundHover: '{color.error-hover}' as TokenRef,
       backgroundPressed: '{color.error-pressed}' as TokenRef,
       text: '{color.on-error}' as TokenRef,
+      border: '{color.error}' as TokenRef,
+      borderHover: '{color.error-hover}' as TokenRef,
     },
     surface: {
       background: '{color.surface-container-highest}' as TokenRef,

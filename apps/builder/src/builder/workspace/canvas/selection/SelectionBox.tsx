@@ -230,7 +230,7 @@ export const SelectionBox = memo(
       {/* 선택 테두리 */}
       <pixiGraphics ref={borderGraphicsRef} draw={drawBorder} />
 
-      {/* Transform 핸들 (8방향) */}
+      {/* Transform 핸들: 엣지(투명 히트 영역) → 코너(시각적 표시) 순서로 렌더링 (z-order) */}
       {showHandles &&
         HANDLE_CONFIGS.map((config) => (
           <TransformHandle

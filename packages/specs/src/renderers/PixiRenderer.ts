@@ -178,6 +178,7 @@ export function getVariantColors(
   bgPressed: number;
   text: number;
   border?: number;
+  borderHover?: number;
   bgAlpha: number;
 } {
   const bg = resolveColor(variantSpec.background, theme);
@@ -185,15 +186,18 @@ export function getVariantColors(
   const bgPressed = resolveColor(variantSpec.backgroundPressed, theme);
   const text = resolveColor(variantSpec.text, theme);
   const border = variantSpec.border ? resolveColor(variantSpec.border, theme) : undefined;
+  const borderHover = variantSpec.borderHover ? resolveColor(variantSpec.borderHover, theme) : undefined;
+
+  const toNum = (v: string | number): number =>
+    typeof v === 'string' ? hexStringToNumber(v) : (v as number);
 
   return {
-    bg: typeof bg === 'string' ? hexStringToNumber(bg) : (bg as number),
-    bgHover: typeof bgHover === 'string' ? hexStringToNumber(bgHover) : (bgHover as number),
-    bgPressed: typeof bgPressed === 'string' ? hexStringToNumber(bgPressed) : (bgPressed as number),
-    text: typeof text === 'string' ? hexStringToNumber(text) : (text as number),
-    border: border !== undefined
-      ? (typeof border === 'string' ? hexStringToNumber(border) : (border as number))
-      : undefined,
+    bg: toNum(bg),
+    bgHover: toNum(bgHover),
+    bgPressed: toNum(bgPressed),
+    text: toNum(text),
+    border: border !== undefined ? toNum(border) : undefined,
+    borderHover: borderHover !== undefined ? toNum(borderHover) : undefined,
     bgAlpha: variantSpec.backgroundAlpha ?? 1,
   };
 }

@@ -34,14 +34,10 @@ export type HandleType = 'resize' | 'rotate';
 export type CursorStyle =
   | 'default'
   | 'move'
-  | 'nw-resize'
-  | 'n-resize'
-  | 'ne-resize'
-  | 'e-resize'
-  | 'se-resize'
-  | 's-resize'
-  | 'sw-resize'
-  | 'w-resize';
+  | 'nwse-resize'
+  | 'nesw-resize'
+  | 'ns-resize'
+  | 'ew-resize';
 
 // ============================================
 // Bounding Box
@@ -122,28 +118,38 @@ export interface HandleConfig {
   /** 핸들 상대 위치 (0-1) */
   relativeX: number;
   relativeY: number;
+  /** 코너 핸들 여부 (false면 엣지 핸들 - 보이지 않는 히트 영역) */
+  isCorner: boolean;
 }
 
 /**
  * 기본 핸들 설정
+ *
+ * Figma 스타일: 코너 핸들만 시각적으로 표시,
+ * 엣지 핸들은 보이지 않지만 호버/드래그 가능한 히트 영역으로 동작
  */
 export const HANDLE_CONFIGS: HandleConfig[] = [
-  { position: 'top-left', cursor: 'nw-resize', relativeX: 0, relativeY: 0 },
-  { position: 'top-center', cursor: 'n-resize', relativeX: 0.5, relativeY: 0 },
-  { position: 'top-right', cursor: 'ne-resize', relativeX: 1, relativeY: 0 },
-  { position: 'middle-right', cursor: 'e-resize', relativeX: 1, relativeY: 0.5 },
-  { position: 'bottom-right', cursor: 'se-resize', relativeX: 1, relativeY: 1 },
-  { position: 'bottom-center', cursor: 's-resize', relativeX: 0.5, relativeY: 1 },
-  { position: 'bottom-left', cursor: 'sw-resize', relativeX: 0, relativeY: 1 },
-  { position: 'middle-left', cursor: 'w-resize', relativeX: 0, relativeY: 0.5 },
+  // 코너 핸들 (시각적으로 표시) - 양방향 대각선 화살표
+  { position: 'top-left', cursor: 'nwse-resize', relativeX: 0, relativeY: 0, isCorner: true },
+  { position: 'top-right', cursor: 'nesw-resize', relativeX: 1, relativeY: 0, isCorner: true },
+  { position: 'bottom-right', cursor: 'nwse-resize', relativeX: 1, relativeY: 1, isCorner: true },
+  { position: 'bottom-left', cursor: 'nesw-resize', relativeX: 0, relativeY: 1, isCorner: true },
+  // 엣지 핸들 (보이지 않는 히트 영역) - 양방향 수직/수평 화살표
+  { position: 'top-center', cursor: 'ns-resize', relativeX: 0.5, relativeY: 0, isCorner: false },
+  { position: 'middle-right', cursor: 'ew-resize', relativeX: 1, relativeY: 0.5, isCorner: false },
+  { position: 'bottom-center', cursor: 'ns-resize', relativeX: 0.5, relativeY: 1, isCorner: false },
+  { position: 'middle-left', cursor: 'ew-resize', relativeX: 0, relativeY: 0.5, isCorner: false },
 ];
 
 // ============================================
 // Constants
 // ============================================
 
-/** 핸들 크기 */
+/** 핸들 크기 (코너 핸들) */
 export const HANDLE_SIZE = 6;
+
+/** 엣지 핸들 히트 영역 두께 (px) */
+export const EDGE_HIT_THICKNESS = 8;
 
 /** 선택 박스 테두리 색상 */
 export const SELECTION_COLOR = 0x3b82f6; // blue-500

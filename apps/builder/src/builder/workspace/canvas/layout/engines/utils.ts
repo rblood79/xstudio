@@ -280,13 +280,15 @@ const BUTTON_SIZE_CONFIG: Record<string, {
   paddingRight: number;
   paddingY: number;
   fontSize: number;
+  borderWidth: number;
 }> = {
   // @sync Button.css [data-size] padding 값과 일치해야 함
-  xs: { paddingLeft: 8, paddingRight: 8, paddingY: 2, fontSize: 12 },     // --spacing-sm = 8px
-  sm: { paddingLeft: 12, paddingRight: 12, paddingY: 4, fontSize: 14 },   // --spacing-md = 12px
-  md: { paddingLeft: 24, paddingRight: 24, paddingY: 8, fontSize: 16 },   // --spacing-xl = 24px
-  lg: { paddingLeft: 32, paddingRight: 32, paddingY: 12, fontSize: 18 },  // --spacing-2xl = 32px
-  xl: { paddingLeft: 40, paddingRight: 40, paddingY: 16, fontSize: 20 },  // --spacing-3xl = 40px
+  // @sync Button.css base: border: 1px solid (all variants, all sizes)
+  xs: { paddingLeft: 8, paddingRight: 8, paddingY: 2, fontSize: 12, borderWidth: 1 },     // --spacing-sm = 8px
+  sm: { paddingLeft: 12, paddingRight: 12, paddingY: 4, fontSize: 14, borderWidth: 1 },   // --spacing-md = 12px
+  md: { paddingLeft: 24, paddingRight: 24, paddingY: 8, fontSize: 16, borderWidth: 1 },   // --spacing-xl = 24px
+  lg: { paddingLeft: 32, paddingRight: 32, paddingY: 12, fontSize: 18, borderWidth: 1 },  // --spacing-2xl = 32px
+  xl: { paddingLeft: 40, paddingRight: 40, paddingY: 16, fontSize: 20, borderWidth: 1 },  // --spacing-3xl = 40px
 };
 
 /** PixiButton MIN_BUTTON_HEIGHT과 동일 */
@@ -318,7 +320,7 @@ function getMeasureContext(): CanvasRenderingContext2D | null {
  * @param fontSize - 폰트 크기 (기본 14px)
  * @param fontFamily - 폰트 패밀리 (기본 Pretendard)
  */
-function measureTextWidth(
+export function measureTextWidth(
   text: string,
   fontSize: number = 14,
   fontFamily: string = specFontFamily.sans
@@ -438,7 +440,8 @@ export function calculateContentWidth(element: Element): number {
       const size = (props?.size as string) ?? 'sm';
       const sizeConfig = BUTTON_SIZE_CONFIG[size] ?? BUTTON_SIZE_CONFIG.sm;
       const fontSize = parseNumericValue(style?.fontSize) ?? sizeConfig.fontSize;
-      const totalPadding = sizeConfig.paddingLeft + sizeConfig.paddingRight;
+      const borderTotal = (sizeConfig.borderWidth ?? 0) * 2; // CSS: border-box, left + right
+      const totalPadding = sizeConfig.paddingLeft + sizeConfig.paddingRight + borderTotal;
       return calculateTextWidth(text, fontSize, totalPadding);
     }
 

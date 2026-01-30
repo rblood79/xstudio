@@ -37,6 +37,7 @@ import { getVariantColors as getLegacyVariantColors, getSizePreset as getLegacyS
 import { drawBox } from "../utils";
 import { useCanvasSyncStore } from "../canvasSync";
 import { parsePadding, parseBorderWidth } from "../sprites/paddingUtils";
+import { measureTextWidth as measureTextWidthCanvas } from "../layout/engines/utils";
 import { useStore } from "../../../stores";
 
 // ============================================
@@ -78,6 +79,7 @@ interface VariantColors {
   bgPressed: number;
   text: number;
   border?: number;
+  borderHover?: number;
   bgAlpha?: number;
 }
 
@@ -140,6 +142,7 @@ interface ButtonLayoutResult {
   pressedColor: number;
   textColor: number;
   borderColor: number | null;
+  borderHoverColor: number | null;
   borderRadius: number;
   borderWidth: number;
   fontSize: number;
@@ -212,13 +215,13 @@ function getButtonLayout(
 
   // 테두리 너비 (shorthand + 개별 속성 모두 지원)
   // padding과 동일한 패턴: inline style이 없으면 spec 기본값 사용
-  // Button.spec.ts: borderWidth: 1 (variant에 border 색상이 있을 때)
-  // CSS: .react-aria-Button { border: 1px solid var(--outline-variant); }
+  // CSS base rule: .react-aria-Button { border: 1px solid var(--outline-variant); }
+  // → 모든 variant에 1px border 적용 (primary 등은 배경과 동일 색상 → 투명)
   const hasBorderWidthStyle = style?.borderWidth !== undefined ||
     style?.borderTopWidth !== undefined || style?.borderRightWidth !== undefined ||
     style?.borderBottomWidth !== undefined || style?.borderLeftWidth !== undefined;
   const parsedBorder = hasBorderWidthStyle ? parseBorderWidth(style) : null;
-  const specDefaultBorderWidth = variantColors.border != null ? 1 : 0;
+  const specDefaultBorderWidth = 1; // CSS base: border: 1px solid (all variants)
   const borderWidthTop = parsedBorder?.top ?? specDefaultBorderWidth;
   const borderWidthRight = parsedBorder?.right ?? specDefaultBorderWidth;
   const borderWidthBottom = parsedBorder?.bottom ?? specDefaultBorderWidth;
@@ -262,9 +265,18 @@ function getButtonLayout(
     ? cssColorToHex(style?.borderColor, variantColors.border ?? 0x000000)
     : (variantColors.border ?? null);
 
+  // Border hover 색상 (CSS: variant별 hover 시 border-color 변경)
+  const borderHoverColor = hasInlineBorderColor
+    ? borderColor // inline 지정 시 hover에서도 동일
+    : (variantColors.borderHover ?? borderColor);
+
   // 텍스트 크기 측정 (먼저 측정해야 최소 크기 계산 가능)
+  // 🚀 너비: Canvas 2D measureText 사용 (BlockEngine calculateContentWidth와 동일)
+  //    → display: block 부모 내 inline-block 버튼 간격 불일치 해소
+  // 🚀 높이: PixiJS getLocalBounds 사용 (수직 메트릭 정확도 필요)
+  const textWidth = measureTextWidthCanvas(buttonText, fontSize, fontFamily);
   const textStyle = new TextStyle({ fontSize, fontFamily });
-  const { width: textWidth, height: textHeight } = measureTextSize(buttonText, textStyle);
+  const textHeight = measureTextSize(buttonText, textStyle).height;
 
   // 최소 필요 크기 계산 (border + padding + text)
   // border-box 모델: width = border + padding + content
@@ -319,6 +331,7 @@ function getButtonLayout(
     pressedColor,
     textColor,
     borderColor,
+    borderHoverColor,
     borderRadius,
     borderWidth,
     fontSize,
@@ -549,9 +562,16 @@ export const PixiButton = memo(function PixiButton({
     }
 
     // Graphics 옵션 (alpha, border)
-    const graphicsOptions = {
+    const defaultGraphicsOptions = {
       alpha: layout.backgroundAlpha,
       borderColor: layout.borderColor,
+      borderWidth: layout.borderWidth,
+    };
+
+    // Hover/Pressed는 borderHoverColor 사용 (CSS variant별 hover border-color)
+    const hoverGraphicsOptions = {
+      alpha: layout.backgroundAlpha,
+      borderColor: layout.borderHoverColor,
       borderWidth: layout.borderWidth,
     };
 
@@ -561,7 +581,7 @@ export const PixiButton = memo(function PixiButton({
       layout.height,
       layout.backgroundColor,
       layout.borderRadius,
-      graphicsOptions
+      defaultGraphicsOptions
     );
 
     const hoverView = createButtonGraphics(
@@ -569,7 +589,7 @@ export const PixiButton = memo(function PixiButton({
       layout.height,
       layout.hoverColor,
       layout.borderRadius,
-      graphicsOptions
+      hoverGraphicsOptions
     );
 
     const pressedView = createButtonGraphics(
@@ -577,7 +597,7 @@ export const PixiButton = memo(function PixiButton({
       layout.height,
       layout.pressedColor,
       layout.borderRadius,
-      graphicsOptions
+      hoverGraphicsOptions // pressed도 hover와 같은 border color (CSS 동작)
     );
 
     // TextStyle 및 Text 객체 생성
