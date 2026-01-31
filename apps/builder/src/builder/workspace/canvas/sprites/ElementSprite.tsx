@@ -17,7 +17,7 @@ import type { Element } from '../../../../types/core/store.types';
 // 🚀 Phase 7: registry 등록은 LayoutContainer에서 처리
 // import { registerElement, unregisterElement } from '../elementRegistry';
 import { useSkiaNode } from '../skia/useSkiaNode';
-import { WASM_FLAGS } from '../wasm-bindings/featureFlags';
+import { WASM_FLAGS, getRenderMode } from '../wasm-bindings/featureFlags';
 import { convertStyle, type CSSStyle } from './styleConverter';
 import { BoxSprite } from './BoxSprite';
 import { TextSprite } from './TextSprite';
@@ -1123,6 +1123,12 @@ export const ElementSprite = memo(function ElementSprite({
     // 일반 컨테이너(box, flex, grid)는 backgroundColor 없으면 투명 처리 (CSS 기본 동작)
     const isUIComponent = spriteType !== 'box' && spriteType !== 'text'
       && spriteType !== 'image' && spriteType !== 'flex' && spriteType !== 'grid';
+
+    // hybrid 모드: UI 컴포넌트는 PixiJS가 텍스트 포함 전체를 렌더링하므로
+    // Skia 노드를 등록하지 않는다. (불투명 Skia 박스가 PixiJS 텍스트를 가림)
+    // skia 모드에서만 UI 컴포넌트 폴백 박스를 등록한다.
+    if (isUIComponent && getRenderMode() === 'hybrid') return null;
+
     const effectiveAlpha = hasBgColor ? fill.alpha : (isUIComponent ? fill.alpha : 0);
 
     // UI 컴포넌트 기본 색상: backgroundColor 미설정 시 가시적인 기본 배경 사용

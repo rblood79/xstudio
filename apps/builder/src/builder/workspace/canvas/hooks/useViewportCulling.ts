@@ -11,14 +11,12 @@
  * - 대형 캔버스에서 줌아웃 시 특히 효과적
  *
  * @since 2025-12-20 Phase 11 Viewport Culling
- * @updated 2026-01-31 스크린 좌표 기반 culling으로 전환 (pan 깜빡임 수정)
+ * @updated 2026-01-31 실시간 getBounds() 기반 스크린 좌표 culling (SpatialIndex 제거 — stale 좌표 이슈)
  */
 
 import { useMemo } from 'react';
 import type { Element } from '../../../../types/core/store.types';
 import { getElementContainer } from '../elementRegistry';
-import { WASM_FLAGS } from '../wasm-bindings/featureFlags';
-import { queryVisibleElements } from '../wasm-bindings/spatialIndex';
 
 // ============================================
 // Types
@@ -160,10 +158,10 @@ export interface UseViewportCullingOptions {
  *
  * 뷰포트 외부에 있는 요소를 필터링하여 렌더링 성능을 최적화합니다.
  *
- * 🔧 스크린 좌표 기반 culling:
- * - 뷰포트: 스크린 좌표 (화면 크기 + margin)
- * - 요소 bounds: container.getBounds() 실시간 스크린 좌표
- * - 좌표 변환 불필요 → pan/zoom 시 stale 좌표 문제 없음
+ * 🔧 실시간 스크린 좌표 기반 culling:
+ * - container.getBounds()로 현재 프레임의 스크린 좌표 사용
+ * - pan/zoom 시에도 항상 정확 (stale 좌표 문제 없음)
+ * - SpatialIndex는 라쏘 선택 등 별도 기능에서만 사용
  *
  * @example
  * ```tsx
@@ -196,47 +194,12 @@ export function useViewportCulling({
       };
     }
 
-    // ── Phase 1: WASM SpatialIndex 경로 ──
-    // layoutBoundsRegistry는 스크린 좌표(pan/zoom 포함)를 저장하므로
-    // 뷰포트도 스크린 좌표로 쿼리한다 (JS 폴백과 동일한 좌표계)
-    if (WASM_FLAGS.SPATIAL_INDEX) {
-      const visibleIds = queryVisibleElements(
-        -VIEWPORT_MARGIN,
-        -VIEWPORT_MARGIN,
-        screenWidth + VIEWPORT_MARGIN,
-        screenHeight + VIEWPORT_MARGIN,
-      );
-      const visibleIdSet = new Set(visibleIds);
-
-      // 부모-자식 overflow 처리:
-      // SpatialIndex 결과에 없어도 부모가 visible이면 자식 포함
-      const visibleElements = elements.filter((element) => {
-        if (visibleIdSet.has(element.id)) return true;
-        // 부모가 visible이면 자식도 포함 (overflow: visible 기본)
-        if (element.parent_id && visibleIdSet.has(element.parent_id)) return true;
-        // body 직속 자식 (parent_id 없음) → body는 항상 화면에 있음
-        if (!element.parent_id) return true;
-        // container 미등록 요소 → 안전하게 포함
-        if (!getElementContainer(element.id)) return true;
-        return false;
-      });
-
-      const culledCount = elements.length - visibleElements.length;
-      return {
-        visibleElements,
-        culledCount,
-        totalCount: elements.length,
-        cullingRatio: elements.length > 0 ? culledCount / elements.length : 0,
-      };
-    }
-
-    // ── JS 폴백 경로 (WASM 비활성화 시) ──
-    // 뷰포트를 스크린 좌표로 계산
-    // container.getBounds()가 스크린 좌표를 반환하므로 좌표 변환 불필요
+    // ── 스크린 좌표 뷰포트 (공통) ──
     const viewport = calculateViewportBounds(screenWidth, screenHeight);
 
-    // 실시간 container.getBounds()로 현재 스크린 좌표 비교
-    // layoutBoundsRegistry는 stale 글로벌 좌표를 가질 수 있으므로 사용하지 않음
+    // ── 실시간 스크린 좌표 기반 visibility 체크 ──
+    // container.getBounds()는 현재 프레임의 스크린 좌표를 반환하므로
+    // pan/zoom 시에도 항상 정확하다.
     //
     // 부모-자식 관계 고려:
     // - 자식이 부모보다 클 수 있음 (overflow: visible 기본)
@@ -305,7 +268,7 @@ export function useViewportCulling({
       totalCount: elements.length,
       cullingRatio: elements.length > 0 ? culledCount / elements.length : 0,
     };
-  // zoom/panOffset은 직접 사용하지 않지만 뷰 변경 시 재계산 트리거
+  // zoom/panOffset은 getBounds()에 간접 반영되지만, 뷰 변경 시 재계산 트리거 필요
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [elements, zoom, panOffset, screenWidth, screenHeight, enabled]);
 }

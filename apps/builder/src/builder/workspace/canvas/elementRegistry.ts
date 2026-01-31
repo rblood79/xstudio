@@ -75,7 +75,9 @@ export function registerElement(id: string, container: Container): void {
 export function updateElementBounds(id: string, bounds: ElementBounds): void {
   layoutBoundsRegistry.set(id, bounds);
 
-  // Phase 1: SpatialIndex 동기화 (씬 좌표)
+  // Phase 1: SpatialIndex 동기화 (스크린 좌표 저장)
+  // getBounds()는 스크린 좌표(pan/zoom 포함)를 반환한다.
+  // pan 시 stale될 수 있으므로, useViewportCulling에서 getBounds() 폴백으로 보완한다.
   if (WASM_FLAGS.SPATIAL_INDEX && _spatialModule) {
     _spatialModule.updateElement(id, bounds.x, bounds.y, bounds.width, bounds.height);
   }

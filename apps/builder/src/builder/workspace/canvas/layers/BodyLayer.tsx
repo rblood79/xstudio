@@ -16,6 +16,8 @@ import { useStore } from '../../../stores';
 import { cssColorToHex, cssColorToAlpha, parseCSSSize } from '../sprites/styleConverter';
 import type { CSSStyle } from '../sprites/styleConverter';
 import { drawBox, parseBorderConfig } from '../utils';
+import { useSkiaNode } from '../skia/useSkiaNode';
+import { WASM_FLAGS } from '../wasm-bindings/featureFlags';
 
 // ============================================
 // Types
@@ -107,6 +109,31 @@ export const BodyLayer = memo(function BodyLayer({
     [pageWidth, pageHeight, backgroundColor, backgroundAlpha, borderRadius, borderConfig]
   );
 
+  // Phase 5: Skia 렌더 데이터 등록 (body 배경)
+  // Skia 모드에서 PixiJS canvas가 hidden이므로 body도 Skia로 렌더링해야 한다.
+  const bodySkiaData = useMemo(() => {
+    if (!WASM_FLAGS.CANVASKIT_RENDERER) return null;
+
+    const r = ((backgroundColor >> 16) & 0xff) / 255;
+    const g = ((backgroundColor >> 8) & 0xff) / 255;
+    const b = (backgroundColor & 0xff) / 255;
+
+    return {
+      type: 'box' as const,
+      x: 0,
+      y: 0,
+      width: pageWidth,
+      height: pageHeight,
+      visible: true,
+      box: {
+        fillColor: Float32Array.of(r, g, b, backgroundAlpha),
+        borderRadius,
+      },
+    };
+  }, [pageWidth, pageHeight, backgroundColor, backgroundAlpha, borderRadius]);
+
+  useSkiaNode(bodyElement?.id ?? '', bodySkiaData);
+
   // 클릭 핸들러 (modifier 키 전달)
   const handleClick = useCallback((e: unknown) => {
     if (bodyElement && onClick) {
@@ -129,7 +156,7 @@ export const BodyLayer = memo(function BodyLayer({
 
   return (
     <pixiGraphics
-      label="BodyLayer"
+      label={bodyElement?.id || 'BodyLayer'}
       draw={draw}
       eventMode="static"
       cursor="default"
