@@ -7,6 +7,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Docs - Skill 규칙 버그 수정 반영 (2026-01-31)
+
+#### 개요
+최근 버그 수정 사항(SelectionLayer, Body borderWidth, Viewport Culling, parseBoxModel)을 `.claude/skills/xstudio-patterns/rules/` Skill 문서에 반영
+
+#### 수정 내용
+
+**1. 기존 규칙 수정 (4건)**
+- `domain-o1-lookup.md` — "선택 상태 동기화" 섹션 추가: `selectedElementIds`/`selectedElementIdsSet` 삭제 시 동기화 규칙, Incorrect/Correct 예시
+- `domain-component-lifecycle.md` — 삭제 패턴에 선택 상태 정리 단계(step 4) 추가: `selectedElementIds` 필터링 + `selectedElementIdsSet` 갱신
+- `pixi-hybrid-layout-engine.md` — "Box Model 처리" 섹션 추가: availableWidth에 border 차감, 자식 offset padding만(Yoga border 자동 처리), content-box 기준 높이 계산, 폼 요소 treatAsBorderBox
+- `perf-checklist.md` — Canvas 체크리스트에 "Viewport Culling" 4개 항목 추가: 좌표 시스템 일관성, 실시간 bounds, cull cycle 방지, overflow 자식 처리
+
+**2. 신규 규칙 생성 (1건)**
+- `pixi-viewport-culling.md` (impact: HIGH) — 스크린 좌표 기반 culling 원칙, 실시간 `getBounds()` 사용, 부모 가시성 체크로 cull/render 무한 cycle 방지 패턴
+
+**3. SKILL.md 등록**
+- HIGH > PIXI Layout 섹션에 `pixi-viewport-culling` 링크 추가
+
+#### 변경된 파일
+- `.claude/skills/xstudio-patterns/rules/domain-o1-lookup.md` — 선택 상태 동기화 섹션
+- `.claude/skills/xstudio-patterns/rules/domain-component-lifecycle.md` — 삭제 시 선택 상태 정리
+- `.claude/skills/xstudio-patterns/rules/pixi-hybrid-layout-engine.md` — Box Model 처리 섹션
+- `.claude/skills/xstudio-patterns/rules/perf-checklist.md` — Viewport Culling 체크리스트
+- `.claude/skills/xstudio-patterns/rules/pixi-viewport-culling.md` — 신규 생성
+- `.claude/skills/xstudio-patterns/SKILL.md` — 규칙 링크 등록
+
+---
+
 ### Docs - 레이아웃/버튼 버그 수정 관련 문서 동기화 (2026-01-31)
 
 #### 개요

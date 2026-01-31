@@ -139,10 +139,22 @@ const removeElement = (elementId: string) => {
   set({ elements: elements.filter(el => !allIdsToRemove.includes(el.id)) });
   get()._rebuildIndexes();
 
-  // 4. DB 삭제 (백그라운드)
+  // 4. ⚠️ 선택 상태 정리 (selectedElementIds/Set 포함 필수)
+  const removeSet = new Set(allIdsToRemove);
+  const filteredSelectedIds = currentState.selectedElementIds.filter(
+    (id: string) => !removeSet.has(id)
+  );
+  set({
+    selectedElementId: null,
+    selectedElementProps: {},
+    selectedElementIds: filteredSelectedIds,
+    selectedElementIdsSet: new Set(filteredSelectedIds),
+  });
+
+  // 5. DB 삭제 (백그라운드)
   deleteElementsFromDB(allIdsToRemove);
 
-  // 5. Preview 동기화
+  // 6. Preview 동기화
   deltaMessenger.sendElementRemoved(elementId, descendantIds);
 };
 

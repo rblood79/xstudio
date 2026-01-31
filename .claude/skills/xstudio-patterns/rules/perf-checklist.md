@@ -72,6 +72,12 @@ const element = elements.find(el => el.id === id);
 - [ ] **Texture 재사용**: 동일 이미지 공유
 - [ ] **컬링**: 뷰포트 외 요소 렌더링 스킵
 
+### Viewport Culling
+- [ ] **좌표 시스템 일관성**: 뷰포트와 요소 bounds를 동일 좌표계(스크린 좌표)로 비교
+- [ ] **실시간 bounds**: `container.getBounds()` 사용 (`layoutBoundsRegistry`는 pan 후 stale)
+- [ ] **Cull/Render cycle 방지**: 부모 가시성 체크로 unmount→re-include 무한 loop 방지
+- [ ] **Overflow 자식 처리**: 부모가 화면에 있으면 자식은 `overflow: visible`로 보일 수 있으므로 cull하지 않음
+
 ### 애니메이션
 - [ ] **requestAnimationFrame**: setInterval 대신 사용
 - [ ] **60fps 목표**: stats.js로 모니터링

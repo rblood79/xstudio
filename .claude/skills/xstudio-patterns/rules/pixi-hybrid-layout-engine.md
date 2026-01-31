@@ -89,4 +89,60 @@ tags: [pixi, layout, canvas, hybrid-engine]
 }} />
 ```
 
+## Box Model 처리
+
+### availableWidth 계산: padding + border 차감
+
+`renderWithCustomEngine`에서 부모의 content-box 크기를 계산할 때 **padding과 border 모두 차감** 필수:
+
+```typescript
+// ✅ availableWidth = 부모 크기 - padding - border
+const parentPadding = parsePadding(parentStyle);
+const parentBorder = parseBorder(parentStyle);
+const availableWidth = pageWidth
+  - parentPadding.left - parentPadding.right
+  - parentBorder.left - parentBorder.right;
+```
+
+### 자식 offset: padding만 적용 (border 제외)
+
+⚠️ Yoga(@pixi/layout)가 `position: absolute` 자식을 padding box 내에 자동 배치하므로, **border offset을 추가하면 이중 적용**:
+
+```typescript
+// ✅ padding만 적용 (Yoga가 border offset 자동 처리)
+left: layout.x + parentPadding.left,
+top: layout.y + parentPadding.top,
+
+// ❌ border 추가 → 이중 적용 (borderWidth만큼 여백 발생)
+left: layout.x + parentPadding.left + parentBorder.left,
+```
+
+### content-box 기준 높이 계산
+
+`calculateContentHeight`는 **순수 텍스트 높이만 반환**, padding/border는 호출 측(BlockEngine)에서 합산:
+
+```typescript
+// ✅ contentHeight = 텍스트 높이만
+// MIN_BUTTON_HEIGHT는 border-box → content-box 변환 후 비교
+const minContentHeight = Math.max(0, MIN_BUTTON_HEIGHT - paddingY * 2 - borderWidth * 2);
+return Math.max(textHeight, minContentHeight);
+
+// ❌ padding 포함 → BlockEngine에서 이중 계산
+return Math.max(paddingY * 2 + textHeight, MIN_BUTTON_HEIGHT);
+```
+
+### 폼 요소 자동 border-box (`treatAsBorderBox`)
+
+`button`, `input`, `select`에 명시적 `width`/`height` 설정 시 **border-box로 취급** — `parseBoxModel`이 padding+border를 자동 차감:
+
+```typescript
+// ✅ parseBoxModel 내부 — 폼 요소는 명시적 크기를 border-box로 해석
+const treatAsBorderBox = boxSizing === 'border-box' ||
+  (isFormElement && (width !== undefined || height !== undefined));
+
+if (treatAsBorderBox && width !== undefined) {
+  width = Math.max(0, width - paddingH - borderH);  // content-box로 변환
+}
+```
+
 > **참고**: 레이아웃 엔진 상세 구현은 [LAYOUT_REQUIREMENTS.md](../../../../docs/LAYOUT_REQUIREMENTS.md) 참조.

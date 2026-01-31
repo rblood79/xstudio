@@ -73,6 +73,46 @@ set({ elements: newElements });
 get()._rebuildIndexes();  // elementsMap, childrenMap, pageIndex 갱신
 ```
 
+## 선택 상태 동기화
+
+Store에는 선택 관련 상태가 3개 존재하며, **요소 삭제 시 모두 갱신** 필수:
+
+```typescript
+interface SelectionState {
+  selectedElementId: string | null;       // 단수 (속성 패널용)
+  selectedElementIds: string[];           // 복수 배열 (다중 선택)
+  selectedElementIdsSet: Set<string>;     // O(1) 포함 여부 검사
+}
+```
+
+### Incorrect
+
+```typescript
+// ❌ selectedElementId만 초기화 → selectedElementIds에 삭제된 ID 잔존
+set({
+  selectedElementId: null,
+  selectedElementProps: {},
+});
+// SelectionLayer가 selectedElementIds를 구독 → stale ID로 bounds 조회 실패 → (0,0)에 SelectionBox 잔존
+```
+
+### Correct
+
+```typescript
+// ✅ 삭제 시 3개 상태 모두 갱신
+const removeSet = new Set(elementIdsToRemove);
+const filteredSelectedIds = currentState.selectedElementIds.filter(
+  (id: string) => !removeSet.has(id)
+);
+
+set({
+  selectedElementId: null,
+  selectedElementProps: {},
+  selectedElementIds: filteredSelectedIds,
+  selectedElementIdsSet: new Set(filteredSelectedIds),
+});
+```
+
 ## 참조 파일
 
 - `apps/builder/src/builder/stores/elements.ts` - 인덱스 정의
