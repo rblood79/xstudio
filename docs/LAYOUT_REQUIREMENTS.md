@@ -746,6 +746,27 @@ export function parseBoxModel(
   // BUTTON_SIZE_CONFIG 기본값 적용 (calculateContentWidth와 이중 계산 방지)
   // 상세: docs/COMPONENT_SPEC_ARCHITECTURE.md §4.7.4.5
 
+  // v1.13: box-sizing: border-box 처리 + 폼 요소 자동 border-box
+  // Self-rendering 요소(button, input, select)는 명시적 width/height를
+  // 총 렌더링 크기(border-box)로 취급 → content-box 변환 필요
+  const boxSizing = style?.boxSizing as string | undefined;
+  const treatAsBorderBox = boxSizing === 'border-box' ||
+    (isFormElement && (width !== undefined || height !== undefined));
+
+  if (treatAsBorderBox) {
+    const paddingH = padding.left + padding.right;
+    const borderH = border.left + border.right;
+    const paddingV = padding.top + padding.bottom;
+    const borderV = border.top + border.bottom;
+
+    if (width !== undefined) {
+      width = Math.max(0, width - paddingH - borderH);
+    }
+    if (height !== undefined) {
+      height = Math.max(0, height - paddingV - borderV);
+    }
+  }
+
   // 콘텐츠 크기 계산
   const contentWidth = calculateContentWidth(element);
   const contentHeight = calculateContentHeight(element);
@@ -1720,12 +1741,17 @@ const KEYWORDS = [
 ```typescript
 // BuilderCanvas.tsx - renderWithCustomEngine
 function renderWithCustomEngine(...) {
-  // 부모의 padding 파싱
+  // 부모의 padding + border 파싱
   const parentPadding = parsePadding(parentStyle);
+  const parentBorder = parseBorder(parentStyle);
 
-  // padding이 적용된 content-box 크기 계산
-  const availableWidth = pageWidth - parentPadding.left - parentPadding.right;
-  const availableHeight = pageHeight - parentPadding.top - parentPadding.bottom;
+  // padding + border가 적용된 content-box 크기 계산
+  const availableWidth = pageWidth
+    - parentPadding.left - parentPadding.right
+    - parentBorder.left - parentBorder.right;
+  const availableHeight = pageHeight
+    - parentPadding.top - parentPadding.bottom
+    - parentBorder.top - parentBorder.bottom;
 
   // 레이아웃 계산 시 content-box 크기 사용
   const layouts = engine.calculate(
@@ -1734,6 +1760,8 @@ function renderWithCustomEngine(...) {
   );
 
   // 자식 위치에 padding offset 적용
+  // ⚠️ border offset은 포함하지 않음 — Yoga가 position:absolute 자식의
+  //    border offset을 자동 처리하므로 여기서 추가하면 이중 적용됨
   return children.map((child) => (
     <LayoutContainer
       layout={{
@@ -2140,13 +2168,16 @@ const BUTTON_SIZE_CONFIG = {
 // calculateTextWidth - Math.ceil → Math.round
 return Math.round(textWidth + padding);
 
-// calculateContentHeight - PixiButton과 동일 공식
-function estimateTextHeight(fontSize: number): number {
-  return Math.round(fontSize * 1.2);
+// calculateContentHeight - 순수 텍스트 높이만 반환 (v1.29)
+// padding/border는 BlockEngine이 parseBoxModel 결과로 합산하므로 여기서 포함하면 이중 계산
+function estimateTextHeight(fontSize: number, lineHeight?: number): number {
+  return lineHeight ?? Math.round(fontSize * 1.2);
 }
 
-// 버튼 높이: max(paddingY*2 + textHeight, MIN_BUTTON_HEIGHT)
-// sm: max(4*2 + Math.round(14*1.2), 24) = max(8 + 17, 24) = 25px
+// MIN_BUTTON_HEIGHT는 border-box 기준 → content-box 최소값으로 변환
+// minContentHeight = max(0, MIN_BUTTON_HEIGHT - paddingY*2 - borderWidth*2)
+// 최종: max(textHeight, minContentHeight)
+// sm: minContentHeight = max(0, 24 - 4*2 - 1*2) = 14, textHeight = 17 → max(17, 14) = 17px
 ```
 
 ---
@@ -2184,3 +2215,4 @@ function estimateTextHeight(fontSize: number): number {
 | 2026-01-29 | 1.26 | SelectionLayer bounds 갱신 버그 수정: 스타일/display 변경 시 selectionLayer가 0,0에 고정되는 문제 해결. elementRegistry에 layoutBoundsRegistry 추가하여 layout bounds 직접 저장, LayoutContainer에서 layout prop 변경 시 RAF로 bounds 캐싱, SelectionLayer에 selectedStyleSignature 구독 추가로 스타일 변경 감지 |
 | 2026-01-29 | 1.27 | Pixi UI 컴포넌트 CSS 단위 해석 규칙 추가: (1) vh/vw → % 변환 정책 (styleToLayout.ts parseCSSValue에서 Yoga가 부모 기준으로 처리), (2) Pixi 컴포넌트 getButtonLayout 패턴 (parseCSSSize + parentContentArea 기준 해석, typeof === 'number' 사용 금지), (3) 부모 content area 계산 필수 (useStore → parsePadding + parseBorderWidth 차감), (4) padding shorthand + border width 4방향 계산 포함 |
 | 2026-01-30 | 1.28 | Button borderWidth/레이아웃 이중 계산 수정: (1) BUTTON_SIZE_CONFIG에 borderWidth:1 필드 추가, (2) Phase 9 BUTTON_SIZE_CONFIG 코드 최신화 (paddingY + borderWidth + CSS paddingX 동기화), (3) parseBoxModel에 폼 요소 BUTTON_SIZE_CONFIG 기본값 적용 (inline style 미지정 시), (4) calculateContentWidth가 폼 요소에서 순수 텍스트 너비만 반환 (padding/border를 parseBoxModel으로 분리하여 이중 계산 제거), (5) 상세: docs/COMPONENT_SPEC_ARCHITECTURE.md §4.7.4.4~4.7.4.8 |
+| 2026-01-31 | 1.29 | 버튼/Body 레이아웃 버그 수정 3건: (1) calculateContentHeight padding 이중 계산 제거 — content-box 기준 textHeight만 반환, MIN_BUTTON_HEIGHT도 content-box로 변환 후 비교, (2) renderWithCustomEngine availableWidth에 border 차감 추가 — parseBorder()로 부모 border를 padding과 함께 차감 (자식 offset은 padding만 — Yoga가 border offset 자동 처리), (3) parseBoxModel에 treatAsBorderBox 로직 추가 — box-sizing: border-box 또는 폼 요소 명시적 width/height 시 padding+border 차감으로 content-box 변환 |

@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Docs - 레이아웃/버튼 버그 수정 관련 문서 동기화 (2026-01-31)
+
+#### 개요
+display/button 관련 버그 수정 사항을 `LAYOUT_REQUIREMENTS.md`(v1.29), `COMPONENT_SPEC_ARCHITECTURE.md`(v1.13) 문서에 반영
+
+#### 수정 내용
+
+**1. LAYOUT_REQUIREMENTS.md**
+- `calculateContentHeight` 공식 수정 — `paddingY*2 + textHeight` → 순수 `textHeight`, `MIN_BUTTON_HEIGHT`도 content-box 변환 후 비교
+- `renderWithCustomEngine` availableWidth 코드 — `parseBorder` 추가, border 차감 반영, 자식 offset은 padding만 적용(Yoga 자동 처리) 주석 추가
+- `parseBoxModel` 의사코드에 `treatAsBorderBox` 로직 추가 — `box-sizing: border-box` 또는 폼 요소 명시적 width/height 시 padding+border 차감
+- 변경 이력 v1.29 추가
+
+**2. COMPONENT_SPEC_ARCHITECTURE.md**
+- §4.7.4.5에 `treatAsBorderBox` 코드 및 설명 추가 — 폼 요소 자동 border-box 변환
+- §4.7.4.2에 v1.13 참고 블록 추가 — parseBoxModel border-box 변환으로 이중 계산 방지 설명
+- 변경 이력 v1.13 추가
+
+#### 변경된 파일
+- `docs/LAYOUT_REQUIREMENTS.md` — calculateContentHeight 공식, availableWidth border 차감, parseBoxModel treatAsBorderBox, 변경 이력 v1.29
+- `docs/COMPONENT_SPEC_ARCHITECTURE.md` — §4.7.4.5 treatAsBorderBox, §4.7.4.2 참고, 변경 이력 v1.13
+
+---
+
 ### Fixed - Button 레이아웃 버그 및 빌드 동기화 수정 (2026-01-31)
 
 #### 개요

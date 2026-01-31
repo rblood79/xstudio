@@ -2744,6 +2744,10 @@ currentY += childHeight;  // border-box 높이로 진행
 
 inline-block 경로도 동일하게 border-box 크기 사용.
 
+> **v1.13 참고**: `parseBoxModel()`이 폼 요소에 대해 자동으로 border-box → content-box 변환을
+> 수행하므로 (§4.7.4.5), BlockEngine의 `childContentWidth + padBorderH` 합산이 정확한
+> border-box 크기를 생성합니다. 폼 요소에 명시적 `width`/`height`가 있을 때도 이중 계산이 발생하지 않습니다.
+
 #### 4.7.4.3 Baseline 정렬: 버튼 수직 중앙 정렬
 
 `display: block` 부모에서 다른 높이의 inline-block 버튼들이 배치될 때,
@@ -2848,6 +2852,27 @@ if (isFormElement) {
 **결과**: BlockEngine의 `childWidth = contentWidth + padding + border` 계산에서:
 - **기본 상태**: `textWidth + BUTTON_SIZE_CONFIG.padding + BUTTON_SIZE_CONFIG.border`
 - **inline 변경 시**: `textWidth + inlinePadding + inlineBorder` (이중 계산 없음)
+
+**v1.13 추가 — 폼 요소 자동 border-box 처리**:
+폼 요소(`button`, `input`, `select`)에 명시적 `width`/`height`가 설정된 경우,
+해당 값을 **border-box** 크기로 취급하여 `padding + border`를 차감합니다.
+PixiButton 등 self-rendering 요소는 `width`를 총 렌더링 크기로 사용하지만,
+BlockEngine은 `content-box + padding + border`로 합산하므로 이중 계산이 발생합니다.
+
+```typescript
+// utils.ts parseBoxModel() — border-box 변환
+const treatAsBorderBox = boxSizing === 'border-box' ||
+  (isFormElement && (width !== undefined || height !== undefined));
+
+if (treatAsBorderBox) {
+  if (width !== undefined) {
+    width = Math.max(0, width - paddingH - borderH);
+  }
+  if (height !== undefined) {
+    height = Math.max(0, height - paddingV - borderV);
+  }
+}
+```
 
 #### 4.7.4.6 calculateContentWidth 순수 텍스트 너비 반환 (v1.12)
 
@@ -4569,3 +4594,4 @@ function PixiButton({ element }) {
 | 2026-01-29 | 1.10 | Button 레이아웃 버그 패치 4건 + 컴포넌트 상태 추적표 (Section 4.7.4.1~4.7.4.4): (1) padding/border 이중 적용 방지 — SELF_PADDING_TAGS(Button, SubmitButton, FancyButton, ToggleButton) + stripSelfRenderedProps (BuilderCanvas.tsx), (2) BlockEngine border-box 크기 계산 — content-box → border-box 변환으로 block/inline-block 요소 겹침 해결 (BlockEngine.ts), (3) baseline 정렬 수정 — VERTICALLY_CENTERED_TAGS(button/fancybutton/togglebutton/input/select) height/2 반환으로 CSS 웹 모드와 동일한 수직 중앙 정렬 (utils.ts), (4) spec 기본 borderWidth 적용 — inline style 미지정 시 variantColors.border 존재하면 1px 기본값 (PixiButton.tsx), (5) 적용 필수 컴포넌트 18개 상태 추적표 추가 — PixiFancyButton/PixiToggleButton은 SELF_PADDING_TAGS 등록 완료, typeof 패턴 전환은 미완료(잔여 작업) |
 | 2026-01-30 | 1.11 | Button auto width 불일치 수정 + Spec 빌드 동기화 규칙 (Section 4.7.4.0): (1) ButtonSpec sizes paddingX 수정 — md:16→24, lg:24→32, xl:32→40 (CSS 토큰과 일치), (2) BUTTON_SIZE_CONFIG paddingLeft/Right 동기화, (3) fontFamily 통일 — Pretendard를 specs fontFamily.sans에 추가, PixiButton·utils.ts·Button.spec.ts에서 specs 상수 참조로 교체, (4) `@xstudio/specs` 빌드 동기화 규칙 추가 (CRITICAL) — dist/ 미갱신 시 layout↔rendering 값 불일치 발생 사례 문서화, (5) 핵심 원칙에 Build-Sync 추가, (6) 9.3 스크립트 섹션을 실제 tsup 빌드 도구와 동기화, (7) 값 동기화 대상 테이블 (Spec↔Builder 내부 상수↔CSS 토큰) 및 @sync 주석 정책 명시 |
 | 2026-01-30 | 1.12 | Button borderWidth/레이아웃 이중 계산 수정 (Section 4.7.4.4~4.7.4.8): (1) 전 variant에 border/borderHover 추가 — CSS `border: 1px solid`와 동기화 (Button.spec.ts), (2) specDefaultBorderWidth=1 고정 — variant.border 유무 무관 (PixiButton.tsx), (3) borderHoverColor 분리 — hover/pressed 상태 별도 border 색상 (PixiButton.tsx, PixiRenderer.ts), (4) parseBoxModel 폼 요소 기본값 — inline style 미지정 시 BUTTON_SIZE_CONFIG padding/border 적용 (utils.ts), (5) calculateContentWidth 순수 텍스트 반환 — 폼 요소 padding/border를 parseBoxModel으로 분리하여 이중 계산 제거 (utils.ts), (6) 텍스트 측정 엔진 통일 — PixiButton 너비 측정을 Canvas 2D measureTextWidth로 교체 (PixiButton.tsx), (7) createDefaultButtonProps borderWidth:'1px' 기본값 — Style Panel 0 표시 해결 (unified.types.ts), (8) BUTTON_SIZE_CONFIG에 borderWidth:1 필드 추가 (utils.ts), (9) 값 동기화 테이블에 borderWidth 항목 추가 |
+| 2026-01-31 | 1.13 | 버튼 display/레이아웃 버그 수정 5건 (Section 4.7.4.2, 4.7.4.5): (1) parseBoxModel 폼 요소 자동 border-box — 명시적 width/height를 border-box로 취급하여 padding+border 차감 (treatAsBorderBox), PixiButton self-rendering과 BlockEngine content-box 합산 간 이중 계산 해결 (utils.ts), (2) calculateContentHeight에서 padding 이중 계산 제거 — content-box 기준 textHeight만 반환 (utils.ts), (3) Body borderWidth 처리 — renderWithCustomEngine의 availableWidth에서 border 차감 추가, 자식 offset은 padding만 적용 (Yoga가 border offset 자동 처리) (BuilderCanvas.tsx), (4) §4.7.4.2에 v1.13 border-box 참고 추가 |
