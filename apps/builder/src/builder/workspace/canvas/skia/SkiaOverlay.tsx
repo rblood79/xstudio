@@ -5,20 +5,26 @@
  * 전역 레지스트리에서 Skia 렌더 데이터를 읽어 CanvasKit으로 렌더링하고,
  * DOM 이벤트를 PixiJS 캔버스로 브리징한다.
  *
- * @see docs/WASM.md §5.7 BuilderCanvas 통합
+ * Phase 6: 이중 Surface 캐싱 + Dirty Rect 렌더링
+ * - idle 프레임 스킵 (registryVersion + camera 변경 감지)
+ * - content 변경 시 dirty rect 부분 렌더링
+ * - camera 변경 시 전체 재렌더링
+ *
+ * @see docs/WASM.md §5.7, §6.1, §6.2
  */
 
 import { useEffect, useRef, useState } from 'react';
 import type { Application, Container } from 'pixi.js';
 import { SkiaRenderer } from './SkiaRenderer';
 import { bridgeEvents } from './eventBridge';
-import { getSkiaNode } from './useSkiaNode';
+import { getSkiaNode, getRegistryVersion, flushDirtyRects } from './useSkiaNode';
 import { renderNode } from './nodeRenderers';
 import type { SkiaNodeData } from './nodeRenderers';
 import { isCanvasKitInitialized, getCanvasKit } from './initCanvasKit';
 import { initAllWasm } from '../wasm-bindings/init';
-import { getRenderMode } from '../wasm-bindings/featureFlags';
+import { getRenderMode, WASM_FLAGS } from '../wasm-bindings/featureFlags';
 import { skiaFontManager } from './fontManager';
+import { useCanvasSyncStore } from '../canvasSync';
 
 interface SkiaOverlayProps {
   /** 부모 컨테이너 DOM 요소 */
@@ -87,6 +93,8 @@ function buildSkiaTreeFromRegistry(root: Container): SkiaNodeData | null {
 export function SkiaOverlay({ containerEl, backgroundColor = 0xf8fafc, app }: SkiaOverlayProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rendererRef = useRef<SkiaRenderer | null>(null);
+  const lastRegistryVersionRef = useRef(-1);
+  const lastCameraRef = useRef({ zoom: -1, panX: -1, panY: -1 });
   const [ready, setReady] = useState(false);
 
   const renderMode = getRenderMode();
@@ -150,11 +158,63 @@ export function SkiaOverlay({ containerEl, backgroundColor = 0xf8fafc, app }: Sk
     const renderFrame = () => {
       if (!rendererRef.current) return;
 
-      // 레지스트리 기반 Skia 렌더 트리 구성
       const stage = app.stage;
-      const tree = buildSkiaTreeFromRegistry(stage);
+      const registryVersion = getRegistryVersion();
 
-      if (tree) {
+      // 카메라 상태 읽기 (canvasSync store에서 동기적으로)
+      const { zoom, panOffset } = useCanvasSyncStore.getState();
+      const camera = { zoom, panX: panOffset.x, panY: panOffset.y };
+
+      if (WASM_FLAGS.DUAL_SURFACE_CACHE) {
+        // ============================================
+        // Phase 6: 이중 Surface 모드
+        // ============================================
+
+        // 변경 감지: 레지스트리 OR 카메라
+        const registryChanged = registryVersion !== lastRegistryVersionRef.current;
+        const cameraChanged =
+          camera.zoom !== lastCameraRef.current.zoom ||
+          camera.panX !== lastCameraRef.current.panX ||
+          camera.panY !== lastCameraRef.current.panY;
+
+        // idle: 변경 없음 → 스킵
+        if (!registryChanged && !cameraChanged) return;
+
+        // 트리 재구성 (변경 시에만)
+        const tree = buildSkiaTreeFromRegistry(stage);
+        if (!tree) return;
+
+        const cullingBounds = new DOMRect(
+          0,
+          0,
+          skiaCanvas.width / dpr,
+          skiaCanvas.height / dpr,
+        );
+
+        renderer.setRootNode({
+          renderSkia(canvas, bounds) {
+            const fontMgr = skiaFontManager.getFamilies().length > 0
+              ? skiaFontManager.getFontMgr()
+              : undefined;
+            renderNode(ck, canvas, tree, bounds, fontMgr);
+          },
+        });
+
+        // dirty rects 수집 (content 변경 시에만 유효)
+        const dirtyRects = registryChanged ? flushDirtyRects() : [];
+
+        renderer.render(cullingBounds, registryVersion, camera, dirtyRects);
+
+        lastRegistryVersionRef.current = registryVersion;
+        lastCameraRef.current = camera;
+      } else {
+        // ============================================
+        // Phase 5: 레거시 단일 Surface 모드
+        // ============================================
+
+        const tree = buildSkiaTreeFromRegistry(stage);
+        if (!tree) return;
+
         const cullingBounds = new DOMRect(
           0,
           0,

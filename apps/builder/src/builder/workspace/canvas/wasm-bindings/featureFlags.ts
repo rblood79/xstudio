@@ -18,6 +18,12 @@ export const WASM_FLAGS = {
   CANVASKIT_RENDERER:
     import.meta.env.VITE_RENDER_MODE === 'skia' ||
     import.meta.env.VITE_RENDER_MODE === 'hybrid',
+
+  /** Phase 6: 이중 Surface 캐싱 + Dirty Rect 렌더링 */
+  DUAL_SURFACE_CACHE:
+    import.meta.env.VITE_SKIA_DUAL_SURFACE !== 'false' &&
+    (import.meta.env.VITE_RENDER_MODE === 'skia' ||
+     import.meta.env.VITE_RENDER_MODE === 'hybrid'),
 } as const;
 
 /** 현재 렌더 모드 */

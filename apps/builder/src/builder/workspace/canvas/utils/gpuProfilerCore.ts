@@ -193,6 +193,9 @@ const wasmTrackers = {
   blockLayout: new MetricTracker(),
   gridLayout: new MetricTracker(),
   skiaFrameTime: new MetricTracker(),
+  contentRenderTime: new MetricTracker(),
+  blitTime: new MetricTracker(),
+  dirtyRectCount: new MetricTracker(),
 } as const;
 
 export function recordWasmMetric(
@@ -224,6 +227,9 @@ export function flushWasmMetrics(): void {
     blockLayoutAvgMs: wasmTrackers.blockLayout.getAverage(),
     gridLayoutAvgMs: wasmTrackers.gridLayout.getAverage(),
     skiaFrameTimeAvgMs: wasmTrackers.skiaFrameTime.getAverage(),
+    contentRenderTimeMs: wasmTrackers.contentRenderTime.getAverage(),
+    blitTimeMs: wasmTrackers.blitTime.getAverage(),
+    dirtyRectCountAvg: wasmTrackers.dirtyRectCount.getAverage(),
   });
 }
 

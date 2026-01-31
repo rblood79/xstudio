@@ -116,6 +116,32 @@ export type EffectStyle =
   | DropShadowEffect;
 
 // ============================================
+// Phase 6: Dirty Rect / Frame Classification Types
+// ============================================
+
+/** Dirty rect — 변경된 영역의 바운딩 박스 (씬 좌표) */
+export interface DirtyRect {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+/** 렌더 프레임 분류 */
+export type FrameType =
+  | 'idle'        // 변경 없음 → 렌더링 스킵
+  | 'camera-only' // 줌/팬만 변경 → 캐시 블리팅
+  | 'content'     // 요소 변경 → dirty rect 부분 렌더링
+  | 'full';       // 리사이즈/첫 프레임 → 전체 렌더링
+
+/** 카메라 상태 스냅샷 (블리팅 변환용) */
+export interface CameraState {
+  zoom: number;
+  panX: number;
+  panY: number;
+}
+
+// ============================================
 // Utility Functions
 // ============================================
 

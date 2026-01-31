@@ -17,12 +17,10 @@ export async function initAllWasm(): Promise<void> {
   try {
     const tasks: Promise<void>[] = [];
 
-    // Phase 1-2: 커스텀 Rust WASM 모듈 (Phase 1 착수 시 구현)
-    if (WASM_FLAGS.SPATIAL_INDEX) {
-      // tasks.push(initSpatialWasm());
-    }
-    if (WASM_FLAGS.LAYOUT_ENGINE) {
-      // tasks.push(initLayoutWasm());
+    // Phase 1-2: Rust WASM 모듈 (SpatialIndex, Layout Engine)
+    if (WASM_FLAGS.SPATIAL_INDEX || WASM_FLAGS.LAYOUT_ENGINE) {
+      const { initRustWasm } = await import('./rustWasm');
+      tasks.push(initRustWasm());
     }
 
     // Phase 5: CanvasKit/Skia WASM (메인 렌더러)

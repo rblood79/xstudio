@@ -19,6 +19,7 @@
 import { useEffect } from 'react';
 import { Container } from 'pixi.js';
 import type { SkiaNodeData } from './nodeRenderers';
+import type { DirtyRect } from './types';
 import { WASM_FLAGS } from '../wasm-bindings/featureFlags';
 
 /** PixiJS Container에 부착되는 Skia 메타데이터 키 */
@@ -36,15 +37,41 @@ export interface SkiaEnabledContainer extends Container {
 /** element.id → SkiaNodeData 매핑 */
 const skiaNodeRegistry = new Map<string, SkiaNodeData>();
 
+/** 레지스트리 변경 버전 (단조 증가) */
+let registryVersion = 0;
+
+/** 프레임 간 축적되는 dirty rects */
+let pendingDirtyRects: DirtyRect[] = [];
+
+/** 노드의 바운드를 DirtyRect로 변환 */
+function nodeToDirtyRect(data: SkiaNodeData): DirtyRect {
+  return { x: data.x, y: data.y, width: data.width, height: data.height };
+}
 
 /** 레지스트리에 Skia 렌더 데이터 등록 */
 export function registerSkiaNode(elementId: string, data: SkiaNodeData): void {
+  // 이전 데이터의 바운드 → dirty rect (지워야 할 영역)
+  const oldData = skiaNodeRegistry.get(elementId);
+  if (oldData) {
+    pendingDirtyRects.push(nodeToDirtyRect(oldData));
+  }
+
+  // 새 데이터의 바운드 → dirty rect (그려야 할 영역)
+  pendingDirtyRects.push(nodeToDirtyRect(data));
+
   skiaNodeRegistry.set(elementId, data);
+  registryVersion++;
 }
 
 /** 레지스트리에서 Skia 렌더 데이터 해제 */
 export function unregisterSkiaNode(elementId: string): void {
+  const oldData = skiaNodeRegistry.get(elementId);
+  if (oldData) {
+    pendingDirtyRects.push(nodeToDirtyRect(oldData));
+  }
+
   skiaNodeRegistry.delete(elementId);
+  registryVersion++;
 }
 
 /** 레지스트리에서 Skia 렌더 데이터 조회 */
@@ -55,6 +82,21 @@ export function getSkiaNode(elementId: string): SkiaNodeData | undefined {
 /** 레지스트리 크기 (디버그용) */
 export function getSkiaRegistrySize(): number {
   return skiaNodeRegistry.size;
+}
+
+/** 현재 레지스트리 변경 버전 (O(1)) */
+export function getRegistryVersion(): number {
+  return registryVersion;
+}
+
+/**
+ * 축적된 dirty rects를 반환하고 초기화한다.
+ * 렌더 루프에서 프레임당 1회 호출한다.
+ */
+export function flushDirtyRects(): DirtyRect[] {
+  const rects = pendingDirtyRects;
+  pendingDirtyRects = [];
+  return rects;
 }
 
 // ============================================

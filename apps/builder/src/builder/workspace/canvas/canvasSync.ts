@@ -43,6 +43,16 @@ export interface GPUMetrics {
   skiaFrameTimeAvgMs: number;
   /** 현재 요소 수 */
   elementCount: number;
+
+  // Phase 6 메트릭
+  /** Content surface 렌더 시간 (ms) */
+  contentRenderTimeMs: number;
+  /** Main surface 블리팅 시간 (ms) */
+  blitTimeMs: number;
+  /** idle 프레임 비율 (0-1) */
+  idleFrameRatio: number;
+  /** 프레임당 평균 dirty rect 수 */
+  dirtyRectCountAvg: number;
 }
 
 export interface CanvasSyncState {
@@ -121,6 +131,10 @@ const initialGPUMetrics: GPUMetrics = {
   gridLayoutAvgMs: 0,
   skiaFrameTimeAvgMs: 0,
   elementCount: 0,
+  contentRenderTimeMs: 0,
+  blitTimeMs: 0,
+  idleFrameRatio: 0,
+  dirtyRectCountAvg: 0,
 };
 
 const initialState = {

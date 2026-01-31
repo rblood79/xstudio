@@ -1,6 +1,7 @@
 import { defineConfig } from "vite";
 import type { Connect, ViteDevServer } from "vite";
 import react from "@vitejs/plugin-react-swc";
+import wasm from "vite-plugin-wasm";
 import type { IncomingMessage, ServerResponse } from "http";
 
 /**
@@ -126,7 +127,7 @@ function apiProxyPlugin() {
 // https://vite.dev/config/
 export default defineConfig(({ command }) => {
   return {
-    plugins: [apiProxyPlugin(), react()],
+    plugins: [wasm(), apiProxyPlugin(), react()],
     base: command === "build" ? "/xstudio/" : "/",
     build: {
       // 브라우저 호환성 명시 (필요시)
@@ -149,6 +150,8 @@ export default defineConfig(({ command }) => {
       ],
     },
     optimizeDeps: {
+      // Rust WASM 모듈은 Vite 사전 번들링에서 제외
+      exclude: ["xstudio-wasm"],
       // 주요 의존성의 사전 번들링 강제 (의존성 스캔 오류 방지)
       include: [
         "react",
