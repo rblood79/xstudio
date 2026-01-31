@@ -52,10 +52,17 @@ function buildSkiaTreeFromRegistry(root: Container): SkiaNodeData | null {
       if (nodeData) {
         // PixiJS 월드 변환에서 절대 좌표 추출
         const wt = container.worldTransform;
+        // PixiJS 컨테이너의 실제 크기 사용 (Yoga 레이아웃 결과)
+        // CSS style에 명시적 width/height가 없는 요소(Button 등)는
+        // nodeData에 기본값(100x100)이 들어있으므로 컨테이너 크기로 덮어쓴다.
+        const actualWidth = container.width > 0 ? container.width : nodeData.width;
+        const actualHeight = container.height > 0 ? container.height : nodeData.height;
         children.push({
           ...nodeData,
           x: wt.tx,
           y: wt.ty,
+          width: actualWidth,
+          height: actualHeight,
         });
         return; // 리프 노드 — 자식 탐색 불필요
       }

@@ -1112,17 +1112,57 @@ export const ElementSprite = memo(function ElementSprite({
     const style = effectiveElement.props?.style as CSSStyle | undefined;
     if (!style) return null;
 
-    const { transform, fill } = convertStyle(style);
+    const { transform, fill, stroke } = convertStyle(style);
     const br = typeof style.borderRadius === 'number' ? style.borderRadius : 0;
 
-    // backgroundColor가 명시적으로 설정되지 않은 경우 투명 처리
-    // (CSS 기본값 white가 불필요하게 렌더링되는 것 방지)
+    // backgroundColor 유무 확인
     const hasBgColor = style.backgroundColor !== undefined && style.backgroundColor !== null && style.backgroundColor !== '';
-    const effectiveAlpha = hasBgColor ? fill.alpha : 0;
 
-    const r = ((fill.color >> 16) & 0xff) / 255;
-    const g = ((fill.color >> 8) & 0xff) / 255;
-    const b = (fill.color & 0xff) / 255;
+    // UI 컴포넌트는 자체 색상 시스템(variant 등)을 사용하므로
+    // CSS style에 backgroundColor가 없어도 가시적으로 렌더링해야 한다.
+    // 일반 컨테이너(box, flex, grid)는 backgroundColor 없으면 투명 처리 (CSS 기본 동작)
+    const isUIComponent = spriteType !== 'box' && spriteType !== 'text'
+      && spriteType !== 'image' && spriteType !== 'flex' && spriteType !== 'grid';
+    const effectiveAlpha = hasBgColor ? fill.alpha : (isUIComponent ? fill.alpha : 0);
+
+    // UI 컴포넌트 기본 색상: backgroundColor 미설정 시 가시적인 기본 배경 사용
+    // #e2e8f0 (Tailwind slate-200) — 중립적인 버튼/UI 기본 색상
+    let r: number, g: number, b: number;
+    if (isUIComponent && !hasBgColor) {
+      r = 0xe2 / 255; // 226
+      g = 0xe8 / 255; // 232
+      b = 0xf0 / 255; // 240
+    } else {
+      r = ((fill.color >> 16) & 0xff) / 255;
+      g = ((fill.color >> 8) & 0xff) / 255;
+      b = (fill.color & 0xff) / 255;
+    }
+
+    // UI 컴포넌트 기본 borderRadius: CSS에서 지정하지 않았으면 6px (일반적인 버튼 둥근 모서리)
+    const effectiveBorderRadius = br > 0 ? br : (isUIComponent && !hasBgColor ? 6 : 0);
+
+    const boxData: {
+      fillColor: Float32Array;
+      borderRadius: number;
+      strokeColor?: Float32Array;
+      strokeWidth?: number;
+    } = {
+      fillColor: Float32Array.of(r, g, b, effectiveAlpha),
+      borderRadius: effectiveBorderRadius,
+    };
+
+    // stroke (border) 데이터 포함
+    if (stroke) {
+      const sr = ((stroke.color >> 16) & 0xff) / 255;
+      const sg = ((stroke.color >> 8) & 0xff) / 255;
+      const sb = (stroke.color & 0xff) / 255;
+      boxData.strokeColor = Float32Array.of(sr, sg, sb, stroke.alpha);
+      boxData.strokeWidth = stroke.width;
+    } else if (isUIComponent && !hasBgColor) {
+      // UI 컴포넌트 기본 테두리: #cbd5e1 (Tailwind slate-300), 1px
+      boxData.strokeColor = Float32Array.of(0xcb / 255, 0xd5 / 255, 0xe1 / 255, 1);
+      boxData.strokeWidth = 1;
+    }
 
     return {
       type: 'box' as const,
@@ -1131,12 +1171,9 @@ export const ElementSprite = memo(function ElementSprite({
       width: transform.width,
       height: transform.height,
       visible: true,
-      box: {
-        fillColor: Float32Array.of(r, g, b, effectiveAlpha),
-        borderRadius: br,
-      },
+      box: boxData,
     };
-  }, [effectiveElement]);
+  }, [effectiveElement, spriteType]);
 
   useSkiaNode(elementId, skiaNodeData);
 

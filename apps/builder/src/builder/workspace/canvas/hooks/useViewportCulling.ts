@@ -197,18 +197,14 @@ export function useViewportCulling({
     }
 
     // ── Phase 1: WASM SpatialIndex 경로 ──
-    // SpatialIndex는 씬 좌표를 저장하므로 뷰포트를 씬 좌표로 변환하여 쿼리
+    // layoutBoundsRegistry는 스크린 좌표(pan/zoom 포함)를 저장하므로
+    // 뷰포트도 스크린 좌표로 쿼리한다 (JS 폴백과 동일한 좌표계)
     if (WASM_FLAGS.SPATIAL_INDEX) {
-      const sceneViewport = {
-        left: (-VIEWPORT_MARGIN - panOffset.x) / zoom,
-        top: (-VIEWPORT_MARGIN - panOffset.y) / zoom,
-        right: (screenWidth + VIEWPORT_MARGIN - panOffset.x) / zoom,
-        bottom: (screenHeight + VIEWPORT_MARGIN - panOffset.y) / zoom,
-      };
-
       const visibleIds = queryVisibleElements(
-        sceneViewport.left, sceneViewport.top,
-        sceneViewport.right, sceneViewport.bottom,
+        -VIEWPORT_MARGIN,
+        -VIEWPORT_MARGIN,
+        screenWidth + VIEWPORT_MARGIN,
+        screenHeight + VIEWPORT_MARGIN,
       );
       const visibleIdSet = new Set(visibleIds);
 
