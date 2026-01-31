@@ -18,7 +18,9 @@
     "playwright:install": "npx playwright install",
     "test:e2e": "playwright test",
     "check:pixi-plan": "pnpm -F @xstudio/builder check:pixi-plan",
-    "fix:pixi-plan": "pnpm -F @xstudio/builder fix:pixi-plan"
+    "fix:pixi-plan": "pnpm -F @xstudio/builder fix:pixi-plan",
+    "prepare:wasm": "node scripts/prepare-wasm.mjs",
+    "postinstall": "pnpm run prepare:wasm"
   },
   "devDependencies": {
     "@playwright/mcp": "^0.0.53",

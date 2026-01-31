@@ -15,9 +15,9 @@
  */
 
 import "@pixi/layout";
-import { useCallback, useEffect, useRef, useMemo, useState, memo, startTransition } from "react";
+import { useCallback, useEffect, useRef, useMemo, useState, memo, startTransition, lazy, Suspense } from "react";
 import { Application, useApplication } from "@pixi/react";
-import { Graphics as PixiGraphics, Container } from "pixi.js";
+import { Graphics as PixiGraphics, Container, Application as PixiApplication } from "pixi.js";
 import { useStore } from "../../stores";
 
 // P4: useExtend 훅으로 메모이제이션된 컴포넌트 등록
@@ -57,6 +57,7 @@ import { useThemeColors } from "./hooks/useThemeColors";
 import { useViewportCulling } from "./hooks/useViewportCulling";
 import { longTaskMonitor } from "../../../utils/longTaskMonitor";
 import type { Element } from "../../../types/core/store.types";
+import { WASM_FLAGS } from "./wasm-bindings/featureFlags";
 
 // ============================================
 // Types
@@ -86,6 +87,24 @@ const DRAG_DISTANCE_THRESHOLD = 4;
 
 // GridLayer는 ./grid/GridLayer.tsx로 이동됨 (B1.4)
 // CanvasResizeHandler 삭제됨 - resizeTo 옵션으로 대체 (Phase 12 B3.2)
+
+/**
+ * Phase 5: CanvasKit 오버레이 (Lazy Import)
+ *
+ * WASM_FLAGS.CANVASKIT_RENDERER가 활성화된 경우에만 로드되어
+ * 비활성 시 번들에 포함되지 않는다.
+ */
+const SkiaOverlayComponent = lazy(() =>
+  import('./skia/SkiaOverlay').then((mod) => ({ default: mod.SkiaOverlay }))
+);
+
+function SkiaOverlayLazy(props: { containerEl: HTMLDivElement; backgroundColor?: number; app: PixiApplication }) {
+  return (
+    <Suspense fallback={null}>
+      <SkiaOverlayComponent {...props} />
+    </Suspense>
+  );
+}
 
 /**
  * P4: PixiJS 컴포넌트 등록 브릿지
@@ -325,7 +344,7 @@ const LayoutContainer = memo(function LayoutContainer({
   }, [elementId]);
 
   return (
-    <pixiContainer ref={handleContainerRef} layout={layout}>
+    <pixiContainer ref={handleContainerRef} layout={layout} label={elementId}>
       {children}
     </pixiContainer>
   );
@@ -808,6 +827,8 @@ export function BuilderCanvas({
   const [containerEl, setContainerEl] = useState<HTMLDivElement | null>(null);
   // 🚀 Phase 7: @pixi/layout용 Yoga 초기화 상태
   const [yogaReady, setYogaReady] = useState(false);
+  // Phase 5: PixiJS app 인스턴스 (SkiaOverlay에 전달)
+  const pixiAppRef = useRef<PixiApplication | null>(null);
 
   // 🚀 Phase 5 + 6.2: 저사양 기기 감지 (모듈 레벨 캐싱으로 useMemo 불필요)
   const isLowEnd = isLowEndDevice();
@@ -1491,7 +1512,7 @@ export function BuilderCanvas({
           powerPreference="high-performance"
           // 🚀 Phase 7 Fix: LayoutSystem.init() 완료 후 Yoga 준비 완료 콜백
           // LayoutSystem.init()이 유일한 loadYoga() 호출 경로 → 인스턴스 중복 방지
-          onInit={() => setYogaReady(true)}
+          onInit={(app) => { pixiAppRef.current = app; setYogaReady(true); }}
         >
           {/* P4: 메모이제이션된 컴포넌트 등록 (첫 번째 자식) */}
           <PixiExtendBridge />
@@ -1571,6 +1592,15 @@ export function BuilderCanvas({
             />
           </pixiContainer>
         </Application>
+      )}
+
+      {/* Phase 5: CanvasKit 오버레이 (Feature Flag 기반) */}
+      {containerEl && pixiAppRef.current && WASM_FLAGS.CANVASKIT_RENDERER && (
+        <SkiaOverlayLazy
+          containerEl={containerEl}
+          backgroundColor={backgroundColor}
+          app={pixiAppRef.current}
+        />
       )}
 
       {/* 텍스트 편집 오버레이 (B1.5) */}

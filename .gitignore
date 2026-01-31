@@ -59,5 +59,8 @@ Thumbs.db
 
 # Task files
 tasks.json
-tasks/ 
+tasks/
 package-lock.json
+
+# WASM binaries (copied from node_modules by prepare:wasm)
+apps/builder/public/wasm/

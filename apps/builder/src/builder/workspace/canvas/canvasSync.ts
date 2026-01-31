@@ -29,6 +29,20 @@ export interface GPUMetrics {
   lastFrameTime: number;
   /** 평균 FPS */
   averageFps: number;
+
+  // WASM 벤치마크 메트릭 (§0.2)
+  /** 뷰포트 바운드 조회 평균 시간 (ms) */
+  boundsLookupAvgMs: number;
+  /** 컬링 필터 평균 시간 (ms) */
+  cullingFilterAvgMs: number;
+  /** 블록 레이아웃 평균 시간 (ms) */
+  blockLayoutAvgMs: number;
+  /** 그리드 레이아웃 평균 시간 (ms) */
+  gridLayoutAvgMs: number;
+  /** CanvasKit 프레임 시간 (ms) */
+  skiaFrameTimeAvgMs: number;
+  /** 현재 요소 수 */
+  elementCount: number;
 }
 
 export interface CanvasSyncState {
@@ -101,6 +115,12 @@ const initialGPUMetrics: GPUMetrics = {
   spriteCount: 0,
   lastFrameTime: 0,
   averageFps: 60,
+  boundsLookupAvgMs: 0,
+  cullingFilterAvgMs: 0,
+  blockLayoutAvgMs: 0,
+  gridLayoutAvgMs: 0,
+  skiaFrameTimeAvgMs: 0,
+  elementCount: 0,
 };
 
 const initialState = {

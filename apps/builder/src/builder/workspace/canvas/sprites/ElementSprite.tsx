@@ -16,6 +16,9 @@ import { memo, useMemo } from 'react';
 import type { Element } from '../../../../types/core/store.types';
 // 🚀 Phase 7: registry 등록은 LayoutContainer에서 처리
 // import { registerElement, unregisterElement } from '../elementRegistry';
+import { useSkiaNode } from '../skia/useSkiaNode';
+import { WASM_FLAGS } from '../wasm-bindings/featureFlags';
+import { convertStyle, type CSSStyle } from './styleConverter';
 import { BoxSprite } from './BoxSprite';
 import { TextSprite } from './TextSprite';
 import { ImageSprite } from './ImageSprite';
@@ -1099,7 +1102,44 @@ export const ElementSprite = memo(function ElementSprite({
     }
   })();
 
-  // 🚀 Phase 7: registry 등록은 LayoutContainer에서 처리 (wrapper 제거)
+  // Phase 5: Skia 렌더 데이터 등록 (모든 요소 타입 공통)
+  // 개별 Sprite(BoxSprite, TextSprite 등)가 자체 useSkiaNode를 호출하면
+  // 같은 elementId로 레지스트리를 덮어쓰므로 더 구체적인 데이터가 사용된다.
+  // UI 컴포넌트(FancyButton 등)는 이 폴백 등록이 사용된다.
+  const skiaNodeData = useMemo(() => {
+    if (!WASM_FLAGS.CANVASKIT_RENDERER) return null;
+
+    const style = effectiveElement.props?.style as CSSStyle | undefined;
+    if (!style) return null;
+
+    const { transform, fill } = convertStyle(style);
+    const br = typeof style.borderRadius === 'number' ? style.borderRadius : 0;
+
+    // backgroundColor가 명시적으로 설정되지 않은 경우 투명 처리
+    // (CSS 기본값 white가 불필요하게 렌더링되는 것 방지)
+    const hasBgColor = style.backgroundColor !== undefined && style.backgroundColor !== null && style.backgroundColor !== '';
+    const effectiveAlpha = hasBgColor ? fill.alpha : 0;
+
+    const r = ((fill.color >> 16) & 0xff) / 255;
+    const g = ((fill.color >> 8) & 0xff) / 255;
+    const b = (fill.color & 0xff) / 255;
+
+    return {
+      type: 'box' as const,
+      x: transform.x,
+      y: transform.y,
+      width: transform.width,
+      height: transform.height,
+      visible: true,
+      box: {
+        fillColor: Float32Array.of(r, g, b, effectiveAlpha),
+        borderRadius: br,
+      },
+    };
+  }, [effectiveElement]);
+
+  useSkiaNode(elementId, skiaNodeData);
+
   return content;
 });
 

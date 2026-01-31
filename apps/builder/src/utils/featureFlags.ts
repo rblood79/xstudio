@@ -15,6 +15,8 @@
 // Types
 // ============================================
 
+export type RenderMode = 'pixi' | 'skia' | 'hybrid';
+
 export interface FeatureFlags {
   /** WebGL Canvas 사용 여부 (Phase 10) */
   useWebGLCanvas: boolean;
@@ -22,6 +24,12 @@ export interface FeatureFlags {
   enableDebugLogs: boolean;
   /** 캔버스 비교 모드 (iframe + PixiJS 동시 표시) */
   canvasCompareMode: boolean;
+  /** WASM SpatialIndex 활성화 (Phase 1) */
+  wasmSpatialIndex: boolean;
+  /** WASM Layout Engine 활성화 (Phase 2) */
+  wasmLayoutEngine: boolean;
+  /** 렌더 모드: pixi(기존) | skia(CanvasKit) | hybrid(공존) (Phase 5) */
+  renderMode: RenderMode;
 }
 
 // ============================================
@@ -97,6 +105,52 @@ export function isCanvasCompareMode(): boolean {
  */
 export const useCanvasCompareMode = isCanvasCompareMode;
 
+// ============================================
+// WASM Feature Flags (Phase 0+)
+// ============================================
+
+/**
+ * WASM SpatialIndex 활성화 여부 (Phase 1)
+ *
+ * O(n) 뷰포트 컬링/라쏘 선택을 공간 인덱스 쿼리로 대체
+ */
+export function isWasmSpatialIndex(): boolean {
+  return parseBoolean(import.meta.env.VITE_WASM_SPATIAL, false);
+}
+
+/**
+ * WASM Layout Engine 활성화 여부 (Phase 2)
+ *
+ * BlockEngine/GridEngine 배치 계산을 WASM으로 가속
+ */
+export function isWasmLayoutEngine(): boolean {
+  return parseBoolean(import.meta.env.VITE_WASM_LAYOUT, false);
+}
+
+/**
+ * 렌더 모드 조회 (Phase 5)
+ *
+ * @returns 'pixi' | 'skia' | 'hybrid'
+ * - pixi: 기존 PixiJS 렌더링 (기본값)
+ * - skia: CanvasKit/Skia 메인 렌더러
+ * - hybrid: CanvasKit + PixiJS 공존 (전환 중)
+ */
+export function getRenderMode(): RenderMode {
+  const mode = import.meta.env.VITE_RENDER_MODE;
+  if (mode === 'skia' || mode === 'hybrid') return mode;
+  return 'pixi';
+}
+
+/**
+ * CanvasKit 렌더러 활성화 여부 (Phase 5)
+ *
+ * VITE_RENDER_MODE가 'skia' 또는 'hybrid'일 때 true
+ */
+export function isCanvasKitEnabled(): boolean {
+  const mode = getRenderMode();
+  return mode === 'skia' || mode === 'hybrid';
+}
+
 /**
  * 모든 Feature Flags 조회
  *
@@ -113,6 +167,9 @@ export function getFeatureFlags(): FeatureFlags {
     useWebGLCanvas: parseBoolean(import.meta.env.VITE_USE_WEBGL_CANVAS, false),
     enableDebugLogs: parseBoolean(import.meta.env.VITE_ENABLE_DEBUG_LOGS, false),
     canvasCompareMode: parseBoolean(import.meta.env.VITE_CANVAS_COMPARE_MODE, false),
+    wasmSpatialIndex: isWasmSpatialIndex(),
+    wasmLayoutEngine: isWasmLayoutEngine(),
+    renderMode: getRenderMode(),
   };
 }
 

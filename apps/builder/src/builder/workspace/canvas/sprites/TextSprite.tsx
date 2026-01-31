@@ -18,6 +18,8 @@ import type { Element } from '../../../../types/core/store.types';
 import { convertStyle, applyTextTransform, type CSSStyle } from './styleConverter';
 import { parsePadding } from './paddingUtils';
 import { drawBox, parseBorderConfig } from '../utils';
+import { useSkiaNode } from '../skia/useSkiaNode';
+import { WASM_FLAGS } from '../wasm-bindings/featureFlags';
 
 // ============================================
 // Types
@@ -220,6 +222,36 @@ export const TextSprite = memo(function TextSprite({
   const textRefCallback = useCallback((text: Text | null) => {
     textRef.current = text;
   }, []);
+
+  // Phase 5: Skia 렌더 데이터 부착
+  const skiaNodeData = useMemo(() => {
+    if (!WASM_FLAGS.CANVASKIT_RENDERER) return null;
+
+    const r = ((textStyle.fill >> 16) & 0xff) / 255;
+    const g = ((textStyle.fill >> 8) & 0xff) / 255;
+    const b = (textStyle.fill & 0xff) / 255;
+
+    return {
+      type: 'text' as const,
+      x: transform.x,
+      y: transform.y,
+      width: transform.width,
+      height: transform.height,
+      visible: true,
+      text: {
+        content: textContent,
+        fontFamilies: [textStyle.fontFamily.split(',')[0].trim()],
+        fontSize: textStyle.fontSize,
+        color: Float32Array.of(r, g, b, 1),
+        letterSpacing: textStyle.letterSpacing,
+        paddingLeft: padding.left,
+        paddingTop: padding.top,
+        maxWidth: transform.width - padding.left - padding.right,
+      },
+    };
+  }, [transform, textStyle, textContent, padding]);
+
+  useSkiaNode(element.id, skiaNodeData);
 
   return (
     <pixiContainer

@@ -16,6 +16,8 @@ import type { Element } from '../../../../types/core/store.types';
 import { convertStyle, type CSSStyle } from './styleConverter';
 import { parsePadding, getContentBounds } from './paddingUtils';
 import { drawBox, parseBorderConfig } from '../utils';
+import { useSkiaNode } from '../skia/useSkiaNode';
+import { WASM_FLAGS } from '../wasm-bindings/featureFlags';
 
 // ============================================
 // Types
@@ -183,6 +185,31 @@ export const ImageSprite = memo(function ImageSprite({ element, onClick }: Image
 
     onClick?.(element.id, { metaKey, shiftKey, ctrlKey });
   }, [element.id, onClick]);
+
+  // Phase 5: Skia 렌더 데이터 부착
+  // 참고: CanvasKit Image(SkImage)는 별도 로딩 필요. 초기 구현에서는 null로 설정하고
+  // Phase 5 후반에 이미지 캐시 시스템으로 교체한다.
+  const skiaNodeData = useMemo(() => {
+    if (!WASM_FLAGS.CANVASKIT_RENDERER) return null;
+
+    return {
+      type: 'image' as const,
+      x: transform.x,
+      y: transform.y,
+      width: transform.width,
+      height: transform.height,
+      visible: true,
+      image: {
+        skImage: null, // Phase 5 후반: CanvasKit MakeImageFromEncoded로 교체
+        contentX: contentBounds.x,
+        contentY: contentBounds.y,
+        contentWidth: contentBounds.width,
+        contentHeight: contentBounds.height,
+      },
+    };
+  }, [transform, contentBounds]);
+
+  useSkiaNode(element.id, skiaNodeData);
 
   return (
     <pixiContainer

@@ -155,6 +155,83 @@ export function updateVRAMUsage(bytes: number): void {
 }
 
 // ============================================
+// WASM Benchmark Utilities (§0.2)
+// ============================================
+
+/**
+ * 단일 작업의 실행 시간을 측정하고 이동 평균으로 관리
+ */
+class MetricTracker {
+  private samples: number[] = [];
+  private readonly maxSamples: number;
+
+  constructor(maxSamples = 60) {
+    this.maxSamples = maxSamples;
+  }
+
+  record(ms: number): void {
+    this.samples.push(ms);
+    if (this.samples.length > this.maxSamples) {
+      this.samples.shift();
+    }
+  }
+
+  getAverage(): number {
+    if (this.samples.length === 0) return 0;
+    return this.samples.reduce((a, b) => a + b, 0) / this.samples.length;
+  }
+
+  reset(): void {
+    this.samples = [];
+  }
+}
+
+/** WASM 벤치마크 트래커 */
+const wasmTrackers = {
+  boundsLookup: new MetricTracker(),
+  cullingFilter: new MetricTracker(),
+  blockLayout: new MetricTracker(),
+  gridLayout: new MetricTracker(),
+  skiaFrameTime: new MetricTracker(),
+} as const;
+
+export function recordWasmMetric(
+  metric: keyof typeof wasmTrackers,
+  ms: number,
+): void {
+  wasmTrackers[metric].record(ms);
+}
+
+/**
+ * performance.now() 기반 측정 헬퍼.
+ * 콜백 실행 시간을 자동으로 기록한다.
+ */
+export function measureWasm<T>(
+  metric: keyof typeof wasmTrackers,
+  fn: () => T,
+): T {
+  const start = performance.now();
+  const result = fn();
+  recordWasmMetric(metric, performance.now() - start);
+  return result;
+}
+
+/** 현재 WASM 메트릭을 canvasSync 스토어에 플러시 */
+export function flushWasmMetrics(): void {
+  useCanvasSyncStore.getState().updateGPUMetrics({
+    boundsLookupAvgMs: wasmTrackers.boundsLookup.getAverage(),
+    cullingFilterAvgMs: wasmTrackers.cullingFilter.getAverage(),
+    blockLayoutAvgMs: wasmTrackers.blockLayout.getAverage(),
+    gridLayoutAvgMs: wasmTrackers.gridLayout.getAverage(),
+    skiaFrameTimeAvgMs: wasmTrackers.skiaFrameTime.getAverage(),
+  });
+}
+
+export function updateElementCount(count: number): void {
+  useCanvasSyncStore.getState().updateGPUMetrics({ elementCount: count });
+}
+
+// ============================================
 // React Hook
 // ============================================
 
