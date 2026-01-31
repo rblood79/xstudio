@@ -5,6 +5,10 @@
  * .woff2/.ttf 바이너리를 직접 로드하고 Typeface를 등록해야 한다.
  * IndexedDB에 폰트 바이너리를 캐싱하여 재방문 시 네트워크 요청을 줄인다.
  *
+ * 동일 패밀리의 여러 웨이트를 로드할 수 있다 (URL 기반 중복 제거).
+ * CanvasKit FontMgr.FromData()에 모든 버퍼를 전달하면
+ * ParagraphBuilder가 fontWeight에 맞는 폰트를 자동 선택한다.
+ *
  * @see docs/WASM.md §5.7 폰트 관리
  */
 
@@ -12,10 +16,11 @@ import type { CanvasKit, FontMgr, Typeface } from 'canvaskit-wasm';
 import { getCanvasKit } from './initCanvasKit';
 
 const IDB_NAME = 'xstudio-fonts';
-const IDB_VERSION = 1;
+const IDB_VERSION = 2;
 const IDB_STORE = 'fonts';
 
 interface FontCacheEntry {
+  url: string;
   family: string;
   buffer: ArrayBuffer;
   timestamp: number;
@@ -28,26 +33,34 @@ interface FontCacheEntry {
  * ```ts
  * const fm = new SkiaFontManager();
  * await fm.loadFont('Pretendard', '/fonts/Pretendard-Regular.woff2');
+ * await fm.loadFont('Pretendard', '/fonts/Pretendard-Bold.woff2');
  * const fontMgr = fm.getFontMgr();
  * ```
  */
 export class SkiaFontManager {
   private fontMgr: FontMgr | null = null;
+  /** URL → Typeface (URL 기반 중복 제거) */
   private typefaces: Map<string, Typeface> = new Map();
+  /** URL → ArrayBuffer */
   private buffers: Map<string, ArrayBuffer> = new Map();
+  /** 로드된 패밀리 이름 집합 */
+  private families: Set<string> = new Set();
   private dirty = true;
 
   /**
    * 폰트를 로드하고 CanvasKit Typeface로 등록한다.
+   *
+   * 동일 URL은 중복 로드하지 않는다.
+   * 동일 패밀리의 다른 웨이트 URL은 모두 로드한다.
    *
    * 1. IndexedDB 캐시 확인
    * 2. 캐시 미스 시 네트워크 fetch
    * 3. Typeface 생성 + IndexedDB 저장
    */
   async loadFont(family: string, url: string): Promise<void> {
-    if (this.typefaces.has(family)) return;
+    if (this.buffers.has(url)) return;
 
-    let buffer = await this.getFromCache(family);
+    let buffer = await this.getFromCache(url);
 
     if (!buffer) {
       const response = await fetch(url);
@@ -55,23 +68,27 @@ export class SkiaFontManager {
         throw new Error(`Font fetch 실패: ${family} (${url}) — ${response.status}`);
       }
       buffer = await response.arrayBuffer();
-      await this.saveToCache(family, buffer);
+      await this.saveToCache(url, family, buffer);
     }
 
     const ck = getCanvasKit();
     const typeface = ck.Typeface.MakeFreeTypeFaceFromData(buffer);
     if (!typeface) {
-      throw new Error(`Typeface 생성 실패: ${family}`);
+      throw new Error(`Typeface 생성 실패: ${family} (${url})`);
     }
 
-    this.typefaces.set(family, typeface);
-    this.buffers.set(family, buffer);
+    this.typefaces.set(url, typeface);
+    this.buffers.set(url, buffer);
+    this.families.add(family);
     this.dirty = true;
   }
 
   /**
    * 등록된 모든 폰트로 구성된 FontMgr을 반환한다.
    * ParagraphBuilder에서 사용한다.
+   *
+   * FontMgr.FromData()에 모든 버퍼를 전달하면
+   * ParagraphBuilder가 fontWeight/fontStyle에 맞는 폰트를 자동 선택한다.
    */
   getFontMgr(): FontMgr {
     if (this.fontMgr && !this.dirty) return this.fontMgr;
@@ -85,12 +102,8 @@ export class SkiaFontManager {
     }
 
     if (bufferArray.length === 0) {
-      // 폰트가 없으면 null — 호출자는 폰트 로드 후 다시 시도해야 함
       this.fontMgr = null;
       this.dirty = false;
-      // null 반환 대신 빈 FontMgr 생성 시도
-      // CanvasKit-WASM에는 RefDefault가 없으므로
-      // 폰트가 없으면 caller가 폰트를 먼저 로드해야 한다
       throw new Error('폰트가 로드되지 않았습니다. loadFont()를 먼저 호출하세요.');
     }
 
@@ -105,12 +118,12 @@ export class SkiaFontManager {
 
   /** 특정 폰트 패밀리가 로드되었는지 확인 */
   hasFont(family: string): boolean {
-    return this.typefaces.has(family);
+    return this.families.has(family);
   }
 
   /** 로드된 폰트 패밀리 목록 */
   getFamilies(): string[] {
-    return Array.from(this.typefaces.keys());
+    return Array.from(this.families);
   }
 
   /** 모든 리소스 해제 */
@@ -120,6 +133,7 @@ export class SkiaFontManager {
     }
     this.typefaces.clear();
     this.buffers.clear();
+    this.families.clear();
 
     if (this.fontMgr) {
       this.fontMgr.delete();
@@ -138,9 +152,11 @@ export class SkiaFontManager {
 
       request.onupgradeneeded = () => {
         const db = request.result;
-        if (!db.objectStoreNames.contains(IDB_STORE)) {
-          db.createObjectStore(IDB_STORE, { keyPath: 'family' });
+        // v1 → v2: keyPath를 'family'에서 'url'로 변경
+        if (db.objectStoreNames.contains(IDB_STORE)) {
+          db.deleteObjectStore(IDB_STORE);
         }
+        db.createObjectStore(IDB_STORE, { keyPath: 'url' });
       };
 
       request.onsuccess = () => resolve(request.result);
@@ -148,13 +164,13 @@ export class SkiaFontManager {
     });
   }
 
-  private async getFromCache(family: string): Promise<ArrayBuffer | null> {
+  private async getFromCache(url: string): Promise<ArrayBuffer | null> {
     try {
       const db = await this.openDB();
       return new Promise((resolve) => {
         const tx = db.transaction(IDB_STORE, 'readonly');
         const store = tx.objectStore(IDB_STORE);
-        const req = store.get(family);
+        const req = store.get(url);
 
         req.onsuccess = () => {
           const entry = req.result as FontCacheEntry | undefined;
@@ -169,6 +185,7 @@ export class SkiaFontManager {
   }
 
   private async saveToCache(
+    url: string,
     family: string,
     buffer: ArrayBuffer,
   ): Promise<void> {
@@ -177,6 +194,7 @@ export class SkiaFontManager {
       const tx = db.transaction(IDB_STORE, 'readwrite');
       const store = tx.objectStore(IDB_STORE);
       const entry: FontCacheEntry = {
+        url,
         family,
         buffer,
         timestamp: Date.now(),

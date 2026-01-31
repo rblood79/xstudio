@@ -24,6 +24,7 @@ import { isCanvasKitInitialized, getCanvasKit } from './initCanvasKit';
 import { initAllWasm } from '../wasm-bindings/init';
 import { getRenderMode, WASM_FLAGS } from '../wasm-bindings/featureFlags';
 import { skiaFontManager } from './fontManager';
+import { loadSkiaFonts } from './loadSkiaFonts';
 import { useCanvasSyncStore } from '../canvasSync';
 
 interface SkiaOverlayProps {
@@ -100,18 +101,27 @@ export function SkiaOverlay({ containerEl, backgroundColor = 0xf8fafc, app }: Sk
   const renderMode = getRenderMode();
   const isActive = renderMode === 'skia' || renderMode === 'hybrid';
 
-  // CanvasKit 초기화
+  // CanvasKit 초기화 + 폰트 로드
   useEffect(() => {
     if (!isActive) return;
 
     let cancelled = false;
 
-    initAllWasm().then(() => {
-      if (cancelled) return;
-      setReady(true);
-    }).catch((err) => {
-      console.error('[SkiaOverlay] WASM 초기화 실패:', err);
-    });
+    initAllWasm()
+      .then(async () => {
+        // 폰트 로드는 best-effort — 실패해도 캔버스는 동작 (텍스트만 미표시)
+        try {
+          await loadSkiaFonts();
+        } catch (err) {
+          console.warn('[SkiaOverlay] 폰트 로드 실패, 텍스트 렌더링 비활성:', err);
+        }
+      })
+      .then(() => {
+        if (!cancelled) setReady(true);
+      })
+      .catch((err) => {
+        console.error('[SkiaOverlay] WASM 초기화 실패:', err);
+      });
 
     return () => {
       cancelled = true;

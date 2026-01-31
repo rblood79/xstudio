@@ -231,6 +231,12 @@ export const TextSprite = memo(function TextSprite({
     const g = ((textStyle.fill >> 8) & 0xff) / 255;
     const b = (textStyle.fill & 0xff) / 255;
 
+    // CSS fontWeight → 숫자 변환 (CanvasKit ParagraphStyle용)
+    const fw = textStyle.fontWeight;
+    const fontWeight = fw === 'bold' ? 700
+      : fw === 'normal' ? 400
+      : parseInt(fw, 10) || 400;
+
     return {
       type: 'text' as const,
       x: transform.x,
@@ -242,6 +248,7 @@ export const TextSprite = memo(function TextSprite({
         content: textContent,
         fontFamilies: [textStyle.fontFamily.split(',')[0].trim()],
         fontSize: textStyle.fontSize,
+        fontWeight,
         color: Float32Array.of(r, g, b, 1),
         letterSpacing: textStyle.letterSpacing,
         paddingLeft: padding.left,

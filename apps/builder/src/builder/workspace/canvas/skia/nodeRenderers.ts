@@ -163,6 +163,24 @@ function renderBox(ck: CanvasKit, canvas: Canvas, node: SkiaNodeData): void {
   }
 }
 
+/**
+ * CSS fontWeight 값(숫자)을 CanvasKit FontWeight enum으로 변환한다.
+ *
+ * CanvasKit FontMgr.FromData()에 여러 웨이트가 등록되어 있으면
+ * ParagraphBuilder가 이 값으로 최적 폰트를 자동 선택한다.
+ */
+function toSkFontWeight(ck: CanvasKit, weight?: number): EmbindEnumEntity {
+  if (!weight || weight <= 100) return ck.FontWeight.Thin;
+  if (weight <= 200) return ck.FontWeight.ExtraLight;
+  if (weight <= 300) return ck.FontWeight.Light;
+  if (weight <= 400) return ck.FontWeight.Normal;
+  if (weight <= 500) return ck.FontWeight.Medium;
+  if (weight <= 600) return ck.FontWeight.SemiBold;
+  if (weight <= 700) return ck.FontWeight.Bold;
+  if (weight <= 800) return ck.FontWeight.ExtraBold;
+  return ck.FontWeight.Black;
+}
+
 /** Text 노드 렌더링 */
 function renderText(
   ck: CanvasKit,
@@ -178,6 +196,9 @@ function renderText(
       textStyle: {
         fontFamilies: node.text.fontFamilies,
         fontSize: node.text.fontSize,
+        fontStyle: {
+          weight: toSkFontWeight(ck, node.text.fontWeight),
+        },
         color: node.text.color,
         letterSpacing: node.text.letterSpacing ?? 0,
       },
