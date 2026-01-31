@@ -10,6 +10,20 @@
  */
 
 import { Container, Rectangle } from 'pixi.js';
+import { WASM_FLAGS } from './wasm-bindings/featureFlags';
+
+// Phase 1: SpatialIndex 동기화 (lazy import, 호출 빈도가 높으므로 캐싱)
+let _spatialModule: typeof import('./wasm-bindings/spatialIndex') | null = null;
+async function getSpatialModule() {
+  if (!_spatialModule) {
+    _spatialModule = await import('./wasm-bindings/spatialIndex');
+  }
+  return _spatialModule;
+}
+// 플래그 활성화 시 즉시 프리로드
+if (WASM_FLAGS.SPATIAL_INDEX) {
+  getSpatialModule();
+}
 
 // ============================================
 // Types
@@ -60,6 +74,11 @@ export function registerElement(id: string, container: Container): void {
  */
 export function updateElementBounds(id: string, bounds: ElementBounds): void {
   layoutBoundsRegistry.set(id, bounds);
+
+  // Phase 1: SpatialIndex 동기화 (씬 좌표)
+  if (WASM_FLAGS.SPATIAL_INDEX && _spatialModule) {
+    _spatialModule.updateElement(id, bounds.x, bounds.y, bounds.width, bounds.height);
+  }
 }
 
 /**
@@ -70,6 +89,11 @@ export function updateElementBounds(id: string, bounds: ElementBounds): void {
 export function unregisterElement(id: string): void {
   elementRegistry.delete(id);
   layoutBoundsRegistry.delete(id);
+
+  // Phase 1: SpatialIndex 동기화
+  if (WASM_FLAGS.SPATIAL_INDEX && _spatialModule) {
+    _spatialModule.removeElement(id);
+  }
 }
 
 /**
@@ -147,6 +171,11 @@ export function getRegistrySize(): number {
 export function clearRegistry(): void {
   elementRegistry.clear();
   layoutBoundsRegistry.clear();
+
+  // Phase 1: SpatialIndex 초기화
+  if (WASM_FLAGS.SPATIAL_INDEX && _spatialModule) {
+    _spatialModule.clearAll();
+  }
 }
 
 // ============================================

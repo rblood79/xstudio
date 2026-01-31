@@ -17,6 +17,8 @@
 import { useMemo } from 'react';
 import type { Element } from '../../../../types/core/store.types';
 import { getElementContainer } from '../elementRegistry';
+import { WASM_FLAGS } from '../wasm-bindings/featureFlags';
+import { queryVisibleElements } from '../wasm-bindings/spatialIndex';
 
 // ============================================
 // Types
@@ -194,6 +196,45 @@ export function useViewportCulling({
       };
     }
 
+    // ── Phase 1: WASM SpatialIndex 경로 ──
+    // SpatialIndex는 씬 좌표를 저장하므로 뷰포트를 씬 좌표로 변환하여 쿼리
+    if (WASM_FLAGS.SPATIAL_INDEX) {
+      const sceneViewport = {
+        left: (-VIEWPORT_MARGIN - panOffset.x) / zoom,
+        top: (-VIEWPORT_MARGIN - panOffset.y) / zoom,
+        right: (screenWidth + VIEWPORT_MARGIN - panOffset.x) / zoom,
+        bottom: (screenHeight + VIEWPORT_MARGIN - panOffset.y) / zoom,
+      };
+
+      const visibleIds = queryVisibleElements(
+        sceneViewport.left, sceneViewport.top,
+        sceneViewport.right, sceneViewport.bottom,
+      );
+      const visibleIdSet = new Set(visibleIds);
+
+      // 부모-자식 overflow 처리:
+      // SpatialIndex 결과에 없어도 부모가 visible이면 자식 포함
+      const visibleElements = elements.filter((element) => {
+        if (visibleIdSet.has(element.id)) return true;
+        // 부모가 visible이면 자식도 포함 (overflow: visible 기본)
+        if (element.parent_id && visibleIdSet.has(element.parent_id)) return true;
+        // body 직속 자식 (parent_id 없음) → body는 항상 화면에 있음
+        if (!element.parent_id) return true;
+        // container 미등록 요소 → 안전하게 포함
+        if (!getElementContainer(element.id)) return true;
+        return false;
+      });
+
+      const culledCount = elements.length - visibleElements.length;
+      return {
+        visibleElements,
+        culledCount,
+        totalCount: elements.length,
+        cullingRatio: elements.length > 0 ? culledCount / elements.length : 0,
+      };
+    }
+
+    // ── JS 폴백 경로 (WASM 비활성화 시) ──
     // 뷰포트를 스크린 좌표로 계산
     // container.getBounds()가 스크린 좌표를 반환하므로 좌표 변환 불필요
     const viewport = calculateViewportBounds(screenWidth, screenHeight);

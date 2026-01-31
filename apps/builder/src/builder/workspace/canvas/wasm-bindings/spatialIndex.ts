@@ -1,0 +1,145 @@
+/**
+ * SpatialIndex TypeScript 래퍼
+ *
+ * Rust WASM SpatialIndex를 감싸서 string UUID 인터페이스를 제공한다.
+ * 내부적으로 idMapper를 통해 u32 ↔ string 변환을 수행한다.
+ *
+ * @see docs/WASM.md §1.3 TypeScript 바인딩
+ */
+
+import { WASM_FLAGS } from './featureFlags';
+import { idMapper } from './idMapper';
+import { getRustWasm } from './rustWasm';
+import type { SpatialIndex as SpatialIndexWasm } from './pkg/xstudio_wasm';
+
+const SPATIAL_CELL_SIZE = 256;
+
+let spatialIndex: SpatialIndexWasm | null = null;
+
+/** SpatialIndex 인스턴스 초기화. initRustWasm() 호출 후에 사용. */
+export function initSpatialIndex(): void {
+  if (spatialIndex) return;
+
+  const wasm = getRustWasm();
+  if (!wasm) {
+    console.warn('[SpatialIndex] Rust WASM 미초기화, 생성 스킵');
+    return;
+  }
+
+  spatialIndex = new wasm.SpatialIndex(SPATIAL_CELL_SIZE);
+
+  if (import.meta.env.DEV) {
+    console.log(`[SpatialIndex] 초기화 완료 (cellSize=${SPATIAL_CELL_SIZE})`);
+  }
+}
+
+/** 요소 삽입/갱신 (씬 좌표) */
+export function updateElement(
+  stringId: string,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+): void {
+  if (!spatialIndex) return;
+  const numId = idMapper.getNumericId(stringId);
+  spatialIndex.upsert(numId, x, y, w, h);
+}
+
+/** 배치 삽입/갱신 */
+export function batchUpdate(
+  elements: Array<{ id: string; x: number; y: number; w: number; h: number }>,
+): void {
+  if (!spatialIndex || elements.length === 0) return;
+
+  const data = new Float32Array(elements.length * 5);
+  for (let i = 0; i < elements.length; i++) {
+    const el = elements[i];
+    const offset = i * 5;
+    data[offset] = idMapper.getNumericId(el.id);
+    data[offset + 1] = el.x;
+    data[offset + 2] = el.y;
+    data[offset + 3] = el.w;
+    data[offset + 4] = el.h;
+  }
+
+  spatialIndex.batch_upsert(data);
+}
+
+/**
+ * 뷰포트 내 가시 요소 쿼리 (씬 좌표).
+ * useViewportCulling에서 사용.
+ */
+export function queryVisibleElements(
+  left: number,
+  top: number,
+  right: number,
+  bottom: number,
+): string[] {
+  if (!spatialIndex) return [];
+
+  const numIds = spatialIndex.query_viewport(left, top, right, bottom);
+  return uint32ArrayToStringIds(numIds);
+}
+
+/**
+ * 사각형 영역 내 요소 쿼리 (씬 좌표).
+ * 라쏘 선택에서 사용.
+ */
+export function queryRect(
+  left: number,
+  top: number,
+  right: number,
+  bottom: number,
+): string[] {
+  if (!spatialIndex) return [];
+
+  const numIds = spatialIndex.query_rect(left, top, right, bottom);
+  return uint32ArrayToStringIds(numIds);
+}
+
+/**
+ * 포인트 히트 테스트 (씬 좌표).
+ */
+export function hitTestPoint(x: number, y: number): string[] {
+  if (!spatialIndex) return [];
+
+  const numIds = spatialIndex.query_point(x, y);
+  return uint32ArrayToStringIds(numIds);
+}
+
+/** 요소 제거 */
+export function removeElement(stringId: string): void {
+  if (!spatialIndex) return;
+
+  const numId = idMapper.tryGetNumericId(stringId);
+  if (numId !== undefined) {
+    spatialIndex.remove(numId);
+    idMapper.remove(stringId);
+  }
+}
+
+/** 전체 초기화 (페이지 전환 등) */
+export function clearAll(): void {
+  if (spatialIndex) {
+    spatialIndex.clear();
+  }
+  idMapper.clear();
+}
+
+/** SpatialIndex 인스턴스 접근 (디버그/테스트용) */
+export function getSpatialIndex(): SpatialIndexWasm | null {
+  return spatialIndex;
+}
+
+/** u32 배열 → string ID 배열 변환 */
+function uint32ArrayToStringIds(numIds: Uint32Array): string[] {
+  const result: string[] = [];
+  for (let i = 0; i < numIds.length; i++) {
+    const str = idMapper.getStringId(numIds[i]);
+    if (str !== undefined) {
+      result.push(str);
+    }
+  }
+  return result;
+}

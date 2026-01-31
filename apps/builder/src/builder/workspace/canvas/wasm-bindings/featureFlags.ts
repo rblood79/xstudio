@@ -14,6 +14,9 @@ export const WASM_FLAGS = {
   /** Phase 2: Layout Engine WASM 가속 */
   LAYOUT_ENGINE: import.meta.env.VITE_WASM_LAYOUT === 'true',
 
+  /** Phase 4: Layout Worker (비동기 레이아웃 계산) */
+  LAYOUT_WORKER: import.meta.env.VITE_WASM_LAYOUT_WORKER === 'true',
+
   /** Phase 5: CanvasKit/Skia 렌더러 활성화 */
   CANVASKIT_RENDERER:
     import.meta.env.VITE_RENDER_MODE === 'skia' ||

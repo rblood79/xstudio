@@ -128,6 +128,10 @@ function apiProxyPlugin() {
 export default defineConfig(({ command }) => {
   return {
     plugins: [wasm(), apiProxyPlugin(), react()],
+    worker: {
+      format: 'es',
+      plugins: () => [wasm()],
+    },
     base: command === "build" ? "/xstudio/" : "/",
     build: {
       // 브라우저 호환성 명시 (필요시)

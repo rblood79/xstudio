@@ -26,6 +26,17 @@ import {
   parseLineHeight,
   calculateBaseline,
 } from './utils';
+import { WASM_FLAGS } from '../../wasm-bindings/featureFlags';
+import {
+  wasmBlockLayout,
+  BLOCK_FIELD_COUNT,
+  DISPLAY,
+  VALIGN,
+  AUTO,
+  type BlockLayoutInput,
+} from '../../wasm-bindings/layoutAccelerator';
+import { getLayoutScheduler } from '../../wasm-worker';
+import type { BlockLayoutParams } from '../../wasm-worker/LayoutScheduler';
 
 /**
  * 🚀 Phase 11: 크기를 min/max로 제한
@@ -120,6 +131,15 @@ export class BlockEngine implements LayoutEngine {
   ): BlockLayoutResult {
     if (children.length === 0) {
       return { layouts: [], firstChildMarginTop: 0, lastChildMarginBottom: 0 };
+    }
+
+    // Phase 2: WASM 가속 경로 (children > 10개일 때 마샬링 비용 대비 이점)
+    if (WASM_FLAGS.LAYOUT_ENGINE && children.length > 10) {
+      const wasmResult = this.calculateViaWasm(
+        parent, children, availableWidth, availableHeight, context
+      );
+      if (wasmResult) return wasmResult;
+      // WASM 실패 시 JS 폴백
     }
 
     // 부모의 padding/border 확인 (margin collapse 차단 여부)
@@ -688,5 +708,215 @@ export class BlockEngine implements LayoutEngine {
    */
   private collapseEmptyBlockMargins(margin: Margin): number {
     return this.collapseMargins(margin.top, margin.bottom);
+  }
+
+  // ============================================
+  // Phase 2: WASM 가속
+  // ============================================
+
+  /**
+   * WASM을 통한 블록 레이아웃 계산
+   *
+   * JS 전처리 (스타일 파싱, effective display, BFC 판별) 후
+   * 정규화된 데이터를 WASM에 전달하고 결과를 역직렬화한다.
+   */
+  private calculateViaWasm(
+    parent: Element,
+    children: Element[],
+    availableWidth: number,
+    availableHeight: number,
+    context?: LayoutContext,
+  ): BlockLayoutResult | null {
+    const parentStyle = parent.props?.style as Record<string, unknown> | undefined;
+    const parentPadding = parsePadding(parentStyle);
+    const parentBorder = parseBorder(parentStyle);
+    const parentCreatesNewBFC = this.createsBFC(parent);
+
+    const canCollapseTop = this.canCollapseWithParentTop(
+      parentPadding, parentBorder, parentCreatesNewBFC, context?.parentMarginCollapse
+    );
+    const canCollapseBottom = this.canCollapseWithParentBottom(
+      parentPadding, parentBorder, parentStyle, parentCreatesNewBFC, context?.parentMarginCollapse
+    );
+
+    // JS 전처리: 각 자식의 정규화된 데이터 생성
+    const inputs: BlockLayoutInput[] = [];
+    const elementIds: string[] = [];
+    const margins: Margin[] = [];
+
+    for (const child of children) {
+      const style = child.props?.style as Record<string, unknown> | undefined;
+      const childDisplay = style?.display as string | undefined;
+      const childTag = (child.tag ?? '').toLowerCase();
+      const childPosition = style?.position as string | undefined;
+
+      const isInlineBlock = this.computeEffectiveDisplay(
+        childDisplay, childTag, context?.parentDisplay, childPosition,
+      ) === 'inline-block';
+
+      const margin = parseMargin(style);
+      const boxModel = parseBoxModel(
+        child, availableWidth, availableHeight,
+        context?.viewportWidth, context?.viewportHeight,
+      );
+
+      const childCreatesNewBFC = this.createsBFC(child);
+      const isEmpty = !isInlineBlock && this.isEmptyBlock(child, boxModel);
+
+      // Padding + border combined
+      const padBorderV = boxModel.padding.top + boxModel.padding.bottom
+        + boxModel.border.top + boxModel.border.bottom;
+      const padBorderH = boxModel.padding.left + boxModel.padding.right
+        + boxModel.border.left + boxModel.border.right;
+
+      let displayType: number;
+      if (isEmpty) {
+        displayType = DISPLAY.EMPTY_BLOCK;
+      } else if (isInlineBlock) {
+        displayType = DISPLAY.INLINE_BLOCK;
+      } else {
+        displayType = DISPLAY.BLOCK;
+      }
+
+      // vertical-align and baseline (for inline-block)
+      const verticalAlign = isInlineBlock ? parseVerticalAlign(style) : 'baseline';
+      const valignNum = verticalAlign === 'top' ? VALIGN.TOP
+        : verticalAlign === 'bottom' ? VALIGN.BOTTOM
+        : verticalAlign === 'middle' ? VALIGN.MIDDLE
+        : VALIGN.BASELINE;
+
+      const childHeight = boxModel.height ?? boxModel.contentHeight;
+      const baseline = isInlineBlock
+        ? calculateBaseline(child, childHeight + padBorderV)
+        : 0;
+      const lineHeight = isInlineBlock ? (parseLineHeight(style) ?? AUTO) : AUTO;
+
+      inputs.push({
+        display: displayType,
+        width: boxModel.width ?? AUTO,
+        height: boxModel.height ?? AUTO,
+        marginTop: margin.top,
+        marginRight: margin.right,
+        marginBottom: margin.bottom,
+        marginLeft: margin.left,
+        bfcFlag: childCreatesNewBFC ? 1 : 0,
+        padBorderV,
+        padBorderH,
+        minWidth: boxModel.minWidth ?? AUTO,
+        maxWidth: boxModel.maxWidth ?? AUTO,
+        minHeight: boxModel.minHeight ?? AUTO,
+        maxHeight: boxModel.maxHeight ?? AUTO,
+        contentWidth: boxModel.contentWidth,
+        contentHeight: boxModel.contentHeight,
+        verticalAlign: valignNum,
+        baseline,
+        lineHeight,
+      });
+
+      elementIds.push(child.id);
+      margins.push(margin);
+    }
+
+    // WASM 호출
+    const result = wasmBlockLayout(
+      inputs,
+      availableWidth,
+      availableHeight,
+      canCollapseTop,
+      canCollapseBottom,
+      context?.prevSiblingMarginBottom ?? 0,
+    );
+
+    if (!result) return null;
+
+    // 역직렬화: Float32Array → ComputedLayout[]
+    const layouts: ComputedLayout[] = [];
+    for (let i = 0; i < children.length; i++) {
+      const off = i * 4;
+      layouts.push({
+        elementId: elementIds[i],
+        x: result.positions[off],
+        y: result.positions[off + 1],
+        width: result.positions[off + 2],
+        height: result.positions[off + 3],
+        margin: margins[i],
+      });
+    }
+
+    // Phase 4: Worker 비동기 재검증 (SWR)
+    if (WASM_FLAGS.LAYOUT_WORKER) {
+      this.scheduleWorkerBlock(
+        parent.id, elementIds, inputs,
+        availableWidth, availableHeight,
+        canCollapseTop, canCollapseBottom,
+        context?.prevSiblingMarginBottom ?? 0,
+      );
+    }
+
+    return {
+      layouts,
+      firstChildMarginTop: result.firstChildMarginTop,
+      lastChildMarginBottom: result.lastChildMarginBottom,
+    };
+  }
+
+  /**
+   * Worker에 블록 레이아웃 비동기 계산을 스케줄링한다.
+   * 결과는 RAF에서 LayoutScheduler.onUpdate로 전달.
+   */
+  private scheduleWorkerBlock(
+    parentId: string,
+    childIds: string[],
+    inputs: BlockLayoutInput[],
+    availableWidth: number,
+    availableHeight: number,
+    canCollapseTop: boolean,
+    canCollapseBottom: boolean,
+    prevSiblingMarginBottom: number,
+  ): void {
+    const scheduler = getLayoutScheduler();
+    if (!scheduler) return;
+
+    // inputs → flat Float32Array 직렬화
+    const count = inputs.length;
+    const data = new Float32Array(count * BLOCK_FIELD_COUNT);
+    for (let i = 0; i < count; i++) {
+      const c = inputs[i];
+      const off = i * BLOCK_FIELD_COUNT;
+      data[off] = c.display;
+      data[off + 1] = c.width;
+      data[off + 2] = c.height;
+      data[off + 3] = c.marginTop;
+      data[off + 4] = c.marginRight;
+      data[off + 5] = c.marginBottom;
+      data[off + 6] = c.marginLeft;
+      data[off + 7] = c.bfcFlag;
+      data[off + 8] = c.padBorderV;
+      data[off + 9] = c.padBorderH;
+      data[off + 10] = c.minWidth;
+      data[off + 11] = c.maxWidth;
+      data[off + 12] = c.minHeight;
+      data[off + 13] = c.maxHeight;
+      data[off + 14] = c.contentWidth;
+      data[off + 15] = c.contentHeight;
+      data[off + 16] = c.verticalAlign;
+      data[off + 17] = c.baseline;
+      data[off + 18] = c.lineHeight;
+    }
+
+    const params: BlockLayoutParams = {
+      kind: 'block',
+      parentId,
+      childIds,
+      data,
+      childCount: count,
+      availableWidth,
+      availableHeight,
+      canCollapseTop,
+      canCollapseBottom,
+      prevSiblingMarginBottom,
+    };
+
+    scheduler.scheduleAsync(params);
   }
 }
