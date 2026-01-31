@@ -31,7 +31,7 @@
 2. 디자인 변수 참조 시스템 ($-- 변수 + 테마별 분기)
 3. AI 시각 피드백 (Generating Effect + Flash Animation)
 4. 내장 디자인 킷 (JSON 임베딩)
-5. 트랜잭션 기반 히스토리 원자성 강화
+5. 히스토리 트랜잭션 확장 (AI batch + 인스턴스 전파 연동만 — XStudio 기존 시스템 우수)
 ```
 
 ---
@@ -267,34 +267,94 @@ G.1 컴포넌트-인스턴스 ─┐
 G.2 변수 참조 시스템 ──┘
 ```
 
-### G.5 히스토리 원자성 강화 (트랜잭션 패턴) — 부분 적용 (낮음)
+### G.5 히스토리 시스템 — XStudio 기존 우수 (Pencil 적용 불필요)
 
 > Pencil 참조: §16.4 트랜잭션 기반 상태 변경, §24.10 Undo/Redo 트랜잭션
+> XStudio 히스토리: Adobe Photoshop History 패널을 벤치마크한 플래그십 기능
 
-**Pencil 패턴:**
+**규모:** 4,714줄 / 8개 파일 — XStudio에서 가장 정교한 대규모 서브시스템
+
+| 파일 | 줄 수 | 역할 |
+|------|-----:|------|
+| `stores/history.ts` | 861 | HistoryManager 싱글톤: Hot Cache(50개) + Cold Storage(IndexedDB), 페이지 격리, 메모리 통계 |
+| `stores/history/historyActions.ts` | 1,847 | Undo/Redo/GoToIndex: 7개 작업 타입 × 3단계 파이프라인 (메모리 → iframe → DB) |
+| `stores/history/historyIndexedDB.ts` | 529 | 영구 저장소: 90일 자동 정리, 세션 복원, 배치 저장/조회 |
+| `stores/utils/elementDiff.ts` | 537 | Diff 계산 엔진: 메모리 80% 절감 (2-5KB → 100-500 bytes/변경) |
+| `stores/commandDataStore.ts` | 334 | 압축 메타데이터: max 100 commands + 500 cached elements |
+| `stores/utils/historyHelpers.ts` | 263 | 고수준 래퍼: trackBatchUpdate, trackGroupCreation, trackUngroup, trackMultiDelete, trackMultiPaste |
+| `panels/history/HistoryPanel.tsx` | 259 | Photoshop-like UI: 시간순 리스트, goToIndex 점프, 시작 상태 마커 |
+| `panels/history/HistoryPanel.css` | 84 | 패널 스타일: active 상태 하이라이트, 카운터 뱃지 |
+
+**지원하는 7개 작업 타입:**
+
+| 타입 | 라벨 | Undo 동작 | Redo 동작 |
+|------|------|----------|----------|
+| `add` | 추가 | 요소 + 자식 삭제 | 요소 + 자식 복원 |
+| `remove` | 삭제 | 요소 + 자식 복원 | 요소 + 자식 삭제 |
+| `update` | 수정 | prevProps/prevElement 복원 | newProps 적용 |
+| `move` | 이동 | prevParentId + prevOrderNum 복원 | newParentId + newOrderNum 적용 |
+| `batch` | 일괄 수정 | 각 요소의 prevProps 일괄 복원 | 각 요소의 newProps 일괄 적용 |
+| `group` | 그룹 | 그룹 삭제 + 자식 원래 parent로 | 그룹 복원 + 자식 그룹 안으로 |
+| `ungroup` | 그룹 해제 | 그룹 복원 + 자식 그룹 안으로 | 그룹 삭제 + 자식 원래 parent로 |
+
+**아키텍처 특징:**
+
 ```
-beginUpdate() → block.update(node, props) × N → commitBlock({ undo: true })
+3단계 저장 아키텍처:
+  Hot Cache (메모리 50개) ─── 즉시 Undo/Redo (~0ms)
+         ↓ 백그라운드 저장
+  Cold Storage (IndexedDB) ─── 세션 복원 / 90일 보관
+         ↓ 비동기 동기화
+  Supabase (클라우드) ─────── 영구 저장 / 다중 디바이스
+
+Undo/Redo 3단계 파이프라인 (7개 타입 모두 동일):
+  Phase 1: 메모리 상태 업데이트 (즉시, _rebuildIndexes 포함)
+  Phase 2: iframe postMessage 동기화 (WebGL-only 모드 스킵)
+  Phase 3: DB 동기화 (IndexedDB + Supabase, 비동기 — UI 블로킹 없음)
 ```
-- 여러 변경을 하나의 트랜잭션으로 묶어 원자적 커밋
-- AI batch-design에서도 동일 패턴으로 대규모 변경을 단일 undo 포인트로 처리
 
-**XStudio 현재 상태:**
-- **이미 고급 아키텍처 구현 완료**:
-  - Diff 기반 히스토리 (전체 스냅샷 대신 변경 delta만 저장, 메모리 80% 감소)
-  - 3단계 저장소: Hot Cache(메모리 50개) → Cold Storage(IndexedDB) → DB 동기화
-  - 페이지별 독립 히스토리 (`PageHistory`)
-  - `addBatchDiffEntry()`로 배치 작업 지원
+**Photoshop-like UI 기능:**
+- 시간순 역순 리스트 (최신이 상단)
+- 임의 항목 클릭 → `goToIndex()` 로 중간 렌더링 없이 일괄 적용
+- "시작 상태" (Initial State) 마커
+- 한국어 액션 라벨: 추가/삭제/수정/이동/일괄 수정(N)/그룹(N)/그룹 해제(N)
+- 카운터 뱃지 (3/10 형식), Undo/Redo/Clear 버튼
+- Keyboard shortcuts: Cmd+Z, Cmd+Y, Cmd+Shift+H (패널 토글)
+- `historyOperationInProgress` 플래그로 동시 작업 방지
 
-**평가:** XStudio의 히스토리 시스템이 Pencil보다 **우수**. Diff 기반 + IndexedDB 영속성 + 페이지 격리는 Pencil의 단순 선형 스택보다 진보적이다.
+**Diff 엔진 상세 (`elementDiff.ts` 537줄):**
+- `PropsDiff`: changed(key→prev/next) + added(key→value) + removed(key→value)
+- `ElementDiff`: props + parentId + orderNum + metadata(customId, events, dataBinding)
+- `deepEqual()`: 재귀 깊은 비교로 불필요한 diff 방지
+- `isDiffEmpty()`: 빈 diff 감지 → 히스토리 엔트리 생성 스킵
+- 직렬화: `serializeDiff()` / `deserializeDiff()` (Map → Array 변환, IndexedDB 저장용)
+- 메모리 추정: `estimateDiffSize()` → `estimatedSize` 필드로 Hot Cache 관리
 
-**부분 적용 가능 영역:**
-- AI batch-design 통합 시 `addBatchDiffEntry()`를 활용한 원자적 트랜잭션 보장
-- 컴포넌트-인스턴스 시스템(G.1) 도입 시 마스터 변경 → 인스턴스 전파를 단일 배치로 처리
+**Pencil vs XStudio 비교:**
+
+| 기능 | Pencil | XStudio | 비교 |
+|------|--------|---------|------|
+| 기본 구조 | `UndoManager` 단순 선형 스택 | `HistoryManager` 싱글톤 + `PageHistory` 격리 | XStudio 우수 |
+| 저장 방식 | 전체 스냅샷 메모리 저장 | Diff 기반 (80% 메모리 절감) | XStudio 우수 |
+| 영속성 | 없음 (세션 종료 시 소멸) | IndexedDB 90일 보관 + Supabase 영구 | XStudio 우수 |
+| 페이지 격리 | 없음 (전역 단일 스택) | 페이지별 독립 히스토리 | XStudio 우수 |
+| 작업 타입 | 범용 undo/redo | 7개 전문 타입 | XStudio 우수 |
+| 점프 이동 | 미지원 | `goToIndex()` — 중간 렌더링 없이 일괄 적용 | XStudio 우수 |
+| UI 패널 | 없음 | Photoshop-style History Panel | XStudio 우수 |
+| 트랜잭션 | `beginUpdate()` → `commitBlock()` | `addBatchDiffEntry()` + `trackBatchUpdate()` | 동등 |
+| DB 동기화 | 없음 | 3단계 (Memory → IndexedDB → Supabase) | XStudio 우수 |
+| 메모리 관리 | 없음 | `getMemoryStats()`, `optimizeMemory()`, maxSize 제한 | XStudio 우수 |
+
+**평가:** XStudio의 히스토리 시스템은 Adobe Photoshop을 벤치마크한 **4,714줄 규모의 플래그십 기능**으로, Pencil의 단순 선형 스택(`UndoManager`)과는 비교 자체가 부적절하다. Pencil의 `beginUpdate()` → `commitBlock()` 트랜잭션 패턴이 제공하는 기능은 XStudio의 `addBatchDiffEntry()` 및 `trackBatchUpdate()`가 이미 완전히 커버하고 있다.
+
+**소규모 확장 가능 영역 (기존 시스템의 래퍼 함수 추가 수준):**
+- AI batch-design 통합 시 `addBatchDiffEntry()`를 활용한 원자적 트랜잭션 보장 (~20줄)
+- 컴포넌트-인스턴스 시스템(G.1) 도입 시 마스터 변경 → 인스턴스 전파를 `trackBatchUpdate()`로 처리
 
 | 영향 대상 | 변경 내용 | 규모 |
 |----------|----------|------|
-| `builder/stores/history.ts` | AI batch 트랜잭션 래퍼 추가 | 소규모 |
-| `builder/stores/elements.ts` | 인스턴스 전파를 배치 히스토리로 묶기 | G.1과 연계 |
+| `builder/stores/history.ts` | AI batch 트랜잭션 래퍼 추가 | ~20줄 |
+| `builder/stores/elements.ts` | 인스턴스 전파를 `trackBatchUpdate()`로 묶기 | G.1과 연계 |
 
 ### G.6 XStudio 기존 우수 패턴 (Pencil 대비)
 
@@ -302,7 +362,7 @@ beginUpdate() → block.update(node, props) × N → commitBlock({ undo: true })
 
 | 영역 | XStudio | Pencil | 평가 |
 |------|---------|--------|------|
-| **Undo/Redo** | Diff 기반 + IndexedDB + 페이지 격리 | 단순 선형 스택 | XStudio 우수 |
+| **Undo/Redo** | **4,714줄/8파일 플래그십**: Diff 기반 (80% 메모리 절감) + 3단계 저장 (RAM→IndexedDB→Supabase) + 페이지 격리 + 7개 작업 타입 + goToIndex 점프 + Photoshop-like Panel UI | 단순 선형 스택 (`UndoManager`: pushUndo/popUndo) | XStudio 압도적 우수 |
 | **캔버스 이벤트** | `useDragInteraction` 상태머신 훅 + 동적 해상도 + SelectionBoxRef 명령형 API | 인라인 조건문 분기 | XStudio 우수 |
 | **이벤트 배칭** | `MessageCoalescer` 우선순위 큐 + RAF throttle + requestIdleCallback | 기본 debounce | XStudio 우수 |
 | **Preview 격리** | iframe srcdoc + postMessage + Delta 동기화 | Electron IPC 전용 | 웹 환경에서 XStudio 우수 |
@@ -393,18 +453,19 @@ AI.md (신규 분석)
 Pencil 패턴 추가 적용 (신규 분석)
 ├── 적용 필요 (높음): G.1 컴포넌트-인스턴스, G.2 변수 참조 ··········· 2건
 ├── 적용 필요 (중간): G.3 시각 피드백, G.4 디자인 킷 ·················· 2건
-├── 부분 적용 (낮음): G.5 히스토리 원자성 ······························ 1건
+├── ★ 변경 불필요: G.5 히스토리 (4,714줄 플래그십 — Pencil 적용 불필요) · 0건
+│   └── 소규모 확장만: AI batch 래퍼 + G.1 인스턴스 전파 연동 ········· (~20줄)
 └── 변경 불필요: 이벤트 배칭, 캔버스 상태머신, Preview 격리 ··········· (XStudio 우수)
-                                                         소계: 5건
+                                                         소계: 4건 + 소규모 확장 1건
                                                     ─────────────
-                                                    전체: 34건
+                                                    전체: 33건 + 소규모 확장 1건
 ```
 
 **결론:**
 - **LAYOUT_REQUIREMENTS.md**: 영향 적음 (5건). 레이아웃 계산은 렌더러 독립적.
 - **COMPONENT_SPEC_ARCHITECTURE.md**: 영향 큼 (18건). 렌더링 + 컴포넌트 시스템 전면 업데이트.
 - **AI.md**: 영향 중간 (6건). G.1/G.2 시스템이 AI 도구 정의에 직접 영향.
-- **Pencil 패턴**: 렌더링/AI 외 5건 추가 적용 식별. G.1(컴포넌트-인스턴스)과 G.2(변수 참조)가 핵심 블로커.
+- **Pencil 패턴**: 렌더링/AI 외 4건 추가 적용 + 1건 소규모 확장 식별. G.1(컴포넌트-인스턴스)과 G.2(변수 참조)가 핵심 블로커. G.5 히스토리는 4,714줄 규모의 플래그십 시스템으로 Pencil 대비 **압도적 우수** — 트랜잭션 패턴 차용 불필요.
 
 ---
 
