@@ -6,6 +6,7 @@
  */
 
 import type { Element, ComponentElementProps } from "../../../types/builder/unified.types";
+import type { ComponentIndex } from "./elementIndexer";
 import { historyManager } from "../history";
 
 /**
@@ -162,6 +163,55 @@ export function trackMultiPaste(newElements: Element[]): void {
   });
 
   console.log(`✅ [History] Tracked multi-paste: single batch entry for ${newElements.length} elements`);
+}
+
+// ============================================
+// G.5: AI Batch Transaction + Instance Propagation
+// ============================================
+
+/**
+ * Track AI batch-design operation as a single atomic history entry.
+ *
+ * AI가 batch_design 도구로 여러 요소를 한 번에 생성/수정/삭제할 때,
+ * 모든 변경사항을 단일 히스토리 엔트리로 묶어 원자적 Undo/Redo를 보장한다.
+ *
+ * @param prevElements - AI 작업 전 상태
+ * @param nextElements - AI 작업 후 상태
+ */
+export function trackAIBatchOperation(
+  prevElements: Element[],
+  nextElements: Element[],
+): void {
+  if (prevElements.length === 0 && nextElements.length === 0) return;
+  historyManager.addBatchDiffEntry(prevElements, nextElements);
+  console.log(`✅ [History] Tracked AI batch operation: ${prevElements.length} → ${nextElements.length} elements`);
+}
+
+/**
+ * Track master → instance propagation as a single batch history entry.
+ *
+ * G.1 컴포넌트-인스턴스 시스템에서 Master 속성 변경 시,
+ * 모든 인스턴스에 전파된 변경사항을 trackBatchUpdate()로 묶어
+ * Undo 시 Master + 인스턴스 모두 원래 상태로 복원한다.
+ *
+ * @param masterId - Master 컴포넌트 ID
+ * @param updates - 전파할 속성 업데이트
+ * @param componentIndex - 현재 ComponentIndex (masterToInstances 조회용)
+ * @param elementsMap - 전체 요소 Map
+ */
+export function trackInstancePropagation(
+  masterId: string,
+  updates: Record<string, unknown>,
+  componentIndex: ComponentIndex,
+  elementsMap: Map<string, Element>,
+): void {
+  const instanceIds = componentIndex.masterToInstances.get(masterId);
+  if (!instanceIds || instanceIds.size === 0) return;
+
+  // Master + 모든 Instance를 하나의 batch로 추적
+  const allIds = [masterId, ...instanceIds];
+  trackBatchUpdate(allIds, updates, elementsMap);
+  console.log(`✅ [History] Tracked instance propagation: master ${masterId} → ${instanceIds.size} instances`);
 }
 
 /**

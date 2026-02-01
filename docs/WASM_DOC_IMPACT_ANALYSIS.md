@@ -347,14 +347,14 @@ Undo/Redo 3단계 파이프라인 (7개 타입 모두 동일):
 
 **평가:** XStudio의 히스토리 시스템은 Adobe Photoshop을 벤치마크한 **4,714줄 규모의 플래그십 기능**으로, Pencil의 단순 선형 스택(`UndoManager`)과는 비교 자체가 부적절하다. Pencil의 `beginUpdate()` → `commitBlock()` 트랜잭션 패턴이 제공하는 기능은 XStudio의 `addBatchDiffEntry()` 및 `trackBatchUpdate()`가 이미 완전히 커버하고 있다.
 
-**소규모 확장 가능 영역 (기존 시스템의 래퍼 함수 추가 수준):**
-- AI batch-design 통합 시 `addBatchDiffEntry()`를 활용한 원자적 트랜잭션 보장 (~20줄)
-- 컴포넌트-인스턴스 시스템(G.1) 도입 시 마스터 변경 → 인스턴스 전파를 `trackBatchUpdate()`로 처리
+**소규모 확장 가능 영역 (기존 시스템의 래퍼 함수 추가 수준):** ✅ 완료
 
-| 영향 대상 | 변경 내용 | 규모 |
-|----------|----------|------|
-| `builder/stores/history.ts` | AI batch 트랜잭션 래퍼 추가 | ~20줄 |
-| `builder/stores/elements.ts` | 인스턴스 전파를 `trackBatchUpdate()`로 묶기 | G.1과 연계 |
+- ✅ AI batch-design 통합 시 `addBatchDiffEntry()`를 활용한 원자적 트랜잭션 보장 → `trackAIBatchOperation()`
+- ✅ 컴포넌트-인스턴스 시스템(G.1) 도입 시 마스터 변경 → 인스턴스 전파를 `trackBatchUpdate()`로 처리 → `trackInstancePropagation()`
+
+| 영향 대상 | 변경 내용 | 규모 | 상태 |
+|----------|----------|------|------|
+| `builder/stores/utils/historyHelpers.ts` | `trackAIBatchOperation()` + `trackInstancePropagation()` 래퍼 추가 | ~45줄 | ✅ 완료 |
 
 ### G.6 XStudio 기존 우수 패턴 (Pencil 대비)
 
@@ -396,15 +396,15 @@ Undo/Redo 3단계 파이프라인 (7개 타입 모두 동일):
 **WASM.md 렌더링 전환을 최우선**으로 실행하고, 후속 기능은 확정된 CanvasKit 기반으로 1회 구현한다.
 G.1/G.2의 **데이터 모델 설계**(타입 정의, 스토어 인터페이스)는 렌더러 무관이므로 WASM.md와 병행하여 미리 진행할 수 있다.
 
-| 순서 | 대상 | 수정 항목 | 이유 |
-|------|------|----------|------|
-| **1** | `docs/WASM.md` Phase 0-6 구현 | 렌더링 코드 작업 | 렌더러 확정이 모든 후속 기능의 전제 조건 |
-| **1'** | G.1/G.2 데이터 모델 설계 (병행) | 타입 정의, 스토어 인터페이스, DB 스키마 | 렌더러 무관 부분만 선행 설계 |
-| **2** | G.1/G.2 렌더링 경로 구현 | CanvasKit 기반 인스턴스 렌더링, 변수 resolve → Skia 색상 | 확정된 CanvasKit API로 1회 구현 |
-| **3** | `docs/AI.md` 업데이트 구현 | A1–A6 (6건) + G.3 시각 피드백 | G.1/G.2 + CanvasKit 확정 후 AI 도구 정의 |
-| **4** | `docs/LAYOUT_REQUIREMENTS.md` | L1–L5 (5건) | 영향 적음, 빠르게 완료 |
-| **5** | `docs/COMPONENT_SPEC_ARCHITECTURE.md` | C1–C18 (18건) + G.1/G.2 반영 | 렌더러 + 컴포넌트 시스템 전면 업데이트 |
-| **6** | 디자인 킷 + 시각 피드백 | G.4 킷 구현 + G.3 피드백 구현 | G.1/G.2 + CanvasKit 완료 후 진행 |
+| 순서 | 대상 | 수정 항목 | 이유 | 상태 |
+|------|------|----------|------|------|
+| **1** | `docs/WASM.md` Phase 0-6 구현 | 렌더링 코드 작업 | 렌더러 확정이 모든 후속 기능의 전제 조건 | ✅ 완료 |
+| **1'** | G.1/G.2 데이터 모델 설계 (병행) | 타입 정의, 스토어 인터페이스, DB 스키마 | 렌더러 무관 부분만 선행 설계 | ✅ 완료 |
+| **2** | G.1/G.2 렌더링 경로 구현 | CanvasKit 기반 인스턴스 렌더링, 변수 resolve → Skia 색상 | 확정된 CanvasKit API로 1회 구현 | ✅ 완료 |
+| **3** | `docs/AI.md` 업데이트 구현 | A1–A6 (6건) + G.3 시각 피드백 | G.1/G.2 + CanvasKit 확정 후 AI 도구 정의 | ✅ 완료 |
+| **4** | `docs/LAYOUT_REQUIREMENTS.md` | L1–L5 (5건) | 영향 적음, 빠르게 완료 | ✅ 완료 |
+| **5** | `docs/COMPONENT_SPEC_ARCHITECTURE.md` | C1–C18 (18건) + G.1/G.2 반영 | 렌더러 + 컴포넌트 시스템 전면 업데이트 | ✅ 완료 |
+| **6** | 디자인 킷 + 시각 피드백 | G.4 킷 구현 + G.3 피드백 구현 | G.1/G.2 + CanvasKit 완료 후 진행 | ✅ 완료 |
 
 **의존 그래프:**
 
