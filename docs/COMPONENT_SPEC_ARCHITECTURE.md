@@ -68,6 +68,18 @@
 
 **총 기간: 14주 (약 3.5개월)**
 
+#### Phase 5+ CanvasKit/Skia 전환 컨텍스트
+
+> 본 문서의 Phase 0-4는 PixiJS 렌더러 기반으로 설계되었다.
+> `docs/WASM.md` Phase 5-6에서 CanvasKit/Skia가 메인 렌더러로 전환되면,
+> 본 문서의 렌더링 관련 섹션이 영향을 받는다.
+> 영향 분석: `docs/WASM_DOC_IMPACT_ANALYSIS.md` §B (18건)
+
+**Spec 시스템의 렌더러 독립성:**
+- ComponentSpec의 **Shape 타입 정의**는 렌더러 무관 (CanvasKit 전환 시에도 유지)
+- Shape 확장(C4-C6)만 CanvasKit 고급 기능 반영으로 추가
+- 렌더러 변경 영향: PixiRenderer 축소 + CanvasKitRenderer 추가 (§2.2, §3.5 참조)
+
 ---
 
 ## 2. 아키텍처 개요
@@ -158,6 +170,33 @@
 > React 경로는 브라우저 CSS 레이아웃을, PIXI 경로는 하이브리드 엔진을 사용하여 동일한 결과를 보장합니다.
 > 자세한 내용은 [LAYOUT_REQUIREMENTS.md](./LAYOUT_REQUIREMENTS.md)를 참조하세요.
 
+#### Phase 5+ 데이터 흐름 (CanvasKit/Skia 전환)
+
+> Phase 5 이후 PixiRenderer는 씬 그래프 전용으로 축소되고, CanvasKitRenderer가 추가된다.
+> 상세: `docs/WASM.md` Phase 5.3–5.7 참조
+
+```
+┌──────────────┐
+│ Button.spec  │ (Single Source of Truth)
+└──────┬───────┘
+       │
+       ├──────────────┬──────────────┬──────────────────┐
+       ▼              ▼              ▼                  ▼
+┌────────────┐ ┌────────────┐ ┌──────────────┐ ┌────────────────────┐
+│CSSGenerator│ │ReactRender.│ │PixiRenderer  │ │CanvasKitRenderer   │
+│(빌드/배포) │ │(React DOM) │ │(씬 그래프만) │ │(Skia Surface 렌더) │
+└──────┬─────┘ └──────┬─────┘ └──────┬───────┘ └─────────┬──────────┘
+       │              │              │                    │
+       ▼              ▼              ▼                    ▼
+  Button.css     Button.tsx    EventBoundary      CanvasKit Surface
+  (Publish)      (React DOM)   (Hit Testing)     (drawRRect, drawParagraph...)
+```
+
+- **CSSGenerator**: React 렌더링 + Publish(배포) 전용
+- **ReactRenderer**: Preview iframe 내 React DOM 렌더링
+- **PixiRenderer**: 씬 그래프 관리 + EventBoundary(Hit Testing) 전용 (시각적 렌더링 제거)
+- **CanvasKitRenderer**: Phase 5+ 추가 — Spec Shapes → Skia Paint/Path → Surface 렌더링
+
 ### 2.3 핵심 원칙
 
 1. **Single Source of Truth**: 모든 스타일 정보는 Spec에서만 정의
@@ -206,8 +245,9 @@ packages/
     │   ├── renderers/
     │   │   ├── index.ts
     │   │   ├── ReactRenderer.ts     # Spec → React Props
-    │   │   ├── PixiRenderer.ts      # Spec → PIXI Graphics
-    │   │   ├── CSSGenerator.ts      # Spec → CSS 파일
+    │   │   ├── PixiRenderer.ts      # Spec → PIXI Graphics (Phase 5+: 씬 그래프 전용)
+    │   │   ├── CanvasKitRenderer.ts # Spec → CanvasKit/Skia Surface (Phase 5+)
+    │   │   ├── CSSGenerator.ts      # Spec → CSS 파일 (React/Publish 전용)
     │   │   └── utils/
     │   │       └── tokenResolver.ts # 토큰 → 실제 값 (색상, 크기, 그림자 등)
     │   │
@@ -564,6 +604,27 @@ export interface TextShape {
 
   /** 줄 수 제한 (multiline 텍스트) */
   maxLines?: number;
+
+  // Phase 5+ CanvasKit ParagraphBuilder 속성:
+  /** 서브픽셀 텍스트 렌더링 (Phase 5+) */
+  subpixel?: boolean;
+  /** 폰트 힌팅 (Phase 5+) */
+  hinting?: 'none' | 'slight' | 'normal' | 'full';
+  /** 커닝 활성화 (Phase 5+) */
+  kerning?: boolean;
+  /** Strut 스타일 — 줄 높이 강제 (Phase 5+) */
+  strutStyle?: {
+    fontFamilies?: string[];
+    fontSize?: number;
+    height?: number;         // lineHeight multiplier
+    leading?: number;
+    forceHeight?: boolean;   // true: 모든 줄에 strut 강제 적용
+  };
+  // CanvasKit 매핑:
+  //   ParagraphBuilder.Make(paraStyle, fontMgr)
+  //   paraStyle.setTextStyle({ subpixel, hinting })
+  //   TextStyle.setFontFeatures([{ name: 'kern', value: 1 }])
+  //   paraStyle.setStrutStyle(strutStyle)
 }
 
 /**
@@ -604,6 +665,19 @@ export interface ShadowShape {
 
   /** 내부 그림자 여부 */
   inset?: boolean;
+
+  // Phase 5+ CanvasKit 이펙트 확장 (saveLayer 기반):
+  /** 이펙트 타입 (Phase 5+) */
+  effectType?: 'shadow' | 'blur' | 'background-blur' | 'glow';
+  /** 배경 블러 반경 — ImageFilter.MakeBlur() (Phase 5+) */
+  backgroundBlur?: number;
+  /** 불투명도 이펙트 — Paint.setAlphaf() (Phase 5+) */
+  opacity?: number;
+  // CanvasKit 매핑:
+  //   shadow → ImageFilter.MakeDropShadow(offsetX, offsetY, sigmaX, sigmaY, color)
+  //   blur → ImageFilter.MakeBlur(sigmaX, sigmaY, TileMode)
+  //   background-blur → canvas.saveLayer() + ImageFilter.MakeBlur() (배경만 블러)
+  //   glow → ImageFilter.MakeDropShadow(0, 0, blur, blur, color) (offset 없는 그림자)
 }
 
 /**
@@ -644,6 +718,18 @@ export interface BorderShape {
     bottom?: boolean;
     left?: boolean;
   };
+
+  // Phase 5+ Skia Stroke 확장:
+  /** Stroke 정렬 (Skia Paint stroke) */
+  strokeAlignment?: 'inside' | 'center' | 'outside';
+  /** 선 끝 모양 (Skia Paint::Cap) */
+  lineCap?: 'butt' | 'round' | 'square';
+  /** 선 꺾임 모양 (Skia Paint::Join) */
+  lineJoin?: 'bevel' | 'miter' | 'round';
+  /** Miter join 제한값 */
+  miterLimit?: number;
+  /** 대시 패턴 (Skia DashPathEffect) — [dashLen, gapLen, ...] */
+  dashPattern?: number[];
 }
 
 /**
@@ -726,6 +812,11 @@ export interface ContainerLayout {
   justifySelf?: 'auto' | 'start' | 'center' | 'end' | 'stretch' | 'normal';
 }
 
+// Phase 5+ CanvasKit overflow 구현:
+// overflow: 'hidden' → canvas.clipRect(containerRect, ClipOp.Intersect)
+// overflow: 'scroll' → canvas.clipRect() + ScrollBar 오버레이 렌더링
+// clipPath: border-radius가 있는 경우 → canvas.clipRRect()로 둥근 클리핑
+
 /**
  * 그라디언트 (ColorPicker, Slider 등에서 사용)
  */
@@ -745,6 +836,17 @@ export interface GradientShape {
     }>;
   };
 }
+
+// Phase 5+ GradientShape 확장 (CanvasKit/Skia):
+//   gradient.type: 'linear' | 'radial' | 'angular' | 'mesh'
+//     - angular: Shader.MakeSweepGradient() — Figma angular gradient
+//     - mesh: Shader.MakeMeshGradient() — 메시 그래디언트
+//   gradient.tileMode?: 'clamp' | 'repeat' | 'mirror'
+//     - CanvasKit TileMode enum 매핑
+//   gradient.colorSpace?: 'sRGB' | 'lab' | 'oklch'
+//     - Skia SkColorSpace 지원 (고품질 색상 보간)
+//   gradient.center?: { x: number; y: number }
+//     - radial/angular의 중심점 (기본: width/2, height/2)
 
 /**
  * 이미지
@@ -1476,6 +1578,9 @@ function renderShape(
     }
 
     // text와 shadow는 별도 처리 필요 (Graphics가 아닌 다른 객체)
+    // Phase 5+ (CanvasKit): text → ParagraphBuilder.drawParagraph(),
+    //   shadow → ImageFilter.MakeDropShadow() / canvas.saveLayer()로 통합 처리.
+    //   PixiJS Graphics의 제약이 없어 별도 처리 불필요.
     case 'text':
     case 'shadow':
       // PixiButton.tsx 등에서 별도 처리
@@ -1530,6 +1635,40 @@ function cssColorToPixiHex(color: string, fallback: number = 0x000000): number {
   }
 
   return fallback;
+}
+
+/**
+ * Phase 5+: CSS 색상 문자열 → CanvasKit/Skia uint32 ARGB 변환
+ *
+ * Skia는 0xAARRGGBB 형식 (알파가 최상위 바이트)
+ * PixiJS의 0xRRGGBB와 달리 알파 채널을 포함한다.
+ */
+function cssColorToSkiaColor(
+  color: string,
+  ck: CanvasKit,
+  fallback?: Float32Array
+): Float32Array {
+  if (!color || color === 'transparent') {
+    return fallback ?? ck.Color4f(0, 0, 0, 0);
+  }
+
+  const parsed = colord(color);
+  if (!parsed.isValid()) {
+    return fallback ?? ck.Color4f(0, 0, 0, 1);
+  }
+
+  const { r, g, b, a } = parsed.toRgb();
+  return ck.Color4f(r / 255, g / 255, b / 255, a);
+}
+
+// 또는 uint32 ARGB 형식 (저수준 API용):
+function cssColorToSkiaUint32(color: string, fallback: number = 0xFF000000): number {
+  const parsed = colord(color);
+  if (!parsed.isValid()) return fallback;
+
+  const { r, g, b, a } = parsed.toRgb();
+  const alpha = Math.round(a * 255);
+  return ((alpha << 24) | (r << 16) | (g << 8) | b) >>> 0;
 }
 
 /**
@@ -1616,6 +1755,119 @@ export function getSizePreset(
     iconSize: sizeSpec.iconSize,
     gap: sizeSpec.gap,
   };
+}
+```
+
+#### Phase 5+ 변경사항 — CanvasKitRenderer (Skia 전환)
+
+> Phase 5 이후 PixiRenderer는 **씬 그래프 + 이벤트(EventBoundary) 관리**로 축소되며,
+> 시각적 렌더링은 CanvasKitRenderer가 담당한다.
+> 상세: `docs/WASM.md` Phase 5.3, 6.3 참조
+
+**PixiRenderer 역할 축소:**
+
+| 기능 | Phase 1-4 (PixiRenderer) | Phase 5+ |
+|------|-------------------------|----------|
+| 도형 렌더링 | `graphics.rect()`, `graphics.circle()` | CanvasKitRenderer |
+| 텍스트 렌더링 | `new Text()` (별도 객체) | CanvasKitRenderer (`drawParagraph`) |
+| 그림자 | 별도 처리 (불완전) | CanvasKitRenderer (`ImageFilter`) |
+| 이벤트 히트 영역 | `EventBoundary` | 동일 (PixiJS 유지) |
+| 씬 그래프 순서 | `Container` 트리 | 동일 (PixiJS 유지) |
+
+**CanvasKitRenderer 핵심 구조:**
+
+```typescript
+// packages/specs/src/renderers/CanvasKitRenderer.ts
+
+import type { CanvasKit, Canvas, Paint } from 'canvaskit-wasm';
+import type { ComponentSpec, Shape } from '../types';
+
+export interface SkiaRenderContext {
+  ck: CanvasKit;
+  canvas: Canvas;
+  theme: Record<string, string>;
+  width: number;
+  height: number;
+  state?: 'default' | 'hover' | 'pressed' | 'disabled';
+}
+
+/**
+ * ComponentSpec의 Shapes를 CanvasKit Surface에 렌더링
+ */
+export function renderToSkia<Props extends Record<string, unknown>>(
+  spec: ComponentSpec<Props>,
+  props: Props,
+  context: SkiaRenderContext
+): void {
+  const { ck, canvas, theme, width, height, state = 'default' } = context;
+
+  const variant = (props.variant as string) || spec.defaultVariant;
+  const size = (props.size as string) || spec.defaultSize;
+
+  const variantSpec = spec.variants[variant];
+  const sizeSpec = spec.sizes[size];
+
+  if (!variantSpec || !sizeSpec) return;
+
+  const shapes = spec.render.shapes(props, variantSpec, sizeSpec, state);
+
+  // 각 Shape를 CanvasKit API로 렌더링
+  shapes.forEach(shape => {
+    renderSkiaShape(ck, canvas, shape, theme, width, height);
+  });
+}
+
+function renderSkiaShape(
+  ck: CanvasKit, canvas: Canvas,
+  shape: Shape, theme: Record<string, string>,
+  width: number, height: number
+): void {
+  switch (shape.type) {
+    case 'rect': {
+      const paint = new ck.Paint();
+      paint.setStyle(ck.PaintStyle.Fill);
+      paint.setColor(cssColorToSkiaColor(shape.fill, ck));
+      const rrect = ck.RRectXY(
+        ck.LTRBRect(shape.x, shape.y,
+          shape.x + resolveSize(shape.width, width),
+          shape.y + resolveSize(shape.height, height)),
+        shape.radius ?? 0, shape.radius ?? 0
+      );
+      canvas.drawRRect(rrect, paint);
+      paint.delete();
+      break;
+    }
+    case 'text': {
+      const paraStyle = new ck.ParagraphStyle({ textAlign: ck.TextAlign.Center });
+      const builder = ck.ParagraphBuilder.Make(paraStyle, fontMgr);
+      builder.pushStyle(new ck.TextStyle({
+        color: cssColorToSkiaColor(shape.fill, ck),
+        fontSize: shape.fontSize,
+        fontFamilies: [shape.fontFamily || 'sans-serif'],
+      }));
+      builder.addText(shape.text);
+      const para = builder.build();
+      para.layout(resolveSize(shape.maxWidth ?? width, width));
+      canvas.drawParagraph(para, shape.x, shape.y);
+      para.delete();
+      break;
+    }
+    case 'shadow': {
+      const filter = ck.ImageFilter.MakeDropShadow(
+        shape.offsetX, shape.offsetY,
+        shape.blur / 2, shape.blur / 2,
+        cssColorToSkiaColor(shape.color, ck)
+      );
+      // saveLayer로 shadow 적용
+      const layerPaint = new ck.Paint();
+      layerPaint.setImageFilter(filter);
+      canvas.saveLayer(layerPaint);
+      // ... target shape 렌더링
+      canvas.restore();
+      layerPaint.delete();
+      break;
+    }
+  }
 }
 ```
 
@@ -1889,6 +2141,11 @@ export async function generateAllCSS(
 }
 ```
 
+> **Phase 5+ 참고:** CSS Generator는 **React 렌더링 및 Publish(배포) 전용**이다.
+> Builder Canvas의 시각적 렌더링은 Phase 5 이후 CanvasKitRenderer가 담당하며,
+> CSS Generator가 생성한 CSS는 Canvas 렌더링에 사용되지 않는다.
+> Canvas에서는 ComponentSpec의 Shapes를 직접 CanvasKit Paint/Path로 변환한다.
+
 ### 3.6 Phase 0 산출물
 
 | 산출물 | 파일 | 설명 |
@@ -1897,7 +2154,8 @@ export async function generateAllCSS(
 | Primitive 토큰 | `specs/src/primitives/*.ts` | 색상, 간격, 타이포그래피, 둥근모서리 |
 | React 렌더러 | `specs/src/renderers/ReactRenderer.ts` | Spec → React Props |
 | PIXI 렌더러 | `specs/src/renderers/PixiRenderer.ts` | Spec → PIXI Graphics |
-| CSS 생성기 | `specs/src/renderers/CSSGenerator.ts` | Spec → CSS 파일 |
+| CanvasKit 렌더러 | `specs/src/renderers/CanvasKitRenderer.ts` | Spec → CanvasKit/Skia Surface (Phase 5+) |
+| CSS 생성기 | `specs/src/renderers/CSSGenerator.ts` | Spec → CSS 파일 (React/Publish 전용) |
 | 빌드 스크립트 | `specs/scripts/*.ts` | CSS 생성, 검증 |
 
 ### 3.7 Phase 0 체크리스트
@@ -1912,6 +2170,9 @@ export async function generateAllCSS(
 - [ ] CSS Generator 구현
 - [ ] 빌드 스크립트 작성
 - [ ] 단위 테스트 작성
+- [ ] CanvasKit WASM 초기화 설정 (`canvaskit-wasm` 패키지 통합)
+- [ ] CanvasKitRenderer 구현 (`Spec → CanvasKit Surface`)
+- [ ] CanvasKit 폰트 로더 구현 (ParagraphBuilder용)
 
 ### 3.8 Phase 0 → Phase 1 검증 게이트
 
@@ -2681,6 +2942,22 @@ const parsedBorder = parseBorderWidth(style);  // "2px" → 4방향, borderTopWi
 > **Note**: PixiFancyButton, PixiToggleButton은 `SELF_PADDING_TAGS` 등록으로 이중 padding 방지는 완료.
 > 그러나 `typeof === 'number'` → `parseCSSSize()`/`parsePadding()`/`parseBorderWidth()` 전환은 미완료 상태.
 > CSS 문자열 값("16px", "50%", "100vw")이 무시되는 버그가 잔존.
+
+##### Phase 5+ 변경사항 (CanvasKit/Skia 전환)
+
+> Phase 5 이후 CanvasKit 렌더링에서는 **Yoga 레이아웃 계산 결과(px 절대값)만 사용**한다.
+> CSS 단위(%, vw, vh, rem)는 Yoga가 계산하여 절대 px로 변환한 결과를 CanvasKit이 받으므로,
+> CanvasKit 렌더러 자체에서는 CSS 단위 해석이 불필요하다.
+
+| 항목 | Phase 5 이전 (PixiJS) | Phase 5+ (CanvasKit) |
+|------|---------------------|---------------------|
+| CSS 단위 해석 | 각 Pixi 컴포넌트에서 `parseCSSSize()` 필요 | **불필요** — Yoga가 px로 변환 완료 |
+| viewport 크기 참조 | vw/vh → parentContentArea 기준 변환 | Yoga가 처리, CanvasKit은 결과만 수신 |
+| % 단위 | 부모 content area 수동 계산 | Yoga가 자동 계산 |
+| 입력 형식 | CSS 문자열 ("16px", "50%") | 숫자 (px 절대값) |
+
+> 따라서 §4.7.4의 CSS 단위 해석 규칙은 **Phase 5 이전 PixiJS 컴포넌트에만 적용**되며,
+> Phase 5+ CanvasKit 렌더러에서는 `skiaNodeData.width/height` 등 이미 계산된 숫자를 직접 사용한다.
 
 #### 4.7.4.0 `@xstudio/specs` 빌드 동기화 (CRITICAL)
 
@@ -3944,6 +4221,84 @@ async function compareScreenshots(
 }
 ```
 
+#### Phase 5+ 변경사항 (CanvasKit/Skia 전환)
+
+> Phase 5 이후 Visual Regression Testing은 React vs **CanvasKit** 비교로 전환된다.
+> 상세: `docs/WASM.md` Phase 5.3 참조
+
+**변경 사항:**
+
+| 기존 (Phase 1-4) | Phase 5+ (CanvasKit) | 비고 |
+|------------------|---------------------|------|
+| `/builder-preview/` PixiJS 캔버스 | CanvasKit `<canvas>` 캡처 | 캡처 대상 변경 |
+| `waitForPixiRender()` | `waitForCanvasKitRender()` | 안정화 대기 함수 변경 |
+| PixiJS Graphics 렌더링 비교 | CanvasKit Surface 렌더링 비교 | 렌더링 파이프라인 변경 |
+
+```typescript
+// Phase 5+ CanvasKit 렌더링 안정화 대기
+async function waitForCanvasKitRender(page: Page): Promise<void> {
+  // CanvasKit WASM 초기화 완료 대기
+  await page.waitForFunction(() =>
+    (window as any).__canvasKitReady === true
+  );
+  // requestAnimationFrame 2회 대기 (더블 버퍼링)
+  await page.evaluate(() => new Promise(resolve => {
+    requestAnimationFrame(() => requestAnimationFrame(resolve));
+  }));
+  // 추가 안정화 (폰트 로드 등)
+  await page.waitForTimeout(100);
+}
+
+// CanvasKit 캔버스 캡처
+async function captureCanvasKit(page: Page): Promise<Buffer> {
+  return page.locator('canvas[data-skia-overlay]').screenshot();
+}
+```
+
+### 8.1.4 Spec Shape ↔ CanvasKit API 매핑
+
+> Phase 5 마이그레이션 시 각 Spec Shape 타입과 CanvasKit API의 1:1 매핑 참조.
+> 상세: `docs/WASM.md` Phase 6.3, `docs/PENCIL_APP_ANALYSIS.md` §11 참조
+
+| Spec Shape | CanvasKit Canvas API | Skia Paint/Path | 현재 PixiJS | 비고 |
+|------------|---------------------|-----------------|------------|------|
+| `RectShape` | `canvas.drawRect()` / `canvas.drawRRect()` | `Paint` + `RRect` | `graphics.rect()` / `graphics.roundRect()` | radius 있으면 RRect |
+| `CircleShape` | `canvas.drawCircle()` | `Paint` | `graphics.circle()` | cx, cy, r |
+| `TextShape` | `canvas.drawParagraph()` | `ParagraphBuilder` → `Paragraph` | `new Text()` (별도 객체) | Phase 5에서 통합 |
+| `ShadowShape` | `ImageFilter.MakeDropShadow()` | `canvas.saveLayer(paint)` | 별도 처리 (불완전) | Phase 5에서 통합 |
+| `BorderShape` | `canvas.drawRRect()` (stroke) | `Paint.setStyle(Stroke)` | `graphics.stroke()` | strokeAlignment 추가 |
+| `GradientShape` | `Shader.MakeLinearGradient()` / `MakeRadialGradient()` / `MakeSweepGradient()` | `Paint.setShader()` | `graphics.fill()` + gradient | angular = Sweep |
+| `ImageShape` | `canvas.drawImageRect()` | `Image` + `Paint` | `Sprite` (별도 객체) | fit/fill/crop |
+| `ContainerShape` | `canvas.save()` / `canvas.clipRect()` / `canvas.restore()` | clip + children 재귀 | `Container` | overflow clipping |
+
+**Fill + Stroke 분리 패턴 (CanvasKit):**
+```typescript
+// CanvasKit은 fill과 stroke를 별도 Paint로 분리 렌더링
+function renderRectShape(canvas: Canvas, shape: RectShape, ck: CanvasKit): void {
+  const rrect = ck.RRectXY(
+    ck.LTRBRect(shape.x, shape.y, shape.x + shape.width, shape.y + shape.height),
+    shape.radius ?? 0, shape.radius ?? 0
+  );
+
+  // 1. Fill
+  const fillPaint = new ck.Paint();
+  fillPaint.setStyle(ck.PaintStyle.Fill);
+  fillPaint.setColor(cssColorToSkiaColor(shape.fill, ck));
+  canvas.drawRRect(rrect, fillPaint);
+  fillPaint.delete();
+
+  // 2. Stroke (border가 있는 경우)
+  if (shape.borderWidth) {
+    const strokePaint = new ck.Paint();
+    strokePaint.setStyle(ck.PaintStyle.Stroke);
+    strokePaint.setStrokeWidth(shape.borderWidth);
+    strokePaint.setColor(cssColorToSkiaColor(shape.borderColor, ck));
+    canvas.drawRRect(rrect, strokePaint);
+    strokePaint.delete();
+  }
+}
+```
+
 ### 8.2 성능 최적화
 
 ```typescript
@@ -3973,6 +4328,49 @@ export function getVariantColors(
 export function invalidateCache(): void {
   variantColorCache.clear();
   sizePresetCache.clear();
+}
+```
+
+#### Phase 5+ 변경사항 (CanvasKit/Skia 전환)
+
+> Phase 5 이후 PixiRenderer 캐싱에 더하여 CanvasKit 전용 최적화가 추가된다.
+> 상세: `docs/WASM.md` Phase 5.5 참조
+
+**이중 Surface 캐싱:**
+```
+Main Surface (화면 표시용)
+  ↕ 더블 버퍼링
+Offscreen Surface (변경 사항 렌더링)
+  → 변경된 노드만 다시 그리기 (Dirty Rect)
+  → 완료 후 Main Surface에 복사
+```
+
+| 전략 | 설명 | CanvasKit API |
+|------|------|---------------|
+| 이중 Surface | 렌더링 중 화면 깜빡임 방지 | `CanvasKit.MakeSurface()` × 2 |
+| Dirty Rect | 변경된 영역만 재렌더링 | `canvas.clipRect(dirtyRect)` + `canvas.drawImage()` |
+| Paint 재사용 | 동일 스타일 Paint 객체 캐싱 | `new CanvasKit.Paint()` + Map 캐시 |
+| Font 캐시 | 폰트 로드 결과 캐싱 | `CanvasKit.Typeface` + Map 캐시 |
+| Paragraph 캐시 | 텍스트 측정 결과 캐싱 | `ParagraphBuilder` 결과 Map 캐시 |
+
+```typescript
+// CanvasKit Dirty Rect 최적화 예시
+function renderDirtyRegion(
+  canvas: Canvas,
+  dirtyRect: Float32Array,  // [x, y, width, height]
+  registry: Map<string, SkiaNodeData>
+): void {
+  canvas.save();
+  canvas.clipRect(dirtyRect, CanvasKit.ClipOp.Intersect, true);
+
+  // dirtyRect와 겹치는 노드만 렌더링
+  for (const [id, node] of registry) {
+    if (rectsOverlap(node, dirtyRect)) {
+      renderNode(canvas, node);
+    }
+  }
+
+  canvas.restore();
 }
 ```
 

@@ -1022,6 +1022,23 @@ export function calculateChildrenLayout(
 }
 ```
 
+#### Phase 5+ 변경사항 (CanvasKit/Skia 전환)
+
+> Phase 5 이후 이 섹션의 엔진 디스패처 로직은 **변경 없이 유지**된다.
+> 상세: `docs/WASM.md` Phase 5.1 참조
+
+엔진 디스패처(`selectEngine`, `shouldDelegateToPixiLayout`)는 **레이아웃 계산 엔진 선택**을 담당하며, 렌더링과 무관하다. Phase 5+ CanvasKit 전환 시:
+
+| 항목 | Phase 5 이전 | Phase 5 이후 | 변경 여부 |
+|------|-------------|-------------|----------|
+| `selectEngine()` | Yoga/Block/Grid 선택 | 동일 | 변경 없음 |
+| `shouldDelegateToPixiLayout()` | Flex → @pixi/layout 위임 판단 | 동일 (Yoga 계산은 유지) | 변경 없음 |
+| `calculateChildrenLayout()` | Block/Grid 엔진으로 계산 | 동일 | 변경 없음 |
+| **렌더링 경로** | Yoga 결과 → PixiJS Graphics | Yoga 결과 → **CanvasKit Surface** | **렌더링만 변경** |
+
+- Yoga 레이아웃 계산 결과(x, y, width, height)는 그대로 CanvasKit 렌더링에 전달된다.
+- `shouldDelegateToPixiLayout()`의 "Pixi Layout" 명칭은 Yoga 기반 Flex 계산을 의미하며, Phase 5에서도 Yoga WASM은 유지된다.
+
 ### 3.6 BlockEngine 상세 설계
 
 ```typescript
@@ -1528,6 +1545,90 @@ Phase 6 (P2 기능)
 
 > **참고**: Phase 6(P2) 완료 후에도 Non-goals(rem/em/vw/calc, Grid repeat/minmax 등)는 미지원
 
+### 4.4 Phase 5+ CanvasKit/Skia 렌더 파이프라인
+
+> Phase 5 이후 §4.1-4.3의 PixiJS 렌더링 부분은 CanvasKit으로 대체된다.
+> PixiJS는 씬 그래프 관리 + EventBoundary(Hit Testing)에만 사용된다.
+> 상세: `docs/WASM.md` Phase 5.3–5.7 참조
+
+#### 4.4.1 렌더 파이프라인 전환
+
+**Phase 5 이전 (현재):**
+```
+Store → ElementsLayer → ElementSprite → useResolvedElement → effectiveElement
+  → PixiJS LayoutContainer(layout props) → PixiJS Graphics 렌더링
+```
+
+**Phase 5 이후 (CanvasKit):**
+```
+Store → ElementsLayer → ElementSprite → useResolvedElement → effectiveElement
+  → skiaNodeData 생성 → useSkiaNode(전역 레지스트리 등록)
+  → SkiaOverlay.buildSkiaTreeFromRegistry() → nodeRenderers → CanvasKit Surface
+```
+
+#### 4.4.2 구조 다이어그램
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│ BuilderCanvas (React)                                           │
+│ ├── <Application> (PixiJS — 씬 그래프 + 이벤트만)                │
+│ │   ├── <Camera> (뷰포트 변환)                                   │
+│ │   │   └── <ElementsLayer>                                     │
+│ │   │       └── <ElementSprite> (각 디자인 노드)                  │
+│ │   │           ├── useResolvedElement() → effectiveElement      │
+│ │   │           ├── skiaNodeData = useMemo(...)                  │
+│ │   │           │   { type, x, y, width, height, box/text/... } │
+│ │   │           └── useSkiaNode(element.id, skiaNodeData)       │
+│ │   │               → 전역 레지스트리에 등록                      │
+│ │   └── <SelectionLayer>, <ToolLayer> 등                        │
+│ │                                                               │
+│ └── <SkiaOverlay> (CanvasKit — 실제 렌더링)                      │
+│     ├── CanvasKit <canvas> (z-index: 2, pointer-events: auto)   │
+│     ├── buildSkiaTreeFromRegistry(pixiStage)                    │
+│     │   └── PixiJS 씬 그래프 순회 + 레지스트리에서 SkiaNodeData 조회│
+│     └── renderNode(canvas, nodeData)                            │
+│         ├── 'box' → drawRRect / drawPath (Fill + Stroke)        │
+│         ├── 'text' → ParagraphBuilder → drawParagraph           │
+│         ├── 'image' → drawImageRect                             │
+│         └── 'container' → children 재귀                          │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+#### 4.4.3 핵심 변경 사항
+
+| 기존 (Phase 1-4) | Phase 5+ (CanvasKit) | 비고 |
+|------------------|---------------------|------|
+| `LayoutContainer` + `layout` props | Yoga 계산 결과를 `skiaNodeData.x/y/width/height`로 전달 | 레이아웃 계산 로직 불변 |
+| `ElementSprite` → PixiJS Graphics 렌더링 | `ElementSprite` → `useSkiaNode()` 레지스트리 등록 | Sprite 컴포넌트는 렌더 데이터 생성만 담당 |
+| PixiJS `<canvas>` 단일 사용 | PixiJS `<canvas>` (hidden) + CanvasKit `<canvas>` (오버레이) | 이벤트는 `eventBridge.ts`로 브리징 |
+| `renderWithPixiLayout()` / `renderWithCustomEngine()` | 동일 (레이아웃 계산 유지) — 렌더링은 SkiaOverlay가 담당 | §4.2 코드 구조 유지 |
+
+#### 4.4.4 레이아웃 → 렌더링 데이터 흐름
+
+```typescript
+// ElementSprite.tsx — Phase 5+ skiaNodeData 생성 예시
+const skiaNodeData: SkiaNodeData = useMemo(() => ({
+  type: 'box',
+  x: 0, y: 0,  // PixiJS worldTransform에서 SkiaOverlay가 보정
+  width: effectiveElement.props?.style?.width ?? 100,
+  height: effectiveElement.props?.style?.height ?? 100,
+  visible: true,
+  box: {
+    fillColor: parseFillColor(effectiveElement),
+    borderRadius: parseBorderRadius(effectiveElement),
+    borderWidth: parseBorderWidth(effectiveElement),
+    borderColor: parseBorderColor(effectiveElement),
+  },
+  children: textChildren,  // UI 컴포넌트의 텍스트 노드
+}), [effectiveElement]);
+
+useSkiaNode(element.id, skiaNodeData);
+```
+
+> **주의:** §4.1-4.3의 `LayoutContainer`, `renderWithPixiLayout`, `renderWithCustomEngine` 코드는
+> Phase 5에서도 **레이아웃 계산 용도로 그대로 유지**된다. CanvasKit은 계산된 레이아웃 결과를 받아
+> 렌더링만 대체한다. 따라서 §3 전체와 §4.1-4.3의 레이아웃 계산 코드는 변경 없음.
+
 ---
 
 ## 5. 검증 방법
@@ -1635,6 +1736,55 @@ describe('Browser CSS Comparison', () => {
 2. Preview iframe과 픽셀 단위 비교
 3. 캔버스 SelectionBox 위치 정확성 확인
 
+### 5.4 Phase 5+ CanvasKit 렌더링 정확성 검증
+
+> Phase 5 이후 레이아웃 검증(§5.1-5.3)에 더하여 **렌더링 정확성** 검증이 필요하다.
+> Yoga 레이아웃 계산은 동일하므로 §5.1-5.3의 레이아웃 테스트는 변경 없이 유지된다.
+> 상세: `docs/WASM.md` Phase 5.3 참조
+
+#### 5.4.1 검증 대상
+
+| 렌더링 기능 | CanvasKit API | 검증 포인트 |
+|------------|---------------|------------|
+| border-radius | `canvas.drawRRect()` | 4방향 개별 반경, 타원형 반경 정확성 |
+| 텍스트 렌더링 | `ParagraphBuilder` → `drawParagraph` | 서브픽셀 렌더링, 폰트 메트릭, 줄바꿈 위치 |
+| 그래디언트 | `Shader.MakeLinearGradient/Radial/Sweep` | 방향, 색상 정지점, 반복 모드 |
+| 그림자/블러 | `ImageFilter.MakeDropShadow/MakeBlur` | offset, sigma, inner/outer shadow |
+| 이미지 | `canvas.drawImageRect()` | fit/fill/crop 모드, 비율 유지 |
+
+#### 5.4.2 비교 방법론
+
+```
+React CSS 렌더링 (Preview iframe) ↔ CanvasKit 렌더링 (Builder Canvas)
+                                  ↓
+                         픽셀 단위 비교 테스트
+```
+
+1. **동일 element를 CSS와 CanvasKit으로 각각 렌더링**
+2. **스크린샷 기반 비교**: html2canvas 또는 Playwright 스크린샷 캡처
+3. **허용 오차**: 안티앨리어싱 차이로 인해 SSIM >= 0.95 또는 픽셀 차이 < 2%
+4. **테스트 케이스 우선순위**:
+   - P0: 단색 박스, border-radius, 텍스트 기본 렌더링
+   - P1: 그래디언트(linear, radial), 그림자, 이미지
+   - P2: angular 그래디언트, 복합 이펙트(blur + shadow)
+
+#### 5.4.3 텍스트 렌더링 전용 검증
+
+```typescript
+// CanvasKit ParagraphBuilder 텍스트 측정 vs CSS 텍스트 측정 비교
+describe('CanvasKit Text Rendering', () => {
+  it('should match CSS text metrics within tolerance', () => {
+    // CanvasKit Paragraph로 측정
+    const ckMetrics = measureWithCanvasKit(text, fontSize, fontFamily);
+    // CSS로 측정 (hidden DOM element)
+    const cssMetrics = measureWithCSS(text, fontSize, fontFamily);
+
+    expect(Math.abs(ckMetrics.width - cssMetrics.width)).toBeLessThan(2);
+    expect(Math.abs(ckMetrics.height - cssMetrics.height)).toBeLessThan(2);
+  });
+});
+```
+
 ---
 
 ## 6. 파일 구조
@@ -1675,6 +1825,17 @@ apps/builder/src/builder/workspace/canvas/layout/
 ### 외부 참조 (PixiJS)
 - [Yoga Layout](https://yogalayout.dev/) - @pixi/layout 기반 엔진
 - [@pixi/layout](https://layout.pixijs.io/) - PixiJS 레이아웃 라이브러리
+
+### 외부 참조 (CanvasKit/Skia)
+
+> Phase 5+ CanvasKit/Skia 전환 관련 참조 문서
+
+- [canvaskit-wasm (npm)](https://www.npmjs.com/package/canvaskit-wasm) - Google 공식 CanvasKit WASM 패키지
+- [CanvasKit API Reference](https://skia.org/docs/user/modules/canvaskit/) - CanvasKit 공식 API 문서
+- [Skia Official Docs](https://skia.org/) - Skia 그래픽 엔진 공식 문서
+- [WASM.md](./WASM.md) - XStudio WASM 렌더링 아키텍처 전환 계획 (Phase 5-6)
+- [PENCIL_APP_ANALYSIS.md](./PENCIL_APP_ANALYSIS.md) - Pencil Desktop 아키텍처 분석 (renderSkia() 패턴 원본, §11)
+- [PENCIL_VS_XSTUDIO_RENDERING.md](./PENCIL_VS_XSTUDIO_RENDERING.md) - Pencil vs XStudio 렌더링 아키텍처 비교
 
 ---
 
@@ -2216,3 +2377,4 @@ function estimateTextHeight(fontSize: number, lineHeight?: number): number {
 | 2026-01-29 | 1.27 | Pixi UI 컴포넌트 CSS 단위 해석 규칙 추가: (1) vh/vw → % 변환 정책 (styleToLayout.ts parseCSSValue에서 Yoga가 부모 기준으로 처리), (2) Pixi 컴포넌트 getButtonLayout 패턴 (parseCSSSize + parentContentArea 기준 해석, typeof === 'number' 사용 금지), (3) 부모 content area 계산 필수 (useStore → parsePadding + parseBorderWidth 차감), (4) padding shorthand + border width 4방향 계산 포함 |
 | 2026-01-30 | 1.28 | Button borderWidth/레이아웃 이중 계산 수정: (1) BUTTON_SIZE_CONFIG에 borderWidth:1 필드 추가, (2) Phase 9 BUTTON_SIZE_CONFIG 코드 최신화 (paddingY + borderWidth + CSS paddingX 동기화), (3) parseBoxModel에 폼 요소 BUTTON_SIZE_CONFIG 기본값 적용 (inline style 미지정 시), (4) calculateContentWidth가 폼 요소에서 순수 텍스트 너비만 반환 (padding/border를 parseBoxModel으로 분리하여 이중 계산 제거), (5) 상세: docs/COMPONENT_SPEC_ARCHITECTURE.md §4.7.4.4~4.7.4.8 |
 | 2026-01-31 | 1.29 | 버튼/Body 레이아웃 버그 수정 3건: (1) calculateContentHeight padding 이중 계산 제거 — content-box 기준 textHeight만 반환, MIN_BUTTON_HEIGHT도 content-box로 변환 후 비교, (2) renderWithCustomEngine availableWidth에 border 차감 추가 — parseBorder()로 부모 border를 padding과 함께 차감 (자식 offset은 padding만 — Yoga가 border offset 자동 처리), (3) parseBoxModel에 treatAsBorderBox 로직 추가 — box-sizing: border-box 또는 폼 요소 명시적 width/height 시 padding+border 차감으로 content-box 변환 |
+| 2026-02-01 | 1.30 | Phase 5 CanvasKit/Skia 통합 문서 추가: (1) §3.5 엔진 디스패처에 Phase 5+ 렌더링 전환 주석 (레이아웃 계산 불변, 렌더링만 CanvasKit), (2) §4.4 CanvasKit 렌더 파이프라인 추가 (Store → ElementSprite → useSkiaNode → SkiaOverlay → nodeRenderers → CanvasKit Surface), (3) §5.4 CanvasKit 렌더링 정확성 검증 방법 추가 (border-radius, 텍스트, 그래디언트, 그림자, 픽셀 비교), (4) §7 CanvasKit/Skia 외부 참조 문서 추가, (5) 상세: docs/WASM.md Phase 5, docs/WASM_DOC_IMPACT_ANALYSIS.md §A |
