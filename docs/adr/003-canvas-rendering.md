@@ -63,6 +63,21 @@ import { Container, Text } from '@pixi/react';
 - @pixi/layout 규칙 학습 필요
 - 디버깅이 DOM보다 어려움
 
+## Update: CanvasKit/Skia WASM 이중 렌더러 (2026-02-01)
+
+PixiJS 단독 렌더링에서 **Pencil 방식의 이중 렌더러**로 전환 진행 중:
+
+| 레이어 | 역할 |
+|--------|------|
+| **CanvasKit/Skia 캔버스** (z:2) | 디자인 노드 + AI 이펙트 + Selection 오버레이 렌더링 |
+| **PixiJS 캔버스** (z:3, 투명) | 씬 그래프 + EventBoundary 히트 테스팅 + 이벤트 처리 |
+
+**핵심 변경:**
+- PixiJS Camera 하위 레이어: `alpha=0`으로 시각적 숨김 (이벤트 유지)
+- `renderable=false` 사용 금지 — PixiJS 8 EventBoundary가 히트 테스팅까지 비활성화
+- Selection 오버레이: `selectionRenderer.ts`에서 CanvasKit API로 렌더링
+- 상세: `docs/WASM.md` §5.7, `docs/reference/components/PIXI_WEBGL.md` 참조
+
 ## Implementation
 
 ```typescript

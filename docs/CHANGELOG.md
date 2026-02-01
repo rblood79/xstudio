@@ -7,6 +7,54 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed - Selection 오버레이 Skia 전환 (Pencil 방식) (2026-02-01)
+
+#### 개요
+Selection 오버레이(선택 박스, Transform 핸들, 라쏘)를 PixiJS 듀얼 캔버스에서 Pencil 앱 방식의 CanvasKit/Skia 단일 캔버스 렌더링으로 전환
+
+#### 아키텍처 변경
+
+**Before (듀얼 캔버스):**
+- Skia 캔버스 (z:2): 디자인 노드 + AI 이펙트
+- PixiJS 캔버스 (z:3): SelectionBox/TransformHandle/Lasso 렌더링 + 이벤트
+
+**After (Pencil 방식 단일 캔버스):**
+- Skia 캔버스 (z:2): 디자인 노드 + AI 이펙트 + Selection 오버레이 (전부 렌더링)
+- PixiJS 캔버스 (z:3): 투명 히트 영역 + 이벤트 처리 전용 (시각적 렌더링 없음)
+
+#### 수정 내용
+
+**1. 신규 파일**
+- `canvas/skia/selectionRenderer.ts` — Skia Selection 렌더 함수 3개 (`renderSelectionBox`, `renderTransformHandles`, `renderLasso`), SkiaDisposable 패턴
+
+**2. SkiaOverlay.tsx**
+- renderFrame에 Selection 렌더링 Phase 4-6 추가 (디자인 노드 → AI 이펙트 → Selection 순서)
+- Zustand `getState()`로 매 프레임 Selection 상태 읽기 (`selectedElementIds`, `elementBounds`)
+- `dragStateRef` props 추가 (라쏘 상태 전달)
+- PixiJS Camera 하위 레이어 숨김: `renderable=false` → `alpha=0` 변경 (히트 테스팅 유지)
+
+**3. PixiJS Selection 컴포넌트 (시각적 렌더링 비활성화)**
+- `SelectionBox.tsx` — `isSkiaMode`에서 drawBorder 스킵 (moveArea 이벤트 영역은 유지)
+- `TransformHandle.tsx` — 코너 핸들: Skia 모드에서 투명 히트 영역만 (엣지 핸들 변경 없음)
+- `LassoSelection.tsx` — Skia 모드에서 draw 스킵
+
+**4. BuilderCanvas.tsx**
+- `dragStateRef` 생성 및 SkiaOverlay에 전달
+
+#### 버그 수정
+- PixiJS 8.14.3 `EventBoundary._interactivePrune()` (line 317)가 `renderable=false`인 컨테이너의 전체 서브트리를 히트 테스팅에서 제외하는 문제 발견
+- `renderable=false` 대신 `alpha=0` 사용으로 시각적 숨김과 이벤트 처리를 동시에 유지
+
+#### 변경된 파일
+- `canvas/skia/selectionRenderer.ts` — 신규 생성
+- `canvas/skia/SkiaOverlay.tsx` — Selection 렌더링 통합 + alpha=0 전환
+- `canvas/BuilderCanvas.tsx` — dragStateRef 전달
+- `canvas/selection/SelectionBox.tsx` — Skia 모드 시각 비활성화
+- `canvas/selection/TransformHandle.tsx` — Skia 모드 시각 비활성화
+- `canvas/selection/LassoSelection.tsx` — Skia 모드 시각 비활성화
+
+---
+
 ### Docs - Skill 규칙 버그 수정 반영 (2026-01-31)
 
 #### 개요

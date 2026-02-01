@@ -12,8 +12,8 @@
 
 | 항목 | Pencil | xstudio |
 |------|--------|---------|
-| **메인 렌더러** | **CanvasKit/Skia WASM** (pencil.wasm, 7.8MB) — 모든 디자인 노드의 벡터/텍스트/이미지/이펙트 렌더링 | PixiJS v8.14.3 (WebGL) |
-| 씬 그래프/이벤트 | PixiJS v8 — 씬 트리 관리 + EventBoundary (Hit Testing) 전용, 디자인 노드 렌더링에 불참여 | PixiJS가 렌더링도 담당 |
+| **메인 렌더러** | **CanvasKit/Skia WASM** (pencil.wasm, 7.8MB) — 모든 디자인 노드의 벡터/텍스트/이미지/이펙트 렌더링 | **CanvasKit/Skia WASM** (canvaskit-wasm) — 디자인 노드 + AI 이펙트 + Selection 오버레이 렌더링 ✅ (2026-02-01 전환) |
+| 씬 그래프/이벤트 | PixiJS v8 — 씬 트리 관리 + EventBoundary (Hit Testing) 전용, 디자인 노드 렌더링에 불참여 | PixiJS v8.14.3 — 씬 그래프 + EventBoundary (Hit Testing) 전용, Camera 하위 `alpha=0`으로 시각적 렌더링 비활성화 |
 | GPU Surface | CanvasKit MakeWebGLCanvasSurface → GrDirectContext → MakeOnScreenGLSurface (폴백: MakeSWCanvasSurface) | PixiJS WebGL 컨텍스트 |
 | React 바인딩 | @pixi/react v8 | @pixi/react v8.0.5 |
 | 레이아웃 | @pixi/layout (Yoga WASM) | @pixi/layout v3.2.0 (Yoga WASM) |
@@ -22,6 +22,8 @@
 | 플랫폼 | Electron (GPU 직접 접근) | 웹 브라우저 (WebGL 제약) |
 
 > **중요 정정사항:** 초기 분석에서 "PixiJS가 메인 렌더러"로 기술했으나, 심층 역공학 결과 **CanvasKit/Skia WASM이 메인 렌더러**이며 PixiJS는 씬 그래프 관리와 이벤트 처리만 담당하는 것으로 확인됨. 모든 씬 노드가 `renderSkia(renderer, canvas, cullingBounds)` 메서드를 구현하여 CanvasKit Canvas API를 직접 호출한다.
+>
+> **xstudio 진행 상황 (2026-02-01):** xstudio도 Pencil 방식으로 전환 중. 현재 Selection 오버레이(선택 박스, Transform 핸들, 라쏘)가 CanvasKit/Skia에서 렌더링되며, PixiJS는 투명 히트 영역 + 이벤트 처리 전용으로 동작. 디자인 노드도 Skia에서 렌더링 중 (`SkiaOverlay.tsx`).
 
 ---
 
@@ -47,7 +49,7 @@
 
 | 최적화 기법 | Pencil | xstudio | WASM 계획 | 비고 |
 |------------|--------|---------|----------|------|
-| **Skia WASM 렌더링** | ✅ renderSkia() — 모든 노드 | ❌ | ❌ | Pencil: CanvasKit이 벡터/텍스트/이미지/이펙트 전담 |
+| **Skia WASM 렌더링** | ✅ renderSkia() — 모든 노드 | ✅ SkiaOverlay renderFrame — 디자인 노드 + AI + Selection | - | xstudio: CanvasKit이 디자인/AI/Selection 렌더링 전담 (2026-02-01) |
 | **이중 Surface 캐싱** | ✅ contentSurface + mainSurface | ❌ | ❌ | 줌/패닝 시 contentSurface 블리팅만 수행 |
 | WebGL 배치 렌더링 | ✅ (236 refs) | 🔶 PixiJS 기본 | - | Pencil은 커스텀 배치 레이어 보유 — 🔄 Phase 5에서 CanvasKit 드로우로 대체 |
 | Dirty Rect 렌더링 | ✅ (104 refs) | ❌ | ❌ | 변경 영역만 다시 그리기 |
@@ -147,19 +149,21 @@
 
 ```
 Pencil 렌더링 최적화 전체: 100%
-├── xstudio 이미 구현: ~55% (React 최적화, 동적 해상도, 컬링, 캐싱, 풀링)
+├── xstudio 이미 구현: ~60% (React 최적화, 동적 해상도, 컬링, 캐싱, 풀링, CanvasKit 렌더 파이프라인)
+│   └── CanvasKit/Skia: 디자인 노드 + AI 이펙트 + Selection 오버레이 렌더링 ✅ (2026-02-01)
 ├── WASM 계획으로 추가: ~15% (SpatialIndex, 레이아웃 가속, Worker)
-├── 추가 개선 필요:    ~20% (Dirty Rect, 아틀라싱, LOD, RenderTexture)
-└── Pencil 고유 영역:  ~10% (CanvasKit/Skia WASM 렌더 엔진, 커스텀 셰이더, renderSkia 파이프라인)
+├── 추가 개선 필요:    ~20% (Dirty Rect, 이중 Surface, 아틀라싱, LOD, RenderTexture)
+└── Pencil 고유 영역:  ~5% (커스텀 셰이더, 전체 노드 renderSkia 메서드)
 ```
 
-**WASM 계획 완료 시 Pencil 대비 약 70% 수준의 렌더링 최적화를 달성.**
+**WASM 계획 완료 시 Pencil 대비 약 75% 수준의 렌더링 최적화를 달성.**
 나머지 20%는 아래 추가 개선 항목으로 보완 가능.
 
-> **⚠️ 전환 영향:** "xstudio 이미 구현 55%" 중 약 **절반(~25-30%)**은 PixiJS 한정 구현(🔄 대체 필요)이다.
+> **⚠️ 전환 영향:** "xstudio 이미 구현 60%" 중 일부는 PixiJS 한정 구현(🔄 대체 필요)이다.
 > Phase 5-6 CanvasKit 전환 시 이 항목들은 CanvasKit API로 **재구현**해야 하며,
 > 단순히 "이미 적용됨 → 추가 작업 불필요"가 아님에 주의.
 > React/Zustand 레이어 최적화(~25-30%)만 전환 후에도 코드 변경 없이 유지된다(✅ 유지).
+> CanvasKit 렌더 파이프라인(디자인 노드/AI/Selection)은 이미 구현 완료(2026-02-01).
 > 상세 분류는 §2 비교표의 전환 영향도 태그(🔄/✅/⬆️) 참조.
 
 ---

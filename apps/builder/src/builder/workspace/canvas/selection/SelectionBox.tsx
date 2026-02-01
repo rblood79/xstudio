@@ -15,6 +15,7 @@ import { PIXI_COMPONENTS } from '../pixiSetup';
 import { TransformHandle } from './TransformHandle';
 import type { BoundingBox, HandlePosition, CursorStyle } from './types';
 import { SELECTION_COLOR, HANDLE_CONFIGS } from './types';
+import { getRenderMode } from '../wasm-bindings/featureFlags';
 
 // ============================================
 // Types
@@ -147,18 +148,20 @@ export const SelectionBox = memo(
 
   // 줌에 독립적인 선 두께 (화면상 항상 1px)
   const strokeWidth = 1 / zoom;
+  const isSkiaMode = getRenderMode() === 'skia';
 
   // 선택 박스 테두리 그리기
   const drawBorder = useCallback(
     (g: PixiGraphics) => {
       g.clear();
+      if (isSkiaMode) return; // Skia가 Selection 렌더링 담당
 
       // 줌에 관계없이 화면상 1px 유지
       g.setStrokeStyle({ width: strokeWidth, color: SELECTION_COLOR, alpha: 1 });
       g.rect(0, 0, width, height);
       g.stroke();
     },
-    [width, height, strokeWidth]
+    [width, height, strokeWidth, isSkiaMode]
   );
 
   // 이동 영역 (배경 - 투명하지만 이벤트 감지)

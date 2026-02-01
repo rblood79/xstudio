@@ -43,10 +43,17 @@ src/builder/workspace/canvas/
 │   ├── ImageSprite.tsx     # 이미지
 │   ├── styleConverter.ts   # CSS → PixiJS 변환
 │   └── index.ts
-├── selection/              # 선택 시스템
+├── selection/              # 선택 시스템 (이벤트 + Pixi 모드 렌더링)
 │   ├── SelectionLayer.tsx
-│   ├── SelectionBox.tsx
-│   ├── TransformHandle.tsx
+│   ├── SelectionBox.tsx      # Skia 모드: drawBorder 스킵, moveArea 이벤트만
+│   ├── TransformHandle.tsx   # Skia 모드: 투명 히트 영역만
+│   ├── LassoSelection.tsx    # Skia 모드: draw 스킵
+│   └── ...
+├── skia/                   # CanvasKit/Skia WASM 렌더링
+│   ├── SkiaOverlay.tsx       # Skia 렌더 루프 + Selection 통합
+│   ├── selectionRenderer.ts  # Selection 오버레이 Skia 렌더 함수
+│   ├── aiEffects.ts          # AI 생성/완료 이펙트
+│   ├── disposable.ts         # CanvasKit 리소스 관리 (SkiaDisposable)
 │   └── ...
 ├── viewport/               # 뷰포트 컨트롤 (Phase 12 B3.2)
 │   ├── ViewportController.ts   # Container 직접 조작
@@ -75,6 +82,10 @@ src/builder/workspace/canvas/
 - 요소 선택 오버레이
 - 라쏘 선택
 - Transform 핸들
+
+> **Skia 모드 (2026-02-01):** `VITE_RENDER_MODE=skia`일 때 Selection 오버레이의 시각적 렌더링은
+> `selectionRenderer.ts`를 통해 CanvasKit/Skia 캔버스에서 수행. PixiJS Selection 컴포넌트는
+> 투명 히트 영역(`alpha=0.001`)으로만 동작하며, 이벤트 처리(클릭 선택, 드래그, 리사이즈)를 담당.
 
 ### B1.4 GridLayer
 - 그리드 표시
@@ -745,6 +756,11 @@ Pan/Zoom 이벤트 → ViewportController → notifyUpdateListeners()
 
 ### B3.3 Selection System 개선
 
+> **Skia 모드 렌더링 분리 (2026-02-01):** `VITE_RENDER_MODE=skia`일 때 Selection의 시각적 렌더링은
+> `canvas/skia/selectionRenderer.ts`에서 CanvasKit API로 수행. PixiJS Selection 컴포넌트는
+> 이벤트 처리(클릭, 드래그, 리사이즈)만 담당하며 투명 히트 영역으로 동작.
+> Camera 하위 레이어는 `alpha=0`으로 숨김 (`renderable=false` 사용 금지 — EventBoundary 히트 테스팅 비활성화 문제).
+
 #### SelectionBox (컨테이너 요소)
 - 자식이 있는 요소도 SelectionBox 테두리 표시
 - Transform 핸들: 단일 선택 시 항상 표시 (컨테이너 포함)
@@ -784,14 +800,17 @@ export const SelectionBox = memo(function SelectionBox({
 }: SelectionBoxProps) {
   // 줌에 독립적인 선 두께 (화면상 항상 1px)
   const strokeWidth = 1 / zoom;
+  const isSkiaMode = getRenderMode() === 'skia';
 
   const drawBorder = useCallback((g: PixiGraphics) => {
     g.clear();
+    if (isSkiaMode) return; // Skia가 Selection 렌더링 담당
     g.setStrokeStyle({ width: strokeWidth, color: SELECTION_COLOR, alpha: 1 });
     g.rect(0, 0, width, height);
     g.stroke();
-  }, [width, height, strokeWidth]);
+  }, [width, height, strokeWidth, isSkiaMode]);
 
+  // moveArea: 이벤트용 투명 영역은 모드 무관하게 유지 (alpha: 0.001)
   // TransformHandle에 zoom 전달
   return (
     <>
@@ -807,7 +826,7 @@ export const SelectionBox = memo(function SelectionBox({
 #### TransformHandle.tsx
 
 ```typescript
-const HANDLE_SIZE = 8;
+const HANDLE_SIZE = 6; // 실제 구현: types.ts에서 6px
 
 export const TransformHandle = memo(function TransformHandle({
   config,
@@ -815,22 +834,32 @@ export const TransformHandle = memo(function TransformHandle({
   zoom = 1,
   // ...
 }: TransformHandleProps) {
-  // 줌에 독립적인 핸들 크기 (화면상 항상 8px)
-  const adjustedSize = HANDLE_SIZE / zoom;
+  // 줌에 독립적인 핸들 크기
+  const cornerSize = HANDLE_SIZE / zoom;
   const strokeWidth = 1 / zoom;
-
-  // 핸들 위치 계산 (조정된 크기 기준)
-  const handleX = boundsX + boundsWidth * config.relativeX - adjustedSize / 2;
-  const handleY = boundsY + boundsHeight * config.relativeY - adjustedSize / 2;
+  const isSkiaMode = getRenderMode() === 'skia';
 
   const draw = useCallback((g: PixiGraphics) => {
     g.clear();
-    g.rect(0, 0, adjustedSize, adjustedSize);
-    g.fill({ color: HANDLE_FILL_COLOR, alpha: 1 });
-    g.setStrokeStyle({ width: strokeWidth, color: HANDLE_STROKE_COLOR, alpha: 1 });
-    g.rect(0, 0, adjustedSize, adjustedSize);
-    g.stroke();
-  }, [adjustedSize, strokeWidth]);
+    if (isCorner && isSkiaMode) {
+      // Skia 모드: 코너도 투명 히트 영역만 (Skia가 시각적 렌더링 담당)
+      g.rect(0, 0, handleW, handleH);
+      g.fill({ color: 0x000000, alpha: 0.001 });
+      return;
+    }
+    if (isCorner) {
+      // Pixi 모드: 흰색 배경 + 파란 테두리 (시각적으로 표시)
+      g.rect(0, 0, handleW, handleH);
+      g.fill({ color: HANDLE_FILL_COLOR, alpha: 1 });
+      g.setStrokeStyle({ width: strokeWidth, color: HANDLE_STROKE_COLOR, alpha: 1 });
+      g.rect(0, 0, handleW, handleH);
+      g.stroke();
+    } else {
+      // 엣지: 투명 히트 영역 (모드 무관)
+      g.rect(0, 0, handleW, handleH);
+      g.fill({ color: 0x000000, alpha: 0.001 });
+    }
+  }, [isCorner, handleW, handleH, strokeWidth, isSkiaMode]);
 });
 ```
 
@@ -841,16 +870,18 @@ export const LassoSelection = memo(function LassoSelection({
   start, current, zoom = 1,
 }: LassoSelectionProps) {
   const strokeWidth = 1 / zoom;
+  const isSkiaMode = getRenderMode() === 'skia';
 
   const draw = useCallback((g: PixiGraphics) => {
     g.clear();
+    if (isSkiaMode) return; // Skia가 Lasso 렌더링 담당
     g.fill({ color: LASSO_COLOR, alpha: LASSO_FILL_ALPHA });
     g.rect(rect.x, rect.y, rect.width, rect.height);
     g.fill();
     g.setStrokeStyle({ width: strokeWidth, color: LASSO_COLOR, alpha: 0.8 });
     g.rect(rect.x, rect.y, rect.width, rect.height);
     g.stroke();
-  }, [rect, strokeWidth]);
+  }, [rect, strokeWidth, isSkiaMode]);
 });
 ```
 
@@ -881,6 +912,26 @@ BuilderCanvas
     │   └── TransformHandle  zoom={zoom}
     └── LassoSelection zoom={zoom}
 ```
+
+### Skia 모드 렌더 파이프라인 (2026-02-01)
+
+`VITE_RENDER_MODE=skia`일 때 Selection 렌더링은 두 레이어로 분리:
+
+```
+[Skia Canvas z:2, pointer-events: none]     [PixiJS Canvas z:3, pointer-events: auto]
+├── 디자인 노드 (renderNode)                 ├── 투명 히트 영역 (alpha=0)
+├── AI Generating 이펙트                      │   ├── moveArea (alpha:0.001)
+├── AI Flash 이펙트                           │   └── corner handles (alpha:0.001)
+├── Selection Box (selectionRenderer)   ★    └── 이벤트 처리 (pointerDown 등)
+├── Corner Handles (selectionRenderer)  ★
+└── Lasso (selectionRenderer)           ★
+```
+
+**핵심 파일:**
+- `canvas/skia/selectionRenderer.ts` — `renderSelectionBox()`, `renderTransformHandles()`, `renderLasso()`
+- `canvas/skia/SkiaOverlay.tsx` — `buildSelectionRenderData()` + renderFrame Phase 4-6
+
+**PixiJS Camera 하위 숨김:** `alpha=0` 사용 (`renderable=false` 금지 — EventBoundary 히트 테스팅 비활성화)
 
 ### 선택 테두리 통합 (14개 컴포넌트)
 

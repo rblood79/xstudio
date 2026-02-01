@@ -1748,11 +1748,14 @@ describe('Browser CSS Comparison', () => {
 |------------|---------------|------------|
 | border-radius | `canvas.drawRRect()` | 4방향 개별 반경, 타원형 반경 정확성 |
 | 텍스트 렌더링 | `ParagraphBuilder` → `drawParagraph` | 서브픽셀 렌더링, 폰트 메트릭, 줄바꿈 위치 |
-| 그래디언트 | `Shader.MakeLinearGradient/Radial/Sweep` | 방향, 색상 정지점, 반복 모드 |
+| 그래디언트 | `Shader.MakeLinearGradient` / `MakeTwoPointConicalGradient` / `MakeSweepGradient` | 방향, 색상 정지점, 반복 모드 |
 | 그림자/블러 | `ImageFilter.MakeDropShadow/MakeBlur` | offset, sigma, inner/outer shadow |
 | 이미지 | `canvas.drawImageRect()` | fit/fill/crop 모드, 비율 유지 |
 
 #### 5.4.2 비교 방법론
+
+> **현재 상태:** 아래 방법론은 Phase 5+ 안정화 단계에서 구현 예정이다.
+> §5.4.1의 CanvasKit API는 모두 구현 완료되어 있으나, 자동화된 픽셀 비교 테스트 인프라는 아직 미구축이다.
 
 ```
 React CSS 렌더링 (Preview iframe) ↔ CanvasKit 렌더링 (Builder Canvas)
@@ -1761,7 +1764,7 @@ React CSS 렌더링 (Preview iframe) ↔ CanvasKit 렌더링 (Builder Canvas)
 ```
 
 1. **동일 element를 CSS와 CanvasKit으로 각각 렌더링**
-2. **스크린샷 기반 비교**: html2canvas 또는 Playwright 스크린샷 캡처
+2. **스크린샷 기반 비교**: Playwright 스크린샷 캡처 (구현 예정)
 3. **허용 오차**: 안티앨리어싱 차이로 인해 SSIM >= 0.95 또는 픽셀 차이 < 2%
 4. **테스트 케이스 우선순위**:
    - P0: 단색 박스, border-radius, 텍스트 기본 렌더링
@@ -1769,6 +1772,8 @@ React CSS 렌더링 (Preview iframe) ↔ CanvasKit 렌더링 (Builder Canvas)
    - P2: angular 그래디언트, 복합 이펙트(blur + shadow)
 
 #### 5.4.3 텍스트 렌더링 전용 검증
+
+> **현재 상태:** 텍스트 측정 인프라(`textMeasure.ts`)는 구현 완료. 아래 테스트 코드는 비교 검증 구현 예정 시점의 설계 예시이다.
 
 ```typescript
 // CanvasKit ParagraphBuilder 텍스트 측정 vs CSS 텍스트 측정 비교
@@ -2378,3 +2383,4 @@ function estimateTextHeight(fontSize: number, lineHeight?: number): number {
 | 2026-01-30 | 1.28 | Button borderWidth/레이아웃 이중 계산 수정: (1) BUTTON_SIZE_CONFIG에 borderWidth:1 필드 추가, (2) Phase 9 BUTTON_SIZE_CONFIG 코드 최신화 (paddingY + borderWidth + CSS paddingX 동기화), (3) parseBoxModel에 폼 요소 BUTTON_SIZE_CONFIG 기본값 적용 (inline style 미지정 시), (4) calculateContentWidth가 폼 요소에서 순수 텍스트 너비만 반환 (padding/border를 parseBoxModel으로 분리하여 이중 계산 제거), (5) 상세: docs/COMPONENT_SPEC_ARCHITECTURE.md §4.7.4.4~4.7.4.8 |
 | 2026-01-31 | 1.29 | 버튼/Body 레이아웃 버그 수정 3건: (1) calculateContentHeight padding 이중 계산 제거 — content-box 기준 textHeight만 반환, MIN_BUTTON_HEIGHT도 content-box로 변환 후 비교, (2) renderWithCustomEngine availableWidth에 border 차감 추가 — parseBorder()로 부모 border를 padding과 함께 차감 (자식 offset은 padding만 — Yoga가 border offset 자동 처리), (3) parseBoxModel에 treatAsBorderBox 로직 추가 — box-sizing: border-box 또는 폼 요소 명시적 width/height 시 padding+border 차감으로 content-box 변환 |
 | 2026-02-01 | 1.30 | Phase 5 CanvasKit/Skia 통합 문서 추가: (1) §3.5 엔진 디스패처에 Phase 5+ 렌더링 전환 주석 (레이아웃 계산 불변, 렌더링만 CanvasKit), (2) §4.4 CanvasKit 렌더 파이프라인 추가 (Store → ElementSprite → useSkiaNode → SkiaOverlay → nodeRenderers → CanvasKit Surface), (3) §5.4 CanvasKit 렌더링 정확성 검증 방법 추가 (border-radius, 텍스트, 그래디언트, 그림자, 픽셀 비교), (4) §7 CanvasKit/Skia 외부 참조 문서 추가, (5) 상세: docs/WASM.md Phase 5, docs/WASM_DOC_IMPACT_ANALYSIS.md §A |
+| 2026-02-01 | 1.31 | §5.4 코드 검증 반영: (1) §5.4.1 Radial gradient API명 수정 (MakeRadialGradient → MakeTwoPointConicalGradient, fills.ts:51-61 실제 구현과 일치), (2) §5.4.2 픽셀 비교 테스트 인프라 미구현 상태 명시 (Playwright 구현 예정), (3) §5.4.3 텍스트 측정 인프라(textMeasure.ts) 존재 / 비교 테스트 미구현 상태 명시 |

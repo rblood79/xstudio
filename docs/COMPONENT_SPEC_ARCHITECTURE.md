@@ -77,8 +77,12 @@
 
 **Spec 시스템의 렌더러 독립성:**
 - ComponentSpec의 **Shape 타입 정의**는 렌더러 무관 (CanvasKit 전환 시에도 유지)
-- Shape 확장(C4-C6)만 CanvasKit 고급 기능 반영으로 추가
-- 렌더러 변경 영향: PixiRenderer 축소 + CanvasKitRenderer 추가 (§2.2, §3.5 참조)
+- Shape 확장(C4-C6)은 CanvasKit 고급 기능 반영을 위한 설계 명세 (코드 인터페이스 적용 예정)
+- 렌더러 변경 영향: PixiJS는 씬 그래프 + 이벤트 전용으로 축소, 시각적 렌더링은 `apps/builder/.../skia/` 디렉토리의 nodeRenderers + SkiaOverlay가 담당
+
+> **현재 구현 상태:** CanvasKit 렌더링은 `packages/specs/src/renderers/CanvasKitRenderer.ts`가 아닌,
+> `apps/builder/src/builder/workspace/canvas/skia/` 디렉토리에서 Element→SkiaNodeData→renderNode() 파이프라인으로 구현되어 있다.
+> Spec Shape → Skia 매핑은 ElementSprite에서 skiaNodeData 생성 시 수행된다.
 
 ---
 
@@ -194,8 +198,11 @@
 
 - **CSSGenerator**: React 렌더링 + Publish(배포) 전용
 - **ReactRenderer**: Preview iframe 내 React DOM 렌더링
-- **PixiRenderer**: 씬 그래프 관리 + EventBoundary(Hit Testing) 전용 (시각적 렌더링 제거)
-- **CanvasKitRenderer**: Phase 5+ 추가 — Spec Shapes → Skia Paint/Path → Surface 렌더링
+- **PixiRenderer**: Phase 5+ 시 씬 그래프 관리 + EventBoundary(Hit Testing) 전용으로 축소 예정 (현재는 시각적 렌더링도 수행)
+- **CanvasKit 렌더링**: Phase 5+ — `apps/builder/.../skia/` 디렉토리에서 Element → SkiaNodeData → nodeRenderers.renderNode() → CanvasKit Surface 파이프라인으로 구현 (`packages/specs/` 외부)
+
+> **구현 참고:** 다이어그램의 CanvasKitRenderer 박스는 설계상 Spec 패키지 내 렌더러를 나타내지만,
+> 실제 구현은 `builder/workspace/canvas/skia/nodeRenderers.ts`의 `renderNode()` 함수가 담당한다.
 
 ### 2.3 핵심 원칙
 
@@ -245,8 +252,8 @@ packages/
     │   ├── renderers/
     │   │   ├── index.ts
     │   │   ├── ReactRenderer.ts     # Spec → React Props
-    │   │   ├── PixiRenderer.ts      # Spec → PIXI Graphics (Phase 5+: 씬 그래프 전용)
-    │   │   ├── CanvasKitRenderer.ts # Spec → CanvasKit/Skia Surface (Phase 5+)
+    │   │   ├── PixiRenderer.ts      # Spec → PIXI Graphics (Phase 5+ 시 씬 그래프 전용으로 축소 예정)
+    │   │   # CanvasKit 렌더링: apps/builder/.../skia/nodeRenderers.ts에서 구현 (이 패키지 외부)
     │   │   ├── CSSGenerator.ts      # Spec → CSS 파일 (React/Publish 전용)
     │   │   └── utils/
     │   │       └── tokenResolver.ts # 토큰 → 실제 값 (색상, 크기, 그림자 등)
@@ -605,7 +612,7 @@ export interface TextShape {
   /** 줄 수 제한 (multiline 텍스트) */
   maxLines?: number;
 
-  // Phase 5+ CanvasKit ParagraphBuilder 속성:
+  // Phase 5+ CanvasKit ParagraphBuilder 속성 (설계 명세 — shape.types.ts 인터페이스 적용 예정):
   /** 서브픽셀 텍스트 렌더링 (Phase 5+) */
   subpixel?: boolean;
   /** 폰트 힌팅 (Phase 5+) */
@@ -667,6 +674,8 @@ export interface ShadowShape {
   inset?: boolean;
 
   // Phase 5+ CanvasKit 이펙트 확장 (saveLayer 기반):
+  // 현재 구현: skia/types.ts의 EffectStyle 유니온 타입 (OpacityEffect | BackgroundBlurEffect | DropShadowEffect)
+  // 아래 필드는 ShadowShape 통합을 위한 설계 명세:
   /** 이펙트 타입 (Phase 5+) */
   effectType?: 'shadow' | 'blur' | 'background-blur' | 'glow';
   /** 배경 블러 반경 — ImageFilter.MakeBlur() (Phase 5+) */
@@ -719,7 +728,7 @@ export interface BorderShape {
     left?: boolean;
   };
 
-  // Phase 5+ Skia Stroke 확장:
+  // Phase 5+ Skia Stroke 확장 (설계 명세 — shape.types.ts 인터페이스 및 nodeRenderers.ts 구현 예정):
   /** Stroke 정렬 (Skia Paint stroke) */
   strokeAlignment?: 'inside' | 'center' | 'outside';
   /** 선 끝 모양 (Skia Paint::Cap) */
@@ -812,10 +821,10 @@ export interface ContainerLayout {
   justifySelf?: 'auto' | 'start' | 'center' | 'end' | 'stretch' | 'normal';
 }
 
-// Phase 5+ CanvasKit overflow 구현:
-// overflow: 'hidden' → canvas.clipRect(containerRect, ClipOp.Intersect)
-// overflow: 'scroll' → canvas.clipRect() + ScrollBar 오버레이 렌더링
-// clipPath: border-radius가 있는 경우 → canvas.clipRRect()로 둥근 클리핑
+// Phase 5+ CanvasKit overflow 구현 (설계 명세):
+// overflow: 'hidden' → canvas.clipRect(containerRect, ClipOp.Intersect)  ← SkiaRenderer.ts:151에 clipRect 구현 완료
+// overflow: 'scroll' → canvas.clipRect() + ScrollBar 오버레이 렌더링     ← 미구현
+// clipPath: border-radius가 있는 경우 → canvas.clipRRect()로 둥근 클리핑 ← clipRRect 미구현
 
 /**
  * 그라디언트 (ColorPicker, Slider 등에서 사용)
@@ -837,14 +846,16 @@ export interface GradientShape {
   };
 }
 
-// Phase 5+ GradientShape 확장 (CanvasKit/Skia):
+// Phase 5+ GradientShape 확장 (CanvasKit/Skia) — fills.ts 구현 상태:
 //   gradient.type: 'linear' | 'radial' | 'angular' | 'mesh'
-//     - angular: Shader.MakeSweepGradient() — Figma angular gradient
-//     - mesh: Shader.MakeMeshGradient() — 메시 그래디언트
+//     - linear: Shader.MakeLinearGradient()              ← ✅ fills.ts:38-45
+//     - radial: Shader.MakeTwoPointConicalGradient()     ← ✅ fills.ts:51-61
+//     - angular: Shader.MakeSweepGradient()              ← ✅ fills.ts:64-74
+//     - mesh: Shader.MakeMeshGradient()                  ← ⚠️ 스텁만 (fills.ts:96-106, 공개 API 미지원)
 //   gradient.tileMode?: 'clamp' | 'repeat' | 'mirror'
-//     - CanvasKit TileMode enum 매핑
+//     - 현재 Clamp만 사용 (repeat/mirror 미구현)
 //   gradient.colorSpace?: 'sRGB' | 'lab' | 'oklch'
-//     - Skia SkColorSpace 지원 (고품질 색상 보간)
+//     - 미구현 (향후 Skia SkColorSpace 지원 예정)
 //   gradient.center?: { x: number; y: number }
 //     - radial/angular의 중심점 (기본: width/2, height/2)
 
@@ -1638,10 +1649,13 @@ function cssColorToPixiHex(color: string, fallback: number = 0x000000): number {
 }
 
 /**
- * Phase 5+: CSS 색상 문자열 → CanvasKit/Skia uint32 ARGB 변환
+ * Phase 5+: CSS 색상 문자열 → CanvasKit/Skia Float32Array 변환 (설계 예시)
  *
- * Skia는 0xAARRGGBB 형식 (알파가 최상위 바이트)
+ * Skia는 ck.Color4f(r, g, b, a) 형식의 Float32Array를 사용한다.
  * PixiJS의 0xRRGGBB와 달리 알파 채널을 포함한다.
+ *
+ * 현재 구현: 전용 변환 함수 없이 fills.ts, aiEffects.ts 등에서
+ * ck.Color4f(r, g, b, a)를 인라인으로 직접 호출한다.
  */
 function cssColorToSkiaColor(
   color: string,
@@ -1774,10 +1788,15 @@ export function getSizePreset(
 | 이벤트 히트 영역 | `EventBoundary` | 동일 (PixiJS 유지) |
 | 씬 그래프 순서 | `Container` 트리 | 동일 (PixiJS 유지) |
 
-**CanvasKitRenderer 핵심 구조:**
+**CanvasKitRenderer 설계 명세:**
+
+> **현재 구현 상태:** 아래 `renderToSkia()` 함수는 Spec 패키지 내 렌더러 설계 예시이다.
+> 실제 CanvasKit 렌더링은 `apps/builder/src/builder/workspace/canvas/skia/nodeRenderers.ts`의
+> `renderNode()` 함수가 담당하며, SkiaNodeData 기반으로 동작한다.
+> Spec Shape → SkiaNodeData 변환은 ElementSprite.tsx에서 수행된다.
 
 ```typescript
-// packages/specs/src/renderers/CanvasKitRenderer.ts
+// 설계 예시 (실제 구현: builder/workspace/canvas/skia/nodeRenderers.ts)
 
 import type { CanvasKit, Canvas, Paint } from 'canvaskit-wasm';
 import type { ComponentSpec, Shape } from '../types';
@@ -4225,6 +4244,9 @@ async function compareScreenshots(
 
 > Phase 5 이후 Visual Regression Testing은 React vs **CanvasKit** 비교로 전환된다.
 > 상세: `docs/WASM.md` Phase 5.3 참조
+>
+> **현재 구현 상태:** 아래 테스트 헬퍼(`waitForCanvasKitRender`, `__canvasKitReady`)는 구현 예정이다.
+> CanvasKit 렌더링 안정화 후 Playwright 기반 비주얼 리그레션 테스트를 구축할 계획이다.
 
 **변경 사항:**
 
@@ -4235,7 +4257,7 @@ async function compareScreenshots(
 | PixiJS Graphics 렌더링 비교 | CanvasKit Surface 렌더링 비교 | 렌더링 파이프라인 변경 |
 
 ```typescript
-// Phase 5+ CanvasKit 렌더링 안정화 대기
+// Phase 5+ CanvasKit 렌더링 안정화 대기 (구현 예정 — 현재 미구현)
 async function waitForCanvasKitRender(page: Page): Promise<void> {
   // CanvasKit WASM 초기화 완료 대기
   await page.waitForFunction(() =>
@@ -4345,13 +4367,13 @@ Offscreen Surface (변경 사항 렌더링)
   → 완료 후 Main Surface에 복사
 ```
 
-| 전략 | 설명 | CanvasKit API |
-|------|------|---------------|
-| 이중 Surface | 렌더링 중 화면 깜빡임 방지 | `CanvasKit.MakeSurface()` × 2 |
-| Dirty Rect | 변경된 영역만 재렌더링 | `canvas.clipRect(dirtyRect)` + `canvas.drawImage()` |
-| Paint 재사용 | 동일 스타일 Paint 객체 캐싱 | `new CanvasKit.Paint()` + Map 캐시 |
-| Font 캐시 | 폰트 로드 결과 캐싱 | `CanvasKit.Typeface` + Map 캐시 |
-| Paragraph 캐시 | 텍스트 측정 결과 캐싱 | `ParagraphBuilder` 결과 Map 캐시 |
+| 전략 | 설명 | CanvasKit API | 구현 상태 |
+|------|------|---------------|----------|
+| 이중 Surface | 렌더링 중 화면 깜빡임 방지 | `CanvasKit.MakeSurface()` × 2 | ✅ SkiaRenderer.ts |
+| Dirty Rect | 변경된 영역만 재렌더링 | `canvas.clipRect(dirtyRect)` + `canvas.drawImage()` | ✅ SkiaRenderer.ts + dirtyRectTracker.ts |
+| Paint 재사용 | 동일 스타일 Paint 객체 캐싱 | `new CanvasKit.Paint()` + Map 캐시 | ⚠️ 미구현 (인라인 생성) |
+| Font 캐시 | 폰트 로드 결과 캐싱 | `CanvasKit.Typeface` + Map 캐시 | ✅ fontManager.ts |
+| Paragraph 캐시 | 텍스트 측정 결과 캐싱 | `ParagraphBuilder` 결과 Map 캐시 | ⚠️ 미구현 (매 프레임 재생성) |
 
 ```typescript
 // CanvasKit Dirty Rect 최적화 예시
@@ -5051,3 +5073,4 @@ function PixiButton({ element }) {
 | 2026-01-30 | 1.11 | Button auto width 불일치 수정 + Spec 빌드 동기화 규칙 (Section 4.7.4.0): (1) ButtonSpec sizes paddingX 수정 — md:16→24, lg:24→32, xl:32→40 (CSS 토큰과 일치), (2) BUTTON_SIZE_CONFIG paddingLeft/Right 동기화, (3) fontFamily 통일 — Pretendard를 specs fontFamily.sans에 추가, PixiButton·utils.ts·Button.spec.ts에서 specs 상수 참조로 교체, (4) `@xstudio/specs` 빌드 동기화 규칙 추가 (CRITICAL) — dist/ 미갱신 시 layout↔rendering 값 불일치 발생 사례 문서화, (5) 핵심 원칙에 Build-Sync 추가, (6) 9.3 스크립트 섹션을 실제 tsup 빌드 도구와 동기화, (7) 값 동기화 대상 테이블 (Spec↔Builder 내부 상수↔CSS 토큰) 및 @sync 주석 정책 명시 |
 | 2026-01-30 | 1.12 | Button borderWidth/레이아웃 이중 계산 수정 (Section 4.7.4.4~4.7.4.8): (1) 전 variant에 border/borderHover 추가 — CSS `border: 1px solid`와 동기화 (Button.spec.ts), (2) specDefaultBorderWidth=1 고정 — variant.border 유무 무관 (PixiButton.tsx), (3) borderHoverColor 분리 — hover/pressed 상태 별도 border 색상 (PixiButton.tsx, PixiRenderer.ts), (4) parseBoxModel 폼 요소 기본값 — inline style 미지정 시 BUTTON_SIZE_CONFIG padding/border 적용 (utils.ts), (5) calculateContentWidth 순수 텍스트 반환 — 폼 요소 padding/border를 parseBoxModel으로 분리하여 이중 계산 제거 (utils.ts), (6) 텍스트 측정 엔진 통일 — PixiButton 너비 측정을 Canvas 2D measureTextWidth로 교체 (PixiButton.tsx), (7) createDefaultButtonProps borderWidth:'1px' 기본값 — Style Panel 0 표시 해결 (unified.types.ts), (8) BUTTON_SIZE_CONFIG에 borderWidth:1 필드 추가 (utils.ts), (9) 값 동기화 테이블에 borderWidth 항목 추가 |
 | 2026-01-31 | 1.13 | 버튼 display/레이아웃 버그 수정 5건 (Section 4.7.4.2, 4.7.4.5): (1) parseBoxModel 폼 요소 자동 border-box — 명시적 width/height를 border-box로 취급하여 padding+border 차감 (treatAsBorderBox), PixiButton self-rendering과 BlockEngine content-box 합산 간 이중 계산 해결 (utils.ts), (2) calculateContentHeight에서 padding 이중 계산 제거 — content-box 기준 textHeight만 반환 (utils.ts), (3) Body borderWidth 처리 — renderWithCustomEngine의 availableWidth에서 border 차감 추가, 자식 offset은 padding만 적용 (Yoga가 border offset 자동 처리) (BuilderCanvas.tsx), (4) §4.7.4.2에 v1.13 border-box 참고 추가 |
+| 2026-02-01 | 1.14 | Phase 5+ CanvasKit/Skia 구현 코드 대조 검증 12건 반영: (1) §1 아키텍처 개요 — Skia 렌더링 실제 위치(apps/builder/.../skia/) 명시, (2) §2 렌더러 설명 — CanvasKitRenderer → nodeRenderers.ts 파이프라인 정정, (3) §2 파일 목록 — CanvasKitRenderer.ts → 외부 구현 참조 코멘트, (4) §3 TextShape — "설계 명세 — 인터페이스 적용 예정" 상태 표기, (5) §3 ShadowShape — 실제 구현 위치(skia/types.ts EffectStyle) 명시, (6) §3 BorderShape — "설계 명세 — 인터페이스 적용 예정" 상태 표기, (7) §4 Clipping — clipRect ✅/clipRRect·overflow 미구현 상태 표기, (8) §4 Gradient — 타입별 구현 상태 + fills.ts 라인 참조, (9) §7 색상 변환 — "설계 예시" + Color4f 인라인 사용 명시, (10) §8 렌더러 파일 — 설계 예시 + nodeRenderers.ts 참조, (11) §12 테스트 헬퍼 — "구현 예정 — 현재 미구현" 표기, (12) §12 캐시 전략 — 구현 상태 컬럼 추가(Paint·Paragraph ⚠️ 미구현, Font·Surface·DirtyRect ✅) |

@@ -296,13 +296,17 @@ function BuilderCanvas() {
 │                                                                  │
 │  ┌──────────────┐  ┌─────────────────────┐  ┌──────────────┐   │
 │  │  UI Layer    │  │   Canvas Layer      │  │  Data Layer  │   │
-│  │  (React DOM) │  │   (PixiJS WebGL)    │  │  (Zustand)   │   │
+│  │  (React DOM) │  │ (CanvasKit + PixiJS)│  │  (Zustand)   │   │
 │  ├──────────────┤  ├─────────────────────┤  ├──────────────┤   │
-│  │ • Sidebar    │  │ • Element Sprites   │  │ • elements   │   │
-│  │ • Inspector  │  │ • Selection Box     │  │ • selection  │   │
-│  │ • Panels     │  │ • Transform Handle  │  │ • history    │   │
-│  │ • Toolbar    │  │ • Grid/Guide        │  │ • theme      │   │
-│  │ • Layer Tree │  │ • Zoom/Pan Camera   │  │ • pages      │   │
+│  │ • Sidebar    │  │ [Skia z:2 렌더링]   │  │ • elements   │   │
+│  │ • Inspector  │  │ • Element Sprites   │  │ • selection  │   │
+│  │ • Panels     │  │ • Selection Box ★   │  │ • history    │   │
+│  │ • Toolbar    │  │ • Transform Handle ★│  │ • theme      │   │
+│  │ • Layer Tree │  │ • AI Effects        │  │ • pages      │   │
+│  │              │  │ [PixiJS z:3 이벤트]  │  │              │   │
+│  │              │  │ • Hit Testing       │  │              │   │
+│  │              │  │ • Drag Interaction  │  │              │   │
+│  │              │  │ • Zoom/Pan Camera   │  │              │   │
 │  └──────────────┘  └─────────────────────┘  └──────────────┘   │
 │         │                    │                     ▲            │
 │         │                    │                     │            │
@@ -424,12 +428,15 @@ export function BuilderCanvas() {
           <ElementSprite key={el.id} element={el} />
         ))}
 
-        {/* Selection Layer */}
+        {/* Selection Layer (PixiJS: 이벤트 히트 영역, Skia: 시각적 렌더링) */}
         <SelectionOverlay selectedIds={selectedIds} />
 
-        {/* Transform Handles */}
+        {/* Transform Handles (PixiJS: 투명 히트 영역, Skia: 시각적 핸들) */}
         <TransformHandles selectedIds={selectedIds} />
       </Container>
+
+      {/* SkiaOverlay: CanvasKit/Skia로 디자인 노드 + AI + Selection 렌더링 */}
+      {/* PixiJS Camera 하위: alpha=0 (renderable=false 금지) */}
     </Application>
   );
 }

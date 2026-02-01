@@ -1,9 +1,12 @@
 /**
  * CanvasKit 캔버스 오버레이 컴포넌트
  *
- * PixiJS Application 위에 CanvasKit `<canvas>`를 오버레이한다.
- * 전역 레지스트리에서 Skia 렌더 데이터를 읽어 CanvasKit으로 렌더링하고,
- * DOM 이벤트를 PixiJS 캔버스로 브리징한다.
+ * PixiJS Application과 함께 CanvasKit `<canvas>`를 배치한다.
+ * 전역 레지스트리에서 Skia 렌더 데이터를 읽어 CanvasKit으로 디자인 콘텐츠를 렌더링하고,
+ * PixiJS 캔버스는 이벤트 처리(히트 테스팅, 드래그)만 담당한다.
+ *
+ * Pencil 방식 단일 캔버스: 디자인 콘텐츠 + AI 이펙트 + Selection 오버레이를
+ * 모두 CanvasKit으로 렌더링한다.
  *
  * 매 프레임 PixiJS 씬 그래프를 순회하여 Skia 렌더 트리를 재구성하고
  * CanvasKit으로 렌더링한다.
@@ -12,9 +15,9 @@
  */
 
 import { useEffect, useRef, useState } from 'react';
+import type { RefObject } from 'react';
 import type { Application, Container } from 'pixi.js';
 import { SkiaRenderer } from './SkiaRenderer';
-import { bridgeEvents } from './eventBridge';
 import { getSkiaNode } from './useSkiaNode';
 import { renderNode } from './nodeRenderers';
 import type { SkiaNodeData } from './nodeRenderers';
@@ -24,6 +27,12 @@ import { getRenderMode } from '../wasm-bindings/featureFlags';
 import { skiaFontManager } from './fontManager';
 import { useAIVisualFeedbackStore } from '../../../stores/aiVisualFeedback';
 import { buildNodeBoundsMap, renderGeneratingEffects, renderFlashes } from './aiEffects';
+import { renderSelectionBox, renderTransformHandles, renderLasso } from './selectionRenderer';
+import type { LassoRenderData } from './selectionRenderer';
+import { useStore } from '../../../stores';
+import { getElementBoundsSimple } from '../elementRegistry';
+import { calculateCombinedBounds } from '../selection/types';
+import type { BoundingBox, DragState } from '../selection/types';
 
 interface SkiaOverlayProps {
   /** 부모 컨테이너 DOM 요소 */
@@ -32,6 +41,18 @@ interface SkiaOverlayProps {
   backgroundColor?: number;
   /** PixiJS Application 인스턴스 */
   app: Application;
+  /** 드래그 상태 Ref (라쏘 렌더링용) */
+  dragStateRef?: RefObject<DragState | null>;
+}
+
+/**
+ * Camera 컨테이너를 찾아 줌/팬 상태를 추출한다.
+ */
+function findCameraContainer(stage: Container): Container | null {
+  for (const child of stage.children) {
+    if ((child as Container).label === 'Camera') return child as Container;
+  }
+  return null;
 }
 
 /**
@@ -39,9 +60,19 @@ interface SkiaOverlayProps {
  *
  * PixiJS Container의 label이 elementId 형식(UUID)인 노드를 탐색하고,
  * 레지스트리에서 해당 elementId의 SkiaNodeData를 조회한다.
- * Container의 worldTransform에서 위치를 추출하여 올바른 좌표에 렌더링한다.
+ * Container의 worldTransform에서 카메라 변환을 제거하여 씬-로컬 좌표로 변환한다.
+ *
+ * @param root - 탐색 시작 컨테이너 (app.stage)
+ * @param cameraX - Camera 컨테이너 X (panOffset.x)
+ * @param cameraY - Camera 컨테이너 Y (panOffset.y)
+ * @param cameraZoom - Camera 스케일 (줌 레벨)
  */
-function buildSkiaTreeFromRegistry(root: Container): SkiaNodeData | null {
+function buildSkiaTreeFromRegistry(
+  root: Container,
+  cameraX: number,
+  cameraY: number,
+  cameraZoom: number,
+): SkiaNodeData | null {
   const children: SkiaNodeData[] = [];
 
   function traverse(container: Container): void {
@@ -49,8 +80,11 @@ function buildSkiaTreeFromRegistry(root: Container): SkiaNodeData | null {
     if (container.label) {
       const nodeData = getSkiaNode(container.label);
       if (nodeData) {
-        // PixiJS 월드 변환에서 절대 좌표 추출
+        // PixiJS 월드 변환에서 카메라 변환을 제거하여 씬-로컬 좌표 추출
         const wt = container.worldTransform;
+        const localX = (wt.tx - cameraX) / cameraZoom;
+        const localY = (wt.ty - cameraY) / cameraZoom;
+
         // PixiJS 컨테이너의 실제 크기 사용 (Yoga 레이아웃 결과)
         // CSS style에 명시적 width/height가 없는 요소(Button 등)는
         // nodeData에 기본값(100x100)이 들어있으므로 컨테이너 크기로 덮어쓴다.
@@ -80,8 +114,8 @@ function buildSkiaTreeFromRegistry(root: Container): SkiaNodeData | null {
         children.push({
           ...nodeData,
           elementId: container.label, // G.3: AI 이펙트 타겟팅용
-          x: wt.tx,
-          y: wt.ty,
+          x: localX,
+          y: localY,
           width: actualWidth,
           height: actualHeight,
           children: updatedChildren,
@@ -113,13 +147,90 @@ function buildSkiaTreeFromRegistry(root: Container): SkiaNodeData | null {
   };
 }
 
+/** Selection 렌더 데이터 결과 */
+interface SelectionRenderResult {
+  bounds: BoundingBox | null;
+  showHandles: boolean;
+  lasso: LassoRenderData | null;
+}
+
 /**
- * CanvasKit 오버레이.
+ * Selection 렌더 데이터를 Zustand 스토어에서 수집한다.
  *
- * - z-index: 2 (위) — CanvasKit GPU 렌더링
- * - PixiJS canvas: z-index: 1 (아래) — 씬 그래프/이벤트
+ * 매 프레임 getState()로 읽기 (React 구독 없음).
+ * 글로벌 좌표를 씬-로컬 좌표로 변환하여 반환.
  */
-export function SkiaOverlay({ containerEl, backgroundColor = 0xf8fafc, app }: SkiaOverlayProps) {
+function buildSelectionRenderData(
+  cameraX: number,
+  cameraY: number,
+  cameraZoom: number,
+  dragStateRef?: RefObject<DragState | null>,
+): SelectionRenderResult {
+  const state = useStore.getState();
+  const selectedIds = state.selectedElementIds;
+
+  let selectionBounds: BoundingBox | null = null;
+  let showHandles = false;
+
+  if (selectedIds.length > 0) {
+    const currentPageId = state.currentPageId;
+    const boxes: BoundingBox[] = [];
+
+    for (const id of selectedIds) {
+      const el = state.elementsMap.get(id);
+      if (!el || el.page_id !== currentPageId) continue;
+
+      const globalBounds = getElementBoundsSimple(id);
+      if (globalBounds) {
+        // 글로벌 → 씬-로컬 좌표 변환
+        boxes.push({
+          x: (globalBounds.x - cameraX) / cameraZoom,
+          y: (globalBounds.y - cameraY) / cameraZoom,
+          width: globalBounds.width / cameraZoom,
+          height: globalBounds.height / cameraZoom,
+        });
+      }
+    }
+
+    selectionBounds = calculateCombinedBounds(boxes);
+    showHandles = selectedIds.length === 1;
+  }
+
+  // 라쏘 상태
+  let lasso: LassoRenderData | null = null;
+  const dragState = dragStateRef?.current;
+  if (
+    dragState?.isDragging &&
+    dragState.operation === 'lasso' &&
+    dragState.startPosition &&
+    dragState.currentPosition
+  ) {
+    const sx = dragState.startPosition.x;
+    const sy = dragState.startPosition.y;
+    const cx = dragState.currentPosition.x;
+    const cy = dragState.currentPosition.y;
+    lasso = {
+      x: Math.min(sx, cx),
+      y: Math.min(sy, cy),
+      width: Math.abs(cx - sx),
+      height: Math.abs(cy - sy),
+    };
+  }
+
+  return { bounds: selectionBounds, showHandles, lasso };
+}
+
+/**
+ * CanvasKit 오버레이 (Pencil 방식 단일 캔버스).
+ *
+ * 캔버스 레이어 순서 (skia 모드):
+ * - z-index: 2 — CanvasKit 캔버스 (디자인 + AI 이펙트 + Selection 오버레이)
+ * - z-index: 3 — PixiJS 캔버스 (이벤트 처리 전용, 시각적 렌더링 없음)
+ *
+ * 모든 Camera 하위 레이어는 renderable=false로 숨기고,
+ * PixiJS는 히트 테스팅과 드래그 이벤트만 처리한다.
+ */
+export function SkiaOverlay({ containerEl, backgroundColor = 0xf8fafc, app, dragStateRef }: SkiaOverlayProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rendererRef = useRef<SkiaRenderer | null>(null);
   const [ready, setReady] = useState(false);
@@ -198,13 +309,13 @@ export function SkiaOverlay({ containerEl, backgroundColor = 0xf8fafc, app }: Sk
     const renderer = new SkiaRenderer(ck, skiaCanvas, bgColor, dpr);
     rendererRef.current = renderer;
 
-    // 이벤트 브리징
-    const cleanupBridge = bridgeEvents(skiaCanvas, pixiCanvas);
-
-    // PixiJS 자체 렌더링 비활성화 (skia 모드)
+    // Pencil 방식: PixiJS는 이벤트 처리 전용 (시각적 렌더링 없음)
+    // Skia가 디자인 + AI 이펙트 + Selection 오버레이를 모두 렌더링
     if (renderMode === 'skia') {
-      pixiCanvas.style.visibility = 'hidden';
-      pixiCanvas.style.pointerEvents = 'none';
+      // PixiJS 배경을 투명하게 → 시각적 렌더링 없음
+      app.renderer.background.alpha = 0;
+      // PixiJS 캔버스를 Skia 위에 배치 (이벤트 처리 전용)
+      pixiCanvas.style.zIndex = '3';
     }
 
     // 렌더 루프: PixiJS ticker에 통합
@@ -213,17 +324,39 @@ export function SkiaOverlay({ containerEl, backgroundColor = 0xf8fafc, app }: Sk
 
       const stage = app.stage;
 
-      // 매 프레임 트리 재구성 + 렌더링
+      // 카메라 상태 추출 (줌/팬)
+      const cameraContainer = findCameraContainer(stage);
+
+      // Pencil 방식: Camera 하위 레이어를 시각적으로 숨기되 이벤트는 유지
+      // ⚠️ renderable=false는 PixiJS 8의 _interactivePrune()에서
+      //    hit testing까지 비활성화하므로 사용 금지.
+      //    alpha=0으로 시각적으로만 숨겨 이벤트 처리를 유지한다.
+      if (renderMode === 'skia' && cameraContainer) {
+        for (const child of cameraContainer.children) {
+          const c = child as Container;
+          if (c.label) {
+            c.alpha = 0;
+          }
+        }
+      }
+      const cameraX = cameraContainer?.x ?? 0;
+      const cameraY = cameraContainer?.y ?? 0;
+      const cameraZoom = Math.max(cameraContainer?.scale?.x ?? 1, 0.001);
+
+      // 매 프레임 트리 재구성 (씬-로컬 좌표로 변환)
       // registryVersion 기반 idle 프레임 스킵은 useEffect/rAF 타이밍 차이로
       // 스타일 변경을 놓칠 수 있어, 매 프레임 렌더링으로 안정성을 우선한다.
-      const tree = buildSkiaTreeFromRegistry(stage);
+      const tree = buildSkiaTreeFromRegistry(stage, cameraX, cameraY, cameraZoom);
       if (!tree) return;
 
+      // 씬-로컬 좌표계에서의 가시 영역 (컬링용)
+      const screenW = skiaCanvas.width / dpr;
+      const screenH = skiaCanvas.height / dpr;
       const cullingBounds = new DOMRect(
-        0,
-        0,
-        skiaCanvas.width / dpr,
-        skiaCanvas.height / dpr,
+        -cameraX / cameraZoom,
+        -cameraY / cameraZoom,
+        screenW / cameraZoom,
+        screenH / cameraZoom,
       );
 
       renderer.setRootNode({
@@ -232,10 +365,15 @@ export function SkiaOverlay({ containerEl, backgroundColor = 0xf8fafc, app }: Sk
             ? skiaFontManager.getFontMgr()
             : undefined;
 
-          // Phase 1: 디자인 노드 렌더링
+          // 카메라 변환 적용 (팬 + 줌)
+          canvas.save();
+          canvas.translate(cameraX, cameraY);
+          canvas.scale(cameraZoom, cameraZoom);
+
+          // Phase 1: 디자인 노드 렌더링 (씬-로컬 좌표)
           renderNode(ck, canvas, tree, bounds, fontMgr);
 
-          // Phase 2-3: G.3 AI 시각 피드백 (generating + flash)
+          // Phase 2-3: G.3 AI 시각 피드백 (카메라 좌표계 내에서 렌더링)
           const aiState = useAIVisualFeedbackStore.getState();
           const hasAIEffects =
             aiState.generatingNodes.size > 0 || aiState.flashAnimations.size > 0;
@@ -249,6 +387,20 @@ export function SkiaOverlay({ containerEl, backgroundColor = 0xf8fafc, app }: Sk
             renderGeneratingEffects(ck, canvas, now, aiState.generatingNodes, nodeBoundsMap);
             renderFlashes(ck, canvas, now, aiState.flashAnimations, nodeBoundsMap);
           }
+
+          // Phase 4-6: Selection 오버레이 (Pencil 방식 — Skia에서 직접 렌더링)
+          const selectionData = buildSelectionRenderData(cameraX, cameraY, cameraZoom, dragStateRef);
+          if (selectionData.bounds) {
+            renderSelectionBox(ck, canvas, selectionData.bounds, cameraZoom);
+            if (selectionData.showHandles) {
+              renderTransformHandles(ck, canvas, selectionData.bounds, cameraZoom);
+            }
+          }
+          if (selectionData.lasso) {
+            renderLasso(ck, canvas, selectionData.lasso, cameraZoom);
+          }
+
+          canvas.restore();
         },
       });
 
@@ -259,13 +411,21 @@ export function SkiaOverlay({ containerEl, backgroundColor = 0xf8fafc, app }: Sk
 
     return () => {
       app.ticker.remove(renderFrame);
-      cleanupBridge();
       renderer.dispose();
       rendererRef.current = null;
 
       if (renderMode === 'skia') {
-        pixiCanvas.style.visibility = '';
-        pixiCanvas.style.pointerEvents = '';
+        // PixiJS 상태 복원
+        app.renderer.background.alpha = 1;
+        pixiCanvas.style.zIndex = '';
+
+        // 디자인 레이어 렌더링 복원
+        const camera = findCameraContainer(app.stage);
+        if (camera) {
+          for (const child of camera.children) {
+            (child as Container).alpha = 1;
+          }
+        }
       }
     };
   }, [ready, isActive, app, containerEl, backgroundColor, renderMode]);
@@ -307,7 +467,7 @@ export function SkiaOverlay({ containerEl, backgroundColor = 0xf8fafc, app }: Sk
         width: '100%',
         height: '100%',
         zIndex: 2,
-        pointerEvents: 'auto',
+        pointerEvents: 'none', // PixiJS 캔버스(z-index:3)가 이벤트 처리
       }}
     />
   );

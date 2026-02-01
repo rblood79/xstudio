@@ -15,7 +15,7 @@
  */
 
 import "@pixi/layout";
-import { useCallback, useEffect, useRef, useMemo, useState, memo, startTransition, lazy, Suspense } from "react";
+import { useCallback, useEffect, useRef, useMemo, useState, memo, startTransition, lazy, Suspense, type RefObject } from "react";
 import { Application, useApplication } from "@pixi/react";
 import { Graphics as PixiGraphics, Container, Application as PixiApplication } from "pixi.js";
 import { useStore } from "../../stores";
@@ -34,6 +34,7 @@ import {
   type BoundingBox,
   type CursorStyle,
   type SelectionBoxHandle,
+  type DragState,
 } from "./selection";
 import { GridLayer } from "./grid";
 import { ViewportControlBridge } from "./viewport";
@@ -98,7 +99,7 @@ const SkiaOverlayComponent = lazy(() =>
   import('./skia/SkiaOverlay').then((mod) => ({ default: mod.SkiaOverlay }))
 );
 
-function SkiaOverlayLazy(props: { containerEl: HTMLDivElement; backgroundColor?: number; app: PixiApplication }) {
+function SkiaOverlayLazy(props: { containerEl: HTMLDivElement; backgroundColor?: number; app: PixiApplication; dragStateRef?: RefObject<DragState | null> }) {
   return (
     <Suspense fallback={null}>
       <SkiaOverlayComponent {...props} />
@@ -1333,6 +1334,10 @@ export function BuilderCanvas({
     ),
   });
 
+  // dragState를 ref로 노출 (Skia Selection 렌더링에서 라쏘 상태 접근용)
+  const dragStateRef = useRef<DragState>(dragState);
+  useEffect(() => { dragStateRef.current = dragState; }, [dragState]);
+
   // 리사이즈 시작 핸들러
   const handleResizeStart = useCallback(
     (
@@ -1600,6 +1605,7 @@ export function BuilderCanvas({
           containerEl={containerEl}
           backgroundColor={backgroundColor}
           app={pixiAppRef.current}
+          dragStateRef={dragStateRef}
         />
       )}
 

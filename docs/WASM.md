@@ -2243,6 +2243,7 @@ CanvasKit 도입 후 PixiJS의 역할을 제한한다:
 | 기능 | 전환 전 (현재) | 전환 후 (목표) | 대체되는 기존 구현 |
 |------|---------------|---------------|-------------------|
 | 디자인 노드 렌더링 | PixiJS WebGL | CanvasKit/Skia WASM | cacheAsTexture, 배치 렌더링, Fill/이펙트 |
+| **Selection 오버레이** | PixiJS Graphics | **CanvasKit/Skia WASM** ✅ 구현 완료 (2026-02-01) | SelectionBox drawBorder, TransformHandle draw, LassoSelection draw |
 | 씬 그래프 관리 | PixiJS Container | PixiJS Container (유지) | — |
 | Hit Testing | PixiJS EventBoundary | PixiJS EventBoundary (유지) | — |
 | 텍스트 렌더링 | PixiJS Text | CanvasKit ParagraphBuilder | — |
@@ -2253,9 +2254,16 @@ CanvasKit 도입 후 PixiJS의 역할을 제한한다:
 
 **PixiJS 렌더링 비활성화:**
 
-> **⚠️ 주의:** `app.renderer.render = () => {}` 단순 noop 처리는 **금지**.
+> **⚠️ 주의 1:** `app.renderer.render = () => {}` 단순 noop 처리는 **금지**.
 > PixiJS의 `render()` 내부에서 Transform/Bounds 갱신(`updateTransform`, `getBounds`)이 수행되므로,
 > noop 처리 시 `EventBoundary` 히트테스트와 `getWorldBounds()` 기반 컬링이 깨진다.
+>
+> **⚠️ 주의 2 (2026-02-01 실증):** `container.renderable = false`는 **금지**.
+> PixiJS 8.14.3의 `EventBoundary._interactivePrune()` (line 317)가 `!container.renderable` 체크로
+> 해당 컨테이너와 **모든 자식**의 히트 테스팅을 완전히 비활성화한다.
+> 대신 **`container.alpha = 0`** 을 사용하여 시각적으로만 숨기고 이벤트 처리는 유지한다.
+> `_interactivePrune()`는 alpha를 체크하지 않으므로, `alpha=0`에서도 클릭/드래그 이벤트가 정상 동작한다.
+> 이 패턴은 `SkiaOverlay.tsx`의 Selection 오버레이 전환에서 검증 완료.
 
 ```typescript
 // BuilderCanvas.tsx — PixiJS "업데이트만 유지" 경로
@@ -2305,16 +2313,24 @@ app.ticker.autoStart = true;
 
 **권장 전략: 캔버스 오버레이 + 이벤트 포워딩**
 
+> **✅ 구현 완료 (2026-02-01):** Selection 오버레이가 이 전략으로 동작 중.
+> Skia 캔버스가 디자인 노드 + AI 이펙트 + Selection 오버레이를 렌더링하고,
+> PixiJS 캔버스는 투명 배경(`alpha=0`)으로 이벤트만 처리한다.
+
 ```
 ┌─────────────────────────────────┐
 │ CanvasKit <canvas>               │  z-index: 2  ← 실제 GPU 렌더링
-│ pointer-events: auto             │  사용자 이벤트 수신
+│ pointer-events: none             │  디자인 노드 + AI 이펙트 + Selection 오버레이
 ├─────────────────────────────────┤
-│ PixiJS <canvas>                  │  z-index: 1  ← 숨김 (렌더링 비활성화)
-│ pointer-events: none             │  씬 그래프 + 이벤트 시스템만 유지
-│ visibility: hidden               │
+│ PixiJS <canvas>                  │  z-index: 3  ← 투명 (alpha=0, 이벤트 수신)
+│ pointer-events: auto             │  씬 그래프 + EventBoundary 히트 테스팅
+│ background: transparent          │  Camera 하위 레이어: alpha=0 (renderable=false 금지)
 └─────────────────────────────────┘
 ```
+
+> **⚠️ 실제 구현에서의 차이점:** 초기 설계와 달리, PixiJS 캔버스가 z-index: 3 (상위)에서
+> 이벤트를 직접 수신한다. CanvasKit 캔버스는 `pointer-events: none`이며 렌더링만 담당.
+> 이벤트 브리징 없이 PixiJS의 네이티브 EventBoundary가 직접 동작하므로 구현이 단순하고 안정적이다.
 
 **구현:**
 1. CanvasKit 전용 `<canvas>` 엘리먼트를 PixiJS 캔버스 **위에** 오버레이 (`position: absolute; z-index` 사용)
@@ -2469,18 +2485,20 @@ const RENDER_MODE = import.meta.env.VITE_RENDER_MODE; // 'pixi' | 'skia' | 'hybr
 
 ### 5.9 Phase 5 산출물
 
-| 산출물 | 내용 |
-|--------|------|
-| `canvas/skia/initCanvasKit.ts` | CanvasKit WASM 초기화 |
-| `canvas/skia/createSurface.ts` | GPU Surface 생성 (WebGL → SW 폴백) |
-| `canvas/skia/SkiaRenderer.ts` | 렌더 루프 (renderSkia 트리 순회) |
-| `canvas/skia/fills.ts` | 6종 Fill Shader 구현 |
-| `canvas/skia/effects.ts` | 이펙트 파이프라인 (opacity, blur, shadow) |
-| `canvas/skia/types.ts` | SkiaRenderable 인터페이스 |
-| `canvas/skia/disposable.ts` | CanvasKit 리소스 수동 해제 래퍼 (Disposable 패턴) |
-| `canvas/skia/fontManager.ts` | CanvasKit 폰트 등록/캐싱 파이프라인 |
-| `canvas/skia/textMeasure.ts` | CanvasKit Paragraph 기반 텍스트 측정 (Yoga measureFunc 연결) |
-| `canvas/skia/eventBridge.ts` | DOM 이벤트 브리징 (CanvasKit 캔버스 → PixiJS 캔버스) |
+| 산출물 | 내용 | 상태 |
+|--------|------|------|
+| `canvas/skia/initCanvasKit.ts` | CanvasKit WASM 초기화 | ✅ 구현 |
+| `canvas/skia/createSurface.ts` | GPU Surface 생성 (WebGL → SW 폴백) | ✅ 구현 |
+| `canvas/skia/SkiaRenderer.ts` | 렌더 루프 (renderSkia 트리 순회) | ✅ 구현 (`SkiaOverlay.tsx`) |
+| `canvas/skia/selectionRenderer.ts` | Selection 오버레이 렌더링 (선택 박스, 핸들, 라쏘) | ✅ 구현 (2026-02-01) |
+| `canvas/skia/aiEffects.ts` | AI 생성 이펙트 (generating 애니메이션, flash) | ✅ 구현 |
+| `canvas/skia/disposable.ts` | CanvasKit 리소스 수동 해제 래퍼 (Disposable 패턴) | ✅ 구현 |
+| `canvas/skia/fills.ts` | 6종 Fill Shader 구현 | 📋 계획 |
+| `canvas/skia/effects.ts` | 이펙트 파이프라인 (opacity, blur, shadow) | 📋 계획 |
+| `canvas/skia/types.ts` | SkiaRenderable 인터페이스 | 📋 계획 |
+| `canvas/skia/fontManager.ts` | CanvasKit 폰트 등록/캐싱 파이프라인 | 📋 계획 |
+| `canvas/skia/textMeasure.ts` | CanvasKit Paragraph 기반 텍스트 측정 (Yoga measureFunc 연결) | 📋 계획 |
+| `canvas/skia/eventBridge.ts` | DOM 이벤트 브리징 (CanvasKit 캔버스 → PixiJS 캔버스) | ❌ 불필요 (§5.7.1 참조) |
 | BoxSprite renderSkia() | 사각형/RoundedRect CanvasKit 렌더링 |
 | TextSprite renderSkia() | ParagraphBuilder 텍스트 렌더링 |
 | ImageSprite renderSkia() | drawImageRect 이미지 렌더링 |
@@ -2632,6 +2650,11 @@ Pencil의 핵심 최적화: contentSurface + mainSurface 분리.
 - 줌/패닝 시 전체 씬 재렌더링 불필요 → contentSurface 블리팅만 수행
 - 오버레이(선택 박스, 가이드라인)만 mainSurface에서 재렌더링
 - 대규모 캔버스에서 줌/패닝 응답 시간 대폭 개선
+
+> **현재 구현 (2026-02-01):** 이중 Surface 없이 단일 Surface에서 매 프레임 전체 렌더링.
+> renderFrame 순서: 디자인 노드 → AI 이펙트 → Selection 오버레이 (선택 박스 + 코너 핸들 + 라쏘).
+> Selection 오버레이는 `selectionRenderer.ts`에서 Zustand getState()로 매 프레임 상태를 읽어 렌더링.
+> 이중 Surface 분리는 향후 성능 최적화로 검토.
 
 ### 6.2 Dirty Rect 렌더링
 
