@@ -1847,3 +1847,130 @@ Cmd+S → saveDocument() → FileManager.export()
 | **자동 저장** | 없음 (명시적 Cmd+S) | 서버 자동 동기화 |
 | **오프라인** | 완전 로컬 (Electron) | 웹 의존 |
 | **템플릿** | 7종 내장 (new, welcome, 4 kits) | (확인 필요) |
+
+---
+
+## 11. Pencil 렌더링 방식 전환 구현 현황 (2026-02-01)
+
+> xstudio가 Pencil 앱과 동일한 CanvasKit/Skia 기반 렌더링 아키텍처로 전환한 현재 상태를 체크한 결과.
+> 구현 파일: `apps/builder/src/builder/workspace/canvas/skia/` (17개 파일)
+
+### 11.1 아키텍처 전환 (Pencil 핵심 패턴)
+
+| # | Pencil 아키텍처 | xstudio 구현 파일 | 상태 |
+|---|----------------|------------------|------|
+| A-1 | CanvasKit/Skia WASM 메인 렌더러 | `SkiaOverlay.tsx` + `SkiaRenderer.ts` | ✅ |
+| A-2 | PixiJS = 씬 그래프 + 이벤트 전용 (렌더링 불참여) | Camera 하위 `alpha=0`, EventBoundary 유지 | ✅ |
+| A-3 | 이중 Surface 캐싱 (contentSurface + mainSurface) | `SkiaRenderer.ts` Phase 6 | ✅ |
+| A-4 | Dirty Rect 부분 렌더링 | `dirtyRectTracker.ts` + `renderContent()` clipRect | ✅ |
+| A-5 | 프레임 분류 (idle/camera-only/content/full) | `SkiaRenderer.classifyFrame()` | ✅ |
+| A-6 | 이벤트 브리징 (Skia↔PixiJS) | `eventBridge.ts` | ✅ |
+| A-7 | Selection 오버레이 Skia 렌더링 | `selectionRenderer.ts` | ✅ |
+| A-8 | AI 이펙트 Skia 렌더링 | `aiEffects.ts` | ✅ |
+
+### 11.2 렌더링 파이프라인 (노드별 renderSkia)
+
+| # | Pencil 기능 | xstudio 구현 | 상태 |
+|---|------------|-------------|------|
+| B-1 | renderSkia() 재귀 트리 순회 | `renderNode()` in `nodeRenderers.ts` | ✅ |
+| B-2 | AABB 뷰포트 컬링 | `intersectsAABB()` | ✅ |
+| B-3 | Box 렌더링 (RRect + borderRadius) | `renderBox()` drawRect/drawRRect | ✅ |
+| B-4 | Text 렌더링 (ParagraphBuilder) | `renderText()` ParagraphBuilder.Make | ✅ |
+| B-5 | Image 렌더링 (drawImageRect) | `renderImage()` | ✅ |
+| B-6 | 이펙트 파이프라인 (beginRenderEffects/endRenderEffects) | `effects.ts` saveLayer 기반 | ✅ |
+| B-7 | 폰트 관리 (FontMgr + IndexedDB 캐싱) | `fontManager.ts` | ✅ |
+| B-8 | 텍스트 측정 (Yoga measureFunc 연결) | `textMeasure.ts` createYogaMeasureFunc | ✅ |
+
+### 11.3 Fill 시스템 (6종)
+
+| # | Fill 타입 | Pencil API | xstudio 구현 | 상태 |
+|---|----------|-----------|-------------|------|
+| C-1 | Color | `paint.setColor()` | `applyFill()` Color4f | ✅ |
+| C-2 | LinearGradient | `MakeLinearGradient` | `MakeLinearGradient` | ✅ |
+| C-3 | RadialGradient | `MakeRadialGradient` | `MakeTwoPointConicalGradient` | ✅ |
+| C-4 | AngularGradient | `MakeSweepGradient` | `MakeSweepGradient` | ✅ |
+| C-5 | ImageFill | `makeShaderOptions` | `makeShaderOptions` | ✅ |
+| C-6 | **MeshGradient** | `drawPatch()` Coons 패치 | 구조 정의만, 렌더링 미구현 | ❌ |
+
+### 11.4 이펙트 (saveLayer 기반)
+
+| # | 이펙트 | Pencil API | xstudio 구현 | 상태 |
+|---|-------|-----------|-------------|------|
+| D-1 | Opacity | `canvas.saveLayer(alphaPaint)` | `paint.setAlphaf()` + saveLayer | ✅ |
+| D-2 | BackgroundBlur | `MakeBlur(sigma, sigma)` | `ImageFilter.MakeBlur` | ✅ |
+| D-3 | DropShadow (Outer) | `MakeDropShadow` | `MakeDropShadow` | ✅ |
+| D-4 | DropShadow (Inner) | `MakeDropShadowOnly` | `MakeDropShadowOnly` | ✅ |
+| D-5 | **LayerBlur** | `saveLayer + MakeBlur` (대상 레이어 자체) | 미구현 | ❌ |
+
+### 11.5 블렌드 모드 (18종)
+
+| # | xstudio 구현 (`blendModes.ts`) | 상태 |
+|---|-------------------------------|------|
+| E-1 | Normal, Multiply, Screen, Overlay, Darken, Lighten, ColorDodge, ColorBurn, HardLight, SoftLight, Difference, Exclusion, Hue, Saturation, Color, Luminosity, DestinationOver, Plus | ✅ 18종 전체 |
+
+### 11.6 Export
+
+| # | 기능 | xstudio 구현 | 상태 |
+|---|------|-------------|------|
+| F-1 | PNG/JPEG/WEBP Export | `export.ts` exportToImage | ✅ |
+| F-2 | DPR 스케일 + 투명 배경 | scale 옵션 + backgroundColor null | ✅ |
+
+### 11.7 유틸리티 및 지원
+
+| # | 기능 | 파일 | 상태 |
+|---|------|------|------|
+| G-1 | CanvasKit 초기화 (HMR 안전, 중복 방지) | `initCanvasKit.ts` | ✅ |
+| G-2 | GPU Surface 생성 (WebGL → SW 폴백) | `createSurface.ts` | ✅ |
+| G-3 | SkiaDisposable (C++ 힙 메모리 관리) | `disposable.ts` | ✅ |
+| G-4 | Skia 노드 레지스트리 (O(1) 조회) | `useSkiaNode.ts` | ✅ |
+| G-5 | Feature Flag (pixi/skia/hybrid) | `featureFlags.ts` | ✅ |
+| G-6 | Skia 타입 정의 (18개 인터페이스) | `types.ts` | ✅ |
+
+### 11.8 Selection 오버레이 (Pencil 방식)
+
+| # | 기능 | 구현 | 상태 |
+|---|------|------|------|
+| H-1 | SelectionBox (파란 스트로크, zoom-aware) | `selectionRenderer.ts` renderSelectionBox | ✅ |
+| H-2 | TransformHandle (4 코너, 흰 fill + 파란 stroke) | `selectionRenderer.ts` renderTransformHandles | ✅ |
+| H-3 | Lasso (반투명 fill + stroke) | `selectionRenderer.ts` renderLasso | ✅ |
+| H-4 | PixiJS Selection: 시각 비활성화, 이벤트만 유지 | SelectionBox/TransformHandle/LassoSelection `isSkiaMode` | ✅ |
+| H-5 | Camera 하위 숨김: `alpha=0` (renderable=false 금지) | SkiaOverlay.tsx renderFrame | ✅ |
+
+### 11.9 AI 시각 피드백
+
+| # | 기능 | 구현 | 상태 |
+|---|------|------|------|
+| I-1 | Generating Effect (블러 오버레이 + 회전 파티클) | `aiEffects.ts` renderGeneratingEffects | ✅ |
+| I-2 | Flash (스트로크 + 스캔라인 애니메이션) | `aiEffects.ts` renderFlashes | ✅ |
+
+### 11.10 미구현 항목 요약
+
+| # | 항목 | 중요도 | 비고 |
+|---|------|--------|------|
+| 1 | **MeshGradient Fill** | 중간 | `fills.ts:96-106` 구조만 정의. Coons 패치 또는 SkSL RuntimeEffect 필요 |
+| 2 | **LayerBlur 이펙트** | 중간 | BackgroundBlur와 유사하나 대상 레이어 자체에 블러 적용. effects.ts에 case 추가 필요 |
+| 3 | **Hybrid 모드** | 낮음 | 텍스트 렌더링 겹침으로 비활성화 중 (`SkiaOverlay.tsx:239-242`) |
+| 4 | **Stroke Alignment** (Inside/Outside) | 낮음 | Path.makeStroked + PathOp 필요. 현재 Center만 지원 |
+| 5 | **Polygon/Donut/Sector 도형** | 낮음 | 고급 벡터 도형. nodeRenderers.ts 확장 필요 |
+
+### 11.11 전환 완성도
+
+```
+Pencil 렌더링 아키텍처 전환: 95% 완료
+
+✅ 완전 구현 (35/37 항목):
+├── 아키텍처: CanvasKit 메인 렌더러 + PixiJS 이벤트 전용
+├── 렌더 루프: 이중 Surface + Dirty Rect + 프레임 분류
+├── 노드 렌더링: Box/Text/Image/Container + AABB 컬링
+├── Fill: 5/6종 (Color, Linear, Radial, Angular, Image)
+├── 이펙트: 4/5종 (Opacity, BackgroundBlur, DropShadow Outer/Inner)
+├── 블렌드 모드: 18종 전체
+├── Selection: 선택 박스 + 핸들 + 라쏘 (Skia 렌더링)
+├── AI: Generating + Flash 애니메이션
+├── Export: PNG/JPEG/WEBP + DPR 스케일
+└── 유틸리티: 초기화, Surface, Disposable, Font, 텍스트 측정
+
+❌ 미구현 (2/37 항목):
+├── MeshGradient Fill (1종) — Phase 5 후반 예정
+└── LayerBlur 이펙트 (1종) — effects.ts 확장 예정
+```

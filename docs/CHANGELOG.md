@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Docs - Pencil 렌더링 방식 전환 구현 현황 체크 (2026-02-01)
+
+#### 개요
+Pencil 앱과 동일한 CanvasKit/Skia 렌더링 아키텍처로의 전환 완성도를 체계적으로 점검하고 결과를 문서화
+
+#### 체크 결과: 95% 완료 (35/37 항목)
+
+**✅ 완전 구현:**
+- 아키텍처: CanvasKit 메인 렌더러 + PixiJS 이벤트 전용 + 이중 Surface + Dirty Rect + 프레임 분류
+- 노드 렌더링: Box/Text/Image/Container + AABB 컬링 + ParagraphBuilder 텍스트
+- Fill 5/6종, 이펙트 4/5종, 블렌드 모드 18종 전체
+- Selection 오버레이 + AI 시각 피드백 + Export (PNG/JPEG/WEBP)
+- 유틸리티: 초기화, Surface, Disposable, Font(IndexedDB 캐싱), 텍스트 측정(Yoga 연결)
+
+**❌ 미구현 (2항목):**
+- MeshGradient Fill — Phase 5 후반 예정
+- LayerBlur 이펙트 — effects.ts 확장 예정
+
+#### 변경된 파일
+- `docs/PENCIL_VS_XSTUDIO_RENDERING.md` — §11 구현 현황 체크리스트 추가 (11.1-11.11)
+
+---
+
 ### Changed - Selection 오버레이 Skia 전환 (Pencil 방식) (2026-02-01)
 
 #### 개요
