@@ -40,6 +40,7 @@ export type PanelId =
   | 'library'
   | 'datatable'
   | 'datatableEditor'  // DataTable 에디터 패널 (DataTablePanel과 함께 사용)
+  | 'designKit'         // G.4: 디자인 킷 브라우저
   // Tool panels
   | 'theme'
   | 'ai'
@@ -202,6 +203,7 @@ export const DEFAULT_PANEL_LAYOUT: PanelLayoutState = {
     'components',
     'datatable',
     'datatableEditor',  // DataTable 에디터 (datatable과 함께 사용)
+    'designKit',         // G.4: 디자인 킷 브라우저
     'theme',
   ],
   rightPanels: [

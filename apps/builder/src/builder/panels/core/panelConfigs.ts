@@ -17,6 +17,7 @@ import {
   FileEdit,
   Activity,
   History,
+  Package,
 } from "lucide-react";
 import type { PanelConfig } from "./types";
 import { PanelRegistry } from "./PanelRegistry";
@@ -35,6 +36,9 @@ import { PropertiesPanel } from "../properties/PropertiesPanel";
 import { StylesPanel } from "../styles/StylesPanel";
 import { EventsPanel } from "../events/EventsPanel";
 import { HistoryPanel } from "../history/HistoryPanel";
+
+// Design Kit panel (G.4)
+import { DesignKitPanel } from "../designKit/DesignKitPanel";
 
 // Bottom panels
 import { MonitorPanel } from "../monitor/MonitorPanel";
@@ -94,6 +98,21 @@ export const PANEL_CONFIGS: PanelConfig[] = [
     minWidth: 490,
     maxWidth: 490,
     description: "DataTable, API, Variable, Transformer 편집",
+  },
+
+  // Design Kit panel (G.4)
+  {
+    id: "designKit",
+    name: "디자인 킷",
+    nameEn: "Design Kit",
+    icon: Package,
+    component: DesignKitPanel,
+    category: "navigation",
+    defaultPosition: "left",
+    minWidth: 249,
+    maxWidth: 400,
+    description: "디자인 킷 브라우저 및 적용",
+    shortcut: "Ctrl+Shift+K",
   },
 
   // Tool panels

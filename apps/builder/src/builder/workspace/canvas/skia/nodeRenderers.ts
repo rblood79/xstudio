@@ -24,6 +24,8 @@ import { SkiaDisposable } from './disposable';
 /** PixiJS Container에 부착되는 Skia 렌더 정보 */
 export interface SkiaNodeData {
   type: 'box' | 'text' | 'image' | 'container';
+  /** 이 노드를 소유한 element의 ID (AI 이펙트 타겟팅용) */
+  elementId?: string;
   /** 노드 로컬 위치/크기 */
   x: number;
   y: number;

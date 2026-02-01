@@ -22,6 +22,8 @@ import { isCanvasKitInitialized, getCanvasKit } from './initCanvasKit';
 import { initAllWasm } from '../wasm-bindings/init';
 import { getRenderMode } from '../wasm-bindings/featureFlags';
 import { skiaFontManager } from './fontManager';
+import { useAIVisualFeedbackStore } from '../../../stores/aiVisualFeedback';
+import { buildNodeBoundsMap, renderGeneratingEffects, renderFlashes } from './aiEffects';
 
 interface SkiaOverlayProps {
   /** 부모 컨테이너 DOM 요소 */
@@ -77,6 +79,7 @@ function buildSkiaTreeFromRegistry(root: Container): SkiaNodeData | null {
 
         children.push({
           ...nodeData,
+          elementId: container.label, // G.3: AI 이펙트 타겟팅용
           x: wt.tx,
           y: wt.ty,
           width: actualWidth,
@@ -228,7 +231,24 @@ export function SkiaOverlay({ containerEl, backgroundColor = 0xf8fafc, app }: Sk
           const fontMgr = skiaFontManager.getFamilies().length > 0
             ? skiaFontManager.getFontMgr()
             : undefined;
+
+          // Phase 1: 디자인 노드 렌더링
           renderNode(ck, canvas, tree, bounds, fontMgr);
+
+          // Phase 2-3: G.3 AI 시각 피드백 (generating + flash)
+          const aiState = useAIVisualFeedbackStore.getState();
+          const hasAIEffects =
+            aiState.generatingNodes.size > 0 || aiState.flashAnimations.size > 0;
+
+          if (hasAIEffects) {
+            const now = performance.now();
+            if (aiState.flashAnimations.size > 0) {
+              aiState.cleanupExpiredFlashes(now);
+            }
+            const nodeBoundsMap = buildNodeBoundsMap(tree, aiState);
+            renderGeneratingEffects(ck, canvas, now, aiState.generatingNodes, nodeBoundsMap);
+            renderFlashes(ck, canvas, now, aiState.flashAnimations, nodeBoundsMap);
+          }
         },
       });
 

@@ -21,6 +21,7 @@ import { useConversationStore } from "../../stores/conversation";
 import { useStore } from "../../stores";
 import { createGroqService } from "../../../services/ai/GroqService";
 import { intentParser } from "../../../services/ai/IntentParser";
+import { useAIVisualFeedbackStore } from "../../stores/aiVisualFeedback";
 import type {
   ComponentIntent,
   BuilderContext,
@@ -335,6 +336,10 @@ function AIPanelContent() {
             }
 
             await addElement(newElement);
+            // G.3: 생성 완료 flash
+            useAIVisualFeedbackStore.getState().addFlashForNode(newElement.id, {
+              scanLine: true,
+            });
             if (import.meta.env.DEV) {
               console.log("[AIPanel] Created element:", newElement);
             }
@@ -383,6 +388,10 @@ function AIPanelContent() {
             }
 
             await updateElementProps(targetId, updates);
+            // G.3: 수정 완료 flash
+            useAIVisualFeedbackStore.getState().addFlashForNode(targetId, {
+              strokeWidth: 1,
+            });
             if (import.meta.env.DEV) {
               console.log("[AIPanel] Updated element:", targetId, updates);
             }
@@ -467,6 +476,11 @@ function AIPanelContent() {
           // Try AI service first (streaming)
           setStreamingStatus(true);
 
+          // G.3: AI 작업 시작 — 선택된 요소에 generating 이펙트
+          if (selectedElementId) {
+            useAIVisualFeedbackStore.getState().startGenerating([selectedElementId]);
+          }
+
           // Add empty assistant message for streaming
           addAssistantMessage("");
 
@@ -494,18 +508,28 @@ function AIPanelContent() {
               // Execute the intent
               await executeIntent(intent);
 
+              // G.3: generating 완료 → flash 전환
+              if (selectedElementId) {
+                useAIVisualFeedbackStore.getState().completeGenerating([selectedElementId]);
+              }
+
               // Update message with intent metadata
               const messages = useConversationStore.getState().messages;
               const lastMessage = messages[messages.length - 1];
               if (lastMessage) {
                 lastMessage.metadata = { componentIntent: intent };
               }
+            } else {
+              // G.3: intent 없음 — generating 취소
+              useAIVisualFeedbackStore.getState().cancelGenerating();
             }
           } catch (streamError) {
             if (import.meta.env.DEV) {
               console.error("[AIPanel] Streaming failed:", streamError);
             }
             setStreamingStatus(false);
+            // G.3: 스트리밍 실패 — generating 취소
+            useAIVisualFeedbackStore.getState().cancelGenerating();
 
             // Fallback to rule-based parser
             throw streamError;

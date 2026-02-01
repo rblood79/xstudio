@@ -308,6 +308,13 @@ Pencil의 IPC Handle을 참고하여 Groq tool calling에 등록할 도구:
 | `get_style_guide` | 현재 테마, 디자인 토큰 조회 | get-style-guide | 중간 |
 | `get_variables` | 디자인 변수 목록 조회 | get-variables | 낮음 |
 | `set_variables` | 디자인 변수 설정 | set-variables | 낮음 |
+| `create_component` | 요소를 Master 컴포넌트로 등록 (G.1) | — | 중간 |
+| `create_instance` | Master의 인스턴스 배치 (G.1) | — | 중간 |
+| `override_instance` | 인스턴스 속성 오버라이드 (G.1) | — | 중간 |
+
+> **Phase 5+ (G.1/G.2 반영):** `create_component`, `create_instance`, `override_instance` 도구가 추가되어
+> 컴포넌트-인스턴스 시스템을 AI가 직접 조작할 수 있다.
+> `get_variables`, `set_variables`는 테마별 분기(`themeId`)와 그룹 필터(`group`)를 지원하도록 확장되었다.
 
 ### 4.4 도구 JSON Schema 예시
 
@@ -454,6 +461,116 @@ const tools: ChatCompletionTool[] = [
     },
   },
 ];
+```
+
+#### Phase 5+ 도구 스키마 (G.1/G.2/G.4 반영)
+
+컴포넌트-인스턴스 시스템(G.1)과 변수 참조(G.2) 지원을 위한 추가 도구:
+
+```typescript
+// G.1: 컴포넌트-인스턴스 도구
+{
+  type: 'function',
+  function: {
+    name: 'create_component',
+    description: '현재 요소를 재사용 가능한 Master 컴포넌트로 등록합니다.',
+    parameters: {
+      type: 'object',
+      properties: {
+        elementId: { type: 'string', description: 'Master로 등록할 요소 ID' },
+        componentName: { type: 'string', description: '컴포넌트 이름' },
+      },
+      required: ['elementId', 'componentName'],
+    },
+  },
+},
+{
+  type: 'function',
+  function: {
+    name: 'create_instance',
+    description: 'Master 컴포넌트의 인스턴스를 생성하여 캔버스에 배치합니다.',
+    parameters: {
+      type: 'object',
+      properties: {
+        masterId: { type: 'string', description: 'Master 컴포넌트 ID' },
+        parentId: { type: 'string', description: '부모 요소 ID' },
+      },
+      required: ['masterId'],
+    },
+  },
+},
+{
+  type: 'function',
+  function: {
+    name: 'override_instance',
+    description: '인스턴스의 속성을 오버라이드합니다. Master 원본에는 영향 없음.',
+    parameters: {
+      type: 'object',
+      properties: {
+        instanceId: { type: 'string', description: '인스턴스 요소 ID' },
+        overrides: { type: 'object', description: '오버라이드할 속성' },
+      },
+      required: ['instanceId', 'overrides'],
+    },
+  },
+},
+
+// G.2: 변수 참조 확장
+// 기존 get_variables, set_variables 도구에 테마별 분기 지원 추가:
+{
+  type: 'function',
+  function: {
+    name: 'get_variables',
+    description: '디자인 변수 목록을 조회합니다. 테마별 값 포함.',
+    parameters: {
+      type: 'object',
+      properties: {
+        themeId: { type: 'string', description: '특정 테마의 값만 조회 (선택)' },
+        group: { type: 'string', description: '변수 그룹으로 필터 (선택)' },
+      },
+    },
+  },
+},
+{
+  type: 'function',
+  function: {
+    name: 'set_variables',
+    description: '디자인 변수를 설정하거나 수정합니다.',
+    parameters: {
+      type: 'object',
+      properties: {
+        variables: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              name: { type: 'string', description: '변수 이름 ($-- 접두사 없이)' },
+              type: { type: 'string', enum: ['color', 'string', 'number'] },
+              defaultValue: { description: '기본값' },
+              themeOverrides: { type: 'object', description: '테마별 오버라이드 {테마명: 값}' },
+            },
+            required: ['name', 'type', 'defaultValue'],
+          },
+        },
+      },
+      required: ['variables'],
+    },
+  },
+},
+```
+
+**batch_design 확장 (G.1 반영):**
+기존 `batch_design` 도구의 `action` enum에 컴포넌트 작업 추가:
+
+```typescript
+action: {
+  type: 'string',
+  enum: [
+    'create', 'update', 'delete',
+    // Phase 5+ G.1 추가:
+    'create_component', 'create_instance', 'override_instance', 'detach_instance',
+  ],
+}
 ```
 
 ---
@@ -736,6 +853,49 @@ ColorPicker, ColorWheel, ColorField, ProgressBar, Meter, Tooltip
 }
 ```
 
+#### Phase 5+ 확장 (G.1/G.2/G.4 반영)
+
+시스템 프롬프트에 컴포넌트 라이브러리, 디자인 변수, 현재 테마 정보를 추가:
+
+```typescript
+export function buildSystemPrompt(context: EnhancedBuilderContext): string {
+  let prompt = `... (기존 프롬프트) ...`;
+
+  // G.1: 컴포넌트 라이브러리 컨텍스트
+  if (context.masterComponents?.length) {
+    prompt += `\n\n## 재사용 가능한 컴포넌트 (Master)
+${context.masterComponents.map(m => `- ${m.name} (${m.tag}, ${m.instanceCount} instances)`).join('\n')}
+
+create_instance 도구를 사용하여 위 컴포넌트의 인스턴스를 배치할 수 있습니다.
+override_instance로 인스턴스별 속성을 변경할 수 있습니다.`;
+  }
+
+  // G.2: 디자인 변수 컨텍스트
+  if (context.designVariables?.length) {
+    prompt += `\n\n## 디자인 변수
+${context.designVariables.map(v => `- $--${v.name} (${v.type}): ${v.defaultValue}`).join('\n')}
+
+스타일 값에 "$--변수명" 형식으로 변수를 참조할 수 있습니다.
+예: { backgroundColor: "$--primary", borderRadius: "$--radius-md" }`;
+  }
+
+  // G.4: 현재 테마 정보
+  if (context.activeTheme) {
+    prompt += `\n\n## 현재 활성 테마: ${context.activeTheme.name}`;
+  }
+
+  return prompt;
+}
+```
+
+**EnhancedBuilderContext 확장 필드:**
+| 필드 | 타입 | 출처 |
+|------|------|------|
+| `masterComponents` | `MasterComponentSummary[]` | elements store → componentIndex |
+| `designVariables` | `DesignVariable[]` | themeStore → designVariables |
+| `activeTheme` | `DesignTheme \| null` | themeStore → activeTheme |
+| `appliedKitIds` | `string[]` | designKitStore → appliedKitIds |
+
 ### 6.6 스타일 변환 레이어
 
 > 렌더링 전환(CanvasKit)과의 독립성을 보장하는 핵심 레이어.
@@ -777,6 +937,41 @@ export function adaptPropsForElement(
     ...adaptStyles(styles),
   };
 }
+```
+
+#### Phase 5+ 확장 (G.2 변수 참조 지원)
+
+AI 도구가 `$--` 접두사 변수 참조를 직접 사용할 수 있도록 어댑터 확장:
+
+```typescript
+// Phase 5+: $-- 변수 참조를 AI가 스타일 값으로 사용
+// AI 출력 예시: { backgroundColor: "$--primary", borderRadius: "$--radius-md" }
+
+export function adaptStyles(
+  cssStyles: Record<string, unknown>,
+): Record<string, unknown> {
+  // $-- 변수 참조가 포함된 스타일 키 추출
+  const variableBindings: string[] = [];
+
+  for (const [key, value] of Object.entries(cssStyles)) {
+    if (typeof value === 'string' && value.startsWith('$--')) {
+      variableBindings.push(value);
+    }
+  }
+
+  return {
+    style: cssStyles,            // $-- 참조는 그대로 유지
+    variableBindings,            // useResolvedElement에서 resolve
+  };
+}
+```
+
+**변환 흐름:**
+```
+AI 도구 출력 → adaptStyles() → Element.props.style ($-- 유지)
+                              → Element.variableBindings 자동 추출
+                              → useResolvedElement → resolveElementVariables()
+                              → 최종 렌더링 값
 ```
 
 ---
@@ -849,6 +1044,35 @@ render()
 
 이 기능은 **CanvasKit 렌더러 위에서 구현해야** 한다.
 AI 전환 1단계에서는 React UI 수준 피드백만 구현하고, Phase 5-6 완료 후 캔버스 레벨 피드백을 추가한다.
+
+#### Phase 5+ 변경사항 (G.3 AI 시각 피드백 반영)
+
+G.3 AI 시각 피드백 시스템이 구현되어, CanvasKit 렌더 루프에 통합:
+
+**구현 완료:**
+- `aiVisualFeedback.ts` — 독립 Zustand 스토어 (generatingNodes, flashAnimations)
+- `aiEffects.ts` — `renderGeneratingEffects()` (블러 + 회전 파티클), `renderFlashes()` (스트로크 + 스캔라인)
+- `SkiaOverlay.tsx` — renderFrame 내부에서 디자인 노드 렌더링 후 AI 이펙트 패스 실행
+
+**렌더 루프 (Phase 5+):**
+```
+renderSkia(canvas, bounds)
+├── renderNode()                    ← 디자인 노드 렌더링
+├── renderGeneratingEffects()       ← AI 생성 중 (블러 + 파티클)
+└── renderFlashes()                 ← AI 완료 후 (스트로크 + 스캔라인)
+```
+
+**AIPanel 연동:**
+- 스트리밍 시작 전: `startGenerating([selectedElementId])`
+- 완료: `completeGenerating(affectedIds)` → flash 전환
+- 에러/취소: `cancelGenerating()`
+- 개별 create/modify: `addFlashForNode(id, { scanLine: true })`
+
+**이펙트 상세:**
+| 이펙트 | 트리거 | 시각 표현 | 지속 |
+|--------|--------|----------|------|
+| Generating | AI 스트리밍 중 | 블러 오버레이 + 6개 파란 파티클 회전 (currentTime/2000) | 무기한 (AI 응답까지) |
+| Flash | AI 작업 완료 | 스트로크 RRect + 스캔라인 (이즈-아웃 페이드) | 500ms (longHold: 2000ms) |
 
 ### 7.5 낮은 영향 — AI 컨텍스트 (스크린샷)
 

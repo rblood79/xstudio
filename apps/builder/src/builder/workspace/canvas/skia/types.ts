@@ -116,6 +116,58 @@ export type EffectStyle =
   | DropShadowEffect;
 
 // ============================================
+// AI Visual Feedback Types (G.3)
+// ============================================
+
+/** Generating Effect 상태 — AI가 작업 중인 노드에 표시 */
+export interface GeneratingEffectState {
+  /** 대상 element ID */
+  elementId: string;
+  /** 효과 시작 시각 (performance.now()) */
+  startTime: number;
+  /** 블러 시그마 값 */
+  blurSigma: number;
+  /** 파티클 색상 [r, g, b, a] 0-1 범위 */
+  particleColor: Float32Array;
+  /** 파티클 수 */
+  particleCount: number;
+}
+
+/** Flash 애니메이션 설정 */
+export interface FlashConfig {
+  /** 스트로크 색상 [r, g, b] 0-1 범위 */
+  color: [number, number, number];
+  /** 스트로크 너비 (px) */
+  strokeWidth: number;
+  /** 오래 지속 여부 (2초 vs 기본 0.5초) */
+  longHold: boolean;
+  /** 스캔라인 그라디언트 활성화 */
+  scanLine: boolean;
+}
+
+/** Flash 애니메이션 상태 — AI 작업 완료 후 변경 노드에 표시 */
+export interface FlashAnimationState {
+  /** 대상 element ID */
+  elementId: string;
+  /** 애니메이션 시작 시각 (performance.now()) */
+  startTime: number;
+  /** 전체 지속 시간 (ms) */
+  duration: number;
+  /** Flash 설정 */
+  config: FlashConfig;
+}
+
+/** AI 이펙트 렌더링에 필요한 노드 바운딩 정보 */
+export interface AIEffectNodeBounds {
+  elementId: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  borderRadius: number;
+}
+
+// ============================================
 // Phase 6: Dirty Rect / Frame Classification Types
 // ============================================
 
