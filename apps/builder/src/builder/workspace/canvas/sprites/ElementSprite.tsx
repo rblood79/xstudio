@@ -96,6 +96,7 @@ import {
   PixiPanel,
 } from '../ui';
 import { useStore } from '../../../stores';
+import { useResolvedElement } from './useResolvedElement';
 import { isFlexContainer, isGridContainer } from '../layout';
 
 // ============================================
@@ -414,14 +415,17 @@ export const ElementSprite = memo(function ElementSprite({
   });
 
   // layoutPosition이 있으면 style을 오버라이드한 새 element 생성
-  const effectiveElement = useMemo(() => {
-    if (!layoutPosition) return element;
+  // G.1/G.2: Instance resolution + Variable resolution
+  const resolvedElement = useResolvedElement(element);
 
-    const currentStyle = (element.props?.style || {}) as Record<string, unknown>;
+  const effectiveElement = useMemo(() => {
+    if (!layoutPosition) return resolvedElement;
+
+    const currentStyle = (resolvedElement.props?.style || {}) as Record<string, unknown>;
     return {
-      ...element,
+      ...resolvedElement,
       props: {
-        ...element.props,
+        ...resolvedElement.props,
         style: {
           ...currentStyle,
           left: layoutPosition.x,
@@ -431,7 +435,7 @@ export const ElementSprite = memo(function ElementSprite({
         },
       },
     };
-  }, [element, layoutPosition]);
+  }, [resolvedElement, layoutPosition]);
 
   const spriteType = getSpriteType(effectiveElement);
 

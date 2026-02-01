@@ -21,8 +21,12 @@ export class ElementsApiService extends BaseApiService {
     return elements.map(
       (el: Record<string, unknown>) => ({
         ...el,
-        customId: el.custom_id, // snake_case → camelCase
-        dataBinding: el.data_binding, // snake_case → camelCase
+        customId: el.custom_id,
+        dataBinding: el.data_binding,
+        componentRole: el.component_role,
+        masterId: el.master_id,
+        componentName: el.component_name,
+        variableBindings: el.variable_bindings,
       })
     ) as Element[];
   }
@@ -39,11 +43,19 @@ export class ElementsApiService extends BaseApiService {
       ...element,
       custom_id: (element as { customId?: string }).customId,
       data_binding: (element as { dataBinding?: unknown }).dataBinding,
+      component_role: (element as { componentRole?: string }).componentRole,
+      master_id: (element as { masterId?: string }).masterId,
+      component_name: (element as { componentName?: string }).componentName,
+      variable_bindings: (element as { variableBindings?: string[] }).variableBindings,
     };
 
     // camelCase 필드 제거 (snake_case로 변환되었으므로)
     delete elementToSave.customId;
     delete elementToSave.dataBinding;
+    delete elementToSave.componentRole;
+    delete elementToSave.masterId;
+    delete elementToSave.componentName;
+    delete elementToSave.variableBindings;
 
     const result = await this.handleApiCall("createElement", async () => {
       return await this.supabase
@@ -62,6 +74,10 @@ export class ElementsApiService extends BaseApiService {
       ...data,
       customId: data.custom_id,
       dataBinding: data.data_binding,
+      componentRole: data.component_role,
+      masterId: data.master_id,
+      componentName: data.component_name,
+      variableBindings: data.variable_bindings,
     } as Element;
   }
 
@@ -78,9 +94,17 @@ export class ElementsApiService extends BaseApiService {
         ...element,
         custom_id: (element as { customId?: string }).customId,
         data_binding: (element as { dataBinding?: unknown }).dataBinding,
+        component_role: (element as { componentRole?: string }).componentRole,
+        master_id: (element as { masterId?: string }).masterId,
+        component_name: (element as { componentName?: string }).componentName,
+        variable_bindings: (element as { variableBindings?: string[] }).variableBindings,
       };
       delete converted.customId;
       delete converted.dataBinding;
+      delete converted.componentRole;
+      delete converted.masterId;
+      delete converted.componentName;
+      delete converted.variableBindings;
       return converted;
     });
 
@@ -97,6 +121,10 @@ export class ElementsApiService extends BaseApiService {
         ...el,
         customId: el.custom_id,
         dataBinding: el.data_binding,
+        componentRole: el.component_role,
+        masterId: el.master_id,
+        componentName: el.component_name,
+        variableBindings: el.variable_bindings,
       })) as Element[];
     }
     return [];
@@ -127,6 +155,22 @@ export class ElementsApiService extends BaseApiService {
       updatesToSave.data_binding = (updates as { dataBinding?: unknown }).dataBinding;
       delete updatesToSave.dataBinding;
     }
+    if ((updates as { componentRole?: string }).componentRole !== undefined) {
+      updatesToSave.component_role = (updates as { componentRole?: string }).componentRole;
+      delete updatesToSave.componentRole;
+    }
+    if ((updates as { masterId?: string }).masterId !== undefined) {
+      updatesToSave.master_id = (updates as { masterId?: string }).masterId;
+      delete updatesToSave.masterId;
+    }
+    if ((updates as { componentName?: string }).componentName !== undefined) {
+      updatesToSave.component_name = (updates as { componentName?: string }).componentName;
+      delete updatesToSave.componentName;
+    }
+    if ((updates as { variableBindings?: string[] }).variableBindings !== undefined) {
+      updatesToSave.variable_bindings = (updates as { variableBindings?: string[] }).variableBindings;
+      delete updatesToSave.variableBindings;
+    }
 
     const result = await this.handleApiCall("updateElement", async () => {
       return await this.supabase
@@ -146,6 +190,10 @@ export class ElementsApiService extends BaseApiService {
       ...data,
       customId: data.custom_id,
       dataBinding: data.data_binding,
+      componentRole: data.component_role,
+      masterId: data.master_id,
+      componentName: data.component_name,
+      variableBindings: data.variable_bindings,
     } as Element;
   }
 

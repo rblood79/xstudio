@@ -6,7 +6,7 @@
  */
 
 import type { Element, Page } from '../../types/core/store.types';
-import type { DesignToken, DesignTheme } from '../../types/theme';
+import type { DesignToken, DesignTheme, DesignVariable } from '../../types/theme';
 import type { Layout } from '../../types/builder/layout.types';
 import type {
   DataTable,
@@ -31,7 +31,8 @@ export interface Project {
 export interface HistoryEntry {
   id: string;
   page_id: string;
-  type: 'add' | 'update' | 'remove' | 'move' | 'batch' | 'group' | 'ungroup';
+  type: 'add' | 'update' | 'remove' | 'move' | 'batch' | 'group' | 'ungroup'
+    | 'instance-create' | 'instance-detach' | 'master-propagate';
   element_id: string;
   element_ids?: string[];
   data: {
@@ -129,6 +130,18 @@ export interface DatabaseAdapter {
     getByProject(projectId: string): Promise<DesignTheme[]>;
     getActiveTheme(projectId: string): Promise<DesignTheme | null>;
     getAll(): Promise<DesignTheme[]>;
+  };
+
+  // Design Variables (G.2 Variable Reference System)
+  designVariables: {
+    insert(variable: DesignVariable): Promise<DesignVariable>;
+    insertMany(variables: DesignVariable[]): Promise<DesignVariable[]>;
+    update(id: string, data: Partial<DesignVariable>): Promise<DesignVariable>;
+    delete(id: string): Promise<void>;
+    getById(id: string): Promise<DesignVariable | null>;
+    getByProject(projectId: string): Promise<DesignVariable[]>;
+    getByName(projectId: string, name: string): Promise<DesignVariable | null>;
+    getAll(): Promise<DesignVariable[]>;
   };
 
   // Layouts (Layout/Slot System)

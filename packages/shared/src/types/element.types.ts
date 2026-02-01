@@ -87,6 +87,22 @@ export interface Element {
   deleted?: boolean;
   dataBinding?: DataBinding;
   events?: unknown[];
+
+  // --- G.1: Component-Instance System ---
+  /** 'master' = 재사용 가능 컴포넌트 원본, 'instance' = master 참조 인스턴스 */
+  componentRole?: 'master' | 'instance';
+  /** instance가 참조하는 master element ID */
+  masterId?: string;
+  /** instance 직접 props 오버라이드 (master 기본값 위에 적용) */
+  overrides?: Record<string, unknown>;
+  /** instance 하위 자손 노드별 오버라이드: { childId: { propKey: value } } */
+  descendants?: Record<string, Record<string, unknown>>;
+  /** master 컴포넌트 표시 이름 */
+  componentName?: string;
+
+  // --- G.2: Design Variable Reference ---
+  /** 이 요소가 참조하는 디자인 변수 목록 (e.g., ['$--primary', '$--spacing-md']) */
+  variableBindings?: string[];
 }
 
 /**

@@ -388,3 +388,34 @@ export function isResolvedToken(token: DesignToken | ResolvedToken): token is Re
 // These will be removed in v2.0
 // NewTokenInput: TokenForm에서 project_id/theme_id 없이 토큰 정보 수집용
 export type NewTokenInput = Omit<CreateTokenInput, 'project_id' | 'theme_id'>;
+
+// ===== G.2: Design Variable Types =====
+// DesignToken과 별개 — Token은 HCT 구조화 값, Variable은 $-- 경량 참조
+
+export type DesignVariableType = 'color' | 'string' | 'number';
+
+/** 테마별 변수 값 (themeId가 null이면 기본값) */
+export interface DesignVariableValue {
+  themeId: string | null;
+  value: string | number;
+}
+
+/** 디자인 변수 정의 */
+export interface DesignVariable {
+  id: string;
+  project_id: string;
+  /** 변수 이름 ($-- 접두사 없이 저장, e.g., 'primary', 'spacing-md') */
+  name: string;
+  type: DesignVariableType;
+  /** 테마별 값 배열 (themeId=null이 기본값) */
+  values: DesignVariableValue[];
+  description?: string;
+  group?: string;
+  /** DesignToken alias (선택) — Token 값을 그대로 사용할 때 */
+  tokenRef?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export type CreateDesignVariableInput = Omit<DesignVariable, 'id' | 'created_at' | 'updated_at'>;
+export type UpdateDesignVariableInput = Partial<Omit<DesignVariable, 'id' | 'project_id' | 'created_at'>>;

@@ -23,6 +23,7 @@ import { tokensToCSS, formatCSSVars } from '../utils/theme/tokenToCss';
 import type {
   DesignTheme,
   DesignToken,
+  DesignVariable,
   CreateTokenInput,
   UpdateTokenInput,
   TokenValue,
@@ -47,6 +48,9 @@ interface UnifiedThemeState {
 
   // Phase 3.1: 캐시 무효화를 위한 내부 버전
   _tokensVersion: number;
+
+  // ===== G.2: Design Variables =====
+  designVariables: DesignVariable[];
 
   // ===== Loading & Error =====
   loading: boolean;
@@ -88,6 +92,9 @@ interface UnifiedThemeState {
   bulkUpsertTokens: (tokens: Partial<DesignToken>[]) => Promise<void>;
   saveAllTokens: () => Promise<void>;
 
+  // ===== Design Variable Actions =====
+  loadDesignVariables: (projectId: string) => Promise<void>;
+
   // ===== CSS Injection =====
   injectThemeCSS: () => void;
 
@@ -120,6 +127,7 @@ export const useUnifiedThemeStore = create<UnifiedThemeState>()(
       activeThemeId: null,
       projectId: null,
       tokens: [],
+      designVariables: [],
       _tokensVersion: 0,
       loading: false,
       error: null,
@@ -143,6 +151,22 @@ export const useUnifiedThemeStore = create<UnifiedThemeState>()(
           // cachedTokensVersion은 rawTokens에서 이미 업데이트됨
         }
         return cachedSemanticTokens;
+      },
+
+      // ===== Design Variable Actions =====
+
+      loadDesignVariables: async (projectId: string) => {
+        try {
+          // DB adapter가 연결되면 여기서 로드
+          // const db = await getDB();
+          // const variables = await db.designVariables.getByProject(projectId);
+          // set({ designVariables: variables });
+
+          // 현재는 빈 배열 유지 (DB adapter 연결 전)
+          void projectId;
+        } catch (err) {
+          console.error('[UnifiedThemeStore] loadDesignVariables failed:', err);
+        }
       },
 
       // ===== Theme Actions =====

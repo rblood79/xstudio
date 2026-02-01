@@ -213,6 +213,93 @@ function isBodyElement(
   return element?.tag === "Body";
 }
 
+// ============================================
+// G.1: Component Index
+// ============================================
+
+/** Master-Instance 관계 인덱스 */
+export interface ComponentIndex {
+  /** masterId → Set<instanceId> */
+  masterToInstances: Map<string, Set<string>>;
+  /** masterId → master Element */
+  masterComponents: Map<string, Element>;
+}
+
+/** 빈 컴포넌트 인덱스 생성 */
+export function createEmptyComponentIndex(): ComponentIndex {
+  return {
+    masterToInstances: new Map(),
+    masterComponents: new Map(),
+  };
+}
+
+/**
+ * 전체 요소에서 Component Index 구축
+ *
+ * - componentRole === 'master' → masterComponents에 등록
+ * - componentRole === 'instance' && masterId → masterToInstances에 등록
+ */
+export function rebuildComponentIndex(elements: Element[]): ComponentIndex {
+  const index = createEmptyComponentIndex();
+
+  for (const el of elements) {
+    if (el.componentRole === 'master') {
+      index.masterComponents.set(el.id, el);
+    }
+    if (el.componentRole === 'instance' && el.masterId) {
+      if (!index.masterToInstances.has(el.masterId)) {
+        index.masterToInstances.set(el.masterId, new Set());
+      }
+      index.masterToInstances.get(el.masterId)!.add(el.id);
+    }
+  }
+
+  return index;
+}
+
+// ============================================
+// G.2: Variable Usage Index
+// ============================================
+
+/** 변수 사용처 인덱스 */
+export interface VariableUsageIndex {
+  /** variableName → Set<elementId> (어떤 요소가 이 변수를 참조하는지) */
+  variableToElements: Map<string, Set<string>>;
+}
+
+/** 빈 변수 사용 인덱스 생성 */
+export function createEmptyVariableUsageIndex(): VariableUsageIndex {
+  return {
+    variableToElements: new Map(),
+  };
+}
+
+/**
+ * 전체 요소에서 Variable Usage Index 구축
+ *
+ * element.variableBindings 배열에서 변수 이름 추출하여 역인덱스 생성
+ */
+export function rebuildVariableUsageIndex(elements: Element[]): VariableUsageIndex {
+  const index = createEmptyVariableUsageIndex();
+
+  for (const el of elements) {
+    if (el.variableBindings && el.variableBindings.length > 0) {
+      for (const varRef of el.variableBindings) {
+        if (!index.variableToElements.has(varRef)) {
+          index.variableToElements.set(varRef, new Set());
+        }
+        index.variableToElements.get(varRef)!.add(el.id);
+      }
+    }
+  }
+
+  return index;
+}
+
+// ============================================
+// Page Index — 기존 유지
+// ============================================
+
 /**
  * 요소의 parent_id 변경 시 인덱스 업데이트
  *

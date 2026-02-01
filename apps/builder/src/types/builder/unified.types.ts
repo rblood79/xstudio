@@ -74,6 +74,36 @@ export interface Element {
   // Layout/Slot System 필드
   layout_id?: string | null; // Layout에 속한 요소면 Layout ID (page_id와 상호 배타적)
   slot_name?: string | null; // Page 요소가 어떤 Slot에 들어갈지 (Page element에만 설정)
+
+  // --- G.1: Component-Instance System ---
+  componentRole?: ComponentRole;
+  masterId?: string;
+  overrides?: Record<string, unknown>;
+  descendants?: DescendantOverrides;
+  componentName?: string;
+
+  // --- G.2: Design Variable Reference ---
+  variableBindings?: string[];
+}
+
+// === G.1/G.2 타입 별칭 및 가드 ===
+
+export type ComponentRole = 'master' | 'instance';
+export type DescendantOverrides = Record<string, Record<string, unknown>>;
+
+/** $-- 접두사 디자인 변수 참조인지 검사 */
+export function isVariableRef(value: unknown): value is string {
+  return typeof value === 'string' && value.startsWith('$--');
+}
+
+/** master 컴포넌트 여부 검사 */
+export function isMasterElement(el: Element): boolean {
+  return el.componentRole === 'master';
+}
+
+/** instance 요소 여부 검사 (masterId 필수) */
+export function isInstanceElement(el: Element): boolean {
+  return el.componentRole === 'instance' && !!el.masterId;
 }
 
 // === 통합된 Page 타입 ===

@@ -32,8 +32,14 @@ import { longTaskMonitor } from "../../utils/longTaskMonitor";
 import { scheduleCancelableBackgroundTask } from "../utils/scheduleTask";
 import {
   type PageElementIndex,
+  type ComponentIndex,
+  type VariableUsageIndex,
   createEmptyPageIndex,
+  createEmptyComponentIndex,
+  createEmptyVariableUsageIndex,
   rebuildPageIndex,
+  rebuildComponentIndex,
+  rebuildVariableUsageIndex,
   getPageElements as getPageElementsFromIndex,
 } from "./utils/elementIndexer";
 
@@ -44,6 +50,10 @@ export interface ElementsState {
   childrenMap: Map<string, Element[]>;
   // 🆕 Phase 2: 페이지별 인덱스 (O(1) 페이지 요소 조회)
   pageIndex: PageElementIndex;
+  // G.1: Component-Instance 인덱스
+  componentIndex: ComponentIndex;
+  // G.2: Variable Usage 인덱스
+  variableUsageIndex: VariableUsageIndex;
   selectedElementId: string | null;
   selectedElementProps: ComponentElementProps;
   selectedTab: { parentId: string; tabIndex: number } | null;
@@ -150,8 +160,11 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
 
     // 🆕 Phase 2: 페이지 인덱스 재구축
     const pageIndex = rebuildPageIndex(elements, elementsMap);
+    // G.1/G.2: Component + Variable 인덱스 재구축
+    const componentIndex = rebuildComponentIndex(elements);
+    const variableUsageIndex = rebuildVariableUsageIndex(elements);
 
-    set({ elementsMap, childrenMap, pageIndex });
+    set({ elementsMap, childrenMap, pageIndex, componentIndex, variableUsageIndex });
   };
 
   // 🆕 Phase 2: O(1) 페이지 요소 조회 함수
@@ -216,6 +229,8 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
     childrenMap: new Map(),
     // 🆕 Phase 2: 페이지 인덱스 초기값
     pageIndex: createEmptyPageIndex(),
+    componentIndex: createEmptyComponentIndex(),
+    variableUsageIndex: createEmptyVariableUsageIndex(),
     selectedElementId: null,
     selectedElementProps: {},
     selectedTab: null,
