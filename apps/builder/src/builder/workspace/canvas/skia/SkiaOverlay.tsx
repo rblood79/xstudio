@@ -54,12 +54,34 @@ function buildSkiaTreeFromRegistry(root: Container): SkiaNodeData | null {
         // nodeData에 기본값(100x100)이 들어있으므로 컨테이너 크기로 덮어쓴다.
         const actualWidth = container.width > 0 ? container.width : nodeData.width;
         const actualHeight = container.height > 0 ? container.height : nodeData.height;
+
+        // text children의 크기/정렬도 실제 컨테이너 크기에 맞춰 갱신
+        // (ElementSprite의 useMemo 시점에는 style 기본값만 사용 가능하므로)
+        const updatedChildren = nodeData.children?.map((child: SkiaNodeData) => {
+          if (child.type === 'text' && child.text) {
+            const fontSize = child.text.fontSize || 14;
+            const lineHeight = fontSize * 1.2;
+            return {
+              ...child,
+              width: actualWidth,
+              height: actualHeight,
+              text: {
+                ...child.text,
+                maxWidth: actualWidth,
+                paddingTop: Math.max(0, (actualHeight - lineHeight) / 2),
+              },
+            };
+          }
+          return child;
+        });
+
         children.push({
           ...nodeData,
           x: wt.tx,
           y: wt.ty,
           width: actualWidth,
           height: actualHeight,
+          children: updatedChildren,
         });
         return; // 리프 노드 — 자식 탐색 불필요
       }
