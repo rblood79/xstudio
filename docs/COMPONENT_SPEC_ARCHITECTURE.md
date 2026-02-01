@@ -2471,6 +2471,64 @@ export const PixiButton = memo(function PixiButton({ element, onClick }: PixiBut
 });
 ```
 
+#### Phase 5+ 변경사항 (CanvasKit/Skia 전환)
+
+> Phase 5 이후 PixiJS Graphics 렌더링은 CanvasKit으로 대체된다.
+> PixiJS는 씬 그래프 + 이벤트(EventBoundary) 전용으로 축소되며,
+> 시각적 렌더링은 CanvasKit Surface에서 처리한다.
+> 상세: `docs/WASM.md` Phase 5.7, §6.1
+
+**현재 구현된 패턴** (`VITE_RENDER_MODE=skia`):
+
+```
+렌더링 흐름:
+1. ElementSprite (spriteType='button')
+   ├── PixiButton → FancyButton (PixiJS 이벤트 처리 전용)
+   └── useSkiaNode(elementId, skiaNodeData) → 전역 레지스트리 등록
+
+2. skiaNodeData 구조:
+   {
+     type: 'box',
+     box: { fillColor, borderRadius, strokeColor, strokeWidth },
+     children: [{                    // ← 텍스트 children 포함
+       type: 'text',
+       text: { content, fontSize, color, align:'center', paddingTop, maxWidth }
+     }]
+   }
+
+3. SkiaOverlay.renderFrame()
+   └── buildSkiaTreeFromRegistry(stage)  // PixiJS 씬 그래프 순회
+       └── getSkiaNode(elementId)        // 레지스트리에서 SkiaNodeData 조회
+           └── renderNode(ck, canvas, tree)  // CanvasKit으로 렌더링
+               ├── renderBox()   → ck.drawRRect() / drawRect()
+               └── renderText()  → ck.ParagraphBuilder → drawParagraph()
+```
+
+**UI 컴포넌트 텍스트 추출** (`ElementSprite.tsx`):
+
+```typescript
+// 텍스트 추출 우선순위: children > text > label > value > placeholder > count
+const textContent = String(
+  props?.children || props?.text || props?.label
+  || props?.value || props?.placeholder || props?.count || ''
+);
+
+// 컴포넌트 타입별 정렬: Button/Badge = center, Input/Checkbox = left
+// Input 계열은 좌측 패딩(8px) 적용
+// placeholder 텍스트는 연한 색상(gray-400) 사용
+```
+
+**variant별 텍스트 색상 매핑**:
+
+| variant | 텍스트 색상 | hex |
+|---------|-----------|-----|
+| default | 진한 회색 | `#1d1b20` |
+| primary | 흰색 | `#ffffff` |
+| secondary | 흰색 | `#ffffff` |
+| surface | 진한 회색 | `#1d1b20` |
+| outline | 보라 | `#6750a4` |
+| ghost | 보라 | `#6750a4` |
+
 ### 4.6 Phase 1 체크리스트
 
 - [x] Button.spec.ts 작성 ✅

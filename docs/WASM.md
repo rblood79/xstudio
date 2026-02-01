@@ -2076,12 +2076,20 @@ renderSkia(canvas: Canvas, cullingBounds: DOMRect): void {
 
 **노드별 renderContent 구현:**
 
-| 노드 타입 | CanvasKit API | 현재 xstudio 대응 |
-|----------|---------------|-------------------|
-| BoxSprite | `canvas.drawRRect()`, `canvas.drawPath()` | PixiJS Graphics |
-| TextSprite | `ParagraphBuilder` → `canvas.drawParagraph()` | PixiJS Text |
-| ImageSprite | `canvas.drawImageRect()` | PixiJS Sprite |
-| 컨테이너 | 자식 재귀 renderSkia() | PixiJS Container |
+| 노드 타입 | CanvasKit API | 현재 xstudio 대응 | 구현 상태 |
+|----------|---------------|-------------------|----------|
+| BoxSprite | `canvas.drawRRect()`, `canvas.drawPath()` | PixiJS Graphics | ✅ 구현 완료 |
+| TextSprite | `ParagraphBuilder` → `canvas.drawParagraph()` | PixiJS Text | ✅ 구현 완료 |
+| ImageSprite | `canvas.drawImageRect()` | PixiJS Sprite | ✅ 구현 완료 |
+| 컨테이너 | 자식 재귀 renderSkia() | PixiJS Container | ✅ 구현 완료 |
+| UI 컴포넌트 (Button 등) | Box + Text children | PixiJS FancyButton 등 | ✅ 구현 완료 |
+
+> **UI 컴포넌트 텍스트 렌더링** (2026-02-01 구현):
+> `ElementSprite`가 UI 컴포넌트(Button, Badge, Input 등)의 `skiaNodeData`에
+> 텍스트 children을 포함하여 등록한다. `props.children/text/label/value/placeholder/count`에서
+> 텍스트를 추출하고, variant별 색상/size별 폰트 크기를 적용한다.
+> `SkiaOverlay.buildSkiaTreeFromRegistry()`가 실제 컨테이너 크기로 텍스트 위치를 보정한다.
+> 폰트는 Pretendard woff2를 `SkiaOverlay` 초기화 시 로드한다.
 
 ### 5.4 SkiaRenderer 렌더 루프
 
@@ -2529,13 +2537,19 @@ function renderNode(ck: CanvasKit, canvas: Canvas): void {
 > Rust 커스텀 할당기로 WASM 힙을 최적화한다. Adobe는 대규모 레이어 시 메모리 풀링을 적용한다.
 > 이 기법들은 §장기 최적화 경로 7.3에서 다룬다.
 
-#### 5.9.2 폰트 관리 파이프라인 (`canvas/skia/fontManager.ts`)
+#### 5.9.2 폰트 관리 파이프라인 (`canvas/skia/fontManager.ts`) — ✅ 구현 완료
 
 CanvasKit은 브라우저의 CSS `@font-face`를 사용할 수 없다.
 `Typeface.MakeFreeTypeFaceFromData(fontBuffer)`로 폰트 바이너리를 직접 로드해야 한다.
 
 **현재 xstudio:** `useCanvasFonts.ts`에서 `document.fonts.ready`로 브라우저 폰트 로딩을 감지.
 이 방식은 CanvasKit에서 작동하지 않으므로 별도 폰트 관리가 필요하다.
+
+> **구현 완료** (2026-02-01):
+> `SkiaOverlay.tsx`의 초기화 useEffect에서 Pretendard Regular woff2를
+> `pretendard` npm 패키지의 Vite `?url` import로 로드한다.
+> 실패 시 CDN 폴백(`cdn.jsdelivr.net/gh/orioncactus/pretendard`)으로 재시도.
+> `skiaFontManager.loadFont()`로 등록하면 `renderText()`에서 `getFontMgr()`를 통해 사용.
 
 ```typescript
 class SkiaFontManager {

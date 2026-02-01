@@ -1196,8 +1196,17 @@ export const ElementSprite = memo(function ElementSprite({
 
     if (isUIComponent) {
       const props = effectiveElement.props as Record<string, unknown> | undefined;
+      const tag = effectiveElement.tag;
+
+      // 텍스트 추출 우선순위: children > text > label > value > placeholder > count
       const textContent = String(
-        props?.children || props?.text || props?.label || ''
+        props?.children
+        || props?.text
+        || props?.label
+        || props?.value
+        || props?.placeholder
+        || props?.count
+        || ''
       );
       if (textContent) {
         // 텍스트 색상: style.color > variant 기반 기본값
@@ -1215,9 +1224,15 @@ export const ElementSprite = memo(function ElementSprite({
           error: 0xffffff,
         };
         const defaultTextColor = VARIANT_TEXT_COLORS[variant] ?? 0x1d1b20;
+
+        // placeholder 텍스트는 연한 색상 사용
+        const isPlaceholder = !props?.children && !props?.text && !props?.label
+          && !props?.value && !!props?.placeholder;
+        const placeholderColor = 0x9ca3af; // Tailwind gray-400
+        const baseTextColor = isPlaceholder ? placeholderColor : defaultTextColor;
         const textColorHex = style?.color
-          ? cssColorToHex(style.color, defaultTextColor)
-          : defaultTextColor;
+          ? cssColorToHex(style.color, baseTextColor)
+          : baseTextColor;
         const tcR = ((textColorHex >> 16) & 0xff) / 255;
         const tcG = ((textColorHex >> 8) & 0xff) / 255;
         const tcB = (textColorHex & 0xff) / 255;
@@ -1232,6 +1247,22 @@ export const ElementSprite = memo(function ElementSprite({
         const fontSize = style?.fontSize !== undefined
           ? parseCSSSize(style.fontSize, undefined, defaultFontSize)
           : defaultFontSize;
+
+        // 컴포넌트 타입별 정렬: Button/Badge = center, Input/Checkbox 등 = left
+        const CENTER_ALIGN_TAGS = new Set([
+          'Button', 'SubmitButton', 'FancyButton',
+          'Badge', 'Tag', 'Chip',
+          'ToggleButton',
+        ]);
+        const textAlign = CENTER_ALIGN_TAGS.has(tag) ? 'center' as const : 'left' as const;
+
+        // Input 계열은 좌측 패딩 적용
+        const INPUT_TAGS = new Set([
+          'Input', 'TextField', 'TextInput', 'SearchField',
+          'TextArea', 'Textarea', 'NumberField', 'ComboBox',
+          'Select', 'Dropdown', 'DateField', 'TimeField', 'ColorField',
+        ]);
+        const paddingLeft = INPUT_TAGS.has(tag) ? 8 : 0;
 
         // 수직 중앙 정렬: paddingTop 근사 계산
         const lineHeight = fontSize * 1.2;
@@ -1249,10 +1280,10 @@ export const ElementSprite = memo(function ElementSprite({
             fontFamilies: ['Pretendard', 'Inter', 'system-ui', 'sans-serif'],
             fontSize,
             color: Float32Array.of(tcR, tcG, tcB, 1),
-            align: 'center' as const,
-            paddingLeft: 0,
+            align: textAlign,
+            paddingLeft,
             paddingTop,
-            maxWidth: transform.width,
+            maxWidth: transform.width - paddingLeft * 2,
           },
         }];
       }
