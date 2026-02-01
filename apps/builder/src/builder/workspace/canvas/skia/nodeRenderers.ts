@@ -48,7 +48,7 @@ export interface SkiaNodeData {
     fontWeight?: number;
     fontStyle?: number;
     color: Float32Array;
-    align?: EmbindEnumEntity;
+    align?: EmbindEnumEntity | 'left' | 'center' | 'right';
     letterSpacing?: number;
     lineHeight?: number;
     paddingLeft: number;
@@ -174,6 +174,20 @@ function renderText(
 
   const scope = new SkiaDisposable();
   try {
+    // string align → CanvasKit TextAlign enum 변환
+    let textAlign: EmbindEnumEntity;
+    const rawAlign = node.text.align;
+    if (typeof rawAlign === 'string') {
+      const alignMap: Record<string, EmbindEnumEntity> = {
+        left: ck.TextAlign.Left,
+        center: ck.TextAlign.Center,
+        right: ck.TextAlign.Right,
+      };
+      textAlign = alignMap[rawAlign] ?? ck.TextAlign.Left;
+    } else {
+      textAlign = rawAlign ?? ck.TextAlign.Left;
+    }
+
     const paraStyle = new ck.ParagraphStyle({
       textStyle: {
         fontFamilies: node.text.fontFamilies,
@@ -181,7 +195,7 @@ function renderText(
         color: node.text.color,
         letterSpacing: node.text.letterSpacing ?? 0,
       },
-      textAlign: node.text.align ?? ck.TextAlign.Left,
+      textAlign,
     });
 
     const builder = scope.track(ck.ParagraphBuilder.Make(paraStyle, fontMgr));

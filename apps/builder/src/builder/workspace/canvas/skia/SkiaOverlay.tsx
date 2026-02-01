@@ -105,13 +105,36 @@ export function SkiaOverlay({ containerEl, backgroundColor = 0xf8fafc, app }: Sk
   // skia 모드에서만 Skia 오버레이 활성화.
   const isActive = renderMode === 'skia';
 
-  // CanvasKit 초기화
+  // CanvasKit + 폰트 초기화
   useEffect(() => {
     if (!isActive) return;
 
     let cancelled = false;
 
-    initAllWasm().then(() => {
+    initAllWasm().then(async () => {
+      if (cancelled) return;
+
+      // 기본 폰트 로드 (텍스트 렌더링에 필수)
+      if (skiaFontManager.getFamilies().length === 0) {
+        try {
+          // Vite asset import로 woff2 URL 획득
+          const fontModule = await import(
+            'pretendard/dist/web/static/woff2/Pretendard-Regular.woff2?url'
+          );
+          await skiaFontManager.loadFont('Pretendard', fontModule.default);
+        } catch (e) {
+          console.warn('[SkiaOverlay] 폰트 로드 실패, CDN 폴백 시도:', e);
+          try {
+            await skiaFontManager.loadFont(
+              'Pretendard',
+              'https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/woff2/Pretendard-Regular.woff2',
+            );
+          } catch (e2) {
+            console.error('[SkiaOverlay] 폰트 로드 최종 실패:', e2);
+          }
+        }
+      }
+
       if (cancelled) return;
       setReady(true);
     }).catch((err) => {

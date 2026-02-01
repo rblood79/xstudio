@@ -18,7 +18,7 @@ import type { Element } from '../../../../types/core/store.types';
 // import { registerElement, unregisterElement } from '../elementRegistry';
 import { useSkiaNode } from '../skia/useSkiaNode';
 import { WASM_FLAGS, getRenderMode } from '../wasm-bindings/featureFlags';
-import { convertStyle, type CSSStyle } from './styleConverter';
+import { convertStyle, cssColorToHex, parseCSSSize, type CSSStyle } from './styleConverter';
 import { BoxSprite } from './BoxSprite';
 import { TextSprite } from './TextSprite';
 import { ImageSprite } from './ImageSprite';
@@ -1170,6 +1170,94 @@ export const ElementSprite = memo(function ElementSprite({
       boxData.strokeWidth = 1;
     }
 
+    // UI 컴포넌트: props.children/text/label에서 텍스트를 추출하여
+    // Skia text children으로 추가한다.
+    // skia 모드에서 PixiJS 캔버스가 숨겨지므로 텍스트를 Skia로 렌더링해야 한다.
+    let textChildren: Array<{
+      type: 'text';
+      x: number;
+      y: number;
+      width: number;
+      height: number;
+      visible: boolean;
+      text: {
+        content: string;
+        fontFamilies: string[];
+        fontSize: number;
+        fontWeight?: number;
+        color: Float32Array;
+        letterSpacing?: number;
+        lineHeight?: number;
+        paddingLeft: number;
+        paddingTop: number;
+        maxWidth: number;
+      };
+    }> | undefined;
+
+    if (isUIComponent) {
+      const props = effectiveElement.props as Record<string, unknown> | undefined;
+      const textContent = String(
+        props?.children || props?.text || props?.label || ''
+      );
+      if (textContent) {
+        // 텍스트 색상: style.color > variant 기반 기본값
+        // variant별 기본 텍스트 색상 (light 모드):
+        //   default → #1d1b20, primary → #ffffff, secondary → #ffffff, surface → #1d1b20
+        const variant = String(props?.variant || 'default');
+        const VARIANT_TEXT_COLORS: Record<string, number> = {
+          default: 0x1d1b20,
+          primary: 0xffffff,
+          secondary: 0xffffff,
+          surface: 0x1d1b20,
+          outline: 0x6750a4,
+          ghost: 0x6750a4,
+          tertiary: 0xffffff,
+          error: 0xffffff,
+        };
+        const defaultTextColor = VARIANT_TEXT_COLORS[variant] ?? 0x1d1b20;
+        const textColorHex = style?.color
+          ? cssColorToHex(style.color, defaultTextColor)
+          : defaultTextColor;
+        const tcR = ((textColorHex >> 16) & 0xff) / 255;
+        const tcG = ((textColorHex >> 8) & 0xff) / 255;
+        const tcB = (textColorHex & 0xff) / 255;
+
+        // 폰트 크기: style.fontSize > size 프리셋
+        // size별 기본 fontSize: xs=12, sm=14, md=16, lg=18, xl=20
+        const size = String(props?.size || 'sm');
+        const SIZE_FONT: Record<string, number> = {
+          xs: 12, sm: 14, md: 16, lg: 18, xl: 20,
+        };
+        const defaultFontSize = SIZE_FONT[size] ?? 14;
+        const fontSize = style?.fontSize !== undefined
+          ? parseCSSSize(style.fontSize, undefined, defaultFontSize)
+          : defaultFontSize;
+
+        // 수직 중앙 정렬: paddingTop 근사 계산
+        const lineHeight = fontSize * 1.2;
+        const paddingTop = Math.max(0, (transform.height - lineHeight) / 2);
+
+        textChildren = [{
+          type: 'text' as const,
+          x: 0,
+          y: 0,
+          width: transform.width,
+          height: transform.height,
+          visible: true,
+          text: {
+            content: textContent,
+            fontFamilies: ['Pretendard', 'Inter', 'system-ui', 'sans-serif'],
+            fontSize,
+            color: Float32Array.of(tcR, tcG, tcB, 1),
+            align: 'center' as const,
+            paddingLeft: 0,
+            paddingTop,
+            maxWidth: transform.width,
+          },
+        }];
+      }
+    }
+
     return {
       type: 'box' as const,
       x: transform.x,
@@ -1178,6 +1266,7 @@ export const ElementSprite = memo(function ElementSprite({
       height: transform.height,
       visible: true,
       box: boxData,
+      children: textChildren,
     };
   }, [effectiveElement, spriteType]);
 
