@@ -12,11 +12,12 @@
 
 import { useExtend } from '@pixi/react';
 import { PIXI_COMPONENTS } from '../pixiSetup';
-import { memo, useMemo } from 'react';
+import { memo, useMemo, useContext } from 'react';
 import type { Element } from '../../../../types/core/store.types';
 // 🚀 Phase 7: registry 등록은 LayoutContainer에서 처리
 // import { registerElement, unregisterElement } from '../elementRegistry';
 import { useSkiaNode } from '../skia/useSkiaNode';
+import { LayoutComputedSizeContext } from '../layoutContext';
 import { convertStyle, cssColorToHex, parseCSSSize, type CSSStyle } from './styleConverter';
 import { BoxSprite } from './BoxSprite';
 import { TextSprite } from './TextSprite';
@@ -417,24 +418,56 @@ export const ElementSprite = memo(function ElementSprite({
   // G.1/G.2: Instance resolution + Variable resolution
   const resolvedElement = useResolvedElement(element);
 
-  const effectiveElement = useMemo(() => {
-    if (!layoutPosition) return resolvedElement;
+  // 🚀 LayoutContainer의 Yoga 계산된 pixel 크기 수신
+  // 퍼센트 기반 width/height를 실제 pixel 값으로 해석하는 데 사용
+  const computedContainerSize = useContext(LayoutComputedSizeContext);
 
-    const currentStyle = (resolvedElement.props?.style || {}) as Record<string, unknown>;
-    return {
-      ...resolvedElement,
-      props: {
-        ...resolvedElement.props,
-        style: {
-          ...currentStyle,
-          left: layoutPosition.x,
-          top: layoutPosition.y,
-          width: layoutPosition.width,
-          height: layoutPosition.height,
+  const effectiveElement = useMemo(() => {
+    if (layoutPosition) {
+      const currentStyle = (resolvedElement.props?.style || {}) as Record<string, unknown>;
+      return {
+        ...resolvedElement,
+        props: {
+          ...resolvedElement.props,
+          style: {
+            ...currentStyle,
+            left: layoutPosition.x,
+            top: layoutPosition.y,
+            width: layoutPosition.width,
+            height: layoutPosition.height,
+          },
         },
-      },
-    };
-  }, [resolvedElement, layoutPosition]);
+      };
+    }
+
+    // 🚀 퍼센트 기반 width/height를 Yoga 계산 결과로 해석
+    // LayoutContainer가 Yoga를 통해 계산한 실제 pixel 크기를 사용하여
+    // '100%' 같은 퍼센트 값을 실제 pixel 값으로 변환
+    // (parseCSSSize는 parentSize 없이는 %를 해석할 수 없음)
+    if (computedContainerSize) {
+      const currentStyle = (resolvedElement.props?.style || {}) as Record<string, unknown>;
+      const w = currentStyle.width;
+      const h = currentStyle.height;
+      const hasPercentWidth = typeof w === 'string' && w.endsWith('%');
+      const hasPercentHeight = typeof h === 'string' && h.endsWith('%');
+
+      if (hasPercentWidth || hasPercentHeight) {
+        return {
+          ...resolvedElement,
+          props: {
+            ...resolvedElement.props,
+            style: {
+              ...currentStyle,
+              ...(hasPercentWidth ? { width: (parseFloat(w as string) / 100) * computedContainerSize.width } : {}),
+              ...(hasPercentHeight ? { height: (parseFloat(h as string) / 100) * computedContainerSize.height } : {}),
+            },
+          },
+        };
+      }
+    }
+
+    return resolvedElement;
+  }, [resolvedElement, layoutPosition, computedContainerSize]);
 
   const spriteType = getSpriteType(effectiveElement);
 

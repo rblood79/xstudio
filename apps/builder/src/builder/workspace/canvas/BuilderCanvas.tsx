@@ -52,6 +52,7 @@ import {
   type ComputedLayout,
 } from "./layout";
 import { getElementBoundsSimple, registerElement, unregisterElement, updateElementBounds } from "./elementRegistry";
+import { LayoutComputedSizeContext } from "./layoutContext";
 import { getOutlineVariantColor } from "./utils/cssVariableReader";
 import { useThemeColors } from "./hooks/useThemeColors";
 import { useViewportCulling } from "./hooks/useViewportCulling";
@@ -304,6 +305,9 @@ const LayoutContainer = memo(function LayoutContainer({
     }
   }, [elementId]);
 
+  // Yoga 계산된 pixel 크기를 하위 컴포넌트에 전달
+  const [computedSize, setComputedSize] = useState<{ width: number; height: number } | null>(null);
+
   // layout prop 변경 시 Container의 global bounds를 직접 계산하여 저장
   // getBounds()는 @pixi/layout 타이밍 문제로 0,0을 반환할 수 있으므로,
   // parent의 worldTransform을 사용해 global 좌표를 직접 계산
@@ -324,6 +328,22 @@ const LayoutContainer = memo(function LayoutContainer({
               height: bounds.height,
             });
           }
+
+          // Yoga 계산된 layout dimensions를 하위 컴포넌트에 전달
+          // getBounds()는 내부 콘텐츠의 bounding box를 반환하므로
+          // Yoga가 계산한 실제 컨테이너 크기와 다를 수 있음
+          // container._layout.computedLayout에서 Yoga 결과를 직접 읽음
+          const yogaLayout = (container as Record<string, unknown>)._layout as
+            { computedLayout?: { width: number; height: number } } | undefined;
+          const yogaWidth = yogaLayout?.computedLayout?.width;
+          const yogaHeight = yogaLayout?.computedLayout?.height;
+
+          if (yogaWidth !== undefined && yogaHeight !== undefined && (yogaWidth > 0 || yogaHeight > 0)) {
+            setComputedSize((prev) => {
+              if (prev && prev.width === yogaWidth && prev.height === yogaHeight) return prev;
+              return { width: yogaWidth, height: yogaHeight };
+            });
+          }
         } catch {
           // Container destroyed 또는 아직 미렌더링
         }
@@ -340,9 +360,11 @@ const LayoutContainer = memo(function LayoutContainer({
   }, [elementId]);
 
   return (
-    <pixiContainer ref={handleContainerRef} layout={layout} label={elementId}>
-      {children}
-    </pixiContainer>
+    <LayoutComputedSizeContext.Provider value={computedSize}>
+      <pixiContainer ref={handleContainerRef} layout={layout} label={elementId}>
+        {children}
+      </pixiContainer>
+    </LayoutComputedSizeContext.Provider>
   );
 });
 
@@ -667,12 +689,28 @@ const ElementsLayer = memo(function ElementsLayer({
         // Yoga가 이전 position: 'absolute'를 유지하는 문제 방지
         // baseLayout에 position: 'absolute'가 있으면 그것으로 override됨
         //
-        // 🚀 Phase 12 Fix: flexShrink: 0 기본값 (CSS min-width: auto 에뮬레이션)
-        // CSS: flex 아이템의 min-width 기본값 = auto (min-content 크기 이하로 축소 안 됨)
-        // Yoga: min-width 기본값 = 0 (아이템이 0까지 축소 가능 → 겹침 발생)
-        // flexShrink: 0으로 축소를 방지하여 CSS 오버플로 동작 재현
+        // 🚀 Phase 12 Fix: flexShrink 조건부 기본값 (CSS 동작 에뮬레이션)
+        //
+        // CSS 동작:
+        //   - flex-shrink 기본값 = 1 (축소 허용)
+        //   - min-width 기본값 = auto (콘텐츠 크기 이하로 축소 방지)
+        //   → 퍼센트 width: 부모 기준으로 비례 축소됨
+        //   → 고정/미지정 width: 콘텐츠 크기까지만 축소
+        //
+        // Yoga 동작:
+        //   - flex-shrink 기본값 = 0
+        //   - min-width 기본값 = 0 (콘텐츠 크기 이하로도 축소 → 겹침)
+        //
+        // 조건부 분기:
+        //   - 퍼센트 width/flexBasis → flexShrink: 1 (CSS처럼 비례 축소 허용)
+        //   - 고정/미지정 width → flexShrink: 0 (min-width: auto 에뮬레이션)
         // 사용자가 명시적으로 flexShrink를 설정하면 그 값이 우선
-        const flexShrinkDefault = effectiveLayout.flexShrink !== undefined ? {} : { flexShrink: 0 };
+        const hasPercentSize =
+          (typeof effectiveLayout.width === 'string' && effectiveLayout.width.endsWith('%')) ||
+          (typeof effectiveLayout.flexBasis === 'string' && String(effectiveLayout.flexBasis).endsWith('%'));
+        const flexShrinkDefault = effectiveLayout.flexShrink !== undefined
+          ? {}
+          : { flexShrink: hasPercentSize ? 1 : 0 };
         const containerLayout = hasChildren && !effectiveLayout.display && !effectiveLayout.flexDirection
           ? { position: 'relative' as const, flexShrink: 0, display: 'flex' as const, flexDirection: 'column' as const, ...blockLayout, ...effectiveLayout }
           : { position: 'relative' as const, ...flexShrinkDefault, ...blockLayout, ...effectiveLayout };
