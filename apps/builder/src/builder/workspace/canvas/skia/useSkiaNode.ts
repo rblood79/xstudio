@@ -90,6 +90,16 @@ export function getRegistryVersion(): number {
 }
 
 /**
+ * 외부 레이아웃 변경(Yoga 재계산 등)을 Skia 렌더 루프에 알린다.
+ * registryVersion을 증가시켜 다음 프레임에서 재렌더링하도록 한다.
+ *
+ * elementRegistry.updateElementBounds() → LayoutContainer Yoga 재계산 후 호출
+ */
+export function notifyLayoutChange(): void {
+  registryVersion++;
+}
+
+/**
  * 축적된 dirty rects를 반환하고 초기화한다.
  * 렌더 루프에서 프레임당 1회 호출한다.
  */

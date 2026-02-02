@@ -180,6 +180,21 @@ function buildSelectionRenderData(
       const el = state.elementsMap.get(id);
       if (!el || el.page_id !== currentPageId) continue;
 
+      // Body 요소는 Skia 레지스트리에서 직접 크기를 가져온다
+      // (PixiJS getBounds()가 alpha:0 상태에서 정확하지 않을 수 있음)
+      if (el.tag?.toLowerCase() === 'body') {
+        const skiaData = getSkiaNode(id);
+        if (skiaData) {
+          boxes.push({
+            x: 0,
+            y: 0,
+            width: skiaData.width / cameraZoom,
+            height: skiaData.height / cameraZoom,
+          });
+        }
+        continue;
+      }
+
       const globalBounds = getElementBoundsSimple(id);
       if (globalBounds) {
         // 글로벌 → 씬-로컬 좌표 변환
@@ -234,6 +249,12 @@ export function SkiaOverlay({ containerEl, backgroundColor = 0xf8fafc, app, drag
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rendererRef = useRef<SkiaRenderer | null>(null);
   const [ready, setReady] = useState(false);
+
+  // Phase 6: Selection/AI 상태 변경 감지용 ref (idle 프레임 스킵 방지)
+  const overlayVersionRef = useRef(0);
+  const lastSelectedIdsRef = useRef<string[]>([]);
+  const lastSelectedIdRef = useRef<string | null>(null);
+  const lastAIActiveRef = useRef(0);
 
   const renderMode = getRenderMode();
   // hybrid 모드: Skia 텍스트 렌더링 미구현 상태에서 Skia 오버레이가
@@ -405,10 +426,32 @@ export function SkiaOverlay({ containerEl, backgroundColor = 0xf8fafc, app, drag
       });
 
       // Phase 6: 이중 Surface 캐싱 활성화 — registryVersion/camera/dirtyRects 전달
+      // Selection/AI 상태 변경도 re-render 트리거에 포함
       const registryVersion = getRegistryVersion();
       const dirtyRects = flushDirtyRects();
       const camera = { zoom: cameraZoom, panX: cameraX, panY: cameraY };
-      renderer.render(cullingBounds, registryVersion, camera, dirtyRects);
+
+      // Selection 상태 변경 감지 — selectedElementIds 참조 변경 시 version 증가
+      const currentSelectedIds = useStore.getState().selectedElementIds;
+      const currentSelectedId = useStore.getState().selectedElementId;
+      if (currentSelectedIds !== lastSelectedIdsRef.current ||
+          currentSelectedId !== lastSelectedIdRef.current) {
+        overlayVersionRef.current++;
+        lastSelectedIdsRef.current = currentSelectedIds;
+        lastSelectedIdRef.current = currentSelectedId;
+      }
+
+      // AI 상태 변경 감지
+      const aiState = useAIVisualFeedbackStore.getState();
+      const currentAIActive = aiState.generatingNodes.size + aiState.flashAnimations.size;
+      if (currentAIActive !== lastAIActiveRef.current) {
+        overlayVersionRef.current++;
+        lastAIActiveRef.current = currentAIActive;
+      }
+
+      // registryVersion + overlayVersion을 합산하여 모든 시각 변경을 감지
+      const effectiveVersion = registryVersion + overlayVersionRef.current;
+      renderer.render(cullingBounds, effectiveVersion, camera, dirtyRects);
     };
 
     app.ticker.add(renderFrame);

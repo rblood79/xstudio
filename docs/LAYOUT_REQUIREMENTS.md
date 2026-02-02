@@ -1553,54 +1553,96 @@ Phase 6 (P2 기능)
 
 #### 4.4.1 렌더 파이프라인 전환
 
-**Phase 5 이전 (현재):**
+**Phase 5 이전:**
 ```
 Store → ElementsLayer → ElementSprite → useResolvedElement → effectiveElement
   → PixiJS LayoutContainer(layout props) → PixiJS Graphics 렌더링
 ```
 
-**Phase 5 이후 (CanvasKit):**
+**Phase 5 (CanvasKit 기본 렌더링):**
 ```
 Store → ElementsLayer → ElementSprite → useResolvedElement → effectiveElement
   → skiaNodeData 생성 → useSkiaNode(전역 레지스트리 등록)
   → SkiaOverlay.buildSkiaTreeFromRegistry() → nodeRenderers → CanvasKit Surface
 ```
 
+**Phase 6 (이중 Surface 캐싱 — 현재 구현):**
+```
+Store → ElementSprite → useResolvedElement($-- 변수 resolve 포함)
+  → skiaNodeData 생성 → useSkiaNode(레지스트리 등록 + registryVersion 증가)
+  → SkiaOverlay render loop:
+      1. classifyFrame(effectiveVersion, camera) → idle | camera-only | content | full
+      2. idle → 렌더링 스킵 (0ms)
+      3. camera-only → contentSurface를 mainSurface에 블리팅 (~2ms)
+      4. content/full → buildSkiaTree(AABB 컬링) → contentSurface 렌더링
+         → Selection Box/Handle/Lasso 오버레이
+         → AI 시각 피드백 (generating effects + flash)
+         → mainSurface에 블리팅
+```
+
 #### 4.4.2 구조 다이어그램
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│ BuilderCanvas (React)                                           │
-│ ├── <Application> (PixiJS — 씬 그래프 + 이벤트만)                │
-│ │   ├── <Camera> (뷰포트 변환)                                   │
-│ │   │   └── <ElementsLayer>                                     │
-│ │   │       └── <ElementSprite> (각 디자인 노드)                  │
-│ │   │           ├── useResolvedElement() → effectiveElement      │
-│ │   │           ├── skiaNodeData = useMemo(...)                  │
-│ │   │           │   { type, x, y, width, height, box/text/... } │
-│ │   │           └── useSkiaNode(element.id, skiaNodeData)       │
-│ │   │               → 전역 레지스트리에 등록                      │
-│ │   └── <SelectionLayer>, <ToolLayer> 등                        │
-│ │                                                               │
-│ └── <SkiaOverlay> (CanvasKit — 실제 렌더링)                      │
-│     ├── CanvasKit <canvas> (z-index: 2, pointer-events: auto)   │
-│     ├── buildSkiaTreeFromRegistry(pixiStage)                    │
-│     │   └── PixiJS 씬 그래프 순회 + 레지스트리에서 SkiaNodeData 조회│
-│     └── renderNode(canvas, nodeData)                            │
-│         ├── 'box' → drawRRect / drawPath (Fill + Stroke)        │
-│         ├── 'text' → ParagraphBuilder → drawParagraph           │
-│         ├── 'image' → drawImageRect                             │
-│         └── 'container' → children 재귀                          │
-└─────────────────────────────────────────────────────────────────┘
+┌───────────────────────────────────────────────────────────────────┐
+│ BuilderCanvas (React)                                             │
+│ ├── <Application> (PixiJS — 씬 그래프 + 이벤트만, alpha: 0)       │
+│ │   ├── <Camera> (뷰포트 변환)                                     │
+│ │   │   └── <ElementsLayer>                                       │
+│ │   │       └── <ElementSprite> (각 디자인 노드)                    │
+│ │   │           ├── useResolvedElement() → effectiveElement        │
+│ │   │           │   └── resolveElementVariables($-- → 실값 변환)   │
+│ │   │           ├── skiaNodeData = useMemo(...)                    │
+│ │   │           │   { type, x, y, w, h, fills[], effects[], ... } │
+│ │   │           └── useSkiaNode(element.id, skiaNodeData)         │
+│ │   │               → 레지스트리 등록 + registryVersion++           │
+│ │   └── <SelectionLayer>, <ToolLayer> 등 (이벤트 전용)             │
+│ │                                                                 │
+│ └── <SkiaOverlay> (CanvasKit — Phase 6 이중 Surface)               │
+│     ├── CanvasKit <canvas> (z-index: 2, pointer-events: auto)     │
+│     ├── SkiaRenderer (이중 Surface 관리)                            │
+│     │   ├── mainSurface   — 최종 출력 (화면에 표시)                  │
+│     │   ├── contentSurface — 콘텐츠 캐시 (변경 시에만 다시 그림)      │
+│     │   └── classifyFrame(effectiveVersion, camera)                │
+│     │       ├── 'idle'        → 렌더링 완전 스킵 (0ms)              │
+│     │       ├── 'camera-only' → contentSurface → mainSurface 블리팅│
+│     │       ├── 'content'     → dirty rect 부분 렌더링              │
+│     │       └── 'full'        → 전체 재렌더링                       │
+│     │                                                              │
+│     ├── render loop (PixiJS ticker 기반)                            │
+│     │   ├── effectiveVersion = registryVersion + overlayVersion    │
+│     │   │   └── overlayVersion: selection/AI 상태 변경 감지         │
+│     │   ├── buildSkiaTree(AABB 뷰포트 컬링 적용)                    │
+│     │   │   └── 화면 밖 노드 스킵, 화면 안 노드만 트리 구성          │
+│     │   ├── renderNode(canvas, nodeData) — 콘텐츠 렌더링             │
+│     │   │   ├── 'box'  → fills[] + drawRRect/drawPath + stroke     │
+│     │   │   │   └── solid/linear/radial/angular/mesh-gradient      │
+│     │   │   ├── 'text' → ParagraphBuilder → drawParagraph          │
+│     │   │   ├── 'image'→ drawImageRect                             │
+│     │   │   └── 'container' → effects[] 적용 + children 재귀       │
+│     │   │       └── opacity/background-blur/drop-shadow/layer-blur │
+│     │   ├── AI 시각 피드백 렌더링                                    │
+│     │   │   ├── renderGeneratingEffects() — 생성 중 애니메이션       │
+│     │   │   └── renderFlashes() — 완료 플래시 효과                   │
+│     │   └── Selection 오버레이 렌더링                                │
+│     │       ├── renderSelectionBox() — 선택 영역 바운딩 박스         │
+│     │       ├── renderTransformHandles() — 리사이즈 핸들             │
+│     │       └── renderLasso() — 다중 선택 올가미                     │
+│     │                                                              │
+│     └── eventBridge.ts — Skia canvas → PixiJS 이벤트 브리징         │
+└───────────────────────────────────────────────────────────────────┘
 ```
 
 #### 4.4.3 핵심 변경 사항
 
-| 기존 (Phase 1-4) | Phase 5+ (CanvasKit) | 비고 |
-|------------------|---------------------|------|
+| 기존 (Phase 1-4) | Phase 5-6 (CanvasKit) | 비고 |
+|------------------|----------------------|------|
 | `LayoutContainer` + `layout` props | Yoga 계산 결과를 `skiaNodeData.x/y/width/height`로 전달 | 레이아웃 계산 로직 불변 |
 | `ElementSprite` → PixiJS Graphics 렌더링 | `ElementSprite` → `useSkiaNode()` 레지스트리 등록 | Sprite 컴포넌트는 렌더 데이터 생성만 담당 |
-| PixiJS `<canvas>` 단일 사용 | PixiJS `<canvas>` (hidden) + CanvasKit `<canvas>` (오버레이) | 이벤트는 `eventBridge.ts`로 브리징 |
+| PixiJS `<canvas>` 단일 사용 | PixiJS `<canvas>` (alpha:0) + CanvasKit `<canvas>` (오버레이) | 이벤트는 `eventBridge.ts`로 브리징 |
+| 매 프레임 전체 렌더링 | Phase 6 이중 Surface + `classifyFrame()` 프레임 분류 | idle: 0ms, camera-only: ~2ms |
+| PixiJS SelectionBox 컴포넌트 | Skia `selectionRenderer.ts` 직접 렌더링 | Box/Handle/Lasso 모두 Skia |
+| 없음 | AI 시각 피드백 (`aiEffects.ts`) Skia 오버레이 | generating + flash 효과 |
+| 없음 | AABB 뷰포트 컬링 — 화면 밖 노드 스킵 | `buildSkiaTreeFromRegistry` |
 | `renderWithPixiLayout()` / `renderWithCustomEngine()` | 동일 (레이아웃 계산 유지) — 렌더링은 SkiaOverlay가 담당 | §4.2 코드 구조 유지 |
 
 #### 4.4.4 레이아웃 → 렌더링 데이터 흐름
@@ -1628,6 +1670,82 @@ useSkiaNode(element.id, skiaNodeData);
 > **주의:** §4.1-4.3의 `LayoutContainer`, `renderWithPixiLayout`, `renderWithCustomEngine` 코드는
 > Phase 5에서도 **레이아웃 계산 용도로 그대로 유지**된다. CanvasKit은 계산된 레이아웃 결과를 받아
 > 렌더링만 대체한다. 따라서 §3 전체와 §4.1-4.3의 레이아웃 계산 코드는 변경 없음.
+
+#### 4.4.5 Phase 6 이중 Surface 캐싱 아키텍처
+
+> `SkiaRenderer.ts` — 콘텐츠 변경이 없을 때 렌더링을 스킵하여 idle 프레임 비용을 0ms로 줄인다.
+
+**Surface 구조:**
+- `mainSurface`: 최종 출력용. 매 프레임 화면에 flush
+- `contentSurface`: 콘텐츠 캐시. 콘텐츠가 변경될 때만 다시 그림
+
+**프레임 분류 (`classifyFrame`):**
+
+| 분류 | 조건 | 동작 | 비용 |
+|------|------|------|------|
+| `idle` | version 동일 + camera 동일 | 렌더링 완전 스킵 | 0ms |
+| `camera-only` | version 동일 + camera 변경 | contentSurface → mainSurface 블리팅 | ~2ms |
+| `content` | version 변경 + dirty rects 존재 | dirty rect 영역만 contentSurface에 재렌더링 | 부분 비용 |
+| `full` | version 변경 + dirty rects 없음 | contentSurface 전체 재렌더링 | 전체 비용 |
+
+**effectiveVersion 계산:**
+```typescript
+// SkiaOverlay.tsx — render loop 내부
+const effectiveVersion = registryVersion + overlayVersionRef.current;
+```
+- `registryVersion`: useSkiaNode 레지스트리 변경 횟수 (콘텐츠 변경)
+- `overlayVersionRef`: selection/AI 상태 변경 횟수 (오버레이 변경)
+- 두 값을 합산하여 콘텐츠와 오버레이 변경을 모두 감지
+
+> **설계 의도:** Selection 상태(`selectedElementIds`)와 AI 피드백 상태는 Skia 레지스트리가 아닌 Zustand store에서 관리된다. Phase 6 `classifyFrame()`이 `registryVersion`만 확인하면 이들 변경을 감지하지 못해 idle로 분류 → 렌더링 스킵되는 문제가 발생한다. `overlayVersionRef`로 이를 보완한다.
+
+#### 4.4.6 Selection / AI 오버레이 렌더링
+
+> Skia 모드에서는 PixiJS SelectionBox 컴포넌트 대신 CanvasKit에서 직접 Selection UI를 렌더링한다.
+
+**Selection 렌더링** (`selectionRenderer.ts`):
+- `buildSelectionRenderData()` — Zustand store에서 선택 상태 + 카메라 변환 → 월드 좌표 바운딩 박스 계산
+- `renderSelectionBox()` — 파란색 바운딩 박스 (1px stroke, 반투명 fill)
+- `renderTransformHandles()` — 8방향 리사이즈 핸들 (모서리 4 + 변 중간 4)
+- `renderLasso()` — 다중 선택 드래그 영역 (점선 사각형)
+
+**AI 시각 피드백** (`aiEffects.ts`):
+- `renderGeneratingEffects()` — 생성 중 노드에 펄스 애니메이션 오버레이
+- `renderFlashes()` — 작업 완료 시 녹색/파란색 플래시 효과
+- `buildNodeBoundsMap()` — Skia 트리에서 대상 노드의 바운딩 박스 조회
+
+렌더링 순서: 콘텐츠 → AI 피드백 → Selection (최상위)
+
+#### 4.4.7 AABB 뷰포트 컬링
+
+> `buildSkiaTreeFromRegistry()` 에서 PixiJS 씬 그래프 순회 시 뷰포트 밖 노드를 스킵한다.
+
+```
+cullingBounds = { x: -cameraX/zoom, y: -cameraY/zoom,
+                  w: canvasWidth/zoom, h: canvasHeight/zoom }
+```
+
+- 각 노드의 worldTransform 위치 + skiaNodeData 크기로 AABB 계산
+- `intersects(nodeBounds, cullingBounds)` → false이면 해당 서브트리 스킵
+- 루트 컨테이너(body)는 크기 0으로 보고될 수 있으므로 항상 포함 (zero-size 예외 처리)
+
+#### 4.4.8 변수 Resolve 렌더링 경로
+
+> `$--` 변수 참조가 Skia 렌더링에 도달하기 전에 실값으로 변환되는 경로.
+
+```
+ElementSprite
+  → useResolvedElement(element)
+    → resolveInstanceOverrides()  // 인스턴스 오버라이드 적용
+    → resolveElementVariables()   // $-- 변수 → 실값 변환
+      → resolveStyleVariables()   // style 객체 내 재귀 resolve
+  → effectiveElement (resolved)
+  → skiaNodeData 생성 (Float32Array 색상값 등)
+```
+
+- `resolveElementVariables()`: props의 모든 `$--`로 시작하는 문자열을 변수 store에서 조회하여 치환
+- `resolveStyleVariables()`: `props.style` 객체 내부의 `$--` 참조를 재귀적으로 resolve
+- Sprite 컴포넌트가 skiaNodeData를 생성할 때는 이미 모든 변수가 실값으로 변환된 상태
 
 ---
 
@@ -1748,9 +1866,12 @@ describe('Browser CSS Comparison', () => {
 |------------|---------------|------------|
 | border-radius | `canvas.drawRRect()` | 4방향 개별 반경, 타원형 반경 정확성 |
 | 텍스트 렌더링 | `ParagraphBuilder` → `drawParagraph` | 서브픽셀 렌더링, 폰트 메트릭, 줄바꿈 위치 |
-| 그래디언트 | `Shader.MakeLinearGradient` / `MakeTwoPointConicalGradient` / `MakeSweepGradient` | 방향, 색상 정지점, 반복 모드 |
+| 그래디언트 (basic) | `Shader.MakeLinearGradient` / `MakeTwoPointConicalGradient` / `MakeSweepGradient` | 방향, 색상 정지점, 반복 모드 |
+| 메시 그래디언트 | `MakeLinearGradient` × 2 + `MakeBlend` (bilinear 근사) | 4코너 색상 보간 정확성, top/bottom 그래디언트 블렌딩 |
 | 그림자/블러 | `ImageFilter.MakeDropShadow/MakeBlur` | offset, sigma, inner/outer shadow |
+| 레이어 블러 | `ImageFilter.MakeBlur` + `saveLayer()` | 전경 콘텐츠 가우시안 블러, sigma 정확성 |
 | 이미지 | `canvas.drawImageRect()` | fit/fill/crop 모드, 비율 유지 |
+| Selection 오버레이 | `drawRRect` + `drawLine` (selectionRenderer.ts) | 바운딩 박스, 핸들, 올가미 위치 정확성 |
 
 #### 5.4.2 비교 방법론
 
@@ -1768,8 +1889,8 @@ React CSS 렌더링 (Preview iframe) ↔ CanvasKit 렌더링 (Builder Canvas)
 3. **허용 오차**: 안티앨리어싱 차이로 인해 SSIM >= 0.95 또는 픽셀 차이 < 2%
 4. **테스트 케이스 우선순위**:
    - P0: 단색 박스, border-radius, 텍스트 기본 렌더링
-   - P1: 그래디언트(linear, radial), 그림자, 이미지
-   - P2: angular 그래디언트, 복합 이펙트(blur + shadow)
+   - P1: 그래디언트(linear, radial), 그림자, 이미지, selection 오버레이
+   - P2: angular/mesh 그래디언트, 복합 이펙트(layer-blur + shadow), AI 시각 피드백
 
 #### 5.4.3 텍스트 렌더링 전용 검증
 
@@ -2384,3 +2505,4 @@ function estimateTextHeight(fontSize: number, lineHeight?: number): number {
 | 2026-01-31 | 1.29 | 버튼/Body 레이아웃 버그 수정 3건: (1) calculateContentHeight padding 이중 계산 제거 — content-box 기준 textHeight만 반환, MIN_BUTTON_HEIGHT도 content-box로 변환 후 비교, (2) renderWithCustomEngine availableWidth에 border 차감 추가 — parseBorder()로 부모 border를 padding과 함께 차감 (자식 offset은 padding만 — Yoga가 border offset 자동 처리), (3) parseBoxModel에 treatAsBorderBox 로직 추가 — box-sizing: border-box 또는 폼 요소 명시적 width/height 시 padding+border 차감으로 content-box 변환 |
 | 2026-02-01 | 1.30 | Phase 5 CanvasKit/Skia 통합 문서 추가: (1) §3.5 엔진 디스패처에 Phase 5+ 렌더링 전환 주석 (레이아웃 계산 불변, 렌더링만 CanvasKit), (2) §4.4 CanvasKit 렌더 파이프라인 추가 (Store → ElementSprite → useSkiaNode → SkiaOverlay → nodeRenderers → CanvasKit Surface), (3) §5.4 CanvasKit 렌더링 정확성 검증 방법 추가 (border-radius, 텍스트, 그래디언트, 그림자, 픽셀 비교), (4) §7 CanvasKit/Skia 외부 참조 문서 추가, (5) 상세: docs/WASM.md Phase 5, docs/WASM_DOC_IMPACT_ANALYSIS.md §A |
 | 2026-02-01 | 1.31 | §5.4 코드 검증 반영: (1) §5.4.1 Radial gradient API명 수정 (MakeRadialGradient → MakeTwoPointConicalGradient, fills.ts:51-61 실제 구현과 일치), (2) §5.4.2 픽셀 비교 테스트 인프라 미구현 상태 명시 (Playwright 구현 예정), (3) §5.4.3 텍스트 측정 인프라(textMeasure.ts) 존재 / 비교 테스트 미구현 상태 명시 |
+| 2026-02-02 | 1.32 | Phase 6 Skia 렌더링 완성 반영: (1) §4.4.1 렌더 파이프라인에 Phase 6 이중 Surface 경로 추가 (classifyFrame → idle/camera-only/content/full 분류), (2) §4.4.2 구조 다이어그램 전면 재작성 (이중 Surface, AABB 컬링, Selection/AI 오버레이, eventBridge, overlayVersion), (3) §4.4.3 테이블에 Selection/AI/AABB 컬링 행 추가, (4) §4.4.5 Phase 6 이중 Surface 캐싱 아키텍처 신규 (effectiveVersion 계산, overlayVersionRef 설계 의도), (5) §4.4.6 Selection/AI 오버레이 렌더링 신규, (6) §4.4.7 AABB 뷰포트 컬링 신규, (7) §4.4.8 변수 Resolve 렌더링 경로 신규, (8) §5.4.1에 메시 그래디언트·레이어 블러·Selection 오버레이 검증 행 추가, (9) §5.4 P2 테스트에 mesh gradient·layer-blur·AI 피드백 추가 |
