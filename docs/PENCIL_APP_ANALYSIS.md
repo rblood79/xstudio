@@ -1409,8 +1409,8 @@ EditorCore가 등록하는 IPC 핸들러 (MCP 도구와 매핑):
 
 ## 18. 소스코드 추출 (라이브러리 제외)
 
-> 추출 경로: `/private/tmp/pencil-extracted/src/`
-> 원본: `out/editor/assets/index.js` (252,734줄, 8.1MB)
+> prettify된 원본: `/Users/admin/work/xstudio/docs/pencil-extracted/index.js` (252,734줄, 8.1MB)
+> 추출 경로: `/Users/admin/work/xstudio/docs/pencil-extracted/`
 > 추출 결과: **127,104줄 (4.5MB)** — 앱 자체 코드 50%
 > 제외 분량: **125,630줄 (3.6MB)** — 서드파티 라이브러리 49%
 
@@ -1502,7 +1502,7 @@ src/
 
 ## 19. engine 디렉토리 상세 분석
 
-> 경로: `/private/tmp/pencil-extracted/src/engine/`
+> 경로: `/Users/admin/work/xstudio/docs/pencil-extracted/engine/`
 > 총 11개 파일, **27,601줄**
 > Pencil 에디터의 핵심 엔진 — 씬 그래프, 카메라, 렌더러, 매니저, 도구, MCP 프로세서
 
