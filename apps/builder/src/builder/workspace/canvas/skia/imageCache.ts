@@ -30,6 +30,9 @@ const cache = new Map<string, CacheEntry>();
 /** 진행 중인 로딩 Promise (중복 요청 방지) */
 const pending = new Map<string, Promise<SkImage | null>>();
 
+/** 캐시 세대 번호 — clearImageCache() 시 증가하여 in-flight 결과를 무효화 (I-H5) */
+let cacheGeneration = 0;
+
 /**
  * URL에서 이미지를 로드하여 CanvasKit Image로 변환한다.
  * 캐시된 이미지가 있으면 즉시 반환한다.
@@ -50,9 +53,13 @@ export async function loadSkImage(url: string): Promise<SkImage | null> {
   // 이미 로딩 중이면 대기 (refCount는 캐시 등록 후 별도 증가)
   const existing = pending.get(url);
   if (existing) {
+    const genBefore = cacheGeneration;
     const image = await existing;
+    // 대기 중 캐시가 초기화되었으면 stale 결과 무시 (I-H5)
+    if (cacheGeneration !== genBefore) {
+      return null;
+    }
     if (image) {
-      // 로딩 완료 후 캐시에 등록된 엔트리의 refCount 증가
       const cachedEntry = cache.get(url);
       if (cachedEntry) {
         cachedEntry.refCount++;
@@ -62,6 +69,7 @@ export async function loadSkImage(url: string): Promise<SkImage | null> {
     return image;
   }
 
+  const currentGeneration = cacheGeneration;
   const promise = fetchAndDecode(url);
   pending.set(url, promise);
 
@@ -69,8 +77,13 @@ export async function loadSkImage(url: string): Promise<SkImage | null> {
     const image = await promise;
     pending.delete(url);
 
+    // fetch 중 캐시가 초기화되었으면 stale 이미지 폐기 (I-H5)
+    if (cacheGeneration !== currentGeneration) {
+      image?.delete();
+      return null;
+    }
+
     if (image) {
-      // 캐시 상한 초과 시 LRU 퇴거
       if (cache.size >= MAX_CACHE_SIZE) {
         evictLRU();
       }
@@ -112,6 +125,7 @@ export function releaseSkImage(url: string): void {
 
 /** 전체 캐시 초기화 */
 export function clearImageCache(): void {
+  cacheGeneration++; // in-flight fetch 결과를 무효화 (I-H5)
   for (const entry of cache.values()) {
     entry.image.delete();
   }

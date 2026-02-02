@@ -71,24 +71,19 @@ export function beginRenderEffects(
         }
 
         case 'drop-shadow': {
+          // Inner/Outer 모두 MakeDropShadow 사용 (소스 콘텐츠 보존).
+          // MakeDropShadowOnly는 소스를 제거하므로 inner shadow에서
+          // 콘텐츠가 사라지는 버그 발생 (I-CR1).
+          // saveLayer 경계가 외부 그림자를 자연스럽게 클리핑한다.
           const filter = scope.track(
-            effect.inner
-              ? ck.ImageFilter.MakeDropShadowOnly(
-                  effect.dx,
-                  effect.dy,
-                  effect.sigmaX,
-                  effect.sigmaY,
-                  effect.color,
-                  null,
-                )
-              : ck.ImageFilter.MakeDropShadow(
-                  effect.dx,
-                  effect.dy,
-                  effect.sigmaX,
-                  effect.sigmaY,
-                  effect.color,
-                  null,
-                ),
+            ck.ImageFilter.MakeDropShadow(
+              effect.dx,
+              effect.dy,
+              effect.sigmaX,
+              effect.sigmaY,
+              effect.color,
+              null,
+            ),
           );
           const paint = scope.track(new ck.Paint());
           paint.setImageFilter(filter);

@@ -309,6 +309,9 @@ export class SkiaRenderer {
   resize(htmlCanvas: HTMLCanvasElement): void {
     if (this.disposed) return;
 
+    // DPR 갱신 — 외부 모니터 이동 등으로 변경될 수 있음 (I-H4)
+    this.dpr = window.devicePixelRatio || 1;
+
     // Content surface 정리
     this.disposeContentSurface();
 
