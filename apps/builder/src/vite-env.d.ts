@@ -106,16 +106,6 @@ interface ImportMetaEnv {
   readonly VITE_USE_WEBGL_CANVAS?: string;
   /** 캔버스 비교 모드 (iframe + PixiJS 동시 표시) */
   readonly VITE_CANVAS_COMPARE_MODE?: string;
-  /** WASM SpatialIndex 가속 */
-  readonly VITE_WASM_SPATIAL?: string;
-  /** WASM Layout Engine 가속 */
-  readonly VITE_WASM_LAYOUT?: string;
-  /** WASM Layout Worker (비동기) */
-  readonly VITE_WASM_LAYOUT_WORKER?: string;
-  /** 렌더 모드: pixi | skia | hybrid */
-  readonly VITE_RENDER_MODE?: string;
-  /** Skia 이중 Surface 캐싱 */
-  readonly VITE_SKIA_DUAL_SURFACE?: string;
 }
 
 interface ImportMeta {

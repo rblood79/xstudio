@@ -21,7 +21,7 @@ import {
   HANDLE_STROKE_COLOR,
   EDGE_HIT_THICKNESS,
 } from './types';
-import { getRenderMode } from '../wasm-bindings/featureFlags';
+
 
 // ============================================
 // Types
@@ -107,14 +107,12 @@ export const TransformHandle = memo(function TransformHandle({
     }
   }
 
-  const isSkiaMode = getRenderMode() === 'skia';
-
   // 핸들 그리기
   const draw = useCallback(
     (g: PixiGraphics) => {
       g.clear();
 
-      if (isCorner && isSkiaMode) {
+      if (isCorner) {
         // Skia 모드: 코너도 투명 히트 영역만 (Skia가 시각적 렌더링 담당)
         g.rect(0, 0, handleW, handleH);
         g.fill({ color: 0x000000, alpha: 0.001 });
@@ -135,7 +133,7 @@ export const TransformHandle = memo(function TransformHandle({
         g.fill({ color: 0x000000, alpha: 0.001 });
       }
     },
-    [isCorner, handleW, handleH, strokeWidth, isSkiaMode]
+    [isCorner, handleW, handleH, strokeWidth]
   );
 
   // 이벤트 핸들러

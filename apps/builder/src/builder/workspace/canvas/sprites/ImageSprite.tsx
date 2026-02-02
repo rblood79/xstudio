@@ -17,7 +17,7 @@ import { convertStyle, buildSkiaEffects, type CSSStyle } from './styleConverter'
 import { parsePadding, getContentBounds } from './paddingUtils';
 import { drawBox, parseBorderConfig } from '../utils';
 import { useSkiaNode } from '../skia/useSkiaNode';
-import { WASM_FLAGS } from '../wasm-bindings/featureFlags';
+
 import { loadSkImage, releaseSkImage } from '../skia/imageCache';
 import type { Image as SkImage } from 'canvaskit-wasm';
 
@@ -192,7 +192,7 @@ export const ImageSprite = memo(function ImageSprite({ element, onClick }: Image
   const [skImage, setSkImage] = useState<SkImage | null>(null);
 
   useEffect(() => {
-    if (!WASM_FLAGS.CANVASKIT_RENDERER || !src) return;
+    if (!src) return;
 
     let cancelled = false;
     const currentSrc = src; // cleanup에서 사용할 src 캡처 (ref 대신)
@@ -226,8 +226,6 @@ export const ImageSprite = memo(function ImageSprite({ element, onClick }: Image
 
   // Skia 렌더 데이터
   const skiaNodeData = useMemo(() => {
-    if (!WASM_FLAGS.CANVASKIT_RENDERER) return null;
-
     return {
       type: 'image' as const,
       x: transform.x,

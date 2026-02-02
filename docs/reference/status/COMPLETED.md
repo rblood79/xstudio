@@ -105,7 +105,7 @@ Rust WASM 기반 캔버스 성능 가속 모듈 빌드 및 활성화.
 - **Phase 2**: Layout Engine — Block/Grid 레이아웃 WASM 가속 (children > 10 임계값)
 - **Phase 4**: Web Worker — 비동기 레이아웃 + SWR 캐싱 + Transferable ArrayBuffer
 
-**Feature Flags:** `VITE_WASM_SPATIAL=true`, `VITE_WASM_LAYOUT=true`, `VITE_WASM_LAYOUT_WORKER=true`
+**Feature Flags:** 환경변수 제거됨 (2026-02-02). 모든 WASM 모듈 하드코딩 활성화.
 
 **상세:** `docs/WASM.md` Phase 0-4
 

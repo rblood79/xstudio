@@ -7,7 +7,7 @@
  * @see docs/WASM.md §1.3 TypeScript 바인딩
  */
 
-import { WASM_FLAGS } from './featureFlags';
+
 import { idMapper } from './idMapper';
 import { getRustWasm } from './rustWasm';
 import type { SpatialIndex as SpatialIndexWasm } from './pkg/xstudio_wasm';

@@ -17,7 +17,6 @@ import type { Element } from '../../../../types/core/store.types';
 // 🚀 Phase 7: registry 등록은 LayoutContainer에서 처리
 // import { registerElement, unregisterElement } from '../elementRegistry';
 import { useSkiaNode } from '../skia/useSkiaNode';
-import { WASM_FLAGS, getRenderMode } from '../wasm-bindings/featureFlags';
 import { convertStyle, cssColorToHex, parseCSSSize, type CSSStyle } from './styleConverter';
 import { BoxSprite } from './BoxSprite';
 import { TextSprite } from './TextSprite';
@@ -1111,8 +1110,6 @@ export const ElementSprite = memo(function ElementSprite({
   // 같은 elementId로 레지스트리를 덮어쓰므로 더 구체적인 데이터가 사용된다.
   // UI 컴포넌트(FancyButton 등)는 이 폴백 등록이 사용된다.
   const skiaNodeData = useMemo(() => {
-    if (!WASM_FLAGS.CANVASKIT_RENDERER) return null;
-
     const style = effectiveElement.props?.style as CSSStyle | undefined;
     if (!style) return null;
 
@@ -1127,11 +1124,6 @@ export const ElementSprite = memo(function ElementSprite({
     // 일반 컨테이너(box, flex, grid)는 backgroundColor 없으면 투명 처리 (CSS 기본 동작)
     const isUIComponent = spriteType !== 'box' && spriteType !== 'text'
       && spriteType !== 'image' && spriteType !== 'flex' && spriteType !== 'grid';
-
-    // hybrid 모드: UI 컴포넌트는 PixiJS가 텍스트 포함 전체를 렌더링하므로
-    // Skia 노드를 등록하지 않는다. (불투명 Skia 박스가 PixiJS 텍스트를 가림)
-    // skia 모드에서만 UI 컴포넌트 폴백 박스를 등록한다.
-    if (isUIComponent && getRenderMode() === 'hybrid') return null;
 
     // UI 컴포넌트 variant별 배경/테두리 색상 매핑 (Light 모드, ButtonSpec 토큰 기반)
     // variant별 배경 색상

@@ -83,9 +83,10 @@ src/builder/workspace/canvas/
 - 라쏘 선택
 - Transform 핸들
 
-> **Skia 모드 (2026-02-01):** `VITE_RENDER_MODE=skia`일 때 Selection 오버레이의 시각적 렌더링은
+> **Skia 모드 (2026-02-01, 고정):** Selection 오버레이의 시각적 렌더링은
 > `selectionRenderer.ts`를 통해 CanvasKit/Skia 캔버스에서 수행. PixiJS Selection 컴포넌트는
 > 투명 히트 영역(`alpha=0.001`)으로만 동작하며, 이벤트 처리(클릭 선택, 드래그, 리사이즈)를 담당.
+> (2026-02-02: `VITE_RENDER_MODE` 환경변수 제거, Skia 모드 하드코딩)
 
 ### B1.4 GridLayer
 - 그리드 표시
@@ -404,7 +405,7 @@ function getButtonLayout(style, buttonProps, buttonText, variantColors) {
 
 ### Skia 폴백 렌더링의 Variant 색상 매핑 (2026-02-02)
 
-`VITE_RENDER_MODE=skia`일 때 PixiButton/PixiCheckbox 등 UI 컴포넌트는 PixiJS FancyButton 대신
+Skia 모드에서 PixiButton/PixiCheckbox 등 UI 컴포넌트는 PixiJS FancyButton 대신
 `ElementSprite.tsx`의 Skia 폴백 경로에서 렌더링된다. 이 경로에서는 CSS 변수 대신
 하드코딩된 M3 Light Mode 색상 매핑 테이블을 사용한다.
 
@@ -793,7 +794,7 @@ Pan/Zoom 이벤트 → ViewportController → notifyUpdateListeners()
 
 ### B3.3 Selection System 개선
 
-> **Skia 모드 렌더링 분리 (2026-02-01):** `VITE_RENDER_MODE=skia`일 때 Selection의 시각적 렌더링은
+> **Skia 모드 렌더링 분리 (2026-02-01, Skia 고정):** Selection의 시각적 렌더링은
 > `canvas/skia/selectionRenderer.ts`에서 CanvasKit API로 수행. PixiJS Selection 컴포넌트는
 > 이벤트 처리(클릭, 드래그, 리사이즈)만 담당하며 투명 히트 영역으로 동작.
 > Camera 하위 레이어는 `alpha=0`으로 숨김 (`renderable=false` 사용 금지 — EventBoundary 히트 테스팅 비활성화 문제).
@@ -837,15 +838,11 @@ export const SelectionBox = memo(function SelectionBox({
 }: SelectionBoxProps) {
   // 줌에 독립적인 선 두께 (화면상 항상 1px)
   const strokeWidth = 1 / zoom;
-  const isSkiaMode = getRenderMode() === 'skia';
 
   const drawBorder = useCallback((g: PixiGraphics) => {
     g.clear();
-    if (isSkiaMode) return; // Skia가 Selection 렌더링 담당
-    g.setStrokeStyle({ width: strokeWidth, color: SELECTION_COLOR, alpha: 1 });
-    g.rect(0, 0, width, height);
-    g.stroke();
-  }, [width, height, strokeWidth, isSkiaMode]);
+    return; // Skia가 Selection 렌더링 담당
+  }, [width, height, strokeWidth]);
 
   // moveArea: 이벤트용 투명 영역은 모드 무관하게 유지 (alpha: 0.001)
   // TransformHandle에 zoom 전달
@@ -874,29 +871,19 @@ export const TransformHandle = memo(function TransformHandle({
   // 줌에 독립적인 핸들 크기
   const cornerSize = HANDLE_SIZE / zoom;
   const strokeWidth = 1 / zoom;
-  const isSkiaMode = getRenderMode() === 'skia';
 
   const draw = useCallback((g: PixiGraphics) => {
     g.clear();
-    if (isCorner && isSkiaMode) {
-      // Skia 모드: 코너도 투명 히트 영역만 (Skia가 시각적 렌더링 담당)
+    if (isCorner) {
+      // 코너: 투명 히트 영역만 (Skia가 시각적 렌더링 담당)
       g.rect(0, 0, handleW, handleH);
       g.fill({ color: 0x000000, alpha: 0.001 });
       return;
     }
-    if (isCorner) {
-      // Pixi 모드: 흰색 배경 + 파란 테두리 (시각적으로 표시)
-      g.rect(0, 0, handleW, handleH);
-      g.fill({ color: HANDLE_FILL_COLOR, alpha: 1 });
-      g.setStrokeStyle({ width: strokeWidth, color: HANDLE_STROKE_COLOR, alpha: 1 });
-      g.rect(0, 0, handleW, handleH);
-      g.stroke();
-    } else {
-      // 엣지: 투명 히트 영역 (모드 무관)
-      g.rect(0, 0, handleW, handleH);
-      g.fill({ color: 0x000000, alpha: 0.001 });
-    }
-  }, [isCorner, handleW, handleH, strokeWidth, isSkiaMode]);
+    // 엣지: 투명 히트 영역
+    g.rect(0, 0, handleW, handleH);
+    g.fill({ color: 0x000000, alpha: 0.001 });
+  }, [isCorner, handleW, handleH, strokeWidth]);
 });
 ```
 
@@ -907,18 +894,11 @@ export const LassoSelection = memo(function LassoSelection({
   start, current, zoom = 1,
 }: LassoSelectionProps) {
   const strokeWidth = 1 / zoom;
-  const isSkiaMode = getRenderMode() === 'skia';
 
   const draw = useCallback((g: PixiGraphics) => {
     g.clear();
-    if (isSkiaMode) return; // Skia가 Lasso 렌더링 담당
-    g.fill({ color: LASSO_COLOR, alpha: LASSO_FILL_ALPHA });
-    g.rect(rect.x, rect.y, rect.width, rect.height);
-    g.fill();
-    g.setStrokeStyle({ width: strokeWidth, color: LASSO_COLOR, alpha: 0.8 });
-    g.rect(rect.x, rect.y, rect.width, rect.height);
-    g.stroke();
-  }, [rect, strokeWidth, isSkiaMode]);
+    return; // Skia가 Lasso 렌더링 담당
+  }, [rect, strokeWidth]);
 });
 ```
 
@@ -952,7 +932,7 @@ BuilderCanvas
 
 ### Skia 모드 렌더 파이프라인 (2026-02-01)
 
-`VITE_RENDER_MODE=skia`일 때 Selection 렌더링은 두 레이어로 분리:
+Selection 렌더링은 두 레이어로 분리 (Skia 모드 고정):
 
 ```
 [Skia Canvas z:2, pointer-events: none]     [PixiJS Canvas z:3, pointer-events: auto]

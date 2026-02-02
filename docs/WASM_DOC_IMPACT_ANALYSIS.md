@@ -1,7 +1,7 @@
 # WASM.md 실행 시 문서 영향 분석 및 Pencil 아키텍처 패턴 적용 계획
 
 > 작성일: 2026-01-31
-> 최종 수정: 2026-02-02 (전체 구현 완료: 렌더링 100% + G.4 디자인 킷 완성)
+> 최종 수정: 2026-02-02 (Round 4 Skia 렌더링 감사 결과 추가)
 > 대상: `docs/LAYOUT_REQUIREMENTS.md`, `docs/COMPONENT_SPEC_ARCHITECTURE.md`, `docs/AI.md`
 > 기준: `docs/WASM.md` Phase 5-6, `docs/PENCIL_APP_ANALYSIS.md` §11–§26
 > 참고: `docs/AI.md` (AI 기능 업그레이드 설계)
@@ -524,3 +524,176 @@ Pencil 패턴 추가 적용 (신규 분석)
 7. G.1/G.2가 AI.md의 도구 정의(A1-A2)와 정합하는지 확인 (도구가 컴포넌트/변수를 올바르게 조작)
 8. G.4 디자인 킷 JSON 스키마가 Pencil §22.3의 킷 구조(variables + themes + reusable 컴포넌트)와 호환되는지 확인
 9. G.3 시각 피드백이 CanvasKit 렌더 루프(WASM.md Phase 5)의 `renderGeneratingEffects()` / `renderFlashes()` 위치에 올바르게 통합되는지 확인
+
+---
+
+## I. Round 4: Skia 렌더링 파이프라인 감사 (2026-02-02)
+
+> Round 1–3 수정 완료 후 전체 Skia 관련 파일 18개를 대상으로 수행한 종합 감사.
+> 총 22건 발견 (CRITICAL 3, HIGH 4, MEDIUM 7, LOW 8)
+
+### CRITICAL (서비스 불가 / 렌더링 왜곡)
+
+#### I-C1. Inner Shadow 렌더링 오류
+
+- **파일**: `canvas/skia/effects.ts:75-82`
+- **문제**: `MakeDropShadowOnly`는 그림자만 그리고 원본 콘텐츠를 삭제한다. inner shadow 구현에 사용하면 **소스 콘텐츠가 사라짐**
+- **현상**: inner shadow가 적용된 요소가 그림자만 보이고 내부 콘텐츠가 투명하게 렌더됨
+- **수정 방안**: `MakeDropShadow` (소스 포함) 사용 + clip rect로 외부 그림자 잘라내어 내부만 표시, 또는 `MakeDropShadowOnly` → `MakeCompose(inner, src)` 합성
+
+#### I-C2. Lasso 좌표 불일치 (Selection 렌더)
+
+- **파일**: `canvas/skia/SkiaOverlay.tsx:289-308`
+- **문제**: Lasso 사각형이 **screen 좌표**(마우스 좌표)를 직접 사용하지만 캔버스는 이미 camera transform(translate + scale)이 적용된 상태. 결과적으로 줌/팬 시 Lasso가 의도와 다른 위치에 렌더됨
+- **현상**: 줌 100% 이외에서 Lasso 드래그 영역과 실제 선택 영역 불일치
+- **수정 방안**: Lasso 좌표를 scene-local 좌표로 변환 (screen → world: `(screenX - cameraX) / zoom`)하거나, Lasso 렌더링을 camera transform 이전에 수행
+
+#### I-C3. 타입 불일치 (styleConverter ↔ effects)
+
+- **파일**: `canvas/skia/sprites/styleConverter.ts` — `buildSkiaEffects()`
+- **문제**: `SkiaEffectItem`은 `[key: string]: unknown` 인덱스 시그니처를 가진 로컬 타입으로, `EffectStyle` 유니언 타입과 구조적으로 호환되지 않음. TypeScript 컴파일은 통과하지만 런타임에서 `effects.ts`의 switch/case가 예상 필드를 찾지 못할 수 있음
+- **현상**: 특정 조합에서 이펙트가 무시되거나 잘못된 분기로 진입 가능
+- **수정 방안**: `SkiaEffectItem` 제거 → `EffectStyle` 유니언 직접 import/사용. 또는 각 case에서 `as OpacityEffect` 등 명시적 타입 단언
+
+### HIGH (기능 결함 / 성능 심각)
+
+#### I-H4. DPR 변경 시 SkiaRenderer.dpr 미갱신
+
+- **파일**: `canvas/skia/SkiaRenderer.ts:54, 306-319`
+- **문제**: `SkiaOverlay`에서 DPR 변경 감지 + 캔버스 리사이즈를 수행하지만, `SkiaRenderer` 인스턴스의 `this.dpr` 필드는 생성자에서만 설정됨. DPR 변경 후 Surface 재생성 시 이전 DPR로 스케일링하여 **흐릿하거나 과도하게 확대**된 렌더링
+- **수정 방안**: `SkiaRenderer`에 `updateDpr(newDpr)` 메서드 추가 또는 `render()` 호출 시 DPR 파라미터 수신
+
+#### I-H5. 이미지 캐시 레이스 컨디션
+
+- **파일**: `canvas/skia/imageCache.ts` — `clearImageCache()` / `loadSkImage()`
+- **문제**: `clearImageCache()`가 모든 SkImage를 delete하지만, 진행 중인 `loadSkImage()` Promise가 완료 후 이미 삭제된 SkImage 참조를 반환할 수 있음
+- **현상**: 페이지 전환 중 이미지 로드 완료 시 use-after-free 크래시 또는 빈 이미지
+- **수정 방안**: `clearImageCache()` 시 진행 중인 Promise에 취소 토큰 전파, 또는 generation counter로 stale 로드 결과 무시
+
+#### I-H6. 프레임당 대량 GC 압력
+
+- **파일**: `canvas/skia/SkiaOverlay.tsx` — `buildSkiaTreeHierarchical()`, `buildTreeBoundsMap()`
+- **문제**: 60fps 렌더 루프에서 매 프레임 수백 개의 `SkiaNodeData` 객체, `Map`, 중간 배열을 생성. Minor GC가 빈번하게 발생하여 프레임 드롭
+- **수정 방안**: 객체 풀링, 이전 프레임 트리 재사용(registryVersion 비교), 또는 `buildSkiaTreeHierarchical`를 registryVersion 변경 시에만 실행
+
+#### I-H7. useSkiaNode 불필요한 재등록
+
+- **파일**: `canvas/skia/useSkiaNode.ts` + 각 Sprite 컴포넌트
+- **문제**: `useMemo`로 생성하는 `skiaNodeData`에 `Float32Array.of(...)` 포함 → 매 렌더마다 새 참조 → `useEffect` deps 변경 → `registerSkiaNode` + `unregisterSkiaNode` 매 프레임 호출
+- **현상**: 정적 요소도 매 프레임 레지스트리 업데이트, registryVersion 무한 증가, 렌더 루프 항상 full render
+- **수정 방안**: `skiaNodeData`에 shallow-equal 비교 래퍼 적용, 또는 `Float32Array` 를 `useMemo` 외부에서 캐싱
+
+### MEDIUM (부분 결함 / 비효율)
+
+#### I-M8. Store 구독 중복 읽기
+
+- **파일**: `canvas/skia/SkiaOverlay.tsx` — `useBuilderStore` selectors
+- **문제**: `elements`, `currentPageId`, `selectedElementIds` 등을 개별 selector로 구독 → 하나의 Store 업데이트가 다수의 리렌더 트리거
+- **수정 방안**: 단일 selector로 필요한 값을 한 번에 추출 (`shallow` comparator 사용)
+
+#### I-M9. AI 시각 피드백 Store 중복
+
+- **파일**: `canvas/skia/SkiaOverlay.tsx` — `useAIVisualFeedbackStore` 다중 구독
+- **문제**: `generatingElementIds`, `flashElementIds`, `flashPhase`를 개별 구독 → AI 작업 중 불필요한 리렌더
+- **수정 방안**: 단일 shallow selector로 통합
+
+#### I-M10. Mesh Gradient에서 SrcOver 블렌드 누락
+
+- **파일**: `canvas/skia/fills.ts` — `case 'mesh-gradient'`
+- **문제**: 현재 `return null` 스텁이지만, 구현 시 생성하는 셰이더의 블렌드 모드를 명시하지 않으면 기본값이 아닌 이전 Paint의 블렌드가 상속될 수 있음
+- **수정 방안**: mesh-gradient 구현 시 `paint.setBlendMode(ck.BlendMode.SrcOver)` 명시
+
+#### I-M11. ParagraphStyle 메모리 누수
+
+- **파일**: `canvas/skia/nodeRenderers.ts:278-294` — `renderText()`
+- **문제**: `new ck.ParagraphStyle()`로 생성한 객체가 `scope.track()`에 추가되지 않음. `ParagraphBuilder`와 `Paragraph`만 추적 중
+- **현상**: `renderText()` 호출마다 ParagraphStyle WASM 메모리 누수
+- **수정 방안**: `scope.track(paraStyle)` 추가, 또는 ParagraphStyle이 CanvasKit에서 delete 불필요한 plain object인지 확인
+
+#### I-M12. ResizeObserver 스테일 엔트리
+
+- **파일**: `canvas/skia/SkiaOverlay.tsx` — ResizeObserver callback
+- **문제**: 캔버스 컨테이너가 언마운트된 후에도 ResizeObserver 콜백이 호출될 수 있으며, `entry.contentRect`이 stale 상태
+- **수정 방안**: `observer.disconnect()`를 cleanup에서 보장 + 콜백 내 `if (!containerRef.current) return` 가드
+
+#### I-M13. blendModes.ts 캐시 미활용
+
+- **파일**: `canvas/skia/blendModes.ts` — `toSkiaBlendMode()`
+- **문제**: 매 호출마다 `switch` 문으로 string → CanvasKit enum 변환. 프레임당 노드 수만큼 호출됨
+- **수정 방안**: `Map<string, EmbindEnumEntity>` 캐시를 `CanvasKit` 인스턴스 초기화 시 구축
+
+#### I-M14. fills.ts conic-gradient fallback 누락
+
+- **파일**: `canvas/skia/fills.ts` — `applyFill()`
+- **문제**: `conic-gradient` 타입이 `FillStyle` 유니언에 없지만, CSS에서는 `conic-gradient`를 사용할 수 있음. 파싱 단계에서 누락되면 silent fail
+- **수정 방안**: `FillStyle`에 `conic-gradient` 타입 추가하거나, `styleConverter`에서 명시적 경고 로깅
+
+### LOW (코드 품질 / 엣지 케이스)
+
+#### I-L15. BodyLayer 빈 ID 가드 미완
+
+- **파일**: `canvas/layers/BodyLayer.tsx`
+- **문제**: `useSkiaNode(bodyElement?.id ?? '', ...)` — 빈 문자열 ID로 등록 시 레지스트리에 `''` 키가 생성됨
+- **현상**: bodyElement 없을 때 불필요한 레지스트리 엔트리
+- **상태**: 이전 라운드에서 부분 수정. `null` 전달로 등록 자체를 스킵하도록 완료 필요
+
+#### I-L16. export.ts 타입 단언
+
+- **파일**: `canvas/skia/export.ts`
+- **문제**: 내보내기 시 `as unknown as ...` 타입 단언이 여러 곳에 사용되어 타입 안전성 약화
+- **수정 방안**: 제네릭 또는 타입 가드로 교체
+
+#### I-L17. cssColorToAlpha HSLA 미지원
+
+- **파일**: `canvas/sprites/styleConverter.ts` — `cssColorToAlpha()`
+- **문제**: `rgba()` 만 파싱. `hsla()`, `oklch()`, CSS named colors의 알파값 추출 불가 → 기본값 1 반환
+- **수정 방안**: `canvas` 2D context `getImageData()` 기반 범용 파서, 또는 `color` npm 패키지 사용
+
+#### I-L18. eventBridge 미사용 코드
+
+- **파일**: `canvas/skia/eventBridge.ts`
+- **문제**: 일부 exported 함수가 현재 어디서도 import되지 않음 (dead code)
+- **수정 방안**: 실제 사용처 확인 후 미사용 함수 제거
+
+#### I-L19. fontManager 예외 처리
+
+- **파일**: `canvas/skia/fontManager.ts`
+- **문제**: 폰트 로드 실패 시 `throw` → 렌더 루프 전체가 중단될 수 있음
+- **수정 방안**: `try-catch` + fallback 폰트 반환, 또는 에러를 로깅하고 `null` 반환
+
+#### I-L20. ImageSprite 이중 로딩
+
+- **파일**: `canvas/sprites/ImageSprite.tsx`
+- **문제**: `src` 변경 시 이전 로드가 완료되기 전에 새 로드 시작 → 이전 라운드에서 `cancelled` 플래그로 수정했으나, `loadSkImage` 자체가 캐시에서 중복 fetch를 시작할 수 있음
+- **수정 방안**: `imageCache.ts`에 진행 중 Promise 캐시 (`Map<string, Promise>`) 추가
+
+#### I-L21. Selection elementRegistry fallback zoom
+
+- **파일**: `canvas/skia/SkiaOverlay.tsx` — `buildSelectionRenderData()`
+- **문제**: `treeBoundsMap`에서 요소를 찾지 못하면 `elementRegistry` fallback으로 좌표를 가져오는데, 이 fallback 경로에서 zoom 스케일이 적용되지 않음
+- **수정 방안**: fallback 경로에도 `/ cameraZoom` 스케일 적용, 또는 fallback 제거 (treeBoundsMap이 항상 완전해야 함)
+
+#### I-L22. updateTextChildren 고정 lineHeight 배수
+
+- **파일**: `canvas/sprites/TextSprite.tsx` 관련 업데이트 경로
+- **문제**: 텍스트 높이 계산에서 `lineHeight`가 `fontSize * 1.2` 고정 배수로 사용되는 경로 존재. CSS lineHeight가 다른 값일 때 높이 불일치
+- **수정 방안**: 실제 `style.lineHeight` 값 사용, 없으면 브라우저 기본값(약 1.2) fallback
+
+---
+
+### Round 4 요약
+
+| 심각도 | 건수 | 주요 영향 영역 |
+|--------|------|---------------|
+| CRITICAL | 3 | inner shadow 렌더, Lasso 좌표, 타입 안전성 |
+| HIGH | 4 | DPR 동기화, 이미지 캐시 안전성, GC 압력, 레지스트리 성능 |
+| MEDIUM | 7 | Store 효율, 메모리 누수, 블렌드 모드, 그라디언트 |
+| LOW | 8 | 코드 품질, 엣지 케이스, dead code |
+| **합계** | **22** | |
+
+### 수정 우선순위
+
+1. **CRITICAL 3건** → 즉시 수정 (렌더링 왜곡 / 기능 불가)
+2. **HIGH 4건** → 우선 수정 (성능 / 안정성)
+3. **MEDIUM 7건** → 순차 수정
+4. **LOW 8건** → 리팩토링 시 함께 처리

@@ -19,7 +19,7 @@
 import { useEffect } from 'react';
 import type { SkiaNodeData } from './nodeRenderers';
 import type { DirtyRect } from './types';
-import { WASM_FLAGS } from '../wasm-bindings/featureFlags';
+
 
 // ============================================
 // 전역 레지스트리
@@ -163,7 +163,6 @@ export function useSkiaNode(
   data: SkiaNodeData | null,
 ): void {
   useEffect(() => {
-    if (!WASM_FLAGS.CANVASKIT_RENDERER) return;
     if (!data) return;
 
     registerSkiaNode(elementId, data);

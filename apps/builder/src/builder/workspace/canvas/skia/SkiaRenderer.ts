@@ -19,7 +19,7 @@ import type { SkiaRenderable, FrameType, CameraState, DirtyRect } from './types'
 import { createGPUSurface } from './createSurface';
 import { recordWasmMetric } from '../utils/gpuProfilerCore';
 import { mergeDirtyRects } from './dirtyRectTracker';
-import { WASM_FLAGS } from '../wasm-bindings/featureFlags';
+
 
 export class SkiaRenderer {
   private ck: CanvasKit;
@@ -286,7 +286,6 @@ export class SkiaRenderer {
     dirtyRects?: DirtyRect[],
   ): void {
     if (
-      WASM_FLAGS.DUAL_SURFACE_CACHE &&
       registryVersion !== undefined &&
       camera !== undefined
     ) {

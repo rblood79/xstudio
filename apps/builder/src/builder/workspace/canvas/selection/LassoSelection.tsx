@@ -12,7 +12,7 @@ import { useExtend } from '@pixi/react';
 import { PIXI_COMPONENTS } from '../pixiSetup';
 import { LASSO_COLOR, LASSO_FILL_ALPHA } from './types';
 import { getLassoBounds } from './LassoSelection.utils';
-import { getRenderMode } from '../wasm-bindings/featureFlags';
+
 
 // ============================================
 // Types
@@ -46,12 +46,11 @@ export const LassoSelection = memo(function LassoSelection({
 
   // 줌에 독립적인 선 두께 (화면상 항상 1px)
   const strokeWidth = 1 / zoom;
-  const isSkiaMode = getRenderMode() === 'skia';
 
   const draw = useCallback(
     (g: PixiGraphics) => {
       g.clear();
-      if (isSkiaMode) return; // Skia가 Lasso 렌더링 담당
+      return; // Skia가 Lasso 렌더링 담당
 
       // 배경 (반투명)
       g.fill({ color: LASSO_COLOR, alpha: LASSO_FILL_ALPHA });
@@ -63,7 +62,7 @@ export const LassoSelection = memo(function LassoSelection({
       g.rect(rect.x, rect.y, rect.width, rect.height);
       g.stroke();
     },
-    [rect, strokeWidth, isSkiaMode]
+    [rect, strokeWidth]
   );
 
   return <pixiGraphics draw={draw} />;

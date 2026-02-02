@@ -26,7 +26,7 @@ import {
   parseLineHeight,
   calculateBaseline,
 } from './utils';
-import { WASM_FLAGS } from '../../wasm-bindings/featureFlags';
+
 import {
   wasmBlockLayout,
   BLOCK_FIELD_COUNT,
@@ -134,7 +134,7 @@ export class BlockEngine implements LayoutEngine {
     }
 
     // Phase 2: WASM 가속 경로 (children > 10개일 때 마샬링 비용 대비 이점)
-    if (WASM_FLAGS.LAYOUT_ENGINE && children.length > 10) {
+    if (children.length > 10) {
       const wasmResult = this.calculateViaWasm(
         parent, children, availableWidth, availableHeight, context
       );
@@ -844,14 +844,12 @@ export class BlockEngine implements LayoutEngine {
     }
 
     // Phase 4: Worker 비동기 재검증 (SWR)
-    if (WASM_FLAGS.LAYOUT_WORKER) {
-      this.scheduleWorkerBlock(
-        parent.id, elementIds, inputs,
-        availableWidth, availableHeight,
-        canCollapseTop, canCollapseBottom,
-        context?.prevSiblingMarginBottom ?? 0,
-      );
-    }
+    this.scheduleWorkerBlock(
+      parent.id, elementIds, inputs,
+      availableWidth, availableHeight,
+      canCollapseTop, canCollapseBottom,
+      context?.prevSiblingMarginBottom ?? 0,
+    );
 
     return {
       layouts,

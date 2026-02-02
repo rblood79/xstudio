@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Removed - WASM/Skia Feature Flag 환경변수 제거 (2026-02-02)
+
+5개 환경변수(`VITE_RENDER_MODE`, `VITE_WASM_SPATIAL`, `VITE_WASM_LAYOUT`, `VITE_WASM_LAYOUT_WORKER`, `VITE_SKIA_DUAL_SURFACE`)를 제거하고 값을 하드코딩하여 ~30개 조건 분기 및 dead code를 제거.
+
+- `wasm-bindings/featureFlags.ts`: 모든 `WASM_FLAGS` → `true`, `getRenderMode()` → `'skia'` 고정
+- `utils/featureFlags.ts`: `isWasmSpatialIndex()`, `isWasmLayoutEngine()`, `isCanvasKitEnabled()` → `true` 고정
+- `.env`, `.env.example`: WASM 관련 환경변수 5줄 삭제
+- `vite-env.d.ts`: 환경변수 타입 5개 삭제
+- Sprite 6개 파일: `if (!WASM_FLAGS.CANVASKIT_RENDERER)` 가드 제거
+- Selection 3개 파일: `isSkiaMode` 변수 제거, 무조건 Skia 경로 사용
+- `init.ts`: Feature Flag 조건 4개 제거 (무조건 초기화)
+- `elementRegistry.ts`: `WASM_FLAGS` 조건 제거 (`_spatialModule` null 체크는 유지)
+- `BuilderCanvas.tsx`: `WASM_FLAGS.CANVASKIT_RENDERER &&` 조건 제거
+- `SkiaRenderer.ts`: `WASM_FLAGS.DUAL_SURFACE_CACHE &&` 조건 제거
+- `BlockEngine.ts`, `GridEngine.ts`: `WASM_FLAGS.LAYOUT_ENGINE &&` / `WASM_FLAGS.LAYOUT_WORKER` 조건 제거
+- `SelectionLayer.utils.ts`: JS 폴백 경로 dead code 제거
+- `SkiaOverlay.tsx`: `renderMode` 조건 3곳 제거, `isActive` 상수화
+
 ### Fixed - Skia 렌더 트리 계층화 및 Selection 좌표 통합 (2026-02-02)
 
 #### 개요
@@ -165,17 +183,14 @@ Rust WASM 기반 성능 가속 모듈(Phase 0-4)을 빌드/활성화하여 전�
 - `ping() = "pong"` 파이프라인 검증 통과
 
 #### Phase 1: Spatial Index
-- `VITE_WASM_SPATIAL=true` 활성화
 - Grid-cell 기반 SpatialIndex (cell_size=256) — O(k) 뷰포트 컬링, 라쏘 선택, 히트 테스트
 - idMapper (string UUID ↔ u32 양방향 매핑)
 
 #### Phase 2: Layout Engine
-- `VITE_WASM_LAYOUT=true` 활성화
 - Block 레이아웃: margin collapse, BFC, inline-block 지원 (children > 10 시 WASM 경로)
 - Grid 레이아웃: track 파싱 (fr/px/%/auto) + cell 위치 계산
 
 #### Phase 4: Web Worker
-- `VITE_WASM_LAYOUT_WORKER=true` 활성화
 - Worker 내 WASM 초기화 + block/grid 레이아웃 비동기 계산
 - SWR 캐싱 + LayoutScheduler (RAF 기반)
 - Transferable ArrayBuffer zero-copy 전송
@@ -254,9 +269,9 @@ Selection 오버레이(선택 박스, Transform 핸들, 라쏘)를 PixiJS 듀얼
 - PixiJS Camera 하위 레이어 숨김: `renderable=false` → `alpha=0` 변경 (히트 테스팅 유지)
 
 **3. PixiJS Selection 컴포넌트 (시각적 렌더링 비활성화)**
-- `SelectionBox.tsx` — `isSkiaMode`에서 drawBorder 스킵 (moveArea 이벤트 영역은 유지)
-- `TransformHandle.tsx` — 코너 핸들: Skia 모드에서 투명 히트 영역만 (엣지 핸들 변경 없음)
-- `LassoSelection.tsx` — Skia 모드에서 draw 스킵
+- `SelectionBox.tsx` — drawBorder 무조건 스킵 (moveArea 이벤트 영역은 유지)
+- `TransformHandle.tsx` — 코너 핸들: 투명 히트 영역만 (엣지 핸들 변경 없음)
+- `LassoSelection.tsx` — draw 무조건 스킵
 
 **4. BuilderCanvas.tsx**
 - `dragStateRef` 생성 및 SkiaOverlay에 전달

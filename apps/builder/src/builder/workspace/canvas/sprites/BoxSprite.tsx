@@ -21,7 +21,7 @@ import { convertStyle, cssColorToHex, cssColorToAlpha, buildSkiaEffects, type CS
 import { parsePadding, getContentBounds } from './paddingUtils';
 import { drawBox, parseBorderConfig } from '../utils';
 import { useSkiaNode } from '../skia/useSkiaNode';
-import { WASM_FLAGS } from '../wasm-bindings/featureFlags';
+
 
 // ============================================
 // Types
@@ -115,8 +115,6 @@ export const BoxSprite = memo(function BoxSprite({ element, onClick }: BoxSprite
 
   // Phase 5: Skia 렌더 데이터 부착
   const skiaNodeData = useMemo(() => {
-    if (!WASM_FLAGS.CANVASKIT_RENDERER) return null;
-
     const r = ((fill.color >> 16) & 0xff) / 255;
     const g = ((fill.color >> 8) & 0xff) / 255;
     const b = (fill.color & 0xff) / 255;

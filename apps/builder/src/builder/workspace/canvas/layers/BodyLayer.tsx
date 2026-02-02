@@ -17,7 +17,7 @@ import { cssColorToHex, cssColorToAlpha, parseCSSSize } from '../sprites/styleCo
 import type { CSSStyle } from '../sprites/styleConverter';
 import { drawBox, parseBorderConfig } from '../utils';
 import { useSkiaNode } from '../skia/useSkiaNode';
-import { WASM_FLAGS } from '../wasm-bindings/featureFlags';
+
 
 // ============================================
 // Types
@@ -112,8 +112,6 @@ export const BodyLayer = memo(function BodyLayer({
   // Phase 5: Skia 렌더 데이터 등록 (body 배경)
   // Skia 모드에서 PixiJS canvas가 hidden이므로 body도 Skia로 렌더링해야 한다.
   const bodySkiaData = useMemo(() => {
-    if (!WASM_FLAGS.CANVASKIT_RENDERER) return null;
-
     const r = ((backgroundColor >> 16) & 0xff) / 255;
     const g = ((backgroundColor >> 8) & 0xff) / 255;
     const b = (backgroundColor & 0xff) / 255;

@@ -23,7 +23,6 @@ import { renderNode } from './nodeRenderers';
 import type { SkiaNodeData } from './nodeRenderers';
 import { isCanvasKitInitialized, getCanvasKit } from './initCanvasKit';
 import { initAllWasm } from '../wasm-bindings/init';
-import { getRenderMode } from '../wasm-bindings/featureFlags';
 import { skiaFontManager } from './fontManager';
 import { useAIVisualFeedbackStore } from '../../../stores/aiVisualFeedback';
 import { buildNodeBoundsMap, renderGeneratingEffects, renderFlashes } from './aiEffects';
@@ -332,11 +331,7 @@ export function SkiaOverlay({ containerEl, backgroundColor = 0xf8fafc, app, drag
   const lastSelectedIdRef = useRef<string | null>(null);
   const lastAIActiveRef = useRef(0);
 
-  const renderMode = getRenderMode();
-  // hybrid 모드: Skia 텍스트 렌더링 미구현 상태에서 Skia 오버레이가
-  // PixiJS 콘텐츠(버튼 텍스트 등)를 가리므로 비활성화.
-  // skia 모드에서만 Skia 오버레이 활성화.
-  const isActive = renderMode === 'skia';
+  const isActive = true;
 
   // CanvasKit + 폰트 초기화
   useEffect(() => {
@@ -408,12 +403,8 @@ export function SkiaOverlay({ containerEl, backgroundColor = 0xf8fafc, app, drag
 
     // Pencil 방식: PixiJS는 이벤트 처리 전용 (시각적 렌더링 없음)
     // Skia가 디자인 + AI 이펙트 + Selection 오버레이를 모두 렌더링
-    if (renderMode === 'skia') {
-      // PixiJS 배경을 투명하게 → 시각적 렌더링 없음
-      app.renderer.background.alpha = 0;
-      // PixiJS 캔버스를 Skia 위에 배치 (이벤트 처리 전용)
-      pixiCanvas.style.zIndex = '3';
-    }
+    app.renderer.background.alpha = 0;
+    pixiCanvas.style.zIndex = '3';
 
     // 렌더 루프: PixiJS ticker에 통합
     const renderFrame = () => {
@@ -429,7 +420,7 @@ export function SkiaOverlay({ containerEl, backgroundColor = 0xf8fafc, app, drag
       // ⚠️ renderable=false는 PixiJS 8의 _interactivePrune()에서
       //    hit testing까지 비활성화하므로 사용 금지.
       //    alpha=0으로 시각적으로만 숨겨 이벤트 처리를 유지한다.
-      if (renderMode === 'skia' && cameraContainer) {
+      if (cameraContainer) {
         for (const child of cameraContainer.children) {
           const c = child as Container;
           if (c.label) {
@@ -566,21 +557,19 @@ export function SkiaOverlay({ containerEl, backgroundColor = 0xf8fafc, app, drag
       renderer.dispose();
       rendererRef.current = null;
 
-      if (renderMode === 'skia') {
-        // PixiJS 상태 복원
-        app.renderer.background.alpha = 1;
-        pixiCanvas.style.zIndex = '';
+      // PixiJS 상태 복원
+      app.renderer.background.alpha = 1;
+      pixiCanvas.style.zIndex = '';
 
-        // 디자인 레이어 렌더링 복원
-        const camera = findCameraContainer(app.stage);
-        if (camera) {
-          for (const child of camera.children) {
-            (child as Container).alpha = 1;
-          }
+      // 디자인 레이어 렌더링 복원
+      const camera = findCameraContainer(app.stage);
+      if (camera) {
+        for (const child of camera.children) {
+          (child as Container).alpha = 1;
         }
       }
     };
-  }, [ready, isActive, app, containerEl, backgroundColor, renderMode]);
+  }, [ready, isActive, app, containerEl, backgroundColor]);
 
   // 페이지 전환 시 Skia 레지스트리 + 이미지 캐시 초기화
   // 개별 Sprite unmount의 useEffect cleanup보다 선행하여

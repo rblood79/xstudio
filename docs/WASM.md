@@ -309,17 +309,22 @@ performance.measure('bounds-lookup', 'bounds-lookup-start', 'bounds-lookup-end')
 
 ### 0.3 Feature Flag 인프라
 
+> **Update (2026-02-02):** 환경변수 기반 Feature Flag가 모두 제거되고 하드코딩됨.
+> `VITE_WASM_SPATIAL`, `VITE_WASM_LAYOUT`, `VITE_WASM_LAYOUT_WORKER`, `VITE_RENDER_MODE`, `VITE_SKIA_DUAL_SURFACE` 환경변수 삭제.
+
 ```typescript
-// wasm-bindings/featureFlags.ts
+// wasm-bindings/featureFlags.ts (하드코딩)
 
 export const WASM_FLAGS = {
-  SPATIAL_INDEX: import.meta.env.VITE_WASM_SPATIAL === 'true',
-  LAYOUT_ENGINE: import.meta.env.VITE_WASM_LAYOUT === 'true',
+  SPATIAL_INDEX: true,
+  LAYOUT_ENGINE: true,
+  LAYOUT_WORKER: true,
+  CANVASKIT_RENDERER: true,
+  DUAL_SURFACE_CACHE: true,
 } as const;
 
-// .env.development
-VITE_WASM_SPATIAL=true
-VITE_WASM_LAYOUT=false
+export type RenderMode = 'skia';
+export function getRenderMode(): RenderMode { return 'skia'; }
 ```
 
 ### 0.4 Phase 0 산출물
@@ -849,7 +854,7 @@ export function unregisterElement(id: string): void {
 - [x] `SelectionLayer.utils.ts` 수정 (라쏘 선택에 SpatialIndex `query_rect` 적용)
 - [ ] 단위 테스트: Rust `wasm-pack test` (삽입, 삭제, 쿼리, query_rect, 엣지 케이스)
 - [ ] 통합 테스트: 1,000개 요소 뷰포트 쿼리 벤치마크
-- [x] Feature Flag (`VITE_WASM_SPATIAL`)로 A/B 비교
+- [x] ~~Feature Flag (`VITE_WASM_SPATIAL`)로 A/B 비교~~ → 환경변수 제거, 무조건 활성화
 - [x] 페이지별 SpatialIndex 범위 관리 (페이지 전환 시 clearAll + 현재 페이지 batch_upsert)
 - [ ] 배치 인덱스 리빌드 최적화 (suspendIndexRebuild/resumeAndRebuildIndexes 패턴)
 
@@ -2432,10 +2437,9 @@ app.ticker.autoStart = true;
    > 드래그 인터랙션(`useDragInteraction.ts`)이 정상 동작한다.
    > **키보드:** 키보드 이벤트는 캔버스가 아닌 `document` 레벨에서 처리하므로 브리징 불필요.
 
-4. `skia` 모드(단독)에서는 PixiJS WebGL 컨텍스트를 `loseContext()`로 해제하여 GPU 리소스 회수
+4. Skia 모드에서 PixiJS는 이벤트 처리 전용 (`alpha=0`), Skia가 시각적 렌더링 전담
 
-> **`pixi` 모드 전환 시:** CanvasKit 캔버스를 제거하고 PixiJS 캔버스를 활성화한다.
-> Feature Flag 전환은 페이지 리로드 없이 동적으로 수행 가능하도록 설계한다.
+> **Note (2026-02-02):** `pixi`/`hybrid` 모드는 제거됨. Skia 모드 고정.
 
 ### 5.8 전환 전략 (점진적)
 
@@ -2487,9 +2491,10 @@ Step 5: PixiJS 자체 렌더링 비활성화
 > 이 측정 결과를 Yoga 레이아웃의 `measureFunc`에 연결하여
 > **렌더링과 측정이 동일 엔진(CanvasKit)**을 사용하도록 보장한다.
 
-각 Step에서 Feature Flag로 CanvasKit/PixiJS 렌더링 경로를 선택할 수 있다:
+렌더링 모드는 Skia로 하드코딩되어 있다 (환경변수 제거됨):
 ```typescript
-const RENDER_MODE = import.meta.env.VITE_RENDER_MODE; // 'pixi' | 'skia' | 'hybrid'
+// featureFlags.ts — getRenderMode() 항상 'skia' 반환
+export function getRenderMode(): 'skia' { return 'skia'; }
 ```
 
 ### 5.9 Phase 5 산출물
@@ -2513,7 +2518,7 @@ const RENDER_MODE = import.meta.env.VITE_RENDER_MODE; // 'pixi' | 'skia' | 'hybr
 | BoxSprite renderSkia() | 사각형/RoundedRect CanvasKit 렌더링 |
 | TextSprite renderSkia() | ParagraphBuilder 텍스트 렌더링 |
 | ImageSprite renderSkia() | drawImageRect 이미지 렌더링 |
-| Feature Flag | `VITE_RENDER_MODE=pixi\|skia\|hybrid` |
+| Render Mode | Skia 고정 (`getRenderMode() → 'skia'`, 환경변수 제거됨) |
 
 #### 5.9.1 Disposable 패턴 (`canvas/skia/disposable.ts`)
 
@@ -2939,8 +2944,6 @@ export function exportToImage(
 import { initSpatialWasm } from './spatialIndex';
 import { initLayoutWasm } from './layoutAccelerator';
 import { initCanvasKit } from '../skia/initCanvasKit';
-import { WASM_FLAGS } from './featureFlags';
-
 let wasmReady = false;
 
 export async function initAllWasm(): Promise<void> {
@@ -2949,46 +2952,35 @@ export async function initAllWasm(): Promise<void> {
   try {
     const tasks: Promise<void>[] = [];
 
-    // Phase 1-2: 커스텀 Rust WASM 모듈
-    if (WASM_FLAGS.SPATIAL_INDEX) tasks.push(initSpatialWasm());
-    if (WASM_FLAGS.LAYOUT_ENGINE) tasks.push(initLayoutWasm());
+    // Phase 1-2: Rust WASM 모듈 (SpatialIndex, Layout Engine)
+    const { initRustWasm } = await import('./rustWasm');
+    tasks.push(initRustWasm().then(async () => {
+      const { initSpatialIndex } = await import('./spatialIndex');
+      initSpatialIndex();
+    }));
 
     // Phase 5: CanvasKit/Skia WASM (메인 렌더러)
-    if (WASM_FLAGS.CANVASKIT_RENDERER) tasks.push(initCanvasKit().then(() => {}));
+    const { initCanvasKit } = await import('../skia/initCanvasKit');
+    tasks.push(initCanvasKit().then(() => {}));
 
     await Promise.all(tasks);
     wasmReady = true;
-    console.log('[WASM] 모듈 초기화 완료', {
-      spatial: WASM_FLAGS.SPATIAL_INDEX,
-      layout: WASM_FLAGS.LAYOUT_ENGINE,
-      canvaskit: WASM_FLAGS.CANVASKIT_RENDERER,
-    });
+
+    // Phase 4: Layout Worker
+    try {
+      const { initLayoutWorker } = await import('../wasm-worker');
+      await initLayoutWorker();
+    } catch (err) {
+      console.warn('[WASM] Layout Worker 초기화 실패, 메인 스레드 폴백:', err);
+    }
   } catch (error) {
     console.error('[WASM] 초기화 실패, JS 폴백 사용:', error);
   }
 }
-
-export function isWasmReady(): boolean {
-  return wasmReady;
-}
 ```
 
-**Feature Flag (수정됨 — Phase 5 포함):**
-```typescript
-// wasm-bindings/featureFlags.ts
-
-export const WASM_FLAGS = {
-  SPATIAL_INDEX: import.meta.env.VITE_WASM_SPATIAL === 'true',
-  LAYOUT_ENGINE: import.meta.env.VITE_WASM_LAYOUT === 'true',
-  CANVASKIT_RENDERER: import.meta.env.VITE_RENDER_MODE === 'skia'
-    || import.meta.env.VITE_RENDER_MODE === 'hybrid',
-} as const;
-
-// .env.development
-VITE_WASM_SPATIAL=true
-VITE_WASM_LAYOUT=false
-VITE_RENDER_MODE=pixi          // 'pixi' | 'skia' | 'hybrid'
-```
+> **Note (2026-02-02):** Feature Flag 조건문이 모두 제거됨. 모든 WASM 모듈이 무조건 초기화.
+> `WASM_FLAGS`는 전부 `true` 하드코딩, 환경변수 5개 삭제됨. §0.3 참조.
 
 **앱 진입점에서 호출:**
 
@@ -3133,7 +3125,7 @@ Phase 5: CanvasKit/Skia WASM 메인 렌더러 도입
   └─ effects.ts — 이펙트 파이프라인 (Opacity/Blur/Shadow)
   └─ 노드별 renderSkia() — BoxSprite, TextSprite, ImageSprite
   └─ PixiJS → 씬 그래프/이벤트 전용으로 역할 축소
-  └─ Feature Flag: VITE_RENDER_MODE=pixi|skia|hybrid
+  └─ 렌더 모드: Skia 하드코딩 (환경변수 제거됨)
   └─ 점진적 전환: Box → Image → Text → 컨테이너 → PixiJS 렌더링 비활성화
       │
 Phase 6: 고급 렌더링 기능 (CanvasKit 활용)

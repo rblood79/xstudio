@@ -16,7 +16,7 @@ import {
   type GridStyle,
 } from '../GridLayout.utils';
 import { parseBoxModel } from './utils';
-import { WASM_FLAGS } from '../../wasm-bindings/featureFlags';
+
 import { wasmParseTracks, wasmGridCellPositions } from '../../wasm-bindings/layoutAccelerator';
 import { getLayoutScheduler } from '../../wasm-worker';
 import type { GridLayoutParams } from '../../wasm-worker/LayoutScheduler';
@@ -39,7 +39,7 @@ export class GridEngine implements LayoutEngine {
     const style = parent.props?.style as GridStyle | undefined;
 
     // Phase 2: WASM 가속 경로 (단순 auto-flow + 명시적 배치 속성 없음)
-    if (WASM_FLAGS.LAYOUT_ENGINE && this.canUseWasmPath(style, children)) {
+    if (this.canUseWasmPath(style, children)) {
       const wasmResult = this.calculateViaWasm(
         parent, style, children, availableWidth, availableHeight,
       );
@@ -202,16 +202,14 @@ export class GridEngine implements LayoutEngine {
     }));
 
     // Phase 4: Worker 비동기 재검증 (SWR)
-    if (WASM_FLAGS.LAYOUT_WORKER) {
-      this.scheduleWorkerGrid(
-        parent.id,
-        children.map(c => c.id),
-        colTemplate, rowTemplate,
-        availableWidth, availableHeight,
-        colGap, rowGap,
-        children.length,
-      );
-    }
+    this.scheduleWorkerGrid(
+      parent.id,
+      children.map(c => c.id),
+      colTemplate, rowTemplate,
+      availableWidth, availableHeight,
+      colGap, rowGap,
+      children.length,
+    );
 
     return layouts;
   }

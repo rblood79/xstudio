@@ -57,7 +57,6 @@ import { useThemeColors } from "./hooks/useThemeColors";
 import { useViewportCulling } from "./hooks/useViewportCulling";
 import { longTaskMonitor } from "../../../utils/longTaskMonitor";
 import type { Element } from "../../../types/core/store.types";
-import { WASM_FLAGS } from "./wasm-bindings/featureFlags";
 
 // ============================================
 // Types
@@ -90,9 +89,6 @@ const DRAG_DISTANCE_THRESHOLD = 4;
 
 /**
  * Phase 5: CanvasKit 오버레이 (Lazy Import)
- *
- * WASM_FLAGS.CANVASKIT_RENDERER가 활성화된 경우에만 로드되어
- * 비활성 시 번들에 포함되지 않는다.
  */
 const SkiaOverlayComponent = lazy(() =>
   import('./skia/SkiaOverlay').then((mod) => ({ default: mod.SkiaOverlay }))
@@ -1599,8 +1595,8 @@ export function BuilderCanvas({
         </Application>
       )}
 
-      {/* Phase 5: CanvasKit 오버레이 (Feature Flag 기반) */}
-      {containerEl && pixiAppRef.current && WASM_FLAGS.CANVASKIT_RENDERER && (
+      {/* Phase 5: CanvasKit 오버레이 */}
+      {containerEl && pixiAppRef.current && (
         <SkiaOverlayLazy
           containerEl={containerEl}
           backgroundColor={backgroundColor}

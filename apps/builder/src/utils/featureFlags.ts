@@ -15,7 +15,7 @@
 // Types
 // ============================================
 
-export type RenderMode = 'pixi' | 'skia' | 'hybrid';
+export type RenderMode = 'skia';
 
 export interface FeatureFlags {
   /** WebGL Canvas 사용 여부 (Phase 10) */
@@ -28,7 +28,7 @@ export interface FeatureFlags {
   wasmSpatialIndex: boolean;
   /** WASM Layout Engine 활성화 (Phase 2) */
   wasmLayoutEngine: boolean;
-  /** 렌더 모드: pixi(기존) | skia(CanvasKit) | hybrid(공존) (Phase 5) */
+  /** 렌더 모드 (skia 고정) */
   renderMode: RenderMode;
 }
 
@@ -115,7 +115,7 @@ export const useCanvasCompareMode = isCanvasCompareMode;
  * O(n) 뷰포트 컬링/라쏘 선택을 공간 인덱스 쿼리로 대체
  */
 export function isWasmSpatialIndex(): boolean {
-  return parseBoolean(import.meta.env.VITE_WASM_SPATIAL, false);
+  return true;
 }
 
 /**
@@ -124,31 +124,21 @@ export function isWasmSpatialIndex(): boolean {
  * BlockEngine/GridEngine 배치 계산을 WASM으로 가속
  */
 export function isWasmLayoutEngine(): boolean {
-  return parseBoolean(import.meta.env.VITE_WASM_LAYOUT, false);
+  return true;
 }
 
 /**
- * 렌더 모드 조회 (Phase 5)
- *
- * @returns 'pixi' | 'skia' | 'hybrid'
- * - pixi: 기존 PixiJS 렌더링 (기본값)
- * - skia: CanvasKit/Skia 메인 렌더러
- * - hybrid: CanvasKit + PixiJS 공존 (전환 중)
+ * 렌더 모드 조회 (skia 고정)
  */
 export function getRenderMode(): RenderMode {
-  const mode = import.meta.env.VITE_RENDER_MODE;
-  if (mode === 'skia' || mode === 'hybrid') return mode;
-  return 'pixi';
+  return 'skia';
 }
 
 /**
- * CanvasKit 렌더러 활성화 여부 (Phase 5)
- *
- * VITE_RENDER_MODE가 'skia' 또는 'hybrid'일 때 true
+ * CanvasKit 렌더러 활성화 여부 (항상 true)
  */
 export function isCanvasKitEnabled(): boolean {
-  const mode = getRenderMode();
-  return mode === 'skia' || mode === 'hybrid';
+  return true;
 }
 
 /**
@@ -167,9 +157,9 @@ export function getFeatureFlags(): FeatureFlags {
     useWebGLCanvas: parseBoolean(import.meta.env.VITE_USE_WEBGL_CANVAS, false),
     enableDebugLogs: parseBoolean(import.meta.env.VITE_ENABLE_DEBUG_LOGS, false),
     canvasCompareMode: parseBoolean(import.meta.env.VITE_CANVAS_COMPARE_MODE, false),
-    wasmSpatialIndex: isWasmSpatialIndex(),
-    wasmLayoutEngine: isWasmLayoutEngine(),
-    renderMode: getRenderMode(),
+    wasmSpatialIndex: true,
+    wasmLayoutEngine: true,
+    renderMode: 'skia' as RenderMode,
   };
 }
 

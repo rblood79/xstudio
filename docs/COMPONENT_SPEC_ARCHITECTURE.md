@@ -2807,7 +2807,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
 
 ### 4.5 CanvasKit/Skia 렌더링 패턴 (현재)
 
-**Button 렌더링 흐름** (`VITE_RENDER_MODE=skia`):
+**Button 렌더링 흐름** (Skia 모드 하드코딩):
 
 ```
 ElementSprite (spriteType='button')

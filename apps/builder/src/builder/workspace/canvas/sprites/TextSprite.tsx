@@ -19,7 +19,7 @@ import { convertStyle, applyTextTransform, buildSkiaEffects, type CSSStyle } fro
 import { parsePadding } from './paddingUtils';
 import { drawBox, parseBorderConfig } from '../utils';
 import { useSkiaNode } from '../skia/useSkiaNode';
-import { WASM_FLAGS } from '../wasm-bindings/featureFlags';
+
 
 // ============================================
 // Types
@@ -228,8 +228,6 @@ export const TextSprite = memo(function TextSprite({
 
   // Phase 5: Skia 렌더 데이터 부착
   const skiaNodeData = useMemo(() => {
-    if (!WASM_FLAGS.CANVASKIT_RENDERER) return null;
-
     const r = ((textStyle.fill >> 16) & 0xff) / 255;
     const g = ((textStyle.fill >> 8) & 0xff) / 255;
     const b = (textStyle.fill & 0xff) / 255;

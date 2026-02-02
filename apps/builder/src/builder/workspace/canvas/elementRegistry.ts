@@ -10,7 +10,7 @@
  */
 
 import { Container, Rectangle } from 'pixi.js';
-import { WASM_FLAGS } from './wasm-bindings/featureFlags';
+
 import { notifyLayoutChange } from './skia/useSkiaNode';
 
 // Phase 1: SpatialIndex 동기화 (lazy import, 호출 빈도가 높으므로 캐싱)
@@ -21,10 +21,8 @@ async function getSpatialModule() {
   }
   return _spatialModule;
 }
-// 플래그 활성화 시 즉시 프리로드
-if (WASM_FLAGS.SPATIAL_INDEX) {
-  getSpatialModule();
-}
+// SpatialIndex 모듈 프리로드
+getSpatialModule();
 
 // ============================================
 // Types
@@ -79,14 +77,12 @@ export function updateElementBounds(id: string, bounds: ElementBounds): void {
   // Phase 6: Yoga 레이아웃 재계산 후 Skia 렌더 루프에 알림
   // LayoutContainer의 RAF 콜백에서 호출되므로, registryVersion 증가로
   // 다음 프레임에서 container.width가 반영된 Skia 트리가 재구축된다.
-  if (WASM_FLAGS.CANVASKIT_RENDERER) {
-    notifyLayoutChange();
-  }
+  notifyLayoutChange();
 
   // Phase 1: SpatialIndex 동기화 (스크린 좌표 저장)
   // getBounds()는 스크린 좌표(pan/zoom 포함)를 반환한다.
   // pan 시 stale될 수 있으므로, useViewportCulling에서 getBounds() 폴백으로 보완한다.
-  if (WASM_FLAGS.SPATIAL_INDEX && _spatialModule) {
+  if (_spatialModule) {
     _spatialModule.updateElement(id, bounds.x, bounds.y, bounds.width, bounds.height);
   }
 }
@@ -101,7 +97,7 @@ export function unregisterElement(id: string): void {
   layoutBoundsRegistry.delete(id);
 
   // Phase 1: SpatialIndex 동기화
-  if (WASM_FLAGS.SPATIAL_INDEX && _spatialModule) {
+  if (_spatialModule) {
     _spatialModule.removeElement(id);
   }
 }
@@ -183,7 +179,7 @@ export function clearRegistry(): void {
   layoutBoundsRegistry.clear();
 
   // Phase 1: SpatialIndex 초기화
-  if (WASM_FLAGS.SPATIAL_INDEX && _spatialModule) {
+  if (_spatialModule) {
     _spatialModule.clearAll();
   }
 }

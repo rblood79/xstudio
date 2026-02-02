@@ -82,11 +82,13 @@ PixiJS 단독 렌더링에서 **Pencil 방식의 이중 렌더러**로 전환 �
 
 Phase 0-4 Rust WASM 모듈을 빌드/활성화하여 캔버스 성능 가속:
 
-| Phase | 모듈 | 역할 | Feature Flag |
-|-------|------|------|-------------|
-| **Phase 1** | `SpatialIndex` | Grid-cell 기반 O(k) 뷰포트 컬링, 라쏘 선택, 히트 테스트 | `VITE_WASM_SPATIAL=true` |
-| **Phase 2** | `block_layout` / `grid_layout` | Block/Grid 레이아웃 WASM 가속 (children > 10) | `VITE_WASM_LAYOUT=true` |
-| **Phase 4** | `layoutWorker` | Web Worker 비동기 레이아웃 + SWR 캐싱 | `VITE_WASM_LAYOUT_WORKER=true` |
+| Phase | 모듈 | 역할 |
+|-------|------|------|
+| **Phase 1** | `SpatialIndex` | Grid-cell 기반 O(k) 뷰포트 컬링, 라쏘 선택, 히트 테스트 |
+| **Phase 2** | `block_layout` / `grid_layout` | Block/Grid 레이아웃 WASM 가속 (children > 10) |
+| **Phase 4** | `layoutWorker` | Web Worker 비동기 레이아웃 + SWR 캐싱 |
+
+> **Note (2026-02-02):** 기존 환경변수 Feature Flag(`VITE_WASM_SPATIAL`, `VITE_WASM_LAYOUT`, `VITE_WASM_LAYOUT_WORKER`, `VITE_RENDER_MODE`, `VITE_SKIA_DUAL_SURFACE`)는 모두 제거되고 값이 하드코딩됨. `featureFlags.ts`의 `WASM_FLAGS`는 전부 `true`, `getRenderMode()`는 `'skia'` 고정.
 
 **빌드 산출물:** `wasm-bindings/pkg/xstudio_wasm_bg.wasm` (70KB)
 **상세:** `docs/WASM.md` Phase 0-4

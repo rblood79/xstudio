@@ -534,7 +534,7 @@ WASM 계획과 무관하게, JS만으로 즉시 적용 가능한 최적화:
 | **렌더 순서** | `elements` 배열 순서에 암묵적 의존 | `elementOrderIndex` Map — `rebuildIndexes()` 시 동기 갱신 | SpatialIndex 결과에 O(k log k) 정렬로 렌더/스태킹 순서 보존 |
 | **인덱스 리빌드** | `_rebuildIndexes()` 14곳에서 개별 호출, 배치 최적화 없음 | `suspendIndexRebuild()`/`resumeAndRebuildIndexes()` 패턴 | 100개 요소 복붙 시 100회→1회 리빌드 (O(n·m)→O(n)) |
 | **메인 스레드 부하** | 모든 레이아웃이 메인 스레드에서 동기 실행 | 중량 레이아웃(>10 요소)을 Worker로 분리, Stale-While-Revalidate 전략 | 레이아웃 계산 중 UI 프리징 제거 |
-| **폴백 안전성** | JS 단일 경로 | Feature Flag (`VITE_WASM_SPATIAL`, `VITE_WASM_LAYOUT`) + JS 폴백 100% 유지 | WASM 실패/비활성 시 즉시 롤백, A/B 비교 가능 |
+| **폴백 안전성** | JS 단일 경로 | WASM 무조건 활성화 (Feature Flag 제거됨), try-catch 에러 핸들링 유지 | WASM 초기화 실패 시 에러 로깅, JS 폴백 경로 제거됨 |
 | **ID 매핑** | string UUID만 사용 (메모리/비교 비용 높음) | `ElementIdMapper` string↔u32 양방향, `tryGetNumericId()` 안전 조회 | WASM 경계에서 4바이트 u32 사용 → 메모리/비교 최적화 |
 | **Bounds 소스 통일** | `layoutBoundsRegistry` (JS Map) + `calculateBounds(style)` 혼재 | SpatialIndex 내부 bounds 캐시 + registry 동기화 | 단일 소스 기반 일관된 bounds 조회 |
 | **페이지 범위 관리** | `elements` 배열이 전체 페이지 포함 — 컬링/쿼리에 불필요한 요소 포함 | 페이지 전환 시 `clearAll()` + 현재 페이지 `batch_upsert()` | SpatialIndex 메모리/쿼리 범위를 현재 페이지로 한정 |
@@ -1926,7 +1926,7 @@ Cmd+S → saveDocument() → FileManager.export()
 | G-2 | GPU Surface 생성 (WebGL → SW 폴백) | `createSurface.ts` | ✅ |
 | G-3 | SkiaDisposable (C++ 힙 메모리 관리) | `disposable.ts` | ✅ |
 | G-4 | Skia 노드 레지스트리 (O(1) 조회) | `useSkiaNode.ts` | ✅ |
-| G-5 | Feature Flag (pixi/skia/hybrid) | `featureFlags.ts` | ✅ |
+| G-5 | Feature Flag → 하드코딩 (skia 고정, 환경변수 제거됨) | `featureFlags.ts` | ✅ |
 | G-6 | Skia 타입 정의 (18개 인터페이스) | `types.ts` | ✅ |
 
 ### 11.8 Selection 오버레이 (Pencil 방식)
@@ -1936,7 +1936,7 @@ Cmd+S → saveDocument() → FileManager.export()
 | H-1 | SelectionBox (파란 스트로크, zoom-aware) | `selectionRenderer.ts` renderSelectionBox | ✅ |
 | H-2 | TransformHandle (4 코너, 흰 fill + 파란 stroke) | `selectionRenderer.ts` renderTransformHandles | ✅ |
 | H-3 | Lasso (반투명 fill + stroke) | `selectionRenderer.ts` renderLasso | ✅ |
-| H-4 | PixiJS Selection: 시각 비활성화, 이벤트만 유지 | SelectionBox/TransformHandle/LassoSelection `isSkiaMode` | ✅ |
+| H-4 | PixiJS Selection: 시각 비활성화, 이벤트만 유지 | SelectionBox/TransformHandle/LassoSelection (무조건 Skia 경로, `isSkiaMode` 제거됨) | ✅ |
 | H-5 | Camera 하위 숨김: `alpha=0` (renderable=false 금지) | SkiaOverlay.tsx renderFrame | ✅ |
 
 ### 11.9 AI 시각 피드백
