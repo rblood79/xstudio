@@ -106,12 +106,11 @@ function updateTextChildren(
  * @param cameraZoom - Camera 스케일 (줌 레벨)
  */
 
-// 트리 rebuild 캐시 — registry/camera 미변경 시 재사용하여 GC 압력 저감 (I-H6→M)
+// 트리 rebuild 캐시 — registryVersion 미변경 시 재사용하여 GC 압력 저감.
+// 카메라(팬/줌)는 비교하지 않음: 트리 좌표는 부모-자식 뺄셈으로 카메라가 상쇄되어
+// 동일한 registryVersion이면 카메라 값과 무관하게 동일한 트리가 생성된다.
 let _cachedTree: SkiaNodeData | null = null;
 let _cachedVersion = -1;
-let _cachedCamX = NaN;
-let _cachedCamY = NaN;
-let _cachedCamZoom = NaN;
 
 function buildSkiaTreeHierarchical(
   cameraContainer: Container,
@@ -120,13 +119,7 @@ function buildSkiaTreeHierarchical(
   cameraZoom: number,
 ): SkiaNodeData | null {
   const currentVersion = getRegistryVersion();
-  if (
-    _cachedTree &&
-    currentVersion === _cachedVersion &&
-    cameraX === _cachedCamX &&
-    cameraY === _cachedCamY &&
-    cameraZoom === _cachedCamZoom
-  ) {
+  if (_cachedTree && currentVersion === _cachedVersion) {
     return _cachedTree;
   }
 
@@ -195,9 +188,6 @@ function buildSkiaTreeHierarchical(
   if (children.length === 0) {
     _cachedTree = null;
     _cachedVersion = currentVersion;
-    _cachedCamX = cameraX;
-    _cachedCamY = cameraY;
-    _cachedCamZoom = cameraZoom;
     return null;
   }
 
@@ -213,9 +203,6 @@ function buildSkiaTreeHierarchical(
 
   _cachedTree = result;
   _cachedVersion = currentVersion;
-  _cachedCamX = cameraX;
-  _cachedCamY = cameraY;
-  _cachedCamZoom = cameraZoom;
 
   return result;
 }
@@ -364,6 +351,7 @@ export function SkiaOverlay({ containerEl, backgroundColor = 0xf8fafc, app, drag
   const lastSelectedIdRef = useRef<string | null>(null);
   const lastAIActiveRef = useRef(0);
 
+
   const isActive = true;
 
   // CanvasKit + 폰트 초기화
@@ -476,77 +464,9 @@ export function SkiaOverlay({ containerEl, backgroundColor = 0xf8fafc, app, drag
       const cameraY = cameraContainer?.y ?? 0;
       const cameraZoom = Math.max(cameraContainer?.scale?.x ?? 1, 0.001);
 
-      // 매 프레임 계층적 Skia 트리 재구성
-      // worldTransform 기반이지만, 부모-자식 간 상대 좌표로 변환하여
-      // 팬/줌 중에도 부모-자식 상대 위치가 항상 정확하다.
-      const tree = cameraContainer
-        ? buildSkiaTreeHierarchical(cameraContainer, cameraX, cameraY, cameraZoom)
-        : null;
-      if (!tree) return;
-
-      // 씬-로컬 좌표계에서의 가시 영역 (컬링용)
-      const screenW = skiaCanvas.width / dpr;
-      const screenH = skiaCanvas.height / dpr;
-      const cullingBounds = new DOMRect(
-        -cameraX / cameraZoom,
-        -cameraY / cameraZoom,
-        screenW / cameraZoom,
-        screenH / cameraZoom,
-      );
-
-      renderer.setRootNode({
-        renderSkia(canvas, bounds) {
-          const fontMgr = skiaFontManager.getFamilies().length > 0
-            ? skiaFontManager.getFontMgr()
-            : undefined;
-
-          // 카메라 변환 적용 (팬 + 줌)
-          canvas.save();
-          canvas.translate(cameraX, cameraY);
-          canvas.scale(cameraZoom, cameraZoom);
-
-          // Phase 1: 디자인 노드 렌더링 (씬-로컬 좌표)
-          renderNode(ck, canvas, tree, bounds, fontMgr);
-
-          // Phase 2-3: G.3 AI 시각 피드백 (카메라 좌표계 내에서 렌더링)
-          const aiState = useAIVisualFeedbackStore.getState();
-          const hasAIEffects =
-            aiState.generatingNodes.size > 0 || aiState.flashAnimations.size > 0;
-
-          if (hasAIEffects) {
-            const now = performance.now();
-            const nodeBoundsMap = buildNodeBoundsMap(tree, aiState);
-            renderGeneratingEffects(ck, canvas, now, aiState.generatingNodes, nodeBoundsMap);
-            renderFlashes(ck, canvas, now, aiState.flashAnimations, nodeBoundsMap);
-            // 만료된 flash를 렌더링 이후에 정리하여 마지막 프레임이 누락되지 않도록 한다.
-            if (aiState.flashAnimations.size > 0) {
-              aiState.cleanupExpiredFlashes(now);
-            }
-          }
-
-          // Phase 4-6: Selection 오버레이 (Pencil 방식 — Skia에서 직접 렌더링)
-          // Skia 트리의 절대 바운드를 추출하여 Selection이 컨텐츠와 동일한 좌표 소스를 참조
-          const treeBoundsMap = buildTreeBoundsMap(tree);
-          const selectionData = buildSelectionRenderData(cameraX, cameraY, cameraZoom, treeBoundsMap, dragStateRef);
-          if (selectionData.bounds) {
-            renderSelectionBox(ck, canvas, selectionData.bounds, cameraZoom);
-            if (selectionData.showHandles) {
-              renderTransformHandles(ck, canvas, selectionData.bounds, cameraZoom);
-            }
-          }
-          if (selectionData.lasso) {
-            renderLasso(ck, canvas, selectionData.lasso, cameraZoom);
-          }
-
-          canvas.restore();
-        },
-      });
-
-      // Phase 6: 이중 Surface 캐싱 활성화 — registryVersion/camera/dirtyRects 전달
-      // Selection/AI 상태 변경도 re-render 트리거에 포함
+      // ── effectiveVersion 계산 (트리 재구성 여부 판단에 사용) ──
       const registryVersion = getRegistryVersion();
       const dirtyRects = flushDirtyRects();
-      const camera = { zoom: cameraZoom, panX: cameraX, panY: cameraY };
 
       // Selection 상태 변경 감지 — selectedElementIds 참조 변경 시 version 증가
       const currentSelectedIds = useStore.getState().selectedElementIds;
@@ -572,8 +492,79 @@ export function SkiaOverlay({ containerEl, backgroundColor = 0xf8fafc, app, drag
       }
       lastAIActiveRef.current = currentAIActive;
 
-      // registryVersion + overlayVersion을 합산하여 모든 시각 변경을 감지
       const effectiveVersion = registryVersion + overlayVersionRef.current;
+      const camera = { zoom: cameraZoom, panX: cameraX, panY: cameraY };
+
+      // 계층적 Skia 트리 재구성 (매 프레임)
+      // rootNode의 renderSkia() 클로저가 현재 카메라 좌표를 캡처하므로
+      // 매 프레임 갱신이 필수. idle 프레임에서는 렌더링이 스킵되므로
+      // 이 갱신 비용(~0ms, 트리 캐시 HIT)만 발생한다.
+      const tree = cameraContainer
+        ? buildSkiaTreeHierarchical(cameraContainer, cameraX, cameraY, cameraZoom)
+        : null;
+      if (!tree) return;
+
+      renderer.setRootNode({
+        renderSkia(canvas, bounds) {
+          const fontMgr = skiaFontManager.getFamilies().length > 0
+            ? skiaFontManager.getFontMgr()
+            : undefined;
+
+          // 카메라 변환 적용 (팬 + 줌)
+          canvas.save();
+          canvas.translate(cameraX, cameraY);
+          canvas.scale(cameraZoom, cameraZoom);
+
+          // Phase 1: 디자인 노드 렌더링 (씬-로컬 좌표)
+          renderNode(ck, canvas, tree, bounds, fontMgr);
+
+          // Phase 2-3: G.3 AI 시각 피드백 (카메라 좌표계 내에서 렌더링)
+          const currentAiState = useAIVisualFeedbackStore.getState();
+          const hasAIEffects =
+            currentAiState.generatingNodes.size > 0 || currentAiState.flashAnimations.size > 0;
+
+          if (hasAIEffects) {
+            const now = performance.now();
+            const nodeBoundsMap = buildNodeBoundsMap(tree, currentAiState);
+            renderGeneratingEffects(ck, canvas, now, currentAiState.generatingNodes, nodeBoundsMap);
+            renderFlashes(ck, canvas, now, currentAiState.flashAnimations, nodeBoundsMap);
+            // 만료된 flash를 렌더링 이후에 정리하여 마지막 프레임이 누락되지 않도록 한다.
+            if (currentAiState.flashAnimations.size > 0) {
+              currentAiState.cleanupExpiredFlashes(now);
+            }
+          }
+
+          // Phase 4-6: Selection 오버레이 (Pencil 방식 — Skia에서 직접 렌더링)
+          // Skia 트리의 절대 바운드를 추출하여 Selection이 컨텐츠와 동일한 좌표 소스를 참조
+          const treeBoundsMap = buildTreeBoundsMap(tree);
+          const selectionData = buildSelectionRenderData(cameraX, cameraY, cameraZoom, treeBoundsMap, dragStateRef);
+          if (selectionData.bounds) {
+            renderSelectionBox(ck, canvas, selectionData.bounds, cameraZoom);
+            if (selectionData.showHandles) {
+              renderTransformHandles(ck, canvas, selectionData.bounds, cameraZoom);
+            }
+          }
+          if (selectionData.lasso) {
+            renderLasso(ck, canvas, selectionData.lasso, cameraZoom);
+          }
+
+          canvas.restore();
+        },
+      });
+
+      // 씬-로컬 좌표계에서의 가시 영역 (컬링용)
+      const screenW = skiaCanvas.width / dpr;
+      const screenH = skiaCanvas.height / dpr;
+      const cullingBounds = new DOMRect(
+        -cameraX / cameraZoom,
+        -cameraY / cameraZoom,
+        screenW / cameraZoom,
+        screenH / cameraZoom,
+      );
+
+      // Phase 6: 이중 Surface 캐싱 — SkiaRenderer가 classifyFrame()으로 최적 경로 결정
+      // idle: 변경 없음 → 렌더링 스킵
+      // content/full: renderContent() + blitToMain()
       renderer.render(cullingBounds, effectiveVersion, camera, dirtyRects);
     };
 

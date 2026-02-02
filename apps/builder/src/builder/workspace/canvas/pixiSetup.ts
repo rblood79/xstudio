@@ -135,27 +135,16 @@ function clampResolutionByPixelBudget(
 }
 
 export function getDynamicResolution(
-  isInteracting: boolean,
+  _isInteracting: boolean,
   size?: CanvasSize
 ): number {
   const devicePixelRatio = window.devicePixelRatio || 1;
   const isLowEnd = isLowEndDevice();
 
-  if (isInteracting) {
-    // 인터랙션 중: 해상도 낮춤 (60fps 유지)
-    const baseResolution = isLowEnd ? 1 : Math.min(devicePixelRatio, 1.5);
-    if (!size) return baseResolution;
-
-    const maxPixels = isLowEnd
-      ? MAX_RENDER_PIXELS_INTERACT_LOW
-      : MAX_RENDER_PIXELS_INTERACT_HIGH;
-    return Math.max(
-      MIN_RESOLUTION,
-      clampResolutionByPixelBudget(baseResolution, size, maxPixels)
-    );
-  }
-
-  // 유휴 상태: 고해상도
+  // Skia 모드: PixiJS는 이벤트 처리 전용 (alpha=0, 시각적 렌더링 없음)
+  // 인터랙션 중 해상도 하향은 불필요하고, 오히려 PixiJS 캔버스 리사이즈 →
+  // @pixi/layout 재계산 → React 리렌더를 유발하여 끊김의 원인이 됨.
+  // 항상 고정 해상도를 사용한다.
   const baseResolution = isLowEnd
     ? Math.min(devicePixelRatio, 1.5)
     : Math.min(devicePixelRatio, 2);

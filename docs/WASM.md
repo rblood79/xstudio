@@ -2149,11 +2149,19 @@ export class SkiaRenderer {
 **이중 Surface 프레임 분류 (Phase 6):**
 ```
 classifyFrame(registryVersion, camera):
-  contentDirty  → 'full'        Surface 재생성 후 전체 렌더링
-  registry 변경 → 'content'     요소 변경 → 전체 재렌더링 (dirty rect 비활성화)
-  camera 변경   → 'camera-only' 줌/팬 → 전체 재렌더링
-  변경 없음     → 'idle'        렌더링 스킵
+  contentDirty                → 'full'     Surface 재생성 후 전체 렌더링
+  registry 또는 camera 변경   → 'content'  renderContent + blitToMain
+  변경 없음                   → 'idle'     렌더링 스킵
 ```
+
+**팬/줌 최적화 (2026-02-02):**
+- `buildSkiaTreeHierarchical` 캐시: registryVersion만 비교 (카메라 비교 제거).
+  트리 좌표는 부모-자식 뺄셈으로 카메라가 상쇄되어, 동일 registryVersion이면 카메라 무관하게 동일 트리 생성.
+  카메라 변경 시 트리 빌드 ~0ms (캐시 HIT), Skia 드로잉만 수행.
+- `camera-only` blit 제거: 뷰포트 크기 스냅샷을 아핀 변환하면 가장자리 클리핑 발생.
+  content render로 전환하여 매 프레임 pixel-perfect 렌더링 보장.
+- Wheel 팬 RAF 배칭: `setPanOffset`을 requestAnimationFrame으로 배칭하여
+  120Hz+ wheel 이벤트에서 React 리렌더를 프레임당 1회로 제한.
 
 ### 5.5 Fill 시스템 (6종, Shader 기반)
 
@@ -2685,6 +2693,12 @@ Pencil의 핵심 최적화: contentSurface + mainSurface 분리.
 > Selection 오버레이는 `selectionRenderer.ts`에서 Zustand getState()로 매 프레임 상태를 읽어 렌더링.
 > `classifyFrame()`으로 idle/content/camera-only/full 분류 후 최소 작업만 수행.
 > renderFrame은 UTILITY priority (-50)로 실행하여 Application.render() (LOW=-25) 이후 Yoga 계산 완료된 worldTransform 보장.
+>
+> **camera-only 프레임 최적화 (2026-02-02):**
+> - `blitWithCameraDelta()`: 캐시된 contentSnapshot을 `snapshotCamera` 기준 아핀 변환으로 재배치 (< 1ms)
+> - `buildSkiaTreeHierarchical` 캐시: registryVersion만 비교하여 camera-only 프레임에서 O(N) 트리 순회 스킵
+> - cleanup render: 카메라 정지 후 `needsCleanupRender` 플래그로 1회 전체 렌더링하여 가장자리 아티팩트 해소
+> - 드래그 최적화: Math.round 정수 스냅 제거 (서브픽셀 렌더링), 16ms 고정 스로틀 제거 (RAF 동기화), 인터랙션 중 해상도 하향 비활성화
 
 ### 6.2 Dirty Rect 렌더링
 
@@ -2806,6 +2820,7 @@ export function exportToImage(
 | 산출물 | 내용 |
 |--------|------|
 | 이중 Surface 캐싱 | contentSurface + mainSurface 분리 + classifyFrame 프레임 분류 |
+| 팬/줌 최적화 | 트리 캐시 (registryVersion만 비교) + content render 매 프레임 + RAF 배칭 |
 | Dirty Rect 렌더링 | 인프라 구현 완료, 좌표계 불일치로 비활성화 (전체 렌더링 폴백) |
 | 블렌드 모드 18종 | CanvasKit BlendMode 매핑 |
 | Export 파이프라인 | PNG/JPEG/WEBP 오프스크린 Export + SVG/PDF 향후 확장 |
@@ -2821,8 +2836,8 @@ export function exportToImage(
 
 | 지표 | 목표 | 비고 |
 |------|------|------|
-| 줌/패닝 프레임 타임 | < 8ms (120fps) | 이중 Surface 블리팅 |
-| 변경 없는 프레임 | < 1ms | contentSurface 캐시 히트 |
+| 줌/패닝 프레임 타임 | < 5ms | content render + 트리 캐시 HIT (단순 페이지 ~1-3ms) |
+| 변경 없는 프레임 | < 1ms | idle: 렌더링 스킵 |
 | Dirty Rect 효율 | GPU 사용량 40-60% 감소 | 부분 영역만 렌더링 |
 | Export 품질 | 벡터 정밀도 보장 | CanvasKit Path 기반 |
 

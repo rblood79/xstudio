@@ -67,6 +67,12 @@ export function useViewportControl(options: UseViewportControlOptions): UseViewp
   const zoomEndTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isZoomingRef = useRef(false);
 
+  // Fix 6: wheel 팬 시 setPanOffset을 RAF로 배칭하여 React 리렌더 최소화.
+  // 트랙패드는 120Hz+로 wheel 이벤트를 발생시키지만, React 리렌더는 프레임당 1회로 충분.
+  // controller.setPosition()은 즉시 호출하여 PixiJS/Skia 시각 렌더링은 지연 없이 유지.
+  const pendingPanRef = useRef<{ x: number; y: number } | null>(null);
+  const rafPanRef = useRef<number | null>(null);
+
   // 🚀 Phase 6.1: 콜백 ref (의존성 배열에서 제외하여 useEffect 재실행 방지)
   const onInteractionStartRef = useRef(onInteractionStart);
   const onInteractionEndRef = useRef(onInteractionEnd);
@@ -254,12 +260,27 @@ export function useViewportControl(options: UseViewportControlOptions): UseViewp
         const rawDeltaX = e.shiftKey ? e.deltaY : e.deltaX;
         const rawDeltaY = e.shiftKey ? 0 : e.deltaY;
 
-        const { panOffset, zoom } = useCanvasSyncStore.getState();
-        const newX = panOffset.x - rawDeltaX;
-        const newY = panOffset.y - rawDeltaY;
+        // Fix 6: 동일 프레임 내 다중 wheel 이벤트 누적 처리.
+        // pendingPanRef가 있으면 이전 누적값 기준, 없으면 Zustand 현재값 기준.
+        const current = pendingPanRef.current ?? useCanvasSyncStore.getState().panOffset;
+        const { zoom } = useCanvasSyncStore.getState();
+        const newX = current.x - rawDeltaX;
+        const newY = current.y - rawDeltaY;
 
+        // PixiJS Container 즉시 업데이트 (Skia 시각 렌더링 지연 없음)
         controller.setPosition(newX, newY, zoom);
-        setPanOffset({ x: newX, y: newY });
+
+        // Zustand 업데이트를 RAF로 배칭 (React 리렌더 프레임당 1회 제한)
+        pendingPanRef.current = { x: newX, y: newY };
+        if (rafPanRef.current === null) {
+          rafPanRef.current = requestAnimationFrame(() => {
+            if (pendingPanRef.current) {
+              setPanOffset(pendingPanRef.current);
+              pendingPanRef.current = null;
+            }
+            rafPanRef.current = null;
+          });
+        }
       }
     };
 
@@ -271,6 +292,16 @@ export function useViewportControl(options: UseViewportControlOptions): UseViewp
       if (zoomEndTimeoutRef.current) {
         clearTimeout(zoomEndTimeoutRef.current);
         zoomEndTimeoutRef.current = null;
+      }
+      // Fix 6: 배칭 RAF 정리
+      if (rafPanRef.current !== null) {
+        cancelAnimationFrame(rafPanRef.current);
+        // 마지막 누적값 반영 (언마운트 전 최종 상태 동기화)
+        if (pendingPanRef.current) {
+          setPanOffset(pendingPanRef.current);
+          pendingPanRef.current = null;
+        }
+        rafPanRef.current = null;
       }
     };
   }, [containerEl, controller, setPanOffset]);

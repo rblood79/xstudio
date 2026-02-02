@@ -6,9 +6,7 @@
  *
  * 프레임 분류:
  * - idle: 변경 없음 → 렌더링 스킵 (0ms)
- * - camera-only: 줌/팬만 변경 → 전체 재렌더링 (worldTransform이 content에 포함)
- *   (향후 씬 좌표 분리 시 캐시 블리팅으로 최적화 가능)
- * - content: 요소 변경 → dirty rect 부분 렌더링 후 블리팅
+ * - content: 요소 또는 카메라 변경 → 전체 렌더링 후 블리팅
  * - full: 리사이즈/첫 프레임 → 전체 재렌더링
  *
  * @see docs/WASM.md §5.10, §6.1, §6.2
@@ -42,6 +40,7 @@ export class SkiaRenderer {
   private contentSnapshot: Image | null = null;
   private contentDirty = true;
   private lastRegistryVersion = -1;
+  /** 프레임 분류용 — 매 프레임 갱신 */
   private lastCamera: CameraState = { zoom: 1, panX: 0, panY: 0 };
 
   constructor(
@@ -73,6 +72,11 @@ export class SkiaRenderer {
 
   /**
    * 프레임을 분류하여 최적 렌더 경로를 결정한다.
+   *
+   * 카메라 변경 시에도 content render를 수행하여
+   * 뷰포트 가장자리의 클리핑 아티팩트를 방지한다.
+   * Fix 5(트리 캐시)로 트리 빌드 비용은 ~0ms이므로
+   * content render의 실제 비용은 Skia 드로잉 연산만 남는다.
    */
   private classifyFrame(
     registryVersion: number,
@@ -86,8 +90,9 @@ export class SkiaRenderer {
       camera.panX !== this.lastCamera.panX ||
       camera.panY !== this.lastCamera.panY;
 
-    if (registryChanged) return 'content';
-    if (cameraChanged) return 'camera-only';
+    if (registryChanged || cameraChanged) {
+      return 'content';
+    }
     return 'idle';
   }
 
@@ -181,9 +186,8 @@ export class SkiaRenderer {
   /**
    * Content 스냅샷을 Main Surface에 블리팅한다.
    *
-   * 현재 구현: 카메라 변환은 content 렌더링 시 worldTransform에 이미 포함되어 있으므로
+   * 카메라 변환은 content 렌더링 시 worldTransform에 이미 포함되어 있으므로
    * 단순 1:1 복사만 수행한다.
-   * 향후 씬 좌표 분리 시 카메라 변환을 blit 단계에서 적용하도록 확장 가능.
    */
   private blitToMain(): void {
     if (!this.contentSnapshot) return;
@@ -198,8 +202,7 @@ export class SkiaRenderer {
    *
    * 프레임 분류에 따라 최소 작업만 수행:
    * - idle → 스킵
-   * - camera-only → blitToMain() 만
-   * - content → renderContent(dirty) + blitToMain()
+   * - content → renderContent() + blitToMain()
    * - full → renderContent(all) + blitToMain()
    */
   renderDualSurface(
@@ -226,19 +229,7 @@ export class SkiaRenderer {
       case 'idle':
         break;
 
-      case 'camera-only':
-        // 현재 아키텍처: 카메라 변환이 renderSkia() 콜백 내부에서 적용되므로
-        // camera-only에서도 전체 재렌더링이 필요하다.
-        // 향후 씬 좌표를 content surface에 분리하면 blitToMain()만으로 최적화 가능.
-        this.renderContent(cullingBounds);
-        this.blitToMain();
-        break;
-
       case 'content':
-        // dirty rect 좌표가 CSS/style 로컬 좌표인 반면,
-        // 실제 렌더링은 카메라 변환(translate+scale) 적용 후 스크린 좌표에서 발생하여
-        // clipRect과 렌더 위치가 불일치. 전체 재렌더링으로 안전하게 처리한다.
-        // (camera-only와 동일한 비용이며, content 변경은 camera 변경보다 훨씬 드물다)
         this.renderContent(cullingBounds);
         this.blitToMain();
         break;

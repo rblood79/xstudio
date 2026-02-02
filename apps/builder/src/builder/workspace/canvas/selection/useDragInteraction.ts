@@ -19,7 +19,6 @@
 
 import { useState, useCallback, useRef, useEffect } from 'react';
 import type { DragState, HandlePosition, BoundingBox } from './types';
-import { TIMING } from '../../../utils/timing';
 
 // ============================================
 // RAF Throttle
@@ -151,9 +150,6 @@ export function useDragInteraction(
   // 중간 상태 저장용 ref (성능 최적화)
   const dragStateRef = useRef<DragState>(initialDragState);
 
-  // 🚀 Phase 19: 마지막 스로틀 시간 추적
-  const lastThrottleTimeRef = useRef<number>(0);
-
   // 🚀 RAF 스로틀링 (프레임당 1회만 상태 업데이트)
   const { schedule: scheduleUpdate, cancel: cancelUpdate } = useRAFThrottle();
 
@@ -223,16 +219,12 @@ export function useDragInteraction(
   }, [onDragStart]);
 
   // 드래그 업데이트 (🚀 Phase 19: React 리렌더링 없이 콜백만 호출)
+  // 시간 기반 스로틀 제거 — RAF 스로틀이 디스플레이 주사율에 동기화.
+  // move/resize: imperative PixiJS 업데이트이므로 포인터 이벤트 속도로 즉시 반영.
+  // lasso: React state 업데이트이므로 RAF로 스로틀링.
   const updateDrag = useCallback((position: { x: number; y: number }) => {
     const state = dragStateRef.current;
     if (!state.isDragging) return;
-
-    // 🚀 Phase 19: 시간 기반 스로틀링 (16ms = 60fps)
-    const now = performance.now();
-    if (now - lastThrottleTimeRef.current < TIMING.DRAG_THROTTLE) {
-      return; // 스로틀 간격 내에서는 무시
-    }
-    lastThrottleTimeRef.current = now;
 
     // ref만 업데이트 (React state는 업데이트하지 않음!)
     const newState: DragState = {

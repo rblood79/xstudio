@@ -202,7 +202,7 @@ Yoga가 계산한 컨테이너 크기를 자식 스프라이트에 전달하는 
 - `renderContent()`에서 `clipRect()`으로 이 좌표를 사용
 - 실제 렌더링은 `renderSkia()` 내부에서 `canvas.translate(cameraX, cameraY)` + `canvas.scale(cameraZoom)` 적용
 - clipRect 영역과 실제 렌더 위치가 불일치 → 변경 사항이 클립 밖에 그려져 보이지 않음
-- 팬 시 `camera-only` 프레임이 전체 렌더링을 수행하여 비로소 변경 사항 표시
+- 팬 시 카메라 변경이 content render를 트리거하여 비로소 변경 사항 표시
 
 **상세:** `apps/builder/src/.../skia/SkiaRenderer.ts`
 
@@ -223,6 +223,73 @@ Yoga가 계산한 컨테이너 크기를 자식 스프라이트에 전달하는 
 - display 전환 시 Yoga가 아직 새 레이아웃을 계산하지 않은 stale 좌표 (0,0) 읽음
 
 **상세:** `apps/builder/src/.../skia/SkiaOverlay.tsx`
+
+## Update: Pan/Zoom 부드러움 최적화 (2026-02-02)
+
+Pencil 앱 대비 팬/줌 끊김 원인 5가지를 분석·수정:
+
+### 1. 정수 스냅 제거 (SelectionBox)
+
+| 항목 | 수정 전 | 수정 후 |
+|------|---------|---------|
+| **좌표 처리** | `Math.round(bounds.x)` — 정수 스냅 | `bounds.x` — 서브픽셀 유지 |
+| **증상** | 줌 2x에서 1px 씬 스텝 = 2px 스크린 점프 | 부드러운 서브픽셀 이동 |
+| **근거** | PixiJS는 alpha=0 히트 테스팅 전용, 시각적 렌더링은 Skia가 안티앨리어싱 처리 | — |
+
+**상세:** `apps/builder/src/.../selection/SelectionBox.tsx`
+
+### 2. 고정 16ms 드래그 스로틀 제거
+
+| 항목 | 수정 전 | 수정 후 |
+|------|---------|---------|
+| **스로틀** | `performance.now() - last < 16` (60fps 고정) | RAF 스로틀 (디스플레이 주사율 동기화) |
+| **증상** | 120Hz/144Hz에서 절반 이하 업데이트율 | 주사율에 맞는 업데이트 |
+| **move/resize** | 시간 기반 스로틀 → RAF 스로틀 (이중 스로틀) | 포인터 이벤트 속도로 즉시 반영 (imperative PixiJS) |
+
+**상세:** `apps/builder/src/.../selection/useDragInteraction.ts`
+
+### 3. 인터랙션 중 해상도 하향 비활성화
+
+| 항목 | 수정 전 | 수정 후 |
+|------|---------|---------|
+| **인터랙션 중** | 해상도 하향 (저사양: 1, 고사양: 1.5) | 고정 해상도 유지 |
+| **증상** | 줌 시작 시 PixiJS 캔버스 리사이즈 → @pixi/layout 재계산 → React 리렌더 | 리사이즈 없음 |
+| **근거** | Skia 모드에서 PixiJS는 이벤트 처리 전용 (시각적 렌더링 없음) | — |
+
+**상세:** `apps/builder/src/.../canvas/pixiSetup.ts`
+
+### 4. Skia 트리 캐시 카메라 비교 제거
+
+| 항목 | 수정 전 | 수정 후 |
+|------|---------|---------|
+| **캐시 조건** | `registryVersion + cameraX + cameraY + cameraZoom` | `registryVersion`만 비교 |
+| **카메라 변경 시** | 캐시 MISS → O(N) 트리 순회 (~5-10ms) | 캐시 HIT → O(1) (~0ms) |
+| **근거** | 트리 좌표는 `relX = absX - parentAbsX`로 계산, 카메라가 부모-자식 뺄셈에서 상쇄 | — |
+
+**상세:** `apps/builder/src/.../skia/SkiaOverlay.tsx` (`buildSkiaTreeHierarchical`)
+
+### 5. Wheel 팬 Zustand 업데이트 RAF 배칭
+
+| 항목 | 수정 전 | 수정 후 |
+|------|---------|---------|
+| **setPanOffset 호출** | 매 wheel 이벤트 (120Hz+) | requestAnimationFrame 배칭 (프레임당 1회) |
+| **PixiJS/Skia 업데이트** | 즉시 (`controller.setPosition`) | 즉시 (변경 없음) |
+| **React 리렌더** | 120Hz+ → BuilderCanvas 전체 리렌더 | 60fps 상한 → 불필요한 리렌더 제거 |
+
+**상세:** `apps/builder/src/.../viewport/useViewportControl.ts`
+
+### 6. Camera-Only Blit 제거 → Content Render 전환
+
+| 항목 | 수정 전 | 수정 후 |
+|------|---------|---------|
+| **카메라 변경 프레임** | `camera-only` → `blitWithCameraDelta()` (< 1ms) | `content` → `renderContent() + blitToMain()` |
+| **가장자리 클리핑** | 스냅샷 경계 밖 = 배경색 노출 (body 짤림) | 매 프레임 pixel-perfect 렌더링 |
+| **성능** | blit < 1ms, 가장자리 아티팩트 발생 | content ~1-3ms (단순 페이지), 아티팩트 없음 |
+| **제거된 코드** | `blitWithCameraDelta`, `snapshotCamera`, `needsCleanupRender` | — |
+
+**근본 원인:** `contentSurface`가 뷰포트 크기로 고정되어, 캐시 스냅샷을 아핀 변환으로 이동하면 스냅샷에 없던 가장자리 영역이 배경색으로 노출됨. Fix 4(트리 캐시)로 트리 빌드 비용이 ~0ms가 되었으므로 content render의 실제 비용은 Skia 드로잉 연산만 남아 성능 영향 최소.
+
+**상세:** `apps/builder/src/.../skia/SkiaRenderer.ts`
 
 ## Implementation
 

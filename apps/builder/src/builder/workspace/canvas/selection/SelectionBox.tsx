@@ -88,11 +88,12 @@ export const SelectionBox = memo(
       originalBoundsRef.current = bounds;
     }, [bounds]);
 
-    // 서브픽셀 렌더링 방지: 좌표와 크기를 정수로 반올림
-    const x = Math.round(bounds.x);
-    const y = Math.round(bounds.y);
-    const width = Math.round(bounds.width);
-    const height = Math.round(bounds.height);
+    // Skia가 시각적 렌더링 담당 (alpha=0인 PixiJS는 히트 테스팅 전용)
+    // 서브픽셀 좌표를 유지하여 고줌에서 부드러운 이동 보장
+    const x = bounds.x;
+    const y = bounds.y;
+    const width = bounds.width;
+    const height = bounds.height;
 
     // 🚀 Phase 19: Imperative handle 노출
     useImperativeHandle(
@@ -102,21 +103,21 @@ export const SelectionBox = memo(
           if (containerRef.current) {
             const original = originalBoundsRef.current;
             containerRef.current.position.set(
-              Math.round(original.x + delta.x),
-              Math.round(original.y + delta.y)
+              original.x + delta.x,
+              original.y + delta.y
             );
           }
         },
         updateBounds: (newBounds: BoundingBox) => {
           if (containerRef.current) {
             containerRef.current.position.set(
-              Math.round(newBounds.x),
-              Math.round(newBounds.y)
+              newBounds.x,
+              newBounds.y
             );
           }
           // 테두리와 이동 영역도 업데이트
-          const w = Math.round(newBounds.width);
-          const h = Math.round(newBounds.height);
+          const w = newBounds.width;
+          const h = newBounds.height;
           const sw = 1 / zoom;
 
           if (borderGraphicsRef.current) {
@@ -137,8 +138,8 @@ export const SelectionBox = memo(
           if (containerRef.current) {
             const original = originalBoundsRef.current;
             containerRef.current.position.set(
-              Math.round(original.x),
-              Math.round(original.y)
+              original.x,
+              original.y
             );
           }
         },
