@@ -308,49 +308,54 @@ const LayoutContainer = memo(function LayoutContainer({
   // Yoga 계산된 pixel 크기를 하위 컴포넌트에 전달
   const [computedSize, setComputedSize] = useState<{ width: number; height: number } | null>(null);
 
-  // layout prop 변경 시 Container의 global bounds를 직접 계산하여 저장
-  // getBounds()는 @pixi/layout 타이밍 문제로 0,0을 반환할 수 있으므로,
-  // parent의 worldTransform을 사용해 global 좌표를 직접 계산
+  // @pixi/layout의 'layout' 이벤트를 구독하여 Yoga 계산 완료 시점에 정확히 읽기
+  // 기존 requestAnimationFrame 방식은 @pixi/layout의 prerender보다 먼저 실행될 수 있어
+  // 스타일 변경 시 즉시 반영되지 않는 문제가 있었음
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
 
-    // @pixi/layout이 position을 업데이트할 때까지 대기 후 global bounds 저장
-    const rafId = requestAnimationFrame(() => {
-      if (!container.destroyed) {
-        try {
-          const bounds = container.getBounds();
-          if (bounds.width > 0 || bounds.height > 0) {
-            updateElementBounds(elementId, {
-              x: bounds.x,
-              y: bounds.y,
-              width: bounds.width,
-              height: bounds.height,
-            });
-          }
-
-          // Yoga 계산된 layout dimensions를 하위 컴포넌트에 전달
-          // getBounds()는 내부 콘텐츠의 bounding box를 반환하므로
-          // Yoga가 계산한 실제 컨테이너 크기와 다를 수 있음
-          // container._layout.computedLayout에서 Yoga 결과를 직접 읽음
-          const yogaLayout = (container as Record<string, unknown>)._layout as
-            { computedLayout?: { width: number; height: number } } | undefined;
-          const yogaWidth = yogaLayout?.computedLayout?.width;
-          const yogaHeight = yogaLayout?.computedLayout?.height;
-
-          if (yogaWidth !== undefined && yogaHeight !== undefined && (yogaWidth > 0 || yogaHeight > 0)) {
-            setComputedSize((prev) => {
-              if (prev && prev.width === yogaWidth && prev.height === yogaHeight) return prev;
-              return { width: yogaWidth, height: yogaHeight };
-            });
-          }
-        } catch {
-          // Container destroyed 또는 아직 미렌더링
+    const syncLayoutData = () => {
+      if (container.destroyed) return;
+      try {
+        // 1) SelectionLayer용 global bounds 업데이트
+        const bounds = container.getBounds();
+        if (bounds.width > 0 || bounds.height > 0) {
+          updateElementBounds(elementId, {
+            x: bounds.x,
+            y: bounds.y,
+            width: bounds.width,
+            height: bounds.height,
+          });
         }
+
+        // 2) Yoga 계산된 layout dimensions를 하위 컴포넌트에 전달
+        const yogaLayout = (container as Record<string, unknown>)._layout as
+          { computedLayout?: { width: number; height: number } } | undefined;
+        const yogaWidth = yogaLayout?.computedLayout?.width;
+        const yogaHeight = yogaLayout?.computedLayout?.height;
+
+        if (yogaWidth !== undefined && yogaHeight !== undefined && (yogaWidth > 0 || yogaHeight > 0)) {
+          setComputedSize((prev) => {
+            if (prev && prev.width === yogaWidth && prev.height === yogaHeight) return prev;
+            return { width: yogaWidth, height: yogaHeight };
+          });
+        }
+      } catch {
+        // Container destroyed 또는 아직 미렌더링
       }
-    });
-    return () => cancelAnimationFrame(rafId);
-  }, [elementId, layout]);
+    };
+
+    // @pixi/layout이 Yoga calculateLayout() 완료 후 emit하는 'layout' 이벤트 구독
+    container.on('layout', syncLayoutData);
+    // 최초 마운트 시 첫 prerender가 아직 미실행일 수 있으므로 rAF fallback
+    const rafId = requestAnimationFrame(syncLayoutData);
+
+    return () => {
+      container.off('layout', syncLayoutData);
+      cancelAnimationFrame(rafId);
+    };
+  }, [elementId]);
 
   // Cleanup: unmount 시 registry에서 해제
   useEffect(() => {
