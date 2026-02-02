@@ -323,9 +323,9 @@ export function Workspace({
           </div>
         </div>
 
-        {/* 오른쪽: PixiJS Canvas */}
+        {/* 오른쪽: WebGL Canvas */}
         <div className="workspace-compare-panel workspace-compare-panel--right">
-          <div className="workspace-compare-label">PixiJS Canvas</div>
+          <div className="workspace-compare-label">WebGL Canvas</div>
           <div className="workspace-compare-content">
             <BuilderCanvas
               pageWidth={canvasSize.width}
