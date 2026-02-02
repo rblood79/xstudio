@@ -8,6 +8,30 @@
 
 ---
 
+## 문서 구조
+
+```
+Part I — 영향 분석
+  A. LAYOUT_REQUIREMENTS.md 영향 분석 ······ (L1–L5)
+  B. COMPONENT_SPEC_ARCHITECTURE.md 영향 분석 (C1–C18)
+  G. Pencil 아키텍처 패턴 추가 적용 분석 ····· (G.1–G.6)
+  H. AI.md 연동 영향 분석 ···················· (A1–A6)
+
+Part II — 실행 계획
+  C. 수정 전략 — 순차 실행
+  D. 영향 범위 요약
+  E. 수정 실행 방법
+  F. 검증
+
+Part III — 감사
+  I. Round 4: Skia 렌더링 파이프라인 감사 ···· (I-CR/I-HI/I-ME/I-LO)
+```
+
+> **섹션 번호 안내:** G/H는 Pencil 분석 추가 시 기존 A/B 뒤에 삽입되었으며, 문서 전체에서 G.1–G.6 형태로 참조되므로 안정 ID로 유지한다.
+> Round 4 항목 ID는 `I-` 접두사로 구분한다 (예: I-CR1 = Round 4 CRITICAL #1).
+
+---
+
 ## 목적
 
 1. `docs/WASM.md` Phase 5-6 (CanvasKit/Skia 메인 렌더러 전환) 실행 시, 기존 문서에서 수정이 필요한 항목을 식별하고 수정 계획을 수립한다.
@@ -252,22 +276,21 @@ VariableManager.resolve("$--primary", currentTheme)
 - `panels/designKit/components/KitComponentList.tsx`: 마스터 컴포넌트 목록 + `createInstance()` 연결
 - `stores/elements.ts`: `createInstance` 스토어 액션 추가
 
-**적용 시 영향 범위:**
+**구현 완료 내역:**
 
-| 영향 대상 | 변경 내용 | 규모 |
+| 영향 대상 | 변경 내용 | 상태 |
 |----------|----------|------|
-| `packages/shared/src/` | 디자인 킷 JSON 스키마 정의 + 기본 킷 작성 | 신규 |
-| `apps/builder/src/builder/panels/` | 디자인 킷 브라우저 패널 | UI 신규 |
-| `apps/builder/src/builder/stores/` | 킷 로드 로직 (변수/테마/컴포넌트 병합) | 신규 |
-| G.1 컴포넌트-인스턴스 시스템 | **선행 의존**: 킷의 컴포넌트를 인스턴스로 배치하려면 필수 | 블로커 |
-| G.2 변수 참조 시스템 | **선행 의존**: 킷의 `$--` 변수 참조를 resolve하려면 필수 | 블로커 |
+| `utils/designKit/builtinKits/basicKit.ts` | 디자인 킷 JSON 스키마 + Basic Kit (5색상 변수, 12토큰, Card/Badge 컴포넌트) | ✅ 완료 |
+| `panels/designKit/DesignKitPanel.tsx` | 디자인 킷 브라우저 패널 + KitComponentList 통합 | ✅ 완료 |
+| `stores/designKitStore.ts` | 킷 로드 로직 (`loadAvailableKits`, `loadBuiltinKit`) | ✅ 완료 |
+| `stores/elements.ts` → `utils/instanceActions.ts` | `createInstance` 스토어 액션 | ✅ 완료 |
 
-**의존 관계:**
+**잔여 의존 관계 (기능 확장 시):**
 
 ```
-G.1 컴포넌트-인스턴스 ─┐
-                       ├──→ G.4 디자인 킷
-G.2 변수 참조 시스템 ──┘
+G.1 컴포넌트-인스턴스 완성 ─┐
+                            ├──→ G.4 디자인 킷 고도화 (마스터↔인스턴스 전파)
+G.2 변수 참조 시스템 완성 ──┘     ($-- 변수 resolve + 테마별 분기)
 ```
 
 ### G.5 히스토리 시스템 — XStudio 기존 우수 (Pencil 적용 불필요)
@@ -275,7 +298,7 @@ G.2 변수 참조 시스템 ──┘
 > Pencil 참조: §16.4 트랜잭션 기반 상태 변경, §24.10 Undo/Redo 트랜잭션
 > XStudio 히스토리: Adobe Photoshop History 패널을 벤치마크한 플래그십 기능
 
-**규모:** 4,714줄 / 8개 파일 — XStudio에서 가장 정교한 대규모 서브시스템
+**규모:** 4,764줄 / 8개 파일 — XStudio에서 가장 정교한 대규모 서브시스템
 
 | 파일 | 줄 수 | 역할 |
 |------|-----:|------|
@@ -284,7 +307,7 @@ G.2 변수 참조 시스템 ──┘
 | `stores/history/historyIndexedDB.ts` | 529 | 영구 저장소: 90일 자동 정리, 세션 복원, 배치 저장/조회 |
 | `stores/utils/elementDiff.ts` | 537 | Diff 계산 엔진: 메모리 80% 절감 (2-5KB → 100-500 bytes/변경) |
 | `stores/commandDataStore.ts` | 334 | 압축 메타데이터: max 100 commands + 500 cached elements |
-| `stores/utils/historyHelpers.ts` | 263 | 고수준 래퍼: trackBatchUpdate, trackGroupCreation, trackUngroup, trackMultiDelete, trackMultiPaste |
+| `stores/utils/historyHelpers.ts` | 313 | 고수준 래퍼: trackBatchUpdate, trackGroupCreation, trackUngroup, trackMultiDelete, trackMultiPaste, trackAIBatchOperation, trackInstancePropagation |
 | `panels/history/HistoryPanel.tsx` | 259 | Photoshop-like UI: 시간순 리스트, goToIndex 점프, 시작 상태 마커 |
 | `panels/history/HistoryPanel.css` | 84 | 패널 스타일: active 상태 하이라이트, 카운터 뱃지 |
 
@@ -348,7 +371,7 @@ Undo/Redo 3단계 파이프라인 (7개 타입 모두 동일):
 | DB 동기화 | 없음 | 3단계 (Memory → IndexedDB → Supabase) | XStudio 우수 |
 | 메모리 관리 | 없음 | `getMemoryStats()`, `optimizeMemory()`, maxSize 제한 | XStudio 우수 |
 
-**평가:** XStudio의 히스토리 시스템은 Adobe Photoshop을 벤치마크한 **4,714줄 규모의 플래그십 기능**으로, Pencil의 단순 선형 스택(`UndoManager`)과는 비교 자체가 부적절하다. Pencil의 `beginUpdate()` → `commitBlock()` 트랜잭션 패턴이 제공하는 기능은 XStudio의 `addBatchDiffEntry()` 및 `trackBatchUpdate()`가 이미 완전히 커버하고 있다.
+**평가:** XStudio의 히스토리 시스템은 Adobe Photoshop을 벤치마크한 **4,764줄 규모의 플래그십 기능**으로, Pencil의 단순 선형 스택(`UndoManager`)과는 비교 자체가 부적절하다. Pencil의 `beginUpdate()` → `commitBlock()` 트랜잭션 패턴이 제공하는 기능은 XStudio의 `addBatchDiffEntry()` 및 `trackBatchUpdate()`가 이미 완전히 커버하고 있다.
 
 **소규모 확장 가능 영역 (기존 시스템의 래퍼 함수 추가 수준):** ✅ 완료
 
@@ -357,7 +380,7 @@ Undo/Redo 3단계 파이프라인 (7개 타입 모두 동일):
 
 | 영향 대상 | 변경 내용 | 규모 | 상태 |
 |----------|----------|------|------|
-| `builder/stores/utils/historyHelpers.ts` | `trackAIBatchOperation()` + `trackInstancePropagation()` 래퍼 추가 | ~45줄 | ✅ 완료 |
+| `builder/stores/utils/historyHelpers.ts` | `trackAIBatchOperation()` + `trackInstancePropagation()` 래퍼 추가 | ~50줄 | ✅ 완료 |
 
 ### G.6 XStudio 기존 우수 패턴 (Pencil 대비)
 
@@ -365,7 +388,7 @@ Undo/Redo 3단계 파이프라인 (7개 타입 모두 동일):
 
 | 영역 | XStudio | Pencil | 평가 |
 |------|---------|--------|------|
-| **Undo/Redo** | **4,714줄/8파일 플래그십**: Diff 기반 (80% 메모리 절감) + 3단계 저장 (RAM→IndexedDB→Supabase) + 페이지 격리 + 7개 작업 타입 + goToIndex 점프 + Photoshop-like Panel UI | 단순 선형 스택 (`UndoManager`: pushUndo/popUndo) | XStudio 압도적 우수 |
+| **Undo/Redo** | **4,764줄/8파일 플래그십**: Diff 기반 (80% 메모리 절감) + 3단계 저장 (RAM→IndexedDB→Supabase) + 페이지 격리 + 7개 작업 타입 + goToIndex 점프 + Photoshop-like Panel UI | 단순 선형 스택 (`UndoManager`: pushUndo/popUndo) | XStudio 압도적 우수 |
 | **캔버스 이벤트** | `useDragInteraction` 상태머신 훅 + 동적 해상도 + SelectionBoxRef 명령형 API | 인라인 조건문 분기 | XStudio 우수 |
 | **이벤트 배칭** | `MessageCoalescer` 우선순위 큐 + RAF throttle + requestIdleCallback | 기본 debounce | XStudio 우수 |
 | **Preview 격리** | iframe srcdoc + postMessage + Delta 동기화 | Electron IPC 전용 | 웹 환경에서 XStudio 우수 |
@@ -456,8 +479,8 @@ AI.md (신규 분석)
 Pencil 패턴 추가 적용 (신규 분석)
 ├── 적용 필요 (높음): G.1 컴포넌트-인스턴스, G.2 변수 참조 ··········· 2건
 ├── 적용 필요 (중간): G.3 시각 피드백, G.4 디자인 킷 ·················· 2건
-├── ★ 변경 불필요: G.5 히스토리 (4,714줄 플래그십 — Pencil 적용 불필요) · 0건
-│   └── 소규모 확장만: AI batch 래퍼 + G.1 인스턴스 전파 연동 ········· (~20줄)
+├── ★ 변경 불필요: G.5 히스토리 (4,764줄 플래그십 — Pencil 적용 불필요) · 0건
+│   └── 소규모 확장만: AI batch 래퍼 + G.1 인스턴스 전파 연동 ········· (~50줄)
 └── 변경 불필요: 이벤트 배칭, 캔버스 상태머신, Preview 격리 ··········· (XStudio 우수)
                                                          소계: 4건 + 소규모 확장 1건
                                                     ─────────────
@@ -468,7 +491,7 @@ Pencil 패턴 추가 적용 (신규 분석)
 - **LAYOUT_REQUIREMENTS.md**: 영향 적음 (5건). 레이아웃 계산은 렌더러 독립적.
 - **COMPONENT_SPEC_ARCHITECTURE.md**: 영향 큼 (18건). 렌더링 + 컴포넌트 시스템 전면 업데이트.
 - **AI.md**: 영향 중간 (6건). G.1/G.2 시스템이 AI 도구 정의에 직접 영향.
-- **Pencil 패턴**: 렌더링/AI 외 4건 추가 적용 + 1건 소규모 확장 식별. G.1(컴포넌트-인스턴스)과 G.2(변수 참조)가 핵심 블로커. G.5 히스토리는 4,714줄 규모의 플래그십 시스템으로 Pencil 대비 **압도적 우수** — 트랜잭션 패턴 차용 불필요.
+- **Pencil 패턴**: 렌더링/AI 외 4건 추가 적용 + 1건 소규모 확장 식별. G.1(컴포넌트-인스턴스)과 G.2(변수 참조)가 핵심 블로커. G.5 히스토리는 4,764줄 규모의 플래그십 시스템으로 Pencil 대비 **압도적 우수** — 트랜잭션 패턴 차용 불필요.
 
 ---
 
@@ -539,14 +562,14 @@ Pencil 패턴 추가 적용 (신규 분석)
 
 ### CRITICAL (서비스 불가 / 렌더링 왜곡) — 1건
 
-#### I-C1. Inner Shadow 렌더링 오류 ✅
+#### I-CR1. Inner Shadow 렌더링 오류 ✅
 
 - **파일**: `canvas/skia/effects.ts:75-82`
 - **문제**: `MakeDropShadowOnly`는 그림자만 그리고 원본 콘텐츠를 삭제한다. inner shadow 구현에 사용하면 **소스 콘텐츠가 사라짐**
 - **현상**: inner shadow가 적용된 요소가 그림자만 보이고 내부 콘텐츠가 투명하게 렌더됨
 - **수정 방안**: `MakeDropShadow` (소스 포함) 사용 + clip rect로 외부 그림자 잘라내어 내부만 표시, 또는 `MakeDropShadowOnly` → `MakeCompose(inner, src)` 합성
 
-#### ~~I-C2. Lasso 좌표 불일치~~ ❌ 오탐
+#### ~~I-CR2. Lasso 좌표 불일치~~ ❌ 오탐
 
 - **검증 결과**: `ClickableBackground.screenToCanvas()`가 `(screenX - panOffset.x) / zoom`으로 이미 scene-local 좌표로 변환 (`BuilderCanvas.tsx:228-237`). camera transform 내부 렌더링과 좌표계 정합.
 
@@ -573,7 +596,7 @@ Pencil 패턴 추가 적용 (신규 분석)
 
 ### MEDIUM (부분 결함 / 비효율) — 2건
 
-#### I-C3→M. 타입 불일치 (styleConverter ↔ effects) ✅
+#### I-CR3→M. 타입 불일치 (styleConverter ↔ effects) ✅
 
 - **파일**: `canvas/sprites/styleConverter.ts:376-379` — `SkiaEffectItem`
 - **원래 심각도**: CRITICAL → **MEDIUM 하향**
@@ -641,10 +664,10 @@ Pencil 패턴 추가 적용 (신규 분석)
 
 ### 수정 우선순위
 
-1. **I-C1** (CRITICAL) — Inner Shadow `MakeDropShadowOnly` → 소스 보존 방식으로 교체
+1. **I-CR1** (CRITICAL) — Inner Shadow `MakeDropShadowOnly` → 소스 보존 방식으로 교체
 2. **I-H4** (HIGH) — SkiaRenderer DPR 갱신
 3. **I-H5** (HIGH) — imageCache generation counter 도입
-4. **I-C3→M** (MEDIUM) — SkiaEffectItem → EffectStyle 타입 정리
+4. **I-CR3→M** (MEDIUM) — SkiaEffectItem → EffectStyle 타입 정리
 5. **I-H6→M** (MEDIUM) — 트리 재구성 최적화 (registryVersion 기반)
 6. **I-L17** (LOW) — cssColorToAlpha colord 활용
 7. **I-L22** (LOW) — updateTextChildren lineHeight 실제값 사용
