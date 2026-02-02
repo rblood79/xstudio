@@ -1563,7 +1563,7 @@ Store → ElementsLayer → ElementSprite → useResolvedElement → effectiveEl
 ```
 Store → ElementsLayer → ElementSprite → useResolvedElement → effectiveElement
   → skiaNodeData 생성 → useSkiaNode(전역 레지스트리 등록)
-  → SkiaOverlay.buildSkiaTreeFromRegistry() → nodeRenderers → CanvasKit Surface
+  → SkiaOverlay.buildSkiaTreeHierarchical() → nodeRenderers → CanvasKit Surface
 ```
 
 **Phase 6 (이중 Surface 캐싱 — 현재 구현):**
@@ -1642,13 +1642,29 @@ Store → ElementSprite → useResolvedElement($-- 변수 resolve 포함)
 | 매 프레임 전체 렌더링 | Phase 6 이중 Surface + `classifyFrame()` 프레임 분류 | idle: 0ms, camera-only: ~2ms |
 | PixiJS SelectionBox 컴포넌트 | Skia `selectionRenderer.ts` 직접 렌더링 | Box/Handle/Lasso 모두 Skia |
 | 없음 | AI 시각 피드백 (`aiEffects.ts`) Skia 오버레이 | generating + flash 효과 |
-| 없음 | AABB 뷰포트 컬링 — 화면 밖 노드 스킵 | `buildSkiaTreeFromRegistry` |
+| 없음 | AABB 뷰포트 컬링 — 화면 밖 노드 스킵 | `buildSkiaTreeHierarchical` + `renderNode` |
 | `renderWithPixiLayout()` / `renderWithCustomEngine()` | 동일 (레이아웃 계산 유지) — 렌더링은 SkiaOverlay가 담당 | §4.2 코드 구조 유지 |
 
 #### 4.4.4 레이아웃 → 렌더링 데이터 흐름
 
 ```typescript
 // ElementSprite.tsx — Phase 5+ skiaNodeData 생성 예시
+// UI 컴포넌트의 경우 variant 기반 색상 매핑 적용 (2026-02-02)
+const props = effectiveElement.props as Record<string, unknown> | undefined;
+const variant = isUIComponent ? String(props?.variant || 'default') : '';
+
+// variant 기반 배경색 (inline style 미지정 시)
+// VARIANT_BG_COLORS: default→#ece6f0, primary→#6750a4, secondary→#625b71, ...
+// VARIANT_BG_ALPHA: outline→0, ghost→0 (투명)
+// VARIANT_BORDER_COLORS: default→#cac4d0, primary→#6750a4, outline→#79747e, ...
+const bgColor = isUIComponent && !hasBgColor
+  ? VARIANT_BG_COLORS[variant] ?? 0xece6f0
+  : parseFillColor(effectiveElement);
+const bgAlpha = VARIANT_BG_ALPHA[variant] ?? 1;
+const borderColor = isUIComponent && !hasBorderColor
+  ? VARIANT_BORDER_COLORS[variant] ?? 0xcac4d0
+  : parseBorderColor(effectiveElement);
+
 const skiaNodeData: SkiaNodeData = useMemo(() => ({
   type: 'box',
   x: 0, y: 0,  // PixiJS worldTransform에서 SkiaOverlay가 보정
@@ -1656,10 +1672,11 @@ const skiaNodeData: SkiaNodeData = useMemo(() => ({
   height: effectiveElement.props?.style?.height ?? 100,
   visible: true,
   box: {
-    fillColor: parseFillColor(effectiveElement),
+    fillColor: bgColor,
+    fillAlpha: bgAlpha,
     borderRadius: parseBorderRadius(effectiveElement),
     borderWidth: parseBorderWidth(effectiveElement),
-    borderColor: parseBorderColor(effectiveElement),
+    borderColor: borderColor,
   },
   children: textChildren,  // UI 컴포넌트의 텍스트 노드
 }), [effectiveElement]);
@@ -1718,7 +1735,8 @@ const effectiveVersion = registryVersion + overlayVersionRef.current;
 
 #### 4.4.7 AABB 뷰포트 컬링
 
-> `buildSkiaTreeFromRegistry()` 에서 PixiJS 씬 그래프 순회 시 뷰포트 밖 노드를 스킵한다.
+> `buildSkiaTreeHierarchical()` 에서 PixiJS 씬 그래프를 계층적으로 순회하여 Skia 렌더 트리를 구성하고,
+> `renderNode()`에서 AABB 컬링으로 뷰포트 밖 노드를 스킵한다.
 
 ```
 cullingBounds = { x: -cameraX/zoom, y: -cameraY/zoom,

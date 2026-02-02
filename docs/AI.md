@@ -1052,6 +1052,7 @@ G.3 AI 시각 피드백 시스템이 구현되어, CanvasKit 렌더 루프에 �
 **구현 완료:**
 - `aiVisualFeedback.ts` — 독립 Zustand 스토어 (generatingNodes, flashAnimations)
 - `aiEffects.ts` — `renderGeneratingEffects()` (블러 + 회전 파티클), `renderFlashes()` (스트로크 + 스캔라인)
+  - `buildNodeBoundsMap()`: 계층적 Skia 트리에서 부모 오프셋을 누적하여 절대 좌표 복원 (2026-02-02 수정)
 - `SkiaOverlay.tsx` — renderFrame 내부에서 디자인 노드 렌더링 후 AI 이펙트 패스 실행
 
 **렌더 루프 (Phase 5+):**

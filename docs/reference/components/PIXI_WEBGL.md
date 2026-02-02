@@ -402,12 +402,49 @@ function getButtonLayout(style, buttonProps, buttonText, variantColors) {
 5. React state 업데이트 → PixiButton 리렌더링
 6. `FancyButton` Graphics 재생성 (새 색상 적용)
 
+### Skia 폴백 렌더링의 Variant 색상 매핑 (2026-02-02)
+
+`VITE_RENDER_MODE=skia`일 때 PixiButton/PixiCheckbox 등 UI 컴포넌트는 PixiJS FancyButton 대신
+`ElementSprite.tsx`의 Skia 폴백 경로에서 렌더링된다. 이 경로에서는 CSS 변수 대신
+하드코딩된 M3 Light Mode 색상 매핑 테이블을 사용한다.
+
+**배경색 매핑 (`VARIANT_BG_COLORS`):**
+
+| variant | 배경색 hex | alpha | M3 Role |
+|---------|----------|-------|---------|
+| default | `#ece6f0` | 1 | surface-container-high |
+| primary | `#6750a4` | 1 | primary |
+| secondary | `#625b71` | 1 | secondary |
+| tertiary | `#7d5260` | 1 | tertiary |
+| error | `#b3261e` | 1 | error |
+| surface | `#e6e0e9` | 1 | surface-container-highest |
+| outline | `#fef7ff` | 0 | surface (투명) |
+| ghost | `#fef7ff` | 0 | surface (투명) |
+
+**테두리색 매핑 (`VARIANT_BORDER_COLORS`):**
+
+| variant | 테두리색 hex | M3 Role |
+|---------|-----------|---------|
+| default | `#cac4d0` | outline-variant |
+| primary | `#6750a4` | primary |
+| secondary | `#625b71` | secondary |
+| tertiary | `#7d5260` | tertiary |
+| error | `#b3261e` | error |
+| surface | `#cac4d0` | outline-variant |
+| outline | `#79747e` | outline |
+| ghost | — | 테두리 없음 |
+
+**우선순위:** `inline style.backgroundColor > VARIANT_BG_COLORS[variant] > 기본값(0xece6f0)`
+
+> **참조:** `ElementSprite.tsx`의 `VARIANT_BG_COLORS`, `VARIANT_BG_ALPHA`, `VARIANT_BORDER_COLORS` 상수.
+> PixiJS hybrid 모드에서는 기존 `cssVariableReader.ts` → `useThemeColors` 경로가 사용된다.
+
 ### 핵심 원칙
 
 1. **Semantic Props (`variant`, `size`)**: 디자인 시스템 토큰 적용, 일관성 보장
 2. **Inline Style (`style: {}`)**: 개별 커스터마이징, Semantic Props 오버라이드 가능
 3. **우선순위**: `style > semantic props > 기본값`
-4. **동기화**: `LayoutEngine.ts`, `PixiButton.tsx`, `Button.css` 간 값 동기화 유지
+4. **동기화**: `LayoutEngine.ts`, `PixiButton.tsx`, `ElementSprite.tsx`, `Button.css` 간 값 동기화 유지
 
 ---
 
@@ -929,9 +966,11 @@ BuilderCanvas
 
 **핵심 파일:**
 - `canvas/skia/selectionRenderer.ts` — `renderSelectionBox()`, `renderTransformHandles()`, `renderLasso()`
-- `canvas/skia/SkiaOverlay.tsx` — `buildSelectionRenderData()` + renderFrame Phase 4-6
+- `canvas/skia/SkiaOverlay.tsx` — `buildSkiaTreeHierarchical()` + `buildTreeBoundsMap()` + `buildSelectionRenderData()` + renderFrame Phase 4-6
 
 **PixiJS Camera 하위 숨김:** `alpha=0` 사용 (`renderable=false` 금지 — EventBoundary 히트 테스팅 비활성화)
+
+**계층적 Skia 트리 (2026-02-02):** `buildSkiaTreeHierarchical()`가 PixiJS 씬 그래프를 계층적으로 순회하여 부모-자식 상대 좌표 기반의 Skia 렌더 트리를 구성. `buildTreeBoundsMap()`으로 추출된 절대 바운드를 Selection이 참조하여 컨텐츠와 항상 동기화.
 
 ### 선택 테두리 통합 (14개 컴포넌트)
 

@@ -2817,11 +2817,14 @@ ElementSprite (spriteType='button')
     │
     ▼
 SkiaOverlay.renderFrame()
-└── buildSkiaTreeFromRegistry(stage)  // PixiJS 씬 그래프 순회
-    └── getSkiaNode(elementId)        // 레지스트리에서 SkiaNodeData 조회
-        └── renderNode(ck, canvas, tree)  // CanvasKit으로 시각적 렌더링
+└── buildSkiaTreeHierarchical(cameraContainer)  // PixiJS 씬 그래프 계층 순회
+    └── getSkiaNode(elementId)                  // 레지스트리에서 SkiaNodeData 조회
+        └── renderNode(ck, canvas, tree)        // CanvasKit으로 시각적 렌더링
             ├── renderBox()   → ck.drawRRect() / drawRect()
             └── renderText()  → ck.ParagraphBuilder → drawParagraph()
+
+// 계층적 트리: 부모-자식 상대 좌표 (worldTransform 뺄셈으로 카메라 오프셋 상쇄)
+// Root (0,0) → Body (relX, relY) → Button (부모 기준 relX, relY)
 ```
 
 **skiaNodeData 구조 (Button 예시):**

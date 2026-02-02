@@ -144,7 +144,7 @@ export const BodyLayer = memo(function BodyLayer({
     };
   }, [pageWidth, pageHeight, backgroundColor, backgroundAlpha, borderRadius, borderConfig]);
 
-  useSkiaNode(bodyElement?.id ?? '', bodySkiaData);
+  useSkiaNode(bodyElement?.id ?? '', bodyElement ? bodySkiaData : null);
 
   // 클릭 핸들러 (modifier 키 전달)
   const handleClick = useCallback((e: unknown) => {

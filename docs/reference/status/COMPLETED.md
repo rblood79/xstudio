@@ -43,7 +43,7 @@
 캔버스 팬 시 body가 화면 왼쪽/위쪽 가장자리에 닿으면 Skia 렌더링이 전부 사라지는 버그 수정.
 
 **Root Cause:**
-1. `buildSkiaTreeFromRegistry`의 가상 루트 노드 `{width:0, height:0}`에 AABB 컬링 적용 → 카메라 원점 이탈 시 루트 컬링
+1. `buildSkiaTreeFromRegistry`(현재 `buildSkiaTreeHierarchical`로 교체됨)의 가상 루트 노드 `{width:0, height:0}`에 AABB 컬링 적용 → 카메라 원점 이탈 시 루트 컬링
 2. `canvas.translate()` 후 자식에 씬-로컬 `cullingBounds` 전달 → 좌표계 불일치로 텍스트 잘못 컬링
 
 **Fix:**

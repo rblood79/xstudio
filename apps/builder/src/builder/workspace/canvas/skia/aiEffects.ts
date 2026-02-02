@@ -50,13 +50,17 @@ export function buildNodeBoundsMap(
 
   if (targetIds.size === 0) return boundsMap;
 
-  // 트리 순회
-  function traverse(node: SkiaNodeData): void {
+  // 계층 트리 순회 — 부모 오프셋을 누적하여 씬-로컬 절대 좌표를 복원한다.
+  // (Skia 트리가 계층적이므로 node.x/y는 부모 기준 상대 좌표)
+  function traverse(node: SkiaNodeData, parentX: number, parentY: number): void {
+    const absX = parentX + node.x;
+    const absY = parentY + node.y;
+
     if (node.elementId && targetIds.has(node.elementId)) {
       boundsMap.set(node.elementId, {
         elementId: node.elementId,
-        x: node.x,
-        y: node.y,
+        x: absX,
+        y: absY,
         width: node.width,
         height: node.height,
         borderRadius: node.box?.borderRadius ?? 0,
@@ -64,12 +68,12 @@ export function buildNodeBoundsMap(
     }
     if (node.children) {
       for (const child of node.children) {
-        traverse(child);
+        traverse(child, absX, absY);
       }
     }
   }
 
-  traverse(tree);
+  traverse(tree, 0, 0);
   return boundsMap;
 }
 

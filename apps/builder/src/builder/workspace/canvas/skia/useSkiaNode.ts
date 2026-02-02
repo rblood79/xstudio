@@ -17,18 +17,9 @@
  */
 
 import { useEffect } from 'react';
-import { Container } from 'pixi.js';
 import type { SkiaNodeData } from './nodeRenderers';
 import type { DirtyRect } from './types';
 import { WASM_FLAGS } from '../wasm-bindings/featureFlags';
-
-/** PixiJS Container에 부착되는 Skia 메타데이터 키 */
-export const SKIA_NODE_KEY = '__skiaNode' as const;
-
-/** Skia 렌더 데이터가 부착된 PixiJS Container */
-export interface SkiaEnabledContainer extends Container {
-  [SKIA_NODE_KEY]?: SkiaNodeData;
-}
 
 // ============================================
 // 전역 레지스트리
@@ -113,6 +104,17 @@ export function getSkiaRegistrySize(): number {
   return skiaNodeRegistry.size;
 }
 
+/**
+ * 페이지 전환 시 레지스트리를 일괄 초기화한다.
+ * 개별 Sprite의 useEffect cleanup보다 먼저 호출하여
+ * 전환 프레임에서 stale 노드가 렌더링되는 것을 방지한다.
+ */
+export function clearSkiaRegistry(): void {
+  skiaNodeRegistry.clear();
+  pendingDirtyRects = [];
+  registryVersion++;
+}
+
 /** 현재 레지스트리 변경 버전 (O(1)) */
 export function getRegistryVersion(): number {
   return registryVersion;
@@ -172,50 +174,3 @@ export function useSkiaNode(
   }, [elementId, data]);
 }
 
-// ============================================
-// 씬 그래프 순회 (레거시 — 폴백)
-// ============================================
-
-/**
- * PixiJS 씬 그래프에서 Skia 렌더 데이터를 수집한다.
- * __skiaNode가 부착된 컨테이너 기반. 레거시 폴백용.
- */
-export function collectSkiaTree(root: Container): SkiaNodeData | null {
-  const skiaContainer = root as SkiaEnabledContainer;
-  const nodeData = skiaContainer[SKIA_NODE_KEY];
-
-  if (!nodeData) {
-    const children: SkiaNodeData[] = [];
-    for (const child of root.children) {
-      if (child instanceof Container) {
-        const childData = collectSkiaTree(child);
-        if (childData) children.push(childData);
-      }
-    }
-
-    if (children.length === 0) return null;
-
-    return {
-      type: 'container',
-      x: root.x,
-      y: root.y,
-      width: 0,
-      height: 0,
-      visible: root.visible,
-      children,
-    };
-  }
-
-  const children: SkiaNodeData[] = [];
-  for (const child of root.children) {
-    if (child instanceof Container) {
-      const childData = collectSkiaTree(child);
-      if (childData) children.push(childData);
-    }
-  }
-
-  return {
-    ...nodeData,
-    children: children.length > 0 ? children : nodeData.children,
-  };
-}

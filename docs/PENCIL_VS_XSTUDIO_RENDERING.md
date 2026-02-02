@@ -23,7 +23,8 @@
 
 > **중요 정정사항:** 초기 분석에서 "PixiJS가 메인 렌더러"로 기술했으나, 심층 역공학 결과 **CanvasKit/Skia WASM이 메인 렌더러**이며 PixiJS는 씬 그래프 관리와 이벤트 처리만 담당하는 것으로 확인됨. 모든 씬 노드가 `renderSkia(renderer, canvas, cullingBounds)` 메서드를 구현하여 CanvasKit Canvas API를 직접 호출한다.
 >
-> **xstudio 진행 상황 (2026-02-01):** xstudio도 Pencil 방식으로 전환 중. 현재 Selection 오버레이(선택 박스, Transform 핸들, 라쏘)가 CanvasKit/Skia에서 렌더링되며, PixiJS는 투명 히트 영역 + 이벤트 처리 전용으로 동작. 디자인 노드도 Skia에서 렌더링 중 (`SkiaOverlay.tsx`).
+> **xstudio 진행 상황 (2026-02-02):** xstudio도 Pencil 방식으로 전환 완료. Selection 오버레이(선택 박스, Transform 핸들, 라쏘) + 디자인 노드 + AI 이펙트 모두 CanvasKit/Skia에서 렌더링. PixiJS는 투명 히트 영역 + 이벤트 처리 전용.
+> `buildSkiaTreeHierarchical()`가 계층적 Skia 트리를 구성하며, worldTransform 부모-자식 상대 좌표로 팬 중에도 상대 위치가 항상 정확. Selection은 `buildTreeBoundsMap()`으로 컨텐츠와 동일한 좌표 소스를 참조.
 
 ---
 

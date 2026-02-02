@@ -58,6 +58,8 @@ export interface SkiaNodeData {
     align?: EmbindEnumEntity | 'left' | 'center' | 'right';
     letterSpacing?: number;
     lineHeight?: number;
+    /** CanvasKit TextDecoration 비트마스크: underline=1, overline=2, lineThrough=4 */
+    decoration?: number;
     paddingLeft: number;
     paddingTop: number;
     maxWidth: number;
@@ -70,6 +72,8 @@ export interface SkiaNodeData {
     contentWidth: number;
     contentHeight: number;
   };
+  /** overflow:hidden 시 자식을 경계에서 클리핑 */
+  clipChildren?: boolean;
   /** 자식 노드 데이터 */
   children?: SkiaNodeData[];
 }
@@ -135,6 +139,13 @@ export function renderNode(
   // 자식 재귀 렌더링 — canvas.translate() 후 좌표계가 부모 로컬로 변환되었으므로
   // cullingBounds도 부모 오프셋만큼 역변환하여 좌표계를 일치시킨다.
   if (node.children) {
+    // overflow:hidden → 자식을 부모 경계에서 클리핑
+    if (node.clipChildren && node.width > 0 && node.height > 0) {
+      canvas.save();
+      const clipRect = ck.LTRBRect(0, 0, node.width, node.height);
+      canvas.clipRect(clipRect, ck.ClipOp.Intersect, true);
+    }
+
     const childBounds = new DOMRect(
       cullingBounds.x - node.x,
       cullingBounds.y - node.y,
@@ -143,6 +154,10 @@ export function renderNode(
     );
     for (const child of node.children) {
       renderNode(ck, canvas, child, childBounds, fontMgr);
+    }
+
+    if (node.clipChildren && node.width > 0 && node.height > 0) {
+      canvas.restore();
     }
   }
 
@@ -268,6 +283,12 @@ function renderText(
         color: node.text.color,
         letterSpacing: node.text.letterSpacing ?? 0,
         ...(heightMultiplier !== undefined ? { heightMultiplier } : {}),
+        // textDecoration: CanvasKit TextDecoration 비트마스크
+        ...(node.text.decoration ? {
+          decoration: node.text.decoration,
+          decorationColor: node.text.color,
+          decorationThickness: 1,
+        } : {}),
       },
       textAlign,
     });

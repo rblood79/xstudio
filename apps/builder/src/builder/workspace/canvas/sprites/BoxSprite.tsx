@@ -17,7 +17,7 @@ import { PIXI_COMPONENTS } from '../pixiSetup';
 import { useCallback, useMemo, memo } from 'react';
 import { Graphics as PixiGraphics, TextStyle } from 'pixi.js';
 import type { Element } from '../../../../types/core/store.types';
-import { convertStyle, cssColorToHex, cssColorToAlpha, type CSSStyle } from './styleConverter';
+import { convertStyle, cssColorToHex, cssColorToAlpha, buildSkiaEffects, type CSSStyle } from './styleConverter';
 import { parsePadding, getContentBounds } from './paddingUtils';
 import { drawBox, parseBorderConfig } from '../utils';
 import { useSkiaNode } from '../skia/useSkiaNode';
@@ -110,6 +110,9 @@ export const BoxSprite = memo(function BoxSprite({ element, onClick }: BoxSprite
   const textX = contentBounds.x + contentBounds.width / 2;
   const textY = contentBounds.y + contentBounds.height / 2;
 
+  // Skia effects (opacity, boxShadow, filter, backdropFilter, mixBlendMode)
+  const skiaEffects = useMemo(() => buildSkiaEffects(style), [style]);
+
   // Phase 5: Skia 렌더 데이터 부착
   const skiaNodeData = useMemo(() => {
     if (!WASM_FLAGS.CANVASKIT_RENDERER) return null;
@@ -117,6 +120,10 @@ export const BoxSprite = memo(function BoxSprite({ element, onClick }: BoxSprite
     const r = ((fill.color >> 16) & 0xff) / 255;
     const g = ((fill.color >> 8) & 0xff) / 255;
     const b = (fill.color & 0xff) / 255;
+    // opacity는 Skia effect로 처리하므로, fill alpha는 backgroundColor alpha만 사용
+    const bgAlpha = skiaEffects.effects?.some(e => e.type === 'opacity')
+      ? cssColorToAlpha(style?.backgroundColor)
+      : fill.alpha;
     const br = typeof borderRadius === 'number' ? borderRadius : borderRadius?.[0] ?? 0;
 
     return {
@@ -125,9 +132,12 @@ export const BoxSprite = memo(function BoxSprite({ element, onClick }: BoxSprite
       y: transform.y,
       width: transform.width,
       height: transform.height,
-      visible: true,
+      visible: style?.display !== 'none' && style?.visibility !== 'hidden',
+      ...(style?.overflow === 'hidden' ? { clipChildren: true } : {}),
+      ...(skiaEffects.effects ? { effects: skiaEffects.effects } : {}),
+      ...(skiaEffects.blendMode ? { blendMode: skiaEffects.blendMode } : {}),
       box: {
-        fillColor: Float32Array.of(r, g, b, fill.alpha),
+        fillColor: Float32Array.of(r, g, b, bgAlpha),
         borderRadius: br,
         strokeColor: borderConfig
           ? (() => {
@@ -143,7 +153,7 @@ export const BoxSprite = memo(function BoxSprite({ element, onClick }: BoxSprite
         strokeWidth: borderConfig?.width,
       },
     };
-  }, [transform, fill, borderRadius, borderConfig]);
+  }, [transform, fill, borderRadius, borderConfig, style, skiaEffects]);
 
   useSkiaNode(element.id, skiaNodeData);
 

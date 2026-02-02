@@ -114,6 +114,37 @@ Skia `renderBox()`의 stroke가 요소 바운드 밖으로 넘쳐 인접 요소 
 
 **상세:** `apps/builder/src/.../skia/nodeRenderers.ts`
 
+## Update: Skia UI 컴포넌트 Variant 색상 매핑 (2026-02-02)
+
+`ElementSprite`의 Skia 폴백 렌더링에서 UI 컴포넌트 배경/테두리 색상을 `#e2e8f0`(slate-200)로 하드코딩하여 variant 변경이 반영되지 않던 문제 수정:
+
+| 항목 | 수정 전 | 수정 후 |
+|------|---------|---------|
+| **배경색** | `#e2e8f0` (slate-200) 하드코딩 | `VARIANT_BG_COLORS[variant]` 테이블 참조 |
+| **테두리색** | `#cbd5e1` (slate-300) 하드코딩 | `VARIANT_BORDER_COLORS[variant]` 테이블 참조 |
+| **투명 variant** | 미지원 | outline/ghost → `bgAlpha=0`, ghost → 테두리 없음 |
+| **우선순위** | 없음 | `style.backgroundColor > variant > 기본값` |
+
+**상세:** `apps/builder/src/.../sprites/ElementSprite.tsx`, `docs/COMPONENT_SPEC_ARCHITECTURE.md` §4.5
+
+## Update: Skia 렌더 트리 계층화 (2026-02-02)
+
+캔버스 팬 시 Body 내 Button이 Body를 뒤따라오는 렌더링 불일치 문제를 근본적으로 해결:
+
+| 항목 | 수정 전 (flat 트리) | 수정 후 (계층적 트리) |
+|------|---------|---------|
+| **트리 구조** | `buildSkiaTreeFromRegistry` — 모든 노드를 flat siblings로 수집 | `buildSkiaTreeHierarchical` — 부모-자식 계층 보존 |
+| **좌표 계산** | `(wt.tx - cameraX) / zoom` — 각 노드 독립 절대 좌표 | `(child.wt.tx - parent.wt.tx) / zoom` — 부모 기준 상대 좌표 |
+| **팬 안정성** | worldTransform 갱신 타이밍 차이 → 노드 간 상대 위치 오차 | 뺄셈 시 카메라 오프셋 상쇄 → 상대 위치 항상 정확 |
+| **Selection 좌표** | elementRegistry/하드코딩 — 컨텐츠와 다른 좌표 소스 | `buildTreeBoundsMap` — Skia 트리에서 추출, 컨텐츠와 동기화 |
+| **AI 이펙트 좌표** | flat 트리에서 직접 `node.x/y` 사용 | `buildNodeBoundsMap`에서 부모 오프셋 누적으로 절대 좌표 복원 |
+
+**핵심 공식:** `relativeX = (child.wt.tx - parent.wt.tx) / cameraZoom`
+- `parent.wt.tx`와 `child.wt.tx` 모두 동일한 (stale) cameraX를 포함
+- 뺄셈 시 카메라 오프셋이 상쇄 → worldTransform 갱신 타이밍과 무관하게 상대 위치 정확
+
+**상세:** `apps/builder/src/.../skia/SkiaOverlay.tsx`, `apps/builder/src/.../skia/aiEffects.ts`
+
 ## Implementation
 
 ```typescript

@@ -15,7 +15,7 @@ import { PIXI_COMPONENTS } from '../pixiSetup';
 import { useCallback, useMemo, useRef, memo } from 'react';
 import { Graphics as PixiGraphics, TextStyle, Text } from 'pixi.js';
 import type { Element } from '../../../../types/core/store.types';
-import { convertStyle, applyTextTransform, type CSSStyle } from './styleConverter';
+import { convertStyle, applyTextTransform, buildSkiaEffects, type CSSStyle } from './styleConverter';
 import { parsePadding } from './paddingUtils';
 import { drawBox, parseBorderConfig } from '../utils';
 import { useSkiaNode } from '../skia/useSkiaNode';
@@ -223,6 +223,9 @@ export const TextSprite = memo(function TextSprite({
     textRef.current = text;
   }, []);
 
+  // Skia effects (opacity, boxShadow, filter, backdropFilter, mixBlendMode)
+  const skiaEffects = useMemo(() => buildSkiaEffects(style), [style]);
+
   // Phase 5: Skia 렌더 데이터 부착
   const skiaNodeData = useMemo(() => {
     if (!WASM_FLAGS.CANVASKIT_RENDERER) return null;
@@ -231,25 +234,45 @@ export const TextSprite = memo(function TextSprite({
     const g = ((textStyle.fill >> 8) & 0xff) / 255;
     const b = (textStyle.fill & 0xff) / 255;
 
+    // CSS fontWeight string → numeric (100–900)
+    const fw = textStyle.fontWeight;
+    const numericFontWeight = fw === 'normal' ? 400 : fw === 'bold' ? 700 : (parseInt(fw, 10) || 400);
+
+    // CSS fontStyle → numeric (0=upright, 1=italic, 2=oblique)
+    const numericFontStyle = textStyle.fontStyle === 'italic' ? 1 : textStyle.fontStyle === 'oblique' ? 2 : 0;
+
     return {
       type: 'text' as const,
       x: transform.x,
       y: transform.y,
       width: transform.width,
       height: transform.height,
-      visible: true,
+      visible: style?.display !== 'none' && style?.visibility !== 'hidden',
+      ...(skiaEffects.effects ? { effects: skiaEffects.effects } : {}),
+      ...(skiaEffects.blendMode ? { blendMode: skiaEffects.blendMode } : {}),
       text: {
         content: textContent,
         fontFamilies: [textStyle.fontFamily.split(',')[0].trim()],
         fontSize: textStyle.fontSize,
+        fontWeight: numericFontWeight,
+        fontStyle: numericFontStyle,
         color: Float32Array.of(r, g, b, 1),
+        align: textStyle.align,
         letterSpacing: textStyle.letterSpacing,
+        // leading > 0이면 명시적 lineHeight 설정 (leading=0이면 폰트 기본값 사용)
+        ...(textStyle.leading > 0 ? { lineHeight: textStyle.leading + textStyle.fontSize } : {}),
+        // textDecoration → CanvasKit 비트마스크: underline=1, overline=2, lineThrough=4
+        ...(hasDecoration ? {
+          decoration: (textDecoration.underline ? 1 : 0)
+            | (textDecoration.overline ? 2 : 0)
+            | (textDecoration.lineThrough ? 4 : 0),
+        } : {}),
         paddingLeft: padding.left,
         paddingTop: padding.top,
         maxWidth: transform.width - padding.left - padding.right,
       },
     };
-  }, [transform, textStyle, textContent, padding]);
+  }, [transform, textStyle, textContent, padding, skiaEffects, hasDecoration, textDecoration]);
 
   useSkiaNode(element.id, skiaNodeData);
 

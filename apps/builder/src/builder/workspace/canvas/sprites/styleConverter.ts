@@ -48,6 +48,10 @@ export interface CSSStyle {
   paddingBottom?: number | string;
   paddingLeft?: number | string;
   boxShadow?: string;
+  overflow?: string;
+  filter?: string;
+  backdropFilter?: string;
+  mixBlendMode?: string;
   // Layout properties
   display?: string;
   flexDirection?: string;
@@ -362,6 +366,133 @@ export function convertStyle(style: CSSStyle | undefined): ConvertedStyle {
     stroke: convertToStrokeStyle(style),
     text: convertToTextStyle(style, transform.width),
     borderRadius: convertBorderRadius(style?.borderRadius),
+  };
+}
+
+// ============================================
+// Skia Effects Builder
+// ============================================
+
+interface SkiaEffectItem {
+  type: string;
+  [key: string]: unknown;
+}
+
+interface SkiaEffectsResult {
+  effects?: SkiaEffectItem[];
+  blendMode?: string;
+}
+
+/**
+ * CSS 스타일에서 Skia 이펙트 목록과 blend mode를 추출한다.
+ *
+ * 지원 속성:
+ * - opacity → OpacityEffect
+ * - boxShadow → DropShadowEffect
+ * - filter: blur() → LayerBlurEffect
+ * - backdropFilter: blur() → BackgroundBlurEffect
+ * - mixBlendMode → blendMode string
+ */
+export function buildSkiaEffects(style: CSSStyle | undefined): SkiaEffectsResult {
+  if (!style) return {};
+
+  const effects: SkiaEffectItem[] = [];
+
+  // 1. opacity → OpacityEffect
+  if (style.opacity !== undefined) {
+    const value = parseCSSSize(style.opacity, undefined, 1);
+    if (value < 1) {
+      effects.push({ type: 'opacity', value });
+    }
+  }
+
+  // 2. boxShadow → DropShadowEffect
+  if (style.boxShadow && style.boxShadow !== 'none') {
+    const shadow = parseFirstBoxShadow(style.boxShadow);
+    if (shadow) {
+      effects.push(shadow);
+    }
+  }
+
+  // 3. filter: blur(Xpx) → LayerBlurEffect
+  if (style.filter) {
+    const blurMatch = style.filter.match(/blur\((\d+(?:\.\d+)?)(px)?\)/);
+    if (blurMatch) {
+      effects.push({ type: 'layer-blur', sigma: parseFloat(blurMatch[1]) });
+    }
+  }
+
+  // 4. backdropFilter: blur(Xpx) → BackgroundBlurEffect
+  if (style.backdropFilter) {
+    const blurMatch = style.backdropFilter.match(/blur\((\d+(?:\.\d+)?)(px)?\)/);
+    if (blurMatch) {
+      effects.push({ type: 'background-blur', sigma: parseFloat(blurMatch[1]) });
+    }
+  }
+
+  return {
+    effects: effects.length > 0 ? effects : undefined,
+    blendMode: style.mixBlendMode || undefined,
+  };
+}
+
+/**
+ * CSS boxShadow의 첫 번째 shadow를 파싱하여 DropShadowEffect로 변환
+ *
+ * 지원 포맷: [inset] offsetX offsetY [blurRadius [spreadRadius]] [color]
+ */
+function parseFirstBoxShadow(raw: string): SkiaEffectItem | null {
+  // 콤마 분리 시 괄호 안의 콤마는 제외
+  const first = raw.split(/,(?![^(]*\))/)[0].trim();
+  if (!first || first === 'none') return null;
+
+  const inner = /\binset\b/.test(first);
+  let cleaned = first.replace(/\binset\b/, '').trim();
+
+  // 색상 추출 (rgb/rgba/hsl/hsla/#hex)
+  let colorStr = 'rgba(0,0,0,1)';
+  const colorPatterns = [
+    /rgba?\([^)]+\)/,
+    /hsla?\([^)]+\)/,
+    /#[0-9a-fA-F]{3,8}/,
+  ];
+  for (const pattern of colorPatterns) {
+    const match = cleaned.match(pattern);
+    if (match) {
+      colorStr = match[0];
+      cleaned = cleaned.replace(match[0], '').trim();
+      break;
+    }
+  }
+
+  // 숫자값 추출 (px 단위 선택적)
+  const nums = cleaned.match(/-?\d+(?:\.\d+)?/g)?.map(Number) ?? [];
+  if (nums.length < 2) return null;
+
+  const dx = nums[0];
+  const dy = nums[1];
+  const blurRadius = nums[2] ?? 0;
+  // CSS blur-radius → Skia sigma (sigma ≈ blurRadius / 2)
+  const sigma = blurRadius / 2;
+
+  // 색상 → Float32Array
+  const hex = cssColorToHex(colorStr, 0x000000);
+  const alpha = cssColorToAlpha(colorStr);
+  const color = Float32Array.of(
+    ((hex >> 16) & 0xff) / 255,
+    ((hex >> 8) & 0xff) / 255,
+    (hex & 0xff) / 255,
+    alpha,
+  );
+
+  return {
+    type: 'drop-shadow',
+    dx,
+    dy,
+    sigmaX: sigma,
+    sigmaY: sigma,
+    color,
+    inner,
   };
 }
 

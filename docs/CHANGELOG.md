@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed - Skia 렌더 트리 계층화 및 Selection 좌표 통합 (2026-02-02)
+
+#### 개요
+캔버스 팬 시 Body 내 Button이 Body를 뒤따라오는 렌더링 불일치 및 Selection 오버레이가 컨텐츠와 분리되는 문제를 근본적으로 해결
+
+#### 버그 원인
+1. **Flat 트리 + worldTransform 절대 좌표**: 기존 `buildSkiaTreeFromRegistry`는 모든 노드를 flat siblings로 수집하고 각 노드의 절대 좌표를 `(wt.tx - cameraX) / zoom`으로 독립 계산. PixiJS ticker 우선순위 차이(`NORMAL` vs `LOW`)로 worldTransform 갱신 타이밍이 달라 노드 간 상대 위치 오차 발생
+2. **Selection 좌표 소스 불일치**: `buildSelectionRenderData`가 elementRegistry/하드코딩 좌표를 사용하여 컨텐츠 렌더링과 다른 좌표 소스 참조
+
+#### 수정 내용
+- `buildSkiaTreeFromRegistry` → `buildSkiaTreeHierarchical`로 교체: 계층적 트리 + worldTransform 부모-자식 상대 좌표
+  - 핵심 공식: `relativeX = (child.wt.tx - parent.wt.tx) / cameraZoom` — 카메라 오프셋이 뺄셈 시 상쇄
+- `buildTreeBoundsMap`: Skia 트리에서 절대 바운드 추출, Selection이 컨텐츠와 동일한 좌표 소스 참조
+- `aiEffects.ts` `buildNodeBoundsMap`: 계층 트리에서 부모 오프셋 누적으로 절대 좌표 복원
+
+#### 변경된 파일
+- `canvas/skia/SkiaOverlay.tsx` — 계층 트리 구성, Selection 좌표 통합
+- `canvas/skia/aiEffects.ts` — AI 이펙트 좌표 누적 수정
+
+---
+
 ### Added - Skia 렌더링 파이프라인 완성 (2026-02-02)
 
 #### 개요
@@ -55,13 +76,37 @@ Skia 렌더링 파이프라인의 남은 기능 8건을 모두 구현하여 Penc
 
 ---
 
+### Fixed - Skia UI 컴포넌트 Variant 배경/테두리 색상 매핑 (2026-02-02)
+
+#### 개요
+프로퍼티 패널에서 UI 컴포넌트(Button 등)의 variant를 변경해도 Skia 캔버스에 배경색/테두리색이 반영되지 않는 문제 수정
+
+#### 버그 원인
+`ElementSprite.tsx`의 Skia 폴백 렌더링에서 배경색을 `#e2e8f0`(slate-200), 테두리색을 `#cbd5e1`(slate-300)로 하드코딩
+
+#### 수정 내용
+- `VARIANT_BG_COLORS`: variant별 배경색 매핑 (8개 variant, M3 Light Mode 기준)
+- `VARIANT_BG_ALPHA`: outline/ghost variant → alpha 0 (투명 배경)
+- `VARIANT_BORDER_COLORS`: variant별 테두리색 매핑 (ghost는 테두리 없음)
+- 우선순위: `inline style.backgroundColor > VARIANT_BG_COLORS[variant] > 기본값`
+
+#### 변경된 파일
+- `canvas/sprites/ElementSprite.tsx` — VARIANT_BG_COLORS, VARIANT_BG_ALPHA, VARIANT_BORDER_COLORS 추가
+- `docs/COMPONENT_SPEC_ARCHITECTURE.md` — §4.5 variant 배경/테두리 색상 테이블 추가
+- `docs/reference/components/PIXI_WEBGL.md` — Skia 폴백 variant 색상 매핑 섹션 추가
+- `docs/WASM.md` — UI 컴포넌트 variant 배경/테두리 색상 노트 추가
+- `docs/adr/003-canvas-rendering.md` — variant 색상 매핑 업데이트 항목 추가
+- `docs/LAYOUT_REQUIREMENTS.md` — skiaNodeData 예시에 variant 색상 매핑 반영
+
+---
+
 ### Fixed - Skia AABB 뷰포트 컬링 좌표계 버그 수정 (2026-02-02)
 
 #### 개요
 캔버스 팬 시 body가 화면 왼쪽/위쪽 가장자리에 닿으면 모든 Skia 렌더링이 사라지는 문제 수정
 
 #### 버그 원인 (2가지)
-1. **루트 컨테이너 zero-size 컬링**: `buildSkiaTreeFromRegistry`가 생성하는 가상 루트 노드 `{x:0, y:0, width:0, height:0}`에 AABB 컬링이 적용되어, 카메라가 원점을 벗어나면 (`cameraX < 0` 또는 `cameraY < 0`) 루트가 컬링 → 전체 렌더링 소실
+1. **루트 컨테이너 zero-size 컬링**: `buildSkiaTreeFromRegistry`(현재 `buildSkiaTreeHierarchical`로 교체됨)가 생성하는 가상 루트 노드 `{x:0, y:0, width:0, height:0}`에 AABB 컬링이 적용되어, 카메라가 원점을 벗어나면 (`cameraX < 0` 또는 `cameraY < 0`) 루트가 컬링 → 전체 렌더링 소실
 2. **자식 좌표계 불일치**: `canvas.translate(node.x, node.y)` 후 자식은 부모 로컬 좌표에 있지만, `cullingBounds`는 씬-로컬 좌표로 전달되어 텍스트 등 자식 노드가 잘못 컬링됨
 
 #### 수정 내용

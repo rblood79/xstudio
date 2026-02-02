@@ -10,15 +10,15 @@
 
 import { useExtend } from '@pixi/react';
 import { PIXI_COMPONENTS } from '../pixiSetup';
-import { useCallback, useMemo, useState, useEffect, useRef, memo } from 'react';
+import { useCallback, useMemo, useState, useEffect, memo } from 'react';
 import { Graphics as PixiGraphics, Texture, Assets } from 'pixi.js';
 import type { Element } from '../../../../types/core/store.types';
-import { convertStyle, type CSSStyle } from './styleConverter';
+import { convertStyle, buildSkiaEffects, type CSSStyle } from './styleConverter';
 import { parsePadding, getContentBounds } from './paddingUtils';
 import { drawBox, parseBorderConfig } from '../utils';
 import { useSkiaNode } from '../skia/useSkiaNode';
 import { WASM_FLAGS } from '../wasm-bindings/featureFlags';
-import { loadSkImage, getSkImage, releaseSkImage } from '../skia/imageCache';
+import { loadSkImage, releaseSkImage } from '../skia/imageCache';
 import type { Image as SkImage } from 'canvaskit-wasm';
 
 // ============================================
@@ -190,34 +190,39 @@ export const ImageSprite = memo(function ImageSprite({ element, onClick }: Image
 
   // Phase 6: CanvasKit 이미지 로딩 (imageCache 사용)
   const [skImage, setSkImage] = useState<SkImage | null>(null);
-  const skImageSrcRef = useRef<string>('');
 
   useEffect(() => {
     if (!WASM_FLAGS.CANVASKIT_RENDERER || !src) return;
 
     let cancelled = false;
-    skImageSrcRef.current = src;
+    const currentSrc = src; // cleanup에서 사용할 src 캡처 (ref 대신)
+    let loaded = false;
 
-    // 캐시에서 동기 조회 시도
-    const cached = getSkImage(src);
-    if (cached) {
-      setSkImage(cached);
-      return;
-    }
-
-    // 비동기 로딩
-    loadSkImage(src).then((img) => {
-      if (cancelled) return;
+    // loadSkImage는 캐시 히트 시에도 refCount를 증가시키므로
+    // 동기 getSkImage()는 사용하지 않는다 (refCount 불일치 방지)
+    loadSkImage(currentSrc).then((img) => {
+      if (cancelled) {
+        // 이미 cleanup 실행됨 → 로드된 이미지 해제
+        if (img) releaseSkImage(currentSrc);
+        return;
+      }
+      loaded = true;
       setSkImage(img);
     });
 
     return () => {
       cancelled = true;
-      if (skImageSrcRef.current) {
-        releaseSkImage(skImageSrcRef.current);
+      setSkImage(null);
+      // 이미 로드 완료된 경우에만 해제
+      // (미완료 시 then 핸들러에서 cancelled 체크 후 해제)
+      if (loaded) {
+        releaseSkImage(currentSrc);
       }
     };
   }, [src]);
+
+  // Skia effects (opacity, boxShadow, filter, backdropFilter, mixBlendMode)
+  const skiaEffects = useMemo(() => buildSkiaEffects(style), [style]);
 
   // Skia 렌더 데이터
   const skiaNodeData = useMemo(() => {
@@ -229,7 +234,9 @@ export const ImageSprite = memo(function ImageSprite({ element, onClick }: Image
       y: transform.y,
       width: transform.width,
       height: transform.height,
-      visible: true,
+      visible: style?.display !== 'none' && style?.visibility !== 'hidden',
+      ...(skiaEffects.effects ? { effects: skiaEffects.effects } : {}),
+      ...(skiaEffects.blendMode ? { blendMode: skiaEffects.blendMode } : {}),
       image: {
         skImage: skImage,
         contentX: contentBounds.x,
@@ -238,7 +245,7 @@ export const ImageSprite = memo(function ImageSprite({ element, onClick }: Image
         contentHeight: contentBounds.height,
       },
     };
-  }, [transform, contentBounds, skImage]);
+  }, [transform, contentBounds, skImage, skiaEffects]);
 
   useSkiaNode(element.id, skiaNodeData);
 

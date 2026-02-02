@@ -1,7 +1,7 @@
 # xstudio WASM 렌더링 아키텍처 전환 계획
 
 > 작성일: 2026-01-29
-> 최종 수정: 2026-02-02 (렌더링 파이프라인 100% 완성: MeshGradient, LayerBlur, Phase 6, G.4 킷 — 11차 수정)
+> 최종 수정: 2026-02-02 (계층적 Skia 트리 + Selection 좌표 통합 — 12차 수정)
 > 대상: `apps/builder/src/builder/workspace/canvas/`
 > 현재 스택: CanvasKit/Skia WASM + PixiJS v8.14.3 (이벤트 전용) + Yoga WASM v3.2.1 + Rust WASM (성능 가속) + Zustand
 > 참고: Pencil Desktop v1.1.10 아키텍처 분석 기반 (`docs/PENCIL_APP_ANALYSIS.md` §11)
@@ -2088,8 +2088,19 @@ renderSkia(canvas: Canvas, cullingBounds: DOMRect): void {
 > `ElementSprite`가 UI 컴포넌트(Button, Badge, Input 등)의 `skiaNodeData`에
 > 텍스트 children을 포함하여 등록한다. `props.children/text/label/value/placeholder/count`에서
 > 텍스트를 추출하고, variant별 색상/size별 폰트 크기를 적용한다.
-> `SkiaOverlay.buildSkiaTreeFromRegistry()`가 실제 컨테이너 크기로 텍스트 위치를 보정한다.
+> `SkiaOverlay.buildSkiaTreeHierarchical()`가 계층적 Skia 트리를 구성하며, 실제 컨테이너 크기로 텍스트 위치를 보정한다.
 > 폰트는 Pretendard woff2를 `SkiaOverlay` 초기화 시 로드한다.
+>
+> **계층적 Skia 트리 (2026-02-02):** 기존 flat 트리(`buildSkiaTreeFromRegistry`)에서 계층적 트리(`buildSkiaTreeHierarchical`)로 전환.
+> worldTransform 부모-자식 간 상대 좌표 계산으로 팬 중에도 부모-자식 상대 위치가 항상 정확.
+> 핵심 공식: `relativeX = (child.wt.tx - parent.wt.tx) / cameraZoom` — 카메라 오프셋이 뺄셈 시 상쇄.
+> Selection 오버레이도 동일한 Skia 트리 좌표 소스(`buildTreeBoundsMap`)를 참조하여 컨텐츠와 항상 동기화.
+>
+> **UI 컴포넌트 variant 배경/테두리 색상** (2026-02-02 추가):
+> `ElementSprite`가 `props.variant`를 읽어 `VARIANT_BG_COLORS`, `VARIANT_BG_ALPHA`,
+> `VARIANT_BORDER_COLORS` 상수 테이블에서 배경색·알파·테두리색을 결정한다.
+> outline/ghost variant는 `bgAlpha=0`(투명), ghost는 테두리도 없음.
+> inline `style.backgroundColor`가 있으면 variant 매핑보다 우선.
 
 ### 5.4 SkiaRenderer 렌더 루프
 
@@ -2488,8 +2499,9 @@ const RENDER_MODE = import.meta.env.VITE_RENDER_MODE; // 'pixi' | 'skia' | 'hybr
 | `canvas/skia/initCanvasKit.ts` | CanvasKit WASM 초기화 | ✅ 구현 |
 | `canvas/skia/createSurface.ts` | GPU Surface 생성 (WebGL → SW 폴백) | ✅ 구현 |
 | `canvas/skia/SkiaRenderer.ts` | 렌더 루프 (renderSkia 트리 순회) | ✅ 구현 (`SkiaOverlay.tsx`) |
+| `canvas/skia/SkiaOverlay.tsx` | 계층적 Skia 트리 구성 (`buildSkiaTreeHierarchical`) + Selection 좌표 통합 (`buildTreeBoundsMap`) | ✅ 수정 (2026-02-02) |
 | `canvas/skia/selectionRenderer.ts` | Selection 오버레이 렌더링 (선택 박스, 핸들, 라쏘) | ✅ 구현 (2026-02-01) |
-| `canvas/skia/aiEffects.ts` | AI 생성 이펙트 (generating 애니메이션, flash) | ✅ 구현 |
+| `canvas/skia/aiEffects.ts` | AI 생성 이펙트 (generating 애니메이션, flash) + 계층 트리 절대 좌표 누적 | ✅ 수정 (2026-02-02) |
 | `canvas/skia/disposable.ts` | CanvasKit 리소스 수동 해제 래퍼 (Disposable 패턴) | ✅ 구현 |
 | `canvas/skia/fills.ts` | 6종 Fill Shader 구현 | ✅ 구현 |
 | `canvas/skia/effects.ts` | 이펙트 파이프라인 (opacity, blur, shadow) | ✅ 구현 |

@@ -18,7 +18,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { RefObject } from 'react';
 import type { Application, Container } from 'pixi.js';
 import { SkiaRenderer } from './SkiaRenderer';
-import { getSkiaNode, getRegistryVersion, flushDirtyRects } from './useSkiaNode';
+import { getSkiaNode, getRegistryVersion, flushDirtyRects, clearSkiaRegistry } from './useSkiaNode';
 import { renderNode } from './nodeRenderers';
 import type { SkiaNodeData } from './nodeRenderers';
 import { isCanvasKitInitialized, getCanvasKit } from './initCanvasKit';
@@ -34,6 +34,7 @@ import { getElementBoundsSimple } from '../elementRegistry';
 import { calculateCombinedBounds } from '../selection/types';
 import type { BoundingBox, DragState } from '../selection/types';
 import { watchContextLoss } from './createSurface';
+import { clearImageCache } from './imageCache';
 
 interface SkiaOverlayProps {
   /** 부모 컨테이너 DOM 요소 */
@@ -57,86 +58,123 @@ function findCameraContainer(stage: Container): Container | null {
 }
 
 /**
- * PixiJS 씬 그래프 순회 + 레지스트리 조회로 Skia 렌더 트리를 구성한다.
+ * text children의 크기/정렬을 실제 컨테이너 크기에 맞춰 갱신한다.
+ * (ElementSprite의 useMemo 시점에는 style 기본값만 사용 가능하므로)
+ */
+function updateTextChildren(
+  children: SkiaNodeData[] | undefined,
+  parentWidth: number,
+  parentHeight: number,
+): SkiaNodeData[] | undefined {
+  return children?.map((child: SkiaNodeData) => {
+    if (child.type === 'text' && child.text) {
+      const fontSize = child.text.fontSize || 14;
+      const lineHeight = fontSize * 1.2;
+      return {
+        ...child,
+        width: parentWidth,
+        height: parentHeight,
+        text: {
+          ...child.text,
+          maxWidth: parentWidth,
+          paddingTop: Math.max(0, (parentHeight - lineHeight) / 2),
+        },
+      };
+    }
+    return child;
+  });
+}
+
+/**
+ * PixiJS 씬 그래프를 계층적으로 순회하여 Skia 렌더 트리를 구성한다.
  *
- * PixiJS Container의 label이 elementId 형식(UUID)인 노드를 탐색하고,
- * 레지스트리에서 해당 elementId의 SkiaNodeData를 조회한다.
- * Container의 worldTransform에서 카메라 변환을 제거하여 씬-로컬 좌표로 변환한다.
+ * worldTransform에서 부모-자식 간 상대 좌표를 계산하여 계층 구조를 보존한다.
  *
- * @param root - 탐색 시작 컨테이너 (app.stage)
- * @param cameraX - Camera 컨테이너 X (panOffset.x)
- * @param cameraY - Camera 컨테이너 Y (panOffset.y)
+ * 핵심 공식:
+ *   relativeX = (child.wt.tx - parent.wt.tx) / cameraZoom
+ *
+ * parent.wt.tx와 child.wt.tx 모두 동일한 (stale) cameraX를 포함하므로
+ * 뺄셈 시 카메라 오프셋이 상쇄된다. 따라서 팬 중에도 부모-자식 상대 위치는
+ * worldTransform 갱신 타이밍과 무관하게 항상 정확하다.
+ *
+ * 이전 flat 트리 방식은 모든 노드의 절대 좌표를
+ * (wt.tx - cameraX) / zoom 으로 독립 계산했기 때문에
+ * wt.tx 갱신 타이밍 차이가 노드 간 상대 위치 오차로 직결되었다.
+ *
+ * @param cameraContainer - Camera 컨테이너 (탐색 시작점)
+ * @param cameraX - Camera X (현재 panOffset.x)
+ * @param cameraY - Camera Y (현재 panOffset.y)
  * @param cameraZoom - Camera 스케일 (줌 레벨)
  */
-function buildSkiaTreeFromRegistry(
-  root: Container,
+function buildSkiaTreeHierarchical(
+  cameraContainer: Container,
   cameraX: number,
   cameraY: number,
   cameraZoom: number,
 ): SkiaNodeData | null {
-  const children: SkiaNodeData[] = [];
 
-  function traverse(container: Container): void {
-    // label이 있으면 레지스트리에서 조회
-    if (container.label) {
-      const nodeData = getSkiaNode(container.label);
-      if (nodeData) {
-        // PixiJS 월드 변환에서 카메라 변환을 제거하여 씬-로컬 좌표 추출
-        const wt = container.worldTransform;
-        const localX = (wt.tx - cameraX) / cameraZoom;
-        const localY = (wt.ty - cameraY) / cameraZoom;
+  /**
+   * PixiJS 컨테이너 트리를 재귀 순회하며 계층적 Skia 노드를 수집한다.
+   *
+   * @param container - 현재 탐색 중인 PixiJS 컨테이너
+   * @param parentAbsX - 부모 labeled 노드의 씬-로컬 절대 X 좌표
+   * @param parentAbsY - 부모 labeled 노드의 씬-로컬 절대 Y 좌표
+   */
+  function traverse(container: Container, parentAbsX: number, parentAbsY: number): SkiaNodeData[] {
+    const results: SkiaNodeData[] = [];
 
-        // PixiJS 컨테이너의 실제 크기 사용 (Yoga 레이아웃 결과)
-        // CSS style에 명시적 width/height가 없는 요소(Button 등)는
-        // nodeData에 기본값(100x100)이 들어있으므로 컨테이너 크기로 덮어쓴다.
-        const actualWidth = container.width > 0 ? container.width : nodeData.width;
-        const actualHeight = container.height > 0 ? container.height : nodeData.height;
-
-        // text children의 크기/정렬도 실제 컨테이너 크기에 맞춰 갱신
-        // (ElementSprite의 useMemo 시점에는 style 기본값만 사용 가능하므로)
-        const updatedChildren = nodeData.children?.map((child: SkiaNodeData) => {
-          if (child.type === 'text' && child.text) {
-            const fontSize = child.text.fontSize || 14;
-            const lineHeight = fontSize * 1.2;
-            return {
-              ...child,
-              width: actualWidth,
-              height: actualHeight,
-              text: {
-                ...child.text,
-                maxWidth: actualWidth,
-                paddingTop: Math.max(0, (actualHeight - lineHeight) / 2),
-              },
-            };
-          }
-          return child;
-        });
-
-        children.push({
-          ...nodeData,
-          elementId: container.label, // G.3: AI 이펙트 타겟팅용
-          x: localX,
-          y: localY,
-          width: actualWidth,
-          height: actualHeight,
-          children: updatedChildren,
-        });
-        // 중첩 요소를 위해 자식 탐색을 계속한다.
-        // 각 자식 요소도 자체 label + useSkiaNode 등록을 가지므로
-        // 플랫 리스트에 독립적으로 추가된다.
-      }
-    }
-
-    // 컨테이너: 자식 재귀
     for (const child of container.children) {
-      if ('children' in child) {
-        traverse(child as Container);
+      if (!('children' in child)) continue;
+      const c = child as Container;
+
+      if (c.label) {
+        const nodeData = getSkiaNode(c.label);
+        if (nodeData) {
+          // worldTransform에서 씬-로컬 절대 좌표 계산
+          const wt = c.worldTransform;
+          const absX = (wt.tx - cameraX) / cameraZoom;
+          const absY = (wt.ty - cameraY) / cameraZoom;
+
+          // 부모 기준 상대 좌표
+          // (parent.wt와 child.wt 모두 동일한 stale cameraX를 포함하므로
+          //  뺄셈 시 카메라 오프셋이 상쇄되어 상대 위치는 항상 정확)
+          const relX = absX - parentAbsX;
+          const relY = absY - parentAbsY;
+
+          // PixiJS 컨테이너의 실제 크기 사용 (Yoga 레이아웃 결과)
+          const actualWidth = c.width > 0 ? c.width : nodeData.width;
+          const actualHeight = c.height > 0 ? c.height : nodeData.height;
+
+          // 내부 자식 (text 등) 크기 갱신
+          const updatedInternalChildren = updateTextChildren(
+            nodeData.children, actualWidth, actualHeight,
+          );
+
+          // 하위 element 자식 재귀 (이 노드의 절대 좌표를 부모로 전달)
+          const elementChildren = traverse(c, absX, absY);
+
+          results.push({
+            ...nodeData,
+            elementId: c.label, // G.3: AI 이펙트 타겟팅용
+            x: relX,            // 부모 labeled 노드 기준 상대 좌표
+            y: relY,
+            width: actualWidth,
+            height: actualHeight,
+            children: [...(updatedInternalChildren || []), ...elementChildren],
+          });
+          continue; // 이미 자식 순회 완료
+        }
       }
+
+      // label 없거나 레지스트리 미등록 → 부모 절대 좌표 유지하며 하위 탐색
+      const childResults = traverse(c, parentAbsX, parentAbsY);
+      results.push(...childResults);
     }
+
+    return results;
   }
 
-  traverse(root);
-
+  const children = traverse(cameraContainer, 0, 0);
   if (children.length === 0) return null;
 
   return {
@@ -158,15 +196,51 @@ interface SelectionRenderResult {
 }
 
 /**
- * Selection 렌더 데이터를 Zustand 스토어에서 수집한다.
+ * Skia 렌더 트리에서 각 element의 씬-로컬 절대 바운드를 추출한다.
  *
- * 매 프레임 getState()로 읽기 (React 구독 없음).
- * 글로벌 좌표를 씬-로컬 좌표로 변환하여 반환.
+ * 계층 트리에서 부모 오프셋을 누적하여 절대 좌표를 복원한다.
+ * 컨텐츠 렌더링과 동일한 좌표 소스(worldTransform 기반)를 사용하므로
+ * Selection 오버레이와 컨텐츠가 항상 동기화된다.
+ */
+function buildTreeBoundsMap(tree: SkiaNodeData): Map<string, BoundingBox> {
+  const boundsMap = new Map<string, BoundingBox>();
+
+  function traverse(node: SkiaNodeData, parentX: number, parentY: number): void {
+    const absX = parentX + node.x;
+    const absY = parentY + node.y;
+
+    if (node.elementId) {
+      boundsMap.set(node.elementId, {
+        x: absX,
+        y: absY,
+        width: node.width,
+        height: node.height,
+      });
+    }
+
+    if (node.children) {
+      for (const child of node.children) {
+        traverse(child, absX, absY);
+      }
+    }
+  }
+
+  traverse(tree, 0, 0);
+  return boundsMap;
+}
+
+/**
+ * Selection 렌더 데이터를 수집한다.
+ *
+ * Skia 트리의 절대 바운드를 사용하여 컨텐츠 렌더링과 동일한 좌표 소스를 참조한다.
+ * 이전 방식(elementRegistry/하드코딩 좌표)은 팬 시 worldTransform 타이밍 불일치로
+ * Selection이 컨텐츠와 분리되는 문제가 있었다.
  */
 function buildSelectionRenderData(
   cameraX: number,
   cameraY: number,
   cameraZoom: number,
+  treeBoundsMap: Map<string, BoundingBox>,
   dragStateRef?: RefObject<DragState | null>,
 ): SelectionRenderResult {
   const state = useStore.getState();
@@ -183,24 +257,22 @@ function buildSelectionRenderData(
       const el = state.elementsMap.get(id);
       if (!el || el.page_id !== currentPageId) continue;
 
-      // Body 요소는 Skia 레지스트리에서 직접 크기를 가져온다
-      // (PixiJS getBounds()가 alpha:0 상태에서 정확하지 않을 수 있음)
-      if (el.tag?.toLowerCase() === 'body') {
-        const skiaData = getSkiaNode(id);
-        if (skiaData) {
-          boxes.push({
-            x: 0,
-            y: 0,
-            width: skiaData.width / cameraZoom,
-            height: skiaData.height / cameraZoom,
-          });
-        }
+      // Skia 트리에서 바운드 조회 (컨텐츠 렌더링과 동일한 worldTransform 기반 좌표)
+      // tree bounds는 이미 씬-로컬 좌표이므로 zoom 보정 불필요
+      const treeBounds = treeBoundsMap.get(id);
+      if (treeBounds) {
+        boxes.push({
+          x: treeBounds.x,
+          y: treeBounds.y,
+          width: treeBounds.width,
+          height: treeBounds.height,
+        });
         continue;
       }
 
+      // 트리에 없는 요소는 elementRegistry 폴백
       const globalBounds = getElementBoundsSimple(id);
       if (globalBounds) {
-        // 글로벌 → 씬-로컬 좌표 변환
         boxes.push({
           x: (globalBounds.x - cameraX) / cameraZoom,
           y: (globalBounds.y - cameraY) / cameraZoom,
@@ -369,10 +441,12 @@ export function SkiaOverlay({ containerEl, backgroundColor = 0xf8fafc, app, drag
       const cameraY = cameraContainer?.y ?? 0;
       const cameraZoom = Math.max(cameraContainer?.scale?.x ?? 1, 0.001);
 
-      // 매 프레임 트리 재구성 (씬-로컬 좌표로 변환)
-      // registryVersion 기반 idle 프레임 스킵은 useEffect/rAF 타이밍 차이로
-      // 스타일 변경을 놓칠 수 있어, 매 프레임 렌더링으로 안정성을 우선한다.
-      const tree = buildSkiaTreeFromRegistry(stage, cameraX, cameraY, cameraZoom);
+      // 매 프레임 계층적 Skia 트리 재구성
+      // worldTransform 기반이지만, 부모-자식 간 상대 좌표로 변환하여
+      // 팬/줌 중에도 부모-자식 상대 위치가 항상 정확하다.
+      const tree = cameraContainer
+        ? buildSkiaTreeHierarchical(cameraContainer, cameraX, cameraY, cameraZoom)
+        : null;
       if (!tree) return;
 
       // 씬-로컬 좌표계에서의 가시 영역 (컬링용)
@@ -416,7 +490,9 @@ export function SkiaOverlay({ containerEl, backgroundColor = 0xf8fafc, app, drag
           }
 
           // Phase 4-6: Selection 오버레이 (Pencil 방식 — Skia에서 직접 렌더링)
-          const selectionData = buildSelectionRenderData(cameraX, cameraY, cameraZoom, dragStateRef);
+          // Skia 트리의 절대 바운드를 추출하여 Selection이 컨텐츠와 동일한 좌표 소스를 참조
+          const treeBoundsMap = buildTreeBoundsMap(tree);
+          const selectionData = buildSelectionRenderData(cameraX, cameraY, cameraZoom, treeBoundsMap, dragStateRef);
           if (selectionData.bounds) {
             renderSelectionBox(ck, canvas, selectionData.bounds, cameraZoom);
             if (selectionData.showHandles) {
@@ -506,6 +582,20 @@ export function SkiaOverlay({ containerEl, backgroundColor = 0xf8fafc, app, drag
     };
   }, [ready, isActive, app, containerEl, backgroundColor, renderMode]);
 
+  // 페이지 전환 시 Skia 레지스트리 + 이미지 캐시 초기화
+  // 개별 Sprite unmount의 useEffect cleanup보다 선행하여
+  // stale 노드가 전환 프레임에 렌더링되는 것을 방지한다.
+  const currentPageId = useStore((s) => s.currentPageId);
+  const prevPageIdRef = useRef(currentPageId);
+
+  useEffect(() => {
+    if (prevPageIdRef.current !== currentPageId) {
+      prevPageIdRef.current = currentPageId;
+      clearSkiaRegistry();
+      clearImageCache();
+    }
+  }, [currentPageId]);
+
   // 리사이즈 대응 (디바운싱 150ms — surface 재생성은 비용이 크므로)
   useEffect(() => {
     if (!ready || !isActive || !canvasRef.current) return;
@@ -536,9 +626,22 @@ export function SkiaOverlay({ containerEl, backgroundColor = 0xf8fafc, app, drag
 
     observer.observe(containerEl);
 
+    // DPR 변경 감지 (외부 모니터 이동 시)
+    const dprQuery = matchMedia(`(resolution: ${window.devicePixelRatio}dppx)`);
+    const handleDprChange = () => {
+      if (!canvasRef.current || !rendererRef.current) return;
+      const newDpr = window.devicePixelRatio || 1;
+      const rect = containerEl.getBoundingClientRect();
+      canvasRef.current.width = Math.floor(rect.width * newDpr);
+      canvasRef.current.height = Math.floor(rect.height * newDpr);
+      rendererRef.current.resize(canvasRef.current);
+    };
+    dprQuery.addEventListener('change', handleDprChange);
+
     return () => {
       if (resizeTimer) clearTimeout(resizeTimer);
       observer.disconnect();
+      dprQuery.removeEventListener('change', handleDprChange);
     };
   }, [ready, isActive, containerEl]);
 
