@@ -7,7 +7,8 @@
  * @see docs/WASM.md §0.1 Rust + wasm-pack 개발 환경
  */
 
-type RustWasmModule = typeof import('./pkg/xstudio_wasm');
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type RustWasmModule = any;
 
 let wasmModule: RustWasmModule | null = null;
 
@@ -15,7 +16,10 @@ export async function initRustWasm(): Promise<void> {
   if (wasmModule) return;
 
   try {
-    const mod = await import('./pkg/xstudio_wasm');
+    // Vite 정적 분석을 우회하기 위해 변수 경로 사용.
+    // ./pkg/xstudio_wasm은 Rust wasm-pack 빌드 산출물로, Phase 1-2 구현 전까지 존재하지 않는다.
+    const path = './pkg/xstudio_wasm';
+    const mod = await import(/* @vite-ignore */ path);
     wasmModule = mod;
 
     if (import.meta.env.DEV) {

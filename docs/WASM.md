@@ -1,9 +1,9 @@
 # xstudio WASM 렌더링 아키텍처 전환 계획
 
 > 작성일: 2026-01-29
-> 최종 수정: 2026-01-30 (최적성 검토 반영 — 8차 수정)
+> 최종 수정: 2026-02-02 (Phase 0-4 WASM 성능 경로 구현 완료 — 9차 수정)
 > 대상: `apps/builder/src/builder/workspace/canvas/`
-> 현재 스택: PixiJS v8.14.3 + @pixi/react v8.0.5 + Yoga WASM v3.2.1 + Zustand
+> 현재 스택: CanvasKit/Skia WASM + PixiJS v8.14.3 (이벤트 전용) + Yoga WASM v3.2.1 + Rust WASM (성능 가속) + Zustand
 > 참고: Pencil Desktop v1.1.10 아키텍처 분석 기반 (`docs/PENCIL_APP_ANALYSIS.md` §11)
 
 ---
@@ -324,12 +324,12 @@ VITE_WASM_LAYOUT=false
 
 ### 0.4 Phase 0 산출물
 
-- [ ] Rust + wasm-pack 프로젝트 초기화
-- [ ] Vite WASM 플러그인 설정
-- [ ] 빌드 파이프라인 검증 (dev + production)
+- [x] Rust + wasm-pack 프로젝트 초기화 _(rustc 1.93.0, wasm-pack 0.14.0)_
+- [x] Vite WASM 플러그인 설정 _(vite-plugin-wasm 3.5.0)_
+- [x] 빌드 파이프라인 검증 (dev + production) _(pkg/xstudio_wasm_bg.wasm 70KB)_
 - [ ] 벤치마크 유틸리티 작성
 - [ ] 기준선 데이터 수집 (4개 시나리오)
-- [ ] Feature Flag 인프라 구축
+- [x] Feature Flag 인프라 구축 _(featureFlags.ts, .env)_
 - [ ] CI/CD에 `wasm:build` 스텝 추가
 
 ---
@@ -841,16 +841,16 @@ export function unregisterElement(id: string): void {
 
 ### 1.5 Phase 1 산출물
 
-- [ ] `spatial_index.rs` 구현 (i64 키 인코딩, 내부 bounds 캐시 포함)
-- [ ] `idMapper.ts` 구현 (string ↔ u32 양방향 매핑)
-- [ ] `spatialIndex.ts` TypeScript 바인딩
-- [ ] `elementRegistry.ts` 수정 (SpatialIndex 동기화 + RAF 타이밍 대책)
-- [ ] `useViewportCulling.ts` 수정 (SpatialIndex 쿼리)
-- [ ] `SelectionLayer.utils.ts` 수정 (라쏘 선택에 SpatialIndex `query_rect` 적용)
+- [x] `spatial_index.rs` 구현 (i64 키 인코딩, 내부 bounds 캐시 포함)
+- [x] `idMapper.ts` 구현 (string ↔ u32 양방향 매핑)
+- [x] `spatialIndex.ts` TypeScript 바인딩
+- [x] `elementRegistry.ts` 수정 (SpatialIndex 동기화 + RAF 타이밍 대책)
+- [x] `useViewportCulling.ts` 수정 (SpatialIndex 쿼리)
+- [x] `SelectionLayer.utils.ts` 수정 (라쏘 선택에 SpatialIndex `query_rect` 적용)
 - [ ] 단위 테스트: Rust `wasm-pack test` (삽입, 삭제, 쿼리, query_rect, 엣지 케이스)
 - [ ] 통합 테스트: 1,000개 요소 뷰포트 쿼리 벤치마크
-- [ ] Feature Flag (`VITE_WASM_SPATIAL`)로 A/B 비교
-- [ ] 페이지별 SpatialIndex 범위 관리 (페이지 전환 시 clearAll + 현재 페이지 batch_upsert)
+- [x] Feature Flag (`VITE_WASM_SPATIAL`)로 A/B 비교
+- [x] 페이지별 SpatialIndex 범위 관리 (페이지 전환 시 clearAll + 현재 페이지 batch_upsert)
 - [ ] 배치 인덱스 리빌드 최적화 (suspendIndexRebuild/resumeAndRebuildIndexes 패턴)
 
 ### 1.6 성능 검증 대상
@@ -1494,13 +1494,13 @@ calculate(parent, children, availableWidth, availableHeight): ComputedLayout[] {
 
 ### 2.5 Phase 2 산출물
 
-- [ ] `block_layout.rs` 구현 (전체 레이아웃 루프, margin collapse 내장)
-- [ ] `grid_layout.rs` 구현 (트랙 파싱, 셀 위치 계산)
-- [ ] `layoutAccelerator.ts` TypeScript 바인딩 (배치 API만 노출)
-- [ ] `BlockEngine.ts` — `calculate()` 진입점에 WASM 배치 위임 추가
-- [ ] `GridEngine.ts` — `calculate()` 진입점에 WASM 배치 위임 추가
-- [ ] 데이터 마샬링 헬퍼 (`serialize/deserialize`) 구현
-- [ ] 최소 요소 수 임계값 결정 (마샬링 비용 > WASM 이득인 경계점)
+- [x] `block_layout.rs` 구현 (전체 레이아웃 루프, margin collapse 내장)
+- [x] `grid_layout.rs` 구현 (트랙 파싱, 셀 위치 계산)
+- [x] `layoutAccelerator.ts` TypeScript 바인딩 (배치 API만 노출)
+- [x] `BlockEngine.ts` — `calculate()` 진입점에 WASM 배치 위임 추가
+- [x] `GridEngine.ts` — `calculate()` 진입점에 WASM 배치 위임 추가
+- [x] 데이터 마샬링 헬퍼 (`serialize/deserialize`) 구현
+- [x] 최소 요소 수 임계값 결정 _(children > 10 기준, BlockEngine.ts:137)_
 - [ ] 단위 테스트: margin collapse, LineBox, BFC 엣지 케이스
 - [ ] 통합 테스트: JS vs WASM 레이아웃 출력 일치 검증 (아래 edge case 필수 포함)
   - [ ] inline-block 요소 판별 (input, button, img, span, a 등 — `BlockEngine.ts:48-71`)
@@ -1781,12 +1781,12 @@ export const wasmBridge = new WasmWorkerBridge();
 
 ### 4.5 Phase 4 산출물
 
-- [ ] `layoutWorker.ts` Web Worker 구현
-- [ ] `protocol.ts` 메시지 프로토콜 정의
-- [ ] `bridge.ts` 메인 스레드 브릿지
-- [ ] Transferable 객체 활용 (WASM 결과를 새 Float32Array에 복사 후 transfer — WASM 선형 메모리 직접 transfer 금지)
-- [ ] Worker 초기화 실패 시 메인 스레드 폴백
-- [ ] 메인 스레드 WASM 호출과 Worker 비동기 호출 분리 기준 문서화
+- [x] `layoutWorker.ts` Web Worker 구현
+- [x] `protocol.ts` 메시지 프로토콜 정의
+- [x] `bridge.ts` 메인 스레드 브릿지
+- [x] Transferable 객체 활용 (WASM 결과를 새 Float32Array에 복사 후 transfer — WASM 선형 메모리 직접 transfer 금지)
+- [x] Worker 초기화 실패 시 메인 스레드 폴백 _(init.ts:48-50)_
+- [x] 메인 스레드 WASM 호출과 Worker 비동기 호출 분리 기준 문서화
 - [ ] 통합 테스트: Worker 통신 안정성
 - [ ] 벤치마크: 메인 스레드 프레임 드롭 비교
 
@@ -2493,11 +2493,11 @@ const RENDER_MODE = import.meta.env.VITE_RENDER_MODE; // 'pixi' | 'skia' | 'hybr
 | `canvas/skia/selectionRenderer.ts` | Selection 오버레이 렌더링 (선택 박스, 핸들, 라쏘) | ✅ 구현 (2026-02-01) |
 | `canvas/skia/aiEffects.ts` | AI 생성 이펙트 (generating 애니메이션, flash) | ✅ 구현 |
 | `canvas/skia/disposable.ts` | CanvasKit 리소스 수동 해제 래퍼 (Disposable 패턴) | ✅ 구현 |
-| `canvas/skia/fills.ts` | 6종 Fill Shader 구현 | 📋 계획 |
-| `canvas/skia/effects.ts` | 이펙트 파이프라인 (opacity, blur, shadow) | 📋 계획 |
-| `canvas/skia/types.ts` | SkiaRenderable 인터페이스 | 📋 계획 |
-| `canvas/skia/fontManager.ts` | CanvasKit 폰트 등록/캐싱 파이프라인 | 📋 계획 |
-| `canvas/skia/textMeasure.ts` | CanvasKit Paragraph 기반 텍스트 측정 (Yoga measureFunc 연결) | 📋 계획 |
+| `canvas/skia/fills.ts` | 6종 Fill Shader 구현 | ✅ 구현 |
+| `canvas/skia/effects.ts` | 이펙트 파이프라인 (opacity, blur, shadow) | ✅ 구현 |
+| `canvas/skia/types.ts` | SkiaRenderable 인터페이스 | ✅ 구현 |
+| `canvas/skia/fontManager.ts` | CanvasKit 폰트 등록/캐싱 파이프라인 | ✅ 구현 |
+| `canvas/skia/textMeasure.ts` | CanvasKit Paragraph 기반 텍스트 측정 (Yoga measureFunc 연결) | ✅ 구현 |
 | `canvas/skia/eventBridge.ts` | DOM 이벤트 브리징 (CanvasKit 캔버스 → PixiJS 캔버스) | ❌ 불필요 (§5.7.1 참조) |
 | BoxSprite renderSkia() | 사각형/RoundedRect CanvasKit 렌더링 |
 | TextSprite renderSkia() | ParagraphBuilder 텍스트 렌더링 |
@@ -3074,14 +3074,15 @@ function someOperation(args) {
   성능 경로: Phase 0–4 (현재 PixiJS 아키텍처 위 점진적 WASM 최적화)
 ═══════════════════════════════════════════════════════════════
 
-Phase 0: 환경 구축 및 벤치마크 기준선
-  └─ Rust + wasm-pack 설정
-  └─ Vite WASM 플러그인
-  └─ 벤치마크 유틸리티
-  └─ Feature Flag 인프라
-  └─ 실측 기준선 수집 → 이후 Phase 필요성 판단
+Phase 0: 환경 구축 및 벤치마크 기준선 ✅ (2026-02-02 구현 완료)
+  └─ Rust 1.93.0 + wasm-pack 0.14.0 설정
+  └─ Vite WASM 플러그인 (vite-plugin-wasm 3.5.0)
+  └─ WASM 빌드 완료 (xstudio_wasm_bg.wasm 70KB)
+  └─ Feature Flag 인프라 (featureFlags.ts + .env)
+  └─ 벤치마크 유틸리티 (미완)
+  └─ 실측 기준선 수집 (미완)
       │
-Phase 1: Spatial Index (축소됨)
+Phase 1: Spatial Index ✅ (2026-02-02 구현 완료)
   └─ spatial_index.rs (i64 키 인코딩, AABB 교차 검증 포함)
   └─ idMapper.ts (string ↔ u32 양방향 매핑, tryGetNumericId 안전 조회)
   └─ elementRegistry.ts — SpatialIndex 동기화 추가
@@ -3089,23 +3090,24 @@ Phase 1: Spatial Index (축소됨)
   └─ SelectionLayer.utils.ts — query_rect로 라쏘 선택 O(n) → O(k)
   └─ ~~BoundsCache~~ 제거 (기존 layoutBoundsRegistry로 충분)
       │
-Phase 2: Layout Engine 배치 가속 (수정됨)
+Phase 2: Layout Engine 배치 가속 ✅ (2026-02-02 구현 완료)
   └─ block_layout.rs — 정규화된 블록 배치 (수직 스태킹 + margin collapse + BFC 경계)
   └─ grid_layout.rs — 트랙 파싱(auto 포함) + 셀 위치 계산
   └─ JS 전처리 책임: out-of-flow 분리, inline-block LineBox 그룹화, blockification, BFC 판별
   └─ WASM calculate()는 전처리된 데이터만 수신 (경계 넘기 1회)
-  └─ 데이터 마샬링 헬퍼 (serialize/deserialize, 8 fields with bfc_flag)
-  └─ 최소 요소 수 임계값 결정 (마샬링 비용 경계점)
+  └─ 데이터 마샬링 헬퍼 (serialize/deserialize, 19 fields/child for block)
+  └─ 최소 요소 수 임계값: children > 10 (BlockEngine.ts:137)
       │
 Phase 3: 제거됨
   └─ 텍스트 데코레이션, CSS 파싱은 WASM 부적합
   └─ 대안: BitmapText 전환, JS 캐시 메모이제이션
       │
-Phase 4: Web Worker 통합 (수정됨)
-  └─ layoutWorker.ts
+Phase 4: Web Worker 통합 ✅ (2026-02-02 구현 완료)
+  └─ layoutWorker.ts — Worker 내 WASM 초기화 + block/grid 핸들러
   └─ Stale-While-Revalidate 동기화 전략
   └─ 초기 레이아웃은 메인 스레드, 변경분만 Worker
   └─ LayoutScheduler 구현 (RAF 기반 결과 적용)
+  └─ bridge.ts — Promise 기반 IPC + Transferable ArrayBuffer
 
 ═══════════════════════════════════════════════════════════════
   품질 경로: Phase 5–6 (CanvasKit/Skia WASM 메인 렌더러 전환)

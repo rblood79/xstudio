@@ -78,6 +78,19 @@ PixiJS 단독 렌더링에서 **Pencil 방식의 이중 렌더러**로 전환 �
 - Selection 오버레이: `selectionRenderer.ts`에서 CanvasKit API로 렌더링
 - 상세: `docs/WASM.md` §5.7, `docs/reference/components/PIXI_WEBGL.md` 참조
 
+## Update: Rust WASM 성능 가속 (2026-02-02)
+
+Phase 0-4 Rust WASM 모듈을 빌드/활성화하여 캔버스 성능 가속:
+
+| Phase | 모듈 | 역할 | Feature Flag |
+|-------|------|------|-------------|
+| **Phase 1** | `SpatialIndex` | Grid-cell 기반 O(k) 뷰포트 컬링, 라쏘 선택, 히트 테스트 | `VITE_WASM_SPATIAL=true` |
+| **Phase 2** | `block_layout` / `grid_layout` | Block/Grid 레이아웃 WASM 가속 (children > 10) | `VITE_WASM_LAYOUT=true` |
+| **Phase 4** | `layoutWorker` | Web Worker 비동기 레이아웃 + SWR 캐싱 | `VITE_WASM_LAYOUT_WORKER=true` |
+
+**빌드 산출물:** `wasm-bindings/pkg/xstudio_wasm_bg.wasm` (70KB)
+**상세:** `docs/WASM.md` Phase 0-4
+
 ## Implementation
 
 ```typescript

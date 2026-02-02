@@ -29,6 +29,25 @@
 - [Data Panel System - Phase 1-6 (2025-11-30)](#data-panel-system)
 - [Nested Routes System - Phase 1-6 (2025-11-30)](#nested-routes-system)
 - [Performance Optimization - Track A/B/C (2025-12-11)](#performance-optimization-track-abc)
+- [WASM Performance Path - Phase 0-4 (2026-02-02)](#wasm-performance-path)
+
+---
+
+## WASM Performance Path
+
+**Status**: ✅ Phase 0-4 Complete (2026-02-02)
+
+Rust WASM 기반 캔버스 성능 가속 모듈 빌드 및 활성화.
+
+**구현 내용:**
+- **Phase 0**: Rust 1.93.0 + wasm-pack 0.14.0 환경, WASM 빌드 (70KB)
+- **Phase 1**: SpatialIndex — Grid-cell 기반 O(k) 뷰포트 컬링, 라쏘 선택, 히트 테스트
+- **Phase 2**: Layout Engine — Block/Grid 레이아웃 WASM 가속 (children > 10 임계값)
+- **Phase 4**: Web Worker — 비동기 레이아웃 + SWR 캐싱 + Transferable ArrayBuffer
+
+**Feature Flags:** `VITE_WASM_SPATIAL=true`, `VITE_WASM_LAYOUT=true`, `VITE_WASM_LAYOUT_WORKER=true`
+
+**상세:** `docs/WASM.md` Phase 0-4
 
 ---
 

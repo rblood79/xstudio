@@ -1,7 +1,7 @@
 # WASM.md 실행 시 문서 영향 분석 및 Pencil 아키텍처 패턴 적용 계획
 
 > 작성일: 2026-01-31
-> 최종 수정: 2026-01-31 (Pencil 아키텍처 패턴 추가 적용 분석 반영)
+> 최종 수정: 2026-02-02 (Phase 0-4 WASM 성능 경로 구현 완료 반영)
 > 대상: `docs/LAYOUT_REQUIREMENTS.md`, `docs/COMPONENT_SPEC_ARCHITECTURE.md`, `docs/AI.md`
 > 기준: `docs/WASM.md` Phase 5-6, `docs/PENCIL_APP_ANALYSIS.md` §11–§26
 > 참고: `docs/AI.md` (AI 기능 업그레이드 설계)
@@ -18,9 +18,10 @@
 ### 렌더링 전환 (WASM.md 기준)
 
 ```
-현재: Yoga 계산 → @pixi/layout → PixiJS Graphics 렌더링
-전환: Yoga 계산 (변경 없음) → renderSkia() → CanvasKit Surface 렌더링
-      PixiJS는 씬 그래프 + 이벤트(EventBoundary) 전용으로 축소
+현재(전환 완료):
+  렌더링: Yoga 계산 → renderSkia() → CanvasKit Surface 렌더링
+          PixiJS는 씬 그래프 + 이벤트(EventBoundary) 전용으로 축소
+  성능 가속: Rust WASM (SpatialIndex O(k) 컬링, Block/Grid 레이아웃 가속, Web Worker 비동기)
 ```
 
 ### Pencil 아키텍처 패턴 추가 적용 (신규)

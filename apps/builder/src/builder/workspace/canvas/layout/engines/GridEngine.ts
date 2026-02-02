@@ -41,7 +41,7 @@ export class GridEngine implements LayoutEngine {
     // Phase 2: WASM 가속 경로 (단순 auto-flow + 명시적 배치 속성 없음)
     if (WASM_FLAGS.LAYOUT_ENGINE && this.canUseWasmPath(style, children)) {
       const wasmResult = this.calculateViaWasm(
-        style, children, availableWidth, availableHeight,
+        parent, style, children, availableWidth, availableHeight,
       );
       if (wasmResult) return wasmResult;
       // WASM 실패 시 JS 폴백
@@ -161,6 +161,7 @@ export class GridEngine implements LayoutEngine {
    * auto-flow (row-major) 기준으로 셀 위치를 일괄 계산.
    */
   private calculateViaWasm(
+    parent: Element,
     style: GridStyle | undefined,
     children: Element[],
     availableWidth: number,

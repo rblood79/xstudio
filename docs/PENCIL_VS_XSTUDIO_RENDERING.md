@@ -17,7 +17,7 @@
 | GPU Surface | CanvasKit MakeWebGLCanvasSurface → GrDirectContext → MakeOnScreenGLSurface (폴백: MakeSWCanvasSurface) | PixiJS WebGL 컨텍스트 |
 | React 바인딩 | @pixi/react v8 | @pixi/react v8.0.5 |
 | 레이아웃 | @pixi/layout (Yoga WASM) | @pixi/layout v3.2.0 (Yoga WASM) |
-| WASM 모듈 | **CanvasKit (Skia) WASM** (7.8MB) — 메인 렌더 엔진 + Yoga | Yoga만 사용 (WASM 계획 진행 중) |
+| WASM 모듈 | **CanvasKit (Skia) WASM** (7.8MB) — 메인 렌더 엔진 + Yoga | **CanvasKit WASM** (메인 렌더러) + **Rust WASM** (SpatialIndex + Layout 가속, 70KB) + Yoga WASM ✅ (2026-02-02) |
 | 번들 크기 | index.js 5.7MB + WASM 7.8MB = ~13.5MB | 측정 필요 |
 | 플랫폼 | Electron (GPU 직접 접근) | 웹 브라우저 (WebGL 제약) |
 
@@ -66,8 +66,8 @@
 
 | 최적화 기법 | Pencil | xstudio | WASM 계획 | 비고 |
 |------------|--------|---------|----------|------|
-| 뷰포트 컬링 | ✅ | ✅ AABB 기반 | 📋 Phase 1 | xstudio: 100px 마진, 20-40% GPU 절감 — 🔄 Phase 5에서 renderSkia() 내부 네이티브 컬링으로 대체 |
-| 공간 인덱스 (Spatial Index) | ✅ (추정) | ❌ | 📋 Phase 1 | O(n) → O(k) 쿼리 개선 |
+| 뷰포트 컬링 | ✅ | ✅ AABB + SpatialIndex O(k) | ✅ Phase 1 | xstudio: SpatialIndex query_viewport로 O(k) 컬링 ✅ (2026-02-02) |
+| 공간 인덱스 (Spatial Index) | ✅ (추정) | ✅ Rust WASM Grid-cell 기반 | ✅ Phase 1 | O(n) → O(k) 쿼리 개선 ✅ (2026-02-02) |
 | 히트 테스트 가속 | ✅ PixiJS EventBoundary — hitTestRecursive, 역순 z-order, Prune+Cull | ❌ 전체 순회 | 📋 Phase 1 | Pencil: PixiJS가 이벤트/히트테스트 전담 |
 | Scissor 클리핑 | ✅ clipToViewport | ❌ | ❌ | GPU 레벨 클리핑 |
 
@@ -151,7 +151,7 @@
 Pencil 렌더링 최적화 전체: 100%
 ├── xstudio 이미 구현: ~60% (React 최적화, 동적 해상도, 컬링, 캐싱, 풀링, CanvasKit 렌더 파이프라인)
 │   └── CanvasKit/Skia: 디자인 노드 + AI 이펙트 + Selection 오버레이 렌더링 ✅ (2026-02-01)
-├── WASM 계획으로 추가: ~15% (SpatialIndex, 레이아웃 가속, Worker)
+├── WASM 구현 완료:     ~15% (SpatialIndex, 레이아웃 가속, Worker) ✅ (2026-02-02)
 ├── 추가 개선 필요:    ~20% (Dirty Rect, 이중 Surface, 아틀라싱, LOD, RenderTexture)
 └── Pencil 고유 영역:  ~5% (커스텀 셰이더, 전체 노드 renderSkia 메서드)
 ```

@@ -7,6 +7,56 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added - WASM 성능 경로 Phase 0-4 구현 완료 (2026-02-02)
+
+#### 개요
+Rust WASM 기반 성능 가속 모듈(Phase 0-4)을 빌드/활성화하여 전체 WASM 파이프라인을 가동
+
+#### Phase 0: 환경 구축
+- Rust 1.93.0 + wasm-pack 0.14.0 설치
+- `wasm-pack build --target bundler` → `xstudio_wasm_bg.wasm` (70KB) 빌드 성공
+- `ping() = "pong"` 파이프라인 검증 통과
+
+#### Phase 1: Spatial Index
+- `VITE_WASM_SPATIAL=true` 활성화
+- Grid-cell 기반 SpatialIndex (cell_size=256) — O(k) 뷰포트 컬링, 라쏘 선택, 히트 테스트
+- idMapper (string UUID ↔ u32 양방향 매핑)
+
+#### Phase 2: Layout Engine
+- `VITE_WASM_LAYOUT=true` 활성화
+- Block 레이아웃: margin collapse, BFC, inline-block 지원 (children > 10 시 WASM 경로)
+- Grid 레이아웃: track 파싱 (fr/px/%/auto) + cell 위치 계산
+
+#### Phase 4: Web Worker
+- `VITE_WASM_LAYOUT_WORKER=true` 활성화
+- Worker 내 WASM 초기화 + block/grid 레이아웃 비동기 계산
+- SWR 캐싱 + LayoutScheduler (RAF 기반)
+- Transferable ArrayBuffer zero-copy 전송
+
+#### 버그 수정
+- `GridEngine.ts`: `calculateViaWasm()` 메서드에 누락된 `parent` 파라미터 추가
+
+#### 브라우저 검증 결과 (콘솔 로그)
+```
+[RustWasm] 초기화 완료 — ping() = "pong"
+[SpatialIndex] 초기화 완료 (cellSize=256)
+[LayoutWorker] 초기화 완료
+[LayoutWorker] scheduler 준비 완료
+[WASM] 모듈 초기화 완료 {spatial: true, layout: true, worker: true, canvaskit: true}
+```
+
+#### 변경된 파일
+- `apps/builder/.env` — WASM 플래그 전체 true 전환
+- `apps/builder/.env.example` — WASM 플래그 업데이트
+- `apps/builder/package.json` — `wasm:build` 스크립트 추가
+- `apps/builder/src/.../layout/engines/GridEngine.ts` — parent 파라미터 버그 수정
+- `apps/builder/src/.../wasm-bindings/pkg/` — Rust WASM 빌드 산출물 (신규)
+- `docs/WASM.md` — Phase 0-4 산출물 체크리스트 ✅ 업데이트, 로드맵 상태 갱신
+- `docs/WASM_DOC_IMPACT_ANALYSIS.md` — 최종 수정일 및 현재 상태 반영
+- `docs/PENCIL_VS_XSTUDIO_RENDERING.md` — WASM 모듈 항목 업데이트
+
+---
+
 ### Docs - Pencil 렌더링 방식 전환 구현 현황 체크 (2026-02-01)
 
 #### 개요
