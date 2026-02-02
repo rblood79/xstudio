@@ -1,7 +1,7 @@
 # WASM.md 실행 시 문서 영향 분석 및 Pencil 아키텍처 패턴 적용 계획
 
 > 작성일: 2026-01-31
-> 최종 수정: 2026-02-02 (Round 4 Skia 렌더링 감사 — 검증 완료: 22건 → 9건 확인, 13건 오탐 제거)
+> 최종 수정: 2026-02-02 (Round 4 Skia 렌더링 감사 — 검증 완료: 22건 → 9건 확인, 13건 오탐 제거; **코드 수정 8/9건 완료**)
 > 대상: `docs/LAYOUT_REQUIREMENTS.md`, `docs/COMPONENT_SPEC_ARCHITECTURE.md`, `docs/AI.md`
 > 기준: `docs/WASM.md` Phase 5-6, `docs/PENCIL_APP_ANALYSIS.md` §11–§26
 > 참고: `docs/AI.md` (AI 기능 업그레이드 설계)
@@ -78,11 +78,11 @@ Part III — 감사
 |---|------|---------|----------|----------|---------|
 | L1 | §3.5 엔진 디스패처 | 941–1023 | `shouldDelegateToPixiLayout()` 가정 | Phase 5+ 렌더 단계 변경 주석 추가 ("Yoga 계산 유지, 렌더만 CanvasKit") | 중간 |
 | L2 | §4.1–4.3 BuilderCanvas 통합 | 1363–1530 | PixiJS `LayoutContainer` + `ElementSprite` 렌더 파이프라인 | Phase 5+ CanvasKit 렌더 파이프라인 섹션 추가 (Yoga → renderSkia() → Surface) | **높음** |
-| L3 | §5.1–5.3 검증 방법 | 1535–1638 | 레이아웃 단위 테스트만 | §5.4 추가: CanvasKit 렌더링 정확성 검증 (border-radius, 텍스트, 그래디언트) | 중간 |
-| L4 | §7 참조 문서 | 1659–1678 | PixiJS/Yoga 참조만 | CanvasKit/Skia 공식 문서 + Pencil renderSkia() 참조 추가 | 낮음 |
-| L5 | §9 변경 이력 | 2185–2217 | Phase 1.27까지 | Phase 5 CanvasKit 통합 항목 추가 | 낮음 |
+| L3 | §5.1–5.3 검증 방법 | 1535–1638 | 레이아웃 단위 테스트만 | §5.4 추가: CanvasKit 렌더링 정확성 검증 (border-radius, 텍스트, 그래디언트) | ✅ 완료 |
+| L4 | §7 참조 문서 | 1659–1678 | PixiJS/Yoga 참조만 | CanvasKit/Skia 공식 문서 + Pencil renderSkia() 참조 추가 | ✅ 완료 |
+| L5 | §9 변경 이력 | 2185–2217 | Phase 1.27까지 | Phase 5 CanvasKit 통합 항목 추가 | ✅ 완료 |
 
-**요약:** 5건 수정 (높음 1, 중간 2, 낮음 2). 레이아웃 엔진 핵심 로직(§1, §3.1–3.4)은 변경 불필요.
+**요약:** 5건 수정 — ✅ 전체 완료 (높음 1, 중간 2, 낮음 2). 레이아웃 엔진 핵심 로직(§1, §3.1–3.4)은 변경 불필요.
 
 ---
 
@@ -457,12 +457,12 @@ G.1/G.2의 **데이터 모델 설계**(타입 정의, 스토어 인터페이스)
 ## D. 영향 범위 요약 (업데이트)
 
 ```
-LAYOUT_REQUIREMENTS.md
+LAYOUT_REQUIREMENTS.md ✅ 전체 완료
 ├── 변경 불필요: 레이아웃 엔진 핵심 (§1, §3.1–3.4, §3.6–3.8) ····· ~70%
-├── 수정 필요 (높음): BuilderCanvas 통합 (§4.1–4.3) ·················· 1건
-├── 수정 필요 (중간): 엔진 디스패처 주석, 검증 방법 추가 ·············· 2건
-└── 수정 필요 (낮음): 참조 문서, 변경 이력 ···························· 2건
-                                                         소계: 5건
+├── ✅ 수정 완료 (높음): BuilderCanvas 통합 (§4.1–4.3) ·············· 1건
+├── ✅ 수정 완료 (중간): 엔진 디스패처 주석, 검증 방법 추가 ·········· 2건
+└── ✅ 수정 완료 (낮음): 참조 문서, 변경 이력 ························ 2건
+                                                         소계: 5건 (전체 완료)
 
 COMPONENT_SPEC_ARCHITECTURE.md
 ├── 변경 불필요: Spec 인터페이스, 상태 관리, Token 시스템 ············ ~30%
@@ -554,6 +554,7 @@ Pencil 패턴 추가 적용 (신규 분석)
 
 > Round 1–3 수정 완료 후 전체 Skia 관련 파일 18개를 대상으로 수행한 종합 감사.
 > 초기 22건 발견 → **코드 대조 검증 후 9건 확인, 13건 오탐 제거**
+> **코드 수정: 8/9건 완료** (3개 커밋: `ac079862`, `2aabab2c`, `7e6f4bb1`). 미수정 1건: I-M14→L (conic-gradient, 사용처 없음)
 
 ### 검증 방법론
 
@@ -562,12 +563,12 @@ Pencil 패턴 추가 적용 (신규 분석)
 
 ### CRITICAL (서비스 불가 / 렌더링 왜곡) — 1건
 
-#### I-CR1. Inner Shadow 렌더링 오류 ✅
+#### I-CR1. Inner Shadow 렌더링 오류 — ✅ 수정 완료
 
 - **파일**: `canvas/skia/effects.ts:75-82`
 - **문제**: `MakeDropShadowOnly`는 그림자만 그리고 원본 콘텐츠를 삭제한다. inner shadow 구현에 사용하면 **소스 콘텐츠가 사라짐**
 - **현상**: inner shadow가 적용된 요소가 그림자만 보이고 내부 콘텐츠가 투명하게 렌더됨
-- **수정 방안**: `MakeDropShadow` (소스 포함) 사용 + clip rect로 외부 그림자 잘라내어 내부만 표시, 또는 `MakeDropShadowOnly` → `MakeCompose(inner, src)` 합성
+- **수정**: Inner/Outer 모두 `MakeDropShadow` (소스 보존) 사용. `saveLayer` 경계가 외부 그림자를 자연스럽게 클리핑. (`ac079862`)
 
 #### ~~I-CR2. Lasso 좌표 불일치~~ ❌ 오탐
 
@@ -575,18 +576,18 @@ Pencil 패턴 추가 적용 (신규 분석)
 
 ### HIGH (기능 결함 / 성능 심각) — 2건
 
-#### I-H4. DPR 변경 시 SkiaRenderer.dpr 미갱신 ✅
+#### I-H4. DPR 변경 시 SkiaRenderer.dpr 미갱신 — ✅ 수정 완료
 
 - **파일**: `canvas/skia/SkiaRenderer.ts:54, 305-318`
 - **문제**: `SkiaOverlay`에서 DPR 변경 감지 + 캔버스 리사이즈를 수행하지만, `SkiaRenderer` 인스턴스의 `this.dpr` 필드는 생성자에서만 설정됨. DPR 변경 후 Surface 재생성 시 이전 DPR로 스케일링하여 **흐릿하거나 과도하게 확대**된 렌더링
-- **수정 방안**: `SkiaRenderer.resize()`에서 `this.dpr = window.devicePixelRatio` 갱신, 또는 `updateDpr(newDpr)` 메서드 추가
+- **수정**: `SkiaRenderer.resize()`에서 `this.dpr = window.devicePixelRatio || 1` 갱신 추가. (`ac079862`)
 
-#### I-H5. 이미지 캐시 레이스 컨디션 ✅
+#### I-H5. 이미지 캐시 레이스 컨디션 — ✅ 수정 완료
 
 - **파일**: `canvas/skia/imageCache.ts` — `clearImageCache()` / `loadSkImage()`
 - **문제**: `clearImageCache()`가 `pending.clear()`로 진행 중 Promise 참조만 제거하지만, `fetchAndDecode()` 자체는 계속 실행됨. 완료 시 새 SkImage가 이미 cleared된 캐시에 재등록되어 **orphan 이미지 누수**
 - **ImageSprite 측 방어**: `cancelled` 플래그 + `releaseSkImage()`로 대부분 회수되지만, 동일 URL 동시 로드(`existing = pending.get()` 경로)에서는 두 번째 caller의 refCount 증가 시 첫 번째 caller가 이미 release해 use-after-free 가능
-- **수정 방안**: generation counter 도입 — `clearImageCache()` 시 generation 증가, `loadSkImage` 완료 시 generation 비교하여 stale 결과 폐기
+- **수정**: `cacheGeneration` counter 도입. `clearImageCache()` 시 generation 증가, `loadSkImage()` pending 경로와 새 fetch 경로 모두에서 generation 비교 → stale 결과 폐기 + `image?.delete()`. (`ac079862`)
 
 #### ~~I-H6~~ → MEDIUM 하향 (아래 I-H6→M 참조)
 
@@ -596,19 +597,19 @@ Pencil 패턴 추가 적용 (신규 분석)
 
 ### MEDIUM (부분 결함 / 비효율) — 2건
 
-#### I-CR3→M. 타입 불일치 (styleConverter ↔ effects) ✅
+#### I-CR3→M. 타입 불일치 (styleConverter ↔ effects) — ✅ 수정 완료
 
 - **파일**: `canvas/sprites/styleConverter.ts:376-379` — `SkiaEffectItem`
 - **원래 심각도**: CRITICAL → **MEDIUM 하향**
 - **문제**: `SkiaEffectItem`은 `{ type: string; [key: string]: unknown }` 로컬 타입. `SkiaNodeData.effects`가 기대하는 `EffectStyle[]` 유니언과 구조적 불일치
 - **런타임 영향**: 실제 생성되는 객체는 올바른 shape (`{ type: 'opacity', value: 0.5 }` 등)이므로 런타임은 정상 동작. TypeScript 엄밀성 이슈
-- **수정 방안**: `SkiaEffectItem` 제거 → `EffectStyle` import 사용
+- **수정**: `SkiaEffectItem` 제거, `EffectStyle`/`DropShadowEffect` import 사용. `buildSkiaEffects` → `EffectStyle[]`, `parseFirstBoxShadow` → `DropShadowEffect | null`. (`2aabab2c`)
 
-#### I-H6→M. 프레임당 GC 압력 ✅
+#### I-H6→M. 프레임당 GC 압력 — ✅ 수정 완료
 
 - **파일**: `canvas/skia/SkiaOverlay.tsx` — `buildSkiaTreeHierarchical()`
 - **문제**: 매 프레임 `SkiaNodeData` spread 복사 + 배열 생성. 요소 수 증가 시 Minor GC 빈도 증가
-- **수정 방안**: registryVersion 비교 → 변경 없으면 이전 트리 재사용
+- **수정**: 모듈 레벨 캐시 변수(`_cachedTree`, `_cachedVersion`, `_cachedCamX/Y/Zoom`) 도입. `registryVersion` + 카메라 상태 비교 → 변경 없으면 이전 트리 재사용. (`2aabab2c`)
 
 #### ~~I-M8~~ ❌ 오탐 — Store는 `getState()` 명령형 읽기(렌더 루프 내). React 구독은 `currentPageId` 1건뿐
 #### ~~I-M9~~ ❌ 오탐 — `useAIVisualFeedbackStore.getState()` 명령형 읽기, 리렌더 유발 안 함
@@ -619,30 +620,30 @@ Pencil 패턴 추가 적용 (신규 분석)
 
 ### LOW (코드 품질 / 엣지 케이스) — 4건
 
-#### I-L17. cssColorToAlpha HSLA 미지원 ✅
+#### I-L17. cssColorToAlpha HSLA 미지원 — ✅ 수정 완료
 
 - **파일**: `canvas/sprites/styleConverter.ts:118-133`
 - **문제**: `rgba()` 와 `transparent`만 파싱. `hsla()`, `oklch()`, `#rrggbbaa` 형식의 알파값 추출 불가 → 기본값 1 반환
-- **수정 방안**: 기존 `colord` 라이브러리(Phase 22에서 도입) 활용하여 범용 알파 추출
+- **수정**: `colord` 라이브러리로 교체. `colord(color).toRgb().a`로 모든 CSS 색상 형식의 알파값 추출. (`7e6f4bb1`)
 
-#### I-L18. eventBridge 미사용 코드 ✅
+#### I-L18. eventBridge 미사용 코드 — ✅ 수정 완료
 
 - **파일**: `canvas/skia/eventBridge.ts`
 - **문제**: 파일 전체가 `@deprecated` 표시. 현재 아키텍처(PixiJS z-index:3)에서 미사용
-- **수정 방안**: 파일 삭제 (향후 필요 시 git에서 복원)
+- **수정**: 파일 삭제 (177줄). 향후 필요 시 git에서 복원 가능. (`7e6f4bb1`)
 
-#### I-L22. updateTextChildren 고정 lineHeight 배수 ✅
+#### I-L22. updateTextChildren 고정 lineHeight 배수 — ✅ 수정 완료
 
 - **파일**: `canvas/skia/SkiaOverlay.tsx:71` — `updateTextChildren()`
 - **문제**: `lineHeight = fontSize * 1.2` 하드코딩. CSS lineHeight가 다른 값(예: 2.0)일 때 수직 중앙 정렬 오차
-- **수정 방안**: `child.text.lineHeight` 사용, 없으면 fallback `fontSize * 1.2`
+- **수정**: `child.text.lineHeight || fontSize * 1.2` — 실제 lineHeight 값 우선 사용, 없을 때만 fallback. (`7e6f4bb1`)
 
-#### I-M14→L. conic-gradient 미지원 ✅
+#### I-M14→L. conic-gradient 미지원 — ⏳ 미수정 (사용처 없음)
 
 - **원래 심각도**: MEDIUM → **LOW 하향**
 - **파일**: `canvas/skia/fills.ts` — `FillStyle` 유니언
 - **문제**: CSS `conic-gradient`가 `FillStyle`에 없음. `styleConverter`에서 파싱하지 않아 silent fail
-- **수정 방안**: 향후 그라디언트 확장 시 추가. 현재는 사용처 없음
+- **수정 방안**: 향후 그라디언트 확장 시 추가. 현재 XStudio에서 conic-gradient 사용처 없으므로 보류
 
 #### ~~I-L15~~ ❌ 오탐 — `useSkiaNode(id, null)` → `if (!data) return`으로 등록 스킵됨
 #### ~~I-L16~~ ❌ 오탐 — `data.buffer as ArrayBuffer`은 표준 TypeScript 패턴
@@ -654,22 +655,27 @@ Pencil 패턴 추가 적용 (신규 분석)
 
 ### Round 4 검증 완료 요약
 
-| 심각도 | 초기 | 검증 후 | 오탐 | 주요 영향 영역 |
-|--------|------|---------|------|---------------|
-| CRITICAL | 3 | **1** | 2 | inner shadow 렌더 |
-| HIGH | 4 | **2** | 2 | DPR 동기화, 이미지 캐시 안전성 |
-| MEDIUM | 7 | **2** | 5 | GC 압력, 타입 엄밀성 |
-| LOW | 8 | **4** | 4 | 알파 파싱, dead code, lineHeight, gradient |
-| **합계** | **22** | **9** | **13** | |
+| 심각도 | 초기 | 검증 후 | 오탐 | 수정 완료 | 미수정 | 주요 영향 영역 |
+|--------|------|---------|------|----------|--------|---------------|
+| CRITICAL | 3 | **1** | 2 | **1** | 0 | inner shadow 렌더 |
+| HIGH | 4 | **2** | 2 | **2** | 0 | DPR 동기화, 이미지 캐시 안전성 |
+| MEDIUM | 7 | **2** | 5 | **2** | 0 | GC 압력, 타입 엄밀성 |
+| LOW | 8 | **4** | 4 | **3** | 1 | 알파 파싱, dead code, lineHeight, gradient |
+| **합계** | **22** | **9** | **13** | **8** | **1** | |
 
-### 수정 우선순위
+### 수정 이력
 
-1. **I-CR1** (CRITICAL) — Inner Shadow `MakeDropShadowOnly` → 소스 보존 방식으로 교체
-2. **I-H4** (HIGH) — SkiaRenderer DPR 갱신
-3. **I-H5** (HIGH) — imageCache generation counter 도입
-4. **I-CR3→M** (MEDIUM) — SkiaEffectItem → EffectStyle 타입 정리
-5. **I-H6→M** (MEDIUM) — 트리 재구성 최적화 (registryVersion 기반)
-6. **I-L17** (LOW) — cssColorToAlpha colord 활용
-7. **I-L22** (LOW) — updateTextChildren lineHeight 실제값 사용
-8. **I-L18** (LOW) — eventBridge 파일 삭제
-9. **I-M14→L** (LOW) — conic-gradient 기능 갭 (향후)
+| 순서 | 항목 | 심각도 | 커밋 | Phase |
+|------|------|--------|------|-------|
+| 1 | **I-CR1** — Inner Shadow `MakeDropShadow` 교체 | CRITICAL | `ac079862` | Phase 1 |
+| 2 | **I-H4** — SkiaRenderer DPR 갱신 | HIGH | `ac079862` | Phase 1 |
+| 3 | **I-H5** — imageCache generation counter | HIGH | `ac079862` | Phase 1 |
+| 4 | **I-CR3→M** — SkiaEffectItem → EffectStyle 타입 | MEDIUM | `2aabab2c` | Phase 2 |
+| 5 | **I-H6→M** — 트리 재구성 캐시 (registryVersion) | MEDIUM | `2aabab2c` | Phase 2 |
+| 6 | **I-L17** — cssColorToAlpha colord 전환 | LOW | `7e6f4bb1` | Phase 3 |
+| 7 | **I-L22** — lineHeight 실제값 사용 | LOW | `7e6f4bb1` | Phase 3 |
+| 8 | **I-L18** — eventBridge 파일 삭제 | LOW | `7e6f4bb1` | Phase 3 |
+
+### 미수정 항목
+
+- **I-M14→L** (LOW) — conic-gradient 기능 갭. 현재 사용처 없어 보류
