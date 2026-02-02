@@ -105,12 +105,30 @@ function updateTextChildren(
  * @param cameraY - Camera Y (현재 panOffset.y)
  * @param cameraZoom - Camera 스케일 (줌 레벨)
  */
+
+// 트리 rebuild 캐시 — registry/camera 미변경 시 재사용하여 GC 압력 저감 (I-H6→M)
+let _cachedTree: SkiaNodeData | null = null;
+let _cachedVersion = -1;
+let _cachedCamX = NaN;
+let _cachedCamY = NaN;
+let _cachedCamZoom = NaN;
+
 function buildSkiaTreeHierarchical(
   cameraContainer: Container,
   cameraX: number,
   cameraY: number,
   cameraZoom: number,
 ): SkiaNodeData | null {
+  const currentVersion = getRegistryVersion();
+  if (
+    _cachedTree &&
+    currentVersion === _cachedVersion &&
+    cameraX === _cachedCamX &&
+    cameraY === _cachedCamY &&
+    cameraZoom === _cachedCamZoom
+  ) {
+    return _cachedTree;
+  }
 
   /**
    * PixiJS 컨테이너 트리를 재귀 순회하며 계층적 Skia 노드를 수집한다.
@@ -174,9 +192,16 @@ function buildSkiaTreeHierarchical(
   }
 
   const children = traverse(cameraContainer, 0, 0);
-  if (children.length === 0) return null;
+  if (children.length === 0) {
+    _cachedTree = null;
+    _cachedVersion = currentVersion;
+    _cachedCamX = cameraX;
+    _cachedCamY = cameraY;
+    _cachedCamZoom = cameraZoom;
+    return null;
+  }
 
-  return {
+  const result: SkiaNodeData = {
     type: 'container',
     x: 0,
     y: 0,
@@ -185,6 +210,14 @@ function buildSkiaTreeHierarchical(
     visible: true,
     children,
   };
+
+  _cachedTree = result;
+  _cachedVersion = currentVersion;
+  _cachedCamX = cameraX;
+  _cachedCamY = cameraY;
+  _cachedCamZoom = cameraZoom;
+
+  return result;
 }
 
 /** Selection 렌더 데이터 결과 */

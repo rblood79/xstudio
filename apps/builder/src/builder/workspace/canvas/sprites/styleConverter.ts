@@ -11,6 +11,7 @@
  */
 
 import { cssColorToPixiHex } from '../../../../utils/color';
+import type { EffectStyle, DropShadowEffect } from '../skia/types';
 
 // ============================================
 // Types
@@ -373,13 +374,8 @@ export function convertStyle(style: CSSStyle | undefined): ConvertedStyle {
 // Skia Effects Builder
 // ============================================
 
-interface SkiaEffectItem {
-  type: string;
-  [key: string]: unknown;
-}
-
 interface SkiaEffectsResult {
-  effects?: SkiaEffectItem[];
+  effects?: EffectStyle[];
   blendMode?: string;
 }
 
@@ -396,7 +392,7 @@ interface SkiaEffectsResult {
 export function buildSkiaEffects(style: CSSStyle | undefined): SkiaEffectsResult {
   if (!style) return {};
 
-  const effects: SkiaEffectItem[] = [];
+  const effects: EffectStyle[] = [];
 
   // 1. opacity → OpacityEffect
   if (style.opacity !== undefined) {
@@ -441,7 +437,7 @@ export function buildSkiaEffects(style: CSSStyle | undefined): SkiaEffectsResult
  *
  * 지원 포맷: [inset] offsetX offsetY [blurRadius [spreadRadius]] [color]
  */
-function parseFirstBoxShadow(raw: string): SkiaEffectItem | null {
+function parseFirstBoxShadow(raw: string): DropShadowEffect | null {
   // 콤마 분리 시 괄호 안의 콤마는 제외
   const first = raw.split(/,(?![^(]*\))/)[0].trim();
   if (!first || first === 'none') return null;
