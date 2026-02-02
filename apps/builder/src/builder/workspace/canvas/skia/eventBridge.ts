@@ -1,4 +1,8 @@
 /**
+ * @deprecated 현재 아키텍처에서는 미사용.
+ * PixiJS 캔버스를 z-index:3으로 Skia 위에 배치하여 직접 이벤트를 받으므로
+ * 이벤트 브리징이 불필요하다. 향후 아키텍처 변경 시 재활용 가능.
+ *
  * DOM 이벤트 브리징: CanvasKit 캔버스 → PixiJS 캔버스
  *
  * CanvasKit 캔버스가 화면 위(z-index: 2)에 위치하므로

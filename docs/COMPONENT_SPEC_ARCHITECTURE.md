@@ -1,8 +1,8 @@
 # Component Spec Architecture - 상세 설계 문서
 
 > **작성일**: 2026-01-27
-> **상태**: Phase 1 구현 진행 중 (Button 완료)
-> **목표**: Builder(WebGL)와 Publish(React)의 100% 시각적 일치
+> **상태**: Phase 5 구현 완료 (CanvasKit/Skia 렌더링 전환)
+> **목표**: Builder(CanvasKit/Skia)와 Publish(React)의 100% 시각적 일치
 
 ---
 
@@ -46,13 +46,14 @@
     ├── tokens (값)
     ├── render.shape (도형 정의)
     ├── render.react (React 변환)
-    └── render.pixi (PIXI 변환)
+    └── render.skia (CanvasKit/Skia Surface 렌더링)
 
 기대효과:
 - 시각적 일치율: 95-98%
 - 단일 소스 = 완벽한 동기화
 - 72개 컴포넌트 × 1파일 = 72개 파일
 - 새 variant 추가 시 1곳만 수정
+- CanvasKit Surface 렌더링으로 고품질 벡터/텍스트 출력
 ```
 
 ### 1.3 Phase 요약
@@ -64,25 +65,28 @@
 | 2 | Form 컴포넌트 (15개) | 3주 | TextField, Select, Checkbox 등 |
 | 3 | 복합 컴포넌트 (20개) | 3주 | Table, Tree, Tabs 등 |
 | 4 | 특수 컴포넌트 (17개) | 2주 | DatePicker, ColorPicker 등 |
-| 5 | 검증 및 최적화 | 2주 | 테스트, 성능 최적화 |
+| 5 | 검증 및 최적화 + **CanvasKit/Skia 전환** | 2주 | 테스트, 성능 최적화, Skia 렌더링 파이프라인 |
 
 **총 기간: 14주 (약 3.5개월)**
 
-#### Phase 5+ CanvasKit/Skia 전환 컨텍스트
+#### CanvasKit/Skia 렌더링 전환 (완료)
 
-> 본 문서의 Phase 0-4는 PixiJS 렌더러 기반으로 설계되었다.
-> `docs/WASM.md` Phase 5-6에서 CanvasKit/Skia가 메인 렌더러로 전환되면,
-> 본 문서의 렌더링 관련 섹션이 영향을 받는다.
-> 영향 분석: `docs/WASM_DOC_IMPACT_ANALYSIS.md` §B (18건)
+CanvasKit/Skia가 **메인 렌더러로 전환 완료**되었다.
+PixiJS는 씬 그래프 관리 + 이벤트(EventBoundary) 전용으로 축소되었으며,
+모든 시각적 렌더링은 CanvasKit Surface에서 처리한다.
+
+- 상세 설계: `docs/WASM.md` Phase 5-6
+- 영향 분석: `docs/WASM_DOC_IMPACT_ANALYSIS.md` §B (18건)
 
 **Spec 시스템의 렌더러 독립성:**
-- ComponentSpec의 **Shape 타입 정의**는 렌더러 무관 (CanvasKit 전환 시에도 유지)
-- Shape 확장(C4-C6)은 CanvasKit 고급 기능 반영을 위한 설계 명세 (코드 인터페이스 적용 예정)
-- 렌더러 변경 영향: PixiJS는 씬 그래프 + 이벤트 전용으로 축소, 시각적 렌더링은 `apps/builder/.../skia/` 디렉토리의 nodeRenderers + SkiaOverlay가 담당
+- ComponentSpec의 **Shape 타입 정의**는 렌더러 무관 (CanvasKit 전환에도 유지)
+- Shape 확장(C4-C6)은 CanvasKit 고급 기능을 반영한 타입 정의
 
-> **현재 구현 상태:** CanvasKit 렌더링은 `packages/specs/src/renderers/CanvasKitRenderer.ts`가 아닌,
-> `apps/builder/src/builder/workspace/canvas/skia/` 디렉토리에서 Element→SkiaNodeData→renderNode() 파이프라인으로 구현되어 있다.
-> Spec Shape → Skia 매핑은 ElementSprite에서 skiaNodeData 생성 시 수행된다.
+**현재 렌더링 아키텍처:**
+- **CanvasKit 렌더링**: `apps/builder/src/builder/workspace/canvas/skia/` 디렉토리
+  - Element → SkiaNodeData → `renderNode()` 파이프라인
+  - Spec Shape → Skia 매핑은 ElementSprite에서 skiaNodeData 생성 시 수행
+- **PixiJS 역할**: 씬 그래프 구조 관리 + EventBoundary(Hit Testing) 전용
 
 ---
 
@@ -109,7 +113,7 @@
 │  │                                                           │
 │  ├── renderers/            # 렌더러                          │
 │  │   ├── ReactRenderer.ts  # Spec → React Props              │
-│  │   ├── PixiRenderer.ts   # Spec → PIXI Graphics            │
+│  │   ├── PixiRenderer.ts   # Spec → 씬 그래프 (이벤트 전용)  │
 │  │   └── CSSGenerator.ts   # Spec → CSS 파일                 │
 │  │                                                           │
 │  └── types/                # 타입 정의                       │
@@ -117,19 +121,60 @@
 │      ├── shape.types.ts                                      │
 │      └── token.types.ts                                      │
 │                                                              │
-│  ┌─────────────────┐       ┌─────────────────┐               │
-│  │ shared/         │       │ builder/canvas/ │               │
-│  │ components/     │       │ ui/             │               │
-│  │                 │       │                 │               │
-│  │ Button.tsx      │       │ PixiButton.tsx  │               │
-│  │ (ReactRenderer  │       │ (PixiRenderer   │               │
-│  │  사용)          │       │  사용)          │               │
-│  └─────────────────┘       └─────────────────┘               │
+│  ┌─────────────────┐       ┌──────────────────────────────┐  │
+│  │ shared/         │       │ builder/workspace/canvas/    │  │
+│  │ components/     │       │ skia/                        │  │
+│  │                 │       │                              │  │
+│  │ Button.tsx      │       │ SkiaOverlay.tsx              │  │
+│  │ (ReactRenderer  │       │ nodeRenderers.ts             │  │
+│  │  사용)          │       │ (CanvasKit Surface 렌더링)   │  │
+│  └─────────────────┘       └──────────────────────────────┘  │
 │                                                              │
 └─────────────────────────────────────────────────────────────┘
 ```
 
 ### 2.2 데이터 흐름
+
+```
+┌──────────────┐
+│ Button.spec  │ (Single Source of Truth)
+└──────┬───────┘
+       │
+       ├──────────────┬──────────────┬──────────────────┐
+       ▼              ▼              ▼                  ▼
+┌────────────┐ ┌────────────┐ ┌──────────────┐ ┌────────────────────┐
+│CSSGenerator│ │ReactRender.│ │PixiJS        │ │CanvasKit/Skia      │
+│(빌드/배포) │ │(React DOM) │ │(씬 그래프)   │ │(Surface 렌더링)    │
+└──────┬─────┘ └──────┬─────┘ └──────┬───────┘ └─────────┬──────────┘
+       │              │              │                    │
+       ▼              ▼              ▼                    ▼
+  Button.css     Button.tsx    EventBoundary      CanvasKit Surface
+  (Publish)      (React DOM)   (Hit Testing)     (drawRRect, drawParagraph...)
+```
+
+**렌더러 역할:**
+- **CSSGenerator**: React 렌더링 + Publish(배포) 전용
+- **ReactRenderer**: Preview iframe 내 React DOM 렌더링
+- **PixiJS**: 씬 그래프 관리 + EventBoundary(Hit Testing) 전용 — 시각적 렌더링 없음
+- **CanvasKit/Skia (Primary)**: `apps/builder/.../skia/` 디렉토리에서 Element → SkiaNodeData → `nodeRenderers.renderNode()` → CanvasKit Surface 파이프라인으로 시각적 렌더링 담당
+
+**CanvasKit 렌더링 파이프라인:**
+```
+ElementSprite                  skia/useSkiaNode.ts        skia/SkiaOverlay.tsx         skia/nodeRenderers.ts
+─────────────                  ───────────────────        ────────────────────         ─────────────────────
+Element props  ──→  skiaNodeData 생성  ──→  글로벌 레지스트리 등록  ──→  renderNode(ck, canvas, tree)
+                   (box/text/image)         (Map<elementId,              ├── renderBox()
+                                             SkiaNodeData>)             ├── renderText()
+                                                                        └── renderImage()
+```
+
+> **레이아웃 계층 분리**: Spec은 컴포넌트 **내부** Shape 배치를 정의하고,
+> **외부** 컨테이너 간 배치는 Yoga 레이아웃 엔진이 담당합니다.
+> React 경로는 브라우저 CSS 레이아웃을, Canvas 경로는 Yoga가 계산한 절대 px 값을 CanvasKit이 사용합니다.
+> 자세한 내용은 [LAYOUT_REQUIREMENTS.md](./LAYOUT_REQUIREMENTS.md)를 참조하세요.
+
+<details>
+<summary>Phase 1-4 레거시 데이터 흐름 (PixiJS 중심)</summary>
 
 ```
 ┌──────────────┐
@@ -143,66 +188,14 @@
 └──────┬───────┘     └──────┬───────┘     └──────┬───────┘
        │                    │                    │
        ▼                    ▼                    ▼
-┌──────────────┐     ┌──────────────┐     ┌──────────────┐
-│ Button.css   │     │ Button.tsx   │     │ PixiButton   │
-│ (빌드 시 생성)│     │ (Props 적용) │     │ (Graphics)   │
-└──────────────┘     └──────────────┘     └──────────────┘
-       │                    │                    │
-       │              브라우저 CSS               │
-       │              레이아웃 엔진              │
-       │                    │           ┌────────┴────────┐
-       │                    │           │ Hybrid Layout   │
-       │                    │           │ Engine          │
-       │                    │           │ ┌─────────────┐ │
-       │                    │           │ │ BlockEngine │ │
-       │                    │           │ │ FlexEngine  │ │
-       │                    │           │ │ GridEngine  │ │
-       │                    │           │ └─────────────┘ │
-       │                    │           └────────┬────────┘
-       │                    │                    │
-       └────────────────────┴────────────────────┘
-                            │
-                            ▼
-                   ┌──────────────────┐
-                   │  동일한 시각적   │
-                   │     결과물       │
-                   └──────────────────┘
+  Button.css           Button.tsx          PixiButton
+  (빌드 시 생성)       (Props 적용)        (Graphics)
 ```
 
-> **레이아웃 계층 분리**: Spec은 컴포넌트 **내부** Shape 배치를 정의하고,
-> **외부** 컨테이너 간 배치는 하이브리드 레이아웃 엔진(BlockEngine/FlexEngine/GridEngine)이 담당합니다.
-> React 경로는 브라우저 CSS 레이아웃을, PIXI 경로는 하이브리드 엔진을 사용하여 동일한 결과를 보장합니다.
-> 자세한 내용은 [LAYOUT_REQUIREMENTS.md](./LAYOUT_REQUIREMENTS.md)를 참조하세요.
+> Phase 1-4에서는 PixiRenderer가 시각적 렌더링을 직접 수행했으나,
+> Phase 5 이후 CanvasKit/Skia로 완전히 대체되었다.
 
-#### Phase 5+ 데이터 흐름 (CanvasKit/Skia 전환)
-
-> Phase 5 이후 PixiRenderer는 씬 그래프 전용으로 축소되고, CanvasKitRenderer가 추가된다.
-> 상세: `docs/WASM.md` Phase 5.3–5.7 참조
-
-```
-┌──────────────┐
-│ Button.spec  │ (Single Source of Truth)
-└──────┬───────┘
-       │
-       ├──────────────┬──────────────┬──────────────────┐
-       ▼              ▼              ▼                  ▼
-┌────────────┐ ┌────────────┐ ┌──────────────┐ ┌────────────────────┐
-│CSSGenerator│ │ReactRender.│ │PixiRenderer  │ │CanvasKitRenderer   │
-│(빌드/배포) │ │(React DOM) │ │(씬 그래프만) │ │(Skia Surface 렌더) │
-└──────┬─────┘ └──────┬─────┘ └──────┬───────┘ └─────────┬──────────┘
-       │              │              │                    │
-       ▼              ▼              ▼                    ▼
-  Button.css     Button.tsx    EventBoundary      CanvasKit Surface
-  (Publish)      (React DOM)   (Hit Testing)     (drawRRect, drawParagraph...)
-```
-
-- **CSSGenerator**: React 렌더링 + Publish(배포) 전용
-- **ReactRenderer**: Preview iframe 내 React DOM 렌더링
-- **PixiRenderer**: Phase 5+ 시 씬 그래프 관리 + EventBoundary(Hit Testing) 전용으로 축소 예정 (현재는 시각적 렌더링도 수행)
-- **CanvasKit 렌더링**: Phase 5+ — `apps/builder/.../skia/` 디렉토리에서 Element → SkiaNodeData → nodeRenderers.renderNode() → CanvasKit Surface 파이프라인으로 구현 (`packages/specs/` 외부)
-
-> **구현 참고:** 다이어그램의 CanvasKitRenderer 박스는 설계상 Spec 패키지 내 렌더러를 나타내지만,
-> 실제 구현은 `builder/workspace/canvas/skia/nodeRenderers.ts`의 `renderNode()` 함수가 담당한다.
+</details>
 
 ### 2.3 핵심 원칙
 
@@ -252,8 +245,7 @@ packages/
     │   ├── renderers/
     │   │   ├── index.ts
     │   │   ├── ReactRenderer.ts     # Spec → React Props
-    │   │   ├── PixiRenderer.ts      # Spec → PIXI Graphics (Phase 5+ 시 씬 그래프 전용으로 축소 예정)
-    │   │   # CanvasKit 렌더링: apps/builder/.../skia/nodeRenderers.ts에서 구현 (이 패키지 외부)
+    │   │   ├── PixiRenderer.ts      # Spec → 씬 그래프 이벤트 전용 (시각적 렌더링 없음)
     │   │   ├── CSSGenerator.ts      # Spec → CSS 파일 (React/Publish 전용)
     │   │   └── utils/
     │   │       └── tokenResolver.ts # 토큰 → 실제 값 (색상, 크기, 그림자 등)
@@ -264,6 +256,27 @@ packages/
     └── scripts/
         ├── generate-css.ts          # CSS 생성 스크립트
         └── validate-specs.ts        # Spec 검증 스크립트
+
+# CanvasKit/Skia 렌더링 (builder 패키지 내 구현)
+apps/builder/src/builder/workspace/canvas/skia/
+    ├── SkiaRenderer.ts          # 메인 렌더링 엔진 (Phase 5: single Surface, Phase 6: dual Surface)
+    ├── SkiaOverlay.tsx          # React 컴포넌트 — CanvasKit canvas 관리, 렌더 루프
+    ├── nodeRenderers.ts         # 노드 타입별 렌더링 (renderBox, renderText, renderImage)
+    ├── useSkiaNode.ts           # React hook — SkiaNodeData 레지스트리 관리
+    ├── types.ts                 # SkiaNodeData, Fill/Effect 타입 정의
+    ├── fills.ts                 # 6가지 Fill 타입 (Color, Linear/Radial/Angular/MeshGradient, Image)
+    ├── effects.ts               # Effect 파이프라인 (Opacity, Blur, DropShadow — saveLayer 기반)
+    ├── blendModes.ts            # 블렌드 모드 정의
+    ├── fontManager.ts           # 폰트 로딩/캐싱, CanvasKit FontMgr 관리
+    ├── textMeasure.ts           # 텍스트 측정 유틸리티
+    ├── selectionRenderer.ts     # 선택 박스, 트랜스폼 핸들, 라쏘 렌더링
+    ├── aiEffects.ts             # AI 생성 이펙트 (파티클/블러/플래시)
+    ├── eventBridge.ts           # DOM 이벤트 → PixiJS 캔버스 브릿지
+    ├── dirtyRectTracker.ts      # Dirty Rectangle 병합 (Phase 6 최적화)
+    ├── disposable.ts            # 리소스 정리 패턴 (SkiaDisposable)
+    ├── createSurface.ts         # GPU Surface 팩토리
+    ├── initCanvasKit.ts         # CanvasKit WASM 초기화
+    └── export.ts                # 캔버스 내보내기 유틸리티
 ```
 
 ### 3.3 핵심 타입 정의
@@ -612,14 +625,14 @@ export interface TextShape {
   /** 줄 수 제한 (multiline 텍스트) */
   maxLines?: number;
 
-  // Phase 5+ CanvasKit ParagraphBuilder 속성 (설계 명세 — shape.types.ts 인터페이스 적용 예정):
-  /** 서브픽셀 텍스트 렌더링 (Phase 5+) */
+  // CanvasKit ParagraphBuilder 속성 (skia/nodeRenderers.ts renderText에서 사용):
+  /** 서브픽셀 텍스트 렌더링 */
   subpixel?: boolean;
-  /** 폰트 힌팅 (Phase 5+) */
+  /** 폰트 힌팅 */
   hinting?: 'none' | 'slight' | 'normal' | 'full';
-  /** 커닝 활성화 (Phase 5+) */
+  /** 커닝 활성화 */
   kerning?: boolean;
-  /** Strut 스타일 — 줄 높이 강제 (Phase 5+) */
+  /** Strut 스타일 — 줄 높이 강제 */
   strutStyle?: {
     fontFamilies?: string[];
     fontSize?: number;
@@ -673,20 +686,19 @@ export interface ShadowShape {
   /** 내부 그림자 여부 */
   inset?: boolean;
 
-  // Phase 5+ CanvasKit 이펙트 확장 (saveLayer 기반):
-  // 현재 구현: skia/types.ts의 EffectStyle 유니온 타입 (OpacityEffect | BackgroundBlurEffect | DropShadowEffect)
-  // 아래 필드는 ShadowShape 통합을 위한 설계 명세:
-  /** 이펙트 타입 (Phase 5+) */
+  // CanvasKit 이펙트 (saveLayer 기반) — 구현: skia/effects.ts
+  // 타입: skia/types.ts의 EffectStyle (OpacityEffect | BackgroundBlurEffect | DropShadowEffect)
+  /** 이펙트 타입 */
   effectType?: 'shadow' | 'blur' | 'background-blur' | 'glow';
-  /** 배경 블러 반경 — ImageFilter.MakeBlur() (Phase 5+) */
+  /** 배경 블러 반경 — ImageFilter.MakeBlur() */
   backgroundBlur?: number;
-  /** 불투명도 이펙트 — Paint.setAlphaf() (Phase 5+) */
+  /** 불투명도 이펙트 — Paint.setAlphaf() */
   opacity?: number;
-  // CanvasKit 매핑:
+  // CanvasKit API 매핑:
   //   shadow → ImageFilter.MakeDropShadow(offsetX, offsetY, sigmaX, sigmaY, color)
   //   blur → ImageFilter.MakeBlur(sigmaX, sigmaY, TileMode)
-  //   background-blur → canvas.saveLayer() + ImageFilter.MakeBlur() (배경만 블러)
-  //   glow → ImageFilter.MakeDropShadow(0, 0, blur, blur, color) (offset 없는 그림자)
+  //   background-blur → canvas.saveLayer() + ImageFilter.MakeBlur()
+  //   glow → ImageFilter.MakeDropShadow(0, 0, blur, blur, color)
 }
 
 /**
@@ -728,7 +740,7 @@ export interface BorderShape {
     left?: boolean;
   };
 
-  // Phase 5+ Skia Stroke 확장 (설계 명세 — shape.types.ts 인터페이스 및 nodeRenderers.ts 구현 예정):
+  // Skia Stroke 속성 (Skia Paint 기반):
   /** Stroke 정렬 (Skia Paint stroke) */
   strokeAlignment?: 'inside' | 'center' | 'outside';
   /** 선 끝 모양 (Skia Paint::Cap) */
@@ -821,10 +833,10 @@ export interface ContainerLayout {
   justifySelf?: 'auto' | 'start' | 'center' | 'end' | 'stretch' | 'normal';
 }
 
-// Phase 5+ CanvasKit overflow 구현 (설계 명세):
-// overflow: 'hidden' → canvas.clipRect(containerRect, ClipOp.Intersect)  ← SkiaRenderer.ts:151에 clipRect 구현 완료
-// overflow: 'scroll' → canvas.clipRect() + ScrollBar 오버레이 렌더링     ← 미구현
-// clipPath: border-radius가 있는 경우 → canvas.clipRRect()로 둥근 클리핑 ← clipRRect 미구현
+// CanvasKit overflow 구현 상태:
+// overflow: 'hidden' → canvas.clipRect(containerRect, ClipOp.Intersect)  ← ✅ SkiaRenderer.ts:151에 구현 완료
+// overflow: 'scroll' → canvas.clipRect() + ScrollBar 오버레이 렌더링     ← ⚠️ 미구현
+// clipPath: border-radius가 있는 경우 → canvas.clipRRect()로 둥근 클리핑 ← ⚠️ clipRRect 미구현
 
 /**
  * 그라디언트 (ColorPicker, Slider 등에서 사용)
@@ -846,7 +858,7 @@ export interface GradientShape {
   };
 }
 
-// Phase 5+ GradientShape 확장 (CanvasKit/Skia) — fills.ts 구현 상태:
+// GradientShape CanvasKit 구현 상태 (fills.ts):
 //   gradient.type: 'linear' | 'radial' | 'angular' | 'mesh'
 //     - linear: Shader.MakeLinearGradient()              ← ✅ fills.ts:38-45
 //     - radial: Shader.MakeTwoPointConicalGradient()     ← ✅ fills.ts:51-61
@@ -855,7 +867,7 @@ export interface GradientShape {
 //   gradient.tileMode?: 'clamp' | 'repeat' | 'mirror'
 //     - 현재 Clamp만 사용 (repeat/mirror 미구현)
 //   gradient.colorSpace?: 'sRGB' | 'lab' | 'oklch'
-//     - 미구현 (향후 Skia SkColorSpace 지원 예정)
+//     - ⚠️ 미구현 (향후 Skia SkColorSpace 지원 예정)
 //   gradient.center?: { x: number; y: number }
 //     - radial/angular의 중심점 (기본: width/2, height/2)
 
@@ -1452,10 +1464,122 @@ export function generateCSSVariables(variantSpec: VariantSpec): Record<string, s
 }
 ```
 
-#### 3.5.3 PIXI Renderer
+#### 3.5.3 CanvasKit/Skia Renderer (Primary)
+
+CanvasKit/Skia가 Builder Canvas의 **메인 시각적 렌더러**이다.
+구현 위치: `apps/builder/src/builder/workspace/canvas/skia/`
+
+**렌더링 역할 분담:**
+
+| 기능 | 담당 | 구현 위치 |
+|------|------|----------|
+| 도형 렌더링 | CanvasKit | `nodeRenderers.ts` → `renderBox()` |
+| 텍스트 렌더링 | CanvasKit | `nodeRenderers.ts` → `renderText()` (ParagraphBuilder) |
+| 이미지 렌더링 | CanvasKit | `nodeRenderers.ts` → `renderImage()` |
+| 그림자/블러/이펙트 | CanvasKit | `effects.ts` → saveLayer + ImageFilter |
+| Fill (6종) | CanvasKit | `fills.ts` → Color, Linear/Radial/Angular/MeshGradient, Image |
+| 이벤트 히트 영역 | PixiJS | EventBoundary (씬 그래프 전용) |
+| 씬 그래프 순서 | PixiJS | Container 트리 (시각적 렌더링 없음) |
+
+**SkiaNodeData 구조 (nodeRenderers.ts):**
 
 ```typescript
-// packages/specs/src/renderers/PixiRenderer.ts
+// apps/builder/src/builder/workspace/canvas/skia/nodeRenderers.ts
+
+interface SkiaNodeData {
+  type: 'box' | 'text' | 'image' | 'container';
+  x: number; y: number; width: number; height: number;
+  visible: boolean;
+  effects?: EffectStyle[];
+
+  // type === 'box'
+  box?: {
+    fillColor: string;
+    borderRadius: number;
+    strokeColor?: string;
+    strokeWidth?: number;
+  };
+
+  // type === 'text'
+  text?: {
+    content: string;
+    fontFamilies: string[];
+    fontSize: number;
+    align: 'left' | 'center' | 'right';
+    lineHeight?: number;
+    paddingLeft?: number;
+    paddingTop?: number;
+    maxWidth?: number;
+  };
+
+  // type === 'image'
+  image?: {
+    skImage: SkImage;
+    contentX: number; contentY: number;
+    contentWidth: number; contentHeight: number;
+  };
+
+  children?: SkiaNodeData[];
+}
+```
+
+**renderNode() — 재귀적 노드 렌더링:**
+
+```typescript
+// apps/builder/src/builder/workspace/canvas/skia/nodeRenderers.ts
+
+function renderNode(
+  ck: CanvasKit,
+  canvas: Canvas,
+  node: SkiaNodeData,
+  cullingBounds: CullingBounds
+): void {
+  if (!node.visible || !intersectsAABB(cullingBounds, node)) return;
+
+  // 이펙트 적용 (saveLayer 기반)
+  const layerCount = beginRenderEffects(ck, canvas, node.effects);
+
+  switch (node.type) {
+    case 'box':    renderBox(ck, canvas, node); break;
+    case 'text':   renderText(ck, canvas, node); break;
+    case 'image':  renderImage(ck, canvas, node); break;
+  }
+
+  // 자식 노드 재귀 렌더링
+  node.children?.forEach(child => renderNode(ck, canvas, child, cullingBounds));
+
+  // 이펙트 레이어 복원
+  endRenderEffects(canvas, layerCount);
+}
+```
+
+**색상 변환 (CanvasKit Color4f):**
+
+```typescript
+// CanvasKit은 ck.Color4f(r, g, b, a) 형식의 Float32Array 사용
+function cssColorToSkiaColor(
+  color: string,
+  ck: CanvasKit,
+  fallback?: Float32Array
+): Float32Array {
+  if (!color || color === 'transparent') {
+    return fallback ?? ck.Color4f(0, 0, 0, 0);
+  }
+  const parsed = colord(color);
+  if (!parsed.isValid()) return fallback ?? ck.Color4f(0, 0, 0, 1);
+  const { r, g, b, a } = parsed.toRgb();
+  return ck.Color4f(r / 255, g / 255, b / 255, a);
+}
+```
+
+<details>
+<summary>Phase 1-4 레거시: PixiRenderer (씬 그래프 이벤트 전용으로 축소)</summary>
+
+> Phase 5 이후 PixiRenderer는 시각적 렌더링을 수행하지 않으며,
+> EventBoundary Hit Testing + Container 트리 관리 전용이다.
+
+```typescript
+// packages/specs/src/renderers/PixiRenderer.ts (레거시 — 이벤트 전용)
 
 import type { Graphics } from 'pixi.js';
 import type { ComponentSpec, Shape, VariantSpec, SizeSpec } from '../types';
@@ -1472,6 +1596,7 @@ export interface PixiRenderContext {
 
 /**
  * ComponentSpec의 Shapes를 PIXI Graphics로 렌더링
+ * ⚠️ Phase 5+ 에서는 시각적 렌더링에 사용되지 않음 (CanvasKit이 담당)
  */
 export function renderToPixi<Props extends Record<string, unknown>>(
   spec: ComponentSpec<Props>,
@@ -1772,31 +1897,30 @@ export function getSizePreset(
 }
 ```
 
-#### Phase 5+ 변경사항 — CanvasKitRenderer (Skia 전환)
+</details>
 
-> Phase 5 이후 PixiRenderer는 **씬 그래프 + 이벤트(EventBoundary) 관리**로 축소되며,
-> 시각적 렌더링은 CanvasKitRenderer가 담당한다.
-> 상세: `docs/WASM.md` Phase 5.3, 6.3 참조
+#### 3.5.3.1 CanvasKit/Skia 렌더링 상세
 
-**PixiRenderer 역할 축소:**
+상세: `docs/WASM.md` Phase 5.3, 6.3 참조
 
-| 기능 | Phase 1-4 (PixiRenderer) | Phase 5+ |
+**PixiJS → CanvasKit 역할 전환 (완료):**
+
+| 기능 | Phase 1-4 (PixiRenderer) | 현재 (CanvasKit/Skia) |
 |------|-------------------------|----------|
-| 도형 렌더링 | `graphics.rect()`, `graphics.circle()` | CanvasKitRenderer |
-| 텍스트 렌더링 | `new Text()` (별도 객체) | CanvasKitRenderer (`drawParagraph`) |
-| 그림자 | 별도 처리 (불완전) | CanvasKitRenderer (`ImageFilter`) |
+| 도형 렌더링 | `graphics.rect()`, `graphics.circle()` | `renderBox()` → `canvas.drawRRect()` |
+| 텍스트 렌더링 | `new Text()` (별도 객체) | `renderText()` → `canvas.drawParagraph()` |
+| 그림자/이펙트 | 별도 처리 (불완전) | `effects.ts` → `ImageFilter` + `saveLayer()` |
 | 이벤트 히트 영역 | `EventBoundary` | 동일 (PixiJS 유지) |
 | 씬 그래프 순서 | `Container` 트리 | 동일 (PixiJS 유지) |
 
-**CanvasKitRenderer 설계 명세:**
+**Spec → CanvasKit 매핑 참조 (renderToSkia 설계 예시):**
 
-> **현재 구현 상태:** 아래 `renderToSkia()` 함수는 Spec 패키지 내 렌더러 설계 예시이다.
-> 실제 CanvasKit 렌더링은 `apps/builder/src/builder/workspace/canvas/skia/nodeRenderers.ts`의
-> `renderNode()` 함수가 담당하며, SkiaNodeData 기반으로 동작한다.
-> Spec Shape → SkiaNodeData 변환은 ElementSprite.tsx에서 수행된다.
+> 실제 구현은 `apps/builder/src/builder/workspace/canvas/skia/nodeRenderers.ts`의
+> `renderNode()` 함수가 담당한다 (위 3.5.3 참조).
+> 아래는 Spec 패키지 내 렌더러 설계 참조 코드이다.
 
 ```typescript
-// 설계 예시 (실제 구현: builder/workspace/canvas/skia/nodeRenderers.ts)
+// Spec → CanvasKit 매핑 참조 (실제 구현: builder/workspace/canvas/skia/nodeRenderers.ts)
 
 import type { CanvasKit, Canvas, Paint } from 'canvaskit-wasm';
 import type { ComponentSpec, Shape } from '../types';
@@ -2160,8 +2284,8 @@ export async function generateAllCSS(
 }
 ```
 
-> **Phase 5+ 참고:** CSS Generator는 **React 렌더링 및 Publish(배포) 전용**이다.
-> Builder Canvas의 시각적 렌더링은 Phase 5 이후 CanvasKitRenderer가 담당하며,
+> **참고:** CSS Generator는 **React 렌더링 및 Publish(배포) 전용**이다.
+> Builder Canvas의 시각적 렌더링은 CanvasKit/Skia가 담당하며,
 > CSS Generator가 생성한 CSS는 Canvas 렌더링에 사용되지 않는다.
 > Canvas에서는 ComponentSpec의 Shapes를 직접 CanvasKit Paint/Path로 변환한다.
 
@@ -2172,8 +2296,8 @@ export async function generateAllCSS(
 | 타입 시스템 | `specs/src/types/*.ts` | ComponentSpec, Shape, Token 타입 |
 | Primitive 토큰 | `specs/src/primitives/*.ts` | 색상, 간격, 타이포그래피, 둥근모서리 |
 | React 렌더러 | `specs/src/renderers/ReactRenderer.ts` | Spec → React Props |
-| PIXI 렌더러 | `specs/src/renderers/PixiRenderer.ts` | Spec → PIXI Graphics |
-| CanvasKit 렌더러 | `builder/workspace/canvas/skia/nodeRenderers.ts` | Spec → CanvasKit/Skia Surface (Phase 5+, builder 패키지 내 구현) |
+| PixiJS 렌더러 | `specs/src/renderers/PixiRenderer.ts` | Spec → 씬 그래프 이벤트 전용 (시각적 렌더링 없음) |
+| **CanvasKit 렌더러** | `builder/workspace/canvas/skia/nodeRenderers.ts` | **Spec → CanvasKit/Skia Surface (메인 시각적 렌더러)** |
 | CSS 생성기 | `specs/src/renderers/CSSGenerator.ts` | Spec → CSS 파일 (React/Publish 전용) |
 | 빌드 스크립트 | `specs/scripts/*.ts` | CSS 생성, 검증 |
 
@@ -2185,13 +2309,17 @@ export async function generateAllCSS(
 - [ ] Primitive 토큰 정의 (`primitives/*.ts`)
 - [ ] Token Resolver 구현
 - [ ] React Renderer 구현
-- [ ] PIXI Renderer 구현
+- [ ] PixiJS Renderer 구현 (씬 그래프 이벤트 전용)
 - [ ] CSS Generator 구현
 - [ ] 빌드 스크립트 작성
 - [ ] 단위 테스트 작성
-- [ ] CanvasKit WASM 초기화 설정 (`canvaskit-wasm` 패키지 통합)
-- [x] CanvasKitRenderer 구현 → `builder/workspace/canvas/skia/nodeRenderers.ts`에 구현 완료 (specs 패키지 외부)
-- [ ] CanvasKit 폰트 로더 구현 (ParagraphBuilder용)
+- [x] CanvasKit WASM 초기화 설정 (`initCanvasKit.ts`)
+- [x] CanvasKitRenderer 구현 (`builder/workspace/canvas/skia/nodeRenderers.ts`)
+- [x] CanvasKit 폰트 로더 구현 (`fontManager.ts`)
+- [x] SkiaOverlay + 이벤트 브릿지 구현 (`SkiaOverlay.tsx` + `eventBridge.ts`)
+- [x] Fill 시스템 구현 — 6종 (`fills.ts`)
+- [x] Effect 파이프라인 구현 (`effects.ts`)
+- [x] Dual Surface + Dirty Rect 최적화 (`SkiaRenderer.ts` + `dirtyRectTracker.ts`)
 
 ### 3.8 Phase 0 → Phase 1 검증 게이트
 
@@ -2204,7 +2332,7 @@ export async function generateAllCSS(
 | 1 | 타입 시스템 완전성 | 모든 타입 export | `tsc --noEmit` 성공 |
 | 2 | 토큰 일관성 | CSS 변수와 1:1 매핑 | 자동화 검증 스크립트 |
 | 3 | React Renderer 동작 | Button Props 변환 | 단위 테스트 100% |
-| 4 | PIXI Renderer 동작 | Button Graphics 생성 | 단위 테스트 100% |
+| 4 | CanvasKit Renderer 동작 | Button renderNode() 렌더링 | 단위 테스트 100% |
 | 5 | CSS Generator 동작 | Button.css 자동 생성 | diff 검증 |
 | 6 | 빌드 성공 | pnpm build 성공 | CI 파이프라인 |
 
@@ -2677,111 +2805,36 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
 );
 ```
 
-### 4.5 마이그레이션된 PIXI 컴포넌트
+### 4.5 CanvasKit/Skia 렌더링 패턴 (현재)
+
+**Button 렌더링 흐름** (`VITE_RENDER_MODE=skia`):
+
+```
+ElementSprite (spriteType='button')
+├── PixiJS Container (씬 그래프 + 이벤트 전용)
+│   └── FancyButton (EventBoundary Hit Testing)
+└── useSkiaNode(elementId, skiaNodeData) → 글로벌 레지스트리 등록
+    │
+    ▼
+SkiaOverlay.renderFrame()
+└── buildSkiaTreeFromRegistry(stage)  // PixiJS 씬 그래프 순회
+    └── getSkiaNode(elementId)        // 레지스트리에서 SkiaNodeData 조회
+        └── renderNode(ck, canvas, tree)  // CanvasKit으로 시각적 렌더링
+            ├── renderBox()   → ck.drawRRect() / drawRect()
+            └── renderText()  → ck.ParagraphBuilder → drawParagraph()
+```
+
+**skiaNodeData 구조 (Button 예시):**
 
 ```typescript
-// apps/builder/src/builder/workspace/canvas/ui/PixiButton.tsx (마이그레이션 후)
-
-import { memo, useCallback, useMemo } from 'react';
-import { useExtend } from '@pixi/react';
-import { Graphics as PixiGraphicsClass } from 'pixi.js';
-import { FancyButton } from '@pixi/ui';
-import { ButtonSpec, type ButtonProps } from '@xstudio/specs';
-import { getVariantColors, getSizePreset, renderToPixi } from '@xstudio/specs/renderers';
-import { useTheme } from '../hooks/useTheme';
-import { PIXI_COMPONENTS } from '../pixiSetup';
-import type { Element } from '../../../../types/core/store.types';
-
-export interface PixiButtonProps {
-  element: Element;
-  isSelected?: boolean;
-  onClick?: (elementId: string) => void;
+{
+  type: 'box',
+  box: { fillColor, borderRadius, strokeColor, strokeWidth },
+  children: [{
+    type: 'text',
+    text: { content, fontSize, color, align: 'center', paddingTop, maxWidth }
+  }]
 }
-
-export const PixiButton = memo(function PixiButton({ element, onClick }: PixiButtonProps) {
-  useExtend(PIXI_COMPONENTS);
-
-  const theme = useTheme(); // 'light' | 'dark'
-  const props = element.props as ButtonProps;
-
-  const variant = props.variant || ButtonSpec.defaultVariant;
-  const size = props.size || ButtonSpec.defaultSize;
-
-  // Spec에서 색상 가져오기
-  const variantSpec = ButtonSpec.variants[variant];
-  const sizeSpec = ButtonSpec.sizes[size];
-
-  const colors = useMemo(() =>
-    getVariantColors(variantSpec, theme),
-    [variantSpec, theme]
-  );
-
-  const sizePreset = useMemo(() =>
-    getSizePreset(sizeSpec),
-    [sizeSpec]
-  );
-
-  // 버튼 텍스트
-  const buttonText = useMemo(() => {
-    return String(props.children || props.text || props.label || 'Button');
-  }, [props.children, props.text, props.label]);
-
-  // Graphics 그리기
-  const drawButton = useCallback((g: PixiGraphicsClass, state: 'default' | 'hover' | 'pressed') => {
-    const bgColor = state === 'hover' ? colors.bgHover
-                  : state === 'pressed' ? colors.bgPressed
-                  : colors.bg;
-
-    g.clear();
-    g.roundRect(0, 0, width, sizePreset.height, sizePreset.borderRadius);
-    g.fill({ color: bgColor, alpha: colors.bgAlpha });
-
-    if (colors.border) {
-      g.stroke({ color: colors.border, width: 1 });
-    }
-  }, [colors, sizePreset, width]);
-
-  // ... FancyButton 생성 로직
-
-  return (
-    <pixiContainer layout={layout}>
-      {/* FancyButton은 useEffect에서 추가 */}
-    </pixiContainer>
-  );
-});
-```
-
-#### Phase 5+ 변경사항 (CanvasKit/Skia 전환)
-
-> Phase 5 이후 PixiJS Graphics 렌더링은 CanvasKit으로 대체된다.
-> PixiJS는 씬 그래프 + 이벤트(EventBoundary) 전용으로 축소되며,
-> 시각적 렌더링은 CanvasKit Surface에서 처리한다.
-> 상세: `docs/WASM.md` Phase 5.7, §6.1
-
-**현재 구현된 패턴** (`VITE_RENDER_MODE=skia`):
-
-```
-렌더링 흐름:
-1. ElementSprite (spriteType='button')
-   ├── PixiButton → FancyButton (PixiJS 이벤트 처리 전용)
-   └── useSkiaNode(elementId, skiaNodeData) → 전역 레지스트리 등록
-
-2. skiaNodeData 구조:
-   {
-     type: 'box',
-     box: { fillColor, borderRadius, strokeColor, strokeWidth },
-     children: [{                    // ← 텍스트 children 포함
-       type: 'text',
-       text: { content, fontSize, color, align:'center', paddingTop, maxWidth }
-     }]
-   }
-
-3. SkiaOverlay.renderFrame()
-   └── buildSkiaTreeFromRegistry(stage)  // PixiJS 씬 그래프 순회
-       └── getSkiaNode(elementId)        // 레지스트리에서 SkiaNodeData 조회
-           └── renderNode(ck, canvas, tree)  // CanvasKit으로 렌더링
-               ├── renderBox()   → ck.drawRRect() / drawRect()
-               └── renderText()  → ck.ParagraphBuilder → drawParagraph()
 ```
 
 **UI 컴포넌트 텍스트 추출** (`ElementSprite.tsx`):
@@ -2808,6 +2861,34 @@ const textContent = String(
 | surface | 진한 회색 | `#1d1b20` |
 | outline | 보라 | `#6750a4` |
 | ghost | 보라 | `#6750a4` |
+
+**variant별 배경 색상 매핑** (Skia 폴백 렌더링):
+
+| variant | 배경 색상 | hex | alpha |
+|---------|----------|-----|-------|
+| default | surface-container-high | `#ece6f0` | 1 |
+| primary | primary | `#6750a4` | 1 |
+| secondary | secondary | `#625b71` | 1 |
+| tertiary | tertiary | `#7d5260` | 1 |
+| error | error | `#b3261e` | 1 |
+| surface | surface-container-highest | `#e6e0e9` | 1 |
+| outline | surface (투명) | `#fef7ff` | 0 |
+| ghost | surface (투명) | `#fef7ff` | 0 |
+
+**variant별 테두리 색상 매핑** (Skia 폴백 렌더링):
+
+| variant | 테두리 색상 | hex | 비고 |
+|---------|-----------|-----|------|
+| default | outline-variant | `#cac4d0` | |
+| primary | primary | `#6750a4` | |
+| secondary | secondary | `#625b71` | |
+| tertiary | tertiary | `#7d5260` | |
+| error | error | `#b3261e` | |
+| surface | outline-variant | `#cac4d0` | |
+| outline | outline | `#79747e` | |
+| ghost | — | — | 테두리 없음 |
+
+> **구현 참조**: `ElementSprite.tsx`의 `VARIANT_BG_COLORS`, `VARIANT_BG_ALPHA`, `VARIANT_BORDER_COLORS` 상수 테이블. outline/ghost variant는 배경 alpha=0으로 투명 처리되며, ghost는 테두리도 없음.
 
 ### 4.6 Phase 1 체크리스트
 
@@ -2872,7 +2953,22 @@ if (ENABLE_BUTTON_SPEC) {
 }
 ```
 
-#### 4.7.4 Pixi UI 컴포넌트 CSS 단위 해석 규칙 (CRITICAL)
+#### 4.7.4 CSS 단위 처리 규칙
+
+**CanvasKit/Skia 렌더링 (현재):** Yoga 레이아웃 엔진이 CSS 단위(%, vw, vh, rem)를 **절대 px로 변환**한 결과를 CanvasKit이 받으므로, CanvasKit 렌더러에서는 CSS 단위 해석이 **불필요**하다. `skiaNodeData.width/height` 등 이미 계산된 숫자를 직접 사용한다.
+
+| 항목 | Phase 1-4 (PixiJS) | 현재 (CanvasKit) |
+|------|---------------------|---------------------|
+| CSS 단위 해석 | 각 Pixi 컴포넌트에서 `parseCSSSize()` 필요 | **불필요** — Yoga가 px로 변환 완료 |
+| viewport 크기 참조 | vw/vh → parentContentArea 기준 변환 | Yoga가 처리, CanvasKit은 결과만 수신 |
+| % 단위 | 부모 content area 수동 계산 | Yoga가 자동 계산 |
+| 입력 형식 | CSS 문자열 ("16px", "50%") | 숫자 (px 절대값) |
+
+<details>
+<summary>Phase 1-4 레거시: Pixi UI 컴포넌트 CSS 단위 해석 규칙</summary>
+
+> 아래 규칙은 Phase 1-4 PixiJS 컴포넌트에만 적용된다.
+> CanvasKit 렌더러에서는 Yoga가 px 변환을 완료하므로 불필요.
 
 모든 Pixi UI 컴포넌트(PixiButton, PixiToggleButton, PixiSlider 등)에서 inline style의 CSS 값을
 WebGL 그래픽 크기로 변환할 때 반드시 아래 규칙을 따라야 합니다.
@@ -2962,21 +3058,8 @@ const parsedBorder = parseBorderWidth(style);  // "2px" → 4방향, borderTopWi
 > 그러나 `typeof === 'number'` → `parseCSSSize()`/`parsePadding()`/`parseBorderWidth()` 전환은 미완료 상태.
 > CSS 문자열 값("16px", "50%", "100vw")이 무시되는 버그가 잔존.
 
-##### Phase 5+ 변경사항 (CanvasKit/Skia 전환)
 
-> Phase 5 이후 CanvasKit 렌더링에서는 **Yoga 레이아웃 계산 결과(px 절대값)만 사용**한다.
-> CSS 단위(%, vw, vh, rem)는 Yoga가 계산하여 절대 px로 변환한 결과를 CanvasKit이 받으므로,
-> CanvasKit 렌더러 자체에서는 CSS 단위 해석이 불필요하다.
-
-| 항목 | Phase 5 이전 (PixiJS) | Phase 5+ (CanvasKit) |
-|------|---------------------|---------------------|
-| CSS 단위 해석 | 각 Pixi 컴포넌트에서 `parseCSSSize()` 필요 | **불필요** — Yoga가 px로 변환 완료 |
-| viewport 크기 참조 | vw/vh → parentContentArea 기준 변환 | Yoga가 처리, CanvasKit은 결과만 수신 |
-| % 단위 | 부모 content area 수동 계산 | Yoga가 자동 계산 |
-| 입력 형식 | CSS 문자열 ("16px", "50%") | 숫자 (px 절대값) |
-
-> 따라서 §4.7.4의 CSS 단위 해석 규칙은 **Phase 5 이전 PixiJS 컴포넌트에만 적용**되며,
-> Phase 5+ CanvasKit 렌더러에서는 `skiaNodeData.width/height` 등 이미 계산된 숫자를 직접 사용한다.
+</details>
 
 #### 4.7.4.0 `@xstudio/specs` 빌드 동기화 (CRITICAL)
 
@@ -4240,24 +4323,24 @@ async function compareScreenshots(
 }
 ```
 
-#### Phase 5+ 변경사항 (CanvasKit/Skia 전환)
+#### 8.1.3.1 CanvasKit Visual Regression Testing (현재)
 
-> Phase 5 이후 Visual Regression Testing은 React vs **CanvasKit** 비교로 전환된다.
-> 상세: `docs/WASM.md` Phase 5.3 참조
->
-> **현재 구현 상태:** 아래 테스트 헬퍼(`waitForCanvasKitRender`, `__canvasKitReady`)는 구현 예정이다.
+Visual Regression Testing은 React vs **CanvasKit** 비교로 수행한다.
+상세: `docs/WASM.md` Phase 5.3 참조
+
+> **구현 상태:** 아래 테스트 헬퍼(`waitForCanvasKitRender`)는 구현 예정이다.
 > CanvasKit 렌더링 안정화 후 Playwright 기반 비주얼 리그레션 테스트를 구축할 계획이다.
 
-**변경 사항:**
+**Phase 1-4 → 현재 변경 사항:**
 
-| 기존 (Phase 1-4) | Phase 5+ (CanvasKit) | 비고 |
+| Phase 1-4 (PixiJS) | 현재 (CanvasKit) | 비고 |
 |------------------|---------------------|------|
-| `/builder-preview/` PixiJS 캔버스 | CanvasKit `<canvas>` 캡처 | 캡처 대상 변경 |
+| `/builder-preview/` PixiJS 캔버스 | CanvasKit `<canvas data-skia-overlay>` 캡처 | 캡처 대상 변경 |
 | `waitForPixiRender()` | `waitForCanvasKitRender()` | 안정화 대기 함수 변경 |
 | PixiJS Graphics 렌더링 비교 | CanvasKit Surface 렌더링 비교 | 렌더링 파이프라인 변경 |
 
 ```typescript
-// Phase 5+ CanvasKit 렌더링 안정화 대기 (구현 예정 — 현재 미구현)
+// CanvasKit 렌더링 안정화 대기 (구현 예정)
 async function waitForCanvasKitRender(page: Page): Promise<void> {
   // CanvasKit WASM 초기화 완료 대기
   await page.waitForFunction(() =>
@@ -4279,7 +4362,7 @@ async function captureCanvasKit(page: Page): Promise<Buffer> {
 
 ### 8.1.4 Spec Shape ↔ CanvasKit API 매핑
 
-> Phase 5 마이그레이션 시 각 Spec Shape 타입과 CanvasKit API의 1:1 매핑 참조.
+각 Spec Shape 타입과 CanvasKit API의 1:1 매핑 참조.
 > 상세: `docs/WASM.md` Phase 6.3, `docs/PENCIL_APP_ANALYSIS.md` §11 참조
 
 | Spec Shape | CanvasKit Canvas API | Skia Paint/Path | 현재 PixiJS | 비고 |
@@ -4353,12 +4436,21 @@ export function invalidateCache(): void {
 }
 ```
 
-#### Phase 5+ 변경사항 (CanvasKit/Skia 전환)
+#### 8.2.1 CanvasKit/Skia 최적화 (현재)
 
-> Phase 5 이후 PixiRenderer 캐싱에 더하여 CanvasKit 전용 최적화가 추가된다.
-> 상세: `docs/WASM.md` Phase 5.5 참조
+상세: `docs/WASM.md` Phase 5.5, 6.1-6.2 참조
 
-**이중 Surface 캐싱:**
+**이중 Surface 캐싱 + Frame Classification:**
+
+```
+Frame Classification (SkiaRenderer.ts):
+  idle        → 변경 없음, 렌더링 스킵
+  camera-only → 줌/팬만 변경, 캐시 blit만 수행 (<2ms)
+  content     → 요소 변경, dirty rect만 재렌더링 (~8ms)
+  full        → 첫 프레임 또는 리사이즈, 전체 렌더링 (~16ms)
+```
+
+**이중 Surface 구조:**
 ```
 Main Surface (화면 표시용)
   ↕ 더블 버퍼링
@@ -4412,14 +4504,25 @@ export type { ComponentSpec, Shape, TokenRef } from './types';
 
 ### 8.4 Phase 5 체크리스트
 
-- [ ] Visual Regression Test 설정 (Playwright)
+**CanvasKit/Skia 렌더링 인프라 (완료):**
+- [x] CanvasKit WASM 초기화 (`initCanvasKit.ts`)
+- [x] SkiaRenderer 구현 — Phase 5 single Surface (`SkiaRenderer.ts`)
+- [x] SkiaRenderer 구현 — Phase 6 dual Surface + dirty rect (`SkiaRenderer.ts` + `dirtyRectTracker.ts`)
+- [x] nodeRenderers 구현 — renderBox, renderText, renderImage (`nodeRenderers.ts`)
+- [x] Fill 시스템 — 6종 (Color, Linear/Radial/Angular/MeshGradient, Image) (`fills.ts`)
+- [x] Effect 파이프라인 — saveLayer 기반 (Opacity, Blur, DropShadow) (`effects.ts`)
+- [x] Font 로딩/캐싱 (`fontManager.ts`)
+- [x] SkiaOverlay + PixiJS 이벤트 브릿지 (`SkiaOverlay.tsx` + `eventBridge.ts`)
+
+**테스트 및 최적화 (진행 중):**
+- [ ] Visual Regression Test 설정 (Playwright + CanvasKit 캡처)
 - [ ] 모든 컴포넌트 스냅샷 생성
-- [ ] React ↔ PIXI 비교 자동화
+- [ ] React ↔ CanvasKit 비교 자동화
 - [ ] 성능 프로파일링
-- [ ] 캐싱 최적화
+- [ ] Paint 캐시 최적화 (현재 인라인 생성)
+- [ ] Paragraph 캐시 최적화 (현재 매 프레임 재생성)
 - [ ] 번들 크기 분석 및 최적화
 - [ ] 문서화 완료
-- [ ] 마이그레이션 가이드 작성
 
 ---
 
@@ -4613,17 +4716,17 @@ export function specPropsToElement<T>(
 }
 ```
 
-#### 9.4.3 PixiButton에서 사용 예시
+#### 9.4.3 ElementSprite에서 Skia 렌더링 사용 예시
 
 ```typescript
-// apps/builder/src/builder/workspace/canvas/ui/PixiButton.tsx
+// apps/builder/src/builder/workspace/canvas/ElementSprite.tsx (개념)
 
 import { useEditorStore } from '../../../../store/editorStore';
 import { elementToSpecProps, getSpecForElement } from '@xstudio/specs/adapters';
-import { renderToPixi, getVariantColors, getSizePreset } from '@xstudio/specs/renderers';
+import { useSkiaNode } from '../skia/useSkiaNode';
 import type { ButtonProps } from '@xstudio/specs';
 
-export const PixiButton = memo(function PixiButton({ elementId }: { elementId: string }) {
+function ElementSpriteButton({ elementId }: { elementId: string }) {
   // Zustand에서 element 가져오기
   const element = useEditorStore(state => state.elementsMap.get(elementId));
 
@@ -4635,14 +4738,17 @@ export const PixiButton = memo(function PixiButton({ elementId }: { elementId: s
 
   if (!spec) return null;
 
-  // Spec에서 variant/size 정보 가져오기
-  const variantSpec = spec.variants[props.variant!];
-  const sizeSpec = spec.sizes[props.size!];
+  // SkiaNodeData 생성 및 글로벌 레지스트리 등록
+  const skiaNodeData = useMemo(() => ({
+    type: 'box' as const,
+    box: { fillColor: variantColor, borderRadius, strokeColor, strokeWidth },
+    children: [{ type: 'text', text: { content: buttonText, fontSize, align: 'center' } }],
+  }), [variantColor, borderRadius, buttonText, fontSize]);
 
-  const colors = getVariantColors(variantSpec, theme);
-  const sizePreset = getSizePreset(sizeSpec);
+  useSkiaNode(elementId, skiaNodeData);
 
-  // ... 렌더링 로직
+  // PixiJS Container는 이벤트 전용 (시각적 렌더링 없음)
+  // ... PixiJS Container 반환
 });
 ```
 
@@ -4675,7 +4781,7 @@ function updateElementFromSpec(elementId: string, newProps: Partial<ButtonProps>
 ```
                     ┌─────────────┐
                     │   E2E      │  Playwright (Visual Regression)
-                    │   Tests    │  - React ↔ PIXI 비교
+                    │   Tests    │  - React ↔ CanvasKit 비교
                     └─────────────┘  - 5% of tests
                    ┌───────────────┐
                    │  Integration  │  Vitest + React Testing Library
@@ -4831,7 +4937,7 @@ import { test, expect } from '@playwright/test';
 import pixelmatch from 'pixelmatch';
 import { PNG } from 'pngjs';
 
-test.describe('React ↔ PIXI Visual Consistency', () => {
+test.describe('React ↔ CanvasKit Visual Consistency', () => {
   const MAX_DIFF_PERCENT = 1; // 최대 1% 차이 허용
 
   test('Button primary/md가 일치함', async ({ page }) => {
@@ -4839,19 +4945,19 @@ test.describe('React ↔ PIXI Visual Consistency', () => {
     await page.goto('/test/button-react?variant=primary&size=md');
     const reactScreenshot = await page.locator('.react-aria-Button').screenshot();
 
-    // PIXI 버전 캡처
-    await page.goto('/test/button-pixi?variant=primary&size=md');
-    await page.waitForSelector('canvas');
-    const pixiScreenshot = await page.locator('canvas').screenshot();
+    // CanvasKit 버전 캡처
+    await page.goto('/test/button-canvas?variant=primary&size=md');
+    await page.waitForFunction(() => (window as any).__canvasKitReady === true);
+    const canvasKitScreenshot = await page.locator('canvas[data-skia-overlay]').screenshot();
 
     // 픽셀 비교
     const reactImg = PNG.sync.read(reactScreenshot);
-    const pixiImg = PNG.sync.read(pixiScreenshot);
+    const canvasKitImg = PNG.sync.read(canvasKitScreenshot);
 
     const diff = new PNG({ width: reactImg.width, height: reactImg.height });
     const numDiffPixels = pixelmatch(
       reactImg.data,
-      pixiImg.data,
+      canvasKitImg.data,
       diff.data,
       reactImg.width,
       reactImg.height,
@@ -4931,11 +5037,11 @@ const USE_SPEC_RENDERER = {
   Table: false, // 아직 마이그레이션 안 됨
 };
 
-function PixiButton({ element }) {
+function ElementSpriteButton({ element }) {
   if (USE_SPEC_RENDERER.Button) {
-    return <PixiButtonFromSpec element={element} />;
+    return <SkiaButtonFromSpec element={element} />;  // CanvasKit 렌더링
   }
-  return <LegacyPixiButton element={element} />;
+  return <LegacyPixiButton element={element} />;  // Phase 1-4 레거시
 }
 ```
 
@@ -5074,3 +5180,4 @@ function PixiButton({ element }) {
 | 2026-01-30 | 1.12 | Button borderWidth/레이아웃 이중 계산 수정 (Section 4.7.4.4~4.7.4.8): (1) 전 variant에 border/borderHover 추가 — CSS `border: 1px solid`와 동기화 (Button.spec.ts), (2) specDefaultBorderWidth=1 고정 — variant.border 유무 무관 (PixiButton.tsx), (3) borderHoverColor 분리 — hover/pressed 상태 별도 border 색상 (PixiButton.tsx, PixiRenderer.ts), (4) parseBoxModel 폼 요소 기본값 — inline style 미지정 시 BUTTON_SIZE_CONFIG padding/border 적용 (utils.ts), (5) calculateContentWidth 순수 텍스트 반환 — 폼 요소 padding/border를 parseBoxModel으로 분리하여 이중 계산 제거 (utils.ts), (6) 텍스트 측정 엔진 통일 — PixiButton 너비 측정을 Canvas 2D measureTextWidth로 교체 (PixiButton.tsx), (7) createDefaultButtonProps borderWidth:'1px' 기본값 — Style Panel 0 표시 해결 (unified.types.ts), (8) BUTTON_SIZE_CONFIG에 borderWidth:1 필드 추가 (utils.ts), (9) 값 동기화 테이블에 borderWidth 항목 추가 |
 | 2026-01-31 | 1.13 | 버튼 display/레이아웃 버그 수정 5건 (Section 4.7.4.2, 4.7.4.5): (1) parseBoxModel 폼 요소 자동 border-box — 명시적 width/height를 border-box로 취급하여 padding+border 차감 (treatAsBorderBox), PixiButton self-rendering과 BlockEngine content-box 합산 간 이중 계산 해결 (utils.ts), (2) calculateContentHeight에서 padding 이중 계산 제거 — content-box 기준 textHeight만 반환 (utils.ts), (3) Body borderWidth 처리 — renderWithCustomEngine의 availableWidth에서 border 차감 추가, 자식 offset은 padding만 적용 (Yoga가 border offset 자동 처리) (BuilderCanvas.tsx), (4) §4.7.4.2에 v1.13 border-box 참고 추가 |
 | 2026-02-01 | 1.14 | Phase 5+ CanvasKit/Skia 구현 코드 대조 검증 12건 반영: (1) §1 아키텍처 개요 — Skia 렌더링 실제 위치(apps/builder/.../skia/) 명시, (2) §2 렌더러 설명 — CanvasKitRenderer → nodeRenderers.ts 파이프라인 정정, (3) §2 파일 목록 — CanvasKitRenderer.ts → 외부 구현 참조 코멘트, (4) §3 TextShape — "설계 명세 — 인터페이스 적용 예정" 상태 표기, (5) §3 ShadowShape — 실제 구현 위치(skia/types.ts EffectStyle) 명시, (6) §3 BorderShape — "설계 명세 — 인터페이스 적용 예정" 상태 표기, (7) §4 Clipping — clipRect ✅/clipRRect·overflow 미구현 상태 표기, (8) §4 Gradient — 타입별 구현 상태 + fills.ts 라인 참조, (9) §7 색상 변환 — "설계 예시" + Color4f 인라인 사용 명시, (10) §8 렌더러 파일 — 설계 예시 + nodeRenderers.ts 참조, (11) §12 테스트 헬퍼 — "구현 예정 — 현재 미구현" 표기, (12) §12 캐시 전략 — 구현 상태 컬럼 추가(Paint·Paragraph ⚠️ 미구현, Font·Surface·DirtyRect ✅) |
+| 2026-02-02 | 2.0 | **Skia 중심 문서 리팩토링**: (1) 문서 상태를 "Phase 5 구현 완료 (CanvasKit/Skia 렌더링 전환)"로 갱신, (2) 목표 아키텍처를 render.skia 중심으로 변경, (3) 메인 데이터 흐름 다이어그램을 CanvasKit 4-path로 교체하고 기존 3-path를 레거시 접이식 블록으로 이동, (4) 시스템 아키텍처 다이어그램에 skia/ 디렉토리 반영, (5) 디렉토리 구조에 skia/ 18개 파일 목록 추가, (6) §3.5.3을 "CanvasKit/Skia Renderer (Primary)"로 재구조화 — SkiaNodeData 구조, renderNode() 파이프라인, 렌더러 역할 분담 테이블 추가, PixiRenderer 코드를 레거시 접이식 블록으로 이동, (7) Shape 타입 내 Phase 5+ 주석을 본문으로 승격 — TextShape(ParagraphBuilder), ShadowShape(effects.ts), BorderShape(Skia Stroke), GradientShape(fills.ts 구현 상태), overflow(clipRect 구현 완료), (8) §4.5를 "CanvasKit/Skia 렌더링 패턴"으로 교체 — ElementSprite→useSkiaNode→SkiaOverlay 파이프라인 다이어그램, (9) §4.7.4 CSS 단위 규칙을 CanvasKit 중심으로 재구성 — Yoga px 변환 설명을 본문으로, PixiJS 규칙을 레거시 접이식 블록으로, (10) Phase 0 체크리스트 갱신 — CanvasKit 인프라 11개 항목 [x] 완료, (11) Phase 5 체크리스트 갱신 — Skia 인프라 8개 항목 [x] 완료 + 미완료 항목 분리, (12) VRT 섹션을 React ↔ CanvasKit 비교로 전환, (13) 성능 최적화에 Frame Classification(idle/camera-only/content/full) 추가, (14) 테스트 코드 내 PIXI 참조를 CanvasKit으로 교체 |

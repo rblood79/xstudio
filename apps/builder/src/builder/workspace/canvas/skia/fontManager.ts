@@ -132,8 +132,17 @@ export class SkiaFontManager {
   // IndexedDB 캐싱
   // ============================================
 
+  /** 캐시된 IDB 연결 (매 호출마다 새로 열지 않음) */
+  private dbInstance: IDBDatabase | null = null;
+  private dbPromise: Promise<IDBDatabase> | null = null;
+
   private async openDB(): Promise<IDBDatabase> {
-    return new Promise((resolve, reject) => {
+    // 기존 연결 재사용
+    if (this.dbInstance) return this.dbInstance;
+    // 열기 진행 중이면 대기
+    if (this.dbPromise) return this.dbPromise;
+
+    this.dbPromise = new Promise<IDBDatabase>((resolve, reject) => {
       const request = indexedDB.open(IDB_NAME, IDB_VERSION);
 
       request.onupgradeneeded = () => {
@@ -143,9 +152,22 @@ export class SkiaFontManager {
         }
       };
 
-      request.onsuccess = () => resolve(request.result);
-      request.onerror = () => reject(request.error);
+      request.onsuccess = () => {
+        this.dbInstance = request.result;
+        // 연결 끊김 시 캐시 무효화
+        this.dbInstance.onclose = () => {
+          this.dbInstance = null;
+          this.dbPromise = null;
+        };
+        resolve(this.dbInstance);
+      };
+      request.onerror = () => {
+        this.dbPromise = null;
+        reject(request.error);
+      };
     });
+
+    return this.dbPromise;
   }
 
   private async getFromCache(family: string): Promise<ArrayBuffer | null> {
@@ -188,5 +210,27 @@ export class SkiaFontManager {
   }
 }
 
+// ============================================
+// HMR 안전 싱글톤 (initCanvasKit.ts 패턴)
+// ============================================
+
+const FM_GLOBAL_KEY = '__XSTUDIO_SKIA_FONT_MANAGER__';
+
+declare global {
+  interface Window {
+    [FM_GLOBAL_KEY]?: SkiaFontManager;
+  }
+}
+
+function getOrCreateFontManager(): SkiaFontManager {
+  // HMR 시 이전 인스턴스 재사용 (Typeface 누수 방지)
+  const existing = window[FM_GLOBAL_KEY];
+  if (existing) return existing;
+
+  const fm = new SkiaFontManager();
+  window[FM_GLOBAL_KEY] = fm;
+  return fm;
+}
+
 /** 싱글톤 인스턴스 */
-export const skiaFontManager = new SkiaFontManager();
+export const skiaFontManager = getOrCreateFontManager();

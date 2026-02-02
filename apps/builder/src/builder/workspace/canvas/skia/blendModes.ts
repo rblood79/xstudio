@@ -8,6 +8,10 @@
 
 import type { CanvasKit } from 'canvaskit-wasm';
 
+/** 캐시된 blend mode 맵 (CanvasKit 인스턴스당 1회 생성) */
+let cachedMap: Record<string, unknown> | null = null;
+let cachedCK: CanvasKit | null = null;
+
 /**
  * CSS mix-blend-mode 이름 → CanvasKit BlendMode로 변환한다.
  *
@@ -18,13 +22,15 @@ import type { CanvasKit } from 'canvaskit-wasm';
 export function toSkiaBlendMode(
   ck: CanvasKit,
   mode: string,
-): ReturnType<typeof getBlendModeMap>[string] {
+): unknown {
   const map = getBlendModeMap(ck);
   return map[mode] ?? ck.BlendMode.SrcOver;
 }
 
 function getBlendModeMap(ck: CanvasKit): Record<string, unknown> {
-  return {
+  if (cachedMap && cachedCK === ck) return cachedMap;
+  cachedCK = ck;
+  cachedMap = {
     // Porter-Duff
     'normal': ck.BlendMode.SrcOver,
     'source-over': ck.BlendMode.SrcOver,
@@ -52,4 +58,5 @@ function getBlendModeMap(ck: CanvasKit): Record<string, unknown> {
     'destination-over': ck.BlendMode.DstOver,
     'plus': ck.BlendMode.Plus,
   };
+  return cachedMap;
 }

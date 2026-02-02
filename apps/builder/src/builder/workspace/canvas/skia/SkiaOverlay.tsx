@@ -33,6 +33,7 @@ import { useStore } from '../../../stores';
 import { getElementBoundsSimple } from '../elementRegistry';
 import { calculateCombinedBounds } from '../selection/types';
 import type { BoundingBox, DragState } from '../selection/types';
+import { watchContextLoss } from './createSurface';
 
 interface SkiaOverlayProps {
   /** 부모 컨테이너 DOM 요소 */
@@ -120,7 +121,9 @@ function buildSkiaTreeFromRegistry(
           height: actualHeight,
           children: updatedChildren,
         });
-        return; // 리프 노드 — 자식 탐색 불필요
+        // 중첩 요소를 위해 자식 탐색을 계속한다.
+        // 각 자식 요소도 자체 label + useSkiaNode 등록을 가지므로
+        // 플랫 리스트에 독립적으로 추가된다.
       }
     }
 
@@ -249,6 +252,7 @@ export function SkiaOverlay({ containerEl, backgroundColor = 0xf8fafc, app, drag
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rendererRef = useRef<SkiaRenderer | null>(null);
   const [ready, setReady] = useState(false);
+  const contextLostRef = useRef(false);
 
   // Phase 6: Selection/AI 상태 변경 감지용 ref (idle 프레임 스킵 방지)
   const overlayVersionRef = useRef(0);
@@ -342,6 +346,7 @@ export function SkiaOverlay({ containerEl, backgroundColor = 0xf8fafc, app, drag
     // 렌더 루프: PixiJS ticker에 통합
     const renderFrame = () => {
       if (!rendererRef.current) return;
+      if (contextLostRef.current) return; // WebGL 컨텍스트 손실 시 렌더링 스킵
 
       const stage = app.stage;
 
@@ -401,12 +406,13 @@ export function SkiaOverlay({ containerEl, backgroundColor = 0xf8fafc, app, drag
 
           if (hasAIEffects) {
             const now = performance.now();
-            if (aiState.flashAnimations.size > 0) {
-              aiState.cleanupExpiredFlashes(now);
-            }
             const nodeBoundsMap = buildNodeBoundsMap(tree, aiState);
             renderGeneratingEffects(ck, canvas, now, aiState.generatingNodes, nodeBoundsMap);
             renderFlashes(ck, canvas, now, aiState.flashAnimations, nodeBoundsMap);
+            // 만료된 flash를 렌더링 이후에 정리하여 마지막 프레임이 누락되지 않도록 한다.
+            if (aiState.flashAnimations.size > 0) {
+              aiState.cleanupExpiredFlashes(now);
+            }
           }
 
           // Phase 4-6: Selection 오버레이 (Pencil 방식 — Skia에서 직접 렌더링)
@@ -442,12 +448,18 @@ export function SkiaOverlay({ containerEl, backgroundColor = 0xf8fafc, app, drag
       }
 
       // AI 상태 변경 감지
+      // AI 이펙트가 활성 상태(generating/flash)면 매 프레임 version 증가하여
+      // 애니메이션이 idle 분류로 멈추는 것을 방지한다.
       const aiState = useAIVisualFeedbackStore.getState();
       const currentAIActive = aiState.generatingNodes.size + aiState.flashAnimations.size;
-      if (currentAIActive !== lastAIActiveRef.current) {
+      if (currentAIActive > 0) {
+        // 활성 애니메이션 → 매 프레임 강제 리렌더
         overlayVersionRef.current++;
-        lastAIActiveRef.current = currentAIActive;
+      } else if (currentAIActive !== lastAIActiveRef.current) {
+        // 비활성 전환 시에도 1회 리렌더 (클린업)
+        overlayVersionRef.current++;
       }
+      lastAIActiveRef.current = currentAIActive;
 
       // registryVersion + overlayVersion을 합산하여 모든 시각 변경을 감지
       const effectiveVersion = registryVersion + overlayVersionRef.current;
@@ -456,7 +468,24 @@ export function SkiaOverlay({ containerEl, backgroundColor = 0xf8fafc, app, drag
 
     app.ticker.add(renderFrame);
 
+    // WebGL 컨텍스트 손실 감시
+    const unwatchContext = watchContextLoss(
+      skiaCanvas,
+      () => {
+        // 손실 시: 렌더링 중단 (Surface가 무효화됨)
+        contextLostRef.current = true;
+      },
+      () => {
+        // 복원 시: Surface 재생성
+        contextLostRef.current = false;
+        if (rendererRef.current && canvasRef.current) {
+          rendererRef.current.resize(canvasRef.current);
+        }
+      },
+    );
+
     return () => {
+      unwatchContext();
       app.ticker.remove(renderFrame);
       renderer.dispose();
       rendererRef.current = null;
@@ -477,29 +506,40 @@ export function SkiaOverlay({ containerEl, backgroundColor = 0xf8fafc, app, drag
     };
   }, [ready, isActive, app, containerEl, backgroundColor, renderMode]);
 
-  // 리사이즈 대응
+  // 리사이즈 대응 (디바운싱 150ms — surface 재생성은 비용이 크므로)
   useEffect(() => {
     if (!ready || !isActive || !canvasRef.current) return;
+
+    let resizeTimer: ReturnType<typeof setTimeout> | null = null;
 
     const observer = new ResizeObserver((entries) => {
       const entry = entries[0];
       if (!entry || !canvasRef.current) return;
 
-      const dpr = window.devicePixelRatio || 1;
-      const { width, height } = entry.contentRect;
-      canvasRef.current.width = Math.floor(width * dpr);
-      canvasRef.current.height = Math.floor(height * dpr);
-      canvasRef.current.style.width = `${width}px`;
-      canvasRef.current.style.height = `${height}px`;
+      if (resizeTimer) clearTimeout(resizeTimer);
 
-      if (rendererRef.current) {
-        rendererRef.current.resize(canvasRef.current);
-      }
+      resizeTimer = setTimeout(() => {
+        if (!canvasRef.current) return;
+
+        const dpr = window.devicePixelRatio || 1;
+        const { width, height } = entry.contentRect;
+        canvasRef.current.width = Math.floor(width * dpr);
+        canvasRef.current.height = Math.floor(height * dpr);
+        canvasRef.current.style.width = `${width}px`;
+        canvasRef.current.style.height = `${height}px`;
+
+        if (rendererRef.current) {
+          rendererRef.current.resize(canvasRef.current);
+        }
+      }, 150);
     });
 
     observer.observe(containerEl);
 
-    return () => observer.disconnect();
+    return () => {
+      if (resizeTimer) clearTimeout(resizeTimer);
+      observer.disconnect();
+    };
   }, [ready, isActive, containerEl]);
 
   if (!isActive) return null;

@@ -71,21 +71,3 @@ export function mergeDirtyRects(
   return merged;
 }
 
-/**
- * 이펙트(blur/shadow)에 의해 렌더링 영역이 확장되는 것을 반영한다.
- *
- * @param rect - 원본 dirty rect
- * @param blurRadius - 확장할 blur 반경 (px)
- * @returns 확장된 dirty rect
- */
-export function expandRectForEffects(
-  rect: DirtyRect,
-  blurRadius: number,
-): DirtyRect {
-  return {
-    x: rect.x - blurRadius,
-    y: rect.y - blurRadius,
-    width: rect.width + blurRadius * 2,
-    height: rect.height + blurRadius * 2,
-  };
-}

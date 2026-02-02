@@ -38,3 +38,36 @@ export function createGPUSurface(
     '브라우저가 WebGL을 지원하는지 확인하세요.'
   );
 }
+
+/**
+ * WebGL 컨텍스트 손실/복원 이벤트를 감시한다.
+ *
+ * GPU 드라이버 충돌, 메모리 부족, 백그라운드 전환 등으로
+ * WebGL 컨텍스트가 손실되면 onLost 콜백을 호출하고,
+ * 브라우저가 컨텍스트를 복원하면 onRestored 콜백을 호출한다.
+ *
+ * @returns cleanup 함수 (이벤트 리스너 해제)
+ */
+export function watchContextLoss(
+  canvas: HTMLCanvasElement,
+  onLost: () => void,
+  onRestored: () => void,
+): () => void {
+  const handleLost = (e: Event) => {
+    e.preventDefault(); // 브라우저에 복원 의도를 알림
+    console.warn('[Skia] WebGL 컨텍스트 손실');
+    onLost();
+  };
+  const handleRestored = () => {
+    console.log('[Skia] WebGL 컨텍스트 복원');
+    onRestored();
+  };
+
+  canvas.addEventListener('webglcontextlost', handleLost);
+  canvas.addEventListener('webglcontextrestored', handleRestored);
+
+  return () => {
+    canvas.removeEventListener('webglcontextlost', handleLost);
+    canvas.removeEventListener('webglcontextrestored', handleRestored);
+  };
+}

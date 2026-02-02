@@ -11,10 +11,11 @@
  */
 
 import type { CanvasKit, Canvas, Paint, FontMgr, Image as SkImage, EmbindEnumEntity } from 'canvaskit-wasm';
-import type { EffectStyle } from './types';
+import type { EffectStyle, FillStyle } from './types';
 import { intersectsAABB } from './types';
 import { applyFill } from './fills';
 import { beginRenderEffects, endRenderEffects } from './effects';
+import { toSkiaBlendMode } from './blendModes';
 import { SkiaDisposable } from './disposable';
 
 // ============================================
@@ -35,9 +36,13 @@ export interface SkiaNodeData {
   visible: boolean;
   /** 이펙트 목록 */
   effects?: EffectStyle[];
+  /** CSS mix-blend-mode (예: 'multiply', 'screen') */
+  blendMode?: string;
   /** Box 전용 */
   box?: {
     fillColor: Float32Array;
+    /** 그라디언트/이미지 등 고급 필 (있으면 fillColor 대신 사용) */
+    fill?: FillStyle;
     borderRadius: number;
     strokeColor?: Float32Array;
     strokeWidth?: number;
@@ -96,6 +101,16 @@ export function renderNode(
   canvas.save();
   canvas.translate(node.x, node.y);
 
+  // blend mode 적용 (non-default인 경우 saveLayer로 분리)
+  let hasBlendLayer = false;
+  if (node.blendMode && node.blendMode !== 'normal') {
+    const blendPaint = new ck.Paint();
+    blendPaint.setBlendMode(toSkiaBlendMode(ck, node.blendMode) as Parameters<typeof blendPaint.setBlendMode>[0]);
+    canvas.saveLayer(blendPaint);
+    blendPaint.delete();
+    hasBlendLayer = true;
+  }
+
   // 이펙트 시작
   const layerCount = node.effects
     ? beginRenderEffects(ck, canvas, node.effects)
@@ -131,8 +146,11 @@ export function renderNode(
     }
   }
 
-  // 이펙트 종료 + 캔버스 복원
+  // 이펙트 종료
   endRenderEffects(canvas, layerCount);
+  // blend mode 레이어 복원
+  if (hasBlendLayer) canvas.restore();
+  // 캔버스 복원 (translate)
   canvas.restore();
 }
 
@@ -145,7 +163,14 @@ function renderBox(ck: CanvasKit, canvas: Canvas, node: SkiaNodeData): void {
     const paint = scope.track(new ck.Paint());
     paint.setAntiAlias(true);
     paint.setStyle(ck.PaintStyle.Fill);
-    paint.setColor(node.box.fillColor);
+
+    // 고급 fill(그라디언트/이미지)이 있으면 applyFill 사용, 없으면 단색 fillColor 폴백
+    let fillShader: { delete(): void } | null = null;
+    if (node.box.fill) {
+      fillShader = applyFill(ck, paint, node.box.fill);
+    } else {
+      paint.setColor(node.box.fillColor);
+    }
 
     const rect = ck.LTRBRect(0, 0, node.width, node.height);
 
@@ -155,6 +180,9 @@ function renderBox(ck: CanvasKit, canvas: Canvas, node: SkiaNodeData): void {
     } else {
       canvas.drawRect(rect, paint);
     }
+
+    // 셰이더 리소스 해제 (color fill은 null)
+    fillShader?.delete();
 
     // Stroke (border-box: stroke를 요소 내부에 완전히 포함)
     // CanvasKit stroke는 경로 중앙에 그려지므로 strokeWidth/2 만큼 inset 필요
@@ -204,12 +232,42 @@ function renderText(
       textAlign = rawAlign ?? ck.TextAlign.Left;
     }
 
+    // fontWeight → CanvasKit FontWeight enum 변환
+    const fontWeightMap: Record<number, EmbindEnumEntity> = {
+      100: ck.FontWeight.Thin,
+      200: ck.FontWeight.ExtraLight,
+      300: ck.FontWeight.Light,
+      400: ck.FontWeight.Normal,
+      500: ck.FontWeight.Medium,
+      600: ck.FontWeight.SemiBold,
+      700: ck.FontWeight.Bold,
+      800: ck.FontWeight.ExtraBold,
+      900: ck.FontWeight.Black,
+    };
+    const fontWeight = fontWeightMap[node.text.fontWeight ?? 400] ?? ck.FontWeight.Normal;
+
+    // fontStyle → CanvasKit FontSlant enum 변환
+    // 0 = upright, 1 = italic, 2 = oblique
+    const fontSlantMap: Record<number, EmbindEnumEntity> = {
+      0: ck.FontSlant.Upright,
+      1: ck.FontSlant.Italic,
+      2: ck.FontSlant.Oblique,
+    };
+    const fontSlant = fontSlantMap[node.text.fontStyle ?? 0] ?? ck.FontSlant.Upright;
+
+    // heightMultiplier: lineHeight가 있으면 fontSize 대비 배수로 설정
+    const heightMultiplier = node.text.lineHeight
+      ? node.text.lineHeight / node.text.fontSize
+      : undefined;
+
     const paraStyle = new ck.ParagraphStyle({
       textStyle: {
         fontFamilies: node.text.fontFamilies,
         fontSize: node.text.fontSize,
+        fontStyle: { weight: fontWeight, slant: fontSlant },
         color: node.text.color,
         letterSpacing: node.text.letterSpacing ?? 0,
+        ...(heightMultiplier !== undefined ? { heightMultiplier } : {}),
       },
       textAlign,
     });

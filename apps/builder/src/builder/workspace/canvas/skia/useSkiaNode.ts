@@ -43,9 +43,38 @@ let registryVersion = 0;
 /** 프레임 간 축적되는 dirty rects */
 let pendingDirtyRects: DirtyRect[] = [];
 
-/** 노드의 바운드를 DirtyRect로 변환 */
+/**
+ * 노드의 바운드를 DirtyRect로 변환한다.
+ * 이펙트(블러, 그림자)가 있으면 확장 영역을 포함시킨다.
+ * 블러 시그마 × 3이 가우시안 커널의 실질적 영향 범위이다.
+ */
 function nodeToDirtyRect(data: SkiaNodeData): DirtyRect {
-  return { x: data.x, y: data.y, width: data.width, height: data.height };
+  let expand = 0;
+
+  if (data.effects) {
+    for (const effect of data.effects) {
+      switch (effect.type) {
+        case 'background-blur':
+        case 'layer-blur':
+          expand = Math.max(expand, effect.sigma * 3);
+          break;
+        case 'drop-shadow': {
+          const shadowExpand =
+            Math.max(Math.abs(effect.dx), Math.abs(effect.dy)) +
+            Math.max(effect.sigmaX, effect.sigmaY) * 3;
+          expand = Math.max(expand, shadowExpand);
+          break;
+        }
+      }
+    }
+  }
+
+  return {
+    x: data.x - expand,
+    y: data.y - expand,
+    width: data.width + expand * 2,
+    height: data.height + expand * 2,
+  };
 }
 
 /** 레지스트리에 Skia 렌더 데이터 등록 */

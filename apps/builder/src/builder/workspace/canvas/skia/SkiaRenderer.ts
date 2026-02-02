@@ -6,7 +6,8 @@
  *
  * 프레임 분류:
  * - idle: 변경 없음 → 렌더링 스킵 (0ms)
- * - camera-only: 줌/팬만 변경 → 캐시된 콘텐츠 블리팅 (< 2ms)
+ * - camera-only: 줌/팬만 변경 → 전체 재렌더링 (worldTransform이 content에 포함)
+ *   (향후 씬 좌표 분리 시 캐시 블리팅으로 최적화 가능)
  * - content: 요소 변경 → dirty rect 부분 렌더링 후 블리팅
  * - full: 리사이즈/첫 프레임 → 전체 재렌더링
  *
@@ -226,7 +227,9 @@ export class SkiaRenderer {
         break;
 
       case 'camera-only':
-        // 카메라 변경 시 content에 worldTransform이 포함되므로 전체 재렌더링 필요
+        // 현재 아키텍처: 카메라 변환이 renderSkia() 콜백 내부에서 적용되므로
+        // camera-only에서도 전체 재렌더링이 필요하다.
+        // 향후 씬 좌표를 content surface에 분리하면 blitToMain()만으로 최적화 가능.
         this.renderContent(cullingBounds);
         this.blitToMain();
         break;

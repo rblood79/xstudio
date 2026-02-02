@@ -1133,19 +1133,52 @@ export const ElementSprite = memo(function ElementSprite({
     // skia 모드에서만 UI 컴포넌트 폴백 박스를 등록한다.
     if (isUIComponent && getRenderMode() === 'hybrid') return null;
 
-    const effectiveAlpha = hasBgColor ? fill.alpha : (isUIComponent ? fill.alpha : 0);
+    // UI 컴포넌트 variant별 배경/테두리 색상 매핑 (Light 모드, ButtonSpec 토큰 기반)
+    // variant별 배경 색상
+    const VARIANT_BG_COLORS: Record<string, number> = {
+      default: 0xece6f0,   // surface-container-high
+      primary: 0x6750a4,   // primary
+      secondary: 0x625b71, // secondary
+      tertiary: 0x7d5260,  // tertiary
+      error: 0xb3261e,     // error
+      surface: 0xe6e0e9,   // surface-container-highest
+      outline: 0xfef7ff,   // surface (투명 — bgAlpha=0)
+      ghost: 0xfef7ff,     // surface (투명 — bgAlpha=0)
+    };
+    // outline/ghost variant는 배경이 투명
+    const VARIANT_BG_ALPHA: Record<string, number> = {
+      outline: 0,
+      ghost: 0,
+    };
+    // variant별 테두리 색상 (ghost는 테두리 없음)
+    const VARIANT_BORDER_COLORS: Record<string, number> = {
+      default: 0xcac4d0,   // outline-variant
+      primary: 0x6750a4,   // primary
+      secondary: 0x625b71, // secondary
+      tertiary: 0x7d5260,  // tertiary
+      error: 0xb3261e,     // error
+      surface: 0xcac4d0,   // outline-variant
+      outline: 0x79747e,   // outline
+    };
 
-    // UI 컴포넌트 기본 색상: backgroundColor 미설정 시 가시적인 기본 배경 사용
-    // #e2e8f0 (Tailwind slate-200) — 중립적인 버튼/UI 기본 색상
+    const props = effectiveElement.props as Record<string, unknown> | undefined;
+    const variant = isUIComponent ? String(props?.variant || 'default') : '';
+
     let r: number, g: number, b: number;
+    let effectiveAlpha: number;
+
     if (isUIComponent && !hasBgColor) {
-      r = 0xe2 / 255; // 226
-      g = 0xe8 / 255; // 232
-      b = 0xf0 / 255; // 240
+      // variant 기반 배경 색상 적용
+      const bgColor = VARIANT_BG_COLORS[variant] ?? 0xece6f0;
+      r = ((bgColor >> 16) & 0xff) / 255;
+      g = ((bgColor >> 8) & 0xff) / 255;
+      b = (bgColor & 0xff) / 255;
+      effectiveAlpha = VARIANT_BG_ALPHA[variant] ?? 1;
     } else {
       r = ((fill.color >> 16) & 0xff) / 255;
       g = ((fill.color >> 8) & 0xff) / 255;
       b = (fill.color & 0xff) / 255;
+      effectiveAlpha = hasBgColor ? fill.alpha : (isUIComponent ? fill.alpha : 0);
     }
 
     // UI 컴포넌트 기본 borderRadius: CSS에서 지정하지 않았으면 6px (일반적인 버튼 둥근 모서리)
@@ -1169,9 +1202,16 @@ export const ElementSprite = memo(function ElementSprite({
       boxData.strokeColor = Float32Array.of(sr, sg, sb, stroke.alpha);
       boxData.strokeWidth = stroke.width;
     } else if (isUIComponent && !hasBgColor) {
-      // UI 컴포넌트 기본 테두리: #cbd5e1 (Tailwind slate-300), 1px
-      boxData.strokeColor = Float32Array.of(0xcb / 255, 0xd5 / 255, 0xe1 / 255, 1);
-      boxData.strokeWidth = 1;
+      // variant 기반 테두리 색상 적용
+      const borderColor = VARIANT_BORDER_COLORS[variant];
+      if (borderColor !== undefined) {
+        const sr = ((borderColor >> 16) & 0xff) / 255;
+        const sg = ((borderColor >> 8) & 0xff) / 255;
+        const sb = (borderColor & 0xff) / 255;
+        boxData.strokeColor = Float32Array.of(sr, sg, sb, 1);
+        boxData.strokeWidth = 1;
+      }
+      // ghost: 테두리 없음 (VARIANT_BORDER_COLORS에 미정의)
     }
 
     // UI 컴포넌트: props.children/text/label에서 텍스트를 추출하여
@@ -1199,7 +1239,6 @@ export const ElementSprite = memo(function ElementSprite({
     }> | undefined;
 
     if (isUIComponent) {
-      const props = effectiveElement.props as Record<string, unknown> | undefined;
       const tag = effectiveElement.tag;
 
       // 텍스트 추출 우선순위: children > text > label > value > placeholder > count
@@ -1216,7 +1255,6 @@ export const ElementSprite = memo(function ElementSprite({
         // 텍스트 색상: style.color > variant 기반 기본값
         // variant별 기본 텍스트 색상 (light 모드):
         //   default → #1d1b20, primary → #ffffff, secondary → #ffffff, surface → #1d1b20
-        const variant = String(props?.variant || 'default');
         const VARIANT_TEXT_COLORS: Record<string, number> = {
           default: 0x1d1b20,
           primary: 0xffffff,

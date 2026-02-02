@@ -54,22 +54,3 @@ export class SkiaDisposable {
   }
 }
 
-/**
- * 콜백 실행 중 생성된 CanvasKit 리소스를 자동 해제한다.
- *
- * 사용법:
- * ```ts
- * withSkiaScope((scope) => {
- *   const paint = scope.track(new ck.Paint());
- *   canvas.drawRect(rect, paint);
- * });
- * ```
- */
-export function withSkiaScope(fn: (scope: SkiaDisposable) => void): void {
-  const scope = new SkiaDisposable();
-  try {
-    fn(scope);
-  } finally {
-    scope.dispose();
-  }
-}
