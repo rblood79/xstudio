@@ -7,6 +7,77 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed - Flex Layout CSS Parity & Style Reactivity (2026-02-02)
+
+#### Phase 12 Fix: Flex 자식의 percentage width 오버플로우 및 스타일 즉시 반영
+
+**문제 1: flex 부모에서 `width:100%` 자식이 오버플로우**
+- `display:flex, flex-direction:row` 부모에 `width:100%` 버튼 2개 배치 시 body를 벗어남
+- CSS 브라우저에서는 정상 동작하지만 WebGL(@pixi/layout)에서는 겹침 발생
+
+**근본 원인:**
+- CSS: `flex-shrink` 기본값 = 1 (축소 허용), `min-width` 기본값 = auto
+- Yoga: `flex-shrink` 기본값 = 0 (축소 안 함), `min-width` 기본값 = 0
+- 기존 코드에서 모든 요소에 `flexShrink: 0` 강제 적용
+
+**해결:**
+- 조건부 flexShrink 기본값: 퍼센트 width → `flexShrink: 1`, 고정 width → `flexShrink: 0`
+- 사용자가 명시적 flexShrink 설정 시 그 값이 우선
+
+```typescript
+const hasPercentSize =
+  (typeof effectiveLayout.width === 'string' && effectiveLayout.width.endsWith('%')) ||
+  (typeof effectiveLayout.flexBasis === 'string' && String(effectiveLayout.flexBasis).endsWith('%'));
+const flexShrinkDefault = effectiveLayout.flexShrink !== undefined
+  ? {}
+  : { flexShrink: hasPercentSize ? 1 : 0 };
+```
+
+**문제 2: 퍼센트 width가 시각적으로 반영되지 않음**
+- Yoga가 올바른 위치를 계산하지만 BoxSprite/PixiButton이 raw CSS `width:'100%'`를 직접 사용
+- `parseCSSSize('100%', undefined, 100)` → 100px으로 해석
+
+**해결:**
+- `LayoutComputedSizeContext` (React Context) 생성하여 Yoga 계산 결과를 자식에 전달
+- `ElementSprite`에서 Context를 소비하여 퍼센트 width/height를 정확한 픽셀로 변환
+- `container._layout.computedLayout`에서 Yoga 결과 직접 읽기 (`getBounds()`는 콘텐츠 bounding box)
+
+**문제 3: 스타일 패널 변경 후 즉시 반영되지 않음**
+- 스타일 변경 후 캔버스를 팬(이동)해야 반영됨
+
+**근본 원인:**
+- `requestAnimationFrame` 콜백이 @pixi/layout의 `prerender`보다 먼저 실행될 수 있음
+- rAF는 한 번만 실행되고 끝남 → 이후 layout 재계산을 캡처 못함
+
+**해결:**
+- `container.on('layout', handler)` 이벤트 리스너로 교체
+- @pixi/layout이 `yogaNode.calculateLayout()` 완료 후 `container.emit('layout')` 이벤트 발생
+- 최초 마운트 시 rAF fallback 유지
+
+```typescript
+// @pixi/layout 'layout' 이벤트 구독 — Yoga 계산 완료 후 정확한 타이밍
+container.on('layout', syncLayoutData);
+// 최초 마운트 시 rAF fallback
+const rafId = requestAnimationFrame(syncLayoutData);
+```
+
+**수정된 파일:**
+
+1. `apps/builder/src/builder/workspace/canvas/BuilderCanvas.tsx`
+   - LayoutContainer: 조건부 flexShrink, layout 이벤트 구독
+2. `apps/builder/src/builder/workspace/canvas/layoutContext.ts` (신규)
+   - `LayoutComputedSizeContext` — 순환 참조 방지용 별도 파일
+3. `apps/builder/src/builder/workspace/canvas/sprites/ElementSprite.tsx`
+   - Context 소비, 퍼센트 width/height를 Yoga 계산 결과 기반으로 해석
+
+**결과:**
+- ✅ flex 부모에서 `width:100%` 자식이 CSS처럼 비례 축소
+- ✅ 퍼센트 기반 width/height가 정확한 픽셀로 변환
+- ✅ 스타일 패널 변경 즉시 캔버스에 반영
+- ✅ TypeScript 에러 없음
+
+---
+
 ### Fixed - Hybrid Layout Engine CSS/WebGL Parity (2026-01-28)
 
 #### Phase 9: display: flex 지원 및 CSS/WebGL 레이아웃 정합성 개선

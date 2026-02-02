@@ -49,3 +49,11 @@ flex 레이아웃에서 percentage height를 사용하면 예상치 못한 결�
   }} />
 </Container>
 ```
+
+## 참고: 퍼센트 width와 LayoutComputedSizeContext
+
+flex 자식의 `width: '100%'`는 @pixi/layout(Yoga)이 올바르게 계산하지만, 스프라이트 렌더링 시 `parseCSSSize('100%', undefined)` → 100px으로 잘못 해석될 수 있습니다. `LayoutComputedSizeContext`가 Yoga 계산 결과를 전파하여 `ElementSprite`에서 정확한 픽셀로 변환합니다.
+
+- **Context 정의:** `canvas/layoutContext.ts`
+- **Provider:** `BuilderCanvas.tsx` LayoutContainer
+- **Consumer:** `ElementSprite.tsx`

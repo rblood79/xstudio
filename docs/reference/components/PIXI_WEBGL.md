@@ -23,8 +23,9 @@ npm install pixi.js@^8.14.3 @pixi/react@^8.0.5 @pixi/layout@^3.2.0 @pixi/ui@^2.3
 
 ```
 src/builder/workspace/canvas/
-├── BuilderCanvas.tsx       # 메인 WebGL 캔버스
+├── BuilderCanvas.tsx       # 메인 WebGL 캔버스 (LayoutContainer 포함)
 ├── canvasSync.ts           # 캔버스 상태 동기화 Store
+├── layoutContext.ts        # LayoutComputedSizeContext (Yoga 크기 전달)
 ├── layout/                 # 레이아웃 시스템
 │   ├── FlexLayout.tsx      # @pixi/layout Flexbox
 │   ├── GridLayout.tsx      # 커스텀 CSS Grid
@@ -1200,6 +1201,101 @@ export function getOutlineVariantColor(): number {
   return cssColorToHex(value, FALLBACK_OUTLINE_VARIANT);
 }
 ```
+
+## LayoutContainer 패턴 (2026-02-02)
+
+### 개요
+
+`LayoutContainer`는 `BuilderCanvas.tsx`의 핵심 래퍼 컴포넌트로, @pixi/layout의 Yoga Flexbox 엔진과 React를 연결합니다.
+
+### 아키텍처
+
+```
+LayoutContainer (memo)
+├── pixiContainer (ref + layout prop)
+│   └── ElementSprite → BoxSprite / PixiButton / ...
+├── LayoutComputedSizeContext.Provider
+│   └── Yoga computedLayout → 자식 스프라이트에 전달
+└── elementRegistry 등록 (SelectionLayer용)
+```
+
+### 조건부 flexShrink (CSS 정합성)
+
+CSS와 Yoga의 기본값 차이를 에뮬레이션:
+
+```typescript
+// CSS: flex-shrink=1 (축소 허용), min-width=auto
+// Yoga: flex-shrink=0 (축소 안 함), min-width=0
+const hasPercentSize =
+  (typeof effectiveLayout.width === 'string' && effectiveLayout.width.endsWith('%')) ||
+  (typeof effectiveLayout.flexBasis === 'string' && String(effectiveLayout.flexBasis).endsWith('%'));
+const flexShrinkDefault = effectiveLayout.flexShrink !== undefined
+  ? {}
+  : { flexShrink: hasPercentSize ? 1 : 0 };
+```
+
+| 조건 | flexShrink | 이유 |
+|------|-----------|------|
+| 퍼센트 width/flexBasis | 1 | CSS처럼 비례 축소 |
+| 고정/미지정 width | 0 | min-width: auto 에뮬레이션 |
+| 사용자 명시적 설정 | 설정값 | 최우선 |
+
+### LayoutComputedSizeContext (퍼센트 크기 해석)
+
+Yoga가 계산한 컨테이너 크기를 React Context로 자식에 전달:
+
+```typescript
+// layoutContext.ts — 순환 참조 방지용 별도 파일
+export const LayoutComputedSizeContext = createContext<{ width: number; height: number } | null>(null);
+```
+
+**문제:** `parseCSSSize('100%', undefined, 100)` → parentSize가 undefined이므로 100px으로 해석
+**해결:** ElementSprite가 Context에서 부모의 computed size를 읽어 정확한 픽셀로 변환
+
+```typescript
+// ElementSprite.tsx
+const computedContainerSize = useContext(LayoutComputedSizeContext);
+// width: '100%' → (100 / 100) * computedContainerSize.width
+```
+
+### @pixi/layout 'layout' 이벤트 구독
+
+Yoga 계산 완료 시점에 정확히 데이터를 읽기 위해 `container.on('layout')` 사용:
+
+```typescript
+// LayoutContainer 내부
+useEffect(() => {
+  const container = containerRef.current;
+  if (!container) return;
+
+  const syncLayoutData = () => {
+    // 1) SelectionLayer용 bounds 업데이트 (getBounds)
+    // 2) LayoutComputedSizeContext용 computedLayout 읽기
+    const yogaLayout = container._layout;
+    setComputedSize({ width: yogaLayout.computedLayout.width, ... });
+  };
+
+  container.on('layout', syncLayoutData);       // Yoga 계산 완료 이벤트
+  const rafId = requestAnimationFrame(syncLayoutData); // 초기 마운트 fallback
+
+  return () => {
+    container.off('layout', syncLayoutData);
+    cancelAnimationFrame(rafId);
+  };
+}, [elementId]);
+```
+
+**핵심:** `requestAnimationFrame`은 @pixi/layout의 `prerender`(Yoga calculateLayout)보다 먼저 실행될 수 있어 stale 값을 읽음. `'layout'` 이벤트는 Yoga 계산 완료 후 emit되므로 항상 최신 값 보장.
+
+### 관련 파일
+
+| 파일 | 역할 |
+|------|------|
+| `canvas/BuilderCanvas.tsx` | LayoutContainer 정의, 조건부 flexShrink |
+| `canvas/layoutContext.ts` | LayoutComputedSizeContext (React Context) |
+| `canvas/sprites/ElementSprite.tsx` | Context 소비, % → px 변환 |
+
+---
 
 ## 성능 최적화
 

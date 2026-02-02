@@ -147,6 +147,46 @@ Skia `renderBox()`의 stroke가 요소 바운드 밖으로 넘쳐 인접 요소 
 
 **상세:** `apps/builder/src/.../skia/SkiaOverlay.tsx`, `apps/builder/src/.../skia/aiEffects.ts`
 
+## Update: Flex Layout CSS 정합성 개선 (2026-02-02)
+
+### 1. 조건부 flexShrink (CSS flex-shrink 에뮬레이션)
+
+`display:flex` 부모에 `width:100%` 자식 2개를 배치하면 body를 벗어나는 문제 수정:
+
+| 항목 | CSS (브라우저) | Yoga (@pixi/layout) |
+|------|---------------|---------------------|
+| **flex-shrink 기본값** | 1 (축소 허용) | 0 (축소 안 함) |
+| **min-width 기본값** | auto (콘텐츠 크기 이하 방지) | 0 (0까지 축소 가능) |
+
+**조건부 분기 적용:**
+- 퍼센트 width/flexBasis → `flexShrink: 1` (CSS처럼 비례 축소)
+- 고정/미지정 width → `flexShrink: 0` (min-width: auto 에뮬레이션)
+- 사용자가 명시적 flexShrink 설정 시 그 값 우선
+
+### 2. LayoutComputedSizeContext (퍼센트 크기 해석)
+
+Yoga가 계산한 컨테이너 크기를 자식 스프라이트에 전달하는 React Context:
+
+| 항목 | 수정 전 | 수정 후 |
+|------|---------|---------|
+| **% width 해석** | `parseCSSSize('100%', undefined, 100)` → 100px | `parseCSSSize('100%', computedWidth, 100)` → 부모 기준 정확 계산 |
+| **크기 전파** | 없음 — 각 스프라이트가 raw CSS 값 직접 사용 | `LayoutComputedSizeContext` — Yoga 결과를 Context로 전달 |
+| **getBounds() vs computedLayout** | getBounds()는 콘텐츠 bounding box | `_layout.computedLayout`에서 Yoga 결과 직접 읽기 |
+
+**새 파일:** `canvas/layoutContext.ts` — 순환 참조 방지를 위해 별도 파일로 분리
+
+### 3. @pixi/layout 'layout' 이벤트 기반 타이밍 수정
+
+스타일 패널 변경 후 캔버스에 즉시 반영되지 않고 팬(이동)해야 적용되던 문제 수정:
+
+| 항목 | 수정 전 | 수정 후 |
+|------|---------|---------|
+| **타이밍** | `requestAnimationFrame` 1회 — prerender 전에 실행 가능 | `container.on('layout', handler)` — Yoga 계산 완료 후 정확히 호출 |
+| **의존성** | `[elementId, layout]` — layout 변경 시만 트리거 | `[elementId]` — 이벤트 기반이므로 재등록 불필요 |
+| **초기값** | rAF에 의존 | rAF fallback + layout 이벤트 구독 |
+
+**상세:** `apps/builder/src/.../canvas/BuilderCanvas.tsx` (LayoutContainer), `canvas/layoutContext.ts`, `canvas/sprites/ElementSprite.tsx`
+
 ## Implementation
 
 ```typescript
