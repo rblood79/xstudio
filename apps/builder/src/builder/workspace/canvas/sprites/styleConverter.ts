@@ -11,6 +11,7 @@
  */
 
 import { cssColorToPixiHex } from '../../../../utils/color';
+import { colord } from 'colord';
 import type { EffectStyle, DropShadowEffect } from '../skia/types';
 
 // ============================================
@@ -115,19 +116,16 @@ export function cssColorToHex(color: string | undefined, fallback = 0x000000): n
 
 /**
  * CSS 색상에서 알파 값 추출
+ *
+ * colord를 사용하여 rgba/hsla/oklch/#rrggbbaa 등 모든 CSS 색상 형식을 지원한다 (I-L17).
  */
 export function cssColorToAlpha(color: string | undefined): number {
   if (!color) return 1;
+  if (color.toLowerCase() === 'transparent') return 0;
 
-  // RGBA
-  const rgbaMatch = color.match(/rgba\([\d\s,]+,\s*([\d.]+)\)/);
-  if (rgbaMatch) {
-    return parseFloat(rgbaMatch[1]);
-  }
-
-  // Transparent
-  if (color.toLowerCase() === 'transparent') {
-    return 0;
+  const parsed = colord(color);
+  if (parsed.isValid()) {
+    return parsed.toRgb().a ?? 1;
   }
 
   return 1;

@@ -68,7 +68,7 @@ function updateTextChildren(
   return children?.map((child: SkiaNodeData) => {
     if (child.type === 'text' && child.text) {
       const fontSize = child.text.fontSize || 14;
-      const lineHeight = fontSize * 1.2;
+      const lineHeight = child.text.lineHeight || fontSize * 1.2; // I-L22: 실제값 우선
       return {
         ...child,
         width: parentWidth,
