@@ -7,6 +7,54 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added - Skia 렌더링 파이프라인 완성 (2026-02-02)
+
+#### 개요
+Skia 렌더링 파이프라인의 남은 기능 8건을 모두 구현하여 Pencil 렌더링 아키텍처 전환 100% 완료
+
+#### 구현 항목
+
+1. **MeshGradient Fill** (`fills.ts`)
+   - CanvasKit에 네이티브 API 없으므로 bilinear interpolation 근사: top/bottom LinearGradient + MakeBlend
+   - `MeshGradientFill` 인터페이스에 rows, columns, colors, width, height 필드 추가
+
+2. **LayerBlur 이펙트** (`effects.ts`)
+   - 전경 콘텐츠에 가우시안 블러 적용: `MakeBlur(ImageFilter)` + `saveLayer()`
+   - `LayerBlurEffect` 인터페이스 + `EffectStyle` 유니언에 합류
+
+3. **Phase 6 이중 Surface 활성화** (`SkiaOverlay.tsx`)
+   - `renderer.render()` 호출에 `registryVersion`, `camera`, `dirtyRects` 파라미터 전달
+   - idle 프레임 스킵, camera-only 블리팅, content dirty rect 부분 렌더링 활성화
+
+4. **변수 resolve 렌더링 경로 완성** (G.2)
+   - `useResolvedElement()` → `effectiveElement` → 개별 Sprite → SkiaNodeData 파이프라인 검증 완료
+   - `resolveElementVariables()`: style 객체 재귀 탐색으로 `$--` 변수 → 실제 CSS 값 변환 동작 확인
+
+5. **KitComponentList 패널 통합** (G.4)
+   - `DesignKitPanel`에 마스터 컴포넌트 목록 표시 + 인스턴스 생성 연결
+   - `elements.ts` 스토어에 `createInstance` 액션 추가
+
+6. **킷 적용 시각 피드백** (G.3 + G.4)
+   - `applyKit()` 시작 시 body에 generating 이펙트, 완료 시 녹색 flash 트리거
+   - 실패 시 generating 이펙트 자동 제거
+
+7. **내장 디자인 킷 JSON** (G.4)
+   - `builtinKits/basicKit.ts`: 5개 색상 변수 + Default 테마(12 토큰) + Card/Badge 마스터 컴포넌트
+   - `loadAvailableKits()`: 내장 킷 메타데이터 자동 로드
+   - `loadBuiltinKit()`: ID로 내장 킷 조회 + loadedKit 설정
+
+#### 변경된 파일
+- `canvas/skia/types.ts` — MeshGradientFill 필드, LayerBlurEffect 인터페이스
+- `canvas/skia/fills.ts` — MeshGradient 셰이더 구현
+- `canvas/skia/effects.ts` — LayerBlur 이펙트 구현
+- `canvas/skia/SkiaOverlay.tsx` — Phase 6 파라미터 전달
+- `panels/designKit/DesignKitPanel.tsx` — KitComponentList 통합, 내장 킷 로드
+- `stores/elements.ts` — createInstance 액션 추가
+- `stores/designKitStore.ts` — loadBuiltinKit, 시각 피드백 연동
+- `utils/designKit/builtinKits/basicKit.ts` — 내장 킷 데이터 (신규)
+
+---
+
 ### Fixed - Skia AABB 뷰포트 컬링 좌표계 버그 수정 (2026-02-02)
 
 #### 개요

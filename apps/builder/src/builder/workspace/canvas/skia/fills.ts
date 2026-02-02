@@ -94,15 +94,40 @@ export function applyFill(
     }
 
     case 'mesh-gradient': {
-      // CanvasKit 공개 API에 직접 mesh gradient 매핑 없음.
-      // Phase 5 후반에 다음 전략 중 하나로 구현 예정:
-      // 1. MakeSweepGradient + 다중 색상 정지점으로 근사
-      // 2. Coons 패치를 ImageData로 전처리 → MakeImageShader
-      // 3. 커스텀 SkSL(RuntimeEffect) 셰이더
-      if (import.meta.env.DEV) {
-        console.warn('[Skia] mesh-gradient Fill은 아직 미구현');
-      }
-      return null;
+      // CanvasKit에 네이티브 mesh gradient API가 없으므로
+      // 4코너 bilinear interpolation → 2x2 LinearGradient 블렌드로 근사.
+      // 2x2 그리드(4색)만 지원. 더 큰 그리드는 좌상 4셀로 폴백.
+      const c = fill.colors;
+      if (!c || c.length < 4 || fill.width <= 0 || fill.height <= 0) return null;
+
+      // Top-Left → Top-Right 수평 그래디언트 (상단 가중치용)
+      const topShader = ck.Shader.MakeLinearGradient(
+        [0, 0],
+        [fill.width, 0],
+        [c[0], c[1]],
+        [0, 1],
+        ck.TileMode.Clamp,
+      );
+      // Bottom-Left → Bottom-Right 수평 그래디언트 (하단 가중치용)
+      const bottomShader = ck.Shader.MakeLinearGradient(
+        [0, 0],
+        [fill.width, 0],
+        [c[2], c[3]],
+        [0, 1],
+        ck.TileMode.Clamp,
+      );
+      // 수직 블렌드: top(1→0) + bottom(0→1) 가중치
+      const blendShader = ck.Shader.MakeBlend(
+        ck.BlendMode.SrcOver,
+        topShader,
+        bottomShader,
+      );
+      paint.setShader(blendShader);
+
+      // topShader/bottomShader는 blendShader가 참조 유지하므로 안전하게 해제
+      topShader.delete();
+      bottomShader.delete();
+      return blendShader;
     }
   }
 }

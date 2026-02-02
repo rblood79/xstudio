@@ -1,7 +1,7 @@
 # xstudio WASM 렌더링 아키텍처 전환 계획
 
 > 작성일: 2026-01-29
-> 최종 수정: 2026-02-02 (AABB 컬링 좌표계 수정 + Phase 0-4 구현 완료 — 10차 수정)
+> 최종 수정: 2026-02-02 (렌더링 파이프라인 100% 완성: MeshGradient, LayerBlur, Phase 6, G.4 킷 — 11차 수정)
 > 대상: `apps/builder/src/builder/workspace/canvas/`
 > 현재 스택: CanvasKit/Skia WASM + PixiJS v8.14.3 (이벤트 전용) + Yoga WASM v3.2.1 + Rust WASM (성능 가속) + Zustand
 > 참고: Pencil Desktop v1.1.10 아키텍처 분석 기반 (`docs/PENCIL_APP_ANALYSIS.md` §11)
@@ -2166,12 +2166,10 @@ export function applyFill(
       ));
       break;
     case 'mesh-gradient':
-      // ⚠️ CanvasKit 공개 API에 직접 mesh gradient 매핑이 없다.
-      // 대체 전략 (구현 시 선택):
-      // 1. CanvasKit.Shader.MakeSweepGradient + 다중 색상 정지점으로 근사
-      // 2. 런타임에 Coons 패치를 ImageData로 전처리 → MakeImageShader
-      // 3. 커스텀 SkSL(RuntimeEffect) 셰이더로 메시 보간 구현
-      // 구현 범위는 Phase 5 착수 시 Figma/Pencil의 mesh gradient 지원 수준을 조사하여 결정.
+      // ✅ 구현 완료: bilinear interpolation 근사
+      // CanvasKit에 네이티브 mesh gradient API가 없으므로
+      // 4코너 색상 → top/bottom MakeLinearGradient + MakeBlend(SrcOver) 로 근사
+      // 실제 구현: canvas/skia/fills.ts case 'mesh-gradient'
       break;
   }
 }

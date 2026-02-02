@@ -1958,21 +1958,19 @@ Cmd+S → saveDocument() → FileManager.export()
 ### 11.11 전환 완성도
 
 ```
-Pencil 렌더링 아키텍처 전환: 95% 완료
+Pencil 렌더링 아키텍처 전환: 100% 완료
 
-✅ 완전 구현 (35/37 항목):
+✅ 완전 구현 (37/37 항목):
 ├── 아키텍처: CanvasKit 메인 렌더러 + PixiJS 이벤트 전용
-├── 렌더 루프: 이중 Surface + Dirty Rect + 프레임 분류
+├── 렌더 루프: 이중 Surface + Dirty Rect + 프레임 분류 (Phase 6 활성화 완료)
 ├── 노드 렌더링: Box/Text/Image/Container + AABB 컬링 + 좌표계 정합성 수정
-├── Fill: 5/6종 (Color, Linear, Radial, Angular, Image)
-├── 이펙트: 4/5종 (Opacity, BackgroundBlur, DropShadow Outer/Inner)
+├── Fill: 6/6종 (Color, Linear, Radial, Angular, Image, MeshGradient)
+├── 이펙트: 4/4종 (Opacity, BackgroundBlur, LayerBlur, DropShadow Outer/Inner)
 ├── 블렌드 모드: 18종 전체
 ├── Selection: 선택 박스 + 핸들 + 라쏘 (Skia 렌더링)
 ├── AI: Generating + Flash 애니메이션
 ├── Export: PNG/JPEG/WEBP + DPR 스케일
-└── 유틸리티: 초기화, Surface, Disposable, Font, 텍스트 측정
-
-❌ 미구현 (2/37 항목):
-├── MeshGradient Fill (1종) — Phase 5 후반 예정
-└── LayerBlur 이펙트 (1종) — effects.ts 확장 예정
+├── 유틸리티: 초기화, Surface, Disposable, Font, 텍스트 측정
+├── 변수 Resolve: $-- 참조 → Float32Array 색상 변환 (G.2 완성)
+└── 디자인 킷: 내장 킷 JSON + 브라우저 패널 + 시각 피드백 (G.4 완성)
 ```

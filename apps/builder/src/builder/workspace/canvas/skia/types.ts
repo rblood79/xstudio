@@ -75,7 +75,16 @@ export interface ImageFill {
 
 export interface MeshGradientFill {
   type: 'mesh-gradient';
-  // CanvasKit에 직접 매핑이 없음 — Phase 5 착수 시 구현 전략 결정
+  /** 그리드 행 수 (최소 2) */
+  rows: number;
+  /** 그리드 열 수 (최소 2) */
+  columns: number;
+  /** rows × columns 개의 색상 (Float32Array[]) — 좌상→우하 순서 */
+  colors: Float32Array[];
+  /** 요소 너비 (셰이더 좌표 계산용) */
+  width: number;
+  /** 요소 높이 (셰이더 좌표 계산용) */
+  height: number;
 }
 
 export type FillStyle =
@@ -110,10 +119,17 @@ export interface DropShadowEffect {
   inner: boolean;
 }
 
+export interface LayerBlurEffect {
+  type: 'layer-blur';
+  /** 가우시안 블러 시그마 (전경 콘텐츠에 적용) */
+  sigma: number;
+}
+
 export type EffectStyle =
   | OpacityEffect
   | BackgroundBlurEffect
-  | DropShadowEffect;
+  | DropShadowEffect
+  | LayerBlurEffect;
 
 // ============================================
 // AI Visual Feedback Types (G.3)

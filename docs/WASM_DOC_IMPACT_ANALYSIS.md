@@ -1,7 +1,7 @@
 # WASM.md 실행 시 문서 영향 분석 및 Pencil 아키텍처 패턴 적용 계획
 
 > 작성일: 2026-01-31
-> 최종 수정: 2026-02-02 (Phase 0-4 WASM 성능 경로 구현 완료 반영)
+> 최종 수정: 2026-02-02 (전체 구현 완료: 렌더링 100% + G.4 디자인 킷 완성)
 > 대상: `docs/LAYOUT_REQUIREMENTS.md`, `docs/COMPONENT_SPEC_ARCHITECTURE.md`, `docs/AI.md`
 > 기준: `docs/WASM.md` Phase 5-6, `docs/PENCIL_APP_ANALYSIS.md` §11–§26
 > 참고: `docs/AI.md` (AI 기능 업그레이드 설계)
@@ -236,7 +236,7 @@ VariableManager.resolve("$--primary", currentTheme)
 - Phase 5 이후 (CanvasKit): `renderGeneratingEffects(canvas)` / `renderFlashes(canvas)` — Skia Paint + ImageFilter로 구현 (Pencil과 동일)
 - **권장**: CanvasKit 전환 후 구현이 효율적 (Pencil과 동일한 API 사용 가능)
 
-### G.4 내장 디자인 킷 — 적용 필요 (중간)
+### G.4 내장 디자인 킷 — ✅ 구현 완료
 
 > Pencil 참조: §22 내장 디자인 킷
 
@@ -245,10 +245,12 @@ VariableManager.resolve("$--primary", currentTheme)
 - 킷 로드 시: variables/themes/reusable 컴포넌트를 프로젝트에 병합
 - 사용자가 인스턴스(`ref`)를 생성하여 디자인에 배치
 
-**XStudio 현재 상태:**
-- `packages/shared/src/renderers/`에 7개 렌더러 모듈 (LayoutRenderers, FormRenderers 등)
-- 컴포넌트 정의는 코드 레벨 (JSON 디자인 킷 없음)
-- 사전 구성된 디자인 시스템 패키지 없음
+**XStudio 구현 완료:**
+- `utils/designKit/builtinKits/basicKit.ts`: Basic Kit (5 색상 변수 + Default 테마 12토큰 + Card/Badge 마스터 컴포넌트)
+- `stores/designKitStore.ts`: `loadAvailableKits()` 내장 킷 자동 로드, `loadBuiltinKit()` ID 기반 조회, 시각 피드백 연동
+- `panels/designKit/DesignKitPanel.tsx`: KitComponentList 통합, `handleSelectKit` → `loadBuiltinKit` 연결
+- `panels/designKit/components/KitComponentList.tsx`: 마스터 컴포넌트 목록 + `createInstance()` 연결
+- `stores/elements.ts`: `createInstance` 스토어 액션 추가
 
 **적용 시 영향 범위:**
 

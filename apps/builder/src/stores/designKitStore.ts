@@ -19,7 +19,9 @@ import { validateKitJSON, validateKitObject } from '../utils/designKit/kitValida
 import { applyDesignKit } from '../utils/designKit/kitLoader';
 import type { KitLoaderThemeAccess, KitLoaderElementAccess } from '../utils/designKit/kitLoader';
 import { exportProjectAsKit } from '../utils/designKit/kitExporter';
+import { BASIC_KIT } from '../utils/designKit/builtinKits/basicKit';
 import { useUnifiedThemeStore } from './themeStore';
+import { useAIVisualFeedbackStore } from '../builder/stores/aiVisualFeedback';
 import type { Element } from '../types/builder/unified.types';
 
 // ============================================
@@ -46,6 +48,8 @@ interface DesignKitActions {
   ) => DesignKit;
   /** 적용된 Kit 제거 */
   removeAppliedKit: (kitId: string) => void;
+  /** 내장 킷 ID로 로드하여 loadedKit에 설정 */
+  loadBuiltinKit: (kitId: string) => DesignKit | null;
   /** 에러 클리어 */
   clearError: () => void;
   /** 로드된 Kit 클리어 */
@@ -77,9 +81,12 @@ export const useDesignKitStore = create<DesignKitStore>((set, get) => ({
   ...initialState,
 
   loadAvailableKits: () => {
-    // 초기 버전: 내장 킷 없음, 사용자 import만 지원
-    // 추후 Supabase에서 킷 목록 로드 가능
-    set({ availableKits: [] });
+    // 내장 킷 메타데이터 로드
+    const { availableKits } = get();
+    const builtinMeta = BASIC_KIT.meta;
+    if (!availableKits.some((k) => k.id === builtinMeta.id)) {
+      set({ availableKits: [...availableKits, builtinMeta] });
+    }
   },
 
   loadKitFromJSON: (jsonString) => {
@@ -108,6 +115,15 @@ export const useDesignKitStore = create<DesignKitStore>((set, get) => ({
 
   applyKit: async (kit, projectId, elementsStore, options) => {
     set({ status: 'applying', error: null });
+
+    // G.3: 킷 적용 시각 피드백 — body 요소에 generating 이펙트 표시
+    const bodyElement = elementsStore.elements.find(
+      (el) => el.tag === 'Body' && el.page_id === projectId,
+    );
+    const feedbackTargetIds = bodyElement ? [bodyElement.id] : [];
+    if (feedbackTargetIds.length > 0) {
+      useAIVisualFeedbackStore.getState().startGenerating(feedbackTargetIds);
+    }
 
     const themeState = useUnifiedThemeStore.getState();
 
@@ -141,12 +157,27 @@ export const useDesignKitStore = create<DesignKitStore>((set, get) => ({
         lastResult: result,
         appliedKitIds: [...appliedKitIds, kit.meta.id],
       });
+
+      // G.3: 킷 적용 완료 — flash 이펙트 트리거
+      if (feedbackTargetIds.length > 0) {
+        useAIVisualFeedbackStore.getState().completeGenerating(feedbackTargetIds, {
+          color: [46 / 255, 160 / 255, 67 / 255],  // 녹색 (성공)
+          strokeWidth: 3,
+          longHold: true,
+          scanLine: false,
+        });
+      }
     } else {
       set({
         status: 'error',
         error: result.error,
         lastResult: result,
       });
+
+      // G.3: 킷 적용 실패 — generating 이펙트 제거
+      if (feedbackTargetIds.length > 0) {
+        useAIVisualFeedbackStore.getState().cancelGenerating();
+      }
     }
 
     return result;
@@ -162,6 +193,22 @@ export const useDesignKitStore = create<DesignKitStore>((set, get) => ({
       elements,
       childrenMap,
     });
+  },
+
+  loadBuiltinKit: (kitId) => {
+    // 내장 킷 레지스트리에서 조회
+    const builtinKits: Record<string, DesignKit> = {
+      [BASIC_KIT.meta.id]: BASIC_KIT,
+    };
+
+    const kit = builtinKits[kitId];
+    if (!kit) {
+      set({ error: `내장 킷을 찾을 수 없습니다: ${kitId}` });
+      return null;
+    }
+
+    set({ loadedKit: kit, error: null });
+    return kit;
   },
 
   removeAppliedKit: (kitId) => {

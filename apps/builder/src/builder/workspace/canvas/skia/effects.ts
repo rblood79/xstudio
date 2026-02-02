@@ -54,6 +54,22 @@ export function beginRenderEffects(
           break;
         }
 
+        case 'layer-blur': {
+          const filter = scope.track(
+            ck.ImageFilter.MakeBlur(
+              effect.sigma,
+              effect.sigma,
+              ck.TileMode.Clamp,
+              null,
+            ),
+          );
+          const paint = scope.track(new ck.Paint());
+          paint.setImageFilter(filter);
+          canvas.saveLayer(paint);
+          layerCount++;
+          break;
+        }
+
         case 'drop-shadow': {
           const filter = scope.track(
             effect.inner

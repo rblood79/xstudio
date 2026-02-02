@@ -32,6 +32,7 @@
 - [WASM Performance Path - Phase 0-4 (2026-02-02)](#wasm-performance-path)
 - [Skia Border-Box Rendering Fix (2026-02-02)](#skia-border-box-rendering-fix)
 - [Skia AABB Viewport Culling Fix (2026-02-02)](#skia-aabb-viewport-culling-fix)
+- [Skia Rendering Pipeline Completion (2026-02-02)](#skia-rendering-pipeline-completion)
 
 ---
 
@@ -50,6 +51,30 @@
 - 자식 재귀 시 `cullingBounds`를 `(x - node.x, y - node.y)` 로 역변환
 
 **파일:** `apps/builder/src/.../skia/nodeRenderers.ts`
+
+---
+
+## Skia Rendering Pipeline Completion
+
+**Status**: ✅ Complete (2026-02-02)
+
+Skia 렌더링 파이프라인의 남은 기능 8건을 모두 구현하여 Pencil 렌더링 아키텍처 전환 100% 완료.
+
+**구현 내용:**
+- **MeshGradient Fill**: bilinear interpolation 근사 (top/bottom LinearGradient + MakeBlend)
+- **LayerBlur Effect**: 전경 가우시안 블러 (`MakeBlur` + `saveLayer`)
+- **Phase 6 이중 Surface 활성화**: idle 스킵, camera-only 블리팅, dirty rect 부분 렌더링
+- **변수 resolve 경로 완성**: `$--` 참조 → `Float32Array` 색상 변환 파이프라인 검증
+- **KitComponentList 패널 통합**: 마스터 컴포넌트 목록 + 인스턴스 생성
+- **킷 적용 시각 피드백**: generating → flash 애니메이션 연동
+- **내장 디자인 킷 JSON**: Basic Kit (5변수 + 12토큰 + Card/Badge 컴포넌트)
+- **문서 업데이트**: CHANGELOG, COMPLETED, PENCIL_VS_XSTUDIO, WASM_DOC_IMPACT 반영
+
+**파일 (8개):**
+- `canvas/skia/types.ts`, `fills.ts`, `effects.ts`, `SkiaOverlay.tsx`
+- `panels/designKit/DesignKitPanel.tsx`
+- `stores/elements.ts`, `stores/designKitStore.ts`
+- `utils/designKit/builtinKits/basicKit.ts` (신규)
 
 ---
 

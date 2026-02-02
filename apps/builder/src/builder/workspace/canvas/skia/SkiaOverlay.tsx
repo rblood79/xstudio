@@ -18,7 +18,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { RefObject } from 'react';
 import type { Application, Container } from 'pixi.js';
 import { SkiaRenderer } from './SkiaRenderer';
-import { getSkiaNode } from './useSkiaNode';
+import { getSkiaNode, getRegistryVersion, flushDirtyRects } from './useSkiaNode';
 import { renderNode } from './nodeRenderers';
 import type { SkiaNodeData } from './nodeRenderers';
 import { isCanvasKitInitialized, getCanvasKit } from './initCanvasKit';
@@ -404,7 +404,11 @@ export function SkiaOverlay({ containerEl, backgroundColor = 0xf8fafc, app, drag
         },
       });
 
-      renderer.render(cullingBounds);
+      // Phase 6: 이중 Surface 캐싱 활성화 — registryVersion/camera/dirtyRects 전달
+      const registryVersion = getRegistryVersion();
+      const dirtyRects = flushDirtyRects();
+      const camera = { zoom: cameraZoom, panX: cameraX, panY: cameraY };
+      renderer.render(cullingBounds, registryVersion, camera, dirtyRects);
     };
 
     app.ticker.add(renderFrame);
