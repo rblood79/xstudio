@@ -1409,8 +1409,8 @@ EditorCore가 등록하는 IPC 핸들러 (MCP 도구와 매핑):
 
 ## 18. 소스코드 추출 (라이브러리 제외)
 
-> prettify된 원본: `/Users/admin/work/xstudio/docs/pencil-extracted/index.js` (252,734줄, 8.1MB)
-> 추출 경로: `/Users/admin/work/xstudio/docs/pencil-extracted/`
+> prettify된 원본: `/Users/admin/work/xstudio/docs/pencil-extracted/index.txt` (252,734줄, 8.1MB)
+> 추출 경로: `/Users/admin/work/xstudio/docs/pencil-extracted/` (모든 .js 파일은 .txt로 확장자 변경됨)
 > 추출 결과: **127,104줄 (4.5MB)** — 앱 자체 코드 50%
 > 제외 분량: **125,630줄 (3.6MB)** — 서드파티 라이브러리 49%
 
@@ -1429,60 +1429,60 @@ EditorCore가 등록하는 IPC 핸들러 (MCP 도구와 매핑):
 ```
 src/
 ├── boot/                           부트스트랩 & 엔트리
-│   ├── 01_vite-bootstrap.js          80줄    Vite 헬퍼, private field 유틸
-│   └── 20_app-entry.js              56줄    ES Module 익스포트 맵
+│   ├── 01_vite-bootstrap.txt          80줄    Vite 헬퍼, private field 유틸
+│   └── 20_app-entry.txt              56줄    ES Module 익스포트 맵
 │
 ├── ipc/                            IPC 통신
-│   └── 02_ipc-system.js            889줄    IPC Server, IPCError, 메시지 핸들링
+│   └── 02_ipc-system.txt            889줄    IPC Server, IPCError, 메시지 핸들링
 │
 ├── core/                           핵심 데이터 모델
-│   ├── 03_node-system-schema.js   7,244줄   .pen 스키마, serialize/deserialize
-│   ├── 04_file-manager.js         3,379줄   .pen 파일 I/O, 에셋 관리
-│   ├── 05_node-types.js          30,962줄   노드 타입 구현체 + 인라인 폰트/메트릭 데이터
-│   └── 06_node-extensions.js      2,602줄   노드 확장, MCP 관련 데이터
+│   ├── 03_node-system-schema.txt   7,244줄   .pen 스키마, serialize/deserialize
+│   ├── 04_file-manager.txt         3,379줄   .pen 파일 I/O, 에셋 관리
+│   ├── 05_node-types.txt          30,962줄   노드 타입 구현체 + 인라인 폰트/메트릭 데이터
+│   └── 06_node-extensions.txt      2,602줄   노드 확장, MCP 관련 데이터
 │
 ├── engine/                         렌더링 엔진 & 매니저
-│   ├── 07_scenegraph.js           2,842줄   씬 그래프 (Io) - 노드 트리 관리
-│   ├── 08_undo-manager.js         9,693줄   Undo/Redo 시스템 (xyt)
-│   ├── 09_camera.js                 476줄   카메라 (_wt) - 뷰포트/줌/패닝
-│   ├── 10_node-manager.js         3,326줄   노드 CRUD (Rwt)
-│   ├── 11_hand-tool.js              741줄   캔버스 패닝 도구 (r_t)
-│   ├── 12_state-manager.js          222줄   이벤트 라우팅/도구 전환 (y_t)
-│   ├── 13_selection-manager.js      422줄   선택 관리 (w_t)
-│   ├── 14_scene-manager.js          523줄   ⭐ 중앙 허브 클래스 (x_t)
-│   ├── 15_skia-renderer.js        6,517줄   Skia CanvasKit 렌더러 (M_t)
-│   ├── 16_mcp-processor.js          554줄   AI 도구 연산 처리 (x2t)
-│   └── 17_editor-core.js         2,285줄   에디터 초기화/IPC 등록 (A2t)
+│   ├── 07_scenegraph.txt           2,842줄   씬 그래프 (Io) - 노드 트리 관리
+│   ├── 08_undo-manager.txt         9,693줄   Undo/Redo 시스템 (xyt)
+│   ├── 09_camera.txt                 476줄   카메라 (_wt) - 뷰포트/줌/패닝
+│   ├── 10_node-manager.txt         3,326줄   노드 CRUD (Rwt)
+│   ├── 11_hand-tool.txt              741줄   캔버스 패닝 도구 (r_t)
+│   ├── 12_state-manager.txt          222줄   이벤트 라우팅/도구 전환 (y_t)
+│   ├── 13_selection-manager.txt      422줄   선택 관리 (w_t)
+│   ├── 14_scene-manager.txt          523줄   ⭐ 중앙 허브 클래스 (x_t)
+│   ├── 15_skia-renderer.txt        6,517줄   Skia CanvasKit 렌더러 (M_t)
+│   ├── 16_mcp-processor.txt          554줄   AI 도구 연산 처리 (x2t)
+│   └── 17_editor-core.txt         2,285줄   에디터 초기화/IPC 등록 (A2t)
 │
 └── ui/                             UI 레이어
-    ├── 18_ui-and-design-kits.js  38,238줄   UI 컴포넌트 + 디자인 킷 JSON (halo/lunaris/nitro/shadcn)
-    └── 19_react-components.js    16,053줄   React UI 패널/모달/속성편집기/라우팅
+    ├── 18_ui-and-design-kits.txt  38,238줄   UI 컴포넌트 + 디자인 킷 JSON (halo/lunaris/nitro/shadcn)
+    └── 19_react-components.txt    16,053줄   React UI 패널/모달/속성편집기/라우팅
 ```
 
 ### 18.3 파일별 원본 라인 매핑
 
 | 추출 파일 | 원본 라인 범위 | 주요 클래스/함수 |
 |---|---|---|
-| `01_vite-bootstrap.js` | 1-80 | `__vite__mapDeps`, `re`, `Tt`, `Oo`, `Bi` (private field 헬퍼) |
-| `02_ipc-system.js` | 28,166-29,054 | `S$e` (IPC Server), `G6` (IPCError), `C$e` |
-| `03_node-system-schema.js` | 70,861-78,104 | `serialize()`, `serializeNode()`, 문서 버전 `HP` |
-| `04_file-manager.js` | 78,105-81,483 | `lXe` (FileManager) |
-| `05_node-types.js` | 81,484-112,445 | 각 노드 타입 구현, `JSON.parse(...)` 인라인 데이터 |
-| `06_node-extensions.js` | 112,446-115,047 | MCP 데이터, 디자인 시스템 정의 |
-| `07_scenegraph.js` | 115,048-117,889 | `Io` (Scenegraph) - viewportNode, nodeByLocalID |
-| `08_undo-manager.js` | 117,890-127,582 | `xyt` (UndoManager) |
-| `09_camera.js` | 127,583-128,058 | `_wt` (Camera) - left/top/zoom/worldTransform |
-| `10_node-manager.js` | 128,059-131,384 | `Rwt` (NodeManager) |
-| `11_hand-tool.js` | 131,385-132,125 | `r_t` (HandTool) - Space+드래그 패닝 |
-| `12_state-manager.js` | 132,126-132,347 | `y_t` (StateManager) - 이벤트 디스패치 |
-| `13_selection-manager.js` | 132,348-132,769 | `w_t` (SelectionManager) |
-| `14_scene-manager.js` | 132,770-133,292 | `x_t` (SceneManager) ⭐ 중앙 허브 |
-| `15_skia-renderer.js` | 133,293-139,809 | `M_t` (SkiaRenderer) - Surface/Canvas/셰이더 |
-| `16_mcp-processor.js` | 139,810-140,363 | `x2t` - batch-design 트랜잭션 처리 |
-| `17_editor-core.js` | 140,364-142,648 | `A2t` (EditorCore) - 초기화/IPC 핸들러 |
-| `18_ui-and-design-kits.js` | 142,649-180,886 | Toast, UI 유틸, 디자인 킷 JSON (~38K줄) |
-| `19_react-components.js` | 236,626-252,678 | React 컴포넌트, 라우팅, 앱 render() |
-| `20_app-entry.js` | 252,679-252,734 | ES Module 익스포트 맵 |
+| `01_vite-bootstrap.txt` | 1-80 | `__vite__mapDeps`, `re`, `Tt`, `Oo`, `Bi` (private field 헬퍼) |
+| `02_ipc-system.txt` | 28,166-29,054 | `S$e` (IPC Server), `G6` (IPCError), `C$e` |
+| `03_node-system-schema.txt` | 70,861-78,104 | `serialize()`, `serializeNode()`, 문서 버전 `HP` |
+| `04_file-manager.txt` | 78,105-81,483 | `lXe` (FileManager) |
+| `05_node-types.txt` | 81,484-112,445 | 각 노드 타입 구현, `JSON.parse(...)` 인라인 데이터 |
+| `06_node-extensions.txt` | 112,446-115,047 | MCP 데이터, 디자인 시스템 정의 |
+| `07_scenegraph.txt` | 115,048-117,889 | `Io` (Scenegraph) - viewportNode, nodeByLocalID |
+| `08_undo-manager.txt` | 117,890-127,582 | `xyt` (UndoManager) |
+| `09_camera.txt` | 127,583-128,058 | `_wt` (Camera) - left/top/zoom/worldTransform |
+| `10_node-manager.txt` | 128,059-131,384 | `Rwt` (NodeManager) |
+| `11_hand-tool.txt` | 131,385-132,125 | `r_t` (HandTool) - Space+드래그 패닝 |
+| `12_state-manager.txt` | 132,126-132,347 | `y_t` (StateManager) - 이벤트 디스패치 |
+| `13_selection-manager.txt` | 132,348-132,769 | `w_t` (SelectionManager) |
+| `14_scene-manager.txt` | 132,770-133,292 | `x_t` (SceneManager) ⭐ 중앙 허브 |
+| `15_skia-renderer.txt` | 133,293-139,809 | `M_t` (SkiaRenderer) - Surface/Canvas/셰이더 |
+| `16_mcp-processor.txt` | 139,810-140,363 | `x2t` - batch-design 트랜잭션 처리 |
+| `17_editor-core.txt` | 140,364-142,648 | `A2t` (EditorCore) - 초기화/IPC 핸들러 |
+| `18_ui-and-design-kits.txt` | 142,649-180,886 | Toast, UI 유틸, 디자인 킷 JSON (~38K줄) |
+| `19_react-components.txt` | 236,626-252,678 | React 컴포넌트, 라우팅, 앱 render() |
+| `20_app-entry.txt` | 252,679-252,734 | ES Module 익스포트 맵 |
 
 ### 18.4 코드 분포 비율
 
@@ -1506,7 +1506,7 @@ src/
 > 총 11개 파일, **27,601줄**
 > Pencil 에디터의 핵심 엔진 — 씬 그래프, 카메라, 렌더러, 매니저, 도구, MCP 프로세서
 
-### 19.1 Camera (`_wt`) — 09_camera.js (476줄)
+### 19.1 Camera (`_wt`) — 09_camera.txt (476줄)
 
 2D 뷰포트 관리 클래스. EventEmitter(`wl`)를 상속하여 `"change"`, `"zoom"` 이벤트를 발행한다.
 
@@ -1538,7 +1538,7 @@ _worldTransform: Qt      // 2D 아핀 변환 매트릭스
 | `ensureVisible(rect, margin)` | 노드가 뷰포트 안에 보이도록 패닝/줌 |
 | `overlapsBounds(bounds)` | 뷰포트와 바운딩 박스 겹침 여부 (렌더링 컬링용) |
 
-**SnapManager (`Awt`)** — 09_camera.js 동일 파일 (137~284줄):
+**SnapManager (`Awt`)** — 09_camera.txt 동일 파일 (137~284줄):
 스냅 가이드 시스템. 드래그 시 주변 노드 경계에 자석처럼 정렬.
 
 ```
@@ -1549,16 +1549,16 @@ _worldTransform: Qt      // 2D 아핀 변환 매트릭스
 4. Skia Paint로 스냅 라인 + 크로스 마커 렌더링
 ```
 
-**AssetManager (`Mwt`)** — 09_camera.js (292~377줄):
+**AssetManager (`Mwt`)** — 09_camera.txt (292~377줄):
 이미지 에셋 로딩/캐싱. HTTP URL은 fetch(), 로컬 파일은 IPC `read-file` 요청. `Ue.MakeImageFromEncoded()`로 Skia 이미지 디코딩.
 
-**ConnectionManager (`Pwt`)** — 09_camera.js (378~415줄):
+**ConnectionManager (`Pwt`)** — 09_camera.txt (378~415줄):
 노드 간 연결선 관리 (프로토타이핑용 인터랙션 링크).
 
-**GuidesManager (`Iwt`)** — 09_camera.js (416~476줄):
+**GuidesManager (`Iwt`)** — 09_camera.txt (416~476줄):
 가이드/룰러 관리. `guidesGraph`에 위임하는 파사드 패턴.
 
-### 19.2 HandTool (`r_t`) — 11_hand-tool.js (49줄 핵심)
+### 19.2 HandTool (`r_t`) — 11_hand-tool.txt (49줄 핵심)
 
 캔버스 패닝 전용 도구. 간결한 상태 머신.
 
@@ -1590,7 +1590,7 @@ class r_t {
 
 **패닝 좌표 변환 공식**: `camera.translate(-deltaScreen / zoom)` — 스크린 상의 드래그 거리를 줌 레벨로 나누어 월드 좌표 이동량으로 변환.
 
-### 19.3 StateManager (`y_t`) — 12_state-manager.js (82줄)
+### 19.3 StateManager (`y_t`) — 12_state-manager.txt (82줄)
 
 이벤트 라우팅의 중앙 디스패처. 상태 패턴(State Pattern) 구현.
 
@@ -1626,7 +1626,7 @@ onToolChange(oldTool, newTool):
 **TextEditorManager (`b_t`)** — 같은 파일 (83~222줄):
 Quill 기반 텍스트 편집 시작/종료 관리. `startTextEditing()` → `tq` 상태로 전환. 텍스트 노드 생성 시 배경색 대비를 `skiaRenderer.readPixel()`로 감지하여 텍스트 색상 자동 결정.
 
-### 19.4 SelectionManager (`w_t`) — 13_selection-manager.js (422줄)
+### 19.4 SelectionManager (`w_t`) — 13_selection-manager.txt (422줄)
 
 노드 선택/조작 시스템. 클립보드, 정렬, 회전, 복제 등 포함.
 
@@ -1659,7 +1659,7 @@ dragStartNodeParents: Map          // 드래그 시작 시 부모 노드 기록
 **클립보드 포맷 (Cursor IDE 연동)**:
 Cursor IDE에서 복사 시 `application/x-lexical-editor` 포맷으로 노드 ID + 파일 경로를 전달하여 Cursor의 AI 에이전트가 Pencil MCP 도구를 사용할 수 있도록 함.
 
-### 19.5 SceneManager (`x_t`) — 14_scene-manager.js (523줄)
+### 19.5 SceneManager (`x_t`) — 14_scene-manager.txt (523줄)
 
 **전체 에디터의 중앙 허브**. 모든 서브시스템을 조합하고 렌더 루프를 관리.
 
@@ -1722,7 +1722,7 @@ config.on("change") → requestFrame()
 { label: "Composer", id: "cursor-composer" }     // 기본 모델
 ```
 
-### 19.6 SkiaRenderer (`M_t`) — 15_skia-renderer.js (6,517줄)
+### 19.6 SkiaRenderer (`M_t`) — 15_skia-renderer.txt (6,517줄)
 
 Skia CanvasKit 기반 콘텐츠 렌더러. 파일 중 가장 큰 엔진 컴포넌트.
 
@@ -1772,11 +1772,11 @@ generatingEffects: []             // AI 이미지 생성 중 효과
    return mix(color1, color2, smoothbump(ratio - 0.5*pixel, ratio + 0.5*pixel, bump));
    ```
 
-**그래디언트 렌더링** (14_scene-manager.js 하단 312~517줄):
+**그래디언트 렌더링** (14_scene-manager.txt 하단 312~517줄):
 - `LinearGradient`, `RadialGradient`, `AngularGradient` 3종 지원
 - 메쉬 그래디언트: 쌍삼차(Bicubic) 보간으로 정점 메쉬 생성 → `MakeVertices(TrianglesStrip, ...)`
 
-### 19.7 Scenegraph (`Io`) — 07_scenegraph.js (2,842줄)
+### 19.7 Scenegraph (`Io`) — 07_scenegraph.txt (2,842줄)
 
 노드 트리 데이터 구조. EventEmitter 상속.
 
@@ -1815,7 +1815,7 @@ rollbackBlock(block) → 모든 변경 역순 실행
 - `unsafeRemoveNode()`: 삭제 시 인스턴스 정리
 - `unsafeChangeParent()`: 부모 변경 + 인스턴스 트리 동기화
 
-### 19.8 UndoManager (`xyt`) — 08_undo-manager.js (9,693줄)
+### 19.8 UndoManager (`xyt`) — 08_undo-manager.txt (9,693줄)
 
 **핵심 Undo/Redo** (1~40줄): 매우 간결한 구현.
 ```javascript
@@ -1839,7 +1839,7 @@ class xyt extends wl {
 
 나머지 9,600줄은 **deep-equal 비교 라이브러리** + **레이아웃 엔진** (Yoga/Flexbox 기반 자동 레이아웃) 코드.
 
-### 19.9 NodeManager (`Rwt`) — 10_node-manager.js (3,326줄)
+### 19.9 NodeManager (`Rwt`) — 10_node-manager.txt (3,326줄)
 
 노드 드로잉/리사이즈/드래그 컨트롤러.
 
@@ -1870,7 +1870,7 @@ finishDrawing(block, point):
 **리사이즈**: 시작점 기록 → 델타 계산 → 비율 유지 옵션 → 노드 프로퍼티 업데이트
 **드래그**: `dragStartNodePositions` 맵으로 원본 위치 저장 → 스냅 가이드 → 부모 프레임 탐색
 
-### 19.10 MCP Processor (`x2t`) — 16_mcp-processor.js (554줄)
+### 19.10 MCP Processor (`x2t`) — 16_mcp-processor.txt (554줄)
 
 AI 도구(Claude, Codex 등)의 `batch-design` 명령을 실행하는 프로세서.
 
@@ -1917,7 +1917,7 @@ MCP `get_editor_state` 호출 시 현재 에디터 상태를 마크다운으로 
 - 재사용 가능 컴포넌트 목록
 - 현재 파일 경로
 
-### 19.11 EditorCore (`A2t`) — 17_editor-core.js (2,285줄)
+### 19.11 EditorCore (`A2t`) — 17_editor-core.txt (2,285줄)
 
 에디터 초기화 및 IPC 핸들러 등록의 엔트리포인트.
 
@@ -2019,12 +2019,12 @@ core 디렉토리는 4개 파일, 총 44,187줄로 구성되며 Pencil의 노드
 
 | 파일 | 줄 수 | 원본 라인 범위 | 핵심 역할 |
 |------|-------|---------------|----------|
-| 03_node-system-schema.js | 7,244 | 95,690-102,933 | PixiJS 렌더링 시스템 + 노드 스키마/열거형 |
-| 04_file-manager.js | 3,379 | 102,934-106,312 | .pen 파일 열기/저장/직렬화 + 노드 삽입/교체 |
-| 05_node-types.js | 30,962 | 106,313-137,274 | 아이콘 폰트, CSS 파서, SVG 파서, CSSO 최적화기 |
-| 06_node-extensions.js | 2,602 | 137,275-139,876 | 도형 노드, Sticky 노드, 텍스트 노드, 프로퍼티 시스템 |
+| 03_node-system-schema.txt | 7,244 | 95,690-102,933 | PixiJS 렌더링 시스템 + 노드 스키마/열거형 |
+| 04_file-manager.txt | 3,379 | 102,934-106,312 | .pen 파일 열기/저장/직렬화 + 노드 삽입/교체 |
+| 05_node-types.txt | 30,962 | 106,313-137,274 | 아이콘 폰트, CSS 파서, SVG 파서, CSSO 최적화기 |
+| 06_node-extensions.txt | 2,602 | 137,275-139,876 | 도형 노드, Sticky 노드, 텍스트 노드, 프로퍼티 시스템 |
 
-### 20.1 03_node-system-schema.js (7,244줄)
+### 20.1 03_node-system-schema.txt (7,244줄)
 
 이 파일은 크게 두 영역으로 나뉜다:
 
@@ -2098,7 +2098,7 @@ float gamma = mix(1.0, 1.0 / 2.2, luma);
 float coverage = pow(shapeColor.a * alpha, gamma);
 ```
 
-### 20.2 04_file-manager.js (3,379줄)
+### 20.2 04_file-manager.txt (3,379줄)
 
 `.pen` 파일의 열기/저장/직렬화를 담당하는 `lXe` (FileManager) 클래스.
 
@@ -2157,7 +2157,7 @@ float coverage = pow(shapeColor.a * alpha, gamma);
 - `$B()` → 프로퍼티 적용 + 변수 바인딩 해석
 - children 대체: `clearChildren()` → `insertNodes()` 재호출
 
-### 20.3 05_node-types.js (30,962줄)
+### 20.3 05_node-types.txt (30,962줄)
 
 가장 큰 파일로, 대부분이 임베디드 라이브러리/데이터이다.
 
@@ -2228,7 +2228,7 @@ SVG 문자열 → SVGO 최적화 (U1t) → SAX 파싱 (o1t) → 노드 트리 �
    - `ZZ` (SvgoParserError): 에러 메시지 + 소스 위치 표시
    - SVG → 내부 노드 타입 변환 (rect, ellipse, line, path 등)
 
-### 20.4 06_node-extensions.js (2,602줄)
+### 20.4 06_node-extensions.txt (2,602줄)
 
 도형 노드, Sticky 노드, 텍스트 노드, 트랜잭션 시스템의 확장.
 
@@ -2381,7 +2381,7 @@ Rr = { Inside: 0, Center: 1, Outside: 2 }
 Lh = { SendToBack: 0, BringToFront: 1, SendBackward: 2, BringForward: 3 }
 ```
 
-### 20.5 BaseNode (`z_`) 상세 분석 (04_file-manager.js:2235)
+### 20.5 BaseNode (`z_`) 상세 분석 (04_file-manager.txt:2235)
 
 모든 노드 타입의 기본 클래스:
 
@@ -2428,20 +2428,20 @@ class z_ {
 ### 20.6 core 파일 간 의존성 그래프
 
 ```
-03_node-system-schema.js
+03_node-system-schema.txt
  ├── PixiJS 렌더링 시스템 (WebGL/WebGPU)
  ├── 레이아웃 엔진 (C2e, CH, EH, E2e)
  ├── 노드 열거형 (Rt, Ea, fo, ii, Zt, hi, fr, Rr, Lh)
  └── SDF/MSDF 셰이더
        │
-04_file-manager.js ─────────────────────────────────────────
+04_file-manager.txt ─────────────────────────────────────────
  ├── z_ (BaseNode) ← 03에서 정의된 C2e, tyt 사용
  ├── lXe (FileManager) ← Scenegraph(Io), Camera(_wt) 참조
  ├── W2e (StrokePath) ← Skia PathBuilder, Rr 열거형
  ├── 노드 삽입/교체/이동 로직
  └── 직렬화/역직렬화
        │
-05_node-types.js ───────────────────────────────────────────
+05_node-types.txt ───────────────────────────────────────────
  ├── _Xe (IconFontNode) ← z_ 상속, Skia Paragraph
  ├── CSS/SVG 처리 파이프라인
  │    ├── CSSTree (파서/토크나이저)
@@ -2449,7 +2449,7 @@ class z_ {
  │    └── SVGO (SVG 최적화)
  └── 아이콘 폰트 데이터 (Lucide)
        │
-06_node-extensions.js ──────────────────────────────────────
+06_node-extensions.txt ──────────────────────────────────────
  ├── Kke (ShapeNode) ← z_ 상속, Skia PathBuilder
  ├── oI (StickyNode) ← z_ 상속, ViewNode 시스템
  ├── Ux (TextNode) ← z_ 상속, Skia Paragraph
@@ -2482,10 +2482,10 @@ ui 디렉토리는 2개 파일, 총 54,291줄로 구성되며 디자인 킷 데�
 
 | 파일 | 줄 수 | 원본 라인 범위 | 핵심 역할 |
 |------|-------|---------------|----------|
-| 18_ui-and-design-kits.js | 38,238 | 142,649-180,886 | 디자인 킷 JSON + Sonner + Radix Primitives + Tailwind Merge + UI 유틸리티 |
-| 19_react-components.js | 16,053 | 180,887-196,939 | Fuse.js + react-virtuoso + 앱 React 컴포넌트 + 라우터 + 앱 초기화 |
+| 18_ui-and-design-kits.txt | 38,238 | 142,649-180,886 | 디자인 킷 JSON + Sonner + Radix Primitives + Tailwind Merge + UI 유틸리티 |
+| 19_react-components.txt | 16,053 | 180,887-196,939 | Fuse.js + react-virtuoso + 앱 React 컴포넌트 + 라우터 + 앱 초기화 |
 
-### 21.1 18_ui-and-design-kits.js (38,238줄)
+### 21.1 18_ui-and-design-kits.txt (38,238줄)
 
 **파일 구성:**
 
@@ -2617,7 +2617,7 @@ function Pi({ className, variant, size, asChild, ...r }) {
 }
 ```
 
-### 21.2 19_react-components.js (16,053줄)
+### 21.2 19_react-components.txt (16,053줄)
 
 **파일 구성:**
 
@@ -2778,8 +2778,8 @@ root.render(<App />);
 
 | 파일 | 전체 줄 | 라이브러리 줄 | 앱 코드 줄 | 앱 코드 비율 |
 |------|---------|-------------|-----------|------------|
-| 18_ui-and-design-kits.js | 38,238 | ~37,100 | ~1,138 | **3%** |
-| 19_react-components.js | 16,053 | ~4,800 | ~11,253 | **70%** |
+| 18_ui-and-design-kits.txt | 38,238 | ~37,100 | ~1,138 | **3%** |
+| 19_react-components.txt | 16,053 | ~4,800 | ~11,253 | **70%** |
 | **합계** | **54,291** | **~41,900** | **~12,391** | **23%** |
 
 ※ 18번 파일의 디자인 킷 JSON 데이터(~35,640줄)가 대부분을 차지
@@ -2854,7 +2854,7 @@ root.render(<App />);
 
 boot 디렉토리: 2개 파일, 136줄
 
-### 22.1 01_vite-bootstrap.js (80줄, 원본 라인 1-80)
+### 22.1 01_vite-bootstrap.txt (80줄, 원본 라인 1-80)
 
 앱 번들의 **최초 실행 코드**. Vite 빌드 시스템 런타임과 Sentry 초기화를 담당.
 
@@ -2902,7 +2902,7 @@ _sentryDebugIds[stack] = "eff24da1-e218-46e1-9bbb-59a6acf5b60b"  // Debug UUID
 - 전역 객체(window/global/globalThis/self)에 릴리스 정보 주입
 - 소스맵 매핑용 debug ID 설정 — Sentry에서 스택 트레이스를 원본 코드에 매핑
 
-### 22.2 20_app-entry.js (56줄, 원본 라인 196,940-196,995)
+### 22.2 20_app-entry.txt (56줄, 원본 라인 196,940-196,995)
 
 앱 번들의 **공개 API 엔트리 포인트**. 52개 named export를 단일 문자 별칭으로 노출.
 
@@ -2923,7 +2923,7 @@ export {
 - **52개 export**: `$`, `A`-`Z`, `_`, `a`-`z` (알파벳 전체 + 특수문자 2개)
 - 내부 minified 이름 → 외부 단일 문자 별칭으로 매핑
 - Vite의 tree-shaking 최적화 결과물
-- 외부에서 이 모듈을 import할 때 사용하는 인터페이스 (예: `import { a as VGe } from './20_app-entry.js'`)
+- 외부에서 이 모듈을 import할 때 사용하는 인터페이스 (예: `import { a as VGe } from './20_app-entry.txt'`)
 
 ---
 
@@ -2931,7 +2931,7 @@ export {
 
 ipc 디렉토리: 1개 파일, 889줄
 
-### 23.1 02_ipc-system.js (889줄, 원본 라인 80-968)
+### 23.1 02_ipc-system.txt (889줄, 원본 라인 80-968)
 
 **IPC(Inter-Process Communication) 시스템** + **수학 유틸리티** + **Bounds 클래스** + **EventEmitter3 라이브러리**를 포함.
 
@@ -3195,7 +3195,7 @@ var z$e = j$e();  // EventEmitter3 팩토리 실행
 ### 24.1 앱 부트스트랩 시퀀스
 
 ```
-01_vite-bootstrap.js (최초 실행)
+01_vite-bootstrap.txt (최초 실행)
 │
 ├─ __vite__mapDeps(): 4개 청크 의존성 매퍼 등록
 ├─ re/Tt/Oo/Bi/Js: ES2022 private field 폴리필 등록
@@ -3203,7 +3203,7 @@ var z$e = j$e();  // EventEmitter3 팩토리 실행
 └─ _sentryDebugIds: 소스맵 디버그 UUID 등록
     │
     ▼
-02_ipc-system.js ~ 19_react-components.js (순차 실행)
+02_ipc-system.txt ~ 19_react-components.txt (순차 실행)
 │
 ├─ IPC 시스템 클래스 정의 (G6, S$e, C$e, wG)
 ├─ 수학 유틸리티 / Bounds / EventEmitter3
@@ -3214,7 +3214,7 @@ var z$e = j$e();  // EventEmitter3 팩토리 실행
 └─ 앱 초기화 (PostHog + Sentry + Router + ReactDOM.createRoot)
     │
     ▼
-20_app-entry.js (최종)
+20_app-entry.txt (최종)
 │
 └─ 52개 named export로 공개 API 노출
 ```
@@ -3258,9 +3258,9 @@ var z$e = j$e();  // EventEmitter3 팩토리 실행
 
 ### 24.3 boot + ipc 핵심 관찰
 
-1. **01_vite-bootstrap.js가 진정한 엔트리**: 번들에서 가장 먼저 실행되며, 나머지 모든 코드가 의존하는 private field 폴리필과 Sentry 초기화를 담당
+1. **01_vite-bootstrap.txt가 진정한 엔트리**: 번들에서 가장 먼저 실행되며, 나머지 모든 코드가 의존하는 private field 폴리필과 Sentry 초기화를 담당
 
-2. **20_app-entry.js는 외부 인터페이스**: 52개 단일 문자 export로 구성. 외부 청크(browserAll.js 등)에서 이 모듈을 통해 앱 기능에 접근
+2. **20_app-entry.txt는 외부 인터페이스**: 52개 단일 문자 export로 구성. 외부 청크(browserAll.js 등)에서 이 모듈을 통해 앱 기능에 접근
 
 3. **IPC 이중 접근 패턴**: React Context + Singleton을 병행하여 React 트리 안팎에서 동일한 IPC 인스턴스에 접근 가능
 
