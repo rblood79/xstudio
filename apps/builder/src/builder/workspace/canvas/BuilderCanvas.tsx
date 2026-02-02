@@ -48,7 +48,6 @@ import {
   selectEngine,
   shouldDelegateToPixiLayout,
   parsePadding,
-  parseBorder,
   type LayoutStyle,
   type ComputedLayout,
 } from "./layout";
@@ -542,6 +541,7 @@ const ElementsLayer = memo(function ElementsLayer({
     // 🚀 자체 padding/border 렌더링 컴포넌트용 layout 정리
     // Yoga가 padding/border를 inset으로 처리하면 이중 적용됨
     // → 컴포넌트 자체가 처리하는 속성은 외부 LayoutContainer에서 제거
+    // Note: 버튼 겹침은 Skia stroke inset(nodeRenderers.ts)으로 해결
     function stripSelfRenderedProps(layout: LayoutStyle): LayoutStyle {
       const {
         padding: _p, paddingTop: _pt, paddingRight: _pr, paddingBottom: _pb, paddingLeft: _pl,
@@ -563,11 +563,11 @@ const ElementsLayer = memo(function ElementsLayer({
       const parentDisplay = parentStyle?.display as string | undefined;
       const engine = selectEngine(parentDisplay);
 
-      // 🚀 부모의 padding/border 파싱 (자식 요소들의 사용 가능 공간 계산)
+      // 🚀 부모의 padding 파싱 (자식 요소들의 사용 가능 공간 계산)
+      // border는 시각 렌더링 전용 — 레이아웃 inset으로 사용하지 않음
       const parentPadding = parsePadding(parentStyle);
-      const parentBorder = parseBorder(parentStyle);
-      const availableWidth = pageWidth - parentPadding.left - parentPadding.right - parentBorder.left - parentBorder.right;
-      const availableHeight = pageHeight - parentPadding.top - parentPadding.bottom - parentBorder.top - parentBorder.bottom;
+      const availableWidth = pageWidth - parentPadding.left - parentPadding.right;
+      const availableHeight = pageHeight - parentPadding.top - parentPadding.bottom;
 
       // 레이아웃 계산 (padding이 적용된 content-box 크기 사용)
       // 🚀 Phase 7: parentDisplay 전달로 CSS blockification 지원
@@ -594,7 +594,7 @@ const ElementsLayer = memo(function ElementsLayer({
             elementId={child.id}
             layout={{
               position: 'absolute',
-              // padding offset 적용 (border offset은 Yoga가 처리)
+              // padding offset 적용 (border는 시각 렌더링만, 레이아웃 inset 아님)
               left: layout.x + parentPadding.left,
               top: layout.y + parentPadding.top,
               width: layout.width,

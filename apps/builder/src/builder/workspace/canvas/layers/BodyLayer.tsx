@@ -128,9 +128,21 @@ export const BodyLayer = memo(function BodyLayer({
       box: {
         fillColor: Float32Array.of(r, g, b, backgroundAlpha),
         borderRadius,
+        strokeColor: borderConfig
+          ? (() => {
+              const sc = borderConfig.color ?? 0x000000;
+              return Float32Array.of(
+                ((sc >> 16) & 0xff) / 255,
+                ((sc >> 8) & 0xff) / 255,
+                (sc & 0xff) / 255,
+                borderConfig.alpha ?? 1,
+              );
+            })()
+          : undefined,
+        strokeWidth: borderConfig?.width,
       },
     };
-  }, [pageWidth, pageHeight, backgroundColor, backgroundAlpha, borderRadius]);
+  }, [pageWidth, pageHeight, backgroundColor, backgroundAlpha, borderRadius, borderConfig]);
 
   useSkiaNode(bodyElement?.id ?? '', bodySkiaData);
 

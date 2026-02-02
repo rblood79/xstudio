@@ -91,6 +91,29 @@ Phase 0-4 Rust WASM 모듈을 빌드/활성화하여 캔버스 성능 가속:
 **빌드 산출물:** `wasm-bindings/pkg/xstudio_wasm_bg.wasm` (70KB)
 **상세:** `docs/WASM.md` Phase 0-4
 
+## Update: Skia Border-Box 렌더링 수정 (2026-02-02)
+
+Skia `renderBox()`의 stroke가 요소 바운드 밖으로 넘쳐 인접 요소 border가 겹치는 문제 수정:
+
+| 항목 | 수정 전 | 수정 후 |
+|------|---------|---------|
+| **Stroke rect** | `(0, 0, width, height)` — strokeWidth/2 밖으로 넘침 | `(inset, inset, width-inset, height-inset)` — 완전 내부 |
+| **PixiJS 일치** | 불일치 (PixiJS는 `getBorderBoxOffset` 사용) | 일치 — 동일한 border-box 동작 |
+| **Block 레이아웃** | `parentBorder`가 `availableWidth`에서 차감 | border는 시각 전용, 레이아웃 inset 아님 |
+
+**상세:** `apps/builder/src/.../skia/nodeRenderers.ts`, `BuilderCanvas.tsx`
+
+## Update: Skia AABB 뷰포트 컬링 좌표계 수정 (2026-02-02)
+
+캔버스 팬 시 body가 화면 왼쪽/위쪽 가장자리에 닿으면 모든 렌더링이 사라지는 버그 수정:
+
+| 항목 | 수정 전 | 수정 후 |
+|------|---------|---------|
+| **루트 컨테이너** | `{width:0, height:0}` 가상 노드에 AABB 컬링 적용 → 원점 이탈 시 전체 소실 | zero-size 노드는 컬링 스킵, 자식에서 개별 컬링 |
+| **자식 cullingBounds** | 씬-로컬 좌표 그대로 전달 → `canvas.translate()` 후 좌표계 불일치 | `(x - node.x, y - node.y)` 역변환으로 로컬 좌표계 일치 |
+
+**상세:** `apps/builder/src/.../skia/nodeRenderers.ts`
+
 ## Implementation
 
 ```typescript

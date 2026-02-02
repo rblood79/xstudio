@@ -86,9 +86,11 @@ export function renderNode(
 ): void {
   if (!node.visible) return;
 
-  // AABB 컬링
-  const nodeBounds = new DOMRect(node.x, node.y, node.width, node.height);
-  if (!intersectsAABB(cullingBounds, nodeBounds)) return;
+  // AABB 컬링 — width/height=0 가상 컨테이너는 스킵 (자식에서 개별 컬링)
+  if (node.width > 0 || node.height > 0) {
+    const nodeBounds = new DOMRect(node.x, node.y, node.width, node.height);
+    if (!intersectsAABB(cullingBounds, nodeBounds)) return;
+  }
 
   // 캔버스 상태 저장 + 로컬 변환
   canvas.save();
@@ -115,10 +117,17 @@ export function renderNode(
       break;
   }
 
-  // 자식 재귀 렌더링
+  // 자식 재귀 렌더링 — canvas.translate() 후 좌표계가 부모 로컬로 변환되었으므로
+  // cullingBounds도 부모 오프셋만큼 역변환하여 좌표계를 일치시킨다.
   if (node.children) {
+    const childBounds = new DOMRect(
+      cullingBounds.x - node.x,
+      cullingBounds.y - node.y,
+      cullingBounds.width,
+      cullingBounds.height,
+    );
     for (const child of node.children) {
-      renderNode(ck, canvas, child, cullingBounds, fontMgr);
+      renderNode(ck, canvas, child, childBounds, fontMgr);
     }
   }
 
@@ -147,17 +156,22 @@ function renderBox(ck: CanvasKit, canvas: Canvas, node: SkiaNodeData): void {
       canvas.drawRect(rect, paint);
     }
 
-    // Stroke
+    // Stroke (border-box: stroke를 요소 내부에 완전히 포함)
+    // CanvasKit stroke는 경로 중앙에 그려지므로 strokeWidth/2 만큼 inset 필요
     if (node.box.strokeColor && node.box.strokeWidth) {
+      const sw = node.box.strokeWidth;
+      const inset = sw / 2;
       paint.setStyle(ck.PaintStyle.Stroke);
-      paint.setStrokeWidth(node.box.strokeWidth);
+      paint.setStrokeWidth(sw);
       paint.setColor(node.box.strokeColor);
 
+      const strokeRect = ck.LTRBRect(inset, inset, node.width - inset, node.height - inset);
       if (node.box.borderRadius > 0) {
-        const rrect = ck.RRectXY(rect, node.box.borderRadius, node.box.borderRadius);
+        const adjustedRadius = Math.max(0, node.box.borderRadius - inset);
+        const rrect = ck.RRectXY(strokeRect, adjustedRadius, adjustedRadius);
         canvas.drawRRect(rrect, paint);
       } else {
-        canvas.drawRect(rect, paint);
+        canvas.drawRect(strokeRect, paint);
       }
     }
   } finally {

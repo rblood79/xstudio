@@ -30,6 +30,41 @@
 - [Nested Routes System - Phase 1-6 (2025-11-30)](#nested-routes-system)
 - [Performance Optimization - Track A/B/C (2025-12-11)](#performance-optimization-track-abc)
 - [WASM Performance Path - Phase 0-4 (2026-02-02)](#wasm-performance-path)
+- [Skia Border-Box Rendering Fix (2026-02-02)](#skia-border-box-rendering-fix)
+- [Skia AABB Viewport Culling Fix (2026-02-02)](#skia-aabb-viewport-culling-fix)
+
+---
+
+## Skia AABB Viewport Culling Fix
+
+**Status**: ✅ Complete (2026-02-02)
+
+캔버스 팬 시 body가 화면 왼쪽/위쪽 가장자리에 닿으면 Skia 렌더링이 전부 사라지는 버그 수정.
+
+**Root Cause:**
+1. `buildSkiaTreeFromRegistry`의 가상 루트 노드 `{width:0, height:0}`에 AABB 컬링 적용 → 카메라 원점 이탈 시 루트 컬링
+2. `canvas.translate()` 후 자식에 씬-로컬 `cullingBounds` 전달 → 좌표계 불일치로 텍스트 잘못 컬링
+
+**Fix:**
+- zero-size 노드 AABB 컬링 스킵 (`node.width > 0 || node.height > 0` 조건 추가)
+- 자식 재귀 시 `cullingBounds`를 `(x - node.x, y - node.y)` 로 역변환
+
+**파일:** `apps/builder/src/.../skia/nodeRenderers.ts`
+
+---
+
+## Skia Border-Box Rendering Fix
+
+**Status**: ✅ Complete (2026-02-02)
+
+Skia 렌더러의 border(stroke) 렌더링이 CSS border-box 모델과 불일치하여 인접 요소 border가 겹치는 문제를 수정.
+
+**구현 내용:**
+- **nodeRenderers.ts**: stroke rect를 `strokeWidth/2` 만큼 inset하여 border가 요소 바운드 내부에 완전히 포함
+- **BodyLayer.tsx**: Skia body 렌더 데이터에 `strokeColor`/`strokeWidth` 추가 (borderColor 미적용 수정)
+- **BuilderCanvas.tsx**: block 레이아웃 `parentBorder`를 `availableWidth`/offset에서 제거 (border = 시각 전용)
+
+**영향:** 모든 Box 타입 Skia 노드 (Button, Body, div 등), display:block / display:flex 양쪽 경로
 
 ---
 

@@ -2498,6 +2498,7 @@ const RENDER_MODE = import.meta.env.VITE_RENDER_MODE; // 'pixi' | 'skia' | 'hybr
 | `canvas/skia/types.ts` | SkiaRenderable 인터페이스 | ✅ 구현 |
 | `canvas/skia/fontManager.ts` | CanvasKit 폰트 등록/캐싱 파이프라인 | ✅ 구현 |
 | `canvas/skia/textMeasure.ts` | CanvasKit Paragraph 기반 텍스트 측정 (Yoga measureFunc 연결) | ✅ 구현 |
+| `canvas/skia/nodeRenderers.ts` | renderBox() stroke border-box inset 수정 (`strokeWidth/2` inset) | ✅ 수정 (2026-02-02) |
 | `canvas/skia/eventBridge.ts` | DOM 이벤트 브리징 (CanvasKit 캔버스 → PixiJS 캔버스) | ❌ 불필요 (§5.7.1 참조) |
 | BoxSprite renderSkia() | 사각형/RoundedRect CanvasKit 렌더링 |
 | TextSprite renderSkia() | ParagraphBuilder 텍스트 렌더링 |

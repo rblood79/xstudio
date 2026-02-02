@@ -7,6 +7,60 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed - Skia AABB 뷰포트 컬링 좌표계 버그 수정 (2026-02-02)
+
+#### 개요
+캔버스 팬 시 body가 화면 왼쪽/위쪽 가장자리에 닿으면 모든 Skia 렌더링이 사라지는 문제 수정
+
+#### 버그 원인 (2가지)
+1. **루트 컨테이너 zero-size 컬링**: `buildSkiaTreeFromRegistry`가 생성하는 가상 루트 노드 `{x:0, y:0, width:0, height:0}`에 AABB 컬링이 적용되어, 카메라가 원점을 벗어나면 (`cameraX < 0` 또는 `cameraY < 0`) 루트가 컬링 → 전체 렌더링 소실
+2. **자식 좌표계 불일치**: `canvas.translate(node.x, node.y)` 후 자식은 부모 로컬 좌표에 있지만, `cullingBounds`는 씬-로컬 좌표로 전달되어 텍스트 등 자식 노드가 잘못 컬링됨
+
+#### 수정 내용
+- `renderNode()`에서 zero-size 노드(가상 컨테이너) AABB 컬링 스킵
+- 자식 재귀 시 `cullingBounds`를 `(x - node.x, y - node.y)` 로 역변환하여 로컬 좌표계 일치
+
+#### 변경된 파일
+- `apps/builder/src/.../skia/nodeRenderers.ts` — AABB 컬링 로직 수정
+
+---
+
+### Fixed - Skia Border-Box 렌더링 및 레이아웃 수정 (2026-02-02)
+
+#### 개요
+Skia 렌더러의 border(stroke) 렌더링이 CSS border-box 모델과 불일치하여 인접 요소의 border가 겹치는 문제를 수정
+
+#### 버그 원인
+- `nodeRenderers.ts`의 `renderBox()`가 stroke를 `(0, 0, width, height)` rect에 그림
+- CanvasKit의 `PaintStyle.Stroke`는 경로 **중앙**에 그려지므로, `strokeWidth/2`만큼 요소 바운드 밖으로 넘침
+- 인접 요소의 border가 서로의 바운드를 침범하여 시각적 겹침 발생
+
+#### 수정 내용
+1. **`skia/nodeRenderers.ts` — Skia stroke inset (핵심 수정)**
+   - stroke rect를 `(inset, inset, width-inset, height-inset)` (inset = strokeWidth/2)로 축소
+   - borderRadius도 inset만큼 조정하여 둥근 모서리에서도 정확한 border-box 동작
+   - PixiJS `drawBox`의 `getBorderBoxOffset` 방식과 동일한 렌더링 결과
+
+2. **`layers/BodyLayer.tsx` — Body Skia 데이터에 strokeColor/strokeWidth 추가**
+   - Skia 모드에서 body의 borderColor가 적용되지 않던 문제 수정
+   - `borderConfig` → `Float32Array` strokeColor + strokeWidth 변환 추가
+
+3. **`BuilderCanvas.tsx` — Block 레이아웃 parentBorder 처리 정리**
+   - `renderWithCustomEngine`에서 `parentBorder`를 `availableWidth` 계산 및 렌더링 offset에서 제거
+   - border는 시각 렌더링 전용, 레이아웃 inset으로 사용하지 않음
+   - `parseBorder` import 제거
+
+#### 영향 범위
+- 모든 Box 타입 Skia 노드 (Button, Body, div 등)의 border 렌더링
+- `display:block` / `display:flex` 양쪽 레이아웃 경로에서 일관된 동작 확인
+
+#### 변경된 파일
+- `apps/builder/src/.../skia/nodeRenderers.ts` — stroke inset 렌더링
+- `apps/builder/src/.../layers/BodyLayer.tsx` — Skia body border 데이터 추가
+- `apps/builder/src/.../BuilderCanvas.tsx` — parentBorder 레이아웃 정리
+
+---
+
 ### Added - WASM 성능 경로 Phase 0-4 구현 완료 (2026-02-02)
 
 #### 개요

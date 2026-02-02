@@ -1875,6 +1875,7 @@ Cmd+S → saveDocument() → FileManager.export()
 | B-1 | renderSkia() 재귀 트리 순회 | `renderNode()` in `nodeRenderers.ts` | ✅ |
 | B-2 | AABB 뷰포트 컬링 | `intersectsAABB()` | ✅ |
 | B-3 | Box 렌더링 (RRect + borderRadius) | `renderBox()` drawRect/drawRRect | ✅ |
+| B-3a | Box Stroke border-box inset | `renderBox()` strokeRect inset by strokeWidth/2 | ✅ (2026-02-02 수정) |
 | B-4 | Text 렌더링 (ParagraphBuilder) | `renderText()` ParagraphBuilder.Make | ✅ |
 | B-5 | Image 렌더링 (drawImageRect) | `renderImage()` | ✅ |
 | B-6 | 이펙트 파이프라인 (beginRenderEffects/endRenderEffects) | `effects.ts` saveLayer 기반 | ✅ |
