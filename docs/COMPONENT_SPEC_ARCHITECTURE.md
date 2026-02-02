@@ -2173,7 +2173,7 @@ export async function generateAllCSS(
 | Primitive 토큰 | `specs/src/primitives/*.ts` | 색상, 간격, 타이포그래피, 둥근모서리 |
 | React 렌더러 | `specs/src/renderers/ReactRenderer.ts` | Spec → React Props |
 | PIXI 렌더러 | `specs/src/renderers/PixiRenderer.ts` | Spec → PIXI Graphics |
-| CanvasKit 렌더러 | `specs/src/renderers/CanvasKitRenderer.ts` | Spec → CanvasKit/Skia Surface (Phase 5+) |
+| CanvasKit 렌더러 | `builder/workspace/canvas/skia/nodeRenderers.ts` | Spec → CanvasKit/Skia Surface (Phase 5+, builder 패키지 내 구현) |
 | CSS 생성기 | `specs/src/renderers/CSSGenerator.ts` | Spec → CSS 파일 (React/Publish 전용) |
 | 빌드 스크립트 | `specs/scripts/*.ts` | CSS 생성, 검증 |
 
@@ -2190,7 +2190,7 @@ export async function generateAllCSS(
 - [ ] 빌드 스크립트 작성
 - [ ] 단위 테스트 작성
 - [ ] CanvasKit WASM 초기화 설정 (`canvaskit-wasm` 패키지 통합)
-- [ ] CanvasKitRenderer 구현 (`Spec → CanvasKit Surface`)
+- [x] CanvasKitRenderer 구현 → `builder/workspace/canvas/skia/nodeRenderers.ts`에 구현 완료 (specs 패키지 외부)
 - [ ] CanvasKit 폰트 로더 구현 (ParagraphBuilder용)
 
 ### 3.8 Phase 0 → Phase 1 검증 게이트

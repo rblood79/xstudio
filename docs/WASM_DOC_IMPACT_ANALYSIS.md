@@ -78,7 +78,7 @@
 |---|------|---------|----------|----------|---------|
 | C1 | Executive Summary | 24–70 | PixiJS 3-소스 아키텍처 설명 | CanvasKit 메인 렌더러 전환 컨텍스트 추가 | **높음** |
 | C2 | Architecture Diagram | 116–160 | Spec → PixiJS Graphics 흐름도 | CanvasKit Surface/Paint/Path 경로 추가 | **높음** |
-| C3 | Directory Structure | 181–220 | renderers/에 PixiRenderer만 | CanvasKitRenderer.ts 추가 | **높음** |
+| C3 | Directory Structure | 181–220 | renderers/에 PixiRenderer만 | CanvasKit 렌더러 위치 명시 (`builder/.../skia/nodeRenderers.ts`) | ✅ 정정 완료 |
 | C4 | GradientShape | 732–747 | linear/radial 2종 | angular/mesh 추가 + TileMode/colorSpace 속성 | **높음** |
 | C5 | ShadowShape/Effects | 569–607 | 기본 Shadow만 | CanvasKit saveLayer 기반 이펙트 (opacity, blur, background-blur) 확장 | **높음** |
 | C6 | BorderShape Stroke | 609–647 | style: solid/dashed/dotted | strokeAlignment(inside/center/outside) + lineCap/lineJoin/miterLimit 추가 | **높음** |

@@ -1874,6 +1874,7 @@ Cmd+S → saveDocument() → FileManager.export()
 |---|------------|-------------|------|
 | B-1 | renderSkia() 재귀 트리 순회 | `renderNode()` in `nodeRenderers.ts` | ✅ |
 | B-2 | AABB 뷰포트 컬링 | `intersectsAABB()` | ✅ |
+| B-2a | AABB 컬링 좌표계 정합성 | zero-size 가상 컨테이너 스킵 + 자식 `cullingBounds` 부모 오프셋 역변환 | ✅ (2026-02-02 수정) |
 | B-3 | Box 렌더링 (RRect + borderRadius) | `renderBox()` drawRect/drawRRect | ✅ |
 | B-3a | Box Stroke border-box inset | `renderBox()` strokeRect inset by strokeWidth/2 | ✅ (2026-02-02 수정) |
 | B-4 | Text 렌더링 (ParagraphBuilder) | `renderText()` ParagraphBuilder.Make | ✅ |
@@ -1962,7 +1963,7 @@ Pencil 렌더링 아키텍처 전환: 95% 완료
 ✅ 완전 구현 (35/37 항목):
 ├── 아키텍처: CanvasKit 메인 렌더러 + PixiJS 이벤트 전용
 ├── 렌더 루프: 이중 Surface + Dirty Rect + 프레임 분류
-├── 노드 렌더링: Box/Text/Image/Container + AABB 컬링
+├── 노드 렌더링: Box/Text/Image/Container + AABB 컬링 + 좌표계 정합성 수정
 ├── Fill: 5/6종 (Color, Linear, Radial, Angular, Image)
 ├── 이펙트: 4/5종 (Opacity, BackgroundBlur, DropShadow Outer/Inner)
 ├── 블렌드 모드: 18종 전체

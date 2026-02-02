@@ -1,7 +1,7 @@
 # xstudio WASM 렌더링 아키텍처 전환 계획
 
 > 작성일: 2026-01-29
-> 최종 수정: 2026-02-02 (Phase 0-4 WASM 성능 경로 구현 완료 — 9차 수정)
+> 최종 수정: 2026-02-02 (AABB 컬링 좌표계 수정 + Phase 0-4 구현 완료 — 10차 수정)
 > 대상: `apps/builder/src/builder/workspace/canvas/`
 > 현재 스택: CanvasKit/Skia WASM + PixiJS v8.14.3 (이벤트 전용) + Yoga WASM v3.2.1 + Rust WASM (성능 가속) + Zustand
 > 참고: Pencil Desktop v1.1.10 아키텍처 분석 기반 (`docs/PENCIL_APP_ANALYSIS.md` §11)
@@ -2498,7 +2498,7 @@ const RENDER_MODE = import.meta.env.VITE_RENDER_MODE; // 'pixi' | 'skia' | 'hybr
 | `canvas/skia/types.ts` | SkiaRenderable 인터페이스 | ✅ 구현 |
 | `canvas/skia/fontManager.ts` | CanvasKit 폰트 등록/캐싱 파이프라인 | ✅ 구현 |
 | `canvas/skia/textMeasure.ts` | CanvasKit Paragraph 기반 텍스트 측정 (Yoga measureFunc 연결) | ✅ 구현 |
-| `canvas/skia/nodeRenderers.ts` | renderBox() stroke border-box inset 수정 (`strokeWidth/2` inset) | ✅ 수정 (2026-02-02) |
+| `canvas/skia/nodeRenderers.ts` | renderBox() stroke border-box inset + AABB 컬링 좌표계 수정 (zero-size 루트 스킵 + 자식 cullingBounds 역변환) | ✅ 수정 (2026-02-02) |
 | `canvas/skia/eventBridge.ts` | DOM 이벤트 브리징 (CanvasKit 캔버스 → PixiJS 캔버스) | ❌ 불필요 (§5.7.1 참조) |
 | BoxSprite renderSkia() | 사각형/RoundedRect CanvasKit 렌더링 |
 | TextSprite renderSkia() | ParagraphBuilder 텍스트 렌더링 |
