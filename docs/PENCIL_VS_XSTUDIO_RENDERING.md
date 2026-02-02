@@ -51,9 +51,9 @@
 | 최적화 기법 | Pencil | xstudio | WASM 계획 | 비고 |
 |------------|--------|---------|----------|------|
 | **Skia WASM 렌더링** | ✅ renderSkia() — 모든 노드 | ✅ SkiaOverlay renderFrame — 디자인 노드 + AI + Selection | - | xstudio: CanvasKit이 디자인/AI/Selection 렌더링 전담 (2026-02-01) |
-| **이중 Surface 캐싱** | ✅ contentSurface + mainSurface | ❌ | ❌ | 줌/패닝 시 contentSurface 블리팅만 수행 |
+| **이중 Surface 캐싱** | ✅ contentSurface + mainSurface | ✅ Phase 6 + classifyFrame 프레임 분류 | - | idle 스킵, content/camera-only/full 분류 (2026-02-02) |
 | WebGL 배치 렌더링 | ✅ (236 refs) | 🔶 PixiJS 기본 | - | Pencil은 커스텀 배치 레이어 보유 — 🔄 Phase 5에서 CanvasKit 드로우로 대체 |
-| Dirty Rect 렌더링 | ✅ (104 refs) | ❌ | ❌ | 변경 영역만 다시 그리기 |
+| Dirty Rect 렌더링 | ✅ (104 refs) | ⚠️ 인프라 완료, 좌표 불일치로 비활성화 | - | clipRect 좌표(CSS 로컬) vs 렌더 좌표(카메라 변환 후) 불일치 → 전체 렌더링 폴백 |
 | GPU 텍스처 캐싱 | ✅ (104 refs) | ✅ cacheAsTexture | - | xstudio Phase F 구현 — 🔄 Phase 5에서 CanvasKit Surface 캐싱으로 대체 |
 | 텍스처 아틀라싱 | ✅ | ❌ | ❌ | 다수 텍스처를 단일 시트로 합치기 |
 | RenderTexture 풀링 | ✅ | ❌ | ❌ | 렌더 텍스처 재사용 |
@@ -137,7 +137,7 @@
 
 | Pencil 기능 | 누락 사유 | xstudio 영향도 |
 |------------|----------|---------------|
-| **Dirty Rect 렌더링** | WASM 계획에 미포함 | **높음** — 대규모 캔버스에서 핵심 최적화 |
+| **Dirty Rect 렌더링** | 인프라 구현 완료, 좌표 변환 미구현 | **중간** — 인프라 완료, CSS→스크린 좌표 변환 구현 시 재활성화 가능 |
 | **텍스처 아틀라싱** | WASM 계획에 미포함 | **높음** — GPU 드로 콜 감소 효과 큼 |
 | **LOD 스위칭** | WASM 계획에 미포함 | **중간** — 줌아웃 시 디테일 감소 |
 | **RenderTexture 풀링** | WASM 계획에 미포함 | **중간** — GPU 메모리 재사용 |
@@ -153,7 +153,7 @@ Pencil 렌더링 최적화 전체: 100%
 ├── xstudio 이미 구현: ~60% (React 최적화, 동적 해상도, 컬링, 캐싱, 풀링, CanvasKit 렌더 파이프라인)
 │   └── CanvasKit/Skia: 디자인 노드 + AI 이펙트 + Selection 오버레이 렌더링 ✅ (2026-02-01)
 ├── WASM 구현 완료:     ~15% (SpatialIndex, 레이아웃 가속, Worker) ✅ (2026-02-02)
-├── 추가 개선 필요:    ~20% (Dirty Rect, 이중 Surface, 아틀라싱, LOD, RenderTexture)
+├── 추가 개선 필요:    ~15% (Dirty Rect 좌표 변환, 아틀라싱, LOD, RenderTexture)
 └── Pencil 고유 영역:  ~5% (커스텀 셰이더, 전체 노드 renderSkia 메서드)
 ```
 
@@ -171,9 +171,10 @@ Pencil 렌더링 최적화 전체: 100%
 
 ## 4. 추가 개선 항목 (WASM 계획 외)
 
-### 4.1 [높음] Dirty Rect 렌더링
+### 4.1 [중간] Dirty Rect 렌더링
 
-**현황:** xstudio는 매 프레임 전체 캔버스를 다시 그림.
+**현황 (2026-02-02):** 인프라 구현 완료 (`pendingDirtyRects`, `flushDirtyRects()`, `mergeDirtyRects()`, `renderContent()` clipRect 분기). 그러나 `registerSkiaNode()`이 dirty rect를 CSS/style 로컬 좌표로 계산하는 반면, 실제 렌더링은 카메라 변환(`translate+scale`) 후 스크린 좌표에서 수행되어 좌표계 불일치 발생. `content` 프레임은 전체 재렌더링으로 폴백 중.
+**남은 작업:** dirty rect 좌표를 Skia 트리의 worldTransform 기반 스크린 좌표로 변환하는 로직 구현.
 **Pencil:** 104개 참조로 변경 영역만 다시 그리는 Dirty Rect 시스템 운용.
 
 **구현 방안:**
@@ -1863,7 +1864,7 @@ Cmd+S → saveDocument() → FileManager.export()
 | A-1 | CanvasKit/Skia WASM 메인 렌더러 | `SkiaOverlay.tsx` + `SkiaRenderer.ts` | ✅ |
 | A-2 | PixiJS = 씬 그래프 + 이벤트 전용 (렌더링 불참여) | Camera 하위 `alpha=0`, EventBoundary 유지 | ✅ |
 | A-3 | 이중 Surface 캐싱 (contentSurface + mainSurface) | `SkiaRenderer.ts` Phase 6 | ✅ |
-| A-4 | Dirty Rect 부분 렌더링 | `dirtyRectTracker.ts` + `renderContent()` clipRect | ✅ |
+| A-4 | Dirty Rect 부분 렌더링 | `dirtyRectTracker.ts` + `renderContent()` clipRect | ⚠️ 인프라 완료, 좌표 불일치로 비활성화 |
 | A-5 | 프레임 분류 (idle/camera-only/content/full) | `SkiaRenderer.classifyFrame()` | ✅ |
 | A-6 | 이벤트 브리징 (Skia↔PixiJS) | `eventBridge.ts` | ✅ |
 | A-7 | Selection 오버레이 Skia 렌더링 | `selectionRenderer.ts` | ✅ |
@@ -1963,7 +1964,7 @@ Pencil 렌더링 아키텍처 전환: 100% 완료
 
 ✅ 완전 구현 (37/37 항목):
 ├── 아키텍처: CanvasKit 메인 렌더러 + PixiJS 이벤트 전용
-├── 렌더 루프: 이중 Surface + Dirty Rect + 프레임 분류 (Phase 6 활성화 완료)
+├── 렌더 루프: 이중 Surface + 프레임 분류 (Phase 6), Dirty Rect 인프라 완료 (좌표 변환 미구현으로 비활성화)
 ├── 노드 렌더링: Box/Text/Image/Container + AABB 컬링 + 좌표계 정합성 수정
 ├── Fill: 6/6종 (Color, Linear, Radial, Angular, Image, MeshGradient)
 ├── 이펙트: 4/4종 (Opacity, BackgroundBlur, LayerBlur, DropShadow Outer/Inner)

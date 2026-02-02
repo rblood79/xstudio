@@ -2134,12 +2134,25 @@ export class SkiaRenderer {
 
 **PixiJS 렌더 루프와의 통합:**
 ```
-매 프레임 (requestAnimationFrame):
-1. PixiJS ticker 콜백
-2. Zustand 상태 → PixiJS 씬 그래프 동기화 (기존 canvasSync.ts)
-3. PixiJS 씬 그래프에서 변경 감지
-4. ★ SkiaRenderer.render() 호출 — CanvasKit이 실제 렌더링 수행
-5. PixiJS는 씬 그래프/이벤트만 유지 (자체 렌더링 비활성화)
+매 프레임 (requestAnimationFrame) — PixiJS Ticker priority 순:
+1. syncPixiVisibility (HIGH=25) — Camera 자식 alpha=0 설정
+2. Application.render() (LOW=-25)
+   └→ prerender → @pixi/layout → Yoga calculateLayout()
+   └→ render → worldTransform 갱신
+3. ★ renderFrame (UTILITY=-50) — buildSkiaTreeHierarchical + SkiaRenderer.render()
+```
+
+> **Note (2026-02-02):** renderFrame은 Application.render() **이후**에 실행하여
+> Yoga 레이아웃 완료 후의 최신 worldTransform을 보장. 이전에는 NORMAL(0)에서
+> 실행되어 display 전환 시 stale 좌표로 인한 1-프레임 플리커 발생.
+
+**이중 Surface 프레임 분류 (Phase 6):**
+```
+classifyFrame(registryVersion, camera):
+  contentDirty  → 'full'        Surface 재생성 후 전체 렌더링
+  registry 변경 → 'content'     요소 변경 → 전체 재렌더링 (dirty rect 비활성화)
+  camera 변경   → 'camera-only' 줌/팬 → 전체 재렌더링
+  변경 없음     → 'idle'        렌더링 스킵
 ```
 
 ### 5.5 Fill 시스템 (6종, Shader 기반)
@@ -2667,10 +2680,11 @@ Pencil의 핵심 최적화: contentSurface + mainSurface 분리.
 - 오버레이(선택 박스, 가이드라인)만 mainSurface에서 재렌더링
 - 대규모 캔버스에서 줌/패닝 응답 시간 대폭 개선
 
-> **현재 구현 (2026-02-01):** 이중 Surface 없이 단일 Surface에서 매 프레임 전체 렌더링.
+> **현재 구현 (2026-02-02):** 이중 Surface 구현 완료 (contentSurface + mainSurface).
 > renderFrame 순서: 디자인 노드 → AI 이펙트 → Selection 오버레이 (선택 박스 + 코너 핸들 + 라쏘).
 > Selection 오버레이는 `selectionRenderer.ts`에서 Zustand getState()로 매 프레임 상태를 읽어 렌더링.
-> 이중 Surface 분리는 향후 성능 최적화로 검토.
+> `classifyFrame()`으로 idle/content/camera-only/full 분류 후 최소 작업만 수행.
+> renderFrame은 UTILITY priority (-50)로 실행하여 Application.render() (LOW=-25) 이후 Yoga 계산 완료된 worldTransform 보장.
 
 ### 6.2 Dirty Rect 렌더링
 
@@ -2697,6 +2711,14 @@ renderDirtyRect(canvas: Canvas, dirtyRect: Rect): void {
   canvas.restore();
 }
 ```
+
+> **현재 상태 (2026-02-02):** Dirty rect 부분 렌더링은 **비활성화** 상태.
+> `registerSkiaNode()`이 dirty rect를 CSS/style 로컬 좌표(`data.x/y`)로 계산하지만,
+> 실제 렌더링은 카메라 변환(`canvas.translate(cameraX,Y)` + `canvas.scale(zoom)`)
+> 적용 후 스크린 좌표에서 수행. `clipRect` 영역과 실제 렌더 위치가 불일치하여
+> 스타일 변경이 화면에 반영되지 않는 문제 발생.
+> `content` 프레임은 `camera-only`와 동일하게 전체 재렌더링으로 처리.
+> Dirty rect 인프라(pendingDirtyRects, flushDirtyRects)는 향후 좌표 변환 구현 시 재활성화 예정.
 
 ### 6.3 블렌드 모드 (18종, Pencil §10.9.8)
 
@@ -2783,8 +2805,8 @@ export function exportToImage(
 
 | 산출물 | 내용 |
 |--------|------|
-| 이중 Surface 캐싱 | contentSurface + mainSurface 분리 |
-| Dirty Rect 렌더링 | 변경 영역만 재렌더링 |
+| 이중 Surface 캐싱 | contentSurface + mainSurface 분리 + classifyFrame 프레임 분류 |
+| Dirty Rect 렌더링 | 인프라 구현 완료, 좌표계 불일치로 비활성화 (전체 렌더링 폴백) |
 | 블렌드 모드 18종 | CanvasKit BlendMode 매핑 |
 | Export 파이프라인 | PNG/JPEG/WEBP 오프스크린 Export + SVG/PDF 향후 확장 |
 

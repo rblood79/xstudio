@@ -406,20 +406,14 @@ export function SkiaOverlay({ containerEl, backgroundColor = 0xf8fafc, app, drag
     app.renderer.background.alpha = 0;
     pixiCanvas.style.zIndex = '3';
 
-    // 렌더 루프: PixiJS ticker에 통합
-    const renderFrame = () => {
-      if (!rendererRef.current) return;
-      if (contextLostRef.current) return; // WebGL 컨텍스트 손실 시 렌더링 스킵
-
-      const stage = app.stage;
-
-      // 카메라 상태 추출 (줌/팬)
-      const cameraContainer = findCameraContainer(stage);
-
-      // Pencil 방식: Camera 하위 레이어를 시각적으로 숨기되 이벤트는 유지
-      // ⚠️ renderable=false는 PixiJS 8의 _interactivePrune()에서
-      //    hit testing까지 비활성화하므로 사용 금지.
-      //    alpha=0으로 시각적으로만 숨겨 이벤트 처리를 유지한다.
+    // Camera 하위 레이어 alpha=0 설정 (PixiJS 렌더링 전에 실행)
+    // ⚠️ renderable=false는 PixiJS 8의 _interactivePrune()에서
+    //    hit testing까지 비활성화하므로 사용 금지.
+    //    alpha=0으로 시각적으로만 숨겨 이벤트 처리를 유지한다.
+    // HIGH priority (25): Application.render() (LOW=-25) 전에 실행하여
+    // PixiJS 렌더링 시 Camera 자식이 이미 숨겨진 상태 보장.
+    const syncPixiVisibility = () => {
+      const cameraContainer = findCameraContainer(app.stage);
       if (cameraContainer) {
         for (const child of cameraContainer.children) {
           const c = child as Container;
@@ -428,6 +422,23 @@ export function SkiaOverlay({ containerEl, backgroundColor = 0xf8fafc, app, drag
           }
         }
       }
+    };
+
+    // Skia 렌더 루프: PixiJS ticker에 통합
+    // UTILITY priority (-50): Application.render() (LOW=-25) 이후에 실행.
+    // Application.render() 내부의 prerender 단계에서 @pixi/layout이
+    // Yoga calculateLayout()을 실행하여 worldTransform을 갱신하므로,
+    // Skia 렌더링이 항상 최신 레이아웃 좌표를 읽도록 보장한다.
+    // (이전: NORMAL(0)에서 실행 → Yoga 미실행 상태의 stale worldTransform 읽음
+    //  → display 전환 시 자식이 (0,0)으로 순간이동하는 1-프레임 플리커 발생)
+    const renderFrame = () => {
+      if (!rendererRef.current) return;
+      if (contextLostRef.current) return; // WebGL 컨텍스트 손실 시 렌더링 스킵
+
+      const stage = app.stage;
+
+      // 카메라 상태 추출 (줌/팬)
+      const cameraContainer = findCameraContainer(stage);
       const cameraX = cameraContainer?.x ?? 0;
       const cameraY = cameraContainer?.y ?? 0;
       const cameraZoom = Math.max(cameraContainer?.scale?.x ?? 1, 0.001);
@@ -533,7 +544,8 @@ export function SkiaOverlay({ containerEl, backgroundColor = 0xf8fafc, app, drag
       renderer.render(cullingBounds, effectiveVersion, camera, dirtyRects);
     };
 
-    app.ticker.add(renderFrame);
+    app.ticker.add(syncPixiVisibility, undefined, 25);  // HIGH: before Application.render()
+    app.ticker.add(renderFrame, undefined, -50);          // UTILITY: after Application.render()
 
     // WebGL 컨텍스트 손실 감시
     const unwatchContext = watchContextLoss(
@@ -553,6 +565,7 @@ export function SkiaOverlay({ containerEl, backgroundColor = 0xf8fafc, app, drag
 
     return () => {
       unwatchContext();
+      app.ticker.remove(syncPixiVisibility);
       app.ticker.remove(renderFrame);
       renderer.dispose();
       rendererRef.current = null;

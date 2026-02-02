@@ -951,6 +951,36 @@ Selection 렌더링은 두 레이어로 분리 (Skia 모드 고정):
 
 **PixiJS Camera 하위 숨김:** `alpha=0` 사용 (`renderable=false` 금지 — EventBoundary 히트 테스팅 비활성화)
 
+#### Ticker Priority 기반 실행 순서 (2026-02-02)
+
+SkiaOverlay의 렌더 루프는 PixiJS ticker에 **두 개의 콜백**으로 분리되어 등록:
+
+```
+PixiJS Ticker 실행 순서 (priority 내림차순):
+─────────────────────────────────────────
+INTERACTION (50)  EventSystem (히트 테스팅)
+HIGH (25)         syncPixiVisibility — Camera 자식 alpha=0
+NORMAL (0)        사용자 코드
+LOW (-25)         Application.render()
+                    └→ prerender → @pixi/layout → Yoga calculateLayout()
+                    └→ render → worldTransform 갱신
+UTILITY (-50)     renderFrame — Skia 트리 빌드 + CanvasKit 렌더링
+```
+
+**핵심:** `renderFrame`이 `Application.render()` (LOW=-25) **이후**인 UTILITY (-50)에서 실행되므로, `buildSkiaTreeHierarchical()`이 항상 Yoga 레이아웃 완료 후의 최신 worldTransform을 읽음. 이전에는 NORMAL (0)에서 실행되어 display 전환 시 stale 좌표 (0,0) 플리커가 발생했음.
+
+#### 이중 Surface 프레임 분류 (2026-02-02)
+
+```
+classifyFrame(registryVersion, camera):
+  contentDirty?          → 'full'     (Surface 재생성/리사이즈 후)
+  registryVersion 변경?  → 'content'  (요소 변경 → 전체 재렌더링)
+  camera 변경?           → 'camera-only' (줌/팬 → 전체 재렌더링)
+  변경 없음               → 'idle'     (스킵)
+```
+
+> **Note:** Dirty rect 부분 렌더링은 좌표계 불일치(CSS 로컬 vs 카메라 변환 후 스크린)로 비활성화. `content` 프레임은 `camera-only`와 동일하게 전체 재렌더링 수행.
+
 **계층적 Skia 트리 (2026-02-02):** `buildSkiaTreeHierarchical()`가 PixiJS 씬 그래프를 계층적으로 순회하여 부모-자식 상대 좌표 기반의 Skia 렌더 트리를 구성. `buildTreeBoundsMap()`으로 추출된 절대 바운드를 Selection이 참조하여 컨텐츠와 항상 동기화.
 
 ### 선택 테두리 통합 (14개 컴포넌트)
@@ -1294,6 +1324,8 @@ useEffect(() => {
 | `canvas/BuilderCanvas.tsx` | LayoutContainer 정의, 조건부 flexShrink |
 | `canvas/layoutContext.ts` | LayoutComputedSizeContext (React Context) |
 | `canvas/sprites/ElementSprite.tsx` | Context 소비, % → px 변환 |
+| `canvas/skia/SkiaRenderer.ts` | 이중 Surface 캐싱 + 프레임 분류 |
+| `canvas/skia/SkiaOverlay.tsx` | Skia 렌더 루프 (ticker priority 기반) |
 
 ---
 

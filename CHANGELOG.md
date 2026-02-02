@@ -45,20 +45,30 @@ const flexShrinkDefault = effectiveLayout.flexShrink !== undefined
 **문제 3: 스타일 패널 변경 후 즉시 반영되지 않음**
 - 스타일 변경 후 캔버스를 팬(이동)해야 반영됨
 
-**근본 원인:**
-- `requestAnimationFrame` 콜백이 @pixi/layout의 `prerender`보다 먼저 실행될 수 있음
-- rAF는 한 번만 실행되고 끝남 → 이후 layout 재계산을 캡처 못함
+**근본 원인 (복합):**
+
+1. **LayoutContainer 타이밍**: `requestAnimationFrame` 콜백이 @pixi/layout의 `prerender`보다 먼저 실행, rAF는 1회만 실행
+2. **Skia Dirty Rect 좌표계 불일치** (주 원인): `registerSkiaNode()`이 dirty rect를 CSS 로컬 좌표(`data.x/y`)로 계산하지만, 실제 Skia 렌더링은 카메라 변환(`translate+scale`) 후 스크린 좌표에서 수행. `renderContent()`의 `clipRect`이 실제 렌더 위치와 불일치하여 변경 사항이 클립 밖에 그려짐. 팬(이동) 시 `camera-only` 프레임이 전체 렌더링을 수행하여 비로소 변경 표시.
 
 **해결:**
-- `container.on('layout', handler)` 이벤트 리스너로 교체
-- @pixi/layout이 `yogaNode.calculateLayout()` 완료 후 `container.emit('layout')` 이벤트 발생
-- 최초 마운트 시 rAF fallback 유지
+
+1. LayoutContainer: `container.on('layout', handler)` 이벤트 리스너로 교체
+2. SkiaRenderer: `content` 프레임에서 dirty rect 부분 렌더링 대신 전체 렌더링 수행
 
 ```typescript
-// @pixi/layout 'layout' 이벤트 구독 — Yoga 계산 완료 후 정확한 타이밍
+// LayoutContainer: @pixi/layout 'layout' 이벤트 구독
 container.on('layout', syncLayoutData);
-// 최초 마운트 시 rAF fallback
-const rafId = requestAnimationFrame(syncLayoutData);
+const rafId = requestAnimationFrame(syncLayoutData); // 최초 마운트 시 fallback
+
+// SkiaRenderer: dirty rect 좌표 불일치 → 전체 렌더링으로 안전 처리
+case 'content':
+  this.renderContent(cullingBounds); // dirtyRects 미전달 → 전체 렌더링
+  this.blitToMain();
+  break;
+
+// SkiaOverlay: ticker priority 분리 (Yoga 레이아웃 후 렌더링)
+app.ticker.add(syncPixiVisibility, undefined, 25);  // HIGH: before Application.render()
+app.ticker.add(renderFrame, undefined, -50);         // UTILITY: after Application.render()
 ```
 
 **수정된 파일:**
@@ -69,11 +79,17 @@ const rafId = requestAnimationFrame(syncLayoutData);
    - `LayoutComputedSizeContext` — 순환 참조 방지용 별도 파일
 3. `apps/builder/src/builder/workspace/canvas/sprites/ElementSprite.tsx`
    - Context 소비, 퍼센트 width/height를 Yoga 계산 결과 기반으로 해석
+4. `apps/builder/src/builder/workspace/canvas/skia/SkiaRenderer.ts`
+   - `content` 프레임: dirty rect 부분 렌더링 → 전체 렌더링으로 변경
+5. `apps/builder/src/builder/workspace/canvas/skia/SkiaOverlay.tsx`
+   - renderFrame: NORMAL(0) → UTILITY(-50) priority (Yoga 레이아웃 후 실행)
+   - syncPixiVisibility: HIGH(25) priority로 분리 (alpha=0 설정)
 
 **결과:**
 - ✅ flex 부모에서 `width:100%` 자식이 CSS처럼 비례 축소
 - ✅ 퍼센트 기반 width/height가 정확한 픽셀로 변환
 - ✅ 스타일 패널 변경 즉시 캔버스에 반영
+- ✅ display: block ↔ flex 전환 시 플리커 없음
 - ✅ TypeScript 에러 없음
 
 ---

@@ -235,7 +235,11 @@ export class SkiaRenderer {
         break;
 
       case 'content':
-        this.renderContent(cullingBounds, dirtyRects);
+        // dirty rect 좌표가 CSS/style 로컬 좌표인 반면,
+        // 실제 렌더링은 카메라 변환(translate+scale) 적용 후 스크린 좌표에서 발생하여
+        // clipRect과 렌더 위치가 불일치. 전체 재렌더링으로 안전하게 처리한다.
+        // (camera-only와 동일한 비용이며, content 변경은 camera 변경보다 훨씬 드물다)
+        this.renderContent(cullingBounds);
         this.blitToMain();
         break;
 

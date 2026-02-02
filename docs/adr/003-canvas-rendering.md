@@ -187,6 +187,43 @@ Yoga가 계산한 컨테이너 크기를 자식 스프라이트에 전달하는 
 
 **상세:** `apps/builder/src/.../canvas/BuilderCanvas.tsx` (LayoutContainer), `canvas/layoutContext.ts`, `canvas/sprites/ElementSprite.tsx`
 
+### 4. Dirty Rect 좌표계 불일치 수정 (Skia 콘텐츠 프레임)
+
+스타일 패널에서 값(backgroundColor 등)을 변경하면 캔버스에 반영되지 않고 팬(이동)해야 보이던 문제 수정:
+
+| 항목 | 수정 전 | 수정 후 |
+|------|---------|---------|
+| **Dirty rect 좌표** | `SkiaNodeData.x/y` (CSS/style 로컬 좌표) | 사용 안 함 (전체 렌더링) |
+| **content 프레임** | `renderContent(cullingBounds, dirtyRects)` → clipRect + 부분 렌더링 | `renderContent(cullingBounds)` → 전체 렌더링 |
+| **좌표계 일치** | dirty rect = CSS 로컬, 렌더 = 카메라 변환 후 스크린 → 불일치 | 전체 렌더링으로 좌표 무관 |
+
+**근본 원인:**
+- `registerSkiaNode()`이 dirty rect를 `data.x/y` (CSS left/top)로 계산
+- `renderContent()`에서 `clipRect()`으로 이 좌표를 사용
+- 실제 렌더링은 `renderSkia()` 내부에서 `canvas.translate(cameraX, cameraY)` + `canvas.scale(cameraZoom)` 적용
+- clipRect 영역과 실제 렌더 위치가 불일치 → 변경 사항이 클립 밖에 그려져 보이지 않음
+- 팬 시 `camera-only` 프레임이 전체 렌더링을 수행하여 비로소 변경 사항 표시
+
+**상세:** `apps/builder/src/.../skia/SkiaRenderer.ts`
+
+### 5. Skia 렌더 루프 Ticker Priority 수정 (display 전환 플리커)
+
+`display: block ↔ flex` 전환 시 body 내 Button들이 캔버스 (0,0)으로 순간이동했다가 재배치되는 1-프레임 플리커 수정:
+
+| 항목 | 수정 전 | 수정 후 |
+|------|---------|---------|
+| **renderFrame priority** | NORMAL (0) — Application.render() 전에 실행 | UTILITY (-50) — Application.render() 후에 실행 |
+| **alpha=0 설정** | renderFrame 내부 (NORMAL 0) | 별도 `syncPixiVisibility` 콜백 (HIGH 25) |
+| **worldTransform** | Yoga 미실행 → stale 좌표 읽음 | Yoga 실행 완료 → 최신 좌표 읽음 |
+
+**근본 원인:**
+- PixiJS ticker는 priority 순으로 콜백 실행: HIGH(25) → NORMAL(0) → LOW(-25) → UTILITY(-50)
+- `Application.render()` (LOW=-25) 내부의 `prerender`에서 @pixi/layout이 Yoga `calculateLayout()` 실행
+- `renderFrame` (NORMAL=0)이 Application.render() 전에 실행 → worldTransform 미갱신
+- display 전환 시 Yoga가 아직 새 레이아웃을 계산하지 않은 stale 좌표 (0,0) 읽음
+
+**상세:** `apps/builder/src/.../skia/SkiaOverlay.tsx`
+
 ## Implementation
 
 ```typescript

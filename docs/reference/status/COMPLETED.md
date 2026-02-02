@@ -33,6 +33,7 @@
 - [Skia Border-Box Rendering Fix (2026-02-02)](#skia-border-box-rendering-fix)
 - [Skia AABB Viewport Culling Fix (2026-02-02)](#skia-aabb-viewport-culling-fix)
 - [Skia Rendering Pipeline Completion (2026-02-02)](#skia-rendering-pipeline-completion)
+- [Skia Style Reactivity & Display Switch Fix (2026-02-02)](#skia-style-reactivity--display-switch-fix)
 
 ---
 
@@ -63,7 +64,7 @@ Skia 렌더링 파이프라인의 남은 기능 8건을 모두 구현하여 Penc
 **구현 내용:**
 - **MeshGradient Fill**: bilinear interpolation 근사 (top/bottom LinearGradient + MakeBlend)
 - **LayerBlur Effect**: 전경 가우시안 블러 (`MakeBlur` + `saveLayer`)
-- **Phase 6 이중 Surface 활성화**: idle 스킵, camera-only 블리팅, dirty rect 부분 렌더링
+- **Phase 6 이중 Surface 활성화**: idle 스킵, camera-only 블리팅, dirty rect 부분 렌더링 (이후 좌표계 불일치로 dirty rect 비활성화 — 아래 참조)
 - **변수 resolve 경로 완성**: `$--` 참조 → `Float32Array` 색상 변환 파이프라인 검증
 - **KitComponentList 패널 통합**: 마스터 컴포넌트 목록 + 인스턴스 생성
 - **킷 적용 시각 피드백**: generating → flash 애니메이션 연동
@@ -108,6 +109,32 @@ Rust WASM 기반 캔버스 성능 가속 모듈 빌드 및 활성화.
 **Feature Flags:** 환경변수 제거됨 (2026-02-02). 모든 WASM 모듈 하드코딩 활성화.
 
 **상세:** `docs/WASM.md` Phase 0-4
+
+---
+
+## Skia Style Reactivity & Display Switch Fix
+
+**Status**: ✅ Complete (2026-02-02)
+
+스타일 패널 변경이 캔버스에 즉시 반영되지 않는 문제와, display 전환 시 1-프레임 플리커 수정.
+
+**문제 1: 스타일 변경 후 팬(이동)해야 반영**
+
+**Root Cause:** SkiaRenderer 이중 Surface의 `content` 프레임에서 dirty rect 부분 렌더링 시, `registerSkiaNode()`의 dirty rect 좌표(CSS/style 로컬)와 실제 Skia 렌더링 좌표(카메라 변환 후 스크린)가 불일치. `clipRect`이 실제 렌더 위치를 포함하지 못해 변경 사항이 보이지 않음.
+
+**Fix:** `content` 프레임에서 dirty rect 부분 렌더링 비활성화 → 전체 재렌더링 (`camera-only`와 동일 비용)
+
+**파일:** `canvas/skia/SkiaRenderer.ts`
+
+**문제 2: display: block ↔ flex 전환 시 (0,0) 플리커**
+
+**Root Cause:** `renderFrame`이 ticker NORMAL priority (0)에서 실행되어 `Application.render()` (LOW=-25) **이전**에 `buildSkiaTreeHierarchical()`를 호출. @pixi/layout의 Yoga `calculateLayout()`은 `Application.render()` 내부의 `prerender` 단계에서 실행되므로, display 전환 시 Yoga가 아직 새 레이아웃을 계산하지 않은 stale worldTransform (0,0) 좌표를 읽음.
+
+**Fix:**
+- `syncPixiVisibility` (HIGH=25): Camera 자식 `alpha=0` 설정 — Application.render() 전에 실행
+- `renderFrame` (UTILITY=-50): Skia 트리 빌드 + 렌더링 — Application.render() 후에 실행하여 최신 worldTransform 보장
+
+**파일:** `canvas/skia/SkiaOverlay.tsx`
 
 ---
 
