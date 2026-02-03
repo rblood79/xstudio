@@ -450,7 +450,7 @@ Skia 폴백 경로에서 `borderRadius`는 `convertStyle()` 반환값을 통해 
 |------|---------|---------|
 | **소스** | `style.borderRadius` (raw CSS 문자열) | `convertStyle(style).borderRadius` (파싱된 숫자) |
 | **결과** | 항상 `0` → 직각 모서리 | 사용자 설정값 반영 |
-| **기본값** | `isUIComponent && !hasBgColor` → 6px | 변경 없음 |
+| **기본값** | `isUIComponent && !hasBgColor` → 6px (하드코딩) | Spec size별 토큰 값: xs/sm=4, md=6, lg/xl=8 (`UI_COMPONENT_DEFAULT_BORDER_RADIUS`) |
 
 ### 핵심 원칙
 

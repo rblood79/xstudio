@@ -21,7 +21,9 @@ const { transform, fill, stroke } = convertStyle(style);
 const br = typeof style.borderRadius === 'number' ? style.borderRadius : 0;
 ```
 
-#### 수정 내용
+#### 수정 내용 (3건)
+
+**1. CSS 문자열 파싱 누락:**
 `convertStyle()`이 이미 `parseCSSSize()`를 통해 CSS 문자열을 숫자로 올바르게 변환하므로, 그 결과를 destructuring하여 사용
 
 ```typescript
@@ -32,12 +34,39 @@ const br = typeof convertedBorderRadius === 'number'
   : convertedBorderRadius?.[0] ?? 0;
 ```
 
+**2. 명시적 0 값 무시:**
+기존 `br > 0 ? br : 기본값` 로직이 사용자가 명시적으로 `borderRadius: "0"`을 설정한 경우와 미설정(undefined)을 구분하지 못함
+
+```typescript
+// 수정 전: borderRadius=0 설정해도 UI 컴포넌트는 기본값 6px로 덮어씌움
+const effectiveBorderRadius = br > 0 ? br : (isUIComponent && !hasBgColor ? 6 : 0);
+
+// 수정 후: style에 borderRadius가 명시적으로 존재하면 그 값(0 포함) 사용
+const hasBorderRadiusSet = style?.borderRadius !== undefined && style?.borderRadius !== null && style?.borderRadius !== '';
+const effectiveBorderRadius = hasBorderRadiusSet ? br : (isUIComponent && !hasBgColor ? 6 : 0);
+```
+
+**3. 하드코딩된 기본 borderRadius 6px → Spec size별 토큰 값 적용:**
+기존에 UI 컴포넌트의 기본 borderRadius가 size에 관계없이 `6`으로 하드코딩되어 있었으나,
+Spec의 radius 토큰 값에 따라 size별로 차등 적용하도록 수정
+
+```typescript
+// 수정 전: 모든 size에 6px 고정
+const effectiveBorderRadius = hasBorderRadiusSet ? br : (isUIComponent && !hasBgColor ? 6 : 0);
+
+// 수정 후: Spec radius 토큰 기반 size별 기본값 (xs/sm=4, md=6, lg/xl=8)
+const size = isUIComponent ? String(props?.size || 'md') : '';
+const defaultBorderRadius = UI_COMPONENT_DEFAULT_BORDER_RADIUS[size] ?? 6;
+const effectiveBorderRadius = hasBorderRadiusSet ? br : (isUIComponent && !hasBgColor ? defaultBorderRadius : 0);
+```
+
 #### 영향 범위
 - 모든 UI 컴포넌트(Button, Input, Checkbox, Select 등)의 Skia 폴백 렌더링에서 `borderRadius` 정상 반영
-- `backgroundColor` 없는 UI 컴포넌트의 기본 6px borderRadius 로직은 변경 없음
+- `borderRadius: 0` 명시적 설정 시 직각 모서리로 정상 렌더링
+- `borderRadius` 미설정 시 Spec size별 기본값 적용 (xs/sm=4px, md=6px, lg/xl=8px)
 
 #### 변경된 파일
-- `apps/builder/src/.../sprites/ElementSprite.tsx` — `convertStyle()` 반환값에서 `borderRadius` destructuring
+- `apps/builder/src/.../sprites/ElementSprite.tsx` — `convertStyle()` borderRadius destructuring + 명시적 0 값 처리 + size별 기본 borderRadius 매핑(`UI_COMPONENT_DEFAULT_BORDER_RADIUS`)
 
 ---
 

@@ -100,6 +100,24 @@ import { useResolvedElement } from './useResolvedElement';
 import { isFlexContainer, isGridContainer } from '../layout';
 
 // ============================================
+// Constants
+// ============================================
+
+/**
+ * UI 컴포넌트 size별 기본 borderRadius (ButtonSpec radius 토큰 기준)
+ * xs/sm → radius.sm(4), md → radius.md(6), lg/xl → radius.lg(8)
+ * @see packages/specs/src/primitives/radius.ts
+ * @see packages/specs/src/components/Button.spec.ts sizes
+ */
+const UI_COMPONENT_DEFAULT_BORDER_RADIUS: Record<string, number> = {
+  xs: 4,  // radius.sm
+  sm: 4,  // radius.sm
+  md: 6,  // radius.md
+  lg: 8,  // radius.lg
+  xl: 8,  // radius.lg
+};
+
+// ============================================
 // Types
 // ============================================
 
@@ -1208,8 +1226,13 @@ export const ElementSprite = memo(function ElementSprite({
       effectiveAlpha = hasBgColor ? fill.alpha : (isUIComponent ? fill.alpha : 0);
     }
 
-    // UI 컴포넌트 기본 borderRadius: CSS에서 지정하지 않았으면 6px (일반적인 버튼 둥근 모서리)
-    const effectiveBorderRadius = br > 0 ? br : (isUIComponent && !hasBgColor ? 6 : 0);
+    // UI 컴포넌트 기본 borderRadius: CSS에서 지정하지 않았으면 Spec size별 토큰 값 적용
+    // xs/sm=4px(radius.sm), md=6px(radius.md), lg/xl=8px(radius.lg)
+    // 명시적으로 0을 설정한 경우(style.borderRadius가 존재)와 미설정(undefined)을 구분
+    const hasBorderRadiusSet = style?.borderRadius !== undefined && style?.borderRadius !== null && style?.borderRadius !== '';
+    const size = isUIComponent ? String(props?.size || 'md') : '';
+    const defaultBorderRadius = UI_COMPONENT_DEFAULT_BORDER_RADIUS[size] ?? 6;
+    const effectiveBorderRadius = hasBorderRadiusSet ? br : (isUIComponent && !hasBgColor ? defaultBorderRadius : 0);
 
     const boxData: {
       fillColor: Float32Array;

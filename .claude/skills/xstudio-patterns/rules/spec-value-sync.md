@@ -43,6 +43,7 @@ md: { paddingLeft: 24, paddingRight: 24, borderWidth: 1 }  // 일치
 | `fontFamily.sans` (typography.ts) | `measureTextWidth()` 기본 폰트 | `body { font-family }` |
 | CSS base `border: 1px solid` | `BUTTON_SIZE_CONFIG[size].borderWidth` (=1) | `Button.css base: border` |
 | `ButtonSpec.variants[v].border` | `PixiButton specDefaultBorderWidth` (=1) | `Button.css border-color` |
+| `ButtonSpec.sizes[size].borderRadius` | `UI_COMPONENT_DEFAULT_BORDER_RADIUS[size]` (ElementSprite.tsx) | `Button.css [data-size] border-radius` |
 
 ## parseBoxModel 기본값
 
@@ -70,6 +71,29 @@ const br = typeof convertedBorderRadius === 'number'
 ```
 
 > Yoga가 변환하는 레이아웃 속성(width, height, padding)과 달리, `borderRadius`는 시각 전용이므로 Yoga를 거치지 않고 CSS 문자열 형태로 남아 있다.
+
+### Size별 기본 borderRadius
+
+`ElementSprite.tsx`의 `UI_COMPONENT_DEFAULT_BORDER_RADIUS` 상수는 Spec radius 토큰 값을 미러링한다.
+`style.borderRadius`가 설정되지 않은 UI 컴포넌트는 `element.props.size`에 따라 기본값을 적용한다:
+
+| size | Spec 토큰 | radius 값 |
+|------|-----------|-----------|
+| xs, sm | `{radius.sm}` | 4px |
+| md | `{radius.md}` | 6px |
+| lg, xl | `{radius.lg}` | 8px |
+
+```typescript
+// ✅ Spec 토큰 기반 size별 기본 borderRadius
+const UI_COMPONENT_DEFAULT_BORDER_RADIUS: Record<string, number> = {
+  xs: 4, sm: 4, md: 6, lg: 8, xl: 8,
+};
+const size = String(props?.size || 'md');
+const defaultBorderRadius = UI_COMPONENT_DEFAULT_BORDER_RADIUS[size] ?? 6;
+
+// ❌ 금지: 하드코딩된 기본값
+const effectiveBorderRadius = isUIComponent ? 6 : 0;
+```
 
 ## 체크리스트
 
