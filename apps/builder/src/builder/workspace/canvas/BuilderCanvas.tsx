@@ -550,6 +550,7 @@ const ElementsLayer = memo(function ElementsLayer({
     'Button', 'SubmitButton',
     'FancyButton',
     'ToggleButton',
+    'ToggleButtonGroup',
     // 향후 자체 padding/border 렌더링하는 컴포넌트 추가 시 여기에 등록
   ]), []);
 

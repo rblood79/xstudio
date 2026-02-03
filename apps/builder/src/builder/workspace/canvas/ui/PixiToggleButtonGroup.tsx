@@ -22,12 +22,13 @@ import {
 } from "pixi.js";
 import type { Element } from "../../../../types/core/store.types";
 import type { CSSStyle } from "../sprites/styleConverter";
-// 🚀 Phase 8: parseCSSSize 제거
+import { cssColorToHex, cssColorToAlpha, parseCSSSize } from "../sprites/styleConverter";
+import { parsePadding, parseBorderWidth } from "../sprites/paddingUtils";
 import {
   getToggleButtonSizePreset,
   getVariantColors,
 } from "../utils/cssVariableReader";
-import { drawBox } from "../utils";
+import { drawBox, parseBorderConfig } from "../utils";
 import { useStore } from "../../../stores";
 import { useThemeColors } from "../hooks/useThemeColors";
 
@@ -323,6 +324,29 @@ export const PixiToggleButtonGroup = memo(function PixiToggleButtonGroup({
   // 🚀 Phase 8: parseCSSSize 제거 - fallback 값 직접 사용
   const gap = typeof style?.gap === 'number' ? style.gap : DEFAULT_GAP;
 
+  // 🚀 Phase 13: 사용자 정의 스타일 파싱
+  // backgroundColor
+  const styleBackgroundColor = useMemo(() => {
+    return cssColorToHex(style?.backgroundColor, 0xffffff);
+  }, [style?.backgroundColor]);
+
+  const styleBackgroundAlpha = useMemo(() => {
+    if (!style?.backgroundColor) return 0.3; // 기본값
+    return cssColorToAlpha(style.backgroundColor);
+  }, [style?.backgroundColor]);
+
+  // border
+  const styleBorderConfig = useMemo(() => parseBorderConfig(style), [style]);
+
+  // borderRadius
+  const styleBorderRadius = useMemo(() => {
+    const parsed = parseCSSSize(style?.borderRadius, undefined, undefined);
+    return parsed ?? (sizePreset.borderRadius + 2);
+  }, [style?.borderRadius, sizePreset.borderRadius]);
+
+  // padding
+  const stylePadding = useMemo(() => parsePadding(style), [style]);
+
   // 버튼 크기 계산 (텍스트 기반)
   const buttonSizes = useMemo(() => {
     const textStyle = new TextStyle({
@@ -338,42 +362,59 @@ export const PixiToggleButtonGroup = memo(function PixiToggleButtonGroup({
     });
   }, [items, sizePreset.fontSize, sizePreset.paddingX, sizePreset.paddingY]);
 
-  // 전체 그룹 배경 (옵션)
-  const groupWidth = useMemo(() => {
+  // 전체 그룹 배경 크기 계산 (배경 그리기용)
+  // 🚀 Phase 13: fit-content 지원
+  // Yoga layout에서 padding을 처리하므로, 여기서는 content 크기만 계산
+  const contentWidth = useMemo(() => {
     if (isHorizontal) {
       return buttonSizes.reduce((sum, s) => sum + s.width, 0) + gap * (items.length - 1);
     }
     return Math.max(...buttonSizes.map((s) => s.width));
   }, [isHorizontal, buttonSizes, gap, items.length]);
 
-  const groupHeight = useMemo(() => {
+  const contentHeight = useMemo(() => {
     if (isHorizontal) {
       return Math.max(...buttonSizes.map((s) => s.height));
     }
     return buttonSizes.reduce((sum, s) => sum + s.height, 0) + gap * (items.length - 1);
   }, [isHorizontal, buttonSizes, gap, items.length]);
 
+  // 배경 그리기용 총 크기 (padding 포함)
+  const backgroundWidth = contentWidth + stylePadding.left + stylePadding.right;
+  const backgroundHeight = contentHeight + stylePadding.top + stylePadding.bottom;
+
   // 그룹 배경 그리기 (pill 형태)
+  // 🚀 Phase 13: 사용자 정의 스타일 적용
+  // 🚀 Phase 14: Yoga 계산 크기 동적 사용
   const drawGroupBackground = useCallback(
     (g: PixiGraphics) => {
       g.clear();
 
+      // 🚀 Phase 14: 부모 container의 Yoga 계산된 크기 사용
+      // Yoga가 자동 계산한 fit-content 크기 (또는 축소된 크기)
+      const parent = g.parent as { layout?: { computedWidth?: number; computedHeight?: number } } | undefined;
+      const actualWidth = parent?.layout?.computedWidth ?? backgroundWidth;
+      const actualHeight = parent?.layout?.computedHeight ?? backgroundHeight;
+
+      // border 설정 (사용자 스타일 우선, 없으면 기본값)
+      const borderConfig = styleBorderConfig ?? {
+        width: 1,
+        color: defaultBorderColor,
+        alpha: 0.5,
+        style: "solid" as const,
+        radius: styleBorderRadius,
+      };
+
       drawBox(g, {
-        width: groupWidth,
-        height: groupHeight,
-        backgroundColor: 0xffffff,
-        backgroundAlpha: 0.3,
-        borderRadius: sizePreset.borderRadius + 2,
-        border: {
-          width: 1,
-          color: defaultBorderColor,
-          alpha: 0.5,
-          style: "solid",
-          radius: sizePreset.borderRadius + 2,
-        },
+        width: actualWidth,
+        height: actualHeight,
+        backgroundColor: styleBackgroundColor,
+        backgroundAlpha: styleBackgroundAlpha,
+        borderRadius: styleBorderRadius,
+        border: borderConfig,
       });
     },
-    [groupWidth, groupHeight, defaultBorderColor, sizePreset.borderRadius]
+    [backgroundWidth, backgroundHeight, styleBackgroundColor, styleBackgroundAlpha, styleBorderRadius, styleBorderConfig, defaultBorderColor]
   );
 
   // 그룹 클릭 핸들러
@@ -411,18 +452,28 @@ export const PixiToggleButtonGroup = memo(function PixiToggleButtonGroup({
 
   // 🚀 Phase 8: 주 컨테이너 layout (iframe CSS와 동기화)
   // CSS: .react-aria-ToggleButtonGroup { display: flex }
+  // 🚀 Phase 13: fit-content 지원
+  // - Yoga가 자식 크기에 기반하여 자동 계산 (width/height 생략)
+  // - flexShrink: 1로 부모 영역 부족 시 축소
+  // - padding: 자식들이 padding 안쪽에 배치되도록
   const groupLayout = useMemo(() => ({
     display: 'flex' as const,
     flexDirection: (isHorizontal ? 'row' : 'column') as 'row' | 'column',
+    justifyContent: 'flex-start' as const,  // 자식들 main axis 시작점 정렬
+    alignItems: 'flex-start' as const,      // 자식들 cross axis 시작점 정렬
     gap,
-    width: groupWidth,
-    height: groupHeight,
+    // width/height 생략 - Yoga가 자식 기반으로 자동 계산 (fit-content)
+    // padding: 자식들이 padding 안쪽에 배치되도록
+    paddingTop: stylePadding.top,
+    paddingRight: stylePadding.right,
+    paddingBottom: stylePadding.bottom,
+    paddingLeft: stylePadding.left,
     position: 'relative' as const,
-    // 콘텐츠 크기에 맞춤 (부모 flex에서 늘어나지 않도록)
+    // fit-content: 부모 flex에서 늘어나지 않고, 부모 부족 시 축소
     flexGrow: 0,
-    flexShrink: 0,
+    flexShrink: 1,
     alignSelf: 'flex-start' as const,
-  }), [isHorizontal, gap, groupWidth, groupHeight]);
+  }), [isHorizontal, gap, stylePadding]);
 
   return (
     <pixiContainer
@@ -430,10 +481,9 @@ export const PixiToggleButtonGroup = memo(function PixiToggleButtonGroup({
       eventMode="static"
       onPointerDown={handleGroupClick}
     >
-      {/* 그룹 배경 - position: absolute */}
+      {/* 그룹 배경 - layout 제거하여 flex에서 제외 (PixiButton 패턴) */}
       <pixiGraphics
         draw={drawGroupBackground}
-        layout={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
         eventMode="none"
       />
 

@@ -10,7 +10,16 @@ import type { SelectedElement } from '../../../inspector/types';
 import { getModifiedProperties } from '../hooks/useStyleSource';
 import { useStyleActions } from '../hooks/useStyleActions';
 import { Type, Square, RulerDimensionLine } from 'lucide-react';
-import { FONT_FAMILIES, FONT_WEIGHTS, BORDER_STYLES } from '../constants/styleOptions';
+import {
+  FONT_FAMILIES,
+  FONT_WEIGHTS,
+  BORDER_STYLES,
+  DISPLAY_OPTIONS,
+  FLEX_DIRECTION_OPTIONS,
+  ALIGN_ITEMS_OPTIONS,
+  JUSTIFY_CONTENT_OPTIONS,
+  FLEX_WRAP_OPTIONS,
+} from '../constants/styleOptions';
 
 interface ModifiedStylesSectionProps {
   selectedElement: SelectedElement;
@@ -38,7 +47,7 @@ export function ModifiedStylesSection({
   // Group properties by category for better organization
   const categorizedProps = {
     layout: modifiedProperties.filter((p) =>
-      ['display', 'flexDirection', 'alignItems', 'justifyContent', 'gap'].includes(p)
+      ['display', 'flexDirection', 'alignItems', 'justifyContent', 'gap', 'flexWrap'].includes(p)
     ),
     spacing: modifiedProperties.filter((p) =>
       ['padding', 'margin', 'width', 'height', 'top', 'left', 'right', 'bottom'].includes(p)
@@ -106,6 +115,72 @@ export function ModifiedStylesSection({
           label={formatLabel(property)}
           value={String(value)}
           options={BORDER_STYLES}
+          onChange={(newValue) => updateStyle(property, newValue)}
+        />
+      );
+    }
+
+    // Layout properties (display, flexDirection, alignItems, justifyContent, flexWrap)
+    if (property === 'display') {
+      return (
+        <PropertySelect
+          key={property}
+          icon={Square}
+          label={formatLabel(property)}
+          value={String(value)}
+          options={DISPLAY_OPTIONS}
+          onChange={(newValue) => updateStyle(property, newValue)}
+        />
+      );
+    }
+
+    if (property === 'flexDirection') {
+      return (
+        <PropertySelect
+          key={property}
+          icon={Square}
+          label={formatLabel(property)}
+          value={String(value)}
+          options={FLEX_DIRECTION_OPTIONS}
+          onChange={(newValue) => updateStyle(property, newValue)}
+        />
+      );
+    }
+
+    if (property === 'alignItems') {
+      return (
+        <PropertySelect
+          key={property}
+          icon={Square}
+          label={formatLabel(property)}
+          value={String(value)}
+          options={ALIGN_ITEMS_OPTIONS}
+          onChange={(newValue) => updateStyle(property, newValue)}
+        />
+      );
+    }
+
+    if (property === 'justifyContent') {
+      return (
+        <PropertySelect
+          key={property}
+          icon={Square}
+          label={formatLabel(property)}
+          value={String(value)}
+          options={JUSTIFY_CONTENT_OPTIONS}
+          onChange={(newValue) => updateStyle(property, newValue)}
+        />
+      );
+    }
+
+    if (property === 'flexWrap') {
+      return (
+        <PropertySelect
+          key={property}
+          icon={Square}
+          label={formatLabel(property)}
+          value={String(value)}
+          options={FLEX_WRAP_OPTIONS}
           onChange={(newValue) => updateStyle(property, newValue)}
         />
       );

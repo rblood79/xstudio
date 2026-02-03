@@ -283,12 +283,29 @@ export function styleToLayout(
   if (width !== undefined) layout.width = width;
   if (height !== undefined) layout.height = height;
 
+  // 🚀 태그별 기본 스타일 처리
+  const tag = element.tag?.toLowerCase() ?? '';
+  const props = element.props as Record<string, unknown> | undefined;
+
+  // 🚀 ToggleButtonGroup: 기본 display: flex, flexDirection 설정
+  // CSS 기본값: display: flex, flex-direction: row (orientation: horizontal)
+  const isToggleButtonGroup = tag === 'togglebuttongroup';
+  if (isToggleButtonGroup) {
+    // display가 명시적으로 설정되지 않았으면 flex 기본값 적용
+    if (!style.display) {
+      layout.display = 'flex';
+    }
+    // flexDirection이 명시적으로 설정되지 않았으면 orientation에 따라 설정
+    if (!style.flexDirection) {
+      const orientation = String(props?.orientation || 'horizontal');
+      layout.flexDirection = orientation === 'vertical' ? 'column' : 'row';
+    }
+  }
+
   // 🚀 Badge/Tag/Chip: 명시적 width/height가 없으면 자체 크기 계산
   // PixiBadge와 동일한 방식으로 계산하여 Yoga 레이아웃에 전달
-  const tag = element.tag?.toLowerCase() ?? '';
   const isBadgeType = tag === 'badge' || tag === 'tag' || tag === 'chip';
   if (isBadgeType) {
-    const props = element.props as Record<string, unknown> | undefined;
     const size = (props?.size as string) ?? 'md';
     const sizePreset = getBadgeSizePreset(size);
 

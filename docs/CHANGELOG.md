@@ -65,6 +65,98 @@ const skiaNodeData = useMemo(() => {
 
 ---
 
+### Fixed - Dirty Rect 부분 렌더링 시 이전 프레임 잔상 문제 수정 (2026-02-03)
+
+#### 개요
+스타일 변경 시 간헐적으로 이전 렌더링의 모양이 남아있는 문제 수정
+
+#### 버그 원인
+Dirty rect 기반 부분 렌더링에서 경계 영역에 여유분(padding)이 없어서 안티앨리어싱, 부동소수점 오차, 서브픽셀 렌더링으로 인한 경계 잔상이 발생
+
+#### 수정 내용 (2건)
+
+**1. `useSkiaNode.ts` - nodeToDirtyRect():**
+```typescript
+// 수정 전
+let expand = 0;
+
+// 수정 후: 기본 2px 여유분 추가
+let expand = 2;  // 안티앨리어싱, 부동소수점 오차 대비
+```
+
+**2. `SkiaRenderer.ts` - screenRect 계산:**
+```typescript
+// 수정 전
+const screenRect = {
+  x: rect.x * camera.zoom + camera.panX,
+  y: rect.y * camera.zoom + camera.panY,
+  width: rect.width * camera.zoom,
+  height: rect.height * camera.zoom,
+};
+
+// 수정 후: 2px 패딩 추가
+const padding = 2;
+const screenRect = {
+  x: rect.x * camera.zoom + camera.panX - padding,
+  y: rect.y * camera.zoom + camera.panY - padding,
+  width: rect.width * camera.zoom + padding * 2,
+  height: rect.height * camera.zoom + padding * 2,
+};
+```
+
+#### 변경된 파일
+- `apps/builder/src/.../skia/useSkiaNode.ts` — `nodeToDirtyRect()` 기본 expand 2px 추가
+- `apps/builder/src/.../skia/SkiaRenderer.ts` — screenRect 계산 시 2px 패딩 추가
+
+---
+
+### Fixed - 요소 삭제 후 화면에 남아있는 문제 수정 (2026-02-03)
+
+#### 개요
+요소를 삭제해도 화면에 남아있고 pan/zoom 같은 위치 이동이 이루어져야 화면에서 사라지던 문제 수정
+
+#### 버그 원인
+React의 `useEffect` cleanup이 비동기적으로 지연될 수 있어서, 요소가 삭제되어도 Skia 레지스트리에서 즉시 제거되지 않음
+
+```
+기존 흐름 (문제):
+1. Store에서 요소 삭제
+2. React reconciliation → ElementSprite 언마운트 예약
+3. (지연) useEffect cleanup 실행 → unregisterSkiaNode 호출
+4. 다음 렌더 프레임에서도 삭제된 요소가 여전히 표시됨
+```
+
+#### 수정 내용
+`elementRemoval.ts`에서 요소 삭제 시 **직접 Skia 레지스트리에서 해당 요소들을 즉시 제거**
+
+```typescript
+// 추가된 import
+import { unregisterSkiaNode } from "../../workspace/canvas/skia/useSkiaNode";
+
+// set() 호출 전에 Skia 레지스트리 정리
+for (const id of elementIdsToRemove) {
+  unregisterSkiaNode(id);
+}
+
+set({
+  elements: filteredElements,
+  // ...
+});
+```
+
+#### 수정 후 흐름
+```
+1. Store에서 요소 삭제 시작
+2. 즉시 unregisterSkiaNode(id) 호출 → dirty rect 추가 + 레지스트리 삭제 + registryVersion++
+3. Store 상태 업데이트
+4. 다음 렌더 프레임에서 dirty rect 영역 클리어 → 삭제된 요소 즉시 화면에서 사라짐
+```
+
+#### 변경된 파일
+- `apps/builder/src/builder/stores/utils/elementRemoval.ts` — `unregisterSkiaNode` import 및 삭제 시 즉시 호출
+
+---
+
 ### Added - Selection 치수 표시 기능 (2026-02-03)
 
 #### 개요
