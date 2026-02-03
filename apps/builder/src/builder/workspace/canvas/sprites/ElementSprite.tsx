@@ -1160,23 +1160,32 @@ export const ElementSprite = memo(function ElementSprite({
   // 개별 Sprite(BoxSprite, TextSprite 등)가 자체 useSkiaNode를 호출하면
   // 같은 elementId로 레지스트리를 덮어쓰므로 더 구체적인 데이터가 사용된다.
   // UI 컴포넌트(FancyButton 등)는 이 폴백 등록이 사용된다.
+
+  // 🚀 Style 변경 감지를 위해 useMemo 외부에서 참조 추출
+  // effectiveElement 참조가 같아도 style/props가 다르면 skiaNodeData 재계산
+  const elementStyle = effectiveElement.props?.style;
+  const elementProps = effectiveElement.props;
+
   const skiaNodeData = useMemo(() => {
-    const style = effectiveElement.props?.style as CSSStyle | undefined;
-    if (!style) return null;
-
-    const { transform, fill, stroke, borderRadius: convertedBorderRadius } = convertStyle(style);
-    const br = typeof convertedBorderRadius === 'number'
-      ? convertedBorderRadius
-      : convertedBorderRadius?.[0] ?? 0;
-
-    // backgroundColor 유무 확인
-    const hasBgColor = style.backgroundColor !== undefined && style.backgroundColor !== null && style.backgroundColor !== '';
+    const style = elementStyle as CSSStyle | undefined;
 
     // UI 컴포넌트는 자체 색상 시스템(variant 등)을 사용하므로
     // CSS style에 backgroundColor가 없어도 가시적으로 렌더링해야 한다.
     // 일반 컨테이너(box, flex, grid)는 backgroundColor 없으면 투명 처리 (CSS 기본 동작)
     const isUIComponent = spriteType !== 'box' && spriteType !== 'text'
       && spriteType !== 'image' && spriteType !== 'flex' && spriteType !== 'grid';
+
+    // style이 없는 일반 요소는 투명 컨테이너이므로 Skia 등록 불필요
+    // UI 컴포넌트는 style 없이도 variant 기반 렌더링 필요
+    if (!style && !isUIComponent) return null;
+
+    const { transform, fill, stroke, borderRadius: convertedBorderRadius } = convertStyle(style);
+    const br = typeof convertedBorderRadius === 'number'
+      ? convertedBorderRadius
+      : convertedBorderRadius?.[0] ?? 0;
+
+    // backgroundColor 유무 확인 (style이 undefined일 수 있으므로 optional chaining)
+    const hasBgColor = style?.backgroundColor !== undefined && style?.backgroundColor !== null && style?.backgroundColor !== '';
 
     // UI 컴포넌트 variant별 배경/테두리 색상 매핑 (Light 모드, ButtonSpec 토큰 기반)
     // variant별 배경 색상
@@ -1282,6 +1291,7 @@ export const ElementSprite = memo(function ElementSprite({
         color: Float32Array;
         letterSpacing?: number;
         lineHeight?: number;
+        align?: 'left' | 'center' | 'right';
         paddingLeft: number;
         paddingTop: number;
         maxWidth: number;
@@ -1391,7 +1401,7 @@ export const ElementSprite = memo(function ElementSprite({
       box: boxData,
       children: textChildren,
     };
-  }, [effectiveElement, spriteType]);
+  }, [effectiveElement, spriteType, elementStyle, elementProps]);
 
   useSkiaNode(elementId, skiaNodeData);
 

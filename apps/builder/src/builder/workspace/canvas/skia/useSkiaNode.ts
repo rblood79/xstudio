@@ -38,9 +38,14 @@ let pendingDirtyRects: DirtyRect[] = [];
  * 노드의 바운드를 DirtyRect로 변환한다.
  * 이펙트(블러, 그림자)가 있으면 확장 영역을 포함시킨다.
  * 블러 시그마 × 3이 가우시안 커널의 실질적 영향 범위이다.
+ *
+ * 기본 여유분 2px: 안티앨리어싱, 부동소수점 좌표 오차, 서브픽셀 렌더링으로 인한
+ * 경계 잔상을 방지한다. Dirty rect가 너무 작으면 이전 프레임의 픽셀이
+ * 완전히 클리어되지 않아 잔상이 남을 수 있다.
  */
 function nodeToDirtyRect(data: SkiaNodeData): DirtyRect {
-  let expand = 0;
+  // 기본 2px 여유분 (안티앨리어싱, 부동소수점 오차 대비)
+  let expand = 2;
 
   if (data.effects) {
     for (const effect of data.effects) {

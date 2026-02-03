@@ -295,6 +295,64 @@ const BUTTON_SIZE_CONFIG: Record<string, {
 const MIN_BUTTON_HEIGHT = 24;
 
 /**
+ * Badge/Tag/Chip size별 설정
+ *
+ * cssVariableReader.ts의 BADGE_FALLBACKS와 1:1 동기화
+ * PixiBadge 렌더링과 동일한 레이아웃 크기 보장
+ */
+const BADGE_SIZE_CONFIG: Record<string, {
+  paddingLeft: number;
+  paddingRight: number;
+  paddingY: number;
+  fontSize: number;
+  borderWidth: number;
+  minWidth: number;
+  height: number;
+}> = {
+  // xs/xl은 BADGE_FALLBACKS에 없으므로 sm/lg 기준 추정
+  xs: { paddingLeft: 8, paddingRight: 8, paddingY: 1, fontSize: 12, borderWidth: 0, minWidth: 16, height: 16 },
+  sm: { paddingLeft: 12, paddingRight: 12, paddingY: 2, fontSize: 14, borderWidth: 0, minWidth: 20, height: 20 },
+  md: { paddingLeft: 12, paddingRight: 12, paddingY: 8, fontSize: 16, borderWidth: 0, minWidth: 24, height: 24 },
+  lg: { paddingLeft: 16, paddingRight: 16, paddingY: 8, fontSize: 18, borderWidth: 0, minWidth: 28, height: 28 },
+  xl: { paddingLeft: 20, paddingRight: 20, paddingY: 10, fontSize: 20, borderWidth: 0, minWidth: 32, height: 32 },
+};
+
+/**
+ * ToggleButton size별 설정
+ *
+ * @sync ToggleButton.css [data-size] padding 값과 일치해야 함
+ * Button.css와 동일한 padding 사용
+ */
+const TOGGLEBUTTON_SIZE_CONFIG: Record<string, {
+  paddingLeft: number;
+  paddingRight: number;
+  paddingY: number;
+  fontSize: number;
+  borderWidth: number;
+}> = {
+  // @sync ToggleButton.css [data-size] padding 값과 일치해야 함
+  sm: { paddingLeft: 12, paddingRight: 12, paddingY: 4, fontSize: 14, borderWidth: 1 },   // --spacing-md = 12px
+  md: { paddingLeft: 24, paddingRight: 24, paddingY: 8, fontSize: 16, borderWidth: 1 },   // --spacing-xl = 24px
+  lg: { paddingLeft: 32, paddingRight: 32, paddingY: 12, fontSize: 18, borderWidth: 1 },  // --spacing-2xl = 32px
+};
+
+/** inline-level UI 컴포넌트 태그 → size config 매핑 */
+const INLINE_UI_SIZE_CONFIGS: Record<string, Record<string, {
+  paddingLeft: number;
+  paddingRight: number;
+  paddingY: number;
+  fontSize: number;
+  borderWidth: number;
+  minWidth?: number;
+  height?: number;
+}>> = {
+  badge: BADGE_SIZE_CONFIG,
+  tag: BADGE_SIZE_CONFIG,
+  chip: BADGE_SIZE_CONFIG,
+  togglebutton: TOGGLEBUTTON_SIZE_CONFIG,
+};
+
+/**
  * Canvas 2D 텍스트 측정용 컨텍스트 (싱글톤)
  *
  * PixiButton의 measureTextSize()와 동일한 결과를 위해
@@ -411,6 +469,21 @@ function calculateTextWidth(text: string, fontSize: number = 14, padding: number
   return Math.round(textWidth + padding);
 }
 
+/** 컴포넌트별 기본 size prop 값 */
+const DEFAULT_SIZE_BY_TAG: Record<string, string> = {
+  // Badge 계열: PixiBadge와 동일하게 'md' 기본값
+  badge: 'md',
+  tag: 'md',
+  chip: 'md',
+  // Button 계열: 'sm' 기본값
+  button: 'sm',
+  input: 'sm',
+  select: 'sm',
+  a: 'sm',
+  label: 'sm',
+  togglebutton: 'sm',
+};
+
 /**
  * 요소의 콘텐츠 너비 계산
  *
@@ -438,11 +511,25 @@ export function calculateContentWidth(element: Element): number {
     // padding/border는 parseBoxModel에서 처리 → 여기서는 텍스트 너비만 반환
     // (inline padding 변경 시 이중 계산 방지)
     const isFormElement = ['button', 'input', 'select', 'a', 'label'].includes(tag);
-    if (isFormElement) {
-      const size = (props?.size as string) ?? 'sm';
-      const sizeConfig = BUTTON_SIZE_CONFIG[size] ?? BUTTON_SIZE_CONFIG.sm;
+    const inlineUIConfig = INLINE_UI_SIZE_CONFIGS[tag];
+    if (isFormElement || inlineUIConfig) {
+      const defaultSize = DEFAULT_SIZE_BY_TAG[tag] ?? 'sm';
+      const size = (props?.size as string) ?? defaultSize;
+      const configMap = isFormElement ? BUTTON_SIZE_CONFIG : inlineUIConfig!;
+      const sizeConfig = configMap[size] ?? configMap[defaultSize] ?? Object.values(configMap)[0];
       const fontSize = parseNumericValue(style?.fontSize) ?? sizeConfig.fontSize;
-      return calculateTextWidth(text, fontSize, 0);
+      const textWidth = calculateTextWidth(text, fontSize, 0);
+
+      // minWidth 적용: totalWidth = contentWidth + padding >= minWidth
+      // PixiBadge와 동일한 너비 계산 (cssVariableReader.ts BADGE_FALLBACKS 참조)
+      const minWidth = (sizeConfig as { minWidth?: number }).minWidth;
+      if (minWidth !== undefined) {
+        const padding = sizeConfig.paddingLeft + sizeConfig.paddingRight;
+        const minContentWidth = Math.max(0, minWidth - padding);
+        return Math.max(minContentWidth, textWidth);
+      }
+
+      return textWidth;
     }
 
     // 일반 요소
@@ -538,16 +625,25 @@ export function calculateContentHeight(element: Element): number {
   const explicitHeight = parseNumericValue(style?.height);
   if (explicitHeight !== undefined) return explicitHeight;
 
-  // 2. 버튼은 size prop에 따라 높이 결정
-  // 🚀 Phase 12 Fix: PixiButton과 동일한 공식 사용
+  // 2. Self-rendering 요소는 size prop에 따라 높이 결정
   // contentHeight는 content-box 높이(텍스트 영역)만 반환해야 함
   // padding/border는 parseBoxModel에서 별도 관리 → BlockEngine이 합산
-  // 이전 버그: paddingY를 여기서 포함 → BlockEngine에서 padding 이중 계산 → 여백 발생
   const tag = (element.tag ?? '').toLowerCase();
-  if (tag === 'button') {
+  const inlineUIConfig = INLINE_UI_SIZE_CONFIGS[tag];
+  if (tag === 'button' || inlineUIConfig) {
     const props = element.props as Record<string, unknown> | undefined;
-    const size = (props?.size as string) ?? 'sm';
-    const sizeConfig = BUTTON_SIZE_CONFIG[size] ?? BUTTON_SIZE_CONFIG.sm;
+    const defaultSize = DEFAULT_SIZE_BY_TAG[tag] ?? 'sm';
+    const size = (props?.size as string) ?? defaultSize;
+    const configMap = tag === 'button' ? BUTTON_SIZE_CONFIG : inlineUIConfig!;
+    const sizeConfig = configMap[size] ?? configMap[defaultSize] ?? Object.values(configMap)[0];
+
+    // Badge 등은 고정 height 사용 (BADGE_FALLBACKS와 동기화)
+    // height는 border-box 기준 → content-box로 변환
+    const configHeight = (sizeConfig as { height?: number }).height;
+    if (configHeight !== undefined) {
+      return Math.max(0, configHeight - sizeConfig.paddingY * 2 - sizeConfig.borderWidth * 2);
+    }
+
     const fontSize = parseNumericValue(style?.fontSize) ?? sizeConfig.fontSize;
     const resolvedLineHeight = parseLineHeight(style, fontSize);
     const textHeight = estimateTextHeight(fontSize, resolvedLineHeight);
@@ -607,13 +703,18 @@ export function parseBoxModel(
   // border 파싱
   let border = parseBorder(style);
 
-  // Button/input 등 self-rendering 요소: inline style이 없으면 BUTTON_SIZE_CONFIG 기본값 적용
+  // Self-rendering 요소: inline style이 없으면 size config 기본값 적용
   const tag = (element.tag ?? '').toLowerCase();
   const isFormElement = ['button', 'input', 'select'].includes(tag);
-  if (isFormElement) {
+  const inlineUISizeConfig = INLINE_UI_SIZE_CONFIGS[tag];
+  const hasSizeConfig = isFormElement || !!inlineUISizeConfig;
+
+  if (hasSizeConfig) {
     const props = element.props as Record<string, unknown> | undefined;
-    const size = (props?.size as string) ?? 'sm';
-    const sizeConfig = BUTTON_SIZE_CONFIG[size] ?? BUTTON_SIZE_CONFIG.sm;
+    const defaultSize = DEFAULT_SIZE_BY_TAG[tag] ?? 'sm';
+    const size = (props?.size as string) ?? defaultSize;
+    const configMap = isFormElement ? BUTTON_SIZE_CONFIG : inlineUISizeConfig!;
+    const sizeConfig = configMap[size] ?? configMap[defaultSize] ?? Object.values(configMap)[0];
 
     const hasInlinePadding = style?.padding !== undefined ||
       style?.paddingTop !== undefined || style?.paddingRight !== undefined ||
@@ -778,11 +879,12 @@ export function parseLineHeight(
  * calculateBaseline(element, 100) // → 80 (상단에서 80px 아래)
  */
 // 🚀 텍스트가 수직 중앙 정렬되는 요소 (CSS baseline ≈ height/2)
-// CSS에서 button/input은 내부 텍스트가 수직 중앙 정렬되므로
+// CSS에서 button/input/badge 등은 내부 텍스트가 수직 중앙 정렬되므로
 // baseline이 요소의 수직 중앙 근처에 위치
 const VERTICALLY_CENTERED_TAGS = new Set([
   'button', 'submitbutton', 'fancybutton', 'togglebutton',
   'input', 'select',
+  'badge', 'tag', 'chip',  // inline-flex 컴포넌트
 ]);
 
 export function calculateBaseline(

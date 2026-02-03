@@ -17,7 +17,7 @@ import type {
 } from './types';
 import { SkiaDisposable } from './disposable';
 import type { SkiaNodeData } from './nodeRenderers';
-import type { AIVisualFeedbackState } from '../../stores/aiVisualFeedback';
+import type { AIVisualFeedbackState } from '../../../stores/aiVisualFeedback';
 
 // ============================================
 // Constants

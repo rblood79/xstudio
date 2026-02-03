@@ -15,6 +15,7 @@
  */
 
 import "@pixi/layout";
+import type { LayoutOptions } from "@pixi/layout";
 import { useCallback, useEffect, useRef, useMemo, useState, memo, startTransition, lazy, Suspense, type RefObject } from "react";
 import { Application, useApplication } from "@pixi/react";
 import { Graphics as PixiGraphics, Container, Application as PixiApplication } from "pixi.js";
@@ -48,6 +49,7 @@ import {
   selectEngine,
   shouldDelegateToPixiLayout,
   parsePadding,
+  parseBorder,
   type LayoutStyle,
   type ComputedLayout,
 } from "./layout";
@@ -330,7 +332,7 @@ const LayoutContainer = memo(function LayoutContainer({
         }
 
         // 2) Yoga 계산된 layout dimensions를 하위 컴포넌트에 전달
-        const yogaLayout = (container as Record<string, unknown>)._layout as
+        const yogaLayout = (container as unknown as Record<string, unknown>)._layout as
           { computedLayout?: { width: number; height: number } } | undefined;
         const yogaWidth = yogaLayout?.computedLayout?.width;
         const yogaHeight = yogaLayout?.computedLayout?.height;
@@ -366,7 +368,7 @@ const LayoutContainer = memo(function LayoutContainer({
 
   return (
     <LayoutComputedSizeContext.Provider value={computedSize}>
-      <pixiContainer ref={handleContainerRef} layout={layout} label={elementId}>
+      <pixiContainer ref={handleContainerRef} layout={layout as unknown as LayoutOptions} label={elementId}>
         {children}
       </pixiContainer>
     </LayoutComputedSizeContext.Provider>
@@ -804,10 +806,30 @@ const ElementsLayer = memo(function ElementsLayer({
 
   // 🚀 Phase 7: @pixi/layout 루트 컨테이너 layout 설정
   // Body 요소의 flex 스타일을 적용하여 자식 요소들이 올바르게 배치되도록 함
+  //
+  // 🚀 Phase 13: CSS border-box 모델 에뮬레이션
+  // CSS는 기본적으로 border-box (width가 border+padding+content 포함)
+  // Yoga는 기본적으로 content-box (width가 content만, padding/border는 외부에 추가)
+  //
+  // 해결책:
+  // - width/height = content-box (pageWidth - border - padding)
+  // - padding/border = undefined (Yoga에 전달하지 않음)
+  // - offset Container로 border+padding 안쪽에서 자식 배치
+  const bodyStyle = bodyElement?.props?.style as Record<string, unknown> | undefined;
+  const bodyBorder = useMemo(() => parseBorder(bodyStyle), [bodyStyle]);
+  const bodyPadding = useMemo(() => parsePadding(bodyStyle), [bodyStyle]);
+
+  // content-box 크기 (CSS에서 자식의 100% 기준)
+  const contentWidth = pageWidth - bodyBorder.left - bodyBorder.right - bodyPadding.left - bodyPadding.right;
+  const contentHeight = pageHeight - bodyBorder.top - bodyBorder.bottom - bodyPadding.top - bodyPadding.bottom;
+
+  // 자식 시작 위치 오프셋 (border + padding 안쪽)
+  const contentOffsetX = bodyBorder.left + bodyPadding.left;
+  const contentOffsetY = bodyBorder.top + bodyPadding.top;
+
   const rootLayout = useMemo(() => {
     // Body 요소의 layout 스타일 가져오기
     const bodyLayout = bodyElement ? styleToLayout(bodyElement, { width: pageWidth, height: pageHeight }) : {};
-
 
     // Body의 flexbox 속성 적용 (width/height는 page 크기로 고정)
     // 🚀 Phase 8: CSS body 기본값 동기화
@@ -829,18 +851,34 @@ const ElementsLayer = memo(function ElementsLayer({
       alignItems: isBodyFlex ? ('stretch' as const) : ('flex-start' as const),
       alignContent: isBodyFlex ? ('stretch' as const) : ('flex-start' as const),
       ...bodyLayout,
-      width: pageWidth,
-      height: pageHeight,
+      // 🚀 Phase 13: content-box 크기로 설정 (자식의 100% 기준)
+      width: Math.max(0, contentWidth),
+      height: Math.max(0, contentHeight),
+      // padding/border는 Yoga에 전달하지 않음 (offset Container에서 처리)
+      padding: undefined,
+      paddingTop: undefined,
+      paddingRight: undefined,
+      paddingBottom: undefined,
+      paddingLeft: undefined,
+      borderWidth: undefined,
+      borderTopWidth: undefined,
+      borderRightWidth: undefined,
+      borderBottomWidth: undefined,
+      borderLeftWidth: undefined,
       position: 'relative' as const,
     };
 
     return result;
-  }, [pageWidth, pageHeight, bodyElement]);
+  }, [pageWidth, pageHeight, bodyElement, contentWidth, contentHeight]);
 
   return (
+    // 🚀 Phase 13: offset Container로 body의 border+padding 안쪽에서 자식 배치
+    // PixiJS Container의 x/y는 @pixi/layout의 layout prop과 별도로 적용됨
     <pixiContainer
       label="ElementsLayer"
-      layout={rootLayout}
+      x={contentOffsetX}
+      y={contentOffsetY}
+      layout={rootLayout as unknown as LayoutOptions}
       eventMode="static"
       interactiveChildren={true}
     >
@@ -1500,7 +1538,7 @@ export function BuilderCanvas({
   const handleElementDoubleClick = useCallback(
     (elementId: string) => {
       const layoutPosition = getElementBoundsSimple(elementId);
-      startEdit(elementId, layoutPosition);
+      startEdit(elementId, layoutPosition ?? undefined);
     },
     [startEdit]
   );

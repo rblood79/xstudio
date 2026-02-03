@@ -35,7 +35,7 @@ export function CanvasScrollbar({ direction }: CanvasScrollbarProps) {
   const trackRef = useRef<HTMLDivElement>(null);
   const thumbRef = useRef<HTMLDivElement>(null);
   const rafIdRef = useRef(0);
-  const fadeTimerRef = useRef<ReturnType<typeof setTimeout>>();
+  const fadeTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const isDraggingRef = useRef(false);
   // 패널 inset 캐시 (viewport 계산에서 재사용)
   const panelInsetRef = useRef({ left: 0, right: 0 });

@@ -24,10 +24,14 @@ import {
 import { FancyButton } from "@pixi/ui";
 import type { Element } from "../../../../types/core/store.types";
 import type { CSSStyle } from "../sprites/styleConverter";
-import { cssColorToHex } from "../sprites/styleConverter";
+import { cssColorToHex, parseCSSSize } from "../sprites/styleConverter";
 import { getSizePreset, getVariantColors, type SizePreset } from "../utils/cssVariableReader";
 import { useThemeColors } from "../hooks/useThemeColors";
 import { drawBox } from "../utils";
+import { measureTextWidth as measureTextWidthCanvas } from "../layout/engines/utils";
+import { useCanvasSyncStore } from "../canvasSync";
+import { parsePadding, parseBorderWidth } from "../sprites/paddingUtils";
+import { useStore } from "../../../stores";
 
 // ============================================
 // Constants
@@ -80,8 +84,8 @@ export interface PixiToggleButtonProps {
 // Style Conversion
 // ============================================
 
-// Size preset fallback
-const DEFAULT_SIZE_PRESET: SizePreset = { fontSize: 14, paddingX: 12, paddingY: 8, borderRadius: 6 };
+// Size preset fallback (sm size: --spacing = 4px for paddingY)
+const DEFAULT_SIZE_PRESET: SizePreset = { fontSize: 14, paddingX: 12, paddingY: 4, borderRadius: 6 };
 
 interface ToggleButtonLayoutResult {
   left: number;
@@ -119,13 +123,15 @@ interface ToggleButtonLayoutResult {
  *
  * @param unselectedColors - 테마에서 동적으로 가져온 unselected 상태 색상
  * @param selectedColors - 테마에서 동적으로 가져온 selected 상태 색상 (variant별)
+ * @param parentContentArea - 부모의 content area (% 크기 계산용)
  */
 function getToggleButtonLayout(
   style: CSSStyle | undefined,
   buttonProps: ToggleButtonElementProps,
   buttonText: string,
   unselectedColors: VariantColors,
-  selectedColors: VariantColors
+  selectedColors: VariantColors,
+  parentContentArea?: { width: number; height: number }
 ): ToggleButtonLayoutResult {
   const size = buttonProps.size || "sm";
   const isToggleSelected = Boolean(buttonProps.isSelected);
@@ -182,25 +188,34 @@ function getToggleButtonLayout(
   const selectedHoverColor = selectedColors.bgHover;
   const selectedPressedColor = selectedColors.bgPressed;
 
-  // 텍스트 크기 측정 (먼저 측정해야 최소 크기 계산 가능)
+  // 🚀 텍스트 너비 측정 - Canvas 2D measureText 사용 (BlockEngine과 동일)
+  // PixiButton/Badge와 동일한 방식으로 display:block에서도 정확한 레이아웃 보장
+  const textWidth = measureTextWidthCanvas(buttonText, fontSize, fontFamily);
+  // 높이는 PixiJS TextStyle 사용 (수직 메트릭 정확도 필요)
   const textStyle = new TextStyle({ fontSize, fontFamily });
   const metrics = CanvasTextMetrics.measureText(buttonText, textStyle);
-  const textWidth = metrics.width;
   const textHeight = metrics.height;
 
-  // 최소 필요 크기 계산 (padding + text)
-  // Note: border-box 모델에서 border는 총 크기 안에 포함되므로 별도로 더하지 않음
-  const minRequiredWidth = paddingLeft + textWidth + paddingRight;
-  const minRequiredHeight = paddingTop + textHeight + paddingBottom;
+  // 최소 필요 크기 계산 (border + padding + text)
+  // border-box 모델: width = border + padding + content
+  const borderWidth = 1; // ToggleButton은 항상 1px border 사용
+  const minRequiredWidth = borderWidth + paddingLeft + textWidth + paddingRight + borderWidth;
+  const minRequiredHeight = borderWidth + paddingTop + textHeight + paddingBottom + borderWidth;
 
   // 크기 계산
-  // 🚀 Fix: 명시적 크기가 최소 필요 크기보다 작으면 auto로 처리
-  // 🚀 Phase 8: parseCSSSize 제거
-  const explicitWidth = typeof style?.width === 'number' ? style.width : 0;
-  const explicitHeight = typeof style?.height === 'number' ? style.height : 0;
+  // parseCSSSize로 CSS 문자열 값("200px", "50%", "100vw" 등)도 올바르게 파싱
+  // %, vw, vh는 부모의 content area 기준으로 계산 (CSS box model)
+  const pctRefWidth = parentContentArea?.width ?? 0;
+  const pctRefHeight = parentContentArea?.height ?? 0;
+  const resolveViewport = parentContentArea ?? { width: 0, height: 0 };
+  const explicitWidth = parseCSSSize(style?.width, pctRefWidth, 0, resolveViewport);
+  const explicitHeight = parseCSSSize(style?.height, pctRefHeight, 0, resolveViewport);
 
-  const isWidthAuto = !style?.width || style?.width === "auto" || explicitWidth < minRequiredWidth;
-  const isHeightAuto = !style?.height || style?.height === "auto" || explicitHeight < minRequiredHeight;
+  // 명시적 크기가 있으면 (%, vh, vw 포함) auto 비활성화
+  const hasExplicitWidth = style?.width !== undefined && style?.width !== "" && style?.width !== "auto";
+  const hasExplicitHeight = style?.height !== undefined && style?.height !== "" && style?.height !== "auto";
+  const isWidthAuto = !hasExplicitWidth || explicitWidth < minRequiredWidth;
+  const isHeightAuto = !hasExplicitHeight || explicitHeight < minRequiredHeight;
 
   let width: number;
   let height: number;
@@ -220,8 +235,8 @@ function getToggleButtonLayout(
   }
 
   return {
-    left: typeof style?.left === 'number' ? style.left : 0,
-    top: typeof style?.top === 'number' ? style.top : 0,
+    left: parseCSSSize(style?.left, pctRefWidth, 0, resolveViewport),
+    top: parseCSSSize(style?.top, pctRefHeight, 0, resolveViewport),
     width,
     height,
     backgroundColor,
@@ -321,6 +336,42 @@ export const PixiToggleButton = memo(function PixiToggleButton({
   const style = element.props?.style as CSSStyle | undefined;
   const props = element.props as ToggleButtonElementProps | undefined;
 
+  // Canvas 크기 (% 크기 계산용)
+  const canvasSize = useCanvasSyncStore((state) => state.canvasSize);
+
+  // 부모 요소 (% 크기 계산용)
+  const parentElement = useStore((state) => {
+    if (!element.parent_id) return null;
+    return state.elementsMap.get(element.parent_id) ?? null;
+  });
+
+  // 부모의 content area 계산 (부모 너비 - padding - border)
+  // CSS box model: 자식의 % 크기는 부모의 content area 기준
+  const parentContentArea = useMemo(() => {
+    const vw = canvasSize.width;
+    const vh = canvasSize.height;
+
+    if (!parentElement) {
+      return { width: vw, height: vh };
+    }
+
+    const parentStyle = parentElement.props?.style as CSSStyle | undefined;
+    const isBody = parentElement.tag.toLowerCase() === 'body';
+
+    // 부모의 외곽 크기 (body는 페이지 크기, 그 외는 CSS 값)
+    const pw = isBody ? vw : parseCSSSize(parentStyle?.width, vw, vw, canvasSize);
+    const ph = isBody ? vh : parseCSSSize(parentStyle?.height, vh, vh, canvasSize);
+
+    // padding + border 차감 (Yoga border-box 모델)
+    const pp = parsePadding(parentStyle);
+    const pb = parseBorderWidth(parentStyle);
+
+    return {
+      width: Math.max(0, pw - pp.left - pp.right - pb.left - pb.right),
+      height: Math.max(0, ph - pp.top - pp.bottom - pb.top - pb.bottom),
+    };
+  }, [parentElement, canvasSize]);
+
   // 테마 색상 (동적으로 CSS 변수에서 읽어옴)
   const themeColors = useThemeColors();
 
@@ -342,8 +393,8 @@ export const PixiToggleButton = memo(function PixiToggleButton({
 
   // 레이아웃 스타일
   const layout = useMemo(() => {
-    return getToggleButtonLayout(style, props || {}, buttonText, unselectedColors, selectedColors);
-  }, [style, props, buttonText, unselectedColors, selectedColors]);
+    return getToggleButtonLayout(style, props || {}, buttonText, unselectedColors, selectedColors, parentContentArea);
+  }, [style, props, buttonText, unselectedColors, selectedColors, parentContentArea]);
 
   // Container ref
   const containerRef = useRef<PixiContainer | null>(null);
@@ -554,6 +605,12 @@ export const PixiToggleButton = memo(function PixiToggleButton({
   // 커서 스타일
   const cursorStyle = layout.isDisabled ? "not-allowed" : "pointer";
 
+  // @pixi/layout에 크기 전달 - Yoga 레이아웃 계산용
+  const containerLayout = useMemo(() => ({
+    width: layout.width,
+    height: layout.height,
+  }), [layout.width, layout.height]);
+
   return (
     <pixiContainer
       x={layout.left}
@@ -561,6 +618,7 @@ export const PixiToggleButton = memo(function PixiToggleButton({
       ref={(c: PixiContainer | null) => {
         containerRef.current = c;
       }}
+      layout={containerLayout}
     >
       {/* 투명 히트 영역 */}
       <pixiGraphics

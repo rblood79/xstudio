@@ -192,7 +192,7 @@ export const PixiTabs = memo(function PixiTabs({
   const rootLayout = useMemo(() => ({
     display: 'flex' as const,
     flexDirection: (isVertical ? 'row' : 'column') as 'row' | 'column',
-    width: styleWidth ?? '100%',
+    width: (styleWidth ?? '100%') as number | 'auto',
     // 🚀 Phase 12: 콘텐츠 기반 높이 - 세로 늘어남 방지
     height: 'auto' as const,
     flexGrow: 0,
@@ -208,7 +208,7 @@ export const PixiTabs = memo(function PixiTabs({
     display: 'flex' as const,
     flexDirection: (isVertical ? 'column' : 'row') as 'column' | 'row',
     // vertical: 고정 너비, horizontal: 부모 너비 채움
-    width: isVertical ? tabsLayout.totalWidth : '100%',
+    width: (isVertical ? tabsLayout.totalWidth : '100%') as number | 'auto',
     flexShrink: 0,
     position: 'relative' as const,
   }), [isVertical, tabsLayout.totalWidth]);
@@ -337,7 +337,7 @@ export const PixiTabs = memo(function PixiTabs({
     const childLayout = styleToLayout(childEl);
 
     return (
-      <pixiContainer key={childEl.id} layout={childLayout}>
+      <pixiContainer key={childEl.id} layout={childLayout as Record<string, unknown>}>
         <ElementSprite
           element={childEl}
           onClick={onClick}
@@ -348,6 +348,7 @@ export const PixiTabs = memo(function PixiTabs({
 
   return (
     <pixiContainer layout={rootLayout}>
+      {/* @ts-expect-error onLayout is a valid @pixi/layout prop but not in @pixi/react types */}
       <pixiContainer layout={tabListLayout} onLayout={handleTabListLayout}>
         {/* 🚀 Phase 11: CSS border-bottom/border-right 동기화 */}
         <pixiGraphics draw={drawTabListBorder} />

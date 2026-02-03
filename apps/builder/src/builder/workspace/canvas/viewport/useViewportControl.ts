@@ -14,7 +14,7 @@
 import { useEffect, useRef, useCallback, useMemo, type RefObject } from 'react';
 import { useApplication } from '@pixi/react';
 import type { Container } from 'pixi.js';
-import { type ViewportState, getViewportController } from './ViewportController';
+import { type ViewportState, type ViewportController, getViewportController } from './ViewportController';
 import { useCanvasSyncStore } from '../canvasSync';
 import { useKeyboardShortcutsRegistry } from '@/builder/hooks';
 

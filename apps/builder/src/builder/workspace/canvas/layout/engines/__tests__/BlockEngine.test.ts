@@ -313,6 +313,7 @@ describe('BlockEngine', () => {
       ];
 
       const layouts = engine.calculate(parent, children, 400, 800, {
+        bfcId: 'test-bfc',
         parentDisplay: 'flex',
       });
 
@@ -329,6 +330,7 @@ describe('BlockEngine', () => {
       ];
 
       const layouts = engine.calculate(parent, children, 400, 800, {
+        bfcId: 'test-bfc',
         parentDisplay: 'flex',
       });
 

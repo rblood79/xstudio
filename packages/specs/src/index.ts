@@ -107,3 +107,30 @@ export type {
 // ─── Components ──────────────────────────────────────────────────────────────
 export { ButtonSpec } from './components/Button.spec';
 export type { ButtonProps } from './components/Button.spec';
+
+export { BadgeSpec } from './components/Badge.spec';
+export type { BadgeProps } from './components/Badge.spec';
+
+export { CardSpec } from './components/Card.spec';
+export type { CardProps } from './components/Card.spec';
+
+export { DialogSpec } from './components/Dialog.spec';
+export type { DialogProps } from './components/Dialog.spec';
+
+export { LinkSpec } from './components/Link.spec';
+export type { LinkProps } from './components/Link.spec';
+
+export { PopoverSpec } from './components/Popover.spec';
+export type { PopoverProps } from './components/Popover.spec';
+
+export { SeparatorSpec } from './components/Separator.spec';
+export type { SeparatorProps } from './components/Separator.spec';
+
+export { ToggleButtonSpec } from './components/ToggleButton.spec';
+export type { ToggleButtonProps } from './components/ToggleButton.spec';
+
+export { ToggleButtonGroupSpec } from './components/ToggleButtonGroup.spec';
+export type { ToggleButtonGroupProps } from './components/ToggleButtonGroup.spec';
+
+export { TooltipSpec } from './components/Tooltip.spec';
+export type { TooltipProps } from './components/Tooltip.spec';

@@ -9,7 +9,7 @@
  * @since 2025-01-06 Phase 1 ElementRegistry
  */
 
-import { Container, Rectangle } from 'pixi.js';
+import { Container, Rectangle, Bounds } from 'pixi.js';
 
 import { notifyLayoutChange } from './skia/useSkiaNode';
 
@@ -118,7 +118,7 @@ export function getElementContainer(id: string): Container | undefined {
  * @param id - Element ID
  * @returns Rectangle 또는 null
  */
-export function getElementBounds(id: string): Rectangle | null {
+export function getElementBounds(id: string): Bounds | null {
   const container = elementRegistry.get(id);
   if (!container) return null;
 

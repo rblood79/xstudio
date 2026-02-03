@@ -201,11 +201,15 @@ export class SkiaRenderer {
       } else {
         for (const rect of merged) {
           // 씬-로컬 좌표 → content canvas 좌표 (카메라 변환 적용)
+          // 2px 패딩 추가: 안티앨리어싱, DPR 스케일링, 부동소수점 오차로 인한
+          // 경계 잔상 방지. Dirty rect 경계가 정확히 픽셀에 맞지 않으면
+          // 이전 프레임의 서브픽셀이 남아 잔상으로 보일 수 있다.
+          const padding = 2;
           const screenRect = {
-            x: rect.x * camera.zoom + camera.panX,
-            y: rect.y * camera.zoom + camera.panY,
-            width: rect.width * camera.zoom,
-            height: rect.height * camera.zoom,
+            x: rect.x * camera.zoom + camera.panX - padding,
+            y: rect.y * camera.zoom + camera.panY - padding,
+            width: rect.width * camera.zoom + padding * 2,
+            height: rect.height * camera.zoom + padding * 2,
           };
 
           this.contentCanvas.save();

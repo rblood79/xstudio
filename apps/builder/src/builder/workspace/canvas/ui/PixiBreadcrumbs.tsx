@@ -18,6 +18,7 @@
  * @updated 2025-01-07 Phase 11 @pixi/layout migration
  */
 
+import '@pixi/layout';
 import { useExtend } from '@pixi/react';
 import { PIXI_COMPONENTS } from '../pixiSetup';
 import { memo, useCallback, useMemo, useRef, useState } from "react";
@@ -201,6 +202,7 @@ export const PixiBreadcrumbs = memo(function PixiBreadcrumbs({
   }, [childItems]);
 
   return (
+    // @ts-expect-error - onLayout is added by @pixi/layout at runtime
     <pixiContainer layout={rootLayout} onLayout={handleLayout}>
       {/* 배경 (filled variant) */}
       {variant === "filled" && <pixiGraphics draw={drawBackground} />}

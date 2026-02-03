@@ -26,7 +26,7 @@ import { initAllWasm } from '../wasm-bindings/init';
 import { skiaFontManager } from './fontManager';
 import { useAIVisualFeedbackStore } from '../../../stores/aiVisualFeedback';
 import { buildNodeBoundsMap, renderGeneratingEffects, renderFlashes } from './aiEffects';
-import { renderSelectionBox, renderTransformHandles, renderLasso } from './selectionRenderer';
+import { renderSelectionBox, renderTransformHandles, renderDimensionLabels, renderLasso } from './selectionRenderer';
 import type { LassoRenderData } from './selectionRenderer';
 import { useStore } from '../../../stores';
 import { getElementBoundsSimple } from '../elementRegistry';
@@ -564,6 +564,8 @@ export function SkiaOverlay({ containerEl, backgroundColor = 0xf8fafc, app, drag
             if (selectionData.showHandles) {
               renderTransformHandles(ck, canvas, selectionData.bounds, cameraZoom);
             }
+            // 치수 레이블 (width × height) 표시
+            renderDimensionLabels(ck, canvas, selectionData.bounds, cameraZoom, fontMgr);
           }
           if (selectionData.lasso) {
             renderLasso(ck, canvas, selectionData.lasso, cameraZoom);

@@ -58,6 +58,8 @@ export interface CSSStyle {
   display?: string;
   flexDirection?: string;
   gap?: number | string;
+  // Visibility
+  visibility?: 'visible' | 'hidden' | 'collapse';
 }
 
 export interface PixiTransform {

@@ -14,7 +14,7 @@ import type {
   SyncMetadata,
 } from '../types';
 import type { Element, Page } from '../../../types/core/store.types';
-import type { DesignToken, DesignTheme } from '../../../types/theme';
+import type { DesignToken, DesignTheme, DesignVariable } from '../../../types/theme';
 import type { Layout } from '../../../types/builder/layout.types';
 import type {
   DataTable,
@@ -828,6 +828,77 @@ export class IndexedDBAdapter implements DatabaseAdapter {
         request.onsuccess = () => resolve();
         request.onerror = () => reject(request.error);
       });
+    },
+  };
+
+  // === Design Variables (G.2 Variable Reference System) ===
+
+  designVariables = {
+    insert: async (variable: DesignVariable): Promise<DesignVariable> => {
+      const now = new Date().toISOString();
+      const variableWithTimestamps: DesignVariable = {
+        ...variable,
+        created_at: variable.created_at || now,
+        updated_at: variable.updated_at || now,
+      };
+      await this.putToStore('design_variables', variableWithTimestamps);
+      return variableWithTimestamps;
+    },
+
+    insertMany: async (variables: DesignVariable[]): Promise<DesignVariable[]> => {
+      if (variables.length === 0) {
+        return [];
+      }
+      const db = this.ensureDB();
+      const now = new Date().toISOString();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction('design_variables', 'readwrite');
+        const store = tx.objectStore('design_variables');
+
+        const variablesWithTimestamps = variables.map((v) => ({
+          ...v,
+          created_at: v.created_at || now,
+          updated_at: v.updated_at || now,
+        }));
+
+        variablesWithTimestamps.forEach((variable) => {
+          store.put(variable);
+        });
+
+        tx.oncomplete = () => resolve(variablesWithTimestamps);
+        tx.onerror = () => reject(tx.error);
+      });
+    },
+
+    update: async (id: string, updates: Partial<DesignVariable>): Promise<DesignVariable> => {
+      const existing = await this.designVariables.getById(id);
+      if (!existing) {
+        throw new Error(`DesignVariable ${id} not found`);
+      }
+      const updated: DesignVariable = { ...existing, ...updates, updated_at: new Date().toISOString() };
+      await this.putToStore('design_variables', updated);
+      return updated;
+    },
+
+    delete: async (id: string): Promise<void> => {
+      await this.deleteFromStore('design_variables', id);
+    },
+
+    getById: async (id: string): Promise<DesignVariable | null> => {
+      return this.getFromStore<DesignVariable>('design_variables', id);
+    },
+
+    getByProject: async (projectId: string): Promise<DesignVariable[]> => {
+      return this.getAllByIndex<DesignVariable>('design_variables', 'project_id', projectId);
+    },
+
+    getByName: async (projectId: string, name: string): Promise<DesignVariable | null> => {
+      const variables = await this.designVariables.getByProject(projectId);
+      return variables.find((v) => v.name === name) || null;
+    },
+
+    getAll: async (): Promise<DesignVariable[]> => {
+      return this.getAllFromStore<DesignVariable>('design_variables');
     },
   };
 

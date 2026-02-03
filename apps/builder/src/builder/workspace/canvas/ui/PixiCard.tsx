@@ -231,22 +231,22 @@ export const PixiCard = memo(function PixiCard({
   // 🚀 Phase 8: 주 컨테이너 layout (iframe CSS와 동기화)
   // CSS: .react-aria-Card { display: block; width: 100%; }
   const cardLayout = useMemo(() => ({
-    display: 'flex',
-    flexDirection: 'column',
-    width: '100%',
+    display: 'flex' as const,
+    flexDirection: 'column' as const,
+    width: '100%' as unknown as number,
     padding: sizePreset.padding,
     minHeight: 60,
     // 콘텐츠 높이에 맞춤 (세로 늘어남 방지)
     flexGrow: 0,
     flexShrink: 0,
-    alignSelf: 'flex-start',
+    alignSelf: 'flex-start' as const,
   }), [sizePreset.padding]);
 
   // card-header 레이아웃 (제목, 부제목)
   const headerLayout = useMemo(() => ({
-    display: 'flex',
-    flexDirection: 'column',
-    width: '100%',
+    display: 'flex' as const,
+    flexDirection: 'column' as const,
+    width: '100%' as unknown as number,
     gap: 2,
     marginBottom: (cardTitle || props?.subheading) ? 8 : 0,
   }), [cardTitle, props?.subheading]);
@@ -256,10 +256,10 @@ export const PixiCard = memo(function PixiCard({
   // flex column으로 description과 children-row를 수직 배치
   // alignItems: 'flex-start'로 왼쪽 정렬
   const contentLayout = useMemo(() => ({
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'flex-start',
-    width: '100%',
+    display: 'flex' as const,
+    flexDirection: 'column' as const,
+    alignItems: 'flex-start' as const,
+    width: '100%' as unknown as number,
   }), []);
 
   // card-description 레이아웃 (display: block, width: 100%)
@@ -267,9 +267,9 @@ export const PixiCard = memo(function PixiCard({
   // 전체 너비를 차지하여 다음 요소가 아래로 배치됨
   // alignItems: 'flex-start'로 텍스트 왼쪽 정렬
   const descriptionLayout = useMemo(() => ({
-    display: 'flex',
-    alignItems: 'flex-start',
-    width: '100%',
+    display: 'flex' as const,
+    alignItems: 'flex-start' as const,
+    width: '100%' as unknown as number,
   }), []);
 
   // children-row 레이아웃 (가로 배치 + 줄바꿈)
@@ -277,10 +277,10 @@ export const PixiCard = memo(function PixiCard({
   // @pixi/layout에서는 flex row wrap으로 동일한 효과 구현
   // gap 없음 (iframe CSS와 동일)
   const childrenRowLayout = useMemo(() => ({
-    display: 'flex',
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    width: '100%',
+    display: 'flex' as const,
+    flexDirection: 'row' as const,
+    flexWrap: 'wrap' as const,
+    width: '100%' as unknown as number,
   }), []);
 
   // 이벤트 핸들러
@@ -358,6 +358,7 @@ export const PixiCard = memo(function PixiCard({
   const hasContent = cardDescription || hasChildren;
 
   return (
+    // @ts-expect-error - onLayout is added by @pixi/layout at runtime
     <pixiContainer layout={cardLayout} onLayout={handleLayout}>
       {/* 카드 배경 */}
       <pixiGraphics draw={drawCard} />

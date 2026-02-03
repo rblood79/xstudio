@@ -189,13 +189,13 @@ export function PixiDisclosureGroup({
   // 🚀 Phase 8: 주 컨테이너 layout (iframe CSS와 동기화)
   // CSS: DisclosureGroup은 별도 CSS 없음 - Disclosure 자식들 배치용
   const groupLayout = useMemo(() => ({
-    display: 'flex',
-    flexDirection: 'column',
+    display: 'flex' as const,
+    flexDirection: 'column' as const,
     gap: sizePreset.gap,
     // 콘텐츠 크기에 맞춤 (부모 flex에서 늘어나지 않도록)
     flexGrow: 0,
     flexShrink: 0,
-    alignSelf: 'flex-start',
+    alignSelf: 'flex-start' as const,
   }), [sizePreset.gap]);
 
   // Empty state

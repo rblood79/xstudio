@@ -79,6 +79,16 @@ const DEFAULT_INLINE_BLOCK_TAGS = new Set([
   'em',
   'small',
   'abbr',
+  // UI 컴포넌트 (CSS inline-flex/inline-block)
+  // element.tag가 PascalCase이고 line 218에서 toLowerCase() 적용됨
+  'badge', 'tag', 'chip',                       // inline-flex (Badge 계열)
+  'togglebutton',                                // inline-flex (버튼 계열)
+  'submitbutton', 'fancybutton',                 // inline-block (버튼 계열)
+  'link', 'anchor',                              // inline (링크 계열)
+  'checkbox', 'switch', 'toggle', 'radio',       // inline-block (폼 컨트롤)
+  'colorswatch',                                 // inline-block
+  'avatar', 'logo', 'icon', 'thumbnail',         // inline-block (미디어)
+  'skeleton', 'skeletonloader',                  // inline-block
 ]);
 
 /**

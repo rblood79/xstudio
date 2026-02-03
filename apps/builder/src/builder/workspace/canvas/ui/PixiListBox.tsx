@@ -455,8 +455,8 @@ export const PixiListBox = memo(function PixiListBox({
   // 🚀 Phase 8: 주 컨테이너 layout (iframe CSS와 동기화)
   // CSS: .react-aria-ListBox { display: flex; flex-direction: column; padding: var(--spacing-xs); gap: var(--spacing-2xs); }
   const containerLayout = useMemo(() => ({
-    display: 'flex',
-    flexDirection: 'column',
+    display: 'flex' as const,
+    flexDirection: 'column' as const,
     width: containerLayoutWidth,
     height: containerLayoutHeight,
     padding: sizePreset.containerPadding,
@@ -464,7 +464,7 @@ export const PixiListBox = memo(function PixiListBox({
     // 콘텐츠 크기에 맞춤 (부모 flex에서 늘어나지 않도록)
     flexGrow: 0,
     flexShrink: 0,
-    alignSelf: 'flex-start',
+    alignSelf: 'flex-start' as const,
   }), [containerLayoutWidth, containerLayoutHeight, sizePreset.containerPadding, sizePreset.gap]);
 
   // 🚀 Phase 12: 아이템 목록 컨테이너 레이아웃

@@ -214,7 +214,7 @@ export const KitVariableSchema = z.object({
   name: z.string().min(1),
   type: z.enum(['color', 'string', 'number']),
   defaultValue: z.union([z.string(), z.number()]),
-  themeOverrides: z.record(z.union([z.string(), z.number()])).optional(),
+  themeOverrides: z.record(z.string(), z.union([z.string(), z.number()])).optional(),
   description: z.string().optional(),
   group: z.string().optional(),
   tokenRef: z.string().optional(),
@@ -232,7 +232,7 @@ export const KitTokenSchema = z.object({
 export const KitElementSchema = z.object({
   localId: z.string().min(1),
   tag: z.string().min(1),
-  props: z.record(z.unknown()),
+  props: z.record(z.string(), z.unknown()),
   parentLocalId: z.string().nullable(),
   orderNum: z.number(),
   componentRole: z.enum(['master', 'instance']).optional(),

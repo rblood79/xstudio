@@ -340,8 +340,8 @@ export const PixiCheckboxGroup = memo(function PixiCheckboxGroup({
 
   // 🚀 Phase 11: CSS 변수 기반 gap
   const itemsLayout = useMemo(() => ({
-    display: 'flex',
-    flexDirection: isHorizontal ? 'row' : 'column',
+    display: 'flex' as const,
+    flexDirection: (isHorizontal ? 'row' : 'column') as 'row' | 'column',
     gap: isHorizontal ? 0 : sizePreset.gap,
   }), [isHorizontal, sizePreset.gap]);
 
@@ -349,10 +349,10 @@ export const PixiCheckboxGroup = memo(function PixiCheckboxGroup({
   // CSS: .react-aria-CheckboxGroup { display: flex; flex-direction: column; gap: var(--gap); }
   // CSS block 요소는 기본적으로 width: 100%
   const groupLayout = useMemo(() => ({
-    display: 'flex',
-    flexDirection: 'column',
+    display: 'flex' as const,
+    flexDirection: 'column' as const,
     gap: sizePreset.gap,
-    width: '100%',
+    width: '100%' as unknown as number,
   }), [sizePreset.gap]);
 
   // 🚀 Phase 11: 전체 그룹 크기 계산 (hitArea용) - CSS 변수 기반

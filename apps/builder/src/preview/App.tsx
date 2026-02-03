@@ -11,6 +11,7 @@ import { CanvasRouter, setGlobalNavigate } from './router';
 import { MessageHandler, messageSender } from './messaging';
 import { useNavigate } from 'react-router-dom';
 import { rendererMap } from "@xstudio/shared/renderers";
+import type { RenderContext as SharedRenderContext } from "@xstudio/shared/types";
 import type { PreviewElement, RenderContext } from './types';
 import type { RuntimeElement } from './store/types';
 import { EventEngine } from '../utils/events/eventEngine';
@@ -286,7 +287,7 @@ function CanvasContent() {
     // rendererMap에서 해당 태그의 렌더러 찾기
     const renderer = rendererMap[el.tag];
     if (renderer) {
-      return renderer(el, renderContext);
+      return renderer(el, renderContext as unknown as SharedRenderContext);
     }
 
     // 렌더러가 없으면 기본 HTML 렌더링
@@ -385,7 +386,7 @@ function CanvasContent() {
     // rendererMap에서 렌더러가 있으면 사용
     const renderer = rendererMap[el.tag];
     if (renderer) {
-      return renderer(el, renderContext);
+      return renderer(el, renderContext as unknown as SharedRenderContext);
     }
 
     return React.createElement(
@@ -412,7 +413,7 @@ function CanvasContent() {
     // rendererMap에서 렌더러가 있으면 사용
     const renderer = rendererMap[el.tag];
     if (renderer) {
-      return renderer(el, renderContext);
+      return renderer(el, renderContext as unknown as SharedRenderContext);
     }
 
     return React.createElement(

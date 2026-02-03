@@ -9,6 +9,7 @@
  */
 
 import type { Element } from '../../../../types/core/store.types';
+import { getBadgeSizePreset } from '../utils/cssVariableReader';
 
 // ============================================
 // Types
@@ -89,6 +90,39 @@ export interface LayoutStyle {
  * - `${number}`: 숫자 문자열
  */
 export type LayoutNumberValue = number | `${number}%` | `${number}`;
+
+// ============================================
+// Badge Text Measurement
+// ============================================
+
+/** Canvas 2D 측정 컨텍스트 (싱글톤) */
+let badgeMeasureCanvas: HTMLCanvasElement | null = null;
+let badgeMeasureContext: CanvasRenderingContext2D | null = null;
+
+/**
+ * Badge 텍스트 너비 측정
+ *
+ * PixiBadge의 measureTextSize와 동일한 결과를 반환하기 위해
+ * Canvas 2D measureText 사용
+ */
+function measureBadgeTextWidth(text: string, fontSize: number): number {
+  if (!text) return 0;
+
+  if (!badgeMeasureContext) {
+    badgeMeasureCanvas = document.createElement('canvas');
+    badgeMeasureContext = badgeMeasureCanvas.getContext('2d');
+  }
+
+  if (!badgeMeasureContext) {
+    // Canvas 미지원 환경: 추정값 사용
+    return text.length * (fontSize * 0.6);
+  }
+
+  // PixiBadge와 동일한 폰트 설정
+  const fontFamily = 'Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif';
+  badgeMeasureContext.font = `${fontSize}px ${fontFamily}`;
+  return badgeMeasureContext.measureText(text).width;
+}
 
 // ============================================
 // CSS Value Parsing
@@ -248,6 +282,29 @@ export function styleToLayout(
   const height = parse(style.height);
   if (width !== undefined) layout.width = width;
   if (height !== undefined) layout.height = height;
+
+  // 🚀 Badge/Tag/Chip: 명시적 width/height가 없으면 자체 크기 계산
+  // PixiBadge와 동일한 방식으로 계산하여 Yoga 레이아웃에 전달
+  const tag = element.tag?.toLowerCase() ?? '';
+  const isBadgeType = tag === 'badge' || tag === 'tag' || tag === 'chip';
+  if (isBadgeType) {
+    const props = element.props as Record<string, unknown> | undefined;
+    const size = (props?.size as string) ?? 'md';
+    const sizePreset = getBadgeSizePreset(size);
+
+    // width 자동 계산 (명시적 width가 없을 때만)
+    if (width === undefined) {
+      const badgeText = String(props?.children ?? props?.text ?? props?.label ?? '');
+      const textWidth = measureBadgeTextWidth(badgeText, sizePreset.fontSize);
+      const badgeWidth = Math.max(sizePreset.minWidth, textWidth + sizePreset.paddingX * 2);
+      layout.width = Math.ceil(badgeWidth);
+    }
+
+    // height 자동 계산 (명시적 height가 없을 때만)
+    if (height === undefined) {
+      layout.height = sizePreset.height;
+    }
+  }
 
   const minWidth = parse(style.minWidth);
   const minHeight = parse(style.minHeight);

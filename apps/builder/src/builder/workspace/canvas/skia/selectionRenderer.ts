@@ -10,7 +10,7 @@
  * @see docs/WASM.md §5.11
  */
 
-import type { CanvasKit, Canvas } from 'canvaskit-wasm';
+import type { CanvasKit, Canvas, FontMgr } from 'canvaskit-wasm';
 import { SkiaDisposable } from './disposable';
 import type { BoundingBox } from '../selection/types';
 import { HANDLE_SIZE, HANDLE_CONFIGS } from '../selection/types';
@@ -23,6 +23,16 @@ import { HANDLE_SIZE, HANDLE_CONFIGS } from '../selection/types';
 const SELECTION_R = 0x3b / 255; // 0.231
 const SELECTION_G = 0x82 / 255; // 0.510
 const SELECTION_B = 0xf6 / 255; // 0.965
+
+/** Dimension 레이블 설정 */
+const DIMENSION_LABEL_FONT_SIZE = 11;      // 화면상 폰트 크기 (px)
+const DIMENSION_LABEL_PADDING_X = 6;       // 레이블 수평 패딩
+const DIMENSION_LABEL_PADDING_Y = 3;       // 레이블 수직 패딩
+const DIMENSION_LABEL_OFFSET_Y = 8;        // 선택 박스 하단으로부터의 오프셋
+const DIMENSION_LABEL_BG_R = 0x51 / 255;   // 배경색 (#51a2ff)
+const DIMENSION_LABEL_BG_G = 0xa2 / 255;
+const DIMENSION_LABEL_BG_B = 0xff / 255;
+const DIMENSION_LABEL_BORDER_RADIUS = 4;   // 배경 둥근 모서리
 
 // ============================================
 // Types
@@ -123,6 +133,135 @@ export function renderTransformHandles(
       canvas.drawRect(rect, fillPaint);
       canvas.drawRect(rect, strokePaint);
     }
+  } finally {
+    scope.dispose();
+  }
+}
+
+// ============================================
+// Dimension Labels (치수 표시)
+// ============================================
+
+/**
+ * 선택된 요소의 크기(width × height)를 선택 박스 하단에 표시한다.
+ *
+ * Figma 스타일: 파란 배경의 둥근 레이블에 흰색 텍스트.
+ * 씬-로컬 좌표계에서 호출되며, fontSize/padding은 1/zoom으로 스케일하여
+ * 화면상 일정한 크기를 유지한다.
+ */
+export function renderDimensionLabels(
+  ck: CanvasKit,
+  canvas: Canvas,
+  bounds: BoundingBox,
+  zoom: number,
+  fontMgr?: FontMgr,
+): void {
+  // fontMgr 없으면 텍스트 렌더링 불가 — 박스만 표시
+  if (!fontMgr) {
+    // 폰트 매니저 없이 배경 박스만 렌더링
+    const scope = new SkiaDisposable();
+    try {
+      const invZoom = 1 / zoom;
+      const paddingX = DIMENSION_LABEL_PADDING_X * invZoom;
+      const paddingY = DIMENSION_LABEL_PADDING_Y * invZoom;
+      const offsetY = DIMENSION_LABEL_OFFSET_Y * invZoom;
+      const borderRadius = DIMENSION_LABEL_BORDER_RADIUS * invZoom;
+
+      // 대략적인 텍스트 크기 추정 (폰트 없이)
+      const width = Math.round(bounds.width);
+      const height = Math.round(bounds.height);
+      const charCount = `${width} × ${height}`.length;
+      const estimatedTextWidth = charCount * DIMENSION_LABEL_FONT_SIZE * 0.6 * invZoom;
+      const estimatedTextHeight = DIMENSION_LABEL_FONT_SIZE * invZoom;
+
+      const labelWidth = estimatedTextWidth + paddingX * 2;
+      const labelHeight = estimatedTextHeight + paddingY * 2;
+      const labelX = bounds.x + bounds.width / 2 - labelWidth / 2;
+      const labelY = bounds.y + bounds.height + offsetY;
+
+      const bgPaint = scope.track(new ck.Paint());
+      bgPaint.setAntiAlias(true);
+      bgPaint.setStyle(ck.PaintStyle.Fill);
+      bgPaint.setColor(ck.Color4f(DIMENSION_LABEL_BG_R, DIMENSION_LABEL_BG_G, DIMENSION_LABEL_BG_B, 1));
+
+      const rrect = ck.RRectXY(
+        ck.LTRBRect(labelX, labelY, labelX + labelWidth, labelY + labelHeight),
+        borderRadius,
+        borderRadius,
+      );
+      canvas.drawRRect(rrect, bgPaint);
+    } finally {
+      scope.dispose();
+    }
+    return;
+  }
+
+  const scope = new SkiaDisposable();
+  try {
+    const invZoom = 1 / zoom;
+
+    // 화면상 고정 크기를 위한 스케일 적용
+    const fontSize = DIMENSION_LABEL_FONT_SIZE * invZoom;
+    const paddingX = DIMENSION_LABEL_PADDING_X * invZoom;
+    const paddingY = DIMENSION_LABEL_PADDING_Y * invZoom;
+    const offsetY = DIMENSION_LABEL_OFFSET_Y * invZoom;
+    const borderRadius = DIMENSION_LABEL_BORDER_RADIUS * invZoom;
+
+    // 치수 텍스트 생성 (소수점 없이 정수로 표시)
+    const width = Math.round(bounds.width);
+    const height = Math.round(bounds.height);
+    const dimensionText = `${width} × ${height}`;
+
+    // Font + Paint를 사용한 직접 텍스트 렌더링
+    const typeface = fontMgr.matchFamilyStyle('Pretendard', {
+      weight: ck.FontWeight.Normal,
+      width: ck.FontWidth.Normal,
+      slant: ck.FontSlant.Upright,
+    });
+
+    if (!typeface) {
+      console.warn('[renderDimensionLabels] typeface not found');
+      return;
+    }
+
+    const font = scope.track(new ck.Font(typeface, fontSize));
+    font.setSubpixel(true);
+
+    // 텍스트 너비 측정 (glyphWidths 합산)
+    const glyphIds = font.getGlyphIDs(dimensionText);
+    const glyphWidths = font.getGlyphWidths(glyphIds);
+    const textWidth = glyphWidths.reduce((sum, w) => sum + w, 0);
+    const textHeight = fontSize;
+
+    // 레이블 배경 크기 및 위치 계산
+    const labelWidth = textWidth + paddingX * 2;
+    const labelHeight = textHeight + paddingY * 2;
+    const labelX = bounds.x + bounds.width / 2 - labelWidth / 2;
+    const labelY = bounds.y + bounds.height + offsetY;
+
+    // 배경 RRect (둥근 모서리 사각형)
+    const bgPaint = scope.track(new ck.Paint());
+    bgPaint.setAntiAlias(true);
+    bgPaint.setStyle(ck.PaintStyle.Fill);
+    bgPaint.setColor(ck.Color4f(DIMENSION_LABEL_BG_R, DIMENSION_LABEL_BG_G, DIMENSION_LABEL_BG_B, 1));
+
+    const rrect = ck.RRectXY(
+      ck.LTRBRect(labelX, labelY, labelX + labelWidth, labelY + labelHeight),
+      borderRadius,
+      borderRadius,
+    );
+    canvas.drawRRect(rrect, bgPaint);
+
+    // 텍스트 Paint (흰색)
+    const textPaint = scope.track(new ck.Paint());
+    textPaint.setAntiAlias(true);
+    textPaint.setStyle(ck.PaintStyle.Fill);
+    textPaint.setColor(ck.Color4f(1, 1, 1, 1));
+
+    // 텍스트 렌더링 (baseline 기준이므로 Y 위치 조정)
+    const textX = labelX + paddingX;
+    const textY = labelY + paddingY + fontSize * 0.85; // baseline 조정
+    canvas.drawText(dimensionText, textX, textY, textPaint, font);
   } finally {
     scope.dispose();
   }

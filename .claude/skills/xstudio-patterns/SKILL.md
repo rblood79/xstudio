@@ -82,6 +82,7 @@ XStudio Builder 애플리케이션의 코드 패턴, 규칙 및 모범 사례를
 - **[inspector-history-sync](rules/inspector-history-sync.md)** - 히스토리 동기화
 
 #### PIXI Layout (pixi-*)
+- **[pixi-border-box-model](rules/pixi-border-box-model.md)** - Border-Box 모델 크기 계산 필수
 - **[pixi-text-isleaf](rules/pixi-text-isleaf.md)** - Text isLeaf 설정
 - **[pixi-hitarea-absolute](rules/pixi-hitarea-absolute.md)** - 히트 영역 absolute 위치
 - **[pixi-viewport-culling](rules/pixi-viewport-culling.md)** - Viewport Culling 좌표 시스템 및 부모 가시성 패턴

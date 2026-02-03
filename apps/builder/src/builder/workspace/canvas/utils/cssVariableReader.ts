@@ -924,9 +924,11 @@ const TOGGLE_BUTTON_SIZE_MAPPING: Record<string, { fontSize: string; paddingY: s
 };
 
 const TOGGLE_BUTTON_FALLBACKS: Record<string, ToggleButtonSizePreset> = {
-  sm: { fontSize: 14, paddingY: 4, paddingX: 12, borderRadius: 6 },
-  md: { fontSize: 16, paddingY: 8, paddingX: 20, borderRadius: 8 },
-  lg: { fontSize: 18, paddingY: 12, paddingX: 24, borderRadius: 10 },
+  // @sync ToggleButton.css [data-size] padding 값과 일치해야 함
+  // Button.css와 동일한 padding 사용: sm=4/12, md=8/24, lg=12/32
+  sm: { fontSize: 14, paddingY: 4, paddingX: 12, borderRadius: 6 },   // --spacing, --spacing-md
+  md: { fontSize: 16, paddingY: 8, paddingX: 24, borderRadius: 8 },   // --spacing-sm, --spacing-xl
+  lg: { fontSize: 18, paddingY: 12, paddingX: 32, borderRadius: 10 }, // --spacing-md, --spacing-2xl
 };
 
 /**

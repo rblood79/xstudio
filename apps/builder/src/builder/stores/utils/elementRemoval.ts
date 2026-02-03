@@ -9,6 +9,8 @@ import { reorderElements } from "./elementReorder";
 import type { ElementsState } from "../elements";
 // 🚀 Phase 11: Feature Flags for WebGL-only mode
 import { isWebGLCanvas, isCanvasCompareMode } from "../../../utils/featureFlags";
+// 🚀 Skia 레지스트리 동기화 — React useEffect cleanup 지연 문제 해결
+import { unregisterSkiaNode } from "../../workspace/canvas/skia/useSkiaNode";
 
 type SetState = Parameters<StateCreator<ElementsState>>[0];
 type GetState = Parameters<StateCreator<ElementsState>>[1];
@@ -375,6 +377,14 @@ export const createRemoveElementAction =
       (id: string) => !removeSet.has(id)
     );
     const hasSelectedIdsChanged = filteredSelectedIds.length !== currentState.selectedElementIds.length;
+
+    // 🚀 Skia 레지스트리에서 삭제된 요소들 즉시 제거
+    // React useEffect cleanup은 비동기로 지연될 수 있어 잔상이 남는 문제 발생
+    // Store 업데이트 전에 먼저 Skia 레지스트리를 정리하여 다음 렌더 프레임에서
+    // 삭제된 요소가 화면에 남아있지 않도록 함
+    for (const id of elementIdsToRemove) {
+      unregisterSkiaNode(id);
+    }
 
     set({
       elements: filteredElements,

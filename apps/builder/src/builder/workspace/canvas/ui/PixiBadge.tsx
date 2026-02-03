@@ -29,6 +29,7 @@ import {
   getBadgeColorPreset,
 } from "../utils/cssVariableReader";
 import { drawBox } from "../utils";
+import { measureTextWidth as measureTextWidthCanvas } from "../layout/engines/utils";
 
 // ============================================
 // Types
@@ -57,6 +58,24 @@ function measureTextSize(text: string, style: TextStyle): { width: number; heigh
   const bounds = textView.getLocalBounds();
   textView.destroy({ children: true });
   return { width: bounds.width, height: bounds.height };
+}
+
+/**
+ * CSS 크기 값을 숫자로 파싱
+ * 명시적 width/height가 있으면 해당 값 사용
+ */
+function parseStyleSize(value: unknown): number | undefined {
+  if (value === undefined || value === null || value === '' || value === 'auto') {
+    return undefined;
+  }
+  if (typeof value === 'number') {
+    return value;
+  }
+  if (typeof value === 'string') {
+    const num = parseFloat(value);
+    if (!isNaN(num)) return num;
+  }
+  return undefined;
 }
 
 // ============================================
@@ -168,12 +187,23 @@ export const PixiBadge = memo(function PixiBadge({
     [sizePreset.fontSize, textColor]
   );
 
+  // 🚀 텍스트 너비 측정 - Canvas 2D measureText 사용 (BlockEngine과 동일)
+  // PixiButton과 동일한 방식으로 display:block에서도 정확한 레이아웃 보장
+  const textWidth = useMemo(() => {
+    if (isDot || !badgeText) return 0;
+    const fontFamily = "Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif";
+    return measureTextWidthCanvas(badgeText, sizePreset.fontSize, fontFamily);
+  }, [isDot, badgeText, sizePreset.fontSize]);
+
+  // PixiJS 텍스트 메트릭 (렌더링 배치용 - 높이 필요)
   const textMetrics = useMemo(() => {
     if (isDot || !badgeText) return null;
     return measureTextSize(badgeText, textStyle);
   }, [isDot, badgeText, textStyle]);
 
   // 배지 크기 계산
+  // 🚀 Button과 동일한 방식: padding + textWidth + padding (border 없음)
+  // BlockEngine calculateContentWidth와 동일한 계산 결과 보장
   const badgeSize = useMemo(() => {
     if (isDot) {
       return {
@@ -182,19 +212,22 @@ export const PixiBadge = memo(function PixiBadge({
       };
     }
 
-    if (textMetrics) {
-      const width = Math.max(sizePreset.minWidth, textMetrics.width + sizePreset.paddingX * 2);
-      return {
-        width,
-        height: sizePreset.height,
-      };
-    }
+    // 명시적 width/height 파싱
+    const explicitWidth = parseStyleSize(style?.width);
+    const explicitHeight = parseStyleSize(style?.height);
+
+    // 🚀 자동 계산 크기: paddingLeft + textWidth + paddingRight
+    // Badge는 border 없음, minWidth 적용
+    const paddingLeft = sizePreset.paddingX;
+    const paddingRight = sizePreset.paddingX;
+    const minRequiredWidth = paddingLeft + textWidth + paddingRight;
+    const autoWidth = Math.max(sizePreset.minWidth, minRequiredWidth);
 
     return {
-      width: sizePreset.minWidth,
-      height: sizePreset.height,
+      width: explicitWidth ?? autoWidth,
+      height: explicitHeight ?? sizePreset.height,
     };
-  }, [isDot, sizePreset, textMetrics]);
+  }, [isDot, sizePreset, textWidth, style?.width, style?.height]);
 
   // 배지 배경 그리기
   const drawBadge = useCallback(
@@ -226,13 +259,14 @@ export const PixiBadge = memo(function PixiBadge({
   }, [element.id, onClick]);
 
   // 텍스트 위치 (중앙 정렬)
+  // 🚀 너비는 Canvas 2D textWidth 사용, 높이는 PixiJS textMetrics 사용
   const textPosition = useMemo(() => {
     if (isDot || !badgeText || !textMetrics) return { x: 0, y: 0 };
     return {
-      x: (badgeSize.width - textMetrics.width) / 2,
+      x: (badgeSize.width - textWidth) / 2,
       y: (badgeSize.height - textMetrics.height) / 2,
     };
-  }, [isDot, badgeText, badgeSize.width, badgeSize.height, textMetrics]);
+  }, [isDot, badgeText, badgeSize.width, badgeSize.height, textWidth, textMetrics]);
 
   // 🚀 Phase 19: 투명 히트 영역
   const drawHitArea = useCallback(
@@ -244,11 +278,18 @@ export const PixiBadge = memo(function PixiBadge({
     [badgeSize.width, badgeSize.height]
   );
 
+  // @pixi/layout에 크기 전달 - Yoga 레이아웃 계산용
+  const badgeLayout = useMemo(() => ({
+    width: badgeSize.width,
+    height: badgeSize.height,
+  }), [badgeSize.width, badgeSize.height]);
+
   return (
     <pixiContainer
       ref={(c: PixiContainer | null) => {
         containerRef.current = c;
       }}
+      layout={badgeLayout}
     >
       {/* 배지 배경 */}
       <pixiGraphics draw={drawBadge} />

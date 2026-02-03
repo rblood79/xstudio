@@ -92,7 +92,7 @@ function handleBlockLayout(req: Extract<WorkerRequest, { type: WorkerRequestType
   };
 
   // Transfer the positions buffer
-  (self as DedicatedWorkerGlobalScope).postMessage(response, [positions.buffer]);
+  (self as unknown as { postMessage: (msg: WorkerResponse, transfer?: Transferable[]) => void }).postMessage(response, [positions.buffer]);
 }
 
 function handleGridLayout(req: Extract<WorkerRequest, { type: WorkerRequestType.GRID_LAYOUT }>): void {
@@ -133,11 +133,11 @@ function handleGridLayout(req: Extract<WorkerRequest, { type: WorkerRequestType.
     positions,
   };
 
-  (self as DedicatedWorkerGlobalScope).postMessage(response, [positions.buffer]);
+  (self as unknown as { postMessage: (msg: WorkerResponse, transfer?: Transferable[]) => void }).postMessage(response, [positions.buffer]);
 }
 
 // ── Helper ──
 
 function respond(msg: WorkerResponse): void {
-  (self as DedicatedWorkerGlobalScope).postMessage(msg);
+  (self as unknown as { postMessage: (msg: WorkerResponse) => void }).postMessage(msg);
 }

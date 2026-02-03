@@ -19,6 +19,7 @@ import { PIXI_COMPONENTS } from '../pixiSetup';
 import { memo, useCallback, useMemo, useRef, useState } from 'react';
 import { Graphics as PixiGraphics, TextStyle } from 'pixi.js';
 import type { Element } from '../../../../types/core/store.types';
+import type { CSSStyle } from '../sprites/styleConverter';
 import {
   getPanelSizePreset,
   getPanelColorPreset,
@@ -96,21 +97,21 @@ export const PixiPanel = memo(function PixiPanel({
   // CSS: .react-aria-Panel { width: 100%; display: flex; flex-direction: column; }
   // 주의: padding 없음 - padding은 .panel-content에만 있음
   const panelLayout = useMemo(() => ({
-    display: 'flex',
-    flexDirection: 'column',
-    width: '100%',
+    display: 'flex' as const,
+    flexDirection: 'column' as const,
+    width: '100%' as unknown as number,
     // 콘텐츠 높이에 맞춤 (세로 늘어남 방지)
     flexGrow: 0,
     flexShrink: 0,
-    alignSelf: 'flex-start',
+    alignSelf: 'flex-start' as const,
   }), []);
 
   // panel-title 레이아웃
   // CSS: .panel-title { padding: var(--spacing-sm) var(--spacing-md); border-bottom: 1px solid var(--border-color); }
   const titleLayout = useMemo(() => ({
-    display: 'flex',
-    alignItems: 'flex-start',
-    width: '100%',
+    display: 'flex' as const,
+    alignItems: 'flex-start' as const,
+    width: '100%' as unknown as number,
     padding: sizePreset.titlePaddingY,
     paddingLeft: sizePreset.titlePaddingX,
     paddingRight: sizePreset.titlePaddingX,
@@ -119,10 +120,10 @@ export const PixiPanel = memo(function PixiPanel({
   // panel-content 레이아웃
   // CSS: .panel-content { padding: var(--spacing-md); flex: 1; min-height: 64px; }
   const contentLayout = useMemo(() => ({
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'flex-start',
-    width: '100%',
+    display: 'flex' as const,
+    flexDirection: 'column' as const,
+    alignItems: 'flex-start' as const,
+    width: '100%' as unknown as number,
     padding: sizePreset.contentPadding,
     flexGrow: 1,
     minHeight: sizePreset.minHeight,
@@ -130,10 +131,10 @@ export const PixiPanel = memo(function PixiPanel({
 
   // children-row 레이아웃 (가로 배치 + 줄바꿈)
   const childrenRowLayout = useMemo(() => ({
-    display: 'flex',
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    width: '100%',
+    display: 'flex' as const,
+    flexDirection: 'row' as const,
+    flexWrap: 'wrap' as const,
+    width: '100%' as unknown as number,
   }), []);
 
   // 패널 배경 그리기
@@ -226,6 +227,7 @@ export const PixiPanel = memo(function PixiPanel({
   const hasChildren = childElements && childElements.length > 0;
 
   return (
+    // @ts-expect-error - onLayout is added by @pixi/layout at runtime
     <pixiContainer layout={panelLayout} onLayout={handleLayout}>
       {/* 패널 배경 */}
       <pixiGraphics draw={drawPanel} />

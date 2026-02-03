@@ -468,6 +468,31 @@ return (
 );
 ```
 
+### 5.5 Border-Box 모델 필수 (CRITICAL)
+
+CSS의 `box-sizing: border-box`와 동일하게 WebGL 컴포넌트 크기 계산 시 **border를 반드시 포함**해야 합니다.
+
+```tsx
+// ❌ 잘못된 예시: border 누락 → Button보다 2px 작아짐
+const minRequiredHeight = paddingTop + textHeight + paddingBottom;
+
+// ✅ 올바른 예시: border-box 모델
+const borderWidth = 1; // CSS의 border 두께와 동일
+const minRequiredHeight = borderWidth + paddingTop + textHeight + paddingBottom + borderWidth;
+```
+
+**왜 중요한가?**
+- CSS `border-box`에서 `height`는 border + padding + content를 포함
+- WebGL에서 border를 누락하면 iframe과 크기가 달라짐
+- 예: Button(26px) vs ToggleButton(24px) → 2px 차이 = border 상하 1px씩 누락
+
+**체크리스트:**
+1. CSS 파일에서 해당 컴포넌트의 border 스타일 확인
+2. 크기 계산 시 4방향 border를 모두 포함
+3. 유사 컴포넌트와 높이 비교하여 검증
+
+**참조 구현:** `PixiButton.tsx:284`
+
 ---
 
 ## 6. 컴포넌트별 CSS 매핑 상세

@@ -7,6 +7,81 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed - WebGL 스타일/프로퍼티 변경 즉시 반영 안 되는 문제 수정 (2026-02-03)
+
+#### 개요
+우측 스타일 패널이나 프로퍼티 패널에서 값을 변경했을 때 WebGL/Skia 캔버스에 즉시 반영되지 않고, 화면 위치 이동(pan/zoom)이나 새로고침 후에야 반영되던 문제 수정
+
+#### 버그 원인
+`ElementSprite.tsx`의 `skiaNodeData` useMemo 의존성 배열에 `style`과 `props`가 누락되어 있었음
+
+```typescript
+// 수정 전: effectiveElement 참조만 비교
+const skiaNodeData = useMemo(() => {
+  const style = effectiveElement.props?.style;
+  // ...
+}, [effectiveElement, spriteType]);  // ⚠️ style 변경 감지 안 됨
+```
+
+`effectiveElement` 객체 참조가 같으면 내부 `props.style`이 변경되어도 useMemo가 캐시된 값을 반환하여 Skia 렌더 데이터가 업데이트되지 않음
+
+#### 수정 내용
+useMemo 외부에서 `style`과 `props` 참조를 추출하여 의존성 배열에 추가
+
+```typescript
+// 수정 후: style/props 참조가 다르면 재계산
+const elementStyle = effectiveElement.props?.style;
+const elementProps = effectiveElement.props;
+
+const skiaNodeData = useMemo(() => {
+  const style = elementStyle as CSSStyle | undefined;
+  // ...
+}, [effectiveElement, spriteType, elementStyle, elementProps]);
+```
+
+이렇게 하면:
+1. Store에서 element.props.style이 업데이트되면 새 style 객체 생성
+2. `elementStyle` 참조가 변경됨
+3. `skiaNodeData` useMemo가 재계산되어 새 Skia 렌더 데이터 생성
+4. `useSkiaNode`의 useEffect가 재실행 → `registerSkiaNode()` 호출
+5. `registryVersion++` → Skia 렌더러가 변경 감지하여 다시 렌더링
+
+#### 참고: BoxSprite의 올바른 패턴
+동일한 문제가 `BoxSprite.tsx`에서는 발생하지 않았는데, 의존성 배열에 `style`이 포함되어 있었기 때문:
+
+```typescript
+// BoxSprite.tsx - 올바른 패턴
+const skiaNodeData = useMemo(() => {
+  // ...
+}, [transform, fill, borderRadius, borderConfig, style, skiaEffects]);  // ✅ style 포함
+```
+
+#### 영향 범위
+- 모든 요소 타입(Button, Box, Text, Image 등)의 스타일/프로퍼티 변경이 즉시 WebGL 캔버스에 반영
+- pan/zoom 없이 스타일 패널 변경 즉시 시각적 피드백 제공
+
+#### 변경된 파일
+- `apps/builder/src/.../sprites/ElementSprite.tsx` — `skiaNodeData` useMemo 의존성 배열에 `elementStyle`, `elementProps` 추가
+
+---
+
+### Added - Selection 치수 표시 기능 (2026-02-03)
+
+#### 개요
+캔버스에서 요소를 선택했을 때 선택 박스 하단에 `width × height` 치수 레이블을 표시하는 Figma 스타일 기능 추가
+
+#### 구현 내용
+- **위치**: 선택 박스 하단 중앙, 8px 오프셋
+- **스타일**: 파란 배경(`#51a2ff`) + 흰색 텍스트 + 둥근 모서리(4px)
+- **폰트**: Pretendard 11px
+- **줌 독립적**: 화면상 일정한 크기 유지 (`1/zoom` 스케일 적용)
+
+#### 변경된 파일
+- `apps/builder/src/.../skia/selectionRenderer.ts` — `renderDimensionLabels()` 함수 추가
+- `apps/builder/src/.../skia/SkiaOverlay.tsx` — Selection 렌더링 시 치수 레이블 호출
+
+---
+
 ### Fixed - Skia UI 컴포넌트 borderRadius 파싱 버그 수정 (2026-02-03)
 
 #### 개요

@@ -328,15 +328,15 @@ export const PixiRadio = memo(function PixiRadio({
   // CSS: .react-aria-RadioGroup { display: flex; flex-direction: column; gap: var(--gap); }
   // CSS block 요소는 기본적으로 width: 100%
   const groupLayout = useMemo(() => ({
-    display: 'flex',
-    flexDirection: 'column',
+    display: 'flex' as const,
+    flexDirection: 'column' as const,
     gap,
-    width: '100%',
+    width: '100%' as unknown as number,
   }), [gap]);
 
   const itemsLayout = useMemo(() => ({
-    display: 'flex',
-    flexDirection: isHorizontal ? 'row' : 'column',
+    display: 'flex' as const,
+    flexDirection: (isHorizontal ? 'row' : 'column') as 'row' | 'column',
     gap: isHorizontal ? 0 : gap,
   }), [isHorizontal, gap]);
 
