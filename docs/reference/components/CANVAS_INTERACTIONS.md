@@ -124,6 +124,27 @@ const newPanY = relativeY - (relativeY - currentPanOffset.y) * zoomRatio;
 - 줌 후: 같은 캔버스 좌표가 같은 화면 위치에 있어야 함
 - 따라서: `newPanX = relativeX - canvasX * newZoom`
 
+### 휠 줌 델타 계산 (Pencil 방식)
+
+`useViewportControl.ts`의 휠 이벤트에서 줌 델타를 Pencil 앱과 동일한 방식으로 계산합니다:
+
+```typescript
+// Pencil 방식: deltaY 클램핑 + 0.012 계수
+// ctrlKey(마우스 휠) → ±30 클램핑, metaKey(트랙패드 핀치) → ±15 클램핑
+const clampRange = e.metaKey ? 15 : 30;
+const clamped = Math.max(-clampRange, Math.min(clampRange, e.deltaY));
+const delta = clamped * -0.012;
+
+controller.zoomAtPoint(e.clientX, e.clientY, rect, delta, true);
+```
+
+| 입력 | deltaY | clamp 범위 | 줌 변화 |
+|------|--------|-----------|---------|
+| 마우스 휠 1클릭 | ~120 | ±30 | 36% |
+| 트랙패드 핀치 | ~3 | ±15 | 3.6% |
+
+> **변경 이력 (2026-02-03):** 기존 `deltaY * 0.001` (12%/클릭)에서 Pencil 방식으로 변경. 마우스 휠과 트랙패드 핀치를 구분하여 각각 최적의 줌 감도를 제공.
+
 ### 중앙 기준 줌 (zoomTo)
 
 뷰포트 중앙을 기준으로 확대/축소합니다.
@@ -519,4 +540,4 @@ CSS transform 제거 + WebGL resize(1160px)
 - [PIXI_WEBGL_INTEGRATION.md](../PIXI_WEBGL_INTEGRATION.md) - PixiJS WebGL 통합
 - [Phase 10 B1.4](../phases/PHASE_10.md) - 줌/팬 구현 스펙
 
-**최종 업데이트:** 2026-01-30
+**최종 업데이트:** 2026-02-03

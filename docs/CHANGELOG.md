@@ -7,6 +7,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed - Skia UI 컴포넌트 borderRadius 파싱 버그 수정 (2026-02-03)
+
+#### 개요
+UI 패널에서 Button 등 UI 컴포넌트의 `borderRadius`를 변경해도 Skia 캔버스에 반영되지 않는 문제 수정
+
+#### 버그 원인
+`ElementSprite.tsx`의 Skia 폴백 렌더링에서 `style.borderRadius`를 `typeof === 'number'` 체크로 직접 읽었으나, UI 패널은 값을 문자열(`"12px"`)로 저장하므로 항상 `0`으로 평가됨
+
+```typescript
+// 수정 전 (항상 br = 0)
+const { transform, fill, stroke } = convertStyle(style);
+const br = typeof style.borderRadius === 'number' ? style.borderRadius : 0;
+```
+
+#### 수정 내용
+`convertStyle()`이 이미 `parseCSSSize()`를 통해 CSS 문자열을 숫자로 올바르게 변환하므로, 그 결과를 destructuring하여 사용
+
+```typescript
+// 수정 후 (올바르게 파싱)
+const { transform, fill, stroke, borderRadius: convertedBorderRadius } = convertStyle(style);
+const br = typeof convertedBorderRadius === 'number'
+  ? convertedBorderRadius
+  : convertedBorderRadius?.[0] ?? 0;
+```
+
+#### 영향 범위
+- 모든 UI 컴포넌트(Button, Input, Checkbox, Select 등)의 Skia 폴백 렌더링에서 `borderRadius` 정상 반영
+- `backgroundColor` 없는 UI 컴포넌트의 기본 6px borderRadius 로직은 변경 없음
+
+#### 변경된 파일
+- `apps/builder/src/.../sprites/ElementSprite.tsx` — `convertStyle()` 반환값에서 `borderRadius` destructuring
+
+---
+
 ### Removed - WASM/Skia Feature Flag 환경변수 제거 (2026-02-02)
 
 5개 환경변수(`VITE_RENDER_MODE`, `VITE_WASM_SPATIAL`, `VITE_WASM_LAYOUT`, `VITE_WASM_LAYOUT_WORKER`, `VITE_SKIA_DUAL_SURFACE`)를 제거하고 값을 하드코딩하여 ~30개 조건 분기 및 dead code를 제거.

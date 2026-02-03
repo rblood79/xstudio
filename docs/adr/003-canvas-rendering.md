@@ -187,24 +187,27 @@ Yoga가 계산한 컨테이너 크기를 자식 스프라이트에 전달하는 
 
 **상세:** `apps/builder/src/.../canvas/BuilderCanvas.tsx` (LayoutContainer), `canvas/layoutContext.ts`, `canvas/sprites/ElementSprite.tsx`
 
-### 4. Dirty Rect 좌표계 불일치 수정 (Skia 콘텐츠 프레임)
+### 4. Dirty Rect 부분 렌더링 활성화 (Skia 콘텐츠 프레임)
 
-스타일 패널에서 값(backgroundColor 등)을 변경하면 캔버스에 반영되지 않고 팬(이동)해야 보이던 문제 수정:
+기존에 좌표계 불일치로 비활성화되었던 Dirty Rect 부분 렌더링을 좌표 변환 구현으로 활성화:
 
-| 항목 | 수정 전 | 수정 후 |
+| 항목 | 수정 전 (비활성화) | 수정 후 (활성화, 2026-02-03) |
 |------|---------|---------|
-| **Dirty rect 좌표** | `SkiaNodeData.x/y` (CSS/style 로컬 좌표) | 사용 안 함 (전체 렌더링) |
-| **content 프레임** | `renderContent(cullingBounds, dirtyRects)` → clipRect + 부분 렌더링 | `renderContent(cullingBounds)` → 전체 렌더링 |
-| **좌표계 일치** | dirty rect = CSS 로컬, 렌더 = 카메라 변환 후 스크린 → 불일치 | 전체 렌더링으로 좌표 무관 |
+| **Dirty rect 좌표** | CSS/style 로컬 좌표 → 카메라 변환과 불일치 | 씬-로컬 좌표 → `renderContent()`에서 카메라 변환 적용 |
+| **content 프레임** | `renderContent(cullingBounds)` → 전체 렌더링 | `renderContent(cullingBounds, camera, dirtyRects)` → clipRect 부분 렌더링 |
+| **좌표 변환** | 없음 (비활성화) | `screenRect = { x: rect.x * zoom + panX, y: rect.y * zoom + panY, ... }` |
+| **뷰포트 폴백** | 없음 | dirty rect 총 면적 > 뷰포트 30% → 전체 렌더링 폴백 (`mergeDirtyRects()`) |
 
-**근본 원인:**
-- `registerSkiaNode()`이 dirty rect를 `data.x/y` (CSS left/top)로 계산
-- `renderContent()`에서 `clipRect()`으로 이 좌표를 사용
-- 실제 렌더링은 `renderSkia()` 내부에서 `canvas.translate(cameraX, cameraY)` + `canvas.scale(cameraZoom)` 적용
-- clipRect 영역과 실제 렌더 위치가 불일치 → 변경 사항이 클립 밖에 그려져 보이지 않음
-- 팬 시 카메라 변경이 content render를 트리거하여 비로소 변경 사항 표시
+**좌표 변환 공식:**
+```
+씬-로컬 좌표 → content canvas 좌표:
+  screenRect.x = rect.x * camera.zoom + camera.panX
+  screenRect.y = rect.y * camera.zoom + camera.panY
+  screenRect.width = rect.width * camera.zoom
+  screenRect.height = rect.height * camera.zoom
+```
 
-**상세:** `apps/builder/src/.../skia/SkiaRenderer.ts`
+**상세:** `apps/builder/src/.../skia/SkiaRenderer.ts`, `apps/builder/src/.../skia/dirtyRectTracker.ts`
 
 ### 5. Skia 렌더 루프 Ticker Priority 수정 (display 전환 플리커)
 
@@ -278,18 +281,70 @@ Pencil 앱 대비 팬/줌 끊김 원인 5가지를 분석·수정:
 
 **상세:** `apps/builder/src/.../viewport/useViewportControl.ts`
 
-### 6. Camera-Only Blit 제거 → Content Render 전환
+### 6. Camera-Only Blit (비활성화 → Phase 5 대기)
+
+Camera-only blit은 올바른 아핀 변환 수학 (`snapshotCamera` 기반 누적 delta)과 Cleanup Render (200ms 디바운스)를 조합하여 구현했으나, **contentSurface가 뷰포트 크기로 고정**되어 팬 시 가장자리 콘텐츠가 클리핑되는 문제가 발생:
+
+| 항목 | camera-only blit 시도 | 최종 (content render) |
+|------|---------|---------|
+| **카메라 변경 프레임** | `camera-only` → `blitWithCameraTransform()` (~1ms) | `content` → `renderContent() + blitToMain()` (~1-3ms) |
+| **가장자리 콘텐츠** | 스냅샷 밖 영역은 배경색 노출, 200ms cleanup 후 복원 | 매 프레임 pixel-perfect 렌더링 |
+| **성능** | blit ~1ms | content ~1-3ms (트리 캐시 + AABB 컬링으로 충분히 빠름) |
+
+**비활성화 이유:** Pencil은 이 문제를 Content Render Padding (뷰포트 + 512px)으로 해결하지만, GPU 메모리 30-50% 증가 트레이드오프가 있다. 현재 XStudio의 content render 비용이 트리 캐시 덕분에 충분히 낮으므로 (~1-3ms), camera-only blit 없이도 60fps를 유지할 수 있다.
+
+**인프라 보존:** `blitWithCameraTransform()`, `snapshotCamera`, `scheduleCleanupRender()` 코드는 Phase 5 (Content Render Padding 512px) 구현 시 재활성화를 위해 보존. `classifyFrame()`에서 `'camera-only'` 대신 `'content'`를 반환하도록 변경.
+
+**상세:** `apps/builder/src/.../skia/SkiaRenderer.ts`
+
+## Update: Pencil 기반 Skia 렌더링 최적화 (2026-02-03)
+
+Pencil 앱 분석(`docs/PENCIL_APP_ANALYSIS.md` 섹션 16-19)에서 확인된 미적용 렌더링 기법을 도입:
+
+### 1. Cleanup Render (200ms 디바운스) — 인프라 보존, 비활성화
+
+Pencil의 `debouncedMoveEnd(200ms) → invalidateContent()` 패턴. Camera-only blit과 함께 사용하여 가장자리 아티팩트를 해소하는 역할.
+
+| 항목 | 설명 |
+|------|------|
+| **트리거** | camera-only 프레임 이후 `scheduleCleanupRender()` 호출 |
+| **디바운스** | 200ms — 연속 팬/줌 중에는 타이머 리셋, 정지 후 1회만 실행 |
+| **현재 상태** | camera-only blit 비활성화로 호출되지 않음. Phase 5 Content Render Padding 구현 시 재활성화 예정 |
+
+### 2. AI Flash 미세 조정
+
+Flash progress > 90%일 때 overlayVersion 증가 중단하여 불필요한 리렌더 방지.
 
 | 항목 | 수정 전 | 수정 후 |
 |------|---------|---------|
-| **카메라 변경 프레임** | `camera-only` → `blitWithCameraDelta()` (< 1ms) | `content` → `renderContent() + blitToMain()` |
-| **가장자리 클리핑** | 스냅샷 경계 밖 = 배경색 노출 (body 짤림) | 매 프레임 pixel-perfect 렌더링 |
-| **성능** | blit < 1ms, 가장자리 아티팩트 발생 | content ~1-3ms (단순 페이지), 아티팩트 없음 |
-| **제거된 코드** | `blitWithCameraDelta`, `snapshotCamera`, `needsCleanupRender` | — |
+| **flash 종료 직전** | 매 프레임 `overlayVersion++` | progress >= 0.9이면 스킵 |
+| **효과** | 리렌더 절약 (flash는 시각적으로 거의 완료된 상태) |
 
-**근본 원인:** `contentSurface`가 뷰포트 크기로 고정되어, 캐시 스냅샷을 아핀 변환으로 이동하면 스냅샷에 없던 가장자리 영역이 배경색으로 노출됨. Fix 4(트리 캐시)로 트리 빌드 비용이 ~0ms가 되었으므로 content render의 실제 비용은 Skia 드로잉 연산만 남아 성능 영향 최소.
+### 3. Pencil 스타일 줌 속도
 
-**상세:** `apps/builder/src/.../skia/SkiaRenderer.ts`
+Pencil 앱의 줌 속도와 동일하게 조정:
+
+| 항목 | 수정 전 | 수정 후 |
+|------|---------|---------|
+| **줌 계수** | `deltaY * 0.001` (12%/클릭) | `clamp(deltaY, ±30) * -0.012` (36%/클릭) |
+| **트랙패드 구분** | 없음 | `metaKey` → ±15 클램프 (트랙패드 핀치), `ctrlKey` → ±30 (마우스 휠) |
+| **체감** | Pencil 대비 3배 느림 | Pencil과 동일 |
+
+**상세:** `useViewportControl.ts`, `SkiaRenderer.ts`, `SkiaOverlay.tsx`, `dirtyRectTracker.ts`
+
+## Update: Skia UI 컴포넌트 borderRadius 파싱 수정 (2026-02-03)
+
+`ElementSprite`의 Skia 폴백 렌더링에서 `style.borderRadius`를 `typeof === 'number'`로 직접 검사하여 CSS 문자열 값(`"12px"` 등)이 항상 `0`으로 평가되던 버그 수정:
+
+| 항목 | 수정 전 | 수정 후 |
+|------|---------|---------|
+| **borderRadius 소스** | `style.borderRadius` (raw CSS 문자열) | `convertStyle(style).borderRadius` (파싱된 숫자) |
+| **파싱 방식** | `typeof === 'number'` → 문자열이면 `0` | `convertBorderRadius()` → `parseCSSSize()` |
+| **영향** | 모든 UI 컴포넌트 borderRadius가 0 또는 기본값 6px | 사용자 설정값 정상 반영 |
+
+> **Note:** `convertStyle()`은 내부적으로 `convertBorderRadius()` → `parseCSSSize()`를 호출하여 CSS 문자열을 숫자로 변환한다. BoxSprite는 이미 이 패턴을 사용하고 있었으나, ElementSprite 폴백에서는 `borderRadius`를 destructuring하지 않아 raw 문자열을 직접 읽고 있었다. 이는 §4.7.4 "typeof === 'number' 금지 패턴"에 해당하는 버그였다.
+
+**상세:** `apps/builder/src/.../sprites/ElementSprite.tsx`
 
 ## Implementation
 

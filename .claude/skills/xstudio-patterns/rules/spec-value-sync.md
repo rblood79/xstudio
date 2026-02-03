@@ -53,12 +53,31 @@ md: { paddingLeft: 24, paddingRight: 24, borderWidth: 1 }  // 일치
 - `parseBoxModel()` → padding/border 기본값 제공 (BUTTON_SIZE_CONFIG 또는 inline)
 - `BlockEngine` → `contentWidth + padding + border` = 정확한 한 번 계산
 
+## Skia 폴백 렌더링 주의사항
+
+`ElementSprite.tsx`의 Skia 폴백 경로에서 시각 전용 속성(`borderRadius`, `borderColor` 등)을 읽을 때는
+반드시 `convertStyle()`의 반환값을 사용해야 합니다. `style.borderRadius`는 UI 패널에서 CSS 문자열
+(`"12px"`)로 저장되므로, `typeof === 'number'` 직접 체크 시 항상 `0`이 됩니다.
+
+```typescript
+// ❌ 금지: raw style 직접 typeof 체크
+const br = typeof style.borderRadius === 'number' ? style.borderRadius : 0;
+
+// ✅ 필수: convertStyle() 반환값 사용
+const { borderRadius: convertedBorderRadius } = convertStyle(style);
+const br = typeof convertedBorderRadius === 'number'
+  ? convertedBorderRadius : convertedBorderRadius?.[0] ?? 0;
+```
+
+> Yoga가 변환하는 레이아웃 속성(width, height, padding)과 달리, `borderRadius`는 시각 전용이므로 Yoga를 거치지 않고 CSS 문자열 형태로 남아 있다.
+
 ## 체크리스트
 
 값 수정 시 반드시 확인:
 - [ ] `packages/specs/src/components/[Component].spec.ts`
 - [ ] `apps/builder/.../engines/utils.ts` (`BUTTON_SIZE_CONFIG` 등 내부 상수)
 - [ ] `apps/builder/.../canvas/ui/Pixi[Component].tsx` (self-rendering 기본값)
+- [ ] `apps/builder/.../sprites/ElementSprite.tsx` (Skia 폴백 — `convertStyle()` 사용 필수)
 - [ ] CSS 파일의 토큰/변수
 - [ ] `pnpm --filter @xstudio/specs build` 실행
 

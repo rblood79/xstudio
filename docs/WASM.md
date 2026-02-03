@@ -2106,6 +2106,12 @@ renderSkia(canvas: Canvas, cullingBounds: DOMRect): void {
 > `VARIANT_BORDER_COLORS` 상수 테이블에서 배경색·알파·테두리색을 결정한다.
 > outline/ghost variant는 `bgAlpha=0`(투명), ghost는 테두리도 없음.
 > inline `style.backgroundColor`가 있으면 variant 매핑보다 우선.
+>
+> **UI 컴포넌트 borderRadius 파싱** (2026-02-03 수정):
+> `ElementSprite`의 Skia 폴백에서 `borderRadius`는 `convertStyle()`의 반환값을 사용하여 파싱한다.
+> `style.borderRadius`는 UI 패널에서 문자열(`"12px"`)로 저장되므로, `typeof === 'number'` 직접 체크 시
+> 항상 `0`이 되는 버그가 있었다. `convertStyle()` → `convertBorderRadius()` → `parseCSSSize()`
+> 경로를 통해 올바르게 숫자로 변환된 값을 사용해야 한다.
 
 ### 5.4 SkiaRenderer 렌더 루프
 

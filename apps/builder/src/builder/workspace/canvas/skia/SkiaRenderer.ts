@@ -6,8 +6,9 @@
  *
  * 프레임 분류:
  * - idle: 변경 없음 → 렌더링 스킵 (0ms)
- * - content: 요소 또는 카메라 변경 → 전체 렌더링 후 블리팅
- * - full: 리사이즈/첫 프레임 → 전체 재렌더링
+ * - camera-only: 카메라만 변경 → 캐시 blit + 아핀 변환 (~1ms)
+ * - content: 요소 변경 → dirty rect 부분 렌더링 후 블리팅
+ * - full: 리사이즈/첫 프레임/cleanup → 전체 재렌더링
  *
  * @see docs/WASM.md §5.10, §6.1, §6.2
  */
@@ -42,6 +43,14 @@ export class SkiaRenderer {
   private lastRegistryVersion = -1;
   /** 프레임 분류용 — 매 프레임 갱신 */
   private lastCamera: CameraState = { zoom: 1, panX: 0, panY: 0 };
+  /** 스냅샷 캡처 시점의 카메라 — camera-only blit 델타 기준점 */
+  private snapshotCamera: CameraState = { zoom: 1, panX: 0, panY: 0 };
+
+  // ============================================
+  // Cleanup Render (Pencil debouncedMoveEnd 패턴)
+  // ============================================
+  private cleanupTimer: ReturnType<typeof setTimeout> | null = null;
+  private needsCleanupRender = false;
 
   constructor(
     ck: CanvasKit,
@@ -73,10 +82,12 @@ export class SkiaRenderer {
   /**
    * 프레임을 분류하여 최적 렌더 경로를 결정한다.
    *
-   * 카메라 변경 시에도 content render를 수행하여
-   * 뷰포트 가장자리의 클리핑 아티팩트를 방지한다.
-   * Fix 5(트리 캐시)로 트리 빌드 비용은 ~0ms이므로
-   * content render의 실제 비용은 Skia 드로잉 연산만 남는다.
+   * 현재: camera-only blit은 비활성화 (contentSurface가 뷰포트 크기로
+   * 가장자리 클리핑 발생). Content Render Padding (Phase 5) 구현 시 재활성화.
+   *
+   * Cleanup Render/camera-only blit 인프라는 Phase 5 대비 보존:
+   * - blitWithCameraTransform(): snapshotCamera 기반 아핀 변환
+   * - scheduleCleanupRender(): 200ms 디바운스 full quality 재렌더링
    */
   private classifyFrame(
     registryVersion: number,
@@ -84,16 +95,46 @@ export class SkiaRenderer {
   ): FrameType {
     if (this.contentDirty) return 'full';
 
+    // Cleanup render — 모션 종료 후 200ms 디바운스 full quality 재렌더링
+    if (this.needsCleanupRender) {
+      this.needsCleanupRender = false;
+      return 'full';
+    }
+
     const registryChanged = registryVersion !== this.lastRegistryVersion;
     const cameraChanged =
       camera.zoom !== this.lastCamera.zoom ||
       camera.panX !== this.lastCamera.panX ||
       camera.panY !== this.lastCamera.panY;
 
-    if (registryChanged || cameraChanged) {
+    if (registryChanged) {
+      return 'content';
+    }
+    if (cameraChanged) {
+      // camera-only blit은 contentSurface가 뷰포트 크기이므로
+      // 스냅샷에 없는 가장자리 영역이 배경색으로 노출되는 문제가 있다.
+      // Content Render Padding (Phase 5, 512px) 구현 전까지는
+      // 카메라 변경 시에도 content render를 수행한다.
+      // 트리 캐시(~0ms)와 AABB 컬링으로 content render 비용이
+      // 충분히 낮아(~1-3ms) 실용적 영향 없음.
       return 'content';
     }
     return 'idle';
+  }
+
+  /**
+   * Cleanup render를 200ms 후로 예약한다.
+   *
+   * Pencil의 debouncedMoveEnd(200ms) → invalidateContent() 패턴.
+   * 카메라 모션/콘텐츠 변경 종료 후 full quality 재렌더링으로
+   * camera-only blit의 가장자리 아티팩트를 보정한다.
+   */
+  private scheduleCleanupRender(): void {
+    if (this.cleanupTimer) clearTimeout(this.cleanupTimer);
+    this.cleanupTimer = setTimeout(() => {
+      this.needsCleanupRender = true;
+      this.cleanupTimer = null;
+    }, 200);
   }
 
   /**
@@ -122,16 +163,23 @@ export class SkiaRenderer {
   /**
    * Content Surface에 씬을 렌더링한다.
    *
-   * dirtyRects가 있으면 해당 영역만 clipRect로 잘라서 부분 렌더링.
+   * dirtyRects가 있으면 카메라 좌표로 변환 후 해당 영역만 clipRect로 부분 렌더링.
    * 없으면 전체 렌더링.
+   *
+   * Phase 3: dirty rect 좌표를 씬-로컬 → content canvas 공간으로 변환하여
+   * 부분 렌더링의 좌표계 불일치를 해결한다.
    */
   private renderContent(
     cullingBounds: DOMRect,
+    camera: CameraState,
     dirtyRects?: DirtyRect[],
   ): void {
     if (!this.contentCanvas || !this.contentSurface || !this.rootNode) return;
 
     const start = performance.now();
+
+    // 뷰포트 면적 기반 폴백: dirty 면적이 30% 초과 시 전체 렌더
+    const viewportArea = (this.mainSurface.width() / this.dpr) * (this.mainSurface.height() / this.dpr);
 
     if (!dirtyRects || dirtyRects.length === 0 || this.contentDirty) {
       // 전체 콘텐츠 렌더링
@@ -141,36 +189,52 @@ export class SkiaRenderer {
       this.rootNode.renderSkia(this.contentCanvas, cullingBounds);
       this.contentCanvas.restore();
     } else {
-      // Dirty Rect 부분 렌더링
-      const merged = mergeDirtyRects(dirtyRects);
-      for (const rect of merged) {
+      // Dirty Rect 부분 렌더링 — 좌표 변환 후 적용
+      const merged = mergeDirtyRects(dirtyRects, 16, viewportArea);
+      if (merged.length === 0) {
+        // 뷰포트 30% 초과 → 전체 렌더 폴백
+        this.contentCanvas.clear(this.backgroundColor);
         this.contentCanvas.save();
         this.contentCanvas.scale(this.dpr, this.dpr);
-
-        // dirty 영역 클리핑
-        const skRect = this.ck.LTRBRect(
-          rect.x,
-          rect.y,
-          rect.x + rect.width,
-          rect.y + rect.height,
-        );
-        this.contentCanvas.clipRect(
-          skRect,
-          this.ck.ClipOp.Intersect,
-          false,
-        );
-
-        // dirty 영역 초기화 + 재렌더링
-        this.contentCanvas.clear(this.backgroundColor);
-        const dirtyBounds = new DOMRect(
-          rect.x,
-          rect.y,
-          rect.width,
-          rect.height,
-        );
-        this.rootNode.renderSkia(this.contentCanvas, dirtyBounds);
-
+        this.rootNode.renderSkia(this.contentCanvas, cullingBounds);
         this.contentCanvas.restore();
+      } else {
+        for (const rect of merged) {
+          // 씬-로컬 좌표 → content canvas 좌표 (카메라 변환 적용)
+          const screenRect = {
+            x: rect.x * camera.zoom + camera.panX,
+            y: rect.y * camera.zoom + camera.panY,
+            width: rect.width * camera.zoom,
+            height: rect.height * camera.zoom,
+          };
+
+          this.contentCanvas.save();
+          this.contentCanvas.scale(this.dpr, this.dpr);
+
+          const skRect = this.ck.LTRBRect(
+            screenRect.x,
+            screenRect.y,
+            screenRect.x + screenRect.width,
+            screenRect.y + screenRect.height,
+          );
+          this.contentCanvas.clipRect(
+            skRect,
+            this.ck.ClipOp.Intersect,
+            false,
+          );
+
+          // dirty 영역 초기화 + 재렌더링
+          this.contentCanvas.clear(this.backgroundColor);
+          const dirtyBounds = new DOMRect(
+            rect.x,
+            rect.y,
+            rect.width,
+            rect.height,
+          );
+          this.rootNode.renderSkia(this.contentCanvas, dirtyBounds);
+
+          this.contentCanvas.restore();
+        }
       }
     }
 
@@ -178,6 +242,7 @@ export class SkiaRenderer {
     this.contentSnapshot?.delete();
     this.contentSurface.flush();
     this.contentSnapshot = this.contentSurface.makeImageSnapshot();
+    this.snapshotCamera = { ...camera }; // camera-only blit 델타 기준점 갱신
     this.contentDirty = false;
 
     recordWasmMetric('skiaFrameTime', performance.now() - start);
@@ -198,11 +263,43 @@ export class SkiaRenderer {
   }
 
   /**
+   * Phase 4: 카메라만 변경된 프레임에서 캐시된 스냅샷에 아핀 변환만 적용한다.
+   *
+   * content re-render 없이 이전 스냅샷을 카메라 델타만큼 이동/스케일하여
+   * ~1ms 이내로 프레임을 완성한다.
+   * 가장자리 아티팩트는 Cleanup Render(Phase 1)로 200ms 후 보정된다.
+   */
+  private blitWithCameraTransform(camera: CameraState): void {
+    if (!this.contentSnapshot) return;
+
+    this.mainCanvas.clear(this.backgroundColor);
+    this.mainCanvas.save();
+
+    // 스냅샷 픽셀 (px, py) → 새 위치로 변환:
+    //   oldPixelX = (sceneX * oldZoom + oldPanX) * dpr
+    //   newPixelX = (sceneX * newZoom + newPanX) * dpr
+    // canvas.translate(tx, ty) → canvas.scale(r, r) 적용 시:
+    //   newPixelX = oldPixelX * r + tx
+    //   tx = (newPanX - oldPanX * r) * dpr
+    const zoomRatio = camera.zoom / this.snapshotCamera.zoom;
+    const tx = (camera.panX - this.snapshotCamera.panX * zoomRatio) * this.dpr;
+    const ty = (camera.panY - this.snapshotCamera.panY * zoomRatio) * this.dpr;
+
+    this.mainCanvas.translate(tx, ty);
+    this.mainCanvas.scale(zoomRatio, zoomRatio);
+
+    this.mainCanvas.drawImage(this.contentSnapshot, 0, 0);
+    this.mainCanvas.restore();
+    this.mainSurface.flush();
+  }
+
+  /**
    * 이중 Surface 모드로 한 프레임을 렌더링한다.
    *
    * 프레임 분류에 따라 최소 작업만 수행:
    * - idle → 스킵
-   * - content → renderContent() + blitToMain()
+   * - camera-only → 캐시 blit + 아핀 변환 (~1ms)
+   * - content → renderContent(dirtyRects) + blitToMain()
    * - full → renderContent(all) + blitToMain()
    */
   renderDualSurface(
@@ -229,13 +326,17 @@ export class SkiaRenderer {
       case 'idle':
         break;
 
+      case 'camera-only':
+        this.blitWithCameraTransform(camera);
+        break;
+
       case 'content':
-        this.renderContent(cullingBounds);
+        this.renderContent(cullingBounds, camera, dirtyRects);
         this.blitToMain();
         break;
 
       case 'full':
-        this.renderContent(cullingBounds);
+        this.renderContent(cullingBounds, camera);
         this.blitToMain();
         break;
     }
@@ -337,6 +438,10 @@ export class SkiaRenderer {
   dispose(): void {
     if (this.disposed) return;
     this.disposed = true;
+    if (this.cleanupTimer) {
+      clearTimeout(this.cleanupTimer);
+      this.cleanupTimer = null;
+    }
     this.disposeContentSurface();
     this.mainSurface.delete();
   }

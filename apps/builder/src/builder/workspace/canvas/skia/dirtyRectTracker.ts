@@ -43,15 +43,27 @@ function rectsOverlapWithThreshold(
  * mergeThreshold (기본 16px) 이내로 인접한 rect도 병합하여
  * 과도하게 작은 clip rect가 생성되는 것을 방지한다.
  *
+ * viewportArea가 제공되면 병합 결과의 총 면적이 뷰포트의 30%를 초과할 때
+ * 빈 배열을 반환하여 호출자가 전체 렌더링으로 폴백하도록 유도한다.
+ *
  * @param rects - 병합할 dirty rect 배열
  * @param mergeThreshold - 병합 임계값 (px, 기본 16)
- * @returns 병합된 dirty rect 배열
+ * @param viewportArea - 뷰포트 면적 (px², 선택적). 제공 시 30% 초과 폴백 활성화.
+ * @returns 병합된 dirty rect 배열 (전체 렌더 폴백 시 빈 배열)
  */
 export function mergeDirtyRects(
   rects: DirtyRect[],
   mergeThreshold = 16,
+  viewportArea?: number,
 ): DirtyRect[] {
-  if (rects.length <= 1) return rects;
+  if (rects.length <= 1) {
+    // 단일 rect도 뷰포트 비율 체크
+    if (viewportArea && rects.length === 1) {
+      const r = rects[0];
+      if (r.width * r.height > viewportArea * 0.3) return [];
+    }
+    return rects;
+  }
 
   // Y, X 순으로 정렬
   const sorted = [...rects].sort((a, b) => a.y - b.y || a.x - b.x);
@@ -66,6 +78,13 @@ export function mergeDirtyRects(
     } else {
       merged.push(current);
     }
+  }
+
+  // 병합 결과의 총 면적이 뷰포트의 30% 초과 → 전체 렌더 폴백
+  if (viewportArea) {
+    let totalArea = 0;
+    for (const r of merged) totalArea += r.width * r.height;
+    if (totalArea > viewportArea * 0.3) return [];
   }
 
   return merged;

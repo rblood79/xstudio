@@ -481,11 +481,32 @@ export function SkiaOverlay({ containerEl, backgroundColor = 0xf8fafc, app, drag
       // AI 상태 변경 감지
       // AI 이펙트가 활성 상태(generating/flash)면 매 프레임 version 증가하여
       // 애니메이션이 idle 분류로 멈추는 것을 방지한다.
+      //
+      // Phase 2 최적화: flash만 활성이고 모든 flash progress >= 0.9이면
+      // version 증가를 스킵하여 불필요한 리렌더를 방지한다.
       const aiState = useAIVisualFeedbackStore.getState();
       const currentAIActive = aiState.generatingNodes.size + aiState.flashAnimations.size;
       if (currentAIActive > 0) {
-        // 활성 애니메이션 → 매 프레임 강제 리렌더
-        overlayVersionRef.current++;
+        const hasGenerating = aiState.generatingNodes.size > 0;
+        if (hasGenerating) {
+          // generating 활성 → 매 프레임 강제 리렌더
+          overlayVersionRef.current++;
+        } else {
+          // flash만 활성 → progress 90% 이상이면 스킵
+          const now = performance.now();
+          let allNearEnd = true;
+          for (const flash of aiState.flashAnimations.values()) {
+            const elapsed = now - flash.startTime;
+            const progress = Math.min(elapsed / flash.duration, 1);
+            if (progress < 0.9) {
+              allNearEnd = false;
+              break;
+            }
+          }
+          if (!allNearEnd) {
+            overlayVersionRef.current++;
+          }
+        }
       } else if (currentAIActive !== lastAIActiveRef.current) {
         // 비활성 전환 시에도 1회 리렌더 (클린업)
         overlayVersionRef.current++;

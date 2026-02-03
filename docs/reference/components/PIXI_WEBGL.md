@@ -441,6 +441,17 @@ Skia 모드에서 PixiButton/PixiCheckbox 등 UI 컴포넌트는 PixiJS FancyBut
 > **참조:** `ElementSprite.tsx`의 `VARIANT_BG_COLORS`, `VARIANT_BG_ALPHA`, `VARIANT_BORDER_COLORS` 상수.
 > PixiJS hybrid 모드에서는 기존 `cssVariableReader.ts` → `useThemeColors` 경로가 사용된다.
 
+**borderRadius 파싱** (2026-02-03 수정):
+
+Skia 폴백 경로에서 `borderRadius`는 `convertStyle()` 반환값을 통해 파싱된다.
+`style.borderRadius`는 UI 패널에서 문자열(`"12px"`)로 저장되므로, `typeof === 'number'`로 직접 읽으면 항상 `0`이 된다.
+
+| 항목 | 수정 전 | 수정 후 |
+|------|---------|---------|
+| **소스** | `style.borderRadius` (raw CSS 문자열) | `convertStyle(style).borderRadius` (파싱된 숫자) |
+| **결과** | 항상 `0` → 직각 모서리 | 사용자 설정값 반영 |
+| **기본값** | `isUIComponent && !hasBgColor` → 6px | 변경 없음 |
+
 ### 핵심 원칙
 
 1. **Semantic Props (`variant`, `size`)**: 디자인 시스템 토큰 적용, 일관성 보장

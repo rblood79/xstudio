@@ -2967,6 +2967,26 @@ if (ENABLE_BUTTON_SPEC) {
 | % 단위 | 부모 content area 수동 계산 | Yoga가 자동 계산 |
 | 입력 형식 | CSS 문자열 ("16px", "50%") | 숫자 (px 절대값) |
 
+> **⚠️ 예외: 시각 전용 속성 (borderRadius, borderColor 등)**
+>
+> Yoga가 변환하는 것은 **레이아웃 속성**(width, height, padding, margin 등)뿐이다.
+> `borderRadius`와 같은 **시각 전용 속성**은 Yoga를 거치지 않으므로 `element.props.style`에
+> CSS 문자열 형태(`"12px"`, `"8"`)로 남아 있다.
+> `ElementSprite`의 Skia 폴백에서 이런 속성을 읽을 때는 반드시 `convertStyle()`의 반환값을
+> 사용하거나 `parseCSSSize()`로 파싱해야 한다.
+>
+> ```typescript
+> // ❌ 금지: raw style 직접 typeof 체크 (CSS 문자열이면 항상 0)
+> const br = typeof style.borderRadius === 'number' ? style.borderRadius : 0;
+>
+> // ✅ 필수: convertStyle() 반환값 사용
+> const { borderRadius: convertedBorderRadius } = convertStyle(style);
+> const br = typeof convertedBorderRadius === 'number'
+>   ? convertedBorderRadius : convertedBorderRadius?.[0] ?? 0;
+> ```
+>
+> (2026-02-03 수정: ElementSprite에서 이 패턴 위반으로 borderRadius가 반영되지 않던 버그 수정)
+
 <details>
 <summary>Phase 1-4 레거시: Pixi UI 컴포넌트 CSS 단위 해석 규칙</summary>
 

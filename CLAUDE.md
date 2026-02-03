@@ -32,7 +32,8 @@ xstudio/
 - **통신**: postMessage (Delta 동기화)
 
 ### Canvas 렌더링
-- **PixiJS 8**: WebGL 기반 캔버스
+- **CanvasKit/Skia WASM**: 메인 렌더러 (디자인 노드 + AI 이펙트 + Selection 오버레이)
+- **PixiJS 8**: 씬 그래프 + EventBoundary 이벤트 처리 전용 (Camera 하위 alpha=0)
 - **@pixi/layout**: Yoga Flexbox 레이아웃
 - **규칙**: x/y props 금지, style 기반 레이아웃
 
@@ -48,7 +49,7 @@ xstudio/
 | UI | React 19, React-Aria Components |
 | State | Zustand, TanStack Query |
 | Styling | Tailwind CSS v4, tailwind-variants |
-| Canvas | PixiJS 8, @pixi/layout, @pixi/react |
+| Canvas | **CanvasKit/Skia WASM** (메인 렌더러) + PixiJS 8 (이벤트 전용), @pixi/layout, @pixi/react |
 | Backend | Supabase (Auth, Database, RLS) |
 | Build | Vite, TypeScript 5, pnpm |
 

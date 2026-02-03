@@ -198,8 +198,9 @@ export interface DirtyRect {
 /** 렌더 프레임 분류 */
 export type FrameType =
   | 'idle'        // 변경 없음 → 렌더링 스킵
-  | 'content'     // 요소 또는 카메라 변경 → 전체 렌더링 후 블리팅
-  | 'full';       // 리사이즈/첫 프레임 → 전체 렌더링
+  | 'camera-only' // 카메라만 변경 → 캐시 blit + 아핀 변환 (~1ms)
+  | 'content'     // 요소 변경 → dirty rect 부분 렌더링 후 블리팅
+  | 'full';       // 리사이즈/첫 프레임/cleanup → 전체 재렌더링
 
 /** 카메라 상태 스냅샷 (블리팅 변환용) */
 export interface CameraState {

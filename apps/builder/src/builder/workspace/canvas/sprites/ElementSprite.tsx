@@ -1146,8 +1146,10 @@ export const ElementSprite = memo(function ElementSprite({
     const style = effectiveElement.props?.style as CSSStyle | undefined;
     if (!style) return null;
 
-    const { transform, fill, stroke } = convertStyle(style);
-    const br = typeof style.borderRadius === 'number' ? style.borderRadius : 0;
+    const { transform, fill, stroke, borderRadius: convertedBorderRadius } = convertStyle(style);
+    const br = typeof convertedBorderRadius === 'number'
+      ? convertedBorderRadius
+      : convertedBorderRadius?.[0] ?? 0;
 
     // backgroundColor 유무 확인
     const hasBgColor = style.backgroundColor !== undefined && style.backgroundColor !== null && style.backgroundColor !== '';

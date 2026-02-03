@@ -248,7 +248,14 @@ export function useViewportControl(options: UseViewportControlOptions): UseViewp
         }, 150);
 
         const rect = containerEl.getBoundingClientRect();
-        const delta = -e.deltaY * 0.001;
+
+        // Pencil 방식: deltaY 클램핑 + 0.012 계수
+        // ctrlKey(마우스 휠) → ±30 클램핑, metaKey(트랙패드 핀치) → ±15 클램핑
+        // 마우스 휠 1클릭(deltaY=120) → clamp=30 → 36% 줌 변화
+        // 트랙패드 핀치(deltaY=3) → clamp=3 → 3.6% 줌 변화
+        const clampRange = e.metaKey ? 15 : 30;
+        const clamped = Math.max(-clampRange, Math.min(clampRange, e.deltaY));
+        const delta = clamped * -0.012;
 
         controller.zoomAtPoint(e.clientX, e.clientY, rect, delta, true);
       } else {
