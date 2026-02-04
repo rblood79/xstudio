@@ -7,7 +7,7 @@
  * 프레임 분류:
  * - idle: 변경 없음 → 렌더링 스킵 (0ms)
  * - camera-only: 카메라만 변경 → 캐시 blit + 아핀 변환 (~1ms)
- * - content: 요소 변경 → 콘텐츠 재렌더링 후 블리팅
+ * - content: 요소 변경 → dirty rect 부분 렌더링 후 블리팅 (폴백 포함)
  * - full: 리사이즈/첫 프레임/cleanup → 전체 재렌더링
  *
  * @see docs/WASM.md §5.10, §6.1, §6.2
@@ -310,7 +310,7 @@ export class SkiaRenderer {
     cullingBounds: DOMRect,
     registryVersion: number,
     camera: CameraState,
-    _dirtyRects?: DirtyRect[],
+    dirtyRects?: DirtyRect[],
   ): void {
     if (this.disposed || !this.rootNode) return;
 
@@ -335,7 +335,7 @@ export class SkiaRenderer {
         break;
 
       case 'content':
-        this.renderContent(cullingBounds, camera);
+        this.renderContent(cullingBounds, camera, dirtyRects);
         this.blitToMain();
         break;
 

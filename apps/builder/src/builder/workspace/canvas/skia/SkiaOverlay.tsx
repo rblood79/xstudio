@@ -18,7 +18,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { RefObject } from 'react';
 import type { Application, Container } from 'pixi.js';
 import { SkiaRenderer } from './SkiaRenderer';
-import { getSkiaNode, getRegistryVersion, flushDirtyRects, clearSkiaRegistry } from './useSkiaNode';
+import { getSkiaNode, getRegistryVersion, flushDirtyState, clearSkiaRegistry } from './useSkiaNode';
 import { renderNode } from './nodeRenderers';
 import type { SkiaNodeData } from './nodeRenderers';
 import { isCanvasKitInitialized, getCanvasKit } from './initCanvasKit';
@@ -34,6 +34,8 @@ import { calculateCombinedBounds } from '../selection/types';
 import type { BoundingBox, DragState } from '../selection/types';
 import { watchContextLoss } from './createSurface';
 import { clearImageCache } from './imageCache';
+import type { DirtyRect, EffectStyle } from './types';
+import { computeDirtyRectsFromInfo, type DirtyInfo } from './dirtyRectUtils';
 
 interface SkiaOverlayProps {
   /** 부모 컨테이너 DOM 요소 */
@@ -269,6 +271,63 @@ function buildTreeBoundsMap(tree: SkiaNodeData): Map<string, BoundingBox> {
   return boundsMap;
 }
 
+function computeEffectExpand(effects?: EffectStyle[]): number {
+  // 기본 2px 여유분 (안티앨리어싱, 부동소수점 오차 대비)
+  let expand = 2;
+
+  if (!effects) return expand;
+
+  for (const effect of effects) {
+    switch (effect.type) {
+      case 'background-blur':
+      case 'layer-blur':
+        expand = Math.max(expand, effect.sigma * 3);
+        break;
+      case 'drop-shadow': {
+        const shadowExpand =
+          Math.max(Math.abs(effect.dx), Math.abs(effect.dy)) +
+          Math.max(effect.sigmaX, effect.sigmaY) * 3;
+        expand = Math.max(expand, shadowExpand);
+        break;
+      }
+      case 'opacity':
+        break;
+    }
+  }
+
+  return expand;
+}
+
+function buildTreeDirtyInfoMap(tree: SkiaNodeData): Map<string, DirtyInfo> {
+  const map = new Map<string, DirtyInfo>();
+
+  function traverse(node: SkiaNodeData, parentX: number, parentY: number): void {
+    const absX = parentX + node.x;
+    const absY = parentY + node.y;
+
+    if (node.elementId) {
+      map.set(node.elementId, {
+        bounds: {
+          x: absX,
+          y: absY,
+          width: node.width,
+          height: node.height,
+        },
+        expand: computeEffectExpand(node.effects),
+      });
+    }
+
+    if (node.children) {
+      for (const child of node.children) {
+        traverse(child, absX, absY);
+      }
+    }
+  }
+
+  traverse(tree, 0, 0);
+  return map;
+}
+
 /**
  * Selection 렌더 데이터를 수집한다.
  *
@@ -371,6 +430,7 @@ export function SkiaOverlay({ containerEl, backgroundColor = 0xf8fafc, app, drag
   const lastSelectedIdsRef = useRef<string[]>([]);
   const lastSelectedIdRef = useRef<string | null>(null);
   const lastAIActiveRef = useRef(0);
+  const prevDirtyInfoMapRef = useRef<Map<string, DirtyInfo>>(new Map());
 
 
   const isActive = true;
@@ -487,7 +547,7 @@ export function SkiaOverlay({ containerEl, backgroundColor = 0xf8fafc, app, drag
 
       // ── effectiveVersion 계산 (트리 재구성 여부 판단에 사용) ──
       const registryVersion = getRegistryVersion();
-      const dirtyRects = flushDirtyRects();
+      const dirtyState = flushDirtyState();
 
       // Selection 상태 변경 감지 — selectedElementIds 참조 변경 시 version 증가
       const currentSelectedIds = useStore.getState().selectedElementIds;
@@ -545,6 +605,24 @@ export function SkiaOverlay({ containerEl, backgroundColor = 0xf8fafc, app, drag
         ? buildSkiaTreeHierarchical(cameraContainer, cameraX, cameraY, cameraZoom)
         : null;
       if (!tree) return;
+
+      const currentDirtyInfoMap = buildTreeDirtyInfoMap(tree);
+      const prevDirtyInfoMap = prevDirtyInfoMapRef.current;
+      let dirtyRects: DirtyRect[] | undefined;
+
+      if (dirtyState.fullRedraw) {
+        dirtyRects = undefined; // 전체 렌더
+      } else if (dirtyState.dirtyIds.length > 0) {
+        dirtyRects = computeDirtyRectsFromInfo(
+          prevDirtyInfoMap,
+          currentDirtyInfoMap,
+          dirtyState.dirtyIds,
+        );
+      } else {
+        dirtyRects = undefined; // overlay-only 변경 등 → 전체 렌더
+      }
+
+      prevDirtyInfoMapRef.current = currentDirtyInfoMap;
 
       renderer.setRootNode({
         renderSkia(canvas, bounds) {

@@ -199,7 +199,7 @@ export interface DirtyRect {
 export type FrameType =
   | 'idle'        // 변경 없음 → 렌더링 스킵
   | 'camera-only' // 카메라만 변경 → 캐시 blit + 아핀 변환 (~1ms)
-  | 'content'     // 요소 변경 → 콘텐츠 재렌더링 후 블리팅
+  | 'content'     // 요소 변경 → dirty rect 기반 부분 렌더링 후 블리팅 (폴백 포함)
   | 'full';       // 리사이즈/첫 프레임/cleanup → 전체 재렌더링
 
 /** 카메라 상태 스냅샷 (블리팅 변환용) */

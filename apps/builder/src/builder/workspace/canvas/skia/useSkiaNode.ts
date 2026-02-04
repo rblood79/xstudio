@@ -18,7 +18,6 @@
 
 import { useLayoutEffect } from 'react';
 import type { SkiaNodeData } from './nodeRenderers';
-import type { DirtyRect } from './types';
 
 
 // ============================================
@@ -31,47 +30,11 @@ const skiaNodeRegistry = new Map<string, SkiaNodeData>();
 /** 레지스트리 변경 버전 (단조 증가) */
 let registryVersion = 0;
 
-/** 프레임 간 축적되는 dirty rects */
-let pendingDirtyRects: DirtyRect[] = [];
+/** 프레임 간 축적되는 dirty element IDs (좌표계는 SkiaOverlay에서 결정) */
+let pendingDirtyIds = new Set<string>();
 
-/**
- * 노드의 바운드를 DirtyRect로 변환한다.
- * 이펙트(블러, 그림자)가 있으면 확장 영역을 포함시킨다.
- * 블러 시그마 × 3이 가우시안 커널의 실질적 영향 범위이다.
- *
- * 기본 여유분 2px: 안티앨리어싱, 부동소수점 좌표 오차, 서브픽셀 렌더링으로 인한
- * 경계 잔상을 방지한다. Dirty rect가 너무 작으면 이전 프레임의 픽셀이
- * 완전히 클리어되지 않아 잔상이 남을 수 있다.
- */
-function nodeToDirtyRect(data: SkiaNodeData): DirtyRect {
-  // 기본 2px 여유분 (안티앨리어싱, 부동소수점 오차 대비)
-  let expand = 2;
-
-  if (data.effects) {
-    for (const effect of data.effects) {
-      switch (effect.type) {
-        case 'background-blur':
-        case 'layer-blur':
-          expand = Math.max(expand, effect.sigma * 3);
-          break;
-        case 'drop-shadow': {
-          const shadowExpand =
-            Math.max(Math.abs(effect.dx), Math.abs(effect.dy)) +
-            Math.max(effect.sigmaX, effect.sigmaY) * 3;
-          expand = Math.max(expand, shadowExpand);
-          break;
-        }
-      }
-    }
-  }
-
-  return {
-    x: data.x - expand,
-    y: data.y - expand,
-    width: data.width + expand * 2,
-    height: data.height + expand * 2,
-  };
-}
+/** dirty rect 계산 불가/대량 변경 시 전체 렌더링 강제 */
+let pendingFullRedraw = false;
 
 /** 레지스트리에 Skia 렌더 데이터 등록 */
 export function registerSkiaNode(elementId: string, data: SkiaNodeData): void {
@@ -79,13 +42,7 @@ export function registerSkiaNode(elementId: string, data: SkiaNodeData): void {
   const oldData = skiaNodeRegistry.get(elementId);
   if (oldData === data) return;
 
-  // 이전 데이터의 바운드 → dirty rect (지워야 할 영역)
-  if (oldData) {
-    pendingDirtyRects.push(nodeToDirtyRect(oldData));
-  }
-
-  // 새 데이터의 바운드 → dirty rect (그려야 할 영역)
-  pendingDirtyRects.push(nodeToDirtyRect(data));
+  pendingDirtyIds.add(elementId);
 
   skiaNodeRegistry.set(elementId, data);
   registryVersion++;
@@ -93,11 +50,7 @@ export function registerSkiaNode(elementId: string, data: SkiaNodeData): void {
 
 /** 레지스트리에서 Skia 렌더 데이터 해제 */
 export function unregisterSkiaNode(elementId: string): void {
-  const oldData = skiaNodeRegistry.get(elementId);
-  if (oldData) {
-    pendingDirtyRects.push(nodeToDirtyRect(oldData));
-  }
-
+  pendingDirtyIds.add(elementId);
   skiaNodeRegistry.delete(elementId);
   registryVersion++;
 }
@@ -119,7 +72,8 @@ export function getSkiaRegistrySize(): number {
  */
 export function clearSkiaRegistry(): void {
   skiaNodeRegistry.clear();
-  pendingDirtyRects = [];
+  pendingDirtyIds.clear();
+  pendingFullRedraw = true;
   registryVersion++;
 }
 
@@ -134,18 +88,25 @@ export function getRegistryVersion(): number {
  *
  * elementRegistry.updateElementBounds() → LayoutContainer Yoga 재계산 후 호출
  */
-export function notifyLayoutChange(): void {
+export function notifyLayoutChange(elementId?: string): void {
+  if (elementId) {
+    pendingDirtyIds.add(elementId);
+  } else {
+    pendingFullRedraw = true;
+  }
   registryVersion++;
 }
 
 /**
- * 축적된 dirty rects를 반환하고 초기화한다.
+ * 축적된 dirty 상태를 반환하고 초기화한다.
  * 렌더 루프에서 프레임당 1회 호출한다.
  */
-export function flushDirtyRects(): DirtyRect[] {
-  const rects = pendingDirtyRects;
-  pendingDirtyRects = [];
-  return rects;
+export function flushDirtyState(): { dirtyIds: string[]; fullRedraw: boolean } {
+  const dirtyIds = Array.from(pendingDirtyIds);
+  pendingDirtyIds.clear();
+  const fullRedraw = pendingFullRedraw;
+  pendingFullRedraw = false;
+  return { dirtyIds, fullRedraw };
 }
 
 // ============================================
@@ -180,4 +141,3 @@ export function useSkiaNode(
     };
   }, [elementId, data]);
 }
-
