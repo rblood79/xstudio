@@ -278,10 +278,12 @@ export function styleToLayout(
   const parse = (value: unknown) => parseCSSValue(value, viewport);
 
   // Dimensions
+  // 🚀 @pixi/layout의 formatStyles가 이전 스타일과 병합하므로,
+  // width/height가 없을 때 명시적으로 'auto'를 설정해야 이전 값이 리셋됨
   const width = parse(style.width);
   const height = parse(style.height);
-  if (width !== undefined) layout.width = width;
-  if (height !== undefined) layout.height = height;
+  layout.width = width !== undefined ? width : 'auto';
+  layout.height = height !== undefined ? height : 'auto';
 
   // 🚀 태그별 기본 스타일 처리
   const tag = element.tag?.toLowerCase() ?? '';
