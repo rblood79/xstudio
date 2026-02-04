@@ -8,7 +8,7 @@
  * 🚀 Phase 23: 컨텐츠 분리로 접힌 섹션 훅 실행 방지
  */
 
-import { useState, memo } from 'react';
+import { useState, useLayoutEffect, memo } from 'react';
 import { PropertySection, PropertyUnitInput } from '../../../components';
 import { ToggleButton, ToggleButtonGroup, Button } from "@xstudio/shared/components";
 import { Input } from 'react-aria-components';
@@ -49,12 +49,50 @@ import {
 interface FourWayGridProps {
   values: { top: string; right: string; bottom: string; left: string };
   onChange: (direction: 'Top' | 'Right' | 'Bottom' | 'Left', value: string) => void;
+  /** 타이핑 중 실시간 캔버스 프리뷰 (RAF-throttled) */
+  onPreview?: (direction: 'Top' | 'Right' | 'Bottom' | 'Left', value: string) => void;
   allowNegative?: boolean;
 }
 
-function FourWayGrid({ values, onChange }: FourWayGridProps) {
+function getDisplayValue(value: string): string {
+  return value.replace('px', '');
+}
+
+function FourWayGrid({ values, onChange, onPreview }: FourWayGridProps) {
+  // Local state로 입력값을 관리하여 controlled input 즉시 반영
+  const [localValues, setLocalValues] = useState({
+    top: getDisplayValue(values.top),
+    right: getDisplayValue(values.right),
+    bottom: getDisplayValue(values.bottom),
+    left: getDisplayValue(values.left),
+  });
+
+  // useLayoutEffect: paint 전에 동기화하여 외부 값 변경 시 플리커 방지
+  useLayoutEffect(() => {
+    setLocalValues({
+      top: getDisplayValue(values.top),
+      right: getDisplayValue(values.right),
+      bottom: getDisplayValue(values.bottom),
+      left: getDisplayValue(values.left),
+    });
+  }, [values.top, values.right, values.bottom, values.left]);
+
   const handleChange = (direction: 'Top' | 'Right' | 'Bottom' | 'Left', inputValue: string) => {
-    // 숫자만 추출하고 px 단위 추가
+    const key = direction.toLowerCase() as 'top' | 'right' | 'bottom' | 'left';
+    setLocalValues(prev => ({ ...prev, [key]: inputValue }));
+
+    // 타이핑 중 실시간 캔버스 프리뷰
+    if (onPreview) {
+      const numericValue = inputValue.replace(/[^0-9.-]/g, '');
+      if (numericValue !== '' && numericValue !== '-') {
+        onPreview(direction, `${numericValue}px`);
+      }
+    }
+  };
+
+  const commitValue = (direction: 'Top' | 'Right' | 'Bottom' | 'Left') => {
+    const key = direction.toLowerCase() as 'top' | 'right' | 'bottom' | 'left';
+    const inputValue = localValues[key];
     const numericValue = inputValue.replace(/[^0-9.-]/g, '');
     if (numericValue === '' || numericValue === '-') {
       onChange(direction, '');
@@ -63,38 +101,52 @@ function FourWayGrid({ values, onChange }: FourWayGridProps) {
     }
   };
 
-  const getDisplayValue = (value: string) => {
-    // px 제거하고 숫자만 표시
-    return value.replace('px', '');
+  const handleKeyDown = (
+    e: React.KeyboardEvent<HTMLInputElement>,
+    direction: 'Top' | 'Right' | 'Bottom' | 'Left',
+  ) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      commitValue(direction);
+      (e.target as HTMLInputElement).blur();
+    }
   };
 
   return (
     <div className="four-way-grid">
       <Input
         className="react-aria-Input four-way-top"
-        value={getDisplayValue(values.top)}
+        value={localValues.top}
         onChange={(e) => handleChange('Top', e.target.value)}
+        onBlur={() => commitValue('Top')}
+        onKeyDown={(e) => handleKeyDown(e, 'Top')}
         placeholder="T"
         aria-label="Top"
       />
       <Input
         className="react-aria-Input four-way-left"
-        value={getDisplayValue(values.left)}
+        value={localValues.left}
         onChange={(e) => handleChange('Left', e.target.value)}
+        onBlur={() => commitValue('Left')}
+        onKeyDown={(e) => handleKeyDown(e, 'Left')}
         placeholder="L"
         aria-label="Left"
       />
       <Input
         className="react-aria-Input four-way-right"
-        value={getDisplayValue(values.right)}
+        value={localValues.right}
         onChange={(e) => handleChange('Right', e.target.value)}
+        onBlur={() => commitValue('Right')}
+        onKeyDown={(e) => handleKeyDown(e, 'Right')}
         placeholder="R"
         aria-label="Right"
       />
       <Input
         className="react-aria-Input four-way-bottom"
-        value={getDisplayValue(values.bottom)}
+        value={localValues.bottom}
         onChange={(e) => handleChange('Bottom', e.target.value)}
+        onBlur={() => commitValue('Bottom')}
+        onKeyDown={(e) => handleKeyDown(e, 'Bottom')}
         placeholder="B"
         aria-label="Bottom"
       />
@@ -118,7 +170,7 @@ const LayoutSectionContent = memo(function LayoutSectionContent() {
     handleFlexWrap,
   } = useStyleActions();
   // 🚀 Phase 1: RAF 기반 스로틀 업데이트
-  const { updateStyleImmediate, updateStyleRAF, updateStyleIdle } = useOptimizedStyleActions();
+  const { updateStyleImmediate, updateStylePreview } = useOptimizedStyleActions();
 
   // 🚀 Phase 3: Jotai atom에서 직접 값 구독
   const styleValues = useLayoutValuesJotai();
@@ -129,13 +181,22 @@ const LayoutSectionContent = memo(function LayoutSectionContent() {
   const justifyContentSpacingKeys = useAtomValue(justifyContentSpacingKeysAtom);
   const flexWrapKeys = useAtomValue(flexWrapKeysAtom);
 
-  // 🚀 Phase 1: FourWayGrid는 타이핑이므로 Idle 업데이트 사용
+  // FourWayGrid는 local state + blur 커밋이므로 즉시 업데이트
   const handlePaddingChange = (direction: 'Top' | 'Right' | 'Bottom' | 'Left', value: string) => {
-    updateStyleIdle(`padding${direction}`, value);
+    updateStyleImmediate(`padding${direction}`, value);
   };
 
   const handleMarginChange = (direction: 'Top' | 'Right' | 'Bottom' | 'Left', value: string) => {
-    updateStyleIdle(`margin${direction}`, value);
+    updateStyleImmediate(`margin${direction}`, value);
+  };
+
+  // 타이핑 중 실시간 캔버스 프리뷰 (히스토리/DB 저장 없음)
+  const handlePaddingPreview = (direction: 'Top' | 'Right' | 'Bottom' | 'Left', value: string) => {
+    updateStylePreview(`padding${direction}`, value);
+  };
+
+  const handleMarginPreview = (direction: 'Top' | 'Right' | 'Bottom' | 'Left', value: string) => {
+    updateStylePreview(`margin${direction}`, value);
   };
 
   if (!styleValues) return null;
@@ -325,7 +386,7 @@ const LayoutSectionContent = memo(function LayoutSectionContent() {
           value={styleValues.gap}
           units={['reset', 'px']}
           onChange={(value) => updateStyleImmediate('gap', value)}
-          onDrag={(value) => updateStyleRAF('gap', value)}
+          onDrag={(value) => updateStylePreview('gap', value)}
           min={0}
           max={500}
         />
@@ -342,7 +403,7 @@ const LayoutSectionContent = memo(function LayoutSectionContent() {
             value={styleValues.padding}
             units={['reset', 'px']}
             onChange={(value) => updateStyleImmediate('padding', value)}
-            onDrag={(value) => updateStyleRAF('padding', value)}
+            onDrag={(value) => updateStylePreview('padding', value)}
             min={0}
             max={500}
           />
@@ -353,7 +414,7 @@ const LayoutSectionContent = memo(function LayoutSectionContent() {
             value={styleValues.margin}
             units={['reset', 'px']}
             onChange={(value) => updateStyleImmediate('margin', value)}
-            onDrag={(value) => updateStyleRAF('margin', value)}
+            onDrag={(value) => updateStylePreview('margin', value)}
             min={0}
             max={500}
           />
@@ -379,6 +440,7 @@ const LayoutSectionContent = memo(function LayoutSectionContent() {
               <FourWayGrid
                 values={paddingValues}
                 onChange={handlePaddingChange}
+                onPreview={handlePaddingPreview}
               />
             </div>
           </fieldset>
@@ -388,6 +450,7 @@ const LayoutSectionContent = memo(function LayoutSectionContent() {
               <FourWayGrid
                 values={marginValues}
                 onChange={handleMarginChange}
+                onPreview={handleMarginPreview}
                 allowNegative
               />
             </div>

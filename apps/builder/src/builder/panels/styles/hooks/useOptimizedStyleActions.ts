@@ -38,6 +38,9 @@ interface OptimizedStyleActionsResult {
   /** Idle 기반 지연 업데이트 (타이핑) */
   updateStyleIdle: (property: string, value: string) => void;
 
+  /** RAF 기반 실시간 프리뷰 (히스토리/DB 없이 캔버스만 업데이트) */
+  updateStylePreview: (property: string, value: string) => void;
+
   /** 여러 스타일 즉시 업데이트 */
   updateStylesImmediate: (styles: Record<string, string>) => void;
 
@@ -81,14 +84,19 @@ export function useOptimizedStyleActions(): OptimizedStyleActionsResult {
 
   // RAF/Idle 참조
   const rafIdRef = useRef<number | null>(null);
+  const previewRafIdRef = useRef<number | null>(null);
   const idleIdRef = useRef<number | null>(null);
   const pendingUpdateRef = useRef<{ property: string; value: string } | null>(null);
+  const pendingPreviewRef = useRef<{ property: string; value: string } | null>(null);
 
   // 정리
   useEffect(() => {
     return () => {
       if (rafIdRef.current !== null) {
         cancelAnimationFrame(rafIdRef.current);
+      }
+      if (previewRafIdRef.current !== null) {
+        cancelAnimationFrame(previewRafIdRef.current);
       }
       if (idleIdRef.current !== null) {
         cancelIdleCallbackPolyfill(idleIdRef.current);
@@ -104,11 +112,16 @@ export function useOptimizedStyleActions(): OptimizedStyleActionsResult {
       cancelAnimationFrame(rafIdRef.current);
       rafIdRef.current = null;
     }
+    if (previewRafIdRef.current !== null) {
+      cancelAnimationFrame(previewRafIdRef.current);
+      previewRafIdRef.current = null;
+    }
     if (idleIdRef.current !== null) {
       cancelIdleCallbackPolyfill(idleIdRef.current);
       idleIdRef.current = null;
     }
     pendingUpdateRef.current = null;
+    pendingPreviewRef.current = null;
   }, []);
 
   /**
@@ -140,6 +153,27 @@ export function useOptimizedStyleActions(): OptimizedStyleActionsResult {
         }
         rafIdRef.current = null;
         pendingUpdateRef.current = null;
+      });
+    }
+  }, []);
+
+  /**
+   * RAF 기반 실시간 프리뷰 (타이핑 중 캔버스 즉시 반영)
+   * - 히스토리/DB 저장 없이 캔버스만 업데이트
+   * - 프레임당 1회만 실행
+   * - 최종 커밋은 blur/Enter 시 updateStyleImmediate로 수행
+   */
+  const updateStylePreview = useCallback((property: string, value: string) => {
+    pendingPreviewRef.current = { property, value };
+
+    if (previewRafIdRef.current === null) {
+      previewRafIdRef.current = requestAnimationFrame(() => {
+        const pending = pendingPreviewRef.current;
+        if (pending) {
+          useStore.getState().updateSelectedStylePreview(pending.property, pending.value);
+        }
+        previewRafIdRef.current = null;
+        pendingPreviewRef.current = null;
       });
     }
   }, []);
@@ -199,6 +233,7 @@ export function useOptimizedStyleActions(): OptimizedStyleActionsResult {
     isPending,
     updateStyleImmediate,
     updateStyleRAF,
+    updateStylePreview,
     updateStyleIdle,
     updateStylesImmediate,
     updateStylesTransition,

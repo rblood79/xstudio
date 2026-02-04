@@ -13,7 +13,7 @@
 
 import { useExtend } from '@pixi/react';
 import { PIXI_COMPONENTS } from '../pixiSetup';
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { memo, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import {
   Graphics as PixiGraphics,
   TextStyle,
@@ -28,6 +28,7 @@ import {
 import { useThemeColors } from "../hooks/useThemeColors";
 import { drawBox } from "../utils";
 import { useStore } from "../../../stores";
+import { LayoutComputedSizeContext } from "../layoutContext";
 
 // ============================================
 // Types
@@ -135,21 +136,17 @@ export const PixiCard = memo(function PixiCard({
     return String(props?.description || props?.children || "");
   }, [props?.description, props?.children]);
 
-  // 카드 크기
-  // 🚀 Phase 8+: CSS 기본값 width: 100% 동기화
-  // 🚀 Phase 9: layout에서 계산된 크기 사용 (문자열 '300px' 등 지원)
+  // 🚀 LayoutComputedSizeContext로 Yoga 계산값 즉시 반영 (ToggleButtonGroup 패턴)
+  // onLayout + useState 방식은 1프레임 이상 지연되어 크기 불일치 발생
+  const computedSize = useContext(LayoutComputedSizeContext);
   const fallbackWidth = 200;
   const fallbackHeight = 60;
 
-  // Layout 시스템에서 계산된 크기 (onLayout 콜백으로 업데이트)
-  const layoutWidthRef = useRef<number | null>(null);
-  const layoutHeightRef = useRef<number | null>(null);
-  const [layoutWidth, setLayoutWidth] = useState<number | null>(null);
-  const [layoutHeight, setLayoutHeight] = useState<number | null>(null);
-
-  // Graphics 그리기용 픽셀 값 (layout 계산값 우선, fallback 사용)
-  const cardWidth = layoutWidth ?? fallbackWidth;
-  const cardHeight = layoutHeight ?? fallbackHeight;
+  // Graphics 그리기용 픽셀 값 (Yoga 계산값 우선, fallback 사용)
+  const cardWidth = (computedSize?.width && computedSize.width > 0)
+    ? computedSize.width : fallbackWidth;
+  const cardHeight = (computedSize?.height && computedSize.height > 0)
+    ? computedSize.height : fallbackHeight;
 
   // 카드 배경 그리기
   const drawCard = useCallback(
@@ -296,47 +293,16 @@ export const PixiCard = memo(function PixiCard({
     onClick?.(element.id);
   }, [element.id, onClick]);
 
-  // 🚀 Phase 9: width와 height 모두 layout에서 가져오기
   // 🚀 Phase 20: 선택된 요소의 computed layout을 store에 동기화
-  const handleLayout = useCallback((layout: { computedLayout?: { width?: number; height?: number } }) => {
-    const nextWidth = layout.computedLayout?.width;
-    const nextHeight = layout.computedLayout?.height;
-
-    let changed = false;
-
-    // Width 업데이트 (변경 시에만)
-    if (nextWidth && layoutWidthRef.current !== nextWidth) {
-      layoutWidthRef.current = nextWidth;
-      setLayoutWidth(nextWidth);
-      changed = true;
-    }
-
-    // Height 업데이트 (변경 시에만)
-    if (nextHeight && layoutHeightRef.current !== nextHeight) {
-      layoutHeightRef.current = nextHeight;
-      setLayoutHeight(nextHeight);
-      changed = true;
-    }
-
-    // 🚀 선택된 요소일 때만 store에 computed layout 동기화
-    if (changed && isSelected && nextWidth && nextHeight) {
-      updateSelectedElementLayout(element.id, {
-        width: nextWidth,
-        height: nextHeight,
-      });
-    }
-  }, [isSelected, element.id, updateSelectedElementLayout]);
-
-  // 🚀 Phase 20: isSelected가 true로 변경될 때 현재 layout 값을 store에 동기화
-  // (선택 전에 handleLayout이 이미 호출되어 layout이 계산되었을 수 있음)
+  // LayoutComputedSizeContext가 변경되면 store 동기화
   useEffect(() => {
-    if (isSelected && layoutWidthRef.current && layoutHeightRef.current) {
+    if (isSelected && computedSize?.width && computedSize?.height) {
       updateSelectedElementLayout(element.id, {
-        width: layoutWidthRef.current,
-        height: layoutHeightRef.current,
+        width: computedSize.width,
+        height: computedSize.height,
       });
     }
-  }, [isSelected, element.id, updateSelectedElementLayout]);
+  }, [isSelected, element.id, computedSize, updateSelectedElementLayout]);
 
   // 🚀 Phase 19: 투명 히트 영역
   const drawHitArea = useCallback(
@@ -358,8 +324,7 @@ export const PixiCard = memo(function PixiCard({
   const hasContent = cardDescription || hasChildren;
 
   return (
-    // @ts-expect-error - onLayout is added by @pixi/layout at runtime
-    <pixiContainer layout={cardLayout} onLayout={handleLayout}>
+    <pixiContainer layout={cardLayout}>
       {/* 카드 배경 */}
       <pixiGraphics draw={drawCard} />
 

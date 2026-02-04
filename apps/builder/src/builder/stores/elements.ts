@@ -69,6 +69,8 @@ export interface ElementsState {
 
   // 내부 헬퍼: 인덱스 재구축
   _rebuildIndexes: () => void;
+  // 내부 헬퍼: 진행 중인 selectedElementProps hydration 취소
+  _cancelHydrateSelectedProps: () => void;
 
   // 🆕 Phase 2: O(1) 페이지 요소 조회
   getPageElements: (pageId: string) => Element[];
@@ -220,9 +222,19 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
       if (!element) return;
 
       longTaskMonitor.measure("interaction.select:hydrate-selected-props", () => {
-        // 🚀 WebGL 요소의 computedStyle 포함 (borderRadius 등)
+        // 🚀 WebGL 요소의 computedStyle만 추가 (borderRadius 등)
+        // 기본 props는 setSelectedElement에서 이미 동기적으로 설정됨
         const computedStyle = computeCanvasElementStyle(element);
-        set({ selectedElementProps: { ...createCompleteProps(element), computedStyle } });
+        const currentProps = state.selectedElementProps;
+        const hasValidProps = currentProps && Object.keys(currentProps).length > 0;
+
+        if (hasValidProps) {
+          // props가 이미 있으면 computedStyle만 병합 (불필요한 리렌더 방지)
+          set({ selectedElementProps: { ...currentProps, computedStyle } });
+        } else {
+          // fallback: 전체 props 재구성
+          set({ selectedElementProps: { ...createCompleteProps(element), computedStyle } });
+        }
       });
     }, { timeout: 50 }); // 50ms 내에 실행 보장
   };
@@ -248,6 +260,7 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
     multiSelectMode: false,
 
     _rebuildIndexes,
+    _cancelHydrateSelectedProps: cancelHydrateSelectedProps,
     getPageElements,
 
   // 🚀 Phase 1: Immer → 함수형 업데이트 (Low Risk)
@@ -322,7 +335,9 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
     const hasExternalProps = Boolean(props || style || computedStyle);
 
     // WebGL Canvas 기본 선택 경로: elementId만 전달됨
-    // - pointerdown task를 줄이기 위해 selectedElementProps는 다음 tick에 채움
+    // - createCompleteProps는 가벼운 연산 (object spread)이므로 동기 실행
+    // - computeCanvasElementStyle만 백그라운드 hydration으로 분리
+    // - 즉시 inline style을 포함하여 스타일 패널 플리커 방지
     if (elementId && !hasExternalProps) {
       let selectedElementIds: string[];
       let selectedElementIdsSet: Set<string>;
@@ -338,14 +353,22 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
         selectedElementIdsSet = new Set([elementId]);
       }
 
+      // 즉시 element.props 기반 props 채우기 (플리커 방지)
+      const element = currentState.elementsMap.get(elementId)
+        ?? findElementById(currentState.elements, elementId);
+      const initialProps = element
+        ? createCompleteProps(element)
+        : {};
+
       set({
         selectedElementId: elementId,
-        selectedElementProps: {},
+        selectedElementProps: initialProps,
         selectedElementIds,
         selectedElementIdsSet,
         multiSelectMode: false,
       });
 
+      // computedStyle만 백그라운드 hydration으로 분리
       scheduleHydrateSelectedProps(elementId);
       return;
     }

@@ -42,7 +42,7 @@ import { useResetStyles } from '../hooks/useResetStyles';
 const TypographySectionContent = memo(function TypographySectionContent() {
   const { updateStyle } = useStyleActions();
   // 🚀 Phase 1: RAF 기반 스로틀 업데이트
-  const { updateStyleImmediate, updateStyleRAF } = useOptimizedStyleActions();
+  const { updateStyleImmediate, updateStylePreview } = useOptimizedStyleActions();
   // 🚀 Phase 3: Jotai atom에서 직접 값 구독
   const styleValues = useTypographyValuesJotai();
 
@@ -93,7 +93,7 @@ const TypographySectionContent = memo(function TypographySectionContent() {
         value={styleValues.fontSize}
         units={['reset', 'px', 'pt']}
         onChange={(value) => updateStyleImmediate('fontSize', value)}
-        onDrag={(value) => updateStyleRAF('fontSize', value)}
+        onDrag={(value) => updateStylePreview('fontSize', value)}
         min={8}
         max={200}
       />
@@ -104,7 +104,7 @@ const TypographySectionContent = memo(function TypographySectionContent() {
         value={styleValues.lineHeight}
         units={['reset', 'px']}
         onChange={(value) => updateStyleImmediate('lineHeight', value)}
-        onDrag={(value) => updateStyleRAF('lineHeight', value)}
+        onDrag={(value) => updateStylePreview('lineHeight', value)}
         min={0}
         max={10}
         allowKeywords
@@ -138,7 +138,7 @@ const TypographySectionContent = memo(function TypographySectionContent() {
         value={styleValues.letterSpacing}
         units={['reset', 'px']}
         onChange={(value) => updateStyleImmediate('letterSpacing', value)}
-        onDrag={(value) => updateStyleRAF('letterSpacing', value)}
+        onDrag={(value) => updateStylePreview('letterSpacing', value)}
         min={-10}
         max={10}
         allowKeywords

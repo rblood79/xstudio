@@ -9,7 +9,7 @@
  * @since 2025-12-20 Phase 3 - Advanced State Management
  */
 
-import { useEffect } from 'react';
+import { useLayoutEffect } from 'react';
 import { useSetAtom } from 'jotai';
 import { useStore } from '../../../stores';
 import { selectedElementAtom } from '../atoms/styleAtoms';
@@ -40,7 +40,8 @@ export function useZustandJotaiBridge(): void {
   const setSelectedElement = useSetAtom(selectedElementAtom);
 
   // Zustand store 구독 - 선택된 요소 변경 시 Jotai atom 업데이트
-  useEffect(() => {
+  // useLayoutEffect: paint 전에 초기값을 설정하여 첫 프레임 깜빡임 방지
+  useLayoutEffect(() => {
     // 초기값 설정
     const state = useStore.getState();
     const initialElement = buildSelectedElement(state);
@@ -75,13 +76,20 @@ function buildSelectedElement(
   const element = elementsMap.get(selectedElementId);
   if (!element) return null;
 
+  // selectedElementProps가 비어있을 때(hydration 대기 중) element.props에서 직접 읽기
+  const hasValidProps = selectedElementProps
+    && Object.keys(selectedElementProps).length > 0;
+  const effectiveProps = hasValidProps
+    ? selectedElementProps
+    : (element.props as Record<string, unknown>);
+
   return {
     id: element.id,
     type: element.tag,
-    style: (selectedElementProps?.style ?? (element.props as Record<string, unknown>)?.style ?? {}) as Record<string, unknown>,
-    computedStyle: selectedElementProps?.computedStyle as Record<string, unknown> | undefined,
-    computedLayout: selectedElementProps?.computedLayout as { width?: number; height?: number } | undefined,
-    className: (selectedElementProps?.className as string) ?? ((element.props as Record<string, unknown>)?.className as string) ?? '',
+    style: (effectiveProps?.style ?? {}) as Record<string, unknown>,
+    computedStyle: effectiveProps?.computedStyle as Record<string, unknown> | undefined,
+    computedLayout: effectiveProps?.computedLayout as { width?: number; height?: number } | undefined,
+    className: (effectiveProps?.className as string) ?? '',
   };
 }
 

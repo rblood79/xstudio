@@ -63,6 +63,8 @@ export interface SkiaNodeData {
     paddingLeft: number;
     paddingTop: number;
     maxWidth: number;
+    /** false이면 updateTextChildren에서 자동 중앙 정렬 스킵 (Card 등 다중 텍스트) */
+    autoCenter?: boolean;
   };
   /** Image 전용 */
   image?: {

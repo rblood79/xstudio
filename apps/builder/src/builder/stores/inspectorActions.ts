@@ -29,6 +29,8 @@ export interface InspectorActionsState {
   // Actions for updating selected element
   updateSelectedStyle: (property: string, value: string) => void;
   updateSelectedStyles: (styles: Record<string, string>) => void;
+  /** 실시간 프리뷰: 히스토리/DB 저장 없이 캔버스만 업데이트 */
+  updateSelectedStylePreview: (property: string, value: string) => void;
   updateSelectedProperty: (key: string, value: unknown) => void;
   updateSelectedProperties: (properties: Record<string, unknown>) => void;
   updateSelectedCustomId: (customId: string) => void;
@@ -49,6 +51,7 @@ interface RequiredState {
   currentPageId: string | null;
   updateElement: (elementId: string, updates: Partial<Element>) => Promise<void>;
   _rebuildIndexes: () => void;
+  _cancelHydrateSelectedProps: () => void;
 }
 
 type CombinedState = InspectorActionsState & RequiredState;
@@ -63,6 +66,14 @@ export const createInspectorActionsSlice: StateCreator<
   [],
   InspectorActionsState
 > = (set, get) => {
+  /**
+   * 프리뷰 전 원본 요소 스냅샷
+   * - 타이핑 중 프리뷰가 elementsMap을 수정하므로,
+   *   커밋 시 정확한 prevProps를 히스토리에 기록하기 위해 원본 보관
+   * - state가 아닌 closure 변수로 관리 (불필요한 리렌더링 방지)
+   */
+  let prePreviewElement: Element | null = null;
+
   /**
    * Helper: Get current selected element
    */
@@ -83,15 +94,25 @@ export const createInspectorActionsSlice: StateCreator<
   const updateAndSave = async (
     elementId: string,
     propsUpdate: Partial<ComponentElementProps>,
-    additionalUpdates?: Partial<Element>
+    additionalUpdates?: Partial<Element>,
+    /** 프리뷰 → 커밋 시 히스토리 정확성을 위한 원본 요소 */
+    prevElementOverride?: Element
   ) => {
     const { elementsMap, elements, selectedElementId, currentPageId } = get();
     const element = elementsMap.get(elementId);
     if (!element) return;
 
+    // 선택된 요소의 props를 직접 업데이트하므로,
+    // 진행 중인 hydration이 있으면 취소하여 경쟁 상태 방지
+    if (selectedElementId === elementId) {
+      get()._cancelHydrateSelectedProps();
+    }
+
     // 🚀 히스토리 저장을 위한 이전 상태 캡처
-    const prevProps = structuredClone(element.props);
-    const prevElement = structuredClone(element);
+    // prevElementOverride가 있으면 프리뷰 전 원본 사용 (정확한 undo/redo)
+    const historyBase = prevElementOverride || element;
+    const prevProps = structuredClone(historyBase.props);
+    const prevElement = structuredClone(historyBase);
 
     const newProps = {
       ...element.props,
@@ -191,6 +212,40 @@ export const createInspectorActionsSlice: StateCreator<
       const element = getSelectedElement();
       if (!element) return;
 
+      // 프리뷰 상태에서 커밋 시, 원본 요소의 style을 기반으로 변경
+      const savedPrePreview = prePreviewElement;
+      prePreviewElement = null;
+
+      const baseElement = (savedPrePreview && savedPrePreview.id === element.id)
+        ? savedPrePreview : element;
+      const currentStyle = { ...((baseElement.props?.style as Record<string, string>) || {}) };
+
+      if (value === "" || value === null || value === undefined) {
+        delete currentStyle[property];
+      } else {
+        currentStyle[property] = value;
+      }
+
+      updateAndSave(
+        element.id,
+        { style: currentStyle },
+        undefined,
+        savedPrePreview && savedPrePreview.id === element.id ? savedPrePreview : undefined,
+      );
+    },
+
+    updateSelectedStylePreview: (property, value) => {
+      const { elementsMap, selectedElementId } = get();
+      if (!selectedElementId) return;
+
+      const element = elementsMap.get(selectedElementId);
+      if (!element) return;
+
+      // 첫 프리뷰 시 원본 요소 스냅샷 저장 (히스토리 정확성)
+      if (!prePreviewElement || prePreviewElement.id !== selectedElementId) {
+        prePreviewElement = structuredClone(element);
+      }
+
       const currentStyle = { ...((element.props?.style as Record<string, string>) || {}) };
 
       if (value === "" || value === null || value === undefined) {
@@ -199,14 +254,42 @@ export const createInspectorActionsSlice: StateCreator<
         currentStyle[property] = value;
       }
 
-      updateAndSave(element.id, { style: currentStyle });
+      const newProps = { ...element.props, style: currentStyle };
+      const updatedElement: Element = { ...element, props: newProps };
+
+      // elementsMap만 업데이트 (캔버스 렌더링용)
+      // ⚠️ selectedElementProps는 업데이트하지 않음!
+      // → Jotai atom이 변경되지 않아 PropertyUnitInput의 value prop 유지
+      // → blur 시 valueActuallyChanged 정상 감지 → onChange(DB 저장) 호출
+      const newElementsMap = new Map(elementsMap);
+      newElementsMap.set(selectedElementId, updatedElement);
+
+      const elementIndex = (get() as CombinedState).elements.findIndex(
+        (el) => el.id === selectedElementId
+      );
+      let newElements = (get() as CombinedState).elements;
+      if (elementIndex !== -1) {
+        newElements = [...newElements];
+        newElements[elementIndex] = updatedElement;
+      }
+
+      set({
+        elements: newElements,
+        elementsMap: newElementsMap,
+      } as Partial<CombinedState>);
     },
 
     updateSelectedStyles: (styles) => {
       const element = getSelectedElement();
       if (!element) return;
 
-      const currentStyle = { ...((element.props?.style as Record<string, string>) || {}) };
+      // 프리뷰 상태에서 커밋 시, 원본 요소의 style 기반으로 변경
+      const savedPrePreview = prePreviewElement;
+      prePreviewElement = null;
+
+      const baseElement = (savedPrePreview && savedPrePreview.id === element.id)
+        ? savedPrePreview : element;
+      const currentStyle = { ...((baseElement.props?.style as Record<string, string>) || {}) };
 
       Object.entries(styles).forEach(([property, value]) => {
         if (value === "" || value === null || value === undefined) {
@@ -216,7 +299,12 @@ export const createInspectorActionsSlice: StateCreator<
         }
       });
 
-      updateAndSave(element.id, { style: currentStyle });
+      updateAndSave(
+        element.id,
+        { style: currentStyle },
+        undefined,
+        savedPrePreview && savedPrePreview.id === element.id ? savedPrePreview : undefined,
+      );
     },
 
     // ============================================

@@ -67,6 +67,17 @@ function updateTextChildren(
 ): SkiaNodeData[] | undefined {
   return children?.map((child: SkiaNodeData) => {
     if (child.type === 'text' && child.text) {
+      // autoCenter: false → 수동 배치 텍스트 (Card 등 다중 텍스트)
+      // maxWidth만 업데이트하고 위치/크기는 유지
+      if (child.text.autoCenter === false) {
+        return {
+          ...child,
+          text: {
+            ...child.text,
+            maxWidth: parentWidth - child.text.paddingLeft * 2,
+          },
+        };
+      }
       const fontSize = child.text.fontSize || 14;
       const lineHeight = child.text.lineHeight || fontSize * 1.2; // I-L22: 실제값 우선
       return {
@@ -151,9 +162,19 @@ function buildSkiaTreeHierarchical(
           const relX = absX - parentAbsX;
           const relY = absY - parentAbsY;
 
-          // PixiJS 컨테이너의 실제 크기 사용 (Yoga 레이아웃 결과)
-          const actualWidth = c.width > 0 ? c.width : nodeData.width;
-          const actualHeight = c.height > 0 ? c.height : nodeData.height;
+          // Yoga 계산 완료 후 visual bounds 갱신 전(React 재렌더 대기)인 경우,
+          // c.width(visual bounds)는 stale 값일 수 있다.
+          // _layout.computedLayout는 Yoga가 즉시 설정하므로 우선 사용한다.
+          const yogaLayout = (c as unknown as Record<string, unknown>)._layout as
+            { computedLayout?: { width: number; height: number } } | undefined;
+          const yogaW = yogaLayout?.computedLayout?.width;
+          const yogaH = yogaLayout?.computedLayout?.height;
+          const actualWidth = (yogaW != null && yogaW > 0)
+            ? yogaW
+            : (c.width > 0 ? c.width : nodeData.width);
+          const actualHeight = (yogaH != null && yogaH > 0)
+            ? yogaH
+            : (c.height > 0 ? c.height : nodeData.height);
 
           // 내부 자식 (text 등) 크기 갱신
           const updatedInternalChildren = updateTextChildren(

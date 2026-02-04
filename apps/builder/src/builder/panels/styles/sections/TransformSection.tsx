@@ -34,7 +34,7 @@ import { useResetStyles } from '../hooks/useResetStyles';
  */
 const TransformSectionContent = memo(function TransformSectionContent() {
   // 🚀 Phase 1: RAF 기반 스로틀 업데이트
-  const { updateStyleImmediate, updateStyleRAF } = useOptimizedStyleActions();
+  const { updateStyleImmediate, updateStylePreview } = useOptimizedStyleActions();
   // 🚀 Phase 3: Jotai atom에서 직접 값 구독
   const styleValues = useTransformValuesJotai();
 
@@ -49,7 +49,7 @@ const TransformSectionContent = memo(function TransformSectionContent() {
         value={styleValues.width}
         units={['reset', 'px', '%', 'vh', 'vw']}
         onChange={(value) => updateStyleImmediate('width', value)}
-        onDrag={(value) => updateStyleRAF('width', value)}
+        onDrag={(value) => updateStylePreview('width', value)}
         min={0}
         max={9999}
       />
@@ -60,7 +60,7 @@ const TransformSectionContent = memo(function TransformSectionContent() {
         value={styleValues.height}
         units={['reset', 'px', '%', 'vh', 'vw']}
         onChange={(value) => updateStyleImmediate('height', value)}
-        onDrag={(value) => updateStyleRAF('height', value)}
+        onDrag={(value) => updateStylePreview('height', value)}
         min={0}
         max={9999}
       />
@@ -81,7 +81,7 @@ const TransformSectionContent = memo(function TransformSectionContent() {
         value={styleValues.left}
         units={['reset', 'px', '%', 'vh', 'vw']}
         onChange={(value) => updateStyleImmediate('left', value)}
-        onDrag={(value) => updateStyleRAF('left', value)}
+        onDrag={(value) => updateStylePreview('left', value)}
         min={-9999}
         max={9999}
       />
@@ -92,7 +92,7 @@ const TransformSectionContent = memo(function TransformSectionContent() {
         value={styleValues.top}
         units={['reset', 'px', '%', 'vh', 'vw']}
         onChange={(value) => updateStyleImmediate('top', value)}
-        onDrag={(value) => updateStyleRAF('top', value)}
+        onDrag={(value) => updateStylePreview('top', value)}
         min={-9999}
         max={9999}
       />

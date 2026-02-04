@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, memo, useState } from "react";
+import React, { useLayoutEffect, useRef, memo, useState } from "react";
 import {
   ComboBox as AriaComboBox,
   Button,
@@ -79,15 +79,13 @@ export const PropertyUnitInput = memo(function PropertyUnitInput({
   // ⭐ 마지막으로 저장한 값 추적 - 중복 호출 방지
   const lastSavedValueRef = useRef<string>(value);
 
-  useEffect(() => {
+  // useLayoutEffect: paint 전에 local state를 동기화하여
+  // 외부 값 변경(undo, 다른 패널) 시 1프레임 플리커 방지
+  useLayoutEffect(() => {
     const parsed = parseUnitValue(value);
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setNumericValue(parsed.numericValue);
-
     setUnit(parsed.unit);
-
     setIsKeyword(parsed.numericValue === null);
-
     setInputValue(
       parsed.numericValue !== null ? String(parsed.numericValue) : parsed.unit
     );
@@ -99,6 +97,16 @@ export const PropertyUnitInput = memo(function PropertyUnitInput({
 
   const handleInputChange = (newValue: string) => {
     setInputValue(newValue);
+
+    // 타이핑 중 실시간 캔버스 프리뷰 (Pencil 앱 동작 방식)
+    // onDrag가 있으면 RAF-throttled로 캔버스에 즉시 반영
+    if (onDrag) {
+      const num = parseFloat(newValue);
+      if (!isNaN(num) && num >= min && num <= max) {
+        const effectiveUnit = KEYWORDS.includes(unit) ? 'px' : unit;
+        onDrag(`${num}${effectiveUnit}`);
+      }
+    }
   };
 
   // ⭐ ComboBox 컨테이너 ref - 내부 포커스 이동 감지용

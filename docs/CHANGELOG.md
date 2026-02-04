@@ -7,6 +7,88 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed - 스타일 패널 프로퍼티 변경 시 저장 안 됨 / 플리커 / 실시간 프리뷰 미반영 (2026-02-04)
+
+#### 개요
+스타일 패널(Transform, Layout, Typography, Appearance)에서 프로퍼티 변경 시:
+1. 값을 변경해도 새로고침하면 저장되지 않음 (DB 저장 누락)
+2. 요소 선택 시 1프레임 플리커 (빈 값 → 실제 값 깜빡임)
+3. 타이핑 중 캔버스에 실시간 프리뷰 미반영
+
+Pencil 앱과 비교하여 동등한 수준의 즉시 반영 품질을 목표로 수정.
+
+#### 버그 1: [Critical] PropertyUnitInput 프리뷰 후 DB 저장 누락
+
+**원인:** `updateSelectedStylePreview`가 `selectedElementProps`를 업데이트 → Jotai atom 갱신 → PropertyUnitInput의 `value` prop이 프리뷰 값으로 변경 → blur 시 `valueActuallyChanged = false` 판정 → `onChange`(DB 저장) 미호출
+
+**수정 (`inspectorActions.ts`):**
+- `updateSelectedStylePreview`에서 `selectedElementProps` 업데이트 제거 (캔버스용 `elementsMap`만 업데이트)
+- `prePreviewElement` closure 변수로 프리뷰 전 원본 스냅샷 보관
+- `updateSelectedStyle`/`updateSelectedStyles` 커밋 시 원본 기반으로 히스토리 기록 (정확한 undo/redo)
+- `updateAndSave`에 `prevElementOverride` 파라미터 추가
+
+```
+타이핑 중: onDrag → updateStylePreview → elementsMap만 업데이트 → 캔버스 반영
+                                          selectedElementProps 미변경 → value prop 유지
+blur/Enter: onChange → updateStyleImmediate → valueActuallyChanged=true → DB 저장
+```
+
+#### 버그 2: [Critical] FourWayGrid controlled input + updateStyleIdle 충돌
+
+**원인:** LayoutSection FourWayGrid의 `<Input>`이 Jotai atom 값으로 제어되는 controlled component인데, `onChange`가 `updateStyleIdle`(requestIdleCallback, 100ms timeout)을 호출. store가 idle callback 이후에야 업데이트되므로 타이핑한 문자가 즉시 사라짐
+
+**수정 (`LayoutSection.tsx`):**
+- FourWayGrid에 local state 패턴 적용 (useState + useLayoutEffect 동기화)
+- `updateStyleIdle` → `updateStyleImmediate`로 변경 (blur 시에만 호출되므로 즉시 업데이트 적합)
+- `onPreview` 콜백 추가 (타이핑 중 실시간 캔버스 프리뷰)
+
+#### 버그 3: [Medium] 요소 선택 시 플리커 (Two-phase hydration)
+
+**원인:** `setSelectedElement`이 `selectedElementProps: {}` 설정 → hydration 50ms 후 실행. 첫 프레임에 모든 값이 빈 상태로 표시
+
+**수정 (`elements.ts`):**
+- `selectedElementProps: {}` → `selectedElementProps: createCompleteProps(element)` (동기적, 경량)
+- hydration 콜백은 `computedStyle`만 머지 (전체 교체 대신)
+- `_cancelHydrateSelectedProps` 노출하여 경쟁 상태 방지
+
+#### 버그 4: [Medium] Zustand→Jotai Bridge useEffect 지연
+
+**원인:** Bridge 초기값 설정이 `useEffect`(paint 이후)에서 실행되어 첫 프레임에 null 표시
+
+**수정 (`useZustandJotaiBridge.ts`):**
+- `useEffect` → `useLayoutEffect`로 변경 (paint 전 실행)
+- `buildSelectedElement`에서 빈 props fallback 개선 (`element.props`에서 직접 읽기)
+
+#### 개선: 실시간 캔버스 프리뷰 (Preview vs Commit 분리)
+
+**목표:** Pencil 앱처럼 타이핑 중에도 캔버스에 즉시 반영
+
+**수정:**
+- `updateSelectedStylePreview` 스토어 액션 추가 (히스토리/DB 저장 없이 캔버스만 업데이트)
+- `updateStylePreview` 훅 함수 추가 (RAF-throttled, `useOptimizedStyleActions.ts`)
+- PropertyUnitInput: `handleInputChange`에서 `onDrag` 호출로 타이핑 중 라이브 프리뷰
+- PropertyUnitInput: `useEffect` → `useLayoutEffect`로 값 동기화 (1프레임 플리커 방지)
+- 전 섹션 `onDrag`를 `updateStyleRAF` → `updateStylePreview`로 전환
+
+| 동작 | 함수 | 히스토리 | DB 저장 |
+|------|------|----------|---------|
+| 타이핑 중 / 드래그 중 | `updateStylePreview` | X | X |
+| blur / Enter | `updateStyleImmediate` | O | O |
+
+#### 수정 파일
+
+| 파일 | 변경 |
+|------|------|
+| `stores/inspectorActions.ts` | prePreviewElement 추적, selectedElementProps 미업데이트, prevElementOverride |
+| `stores/elements.ts` | 동기적 createCompleteProps, _cancelHydrateSelectedProps |
+| `panels/styles/hooks/useOptimizedStyleActions.ts` | updateStylePreview 추가 |
+| `panels/styles/hooks/useZustandJotaiBridge.ts` | useLayoutEffect, 빈 props fallback |
+| `panels/styles/sections/LayoutSection.tsx` | FourWayGrid local state, onPreview |
+| `panels/styles/sections/TransformSection.tsx` | onDrag → updateStylePreview |
+| `panels/styles/sections/TypographySection.tsx` | onDrag → updateStylePreview |
+| `panels/styles/sections/AppearanceSection.tsx` | onDrag → updateStylePreview |
+| `components/property/PropertyUnitInput.tsx` | useLayoutEffect, 타이핑 중 라이브 프리뷰 |
+
 ### Fixed - ToggleButtonGroup 캔버스 선택 불가 및 스타일 적용 버그 수정 (2026-02-04)
 
 #### 1. ToggleButtonGroup 캔버스에서 클릭 선택 불가 (Selection)

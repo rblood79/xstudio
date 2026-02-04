@@ -31,7 +31,7 @@ import { useResetStyles } from '../hooks/useResetStyles';
 const AppearanceSectionContent = memo(function AppearanceSectionContent() {
   const { updateStyle } = useStyleActions();
   // 🚀 Phase 1: RAF 기반 스로틀 업데이트
-  const { updateStyleImmediate, updateStyleRAF } = useOptimizedStyleActions();
+  const { updateStyleImmediate, updateStylePreview } = useOptimizedStyleActions();
   // 🚀 Phase 3: Jotai atom에서 직접 값 구독
   const styleValues = useAppearanceValuesJotai();
 
@@ -75,7 +75,7 @@ const AppearanceSectionContent = memo(function AppearanceSectionContent() {
           value={styleValues.borderWidth}
           units={['reset', 'px']}
           onChange={(value) => updateStyleImmediate('borderWidth', value)}
-          onDrag={(value) => updateStyleRAF('borderWidth', value)}
+          onDrag={(value) => updateStylePreview('borderWidth', value)}
           min={0}
           max={100}
         />
@@ -86,7 +86,7 @@ const AppearanceSectionContent = memo(function AppearanceSectionContent() {
           value={styleValues.borderRadius}
           units={['reset', 'px']}
           onChange={(value) => updateStyleImmediate('borderRadius', value)}
-          onDrag={(value) => updateStyleRAF('borderRadius', value)}
+          onDrag={(value) => updateStylePreview('borderRadius', value)}
           min={0}
           max={500}
         />

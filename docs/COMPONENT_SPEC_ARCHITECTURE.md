@@ -1188,7 +1188,7 @@ export const typography: TypographyTokens = {
 };
 
 export const fontFamily = {
-  sans: 'Inter, system-ui, -apple-system, sans-serif',
+  sans: 'Pretendard, Inter, system-ui, -apple-system, sans-serif',
   mono: 'JetBrains Mono, Consolas, monospace',
 };
 
@@ -1248,42 +1248,55 @@ export function getRadiusToken(name: keyof RadiusTokens): number {
 import type { ShadowTokens } from '../types/token.types';
 
 /**
- * Light 모드 그림자 토큰
- * Material Design 3 elevation 기반
+ * 그림자 토큰
+ * CSS box-shadow 형식 (Tailwind-style)
  */
-export const lightShadows: ShadowTokens = {
+export const shadows: ShadowTokens = {
+  /** 그림자 없음 */
   none: 'none',
-  sm: '0 1px 2px rgba(0, 0, 0, 0.1)',
-  md: '0 2px 4px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06)',
-  lg: '0 4px 8px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.06)',
-  xl: '0 8px 16px rgba(0, 0, 0, 0.1), 0 4px 8px rgba(0, 0, 0, 0.06)',
-  inset: 'inset 0 1px 2px rgba(0, 0, 0, 0.1)',
-  'focus-ring': '0 0 0 2px var(--primary)',
+
+  /** 작은 그림자 (elevation 1) */
+  sm: '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
+
+  /** 중간 그림자 (elevation 2) */
+  md: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1)',
+
+  /** 큰 그림자 (elevation 3) */
+  lg: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1)',
+
+  /** 매우 큰 그림자 (elevation 4) */
+  xl: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
+
+  /** 내부 그림자 (inset) */
+  inset: 'inset 0 2px 4px 0 rgba(0, 0, 0, 0.05)',
+
+  /** 포커스 링 */
+  'focus-ring': '0 0 0 2px var(--primary, #6750a4)',
 };
+
+export function getShadowToken(name: keyof ShadowTokens): string {
+  return shadows[name];
+}
 
 /**
- * Dark 모드 그림자 토큰
+ * CSS box-shadow 문자열을 파싱하여 PIXI에서 사용할 수 있는 형태로 변환
  */
-export const darkShadows: ShadowTokens = {
-  none: 'none',
-  sm: '0 1px 2px rgba(0, 0, 0, 0.3)',
-  md: '0 2px 4px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.2)',
-  lg: '0 4px 8px rgba(0, 0, 0, 0.3), 0 2px 4px rgba(0, 0, 0, 0.2)',
-  xl: '0 8px 16px rgba(0, 0, 0, 0.3), 0 4px 8px rgba(0, 0, 0, 0.2)',
-  inset: 'inset 0 1px 2px rgba(0, 0, 0, 0.3)',
-  'focus-ring': '0 0 0 2px var(--primary)',
-};
+export interface ParsedShadow {
+  offsetX: number;
+  offsetY: number;
+  blur: number;
+  spread: number;
+  color: string;
+  alpha: number;
+  inset: boolean;
+}
 
-/**
- * 테마별 그림자 객체
- */
-export const shadows = {
-  light: lightShadows,
-  dark: darkShadows,
-};
-
-export function getShadowToken(name: keyof ShadowTokens, theme: 'light' | 'dark' = 'light'): string {
-  return theme === 'dark' ? darkShadows[name] : lightShadows[name];
+export function parseShadow(shadow: string): ParsedShadow[] {
+  if (shadow === 'none') return [];
+  // rgba 괄호 안의 쉼표는 무시하고 분리
+  const parts = shadow.split(/,(?![^(]*\))/);
+  // 각 part에서 inset, 색상, 숫자값 파싱 → ParsedShadow 반환
+  // ...
 }
 ```
 
@@ -2322,16 +2335,16 @@ export async function generateAllCSS(
 
 ### 3.7 Phase 0 체크리스트
 
-- [ ] `packages/specs` 패키지 생성
-- [ ] `package.json`, `tsconfig.json` 설정
-- [ ] 타입 시스템 구현 (`types/*.ts`)
-- [ ] Primitive 토큰 정의 (`primitives/*.ts`)
-- [ ] Token Resolver 구현
-- [ ] React Renderer 구현
-- [ ] PixiJS Renderer 구현 (씬 그래프 이벤트 전용)
-- [ ] CSS Generator 구현
-- [ ] 빌드 스크립트 작성
-- [ ] 단위 테스트 작성
+- [x] `packages/specs` 패키지 생성
+- [x] `package.json`, `tsconfig.json` 설정
+- [x] 타입 시스템 구현 (`types/*.ts`)
+- [x] Primitive 토큰 정의 (`primitives/*.ts`)
+- [x] Token Resolver 구현
+- [x] React Renderer 구현
+- [x] PixiJS Renderer 구현 (씬 그래프 이벤트 전용)
+- [x] CSS Generator 구현
+- [x] 빌드 스크립트 작성
+- [ ] 단위 테스트 작성 ⚠️ `tests/` 디렉토리 미생성
 - [x] CanvasKit WASM 초기화 설정 (`initCanvasKit.ts`)
 - [x] CanvasKitRenderer 구현 (`builder/workspace/canvas/skia/nodeRenderers.ts`)
 - [x] CanvasKit 폰트 로더 구현 (`fontManager.ts`)
@@ -3080,6 +3093,7 @@ const parsedBorder = parseBorderWidth(style);  // "2px" → 4방향, borderTopWi
 | **PixiFancyButton** | ❌ typeof 사용 중 | ✅ 등록됨 | parseCSSSize/parsePadding/parseBorderWidth 전환 필요 |
 | **PixiToggleButton** | ❌ typeof 사용 중 | ✅ 등록됨 | parseCSSSize/parsePadding/parseBorderWidth 전환 필요 |
 | PixiToggleButtonGroup | ✅ 완료 | — | container-only 패턴, LayoutComputedSizeContext 사용 (2026-02-04) |
+| **PixiCard** | ✅ 완료 | — | LayoutComputedSizeContext 패턴, 다중 텍스트 Skia 렌더링 (2026-02-04) |
 | PixiSlider | ❌ | — | 전체 마이그레이션 |
 | PixiSwitcher | ❌ | — | 전체 마이그레이션 |
 | PixiSelect | ❌ | — | 전체 마이그레이션 |
@@ -4659,7 +4673,7 @@ export type { ComponentSpec, Shape, TokenRef } from './types';
     "test:visual": "playwright test",
     "generate:css": "tsx scripts/generate-css.ts",
     "validate": "tsx scripts/validate-specs.ts",
-    "validate:tokens": "tsx scripts/validate-tokens.ts",
+    "validate:tokens": "tsx scripts/validate-tokens.ts",  // ⚠️ 미구현: 파일 미생성
     "lint": "eslint src/",
     "typecheck": "tsc --noEmit"
   }
@@ -5227,3 +5241,5 @@ function ElementSpriteButton({ element }) {
 | 2026-02-01 | 1.14 | Phase 5+ CanvasKit/Skia 구현 코드 대조 검증 12건 반영: (1) §1 아키텍처 개요 — Skia 렌더링 실제 위치(apps/builder/.../skia/) 명시, (2) §2 렌더러 설명 — CanvasKitRenderer → nodeRenderers.ts 파이프라인 정정, (3) §2 파일 목록 — CanvasKitRenderer.ts → 외부 구현 참조 코멘트, (4) §3 TextShape — "설계 명세 — 인터페이스 적용 예정" 상태 표기, (5) §3 ShadowShape — 실제 구현 위치(skia/types.ts EffectStyle) 명시, (6) §3 BorderShape — "설계 명세 — 인터페이스 적용 예정" 상태 표기, (7) §4 Clipping — clipRect ✅/clipRRect·overflow 미구현 상태 표기, (8) §4 Gradient — 타입별 구현 상태 + fills.ts 라인 참조, (9) §7 색상 변환 — "설계 예시" + Color4f 인라인 사용 명시, (10) §8 렌더러 파일 — 설계 예시 + nodeRenderers.ts 참조, (11) §12 테스트 헬퍼 — "구현 예정 — 현재 미구현" 표기, (12) §12 캐시 전략 — 구현 상태 컬럼 추가(Paint·Paragraph ⚠️ 미구현, Font·Surface·DirtyRect ✅) |
 | 2026-02-02 | 2.0 | **Skia 중심 문서 리팩토링**: (1) 문서 상태를 "Phase 5 구현 완료 (CanvasKit/Skia 렌더링 전환)"로 갱신, (2) 목표 아키텍처를 render.skia 중심으로 변경, (3) 메인 데이터 흐름 다이어그램을 CanvasKit 4-path로 교체하고 기존 3-path를 레거시 접이식 블록으로 이동, (4) 시스템 아키텍처 다이어그램에 skia/ 디렉토리 반영, (5) 디렉토리 구조에 skia/ 18개 파일 목록 추가, (6) §3.5.3을 "CanvasKit/Skia Renderer (Primary)"로 재구조화 — SkiaNodeData 구조, renderNode() 파이프라인, 렌더러 역할 분담 테이블 추가, PixiRenderer 코드를 레거시 접이식 블록으로 이동, (7) Shape 타입 내 Phase 5+ 주석을 본문으로 승격 — TextShape(ParagraphBuilder), ShadowShape(effects.ts), BorderShape(Skia Stroke), GradientShape(fills.ts 구현 상태), overflow(clipRect 구현 완료), (8) §4.5를 "CanvasKit/Skia 렌더링 패턴"으로 교체 — ElementSprite→useSkiaNode→SkiaOverlay 파이프라인 다이어그램, (9) §4.7.4 CSS 단위 규칙을 CanvasKit 중심으로 재구성 — Yoga px 변환 설명을 본문으로, PixiJS 규칙을 레거시 접이식 블록으로, (10) Phase 0 체크리스트 갱신 — CanvasKit 인프라 11개 항목 [x] 완료, (11) Phase 5 체크리스트 갱신 — Skia 인프라 8개 항목 [x] 완료 + 미완료 항목 분리, (12) VRT 섹션을 React ↔ CanvasKit 비교로 전환, (13) 성능 최적화에 Frame Classification(idle/camera-only/content/full) 추가, (14) 테스트 코드 내 PIXI 참조를 CanvasKit으로 교체 |
 | 2026-02-04 | 2.1 | 문서 정확성 검증 및 수정 7건: (1) §7.1 컴포넌트 개수 17→16으로 수정, (2) §5.2 TextFieldSpec states 타입 불일치 수정 — focus→focused, invalid 제거, borderColor/borderWidth→outline/outlineOffset (StateEffect 인터페이스 준수), (3) §4.2 ToggleButton/ToggleButtonGroup 상태 "⚠️ 부분"→"✅ 정상" (WebGL container-only 패턴 구현 완료), (4) §3.5.3.1 renderSkiaShape rect case에서 RectShape 타입에 없는 radius 사용 수정 — rect/roundRect case 분리, (5) hexStringToNumber 함수 정의 추가 (PixiRenderer.ts 코드에서 참조되나 미정의), (6) §4.7.4 PixiToggleButtonGroup CSS 단위 파싱 상태 갱신 — "❌"→"✅ 완료" (container-only 패턴, LayoutComputedSizeContext 사용), (7) ToggleButtonGroup WebGL 구현 관련 변경 반영 — PropertyUnitInput 키워드 유닛 버그 수정, styleToLayout.ts formatStyles 캐싱 수정, PixiToggleButtonGroup selection 수정 (eventMode, computedSize > 0 체크) |
+| 2026-02-04 | 2.2 | Phase 0 재점검 — 코드↔문서 동기화 5건: (1) §3.7 Phase 0 체크리스트 항목 1-9 `[x]` 완료 표기 (패키지 생성, 타입 시스템, Primitive 토큰, Token Resolver, React/PixiJS/CSS 렌더러, 빌드 스크립트 모두 구현 확인), 항목 10 단위 테스트는 `[ ]` 유지 (tests/ 디렉토리 미생성), (2) §3.4 shadows.ts 코드 예시 전면 교체 — lightShadows/darkShadows 분리 구조에서 단일 `shadows` 객체로 수정 (Tailwind-style 값), `getShadowToken(name)` 시그니처 수정 (theme 파라미터 제거), `ParsedShadow` 인터페이스 및 `parseShadow()` 함수 추가, (3) §3.4 typography.ts fontFamily.sans에 'Pretendard' 추가 — 실제 코드와 동기화 (v1.11에서 추가되었으나 코드 예시 미반영), (4) §9.3 package.json의 validate:tokens 스크립트에 미구현 주석 추가 (scripts/validate-tokens.ts 파일 미생성) |
+| 2026-02-04 | 2.3 | Card WebGL/Skia 구현 + Body 레이아웃 버그 수정 6건: (1) **PixiCard LayoutComputedSizeContext 패턴 전환** — onLayout+useState(1프레임 지연) → LayoutComputedSizeContext(즉시 반영)로 교체, ToggleButtonGroup과 동일 패턴 (PixiCard.tsx), (2) **Card 다중 텍스트 Skia 렌더링** — ElementSprite.tsx에서 Card 태그 특수 처리, title(fontSize:16,fontWeight:600) + subheading(fontSize:14) + description(fontSize:14) 3개 텍스트 노드 생성, autoCenter:false로 Card 내 수직 스택 위치 유지, (3) **SkiaNodeData.text.autoCenter 필드 추가** — nodeRenderers.ts에 autoCenter 옵션 추가, SkiaOverlay.tsx updateTextChildren()에서 autoCenter:false일 때 maxWidth만 업데이트하고 paddingTop/중앙정렬 스킵, (4) **SkiaOverlay Yoga computed width 우선** — buildSkiaTreeHierarchical에서 c.width(PixiJS visual bounds, stale 가능) 대신 c._layout.computedLayout.width(Yoga 즉시값) 우선 사용 (SkiaOverlay.tsx), (5) **renderWithCustomEngine Body 이중 패딩 수정** — 루트 pixiContainer가 이미 contentOffsetX/contentWidth를 적용하므로 Body 자식에 paddingOffset 재적용 방지, availableWidth에 border 차감 추가 (BuilderCanvas.tsx), (6) **blockLayout flexBasis:'100%' 미적용 수정** — styleToLayout이 항상 width:'auto'(truthy) 반환하여 !effectiveLayout.width가 false → width!=='auto' 체크로 교체, Body의 isParentFlexRow에 rootLayout 기본 flexDirection:'row' 반영 (BuilderCanvas.tsx), (7) §4.7.4 컴포넌트 목록에 PixiCard 추가 |

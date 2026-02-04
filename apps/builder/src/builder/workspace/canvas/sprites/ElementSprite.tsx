@@ -1295,99 +1295,208 @@ export const ElementSprite = memo(function ElementSprite({
         paddingLeft: number;
         paddingTop: number;
         maxWidth: number;
+        autoCenter?: boolean;
       };
     }> | undefined;
 
     if (isUIComponent) {
       const tag = effectiveElement.tag;
 
-      // 텍스트 추출 우선순위: children > text > label > value > placeholder > count
-      const textContent = String(
-        props?.children
-        || props?.text
-        || props?.label
-        || props?.value
-        || props?.placeholder
-        || props?.count
-        || ''
-      );
-      if (textContent) {
-        // 텍스트 색상: style.color > variant 기반 기본값
-        // variant별 기본 텍스트 색상 (light 모드):
-        //   default → #1d1b20, primary → #ffffff, secondary → #ffffff, surface → #1d1b20
-        const VARIANT_TEXT_COLORS: Record<string, number> = {
-          default: 0x1d1b20,
-          primary: 0xffffff,
-          secondary: 0xffffff,
-          surface: 0x1d1b20,
-          outline: 0x6750a4,
-          ghost: 0x6750a4,
-          tertiary: 0xffffff,
-          error: 0xffffff,
-        };
-        const defaultTextColor = VARIANT_TEXT_COLORS[variant] ?? 0x1d1b20;
+      // 텍스트 색상 공통 상수
+      const VARIANT_TEXT_COLORS: Record<string, number> = {
+        default: 0x1d1b20,
+        primary: 0xffffff,
+        secondary: 0xffffff,
+        surface: 0x1d1b20,
+        outline: 0x6750a4,
+        ghost: 0x6750a4,
+        tertiary: 0xffffff,
+        error: 0xffffff,
+      };
 
-        // placeholder 텍스트는 연한 색상 사용
-        const isPlaceholder = !props?.children && !props?.text && !props?.label
-          && !props?.value && !!props?.placeholder;
-        const placeholderColor = 0x9ca3af; // Tailwind gray-400
-        const baseTextColor = isPlaceholder ? placeholderColor : defaultTextColor;
-        const textColorHex = style?.color
-          ? cssColorToHex(style.color, baseTextColor)
-          : baseTextColor;
-        const tcR = ((textColorHex >> 16) & 0xff) / 255;
-        const tcG = ((textColorHex >> 8) & 0xff) / 255;
-        const tcB = (textColorHex & 0xff) / 255;
+      // Card 컴포넌트: title/heading, subheading, description 다중 텍스트
+      if (tag === 'Card') {
+        const cardTitle = String(props?.heading || props?.title || '');
+        const cardSubheading = String(props?.subheading || '');
+        const cardDescription = String(props?.description || props?.children || '');
 
-        // 폰트 크기: style.fontSize > size 프리셋
-        // size별 기본 fontSize: xs=12, sm=14, md=16, lg=18, xl=20
-        const size = String(props?.size || 'sm');
-        const SIZE_FONT: Record<string, number> = {
-          xs: 12, sm: 14, md: 16, lg: 18, xl: 20,
-        };
-        const defaultFontSize = SIZE_FONT[size] ?? 14;
-        const fontSize = style?.fontSize !== undefined
-          ? parseCSSSize(style.fontSize, undefined, defaultFontSize)
-          : defaultFontSize;
+        if (cardTitle || cardSubheading || cardDescription) {
+          const defaultTextColor = VARIANT_TEXT_COLORS[variant] ?? 0x1d1b20;
+          const textColorHex = style?.color
+            ? cssColorToHex(style.color, defaultTextColor)
+            : defaultTextColor;
+          const tcR = ((textColorHex >> 16) & 0xff) / 255;
+          const tcG = ((textColorHex >> 8) & 0xff) / 255;
+          const tcB = (textColorHex & 0xff) / 255;
+          const textColor = Float32Array.of(tcR, tcG, tcB, 1);
 
-        // 컴포넌트 타입별 정렬: Button/Badge = center, Input/Checkbox 등 = left
-        const CENTER_ALIGN_TAGS = new Set([
-          'Button', 'SubmitButton', 'FancyButton',
-          'Badge', 'Tag', 'Chip',
-          'ToggleButton',
-        ]);
-        const textAlign = CENTER_ALIGN_TAGS.has(tag) ? 'center' as const : 'left' as const;
+          // Card padding (cssVariableReader CARD_FALLBACKS와 동기화)
+          const cardSize = String(props?.size || 'md');
+          const CARD_PADDING: Record<string, number> = { sm: 8, md: 12, lg: 16 };
+          const padding = CARD_PADDING[cardSize] ?? 12;
+          const fontFamilies = ['Pretendard', 'Inter', 'system-ui', 'sans-serif'];
+          const maxWidth = transform.width - padding * 2;
 
-        // Input 계열은 좌측 패딩 적용
-        const INPUT_TAGS = new Set([
-          'Input', 'TextField', 'TextInput', 'SearchField',
-          'TextArea', 'Textarea', 'NumberField', 'ComboBox',
-          'Select', 'Dropdown', 'DateField', 'TimeField', 'ColorField',
-        ]);
-        const paddingLeft = INPUT_TAGS.has(tag) ? 8 : 0;
+          const nodes: typeof textChildren = [];
+          let currentY = padding;
 
-        // 수직 중앙 정렬: paddingTop 근사 계산
-        const lineHeight = fontSize * 1.2;
-        const paddingTop = Math.max(0, (transform.height - lineHeight) / 2);
+          // Title (heading || title)
+          if (cardTitle) {
+            const titleFontSize = 16;
+            nodes.push({
+              type: 'text' as const,
+              x: 0, y: 0,
+              width: transform.width,
+              height: transform.height,
+              visible: true,
+              text: {
+                content: cardTitle,
+                fontFamilies,
+                fontSize: titleFontSize,
+                fontWeight: 600,
+                color: textColor,
+                align: 'left' as const,
+                paddingLeft: padding,
+                paddingTop: currentY,
+                maxWidth,
+                autoCenter: false,
+              },
+            });
+            currentY += titleFontSize * 1.2;
+          }
 
-        textChildren = [{
-          type: 'text' as const,
-          x: 0,
-          y: 0,
-          width: transform.width,
-          height: transform.height,
-          visible: true,
-          text: {
-            content: textContent,
-            fontFamilies: ['Pretendard', 'Inter', 'system-ui', 'sans-serif'],
-            fontSize,
-            color: Float32Array.of(tcR, tcG, tcB, 1),
-            align: textAlign,
-            paddingLeft,
-            paddingTop,
-            maxWidth: transform.width - paddingLeft * 2,
-          },
-        }];
+          // Subheading
+          if (cardSubheading) {
+            if (cardTitle) currentY += 2; // header gap (PixiCard headerLayout.gap)
+            const subFontSize = 14;
+            nodes.push({
+              type: 'text' as const,
+              x: 0, y: 0,
+              width: transform.width,
+              height: transform.height,
+              visible: true,
+              text: {
+                content: cardSubheading,
+                fontFamilies,
+                fontSize: subFontSize,
+                color: textColor,
+                align: 'left' as const,
+                paddingLeft: padding,
+                paddingTop: currentY,
+                maxWidth,
+                autoCenter: false,
+              },
+            });
+            currentY += subFontSize * 1.2;
+          }
+
+          // header → content gap (PixiCard headerLayout.marginBottom = 8)
+          if (cardTitle || cardSubheading) {
+            currentY += 8;
+          }
+
+          // Description (description || children)
+          if (cardDescription) {
+            const descFontSize = 14;
+            nodes.push({
+              type: 'text' as const,
+              x: 0, y: 0,
+              width: transform.width,
+              height: transform.height,
+              visible: true,
+              text: {
+                content: cardDescription,
+                fontFamilies,
+                fontSize: descFontSize,
+                color: textColor,
+                align: 'left' as const,
+                paddingLeft: padding,
+                paddingTop: currentY,
+                maxWidth,
+                autoCenter: false,
+              },
+            });
+          }
+
+          textChildren = nodes;
+        }
+      } else {
+        // 기존 단일 텍스트 추출 (Button, Badge, Input 등)
+        // 텍스트 추출 우선순위: children > text > label > value > placeholder > count
+        const textContent = String(
+          props?.children
+          || props?.text
+          || props?.label
+          || props?.value
+          || props?.placeholder
+          || props?.count
+          || ''
+        );
+        if (textContent) {
+          const defaultTextColor = VARIANT_TEXT_COLORS[variant] ?? 0x1d1b20;
+
+          // placeholder 텍스트는 연한 색상 사용
+          const isPlaceholder = !props?.children && !props?.text && !props?.label
+            && !props?.value && !!props?.placeholder;
+          const placeholderColor = 0x9ca3af; // Tailwind gray-400
+          const baseTextColor = isPlaceholder ? placeholderColor : defaultTextColor;
+          const textColorHex = style?.color
+            ? cssColorToHex(style.color, baseTextColor)
+            : baseTextColor;
+          const tcR = ((textColorHex >> 16) & 0xff) / 255;
+          const tcG = ((textColorHex >> 8) & 0xff) / 255;
+          const tcB = (textColorHex & 0xff) / 255;
+
+          // 폰트 크기: style.fontSize > size 프리셋
+          // size별 기본 fontSize: xs=12, sm=14, md=16, lg=18, xl=20
+          const size = String(props?.size || 'sm');
+          const SIZE_FONT: Record<string, number> = {
+            xs: 12, sm: 14, md: 16, lg: 18, xl: 20,
+          };
+          const defaultFontSize = SIZE_FONT[size] ?? 14;
+          const fontSize = style?.fontSize !== undefined
+            ? parseCSSSize(style.fontSize, undefined, defaultFontSize)
+            : defaultFontSize;
+
+          // 컴포넌트 타입별 정렬: Button/Badge = center, Input/Checkbox 등 = left
+          const CENTER_ALIGN_TAGS = new Set([
+            'Button', 'SubmitButton', 'FancyButton',
+            'Badge', 'Tag', 'Chip',
+            'ToggleButton',
+          ]);
+          const textAlign = CENTER_ALIGN_TAGS.has(tag) ? 'center' as const : 'left' as const;
+
+          // Input 계열은 좌측 패딩 적용
+          const INPUT_TAGS = new Set([
+            'Input', 'TextField', 'TextInput', 'SearchField',
+            'TextArea', 'Textarea', 'NumberField', 'ComboBox',
+            'Select', 'Dropdown', 'DateField', 'TimeField', 'ColorField',
+          ]);
+          const paddingLeft = INPUT_TAGS.has(tag) ? 8 : 0;
+
+          // 수직 중앙 정렬: paddingTop 근사 계산
+          const lineHeight = fontSize * 1.2;
+          const paddingTop = Math.max(0, (transform.height - lineHeight) / 2);
+
+          textChildren = [{
+            type: 'text' as const,
+            x: 0,
+            y: 0,
+            width: transform.width,
+            height: transform.height,
+            visible: true,
+            text: {
+              content: textContent,
+              fontFamilies: ['Pretendard', 'Inter', 'system-ui', 'sans-serif'],
+              fontSize,
+              color: Float32Array.of(tcR, tcG, tcB, 1),
+              align: textAlign,
+              paddingLeft,
+              paddingTop,
+              maxWidth: transform.width - paddingLeft * 2,
+            },
+          }];
+        }
       }
     }
 

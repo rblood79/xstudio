@@ -591,11 +591,25 @@ const ElementsLayer = memo(function ElementsLayer({
       const parentDisplay = parentStyle?.display as string | undefined;
       const engine = selectEngine(parentDisplay);
 
-      // 🚀 부모의 padding 파싱 (자식 요소들의 사용 가능 공간 계산)
-      // border는 시각 렌더링 전용 — 레이아웃 inset으로 사용하지 않음
+      // 🚀 Body 이중 패딩 방지
+      // Body가 부모일 때: root pixiContainer가 이미 border+padding 오프셋을 적용하고
+      // width=contentWidth로 설정되었으므로, 여기서 다시 padding을 적용하면 이중 적용된다.
+      // 비-Body 부모: border는 시각 렌더링 전용, padding만 inset으로 사용
+      const isBodyParent = parentElement === bodyElement;
       const parentPadding = parsePadding(parentStyle);
-      const availableWidth = pageWidth - parentPadding.left - parentPadding.right;
-      const availableHeight = pageHeight - parentPadding.top - parentPadding.bottom;
+      const parentBorderVal = isBodyParent ? parseBorder(parentStyle) : { top: 0, right: 0, bottom: 0, left: 0 };
+
+      // Body: content-box 크기 (pageWidth - border - padding). 비-Body: pageWidth - padding
+      const availableWidth = isBodyParent
+        ? pageWidth - parentBorderVal.left - parentBorderVal.right - parentPadding.left - parentPadding.right
+        : pageWidth - parentPadding.left - parentPadding.right;
+      const availableHeight = isBodyParent
+        ? pageHeight - parentBorderVal.top - parentBorderVal.bottom - parentPadding.top - parentPadding.bottom
+        : pageHeight - parentPadding.top - parentPadding.bottom;
+
+      // Body 자식 위치: root container가 이미 offset 적용 → 0
+      const paddingOffsetX = isBodyParent ? 0 : parentPadding.left;
+      const paddingOffsetY = isBodyParent ? 0 : parentPadding.top;
 
       // 레이아웃 계산 (padding이 적용된 content-box 크기 사용)
       // 🚀 Phase 7: parentDisplay 전달로 CSS blockification 지원
@@ -622,9 +636,8 @@ const ElementsLayer = memo(function ElementsLayer({
             elementId={child.id}
             layout={{
               position: 'absolute',
-              // padding offset 적용 (border는 시각 렌더링만, 레이아웃 inset 아님)
-              left: layout.x + parentPadding.left,
-              top: layout.y + parentPadding.top,
+              left: layout.x + paddingOffsetX,
+              top: layout.y + paddingOffsetY,
               width: layout.width,
               height: layout.height,
             }}
@@ -688,8 +701,14 @@ const ElementsLayer = memo(function ElementsLayer({
         // 🚀 Phase 8: CSS display: block 요소에 flexBasis: '100%' 적용
         // 부모가 flexDirection: 'row'일 때, block 요소가 한 줄 전체를 차지하도록
         const isBlockElement = BLOCK_TAGS.has(child.tag);
-        const isParentFlexRow = parentLayout.flexDirection === 'row' || (!parentLayout.flexDirection && parentLayout.display === 'flex');
-        const blockLayout = isBlockElement && !effectiveLayout.width && isParentFlexRow
+        // Body 기본값: rootLayout은 항상 flexDirection: 'row' (bodyLayout에서 override 가능)
+        const isParentFlexRow = parentElement === bodyElement
+          ? (parentLayout.flexDirection ?? 'row') === 'row'
+          : parentLayout.flexDirection === 'row' || (!parentLayout.flexDirection && parentLayout.display === 'flex');
+        // styleToLayout은 기본 width: 'auto'를 반환하므로, 사용자가 명시적으로
+        // 설정한 width만 체크 (auto는 "미지정"으로 취급)
+        const hasExplicitWidth = effectiveLayout.width !== undefined && effectiveLayout.width !== 'auto';
+        const blockLayout = isBlockElement && !hasExplicitWidth && isParentFlexRow
           ? { flexBasis: '100%' as const }
           : {};
 
@@ -750,7 +769,8 @@ const ElementsLayer = memo(function ElementsLayer({
                 // Panel 안의 Card, Card 안의 Panel 등 중첩된 Container도 children 렌더링 지원
                 const isChildContainerType = CONTAINER_TAGS.has(childEl.tag);
                 const isChildBlockElement = BLOCK_TAGS.has(childEl.tag);
-                const childBlockLayout = isChildBlockElement && !effectiveChildLayout.width
+                const hasExplicitChildWidth = effectiveChildLayout.width !== undefined && effectiveChildLayout.width !== 'auto';
+                const childBlockLayout = isChildBlockElement && !hasExplicitChildWidth
                   ? { flexBasis: '100%' as const }
                   : {};
 
