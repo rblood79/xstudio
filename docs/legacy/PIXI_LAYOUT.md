@@ -513,6 +513,13 @@ LayoutEngine.ts 완전 삭제 (1,804줄)
    - 각 Phase별로 별도 커밋
    - 문제 발생 시 해당 Phase만 롤백 가능
 
+5. **⚠️ formatStyles 캐싱 (CRITICAL)**
+   - `@pixi/layout`의 `formatStyles`는 새 스타일을 이전 스타일과 머지: `{ ...currentStyles.custom, ...style }`
+   - **삭제된 속성이 이전 캐시 값으로 남아있음** — `undefined`인 속성은 새 객체에 포함되지 않아 이전 값이 유지됨
+   - **해결**: 변경 가능한 모든 레이아웃 속성은 명시적으로 기본값(`'auto'` 등)을 설정해야 함
+   - 예시: `styleToLayout.ts`에서 `layout.width = width !== undefined ? width : 'auto';`
+   - 이 패턴이 없으면 `width: 200px` → `width: auto` 전환 시 새로고침 전까지 200px이 유지됨
+
 ---
 
 ## Phase 7+: SelectionBox 좌표 변환 수정 ✅

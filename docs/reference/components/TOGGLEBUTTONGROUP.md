@@ -268,6 +268,58 @@ function getJustifyContentSpacingKeys(element: SelectedElement): string[] {
 - **CSS transitions**: GPU 가속 (부드러운 애니메이션)
 - **Minimal re-renders**: selectedKeys 변경 시에만 업데이트
 
+## WebGL Canvas 구현 (2026-02-04)
+
+### Container-only 패턴
+
+ToggleButtonGroup은 **container-only** 패턴으로 구현됩니다:
+- `PixiToggleButtonGroup.tsx`는 배경(pixiGraphics)만 렌더링
+- 자식 ToggleButton들은 `ElementsLayer`에서 형제(sibling)로 개별 렌더링
+- ToggleButtonGroup은 `CONTAINER_TAGS`에 포함되지 않음
+
+### 렌더링 구조
+
+```
+LayoutContainer (toggleButtonGroupId, containerLayout from styleToLayout)
+  ├─ ElementSprite → PixiToggleButtonGroup → pixiGraphics (배경 + hit area)
+  ├─ LayoutContainer (toggleButton1Id) → ElementSprite → PixiToggleButton
+  └─ LayoutContainer (toggleButton2Id) → ElementSprite → PixiToggleButton
+```
+
+### 선택(Selection) 처리
+
+```tsx
+// pixiGraphics 직접 반환 (BoxSprite 패턴)
+// - layout 속성 없음 → Yoga flex에 미참여 (자식 ToggleButton과 경쟁 없음)
+// - eventMode="static" → 배경 영역 클릭 시 그룹 선택
+// - LayoutComputedSizeContext → Yoga computed size로 hit area 크기 결정
+return (
+  <pixiGraphics
+    draw={drawGroupBackground}
+    eventMode="static"
+    cursor="pointer"
+    onPointerDown={handleGroupClick}
+  />
+);
+```
+
+**주의사항:**
+- `computedSize.height`가 0일 수 있음 → `??` 대신 `> 0` 명시적 체크 필요
+- 자식 ToggleButton이 z-order 위에 있으므로, 버튼 영역 클릭 시 자식이 선택됨
+- 배경 영역(자식 버튼 외 영역) 클릭 시 ToggleButtonGroup이 선택됨
+
+### width/height 스타일 적용
+
+- 외부 `LayoutContainer`가 `styleToLayout`을 통해 width/height 처리
+- 내부 `PixiToggleButtonGroup`은 배경 크기를 `LayoutComputedSizeContext`에서 가져옴
+- `@pixi/layout`의 `formatStyles` 캐싱 때문에 `styleToLayout.ts`에서 `width: 'auto'` 명시적 설정 필요
+
+### 수정된 파일
+
+- `src/builder/workspace/canvas/ui/PixiToggleButtonGroup.tsx` - 선택, 크기 적용
+- `src/builder/workspace/canvas/layout/styleToLayout.ts` - auto 기본값 명시
+- `src/builder/components/property/PropertyUnitInput.tsx` - 키워드 유닛 버그 수정
+
 ## 관련 파일
 
 - `src/builder/components/ToggleButtonGroup.tsx` - Indicator 로직 (line 47-68)

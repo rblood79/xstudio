@@ -58,3 +58,32 @@ tags: [pixi, layout, interaction]
   />
 </Container>
 ```
+
+## Container-only 패턴 (ToggleButtonGroup 등)
+
+자식이 형제(sibling)로 렌더링되는 컴포넌트는 `pixiGraphics`를 직접 반환하여 hit area를 제공합니다.
+
+```tsx
+// ✅ Container-only: pixiGraphics 직접 반환 (BoxSprite 패턴)
+// - layout 속성 없음 → Yoga flex에 미참여 (자식과 경쟁 없음)
+// - LayoutComputedSizeContext로 Yoga 계산 크기 사용
+const computedSize = useContext(LayoutComputedSizeContext);
+
+// ⚠️ computedSize.height가 0일 수 있음 → ?? 대신 > 0 체크 필수
+const bgWidth = (computedSize?.width && computedSize.width > 0)
+  ? computedSize.width : fallbackWidth;
+
+return (
+  <pixiGraphics
+    draw={drawBackground}
+    eventMode="static"
+    cursor="pointer"
+    onPointerDown={handleClick}
+  />
+);
+```
+
+**주의사항:**
+- `??` 연산자는 `0`을 falsy로 취급하지 않음 → `computedSize.height === 0`이면 `bgHeight = 0` → hit area 없음
+- `position: absolute` pixiContainer 래퍼는 PixiJS EventBoundary에서 올바른 hit area를 가지지 못할 수 있음
+- `eventMode="none"`인 pixiGraphics는 클릭이 관통됨 — 반드시 `eventMode="static"` 설정
