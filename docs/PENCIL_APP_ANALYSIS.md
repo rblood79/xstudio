@@ -952,7 +952,7 @@ Hand 도구 + 드래그      ──►  camera.translate()     ──►  dirty 
            화면에 변환 적용된 렌더링 (GPU accelerated)
 ```
 
-### 16.10 XStudio 대응 구현 비교 (2026-02-02)
+### 16.10 XStudio 대응 구현 비교 (2026-02-04)
 
 Pencil의 Pan/Zoom 아키텍처를 분석하여 XStudio에 적용한 최적화:
 
@@ -962,8 +962,9 @@ Pencil의 Pan/Zoom 아키텍처를 분석하여 XStudio에 적용한 최적화:
 |------|--------|-------------------|
 | **Camera 구조** | `_wt` 클래스, dirty flag + lazy refresh | `ViewportController` — PixiJS Container.x/y/scale 직접 조작 |
 | **카메라 → GPU** | `canvas.concat(worldTransform.toArray())` | `canvas.translate(cameraX, cameraY); canvas.scale(cameraZoom, cameraZoom)` |
-| **컨텐츠 캐싱** | `contentNeedsRedraw` flag, 오프스크린 surface snapshot | `SkiaRenderer.contentSurface` + `contentSnapshot` (이중 Surface 캐싱) |
-| **camera-only 프레임** | `contentNeedsRedraw === false` → 캐시 blit만 수행 (< 1ms) | `classifyFrame()` → `blitWithCameraDelta()` — 아핀 변환 블리팅 (< 1ms) |
+| **컨텐츠 캐싱** | `contentNeedsRedraw` flag, 오프스크린 surface snapshot | `SkiaRenderer.contentSurface` + `contentSnapshot` (컨텐츠 캐시) |
+| **오버레이 분리** | 컨텐츠/오버레이 분리 렌더 | mainSurface에 Selection/AI/PageTitle만 별도 패스로 덧그리기 (present) |
+| **camera-only 프레임** | `contentNeedsRedraw === false` → 캐시 blit만 수행 (< 1ms) | padding(기본 512px) 포함 스냅샷 + `blitWithCameraTransform()` 아핀 변환 블리팅 (canBlit 가드) |
 | **줌 시 보간** | `drawImageCubic(snapshot, 0.3, 0.3)` — 큐빅 보간 | `canvas.scale(scaleRatio)` + `drawImage(snapshot)` |
 | **cleanup render** | 줌 변경 시 `invalidateContent()` → 다음 프레임 전체 재렌더링 | `needsCleanupRender` flag → 카메라 정지 후 1회 전체 렌더링 |
 
@@ -974,7 +975,7 @@ Pencil의 Pan/Zoom 아키텍처를 분석하여 XStudio에 적용한 최적화:
 | 1 | **정수 스냅** | 서브픽셀 렌더링 허용 (CanvasKit 안티앨리어싱) | `SelectionBox.tsx`: `Math.round` 제거 |
 | 2 | **드래그 스로틀** | `requestFrame()` 기반 (디스플레이 주사율 동기화) | `useDragInteraction.ts`: 16ms 고정 스로틀 제거, RAF 동기화 |
 | 3 | **해상도 변동** | 고정 DPI (인터랙션 무관) | `pixiSetup.ts`: 인터랙션 중 해상도 하향 비활성화 |
-| 4 | **camera-only GPU** | `contentNeedsRedraw === false` → blit만 | `SkiaRenderer.ts`: `blitWithCameraDelta()` 추가 |
+| 4 | **camera-only GPU** | `contentNeedsRedraw === false` → blit만 | `SkiaRenderer.ts`: padding 포함 스냅샷 + `blitWithCameraTransform()` + `present()` |
 | 5 | **트리 캐시** | 캐시 blit이므로 트리 순회 불필요 | `SkiaOverlay.tsx`: `buildSkiaTreeHierarchical` 캐시에서 카메라 비교 제거 (registryVersion만 비교) |
 
 #### camera-only 프레임 비용 비교
@@ -989,16 +990,25 @@ Pencil:
 XStudio (수정 전):
   buildSkiaTreeHierarchical (cache MISS)              ~5-10ms  ← 카메라 비교로 매번 무효화
   setRootNode (closure 생성)                           ~0.1ms
-  renderContent (전체 GPU 렌더링)                      ~16ms   ← camera-only도 전체 렌더
+  renderContent (전체 GPU 렌더링)                      ~16ms   ← camera-only도 전체 렌더 (가장자리/좌표 이슈로 blit 비활성)
   blitToMain                                           ~1ms
   합계: ~22-27ms
 
 XStudio (수정 후):
   buildSkiaTreeHierarchical (cache HIT)                ~0ms    ← registryVersion만 비교
-  setRootNode (closure 생성)                            ~0.1ms
-  blitWithCameraDelta (아핀 변환 블리팅)                 ~1ms    ← GPU 렌더 스킵
-  합계: ~1ms
+  contentSnapshot blit (아핀 변환, padding 포함)          ~1ms
+  overlay pass (Selection/AI/PageTitle)                ~0-1ms
+  합계: ~1-2ms
 ```
+
+#### 추가로 Pencil과 맞춰볼 항목 (정책/품질)
+
+구조는 Pencil의 “컨텐츠 캐시 + present blit + 오버레이 분리” 모델로 정리됐지만,
+픽셀/체감 정합성을 더 끌어올리려면 아래 항목을 체크해야 한다(상세는 `docs/WASM.md` §6.8 참조).
+
+- 줌 스냅샷 보간/샘플링 옵션 명시(`drawImageCubic` 등) 및 색공간/감마 정책 고정
+- 오버레이 텍스트 렌더링 정책(Paragraph 통일 여부)과 좌표 반올림/픽셀 스냅 규칙 문서화
+- contentSurface 백엔드(GPU/offscreen) 및 padding/cleanup render 트리거 정책 튜닝
 
 ---
 

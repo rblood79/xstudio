@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed - Pencil-Style 2-Pass Skia Renderer (2026-02-04)
+
+#### Phase 6 Fix: 컨텐츠 캐시 + 오버레이 분리로 렌더 파이프라인 교체
+
+**배경**
+- Skia 단일 패스(컨텐츠+오버레이 동시 렌더) + dirty rect/clip 기반 최적화는 좌표계/클리핑 이슈로 잔상·미반영 버그를 유발할 수 있음
+
+**해결**
+- **컨텐츠(contentSurface)**: 디자인 노드만 렌더링하여 `contentSnapshot` 캐시 생성
+- **표시(mainSurface)**: 스냅샷 blit(카메라 델타는 아핀 변환) 후 **Selection/AI/PageTitle 오버레이를 별도 패스로 덧그리기**
+- contentSurface에 **padding(기본 512px)** 을 추가하여 camera-only 아핀 blit의 가장자리 클리핑을 방지하고, `canBlitWithCameraTransform()` 가드로 안전성 확보
+- Dirty rect 기반 부분 렌더링 경로는 제거(보류)하고, 컨텐츠 invalidation은 registryVersion 기반 full rerender로 단순화
+
+**수정된 파일**
+- `apps/builder/src/builder/workspace/canvas/skia/SkiaRenderer.ts`
+- `apps/builder/src/builder/workspace/canvas/skia/SkiaOverlay.tsx`
+- `apps/builder/src/builder/workspace/canvas/skia/useSkiaNode.ts`
+- `apps/builder/src/builder/workspace/canvas/elementRegistry.ts`
+- `docs/WASM.md`, `docs/PENCIL_APP_ANALYSIS.md`
+
 ### Fixed - Flex Layout CSS Parity & Style Reactivity (2026-02-02)
 
 #### Phase 12 Fix: Flex 자식의 percentage width 오버플로우 및 스타일 즉시 반영

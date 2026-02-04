@@ -1,7 +1,7 @@
 # xstudio WASM 렌더링 아키텍처 전환 계획
 
 > 작성일: 2026-01-29
-> 최종 수정: 2026-02-02 (계층적 Skia 트리 + Selection 좌표 통합 — 12차 수정)
+> 최종 수정: 2026-02-04 (Pencil 방식 2-pass: 컨텐츠 캐시 + 오버레이 분리 + padding 기반 camera-only blit)
 > 대상: `apps/builder/src/builder/workspace/canvas/`
 > 현재 스택: CanvasKit/Skia WASM + PixiJS v8.14.3 (이벤트 전용) + Yoga WASM v3.2.1 + Rust WASM (성능 가속) + Zustand
 > 참고: Pencil Desktop v1.1.10 아키텍처 분석 기반 (`docs/PENCIL_APP_ANALYSIS.md` §11)
@@ -38,7 +38,7 @@ Pencil 실제 구조:                    현재 xstudio:
 
 - **Phase 0–4** (기존): 현재 PixiJS 아키텍처 위에서의 점진적 WASM 최적화 (Spatial Index, Layout 가속, Worker). CanvasKit 전환 전에도 독립적으로 유효하다.
 - **Phase 5** (신규): CanvasKit/Skia WASM 메인 렌더러 도입 — Pencil의 renderSkia 패턴 적용
-- **Phase 6** (신규): 고급 렌더링 기능 — 이중 Surface 캐싱, Dirty Rect, 이펙트 파이프라인
+- **Phase 6** (신규): 고급 렌더링 기능 — 이중 Surface 캐싱(컨텐츠 캐시 + 오버레이 분리), padding 기반 camera-only blit, cleanup render
 
 ---
 
@@ -62,7 +62,7 @@ Pencil 실제 구조:                    현재 xstudio:
 |------|--------------|-------------------|-----------|
 | **줌/패닝** | 매 프레임 전체 씬 재렌더링 | 이중 Surface 캐싱 — contentSurface 블리팅만 | **10x+** (< 1ms vs ~16ms) |
 | **정적 프레임** | 변경 없어도 전체 렌더 | contentSurface 캐시 히트 → GPU 제출만 | **< 1ms** |
-| **부분 변경** | 전체 캔버스 다시 그림 | Dirty Rect — 변경 영역만 재렌더링 | GPU 부하 **40-60% 감소** |
+| **오버레이 변경** | 컨텐츠까지 다시 그림 | 컨텐츠는 캐시 유지 + 오버레이만 덧그리기 | 불필요한 GPU 재렌더 제거 |
 | **뷰포트 컬링** | JS에서 AABB 검사 | renderSkia() 첫 줄에서 네이티브 AABB 컬링 | WASM 내부에서 처리 |
 | **텍스처 관리** | PixiJS 개별 텍스처 업로드 | CanvasKit 내부 GPU 리소스 관리 | 드로 콜 감소 |
 
@@ -93,7 +93,7 @@ Pencil 실제 구조:                    현재 xstudio:
 | 평가 항목 | 점수 | 근거 |
 |----------|------|------|
 | 렌더링 품질 향상 | ★★★★★ | 벡터/텍스트/이펙트/Fill/블렌드 모두 디자인 툴 수준 |
-| 성능 향상 | ★★★★☆ | 이중 Surface + Dirty Rect로 대폭 개선, 단 초기 로드 비용 |
+| 성능 향상 | ★★★★☆ | 이중 Surface + 2-pass(present) + padding 기반 camera-only blit로 대폭 개선, 단 초기 로드 비용 |
 | 아키텍처 정합성 | ★★★★★ | Pencil과 동일 구조 → 검증된 패턴 |
 | 구현 난이도 | ★★★☆☆ | 점진적 전환(Feature Flag)으로 리스크 관리 가능 |
 | 번들 비용 | ★★☆☆☆ | +1.5MB는 웹 앱에 부담이나, 디자인 툴 특성상 수용 가능 |
@@ -2121,20 +2121,20 @@ Pencil §10.9.3의 렌더 루프를 xstudio에 적용한다.
 // canvas/skia/SkiaRenderer.ts
 
 export class SkiaRenderer {
-  private surface: Surface;
-  private canvas: Canvas;
-  private rootNode: SkiaRenderable;
+  // contentSurface: 디자인 컨텐츠 캐시
+  // mainSurface: 화면 표시 (snapshot blit + overlay)
 
-  render(cullingBounds: DOMRect): void {
-    // CanvasKit Canvas에 직접 렌더링
-    this.canvas.clear(this.backgroundColor);
+  setContentNode(node: SkiaRenderable | null): void;
+  setOverlayNode(node: SkiaRenderable | null): void;
 
-    // 전체 씬 트리 renderSkia() 실행
-    this.rootNode.renderSkia(this.canvas, cullingBounds);
-
-    // GPU 제출
-    this.surface.flush();
-  }
+  // registryVersion: 컨텐츠 변경 버전
+  // overlayVersion: 선택/AI 등 오버레이 변경 버전
+  render(
+    cullingBounds: DOMRect,
+    registryVersion: number,
+    camera: { zoom: number; panX: number; panY: number },
+    overlayVersion: number,
+  ): void;
 }
 ```
 
@@ -2145,7 +2145,7 @@ export class SkiaRenderer {
 2. Application.render() (LOW=-25)
    └→ prerender → @pixi/layout → Yoga calculateLayout()
    └→ render → worldTransform 갱신
-3. ★ renderFrame (UTILITY=-50) — buildSkiaTreeHierarchical + SkiaRenderer.render()
+3. ★ renderFrame (UTILITY=-50) — buildSkiaTreeHierarchical + SkiaRenderer.render(registryVersion, camera, overlayVersion)
 ```
 
 > **Note (2026-02-02):** renderFrame은 Application.render() **이후**에 실행하여
@@ -2154,18 +2154,21 @@ export class SkiaRenderer {
 
 **이중 Surface 프레임 분류 (Phase 6):**
 ```
-classifyFrame(registryVersion, camera):
-  contentDirty                → 'full'     Surface 재생성 후 전체 렌더링
-  registry 또는 camera 변경   → 'content'  renderContent + blitToMain
-  변경 없음                   → 'idle'     렌더링 스킵
+classifyFrame(registryVersion, camera, overlayVersion):
+  contentDirty/cleanup         → 'full'        컨텐츠 전체 재렌더 + present
+  registry 변경                → 'content'     컨텐츠 전체 재렌더 + present
+  camera 변경                  → 'camera-only' (가능 시) 캐시 아핀 blit + overlay
+  overlay 변경                 → 'present'     캐시 blit + overlay
+  변경 없음                    → 'idle'        렌더링 스킵
 ```
 
-**팬/줌 최적화 (2026-02-02):**
+**팬/줌 최적화 (2026-02-04):**
 - `buildSkiaTreeHierarchical` 캐시: registryVersion만 비교 (카메라 비교 제거).
   트리 좌표는 부모-자식 뺄셈으로 카메라가 상쇄되어, 동일 registryVersion이면 카메라 무관하게 동일 트리 생성.
-  카메라 변경 시 트리 빌드 ~0ms (캐시 HIT), Skia 드로잉만 수행.
-- `camera-only` blit 제거: 뷰포트 크기 스냅샷을 아핀 변환하면 가장자리 클리핑 발생.
-  content render로 전환하여 매 프레임 pixel-perfect 렌더링 보장.
+  카메라 변경 시 트리 빌드 ~0ms (캐시 HIT), present 비용만 발생.
+- padding 기반 `camera-only` blit 활성화:
+  contentSurface를 뷰포트보다 크게 생성(기본 512px 패딩)하여 가장자리 클리핑을 방지하고,
+  `canBlitWithCameraTransform()` 가드로 “완전히 덮을 수 있을 때만” 아핀 blit을 수행.
 - Wheel 팬 RAF 배칭: `setPanOffset`을 requestAnimationFrame으로 배칭하여
   120Hz+ wheel 이벤트에서 React 리렌더를 프레임당 1회로 제한.
 
@@ -2694,51 +2697,35 @@ Pencil의 핵심 최적화: contentSurface + mainSurface 분리.
 - 오버레이(선택 박스, 가이드라인)만 mainSurface에서 재렌더링
 - 대규모 캔버스에서 줌/패닝 응답 시간 대폭 개선
 
-> **현재 구현 (2026-02-02):** 이중 Surface 구현 완료 (contentSurface + mainSurface).
-> renderFrame 순서: 디자인 노드 → AI 이펙트 → Selection 오버레이 (선택 박스 + 코너 핸들 + 라쏘).
-> Selection 오버레이는 `selectionRenderer.ts`에서 Zustand getState()로 매 프레임 상태를 읽어 렌더링.
-> `classifyFrame()`으로 idle/content/camera-only/full 분류 후 최소 작업만 수행.
+> **현재 구현 (2026-02-04):** Pencil 방식 2-pass 렌더링으로 교체 완료.
+> - **컨텐츠 패스(contentSurface):** 디자인 노드만 렌더링하여 `contentSnapshot` 캐시 생성
+> - **표시 패스(mainSurface):** snapshot blit(카메라 델타는 아핀 변환) 후 Selection/AI/PageTitle 오버레이를 덧그리기
+> - `classifyFrame()`으로 idle/present/camera-only/content/full 분류 후 최소 작업만 수행.
 > renderFrame은 UTILITY priority (-50)로 실행하여 Application.render() (LOW=-25) 이후 Yoga 계산 완료된 worldTransform 보장.
 >
-> **camera-only 프레임 최적화 (2026-02-02):**
-> - `blitWithCameraDelta()`: 캐시된 contentSnapshot을 `snapshotCamera` 기준 아핀 변환으로 재배치 (< 1ms)
+> **“핵심 구조” 관점에서는 Pencil과 동일한 방식(컨텐츠 캐시 + present 단계에서 blit + 오버레이 별도 렌더)으로 변경됨**
+> - 컨텐츠 캐시: `apps/builder/src/builder/workspace/canvas/skia/SkiaRenderer.ts:215` (contentSurface에 렌더 → `contentSnapshot` 생성)
+> - present 단계: `apps/builder/src/builder/workspace/canvas/skia/SkiaRenderer.ts:306` (snapshot blit/아핀변환 + `renderOverlay()` + flush)
+> - 오버레이 분리: `apps/builder/src/builder/workspace/canvas/skia/SkiaOverlay.tsx:584` (`setContentNode`=디자인만) / `apps/builder/src/builder/workspace/canvas/skia/SkiaOverlay.tsx:590` (`setOverlayNode`=Selection/AI/PageTitle만)
+>
+> 다만 “완전히 동일”을 픽셀 단위까지 포함해 말하면 아직 보장할 수 없다(폰트/AA/효과 구현/CanvasKit 버전/미세한 좌표 반올림 차이 등).
+> 하지만 이전의 ‘스타일 변경 후 팬해야 반영/잔상’ 문제군을 구조적으로 피하는 방향으로는 Pencil과 같은 모델이 맞다.
+>
+> **camera-only 프레임 최적화 (2026-02-04):**
+> - padding(기본 512px) 포함 contentSurface로 가장자리 아티팩트 방지
+> - `blitWithCameraTransform()`: 캐시된 contentSnapshot을 `snapshotCamera` 기준 아핀 변환으로 재배치 (< 1ms)
 > - `buildSkiaTreeHierarchical` 캐시: registryVersion만 비교하여 camera-only 프레임에서 O(N) 트리 순회 스킵
 > - cleanup render: 카메라 정지 후 `needsCleanupRender` 플래그로 1회 전체 렌더링하여 가장자리 아티팩트 해소
 > - 드래그 최적화: Math.round 정수 스냅 제거 (서브픽셀 렌더링), 16ms 고정 스로틀 제거 (RAF 동기화), 인터랙션 중 해상도 하향 비활성화
 
-### 6.2 Dirty Rect 렌더링
+### 6.2 Dirty Rect 렌더링 (보류)
 
 변경된 영역만 다시 렌더링하는 최적화.
 
-```
-전체 렌더링 (현재):           Dirty Rect (목표):
-┌─────────────────┐         ┌─────────────────┐
-│ ██████████████  │         │ ·····█████····  │
-│ ██████████████  │         │ ·····█████····  │
-│ ██████████████  │    →    │ ·············   │
-│ ██████████████  │         │ ·············   │
-└─────────────────┘         └─────────────────┘
-GPU 전체 사용                변경 영역만 GPU 사용
-```
-
-CanvasKit의 `canvas.clipRect()` + `canvas.save()/restore()`로 구현:
-```typescript
-renderDirtyRect(canvas: Canvas, dirtyRect: Rect): void {
-  canvas.save();
-  canvas.clipRect(dirtyRect, ck.ClipOp.Intersect, false);
-  // dirtyRect과 교차하는 노드만 renderSkia()
-  this.rootNode.renderSkia(canvas, dirtyRectToDOMRect(dirtyRect));
-  canvas.restore();
-}
-```
-
-> **현재 상태 (2026-02-02):** Dirty rect 부분 렌더링은 **비활성화** 상태.
-> `registerSkiaNode()`이 dirty rect를 CSS/style 로컬 좌표(`data.x/y`)로 계산하지만,
-> 실제 렌더링은 카메라 변환(`canvas.translate(cameraX,Y)` + `canvas.scale(zoom)`)
-> 적용 후 스크린 좌표에서 수행. `clipRect` 영역과 실제 렌더 위치가 불일치하여
-> 스타일 변경이 화면에 반영되지 않는 문제 발생.
-> `content` 프레임은 `camera-only`와 동일하게 전체 재렌더링으로 처리.
-> Dirty rect 인프라(pendingDirtyRects, flushDirtyRects)는 향후 좌표 변환 구현 시 재활성화 예정.
+> **현재 상태 (2026-02-04):** Dirty rect 기반 부분 렌더링은 **보류**한다.
+> 이전 구현은 좌표계 불일치로 “스타일 변경 후 팬/새로고침해야 반영” 문제가 발생했다.
+> 현재는 Pencil 방식 2-pass(컨텐츠 캐시 + 오버레이 분리) + padding 기반 camera-only blit으로
+> 안정성과 성능을 확보했으며, Dirty rect는 컨텐츠 변경이 병목으로 확인될 때 Post-Phase로 재검토한다.
 
 ### 6.3 블렌드 모드 (18종, Pencil §10.9.8)
 
@@ -2825,9 +2812,9 @@ export function exportToImage(
 
 | 산출물 | 내용 |
 |--------|------|
-| 이중 Surface 캐싱 | contentSurface + mainSurface 분리 + classifyFrame 프레임 분류 |
-| 팬/줌 최적화 | 트리 캐시 (registryVersion만 비교) + content render 매 프레임 + RAF 배칭 |
-| Dirty Rect 렌더링 | 인프라 구현 완료, 좌표계 불일치로 비활성화 (전체 렌더링 폴백) |
+| 이중 Surface 캐싱 | contentSurface(컨텐츠) + mainSurface(표시) 분리 + classifyFrame 프레임 분류 |
+| 오버레이 분리 | Selection/AI/PageTitle을 mainSurface에 별도 패스로 덧그리기 (present) |
+| camera-only blit | padding(기본 512px) + 아핀 변환 blit + cleanup render (200ms) |
 | 블렌드 모드 18종 | CanvasKit BlendMode 매핑 |
 | Export 파이프라인 | PNG/JPEG/WEBP 오프스크린 Export + SVG/PDF 향후 확장 |
 
@@ -2844,8 +2831,62 @@ export function exportToImage(
 |------|------|------|
 | 줌/패닝 프레임 타임 | < 5ms | content render + 트리 캐시 HIT (단순 페이지 ~1-3ms) |
 | 변경 없는 프레임 | < 1ms | idle: 렌더링 스킵 |
-| Dirty Rect 효율 | GPU 사용량 40-60% 감소 | 부분 영역만 렌더링 |
+| 오버레이-only 변경 | 컨텐츠 재렌더 없음 | present: snapshot blit + overlay |
 | Export 품질 | 벡터 정밀도 보장 | CanvasKit Path 기반 |
+
+### 6.7 렌더링 “동일성” 검증 가이드
+
+> 목표: “Pencil과 픽셀 100% 동일”이 아니라, **Pencil과 동일한 렌더링 모델(컨텐츠 캐시 + present blit + 오버레이 분리)**이
+> 사용자 경험 측면(즉시 반영/잔상 없음/패닝 성능)에서 동등하게 동작하는지 검증한다.
+
+#### 기능 동등 체크리스트 (수동)
+
+- **스타일 변경 즉시 반영**: 색/테두리/폰트/크기 변경이 팬/새로고침 없이 즉시 화면에 반영되는가
+- **오버레이-only 변경**: 선택 변경(Selection box/handles/치수 라벨), AI flash/generating이 컨텐츠 재렌더 없이 부드럽게 갱신되는가
+- **패닝/줌**: 패닝/줌 중 프레임 드랍이 없고, 카메라 정지 후 약 200ms 내 “cleanup render”로 선명한 최종 결과가 정리되는가
+- **페이지 전환/리사이즈/DPR 변경**: 전환 프레임에 stale 잔상이 남지 않고, surface가 정상적으로 재생성되는가
+- **컨텍스트 로스**: WebGL context loss/restore 시 렌더가 중단/복원되는가
+
+#### 픽셀 비교(골든 이미지) 방향 (선택)
+
+픽셀 단위 동일성을 보장하려면 회귀 테스트가 필요하다.
+
+- **테스트 도구**: Playwright screenshot diff
+- **시나리오 추천**: (1) 단순 박스/텍스트/이미지 (2) blur/shadow (3) blend mode (4) selection overlay (5) AI flash (6) 패닝/줌 후 정지
+- **안정화 조건**:
+  - 폰트 로드 완료 대기(캔버스 텍스트는 폰트에 민감)
+  - 애니메이션/이펙트는 프레임 스냅샷 시점 고정 또는 비활성화 옵션 필요
+  - cleanup render가 200ms 디바운스이므로, 캡처 전 `>= 250ms` 대기 권장
+
+### 6.8 Pencil 정합성 잔여 체크리스트 (추가로 맞춰야 할 부분)
+
+> Phase 6에서 “컨텐츠 캐시 + present 단계 blit + 오버레이 분리” 구조는 Pencil과 동일한 모델로 정리됐다.
+> 다만 아래 항목들은 구현/설정 차이로 인해 체감 품질 또는 픽셀 결과가 달라질 수 있으므로,
+> 필요 시 Pencil과 동일 정책으로 맞추는 작업이 남아 있다.
+
+#### 렌더링 품질/정책
+
+- **줌 스냅샷 보간 정책**: Pencil은 zoom mismatch 시 `drawImageCubic`류의 보간을 사용한다. xstudio는 현재 `drawImage + scale`에 의존한다. (`apps/builder/src/builder/workspace/canvas/skia/SkiaRenderer.ts:306`)
+- **스냅샷 샘플링 옵션 고정**: 이미지 스케일 시 sampling(Nearest/Linear/Cubic)과 mipmap 사용 여부가 다르면 결과가 달라질 수 있다. 스냅샷 blit에 sampling 옵션을 명시하는지 검토한다.
+- **색공간/감마(선형/비선형) 정책**: sRGB/Display-P3, premultiplied alpha 처리 차이는 블렌드/AA 결과를 바꾼다. CanvasKit 초기화/Surface 생성에서 컬러 스페이스 정책을 명확히 기록/고정한다.
+- **텍스트 렌더링 정책 통일**: 컨텐츠 텍스트는 Paragraph 기반(또는 폰트 매니저)인데, 오버레이 텍스트(치수/타이틀)는 `drawText` 경로다.(선명도/자간/힌팅 차이) 필요 시 오버레이도 Paragraph로 통일한다. (`apps/builder/src/builder/workspace/canvas/skia/selectionRenderer.ts:334`)
+- **좌표 반올림/픽셀 스냅 정책**: pan/zoom/레이아웃 결과를 어느 단계에서 정수로 스냅하는지(또는 스냅하지 않는지) 정책이 다르면 1px 흔들림/AA 차이가 생긴다. “월드 좌표는 float 유지, 최종 present 단계만 device pixel 정렬” 같은 규칙을 문서화해 Pencil과 맞춘다.
+- **클리핑/마스크 경계 정책**: contentSurface padding으로 화면 밖까지 렌더링하므로, clip/mask가 있는 노드에서 “패딩 영역 렌더링”이 의도치 않은 부작용(블러 확장/그림자 잘림/배경 누적)을 만들지 않는지 확인한다.
+- **Paint 기본값 정합**: antiAlias, filterQuality(샘플링), stroke join/cap, blend mode 기본값이 Pencil과 다르면 미세한 품질 차이가 생긴다. 공통 Paint 생성 유틸로 기본값을 고정하는 방향을 검토한다.
+
+#### 성능/안정성
+
+- **contentSurface 백엔드**: xstudio는 `ck.MakeSurface()`로 오프스크린을 만든다(일반적으로 raster). Pencil이 사용하는 GPU surface와 성능 특성이 다를 수 있으니, 대규모 씬에서 병목이면 offscreen도 GPU 타겟(가능한 API)으로 맞추는 방안을 검토한다. (`apps/builder/src/builder/workspace/canvas/skia/SkiaRenderer.ts:200`)
+- **padding 값 정책화**: 현재 padding은 고정 512px이다. 큰 줌/빠른 패닝에서 `canBlitWithCameraTransform()`이 false로 떨어지면 content 재렌더 빈도가 늘 수 있으니, (1) 사용자 설정/디바이스 DPR/줌 범위에 따라 동적 조정, (2) 최소/최대 값 가이드가 필요하다. (`apps/builder/src/builder/workspace/canvas/skia/SkiaRenderer.ts:44`)
+- **cleanup render 트리거 정합**: 현재 camera-only에서만 200ms cleanup render를 스케줄한다. Pencil과 동일한 체감을 원하면 “모션 종료”의 정의(휠/드래그/트랙패드)와 트리거 조건을 문서화하고, 필요한 입력 케이스를 추가한다. (`apps/builder/src/builder/workspace/canvas/skia/SkiaRenderer.ts:360`)
+- **리소스 수명/누수 방지**: `Image.makeImageSnapshot()`/`Typeface`/`Paint`/`Path` 같은 CanvasKit 객체는 GC 대상이 아니므로 `.delete()`가 누락되면 장시간 사용에서 누수가 된다. “프레임 생성 객체는 프레임 종료 시 해제/캐시는 세대 기반으로 교체” 같은 원칙을 Pencil 수준으로 정리한다.
+- **비동기 리소스 로딩에 대한 invalidation**: 폰트/이미지 로드가 뒤늦게 완료되면 contentSurface가 “이전 폴백 폰트/플레이스홀더” 상태로 스냅샷을 잡을 수 있다. 로딩 완료 시점에 `invalidateContent()`를 트리거하는 정책을 명확히 한다.
+
+#### 기능 동등/경계 조건
+
+- **컨텍스트 로스/복원 시 캐시 무효화**: 복원 시 `resize()`로 surface 재생성은 되지만, snapshot/버전 상태와 overlayVersion의 초기화 정책을 Pencil처럼 명확히 맞춘다. (`apps/builder/src/builder/workspace/canvas/skia/SkiaOverlay.tsx:654`)
+- **페이지 전환 시 오버레이/컨텐츠 클리어 순서**: 현재 `clearSkiaRegistry + clearImageCache + invalidateContent + clearFrame`로 처리한다. 전환 프레임에서 1-frame stale이 보이면 clear 순서/버전 갱신을 조정한다. (`apps/builder/src/builder/workspace/canvas/skia/SkiaOverlay.tsx:722`)
+- **DPR/리사이즈 시 1-frame stale 방지**: resize 직후 프레임에서 snapshot이 없거나(또는 이전 DPR의 snapshot이 남아) 깜빡임이 생길 수 있다. “resize 시 clearFrame + invalidateContent + overlayVersion reset” 같은 규칙으로 안정화한다.
 
 ---
 
@@ -3173,7 +3214,8 @@ Phase 5: CanvasKit/Skia WASM 메인 렌더러 도입
       │
 Phase 6: 고급 렌더링 기능 (CanvasKit 활용)
   └─ 이중 Surface 캐싱 (contentSurface + mainSurface)
-  └─ Dirty Rect 렌더링 (변경 영역만 재렌더링)
+  └─ 오버레이 분리 (present 패스: Selection/AI/PageTitle 덧그리기)
+  └─ camera-only blit (padding + 아핀 변환 + cleanup render)
   └─ 블렌드 모드 18종 (CanvasKit BlendMode)
   └─ Export 파이프라인 (PNG/JPEG/WEBP 오프스크린)
       │
@@ -3214,7 +3256,7 @@ Phase 6: 고급 렌더링 기능 (CanvasKit 활용)
 | Phase 1-4 WASM 바이너리 | < 60KB (gzip) | Phase 4 완료 후 |
 | **렌더링 품질** | **Pencil 동등 수준** (벡터/텍스트/이펙트) | **Phase 5 완료 후** |
 | **줌/패닝 프레임 타임** | **< 8ms** (이중 Surface 블리팅) | **Phase 6 완료 후** |
-| **Dirty Rect 효율** | **GPU 사용량 40-60% 감소** | **Phase 6 완료 후** |
+| **오버레이-only 변경** | **컨텐츠 재렌더 없음** (present) | **Phase 6 완료 후** |
 
 > **핵심 원칙:**
 > 1. 벤치마크 없는 추정치를 신뢰하지 않는다 — Phase 0에서 실측한다.
