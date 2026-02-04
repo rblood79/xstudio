@@ -16,7 +16,7 @@
  * @see docs/WASM.md §5.11 renderSkia() React 컴포넌트 통합
  */
 
-import { useEffect } from 'react';
+import { useLayoutEffect } from 'react';
 import type { SkiaNodeData } from './nodeRenderers';
 import type { DirtyRect } from './types';
 
@@ -75,8 +75,11 @@ function nodeToDirtyRect(data: SkiaNodeData): DirtyRect {
 
 /** 레지스트리에 Skia 렌더 데이터 등록 */
 export function registerSkiaNode(elementId: string, data: SkiaNodeData): void {
-  // 이전 데이터의 바운드 → dirty rect (지워야 할 영역)
+  // 동일 참조면 스킵 (useLayoutEffect 재실행 시 중복 방지)
   const oldData = skiaNodeRegistry.get(elementId);
+  if (oldData === data) return;
+
+  // 이전 데이터의 바운드 → dirty rect (지워야 할 영역)
   if (oldData) {
     pendingDirtyRects.push(nodeToDirtyRect(oldData));
   }
@@ -167,7 +170,7 @@ export function useSkiaNode(
   elementId: string,
   data: SkiaNodeData | null,
 ): void {
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!data) return;
 
     registerSkiaNode(elementId, data);

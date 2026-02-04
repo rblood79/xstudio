@@ -76,11 +76,11 @@ This document tracks the migration progress of React Aria Components from the if
 
 ### 🔄 Pending Migration or Verification (53 components)
 
-#### Basic UI Components (3 remaining)
+#### Basic UI Components (1 remaining)
 | Component | Priority | Complexity | Notes |
 |-----------|----------|------------|-------|
-| ToggleButton | High | Medium | Group selection support needed |
-| ToggleButtonGroup | High | Medium | Multiple selection |
+| ToggleButton | ~~High~~ | ~~Medium~~ | ✅ 렌더링, 선택, 크기 동기화 확인 완료 (2026-02-04) |
+| ToggleButtonGroup | ~~High~~ | ~~Medium~~ | ✅ container-only 패턴, 선택, width/height 스타일 적용 확인 완료 (2026-02-04) |
 | Badge | Low | Low | Text with background |
 
 #### Form Controls (7 remaining)
@@ -298,11 +298,12 @@ return (
 3. **Cover entire clickable area** - Calculate totalWidth/totalHeight including all child elements
 4. **Remove events from other elements** - Only hitArea should handle clicks to avoid conflicts
 
-**Components with hitArea Pattern (8):**
+**Components with hitArea Pattern (9):**
 - `PixiInput.tsx`, `PixiTextField.tsx` - Form inputs
 - `PixiRadio.tsx`, `PixiCheckboxGroup.tsx` - Group selection
 - `PixiSwitch.tsx` - Toggle switch
 - `PixiBadge.tsx`, `PixiCard.tsx`, `PixiComboBox.tsx` - Data display
+- `PixiToggleButtonGroup.tsx` - Container-only 패턴 (pixiGraphics 직접 반환, LayoutComputedSizeContext 사용)
 
 **React Key Pattern:**
 ```tsx

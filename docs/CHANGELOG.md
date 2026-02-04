@@ -7,6 +7,46 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed - ToggleButtonGroup 캔버스 선택 불가 및 스타일 적용 버그 수정 (2026-02-04)
+
+#### 1. ToggleButtonGroup 캔버스에서 클릭 선택 불가 (Selection)
+
+**원인 (3가지 복합 문제):**
+- `pixiGraphics`의 `eventMode="none"`으로 클릭이 관통됨
+- `position: absolute` pixiContainer 래퍼가 PixiJS hit testing에서 올바른 hit area 미제공
+- `LayoutComputedSizeContext`의 `computedSize.height === 0`이 `??` 연산자에서 falsy로 처리되지 않아 `bgHeight = 0` → hit area 없음
+
+**수정 (`PixiToggleButtonGroup.tsx`):**
+- `pixiContainer` 래퍼 제거 → `pixiGraphics` 직접 반환 (BoxSprite 패턴)
+- `eventMode="static"` + `cursor="pointer"` + `onPointerDown` 설정
+- `LayoutComputedSizeContext`에서 Yoga computed size 사용 (Skia 렌더링과 hit area 일치)
+- `computedSize` 값이 0일 때 fallback하도록 `??` → `> 0` 명시적 체크로 변경
+
+#### 2. ToggleButtonGroup width/height 스타일 미적용
+
+**원인:** `PixiToggleButtonGroup.tsx`의 `groupLayout`이 style.width/height를 무시하고 fit-content 고정
+
+**수정:** 외부 LayoutContainer(styleToLayout)가 width/height 처리, 내부는 배경만 렌더링
+
+#### 3. width/height를 px/% → auto/fit-content 변경 시 새로고침 필요
+
+**원인:** `@pixi/layout`의 `formatStyles`가 `{ ...이전스타일, ...새스타일 }`로 머지하여, 삭제된 속성(width/height)이 이전 캐시 값으로 남아있음
+
+**수정 (`styleToLayout.ts`):** width/height가 undefined일 때 명시적으로 `'auto'` 설정하여 이전 캐시 값을 덮어씀
+
+```typescript
+// Before: 삭제된 속성이 캐시에 남음
+if (width !== undefined) layout.width = width;
+// After: 명시적 'auto'로 이전 값 override
+layout.width = width !== undefined ? width : 'auto';
+```
+
+#### 4. PropertyUnitInput 키워드 유닛 버그
+
+**원인:** auto, fit-content 등 키워드 유닛 선택 시 "300auto" 같은 잘못된 CSS 생성
+
+**수정 (`PropertyUnitInput.tsx`):** 키워드 유닛 감지 시 effectiveUnit을 'px'로 변환하여 숫자+키워드 조합 방지
+
 ### Fixed - WebGL 스타일/프로퍼티 변경 즉시 반영 안 되는 문제 수정 (2026-02-03)
 
 #### 개요
