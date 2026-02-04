@@ -235,12 +235,13 @@ export const transformValuesAtom = selectAtom(
   selectedElementAtom,
   (element) => {
     if (!element) return null;
-    return {
+    const result = {
       width: getTransformValue(element.type, element.style?.width, 'width'),
       height: getTransformValue(element.type, element.style?.height, 'height'),
       top: String(element.style?.top ?? 'auto'),
       left: String(element.style?.left ?? 'auto'),
     };
+    return result;
   },
   (a, b) => {
     if (a === null && b === null) return true;

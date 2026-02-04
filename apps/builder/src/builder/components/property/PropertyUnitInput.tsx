@@ -153,13 +153,16 @@ export const PropertyUnitInput = memo(function PropertyUnitInput({
       return;
     }
 
+    // ⭐ 키워드 단위(auto, fit-content 등)에서 숫자로 전환 시 px로 기본 설정
+    const effectiveUnit = KEYWORDS.includes(unit) ? 'px' : unit;
+
     // ⭐ Shorthand 값 비교: "8px 12px" → 첫 번째 값 "8px"와 비교
     // 원본 값을 파싱하여 실제 숫자값/단위가 변경되었는지 확인
     const originalParsed = parseUnitValue(value);
     const valueActuallyChanged =
-      originalParsed.numericValue !== num || originalParsed.unit !== unit;
+      originalParsed.numericValue !== num || originalParsed.unit !== effectiveUnit;
 
-    const newValue = `${num}${unit}`;
+    const newValue = `${num}${effectiveUnit}`;
     // 실제로 값이 변경된 경우에만 onChange 호출
     if (valueActuallyChanged && newValue !== lastSavedValueRef.current) {
       lastSavedValueRef.current = newValue;
@@ -225,13 +228,16 @@ export const PropertyUnitInput = memo(function PropertyUnitInput({
       } else {
         const num = parseFloat(trimmed);
         if (!isNaN(num) && num >= min && num <= max) {
+          // ⭐ 키워드 단위(auto, fit-content 등)에서 숫자로 전환 시 px로 기본 설정
+          const effectiveUnit = KEYWORDS.includes(unit) ? 'px' : unit;
+
           // ⭐ Shorthand 값 비교: 실제 숫자값/단위가 변경되었는지 확인
           const originalParsed = parseUnitValue(value);
           const valueActuallyChanged =
-            originalParsed.numericValue !== num || originalParsed.unit !== unit;
+            originalParsed.numericValue !== num || originalParsed.unit !== effectiveUnit;
 
           if (valueActuallyChanged) {
-            const newVal = `${num}${unit}`;
+            const newVal = `${num}${effectiveUnit}`;
             onChange(newVal);
             shouldSave = true;
           }

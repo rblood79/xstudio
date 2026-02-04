@@ -383,18 +383,31 @@ export const PixiToggleButtonGroup = memo(function PixiToggleButtonGroup({
   const backgroundWidth = contentWidth + stylePadding.left + stylePadding.right;
   const backgroundHeight = contentHeight + stylePadding.top + stylePadding.bottom;
 
+  // 🚀 사용자 정의 width/height 파싱 (ElementSprite가 %를 pixel로 변환 완료)
+  const explicitWidth = useMemo(() => {
+    const w = style?.width;
+    if (w === undefined || w === null || w === '') return null;
+    return typeof w === 'number' ? w : parseCSSSize(w);
+  }, [style?.width]);
+
+  const explicitHeight = useMemo(() => {
+    const h = style?.height;
+    if (h === undefined || h === null || h === '') return null;
+    return typeof h === 'number' ? h : parseCSSSize(h);
+  }, [style?.height]);
+
+  // 배경 크기: 명시적 style > 콘텐츠 기반 자동 계산
+  const bgWidth = (explicitWidth && explicitWidth > 0) ? explicitWidth : backgroundWidth;
+  const bgHeight = (explicitHeight && explicitHeight > 0) ? explicitHeight : backgroundHeight;
+
   // 그룹 배경 그리기 (pill 형태)
   // 🚀 Phase 13: 사용자 정의 스타일 적용
-  // 🚀 Phase 14: Yoga 계산 크기 동적 사용
   const drawGroupBackground = useCallback(
     (g: PixiGraphics) => {
       g.clear();
 
-      // 🚀 Phase 14: 부모 container의 Yoga 계산된 크기 사용
-      // Yoga가 자동 계산한 fit-content 크기 (또는 축소된 크기)
-      const parent = g.parent as { layout?: { computedWidth?: number; computedHeight?: number } } | undefined;
-      const actualWidth = parent?.layout?.computedWidth ?? backgroundWidth;
-      const actualHeight = parent?.layout?.computedHeight ?? backgroundHeight;
+      const actualWidth = bgWidth;
+      const actualHeight = bgHeight;
 
       // border 설정 (사용자 스타일 우선, 없으면 기본값)
       const borderConfig = styleBorderConfig ?? {
@@ -414,7 +427,7 @@ export const PixiToggleButtonGroup = memo(function PixiToggleButtonGroup({
         border: borderConfig,
       });
     },
-    [backgroundWidth, backgroundHeight, styleBackgroundColor, styleBackgroundAlpha, styleBorderRadius, styleBorderConfig, defaultBorderColor]
+    [bgWidth, bgHeight, styleBackgroundColor, styleBackgroundAlpha, styleBorderRadius, styleBorderConfig, defaultBorderColor]
   );
 
   // 그룹 클릭 핸들러
@@ -450,30 +463,16 @@ export const PixiToggleButtonGroup = memo(function PixiToggleButtonGroup({
     [element.id, onClick, onChange, selectionMode, selectedKeys]
   );
 
-  // 🚀 Phase 8: 주 컨테이너 layout (iframe CSS와 동기화)
-  // CSS: .react-aria-ToggleButtonGroup { display: flex }
-  // 🚀 Phase 13: fit-content 지원
-  // - Yoga가 자식 크기에 기반하여 자동 계산 (width/height 생략)
-  // - flexShrink: 1로 부모 영역 부족 시 축소
-  // - padding: 자식들이 padding 안쪽에 배치되도록
+  // 🚀 배경 컨테이너 layout: position absolute로 부모 LayoutContainer를 100% 채움
+  // 외부 LayoutContainer(styleToLayout)가 width/height/display/flex 등 모든 레이아웃 처리
+  // 이 컨테이너는 배경만 렌더링하며 flex 레이아웃에 참여하지 않음
   const groupLayout = useMemo(() => ({
-    display: 'flex' as const,
-    flexDirection: (isHorizontal ? 'row' : 'column') as 'row' | 'column',
-    justifyContent: 'flex-start' as const,  // 자식들 main axis 시작점 정렬
-    alignItems: 'flex-start' as const,      // 자식들 cross axis 시작점 정렬
-    gap,
-    // width/height 생략 - Yoga가 자식 기반으로 자동 계산 (fit-content)
-    // padding: 자식들이 padding 안쪽에 배치되도록
-    paddingTop: stylePadding.top,
-    paddingRight: stylePadding.right,
-    paddingBottom: stylePadding.bottom,
-    paddingLeft: stylePadding.left,
-    position: 'relative' as const,
-    // fit-content: 부모 flex에서 늘어나지 않고, 부모 부족 시 축소
-    flexGrow: 0,
-    flexShrink: 1,
-    alignSelf: 'flex-start' as const,
-  }), [isHorizontal, gap, stylePadding]);
+    position: 'absolute' as const,
+    top: 0,
+    left: 0,
+    width: '100%' as unknown as number,
+    height: '100%' as unknown as number,
+  }), []);
 
   // 🚀 컨테이너 역할만: 배경 렌더링, 자식 ToggleButton은 ElementsLayer에서 렌더링
   return (
