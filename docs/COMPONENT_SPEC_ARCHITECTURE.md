@@ -1725,6 +1725,13 @@ function renderShape(
 }
 
 /**
+ * hex 문자열 → PixiJS 숫자 변환
+ */
+function hexStringToNumber(hex: string): number {
+  return parseInt(hex.replace('#', ''), 16);
+}
+
+/**
  * CSS 색상 문자열 → PixiJS hex 숫자 변환
  * colord 라이브러리로 모든 CSS 색상 포맷 지원
  */
@@ -1970,11 +1977,23 @@ function renderSkiaShape(
       const paint = new ck.Paint();
       paint.setStyle(ck.PaintStyle.Fill);
       paint.setColor(cssColorToSkiaColor(shape.fill, ck));
+      const rect = ck.LTRBRect(shape.x, shape.y,
+        shape.x + resolveSize(shape.width, width),
+        shape.y + resolveSize(shape.height, height));
+      canvas.drawRect(rect, paint);
+      paint.delete();
+      break;
+    }
+    case 'roundRect': {
+      const paint = new ck.Paint();
+      paint.setStyle(ck.PaintStyle.Fill);
+      paint.setColor(cssColorToSkiaColor(shape.fill, ck));
+      const r = typeof shape.radius === 'number' ? shape.radius : (shape.radius?.[0] ?? 0);
       const rrect = ck.RRectXY(
         ck.LTRBRect(shape.x, shape.y,
           shape.x + resolveSize(shape.width, width),
           shape.y + resolveSize(shape.height, height)),
-        shape.radius ?? 0, shape.radius ?? 0
+        r, r
       );
       canvas.drawRRect(rrect, paint);
       paint.delete();
@@ -2506,8 +2525,8 @@ jobs:
 | 3 | Card | ✅ 정상 | 중간 | 높음 |
 | 4 | Link | ✅ 정상 | 낮음 | 높음 |
 | 5 | Separator | ✅ 정상 | 낮음 | 중간 |
-| 6 | ToggleButton | ⚠️ 부분 | 중간 | 높음 |
-| 7 | ToggleButtonGroup | ⚠️ 부분 | 높음 | 높음 |
+| 6 | ToggleButton | ✅ 정상 | 중간 | 높음 |
+| 7 | ToggleButtonGroup | ✅ 정상 | 높음 | 높음 |
 | 8 | Tooltip | ✅ 정상 | 중간 | 중간 |
 | 9 | Popover | ✅ 정상 | 중간 | 중간 |
 | 10 | Dialog | ✅ 정상 | 높음 | 중간 |
@@ -3060,7 +3079,7 @@ const parsedBorder = parseBorderWidth(style);  // "2px" → 4방향, borderTopWi
 | **PixiButton** | ✅ 완료 | ✅ 등록됨 | — |
 | **PixiFancyButton** | ❌ typeof 사용 중 | ✅ 등록됨 | parseCSSSize/parsePadding/parseBorderWidth 전환 필요 |
 | **PixiToggleButton** | ❌ typeof 사용 중 | ✅ 등록됨 | parseCSSSize/parsePadding/parseBorderWidth 전환 필요 |
-| PixiToggleButtonGroup | ❌ | — | 전체 마이그레이션 |
+| PixiToggleButtonGroup | ✅ 완료 | — | container-only 패턴, LayoutComputedSizeContext 사용 (2026-02-04) |
 | PixiSlider | ❌ | — | 전체 마이그레이션 |
 | PixiSwitcher | ❌ | — | 전체 마이그레이션 |
 | PixiSelect | ❌ | — | 전체 마이그레이션 |
@@ -3560,15 +3579,18 @@ export const TextFieldSpec: ComponentSpec<TextFieldProps> = {
   },
 
   states: {
-    focus: {
-      borderColor: '{color.primary}',
-      borderWidth: 2,
-    },
-    invalid: {
-      borderColor: '{color.error}',
+    focused: {
+      outline: '2px solid var(--primary)',
+      outlineOffset: '0px',
     },
     disabled: {
       opacity: 0.38,
+      cursor: 'not-allowed',
+      pointerEvents: 'none',
+    },
+    focusVisible: {
+      outline: '2px solid var(--primary)',
+      outlineOffset: '2px',
     },
   },
 
@@ -3922,7 +3944,7 @@ export const TableSpec: ComponentSpec<TableProps> = {
 
 ## 7. Phase 4: 특수 컴포넌트 마이그레이션
 
-### 7.1 대상 컴포넌트 (17개)
+### 7.1 대상 컴포넌트 (16개)
 
 | # | 컴포넌트 | 현재 상태 | 복잡도 |
 |---|----------|----------|--------|
@@ -5204,3 +5226,4 @@ function ElementSpriteButton({ element }) {
 | 2026-01-31 | 1.13 | 버튼 display/레이아웃 버그 수정 5건 (Section 4.7.4.2, 4.7.4.5): (1) parseBoxModel 폼 요소 자동 border-box — 명시적 width/height를 border-box로 취급하여 padding+border 차감 (treatAsBorderBox), PixiButton self-rendering과 BlockEngine content-box 합산 간 이중 계산 해결 (utils.ts), (2) calculateContentHeight에서 padding 이중 계산 제거 — content-box 기준 textHeight만 반환 (utils.ts), (3) Body borderWidth 처리 — renderWithCustomEngine의 availableWidth에서 border 차감 추가, 자식 offset은 padding만 적용 (Yoga가 border offset 자동 처리) (BuilderCanvas.tsx), (4) §4.7.4.2에 v1.13 border-box 참고 추가 |
 | 2026-02-01 | 1.14 | Phase 5+ CanvasKit/Skia 구현 코드 대조 검증 12건 반영: (1) §1 아키텍처 개요 — Skia 렌더링 실제 위치(apps/builder/.../skia/) 명시, (2) §2 렌더러 설명 — CanvasKitRenderer → nodeRenderers.ts 파이프라인 정정, (3) §2 파일 목록 — CanvasKitRenderer.ts → 외부 구현 참조 코멘트, (4) §3 TextShape — "설계 명세 — 인터페이스 적용 예정" 상태 표기, (5) §3 ShadowShape — 실제 구현 위치(skia/types.ts EffectStyle) 명시, (6) §3 BorderShape — "설계 명세 — 인터페이스 적용 예정" 상태 표기, (7) §4 Clipping — clipRect ✅/clipRRect·overflow 미구현 상태 표기, (8) §4 Gradient — 타입별 구현 상태 + fills.ts 라인 참조, (9) §7 색상 변환 — "설계 예시" + Color4f 인라인 사용 명시, (10) §8 렌더러 파일 — 설계 예시 + nodeRenderers.ts 참조, (11) §12 테스트 헬퍼 — "구현 예정 — 현재 미구현" 표기, (12) §12 캐시 전략 — 구현 상태 컬럼 추가(Paint·Paragraph ⚠️ 미구현, Font·Surface·DirtyRect ✅) |
 | 2026-02-02 | 2.0 | **Skia 중심 문서 리팩토링**: (1) 문서 상태를 "Phase 5 구현 완료 (CanvasKit/Skia 렌더링 전환)"로 갱신, (2) 목표 아키텍처를 render.skia 중심으로 변경, (3) 메인 데이터 흐름 다이어그램을 CanvasKit 4-path로 교체하고 기존 3-path를 레거시 접이식 블록으로 이동, (4) 시스템 아키텍처 다이어그램에 skia/ 디렉토리 반영, (5) 디렉토리 구조에 skia/ 18개 파일 목록 추가, (6) §3.5.3을 "CanvasKit/Skia Renderer (Primary)"로 재구조화 — SkiaNodeData 구조, renderNode() 파이프라인, 렌더러 역할 분담 테이블 추가, PixiRenderer 코드를 레거시 접이식 블록으로 이동, (7) Shape 타입 내 Phase 5+ 주석을 본문으로 승격 — TextShape(ParagraphBuilder), ShadowShape(effects.ts), BorderShape(Skia Stroke), GradientShape(fills.ts 구현 상태), overflow(clipRect 구현 완료), (8) §4.5를 "CanvasKit/Skia 렌더링 패턴"으로 교체 — ElementSprite→useSkiaNode→SkiaOverlay 파이프라인 다이어그램, (9) §4.7.4 CSS 단위 규칙을 CanvasKit 중심으로 재구성 — Yoga px 변환 설명을 본문으로, PixiJS 규칙을 레거시 접이식 블록으로, (10) Phase 0 체크리스트 갱신 — CanvasKit 인프라 11개 항목 [x] 완료, (11) Phase 5 체크리스트 갱신 — Skia 인프라 8개 항목 [x] 완료 + 미완료 항목 분리, (12) VRT 섹션을 React ↔ CanvasKit 비교로 전환, (13) 성능 최적화에 Frame Classification(idle/camera-only/content/full) 추가, (14) 테스트 코드 내 PIXI 참조를 CanvasKit으로 교체 |
+| 2026-02-04 | 2.1 | 문서 정확성 검증 및 수정 7건: (1) §7.1 컴포넌트 개수 17→16으로 수정, (2) §5.2 TextFieldSpec states 타입 불일치 수정 — focus→focused, invalid 제거, borderColor/borderWidth→outline/outlineOffset (StateEffect 인터페이스 준수), (3) §4.2 ToggleButton/ToggleButtonGroup 상태 "⚠️ 부분"→"✅ 정상" (WebGL container-only 패턴 구현 완료), (4) §3.5.3.1 renderSkiaShape rect case에서 RectShape 타입에 없는 radius 사용 수정 — rect/roundRect case 분리, (5) hexStringToNumber 함수 정의 추가 (PixiRenderer.ts 코드에서 참조되나 미정의), (6) §4.7.4 PixiToggleButtonGroup CSS 단위 파싱 상태 갱신 — "❌"→"✅ 완료" (container-only 패턴, LayoutComputedSizeContext 사용), (7) ToggleButtonGroup WebGL 구현 관련 변경 반영 — PropertyUnitInput 키워드 유닛 버그 수정, styleToLayout.ts formatStyles 캐싱 수정, PixiToggleButtonGroup selection 수정 (eventMode, computedSize > 0 체크) |
