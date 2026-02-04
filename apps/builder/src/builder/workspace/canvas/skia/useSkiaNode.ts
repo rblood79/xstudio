@@ -30,19 +30,11 @@ const skiaNodeRegistry = new Map<string, SkiaNodeData>();
 /** 레지스트리 변경 버전 (단조 증가) */
 let registryVersion = 0;
 
-/** 프레임 간 축적되는 dirty element IDs (좌표계는 SkiaOverlay에서 결정) */
-let pendingDirtyIds = new Set<string>();
-
-/** dirty rect 계산 불가/대량 변경 시 전체 렌더링 강제 */
-let pendingFullRedraw = false;
-
 /** 레지스트리에 Skia 렌더 데이터 등록 */
 export function registerSkiaNode(elementId: string, data: SkiaNodeData): void {
   // 동일 참조면 스킵 (useLayoutEffect 재실행 시 중복 방지)
   const oldData = skiaNodeRegistry.get(elementId);
   if (oldData === data) return;
-
-  pendingDirtyIds.add(elementId);
 
   skiaNodeRegistry.set(elementId, data);
   registryVersion++;
@@ -50,7 +42,6 @@ export function registerSkiaNode(elementId: string, data: SkiaNodeData): void {
 
 /** 레지스트리에서 Skia 렌더 데이터 해제 */
 export function unregisterSkiaNode(elementId: string): void {
-  pendingDirtyIds.add(elementId);
   skiaNodeRegistry.delete(elementId);
   registryVersion++;
 }
@@ -72,8 +63,6 @@ export function getSkiaRegistrySize(): number {
  */
 export function clearSkiaRegistry(): void {
   skiaNodeRegistry.clear();
-  pendingDirtyIds.clear();
-  pendingFullRedraw = true;
   registryVersion++;
 }
 
@@ -88,25 +77,8 @@ export function getRegistryVersion(): number {
  *
  * elementRegistry.updateElementBounds() → LayoutContainer Yoga 재계산 후 호출
  */
-export function notifyLayoutChange(elementId?: string): void {
-  if (elementId) {
-    pendingDirtyIds.add(elementId);
-  } else {
-    pendingFullRedraw = true;
-  }
+export function notifyLayoutChange(): void {
   registryVersion++;
-}
-
-/**
- * 축적된 dirty 상태를 반환하고 초기화한다.
- * 렌더 루프에서 프레임당 1회 호출한다.
- */
-export function flushDirtyState(): { dirtyIds: string[]; fullRedraw: boolean } {
-  const dirtyIds = Array.from(pendingDirtyIds);
-  pendingDirtyIds.clear();
-  const fullRedraw = pendingFullRedraw;
-  pendingFullRedraw = false;
-  return { dirtyIds, fullRedraw };
 }
 
 // ============================================

@@ -7,6 +7,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added - 캔버스 Page Title 라벨 표시 (2026-02-04)
+
+#### 개요
+캔버스에서 페이지 경계(CanvasBounds) 좌측 상단 위에 현재 페이지 타이틀을 표시.
+Pencil 앱의 Frame title과 동일한 방식.
+
+#### 구현 방식
+- **렌더링**: Skia 캔버스에서 직접 렌더링 (기존 `renderDimensionLabels` 패턴 활용)
+- **위치**: 페이지 좌상단 (0, 0) 기준으로 위쪽 20px offset
+- **폰트**: Pretendard 12px (화면 기준, zoom-independent — `fontSize * (1/zoom)`)
+- **색상**: slate-500 (`#64748b`), 80% opacity
+- **배경 없음**: Pencil 스타일 텍스트만 표시
+
+#### 렌더 파이프라인 삽입 위치
+```
+renderNode() → AI effects → ★renderPageTitle()★ → Selection overlay → Lasso
+```
+- Selection 오버레이보다 먼저 렌더링되어, 선택 박스/핸들이 타이틀 위에 표시됨
+- `pageTitle` 변경 감지: `lastPageTitleRef` → `overlayVersionRef++`로 리렌더 트리거
+
+#### 수정 파일
+
+| 파일 | 변경 |
+|------|------|
+| `workspace/canvas/skia/selectionRenderer.ts` | `renderPageTitle()` 함수 + 상수 추가 |
+| `workspace/canvas/skia/SkiaOverlay.tsx` | props 확장, 타이틀 변경 감지, renderPageTitle 호출 |
+| `workspace/canvas/BuilderCanvas.tsx` | SkiaOverlayLazy에 pageWidth/pageHeight 전달 |
+
 ### Fixed - 스타일 패널 프로퍼티 변경 시 저장 안 됨 / 플리커 / 실시간 프리뷰 미반영 (2026-02-04)
 
 #### 개요

@@ -18,7 +18,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { RefObject } from 'react';
 import type { Application, Container } from 'pixi.js';
 import { SkiaRenderer } from './SkiaRenderer';
-import { getSkiaNode, getRegistryVersion, flushDirtyState, clearSkiaRegistry } from './useSkiaNode';
+import { getSkiaNode, getRegistryVersion, clearSkiaRegistry } from './useSkiaNode';
 import { renderNode } from './nodeRenderers';
 import type { SkiaNodeData } from './nodeRenderers';
 import { isCanvasKitInitialized, getCanvasKit } from './initCanvasKit';
@@ -34,8 +34,6 @@ import { calculateCombinedBounds } from '../selection/types';
 import type { BoundingBox, DragState } from '../selection/types';
 import { watchContextLoss } from './createSurface';
 import { clearImageCache } from './imageCache';
-import type { DirtyRect, EffectStyle } from './types';
-import { computeDirtyRectsFromInfo, type DirtyInfo } from './dirtyRectUtils';
 
 interface SkiaOverlayProps {
   /** 부모 컨테이너 DOM 요소 */
@@ -275,63 +273,6 @@ function buildTreeBoundsMap(tree: SkiaNodeData): Map<string, BoundingBox> {
   return boundsMap;
 }
 
-function computeEffectExpand(effects?: EffectStyle[]): number {
-  // 기본 2px 여유분 (안티앨리어싱, 부동소수점 오차 대비)
-  let expand = 2;
-
-  if (!effects) return expand;
-
-  for (const effect of effects) {
-    switch (effect.type) {
-      case 'background-blur':
-      case 'layer-blur':
-        expand = Math.max(expand, effect.sigma * 3);
-        break;
-      case 'drop-shadow': {
-        const shadowExpand =
-          Math.max(Math.abs(effect.dx), Math.abs(effect.dy)) +
-          Math.max(effect.sigmaX, effect.sigmaY) * 3;
-        expand = Math.max(expand, shadowExpand);
-        break;
-      }
-      case 'opacity':
-        break;
-    }
-  }
-
-  return expand;
-}
-
-function buildTreeDirtyInfoMap(tree: SkiaNodeData): Map<string, DirtyInfo> {
-  const map = new Map<string, DirtyInfo>();
-
-  function traverse(node: SkiaNodeData, parentX: number, parentY: number): void {
-    const absX = parentX + node.x;
-    const absY = parentY + node.y;
-
-    if (node.elementId) {
-      map.set(node.elementId, {
-        bounds: {
-          x: absX,
-          y: absY,
-          width: node.width,
-          height: node.height,
-        },
-        expand: computeEffectExpand(node.effects),
-      });
-    }
-
-    if (node.children) {
-      for (const child of node.children) {
-        traverse(child, absX, absY);
-      }
-    }
-  }
-
-  traverse(tree, 0, 0);
-  return map;
-}
-
 /**
  * Selection 렌더 데이터를 수집한다.
  *
@@ -423,7 +364,7 @@ function buildSelectionRenderData(
  * 모든 Camera 하위 레이어는 renderable=false로 숨기고,
  * PixiJS는 히트 테스팅과 드래그 이벤트만 처리한다.
  */
-export function SkiaOverlay({ containerEl, backgroundColor = 0xf8fafc, app, dragStateRef, pageWidth, pageHeight }: SkiaOverlayProps) {
+export function SkiaOverlay({ containerEl, backgroundColor = 0xf8fafc, app, dragStateRef }: SkiaOverlayProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rendererRef = useRef<SkiaRenderer | null>(null);
   const [ready, setReady] = useState(false);
@@ -435,7 +376,6 @@ export function SkiaOverlay({ containerEl, backgroundColor = 0xf8fafc, app, drag
   const lastSelectedIdRef = useRef<string | null>(null);
   const lastAIActiveRef = useRef(0);
   const lastPageTitleRef = useRef('');
-  const prevDirtyInfoMapRef = useRef<Map<string, DirtyInfo>>(new Map());
 
 
   const isActive = true;
@@ -550,9 +490,7 @@ export function SkiaOverlay({ containerEl, backgroundColor = 0xf8fafc, app, drag
       const cameraY = cameraContainer?.y ?? 0;
       const cameraZoom = Math.max(cameraContainer?.scale?.x ?? 1, 0.001);
 
-      // ── effectiveVersion 계산 (트리 재구성 여부 판단에 사용) ──
       const registryVersion = getRegistryVersion();
-      const dirtyState = flushDirtyState();
 
       // Selection 상태 변경 감지 — selectedElementIds 참조 변경 시 version 증가
       const currentSelectedIds = useStore.getState().selectedElementIds;
@@ -599,6 +537,12 @@ export function SkiaOverlay({ containerEl, backgroundColor = 0xf8fafc, app, drag
       }
       lastAIActiveRef.current = currentAIActive;
 
+      // 드래그 중(라쏘/리사이즈/이동)에는 매 프레임 오버레이 갱신
+      const dragState = dragStateRef?.current;
+      if (dragState?.isDragging) {
+        overlayVersionRef.current++;
+      }
+
       // 페이지 타이틀 변경 감지
       const storeState = useStore.getState();
       const currentPage = storeState.pages.find(p => p.id === storeState.currentPageId);
@@ -608,7 +552,6 @@ export function SkiaOverlay({ containerEl, backgroundColor = 0xf8fafc, app, drag
         lastPageTitleRef.current = pageTitle;
       }
 
-      const effectiveVersion = registryVersion + overlayVersionRef.current;
       const camera = { zoom: cameraZoom, panX: cameraX, panY: cameraY };
 
       // 계층적 Skia 트리 재구성 (매 프레임)
@@ -618,78 +561,57 @@ export function SkiaOverlay({ containerEl, backgroundColor = 0xf8fafc, app, drag
       const tree = cameraContainer
         ? buildSkiaTreeHierarchical(cameraContainer, cameraX, cameraY, cameraZoom)
         : null;
-      if (!tree) return;
-
-      const currentDirtyInfoMap = buildTreeDirtyInfoMap(tree);
-      const prevDirtyInfoMap = prevDirtyInfoMapRef.current;
-      let dirtyRects: DirtyRect[] | undefined;
-
-      if (dirtyState.fullRedraw) {
-        dirtyRects = undefined; // 전체 렌더
-      } else if (dirtyState.dirtyIds.length > 0) {
-        dirtyRects = computeDirtyRectsFromInfo(
-          prevDirtyInfoMap,
-          currentDirtyInfoMap,
-          dirtyState.dirtyIds,
-        );
-      } else {
-        dirtyRects = undefined; // overlay-only 변경 등 → 전체 렌더
+      if (!tree) {
+        renderer.clearFrame();
+        renderer.invalidateContent();
+        return;
       }
 
-      prevDirtyInfoMapRef.current = currentDirtyInfoMap;
+      const fontMgr = skiaFontManager.getFamilies().length > 0
+        ? skiaFontManager.getFontMgr()
+        : undefined;
 
-      renderer.setRootNode({
+      const treeBoundsMap = buildTreeBoundsMap(tree);
+      const selectionData = buildSelectionRenderData(cameraX, cameraY, cameraZoom, treeBoundsMap, dragStateRef);
+
+      const currentAiState = useAIVisualFeedbackStore.getState();
+      const hasAIEffects =
+        currentAiState.generatingNodes.size > 0 || currentAiState.flashAnimations.size > 0;
+      const nodeBoundsMap = hasAIEffects
+        ? buildNodeBoundsMap(tree, currentAiState)
+        : null;
+
+      renderer.setContentNode({
         renderSkia(canvas, bounds) {
-          const fontMgr = skiaFontManager.getFamilies().length > 0
-            ? skiaFontManager.getFontMgr()
-            : undefined;
-
-          // 카메라 변환 적용 (팬 + 줌)
-          canvas.save();
-          canvas.translate(cameraX, cameraY);
-          canvas.scale(cameraZoom, cameraZoom);
-
-          // Phase 1: 디자인 노드 렌더링 (씬-로컬 좌표)
           renderNode(ck, canvas, tree, bounds, fontMgr);
+        },
+      });
 
-          // Phase 2-3: G.3 AI 시각 피드백 (카메라 좌표계 내에서 렌더링)
-          const currentAiState = useAIVisualFeedbackStore.getState();
-          const hasAIEffects =
-            currentAiState.generatingNodes.size > 0 || currentAiState.flashAnimations.size > 0;
-
-          if (hasAIEffects) {
+      renderer.setOverlayNode({
+        renderSkia(canvas, _bounds) {
+          if (hasAIEffects && nodeBoundsMap) {
             const now = performance.now();
-            const nodeBoundsMap = buildNodeBoundsMap(tree, currentAiState);
             renderGeneratingEffects(ck, canvas, now, currentAiState.generatingNodes, nodeBoundsMap);
             renderFlashes(ck, canvas, now, currentAiState.flashAnimations, nodeBoundsMap);
-            // 만료된 flash를 렌더링 이후에 정리하여 마지막 프레임이 누락되지 않도록 한다.
             if (currentAiState.flashAnimations.size > 0) {
               currentAiState.cleanupExpiredFlashes(now);
             }
           }
 
-          // Page Title 라벨 (Pencil Frame Title 스타일)
           if (pageTitle) {
             renderPageTitle(ck, canvas, pageTitle, cameraZoom, fontMgr);
           }
 
-          // Phase 4-6: Selection 오버레이 (Pencil 방식 — Skia에서 직접 렌더링)
-          // Skia 트리의 절대 바운드를 추출하여 Selection이 컨텐츠와 동일한 좌표 소스를 참조
-          const treeBoundsMap = buildTreeBoundsMap(tree);
-          const selectionData = buildSelectionRenderData(cameraX, cameraY, cameraZoom, treeBoundsMap, dragStateRef);
           if (selectionData.bounds) {
             renderSelectionBox(ck, canvas, selectionData.bounds, cameraZoom);
             if (selectionData.showHandles) {
               renderTransformHandles(ck, canvas, selectionData.bounds, cameraZoom);
             }
-            // 치수 레이블 (width × height) 표시
             renderDimensionLabels(ck, canvas, selectionData.bounds, cameraZoom, fontMgr);
           }
           if (selectionData.lasso) {
             renderLasso(ck, canvas, selectionData.lasso, cameraZoom);
           }
-
-          canvas.restore();
         },
       });
 
@@ -706,7 +628,7 @@ export function SkiaOverlay({ containerEl, backgroundColor = 0xf8fafc, app, drag
       // Phase 6: 이중 Surface 캐싱 — SkiaRenderer가 classifyFrame()으로 최적 경로 결정
       // idle: 변경 없음 → 렌더링 스킵
       // content/full: renderContent() + blitToMain()
-      renderer.render(cullingBounds, effectiveVersion, camera, dirtyRects);
+      renderer.render(cullingBounds, registryVersion, camera, overlayVersionRef.current);
     };
 
     app.ticker.add(syncPixiVisibility, undefined, 25);  // HIGH: before Application.render()
@@ -760,6 +682,8 @@ export function SkiaOverlay({ containerEl, backgroundColor = 0xf8fafc, app, drag
       prevPageIdRef.current = currentPageId;
       clearSkiaRegistry();
       clearImageCache();
+      rendererRef.current?.invalidateContent();
+      rendererRef.current?.clearFrame();
     }
   }, [currentPageId]);
 

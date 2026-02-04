@@ -2,30 +2,36 @@
  * CanvasKit/Skia 렌더 루프
  *
  * Phase 5: 기본 렌더 루프 (단일 Surface)
- * Phase 6: 이중 Surface 캐싱 + Dirty Rect 렌더링
+ * Phase 6: 이중 Surface 캐싱 (컨텐츠 캐시 + 오버레이 분리)
  *
  * 프레임 분류:
  * - idle: 변경 없음 → 렌더링 스킵 (0ms)
- * - camera-only: 카메라만 변경 → 캐시 blit + 아핀 변환 (~1ms)
- * - content: 요소 변경 → dirty rect 부분 렌더링 후 블리팅 (폴백 포함)
+ * - present: 오버레이만 변경 → 캐시 blit + 오버레이 렌더
+ * - camera-only: 카메라만 변경 → 캐시 blit + 아핀 변환 + 오버레이 렌더 (~1ms)
+ * - content: 요소 변경 → 컨텐츠 재렌더링 + 캐시 갱신
  * - full: 리사이즈/첫 프레임/cleanup → 전체 재렌더링
  *
  * @see docs/WASM.md §5.10, §6.1, §6.2
  */
 
 import type { CanvasKit, Canvas, Surface, Image } from 'canvaskit-wasm';
-import type { SkiaRenderable, FrameType, CameraState, DirtyRect } from './types';
+import type { SkiaRenderable, FrameType, CameraState } from './types';
 import { createGPUSurface } from './createSurface';
 import { recordWasmMetric } from '../utils/gpuProfilerCore';
-import { mergeDirtyRects } from './dirtyRectTracker';
 
 
 export class SkiaRenderer {
   private ck: CanvasKit;
-  private rootNode: SkiaRenderable | null = null;
+  private contentNode: SkiaRenderable | null = null;
+  private overlayNode: SkiaRenderable | null = null;
   private backgroundColor: Float32Array;
   private disposed = false;
   private dpr: number;
+
+  /** Content Surface 패딩 (CSS px) — camera-only blit 가장자리 아티팩트 방지 */
+  private readonly contentPaddingCssPx = 512;
+  /** DPR 반영된 패딩 (device px) */
+  private contentPaddingDevicePx = 0;
 
   // ============================================
   // Main Surface (화면 표시)
@@ -41,6 +47,7 @@ export class SkiaRenderer {
   private contentSnapshot: Image | null = null;
   private contentDirty = true;
   private lastRegistryVersion = -1;
+  private lastOverlayVersion = -1;
   /** 프레임 분류용 — 매 프레임 갱신 */
   private lastCamera: CameraState = { zoom: 1, panX: 0, panY: 0 };
   /** 스냅샷 캡처 시점의 카메라 — camera-only blit 델타 기준점 */
@@ -60,19 +67,36 @@ export class SkiaRenderer {
   ) {
     this.ck = ck;
     this.dpr = dpr ?? (window.devicePixelRatio || 1);
+    this.contentPaddingDevicePx = Math.round(this.contentPaddingCssPx * this.dpr);
     this.mainSurface = createGPUSurface(ck, htmlCanvas);
     this.mainCanvas = this.mainSurface.getCanvas();
     this.backgroundColor = backgroundColor ?? ck.Color4f(1, 1, 1, 1);
   }
 
-  /** 렌더링할 루트 노드를 설정한다. */
-  setRootNode(node: SkiaRenderable): void {
-    this.rootNode = node;
+  /** 컨텐츠(디자인 노드) 렌더러를 설정한다. */
+  setContentNode(node: SkiaRenderable | null): void {
+    this.contentNode = node;
+  }
+
+  /** 오버레이(Selection/AI) 렌더러를 설정한다. */
+  setOverlayNode(node: SkiaRenderable | null): void {
+    this.overlayNode = node;
   }
 
   /** 배경색을 변경한다. */
   setBackgroundColor(color: Float32Array): void {
     this.backgroundColor = color;
+  }
+
+  /** 컨텐츠 캐시를 무효화하여 다음 프레임에서 전체 재렌더링하도록 한다. */
+  invalidateContent(): void {
+    this.contentDirty = true;
+  }
+
+  /** 메인 캔버스를 클리어한다 (페이지 전환/초기화용). */
+  clearFrame(): void {
+    this.mainCanvas.clear(this.backgroundColor);
+    this.mainSurface.flush();
   }
 
   // ============================================
@@ -82,16 +106,13 @@ export class SkiaRenderer {
   /**
    * 프레임을 분류하여 최적 렌더 경로를 결정한다.
    *
-   * 현재: camera-only blit은 비활성화 (contentSurface가 뷰포트 크기로
-   * 가장자리 클리핑 발생). Content Render Padding (Phase 5) 구현 시 재활성화.
-   *
-   * Cleanup Render/camera-only blit 인프라는 Phase 5 대비 보존:
-   * - blitWithCameraTransform(): snapshotCamera 기반 아핀 변환
-   * - scheduleCleanupRender(): 200ms 디바운스 full quality 재렌더링
+   * 컨텐츠는 contentSurface에 캐시하고, 화면 표시는
+   * snapshot blit + 오버레이를 mainSurface에 덧그린다.
    */
   private classifyFrame(
     registryVersion: number,
     camera: CameraState,
+    overlayVersion: number,
   ): FrameType {
     if (this.contentDirty) return 'full';
 
@@ -102,6 +123,7 @@ export class SkiaRenderer {
     }
 
     const registryChanged = registryVersion !== this.lastRegistryVersion;
+    const overlayChanged = overlayVersion !== this.lastOverlayVersion;
     const cameraChanged =
       camera.zoom !== this.lastCamera.zoom ||
       camera.panX !== this.lastCamera.panX ||
@@ -111,13 +133,10 @@ export class SkiaRenderer {
       return 'content';
     }
     if (cameraChanged) {
-      // camera-only blit은 contentSurface가 뷰포트 크기이므로
-      // 스냅샷에 없는 가장자리 영역이 배경색으로 노출되는 문제가 있다.
-      // Content Render Padding (Phase 5, 512px) 구현 전까지는
-      // 카메라 변경 시에도 content render를 수행한다.
-      // 트리 캐시(~0ms)와 AABB 컬링으로 content render 비용이
-      // 충분히 낮아(~1-3ms) 실용적 영향 없음.
-      return 'content';
+      return this.canBlitWithCameraTransform(camera) ? 'camera-only' : 'content';
+    }
+    if (overlayChanged) {
+      return 'present';
     }
     return 'idle';
   }
@@ -137,9 +156,39 @@ export class SkiaRenderer {
     }, 200);
   }
 
+  private canBlitWithCameraTransform(camera: CameraState): boolean {
+    if (!this.contentSnapshot) return false;
+
+    const mainW = this.mainSurface.width();
+    const mainH = this.mainSurface.height();
+    if (mainW <= 0 || mainH <= 0) return false;
+
+    const pad = this.contentPaddingDevicePx;
+    const zoomRatio = camera.zoom / this.snapshotCamera.zoom;
+    const tx = (camera.panX - this.snapshotCamera.panX * zoomRatio) * this.dpr;
+    const ty = (camera.panY - this.snapshotCamera.panY * zoomRatio) * this.dpr;
+
+    // 변환된 스냅샷 이미지가 메인 캔버스를 완전히 덮는지 확인한다.
+    // base = -pad 이고 contentSize = main + 2*pad 이므로:
+    // left = -pad*r + tx, right = (mainW + pad)*r + tx
+    const left = -pad * zoomRatio + tx;
+    const top = -pad * zoomRatio + ty;
+    const right = (mainW + pad) * zoomRatio + tx;
+    const bottom = (mainH + pad) * zoomRatio + ty;
+
+    const margin = 1; // 1px 여유 (부동소수점 오차)
+    return (
+      left <= margin &&
+      top <= margin &&
+      right >= mainW - margin &&
+      bottom >= mainH - margin
+    );
+  }
+
   /**
    * Content Surface를 초기화한다.
-   * mainSurface와 동일한 크기의 오프스크린 래스터 Surface를 생성한다.
+   * mainSurface보다 큰 오프스크린 Surface를 생성하여 camera-only blit 시
+   * 가장자리 아티팩트를 방지한다.
    *
    * CanvasKit.MakeSurface()로 CPU-backed surface를 생성한다.
    * makeImageSnapshot()으로 생성된 Image는 GPU canvas에 그릴 때
@@ -148,8 +197,8 @@ export class SkiaRenderer {
   private initContentSurface(): void {
     this.disposeContentSurface();
 
-    const width = this.mainSurface.width();
-    const height = this.mainSurface.height();
+    const width = this.mainSurface.width() + this.contentPaddingDevicePx * 2;
+    const height = this.mainSurface.height() + this.contentPaddingDevicePx * 2;
 
     this.contentSurface = this.ck.MakeSurface(width, height)!;
     if (!this.contentSurface) {
@@ -162,85 +211,33 @@ export class SkiaRenderer {
 
   /**
    * Content Surface에 씬을 렌더링한다.
-   *
-   * dirtyRects가 있으면 카메라 좌표로 변환 후 해당 영역만 clipRect로 부분 렌더링.
-   * 없으면 전체 렌더링.
-   *
-   * Phase 3: dirty rect 좌표를 씬-로컬 → content canvas 공간으로 변환하여
-   * 부분 렌더링의 좌표계 불일치를 해결한다.
    */
   private renderContent(
     cullingBounds: DOMRect,
     camera: CameraState,
-    dirtyRects?: DirtyRect[],
   ): void {
-    if (!this.contentCanvas || !this.contentSurface || !this.rootNode) return;
+    if (!this.contentCanvas || !this.contentSurface || !this.contentNode) return;
 
     const start = performance.now();
 
-    // 뷰포트 면적 기반 폴백: dirty 면적이 30% 초과 시 전체 렌더
-    const viewportArea = (this.mainSurface.width() / this.dpr) * (this.mainSurface.height() / this.dpr);
+    // 전체 콘텐츠 렌더링 (Pencil 방식: content invalidation은 full rerender)
+    const padCss = this.contentPaddingDevicePx / this.dpr;
+    const padScene = padCss / Math.max(camera.zoom, 0.001);
+    const paddedBounds = new DOMRect(
+      cullingBounds.x - padScene,
+      cullingBounds.y - padScene,
+      cullingBounds.width + padScene * 2,
+      cullingBounds.height + padScene * 2,
+    );
 
-    if (!dirtyRects || dirtyRects.length === 0 || this.contentDirty) {
-      // 전체 콘텐츠 렌더링
-      this.contentCanvas.clear(this.backgroundColor);
-      this.contentCanvas.save();
-      this.contentCanvas.scale(this.dpr, this.dpr);
-      this.rootNode.renderSkia(this.contentCanvas, cullingBounds);
-      this.contentCanvas.restore();
-    } else {
-      // Dirty Rect 부분 렌더링 — 좌표 변환 후 적용
-      const merged = mergeDirtyRects(dirtyRects, 16, viewportArea);
-      if (merged.length === 0) {
-        // 뷰포트 30% 초과 → 전체 렌더 폴백
-        this.contentCanvas.clear(this.backgroundColor);
-        this.contentCanvas.save();
-        this.contentCanvas.scale(this.dpr, this.dpr);
-        this.rootNode.renderSkia(this.contentCanvas, cullingBounds);
-        this.contentCanvas.restore();
-      } else {
-        for (const rect of merged) {
-          // 씬-로컬 좌표 → content canvas 좌표 (카메라 변환 적용)
-          // 2px 패딩 추가: 안티앨리어싱, DPR 스케일링, 부동소수점 오차로 인한
-          // 경계 잔상 방지. Dirty rect 경계가 정확히 픽셀에 맞지 않으면
-          // 이전 프레임의 서브픽셀이 남아 잔상으로 보일 수 있다.
-          const padding = 2;
-          const screenRect = {
-            x: rect.x * camera.zoom + camera.panX - padding,
-            y: rect.y * camera.zoom + camera.panY - padding,
-            width: rect.width * camera.zoom + padding * 2,
-            height: rect.height * camera.zoom + padding * 2,
-          };
-
-          this.contentCanvas.save();
-          this.contentCanvas.scale(this.dpr, this.dpr);
-
-          const skRect = this.ck.LTRBRect(
-            screenRect.x,
-            screenRect.y,
-            screenRect.x + screenRect.width,
-            screenRect.y + screenRect.height,
-          );
-          this.contentCanvas.clipRect(
-            skRect,
-            this.ck.ClipOp.Intersect,
-            false,
-          );
-
-          // dirty 영역 초기화 + 재렌더링
-          this.contentCanvas.clear(this.backgroundColor);
-          const dirtyBounds = new DOMRect(
-            rect.x,
-            rect.y,
-            rect.width,
-            rect.height,
-          );
-          this.rootNode.renderSkia(this.contentCanvas, dirtyBounds);
-
-          this.contentCanvas.restore();
-        }
-      }
-    }
+    this.contentCanvas.clear(this.backgroundColor);
+    this.contentCanvas.save();
+    this.contentCanvas.scale(this.dpr, this.dpr);
+    this.contentCanvas.translate(padCss, padCss);
+    this.contentCanvas.translate(camera.panX, camera.panY);
+    this.contentCanvas.scale(camera.zoom, camera.zoom);
+    this.contentNode.renderSkia(this.contentCanvas, paddedBounds);
+    this.contentCanvas.restore();
 
     // 콘텐츠 스냅샷 생성 (이전 스냅샷 해제)
     this.contentSnapshot?.delete();
@@ -253,17 +250,13 @@ export class SkiaRenderer {
   }
 
   /**
-   * Content 스냅샷을 Main Surface에 블리팅한다.
-   *
-   * 카메라 변환은 content 렌더링 시 worldTransform에 이미 포함되어 있으므로
-   * 단순 1:1 복사만 수행한다.
+   * Content 스냅샷을 Main Surface에 블리팅한다 (flush는 호출자가 수행).
    */
-  private blitToMain(): void {
+  private blitToMainNoFlush(): void {
     if (!this.contentSnapshot) return;
 
     this.mainCanvas.clear(this.backgroundColor);
-    this.mainCanvas.drawImage(this.contentSnapshot, 0, 0);
-    this.mainSurface.flush();
+    this.mainCanvas.drawImage(this.contentSnapshot, -this.contentPaddingDevicePx, -this.contentPaddingDevicePx);
   }
 
   /**
@@ -273,7 +266,7 @@ export class SkiaRenderer {
    * ~1ms 이내로 프레임을 완성한다.
    * 가장자리 아티팩트는 Cleanup Render(Phase 1)로 200ms 후 보정된다.
    */
-  private blitWithCameraTransform(camera: CameraState): void {
+  private blitWithCameraTransformNoFlush(camera: CameraState): void {
     if (!this.contentSnapshot) return;
 
     this.mainCanvas.clear(this.backgroundColor);
@@ -292,8 +285,39 @@ export class SkiaRenderer {
     this.mainCanvas.translate(tx, ty);
     this.mainCanvas.scale(zoomRatio, zoomRatio);
 
-    this.mainCanvas.drawImage(this.contentSnapshot, 0, 0);
+    this.mainCanvas.drawImage(this.contentSnapshot, -this.contentPaddingDevicePx, -this.contentPaddingDevicePx);
     this.mainCanvas.restore();
+  }
+
+  private renderOverlay(
+    cullingBounds: DOMRect,
+    camera: CameraState,
+  ): void {
+    if (!this.overlayNode) return;
+
+    this.mainCanvas.save();
+    this.mainCanvas.scale(this.dpr, this.dpr);
+    this.mainCanvas.translate(camera.panX, camera.panY);
+    this.mainCanvas.scale(camera.zoom, camera.zoom);
+    this.overlayNode.renderSkia(this.mainCanvas, cullingBounds);
+    this.mainCanvas.restore();
+  }
+
+  private present(
+    cullingBounds: DOMRect,
+    camera: CameraState,
+  ): void {
+    const cameraMatchesSnapshot =
+      camera.zoom === this.snapshotCamera.zoom &&
+      camera.panX === this.snapshotCamera.panX &&
+      camera.panY === this.snapshotCamera.panY;
+
+    if (cameraMatchesSnapshot) {
+      this.blitToMainNoFlush();
+    } else {
+      this.blitWithCameraTransformNoFlush(camera);
+    }
+    this.renderOverlay(cullingBounds, camera);
     this.mainSurface.flush();
   }
 
@@ -302,50 +326,56 @@ export class SkiaRenderer {
    *
    * 프레임 분류에 따라 최소 작업만 수행:
    * - idle → 스킵
-   * - camera-only → 캐시 blit + 아핀 변환 (~1ms)
-   * - content → renderContent(dirtyRects) + blitToMain()
-   * - full → renderContent(all) + blitToMain()
+   * - present → 캐시 blit + 오버레이
+   * - camera-only → 캐시 blit(아핀) + 오버레이
+   * - content/full → 컨텐츠 재렌더 + 캐시 갱신
    */
   renderDualSurface(
     cullingBounds: DOMRect,
     registryVersion: number,
     camera: CameraState,
-    dirtyRects?: DirtyRect[],
+    overlayVersion: number,
   ): void {
-    if (this.disposed || !this.rootNode) return;
+    if (this.disposed || !this.contentNode) return;
 
     // Lazy init content surface
     if (!this.contentSurface) {
       this.initContentSurface();
       // Content surface 실패 시 레거시 폴백
       if (!this.contentSurface) {
-        this.renderLegacy(cullingBounds);
+        this.renderLegacy(cullingBounds, camera);
         return;
       }
     }
 
-    const frameType = this.classifyFrame(registryVersion, camera);
+    const frameType = this.classifyFrame(registryVersion, camera, overlayVersion);
 
     switch (frameType) {
       case 'idle':
         break;
 
+      case 'present':
+        this.present(cullingBounds, camera);
+        break;
+
       case 'camera-only':
-        this.blitWithCameraTransform(camera);
+        this.scheduleCleanupRender();
+        this.present(cullingBounds, camera);
         break;
 
       case 'content':
-        this.renderContent(cullingBounds, camera, dirtyRects);
-        this.blitToMain();
+        this.renderContent(cullingBounds, camera);
+        this.present(cullingBounds, camera);
         break;
 
       case 'full':
         this.renderContent(cullingBounds, camera);
-        this.blitToMain();
+        this.present(cullingBounds, camera);
         break;
     }
 
     this.lastRegistryVersion = registryVersion;
+    this.lastOverlayVersion = overlayVersion;
     this.lastCamera = { ...camera };
   }
 
@@ -358,15 +388,20 @@ export class SkiaRenderer {
    *
    * DUAL_SURFACE_CACHE가 비활성화된 경우 또는 content surface 생성 실패 시 사용.
    */
-  renderLegacy(cullingBounds: DOMRect): void {
-    if (this.disposed || !this.rootNode) return;
+  renderLegacy(cullingBounds: DOMRect, camera: CameraState): void {
+    if (this.disposed || !this.contentNode) return;
 
     const start = performance.now();
 
     this.mainCanvas.clear(this.backgroundColor);
     this.mainCanvas.save();
     this.mainCanvas.scale(this.dpr, this.dpr);
-    this.rootNode.renderSkia(this.mainCanvas, cullingBounds);
+    this.mainCanvas.translate(camera.panX, camera.panY);
+    this.mainCanvas.scale(camera.zoom, camera.zoom);
+    this.contentNode.renderSkia(this.mainCanvas, cullingBounds);
+    if (this.overlayNode) {
+      this.overlayNode.renderSkia(this.mainCanvas, cullingBounds);
+    }
     this.mainCanvas.restore();
     this.mainSurface.flush();
 
@@ -381,18 +416,11 @@ export class SkiaRenderer {
    */
   render(
     cullingBounds: DOMRect,
-    registryVersion?: number,
-    camera?: CameraState,
-    dirtyRects?: DirtyRect[],
+    registryVersion: number,
+    camera: CameraState,
+    overlayVersion: number,
   ): void {
-    if (
-      registryVersion !== undefined &&
-      camera !== undefined
-    ) {
-      this.renderDualSurface(cullingBounds, registryVersion, camera, dirtyRects);
-    } else {
-      this.renderLegacy(cullingBounds);
-    }
+    this.renderDualSurface(cullingBounds, registryVersion, camera, overlayVersion);
   }
 
   // ============================================
@@ -407,6 +435,7 @@ export class SkiaRenderer {
 
     // DPR 갱신 — 외부 모니터 이동 등으로 변경될 수 있음 (I-H4)
     this.dpr = window.devicePixelRatio || 1;
+    this.contentPaddingDevicePx = Math.round(this.contentPaddingCssPx * this.dpr);
 
     // Content surface 정리
     this.disposeContentSurface();
