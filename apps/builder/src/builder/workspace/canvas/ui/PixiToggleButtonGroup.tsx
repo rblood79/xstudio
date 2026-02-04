@@ -14,7 +14,7 @@
 
 import { useExtend } from '@pixi/react';
 import { PIXI_COMPONENTS } from '../pixiSetup';
-import { memo, useCallback, useMemo } from "react";
+import { memo, useCallback, useContext, useMemo } from "react";
 import {
   Graphics as PixiGraphics,
   TextStyle,
@@ -29,6 +29,7 @@ import {
   getVariantColors,
 } from "../utils/cssVariableReader";
 import { drawBox, parseBorderConfig } from "../utils";
+import { LayoutComputedSizeContext } from "../layoutContext";
 import { useStore } from "../../../stores";
 import { useThemeColors } from "../hooks/useThemeColors";
 
@@ -396,9 +397,19 @@ export const PixiToggleButtonGroup = memo(function PixiToggleButtonGroup({
     return typeof h === 'number' ? h : parseCSSSize(h);
   }, [style?.height]);
 
-  // 배경 크기: 명시적 style > 콘텐츠 기반 자동 계산
-  const bgWidth = (explicitWidth && explicitWidth > 0) ? explicitWidth : backgroundWidth;
-  const bgHeight = (explicitHeight && explicitHeight > 0) ? explicitHeight : backgroundHeight;
+  // 🚀 Yoga computed size: LayoutContainer가 계산한 실제 레이아웃 크기
+  // display:block → 부모 너비 채움, fit-content → 콘텐츠 크기 등
+  // PixiJS hit area와 Skia 시각적 렌더링이 일치하도록 사용
+  const computedSize = useContext(LayoutComputedSizeContext);
+
+  // 배경 크기: Yoga computed (>0) > 명시적 style > 콘텐츠 기반 자동 계산
+  // computedSize.height가 0일 수 있음 (Yoga가 children 미반영 시) → fallback 필요
+  const bgWidth = (computedSize?.width && computedSize.width > 0)
+    ? computedSize.width
+    : ((explicitWidth && explicitWidth > 0) ? explicitWidth : backgroundWidth);
+  const bgHeight = (computedSize?.height && computedSize.height > 0)
+    ? computedSize.height
+    : ((explicitHeight && explicitHeight > 0) ? explicitHeight : backgroundHeight);
 
   // 그룹 배경 그리기 (pill 형태)
   // 🚀 Phase 13: 사용자 정의 스타일 적용
@@ -463,30 +474,17 @@ export const PixiToggleButtonGroup = memo(function PixiToggleButtonGroup({
     [element.id, onClick, onChange, selectionMode, selectedKeys]
   );
 
-  // 🚀 배경 컨테이너 layout: position absolute로 부모 LayoutContainer를 100% 채움
-  // 외부 LayoutContainer(styleToLayout)가 width/height/display/flex 등 모든 레이아웃 처리
-  // 이 컨테이너는 배경만 렌더링하며 flex 레이아웃에 참여하지 않음
-  const groupLayout = useMemo(() => ({
-    position: 'absolute' as const,
-    top: 0,
-    left: 0,
-    width: '100%' as unknown as number,
-    height: '100%' as unknown as number,
-  }), []);
-
-  // 🚀 컨테이너 역할만: 배경 렌더링, 자식 ToggleButton은 ElementsLayer에서 렌더링
+  // 🚀 배경만 렌더링: pixiGraphics 직접 반환 (BoxSprite 패턴)
+  // - layout 속성 없음 → Yoga flex에 참여하지 않아 자식 ToggleButton과 경쟁 없음
+  // - eventMode="static" → 배경 영역 클릭 시 hit area로 그룹 선택 가능
+  // - 자식 ToggleButton은 ElementsLayer에서 형제로 렌더링 (z-order 위)
   return (
-    <pixiContainer
-      layout={groupLayout}
+    <pixiGraphics
+      draw={drawGroupBackground}
       eventMode="static"
+      cursor="pointer"
       onPointerDown={handleGroupClick}
-    >
-      {/* 그룹 배경만 렌더링 - 자식 버튼들은 ElementsLayer에서 개별 렌더링 */}
-      <pixiGraphics
-        draw={drawGroupBackground}
-        eventMode="none"
-      />
-    </pixiContainer>
+    />
   );
 });
 
