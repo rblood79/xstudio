@@ -475,36 +475,18 @@ export const PixiToggleButtonGroup = memo(function PixiToggleButtonGroup({
     alignSelf: 'flex-start' as const,
   }), [isHorizontal, gap, stylePadding]);
 
+  // 🚀 컨테이너 역할만: 배경 렌더링, 자식 ToggleButton은 ElementsLayer에서 렌더링
   return (
     <pixiContainer
       layout={groupLayout}
       eventMode="static"
       onPointerDown={handleGroupClick}
     >
-      {/* 그룹 배경 - layout 제거하여 flex에서 제외 (PixiButton 패턴) */}
+      {/* 그룹 배경만 렌더링 - 자식 버튼들은 ElementsLayer에서 개별 렌더링 */}
       <pixiGraphics
         draw={drawGroupBackground}
         eventMode="none"
       />
-
-      {/* 토글 버튼 아이템들 */}
-      {items.map((item, index) => {
-        const isItemSelected = selectedKeys.includes(item.value);
-
-        return (
-          <ToggleButtonItemComponent
-            key={item.id}
-            item={item}
-            isItemSelected={isItemSelected}
-            width={buttonSizes[index].width}
-            height={buttonSizes[index].height}
-            sizePreset={sizePreset}
-            variantColors={variantColors}
-            borderColor={defaultBorderColor}
-            onPress={handleItemPress}
-          />
-        );
-      })}
     </pixiContainer>
   );
 });
