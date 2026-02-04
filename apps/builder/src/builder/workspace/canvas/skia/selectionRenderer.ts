@@ -24,6 +24,14 @@ const SELECTION_R = 0x3b / 255; // 0.231
 const SELECTION_G = 0x82 / 255; // 0.510
 const SELECTION_B = 0xf6 / 255; // 0.965
 
+/** Page Title 레이블 설정 */
+const PAGE_TITLE_FONT_SIZE = 12;           // 화면상 폰트 크기 (px)
+const PAGE_TITLE_OFFSET_Y = 20;            // 페이지 상단 위로 오프셋 (px)
+const PAGE_TITLE_COLOR_R = 0x64 / 255;     // slate-500 (#64748b)
+const PAGE_TITLE_COLOR_G = 0x74 / 255;
+const PAGE_TITLE_COLOR_B = 0x8b / 255;
+const PAGE_TITLE_OPACITY = 0.8;
+
 /** Dimension 레이블 설정 */
 const DIMENSION_LABEL_FONT_SIZE = 11;      // 화면상 폰트 크기 (px)
 const DIMENSION_LABEL_PADDING_X = 6;       // 레이블 수평 패딩
@@ -307,6 +315,64 @@ export function renderLasso(
     strokePaint.setStrokeWidth(sw);
     strokePaint.setColor(ck.Color4f(SELECTION_R, SELECTION_G, SELECTION_B, 0.8));
     canvas.drawRect(rect, strokePaint);
+  } finally {
+    scope.dispose();
+  }
+}
+
+// ============================================
+// Page Title Label (Pencil Frame Title 스타일)
+// ============================================
+
+/**
+ * 페이지 타이틀을 페이지 경계 좌상단 위에 표시한다.
+ *
+ * Pencil 앱의 Frame title과 동일한 방식.
+ * 씬-로컬 좌표계에서 호출되며, fontSize는 1/zoom으로 스케일하여
+ * 화면상 일정한 크기를 유지한다.
+ */
+export function renderPageTitle(
+  ck: CanvasKit,
+  canvas: Canvas,
+  title: string,
+  zoom: number,
+  fontMgr?: FontMgr,
+): void {
+  if (!title || !fontMgr) return;
+
+  const scope = new SkiaDisposable();
+  try {
+    const invZoom = 1 / zoom;
+
+    // 화면상 고정 크기를 위한 스케일 적용
+    const fontSize = PAGE_TITLE_FONT_SIZE * invZoom;
+    const offsetY = PAGE_TITLE_OFFSET_Y * invZoom;
+
+    // Typeface 획득
+    const typeface = fontMgr.matchFamilyStyle('Pretendard', {
+      weight: ck.FontWeight.Normal,
+      width: ck.FontWidth.Normal,
+      slant: ck.FontSlant.Upright,
+    });
+    if (!typeface) return;
+
+    const font = scope.track(new ck.Font(typeface, fontSize));
+    font.setSubpixel(true);
+
+    // 텍스트 Paint (slate-500, 80% opacity)
+    const textPaint = scope.track(new ck.Paint());
+    textPaint.setAntiAlias(true);
+    textPaint.setStyle(ck.PaintStyle.Fill);
+    textPaint.setColor(ck.Color4f(
+      PAGE_TITLE_COLOR_R, PAGE_TITLE_COLOR_G, PAGE_TITLE_COLOR_B,
+      PAGE_TITLE_OPACITY,
+    ));
+
+    // 위치: 페이지 좌상단 (0, 0)에서 위로 offsetY만큼
+    const textX = 0;
+    const textY = -offsetY + fontSize * 0.85; // baseline 보정
+
+    canvas.drawText(title, textX, textY, textPaint, font);
   } finally {
     scope.dispose();
   }

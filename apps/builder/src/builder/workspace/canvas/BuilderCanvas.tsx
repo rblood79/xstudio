@@ -99,7 +99,7 @@ const SkiaOverlayComponent = lazy(() =>
   import('./skia/SkiaOverlay').then((mod) => ({ default: mod.SkiaOverlay }))
 );
 
-function SkiaOverlayLazy(props: { containerEl: HTMLDivElement; backgroundColor?: number; app: PixiApplication; dragStateRef?: RefObject<DragState | null> }) {
+function SkiaOverlayLazy(props: { containerEl: HTMLDivElement; backgroundColor?: number; app: PixiApplication; dragStateRef?: RefObject<DragState | null>; pageWidth?: number; pageHeight?: number }) {
   return (
     <Suspense fallback={null}>
       <SkiaOverlayComponent {...props} />
@@ -1708,6 +1708,8 @@ export function BuilderCanvas({
           backgroundColor={backgroundColor}
           app={pixiAppRef.current}
           dragStateRef={dragStateRef}
+          pageWidth={pageWidth}
+          pageHeight={pageHeight}
         />
       )}
 

@@ -26,7 +26,7 @@ import { initAllWasm } from '../wasm-bindings/init';
 import { skiaFontManager } from './fontManager';
 import { useAIVisualFeedbackStore } from '../../../stores/aiVisualFeedback';
 import { buildNodeBoundsMap, renderGeneratingEffects, renderFlashes } from './aiEffects';
-import { renderSelectionBox, renderTransformHandles, renderDimensionLabels, renderLasso } from './selectionRenderer';
+import { renderSelectionBox, renderTransformHandles, renderDimensionLabels, renderLasso, renderPageTitle } from './selectionRenderer';
 import type { LassoRenderData } from './selectionRenderer';
 import { useStore } from '../../../stores';
 import { getElementBoundsSimple } from '../elementRegistry';
@@ -46,6 +46,10 @@ interface SkiaOverlayProps {
   app: Application;
   /** 드래그 상태 Ref (라쏘 렌더링용) */
   dragStateRef?: RefObject<DragState | null>;
+  /** 페이지 너비 (타이틀 렌더링용) */
+  pageWidth?: number;
+  /** 페이지 높이 (타이틀 렌더링용) */
+  pageHeight?: number;
 }
 
 /**
@@ -419,7 +423,7 @@ function buildSelectionRenderData(
  * 모든 Camera 하위 레이어는 renderable=false로 숨기고,
  * PixiJS는 히트 테스팅과 드래그 이벤트만 처리한다.
  */
-export function SkiaOverlay({ containerEl, backgroundColor = 0xf8fafc, app, dragStateRef }: SkiaOverlayProps) {
+export function SkiaOverlay({ containerEl, backgroundColor = 0xf8fafc, app, dragStateRef, pageWidth, pageHeight }: SkiaOverlayProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rendererRef = useRef<SkiaRenderer | null>(null);
   const [ready, setReady] = useState(false);
@@ -430,6 +434,7 @@ export function SkiaOverlay({ containerEl, backgroundColor = 0xf8fafc, app, drag
   const lastSelectedIdsRef = useRef<string[]>([]);
   const lastSelectedIdRef = useRef<string | null>(null);
   const lastAIActiveRef = useRef(0);
+  const lastPageTitleRef = useRef('');
   const prevDirtyInfoMapRef = useRef<Map<string, DirtyInfo>>(new Map());
 
 
@@ -594,6 +599,15 @@ export function SkiaOverlay({ containerEl, backgroundColor = 0xf8fafc, app, drag
       }
       lastAIActiveRef.current = currentAIActive;
 
+      // 페이지 타이틀 변경 감지
+      const storeState = useStore.getState();
+      const currentPage = storeState.pages.find(p => p.id === storeState.currentPageId);
+      const pageTitle = currentPage?.title ?? '';
+      if (pageTitle !== lastPageTitleRef.current) {
+        overlayVersionRef.current++;
+        lastPageTitleRef.current = pageTitle;
+      }
+
       const effectiveVersion = registryVersion + overlayVersionRef.current;
       const camera = { zoom: cameraZoom, panX: cameraX, panY: cameraY };
 
@@ -652,6 +666,11 @@ export function SkiaOverlay({ containerEl, backgroundColor = 0xf8fafc, app, drag
             if (currentAiState.flashAnimations.size > 0) {
               currentAiState.cleanupExpiredFlashes(now);
             }
+          }
+
+          // Page Title 라벨 (Pencil Frame Title 스타일)
+          if (pageTitle) {
+            renderPageTitle(ck, canvas, pageTitle, cameraZoom, fontMgr);
           }
 
           // Phase 4-6: Selection 오버레이 (Pencil 방식 — Skia에서 직접 렌더링)
