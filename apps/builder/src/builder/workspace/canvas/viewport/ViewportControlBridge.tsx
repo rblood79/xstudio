@@ -26,6 +26,8 @@ export interface ViewportControlBridgeProps {
   onInteractionStart?: () => void;
   /** 팬/줌 인터랙션 종료 시 호출 */
   onInteractionEnd?: () => void;
+  /** 초기 Pan Offset X (비교 모드 등에서 사용) */
+  initialPanOffsetX?: number;
 }
 
 /**
@@ -41,6 +43,7 @@ export function ViewportControlBridge({
   // 🚀 Phase 6.1: 인터랙션 콜백
   onInteractionStart,
   onInteractionEnd,
+  initialPanOffsetX,
 }: ViewportControlBridgeProps): null {
   // ViewportController 연결 및 이벤트 핸들링
   const { controller } = useViewportControl({
@@ -51,6 +54,7 @@ export function ViewportControlBridge({
     // 🚀 Phase 6.1: 인터랙션 콜백 전달
     onInteractionStart,
     onInteractionEnd,
+    initialPanOffsetX,
   });
 
   // 디버그 로깅 (개발 모드에서만)

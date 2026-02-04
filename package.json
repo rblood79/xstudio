@@ -30,7 +30,7 @@
     "@playwright/test": "^1.58.1",
     "playwright": "^1.58.1",
     "tsx": "^4.21.0",
-    "turbo": "^2.8.1",
+    "turbo": "^2.8.3",
     "vitest": "^4.0.18"
   },
   "packageManager": "pnpm@10.26.2"

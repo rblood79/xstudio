@@ -72,6 +72,8 @@ export interface BuilderCanvasProps {
   pageHeight?: number;
   /** 배경색 */
   backgroundColor?: number;
+  /** 초기 Pan Offset X (비교 모드 등에서 사용) */
+  initialPanOffsetX?: number;
 }
 
 // ============================================
@@ -898,6 +900,7 @@ export function BuilderCanvas({
   pageWidth = DEFAULT_WIDTH,
   pageHeight = DEFAULT_HEIGHT,
   backgroundColor = DEFAULT_BACKGROUND,
+  initialPanOffsetX,
 }: BuilderCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   // 🚀 Phase 19: SelectionBox imperative handle ref (드래그 중 React 리렌더링 없이 위치 업데이트)
@@ -1609,6 +1612,7 @@ export function BuilderCanvas({
             maxZoom={5}
             onInteractionStart={handleDragStart}
             onInteractionEnd={handleDragEnd}
+            initialPanOffsetX={initialPanOffsetX}
           />
 
           {/* 전체 Canvas 영역 클릭 → 선택 해제 + 라쏘 선택 시작 */}

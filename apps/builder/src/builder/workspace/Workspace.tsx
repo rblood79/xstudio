@@ -229,6 +229,22 @@ export function Workspace({
     }
   }, [selectedBreakpoint, canvasSize.width, canvasSize.height, centerCanvas]);
 
+  // 🚀 비교 모드: WebGL Canvas offset 적용 (width만큼 왼쪽으로)
+  const compareOffsetAppliedRef = useRef(false);
+  useEffect(() => {
+    if (!compareMode || !isCanvasReady || compareOffsetAppliedRef.current) return;
+
+    // 한 번만 적용
+    compareOffsetAppliedRef.current = true;
+
+    // 현재 panOffset에서 canvasSize.width 만큼 왼쪽으로 이동
+    const currentPanOffset = useCanvasSyncStore.getState().panOffset;
+    setPanOffset({
+      x: currentPanOffset.x - canvasSize.width,
+      y: currentPanOffset.y,
+    });
+  }, [compareMode, isCanvasReady, canvasSize.width, setPanOffset]);
+
   // ============================================
   // Container Size Tracking
   // ============================================
@@ -330,6 +346,7 @@ export function Workspace({
             <BuilderCanvas
               pageWidth={canvasSize.width}
               pageHeight={canvasSize.height}
+              initialPanOffsetX={-canvasSize.width}
             />
           </div>
         </div>

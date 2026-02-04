@@ -36,6 +36,8 @@ export interface UseViewportControlOptions {
   onInteractionStart?: () => void;
   /** 팬/줌 인터랙션 종료 시 호출 */
   onInteractionEnd?: () => void;
+  /** 초기 Pan Offset X (비교 모드 등에서 사용) */
+  initialPanOffsetX?: number;
 }
 
 export interface UseViewportControlReturn {
@@ -58,6 +60,7 @@ export function useViewportControl(options: UseViewportControlOptions): UseViewp
     // 🚀 Phase 6.1: 인터랙션 콜백
     onInteractionStart,
     onInteractionEnd,
+    initialPanOffsetX,
   } = options;
 
   const { app } = useApplication();
@@ -167,14 +170,20 @@ export function useViewportControl(options: UseViewportControlOptions): UseViewp
     controller.attach(cameraContainer);
 
     // 초기 상태 적용 (Zustand에서 읽어서 Container에 적용)
-    const { zoom, panOffset } = useCanvasSyncStore.getState();
-    controller.setPosition(panOffset.x, panOffset.y, zoom);
-    console.log('[useViewportControl] Initial position applied:', { x: panOffset.x, y: panOffset.y, scale: zoom });
+    const { zoom, panOffset, setPanOffset } = useCanvasSyncStore.getState();
+    // initialPanOffsetX가 있으면 적용 (비교 모드 등)
+    const finalX = initialPanOffsetX !== undefined ? panOffset.x + initialPanOffsetX : panOffset.x;
+    controller.setPosition(finalX, panOffset.y, zoom);
+    // Store도 동기화 (다른 컴포넌트에서 panOffset을 읽을 때 반영되도록)
+    if (initialPanOffsetX !== undefined) {
+      setPanOffset({ x: finalX, y: panOffset.y });
+    }
+    console.log('[useViewportControl] Initial position applied:', { x: finalX, y: panOffset.y, scale: zoom, initialPanOffsetX });
 
     return () => {
       controller.detach();
     };
-  }, [app, cameraLabel, controller]);
+  }, [app, cameraLabel, controller, initialPanOffsetX]);
 
   // 마우스 이벤트 핸들러 (팬)
   useEffect(() => {
