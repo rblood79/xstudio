@@ -316,8 +316,8 @@ return (
 
 ### 수정된 파일
 
-- `src/builder/workspace/canvas/ui/PixiToggleButtonGroup.tsx` - 선택, 크기 적용
-- `src/builder/workspace/canvas/layout/styleToLayout.ts` - auto 기본값 명시
+- `apps/builder/src/builder/workspace/canvas/ui/PixiToggleButtonGroup.tsx` - 선택, 크기 적용
+- `apps/builder/src/builder/workspace/canvas/layout/styleToLayout.ts` - auto 기본값 명시
 - `src/builder/components/property/PropertyUnitInput.tsx` - 키워드 유닛 버그 수정
 
 ## 관련 파일

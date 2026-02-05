@@ -1,7 +1,7 @@
 # xstudio WASM 렌더링 아키텍처 전환 계획
 
 > 작성일: 2026-01-29
-> 최종 수정: 2026-02-04 (Pencil 방식 2-pass: 컨텐츠 캐시 + 오버레이 분리 + padding 기반 camera-only blit)
+> 최종 수정: 2026-02-05 (Pencil 방식 2-pass: 컨텐츠 캐시 + present(blit) + 오버레이 분리 + padding 기반 camera-only + cleanup render)
 > 대상: `apps/builder/src/builder/workspace/canvas/`
 > 현재 스택: CanvasKit/Skia WASM + PixiJS v8.14.3 (이벤트 전용) + Yoga WASM v3.2.1 + Rust WASM (성능 가속) + Zustand
 > 참고: Pencil Desktop v1.1.10 아키텍처 분석 기반 (`docs/PENCIL_APP_ANALYSIS.md` §11)
@@ -1894,7 +1894,7 @@ React Component → @pixi/react → PixiJS Container (씬 그래프 + 이벤트�
 
 **초기화:**
 ```typescript
-// canvas/skia/initCanvasKit.ts
+// apps/builder/src/builder/workspace/canvas/skia/initCanvasKit.ts
 
 import CanvasKitInit from 'canvaskit-wasm';
 import type { CanvasKit, Surface, Canvas } from 'canvaskit-wasm';
@@ -1989,7 +1989,7 @@ console.log(`✅ canvaskit.wasm → ${dest}`);
 
 **Surface 생성 (Pencil §10.9.2 패턴):**
 ```typescript
-// canvas/skia/createSurface.ts
+// apps/builder/src/builder/workspace/canvas/skia/createSurface.ts
 
 export function createGPUSurface(
   ck: CanvasKit,
@@ -2016,7 +2016,7 @@ xstudio의 Sprite 계층에 도입한다.
 
 **인터페이스:**
 ```typescript
-// canvas/skia/types.ts
+// apps/builder/src/builder/workspace/canvas/skia/types.ts
 
 import type { Canvas, Paint, Path } from 'canvaskit-wasm';
 
@@ -2118,7 +2118,7 @@ renderSkia(canvas: Canvas, cullingBounds: DOMRect): void {
 Pencil §10.9.3의 렌더 루프를 xstudio에 적용한다.
 
 ```typescript
-// canvas/skia/SkiaRenderer.ts
+// apps/builder/src/builder/workspace/canvas/skia/SkiaRenderer.ts
 
 export class SkiaRenderer {
   // contentSurface: 디자인 컨텐츠 캐시
@@ -2157,18 +2157,21 @@ export class SkiaRenderer {
 classifyFrame(registryVersion, camera, overlayVersion):
   contentDirty/cleanup         → 'full'        컨텐츠 전체 재렌더 + present
   registry 변경                → 'content'     컨텐츠 전체 재렌더 + present
-  camera 변경                  → 'camera-only' (가능 시) 캐시 아핀 blit + overlay
+  camera 변경                  → 'camera-only' (snapshot 존재 시) 캐시 아핀 blit + overlay
   overlay 변경                 → 'present'     캐시 blit + overlay
   변경 없음                    → 'idle'        렌더링 스킵
 ```
 
-**팬/줌 최적화 (2026-02-04):**
+**팬/줌 최적화 (2026-02-05):**
 - `buildSkiaTreeHierarchical` 캐시: registryVersion만 비교 (카메라 비교 제거).
   트리 좌표는 부모-자식 뺄셈으로 카메라가 상쇄되어, 동일 registryVersion이면 카메라 무관하게 동일 트리 생성.
   카메라 변경 시 트리 빌드 ~0ms (캐시 HIT), present 비용만 발생.
+- `buildTreeBoundsMap` 캐시: Selection 바운드맵 또한 registryVersion 기반으로 재사용하여 매 프레임 O(n) 순회를 제거.
 - padding 기반 `camera-only` blit 활성화:
   contentSurface를 뷰포트보다 크게 생성(기본 512px 패딩)하여 가장자리 클리핑을 방지하고,
-  `canBlitWithCameraTransform()` 가드로 “완전히 덮을 수 있을 때만” 아핀 blit을 수행.
+  `canBlitWithCameraTransform()`은 “현재 snapshot이 화면을 완전히 덮는지”를 판정해
+  **모션 종료 후 cleanup(full) 재렌더링 필요 여부**를 결정한다(인터랙션 중에는 camera-only 유지).
+- PixiJS 시각 비활성화 O(1): Camera 하위 레이어 전체 순회 대신, `Camera.alpha=0`으로 렌더만 끄고 이벤트는 유지.
 - Wheel 팬 RAF 배칭: `setPanOffset`을 requestAnimationFrame으로 배칭하여
   120Hz+ wheel 이벤트에서 React 리렌더를 프레임당 1회로 제한.
 
@@ -2177,7 +2180,7 @@ classifyFrame(registryVersion, camera, overlayVersion):
 Pencil §10.9.6의 Fill 시스템을 구현한다.
 
 ```typescript
-// canvas/skia/fills.ts
+// apps/builder/src/builder/workspace/canvas/skia/fills.ts
 
 export function applyFill(
   ck: CanvasKit,
@@ -2215,7 +2218,7 @@ export function applyFill(
       // ✅ 구현 완료: bilinear interpolation 근사
       // CanvasKit에 네이티브 mesh gradient API가 없으므로
       // 4코너 색상 → top/bottom MakeLinearGradient + MakeBlend(SrcOver) 로 근사
-      // 실제 구현: canvas/skia/fills.ts case 'mesh-gradient'
+      // 실제 구현: apps/builder/src/builder/workspace/canvas/skia/fills.ts case 'mesh-gradient'
       break;
   }
 }
@@ -2226,7 +2229,7 @@ export function applyFill(
 Pencil §10.9.5의 이펙트 파이프라인을 구현한다.
 
 ```typescript
-// canvas/skia/effects.ts
+// apps/builder/src/builder/workspace/canvas/skia/effects.ts
 
 export function beginRenderEffects(
   ck: CanvasKit,
@@ -2319,15 +2322,9 @@ app.ticker.add(() => {
   app.stage.updateTransform();
 
   // EventBoundary 갱신:
-  // PixiJS v8의 EventSystem은 포인터 이벤트(pointermove 등) 발생 시
-  // 자동으로 히트테스트를 수행한다. eventBridge.ts가 DOM 이벤트를
-  // PixiJS 캔버스로 재디스패치하면, EventSystem이 자동으로
-  // rootBoundary를 갱신하므로 별도 호출이 불필요하다.
-  //
-  // ⚠️ rootBoundary.hitTest() 직접 호출은 PixiJS 내부 API 의존이므로 금지.
-  // 대신 eventBridge.ts의 DOM 이벤트 재디스패치에 의존한다.
-  // 드래그 중 캔버스 밖으로 포인터가 나가는 경우도 pointerleave/pointerenter
-  // 이벤트가 브리징되므로 EventSystem이 자동으로 상태를 추적한다.
+  // PixiJS 캔버스가 최상단(z-index:3)에서 DOM 이벤트를 직접 수신하므로,
+  // PixiJS EventSystem/EventBoundary는 브리징 없이 정상 동작한다.
+  // (eventBridge.ts 전략은 과거 시도였으며 삭제됨)
 
   // GPU 렌더링은 수행하지 않음 — CanvasKit이 담당
 });
@@ -2376,98 +2373,12 @@ app.ticker.autoStart = true;
 > 이벤트를 직접 수신한다. CanvasKit 캔버스는 `pointer-events: none`이며 렌더링만 담당.
 > 이벤트 브리징 없이 PixiJS의 네이티브 EventBoundary가 직접 동작하므로 구현이 단순하고 안정적이다.
 
-**구현:**
-1. CanvasKit 전용 `<canvas>` 엘리먼트를 PixiJS 캔버스 **위에** 오버레이 (`position: absolute; z-index` 사용)
-2. PixiJS 캔버스: `visibility: hidden; pointer-events: none` — WebGL 컨텍스트는 유지하되 렌더링은 비활성화
-3. **이벤트 브리징 전략** — CanvasKit 캔버스의 DOM 이벤트를 PixiJS 캔버스로 재전달:
+**구현 (현재 xstudio):**
+1. CanvasKit 전용 `<canvas>`는 z-index:2에서 **렌더링만 담당** (`pointer-events: none`)
+2. PixiJS `<canvas>`는 z-index:3에서 **DOM 이벤트를 직접 수신**하여 EventBoundary 히트테스트/드래그를 처리
+3. PixiJS는 Camera 루트 `alpha=0`으로 **시각적 렌더링만 비활성화**(이벤트/히트테스트 유지)
 
-   > **⚠️ `FederatedPointerEvent` 직접 생성은 PixiJS 내부 API 의존.**
-   > xstudio의 현재 코드는 `FederatedPointerEvent`를 직접 생성하지 않으며,
-   > `eventMode="static"` 기반 자동 이벤트 처리를 사용한다.
-   > 이벤트 포워딩은 **DOM 레벨에서 수행**하여 내부 API 의존을 피한다.
-
-   ```typescript
-   // canvas/skia/eventBridge.ts
-
-   const FORWARDED_EVENTS = [
-     'pointerdown', 'pointermove', 'pointerup', 'pointercancel',
-     'pointerenter', 'pointerleave', 'pointerover', 'pointerout',
-     'wheel', 'click', 'dblclick', 'contextmenu',
-   ] as const;
-
-   export function bridgeEvents(
-     source: HTMLCanvasElement,  // CanvasKit 캔버스
-     target: HTMLCanvasElement,  // PixiJS 캔버스
-   ): () => void {
-     const handlers = FORWARDED_EVENTS.map((type) => {
-       const handler = (e: Event) => {
-         // DOM 이벤트를 PixiJS 캔버스로 재디스패치
-         // PixiJS EventSystem이 자동으로 FederatedEvent를 생성
-         let clone: Event;
-         try {
-           // 대부분의 브라우저: 원본 이벤트 생성자로 클론
-           clone = new (e.constructor as typeof Event)(e.type, e);
-         } catch {
-           // 생성자 클론 실패 시 타입별 수동 매핑으로 폴백.
-           // typeof 가드: 구형 Safari/테스트 환경에서 PointerEvent/WheelEvent
-           // 전역이 없으면 instanceof 자체가 ReferenceError로 터진다.
-           if (typeof PointerEvent !== 'undefined' && e instanceof PointerEvent) {
-             clone = new PointerEvent(e.type, {
-               bubbles: e.bubbles, cancelable: e.cancelable,
-               clientX: e.clientX, clientY: e.clientY,
-               pointerId: e.pointerId, pointerType: e.pointerType,
-               button: e.button, buttons: e.buttons,
-               ctrlKey: e.ctrlKey, shiftKey: e.shiftKey,
-               altKey: e.altKey, metaKey: e.metaKey,
-             });
-           } else if (typeof WheelEvent !== 'undefined' && e instanceof WheelEvent) {
-             clone = new WheelEvent(e.type, {
-               bubbles: e.bubbles, cancelable: e.cancelable,
-               clientX: e.clientX, clientY: e.clientY,
-               deltaX: e.deltaX, deltaY: e.deltaY, deltaMode: e.deltaMode,
-               ctrlKey: e.ctrlKey, shiftKey: e.shiftKey,
-             });
-           } else if (typeof MouseEvent !== 'undefined' && e instanceof MouseEvent) {
-             clone = new MouseEvent(e.type, {
-               bubbles: e.bubbles, cancelable: e.cancelable,
-               clientX: e.clientX, clientY: e.clientY,
-               button: e.button, buttons: e.buttons,
-               ctrlKey: e.ctrlKey, shiftKey: e.shiftKey,
-             });
-           } else {
-             clone = new Event(e.type, { bubbles: e.bubbles, cancelable: e.cancelable });
-           }
-         }
-         target.dispatchEvent(clone);
-         // preventDefault()는 wheel/pointer* 이벤트에만 적용한다.
-         // click/dblclick/contextmenu의 기본 동작을 막으면
-         // 텍스트 선택, 링크 클릭, 우클릭 메뉴 등 UX 회귀가 발생한다.
-         const PREVENT_DEFAULT_TYPES = new Set([
-           'wheel', 'pointerdown', 'pointermove', 'pointerup', 'pointercancel',
-         ]);
-         if (PREVENT_DEFAULT_TYPES.has(type)) {
-           e.preventDefault();
-         }
-       };
-       // passive: false — wheel/pointer 이벤트에서 preventDefault()가
-       // 무시되지 않도록 보장. 캔버스 내 스크롤/줌 동작을 CanvasKit이 처리할 때 필수.
-       // click/dblclick/contextmenu는 passive 기본값(false)으로 충분하다.
-       const needsNonPassive = type.startsWith('pointer') || type === 'wheel';
-       source.addEventListener(type, handler, needsNonPassive ? { passive: false } : undefined);
-       return { type, handler };
-     });
-     // cleanup 함수 반환
-     return () => handlers.forEach(({ type, handler }) =>
-       source.removeEventListener(type, handler)
-     );
-   }
-   ```
-
-   > **포인터 캡처:** `setPointerCapture`/`releasePointerCapture`도 브리징해야
-   > 드래그 인터랙션(`useDragInteraction.ts`)이 정상 동작한다.
-   > **키보드:** 키보드 이벤트는 캔버스가 아닌 `document` 레벨에서 처리하므로 브리징 불필요.
-
-4. Skia 모드에서 PixiJS는 이벤트 처리 전용 (`alpha=0`), Skia가 시각적 렌더링 전담
+> eventBridge 기반 DOM 이벤트 재디스패치는 불필요하여 삭제됨.
 
 > **Note (2026-02-02):** `pixi`/`hybrid` 모드는 제거됨. Skia 모드 고정.
 
@@ -2490,7 +2401,7 @@ Step 5: PixiJS 자체 렌더링 비활성화
 >
 > Step 3에서 반드시 **측정 경로도 함께 전환**해야 한다:
 > ```typescript
-> // canvas/skia/textMeasure.ts
+> // apps/builder/src/builder/workspace/canvas/skia/textMeasure.ts
 >
 > function measureText(
 >   ck: CanvasKit,
@@ -2531,26 +2442,26 @@ export function getRenderMode(): 'skia' { return 'skia'; }
 
 | 산출물 | 내용 | 상태 |
 |--------|------|------|
-| `canvas/skia/initCanvasKit.ts` | CanvasKit WASM 초기화 | ✅ 구현 |
-| `canvas/skia/createSurface.ts` | GPU Surface 생성 (WebGL → SW 폴백) | ✅ 구현 |
-| `canvas/skia/SkiaRenderer.ts` | 렌더 루프 (renderSkia 트리 순회) | ✅ 구현 (`SkiaOverlay.tsx`) |
-| `canvas/skia/SkiaOverlay.tsx` | 계층적 Skia 트리 구성 (`buildSkiaTreeHierarchical`) + Selection 좌표 통합 (`buildTreeBoundsMap`) | ✅ 수정 (2026-02-02) |
-| `canvas/skia/selectionRenderer.ts` | Selection 오버레이 렌더링 (선택 박스, 핸들, 라쏘) | ✅ 구현 (2026-02-01) |
-| `canvas/skia/aiEffects.ts` | AI 생성 이펙트 (generating 애니메이션, flash) + 계층 트리 절대 좌표 누적 | ✅ 수정 (2026-02-02) |
-| `canvas/skia/disposable.ts` | CanvasKit 리소스 수동 해제 래퍼 (Disposable 패턴) | ✅ 구현 |
-| `canvas/skia/fills.ts` | 6종 Fill Shader 구현 | ✅ 구현 |
-| `canvas/skia/effects.ts` | 이펙트 파이프라인 (opacity, blur, shadow) | ✅ 구현 |
-| `canvas/skia/types.ts` | SkiaRenderable 인터페이스 | ✅ 구현 |
-| `canvas/skia/fontManager.ts` | CanvasKit 폰트 등록/캐싱 파이프라인 | ✅ 구현 |
-| `canvas/skia/textMeasure.ts` | CanvasKit Paragraph 기반 텍스트 측정 (Yoga measureFunc 연결) | ✅ 구현 |
-| `canvas/skia/nodeRenderers.ts` | renderBox() stroke border-box inset + AABB 컬링 좌표계 수정 (zero-size 루트 스킵 + 자식 cullingBounds 역변환) | ✅ 수정 (2026-02-02) |
-| `canvas/skia/eventBridge.ts` | DOM 이벤트 브리징 (CanvasKit 캔버스 → PixiJS 캔버스) | ❌ 불필요 (§5.7.1 참조) |
+| `apps/builder/src/builder/workspace/canvas/skia/initCanvasKit.ts` | CanvasKit WASM 초기화 | ✅ 구현 |
+| `apps/builder/src/builder/workspace/canvas/skia/createSurface.ts` | GPU Surface 생성 (WebGL → SW 폴백) | ✅ 구현 |
+| `apps/builder/src/builder/workspace/canvas/skia/SkiaRenderer.ts` | 렌더 루프 (2-pass: content 캐시 + present + overlay) | ✅ 구현 |
+| `apps/builder/src/builder/workspace/canvas/skia/SkiaOverlay.tsx` | 계층적 Skia 트리 구성 + content/overlay 노드 분리 + Selection 좌표 통합 | ✅ 구현/수정 (2026-02-05) |
+| `apps/builder/src/builder/workspace/canvas/skia/selectionRenderer.ts` | Selection 오버레이 렌더링 (선택 박스, 핸들, 라쏘, 타이틀) | ✅ 구현 |
+| `apps/builder/src/builder/workspace/canvas/skia/aiEffects.ts` | AI 생성 이펙트 (generating, flash) | ✅ 구현 |
+| `apps/builder/src/builder/workspace/canvas/skia/disposable.ts` | CanvasKit 리소스 수동 해제 래퍼 (Disposable 패턴) | ✅ 구현 |
+| `apps/builder/src/builder/workspace/canvas/skia/fills.ts` | Fill 시스템 (6종) | ✅ 구현 |
+| `apps/builder/src/builder/workspace/canvas/skia/effects.ts` | 이펙트 파이프라인 (saveLayer 기반) | ✅ 구현 |
+| `apps/builder/src/builder/workspace/canvas/skia/types.ts` | SkiaRenderable 인터페이스 | ✅ 구현 |
+| `apps/builder/src/builder/workspace/canvas/skia/fontManager.ts` | CanvasKit 폰트 등록/캐싱 파이프라인 | ✅ 구현 |
+| `apps/builder/src/builder/workspace/canvas/skia/textMeasure.ts` | CanvasKit Paragraph 기반 텍스트 측정 (Yoga measureFunc 연결) | ✅ 구현 |
+| `apps/builder/src/builder/workspace/canvas/skia/nodeRenderers.ts` | Box/Text/Image/Container 노드 렌더링 + AABB 컬링 | ✅ 구현 |
+| `apps/builder/src/builder/workspace/canvas/skia/eventBridge.ts` | DOM 이벤트 브리징 (CanvasKit 캔버스 → PixiJS 캔버스) | ❌ 삭제됨 (불필요) |
 | BoxSprite renderSkia() | 사각형/RoundedRect CanvasKit 렌더링 |
 | TextSprite renderSkia() | ParagraphBuilder 텍스트 렌더링 |
 | ImageSprite renderSkia() | drawImageRect 이미지 렌더링 |
 | Render Mode | Skia 고정 (`getRenderMode() → 'skia'`, 환경변수 제거됨) |
 
-#### 5.9.1 Disposable 패턴 (`canvas/skia/disposable.ts`)
+#### 5.9.1 Disposable 패턴 (`apps/builder/src/builder/workspace/canvas/skia/disposable.ts`)
 
 CanvasKit의 Paint, Path, Surface, Image 등은 모두 C++ 힙 객체로 JS GC가 관리하지 않는다.
 수동 `.delete()` 누락 시 WASM 메모리 누수가 발생한다.
@@ -2601,7 +2512,7 @@ function renderNode(ck: CanvasKit, canvas: Canvas): void {
 > Rust 커스텀 할당기로 WASM 힙을 최적화한다. Adobe는 대규모 레이어 시 메모리 풀링을 적용한다.
 > 이 기법들은 §장기 최적화 경로 7.3에서 다룬다.
 
-#### 5.9.2 폰트 관리 파이프라인 (`canvas/skia/fontManager.ts`) — ✅ 구현 완료
+#### 5.9.2 폰트 관리 파이프라인 (`apps/builder/src/builder/workspace/canvas/skia/fontManager.ts`) — ✅ 구현 완료
 
 CanvasKit은 브라우저의 CSS `@font-face`를 사용할 수 없다.
 `Typeface.MakeFreeTypeFaceFromData(fontBuffer)`로 폰트 바이너리를 직접 로드해야 한다.
@@ -2697,7 +2608,7 @@ Pencil의 핵심 최적화: contentSurface + mainSurface 분리.
 - 오버레이(선택 박스, 가이드라인)만 mainSurface에서 재렌더링
 - 대규모 캔버스에서 줌/패닝 응답 시간 대폭 개선
 
-> **현재 구현 (2026-02-04):** Pencil 방식 2-pass 렌더링으로 교체 완료.
+> **현재 구현 (2026-02-05):** Pencil 방식 2-pass 렌더링으로 교체 완료.
 > - **컨텐츠 패스(contentSurface):** 디자인 노드만 렌더링하여 `contentSnapshot` 캐시 생성
 > - **표시 패스(mainSurface):** snapshot blit(카메라 델타는 아핀 변환) 후 Selection/AI/PageTitle 오버레이를 덧그리기
 > - `classifyFrame()`으로 idle/present/camera-only/content/full 분류 후 최소 작업만 수행.
@@ -2705,8 +2616,8 @@ Pencil의 핵심 최적화: contentSurface + mainSurface 분리.
 >
 > **“핵심 구조” 관점에서는 Pencil과 동일한 방식(컨텐츠 캐시 + present 단계에서 blit + 오버레이 별도 렌더)으로 변경됨**
 > - 컨텐츠 캐시: `apps/builder/src/builder/workspace/canvas/skia/SkiaRenderer.ts:215` (contentSurface에 렌더 → `contentSnapshot` 생성)
-> - present 단계: `apps/builder/src/builder/workspace/canvas/skia/SkiaRenderer.ts:306` (snapshot blit/아핀변환 + `renderOverlay()` + flush)
-> - 오버레이 분리: `apps/builder/src/builder/workspace/canvas/skia/SkiaOverlay.tsx:584` (`setContentNode`=디자인만) / `apps/builder/src/builder/workspace/canvas/skia/SkiaOverlay.tsx:590` (`setOverlayNode`=Selection/AI/PageTitle만)
+> - present 단계: `apps/builder/src/builder/workspace/canvas/skia/SkiaRenderer.ts:309` (snapshot blit/아핀변환 + `renderOverlay()` + flush)
+> - 오버레이 분리: `apps/builder/src/builder/workspace/canvas/skia/SkiaOverlay.tsx:603` (`setContentNode`=디자인만) / `apps/builder/src/builder/workspace/canvas/skia/SkiaOverlay.tsx:609` (`setOverlayNode`=Selection/AI/PageTitle만)
 >
 > 다만 “완전히 동일”을 픽셀 단위까지 포함해 말하면 아직 보장할 수 없다(폰트/AA/효과 구현/CanvasKit 버전/미세한 좌표 반올림 차이 등).
 > 하지만 이전의 ‘스타일 변경 후 팬해야 반영/잔상’ 문제군을 구조적으로 피하는 방향으로는 Pencil과 같은 모델이 맞다.
@@ -2730,7 +2641,7 @@ Pencil의 핵심 최적화: contentSurface + mainSurface 분리.
 ### 6.3 블렌드 모드 (18종, Pencil §10.9.8)
 
 ```typescript
-// canvas/skia/blendModes.ts
+// apps/builder/src/builder/workspace/canvas/skia/blendModes.ts
 
 const BLEND_MODE_MAP: Record<string, BlendMode> = {
   'normal': ck.BlendMode.SrcOver,
@@ -2759,7 +2670,7 @@ const BLEND_MODE_MAP: Record<string, BlendMode> = {
 CanvasKit 기반 고품질 이미지 Export:
 
 ```typescript
-// canvas/skia/export.ts
+// apps/builder/src/builder/workspace/canvas/skia/export.ts
 
 export function exportToImage(
   ck: CanvasKit,
@@ -2877,15 +2788,15 @@ export function exportToImage(
 #### 성능/안정성
 
 - **contentSurface 백엔드**: xstudio는 `ck.MakeSurface()`로 오프스크린을 만든다(일반적으로 raster). Pencil이 사용하는 GPU surface와 성능 특성이 다를 수 있으니, 대규모 씬에서 병목이면 offscreen도 GPU 타겟(가능한 API)으로 맞추는 방안을 검토한다. (`apps/builder/src/builder/workspace/canvas/skia/SkiaRenderer.ts:200`)
-- **padding 값 정책화**: 현재 padding은 고정 512px이다. 큰 줌/빠른 패닝에서 `canBlitWithCameraTransform()`이 false로 떨어지면 content 재렌더 빈도가 늘 수 있으니, (1) 사용자 설정/디바이스 DPR/줌 범위에 따라 동적 조정, (2) 최소/최대 값 가이드가 필요하다. (`apps/builder/src/builder/workspace/canvas/skia/SkiaRenderer.ts:44`)
+- **padding 값 정책화**: 현재 padding은 고정 512px이다. 큰 줌/빠른 패닝에서 `canBlitWithCameraTransform()`이 false로 떨어지면 **cleanup(full) 재렌더링**이 자주 발생할 수 있으니, (1) 사용자 설정/디바이스 DPR/줌 범위에 따라 동적 조정, (2) 최소/최대 값 가이드가 필요하다. (`apps/builder/src/builder/workspace/canvas/skia/SkiaRenderer.ts:44`)
 - **cleanup render 트리거 정합**: 현재 camera-only에서만 200ms cleanup render를 스케줄한다. Pencil과 동일한 체감을 원하면 “모션 종료”의 정의(휠/드래그/트랙패드)와 트리거 조건을 문서화하고, 필요한 입력 케이스를 추가한다. (`apps/builder/src/builder/workspace/canvas/skia/SkiaRenderer.ts:360`)
 - **리소스 수명/누수 방지**: `Image.makeImageSnapshot()`/`Typeface`/`Paint`/`Path` 같은 CanvasKit 객체는 GC 대상이 아니므로 `.delete()`가 누락되면 장시간 사용에서 누수가 된다. “프레임 생성 객체는 프레임 종료 시 해제/캐시는 세대 기반으로 교체” 같은 원칙을 Pencil 수준으로 정리한다.
 - **비동기 리소스 로딩에 대한 invalidation**: 폰트/이미지 로드가 뒤늦게 완료되면 contentSurface가 “이전 폴백 폰트/플레이스홀더” 상태로 스냅샷을 잡을 수 있다. 로딩 완료 시점에 `invalidateContent()`를 트리거하는 정책을 명확히 한다.
 
 #### 기능 동등/경계 조건
 
-- **컨텍스트 로스/복원 시 캐시 무효화**: 복원 시 `resize()`로 surface 재생성은 되지만, snapshot/버전 상태와 overlayVersion의 초기화 정책을 Pencil처럼 명확히 맞춘다. (`apps/builder/src/builder/workspace/canvas/skia/SkiaOverlay.tsx:654`)
-- **페이지 전환 시 오버레이/컨텐츠 클리어 순서**: 현재 `clearSkiaRegistry + clearImageCache + invalidateContent + clearFrame`로 처리한다. 전환 프레임에서 1-frame stale이 보이면 clear 순서/버전 갱신을 조정한다. (`apps/builder/src/builder/workspace/canvas/skia/SkiaOverlay.tsx:722`)
+- **컨텍스트 로스/복원 시 캐시 무효화**: 복원 시 `resize()`로 surface 재생성은 되지만, snapshot/버전 상태와 overlayVersion의 초기화 정책을 Pencil처럼 명확히 맞춘다. (`apps/builder/src/builder/workspace/canvas/skia/SkiaOverlay.tsx:656`)
+- **페이지 전환 시 오버레이/컨텐츠 클리어 순서**: 현재 `clearSkiaRegistry + clearImageCache + invalidateContent + clearFrame`로 처리한다. 전환 프레임에서 1-frame stale이 보이면 clear 순서/버전 갱신을 조정한다. (`apps/builder/src/builder/workspace/canvas/skia/SkiaOverlay.tsx:698`)
 - **DPR/리사이즈 시 1-frame stale 방지**: resize 직후 프레임에서 snapshot이 없거나(또는 이전 DPR의 snapshot이 남아) 깜빡임이 생길 수 있다. “resize 시 clearFrame + invalidateContent + overlayVersion reset” 같은 규칙으로 안정화한다.
 
 ---

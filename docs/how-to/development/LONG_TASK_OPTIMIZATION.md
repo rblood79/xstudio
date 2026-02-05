@@ -113,7 +113,7 @@ export const TIMING = {
 
 #### 1.1 드래그 중 상태 업데이트 분리
 
-**파일**: `src/builder/workspace/canvas/selection/useDragInteraction.ts`
+**파일**: `apps/builder/src/builder/workspace/canvas/selection/useDragInteraction.ts`
 
 ```typescript
 // Before: 매 move마다 store 업데이트
@@ -140,7 +140,7 @@ const updateDrag = (position) => {
 
 #### 1.2 SelectionBox PixiJS 직접 조작
 
-**파일**: `src/builder/workspace/canvas/selection/SelectionBox.tsx`
+**파일**: `apps/builder/src/builder/workspace/canvas/selection/SelectionBox.tsx`
 
 ```typescript
 // PixiJS Graphics ref를 직접 조작
@@ -158,7 +158,7 @@ useImperativeHandle(ref, () => ({
 
 #### 1.3 드래그 프리뷰 레이어 분리
 
-**파일**: `src/builder/workspace/canvas/selection/DragPreview.tsx` (신규)
+**파일**: `apps/builder/src/builder/workspace/canvas/selection/DragPreview.tsx` (신규)
 
 - 드래그 프리뷰를 별도 PixiJS Container로 분리
 - React 상태와 완전히 독립적으로 동작
@@ -171,7 +171,7 @@ useImperativeHandle(ref, () => ({
 
 #### 2.1 SelectionLayer 구독 최소화
 
-**파일**: `src/builder/workspace/canvas/selection/SelectionLayer.tsx`
+**파일**: `apps/builder/src/builder/workspace/canvas/selection/SelectionLayer.tsx`
 
 ```typescript
 // Before: 배열 구독
@@ -203,7 +203,7 @@ useEffect(() => {
 
 #### 2.3 ElementSprite 선택 시각화 최적화
 
-**파일**: `src/builder/workspace/canvas/sprites/ElementSprite.tsx`
+**파일**: `apps/builder/src/builder/workspace/canvas/sprites/ElementSprite.tsx`
 
 - `isSelected` 변경 시 PixiJS tint만 변경 (리렌더링 없이)
 - 선택 테두리는 SelectionLayer에서만 렌더링
@@ -277,7 +277,7 @@ const handleChange = (value) => {
 
 #### 4.1 Yoga 레이아웃 계산 분할
 
-**파일**: `src/builder/workspace/canvas/layout/calculateLayout.ts`
+**파일**: `apps/builder/src/builder/workspace/canvas/layout/calculateLayout.ts`
 
 ```typescript
 // Before: 동기 계산
@@ -320,7 +320,7 @@ unstable_batchedUpdates(() => {
 
 #### 5.1 동적 해상도 조정
 
-**파일**: `src/builder/workspace/canvas/BuilderCanvas.tsx`
+**파일**: `apps/builder/src/builder/workspace/canvas/BuilderCanvas.tsx`
 
 ```typescript
 // 드래그/줌 중에는 해상도 낮춤
@@ -337,7 +337,7 @@ useEffect(() => {
 
 #### 5.2 WebGL 컨텍스트 최적화
 
-**파일**: `src/builder/workspace/canvas/pixiSetup.ts`
+**파일**: `apps/builder/src/builder/workspace/canvas/pixiSetup.ts`
 
 ```typescript
 // Application 생성 시 최적화 옵션
@@ -353,13 +353,13 @@ const app = new Application({
 ## 4. 수정 대상 파일 목록
 
 ### Phase 1 (드래그)
-- `src/builder/workspace/canvas/selection/useDragInteraction.ts`
-- `src/builder/workspace/canvas/selection/SelectionBox.tsx`
-- `src/builder/workspace/canvas/selection/DragPreview.tsx` (신규)
+- `apps/builder/src/builder/workspace/canvas/selection/useDragInteraction.ts`
+- `apps/builder/src/builder/workspace/canvas/selection/SelectionBox.tsx`
+- `apps/builder/src/builder/workspace/canvas/selection/DragPreview.tsx` (신규)
 
 ### Phase 2 (선택 렌더링)
-- `src/builder/workspace/canvas/selection/SelectionLayer.tsx`
-- `src/builder/workspace/canvas/sprites/ElementSprite.tsx`
+- `apps/builder/src/builder/workspace/canvas/selection/SelectionLayer.tsx`
+- `apps/builder/src/builder/workspace/canvas/sprites/ElementSprite.tsx`
 - `src/builder/stores/selection.ts`
 
 ### Phase 3 (인스펙터)
@@ -368,12 +368,12 @@ const app = new Application({
 - `src/builder/inspector/components/*.tsx`
 
 ### Phase 4 (Long Task)
-- `src/builder/workspace/canvas/layout/calculateLayout.ts`
-- `src/builder/workspace/canvas/BuilderCanvas.tsx`
+- `apps/builder/src/builder/workspace/canvas/layout/calculateLayout.ts`
+- `apps/builder/src/builder/workspace/canvas/BuilderCanvas.tsx`
 - `src/builder/stores/elements.ts`
 
 ### Phase 5 (캔버스)
-- `src/builder/workspace/canvas/pixiSetup.ts`
+- `apps/builder/src/builder/workspace/canvas/pixiSetup.ts`
 
 ---
 

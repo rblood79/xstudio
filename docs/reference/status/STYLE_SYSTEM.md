@@ -584,7 +584,7 @@ export function getEnhancedStyleSource(
 ### 4.1 Cached Style Converter
 
 ```typescript
-// src/builder/workspace/canvas/sprites/styleConverter.ts
+// apps/builder/src/builder/workspace/canvas/sprites/styleConverter.ts
 
 /**
  * Style Conversion Cache
@@ -688,7 +688,7 @@ export function convertStyleWithTokens(
 ### 4.2 Optimized Sprite Components
 
 ```typescript
-// src/builder/workspace/canvas/sprites/TextSprite.tsx
+// apps/builder/src/builder/workspace/canvas/sprites/TextSprite.tsx
 
 export const TextSprite = memo(function TextSprite({ element, onClick, onDoubleClick }: TextSpriteProps) {
   const style = element.props?.style as CSSStyle | undefined;
@@ -1152,7 +1152,7 @@ export const cacheManager = new CacheManager();
 ### 7.2 렌더링 최적화
 
 ```typescript
-// src/builder/workspace/canvas/utils/renderOptimizer.ts
+// apps/builder/src/builder/workspace/canvas/utils/renderOptimizer.ts
 
 /**
  * 배치 렌더링 스케줄러

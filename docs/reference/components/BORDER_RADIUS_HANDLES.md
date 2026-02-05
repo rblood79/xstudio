@@ -30,13 +30,13 @@
 4. **근본적인 아키텍처 재검토 필요**
 
 ### 롤백된 파일
-- `src/builder/workspace/canvas/selection/borderRadiusTypes.ts` (삭제)
-- `src/builder/workspace/canvas/selection/useBorderRadiusDragPixi.ts` (삭제)
-- `src/builder/workspace/canvas/selection/BorderRadiusHandle.tsx` (삭제)
-- `src/builder/workspace/canvas/selection/BorderRadiusHandles.tsx` (삭제)
-- `src/builder/workspace/canvas/selection/SelectionBox.tsx` (원복)
-- `src/builder/workspace/canvas/selection/SelectionLayer.tsx` (원복)
-- `src/builder/workspace/canvas/selection/index.ts` (원복)
+- `apps/builder/src/builder/workspace/canvas/selection/borderRadiusTypes.ts` (삭제)
+- `apps/builder/src/builder/workspace/canvas/selection/useBorderRadiusDragPixi.ts` (삭제)
+- `apps/builder/src/builder/workspace/canvas/selection/BorderRadiusHandle.tsx` (삭제)
+- `apps/builder/src/builder/workspace/canvas/selection/BorderRadiusHandles.tsx` (삭제)
+- `apps/builder/src/builder/workspace/canvas/selection/SelectionBox.tsx` (원복)
+- `apps/builder/src/builder/workspace/canvas/selection/SelectionLayer.tsx` (원복)
+- `apps/builder/src/builder/workspace/canvas/selection/index.ts` (원복)
 
 ---
 
@@ -79,7 +79,7 @@ SelectionLayer
 ### 2.2 파일 구조
 
 ```
-src/builder/workspace/canvas/selection/
+apps/builder/src/builder/workspace/canvas/selection/
 ├── types.ts                      # (수정) CornerPosition 추가
 ├── borderRadiusTypes.ts          # (신규) 상수, 유틸리티
 ├── BorderRadiusHandle.tsx        # (신규) 개별 핸들 컴포넌트

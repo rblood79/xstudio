@@ -5,7 +5,7 @@
 
 ## Overview
 
-This document tracks the migration progress of React Aria Components from the iframe preview system (`src/canvas/`) to the WebGL-based canvas system (`src/builder/workspace/canvas/ui/`).
+This document tracks the migration progress of React Aria Components from the iframe preview system (`src/canvas/`) to the WebGL-based canvas system (`apps/builder/src/builder/workspace/canvas/ui/`).
 
 ⚠️ **검증 현황**: 실제 WebGL 캔버스에서 확인된 항목은 `Button`, `Checkbox`, `CheckboxGroup`, `RadioGroup`, `TextField`입니다. 아래 표의 나머지 항목들은 구현 여부가 미확인 상태이며, 화면 렌더링·동작 검증이 필요합니다.
 
@@ -13,7 +13,7 @@ This document tracks the migration progress of React Aria Components from the if
 
 | Aspect | iframe Preview | WebGL Canvas |
 |--------|----------------|--------------|
-| Location | `src/canvas/renderers/` | `src/builder/workspace/canvas/ui/` |
+| Location | `src/canvas/renderers/` | `apps/builder/src/builder/workspace/canvas/ui/` |
 | Base | React Aria Components | @pixi/ui + Custom PixiJS |
 | Rendering | DOM-based | WebGL Graphics |
 | Component Prefix | None (direct RAC) | `Pixi*` |
@@ -197,7 +197,7 @@ This document tracks the migration progress of React Aria Components from the if
 ### Standard Component Structure
 
 ```tsx
-// src/builder/workspace/canvas/ui/PixiComponent.tsx
+// apps/builder/src/builder/workspace/canvas/ui/PixiComponent.tsx
 
 import { memo, useRef, useEffect, useCallback } from 'react';
 import { Container } from 'pixi.js';
@@ -326,7 +326,7 @@ return (
 
 ### Recorded WebGL Components
 ```
-src/builder/workspace/canvas/ui/
+apps/builder/src/builder/workspace/canvas/ui/
 ├── index.ts                # Module exports
 ├── PixiButton.tsx          # Basic button
 ├── PixiFancyButton.tsx     # Enhanced button
@@ -348,7 +348,7 @@ src/builder/workspace/canvas/ui/
 
 ### Core Sprites
 ```
-src/builder/workspace/canvas/sprites/
+apps/builder/src/builder/workspace/canvas/sprites/
 ├── ElementSprite.tsx       # Type router/dispatcher
 ├── BoxSprite.tsx           # Container rendering
 ├── TextSprite.tsx          # Text rendering
@@ -359,7 +359,7 @@ src/builder/workspace/canvas/sprites/
 
 ### Layout System
 ```
-src/builder/workspace/canvas/layout/
+apps/builder/src/builder/workspace/canvas/layout/
 ├── LayoutEngine.ts         # Yoga v3 Flexbox
 └── GridLayout.tsx          # CSS Grid manual
 ```

@@ -176,7 +176,7 @@ iframe에서 CSS가 자동으로 적용하는 것을 WebGL에서는 수동으로
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │                    cssVariableReader.ts                         │
-│               (src/builder/workspace/canvas/utils/)             │
+│               (apps/builder/src/builder/workspace/canvas/utils/)             │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                 │
 │  ┌─────────────────┐  ┌─────────────────┐  ┌────────────────┐  │
@@ -307,7 +307,7 @@ Step 4: 검증
 
 **Step 2: cssVariableReader.ts 매핑**
 ```typescript
-// src/builder/workspace/canvas/utils/cssVariableReader.ts
+// apps/builder/src/builder/workspace/canvas/utils/cssVariableReader.ts
 
 const SIZE_CSS_MAPPING = {
   sm: {
@@ -338,7 +338,7 @@ export function getSizePreset(size: string): SizePreset {
 
 **Step 3: PixiButton.tsx 사용**
 ```typescript
-// src/builder/workspace/canvas/ui/PixiButton.tsx
+// apps/builder/src/builder/workspace/canvas/ui/PixiButton.tsx
 import { getSizePreset, getVariantColors } from '../utils/cssVariableReader';
 
 const sizePreset = getSizePreset(size);        // CSS에서 동적으로
@@ -574,7 +574,7 @@ const minRequiredHeight = borderWidth + paddingTop + textHeight + paddingBottom 
 ## 8. 파일 구조
 
 ```
-src/builder/workspace/canvas/
+apps/builder/src/builder/workspace/canvas/
 ├── utils/
 │   └── cssVariableReader.ts    # 🔑 CSS 동기화 핵심
 │       ├── getCSSVariable()
@@ -607,9 +607,9 @@ src/builder/workspace/canvas/
 - **M3 색상**: `src/builder/styles/1-theme/m3-tokens.css`
 
 ### WebGL 구현체
-- **PixiJS 컴포넌트**: `src/builder/workspace/canvas/ui/`
-- **CSS 변수 리더**: `src/builder/workspace/canvas/utils/cssVariableReader.ts`
-- **Drawing 유틸**: `src/builder/workspace/canvas/utils/graphicsUtils.ts`
+- **PixiJS 컴포넌트**: `apps/builder/src/builder/workspace/canvas/ui/`
+- **CSS 변수 리더**: `apps/builder/src/builder/workspace/canvas/utils/cssVariableReader.ts`
+- **Drawing 유틸**: `apps/builder/src/builder/workspace/canvas/utils/graphicsUtils.ts`
 
 ### @pixi/ui 문서
 - [FancyButton](https://pixijs.io/ui/storybook/?path=/story/fancybutton--simple)
@@ -624,7 +624,7 @@ src/builder/workspace/canvas/
 
 #### 핵심 유틸리티 구현
 
-**파일**: `src/builder/workspace/canvas/utils/cssVariableReader.ts`
+**파일**: `apps/builder/src/builder/workspace/canvas/utils/cssVariableReader.ts`
 
 | 함수 | 설명 | 상태 |
 |------|------|------|
@@ -636,7 +636,7 @@ src/builder/workspace/canvas/
 
 #### PixiButton 업데이트
 
-**파일**: `src/builder/workspace/canvas/ui/PixiButton.tsx`
+**파일**: `apps/builder/src/builder/workspace/canvas/ui/PixiButton.tsx`
 
 - ❌ 기존: 하드코딩된 `SIZE_PRESETS` 상수
 - ✅ 변경: `getSizePreset(size)` 사용으로 CSS 변수 동적 읽기
@@ -654,7 +654,7 @@ const sizePreset = getSizePreset(size);
 
 #### PixiCheckbox 업데이트
 
-**파일**: `src/builder/workspace/canvas/ui/PixiCheckbox.tsx`
+**파일**: `apps/builder/src/builder/workspace/canvas/ui/PixiCheckbox.tsx`
 
 - ❌ 기존: 하드코딩된 boxSize 계산
 - ✅ 변경: `getCheckboxSizePreset(size)` 사용
@@ -783,7 +783,7 @@ const boxSize = sizePreset.boxSize;
 | **Table (1)** | | | |
 | | Table | PixiTable | ✅ |
 
-#### 11.0.2 WebGL 구현 완료 현황 (src/builder/workspace/canvas/ui/)
+#### 11.0.2 WebGL 구현 완료 현황 (apps/builder/src/builder/workspace/canvas/ui/)
 
 **총 62개 파일 구현 완료:**
 
@@ -955,7 +955,7 @@ Step 0.9-0.11: Input, Select, Switch (동일 패턴)
 #### 0.5 산출물 (완료)
 
 ```
-src/builder/workspace/canvas/utils/cssVariableReader.ts
+apps/builder/src/builder/workspace/canvas/utils/cssVariableReader.ts
 ├── getCSSVariable()           ✅
 ├── parseCSSValue()            ✅
 ├── getVariantColors()         ✅

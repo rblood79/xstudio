@@ -286,11 +286,11 @@ export function getDynamicResolution(isInteracting: boolean): number {
 
 ### Phase 1-3 완료 파일
 - `src/builder/constants/timing.ts` (신규)
-- `src/builder/workspace/canvas/selection/useDragInteraction.ts`
-- `src/builder/workspace/canvas/selection/SelectionBox.tsx`
-- `src/builder/workspace/canvas/selection/SelectionLayer.tsx`
-- `src/builder/workspace/canvas/selection/index.ts`
-- `src/builder/workspace/canvas/BuilderCanvas.tsx`
+- `apps/builder/src/builder/workspace/canvas/selection/useDragInteraction.ts`
+- `apps/builder/src/builder/workspace/canvas/selection/SelectionBox.tsx`
+- `apps/builder/src/builder/workspace/canvas/selection/SelectionLayer.tsx`
+- `apps/builder/src/builder/workspace/canvas/selection/index.ts`
+- `apps/builder/src/builder/workspace/canvas/BuilderCanvas.tsx`
 - `src/builder/stores/index.ts`
 - `src/builder/panels/properties/PropertiesPanel.tsx`
 - `src/builder/panels/styles/StylesPanel.tsx`
@@ -313,9 +313,9 @@ export function getDynamicResolution(isInteracting: boolean): number {
 - `src/builder/sidebar/components/ElementTreeRenderer.tsx` (useDeferredValue 적용)
 
 ### Phase 5 완료 파일
-- `src/builder/workspace/canvas/pixiSetup.ts` (전역 설정, 저사양 감지, 동적 해상도)
-- `src/builder/workspace/canvas/BuilderCanvas.tsx` (WebGL 최적화, 동적 해상도 연동)
-- `src/builder/workspace/canvas/selection/useDragInteraction.ts` (onDragStart 콜백)
+- `apps/builder/src/builder/workspace/canvas/pixiSetup.ts` (전역 설정, 저사양 감지, 동적 해상도)
+- `apps/builder/src/builder/workspace/canvas/BuilderCanvas.tsx` (WebGL 최적화, 동적 해상도 연동)
+- `apps/builder/src/builder/workspace/canvas/selection/useDragInteraction.ts` (onDragStart 콜백)
 
 ---
 

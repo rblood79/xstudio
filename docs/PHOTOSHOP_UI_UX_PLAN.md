@@ -52,10 +52,10 @@
 | 영역 | 파일 경로 |
 |------|-----------|
 | Workspace 컨테이너 | `src/builder/workspace/Workspace.tsx` |
-| PixiJS 캔버스 | `src/builder/workspace/canvas/BuilderCanvas.tsx` |
-| 선택 레이어 | `src/builder/workspace/canvas/selection/SelectionLayer.tsx` |
+| PixiJS 캔버스 | `apps/builder/src/builder/workspace/canvas/BuilderCanvas.tsx` |
+| 선택 레이어 | `apps/builder/src/builder/workspace/canvas/selection/SelectionLayer.tsx` |
 | DOM 오버레이 | `src/builder/workspace/overlay/` |
-| 뷰포트 컨트롤 | `src/builder/workspace/canvas/viewport/` |
+| 뷰포트 컨트롤 | `apps/builder/src/builder/workspace/canvas/viewport/` |
 | 히스토리 | `src/builder/stores/history.ts`, `panels/history/` |
 | AI 패널 | `src/builder/panels/ai/AIPanel.tsx` |
 

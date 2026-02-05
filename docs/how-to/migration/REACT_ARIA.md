@@ -257,7 +257,7 @@ pnpm add colord
 
 **적용 위치**:
 - `src/builder/panels/styles/` - 스타일 패널
-- `src/builder/workspace/canvas/utils/cssVariableReader.ts` - Pixi Canvas
+- `apps/builder/src/builder/workspace/canvas/utils/cssVariableReader.ts` - Pixi Canvas
 
 ```typescript
 // Before
@@ -463,7 +463,7 @@ pnpm add colord
 
 **수정할 파일**:
 - `src/builder/panels/styles/utils/colorParser.ts` (신규 또는 기존 수정)
-- `src/builder/workspace/canvas/utils/cssVariableReader.ts`
+- `apps/builder/src/builder/workspace/canvas/utils/cssVariableReader.ts`
 
 **완료 기준**:
 - [ ] colord 설치 완료

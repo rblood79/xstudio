@@ -151,7 +151,7 @@ renderer.resize(width, height); // 매우 비싼 연산 - Framebuffer 재생성
 
 - `src/builder/styles/4-layout/canvas.css`: Grid 레이아웃 정의
 - `src/builder/workspace/Workspace.tsx`: ResizeObserver로 크기 추적
-- `src/builder/workspace/canvas/BuilderCanvas.tsx`: CanvasSmoothResizeBridge
+- `apps/builder/src/builder/workspace/canvas/BuilderCanvas.tsx`: CanvasSmoothResizeBridge
 
 ### 3.2 목표 구조 (해결)
 
@@ -265,13 +265,13 @@ PixiJS v8에서는 `Culler.shared.cull()`을 매 프레임 수동 호출해야 �
 
 | 파일 | 설명 |
 |-----|-----|
-| `src/builder/workspace/canvas/hooks/useViewportCulling.ts` | 컬링 훅 (신규) |
-| `src/builder/workspace/canvas/BuilderCanvas.tsx` | ElementsLayer에 적용 |
+| `apps/builder/src/builder/workspace/canvas/hooks/useViewportCulling.ts` | 컬링 훅 (신규) |
+| `apps/builder/src/builder/workspace/canvas/BuilderCanvas.tsx` | ElementsLayer에 적용 |
 
 #### 4.4.3 핵심 코드
 
 ```typescript
-// src/builder/workspace/canvas/hooks/useViewportCulling.ts
+// apps/builder/src/builder/workspace/canvas/hooks/useViewportCulling.ts
 
 // 뷰포트 경계 계산 (화면 좌표 → 캔버스 좌표)
 export function calculateViewportBounds(
@@ -424,7 +424,7 @@ Phase A 적용 후 다음을 테스트:
 ### 6.3 구현 상세 (필요시)
 
 ```tsx
-// src/builder/workspace/canvas/viewport/useViewportOffset.ts
+// apps/builder/src/builder/workspace/canvas/viewport/useViewportOffset.ts
 
 import { useMemo } from "react";
 import { useStore } from "../../../stores";
@@ -479,7 +479,7 @@ Phase A 적용 후:
 ### 7.3 구현 상세 (필요시)
 
 ```tsx
-// src/builder/workspace/canvas/BuilderCanvas.tsx
+// apps/builder/src/builder/workspace/canvas/BuilderCanvas.tsx
 
 // 기존
 <Application resizeTo={containerEl} ... >
@@ -511,12 +511,12 @@ Phase A 적용 후:
 
 | 파일                                                    | 설명                  |
 | ------------------------------------------------------- | --------------------- |
-| `src/builder/workspace/canvas/hooks/useWindowResize.ts` | 윈도우 resize 전용 훅 |
+| `apps/builder/src/builder/workspace/canvas/hooks/useWindowResize.ts` | 윈도우 resize 전용 훅 |
 
 ### 8.3 구현 상세
 
 ```tsx
-// src/builder/workspace/canvas/hooks/useWindowResize.ts
+// apps/builder/src/builder/workspace/canvas/hooks/useWindowResize.ts
 
 import { useEffect, useRef } from "react";
 import { Application } from "pixi.js";
@@ -579,12 +579,12 @@ Sprite 재사용으로 GC 부담 감소
 
 | 파일                                               | 설명                 |
 | -------------------------------------------------- | -------------------- |
-| `src/builder/workspace/canvas/utils/SpritePool.ts` | 스프라이트 풀 매니저 |
+| `apps/builder/src/builder/workspace/canvas/utils/SpritePool.ts` | 스프라이트 풀 매니저 |
 
 ### 9.3 구현 상세
 
 ```tsx
-// src/builder/workspace/canvas/utils/SpritePool.ts
+// apps/builder/src/builder/workspace/canvas/utils/SpritePool.ts
 
 import { Sprite, Texture, Container } from "pixi.js";
 
@@ -654,7 +654,7 @@ export const spritePool = new SpritePool();
 ### 10.2 구현 상세
 
 ```tsx
-// src/builder/workspace/canvas/sprites/ElementSprite.tsx
+// apps/builder/src/builder/workspace/canvas/sprites/ElementSprite.tsx
 
 const ElementSprite = memo(function ElementSprite({ element, layoutPosition }) {
   const containerRef = useRef<Container>(null);

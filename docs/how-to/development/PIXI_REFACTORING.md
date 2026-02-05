@@ -47,8 +47,8 @@
 ```
 
 **문제 파일**:
-- `src/builder/workspace/canvas/selection/TransformHandle.tsx:106-108`
-- `src/builder/workspace/canvas/selection/SelectionBox.tsx:121-123`
+- `apps/builder/src/builder/workspace/canvas/selection/TransformHandle.tsx:106-108`
+- `apps/builder/src/builder/workspace/canvas/selection/SelectionBox.tsx:121-123`
 
 ```tsx
 // 현재 코드 (TransformHandle.tsx)
@@ -439,7 +439,7 @@ fix(canvas): apply pixiContainer wrapper workaround for layoutContainer event is
 #### 6.1 디렉토리 구조
 
 ```
-src/builder/workspace/canvas/ui/
+apps/builder/src/builder/workspace/canvas/ui/
 ├─ index.ts              # Export all
 ├─ types.ts              # 공통 타입 정의
 ├─ PixiUIBase.tsx        # 기본 래퍼 (공통 로직)
@@ -645,8 +645,8 @@ feat(workspace): add @pixi/ui Slider component wrapper
 
 **파일 위치:**
 - **StylePanel 섹션**: `src/builder/panels/styles/sections/`
-- **Canvas 스타일 변환**: `src/builder/workspace/canvas/sprites/styleConverter.ts`
-- **Canvas 레이아웃 계산**: `src/builder/workspace/canvas/layout/layoutCalculator.ts`
+- **Canvas 스타일 변환**: `apps/builder/src/builder/workspace/canvas/sprites/styleConverter.ts`
+- **Canvas 레이아웃 계산**: `apps/builder/src/builder/workspace/canvas/layout/layoutCalculator.ts`
 
 | 섹션 | 속성 | Canvas 구현 | 상태 | 비고 |
 |------|------|-------------|------|------|
@@ -1395,7 +1395,7 @@ feat(canvas): add borderStyle support (dashed, dotted, double) (P7.9)
 ### Canvas 폴더 구조 (P1-P7.9 완료 후)
 
 ```
-src/builder/workspace/canvas/
+apps/builder/src/builder/workspace/canvas/
 ├── pixiSetup.ts              # P2,P4: PIXI_COMPONENTS 카탈로그 + useExtend
 ├── BuilderCanvas.tsx         # P7.8: initYoga() 초기화
 ├── canvasSync.ts             # Canvas 상태 동기화

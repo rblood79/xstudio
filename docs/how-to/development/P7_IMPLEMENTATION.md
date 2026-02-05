@@ -11,7 +11,7 @@
 ### 파일 구조
 
 ```
-src/builder/workspace/canvas/sprites/
+apps/builder/src/builder/workspace/canvas/sprites/
 ├── styleConverter.ts    # CSS → PixiJS 변환 (확장 필요)
 ├── BoxSprite.tsx        # 컨테이너 스프라이트 (padding 미구현)
 ├── TextSprite.tsx       # 텍스트 스프라이트 (padding 구현됨)

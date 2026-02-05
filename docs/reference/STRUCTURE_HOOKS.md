@@ -3,7 +3,7 @@
 ## 1. 개요
 
 - **분석 대상**: `src` 내 `use*` 훅 함수와 `hooks/` 디렉토리
-- **포함 범위**: Builder 영역 포함, `src/builder/workspace/canvas/**`까지
+- **포함 범위**: Builder 영역 포함, `apps/builder/src/builder/workspace/canvas/**`까지
 - **제외 대상**:
   - `src/builder/panels/events/**` (이벤트 시스템 전용)
   - `src/canvas/**` (iframe 런타임 분리)
@@ -49,7 +49,7 @@
   - **Styles**: `src/builder/panels/styles/hooks/*`
   - **Monitor**: `src/builder/panels/monitor/hooks/*`
   - **Nodes Tree**: `src/builder/panels/nodes/tree/hooks/*`
-- **Workspace Canvas**: `src/builder/workspace/canvas/hooks/*` (WebGL/viewport 특화)
+- **Workspace Canvas**: `apps/builder/src/builder/workspace/canvas/hooks/*` (WebGL/viewport 특화)
   - `useThemeColors.ts`
   - `useViewportCulling.ts`
 

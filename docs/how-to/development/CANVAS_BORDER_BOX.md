@@ -601,8 +601,8 @@ export function calculateAutoSize(options: AutoSizeOptions): { width: number; he
 | 테스트 | 3 | 각 유틸리티 테스트 파일 |
 
 ### 2025-12-16 신규 추가 파일
-- `src/builder/workspace/canvas/ui/PixiCheckboxGroup.tsx` - CheckboxGroup 시각적 렌더링
-- `src/builder/workspace/canvas/ui/PixiCheckboxItem.tsx` - Checkbox 투명 hit area
+- `apps/builder/src/builder/workspace/canvas/ui/PixiCheckboxGroup.tsx` - CheckboxGroup 시각적 렌더링
+- `apps/builder/src/builder/workspace/canvas/ui/PixiCheckboxItem.tsx` - Checkbox 투명 hit area
 
 ---
 

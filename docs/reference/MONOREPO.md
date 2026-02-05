@@ -719,7 +719,7 @@ git mv apps/builder/src/canvas/ apps/builder/src/preview/
 ```
 
 > **이유**: `src/canvas/`는 React 기반 프리뷰 앱이지만, 이름이 Pixi.js의
-> `src/builder/workspace/canvas/` (WebGL 편집 화면)와 혼동을 줄 수 있음
+> `apps/builder/src/builder/workspace/canvas/` (WebGL 편집 화면)와 혼동을 줄 수 있음
 
 **Step 3: 빌드 검증** (렌더러 이동 전 중간 검증)
 ```bash

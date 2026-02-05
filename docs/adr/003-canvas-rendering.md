@@ -1,8 +1,12 @@
 # ADR-003: PixiJS for Canvas Rendering
 
-**Status:** Accepted
+**Status:** Superseded (2026-02-05)
 **Date:** 2024-01-01
 **Decision Makers:** XStudio Team
+
+> **Superseded By:** Pencil 방식 CanvasKit/Skia 2-pass 렌더러(컨텐츠 캐시 + present(blit) + 오버레이 분리).
+> PixiJS는 렌더링이 아니라 **씬 그래프/히트테스트(EventBoundary)/이벤트** 전용 레이어로 유지.
+> 상세: `docs/WASM.md`, `docs/PENCIL_VS_XSTUDIO_RENDERING.md`
 
 ## Context
 
@@ -173,7 +177,7 @@ Yoga가 계산한 컨테이너 크기를 자식 스프라이트에 전달하는 
 | **크기 전파** | 없음 — 각 스프라이트가 raw CSS 값 직접 사용 | `LayoutComputedSizeContext` — Yoga 결과를 Context로 전달 |
 | **getBounds() vs computedLayout** | getBounds()는 콘텐츠 bounding box | `_layout.computedLayout`에서 Yoga 결과 직접 읽기 |
 
-**새 파일:** `canvas/layoutContext.ts` — 순환 참조 방지를 위해 별도 파일로 분리
+**새 파일:** `apps/builder/src/builder/workspace/canvas/layoutContext.ts` — 순환 참조 방지를 위해 별도 파일로 분리
 
 ### 3. @pixi/layout 'layout' 이벤트 기반 타이밍 수정
 
@@ -185,29 +189,20 @@ Yoga가 계산한 컨테이너 크기를 자식 스프라이트에 전달하는 
 | **의존성** | `[elementId, layout]` — layout 변경 시만 트리거 | `[elementId]` — 이벤트 기반이므로 재등록 불필요 |
 | **초기값** | rAF에 의존 | rAF fallback + layout 이벤트 구독 |
 
-**상세:** `apps/builder/src/.../canvas/BuilderCanvas.tsx` (LayoutContainer), `canvas/layoutContext.ts`, `canvas/sprites/ElementSprite.tsx`
+**상세:** `apps/builder/src/builder/workspace/canvas/BuilderCanvas.tsx` (LayoutContainer), `apps/builder/src/builder/workspace/canvas/layoutContext.ts`, `apps/builder/src/builder/workspace/canvas/sprites/ElementSprite.tsx`
 
-### 4. Dirty Rect 부분 렌더링 활성화 (Skia 콘텐츠 프레임)
+### 4. Dirty Rect 부분 렌더링 활성화 (Skia 콘텐츠 프레임) — (현재 제거됨)
 
-기존에 좌표계 불일치로 비활성화되었던 Dirty Rect 부분 렌더링을 좌표 변환 구현으로 활성화:
+2026-02-03에 clipRect 기반 Dirty Rect 부분 렌더링을 활성화(좌표 변환 포함)했으나,
+2026-02-04~02-05에 “팬/줌/스냅샷/padding” 조합에서 잔상·미반영 리스크가 커서 제거(보류)했다.
+현재는 Pencil 방식 2-pass(컨텐츠 캐시 + present blit + 오버레이 분리)로 대체된다.
 
-| 항목 | 수정 전 (비활성화) | 수정 후 (활성화, 2026-02-03) |
-|------|---------|---------|
-| **Dirty rect 좌표** | CSS/style 로컬 좌표 → 카메라 변환과 불일치 | 씬-로컬 좌표 → `renderContent()`에서 카메라 변환 적용 |
-| **content 프레임** | `renderContent(cullingBounds)` → 전체 렌더링 | `renderContent(cullingBounds, camera, dirtyRects)` → clipRect 부분 렌더링 |
-| **좌표 변환** | 없음 (비활성화) | `screenRect = { x: rect.x * zoom + panX, y: rect.y * zoom + panY, ... }` |
-| **뷰포트 폴백** | 없음 | dirty rect 총 면적 > 뷰포트 30% → 전체 렌더링 폴백 (`mergeDirtyRects()`) |
+| 항목 | 당시(2026-02-03) | 현재(2026-02-05) |
+|------|------------------|------------------|
+| **content 프레임** | `renderContent(..., dirtyRects)` → clipRect 부분 렌더 | 컨텐츠 invalidation은 full rerender로 단순화 |
+| **카메라 프레임** | camera-only blit 인프라 보존(비활성) | snapshot 아핀 blit(camera-only) 활성 + cleanup(full) 1회 |
 
-**좌표 변환 공식:**
-```
-씬-로컬 좌표 → content canvas 좌표:
-  screenRect.x = rect.x * camera.zoom + camera.panX
-  screenRect.y = rect.y * camera.zoom + camera.panY
-  screenRect.width = rect.width * camera.zoom
-  screenRect.height = rect.height * camera.zoom
-```
-
-**상세:** `apps/builder/src/.../skia/SkiaRenderer.ts`, `apps/builder/src/.../skia/dirtyRectTracker.ts`
+> 기록 목적 참고: `dirtyRectTracker.ts`는 과거 시도 흔적으로 남아 있을 수 있으나, 현재 렌더 경로에는 통합되지 않는다.
 
 ### 5. Skia 렌더 루프 Ticker Priority 수정 (display 전환 플리커)
 
@@ -297,11 +292,11 @@ Camera-only blit은 올바른 아핀 변환 수학 (`snapshotCamera` 기반 누�
 
 **상세:** `apps/builder/src/.../skia/SkiaRenderer.ts`
 
-## Update: Pencil 기반 Skia 렌더링 최적화 (2026-02-03)
+## Update: Pencil 기반 Skia 렌더링 최적화 (2026-02-03 → 2026-02-05 반영)
 
 Pencil 앱 분석(`docs/PENCIL_APP_ANALYSIS.md` 섹션 16-19)에서 확인된 미적용 렌더링 기법을 도입:
 
-### 1. Cleanup Render (200ms 디바운스) — 인프라 보존, 비활성화
+### 1. Cleanup Render (200ms 디바운스) — ✅ 활성화
 
 Pencil의 `debouncedMoveEnd(200ms) → invalidateContent()` 패턴. Camera-only blit과 함께 사용하여 가장자리 아티팩트를 해소하는 역할.
 
@@ -309,7 +304,7 @@ Pencil의 `debouncedMoveEnd(200ms) → invalidateContent()` 패턴. Camera-only 
 |------|------|
 | **트리거** | camera-only 프레임 이후 `scheduleCleanupRender()` 호출 |
 | **디바운스** | 200ms — 연속 팬/줌 중에는 타이머 리셋, 정지 후 1회만 실행 |
-| **현재 상태** | camera-only blit 비활성화로 호출되지 않음. Phase 5 Content Render Padding 구현 시 재활성화 예정 |
+| **현재 상태 (2026-02-05)** | camera-only 아핀 blit 활성화. zoom mismatch 또는 snapshot이 화면을 완전히 덮지 못하는 경우(`canBlitWithCameraTransform() === false`)에 cleanup(full) 1회 재렌더로 품질/가장자리 정리 |
 
 ### 2. AI Flash 미세 조정
 
@@ -330,7 +325,17 @@ Pencil 앱의 줌 속도와 동일하게 조정:
 | **트랙패드 구분** | 없음 | `metaKey` → ±15 클램프 (트랙패드 핀치), `ctrlKey` → ±30 (마우스 휠) |
 | **체감** | Pencil 대비 3배 느림 | Pencil과 동일 |
 
-**상세:** `useViewportControl.ts`, `SkiaRenderer.ts`, `SkiaOverlay.tsx`, `dirtyRectTracker.ts`
+**상세:** `useViewportControl.ts`, `SkiaRenderer.ts`, `SkiaOverlay.tsx`
+
+## Update: Dirty Rect 제거 + Pencil 2-pass 렌더러 완전 교체 (2026-02-05)
+
+Dirty Rect(clipRect) 기반 부분 렌더링은 “팬/줌/스냅샷/padding” 조합에서
+좌표계·클리핑 경계 문제가 잔상·미반영 버그로 나타나기 쉬워 제거(보류)했다.
+
+대신 Pencil과 동일한 모델로 정리:
+- contentSurface에 **디자인 컨텐츠** 전체 렌더 → `contentSnapshot` 캐시
+- present 단계에서 snapshot blit(카메라 델타 아핀 변환) + **오버레이(Selection/AI/PageTitle) 별도 렌더**
+- 줌/팬 중에는 camera-only 우선, 정지 후 cleanup(full)로 품질 정리
 
 ## Update: Skia UI 컴포넌트 borderRadius 파싱 수정 (2026-02-03)
 

@@ -119,7 +119,7 @@ src/builder/stores/                 # 빌더 도메인 (통합)
   ├── elementLoader.ts                # LRU 캐시 기반 로딩
   └── ...
 
-src/builder/workspace/canvas/       # WebGL 캔버스 렌더링 전용 (스토어 제거됨)
+apps/builder/src/builder/workspace/canvas/       # WebGL 캔버스 렌더링 전용 (스토어 제거됨)
   └── canvasSync.ts                   # React-WebGL 동기화
 ```
 
@@ -203,8 +203,8 @@ Builder는 WebGL 모드(PixiJS)를 사용합니다. 각 Phase별 영향 범위�
 | `src/builder/main/BuilderCore.tsx`                  | showOverlay                 |
 | `src/builder/overlay/index.tsx`                     | showOverlay, overlayOpacity |
 | `src/builder/grid/index.tsx`                        | showGrid                    |
-| `src/builder/workspace/canvas/BuilderCanvas.tsx`    | useStore 직접 사용          |
-| `src/builder/workspace/canvas/grid/GridLayer.tsx`   | showGrid, gridSize          |
+| `apps/builder/src/builder/workspace/canvas/BuilderCanvas.tsx`    | useStore 직접 사용          |
+| `apps/builder/src/builder/workspace/canvas/grid/GridLayer.tsx`   | showGrid, gridSize          |
 | `src/builder/stores/canvasStore.ts`                 | canvasSettings.ts 위임      |
 
 - **영향 파일**: 9개 (WebGL 관련)

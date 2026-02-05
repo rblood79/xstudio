@@ -1,7 +1,7 @@
 # WASM.md 실행 시 문서 영향 분석 및 Pencil 아키텍처 패턴 적용 계획
 
 > 작성일: 2026-01-31
-> 최종 수정: 2026-02-02 (Round 4 Skia 렌더링 감사 — 검증 완료: 22건 → 9건 확인, 13건 오탐 제거; **코드 수정 8/9건 완료**)
+> 최종 수정: 2026-02-05 (Round 5: Pencil 방식 2-pass 렌더러 완전 교체 + 줌/팬 성능 핫픽스, 관련 문서 정합 업데이트)
 > 대상: `docs/LAYOUT_REQUIREMENTS.md`, `docs/COMPONENT_SPEC_ARCHITECTURE.md`, `docs/AI.md`
 > 기준: `docs/WASM.md` Phase 5-6, `docs/PENCIL_APP_ANALYSIS.md` §11–§26
 > 참고: `docs/AI.md` (AI 기능 업그레이드 설계)
@@ -113,7 +113,7 @@ Part III — 감사
 | C11 | CSS Generator | 1633–1693 | CSS 생성 로직 | "CSS는 React/Publish 전용, Canvas 렌더링은 CanvasKitRenderer" 주석 추가 | 중간 |
 | C12 | ContainerLayout Overflow | 684–727 | overflow: hidden/scroll | CanvasKit clipRect()/clipPath() 구현 주석 추가 | 중간 |
 | C13 | PixiButton 예시 | 2401–2471 | Graphics로 버튼 그리기 | Phase 5+ renderSkia() 패턴으로 대체 예시 | **높음** |
-| C14 | Performance Optimization | 3889–3919 | 변형 색상 캐싱 | 이중 Surface 캐싱 + Dirty Rect 전략 추가 | **높음** |
+| C14 | Performance Optimization | 3889–3919 | 변형 색상 캐싱 | 이중 Surface 2-pass(컨텐츠 캐시 + present blit + 오버레이 분리) 전략 추가 | **높음** |
 | C15 | Visual Regression Testing | 3666–3887 | React vs PixiJS 비교 | React vs CanvasKit 비교로 업데이트 + waitForCanvasKitRender() | **높음** |
 | C16 | CSS vs WebGL 규칙 | 2540–2586 | CSS 단위 해석 경고 | CanvasKit은 Yoga 계산 결과(px)만 사용, CSS 미적용 명시 | 중간 |
 | C17 | Phase 0 Checklist | 1902–1915 | 기본 설정 항목 | CanvasKit WASM 설정 + CanvasKitRenderer 구현 항목 추가 | **높음** |
@@ -249,10 +249,10 @@ VariableManager.resolve("$--primary", currentTheme)
 
 | 영향 대상 | 변경 내용 | 규모 |
 |----------|----------|------|
-| `canvas/sprites/` 또는 renderSkia 파이프라인 | `renderGeneratingEffects()` 구현 — placeholder 노드 위 오버레이 | 신규 기능 |
-| `canvas/sprites/` 또는 renderSkia 파이프라인 | `renderFlashes()` 구현 — 변경 노드 하이라이트 | 신규 기능 |
-| `builder/stores/elements.ts` | `placeholder` 속성 추가 (AI 생성 중 표시) | 속성 추가 |
-| `services/ai/` | AI 응답 완료 시 flash 트리거, 작업 중 placeholder 관리 | 연동 |
+| `apps/builder/src/builder/workspace/canvas/sprites/` 또는 renderSkia 파이프라인 | `renderGeneratingEffects()` 구현 — placeholder 노드 위 오버레이 | 신규 기능 |
+| `apps/builder/src/builder/workspace/canvas/sprites/` 또는 renderSkia 파이프라인 | `renderFlashes()` 구현 — 변경 노드 하이라이트 | 신규 기능 |
+| `apps/builder/src/builder/stores/elements.ts` | `placeholder` 속성 추가 (AI 생성 중 표시) | 속성 추가 |
+| `apps/builder/src/services/ai/` | AI 응답 완료 시 flash 트리거, 작업 중 placeholder 관리 | 연동 |
 | `docs/AI.md` | §A3 시각 피드백 상세 설계 추가 | 문서 |
 
 **CanvasKit 전환과의 관계:**
@@ -565,7 +565,7 @@ Pencil 패턴 추가 적용 (신규 분석)
 
 #### I-CR1. Inner Shadow 렌더링 오류 — ✅ 수정 완료
 
-- **파일**: `canvas/skia/effects.ts:75-82`
+- **파일**: `apps/builder/src/builder/workspace/canvas/skia/effects.ts:75-82`
 - **문제**: `MakeDropShadowOnly`는 그림자만 그리고 원본 콘텐츠를 삭제한다. inner shadow 구현에 사용하면 **소스 콘텐츠가 사라짐**
 - **현상**: inner shadow가 적용된 요소가 그림자만 보이고 내부 콘텐츠가 투명하게 렌더됨
 - **수정**: Inner/Outer 모두 `MakeDropShadow` (소스 보존) 사용. `saveLayer` 경계가 외부 그림자를 자연스럽게 클리핑. (`ac079862`)
@@ -578,13 +578,13 @@ Pencil 패턴 추가 적용 (신규 분석)
 
 #### I-H4. DPR 변경 시 SkiaRenderer.dpr 미갱신 — ✅ 수정 완료
 
-- **파일**: `canvas/skia/SkiaRenderer.ts:54, 305-318`
+- **파일**: `apps/builder/src/builder/workspace/canvas/skia/SkiaRenderer.ts:54, 305-318`
 - **문제**: `SkiaOverlay`에서 DPR 변경 감지 + 캔버스 리사이즈를 수행하지만, `SkiaRenderer` 인스턴스의 `this.dpr` 필드는 생성자에서만 설정됨. DPR 변경 후 Surface 재생성 시 이전 DPR로 스케일링하여 **흐릿하거나 과도하게 확대**된 렌더링
 - **수정**: `SkiaRenderer.resize()`에서 `this.dpr = window.devicePixelRatio || 1` 갱신 추가. (`ac079862`)
 
 #### I-H5. 이미지 캐시 레이스 컨디션 — ✅ 수정 완료
 
-- **파일**: `canvas/skia/imageCache.ts` — `clearImageCache()` / `loadSkImage()`
+- **파일**: `apps/builder/src/builder/workspace/canvas/skia/imageCache.ts` — `clearImageCache()` / `loadSkImage()`
 - **문제**: `clearImageCache()`가 `pending.clear()`로 진행 중 Promise 참조만 제거하지만, `fetchAndDecode()` 자체는 계속 실행됨. 완료 시 새 SkImage가 이미 cleared된 캐시에 재등록되어 **orphan 이미지 누수**
 - **ImageSprite 측 방어**: `cancelled` 플래그 + `releaseSkImage()`로 대부분 회수되지만, 동일 URL 동시 로드(`existing = pending.get()` 경로)에서는 두 번째 caller의 refCount 증가 시 첫 번째 caller가 이미 release해 use-after-free 가능
 - **수정**: `cacheGeneration` counter 도입. `clearImageCache()` 시 generation 증가, `loadSkImage()` pending 경로와 새 fetch 경로 모두에서 generation 비교 → stale 결과 폐기 + `image?.delete()`. (`ac079862`)
@@ -599,7 +599,7 @@ Pencil 패턴 추가 적용 (신규 분석)
 
 #### I-CR3→M. 타입 불일치 (styleConverter ↔ effects) — ✅ 수정 완료
 
-- **파일**: `canvas/sprites/styleConverter.ts:376-379` — `SkiaEffectItem`
+- **파일**: `apps/builder/src/builder/workspace/canvas/sprites/styleConverter.ts:376-379` — `SkiaEffectItem`
 - **원래 심각도**: CRITICAL → **MEDIUM 하향**
 - **문제**: `SkiaEffectItem`은 `{ type: string; [key: string]: unknown }` 로컬 타입. `SkiaNodeData.effects`가 기대하는 `EffectStyle[]` 유니언과 구조적 불일치
 - **런타임 영향**: 실제 생성되는 객체는 올바른 shape (`{ type: 'opacity', value: 0.5 }` 등)이므로 런타임은 정상 동작. TypeScript 엄밀성 이슈
@@ -607,9 +607,10 @@ Pencil 패턴 추가 적용 (신규 분석)
 
 #### I-H6→M. 프레임당 GC 압력 — ✅ 수정 완료
 
-- **파일**: `canvas/skia/SkiaOverlay.tsx` — `buildSkiaTreeHierarchical()`
+- **파일**: `apps/builder/src/builder/workspace/canvas/skia/SkiaOverlay.tsx` — `buildSkiaTreeHierarchical()`
 - **문제**: 매 프레임 `SkiaNodeData` spread 복사 + 배열 생성. 요소 수 증가 시 Minor GC 빈도 증가
-- **수정**: 모듈 레벨 캐시 변수(`_cachedTree`, `_cachedVersion`, `_cachedCamX/Y/Zoom`) 도입. `registryVersion` + 카메라 상태 비교 → 변경 없으면 이전 트리 재사용. (`2aabab2c`)
+- **수정 (2026-02-02)**: 모듈 레벨 캐시 변수(`_cachedTree`, `_cachedVersion`) 도입. 동일 `registryVersion`이면 트리 재사용. (`2aabab2c`)
+- **추가 개선 (2026-02-05)**: Selection 바운드맵(`buildTreeBoundsMap`)도 `registryVersion` 캐시로 재사용 + Pixi 시각 비활성화는 Camera 루트 `alpha=0` O(1) 처리로 변경.
 
 #### ~~I-M8~~ ❌ 오탐 — Store는 `getState()` 명령형 읽기(렌더 루프 내). React 구독은 `currentPageId` 1건뿐
 #### ~~I-M9~~ ❌ 오탐 — `useAIVisualFeedbackStore.getState()` 명령형 읽기, 리렌더 유발 안 함
@@ -622,26 +623,26 @@ Pencil 패턴 추가 적용 (신규 분석)
 
 #### I-L17. cssColorToAlpha HSLA 미지원 — ✅ 수정 완료
 
-- **파일**: `canvas/sprites/styleConverter.ts:118-133`
+- **파일**: `apps/builder/src/builder/workspace/canvas/sprites/styleConverter.ts:118-133`
 - **문제**: `rgba()` 와 `transparent`만 파싱. `hsla()`, `oklch()`, `#rrggbbaa` 형식의 알파값 추출 불가 → 기본값 1 반환
 - **수정**: `colord` 라이브러리로 교체. `colord(color).toRgb().a`로 모든 CSS 색상 형식의 알파값 추출. (`7e6f4bb1`)
 
 #### I-L18. eventBridge 미사용 코드 — ✅ 수정 완료
 
-- **파일**: `canvas/skia/eventBridge.ts`
+- **파일**: `apps/builder/src/builder/workspace/canvas/skia/eventBridge.ts`
 - **문제**: 파일 전체가 `@deprecated` 표시. 현재 아키텍처(PixiJS z-index:3)에서 미사용
 - **수정**: 파일 삭제 (177줄). 향후 필요 시 git에서 복원 가능. (`7e6f4bb1`)
 
 #### I-L22. updateTextChildren 고정 lineHeight 배수 — ✅ 수정 완료
 
-- **파일**: `canvas/skia/SkiaOverlay.tsx:71` — `updateTextChildren()`
+- **파일**: `apps/builder/src/builder/workspace/canvas/skia/SkiaOverlay.tsx:71` — `updateTextChildren()`
 - **문제**: `lineHeight = fontSize * 1.2` 하드코딩. CSS lineHeight가 다른 값(예: 2.0)일 때 수직 중앙 정렬 오차
 - **수정**: `child.text.lineHeight || fontSize * 1.2` — 실제 lineHeight 값 우선 사용, 없을 때만 fallback. (`7e6f4bb1`)
 
 #### I-M14→L. conic-gradient 미지원 — ⏳ 미수정 (사용처 없음)
 
 - **원래 심각도**: MEDIUM → **LOW 하향**
-- **파일**: `canvas/skia/fills.ts` — `FillStyle` 유니언
+- **파일**: `apps/builder/src/builder/workspace/canvas/skia/fills.ts` — `FillStyle` 유니언
 - **문제**: CSS `conic-gradient`가 `FillStyle`에 없음. `styleConverter`에서 파싱하지 않아 silent fail
 - **수정 방안**: 향후 그라디언트 확장 시 추가. 현재 XStudio에서 conic-gradient 사용처 없으므로 보류
 
@@ -679,3 +680,34 @@ Pencil 패턴 추가 적용 (신규 분석)
 ### 미수정 항목
 
 - **I-M14→L** (LOW) — conic-gradient 기능 갭. 현재 사용처 없어 보류
+
+---
+
+## J. Round 5: Pencil 방식 2-pass 렌더러 완전 교체 (2026-02-05)
+
+> 목적: “스타일 변경 후 팬/줌 해야 반영” + “잔상”류 문제를 구조적으로 제거하고,
+> 줌/팬 인터랙션 중 프레임 드랍/메인 스레드 블로킹을 줄이기 위한 렌더 파이프라인 재정렬.
+
+### 핵심 변경 (구조)
+
+- **Dirty Rect(clipRect) 경로 제거(보류)**: 부분 렌더 좌표계/클리핑 경계 문제로 잔상·미반영 리스크가 커서, 컨텐츠 invalidation은 full rerender로 단순화.
+- **컨텐츠 캐시 + present(blit) + 오버레이 분리**:
+  - contentSurface에 **디자인 컨텐츠만** 렌더 → `contentSnapshot` 캐시
+  - mainSurface는 **present 단계**에서 snapshot blit(카메라 델타는 아핀 변환) + Selection/AI/PageTitle 오버레이를 별도 패스로 덧그리기
+- **camera-only 정책**: 줌/팬 중에는 snapshot 아핀 blit을 우선하고, 모션 종료 후 cleanup(full) 1회 렌더로 품질/가장자리 정리.
+
+### 핵심 변경 (성능/안정성)
+
+- **Pixi 시각 비활성화 O(1)**: 매 프레임 Camera 자식 전체 순회 대신 `Camera.alpha=0`으로 렌더만 비활성화(이벤트/히트테스트는 유지).
+- **Selection 바운드맵 캐시**: `buildTreeBoundsMap(tree)` 결과를 `registryVersion` 기준으로 재사용해 매 프레임 O(n) 순회를 제거.
+
+### 관련 코드(현행 경로)
+
+- `apps/builder/src/builder/workspace/canvas/skia/SkiaRenderer.ts`
+- `apps/builder/src/builder/workspace/canvas/skia/SkiaOverlay.tsx`
+
+### 관련 문서 정합 업데이트(2026-02-05)
+
+- `docs/WASM.md` — Phase 6 “2-pass + present + overlay 분리” 및 camera-only/cleanup 정책 반영
+- `docs/PENCIL_APP_ANALYSIS.md` — 16.10 비교 섹션 최신 상태 반영(트리/바운드맵 캐시, O(1) alpha 등)
+- `docs/PENCIL_VS_XSTUDIO_RENDERING.md` — Dirty Rect 제거 및 2-pass 모델 기준으로 비교표/현황 정정

@@ -72,7 +72,7 @@ Skia 렌더링 파이프라인의 남은 기능 8건을 모두 구현하여 Penc
 - **문서 업데이트**: CHANGELOG, COMPLETED, PENCIL_VS_XSTUDIO, WASM_DOC_IMPACT 반영
 
 **파일 (8개):**
-- `canvas/skia/types.ts`, `fills.ts`, `effects.ts`, `SkiaOverlay.tsx`
+- `apps/builder/src/builder/workspace/canvas/skia/types.ts`, `fills.ts`, `effects.ts`, `SkiaOverlay.tsx`
 - `panels/designKit/DesignKitPanel.tsx`
 - `stores/elements.ts`, `stores/designKitStore.ts`
 - `utils/designKit/builtinKits/basicKit.ts` (신규)
@@ -124,7 +124,7 @@ Rust WASM 기반 캔버스 성능 가속 모듈 빌드 및 활성화.
 
 **Fix:** `content` 프레임에서 dirty rect 부분 렌더링 비활성화 → 전체 재렌더링 (`camera-only`와 동일 비용)
 
-**파일:** `canvas/skia/SkiaRenderer.ts`
+**파일:** `apps/builder/src/builder/workspace/canvas/skia/SkiaRenderer.ts`
 
 **문제 2: display: block ↔ flex 전환 시 (0,0) 플리커**
 
@@ -134,7 +134,7 @@ Rust WASM 기반 캔버스 성능 가속 모듈 빌드 및 활성화.
 - `syncPixiVisibility` (HIGH=25): Camera 자식 `alpha=0` 설정 — Application.render() 전에 실행
 - `renderFrame` (UTILITY=-50): Skia 트리 빌드 + 렌더링 — Application.render() 후에 실행하여 최신 worldTransform 보장
 
-**파일:** `canvas/skia/SkiaOverlay.tsx`
+**파일:** `apps/builder/src/builder/workspace/canvas/skia/SkiaOverlay.tsx`
 
 ---
 

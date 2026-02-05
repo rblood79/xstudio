@@ -259,7 +259,7 @@ packages/
 
 # CanvasKit/Skia 렌더링 (builder 패키지 내 구현)
 apps/builder/src/builder/workspace/canvas/skia/
-    ├── SkiaRenderer.ts          # 메인 렌더링 엔진 (Phase 5: single Surface, Phase 6: dual Surface)
+    ├── SkiaRenderer.ts          # 메인 렌더링 엔진 (Phase 5: single Surface, Phase 6: 2-pass dual Surface + present)
     ├── SkiaOverlay.tsx          # React 컴포넌트 — CanvasKit canvas 관리, 렌더 루프
     ├── nodeRenderers.ts         # 노드 타입별 렌더링 (renderBox, renderText, renderImage)
     ├── useSkiaNode.ts           # React hook — SkiaNodeData 레지스트리 관리
@@ -271,8 +271,8 @@ apps/builder/src/builder/workspace/canvas/skia/
     ├── textMeasure.ts           # 텍스트 측정 유틸리티
     ├── selectionRenderer.ts     # 선택 박스, 트랜스폼 핸들, 라쏘 렌더링
     ├── aiEffects.ts             # AI 생성 이펙트 (파티클/블러/플래시)
-    ├── eventBridge.ts           # DOM 이벤트 → PixiJS 캔버스 브릿지
-    ├── dirtyRectTracker.ts      # Dirty Rectangle 병합 (Phase 6 최적화)
+    ├── eventBridge.ts           # (삭제됨) 과거 DOM 이벤트 브릿지 시도 — 현재 PixiJS EventBoundary로 충분
+    ├── dirtyRectTracker.ts      # (보류/미사용) clipRect 기반 Dirty Rect 부분 렌더링 시도 흔적
     ├── disposable.ts            # 리소스 정리 패턴 (SkiaDisposable)
     ├── createSurface.ts         # GPU Surface 팩토리
     ├── initCanvasKit.ts         # CanvasKit WASM 초기화
@@ -1940,7 +1940,7 @@ export function getSizePreset(
 > 아래는 Spec 패키지 내 렌더러 설계 참조 코드이다.
 
 ```typescript
-// Spec → CanvasKit 매핑 참조 (실제 구현: builder/workspace/canvas/skia/nodeRenderers.ts)
+// Spec → CanvasKit 매핑 참조 (실제 구현: apps/builder/src/builder/workspace/canvas/skia/nodeRenderers.ts)
 
 import type { CanvasKit, Canvas, Paint } from 'canvaskit-wasm';
 import type { ComponentSpec, Shape } from '../types';
@@ -2329,7 +2329,7 @@ export async function generateAllCSS(
 | Primitive 토큰 | `specs/src/primitives/*.ts` | 색상, 간격, 타이포그래피, 둥근모서리 |
 | React 렌더러 | `specs/src/renderers/ReactRenderer.ts` | Spec → React Props |
 | PixiJS 렌더러 | `specs/src/renderers/PixiRenderer.ts` | Spec → 씬 그래프 이벤트 전용 (시각적 렌더링 없음) |
-| **CanvasKit 렌더러** | `builder/workspace/canvas/skia/nodeRenderers.ts` | **Spec → CanvasKit/Skia Surface (메인 시각적 렌더러)** |
+| **CanvasKit 렌더러** | `apps/builder/src/builder/workspace/canvas/skia/nodeRenderers.ts` | **Spec → CanvasKit/Skia Surface (메인 시각적 렌더러)** |
 | CSS 생성기 | `specs/src/renderers/CSSGenerator.ts` | Spec → CSS 파일 (React/Publish 전용) |
 | 빌드 스크립트 | `specs/scripts/*.ts` | CSS 생성, 검증 |
 
@@ -2346,12 +2346,12 @@ export async function generateAllCSS(
 - [x] 빌드 스크립트 작성
 - [ ] 단위 테스트 작성 ⚠️ `tests/` 디렉토리 미생성
 - [x] CanvasKit WASM 초기화 설정 (`initCanvasKit.ts`)
-- [x] CanvasKitRenderer 구현 (`builder/workspace/canvas/skia/nodeRenderers.ts`)
+- [x] CanvasKitRenderer 구현 (`apps/builder/src/builder/workspace/canvas/skia/nodeRenderers.ts`)
 - [x] CanvasKit 폰트 로더 구현 (`fontManager.ts`)
-- [x] SkiaOverlay + 이벤트 브릿지 구현 (`SkiaOverlay.tsx` + `eventBridge.ts`)
+- [x] SkiaOverlay 구현 + PixiJS 이벤트 유지 (`SkiaOverlay.tsx`, EventBoundary 기반)
 - [x] Fill 시스템 구현 — 6종 (`fills.ts`)
 - [x] Effect 파이프라인 구현 (`effects.ts`)
-- [x] Dual Surface + Dirty Rect 최적화 (`SkiaRenderer.ts` + `dirtyRectTracker.ts`)
+- [x] Dual Surface + 2-pass 최적화 (컨텐츠 캐시 + present blit + 오버레이 분리) (`SkiaRenderer.ts`)
 
 ### 3.8 Phase 0 → Phase 1 검증 게이트
 
@@ -4504,9 +4504,10 @@ export function invalidateCache(): void {
 ```
 Frame Classification (SkiaRenderer.ts):
   idle        → 변경 없음, 렌더링 스킵
-  camera-only → 줌/팬만 변경, 캐시 blit만 수행 (<2ms)
-  content     → 요소 변경, dirty rect만 재렌더링 (~8ms)
-  full        → 첫 프레임 또는 리사이즈, 전체 렌더링 (~16ms)
+  present     → 오버레이만 변경, snapshot blit + 오버레이 렌더
+  camera-only → 줌/팬만 변경, snapshot 아핀 blit + 오버레이 렌더 (<2ms)
+  content     → 요소 변경, 컨텐츠 전체 재렌더 + present (~8-16ms)
+  full        → 첫 프레임/리사이즈/cleanup, 컨텐츠 전체 재렌더 + present
 ```
 
 **이중 Surface 구조:**
@@ -4514,36 +4515,26 @@ Frame Classification (SkiaRenderer.ts):
 Main Surface (화면 표시용)
   ↕ 더블 버퍼링
 Offscreen Surface (변경 사항 렌더링)
-  → 변경된 노드만 다시 그리기 (Dirty Rect)
-  → 완료 후 Main Surface에 복사
+  → 디자인 컨텐츠 전체 렌더 → snapshot 캐시
+  → present 단계에서 Main Surface로 blit + 오버레이 별도 렌더
 ```
 
 | 전략 | 설명 | CanvasKit API | 구현 상태 |
 |------|------|---------------|----------|
 | 이중 Surface | 렌더링 중 화면 깜빡임 방지 | `CanvasKit.MakeSurface()` × 2 | ✅ SkiaRenderer.ts |
-| Dirty Rect | 변경된 영역만 재렌더링 | `canvas.clipRect(dirtyRect)` + `canvas.drawImage()` | ✅ SkiaRenderer.ts + dirtyRectTracker.ts |
+| 2-pass present | 컨텐츠 캐시(snapshot) + 오버레이 분리 | `makeImageSnapshot()` + `drawImage()` | ✅ SkiaRenderer.ts |
 | Paint 재사용 | 동일 스타일 Paint 객체 캐싱 | `new CanvasKit.Paint()` + Map 캐시 | ⚠️ 미구현 (인라인 생성) |
 | Font 캐시 | 폰트 로드 결과 캐싱 | `CanvasKit.Typeface` + Map 캐시 | ✅ fontManager.ts |
 | Paragraph 캐시 | 텍스트 측정 결과 캐싱 | `ParagraphBuilder` 결과 Map 캐시 | ⚠️ 미구현 (매 프레임 재생성) |
 
 ```typescript
-// CanvasKit Dirty Rect 최적화 예시
-function renderDirtyRegion(
-  canvas: Canvas,
-  dirtyRect: Float32Array,  // [x, y, width, height]
-  registry: Map<string, SkiaNodeData>
-): void {
-  canvas.save();
-  canvas.clipRect(dirtyRect, CanvasKit.ClipOp.Intersect, true);
-
-  // dirtyRect와 겹치는 노드만 렌더링
-  for (const [id, node] of registry) {
-    if (rectsOverlap(node, dirtyRect)) {
-      renderNode(canvas, node);
-    }
-  }
-
-  canvas.restore();
+// CanvasKit 2-pass present 개념 예시
+function presentFrame(canvas: Canvas, snapshot: Image): void {
+  // 1) 컨텐츠 스냅샷 blit (camera-only는 아핀 변환 포함)
+  canvas.drawImage(snapshot, 0, 0);
+  // 2) 오버레이(Selection/AI 등) 별도 렌더
+  renderOverlay(canvas);
+  // 3) flush
 }
 ```
 
@@ -4566,12 +4557,12 @@ export type { ComponentSpec, Shape, TokenRef } from './types';
 **CanvasKit/Skia 렌더링 인프라 (완료):**
 - [x] CanvasKit WASM 초기화 (`initCanvasKit.ts`)
 - [x] SkiaRenderer 구현 — Phase 5 single Surface (`SkiaRenderer.ts`)
-- [x] SkiaRenderer 구현 — Phase 6 dual Surface + dirty rect (`SkiaRenderer.ts` + `dirtyRectTracker.ts`)
+- [x] SkiaRenderer 구현 — Phase 6 2-pass dual Surface + present + 오버레이 분리 (`SkiaRenderer.ts`)
 - [x] nodeRenderers 구현 — renderBox, renderText, renderImage (`nodeRenderers.ts`)
 - [x] Fill 시스템 — 6종 (Color, Linear/Radial/Angular/MeshGradient, Image) (`fills.ts`)
 - [x] Effect 파이프라인 — saveLayer 기반 (Opacity, Blur, DropShadow) (`effects.ts`)
 - [x] Font 로딩/캐싱 (`fontManager.ts`)
-- [x] SkiaOverlay + PixiJS 이벤트 브릿지 (`SkiaOverlay.tsx` + `eventBridge.ts`)
+- [x] SkiaOverlay + PixiJS 이벤트 유지 (EventBoundary 기반, 브릿지 불필요) (`SkiaOverlay.tsx`)
 
 **테스트 및 최적화 (진행 중):**
 - [ ] Visual Regression Test 설정 (Playwright + CanvasKit 캡처)

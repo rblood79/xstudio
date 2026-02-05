@@ -327,7 +327,7 @@ grep -n "isActive" src/builder/panels/*/
 grep -rn "@tanstack/react-query" src/
 
 # 3. WebGL 구조 검증
-ls -la src/builder/workspace/canvas/
+ls -la apps/builder/src/builder/workspace/canvas/
 
 # 4. CI 스크립트 검증
 ls -la scripts/*.ts

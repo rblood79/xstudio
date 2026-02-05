@@ -31,9 +31,9 @@ renderNode() → AI effects → ★renderPageTitle()★ → Selection overlay �
 
 | 파일 | 변경 |
 |------|------|
-| `workspace/canvas/skia/selectionRenderer.ts` | `renderPageTitle()` 함수 + 상수 추가 |
-| `workspace/canvas/skia/SkiaOverlay.tsx` | props 확장, 타이틀 변경 감지, renderPageTitle 호출 |
-| `workspace/canvas/BuilderCanvas.tsx` | SkiaOverlayLazy에 pageWidth/pageHeight 전달 |
+| `apps/builder/src/builder/workspace/canvas/skia/selectionRenderer.ts` | `renderPageTitle()` 함수 + 상수 추가 |
+| `apps/builder/src/builder/workspace/canvas/skia/SkiaOverlay.tsx` | props 확장, 타이틀 변경 감지, renderPageTitle 호출 |
+| `apps/builder/src/builder/workspace/canvas/BuilderCanvas.tsx` | SkiaOverlayLazy에 pageWidth/pageHeight 전달 |
 
 ### Fixed - 스타일 패널 프로퍼티 변경 시 저장 안 됨 / 플리커 / 실시간 프리뷰 미반영 (2026-02-04)
 
@@ -258,7 +258,31 @@ const screenRect = {
 - `apps/builder/src/.../skia/useSkiaNode.ts` — `nodeToDirtyRect()` 기본 expand 2px 추가
 - `apps/builder/src/.../skia/SkiaRenderer.ts` — screenRect 계산 시 2px 패딩 추가
 
+> **업데이트 (2026-02-05):** 이후 clipRect 기반 Dirty Rect 경로는 “팬/줌/스냅샷/padding” 조합에서
+> 잔상·미반영 리스크가 커서 **2-pass 컨텐츠 캐시 + present(blit) + 오버레이 분리 모델로 대체**되었다.
+> 따라서 위 수정은 “당시 시점의 Hotfix 기록”으로만 의미가 있으며, 현재 렌더 경로에는 적용되지 않는다.
+
 ---
+
+### Fixed - Pencil 2-pass 렌더러로 Dirty Rect 제거 및 줌/팬 성능 핫픽스 (2026-02-05)
+
+#### 개요
+줌/팬 중 스타일/프로퍼티 반영 지연(팬해야 반영)과 잔상 문제를 구조적으로 제거하고,
+메인 스레드 블로킹(긴 rAF 핸들러) 현상을 줄이기 위한 렌더 파이프라인 재정렬.
+
+#### 변경 내용
+- Dirty Rect(clipRect) 부분 렌더링 경로 제거(보류) → 컨텐츠 invalidation은 full rerender로 단순화
+- Pencil 방식 2-pass:
+  - contentSurface에 디자인 컨텐츠 렌더 → `contentSnapshot` 캐시
+  - mainSurface는 present 단계에서 snapshot blit(카메라 델타 아핀 변환) + Selection/AI/PageTitle 오버레이 별도 패스
+- 줌/팬 인터랙션 중에는 camera-only(스냅샷 아핀 blit) 우선 + 모션 종료 후 cleanup(full) 1회 재렌더
+- Pixi 시각 비활성화 O(1): Camera 자식 전체 순회 대신 `Camera.alpha=0`
+- Selection 바운드맵 `registryVersion` 캐시로 매 프레임 O(n) 순회 제거
+
+#### 변경된 파일
+- `apps/builder/src/builder/workspace/canvas/skia/SkiaRenderer.ts`
+- `apps/builder/src/builder/workspace/canvas/skia/SkiaOverlay.tsx`
+- `docs/WASM.md`, `docs/PENCIL_APP_ANALYSIS.md`, `docs/PENCIL_VS_XSTUDIO_RENDERING.md`
 
 ### Fixed - 요소 삭제 후 화면에 남아있는 문제 수정 (2026-02-03)
 
@@ -421,8 +445,8 @@ const effectiveBorderRadius = hasBorderRadiusSet ? br : (isUIComponent && !hasBg
 - `aiEffects.ts` `buildNodeBoundsMap`: 계층 트리에서 부모 오프셋 누적으로 절대 좌표 복원
 
 #### 변경된 파일
-- `canvas/skia/SkiaOverlay.tsx` — 계층 트리 구성, Selection 좌표 통합
-- `canvas/skia/aiEffects.ts` — AI 이펙트 좌표 누적 수정
+- `apps/builder/src/builder/workspace/canvas/skia/SkiaOverlay.tsx` — 계층 트리 구성, Selection 좌표 통합
+- `apps/builder/src/builder/workspace/canvas/skia/aiEffects.ts` — AI 이펙트 좌표 누적 수정
 
 ---
 
@@ -463,10 +487,10 @@ Skia 렌더링 파이프라인의 남은 기능 8건을 모두 구현하여 Penc
    - `loadBuiltinKit()`: ID로 내장 킷 조회 + loadedKit 설정
 
 #### 변경된 파일
-- `canvas/skia/types.ts` — MeshGradientFill 필드, LayerBlurEffect 인터페이스
-- `canvas/skia/fills.ts` — MeshGradient 셰이더 구현
-- `canvas/skia/effects.ts` — LayerBlur 이펙트 구현
-- `canvas/skia/SkiaOverlay.tsx` — Phase 6 파라미터 전달
+- `apps/builder/src/builder/workspace/canvas/skia/types.ts` — MeshGradientFill 필드, LayerBlurEffect 인터페이스
+- `apps/builder/src/builder/workspace/canvas/skia/fills.ts` — MeshGradient 셰이더 구현
+- `apps/builder/src/builder/workspace/canvas/skia/effects.ts` — LayerBlur 이펙트 구현
+- `apps/builder/src/builder/workspace/canvas/skia/SkiaOverlay.tsx` — Phase 6 파라미터 전달
 - `panels/designKit/DesignKitPanel.tsx` — KitComponentList 통합, 내장 킷 로드
 - `stores/elements.ts` — createInstance 액션 추가
 - `stores/designKitStore.ts` — loadBuiltinKit, 시각 피드백 연동
@@ -489,7 +513,7 @@ Skia 렌더링 파이프라인의 남은 기능 8건을 모두 구현하여 Penc
 - 우선순위: `inline style.backgroundColor > VARIANT_BG_COLORS[variant] > 기본값`
 
 #### 변경된 파일
-- `canvas/sprites/ElementSprite.tsx` — VARIANT_BG_COLORS, VARIANT_BG_ALPHA, VARIANT_BORDER_COLORS 추가
+- `apps/builder/src/builder/workspace/canvas/sprites/ElementSprite.tsx` — VARIANT_BG_COLORS, VARIANT_BG_ALPHA, VARIANT_BORDER_COLORS 추가
 - `docs/COMPONENT_SPEC_ARCHITECTURE.md` — §4.5 variant 배경/테두리 색상 테이블 추가
 - `docs/reference/components/PIXI_WEBGL.md` — Skia 폴백 variant 색상 매핑 섹션 추가
 - `docs/WASM.md` — UI 컴포넌트 variant 배경/테두리 색상 노트 추가
@@ -607,7 +631,7 @@ Pencil 앱과 동일한 CanvasKit/Skia 렌더링 아키텍처로의 전환 완�
 #### 체크 결과: 95% 완료 (35/37 항목)
 
 **✅ 완전 구현:**
-- 아키텍처: CanvasKit 메인 렌더러 + PixiJS 이벤트 전용 + 이중 Surface + Dirty Rect + 프레임 분류
+- 아키텍처: CanvasKit 메인 렌더러 + PixiJS 이벤트 전용 + 이중 Surface + 2-pass(컨텐츠 캐시 + present blit + 오버레이 분리) + 프레임 분류
 - 노드 렌더링: Box/Text/Image/Container + AABB 컬링 + ParagraphBuilder 텍스트
 - Fill 5/6종, 이펙트 4/5종, 블렌드 모드 18종 전체
 - Selection 오버레이 + AI 시각 피드백 + Export (PNG/JPEG/WEBP)
@@ -640,7 +664,7 @@ Selection 오버레이(선택 박스, Transform 핸들, 라쏘)를 PixiJS 듀얼
 #### 수정 내용
 
 **1. 신규 파일**
-- `canvas/skia/selectionRenderer.ts` — Skia Selection 렌더 함수 3개 (`renderSelectionBox`, `renderTransformHandles`, `renderLasso`), SkiaDisposable 패턴
+- `apps/builder/src/builder/workspace/canvas/skia/selectionRenderer.ts` — Skia Selection 렌더 함수 3개 (`renderSelectionBox`, `renderTransformHandles`, `renderLasso`), SkiaDisposable 패턴
 
 **2. SkiaOverlay.tsx**
 - renderFrame에 Selection 렌더링 Phase 4-6 추가 (디자인 노드 → AI 이펙트 → Selection 순서)
@@ -661,8 +685,8 @@ Selection 오버레이(선택 박스, Transform 핸들, 라쏘)를 PixiJS 듀얼
 - `renderable=false` 대신 `alpha=0` 사용으로 시각적 숨김과 이벤트 처리를 동시에 유지
 
 #### 변경된 파일
-- `canvas/skia/selectionRenderer.ts` — 신규 생성
-- `canvas/skia/SkiaOverlay.tsx` — Selection 렌더링 통합 + alpha=0 전환
+- `apps/builder/src/builder/workspace/canvas/skia/selectionRenderer.ts` — 신규 생성
+- `apps/builder/src/builder/workspace/canvas/skia/SkiaOverlay.tsx` — Selection 렌더링 통합 + alpha=0 전환
 - `canvas/BuilderCanvas.tsx` — dragStateRef 전달
 - `canvas/selection/SelectionBox.tsx` — Skia 모드 시각 비활성화
 - `canvas/selection/TransformHandle.tsx` — Skia 모드 시각 비활성화
@@ -1255,7 +1279,7 @@ const ModifiedSectionsWrapper = memo(function ModifiedSectionsWrapper() { ... })
 
 **1. useViewportCulling 훅 생성**
 ```typescript
-// src/builder/workspace/canvas/hooks/useViewportCulling.ts
+// apps/builder/src/builder/workspace/canvas/hooks/useViewportCulling.ts
 export function useViewportCulling({
   elements,
   layoutResult,
@@ -1272,7 +1296,7 @@ export function useViewportCulling({
 
 **2. ElementsLayer에 적용**
 ```typescript
-// src/builder/workspace/canvas/BuilderCanvas.tsx
+// apps/builder/src/builder/workspace/canvas/BuilderCanvas.tsx
 const { visibleElements } = useViewportCulling({
   elements: sortedElements,
   layoutResult,
@@ -1415,11 +1439,11 @@ if (isTextFieldElement(element) && (!hasExplicitWidth || !hasExplicitHeight)) {
 ```
 
 #### 수정된 파일
-- `src/builder/workspace/canvas/pixiSetup.ts` - 클래스 이름 등록 + 모듈 레벨 extend()
-- `src/builder/workspace/canvas/ui/PixiCheckboxGroup.tsx` - orientation 지원
-- `src/builder/workspace/canvas/ui/PixiRadio.tsx` - orientation 지원
-- `src/builder/workspace/canvas/ui/PixiTextField.tsx` - pixi 접두사 컴포넌트 + 위치 수정
-- `src/builder/workspace/canvas/layout/LayoutEngine.ts` - orientation 동기화 + TextField 측정
+- `apps/builder/src/builder/workspace/canvas/pixiSetup.ts` - 클래스 이름 등록 + 모듈 레벨 extend()
+- `apps/builder/src/builder/workspace/canvas/ui/PixiCheckboxGroup.tsx` - orientation 지원
+- `apps/builder/src/builder/workspace/canvas/ui/PixiRadio.tsx` - orientation 지원
+- `apps/builder/src/builder/workspace/canvas/ui/PixiTextField.tsx` - pixi 접두사 컴포넌트 + 위치 수정
+- `apps/builder/src/builder/workspace/canvas/layout/LayoutEngine.ts` - orientation 동기화 + TextField 측정
 
 ---
 
@@ -1504,13 +1528,13 @@ const selectedFromChildren = childCheckboxes
 3. options 배열의 `checked` 필드
 
 **신규/수정 파일:**
-- `src/builder/workspace/canvas/ui/PixiCheckboxGroup.tsx` - 신규 생성
-- `src/builder/workspace/canvas/ui/PixiCheckboxItem.tsx` - 신규 생성
-- `src/builder/workspace/canvas/ui/PixiRadio.tsx` - selectedValue 로직 수정
-- `src/builder/workspace/canvas/ui/index.ts` - export 추가
-- `src/builder/workspace/canvas/sprites/ElementSprite.tsx` - 분기 처리 추가
-- `src/builder/workspace/canvas/layout/LayoutEngine.ts` - 크기/위치 계산 함수 추가
-- `src/builder/workspace/canvas/BuilderCanvas.tsx` - 필터 로직 수정
+- `apps/builder/src/builder/workspace/canvas/ui/PixiCheckboxGroup.tsx` - 신규 생성
+- `apps/builder/src/builder/workspace/canvas/ui/PixiCheckboxItem.tsx` - 신규 생성
+- `apps/builder/src/builder/workspace/canvas/ui/PixiRadio.tsx` - selectedValue 로직 수정
+- `apps/builder/src/builder/workspace/canvas/ui/index.ts` - export 추가
+- `apps/builder/src/builder/workspace/canvas/sprites/ElementSprite.tsx` - 분기 처리 추가
+- `apps/builder/src/builder/workspace/canvas/layout/LayoutEngine.ts` - 크기/위치 계산 함수 추가
+- `apps/builder/src/builder/workspace/canvas/BuilderCanvas.tsx` - 필터 로직 수정
 
 ---
 
@@ -1547,8 +1571,8 @@ const selectedFromChildren = childCheckboxes
 - `getOutlineVariantColor()` in `cssVariableReader.ts`
 
 **수정된 파일:**
-- `src/builder/workspace/canvas/BuilderCanvas.tsx` - CanvasBounds 컴포넌트
-- `src/builder/workspace/canvas/utils/cssVariableReader.ts` - 색상 함수 추가
+- `apps/builder/src/builder/workspace/canvas/BuilderCanvas.tsx` - CanvasBounds 컴포넌트
+- `apps/builder/src/builder/workspace/canvas/utils/cssVariableReader.ts` - 색상 함수 추가
 
 ---
 
@@ -1623,11 +1647,11 @@ const adjustedSize = HANDLE_SIZE / zoom;  // HANDLE_SIZE = 6px
 | 페이지 경계 | 1px | 1px | 1px |
 
 **수정된 파일:**
-- `src/builder/workspace/canvas/selection/SelectionLayer.tsx` - zoom prop 추가
-- `src/builder/workspace/canvas/selection/SelectionBox.tsx` - zoom prop, strokeWidth 계산
-- `src/builder/workspace/canvas/selection/TransformHandle.tsx` - zoom prop, adjustedSize 계산
-- `src/builder/workspace/canvas/selection/LassoSelection.tsx` - zoom prop, strokeWidth 계산
-- `src/builder/workspace/canvas/BuilderCanvas.tsx` - CanvasBounds, SelectionLayer에 zoom 전달
+- `apps/builder/src/builder/workspace/canvas/selection/SelectionLayer.tsx` - zoom prop 추가
+- `apps/builder/src/builder/workspace/canvas/selection/SelectionBox.tsx` - zoom prop, strokeWidth 계산
+- `apps/builder/src/builder/workspace/canvas/selection/TransformHandle.tsx` - zoom prop, adjustedSize 계산
+- `apps/builder/src/builder/workspace/canvas/selection/LassoSelection.tsx` - zoom prop, strokeWidth 계산
+- `apps/builder/src/builder/workspace/canvas/BuilderCanvas.tsx` - CanvasBounds, SelectionLayer에 zoom 전달
 
 ---
 
@@ -1658,7 +1682,7 @@ g.stroke();
 - 라벨 텍스트는 pixiText 사용
 
 **수정된 파일:**
-- `src/builder/workspace/canvas/ui/PixiCheckbox.tsx` - 전체 리팩토링
+- `apps/builder/src/builder/workspace/canvas/ui/PixiCheckbox.tsx` - 전체 리팩토링
 
 ---
 
@@ -1689,7 +1713,7 @@ const DEFAULT_OPTIONS: RadioOption[] = [
 - 기본 옵션으로 항상 무언가 표시됨
 
 **수정된 파일:**
-- `src/builder/workspace/canvas/ui/PixiRadio.tsx` - 전체 리팩토링
+- `apps/builder/src/builder/workspace/canvas/ui/PixiRadio.tsx` - 전체 리팩토링
 
 ---
 
@@ -1757,12 +1781,12 @@ textView.scale.set(textScale); // 1 / multiplier
 | BitmapText + SDF | 미적용 (필요시 추가 가능) |
 
 **신규 파일:**
-- `src/builder/workspace/canvas/hooks/useCrispText.ts`
+- `apps/builder/src/builder/workspace/canvas/hooks/useCrispText.ts`
 
 **수정된 파일:**
-- `src/builder/workspace/canvas/BuilderCanvas.tsx` - resolution, roundPixels 설정
-- `src/builder/workspace/canvas/sprites/TextSprite.tsx` - 동적 폰트 크기
-- `src/builder/workspace/canvas/ui/PixiButton.tsx` - 동적 폰트 크기
+- `apps/builder/src/builder/workspace/canvas/BuilderCanvas.tsx` - resolution, roundPixels 설정
+- `apps/builder/src/builder/workspace/canvas/sprites/TextSprite.tsx` - 동적 폰트 크기
+- `apps/builder/src/builder/workspace/canvas/ui/PixiButton.tsx` - 동적 폰트 크기
 
 ---
 
@@ -1883,11 +1907,11 @@ function mixWithWhite(color: number, percent: number): number {
 ```
 
 **신규 파일:**
-- `src/builder/workspace/canvas/utils/cssVariableReader.ts`
-- `src/builder/workspace/canvas/hooks/useThemeColors.ts`
+- `apps/builder/src/builder/workspace/canvas/utils/cssVariableReader.ts`
+- `apps/builder/src/builder/workspace/canvas/hooks/useThemeColors.ts`
 
 **수정된 파일:**
-- `src/builder/workspace/canvas/ui/PixiButton.tsx`
+- `apps/builder/src/builder/workspace/canvas/ui/PixiButton.tsx`
 
 ---
 
@@ -1964,7 +1988,7 @@ function measureTextSize(element, style) {
 | `size="lg"` | 12px 32px | 일관성 (semantic) |
 
 **수정된 파일:**
-- `src/builder/workspace/canvas/layout/LayoutEngine.ts` - Button size prop 지원
+- `apps/builder/src/builder/workspace/canvas/layout/LayoutEngine.ts` - Button size prop 지원
 
 ---
 
@@ -2052,7 +2076,7 @@ Canvas에서 DOM 레이아웃 방식 재현:
 - **Flexbox Layout**: flexDirection, justifyContent, alignItems, gap
 - 안전 기능: MAX_LAYOUT_DEPTH, 순환 참조 감지
 
-**파일:** `src/builder/workspace/canvas/layout/layoutCalculator.ts`
+**파일:** `apps/builder/src/builder/workspace/canvas/layout/layoutCalculator.ts`
 
 #### B3.2 Canvas Resize Handler (Figma-style)
 패널 열기/닫기 시 캔버스 깜빡임 문제 해결:
@@ -2071,14 +2095,14 @@ canvas.style.transform = `scale(${scaleX}, ${scaleY})`;
 app.renderer.resize(width, height);
 ```
 
-**파일:** `src/builder/workspace/canvas/BuilderCanvas.tsx:77-146`
+**파일:** `apps/builder/src/builder/workspace/canvas/BuilderCanvas.tsx:77-146`
 
 #### B3.3 Selection System 개선
 - SelectionBox: 컨테이너 요소도 테두리 표시
 - Transform 핸들: 단일 선택 시 항상 표시 (컨테이너 포함)
 - Move 영역: 컨테이너는 비활성화 (자식 클릭 허용)
 
-**파일:** `src/builder/workspace/canvas/selection/SelectionLayer.tsx`
+**파일:** `apps/builder/src/builder/workspace/canvas/selection/SelectionLayer.tsx`
 
 ---
 
@@ -2109,7 +2133,7 @@ export function Panel({ isActive }: PanelProps) {
 #### Track B: WebGL Builder ✅
 
 **B1. WebGL Canvas 구축**
-- 메인 캔버스: `src/builder/workspace/canvas/BuilderCanvas.tsx`
+- 메인 캔버스: `apps/builder/src/builder/workspace/canvas/BuilderCanvas.tsx`
 - Sprite 시스템: `sprites/` (BoxSprite, TextSprite, ImageSprite)
 - Selection 시스템: `selection/` (SelectionBox, TransformHandle, LassoSelection)
 - Grid/Zoom/Pan: `grid/` (GridLayer, useZoomPan)

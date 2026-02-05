@@ -628,8 +628,8 @@ panels/events/editors/BlockActionEditor
 ### Phase 2: Import 경로 업데이트
 - [x] `constants/timing`을 import하는 모든 파일 검색
 - [x] import 경로를 `utils/timing`으로 변경
-  - `src/builder/workspace/canvas/selection/SelectionLayer.tsx`
-  - `src/builder/workspace/canvas/selection/useDragInteraction.ts`
+  - `apps/builder/src/builder/workspace/canvas/selection/SelectionLayer.tsx`
+  - `apps/builder/src/builder/workspace/canvas/selection/useDragInteraction.ts`
 
 ### Phase 3: 정리
 - [x] `src/builder/constants/` 폴더 삭제

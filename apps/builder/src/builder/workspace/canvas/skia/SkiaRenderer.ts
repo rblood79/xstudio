@@ -133,7 +133,10 @@ export class SkiaRenderer {
       return 'content';
     }
     if (cameraChanged) {
-      return this.canBlitWithCameraTransform(camera) ? 'camera-only' : 'content';
+      // 팬/줌 중에는 content 재렌더링을 피하고 snapshot에 아핀 변환만 적용한다.
+      // zoom-out 등으로 snapshot이 화면을 완전히 덮지 못해도, cleanup render(200ms)로
+      // 모션 종료 후 1회 전체 재렌더링하여 품질/가장자리를 정리한다. (Pencil 모델)
+      return this.contentSnapshot ? 'camera-only' : 'content';
     }
     if (overlayChanged) {
       return 'present';
@@ -359,7 +362,11 @@ export class SkiaRenderer {
         break;
 
       case 'camera-only':
-        this.scheduleCleanupRender();
+        // camera-only 중 snapshot이 화면을 완전히 덮지 못하거나(zoom-out/큰 pan),
+        // zoom mismatch로 선명도 저하가 생기면 모션 종료 후 1회 전체 재렌더링한다.
+        if (!this.canBlitWithCameraTransform(camera) || camera.zoom !== this.snapshotCamera.zoom) {
+          this.scheduleCleanupRender();
+        }
         this.present(cullingBounds, camera);
         break;
 

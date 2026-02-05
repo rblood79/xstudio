@@ -88,7 +88,7 @@ xstudio/
 | 항목 | 구현 위치 |
 |------|----------|
 | **B0 전제조건** | `pnpm-workspace.yaml`, `featureFlags.ts`, `perf-benchmark.ts` |
-| **B1 WebGL Canvas** | `src/builder/workspace/canvas/` (BuilderCanvas, sprites/, selection/, grid/) |
+| **B1 WebGL Canvas** | `apps/builder/src/builder/workspace/canvas/` (BuilderCanvas, sprites/, selection/, grid/) |
 | **B2 Publish App** | `packages/shared/`, `packages/publish/` |
 
 ### Track C: 검증 및 CI ✅
@@ -140,7 +140,7 @@ xstudio/
 
 **Viewport Culling 구현**:
 ```typescript
-// src/builder/workspace/canvas/hooks/useViewportCulling.ts
+// apps/builder/src/builder/workspace/canvas/hooks/useViewportCulling.ts
 const { visibleElements } = useViewportCulling({
   elements: sortedElements,
   layoutResult,

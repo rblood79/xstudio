@@ -952,7 +952,7 @@ Hand 도구 + 드래그      ──►  camera.translate()     ──►  dirty 
            화면에 변환 적용된 렌더링 (GPU accelerated)
 ```
 
-### 16.10 XStudio 대응 구현 비교 (2026-02-04)
+### 16.10 XStudio 대응 구현 비교 (2026-02-05)
 
 Pencil의 Pan/Zoom 아키텍처를 분석하여 XStudio에 적용한 최적화:
 
@@ -964,11 +964,11 @@ Pencil의 Pan/Zoom 아키텍처를 분석하여 XStudio에 적용한 최적화:
 | **카메라 → GPU** | `canvas.concat(worldTransform.toArray())` | `canvas.translate(cameraX, cameraY); canvas.scale(cameraZoom, cameraZoom)` |
 | **컨텐츠 캐싱** | `contentNeedsRedraw` flag, 오프스크린 surface snapshot | `SkiaRenderer.contentSurface` + `contentSnapshot` (컨텐츠 캐시) |
 | **오버레이 분리** | 컨텐츠/오버레이 분리 렌더 | mainSurface에 Selection/AI/PageTitle만 별도 패스로 덧그리기 (present) |
-| **camera-only 프레임** | `contentNeedsRedraw === false` → 캐시 blit만 수행 (< 1ms) | padding(기본 512px) 포함 스냅샷 + `blitWithCameraTransform()` 아핀 변환 블리팅 (canBlit 가드) |
+| **camera-only 프레임** | `contentNeedsRedraw === false` → 캐시 blit만 수행 (< 1ms) | padding(기본 512px) 포함 스냅샷 + `blitWithCameraTransform()` 아핀 변환 블리팅. `canBlitWithCameraTransform()`은 “cleanup(full) 재렌더 필요 여부” 판단에 사용 |
 | **줌 시 보간** | `drawImageCubic(snapshot, 0.3, 0.3)` — 큐빅 보간 | `canvas.scale(scaleRatio)` + `drawImage(snapshot)` |
 | **cleanup render** | 줌 변경 시 `invalidateContent()` → 다음 프레임 전체 재렌더링 | `needsCleanupRender` flag → 카메라 정지 후 1회 전체 렌더링 |
 
-#### Pencil 대비 XStudio에서 발견·수정된 병목 5가지
+#### Pencil 대비 XStudio에서 발견·수정된 병목 7가지
 
 | # | 병목 | Pencil 방식 | XStudio 수정 |
 |---|------|------------|-------------|
@@ -976,7 +976,9 @@ Pencil의 Pan/Zoom 아키텍처를 분석하여 XStudio에 적용한 최적화:
 | 2 | **드래그 스로틀** | `requestFrame()` 기반 (디스플레이 주사율 동기화) | `useDragInteraction.ts`: 16ms 고정 스로틀 제거, RAF 동기화 |
 | 3 | **해상도 변동** | 고정 DPI (인터랙션 무관) | `pixiSetup.ts`: 인터랙션 중 해상도 하향 비활성화 |
 | 4 | **camera-only GPU** | `contentNeedsRedraw === false` → blit만 | `SkiaRenderer.ts`: padding 포함 스냅샷 + `blitWithCameraTransform()` + `present()` |
-| 5 | **트리 캐시** | 캐시 blit이므로 트리 순회 불필요 | `SkiaOverlay.tsx`: `buildSkiaTreeHierarchical` 캐시에서 카메라 비교 제거 (registryVersion만 비교) |
+| 5 | **트리/바운드맵 캐시** | 캐시 blit이므로 트리 순회 불필요 | `SkiaOverlay.tsx`: `buildSkiaTreeHierarchical` + `buildTreeBoundsMap`을 registryVersion 캐시로 재사용 |
+| 6 | **Pixi 시각 비활성화 O(N)** | (해당 없음) | Camera 자식 전체 순회 대신 `Camera.alpha=0`으로 O(1) 처리 (이벤트 유지) |
+| 7 | **줌/팬 중 content 재렌더 폭증** | camera-only는 항상 캐시 blit | zoom-out 등으로 스냅샷이 화면을 완전히 덮지 못해도 인터랙션 중에는 camera-only 유지 + 정지 후 cleanup(full) 1회 재렌더 |
 
 #### camera-only 프레임 비용 비교
 
@@ -996,6 +998,7 @@ XStudio (수정 전):
 
 XStudio (수정 후):
   buildSkiaTreeHierarchical (cache HIT)                ~0ms    ← registryVersion만 비교
+  buildTreeBoundsMap (cache HIT)                       ~0ms
   contentSnapshot blit (아핀 변환, padding 포함)          ~1ms
   overlay pass (Selection/AI/PageTitle)                ~0-1ms
   합계: ~1-2ms

@@ -193,7 +193,7 @@ function BuilderCanvas() {
   <aside class="sidebar" />           <!-- packages/builder/sidebar/ -->
 
   <main class="workspace">            <!-- packages/builder/workspace/ -->
-    <div class="canvas" />            <!-- packages/builder/workspace/canvas/ (WebGL) -->
+    <div class="canvas" />            <!-- apps/builder/src/builder/workspace/canvas/ (WebGL) -->
     <div class="overlay" />           <!-- packages/builder/workspace/overlay/ (DOM) -->
   </main>
 
@@ -397,7 +397,7 @@ export function deserializeScene(scene: SceneElement[]): Element[] {
 ### 3.5 WebGL Canvas 컴포넌트 구조
 
 ```typescript
-// packages/builder/workspace/canvas/BuilderCanvas.tsx
+// apps/builder/src/builder/workspace/canvas/BuilderCanvas.tsx
 import { useCanvasSyncStore } from '../../stores/canvasSync';
 import { Application, Container } from '@pixi/react';
 import { useStore } from '../../stores';
@@ -445,7 +445,7 @@ export function BuilderCanvas() {
 ### 3.6 Element Sprite 렌더링 전략
 
 ```typescript
-// packages/builder/workspace/canvas/sprites/ElementSprite.tsx
+// apps/builder/src/builder/workspace/canvas/sprites/ElementSprite.tsx
 import { Container, Text } from '@pixi/react';
 import { useMemo } from 'react';
 
@@ -721,7 +721,7 @@ export function PageRenderer({ page, elements }) {
 - [ ] React 19로 업그레이드 (현재 버전 확인 필요)
 - [ ] @pixi/react v8 설치 및 설정
 - [ ] `packages/builder/workspace/` 디렉토리 구조 생성
-- [ ] `packages/builder/workspace/canvas/BuilderCanvas.tsx` 생성
+- [ ] `apps/builder/src/builder/workspace/canvas/BuilderCanvas.tsx` 생성
 - [ ] `packages/builder/workspace/Workspace.tsx` 컨테이너 생성
 - [ ] 기존 BuilderCore에 Workspace 마운트
 - [ ] DevTools 연동 (PixiJS DevTools 확장)
@@ -729,7 +729,7 @@ export function PageRenderer({ page, elements }) {
 - [ ] `canvasSync.ts` 스토어 생성 (renderVersion 동기화)
 
 #### Phase 10.2: ElementSprite 시스템 (16hr)
-- [ ] `packages/builder/workspace/canvas/sprites/` 디렉토리 생성
+- [ ] `apps/builder/src/builder/workspace/canvas/sprites/` 디렉토리 생성
 - [ ] BaseSprite 추상 클래스 설계
 - [ ] BoxSprite (Box, Flex, Grid) 구현
 - [ ] TextSprite (Text, Heading, Label) 구현
@@ -739,7 +739,7 @@ export function PageRenderer({ page, elements }) {
 - [ ] Style → PixiJS 속성 변환 유틸리티
 
 #### Phase 10.3: Selection + Transform (12hr)
-- [ ] `packages/builder/workspace/canvas/selection/` 디렉토리 생성
+- [ ] `apps/builder/src/builder/workspace/canvas/selection/` 디렉토리 생성
 - [ ] SelectionOverlay 컴포넌트
 - [ ] 다중 선택 박스 (Bounding Box)
 - [ ] TransformHandles (8방향 + 회전)
@@ -748,7 +748,7 @@ export function PageRenderer({ page, elements }) {
 - [ ] Zustand selection store 연동
 
 #### Phase 10.4: Zoom/Pan + Grid (8hr)
-- [ ] `packages/builder/workspace/canvas/grid/` 디렉토리 생성
+- [ ] `apps/builder/src/builder/workspace/canvas/grid/` 디렉토리 생성
 - [ ] Camera/Viewport 시스템
 - [ ] 마우스 휠 줌
 - [ ] 스페이스바 + 드래그 팬
@@ -863,7 +863,7 @@ P2 (Medium):
 GPU 리소스 부족 시 브라우저가 WebGL 컨텍스트를 강제 해제할 수 있습니다.
 
 ```typescript
-// packages/builder/workspace/canvas/utils/contextRecovery.ts
+// apps/builder/src/builder/workspace/canvas/utils/contextRecovery.ts
 export function setupContextRecovery(canvas: HTMLCanvasElement) {
   canvas.addEventListener('webglcontextlost', (e) => {
     e.preventDefault();
@@ -903,7 +903,7 @@ VRAM 예산 관리를 위한 텍스처 캐시 정책:
 | **비동기 해제** | `requestIdleCallback` 사용으로 프레임 드롭 방지 |
 
 ```typescript
-// packages/builder/workspace/canvas/utils/textureCache.ts
+// apps/builder/src/builder/workspace/canvas/utils/textureCache.ts
 class TextureLRUCache {
   private maxVRAM = 256 * 1024 * 1024; // 256MB
   private ttl = 30000; // 30초

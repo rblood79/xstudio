@@ -326,7 +326,7 @@ const lastPanPointRef = useRef<{ x: number; y: number } | null>(null);
 ### 파일 구조
 
 ```
-src/builder/workspace/canvas/selection/
+apps/builder/src/builder/workspace/canvas/selection/
 ├── SelectionLayer.tsx        # 최상위 선택 레이어 (Store 연결, bounds 계산)
 ├── SelectionBox.tsx          # 선택 박스 + 핸들 렌더링 (imperative 업데이트)
 ├── TransformHandle.tsx       # 개별 리사이즈 핸들 (코너/엣지)
@@ -416,7 +416,7 @@ type CursorStyle =
 
 ### Layout Calculator
 
-`src/builder/workspace/canvas/layout/layoutCalculator.ts`
+`apps/builder/src/builder/workspace/canvas/layout/layoutCalculator.ts`
 
 캔버스에서 DOM의 레이아웃 방식을 재현합니다.
 

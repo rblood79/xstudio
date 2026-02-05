@@ -95,7 +95,7 @@ src/builder/sidebar/LayerTree/
 
 ### 구현 위치
 
-- `src/builder/workspace/canvas/BuilderCanvas.tsx`
+- `apps/builder/src/builder/workspace/canvas/BuilderCanvas.tsx`
 
 ### 핵심 로직
 
@@ -124,11 +124,11 @@ src/builder/sidebar/LayerTree/
 
 - Tree UI: `src/builder/sidebar/LayerTree/LayerTree.tsx`
 - DnD 계산: `src/builder/sidebar/LayerTree/useLayerTreeDnd.ts`
-- WebGL 재정렬: `src/builder/workspace/canvas/BuilderCanvas.tsx`
+- WebGL 재정렬: `apps/builder/src/builder/workspace/canvas/BuilderCanvas.tsx`
 - Selection 시작 좌표 전달:
-  - `src/builder/workspace/canvas/selection/SelectionBox.tsx`
-  - `src/builder/workspace/canvas/selection/SelectionLayer.tsx`
-  - `src/builder/workspace/canvas/selection/TransformHandle.tsx`
+  - `apps/builder/src/builder/workspace/canvas/selection/SelectionBox.tsx`
+  - `apps/builder/src/builder/workspace/canvas/selection/SelectionLayer.tsx`
+  - `apps/builder/src/builder/workspace/canvas/selection/TransformHandle.tsx`
 
 ---
 

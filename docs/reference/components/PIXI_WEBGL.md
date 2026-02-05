@@ -22,7 +22,7 @@ npm install pixi.js@^8.14.3 @pixi/react@^8.0.5 @pixi/layout@^3.2.0 @pixi/ui@^2.3
 ## 아키텍처
 
 ```
-src/builder/workspace/canvas/
+apps/builder/src/builder/workspace/canvas/
 ├── BuilderCanvas.tsx       # 메인 WebGL 캔버스 (LayoutContainer 포함)
 ├── canvasSync.ts           # 캔버스 상태 동기화 Store
 ├── layoutContext.ts        # LayoutComputedSizeContext (Yoga 크기 전달)
@@ -658,7 +658,7 @@ const useWebGL = useWebGLCanvas();
 
 ### B3.1 DOM-like Layout Calculator
 
-`src/builder/workspace/canvas/layout/layoutCalculator.ts`
+`apps/builder/src/builder/workspace/canvas/layout/layoutCalculator.ts`
 
 캔버스에서 DOM의 레이아웃 방식을 재현합니다:
 
@@ -719,7 +719,7 @@ PixiJS 권장 방식으로 `resizeTo` 옵션 사용:
 React 리렌더 없이 팬/줌 처리:
 
 ```
-src/builder/workspace/canvas/viewport/
+apps/builder/src/builder/workspace/canvas/viewport/
 ├── ViewportController.ts      # 핵심 클래스 (싱글톤)
 ├── useViewportControl.ts      # React hook (싱글톤 사용)
 ├── ViewportControlBridge.tsx  # Application 내부 브릿지
@@ -807,7 +807,7 @@ Pan/Zoom 이벤트 → ViewportController → notifyUpdateListeners()
 ### B3.3 Selection System 개선
 
 > **Skia 모드 렌더링 분리 (2026-02-01, Skia 고정):** Selection의 시각적 렌더링은
-> `canvas/skia/selectionRenderer.ts`에서 CanvasKit API로 수행. PixiJS Selection 컴포넌트는
+> `apps/builder/src/builder/workspace/canvas/skia/selectionRenderer.ts`에서 CanvasKit API로 수행. PixiJS Selection 컴포넌트는
 > 이벤트 처리(클릭, 드래그, 리사이즈)만 담당하며 투명 히트 영역으로 동작.
 > Camera 하위 레이어는 `alpha=0`으로 숨김 (`renderable=false` 사용 금지 — EventBoundary 히트 테스팅 비활성화 문제).
 
@@ -957,8 +957,8 @@ Selection 렌더링은 두 레이어로 분리 (Skia 모드 고정):
 ```
 
 **핵심 파일:**
-- `canvas/skia/selectionRenderer.ts` — `renderSelectionBox()`, `renderTransformHandles()`, `renderLasso()`
-- `canvas/skia/SkiaOverlay.tsx` — `buildSkiaTreeHierarchical()` + `buildTreeBoundsMap()` + `buildSelectionRenderData()` + renderFrame Phase 4-6
+- `apps/builder/src/builder/workspace/canvas/skia/selectionRenderer.ts` — `renderSelectionBox()`, `renderTransformHandles()`, `renderLasso()`
+- `apps/builder/src/builder/workspace/canvas/skia/SkiaOverlay.tsx` — `buildSkiaTreeHierarchical()` + `buildTreeBoundsMap()` + `buildSelectionRenderData()` + renderFrame Phase 4-6
 
 **PixiJS Camera 하위 숨김:** `alpha=0` 사용 (`renderable=false` 금지 — EventBoundary 히트 테스팅 비활성화)
 
@@ -1059,7 +1059,7 @@ extend(PIXI_COMPONENTS);
 
 Label, Input, Description을 포함하는 복합 텍스트 필드 컴포넌트.
 
-**파일:** `src/builder/workspace/canvas/ui/PixiTextField.tsx`
+**파일:** `apps/builder/src/builder/workspace/canvas/ui/PixiTextField.tsx`
 
 ```typescript
 // CSS preset 동기화
@@ -1233,7 +1233,7 @@ const RadioItem = memo(function RadioItem({
 Canvas 페이지 테두리용 `--outline-variant` CSS 변수 읽기 함수 추가:
 
 ```typescript
-// src/builder/workspace/canvas/sprites/cssVariableReader.ts
+// apps/builder/src/builder/workspace/canvas/sprites/cssVariableReader.ts
 
 const FALLBACK_OUTLINE_VARIANT = 0xcad4de;  // --outline-variant 기본값
 
@@ -1334,9 +1334,9 @@ useEffect(() => {
 |------|------|
 | `canvas/BuilderCanvas.tsx` | LayoutContainer 정의, 조건부 flexShrink |
 | `canvas/layoutContext.ts` | LayoutComputedSizeContext (React Context) |
-| `canvas/sprites/ElementSprite.tsx` | Context 소비, % → px 변환 |
-| `canvas/skia/SkiaRenderer.ts` | 이중 Surface 캐싱 + 프레임 분류 |
-| `canvas/skia/SkiaOverlay.tsx` | Skia 렌더 루프 (ticker priority 기반) |
+| `apps/builder/src/builder/workspace/canvas/sprites/ElementSprite.tsx` | Context 소비, % → px 변환 |
+| `apps/builder/src/builder/workspace/canvas/skia/SkiaRenderer.ts` | 이중 Surface 캐싱 + 프레임 분류 |
+| `apps/builder/src/builder/workspace/canvas/skia/SkiaOverlay.tsx` | Skia 렌더 루프 (ticker priority 기반) |
 
 ---
 

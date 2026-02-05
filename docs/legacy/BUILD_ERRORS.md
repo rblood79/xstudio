@@ -101,7 +101,7 @@ onpointerleave → onPointerLeave
 
 **일괄 변환 명령어:**
 ```bash
-find src/builder/workspace/canvas/ui -name "Pixi*.tsx" -exec sed -i '' \
+find apps/builder/src/builder/workspace/canvas/ui -name "Pixi*.tsx" -exec sed -i '' \
   -e 's/onpointertap/onPointerTap/g' \
   -e 's/onpointerdown/onPointerDown/g' \
   -e 's/onpointerenter/onPointerEnter/g' \

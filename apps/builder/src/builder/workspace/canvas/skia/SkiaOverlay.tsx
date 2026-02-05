@@ -129,12 +129,12 @@ let _cachedVersion = -1;
 
 function buildSkiaTreeHierarchical(
   cameraContainer: Container,
+  registryVersion: number,
   cameraX: number,
   cameraY: number,
   cameraZoom: number,
 ): SkiaNodeData | null {
-  const currentVersion = getRegistryVersion();
-  if (_cachedTree && currentVersion === _cachedVersion) {
+  if (_cachedTree && registryVersion === _cachedVersion) {
     return _cachedTree;
   }
 
@@ -212,7 +212,7 @@ function buildSkiaTreeHierarchical(
   const children = traverse(cameraContainer, 0, 0);
   if (children.length === 0) {
     _cachedTree = null;
-    _cachedVersion = currentVersion;
+    _cachedVersion = registryVersion;
     return null;
   }
 
@@ -227,9 +227,26 @@ function buildSkiaTreeHierarchical(
   };
 
   _cachedTree = result;
-  _cachedVersion = currentVersion;
+  _cachedVersion = registryVersion;
 
   return result;
+}
+
+// Selection 바운드맵 캐시 — 트리와 동일하게 registryVersion 기반 재사용
+let _cachedTreeBoundsMap: Map<string, BoundingBox> | null = null;
+let _cachedTreeBoundsVersion = -1;
+
+function getCachedTreeBoundsMap(
+  tree: SkiaNodeData,
+  registryVersion: number,
+): Map<string, BoundingBox> {
+  if (_cachedTreeBoundsMap && registryVersion === _cachedTreeBoundsVersion) {
+    return _cachedTreeBoundsMap;
+  }
+  const map = buildTreeBoundsMap(tree);
+  _cachedTreeBoundsMap = map;
+  _cachedTreeBoundsVersion = registryVersion;
+  return map;
 }
 
 /** Selection 렌더 데이터 결과 */
@@ -369,6 +386,7 @@ export function SkiaOverlay({ containerEl, backgroundColor = 0xf8fafc, app, drag
   const rendererRef = useRef<SkiaRenderer | null>(null);
   const [ready, setReady] = useState(false);
   const contextLostRef = useRef(false);
+  const originalCameraAlphaRef = useRef<number | null>(null);
 
   // Phase 6: Selection/AI 상태 변경 감지용 ref (idle 프레임 스킵 방지)
   const overlayVersionRef = useRef(0);
@@ -462,12 +480,13 @@ export function SkiaOverlay({ containerEl, backgroundColor = 0xf8fafc, app, drag
     const syncPixiVisibility = () => {
       const cameraContainer = findCameraContainer(app.stage);
       if (cameraContainer) {
-        for (const child of cameraContainer.children) {
-          const c = child as Container;
-          if (c.label) {
-            c.alpha = 0;
-          }
+        if (originalCameraAlphaRef.current == null) {
+          originalCameraAlphaRef.current = cameraContainer.alpha;
         }
+        // O(1): 전체 하위 순회 대신 Camera 루트만 투명 처리
+        // PixiJS 이벤트(hit test)는 visible/renderable/measurable에 의해 prune되며,
+        // alpha는 prune 조건이 아니므로 상호작용은 유지된다. (pixi.js v8 EventBoundary._interactivePrune)
+        cameraContainer.alpha = 0;
       }
     };
 
@@ -559,7 +578,7 @@ export function SkiaOverlay({ containerEl, backgroundColor = 0xf8fafc, app, drag
       // 매 프레임 갱신이 필수. idle 프레임에서는 렌더링이 스킵되므로
       // 이 갱신 비용(~0ms, 트리 캐시 HIT)만 발생한다.
       const tree = cameraContainer
-        ? buildSkiaTreeHierarchical(cameraContainer, cameraX, cameraY, cameraZoom)
+        ? buildSkiaTreeHierarchical(cameraContainer, registryVersion, cameraX, cameraY, cameraZoom)
         : null;
       if (!tree) {
         renderer.clearFrame();
@@ -571,7 +590,7 @@ export function SkiaOverlay({ containerEl, backgroundColor = 0xf8fafc, app, drag
         ? skiaFontManager.getFontMgr()
         : undefined;
 
-      const treeBoundsMap = buildTreeBoundsMap(tree);
+      const treeBoundsMap = getCachedTreeBoundsMap(tree, registryVersion);
       const selectionData = buildSelectionRenderData(cameraX, cameraY, cameraZoom, treeBoundsMap, dragStateRef);
 
       const currentAiState = useAIVisualFeedbackStore.getState();
@@ -664,9 +683,8 @@ export function SkiaOverlay({ containerEl, backgroundColor = 0xf8fafc, app, drag
       // 디자인 레이어 렌더링 복원
       const camera = findCameraContainer(app.stage);
       if (camera) {
-        for (const child of camera.children) {
-          (child as Container).alpha = 1;
-        }
+        camera.alpha = originalCameraAlphaRef.current ?? 1;
+        originalCameraAlphaRef.current = null;
       }
     };
   }, [ready, isActive, app, containerEl, backgroundColor]);
