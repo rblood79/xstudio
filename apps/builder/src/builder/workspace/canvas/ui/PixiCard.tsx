@@ -247,14 +247,17 @@ export const PixiCard = memo(function PixiCard({
   );
 
   // 🚀 Phase 9: 외부 LayoutContainer가 width를 제어
-  // height: calculatedContentHeight → Yoga가 정확한 높이를 사용하여 형제 배치 정확도 보장
+  // height: 'auto' → Yoga가 children(Button 등) 포함 자동 높이 계산
+  // minHeight: calculatedContentHeight → 텍스트만 있는 경우 최소 높이 보장
+  //   (Yoga가 텍스트 leaf를 정확히 측정하지 못하는 경우의 안전장치)
   // width: 설정하지 않음 — 부모 방향에 따라 Yoga가 결정:
   //   - column 부모: alignSelf: 'stretch' → 전체 너비 차지
   //   - row 부모: 콘텐츠 기반 너비 사용 (형제 요소와 공간 분배)
   const cardLayout = useMemo(() => ({
     display: 'flex' as const,
     flexDirection: 'column' as const,
-    height: calculatedContentHeight,
+    height: 'auto' as unknown as number,
+    minHeight: calculatedContentHeight,
     padding: sizePreset.padding,
     flexGrow: 0,
     flexShrink: 1,
@@ -274,11 +277,13 @@ export const PixiCard = memo(function PixiCard({
   // @pixi/layout에서 display: 'block'은 CSS와 다르게 동작
   // flex column으로 description과 children-row를 수직 배치
   // alignItems: 'flex-start'로 왼쪽 정렬
+  // gap: 8 — description과 children-row 사이 간격 (headerLayout.marginBottom과 동일)
   const contentLayout = useMemo(() => ({
     display: 'flex' as const,
     flexDirection: 'column' as const,
     alignItems: 'flex-start' as const,
     width: '100%' as unknown as number,
+    gap: 8,
   }), []);
 
   // card-description 레이아웃 (display: block, width: 100%)

@@ -151,6 +151,8 @@ export interface UseViewportCullingOptions {
   screenHeight?: number;
   /** 컬링 활성화 여부 (기본값: true) */
   enabled?: boolean;
+  /** 외부 변경 감지용 버전 (예: 페이지 위치 이동) */
+  version?: number;
 }
 
 /**
@@ -182,6 +184,7 @@ export function useViewportCulling({
   screenWidth = typeof window !== 'undefined' ? window.innerWidth : 1920,
   screenHeight = typeof window !== 'undefined' ? window.innerHeight : 1080,
   enabled = true,
+  version = 0,
 }: UseViewportCullingOptions): CullingResult {
   return useMemo(() => {
     // 컬링 비활성화 시 모든 요소 반환
@@ -270,7 +273,7 @@ export function useViewportCulling({
     };
   // zoom/panOffset은 getBounds()에 간접 반영되지만, 뷰 변경 시 재계산 트리거 필요
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [elements, zoom, panOffset, screenWidth, screenHeight, enabled]);
+  }, [elements, zoom, panOffset, screenWidth, screenHeight, enabled, version]);
 }
 
 // ============================================

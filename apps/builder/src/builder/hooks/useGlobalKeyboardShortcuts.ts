@@ -229,20 +229,31 @@ export function useGlobalKeyboardShortcuts() {
    * Canvas Delete - 선택된 요소들 삭제
    */
   const handleCanvasDelete = useCallback(async () => {
-    const { selectedElementIds, removeElement, setSelectedElement } = useStore.getState();
+    const { selectedElementIds, elementsMap, removeElement, setSelectedElement } = useStore.getState();
 
     if (selectedElementIds.length === 0) {
       console.log('[Keyboard] Delete: No elements selected');
       return;
     }
 
-    console.log(`[Keyboard] Deleting ${selectedElementIds.length} elements`);
+    // Body 요소는 키보드로 삭제 불가 (페이지 삭제 시에만 함께 삭제)
+    const deletableIds = selectedElementIds.filter((id) => {
+      const el = elementsMap.get(id);
+      return el && el.tag.toLowerCase() !== 'body';
+    });
+
+    if (deletableIds.length === 0) {
+      console.log('[Keyboard] Delete: Only body elements selected, skipping');
+      return;
+    }
+
+    console.log(`[Keyboard] Deleting ${deletableIds.length} elements`);
 
     // 선택 해제 먼저
     setSelectedElement(null);
 
     // 요소들 삭제
-    for (const id of selectedElementIds) {
+    for (const id of deletableIds) {
       await removeElement(id);
     }
   }, []);

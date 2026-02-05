@@ -53,15 +53,18 @@ import {
   type LayoutStyle,
   type ComputedLayout,
 } from "./layout";
-import { getElementBoundsSimple, registerElement, unregisterElement, updateElementBounds } from "./elementRegistry";
-import { notifyLayoutChange } from "./skia/useSkiaNode";
+import { getElementBoundsSimple, getElementContainer, registerElement, unregisterElement, updateElementBounds } from "./elementRegistry";
+import { notifyLayoutChange, useSkiaNode } from "./skia/useSkiaNode";
 import { LayoutComputedSizeContext } from "./layoutContext";
 import { getOutlineVariantColor } from "./utils/cssVariableReader";
 import { GPUDebugOverlay } from "./utils/GPUDebugOverlay";
 import { useThemeColors } from "./hooks/useThemeColors";
 import { useViewportCulling } from "./hooks/useViewportCulling";
+import { usePageDrag } from "./hooks/usePageDrag";
 import { longTaskMonitor } from "../../../utils/longTaskMonitor";
 import type { Element } from "../../../types/core/store.types";
+import { getPageElements } from "../../stores/utils/elementIndexer";
+import type { PageElementIndex } from "../../stores/utils/elementIndexer";
 import { useGPUProfiler } from "./utils/gpuProfilerCore";
 
 // ============================================
@@ -87,6 +90,8 @@ const DEFAULT_WIDTH = 1920;
 const DEFAULT_HEIGHT = 1080;
 const DEFAULT_BACKGROUND = 0xf8fafc; // slate-50
 const DRAG_DISTANCE_THRESHOLD = 4;
+const PAGE_STACK_GAP = 80;
+const PAGE_TITLE_HIT_HEIGHT = 24;
 
 // ============================================
 // Sub-Components
@@ -102,7 +107,16 @@ const SkiaOverlayComponent = lazy(() =>
   import('./skia/SkiaOverlay').then((mod) => ({ default: mod.SkiaOverlay }))
 );
 
-function SkiaOverlayLazy(props: { containerEl: HTMLDivElement; backgroundColor?: number; app: PixiApplication; dragStateRef?: RefObject<DragState | null>; pageWidth?: number; pageHeight?: number }) {
+function SkiaOverlayLazy(props: {
+  containerEl: HTMLDivElement;
+  backgroundColor?: number;
+  app: PixiApplication;
+  dragStateRef?: RefObject<DragState | null>;
+  pageWidth?: number;
+  pageHeight?: number;
+  pageFrames?: Array<{ id: string; title: string; x: number; y: number; width: number; height: number }>;
+  currentPageId?: string | null;
+}) {
   return (
     <Suspense fallback={null}>
       <SkiaOverlayComponent {...props} />
@@ -150,6 +164,99 @@ function CanvasBounds({ width, height, zoom = 1 }: { width: number; height: numb
 
   return <pixiGraphics draw={draw} />;
 }
+
+/**
+ * 🚀 Multi-page: 메모이제이션된 페이지 컨테이너
+ * 부모(BuilderCanvas)가 리렌더되어도 props가 같으면 스킵.
+ */
+interface PageContainerProps {
+  pageId: string;
+  posX: number;
+  posY: number;
+  pageWidth: number;
+  pageHeight: number;
+  zoom: number;
+  panOffset: { x: number; y: number };
+  isVisible: boolean;
+  yogaReady: boolean;
+  bodyElement: Element | null;
+  pageElements: Element[];
+  elementById: (id: string) => Element | undefined;
+  depthMap: Map<string, number>;
+  onClick: (elementId: string, modifiers?: { metaKey: boolean; shiftKey: boolean; ctrlKey: boolean }) => void;
+  onDoubleClick: (elementId: string) => void;
+  onTitleDragStart: (pageId: string, clientX: number, clientY: number) => void;
+}
+
+const titleHitDraw = (pageWidth: number) => (g: PixiGraphics) => {
+  g.clear();
+  g.rect(0, -PAGE_TITLE_HIT_HEIGHT, pageWidth, PAGE_TITLE_HIT_HEIGHT);
+  g.fill({ color: 0xffffff, alpha: 0.001 });
+};
+
+const PageContainer = memo(function PageContainer({
+  pageId,
+  posX,
+  posY,
+  pageWidth,
+  pageHeight,
+  zoom,
+  panOffset,
+  isVisible,
+  yogaReady,
+  bodyElement,
+  pageElements,
+  elementById,
+  depthMap,
+  onClick,
+  onDoubleClick,
+  onTitleDragStart,
+}: PageContainerProps) {
+  const draw = useMemo(() => titleHitDraw(pageWidth), [pageWidth]);
+
+  const handleTitlePointerDown = useCallback((e: { nativeEvent: PointerEvent; stopPropagation: () => void }) => {
+    e.stopPropagation();
+    onTitleDragStart(pageId, e.nativeEvent.clientX, e.nativeEvent.clientY);
+  }, [pageId, onTitleDragStart]);
+
+  return (
+    <pixiContainer
+      label={`Page-${pageId}`}
+      x={posX}
+      y={posY}
+      eventMode="static"
+      interactiveChildren={true}
+    >
+      <pixiGraphics
+        draw={draw}
+        eventMode="static"
+        cursor="grab"
+        onPointerDown={handleTitlePointerDown}
+      />
+      <BodyLayer
+        pageId={pageId}
+        pageWidth={pageWidth}
+        pageHeight={pageHeight}
+        onClick={onClick}
+      />
+      <CanvasBounds width={pageWidth} height={pageHeight} zoom={zoom} />
+      {isVisible && yogaReady && bodyElement && (
+        <ElementsLayer
+          pageElements={pageElements}
+          bodyElement={bodyElement}
+          elementById={elementById}
+          depthMap={depthMap}
+          pageWidth={pageWidth}
+          pageHeight={pageHeight}
+          zoom={zoom}
+          panOffset={panOffset}
+          onClick={onClick}
+          onDoubleClick={onDoubleClick}
+        />
+      )}
+    </pixiContainer>
+  );
+});
 
 /**
  * 클릭 가능한 백그라운드 (빈 영역 클릭 감지용 + 라쏘 선택)
@@ -410,77 +517,34 @@ const LayoutContainer = memo(function LayoutContainer({
 // 🚀 Phase 6: layoutResult prop 제거 - @pixi/layout 자동 레이아웃
 // 🚀 Phase 7: pageWidth/pageHeight 추가 - 루트 layout 설정에 필요
 const ElementsLayer = memo(function ElementsLayer({
+  pageElements,
+  bodyElement,
+  elementById,
+  depthMap,
   pageWidth,
   pageHeight,
   zoom,
   panOffset,
   onClick,
   onDoubleClick,
+  pagePositionVersion = 0,
 }: {
+  pageElements: Element[];
+  bodyElement: Element | null;
+  elementById: Map<string, Element>;
+  depthMap: Map<string, number>;
   pageWidth: number;
   pageHeight: number;
   zoom: number;
   panOffset: { x: number; y: number };
   onClick?: (elementId: string) => void;
   onDoubleClick?: (elementId: string) => void;
+  pagePositionVersion?: number;
 }) {
-  const elements = useStore((state) => state.elements);
-  const currentPageId = useStore((state) => state.currentPageId);
   // 🚀 성능 최적화: selectedElementIds 구독 제거
   // 기존: ElementsLayer가 selectedElementIds 구독 → 선택 변경 시 전체 리렌더 O(n)
   // 개선: 각 ElementSprite가 자신의 선택 상태만 구독 → 변경된 요소만 리렌더 O(2)
   // selectedElementIds, selectedIdSet 제거됨
-
-  const elementById = useMemo(
-    () => new Map(elements.map((el) => [el.id, el])),
-    [elements]
-  );
-
-  const bodyElement = useMemo(() => {
-    if (!currentPageId) return null;
-    return elements.find(
-      (el) => el.page_id === currentPageId && el.tag.toLowerCase() === "body"
-    ) ?? null;
-  }, [elements, currentPageId]);
-
-  // 깊이 맵을 한 번 계산하여 정렬 비용 감소
-  const depthMap = useMemo(() => {
-    const cache = new Map<string, number>();
-
-    const computeDepth = (id: string | null): number => {
-      if (!id) return 0;
-      const cached = cache.get(id);
-      if (cached !== undefined) return cached;
-
-      const el = elementById.get(id);
-      if (!el || el.tag.toLowerCase() === "body") {
-        cache.set(id, 0);
-        return 0;
-      }
-
-      const depth = 1 + computeDepth(el.parent_id as string | null);
-      cache.set(id, depth);
-      return depth;
-    };
-
-    elements.forEach((el) => {
-      cache.set(el.id, computeDepth(el.id));
-    });
-
-    return cache;
-  }, [elements, elementById]);
-
-  // 현재 페이지의 요소만 필터링 (Body 제외, 실제 렌더링 대상만)
-  // 선택 변경으로 인한 리렌더에서도 재계산/정렬 비용을 피하기 위해 memoize
-  const pageElements = useMemo(() => {
-    return elements.filter((el) => {
-      if (el.page_id !== currentPageId) return false;
-      // Body 태그는 캔버스 전체를 의미하므로 렌더링에서 제외 (대소문자 무시)
-      if (el.tag.toLowerCase() === "body") return false;
-      // CheckboxGroup의 자식 Checkbox는 투명 hit area로 렌더링 (필터하지 않음)
-      return true;
-    });
-  }, [elements, currentPageId]);
 
   const pageChildrenMap = useMemo(() => {
     const map = new Map<string | null, Element[]>();
@@ -526,6 +590,7 @@ const ElementsLayer = memo(function ElementsLayer({
     zoom,
     panOffset,
     enabled: true, // 필요시 비활성화 가능
+    version: pagePositionVersion,
   });
 
   const renderIdSet = useMemo(() => {
@@ -771,9 +836,13 @@ const ElementsLayer = memo(function ElementsLayer({
         // (PixiCard 등이 내부에서 flex column 레이아웃을 사용하므로 외부도 동기화)
         const isContainerTag = CONTAINER_TAGS.has(child.tag);
         const needsFlexLayout = (hasChildren || isContainerTag) && !effectiveLayout.display && !effectiveLayout.flexDirection;
+        // 🚀 @pixi/layout의 formatStyles는 이전 스타일과 merge하므로,
+        // 부모 flexDirection 변경 시 이전 blockLayout의 flexBasis/flexGrow가 잔류.
+        // 명시적 기본값으로 stale 속성을 항상 리셋.
+        const blockLayoutDefaults = { flexBasis: 'auto' as const, flexGrow: 0 };
         const containerLayout = needsFlexLayout
-          ? { position: 'relative' as const, ...flexShrinkDefault, display: 'flex' as const, flexDirection: 'column' as const, ...blockLayout, ...effectiveLayout, ...blockWidthOverride }
-          : { position: 'relative' as const, ...flexShrinkDefault, ...blockLayout, ...effectiveLayout, ...blockWidthOverride };
+          ? { position: 'relative' as const, ...blockLayoutDefaults, ...flexShrinkDefault, display: 'flex' as const, flexDirection: 'column' as const, ...blockLayout, ...effectiveLayout, ...blockWidthOverride }
+          : { position: 'relative' as const, ...blockLayoutDefaults, ...flexShrinkDefault, ...blockLayout, ...effectiveLayout, ...blockWidthOverride };
 
         // 🚀 Phase 10: Container 타입은 children을 ElementSprite에 전달
         // Container 컴포넌트가 children을 배경 안에 렌더링
@@ -806,9 +875,10 @@ const ElementsLayer = memo(function ElementsLayer({
                   : {};
 
                 const childFlexShrinkDefault = effectiveChildLayout.flexShrink !== undefined ? {} : { flexShrink: 0 };
+                const childBlockLayoutDefaults = { flexBasis: 'auto' as const, flexGrow: 0 };
                 const childContainerLayout = childHasChildren && !effectiveChildLayout.flexDirection
-                  ? { position: 'relative' as const, flexShrink: 0, display: 'flex' as const, flexDirection: 'column' as const, ...childBlockLayout, ...effectiveChildLayout }
-                  : { position: 'relative' as const, ...childFlexShrinkDefault, ...childBlockLayout, ...effectiveChildLayout };
+                  ? { position: 'relative' as const, ...childBlockLayoutDefaults, flexShrink: 0, display: 'flex' as const, flexDirection: 'column' as const, ...childBlockLayout, ...effectiveChildLayout }
+                  : { position: 'relative' as const, ...childBlockLayoutDefaults, ...childFlexShrinkDefault, ...childBlockLayout, ...effectiveChildLayout };
 
                 // nested Container의 children
                 const nestedChildElements = isChildContainerType ? (pageChildrenMap.get(childEl.id) ?? []) : [];
@@ -828,9 +898,10 @@ const ElementsLayer = memo(function ElementsLayer({
                           : nestedLayout;
                         const nestedHasChildren = (pageChildrenMap.get(nestedEl.id)?.length ?? 0) > 0;
                         const nestedFlexShrinkDefault = effectiveNestedLayout.flexShrink !== undefined ? {} : { flexShrink: 0 };
+                        const nestedBlockLayoutDefaults = { flexBasis: 'auto' as const, flexGrow: 0 };
                         const nestedContainerLayout = nestedHasChildren && !effectiveNestedLayout.flexDirection
-                          ? { position: 'relative' as const, flexShrink: 0, display: 'flex' as const, flexDirection: 'column' as const, ...effectiveNestedLayout }
-                          : { position: 'relative' as const, ...nestedFlexShrinkDefault, ...effectiveNestedLayout };
+                          ? { position: 'relative' as const, ...nestedBlockLayoutDefaults, flexShrink: 0, display: 'flex' as const, flexDirection: 'column' as const, ...effectiveNestedLayout }
+                          : { position: 'relative' as const, ...nestedBlockLayoutDefaults, ...nestedFlexShrinkDefault, ...effectiveNestedLayout };
                         return (
                           <LayoutContainer key={nestedEl.id} elementId={nestedEl.id} layout={nestedContainerLayout}>
                             <ElementSprite
@@ -994,6 +1065,7 @@ export function BuilderCanvas({
 
   // Store state
   const elements = useStore((state) => state.elements);
+  const pages = useStore((state) => state.pages);
   // 🚀 selectedElementIds는 ElementsLayer 내부에서 직접 구독 (부모 리렌더링 방지)
   const setSelectedElement = useStore((state) => state.setSelectedElement);
   const setSelectedElements = useStore((state) => state.setSelectedElements);
@@ -1001,6 +1073,7 @@ export function BuilderCanvas({
   const updateElementProps = useStore((state) => state.updateElementProps);
   const batchUpdateElements = useStore((state) => state.batchUpdateElements);
   const currentPageId = useStore((state) => state.currentPageId);
+  const setCurrentPageId = useStore((state) => state.setCurrentPageId);
 
   // Settings state (SettingsPanel 연동)
   const showGrid = useStore((state) => state.showGrid);
@@ -1008,6 +1081,9 @@ export function BuilderCanvas({
 
   const zoom = useCanvasSyncStore((state) => state.zoom);
   const panOffset = useCanvasSyncStore((state) => state.panOffset);
+
+  // 🆕 Multi-page: 페이지 타이틀 드래그
+  const { startDrag: startPageDrag } = usePageDrag(zoom);
 
   // Canvas sync actions
   const setCanvasReady = useCanvasSyncStore((state) => state.setCanvasReady);
@@ -1017,10 +1093,9 @@ export function BuilderCanvas({
 
   // 🚀 Phase 6: calculateLayout 제거 - @pixi/layout이 자동으로 레이아웃 처리
 
-  const elementById = useMemo(
-    () => new Map(elements.map((el) => [el.id, el])),
-    [elements]
-  );
+  // 🚀 elementsMap을 직접 사용 (elements로부터 중복 Map 생성 제거)
+  const elementsMap = useStore((state) => state.elementsMap);
+  const elementById = elementsMap;
 
   const depthMap = useMemo(() => {
     const cache = new Map<string, number>();
@@ -1050,12 +1125,93 @@ export function BuilderCanvas({
 
   // Zoom/Pan은 ViewportControlBridge에서 처리 (Application 내부에서 Container 직접 조작)
 
-  // 현재 페이지 요소 필터링 (라쏘 선택용)
+  // 현재 페이지의 Body 요소
+  const bodyElement = useMemo(() => {
+    if (!currentPageId) return null;
+    return elements.find(
+      (el) => el.page_id === currentPageId && el.tag.toLowerCase() === "body"
+    ) ?? null;
+  }, [elements, currentPageId]);
+
+  // 현재 페이지 요소 필터링 (Body 제외)
   const pageElements = useMemo(() => {
     return elements.filter(
-      (el) => el.page_id === currentPageId && el.tag !== "Body"
+      (el) => el.page_id === currentPageId && el.tag.toLowerCase() !== "body"
     );
   }, [elements, currentPageId]);
+
+  // 🆕 Multi-page: 모든 페이지의 데이터 (body + elements) 사전 계산
+  const pagePositions = useStore((state) => state.pagePositions);
+  const pagePositionsVersion = useStore((state) => state.pagePositionsVersion);
+  const initializePagePositions = useStore((state) => state.initializePagePositions);
+
+  // 🆕 Multi-page: pageWidth 변경 시 페이지 위치 재계산 (breakpoint 변경 대응)
+  const prevPageWidthRef = useRef(pageWidth);
+  useEffect(() => {
+    if (prevPageWidthRef.current !== pageWidth && pages.length > 0) {
+      prevPageWidthRef.current = pageWidth;
+      initializePagePositions(pages, pageWidth, PAGE_STACK_GAP);
+    }
+  }, [pageWidth, pages, initializePagePositions]);
+
+  // 🚀 O(1) pageIndex 기반 조회 (elements.find/filter O(N*M) 제거)
+  const pageIndex = useStore((state) => state.pageIndex);
+
+  const allPageData = useMemo(() => {
+    const map = new Map<string, { bodyElement: Element | null; pageElements: Element[] }>();
+    for (const page of pages) {
+      const pageEls = getPageElements(pageIndex, page.id, elementsMap);
+      let body: Element | null = null;
+      const nonBody: Element[] = [];
+      for (const el of pageEls) {
+        if (el.tag.toLowerCase() === 'body') {
+          body = el;
+        } else {
+          nonBody.push(el);
+        }
+      }
+      map.set(page.id, { bodyElement: body, pageElements: nonBody });
+    }
+    return map;
+  }, [pages, pageIndex, elementsMap]);
+
+  // 🆕 Multi-page: Skia 페이지 프레임 (타이틀 렌더링용)
+  const pageFrames = useMemo(() => {
+    return pages.map(page => ({
+      id: page.id,
+      title: page.title,
+      x: pagePositions[page.id]?.x ?? 0,
+      y: pagePositions[page.id]?.y ?? 0,
+      width: pageWidth,
+      height: pageHeight,
+    }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pages, pagePositionsVersion, pageWidth, pageHeight]);
+
+  // 🆕 Multi-page: 뷰포트 밖 페이지 컬링 (성능 최적화)
+  const visiblePageIds = useMemo(() => {
+    const margin = 200; // 여유 마진 (패닝 시 깜빡임 방지)
+    const screenWidth = containerSize?.width ?? window.innerWidth;
+    const screenHeight = containerSize?.height ?? window.innerHeight;
+    const visible = new Set<string>();
+    for (const page of pages) {
+      const pos = pagePositions[page.id];
+      if (!pos) continue;
+      const screenX = pos.x * zoom + panOffset.x;
+      const screenY = pos.y * zoom + panOffset.y;
+      const screenW = pageWidth * zoom;
+      const screenH = pageHeight * zoom;
+      const isInViewport = !(
+        screenX + screenW < -margin ||
+        screenX > screenWidth + margin ||
+        screenY + screenH < -margin ||
+        screenY > screenHeight + margin
+      );
+      if (isInViewport) visible.add(page.id);
+    }
+    return visible;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pages, pagePositionsVersion, pageWidth, pageHeight, zoom, panOffset.x, panOffset.y, containerSize]);
 
   // 라쏘 선택 영역 내 요소 찾기
   // 🚀 Phase 6: ElementRegistry의 getBounds() 사용
@@ -1433,9 +1589,9 @@ export function BuilderCanvas({
         // 🚀 Phase 5: 드래그 종료 시 해상도 복원
         handleDragEnd();
 
-        if (selectedIds.length > 0) {
-          setSelectedElements(selectedIds);
-        }
+        // setSelectedElements([])는 selectedElementId, selectedElementProps까지
+        // 모두 초기화 (clearSelection은 selection slice만 초기화하여 불충분)
+        setSelectedElements(selectedIds);
       },
       [setSelectedElements, handleDragEnd]
     ),
@@ -1554,6 +1710,14 @@ export function BuilderCanvas({
         // 텍스트 편집 중이면 클릭 무시
         if (isEditing) return;
 
+        // 🆕 Multi-page: 다른 페이지 요소 클릭 시 페이지 전환
+        const state = useStore.getState();
+        const clickedElement = state.elementsMap.get(elementId);
+        if (clickedElement?.page_id && clickedElement.page_id !== state.currentPageId) {
+          clearSelection();
+          setCurrentPageId(clickedElement.page_id);
+        }
+
         // Cmd+Click (Mac) or Ctrl+Click (Windows) for multi-select
         const isMultiSelectKey = modifiers?.metaKey || modifiers?.ctrlKey;
 
@@ -1561,6 +1725,15 @@ export function BuilderCanvas({
         // React가 현재 프레임을 먼저 완료하고, 유휴 시간에 리렌더링 수행
         startTransition(() => {
           if (isMultiSelectKey) {
+            // 🆕 Multi-page: 크로스 페이지 다중 선택 방지
+            // 다른 페이지 요소면 페이지 전환 + 단일 선택
+            const curPageId = useStore.getState().currentPageId;
+            const targetEl = useStore.getState().elementsMap.get(elementId);
+            if (targetEl?.page_id && targetEl.page_id !== curPageId) {
+              setSelectedElement(elementId);
+              return;
+            }
+
             // 🚀 getState()로 현재 selectedElementIds 읽기 (stale closure 방지)
             const currentSelectedIds = useStore.getState().selectedElementIds;
 
@@ -1588,7 +1761,7 @@ export function BuilderCanvas({
         });
       });
     },
-    [setSelectedElement, setSelectedElements, clearSelection, isEditing]
+    [setSelectedElement, setSelectedElements, clearSelection, isEditing, setCurrentPageId]
   );
 
   // Element double click handler (텍스트 편집 시작)
@@ -1706,32 +1879,35 @@ export function BuilderCanvas({
             eventMode="static"
             interactiveChildren={true}
           >
-            {/* Body Layer (Body 요소의 배경색, 테두리 등) - 최하단 */}
-            <BodyLayer
-              pageWidth={pageWidth}
-              pageHeight={pageHeight}
-              onClick={handleElementClick}
-            />
+            {/* 🆕 Multi-page: 메모이제이션된 페이지 컨테이너 (뷰포트 컬링 적용) */}
+            {pages.map((page) => {
+              const pos = pagePositions[page.id];
+              const data = allPageData.get(page.id);
+              if (!pos || !data) return null;
+              return (
+                <PageContainer
+                  key={page.id}
+                  pageId={page.id}
+                  posX={pos.x}
+                  posY={pos.y}
+                  pageWidth={pageWidth}
+                  pageHeight={pageHeight}
+                  zoom={zoom}
+                  panOffset={panOffset}
+                  isVisible={visiblePageIds.has(page.id)}
+                  yogaReady={yogaReady}
+                  bodyElement={data.bodyElement}
+                  pageElements={data.pageElements}
+                  elementById={elementById}
+                  depthMap={depthMap}
+                  onClick={handleElementClick}
+                  onDoubleClick={handleElementDoubleClick}
+                  onTitleDragStart={startPageDrag}
+                />
+              );
+            })}
 
-            {/* Page Bounds (breakpoint 경계선) */}
-            <CanvasBounds width={pageWidth} height={pageHeight} zoom={zoom} />
-
-            {/* Elements Layer (ElementSprite 기반) */}
-            {/* 🚀 Phase 7: Yoga 준비 후에만 렌더링 (layout prop에 Yoga 필요) */}
-            {yogaReady && (
-              <ElementsLayer
-                pageWidth={pageWidth}
-                pageHeight={pageHeight}
-                zoom={zoom}
-                panOffset={panOffset}
-                onClick={handleElementClick}
-                onDoubleClick={handleElementDoubleClick}
-              />
-            )}
-
-            {/* Selection Layer (최상단) */}
-            {/* 🚀 Phase 2: layoutResult prop 제거 - ElementRegistry 사용 */}
-            {/* 🚀 Phase 7: panOffset 추가 - 글로벌→로컬 좌표 변환용 */}
+            {/* Selection Layer (최상단 - 모든 페이지 위) */}
             <SelectionLayer
               dragState={dragState}
               pageWidth={pageWidth}
@@ -1742,6 +1918,8 @@ export function BuilderCanvas({
               onMoveStart={handleMoveStart}
               onCursorChange={handleCursorChange}
               selectionBoxRef={selectionBoxRef}
+              pagePositions={pagePositions}
+              pagePositionsVersion={pagePositionsVersion}
             />
           </pixiContainer>
         </Application>
@@ -1756,6 +1934,8 @@ export function BuilderCanvas({
           dragStateRef={dragStateRef}
           pageWidth={pageWidth}
           pageHeight={pageHeight}
+          pageFrames={pageFrames}
+          currentPageId={currentPageId}
         />
       )}
 

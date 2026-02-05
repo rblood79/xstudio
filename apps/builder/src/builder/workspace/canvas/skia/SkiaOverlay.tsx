@@ -49,6 +49,17 @@ interface SkiaOverlayProps {
   pageWidth?: number;
   /** 페이지 높이 (타이틀 렌더링용) */
   pageHeight?: number;
+  /** 캔버스에 표시할 페이지 프레임들 */
+  pageFrames?: Array<{
+    id: string;
+    title: string;
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  }>;
+  /** 현재 활성 페이지 ID */
+  currentPageId?: string | null;
 }
 
 /**
@@ -122,11 +133,12 @@ function updateTextChildren(
  * @param cameraZoom - Camera 스케일 (줌 레벨)
  */
 
-// 트리 rebuild 캐시 — registryVersion 미변경 시 재사용하여 GC 압력 저감.
+// 트리 rebuild 캐시 — registryVersion + pagePositionsVersion 미변경 시 재사용하여 GC 압력 저감.
 // 카메라(팬/줌)는 비교하지 않음: 트리 좌표는 부모-자식 뺄셈으로 카메라가 상쇄되어
-// 동일한 registryVersion이면 카메라 값과 무관하게 동일한 트리가 생성된다.
+// 동일한 버전이면 카메라 값과 무관하게 동일한 트리가 생성된다.
 let _cachedTree: SkiaNodeData | null = null;
 let _cachedVersion = -1;
+let _cachedPagePosVersion = -1;
 
 function buildSkiaTreeHierarchical(
   cameraContainer: Container,
@@ -134,8 +146,9 @@ function buildSkiaTreeHierarchical(
   cameraX: number,
   cameraY: number,
   cameraZoom: number,
+  pagePositionsVersion = 0,
 ): SkiaNodeData | null {
-  if (_cachedTree && registryVersion === _cachedVersion) {
+  if (_cachedTree && registryVersion === _cachedVersion && pagePositionsVersion === _cachedPagePosVersion) {
     return _cachedTree;
   }
 
@@ -219,6 +232,7 @@ function buildSkiaTreeHierarchical(
   if (children.length === 0) {
     _cachedTree = null;
     _cachedVersion = registryVersion;
+    _cachedPagePosVersion = pagePositionsVersion;
     return null;
   }
 
@@ -234,24 +248,28 @@ function buildSkiaTreeHierarchical(
 
   _cachedTree = result;
   _cachedVersion = registryVersion;
+  _cachedPagePosVersion = pagePositionsVersion;
 
   return result;
 }
 
-// Selection 바운드맵 캐시 — 트리와 동일하게 registryVersion 기반 재사용
+// Selection 바운드맵 캐시 — 트리와 동일하게 registryVersion + pagePosVersion 기반 재사용
 let _cachedTreeBoundsMap: Map<string, BoundingBox> | null = null;
 let _cachedTreeBoundsVersion = -1;
+let _cachedTreeBoundsPosVersion = -1;
 
 function getCachedTreeBoundsMap(
   tree: SkiaNodeData,
   registryVersion: number,
+  pagePosVersion = 0,
 ): Map<string, BoundingBox> {
-  if (_cachedTreeBoundsMap && registryVersion === _cachedTreeBoundsVersion) {
+  if (_cachedTreeBoundsMap && registryVersion === _cachedTreeBoundsVersion && pagePosVersion === _cachedTreeBoundsPosVersion) {
     return _cachedTreeBoundsMap;
   }
   const map = buildTreeBoundsMap(tree);
   _cachedTreeBoundsMap = map;
   _cachedTreeBoundsVersion = registryVersion;
+  _cachedTreeBoundsPosVersion = pagePosVersion;
   return map;
 }
 
@@ -387,7 +405,14 @@ function buildSelectionRenderData(
  * 모든 Camera 하위 레이어는 renderable=false로 숨기고,
  * PixiJS는 히트 테스팅과 드래그 이벤트만 처리한다.
  */
-export function SkiaOverlay({ containerEl, backgroundColor = 0xf8fafc, app, dragStateRef }: SkiaOverlayProps) {
+export function SkiaOverlay({
+  containerEl,
+  backgroundColor = 0xf8fafc,
+  app,
+  dragStateRef,
+  pageFrames,
+  currentPageId,
+}: SkiaOverlayProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rendererRef = useRef<SkiaRenderer | null>(null);
   const [ready, setReady] = useState(false);
@@ -399,7 +424,23 @@ export function SkiaOverlay({ containerEl, backgroundColor = 0xf8fafc, app, drag
   const lastSelectedIdsRef = useRef<string[]>([]);
   const lastSelectedIdRef = useRef<string | null>(null);
   const lastAIActiveRef = useRef(0);
-  const lastPageTitleRef = useRef('');
+  const lastPageFramesSignatureRef = useRef('');
+  const pageFramesRef = useRef<SkiaOverlayProps["pageFrames"]>(undefined);
+  // 🚀 페이지 위치 변경 감지용 ref (매 프레임 store 읽기 대신 React lifecycle에서 갱신)
+  const pagePosVersionRef = useRef(0);
+  const lastPagePosVersionRef = useRef(0);
+
+  // 페이지 프레임/현재 페이지 ref 갱신
+  useEffect(() => {
+    pageFramesRef.current = pageFrames;
+  }, [pageFrames]);
+
+  // 🚀 페이지 위치 버전 React lifecycle에서 ref로 전파 (매 프레임 store.getState() 호출 제거)
+  useEffect(() => {
+    const version = useStore.getState().pagePositionsVersion;
+    pagePosVersionRef.current = version;
+  });
+
   const emptyTreeBoundsMapRef = useRef<Map<string, BoundingBox>>(new Map());
 
   // Dev-only: registryVersion 변화율(Content rerender 원인 추적)
@@ -407,6 +448,22 @@ export function SkiaOverlay({ containerEl, backgroundColor = 0xf8fafc, app, drag
   const devRegistryWindowStartVersion = useRef(0);
 
   const isActive = true;
+
+  // 페이지 프레임 변경 감지 → 오버레이 리렌더 트리거
+  useEffect(() => {
+    const frames = pageFrames ?? [];
+    const signature = frames
+      .map((frame) => {
+        const isActiveFrame = frame.id === (currentPageId ?? '');
+        return `${frame.id}:${frame.title}:${frame.x}:${frame.y}:${frame.width}:${frame.height}:${isActiveFrame ? 1 : 0}`;
+      })
+      .join('|');
+
+    if (signature !== lastPageFramesSignatureRef.current) {
+      overlayVersionRef.current++;
+      lastPageFramesSignatureRef.current = signature;
+    }
+  }, [pageFrames, currentPageId]);
 
   // CanvasKit + 폰트 초기화
   useEffect(() => {
@@ -520,6 +577,7 @@ export function SkiaOverlay({ containerEl, backgroundColor = 0xf8fafc, app, drag
       const cameraZoom = Math.max(cameraContainer?.scale?.x ?? 1, 0.001);
 
       const registryVersion = getRegistryVersion();
+      const pagePosVersion = pagePosVersionRef.current;
 
       if (process.env.NODE_ENV === 'development') {
         const now = performance.now();
@@ -591,16 +649,13 @@ export function SkiaOverlay({ containerEl, backgroundColor = 0xf8fafc, app, drag
         overlayVersionRef.current++;
       }
 
-      // 페이지 타이틀 변경 감지
-      const storeState = useStore.getState();
-      const currentPage = storeState.pages.find(p => p.id === storeState.currentPageId);
-      const pageTitle = currentPage?.title ?? '';
-      if (pageTitle !== lastPageTitleRef.current) {
-        overlayVersionRef.current++;
-        lastPageTitleRef.current = pageTitle;
-      }
-
       const camera = { zoom: cameraZoom, panX: cameraX, panY: cameraY };
+
+      // 🚀 페이지 위치 변경 감지 — content 무효화 (registryVersion 합산 해킹 제거)
+      if (pagePosVersion !== lastPagePosVersionRef.current) {
+        lastPagePosVersionRef.current = pagePosVersion;
+        renderer.invalidateContent();
+      }
 
       // 계층적 Skia 트리 재구성 (매 프레임)
       // rootNode의 renderSkia() 클로저가 현재 카메라 좌표를 캡처하므로
@@ -610,7 +665,7 @@ export function SkiaOverlay({ containerEl, backgroundColor = 0xf8fafc, app, drag
         ? performance.now()
         : 0;
       const tree = cameraContainer
-        ? buildSkiaTreeHierarchical(cameraContainer, registryVersion, cameraX, cameraY, cameraZoom)
+        ? buildSkiaTreeHierarchical(cameraContainer, registryVersion, cameraX, cameraY, cameraZoom, pagePosVersion)
         : null;
       if (process.env.NODE_ENV === 'development') {
         recordWasmMetric('skiaTreeBuildTime', performance.now() - treeBuildStart);
@@ -632,7 +687,7 @@ export function SkiaOverlay({ containerEl, backgroundColor = 0xf8fafc, app, drag
         ? performance.now()
         : 0;
       const treeBoundsMap = needsSelectionBoundsMap
-        ? getCachedTreeBoundsMap(tree, registryVersion)
+        ? getCachedTreeBoundsMap(tree, registryVersion, pagePosVersion)
         : emptyTreeBoundsMapRef.current;
       const selectionData = buildSelectionRenderData(cameraX, cameraY, cameraZoom, treeBoundsMap, dragStateRef);
       if (process.env.NODE_ENV === 'development' && needsSelectionBoundsMap) {
@@ -669,8 +724,16 @@ export function SkiaOverlay({ containerEl, backgroundColor = 0xf8fafc, app, drag
             }
           }
 
-          if (pageTitle) {
-            renderPageTitle(ck, canvas, pageTitle, cameraZoom, fontMgr);
+          const frames = pageFramesRef.current ?? [];
+          if (frames.length > 0) {
+            const activePageId = useStore.getState().currentPageId;
+            for (const frame of frames) {
+              if (!frame.title) continue;
+              canvas.save();
+              canvas.translate(frame.x, frame.y);
+              renderPageTitle(ck, canvas, frame.title, cameraZoom, fontMgr, frame.id === activePageId);
+              canvas.restore();
+            }
           }
 
           if (selectionData.bounds) {
@@ -699,6 +762,7 @@ export function SkiaOverlay({ containerEl, backgroundColor = 0xf8fafc, app, drag
       // Phase 6: 이중 Surface 캐싱 — SkiaRenderer가 classifyFrame()으로 최적 경로 결정
       // idle: 변경 없음 → 렌더링 스킵
       // content/full: renderContent() + blitToMain()
+      // pagePosVersion을 합산하여 페이지 위치 변경 시 content layer 재렌더 트리거
       renderer.render(cullingBounds, registryVersion, camera, overlayVersionRef.current);
     };
 
@@ -744,20 +808,14 @@ export function SkiaOverlay({ containerEl, backgroundColor = 0xf8fafc, app, drag
     };
   }, [ready, isActive, app, containerEl, backgroundColor]);
 
-  // 페이지 전환 시 Skia 레지스트리 + 이미지 캐시 초기화
-  // 개별 Sprite unmount의 useEffect cleanup보다 선행하여
-  // stale 노드가 전환 프레임에 렌더링되는 것을 방지한다.
-  const currentPageId = useStore((s) => s.currentPageId);
+  // 🆕 Multi-page: 모든 페이지가 동시 마운트되므로 페이지 전환 시
+  // 레지스트리/캐시 초기화 불필요. 선택 하이라이트 갱신만 수행.
   const prevPageIdRef = useRef(currentPageId);
 
   useEffect(() => {
     if (prevPageIdRef.current !== currentPageId) {
       prevPageIdRef.current = currentPageId;
-      clearSkiaRegistry();
-      clearImageCache();
-      clearTextParagraphCache();
       rendererRef.current?.invalidateContent();
-      rendererRef.current?.clearFrame();
     }
   }, [currentPageId]);
 

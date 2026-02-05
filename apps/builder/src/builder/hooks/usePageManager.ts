@@ -5,8 +5,11 @@ import { type Page as ApiPage } from '../../services/api/PagesApiService';
 import { type Page } from '../../types/builder/unified.types';
 import { getDB } from '../../lib/db';
 import { useStore } from '../stores';
+import { useCanvasSyncStore } from '../workspace/canvas/canvasSync';
 import type { ElementProps } from '../../types/integrations/supabase.types';
 import { ElementUtils } from '../../utils/element/elementUtils';
+
+const PAGE_STACK_GAP = 80;
 
 /**
  * API 응답 타입 (에러를 throw하지 않고 return)
@@ -80,10 +83,15 @@ export const usePageManager = ({ requestAutoSelectAfterUpdate }: UsePageManagerP
 
     const setCurrentPageId = useStore((state) => state.setCurrentPageId);
     const setPages = useStore((state) => state.setPages);
+    const setElements = useStore((state) => state.setElements);
+    const setSelectedElement = useStore((state) => state.setSelectedElement);
+    const setLazyLoadingEnabled = useStore((state) => state.setLazyLoadingEnabled);
+    const initializePagePositions = useStore((state) => state.initializePagePositions);
 
     // 🚀 Phase 5: Lazy Loading 관련 상태
     const lazyLoadPageElements = useStore((state) => state.lazyLoadPageElements);
     const isPageLoaded = useStore((state) => state.isPageLoaded);
+    const lazyLoadingEnabled = useStore((state) => state.lazyLoadingEnabled);
 
     /**
      * fetchElements - 페이지 요소 로드
@@ -99,55 +107,60 @@ export const usePageManager = ({ requestAutoSelectAfterUpdate }: UsePageManagerP
         }
 
         try {
-            // IndexedDB에서 페이지 요소 로드 (빠름! 10-50ms)
-            const db = await getDB();
-            const elementsData = await db.elements.getByPage(pageId);
+            const { elements, pages } = useStore.getState();
+            const existingPageElements = elements.filter((el) => el.page_id === pageId);
+            let mergedElements = elements;
+            let loadedPageElements = existingPageElements;
 
-            // ⭐ Layout/Slot System: 페이지에 적용된 Layout의 요소들도 함께 로드
-            const { pages } = useStore.getState();
-            const currentPage = pages.find(p => p.id === pageId);
-            const allElements = [...elementsData];
+            if (existingPageElements.length === 0) {
+                // IndexedDB에서 페이지 요소 로드 (빠름! 10-50ms)
+                const db = await getDB();
+                const elementsData = await db.elements.getByPage(pageId);
 
-            if (currentPage?.layout_id) {
-                const layoutElements = await db.elements.getByLayout(currentPage.layout_id);
-                console.log(`📥 [fetchElements] Layout ${currentPage.layout_id.slice(0, 8)} 요소 ${layoutElements.length}개 함께 로드`);
-                // Layout 요소들 추가 (중복 제거)
-                const existingIds = new Set(allElements.map(el => el.id));
-                layoutElements.forEach(el => {
-                    if (!existingIds.has(el.id)) {
-                        allElements.push(el);
-                    }
-                });
+                // ⭐ Layout/Slot System: 페이지에 적용된 Layout의 요소들도 함께 로드
+                const currentPage = pages.find(p => p.id === pageId);
+                const allElements = [...elementsData];
+
+                if (currentPage?.layout_id) {
+                    const layoutElements = await db.elements.getByLayout(currentPage.layout_id);
+                    console.log(`📥 [fetchElements] Layout ${currentPage.layout_id.slice(0, 8)} 요소 ${layoutElements.length}개 함께 로드`);
+                    // Layout 요소들 추가 (중복 제거)
+                    const existingIds = new Set(allElements.map(el => el.id));
+                    layoutElements.forEach(el => {
+                        if (!existingIds.has(el.id)) {
+                            allElements.push(el);
+                        }
+                    });
+                }
+
+                // 기존 요소와 병합 (중복 제거)
+                const mergedMap = new Map<string, Element>();
+                elements.forEach((el) => mergedMap.set(el.id, el));
+                allElements.forEach((el) => mergedMap.set(el.id, el));
+                mergedElements = Array.from(mergedMap.values());
+                loadedPageElements = elementsData;
+
+                setElements(mergedElements);
             }
 
-            const { setElements, setSelectedElement } = useStore.getState() as unknown as {
-                setElements: (elements: Element[], options?: { skipHistory?: boolean }) => void;
-                setSelectedElement: (elementId: string | null) => void;
-            };
-
-            // 히스토리 추적이 일시정지된 경우에도 페이지 로드는 허용
+            // 페이지 변경 시 현재 페이지 ID 업데이트
+            setCurrentPageId(pageId);
+            setSelectedPageId(pageId);
 
             // 페이지 선택 시 order_num이 0인 요소(body) 찾기
-            const bodyElement = elementsData.find(el => el.order_num === 0);
+            const bodyElement = loadedPageElements.find(el => el.order_num === 0);
 
             // 🎯 CRITICAL: setElements 전에 auto-select 예약 (race condition 방지)
             if (bodyElement && requestAutoSelectAfterUpdate) {
                 requestAutoSelectAfterUpdate(bodyElement.id);
             }
 
-            // 항상 히스토리 기록하지 않음 (useEffect → UPDATE_ELEMENTS → ACK → auto-select 실행)
-            setElements(allElements);
-
-            // 페이지 변경 시 현재 페이지 ID 업데이트
-            setCurrentPageId(pageId);
-            setSelectedPageId(pageId);
-
             // body 요소 자동 선택
             if (bodyElement) {
                 setSelectedElement(bodyElement.id);
             }
 
-            return { success: true, data: allElements };
+            return { success: true, data: mergedElements };
         } catch (error) {
             console.error('요소 로드 에러:', error);
             return { success: false, error: error as Error };
@@ -206,7 +219,18 @@ export const usePageManager = ({ requestAutoSelectAfterUpdate }: UsePageManagerP
             setCurrentPageId(newPage.id);
 
             // Zustand store 업데이트 (현재 store의 pages에 새 페이지 추가)
-            setPages([...currentPages, newPage]);
+            const updatedPages = [...currentPages, newPage];
+            setPages(updatedPages);
+
+            // 🆕 Multi-page: 새 페이지 위치 추가 (기존 페이지 오른쪽 끝)
+            const { pagePositions } = useStore.getState();
+            const currentCanvasWidth = useCanvasSyncStore.getState().canvasSize.width;
+            let maxX = 0;
+            for (const pos of Object.values(pagePositions)) {
+                const endX = pos.x + currentCanvasWidth + PAGE_STACK_GAP;
+                if (endX > maxX) maxX = endX;
+            }
+            useStore.getState().updatePagePosition(newPage.id, maxX, 0);
 
             // 새 페이지에 기본 body 요소 생성
             const bodyElement: Element = {
@@ -381,17 +405,54 @@ export const usePageManager = ({ requestAutoSelectAfterUpdate }: UsePageManagerP
             });
             setPages(storePages);
 
+            // 🆕 Multi-page: 페이지 위치 초기화 (수평 스택, 현재 canvasSize 기반)
+            const currentCanvasSize = useCanvasSyncStore.getState().canvasSize;
+            initializePagePositions(storePages, currentCanvasSize.width, PAGE_STACK_GAP);
+
+            // 🚀 Pencil 방식: 전체 페이지 요소를 한 번에 로드 (Lazy Loading 비활성화)
+            setLazyLoadingEnabled(false);
+
+            const pageIdSet = new Set(projectPages.map((p) => p.id));
+            const allElements = await db.elements.getAll();
+            const pageElements = allElements.filter((el) => el.page_id && pageIdSet.has(el.page_id));
+
+            // Layout 요소도 함께 로드 (중복 제거)
+            const layoutIds = Array.from(
+                new Set(
+                    projectPages
+                        .map((p) => (p as { layout_id?: string | null }).layout_id)
+                        .filter((id): id is string => Boolean(id))
+                )
+            );
+            const layoutElements: Element[] = [];
+            for (const layoutId of layoutIds) {
+                const els = await db.elements.getByLayout(layoutId);
+                layoutElements.push(...els);
+            }
+
+            const mergedMap = new Map<string, Element>();
+            pageElements.forEach((el) => mergedMap.set(el.id, el));
+            layoutElements.forEach((el) => mergedMap.set(el.id, el));
+            const mergedElements = Array.from(mergedMap.values());
+
+            setElements(mergedElements);
+
             // 4. order_num이 0인 페이지(Home)를 우선 선택, 없으면 첫 번째 페이지 선택
             if (apiPages.length > 0) {
                 const homePage = apiPages.find(p => p.order_num === 0);
                 const pageToSelect = homePage || apiPages[0];
 
                 setCurrentPageId(pageToSelect.id);
+                setSelectedPageId(pageToSelect.id);
 
-                const result = await fetchElements(pageToSelect.id);
-                if (!result.success) {
-                    initializingRef.current = null;
-                    return { success: false, error: result.error };
+                const bodyElement = mergedElements.find(
+                    (el) => el.page_id === pageToSelect.id && el.order_num === 0
+                );
+                if (bodyElement) {
+                    if (requestAutoSelectAfterUpdate) {
+                        requestAutoSelectAfterUpdate(bodyElement.id);
+                    }
+                    setSelectedElement(bodyElement.id);
                 }
             }
 
@@ -402,9 +463,9 @@ export const usePageManager = ({ requestAutoSelectAfterUpdate }: UsePageManagerP
             initializingRef.current = null;
             return { success: false, error: error as Error };
         }
-        // pageList, setCurrentPageId, setPages are stable
+        // pageList, setCurrentPageId, setPages, initializePagePositions are stable
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [fetchElements]);
+    }, [fetchElements, setElements, setLazyLoadingEnabled, setSelectedElement, initializePagePositions]);
 
     /**
      * loadPageIfNeeded - 페이지가 로드되지 않았으면 로드
@@ -414,6 +475,7 @@ export const usePageManager = ({ requestAutoSelectAfterUpdate }: UsePageManagerP
      */
     const loadPageIfNeeded = useCallback(async (pageId: string): Promise<void> => {
         if (!pageId) return;
+        if (!lazyLoadingEnabled) return;
 
         // 이미 로드됨 - 스킵
         if (isPageLoaded(pageId)) {
@@ -424,7 +486,7 @@ export const usePageManager = ({ requestAutoSelectAfterUpdate }: UsePageManagerP
         // Lazy Load 실행
         console.log(`🔄 [loadPageIfNeeded] Loading page: ${pageId.slice(0, 8)}`);
         await lazyLoadPageElements(pageId);
-    }, [isPageLoaded, lazyLoadPageElements]);
+    }, [isPageLoaded, lazyLoadPageElements, lazyLoadingEnabled]);
 
     return {
         pages: pageList.items,

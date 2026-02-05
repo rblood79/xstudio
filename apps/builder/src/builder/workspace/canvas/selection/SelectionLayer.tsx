@@ -36,6 +36,10 @@ export interface SelectionLayerProps {
   pageWidth?: number;
   /** 페이지 높이 (Body 선택용) */
   pageHeight?: number;
+  /** 페이지 위치 맵 (Body 선택/바운드용) */
+  pagePositions?: Record<string, { x: number; y: number }>;
+  /** 페이지 위치 변경 버전 */
+  pagePositionsVersion?: number;
   /** 현재 줌 레벨 (핸들 크기 유지용) */
   zoom?: number;
   /** 🚀 Phase 7: Pan offset for coordinate transformation */
@@ -75,6 +79,8 @@ export const SelectionLayer = memo(function SelectionLayer({
   dragState,
   pageWidth = 1920,
   pageHeight = 1080,
+  pagePositions,
+  pagePositionsVersion = 0,
   zoom = 1,
   panOffset = { x: 0, y: 0 },
   onResizeStart,
@@ -152,7 +158,13 @@ export const SelectionLayer = memo(function SelectionLayer({
     const boxes = selectedElements.map((el) => {
       // Body 요소는 페이지 전체 크기로 설정 (이미 Camera 로컬 좌표)
       if (el.tag.toLowerCase() === 'body') {
-        return { x: 0, y: 0, width: pageWidth, height: pageHeight };
+        const pos = el.page_id ? pagePositions?.[el.page_id] : undefined;
+        return {
+          x: pos?.x ?? 0,
+          y: pos?.y ?? 0,
+          width: pageWidth,
+          height: pageHeight,
+        };
       }
       // 🚀 Phase 2: ElementRegistry에서 실제 bounds 조회
       const bounds = getElementBoundsSimple(el.id);
@@ -173,7 +185,16 @@ export const SelectionLayer = memo(function SelectionLayer({
 
     return calculateCombinedBounds(boxes);
   // eslint-disable-next-line @typescript-eslint/no-unused-vars -- 의존성 트리거용
-  }, [selectedElements, pageWidth, pageHeight, zoom, panOffset, selectedStyleSignature]);
+  }, [
+    selectedElements,
+    pageWidth,
+    pageHeight,
+    zoom,
+    panOffset,
+    selectedStyleSignature,
+    pagePositions,
+    pagePositionsVersion,
+  ]);
 
   // 🚀 Phase 2: 선택 변경 시 bounds 계산
   // ElementRegistry의 getBounds()를 사용하여 실제 렌더링된 위치 조회

@@ -350,6 +350,48 @@ Dirty Rect(clipRect) 기반 부분 렌더링은 “팬/줌/스냅샷/padding” 
 
 **상세:** `apps/builder/src/.../sprites/ElementSprite.tsx`
 
+## Update: Multi-Page Canvas Rendering (2026-02-05)
+
+Pencil의 Frame처럼 모든 페이지를 캔버스에 동시 렌더링하는 멀티페이지 지원 추가:
+
+### 씬 그래프 구조 변경
+
+```
+변경 전:                          변경 후:
+Camera                           Camera
+  BodyLayer (단일)                  pages.map(page =>
+  CanvasBounds (단일)                 <PageContainer x={pos.x} y={pos.y}>
+  ElementsLayer (단일)                  <pixiGraphics /> (타이틀 드래그)
+  SelectionLayer                        <BodyLayer />
+                                        <CanvasBounds />
+                                        {isVisible && <ElementsLayer />}
+                                      </PageContainer>
+                                    )
+                                    <SelectionLayer /> (최상단)
+```
+
+### 핵심 설계 결정
+
+| 결정 | 근거 |
+|------|------|
+| **PageContainer에 x/y 직접 배치** | Yoga layout 외부이므로 x/y prop 예외 허용 |
+| **Skia traverse() 수정 불필요** | `worldTransform`이 page container offset 자동 누적 |
+| **페이지 전환 시 레지스트리 초기화 제거** | 모든 페이지 동시 마운트 |
+| **`setSelectedElements([])` 사용** | `clearSelection()`은 selection 슬라이스만 초기화 — 트리/패널에 잔류 문제 |
+| **DOM clientX/clientY 좌표계** | PixiJS global 좌표와 DOM 좌표 불일치 방지 |
+| **`invalidateContent()` + ref 기반** | 버전 합산은 충돌 위험, 매 프레임 store 읽기는 성능 부담 |
+
+### 성능 영향
+
+| 항목 | 변경 전 | 변경 후 |
+|------|---------|---------|
+| 페이지별 요소 조회 | O(N*M) `elements.find/filter` | O(1) `pageIndex` |
+| elementById | `new Map()` 매 렌더 생성 | `elementsMap` 직접 참조 |
+| 페이지 컨테이너 | 인라인 JSX | `PageContainer` memo |
+| 뷰포트 밖 페이지 | 전체 렌더링 | `ElementsLayer` 조건부 제외 (200px 마진) |
+
+**상세:** `docs/MULTIPAGE.md`
+
 ## Implementation
 
 ```typescript

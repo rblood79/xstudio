@@ -67,6 +67,10 @@ export interface ElementsState {
   selectedElementIdsSet: Set<string>;
   multiSelectMode: boolean;
 
+  // 🆕 Multi-page: 페이지별 캔버스 위치
+  pagePositions: Record<string, { x: number; y: number }>;
+  pagePositionsVersion: number;
+
   // 내부 헬퍼: 인덱스 재구축
   _rebuildIndexes: () => void;
   // 내부 헬퍼: 진행 중인 selectedElementProps hydration 취소
@@ -117,6 +121,10 @@ export interface ElementsState {
   // 🚀 배치 업데이트 (100+ 요소 최적화)
   batchUpdateElementProps: (updates: BatchPropsUpdate[]) => Promise<void>;
   batchUpdateElements: (updates: BatchElementUpdate[]) => Promise<void>;
+
+  // 🆕 Multi-page: 페이지 위치 관리
+  initializePagePositions: (pages: Page[], pageWidth: number, gap: number) => void;
+  updatePagePosition: (pageId: string, x: number, y: number) => void;
 
   // 🚀 WebGL computed layout 동기화
   updateSelectedElementLayout: (elementId: string, layout: ComputedLayout) => void;
@@ -258,6 +266,10 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
     // 🚀 O(1) 검색용 Set
     selectedElementIdsSet: new Set<string>(),
     multiSelectMode: false,
+
+    // 🆕 Multi-page: 페이지별 캔버스 위치
+    pagePositions: {},
+    pagePositionsVersion: 0,
 
     _rebuildIndexes,
     _cancelHydrateSelectedProps: cancelHydrateSelectedProps,
@@ -608,6 +620,29 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
         computedLayout: layout,
       },
     });
+  },
+
+  // 🆕 Multi-page: 페이지 위치 초기화 (order_num 정렬 → 수평 스택)
+  initializePagePositions: (pages: Page[], pageWidth: number, gap: number) => {
+    const sorted = [...pages].sort((a, b) => (a.order_num ?? 0) - (b.order_num ?? 0));
+    const positions: Record<string, { x: number; y: number }> = {};
+    let currentX = 0;
+    for (const page of sorted) {
+      positions[page.id] = { x: currentX, y: 0 };
+      currentX += pageWidth + gap;
+    }
+    set((state) => ({
+      pagePositions: positions,
+      pagePositionsVersion: state.pagePositionsVersion + 1,
+    }));
+  },
+
+  // 🆕 Multi-page: 단일 페이지 위치 업데이트 (드래그용)
+  updatePagePosition: (pageId: string, x: number, y: number) => {
+    set((state) => ({
+      pagePositions: { ...state.pagePositions, [pageId]: { x, y } },
+      pagePositionsVersion: state.pagePositionsVersion + 1,
+    }));
   },
 
   // G.1: Instance 생성 액션

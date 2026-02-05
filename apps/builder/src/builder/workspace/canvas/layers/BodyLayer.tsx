@@ -31,6 +31,8 @@ interface ClickModifiers {
 }
 
 export interface BodyLayerProps {
+  /** 대상 페이지 ID */
+  pageId: string;
   /** 페이지 너비 */
   pageWidth: number;
   /** 페이지 높이 */
@@ -53,6 +55,7 @@ export interface BodyLayerProps {
  * - boxShadow (TODO)
  */
 export const BodyLayer = memo(function BodyLayer({
+  pageId,
   pageWidth,
   pageHeight,
   onClick,
@@ -60,17 +63,15 @@ export const BodyLayer = memo(function BodyLayer({
   useExtend(PIXI_COMPONENTS);
   // 🚀 최적화: elements 배열 대신 elementsMap 사용
   const elementsMap = useStore((state) => state.elementsMap);
-  const currentPageId = useStore((state) => state.currentPageId);
-
   // Body 요소 찾기 (페이지당 1개만 존재)
   const bodyElement = useMemo(() => {
     for (const el of elementsMap.values()) {
-      if (el.page_id === currentPageId && el.tag.toLowerCase() === 'body') {
+      if (el.page_id === pageId && el.tag.toLowerCase() === 'body') {
         return el;
       }
     }
     return undefined;
-  }, [elementsMap, currentPageId]);
+  }, [elementsMap, pageId]);
 
   // Body 스타일
   const bodyStyle = bodyElement?.props?.style as CSSStyle | undefined;

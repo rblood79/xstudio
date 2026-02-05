@@ -1014,6 +1014,13 @@ XStudio (수정 후):
 - padding(512px) 및 cleanup render 트리거 정책(입력 디바이스/줌 범위)에 대한 튜닝/문서화
 - 리소스 수명/누수 방지(Paragraph/Paint/Path/Image 등 `.delete()` 정책) 및 캐시 세대 교체 규칙 정리
 
+#### XStudio 적용 메모: Frame/페이지 렌더링
+
+- **렌더 범위**: 프리뷰(iframe)는 기존처럼 **현재 페이지 1개만 유지**.
+- **캔버스 렌더**: 빌더 캔버스에는 **모든 페이지를 Frame처럼 동시에 렌더링**.
+- **페이지 배치**: **가로 스택** 기본 배치, **페이지 타이틀 영역 드래그**로 위치 재배치 가능.
+- **로딩 정책**: Pencil과 동일하게 **전체 페이지/요소를 초기 로드**(페이지 단위 lazy load 없음).
+
 ---
 
 ## 17. 에디터 프론트엔드 (index.js) 구조 분석
@@ -2170,6 +2177,55 @@ float coverage = pow(shapeColor.a * alpha, gamma);
 - descendants 처리: 슬래시 경로로 중첩 노드 접근 (e.g., `instanceId/childId`)
 - `$B()` → 프로퍼티 적용 + 변수 바인딩 해석
 - children 대체: `clearChildren()` → `insertNodes()` 재호출
+
+#### FrameNode (`jx`) 렌더링/히트테스트 핵심 (04_file-manager.txt: ~2960-3300)
+
+**구조/상태 캐시**
+```
+_fillPath / fillPathDirty   // 라운드 사각형 fill 경로 캐시
+_slotPath / slotPathDirty   // slot placeholder 경로 캐시 (내부 inset)
+_maskPath                   // stroke 정렬에 따른 마스크 경로
+strokePath (W2e)            // stroke 경로 계산/렌더
+generatingEffect            // placeholder → 생성중 효과 핸들
+```
+
+**Fill/Slot 경로 생성**
+- Fill 경로: `CG()`로 라운드 사각형 생성. `width/height/cornerRadius` 변경 시 dirty.
+- Slot 경로: 10px inset 사각형. 코너도 `cornerRadius - 10`으로 축소(0 하한).
+
+**시각 바운딩 박스**
+- 기본은 `localBounds()` 기반.
+- stroke가 있을 때 `strokeAlignment`에 따라 확장.
+- `strokeAlignment=Center` → 0.5배, `strokeAlignment=Outside` → 1배만큼 `strokeWidth`로 확장.
+- `clip=false`면 자식들의 `visualLocalBounds`를 union.
+- 이펙트는 `a4()`로 추가 반영.
+
+**렌더 파이프라인 (renderSkia)**
+- 비활성/뷰포트 비접촉 시 early return.
+- 로컬 매트릭스 적용 → `renderFills()`로 배경 렌더.
+- `clip=true`면 fill path로 clip 후 자식 렌더, `clip=false`면 stroke 렌더 후 자식.
+- 자식 중 `renderOnTop`은 마지막에 별도 렌더.
+- `clip=true`일 때 stroke는 자식 렌더 뒤에 그려짐.
+- slot이 있거나 slot 인스턴스이며 자식이 없으면 `renderSlot()`로 placeholder 표시.
+
+**히트 테스트**
+- `getVisualWorldBounds()` 밖이면 무시.
+- fill path + stroke path 기준으로 히트 판정.
+- `clip=true`면 fill path 내부에서만 자식 히트 테스트.
+- 자식은 역순 순회(상단 우선).
+- 루트/빈 프레임은 바운딩 박스 또는 stroke 히트 시 프레임 자체 선택.
+
+**기타 동작**
+- `placeholder` 토글 시 생성중 효과(`skiaRenderer.addGeneratingEffect`) 등록/해제.
+- 이름/표시 여부/부모 변경 시 `frameNamesManager`에 변경 통지.
+- `supportsImageFill()`은 true.
+
+#### 캔버스 Frame 동작 요약 (UI/코드 관찰)
+
+- 문서가 단일 Scenegraph 노드 트리로 구성되므로, Frame은 “페이지 전환” 없이 같은 캔버스에 공존하는 구조이다.
+- Frame 이름/표시 상태는 `frameNamesManager`에서 별도 오버레이로 관리된다.
+- 드래그 이동은 `dragStartNodePositions`로 원본 좌표를 저장하고, 드롭 대상 탐색은 `findFrameForPosition(x, y)`로 처리한다.
+- 파일 로드 시 `insertNodes()`로 전체 노드를 일괄 생성하고 `updateLayout()`을 수행한다(페이지 단위 lazy load 없음).
 
 ### 20.3 05_node-types.txt (30,962줄)
 

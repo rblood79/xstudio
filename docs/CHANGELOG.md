@@ -7,6 +7,123 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added - Multi-Page Canvas Rendering (2026-02-05)
+
+#### 개요
+캔버스에 모든 페이지를 Pencil의 Frame처럼 동시 렌더링하는 기능 구현.
+Preview iframe은 기존대로 현재 페이지 1개만 유지.
+
+#### 주요 변경사항
+
+**Phase 1: 페이지 위치 상태 관리**
+- Store에 `pagePositions`, `pagePositionsVersion` 상태 및 `initializePagePositions()`, `updatePagePosition()` 액션 추가.
+- `usePageManager`에서 초기화 시 수평 배치 계산, `addPage()` 시 동적 canvasSize 기반 위치 계산.
+
+**Phase 2: 다중 페이지 PixiJS 씬 그래프**
+- Camera 하위에 `PageContainer` memo 컴포넌트로 페이지별 독립 컨테이너 생성.
+- `allPageData`: `pageIndex` 기반 O(1) 조회 (기존 `elements.find/filter` O(N*M) 제거).
+- `elementById`: store의 `elementsMap` 직접 참조 (중복 Map 생성 제거).
+
+**Phase 3: Skia 렌더링 멀티페이지 대응**
+- Skia 트리 캐시에 `pagePositionsVersion` 키 추가.
+- `pagePosVersionRef` + `invalidateContent()` ref 기반 content 재렌더 트리거.
+- 페이지 전환 시 `clearSkiaRegistry()` / `clearImageCache()` / `clearTextParagraphCache()` 호출 제거.
+- `renderPageTitle()`: 활성 페이지 selection 색상(`#3B82F6`), 비활성 slate-500(`#64748b`).
+
+**Phase 4: 페이지 클릭 → currentPage 전환**
+- 다른 페이지 요소 클릭 시 `setCurrentPageId(element.page_id)` 호출 + Preview 갱신.
+
+**Phase 5: Selection 페이지 경계 처리**
+- 빈 영역 클릭 시 `setSelectedElements([])` — 트리/패널 포함 완전 초기화.
+- 라쏘 선택은 현재 페이지 내에서만 동작.
+- boundsMap 캐시에 `pagePosVersion` 분리 키 추가.
+
+**Phase 6: Viewport Culling 페이지 단위 최적화**
+- `visiblePageIds: Set<string>` — 뷰포트 밖 페이지의 `ElementsLayer` 렌더링 제외 (200px 마진).
+
+**Phase 7: 페이지 타이틀 드래그**
+- `usePageDrag` 훅: RAF 스로틀 + DOM clientX/clientY 좌표계.
+- 타이틀 히트 영역: `PAGE_TITLE_HIT_HEIGHT = 24px`.
+
+**Body 요소 보호**
+- `handleCanvasDelete`에서 `tag === 'body'` 요소 필터링.
+- `elementRemoval.ts`의 `removeElement`에서 body 삭제 가드 추가.
+
+#### 성능 최적화
+| 항목 | 변경 전 | 변경 후 |
+|------|---------|---------|
+| `allPageData` | `elements.find/filter` O(N*M) | `pageIndex` O(1) |
+| `elementById` | `new Map(elements.map())` 매 렌더 | `elementsMap` 직접 참조 |
+| 페이지 컨테이너 | 인라인 JSX | `PageContainer` memo |
+| Skia content 감지 | 버전 합산 | `invalidateContent()` + ref |
+| 매 프레임 store 읽기 | `useStore.getState()` | `pagePosVersionRef` |
+
+#### 수정 파일
+| 파일 | 변경 |
+|------|------|
+| `stores/elements.ts` | pagePositions 상태/액션 추가 |
+| `stores/utils/elementRemoval.ts` | Body 삭제 가드 |
+| `hooks/usePageManager.ts` | 초기화/addPage 위치 계산 |
+| `hooks/useGlobalKeyboardShortcuts.ts` | Body 삭제 필터링 |
+| `canvas/BuilderCanvas.tsx` | 핵심 구조: PageContainer, allPageData, viewport culling, 페이지 전환 |
+| `canvas/layers/BodyLayer.tsx` | pageId prop 사용 |
+| `canvas/skia/SkiaOverlay.tsx` | 트리 캐시 pagePosVersion, 레지스트리 초기화 제거 |
+| `canvas/skia/selectionRenderer.ts` | renderPageTitle isActive |
+| `canvas/selection/SelectionLayer.tsx` | pagePositions prop 연결 |
+| `canvas/hooks/useViewportCulling.ts` | 페이지 단위 컬링 |
+| `canvas/hooks/usePageDrag.ts` | **신규** — 페이지 드래그 훅 |
+
+**상세:** `docs/MULTIPAGE.md`
+
+### Fixed - Canvas Layout/Rendering 버그 5건 수정 (2026-02-05)
+
+#### 개요
+Canvas(PixiJS + Skia) 렌더링에서 발생한 5개 버그를 수정.
+리팩토링 시 내부 store 구독→props 전환에서 render call 업데이트 누락이 근본 원인.
+
+#### 버그 1: Body flex-direction 변경 시 Card 높이 늘어남
+- **현상**: Body `row→column` 전환 시 Card가 body 전체 높이로 확대. 새로고침하면 정상.
+- **원인**: `@pixi/layout`의 `formatStyles()`가 이전 스타일과 merge하여 `flexBasis:'100%'`가 잔류.
+- **수정**: `blockLayoutDefaults = { flexBasis: 'auto', flexGrow: 0 }` 기본값을 containerLayout spread 최선두에 배치 (3곳).
+- **파일**: `BuilderCanvas.tsx`
+
+#### 버그 2: Card + Button children 겹침
+- **현상**: Card 내부 Button이 description 텍스트와 겹침.
+- **원인**: `cardLayout.height`가 텍스트만 계산한 고정값 → Yoga가 children 배치 공간 부족.
+- **수정**: `height: 'auto'` + `minHeight: calculatedContentHeight` + `contentLayout.gap: 8`.
+- **파일**: `PixiCard.tsx`
+
+#### 버그 3: Body padding 적용 시 Card overflow
+- **현상**: Body에 padding 적용 시 Card가 body를 벗어남. 새로고침하면 정상.
+- **원인**: `ElementsLayer`가 내부 `useStore` → props 리팩토링 후 render call에서 `pageElements`, `bodyElement`, `elementById`, `depthMap` 미전달 → 모두 `undefined`.
+- **수정**: `<ElementsLayer>` render call에 누락 props 추가, `bodyElement` computation을 `BuilderCanvas`에 추가.
+- **파일**: `BuilderCanvas.tsx`
+
+#### 버그 4: Body 배경색/border/selection 미표시
+- **현상**: Body의 배경색, border, selection overlay가 Skia에서 렌더링되지 않음.
+- **원인**: `BodyLayer`가 내부 `useStore(currentPageId)` → `pageId` prop 리팩토링 후 render call에서 `pageId` 미전달 → `bodyElement` 항상 `undefined` → Skia node 미등록.
+- **수정**: `<BodyLayer pageId={currentPageId!}>` prop 추가.
+- **파일**: `BuilderCanvas.tsx`
+
+#### 버그 5: SkiaOverlay.tsx 빌드 에러
+- **현상**: `"currentPageId" has already been declared` esbuild 에러.
+- **원인**: `currentPageId`가 prop(line 407)과 `useStore`(line 789) 양쪽에서 중복 선언.
+- **수정**: 중복 `useStore` 구독 제거 (prop으로 전달됨).
+- **파일**: `SkiaOverlay.tsx`
+
+#### 수정 파일 목록
+
+| 파일 | 변경 |
+|------|------|
+| `apps/builder/src/builder/workspace/canvas/BuilderCanvas.tsx` | ElementsLayer/BodyLayer 누락 props 전달, blockLayoutDefaults 추가, bodyElement 계산 |
+| `apps/builder/src/builder/workspace/canvas/ui/PixiCard.tsx` | cardLayout height:'auto' + minHeight, contentLayout gap:8 |
+| `apps/builder/src/builder/workspace/canvas/skia/SkiaOverlay.tsx` | 중복 currentPageId 선언 제거 |
+
+#### 교훈
+`@pixi/layout`의 `formatStyles()` merge 동작과 리팩토링 시 render call 업데이트 누락은 "새로고침하면 정상"이라는 공통 증상을 보인다.
+- **formatStyles merge**: 이전 스타일이 잔류 → 새로고침으로 `_styles.custom` 초기화 시 정상
+- **Props 미전달**: undefined 값으로 동작 → 새로고침으로 store 재구독 시 정상
+
 ### Added - GPUDebugOverlay (2026-02-05)
 
 #### 개요

@@ -44,6 +44,12 @@ export const createRemoveElementAction =
       }
       return;
     }
+
+    // Body 요소는 직접 삭제 불가 (페이지 삭제 시에만 함께 삭제)
+    if (element.tag.toLowerCase() === 'body') {
+      console.log("⚠️ removeElement: Body 요소는 삭제할 수 없습니다", { elementId });
+      return;
+    }
     console.log("🔍 삭제할 요소:", {
       id: element.id,
       tag: element.tag,

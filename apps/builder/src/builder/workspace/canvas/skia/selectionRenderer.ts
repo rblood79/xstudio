@@ -337,6 +337,7 @@ export function renderPageTitle(
   title: string,
   zoom: number,
   fontMgr?: FontMgr,
+  isActive = false,
 ): void {
   if (!title || !fontMgr) return;
 
@@ -350,7 +351,7 @@ export function renderPageTitle(
 
     // Typeface 획득
     const typeface = fontMgr.matchFamilyStyle('Pretendard', {
-      weight: ck.FontWeight.Normal,
+      weight: isActive ? ck.FontWeight.Medium : ck.FontWeight.Normal,
       width: ck.FontWidth.Normal,
       slant: ck.FontSlant.Upright,
     });
@@ -359,14 +360,18 @@ export function renderPageTitle(
     const font = scope.track(new ck.Font(typeface, fontSize));
     font.setSubpixel(true);
 
-    // 텍스트 Paint (slate-500, 80% opacity)
+    // 활성 페이지: selection 색상, 비활성: slate-500
     const textPaint = scope.track(new ck.Paint());
     textPaint.setAntiAlias(true);
     textPaint.setStyle(ck.PaintStyle.Fill);
-    textPaint.setColor(ck.Color4f(
-      PAGE_TITLE_COLOR_R, PAGE_TITLE_COLOR_G, PAGE_TITLE_COLOR_B,
-      PAGE_TITLE_OPACITY,
-    ));
+    if (isActive) {
+      textPaint.setColor(ck.Color4f(SELECTION_R, SELECTION_G, SELECTION_B, 1));
+    } else {
+      textPaint.setColor(ck.Color4f(
+        PAGE_TITLE_COLOR_R, PAGE_TITLE_COLOR_G, PAGE_TITLE_COLOR_B,
+        PAGE_TITLE_OPACITY,
+      ));
+    }
 
     // 위치: 페이지 좌상단 (0, 0)에서 위로 offsetY만큼
     const textX = 0;

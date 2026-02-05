@@ -1,7 +1,7 @@
 # Pencil vs xstudio 렌더링 성능 비교 분석
 
 > 분석일: 2026-01-29
-> 최종 수정: 2026-02-05 (Pencil 방식 2-pass: 컨텐츠 캐시 + present blit + 오버레이 분리, Dirty Rect 경로 제거)
+> 최종 수정: 2026-02-05 (Pencil 방식 2-pass + 멀티페이지 동시 렌더링)
 > Pencil: v1.1.10 (Electron + CanvasKit/Skia WASM + PixiJS v8)
 > xstudio: PixiJS v8.14.3 + @pixi/react v8.0.5
 >
@@ -34,6 +34,13 @@
 > - 트리/Selection 바운드맵은 registryVersion 캐시로 GC/CPU 압력 최소화
 > - clipRect 기반 Dirty Rect 경로는 잔상/미반영 버그 위험으로 제거(보류)
 > - Dev 관측: `GPUDebugOverlay`로 `RAF FPS`와 `Present/s`, `Content/s`, `Registry/s`, `Idle%`를 분리 관측
+>
+> **멀티페이지 동시 렌더링 (2026-02-05):** Pencil의 Frame 방식과 동일하게 모든 페이지를 캔버스에 동시 렌더링.
+> - **씬 그래프:** Camera 하위에 `PageContainer` memo 컴포넌트로 페이지별 독립 컨테이너 (x/y 수동 배치, Yoga 외부)
+> - **Skia 호환:** `traverse()` 수정 없이 `worldTransform`이 page container offset 자동 누적
+> - **성능:** `pageIndex` O(1) 조회, `elementsMap` 직접 참조, 뷰포트 밖 페이지 `ElementsLayer` 컬링 (200px 마진)
+> - **페이지 타이틀:** 활성 `#3B82F6` / 비활성 `#64748b`, 드래그 재배치 (RAF 스로틀, DOM 좌표계)
+> - **상세:** `docs/MULTIPAGE.md`
 >
 > **"완전히 동일"의 범위(주의):**
 > - “핵심 구조” 관점에서는 Pencil과 동일한 방식(컨텐츠 캐시 + present 단계에서 blit + 오버레이 별도 렌더)으로 정리됐다.
@@ -77,11 +84,23 @@
 | **6종 Fill 시스템** | ✅ Shader 기반 | ✅ 6종 (`fills.ts`) | - | Color/Linear/Radial/Angular/MeshGradient/Image |
 | **이펙트 파이프라인** | ✅ beginRenderEffects | ✅ saveLayer 기반 (`effects.ts`) | - | Opacity/BackgroundBlur/DropShadow 등 |
 
+#### Frame 렌더링 규칙 (Pencil 기준)
+
+Pencil의 캔버스에 그려지는 Frame은 `FrameNode(jx)`가 직접 렌더링하며 아래 규칙을 따른다.
+
+- Fill 경로는 라운드 사각형으로 생성하며 `width/height/cornerRadius` 변경 시 캐시 무효화.
+- Slot 경로는 내부 10px inset 사각형, cornerRadius는 `cornerRadius - 10`(0 하한).
+- 시각 바운딩은 `localBounds()` 기본, `strokeAlignment`가 Center/Outside면 strokeWidth만큼 확장.
+- `clip=false`면 자식들의 `visualLocalBounds`를 union하고, 이펙트는 추가 확장.
+- 렌더 순서: fills → (clip이면 clip) → children → (clip이면 stroke) → renderOnTop children.
+- slot 또는 slot 인스턴스이고 자식이 없으면 `renderSlot()`로 placeholder 표시.
+- 히트 테스트는 fill/stroke 경로 기준이며 `clip=true`면 fill 내부에서만 자식 히트 테스트.
+
 ### 2.2 공간 및 히트 테스트
 
 | 최적화 기법 | Pencil | xstudio | WASM 계획 | 비고 |
 |------------|--------|---------|----------|------|
-| 뷰포트 컬링 | ✅ | ✅ AABB + SpatialIndex O(k) | ✅ Phase 1 | xstudio: SpatialIndex query_viewport로 O(k) 컬링 ✅ (2026-02-02) |
+| 뷰포트 컬링 | ✅ | ✅ AABB + SpatialIndex O(k) + 페이지 단위 컬링 | ✅ Phase 1 | xstudio: SpatialIndex query_viewport O(k) ✅ (2026-02-02) + 멀티페이지 뷰포트 컬링 `visiblePageIds` ✅ (2026-02-05) |
 | 공간 인덱스 (Spatial Index) | ✅ (추정) | ✅ Rust WASM Grid-cell 기반 | ✅ Phase 1 | O(n) → O(k) 쿼리 개선 ✅ (2026-02-02) |
 | 히트 테스트 가속 | ✅ PixiJS EventBoundary — hitTestRecursive, 역순 z-order, Prune+Cull | ✅ PixiJS EventBoundary | - | xstudio도 PixiJS가 이벤트/히트테스트 전담 (렌더는 CanvasKit) |
 | Scissor 클리핑 | ✅ clipToViewport | ❌ | ❌ | GPU 레벨 클리핑 |
@@ -526,7 +545,7 @@ WASM 계획과 무관하게, JS만으로 즉시 적용 가능한 최적화:
 | **폴백 안전성** | JS 단일 경로 | WASM 무조건 활성화 (Feature Flag 제거됨), try-catch 에러 핸들링 유지 | WASM 초기화 실패 시 에러 로깅, JS 폴백 경로 제거됨 |
 | **ID 매핑** | string UUID만 사용 (메모리/비교 비용 높음) | `ElementIdMapper` string↔u32 양방향, `tryGetNumericId()` 안전 조회 | WASM 경계에서 4바이트 u32 사용 → 메모리/비교 최적화 |
 | **Bounds 소스 통일** | `layoutBoundsRegistry` (JS Map) + `calculateBounds(style)` 혼재 | SpatialIndex 내부 bounds 캐시 + registry 동기화 | 단일 소스 기반 일관된 bounds 조회 |
-| **페이지 범위 관리** | `elements` 배열이 전체 페이지 포함 — 컬링/쿼리에 불필요한 요소 포함 | 페이지 전환 시 `clearAll()` + 현재 페이지 `batch_upsert()` | SpatialIndex 메모리/쿼리 범위를 현재 페이지로 한정 |
+| **페이지 범위 관리** | `elements` 배열이 전체 페이지 포함 — 컬링/쿼리에 불필요한 요소 포함 | ✅ 멀티페이지 동시 렌더링 (2026-02-05): 모든 페이지를 동시 마운트. `pageIndex` O(1) 조회 + `visiblePageIds` 뷰포트 컬링으로 렌더 범위 관리 | SpatialIndex는 현재 페이지 한정, 캔버스 렌더링은 모든 페이지 동시 표시 |
 
 ### 8.4 메모리 및 번들 영향
 
@@ -1857,6 +1876,10 @@ Cmd+S → saveDocument() → FileManager.export()
 | A-6 | 이벤트 브리징 (Skia↔PixiJS) | (불필요) | ❌ PixiJS 캔버스가 DOM 이벤트를 직접 수신하므로 삭제됨 |
 | A-7 | Selection 오버레이 Skia 렌더링 | `selectionRenderer.ts` | ✅ |
 | A-8 | AI 이펙트 Skia 렌더링 | `aiEffects.ts` | ✅ |
+| A-9 | 멀티페이지 동시 렌더링 (Pencil Frame 방식) | `BuilderCanvas.tsx` PageContainer + `SkiaOverlay.tsx` 트리 캐시 확장 | ✅ (2026-02-05) |
+| A-10 | 페이지 타이틀 렌더링 (활성/비활성 색상) | `selectionRenderer.ts` renderPageTitle | ✅ (2026-02-05) |
+| A-11 | 페이지 드래그 재배치 | `usePageDrag.ts` (RAF 스로틀 + DOM 좌표계) | ✅ (2026-02-05) |
+| A-12 | 페이지 단위 뷰포트 컬링 | `BuilderCanvas.tsx` visiblePageIds + `useViewportCulling.ts` | ✅ (2026-02-05) |
 
 ### 11.2 렌더링 파이프라인 (노드별 renderSkia)
 
@@ -1927,6 +1950,8 @@ Cmd+S → saveDocument() → FileManager.export()
 | H-3 | Lasso (반투명 fill + stroke) | `selectionRenderer.ts` renderLasso | ✅ |
 | H-4 | PixiJS Selection: 시각 비활성화, 이벤트만 유지 | SelectionBox/TransformHandle/LassoSelection (무조건 Skia 경로, `isSkiaMode` 제거됨) | ✅ |
 | H-5 | Camera 하위 숨김: `alpha=0` (renderable=false 금지) | SkiaOverlay.tsx renderFrame | ✅ |
+| H-6 | 페이지 타이틀 (활성: #3B82F6, 비활성: #64748b) | `selectionRenderer.ts` renderPageTitle (isActive) | ✅ (2026-02-05) |
+| H-7 | 치수 레이블 (width × height, 파란 배경 흰 텍스트) | `selectionRenderer.ts` renderDimensionLabels | ✅ |
 
 ### 11.9 AI 시각 피드백
 
@@ -1950,17 +1975,18 @@ Cmd+S → saveDocument() → FileManager.export()
 ```
 Pencil 렌더링 아키텍처 전환: 100% 완료
 
-✅ 완전 구현 (37/37 항목):
+✅ 완전 구현 (43/43 항목):
 ├── 아키텍처: CanvasKit 메인 렌더러 + PixiJS 이벤트 전용
 ├── 렌더 루프: 이중 Surface + 프레임 분류 (idle/present/camera-only/content/full) + padding 기반 camera-only blit + cleanup render (2026-02-05)
 ├── 노드 렌더링: Box/Text/Image/Container + AABB 컬링 + 좌표계 정합성 수정
 ├── Fill: 6/6종 (Color, Linear, Radial, Angular, Image, MeshGradient)
 ├── 이펙트: 4/4종 (Opacity, BackgroundBlur, LayerBlur, DropShadow Outer/Inner)
 ├── 블렌드 모드: 18종 전체
-├── Selection: 선택 박스 + 핸들 + 라쏘 (Skia 렌더링)
+├── Selection: 선택 박스 + 핸들 + 라쏘 + 치수 레이블 + 페이지 타이틀 (Skia 렌더링)
 ├── AI: Generating + Flash 애니메이션
 ├── Export: PNG/JPEG/WEBP + DPR 스케일
 ├── 유틸리티: 초기화, Surface, Disposable, Font, 텍스트 측정
 ├── 변수 Resolve: $-- 참조 → Float32Array 색상 변환 (G.2 완성)
-└── 디자인 킷: 내장 킷 JSON + 브라우저 패널 + 시각 피드백 (G.4 완성)
+├── 디자인 킷: 내장 킷 JSON + 브라우저 패널 + 시각 피드백 (G.4 완성)
+└── 멀티페이지: 동시 렌더링 + 페이지 타이틀 + 드래그 재배치 + 뷰포트 컬링 (2026-02-05)
 ```
