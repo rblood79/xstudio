@@ -10,6 +10,10 @@ import { generateAllCSS } from '../src/renderers/CSSGenerator';
 import type { ComponentSpec } from '../src/types';
 import * as fs from 'fs/promises';
 import * as path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const COMPONENTS_DIR = path.join(__dirname, '../src/components');
 const OUTPUT_DIR = path.join(__dirname, '../../shared/src/components/styles/generated');

@@ -10,13 +10,65 @@
  * @see docs/WASM.md §5.11 노드별 renderSkia() 구현
  */
 
-import type { CanvasKit, Canvas, Paint, FontMgr, Image as SkImage, EmbindEnumEntity } from 'canvaskit-wasm';
+import type { CanvasKit, Canvas, Paint, FontMgr, Paragraph, Image as SkImage, EmbindEnumEntity } from 'canvaskit-wasm';
 import type { EffectStyle, FillStyle } from './types';
-import { intersectsAABB } from './types';
 import { applyFill } from './fills';
 import { beginRenderEffects, endRenderEffects } from './effects';
 import { toSkiaBlendMode } from './blendModes';
 import { SkiaDisposable } from './disposable';
+
+// ============================================
+// Text paragraph cache (Pencil-style)
+// ============================================
+
+const MAX_PARAGRAPH_CACHE_SIZE = 500;
+const paragraphCache = new Map<string, Paragraph>();
+let lastParagraphFontMgr: FontMgr | null = null;
+
+function clearParagraphCache(): void {
+  for (const paragraph of paragraphCache.values()) {
+    paragraph.delete();
+  }
+  paragraphCache.clear();
+}
+
+export function clearTextParagraphCache(): void {
+  clearParagraphCache();
+}
+
+// Vite HMR에서 모듈이 교체될 때 네이티브 paragraph 누수를 방지한다.
+// (Paragraph는 GC 대상이 아니므로 명시적 delete가 필요)
+if (import.meta.hot) {
+  import.meta.hot.dispose(() => {
+    clearParagraphCache();
+  });
+}
+
+function getCachedParagraph(key: string): Paragraph | undefined {
+  const cached = paragraphCache.get(key);
+  if (!cached) return undefined;
+  // LRU: bump to the end
+  paragraphCache.delete(key);
+  paragraphCache.set(key, cached);
+  return cached;
+}
+
+function setCachedParagraph(key: string, paragraph: Paragraph): void {
+  const existing = paragraphCache.get(key);
+  if (existing) {
+    existing.delete();
+    paragraphCache.delete(key);
+  }
+
+  paragraphCache.set(key, paragraph);
+  if (paragraphCache.size <= MAX_PARAGRAPH_CACHE_SIZE) return;
+
+  const oldestKey = paragraphCache.keys().next().value as string | undefined;
+  if (!oldestKey) return;
+  const oldest = paragraphCache.get(oldestKey);
+  oldest?.delete();
+  paragraphCache.delete(oldestKey);
+}
 
 // ============================================
 // PixiJS 씬 노드에 부착하는 Skia 렌더 데이터 타입
@@ -76,6 +128,9 @@ export interface SkiaNodeData {
   };
   /** overflow:hidden 시 자식을 경계에서 클리핑 */
   clipChildren?: boolean;
+  /** 콘텐츠 기반 최소 높이 (Card 등 auto-height UI 컴포넌트용)
+   *  Yoga가 텍스트 bounds를 아직 반영하지 못한 경우의 폴백으로 사용 */
+  contentMinHeight?: number;
   /** 자식 노드 데이터 */
   children?: SkiaNodeData[];
 }
@@ -95,12 +150,44 @@ export function renderNode(
   cullingBounds: DOMRect,
   fontMgr?: FontMgr,
 ): void {
+  const left = cullingBounds.x;
+  const top = cullingBounds.y;
+  renderNodeInternal(
+    ck,
+    canvas,
+    node,
+    left,
+    top,
+    left + cullingBounds.width,
+    top + cullingBounds.height,
+    fontMgr,
+  );
+}
+
+function renderNodeInternal(
+  ck: CanvasKit,
+  canvas: Canvas,
+  node: SkiaNodeData,
+  cullLeft: number,
+  cullTop: number,
+  cullRight: number,
+  cullBottom: number,
+  fontMgr?: FontMgr,
+): void {
   if (!node.visible) return;
 
   // AABB 컬링 — width/height=0 가상 컨테이너는 스킵 (자식에서 개별 컬링)
   if (node.width > 0 || node.height > 0) {
-    const nodeBounds = new DOMRect(node.x, node.y, node.width, node.height);
-    if (!intersectsAABB(cullingBounds, nodeBounds)) return;
+    const nodeLeft = node.x;
+    const nodeTop = node.y;
+    const nodeRight = nodeLeft + node.width;
+    const nodeBottom = nodeTop + node.height;
+    if (
+      cullLeft > nodeRight ||
+      cullRight < nodeLeft ||
+      cullTop > nodeBottom ||
+      cullBottom < nodeTop
+    ) return;
   }
 
   // 캔버스 상태 저장 + 로컬 변환
@@ -148,14 +235,21 @@ export function renderNode(
       canvas.clipRect(clipRect, ck.ClipOp.Intersect, true);
     }
 
-    const childBounds = new DOMRect(
-      cullingBounds.x - node.x,
-      cullingBounds.y - node.y,
-      cullingBounds.width,
-      cullingBounds.height,
-    );
+    const childCullLeft = cullLeft - node.x;
+    const childCullTop = cullTop - node.y;
+    const childCullRight = cullRight - node.x;
+    const childCullBottom = cullBottom - node.y;
     for (const child of node.children) {
-      renderNode(ck, canvas, child, childBounds, fontMgr);
+      renderNodeInternal(
+        ck,
+        canvas,
+        child,
+        childCullLeft,
+        childCullTop,
+        childCullRight,
+        childCullBottom,
+        fontMgr,
+      );
     }
 
     if (node.clipChildren && node.width > 0 && node.height > 0) {
@@ -233,6 +327,38 @@ function renderText(
 ): void {
   if (!node.text) return;
 
+  // FontMgr이 교체되면(폰트 로드/갱신) 기존 paragraph는 무효가 될 수 있으므로 캐시를 비운다.
+  if (lastParagraphFontMgr !== fontMgr) {
+    clearParagraphCache();
+    lastParagraphFontMgr = fontMgr;
+  }
+
+  // key는 텍스트 shaping/layout에 영향을 주는 값만 포함한다.
+  const color = node.text.color;
+  const colorKey = `${color[0].toFixed(3)},${color[1].toFixed(3)},${color[2].toFixed(3)},${color[3].toFixed(3)}`;
+  const heightMultiplier = node.text.lineHeight
+    ? node.text.lineHeight / node.text.fontSize
+    : 0;
+  const key = [
+    node.text.content,
+    node.text.maxWidth,
+    node.text.fontFamilies.join('|'),
+    node.text.fontSize,
+    node.text.fontWeight ?? 400,
+    node.text.fontStyle ?? 0,
+    node.text.letterSpacing ?? 0,
+    heightMultiplier,
+    typeof node.text.align === 'string' ? node.text.align : 'enum',
+    node.text.decoration ?? 0,
+    colorKey,
+  ].join('\u0000');
+
+  const cached = getCachedParagraph(key);
+  if (cached) {
+    canvas.drawParagraph(cached, node.text.paddingLeft, node.text.paddingTop);
+    return;
+  }
+
   const scope = new SkiaDisposable();
   try {
     // string align → CanvasKit TextAlign enum 변환
@@ -272,10 +398,7 @@ function renderText(
     };
     const fontSlant = fontSlantMap[node.text.fontStyle ?? 0] ?? ck.FontSlant.Upright;
 
-    // heightMultiplier: lineHeight가 있으면 fontSize 대비 배수로 설정
-    const heightMultiplier = node.text.lineHeight
-      ? node.text.lineHeight / node.text.fontSize
-      : undefined;
+    const heightMultiplierOpt = heightMultiplier > 0 ? heightMultiplier : undefined;
 
     const paraStyle = new ck.ParagraphStyle({
       textStyle: {
@@ -284,7 +407,7 @@ function renderText(
         fontStyle: { weight: fontWeight, slant: fontSlant },
         color: node.text.color,
         letterSpacing: node.text.letterSpacing ?? 0,
-        ...(heightMultiplier !== undefined ? { heightMultiplier } : {}),
+        ...(heightMultiplierOpt !== undefined ? { heightMultiplier: heightMultiplierOpt } : {}),
         // textDecoration: CanvasKit TextDecoration 비트마스크
         ...(node.text.decoration ? {
           decoration: node.text.decoration,
@@ -297,9 +420,9 @@ function renderText(
 
     const builder = scope.track(ck.ParagraphBuilder.Make(paraStyle, fontMgr));
     builder.addText(node.text.content);
-    const paragraph = scope.track(builder.build());
+    const paragraph = builder.build();
     paragraph.layout(node.text.maxWidth);
-
+    setCachedParagraph(key, paragraph);
     canvas.drawParagraph(paragraph, node.text.paddingLeft, node.text.paddingTop);
   } finally {
     scope.dispose();

@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added - GPUDebugOverlay (2026-02-05)
+
+#### 개요
+Skia 렌더링의 “rAF(브라우저) 프레임”과 “Skia present(실제 화면 제출)”을 분리해서 관측할 수 있는 Dev-only 오버레이를 추가.
+
+#### 표시 항목(요약)
+- `RAF FPS`, `RAF Frame(ms)` — 브라우저 rAF 기준
+- `Skia(ms)`, `Content(ms)`, `Blit(ms)` — SkiaOverlay/SkiaRenderer 단계별 프레임타임
+- `Present/s`, `Content/s`, `Registry/s`, `Idle%` — “실제 렌더 빈도/원인” 관측
+
+#### 위치/마운트
+- 캔버스 좌상단(Dev-only)
+- `apps/builder/src/builder/workspace/canvas/BuilderCanvas.tsx`
+- `apps/builder/src/builder/workspace/canvas/utils/GPUDebugOverlay.tsx`
+
 ### Added - 캔버스 Page Title 라벨 표시 (2026-02-04)
 
 #### 개요
@@ -118,6 +133,36 @@ blur/Enter: onChange → updateStyleImmediate → valueActuallyChanged=true → 
 | `components/property/PropertyUnitInput.tsx` | useLayoutEffect, 타이핑 중 라이브 프리뷰 |
 
 ### Fixed - ToggleButtonGroup 캔버스 선택 불가 및 스타일 적용 버그 수정 (2026-02-04)
+
+### Fixed - Pencil 방식 2-pass 렌더러 안정화/성능 (2026-02-05)
+
+#### 개요
+Pencil 모델(컨텐츠 캐시 + present(blit) + 오버레이 분리)로 전환한 후, 고배율 줌/팬 및 리사이즈/DPR 변화에서 잔상·미세 버그를 방지하고 cleanup 비용을 낮춤.
+
+#### 변경 사항(요약)
+- **contentSurface 백엔드 정합**: `ck.MakeSurface()` 대신 `mainSurface.makeSurface()`로 offscreen surface를 생성해 메인과 동일 백엔드(GPU/SW) 사용.
+- **줌 스냅샷 보간**: zoomRatio != 1이면 `drawImageCubic` 우선 적용(미지원 환경 `drawImage` 폴백).
+- **Paragraph LRU 캐시**: 텍스트 `Paragraph`를 (내용+스타일+maxWidth) 키로 캐시(최대 500), 폰트 교체/페이지 전환/HMR에서 무효화.
+- **리사이즈/DPR/컨텍스트 복원 안정화**: surface 재생성 직후 `invalidateContent()+clearFrame()`로 1-frame stale/잔상 방지.
+
+#### 관련 파일
+- `apps/builder/src/builder/workspace/canvas/skia/SkiaRenderer.ts`
+- `apps/builder/src/builder/workspace/canvas/skia/SkiaOverlay.tsx`
+- `apps/builder/src/builder/workspace/canvas/skia/nodeRenderers.ts`
+
+### Fixed - 스타일 변경 Long Task 저감 (2026-02-05)
+
+#### 개요
+스타일 패널에서 클릭/드래그 시 `[Violation] 'click' handler took ...ms`(Long Task) 빈도를 낮추기 위해, 업데이트 액션의 O(n) 재빌드를 제거하고 저장을 백그라운드로 전환.
+
+#### 변경 사항(요약)
+- `updateElementProps`/`batchUpdateElementProps`: `_rebuildIndexes()` 제거, 변경된 요소만 `elementsMap` O(1) 갱신
+- IndexedDB 저장을 `await`로 블로킹하지 않고 백그라운드 처리
+- 멀티 선택 정렬/분배를 `batchUpdateElementProps` 경로로 전환
+
+#### 관련 파일
+- `apps/builder/src/builder/stores/utils/elementUpdate.ts`
+- `apps/builder/src/builder/panels/properties/PropertiesPanel.tsx`
 
 #### 1. ToggleButtonGroup 캔버스에서 클릭 선택 불가 (Selection)
 

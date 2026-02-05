@@ -13,6 +13,7 @@
 import type { Margin, BoxModel, VerticalAlign } from './types';
 import type { Element } from '../../../../../types/core/store.types';
 import { fontFamily as specFontFamily } from '@xstudio/specs';
+import { measureWrappedTextHeight } from '../../utils/textMeasure';
 
 /**
  * 중복 경고 방지용 Set
@@ -336,6 +337,18 @@ const TOGGLEBUTTON_SIZE_CONFIG: Record<string, {
   lg: { paddingLeft: 32, paddingRight: 32, paddingY: 12, fontSize: 18, borderWidth: 1 },  // --spacing-2xl = 32px
 };
 
+/**
+ * Card size별 설정
+ *
+ * cssVariableReader.ts의 CARD_FALLBACKS와 1:1 동기화
+ * PixiCard 렌더링과 동일한 내부 패딩 보장
+ */
+const CARD_SIZE_CONFIG: Record<string, { padding: number }> = {
+  sm: { padding: 8 },
+  md: { padding: 12 },
+  lg: { padding: 16 },
+};
+
 /** inline-level UI 컴포넌트 태그 → size config 매핑 */
 const INLINE_UI_SIZE_CONFIGS: Record<string, Record<string, {
   paddingLeft: number;
@@ -616,9 +629,11 @@ function estimateTextHeight(fontSize: number, lineHeight?: number): number {
 /**
  * 요소의 콘텐츠 높이 계산
  *
+ * @param element - 대상 요소
+ * @param availableWidth - 사용 가능한 너비 (Card 등 텍스트 wrap 높이 계산용)
  * @returns 콘텐츠 기반 높이 (자식이 없으면 태그별 기본 높이)
  */
-export function calculateContentHeight(element: Element): number {
+export function calculateContentHeight(element: Element, availableWidth?: number): number {
   const style = element.props?.style as Record<string, unknown> | undefined;
 
   // 1. 명시적 height가 있으면 사용
@@ -652,18 +667,57 @@ export function calculateContentHeight(element: Element): number {
     return Math.max(textHeight, minContentHeight);
   }
 
-  // 3. lineHeight가 명시적으로 지정되어 있으면 최소 높이로 사용
+  // 3. Card 컴포넌트: 텍스트 콘텐츠 기반 높이 계산
+  // Card는 내부 패딩 + 텍스트(heading, subheading, description)로 높이 결정
+  // 요소의 style에는 padding이 없고 Card 컴포넌트가 자체 패딩을 관리하므로
+  // contentHeight에 내부 패딩 포함하여 반환
+  if (tag === 'card') {
+    const props = element.props as Record<string, unknown> | undefined;
+    const size = (props?.size as string) ?? 'md';
+    const cardConfig = CARD_SIZE_CONFIG[size] ?? CARD_SIZE_CONFIG.md;
+    const cardPad = cardConfig.padding;
+
+    // Card 너비: availableWidth가 있으면 사용, 없으면 200px 폴백
+    const cardWidth = availableWidth ?? 200;
+    const wrapWidth = cardWidth - cardPad * 2;
+    const fontFamily = specFontFamily.sans;
+
+    const cardTitle = String(props?.heading || props?.title || '');
+    const subheading = props?.subheading ? String(props.subheading) : '';
+    const description = String(props?.description || props?.children || '');
+
+    let h = cardPad; // top padding
+
+    if (cardTitle) {
+      h += measureWrappedTextHeight(cardTitle, 16, 600, fontFamily, wrapWidth);
+    }
+    if (subheading) {
+      if (cardTitle) h += 2; // header gap
+      h += measureWrappedTextHeight(subheading, 14, 400, fontFamily, wrapWidth);
+    }
+    if (cardTitle || subheading) {
+      h += 8; // marginBottom between header and content
+    }
+    if (description) {
+      h += measureWrappedTextHeight(description, 14, 400, fontFamily, wrapWidth);
+    }
+
+    h += cardPad; // bottom padding
+    return Math.max(h, 60); // minHeight 60
+  }
+
+  // 4. lineHeight가 명시적으로 지정되어 있으면 최소 높이로 사용
   const fontSize = parseNumericValue(style?.fontSize);
   const resolvedLineHeight = parseLineHeight(style, fontSize);
   if (resolvedLineHeight !== undefined) {
     return Math.round(resolvedLineHeight);
   }
 
-  // 4. 태그별 기본 높이 사용
+  // 5. 태그별 기본 높이 사용
   const defaultHeight = DEFAULT_ELEMENT_HEIGHTS[tag];
   if (defaultHeight !== undefined) return defaultHeight;
 
-  // 5. 알 수 없는 태그는 기본값 사용
+  // 6. 알 수 없는 태그는 기본값 사용
   return DEFAULT_HEIGHT;
 }
 
@@ -769,7 +823,7 @@ export function parseBoxModel(
 
   // 콘텐츠 크기 계산
   const contentWidth = calculateContentWidth(element);
-  const contentHeight = calculateContentHeight(element);
+  const contentHeight = calculateContentHeight(element, availableWidth);
 
   return {
     width,

@@ -39,6 +39,7 @@
     "generate:css": "tsx scripts/generate-css.ts",
     "validate": "tsx scripts/validate-specs.ts",
     "validate:tokens": "tsx scripts/validate-tokens.ts",
+    "validate:phase0": "tsx scripts/validate-phase0.ts",
     "lint": "eslint src/",
     "typecheck": "tsc --noEmit"
   },

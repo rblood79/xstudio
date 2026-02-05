@@ -96,7 +96,9 @@ class GPUProfiler {
 
     useCanvasSyncStore.getState().updateGPUMetrics({
       lastFrameTime: avgFrameTime,
-      averageFps: Math.min(60, Math.round(fps)),
+      // rAF 기반 FPS는 모니터 주사율을 반영한다(렌더링된 프레임 수와는 별개).
+      // 정밀도를 유지하기 위해 clamp/round를 하지 않는다.
+      averageFps: fps,
     });
   }
 
@@ -195,7 +197,14 @@ const wasmTrackers = {
   skiaFrameTime: new MetricTracker(),
   contentRenderTime: new MetricTracker(),
   blitTime: new MetricTracker(),
+  idleFrameRatio: new MetricTracker(),
   dirtyRectCount: new MetricTracker(),
+  contentRendersPerSec: new MetricTracker(),
+  registryChangesPerSec: new MetricTracker(),
+  presentFramesPerSec: new MetricTracker(),
+  skiaTreeBuildTime: new MetricTracker(),
+  selectionBuildTime: new MetricTracker(),
+  aiBoundsBuildTime: new MetricTracker(),
 } as const;
 
 export function recordWasmMetric(
@@ -229,7 +238,14 @@ export function flushWasmMetrics(): void {
     skiaFrameTimeAvgMs: wasmTrackers.skiaFrameTime.getAverage(),
     contentRenderTimeMs: wasmTrackers.contentRenderTime.getAverage(),
     blitTimeMs: wasmTrackers.blitTime.getAverage(),
+    idleFrameRatio: wasmTrackers.idleFrameRatio.getAverage(),
     dirtyRectCountAvg: wasmTrackers.dirtyRectCount.getAverage(),
+    contentRendersPerSec: wasmTrackers.contentRendersPerSec.getAverage(),
+    registryChangesPerSec: wasmTrackers.registryChangesPerSec.getAverage(),
+    presentFramesPerSec: wasmTrackers.presentFramesPerSec.getAverage(),
+    skiaTreeBuildTimeMs: wasmTrackers.skiaTreeBuildTime.getAverage(),
+    selectionBuildTimeMs: wasmTrackers.selectionBuildTime.getAverage(),
+    aiBoundsBuildTimeMs: wasmTrackers.aiBoundsBuildTime.getAverage(),
   });
 }
 
@@ -249,4 +265,3 @@ export function useGPUProfiler(enabled = true): void {
     return () => gpuProfiler.stop();
   }, [enabled]);
 }
-

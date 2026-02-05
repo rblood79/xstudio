@@ -302,7 +302,7 @@ performance.measure('bounds-lookup', 'bounds-lookup-start', 'bounds-lookup-end')
 
 | 항목 | 측정 방법 | 의의 |
 |------|----------|------|
-| panOffset 변경 빈도 | ViewportController.syncToReactState() 호출 횟수/초 | throttle 필요성 판단 |
+| panOffset 변경 빈도 | wheel pan 시 `setPanOffset()` 호출 횟수/초 (rAF 배칭 확인) | 불필요한 React 리렌더 방지 |
 | _rebuildIndexes 호출 빈도 | 배치 작업 시 호출 횟수 | 배치 리빌드 최적화 우선순위 |
 | SpritePool 히트율 | acquire/release 비율 vs destroy 비율 | maxPoolSize 적정성 |
 | CSS 파싱 반복률 | parseCSSValue 동일 입력 호출 비율 | 캐싱 ROI |
@@ -708,13 +708,11 @@ if (WASM_FLAGS.SPATIAL_INDEX) {
 // ※ 기존 elements.filter(el => ...) 경로는 WASM_FLAGS.SPATIAL_INDEX=false일 때만 실행 (JS 폴백)
 ```
 
-> **⚠️ 사전 최적화 필요: ViewportController throttle**
-> 현재 `ViewportController.updatePan()`은 마우스 move마다 호출되어 초당 60~240회
-> `syncToReactState()`를 실행하고, 매번 새로운 panOffset 객체를 생성한다.
-> 이로 인해 `useMemo` 의존성이 무효화되어 SpatialIndex 쿼리 + O(k log k) 정렬이
-> 초당 240회 실행될 수 있다. WASM SpatialIndex 도입 전에 다음을 적용해야 한다:
-> - `syncToReactState()`에 **16ms throttle** 적용 (60fps 상한)
-> - panOffset 객체를 **shallow equal 비교**하여 값이 동일하면 React state 업데이트 스킵
+> **Note (현행 구현): ViewportController 동기화 정책**
+> - 드래그 팬(`updatePan`)은 PixiJS Container를 **imperative**로만 업데이트하고, React/Zustand 동기화는 `endPan()`에서 1회 수행한다.
+> - 휠 팬은 동일 프레임 내 이벤트를 `requestAnimationFrame`으로 배칭하여 `setPanOffset()` 호출을 프레임당 1회로 제한한다.
+> - 휠 줌은 커서 중심 유지 때문에 `zoomAtPoint(..., syncImmediately=true)`로 즉시 동기화한다.
+> 따라서 “move마다 `syncToReactState()`를 호출해 폭증”하는 형태는 현재 경로에서 발생하지 않는다.
 
 **`elementOrderIndex` 생성 및 갱신:**
 
@@ -755,12 +753,15 @@ rebuildIndexes(elements) {
 > **갱신 비용:** O(n) 순회 1회. 기존 `rebuildIndexes()`에서 `elementsMap`을 빌드하는 것과
 > 동일한 시점에 함께 수행하므로, 추가 비용은 Map.set() n회뿐이다.
 
-> **⚠️ 배치 리빌드 주의:** 현재 `_rebuildIndexes()`는 14곳에서 호출된다
+> **⚠️ 배치 리빌드 주의:** `_rebuildIndexes()`는 구조 변경(add/remove/move/페이지 로드/Undo/Redo 등) 경로에서 호출된다
 > (elements.ts, elementCreation.ts, elementUpdate.ts, elementRemoval.ts, elementLoader.ts, historyActions.ts).
 > 배치 작업(복붙, 페이지 로드, Undo/Redo) 시 매 요소마다 호출되면
 > O(n) × m = **O(n·m)** 비용이 발생한다 (m = 배치 내 요소 수).
 > `elementOrderIndex` 추가로 인해 리빌드 비용이 기존 대비 ~25% 증가하므로,
 > 배치 작업 시에는 개별 호출 대신 최종 1회만 리빌드하는 전략을 적용해야 한다:
+>
+> **단, props-only 업데이트(`updateElementProps`, `batchUpdateElementProps`)는 전역 리빌드를 하지 않고**
+> 변경된 요소만 O(1)로 `elementsMap`을 갱신하도록 최적화되어 있어, 스타일 패널 변경 경로에서는 `_rebuildIndexes()`가 병목이 아니다.
 > ```typescript
 > // 배치 작업 패턴
 > function batchOperation(operations: () => void) {
@@ -2152,6 +2153,14 @@ export class SkiaRenderer {
 > Yoga 레이아웃 완료 후의 최신 worldTransform을 보장. 이전에는 NORMAL(0)에서
 > 실행되어 display 전환 시 stale 좌표로 인한 1-프레임 플리커 발생.
 
+> **Note (2026-02-05):** LayoutContainer의 'layout' 이벤트 핸들러에서 `notifyLayoutChange()` 무조건 호출.
+> `@pixi/layout updateLayout()`에서 `emit('layout')`이 `_onUpdate()`보다 먼저 호출되어,
+> `getBounds()`가 stale worldTransform을 읽음 → `updateElementBounds` epsilon check 통과
+> → `notifyLayoutChange()` 미호출. 이 문제는 부모의 flex 속성(alignItems, justifyContent 등)
+> 변경 시 자식 위치가 시각적으로 갱신되지 않는 버그를 유발함.
+> `hasNewLayout()` true일 때만 이벤트가 발생하므로 무조건 호출이 안전하며,
+> renderFrame(priority -50)은 render 이후 실행되어 worldTransform이 이미 정확함.
+
 **이중 Surface 프레임 분류 (Phase 6):**
 ```
 classifyFrame(registryVersion, camera, overlayVersion):
@@ -2681,6 +2690,9 @@ export function exportToImage(
   quality?: number,
 ): Uint8Array {
   // 1) 오프스크린 Surface 생성
+  //
+  // Note: 인터랙티브 렌더(contentSurface)는 `mainSurface.makeSurface()`로 백엔드(GPU/SW) 정합을 맞추지만,
+  // Export는 1회성 오프스크린 렌더이므로 `ck.MakeSurface()`로도 충분하다.
   const surface = ck.MakeSurface(width, height);
   const canvas = surface.getCanvas();
 
@@ -2745,6 +2757,8 @@ export function exportToImage(
 | 오버레이-only 변경 | 컨텐츠 재렌더 없음 | present: snapshot blit + overlay |
 | Export 품질 | 벡터 정밀도 보장 | CanvasKit Path 기반 |
 
+**개발 관측(Dev-only):** `GPUDebugOverlay`가 캔버스 **좌상단**에 표시되어 FPS/프레임타임/`Content/s`(초당 컨텐츠 재렌더)/`Registry/s`(초당 Skia registry 변경) 등을 확인할 수 있다. (`apps/builder/src/builder/workspace/canvas/BuilderCanvas.tsx`)
+
 ### 6.7 렌더링 “동일성” 검증 가이드
 
 > 목표: “Pencil과 픽셀 100% 동일”이 아니라, **Pencil과 동일한 렌더링 모델(컨텐츠 캐시 + present blit + 오버레이 분리)**이
@@ -2775,9 +2789,24 @@ export function exportToImage(
 > 다만 아래 항목들은 구현/설정 차이로 인해 체감 품질 또는 픽셀 결과가 달라질 수 있으므로,
 > 필요 시 Pencil과 동일 정책으로 맞추는 작업이 남아 있다.
 
+**현재 남은 항목(요약, 2026-02-05):**
+- 스냅샷 샘플링 옵션 고정(Nearest/Linear/Cubic + mipmap 정책)
+- 색공간/감마(선형/비선형) 및 premultiplied alpha 정책 고정
+- 오버레이 텍스트 렌더링(치수/타이틀 등) Paragraph 통일 여부 결정 및 적용
+- padding(512px) 동적 조정/가이드(줌 범위, DPR, 디바이스 성능 기반)
+- cleanup render 트리거(입력 디바이스/이벤트 패턴) 튜닝 및 문서화
+- CanvasKit 리소스 수명/누수 방지 원칙 문서화(+ 필요 시 방어 코드/검증 도구 추가)
+
+**실행 플랜(우선순위 제안):**
+1. **샘플링/색공간 정책 확정**: 현재 CanvasKit 기본값을 문서화하고(현 상태 고정), 스냅샷 blit 경로의 sampling 옵션을 명시적으로 고정.
+2. **오버레이 텍스트 Paragraph 통일**: selection/page title/dimension 라벨을 `renderText()`(Paragraph) 경로로 이관하고, 기존 Paragraph LRU 캐시를 재사용.
+3. **padding 동적 조정**: zoom/DPR/뷰포트 크기 기반으로 padding을 동적으로 산정하고, `GPUDebugOverlay`로 content 재렌더 빈도(`Content/s`)를 관측하며 튜닝.
+4. **cleanup 트리거 정교화**: wheel/drag/trackpad 패턴별로 “모션 종료” 정의를 문서화하고, 200ms 디바운스/즉시 content 재렌더 조건을 케이스별로 검증.
+5. **리소스 수명/누수 가드**: dev 모드에서 Paint/Path/Image/Paragraph 생성·해제 카운터를 추가하고, 누수/해제 누락을 조기에 감지.
+
 #### 렌더링 품질/정책
 
-- **줌 스냅샷 보간 정책**: Pencil은 zoom mismatch 시 `drawImageCubic`류의 보간을 사용한다. xstudio는 현재 `drawImage + scale`에 의존한다. (`apps/builder/src/builder/workspace/canvas/skia/SkiaRenderer.ts:306`)
+- ✅ **줌 스냅샷 보간 정책**: Pencil은 zoom mismatch 시 `drawImageCubic`류의 보간을 사용한다. xstudio도 zoomRatio != 1(스케일링 발생) 시 `drawImageCubic`을 우선 사용하고, 런타임 미지원 환경에서는 `drawImage + scale`로 폴백한다. (`apps/builder/src/builder/workspace/canvas/skia/SkiaRenderer.ts:282`)
 - **스냅샷 샘플링 옵션 고정**: 이미지 스케일 시 sampling(Nearest/Linear/Cubic)과 mipmap 사용 여부가 다르면 결과가 달라질 수 있다. 스냅샷 blit에 sampling 옵션을 명시하는지 검토한다.
 - **색공간/감마(선형/비선형) 정책**: sRGB/Display-P3, premultiplied alpha 처리 차이는 블렌드/AA 결과를 바꾼다. CanvasKit 초기화/Surface 생성에서 컬러 스페이스 정책을 명확히 기록/고정한다.
 - **텍스트 렌더링 정책 통일**: 컨텐츠 텍스트는 Paragraph 기반(또는 폰트 매니저)인데, 오버레이 텍스트(치수/타이틀)는 `drawText` 경로다.(선명도/자간/힌팅 차이) 필요 시 오버레이도 Paragraph로 통일한다. (`apps/builder/src/builder/workspace/canvas/skia/selectionRenderer.ts:334`)
@@ -2787,17 +2816,21 @@ export function exportToImage(
 
 #### 성능/안정성
 
-- **contentSurface 백엔드**: xstudio는 `ck.MakeSurface()`로 오프스크린을 만든다(일반적으로 raster). Pencil이 사용하는 GPU surface와 성능 특성이 다를 수 있으니, 대규모 씬에서 병목이면 offscreen도 GPU 타겟(가능한 API)으로 맞추는 방안을 검토한다. (`apps/builder/src/builder/workspace/canvas/skia/SkiaRenderer.ts:200`)
+- ✅ **contentSurface 백엔드**: contentSurface는 `mainSurface.makeSurface()`로 생성하여 **메인과 동일한 백엔드(GPU/SW)** 를 사용한다. (이전의 `ck.MakeSurface()` raster-direct 경로는 content render 비용이 커질 수 있어 제거) (`apps/builder/src/builder/workspace/canvas/skia/SkiaRenderer.ts:260`)
+- **텍스트 Paragraph 캐시(LRU)**: `ParagraphBuilder`의 shaping/layout 비용이 큰 케이스(고배율 줌 후 cleanup 등)를 줄이기 위해, 텍스트 `Paragraph`를 (내용+스타일+`maxWidth`) 키로 캐시한다. 폰트 매니저가 교체되면 캐시를 전체 무효화하고, 페이지 전환 시에도 캐시를 비워 네이티브 리소스 누수를 방지한다. (`apps/builder/src/builder/workspace/canvas/skia/nodeRenderers.ts:24`, `apps/builder/src/builder/workspace/canvas/skia/SkiaOverlay.tsx:704`)
 - **padding 값 정책화**: 현재 padding은 고정 512px이다. 큰 줌/빠른 패닝에서 `canBlitWithCameraTransform()`이 false로 떨어지면 **cleanup(full) 재렌더링**이 자주 발생할 수 있으니, (1) 사용자 설정/디바이스 DPR/줌 범위에 따라 동적 조정, (2) 최소/최대 값 가이드가 필요하다. (`apps/builder/src/builder/workspace/canvas/skia/SkiaRenderer.ts:44`)
-- **cleanup render 트리거 정합**: 현재 camera-only에서만 200ms cleanup render를 스케줄한다. Pencil과 동일한 체감을 원하면 “모션 종료”의 정의(휠/드래그/트랙패드)와 트리거 조건을 문서화하고, 필요한 입력 케이스를 추가한다. (`apps/builder/src/builder/workspace/canvas/skia/SkiaRenderer.ts:360`)
+- **cleanup render 트리거 정합**: 현재는 카메라 모션(cameraChanged) 동안 debounced로 200ms cleanup render를 스케줄한다. Pencil과 동일한 체감을 원하면 “모션 종료”의 정의(휠/드래그/트랙패드)와 트리거 조건을 문서화하고, 필요한 입력 케이스를 추가한다. (`apps/builder/src/builder/workspace/canvas/skia/SkiaRenderer.ts:360`)
+- **Pencil식 content 재렌더 조건(줌/커버리지)**: 카메라 변경 중에도 `camera.zoom > snapshotZoom * 3` 또는 `canBlitWithCameraTransform() === false`(패딩 포함 스냅샷이 뷰포트를 덮지 못함)인 경우에는 camera-only 대신 즉시 content를 재렌더링한다. (`apps/builder/src/builder/workspace/canvas/skia/SkiaRenderer.ts:123`)
 - **리소스 수명/누수 방지**: `Image.makeImageSnapshot()`/`Typeface`/`Paint`/`Path` 같은 CanvasKit 객체는 GC 대상이 아니므로 `.delete()`가 누락되면 장시간 사용에서 누수가 된다. “프레임 생성 객체는 프레임 종료 시 해제/캐시는 세대 기반으로 교체” 같은 원칙을 Pencil 수준으로 정리한다.
-- **비동기 리소스 로딩에 대한 invalidation**: 폰트/이미지 로드가 뒤늦게 완료되면 contentSurface가 “이전 폴백 폰트/플레이스홀더” 상태로 스냅샷을 잡을 수 있다. 로딩 완료 시점에 `invalidateContent()`를 트리거하는 정책을 명확히 한다.
+- **비동기 리소스 로딩에 대한 invalidation**:
+  - 이미지: `ImageSprite`가 `loadSkImage()` 완료 후 `skImage` state를 갱신하고, `useSkiaNode()` 등록 데이터가 바뀌면서 `registryVersion`이 증가 → 다음 프레임에 컨텐츠 재렌더가 자동으로 발생한다.
+  - 폰트: 현재는 기본 폰트를 `ready=true` 이전에 로드해서 “초기 폴백 폰트 스냅샷”이 잡히지 않도록 한다. 추후 런타임 폰트 추가(사용자 폰트 업로드 등)를 지원하면, 폰트 로드 완료 시점에 `invalidateContent()`를 1회 호출하는 정책을 추가로 맞춘다.
 
 #### 기능 동등/경계 조건
 
-- **컨텍스트 로스/복원 시 캐시 무효화**: 복원 시 `resize()`로 surface 재생성은 되지만, snapshot/버전 상태와 overlayVersion의 초기화 정책을 Pencil처럼 명확히 맞춘다. (`apps/builder/src/builder/workspace/canvas/skia/SkiaOverlay.tsx:656`)
-- **페이지 전환 시 오버레이/컨텐츠 클리어 순서**: 현재 `clearSkiaRegistry + clearImageCache + invalidateContent + clearFrame`로 처리한다. 전환 프레임에서 1-frame stale이 보이면 clear 순서/버전 갱신을 조정한다. (`apps/builder/src/builder/workspace/canvas/skia/SkiaOverlay.tsx:698`)
-- **DPR/리사이즈 시 1-frame stale 방지**: resize 직후 프레임에서 snapshot이 없거나(또는 이전 DPR의 snapshot이 남아) 깜빡임이 생길 수 있다. “resize 시 clearFrame + invalidateContent + overlayVersion reset” 같은 규칙으로 안정화한다.
+- ✅ **컨텍스트 로스/복원 시 캐시 무효화**: 복원 시 `resize()`로 surface를 재생성하고, 즉시 `invalidateContent()+clearFrame()`로 1-frame stale/잔상을 방지한다. (`apps/builder/src/builder/workspace/canvas/skia/SkiaOverlay.tsx:656`)
+- **페이지 전환 시 오버레이/컨텐츠 클리어 순서**: 현재 `clearSkiaRegistry + clearImageCache + clearTextParagraphCache + invalidateContent + clearFrame`로 처리한다. 전환 프레임에서 1-frame stale이 보이면 clear 순서/버전 갱신을 조정한다. (`apps/builder/src/builder/workspace/canvas/skia/SkiaOverlay.tsx:698`)
+- ✅ **DPR/리사이즈 시 1-frame stale 방지**: ResizeObserver/DPR 변경에서 `resize()` 후 `invalidateContent()+clearFrame()`를 호출해 stale snapshot/present를 방지한다. DPR 변화는 `matchMedia(resolution: …dppx)` query를 갱신하여 연속 변화도 추적한다. (`apps/builder/src/builder/workspace/canvas/skia/SkiaOverlay.tsx:727`)
 
 ---
 

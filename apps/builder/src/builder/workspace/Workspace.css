@@ -14,6 +14,7 @@
 .canvas-container {
   position: absolute;
   inset: 0;
+  outline: none;
 }
 
 .workspace-overlay {

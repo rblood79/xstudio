@@ -19,7 +19,7 @@ import type { RefObject } from 'react';
 import type { Application, Container } from 'pixi.js';
 import { SkiaRenderer } from './SkiaRenderer';
 import { getSkiaNode, getRegistryVersion, clearSkiaRegistry } from './useSkiaNode';
-import { renderNode } from './nodeRenderers';
+import { clearTextParagraphCache, renderNode } from './nodeRenderers';
 import type { SkiaNodeData } from './nodeRenderers';
 import { isCanvasKitInitialized, getCanvasKit } from './initCanvasKit';
 import { initAllWasm } from '../wasm-bindings/init';
@@ -34,6 +34,7 @@ import { calculateCombinedBounds } from '../selection/types';
 import type { BoundingBox, DragState } from '../selection/types';
 import { watchContextLoss } from './createSurface';
 import { clearImageCache } from './imageCache';
+import { flushWasmMetrics, recordWasmMetric } from '../utils/gpuProfilerCore';
 
 interface SkiaOverlayProps {
   /** 부모 컨테이너 DOM 요소 */
@@ -176,9 +177,14 @@ function buildSkiaTreeHierarchical(
           const actualWidth = (yogaW != null && yogaW > 0)
             ? yogaW
             : (c.width > 0 ? c.width : nodeData.width);
-          const actualHeight = (yogaH != null && yogaH > 0)
+          // 🚀 Card 등 auto-height UI 컴포넌트: Yoga가 텍스트 bounds를
+          // 아직 반영하지 못한 경우(minHeight 폴백), contentMinHeight를 최소값으로 적용
+          const baseHeight = (yogaH != null && yogaH > 0)
             ? yogaH
             : (c.height > 0 ? c.height : nodeData.height);
+          const actualHeight = nodeData.contentMinHeight
+            ? Math.max(baseHeight, nodeData.contentMinHeight)
+            : baseHeight;
 
           // 내부 자식 (text 등) 크기 갱신
           const updatedInternalChildren = updateTextChildren(
@@ -394,7 +400,11 @@ export function SkiaOverlay({ containerEl, backgroundColor = 0xf8fafc, app, drag
   const lastSelectedIdRef = useRef<string | null>(null);
   const lastAIActiveRef = useRef(0);
   const lastPageTitleRef = useRef('');
+  const emptyTreeBoundsMapRef = useRef<Map<string, BoundingBox>>(new Map());
 
+  // Dev-only: registryVersion 변화율(Content rerender 원인 추적)
+  const devRegistryWindowStartMs = useRef(0);
+  const devRegistryWindowStartVersion = useRef(0);
 
   const isActive = true;
 
@@ -511,6 +521,25 @@ export function SkiaOverlay({ containerEl, backgroundColor = 0xf8fafc, app, drag
 
       const registryVersion = getRegistryVersion();
 
+      if (process.env.NODE_ENV === 'development') {
+        const now = performance.now();
+        if (devRegistryWindowStartMs.current <= 0) {
+          devRegistryWindowStartMs.current = now;
+          devRegistryWindowStartVersion.current = registryVersion;
+        } else {
+          const elapsed = now - devRegistryWindowStartMs.current;
+          if (elapsed >= 1000) {
+            const delta = registryVersion - devRegistryWindowStartVersion.current;
+            const perSec = delta / (elapsed / 1000);
+            recordWasmMetric('registryChangesPerSec', perSec);
+            // content render가 없더라도 오버레이에서 수치를 볼 수 있도록 플러시한다.
+            flushWasmMetrics();
+            devRegistryWindowStartMs.current = now;
+            devRegistryWindowStartVersion.current = registryVersion;
+          }
+        }
+      }
+
       // Selection 상태 변경 감지 — selectedElementIds 참조 변경 시 version 증가
       const currentSelectedIds = useStore.getState().selectedElementIds;
       const currentSelectedId = useStore.getState().selectedElementId;
@@ -577,9 +606,15 @@ export function SkiaOverlay({ containerEl, backgroundColor = 0xf8fafc, app, drag
       // rootNode의 renderSkia() 클로저가 현재 카메라 좌표를 캡처하므로
       // 매 프레임 갱신이 필수. idle 프레임에서는 렌더링이 스킵되므로
       // 이 갱신 비용(~0ms, 트리 캐시 HIT)만 발생한다.
+      const treeBuildStart = process.env.NODE_ENV === 'development'
+        ? performance.now()
+        : 0;
       const tree = cameraContainer
         ? buildSkiaTreeHierarchical(cameraContainer, registryVersion, cameraX, cameraY, cameraZoom)
         : null;
+      if (process.env.NODE_ENV === 'development') {
+        recordWasmMetric('skiaTreeBuildTime', performance.now() - treeBuildStart);
+      }
       if (!tree) {
         renderer.clearFrame();
         renderer.invalidateContent();
@@ -590,15 +625,32 @@ export function SkiaOverlay({ containerEl, backgroundColor = 0xf8fafc, app, drag
         ? skiaFontManager.getFontMgr()
         : undefined;
 
-      const treeBoundsMap = getCachedTreeBoundsMap(tree, registryVersion);
+      // selection이 없으면 boundsMap을 굳이 만들 필요가 없다 (O(n) 트리 순회 제거)
+      const selectedIds = useStore.getState().selectedElementIds;
+      const needsSelectionBoundsMap = selectedIds.length > 0;
+      const selectionBuildStart = process.env.NODE_ENV === 'development' && needsSelectionBoundsMap
+        ? performance.now()
+        : 0;
+      const treeBoundsMap = needsSelectionBoundsMap
+        ? getCachedTreeBoundsMap(tree, registryVersion)
+        : emptyTreeBoundsMapRef.current;
       const selectionData = buildSelectionRenderData(cameraX, cameraY, cameraZoom, treeBoundsMap, dragStateRef);
+      if (process.env.NODE_ENV === 'development' && needsSelectionBoundsMap) {
+        recordWasmMetric('selectionBuildTime', performance.now() - selectionBuildStart);
+      }
 
       const currentAiState = useAIVisualFeedbackStore.getState();
       const hasAIEffects =
         currentAiState.generatingNodes.size > 0 || currentAiState.flashAnimations.size > 0;
+      const aiBuildStart = process.env.NODE_ENV === 'development' && hasAIEffects
+        ? performance.now()
+        : 0;
       const nodeBoundsMap = hasAIEffects
         ? buildNodeBoundsMap(tree, currentAiState)
         : null;
+      if (process.env.NODE_ENV === 'development' && hasAIEffects) {
+        recordWasmMetric('aiBoundsBuildTime', performance.now() - aiBuildStart);
+      }
 
       renderer.setContentNode({
         renderSkia(canvas, bounds) {
@@ -665,6 +717,9 @@ export function SkiaOverlay({ containerEl, backgroundColor = 0xf8fafc, app, drag
         contextLostRef.current = false;
         if (rendererRef.current && canvasRef.current) {
           rendererRef.current.resize(canvasRef.current);
+          // 복원 직후 1-frame stale/잔상 방지: 즉시 클리어 + 컨텐츠 무효화
+          rendererRef.current.invalidateContent();
+          rendererRef.current.clearFrame();
         }
       },
     );
@@ -700,6 +755,7 @@ export function SkiaOverlay({ containerEl, backgroundColor = 0xf8fafc, app, drag
       prevPageIdRef.current = currentPageId;
       clearSkiaRegistry();
       clearImageCache();
+      clearTextParagraphCache();
       rendererRef.current?.invalidateContent();
       rendererRef.current?.clearFrame();
     }
@@ -729,6 +785,9 @@ export function SkiaOverlay({ containerEl, backgroundColor = 0xf8fafc, app, drag
 
         if (rendererRef.current) {
           rendererRef.current.resize(canvasRef.current);
+          // resize 직후 stale snapshot/present 방지
+          rendererRef.current.invalidateContent();
+          rendererRef.current.clearFrame();
         }
       }, 150);
     });
@@ -736,14 +795,23 @@ export function SkiaOverlay({ containerEl, backgroundColor = 0xf8fafc, app, drag
     observer.observe(containerEl);
 
     // DPR 변경 감지 (외부 모니터 이동 시)
-    const dprQuery = matchMedia(`(resolution: ${window.devicePixelRatio}dppx)`);
+    let dprQuery = matchMedia(`(resolution: ${window.devicePixelRatio}dppx)`);
     const handleDprChange = () => {
       if (!canvasRef.current || !rendererRef.current) return;
+
       const newDpr = window.devicePixelRatio || 1;
       const rect = containerEl.getBoundingClientRect();
       canvasRef.current.width = Math.floor(rect.width * newDpr);
       canvasRef.current.height = Math.floor(rect.height * newDpr);
+
       rendererRef.current.resize(canvasRef.current);
+      rendererRef.current.invalidateContent();
+      rendererRef.current.clearFrame();
+
+      // 다음 DPR 변화도 감지할 수 있도록 query를 갱신한다.
+      dprQuery.removeEventListener('change', handleDprChange);
+      dprQuery = matchMedia(`(resolution: ${window.devicePixelRatio}dppx)`);
+      dprQuery.addEventListener('change', handleDprChange);
     };
     dprQuery.addEventListener('change', handleDprChange);
 

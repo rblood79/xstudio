@@ -334,7 +334,7 @@ G.2 변수 참조 시스템 완성 ──┘     ($-- 변수 resolve + 테마별
   Supabase (클라우드) ─────── 영구 저장 / 다중 디바이스
 
 Undo/Redo 3단계 파이프라인 (7개 타입 모두 동일):
-  Phase 1: 메모리 상태 업데이트 (즉시, _rebuildIndexes 포함)
+  Phase 1: 메모리 상태 업데이트 (즉시, 변경된 요소만 O(1)로 인덱스 갱신)
   Phase 2: iframe postMessage 동기화 (WebGL-only 모드 스킵)
   Phase 3: DB 동기화 (IndexedDB + Supabase, 비동기 — UI 블로킹 없음)
 ```
@@ -700,11 +700,20 @@ Pencil 패턴 추가 적용 (신규 분석)
 
 - **Pixi 시각 비활성화 O(1)**: 매 프레임 Camera 자식 전체 순회 대신 `Camera.alpha=0`으로 렌더만 비활성화(이벤트/히트테스트는 유지).
 - **Selection 바운드맵 캐시**: `buildTreeBoundsMap(tree)` 결과를 `registryVersion` 기준으로 재사용해 매 프레임 O(n) 순회를 제거.
+- **contentSurface 백엔드 정합**: `ck.MakeSurface()` 대신 `mainSurface.makeSurface()`로 offscreen surface를 생성해 **메인과 동일한 백엔드(GPU/SW)** 를 사용. 고배율 줌 후 cleanup(full) 시 content render 비용이 과도하게 증가하는 경로를 제거.
+- **줌 스냅샷 보간 정책**: zoomRatio != 1인 경우 `drawImageCubic`을 우선 적용(미지원 환경에서는 `drawImage` 폴백)하여 Pencil과 유사한 확대/축소 품질을 확보.
+- **텍스트 Paragraph LRU 캐시**: ParagraphBuilder shaping/layout 비용을 줄이기 위해 `(content + 스타일 + maxWidth)` 키로 `Paragraph`를 캐시(최대 500). 폰트 매니저 교체/페이지 전환/HMR에서 캐시를 무효화하여 네이티브 리소스 누수를 방지.
+- **리사이즈/DPR/컨텍스트 복원 안정화**: surface 재생성 직후 `invalidateContent()+clearFrame()`로 1-frame stale/잔상 방지. DPR 변화는 matchMedia query를 갱신하여 연속 변화도 추적.
+- **Dev 관측(오버레이)**: `GPUDebugOverlay`로 `RAF FPS`와 함께 `Present/s`, `Content/s`, `Registry/s`, `Idle%` 등 “실제 렌더 빈도/원인”을 분리 관측 가능.
+- **스타일 변경 Long Task 저감**: `updateElementProps`/`batchUpdateElementProps`에서 `_rebuildIndexes()`를 제거하고, IndexedDB 저장을 백그라운드 처리해 스타일 패널 클릭/드래그 시 메인 스레드 블로킹을 줄임.
 
 ### 관련 코드(현행 경로)
 
 - `apps/builder/src/builder/workspace/canvas/skia/SkiaRenderer.ts`
 - `apps/builder/src/builder/workspace/canvas/skia/SkiaOverlay.tsx`
+- `apps/builder/src/builder/workspace/canvas/skia/nodeRenderers.ts` (Paragraph 캐시 포함)
+- `apps/builder/src/builder/workspace/canvas/utils/GPUDebugOverlay.tsx`
+- `apps/builder/src/builder/stores/utils/elementUpdate.ts` (스타일 변경 성능)
 
 ### 관련 문서 정합 업데이트(2026-02-05)
 

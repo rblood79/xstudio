@@ -26,12 +26,21 @@ export function GPUDebugOverlay() {
 
   return (
     <div style={overlayStyle}>
-      <div>FPS: {gpuMetrics.averageFps.toFixed(0)}</div>
-      <div>Frame: {gpuMetrics.lastFrameTime.toFixed(2)}ms</div>
+      <div>RAF FPS: {gpuMetrics.averageFps.toFixed(1)}</div>
+      <div>RAF Frame: {gpuMetrics.lastFrameTime.toFixed(2)}ms</div>
+      <div>Skia: {gpuMetrics.skiaFrameTimeAvgMs.toFixed(2)}ms</div>
+      <div>Content: {gpuMetrics.contentRenderTimeMs.toFixed(2)}ms</div>
+      <div>Blit: {gpuMetrics.blitTimeMs.toFixed(2)}ms</div>
+      <div>Present/s: {gpuMetrics.presentFramesPerSec.toFixed(2)}</div>
+      <div>Tree: {gpuMetrics.skiaTreeBuildTimeMs.toFixed(2)}ms</div>
+      <div>Sel: {gpuMetrics.selectionBuildTimeMs.toFixed(2)}ms</div>
+      <div>AI: {gpuMetrics.aiBoundsBuildTimeMs.toFixed(2)}ms</div>
+      <div>Content/s: {gpuMetrics.contentRendersPerSec.toFixed(2)}</div>
+      <div>Registry/s: {gpuMetrics.registryChangesPerSec.toFixed(2)}</div>
+      <div>Idle: {(gpuMetrics.idleFrameRatio * 100).toFixed(0)}%</div>
       <div>Textures: {gpuMetrics.textureCount}</div>
       <div>Sprites: {gpuMetrics.spriteCount}</div>
       <div>VRAM: {(gpuMetrics.vramUsed / 1024 / 1024).toFixed(1)}MB</div>
     </div>
   );
 }
-

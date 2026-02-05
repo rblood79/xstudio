@@ -53,6 +53,20 @@ export interface GPUMetrics {
   idleFrameRatio: number;
   /** 프레임당 평균 dirty rect 수 */
   dirtyRectCountAvg: number;
+
+  /** (dev) 초당 content 재렌더링 횟수 */
+  contentRendersPerSec: number;
+  /** (dev) 초당 Skia registry 변경 횟수 */
+  registryChangesPerSec: number;
+  /** (dev) 초당 present(비-idle) 프레임 수 */
+  presentFramesPerSec: number;
+
+  /** (dev) Skia 트리 빌드 시간 (ms) */
+  skiaTreeBuildTimeMs: number;
+  /** (dev) Selection 바운드맵/데이터 생성 시간 (ms) */
+  selectionBuildTimeMs: number;
+  /** (dev) AI 바운드맵 생성 시간 (ms) */
+  aiBoundsBuildTimeMs: number;
 }
 
 export interface CanvasSyncState {
@@ -135,6 +149,12 @@ const initialGPUMetrics: GPUMetrics = {
   blitTimeMs: 0,
   idleFrameRatio: 0,
   dirtyRectCountAvg: 0,
+  contentRendersPerSec: 0,
+  registryChangesPerSec: 0,
+  presentFramesPerSec: 0,
+  skiaTreeBuildTimeMs: 0,
+  selectionBuildTimeMs: 0,
+  aiBoundsBuildTimeMs: 0,
 };
 
 const initialState = {

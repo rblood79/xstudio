@@ -70,7 +70,6 @@ function hasShallowPatchChanges(
 export const createUpdateElementPropsAction =
   (set: SetState, get: GetState) =>
   async (elementId: string, props: ComponentElementProps) => {
-    console.log('[UpdateElementProps] called:', { elementId, props });
     const currentState = get();
     // produce 외부에서는 elementsMap 사용 가능
     const element = getElementById(currentState.elementsMap, elementId);
@@ -111,32 +110,42 @@ export const createUpdateElementPropsAction =
         ? createCompleteProps(updatedElement, props)
         : currentState.selectedElementProps;
 
-    set({
-      elements: updatedElements,
-      selectedElementProps,
-    });
-
-    // 🔧 CRITICAL: elementsMap 재구축 (재선택 시 이전 값 반환 방지)
-    // Immer produce() 외부에서 호출 (Map은 Immer가 직접 지원하지 않음)
-    get()._rebuildIndexes();
+    // updateElementProps는 element 구조(parent_id/page_id/tag/variableBindings 등)를 바꾸지 않으므로,
+    // 전체 인덱스 재구축(O(n)) 대신 변경된 요소만 O(1)로 갱신한다.
+    if (updatedElement) {
+      const elementsMap = new Map(currentState.elementsMap);
+      elementsMap.set(elementId, updatedElement);
+      set({
+        elements: updatedElements,
+        elementsMap,
+        selectedElementProps,
+      });
+    } else {
+      set({
+        elements: updatedElements,
+        selectedElementProps,
+      });
+    }
 
     // 2. iframe 업데이트는 PropertyPanel에서 직접 처리하도록 변경 (무한 루프 방지)
 
-    // 3. IndexedDB에 저장 (로컬 우선 저장)
-    try {
-      const db = await getDB();
-      await db.elements.update(elementId, { props });
-    } catch (error) {
-      console.warn("⚠️ [IndexedDB] 요소 저장 중 오류 (메모리는 정상):", error);
-      // 🚀 Phase 7: Toast + Undo 버튼
-      globalToast.error("저장에 실패했습니다.", {
-        duration: 8000,
-        action: {
-          label: "되돌리기",
-          onClick: () => get().undo(),
-        },
-      });
-    }
+    // 3. IndexedDB에 저장 (로컬 우선 저장) — UI 이벤트 핸들러를 블로킹하지 않도록 비동기 처리
+    void (async () => {
+      try {
+        const db = await getDB();
+        await db.elements.update(elementId, { props });
+      } catch (error) {
+        console.warn("⚠️ [IndexedDB] 요소 저장 중 오류 (메모리는 정상):", error);
+        // 🚀 Phase 7: Toast + Undo 버튼
+        globalToast.error("저장에 실패했습니다.", {
+          duration: 8000,
+          action: {
+            label: "되돌리기",
+            onClick: () => get().undo(),
+          },
+        });
+      }
+    })();
   };
 
 /**
@@ -206,21 +215,23 @@ export const createUpdateElementAction =
     // Immer produce() 외부에서 호출 (Map은 Immer가 직접 지원하지 않음)
     get()._rebuildIndexes();
 
-    // 2. IndexedDB에 저장 (로컬 우선 저장)
-    try {
-      const db = await getDB();
-      await db.elements.update(elementId, updates);
-    } catch (error) {
-      console.warn("⚠️ [IndexedDB] 요소 저장 중 오류 (메모리는 정상):", error);
-      // 🚀 Phase 7: Toast + Undo 버튼
-      globalToast.error("저장에 실패했습니다.", {
-        duration: 8000,
-        action: {
-          label: "되돌리기",
-          onClick: () => get().undo(),
-        },
-      });
-    }
+    // 2. IndexedDB에 저장 (로컬 우선 저장) — UI 이벤트 핸들러를 블로킹하지 않도록 비동기 처리
+    void (async () => {
+      try {
+        const db = await getDB();
+        await db.elements.update(elementId, updates);
+      } catch (error) {
+        console.warn("⚠️ [IndexedDB] 요소 저장 중 오류 (메모리는 정상):", error);
+        // 🚀 Phase 7: Toast + Undo 버튼
+        globalToast.error("저장에 실패했습니다.", {
+          duration: 8000,
+          action: {
+            label: "되돌리기",
+            onClick: () => get().undo(),
+          },
+        });
+      }
+    })();
   };
 
 // ============================================
@@ -265,6 +276,8 @@ export const createBatchUpdateElementPropsAction =
 
     // 업데이트 맵 생성 (O(1) 조회용)
     const updateMap = new Map<string, ComponentElementProps>();
+    const updatedElementMap = new Map<string, Element>();
+    const nextElementsMap = new Map(state.elementsMap);
     for (const { elementId, props } of validUpdates) {
       const element = getElementById(state.elementsMap, elementId);
       if (element) {
@@ -274,26 +287,30 @@ export const createBatchUpdateElementPropsAction =
           prevElement: cloneForHistory(element),
         });
         updateMap.set(elementId, props);
+
+        // props-only 업데이트는 element 구조를 바꾸지 않으므로,
+        // 인덱스 전체 재구축 대신 요소만 O(1)로 갱신한다.
+        const merged = { ...element, props: { ...element.props, ...props } };
+        updatedElementMap.set(elementId, merged);
+        nextElementsMap.set(elementId, merged);
       }
     }
 
     // 2. 단일 메모리 상태 업데이트 (불변)
-    const updatedElements = state.elements.map((el) => {
-      const props = updateMap.get(el.id);
-      return props ? { ...el, props: { ...el.props, ...props } } : el;
-    });
+    const updatedElements = state.elements.map((el) => updatedElementMap.get(el.id) ?? el);
 
     // 선택된 요소 props 업데이트
     const selectedId = state.selectedElementId;
     const selectedProps = selectedId && updateMap.has(selectedId)
       ? (() => {
-          const el = updatedElements.find((e) => e.id === selectedId);
+          const el = updatedElementMap.get(selectedId);
           return el ? createCompleteProps(el, updateMap.get(selectedId)!) : state.selectedElementProps;
         })()
       : state.selectedElementProps;
 
     set({
       elements: updatedElements,
+      elementsMap: nextElementsMap,
       selectedElementProps: selectedProps,
     });
 
@@ -313,28 +330,27 @@ export const createBatchUpdateElementPropsAction =
       });
     }
 
-    // 3. 단일 인덱스 재구축
-    get()._rebuildIndexes();
-
-    // 4. IndexedDB 병렬 저장
-    try {
-      const db = await getDB();
-      await Promise.all(
-        validUpdates.map(({ elementId, props }) =>
-          db.elements.update(elementId, { props })
-        )
-      );
-    } catch (error) {
-      console.warn("⚠️ [IndexedDB] 배치 저장 중 오류 (메모리는 정상):", error);
-      // 🚀 Phase 7: Toast + Undo 버튼
-      globalToast.error("저장에 실패했습니다.", {
-        duration: 8000,
-        action: {
-          label: "되돌리기",
-          onClick: () => get().undo(),
-        },
-      });
-    }
+    // 3. IndexedDB 병렬 저장 — UI 이벤트 핸들러를 블로킹하지 않도록 비동기 처리
+    void (async () => {
+      try {
+        const db = await getDB();
+        await Promise.all(
+          validUpdates.map(({ elementId, props }) =>
+            db.elements.update(elementId, { props })
+          )
+        );
+      } catch (error) {
+        console.warn("⚠️ [IndexedDB] 배치 저장 중 오류 (메모리는 정상):", error);
+        // 🚀 Phase 7: Toast + Undo 버튼
+        globalToast.error("저장에 실패했습니다.", {
+          duration: 8000,
+          action: {
+            label: "되돌리기",
+            onClick: () => get().undo(),
+          },
+        });
+      }
+    })();
   };
 
 /**

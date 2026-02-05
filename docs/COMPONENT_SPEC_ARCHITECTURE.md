@@ -2344,7 +2344,7 @@ export async function generateAllCSS(
 - [x] PixiJS Renderer 구현 (씬 그래프 이벤트 전용)
 - [x] CSS Generator 구현
 - [x] 빌드 스크립트 작성
-- [ ] 단위 테스트 작성 ⚠️ `tests/` 디렉토리 미생성
+- [x] 단위 테스트 작성 (`packages/specs/__tests__`, `packages/specs/vitest.config.ts`)
 - [x] CanvasKit WASM 초기화 설정 (`initCanvasKit.ts`)
 - [x] CanvasKitRenderer 구현 (`apps/builder/src/builder/workspace/canvas/skia/nodeRenderers.ts`)
 - [x] CanvasKit 폰트 로더 구현 (`fontManager.ts`)
@@ -4521,11 +4521,11 @@ Offscreen Surface (변경 사항 렌더링)
 
 | 전략 | 설명 | CanvasKit API | 구현 상태 |
 |------|------|---------------|----------|
-| 이중 Surface | 렌더링 중 화면 깜빡임 방지 | `CanvasKit.MakeSurface()` × 2 | ✅ SkiaRenderer.ts |
+| 이중 Surface | 렌더링 중 화면 깜빡임 방지 | `MakeWebGLCanvasSurface` + `Surface.makeSurface()` | ✅ SkiaRenderer.ts |
 | 2-pass present | 컨텐츠 캐시(snapshot) + 오버레이 분리 | `makeImageSnapshot()` + `drawImage()` | ✅ SkiaRenderer.ts |
 | Paint 재사용 | 동일 스타일 Paint 객체 캐싱 | `new CanvasKit.Paint()` + Map 캐시 | ⚠️ 미구현 (인라인 생성) |
 | Font 캐시 | 폰트 로드 결과 캐싱 | `CanvasKit.Typeface` + Map 캐시 | ✅ fontManager.ts |
-| Paragraph 캐시 | 텍스트 측정 결과 캐싱 | `ParagraphBuilder` 결과 Map 캐시 | ⚠️ 미구현 (매 프레임 재생성) |
+| Paragraph 캐시 | 텍스트 shaping/layout 결과 캐싱 | `ParagraphBuilder` → `Paragraph` | ✅ 구현 (LRU 500, 폰트 교체/페이지 전환/HMR 무효화) — `nodeRenderers.ts` |
 
 ```typescript
 // CanvasKit 2-pass present 개념 예시
@@ -4570,7 +4570,7 @@ export type { ComponentSpec, Shape, TokenRef } from './types';
 - [ ] React ↔ CanvasKit 비교 자동화
 - [ ] 성능 프로파일링
 - [ ] Paint 캐시 최적화 (현재 인라인 생성)
-- [ ] Paragraph 캐시 최적화 (현재 매 프레임 재생성)
+- [x] Paragraph 캐시 최적화 (LRU 캐시 + 무효화 정책 반영)
 - [ ] 번들 크기 분석 및 최적화
 - [ ] 문서화 완료
 
@@ -4664,7 +4664,8 @@ export type { ComponentSpec, Shape, TokenRef } from './types';
     "test:visual": "playwright test",
     "generate:css": "tsx scripts/generate-css.ts",
     "validate": "tsx scripts/validate-specs.ts",
-    "validate:tokens": "tsx scripts/validate-tokens.ts",  // ⚠️ 미구현: 파일 미생성
+    "validate:tokens": "tsx scripts/validate-tokens.ts",
+    "validate:phase0": "tsx scripts/validate-phase0.ts",
     "lint": "eslint src/",
     "typecheck": "tsc --noEmit"
   }

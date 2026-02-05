@@ -7,6 +7,82 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed - Dynamic Flex Property Changes Not Reflected Without Refresh (2026-02-05)
+
+#### Body 요소의 justify-content/align-items 동적 변경 시 Skia 캔버스 미갱신 수정
+
+**문제**
+- Body에 `display: flex; flex-direction: column;` 적용 후 `justify-content: flex-start; align-items: flex-start;` 추가 시 시각적 변화 없음
+- 페이지 새로고침 후에만 정상 렌더링됨
+- 부모의 flex 정렬 속성(alignItems, justifyContent, alignContent) 변경이 자식 요소 위치에 즉시 반영되지 않는 일반적 문제
+
+**근본 원인**
+- `@pixi/layout`의 `updateLayout()` 내부에서 `container.emit('layout')`이 `container._onUpdate()`보다 **먼저** 호출됨
+- 'layout' 이벤트 핸들러(`syncLayoutData`)에서 `getBounds()`를 호출할 때, `_localTransformChangeId`가 아직 갱신되지 않아 `updateTransform()`이 새 위치를 반영하지 않음
+- `updateElementBounds()`의 epsilon check(0.01 오차)가 stale bounds와 이전 bounds를 동일하게 판단 → `notifyLayoutChange()` 미호출
+- `registryVersion` 미증가 → Skia 렌더 트리 캐시 재사용 → 이전 위치로 렌더링
+
+```
+@pixi/layout updateLayout() 실행 순서:
+1. layout._computedPixiLayout = yogaNode.getComputedLayout()  ← 새 값 설정
+2. container.emit('layout')  ← syncLayoutData 실행 (getBounds는 stale)
+3. container._onUpdate()     ← 이후에야 transform 변경 시그널
+```
+
+**해결**
+- LayoutContainer의 'layout' 이벤트 핸들러에서 `notifyLayoutChange()` **무조건 호출**
+- `hasNewLayout()`이 true인 경우에만 이벤트가 발생하므로, 불필요한 호출 없이 안전
+- Skia renderFrame은 PixiJS ticker priority -50 (Application.render() 이후)에 실행되어, 이 시점에서 `worldTransform`은 이미 갱신됨
+- 기존 double-RAF 방식(`useEffect` + `requestAnimationFrame` 2중)은 rAF 타이밍 불확실성으로 실패 → 제거
+
+**추가 수정: Block 요소 레이아웃**
+- `containerLayout` 스프레드에 `...blockWidthOverride`가 누락되어 flex column 부모의 block 자식이 `width: 100%`를 받지 못하는 문제 수정
+- `blockWidthOverride`는 `effectiveLayout` 이후에 스프레드되어야 `width: 'auto'` 기본값을 올바르게 덮어씀
+
+**수정된 파일**
+1. `apps/builder/src/builder/workspace/canvas/BuilderCanvas.tsx`
+   - LayoutContainer `syncLayoutData`: 'layout' 이벤트에서 `notifyLayoutChange()` 무조건 호출
+   - double-RAF useEffect 제거 (불필요)
+   - containerLayout 스프레드에 `...blockWidthOverride` 추가
+
+**결과**
+- ✅ justify-content, align-items 변경 즉시 캔버스에 반영
+- ✅ alignContent, flexWrap 등 모든 부모 flex 속성 동적 변경 지원
+- ✅ Block 요소(Card, Panel, Form 등)가 flex column 부모에서 정확한 너비
+- ✅ 새로고침 없이 스타일 패널 변경 즉시 반영
+- ✅ TypeScript 에러 없음
+
+### Fixed - Canvas Keyboard Shortcut (Backspace/Delete) Not Working (2026-02-05)
+
+#### 캔버스에서 선택된 요소를 Backspace/Delete 키로 삭제 가능하도록 수정
+
+**문제**
+- 캔버스에서 요소를 선택한 후 Backspace/Delete 키를 눌러도 요소가 삭제되지 않음
+- 삭제는 왼쪽 트리(레이어 패널)의 휴지통 아이콘으로만 가능했음
+- Figma, Pencil App 등 디자인 도구의 기본 UX와 불일치
+
+**근본 원인**
+- `canvas-container` div에 `tabIndex`가 없어서 DOM 포커스를 받을 수 없었음
+- WebGL 캔버스 클릭 시 `document.activeElement`가 캔버스 영역 밖(`document.body`)에 머물러 `useActiveScope`가 `canvas-focused` 스코프를 반환하지 않음
+- Delete/Backspace 단축키 스코프가 `['canvas-focused', 'panel:events']`로 정의되어 있어, 활성 우측 패널 스코프(`panel:properties`, `panel:styles` 등)에서는 동작하지 않음
+- 단축키 정의(`keyboardShortcuts.ts`)와 핸들러(`useGlobalKeyboardShortcuts.ts`)는 이미 올바르게 구현되어 있었으나, DOM 포커스 문제로 스코프 매칭이 실패
+
+**해결**
+- `canvas-container` div에 `tabIndex={-1}` 추가 (프로그래밍적으로 포커스 가능하되 Tab 탐색에는 포함되지 않음)
+- `onPointerDown` 핸들러 추가: 캔버스 영역 클릭 시 컨테이너에 포커스 이동 → `activeScope`가 `canvas-focused`로 전환
+- 텍스트 입력 요소(`input`, `textarea`, `contenteditable`) 클릭 시에는 포커스를 가져오지 않아 텍스트 편집에 영향 없음
+- 포커스 시 불필요한 outline 표시 방지를 위해 CSS에 `outline: none` 추가
+
+**수정된 파일**
+1. `apps/builder/src/builder/workspace/canvas/BuilderCanvas.tsx` — `tabIndex={-1}` + `onPointerDown` 포커스 핸들러
+2. `apps/builder/src/builder/workspace/Workspace.css` — `.canvas-container`에 `outline: none`
+
+**결과**
+- ✅ 캔버스에서 요소 선택 후 Backspace/Delete 키로 삭제 가능
+- ✅ 라쏘 선택 후에도 Backspace/Delete 동작
+- ✅ 텍스트 편집 중 Backspace는 정상적으로 텍스트 입력에 사용
+- ✅ 기존 Copy(⌘C), Paste(⌘V), Escape 등 캔버스 스코프 단축키도 함께 활성화
+
 ### Fixed - Pencil-Style 2-Pass Skia Renderer (2026-02-04)
 
 #### Phase 6 Fix: 컨텐츠 캐시 + 오버레이 분리로 렌더 파이프라인 교체
@@ -26,6 +102,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `apps/builder/src/builder/workspace/canvas/skia/useSkiaNode.ts`
 - `apps/builder/src/builder/workspace/canvas/elementRegistry.ts`
 - `docs/WASM.md`, `docs/PENCIL_APP_ANALYSIS.md`
+
+### Fixed - Pencil 2-Pass Renderer Stabilization & Profiling (2026-02-05)
+
+#### Phase 6 후속: 고배율 줌/리사이즈 안정화 + 관측 + 스타일 변경 Long Task 저감
+
+**추가 개선**
+- **contentSurface 백엔드 정합**: offscreen surface를 `mainSurface.makeSurface()`로 생성하여 메인과 동일 백엔드(GPU/SW) 사용 (`ck.MakeSurface()` raster-direct 경로 제거).
+- **줌 스냅샷 보간**: zoomRatio != 1이면 `drawImageCubic` 우선 적용(미지원 환경 `drawImage` 폴백)으로 확대/축소 품질 개선.
+- **Paragraph LRU 캐시**: 텍스트 `Paragraph`를 (내용+스타일+maxWidth) 키로 캐시(최대 500), 폰트 교체/페이지 전환/HMR에서 무효화.
+- **리사이즈/DPR/컨텍스트 복원 안정화**: surface 재생성 직후 `invalidateContent()+clearFrame()`로 1-frame stale/잔상 방지.
+- **Dev 관측(오버레이)**: `GPUDebugOverlay` 추가 — `RAF FPS`와 `Present/s`, `Content/s`, `Registry/s`, `Idle%`를 분리 관측.
+- **스타일 변경 Long Task 저감**: `updateElementProps`/`batchUpdateElementProps`에서 `_rebuildIndexes()` 제거, IndexedDB 저장 백그라운드화, 멀티 선택은 batch 경로로 통합.
+
+**수정된 파일**
+- `apps/builder/src/builder/workspace/canvas/skia/SkiaRenderer.ts`
+- `apps/builder/src/builder/workspace/canvas/skia/SkiaOverlay.tsx`
+- `apps/builder/src/builder/workspace/canvas/skia/nodeRenderers.ts`
+- `apps/builder/src/builder/workspace/canvas/utils/GPUDebugOverlay.tsx`
+- `apps/builder/src/builder/stores/utils/elementUpdate.ts`
+- `apps/builder/src/builder/panels/properties/PropertiesPanel.tsx`
 
 ### Fixed - Flex Layout CSS Parity & Style Reactivity (2026-02-02)
 

@@ -34,7 +34,7 @@
 ### 🚀 O(1) 성능 지향 (High-Performance Engine)
 
 - **Fast Lookup**: 모든 요소는 `Map<string, Element>`를 통해 상수 시간 내에 접근합니다.
-- **Indexing System**: `PageElementIndex`를 통해 특정 페이지의 모든 요소를 즉시 필터링(O(1))하며, `_rebuildIndexes`를 통해 원자성을 유지합니다.
+- **Indexing System**: `PageElementIndex`로 페이지별 요소 필터링을 O(1)로 유지합니다. 구조 변경(add/remove/move 등)은 `_rebuildIndexes()`로 원자성을 보장하되, props-only 업데이트(`updateElementProps`, `batchUpdateElementProps`)는 전역 리빌드 없이 변경된 요소만 O(1)로 `elementsMap`을 갱신합니다.
 - **Selection Optimization**: `selectedElementIdsSet` (Set)을 사용하여 수천 개의 요소 중 선택 여부를 즉시 판별합니다.
 
 ### 📦 메모리 관리 및 확장성 (Enterprise Scalability)
@@ -73,7 +73,7 @@
 
 > [!IMPORTANT]
 > **100+ 요소 동시 수정 시 Batch Action 필수**
-> 단일 `updateElement` 대신 `batchUpdateElements`를 사용하여 한 번의 인덱스 재구축과 한 번의 Zustand 업데이트로 처리하십시오.
+> 단일 `updateElementProps` 반복 호출 대신 `batchUpdateElementProps`를 사용하여 한 번의 Zustand 업데이트로 처리하십시오. (props-only 업데이트는 전역 `_rebuildIndexes()` 없이 O(1) 부분 갱신)
 
 > [!TIP]
 > **Priority-based Hydration**

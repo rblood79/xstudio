@@ -276,19 +276,17 @@ Pencil 앱 대비 팬/줌 끊김 원인 5가지를 분석·수정:
 
 **상세:** `apps/builder/src/.../viewport/useViewportControl.ts`
 
-### 6. Camera-Only Blit (비활성화 → Phase 5 대기)
+### 6. Camera-Only Blit (Pencil 방식: padding + cleanup) — ✅ 활성화 (2026-02-05)
 
-Camera-only blit은 올바른 아핀 변환 수학 (`snapshotCamera` 기반 누적 delta)과 Cleanup Render (200ms 디바운스)를 조합하여 구현했으나, **contentSurface가 뷰포트 크기로 고정**되어 팬 시 가장자리 콘텐츠가 클리핑되는 문제가 발생:
+Pencil 모델대로 “컨텐츠는 캐시 스냅샷, 카메라만 바뀌면 blit만”을 활성화했다.
+핵심은 **contentSurface를 뷰포트보다 크게 생성(padding 512px)** 하여 팬/줌 중 가장자리 클리핑을 막는 것.
 
-| 항목 | camera-only blit 시도 | 최종 (content render) |
-|------|---------|---------|
-| **카메라 변경 프레임** | `camera-only` → `blitWithCameraTransform()` (~1ms) | `content` → `renderContent() + blitToMain()` (~1-3ms) |
-| **가장자리 콘텐츠** | 스냅샷 밖 영역은 배경색 노출, 200ms cleanup 후 복원 | 매 프레임 pixel-perfect 렌더링 |
-| **성능** | blit ~1ms | content ~1-3ms (트리 캐시 + AABB 컬링으로 충분히 빠름) |
-
-**비활성화 이유:** Pencil은 이 문제를 Content Render Padding (뷰포트 + 512px)으로 해결하지만, GPU 메모리 30-50% 증가 트레이드오프가 있다. 현재 XStudio의 content render 비용이 트리 캐시 덕분에 충분히 낮으므로 (~1-3ms), camera-only blit 없이도 60fps를 유지할 수 있다.
-
-**인프라 보존:** `blitWithCameraTransform()`, `snapshotCamera`, `scheduleCleanupRender()` 코드는 Phase 5 (Content Render Padding 512px) 구현 시 재활성화를 위해 보존. `classifyFrame()`에서 `'camera-only'` 대신 `'content'`를 반환하도록 변경.
+| 항목 | 동작 |
+|------|------|
+| **카메라 변경 프레임** | `camera-only` → `blitWithCameraTransform()` (snapshot 아핀 변환) + 오버레이 렌더 |
+| **품질/커버리지 조건** | (1) `camera.zoom > snapshotZoom * 3` 또는 (2) 패딩 포함 스냅샷이 뷰포트를 덮지 못하면 즉시 content 재렌더 |
+| **cleanup** | 모션 정지 후 200ms에 cleanup(full) 1회 렌더로 품질 정리 |
+| **리샘플링** | zoomRatio != 1이면 `drawImageCubic` 우선 적용(미지원 환경은 `drawImage` 폴백) |
 
 **상세:** `apps/builder/src/.../skia/SkiaRenderer.ts`
 
@@ -336,6 +334,7 @@ Dirty Rect(clipRect) 기반 부분 렌더링은 “팬/줌/스냅샷/padding” 
 - contentSurface에 **디자인 컨텐츠** 전체 렌더 → `contentSnapshot` 캐시
 - present 단계에서 snapshot blit(카메라 델타 아핀 변환) + **오버레이(Selection/AI/PageTitle) 별도 렌더**
 - 줌/팬 중에는 camera-only 우선, 정지 후 cleanup(full)로 품질 정리
+- Dev 관측: `GPUDebugOverlay`로 `RAF FPS`와 함께 `Present/s`, `Content/s`, `Registry/s`, `Idle%` 등을 분리 관측
 
 ## Update: Skia UI 컴포넌트 borderRadius 파싱 수정 (2026-02-03)
 

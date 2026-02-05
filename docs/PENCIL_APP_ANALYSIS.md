@@ -964,9 +964,9 @@ Pencil의 Pan/Zoom 아키텍처를 분석하여 XStudio에 적용한 최적화:
 | **카메라 → GPU** | `canvas.concat(worldTransform.toArray())` | `canvas.translate(cameraX, cameraY); canvas.scale(cameraZoom, cameraZoom)` |
 | **컨텐츠 캐싱** | `contentNeedsRedraw` flag, 오프스크린 surface snapshot | `SkiaRenderer.contentSurface` + `contentSnapshot` (컨텐츠 캐시) |
 | **오버레이 분리** | 컨텐츠/오버레이 분리 렌더 | mainSurface에 Selection/AI/PageTitle만 별도 패스로 덧그리기 (present) |
-| **camera-only 프레임** | `contentNeedsRedraw === false` → 캐시 blit만 수행 (< 1ms) | padding(기본 512px) 포함 스냅샷 + `blitWithCameraTransform()` 아핀 변환 블리팅. `canBlitWithCameraTransform()`은 “cleanup(full) 재렌더 필요 여부” 판단에 사용 |
-| **줌 시 보간** | `drawImageCubic(snapshot, 0.3, 0.3)` — 큐빅 보간 | `canvas.scale(scaleRatio)` + `drawImage(snapshot)` |
-| **cleanup render** | 줌 변경 시 `invalidateContent()` → 다음 프레임 전체 재렌더링 | `needsCleanupRender` flag → 카메라 정지 후 1회 전체 렌더링 |
+| **camera-only 프레임** | `contentNeedsRedraw === false` → 캐시 blit만 수행 (< 1ms) | padding(기본 512px) 포함 스냅샷 + `blitWithCameraTransform()` 아핀 변환 블리팅. 단, (1) `camera.zoom > snapshotZoom * 3` 또는 (2) 패딩 포함 스냅샷이 뷰포트를 덮지 못하면 즉시 content 재렌더 |
+| **줌 시 보간** | `drawImageCubic(snapshot, 0.3, 0.3)` — 큐빅 보간 | zoomRatio != 1이면 `drawImageCubic`을 우선 사용(미지원 환경은 `drawImage` 폴백) |
+| **cleanup render** | 줌 변경 시 `invalidateContent()` → 다음 프레임 전체 재렌더링 | 카메라 모션 중 camera-only 우선 + 정지 후 cleanup(full) 1회 렌더링 |
 
 #### Pencil 대비 XStudio에서 발견·수정된 병목 7가지
 
@@ -978,7 +978,7 @@ Pencil의 Pan/Zoom 아키텍처를 분석하여 XStudio에 적용한 최적화:
 | 4 | **camera-only GPU** | `contentNeedsRedraw === false` → blit만 | `SkiaRenderer.ts`: padding 포함 스냅샷 + `blitWithCameraTransform()` + `present()` |
 | 5 | **트리/바운드맵 캐시** | 캐시 blit이므로 트리 순회 불필요 | `SkiaOverlay.tsx`: `buildSkiaTreeHierarchical` + `buildTreeBoundsMap`을 registryVersion 캐시로 재사용 |
 | 6 | **Pixi 시각 비활성화 O(N)** | (해당 없음) | Camera 자식 전체 순회 대신 `Camera.alpha=0`으로 O(1) 처리 (이벤트 유지) |
-| 7 | **줌/팬 중 content 재렌더 폭증** | camera-only는 항상 캐시 blit | zoom-out 등으로 스냅샷이 화면을 완전히 덮지 못해도 인터랙션 중에는 camera-only 유지 + 정지 후 cleanup(full) 1회 재렌더 |
+| 7 | **줌/팬 중 content 재렌더 폭증** | camera-only는 항상 캐시 blit | camera-only 우선이 기본. 다만 zoom이 snapshot 기준 3배를 넘거나, 패딩 포함 스냅샷이 뷰포트를 덮지 못하면 즉시 content 재렌더(품질/커버리지 보장). 그 외는 정지 후 cleanup(full) 1회로 정리 |
 
 #### camera-only 프레임 비용 비교
 
@@ -1009,9 +1009,10 @@ XStudio (수정 후):
 구조는 Pencil의 “컨텐츠 캐시 + present blit + 오버레이 분리” 모델로 정리됐지만,
 픽셀/체감 정합성을 더 끌어올리려면 아래 항목을 체크해야 한다(상세는 `docs/WASM.md` §6.8 참조).
 
-- 줌 스냅샷 보간/샘플링 옵션 명시(`drawImageCubic` 등) 및 색공간/감마 정책 고정
+- 색공간/감마(선형/비선형) 및 premultiplied alpha 정책 고정
 - 오버레이 텍스트 렌더링 정책(Paragraph 통일 여부)과 좌표 반올림/픽셀 스냅 규칙 문서화
-- contentSurface 백엔드(GPU/offscreen) 및 padding/cleanup render 트리거 정책 튜닝
+- padding(512px) 및 cleanup render 트리거 정책(입력 디바이스/줌 범위)에 대한 튜닝/문서화
+- 리소스 수명/누수 방지(Paragraph/Paint/Path/Image 등 `.delete()` 정책) 및 캐시 세대 교체 규칙 정리
 
 ---
 

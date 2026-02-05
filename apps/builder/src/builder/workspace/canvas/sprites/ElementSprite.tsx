@@ -98,6 +98,7 @@ import {
 import { useStore } from '../../../stores';
 import { useResolvedElement } from './useResolvedElement';
 import { isFlexContainer, isGridContainer } from '../layout';
+import { measureWrappedTextHeight } from '../utils/textMeasure';
 
 // ============================================
 // Constants
@@ -1166,6 +1167,11 @@ export const ElementSprite = memo(function ElementSprite({
   const elementStyle = effectiveElement.props?.style;
   const elementProps = effectiveElement.props;
 
+  // 🚀 Yoga 계산된 크기를 skiaNodeData에 반영
+  // convertStyle의 폴백(100)이 아닌 실제 Yoga 레이아웃 결과를 사용
+  const computedW = computedContainerSize?.width;
+  const computedH = computedContainerSize?.height;
+
   const skiaNodeData = useMemo(() => {
     const style = elementStyle as CSSStyle | undefined;
 
@@ -1183,6 +1189,11 @@ export const ElementSprite = memo(function ElementSprite({
     const br = typeof convertedBorderRadius === 'number'
       ? convertedBorderRadius
       : convertedBorderRadius?.[0] ?? 0;
+
+    // 🚀 Yoga 계산 크기 우선 사용 (convertStyle 폴백 100 대신)
+    // Card/Panel 등 auto-height 컴포넌트에서 Skia box 크기가 실제 콘텐츠와 일치하도록 보장
+    const finalWidth = (computedW != null && computedW > 0) ? computedW : transform.width;
+    const finalHeight = (computedH != null && computedH > 0) ? computedH : transform.height;
 
     // backgroundColor 유무 확인 (style이 undefined일 수 있으므로 optional chaining)
     const hasBgColor = style?.backgroundColor !== undefined && style?.backgroundColor !== null && style?.backgroundColor !== '';
@@ -1299,6 +1310,9 @@ export const ElementSprite = memo(function ElementSprite({
       };
     }> | undefined;
 
+    // Card 콘텐츠 기반 최소 높이 (Yoga가 계산하지 못한 경우의 폴백)
+    let cardCalculatedHeight: number | undefined;
+
     if (isUIComponent) {
       const tag = effectiveElement.tag;
 
@@ -1335,19 +1349,24 @@ export const ElementSprite = memo(function ElementSprite({
           const CARD_PADDING: Record<string, number> = { sm: 8, md: 12, lg: 16 };
           const padding = CARD_PADDING[cardSize] ?? 12;
           const fontFamilies = ['Pretendard', 'Inter', 'system-ui', 'sans-serif'];
-          const maxWidth = transform.width - padding * 2;
+          const maxWidth = finalWidth - padding * 2;
 
           const nodes: typeof textChildren = [];
           let currentY = padding;
 
+          const fontFamilyStr = fontFamilies[0] ?? 'sans-serif';
+
           // Title (heading || title)
           if (cardTitle) {
             const titleFontSize = 16;
+            const titleHeight = measureWrappedTextHeight(
+              cardTitle, titleFontSize, 600, fontFamilyStr, maxWidth,
+            );
             nodes.push({
               type: 'text' as const,
               x: 0, y: 0,
-              width: transform.width,
-              height: transform.height,
+              width: finalWidth,
+              height: finalHeight,
               visible: true,
               text: {
                 content: cardTitle,
@@ -1362,18 +1381,21 @@ export const ElementSprite = memo(function ElementSprite({
                 autoCenter: false,
               },
             });
-            currentY += titleFontSize * 1.2;
+            currentY += titleHeight;
           }
 
           // Subheading
           if (cardSubheading) {
             if (cardTitle) currentY += 2; // header gap (PixiCard headerLayout.gap)
             const subFontSize = 14;
+            const subHeight = measureWrappedTextHeight(
+              cardSubheading, subFontSize, 400, fontFamilyStr, maxWidth,
+            );
             nodes.push({
               type: 'text' as const,
               x: 0, y: 0,
-              width: transform.width,
-              height: transform.height,
+              width: finalWidth,
+              height: finalHeight,
               visible: true,
               text: {
                 content: cardSubheading,
@@ -1387,7 +1409,7 @@ export const ElementSprite = memo(function ElementSprite({
                 autoCenter: false,
               },
             });
-            currentY += subFontSize * 1.2;
+            currentY += subHeight;
           }
 
           // header → content gap (PixiCard headerLayout.marginBottom = 8)
@@ -1398,11 +1420,14 @@ export const ElementSprite = memo(function ElementSprite({
           // Description (description || children)
           if (cardDescription) {
             const descFontSize = 14;
+            const descHeight = measureWrappedTextHeight(
+              cardDescription, descFontSize, 400, fontFamilyStr, maxWidth,
+            );
             nodes.push({
               type: 'text' as const,
               x: 0, y: 0,
-              width: transform.width,
-              height: transform.height,
+              width: finalWidth,
+              height: finalHeight,
               visible: true,
               text: {
                 content: cardDescription,
@@ -1416,8 +1441,11 @@ export const ElementSprite = memo(function ElementSprite({
                 autoCenter: false,
               },
             });
+            currentY += descHeight;
           }
 
+          // 콘텐츠 기반 높이 = 모든 텍스트 위치 + 하단 패딩
+          cardCalculatedHeight = currentY + padding;
           textChildren = nodes;
         }
       } else {
@@ -1476,14 +1504,14 @@ export const ElementSprite = memo(function ElementSprite({
 
           // 수직 중앙 정렬: paddingTop 근사 계산
           const lineHeight = fontSize * 1.2;
-          const paddingTop = Math.max(0, (transform.height - lineHeight) / 2);
+          const paddingTop = Math.max(0, (finalHeight - lineHeight) / 2);
 
           textChildren = [{
             type: 'text' as const,
             x: 0,
             y: 0,
-            width: transform.width,
-            height: transform.height,
+            width: finalWidth,
+            height: finalHeight,
             visible: true,
             text: {
               content: textContent,
@@ -1493,24 +1521,31 @@ export const ElementSprite = memo(function ElementSprite({
               align: textAlign,
               paddingLeft,
               paddingTop,
-              maxWidth: transform.width - paddingLeft * 2,
+              maxWidth: finalWidth - paddingLeft * 2,
             },
           }];
         }
       }
     }
 
+    // 🚀 Card 등 auto-height UI 컴포넌트: 콘텐츠 기반 최소 높이
+    // Yoga가 텍스트 bounds를 아직 반영하지 못한 경우(minHeight 폴백),
+    // SkiaOverlay에서 contentMinHeight를 최소값으로 적용하여
+    // yogaH가 콘텐츠보다 작은 경우를 보정
+    const contentMinHeight = cardCalculatedHeight;
+
     return {
       type: 'box' as const,
       x: transform.x,
       y: transform.y,
-      width: transform.width,
-      height: transform.height,
+      width: finalWidth,
+      height: finalHeight,
       visible: true,
       box: boxData,
       children: textChildren,
+      contentMinHeight,
     };
-  }, [effectiveElement, spriteType, elementStyle, elementProps]);
+  }, [effectiveElement, spriteType, elementStyle, elementProps, computedW, computedH]);
 
   useSkiaNode(elementId, skiaNodeData);
 

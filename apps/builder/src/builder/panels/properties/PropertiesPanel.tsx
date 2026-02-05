@@ -369,7 +369,13 @@ const MultiSelectContent = memo(function MultiSelectContent({
     try {
       const elementsMap = getElementsMap();
       trackBatchUpdate(selectedElementIds, updates, elementsMap);
-      await Promise.all(selectedElementIds.map((id: string) => updateElementProps(id, updates)));
+      const batchUpdateElementProps = useStore.getState().batchUpdateElementProps;
+      await batchUpdateElementProps(
+        selectedElementIds.map((id: string) => ({
+          elementId: id,
+          props: updates as unknown as import("../../../types/core/store.types").ComponentElementProps,
+        }))
+      );
       console.log('Batch update applied to', selectedElementIds.length, 'elements');
     } catch (error) {
       console.error('Failed to batch update:', error);
@@ -415,14 +421,20 @@ const MultiSelectContent = memo(function MultiSelectContent({
       const styleUpdates: Record<string, Record<string, unknown>> = {};
       updates.forEach((update) => { styleUpdates[update.id] = update.style; });
       trackBatchUpdate(selectedElementIds, styleUpdates, elementsMap);
-      await Promise.all(updates.map((update) => {
+      const batchUpdateElementProps = useStore.getState().batchUpdateElementProps;
+      const batch = updates.flatMap((update) => {
         const element = elementsMap.get(update.id);
-        if (element) {
-          const updatedStyle = { ...(element.props.style as Record<string, unknown> || {}), ...update.style };
-          return updateElementProps(update.id, { style: updatedStyle });
-        }
-        return Promise.resolve();
-      }));
+        if (!element) return [];
+        const updatedStyle = {
+          ...((element.props.style as Record<string, unknown>) || {}),
+          ...update.style,
+        };
+        return [{
+          elementId: update.id,
+          props: { style: updatedStyle } as import("../../../types/core/store.types").ComponentElementProps,
+        }];
+      });
+      await batchUpdateElementProps(batch);
       console.log(`✅ [Alignment] Aligned ${updates.length} elements to ${type}`);
     } catch (error) {
       console.error('❌ [Alignment] Failed:', error);
@@ -438,14 +450,20 @@ const MultiSelectContent = memo(function MultiSelectContent({
       const styleUpdates: Record<string, Record<string, unknown>> = {};
       updates.forEach((update) => { styleUpdates[update.id] = update.style; });
       trackBatchUpdate(selectedElementIds, styleUpdates, elementsMap);
-      await Promise.all(updates.map((update) => {
+      const batchUpdateElementProps = useStore.getState().batchUpdateElementProps;
+      const batch = updates.flatMap((update) => {
         const element = elementsMap.get(update.id);
-        if (element) {
-          const updatedStyle = { ...(element.props.style as Record<string, unknown> || {}), ...update.style };
-          return updateElementProps(update.id, { style: updatedStyle });
-        }
-        return Promise.resolve();
-      }));
+        if (!element) return [];
+        const updatedStyle = {
+          ...((element.props.style as Record<string, unknown>) || {}),
+          ...update.style,
+        };
+        return [{
+          elementId: update.id,
+          props: { style: updatedStyle } as import("../../../types/core/store.types").ComponentElementProps,
+        }];
+      });
+      await batchUpdateElementProps(batch);
       console.log(`✅ [Distribution] Distributed ${updates.length} elements ${type}ly`);
     } catch (error) {
       console.error('❌ [Distribution] Failed:', error);

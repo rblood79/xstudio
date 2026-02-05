@@ -27,6 +27,7 @@ import {
 } from "../utils/cssVariableReader";
 import { useThemeColors } from "../hooks/useThemeColors";
 import { drawBox } from "../utils";
+import { measureWrappedTextHeight } from "../utils/textMeasure";
 import { useStore } from "../../../stores";
 import { LayoutComputedSizeContext } from "../layoutContext";
 
@@ -145,8 +146,37 @@ export const PixiCard = memo(function PixiCard({
   // Graphics 그리기용 픽셀 값 (Yoga 계산값 우선, fallback 사용)
   const cardWidth = (computedSize?.width && computedSize.width > 0)
     ? computedSize.width : fallbackWidth;
-  const cardHeight = (computedSize?.height && computedSize.height > 0)
+
+  // 🚀 콘텐츠 기반 높이 계산 (Yoga가 텍스트 leaf를 정확히 측정하지 못하는 경우 대비)
+  // Canvas 2D API로 word-wrap 줄 수를 정확히 측정하여 명시적 height 설정
+  const calculatedContentHeight = useMemo(() => {
+    const pad = sizePreset.padding;
+    const wrapWidth = cardWidth - pad * 2;
+    const fontFamily = 'Pretendard';
+    let h = pad; // top padding
+
+    if (cardTitle) {
+      h += measureWrappedTextHeight(cardTitle, 16, 600, fontFamily, wrapWidth);
+    }
+    if (props?.subheading) {
+      if (cardTitle) h += 2; // header gap
+      h += measureWrappedTextHeight(String(props.subheading), 14, 400, fontFamily, wrapWidth);
+    }
+    if (cardTitle || props?.subheading) {
+      h += 8; // marginBottom
+    }
+    if (cardDescription) {
+      h += measureWrappedTextHeight(cardDescription, 14, 400, fontFamily, wrapWidth);
+    }
+
+    h += pad; // bottom padding
+    return Math.max(h, 60); // minHeight 60
+  }, [cardTitle, props?.subheading, cardDescription, cardWidth, sizePreset.padding]);
+
+  // 🚀 높이는 콘텐츠 기반 계산값과 Yoga 값 중 큰 값 사용
+  const yogaHeight = (computedSize?.height && computedSize.height > 0)
     ? computedSize.height : fallbackHeight;
+  const cardHeight = Math.max(yogaHeight, calculatedContentHeight);
 
   // 카드 배경 그리기
   const drawCard = useCallback(
@@ -216,28 +246,20 @@ export const PixiCard = memo(function PixiCard({
     [textColor, cardWidth, sizePreset.padding]
   );
 
-  // 🚀 Phase 9: 외부 LayoutContainer가 width/height를 제어
-  // PixiCard는 CSS 기본값과 동기화:
-  // - width: 100% (CSS 기본값 .react-aria-Card { width: 100% })
-  // - height: 미지정 (콘텐츠에 맞춤, CSS에서도 height 미지정)
-  // % 값 이중 적용 방지: style.width='50%' → LayoutContainer(50%) + PixiCard(100%) = 50%
-  //
-  // 🚀 Phase 10: iframe 구조와 동기화
-  // iframe: Card > card-header > card-content(children) > card-footer
-  // CSS: .react-aria-Card { display: block }, .card-content는 스타일 없음 (block 기본)
-  // 🚀 Phase 8: 주 컨테이너 layout (iframe CSS와 동기화)
-  // CSS: .react-aria-Card { display: block; width: 100%; }
+  // 🚀 Phase 9: 외부 LayoutContainer가 width를 제어
+  // height: calculatedContentHeight → Yoga가 정확한 높이를 사용하여 형제 배치 정확도 보장
+  // width: 설정하지 않음 — 부모 방향에 따라 Yoga가 결정:
+  //   - column 부모: alignSelf: 'stretch' → 전체 너비 차지
+  //   - row 부모: 콘텐츠 기반 너비 사용 (형제 요소와 공간 분배)
   const cardLayout = useMemo(() => ({
     display: 'flex' as const,
     flexDirection: 'column' as const,
-    width: '100%' as unknown as number,
+    height: calculatedContentHeight,
     padding: sizePreset.padding,
-    minHeight: 60,
-    // 콘텐츠 높이에 맞춤 (세로 늘어남 방지)
     flexGrow: 0,
-    flexShrink: 0,
-    alignSelf: 'flex-start' as const,
-  }), [sizePreset.padding]);
+    flexShrink: 1,
+    alignSelf: 'stretch' as const,
+  }), [sizePreset.padding, calculatedContentHeight]);
 
   // card-header 레이아웃 (제목, 부제목)
   const headerLayout = useMemo(() => ({

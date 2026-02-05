@@ -54,12 +54,15 @@ import {
   type ComputedLayout,
 } from "./layout";
 import { getElementBoundsSimple, registerElement, unregisterElement, updateElementBounds } from "./elementRegistry";
+import { notifyLayoutChange } from "./skia/useSkiaNode";
 import { LayoutComputedSizeContext } from "./layoutContext";
 import { getOutlineVariantColor } from "./utils/cssVariableReader";
+import { GPUDebugOverlay } from "./utils/GPUDebugOverlay";
 import { useThemeColors } from "./hooks/useThemeColors";
 import { useViewportCulling } from "./hooks/useViewportCulling";
 import { longTaskMonitor } from "../../../utils/longTaskMonitor";
 import type { Element } from "../../../types/core/store.types";
+import { useGPUProfiler } from "./utils/gpuProfilerCore";
 
 // ============================================
 // Types
@@ -350,13 +353,25 @@ const LayoutContainer = memo(function LayoutContainer({
       }
     };
 
-    // @pixi/layout이 Yoga calculateLayout() 완료 후 emit하는 'layout' 이벤트 구독
-    container.on('layout', syncLayoutData);
+    // @pixi/layout의 'layout' 이벤트 핸들러
+    // updateLayout() 내부에서 emit('layout')이 _onUpdate()보다 먼저 호출되어
+    // getBounds()가 stale worldTransform을 읽음 → updateElementBounds의 epsilon check 통과
+    // → notifyLayoutChange 미호출 → Skia 캐시 미갱신.
+    // 해결: 'layout' 이벤트에서 무조건 notifyLayoutChange() 호출.
+    // 'layout'은 hasNewLayout()이 true인 경우에만 발생하므로 안전하며,
+    // Skia renderFrame은 PixiJS render 이후(priority -50)에 실행되어
+    // 이 시점에서 worldTransform은 이미 갱신되어 있다.
+    const onLayoutEvent = () => {
+      syncLayoutData();
+      notifyLayoutChange();
+    };
+
+    container.on('layout', onLayoutEvent);
     // 최초 마운트 시 첫 prerender가 아직 미실행일 수 있으므로 rAF fallback
     const rafId = requestAnimationFrame(syncLayoutData);
 
     return () => {
-      container.off('layout', syncLayoutData);
+      container.off('layout', onLayoutEvent);
       cancelAnimationFrame(rafId);
     };
   }, [elementId]);
@@ -699,8 +714,11 @@ const ElementsLayer = memo(function ElementsLayer({
         const hasChildren = (pageChildrenMap.get(child.id)?.length ?? 0) > 0;
 
         // 🚀 Phase 8: CSS display: block 요소에 flexBasis: '100%' 적용
-        // 부모가 flexDirection: 'row'일 때, block 요소가 한 줄 전체를 차지하도록
+        // 부모가 암시적 flex-row일 때 block 요소가 한 줄 전체를 차지하도록
+        // 단, 부모가 명시적으로 display:flex를 설정한 경우 CSS flex 명세에 따라
+        // block 요소도 flex item으로 취급 → flexBasis: '100%' 미적용
         const isBlockElement = BLOCK_TAGS.has(child.tag);
+        const parentHasExplicitFlex = parentDisplay === 'flex' || parentDisplay === 'inline-flex';
         // Body 기본값: rootLayout은 항상 flexDirection: 'row' (bodyLayout에서 override 가능)
         const isParentFlexRow = parentElement === bodyElement
           ? (parentLayout.flexDirection ?? 'row') === 'row'
@@ -709,7 +727,15 @@ const ElementsLayer = memo(function ElementsLayer({
         // 설정한 width만 체크 (auto는 "미지정"으로 취급)
         const hasExplicitWidth = effectiveLayout.width !== undefined && effectiveLayout.width !== 'auto';
         const blockLayout = isBlockElement && !hasExplicitWidth && isParentFlexRow
-          ? { flexBasis: '100%' as const }
+          ? parentHasExplicitFlex
+            ? { flexGrow: 1, flexShrink: 1 }              // 명시적 flex row: 나머지 공간 채움
+            : { flexBasis: '100%' as const }               // 암시적 flex row: 한 줄 전체 차지 (block 동작)
+          : {};
+        // 🚀 Block 요소 width 강제: flex column에서 align-items: flex-start여도 전체 너비 차지
+        // alignSelf: 'stretch'는 Yoga에서 height에도 영향 → width: '100%'로 명시적 처리
+        // effectiveLayout 뒤에 spread하여 styleToLayout의 width: 'auto'를 덮어씀
+        const blockWidthOverride = isBlockElement && !hasExplicitWidth && !isParentFlexRow
+          ? { width: '100%' as const }
           : {};
 
         // 🚀 자식 요소에 display: flex가 있으면 해당 속성 적용
@@ -740,9 +766,14 @@ const ElementsLayer = memo(function ElementsLayer({
         const flexShrinkDefault = effectiveLayout.flexShrink !== undefined
           ? {}
           : { flexShrink: hasPercentSize ? 1 : 0 };
-        const containerLayout = hasChildren && !effectiveLayout.display && !effectiveLayout.flexDirection
-          ? { position: 'relative' as const, flexShrink: 0, display: 'flex' as const, flexDirection: 'column' as const, ...blockLayout, ...effectiveLayout }
-          : { position: 'relative' as const, ...flexShrinkDefault, ...blockLayout, ...effectiveLayout };
+        // 🚀 Container 타입(Card, Panel 등)은 child element 없이도 내부 Yoga 레이아웃이
+        // 올바르게 계산되도록 display: flex + flexDirection: column 보장
+        // (PixiCard 등이 내부에서 flex column 레이아웃을 사용하므로 외부도 동기화)
+        const isContainerTag = CONTAINER_TAGS.has(child.tag);
+        const needsFlexLayout = (hasChildren || isContainerTag) && !effectiveLayout.display && !effectiveLayout.flexDirection;
+        const containerLayout = needsFlexLayout
+          ? { position: 'relative' as const, ...flexShrinkDefault, display: 'flex' as const, flexDirection: 'column' as const, ...blockLayout, ...effectiveLayout, ...blockWidthOverride }
+          : { position: 'relative' as const, ...flexShrinkDefault, ...blockLayout, ...effectiveLayout, ...blockWidthOverride };
 
         // 🚀 Phase 10: Container 타입은 children을 ElementSprite에 전달
         // Container 컴포넌트가 children을 배경 안에 렌더링
@@ -922,6 +953,9 @@ export function BuilderCanvas({
   backgroundColor = DEFAULT_BACKGROUND,
   initialPanOffsetX,
 }: BuilderCanvasProps) {
+  // Dev-only: rAF 기반 FPS/프레임타임 측정(렌더 idle 여부와는 별개)
+  useGPUProfiler(import.meta.env.DEV);
+
   const containerRef = useRef<HTMLDivElement>(null);
   // 🚀 Phase 19: SelectionBox imperative handle ref (드래그 중 React 리렌더링 없이 위치 업데이트)
   const selectionBoxRef = useRef<SelectionBoxHandle>(null);
@@ -1602,7 +1636,19 @@ export function BuilderCanvas({
   }, [setCanvasReady]);
 
   return (
-    <div ref={setContainerNode} className="canvas-container">
+    <div
+      ref={setContainerNode}
+      className="canvas-container"
+      tabIndex={-1}
+      onPointerDown={(e) => {
+        // 캔버스 영역 클릭 시 컨테이너에 포커스 → activeScope가 'canvas-focused'로 전환
+        // Backspace/Delete 등 캔버스 스코프 단축키 활성화
+        const target = e.target as HTMLElement;
+        if (!target.closest('input, textarea, [contenteditable="true"]')) {
+          containerRef.current?.focus();
+        }
+      }}
+    >
       {/* 🚀 Phase 7: Application 즉시 렌더링, Yoga는 LayoutSystem.init()에서 로드 */}
       {containerEl && (
         <Application
@@ -1712,6 +1758,8 @@ export function BuilderCanvas({
           pageHeight={pageHeight}
         />
       )}
+
+      <GPUDebugOverlay />
 
       {/* 텍스트 편집 오버레이 (B1.5) */}
       {editState && editState.elementId && (

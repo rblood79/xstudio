@@ -10,6 +10,10 @@ import type { ComponentSpec, TokenRef } from '../src/types';
 import { isValidTokenRef } from '../src/types/token.types';
 import * as fs from 'fs/promises';
 import * as path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const COMPONENTS_DIR = path.join(__dirname, '../src/components');
 
@@ -154,8 +158,8 @@ function validateSpec(spec: ComponentSpec<unknown>, fileName: string): Validatio
       validateTokenRef(size.fontSize, `${prefix} sizes.${sizeName}.fontSize`, result);
       validateTokenRef(size.borderRadius, `${prefix} sizes.${sizeName}.borderRadius`, result);
 
-      if (size.height <= 0) {
-        result.errors.push(`${prefix} sizes.${sizeName}.height must be positive`);
+      if (size.height < 0) {
+        result.errors.push(`${prefix} sizes.${sizeName}.height must be non-negative (0 = auto)`);
       }
     });
   }

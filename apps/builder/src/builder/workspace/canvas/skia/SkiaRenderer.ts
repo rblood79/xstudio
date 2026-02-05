@@ -17,7 +17,7 @@
 import type { CanvasKit, Canvas, Surface, Image } from 'canvaskit-wasm';
 import type { SkiaRenderable, FrameType, CameraState } from './types';
 import { createGPUSurface } from './createSurface';
-import { recordWasmMetric } from '../utils/gpuProfilerCore';
+import { recordWasmMetric, flushWasmMetrics } from '../utils/gpuProfilerCore';
 
 
 export class SkiaRenderer {
@@ -32,6 +32,16 @@ export class SkiaRenderer {
   private readonly contentPaddingCssPx = 512;
   /** DPR 반영된 패딩 (device px) */
   private contentPaddingDevicePx = 0;
+
+  /**
+   * Snapshot(blit) 리샘플링 정책
+   *
+   * Pencil은 zoom mismatch 시 drawImageCubic 계열로 보간을 사용하는 것으로 알려져 있다.
+   * xstudio도 zoomRatio != 1인 경우(스케일링 발생)에 cubic 보간을 우선 사용한다.
+   *
+   * Mitchell-Netravali (B=C=1/3): 일반적인 UI 확대/축소에 무난한 기본값.
+   */
+  private readonly snapshotCubicResampler = { b: 1 / 3, c: 1 / 3 };
 
   // ============================================
   // Main Surface (화면 표시)
@@ -59,6 +69,15 @@ export class SkiaRenderer {
   private cleanupTimer: ReturnType<typeof setTimeout> | null = null;
   private needsCleanupRender = false;
 
+  // ============================================
+  // Dev instrumentation
+  // ============================================
+  private devContentRenderCount = 0;
+  private devContentRenderWindowStartMs = 0;
+  private devFrameCount = 0;
+  private devIdleFrameCount = 0;
+  private devFrameWindowStartMs = 0;
+
   constructor(
     ck: CanvasKit,
     htmlCanvas: HTMLCanvasElement,
@@ -71,6 +90,11 @@ export class SkiaRenderer {
     this.mainSurface = createGPUSurface(ck, htmlCanvas);
     this.mainCanvas = this.mainSurface.getCanvas();
     this.backgroundColor = backgroundColor ?? ck.Color4f(1, 1, 1, 1);
+
+    if (process.env.NODE_ENV === 'development') {
+      this.devContentRenderWindowStartMs = performance.now();
+      this.devFrameWindowStartMs = this.devContentRenderWindowStartMs;
+    }
   }
 
   /** 컨텐츠(디자인 노드) 렌더러를 설정한다. */
@@ -133,15 +157,53 @@ export class SkiaRenderer {
       return 'content';
     }
     if (cameraChanged) {
-      // 팬/줌 중에는 content 재렌더링을 피하고 snapshot에 아핀 변환만 적용한다.
-      // zoom-out 등으로 snapshot이 화면을 완전히 덮지 못해도, cleanup render(200ms)로
-      // 모션 종료 후 1회 전체 재렌더링하여 품질/가장자리를 정리한다. (Pencil 모델)
-      return this.contentSnapshot ? 'camera-only' : 'content';
+      if (!this.contentSnapshot) {
+        return 'content';
+      }
+
+      // Pencil 모델: 팬/줌 중에는 snapshot blit(camera-only)으로 즉시 응답한다.
+      //
+      // 단, 아래 조건에서는 “현재 스냅샷으로는 품질/커버리지를 유지할 수 없다”고 보고
+      // 즉시 content를 재렌더링한다. (Pencil의 redrawContentIfNeeded() 패턴)
+      //
+      // 1) zoom in이 스냅샷 캡처 시점 대비 너무 커짐 → 리샘플링 blur/디테일 손실
+      // 2) 스냅샷(패딩 포함)이 현재 뷰포트를 완전히 덮지 못함 → 빈 영역/가장자리 아티팩트
+      const zoomTooLarge = camera.zoom > this.snapshotCamera.zoom * 3;
+      const outOfCoverage = !this.canBlitWithCameraTransform(camera);
+      if (zoomTooLarge || outOfCoverage) {
+        return 'content';
+      }
+
+      // 모션 종료 후 200ms에 1회 full render로 최종 품질을 정리한다.
+      // (zoom mismatch 보간, 서브픽셀 이동에 대한 cleanup)
+      this.scheduleCleanupRender();
+      return 'camera-only';
     }
     if (overlayChanged) {
       return 'present';
     }
     return 'idle';
+  }
+
+  private tickDevMetrics(nowMs: number): void {
+    if (process.env.NODE_ENV !== 'development') return;
+
+    if (this.devContentRenderWindowStartMs <= 0) {
+      this.devContentRenderWindowStartMs = nowMs;
+      this.devContentRenderCount = 0;
+      return;
+    }
+
+    const elapsed = nowMs - this.devContentRenderWindowStartMs;
+    if (elapsed < 1000) return;
+
+    const perSec = this.devContentRenderCount / (elapsed / 1000);
+    recordWasmMetric('contentRendersPerSec', perSec);
+    // CanvasSync 스토어로 플러시하여 dev overlay/monitor에서 확인 가능하게 한다.
+    flushWasmMetrics();
+
+    this.devContentRenderWindowStartMs = nowMs;
+    this.devContentRenderCount = 0;
   }
 
   /**
@@ -157,6 +219,14 @@ export class SkiaRenderer {
       this.needsCleanupRender = true;
       this.cleanupTimer = null;
     }, 200);
+  }
+
+  private cancelCleanupRender(): void {
+    if (this.cleanupTimer) {
+      clearTimeout(this.cleanupTimer);
+      this.cleanupTimer = null;
+    }
+    this.needsCleanupRender = false;
   }
 
   private canBlitWithCameraTransform(camera: CameraState): boolean {
@@ -193,9 +263,8 @@ export class SkiaRenderer {
    * mainSurface보다 큰 오프스크린 Surface를 생성하여 camera-only blit 시
    * 가장자리 아티팩트를 방지한다.
    *
-   * CanvasKit.MakeSurface()로 CPU-backed surface를 생성한다.
-   * makeImageSnapshot()으로 생성된 Image는 GPU canvas에 그릴 때
-   * 자동으로 GPU 텍스처로 업로드되므로 블리팅 성능에 문제 없다.
+   * mainSurface.makeSurface()로 **동일 백엔드(GPU/SW)** 의 호환 Surface를 생성한다.
+   * (ck.MakeSurface는 raster-direct(CPU) surface를 만들어 content render 비용이 커질 수 있으므로 사용하지 않는다.)
    */
   private initContentSurface(): void {
     this.disposeContentSurface();
@@ -203,11 +272,12 @@ export class SkiaRenderer {
     const width = this.mainSurface.width() + this.contentPaddingDevicePx * 2;
     const height = this.mainSurface.height() + this.contentPaddingDevicePx * 2;
 
-    this.contentSurface = this.ck.MakeSurface(width, height)!;
-    if (!this.contentSurface) {
-      console.warn('[SkiaRenderer] Content surface 생성 실패, 레거시 모드로 폴백');
-      return;
-    }
+    const baseInfo = this.mainSurface.imageInfo();
+    this.contentSurface = this.mainSurface.makeSurface({
+      ...baseInfo,
+      width,
+      height,
+    });
     this.contentCanvas = this.contentSurface.getCanvas();
     this.contentDirty = true;
   }
@@ -220,6 +290,14 @@ export class SkiaRenderer {
     camera: CameraState,
   ): void {
     if (!this.contentCanvas || !this.contentSurface || !this.contentNode) return;
+
+    if (process.env.NODE_ENV === 'development') {
+      this.devContentRenderCount++;
+    }
+
+    // content/full 렌더가 수행되면 cleanup 목적(최종 품질 정리)이 충족되므로 예약을 취소한다.
+    // (카메라 모션 도중 스타일 변경 등이 겹쳤을 때, 모션 종료 후 불필요한 추가 full render 방지)
+    this.cancelCleanupRender();
 
     const start = performance.now();
 
@@ -249,7 +327,7 @@ export class SkiaRenderer {
     this.snapshotCamera = { ...camera }; // camera-only blit 델타 기준점 갱신
     this.contentDirty = false;
 
-    recordWasmMetric('skiaFrameTime', performance.now() - start);
+    recordWasmMetric('contentRenderTime', performance.now() - start);
   }
 
   /**
@@ -288,7 +366,28 @@ export class SkiaRenderer {
     this.mainCanvas.translate(tx, ty);
     this.mainCanvas.scale(zoomRatio, zoomRatio);
 
-    this.mainCanvas.drawImage(this.contentSnapshot, -this.contentPaddingDevicePx, -this.contentPaddingDevicePx);
+    // zoom mismatch(스케일링) 시에는 cubic 보간을 사용해 선명도/계단 현상을 줄인다.
+    // CanvasKit 타입 정의에 drawImageCubic이 없을 수 있어 런타임 존재 여부로 가드한다.
+    const x = -this.contentPaddingDevicePx;
+    const y = -this.contentPaddingDevicePx;
+    const shouldUseCubic = Math.abs(zoomRatio - 1) > 1e-6;
+    const anyCanvas = this.mainCanvas as unknown as {
+      drawImageCubic?: (
+        image: Image,
+        x: number,
+        y: number,
+        b: number,
+        c: number,
+        paint?: unknown,
+      ) => void;
+    };
+
+    if (shouldUseCubic && typeof anyCanvas.drawImageCubic === 'function') {
+      const { b, c } = this.snapshotCubicResampler;
+      anyCanvas.drawImageCubic(this.contentSnapshot, x, y, b, c);
+    } else {
+      this.mainCanvas.drawImage(this.contentSnapshot, x, y);
+    }
     this.mainCanvas.restore();
   }
 
@@ -315,11 +414,13 @@ export class SkiaRenderer {
       camera.panX === this.snapshotCamera.panX &&
       camera.panY === this.snapshotCamera.panY;
 
+    const blitStart = performance.now();
     if (cameraMatchesSnapshot) {
       this.blitToMainNoFlush();
     } else {
       this.blitWithCameraTransformNoFlush(camera);
     }
+    recordWasmMetric('blitTime', performance.now() - blitStart);
     this.renderOverlay(cullingBounds, camera);
     this.mainSurface.flush();
   }
@@ -341,6 +442,17 @@ export class SkiaRenderer {
   ): void {
     if (this.disposed || !this.contentNode) return;
 
+    this.tickDevMetrics(performance.now());
+
+    if (process.env.NODE_ENV === 'development') {
+      if (this.devFrameWindowStartMs <= 0) {
+        this.devFrameWindowStartMs = performance.now();
+        this.devFrameCount = 0;
+        this.devIdleFrameCount = 0;
+      }
+      this.devFrameCount++;
+    }
+
     // Lazy init content surface
     if (!this.contentSurface) {
       this.initContentSurface();
@@ -351,10 +463,14 @@ export class SkiaRenderer {
       }
     }
 
+    const frameStart = performance.now();
     const frameType = this.classifyFrame(registryVersion, camera, overlayVersion);
 
     switch (frameType) {
       case 'idle':
+        if (process.env.NODE_ENV === 'development') {
+          this.devIdleFrameCount++;
+        }
         break;
 
       case 'present':
@@ -362,11 +478,6 @@ export class SkiaRenderer {
         break;
 
       case 'camera-only':
-        // camera-only 중 snapshot이 화면을 완전히 덮지 못하거나(zoom-out/큰 pan),
-        // zoom mismatch로 선명도 저하가 생기면 모션 종료 후 1회 전체 재렌더링한다.
-        if (!this.canBlitWithCameraTransform(camera) || camera.zoom !== this.snapshotCamera.zoom) {
-          this.scheduleCleanupRender();
-        }
         this.present(cullingBounds, camera);
         break;
 
@@ -379,6 +490,26 @@ export class SkiaRenderer {
         this.renderContent(cullingBounds, camera);
         this.present(cullingBounds, camera);
         break;
+    }
+
+    if (frameType !== 'idle') {
+      recordWasmMetric('skiaFrameTime', performance.now() - frameStart);
+    }
+
+    if (process.env.NODE_ENV === 'development') {
+      const now = performance.now();
+      const elapsed = now - this.devFrameWindowStartMs;
+      if (elapsed >= 1000 && this.devFrameCount > 0) {
+        const ratio = this.devIdleFrameCount / this.devFrameCount;
+        const nonIdle = this.devFrameCount - this.devIdleFrameCount;
+        const presentsPerSec = nonIdle / (elapsed / 1000);
+        recordWasmMetric('idleFrameRatio', ratio);
+        recordWasmMetric('presentFramesPerSec', presentsPerSec);
+        flushWasmMetrics();
+        this.devFrameWindowStartMs = now;
+        this.devFrameCount = 0;
+        this.devIdleFrameCount = 0;
+      }
     }
 
     this.lastRegistryVersion = registryVersion;

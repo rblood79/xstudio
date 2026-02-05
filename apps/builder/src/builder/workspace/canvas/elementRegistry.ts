@@ -72,6 +72,17 @@ export function registerElement(id: string, container: Container): void {
  * getBounds()의 타이밍 문제를 우회.
  */
 export function updateElementBounds(id: string, bounds: ElementBounds): void {
+  const prev = layoutBoundsRegistry.get(id);
+  if (prev) {
+    const eps = 0.01;
+    const unchanged =
+      Math.abs(prev.x - bounds.x) < eps &&
+      Math.abs(prev.y - bounds.y) < eps &&
+      Math.abs(prev.width - bounds.width) < eps &&
+      Math.abs(prev.height - bounds.height) < eps;
+    if (unchanged) return;
+  }
+
   layoutBoundsRegistry.set(id, bounds);
 
   // Phase 6: Yoga 레이아웃 재계산 후 Skia 렌더 루프에 알림

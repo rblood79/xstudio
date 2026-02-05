@@ -27,9 +27,13 @@
 > **xstudio 진행 상황 (2026-02-05):** xstudio도 Pencil의 “컨텐츠 캐시 + present(blit) + 오버레이 분리” 모델로 전환 완료.
 > - **컨텐츠 패스:** contentSurface에 디자인 노드만 렌더 → `contentSnapshot` 캐시
 > - **present 패스:** mainSurface에 snapshot blit(카메라 델타는 아핀 변환) + Selection/AI/PageTitle 오버레이 덧그리기
+> - **contentSurface 백엔드 정합:** `mainSurface.makeSurface()`로 offscreen surface를 생성하여 메인과 동일 백엔드(GPU/SW) 사용
+> - **줌 스냅샷 보간:** zoomRatio != 1이면 `drawImageCubic` 우선 적용(미지원 환경 `drawImage` 폴백)
+> - **텍스트 Paragraph LRU 캐시:** (내용+스타일+maxWidth) 키로 `Paragraph` 캐시(최대 500), 폰트 교체/페이지 전환/HMR에서 무효화
 > - PixiJS는 투명 히트 영역 + 이벤트 처리 전용(`Camera.alpha=0` O(1) 처리)
 > - 트리/Selection 바운드맵은 registryVersion 캐시로 GC/CPU 압력 최소화
 > - clipRect 기반 Dirty Rect 경로는 잔상/미반영 버그 위험으로 제거(보류)
+> - Dev 관측: `GPUDebugOverlay`로 `RAF FPS`와 `Present/s`, `Content/s`, `Registry/s`, `Idle%`를 분리 관측
 >
 > **"완전히 동일"의 범위(주의):**
 > - “핵심 구조” 관점에서는 Pencil과 동일한 방식(컨텐츠 캐시 + present 단계에서 blit + 오버레이 별도 렌더)으로 정리됐다.
@@ -517,7 +521,7 @@ WASM 계획과 무관하게, JS만으로 즉시 적용 가능한 최적화:
 |------|----------|-------------|------|
 | **공간 검색** | 인덱스 없음 — `elements.filter()` 배열 순회만 존재 | Grid 기반 SpatialIndex (cell_size=256, i64 키 인코딩) | O(n)→O(k) 전환, 요소 수와 무관한 쿼리 성능 |
 | **렌더 순서** | `elements` 배열 순서에 암묵적 의존 | `elementOrderIndex` Map — `rebuildIndexes()` 시 동기 갱신 | SpatialIndex 결과에 O(k log k) 정렬로 렌더/스태킹 순서 보존 |
-| **인덱스 리빌드** | `_rebuildIndexes()` 14곳에서 개별 호출, 배치 최적화 없음 | `suspendIndexRebuild()`/`resumeAndRebuildIndexes()` 패턴 | 100개 요소 복붙 시 100회→1회 리빌드 (O(n·m)→O(n)) |
+| **인덱스 리빌드** | 구조 변경(add/remove/move 등) 액션은 `_rebuildIndexes()`로 전역 인덱스 재생성. 단, props-only 업데이트(`updateElementProps`, `batchUpdateElementProps`)는 전역 리빌드 없이 `elementsMap`을 O(1)로 갱신 | `suspendIndexRebuild()`/`resumeAndRebuildIndexes()` 패턴 | 대규모 배치에서 “전역 리빌드 횟수”를 최소화 (필요 시) |
 | **메인 스레드 부하** | 모든 레이아웃이 메인 스레드에서 동기 실행 | 중량 레이아웃(>10 요소)을 Worker로 분리, Stale-While-Revalidate 전략 | 레이아웃 계산 중 UI 프리징 제거 |
 | **폴백 안전성** | JS 단일 경로 | WASM 무조건 활성화 (Feature Flag 제거됨), try-catch 에러 핸들링 유지 | WASM 초기화 실패 시 에러 로깅, JS 폴백 경로 제거됨 |
 | **ID 매핑** | string UUID만 사용 (메모리/비교 비용 높음) | `ElementIdMapper` string↔u32 양방향, `tryGetNumericId()` 안전 조회 | WASM 경계에서 4바이트 u32 사용 → 메모리/비교 최적화 |
