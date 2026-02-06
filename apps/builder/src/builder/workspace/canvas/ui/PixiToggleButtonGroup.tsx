@@ -42,6 +42,9 @@ export interface PixiToggleButtonGroupProps {
   isSelected?: boolean;
   onClick?: (elementId: string) => void;
   onChange?: (elementId: string, selectedKeys: string[]) => void;
+  // 🚀 CONTAINER_TAGS 지원: 자식 요소 내부 렌더링
+  childElements?: Element[];
+  renderChildElement?: (child: Element) => React.ReactNode;
 }
 
 interface ToggleButtonItem {
@@ -55,7 +58,7 @@ interface ToggleButtonItem {
 // Constants
 // ============================================
 
-const DEFAULT_GAP = 4;
+const DEFAULT_GAP = 0;  // CSS 기본값: gap: 0
 const MIN_BUTTON_WIDTH = 48;
 
 // ============================================
@@ -229,6 +232,8 @@ export const PixiToggleButtonGroup = memo(function PixiToggleButtonGroup({
   element,
   onClick,
   onChange,
+  childElements,
+  renderChildElement,
 }: PixiToggleButtonGroupProps) {
   useExtend(PIXI_COMPONENTS);
   const style = element.props?.style as CSSStyle | undefined;
@@ -259,9 +264,15 @@ export const PixiToggleButtonGroup = memo(function PixiToggleButtonGroup({
     ];
   }, [childButtons, props]);
 
-  // variant와 size
-  const variant = useMemo(() => String(props?.variant || "default"), [props?.variant]);
-  const size = useMemo(() => String(props?.size || "md"), [props?.size]);
+  // 🚀 Store에서 최신 element를 직접 구독하여 size 변경 시 리렌더링 보장
+  // element prop은 memo 비교에서 참조가 같으면 업데이트되지 않을 수 있음
+  const latestElement = useStore((state) =>
+    state.elementsMap.get(element.id)
+  ) ?? element;
+
+  // variant와 size - 최신 element에서 읽기
+  const variant = String((latestElement.props as Record<string, unknown>)?.variant || "default");
+  const size = String((latestElement.props as Record<string, unknown>)?.size || "md");
 
   // 🚀 테마 색상 동적 로드
   const themeColors = useThemeColors();
@@ -321,9 +332,17 @@ export const PixiToggleButtonGroup = memo(function PixiToggleButtonGroup({
     return orientation === "horizontal" || flexDirection === "row";
   }, [props?.orientation, style]);
 
-  // gap
-  // 🚀 Phase 8: parseCSSSize 제거 - fallback 값 직접 사용
-  const gap = typeof style?.gap === 'number' ? style.gap : DEFAULT_GAP;
+  // gap - CSS 문자열 값도 지원 ("8px", "16" 등)
+  const gap = useMemo(() => {
+    if (style?.gap === undefined || style?.gap === null || style?.gap === '') {
+      return DEFAULT_GAP;
+    }
+    if (typeof style.gap === 'number') {
+      return style.gap;
+    }
+    const parsed = parseCSSSize(style.gap, undefined, undefined);
+    return parsed ?? DEFAULT_GAP;
+  }, [style?.gap]);
 
   // 🚀 Phase 13: 사용자 정의 스타일 파싱
   // backgroundColor
@@ -355,10 +374,13 @@ export const PixiToggleButtonGroup = memo(function PixiToggleButtonGroup({
       fontSize: sizePreset.fontSize,
     });
 
+    // borderWidth: 개별 버튼에 1px border가 있음 (drawBox에서 border.width: 1)
+    const borderWidth = 1;
     return items.map((item) => {
       const metrics = CanvasTextMetrics.measureText(item.label, textStyle);
-      const width = Math.max(MIN_BUTTON_WIDTH, metrics.width + sizePreset.paddingX * 2);
-      const height = metrics.height + sizePreset.paddingY * 2;
+      // ToggleButton과 동일한 공식: border + padding + text + padding + border
+      const width = Math.max(MIN_BUTTON_WIDTH, borderWidth + sizePreset.paddingX + metrics.width + sizePreset.paddingX + borderWidth);
+      const height = borderWidth + sizePreset.paddingY + metrics.height + sizePreset.paddingY + borderWidth;
       return { width, height };
     });
   }, [items, sizePreset.fontSize, sizePreset.paddingX, sizePreset.paddingY]);
@@ -474,17 +496,57 @@ export const PixiToggleButtonGroup = memo(function PixiToggleButtonGroup({
     [element.id, onClick, onChange, selectionMode, selectedKeys]
   );
 
-  // 🚀 배경만 렌더링: pixiGraphics 직접 반환 (BoxSprite 패턴)
-  // - layout 속성 없음 → Yoga flex에 참여하지 않아 자식 ToggleButton과 경쟁 없음
-  // - eventMode="static" → 배경 영역 클릭 시 hit area로 그룹 선택 가능
-  // - 자식 ToggleButton은 ElementsLayer에서 형제로 렌더링 (z-order 위)
+  // 🚀 CONTAINER_TAGS: 자식 ToggleButton 내부 렌더링
+  const hasChildren = childElements && childElements.length > 0;
+
+  // 🚀 Card 패턴: groupLayout으로 Yoga가 자식 크기에 맞게 높이 자동 계산
+  // minHeight 제거: 실제 자식 ToggleButton의 높이를 Yoga가 읽어서 사용
+  const groupLayout = useMemo(() => ({
+    display: 'flex' as const,
+    flexDirection: isHorizontal ? 'row' as const : 'column' as const,
+    alignItems: 'center' as const,
+    gap,
+    position: 'relative' as const,
+  }), [isHorizontal, gap]);
+
+  // 🚀 배경 레이아웃: absolute로 전체 영역 덮기
+  const backgroundLayout = useMemo(() => ({
+    position: 'absolute' as const,
+    top: 0,
+    left: 0,
+    width: '100%' as const,
+    height: '100%' as const,
+  }), []);
+
   return (
-    <pixiGraphics
-      draw={drawGroupBackground}
-      eventMode="static"
-      cursor="pointer"
-      onPointerDown={handleGroupClick}
-    />
+    <pixiContainer layout={groupLayout}>
+      {/* 배경 그래픽 - absolute로 전체 영역 덮기 */}
+      <pixiGraphics
+        draw={drawGroupBackground}
+        layout={backgroundLayout}
+        eventMode="static"
+        cursor="pointer"
+        onPointerDown={handleGroupClick}
+      />
+      {/* 자식 ToggleButton 렌더링 - 부모의 size 상속 */}
+      {hasChildren && renderChildElement && childElements.map((childEl) => {
+        // 자식이 명시적으로 size를 설정하지 않았으면 부모의 size 상속
+        const childProps = childEl.props as Record<string, unknown> | undefined;
+        const childSize = childProps?.size;
+        const inheritedSize = (childSize === undefined || childSize === null || childSize === '') ? size : childSize;
+        // 🚀 props 전체를 새 객체로 생성하여 memo 비교에서 변경 감지
+        const modifiedChild: Element = {
+          ...childEl,
+          props: {
+            ...childEl.props,
+            size: inheritedSize,
+            // 🚀 _parentSize를 추가하여 부모 size 변경 시 props 참조 변경 보장
+            _parentSize: size,
+          },
+        };
+        return renderChildElement(modifiedChild);
+      })}
+    </pixiContainer>
   );
 });
 

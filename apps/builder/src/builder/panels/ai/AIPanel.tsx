@@ -1,8 +1,8 @@
 /**
  * AIPanel - AI 어시스턴트 패널
  *
- * PanelProps 인터페이스를 구현하여 패널 시스템과 통합
- * Groq 서비스를 사용한 AI 기반 빌더 인터랙션 제공
+ * Tool Calling + Agent Loop 기반 AI 디자인 어시스턴트
+ * G.3 시각 피드백 연동 포함
  *
  * 통합된 컴포넌트:
  * - ChatContainer: 메인 채팅 컨테이너
@@ -10,7 +10,7 @@
  * - ChatInput: 메시지 입력 필드
  */
 
-import { useEffect, useCallback, useRef, useState, useMemo } from "react";
+import { useEffect, useCallback, useRef, useState } from "react";
 import type { KeyboardEvent } from "react";
 import type { PanelProps } from "../core/types";
 import { PanelHeader } from "../../components";
@@ -19,19 +19,18 @@ import { MessageCircle, Trash2, Bot } from "lucide-react";
 import { iconProps } from "../../../utils/ui/uiConstants";
 import { useConversationStore } from "../../stores/conversation";
 import { useStore } from "../../stores";
-import { createGroqService } from "../../../services/ai/GroqService";
-import { intentParser } from "../../../services/ai/IntentParser";
-import { useAIVisualFeedbackStore } from "../../stores/aiVisualFeedback";
+import { useAgentLoop } from "./hooks/useAgentLoop";
+import { ToolResultMessage } from "./components/ToolResultMessage";
+import { AgentControls } from "./components/AgentControls";
 import type {
-  ComponentIntent,
   BuilderContext,
   ChatMessage as ChatMessageType,
 } from "../../../types/integrations/chat.types";
-import type { Element } from "../../../types/core/store.types";
 import "@xstudio/shared/components/styles/ChatContainer.css";
 import "@xstudio/shared/components/styles/ChatMessage.css";
 import "@xstudio/shared/components/styles/ChatInput.css";
 import './AIPanel.css';
+
 /**
  * ChatMessage - 개별 메시지 표시
  */
@@ -41,6 +40,11 @@ interface ChatMessageProps {
 
 function ChatMessage({ message }: ChatMessageProps) {
   const { role, content, status, timestamp } = message;
+
+  // tool 메시지는 ToolResultMessage로 렌더링
+  if (role === "tool") {
+    return <ToolResultMessage message={message} />;
+  }
 
   const formatTimestamp = (ts: number) => {
     const date = new Date(ts);
@@ -99,39 +103,36 @@ function ChatInput({
   };
 
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
-    // Send on Enter (without Shift)
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSend();
     }
   };
 
-  const handleInput = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setValue(e.target.value);
-
-    // Auto-resize textarea
-    const textarea = e.target;
-    textarea.style.height = "auto";
-    textarea.style.height = `${Math.min(textarea.scrollHeight, 120)}px`;
+  const handleInput = () => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = "auto";
+      textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
+    }
   };
 
   return (
     <div className="chat-input">
       <textarea
         ref={textareaRef}
-        className="textarea"
         value={value}
-        onChange={handleInput}
+        onChange={(e) => setValue(e.target.value)}
         onKeyDown={handleKeyDown}
+        onInput={handleInput}
         placeholder={placeholder}
         disabled={disabled}
         rows={1}
+        aria-label="메시지 입력"
       />
-
       <Button
         onPress={handleSend}
         isDisabled={disabled || !value.trim()}
-        type="button"
+        aria-label="전송"
         variant="primary"
         size="sm"
       >
@@ -142,57 +143,48 @@ function ChatInput({
 }
 
 /**
- * ChatContainer - 메인 채팅 컨테이너
+ * ChatContainer - 메시지 목록 + 입력
  */
 interface ChatContainerProps {
   messages: ChatMessageType[];
   onSendMessage: (message: string) => void;
-  isStreaming?: boolean;
-  suggestions?: string[];
+  isDisabled: boolean;
 }
 
 function ChatContainer({
   messages,
   onSendMessage,
-  isStreaming = false,
-  suggestions = [
-    "빨간색 버튼을 만들어줘",
-    "국가 목록을 보여주는 Select를 추가해줘",
-    "테이블을 추가하고 사용자 목록을 보여줘",
-    "이 버튼을 왼쪽 정렬로 바꿔줘",
-  ],
+  isDisabled,
 }: ChatContainerProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Auto-scroll to bottom when new messages arrive
+  // Auto-scroll
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  const handleSuggestionClick = (suggestion: string) => {
-    onSendMessage(suggestion);
-  };
+  const suggestions = [
+    "빨간 버튼 추가",
+    "테이블 생성",
+    "선택한 요소 수정",
+  ];
 
   return (
-    <div className="chatPanel">
-      <div className="chat-content messages">
+    <div className="chat-container">
+      <div className="messages-list">
         {messages.length === 0 ? (
-          <div className="chat-content-empty">
-            <MessageCircle className="chat-content-empty-icon" />
-            <div className="chat-content-empty-title">대화를 시작하세요</div>
-            <div className="chat-content-empty-description">
-              아래 예시를 클릭하거나 직접 메시지를 입력해보세요
-            </div>
-
-            <div className="chat-content-suggestions">
-              {suggestions.map((suggestion, index) => (
+          <div className="empty-state">
+            <MessageCircle size={32} strokeWidth={1} />
+            <p>AI 어시스턴트에게 디자인을 요청하세요</p>
+            <div className="suggestions">
+              {suggestions.map((s) => (
                 <button
-                  key={index}
-                  className="chat-content-suggestion"
-                  onClick={() => handleSuggestionClick(suggestion)}
+                  key={s}
+                  className="suggestion-btn"
+                  onClick={() => onSendMessage(s)}
                   type="button"
                 >
-                  {suggestion}
+                  {s}
                 </button>
               ))}
             </div>
@@ -207,7 +199,7 @@ function ChatContainer({
         )}
       </div>
 
-      <ChatInput onSend={onSendMessage} disabled={isStreaming} />
+      <ChatInput onSend={onSendMessage} disabled={isDisabled} />
     </div>
   );
 }
@@ -219,33 +211,17 @@ function AIPanelContent() {
   const {
     messages,
     isStreaming,
-    currentContext,
-    addUserMessage,
-    addAssistantMessage,
-    updateLastMessage,
-    setStreamingStatus,
-    updateContext,
-    clearConversation,
-  } = useConversationStore();
+    isAgentRunning,
+    currentTurn,
+    runAgent,
+    stopAgent,
+  } = useAgentLoop();
 
   const elements = useStore((state) => state.elements);
   const selectedElementId = useStore((state) => state.selectedElementId);
   const currentPageId = useStore((state) => state.currentPageId);
-  const addElement = useStore((state) => state.addElement);
-  const updateElementProps = useStore((state) => state.updateElementProps);
-  const removeElement = useStore((state) => state.removeElement);
 
-  // Initialize Groq service with useMemo (prevents recreation on every render)
-  const groqService = useMemo(() => {
-    try {
-      return createGroqService();
-    } catch (error) {
-      if (import.meta.env.DEV) {
-        console.error("[AIPanel] Failed to initialize Groq service:", error);
-      }
-      return null;
-    }
-  }, []);
+  const { updateContext, clearConversation } = useConversationStore();
 
   /**
    * Update context whenever builder state changes
@@ -266,312 +242,7 @@ function AIPanelContent() {
     updateContext(context);
   }, [elements, selectedElementId, currentPageId, updateContext]);
 
-  /**
-   * Execute component intent (create/modify/delete elements)
-   */
-  const executeIntent = useCallback(
-    async (intent: ComponentIntent) => {
-      if (import.meta.env.DEV) {
-        console.log("[AIPanel] Executing intent:", intent);
-      }
-
-      try {
-        switch (intent.action) {
-          case "create": {
-            if (!intent.componentType) {
-              if (import.meta.env.DEV) {
-                console.warn(
-                  "[AIPanel] Missing componentType for create action"
-                );
-              }
-              return;
-            }
-
-            // Determine parent_id: use selected element or Body
-            let parentId = null;
-            if (selectedElementId) {
-              // Use selected element as parent
-              parentId = selectedElementId;
-            } else {
-              // Find body element and use it as parent
-              const bodyElement = elements.find((el) => el.tag === "body");
-              if (bodyElement) {
-                parentId = bodyElement.id;
-              }
-            }
-
-            const newElement: Element = {
-              id: crypto.randomUUID(),
-              tag: intent.componentType,
-              props: intent.props || {},
-              parent_id: parentId,
-              page_id: currentPageId || "default",
-              order_num: elements.length,
-              dataBinding: undefined,
-            } as Element;
-
-            // Add styles as inline styles
-            if (intent.styles && Object.keys(intent.styles).length > 0) {
-              newElement.props = {
-                ...newElement.props,
-                style: intent.styles,
-              };
-            }
-
-            // Add dataBinding if provided
-            if (intent.dataBinding) {
-              newElement.dataBinding = {
-                type: "collection",
-                source: "api",
-                config: {
-                  baseUrl: intent.dataBinding.baseUrl,
-                  endpoint: intent.dataBinding.endpoint,
-                  params: intent.dataBinding.params || {},
-                  dataMapping: {
-                    idField: "id",
-                    labelField: "name",
-                  },
-                },
-              };
-            }
-
-            await addElement(newElement);
-            // G.3: 생성 완료 flash
-            useAIVisualFeedbackStore.getState().addFlashForNode(newElement.id, {
-              scanLine: true,
-            });
-            if (import.meta.env.DEV) {
-              console.log("[AIPanel] Created element:", newElement);
-            }
-            break;
-          }
-
-          case "modify":
-          case "style": {
-            if (!intent.targetElementId) {
-              if (import.meta.env.DEV) {
-                console.warn(
-                  "[AIPanel] Missing targetElementId for modify/style action"
-                );
-              }
-              return;
-            }
-
-            const targetId =
-              intent.targetElementId === "current"
-                ? selectedElementId
-                : intent.targetElementId;
-
-            if (!targetId) {
-              if (import.meta.env.DEV) {
-                console.warn(
-                  "[AIPanel] No element selected for modify/style action"
-                );
-              }
-              return;
-            }
-
-            const updates: Record<string, unknown> = {};
-
-            // Merge props
-            if (intent.props) {
-              Object.assign(updates, intent.props);
-            }
-
-            // Merge styles into style prop
-            if (intent.styles) {
-              updates.style = {
-                ...(elements.find((el) => el.id === targetId)?.props.style ||
-                  {}),
-                ...intent.styles,
-              };
-            }
-
-            await updateElementProps(targetId, updates);
-            // G.3: 수정 완료 flash
-            useAIVisualFeedbackStore.getState().addFlashForNode(targetId, {
-              strokeWidth: 1,
-            });
-            if (import.meta.env.DEV) {
-              console.log("[AIPanel] Updated element:", targetId, updates);
-            }
-            break;
-          }
-
-          case "delete": {
-            if (!intent.targetElementId) {
-              if (import.meta.env.DEV) {
-                console.warn(
-                  "[AIPanel] Missing targetElementId for delete action"
-                );
-              }
-              return;
-            }
-
-            const targetId =
-              intent.targetElementId === "current"
-                ? selectedElementId
-                : intent.targetElementId;
-
-            if (!targetId) {
-              if (import.meta.env.DEV) {
-                console.warn("[AIPanel] No element selected for delete action");
-              }
-              return;
-            }
-
-            await removeElement(targetId);
-            if (import.meta.env.DEV) {
-              console.log("[AIPanel] Deleted element:", targetId);
-            }
-            break;
-          }
-
-          case "query":
-            // Query actions don't modify elements, just provide information
-            if (import.meta.env.DEV) {
-              console.log("[AIPanel] Query action:", intent.description);
-            }
-            break;
-
-          default:
-            if (import.meta.env.DEV) {
-              console.warn("[AIPanel] Unknown action:", intent.action);
-            }
-        }
-      } catch (error) {
-        if (import.meta.env.DEV) {
-          console.error("[AIPanel] Failed to execute intent:", error);
-        }
-        throw error;
-      }
-    },
-    [
-      currentPageId,
-      elements,
-      selectedElementId,
-      addElement,
-      updateElementProps,
-      removeElement,
-    ]
-  );
-
-  /**
-   * Handle sending a message
-   */
-  const handleSendMessage = useCallback(
-    async (message: string) => {
-      if (!currentContext) {
-        if (import.meta.env.DEV) {
-          console.warn("[AIPanel] No context available");
-        }
-        return;
-      }
-
-      // Add user message
-      addUserMessage(message);
-
-      try {
-        if (groqService) {
-          // Try AI service first (streaming)
-          setStreamingStatus(true);
-
-          // G.3: AI 작업 시작 — 선택된 요소에 generating 이펙트
-          if (selectedElementId) {
-            useAIVisualFeedbackStore.getState().startGenerating([selectedElementId]);
-          }
-
-          // Add empty assistant message for streaming
-          addAssistantMessage("");
-
-          let fullResponse = "";
-
-          try {
-            for await (const chunk of groqService.chatStream(
-              message,
-              currentContext
-            )) {
-              fullResponse += chunk;
-              updateLastMessage(fullResponse);
-            }
-
-            setStreamingStatus(false);
-
-            // Parse intent from full response
-            const intent = groqService.parseIntent(fullResponse);
-
-            if (intent) {
-              if (import.meta.env.DEV) {
-                console.log("[AIPanel] Parsed intent:", intent);
-              }
-
-              // Execute the intent
-              await executeIntent(intent);
-
-              // G.3: generating 완료 → flash 전환
-              if (selectedElementId) {
-                useAIVisualFeedbackStore.getState().completeGenerating([selectedElementId]);
-              }
-
-              // Update message with intent metadata
-              const messages = useConversationStore.getState().messages;
-              const lastMessage = messages[messages.length - 1];
-              if (lastMessage) {
-                lastMessage.metadata = { componentIntent: intent };
-              }
-            } else {
-              // G.3: intent 없음 — generating 취소
-              useAIVisualFeedbackStore.getState().cancelGenerating();
-            }
-          } catch (streamError) {
-            if (import.meta.env.DEV) {
-              console.error("[AIPanel] Streaming failed:", streamError);
-            }
-            setStreamingStatus(false);
-            // G.3: 스트리밍 실패 — generating 취소
-            useAIVisualFeedbackStore.getState().cancelGenerating();
-
-            // Fallback to rule-based parser
-            throw streamError;
-          }
-        } else {
-          throw new Error("Groq service not available");
-        }
-      } catch (error) {
-        if (import.meta.env.DEV) {
-          console.warn(
-            "[AIPanel] AI service failed, using rule-based parser:",
-            error
-          );
-        }
-
-        // Fallback to rule-based parser
-        const intent = intentParser.parse(message, currentContext);
-
-        if (intent) {
-          const responseMessage = intent.description || "요청을 처리했습니다.";
-
-          addAssistantMessage(responseMessage, intent);
-
-          // Execute the intent
-          await executeIntent(intent);
-        } else {
-          addAssistantMessage(
-            "죄송합니다. 요청을 이해하지 못했습니다. 다시 시도해주세요."
-          );
-        }
-      }
-    },
-    [
-      currentContext,
-      addUserMessage,
-      addAssistantMessage,
-      updateLastMessage,
-      setStreamingStatus,
-      executeIntent,
-      groqService,
-    ]
-  );
+  const isDisabled = isStreaming || isAgentRunning;
 
   return (
     <div className="ai-panel">
@@ -579,34 +250,41 @@ function AIPanelContent() {
         icon={<Bot size={iconProps.size} />}
         title="AI Assistant"
         actions={
-          messages.length > 0 && (
-            <button
-              className="iconButton"
-              onClick={clearConversation}
-              type="button"
-              aria-label="Clear conversation"
-              title="대화 초기화"
-            >
-              <Trash2
-                color={iconProps.color}
-                strokeWidth={iconProps.strokeWidth}
-                size={iconProps.size}
+          <>
+            {isAgentRunning && (
+              <AgentControls
+                currentTurn={currentTurn}
+                onStop={stopAgent}
               />
-            </button>
-          )
+            )}
+            {messages.length > 0 && !isAgentRunning && (
+              <button
+                className="iconButton"
+                onClick={clearConversation}
+                type="button"
+                aria-label="Clear conversation"
+                title="대화 초기화"
+              >
+                <Trash2
+                  color={iconProps.color}
+                  strokeWidth={iconProps.strokeWidth}
+                  size={iconProps.size}
+                />
+              </button>
+            )}
+          </>
         }
       />
       <ChatContainer
         messages={messages}
-        onSendMessage={handleSendMessage}
-        isStreaming={isStreaming}
+        onSendMessage={runAgent}
+        isDisabled={isDisabled}
       />
     </div>
   );
 }
 
 export function AIPanel({ isActive }: PanelProps) {
-  // 활성 상태가 아니면 렌더링하지 않음 (성능 최적화)
   if (!isActive) {
     return null;
   }

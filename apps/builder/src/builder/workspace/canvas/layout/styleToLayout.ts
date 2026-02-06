@@ -289,8 +289,8 @@ export function styleToLayout(
   const tag = element.tag?.toLowerCase() ?? '';
   const props = element.props as Record<string, unknown> | undefined;
 
-  // 🚀 ToggleButtonGroup: 기본 display: flex, flexDirection 설정
-  // CSS 기본값: display: flex, flex-direction: row (orientation: horizontal)
+  // 🚀 ToggleButtonGroup: 기본 display: flex, flexDirection, alignItems 설정
+  // CSS 기본값: display: flex, flex-direction: row, align-items: center
   const isToggleButtonGroup = tag === 'togglebuttongroup';
   if (isToggleButtonGroup) {
     // display가 명시적으로 설정되지 않았으면 flex 기본값 적용
@@ -301,6 +301,10 @@ export function styleToLayout(
     if (!style.flexDirection) {
       const orientation = String(props?.orientation || 'horizontal');
       layout.flexDirection = orientation === 'vertical' ? 'column' : 'row';
+    }
+    // alignItems가 명시적으로 설정되지 않았으면 center (자식이 부모 높이로 늘어나지 않도록)
+    if (!style.alignItems) {
+      layout.alignItems = 'center';
     }
   }
 

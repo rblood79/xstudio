@@ -38,6 +38,21 @@ Card 컴포넌트에 `display: 'block'` 기본값 추가 및 Preview CSS와 동�
   - top/left → marginTop/marginLeft
 - 영향 파일: `BuilderCanvas.tsx`
 
+#### Phase 5: Block 레이아웃 라인 기반 렌더링
+- **문제**: Body에 Button 여러 개 추가 시 계단식 배치 (가로 배치 안됨)
+- **원인**: flex column 래퍼 + marginLeft로 x 위치 표현 → 모든 요소 수직 배치
+- **수정**: 같은 y 값을 가진 요소들을 라인(flex row)으로 그룹화
+  - BlockEngine 결과를 y 값 기준으로 라인 그룹화
+  - 각 라인은 flex row (가로 배치)
+  - 라인들은 flex column (세로 쌓기)
+- 영향 파일: `BuilderCanvas.tsx`
+
+#### Phase 6: ToggleButton 사이즈 통일
+- **문제**: ToggleButton/ToggleButtonGroup의 borderRadius가 Button과 다름
+- **수정**: `TOGGLE_BUTTON_FALLBACKS` borderRadius를 Button과 동일하게 변경
+  - sm: 6 → 4, md: 8 → 6, lg: 10 → 8
+- 영향 파일: `cssVariableReader.ts`, `PixiToggleButton.tsx`
+
 #### 최종 결과
 | 기능 | 상태 |
 |------|------|
@@ -45,6 +60,8 @@ Card 컴포넌트에 `display: 'block'` 기본값 추가 및 Preview CSS와 동�
 | padding 정상 적용 | ✅ |
 | height auto-grow | ✅ |
 | siblings 자동 재배치 | ✅ |
+| inline 요소 가로 배치 | ✅ |
+| Button 계열 사이즈 통일 | ✅ |
 | Preview 일치 | ✅ |
 
 **상세:** `.claude/plans/giggly-wibbling-mango.md`

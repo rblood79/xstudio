@@ -690,6 +690,8 @@ export const ElementSprite = memo(function ElementSprite({
           isSelected={isSelected}
           onClick={onClick}
           onChange={onChange ? (id, keys) => onChange(id, keys) : undefined}
+          childElements={childElements}
+          renderChildElement={renderChildElement}
         />
       );
 

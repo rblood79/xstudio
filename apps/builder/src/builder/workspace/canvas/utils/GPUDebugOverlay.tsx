@@ -1,4 +1,5 @@
 import type { CSSProperties } from 'react';
+import { enableDebugLogs } from '../../../../utils/featureFlags';
 import { useCanvasSyncStore } from '../canvasSync';
 
 const overlayStyle: CSSProperties = {
@@ -22,7 +23,7 @@ const overlayStyle: CSSProperties = {
 export function GPUDebugOverlay() {
   const gpuMetrics = useCanvasSyncStore((state) => state.gpuMetrics);
 
-  if (process.env.NODE_ENV !== 'development') return null;
+  if (!enableDebugLogs()) return null;
 
   return (
     <div style={overlayStyle}>

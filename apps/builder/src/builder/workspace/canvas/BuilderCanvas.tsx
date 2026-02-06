@@ -614,6 +614,7 @@ const ElementsLayer = memo(function ElementsLayer({
   const CONTAINER_TAGS = useMemo(() => new Set([
     'Card', 'Box', 'Panel', 'Form', 'Group', 'Dialog', 'Modal',
     'Disclosure', 'DisclosureGroup', 'Accordion',
+    'ToggleButtonGroup',  // 🚀 Phase 7: flex container로 자식 ToggleButton 내부 렌더링
   ]), []);
 
   // 🚀 Phase 8: CSS display: block 요소 목록
@@ -706,8 +707,9 @@ const ElementsLayer = memo(function ElementsLayer({
       );
 
       // 🚀 Phase 5: 라인 기반 렌더링 - inline 요소들을 가로로 배치
-      // BlockEngine은 같은 줄의 inline 요소들에게 같은 y 값을 부여
-      // 같은 y 값을 가진 요소들을 하나의 라인(flex row)으로 그룹화
+      // BlockEngine은 같은 줄의 inline 요소들을 LineBox로 그룹화하지만,
+      // vertical-align으로 인해 각 요소의 y 값이 다를 수 있음 (baseline, top, bottom, middle)
+      // 따라서 수직 범위가 겹치는 요소들을 같은 라인으로 그룹화
       interface LineGroup {
         y: number;
         height: number;
@@ -715,19 +717,30 @@ const ElementsLayer = memo(function ElementsLayer({
       }
 
       const lines: LineGroup[] = [];
-      const EPSILON = 0.5; // y 값 비교 허용 오차
 
       children.forEach((child) => {
         if (!renderIdSet.has(child.id)) return;
         const layout = layoutMap.get(child.id);
         if (!layout) return;
 
-        // 기존 라인에 추가할 수 있는지 확인 (y 값이 거의 같은 경우)
-        const existingLine = lines.find((line) => Math.abs(line.y - layout.y) < EPSILON);
+        const elementTop = layout.y;
+        const elementBottom = layout.y + layout.height;
+
+        // 기존 라인과 수직 범위가 겹치는지 확인 (vertical-align으로 인한 y 차이 허용)
+        const existingLine = lines.find((line) => {
+          const lineTop = line.y;
+          const lineBottom = line.y + line.height;
+          // 수직 범위가 겹치면 같은 라인
+          return elementTop < lineBottom && elementBottom > lineTop;
+        });
+
         if (existingLine) {
           existingLine.elements.push({ child, layout });
-          // 라인 높이는 가장 큰 요소 기준
-          existingLine.height = Math.max(existingLine.height, layout.height);
+          // 라인 범위 확장 (가장 위쪽 y와 가장 아래쪽 bottom 기준)
+          const newTop = Math.min(existingLine.y, elementTop);
+          const newBottom = Math.max(existingLine.y + existingLine.height, elementBottom);
+          existingLine.y = newTop;
+          existingLine.height = newBottom - newTop;
         } else {
           // 새 라인 생성
           lines.push({
@@ -760,6 +773,10 @@ const ElementsLayer = memo(function ElementsLayer({
           const marginLeft = elemIndex === 0 ? layout.x : Math.max(0, layout.x - previousRight);
           previousRight = layout.x + layout.width;
 
+          // 🚀 vertical-align 반영: BlockEngine이 계산한 y 위치를 marginTop으로 변환
+          // 라인 상단(line.y) 기준으로 각 요소의 y 오프셋 계산
+          const marginTop = layout.y - line.y;
+
           // 🚀 CONTAINER_TAGS 처리
           const isContainerType = CONTAINER_TAGS.has(child.tag);
           const childElements = isContainerType ? (pageChildrenMap.get(child.id) ?? []) : [];
@@ -769,19 +786,23 @@ const ElementsLayer = memo(function ElementsLayer({
             ? stripSelfRenderedProps(childLayoutStyle)
             : childLayoutStyle;
 
+          // 🚀 ToggleButtonGroup: minHeight 미적용 (자식 ToggleButton 높이에 맞게 자동 계산)
+          const isToggleButtonGroup = child.tag === 'ToggleButtonGroup';
           const containerLayout = isContainerType
             ? {
                 position: 'relative' as const,
+                marginTop,
                 marginLeft,
                 width: layout.width,
                 height: 'auto' as unknown as number,
-                minHeight: layout.height,
+                ...(isToggleButtonGroup ? {} : { minHeight: layout.height }),
                 display: (effectiveChildLayoutStyle.display || 'flex') as 'flex',
                 flexDirection: (effectiveChildLayoutStyle.flexDirection || 'column') as 'column',
                 ...effectiveChildLayoutStyle,
               }
             : {
                 position: 'relative' as const,
+                marginTop,
                 marginLeft,
                 width: layout.width,
                 height: layout.height,
@@ -870,7 +891,7 @@ const ElementsLayer = memo(function ElementsLayer({
                 marginTop: lineMarginTop,
                 display: 'flex' as const,
                 flexDirection: 'row' as const,
-                alignItems: 'flex-start' as const,
+                alignItems: 'flex-start' as const,  // 각 요소의 marginTop으로 vertical-align 반영
               }}
             >
               {rowElements}
@@ -887,7 +908,7 @@ const ElementsLayer = memo(function ElementsLayer({
               marginTop: lineMarginTop,
               display: 'flex' as const,
               flexDirection: 'row' as const,
-              alignItems: 'flex-start' as const,
+              alignItems: 'flex-start' as const,  // 각 요소의 marginTop으로 vertical-align 반영
               flexWrap: 'nowrap' as const,
             }}
           >
