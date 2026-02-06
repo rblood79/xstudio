@@ -34,6 +34,28 @@
 - [Skia AABB Viewport Culling Fix (2026-02-02)](#skia-aabb-viewport-culling-fix)
 - [Skia Rendering Pipeline Completion (2026-02-02)](#skia-rendering-pipeline-completion)
 - [Skia Style Reactivity & Display Switch Fix (2026-02-02)](#skia-style-reactivity--display-switch-fix)
+- [WebGL Canvas Stabilization Patch (2026-02-06)](#webgl-canvas-stabilization-patch)
+
+---
+
+## WebGL Canvas Stabilization Patch
+
+**Status**: ✅ Complete (2026-02-06)
+
+Section/Card 레이아웃과 Selection/Lasso, 키보드 붙여넣기 충돌을 포함한 WebGL 안정화 패치.
+
+**포함된 수정:**
+- **Section 레이아웃 정합성**: `display:block` 기본 동작과 명시적 flex 동작 분리, body display/flex-direction 변경 영향 제거
+- **auto height + padding 보정**: Section의 children 높이 반영 누락/과잉 경로 정리
+- **Selection/Lasso 좌표계 수정**: 라쏘는 글로벌 좌표, 요소 bounds는 `getBounds()` 기반으로 통일하여 드래그 선택 복구
+- **Cmd/Ctrl+V 중복 paste 제거**: PropertiesPanel 단축키를 `panel:properties` 스코프로 제한, `activeScope` 연동
+- **Card overflow 수정**: BlockEngine에서 Card/Box를 border-box로 해석하여 `width:100% + padding` 초과폭 제거
+
+**수정 파일:**
+- `apps/builder/src/builder/workspace/canvas/BuilderCanvas.tsx`
+- `apps/builder/src/builder/workspace/canvas/selection/SelectionLayer.utils.ts`
+- `apps/builder/src/builder/panels/properties/PropertiesPanel.tsx`
+- `apps/builder/src/builder/workspace/canvas/layout/engines/utils.ts`
 
 ---
 

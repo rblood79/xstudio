@@ -8,6 +8,25 @@
 현재 PixiJS Canvas에서 border가 요소 바깥으로 그려져 레이아웃이 겹치는 문제가 있음.
 CSS의 `box-sizing: border-box` 동작을 구현하여 border가 요소 안쪽으로 그려지도록 수정 필요.
 
+## 2026-02-06 운영 반영 사항
+
+기존 계획 문서와 별도로, 실제 운영 코드에 아래 패치가 반영되었습니다.
+
+### Card/Box border-box 해석 추가 (BlockEngine)
+
+**문제**
+- Body 내부에 `Card`를 추가하면 `width: 100%` + `padding` 조합에서 요소가 body 경계를 넘는 overflow 발생
+
+**원인**
+- BlockEngine `parseBoxModel()`이 `Section`만 예외적으로 border-box 처리하고, `Card/Box`는 content-box로 계산
+
+**해결**
+- `parseBoxModel()`의 `treatAsBorderBox` 조건에 `tag === 'card' || tag === 'box'` 추가
+- `style.boxSizing`이 비어 있어도 명시적 width/height가 있으면 Section과 동일하게 border-box로 해석
+
+**반영 파일**
+- `apps/builder/src/builder/workspace/canvas/layout/engines/utils.ts`
+
 ## 핵심 원칙
 
 ### CSS border-box 동작

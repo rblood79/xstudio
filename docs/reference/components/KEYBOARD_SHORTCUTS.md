@@ -1,7 +1,7 @@
 # XStudio Keyboard Shortcuts System
 
 > **Version:** 3.1
-> **Last Updated:** 2025-12-29
+> **Last Updated:** 2026-02-06
 > **Status:** ✅ Phase 0-7 구현 완료
 
 ---
@@ -35,6 +35,25 @@
 | Keydown → Handler | ~5ms | ~1ms | Performance.mark() |
 | Memory (shortcuts) | 분산 | ~10KB | DevTools Heap |
 | Bundle Size Impact | - | +2KB | Vite build analysis |
+
+---
+
+## 2026-02-06 운영 패치: Cmd/Ctrl+V 이중 실행
+
+### 증상
+- 요소 선택 후 붙여넣기(`Cmd/Ctrl+V`) 시 1회 입력에 요소가 2개 생성됨
+
+### 원인
+- 글로벌 단축키(`useGlobalKeyboardShortcuts`)와 `PropertiesPanel` 로컬 단축키가 동일 키 조합을 동시에 처리
+- `PropertiesPanel`의 registry 등록에 `activeScope`가 전달되지 않아 scope 필터가 실질적으로 비활성
+
+### 수정
+- `PropertiesPanel.tsx`에 `useActiveScope()` 추가
+- `Cmd/Ctrl+C`, `Cmd/Ctrl+V`, `Cmd/Ctrl+Shift+C`, `Cmd/Ctrl+Shift+V`를 `scope: 'panel:properties'`로 제한
+- `useKeyboardShortcutsRegistry(..., { activeScope })`로 scope 필터 활성화
+
+### 수정 파일
+- `apps/builder/src/builder/panels/properties/PropertiesPanel.tsx`
 
 ---
 

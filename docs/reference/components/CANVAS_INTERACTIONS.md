@@ -323,6 +323,25 @@ const lastPanPointRef = useRef<{ x: number; y: number } | null>(null);
 
 캔버스에서 요소를 선택하면 SelectionLayer가 표시되며, Figma 스타일의 핸들 시스템을 사용합니다.
 
+### 2026-02-06 패치 노트 (Selection/Lasso)
+
+**증상**
+- 선택 박스가 실제 렌더링 영역과 어긋남
+- 라쏘 드래그 박스 안에 요소가 들어와도 선택되지 않음
+
+**원인**
+- 라쏘 영역은 화면(글로벌) 좌표, 요소 bounds는 로컬/혼합 좌표로 비교되어 AABB 판정 실패
+- Selection 유틸이 SpatialIndex 경로와 직접 bounds 경로를 혼용
+
+**해결**
+- `BuilderCanvas.tsx`에서 라쏘 좌표를 글로벌 기준으로 정규화
+- 요소 bounds는 `elementRegistry.getBounds()` 우선 사용, fallback도 글로벌 좌표로 변환
+- `SelectionLayer.utils.ts`는 전달된 bounds 기반 AABB 교차 검사만 수행하도록 단순화
+
+**영향 파일**
+- `apps/builder/src/builder/workspace/canvas/BuilderCanvas.tsx`
+- `apps/builder/src/builder/workspace/canvas/selection/SelectionLayer.utils.ts`
+
 ### 파일 구조
 
 ```

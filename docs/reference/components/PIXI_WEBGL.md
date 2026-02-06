@@ -1,6 +1,7 @@
 # PixiJS WebGL Integration
 
 > Phase 10-11: PixiJS 기반 Figma-like WebGL 캔버스 구현
+> Last Updated: 2026-02-06
 
 ## 개요
 
@@ -66,6 +67,31 @@ apps/builder/src/builder/workspace/canvas/
     ├── useZoomPan.ts       # (레거시, ViewportController로 대체)
     └── index.ts
 ```
+
+## 2026-02-06 안정화 패치
+
+### Section 레이아웃 정합성
+- `display:block` 기본 동작과 명시적 `display:flex` 동작을 분리해 body의 display/flex-direction 변경이 Section 계산에 누수되지 않도록 수정.
+- `height:auto` + padding 환경에서 children 크기 반영 누락/과잉이 발생하던 경로를 정리.
+
+### Selection/Lasso 좌표계 보정
+- 라쏘 박스와 요소 bounds 좌표계를 글로벌 기준으로 통일.
+- `BuilderCanvas.tsx`에서 `elementRegistry`의 `getBounds()` 우선 경로를 사용하고, fallback 좌표도 글로벌로 정규화.
+- `SelectionLayer.utils.ts`는 전달받은 bounds 기반 AABB 교차 판정만 담당하도록 단순화.
+
+### Keyboard 중복 paste 방지
+- 글로벌 훅과 PropertiesPanel에서 동시에 `Cmd/Ctrl+V`를 처리하던 경로 수정.
+- PropertiesPanel 단축키를 `panel:properties` scope로 제한하고 `activeScope`를 registry 옵션으로 전달.
+
+### Card overflow (Body 경계 초과) 수정
+- BlockEngine `parseBoxModel()`에서 Card/Box도 Section과 동일하게 border-box 해석.
+- `width:100%` + padding 조합에서 body 폭을 넘어가던 문제 해결.
+
+**관련 파일**
+- `apps/builder/src/builder/workspace/canvas/BuilderCanvas.tsx`
+- `apps/builder/src/builder/workspace/canvas/selection/SelectionLayer.utils.ts`
+- `apps/builder/src/builder/panels/properties/PropertiesPanel.tsx`
+- `apps/builder/src/builder/workspace/canvas/layout/engines/utils.ts`
 
 ## Phase 10: 기본 WebGL 캔버스 (완료)
 

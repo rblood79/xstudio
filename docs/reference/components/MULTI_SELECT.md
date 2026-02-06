@@ -1,9 +1,29 @@
 # Multi-Element Selection: Future Improvements
 
-**Last Updated**: 2025-11-16
+**Last Updated**: 2026-02-06
 **Current Status**: ✅ **ALL PHASES COMPLETE** - Phase 2 (Multi-Element Editing) + Phase 3 (Keyboard Shortcuts + Selection Filters) + Phase 4 (Grouping & Organization) + Phase 5 (Alignment & Distribution) + Phase 6 (Copy/Paste/Duplicate) + Phase 7 (History Integration) + Phase 8 (Performance Optimization) + Phase 9 (Advanced Features)
 
 This document outlines potential improvements and enhancements for the multi-element selection feature.
+
+---
+
+## 🔧 2026-02-06 Hotfix: Lasso Selection 좌표계 불일치
+
+**증상**
+- 드래그 라쏘 박스 내부에 요소가 있어도 선택되지 않음
+- 선택 영역이 실제 렌더 위치와 어긋나 보임
+
+**원인**
+- 라쏘 박스는 글로벌 좌표, 요소 bounds는 로컬/혼합 좌표로 비교되어 AABB 충돌 판정 실패
+- Selection 유틸에서 SpatialIndex 기반 경로와 전달 bounds 경로가 혼재
+
+**수정**
+- `BuilderCanvas.tsx`: 라쏘 좌표를 글로벌 기준으로 정규화, 요소 bounds는 `elementRegistry.getBounds()` 우선 사용
+- `SelectionLayer.utils.ts`: 전달된 bounds 기반 AABB 교차 검사로 단순화
+
+**영향 파일**
+- `apps/builder/src/builder/workspace/canvas/BuilderCanvas.tsx`
+- `apps/builder/src/builder/workspace/canvas/selection/SelectionLayer.utils.ts`
 
 ---
 

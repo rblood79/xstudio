@@ -7,6 +7,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed - WebGL Canvas 안정화 패치 (2026-02-06)
+
+#### 개요
+Section/Card 레이아웃 정합성, Selection/Lasso 좌표계, 키보드 붙여넣기 중복 실행 이슈를 한 번에 정리한 안정화 패치.
+
+#### 1) Section 레이아웃 정합성 (display:block/flex, auto height)
+- Section의 암시적 flex 처리/레거시 경로를 정리하여 `display:block` 기본 동작과 명시적 `display:flex` 동작을 분리.
+- `display:block`일 때 부모(body)의 `display`, `flex-direction` 변경이 Section display 계산에 간섭하던 문제 수정.
+- `height:auto` + padding 환경에서 children 크기 반영/누락이 뒤섞이던 계산 경로 정리.
+- 선택 박스가 실제 렌더 영역과 어긋나던 문제를 함께 보정.
+
+#### 2) Lasso/Selection 좌표계 보정
+- 라쏘 박스는 화면(글로벌) 좌표, 요소 bounds는 로컬/혼합 좌표를 읽어 교차 판정이 실패하던 문제 수정.
+- `BuilderCanvas.tsx`에서 라쏘 좌표를 글로벌 기준으로 정규화하고, 요소 bounds는 `elementRegistry.getBounds()` 우선 경로로 통일.
+- `SelectionLayer.utils.ts`는 전달된 bounds 기반 AABB 판정만 수행하도록 단순화하여 SpatialIndex 경로 불일치 제거.
+
+#### 3) Cmd/Ctrl+V 붙여넣기 2회 실행
+- 글로벌 단축키와 PropertiesPanel 단축키가 동시에 `paste`를 처리하여 요소가 2개 생성되던 문제 수정.
+- PropertiesPanel 단축키를 `panel:properties` 스코프로 제한하고 `activeScope`를 registry 옵션에 연결.
+
+#### 4) Card가 Body 영역을 넘어가는 overflow
+- BlockEngine `parseBoxModel()`에서 Card/Box를 content-box로 계산하던 경로 수정.
+- `width/height` 명시 시 Section과 동일하게 Card/Box도 border-box로 해석해 `width:100% + padding` 초과폭 제거.
+
+#### 수정 파일
+| 파일 | 변경 |
+|------|------|
+| `apps/builder/src/builder/workspace/canvas/BuilderCanvas.tsx` | Section/Container 레이아웃 경로 정리, Selection/Lasso bounds 좌표계 보정 |
+| `apps/builder/src/builder/workspace/canvas/selection/SelectionLayer.utils.ts` | 전달 bounds 기반 AABB 교차 판정으로 단순화 |
+| `apps/builder/src/builder/panels/properties/PropertiesPanel.tsx` | copy/paste 단축키 scope 지정 + activeScope 적용 |
+| `apps/builder/src/builder/workspace/canvas/layout/engines/utils.ts` | Card/Box border-box 해석 추가 |
+
+---
+
 ### Added - AI Tool Calling + Agent Loop (2026-02-06)
 
 #### 개요

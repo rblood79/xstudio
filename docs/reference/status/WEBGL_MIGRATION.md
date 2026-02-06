@@ -1,6 +1,6 @@
 # WebGL Canvas Component Migration Status
 
-> **Last Updated**: 2025-12-18
+> **Last Updated**: 2026-02-06
 > **Branch**: claude/migrate-panel-components-webgl-96QYI
 
 ## Overview
@@ -8,6 +8,15 @@
 This document tracks the migration progress of React Aria Components from the iframe preview system (`src/canvas/`) to the WebGL-based canvas system (`apps/builder/src/builder/workspace/canvas/ui/`).
 
 ⚠️ **검증 현황**: 실제 WebGL 캔버스에서 확인된 항목은 `Button`, `Checkbox`, `CheckboxGroup`, `RadioGroup`, `TextField`입니다. 아래 표의 나머지 항목들은 구현 여부가 미확인 상태이며, 화면 렌더링·동작 검증이 필요합니다.
+
+### 최근 안정화 패치 (2026-02-06)
+
+마이그레이션 자체와 별도로 런타임 안정화를 위한 패치가 반영되었습니다.
+
+- Section `display:block/flex` 동작 분리 및 auto-height/padding 정합성 보정
+- Selection 영역/라쏘 드래그 선택 좌표계(글로벌 vs 로컬) 불일치 수정
+- `Cmd/Ctrl+V` 붙여넣기 중복 실행(2개 생성) 제거 — PropertiesPanel scope 정리
+- Card/Box `width:100% + padding` overflow 수정 — BlockEngine border-box 해석 추가
 
 ### Architecture Comparison
 
