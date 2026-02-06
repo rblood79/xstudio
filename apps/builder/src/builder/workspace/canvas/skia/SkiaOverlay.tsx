@@ -726,12 +726,14 @@ export function SkiaOverlay({
 
           const frames = pageFramesRef.current ?? [];
           if (frames.length > 0) {
-            const activePageId = useStore.getState().currentPageId;
+            const state = useStore.getState();
+            const activePageId = state.currentPageId;
+            const hasSelection = state.selectedElementIds.length > 0;
             for (const frame of frames) {
               if (!frame.title) continue;
               canvas.save();
               canvas.translate(frame.x, frame.y);
-              renderPageTitle(ck, canvas, frame.title, cameraZoom, fontMgr, frame.id === activePageId);
+              renderPageTitle(ck, canvas, frame.title, cameraZoom, fontMgr, hasSelection && frame.id === activePageId);
               canvas.restore();
             }
           }

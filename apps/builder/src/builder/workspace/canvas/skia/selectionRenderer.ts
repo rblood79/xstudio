@@ -345,10 +345,6 @@ export function renderPageTitle(
   try {
     const invZoom = 1 / zoom;
 
-    // 화면상 고정 크기를 위한 스케일 적용
-    const fontSize = PAGE_TITLE_FONT_SIZE * invZoom;
-    const offsetY = PAGE_TITLE_OFFSET_Y * invZoom;
-
     // Typeface 획득
     const typeface = fontMgr.matchFamilyStyle('Pretendard', {
       weight: isActive ? ck.FontWeight.Medium : ck.FontWeight.Normal,
@@ -357,7 +353,8 @@ export function renderPageTitle(
     });
     if (!typeface) return;
 
-    const font = scope.track(new ck.Font(typeface, fontSize));
+    // 고정 폰트 사이즈로 렌더링하여 줌 시 글리프 간격 흔들림 방지
+    const font = scope.track(new ck.Font(typeface, PAGE_TITLE_FONT_SIZE));
     font.setSubpixel(true);
 
     // 활성 페이지: selection 색상, 비활성: slate-500
@@ -373,11 +370,16 @@ export function renderPageTitle(
       ));
     }
 
-    // 위치: 페이지 좌상단 (0, 0)에서 위로 offsetY만큼
+    // canvas.scale로 줌 보정 → 폰트 사이즈가 항상 고정되어 글리프 메트릭 안정
+    canvas.save();
+    canvas.scale(invZoom, invZoom);
+
+    // 화면 픽셀 좌표에서 위치 계산 후 pixel snap
     const textX = 0;
-    const textY = -offsetY + fontSize * 0.85; // baseline 보정
+    const textY = Math.round(-PAGE_TITLE_OFFSET_Y + PAGE_TITLE_FONT_SIZE * 0.85);
 
     canvas.drawText(title, textX, textY, textPaint, font);
+    canvas.restore();
   } finally {
     scope.dispose();
   }

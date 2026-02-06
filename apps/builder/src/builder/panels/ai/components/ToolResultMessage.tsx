@@ -14,6 +14,8 @@ const TOOL_RESULT_LABELS: Record<string, string> = {
   delete_element: '삭제됨',
   get_editor_state: '상태 조회 완료',
   get_selection: '선택 조회 완료',
+  search_elements: '검색 완료',
+  batch_design: '일괄 변경 완료',
 };
 
 export function ToolResultMessage({ message }: ToolResultMessageProps) {

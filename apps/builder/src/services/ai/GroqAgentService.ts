@@ -12,6 +12,8 @@ import { createToolRegistry, toolDefinitions } from './tools';
 import { buildSystemPrompt } from './systemPrompt';
 
 const MAX_TURNS = 10;
+const MAX_RETRIES = 3;
+const INITIAL_RETRY_DELAY_MS = 1000;
 
 type GroqMessage = Groq.Chat.Completions.ChatCompletionMessageParam;
 
@@ -54,16 +56,8 @@ export class GroqAgentService {
       turn++;
 
       try {
-        // Groq API 호출 (streaming)
-        const stream = await this.client.chat.completions.create({
-          model: 'llama-3.3-70b-versatile',
-          messages: conversationMessages,
-          tools: toolDefinitions,
-          tool_choice: 'auto',
-          stream: true,
-          temperature: 0.7,
-          max_tokens: 2048,
-        });
+        // Groq API 호출 (streaming) + 429 지수 백오프
+        const stream = await this.createStreamWithRetry(conversationMessages);
 
         let assistantContent = '';
         const toolCalls: ToolCall[] = [];
@@ -189,6 +183,60 @@ export class GroqAgentService {
     }
 
     yield { type: 'max-turns-reached' };
+  }
+
+  /**
+   * 429 Rate Limit 지수 백오프 재시도
+   */
+  private async createStreamWithRetry(messages: GroqMessage[]) {
+    let lastError: unknown;
+
+    for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+      try {
+        return await this.client.chat.completions.create({
+          model: 'llama-3.3-70b-versatile',
+          messages,
+          tools: toolDefinitions,
+          tool_choice: 'auto',
+          stream: true,
+          temperature: 0.7,
+          max_tokens: 2048,
+        });
+      } catch (error) {
+        lastError = error;
+        const isRateLimit = this.isRateLimitError(error);
+
+        if (!isRateLimit || attempt >= MAX_RETRIES) {
+          throw error;
+        }
+
+        if (this.abortController?.signal.aborted) {
+          throw error;
+        }
+
+        const delay = INITIAL_RETRY_DELAY_MS * Math.pow(2, attempt);
+        console.warn(`[GroqAgent] 429 Rate limit, ${delay}ms 후 재시도 (${attempt + 1}/${MAX_RETRIES})`);
+        await this.sleep(delay);
+      }
+    }
+
+    throw lastError;
+  }
+
+  private isRateLimitError(error: unknown): boolean {
+    if (error && typeof error === 'object') {
+      const statusCode = (error as { status?: number }).status
+        ?? (error as { statusCode?: number }).statusCode;
+      if (statusCode === 429) return true;
+
+      const message = (error as { message?: string }).message;
+      if (message && message.toLowerCase().includes('rate limit')) return true;
+    }
+    return false;
+  }
+
+  private sleep(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
   /**

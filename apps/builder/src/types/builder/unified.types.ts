@@ -715,6 +715,10 @@ export function createDefaultToggleButtonGroupProps(): ToggleButtonGroupElementP
     isDisabled: false,
     selectionMode: "single",
     orientation: "horizontal",
+    style: {
+      display: 'flex',
+      flexDirection: 'row',
+    },
   };
 }
 

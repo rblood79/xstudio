@@ -139,4 +139,68 @@ export const toolDefinitions: ChatCompletionTool[] = [
       },
     },
   },
+  {
+    type: 'function',
+    function: {
+      name: 'search_elements',
+      description: '조건에 맞는 요소를 검색합니다. 태그, 속성명, 속성값, 스타일 속성으로 필터링할 수 있습니다.',
+      parameters: {
+        type: 'object',
+        properties: {
+          tag: {
+            type: 'string',
+            description: '검색할 컴포넌트 태그 (예: Button, TextField)',
+          },
+          propName: {
+            type: 'string',
+            description: '검색할 속성 이름 (예: children, variant)',
+          },
+          propValue: {
+            type: 'string',
+            description: '검색할 속성 값. propName과 함께 사용.',
+          },
+          styleProp: {
+            type: 'string',
+            description: '해당 CSS 속성이 설정된 요소를 검색 (예: backgroundColor)',
+          },
+          limit: {
+            type: 'number',
+            description: '최대 반환 개수. 기본 20.',
+          },
+        },
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'batch_design',
+      description: '여러 생성/수정/삭제 작업을 한 번에 순차 실행합니다. 복잡한 레이아웃을 한 번에 만들 때 유용합니다.',
+      parameters: {
+        type: 'object',
+        properties: {
+          operations: {
+            type: 'array',
+            description: '실행할 작업 배열. 순서대로 실행되며, 하나라도 실패하면 중단됩니다.',
+            items: {
+              type: 'object',
+              properties: {
+                action: {
+                  type: 'string',
+                  enum: ['create', 'update', 'delete'],
+                  description: '작업 유형',
+                },
+                args: {
+                  type: 'object',
+                  description: '해당 작업의 인자. create: {tag, props, styles, parentId}, update: {elementId, props, styles}, delete: {elementId}',
+                },
+              },
+              required: ['action', 'args'],
+            },
+          },
+        },
+        required: ['operations'],
+      },
+    },
+  },
 ];

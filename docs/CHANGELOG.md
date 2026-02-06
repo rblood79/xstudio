@@ -7,6 +7,58 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added - AI Tool Calling + Agent Loop (2026-02-06)
+
+#### 개요
+기존 JSON 텍스트 파싱 방식(GroqService)에서 **Tool Calling + Agent Loop** 아키텍처(GroqAgentService)로 전환.
+Groq SDK의 tool calling을 활용하여 AI가 에디터 도구를 직접 호출하는 방식으로 변경.
+
+#### Phase A1: 기반 구조
+- `ai.types.ts` 확장 — AgentEvent(7-variant union), ToolCall, ToolExecutor, AIAgentProvider
+- `chat.types.ts` 확장 — tool role, ToolCallInfo, ConversationState agent 필드
+- `tools/definitions.ts` — 7개 도구 JSON Schema (Groq ChatCompletionTool 형식)
+- `systemPrompt.ts` — `buildSystemPrompt(context)` 동적 시스템 프롬프트 빌더
+- `styleAdapter.ts` — CSS-like → 내부 스키마 변환 레이어 (CanvasKit 전환 대비)
+- 영향 파일: `ai.types.ts`, `chat.types.ts`, `tools/definitions.ts`, `systemPrompt.ts`, `styleAdapter.ts`
+
+#### Phase A2: Agent 서비스
+- `GroqAgentService.ts` — AsyncGenerator 기반 Agent Loop, streaming tool call 조립, MAX_TURNS=10, AbortController
+- 5개 핵심 도구: `createElement.ts`, `updateElement.ts`, `deleteElement.ts`, `getEditorState.ts`, `getSelection.ts`
+- `tools/index.ts` — 도구 레지스트리 (`createToolRegistry()`)
+- `conversation.ts` 확장 — isAgentRunning, currentTurn, activeToolCalls 상태 + 관련 액션
+- 영향 파일: `GroqAgentService.ts`, `tools/*.ts`, `conversation.ts`
+
+#### Phase A3: UI 개선
+- `useAgentLoop.ts` — Agent Loop React hook, G.3 시각 피드백 연동, IntentParser fallback
+- `ToolCallMessage.tsx` — 도구 호출 상태 표시 (아이콘 + 이름 + 스피너/체크/에러)
+- `ToolResultMessage.tsx` — 도구 실행 결과 표시 (생성됨/수정됨/삭제됨)
+- `AgentControls.tsx` — 중단 버튼 + 현재 turn 카운터
+- `AIPanel.tsx` 재작성 — useAgentLoop hook 기반, executeIntent 제거
+- `GroqService.ts` — @deprecated 표시, 동작하지 않는 예시 제거
+- 영향 파일: `AIPanel.tsx`, `useAgentLoop.ts`, `components/*.tsx`, `GroqService.ts`
+
+#### Phase A4: 고급 기능
+- `searchElements.ts` — tag/propName/propValue/styleProp 기반 요소 검색 (limit 지원)
+- `batchDesign.ts` — operations[] 배열 순차 실행 (create/update/delete, 최대 20개, 실패 시 중단)
+- 429 Rate Limit 지수 백오프 — GroqAgentService 내부 재시도 (1s→2s→4s, 3회)
+- 영향 파일: `searchElements.ts`, `batchDesign.ts`, `GroqAgentService.ts`, `definitions.ts`, `index.ts`
+
+#### 최종 결과
+| 기능 | 상태 |
+|------|------|
+| Tool Calling (7개 도구) | ✅ |
+| Agent Loop (multi-turn) | ✅ |
+| 대화 히스토리 전달 | ✅ |
+| Streaming 텍스트 + Tool 피드백 | ✅ |
+| G.3 시각 피드백 연동 | ✅ |
+| 에이전트 중단 (AbortController) | ✅ |
+| IntentParser fallback | ✅ |
+| Rate Limit 대응 (429 백오프) | ✅ |
+| 배치 작업 (batch_design) | ✅ |
+| 요소 검색 (search_elements) | ✅ |
+
+---
+
 ### Added - Card display: block 완전 지원 (2026-02-06)
 
 #### 개요

@@ -96,6 +96,7 @@ import {
   PixiPanel,
 } from '../ui';
 import { useStore } from '../../../stores';
+import { useShallow } from 'zustand/react/shallow';
 import { useResolvedElement } from './useResolvedElement';
 import { isFlexContainer, isGridContainer } from '../layout';
 import { measureWrappedTextHeight } from '../utils/textMeasure';
@@ -432,6 +433,29 @@ export const ElementSprite = memo(function ElementSprite({
     if (!element.parent_id) return null;
     return state.elementsMap.get(element.parent_id) ?? null;
   });
+
+  // 🚀 ToggleButtonGroup 내 ToggleButton의 위치 정보 (borderRadius 계산용)
+  // CSS에서는 그룹 내 첫/끝 버튼만 외곽 모서리에 borderRadius 적용
+  // useShallow로 shallow comparison 적용하여 무한 루프 방지
+  const toggleGroupPosition = useStore(
+    useShallow((state) => {
+      if (element.tag !== 'ToggleButton' || !element.parent_id) return null;
+      const parent = state.elementsMap.get(element.parent_id);
+      if (!parent || parent.tag !== 'ToggleButtonGroup') return null;
+
+      const siblings = state.childrenMap.get(parent.id) || [];
+      const index = siblings.findIndex(s => s.id === element.id);
+      if (index === -1) return null;
+
+      const orientation = ((parent.props as Record<string, unknown>)?.orientation as string) || 'horizontal';
+      return {
+        orientation,
+        isFirst: index === 0,
+        isLast: index === siblings.length - 1,
+        isOnly: siblings.length === 1,
+      };
+    })
+  );
 
   // layoutPosition이 있으면 style을 오버라이드한 새 element 생성
   // G.1/G.2: Instance resolution + Variable resolution
@@ -1254,11 +1278,39 @@ export const ElementSprite = memo(function ElementSprite({
     const hasBorderRadiusSet = style?.borderRadius !== undefined && style?.borderRadius !== null && style?.borderRadius !== '';
     const size = isUIComponent ? String(props?.size || 'md') : '';
     const defaultBorderRadius = UI_COMPONENT_DEFAULT_BORDER_RADIUS[size] ?? 6;
-    const effectiveBorderRadius = hasBorderRadiusSet ? br : (isUIComponent && !hasBgColor ? defaultBorderRadius : 0);
+    let effectiveBorderRadius: number | [number, number, number, number] = hasBorderRadiusSet ? br : (isUIComponent && !hasBgColor ? defaultBorderRadius : 0);
+
+    // 🚀 ToggleButtonGroup 내 ToggleButton: 위치에 따른 borderRadius 배열 적용
+    // CSS 규칙: 첫 버튼=외곽 모서리만, 중간=없음, 끝 버튼=외곽 모서리만
+    if (toggleGroupPosition && typeof effectiveBorderRadius === 'number') {
+      const { orientation, isFirst, isLast, isOnly } = toggleGroupPosition;
+      const r = effectiveBorderRadius;
+
+      if (!isOnly) {
+        if (orientation === 'horizontal') {
+          if (isFirst) {
+            effectiveBorderRadius = [r, 0, 0, r]; // 왼쪽만
+          } else if (isLast) {
+            effectiveBorderRadius = [0, r, r, 0]; // 오른쪽만
+          } else {
+            effectiveBorderRadius = [0, 0, 0, 0]; // 중간: 없음
+          }
+        } else {
+          // vertical
+          if (isFirst) {
+            effectiveBorderRadius = [r, r, 0, 0]; // 위쪽만
+          } else if (isLast) {
+            effectiveBorderRadius = [0, 0, r, r]; // 아래쪽만
+          } else {
+            effectiveBorderRadius = [0, 0, 0, 0]; // 중간: 없음
+          }
+        }
+      }
+    }
 
     const boxData: {
       fillColor: Float32Array;
-      borderRadius: number;
+      borderRadius: number | [number, number, number, number];
       strokeColor?: Float32Array;
       strokeWidth?: number;
     } = {

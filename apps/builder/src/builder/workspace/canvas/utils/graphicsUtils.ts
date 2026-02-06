@@ -87,6 +87,86 @@ export function smoothRoundRect(
 }
 
 /**
+ * 개별 모서리 반경을 가진 부드러운 둥근 사각형 그리기
+ *
+ * CSS border-radius와 동일한 순서: [top-left, top-right, bottom-right, bottom-left]
+ *
+ * @param g - Graphics 객체
+ * @param x - X 좌표
+ * @param y - Y 좌표
+ * @param width - 너비
+ * @param height - 높이
+ * @param radii - 모서리 반경 배열 [tl, tr, br, bl]
+ * @param segments - 각 모서리당 세그먼트 수 (미지정 시 최대 반경 기반 자동 계산)
+ */
+export function smoothRoundRectCorners(
+  g: PixiGraphics,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  radii: [number, number, number, number],
+  segments?: number
+): void {
+  const [tl, tr, br, bl] = radii;
+
+  // 모든 radius가 0이면 일반 사각형
+  if (tl <= 0 && tr <= 0 && br <= 0 && bl <= 0) {
+    g.rect(x, y, width, height);
+    return;
+  }
+
+  // radius가 너무 크면 조정
+  const maxRadius = Math.min(width, height) / 2;
+  const rTL = Math.min(tl, maxRadius);
+  const rTR = Math.min(tr, maxRadius);
+  const rBR = Math.min(br, maxRadius);
+  const rBL = Math.min(bl, maxRadius);
+
+  // 세그먼트 수는 최대 반경 기준
+  const maxR = Math.max(rTL, rTR, rBR, rBL);
+  const cornerSegments = segments ?? getRoundRectSegments(maxR);
+
+  // 시작점 (top-left 직선 시작)
+  g.moveTo(x + rTL, y);
+
+  // Top edge
+  g.lineTo(x + width - rTR, y);
+
+  // Top-right corner (arc)
+  if (rTR > 0) {
+    drawArc(g, x + width - rTR, y + rTR, rTR, -Math.PI / 2, 0, cornerSegments);
+  }
+
+  // Right edge
+  g.lineTo(x + width, y + height - rBR);
+
+  // Bottom-right corner (arc)
+  if (rBR > 0) {
+    drawArc(g, x + width - rBR, y + height - rBR, rBR, 0, Math.PI / 2, cornerSegments);
+  }
+
+  // Bottom edge
+  g.lineTo(x + rBL, y + height);
+
+  // Bottom-left corner (arc)
+  if (rBL > 0) {
+    drawArc(g, x + rBL, y + height - rBL, rBL, Math.PI / 2, Math.PI, cornerSegments);
+  }
+
+  // Left edge
+  g.lineTo(x, y + rTL);
+
+  // Top-left corner (arc)
+  if (rTL > 0) {
+    drawArc(g, x + rTL, y + rTL, rTL, Math.PI, Math.PI * 1.5, cornerSegments);
+  }
+
+  // Close path
+  g.closePath();
+}
+
+/**
  * 호(arc) 그리기 - lineTo로 세그먼트화
  */
 function drawArc(
@@ -146,8 +226,12 @@ export interface DrawBoxOptions {
   backgroundColor?: number;
   /** 배경 투명도 (0-1) */
   backgroundAlpha?: number;
-  /** border 모서리 반경 (border 없이도 적용 가능) */
-  borderRadius?: number;
+  /**
+   * border 모서리 반경 (border 없이도 적용 가능)
+   * - number: 모든 모서리에 동일 적용
+   * - [tl, tr, br, bl]: 각 모서리별 개별 적용 (CSS 순서)
+   */
+  borderRadius?: number | [number, number, number, number];
   /** border 설정 (null이면 border 없음) */
   border?: BorderConfig | null;
 }
@@ -203,12 +287,22 @@ export function drawBox(g: PixiGraphics, options: DrawBoxOptions): void {
   } = options;
 
   // borderRadius 우선순위: 명시적 옵션 > border.radius > 0
-  const borderRadius = explicitBorderRadius ?? border?.radius ?? 0;
+  const rawRadius = explicitBorderRadius ?? border?.radius ?? 0;
+
+  // 개별 모서리 지원: [tl, tr, br, bl] 또는 단일 값
+  const isArrayRadius = Array.isArray(rawRadius);
+  const hasRadius = isArrayRadius
+    ? rawRadius.some(r => r > 0)
+    : rawRadius > 0;
 
   // 1. Fill (전체 영역)
   // 🚀 smoothRoundRect 사용: 확대 시에도 부드러운 모서리
-  if (borderRadius > 0) {
-    smoothRoundRect(g, 0, 0, width, height, borderRadius);
+  if (hasRadius) {
+    if (isArrayRadius) {
+      smoothRoundRectCorners(g, 0, 0, width, height, rawRadius as [number, number, number, number]);
+    } else {
+      smoothRoundRect(g, 0, 0, width, height, rawRadius as number);
+    }
   } else {
     g.rect(0, 0, width, height);
   }
@@ -216,13 +310,32 @@ export function drawBox(g: PixiGraphics, options: DrawBoxOptions): void {
 
   // 2. Stroke (border가 있는 경우)
   if (isValidBorder(border)) {
+    // 개별 모서리인 경우 최대값 사용 (border inner bounds 계산용)
+    const uniformRadius = isArrayRadius
+      ? Math.max(...(rawRadius as number[]))
+      : rawRadius as number;
+
     if (ENABLE_BORDER_BOX) {
       // border-box 방식: 안쪽으로 offset
-      const inner = getBorderBoxInnerBounds(width, height, border.width, borderRadius);
-      drawBorderByStyle(g, width, height, inner, border);
+      const inner = getBorderBoxInnerBounds(width, height, border.width, uniformRadius);
+
+      // 개별 모서리인 경우 drawBorderByStyleCorners 사용
+      if (isArrayRadius) {
+        const radii = rawRadius as [number, number, number, number];
+        // inner radius 계산: 각 모서리별로 border.width 만큼 축소
+        const innerRadii: [number, number, number, number] = [
+          Math.max(0, radii[0] - border.width),
+          Math.max(0, radii[1] - border.width),
+          Math.max(0, radii[2] - border.width),
+          Math.max(0, radii[3] - border.width),
+        ];
+        drawSolidBorderCorners(g, inner, innerRadii, border);
+      } else {
+        drawBorderByStyle(g, width, height, inner, border);
+      }
     } else {
       // 기존 방식: stroke at edge (롤백용)
-      drawBorderLegacy(g, width, height, borderRadius, border);
+      drawBorderLegacy(g, width, height, uniformRadius, border);
     }
   }
 }
@@ -309,6 +422,24 @@ function drawSolidBorder(
 ): void {
   if (inner.radius > 0) {
     smoothRoundRect(g, inner.x, inner.y, inner.width, inner.height, inner.radius);
+  } else {
+    g.rect(inner.x, inner.y, inner.width, inner.height);
+  }
+  g.stroke({ width: border.width, color: border.color, alpha: border.alpha });
+}
+
+/**
+ * Solid border 그리기 (개별 모서리 radius 지원)
+ */
+function drawSolidBorderCorners(
+  g: PixiGraphics,
+  inner: BorderBoxInnerBounds,
+  radii: [number, number, number, number],
+  border: BorderConfig
+): void {
+  const hasRadius = radii.some(r => r > 0);
+  if (hasRadius) {
+    smoothRoundRectCorners(g, inner.x, inner.y, inner.width, inner.height, radii);
   } else {
     g.rect(inner.x, inner.y, inner.width, inner.height);
   }

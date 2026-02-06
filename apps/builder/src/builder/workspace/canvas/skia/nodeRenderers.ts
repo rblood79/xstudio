@@ -95,7 +95,12 @@ export interface SkiaNodeData {
     fillColor: Float32Array;
     /** 그라디언트/이미지 등 고급 필 (있으면 fillColor 대신 사용) */
     fill?: FillStyle;
-    borderRadius: number;
+    /**
+     * 모서리 반경
+     * - number: 모든 모서리에 동일 적용
+     * - [tl, tr, br, bl]: 각 모서리별 개별 적용 (CSS 순서)
+     */
+    borderRadius: number | [number, number, number, number];
     strokeColor?: Float32Array;
     strokeWidth?: number;
   };
@@ -265,6 +270,74 @@ function renderNodeInternal(
   canvas.restore();
 }
 
+/**
+ * 개별 모서리 radius를 가진 둥근 사각형 Path 생성
+ * CSS border-radius 순서: [top-left, top-right, bottom-right, bottom-left]
+ */
+function createRoundRectPath(
+  ck: CanvasKit,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  radii: [number, number, number, number],
+): ReturnType<CanvasKit['Path']['prototype']['constructor']> {
+  const [tl, tr, br, bl] = radii;
+  const maxRadius = Math.min(width, height) / 2;
+  const rTL = Math.min(Math.max(0, tl), maxRadius);
+  const rTR = Math.min(Math.max(0, tr), maxRadius);
+  const rBR = Math.min(Math.max(0, br), maxRadius);
+  const rBL = Math.min(Math.max(0, bl), maxRadius);
+
+  const path = new ck.Path();
+
+  // 시작점: top-left 모서리 끝
+  path.moveTo(x + rTL, y);
+
+  // Top edge
+  path.lineTo(x + width - rTR, y);
+
+  // Top-right corner
+  if (rTR > 0) {
+    path.arcToTangent(x + width, y, x + width, y + rTR, rTR);
+  } else {
+    path.lineTo(x + width, y);
+  }
+
+  // Right edge
+  path.lineTo(x + width, y + height - rBR);
+
+  // Bottom-right corner
+  if (rBR > 0) {
+    path.arcToTangent(x + width, y + height, x + width - rBR, y + height, rBR);
+  } else {
+    path.lineTo(x + width, y + height);
+  }
+
+  // Bottom edge
+  path.lineTo(x + rBL, y + height);
+
+  // Bottom-left corner
+  if (rBL > 0) {
+    path.arcToTangent(x, y + height, x, y + height - rBL, rBL);
+  } else {
+    path.lineTo(x, y + height);
+  }
+
+  // Left edge
+  path.lineTo(x, y + rTL);
+
+  // Top-left corner
+  if (rTL > 0) {
+    path.arcToTangent(x, y, x + rTL, y, rTL);
+  } else {
+    path.lineTo(x, y);
+  }
+
+  path.close();
+  return path;
+}
+
 /** Box 노드 렌더링 */
 function renderBox(ck: CanvasKit, canvas: Canvas, node: SkiaNodeData): void {
   if (!node.box) return;
@@ -284,10 +357,20 @@ function renderBox(ck: CanvasKit, canvas: Canvas, node: SkiaNodeData): void {
     }
 
     const rect = ck.LTRBRect(0, 0, node.width, node.height);
+    const br = node.box.borderRadius;
+    const isArrayRadius = Array.isArray(br);
+    const hasRadius = isArrayRadius ? br.some(r => r > 0) : br > 0;
 
-    if (node.box.borderRadius > 0) {
-      const rrect = ck.RRectXY(rect, node.box.borderRadius, node.box.borderRadius);
-      canvas.drawRRect(rrect, paint);
+    if (hasRadius) {
+      if (isArrayRadius) {
+        // 개별 모서리 radius: Path로 그리기
+        const path = createRoundRectPath(ck, 0, 0, node.width, node.height, br);
+        canvas.drawPath(path, paint);
+        path.delete();
+      } else {
+        const rrect = ck.RRectXY(rect, br, br);
+        canvas.drawRRect(rrect, paint);
+      }
     } else {
       canvas.drawRect(rect, paint);
     }
@@ -305,10 +388,23 @@ function renderBox(ck: CanvasKit, canvas: Canvas, node: SkiaNodeData): void {
       paint.setColor(node.box.strokeColor);
 
       const strokeRect = ck.LTRBRect(inset, inset, node.width - inset, node.height - inset);
-      if (node.box.borderRadius > 0) {
-        const adjustedRadius = Math.max(0, node.box.borderRadius - inset);
-        const rrect = ck.RRectXY(strokeRect, adjustedRadius, adjustedRadius);
-        canvas.drawRRect(rrect, paint);
+      if (hasRadius) {
+        if (isArrayRadius) {
+          // 개별 모서리: stroke용 inner radius 계산
+          const innerRadii: [number, number, number, number] = [
+            Math.max(0, br[0] - inset),
+            Math.max(0, br[1] - inset),
+            Math.max(0, br[2] - inset),
+            Math.max(0, br[3] - inset),
+          ];
+          const path = createRoundRectPath(ck, inset, inset, node.width - inset * 2, node.height - inset * 2, innerRadii);
+          canvas.drawPath(path, paint);
+          path.delete();
+        } else {
+          const adjustedRadius = Math.max(0, br - inset);
+          const rrect = ck.RRectXY(strokeRect, adjustedRadius, adjustedRadius);
+          canvas.drawRRect(rrect, paint);
+        }
       } else {
         canvas.drawRect(strokeRect, paint);
       }

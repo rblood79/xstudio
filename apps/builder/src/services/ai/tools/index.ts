@@ -10,6 +10,8 @@ import { getSelectionTool } from './getSelection';
 import { createElementTool } from './createElement';
 import { updateElementTool } from './updateElement';
 import { deleteElementTool } from './deleteElement';
+import { searchElementsTool } from './searchElements';
+import { batchDesignTool } from './batchDesign';
 
 export { toolDefinitions } from './definitions';
 
@@ -25,6 +27,8 @@ export function createToolRegistry(): Map<string, ToolExecutor> {
     createElementTool,
     updateElementTool,
     deleteElementTool,
+    searchElementsTool,
+    batchDesignTool,
   ];
 
   for (const tool of tools) {

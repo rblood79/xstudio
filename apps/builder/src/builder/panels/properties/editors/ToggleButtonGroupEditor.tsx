@@ -195,7 +195,21 @@ export const ToggleButtonGroupEditor = memo(function ToggleButtonGroupEditor({ e
                 <PropertySelect
                     label={PROPERTY_LABELS.ORIENTATION}
                     value={String(currentProps.orientation || 'horizontal')}
-                    onChange={(value) => updateProp('orientation', value)}
+                    onChange={(value) => {
+                        // orientation 변경 시 style.flexDirection도 함께 업데이트
+                        const flexDirection = value === 'vertical' ? 'column' : 'row';
+                        const currentStyle = (currentProps.style as Record<string, unknown>) || {};
+                        const updatedProps = {
+                            ...currentProps,
+                            orientation: value,
+                            style: {
+                                ...currentStyle,
+                                display: 'flex',
+                                flexDirection,
+                            },
+                        };
+                        onUpdate(updatedProps);
+                    }}
                     options={[
                         { value: 'horizontal', label: PROPERTY_LABELS.ORIENTATION_HORIZONTAL },
                         { value: 'vertical', label: PROPERTY_LABELS.ORIENTATION_VERTICAL }

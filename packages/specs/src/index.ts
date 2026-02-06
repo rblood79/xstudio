@@ -123,6 +123,9 @@ export type { LinkProps } from './components/Link.spec';
 export { PopoverSpec } from './components/Popover.spec';
 export type { PopoverProps } from './components/Popover.spec';
 
+export { SectionSpec } from './components/Section.spec';
+export type { SectionProps } from './components/Section.spec';
+
 export { SeparatorSpec } from './components/Separator.spec';
 export type { SeparatorProps } from './components/Separator.spec';
 

@@ -12,11 +12,23 @@ xstudio/
 │   └── builder/          # 메인 빌더 앱
 │       └── src/
 │           ├── builder/  # Builder UI (에디터)
+│           │   ├── panels/ai/           # AI 어시스턴트 패널
+│           │   │   ├── hooks/useAgentLoop.ts  # Agent Loop React hook
+│           │   │   └── components/      # ToolCallMessage, ToolResultMessage, AgentControls
+│           │   └── stores/
+│           │       ├── conversation.ts  # 대화 + Agent 상태 (Zustand)
+│           │       └── aiVisualFeedback.ts  # G.3 시각 피드백
 │           ├── preview/  # Preview (iframe 내부)
-│           └── services/ # Supabase 서비스
+│           └── services/ # Supabase, AI 서비스
+│               └── ai/
+│                   ├── GroqAgentService.ts  # Tool Calling + Agent Loop
+│                   ├── tools/              # 7개 도구 (CRUD, search, batch)
+│                   ├── systemPrompt.ts     # 동적 시스템 프롬프트
+│                   └── styleAdapter.ts     # CSS → 내부 스키마 변환
 ├── packages/
 │   └── shared/           # 공유 유틸리티
 ├── docs/
+│   ├── AI.md             # AI 기능 설계 문서
 │   ├── adr/              # 아키텍처 결정 기록
 │   └── reference/        # 기술 문서
 └── .claude/
@@ -50,6 +62,7 @@ xstudio/
 | State | Zustand, TanStack Query |
 | Styling | Tailwind CSS v4, tailwind-variants |
 | Canvas | **CanvasKit/Skia WASM** (메인 렌더러) + PixiJS 8 (이벤트 전용), @pixi/layout, @pixi/react |
+| AI | Groq SDK (llama-3.3-70b-versatile), Tool Calling + Agent Loop |
 | Backend | Supabase (Auth, Database, RLS) |
 | Build | Vite, TypeScript 5, pnpm |
 
@@ -103,6 +116,7 @@ pnpm storybook
 
 ## 참조 문서
 
+- [AI Feature Design](docs/AI.md)
 - [CSS Architecture](docs/reference/components/CSS_ARCHITECTURE.md)
 - [Skill Rules](.claude/skills/xstudio-patterns/SKILL.md)
 - [ADR: State Management](docs/adr/001-state-management.md)

@@ -501,10 +501,11 @@ export const PixiToggleButtonGroup = memo(function PixiToggleButtonGroup({
 
   // 🚀 Card 패턴: groupLayout으로 Yoga가 자식 크기에 맞게 높이 자동 계산
   // minHeight 제거: 실제 자식 ToggleButton의 높이를 Yoga가 읽어서 사용
+  // vertical: alignItems: 'stretch'로 자식 버튼들이 같은 너비를 가짐
   const groupLayout = useMemo(() => ({
     display: 'flex' as const,
     flexDirection: isHorizontal ? 'row' as const : 'column' as const,
-    alignItems: 'center' as const,
+    alignItems: isHorizontal ? 'center' as const : 'stretch' as const,
     gap,
     position: 'relative' as const,
   }), [isHorizontal, gap]);
@@ -529,11 +530,22 @@ export const PixiToggleButtonGroup = memo(function PixiToggleButtonGroup({
         onPointerDown={handleGroupClick}
       />
       {/* 자식 ToggleButton 렌더링 - 부모의 size 상속 */}
-      {hasChildren && renderChildElement && childElements.map((childEl) => {
+      {hasChildren && renderChildElement && childElements.map((childEl, index) => {
         // 자식이 명시적으로 size를 설정하지 않았으면 부모의 size 상속
         const childProps = childEl.props as Record<string, unknown> | undefined;
         const childSize = childProps?.size;
         const inheritedSize = (childSize === undefined || childSize === null || childSize === '') ? size : childSize;
+
+        // 🚀 CSS 규칙: 첫 번째 버튼 제외하고 margin-inline-start: -1px
+        // 버튼 border가 겹쳐 보이도록 하기 위함
+        const childStyle = (childEl.props?.style || {}) as Record<string, unknown>;
+        const marginStyle = index > 0
+          ? (isHorizontal ? { marginLeft: -1 } : { marginTop: -1 })
+          : {};
+
+        // 🚀 CSS 규칙: vertical orientation일 때 자식 버튼들은 같은 너비 (가장 넓은 버튼 기준)
+        // Yoga flex column + alignItems: 'stretch'로 처리됨
+
         // 🚀 props 전체를 새 객체로 생성하여 memo 비교에서 변경 감지
         const modifiedChild: Element = {
           ...childEl,
@@ -542,6 +554,10 @@ export const PixiToggleButtonGroup = memo(function PixiToggleButtonGroup({
             size: inheritedSize,
             // 🚀 _parentSize를 추가하여 부모 size 변경 시 props 참조 변경 보장
             _parentSize: size,
+            style: {
+              ...childStyle,
+              ...marginStyle,
+            },
           },
         };
         return renderChildElement(modifiedChild);

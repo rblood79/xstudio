@@ -10,41 +10,64 @@
 
 ## 1. 현재 상태 분석
 
-### 1.1 기존 AI 파일 구조
+### 1.1 AI 파일 구조
+
+> **Phase A1~A4 구현 완료** (2026-02-06)
 
 ```
 apps/builder/src/
 ├── types/integrations/
-│   ├── ai.types.ts              # AIProvider, GroqConfig, AIResponse 타입
-│   └── chat.types.ts            # ChatMessage, ComponentIntent, BuilderContext 타입
+│   ├── ai.types.ts              # ✅ AgentEvent, ToolCall, ToolExecutor, AIAgentProvider 타입
+│   └── chat.types.ts            # ✅ tool role, ToolCallInfo, ConversationState 확장
 ├── types/theme/
 │   └── generation.types.ts      # 테마 생성 타입
 ├── services/ai/
-│   ├── GroqService.ts           # Groq API 통합 (chat, chatStream, parseIntent)
-│   └── IntentParser.ts          # Rule-based fallback 파서
+│   ├── GroqAgentService.ts      # ✅ Tool Calling + Agent Loop 핵심 서비스
+│   ├── GroqService.ts           # ⚠️ deprecated — IntentParser fallback 전용
+│   ├── IntentParser.ts          # 유지 (최후 fallback)
+│   ├── systemPrompt.ts          # ✅ 동적 시스템 프롬프트 빌더
+│   ├── styleAdapter.ts          # ✅ CSS-like → 내부 스키마 변환 레이어
+│   └── tools/                   # ✅ 도구 구현 디렉토리
+│       ├── index.ts             # 도구 레지스트리 (7개 도구)
+│       ├── definitions.ts       # 도구 JSON Schema 정의
+│       ├── createElement.ts     # create_element (G.3 flash 연동)
+│       ├── updateElement.ts     # update_element (G.3 flash 연동)
+│       ├── deleteElement.ts     # delete_element (body 보호)
+│       ├── getEditorState.ts    # get_editor_state (트리 구조 변환)
+│       ├── getSelection.ts      # get_selection (선택 요소 상세)
+│       ├── searchElements.ts    # search_elements (tag/prop/style 필터)
+│       └── batchDesign.ts       # batch_design (일괄 create/update/delete)
 ├── services/theme/
 │   └── ThemeGenerationService.ts # AI 테마 생성
 ├── builder/panels/ai/
-│   ├── AIPanel.tsx              # AI 패널 UI (ChatMessage, ChatInput, ChatContainer)
-│   └── AIPanel.css
+│   ├── AIPanel.tsx              # ✅ useAgentLoop 기반, Tool 피드백 UI
+│   ├── AIPanel.css
+│   ├── components/              # ✅ 패널 하위 컴포넌트
+│   │   ├── ToolCallMessage.tsx  # 도구 호출 상태 표시 (아이콘+라벨+스피너)
+│   │   ├── ToolResultMessage.tsx # 도구 실행 결과 표시
+│   │   └── AgentControls.tsx    # 중단 버튼 + 현재 turn 표시
+│   └── hooks/
+│       └── useAgentLoop.ts      # ✅ Agent Loop React hook (G.3 연동)
 ├── builder/panels/themes/components/
 │   └── AIThemeGenerator.tsx     # 테마 생성 UI
 └── builder/stores/
-    └── conversation.ts          # 대화 상태 (Zustand)
+    ├── conversation.ts          # ✅ agent 상태, tool events 확장
+    └── aiVisualFeedback.ts      # ✅ G.3 시각 피드백 (generating/flash)
 ```
 
-### 1.2 기존 아키텍처의 문제점
+### 1.2 기존 아키텍처의 문제점 및 해결 상태
 
-| 문제 | 상세 |
-|------|------|
-| **JSON 텍스트 파싱 방식** | AI가 JSON 텍스트를 출력 → `parseIntent()`로 파싱 → 형식 깨짐 빈번 |
-| **대화 히스토리 미전달** | 매 메시지가 독립적 — AI에 이전 대화 컨텍스트 없음 |
-| **컨텍스트 부족** | 최근 5개 요소의 간략 정보만 전달 |
-| **Tool Calling 미사용** | groq-sdk가 tool calling을 지원하지만 활용하지 않음 |
-| **단일 메시지 구조** | tool 실행 과정, 중간 결과 표시 불가 |
-| **에이전트 제어 없음** | 중단 버튼, 재시도 등 제어 기능 없음 |
-| **시각 피드백 없음** | AI 작업 중 캔버스 레벨 피드백 없음 |
-| **배치 작업 미지원** | 복수 요소 일괄 생성/수정 불가 |
+| 문제 | 상세 | 해결 |
+|------|------|------|
+| **JSON 텍스트 파싱 방식** | AI가 JSON 텍스트를 출력 → `parseIntent()`로 파싱 → 형식 깨짐 빈번 | ✅ Tool Calling으로 대체 (GroqAgentService) |
+| **대화 히스토리 미전달** | 매 메시지가 독립적 — AI에 이전 대화 컨텍스트 없음 | ✅ 전체 대화 히스토리 전달 (runAgentLoop) |
+| **컨텍스트 부족** | 최근 5개 요소의 간략 정보만 전달 | ✅ get_editor_state/get_selection 도구로 풍부한 컨텍스트 |
+| **Tool Calling 미사용** | groq-sdk가 tool calling을 지원하지만 활용하지 않음 | ✅ 7개 도구 정의 + tool_choice: 'auto' |
+| **단일 메시지 구조** | tool 실행 과정, 중간 결과 표시 불가 | ✅ ToolCallMessage/ToolResultMessage 컴포넌트 |
+| **에이전트 제어 없음** | 중단 버튼, 재시도 등 제어 기능 없음 | ✅ AgentControls + AbortController |
+| **시각 피드백 없음** | AI 작업 중 캔버스 레벨 피드백 없음 | ✅ G.3 완전 구현 (generating + flash) |
+| **배치 작업 미지원** | 복수 요소 일괄 생성/수정 불가 | ✅ batch_design 도구 (최대 20개 작업) |
+| **Rate Limit 미대응** | Groq 무료 tier 30 req/min 제한 시 에러 | ✅ 429 지수 백오프 (3회 재시도) |
 
 ### 1.3 기존 메시지 흐름
 
@@ -296,21 +319,21 @@ addUserMessage() → Conversation Store
 
 Pencil의 IPC Handle을 참고하여 Groq tool calling에 등록할 도구:
 
-| 도구 | 역할 | Pencil 대응 | 우선순위 |
-|------|------|------------|---------|
-| `create_element` | 요소 생성 (타입, props, styles, 부모 지정) | batch-design → handleInsert | 높음 |
-| `update_element` | 요소 속성/스타일 수정 | batch-design → handleUpdate | 높음 |
-| `delete_element` | 요소 삭제 | batch-design → handleDelete | 높음 |
-| `get_editor_state` | 현재 페이지 구조, 요소 트리 조회 | get-editor-state | 높음 |
-| `get_selection` | 선택된 요소 상세 정보 | get-selection | 높음 |
-| `search_elements` | 조건으로 요소 검색 (태그, 속성 등) | search-design-nodes | 중간 |
-| `batch_design` | 복수 요소 일괄 변경 | batch-design | 중간 |
-| `get_style_guide` | 현재 테마, 디자인 토큰 조회 | get-style-guide | 중간 |
-| `get_variables` | 디자인 변수 목록 조회 | get-variables | 낮음 |
-| `set_variables` | 디자인 변수 설정 | set-variables | 낮음 |
-| `create_component` | 요소를 Master 컴포넌트로 등록 (G.1) | — | 중간 |
-| `create_instance` | Master의 인스턴스 배치 (G.1) | — | 중간 |
-| `override_instance` | 인스턴스 속성 오버라이드 (G.1) | — | 중간 |
+| 도구 | 역할 | Pencil 대응 | 상태 |
+|------|------|------------|------|
+| `create_element` | 요소 생성 (타입, props, styles, 부모 지정) | batch-design → handleInsert | ✅ 구현 |
+| `update_element` | 요소 속성/스타일 수정 | batch-design → handleUpdate | ✅ 구현 |
+| `delete_element` | 요소 삭제 | batch-design → handleDelete | ✅ 구현 |
+| `get_editor_state` | 현재 페이지 구조, 요소 트리 조회 | get-editor-state | ✅ 구현 |
+| `get_selection` | 선택된 요소 상세 정보 | get-selection | ✅ 구현 |
+| `search_elements` | 조건으로 요소 검색 (태그, 속성 등) | search-design-nodes | ✅ 구현 |
+| `batch_design` | 복수 요소 일괄 변경 | batch-design | ✅ 구현 |
+| `get_style_guide` | 현재 테마, 디자인 토큰 조회 | get-style-guide | Phase 5+ |
+| `get_variables` | 디자인 변수 목록 조회 | get-variables | Phase 5+ |
+| `set_variables` | 디자인 변수 설정 | set-variables | Phase 5+ |
+| `create_component` | 요소를 Master 컴포넌트로 등록 (G.1) | — | Phase 5+ |
+| `create_instance` | Master의 인스턴스 배치 (G.1) | — | Phase 5+ |
+| `override_instance` | 인스턴스 속성 오버라이드 (G.1) | — | Phase 5+ |
 
 > **Phase 5+ (G.1/G.2 반영):** `create_component`, `create_instance`, `override_instance` 도구가 추가되어
 > 컴포넌트-인스턴스 시스템을 AI가 직접 조작할 수 있다.
@@ -596,7 +619,7 @@ apps/builder/src/
 │   │   └── batchDesign.ts       # batch_design 구현
 │   ├── styleAdapter.ts          # ★ 신규: CSS-like → 내부 스키마 변환 레이어
 │   ├── systemPrompt.ts          # ★ 신규: 시스템 프롬프트 관리
-│   ├── GroqService.ts           # 제거 또는 GroqAgentService로 통합
+│   ├── GroqService.ts           # ⚠️ deprecated — IntentParser fallback 전용으로 유지
 │   └── IntentParser.ts          # 유지 (최후 fallback)
 ├── builder/panels/ai/
 │   ├── AIPanel.tsx              # ★ 재작성: Tool 실행 피드백, 중단 버튼
@@ -1030,7 +1053,9 @@ Phase 5-6에서 렌더링 전환 시 요소의 스타일 모델이 확장된다:
 **해결:** §6.6의 `styleAdapter.ts` 변환 레이어가 이 문제를 흡수한다.
 AI 도구는 항상 CSS-like 형식을 출력하고, 렌더링 전환 시 변환 레이어만 업데이트하면 된다.
 
-### 7.4 낮은 영향 — AI 생성 시각 피드백
+### 7.4 ~~낮은 영향~~ → ✅ 구현 완료 — AI 생성 시각 피드백
+
+> **G.3 AI 시각 피드백 시스템이 CanvasKit 렌더 루프에 완전 통합됨** (2026-02-02)
 
 Pencil의 렌더 루프에는 `renderGeneratingEffects()`가 존재한다 (§21.2):
 
@@ -1042,8 +1067,8 @@ render()
 └── surface.flush()
 ```
 
-이 기능은 **CanvasKit 렌더러 위에서 구현해야** 한다.
-AI 전환 1단계에서는 React UI 수준 피드백만 구현하고, Phase 5-6 완료 후 캔버스 레벨 피드백을 추가한다.
+~~이 기능은 **CanvasKit 렌더러 위에서 구현해야** 한다.~~
+~~AI 전환 1단계에서는 React UI 수준 피드백만 구현하고, Phase 5-6 완료 후 캔버스 레벨 피드백을 추가한다.~~
 
 #### Phase 5+ 변경사항 (G.3 AI 시각 피드백 반영)
 
@@ -1097,7 +1122,7 @@ Pencil의 AI는 `get-screenshot`으로 뷰포트 캡처를 컨텍스트로 사�
 | **없음** | Tool calling, Agent loop, Store, UI | 독립적 | 선행 착수 가능 |
 | **중간** | AI 도구 스타일 출력 | 스키마 확장 시 변경 | `styleAdapter.ts` 변환 레이어 |
 | **낮음** | AI 컨텍스트 (스크린샷) | Export API 변경 | 텍스트 컨텍스트 우선 |
-| **낮음** | AI 생성 시각 피드백 | CanvasKit 기반 | Phase 5-6 후 추가 |
+| ~~낮음~~ **완료** | AI 생성 시각 피드백 | CanvasKit 기반 | ✅ G.3 구현 완료 |
 
 ### 7.7 결론
 
@@ -1114,34 +1139,35 @@ AI 전환을 먼저 진행해도 무방하다.
   AI 전환 (렌더링과 독립)
 ═══════════════════════════════════════════════════════════════
 
-Phase A1: 기반 구조 구축
+Phase A1: 기반 구조 구축 ✅ (2026-02-06 완료)
   └── types/integrations/ai.types.ts 재작성 (AgentEvent, ToolCall 타입)
   └── types/integrations/chat.types.ts 확장 (tool 메시지 타입)
-  └── services/ai/tools/definitions.ts (도구 JSON Schema)
-  └── services/ai/systemPrompt.ts (시스템 프롬프트)
+  └── services/ai/tools/definitions.ts (도구 JSON Schema — 7개)
+  └── services/ai/systemPrompt.ts (동적 시스템 프롬프트)
   └── services/ai/styleAdapter.ts (스타일 변환 레이어)
 
-Phase A2: Agent 서비스 구현
-  └── services/ai/GroqAgentService.ts (Tool Calling + Agent Loop)
-  └── services/ai/tools/*.ts (개별 도구 구현)
-  └── builder/stores/conversation.ts 확장
+Phase A2: Agent 서비스 구현 ✅ (2026-02-06 완료)
+  └── services/ai/GroqAgentService.ts (Tool Calling + Agent Loop + 429 지수 백오프)
+  └── services/ai/tools/*.ts (7개 도구: CRUD 5개 + search + batch)
+  └── builder/stores/conversation.ts 확장 (agent 상태, tool events)
 
-Phase A3: UI 개선
-  └── builder/panels/ai/AIPanel.tsx 재작성
+Phase A3: UI 개선 ✅ (2026-02-06 완료)
+  └── builder/panels/ai/AIPanel.tsx 재작성 (useAgentLoop hook 기반)
+  └── builder/panels/ai/hooks/useAgentLoop.ts (G.3 피드백 연동)
   └── builder/panels/ai/components/ToolCallMessage.tsx
   └── builder/panels/ai/components/ToolResultMessage.tsx
   └── builder/panels/ai/components/AgentControls.tsx
 
-Phase A4: 고급 기능
-  └── batch_design 도구 구현
-  └── search_elements 도구 구현
-  └── get_style_guide 도구 구현
-  └── Rate limit 대응 (요청 큐 + 지수 백오프)
+Phase A4: 고급 기능 ✅ (2026-02-06 완료)
+  └── batch_design 도구 구현 (최대 20개 작업, 실패 시 중단)
+  └── search_elements 도구 구현 (tag/propName/propValue/styleProp 필터)
+  └── Rate limit 대응 (429 지수 백오프, 3회 재시도)
 
 Phase A5: 캔버스 통합 (Phase 5-6 이후)
-  └── AI 생성 시각 피드백 (CanvasKit renderGeneratingEffects)
-  └── styleAdapter.ts → CanvasKit 스키마 변환 업데이트
-  └── 스크린샷 기반 컨텍스트 (멀티모달 LLM 전환 시)
+  └── ✅ AI 생성 시각 피드백 (CanvasKit renderGeneratingEffects — G.3 완료)
+  └── styleAdapter.ts → CanvasKit 스키마 변환 업데이트 (미착수)
+  └── 스크린샷 기반 컨텍스트 (멀티모달 LLM 전환 시, 미착수)
+  └── get_style_guide, get_variables, set_variables 도구 (미착수)
 
 ═══════════════════════════════════════════════════════════════
   렌더링 전환 (AI와 독립) — docs/WASM.md 참조
@@ -1157,28 +1183,30 @@ Phase 0: 벤치마크 → Phase 5: CanvasKit → Phase 6: 고급 렌더링
 
 ## 9. 재구성 대상 파일 요약
 
-| 파일 | 변경 내용 | 우선순위 |
-|------|----------|---------|
-| `types/integrations/ai.types.ts` | 전면 재작성: AgentEvent, ToolCall, ToolExecutor 타입 | A1 |
-| `types/integrations/chat.types.ts` | 확장: tool role, ToolCallInfo, ToolResultMessage | A1 |
-| `services/ai/tools/definitions.ts` | 신규: 도구 JSON Schema 정의 | A1 |
-| `services/ai/systemPrompt.ts` | 신규: 시스템 프롬프트 관리 | A1 |
-| `services/ai/styleAdapter.ts` | 신규: CSS-like → 내부 스키마 변환 | A1 |
-| `services/ai/GroqAgentService.ts` | 신규: Tool Calling + Agent Loop 핵심 | A2 |
-| `services/ai/tools/createElement.ts` | 신규: create_element 도구 | A2 |
-| `services/ai/tools/updateElement.ts` | 신규: update_element 도구 | A2 |
-| `services/ai/tools/deleteElement.ts` | 신규: delete_element 도구 | A2 |
-| `services/ai/tools/getEditorState.ts` | 신규: get_editor_state 도구 | A2 |
-| `services/ai/tools/getSelection.ts` | 신규: get_selection 도구 | A2 |
-| `services/ai/tools/searchElements.ts` | 신규: search_elements 도구 | A4 |
-| `services/ai/tools/batchDesign.ts` | 신규: batch_design 도구 | A4 |
-| `services/ai/tools/index.ts` | 신규: 도구 레지스트리 | A2 |
-| `services/ai/GroqService.ts` | 제거 (GroqAgentService로 대체) | A2 |
-| `services/ai/IntentParser.ts` | 유지 (최후 fallback) | - |
-| `builder/stores/conversation.ts` | 확장: agent 상태, tool events | A2 |
-| `builder/panels/ai/AIPanel.tsx` | 재작성: Tool 피드백 UI, 중단 버튼 | A3 |
-| `builder/panels/ai/AIPanel.css` | 스타일 업데이트 | A3 |
-| `builder/panels/ai/components/*.tsx` | 신규: ToolCall/Result/Controls 컴포넌트 | A3 |
+| 파일 | 변경 내용 | Phase | 상태 |
+|------|----------|-------|------|
+| `types/integrations/ai.types.ts` | 확장: AgentEvent, ToolCall, ToolExecutor, AIAgentProvider 타입 | A1 | ✅ |
+| `types/integrations/chat.types.ts` | 확장: tool role, ToolCallInfo, ConversationState agent 필드 | A1 | ✅ |
+| `services/ai/tools/definitions.ts` | 신규: 7개 도구 JSON Schema 정의 | A1 | ✅ |
+| `services/ai/systemPrompt.ts` | 신규: `buildSystemPrompt(context)` 동적 프롬프트 | A1 | ✅ |
+| `services/ai/styleAdapter.ts` | 신규: CSS-like → 내부 스키마 변환 (adaptStyles, adaptPropsForElement) | A1 | ✅ |
+| `services/ai/GroqAgentService.ts` | 신규: Tool Calling + Agent Loop + 429 지수 백오프 | A2 | ✅ |
+| `services/ai/tools/createElement.ts` | 신규: create_element 도구 (G.3 flash 연동) | A2 | ✅ |
+| `services/ai/tools/updateElement.ts` | 신규: update_element 도구 (G.3 flash 연동) | A2 | ✅ |
+| `services/ai/tools/deleteElement.ts` | 신규: delete_element 도구 (body 보호) | A2 | ✅ |
+| `services/ai/tools/getEditorState.ts` | 신규: get_editor_state 도구 (트리 구조, childrenMap) | A2 | ✅ |
+| `services/ai/tools/getSelection.ts` | 신규: get_selection 도구 (elementsMap) | A2 | ✅ |
+| `services/ai/tools/index.ts` | 신규: 도구 레지스트리 (7개 도구) | A2 | ✅ |
+| `services/ai/tools/searchElements.ts` | 신규: search_elements 도구 (tag/prop/style 필터) | A4 | ✅ |
+| `services/ai/tools/batchDesign.ts` | 신규: batch_design 도구 (일괄 create/update/delete) | A4 | ✅ |
+| `services/ai/GroqService.ts` | deprecated: IntentParser fallback 전용으로 유지 | A2 | ✅ |
+| `services/ai/IntentParser.ts` | 유지 (최후 fallback) | - | ✅ |
+| `builder/stores/conversation.ts` | 확장: agent 상태, tool events, appendToLastMessage | A2 | ✅ |
+| `builder/panels/ai/AIPanel.tsx` | 재작성: useAgentLoop hook 기반, Tool 피드백 UI | A3 | ✅ |
+| `builder/panels/ai/hooks/useAgentLoop.ts` | 신규: Agent Loop React hook (G.3 연동) | A3 | ✅ |
+| `builder/panels/ai/components/ToolCallMessage.tsx` | 신규: 도구 호출 상태 표시 | A3 | ✅ |
+| `builder/panels/ai/components/ToolResultMessage.tsx` | 신규: 도구 실행 결과 표시 | A3 | ✅ |
+| `builder/panels/ai/components/AgentControls.tsx` | 신규: 중단 버튼 + turn 카운터 | A3 | ✅ |
 
 ---
 

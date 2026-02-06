@@ -32,6 +32,7 @@ import { measureTextWidth as measureTextWidthCanvas } from "../layout/engines/ut
 import { useCanvasSyncStore } from "../canvasSync";
 import { parsePadding, parseBorderWidth } from "../sprites/paddingUtils";
 import { useStore } from "../../../stores";
+import { useShallow } from "zustand/react/shallow";
 
 // ============================================
 // Constants
@@ -259,15 +260,20 @@ function getToggleButtonLayout(
 
 /**
  * 토글 버튼 배경 Graphics 생성
+ *
+ * @param borderRadius - 단일 값 또는 [tl, tr, br, bl] 배열
  */
 function createToggleButtonGraphics(
   width: number,
   height: number,
   backgroundColor: number,
   borderColor: number,
-  borderRadius: number
+  borderRadius: number | [number, number, number, number]
 ): PixiGraphicsClass {
   const graphics = new PixiGraphicsClass();
+
+  // 단일 값인 경우 border.radius로 사용, 배열인 경우 borderRadius로 사용
+  const uniformRadius = Array.isArray(borderRadius) ? Math.max(...borderRadius) : borderRadius;
 
   drawBox(graphics, {
     width,
@@ -280,7 +286,7 @@ function createToggleButtonGraphics(
       color: borderColor,
       alpha: 1,
       style: "solid",
-      radius: borderRadius,
+      radius: uniformRadius,
     },
   });
 
@@ -345,6 +351,36 @@ export const PixiToggleButton = memo(function PixiToggleButton({
     return state.elementsMap.get(element.parent_id) ?? null;
   });
 
+  // 🚀 부모 ToggleButtonGroup의 size 구독
+  // LayoutContainer memo 비교 문제를 우회하여 부모 size 변경 시 리렌더링 보장
+  const parentSize = useStore((state) => {
+    if (!element.parent_id) return undefined;
+    const parent = state.elementsMap.get(element.parent_id);
+    if (!parent || parent.tag !== 'ToggleButtonGroup') return undefined;
+    return (parent.props as Record<string, unknown>)?.size as string | undefined;
+  });
+
+  // 🚀 부모 ToggleButtonGroup의 orientation 및 그룹 내 위치 구독
+  // CSS에서는 그룹 내 버튼들이 위치에 따라 다른 borderRadius를 가짐
+  // useShallow로 shallow comparison 적용하여 무한 루프 방지
+  const groupPositionInfo = useStore(
+    useShallow((state) => {
+      if (!element.parent_id) return null;
+      const parent = state.elementsMap.get(element.parent_id);
+      if (!parent || parent.tag !== 'ToggleButtonGroup') return null;
+
+      const orientation = ((parent.props as Record<string, unknown>)?.orientation as string) || 'horizontal';
+      // childrenMap은 Element[] 반환 - ID로 찾아야 함
+      const siblings = state.childrenMap.get(parent.id) || [];
+      const index = siblings.findIndex(s => s.id === element.id);
+      const isFirst = index === 0;
+      const isLast = index === siblings.length - 1;
+      const isOnly = siblings.length === 1;
+
+      return { orientation, isFirst, isLast, isOnly };
+    })
+  );
+
   // 부모의 content area 계산 (부모 너비 - padding - border)
   // CSS box model: 자식의 % 크기는 부모의 content area 기준
   const parentContentArea = useMemo(() => {
@@ -391,10 +427,20 @@ export const PixiToggleButton = memo(function PixiToggleButton({
     return String(props?.children || props?.text || props?.label || "Toggle");
   }, [props?.children, props?.text, props?.label]);
 
+  // 🚀 size 우선순위: 부모 ToggleButtonGroup size > props.size > 기본값 'sm'
+  // ToggleButtonGroup 안의 버튼은 부모의 size를 따라야 함 (CSS 동작과 일치)
+  const effectiveSize = parentSize || props?.size || 'sm';
+
+  // 🚀 effectiveProps: 부모에서 상속받은 size를 반영
+  const effectiveProps = useMemo(() => ({
+    ...(props || {}),
+    size: effectiveSize,
+  }), [props, effectiveSize]);
+
   // 레이아웃 스타일
   const layout = useMemo(() => {
-    return getToggleButtonLayout(style, props || {}, buttonText, unselectedColors, selectedColors, parentContentArea);
-  }, [style, props, buttonText, unselectedColors, selectedColors, parentContentArea]);
+    return getToggleButtonLayout(style, effectiveProps, buttonText, unselectedColors, selectedColors, parentContentArea);
+  }, [style, effectiveProps, buttonText, unselectedColors, selectedColors, parentContentArea]);
 
   // Container ref
   const containerRef = useRef<PixiContainer | null>(null);
@@ -416,6 +462,44 @@ export const PixiToggleButton = memo(function PixiToggleButton({
       container.removeChild(disabledOverlayRef.current);
       disabledOverlayRef.current.destroy();
       disabledOverlayRef.current = null;
+    }
+
+    // 🚀 그룹 내 위치에 따른 borderRadius 계산
+    // CSS 규칙: 그룹 내 버튼은 외곽 모서리만 radius 적용
+    let effectiveBorderRadius: number | [number, number, number, number] = layout.borderRadius;
+
+    if (groupPositionInfo) {
+      const { orientation, isFirst, isLast, isOnly } = groupPositionInfo;
+      const r = layout.borderRadius;
+
+      if (isOnly) {
+        // 단일 버튼: 모든 모서리에 radius
+        effectiveBorderRadius = r;
+      } else if (orientation === 'horizontal') {
+        // 가로 배치
+        if (isFirst) {
+          // 첫 번째: 왼쪽만 [tl, 0, 0, bl]
+          effectiveBorderRadius = [r, 0, 0, r];
+        } else if (isLast) {
+          // 마지막: 오른쪽만 [0, tr, br, 0]
+          effectiveBorderRadius = [0, r, r, 0];
+        } else {
+          // 중간: 모두 0
+          effectiveBorderRadius = [0, 0, 0, 0];
+        }
+      } else {
+        // 세로 배치 (vertical)
+        if (isFirst) {
+          // 첫 번째: 위쪽만 [tl, tr, 0, 0]
+          effectiveBorderRadius = [r, r, 0, 0];
+        } else if (isLast) {
+          // 마지막: 아래쪽만 [0, 0, br, bl]
+          effectiveBorderRadius = [0, 0, r, r];
+        } else {
+          // 중간: 모두 0
+          effectiveBorderRadius = [0, 0, 0, 0];
+        }
+      }
     }
 
     // 현재 상태에 따른 색상 선택
@@ -441,7 +525,7 @@ export const PixiToggleButton = memo(function PixiToggleButton({
       layout.height,
       bgColor,
       borderCol,
-      layout.borderRadius
+      effectiveBorderRadius
     );
 
     const hoverView = createToggleButtonGraphics(
@@ -449,7 +533,7 @@ export const PixiToggleButton = memo(function PixiToggleButton({
       layout.height,
       hoverBgColor,
       borderCol,
-      layout.borderRadius
+      effectiveBorderRadius
     );
 
     const pressedView = createToggleButtonGraphics(
@@ -457,7 +541,7 @@ export const PixiToggleButton = memo(function PixiToggleButton({
       layout.height,
       pressedBgColor,
       borderCol,
-      layout.borderRadius
+      effectiveBorderRadius
     );
 
     // TextStyle 및 Text 객체 생성
@@ -496,11 +580,16 @@ export const PixiToggleButton = memo(function PixiToggleButton({
     buttonRef.current = button;
 
     // 비활성화 오버레이 추가
+    // effectiveBorderRadius가 배열인 경우 최대값 사용
+    const overlayRadius = Array.isArray(effectiveBorderRadius)
+      ? Math.max(...effectiveBorderRadius)
+      : effectiveBorderRadius;
+
     if (layout.isDisabled) {
       const disabledOverlay = createDisabledOverlay(
         layout.width,
         layout.height,
-        layout.borderRadius
+        overlayRadius
       );
       container.addChild(disabledOverlay);
       disabledOverlayRef.current = disabledOverlay;
@@ -565,6 +654,7 @@ export const PixiToggleButton = memo(function PixiToggleButton({
     layout.isToggleSelected,
     layout.isDisabled,
     buttonText,
+    groupPositionInfo,
   ]);
 
   // 투명 히트 영역
