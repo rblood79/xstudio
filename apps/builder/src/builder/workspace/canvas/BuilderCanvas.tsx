@@ -710,24 +710,107 @@ const ElementsLayer = memo(function ElementsLayer({
         const layout = layoutMap.get(child.id);
         if (!layout) return null;
 
-        return (
-          <LayoutContainer
-            key={`custom-${child.id}`}
-            elementId={child.id}
-            layout={{
-              position: 'absolute',
+        // 🚀 Phase 2: CONTAINER_TAGS 처리 (정상 경로와 동일한 패턴)
+        // Container 타입은 children을 내부에 렌더링
+        const isContainerType = CONTAINER_TAGS.has(child.tag);
+        const childElements = isContainerType ? (pageChildrenMap.get(child.id) ?? []) : [];
+
+        // 🚀 CONTAINER_TAGS는 height: 'auto'로 설정
+        // BlockEngine은 Card의 children을 고려하지 않고 높이를 계산하므로,
+        // Yoga가 children을 포함한 높이를 자동 계산하도록 함
+        const containerLayout = isContainerType
+          ? {
+              position: 'absolute' as const,
+              left: layout.x + paddingOffsetX,
+              top: layout.y + paddingOffsetY,
+              width: layout.width,
+              height: 'auto' as unknown as number,
+              minHeight: layout.height,
+              display: 'flex' as const,
+              flexDirection: 'column' as const,
+            }
+          : {
+              position: 'absolute' as const,
               left: layout.x + paddingOffsetX,
               top: layout.y + paddingOffsetY,
               width: layout.width,
               height: layout.height,
-            }}
+            };
+
+        return (
+          <LayoutContainer
+            key={`custom-${child.id}`}
+            elementId={child.id}
+            layout={containerLayout}
           >
             <ElementSprite
               element={child}
               onClick={onClick}
               onDoubleClick={onDoubleClick}
+              childElements={isContainerType ? childElements : undefined}
+              renderChildElement={isContainerType ? (childEl: Element) => {
+                // 1. styleToLayout으로 레이아웃 속성 추출
+                const childLayout = styleToLayout(childEl, viewport);
+                const effectiveChildLayout = SELF_PADDING_TAGS.has(childEl.tag)
+                  ? stripSelfRenderedProps(childLayout)
+                  : childLayout;
+                const childHasChildren = (pageChildrenMap.get(childEl.id)?.length ?? 0) > 0;
+
+                // 2. nested Container 타입 처리
+                const isChildContainerType = CONTAINER_TAGS.has(childEl.tag);
+                const isChildBlockElement = BLOCK_TAGS.has(childEl.tag);
+                const hasExplicitChildWidth = effectiveChildLayout.width !== undefined && effectiveChildLayout.width !== 'auto';
+                const childBlockLayout = isChildBlockElement && !hasExplicitChildWidth
+                  ? { flexBasis: '100%' as const }
+                  : {};
+
+                const childFlexShrinkDefault = effectiveChildLayout.flexShrink !== undefined ? {} : { flexShrink: 0 };
+                const childBlockLayoutDefaults = { flexBasis: 'auto' as const, flexGrow: 0 };
+                const childContainerLayout = childHasChildren && !effectiveChildLayout.flexDirection
+                  ? { position: 'relative' as const, ...childBlockLayoutDefaults, flexShrink: 0, display: 'flex' as const, flexDirection: 'column' as const, ...childBlockLayout, ...effectiveChildLayout }
+                  : { position: 'relative' as const, ...childBlockLayoutDefaults, ...childFlexShrinkDefault, ...childBlockLayout, ...effectiveChildLayout };
+
+                // 3. nested Container의 children
+                const nestedChildElements = isChildContainerType ? (pageChildrenMap.get(childEl.id) ?? []) : [];
+
+                return (
+                  <LayoutContainer key={childEl.id} elementId={childEl.id} layout={childContainerLayout}>
+                    <ElementSprite
+                      element={childEl}
+                      onClick={onClick}
+                      onDoubleClick={onDoubleClick}
+                      childElements={isChildContainerType ? nestedChildElements : undefined}
+                      renderChildElement={isChildContainerType ? (nestedEl: Element) => {
+                        // 재귀적으로 nested children 렌더링 (3단계)
+                        const nestedLayout = styleToLayout(nestedEl, viewport);
+                        const effectiveNestedLayout = SELF_PADDING_TAGS.has(nestedEl.tag)
+                          ? stripSelfRenderedProps(nestedLayout)
+                          : nestedLayout;
+                        const nestedHasChildren = (pageChildrenMap.get(nestedEl.id)?.length ?? 0) > 0;
+                        const nestedFlexShrinkDefault = effectiveNestedLayout.flexShrink !== undefined ? {} : { flexShrink: 0 };
+                        const nestedBlockLayoutDefaults = { flexBasis: 'auto' as const, flexGrow: 0 };
+                        const nestedContainerLayout = nestedHasChildren && !effectiveNestedLayout.flexDirection
+                          ? { position: 'relative' as const, ...nestedBlockLayoutDefaults, flexShrink: 0, display: 'flex' as const, flexDirection: 'column' as const, ...effectiveNestedLayout }
+                          : { position: 'relative' as const, ...nestedBlockLayoutDefaults, ...nestedFlexShrinkDefault, ...effectiveNestedLayout };
+                        return (
+                          <LayoutContainer key={nestedEl.id} elementId={nestedEl.id} layout={nestedContainerLayout}>
+                            <ElementSprite
+                              element={nestedEl}
+                              onClick={onClick}
+                              onDoubleClick={onDoubleClick}
+                            />
+                            {renderTreeFn(nestedEl.id)}
+                          </LayoutContainer>
+                        );
+                      } : undefined}
+                    />
+                    {!isChildContainerType && renderTreeFn(childEl.id)}
+                  </LayoutContainer>
+                );
+              } : undefined}
             />
-            {renderTreeFn(child.id)}
+            {/* Container 타입이 아닌 경우에만 children을 형제로 렌더링 */}
+            {!isContainerType && renderTreeFn(child.id)}
           </LayoutContainer>
         );
       });

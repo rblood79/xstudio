@@ -914,6 +914,9 @@ export function createDefaultCardProps(): CardElementProps {
     orientation: "vertical",
     title: "Title",
     description: "Description",
+    style: {
+      display: 'block',
+    },
   };
 }
 
@@ -990,6 +993,14 @@ export function createDefaultDivProps(): DivElementProps {
   return {};
 }
 
+export function createDefaultBodyProps(): DivElementProps {
+  return {
+    style: {
+      display: 'block',
+    },
+  };
+}
+
 export function createDefaultSectionProps(): SectionElementProps {
   return {};
 }
@@ -1049,6 +1060,7 @@ export function getDefaultProps(tag: string): ComponentElementProps {
     Section: createDefaultSectionProps,
     Nav: createDefaultNavProps,
     Slot: createDefaultSlotProps,
+    body: createDefaultBodyProps,
   };
 
   const createProps = defaultPropsMap[tag];

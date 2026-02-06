@@ -18,6 +18,7 @@ import type {
   LayoutsStoreActions,
 } from "../../../types/builder/layout.types";
 import type { Element, Page } from "../../../types/builder/unified.types";
+import { getDefaultProps } from "../../../types/builder/unified.types";
 import { useStore } from "../elements";
 
 // Type aliases for set/get
@@ -99,7 +100,7 @@ export const createCreateLayoutAction =
       const bodyElement: Element = {
         id: crypto.randomUUID(),
         tag: "body",
-        props: {} as Element["props"],
+        props: getDefaultProps("body") as Element["props"],
         parent_id: null,
         page_id: null, // Layout 요소는 page_id 없음
         layout_id: newLayout.id, // Layout ID 설정

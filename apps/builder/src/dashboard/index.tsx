@@ -8,6 +8,7 @@ import {
 } from "../services/api";
 import { getDB } from "../lib/db";
 import { ElementProps } from "../types/integrations/supabase.types";
+import { getDefaultProps } from "../types/builder/unified.types";
 import { ElementUtils } from "../utils/element/elementUtils";
 import { Button, TextField, Input } from "react-aria-components";
 import { useAsyncQuery } from "../builder/hooks/useAsyncQuery";
@@ -154,7 +155,7 @@ function Dashboard() {
       const bodyElement = {
         id: ElementUtils.generateId(),
         tag: "body",
-        props: {} as ElementProps,
+        props: getDefaultProps("body") as ElementProps,
         parent_id: null,
         page_id: homePageId,
         order_num: 0,

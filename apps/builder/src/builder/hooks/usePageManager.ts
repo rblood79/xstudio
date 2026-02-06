@@ -2,7 +2,7 @@ import { useState, useRef, useCallback } from 'react';
 import { useListData } from 'react-stately';
 import { Element } from '../../types/core/store.types';
 import { type Page as ApiPage } from '../../services/api/PagesApiService';
-import { type Page } from '../../types/builder/unified.types';
+import { type Page, getDefaultProps } from '../../types/builder/unified.types';
 import { getDB } from '../../lib/db';
 import { useStore } from '../stores';
 import { useCanvasSyncStore } from '../workspace/canvas/canvasSync';
@@ -236,7 +236,7 @@ export const usePageManager = ({ requestAutoSelectAfterUpdate }: UsePageManagerP
             const bodyElement: Element = {
                 id: ElementUtils.generateId(),
                 tag: 'body',
-                props: {} as ElementProps,
+                props: getDefaultProps('body') as ElementProps,
                 parent_id: null,
                 page_id: newPage.id,
                 order_num: 0,
@@ -320,7 +320,7 @@ export const usePageManager = ({ requestAutoSelectAfterUpdate }: UsePageManagerP
             const bodyElement: Element = {
                 id: ElementUtils.generateId(),
                 tag: 'body',
-                props: {} as ElementProps,
+                props: getDefaultProps('body') as ElementProps,
                 parent_id: null,
                 page_id: newPage.id,
                 order_num: 0,
