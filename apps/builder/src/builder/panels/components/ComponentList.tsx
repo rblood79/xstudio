@@ -123,7 +123,7 @@ const overlaysComp = [
 
 const structureComp = [
   { tag: "Text", label: "text", icon: Text },
-  { tag: "section", label: "section", icon: Square },
+  { tag: "Section", label: "section", icon: Square },
   { tag: "Div", label: "division", icon: Code },
 ] as const;
 

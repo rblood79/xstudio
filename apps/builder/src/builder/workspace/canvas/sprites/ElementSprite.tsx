@@ -443,7 +443,9 @@ export const ElementSprite = memo(function ElementSprite({
       const parent = state.elementsMap.get(element.parent_id);
       if (!parent || parent.tag !== 'ToggleButtonGroup') return null;
 
-      const siblings = state.childrenMap.get(parent.id) || [];
+      const siblings = (state.childrenMap.get(parent.id) || [])
+        .slice()
+        .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
       const index = siblings.findIndex(s => s.id === element.id);
       if (index === -1) return null;
 
@@ -1161,6 +1163,16 @@ export const ElementSprite = memo(function ElementSprite({
     // 실제 레이아웃 계산은 BuilderCanvas에서 @pixi/layout으로 처리
     case 'flex':
     case 'grid':
+      if (childElements && childElements.length > 0 && renderChildElement) {
+        return (
+          <>
+            <pixiContainer layout={{ position: 'absolute' as const, left: 0, top: 0 }}>
+              <BoxSprite element={effectiveElement} isSelected={isSelected} onClick={onClick} />
+            </pixiContainer>
+            {childElements.map((childEl) => renderChildElement(childEl))}
+          </>
+        );
+      }
       return <BoxSprite element={effectiveElement} isSelected={isSelected} onClick={onClick} />;
 
     // 기본 타입
@@ -1179,6 +1191,16 @@ export const ElementSprite = memo(function ElementSprite({
 
     case 'box':
     default:
+      if (childElements && childElements.length > 0 && renderChildElement) {
+        return (
+          <>
+            <pixiContainer layout={{ position: 'absolute' as const, left: 0, top: 0 }}>
+              <BoxSprite element={effectiveElement} isSelected={isSelected} onClick={onClick} />
+            </pixiContainer>
+            {childElements.map((childEl) => renderChildElement(childEl))}
+          </>
+        );
+      }
       return <BoxSprite element={effectiveElement} isSelected={isSelected} onClick={onClick} />;
     }
   })();
@@ -1603,7 +1625,7 @@ export const ElementSprite = memo(function ElementSprite({
       children: textChildren,
       contentMinHeight,
     };
-  }, [effectiveElement, spriteType, elementStyle, elementProps, computedW, computedH]);
+  }, [effectiveElement, spriteType, elementStyle, elementProps, computedW, computedH, toggleGroupPosition]);
 
   useSkiaNode(elementId, skiaNodeData);
 

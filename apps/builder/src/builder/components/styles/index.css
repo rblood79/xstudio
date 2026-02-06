@@ -171,7 +171,8 @@
                 background: var(--primary);
                 box-shadow: var(--shadow-sm);
                 pointer-events: none;
-                transition: translate 200ms cubic-bezier(0.16, 1, 0.3, 1),
+                transition:
+                  translate 200ms cubic-bezier(0.16, 1, 0.3, 1),
                   width 200ms cubic-bezier(0.16, 1, 0.3, 1),
                   height 200ms cubic-bezier(0.16, 1, 0.3, 1);
 
@@ -488,6 +489,7 @@
     }
 
     .react-aria-ToggleButtonGroup[data-indicator="true"] {
+      width: 100%;
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -653,7 +655,8 @@
             /* React Aria 1.13.0: 3x3 Grid SelectionIndicator for 2D movement */
             .react-aria-SelectionIndicator {
               border-radius: var(--radius-sm);
-              transition: transform 200ms cubic-bezier(0.16, 1, 0.3, 1),
+              transition:
+                transform 200ms cubic-bezier(0.16, 1, 0.3, 1),
                 width 200ms cubic-bezier(0.16, 1, 0.3, 1),
                 height 200ms cubic-bezier(0.16, 1, 0.3, 1);
 

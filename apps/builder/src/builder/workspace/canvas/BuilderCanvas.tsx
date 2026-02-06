@@ -615,6 +615,8 @@ const ElementsLayer = memo(function ElementsLayer({
     'Card', 'Box', 'Panel', 'Form', 'Group', 'Dialog', 'Modal',
     'Disclosure', 'DisclosureGroup', 'Accordion',
     'ToggleButtonGroup',  // 🚀 Phase 7: flex container로 자식 ToggleButton 내부 렌더링
+    'Section',  // 시맨틱 섹션 컨테이너 (legacy PascalCase)
+    'section',  // 시맨틱 섹션 컨테이너 (component list lowercase 호환)
   ]), []);
 
   // 🚀 Phase 8: CSS display: block 요소 목록
@@ -623,6 +625,8 @@ const ElementsLayer = memo(function ElementsLayer({
   const BLOCK_TAGS = useMemo(() => new Set([
     'Card', 'Panel', 'Form', 'Disclosure', 'DisclosureGroup', 'Accordion',
     'Dialog', 'Modal', 'Box', 'Tabs', 'CheckboxGroup', 'RadioGroup',
+    'Section',
+    'section',
   ]), []);
 
   // 🚀 자체 padding/border 렌더링 컴포넌트 (leaf UI)
@@ -788,6 +792,9 @@ const ElementsLayer = memo(function ElementsLayer({
 
           // 🚀 ToggleButtonGroup: minHeight 미적용 (자식 ToggleButton 높이에 맞게 자동 계산)
           const isToggleButtonGroup = child.tag === 'ToggleButtonGroup';
+          // effectiveChildLayoutStyle에서 width/height 분리
+          // BlockEngine이 계산한 크기가 styleToLayout의 'auto' 기본값에 덮어씌워지지 않도록
+          const { width: _csw, height: _csh, ...childLayoutRest } = effectiveChildLayoutStyle;
           const containerLayout = isContainerType
             ? {
                 position: 'relative' as const,
@@ -796,9 +803,9 @@ const ElementsLayer = memo(function ElementsLayer({
                 width: layout.width,
                 height: 'auto' as unknown as number,
                 ...(isToggleButtonGroup ? {} : { minHeight: layout.height }),
-                display: (effectiveChildLayoutStyle.display || 'flex') as 'flex',
-                flexDirection: (effectiveChildLayoutStyle.flexDirection || 'column') as 'column',
-                ...effectiveChildLayoutStyle,
+                display: (childLayoutRest.display || 'flex') as 'flex',
+                flexDirection: (childLayoutRest.flexDirection || 'column') as 'column',
+                ...childLayoutRest,
               }
             : {
                 position: 'relative' as const,
@@ -1171,6 +1178,12 @@ const ElementsLayer = memo(function ElementsLayer({
     // - Yoga에서 flexWrap: 'wrap' + alignContent: 'flex-start'는 alignItems를 무시하므로
     //   body가 flex일 때 CSS 기본값을 적용해야 justify-content/align-items가 정상 동작
     const isBodyFlex = bodyLayout.display === 'flex';
+    // 🚀 bodyLayout에서 display를 분리하여 항상 'flex'로 강제
+    // body가 display: 'block'일 때 bodyLayout.display = 'block'이 spread되면
+    // @pixi/layout(Yoga)의 레이아웃 계산이 비정상 동작 → 중첩 flex 컨테이너 깨짐
+    // 커스텀 엔진(BlockEngine)이 block 레이아웃을 외부에서 처리하므로
+    // Yoga 트리의 루트 노드는 항상 flex 컨텍스트로 유지해야 함
+    const { display: _bodyDisplay, ...bodyLayoutWithoutDisplay } = bodyLayout;
     const result = {
       display: 'flex' as const,
       flexDirection: 'row' as const,
@@ -1178,7 +1191,7 @@ const ElementsLayer = memo(function ElementsLayer({
       justifyContent: 'flex-start' as const,
       alignItems: isBodyFlex ? ('stretch' as const) : ('flex-start' as const),
       alignContent: isBodyFlex ? ('stretch' as const) : ('flex-start' as const),
-      ...bodyLayout,
+      ...bodyLayoutWithoutDisplay,
       // 🚀 Phase 13: content-box 크기로 설정 (자식의 100% 기준)
       width: Math.max(0, contentWidth),
       height: Math.max(0, contentHeight),

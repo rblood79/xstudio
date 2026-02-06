@@ -1008,7 +1008,11 @@ export function createDefaultBodyProps(): DivElementProps {
 }
 
 export function createDefaultSectionProps(): SectionElementProps {
-  return {};
+  return {
+    style: {
+      display: 'block',
+    },
+  };
 }
 
 export function createDefaultNavProps(): NavElementProps {
@@ -1064,6 +1068,7 @@ export function getDefaultProps(tag: string): ComponentElementProps {
     Text: createDefaultTextProps,
     Div: createDefaultDivProps,
     Section: createDefaultSectionProps,
+    section: createDefaultSectionProps,
     Nav: createDefaultNavProps,
     Slot: createDefaultSlotProps,
     body: createDefaultBodyProps,

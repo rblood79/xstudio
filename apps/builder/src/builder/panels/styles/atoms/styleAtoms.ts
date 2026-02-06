@@ -167,6 +167,7 @@ const DEFAULT_CSS_VALUES: Record<string, { width?: string; height?: string }> = 
   // === 레이아웃 ===
   Div: { width: 'auto' },
   Section: { width: '100%' },
+  section: { width: '100%' },
   Nav: { width: '100%' },
 };
 

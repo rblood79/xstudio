@@ -299,7 +299,7 @@ function createToggleButtonGraphics(
 function createDisabledOverlay(
   width: number,
   height: number,
-  borderRadius: number
+  borderRadius: number | [number, number, number, number]
 ): PixiGraphicsClass {
   const graphics = new PixiGraphicsClass();
   drawBox(graphics, {
@@ -370,8 +370,10 @@ export const PixiToggleButton = memo(function PixiToggleButton({
       if (!parent || parent.tag !== 'ToggleButtonGroup') return null;
 
       const orientation = ((parent.props as Record<string, unknown>)?.orientation as string) || 'horizontal';
-      // childrenMap은 Element[] 반환 - ID로 찾아야 함
-      const siblings = state.childrenMap.get(parent.id) || [];
+      // childrenMap은 Element[] 반환 - order_num 기준 정렬 후 위치 판별
+      const siblings = (state.childrenMap.get(parent.id) || [])
+        .slice()
+        .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
       const index = siblings.findIndex(s => s.id === element.id);
       const isFirst = index === 0;
       const isLast = index === siblings.length - 1;
@@ -580,16 +582,11 @@ export const PixiToggleButton = memo(function PixiToggleButton({
     buttonRef.current = button;
 
     // 비활성화 오버레이 추가
-    // effectiveBorderRadius가 배열인 경우 최대값 사용
-    const overlayRadius = Array.isArray(effectiveBorderRadius)
-      ? Math.max(...effectiveBorderRadius)
-      : effectiveBorderRadius;
-
     if (layout.isDisabled) {
       const disabledOverlay = createDisabledOverlay(
         layout.width,
         layout.height,
-        overlayRadius
+        effectiveBorderRadius
       );
       container.addChild(disabledOverlay);
       disabledOverlayRef.current = disabledOverlay;

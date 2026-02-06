@@ -176,6 +176,7 @@ export const useElementCreator = (): UseElementCreatorReturn => {
             case 'Div':
                 return createDefaultDivProps();
             case 'Section':
+            case 'section':
                 return createDefaultSectionProps();
             case 'Nav':
                 return createDefaultNavProps();

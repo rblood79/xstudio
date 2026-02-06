@@ -359,6 +359,8 @@ export function styleToLayout(
     layout.display = 'flex';
     // CSS flex의 기본 flexDirection은 'row'
     layout.flexDirection = (style.flexDirection as LayoutStyle['flexDirection']) ?? 'row';
+  } else if (style.display === 'block' || style.display === 'inline-block') {
+    layout.display = 'block';
   }
 
   // Flexbox Container

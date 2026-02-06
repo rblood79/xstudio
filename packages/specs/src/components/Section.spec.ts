@@ -28,7 +28,7 @@ export interface SectionProps {
 export const SectionSpec: ComponentSpec<SectionProps> = {
   name: 'Section',
   description: 'HTML <section> 시맨틱 컨테이너 컴포넌트',
-  element: 'div',
+  element: 'section',
 
   defaultVariant: 'default',
   defaultSize: 'md',
@@ -102,6 +102,8 @@ export const SectionSpec: ComponentSpec<SectionProps> = {
   },
 
   states: {
+    hover: {},
+    pressed: {},
     disabled: {
       opacity: 0.38,
       pointerEvents: 'none',
@@ -109,8 +111,10 @@ export const SectionSpec: ComponentSpec<SectionProps> = {
   },
 
   render: {
-    shapes: (props, variant, size, _state = 'default') => {
-      const bgColor = variant.background;
+    shapes: (props, variant, size, state = 'default') => {
+      const bgColor = state === 'hover' ? variant.backgroundHover
+                    : state === 'pressed' ? variant.backgroundPressed
+                    : variant.background;
       const borderRadius = size.borderRadius;
 
       const shapes: Shape[] = [];
@@ -125,7 +129,7 @@ export const SectionSpec: ComponentSpec<SectionProps> = {
         height: 'auto',
         radius: borderRadius as unknown as number,
         fill: bgColor,
-        ...(variant.backgroundAlpha !== undefined && { alpha: variant.backgroundAlpha }),
+        ...(variant.backgroundAlpha !== undefined && { fillAlpha: variant.backgroundAlpha }),
       });
 
       // 테두리 (outlined variant)
@@ -149,10 +153,7 @@ export const SectionSpec: ComponentSpec<SectionProps> = {
         height: 'auto',
         children: [],
         layout: {
-          display: 'flex',
-          flexDirection: 'column',
-          gap: size.gap,
-          padding: size.paddingY,
+          display: 'block',
         },
       });
 

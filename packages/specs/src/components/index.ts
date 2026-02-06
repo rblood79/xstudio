@@ -42,6 +42,10 @@ export type { ToggleButtonProps } from './ToggleButton.spec';
 export { ToggleButtonGroupSpec } from './ToggleButtonGroup.spec';
 export type { ToggleButtonGroupProps } from './ToggleButtonGroup.spec';
 
+// Section
+export { SectionSpec } from './Section.spec';
+export type { SectionProps } from './Section.spec';
+
 // Tooltip
 export { TooltipSpec } from './Tooltip.spec';
 export type { TooltipProps } from './Tooltip.spec';
