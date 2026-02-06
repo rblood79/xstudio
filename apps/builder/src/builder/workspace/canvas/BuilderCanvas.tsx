@@ -810,6 +810,7 @@ const ElementsLayer = memo(function ElementsLayer({
           const childLayoutStyle = styleToLayout(child, viewport);
           const isContainerType = isContainerTagForLayout(child.tag, childLayoutStyle);
           const childElements = isContainerType ? (pageChildrenMap.get(child.id) ?? []) : [];
+          const hasChildElements = (pageChildrenMap.get(child.id)?.length ?? 0) > 0;
 
           const effectiveChildLayoutStyle = isContainerType && SELF_PADDING_TAGS.has(child.tag)
             ? stripSelfRenderedProps(childLayoutStyle)
@@ -817,6 +818,9 @@ const ElementsLayer = memo(function ElementsLayer({
 
           // 🚀 ToggleButtonGroup: minHeight 미적용 (자식 ToggleButton 높이에 맞게 자동 계산)
           const isToggleButtonGroup = child.tag === 'ToggleButtonGroup';
+          const isAutoHeightSection = child.tag === 'Section' &&
+            hasChildElements &&
+            (childLayoutStyle.height === undefined || childLayoutStyle.height === 'auto');
           // effectiveChildLayoutStyle에서 width/height 분리
           // BlockEngine이 계산한 크기가 styleToLayout의 'auto' 기본값에 덮어씌워지지 않도록
           const { width: _csw, height: _csh, ...childLayoutRest } = effectiveChildLayoutStyle;
@@ -852,7 +856,9 @@ const ElementsLayer = memo(function ElementsLayer({
                 marginTop,
                 marginLeft,
                 width: layout.width,
-                height: layout.height,
+                ...(isAutoHeightSection
+                  ? { height: 'auto' as unknown as number, minHeight: layout.height }
+                  : { height: layout.height }),
               };
 
           return (
@@ -972,14 +978,16 @@ const ElementsLayer = memo(function ElementsLayer({
         );
       });
 
+      const isSectionBlockParent = parentElement.tag === 'Section' && parentDisplay !== 'flex' && parentDisplay !== 'inline-flex';
       // 🚀 flex column 래퍼로 라인들을 감싸기
       return (
         <LayoutContainer
           key={`custom-wrapper-${parentElement.id}`}
           layout={{
-            position: 'absolute' as const,
-            left: paddingOffsetX,
-            top: paddingOffsetY,
+            position: isSectionBlockParent ? ('relative' as const) : ('absolute' as const),
+            ...(isSectionBlockParent
+              ? { marginLeft: paddingOffsetX, marginTop: paddingOffsetY, marginBottom: parentPadding.bottom }
+              : { left: paddingOffsetX, top: paddingOffsetY }),
             width: availableWidth,
             display: 'flex' as const,
             flexDirection: 'column' as const,

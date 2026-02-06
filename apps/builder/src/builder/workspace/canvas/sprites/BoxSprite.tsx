@@ -14,13 +14,14 @@
 
 import { useExtend } from '@pixi/react';
 import { PIXI_COMPONENTS } from '../pixiSetup';
-import { useCallback, useMemo, memo } from 'react';
+import { useCallback, useMemo, memo, useContext } from 'react';
 import { Graphics as PixiGraphics, TextStyle } from 'pixi.js';
 import type { Element } from '../../../../types/core/store.types';
 import { convertStyle, cssColorToHex, cssColorToAlpha, buildSkiaEffects, type CSSStyle } from './styleConverter';
 import { parsePadding, getContentBounds } from './paddingUtils';
 import { drawBox, parseBorderConfig } from '../utils';
 import { useSkiaNode } from '../skia/useSkiaNode';
+import { LayoutComputedSizeContext } from '../layoutContext';
 
 
 // ============================================
@@ -42,8 +43,27 @@ export const BoxSprite = memo(function BoxSprite({ element, onClick }: BoxSprite
   useExtend(PIXI_COMPONENTS);
   const style = element.props?.style as CSSStyle | undefined;
   const converted = useMemo(() => convertStyle(style), [style]);
+  const computedContainerSize = useContext(LayoutComputedSizeContext);
 
-  const { transform, fill, borderRadius } = converted;
+  const { fill, borderRadius } = converted;
+  const transform = useMemo(() => {
+    if (!computedContainerSize) return converted.transform;
+
+    const styleWidth = style?.width;
+    const styleHeight = style?.height;
+    const usesLayoutWidth = styleWidth === undefined || styleWidth === 'auto' ||
+      (typeof styleWidth === 'string' && styleWidth.endsWith('%'));
+    const usesLayoutHeight = styleHeight === undefined || styleHeight === 'auto' ||
+      (typeof styleHeight === 'string' && styleHeight.endsWith('%'));
+
+    if (!usesLayoutWidth && !usesLayoutHeight) return converted.transform;
+
+    return {
+      ...converted.transform,
+      width: usesLayoutWidth ? computedContainerSize.width : converted.transform.width,
+      height: usesLayoutHeight ? computedContainerSize.height : converted.transform.height,
+    };
+  }, [computedContainerSize, converted.transform, style?.height, style?.width]);
 
   // Border-Box v2: parseBorderConfig로 border 정보 추출
   const borderConfig = useMemo(() => parseBorderConfig(style), [style]);
