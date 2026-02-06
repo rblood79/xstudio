@@ -508,7 +508,12 @@ export const PixiToggleButtonGroup = memo(function PixiToggleButtonGroup({
     alignItems: isHorizontal ? 'center' as const : 'stretch' as const,
     gap,
     position: 'relative' as const,
-  }), [isHorizontal, gap]);
+    // 🚀 Style Panel에서 설정한 padding 적용
+    paddingTop: stylePadding.top,
+    paddingRight: stylePadding.right,
+    paddingBottom: stylePadding.bottom,
+    paddingLeft: stylePadding.left,
+  }), [isHorizontal, gap, stylePadding]);
 
   // 🚀 배경 레이아웃: absolute로 전체 영역 덮기
   const backgroundLayout = useMemo(() => ({
