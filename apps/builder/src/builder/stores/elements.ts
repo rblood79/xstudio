@@ -31,6 +31,7 @@ import { createInstance as createInstanceAction } from "./utils/instanceActions"
 import { elementsApi } from "../../services/api";
 import { longTaskMonitor } from "../../utils/longTaskMonitor";
 import { scheduleCancelableBackgroundTask } from "../utils/scheduleTask";
+import { normalizeElementTags } from "./utils/elementTagNormalizer";
 import {
   type PageElementIndex,
   type ComponentIndex,
@@ -279,16 +280,25 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
   // setElements는 내부 상태 관리용이므로 히스토리 기록하지 않음
   // 실제 요소 변경은 addElement, updateElementProps, removeElement에서 처리
   setElements: (elements) => {
-    set({ elements });
+    const { elements: normalizedElements } = normalizeElementTags(elements);
+    set({ elements: normalizedElements });
     // 인덱스 자동 재구축
     get()._rebuildIndexes();
   },
 
   // 🚀 Phase 1: Immer → 함수형 업데이트 (Low Risk)
   loadPageElements: (elements, pageId) => {
+    // 레거시 태그(section)를 canonical 태그(Section)로 정규화
+    const {
+      elements: normalizedElements,
+      updatedElements: normalizedTagElements,
+    } = normalizeElementTags(elements);
+
     // orphan 요소들을 body로 마이그레이션
-    const { elements: migratedElements, updatedElements } =
-      ElementUtils.migrateOrphanElementsToBody(elements, pageId);
+    const {
+      elements: migratedElements,
+      updatedElements: orphanMigratedElements,
+    } = ElementUtils.migrateOrphanElementsToBody(normalizedElements, pageId);
 
     // 페이지 변경 시 히스토리 초기화
     historyManager.setCurrentPage(pageId);
@@ -297,18 +307,28 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
     // 인덱스 자동 재구축
     get()._rebuildIndexes();
 
-    // 마이그레이션된 요소가 있으면 DB에도 저장 (백그라운드)
-    if (updatedElements.length > 0) {
+    // 정규화/마이그레이션으로 변경된 요소가 있으면 DB에도 저장 (백그라운드)
+    const changedElementIds = new Set<string>([
+      ...normalizedTagElements.map((el) => el.id),
+      ...orphanMigratedElements.map((el) => el.id),
+    ]);
+
+    if (changedElementIds.size > 0) {
+      const elementById = new Map(migratedElements.map((el) => [el.id, el]));
+      const elementsToPersist = Array.from(changedElementIds)
+        .map((id) => elementById.get(id))
+        .filter((el): el is Element => Boolean(el));
+
       Promise.all(
-        updatedElements.map((el) => elementsApi.updateElement(el.id, el))
+        elementsToPersist.map((el) => elementsApi.updateElement(el.id, el))
       )
         .then(() => {
           console.log(
-            `✅ ${updatedElements.length}개 orphan 요소 DB 업데이트 완료`
+            `✅ ${elementsToPersist.length}개 요소 정규화/마이그레이션 DB 업데이트 완료`
           );
         })
         .catch((error) => {
-          console.warn("⚠️ Orphan 요소 DB 업데이트 실패:", error);
+          console.warn("⚠️ 요소 정규화/마이그레이션 DB 업데이트 실패:", error);
         });
     }
 

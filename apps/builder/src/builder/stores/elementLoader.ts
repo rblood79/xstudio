@@ -20,6 +20,7 @@ import type { Element } from '../../types/core/store.types';
 import { getDB } from '../../lib/db';
 import { supabase } from '../../env/supabase.client';
 import { pageCache, type LRUCacheStats } from '../utils/LRUPageCache';
+import { normalizeElementTags } from './utils/elementTagNormalizer';
 
 // ============================================
 // Types
@@ -231,13 +232,21 @@ export function createElementLoaderSlice(
     try {
       // 1. IndexedDB에서 먼저 시도
       let elements = await loadFromIndexedDB(pageId);
+      let loadedFromSupabase = false;
 
       // 2. IndexedDB에 없으면 Supabase에서 로드
       if (!elements || elements.length === 0) {
         elements = await loadFromSupabase(pageId);
+        loadedFromSupabase = true;
+      }
 
-        // IndexedDB에 캐싱
-        if (elements.length > 0) {
+      // 레거시 태그(section)를 canonical 태그(Section)로 정규화
+      if (elements.length > 0) {
+        const { elements: normalizedElements } = normalizeElementTags(elements);
+        elements = normalizedElements;
+
+        // Supabase에서 불러온 경우에는 정규화된 결과를 IndexedDB에 캐싱
+        if (loadedFromSupabase) {
           cacheToIndexedDB(elements);
         }
       }

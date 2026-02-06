@@ -17,6 +17,7 @@ import type { SelectedElement, DataBinding, EventHandler } from "../inspector/ty
 import type { ElementEvent } from "../../types/events/events.types";
 import { saveService } from "../../services/save";
 import { historyManager } from "./history";
+import { normalizeElementTags } from "./utils/elementTagNormalizer";
 
 // ============================================
 // Types
@@ -99,7 +100,21 @@ export const createInspectorActionsSlice: StateCreator<
     prevElementOverride?: Element
   ) => {
     const { elementsMap, elements, selectedElementId, currentPageId } = get();
-    const element = elementsMap.get(elementId);
+    const {
+      elements: normalizedElements,
+      updatedElements: normalizedTagElements,
+    } = normalizeElementTags(elements);
+
+    let baseElementsMap = elementsMap;
+    if (normalizedTagElements.length > 0) {
+      const normalizedMap = new Map(elementsMap);
+      normalizedTagElements.forEach((el) => {
+        normalizedMap.set(el.id, el);
+      });
+      baseElementsMap = normalizedMap;
+    }
+
+    const element = baseElementsMap.get(elementId);
     if (!element) return;
 
     // 선택된 요소의 props를 직접 업데이트하므로,
@@ -139,14 +154,14 @@ export const createInspectorActionsSlice: StateCreator<
     }
 
     // 🚀 O(1) Map 업데이트 (새 Map 생성으로 불변성 유지)
-    const newElementsMap = new Map(elementsMap);
+    const newElementsMap = new Map(baseElementsMap);
     newElementsMap.set(elementId, updatedElement);
 
     // 🚀 elements 배열도 업데이트 (findIndex로 위치 찾아서 직접 교체)
-    const elementIndex = elements.findIndex((el) => el.id === elementId);
-    let newElements = elements;
+    const elementIndex = normalizedElements.findIndex((el) => el.id === elementId);
+    let newElements = normalizedElements;
     if (elementIndex !== -1) {
-      newElements = [...elements];
+      newElements = [...normalizedElements];
       newElements[elementIndex] = updatedElement;
     }
 

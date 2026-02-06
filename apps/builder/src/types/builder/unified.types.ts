@@ -1068,7 +1068,6 @@ export function getDefaultProps(tag: string): ComponentElementProps {
     Text: createDefaultTextProps,
     Div: createDefaultDivProps,
     Section: createDefaultSectionProps,
-    section: createDefaultSectionProps,
     Nav: createDefaultNavProps,
     Slot: createDefaultSlotProps,
     body: createDefaultBodyProps,

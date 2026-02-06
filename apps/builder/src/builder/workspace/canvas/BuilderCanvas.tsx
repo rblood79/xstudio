@@ -615,8 +615,6 @@ const ElementsLayer = memo(function ElementsLayer({
     'Card', 'Box', 'Panel', 'Form', 'Group', 'Dialog', 'Modal',
     'Disclosure', 'DisclosureGroup', 'Accordion',
     'ToggleButtonGroup',  // 🚀 Phase 7: flex container로 자식 ToggleButton 내부 렌더링
-    'Section',  // 시맨틱 섹션 컨테이너 (legacy PascalCase)
-    'section',  // 시맨틱 섹션 컨테이너 (component list lowercase 호환)
   ]), []);
 
   // 🚀 Phase 8: CSS display: block 요소 목록
@@ -626,7 +624,6 @@ const ElementsLayer = memo(function ElementsLayer({
     'Card', 'Panel', 'Form', 'Disclosure', 'DisclosureGroup', 'Accordion',
     'Dialog', 'Modal', 'Box', 'Tabs', 'CheckboxGroup', 'RadioGroup',
     'Section',
-    'section',
   ]), []);
 
   // 🚀 자체 padding/border 렌더링 컴포넌트 (leaf UI)
@@ -666,6 +663,33 @@ const ElementsLayer = memo(function ElementsLayer({
       return rest;
     }
 
+    function isImplicitFlexColumnLayout(layout: LayoutStyle): boolean {
+      return !layout.display && !layout.flexDirection;
+    }
+
+    function shouldUseImplicitFlexColumn(tag: string, layout: LayoutStyle): boolean {
+      if (!isImplicitFlexColumnLayout(layout)) {
+        return false;
+      }
+      // Section은 CSS 기본값(display: block)을 유지한다.
+      return tag !== 'Section';
+    }
+
+    function getImplicitSectionBlockPatch(tag: string, layout: LayoutStyle): Partial<LayoutStyle> {
+      if (tag !== 'Section' || !isImplicitFlexColumnLayout(layout)) {
+        return {};
+      }
+      return { display: 'block' as const };
+    }
+
+    function isContainerTagForLayout(tag: string, layout: LayoutStyle): boolean {
+      if (tag === 'Section') {
+        // Section은 명시적으로 flex 컨테이너일 때만 내부 children 렌더링 경로 사용
+        return layout.display === 'flex' || layout.flexDirection !== undefined;
+      }
+      return CONTAINER_TAGS.has(tag);
+    }
+
     // 🚀 Phase 4: 커스텀 엔진으로 렌더링 (display: grid/block)
     // Grid/Block은 @pixi/layout 대신 커스텀 엔진으로 레이아웃 계산 후 absolute 배치
     function renderWithCustomEngine(
@@ -674,7 +698,8 @@ const ElementsLayer = memo(function ElementsLayer({
       renderTreeFn: (parentId: string | null) => React.ReactNode
     ): React.ReactNode {
       const parentStyle = parentElement.props?.style as Record<string, unknown> | undefined;
-      const parentDisplay = parentStyle?.display as string | undefined;
+      const rawParentDisplay = parentStyle?.display as string | undefined;
+      const parentDisplay = rawParentDisplay ?? (parentElement.tag === 'Section' ? 'block' : undefined);
       const engine = selectEngine(parentDisplay);
 
       // 🚀 Body 이중 패딩 방지
@@ -782,10 +807,10 @@ const ElementsLayer = memo(function ElementsLayer({
           const marginTop = layout.y - line.y;
 
           // 🚀 CONTAINER_TAGS 처리
-          const isContainerType = CONTAINER_TAGS.has(child.tag);
+          const childLayoutStyle = styleToLayout(child, viewport);
+          const isContainerType = isContainerTagForLayout(child.tag, childLayoutStyle);
           const childElements = isContainerType ? (pageChildrenMap.get(child.id) ?? []) : [];
 
-          const childLayoutStyle = isContainerType ? styleToLayout(child, viewport) : {};
           const effectiveChildLayoutStyle = isContainerType && SELF_PADDING_TAGS.has(child.tag)
             ? stripSelfRenderedProps(childLayoutStyle)
             : childLayoutStyle;
@@ -795,17 +820,32 @@ const ElementsLayer = memo(function ElementsLayer({
           // effectiveChildLayoutStyle에서 width/height 분리
           // BlockEngine이 계산한 크기가 styleToLayout의 'auto' 기본값에 덮어씌워지지 않도록
           const { width: _csw, height: _csh, ...childLayoutRest } = effectiveChildLayoutStyle;
+          const childNeedsImplicitFlexLayout = isContainerType && shouldUseImplicitFlexColumn(child.tag, childLayoutRest);
+          const childImplicitSectionBlockPatch = isContainerType
+            ? getImplicitSectionBlockPatch(child.tag, childLayoutRest)
+            : {};
           const containerLayout = isContainerType
-            ? {
+            ? childNeedsImplicitFlexLayout
+              ? {
                 position: 'relative' as const,
                 marginTop,
                 marginLeft,
                 width: layout.width,
                 height: 'auto' as unknown as number,
                 ...(isToggleButtonGroup ? {} : { minHeight: layout.height }),
-                display: (childLayoutRest.display || 'flex') as 'flex',
-                flexDirection: (childLayoutRest.flexDirection || 'column') as 'column',
+                display: 'flex' as const,
+                flexDirection: 'column' as const,
                 ...childLayoutRest,
+              }
+              : {
+                position: 'relative' as const,
+                marginTop,
+                marginLeft,
+                width: layout.width,
+                height: 'auto' as unknown as number,
+                ...(isToggleButtonGroup ? {} : { minHeight: layout.height }),
+                ...childLayoutRest,
+                ...childImplicitSectionBlockPatch,
               }
             : {
                 position: 'relative' as const,
@@ -833,7 +873,7 @@ const ElementsLayer = memo(function ElementsLayer({
                     : childLayout;
                   const childHasChildren = (pageChildrenMap.get(childEl.id)?.length ?? 0) > 0;
 
-                  const isChildContainerType = CONTAINER_TAGS.has(childEl.tag);
+                  const isChildContainerType = isContainerTagForLayout(childEl.tag, effectiveChildLayout);
                   const isChildBlockElement = BLOCK_TAGS.has(childEl.tag);
                   const hasExplicitChildWidth = effectiveChildLayout.width !== undefined && effectiveChildLayout.width !== 'auto';
                   const childBlockLayout = isChildBlockElement && !hasExplicitChildWidth
@@ -842,9 +882,13 @@ const ElementsLayer = memo(function ElementsLayer({
 
                   const childFlexShrinkDefault = effectiveChildLayout.flexShrink !== undefined ? {} : { flexShrink: 0 };
                   const childBlockLayoutDefaults = { flexBasis: 'auto' as const, flexGrow: 0 };
-                  const childContainerLayout = childHasChildren && !effectiveChildLayout.flexDirection
+                  const childNeedsImplicitFlexLayout = childHasChildren && shouldUseImplicitFlexColumn(childEl.tag, effectiveChildLayout);
+                  const childSectionBlockPatch = !childNeedsImplicitFlexLayout
+                    ? getImplicitSectionBlockPatch(childEl.tag, effectiveChildLayout)
+                    : {};
+                  const childContainerLayout = childNeedsImplicitFlexLayout
                     ? { position: 'relative' as const, ...childBlockLayoutDefaults, flexShrink: 0, display: 'flex' as const, flexDirection: 'column' as const, ...childBlockLayout, ...effectiveChildLayout }
-                    : { position: 'relative' as const, ...childBlockLayoutDefaults, ...childFlexShrinkDefault, ...childBlockLayout, ...effectiveChildLayout };
+                    : { position: 'relative' as const, ...childBlockLayoutDefaults, ...childFlexShrinkDefault, ...childBlockLayout, ...effectiveChildLayout, ...childSectionBlockPatch };
 
                   const nestedChildElements = isChildContainerType ? (pageChildrenMap.get(childEl.id) ?? []) : [];
 
@@ -863,9 +907,13 @@ const ElementsLayer = memo(function ElementsLayer({
                           const nestedHasChildren = (pageChildrenMap.get(nestedEl.id)?.length ?? 0) > 0;
                           const nestedFlexShrinkDefault = effectiveNestedLayout.flexShrink !== undefined ? {} : { flexShrink: 0 };
                           const nestedBlockLayoutDefaults = { flexBasis: 'auto' as const, flexGrow: 0 };
-                          const nestedContainerLayout = nestedHasChildren && !effectiveNestedLayout.flexDirection
+                          const nestedNeedsImplicitFlexLayout = nestedHasChildren && shouldUseImplicitFlexColumn(nestedEl.tag, effectiveNestedLayout);
+                          const nestedSectionBlockPatch = !nestedNeedsImplicitFlexLayout
+                            ? getImplicitSectionBlockPatch(nestedEl.tag, effectiveNestedLayout)
+                            : {};
+                          const nestedContainerLayout = nestedNeedsImplicitFlexLayout
                             ? { position: 'relative' as const, ...nestedBlockLayoutDefaults, flexShrink: 0, display: 'flex' as const, flexDirection: 'column' as const, ...effectiveNestedLayout }
-                            : { position: 'relative' as const, ...nestedBlockLayoutDefaults, ...nestedFlexShrinkDefault, ...effectiveNestedLayout };
+                            : { position: 'relative' as const, ...nestedBlockLayoutDefaults, ...nestedFlexShrinkDefault, ...effectiveNestedLayout, ...nestedSectionBlockPatch };
                           return (
                             <LayoutContainer key={nestedEl.id} elementId={nestedEl.id} layout={nestedContainerLayout}>
                               <ElementSprite
@@ -950,7 +998,8 @@ const ElementsLayer = memo(function ElementsLayer({
       // 🚀 Phase 4: 부모의 display 확인하여 엔진 선택
       const parentElement = parentId ? elementById.get(parentId) : bodyElement;
       const parentStyle = parentElement?.props?.style as Record<string, unknown> | undefined;
-      const parentDisplay = parentStyle?.display as string | undefined;
+      const rawParentDisplay = parentStyle?.display as string | undefined;
+      const parentDisplay = rawParentDisplay ?? (parentElement?.tag === 'Section' ? 'block' : undefined);
 
       // 엔진 선택
       const engine = selectEngine(parentDisplay);
@@ -1044,19 +1093,22 @@ const ElementsLayer = memo(function ElementsLayer({
         // 🚀 Container 타입(Card, Panel 등)은 child element 없이도 내부 Yoga 레이아웃이
         // 올바르게 계산되도록 display: flex + flexDirection: column 보장
         // (PixiCard 등이 내부에서 flex column 레이아웃을 사용하므로 외부도 동기화)
-        const isContainerTag = CONTAINER_TAGS.has(child.tag);
-        const needsFlexLayout = (hasChildren || isContainerTag) && !effectiveLayout.display && !effectiveLayout.flexDirection;
+        const isContainerTag = isContainerTagForLayout(child.tag, effectiveLayout);
+        const needsFlexLayout = (hasChildren || isContainerTag) && shouldUseImplicitFlexColumn(child.tag, effectiveLayout);
+        const implicitSectionBlockPatch = !needsFlexLayout
+          ? getImplicitSectionBlockPatch(child.tag, effectiveLayout)
+          : {};
         // 🚀 @pixi/layout의 formatStyles는 이전 스타일과 merge하므로,
         // 부모 flexDirection 변경 시 이전 blockLayout의 flexBasis/flexGrow가 잔류.
         // 명시적 기본값으로 stale 속성을 항상 리셋.
         const blockLayoutDefaults = { flexBasis: 'auto' as const, flexGrow: 0 };
         const containerLayout = needsFlexLayout
           ? { position: 'relative' as const, ...blockLayoutDefaults, ...flexShrinkDefault, display: 'flex' as const, flexDirection: 'column' as const, ...blockLayout, ...effectiveLayout, ...blockWidthOverride }
-          : { position: 'relative' as const, ...blockLayoutDefaults, ...flexShrinkDefault, ...blockLayout, ...effectiveLayout, ...blockWidthOverride };
+          : { position: 'relative' as const, ...blockLayoutDefaults, ...flexShrinkDefault, ...blockLayout, ...effectiveLayout, ...blockWidthOverride, ...implicitSectionBlockPatch };
 
         // 🚀 Phase 10: Container 타입은 children을 ElementSprite에 전달
         // Container 컴포넌트가 children을 배경 안에 렌더링
-        const isContainerType = CONTAINER_TAGS.has(child.tag);
+        const isContainerType = isContainerTagForLayout(child.tag, effectiveLayout);
         const childElements = isContainerType ? (pageChildrenMap.get(child.id) ?? []) : [];
 
         // LayoutContainer: layout + registry 등록을 함께 처리
@@ -1077,7 +1129,7 @@ const ElementsLayer = memo(function ElementsLayer({
 
                 // 🚀 Phase 11: nested Container 타입 처리
                 // Panel 안의 Card, Card 안의 Panel 등 중첩된 Container도 children 렌더링 지원
-                const isChildContainerType = CONTAINER_TAGS.has(childEl.tag);
+                const isChildContainerType = isContainerTagForLayout(childEl.tag, effectiveChildLayout);
                 const isChildBlockElement = BLOCK_TAGS.has(childEl.tag);
                 const hasExplicitChildWidth = effectiveChildLayout.width !== undefined && effectiveChildLayout.width !== 'auto';
                 const childBlockLayout = isChildBlockElement && !hasExplicitChildWidth
@@ -1086,9 +1138,13 @@ const ElementsLayer = memo(function ElementsLayer({
 
                 const childFlexShrinkDefault = effectiveChildLayout.flexShrink !== undefined ? {} : { flexShrink: 0 };
                 const childBlockLayoutDefaults = { flexBasis: 'auto' as const, flexGrow: 0 };
-                const childContainerLayout = childHasChildren && !effectiveChildLayout.flexDirection
+                const childNeedsImplicitFlexLayout = childHasChildren && shouldUseImplicitFlexColumn(childEl.tag, effectiveChildLayout);
+                const childSectionBlockPatch = !childNeedsImplicitFlexLayout
+                  ? getImplicitSectionBlockPatch(childEl.tag, effectiveChildLayout)
+                  : {};
+                const childContainerLayout = childNeedsImplicitFlexLayout
                   ? { position: 'relative' as const, ...childBlockLayoutDefaults, flexShrink: 0, display: 'flex' as const, flexDirection: 'column' as const, ...childBlockLayout, ...effectiveChildLayout }
-                  : { position: 'relative' as const, ...childBlockLayoutDefaults, ...childFlexShrinkDefault, ...childBlockLayout, ...effectiveChildLayout };
+                  : { position: 'relative' as const, ...childBlockLayoutDefaults, ...childFlexShrinkDefault, ...childBlockLayout, ...effectiveChildLayout, ...childSectionBlockPatch };
 
                 // nested Container의 children
                 const nestedChildElements = isChildContainerType ? (pageChildrenMap.get(childEl.id) ?? []) : [];
@@ -1109,9 +1165,13 @@ const ElementsLayer = memo(function ElementsLayer({
                         const nestedHasChildren = (pageChildrenMap.get(nestedEl.id)?.length ?? 0) > 0;
                         const nestedFlexShrinkDefault = effectiveNestedLayout.flexShrink !== undefined ? {} : { flexShrink: 0 };
                         const nestedBlockLayoutDefaults = { flexBasis: 'auto' as const, flexGrow: 0 };
-                        const nestedContainerLayout = nestedHasChildren && !effectiveNestedLayout.flexDirection
+                        const nestedNeedsImplicitFlexLayout = nestedHasChildren && shouldUseImplicitFlexColumn(nestedEl.tag, effectiveNestedLayout);
+                        const nestedSectionBlockPatch = !nestedNeedsImplicitFlexLayout
+                          ? getImplicitSectionBlockPatch(nestedEl.tag, effectiveNestedLayout)
+                          : {};
+                        const nestedContainerLayout = nestedNeedsImplicitFlexLayout
                           ? { position: 'relative' as const, ...nestedBlockLayoutDefaults, flexShrink: 0, display: 'flex' as const, flexDirection: 'column' as const, ...effectiveNestedLayout }
-                          : { position: 'relative' as const, ...nestedBlockLayoutDefaults, ...nestedFlexShrinkDefault, ...effectiveNestedLayout };
+                          : { position: 'relative' as const, ...nestedBlockLayoutDefaults, ...nestedFlexShrinkDefault, ...effectiveNestedLayout, ...nestedSectionBlockPatch };
                         return (
                           <LayoutContainer key={nestedEl.id} elementId={nestedEl.id} layout={nestedContainerLayout}>
                             <ElementSprite

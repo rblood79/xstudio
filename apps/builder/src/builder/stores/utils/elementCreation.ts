@@ -8,6 +8,7 @@ import { sanitizeElement } from "./elementSanitizer";
 import { reorderElements } from "./elementReorder";
 import type { ElementsState } from "../elements";
 import { HierarchyManager } from "../../utils/HierarchyManager";
+import { normalizeElementTagInElement } from "./elementTagNormalizer";
 
 type SetState = Parameters<StateCreator<ElementsState>>[0];
 type GetState = Parameters<StateCreator<ElementsState>>[1];
@@ -32,13 +33,13 @@ export const createAddElementAction =
     const state = get();
 
     // 🔧 order_num 중복 방지: 기존 형제 요소와 중복되면 새로운 값 할당
-    let elementToAdd = element;
-    const siblings = state.elements.filter(el => el.parent_id === element.parent_id);
-    const hasConflict = siblings.some(sibling => sibling.order_num === element.order_num);
+    let elementToAdd = normalizeElementTagInElement(element);
+    const siblings = state.elements.filter(el => el.parent_id === elementToAdd.parent_id);
+    const hasConflict = siblings.some(sibling => sibling.order_num === elementToAdd.order_num);
 
-    if (hasConflict || element.order_num === undefined || element.order_num === null) {
-      const nextOrderNum = HierarchyManager.calculateNextOrderNum(element.parent_id ?? null, state.elements);
-      elementToAdd = { ...element, order_num: nextOrderNum };
+    if (hasConflict || elementToAdd.order_num === undefined || elementToAdd.order_num === null) {
+      const nextOrderNum = HierarchyManager.calculateNextOrderNum(elementToAdd.parent_id ?? null, state.elements);
+      elementToAdd = { ...elementToAdd, order_num: nextOrderNum };
     }
 
     // 🚀 Phase 1: Immer → 함수형 업데이트
@@ -112,18 +113,20 @@ export const createAddComplexElementAction =
   (set: SetState, get: GetState) =>
   async (parentElement: Element, childElements: Element[]) => {
     const state = get();
+    const normalizedParent = normalizeElementTagInElement(parentElement);
+    const normalizedChildren = childElements.map(normalizeElementTagInElement);
 
     // 🔧 부모 요소의 order_num 중복 방지
-    let parentToAdd = parentElement;
-    const parentSiblings = state.elements.filter(el => el.parent_id === parentElement.parent_id);
-    const parentHasConflict = parentSiblings.some(sibling => sibling.order_num === parentElement.order_num);
+    let parentToAdd = normalizedParent;
+    const parentSiblings = state.elements.filter(el => el.parent_id === normalizedParent.parent_id);
+    const parentHasConflict = parentSiblings.some(sibling => sibling.order_num === normalizedParent.order_num);
 
-    if (parentHasConflict || parentElement.order_num === undefined || parentElement.order_num === null) {
-      const nextOrderNum = HierarchyManager.calculateNextOrderNum(parentElement.parent_id ?? null, state.elements);
-      parentToAdd = { ...parentElement, order_num: nextOrderNum };
+    if (parentHasConflict || normalizedParent.order_num === undefined || normalizedParent.order_num === null) {
+      const nextOrderNum = HierarchyManager.calculateNextOrderNum(normalizedParent.parent_id ?? null, state.elements);
+      parentToAdd = { ...normalizedParent, order_num: nextOrderNum };
     }
 
-    const allElements = [parentToAdd, ...childElements];
+    const allElements = [parentToAdd, ...normalizedChildren];
 
     // 🚀 Phase 1: Immer → 함수형 업데이트
     // 1. 히스토리 추가 (Page 모드 또는 Layout 모드 모두)
@@ -133,7 +136,7 @@ export const createAddComplexElementAction =
         elementId: parentToAdd.id,
         data: {
           element: { ...parentToAdd },
-          childElements: childElements.map((child) => ({ ...child })),
+          childElements: normalizedChildren.map((child) => ({ ...child })),
         },
       });
     }
@@ -154,7 +157,7 @@ export const createAddComplexElementAction =
         allElements.map((el) => sanitizeElement(el))
       );
       console.log(
-        `✅ [IndexedDB] 복합 컴포넌트 저장 완료: ${parentToAdd.tag} + 자식 ${childElements.length}개`
+        `✅ [IndexedDB] 복합 컴포넌트 저장 완료: ${parentToAdd.tag} + 자식 ${normalizedChildren.length}개`
       );
     } catch (error) {
       console.warn("⚠️ [IndexedDB] 저장 중 오류 (메모리는 정상):", error);
