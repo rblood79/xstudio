@@ -84,6 +84,18 @@ export const PixiCard = memo(function PixiCard({
   // 🚀 CSS에서 프리셋 읽기
   const sizePreset = useMemo(() => getCardSizePreset(size), [size]);
 
+  // 🚀 style.padding 우선 사용, 없으면 sizePreset.padding 사용
+  const effectivePadding = useMemo(() => {
+    if (style?.padding !== undefined) {
+      // padding 값을 숫자로 파싱 (예: '12px' → 12, '0' → 0)
+      const parsed = typeof style.padding === 'number'
+        ? style.padding
+        : parseInt(String(style.padding), 10);
+      return isNaN(parsed) ? sizePreset.padding : parsed;
+    }
+    return sizePreset.padding;
+  }, [style?.padding, sizePreset.padding]);
+
   // 🚀 테마 색상 동적 로드
   const themeColors = useThemeColors();
 
@@ -149,11 +161,12 @@ export const PixiCard = memo(function PixiCard({
 
   // 🚀 콘텐츠 기반 높이 계산 (Yoga가 텍스트 leaf를 정확히 측정하지 못하는 경우 대비)
   // Canvas 2D API로 word-wrap 줄 수를 정확히 측정하여 명시적 height 설정
+  // 🚀 주의: padding은 cardLayout에서 Yoga가 처리하므로 여기서는 content-box만 계산
   const calculatedContentHeight = useMemo(() => {
-    const pad = sizePreset.padding;
+    const pad = effectivePadding;
     const wrapWidth = cardWidth - pad * 2;
     const fontFamily = 'Pretendard';
-    let h = pad; // top padding
+    let h = 0; // content-box height (padding 제외)
 
     if (cardTitle) {
       h += measureWrappedTextHeight(cardTitle, 16, 600, fontFamily, wrapWidth);
@@ -163,15 +176,15 @@ export const PixiCard = memo(function PixiCard({
       h += measureWrappedTextHeight(String(props.subheading), 14, 400, fontFamily, wrapWidth);
     }
     if (cardTitle || props?.subheading) {
-      h += 8; // marginBottom
+      h += 8; // marginBottom between header and content
     }
     if (cardDescription) {
       h += measureWrappedTextHeight(cardDescription, 14, 400, fontFamily, wrapWidth);
     }
 
-    h += pad; // bottom padding
-    return Math.max(h, 60); // minHeight 60
-  }, [cardTitle, props?.subheading, cardDescription, cardWidth, sizePreset.padding]);
+    // minHeight 36 (60 - 24px padding = 36px content)
+    return Math.max(h, 36);
+  }, [cardTitle, props?.subheading, cardDescription, cardWidth, effectivePadding]);
 
   // 🚀 높이는 콘텐츠 기반 계산값과 Yoga 값 중 큰 값 사용
   const yogaHeight = (computedSize?.height && computedSize.height > 0)
@@ -227,9 +240,9 @@ export const PixiCard = memo(function PixiCard({
         fill: textColor,
         fontWeight: "600",
         wordWrap: true,
-        wordWrapWidth: cardWidth - sizePreset.padding * 2,
+        wordWrapWidth: cardWidth - effectivePadding * 2,
       }),
-    [textColor, cardWidth, sizePreset.padding]
+    [textColor, cardWidth, effectivePadding]
   );
 
   // 설명 텍스트 스타일
@@ -241,9 +254,9 @@ export const PixiCard = memo(function PixiCard({
         fill: textColor,
         fontWeight: "400",
         wordWrap: true,
-        wordWrapWidth: cardWidth - sizePreset.padding * 2,
+        wordWrapWidth: cardWidth - effectivePadding * 2,
       }),
-    [textColor, cardWidth, sizePreset.padding]
+    [textColor, cardWidth, effectivePadding]
   );
 
   // 🚀 Phase 9: 외부 LayoutContainer가 width를 제어
@@ -258,11 +271,11 @@ export const PixiCard = memo(function PixiCard({
     flexDirection: 'column' as const,
     height: 'auto' as unknown as number,
     minHeight: calculatedContentHeight,
-    padding: sizePreset.padding,
+    padding: effectivePadding,
     flexGrow: 0,
     flexShrink: 1,
     alignSelf: 'stretch' as const,
-  }), [sizePreset.padding, calculatedContentHeight]);
+  }), [effectivePadding, calculatedContentHeight]);
 
   // card-header 레이아웃 (제목, 부제목)
   const headerLayout = useMemo(() => ({

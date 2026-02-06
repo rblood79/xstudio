@@ -668,14 +668,16 @@ export function calculateContentHeight(element: Element, availableWidth?: number
   }
 
   // 3. Card 컴포넌트: 텍스트 콘텐츠 기반 높이 계산
-  // Card는 내부 패딩 + 텍스트(heading, subheading, description)로 높이 결정
-  // 요소의 style에는 padding이 없고 Card 컴포넌트가 자체 패딩을 관리하므로
-  // contentHeight에 내부 패딩 포함하여 반환
+  // 🚀 Card는 style.padding이 있으므로 BlockEngine이 padding을 별도로 추가함
+  // contentHeight는 content-box 높이만 반환 (padding 제외)
   if (tag === 'card') {
     const props = element.props as Record<string, unknown> | undefined;
     const size = (props?.size as string) ?? 'md';
     const cardConfig = CARD_SIZE_CONFIG[size] ?? CARD_SIZE_CONFIG.md;
-    const cardPad = cardConfig.padding;
+
+    // padding은 style.padding 우선, 없으면 size config 사용
+    const stylePadding = parseNumericValue(style?.padding);
+    const cardPad = stylePadding ?? cardConfig.padding;
 
     // Card 너비: availableWidth가 있으면 사용, 없으면 200px 폴백
     const cardWidth = availableWidth ?? 200;
@@ -686,7 +688,7 @@ export function calculateContentHeight(element: Element, availableWidth?: number
     const subheading = props?.subheading ? String(props.subheading) : '';
     const description = String(props?.description || props?.children || '');
 
-    let h = cardPad; // top padding
+    let h = 0; // content-box height (padding 제외)
 
     if (cardTitle) {
       h += measureWrappedTextHeight(cardTitle, 16, 600, fontFamily, wrapWidth);
@@ -702,8 +704,8 @@ export function calculateContentHeight(element: Element, availableWidth?: number
       h += measureWrappedTextHeight(description, 14, 400, fontFamily, wrapWidth);
     }
 
-    h += cardPad; // bottom padding
-    return Math.max(h, 60); // minHeight 60
+    // minHeight 36 (60 - 24px default padding = 36px content)
+    return Math.max(h, 36);
   }
 
   // 4. lineHeight가 명시적으로 지정되어 있으면 최소 높이로 사용

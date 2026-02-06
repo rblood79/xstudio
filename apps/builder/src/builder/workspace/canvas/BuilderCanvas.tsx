@@ -633,6 +633,7 @@ const ElementsLayer = memo(function ElementsLayer({
     'FancyButton',
     'ToggleButton',
     'ToggleButtonGroup',
+    'Card',  // PixiCard가 sizePreset.padding으로 내부 처리
     // 향후 자체 padding/border 렌더링하는 컴포넌트 추가 시 여기에 등록
   ]), []);
 
@@ -704,35 +705,55 @@ const ElementsLayer = memo(function ElementsLayer({
         layouts.map((l) => [l.elementId, l])
       );
 
-      return children.map((child) => {
+      // 🚀 Phase 3: flex column 래퍼로 siblings 자동 재배치
+      // absolute 대신 flex column을 사용하여 CONTAINER_TAGS가 높이 변경 시 siblings가 자동으로 이동
+      // BlockEngine의 y 위치를 marginTop으로 변환
+      let previousBottom = 0;
+
+      const childrenElements = children.map((child, index) => {
         if (!renderIdSet.has(child.id)) return null;
 
         const layout = layoutMap.get(child.id);
         if (!layout) return null;
+
+        // marginTop 계산: BlockEngine이 계산한 y 위치에서 이전 요소의 bottom 위치를 빼면 margin
+        // 첫 번째 요소의 경우 layout.y가 marginTop
+        const marginTop = index === 0 ? layout.y : Math.max(0, layout.y - previousBottom);
+        // 다음 요소를 위해 현재 요소의 bottom 위치 저장
+        // CONTAINER_TAGS는 height: 'auto'이므로 BlockEngine의 height를 기준으로 함 (실제 높이는 Yoga가 결정)
+        previousBottom = layout.y + layout.height;
 
         // 🚀 Phase 2: CONTAINER_TAGS 처리 (정상 경로와 동일한 패턴)
         // Container 타입은 children을 내부에 렌더링
         const isContainerType = CONTAINER_TAGS.has(child.tag);
         const childElements = isContainerType ? (pageChildrenMap.get(child.id) ?? []) : [];
 
-        // 🚀 CONTAINER_TAGS는 height: 'auto'로 설정
-        // BlockEngine은 Card의 children을 고려하지 않고 높이를 계산하므로,
-        // Yoga가 children을 포함한 높이를 자동 계산하도록 함
+        // 🚀 Card의 스타일에서 display, flexDirection을 읽어서 반영
+        // 🚀 SELF_PADDING_TAGS는 padding/border를 컴포넌트 내부에서 처리하므로 외부에서 제거
+        const childLayoutStyle = isContainerType ? styleToLayout(child, viewport) : {};
+        const effectiveChildLayoutStyle = isContainerType && SELF_PADDING_TAGS.has(child.tag)
+          ? stripSelfRenderedProps(childLayoutStyle)
+          : childLayoutStyle;
+
+        // 🚀 flex column 내에서 relative 위치 사용
+        // CONTAINER_TAGS: height: 'auto'로 Yoga가 children 포함 높이 계산
+        // 일반 요소: BlockEngine이 계산한 height 사용
         const containerLayout = isContainerType
           ? {
-              position: 'absolute' as const,
-              left: layout.x + paddingOffsetX,
-              top: layout.y + paddingOffsetY,
+              position: 'relative' as const,
+              marginTop,
+              marginLeft: layout.x,  // x 위치를 marginLeft로 변환
               width: layout.width,
               height: 'auto' as unknown as number,
               minHeight: layout.height,
-              display: 'flex' as const,
-              flexDirection: 'column' as const,
+              display: (effectiveChildLayoutStyle.display || 'flex') as 'flex',
+              flexDirection: (effectiveChildLayoutStyle.flexDirection || 'column') as 'column',
+              ...effectiveChildLayoutStyle,  // 나머지 스타일(gap, alignItems 등) 반영
             }
           : {
-              position: 'absolute' as const,
-              left: layout.x + paddingOffsetX,
-              top: layout.y + paddingOffsetY,
+              position: 'relative' as const,
+              marginTop,
+              marginLeft: layout.x,  // x 위치를 marginLeft로 변환
               width: layout.width,
               height: layout.height,
             };
@@ -814,6 +835,25 @@ const ElementsLayer = memo(function ElementsLayer({
           </LayoutContainer>
         );
       });
+
+      // 🚀 Phase 3: flex column 래퍼로 감싸서 siblings 자동 재배치
+      // paddingOffset은 Body의 경우 이미 적용되어 있으므로 0, 그 외는 padding 적용
+      return (
+        <LayoutContainer
+          key={`custom-wrapper-${parentElement.id}`}
+          layout={{
+            position: 'absolute' as const,
+            left: paddingOffsetX,
+            top: paddingOffsetY,
+            width: availableWidth,
+            display: 'flex' as const,
+            flexDirection: 'column' as const,
+            alignItems: 'flex-start' as const,  // block 요소 왼쪽 정렬
+          }}
+        >
+          {childrenElements}
+        </LayoutContainer>
+      );
     }
 
     function renderTree(parentId: string | null): React.ReactNode {

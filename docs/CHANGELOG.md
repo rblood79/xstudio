@@ -7,6 +7,50 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added - Card display: block 완전 지원 (2026-02-06)
+
+#### 개요
+Card 컴포넌트에 `display: 'block'` 기본값 추가 및 Preview CSS와 동일한 동작 구현.
+
+#### Phase 1: Body 기본값 설정
+- `createDefaultBodyProps()` 추가 — Body에 `display: 'block'` 기본값 설정
+- Reset 시 컴포넌트 기본값 복원 (`useResetStyles.ts`)
+- 영향 파일: `unified.types.ts`, `dashboard/index.tsx`, `usePageManager.ts`, `layoutActions.ts`, `useResetStyles.ts`
+
+#### Phase 2: renderWithCustomEngine CONTAINER_TAGS 지원
+- **문제**: Card에 `display: 'block'` 추가 시 children이 Card 외부에 형제로 렌더링됨
+- **원인**: `renderWithCustomEngine`에서 `childElements`/`renderChildElement` props 누락
+- **수정**: 정상 경로와 동일한 CONTAINER_TAGS 처리 패턴 적용
+- Card 기본값에 `display: 'block'`, `width: '100%'`, `padding: '12px'` 추가
+- 영향 파일: `BuilderCanvas.tsx`, `unified.types.ts`
+
+#### Phase 3: Card padding 이중 적용 수정
+- **문제**: children 없이도 불필요한 여백 발생 ("children 공간 차지")
+- **원인**: `calculatedContentHeight`에 padding 포함 + `cardLayout.padding`으로 이중 적용
+- **수정**: `calculatedContentHeight`와 `calculateContentHeight()`를 content-only로 변경
+- 영향 파일: `PixiCard.tsx`, `layout/engines/utils.ts`
+
+#### Phase 4: CONTAINER_TAGS 높이 변경 시 siblings 재배치
+- **문제**: Card에 children 추가 → Card height 증가 → 아래 Button 위치 그대로
+- **원인**: `position: absolute` + 고정 `top` 값 사용
+- **수정**: flex column 래퍼 + relative positioning으로 변경
+  - absolute → relative
+  - top/left → marginTop/marginLeft
+- 영향 파일: `BuilderCanvas.tsx`
+
+#### 최종 결과
+| 기능 | 상태 |
+|------|------|
+| children 내부 렌더링 | ✅ |
+| padding 정상 적용 | ✅ |
+| height auto-grow | ✅ |
+| siblings 자동 재배치 | ✅ |
+| Preview 일치 | ✅ |
+
+**상세:** `.claude/plans/giggly-wibbling-mango.md`
+
+---
+
 ### Added - Multi-Page Canvas Rendering (2026-02-05)
 
 #### 개요

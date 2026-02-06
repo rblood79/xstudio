@@ -1344,10 +1344,14 @@ export const ElementSprite = memo(function ElementSprite({
           const tcB = (textColorHex & 0xff) / 255;
           const textColor = Float32Array.of(tcR, tcG, tcB, 1);
 
-          // Card padding (cssVariableReader CARD_FALLBACKS와 동기화)
+          // Card padding (style.padding 우선, 없으면 size preset 사용)
           const cardSize = String(props?.size || 'md');
           const CARD_PADDING: Record<string, number> = { sm: 8, md: 12, lg: 16 };
-          const padding = CARD_PADDING[cardSize] ?? 12;
+          const sizePresetPadding = CARD_PADDING[cardSize] ?? 12;
+          // style.padding이 설정되면 해당 값 사용
+          const padding = style?.padding !== undefined
+            ? (typeof style.padding === 'number' ? style.padding : parseInt(String(style.padding), 10) || 0)
+            : sizePresetPadding;
           const fontFamilies = ['Pretendard', 'Inter', 'system-ui', 'sans-serif'];
           const maxWidth = finalWidth - padding * 2;
 

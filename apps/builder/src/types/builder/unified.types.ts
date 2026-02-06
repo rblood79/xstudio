@@ -916,6 +916,8 @@ export function createDefaultCardProps(): CardElementProps {
     description: "Description",
     style: {
       display: 'block',
+      width: '100%',
+      padding: '12px',  // var(--spacing-md) = 12px
     },
   };
 }
