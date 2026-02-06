@@ -23,7 +23,7 @@ import { ElementSlotSelector } from "./editors/ElementSlotSelector";
 import { Button } from "@xstudio/shared/components";
 import { Copy, ClipboardPaste, Settings2 } from "lucide-react";
 import { iconProps } from "../../../utils/ui/uiConstants";
-import { useKeyboardShortcutsRegistry, useCopyPaste } from "@/builder/hooks";
+import { useKeyboardShortcutsRegistry, useCopyPaste, useActiveScope } from "@/builder/hooks";
 import { useStore } from "../../stores";
 import { copyMultipleElements, pasteMultipleElements, serializeCopiedElements, deserializeCopiedElements } from "../../utils/multiElementCopy";
 import { selectionMemory } from "../../utils/selectionMemory";
@@ -543,6 +543,7 @@ function PropertiesPanelContent() {
   const getMultiSelectMode = useCallback(() => useStore.getState().multiSelectMode || false, []);
 
   const [showKeyboardHelp, setShowKeyboardHelp] = useState(false);
+  const activeScope = useActiveScope();
 
   // 🔥 최적화: useCopyPaste hook 사용
   const { copy: copyProperties, paste: pasteProperties } = useCopyPaste({
@@ -1010,12 +1011,14 @@ function PropertiesPanelContent() {
         modifier: 'cmdShift' as const,
         handler: handleCopyProperties,
         description: 'Copy Properties',
+        scope: 'panel:properties' as const,
       },
       {
         key: 'v',
         modifier: 'cmdShift' as const,
         handler: handlePasteProperties,
         description: 'Paste Properties',
+        scope: 'panel:properties' as const,
       },
       // ⭐ Multi-element shortcuts
       {
@@ -1023,12 +1026,14 @@ function PropertiesPanelContent() {
         modifier: 'cmd' as const,
         handler: handleCopyAll,
         description: 'Copy All Elements',
+        scope: 'panel:properties' as const,
       },
       {
         key: 'v',
         modifier: 'cmd' as const,
         handler: handlePasteAll,
         description: 'Paste Elements',
+        scope: 'panel:properties' as const,
       },
       {
         key: 'd',
@@ -1123,7 +1128,11 @@ function PropertiesPanelContent() {
     [handleCopyProperties, handlePasteProperties, handleCopyAll, handlePasteAll, handleDuplicate, handleSelectAll, handleEscapeClearSelection, handleGroupSelection, handleUngroupSelection, handleAlign, handleDistribute]
   );
 
-  useKeyboardShortcutsRegistry(shortcuts, [handleCopyProperties, handlePasteProperties, handleCopyAll, handlePasteAll, handleDuplicate, handleSelectAll, handleEscapeClearSelection, handleGroupSelection, handleUngroupSelection, handleAlign, handleDistribute]);
+  useKeyboardShortcutsRegistry(
+    shortcuts,
+    [handleCopyProperties, handlePasteProperties, handleCopyAll, handlePasteAll, handleDuplicate, handleSelectAll, handleEscapeClearSelection, handleGroupSelection, handleUngroupSelection, handleAlign, handleDistribute],
+    { activeScope }
+  );
 
   // ⭐ Phase 3: Tab navigation (requires special handling)
   // Note: Tab navigation requires special handling (Shift+Tab, preventDefault) that useKeyboardShortcutsRegistry doesn't support

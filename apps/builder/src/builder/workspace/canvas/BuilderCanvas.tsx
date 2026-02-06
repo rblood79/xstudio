@@ -1501,10 +1501,32 @@ export function BuilderCanvas({
   // 🚀 Phase 6: ElementRegistry의 getBounds() 사용
   const findElementsInLassoArea = useCallback(
     (start: { x: number; y: number }, end: { x: number; y: number }) => {
+      const startGlobal = {
+        x: start.x * zoom + panOffset.x,
+        y: start.y * zoom + panOffset.y,
+      };
+      const endGlobal = {
+        x: end.x * zoom + panOffset.x,
+        y: end.y * zoom + panOffset.y,
+      };
+
       return findElementsInLasso(
         pageElements.map((el) => {
-          // ElementRegistry에서 실제 렌더링 위치 가져오기
-          const bounds = getElementBoundsSimple(el.id);
+          // 현재 프레임의 정확한 스크린 좌표를 우선 사용
+          const container = getElementContainer(el.id);
+          let bounds: { x: number; y: number; width: number; height: number } | null = null;
+          if (container) {
+            try {
+              const b = container.getBounds();
+              bounds = { x: b.x, y: b.y, width: b.width, height: b.height };
+            } catch {
+              bounds = null;
+            }
+          }
+          if (!bounds) {
+            // fallback: registry에 저장된 bounds
+            bounds = getElementBoundsSimple(el.id);
+          }
           if (bounds) {
             return {
               id: el.id,
@@ -1519,16 +1541,29 @@ export function BuilderCanvas({
             };
           }
           // fallback: 원래 스타일 사용
+          const style = el.props?.style as Record<string, unknown> | undefined;
+          const localLeft = Number(style?.left ?? 0);
+          const localTop = Number(style?.top ?? 0);
+          const localWidth = Number(style?.width ?? 0);
+          const localHeight = Number(style?.height ?? 0);
+
+          const fallbackStyle = {
+            left: Number.isFinite(localLeft) ? localLeft * zoom + panOffset.x : 0,
+            top: Number.isFinite(localTop) ? localTop * zoom + panOffset.y : 0,
+            width: Number.isFinite(localWidth) ? localWidth * zoom : 0,
+            height: Number.isFinite(localHeight) ? localHeight * zoom : 0,
+          };
+
           return {
             id: el.id,
-            props: { style: el.props?.style as Record<string, unknown> },
+            props: { style: fallbackStyle },
           };
         }),
-        start,
-        end
+        startGlobal,
+        endGlobal
       );
     },
-    [pageElements]
+    [pageElements, panOffset.x, panOffset.y, zoom]
   );
 
   const screenToCanvasPoint = useCallback(

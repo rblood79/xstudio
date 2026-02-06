@@ -807,12 +807,15 @@ export function parseBoxModel(
   // BlockEngine 경로에서는 parseBoxModel 단계에서 border-box 변환으로 해결.
   const boxSizing = style?.boxSizing as string | undefined;
   // Preview iframe는 전역 `* { box-sizing: border-box; }`를 사용한다.
-  // Section은 style.boxSizing이 비어 있어도 명시적 width/height를 border-box로 해석해야
-  // Web 모드와 동일하게 총 크기(패딩 포함)가 유지된다.
+  // Section/Card(Box)는 style.boxSizing이 비어 있어도 명시적 width/height를
+  // border-box로 해석해야 Web 모드와 동일하게 총 크기(패딩 포함)가 유지된다.
   const isSectionElement = tag === 'section';
+  const isCardLikeElement = tag === 'card' || tag === 'box';
   const treatAsBorderBox = boxSizing === 'border-box' ||
     (isFormElement && (width !== undefined || height !== undefined)) ||
-    (isSectionElement && boxSizing !== 'content-box' && (width !== undefined || height !== undefined));
+    ((isSectionElement || isCardLikeElement) &&
+      boxSizing !== 'content-box' &&
+      (width !== undefined || height !== undefined));
 
   if (treatAsBorderBox) {
     const paddingH = padding.left + padding.right;
