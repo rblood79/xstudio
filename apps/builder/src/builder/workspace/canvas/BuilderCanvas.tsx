@@ -705,139 +705,198 @@ const ElementsLayer = memo(function ElementsLayer({
         layouts.map((l) => [l.elementId, l])
       );
 
-      // 🚀 Phase 3: flex column 래퍼로 siblings 자동 재배치
-      // absolute 대신 flex column을 사용하여 CONTAINER_TAGS가 높이 변경 시 siblings가 자동으로 이동
-      // BlockEngine의 y 위치를 marginTop으로 변환
-      let previousBottom = 0;
+      // 🚀 Phase 5: 라인 기반 렌더링 - inline 요소들을 가로로 배치
+      // BlockEngine은 같은 줄의 inline 요소들에게 같은 y 값을 부여
+      // 같은 y 값을 가진 요소들을 하나의 라인(flex row)으로 그룹화
+      interface LineGroup {
+        y: number;
+        height: number;
+        elements: Array<{ child: Element; layout: ComputedLayout }>;
+      }
 
-      const childrenElements = children.map((child, index) => {
-        if (!renderIdSet.has(child.id)) return null;
+      const lines: LineGroup[] = [];
+      const EPSILON = 0.5; // y 값 비교 허용 오차
 
+      children.forEach((child) => {
+        if (!renderIdSet.has(child.id)) return;
         const layout = layoutMap.get(child.id);
-        if (!layout) return null;
+        if (!layout) return;
 
-        // marginTop 계산: BlockEngine이 계산한 y 위치에서 이전 요소의 bottom 위치를 빼면 margin
-        // 첫 번째 요소의 경우 layout.y가 marginTop
-        const marginTop = index === 0 ? layout.y : Math.max(0, layout.y - previousBottom);
-        // 다음 요소를 위해 현재 요소의 bottom 위치 저장
-        // CONTAINER_TAGS는 height: 'auto'이므로 BlockEngine의 height를 기준으로 함 (실제 높이는 Yoga가 결정)
-        previousBottom = layout.y + layout.height;
+        // 기존 라인에 추가할 수 있는지 확인 (y 값이 거의 같은 경우)
+        const existingLine = lines.find((line) => Math.abs(line.y - layout.y) < EPSILON);
+        if (existingLine) {
+          existingLine.elements.push({ child, layout });
+          // 라인 높이는 가장 큰 요소 기준
+          existingLine.height = Math.max(existingLine.height, layout.height);
+        } else {
+          // 새 라인 생성
+          lines.push({
+            y: layout.y,
+            height: layout.height,
+            elements: [{ child, layout }],
+          });
+        }
+      });
 
-        // 🚀 Phase 2: CONTAINER_TAGS 처리 (정상 경로와 동일한 패턴)
-        // Container 타입은 children을 내부에 렌더링
-        const isContainerType = CONTAINER_TAGS.has(child.tag);
-        const childElements = isContainerType ? (pageChildrenMap.get(child.id) ?? []) : [];
+      // y 값 기준으로 라인 정렬
+      lines.sort((a, b) => a.y - b.y);
 
-        // 🚀 Card의 스타일에서 display, flexDirection을 읽어서 반영
-        // 🚀 SELF_PADDING_TAGS는 padding/border를 컴포넌트 내부에서 처리하므로 외부에서 제거
-        const childLayoutStyle = isContainerType ? styleToLayout(child, viewport) : {};
-        const effectiveChildLayoutStyle = isContainerType && SELF_PADDING_TAGS.has(child.tag)
-          ? stripSelfRenderedProps(childLayoutStyle)
-          : childLayoutStyle;
+      // 라인별로 렌더링
+      let previousLineBottom = 0;
 
-        // 🚀 flex column 내에서 relative 위치 사용
-        // CONTAINER_TAGS: height: 'auto'로 Yoga가 children 포함 높이 계산
-        // 일반 요소: BlockEngine이 계산한 height 사용
-        const containerLayout = isContainerType
-          ? {
-              position: 'relative' as const,
-              marginTop,
-              marginLeft: layout.x,  // x 위치를 marginLeft로 변환
-              width: layout.width,
-              height: 'auto' as unknown as number,
-              minHeight: layout.height,
-              display: (effectiveChildLayoutStyle.display || 'flex') as 'flex',
-              flexDirection: (effectiveChildLayoutStyle.flexDirection || 'column') as 'column',
-              ...effectiveChildLayoutStyle,  // 나머지 스타일(gap, alignItems 등) 반영
-            }
-          : {
-              position: 'relative' as const,
-              marginTop,
-              marginLeft: layout.x,  // x 위치를 marginLeft로 변환
-              width: layout.width,
-              height: layout.height,
-            };
+      const lineElements = lines.map((line, lineIndex) => {
+        // 라인의 marginTop 계산
+        const lineMarginTop = lineIndex === 0 ? line.y : Math.max(0, line.y - previousLineBottom);
+        previousLineBottom = line.y + line.height;
 
+        // x 기준으로 요소 정렬
+        line.elements.sort((a, b) => a.layout.x - b.layout.x);
+
+        // 라인 내 요소들 렌더링
+        let previousRight = 0;
+
+        const rowElements = line.elements.map(({ child, layout }, elemIndex) => {
+          // 요소 간 gap 계산 (x 위치 차이)
+          const marginLeft = elemIndex === 0 ? layout.x : Math.max(0, layout.x - previousRight);
+          previousRight = layout.x + layout.width;
+
+          // 🚀 CONTAINER_TAGS 처리
+          const isContainerType = CONTAINER_TAGS.has(child.tag);
+          const childElements = isContainerType ? (pageChildrenMap.get(child.id) ?? []) : [];
+
+          const childLayoutStyle = isContainerType ? styleToLayout(child, viewport) : {};
+          const effectiveChildLayoutStyle = isContainerType && SELF_PADDING_TAGS.has(child.tag)
+            ? stripSelfRenderedProps(childLayoutStyle)
+            : childLayoutStyle;
+
+          const containerLayout = isContainerType
+            ? {
+                position: 'relative' as const,
+                marginLeft,
+                width: layout.width,
+                height: 'auto' as unknown as number,
+                minHeight: layout.height,
+                display: (effectiveChildLayoutStyle.display || 'flex') as 'flex',
+                flexDirection: (effectiveChildLayoutStyle.flexDirection || 'column') as 'column',
+                ...effectiveChildLayoutStyle,
+              }
+            : {
+                position: 'relative' as const,
+                marginLeft,
+                width: layout.width,
+                height: layout.height,
+              };
+
+          return (
+            <LayoutContainer
+              key={`custom-${child.id}`}
+              elementId={child.id}
+              layout={containerLayout}
+            >
+              <ElementSprite
+                element={child}
+                onClick={onClick}
+                onDoubleClick={onDoubleClick}
+                childElements={isContainerType ? childElements : undefined}
+                renderChildElement={isContainerType ? (childEl: Element) => {
+                  const childLayout = styleToLayout(childEl, viewport);
+                  const effectiveChildLayout = SELF_PADDING_TAGS.has(childEl.tag)
+                    ? stripSelfRenderedProps(childLayout)
+                    : childLayout;
+                  const childHasChildren = (pageChildrenMap.get(childEl.id)?.length ?? 0) > 0;
+
+                  const isChildContainerType = CONTAINER_TAGS.has(childEl.tag);
+                  const isChildBlockElement = BLOCK_TAGS.has(childEl.tag);
+                  const hasExplicitChildWidth = effectiveChildLayout.width !== undefined && effectiveChildLayout.width !== 'auto';
+                  const childBlockLayout = isChildBlockElement && !hasExplicitChildWidth
+                    ? { flexBasis: '100%' as const }
+                    : {};
+
+                  const childFlexShrinkDefault = effectiveChildLayout.flexShrink !== undefined ? {} : { flexShrink: 0 };
+                  const childBlockLayoutDefaults = { flexBasis: 'auto' as const, flexGrow: 0 };
+                  const childContainerLayout = childHasChildren && !effectiveChildLayout.flexDirection
+                    ? { position: 'relative' as const, ...childBlockLayoutDefaults, flexShrink: 0, display: 'flex' as const, flexDirection: 'column' as const, ...childBlockLayout, ...effectiveChildLayout }
+                    : { position: 'relative' as const, ...childBlockLayoutDefaults, ...childFlexShrinkDefault, ...childBlockLayout, ...effectiveChildLayout };
+
+                  const nestedChildElements = isChildContainerType ? (pageChildrenMap.get(childEl.id) ?? []) : [];
+
+                  return (
+                    <LayoutContainer key={childEl.id} elementId={childEl.id} layout={childContainerLayout}>
+                      <ElementSprite
+                        element={childEl}
+                        onClick={onClick}
+                        onDoubleClick={onDoubleClick}
+                        childElements={isChildContainerType ? nestedChildElements : undefined}
+                        renderChildElement={isChildContainerType ? (nestedEl: Element) => {
+                          const nestedLayout = styleToLayout(nestedEl, viewport);
+                          const effectiveNestedLayout = SELF_PADDING_TAGS.has(nestedEl.tag)
+                            ? stripSelfRenderedProps(nestedLayout)
+                            : nestedLayout;
+                          const nestedHasChildren = (pageChildrenMap.get(nestedEl.id)?.length ?? 0) > 0;
+                          const nestedFlexShrinkDefault = effectiveNestedLayout.flexShrink !== undefined ? {} : { flexShrink: 0 };
+                          const nestedBlockLayoutDefaults = { flexBasis: 'auto' as const, flexGrow: 0 };
+                          const nestedContainerLayout = nestedHasChildren && !effectiveNestedLayout.flexDirection
+                            ? { position: 'relative' as const, ...nestedBlockLayoutDefaults, flexShrink: 0, display: 'flex' as const, flexDirection: 'column' as const, ...effectiveNestedLayout }
+                            : { position: 'relative' as const, ...nestedBlockLayoutDefaults, ...nestedFlexShrinkDefault, ...effectiveNestedLayout };
+                          return (
+                            <LayoutContainer key={nestedEl.id} elementId={nestedEl.id} layout={nestedContainerLayout}>
+                              <ElementSprite
+                                element={nestedEl}
+                                onClick={onClick}
+                                onDoubleClick={onDoubleClick}
+                              />
+                              {renderTreeFn(nestedEl.id)}
+                            </LayoutContainer>
+                          );
+                        } : undefined}
+                      />
+                      {!isChildContainerType && renderTreeFn(childEl.id)}
+                    </LayoutContainer>
+                  );
+                } : undefined}
+              />
+              {!isContainerType && renderTreeFn(child.id)}
+            </LayoutContainer>
+          );
+        });
+
+        // 라인이 하나의 요소만 가지면 flex row 래퍼 불필요
+        if (rowElements.length === 1) {
+          return (
+            <LayoutContainer
+              key={`line-${lineIndex}`}
+              layout={{
+                position: 'relative' as const,
+                marginTop: lineMarginTop,
+                display: 'flex' as const,
+                flexDirection: 'row' as const,
+                alignItems: 'flex-start' as const,
+              }}
+            >
+              {rowElements}
+            </LayoutContainer>
+          );
+        }
+
+        // 여러 요소가 있는 라인은 flex row로 감싸기
         return (
           <LayoutContainer
-            key={`custom-${child.id}`}
-            elementId={child.id}
-            layout={containerLayout}
+            key={`line-${lineIndex}`}
+            layout={{
+              position: 'relative' as const,
+              marginTop: lineMarginTop,
+              display: 'flex' as const,
+              flexDirection: 'row' as const,
+              alignItems: 'flex-start' as const,
+              flexWrap: 'nowrap' as const,
+            }}
           >
-            <ElementSprite
-              element={child}
-              onClick={onClick}
-              onDoubleClick={onDoubleClick}
-              childElements={isContainerType ? childElements : undefined}
-              renderChildElement={isContainerType ? (childEl: Element) => {
-                // 1. styleToLayout으로 레이아웃 속성 추출
-                const childLayout = styleToLayout(childEl, viewport);
-                const effectiveChildLayout = SELF_PADDING_TAGS.has(childEl.tag)
-                  ? stripSelfRenderedProps(childLayout)
-                  : childLayout;
-                const childHasChildren = (pageChildrenMap.get(childEl.id)?.length ?? 0) > 0;
-
-                // 2. nested Container 타입 처리
-                const isChildContainerType = CONTAINER_TAGS.has(childEl.tag);
-                const isChildBlockElement = BLOCK_TAGS.has(childEl.tag);
-                const hasExplicitChildWidth = effectiveChildLayout.width !== undefined && effectiveChildLayout.width !== 'auto';
-                const childBlockLayout = isChildBlockElement && !hasExplicitChildWidth
-                  ? { flexBasis: '100%' as const }
-                  : {};
-
-                const childFlexShrinkDefault = effectiveChildLayout.flexShrink !== undefined ? {} : { flexShrink: 0 };
-                const childBlockLayoutDefaults = { flexBasis: 'auto' as const, flexGrow: 0 };
-                const childContainerLayout = childHasChildren && !effectiveChildLayout.flexDirection
-                  ? { position: 'relative' as const, ...childBlockLayoutDefaults, flexShrink: 0, display: 'flex' as const, flexDirection: 'column' as const, ...childBlockLayout, ...effectiveChildLayout }
-                  : { position: 'relative' as const, ...childBlockLayoutDefaults, ...childFlexShrinkDefault, ...childBlockLayout, ...effectiveChildLayout };
-
-                // 3. nested Container의 children
-                const nestedChildElements = isChildContainerType ? (pageChildrenMap.get(childEl.id) ?? []) : [];
-
-                return (
-                  <LayoutContainer key={childEl.id} elementId={childEl.id} layout={childContainerLayout}>
-                    <ElementSprite
-                      element={childEl}
-                      onClick={onClick}
-                      onDoubleClick={onDoubleClick}
-                      childElements={isChildContainerType ? nestedChildElements : undefined}
-                      renderChildElement={isChildContainerType ? (nestedEl: Element) => {
-                        // 재귀적으로 nested children 렌더링 (3단계)
-                        const nestedLayout = styleToLayout(nestedEl, viewport);
-                        const effectiveNestedLayout = SELF_PADDING_TAGS.has(nestedEl.tag)
-                          ? stripSelfRenderedProps(nestedLayout)
-                          : nestedLayout;
-                        const nestedHasChildren = (pageChildrenMap.get(nestedEl.id)?.length ?? 0) > 0;
-                        const nestedFlexShrinkDefault = effectiveNestedLayout.flexShrink !== undefined ? {} : { flexShrink: 0 };
-                        const nestedBlockLayoutDefaults = { flexBasis: 'auto' as const, flexGrow: 0 };
-                        const nestedContainerLayout = nestedHasChildren && !effectiveNestedLayout.flexDirection
-                          ? { position: 'relative' as const, ...nestedBlockLayoutDefaults, flexShrink: 0, display: 'flex' as const, flexDirection: 'column' as const, ...effectiveNestedLayout }
-                          : { position: 'relative' as const, ...nestedBlockLayoutDefaults, ...nestedFlexShrinkDefault, ...effectiveNestedLayout };
-                        return (
-                          <LayoutContainer key={nestedEl.id} elementId={nestedEl.id} layout={nestedContainerLayout}>
-                            <ElementSprite
-                              element={nestedEl}
-                              onClick={onClick}
-                              onDoubleClick={onDoubleClick}
-                            />
-                            {renderTreeFn(nestedEl.id)}
-                          </LayoutContainer>
-                        );
-                      } : undefined}
-                    />
-                    {!isChildContainerType && renderTreeFn(childEl.id)}
-                  </LayoutContainer>
-                );
-              } : undefined}
-            />
-            {/* Container 타입이 아닌 경우에만 children을 형제로 렌더링 */}
-            {!isContainerType && renderTreeFn(child.id)}
+            {rowElements}
           </LayoutContainer>
         );
       });
 
-      // 🚀 Phase 3: flex column 래퍼로 감싸서 siblings 자동 재배치
-      // paddingOffset은 Body의 경우 이미 적용되어 있으므로 0, 그 외는 padding 적용
+      // 🚀 flex column 래퍼로 라인들을 감싸기
       return (
         <LayoutContainer
           key={`custom-wrapper-${parentElement.id}`}
@@ -848,10 +907,10 @@ const ElementsLayer = memo(function ElementsLayer({
             width: availableWidth,
             display: 'flex' as const,
             flexDirection: 'column' as const,
-            alignItems: 'flex-start' as const,  // block 요소 왼쪽 정렬
+            alignItems: 'flex-start' as const,
           }}
         >
-          {childrenElements}
+          {lineElements}
         </LayoutContainer>
       );
     }

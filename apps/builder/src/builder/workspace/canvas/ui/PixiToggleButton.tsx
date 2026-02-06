@@ -25,7 +25,7 @@ import { FancyButton } from "@pixi/ui";
 import type { Element } from "../../../../types/core/store.types";
 import type { CSSStyle } from "../sprites/styleConverter";
 import { cssColorToHex, parseCSSSize } from "../sprites/styleConverter";
-import { getSizePreset, getVariantColors, type SizePreset } from "../utils/cssVariableReader";
+import { getToggleButtonSizePreset, getVariantColors, type ToggleButtonSizePreset } from "../utils/cssVariableReader";
 import { useThemeColors } from "../hooks/useThemeColors";
 import { drawBox } from "../utils";
 import { measureTextWidth as measureTextWidthCanvas } from "../layout/engines/utils";
@@ -84,8 +84,8 @@ export interface PixiToggleButtonProps {
 // Style Conversion
 // ============================================
 
-// Size preset fallback (sm size: --spacing = 4px for paddingY)
-const DEFAULT_SIZE_PRESET: SizePreset = { fontSize: 14, paddingX: 12, paddingY: 4, borderRadius: 6 };
+// Size preset fallback (sm size: Button과 동일)
+const DEFAULT_SIZE_PRESET: ToggleButtonSizePreset = { fontSize: 14, paddingX: 12, paddingY: 4, borderRadius: 4 };
 
 interface ToggleButtonLayoutResult {
   left: number;
@@ -137,8 +137,8 @@ function getToggleButtonLayout(
   const isToggleSelected = Boolean(buttonProps.isSelected);
   const isDisabled = Boolean(buttonProps.isDisabled);
 
-  // 🚀 CSS에서 사이즈 프리셋 읽기 (Button과 동일한 패턴)
-  const sizePreset = getSizePreset(size) || DEFAULT_SIZE_PRESET;
+  // 🚀 CSS에서 사이즈 프리셋 읽기 (ToggleButtonGroup과 동일한 패턴)
+  const sizePreset = getToggleButtonSizePreset(size) || DEFAULT_SIZE_PRESET;
 
   // 폰트 설정 (inline style > size preset)
   // 🚀 Phase 8: parseCSSSize 제거 - CSS 프리셋 값 사용

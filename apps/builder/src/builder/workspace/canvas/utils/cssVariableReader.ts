@@ -917,18 +917,18 @@ export interface ToggleButtonSizePreset {
   borderRadius: number;
 }
 
-const TOGGLE_BUTTON_SIZE_MAPPING: Record<string, { fontSize: string; paddingY: string; paddingX: string }> = {
-  sm: { fontSize: '--text-sm', paddingY: '--spacing', paddingX: '--spacing-md' },
-  md: { fontSize: '--text-base', paddingY: '--spacing-sm', paddingX: '--spacing-xl' },
-  lg: { fontSize: '--text-lg', paddingY: '--spacing-md', paddingX: '--spacing-2xl' },
+const TOGGLE_BUTTON_SIZE_MAPPING: Record<string, { fontSize: string; paddingY: string; paddingX: string; borderRadius: string }> = {
+  sm: { fontSize: '--text-sm', paddingY: '--spacing', paddingX: '--spacing-md', borderRadius: '--radius-sm' },
+  md: { fontSize: '--text-base', paddingY: '--spacing-sm', paddingX: '--spacing-xl', borderRadius: '--radius-md' },
+  lg: { fontSize: '--text-lg', paddingY: '--spacing-md', paddingX: '--spacing-2xl', borderRadius: '--radius-lg' },
 };
 
 const TOGGLE_BUTTON_FALLBACKS: Record<string, ToggleButtonSizePreset> = {
   // @sync ToggleButton.css [data-size] padding 값과 일치해야 함
-  // Button.css와 동일한 padding 사용: sm=4/12, md=8/24, lg=12/32
-  sm: { fontSize: 14, paddingY: 4, paddingX: 12, borderRadius: 6 },   // --spacing, --spacing-md
-  md: { fontSize: 16, paddingY: 8, paddingX: 24, borderRadius: 8 },   // --spacing-sm, --spacing-xl
-  lg: { fontSize: 18, paddingY: 12, paddingX: 32, borderRadius: 10 }, // --spacing-md, --spacing-2xl
+  // Button.css와 동일한 padding/borderRadius 사용
+  sm: { fontSize: 14, paddingY: 4, paddingX: 12, borderRadius: 4 },   // --radius-sm
+  md: { fontSize: 16, paddingY: 8, paddingX: 24, borderRadius: 6 },   // --radius-md
+  lg: { fontSize: 18, paddingY: 12, paddingX: 32, borderRadius: 8 },  // --radius-lg
 };
 
 /**
@@ -945,7 +945,7 @@ export function getToggleButtonSizePreset(size: string): ToggleButtonSizePreset 
   const fontSize = parseCSSValue(getCSSVariable(mapping.fontSize), fallback.fontSize);
   const paddingY = parseCSSValue(getCSSVariable(mapping.paddingY), fallback.paddingY);
   const paddingX = parseCSSValue(getCSSVariable(mapping.paddingX), fallback.paddingX);
-  const borderRadius = parseCSSValue(getCSSVariable('--radius-md'), fallback.borderRadius);
+  const borderRadius = parseCSSValue(getCSSVariable(mapping.borderRadius), fallback.borderRadius);
 
   return {
     fontSize,
