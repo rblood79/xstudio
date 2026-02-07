@@ -6,6 +6,29 @@
 
 ---
 
+## 0. 문서 검토 요약 (2026-02)
+
+기존 초안은 방향성이 명확하고, Pencil 기능을 단계별로 잘 쪼갠 점이 강점이다. 다만 현재 저장소 구조/상태관리 패턴과 일부 경로·명령어가 어긋난 부분이 있어 아래를 반영해 보완했다.
+
+### 0.1 보완한 핵심 항목
+
+1. **경로 정합성 보정**
+   - `atoms/fillAtoms.ts` 같은 상대 경로 표기를 실제 코드베이스 기준(`apps/builder/src/builder/panels/styles/atoms/fillAtoms.ts`)으로 명확화.
+2. **상태관리 흐름 정렬**
+   - `useSceneManager()` 기반 예시는 현재 Builder의 Zustand + Jotai 브릿지 흐름과 어긋나므로, `selectedElementAtom`/`appearanceValuesAtom` 패턴과 히스토리 액션 호출 기반으로 정리.
+3. **명령어 표준화**
+   - 루트 스크립트 기준 `pnpm type-check`로 수정.
+4. **릴리즈 안전장치 추가**
+   - Feature Flag/마이그레이션 게이트/롤백 체크리스트를 명시해 점진 배포 가능하도록 보강.
+
+### 0.2 유지한 설계 원칙
+
+- Fill/Stroke를 단일 문자열에서 **레이어 모델**로 승격
+- 드래그 중 로컬 업데이트, 확정 시 history/db 반영
+- Skia 변환 레이어를 별도로 두고 렌더 파이프라인 순서를 유지
+
+---
+
 ## 1. 현재 상태 분석 (AS-IS)
 
 ### 1.1 기존 컬러 피커 구조
@@ -236,7 +259,7 @@ export interface Element {
 #### 3.2.1 Jotai Atom 추가
 
 ```typescript
-// atoms/fillAtoms.ts (신규)
+// apps/builder/src/builder/panels/styles/atoms/fillAtoms.ts (신규)
 
 import { atom } from 'jotai';
 import type { FillItem, StrokeConfig, ColorInputMode } from '@/types/builder/fill.types';
@@ -265,10 +288,13 @@ export const colorInputModeAtom = atom<ColorInputMode>('hex');
 #### 3.2.2 Fill 액션
 
 ```typescript
-// hooks/useFillActions.ts (신규)
+// apps/builder/src/builder/panels/styles/hooks/useFillActions.ts (신규)
+
+// 주의: 실제 구현은 builder의 Zustand 액션 + Jotai 브릿지 패턴에 맞춘다.
+// (sceneManager 직접 의존 대신 element update/history 액션을 경유)
 
 export function useFillActions() {
-  const sceneManager = useSceneManager();
+  const { updateElement, pushHistory } = useBuilderActions();
 
   /** Fill 추가 */
   const addFill = (type: FillType = FillType.Color) => {
@@ -710,13 +736,27 @@ function getOrCreateGradientShader(fill: GradientFillItem): CanvasKit.Shader {
 
 | 범위 | 방법 | 파일 |
 |------|------|------|
-| 타입 안전성 | `pnpm typecheck` | `fill.types.ts` |
+| 타입 안전성 | `pnpm type-check` | `fill.types.ts` |
 | 색상 변환 | Unit Test | `colorUtils.test.ts` |
 | Fill CRUD | Unit Test | `useFillActions.test.ts` |
 | 마이그레이션 | Unit Test | `fillMigration.test.ts` |
 | UI 렌더링 | Storybook | `FillSection.stories.tsx` |
 | 드래그 인터랙션 | Storybook + E2E | `GradientBar.stories.tsx` |
 | 성능 | Canvas FPS 모니터 | 기존 모니터링 패널 활용 |
+
+### 10.1 수용 기준 (Acceptance Criteria)
+
+- 단색 요소를 선택했을 때, 기존 `backgroundColor`는 자동으로 `fills[0]`에 마이그레이션되어 UI에서 동일 색으로 표시된다.
+- Fill 레이어 3개 이상에서 **추가/삭제/순서변경/토글**이 undo/redo에 정확히 반영된다.
+- ColorArea/Hue/Alpha 드래그 중 프레임 드랍 없이 미리보기가 갱신되고, drag end 시점에만 history entry가 생성된다.
+- Linear/Radial/Angular 스톱 편집 후 캔버스(스키아) 결과와 패널 미리보기가 시각적으로 일치한다.
+- EyeDropper 미지원 브라우저에서 버튼이 노출되지 않으며, 지원 브라우저에서 취소(ESC) 시 상태가 오염되지 않는다.
+
+### 10.2 Feature Flag / 롤백 전략
+
+- `fills/stroke` 편집 UI는 초기에는 `color-picker-v2` 플래그 하에서만 노출한다.
+- 플래그 OFF 시 기존 `AppearanceSection` 단색 편집 경로를 유지해 즉시 롤백 가능해야 한다.
+- DB에는 신규 필드를 쓰더라도, 읽기 경로는 `fills ?? backgroundColor` 폴백을 한 릴리즈 이상 유지한다.
 
 ---
 
