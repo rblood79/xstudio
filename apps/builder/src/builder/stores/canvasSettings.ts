@@ -40,6 +40,9 @@ export interface SettingsState {
   /** History 정보 (Monitor에서 사용) */
   historyInfo: HistoryInfo;
 
+  /** Workflow 오버레이 표시 여부 (WebGL 캔버스 위에 페이지 간 연결선 표시) */
+  showWorkflowOverlay: boolean;
+
   /** Grid 표시 토글 */
   setShowGrid: (show: boolean) => void;
 
@@ -57,6 +60,12 @@ export interface SettingsState {
 
   /** 뷰 모드 토글 */
   toggleViewMode: () => void;
+
+  /** Workflow 오버레이 토글 */
+  toggleWorkflowOverlay: () => void;
+
+  /** Workflow 오버레이 설정 */
+  setShowWorkflowOverlay: (show: boolean) => void;
 }
 
 /**
@@ -67,6 +76,7 @@ export const createSettingsSlice: StateCreator<SettingsState> = (set, get) => ({
   showGrid: false,
   snapToGrid: false,
   gridSize: 8,
+  showWorkflowOverlay: false,
   historyInfo: {
     canUndo: false,
     canRedo: false,
@@ -115,5 +125,19 @@ export const createSettingsSlice: StateCreator<SettingsState> = (set, get) => ({
   toggleViewMode: () => {
     const current = get().viewMode;
     set({ viewMode: current === 'canvas' ? 'workflow' : 'canvas' });
+  },
+
+  /**
+   * Workflow 오버레이 토글
+   */
+  toggleWorkflowOverlay: () => {
+    set({ showWorkflowOverlay: !get().showWorkflowOverlay });
+  },
+
+  /**
+   * Workflow 오버레이 설정
+   */
+  setShowWorkflowOverlay: (show: boolean) => {
+    set({ showWorkflowOverlay: show });
   },
 });
