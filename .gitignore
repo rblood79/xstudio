@@ -69,3 +69,7 @@ apps/builder/public/wasm/
 # Rust WASM build artifacts
 apps/builder/src/builder/workspace/canvas/wasm/target/
 apps/builder/src/builder/workspace/canvas/wasm-bindings/pkg/
+
+# TypeScript compiled output (tsc -b) alongside source files
+apps/builder/src/**/*.js
+!apps/builder/src/**/*.config.js
