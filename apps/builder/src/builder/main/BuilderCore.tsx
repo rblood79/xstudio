@@ -11,6 +11,7 @@ import "../panels";
 
 import { BuilderHeader, Breakpoint } from "./BuilderHeader";
 import { BuilderCanvas } from "./BuilderCanvas";
+import { BuilderWorkflow } from "./BuilderWorkflow";
 import { BuilderViewport } from "./BuilderViewport";
 import SelectionOverlay from "../overlay";
 import { Workspace } from "../workspace";
@@ -64,8 +65,6 @@ export const BuilderCore: React.FC = () => {
   const setHistoryInfo = useStore((state) => state.setHistoryInfo);
   const viewMode = useStore((state) => state.viewMode);
   const toggleViewMode = useStore((state) => state.toggleViewMode);
-  const showWorkflowOverlay = useStore((state) => state.showWorkflowOverlay);
-  const toggleWorkflowOverlay = useStore((state) => state.toggleWorkflowOverlay);
 
   // 히스토리 정보 업데이트 (구독 기반)
   useEffect(() => {
@@ -846,39 +845,40 @@ export const BuilderCore: React.FC = () => {
         onPublish={handlePublish}
         viewMode={viewMode}
         onViewModeToggle={toggleViewMode}
-        showWorkflowOverlay={showWorkflowOverlay}
-        onWorkflowOverlayToggle={toggleWorkflowOverlay}
       />
 
-      {/* WebGL 캔버스는 항상 표시. Workflow는 캔버스 위 오버레이로 통합됨 */}
-      {useWebGL ? (
-        /* WebGL Canvas (Phase 10) */
-        <Workspace
-          breakpoint={breakpoint}
-          breakpoints={breakpoints}
-          fallbackCanvas={
-            <BuilderCanvas
-              projectId={projectId}
-              breakpoint={new Set(Array.from(breakpoint).map(String))}
-              breakpoints={breakpoints}
-              onIframeLoad={handleIframeLoad}
-              onMessage={handleMessage}
-            >
-              <SelectionOverlay />
-            </BuilderCanvas>
-          }
-        />
+      {viewMode === 'canvas' ? (
+        useWebGL ? (
+          /* WebGL Canvas (Phase 10) */
+          <Workspace
+            breakpoint={breakpoint}
+            breakpoints={breakpoints}
+            fallbackCanvas={
+              <BuilderCanvas
+                projectId={projectId}
+                breakpoint={new Set(Array.from(breakpoint).map(String))}
+                breakpoints={breakpoints}
+                onIframeLoad={handleIframeLoad}
+                onMessage={handleMessage}
+              >
+                <SelectionOverlay />
+              </BuilderCanvas>
+            }
+          />
+        ) : (
+          /* iframe Canvas (기존) */
+          <BuilderCanvas
+            projectId={projectId}
+            breakpoint={new Set(Array.from(breakpoint).map(String))}
+            breakpoints={breakpoints}
+            onIframeLoad={handleIframeLoad}
+            onMessage={handleMessage}
+          >
+            <SelectionOverlay />
+          </BuilderCanvas>
+        )
       ) : (
-        /* iframe Canvas (기존) */
-        <BuilderCanvas
-          projectId={projectId}
-          breakpoint={new Set(Array.from(breakpoint).map(String))}
-          breakpoints={breakpoints}
-          onIframeLoad={handleIframeLoad}
-          onMessage={handleMessage}
-        >
-          <SelectionOverlay />
-        </BuilderCanvas>
+        <BuilderWorkflow />
       )}
 
       <aside className="sidebar">

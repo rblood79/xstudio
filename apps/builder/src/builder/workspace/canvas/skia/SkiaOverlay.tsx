@@ -35,8 +35,6 @@ import type { BoundingBox, DragState } from '../selection/types';
 import { watchContextLoss } from './createSurface';
 import { clearImageCache } from './imageCache';
 import { flushWasmMetrics, recordWasmMetric } from '../utils/gpuProfilerCore';
-import { computeWorkflowEdges, type WorkflowEdge, type PageFrame } from './workflowEdges';
-import { renderWorkflowEdges } from './workflowRenderer';
 
 interface SkiaOverlayProps {
   /** 부모 컨테이너 DOM 요소 */
@@ -445,11 +443,6 @@ export function SkiaOverlay({
 
   const emptyTreeBoundsMapRef = useRef<Map<string, BoundingBox>>(new Map());
 
-  // Workflow overlay: cached edges + version tracking
-  const workflowEdgesRef = useRef<WorkflowEdge[]>([]);
-  const workflowEdgesVersionRef = useRef(-1);
-  const lastWorkflowOverlayRef = useRef(false);
-
   // Dev-only: registryVersion 변화율(Content rerender 원인 추적)
   const devRegistryWindowStartMs = useRef(0);
   const devRegistryWindowStartVersion = useRef(0);
@@ -656,21 +649,6 @@ export function SkiaOverlay({
         overlayVersionRef.current++;
       }
 
-      // Workflow overlay: recompute edges when elements/pages change or toggle state changes
-      const showWorkflow = useStore.getState().showWorkflowOverlay;
-      if (showWorkflow !== lastWorkflowOverlayRef.current) {
-        lastWorkflowOverlayRef.current = showWorkflow;
-        overlayVersionRef.current++;
-      }
-      if (showWorkflow && registryVersion !== workflowEdgesVersionRef.current) {
-        const storeState = useStore.getState();
-        const allElements = storeState.elements ?? [];
-        const allPages = storeState.pages ?? [];
-        workflowEdgesRef.current = computeWorkflowEdges(allPages, allElements);
-        workflowEdgesVersionRef.current = registryVersion;
-        overlayVersionRef.current++;
-      }
-
       const camera = { zoom: cameraZoom, panX: cameraX, panY: cameraY };
 
       // 🚀 페이지 위치 변경 감지 — content 무효화 (registryVersion 합산 해킹 제거)
@@ -757,16 +735,6 @@ export function SkiaOverlay({
               canvas.translate(frame.x, frame.y);
               renderPageTitle(ck, canvas, frame.title, cameraZoom, fontMgr, hasSelection && frame.id === activePageId);
               canvas.restore();
-            }
-
-            // Workflow overlay: draw edges between page frames
-            const showWorkflow = useStore.getState().showWorkflowOverlay;
-            if (showWorkflow && frames.length > 1) {
-              const pageFrameMap = new Map<string, PageFrame>();
-              for (const f of frames) {
-                pageFrameMap.set(f.id, f);
-              }
-              renderWorkflowEdges(ck, canvas, workflowEdgesRef.current, pageFrameMap, cameraZoom, fontMgr);
             }
           }
 

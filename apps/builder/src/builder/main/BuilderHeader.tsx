@@ -50,8 +50,6 @@ export interface BuilderHeaderProps {
   onPublish: () => void;
   viewMode: "canvas" | "workflow";
   onViewModeToggle: () => void;
-  showWorkflowOverlay?: boolean;
-  onWorkflowOverlayToggle?: () => void;
 }
 
 export const BuilderHeader: React.FC<BuilderHeaderProps> = ({
@@ -70,8 +68,6 @@ export const BuilderHeader: React.FC<BuilderHeaderProps> = ({
   onPublish,
   viewMode,
   onViewModeToggle,
-  showWorkflowOverlay = false,
-  onWorkflowOverlayToggle,
 }) => {
   const { layout, toggleBottomPanel, openPanelAsModal } = usePanelLayout();
   const isMonitorOpen =
@@ -190,7 +186,7 @@ export const BuilderHeader: React.FC<BuilderHeaderProps> = ({
           selectedKeys={
             new Set([
               ...(isMonitorOpen ? ["monitor"] : []),
-              ...(showWorkflowOverlay ? ["workflow"] : []),
+              ...(viewMode === "workflow" ? ["workflow"] : []),
             ])
           }
           indicator={true}
@@ -198,16 +194,16 @@ export const BuilderHeader: React.FC<BuilderHeaderProps> = ({
             const selectedKeys = new Set(keys);
             const wasMonitorOpen = isMonitorOpen;
             const isMonitorNowSelected = selectedKeys.has("monitor");
-            const wasWorkflowOverlay = showWorkflowOverlay;
+            const wasWorkflow = viewMode === "workflow";
             const isWorkflowNowSelected = selectedKeys.has("workflow");
 
             // Monitor 토글
             if (wasMonitorOpen !== isMonitorNowSelected) {
               toggleBottomPanel("monitor");
             }
-            // Workflow 오버레이 토글 (WebGL 캔버스 위에 연결선 표시)
-            if (wasWorkflowOverlay !== isWorkflowNowSelected) {
-              onWorkflowOverlayToggle?.();
+            // Workflow 토글
+            if (wasWorkflow !== isWorkflowNowSelected) {
+              onViewModeToggle();
             }
           }}
           aria-label="View options"
@@ -222,14 +218,22 @@ export const BuilderHeader: React.FC<BuilderHeaderProps> = ({
           <ToggleButton
             id="workflow"
             aria-label={
-              showWorkflowOverlay ? "Hide Workflow Overlay" : "Show Workflow Overlay"
+              viewMode === "canvas" ? "Switch to Workflow" : "Switch to Canvas"
             }
           >
-            <GitBranch
-              color={showWorkflowOverlay ? "var(--color-white)" : iconProps.color}
-              strokeWidth={iconProps.strokeWidth}
-              size={iconProps.size}
-            />
+            {viewMode === "canvas" ? (
+              <GitBranch
+                color={iconProps.color}
+                strokeWidth={iconProps.strokeWidth}
+                size={iconProps.size}
+              />
+            ) : (
+              <LayoutGrid
+                color="var(--color-white)"
+                strokeWidth={iconProps.strokeWidth}
+                size={iconProps.size}
+              />
+            )}
           </ToggleButton>
           <ToggleButton id="preview" aria-label="Preview" onPress={onPreview}>
             <Eye
