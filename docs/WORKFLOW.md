@@ -1,6 +1,6 @@
 # WebGL Workflow Integration - Analysis & Implementation Plan
 
-> **Status**: Phase 1 (기본 오버레이) 완료, Phase 2~4 계획 수립
+> **Status**: 분석 완료, 전체 Phase 미구현 (계획 수립 단계)
 >
 > **목표**: `@xyflow/react` 기반 별도 화면 전환 → WebGL 캔버스 내 네이티브 CanvasKit 렌더링으로 통합
 
@@ -190,18 +190,18 @@ renderer.setOverlayNode({
 
 ## 3. 구현 계획
 
-### Phase 1: 기본 엣지 오버레이 (완료)
+### Phase 1: 기본 엣지 오버레이 (계획)
 
 **범위**: Navigation + Event-navigation 엣지를 CanvasKit으로 렌더링
 
-#### 완료된 파일
+#### 변경 대상 파일
 
 | 파일 | 변경 | 역할 |
 |------|------|------|
-| `skia/workflowEdges.ts` | 신규 (219줄) | Element에서 페이지 간 연결 추출 |
-| `skia/workflowRenderer.ts` | 신규 (281줄) | Bezier 커브 + 화살표 CanvasKit 렌더링 |
-| `skia/SkiaOverlay.tsx` | 수정 (+32줄) | 워크플로우 렌더링 파이프라인 통합 |
-| `stores/canvasSettings.ts` | 수정 (+24줄) | `showWorkflowOverlay` 상태 추가 |
+| `skia/workflowEdges.ts` | 신규 | Element에서 페이지 간 연결 추출 |
+| `skia/workflowRenderer.ts` | 신규 | Bezier 커브 + 화살표 CanvasKit 렌더링 |
+| `skia/SkiaOverlay.tsx` | 수정 | 워크플로우 렌더링 파이프라인 통합 |
+| `stores/canvasSettings.ts` | 수정 | `showWorkflowOverlay` 상태 추가 |
 | `main/BuilderHeader.tsx` | 수정 | GitBranch 버튼 → 오버레이 토글 |
 | `main/BuilderCore.tsx` | 수정 | 별도 워크플로우 뷰 제거, 캔버스 항상 표시 |
 
@@ -429,7 +429,7 @@ B → D (navigation)     → 연한 파란색 (2차 연결)
 ### 4.1 단계적 접근
 
 ```
-Phase 1 (완료)                    Phase 2                        Phase 3~4
+Phase 1                           Phase 2                        Phase 3~4
 ┌─────────────────┐    ┌─────────────────────────┐    ┌──────────────────────┐
 │ 기본 엣지        │    │ 데이터+레이아웃 연결     │    │ 인터랙션+고급 UI     │
 │ navigation edge  │ → │ data source edges       │ → │ hover highlight      │
@@ -642,11 +642,13 @@ if (showWorkflow && registryVersion !== workflowEdgesVersionRef.current) {
 - [ADR-003: Canvas Rendering](docs/adr/003-canvas-rendering.md) - CanvasKit/Skia 선택 이유
 - [ADR-001: State Management](docs/adr/001-state-management.md) - Zustand 슬라이스 패턴
 
-### 관련 파일
+### 기존 시스템 파일
+- `apps/builder/src/workflow/` — 기존 ReactFlow 워크플로우 전체 디렉토리
+- `apps/builder/src/builder/main/BuilderWorkflow.tsx` — 기존 bridge 컴포넌트
+- `apps/builder/src/builder/stores/canvasSettings.ts` — viewMode 상태 관리
+
+### 통합 대상 파일 (수정/생성 예정)
 - `apps/builder/src/builder/workspace/canvas/skia/SkiaOverlay.tsx` — 오버레이 파이프라인
 - `apps/builder/src/builder/workspace/canvas/skia/SkiaRenderer.ts` — 프레임 분류/캐싱
 - `apps/builder/src/builder/workspace/canvas/skia/selectionRenderer.ts` — 렌더러 패턴 참조
 - `apps/builder/src/builder/workspace/canvas/skia/aiEffects.ts` — 렌더러 패턴 참조
-- `apps/builder/src/builder/workspace/canvas/skia/workflowEdges.ts` — 엣지 계산
-- `apps/builder/src/builder/workspace/canvas/skia/workflowRenderer.ts` — 엣지 렌더링
-- `apps/builder/src/builder/stores/canvasSettings.ts` — 워크플로우 오버레이 상태
