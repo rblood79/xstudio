@@ -1,8 +1,8 @@
 # WebGL Workflow Integration - Analysis & Implementation Plan
 
-> **Status**: Phase 1 (기본 오버레이) 완료, Phase 2~4 계획 수립
+> **Status**: 분석/설계 단계 (기존 ReactFlow Workflow 운영 중)
 >
-> **목표**: `@xyflow/react` 기반 별도 화면 전환 → WebGL 캔버스 내 네이티브 CanvasKit 렌더링으로 통합
+> **목표**: `@xyflow/react` 기반 별도 화면 전환 → WebGL 캔버스 내 네이티브 CanvasKit 렌더링으로 점진 통합
 
 ---
 
@@ -190,22 +190,25 @@ renderer.setOverlayNode({
 
 ## 3. 구현 계획
 
-### Phase 1: 기본 엣지 오버레이 (완료)
+### Phase 1: 기본 엣지 오버레이 (계획)
 
 **범위**: Navigation + Event-navigation 엣지를 CanvasKit으로 렌더링
 
-#### 완료된 파일
+> 참고: 현재 코드베이스는 `viewMode === 'workflow'` 분기와 `BuilderWorkflow`를 유지하고 있으며,
+> 아래 내용은 구현 목표 상태를 기준으로 정리했습니다.
+
+#### 예정 파일
 
 | 파일 | 변경 | 역할 |
 |------|------|------|
-| `skia/workflowEdges.ts` | 신규 (219줄) | Element에서 페이지 간 연결 추출 |
-| `skia/workflowRenderer.ts` | 신규 (281줄) | Bezier 커브 + 화살표 CanvasKit 렌더링 |
-| `skia/SkiaOverlay.tsx` | 수정 (+32줄) | 워크플로우 렌더링 파이프라인 통합 |
-| `stores/canvasSettings.ts` | 수정 (+24줄) | `showWorkflowOverlay` 상태 추가 |
-| `main/BuilderHeader.tsx` | 수정 | GitBranch 버튼 → 오버레이 토글 |
-| `main/BuilderCore.tsx` | 수정 | 별도 워크플로우 뷰 제거, 캔버스 항상 표시 |
+| `apps/builder/src/builder/workspace/canvas/skia/workflowEdges.ts` | 신규 | Element에서 페이지 간 연결 추출 |
+| `apps/builder/src/builder/workspace/canvas/skia/workflowRenderer.ts` | 신규 | Bezier 커브 + 화살표 CanvasKit 렌더링 |
+| `apps/builder/src/builder/workspace/canvas/skia/SkiaOverlay.tsx` | 수정 | 워크플로우 렌더링 파이프라인 통합 |
+| `apps/builder/src/builder/stores/canvasSettings.ts` | 수정 | `showWorkflowOverlay` 및 세부 토글 상태 추가 |
+| `apps/builder/src/builder/main/BuilderHeader.tsx` | 수정 | GitBranch 버튼 → 오버레이 토글 |
+| `apps/builder/src/builder/main/BuilderCore.tsx` | 수정 | `viewMode` 전환 제거 후 캔버스 상시 표시 |
 
-#### 데이터 흐름
+#### 목표 데이터 흐름
 
 ```
 Store (pages, elements)
@@ -223,14 +226,14 @@ renderWorkflowEdges(ck, canvas, edges, pageFrameMap, zoom)
     └── drawText(): 레이블 (선택적)
 ```
 
-#### 엣지 스타일
+#### 목표 엣지 스타일
 
 | 타입 | 색상 | 스타일 | 레이블 |
 |------|------|--------|--------|
 | `navigation` | blue-500 (#3b82f6) | Solid, 2px | "Link" |
 | `event-navigation` | purple-500 (#a855f7) | Dashed [6,4], 2px | 이벤트 타입 |
 
-#### 앵커 포인트 계산
+#### 목표 앵커 포인트 계산
 
 ```
 페이지 A가 페이지 B의 왼쪽에 있을 때:
@@ -242,7 +245,7 @@ renderWorkflowEdges(ck, canvas, edges, pageFrameMap, zoom)
 → Math.abs(dx) > Math.abs(dy) 판별로 수평/수직 자동 결정
 ```
 
-#### 성능 특성
+#### 목표 성능 특성
 
 - **엣지 계산**: O(pages × elements) — registryVersion 변경 시에만 실행
 - **렌더링**: O(edges) — overlay layer의 일부, `present` 프레임 타입
@@ -429,19 +432,28 @@ B → D (navigation)     → 연한 파란색 (2차 연결)
 ### 4.1 단계적 접근
 
 ```
-Phase 1 (완료)                    Phase 2                        Phase 3~4
+현재(ReactFlow)                  Phase 1                        Phase 2~4
 ┌─────────────────┐    ┌─────────────────────────┐    ┌──────────────────────┐
+│ workflow 화면 전환 │    │ 기본 엣지 오버레이       │    │ 데이터/인터랙션/UI    │
+│ BuilderWorkflow  │ → │ navigation edge         │ → │ data/layout edges     │
+│ @xyflow/react    │    │ event edge              │    │ hover/click/minimap   │
+│ 별도 카메라        │    │ 오버레이 토글            │    │ legend/summary panel  │
+└─────────────────┘    └─────────────────────────┘    └──────────────────────┘
+
+완료 후 목표 상태
+    ┌─────────────────┐    ┌─────────────────────────┐    ┌──────────────────────┐
 │ 기본 엣지        │    │ 데이터+레이아웃 연결     │    │ 인터랙션+고급 UI     │
 │ navigation edge  │ → │ data source edges       │ → │ hover highlight      │
 │ event edge       │    │ layout group overlay    │    │ click navigation     │
 │ 토글 버튼        │    │ 세부 토글 드롭다운       │    │ minimap, legend      │
-└─────────────────┘    └─────────────────────────┘    └──────────────────────┘
+    └─────────────────┘    └─────────────────────────┘    └──────────────────────┘
 ```
 
 ### 4.2 기존 Workflow 코드 처리
 
 | 단계 | 조건 | 조치 |
 |------|------|------|
+| 현재 | 기존 ReactFlow 운영 | 기존 코드 유지 |
 | Phase 1 | 기본 엣지 동작 확인 | 기존 코드 유지 (fallback) |
 | Phase 2 | 데이터/레이아웃 기능 동등 | `BuilderWorkflow.tsx` 제거 |
 | Phase 3 | 인터랙션 기능 동등 | `workflow/components/` 제거 |
@@ -613,9 +625,9 @@ if (showWorkflow && registryVersion !== workflowEdgesVersionRef.current) {
 
 ## 6. 비교 분석
 
-### 6.1 기존 vs 새 아키텍처
+### 6.1 기존 vs 목표 아키텍처
 
-| 항목 | 기존 (@xyflow/react) | 새 (CanvasKit 오버레이) |
+| 항목 | 기존 (@xyflow/react) | 목표 (CanvasKit 오버레이) |
 |------|---------------------|----------------------|
 | **렌더링 엔진** | DOM (React 노드) | WebGL (CanvasKit) |
 | **전환 방식** | 화면 전환 (언마운트/마운트) | 오버레이 토글 (즉시) |
@@ -625,7 +637,7 @@ if (showWorkflow && registryVersion !== workflowEdgesVersionRef.current) {
 | **프레임 비용** | N/A (DOM) | ~1-2ms (present 프레임) |
 | **데이터 동기화** | 3개 useEffect 브리지 | 직접 store 접근 |
 
-### 6.2 성능 비교
+### 6.2 성능 비교 (예상)
 
 | 시나리오 | 기존 | 새 |
 |---------|------|------|
