@@ -1,20 +1,24 @@
 /**
  * FillDetailPopover - Fill 상세 편집 Popover 내용
  *
- * Popover 안에:
- * - FillTypeSelector (상단)
- * - ColorPickerPanel (Color 타입일 때)
- * - GradientEditor (Gradient 타입일 때)
+ * 설계문서 Pencil 앱 스타일:
+ * ┌──────────────────────────────┐
+ * │  [Color] [Gradient] [Image]  │  ← 대분류 탭 (FillTypeSelector)
+ * ├──────────────────────────────┤
+ * │  Color 탭: ColorPickerPanel  │
+ * │  Gradient 탭: GradientEditor │  ← 내부에 [Linear][Radial][Angular]
+ * │  Image 탭: (Phase 3)        │
+ * └──────────────────────────────┘
  *
  * @since 2026-02-10 Color Picker Phase 1
- * @updated 2026-02-10 Gradient Phase 2
+ * @updated 2026-02-10 Phase 2 - 3탭 구조 재설계
  */
 
-import { memo, useCallback } from 'react';
+import { memo, useCallback, useMemo } from 'react';
 import type { FillItem, ColorFillItem } from '../../../../types/builder/fill.types';
 import { FillType } from '../../../../types/builder/fill.types';
 import { normalizeToHex8 } from '../utils/colorUtils';
-import { FillTypeSelector } from './FillTypeSelector';
+import { FillTypeSelector, type FillCategory } from './FillTypeSelector';
 import { ColorPickerPanel } from './ColorPickerPanel';
 import { GradientEditor } from './GradientEditor';
 
@@ -29,6 +33,34 @@ interface FillDetailPopoverProps {
   onTypeChange: (newType: FillType) => void;
 }
 
+/** FillType → FillCategory 매핑 */
+function fillTypeToCategory(type: FillType): FillCategory {
+  switch (type) {
+    case FillType.Color:
+      return 'color';
+    case FillType.LinearGradient:
+    case FillType.RadialGradient:
+    case FillType.AngularGradient:
+      return 'gradient';
+    case FillType.Image:
+      return 'image';
+    default:
+      return 'color';
+  }
+}
+
+/** FillCategory → 기본 FillType 매핑 */
+function categoryToDefaultFillType(category: FillCategory): FillType {
+  switch (category) {
+    case 'color':
+      return FillType.Color;
+    case 'gradient':
+      return FillType.LinearGradient;
+    case 'image':
+      return FillType.Image;
+  }
+}
+
 export const FillDetailPopover = memo(function FillDetailPopover({
   fill,
   onColorChange,
@@ -37,26 +69,38 @@ export const FillDetailPopover = memo(function FillDetailPopover({
   onUpdateEnd,
   onTypeChange,
 }: FillDetailPopoverProps) {
+  const currentCategory = useMemo(() => fillTypeToCategory(fill.type), [fill.type]);
   const isColor = fill.type === FillType.Color;
-  const isGradient =
-    fill.type === FillType.LinearGradient ||
-    fill.type === FillType.RadialGradient ||
-    fill.type === FillType.AngularGradient;
+  const isGradient = currentCategory === 'gradient';
 
   const colorValue = isColor
     ? normalizeToHex8((fill as ColorFillItem).color)
     : '#000000FF';
 
-  const handleTypeChange = useCallback(
-    (newType: FillType) => {
+  // 대분류 탭 변경 (Color ↔ Gradient ↔ Image)
+  const handleCategoryChange = useCallback(
+    (category: FillCategory) => {
+      const currentCat = fillTypeToCategory(fill.type);
+      if (category === currentCat) return;
+
+      // Gradient 내부 하위 타입은 유지하고 대분류만 변경
+      const newType = categoryToDefaultFillType(category);
       onTypeChange(newType);
+    },
+    [fill.type, onTypeChange],
+  );
+
+  // Gradient 하위 타입 변경 (Linear ↔ Radial ↔ Angular)
+  const handleGradientSubTypeChange = useCallback(
+    (subType: FillType) => {
+      onTypeChange(subType);
     },
     [onTypeChange],
   );
 
   return (
     <div className="fill-detail-popover">
-      <FillTypeSelector value={fill.type} onChange={handleTypeChange} />
+      <FillTypeSelector value={currentCategory} onChange={handleCategoryChange} />
       {isColor && (
         <ColorPickerPanel
           value={colorValue}
@@ -69,6 +113,7 @@ export const FillDetailPopover = memo(function FillDetailPopover({
           fill={fill as Parameters<typeof GradientEditor>[0]['fill']}
           onChange={onUpdate}
           onChangeEnd={onUpdateEnd}
+          onSubTypeChange={handleGradientSubTypeChange}
         />
       )}
     </div>
