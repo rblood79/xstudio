@@ -14,6 +14,7 @@ import type { PanelProps } from "../core/types";
 import type { SelectedElement } from "../../inspector/types";
 import type { ActionType, EventType as RegistryEventType } from "@/types/events/events.types";
 import { ACTION_TYPE_LABELS, REGISTRY_ACTION_CATEGORIES } from "@/types/events/events.types";
+import { getRecommendedActions } from "./data/actionMetadata";
 import type { EventHandler } from "./types/eventTypes";
 import type { EventType } from "@/types/events/events.types";
 import type {
@@ -29,6 +30,10 @@ import { useEventHandlers } from "./state/useEventHandlers";
 import { useActions } from "./state/useActions";
 import { useEventSelection } from "./state/useEventSelection";
 import { DebounceThrottleEditor } from "./components/DebounceThrottleEditor";
+import { RecommendedEventsSection } from "./components/RecommendedEventsSection";
+import { TemplateSuggestionSection } from "./components/TemplateSuggestionSection";
+import { generateEventHandlerIds } from "./hooks/useApplyTemplate";
+import type { EventTemplate } from "./data/eventTemplates";
 // Block-based UI components
 import { WhenBlock } from "./blocks/WhenBlock";
 import { IfBlock } from "./blocks/IfBlock";
@@ -163,15 +168,25 @@ interface ActionPickerOverlayProps {
   branch: 'then' | 'else';
   onSelect: (actionType: ActionType) => void;
   onClose: () => void;
+  /** 현재 이벤트 타입 (추천 배지용) */
+  eventType?: string;
+  /** 컴포넌트 타입 (추천 배지용) */
+  componentType?: string;
 }
 
-function ActionPickerOverlay({ branch, onSelect, onClose }: ActionPickerOverlayProps) {
+function ActionPickerOverlay({ branch, onSelect, onClose, eventType, componentType }: ActionPickerOverlayProps) {
   const [searchValue, setSearchValue] = useState('');
 
   // 사용 가능한 액션 타입 목록
   const availableActionTypes = useMemo(() => {
     return Object.keys(ACTION_TYPE_LABELS) as ActionType[];
   }, []);
+
+  // 추천 액션 Set (배지 표시용)
+  const recommendedActionSet = useMemo(() => {
+    const recommended = getRecommendedActions({ eventType, componentType });
+    return new Set(recommended);
+  }, [eventType, componentType]);
 
   // 검색 필터링된 목록
   const filteredActionTypes = useMemo(() => {
@@ -250,6 +265,9 @@ function ActionPickerOverlay({ branch, onSelect, onClose }: ActionPickerOverlayP
                     {ACTION_TYPE_LABELS[actionType] || actionType}
                   </span>
                   <span className="action-type-code">{actionType}</span>
+                  {recommendedActionSet.has(actionType) && (
+                    <span className="action-recommended-badge">추천</span>
+                  )}
                 </button>
               ))}
             </div>
@@ -402,6 +420,44 @@ function EventsPanelContent({
     const newHandler = addHandler(eventType);
     selectHandler(newHandler.id);
   };
+
+  // 템플릿 적용 (이벤트 + 액션 일괄 생성)
+  const handleApplyTemplate = useCallback((template: EventTemplate) => {
+    const templateEvents = generateEventHandlerIds(template.events, 'tpl');
+    let firstNewHandlerId: string | null = null;
+
+    for (const templateEvent of templateEvents) {
+      const existingHandler = handlers.find(
+        (h) => h.event === templateEvent.event
+      );
+
+      if (existingHandler) {
+        // 기존 핸들러에 액션 병합
+        const mergedActions = [
+          ...existingHandler.actions,
+          ...templateEvent.actions,
+        ];
+        updateHandler(existingHandler.id, {
+          ...existingHandler,
+          actions: mergedActions,
+        });
+        if (!firstNewHandlerId) firstNewHandlerId = existingHandler.id;
+      } else {
+        // 새 핸들러 생성
+        const newHandler = addHandler(templateEvent.event);
+        updateHandler(newHandler.id, {
+          ...newHandler,
+          actions: templateEvent.actions,
+        });
+        if (!firstNewHandlerId) firstNewHandlerId = newHandler.id;
+      }
+    }
+
+    // 첫 번째 핸들러 자동 선택 (결과 즉시 확인)
+    if (firstNewHandlerId) {
+      selectHandler(firstNewHandlerId);
+    }
+  }, [handlers, addHandler, updateHandler, selectHandler]);
 
   // 이벤트 핸들러 삭제
   const handleRemoveHandler = (handlerId: string) => {
@@ -583,18 +639,30 @@ function EventsPanelContent({
 
       <div className="panel-contents">
         {handlers.length === 0 ? (
-          /* 이벤트 핸들러 없음 */
-          <EmptyState
-            icon={
-              <Zap
-                size={iconLarge.size}
-                color={iconProps.color}
-                strokeWidth={iconProps.strokeWidth}
-              />
-            }
-            message="이벤트 핸들러가 없습니다"
-            description="상단의 + 버튼을 눌러 이벤트를 추가하세요"
-          />
+          /* 이벤트 핸들러 없음 → 추천 chips + 템플릿 + EmptyState */
+          <>
+            <RecommendedEventsSection
+              componentType={selectedElement.type}
+              registeredEvents={registeredEventTypes}
+              onAddEvent={handleAddEvent}
+            />
+            <TemplateSuggestionSection
+              componentType={selectedElement.type}
+              currentHandlers={handlers}
+              onApplyTemplate={handleApplyTemplate}
+            />
+            <EmptyState
+              icon={
+                <Zap
+                  size={iconLarge.size}
+                  color={iconProps.color}
+                  strokeWidth={iconProps.strokeWidth}
+                />
+              }
+              message="이벤트 핸들러가 없습니다"
+              description="위의 추천 이벤트나 템플릿을 선택하세요"
+            />
+          </>
         ) : selectedHandler ? (
           /* 선택된 핸들러 상세 뷰 - 블록 기반 UI */
           <div className="section block-view" data-section-id="handler-detail">
@@ -660,6 +728,9 @@ function EventsPanelContent({
                 onRemoveAction={handleRemoveAction}
                 onUpdateAction={handleUpdateAction}
                 showConnector={true}
+                eventType={selectedHandler.event}
+                componentType={selectedElement.type}
+                onQuickAddAction={(actionType) => handleAddAction(actionType, 'then')}
               />
 
               {/* ELSE 블록 - 조건 불만족 시 액션 목록 (조건이 있을 때만 표시) */}
@@ -675,6 +746,9 @@ function EventsPanelContent({
                   onRemoveAction={handleRemoveElseAction}
                   onUpdateAction={handleUpdateElseAction}
                   showConnector={true}
+                  eventType={selectedHandler.event}
+                  componentType={selectedElement.type}
+                  onQuickAddAction={(actionType) => handleAddAction(actionType, 'else')}
                 />
               )}
 
@@ -684,6 +758,8 @@ function EventsPanelContent({
                   branch={showAddAction}
                   onSelect={(actionType) => handleAddAction(actionType, showAddAction)}
                   onClose={() => setShowAddAction(false)}
+                  eventType={selectedHandler.event}
+                  componentType={selectedElement.type}
                 />
               )}
 
@@ -738,32 +814,39 @@ function EventsPanelContent({
             </PropertySection>
           </div>
         ) : (
-          /* 핸들러 목록 뷰 */
-          <PropertySection id="handlers-list" title="Event Handlers">
-            <div className="handlers-list">
-              {handlers.map((handler) => (
-                <button
-                  key={handler.id}
-                  type="button"
-                  className="handler-item"
-                  onClick={() => selectHandler(handler.id)}
-                >
-                  <div className="handler-info">
-                    <Zap
-                      size={iconEditProps.size}
-                      color={iconProps.color}
-                      strokeWidth={iconProps.strokeWidth}
-                    />
-                    <span className="handler-type">{handler.event}</span>
-                  </div>
-                  <span className="handler-action-count">
-                    {handler.actions?.length || 0} action
-                    {(handler.actions?.length || 0) !== 1 ? "s" : ""}
-                  </span>
-                </button>
-              ))}
-            </div>
-          </PropertySection>
+          /* 핸들러 목록 뷰 → 추천 chips + 핸들러 목록 */
+          <>
+            <RecommendedEventsSection
+              componentType={selectedElement.type}
+              registeredEvents={registeredEventTypes}
+              onAddEvent={handleAddEvent}
+            />
+            <PropertySection id="handlers-list" title="Event Handlers">
+              <div className="handlers-list">
+                {handlers.map((handler) => (
+                  <button
+                    key={handler.id}
+                    type="button"
+                    className="handler-item"
+                    onClick={() => selectHandler(handler.id)}
+                  >
+                    <div className="handler-info">
+                      <Zap
+                        size={iconEditProps.size}
+                        color={iconProps.color}
+                        strokeWidth={iconProps.strokeWidth}
+                      />
+                      <span className="handler-type">{handler.event}</span>
+                    </div>
+                    <span className="handler-action-count">
+                      {handler.actions?.length || 0} action
+                      {(handler.actions?.length || 0) !== 1 ? "s" : ""}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </PropertySection>
+          </>
         )}
       </div>
     </div>

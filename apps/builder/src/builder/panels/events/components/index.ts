@@ -7,3 +7,6 @@ export { DebounceThrottleEditor } from "./DebounceThrottleEditor";
 export { ActionDelayEditor } from "./ActionDelayEditor";
 export { ComponentSelector } from "./ComponentSelector";
 export { ExecutionDebugger } from "./ExecutionDebugger";
+export { RecommendedEventsSection } from "./RecommendedEventsSection";
+export { TemplateSuggestionSection } from "./TemplateSuggestionSection";
+export { RecommendedActionsChips } from "./RecommendedActionsChips";

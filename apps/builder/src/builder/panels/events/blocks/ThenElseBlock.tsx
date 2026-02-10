@@ -9,8 +9,10 @@ import { useState } from 'react';
 import { Button } from 'react-aria-components';
 import { Plus, ChevronDown, ChevronRight } from 'lucide-react';
 import type { BlockEventAction } from '../types/eventBlockTypes';
+import type { ActionType } from '../types/eventTypes';
 import { ActionBlock } from './ActionBlock';
 import { BlockConnector } from './BlockConnector';
+import { RecommendedActionsChips } from '../components/RecommendedActionsChips';
 import { iconProps, iconSmall } from '../../../../utils/ui/uiConstants';
 
 interface ThenElseBlockProps {
@@ -43,6 +45,15 @@ interface ThenElseBlockProps {
 
   /** 초기 접힘 상태 */
   defaultCollapsed?: boolean;
+
+  /** 현재 이벤트 타입 (추천 액션용) */
+  eventType?: string;
+
+  /** 컴포넌트 타입 (추천 액션용) */
+  componentType?: string;
+
+  /** 추천 액션 빠른 추가 핸들러 */
+  onQuickAddAction?: (actionType: ActionType) => void;
 }
 
 /**
@@ -66,6 +77,9 @@ export function ThenElseBlock({
   showConnector = true,
   isDisabled = false,
   defaultCollapsed = false,
+  eventType,
+  componentType,
+  onQuickAddAction,
 }: ThenElseBlockProps) {
   const [isCollapsed, setIsCollapsed] = useState(defaultCollapsed);
   const [expandedActionId, setExpandedActionId] = useState<string | null>(null);
@@ -131,27 +145,47 @@ export function ThenElseBlock({
             {actions.length === 0 ? (
               <div className="block-empty">
                 <span>No actions</span>
+                {/* 추천 액션 chips (빈 상태) */}
+                {eventType && componentType && onQuickAddAction && (
+                  <RecommendedActionsChips
+                    eventType={eventType}
+                    componentType={componentType}
+                    existingActions={actions}
+                    onAddAction={onQuickAddAction}
+                  />
+                )}
                 <Button
                   className="add-action-btn"
                   onPress={onAddAction}
                   isDisabled={isDisabled}
                 >
                   <Plus size={iconSmall.size} />
-                  <span>Add action</span>
+                  <span>More actions</span>
                 </Button>
               </div>
             ) : (
-              actions.map((action, index) => (
-                <ActionBlock
-                  key={action.id}
-                  action={action}
-                  index={index + 1}
-                  onClick={() => onActionClick?.(action)}
-                  onRemove={() => onRemoveAction?.(action.id)}
-                  isExpanded={expandedActionId === action.id}
-                  onToggleExpand={() => handleToggleActionExpand(action.id)}
-                />
-              ))
+              <>
+                {actions.map((action, index) => (
+                  <ActionBlock
+                    key={action.id}
+                    action={action}
+                    index={index + 1}
+                    onClick={() => onActionClick?.(action)}
+                    onRemove={() => onRemoveAction?.(action.id)}
+                    isExpanded={expandedActionId === action.id}
+                    onToggleExpand={() => handleToggleActionExpand(action.id)}
+                  />
+                ))}
+                {/* 추천 액션 chips (액션 있는 상태 - 미등록 타입만) */}
+                {eventType && componentType && onQuickAddAction && (
+                  <RecommendedActionsChips
+                    eventType={eventType}
+                    componentType={componentType}
+                    existingActions={actions}
+                    onAddAction={onQuickAddAction}
+                  />
+                )}
+              </>
             )}
           </div>
         )}

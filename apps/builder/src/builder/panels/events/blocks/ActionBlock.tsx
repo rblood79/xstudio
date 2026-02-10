@@ -5,7 +5,7 @@
  * 드래그 앤 드롭 정렬, 편집, 삭제 지원
  */
 
-import { Button } from "react-aria-components";
+import { Button, TooltipTrigger, Tooltip } from "react-aria-components";
 import {
   GripVertical,
   Trash,
@@ -24,11 +24,13 @@ import {
   Table,
   Save,
   Variable,
+  AlertTriangle,
 } from "lucide-react";
 import type { BlockEventAction } from "../types/eventBlockTypes";
 import type { ActionType } from "../types/eventTypes";
 import { ACTION_TYPE_LABELS } from "../types/eventTypes";
 import { iconProps, iconEditProps } from "../../../../utils/ui/uiConstants";
+import { ACTION_METADATA } from "../data/actionMetadata";
 
 interface ActionBlockProps {
   /** 액션 데이터 */
@@ -118,6 +120,18 @@ function getActionSummary(action: BlockEventAction): string {
 }
 
 /**
+ * 필수 설정이 누락된 필드 목록 반환
+ */
+function getMissingRequiredFields(action: BlockEventAction): string[] {
+  const metadata = ACTION_METADATA[action.type as keyof typeof ACTION_METADATA];
+  if (!metadata?.configFields) return [];
+  const config = action.config as Record<string, unknown>;
+  return metadata.configFields
+    .filter((f) => f.required && (config[f.name] === undefined || config[f.name] === '' || config[f.name] === null))
+    .map((f) => f.label);
+}
+
+/**
  * 개별 액션 블록 컴포넌트
  *
  * @example
@@ -141,6 +155,8 @@ export function ActionBlock({
   const IconComponent = (ACTION_ICONS as Record<string, React.ComponentType<{ size?: number; className?: string }>>)[action.type] || Code;
   const label = (ACTION_TYPE_LABELS as Record<string, string>)[action.type] || action.type;
   const summary = getActionSummary(action);
+  const missingFields = getMissingRequiredFields(action);
+  const hasMissingConfig = missingFields.length > 0;
 
   return (
     <div
@@ -174,6 +190,21 @@ export function ActionBlock({
         <span className="action-type">{label}</span>
         {summary && <span className="action-summary">{summary}</span>}
       </button>
+
+      {/* Missing Config Warning */}
+      {hasMissingConfig && (
+        <TooltipTrigger delay={300}>
+          <Button
+            className="iconButton action-warning"
+            aria-label={`필수 설정 누락: ${missingFields.join(', ')}`}
+          >
+            <AlertTriangle size={14} className="action-warning-icon" />
+          </Button>
+          <Tooltip className="action-warning-tooltip" placement="bottom">
+            필수 설정 누락: {missingFields.join(', ')}
+          </Tooltip>
+        </TooltipTrigger>
+      )}
 
       {/* Action Controls */}
       <div className="action-controls">

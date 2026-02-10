@@ -52,25 +52,26 @@
 
 ## 단계별 개선안
 
-### P0: 추천 이벤트 노출 + 빈 상태 개선
+### P0: 추천 이벤트 노출 + 빈 상태 개선 ✅ 구현 완료
 핵심 목표: 사용자가 + 버튼 없이도 추천 이벤트를 발견하고 추가할 수 있게 한다.
 
-| # | 항목 | 설명 |
-|---|------|------|
-| 1 | 추천 이벤트 chips | panel-contents 상단에 컴포넌트별 추천 이벤트를 quick add chips로 노출 |
-| 2 | 빈 상태 가이드 개선 | "이벤트 핸들러가 없습니다" 메시지에 추천 이벤트 버튼 포함 |
-| 3 | 인라인 설명 | 각 추천 chip에 툴팁으로 이벤트 설명/사용 예시 제공 |
-| 4 | 등록된 이벤트 필터링 | 이미 등록된 이벤트는 추천 목록에서 제외 |
+| # | 항목 | 설명 | 상태 |
+|---|------|------|------|
+| 1 | 추천 이벤트 chips | panel-contents 상단에 컴포넌트별 추천 이벤트를 quick add chips로 노출 | ✅ |
+| 2 | 빈 상태 가이드 개선 | "이벤트 핸들러가 없습니다" 메시지에 추천 이벤트 버튼 포함 | ✅ |
+| 3 | 인라인 설명 | 각 추천 chip에 툴팁으로 이벤트 설명/사용 예시 제공 | ✅ |
+| 4 | 등록된 이벤트 필터링 | 이미 등록된 이벤트는 추천 목록에서 제외 | ✅ |
+| 5 | 레시피 템플릿 노출 | 빈 상태에서 컴포넌트별 레시피 템플릿 카드 표시 (P1에서 이동) | ✅ |
 
-### P1: 추천 액션 + 레시피 템플릿
+### P1: 추천 액션 + 호환성 배지 + 누락 경고 ✅ 구현 완료
 핵심 목표: 이벤트 추가 후 액션 설정까지의 흐름을 단축한다.
 
-| # | 항목 | 설명 |
-|---|------|------|
-| 1 | 추천 액션 노출 | 이벤트 선택 후 THEN 블록에 추천 액션 2~3개를 chips로 표시 |
-| 2 | 레시피 템플릿 | 자주 사용되는 이벤트+액션 조합(예: onSubmit → validateForm → showToast) 제공 |
-| 3 | 액션 호환성 배지 | 선택된 이벤트와 호환되는 액션 표시 |
-| 4 | 누락 설정 경고 | 필수 config가 없는 액션에 경고 아이콘 표시 |
+| # | 항목 | 설명 | 상태 |
+|---|------|------|------|
+| 1 | 추천 액션 노출 | THEN/ELSE 블록에 추천 액션 최대 3개를 chips로 표시 (컨텍스트+체이닝 추천) | ✅ |
+| 2 | 레시피 템플릿 | 자주 사용되는 이벤트+액션 조합 제공 (P0에서 구현 완료) | ✅ |
+| 3 | 액션 호환성 배지 | ActionPickerOverlay에서 추천 액션에 "추천" 배지 표시 | ✅ |
+| 4 | 누락 설정 경고 | 필수 config가 없는 액션에 AlertTriangle 경고 아이콘 + 툴팁 표시 | ✅ |
 
 ### P2: AI 생성 + 고급 기능
 핵심 목표: 고급 사용자를 위한 생산성 도구를 제공한다.
@@ -129,7 +130,7 @@
 - 이미 등록된 이벤트는 추천에서 제외
 - 모든 추천 이벤트 등록 시 섹션 숨김
 
-### 4. 핸들러 디테일 화면
+### 4. 핸들러 디테일 화면 (P1 반영)
 ```
 ┌─────────────────────────────────┐
 │ ← onClick                   [🗑]│
@@ -138,14 +139,25 @@
 │ │ onClick                     │ │
 │ └─────────────────────────────┘ │
 │         │                       │
-│ ┌─ THEN ──────────────────────┐ │
-│ │ [+] showToast               │ │
-│ │ [+] navigate                │ │
+│ ┌─ THEN ────────── 2 actions ┐ │
+│ │ 1. 🔗 navigate → /home     │ │
+│ │ 2. 💬 showToast → "완료" ⚠️ │ │  ← ⚠️ 누락 경고
+│ │ 추천: [setState] [showModal]│ │  ← 추천 액션 chips
+│ └─────────────────────────────┘ │
+│                                 │
+│ ┌─ ActionPicker ──────────────┐ │
+│ │ 페이지 이동 (navigate) 추천  │ │  ← "추천" 배지
+│ │ 상태 설정 (setState)  추천   │ │
+│ │ API 호출 (apiCall)          │ │
 │ └─────────────────────────────┘ │
 └─────────────────────────────────┘
 ```
 - 추천 이벤트 섹션 숨김 (집중 편집)
-- P1: THEN 블록에 추천 액션 chips 추가
+- THEN/ELSE 블록에 추천 액션 chips 표시 (이미 추가된 액션 제외, 최대 3개)
+- 빈 블록: 추천 chips + "More actions" 버튼
+- 액션 있는 블록: 액션 리스트 아래에 추천 chips
+- ActionPickerOverlay에서 추천 액션에 "추천" 배지 표시
+- 필수 config 누락 액션에 ⚠️ 경고 아이콘 + 툴팁
 
 ## 인터랙션 명세
 
@@ -176,31 +188,44 @@
 ### 파일 구조
 ```
 src/builder/panels/events/
-├── EventsPanel.tsx                    # 메인 패널 (P0: 추천 이벤트 섹션 추가)
+├── EventsPanel.tsx                        # 메인 패널 (P0+P1: 추천/템플릿/ActionPicker 배지)
+├── EventsPanel.css                        # 스타일 (P0+P1: 추천 chips, 경고, 배지)
 ├── components/
-│   └── RecommendedEventsSection.tsx   # [신규] 추천 이벤트 chips 컴포넌트
+│   ├── index.ts                           # barrel exports
+│   ├── RecommendedEventsSection.tsx       # [P0] 추천 이벤트 chips 컴포넌트
+│   ├── TemplateSuggestionSection.tsx      # [P0] 레시피 템플릿 카드 컴포넌트
+│   └── RecommendedActionsChips.tsx        # [P1] THEN/ELSE 블록 내 추천 액션 chips
+├── blocks/
+│   ├── ThenElseBlock.tsx                  # [P1 수정] 추천 액션 chips 통합
+│   └── ActionBlock.tsx                    # [P1 수정] 누락 설정 경고 아이콘 추가
 ├── hooks/
-│   └── useRecommendedEvents.ts        # [기존] 컴포넌트별 추천 이벤트 훅
+│   ├── useRecommendedEvents.ts            # [기존] 컴포넌트별 추천 이벤트 훅
+│   └── useApplyTemplate.ts               # [기존] 템플릿 적용 훅 + generateEventHandlerIds
 ├── data/
-│   ├── eventCategories.ts             # [기존] COMPONENT_RECOMMENDED_EVENTS, EVENT_METADATA
-│   ├── actionRecommendations.ts       # [신규-P1] 이벤트별 추천 액션 매핑
-│   └── eventTemplates.ts              # [기존] 레시피 템플릿 데이터 (P1 확장)
+│   ├── eventCategories.ts                 # [기존] COMPONENT_RECOMMENDED_EVENTS, EVENT_METADATA
+│   ├── actionMetadata.ts                  # [기존] ACTION_METADATA, getRecommendedActions()
+│   └── eventTemplates.ts                  # [기존] 19개 레시피 템플릿 데이터
 └── pickers/
-    └── EventTypePicker.tsx            # [기존] 이벤트 선택 팝오버
+    └── EventTypePicker.tsx                # [기존] 이벤트 선택 팝오버
 ```
 
-### 기존 데이터 소스 활용
-| 데이터 | 위치 | 용도 |
-|--------|------|------|
-| `COMPONENT_RECOMMENDED_EVENTS` | `data/eventCategories.ts:257` | 컴포넌트별 추천 이벤트 목록 |
-| `EVENT_METADATA` | `data/eventCategories.ts:58` | 이벤트 라벨, 설명, 사용률 |
-| `getRecommendedEvents()` | `data/eventCategories.ts:313` | 추천 이벤트 조회 함수 |
-| `useRecommendedEvents()` | `hooks/useRecommendedEvents.ts:38` | 추천 이벤트 훅 (메타데이터 포함) |
-| `isImplementedEventType()` | `@/types/events/events.types` | 구현된 이벤트 필터링 |
+### 데이터 소스 활용
+| 데이터 | 위치 | 용도 | 사용 단계 |
+|--------|------|------|-----------|
+| `COMPONENT_RECOMMENDED_EVENTS` | `data/eventCategories.ts:257` | 컴포넌트별 추천 이벤트 목록 | P0 |
+| `EVENT_METADATA` | `data/eventCategories.ts:58` | 이벤트 라벨, 설명, 사용률 | P0 |
+| `getRecommendedEvents()` | `data/eventCategories.ts:313` | 추천 이벤트 조회 함수 | P0 |
+| `useRecommendedEvents()` | `hooks/useRecommendedEvents.ts:38` | 추천 이벤트 훅 (메타데이터 포함) | P0 |
+| `isImplementedEventType()` | `@/types/events/events.types` | 구현된 이벤트 필터링 | P0 |
+| `getRecommendedTemplates()` | `data/eventTemplates.ts` | 컴포넌트별 추천 템플릿 조회 | P0 |
+| `generateEventHandlerIds()` | `hooks/useApplyTemplate.ts` | 템플릿 이벤트 ID 생성 | P0 |
+| `getRecommendedActions()` | `data/actionMetadata.ts:651` | 컨텍스트 기반 추천 액션 조회 | P1 |
+| `ACTION_METADATA[type].configFields` | `data/actionMetadata.ts` | 액션별 필수/선택 config 필드 | P1 |
+| `ACTION_TYPE_LABELS` | `types/eventTypes.ts` | 한국어 액션 라벨 | P1 |
 
-### 신규 컴포넌트 명세 (P0)
+### 컴포넌트 명세
 
-**RecommendedEventsSection**
+#### RecommendedEventsSection (P0)
 ```tsx
 interface RecommendedEventsSectionProps {
   componentType: string;              // 선택된 컴포넌트 타입
@@ -208,37 +233,82 @@ interface RecommendedEventsSectionProps {
   onAddEvent: (type: EventType) => void;
 }
 ```
+- **배치**: `panel-contents` 상단 (핸들러 없음 + 리스트 뷰)
+- **숨김**: 핸들러 상세 뷰
+- **최대 표시**: 4개 (overflow 시 "+N more")
+- **스타일**: `.recommended-events-section`, `.recommended-event-chip`
 
-**배치 위치**: `EventsPanel.tsx` 내 `panel-contents` 상단
-- 핸들러 없음: EmptyState와 함께 표시
-- 핸들러 있음 (리스트): PropertySection 위에 표시
-- 핸들러 상세: 숨김
+#### TemplateSuggestionSection (P0)
+```tsx
+interface TemplateSuggestionSectionProps {
+  componentType: string;
+  currentHandlers: EventHandler[];
+  onApplyTemplate: (template: EventTemplate) => void;
+  maxVisible?: number;                // 기본값 3
+}
+```
+- **배치**: 핸들러 없음 상태에서 추천 이벤트 아래
+- **동작**: 클릭 시 이벤트+액션 일괄 생성, 기존 핸들러와 이벤트 겹치면 "merge" 배지
+- **스타일**: `.template-suggestion-card`, `.template-merge-badge`
+
+#### RecommendedActionsChips (P1)
+```tsx
+interface RecommendedActionsChipsProps {
+  eventType: string;                  // 현재 이벤트 타입
+  componentType: string;              // 대상 컴포넌트 타입
+  existingActions: BlockEventAction[]; // 이미 추가된 액션 목록
+  onAddAction: (actionType: ActionType) => void;
+}
+```
+- **배치**: ThenElseBlock 내부 (빈 상태: chips + "More actions" / 액션 있음: 리스트 아래)
+- **추천 로직**: `getRecommendedActions({ eventType, componentType })` + 마지막 액션 체이닝
+- **최대 표시**: 3개 (이미 추가된 액션 타입 제외)
+- **스타일**: `.recommended-actions-chips`, `.recommended-action-chip` (dashed 테두리)
+
+#### ActionBlock 경고 (P1)
+- **헬퍼**: `getMissingRequiredFields(action)` — `ACTION_METADATA[type].configFields`에서 `required: true`인 필드 중 값이 비어있는 항목 반환
+- **렌더링**: `AlertTriangle` 아이콘 + `TooltipTrigger`로 누락 필드명 표시
+- **스타일**: `.action-warning`, `.action-warning-icon`, `.action-warning-tooltip` (amber 색상)
+
+#### ActionPickerOverlay 추천 배지 (P1)
+- **로직**: `getRecommendedActions({ eventType, componentType })` 결과를 Set으로 변환
+- **렌더링**: 추천 액션 항목에 `<span className="action-recommended-badge">추천</span>` 추가
+- **스타일**: `.action-recommended-badge` (primary 색상)
 
 ### 스타일 가이드
-- 기존 `EventTypePicker`의 추천 chip 스타일 재사용
-- 클래스명: `.recommended-events-section`, `.recommended-event-chip`
-- 최대 표시 개수: 4개 (overflow 시 "+N more" 표시)
+- 모든 스타일은 `EventsPanel.css`에 집중 (개별 CSS 파일 분리 없음)
+- 다크 모드: `[data-theme="dark"]` 선택자로 대응
+- 클래스명 패턴: `.recommended-*` (P0 이벤트), `.recommended-action-*` (P1 액션), `.action-warning-*` (P1 경고)
 
 ## 검증 체크리스트
 
-### P0 검증
-- [ ] Button 선택 시 `onPress`, `onClick` 추천 chip 노출
-- [ ] TextField 선택 시 `onChange`, `onInput`, `onFocus`, `onBlur` 추천 chip 노출
-- [ ] 추천 chip 클릭 → 핸들러 생성 및 자동 선택
-- [ ] 이미 등록된 이벤트는 추천 목록에서 제외
-- [ ] 모든 추천 이벤트 등록 시 추천 섹션 숨김
-- [ ] 핸들러 디테일 화면에서 추천 섹션 숨김
-- [ ] 추천 chip에 마우스 호버 시 툴팁 표시 (이벤트 설명)
-- [ ] 키보드 탐색: Tab으로 chip 간 이동, Enter/Space로 추가
+### P0 검증 (구현 완료)
+- [x] Button 선택 시 `onPress`, `onClick` 추천 chip 노출
+- [x] TextField 선택 시 `onChange`, `onInput`, `onFocus`, `onBlur` 추천 chip 노출
+- [x] 추천 chip 클릭 → 핸들러 생성 및 자동 선택
+- [x] 이미 등록된 이벤트는 추천 목록에서 제외
+- [x] 모든 추천 이벤트 등록 시 추천 섹션 숨김
+- [x] 핸들러 디테일 화면에서 추천 섹션 숨김
+- [x] 추천 chip에 마우스 호버 시 툴팁 표시 (이벤트 설명)
+- [x] 키보드 탐색: Tab으로 chip 간 이동, Enter/Space로 추가
+- [x] 빈 상태에서 레시피 템플릿 카드 표시
+- [x] 템플릿 클릭 → 이벤트+액션 일괄 생성 (기존 핸들러 merge 지원)
+- [x] 다크 모드 스타일 정상
 
-### P1 검증
-- [ ] 이벤트 추가 후 THEN 블록에 추천 액션 chips 표시
-- [ ] 추천 액션 클릭 → 액션 추가
-- [ ] 레시피 템플릿 선택 → 이벤트+액션 일괄 생성
-- [ ] 액션 호환성 배지 정확성 (이벤트-액션 매핑)
-- [ ] 필수 config 누락 시 경고 아이콘 표시
+### P1 검증 (구현 완료)
+- [x] onClick 핸들러 상세 → THEN 블록에 `navigate`, `showModal`, `apiCall` chips 표시
+- [x] onSubmit 핸들러 상세 → THEN 블록에 `validateForm`, `apiCall`, `showToast` chips 표시
+- [x] 추천 액션 chip 클릭 → 액션 추가 + 기본 config 적용
+- [x] 이미 navigate 있을 때 → chips에서 navigate 제외
+- [x] 마지막 액션이 apiCall일 때 → 체이닝 추천 (setState, showToast, navigate)
+- [x] navigate 액션의 path 미입력 → ActionBlock에 ⚠️ 경고 아이콘
+- [x] 경고 아이콘 호버 → "필수 설정 누락: Path" 툴팁
+- [x] ActionPickerOverlay → 추천 액션에 "추천" 배지 표시
+- [x] ELSE 블록에도 추천 chips + 경고 정상 동작
+- [x] 다크 모드 스타일 정상
+- [x] TypeScript 타입 체크 통과
 
-### P2 검증
+### P2 검증 (미구현)
 - [ ] 자연어 입력 → 이벤트+액션 초안 생성
 - [ ] Ctrl/Cmd+K → 커맨드 팔레트 열림
 - [ ] 시뮬레이션 실행 → 콘솔에 mock 결과 출력
@@ -260,6 +330,41 @@ interface RecommendedEventsSectionProps {
 **결정: panel-contents 상단 (검색바 형태)**
 - 이유: 헤더는 공간이 제한적이고, 검색과 유사한 UX가 자연스러움
 - 형태: 플레이스홀더 "무엇을 하고 싶으세요?" + Enter로 생성
+
+## 구현 이력
+
+### P0 (2025-02-10)
+**변경 파일 6개:**
+| 파일 | 작업 |
+|------|------|
+| `components/RecommendedEventsSection.tsx` | 신규 — 추천 이벤트 chips (useRecommendedEvents 기반, 최대 4개, 툴팁) |
+| `components/TemplateSuggestionSection.tsx` | 신규 — 레시피 템플릿 카드 (getRecommendedTemplates 기반, 최대 3개, merge 배지) |
+| `components/index.ts` | 수정 — barrel export 추가 |
+| `EventsPanel.tsx` | 수정 — 3가지 상태별 추천 노출 + handleApplyTemplate 콜백 |
+| `EventsPanel.css` | 수정 — 추천 chips/템플릿 카드 스타일 (~120줄 추가) |
+
+**핵심 구현 사항:**
+- `handleApplyTemplate`: 템플릿 이벤트를 순회하며 기존 핸들러 merge 또는 신규 생성
+- 빈 상태: 추천 chips + 템플릿 + EmptyState (안내 문구 변경)
+- 리스트 뷰: 추천 chips + 핸들러 목록
+- 디테일 뷰: 추천 숨김 (집중 편집)
+
+### P1 (2025-02-10)
+**변경 파일 6개:**
+| 파일 | 작업 |
+|------|------|
+| `components/RecommendedActionsChips.tsx` | 신규 — THEN/ELSE 블록 내 추천 액션 chips (컨텍스트+체이닝 추천, 최대 3개) |
+| `blocks/ThenElseBlock.tsx` | 수정 — eventType/componentType/onQuickAddAction props 추가, 추천 chips 렌더링 |
+| `blocks/ActionBlock.tsx` | 수정 — getMissingRequiredFields 헬퍼 + AlertTriangle 경고 아이콘/툴팁 |
+| `EventsPanel.tsx` | 수정 — ThenElseBlock에 새 props 전달 + ActionPickerOverlay에 추천 배지 |
+| `EventsPanel.css` | 수정 — 추천 액션/경고/배지 스타일 (~90줄 추가) |
+| `components/index.ts` | 수정 — RecommendedActionsChips export 추가 |
+
+**핵심 구현 사항:**
+- 추천 액션 로직: `getRecommendedActions({ eventType, componentType })` + 마지막 액션 `previousAction` 체이닝 결과 병합
+- 누락 경고: `ACTION_METADATA[type].configFields`에서 `required: true`인 필드의 값이 비어있으면 amber 경고
+- ActionPicker 배지: 추천 액션 Set 생성 → 해당 액션 항목에 "추천" 배지 렌더링
+- ThenElseBlock 빈 상태: "No actions" + 추천 chips + "More actions" 버튼
 
 ## 출처
 1. https://www.framer.com/ai/ (Framer AI 설명)
