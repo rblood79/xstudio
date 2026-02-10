@@ -471,7 +471,7 @@ B → D (navigation)     → 연한 파란색 (2차 연결)
 | `BuilderCore.tsx` viewMode 전환 | 제거 완료 | 캔버스 항상 표시 |
 | `canvasSettings.ts` viewMode 상태 | 제거 완료 | `showWorkflowOverlay` 토글로 대체 |
 | `@dagrejs/dagre` 의존성 | 제거 완료 | DAG 자동 레이아웃 불필요 |
-| `@xyflow/react` 의존성 | 유지 | events 패널에서 사용 중 |
+| `@xyflow/react` 의존성 | 제거 완료 | events 패널 데드 코드 정리 시 함께 제거 |
 
 ### 4.3 제거된 파일 목록
 

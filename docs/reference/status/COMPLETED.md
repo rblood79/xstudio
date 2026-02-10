@@ -170,7 +170,7 @@ Visual programming system with drag-and-drop event handlers and action configura
 ### Key Features
 - React Stately-based state management (useEventHandlers, useActions)
 - 21 action editors for comprehensive event handling
-- Three visual modes (List, Simple Flow, ReactFlow)
+- Block-based UI (WHEN → IF → THEN/ELSE) — 레거시 ViewMode(List/Simple/ReactFlow) 제거됨
 - Event templates and AI-powered recommendations
 - Conditional execution and timing controls
 - Execution debugging and logging
@@ -182,7 +182,7 @@ Visual programming system with drag-and-drop event handlers and action configura
 - 65+ files in `src/builder/inspector/events/`
 - State management hooks in `state/`
 - Action editors in `actions/`
-- Visual components in `components/visualMode/`
+- Block components in `blocks/` and `editors/`
 
 ### Documentation
 - See CLAUDE.md "Event System (Inspector Events Tab)" section for detailed implementation

@@ -268,10 +268,9 @@ panels/common → builder/components : 0개 참조
 | 폴더 | 파일 수 | 설명 |
 |------|---------|------|
 | `actions/` | 25개 | 액션 에디터 (Navigate, SetState, ShowModal, APICall 등) |
-| `components/` | 8개 | UI 컴포넌트 (ActionListView, ConditionEditor, ComponentSelector 등) |
-| `components/visualMode/` | 6개 | 시각적 플로우 (FlowNode, ActionNode, TriggerNode 등) |
+| `components/` | 5개 | UI 컴포넌트 (ConditionEditor, ComponentSelector 등) — 레거시 ViewMode 관련 파일 제거됨 |
 | `execution/` | 3개 | 실행 로직 (eventExecutor, conditionEvaluator, executionLogger) |
-| `hooks/` | 7개 | 커스텀 훅 (useEventFlow, useVariableSchema 등) |
+| `hooks/` | 6개 | 커스텀 훅 (useVariableSchema, useBlockKeyboard 등) — useEventFlow 제거됨 |
 | `state/` | 3개 | 상태 관리 (useActions, useEventHandlers, useEventSelection) |
 | `types/` | 4개 | 타입 정의 (eventTypes, eventBlockTypes, templateTypes, index) |
 | `utils/` | 5개 | 유틸리티 함수 (normalizeEventTypes, variableParser 등) |
@@ -342,23 +341,12 @@ src/builder/panels/events/
 │   ├── BlockConnector.tsx
 │   └── index.ts
 │
-├── components/                  # UI 컴포넌트 (events/components/ → 이동)
+├── components/                  # UI 컴포넌트 (레거시 ViewMode/visualMode 제거됨)
 │   ├── ActionDelayEditor.tsx
-│   ├── ActionListView.tsx
 │   ├── ComponentSelector.tsx
 │   ├── ConditionEditor.tsx
 │   ├── DebounceThrottleEditor.tsx
-│   ├── EventHandlerManager.tsx
 │   ├── ExecutionDebugger.tsx
-│   ├── ViewModeToggle.tsx
-│   ├── visualMode/
-│   │   ├── FlowNode.tsx
-│   │   ├── ActionNode.tsx
-│   │   ├── TriggerNode.tsx
-│   │   ├── FlowConnector.tsx
-│   │   ├── ReactFlowCanvas.tsx
-│   │   ├── SimpleFlowView.tsx
-│   │   └── index.ts
 │   └── index.ts
 │
 ├── editors/                     # 에디터 컴포넌트 (기존 유지)
@@ -377,7 +365,6 @@ src/builder/panels/events/
 │   └── index.ts
 │
 ├── hooks/                       # 훅 통합 (events/hooks/ + panels/events/hooks/)
-│   ├── useEventFlow.ts
 │   ├── useEventSearch.ts
 │   ├── useVariableSchema.ts
 │   ├── useRecommendedEvents.ts

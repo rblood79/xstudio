@@ -26,6 +26,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+### Removed - @xyflow/react 의존성 및 이벤트 패널 데드 코드 제거 (2026-02-10)
+
+#### 개요
+이벤트 패널이 Phase 5 블록 기반 UI(WHEN → IF → THEN/ELSE)로 전환된 후 사용되지 않던 레거시 ViewMode 시스템(List/Simple/ReactFlow)과 `@xyflow/react` 의존성을 완전 제거.
+
+#### 삭제된 파일
+- `components/EventHandlerManager.tsx` — 레거시 3-mode 뷰 매니저
+- `components/ViewModeToggle.tsx` — List/Simple/ReactFlow 토글
+- `components/ActionListView.tsx` — 레거시 액션 목록 뷰
+- `components/visualMode/` 전체 — ReactFlowCanvas, TriggerNode, ActionNode, SimpleFlowView, FlowNode, FlowConnector
+- `hooks/useEventFlow.ts` — EventHandler → ReactFlow 노드/엣지 변환
+
+#### 수정된 파일
+| 파일 | 변경 |
+|------|------|
+| `panels/events/components/index.ts` | 삭제된 컴포넌트 export 제거 |
+| `panels/events/hooks/index.ts` | `useEventFlow` export 제거 |
+| `apps/builder/package.json` | `@xyflow/react` 의존성 제거 |
+
+#### 효과
+- 번들 크기 절감: ~45KB (gzip) — `@xyflow/react` + 18개 하위 의존성 제거
+- 프로젝트에서 `@xyflow/react` 참조 완전 제거 (워크플로우 레거시 코드 포함)
+
+---
+
 ### Fixed - WebGL Canvas 안정화 패치 (2026-02-06)
 
 #### 개요

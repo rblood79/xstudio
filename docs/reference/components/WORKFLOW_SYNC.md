@@ -29,7 +29,7 @@
   2) 페이지 `slug`에 중복된 `/`이 없는지 확인(빌더에서 자동 정규화됨).
   3) 버튼/링크에 내부 경로가 `href|to|path`로 설정됐는지 확인.
   4) 이벤트의 `navigate` 액션이 `config.path`(또는 `value.path`)에 설정돼 있고 enabled 상태인지 확인.
-- 이벤트/링크가 모두 인식되는데 선이 없을 때: 콘솔의 `navEdgeCount`, `eventEdgeCount` 값을 보고 0이면 매칭 문제, 0 이상이면 ReactFlow 렌더/토글 문제입니다.
+- 이벤트/링크가 모두 인식되는데 선이 없을 때: 콘솔의 `navEdgeCount`, `eventEdgeCount` 값을 보고 0이면 매칭 문제, 0 이상이면 CanvasKit 오버레이 렌더/토글 문제입니다.
 
 ## 기대 결과
 - Home 버튼이 `/page-2`, `/page-3`으로 이동하도록 설정된 경우 `Navigation` 토글 on 시 두 개의 네비게이션 엣지가 표시됩니다.

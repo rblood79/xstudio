@@ -82,7 +82,7 @@ ESLint: 0 errors ✅
 
 | 라이브러리 | 버전 | 용도 | 추천 활용처 |
 |-----------|------|------|-------------|
-| **@xyflow/react** | 12.10.0 | 플로우 다이어그램 | 히스토리 플로우 시각화, 의존성 그래프 |
+| ~~@xyflow/react~~ | ~~12.10.0~~ | ~~플로우 다이어그램~~ | 제거됨 — 대안 필요 시 HTML/CSS 기반 구현 권장 |
 | **three** | 0.181.2 | 3D 그래픽 | 고급 메모리 시각화 (선택적) |
 | **@tanstack/react-virtual** | 3.13.12 | 가상 스크롤링 | 긴 히스토리 목록 렌더링 |
 | **lucide-react** | 0.553.0 | 아이콘 | UI 아이콘 |
@@ -1169,9 +1169,11 @@ function formatBytes(bytes: number): string {
 - ✅ Responsive (viewBox)
 - ✅ 간단한 시계열 데이터에 적합
 
-#### Option B: ReactFlow 기반 히스토리 플로우 (고급 기능)
+#### Option B: ~~ReactFlow 기반~~ 히스토리 플로우 (고급 기능)
 
-히스토리 변화를 플로우 다이어그램으로 시각화하려면 이미 설치된 **@xyflow/react**를 활용할 수 있습니다.
+> **⚠️ 주의**: `@xyflow/react`는 프로젝트에서 제거되었습니다 (2026-02-10). 아래 코드 예제는 참고용이며, 구현 시 HTML/CSS/Canvas 기반 대안이 필요합니다.
+
+~~히스토리 변화를 플로우 다이어그램으로 시각화하려면 이미 설치된 **@xyflow/react**를 활용할 수 있습니다.~~
 
 **파일**: `src/builder/panels/monitor/components/HistoryFlowChart.tsx`
 

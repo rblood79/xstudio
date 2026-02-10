@@ -40,7 +40,6 @@
     "@xstudio/publish": "workspace:*",
     "@xstudio/shared": "workspace:*",
     "@xstudio/specs": "workspace:*",
-    "@xyflow/react": "^12.10.0",
     "autoprefixer": "^10.4.23",
     "canvaskit-wasm": "^0.40.0",
     "clsx": "^2.1.1",

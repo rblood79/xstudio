@@ -92,7 +92,7 @@ xstudio/
 │   │   │   │   └── ContextMenu.tsx
 │   │   │   └── Workspace.tsx
 │   │   │
-│   │   ├── workflow/            ← @xyflow/react (유지)
+│   │   ├── workflow/            ← 삭제됨 (CanvasKit 오버레이로 대체)
 │   │   ├── sidebar/
 │   │   ├── inspector/
 │   │   ├── panels/
@@ -199,7 +199,7 @@ function BuilderCanvas() {
 
   <aside class="inspector" />         <!-- packages/builder/inspector/ -->
 
-  <main class="workflow" />           <!-- packages/builder/workflow/ (@xyflow/react) -->
+  <!-- workflow/ 삭제됨 — CanvasKit 오버레이로 통합 (showWorkflowOverlay 토글) -->
 </div>
 ```
 

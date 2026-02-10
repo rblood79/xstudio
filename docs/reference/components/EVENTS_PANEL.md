@@ -37,14 +37,12 @@ src/builder/
     │   └── ... (19개 더)
     │
     ├── components/
-    │   ├── EventHandlerManager.tsx
     │   ├── ConditionEditor.tsx
     │   ├── DebounceThrottleEditor.tsx
-    │   └── visualMode/           # ReactFlow 기반 시각화
-    │       ├── ReactFlowCanvas.tsx
-    │       ├── SimpleFlowView.tsx
-    │       ├── TriggerNode.tsx
-    │       └── ActionNode.tsx
+    │   ├── ActionDelayEditor.tsx
+    │   ├── ComponentSelector.tsx
+    │   ├── ExecutionDebugger.tsx
+    │   └── index.ts
     │
     ├── pickers/
     │   ├── EventTypePicker.tsx
@@ -79,7 +77,7 @@ src/builder/
 │   Settings (Condition, Debounce)       │
 │   Actions                              │
 │      ├─ [+ Add Action]                 │
-│      └─ EventHandlerManager            │
+│      └─ Block-based Editor (WHEN/IF/THEN) │
 └────────────────────────────────────────┘
 ```
 
