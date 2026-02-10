@@ -141,16 +141,23 @@
 
   /* Fill detail popover container */
   .fill-detail-popover-container {
+    /* 고정 너비: Color ↔ Gradient 전환 시 위치 점프 방지 */
+    &.react-aria-Popover {
+      max-width: none;
+      width: 244px;
+    }
+
     .react-aria-Dialog {
       outline: none;
       padding: 12px;
       display: flex;
       flex-direction: column;
       gap: 8px;
-      min-width: 220px;
-      max-height: inherit;
+      width: 220px;
+      max-height: 480px;
       box-sizing: border-box;
-      overflow: auto;
+      overflow-y: auto;
+      overflow-x: hidden;
       background: var(--surface-container);
     }
   }
