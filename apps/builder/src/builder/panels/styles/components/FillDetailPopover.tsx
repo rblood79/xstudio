@@ -15,12 +15,13 @@
  */
 
 import { memo, useCallback, useMemo } from 'react';
-import type { FillItem, ColorFillItem } from '../../../../types/builder/fill.types';
+import type { FillItem, ColorFillItem, BlendMode } from '../../../../types/builder/fill.types';
 import { FillType } from '../../../../types/builder/fill.types';
 import { normalizeToHex8 } from '../utils/colorUtils';
 import { FillTypeSelector, type FillCategory } from './FillTypeSelector';
 import { ColorPickerPanel } from './ColorPickerPanel';
 import { GradientEditor } from './GradientEditor';
+import { BlendModeSelector } from './BlendModeSelector';
 
 import './FillDetailPopover.css';
 
@@ -98,6 +99,14 @@ export const FillDetailPopover = memo(function FillDetailPopover({
     [onTypeChange],
   );
 
+  // BlendMode 변경
+  const handleBlendModeChange = useCallback(
+    (mode: BlendMode) => {
+      onUpdateEnd({ blendMode: mode } as Partial<FillItem>);
+    },
+    [onUpdateEnd],
+  );
+
   return (
     <div className="fill-detail-popover">
       <FillTypeSelector value={currentCategory} onChange={handleCategoryChange} />
@@ -116,6 +125,12 @@ export const FillDetailPopover = memo(function FillDetailPopover({
           onSubTypeChange={handleGradientSubTypeChange}
         />
       )}
+
+      <div className="fill-detail-popover__divider" />
+      <BlendModeSelector
+        value={fill.blendMode}
+        onChange={handleBlendModeChange}
+      />
     </div>
   );
 });

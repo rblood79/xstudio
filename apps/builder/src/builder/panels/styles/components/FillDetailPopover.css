@@ -10,4 +10,10 @@
     flex-direction: column;
     gap: 8px;
   }
+
+  .fill-detail-popover__divider {
+    height: 1px;
+    background: var(--outline-variant);
+    margin: 2px 0;
+  }
 }

@@ -8,7 +8,7 @@
  * @since 2026-02-10 Color Picker Phase 1
  */
 
-import { memo, useState, useCallback, useRef, useEffect } from 'react';
+import { memo, useState, useCallback, useRef } from 'react';
 import {
   ColorPicker as AriaColorPicker,
   parseColor,
@@ -18,6 +18,7 @@ import { ColorArea } from '@xstudio/shared/components/ColorArea';
 import { ColorSlider } from '@xstudio/shared/components/ColorSlider';
 import { ColorInputModeSelector } from './ColorInputModeSelector';
 import { ColorInputFields } from './ColorInputFields';
+import { EyeDropperButton } from './EyeDropperButton';
 
 import './ColorPickerPanel.css';
 
@@ -108,7 +109,10 @@ function ColorPickerPanelInner({
           onChangeEnd={handleChangeEnd}
         />
         <div className="color-picker-panel__inputs">
-          <ColorInputModeSelector />
+          <div className="color-picker-panel__inputs-row">
+            <EyeDropperButton onColorPick={handleInputChange} />
+            <ColorInputModeSelector />
+          </div>
           <ColorInputFields value={hexValue} onChange={handleInputChange} />
         </div>
       </div>

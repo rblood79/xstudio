@@ -152,6 +152,17 @@ export const BoxSprite = memo(function BoxSprite({ element, onClick }: BoxSprite
     // 그래디언트 FillStyle이면 box.fill로 사용 (color 타입은 fillColor로 처리)
     const gradientFill = fillV2Style && fillV2Style.type !== 'color' ? fillV2Style : undefined;
 
+    // Fill V2: 최상위 enabled fill의 blendMode 추출
+    let fillBlendMode: string | undefined;
+    if (isFillV2Enabled() && fills && fills.length > 0) {
+      for (let i = fills.length - 1; i >= 0; i--) {
+        if (fills[i].enabled && fills[i].blendMode !== 'normal') {
+          fillBlendMode = fills[i].blendMode;
+          break;
+        }
+      }
+    }
+
     if (fillV2Color) {
       fillColor = fillV2Color;
     } else {
@@ -177,7 +188,7 @@ export const BoxSprite = memo(function BoxSprite({ element, onClick }: BoxSprite
       visible: style?.display !== 'none' && style?.visibility !== 'hidden',
       ...(style?.overflow === 'hidden' ? { clipChildren: true } : {}),
       ...(skiaEffects.effects ? { effects: skiaEffects.effects } : {}),
-      ...(skiaEffects.blendMode ? { blendMode: skiaEffects.blendMode } : {}),
+      ...(fillBlendMode ? { blendMode: fillBlendMode } : skiaEffects.blendMode ? { blendMode: skiaEffects.blendMode } : {}),
       box: {
         fillColor,
         ...(gradientFill ? { fill: gradientFill } : {}),
