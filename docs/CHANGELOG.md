@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed - Workflow 미니맵 개선 (2026-02-10)
+
+#### 개요
+워크플로우 오버레이의 미니맵을 CanvasScrollbar와 동일한 자동 표시/숨김 패턴으로 변경하고, 크기를 캔버스에 비례하도록 개선.
+
+#### 변경 내용
+- **자동 표시/숨김**: 캔버스 이동(pan/zoom) 시에만 미니맵 표시, 1.5초 비활동 후 자동 숨김
+  - 패널 토글 시 미니맵 위치 갱신 타이밍 문제를 근본적으로 해소
+- **동적 크기**: 고정 200×150px → 캔버스 크기의 10% 비례 (width: 80~200px, height: 60~140px clamp)
+- **여백 통일**: bottom 여백을 48px → 16px로 변경하여 right 여백과 동일하게 통일
+
+#### 수정 파일
+| 파일 | 변경 |
+|------|------|
+| `apps/builder/src/builder/workspace/canvas/skia/SkiaOverlay.tsx` | 미니맵 가시성 제어 (카메라 감지 + fade 타이머), 동적 크기 계산, 미사용 코드 제거 |
+| `apps/builder/src/builder/workspace/canvas/skia/workflowMinimap.ts` | bottom 여백 16px, 동적 크기 상수 추가 (`MINIMAP_CANVAS_RATIO`, min/max bounds) |
+
+---
+
 ### Fixed - WebGL Canvas 안정화 패치 (2026-02-06)
 
 #### 개요

@@ -402,8 +402,11 @@ B → D (navigation)     → 연한 파란색 (2차 연결)
 ```
 
 - SkiaOverlay의 별도 렌더 패스로 구현
-- 화면 우하단에 고정 위치 (screen-space)
+- 화면 우하단에 고정 위치 (screen-space), 여백 16px (right/bottom 동일)
 - 미니맵 클릭으로 카메라 이동
+- **자동 표시/숨김**: 캔버스 이동(pan/zoom) 시에만 표시, 1.5초 비활동 후 자동 숨김 (CanvasScrollbar와 동일 패턴)
+- **동적 크기**: 캔버스 크기의 10% 비례 (width: 80~200px, height: 60~140px clamp)
+- inspector 패널 열림 시 패널 너비만큼 좌측으로 위치 보정
 
 #### 4.2 워크플로우 레전드
 
@@ -811,7 +814,7 @@ tests/
 - `apps/builder/src/builder/workspace/canvas/skia/workflowRenderer.ts` — 엣지 렌더링 (Phase 1~2)
 - `apps/builder/src/builder/workspace/canvas/skia/workflowHitTest.ts` — 엣지/노드 히트 테스트 (Phase 3)
 - `apps/builder/src/builder/workspace/canvas/skia/workflowGraphUtils.ts` — 그래프 유틸리티 (Phase 1~2)
-- `apps/builder/src/builder/workspace/canvas/skia/workflowMinimap.ts` — 미니맵 렌더링 (Phase 4)
+- `apps/builder/src/builder/workspace/canvas/skia/workflowMinimap.ts` — 미니맵 렌더링 + 동적 크기 상수 (Phase 4)
 - `apps/builder/src/builder/workspace/canvas/hooks/useWorkflowInteraction.ts` — 인터랙션 훅 (Phase 3)
 - `apps/builder/src/builder/workspace/components/WorkflowLegend.tsx` — 레전드 패널 (Phase 4)
 - `apps/builder/src/builder/workspace/components/WorkflowPageSummary.tsx` — 페이지 요약 패널 (Phase 4)

@@ -817,7 +817,7 @@ ViewportController의 `addUpdateListener()`를 통해 외부 컴포넌트가 pan
 ```
 Pan/Zoom 이벤트 → ViewportController → notifyUpdateListeners()
                                           ├─ CanvasScrollbar (DOM 직접 업데이트)
-                                          └─ (향후 미니맵 등 추가 가능)
+                                          └─ Workflow Minimap (ticker 카메라 감지 → 자동 표시/숨김)
 ```
 
 #### 성능 비교

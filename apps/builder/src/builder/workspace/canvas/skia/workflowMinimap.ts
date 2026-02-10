@@ -56,13 +56,21 @@ export interface MinimapRenderData {
 
 export const DEFAULT_MINIMAP_CONFIG: MinimapConfig = {
   screenRight: 16,
-  screenBottom: 48,
+  screenBottom: 16,
   width: 200,
   height: 150,
   bgColor: [0.1, 0.1, 0.1, 0.85],
   borderRadius: 8,
   borderColor: [0.3, 0.3, 0.3, 0.5],
 };
+
+/** 캔버스 대비 미니맵 비율 (10%) */
+export const MINIMAP_CANVAS_RATIO = 0.10;
+/** 미니맵 최소/최대 크기 (px) */
+export const MINIMAP_MIN_WIDTH = 80;
+export const MINIMAP_MAX_WIDTH = 200;
+export const MINIMAP_MIN_HEIGHT = 60;
+export const MINIMAP_MAX_HEIGHT = 140;
 
 // ============================================
 // Colors

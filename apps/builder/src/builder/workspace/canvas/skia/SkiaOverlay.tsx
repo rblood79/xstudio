@@ -33,7 +33,7 @@ import { renderWorkflowEdges, renderDataSourceEdges, renderLayoutGroups, renderP
 import { buildEdgeGeometryCache, type CachedEdgeGeometry } from './workflowHitTest';
 import { computeConnectedEdges } from './workflowGraphUtils';
 import { useWorkflowInteraction, type WorkflowHoverState } from '../hooks/useWorkflowInteraction';
-import { renderWorkflowMinimap, DEFAULT_MINIMAP_CONFIG, type MinimapConfig, type MinimapRenderData } from './workflowMinimap';
+import { renderWorkflowMinimap, DEFAULT_MINIMAP_CONFIG, MINIMAP_CANVAS_RATIO, MINIMAP_MIN_WIDTH, MINIMAP_MAX_WIDTH, MINIMAP_MIN_HEIGHT, MINIMAP_MAX_HEIGHT, type MinimapConfig } from './workflowMinimap';
 import { useStore } from '../../../stores';
 import { useLayoutsStore } from '../../../stores/layouts';
 import { getElementBoundsSimple } from '../elementRegistry';
@@ -456,9 +456,12 @@ export function SkiaOverlay({
   const lastHoveredEdgeRef = useRef<string | null>(null);
   const lastFocusedPageRef = useRef<string | null>(null);
 
-  // Phase 4: 미니맵 config ref (렌더 콜백에서 매 프레임 우측 패널 너비 반영)
+  // Phase 4: 미니맵 config ref (inspector 패널 너비 반영)
   const minimapConfigRef = useRef<MinimapConfig>(DEFAULT_MINIMAP_CONFIG);
-  const lastPanelShowRightRef = useRef(useStore.getState().panelLayout.showRight);
+  // Phase 4: 미니맵 가시성 — 캔버스 이동 시에만 표시
+  const minimapVisibleRef = useRef(false);
+  const minimapFadeTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const lastMinimapCameraRef = useRef({ x: 0, y: 0, zoom: 1 });
 
   // 페이지 프레임/현재 페이지 ref 갱신
   useEffect(() => {
@@ -620,6 +623,23 @@ export function SkiaOverlay({
       const registryVersion = getRegistryVersion();
       const pagePosVersion = pagePosVersionRef.current;
 
+      // Phase 4: 미니맵 가시성 — 캔버스 이동(pan/zoom) 시에만 표시 (스크롤바 패턴)
+      const lastMmCam = lastMinimapCameraRef.current;
+      const cameraChanged = cameraX !== lastMmCam.x || cameraY !== lastMmCam.y || cameraZoom !== lastMmCam.zoom;
+      if (cameraChanged) {
+        lastMinimapCameraRef.current = { x: cameraX, y: cameraY, zoom: cameraZoom };
+        if (!minimapVisibleRef.current) {
+          minimapVisibleRef.current = true;
+          overlayVersionRef.current++;
+        }
+        // 이동 중에는 타이머 리셋
+        if (minimapFadeTimerRef.current) clearTimeout(minimapFadeTimerRef.current);
+        minimapFadeTimerRef.current = setTimeout(() => {
+          minimapVisibleRef.current = false;
+          overlayVersionRef.current++;
+        }, 1500);
+      }
+
       if (process.env.NODE_ENV === 'development') {
         const now = performance.now();
         if (devRegistryWindowStartMs.current <= 0) {
@@ -687,13 +707,6 @@ export function SkiaOverlay({
       // 드래그 중(라쏘/리사이즈/이동)에는 매 프레임 오버레이 갱신
       const dragState = dragStateRef?.current;
       if (dragState?.isDragging) {
-        overlayVersionRef.current++;
-      }
-
-      // Phase 4: 패널 토글 → 미니맵 위치 갱신 (workflow 토글과 동일 패턴)
-      const panelShowRight = useStore.getState().panelLayout.showRight;
-      if (panelShowRight !== lastPanelShowRightRef.current) {
-        lastPanelShowRightRef.current = panelShowRight;
         overlayVersionRef.current++;
       }
 
@@ -946,18 +959,24 @@ export function SkiaOverlay({
             renderLasso(ck, canvas, selectionData.lasso, cameraZoom);
           }
 
-          // Phase 4: 미니맵 (최상위 레이어, 스크린 고정)
-          if (showWorkflowOverlay && pageFrameMapRef.current.size > 0) {
+          // Phase 4: 미니맵 (최상위 레이어, 스크린 고정) — 캔버스 이동 시에만 표시
+          if (showWorkflowOverlay && minimapVisibleRef.current && pageFrameMapRef.current.size > 0) {
             const mmScreenW = skiaCanvas.width / dpr;
             const mmScreenH = skiaCanvas.height / dpr;
 
-            // 스크롤바(CanvasScrollbar)와 동일 패턴: inspector 패널 너비를 DOM에서 측정
+            // 캔버스 크기에 비례하여 미니맵 크기 결정
+            const mmWidth = Math.max(MINIMAP_MIN_WIDTH, Math.min(MINIMAP_MAX_WIDTH, Math.round(mmScreenW * MINIMAP_CANVAS_RATIO)));
+            const mmHeight = Math.max(MINIMAP_MIN_HEIGHT, Math.min(MINIMAP_MAX_HEIGHT, Math.round(mmScreenH * MINIMAP_CANVAS_RATIO)));
+
+            // inspector 패널 너비를 DOM에서 측정하여 미니맵 위치 보정
             const { panelLayout } = useStore.getState();
             const inspectorWidth = panelLayout.showRight
               ? (document.querySelector('aside.inspector') as HTMLElement)?.offsetWidth ?? 0
               : 0;
             minimapConfigRef.current = {
               ...DEFAULT_MINIMAP_CONFIG,
+              width: mmWidth,
+              height: mmHeight,
               screenRight: inspectorWidth + DEFAULT_MINIMAP_CONFIG.screenRight,
             };
 
@@ -1025,6 +1044,7 @@ export function SkiaOverlay({
 
     return () => {
       unwatchContext();
+      if (minimapFadeTimerRef.current) clearTimeout(minimapFadeTimerRef.current);
       app.ticker.remove(syncPixiVisibility);
       app.ticker.remove(renderFrame);
       renderer.dispose();
