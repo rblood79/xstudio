@@ -15,6 +15,8 @@ import { StateCreator } from "zustand";
 import type { Element, ComponentElementProps } from "../../types/core/store.types";
 import type { SelectedElement, DataBinding, EventHandler } from "../inspector/types";
 import type { ElementEvent } from "../../types/events/events.types";
+import type { FillItem } from "../../types/builder/fill.types";
+import { fillsToBackgroundColor } from "../panels/styles/utils/fillMigration";
 import { saveService } from "../../services/save";
 import { historyManager } from "./history";
 import { normalizeElementTags } from "./utils/elementTagNormalizer";
@@ -40,6 +42,12 @@ export interface InspectorActionsState {
   addSelectedEvent: (event: EventHandler) => void;
   updateSelectedEvent: (id: string, event: EventHandler) => void;
   removeSelectedEvent: (id: string) => void;
+  // Fill Actions (Color Picker Phase 1)
+  /** fills 배열 업데이트 + style.backgroundColor 동기화 + 히스토리/DB 저장 */
+  updateSelectedFills: (fills: FillItem[]) => void;
+  /** fills 실시간 프리뷰: 히스토리/DB 저장 없이 캔버스만 업데이트 */
+  updateSelectedFillsPreview: (fills: FillItem[]) => void;
+
   // ComputedStyle은 DB 저장 없이 메모리만 업데이트 (런타임 값)
   updateSelectedComputedStyle: (computedStyle: Record<string, string>) => void;
 }
@@ -397,6 +405,82 @@ export const createInspectorActionsSlice: StateCreator<
       const currentEvents = ((element.props?.events as EventHandler[]) || []);
       const updatedEvents = currentEvents.filter((e) => e.id !== id);
       updateAndSave(element.id, { events: updatedEvents as unknown as ElementEvent[] });
+    },
+
+    // ============================================
+    // Fill Actions (Color Picker Phase 1)
+    // ============================================
+
+    updateSelectedFills: (fills) => {
+      const element = getSelectedElement();
+      if (!element) return;
+
+      // 프리뷰 상태에서 커밋 시, 원본 요소 기반으로 변경
+      const savedPrePreview = prePreviewElement;
+      prePreviewElement = null;
+
+      const baseElement = (savedPrePreview && savedPrePreview.id === element.id)
+        ? savedPrePreview : element;
+
+      // fills → backgroundColor 역동기화
+      const backgroundColor = fillsToBackgroundColor(fills);
+      const currentStyle = { ...((baseElement.props?.style as Record<string, string>) || {}) };
+      if (backgroundColor !== undefined) {
+        currentStyle.backgroundColor = backgroundColor;
+      } else {
+        delete currentStyle.backgroundColor;
+      }
+
+      updateAndSave(
+        element.id,
+        { style: currentStyle },
+        { fills },
+        savedPrePreview && savedPrePreview.id === element.id ? savedPrePreview : undefined,
+      );
+    },
+
+    updateSelectedFillsPreview: (fills) => {
+      const { elementsMap, selectedElementId } = get();
+      if (!selectedElementId) return;
+
+      const element = elementsMap.get(selectedElementId);
+      if (!element) return;
+
+      // 첫 프리뷰 시 원본 요소 스냅샷 저장 (히스토리 정확성)
+      if (!prePreviewElement || prePreviewElement.id !== selectedElementId) {
+        prePreviewElement = structuredClone(element);
+      }
+
+      // fills → backgroundColor 역동기화
+      const backgroundColor = fillsToBackgroundColor(fills);
+      const currentStyle = { ...((element.props?.style as Record<string, string>) || {}) };
+      if (backgroundColor !== undefined) {
+        currentStyle.backgroundColor = backgroundColor;
+      } else {
+        delete currentStyle.backgroundColor;
+      }
+
+      const newProps = { ...element.props, style: currentStyle };
+      const updatedElement: Element = { ...element, props: newProps, fills };
+
+      // elementsMap만 업데이트 (캔버스 렌더링용)
+      // selectedElementProps는 업데이트하지 않음 (Jotai atom value 유지)
+      const newElementsMap = new Map(elementsMap);
+      newElementsMap.set(selectedElementId, updatedElement);
+
+      const elementIndex = (get() as CombinedState).elements.findIndex(
+        (el) => el.id === selectedElementId
+      );
+      let newElements = (get() as CombinedState).elements;
+      if (elementIndex !== -1) {
+        newElements = [...newElements];
+        newElements[elementIndex] = updatedElement;
+      }
+
+      set({
+        elements: newElements,
+        elementsMap: newElementsMap,
+      } as Partial<CombinedState>);
     },
 
     // ============================================

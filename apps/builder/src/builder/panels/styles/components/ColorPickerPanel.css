@@ -1,0 +1,21 @@
+/**
+ * ColorPickerPanel Styles
+ *
+ * Color Picker Phase 1
+ * M3 CSS 변수 활용
+ */
+
+@layer components {
+  .color-picker-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 0;
+  }
+
+  .color-picker-panel__inputs {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+}

@@ -30,6 +30,8 @@ export interface FeatureFlags {
   wasmLayoutEngine: boolean;
   /** 렌더 모드 (skia 고정) */
   renderMode: RenderMode;
+  /** Fill V2: 다중 Fill 레이어 + 색상 모드 전환 (Color Picker Phase 1) */
+  fillV2: boolean;
 }
 
 // ============================================
@@ -141,6 +143,28 @@ export function isCanvasKitEnabled(): boolean {
   return true;
 }
 
+// ============================================
+// Fill V2 Feature Flag (Color Picker Phase 1)
+// ============================================
+
+/**
+ * Fill V2 활성화 여부 (다중 Fill 레이어 + 색상 모드 전환)
+ *
+ * @returns true if Fill V2 UI should be displayed
+ *
+ * @example
+ * ```typescript
+ * if (isFillV2Enabled()) {
+ *   return <FillSection />;
+ * } else {
+ *   return <AppearanceSection />;  // 기존 단색 backgroundColor 편집
+ * }
+ * ```
+ */
+export function isFillV2Enabled(): boolean {
+  return parseBoolean(import.meta.env.VITE_FEATURE_FILL_V2, false);
+}
+
 /**
  * 모든 Feature Flags 조회
  *
@@ -160,6 +184,7 @@ export function getFeatureFlags(): FeatureFlags {
     wasmSpatialIndex: true,
     wasmLayoutEngine: true,
     renderMode: 'skia' as RenderMode,
+    fillV2: parseBoolean(import.meta.env.VITE_FEATURE_FILL_V2, false),
   };
 }
 

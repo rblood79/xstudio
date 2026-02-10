@@ -1,6 +1,6 @@
 # Color Picker 상세 설계 문서
 
-> **목표**: Pencil 앱 수준의 컬러 피커 및 Fill/Stroke 시스템 구축
+> **목표**: Pencil 앱 수준의 컬러 피커 및 Fill/Border 시스템 구축
 > **현재 상태**: 단색 HSB 피커만 존재, 그래디언트/다중 레이어/EyeDropper 없음 (Phase 1 미착수)
 > **참조**: `docs/PENCIL_APP_ANALYSIS.md`, `apps/builder/src/builder/workspace/canvas/skia/types.ts`
 >
@@ -46,7 +46,7 @@
 
 ### 0.2 유지한 설계 원칙
 
-- Fill/Stroke를 단일 문자열에서 **레이어 모델**로 승격
+- Fill/Border를 단일 문자열에서 **레이어 모델**로 승격
 - 드래그 중 로컬 업데이트, 확정 시 history/db 반영
 - Skia 변환 레이어를 별도로 두고 렌더 파이프라인 순서를 유지
 
@@ -98,7 +98,7 @@ type FillStyle =
 |------|------|--------|
 | Fill 타입 | 단색 1개 | 6종 (Color, Image, 3×Gradient, Mesh) |
 | Fill 레이어 | 1개 | 다중 (배열, 순서 변경, on/off) |
-| Stroke 레이어 | 1개 | 다중 (배열, 개별 너비) |
+| Border 레이어 | 1개 (CSS border) | 다중 (배열, 개별 너비) |
 | 색상 입력 모드 | Hex only | RGBA / HEX / CSS / HSL / HSB 전환 |
 | EyeDropper | 없음 | 화면 색상 추출 |
 | Scrub Input | 없음 | 드래그로 숫자 값 조정 |
@@ -236,30 +236,32 @@ export type BlendMode =
 export type ColorInputMode = 'rgba' | 'hex' | 'css' | 'hsl' | 'hsb';
 ```
 
-#### 3.1.2 Stroke 아이템 타입
+#### 3.1.2 Border 아이템 타입
+
+> **웹 빌더 컨텍스트**: Pencil의 Stroke 개념을 CSS border로 매핑.
+> CSS는 이미 개별 변 borderWidth, borderStyle, borderColor를 지원하므로 이를 활용.
 
 ```typescript
-/** Stroke 정렬 */
-export enum StrokeAlignment {
-  Inside = 'inside',
-  Center = 'center',
-  Outside = 'outside',
+/** Border 설정 (CSS border 기반) */
+export interface BorderConfig {
+  fills: FillItem[];                    // 다중 보더 색상 (Phase 1: 단색 1개)
+  width: BorderWidth;                   // CSS borderWidth (통합 또는 개별)
+  style: BorderStyle;                   // CSS borderStyle
+  radius: BorderRadius;                 // CSS borderRadius (통합 또는 개별)
 }
 
-/** Stroke 설정 */
-export interface StrokeConfig {
-  fills: FillItem[];                    // 다중 스트로크 색상
-  width: StrokeWidth;                   // 통합 또는 개별 너비
-  alignment: StrokeAlignment;
-  lineJoin: 'miter' | 'bevel' | 'round';
-  lineCap: 'butt' | 'round' | 'square';
-  dashArray?: number[];                 // 점선 패턴
-}
+/** 보더 너비 (CSS borderWidth 매핑) */
+export type BorderWidth =
+  | string                              // 통합 (예: '1px')
+  | { top: string; right: string; bottom: string; left: string };  // 개별
 
-/** 스트로크 너비 (통합/개별) */
-export type StrokeWidth =
-  | number                              // 통합 (모든 변)
-  | { top: number; right: number; bottom: number; left: number };  // 개별
+/** 보더 스타일 */
+export type BorderStyle = 'none' | 'solid' | 'dashed' | 'dotted' | 'double' | 'groove' | 'ridge';
+
+/** 보더 반경 (CSS borderRadius 매핑) */
+export type BorderRadius =
+  | string                              // 통합 (예: '8px')
+  | { topLeft: string; topRight: string; bottomRight: string; bottomLeft: string };  // 개별
 ```
 
 #### 3.1.3 Element 확장
@@ -272,8 +274,8 @@ export interface Element {
   /** 다중 Fill 레이어 (Phase 1) */
   fills?: FillItem[];
 
-  /** Stroke 설정 (Phase 1) */
-  stroke?: StrokeConfig;
+  /** Border 설정 (Phase 1, CSS border 기반) */
+  border?: BorderConfig;
 }
 ```
 
@@ -285,13 +287,13 @@ export interface Element {
 // apps/builder/src/builder/panels/styles/atoms/fillAtoms.ts (신규)
 
 import { atom } from 'jotai';
-import type { FillItem, StrokeConfig, ColorInputMode } from '@/types/builder/fill.types';
+import type { FillItem, BorderConfig, ColorInputMode } from '@/types/builder/fill.types';
 
 /** 선택된 요소의 fills 배열 */
 export const fillsAtom = atom<FillItem[] | null>(null);
 
 /** 선택된 요소의 stroke 설정 */
-export const strokeAtom = atom<StrokeConfig | null>(null);
+export const borderAtom = atom<BorderConfig | null>(null);
 
 /** 현재 편집 중인 fill 인덱스 */
 export const activeFillIndexAtom = atom<number | null>(null);
@@ -341,10 +343,10 @@ export function useFillActions() {
   /** Fill 속성 업데이트 */
   const updateFill = (index: number, patch: Partial<FillItem>) => { /* ... */ };
 
-  /** Stroke Fill 추가 */
-  const addStrokeFill = () => { /* ... */ };
+  /** Border Fill 추가 */
+  const addBorderFill = () => { /* ... */ };
 
-  return { addFill, removeFill, reorderFill, toggleFill, updateFill, addStrokeFill };
+  return { addFill, removeFill, reorderFill, toggleFill, updateFill, addBorderFill };
 }
 ```
 
@@ -376,14 +378,14 @@ FillSection (신규)
     ├── GradientEditor (그래디언트일 때, Phase 2)
     └── BlendModeSelector (Phase 3)
 
-StrokeSection (기존 확장)
-├── SectionHeader ("Stroke" 타이틀 + [+] 추가 버튼)
-├── StrokeFillLayerList (Fill과 동일한 레이어 구조)
-├── StrokeAlignmentSelector (Inside | Center | Outside)
-├── StrokeWidthInput (통합 또는 개별 토글)
+BorderSection (기존 AppearanceSection 확장)
+├── SectionHeader ("Border" 타이틀 + [+] 추가 버튼)
+├── BorderFillLayerList (Fill과 동일한 레이어 구조)
+├── BorderStyleSelector (none | solid | dashed | dotted | double)
+├── BorderWidthInput (통합 또는 개별 토글)
 │   └── IndividualWidthInputs (Top/Right/Bottom/Left, 토글 시 표시)
-├── LineJoinSelector (Miter | Bevel | Round)
-└── LineCapSelector (Butt | Round | Square)
+└── BorderRadiusInput (통합 또는 개별 토글)
+    └── IndividualRadiusInputs (TL/TR/BR/BL, 토글 시 표시)
 ```
 
 #### 3.3.2 파일 구조
@@ -392,8 +394,8 @@ StrokeSection (기존 확장)
 apps/builder/src/builder/panels/styles/sections/
 ├── FillSection.tsx              ← 메인 Fill 섹션
 ├── FillSection.css              ← 스타일
-├── StrokeSection.tsx            ← 메인 Stroke 섹션 (기존 확장)
-└── StrokeSection.css
+├── BorderSection.tsx            ← 메인 Border 섹션 (기존 AppearanceSection 확장)
+└── BorderSection.css
 
 apps/builder/src/builder/panels/styles/components/
 ├── FillLayerRow.tsx             ← 개별 Fill 레이어 행
@@ -408,7 +410,7 @@ apps/builder/src/builder/panels/styles/components/
 ├── BlendModeSelector.tsx        ← 블렌드 모드 드롭다운 (Phase 3)
 ├── EyeDropperButton.tsx         ← 화면 색상 추출 (Phase 3)
 ├── ScrubInput.tsx               ← 드래그 숫자 입력 (Phase 3)
-└── StrokeWidthControl.tsx       ← 스트로크 너비 (통합/개별)
+└── BorderWidthControl.tsx       ← 보더 너비 (통합/개별)
 ```
 
 ### 3.4 ColorPickerPanel 상세
@@ -586,7 +588,7 @@ interface ScrubInputProps {
 5. 커서: `cursor: ew-resize` (좌우 화살표)
 6. 드래그 중 커스텀 ↔ 커서 아이콘 포탈 렌더
 
-**적용 위치**: 모든 숫자 입력 (opacity, rotation, position, stroke width 등)
+**적용 위치**: 모든 숫자 입력 (opacity, rotation, position, border width 등)
 
 ### 5.3 Blend Mode Selector
 
@@ -683,14 +685,14 @@ Step 10: 이미지/메쉬/변수 바인딩 (Phase 4)
 
 | 파일 | 변경 내용 |
 |------|-----------|
-| `apps/builder/src/types/builder/unified.types.ts` | `Element`에 `fills?`, `stroke?` 추가 |
+| `apps/builder/src/types/builder/unified.types.ts` | `Element`에 `fills?`, `border?` 추가 |
 | `apps/builder/src/builder/panels/styles/sections/AppearanceSection.tsx` | FillSection으로 점진적 교체 |
-| `apps/builder/src/builder/panels/styles/atoms/fillAtoms.ts` (신규 예정) | `fillsAtom`, `strokeAtom` 추가 |
-| `apps/builder/src/builder/panels/styles/hooks/useAppearanceValuesJotai.ts` | fills/stroke 구독 추가 |
+| `apps/builder/src/builder/panels/styles/atoms/fillAtoms.ts` (신규 예정) | `fillsAtom`, `borderAtom` 추가 |
+| `apps/builder/src/builder/panels/styles/hooks/useAppearanceValuesJotai.ts` | fills/border 구독 추가 |
 | `apps/builder/src/builder/components/property/PropertyColor.tsx` | ColorPickerPanel로 대체 (내부 사용은 유지) |
 | `apps/builder/src/builder/workspace/canvas/skia/types.ts` | 기존 FillStyle 타입 유지 (변환 레이어 추가) |
 | `apps/builder/src/builder/stores/utils/elementCreation.ts` | 새 요소 생성 시 기본 fills 배열 설정 |
-| `apps/builder/src/builder/stores/utils/elementUpdate.ts` | fills/stroke 업데이트 액션 추가 |
+| `apps/builder/src/builder/stores/utils/elementUpdate.ts` | fills/border 업데이트 액션 추가 |
 
 ---
 
@@ -702,10 +704,10 @@ Step 10: 이미지/메쉬/변수 바인딩 (Phase 4)
 요소 변경 시:
 1. Memory Update (즉시)
    ├── fills[] 배열 변경
-   └── stroke 설정 변경
+   └── border 설정 변경
 2. Index Rebuild (즉시)
 3. History Record (즉시)
-   └── fills/stroke 전체 스냅샷
+   └── fills/border 전체 스냅샷
 4. Fill → Skia 변환 (즉시)
    ├── FillItem → FillStyle (apps/builder/src/builder/workspace/canvas/skia/types.ts)
    └── CanvasKit Shader 생성
@@ -860,7 +862,7 @@ Phase 4 (이미지/메쉬/변수)
 
 ### 12.2 Feature Flag / 롤백 전략
 
-- `fills/stroke` 편집 UI는 초기에는 Feature Flag 하에서만 노출한다 (구현 방안은 10.2 참조).
+- `fills/border` 편집 UI는 초기에는 Feature Flag 하에서만 노출한다 (구현 방안은 10.2 참조).
 - 플래그 OFF 시 기존 `AppearanceSection` 단색 편집 경로를 유지해 즉시 롤백 가능해야 한다.
 - DB에는 신규 필드를 쓰더라도, 읽기 경로는 `fills ?? backgroundColor` 폴백을 한 릴리즈 이상 유지한다.
 

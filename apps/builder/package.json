@@ -52,6 +52,7 @@
     "jotai": "catalog:",
     "lodash": "^4.17.21",
     "lucide-react": "^0.562.0",
+    "nanoid": "^5.1.6",
     "papaparse": "^5.5.3",
     "pixi.js": "^8.14.3",
     "postcss": "^8.5.6",

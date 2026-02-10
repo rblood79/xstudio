@@ -5,9 +5,10 @@
  *
  * 🚀 Phase 3: Jotai 기반 Fine-grained Reactivity
  * 🚀 Phase 23: 컨텐츠 분리로 접힌 섹션 훅 실행 방지
+ * 🎨 Color Picker Phase 1: isFillV2Enabled() → FillSection 분기
  */
 
-import { memo } from 'react';
+import { memo, lazy, Suspense } from 'react';
 import { PropertySection, PropertyUnitInput, PropertyColor, PropertySelect } from '../../../components';
 import { Button } from "@xstudio/shared/components";
 import { iconProps } from '../../../../utils/ui/uiConstants';
@@ -22,6 +23,11 @@ import { useStyleActions } from '../hooks/useStyleActions';
 import { useOptimizedStyleActions } from '../hooks/useOptimizedStyleActions';
 import { useAppearanceValuesJotai } from '../hooks/useAppearanceValuesJotai';
 import { useResetStyles } from '../hooks/useResetStyles';
+import { isFillV2Enabled } from '../../../../utils/featureFlags';
+
+const LazyFillSection = lazy(() =>
+  import('./FillSection').then((m) => ({ default: m.FillSection }))
+);
 
 /**
  * 🚀 Phase 3/23: 내부 컨텐츠 컴포넌트
@@ -39,25 +45,27 @@ const AppearanceSectionContent = memo(function AppearanceSectionContent() {
 
   return (
     <>
-      <div className="style-background">
-        <PropertyColor
-          icon={Square}
-          label="Background Color"
-          className="background-color"
-          value={styleValues.backgroundColor}
-          onChange={(value) => updateStyle('backgroundColor', value)}
-          placeholder="#FFFFFF"
-        />
-        <div className="fieldset-actions actions-icon">
-          <Button>
-            <EllipsisVertical
-              color={iconProps.color}
-              size={iconProps.size}
-              strokeWidth={iconProps.strokeWidth}
-            />
-          </Button>
+      {!isFillV2Enabled() && (
+        <div className="style-background">
+          <PropertyColor
+            icon={Square}
+            label="Background Color"
+            className="background-color"
+            value={styleValues.backgroundColor}
+            onChange={(value) => updateStyle('backgroundColor', value)}
+            placeholder="#FFFFFF"
+          />
+          <div className="fieldset-actions actions-icon">
+            <Button>
+              <EllipsisVertical
+                color={iconProps.color}
+                size={iconProps.size}
+                strokeWidth={iconProps.strokeWidth}
+              />
+            </Button>
+          </div>
         </div>
-      </div>
+      )}
 
       <div className="style-border">
         <PropertyColor
@@ -137,8 +145,15 @@ export const AppearanceSection = memo(function AppearanceSection() {
   };
 
   return (
-    <PropertySection id="appearance" title="Appearance" onReset={handleReset}>
-      <AppearanceSectionContent />
-    </PropertySection>
+    <>
+      {isFillV2Enabled() && (
+        <Suspense fallback={null}>
+          <LazyFillSection />
+        </Suspense>
+      )}
+      <PropertySection id="appearance" title="Appearance" onReset={handleReset}>
+        <AppearanceSectionContent />
+      </PropertySection>
+    </>
   );
 });

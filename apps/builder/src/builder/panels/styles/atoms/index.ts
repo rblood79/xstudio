@@ -76,3 +76,11 @@ export {
   modifiedCountAtom,
   isCopyDisabledAtom,
 } from './styleAtoms';
+
+// Fill section atoms (Color Picker Phase 1)
+export {
+  fillsAtom,
+  activeFillIndexAtom,
+  activeFillAtom,
+  colorInputModeAtom,
+} from './fillAtoms';

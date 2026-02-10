@@ -13,6 +13,8 @@ import { useLayoutEffect } from 'react';
 import { useSetAtom } from 'jotai';
 import { useStore } from '../../../stores';
 import { selectedElementAtom } from '../atoms/styleAtoms';
+import type { FillItem } from '../../../../types/builder/fill.types';
+import { ensureFills } from '../utils/fillMigration';
 // Local interface for style panel's selected element (different from inspector's SelectedElement)
 interface StylePanelSelectedElement {
   id: string;
@@ -21,6 +23,7 @@ interface StylePanelSelectedElement {
   computedStyle?: Record<string, unknown>;
   computedLayout?: { width?: number; height?: number }; // 🚀 WebGL computed layout
   className: string;
+  fills?: FillItem[];
 }
 
 /**
@@ -83,13 +86,21 @@ function buildSelectedElement(
     ? selectedElementProps
     : (element.props as Record<string, unknown>);
 
+  // fills: element.fills 직접 읽기, 없으면 backgroundColor에서 마이그레이션
+  const style = (effectiveProps?.style ?? {}) as Record<string, unknown>;
+  const fills = ensureFills(
+    element.fills,
+    style.backgroundColor as string | undefined,
+  );
+
   return {
     id: element.id,
     type: element.tag,
-    style: (effectiveProps?.style ?? {}) as Record<string, unknown>,
+    style,
     computedStyle: effectiveProps?.computedStyle as Record<string, unknown> | undefined,
     computedLayout: effectiveProps?.computedLayout as { width?: number; height?: number } | undefined,
     className: (effectiveProps?.className as string) ?? '',
+    fills,
   };
 }
 

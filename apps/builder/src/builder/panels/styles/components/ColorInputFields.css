@@ -1,0 +1,93 @@
+/**
+ * ColorInputFields Styles
+ *
+ * Color Picker Phase 1
+ */
+
+@layer components {
+  .color-input-fields {
+    display: flex;
+    gap: 4px;
+    width: 100%;
+  }
+
+  .color-input-fields--hex,
+  .color-input-fields--css {
+    flex-direction: column;
+  }
+
+  .color-input-fields--multi {
+    flex-direction: row;
+  }
+
+  /* Number field */
+  .color-input-number-field {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 0;
+    gap: 2px;
+  }
+
+  .color-input-number-field__input {
+    width: 100%;
+    padding: 3px 4px;
+    font-size: var(--text-xs);
+    font-family: var(--font-mono);
+    background: var(--surface-container-high);
+    border: 1px solid var(--outline-variant);
+    border-radius: var(--radius-sm);
+    color: var(--on-surface);
+    text-align: center;
+    box-sizing: border-box;
+
+    &:focus {
+      outline: 2px solid var(--primary);
+      outline-offset: -2px;
+      border-color: var(--primary);
+    }
+  }
+
+  .color-input-number-field__label {
+    font-size: 9px;
+    color: var(--on-surface-variant);
+    text-align: center;
+    text-transform: uppercase;
+    user-select: none;
+  }
+
+  /* Text field */
+  .color-input-text-field {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    gap: 2px;
+  }
+
+  .color-input-text-field__input {
+    width: 100%;
+    padding: 3px 6px;
+    font-size: var(--text-xs);
+    font-family: var(--font-mono);
+    background: var(--surface-container-high);
+    border: 1px solid var(--outline-variant);
+    border-radius: var(--radius-sm);
+    color: var(--on-surface);
+    text-align: center;
+    box-sizing: border-box;
+
+    &:focus {
+      outline: 2px solid var(--primary);
+      outline-offset: -2px;
+      border-color: var(--primary);
+    }
+  }
+
+  .color-input-text-field__label {
+    font-size: 9px;
+    color: var(--on-surface-variant);
+    text-align: center;
+    text-transform: uppercase;
+    user-select: none;
+  }
+}

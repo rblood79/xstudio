@@ -1,0 +1,13 @@
+/**
+ * FillDetailPopover Styles
+ *
+ * Color Picker Phase 1
+ */
+
+@layer components {
+  .fill-detail-popover {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+}

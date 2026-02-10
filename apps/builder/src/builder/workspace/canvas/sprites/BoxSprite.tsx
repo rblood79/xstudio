@@ -22,6 +22,8 @@ import { parsePadding, getContentBounds } from './paddingUtils';
 import { drawBox, parseBorderConfig } from '../utils';
 import { useSkiaNode } from '../skia/useSkiaNode';
 import { LayoutComputedSizeContext } from '../layoutContext';
+import { isFillV2Enabled } from '../../../../utils/featureFlags';
+import { fillsToSkiaFillColor } from '../../../panels/styles/utils/fillToSkia';
 
 
 // ============================================
@@ -134,14 +136,29 @@ export const BoxSprite = memo(function BoxSprite({ element, onClick }: BoxSprite
   const skiaEffects = useMemo(() => buildSkiaEffects(style), [style]);
 
   // Phase 5: Skia 렌더 데이터 부착
+  // Fill V2: element.fills → fillsToSkiaFillColor 우선 사용
+  const fills = element.fills;
   const skiaNodeData = useMemo(() => {
-    const r = ((fill.color >> 16) & 0xff) / 255;
-    const g = ((fill.color >> 8) & 0xff) / 255;
-    const b = (fill.color & 0xff) / 255;
-    // opacity는 Skia effect로 처리하므로, fill alpha는 backgroundColor alpha만 사용
-    const bgAlpha = skiaEffects.effects?.some(e => e.type === 'opacity')
-      ? cssColorToAlpha(style?.backgroundColor)
-      : fill.alpha;
+    // Fill V2: Feature Flag ON + fills 존재 시 fills 배열에서 fillColor 추출
+    let fillColor: Float32Array;
+    const fillV2Color = isFillV2Enabled() && fills && fills.length > 0
+      ? fillsToSkiaFillColor(fills)
+      : null;
+
+    if (fillV2Color) {
+      fillColor = fillV2Color;
+    } else {
+      // 기존 backgroundColor → fillColor 폴백
+      const r = ((fill.color >> 16) & 0xff) / 255;
+      const g = ((fill.color >> 8) & 0xff) / 255;
+      const b = (fill.color & 0xff) / 255;
+      // opacity는 Skia effect로 처리하므로, fill alpha는 backgroundColor alpha만 사용
+      const bgAlpha = skiaEffects.effects?.some(e => e.type === 'opacity')
+        ? cssColorToAlpha(style?.backgroundColor)
+        : fill.alpha;
+      fillColor = Float32Array.of(r, g, b, bgAlpha);
+    }
+
     const br = typeof borderRadius === 'number' ? borderRadius : borderRadius?.[0] ?? 0;
 
     return {
@@ -155,7 +172,7 @@ export const BoxSprite = memo(function BoxSprite({ element, onClick }: BoxSprite
       ...(skiaEffects.effects ? { effects: skiaEffects.effects } : {}),
       ...(skiaEffects.blendMode ? { blendMode: skiaEffects.blendMode } : {}),
       box: {
-        fillColor: Float32Array.of(r, g, b, bgAlpha),
+        fillColor,
         borderRadius: br,
         strokeColor: borderConfig
           ? (() => {
@@ -171,7 +188,7 @@ export const BoxSprite = memo(function BoxSprite({ element, onClick }: BoxSprite
         strokeWidth: borderConfig?.width,
       },
     };
-  }, [transform, fill, borderRadius, borderConfig, style, skiaEffects]);
+  }, [transform, fill, borderRadius, borderConfig, style, skiaEffects, fills]);
 
   useSkiaNode(element.id, skiaNodeData);
 

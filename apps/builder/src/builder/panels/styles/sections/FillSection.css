@@ -1,0 +1,54 @@
+/**
+ * FillSection Styles
+ *
+ * Color Picker Phase 1
+ */
+
+@layer components {
+  .fill-section-content {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .fill-section-empty {
+    padding: 8px 0;
+    font-size: var(--text-xs);
+    color: var(--on-surface-variant);
+    text-align: center;
+  }
+
+  .fill-section-header-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 4px;
+  }
+
+  .fill-section-add-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    padding: 0;
+    background: transparent;
+    border: 1px solid var(--outline-variant);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: background 0.15s ease;
+
+    &:hover:not(:disabled) {
+      background: var(--surface-container-highest);
+    }
+
+    &:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--primary);
+      outline-offset: -2px;
+    }
+  }
+}
