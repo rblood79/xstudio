@@ -10,7 +10,6 @@ import {
   Smartphone,
   Asterisk,
   Activity,
-  LayoutGrid,
   GitBranch,
   Settings,
 } from "lucide-react";
@@ -48,8 +47,8 @@ export interface BuilderHeaderProps {
   onPreview: () => void;
   onPlay: () => void;
   onPublish: () => void;
-  viewMode: "canvas" | "workflow";
-  onViewModeToggle: () => void;
+  showWorkflowOverlay: boolean;
+  onWorkflowOverlayToggle: () => void;
 }
 
 export const BuilderHeader: React.FC<BuilderHeaderProps> = ({
@@ -66,8 +65,8 @@ export const BuilderHeader: React.FC<BuilderHeaderProps> = ({
   onPreview,
   onPlay,
   onPublish,
-  viewMode,
-  onViewModeToggle,
+  showWorkflowOverlay,
+  onWorkflowOverlayToggle,
 }) => {
   const { layout, toggleBottomPanel, openPanelAsModal } = usePanelLayout();
   const isMonitorOpen =
@@ -186,7 +185,7 @@ export const BuilderHeader: React.FC<BuilderHeaderProps> = ({
           selectedKeys={
             new Set([
               ...(isMonitorOpen ? ["monitor"] : []),
-              ...(viewMode === "workflow" ? ["workflow"] : []),
+              ...(showWorkflowOverlay ? ["workflow"] : []),
             ])
           }
           indicator={true}
@@ -194,16 +193,16 @@ export const BuilderHeader: React.FC<BuilderHeaderProps> = ({
             const selectedKeys = new Set(keys);
             const wasMonitorOpen = isMonitorOpen;
             const isMonitorNowSelected = selectedKeys.has("monitor");
-            const wasWorkflow = viewMode === "workflow";
+            const wasWorkflow = showWorkflowOverlay;
             const isWorkflowNowSelected = selectedKeys.has("workflow");
 
             // Monitor 토글
             if (wasMonitorOpen !== isMonitorNowSelected) {
               toggleBottomPanel("monitor");
             }
-            // Workflow 토글
+            // Workflow 오버레이 토글
             if (wasWorkflow !== isWorkflowNowSelected) {
-              onViewModeToggle();
+              onWorkflowOverlayToggle();
             }
           }}
           aria-label="View options"
@@ -218,22 +217,14 @@ export const BuilderHeader: React.FC<BuilderHeaderProps> = ({
           <ToggleButton
             id="workflow"
             aria-label={
-              viewMode === "canvas" ? "Switch to Workflow" : "Switch to Canvas"
+              showWorkflowOverlay ? "Hide Workflow Overlay" : "Show Workflow Overlay"
             }
           >
-            {viewMode === "canvas" ? (
-              <GitBranch
-                color={iconProps.color}
-                strokeWidth={iconProps.strokeWidth}
-                size={iconProps.size}
-              />
-            ) : (
-              <LayoutGrid
-                color="var(--color-white)"
-                strokeWidth={iconProps.strokeWidth}
-                size={iconProps.size}
-              />
-            )}
+            <GitBranch
+              color={showWorkflowOverlay ? "var(--color-white)" : iconProps.color}
+              strokeWidth={iconProps.strokeWidth}
+              size={iconProps.size}
+            />
           </ToggleButton>
           <ToggleButton id="preview" aria-label="Preview" onPress={onPreview}>
             <Eye

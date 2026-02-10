@@ -52,11 +52,20 @@ export interface SettingsState {
   /** History 정보 업데이트 */
   setHistoryInfo: (info: HistoryInfo) => void;
 
+  /** Workflow 오버레이 표시 여부 (기본값: false) */
+  showWorkflowOverlay: boolean;
+
   /** 뷰 모드 설정 */
   setViewMode: (mode: 'canvas' | 'workflow') => void;
 
   /** 뷰 모드 토글 */
   toggleViewMode: () => void;
+
+  /** Workflow 오버레이 표시 설정 */
+  setShowWorkflowOverlay: (show: boolean) => void;
+
+  /** Workflow 오버레이 표시 토글 */
+  toggleWorkflowOverlay: () => void;
 }
 
 /**
@@ -66,6 +75,7 @@ export const createSettingsSlice: StateCreator<SettingsState> = (set, get) => ({
   viewMode: 'canvas',
   showGrid: false,
   snapToGrid: false,
+  showWorkflowOverlay: false,
   gridSize: 8,
   historyInfo: {
     canUndo: false,
@@ -115,5 +125,19 @@ export const createSettingsSlice: StateCreator<SettingsState> = (set, get) => ({
   toggleViewMode: () => {
     const current = get().viewMode;
     set({ viewMode: current === 'canvas' ? 'workflow' : 'canvas' });
+  },
+
+  /**
+   * Workflow 오버레이 표시 설정
+   */
+  setShowWorkflowOverlay: (show: boolean) => {
+    set({ showWorkflowOverlay: show });
+  },
+
+  /**
+   * Workflow 오버레이 표시 토글
+   */
+  toggleWorkflowOverlay: () => {
+    set((state) => ({ showWorkflowOverlay: !state.showWorkflowOverlay }));
   },
 });

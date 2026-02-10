@@ -65,6 +65,8 @@ export const BuilderCore: React.FC = () => {
   const setHistoryInfo = useStore((state) => state.setHistoryInfo);
   const viewMode = useStore((state) => state.viewMode);
   const toggleViewMode = useStore((state) => state.toggleViewMode);
+  const showWorkflowOverlay = useStore((state) => state.showWorkflowOverlay);
+  const toggleWorkflowOverlay = useStore((state) => state.toggleWorkflowOverlay);
 
   // 히스토리 정보 업데이트 (구독 기반)
   useEffect(() => {
@@ -843,8 +845,8 @@ export const BuilderCore: React.FC = () => {
         onPreview={handlePreview}
         onPlay={handlePlay}
         onPublish={handlePublish}
-        viewMode={viewMode}
-        onViewModeToggle={toggleViewMode}
+        showWorkflowOverlay={showWorkflowOverlay}
+        onWorkflowOverlayToggle={toggleWorkflowOverlay}
       />
 
       {viewMode === 'canvas' ? (

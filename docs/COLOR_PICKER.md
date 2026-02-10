@@ -1,19 +1,42 @@
 # Color Picker 상세 설계 문서
 
 > **목표**: Pencil 앱 수준의 컬러 피커 및 Fill/Stroke 시스템 구축
-> **현재 상태**: 단색 HSB 피커만 존재, 그래디언트/다중 레이어/EyeDropper 없음
+> **현재 상태**: 단색 HSB 피커만 존재, 그래디언트/다중 레이어/EyeDropper 없음 (Phase 1 미착수)
 > **참조**: `docs/PENCIL_APP_ANALYSIS.md`, `apps/builder/src/builder/workspace/canvas/skia/types.ts`
+>
+> **Phase 착수 조건**:
+> - Phase 1: `apps/builder/src/types/builder/fill.types.ts` (신규 예정) 타입 정의 + Element 확장에 대한 DB 스키마 영향 분석 완료 시
+> - Phase 2: Phase 1 다중 Fill UI의 QA 통과 + Skia 렌더링 검증 완료 시
+> - Phase 3: Phase 2 그래디언트 에디터 안정화 + EyeDropper 브라우저 호환 매트릭스 확정 시
+> - Phase 4: Phase 3 기능 안정화 + 이미지 업로드 인프라 준비 완료 시
 
 ---
 
-## 0. 문서 검토 요약 (2026-02)
+## 0. 문서 검토 요약
+
+### 0.0 2차 검토 (2026-02-10)
+
+코드베이스 대조 검증을 통해 다음을 보완했다.
+
+1. **액션 이름 정합성 수정**
+   - `useBuilderActions()` / `pushHistory` → 실제 코드의 `useStyleActions()` / `historyManager.addEntry()` 로 정정.
+2. **`@dnd-kit/sortable` 의존성 상태 정정**
+   - "이미 프로젝트 의존성에 있을 것" → 실제로 미설치 상태. 설치 명령어 명시.
+3. **기존 활용 가능 자산 섹션 추가 (Section 11)**
+   - `apps/builder/src/builder/workspace/canvas/skia/fills.ts` (`applyFill()`), `apps/builder/src/builder/workspace/canvas/skia/blendModes.ts`, `useOptimizedStyleActions` 등 재사용 대상 명시.
+4. **리스크 분석 추가 (Section 10)**
+   - 7개 기술 리스크 (R1~R7), Phase 간 의존성 리스크, Feature Flag 구현 방안 포함.
+5. **성능 기준값 추가 (Section 9.4)**
+   - Fill 렌더링, 드래그 FPS, 마이그레이션 성능 등 정량 기준 명시.
+6. **Phase 착수 조건 추가**
+   - 문서 상단에 각 Phase별 착수 전제 조건 명시.
+
+### 0.1 1차 검토 (2026-02)
 
 기존 초안은 방향성이 명확하고, Pencil 기능을 단계별로 잘 쪼갠 점이 강점이다. 다만 현재 저장소 구조/상태관리 패턴과 일부 경로·명령어가 어긋난 부분이 있어 아래를 반영해 보완했다.
 
-### 0.1 보완한 핵심 항목
-
 1. **경로 정합성 보정**
-   - `atoms/fillAtoms.ts` 같은 상대 경로 표기를 실제 코드베이스 기준(`apps/builder/src/builder/panels/styles/atoms/fillAtoms.ts`)으로 명확화.
+   - 축약 경로 표기를 리포지토리 루트 기준 경로(`apps/builder/src/builder/panels/styles/atoms/fillAtoms.ts`)로 통일.
 2. **상태관리 흐름 정렬**
    - `useSceneManager()` 기반 예시는 현재 Builder의 Zustand + Jotai 브릿지 흐름과 어긋나므로, `selectedElementAtom`/`appearanceValuesAtom` 패턴과 히스토리 액션 호출 기반으로 정리.
 3. **명령어 표준화**
@@ -63,7 +86,7 @@ apps/builder/src/builder/
 type FillStyle =
   | ColorFill            // { type: 'color', rgba: [r,g,b,a] }
   | LinearGradientFill   // { type: 'linear-gradient', start, end, colors, positions }
-  | RadialGradientFill   // { type: 'radial-gradient', center, radius, colors, positions }
+  | RadialGradientFill   // { type: 'radial-gradient', center, startRadius, endRadius, colors, positions }
   | AngularGradientFill  // { type: 'angular-gradient', cx, cy, colors, positions }
   | ImageFill            // { type: 'image', image, tileMode, sampling }
   | MeshGradientFill     // { type: 'mesh-gradient', rows, columns, colors }
@@ -242,7 +265,7 @@ export type StrokeWidth =
 #### 3.1.3 Element 확장
 
 ```typescript
-// unified.types.ts Element에 추가할 속성
+// apps/builder/src/types/builder/unified.types.ts Element에 추가할 속성
 export interface Element {
   // ... 기존 속성 ...
 
@@ -294,7 +317,11 @@ export const colorInputModeAtom = atom<ColorInputMode>('hex');
 // (sceneManager 직접 의존 대신 element update/history 액션을 경유)
 
 export function useFillActions() {
-  const { updateElement, pushHistory } = useBuilderActions();
+  // 기존 패턴 참조:
+  //   useStyleActions() → useStore.getState().updateSelectedStyle()
+  //   historyManager.addEntry() (apps/builder/src/builder/stores/history.ts)
+  //   useOptimizedStyleActions() → updateStylePreview() / updateStyleImmediate()
+  const { updateStyle } = useStyleActions();
 
   /** Fill 추가 */
   const addFill = (type: FillType = FillType.Color) => {
@@ -389,7 +416,7 @@ apps/builder/src/builder/panels/styles/components/
 기존 `PropertyColor`를 대체하는 핵심 컴포넌트.
 
 ```typescript
-// components/ColorPickerPanel.tsx
+// apps/builder/src/builder/panels/styles/components/ColorPickerPanel.tsx
 
 interface ColorPickerPanelProps {
   /** 현재 색상 (8자리 hex "#RRGGBBAA") */
@@ -446,7 +473,7 @@ Pencil 프로퍼티 패널의 Fill 행 패턴.
   토글  미리보기   타입선택   값/hex  opacity  삭제
 ```
 
-**드래그 순서 변경**: `@dnd-kit/sortable` 사용 (이미 프로젝트 의존성에 있을 것)
+**드래그 순서 변경**: `@dnd-kit/sortable` 사용 (현재 미설치, Phase 1 착수 시 `pnpm add @dnd-kit/core @dnd-kit/sortable` 필요)
 
 ---
 
@@ -490,7 +517,7 @@ GradientEditor
 
 ### 4.3 캔버스 연동
 
-기존 `skia/types.ts`의 Fill 타입 → CanvasKit 셰이더 변환:
+기존 `apps/builder/src/builder/workspace/canvas/skia/types.ts`의 Fill 타입 → CanvasKit 셰이더 변환:
 
 ```typescript
 // 기존 코드 활용 경로
@@ -511,7 +538,7 @@ FillItem (UI 모델) → FillStyle (Skia 모델) → CanvasKit.Shader
 ### 5.1 EyeDropper
 
 ```typescript
-// components/EyeDropperButton.tsx
+// apps/builder/src/builder/panels/styles/components/EyeDropperButton.tsx
 
 async function pickColorFromScreen(): Promise<string | null> {
   if (!('EyeDropper' in window)) {
@@ -538,7 +565,7 @@ async function pickColorFromScreen(): Promise<string | null> {
 Pencil의 `iVt` 컴포넌트 패턴 채용.
 
 ```typescript
-// components/ScrubInput.tsx
+// apps/builder/src/builder/panels/styles/components/ScrubInput.tsx
 
 interface ScrubInputProps {
   value: number;
@@ -564,7 +591,7 @@ interface ScrubInputProps {
 ### 5.3 Blend Mode Selector
 
 ```typescript
-// components/BlendModeSelector.tsx
+// apps/builder/src/builder/panels/styles/components/BlendModeSelector.tsx
 
 const BLEND_MODES: { value: BlendMode; label: string }[] = [
   { value: 'normal', label: 'Normal' },
@@ -597,6 +624,7 @@ const BLEND_MODES: { value: BlendMode; label: string }[] = [
 - N×M 그리드의 색상 포인트
 - 각 포인트에 베지어 핸들 (left/right/top/bottom)
 - 쌍삼차(Bicubic) 보간으로 CanvasKit `MakeVertices(TrianglesStrip)` 렌더
+- 참고: 현재 `apps/builder/src/builder/workspace/canvas/skia/fills.ts`는 mesh를 2x2 근사(LinearGradient 블렌드)로 처리하므로, Phase 4에서 N×M 확장이 필요
 
 ### 6.3 변수 바인딩 UI
 
@@ -639,8 +667,8 @@ function migrateBackgroundColor(element: Element): FillItem[] {
 ### 7.2 점진적 전환 순서
 
 ```
-Step 1: fill.types.ts 타입 정의
-Step 2: fillAtoms.ts Jotai atom 추가
+Step 1: apps/builder/src/types/builder/fill.types.ts 타입 정의
+Step 2: apps/builder/src/builder/panels/styles/atoms/fillAtoms.ts Jotai atom 추가
 Step 3: FillSection UI 기본 구조 (단색 레이어만)
 Step 4: ColorPickerPanel (색상 모드 전환)
 Step 5: 다중 Fill 레이어 (추가/삭제/순서/토글)
@@ -655,14 +683,14 @@ Step 10: 이미지/메쉬/변수 바인딩 (Phase 4)
 
 | 파일 | 변경 내용 |
 |------|-----------|
-| `unified.types.ts` | `Element`에 `fills?`, `stroke?` 추가 |
-| `AppearanceSection.tsx` | FillSection으로 점진적 교체 |
-| `styleAtoms.ts` | `fillsAtom`, `strokeAtom` 추가 |
-| `useAppearanceValuesJotai.ts` | fills/stroke 구독 추가 |
-| `PropertyColor.tsx` | ColorPickerPanel로 대체 (내부 사용은 유지) |
-| `skia/types.ts` | 기존 FillStyle 타입 유지 (변환 레이어 추가) |
-| `elementCreation.ts` | 새 요소 생성 시 기본 fills 배열 설정 |
-| `elementUpdate.ts` | fills/stroke 업데이트 액션 추가 |
+| `apps/builder/src/types/builder/unified.types.ts` | `Element`에 `fills?`, `stroke?` 추가 |
+| `apps/builder/src/builder/panels/styles/sections/AppearanceSection.tsx` | FillSection으로 점진적 교체 |
+| `apps/builder/src/builder/panels/styles/atoms/fillAtoms.ts` (신규) | `fillsAtom`, `strokeAtom` 추가 |
+| `apps/builder/src/builder/panels/styles/hooks/useAppearanceValuesJotai.ts` | fills/stroke 구독 추가 |
+| `apps/builder/src/builder/components/property/PropertyColor.tsx` | ColorPickerPanel로 대체 (내부 사용은 유지) |
+| `apps/builder/src/builder/workspace/canvas/skia/types.ts` | 기존 FillStyle 타입 유지 (변환 레이어 추가) |
+| `apps/builder/src/builder/stores/utils/elementCreation.ts` | 새 요소 생성 시 기본 fills 배열 설정 |
+| `apps/builder/src/builder/stores/utils/elementUpdate.ts` | fills/stroke 업데이트 액션 추가 |
 
 ---
 
@@ -679,7 +707,7 @@ Step 10: 이미지/메쉬/변수 바인딩 (Phase 4)
 3. History Record (즉시)
    └── fills/stroke 전체 스냅샷
 4. Fill → Skia 변환 (즉시)
-   ├── FillItem → FillStyle (skia/types.ts)
+   ├── FillItem → FillStyle (apps/builder/src/builder/workspace/canvas/skia/types.ts)
    └── CanvasKit Shader 생성
 5. Canvas Render (즉시, 60fps)
 6. DB Persist (백그라운드)
@@ -730,21 +758,99 @@ function getOrCreateGradientShader(fill: GradientFillItem): CanvasKit.Shader {
 }
 ```
 
+### 9.4 성능 기준값
+
+| 시나리오 | 측정 항목 | 기준값 | 도구 |
+|---------|----------|--------|------|
+| Fill 1개 렌더링 | Shader 생성 + Paint 적용 | < 0.5ms | `performance.now()` |
+| Fill 5개 레이어 합성 | 전체 fills 순회 + Shader 체이닝 | < 3ms | `performance.now()` |
+| ColorArea 드래그 | 드래그 중 FPS | 60fps 유지 | `requestAnimationFrame` FPS 카운터 |
+| Fill 추가/삭제 | UI 반영 시간 | < 16ms (1 프레임) | React Profiler |
+| 그래디언트 스톱 드래그 (Phase 2) | Shader 재생성 + 캔버스 갱신 | < 5ms | `performance.now()` |
+| 마이그레이션 | `backgroundColor` → `fills[]` 변환 (요소 100개) | < 50ms | `performance.now()` |
+
 ---
 
-## 10. 테스트 전략
+## 10. 리스크 분석
+
+### 10.1 기술 리스크
+
+| ID | 리스크 | 영향 | 발생 확률 | 완화 방안 |
+|----|--------|------|----------|----------|
+| R1 | **다중 Fill 렌더링 성능** — Fill 레이어 5+ 시 CanvasKit Shader 체이닝/합성 비용 증가 | 중간 | 중간 | Fill 레이어 수 상한 설정 (기본 10개), 비활성(`enabled: false`) Fill은 렌더링 스킵 |
+| R2 | **마이그레이션 데이터 무결성** — 기존 `backgroundColor` → `fills[]` 변환 시 edge case (CSS 변수, `inherit`, `transparent`, `rgba()` 등) | 높음 | 높음 | 정규화 함수 `normalizeToHex8()`에 대한 edge case 테스트 철저히 작성, 변환 실패 시 원본값 보존 |
+| R3 | **드래그 순서 변경 + History** — reorder 시마다 fills 배열 전체 스냅샷 저장으로 History 메모리 증가 | 낮음 | 중간 | History entry에 diff 대신 전체 스냅샷 사용 (기존 패턴), 메모리 상한 도달 시 오래된 entry 제거 |
+| R4 | **EyeDropper 브라우저 호환 (Phase 3)** — Firefox/Safari 미지원, 일부 보안 정책에서 차단 가능 | 낮음 | 확실 | `'EyeDropper' in window` 가드로 버튼 자체를 숨김, 미지원 시 대체 UX 불필요 (기능 자체 생략) |
+| R5 | **Gradient Shader GPU 리소스 누수** — 스톱 드래그 중 매 프레임 Shader 재생성 시 이전 Shader `delete()` 누락 가능 | 높음 | 중간 | 9.3의 shaderCache 패턴 적용 + 캐시 교체 시 이전 Shader `delete()` 명시적 호출, `SkiaDisposable` 패턴 준수 |
+| R6 | **전용 Feature Flag 미연결** — 기존 `apps/builder/src/utils/featureFlags.ts` 인프라는 있으나 `color-picker-v2` 플래그 연결/노출 정책 미정 | 중간 | 중간 | 아래 10.2 참조 |
+| R7 | **`@dnd-kit/sortable` 신규 의존성** — 새 의존성 추가에 따른 번들 크기 증가 및 호환성 리스크 | 낮음 | 낮음 | `@dnd-kit/core` ~13KB gzip, Phase 1 착수 시 번들 분석 후 tree-shaking 확인 |
+
+### 10.2 Feature Flag 구현 방안
+
+현재 프로젝트에는 `apps/builder/src/utils/featureFlags.ts` 기반 플래그 인프라가 있으므로, 아래 방식 중 선택:
+
+| 방안 | 장점 | 단점 |
+|------|------|------|
+| **A. 기존 인프라 확장 (권장)** (`VITE_FEATURE_FILL_V2=true`) | 현재 패턴(`VITE_USE_WEBGL_CANVAS`)과 동일, 구현/검증 비용 최소 | 런타임 사용자별 제어 불가 |
+| **B. Zustand 슬라이스** (`useFeatureFlags()`) | 런타임 전환 가능, DevTools 연동 | DB/원격 제어 없음 |
+| **C. Supabase Remote Config** | 사용자별/환경별 제어 | 구현 비용 높음, Phase 1에 과도함 |
+
+> **권장**: Phase 1은 **방안 A (기존 인프라 확장)**로 시작, 추후 필요 시 B로 승격.
+
+### 10.3 Phase 간 의존성 리스크
+
+```
+Phase 1 (Fill 모델 + 다중 UI)
+    ↓ 실패 시: 기존 AppearanceSection 단색 편집 유지, 영향 없음
+Phase 2 (그래디언트 에디터)
+    ↓ 실패 시: Phase 1만 운영 (단색 Fill만 지원)
+Phase 3 (EyeDropper + Scrub + Blend) ← R4, R5 집중 발생 구간
+    ↓ 실패 시: Phase 2까지만 운영, 보조 기능 미제공
+Phase 4 (이미지/메쉬/변수)
+    ↓ 실패 시: Phase 3까지만 운영, 고급 Fill 타입 미제공
+```
+
+### 10.4 완화되는 리스크
+
+| 항목 | 설명 |
+|------|------|
+| Skia 변환 레이어 완성 | `apps/builder/src/builder/workspace/canvas/skia/fills.ts`의 `applyFill()` 이 6종 FillStyle을 이미 처리 → Phase 1~4 캔버스 렌더링 리스크 낮음 |
+| 기존 드래그 패턴 검증됨 | `apps/builder/src/builder/components/property/PropertyColor.tsx`의 onChange/onChangeEnd 패턴이 이미 안정적으로 동작 |
+| fills 폴백 경로 | `fills ?? backgroundColor` 폴백으로 마이그레이션 중 데이터 손실 위험 최소화 |
+
+---
+
+## 11. 기존 활용 가능 자산
+
+> Phase 구현 시 재사용해야 할 기존 코드 자산 목록. 중복 구현을 방지하기 위해 반드시 참조.
+
+| 자산 | 파일 경로 | 활용 Phase | 설명 |
+|------|----------|-----------|------|
+| **`applyFill()`** | `apps/builder/src/builder/workspace/canvas/skia/fills.ts` | Phase 1~4 전체 | FillStyle → CanvasKit Paint/Shader 변환 (Color/Linear/Radial/Angular/Image 안정, Mesh는 2x2 근사/폴백) |
+| **BlendMode 매핑** | `apps/builder/src/builder/workspace/canvas/skia/blendModes.ts` | Phase 3 | BlendMode 문자열 → CanvasKit BlendMode enum 변환 |
+| **`useStyleActions()`** | `apps/builder/src/builder/panels/styles/hooks/useStyleActions.ts` | Phase 1 | `updateStyle()` → `useStore.getState().updateSelectedStyle()` |
+| **`useOptimizedStyleActions()`** | `apps/builder/src/builder/panels/styles/hooks/useOptimizedStyleActions.ts` | Phase 1 | `updateStylePreview()` (드래그 중) / `updateStyleImmediate()` (확정 시) |
+| **`useZustandJotaiBridge()`** | `apps/builder/src/builder/panels/styles/hooks/useZustandJotaiBridge.ts` | Phase 1 | Zustand → Jotai 단방향 동기화 패턴 (fills atom 동기화에 재사용) |
+| **`historyManager.addEntry()`** | `apps/builder/src/builder/stores/history.ts` | Phase 1~4 | History 기록 (`structuredClone` 기반 스냅샷) |
+| **`inspectorActions`** | `apps/builder/src/builder/stores/inspectorActions.ts` | Phase 1 | `updateSelectedStyle()`, `updateSelectedStyles()` 구현체 |
+| **`PropertyColor.tsx`** | `apps/builder/src/builder/components/property/PropertyColor.tsx` | Phase 1 | 드래그 중 로컬 상태 / 확정 시 저장 패턴 참조 |
+| **`SkiaDisposable`** | `apps/builder/src/builder/workspace/canvas/skia/disposable.ts` | Phase 2~4 | GPU 리소스(Paint, Path, Shader) 자동 정리 패턴 |
+
+---
+
+## 12. 테스트 전략
 
 | 범위 | 방법 | 파일 |
 |------|------|------|
-| 타입 안전성 | `pnpm type-check` | `fill.types.ts` |
-| 색상 변환 | Unit Test | `colorUtils.test.ts` |
-| Fill CRUD | Unit Test | `useFillActions.test.ts` |
-| 마이그레이션 | Unit Test | `fillMigration.test.ts` |
-| UI 렌더링 | Storybook | `FillSection.stories.tsx` |
-| 드래그 인터랙션 | Storybook + E2E | `GradientBar.stories.tsx` |
+| 타입 안전성 | `pnpm type-check` | `apps/builder/src/types/builder/fill.types.ts` (신규 예정) |
+| 색상 변환 | Unit Test | `apps/builder/src/builder/panels/styles/utils/colorUtils.test.ts` (신규 예정) |
+| Fill CRUD | Unit Test | `apps/builder/src/builder/panels/styles/hooks/useFillActions.test.ts` (신규 예정) |
+| 마이그레이션 | Unit Test | `apps/builder/src/builder/panels/styles/utils/fillMigration.test.ts` (신규 예정) |
+| UI 렌더링 | Storybook | `apps/builder/src/builder/panels/styles/sections/FillSection.stories.tsx` (신규 예정) |
+| 드래그 인터랙션 | Storybook + E2E | `apps/builder/src/builder/panels/styles/components/GradientBar.stories.tsx` (신규 예정) |
 | 성능 | Canvas FPS 모니터 | 기존 모니터링 패널 활용 |
 
-### 10.1 수용 기준 (Acceptance Criteria)
+### 12.1 수용 기준 (Acceptance Criteria)
 
 - 단색 요소를 선택했을 때, 기존 `backgroundColor`는 자동으로 `fills[0]`에 마이그레이션되어 UI에서 동일 색으로 표시된다.
 - Fill 레이어 3개 이상에서 **추가/삭제/순서변경/토글**이 undo/redo에 정확히 반영된다.
@@ -752,9 +858,9 @@ function getOrCreateGradientShader(fill: GradientFillItem): CanvasKit.Shader {
 - Linear/Radial/Angular 스톱 편집 후 캔버스(스키아) 결과와 패널 미리보기가 시각적으로 일치한다.
 - EyeDropper 미지원 브라우저에서 버튼이 노출되지 않으며, 지원 브라우저에서 취소(ESC) 시 상태가 오염되지 않는다.
 
-### 10.2 Feature Flag / 롤백 전략
+### 12.2 Feature Flag / 롤백 전략
 
-- `fills/stroke` 편집 UI는 초기에는 `color-picker-v2` 플래그 하에서만 노출한다.
+- `fills/stroke` 편집 UI는 초기에는 Feature Flag 하에서만 노출한다 (구현 방안은 10.2 참조).
 - 플래그 OFF 시 기존 `AppearanceSection` 단색 편집 경로를 유지해 즉시 롤백 가능해야 한다.
 - DB에는 신규 필드를 쓰더라도, 읽기 경로는 `fills ?? backgroundColor` 폴백을 한 릴리즈 이상 유지한다.
 

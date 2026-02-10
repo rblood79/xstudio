@@ -1,8 +1,14 @@
 # WebGL Workflow Integration - Analysis & Implementation Plan
 
-> **Status**: 분석/설계 단계 (기존 ReactFlow Workflow 운영 중)
+> **Status**: 분석/설계 단계 (기존 ReactFlow Workflow 운영 중, Phase 1 미착수)
 >
 > **목표**: `@xyflow/react` 기반 별도 화면 전환 → WebGL 캔버스 내 네이티브 CanvasKit 렌더링으로 점진 통합
+>
+> **Phase 착수 조건**:
+> - Phase 1: 캔버스 멀티 페이지 렌더링 안정화 + pagePositions 정확도 검증 완료 시
+> - Phase 2: Phase 1 엣지 렌더링의 시각적/성능 QA 통과 시
+> - Phase 3: Phase 2 기능 동등성 확인 + PixiJS 이벤트 충돌 해결 방안 확정 시
+> - Phase 4: Phase 3 인터랙션 안정화 + 사용자 피드백 반영 완료 시
 
 ---
 
@@ -22,9 +28,9 @@ workflow/
 │   ├── LayoutNode.tsx       (72줄)  # 레이아웃 노드 컴포넌트
 │   └── DataSourceNode.tsx   (88줄)  # 데이터 소스 노드 컴포넌트
 ├── utils/autoLayout.ts      (96줄)  # Dagre 기반 자동 레이아웃
-└── styles/workflow.css     (496줄)  # ReactFlow 스타일
+└── styles/workflow.css     (495줄)  # ReactFlow 스타일
                             ─────
-                        합계: 1,544줄 + 496줄 CSS
+                        합계: 1,537줄 + 495줄 CSS
 ```
 
 #### 외부 의존성
@@ -441,12 +447,12 @@ B → D (navigation)     → 연한 파란색 (2차 연결)
 └─────────────────┘    └─────────────────────────┘    └──────────────────────┘
 
 완료 후 목표 상태
-    ┌─────────────────┐    ┌─────────────────────────┐    ┌──────────────────────┐
+┌─────────────────┐    ┌─────────────────────────┐    ┌──────────────────────┐
 │ 기본 엣지        │    │ 데이터+레이아웃 연결     │    │ 인터랙션+고급 UI     │
 │ navigation edge  │ → │ data source edges       │ → │ hover highlight      │
 │ event edge       │    │ layout group overlay    │    │ click navigation     │
 │ 토글 버튼        │    │ 세부 토글 드롭다운       │    │ minimap, legend      │
-    └─────────────────┘    └─────────────────────────┘    └──────────────────────┘
+└─────────────────┘    └─────────────────────────┘    └──────────────────────┘
 ```
 
 ### 4.2 기존 Workflow 코드 처리
@@ -637,28 +643,164 @@ if (showWorkflow && registryVersion !== workflowEdgesVersionRef.current) {
 | **프레임 비용** | N/A (DOM) | ~1-2ms (present 프레임) |
 | **데이터 동기화** | 3개 useEffect 브리지 | 직접 store 접근 |
 
-### 6.2 성능 비교 (예상)
+### 6.2 성능 비교 (추정치, 벤치마크 미실시)
 
-| 시나리오 | 기존 | 새 |
-|---------|------|------|
-| 토글 ON | ~200ms (DOM 마운트 + ReactFlow 초기화) | ~1ms (overlayVersion++) |
-| 토글 OFF | ~100ms (DOM 언마운트) | ~0.1ms (idle 프레임) |
-| Pan/Zoom | ReactFlow 자체 처리 | 기존 카메라 그대로 |
-| 요소 변경 | useEffect 동기화 대기 | 즉시 registryVersion 감지 |
+> **주의**: 아래 수치는 CanvasKit 오버레이 패턴(aiEffects, selectionRenderer)의 실측 데이터를 기반으로 한 추정값입니다.
+> Phase 1 구현 후 실측 벤치마크로 검증이 필요합니다.
+
+| 시나리오 | 기존 | 새 (추정) | 검증 방법 |
+|---------|------|------|------|
+| 토글 ON | ~200ms (DOM 마운트 + ReactFlow 초기화) | ~1ms (overlayVersion++) | `performance.mark()` 측정 |
+| 토글 OFF | ~100ms (DOM 언마운트) | ~0.1ms (idle 프레임) | 프레임 분류 로그 확인 |
+| Pan/Zoom | ReactFlow 자체 처리 | 기존 카메라 그대로 | FPS 모니터링 |
+| 요소 변경 | useEffect 동기화 대기 | 즉시 registryVersion 감지 | 이벤트 타임스탬프 비교 |
 
 ---
 
-## 7. 참조
+## 7. 리스크 분석
+
+### 7.1 기술 리스크
+
+| ID | 리스크 | 영향 | 발생 확률 | 완화 방안 |
+|----|--------|------|----------|----------|
+| R1 | **CanvasKit 폰트 로딩 지연** — 폰트 매니저(FontMgr) 초기화 전 레이블 렌더링 시도 시 빈 텍스트 또는 크래시 | 높음 | 중간 | 폰트 로딩 완료까지 레이블 렌더링 스킵, `fontMgr` null 체크 가드 추가 |
+| R2 | **대규모 엣지 렌더링 성능** — 페이지 50+, 엣지 200+ 시 present 프레임이 1-2ms 초과 가능 | 중간 | 낮음 | 뷰포트 밖 엣지 frustum culling, 줌 레벨별 LOD(Level of Detail) 적용 |
+| R3 | **PixiJS 이벤트 충돌 (Phase 3)** — 워크플로우 엣지 클릭 vs 요소 선택 클릭이 같은 PixiJS EventBoundary에서 경합 | 높음 | 높음 | 워크플로우 오버레이 활성 시 이벤트 모드 분리: `workflowHitTest` 우선 → miss 시 기존 요소 선택으로 fallback |
+| R4 | **Bezier 히트 테스트 정밀도 vs 성능 (Phase 3)** — sample point 수가 적으면 miss, 많으면 매 프레임 계산 비용 증가 | 중간 | 중간 | 엣지당 20개 sample point로 시작, 프로파일링 후 조정. 공간 분할(grid hash)로 O(n) → O(1) 근사 |
+| R5 | **GPU 리소스 누수** — CanvasKit Paint/Path 객체의 `delete()` 누락 시 메모리 증가 | 높음 | 중간 | 기존 `SkiaDisposable` 패턴 준수, `finally` 블록에서 반드시 `scope.dispose()` 호출 |
+| R6 | **기존 ReactFlow 코드와의 공존 기간** — Phase 1~2 동안 두 시스템이 동시에 존재하여 유지보수 부담 증가 | 낮음 | 확실 | Phase별 제거 기준을 명확히 하고, 기존 코드는 수정하지 않고 freeze 상태 유지 |
+
+### 7.2 Phase 간 의존성 리스크
+
+```
+Phase 1 (기본 엣지)
+    ↓ 실패 시: 기존 ReactFlow fallback 유지, 영향 없음
+Phase 2 (데이터/레이아웃)
+    ↓ 실패 시: Phase 1만 운영, 데이터 바인딩은 기존 방식 유지
+Phase 3 (인터랙티브) ← R3, R4 집중 발생 구간
+    ↓ 실패 시: Phase 2까지만 운영 (오버레이는 읽기 전용)
+Phase 4 (고급 UI)
+    ↓ 실패 시: Phase 3까지만 운영, 미니맵/레전드 미제공
+```
+
+**핵심**: Phase 3이 가장 리스크가 높은 구간. PixiJS 이벤트 시스템과의 통합이 기술적 난이도가 가장 높으므로, Phase 3 착수 전에 이벤트 분리 방안의 PoC(Proof of Concept)를 먼저 진행할 것을 권장.
+
+### 7.3 완화되는 리스크
+
+| 항목 | 설명 |
+|------|------|
+| 단계적 rollback | 각 Phase가 독립적이므로 실패 시 이전 Phase로 fallback 가능 |
+| 기존 패턴 재사용 | `selectionRenderer.ts`, `aiEffects.ts`의 검증된 CanvasKit 렌더링 패턴을 그대로 사용 |
+| 오버레이 격리 | 워크플로우 렌더링이 content layer에 영향을 주지 않음 (overlay layer 한정) |
+
+---
+
+## 8. 테스트 전략
+
+### 8.1 테스트 레벨별 계획
+
+#### Unit Tests
+
+| 대상 | 테스트 항목 | 도구 |
+|------|-----------|------|
+| `computeWorkflowEdges()` | navigation link 추출 정확도, event-navigation 추출, 외부 링크 필터링, 앵커 링크 스킵 | Vitest |
+| `normalizeSlug()` | 쿼리 파라미터 제거, 슬래시 정규화, null/undefined 처리 | Vitest |
+| `computeEndpoints()` | 수평/수직 방향 판별, 앵커 포인트 좌표 계산 | Vitest |
+| `computeDataSourceEdges()` (Phase 2) | 데이터 소스 타입별 추출, 중복 제거 | Vitest |
+
+```typescript
+// 예시: workflowEdges.test.ts
+describe('computeWorkflowEdges', () => {
+  it('Link href="/about"을 navigation 엣지로 추출한다', () => {
+    const pages = [mockPage('home', '/home'), mockPage('about', '/about')];
+    const elements = [mockElement('home', { tag: 'Link', props: { href: '/about' } })];
+    const edges = computeWorkflowEdges(pages, elements);
+    expect(edges).toEqual([{ type: 'navigation', sourcePageId: 'home', targetPageId: 'about' }]);
+  });
+
+  it('http로 시작하는 외부 링크는 무시한다', () => {
+    const elements = [mockElement('home', { tag: 'a', props: { href: 'https://google.com' } })];
+    const edges = computeWorkflowEdges(pages, elements);
+    expect(edges).toHaveLength(0);
+  });
+
+  it('event navigate action에서 경로를 추출한다', () => {
+    const elements = [mockElement('home', {
+      events: [{ actions: [{ type: 'navigate', config: { path: '/contact' } }] }],
+    })];
+    const edges = computeWorkflowEdges(pages, elements);
+    expect(edges[0].type).toBe('event-navigation');
+  });
+});
+```
+
+#### Integration Tests
+
+| 대상 | 테스트 항목 | 도구 |
+|------|-----------|------|
+| 오버레이 토글 | `showWorkflowOverlay` 토글 시 `overlayVersion` 증가 확인 | Vitest + store mock |
+| 캐시 무효화 | `registryVersion` 변경 → 엣지 재계산 트리거 확인 | Vitest + store mock |
+| 프레임 분류 | 오버레이만 변경 시 `present` 프레임 타입 반환 확인 | Vitest + SkiaRenderer mock |
+
+#### Visual Regression Tests
+
+| 대상 | 테스트 항목 | 도구 |
+|------|-----------|------|
+| 엣지 렌더링 | 2~3개 페이지 간 navigation 엣지가 올바른 위치에 그려지는지 스냅샷 비교 | Playwright + 스크린샷 비교 |
+| 화살표 방향 | 수평/수직 연결 시 화살표 방향이 올바른지 확인 | Playwright |
+| 줌 불변성 | 줌 50%, 100%, 200%에서 선 두께/화살표 크기가 화면상 일정한지 확인 | Playwright |
+| 스타일 일관성 | navigation(실선 파란색) vs event(점선 보라색) 구분 확인 | Playwright |
+
+#### Performance Tests
+
+| 대상 | 측정 항목 | 기준값 | 도구 |
+|------|----------|--------|------|
+| 토글 ON 지연 | `showWorkflowOverlay` 토글 → 다음 프레임 완료까지 | < 5ms | `performance.mark/measure` |
+| 엣지 계산 시간 | `computeWorkflowEdges()` 실행 시간 (50페이지, 200엣지) | < 10ms | `performance.now()` |
+| 프레임 드롭 | 워크플로우 오버레이 ON 상태에서 pan/zoom 시 FPS | 60fps 유지 | `requestAnimationFrame` FPS 카운터 |
+| 메모리 | 오버레이 ON/OFF 반복 100회 후 힙 크기 변화 | 증가 < 1MB | Chrome DevTools Heap Snapshot |
+
+### 8.2 Phase별 테스트 범위
+
+| Phase | Unit | Integration | Visual | Performance |
+|-------|------|-------------|--------|-------------|
+| **1: 기본 엣지** | `computeWorkflowEdges`, `normalizeSlug`, `computeEndpoints` | 토글 + 캐시 | 엣지 스냅샷 (2~3 케이스) | 토글 지연, FPS |
+| **2: 데이터/레이아웃** | `computeDataSourceEdges`, 레이아웃 그룹 계산 | 세부 토글 조합 | 데이터 엣지 + 레이아웃 그룹 스냅샷 | 엣지 50+ 렌더링 |
+| **3: 인터랙티브** | Bezier 히트 테스트, 이벤트 모드 분리 | 클릭 → 카메라 이동, 호버 → 하이라이트 | 하이라이트 스냅샷 | 히트 테스트 < 1ms/프레임 |
+| **4: 고급 UI** | 미니맵 좌표 변환, 레전드 필터 | 미니맵 클릭 → 카메라 동기화 | 미니맵 + 레전드 스냅샷 | 미니맵 렌더링 < 2ms |
+
+### 8.3 테스트 인프라
+
+```
+tests/
+├── unit/
+│   └── workflow/
+│       ├── workflowEdges.test.ts      # 엣지 계산 로직
+│       ├── normalizeSlug.test.ts      # slug 정규화
+│       └── computeEndpoints.test.ts   # 앵커 포인트 계산
+├── integration/
+│   └── workflow/
+│       ├── overlayToggle.test.ts      # 오버레이 토글 + 프레임 분류
+│       └── cacheInvalidation.test.ts  # 캐시 무효화
+└── e2e/
+    └── workflow/
+        ├── edgeRendering.spec.ts      # 시각적 회귀 (Playwright)
+        └── performance.spec.ts        # 성능 벤치마크
+```
+
+---
+
+## 9. 참조
 
 ### 관련 ADR
-- [ADR-003: Canvas Rendering](docs/adr/003-canvas-rendering.md) - CanvasKit/Skia 선택 이유
-- [ADR-001: State Management](docs/adr/001-state-management.md) - Zustand 슬라이스 패턴
+- [ADR-003: Canvas Rendering](./adr/003-canvas-rendering.md) - CanvasKit/Skia 선택 이유
+- [ADR-001: State Management](./adr/001-state-management.md) - Zustand 슬라이스 패턴
 
 ### 관련 파일
 - `apps/builder/src/builder/workspace/canvas/skia/SkiaOverlay.tsx` — 오버레이 파이프라인
 - `apps/builder/src/builder/workspace/canvas/skia/SkiaRenderer.ts` — 프레임 분류/캐싱
 - `apps/builder/src/builder/workspace/canvas/skia/selectionRenderer.ts` — 렌더러 패턴 참조
 - `apps/builder/src/builder/workspace/canvas/skia/aiEffects.ts` — 렌더러 패턴 참조
-- `apps/builder/src/builder/workspace/canvas/skia/workflowEdges.ts` — 엣지 계산
-- `apps/builder/src/builder/workspace/canvas/skia/workflowRenderer.ts` — 엣지 렌더링
+- `apps/builder/src/builder/workspace/canvas/skia/workflowEdges.ts` — 엣지 계산 (예정, Phase 1)
+- `apps/builder/src/builder/workspace/canvas/skia/workflowRenderer.ts` — 엣지 렌더링 (예정, Phase 1)
 - `apps/builder/src/builder/stores/canvasSettings.ts` — 워크플로우 오버레이 상태

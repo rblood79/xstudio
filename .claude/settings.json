@@ -6,5 +6,8 @@
       "Bash(npm run check:*)",
       "Bash(npm run perf:*)"
     ]
+  },
+  "env": {
+    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
   }
 }

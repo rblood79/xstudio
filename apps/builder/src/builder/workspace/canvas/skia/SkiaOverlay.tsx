@@ -28,6 +28,8 @@ import { useAIVisualFeedbackStore } from '../../../stores/aiVisualFeedback';
 import { buildNodeBoundsMap, renderGeneratingEffects, renderFlashes } from './aiEffects';
 import { renderSelectionBox, renderTransformHandles, renderDimensionLabels, renderLasso, renderPageTitle } from './selectionRenderer';
 import type { LassoRenderData } from './selectionRenderer';
+import { computeWorkflowEdges, type WorkflowEdge } from './workflowEdges';
+import { renderWorkflowEdges, type PageFrame, type ElementBounds } from './workflowRenderer';
 import { useStore } from '../../../stores';
 import { getElementBoundsSimple } from '../elementRegistry';
 import { calculateCombinedBounds } from '../selection/types';
@@ -430,6 +432,12 @@ export function SkiaOverlay({
   const pagePosVersionRef = useRef(0);
   const lastPagePosVersionRef = useRef(0);
 
+  // Workflow 오버레이 캐시
+  const workflowEdgesRef = useRef<WorkflowEdge[]>([]);
+  const workflowEdgesVersionRef = useRef(-1);
+  const lastShowWorkflowRef = useRef(false);
+  const lastWorkflowElementsRef = useRef<unknown>(null);
+
   // 페이지 프레임/현재 페이지 ref 갱신
   useEffect(() => {
     pageFramesRef.current = pageFrames;
@@ -649,6 +657,27 @@ export function SkiaOverlay({
         overlayVersionRef.current++;
       }
 
+      // Workflow 오버레이 상태 감지 및 엣지 계산
+      const showWorkflowOverlay = useStore.getState().showWorkflowOverlay;
+      if (showWorkflowOverlay !== lastShowWorkflowRef.current) {
+        lastShowWorkflowRef.current = showWorkflowOverlay;
+        overlayVersionRef.current++;
+      }
+      if (showWorkflowOverlay) {
+        const storeState = useStore.getState();
+        // elements 참조 변경 감지 (이벤트/href 변경은 registryVersion에 반영되지 않으므로)
+        const elementsChanged = storeState.elements !== lastWorkflowElementsRef.current;
+        if (registryVersion !== workflowEdgesVersionRef.current || elementsChanged) {
+          workflowEdgesRef.current = computeWorkflowEdges(
+            storeState.pages,
+            storeState.elements as Parameters<typeof computeWorkflowEdges>[1],
+          );
+          workflowEdgesVersionRef.current = registryVersion;
+          lastWorkflowElementsRef.current = storeState.elements;
+          overlayVersionRef.current++;
+        }
+      }
+
       const camera = { zoom: cameraZoom, panX: cameraX, panY: cameraY };
 
       // 🚀 페이지 위치 변경 감지 — content 무효화 (registryVersion 합산 해킹 제거)
@@ -680,9 +709,9 @@ export function SkiaOverlay({
         ? skiaFontManager.getFontMgr()
         : undefined;
 
-      // selection이 없으면 boundsMap을 굳이 만들 필요가 없다 (O(n) 트리 순회 제거)
+      // selection 또는 workflow 오버레이 활성 시 boundsMap 필요
       const selectedIds = useStore.getState().selectedElementIds;
-      const needsSelectionBoundsMap = selectedIds.length > 0;
+      const needsSelectionBoundsMap = selectedIds.length > 0 || showWorkflowOverlay;
       const selectionBuildStart = process.env.NODE_ENV === 'development' && needsSelectionBoundsMap
         ? performance.now()
         : 0;
@@ -736,6 +765,20 @@ export function SkiaOverlay({
               renderPageTitle(ck, canvas, frame.title, cameraZoom, fontMgr, hasSelection && frame.id === activePageId);
               canvas.restore();
             }
+          }
+
+          // Workflow 엣지 렌더링
+          if (showWorkflowOverlay && workflowEdgesRef.current.length > 0) {
+            const pageFrameMap = new Map<string, PageFrame>();
+            for (const frame of frames) {
+              pageFrameMap.set(frame.id, frame);
+            }
+            // treeBoundsMap에서 ElementBounds 맵 구성 (요소 레벨 앵커링)
+            const elBoundsMap = new Map<string, ElementBounds>();
+            for (const [id, bbox] of treeBoundsMap) {
+              elBoundsMap.set(id, { x: bbox.x, y: bbox.y, width: bbox.width, height: bbox.height });
+            }
+            renderWorkflowEdges(ck, canvas, workflowEdgesRef.current, pageFrameMap, cameraZoom, fontMgr, elBoundsMap);
           }
 
           if (selectionData.bounds) {
