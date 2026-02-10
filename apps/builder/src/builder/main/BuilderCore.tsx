@@ -11,7 +11,7 @@ import "../panels";
 
 import { BuilderHeader, Breakpoint } from "./BuilderHeader";
 import { BuilderCanvas } from "./BuilderCanvas";
-import { BuilderWorkflow } from "./BuilderWorkflow";
+
 import { BuilderViewport } from "./BuilderViewport";
 import SelectionOverlay from "../overlay";
 import { Workspace } from "../workspace";
@@ -63,10 +63,16 @@ export const BuilderCore: React.FC = () => {
   // UI 설정 (글로벌 uiStore에서 가져옴 - Phase 1)
   const themeMode = useUiStore((state) => state.themeMode);
   const setHistoryInfo = useStore((state) => state.setHistoryInfo);
-  const viewMode = useStore((state) => state.viewMode);
-  const toggleViewMode = useStore((state) => state.toggleViewMode);
   const showWorkflowOverlay = useStore((state) => state.showWorkflowOverlay);
   const toggleWorkflowOverlay = useStore((state) => state.toggleWorkflowOverlay);
+  const showWorkflowNavigation = useStore((state) => state.showWorkflowNavigation);
+  const showWorkflowEvents = useStore((state) => state.showWorkflowEvents);
+  const showWorkflowDataSources = useStore((state) => state.showWorkflowDataSources);
+  const showWorkflowLayoutGroups = useStore((state) => state.showWorkflowLayoutGroups);
+  const toggleWorkflowNavigation = useStore((state) => state.toggleWorkflowNavigation);
+  const toggleWorkflowEvents = useStore((state) => state.toggleWorkflowEvents);
+  const toggleWorkflowDataSources = useStore((state) => state.toggleWorkflowDataSources);
+  const toggleWorkflowLayoutGroups = useStore((state) => state.toggleWorkflowLayoutGroups);
 
   // 히스토리 정보 업데이트 (구독 기반)
   useEffect(() => {
@@ -847,40 +853,46 @@ export const BuilderCore: React.FC = () => {
         onPublish={handlePublish}
         showWorkflowOverlay={showWorkflowOverlay}
         onWorkflowOverlayToggle={toggleWorkflowOverlay}
+        workflowSubToggles={{
+          showNavigation: showWorkflowNavigation,
+          showEvents: showWorkflowEvents,
+          showDataSources: showWorkflowDataSources,
+          showLayoutGroups: showWorkflowLayoutGroups,
+          onToggleNavigation: toggleWorkflowNavigation,
+          onToggleEvents: toggleWorkflowEvents,
+          onToggleDataSources: toggleWorkflowDataSources,
+          onToggleLayoutGroups: toggleWorkflowLayoutGroups,
+        }}
       />
 
-      {viewMode === 'canvas' ? (
-        useWebGL ? (
-          /* WebGL Canvas (Phase 10) */
-          <Workspace
-            breakpoint={breakpoint}
-            breakpoints={breakpoints}
-            fallbackCanvas={
-              <BuilderCanvas
-                projectId={projectId}
-                breakpoint={new Set(Array.from(breakpoint).map(String))}
-                breakpoints={breakpoints}
-                onIframeLoad={handleIframeLoad}
-                onMessage={handleMessage}
-              >
-                <SelectionOverlay />
-              </BuilderCanvas>
-            }
-          />
-        ) : (
-          /* iframe Canvas (기존) */
-          <BuilderCanvas
-            projectId={projectId}
-            breakpoint={new Set(Array.from(breakpoint).map(String))}
-            breakpoints={breakpoints}
-            onIframeLoad={handleIframeLoad}
-            onMessage={handleMessage}
-          >
-            <SelectionOverlay />
-          </BuilderCanvas>
-        )
+      {useWebGL ? (
+        /* WebGL Canvas (Phase 10) */
+        <Workspace
+          breakpoint={breakpoint}
+          breakpoints={breakpoints}
+          fallbackCanvas={
+            <BuilderCanvas
+              projectId={projectId}
+              breakpoint={new Set(Array.from(breakpoint).map(String))}
+              breakpoints={breakpoints}
+              onIframeLoad={handleIframeLoad}
+              onMessage={handleMessage}
+            >
+              <SelectionOverlay />
+            </BuilderCanvas>
+          }
+        />
       ) : (
-        <BuilderWorkflow />
+        /* iframe Canvas (기존) */
+        <BuilderCanvas
+          projectId={projectId}
+          breakpoint={new Set(Array.from(breakpoint).map(String))}
+          breakpoints={breakpoints}
+          onIframeLoad={handleIframeLoad}
+          onMessage={handleMessage}
+        >
+          <SelectionOverlay />
+        </BuilderCanvas>
       )}
 
       <aside className="sidebar">

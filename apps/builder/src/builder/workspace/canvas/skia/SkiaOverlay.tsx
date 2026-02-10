@@ -458,11 +458,13 @@ export function SkiaOverlay({
 
   // Phase 4: 미니맵 config ref (렌더 콜백에서 매 프레임 우측 패널 너비 반영)
   const minimapConfigRef = useRef<MinimapConfig>(DEFAULT_MINIMAP_CONFIG);
+  const lastPanelShowRightRef = useRef(useStore.getState().panelLayout.showRight);
 
   // 페이지 프레임/현재 페이지 ref 갱신
   useEffect(() => {
     pageFramesRef.current = pageFrames;
   }, [pageFrames]);
+
 
   // Phase 3: 워크플로우 인터랙션 훅
   useWorkflowInteraction({
@@ -685,6 +687,13 @@ export function SkiaOverlay({
       // 드래그 중(라쏘/리사이즈/이동)에는 매 프레임 오버레이 갱신
       const dragState = dragStateRef?.current;
       if (dragState?.isDragging) {
+        overlayVersionRef.current++;
+      }
+
+      // Phase 4: 패널 토글 → 미니맵 위치 갱신 (workflow 토글과 동일 패턴)
+      const panelShowRight = useStore.getState().panelLayout.showRight;
+      if (panelShowRight !== lastPanelShowRightRef.current) {
+        lastPanelShowRightRef.current = panelShowRight;
         overlayVersionRef.current++;
       }
 
@@ -942,10 +951,15 @@ export function SkiaOverlay({
             const mmScreenW = skiaCanvas.width / dpr;
             const mmScreenH = skiaCanvas.height / dpr;
 
-            // 매 프레임 우측 패널 너비를 DOM에서 직접 읽어 config 갱신
-            const inspectorEl = document.querySelector('.inspector');
-            const rightInset = (inspectorEl ? inspectorEl.getBoundingClientRect().width : 0) + 16;
-            minimapConfigRef.current = { ...DEFAULT_MINIMAP_CONFIG, screenRight: rightInset };
+            // 스크롤바(CanvasScrollbar)와 동일 패턴: inspector 패널 너비를 DOM에서 측정
+            const { panelLayout } = useStore.getState();
+            const inspectorWidth = panelLayout.showRight
+              ? (document.querySelector('aside.inspector') as HTMLElement)?.offsetWidth ?? 0
+              : 0;
+            minimapConfigRef.current = {
+              ...DEFAULT_MINIMAP_CONFIG,
+              screenRight: inspectorWidth + DEFAULT_MINIMAP_CONFIG.screenRight,
+            };
 
             renderWorkflowMinimap(
               ck,

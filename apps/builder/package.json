@@ -21,7 +21,6 @@
     "clean": "rm -rf dist node_modules/.vite"
   },
   "dependencies": {
-    "@dagrejs/dagre": "^1.1.8",
     "@internationalized/date": "^3.10.1",
     "@internationalized/number": "^3.6.5",
     "@material/material-color-utilities": "^0.3.0",

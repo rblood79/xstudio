@@ -1,14 +1,14 @@
 # WebGL Workflow Integration - Analysis & Implementation Plan
 
-> **Status**: 분석/설계 단계 (기존 ReactFlow Workflow 운영 중, Phase 1 미착수)
+> **Status**: Phase 1~4 구현 완료 / 레거시 ReactFlow 코드 제거 완료
 >
 > **목표**: `@xyflow/react` 기반 별도 화면 전환 → WebGL 캔버스 내 네이티브 CanvasKit 렌더링으로 점진 통합
 >
-> **Phase 착수 조건**:
-> - Phase 1: 캔버스 멀티 페이지 렌더링 안정화 + pagePositions 정확도 검증 완료 시
-> - Phase 2: Phase 1 엣지 렌더링의 시각적/성능 QA 통과 시
-> - Phase 3: Phase 2 기능 동등성 확인 + PixiJS 이벤트 충돌 해결 방안 확정 시
-> - Phase 4: Phase 3 인터랙션 안정화 + 사용자 피드백 반영 완료 시
+> **Phase 착수 조건** (모두 충족 완료):
+> - ~~Phase 1: 캔버스 멀티 페이지 렌더링 안정화 + pagePositions 정확도 검증 완료 시~~ ✓
+> - ~~Phase 2: Phase 1 엣지 렌더링의 시각적/성능 QA 통과 시~~ ✓
+> - ~~Phase 3: Phase 2 기능 동등성 확인 + PixiJS 이벤트 충돌 해결 방안 확정 시~~ ✓
+> - ~~Phase 4: Phase 3 인터랙션 안정화 + 사용자 피드백 반영 완료 시~~ ✓
 
 ---
 
@@ -153,16 +153,20 @@ BuilderCore
 ├── BuilderHeader
 │   └── GitBranch 토글 버튼 → showWorkflowOverlay 토글
 └── Workspace (WebGL Canvas - 항상 표시)
+    ├── WorkflowCanvasToggles (캔버스 상단, 오버레이 활성 시 표시)
+    │   └── Checkbox × 4 (Navigation, Events, Data Sources, Layout Groups)
+    ├── WorkflowLegend (좌하단 고정)
+    ├── WorkflowPageSummary (우상단 고정, 페이지 포커스 시)
     ├── BuilderCanvas (PixiJS 씬 그래프)
     │   └── 모든 페이지 동시 렌더링 (pagePositions)
     └── SkiaOverlay
         └── Overlay Layer
             ├── AI 이펙트
             ├── 페이지 타이틀
-            ├── [Phase 1] 워크플로우 엣지 (navigation, event)
-            ├── [Phase 2] 데이터 바인딩 엣지, 레이아웃 그룹
-            ├── [Phase 3] 인터랙티브 호버/클릭
-            ├── [Phase 4] 미니맵, 레전드 패널
+            ├── 워크플로우 엣지 (navigation, event)
+            ├── 데이터 바인딩 엣지, 레이아웃 그룹
+            ├── 인터랙티브 호버/클릭
+            ├── 미니맵
             └── 셀렉션 오버레이
 ```
 
@@ -196,14 +200,11 @@ renderer.setOverlayNode({
 
 ## 3. 구현 계획
 
-### Phase 1: 기본 엣지 오버레이 (계획)
+### Phase 1: 기본 엣지 오버레이 (구현 완료 ✓)
 
 **범위**: Navigation + Event-navigation 엣지를 CanvasKit으로 렌더링
 
-> 참고: 현재 코드베이스는 `viewMode === 'workflow'` 분기와 `BuilderWorkflow`를 유지하고 있으며,
-> 아래 내용은 구현 목표 상태를 기준으로 정리했습니다.
-
-#### 예정 파일
+#### 구현 파일
 
 | 파일 | 변경 | 역할 |
 |------|------|------|
@@ -260,7 +261,7 @@ renderWorkflowEdges(ck, canvas, edges, pageFrameMap, zoom)
 
 ---
 
-### Phase 2: 데이터 바인딩 & 레이아웃 (계획)
+### Phase 2: 데이터 바인딩 & 레이아웃 (구현 완료 ✓)
 
 **범위**: Data Source 연결, Layout 그룹 시각화
 
@@ -329,11 +330,14 @@ interface SettingsState {
 }
 ```
 
-**UI**: BuilderHeader의 워크플로우 버튼 옆에 세부 토글 드롭다운 추가
+**UI**: Workspace 캔버스 상단에 `WorkflowCanvasToggles` 컴포넌트로 구현 (오버레이 활성 시 표시)
+- 위치: `apps/builder/src/builder/workspace/Workspace.tsx`
+- React-Aria Checkbox × 4 (Navigation, Events, Data Sources, Layout Groups)
+- 스타일: `apps/builder/src/builder/workspace/Workspace.css` (`.workflow-canvas-toggles`)
 
 ---
 
-### Phase 3: 인터랙티브 기능 (계획)
+### Phase 3: 인터랙티브 기능 (구현 완료 ✓)
 
 **범위**: 호버, 클릭, 하이라이트 상호작용
 
@@ -382,7 +386,7 @@ B → D (navigation)     → 연한 파란색 (2차 연결)
 
 ---
 
-### Phase 4: 고급 UI 기능 (계획)
+### Phase 4: 고급 UI 기능 (구현 완료 ✓)
 
 **범위**: 미니맵, 레전드, 요약 패널
 
@@ -451,24 +455,25 @@ B → D (navigation)     → 연한 파란색 (2차 연결)
 │ 기본 엣지        │    │ 데이터+레이아웃 연결     │    │ 인터랙션+고급 UI     │
 │ navigation edge  │ → │ data source edges       │ → │ hover highlight      │
 │ event edge       │    │ layout group overlay    │    │ click navigation     │
-│ 토글 버튼        │    │ 세부 토글 드롭다운       │    │ minimap, legend      │
+│ 토글 버튼        │    │ 캔버스 상단 서브 토글    │    │ minimap, legend      │
 └─────────────────┘    └─────────────────────────┘    └──────────────────────┘
 ```
 
-### 4.2 기존 Workflow 코드 처리
+### 4.2 기존 Workflow 코드 처리 (완료)
 
-| 단계 | 조건 | 조치 |
+| 대상 | 상태 | 비고 |
 |------|------|------|
-| 현재 | 기존 ReactFlow 운영 | 기존 코드 유지 |
-| Phase 1 | 기본 엣지 동작 확인 | 기존 코드 유지 (fallback) |
-| Phase 2 | 데이터/레이아웃 기능 동등 | `BuilderWorkflow.tsx` 제거 |
-| Phase 3 | 인터랙션 기능 동등 | `workflow/components/` 제거 |
-| Phase 4 | 고급 UI 완료 | `@xyflow/react`, `dagre` 의존성 제거 |
+| `apps/builder/src/workflow/` 전체 디렉토리 | 삭제 완료 | 14개 파일 (types, store, components, nodes, utils, styles) |
+| `apps/builder/src/builder/main/BuilderWorkflow.tsx` | 삭제 완료 | bridge 컴포넌트 |
+| `BuilderCore.tsx` viewMode 전환 | 제거 완료 | 캔버스 항상 표시 |
+| `canvasSettings.ts` viewMode 상태 | 제거 완료 | `showWorkflowOverlay` 토글로 대체 |
+| `@dagrejs/dagre` 의존성 | 제거 완료 | DAG 자동 레이아웃 불필요 |
+| `@xyflow/react` 의존성 | 유지 | events 패널에서 사용 중 |
 
-### 4.3 제거 대상 파일 (최종)
+### 4.3 제거된 파일 목록
 
 ```
-apps/builder/src/workflow/           # 전체 디렉토리
+apps/builder/src/workflow/           # 전체 디렉토리 (삭제 완료)
 ├── types/index.ts
 ├── store/workflowStore.ts
 ├── store/index.ts
@@ -483,17 +488,13 @@ apps/builder/src/workflow/           # 전체 디렉토리
 ├── utils/index.ts
 └── styles/workflow.css
 
-apps/builder/src/builder/main/BuilderWorkflow.tsx  # bridge 컴포넌트
-
-package.json 의존성:
-- @xyflow/react
-- @dagrejs/dagre
+apps/builder/src/builder/main/BuilderWorkflow.tsx  # bridge 컴포넌트 (삭제 완료)
 ```
 
-**예상 절감**:
+**실제 절감**:
 - 코드: ~2,000줄 삭제
 - CSS: ~500줄 삭제
-- 번들: ~60KB gzip 감소
+- 번들: `@dagrejs/dagre` 제거로 ~15KB gzip 감소
 
 ---
 
@@ -797,10 +798,20 @@ tests/
 - [ADR-001: State Management](./adr/001-state-management.md) - Zustand 슬라이스 패턴
 
 ### 관련 파일
+
+#### 기존 인프라
 - `apps/builder/src/builder/workspace/canvas/skia/SkiaOverlay.tsx` — 오버레이 파이프라인
 - `apps/builder/src/builder/workspace/canvas/skia/SkiaRenderer.ts` — 프레임 분류/캐싱
 - `apps/builder/src/builder/workspace/canvas/skia/selectionRenderer.ts` — 렌더러 패턴 참조
 - `apps/builder/src/builder/workspace/canvas/skia/aiEffects.ts` — 렌더러 패턴 참조
-- `apps/builder/src/builder/workspace/canvas/skia/workflowEdges.ts` — 엣지 계산 (예정, Phase 1)
-- `apps/builder/src/builder/workspace/canvas/skia/workflowRenderer.ts` — 엣지 렌더링 (예정, Phase 1)
 - `apps/builder/src/builder/stores/canvasSettings.ts` — 워크플로우 오버레이 상태
+
+#### CanvasKit 워크플로우 구현 파일
+- `apps/builder/src/builder/workspace/canvas/skia/workflowEdges.ts` — 엣지 계산 (Phase 1)
+- `apps/builder/src/builder/workspace/canvas/skia/workflowRenderer.ts` — 엣지 렌더링 (Phase 1~2)
+- `apps/builder/src/builder/workspace/canvas/skia/workflowHitTest.ts` — 엣지/노드 히트 테스트 (Phase 3)
+- `apps/builder/src/builder/workspace/canvas/skia/workflowGraphUtils.ts` — 그래프 유틸리티 (Phase 1~2)
+- `apps/builder/src/builder/workspace/canvas/skia/workflowMinimap.ts` — 미니맵 렌더링 (Phase 4)
+- `apps/builder/src/builder/workspace/canvas/hooks/useWorkflowInteraction.ts` — 인터랙션 훅 (Phase 3)
+- `apps/builder/src/builder/workspace/components/WorkflowLegend.tsx` — 레전드 패널 (Phase 4)
+- `apps/builder/src/builder/workspace/components/WorkflowPageSummary.tsx` — 페이지 요약 패널 (Phase 4)

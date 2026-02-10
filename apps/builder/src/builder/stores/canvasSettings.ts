@@ -2,10 +2,11 @@
  * Canvas Settings Slice
  *
  * 빌더 캔버스 환경 설정 관리
- * - viewMode, showGrid, snapToGrid, gridSize 등
+ * - showGrid, snapToGrid, gridSize, workflow overlay 등
  *
  * @since 2024-12-29
  * @updated 2025-12-29 - overlay/visualization 설정 제거 (WebGL 전환으로 불필요)
+ * @updated 2026-02-10 - viewMode 제거 (레거시 ReactFlow 워크플로우 삭제)
  */
 
 import { StateCreator } from "zustand";
@@ -23,11 +24,9 @@ export interface HistoryInfo {
  *
  * Note: themeMode, uiScale은 src/stores/uiStore.ts로 이관됨
  * Note: showOverlay, overlayOpacity, showElementBorders, showElementLabels 제거됨 (WebGL 전환)
+ * Note: viewMode, setViewMode, toggleViewMode 제거됨 (레거시 ReactFlow 워크플로우 삭제)
  */
 export interface SettingsState {
-  /** 빌더 뷰 모드 (기본값: 'canvas') */
-  viewMode: 'canvas' | 'workflow';
-
   /** Grid 표시 여부 (기본값: false) */
   showGrid: boolean;
 
@@ -54,12 +53,6 @@ export interface SettingsState {
 
   /** Workflow 오버레이 표시 여부 (기본값: false) */
   showWorkflowOverlay: boolean;
-
-  /** 뷰 모드 설정 */
-  setViewMode: (mode: 'canvas' | 'workflow') => void;
-
-  /** 뷰 모드 토글 */
-  toggleViewMode: () => void;
 
   /** Workflow 오버레이 표시 설정 */
   setShowWorkflowOverlay: (show: boolean) => void;
@@ -105,7 +98,6 @@ export interface SettingsState {
  * Settings Slice 생성
  */
 export const createSettingsSlice: StateCreator<SettingsState> = (set, get) => ({
-  viewMode: 'canvas',
   showGrid: false,
   snapToGrid: false,
   showWorkflowOverlay: false,
@@ -148,21 +140,6 @@ export const createSettingsSlice: StateCreator<SettingsState> = (set, get) => ({
    */
   setHistoryInfo: (info: HistoryInfo) => {
     set({ historyInfo: info });
-  },
-
-  /**
-   * 뷰 모드 설정
-   */
-  setViewMode: (mode: 'canvas' | 'workflow') => {
-    set({ viewMode: mode });
-  },
-
-  /**
-   * 뷰 모드 토글
-   */
-  toggleViewMode: () => {
-    const current = get().viewMode;
-    set({ viewMode: current === 'canvas' ? 'workflow' : 'canvas' });
   },
 
   /**
