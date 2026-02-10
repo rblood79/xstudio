@@ -16,7 +16,7 @@ import type { Element, ComponentElementProps } from "../../types/core/store.type
 import type { SelectedElement, DataBinding, EventHandler } from "../inspector/types";
 import type { ElementEvent } from "../../types/events/events.types";
 import type { FillItem } from "../../types/builder/fill.types";
-import { fillsToBackgroundColor } from "../panels/styles/utils/fillMigration";
+import { fillsToBackgroundColor, fillsToCssBackground } from "../panels/styles/utils/fillMigration";
 import { saveService } from "../../services/save";
 import { historyManager } from "./history";
 import { normalizeElementTags } from "./utils/elementTagNormalizer";
@@ -422,13 +422,19 @@ export const createInspectorActionsSlice: StateCreator<
       const baseElement = (savedPrePreview && savedPrePreview.id === element.id)
         ? savedPrePreview : element;
 
-      // fills → backgroundColor 역동기화
-      const backgroundColor = fillsToBackgroundColor(fills);
+      // fills → CSS background 동기화 (Color → backgroundColor, Gradient → backgroundImage)
+      const cssBg = fillsToCssBackground(fills);
       const currentStyle = { ...((baseElement.props?.style as Record<string, string>) || {}) };
-      if (backgroundColor !== undefined) {
-        currentStyle.backgroundColor = backgroundColor;
-      } else {
-        delete currentStyle.backgroundColor;
+
+      // 이전 background 관련 속성 정리
+      delete currentStyle.backgroundColor;
+      delete currentStyle.backgroundImage;
+
+      if (cssBg.backgroundColor) {
+        currentStyle.backgroundColor = cssBg.backgroundColor;
+      }
+      if (cssBg.backgroundImage) {
+        currentStyle.backgroundImage = cssBg.backgroundImage;
       }
 
       updateAndSave(
@@ -451,13 +457,19 @@ export const createInspectorActionsSlice: StateCreator<
         prePreviewElement = structuredClone(element);
       }
 
-      // fills → backgroundColor 역동기화
-      const backgroundColor = fillsToBackgroundColor(fills);
+      // fills → CSS background 동기화 (Color → backgroundColor, Gradient → backgroundImage)
+      const cssBg = fillsToCssBackground(fills);
       const currentStyle = { ...((element.props?.style as Record<string, string>) || {}) };
-      if (backgroundColor !== undefined) {
-        currentStyle.backgroundColor = backgroundColor;
-      } else {
-        delete currentStyle.backgroundColor;
+
+      // 이전 background 관련 속성 정리
+      delete currentStyle.backgroundColor;
+      delete currentStyle.backgroundImage;
+
+      if (cssBg.backgroundColor) {
+        currentStyle.backgroundColor = cssBg.backgroundColor;
+      }
+      if (cssBg.backgroundImage) {
+        currentStyle.backgroundImage = cssBg.backgroundImage;
       }
 
       const newProps = { ...element.props, style: currentStyle };

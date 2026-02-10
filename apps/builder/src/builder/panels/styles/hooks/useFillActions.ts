@@ -1,17 +1,19 @@
 /**
  * Fill Actions Hook
  *
- * Color Picker Phase 1: Fill 배열 CRUD 액션
+ * Gradient Phase 2: Fill 배열 CRUD 액션 + 타입 변경
  * - fills 배열을 복사 → 변경 → store.updateSelectedFills() 호출
  * - 프리뷰 액션은 store.updateSelectedFillsPreview() 사용
+ * - changeFillType: Color ↔ Gradient 타입 전환
  *
  * @since 2026-02-10 Color Picker Phase 1
+ * @updated 2026-02-10 Gradient Phase 2
  */
 
 import { useCallback } from 'react';
 import { useStore } from '../../../stores';
-import type { FillItem, ColorFillItem } from '../../../../types/builder/fill.types';
-import { FillType, createDefaultColorFill } from '../../../../types/builder/fill.types';
+import type { FillItem, ColorFillItem, GradientStop } from '../../../../types/builder/fill.types';
+import { FillType, createDefaultColorFill, createDefaultFill } from '../../../../types/builder/fill.types';
 
 export interface FillActions {
   addFill: (type?: FillType) => void;
@@ -20,6 +22,7 @@ export interface FillActions {
   toggleFill: (fillId: string) => void;
   updateFill: (fillId: string, updates: Partial<FillItem>) => void;
   updateFillPreview: (fillId: string, updates: Partial<FillItem>) => void;
+  changeFillType: (fillId: string, newType: FillType) => void;
 }
 
 /**
@@ -37,9 +40,7 @@ function getCurrentFills(): FillItem[] {
 export function useFillActions(): FillActions {
   const addFill = useCallback((type: FillType = FillType.Color) => {
     const fills = getCurrentFills();
-    const newFill = createDefaultColorFill('#000000FF');
-    // Phase 1: Color 타입만 지원
-    if (type !== FillType.Color) return;
+    const newFill = createDefaultFill(type);
     const newFills = [...fills, newFill];
     useStore.getState().updateSelectedFills(newFills);
   }, []);
@@ -74,10 +75,6 @@ export function useFillActions(): FillActions {
     const fills = getCurrentFills();
     const newFills = fills.map((f) => {
       if (f.id !== fillId) return f;
-      // ColorFillItem 업데이트 (Phase 1)
-      if (f.type === FillType.Color) {
-        return { ...f, ...updates } as ColorFillItem;
-      }
       return { ...f, ...updates } as FillItem;
     });
     useStore.getState().updateSelectedFills(newFills);
@@ -87,13 +84,57 @@ export function useFillActions(): FillActions {
     const fills = getCurrentFills();
     const newFills = fills.map((f) => {
       if (f.id !== fillId) return f;
-      if (f.type === FillType.Color) {
-        return { ...f, ...updates } as ColorFillItem;
-      }
       return { ...f, ...updates } as FillItem;
     });
     useStore.getState().updateSelectedFillsPreview(newFills);
   }, []);
 
-  return { addFill, removeFill, reorderFill, toggleFill, updateFill, updateFillPreview };
+  const changeFillType = useCallback((fillId: string, newType: FillType) => {
+    const fills = getCurrentFills();
+    const newFills = fills.map((f) => {
+      if (f.id !== fillId) return f;
+
+      // Color → Gradient
+      if (f.type === FillType.Color && newType !== FillType.Color) {
+        const colorFill = f as ColorFillItem;
+        const base = createDefaultFill(newType);
+        return {
+          ...base,
+          id: f.id,
+          enabled: f.enabled,
+          opacity: f.opacity,
+          stops: [
+            { color: colorFill.color, position: 0 },
+            { color: '#FFFFFFFF', position: 1 },
+          ],
+        } as FillItem;
+      }
+
+      // Gradient → Color
+      if (f.type !== FillType.Color && newType === FillType.Color) {
+        const gradFill = f as { stops?: GradientStop[] };
+        const color = gradFill.stops?.[0]?.color ?? '#000000FF';
+        return {
+          ...createDefaultColorFill(color),
+          id: f.id,
+          enabled: f.enabled,
+          opacity: f.opacity,
+        };
+      }
+
+      // Gradient → Gradient (타입만 변경, stops 유지)
+      const base = createDefaultFill(newType);
+      const currentStops = (f as { stops?: GradientStop[] }).stops;
+      return {
+        ...base,
+        id: f.id,
+        enabled: f.enabled,
+        opacity: f.opacity,
+        ...(currentStops ? { stops: currentStops } : {}),
+      } as FillItem;
+    });
+    useStore.getState().updateSelectedFills(newFills);
+  }, []);
+
+  return { addFill, removeFill, reorderFill, toggleFill, updateFill, updateFillPreview, changeFillType };
 }

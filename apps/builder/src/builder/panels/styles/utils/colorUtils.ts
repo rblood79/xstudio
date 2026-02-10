@@ -185,6 +185,17 @@ export function hex6ToHex8(hex: string): string {
 }
 
 // ============================================
+// Gradient Stops → CSS
+// ============================================
+
+import type { GradientStop } from '../../../../types/builder/fill.types';
+
+/** GradientStop[] → CSS 그래디언트 색상 스톱 문자열 */
+export function gradientStopsToCss(stops: GradientStop[]): string {
+  return stops.map(s => `${s.color.slice(0, 7)} ${Math.round(s.position * 100)}%`).join(', ');
+}
+
+// ============================================
 // Float32Array 변환 (Skia 용)
 // ============================================
 

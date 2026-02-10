@@ -68,6 +68,13 @@
     }
   }
 
+  /* Gradient swatch */
+  .fill-layer-row__gradient-swatch {
+    width: 18px;
+    height: 18px;
+    border-radius: 2px;
+  }
+
   /* Hex value display */
   .fill-layer-row__hex {
     flex: 1;

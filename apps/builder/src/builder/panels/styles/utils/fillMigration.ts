@@ -7,9 +7,15 @@
  * @see docs/COLOR_PICKER.md Section 7
  */
 
-import type { FillItem, ColorFillItem } from '../../../../types/builder/fill.types';
+import type {
+  FillItem,
+  ColorFillItem,
+  LinearGradientFillItem,
+  RadialGradientFillItem,
+  AngularGradientFillItem,
+} from '../../../../types/builder/fill.types';
 import { FillType, createDefaultColorFill } from '../../../../types/builder/fill.types';
-import { normalizeToHex8 } from './colorUtils';
+import { normalizeToHex8, gradientStopsToCss } from './colorUtils';
 
 /**
  * Element의 backgroundColor CSS string → FillItem[] 변환
@@ -72,4 +78,53 @@ export function fillsToBackgroundColor(fills: FillItem[]): string | undefined {
   }
 
   return undefined;
+}
+
+/**
+ * fills 배열 → CSS background 속성 변환
+ * Color → backgroundColor, Gradient → backgroundImage
+ *
+ * @param fills FillItem 배열
+ * @returns { backgroundColor?, backgroundImage? }
+ */
+export function fillsToCssBackground(fills: FillItem[]): {
+  backgroundColor?: string;
+  backgroundImage?: string;
+} {
+  if (!fills || fills.length === 0) return {};
+
+  for (let i = fills.length - 1; i >= 0; i--) {
+    const fill = fills[i];
+    if (!fill.enabled) continue;
+
+    switch (fill.type) {
+      case FillType.Color: {
+        const hex6 = (fill as ColorFillItem).color.slice(0, 7);
+        return { backgroundColor: hex6 };
+      }
+      case FillType.LinearGradient: {
+        const lg = fill as LinearGradientFillItem;
+        const stops = gradientStopsToCss(lg.stops);
+        return { backgroundImage: `linear-gradient(${lg.rotation}deg, ${stops})` };
+      }
+      case FillType.RadialGradient: {
+        const rg = fill as RadialGradientFillItem;
+        const stops = gradientStopsToCss(rg.stops);
+        const cx = Math.round(rg.center.x * 100);
+        const cy = Math.round(rg.center.y * 100);
+        return { backgroundImage: `radial-gradient(circle at ${cx}% ${cy}%, ${stops})` };
+      }
+      case FillType.AngularGradient: {
+        const ag = fill as AngularGradientFillItem;
+        const stops = gradientStopsToCss(ag.stops);
+        const cx = Math.round(ag.center.x * 100);
+        const cy = Math.round(ag.center.y * 100);
+        return { backgroundImage: `conic-gradient(from ${ag.rotation}deg at ${cx}% ${cy}%, ${stops})` };
+      }
+      default:
+        continue;
+    }
+  }
+
+  return {};
 }

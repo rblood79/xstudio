@@ -1,0 +1,31 @@
+/**
+ * GradientEditor Styles
+ *
+ * Gradient Phase 2: 메인 그래디언트 편집기 컨테이너
+ */
+
+@layer components {
+  .gradient-editor {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .gradient-editor__section {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .gradient-editor__section-label {
+    font-size: var(--text-xs);
+    color: var(--on-surface-variant);
+    font-weight: 500;
+  }
+
+  .gradient-editor__divider {
+    height: 1px;
+    background: var(--outline-variant);
+    margin: 2px 0;
+  }
+}

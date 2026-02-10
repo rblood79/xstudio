@@ -1,9 +1,10 @@
 /**
  * FillTypeSelector - Fill 타입 선택 버튼 그룹
  *
- * Phase 1: Color만 활성, 나머지 타입은 disabled
+ * Phase 2: Color + Gradient 활성, Image는 disabled
  *
  * @since 2026-02-10 Color Picker Phase 1
+ * @updated 2026-02-10 Gradient Phase 2
  */
 
 import { memo, useCallback } from 'react';
@@ -19,9 +20,9 @@ interface FillTypeSelectorProps {
 
 const FILL_TYPES: { type: FillType; label: string; icon: LucideIcon; disabled: boolean }[] = [
   { type: FillType.Color, label: 'Color', icon: Circle, disabled: false },
-  { type: FillType.LinearGradient, label: 'Linear Gradient', icon: ArrowUpRight, disabled: true },
-  { type: FillType.RadialGradient, label: 'Radial Gradient', icon: Target, disabled: true },
-  { type: FillType.AngularGradient, label: 'Angular Gradient', icon: RotateCw, disabled: true },
+  { type: FillType.LinearGradient, label: 'Linear Gradient', icon: ArrowUpRight, disabled: false },
+  { type: FillType.RadialGradient, label: 'Radial Gradient', icon: Target, disabled: false },
+  { type: FillType.AngularGradient, label: 'Angular Gradient', icon: RotateCw, disabled: false },
   { type: FillType.Image, label: 'Image', icon: Image, disabled: true },
 ];
 

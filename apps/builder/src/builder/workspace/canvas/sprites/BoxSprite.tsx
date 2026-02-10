@@ -23,7 +23,7 @@ import { drawBox, parseBorderConfig } from '../utils';
 import { useSkiaNode } from '../skia/useSkiaNode';
 import { LayoutComputedSizeContext } from '../layoutContext';
 import { isFillV2Enabled } from '../../../../utils/featureFlags';
-import { fillsToSkiaFillColor } from '../../../panels/styles/utils/fillToSkia';
+import { fillsToSkiaFillColor, fillsToSkiaFillStyle } from '../../../panels/styles/utils/fillToSkia';
 
 
 // ============================================
@@ -145,6 +145,13 @@ export const BoxSprite = memo(function BoxSprite({ element, onClick }: BoxSprite
       ? fillsToSkiaFillColor(fills)
       : null;
 
+    // Fill V2: 그래디언트 FillStyle 추출
+    const fillV2Style = isFillV2Enabled() && fills && fills.length > 0
+      ? fillsToSkiaFillStyle(fills, transform.width, transform.height)
+      : null;
+    // 그래디언트 FillStyle이면 box.fill로 사용 (color 타입은 fillColor로 처리)
+    const gradientFill = fillV2Style && fillV2Style.type !== 'color' ? fillV2Style : undefined;
+
     if (fillV2Color) {
       fillColor = fillV2Color;
     } else {
@@ -173,6 +180,7 @@ export const BoxSprite = memo(function BoxSprite({ element, onClick }: BoxSprite
       ...(skiaEffects.blendMode ? { blendMode: skiaEffects.blendMode } : {}),
       box: {
         fillColor,
+        ...(gradientFill ? { fill: gradientFill } : {}),
         borderRadius: br,
         strokeColor: borderConfig
           ? (() => {

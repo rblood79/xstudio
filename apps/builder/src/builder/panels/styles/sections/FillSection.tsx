@@ -1,15 +1,14 @@
 /**
  * FillSection (UI: "Background") - Background 레이어 편집 섹션
  *
- * Color Picker Phase 1:
+ * Phase 2: Color + Gradient 다중 레이어
  * - PropertySection 래퍼 + 내부 Content 분리
  * - Jotai atom 구독 (fillsAtom)
  * - @dnd-kit/sortable 드래그 순서 변경
  * - memo 최적화
- * - Color fill은 최대 1개 제한 (웹 CSS: background-color는 1개만)
- * - Phase 2: Gradient/Image 추가 시 다중 레이어 활성화 (CSS background 다중 레이어)
  *
  * @since 2026-02-10 Color Picker Phase 1
+ * @updated 2026-02-10 Gradient Phase 2
  */
 
 import { memo, useCallback } from 'react';
@@ -45,12 +44,14 @@ function SortableFillRow({
   onUpdate,
   onUpdatePreview,
   onRemove,
+  onTypeChange,
 }: {
   fill: FillItem;
   onToggle: (id: string) => void;
   onUpdate: (id: string, updates: Partial<FillItem>) => void;
   onUpdatePreview: (id: string, updates: Partial<FillItem>) => void;
   onRemove: (id: string) => void;
+  onTypeChange: (fillId: string, newType: FillType) => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({
     id: fill.id,
@@ -69,6 +70,7 @@ function SortableFillRow({
         onUpdate={onUpdate}
         onUpdatePreview={onUpdatePreview}
         onRemove={onRemove}
+        onTypeChange={onTypeChange}
       />
     </div>
   );
@@ -80,7 +82,7 @@ function SortableFillRow({
  */
 const FillSectionContent = memo(function FillSectionContent() {
   const { fills } = useFillValuesJotai();
-  const { addFill, removeFill, reorderFill, toggleFill, updateFill, updateFillPreview } =
+  const { addFill, removeFill, reorderFill, toggleFill, updateFill, updateFillPreview, changeFillType } =
     useFillActions();
 
   const sensors = useSensors(
@@ -126,6 +128,7 @@ const FillSectionContent = memo(function FillSectionContent() {
                 onUpdate={updateFill}
                 onUpdatePreview={updateFillPreview}
                 onRemove={removeFill}
+                onTypeChange={changeFillType}
               />
             ))}
           </SortableContext>
@@ -137,19 +140,16 @@ const FillSectionContent = memo(function FillSectionContent() {
 
 /**
  * FillSection - 외부 래퍼 (UI 표시: "Background")
- * - Color fill은 최대 1개 (웹 CSS background-color 제약)
- * - Phase 2: Gradient/Image 타입은 다중 레이어 허용
+ * Phase 2: 다중 레이어 (Color + Gradient)
  */
 export const FillSection = memo(function FillSection() {
   const { fills } = useFillValuesJotai();
   const { addFill } = useFillActions();
 
-  // Phase 1: Color fill이 이미 있으면 추가 버튼 비활성화
-  const hasColorFill = fills.some((f) => f.type === FillType.Color);
-
   const handleAdd = useCallback(() => {
-    addFill();
-  }, [addFill]);
+    const hasColor = fills.some((f) => f.type === FillType.Color);
+    addFill(hasColor ? FillType.LinearGradient : FillType.Color);
+  }, [fills, addFill]);
 
   return (
     <PropertySection
@@ -162,8 +162,7 @@ export const FillSection = memo(function FillSection() {
           className="fill-section-add-btn"
           onClick={handleAdd}
           aria-label="Add background"
-          title={hasColorFill ? 'Color background already exists' : 'Add background'}
-          disabled={hasColorFill}
+          title="Add background"
         >
           <Plus
             size={iconSmall.size}
