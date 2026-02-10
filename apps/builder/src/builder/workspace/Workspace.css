@@ -128,6 +128,66 @@
 }
 
 /* ============================================
+ * Workflow Canvas Toggles
+ * ============================================ */
+
+.workflow-canvas-toggles {
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 16px;
+  background-color: color-mix(in srgb, var(--color-gray-900) 75%, transparent);
+  backdrop-filter: blur(8px);
+  border-radius: var(--radius-lg);
+  pointer-events: auto;
+  font-size: var(--text-xs);
+  color: var(--color-gray-100);
+}
+
+.workflow-canvas-toggles .react-aria-Checkbox {
+  color: var(--color-gray-100);
+  font-size: var(--text-xs);
+  gap: 4px;
+}
+
+/* ============================================
+ * Workflow Legend
+ * ============================================ */
+
+.workflow-legend {
+  position: absolute;
+  bottom: 48px;
+  left: 16px;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 12px;
+  background-color: color-mix(in srgb, var(--color-gray-900) 75%, transparent);
+  backdrop-filter: blur(8px);
+  border-radius: var(--radius-lg);
+  border: 1px solid color-mix(in srgb, var(--color-gray-600) 30%, transparent);
+  pointer-events: none;
+  font-size: 11px;
+  color: var(--color-gray-100);
+}
+
+.workflow-legend-entry {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.workflow-legend-label {
+  white-space: nowrap;
+}
+
+/* ============================================
  * Compare Mode - iframe + PixiJS 동시 표시
  * ============================================ */
 

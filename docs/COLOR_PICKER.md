@@ -36,7 +36,7 @@
 기존 초안은 방향성이 명확하고, Pencil 기능을 단계별로 잘 쪼갠 점이 강점이다. 다만 현재 저장소 구조/상태관리 패턴과 일부 경로·명령어가 어긋난 부분이 있어 아래를 반영해 보완했다.
 
 1. **경로 정합성 보정**
-   - 축약 경로 표기를 리포지토리 루트 기준 경로(`apps/builder/src/builder/panels/styles/atoms/fillAtoms.ts`)로 통일.
+   - 축약 경로 표기를 리포지토리 루트 기준 경로(`apps/builder/src/builder/panels/styles/atoms/fillAtoms.ts` (신규 예정))로 통일.
 2. **상태관리 흐름 정렬**
    - `useSceneManager()` 기반 예시는 현재 Builder의 Zustand + Jotai 브릿지 흐름과 어긋나므로, `selectedElementAtom`/`appearanceValuesAtom` 패턴과 히스토리 액션 호출 기반으로 정리.
 3. **명령어 표준화**
@@ -685,7 +685,7 @@ Step 10: 이미지/메쉬/변수 바인딩 (Phase 4)
 |------|-----------|
 | `apps/builder/src/types/builder/unified.types.ts` | `Element`에 `fills?`, `stroke?` 추가 |
 | `apps/builder/src/builder/panels/styles/sections/AppearanceSection.tsx` | FillSection으로 점진적 교체 |
-| `apps/builder/src/builder/panels/styles/atoms/fillAtoms.ts` (신규) | `fillsAtom`, `strokeAtom` 추가 |
+| `apps/builder/src/builder/panels/styles/atoms/fillAtoms.ts` (신규 예정) | `fillsAtom`, `strokeAtom` 추가 |
 | `apps/builder/src/builder/panels/styles/hooks/useAppearanceValuesJotai.ts` | fills/stroke 구독 추가 |
 | `apps/builder/src/builder/components/property/PropertyColor.tsx` | ColorPickerPanel로 대체 (내부 사용은 유지) |
 | `apps/builder/src/builder/workspace/canvas/skia/types.ts` | 기존 FillStyle 타입 유지 (변환 레이어 추가) |

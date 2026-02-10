@@ -233,3 +233,142 @@ export function computeWorkflowEdges(
 
   return edges;
 }
+
+// ============================================
+// Data Source Edge Types & Computation
+// ============================================
+
+export interface DataSourceEdge {
+  id: string;
+  sourceType: 'dataTable' | 'api' | 'supabase' | 'mock';
+  name: string;
+  boundElements: Array<{ elementId: string; elementTag: string; pageId: string }>;
+}
+
+export interface LayoutGroup {
+  layoutId: string;
+  layoutName: string;
+  pageIds: string[];
+}
+
+/**
+ * 요소의 데이터 바인딩을 분석하여 데이터 소스 엣지 목록을 계산.
+ *
+ * 두 가지 바인딩 형식을 지원:
+ * A) PropertyDataBinding: { source, name } → dataTable | api
+ * B) Full DataBinding: { type, config } → mock | supabase | api
+ *
+ * 동일 데이터 소스 ID의 바인딩은 하나로 합산됨 (boundElements 병합).
+ */
+export function computeDataSourceEdges(
+  elements: WorkflowElementInput[],
+): DataSourceEdge[] {
+  const dataSourceMap = new Map<string, DataSourceEdge>();
+
+  for (const el of elements) {
+    // props.dataBinding 에서 바인딩 정보를 추출
+    const binding = el.props.dataBinding as Record<string, unknown> | undefined;
+    if (!binding || typeof binding !== 'object') continue;
+
+    let sourceType: DataSourceEdge['sourceType'] | null = null;
+    let name = '';
+    let id = '';
+
+    // A) PropertyDataBinding 형식: { source, name }
+    if ('source' in binding && 'name' in binding && binding.name) {
+      const src = binding.source as string;
+      if (src === 'dataTable') {
+        sourceType = 'dataTable';
+        name = binding.name as string;
+        id = `dataTable-${name}`;
+      } else if (src === 'api') {
+        sourceType = 'api';
+        name = binding.name as string;
+        id = `api-${name}`;
+      }
+    }
+
+    // B) Full DataBinding 형식: { type, config }
+    if (!sourceType && 'type' in binding && binding.config) {
+      const config = binding.config as Record<string, unknown>;
+
+      if (config.baseUrl === 'MOCK_DATA') {
+        sourceType = 'mock';
+        name = (config.endpoint as string) || 'Mock Data';
+        id = `mock-${name}`;
+      } else if (binding.source === 'supabase' && config.tableName) {
+        sourceType = 'supabase';
+        name = config.tableName as string;
+        id = `supabase-${name}`;
+      } else if (binding.source === 'api' && config.endpoint) {
+        sourceType = 'api';
+        name = config.endpoint as string;
+        id = `api-${name}`;
+      }
+    }
+
+    if (!sourceType || !name) continue;
+
+    const boundEntry = {
+      elementId: el.id,
+      elementTag: el.tag,
+      pageId: el.page_id || '',
+    };
+
+    const existing = dataSourceMap.get(id);
+    if (existing) {
+      existing.boundElements.push(boundEntry);
+    } else {
+      dataSourceMap.set(id, {
+        id,
+        sourceType,
+        name,
+        boundElements: [boundEntry],
+      });
+    }
+  }
+
+  return Array.from(dataSourceMap.values());
+}
+
+// ============================================
+// Layout Group Computation
+// ============================================
+
+/**
+ * 페이지들을 Layout 기준으로 그룹화.
+ *
+ * pages에서 layout_id를 읽고 layouts 배열과 매칭하여
+ * 1개 이상의 페이지가 속한 LayoutGroup 목록을 반환.
+ */
+export function computeLayoutGroups(
+  pages: WorkflowPageInput[],
+  layouts: Array<{ id: string; name: string }>,
+): LayoutGroup[] {
+  const layoutNameMap = new Map<string, string>();
+  for (const layout of layouts) {
+    layoutNameMap.set(layout.id, layout.name);
+  }
+
+  const groupMap = new Map<string, string[]>();
+
+  for (const page of pages) {
+    const layoutId = (page as Record<string, unknown>).layout_id as string | undefined | null;
+    if (!layoutId) continue;
+
+    const existing = groupMap.get(layoutId);
+    if (existing) {
+      existing.push(page.id);
+    } else {
+      groupMap.set(layoutId, [page.id]);
+    }
+  }
+
+  const groups: LayoutGroup[] = [];
+  for (const [layoutId, pageIds] of groupMap) {
+    const layoutName = layoutNameMap.get(layoutId) || layoutId;
+    groups.push({ layoutId, layoutName, pageIds });
+  }
+
+  return groups;
+}

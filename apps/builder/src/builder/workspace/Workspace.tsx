@@ -23,6 +23,9 @@ import { useStore } from "../stores";
 import { isWebGLCanvas, isCanvasCompareMode } from "../../utils/featureFlags";
 // useZoomShortcuts는 useGlobalKeyboardShortcuts로 통합됨 (BuilderCore.tsx)
 import { CanvasScrollbar } from "./scrollbar";
+import { Checkbox } from "@xstudio/shared/components";
+import { WorkflowLegend } from "./components/WorkflowLegend";
+import { WorkflowPageSummary } from "./components/WorkflowPageSummary";
 import "./Workspace.css";
 // ============================================
 // Types
@@ -43,6 +46,44 @@ export interface WorkspaceProps {
   /** 기존 iframe 캔버스 (Feature Flag OFF 시 사용) */
   fallbackCanvas?: React.ReactNode;
 }
+
+// ============================================
+// Workflow Canvas Toggles
+// ============================================
+
+/**
+ * 워크플로우 오버레이 활성화 시 캔버스 상단에 표시되는 서브 토글
+ */
+const WorkflowCanvasToggles: React.FC = () => {
+  const showOverlay = useStore((s) => s.showWorkflowOverlay);
+  const showNavigation = useStore((s) => s.showWorkflowNavigation);
+  const showEvents = useStore((s) => s.showWorkflowEvents);
+  const showDataSources = useStore((s) => s.showWorkflowDataSources);
+  const showLayoutGroups = useStore((s) => s.showWorkflowLayoutGroups);
+  const setNavigation = useStore((s) => s.setShowWorkflowNavigation);
+  const setEvents = useStore((s) => s.setShowWorkflowEvents);
+  const setDataSources = useStore((s) => s.setShowWorkflowDataSources);
+  const setLayoutGroups = useStore((s) => s.setShowWorkflowLayoutGroups);
+
+  if (!showOverlay) return null;
+
+  return (
+    <div className="workflow-canvas-toggles">
+      <Checkbox isSelected={showNavigation} onChange={setNavigation} size="sm" isTreeItemChild>
+        Navigation
+      </Checkbox>
+      <Checkbox isSelected={showEvents} onChange={setEvents} size="sm" isTreeItemChild>
+        Events
+      </Checkbox>
+      <Checkbox isSelected={showDataSources} onChange={setDataSources} size="sm" isTreeItemChild>
+        Data Sources
+      </Checkbox>
+      <Checkbox isSelected={showLayoutGroups} onChange={setLayoutGroups} size="sm" isTreeItemChild>
+        Layout Groups
+      </Checkbox>
+    </div>
+  );
+};
 
 // ============================================
 // Main Component
@@ -384,6 +425,13 @@ export function Workspace({
       <div className="workspace-overlay">
         {/* TextEditOverlay will be added in B1.5 */}
       </div>
+
+      {/* Workflow Sub-Toggles (캔버스 상단) */}
+      <WorkflowCanvasToggles />
+
+      {/* Phase 4: Workflow Legend (좌하단) + Page Summary (우상단) */}
+      <WorkflowLegend />
+      <WorkflowPageSummary />
 
       {/* Figma-style Canvas Scrollbars */}
       <CanvasScrollbar direction="horizontal" />
