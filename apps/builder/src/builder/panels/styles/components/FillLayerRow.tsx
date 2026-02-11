@@ -18,10 +18,11 @@ import {
 import { ColorSwatch } from '@xstudio/shared/components/ColorSwatch';
 import { Popover } from '@xstudio/shared/components/Popover';
 import { Trash2 } from 'lucide-react';
-import type { FillItem, ColorFillItem, GradientStop } from '../../../../types/builder/fill.types';
+import type { FillItem, ColorFillItem, ImageFillItem, GradientStop } from '../../../../types/builder/fill.types';
 import { FillType } from '../../../../types/builder/fill.types';
 import { hex8ToHex6, normalizeToHex8 } from '../utils/colorUtils';
 import { FillDetailPopover } from './FillDetailPopover';
+import { ScrubInput } from './ScrubInput';
 import { iconSmall } from '../../../../utils/ui/uiConstants';
 
 import './FillLayerRow.css';
@@ -39,6 +40,7 @@ const GRADIENT_TYPE_LABELS: Record<string, string> = {
   [FillType.LinearGradient]: 'Linear',
   [FillType.RadialGradient]: 'Radial',
   [FillType.AngularGradient]: 'Angular',
+  [FillType.MeshGradient]: 'Mesh',
 };
 
 function buildSwatchGradient(stops: GradientStop[]): string {
@@ -62,10 +64,14 @@ export const FillLayerRow = memo(function FillLayerRow({
     fill.type === FillType.LinearGradient ||
     fill.type === FillType.RadialGradient ||
     fill.type === FillType.AngularGradient;
+  const isMeshGradient = fill.type === FillType.MeshGradient;
+  const isImage = fill.type === FillType.Image;
 
   const colorValue = isColor ? (fill as ColorFillItem).color : '#000000FF';
   const displayHex = isColor ? hex8ToHex6(normalizeToHex8(colorValue)) : '';
-  const gradientLabel = isGradient ? GRADIENT_TYPE_LABELS[fill.type] ?? '' : '';
+  const gradientLabel = (isGradient || isMeshGradient) ? GRADIENT_TYPE_LABELS[fill.type] ?? '' : '';
+  const imageUrl = isImage ? (fill as ImageFillItem).url : '';
+  const displayLabel = isImage ? 'Image' : gradientLabel;
   const opacityPercent = Math.round(fill.opacity * 100);
 
   const gradientStops = isGradient ? (fill as { stops: GradientStop[] }).stops : [];
@@ -82,24 +88,11 @@ export const FillLayerRow = memo(function FillLayerRow({
     onRemove(fill.id);
   }, [fill.id, onRemove]);
 
-  const handleOpacityBlur = useCallback(
-    (e: React.FocusEvent<HTMLInputElement>) => {
-      const parsed = Number(e.target.value);
-      if (!Number.isNaN(parsed)) {
-        const clamped = Math.max(0, Math.min(100, Math.round(parsed)));
-        onUpdate(fill.id, { opacity: clamped / 100 });
-      }
+  const handleOpacityCommit = useCallback(
+    (value: number) => {
+      onUpdate(fill.id, { opacity: value / 100 });
     },
     [fill.id, onUpdate],
-  );
-
-  const handleOpacityKeyDown = useCallback(
-    (e: React.KeyboardEvent<HTMLInputElement>) => {
-      if (e.key === 'Enter') {
-        (e.target as HTMLInputElement).blur();
-      }
-    },
-    [],
   );
 
   const handleColorChange = useCallback(
@@ -161,6 +154,15 @@ export const FillLayerRow = memo(function FillLayerRow({
               style={{ background: swatchGradientCss }}
             />
           )}
+          {isMeshGradient && (
+            <div className="fill-layer-row__mesh-swatch" />
+          )}
+          {isImage && (
+            <div
+              className="fill-layer-row__image-swatch"
+              style={imageUrl ? { backgroundImage: `url(${imageUrl})` } : undefined}
+            />
+          )}
         </AriaButton>
         <Popover
           placement="bottom start"
@@ -179,17 +181,17 @@ export const FillLayerRow = memo(function FillLayerRow({
       </DialogTrigger>
 
       <span className="fill-layer-row__hex">
-        {isColor ? displayHex : gradientLabel}
+        {isColor ? displayHex : displayLabel}
       </span>
 
-      <input
-        type="text"
-        inputMode="numeric"
-        className="fill-layer-row__opacity"
-        defaultValue={opacityPercent}
-        onBlur={handleOpacityBlur}
-        onKeyDown={handleOpacityKeyDown}
-        aria-label="Fill opacity"
+      <ScrubInput
+        value={opacityPercent}
+        onCommit={handleOpacityCommit}
+        min={0}
+        max={100}
+        suffix="%"
+        label="Fill opacity"
+        className="fill-layer-row__opacity-scrub"
       />
 
       <button

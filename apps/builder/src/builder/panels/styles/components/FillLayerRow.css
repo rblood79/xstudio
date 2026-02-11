@@ -75,6 +75,24 @@
     border-radius: 2px;
   }
 
+  /* Mesh swatch */
+  .fill-layer-row__mesh-swatch {
+    width: 18px;
+    height: 18px;
+    border-radius: 2px;
+    background: conic-gradient(#FF0000, #FFFF00, #00FF00, #00FFFF, #0000FF, #FF00FF, #FF0000);
+  }
+
+  /* Image swatch */
+  .fill-layer-row__image-swatch {
+    width: 18px;
+    height: 18px;
+    border-radius: 2px;
+    background-size: cover;
+    background-position: center;
+    background-color: var(--surface-container-highest);
+  }
+
   /* Hex value display */
   .fill-layer-row__hex {
     flex: 1;

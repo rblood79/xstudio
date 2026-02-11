@@ -1,17 +1,19 @@
 /**
  * GradientStopList - 그래디언트 스톱 목록
  *
- * Gradient Phase 2
- * - 각 행: [색상 스와치] [position % input] [삭제 버튼]
+ * Gradient Phase 2 + Phase 3 ScrubInput 적용
+ * - 각 행: [색상 스와치] [ScrubInput position %] [삭제 버튼]
  * - 스톱 추가/삭제/위치 변경
  *
  * @since 2026-02-10 Gradient Phase 2
+ * @updated 2026-02-11 Phase 3 — ScrubInput 적용
  */
 
 import { memo, useCallback } from 'react';
 import { Plus, X } from 'lucide-react';
 import type { GradientStop } from '../../../../types/builder/fill.types';
 import { iconSmall } from '../../../../utils/ui/uiConstants';
+import { ScrubInput } from './ScrubInput';
 
 import './GradientStopList.css';
 
@@ -32,73 +34,21 @@ export const GradientStopList = memo(function GradientStopList({
   onStopAdd,
   onStopRemove,
 }: GradientStopListProps) {
-  const handlePositionBlur = useCallback(
-    (index: number, e: React.FocusEvent<HTMLInputElement>) => {
-      const parsed = Number(e.target.value);
-      if (!Number.isNaN(parsed)) {
-        const clamped = Math.max(0, Math.min(100, Math.round(parsed)));
-        onStopPositionChange(index, clamped / 100);
-      }
-    },
-    [onStopPositionChange],
-  );
-
-  const handlePositionKeyDown = useCallback(
-    (e: React.KeyboardEvent<HTMLInputElement>) => {
-      if (e.key === 'Enter') {
-        (e.target as HTMLInputElement).blur();
-      }
-    },
-    [],
-  );
-
   const canDelete = stops.length > 2;
 
   return (
     <div className="gradient-stop-list">
       {stops.map((stop, index) => (
-        <div
+        <StopRow
           key={index}
-          className="gradient-stop-list__row"
-          data-active={index === activeStopIndex || undefined}
-          onClick={() => onStopSelect(index)}
-        >
-          <div
-            className="gradient-stop-list__swatch"
-            style={{ backgroundColor: stop.color.slice(0, 7) }}
-          />
-          <input
-            type="number"
-            className="gradient-stop-list__position"
-            min={0}
-            max={100}
-            step={1}
-            defaultValue={Math.round(stop.position * 100)}
-            key={`${index}-${stop.position}`}
-            onBlur={(e) => handlePositionBlur(index, e)}
-            onKeyDown={handlePositionKeyDown}
-            onClick={(e) => e.stopPropagation()}
-            aria-label={`Stop ${index + 1} position`}
-          />
-          <span className="gradient-stop-list__position-suffix">%</span>
-          <span className="gradient-stop-list__spacer" />
-          <button
-            type="button"
-            className="gradient-stop-list__delete"
-            disabled={!canDelete}
-            onClick={(e) => {
-              e.stopPropagation();
-              onStopRemove(index);
-            }}
-            aria-label={`Remove stop ${index + 1}`}
-          >
-            <X
-              size={iconSmall.size}
-              strokeWidth={iconSmall.strokeWidth}
-              color={iconSmall.color}
-            />
-          </button>
-        </div>
+          index={index}
+          stop={stop}
+          isActive={index === activeStopIndex}
+          canDelete={canDelete}
+          onSelect={onStopSelect}
+          onPositionChange={onStopPositionChange}
+          onRemove={onStopRemove}
+        />
       ))}
       <button
         type="button"
@@ -107,6 +57,82 @@ export const GradientStopList = memo(function GradientStopList({
       >
         <Plus size={12} strokeWidth={2} />
         Add Stop
+      </button>
+    </div>
+  );
+});
+
+/** 개별 스톱 행 — ScrubInput 콜백 안정화를 위해 분리 */
+const StopRow = memo(function StopRow({
+  index,
+  stop,
+  isActive,
+  canDelete,
+  onSelect,
+  onPositionChange,
+  onRemove,
+}: {
+  index: number;
+  stop: GradientStop;
+  isActive: boolean;
+  canDelete: boolean;
+  onSelect: (index: number) => void;
+  onPositionChange: (index: number, position: number) => void;
+  onRemove: (index: number) => void;
+}) {
+  const handlePositionCommit = useCallback(
+    (value: number) => {
+      onPositionChange(index, value / 100);
+    },
+    [index, onPositionChange],
+  );
+
+  const handleClick = useCallback(() => {
+    onSelect(index);
+  }, [index, onSelect]);
+
+  const handleRemove = useCallback(
+    (e: React.MouseEvent) => {
+      e.stopPropagation();
+      onRemove(index);
+    },
+    [index, onRemove],
+  );
+
+  return (
+    <div
+      className="gradient-stop-list__row"
+      data-active={isActive || undefined}
+      onClick={handleClick}
+    >
+      <div
+        className="gradient-stop-list__swatch"
+        style={{ backgroundColor: stop.color.slice(0, 7) }}
+      />
+      <div onClick={(e) => e.stopPropagation()}>
+        <ScrubInput
+          value={Math.round(stop.position * 100)}
+          onCommit={handlePositionCommit}
+          min={0}
+          max={100}
+          suffix="%"
+          label={`Stop ${index + 1} position`}
+          className="gradient-stop-list__position-scrub"
+        />
+      </div>
+      <span className="gradient-stop-list__spacer" />
+      <button
+        type="button"
+        className="gradient-stop-list__delete"
+        disabled={!canDelete}
+        onClick={handleRemove}
+        aria-label={`Remove stop ${index + 1}`}
+      >
+        <X
+          size={iconSmall.size}
+          strokeWidth={iconSmall.strokeWidth}
+          color={iconSmall.color}
+        />
       </button>
     </div>
   );

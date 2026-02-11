@@ -6,12 +6,14 @@
  *
  * @updated 2025-12-29 - Save Mode, Preview & Overlay, Element Visualization 섹션 제거
  *   (WebGL 캔버스 전환 및 로컬 저장 방식으로 변경됨에 따라 불필요해짐)
+ * @updated 2026-02-11 - Page Layout 설정 추가 (가로/세로/지그재그 페이지 배치, BuilderHeader에서 이동)
  */
 
 import {
   Grid3x3,
   Magnet,
   Ruler,
+  LayoutGrid,
   Palette,
   ZoomIn,
   Moon,
@@ -47,6 +49,10 @@ function SettingsContent() {
 
   const gridSize = useStore((state) => state.gridSize);
   const setGridSize = useStore((state) => state.setGridSize);
+
+  // Page Layout 설정
+  const pageLayoutDirection = useStore((state) => state.pageLayoutDirection);
+  const setPageLayoutDirection = useStore((state) => state.setPageLayoutDirection);
 
   // UI 설정 (글로벌 uiStore에서 가져옴)
   const themeMode = useUiStore((state) => state.themeMode);
@@ -111,6 +117,12 @@ function SettingsContent() {
     { value: "24", label: "24px" },
   ];
 
+  const pageLayoutOptions = [
+    { value: "horizontal", label: "Horizontal" },
+    { value: "vertical", label: "Vertical" },
+    { value: "zigzag", label: "Zigzag" },
+  ];
+
   const handleGridSizeChange = (value: string) => {
     const size = parseInt(value) as 8 | 16 | 24;
     setGridSize(size);
@@ -159,6 +171,14 @@ function SettingsContent() {
             onChange={handleGridSizeChange}
             options={gridSizeOptions}
             icon={Ruler}
+          />
+
+          <PropertySelect
+            label="Page Layout"
+            value={pageLayoutDirection}
+            onChange={setPageLayoutDirection}
+            options={pageLayoutOptions}
+            icon={LayoutGrid}
           />
         </PropertySection>
 

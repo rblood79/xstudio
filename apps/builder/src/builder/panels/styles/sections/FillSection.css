@@ -51,4 +51,24 @@
       outline-offset: -2px;
     }
   }
+
+  /* Inline variant (inside Appearance section) */
+  .fill-section-inline {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-bottom: 8px;
+  }
+
+  .fill-section-inline-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .fill-section-inline-label {
+    font-size: var(--text-xs);
+    color: var(--on-surface-variant);
+    font-weight: 500;
+  }
 }

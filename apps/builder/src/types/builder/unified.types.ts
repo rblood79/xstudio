@@ -86,8 +86,10 @@ export interface Element {
   variableBindings?: string[];
 
   // --- Fill System (Color Picker Phase 1) ---
-  /** 다중 Fill 레이어 (Phase 1: 메모리 상태만, DB 미저장) */
+  /** 다중 Fill 레이어 (IndexedDB 저장) */
   fills?: import('./fill.types').FillItem[];
+  /** Border 설정 (Phase 1: 타입만 추가, UI 미연결) */
+  border?: import('./fill.types').BorderConfig;
 }
 
 // === G.1/G.2 타입 별칭 및 가드 ===

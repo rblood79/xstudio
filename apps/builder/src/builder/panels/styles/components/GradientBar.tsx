@@ -10,7 +10,7 @@
  * @since 2026-02-10 Gradient Phase 2
  */
 
-import { memo, useCallback, useRef } from 'react';
+import { memo, useCallback, useRef, useEffect } from 'react';
 import type { GradientStop } from '../../../../types/builder/fill.types';
 
 import './GradientBar.css';
@@ -41,6 +41,16 @@ export const GradientBar = memo(function GradientBar({
     index: number;
     startY: number;
   } | null>(null);
+  const rafRef = useRef<number | null>(null);
+
+  // 언마운트 시 pending RAF 정리
+  useEffect(() => {
+    return () => {
+      if (rafRef.current !== null) {
+        cancelAnimationFrame(rafRef.current);
+      }
+    };
+  }, []);
 
   const getPosition = useCallback((clientX: number): number => {
     const bar = barRef.current;
@@ -61,19 +71,29 @@ export const GradientBar = memo(function GradientBar({
     [onStopSelect],
   );
 
+  // 🚀 RAF throttle: 초당 최대 60회로 제한
   const handlePointerMove = useCallback(
     (e: React.PointerEvent) => {
       const drag = draggingRef.current;
       if (!drag) return;
 
-      const position = getPosition(e.clientX);
-      const deltaY = Math.abs(e.clientY - drag.startY);
+      const clientX = e.clientX;
+      const clientY = e.clientY;
 
-      if (deltaY > 30 && stops.length > 2) {
-        return;
-      }
+      // 이미 예약된 RAF가 있으면 스킵
+      if (rafRef.current !== null) return;
 
-      onStopMove(drag.index, position);
+      rafRef.current = requestAnimationFrame(() => {
+        rafRef.current = null;
+        const position = getPosition(clientX);
+        const deltaY = Math.abs(clientY - drag.startY);
+
+        if (deltaY > 30 && stops.length > 2) {
+          return;
+        }
+
+        onStopMove(drag.index, position);
+      });
     },
     [getPosition, onStopMove, stops.length],
   );
@@ -83,6 +103,12 @@ export const GradientBar = memo(function GradientBar({
       const drag = draggingRef.current;
       if (!drag) return;
       draggingRef.current = null;
+
+      // pending RAF 취소
+      if (rafRef.current !== null) {
+        cancelAnimationFrame(rafRef.current);
+        rafRef.current = null;
+      }
 
       const deltaY = Math.abs(e.clientY - drag.startY);
       if (deltaY > 30 && stops.length > 2) {

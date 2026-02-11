@@ -63,6 +63,7 @@ export function useWorkflowInteraction({
 }: UseWorkflowInteractionOptions): void {
   const rafRef = useRef<number | null>(null);
   const isMinimapDraggingRef = useRef(false);
+  const lastMouseRef = useRef({ x: 0, y: 0 });
 
   // animateToPage → panToPage 유틸로 통합 (viewport/panToPage.ts)
   const animateToPage = panToPage;
@@ -112,6 +113,10 @@ export function useWorkflowInteraction({
 
   const handlePointerMove = useCallback((e: PointerEvent) => {
     if (!containerEl) return;
+
+    // 좌표 변화 없으면 스킵 (subpixel jitter 방지 → idle 프레임 복원)
+    if (e.clientX === lastMouseRef.current.x && e.clientY === lastMouseRef.current.y) return;
+    lastMouseRef.current = { x: e.clientX, y: e.clientY };
 
     // Phase 4: 미니맵 드래그 중이면 카메라 이동만 처리
     if (isMinimapDraggingRef.current) {

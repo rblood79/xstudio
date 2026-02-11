@@ -7,9 +7,13 @@
  * @since 2024-12-29
  * @updated 2025-12-29 - overlay/visualization 설정 제거 (WebGL 전환으로 불필요)
  * @updated 2026-02-10 - viewMode 제거 (레거시 ReactFlow 워크플로우 삭제)
+ * @updated 2026-02-11 - pageLayoutDirection 추가 (가로/세로/지그재그 페이지 배치, Settings 패널에서 제어)
  */
 
 import { StateCreator } from "zustand";
+
+/** 페이지 배치 방향 */
+export type PageLayoutDirection = "horizontal" | "vertical" | "zigzag";
 
 export interface HistoryInfo {
   canUndo: boolean;
@@ -88,10 +92,20 @@ export interface SettingsState {
   /** Workflow Layout group visualization 표시 토글 */
   toggleWorkflowLayoutGroups: () => void;
 
+  /** Workflow 엣지 직선 표시 여부 (기본값: true = 직각 orthogonal) */
+  workflowStraightEdges: boolean;
+  /** Workflow 엣지 직선 표시 설정 */
+  setWorkflowStraightEdges: (straight: boolean) => void;
+
   /** Workflow에서 포커스된 페이지 ID (기본값: null) */
   workflowFocusedPageId: string | null;
   /** Workflow 포커스 페이지 설정 */
   setWorkflowFocusedPageId: (pageId: string | null) => void;
+
+  /** 페이지 배치 방향 (기본값: 'horizontal') */
+  pageLayoutDirection: PageLayoutDirection;
+  /** 페이지 배치 방향 설정 */
+  setPageLayoutDirection: (direction: PageLayoutDirection) => void;
 }
 
 /**
@@ -105,7 +119,9 @@ export const createSettingsSlice: StateCreator<SettingsState> = (set, get) => ({
   showWorkflowEvents: true,
   showWorkflowDataSources: true,
   showWorkflowLayoutGroups: true,
+  workflowStraightEdges: true,
   workflowFocusedPageId: null,
+  pageLayoutDirection: "horizontal" as PageLayoutDirection,
   gridSize: 8,
   historyInfo: {
     canUndo: false,
@@ -213,9 +229,23 @@ export const createSettingsSlice: StateCreator<SettingsState> = (set, get) => ({
   },
 
   /**
+   * Workflow 엣지 직선 표시 설정
+   */
+  setWorkflowStraightEdges: (straight: boolean) => {
+    set({ workflowStraightEdges: straight });
+  },
+
+  /**
    * Workflow 포커스 페이지 설정
    */
   setWorkflowFocusedPageId: (pageId: string | null) => {
     set({ workflowFocusedPageId: pageId });
+  },
+
+  /**
+   * 페이지 배치 방향 설정
+   */
+  setPageLayoutDirection: (direction: PageLayoutDirection) => {
+    set({ pageLayoutDirection: direction });
   },
 });

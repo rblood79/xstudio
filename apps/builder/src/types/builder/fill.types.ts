@@ -246,7 +246,12 @@ export function createDefaultFill(type: FillType = FillType.Color): FillItem {
         type: FillType.MeshGradient,
         rows: 2,
         columns: 2,
-        points: [],
+        points: [
+          { position: [0, 0], color: '#FF0000FF' },
+          { position: [1, 0], color: '#FFFF00FF' },
+          { position: [0, 1], color: '#0000FFFF' },
+          { position: [1, 1], color: '#00FF00FF' },
+        ],
         enabled: true,
         opacity: 1,
         blendMode: 'normal',

@@ -3,7 +3,7 @@
  *
  * 설계문서 구조:
  * GradientEditor
- * ├── GradientTypeToggle [Linear] [Radial] [Angular]
+ * ├── Select (Gradient SubType: Linear/Radial/Angular/Mesh)
  * ├── GradientBar (미리보기 + 스톱 드래그)
  * ├── ColorPickerPanel (활성 스톱 색상 편집)
  * ├── GradientControls (rotation/center/radius)
@@ -12,8 +12,9 @@
  * @since 2026-02-10 Gradient Phase 2
  */
 
-import { memo, useState, useCallback, useMemo } from 'react';
-import { ArrowUpRight, Target, RotateCw, type LucideIcon } from 'lucide-react';
+import { memo, useState, useCallback, useMemo, useEffect, useRef } from 'react';
+import type { Key } from 'react-aria-components';
+import { Select, SelectItem } from '@xstudio/shared/components';
 import type {
   FillItem,
   GradientStop,
@@ -35,55 +36,28 @@ type GradientFill =
   | RadialGradientFillItem
   | AngularGradientFillItem;
 
-/** 그래디언트 하위 타입 */
-type GradientSubType = FillType.LinearGradient | FillType.RadialGradient | FillType.AngularGradient;
+/** 그래디언트 하위 타입 (Mesh 포함) */
+type GradientSubType = FillType.LinearGradient | FillType.RadialGradient | FillType.AngularGradient | FillType.MeshGradient;
 
 interface GradientEditorProps {
   fill: GradientFill;
-  onChange: (updates: Partial<FillItem>) => void;
+  /** Canvas preview during drag (→ updateFillPreview → elementsMap만 업데이트, selectedElementProps 미변경) */
+  onChange?: (updates: Partial<FillItem>) => void;
   onChangeEnd: (updates: Partial<FillItem>) => void;
   /** 그래디언트 하위 타입 변경 (Linear ↔ Radial ↔ Angular) */
   onSubTypeChange: (subType: GradientSubType) => void;
 }
 
 // ============================================
-// GradientTypeToggle (내부 컴포넌트)
+// Gradient SubType Select 옵션
 // ============================================
 
-const GRADIENT_SUB_TYPES: { type: GradientSubType; label: string; icon: LucideIcon }[] = [
-  { type: FillType.LinearGradient, label: 'Linear', icon: ArrowUpRight },
-  { type: FillType.RadialGradient, label: 'Radial', icon: Target },
-  { type: FillType.AngularGradient, label: 'Angular', icon: RotateCw },
+const GRADIENT_SUB_TYPE_OPTIONS: { id: GradientSubType; name: string }[] = [
+  { id: FillType.LinearGradient, name: 'Linear' },
+  { id: FillType.RadialGradient, name: 'Radial' },
+  { id: FillType.AngularGradient, name: 'Angular' },
+  { id: FillType.MeshGradient, name: 'Mesh' },
 ];
-
-const GradientTypeToggle = memo(function GradientTypeToggle({
-  value,
-  onChange,
-}: {
-  value: GradientSubType;
-  onChange: (type: GradientSubType) => void;
-}) {
-  return (
-    <div className="gradient-type-toggle" role="radiogroup" aria-label="Gradient type">
-      {GRADIENT_SUB_TYPES.map(({ type, label, icon: Icon }) => (
-        <button
-          key={type}
-          type="button"
-          className="gradient-type-toggle__btn"
-          role="radio"
-          aria-checked={value === type}
-          aria-label={label}
-          data-active={value === type || undefined}
-          onClick={() => onChange(type)}
-          title={label}
-        >
-          <Icon size={12} strokeWidth={2} />
-          <span className="gradient-type-toggle__label">{label}</span>
-        </button>
-      ))}
-    </div>
-  );
-});
 
 // ============================================
 // 유틸리티
@@ -142,105 +116,153 @@ export const GradientEditor = memo(function GradientEditor({
 }: GradientEditorProps) {
   const [activeStopIndex, setActiveStopIndex] = useState(0);
 
-  const stops = fill.stops;
-  const activeStop = stops[activeStopIndex] ?? stops[0];
+  // 🚀 Performance: Solid color 방식 적용
+  // 드래그 중: onChange → updateFillPreview → elementsMap만 업데이트 (Canvas 프리뷰)
+  //            selectedElementProps 미변경 → fillsAtom 재계산 없음 → 부모 리렌더 없음
+  // 드래그 종료: onChangeEnd → updateFill → 히스토리 + DB 저장
+  // Stop 위치 드래그: localStops 상태로 핸들 위치 관리 + onChange로 Canvas 프리뷰
+  // Color 드래그: ColorPickerPanelInner.localColor가 UI 담당 + onChange로 Canvas 프리뷰
+  const [localStops, setLocalStops] = useState<GradientStop[]>(fill.stops);
 
-  const gradientCss = useMemo(() => buildGradientCss(stops), [stops]);
+  // 외부(store)에서 stops가 변경되면 로컬 상태 동기화
+  useEffect(() => {
+    setLocalStops(fill.stops);
+  }, [fill.stops]);
 
-  // --- Gradient sub-type toggle ---
+  // Ref: stable callback에서 최신 localStops 접근 (dependency 없이)
+  const localStopsRef = useRef(localStops);
+  localStopsRef.current = localStops;
+
+  const activeStop = localStops[activeStopIndex] ?? localStops[0];
+
+  // 🚀 Performance: ColorPickerPanel에 전달하는 color는 안정적 참조 유지
+  // ColorPickerPanel은 key={value}로 remount하므로, 드래그 중 color 변경 시
+  // 이 값을 업데이트하면 매 프레임 remount 발생 → 극심한 랙
+  // 드래그 중에는 committedStopColor를 유지하고, 종료 시에만 갱신
+  const [committedStopColor, setCommittedStopColor] = useState(activeStop?.color ?? '#000000FF');
+
+  // 활성 스톱이 변경되면 (다른 스톱 선택) committed color 동기화
+  useEffect(() => {
+    setCommittedStopColor(activeStop?.color ?? '#000000FF');
+  }, [activeStopIndex, fill.stops]);
+
+  const gradientCss = useMemo(() => buildGradientCss(localStops), [localStops]);
+
+  // --- Gradient sub-type select ---
   const handleSubTypeChange = useCallback(
-    (subType: GradientSubType) => {
-      if (subType !== fill.type) {
+    (key: Key | null) => {
+      const subType = key as GradientSubType | null;
+      if (subType && subType !== fill.type) {
         onSubTypeChange(subType);
       }
     },
     [fill.type, onSubTypeChange],
   );
 
-  // --- Stop drag ---
+  // --- Stop drag (로컬 UI + Canvas preview) ---
   const handleStopMove = useCallback(
     (index: number, position: number) => {
-      const newStops = stops.map((s, i) =>
-        i === index ? { ...s, position } : s,
+      setLocalStops((prev) =>
+        prev.map((s, i) => (i === index ? { ...s, position } : s)),
       );
-      onChange({ stops: newStops } as Partial<FillItem>);
+      // Canvas preview (updateFillPreview → elementsMap만 업데이트)
+      if (onChange) {
+        const newStops = localStopsRef.current.map((s, i) =>
+          i === index ? { ...s, position } : s,
+        );
+        onChange({ stops: newStops } as Partial<FillItem>);
+      }
     },
-    [stops, onChange],
+    [onChange],
   );
 
+  // --- Stop drag 종료 (store 커밋) ---
   const handleStopMoveEnd = useCallback(
     (index: number, position: number) => {
-      const newStops = stops.map((s, i) =>
+      const newStops = localStops.map((s, i) =>
         i === index ? { ...s, position } : s,
       );
+      setLocalStops(newStops);
       onChangeEnd({ stops: newStops } as Partial<FillItem>);
     },
-    [stops, onChangeEnd],
+    [localStops, onChangeEnd],
   );
 
   // --- Stop add ---
   const handleStopAdd = useCallback(
     (position: number) => {
-      const color = getColorAtPosition(stops, position);
-      const newStops = [...stops, { color, position }];
+      const color = getColorAtPosition(localStops, position);
+      const newStops = [...localStops, { color, position }];
       setActiveStopIndex(newStops.length - 1);
+      setLocalStops(newStops);
       onChangeEnd({ stops: newStops } as Partial<FillItem>);
     },
-    [stops, onChangeEnd],
+    [localStops, onChangeEnd],
   );
 
   const handleStopAddFromList = useCallback(() => {
-    const midPosition = stops.length >= 2
-      ? (stops[stops.length - 2].position + stops[stops.length - 1].position) / 2
+    const midPosition = localStops.length >= 2
+      ? (localStops[localStops.length - 2].position + localStops[localStops.length - 1].position) / 2
       : 0.5;
-    const color = getColorAtPosition(stops, midPosition);
-    const newStops = [...stops, { color, position: midPosition }];
+    const color = getColorAtPosition(localStops, midPosition);
+    const newStops = [...localStops, { color, position: midPosition }];
     setActiveStopIndex(newStops.length - 1);
+    setLocalStops(newStops);
     onChangeEnd({ stops: newStops } as Partial<FillItem>);
-  }, [stops, onChangeEnd]);
+  }, [localStops, onChangeEnd]);
 
   // --- Stop remove ---
   const handleStopRemove = useCallback(
     (index: number) => {
-      if (stops.length <= 2) return;
-      const newStops = stops.filter((_, i) => i !== index);
+      if (localStops.length <= 2) return;
+      const newStops = localStops.filter((_, i) => i !== index);
       const newIndex = Math.min(activeStopIndex, newStops.length - 1);
       setActiveStopIndex(newIndex);
+      setLocalStops(newStops);
       onChangeEnd({ stops: newStops } as Partial<FillItem>);
     },
-    [stops, activeStopIndex, onChangeEnd],
+    [localStops, activeStopIndex, onChangeEnd],
   );
 
-  // --- Stop color change ---
+  // --- Stop color change (Solid color 방식: Canvas preview만) ---
+  // ColorPickerPanelInner의 localColor가 ColorArea/Slider UI 업데이트 담당
+  // setLocalStops 미호출 → GradientEditor/GradientBar/GradientStopList 리렌더 없음
+  // onChange → updateFillPreview → Canvas만 업데이트 (selectedElementProps 미변경)
   const handleColorChange = useCallback(
     (color: string) => {
-      const newStops = stops.map((s, i) =>
-        i === activeStopIndex ? { ...s, color } : s,
-      );
-      onChange({ stops: newStops } as Partial<FillItem>);
+      if (onChange) {
+        const newStops = localStopsRef.current.map((s, i) =>
+          i === activeStopIndex ? { ...s, color } : s,
+        );
+        onChange({ stops: newStops } as Partial<FillItem>);
+      }
     },
-    [stops, activeStopIndex, onChange],
+    [activeStopIndex, onChange],
   );
 
+  // --- Stop color change 종료 (store 커밋 + committedStopColor 갱신) ---
   const handleColorChangeEnd = useCallback(
     (color: string) => {
-      const newStops = stops.map((s, i) =>
+      const newStops = localStops.map((s, i) =>
         i === activeStopIndex ? { ...s, color } : s,
       );
+      setLocalStops(newStops);
+      setCommittedStopColor(color);
       onChangeEnd({ stops: newStops } as Partial<FillItem>);
     },
-    [stops, activeStopIndex, onChangeEnd],
+    [localStops, activeStopIndex, onChangeEnd],
   );
 
   // --- Stop position from list ---
   const handleStopPositionChange = useCallback(
     (index: number, position: number) => {
-      const newStops = stops.map((s, i) =>
+      const newStops = localStops.map((s, i) =>
         i === index ? { ...s, position } : s,
       );
+      setLocalStops(newStops);
       onChangeEnd({ stops: newStops } as Partial<FillItem>);
     },
-    [stops, onChangeEnd],
+    [localStops, onChangeEnd],
   );
 
   // --- Stop select ---
@@ -250,13 +272,19 @@ export const GradientEditor = memo(function GradientEditor({
 
   return (
     <div className="gradient-editor">
-      <GradientTypeToggle
-        value={fill.type as GradientSubType}
-        onChange={handleSubTypeChange}
-      />
+      <Select
+        aria-label="Gradient type"
+        size="sm"
+        selectedKey={fill.type}
+        onSelectionChange={handleSubTypeChange}
+        items={GRADIENT_SUB_TYPE_OPTIONS}
+        className="gradient-type-select"
+      >
+        {(item) => <SelectItem>{item.name}</SelectItem>}
+      </Select>
 
       <GradientBar
-        stops={stops}
+        stops={localStops}
         gradientCss={gradientCss}
         activeStopIndex={activeStopIndex}
         onStopSelect={handleStopSelect}
@@ -268,7 +296,7 @@ export const GradientEditor = memo(function GradientEditor({
 
       {activeStop && (
         <ColorPickerPanel
-          value={activeStop.color}
+          value={committedStopColor}
           onChange={handleColorChange}
           onChangeEnd={handleColorChangeEnd}
         />
@@ -281,7 +309,7 @@ export const GradientEditor = memo(function GradientEditor({
       <div className="gradient-editor__divider" />
 
       <GradientStopList
-        stops={stops}
+        stops={localStops}
         activeStopIndex={activeStopIndex}
         onStopSelect={handleStopSelect}
         onStopPositionChange={handleStopPositionChange}

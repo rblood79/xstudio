@@ -321,14 +321,22 @@ export function renderWorkflowMinimap(
     const vpW = vb.width * transform.scale;
     const vpH = vb.height * transform.scale;
 
-    // 뷰포트 반투명 배경
-    const vpFillPaint = scope.track(new ck.Paint());
-    vpFillPaint.setAntiAlias(true);
-    vpFillPaint.setStyle(ck.PaintStyle.Fill);
-    vpFillPaint.setColor(
-      ck.Color4f(PAGE_FOCUSED_COLOR[0], PAGE_FOCUSED_COLOR[1], PAGE_FOCUSED_COLOR[2], 0.15),
-    );
-    canvas.drawRect(ck.XYWHRect(vpX, vpY, vpW, vpH), vpFillPaint);
+    // 뷰포트 밖 영역 어둡게 (dim mask) — 현재 보이는 영역을 명확히 표시
+    const dimPaint = scope.track(new ck.Paint());
+    dimPaint.setAntiAlias(true);
+    dimPaint.setStyle(ck.PaintStyle.Fill);
+    dimPaint.setColor(ck.Color4f(0, 0, 0, 0.45));
+
+    // 상단 (미니맵 상단 ~ 뷰포트 상단)
+    canvas.drawRect(ck.XYWHRect(mmSceneX, mmSceneY, mmSceneW, vpY - mmSceneY), dimPaint);
+    // 하단 (뷰포트 하단 ~ 미니맵 하단)
+    const vpBottom = vpY + vpH;
+    canvas.drawRect(ck.XYWHRect(mmSceneX, vpBottom, mmSceneW, mmSceneY + mmSceneH - vpBottom), dimPaint);
+    // 좌측 (뷰포트 좌측 왼쪽, 뷰포트 높이 범위)
+    canvas.drawRect(ck.XYWHRect(mmSceneX, vpY, vpX - mmSceneX, vpH), dimPaint);
+    // 우측 (뷰포트 우측 오른쪽, 뷰포트 높이 범위)
+    const vpRight = vpX + vpW;
+    canvas.drawRect(ck.XYWHRect(vpRight, vpY, mmSceneX + mmSceneW - vpRight, vpH), dimPaint);
 
     // 뷰포트 테두리
     const vpStrokePaint = scope.track(new ck.Paint());

@@ -404,9 +404,10 @@ export const usePageManager = ({ requestAutoSelectAfterUpdate }: UsePageManagerP
             });
             setPages(storePages);
 
-            // 🆕 Multi-page: 페이지 위치 초기화 (수평 스택, 현재 canvasSize 기반)
+            // 🆕 Multi-page: 페이지 위치 초기화 (현재 방향 + canvasSize 기반)
             const currentCanvasSize = useCanvasSyncStore.getState().canvasSize;
-            initializePagePositions(storePages, currentCanvasSize.width, PAGE_STACK_GAP);
+            const currentDirection = useStore.getState().pageLayoutDirection;
+            initializePagePositions(storePages, currentCanvasSize.width, currentCanvasSize.height, PAGE_STACK_GAP, currentDirection);
 
             // 🚀 Pencil 방식: 전체 페이지 요소를 한 번에 로드 (Lazy Loading 비활성화)
             setLazyLoadingEnabled(false);

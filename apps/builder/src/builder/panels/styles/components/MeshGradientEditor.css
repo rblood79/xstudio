@@ -1,0 +1,75 @@
+/**
+ * MeshGradientEditor Styles
+ *
+ * Phase 4: 메쉬 그래디언트 편집기
+ */
+
+@layer components {
+  .mesh-gradient-editor {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .mesh-gradient-editor__grid-controls {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 4px 8px;
+    align-items: center;
+  }
+
+  .mesh-gradient-editor__label {
+    font-size: var(--text-xs);
+    color: var(--on-surface-variant);
+    white-space: nowrap;
+  }
+
+  .mesh-gradient-editor__grid-row {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+  }
+
+  .mesh-gradient-editor__scrub {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .mesh-gradient-editor__x {
+    font-size: var(--text-xs);
+    color: var(--on-surface-variant);
+    flex-shrink: 0;
+  }
+
+  .mesh-gradient-editor__point-grid {
+    display: grid;
+    gap: 3px;
+    padding: 4px;
+    background: var(--surface-container-high);
+    border: 1px solid var(--outline-variant);
+    border-radius: var(--radius-md);
+  }
+
+  .mesh-gradient-editor__point {
+    aspect-ratio: 1;
+    min-height: 20px;
+    border: 2px solid transparent;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: border-color 0.1s, transform 0.1s;
+
+    &:hover {
+      transform: scale(1.1);
+    }
+
+    &[data-active] {
+      border-color: var(--on-surface);
+      box-shadow: 0 0 0 1px var(--surface-container);
+    }
+  }
+
+  .mesh-gradient-editor__divider {
+    height: 1px;
+    background: var(--outline-variant);
+  }
+}

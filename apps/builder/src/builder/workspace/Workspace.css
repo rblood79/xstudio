@@ -167,6 +167,13 @@
   flex-shrink: 0;
 }
 
+.workflow-toggle-divider {
+  width: 1px;
+  height: 16px;
+  background-color: var(--color-gray-600);
+  flex-shrink: 0;
+}
+
 /* ============================================
  * Compare Mode - iframe + PixiJS 동시 표시
  * ============================================ */

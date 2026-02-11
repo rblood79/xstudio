@@ -19,6 +19,9 @@ import type { Element } from '../../../../types/core/store.types';
 import { useSkiaNode } from '../skia/useSkiaNode';
 import { LayoutComputedSizeContext } from '../layoutContext';
 import { convertStyle, cssColorToHex, parseCSSSize, type CSSStyle } from './styleConverter';
+import { isFillV2Enabled } from '../../../../utils/featureFlags';
+import { fillsToSkiaFillStyle } from '../../../panels/styles/utils/fillToSkia';
+import type { FillStyle } from '../skia/types';
 import { BoxSprite } from './BoxSprite';
 import { TextSprite } from './TextSprite';
 import { ImageSprite } from './ImageSprite';
@@ -1206,9 +1209,11 @@ export const ElementSprite = memo(function ElementSprite({
   })();
 
   // Phase 5: Skia 렌더 데이터 등록 (모든 요소 타입 공통)
-  // 개별 Sprite(BoxSprite, TextSprite 등)가 자체 useSkiaNode를 호출하면
-  // 같은 elementId로 레지스트리를 덮어쓰므로 더 구체적인 데이터가 사용된다.
-  // UI 컴포넌트(FancyButton 등)는 이 폴백 등록이 사용된다.
+  // React useLayoutEffect는 자식→부모 순서로 실행되므로,
+  // 개별 Sprite(BoxSprite 등)의 useSkiaNode가 먼저 실행되고
+  // 이 부모(ElementSprite)의 useSkiaNode가 마지막에 실행되어 레지스트리를 덮어쓴다.
+  // 따라서 gradient fill 등 고급 fill 데이터는 이 레벨에서도 포함해야 한다.
+  // UI 컴포넌트(FancyButton 등)는 이 등록이 유일한 Skia 데이터 소스이다.
 
   // 🚀 Style 변경 감지를 위해 useMemo 외부에서 참조 추출
   // effectiveElement 참조가 같아도 style/props가 다르면 skiaNodeData 재계산
@@ -1332,6 +1337,7 @@ export const ElementSprite = memo(function ElementSprite({
 
     const boxData: {
       fillColor: Float32Array;
+      fill?: FillStyle;
       borderRadius: number | [number, number, number, number];
       strokeColor?: Float32Array;
       strokeWidth?: number;
@@ -1339,6 +1345,15 @@ export const ElementSprite = memo(function ElementSprite({
       fillColor: Float32Array.of(r, g, b, effectiveAlpha),
       borderRadius: effectiveBorderRadius,
     };
+
+    // Fill V2: gradient/image fill 지원 (BoxSprite의 useSkiaNode과 동일 데이터 보장)
+    const fills = effectiveElement.fills;
+    if (isFillV2Enabled() && fills && fills.length > 0) {
+      const fillV2Style = fillsToSkiaFillStyle(fills, finalWidth, finalHeight);
+      if (fillV2Style && fillV2Style.type !== 'color') {
+        boxData.fill = fillV2Style;
+      }
+    }
 
     // stroke (border) 데이터 포함
     if (stroke) {

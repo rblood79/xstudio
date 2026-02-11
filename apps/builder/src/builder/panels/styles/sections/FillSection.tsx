@@ -139,10 +139,10 @@ const FillSectionContent = memo(function FillSectionContent() {
 });
 
 /**
- * FillSection - 외부 래퍼 (UI 표시: "Background")
- * Phase 2: 다중 레이어 (Color + Gradient)
+ * FillSectionInline - Appearance 섹션 내부에 인라인으로 렌더링
+ * PropertySection 래퍼 없이 Background 콘텐츠만 제공
  */
-export const FillSection = memo(function FillSection() {
+export const FillSectionInline = memo(function FillSectionInline() {
   const { fills } = useFillValuesJotai();
   const { addFill } = useFillActions();
 
@@ -152,11 +152,9 @@ export const FillSection = memo(function FillSection() {
   }, [fills, addFill]);
 
   return (
-    <PropertySection
-      id="background"
-      title="Background"
-    >
-      <div className="fill-section-header-actions">
+    <div className="fill-section-inline">
+      <div className="fill-section-inline-header">
+        <span className="fill-section-inline-label">Background</span>
         <button
           type="button"
           className="fill-section-add-btn"
@@ -172,6 +170,18 @@ export const FillSection = memo(function FillSection() {
         </button>
       </div>
       <FillSectionContent />
+    </div>
+  );
+});
+
+/**
+ * FillSection - 독립 섹션 래퍼 (PropertySection 포함)
+ * 호환성 유지용 — 단독 사용 시
+ */
+export const FillSection = memo(function FillSection() {
+  return (
+    <PropertySection id="background" title="Background">
+      <FillSectionInline />
     </PropertySection>
   );
 });

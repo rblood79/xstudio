@@ -201,6 +201,9 @@ export const createInspectorActionsSlice: StateCreator<
         if (additionalUpdates?.dataBinding !== undefined) {
           payload.data_binding = additionalUpdates.dataBinding;
         }
+        if (additionalUpdates?.fills !== undefined) {
+          payload.fills = additionalUpdates.fills;
+        }
 
         await saveService.savePropertyChange(
           {

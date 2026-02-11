@@ -1428,15 +1428,17 @@ export function BuilderCanvas({
   const pagePositions = useStore((state) => state.pagePositions);
   const pagePositionsVersion = useStore((state) => state.pagePositionsVersion);
   const initializePagePositions = useStore((state) => state.initializePagePositions);
+  const pageLayoutDirection = useStore((state) => state.pageLayoutDirection);
 
-  // 🆕 Multi-page: pageWidth 변경 시 페이지 위치 재계산 (breakpoint 변경 대응)
-  const prevPageWidthRef = useRef(pageWidth);
+  // 🆕 Multi-page: pageWidth/pageHeight/pageLayoutDirection 변경 시 페이지 위치 재계산
+  const prevLayoutKeyRef = useRef(`${pageWidth}:${pageHeight}:${pageLayoutDirection}`);
   useEffect(() => {
-    if (prevPageWidthRef.current !== pageWidth && pages.length > 0) {
-      prevPageWidthRef.current = pageWidth;
-      initializePagePositions(pages, pageWidth, PAGE_STACK_GAP);
+    const layoutKey = `${pageWidth}:${pageHeight}:${pageLayoutDirection}`;
+    if (prevLayoutKeyRef.current !== layoutKey && pages.length > 0) {
+      prevLayoutKeyRef.current = layoutKey;
+      initializePagePositions(pages, pageWidth, pageHeight, PAGE_STACK_GAP, pageLayoutDirection);
     }
-  }, [pageWidth, pages, initializePagePositions]);
+  }, [pageWidth, pageHeight, pageLayoutDirection, pages, initializePagePositions]);
 
   // 🚀 O(1) pageIndex 기반 조회 (elements.find/filter O(N*M) 제거)
   const pageIndex = useStore((state) => state.pageIndex);

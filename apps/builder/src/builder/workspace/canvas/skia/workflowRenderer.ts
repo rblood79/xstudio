@@ -67,7 +67,7 @@ export interface WorkflowHighlightState {
 // Constants
 // ============================================
 
-const EDGE_STROKE_WIDTH = 2;   // screen px
+const EDGE_STROKE_WIDTH = 1;   // screen px
 const ARROW_SIZE = 8;          // screen px
 const LABEL_FONT_SIZE = 10;    // screen px
 const DS_INDICATOR_RADIUS = 5; // screen px (data source indicator circle)
@@ -75,6 +75,7 @@ const DS_LABEL_FONT_SIZE = 9;  // screen px
 const LAYOUT_GROUP_PADDING = 20; // screen px
 const LAYOUT_STROKE_WIDTH = 1.5; // screen px
 const LAYOUT_LABEL_FONT_SIZE = 10; // screen px
+const ORTHO_BORDER_RADIUS = 8;     // screen px — smoothstep 꺾임 둥글기
 
 /** blue-500 (#3b82f6) */
 const NAVIGATION_COLOR: [number, number, number] = [
@@ -187,6 +188,54 @@ export function computeControlPoints(endpoints: EndpointPair): ControlPoints {
 }
 
 /**
+ * 직각 라우팅에서 타겟 페이지 직전 갭의 중앙 좌표를 계산한다.
+ *
+ * 타겟에 가장 가까운 이전 페이지를 찾아, 그 사이 갭의 50% 지점을 반환.
+ * 페이지 드래그로 갭이 변해도 동적으로 중앙을 유지한다.
+ */
+export function computeOrthogonalTurnPoint(
+  targetFrame: PageFrame,
+  sourceFrame: PageFrame,
+  pageFrameMap: Map<string, PageFrame>,
+  horizontal: boolean,
+  forward: boolean,
+): number {
+  if (horizontal) {
+    if (forward) {
+      // → 방향: 타겟 왼쪽 직전의 페이지 오른쪽 엣지 찾기
+      let prevEdge = sourceFrame.x + sourceFrame.width;
+      for (const [, f] of pageFrameMap) {
+        const re = f.x + f.width;
+        if (re < targetFrame.x && re > prevEdge) prevEdge = re;
+      }
+      return (prevEdge + targetFrame.x) / 2;
+    }
+    // ← 방향: 타겟 오른쪽 직후의 페이지 왼쪽 엣지 찾기
+    let nextEdge = sourceFrame.x;
+    for (const [, f] of pageFrameMap) {
+      if (f.x > targetFrame.x + targetFrame.width && f.x < nextEdge) nextEdge = f.x;
+    }
+    return (targetFrame.x + targetFrame.width + nextEdge) / 2;
+  }
+
+  if (forward) {
+    // ↓ 방향: 타겟 위쪽 직전의 페이지 하단 엣지 찾기
+    let prevEdge = sourceFrame.y + sourceFrame.height;
+    for (const [, f] of pageFrameMap) {
+      const be = f.y + f.height;
+      if (be < targetFrame.y && be > prevEdge) prevEdge = be;
+    }
+    return (prevEdge + targetFrame.y) / 2;
+  }
+  // ↑ 방향: 타겟 아래쪽 직후의 페이지 상단 엣지 찾기
+  let nextEdge = sourceFrame.y;
+  for (const [, f] of pageFrameMap) {
+    if (f.y > targetFrame.y + targetFrame.height && f.y < nextEdge) nextEdge = f.y;
+  }
+  return (targetFrame.y + targetFrame.height + nextEdge) / 2;
+}
+
+/**
  * 엔드포인트 + 제어점을 포함한 전체 Bezier 지오메트리를 계산한다.
  *
  * computeEndpoints + computeControlPoints를 결합하여 단일 객체로 반환한다.
@@ -225,16 +274,40 @@ export function renderWorkflowEdges(
   _fontMgr?: FontMgr,
   elementBoundsMap?: Map<string, ElementBounds>,
   highlightState?: WorkflowHighlightState,
+  straightEdges?: boolean,
 ): void {
   if (edges.length === 0) return;
 
   const scope = new SkiaDisposable();
   try {
     const arrowSize = ARROW_SIZE / zoom;
+    const srcR = 3 / zoom;
 
     // 하이라이트 활성 여부 (hoveredEdgeId 또는 focusedPageId가 있으면 활성)
     const isHighlightActive = highlightState != null &&
       (highlightState.hoveredEdgeId != null || highlightState.focusedPageId != null);
+
+    // 공유 Paint 객체 (엣지 루프 밖에서 1회 생성, 속성만 업데이트)
+    const strokePaint = scope.track(new ck.Paint());
+    strokePaint.setAntiAlias(true);
+    strokePaint.setStyle(ck.PaintStyle.Stroke);
+
+    const arrowPaint = scope.track(new ck.Paint());
+    arrowPaint.setAntiAlias(true);
+    arrowPaint.setStyle(ck.PaintStyle.Fill);
+
+    const srcFillPaint = scope.track(new ck.Paint());
+    srcFillPaint.setAntiAlias(true);
+    srcFillPaint.setStyle(ck.PaintStyle.Fill);
+    srcFillPaint.setColor(ck.Color4f(1, 1, 1, 1));
+
+    const srcStrokePaint = scope.track(new ck.Paint());
+    srcStrokePaint.setAntiAlias(true);
+    srcStrokePaint.setStyle(ck.PaintStyle.Stroke);
+    srcStrokePaint.setStrokeWidth(1.2 / zoom);
+
+    // 이벤트 엣지용 대시 PathEffect (zoom당 1회 생성)
+    const dashEffect = scope.track(ck.PathEffect.MakeDash([6 / zoom, 4 / zoom]));
 
     for (const edge of edges) {
       const sourceFrame = pageFrameMap.get(edge.sourcePageId);
@@ -247,16 +320,16 @@ export function renderWorkflowEdges(
 
       if (isHighlightActive && highlightState != null) {
         if (highlightState.hoveredEdgeId === edge.id) {
-          edgeStrokeWidth = 4 / zoom;
+          edgeStrokeWidth = 2 / zoom;
           edgeOpacity = 1.0;
         } else if (highlightState.directEdgeIds.has(edge.id)) {
-          edgeStrokeWidth = 3 / zoom;
+          edgeStrokeWidth = 2 / zoom;
           edgeOpacity = 1.0;
         } else if (highlightState.secondaryEdgeIds.has(edge.id)) {
-          edgeStrokeWidth = 2 / zoom;
+          edgeStrokeWidth = 1 / zoom;
           edgeOpacity = 0.5;
         } else {
-          edgeStrokeWidth = 2 / zoom;
+          edgeStrokeWidth = 1 / zoom;
           edgeOpacity = 0.15;
         }
       }
@@ -264,28 +337,14 @@ export function renderWorkflowEdges(
       const isEvent = edge.type === 'event-navigation';
       const color = isEvent ? EVENT_NAV_COLOR : NAVIGATION_COLOR;
 
-      // 엣지별 Stroke Paint
-      const strokePaint = scope.track(new ck.Paint());
-      strokePaint.setAntiAlias(true);
-      strokePaint.setStyle(ck.PaintStyle.Stroke);
+      // 공유 Paint 속성 업데이트 (new 없이 재사용)
       strokePaint.setStrokeWidth(edgeStrokeWidth);
-      strokePaint.setColor(
-        ck.Color4f(color[0], color[1], color[2], edgeOpacity),
-      );
-      if (isEvent) {
-        const dashEff = scope.track(
-          ck.PathEffect.MakeDash([6 / zoom, 4 / zoom]),
-        );
-        strokePaint.setPathEffect(dashEff);
-      }
+      strokePaint.setColor(ck.Color4f(color[0], color[1], color[2], edgeOpacity));
+      strokePaint.setPathEffect(isEvent ? dashEffect : null);
 
-      // 화살표 Fill Paint
-      const arrowPaint = scope.track(new ck.Paint());
-      arrowPaint.setAntiAlias(true);
-      arrowPaint.setStyle(ck.PaintStyle.Fill);
-      arrowPaint.setColor(
-        ck.Color4f(color[0], color[1], color[2], edgeOpacity),
-      );
+      arrowPaint.setColor(ck.Color4f(color[0], color[1], color[2], edgeOpacity));
+
+      srcStrokePaint.setColor(ck.Color4f(color[0], color[1], color[2], edgeOpacity));
 
       // 소스 요소 바운드 조회 (요소 레벨 앵커링)
       const sourceElBounds = edge.sourceElementId && elementBoundsMap
@@ -296,17 +355,63 @@ export function renderWorkflowEdges(
       const endpoints = computeEndpoints(sourceFrame, targetFrame, sourceElBounds);
       const { sx, sy, ex, ey } = endpoints;
 
-      // Bezier 제어점 계산
-      const { cpx1, cpy1, cpx2, cpy2 } = computeControlPoints(endpoints);
-
-      // Bezier path 그리기
+      // 경로 그리기
       const path = scope.track(new ck.Path());
-      path.moveTo(sx, sy);
-      path.cubicTo(cpx1, cpy1, cpx2, cpy2, ex, ey);
+      let angle: number;
+
+      if (straightEdges) {
+        // 직각(orthogonal/smoothstep): 타겟 직전 페이지와의 갭 중앙에서 꺾어 진입
+        const pageDx = Math.abs(targetFrame.x + targetFrame.width / 2 - sourceFrame.x - sourceFrame.width / 2);
+        const pageDy = Math.abs(targetFrame.y + targetFrame.height / 2 - sourceFrame.y - sourceFrame.height / 2);
+        const isHorizontal = pageDx >= pageDy;
+        path.moveTo(sx, sy);
+        if (isHorizontal) {
+          const turnX = computeOrthogonalTurnPoint(targetFrame, sourceFrame, pageFrameMap, true, ex > sx);
+          // smoothstep: 꺾임점에 둥근 모서리 (arcToTangent)
+          const r = Math.min(
+            ORTHO_BORDER_RADIUS / zoom,
+            Math.abs(turnX - sx) / 2,
+            Math.abs(ey - sy) / 2,
+          );
+          const dirX = Math.sign(turnX - sx); // 수평 진행 방향
+          const dirY = Math.sign(ey - sy);     // 수직 진행 방향
+          // 1st turn: 수평 → 수직
+          path.lineTo(turnX - r * dirX, sy);
+          path.arcToTangent(turnX, sy, turnX, sy + r * dirY, r);
+          // 2nd turn: 수직 → 수평
+          path.lineTo(turnX, ey - r * dirY);
+          path.arcToTangent(turnX, ey, turnX + r * Math.sign(ex - turnX), ey, r);
+          path.lineTo(ex, ey);
+          angle = Math.atan2(0, ex - turnX);
+        } else {
+          const turnY = computeOrthogonalTurnPoint(targetFrame, sourceFrame, pageFrameMap, false, ey > sy);
+          // smoothstep: 꺾임점에 둥근 모서리 (arcToTangent)
+          const r = Math.min(
+            ORTHO_BORDER_RADIUS / zoom,
+            Math.abs(turnY - sy) / 2,
+            Math.abs(ex - sx) / 2,
+          );
+          const dirX = Math.sign(ex - sx);     // 수평 진행 방향
+          const dirY = Math.sign(turnY - sy);   // 수직 진행 방향
+          // 1st turn: 수직 → 수평
+          path.lineTo(sx, turnY - r * dirY);
+          path.arcToTangent(sx, turnY, sx + r * dirX, turnY, r);
+          // 2nd turn: 수평 → 수직
+          path.lineTo(ex - r * dirX, turnY);
+          path.arcToTangent(ex, turnY, ex, turnY + r * Math.sign(ey - turnY), r);
+          path.lineTo(ex, ey);
+          angle = Math.atan2(ey - turnY, 0);
+        }
+      } else {
+        // Bezier 곡선 모드
+        const { cpx1, cpy1, cpx2, cpy2 } = computeControlPoints(endpoints);
+        path.moveTo(sx, sy);
+        path.cubicTo(cpx1, cpy1, cpx2, cpy2, ex, ey);
+        angle = Math.atan2(ey - cpy2, ex - cpx2);
+      }
       canvas.drawPath(path, strokePaint);
 
       // 화살표 그리기
-      const angle = Math.atan2(ey - cpy2, ex - cpx2);
       const arrowAngle = Math.PI * 0.8;
 
       const ax1 = ex + arrowSize * Math.cos(angle + arrowAngle);
@@ -320,6 +425,10 @@ export function renderWorkflowEdges(
       arrowPath.lineTo(ax2, ay2);
       arrowPath.close();
       canvas.drawPath(arrowPath, arrowPaint);
+
+      // 소스 도트 (시작점 표시) — 지름 6px, white fill + edge color stroke
+      canvas.drawCircle(sx, sy, srcR, srcFillPaint);
+      canvas.drawCircle(sx, sy, srcR, srcStrokePaint);
     }
   } finally {
     scope.dispose();
@@ -380,7 +489,36 @@ export function renderDataSourceEdges(
     const radius = DS_INDICATOR_RADIUS / zoom;
     const fontSize = DS_LABEL_FONT_SIZE / zoom;
     const lineStrokeWidth = 1 / zoom;
-    const dashInterval = [3 / zoom, 3 / zoom];
+
+    // 공유 Paint 객체 (데이터소스 루프 밖에서 1회 생성)
+    const circlePaint = scope.track(new ck.Paint());
+    circlePaint.setAntiAlias(true);
+    circlePaint.setStyle(ck.PaintStyle.Fill);
+
+    const labelPaint = scope.track(new ck.Paint());
+    labelPaint.setAntiAlias(true);
+    labelPaint.setStyle(ck.PaintStyle.Fill);
+
+    const linePaint = scope.track(new ck.Paint());
+    linePaint.setAntiAlias(true);
+    linePaint.setStyle(ck.PaintStyle.Stroke);
+    linePaint.setStrokeWidth(lineStrokeWidth);
+    const lineDash = scope.track(ck.PathEffect.MakeDash([3 / zoom, 3 / zoom]));
+    linePaint.setPathEffect(lineDash);
+
+    // 폰트 (1회 생성)
+    let font: InstanceType<typeof ck.Font> | null = null;
+    if (fontMgr) {
+      const typeface = fontMgr.matchFamilyStyle('Pretendard', {
+        weight: ck.FontWeight.Normal,
+        width: ck.FontWidth.Normal,
+        slant: ck.FontSlant.Upright,
+      });
+      if (typeface) {
+        font = scope.track(new ck.Font(typeface, fontSize));
+        font.setSubpixel(true);
+      }
+    }
 
     // 인덱스별로 인디케이터를 수직 오프셋하여 겹침 방지
     let dsIndex = 0;
@@ -399,41 +537,19 @@ export function renderDataSourceEdges(
       const indicatorY = pageFrame.y - (20 / zoom);
 
       // 원형 인디케이터 (filled)
-      const circlePaint = scope.track(new ck.Paint());
-      circlePaint.setAntiAlias(true);
-      circlePaint.setStyle(ck.PaintStyle.Fill);
       circlePaint.setColor(ck.Color4f(color[0], color[1], color[2], 1));
       canvas.drawCircle(indicatorX, indicatorY, radius, circlePaint);
 
       // 라벨 텍스트
-      if (fontMgr) {
-        const typeface = fontMgr.matchFamilyStyle('Pretendard', {
-          weight: ck.FontWeight.Normal,
-          width: ck.FontWidth.Normal,
-          slant: ck.FontSlant.Upright,
-        });
-        if (typeface) {
-          const labelPaint = scope.track(new ck.Paint());
-          labelPaint.setAntiAlias(true);
-          labelPaint.setStyle(ck.PaintStyle.Fill);
-          labelPaint.setColor(ck.Color4f(color[0], color[1], color[2], 1));
-
-          const font = scope.track(new ck.Font(typeface, fontSize));
-          font.setSubpixel(true);
-          const labelX = indicatorX + radius + (4 / zoom);
-          const labelY = indicatorY + fontSize * 0.35;
-          canvas.drawText(ds.name, labelX, labelY, labelPaint, font);
-        }
+      if (font) {
+        labelPaint.setColor(ck.Color4f(color[0], color[1], color[2], 1));
+        const labelX = indicatorX + radius + (4 / zoom);
+        const labelY = indicatorY + fontSize * 0.35;
+        canvas.drawText(ds.name, labelX, labelY, labelPaint, font);
       }
 
       // 바인딩된 요소들에서 인디케이터로 점선 연결
-      const linePaint = scope.track(new ck.Paint());
-      linePaint.setAntiAlias(true);
-      linePaint.setStyle(ck.PaintStyle.Stroke);
-      linePaint.setStrokeWidth(lineStrokeWidth);
       linePaint.setColor(ck.Color4f(color[0], color[1], color[2], 0.6));
-      const lineDash = scope.track(ck.PathEffect.MakeDash(dashInterval));
-      linePaint.setPathEffect(lineDash);
 
       for (const bound of ds.boundElements) {
         const elBounds = elementBoundsMap.get(bound.elementId);

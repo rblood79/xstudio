@@ -87,10 +87,12 @@ const WorkflowCanvasToggles: React.FC = () => {
   const showEvents = useStore((s) => s.showWorkflowEvents);
   const showDataSources = useStore((s) => s.showWorkflowDataSources);
   const showLayoutGroups = useStore((s) => s.showWorkflowLayoutGroups);
+  const straightEdges = useStore((s) => s.workflowStraightEdges);
   const setNavigation = useStore((s) => s.setShowWorkflowNavigation);
   const setEvents = useStore((s) => s.setShowWorkflowEvents);
   const setDataSources = useStore((s) => s.setShowWorkflowDataSources);
   const setLayoutGroups = useStore((s) => s.setShowWorkflowLayoutGroups);
+  const setStraightEdges = useStore((s) => s.setWorkflowStraightEdges);
 
   if (!showOverlay) return null;
 
@@ -107,6 +109,10 @@ const WorkflowCanvasToggles: React.FC = () => {
       </Checkbox>
       <Checkbox isSelected={showLayoutGroups} onChange={setLayoutGroups} size="sm" isTreeItemChild>
         <span className="workflow-toggle-label"><EdgeStyleIcon style="group" color="#a78bfa" />Layout Groups</span>
+      </Checkbox>
+      <div className="workflow-toggle-divider" />
+      <Checkbox isSelected={straightEdges} onChange={setStraightEdges} size="sm" isTreeItemChild>
+        <span className="workflow-toggle-label">Orthogonal</span>
       </Checkbox>
     </div>
   );

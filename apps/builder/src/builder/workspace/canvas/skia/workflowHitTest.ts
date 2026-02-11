@@ -8,7 +8,7 @@
 
 import type { WorkflowEdge } from './workflowEdges';
 import type { PageFrame, ElementBounds, EndpointPair, ControlPoints } from './workflowRenderer';
-import { computeEndpoints, computeControlPoints } from './workflowRenderer';
+import { computeEndpoints, computeControlPoints, computeOrthogonalTurnPoint } from './workflowRenderer';
 
 // ============================================
 // Types
@@ -140,6 +140,7 @@ export function buildEdgeGeometryCache(
   edges: WorkflowEdge[],
   pageFrameMap: Map<string, PageFrame>,
   elBoundsMap?: Map<string, ElementBounds>,
+  straightEdges?: boolean,
 ): CachedEdgeGeometry[] {
   const cache: CachedEdgeGeometry[] = [];
 
@@ -153,14 +154,42 @@ export function buildEdgeGeometryCache(
       : undefined;
 
     const endpoints: EndpointPair = computeEndpoints(sourceFrame, targetFrame, sourceElBounds);
-    const cp: ControlPoints = computeControlPoints(endpoints);
+    let cp: ControlPoints;
+    let samples: BezierSamplePoint[];
 
-    const samples = sampleBezierCurve(
-      endpoints.sx, endpoints.sy,
-      cp.cpx1, cp.cpy1,
-      cp.cpx2, cp.cpy2,
-      endpoints.ex, endpoints.ey,
-    );
+    if (straightEdges) {
+      // 직각(orthogonal): 타겟 직전 페이지와의 갭 중앙에서 꺾어 진입
+      const { sx, sy, ex, ey } = endpoints;
+      const pageDx = Math.abs(targetFrame.x + targetFrame.width / 2 - sourceFrame.x - sourceFrame.width / 2);
+      const pageDy = Math.abs(targetFrame.y + targetFrame.height / 2 - sourceFrame.y - sourceFrame.height / 2);
+      const isHorizontal = pageDx >= pageDy;
+      if (isHorizontal) {
+        const turnX = computeOrthogonalTurnPoint(targetFrame, sourceFrame, pageFrameMap, true, ex > sx);
+        samples = [
+          { x: sx, y: sy, t: 0 },
+          { x: turnX, y: sy, t: 0.33 },
+          { x: turnX, y: ey, t: 0.67 },
+          { x: ex, y: ey, t: 1 },
+        ];
+      } else {
+        const turnY = computeOrthogonalTurnPoint(targetFrame, sourceFrame, pageFrameMap, false, ey > sy);
+        samples = [
+          { x: sx, y: sy, t: 0 },
+          { x: sx, y: turnY, t: 0.33 },
+          { x: ex, y: turnY, t: 0.67 },
+          { x: ex, y: ey, t: 1 },
+        ];
+      }
+      cp = { cpx1: sx, cpy1: sy, cpx2: ex, cpy2: ey };
+    } else {
+      cp = computeControlPoints(endpoints);
+      samples = sampleBezierCurve(
+        endpoints.sx, endpoints.sy,
+        cp.cpx1, cp.cpy1,
+        cp.cpx2, cp.cpy2,
+        endpoints.ex, endpoints.ey,
+      );
+    }
 
     cache.push({
       edgeId: edge.id,

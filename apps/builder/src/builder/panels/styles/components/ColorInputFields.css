@@ -20,7 +20,7 @@
     flex-direction: row;
   }
 
-  /* Number field */
+  /* Number field — ScrubInput 래퍼 */
   .color-input-number-field {
     display: flex;
     flex-direction: column;
@@ -29,23 +29,8 @@
     gap: 2px;
   }
 
-  .color-input-number-field__input {
+  .color-input-number-field__scrub {
     width: 100%;
-    padding: 3px 4px;
-    font-size: var(--text-xs);
-    font-family: var(--font-mono);
-    background: var(--surface-container-high);
-    border: 1px solid var(--outline-variant);
-    border-radius: var(--radius-sm);
-    color: var(--on-surface);
-    text-align: center;
-    box-sizing: border-box;
-
-    &:focus {
-      outline: 2px solid var(--primary);
-      outline-offset: -2px;
-      border-color: var(--primary);
-    }
   }
 
   .color-input-number-field__label {

@@ -30,6 +30,7 @@
 #### Phase 1 (Fill 데이터 모델 + 다중 Fill UI)
 - [x] `fill.types.ts` — 6종 FillItem 타입 + BlendMode + ColorInputMode + BorderConfig
 - [x] `Element.fills` — Element에 `fills?: FillItem[]` 필드 추가
+- [x] `Element.border` — Element에 `border?: BorderConfig` 필드 추가 (UI 미연결, 타입만)
 - [x] `FillSection.tsx` — "Background" 섹션 (SectionHeader + "+" 버튼 + FillLayerList)
 - [x] `FillLayerRow.tsx` — `[toggle] [swatch] [hex/label] [opacity%] [delete]`
 - [x] `FillDetailPopover.tsx` — Fill 상세 편집 Popover
@@ -45,7 +46,7 @@
 - [x] BoxSprite 연동: fills → fillColor (Float32Array)
 - [x] inspectorActions DB 동기화: fills → style.backgroundColor
 - [x] Color fill 1개 제한 (CSS background-color는 단수)
-- [ ] `@dnd-kit/sortable` 드래그 순서 변경 (미구현, 수동 reorder만)
+- [x] `@dnd-kit/sortable` 드래그 순서 변경 (`FillSection.tsx` — `SortableFillRow` + `DndContext`)
 
 #### Phase 2 (그래디언트 에디터)
 - [x] `GradientEditor.tsx` — 메인 컨테이너 + GradientTypeToggle `[Linear] [Radial] [Angular]`
@@ -70,13 +71,13 @@
 - [x] FillDetailPopover에 BlendMode 셀렉터 추가 (하단)
 - [x] BoxSprite: fill-level blendMode → Skia 렌더러 전달 (element-level보다 우선)
 - [x] Popover 고정 너비 (244px) — Color ↔ Gradient 전환 시 위치 점프 방지
-- [ ] `ScrubInput.tsx` — requestPointerLock + movementX 기반 드래그 숫자 조정 (미구현)
+- [x] `ScrubInput.tsx` — requestPointerLock + movementX 기반 드래그 숫자 조정 (GradientControls, FillLayerRow, GradientStopList 적용)
 
-#### Phase 4 (미착수)
-- [ ] 이미지 Fill (파일 업로드 + stretch/fill/fit)
-- [ ] 메쉬 그래디언트 (N×M 그리드 + 베지어 핸들)
-- [ ] 변수 바인딩 UI (`$--변수명` 참조)
-- [ ] Image 탭 활성화 (현재 disabled)
+#### Phase 4
+- [x] 이미지 Fill (URL 입력 + 파일 드롭 + stretch/fill/fit)
+- [x] 메쉬 그래디언트 (N×M 그리드 + 포인트 색상 편집)
+- [x] 변수 바인딩 UI (`$--변수명` 참조, 색상 토큰 연동)
+- [x] Image 탭 활성화 (FillTypeSelector.tsx `disabled: false`)
 
 ### 구현된 파일 목록
 
@@ -98,8 +99,12 @@ apps/builder/src/builder/panels/styles/
 │   ├── GradientBar.tsx / .css       ← 미리보기 바 + 스톱 핸들
 │   ├── GradientStopList.tsx / .css  ← 스톱 목록
 │   ├── GradientControls.tsx / .css  ← rotation/center/radius 입력
+│   ├── ScrubInput.tsx / .css        ← pointerLock 기반 드래그 숫자 조정
 │   ├── EyeDropperButton.tsx / .css  ← 브라우저 EyeDropper API
-│   └── BlendModeSelector.tsx / .css ← 12종 BlendMode 드롭다운
+│   ├── BlendModeSelector.tsx / .css ← 12종 BlendMode 드롭다운
+│   ├── ImageFillEditor.tsx / .css   ← 이미지 Fill (URL + 파일 드롭 + 모드)
+│   ├── MeshGradientEditor.tsx / .css ← 메쉬 그래디언트 (N×M 그리드)
+│   └── VariableBindingButton.tsx / .css ← 색상 변수 바인딩 UI
 ├── hooks/
 │   └── useFillActions.ts            ← Fill CRUD 액션
 └── utils/
@@ -124,12 +129,25 @@ apps/builder/src/builder/stores/
 | UI명 "Fill" | UI명 "Background" | CSS 의미에 맞추어 사용자 친화적으로 변경 |
 | Gradient 셰이더 캐싱 (`shaderCache`) | 미구현 (매 프레임 재생성) | Phase 2에서 성능 이슈 미발생, 필요 시 추가 |
 | ScrubInput | 미구현 | 숫자 입력 필드의 blur/enter 커밋 패턴으로 충분 |
+| `BorderConfig.style: BorderStyle` | `style: BorderStyleValue` | CSS 기본 `BorderStyle` 인터페이스와의 충돌 방지 |
 
 ---
 
 ## 0.5 문서 검토 요약
 
-### 0.0 2차 검토 (2026-02-10)
+### 0.0 3차 검토 (2026-02-11)
+
+코드베이스 전수 대조를 통해 문서-코드 불일치 7건을 수정했다.
+
+1. **Section 9.2**: Jotai `selectAtom` 예시 → Zustand 직접 접근 패턴으로 교체 (실제 구현에 부합)
+2. **Section 9.3**: "Gradient 셰이더 캐싱" 미구현 상태 명시 (성능 이슈 미발생으로 보류)
+3. **Section 3.1.2**: `BorderStyle` → `BorderStyleValue` 타입명 반영 (CSS 기본 타입 충돌 방지)
+4. **Section 11.1**: `packages/shared/components/` → `packages/shared/src/components/` 경로 수정
+5. **Section 1.1**: `PixiColorSwatchPicker.tsx` 삭제 상태 반영
+6. **`unified.types.ts`**: `Element.border?: BorderConfig` 필드 추가 (설계문서 Phase 1 범위, UI 미연결)
+7. **설계 vs 구현 차이점 테이블**: `BorderStyleValue` 네이밍 차이 항목 추가
+
+### 0.1 2차 검토 (2026-02-10)
 
 코드베이스 대조 검증을 통해 다음을 보완했다.
 
@@ -189,7 +207,7 @@ apps/builder/src/builder/
 │   └── AppearanceSection.tsx      ← backgroundColor, borderColor (단색 string)
 └── workspace/canvas/ui/
     ├── PixiColorPicker.tsx        ← WebGL 캔버스 렌더링 (미리보기용)
-    └── PixiColorSwatchPicker.tsx  ← WebGL 팔레트
+    └── PixiColorSwatchPicker.tsx  ← WebGL 팔레트 (삭제됨)
 ```
 
 ### 1.2 기존 타입 (이미 정의됨, UI 미연결)
@@ -361,7 +379,7 @@ export type ColorInputMode = 'rgba' | 'hex' | 'css' | 'hsl' | 'hsb';
 export interface BorderConfig {
   fills: FillItem[];                    // 다중 보더 색상 (Phase 1: 단색 1개)
   width: BorderWidth;                   // CSS borderWidth (통합 또는 개별)
-  style: BorderStyle;                   // CSS borderStyle
+  style: BorderStyleValue;               // CSS borderStyle
   radius: BorderRadius;                 // CSS borderRadius (통합 또는 개별)
 }
 
@@ -370,8 +388,8 @@ export type BorderWidth =
   | string                              // 통합 (예: '1px')
   | { top: string; right: string; bottom: string; left: string };  // 개별
 
-/** 보더 스타일 */
-export type BorderStyle = 'none' | 'solid' | 'dashed' | 'dotted' | 'double' | 'groove' | 'ridge';
+/** 보더 스타일 — CSS 기본 `BorderStyle` 인터페이스와의 충돌 방지를 위해 `BorderStyleValue`로 명명 */
+export type BorderStyleValue = 'none' | 'solid' | 'dashed' | 'dotted' | 'double' | 'groove' | 'ridge';
 
 /** 보더 반경 (CSS borderRadius 매핑) */
 export type BorderRadius =
@@ -837,18 +855,19 @@ ColorArea 드래그 종료:
   → DB Persist
 ```
 
-### 9.2 Jotai selectAtom 활용
+### 9.2 Zustand 선택적 구독
 
 ```typescript
-// fills 배열에서 특정 인덱스만 구독
-const fillAtIndex = selectAtom(
-  fillsAtom,
-  (fills) => fills?.[index] ?? null,
-  (a, b) => JSON.stringify(a) === JSON.stringify(b)
-);
+// Zustand store에서 선택된 요소의 fills를 직접 읽기
+const fills = useStore.getState().elementsMap.get(selectedElementId)?.fills ?? [];
+
+// 특정 fill 인덱스만 필요한 경우
+const targetFill = fills[index] ?? null;
 ```
 
-### 9.3 Gradient 셰이더 캐싱
+### 9.3 Gradient 셰이더 캐싱 (미구현 — 성능 이슈 미발생으로 보류)
+
+향후 성능 이슈 발생 시 적용할 패턴:
 
 ```typescript
 // 동일한 stops/rotation이면 Shader 재생성 안 함
@@ -943,8 +962,8 @@ Phase 4 (이미지/메쉬/변수)            ⬜ 미착수
 | **`inspectorActions`** | `stores/inspectorActions.ts` | Phase 1~2에서 `updateSelectedFills()` / `updateSelectedFillsPreview()` 추가 |
 | **`historyManager`** | `stores/history.ts` | fills 변경 시 자동 History 기록 |
 | **React Aria ColorPicker** | `react-aria-components` | ColorPickerPanel에서 parseColor/ColorArea/ColorSlider 활용 |
-| **`ColorSwatch`** | `packages/shared/components/ColorSwatch.tsx` | FillLayerRow swatch 렌더링 |
-| **`Popover`** | `packages/shared/components/Popover.tsx` | FillDetailPopover 컨테이너 |
+| **`ColorSwatch`** | `packages/shared/src/components/ColorSwatch.tsx` | FillLayerRow swatch 렌더링 |
+| **`Popover`** | `packages/shared/src/components/Popover.tsx` | FillDetailPopover 컨테이너 |
 
 ### 11.2 신규 자산 (Phase 1~3에서 생성)
 
@@ -980,8 +999,8 @@ Phase 4 (이미지/메쉬/변수)            ⬜ 미착수
 - [x] EyeDropper 미지원 브라우저에서 버튼이 노출되지 않으며, 지원 브라우저에서 취소(ESC) 시 상태가 오염되지 않는다.
 - [x] BlendMode 선택 시 Skia 캔버스에 즉시 반영된다.
 - [x] Color ↔ Gradient 탭 전환 시 Popover 위치가 유지된다 (고정 너비 244px).
-- [ ] Fill 레이어 드래그 순서 변경 (미구현)
-- [ ] ScrubInput으로 숫자 값 드래그 조정 (미구현)
+- [x] Fill 레이어 드래그 순서 변경 (`FillSection.tsx` — `@dnd-kit/sortable`)
+- [x] ScrubInput으로 숫자 값 드래그 조정 (GradientControls, FillLayerRow, GradientStopList)
 
 ### 12.2 Feature Flag / 롤백 전략 (구현 완료)
 

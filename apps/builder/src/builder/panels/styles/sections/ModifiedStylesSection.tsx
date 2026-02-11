@@ -53,7 +53,7 @@ export function ModifiedStylesSection({
       ['padding', 'margin', 'width', 'height', 'top', 'left', 'right', 'bottom'].includes(p)
     ),
     appearance: modifiedProperties.filter((p) =>
-      ['backgroundColor', 'borderColor', 'borderWidth', 'borderRadius', 'borderStyle'].includes(p)
+      ['backgroundColor', 'backgroundImage', 'backgroundSize', 'borderColor', 'borderWidth', 'borderRadius', 'borderStyle'].includes(p)
     ),
     typography: modifiedProperties.filter((p) =>
       ['fontFamily', 'fontSize', 'fontWeight', 'fontStyle', 'lineHeight', 'letterSpacing', 'color', 'textAlign', 'textDecoration', 'textTransform', 'verticalAlign'].includes(p)
@@ -64,6 +64,20 @@ export function ModifiedStylesSection({
   const renderProperty = (property: string) => {
     const value = selectedElement.style?.[property as keyof React.CSSProperties];
     if (!value) return null;
+
+    // Background image (gradient) — read-only display
+    if (property === 'backgroundImage' || property === 'backgroundSize') {
+      const displayValue = String(value);
+      const truncated = displayValue.length > 30
+        ? displayValue.slice(0, 30) + '…'
+        : displayValue;
+      return (
+        <div key={property} className="modified-readonly-field">
+          <span className="modified-readonly-label">{formatLabel(property)}</span>
+          <span className="modified-readonly-value" title={displayValue}>{truncated}</span>
+        </div>
+      );
+    }
 
     // Color properties
     if (['backgroundColor', 'borderColor', 'color'].includes(property)) {

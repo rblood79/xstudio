@@ -26,6 +26,7 @@ import {
   cssToHex8,
   normalizeToHex8,
 } from '../utils/colorUtils';
+import { ScrubInput } from './ScrubInput';
 
 import './ColorInputFields.css';
 
@@ -34,7 +35,7 @@ interface ColorInputFieldsProps {
   onChange: (hex8: string) => void;
 }
 
-/** 단일 숫자 입력 필드 */
+/** 단일 숫자 입력 필드 — ScrubInput 래퍼 */
 function NumberField({
   label,
   value,
@@ -50,51 +51,21 @@ function NumberField({
   suffix?: string;
   onChange: (v: number) => void;
 }) {
-  const [localValue, setLocalValue] = useState(String(value));
-
-  const handleBlur = useCallback(() => {
-    const parsed = Number(localValue);
-    if (!Number.isNaN(parsed)) {
-      const clamped = Math.max(min, Math.min(max, Math.round(parsed)));
-      setLocalValue(String(clamped));
-      onChange(clamped);
-    } else {
-      setLocalValue(String(value));
-    }
-  }, [localValue, min, max, onChange, value]);
-
-  const handleKeyDown = useCallback(
-    (e: React.KeyboardEvent<HTMLInputElement>) => {
-      if (e.key === 'Enter') {
-        (e.target as HTMLInputElement).blur();
-      }
-    },
-    [],
-  );
-
-  // value prop 변경 시 동기화
-  const displayValue = localValue;
-
   return (
-    <label className="color-input-number-field">
-      <input
-        type="text"
-        inputMode="numeric"
-        className="color-input-number-field__input"
-        value={displayValue}
-        onChange={(e) => setLocalValue(e.target.value)}
-        onFocus={(e) => {
-          setLocalValue(String(value));
-          e.target.select();
-        }}
-        onBlur={handleBlur}
-        onKeyDown={handleKeyDown}
-        aria-label={label}
+    <div className="color-input-number-field">
+      <ScrubInput
+        value={value}
+        onCommit={onChange}
+        min={min}
+        max={max}
+        suffix={suffix}
+        label={label}
+        className="color-input-number-field__scrub"
       />
       <span className="color-input-number-field__label">
-        {label}{suffix ?? ''}
+        {label}
       </span>
-    </label>
+    </div>
   );
 }
 

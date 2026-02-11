@@ -1,11 +1,11 @@
 /**
  * AppearanceSection - Appearance 스타일 편집 섹션
  *
- * Background, Border 편집
+ * Background + Border 편집 (단일 섹션)
  *
  * 🚀 Phase 3: Jotai 기반 Fine-grained Reactivity
  * 🚀 Phase 23: 컨텐츠 분리로 접힌 섹션 훅 실행 방지
- * 🎨 Color Picker Phase 1: isFillV2Enabled() → FillSection 분기
+ * 🎨 Color Picker Phase 1: isFillV2Enabled() → FillSectionContent 분기
  */
 
 import { memo, lazy, Suspense } from 'react';
@@ -25,8 +25,8 @@ import { useAppearanceValuesJotai } from '../hooks/useAppearanceValuesJotai';
 import { useResetStyles } from '../hooks/useResetStyles';
 import { isFillV2Enabled } from '../../../../utils/featureFlags';
 
-const LazyFillSection = lazy(() =>
-  import('./FillSection').then((m) => ({ default: m.FillSection }))
+const LazyFillSectionContent = lazy(() =>
+  import('./FillSection').then((m) => ({ default: m.FillSectionInline }))
 );
 
 /**
@@ -45,7 +45,12 @@ const AppearanceSectionContent = memo(function AppearanceSectionContent() {
 
   return (
     <>
-      {!isFillV2Enabled() && (
+      {/* Background: FillV2 활성화 시 FillSectionInline, 아니면 기존 PropertyColor */}
+      {isFillV2Enabled() ? (
+        <Suspense fallback={null}>
+          <LazyFillSectionContent />
+        </Suspense>
+      ) : (
         <div className="style-background">
           <PropertyColor
             icon={Square}
@@ -67,6 +72,7 @@ const AppearanceSectionContent = memo(function AppearanceSectionContent() {
         </div>
       )}
 
+      {/* Border */}
       <div className="style-border">
         <PropertyColor
           icon={Square}
@@ -145,15 +151,8 @@ export const AppearanceSection = memo(function AppearanceSection() {
   };
 
   return (
-    <>
-      {isFillV2Enabled() && (
-        <Suspense fallback={null}>
-          <LazyFillSection />
-        </Suspense>
-      )}
-      <PropertySection id="appearance" title="Appearance" onReset={handleReset}>
-        <AppearanceSectionContent />
-      </PropertySection>
-    </>
+    <PropertySection id="appearance" title="Appearance" onReset={handleReset}>
+      <AppearanceSectionContent />
+    </PropertySection>
   );
 });

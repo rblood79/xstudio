@@ -422,13 +422,19 @@ B → D (navigation)     → 연한 파란색 (2차 연결)
 기존 좌하단 `WorkflowLegend` 패널을 제거하고, 상단 `WorkflowCanvasToggles` 체크박스에 엣지 스타일 아이콘을 통합:
 
 ```
-[✓ ━━━ Navigation] [✓ ┅┅┅ Events] [✓ ··· Data Sources] [✓ ┌┄┐ Layout Groups]
+[✓ ━━━ Navigation] [✓ ┅┅┅ Events] [✓ ··· Data Sources] [✓ ┌┄┐ Layout Groups] | [✓ Straight]
 ```
 
 - 각 체크박스 레이블 앞에 해당 엣지 스타일의 SVG 아이콘 표시
 - 토글 ON/OFF와 범례가 한 곳에서 해결
 - 아이콘+텍스트를 `<span className="workflow-toggle-label">` (inline-flex, align-items: center)로 감싸 세로 중앙 정렬
 - `.workflow-toggle-label svg { width: auto; height: auto }` — shared Checkbox의 `.sm svg` 크기 override 방지
+- **Straight 토글**: 구분자(`workflow-toggle-divider`) 뒤에 배치, 엣지를 Bezier 곡선 ↔ 직선으로 전환
+  - `workflowStraightEdges` store 상태 (기본값: false = Bezier)
+  - 렌더링: `path.cubicTo()` ↔ `path.lineTo()` 조건부 분기
+  - 히트 테스트: Bezier 20-point 샘플링 ↔ 직선 2-point (기존 `pointToBezierDistance` 재사용)
+  - 화살표 각도: 끝 제어점 기준 ↔ 직선 방향 기준
+  - 미니맵은 항상 직선 (`drawLine`) — 토글 영향 없음
 
 #### 4.3 페이지 타이틀 요소 수 뱃지
 
@@ -825,3 +831,143 @@ tests/
 - `apps/builder/src/builder/workspace/canvas/viewport/panToPage.ts` — 페이지 중앙 카메라 이동 유틸 (Phase 3, 트리/캔버스 양쪽 재사용)
 - ~~`apps/builder/src/builder/workspace/components/WorkflowLegend.tsx`~~ — 삭제됨 (레전드 아이콘을 `WorkflowCanvasToggles`에 통합)
 - ~~`apps/builder/src/builder/workspace/components/WorkflowPageSummary.tsx`~~ — 삭제됨 (요소 수 뱃지로 대체, `selectionRenderer.ts`의 `renderPageTitle`에 통합)
+
+---
+
+## 10. 업데이트 내역
+
+### 2025-02-11: Orthogonal Edge 고도화 (@xyflow/react 대비 개선)
+
+#### 비교 분석 결과
+
+@xyflow/react의 step/smoothstep 엣지와 비교하여 기능 동등성을 확보.
+
+| 기능 | @xyflow/react | XStudio | 상태 |
+|------|-------------|---------|------|
+| 꺾임점 위치 (stepPosition) | 고정 비율 0~1 (기본 0.5) | 동적 갭 중앙 (`computeOrthogonalTurnPoint`) | **우위** |
+| 라우팅 방향 자동 판별 | Handle position 수동 지정 | 페이지 프레임 센터 기반 자동 | 동등 |
+| 중간 노드 충돌 회피 | 미지원 (알려진 한계) | 미지원 | 동일 한계 |
+| 둥근 모서리 (borderRadius) | smoothstep 기본 5px | `arcToTangent` 8px | **동등** |
+| 실시간 업데이트 | 노드 이동 시 재계산 | 페이지 드래그 시 재계산 | 동등 |
+| 호버/클릭 인터랙션 | DOM 이벤트 | Bezier 샘플링 히트테스트 | 동등 |
+
+#### 변경 사항
+
+**1. SmoothStep 둥근 모서리** (`workflowRenderer.ts`)
+
+Orthogonal 엣지의 꺾임점에 `path.arcToTangent()`를 적용하여 부드러운 직각 전환.
+
+```
+변경 전 (step):       변경 후 (smoothstep):
+    │                     │
+    └────              ╰────
+```
+
+- 상수: `ORTHO_BORDER_RADIUS = 8` (screen px)
+- 반지름은 `Math.min(8/zoom, 수평거리/2, 수직거리/2)`로 clamp하여 좁은 간격에서도 안전
+- 수평/수직 양방향 모두 적용
+- 히트테스트 변경 불필요 (8px radius < hit threshold)
+
+**2. 소스 엔드포인트 도트** (`workflowRenderer.ts`)
+
+엣지 시작점에 지름 6px 원 마커 추가 (다른 workflow 라이브러리의 소스 표시 관례).
+
+- 스타일: white fill (#ffffff) + edge color stroke (1.2px)
+- `canvas.drawCircle(sx, sy, 3 / zoom, ...)` — fill/stroke 분리 렌더링
+- zoom-invariant (screen-space 6px 고정)
+
+**3. 엣지 stroke width 조정** (`workflowRenderer.ts`)
+
+시각적 경량화를 위해 기본 선 두께를 축소.
+
+| 상태 | 변경 전 | 변경 후 |
+|------|--------|--------|
+| 기본 | 2px | **1px** |
+| 마우스오버 | 4px | **2px** |
+| 직접 연결 | 3px | **2px** |
+| 간접 연결 | 2px | **1px** |
+| 비관련 엣지 | 2px | **1px** |
+
+#### 변경 파일
+
+| 파일 | 변경 내용 |
+|------|----------|
+| `workflowRenderer.ts` | `EDGE_STROKE_WIDTH` 2→1, hover/direct 4/3→2/2, `arcToTangent` 삽입, 소스 도트 추가 |
+| `workflowHitTest.ts` | 변경 없음 (직선 근사 유지) |
+
+**4. 미니맵 viewport 가시성 개선** (`workflowMinimap.ts`)
+
+기존 미니맵은 현재 보고 있는 영역(viewport)을 반투명 파란색 fill(opacity 0.15)로 표시하여
+줌 변경 시 viewport 크기 변화를 인지하기 어려웠음.
+
+- 변경 전: viewport 영역에 반투명 파란색 fill → 거의 보이지 않음
+- 변경 후: viewport **바깥 영역을 dim mask**(opacity 0.45)로 어둡게 처리
+- 4개의 직사각형(상/하/좌/우)으로 viewport 외부를 커버
+- viewport 테두리(blue, 1.5px)는 유지
+- 줌인 시 밝은 영역이 축소, 줌아웃 시 확대 → 현재 뷰 위치를 직관적으로 파악 가능
+
+| 파일 | 변경 내용 |
+|------|----------|
+| `workflowMinimap.ts` | viewport fill 제거 → dim mask 4-rect 방식으로 교체 |
+
+### 2025-02-11: 워크플로우 오버레이 FPS 최적화
+
+#### 문제
+
+워크플로우 오버레이 토글 ON 시 idle FPS가 ~50 → ~40으로 하락하고, 캔버스 이동 시 추가 하락.
+
+#### 원인 분석
+
+| 원인 | 영향도 | 설명 |
+|------|--------|------|
+| `buildEdgeGeometryCache()` 매 프레임 실행 | **높음** | Bezier 샘플링 O(E×20) + ElementBounds Map 재할당 |
+| Paint/Path GPU 객체 매 프레임 생성/해제 | **중간** | 엣지당 4~5개 Paint → ~150개+/프레임 |
+| pointermove 상시 RAF 스케줄 | **중간** | subpixel jitter → `hitTestEdges()` 매 프레임 호출 → idle 불가 |
+| `syncPixiVisibility` 매 프레임 alpha 재설정 | **낮음** | 이미 0인데 매 프레임 setter 호출 |
+
+#### 최적화 내용
+
+**1. `buildEdgeGeometryCache` 버전 기반 캐싱** (`SkiaOverlay.tsx`)
+
+`workflowEdgesVersion:pagePosVersion:straightEdges` 복합 키로 캐시 무효화 판단.
+키가 동일하면 재계산 스킵 → 매 프레임 O(E×20) → 변경 시에만 실행.
+
+```typescript
+const cacheKey = `${workflowEdgesVersionRef.current}:${pagePosVersion}:${workflowStraightEdges}`;
+if (cacheKey !== edgeGeometryCacheKeyRef.current) {
+  edgeGeometryCacheRef.current = buildEdgeGeometryCache(...);
+  edgeGeometryCacheKeyRef.current = cacheKey;
+}
+```
+
+**2. 공유 Paint 객체 루프 밖 생성** (`workflowRenderer.ts`)
+
+엣지 루프 안에서 매번 `new ck.Paint()`를 호출하던 것을 루프 밖으로 이동.
+속성(color, strokeWidth, pathEffect)만 업데이트하여 재사용.
+
+| 렌더러 | 변경 전 (Paint/프레임) | 변경 후 |
+|--------|----------------------|---------|
+| `renderWorkflowEdges` | 4E+1E (~100개, E=20) | **5개** (고정) |
+| `renderDataSourceEdges` | 3D+D (~16개, D=4) | **4개** (고정) |
+
+**3. pointermove 좌표 변화 체크** (`useWorkflowInteraction.ts`)
+
+`lastMouseRef`로 이전 좌표 저장, `e.clientX === last.x && e.clientY === last.y`이면 즉시 return.
+OS 수준 subpixel jitter에 의한 불필요한 RAF 스케줄 차단 → idle 프레임 분류 복원.
+
+**4. `syncPixiVisibility` 중복 설정 방지** (`SkiaOverlay.tsx`)
+
+`cameraContainer.alpha !== 0` 가드 추가 → 이미 0이면 매 프레임 setter 스킵.
+
+#### 변경 파일
+
+| 파일 | 변경 내용 |
+|------|----------|
+| `SkiaOverlay.tsx` | `edgeGeometryCacheKeyRef` 추가, 버전 기반 캐싱 로직, `syncPixiVisibility` alpha 가드 |
+| `workflowRenderer.ts` | `renderWorkflowEdges` / `renderDataSourceEdges` Paint 공유 패턴 적용 |
+| `useWorkflowInteraction.ts` | `lastMouseRef` 추가, pointermove 좌표 변화 체크 |
+
+### 2025-02-11: 엣지 기본 모드 변경
+
+- `workflowStraightEdges` 기본값을 `false`(Bezier 곡선) → `true`(직각 orthogonal)로 변경
+- 파일: `canvasSettings.ts`

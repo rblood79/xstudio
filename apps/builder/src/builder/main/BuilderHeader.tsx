@@ -21,7 +21,6 @@ import { iconProps } from "../../utils/ui/uiConstants";
 import { usePanelLayout } from "../layout";
 import { ZoomControls } from "../workspace/ZoomControls";
 import { ShortcutTooltip } from "../components/overlay";
-
 export interface Breakpoint {
   id: string;
   label: string;

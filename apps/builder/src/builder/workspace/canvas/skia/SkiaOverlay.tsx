@@ -147,6 +147,11 @@ function updateTextChildren(
 let _cachedTree: SkiaNodeData | null = null;
 let _cachedVersion = -1;
 let _cachedPagePosVersion = -1;
+// pagePositionsVersion 변경 후 PixiJS worldTransform이 실제 갱신될 때까지
+// 캐시를 우회하여 stale 좌표가 캐시에 고정되는 것을 방지한다.
+// React 리렌더 → PixiJS 컨테이너 props 갱신 → Application.render() worldTransform 갱신
+// 까지 1~2프레임이 필요하므로 3프레임간 캐시를 스킵한다.
+let _pagePosStaleFrames = 0;
 
 function buildSkiaTreeHierarchical(
   cameraContainer: Container,
@@ -453,6 +458,7 @@ export function SkiaOverlay({
   // Phase 3: 인터랙션 refs
   const workflowHoverStateRef = useRef<WorkflowHoverState>({ hoveredEdgeId: null });
   const edgeGeometryCacheRef = useRef<CachedEdgeGeometry[]>([]);
+  const edgeGeometryCacheKeyRef = useRef('');
   const pageFrameMapRef = useRef<Map<string, PageFrame>>(new Map());
   const lastHoveredEdgeRef = useRef<string | null>(null);
   const lastFocusedPageRef = useRef<string | null>(null);
@@ -598,7 +604,10 @@ export function SkiaOverlay({
         // O(1): 전체 하위 순회 대신 Camera 루트만 투명 처리
         // PixiJS 이벤트(hit test)는 visible/renderable/measurable에 의해 prune되며,
         // alpha는 prune 조건이 아니므로 상호작용은 유지된다. (pixi.js v8 EventBoundary._interactivePrune)
-        cameraContainer.alpha = 0;
+        // 이미 0이면 스킵 (매 프레임 중복 설정 방지)
+        if (cameraContainer.alpha !== 0) {
+          cameraContainer.alpha = 0;
+        }
       }
     };
 
@@ -719,8 +728,8 @@ export function SkiaOverlay({
       }
       // Phase 2: 서브 토글 변경 감지
       if (showWorkflowOverlay) {
-        const { showWorkflowNavigation: sn, showWorkflowEvents: se, showWorkflowDataSources: sd, showWorkflowLayoutGroups: sl } = useStore.getState();
-        const subKey = `${sn}-${se}-${sd}-${sl}`;
+        const { showWorkflowNavigation: sn, showWorkflowEvents: se, showWorkflowDataSources: sd, showWorkflowLayoutGroups: sl, workflowStraightEdges: wse } = useStore.getState();
+        const subKey = `${sn}-${se}-${sd}-${sl}-${wse}`;
         if (subKey !== lastWfSubTogglesRef.current) {
           lastWfSubTogglesRef.current = subKey;
           overlayVersionRef.current++;
@@ -768,6 +777,17 @@ export function SkiaOverlay({
       // 🚀 페이지 위치 변경 감지 — content 무효화 (registryVersion 합산 해킹 제거)
       if (pagePosVersion !== lastPagePosVersionRef.current) {
         lastPagePosVersionRef.current = pagePosVersion;
+        renderer.invalidateContent();
+        // pagePositionsVersion 변경 직후에는 React 리렌더가 아직 PixiJS 컨테이너의
+        // x/y props를 갱신하지 않아 worldTransform이 stale하다.
+        // 3프레임간 캐시를 강제 무효화하여 올바른 좌표로 트리가 재빌드되도록 한다.
+        _pagePosStaleFrames = 3;
+      }
+
+      // pagePositionsVersion 변경 후 과도기 프레임: 캐시 무효화하여 stale 트리 방지
+      if (_pagePosStaleFrames > 0) {
+        _cachedTree = null;
+        _pagePosStaleFrames--;
         renderer.invalidateContent();
       }
 
@@ -818,15 +838,22 @@ export function SkiaOverlay({
         pageFrameMapRef.current = pfMap;
 
         if (workflowEdgesRef.current.length > 0) {
-          const elMap = new Map<string, ElementBounds>();
-          for (const [id, bbox] of treeBoundsMap) {
-            elMap.set(id, { x: bbox.x, y: bbox.y, width: bbox.width, height: bbox.height });
+          const { workflowStraightEdges } = useStore.getState();
+          // 버전 기반 캐싱: edges/pagePos/straightEdges 변경 시에만 재계산
+          const cacheKey = `${workflowEdgesVersionRef.current}:${pagePosVersion}:${workflowStraightEdges}`;
+          if (cacheKey !== edgeGeometryCacheKeyRef.current) {
+            const elMap = new Map<string, ElementBounds>();
+            for (const [id, bbox] of treeBoundsMap) {
+              elMap.set(id, { x: bbox.x, y: bbox.y, width: bbox.width, height: bbox.height });
+            }
+            edgeGeometryCacheRef.current = buildEdgeGeometryCache(
+              workflowEdgesRef.current, pfMap, elMap, workflowStraightEdges,
+            );
+            edgeGeometryCacheKeyRef.current = cacheKey;
           }
-          edgeGeometryCacheRef.current = buildEdgeGeometryCache(
-            workflowEdgesRef.current, pfMap, elMap,
-          );
         } else {
           edgeGeometryCacheRef.current = [];
+          edgeGeometryCacheKeyRef.current = '';
         }
       }
 
@@ -939,7 +966,8 @@ export function SkiaOverlay({
                 return false;
               });
               if (filteredEdges.length > 0) {
-                renderWorkflowEdges(ck, canvas, filteredEdges, pageFrameMap, cameraZoom, fontMgr, elBoundsMap, highlightState);
+                const straightEdges = useStore.getState().workflowStraightEdges;
+                renderWorkflowEdges(ck, canvas, filteredEdges, pageFrameMap, cameraZoom, fontMgr, elBoundsMap, highlightState, straightEdges);
               }
             }
 

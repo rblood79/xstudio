@@ -3,6 +3,9 @@
  *
  * Modal 모드 패널을 렌더링하는 컨테이너 컴포넌트
  * React Aria Components 기반으로 포커스 트랩, ESC 닫기 지원
+ *
+ * @updated 2026-02-11 - CSS 변수 불일치 수정: --spectrum-gray-* → M3 시맨틱 변수,
+ *   builder-system.css에 .modal-panel 선택자 추가
  */
 
 import { memo, useCallback, useRef, useEffect } from "react";

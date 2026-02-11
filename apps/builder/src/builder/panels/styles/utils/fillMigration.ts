@@ -13,6 +13,7 @@ import type {
   LinearGradientFillItem,
   RadialGradientFillItem,
   AngularGradientFillItem,
+  ImageFillItem,
 } from '../../../../types/builder/fill.types';
 import { FillType, createDefaultColorFill } from '../../../../types/builder/fill.types';
 import { normalizeToHex8, gradientStopsToCss } from './colorUtils';
@@ -90,6 +91,7 @@ export function fillsToBackgroundColor(fills: FillItem[]): string | undefined {
 export function fillsToCssBackground(fills: FillItem[]): {
   backgroundColor?: string;
   backgroundImage?: string;
+  backgroundSize?: string;
 } {
   if (!fills || fills.length === 0) return {};
 
@@ -120,6 +122,19 @@ export function fillsToCssBackground(fills: FillItem[]): {
         const cx = Math.round(ag.center.x * 100);
         const cy = Math.round(ag.center.y * 100);
         return { backgroundImage: `conic-gradient(from ${ag.rotation}deg at ${cx}% ${cy}%, ${stops})` };
+      }
+      case FillType.Image: {
+        const img = fill as ImageFillItem;
+        if (!img.url) continue;
+        const sizeMap: Record<string, string> = {
+          stretch: '100% 100%',
+          fill: 'cover',
+          fit: 'contain',
+        };
+        return {
+          backgroundImage: `url(${img.url})`,
+          backgroundSize: sizeMap[img.mode] ?? 'cover',
+        };
       }
       default:
         continue;

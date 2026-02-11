@@ -94,8 +94,18 @@ export function useFillActions(): FillActions {
     const newFills = fills.map((f) => {
       if (f.id !== fillId) return f;
 
+      const isCurrentColor = f.type === FillType.Color;
+      const isCurrentGradient =
+        f.type === FillType.LinearGradient ||
+        f.type === FillType.RadialGradient ||
+        f.type === FillType.AngularGradient;
+      const isNewGradient =
+        newType === FillType.LinearGradient ||
+        newType === FillType.RadialGradient ||
+        newType === FillType.AngularGradient;
+
       // Color → Gradient
-      if (f.type === FillType.Color && newType !== FillType.Color) {
+      if (isCurrentColor && isNewGradient) {
         const colorFill = f as ColorFillItem;
         const base = createDefaultFill(newType);
         return {
@@ -111,7 +121,7 @@ export function useFillActions(): FillActions {
       }
 
       // Gradient → Color
-      if (f.type !== FillType.Color && newType === FillType.Color) {
+      if (isCurrentGradient && newType === FillType.Color) {
         const gradFill = f as { stops?: GradientStop[] };
         const color = gradFill.stops?.[0]?.color ?? '#000000FF';
         return {
@@ -123,14 +133,25 @@ export function useFillActions(): FillActions {
       }
 
       // Gradient → Gradient (타입만 변경, stops 유지)
+      if (isCurrentGradient && isNewGradient) {
+        const base = createDefaultFill(newType);
+        const currentStops = (f as { stops?: GradientStop[] }).stops;
+        return {
+          ...base,
+          id: f.id,
+          enabled: f.enabled,
+          opacity: f.opacity,
+          ...(currentStops ? { stops: currentStops } : {}),
+        } as FillItem;
+      }
+
+      // Any → Image / Image → Any (기본값으로 전환)
       const base = createDefaultFill(newType);
-      const currentStops = (f as { stops?: GradientStop[] }).stops;
       return {
         ...base,
         id: f.id,
         enabled: f.enabled,
         opacity: f.opacity,
-        ...(currentStops ? { stops: currentStops } : {}),
       } as FillItem;
     });
     useStore.getState().updateSelectedFills(newFills);

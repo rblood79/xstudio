@@ -5,6 +5,7 @@ import { create } from "zustand";
 import { StateCreator } from "zustand";
 import { Element, ComponentElementProps, ComputedLayout } from "../../types/core/store.types";
 import { Page } from "../../types/builder/unified.types";
+import type { PageLayoutDirection } from "./canvasSettings";
 import { historyManager } from "./history";
 import { reorderElements } from "./utils/elementReorder";
 import {
@@ -124,7 +125,7 @@ export interface ElementsState {
   batchUpdateElements: (updates: BatchElementUpdate[]) => Promise<void>;
 
   // 🆕 Multi-page: 페이지 위치 관리
-  initializePagePositions: (pages: Page[], pageWidth: number, gap: number) => void;
+  initializePagePositions: (pages: Page[], pageWidth: number, pageHeight: number, gap: number, direction?: PageLayoutDirection) => void;
   updatePagePosition: (pageId: string, x: number, y: number) => void;
 
   // 🚀 WebGL computed layout 동기화
@@ -643,14 +644,34 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
   },
 
   // 🆕 Multi-page: 페이지 위치 초기화 (order_num 정렬 → 수평 스택)
-  initializePagePositions: (pages: Page[], pageWidth: number, gap: number) => {
+  initializePagePositions: (pages: Page[], pageWidth: number, pageHeight: number, gap: number, direction: PageLayoutDirection = "horizontal") => {
     const sorted = [...pages].sort((a, b) => (a.order_num ?? 0) - (b.order_num ?? 0));
     const positions: Record<string, { x: number; y: number }> = {};
-    let currentX = 0;
-    for (const page of sorted) {
-      positions[page.id] = { x: currentX, y: 0 };
-      currentX += pageWidth + gap;
+
+    if (direction === "vertical") {
+      let currentY = 0;
+      for (const page of sorted) {
+        positions[page.id] = { x: 0, y: currentY };
+        currentY += pageHeight + gap;
+      }
+    } else if (direction === "zigzag") {
+      for (let i = 0; i < sorted.length; i++) {
+        const col = i % 2;
+        const row = Math.floor(i / 2);
+        positions[sorted[i].id] = {
+          x: col * (pageWidth + gap),
+          y: row * (pageHeight + gap),
+        };
+      }
+    } else {
+      // horizontal (기본)
+      let currentX = 0;
+      for (const page of sorted) {
+        positions[page.id] = { x: currentX, y: 0 };
+        currentX += pageWidth + gap;
+      }
     }
+
     set((state) => ({
       pagePositions: positions,
       pagePositionsVersion: state.pagePositionsVersion + 1,

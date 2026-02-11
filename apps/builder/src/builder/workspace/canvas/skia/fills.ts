@@ -43,6 +43,15 @@ export function applyFill(
         fill.positions,
         ck.TileMode.Clamp,
       );
+      if (!shader) {
+        if (process.env.NODE_ENV === 'development') {
+          console.warn('[applyFill] MakeLinearGradient returned null', {
+            start: fill.start, end: fill.end,
+            colorsLen: fill.colors.length, positionsLen: fill.positions.length,
+          });
+        }
+        return null;
+      }
       paint.setShader(shader);
       return shader;
     }
@@ -57,6 +66,15 @@ export function applyFill(
         fill.positions,
         ck.TileMode.Clamp,
       );
+      if (!shader) {
+        if (process.env.NODE_ENV === 'development') {
+          console.warn('[applyFill] MakeTwoPointConicalGradient returned null', {
+            center: fill.center, startRadius: fill.startRadius, endRadius: fill.endRadius,
+            colorsLen: fill.colors.length, positionsLen: fill.positions.length,
+          });
+        }
+        return null;
+      }
       paint.setShader(shader);
       return shader;
     }
@@ -69,6 +87,15 @@ export function applyFill(
         fill.positions,
         ck.TileMode.Clamp,
       );
+      if (!shader) {
+        if (process.env.NODE_ENV === 'development') {
+          console.warn('[applyFill] MakeSweepGradient returned null', {
+            cx: fill.cx, cy: fill.cy,
+            colorsLen: fill.colors.length, positionsLen: fill.positions.length,
+          });
+        }
+        return null;
+      }
       paint.setShader(shader);
       return shader;
     }

@@ -11,7 +11,7 @@
 
 import { atom } from 'jotai';
 import { selectAtom } from 'jotai/utils';
-import type { FillItem, ColorInputMode } from '../../../../types/builder/fill.types';
+import type { FillItem, ColorFillItem, GradientStop, ColorInputMode } from '../../../../types/builder/fill.types';
 import { selectedElementAtom } from './styleAtoms';
 
 // ============================================
@@ -30,13 +30,26 @@ export const fillsAtom = selectAtom(
     if (a.length !== b.length) return false;
     return a.every((fill, i) => {
       const other = b[i];
-      return fill.id === other.id
-        && fill.enabled === other.enabled
-        && fill.opacity === other.opacity
-        && fill.type === other.type
-        && (fill.type === 'color' && other.type === 'color'
-          ? fill.color === other.color
-          : fill === other);
+      if (fill.id !== other.id
+        || fill.enabled !== other.enabled
+        || fill.opacity !== other.opacity
+        || fill.type !== other.type) {
+        return false;
+      }
+      // Color: color 값 비교
+      if (fill.type === 'color' && other.type === 'color') {
+        return (fill as ColorFillItem).color === (other as ColorFillItem).color;
+      }
+      // Gradient: stops 배열 얕은 비교
+      const fillStops = (fill as { stops?: GradientStop[] }).stops;
+      const otherStops = (other as { stops?: GradientStop[] }).stops;
+      if (fillStops && otherStops) {
+        if (fillStops.length !== otherStops.length) return false;
+        return fillStops.every((s, j) =>
+          s.color === otherStops[j].color && s.position === otherStops[j].position
+        );
+      }
+      return fill === other;
     });
   }
 );

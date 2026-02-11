@@ -8,7 +8,7 @@ XStudio의 빌더 캔버스에서 모든 페이지를 Pencil의 Frame처럼 동�
 
 - 렌더 범위: 프리뷰(iframe)는 현재 페이지 1개만 렌더링 유지.
 - 캔버스 렌더: 모든 페이지를 동시에 표시.
-- 페이지 배치: 가로 스택 기본 배치 (간격 80px).
+- 페이지 배치: 가로 스택 기본 배치 (간격 80px). Settings 패널에서 가로/세로/지그재그 방향 전환 가능.
 - 위치 조절: 페이지 타이틀 영역 드래그로 위치 재배치 가능.
 - 로딩 정책: 초기 로드 시 모든 페이지/요소를 로딩(페이지 단위 lazy load 없음).
 
@@ -45,10 +45,13 @@ initializePagePositions(pages, pageWidth, gap)            // 전체 위치 재�
 updatePagePosition(pageId, x, y)                          // 단일 페이지 위치 업데이트
 ```
 
-- `initializePagePositions`: `order_num` 정렬 후 `currentX += pageWidth + gap` 방식으로 수평 배치.
+- `initializePagePositions`: `order_num` 정렬 후 `direction` 파라미터에 따라 배치 방식 결정:
+  - `horizontal` (기본): `currentX += pageWidth + gap` 수평 배치.
+  - `vertical`: `currentY += pageHeight + gap` 수직 배치.
+  - `zigzag`: 2열 그리드 배치 (`col = i % 2`, `row = Math.floor(i / 2)`).
 - `usePageManager.initializeProject()` 완료 후 `initializePagePositions()` 호출.
 - `addPage()` 시 기존 페이지들의 최대 X + 현재 `canvasSize.width` + gap 위치에 새 페이지 추가.
-- 상단 바에서 breakpoint(사이즈) 변경 시 `BuilderCanvas`의 `useEffect`가 `pageWidth` 변경을 감지하여 `initializePagePositions()` 재호출 → 모든 페이지 위치를 새 사이즈 기준으로 재배치.
+- 상단 바에서 breakpoint(사이즈) 변경 또는 Settings 패널에서 배치 방향 변경 시 `BuilderCanvas`의 `useEffect`가 `pageWidth`/`pageHeight`/`pageLayoutDirection` 변경을 감지하여 `initializePagePositions()` 재호출 → 모든 페이지 위치를 새 사이즈/방향 기준으로 재배치.
 - 페이지 너비는 `useCanvasSyncStore.getState().canvasSize.width`에서 동적으로 읽음 (하드코딩 없음).
 
 ### Phase 2: 다중 페이지 PixiJS 씬 그래프
@@ -110,6 +113,10 @@ if (_cachedTree && registryVersion === _cachedVersion
 - `registryVersion + pagePosVersion` 합산 방식 **폐기** (버전 충돌 위험).
 - `pagePosVersionRef`로 React lifecycle에서 갱신, 렌더 루프에서 변경 감지 시 `renderer.invalidateContent()` 호출.
 - 매 프레임 `useStore.getState()` 호출 제거 → ref 기반.
+
+#### 트리 캐시 Stale 방지 (`_pagePosStaleFrames`)
+- `pagePositionsVersion` 변경 직후 React 리렌더가 PixiJS 컨테이너 x/y를 아직 갱신하지 않아 `worldTransform`이 stale한 상태에서 트리가 빌드 & 캐시되는 race condition 방지.
+- 변경 감지 시 `_pagePosStaleFrames = 3` 설정 → 3프레임간 `_cachedTree`를 강제 null 처리하여 PixiJS worldTransform 갱신 후 올바른 좌표로 트리 재빌드.
 
 #### 페이지 전환 시 레지스트리 초기화 제거
 - 모든 페이지가 동시 마운트되므로 `clearSkiaRegistry()` / `clearImageCache()` / `clearTextParagraphCache()` 호출 제거.
@@ -204,17 +211,19 @@ export function usePageDrag(zoom: number): UsePageDragReturn {
 
 | 파일 | Phase | 변경 내용 |
 |------|-------|-----------|
-| `stores/elements.ts` | 1 | `pagePositions`, `pagePositionsVersion`, `initializePagePositions`, `updatePagePosition` 상태/액션 추가 |
+| `stores/canvasSettings.ts` | — | `PageLayoutDirection` 타입 및 `pageLayoutDirection` / `setPageLayoutDirection` 상태 추가 |
+| `stores/elements.ts` | 1 | `pagePositions`, `pagePositionsVersion`, `initializePagePositions`, `updatePagePosition` 상태/액션 추가. `initializePagePositions`에 `direction` 파라미터 추가 |
 | `stores/utils/elementRemoval.ts` | — | Body 요소 삭제 가드 추가 |
 | `hooks/usePageManager.ts` | 1 | 초기화 시 `initializePagePositions` 호출, `addPage` 시 새 페이지 위치 계산 (동적 canvasSize) |
 | `hooks/useGlobalKeyboardShortcuts.ts` | — | `handleCanvasDelete`에서 body 요소 필터링 |
 | `canvas/BuilderCanvas.tsx` | 2,4,5,6 | 핵심 구조 변경: `PageContainer` memo, `allPageData` pageIndex 기반, viewport culling, 페이지 전환, 선택 해제 |
 | `canvas/layers/BodyLayer.tsx` | 2 | `pageId` prop 사용 (기존 인터페이스) |
-| `canvas/skia/SkiaOverlay.tsx` | 3 | 트리 캐시 `pagePosVersion` 추가, 레지스트리 초기화 제거, content invalidation ref 기반 |
+| `canvas/skia/SkiaOverlay.tsx` | 3 | 트리 캐시 `pagePosVersion` 추가, `_pagePosStaleFrames` stale 방지, 레지스트리 초기화 제거, content invalidation ref 기반 |
 | `canvas/skia/selectionRenderer.ts` | 3 | `renderPageTitle` isActive 파라미터 추가 (selection 색상) |
 | `canvas/selection/SelectionLayer.tsx` | 5 | `pagePositions`, `pagePositionsVersion` prop 연결 |
 | `canvas/hooks/useViewportCulling.ts` | 6 | 페이지 단위 컬링 지원 |
 | `canvas/hooks/usePageDrag.ts` | 7 | **신규** — 페이지 드래그 훅 (RAF 스로틀, DOM 좌표계) |
+| `panels/settings/SettingsPanel.tsx` | — | Page Layout 설정 추가 (PropertySelect: Horizontal/Vertical/Zigzag) |
 
 ---
 
@@ -230,3 +239,4 @@ export function usePageDrag(zoom: number): UsePageDragReturn {
 - 페이지 타이틀 영역(`PAGE_TITLE_HIT_HEIGHT = 24px`)은 드래그 핸들로 동작한다.
 - 타이틀은 페이지 상단에 노출하며, 활성 페이지는 selection 색상(`#3B82F6`), 비활성은 slate-500.
 - 페이지 간 간격: `PAGE_STACK_GAP = 80px`.
+- 페이지 배치 방향: Settings 패널 → Grid & Guides → Page Layout에서 Horizontal/Vertical/Zigzag 선택 가능 (기본: Horizontal).

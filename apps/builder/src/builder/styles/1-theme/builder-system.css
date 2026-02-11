@@ -1,7 +1,10 @@
 /* Builder System Tokens - XStudio Builder UI Only
- * These tokens are ONLY for Builder system UI (header, sidebar, inspector)
+ * These tokens are ONLY for Builder system UI (header, sidebar, inspector, modal-panel)
  * NOT affected by user theme changes in Preview
  * Independent dark mode support via [data-builder-theme="dark"]
+ *
+ * @updated 2026-02-11 - .modal-panel 선택자 추가 (React Aria className이 기본 클래스를 대체하여
+ *   .react-aria-Modal 매칭 실패 → 모달 내부 CSS 변수 불일치 수정)
  */
 
 @layer builder-system {
@@ -43,7 +46,8 @@
   .bg,
   .canvas,
   body:not([data-preview="true"]) .react-aria-Popover,
-  body:not([data-preview="true"]) .react-aria-Modal {
+  body:not([data-preview="true"]) .react-aria-Modal,
+  .modal-panel {
     /* ===== Core Semantic Colors (Light Mode) ===== */
     --background-color: var(--gray-0);
     --text-color: var(--gray-750);
@@ -145,7 +149,8 @@
   [data-builder-theme="dark"] .bg,
   [data-builder-theme="dark"] .canvas,
   [data-builder-theme="dark"] body:not([data-preview="true"]) .react-aria-Popover,
-  [data-builder-theme="dark"] body:not([data-preview="true"]) .react-aria-Modal {
+  [data-builder-theme="dark"] body:not([data-preview="true"]) .react-aria-Modal,
+  [data-builder-theme="dark"] .modal-panel {
     /* ===== Core Semantic Colors (Dark Mode) ===== */
     --background-color: var(--gray-900);
     --text-color: var(--gray-100);

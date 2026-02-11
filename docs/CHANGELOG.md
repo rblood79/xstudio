@@ -7,6 +7,47 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added - 페이지 배치 방향 설정 (2026-02-11)
+
+#### 개요
+캔버스 내 멀티페이지 배치 방향을 가로/세로/지그재그로 전환할 수 있는 설정을 추가. Settings 패널의 Grid & Guides 섹션에서 제어.
+
+#### 변경 내용
+- **Page Layout 설정**: Settings 패널 → Grid & Guides에 PropertySelect 추가 (Horizontal / Vertical / Zigzag)
+- **배치 로직**: `initializePagePositions`에 `direction` 파라미터 추가, 방향별 좌표 계산 구현
+- **Skia 캐시 stale 방지**: `_pagePosStaleFrames` 카운터로 방향 전환 시 PixiJS worldTransform 갱신 전 캐시 고정 방지
+
+#### 수정 파일
+| 파일 | 변경 |
+|------|------|
+| `stores/canvasSettings.ts` | `PageLayoutDirection` 타입 및 `pageLayoutDirection` / `setPageLayoutDirection` 상태 추가 |
+| `stores/elements.ts` | `initializePagePositions`에 `direction` 파라미터 추가, vertical/zigzag 배치 로직 구현 |
+| `panels/settings/SettingsPanel.tsx` | Page Layout PropertySelect 추가 (Grid & Guides 섹션) |
+| `canvas/BuilderCanvas.tsx` | `pageLayoutDirection` 변경 감지 및 페이지 위치 재계산 |
+| `hooks/usePageManager.ts` | 초기화 시 현재 방향 반영 |
+| `canvas/skia/SkiaOverlay.tsx` | `_pagePosStaleFrames` 카운터로 트리 캐시 race condition 방지 |
+| `main/BuilderHeader.tsx` | 페이지 배치 ToggleButtonGroup 제거 (Settings 패널로 이동) |
+| `main/BuilderCore.tsx` | 불필요한 pageLayoutDirection props 전달 제거 |
+
+---
+
+### Fixed - 모달 패널 CSS 변수 불일치 수정 (2026-02-11)
+
+#### 개요
+Settings 모달 패널의 컴포넌트 색상이 좌우 패널과 다르게 표시되던 문제를 수정.
+
+#### 근본 원인
+1. React Aria `<Modal className="modal-panel-wrapper">`가 기본 `react-aria-Modal` 클래스를 대체하여, `builder-system.css`의 `.react-aria-Modal` 선택자가 매칭되지 않음 → 모달 내부가 `:root`/`body` 레벨의 테마 변수(블루 톤)를 상속
+2. `ModalPanelContainer.css`에서 프로젝트에 정의되지 않은 `--spectrum-gray-*` 변수 사용
+
+#### 수정 파일
+| 파일 | 변경 |
+|------|------|
+| `styles/1-theme/builder-system.css` | Light/Dark 모드 CSS 변수 선택자에 `.modal-panel` 추가 |
+| `layout/ModalPanelContainer.css` | 미정의 `--spectrum-gray-*` 7개소를 M3 시맨틱 변수로 교체 |
+
+---
+
 ### Changed - Workflow 미니맵 개선 (2026-02-10)
 
 #### 개요
