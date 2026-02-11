@@ -16,7 +16,7 @@ import type { FillItem, ColorFillItem, GradientStop } from '../../../../types/bu
 import { FillType, createDefaultColorFill, createDefaultFill } from '../../../../types/builder/fill.types';
 
 export interface FillActions {
-  addFill: (type?: FillType) => void;
+  addFill: (type?: FillType, initialColor?: string) => void;
   removeFill: (fillId: string) => void;
   reorderFill: (fromIndex: number, toIndex: number) => void;
   toggleFill: (fillId: string) => void;
@@ -38,9 +38,11 @@ function getCurrentFills(): FillItem[] {
 }
 
 export function useFillActions(): FillActions {
-  const addFill = useCallback((type: FillType = FillType.Color) => {
+  const addFill = useCallback((type: FillType = FillType.Color, initialColor?: string) => {
     const fills = getCurrentFills();
-    const newFill = createDefaultFill(type);
+    const newFill = initialColor && type === FillType.Color
+      ? createDefaultColorFill(initialColor)
+      : createDefaultFill(type);
     const newFills = [...fills, newFill];
     useStore.getState().updateSelectedFills(newFills);
   }, []);

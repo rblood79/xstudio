@@ -71,4 +71,29 @@
     color: var(--on-surface-variant);
     font-weight: 500;
   }
+
+  /* FillBackgroundInline: extra layers below grid */
+  .fill-background-extra {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  /* FillBackgroundInline: empty placeholder */
+  .fill-empty-placeholder {
+    display: flex;
+    align-items: center;
+    font-size: var(--text-xs);
+    color: var(--on-surface-variant);
+    padding: var(--spacing);
+    background: var(--outline-variant);
+    border-radius: var(--radius-md);
+  }
+
+  /* FillBackgroundInline: gradient swatch inside PropertyColor-style button */
+  .fill-background-gradient-swatch {
+    height: var(--text-xl);
+    border-radius: var(--radius-sm);
+    width: 100%;
+  }
 }

@@ -24,9 +24,10 @@ import { useOptimizedStyleActions } from '../hooks/useOptimizedStyleActions';
 import { useAppearanceValuesJotai } from '../hooks/useAppearanceValuesJotai';
 import { useResetStyles } from '../hooks/useResetStyles';
 import { isFillV2Enabled } from '../../../../utils/featureFlags';
+import { useStore } from '../../../stores';
 
-const LazyFillSectionContent = lazy(() =>
-  import('./FillSection').then((m) => ({ default: m.FillSectionInline }))
+const LazyFillBackgroundInline = lazy(() =>
+  import('./FillSection').then((m) => ({ default: m.FillBackgroundInline }))
 );
 
 /**
@@ -45,10 +46,10 @@ const AppearanceSectionContent = memo(function AppearanceSectionContent() {
 
   return (
     <>
-      {/* Background: FillV2 활성화 시 FillSectionInline, 아니면 기존 PropertyColor */}
+      {/* Background: FillV2 활성화 시 FillBackgroundInline, 아니면 기존 PropertyColor */}
       {isFillV2Enabled() ? (
         <Suspense fallback={null}>
-          <LazyFillSectionContent />
+          <LazyFillBackgroundInline />
         </Suspense>
       ) : (
         <div className="style-background">
@@ -148,6 +149,10 @@ export const AppearanceSection = memo(function AppearanceSection() {
 
   const handleReset = () => {
     resetStyles(['backgroundColor', 'borderColor', 'borderWidth', 'borderRadius', 'borderStyle']);
+    // V2: fills 배열도 초기화
+    if (isFillV2Enabled()) {
+      useStore.getState().updateSelectedFills([]);
+    }
   };
 
   return (
