@@ -25,7 +25,6 @@ import { isWebGLCanvas, isCanvasCompareMode } from "../../utils/featureFlags";
 import { CanvasScrollbar } from "./scrollbar";
 import { Checkbox } from "@xstudio/shared/components";
 import { WorkflowLegend } from "./components/WorkflowLegend";
-import { WorkflowPageSummary } from "./components/WorkflowPageSummary";
 import "./Workspace.css";
 // ============================================
 // Types
@@ -431,7 +430,6 @@ export function Workspace({
 
       {/* Phase 4: Workflow Legend (좌하단) + Page Summary (우상단) */}
       <WorkflowLegend />
-      <WorkflowPageSummary />
 
       {/* Figma-style Canvas Scrollbars */}
       <CanvasScrollbar direction="horizontal" />

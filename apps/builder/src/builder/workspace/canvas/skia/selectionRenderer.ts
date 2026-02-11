@@ -32,6 +32,14 @@ const PAGE_TITLE_COLOR_G = 0x74 / 255;
 const PAGE_TITLE_COLOR_B = 0x8b / 255;
 const PAGE_TITLE_OPACITY = 0.8;
 
+/** Element Count 뱃지 설정 */
+const BADGE_FONT_SIZE = 10;                // 화면상 폰트 크기 (px)
+const BADGE_GAP = 6;                       // 타이틀과 뱃지 사이 간격 (px)
+const BADGE_COLOR_R = 0x94 / 255;          // slate-400 (#94a3b8)
+const BADGE_COLOR_G = 0xa3 / 255;
+const BADGE_COLOR_B = 0xb8 / 255;
+const BADGE_OPACITY = 0.6;
+
 /** Dimension 레이블 설정 */
 const DIMENSION_LABEL_FONT_SIZE = 11;      // 화면상 폰트 크기 (px)
 const DIMENSION_LABEL_PADDING_X = 6;       // 레이블 수평 패딩
@@ -338,6 +346,7 @@ export function renderPageTitle(
   zoom: number,
   fontMgr?: FontMgr,
   isActive = false,
+  elementCount?: number,
 ): void {
   if (!title || !fontMgr) return;
 
@@ -379,6 +388,35 @@ export function renderPageTitle(
     const textY = Math.round(-PAGE_TITLE_OFFSET_Y + PAGE_TITLE_FONT_SIZE * 0.85);
 
     canvas.drawText(title, textX, textY, textPaint, font);
+
+    // 요소 수 뱃지 (타이틀 오른쪽)
+    if (elementCount != null && elementCount > 0) {
+      const titleGlyphIds = font.getGlyphIDs(title);
+      const titleGlyphWidths = font.getGlyphWidths(titleGlyphIds);
+      const titleWidth = titleGlyphWidths.reduce((sum, w) => sum + w, 0);
+
+      const badgeText = `${elementCount} elements`;
+      const badgeTypeface = fontMgr.matchFamilyStyle('Pretendard', {
+        weight: ck.FontWeight.Normal,
+        width: ck.FontWidth.Normal,
+        slant: ck.FontSlant.Upright,
+      });
+      if (badgeTypeface) {
+        const badgeFont = scope.track(new ck.Font(badgeTypeface, BADGE_FONT_SIZE));
+        badgeFont.setSubpixel(true);
+
+        const badgePaint = scope.track(new ck.Paint());
+        badgePaint.setAntiAlias(true);
+        badgePaint.setStyle(ck.PaintStyle.Fill);
+        badgePaint.setColor(ck.Color4f(BADGE_COLOR_R, BADGE_COLOR_G, BADGE_COLOR_B, BADGE_OPACITY));
+
+        const badgeX = titleWidth + BADGE_GAP;
+        const badgeY = Math.round(-PAGE_TITLE_OFFSET_Y + BADGE_FONT_SIZE * 0.85);
+
+        canvas.drawText(badgeText, badgeX, badgeY, badgePaint, badgeFont);
+      }
+    }
+
     canvas.restore();
   } finally {
     scope.dispose();

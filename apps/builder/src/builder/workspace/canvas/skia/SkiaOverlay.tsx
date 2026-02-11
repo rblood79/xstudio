@@ -64,6 +64,7 @@ interface SkiaOverlayProps {
     y: number;
     width: number;
     height: number;
+    elementCount: number;
   }>;
   /** 현재 활성 페이지 ID */
   currentPageId?: string | null;
@@ -868,7 +869,7 @@ export function SkiaOverlay({
               if (!frame.title) continue;
               canvas.save();
               canvas.translate(frame.x, frame.y);
-              renderPageTitle(ck, canvas, frame.title, cameraZoom, fontMgr, hasSelection && frame.id === activePageId);
+              renderPageTitle(ck, canvas, frame.title, cameraZoom, fontMgr, hasSelection && frame.id === activePageId, frame.elementCount);
               canvas.restore();
             }
           }

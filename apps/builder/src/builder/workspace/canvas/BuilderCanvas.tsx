@@ -114,7 +114,7 @@ function SkiaOverlayLazy(props: {
   dragStateRef?: RefObject<DragState | null>;
   pageWidth?: number;
   pageHeight?: number;
-  pageFrames?: Array<{ id: string; title: string; x: number; y: number; width: number; height: number }>;
+  pageFrames?: Array<{ id: string; title: string; x: number; y: number; width: number; height: number; elementCount: number }>;
   currentPageId?: string | null;
 }) {
   return (
@@ -1461,16 +1461,20 @@ export function BuilderCanvas({
 
   // 🆕 Multi-page: Skia 페이지 프레임 (타이틀 렌더링용)
   const pageFrames = useMemo(() => {
-    return pages.map(page => ({
-      id: page.id,
-      title: page.title,
-      x: pagePositions[page.id]?.x ?? 0,
-      y: pagePositions[page.id]?.y ?? 0,
-      width: pageWidth,
-      height: pageHeight,
-    }));
+    return pages.map(page => {
+      const count = elements.filter(el => el.page_id === page.id && !el.deleted).length;
+      return {
+        id: page.id,
+        title: page.title,
+        x: pagePositions[page.id]?.x ?? 0,
+        y: pagePositions[page.id]?.y ?? 0,
+        width: pageWidth,
+        height: pageHeight,
+        elementCount: count,
+      };
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pages, pagePositionsVersion, pageWidth, pageHeight]);
+  }, [pages, pagePositionsVersion, pageWidth, pageHeight, elements]);
 
   // 🆕 Multi-page: 뷰포트 밖 페이지 컬링 (성능 최적화)
   const visiblePageIds = useMemo(() => {
