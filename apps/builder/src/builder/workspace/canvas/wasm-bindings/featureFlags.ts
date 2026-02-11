@@ -8,14 +8,14 @@
  */
 
 export const WASM_FLAGS = {
-  /** Phase 1: SpatialIndex WASM 가속 */
-  SPATIAL_INDEX: true,
+  /** Phase 1: SpatialIndex WASM 가속 (Rust wasm-pack 빌드 필요) */
+  SPATIAL_INDEX: false,
 
-  /** Phase 2: Layout Engine WASM 가속 */
-  LAYOUT_ENGINE: true,
+  /** Phase 2: Layout Engine WASM 가속 (Rust wasm-pack 빌드 필요) */
+  LAYOUT_ENGINE: false,
 
-  /** Phase 4: Layout Worker (비동기 레이아웃 계산) */
-  LAYOUT_WORKER: true,
+  /** Phase 4: Layout Worker (Rust WASM 초기화 필요) */
+  LAYOUT_WORKER: false,
 
   /** Phase 5: CanvasKit/Skia 렌더러 활성화 */
   CANVASKIT_RENDERER: true,

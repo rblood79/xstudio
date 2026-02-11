@@ -27,9 +27,11 @@ export async function initRustWasm(): Promise<void> {
       const result = mod.ping();
       console.log(`[RustWasm] 초기화 완료 — ping() = "${result}"`);
     }
-  } catch (error) {
-    console.error('[RustWasm] 초기화 실패:', error);
-    throw error;
+  } catch {
+    // Phase 1-2 구현 전까지 pkg/xstudio_wasm이 존재하지 않으므로 경고만 출력
+    if (import.meta.env.DEV) {
+      console.warn('[RustWasm] WASM 모듈 미발견, JS 폴백 사용 (Phase 1-2 구현 전)');
+    }
   }
 }
 

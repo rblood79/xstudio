@@ -12,31 +12,42 @@ export async function initAllWasm(): Promise<void> {
   if (wasmReady) return;
 
   try {
+    const { WASM_FLAGS } = await import('./featureFlags');
     const tasks: Promise<void>[] = [];
 
     // Phase 1-2: Rust WASM 모듈 (SpatialIndex, Layout Engine)
-    const { initRustWasm } = await import('./rustWasm');
-    tasks.push(
-      initRustWasm().then(async () => {
-        // SpatialIndex는 Rust WASM 초기화 후에 생성
-        const { initSpatialIndex } = await import('./spatialIndex');
-        initSpatialIndex();
-      }),
-    );
+    if (WASM_FLAGS.SPATIAL_INDEX || WASM_FLAGS.LAYOUT_ENGINE) {
+      const { initRustWasm, isRustWasmReady } = await import('./rustWasm');
+      tasks.push(
+        initRustWasm().then(async () => {
+          if (isRustWasmReady() && WASM_FLAGS.SPATIAL_INDEX) {
+            const { initSpatialIndex } = await import('./spatialIndex');
+            initSpatialIndex();
+          }
+        }),
+      );
+    }
 
     // Phase 5: CanvasKit/Skia WASM (메인 렌더러)
-    const { initCanvasKit } = await import('../skia/initCanvasKit');
-    tasks.push(initCanvasKit().then(() => {}));
+    if (WASM_FLAGS.CANVASKIT_RENDERER) {
+      const { initCanvasKit } = await import('../skia/initCanvasKit');
+      tasks.push(initCanvasKit().then(() => {}));
+    }
 
     await Promise.all(tasks);
     wasmReady = true;
 
     // Phase 4: Layout Worker (Rust WASM 초기화 후)
-    try {
-      const { initLayoutWorker } = await import('../wasm-worker');
-      await initLayoutWorker();
-    } catch (err) {
-      console.warn('[WASM] Layout Worker 초기화 실패, 메인 스레드 폴백:', err);
+    if (WASM_FLAGS.LAYOUT_WORKER) {
+      const { isRustWasmReady } = await import('./rustWasm');
+      if (isRustWasmReady()) {
+        try {
+          const { initLayoutWorker } = await import('../wasm-worker');
+          await initLayoutWorker();
+        } catch (err) {
+          console.warn('[WASM] Layout Worker 초기화 실패, 메인 스레드 폴백:', err);
+        }
+      }
     }
 
     if (import.meta.env.DEV) {
