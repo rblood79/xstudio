@@ -366,9 +366,18 @@ Scene-local 좌표로 변환
 ```typescript
 // 워크플로우 오버레이 활성 상태에서 페이지 프레임 클릭 시
 // → 해당 페이지로 포커스 이동 (camera pan + zoom)
-// → currentPageId 설정
+// → currentPageId 설정 (좌측 Pages 트리 선택 동기화)
 // → 연결된 엣지 하이라이트
 ```
+
+**양방향 동기화**:
+- **캔버스 → 트리**: 워크플로우 오버레이에서 페이지 클릭 시 `setCurrentPageId()` 호출 → 좌측 Pages 트리 선택 상태 동기화
+- **트리 → 캔버스**: 좌측 Pages 트리에서 페이지 선택 시 `panToPage()` 호출 → 카메라가 해당 페이지 중앙으로 300ms ease-out 애니메이션 이동
+- **`panToPage()`**: React 훅 비의존 순수 함수로 추출 (`viewport/panToPage.ts`), store 직접 접근으로 트리/캔버스 양쪽에서 재사용
+
+**애니메이션 최적화**:
+- `handlePageSelect` 호출 순서: `panToPage()` → `setCurrentPageId()` → `fetchElements()` (RAF 스케줄을 상태 업데이트보다 먼저 등록하여 첫 프레임 지연 방지)
+- `fetchElements()` 내부의 중복 `setCurrentPageId()` 호출 제거 — 모든 호출 경로에서 외부에서 이미 처리
 
 #### 3.3 연결 경로 하이라이트
 
@@ -813,5 +822,6 @@ tests/
 - `apps/builder/src/builder/workspace/canvas/skia/workflowGraphUtils.ts` — 그래프 유틸리티 (Phase 1~2)
 - `apps/builder/src/builder/workspace/canvas/skia/workflowMinimap.ts` — 미니맵 렌더링 + 동적 크기 상수 (Phase 4)
 - `apps/builder/src/builder/workspace/canvas/hooks/useWorkflowInteraction.ts` — 인터랙션 훅 (Phase 3)
+- `apps/builder/src/builder/workspace/canvas/viewport/panToPage.ts` — 페이지 중앙 카메라 이동 유틸 (Phase 3, 트리/캔버스 양쪽 재사용)
 - ~~`apps/builder/src/builder/workspace/components/WorkflowLegend.tsx`~~ — 삭제됨 (레전드 아이콘을 `WorkflowCanvasToggles`에 통합)
 - ~~`apps/builder/src/builder/workspace/components/WorkflowPageSummary.tsx`~~ — 삭제됨 (요소 수 뱃지로 대체, `selectionRenderer.ts`의 `renderPageTitle`에 통합)

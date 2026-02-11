@@ -143,8 +143,7 @@ export const usePageManager = ({ requestAutoSelectAfterUpdate }: UsePageManagerP
                 setElements(mergedElements);
             }
 
-            // 페이지 변경 시 현재 페이지 ID 업데이트
-            setCurrentPageId(pageId);
+            // 페이지 선택 상태 업데이트 (setCurrentPageId는 호출자에서 처리)
             setSelectedPageId(pageId);
 
             // 페이지 선택 시 order_num이 0인 요소(body) 찾기

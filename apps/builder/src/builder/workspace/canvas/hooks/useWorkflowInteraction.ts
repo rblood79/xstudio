@@ -18,6 +18,7 @@ import { useCanvasSyncStore } from '../canvasSync';
 import { hitTestEdges, hitTestPageFrame, type CachedEdgeGeometry } from '../skia/workflowHitTest';
 import type { PageFrame } from '../skia/workflowRenderer';
 import { getViewportController } from '../viewport/ViewportController';
+import { panToPage, cancelPanToPage } from '../viewport/panToPage';
 import { isPointInMinimap, minimapScreenToWorld, computeMinimapTransform, type MinimapConfig } from '../skia/workflowMinimap';
 
 // ============================================
@@ -47,7 +48,6 @@ export interface UseWorkflowInteractionOptions {
 // Animation Constants
 // ============================================
 
-const ANIMATE_DURATION_MS = 300;
 
 // ============================================
 // Hook
@@ -62,58 +62,10 @@ export function useWorkflowInteraction({
   minimapConfigRef,
 }: UseWorkflowInteractionOptions): void {
   const rafRef = useRef<number | null>(null);
-  const animationRafRef = useRef<number | null>(null);
   const isMinimapDraggingRef = useRef(false);
 
-  // ============================================
-  // animateToPage: 300ms ease-out 카메라 애니메이션
-  // ============================================
-
-  const animateToPage = useCallback((pageId: string) => {
-    const frame = pageFrameMapRef.current?.get(pageId);
-    if (!frame) return;
-
-    const vc = getViewportController();
-    if (!vc.isAttached()) return;
-
-    const { zoom, panOffset, containerSize } = useCanvasSyncStore.getState();
-
-    // 타겟 페이지 중심이 화면 중심에 오도록 계산
-    const pageCenterX = frame.x + frame.width / 2;
-    const pageCenterY = frame.y + frame.height / 2;
-    const targetX = containerSize.width / 2 - pageCenterX * zoom;
-    const targetY = containerSize.height / 2 - pageCenterY * zoom;
-
-    const startX = panOffset.x;
-    const startY = panOffset.y;
-    const startTime = performance.now();
-
-    // 이전 애니메이션 취소
-    if (animationRafRef.current !== null) {
-      cancelAnimationFrame(animationRafRef.current);
-    }
-
-    const animate = () => {
-      const elapsed = performance.now() - startTime;
-      const progress = Math.min(elapsed / ANIMATE_DURATION_MS, 1);
-      // ease-out: 1 - (1 - t)^3
-      const eased = 1 - Math.pow(1 - progress, 3);
-
-      const x = startX + (targetX - startX) * eased;
-      const y = startY + (targetY - startY) * eased;
-
-      vc.setPosition(x, y, zoom);
-      useCanvasSyncStore.getState().setPanOffset({ x, y });
-
-      if (progress < 1) {
-        animationRafRef.current = requestAnimationFrame(animate);
-      } else {
-        animationRafRef.current = null;
-      }
-    };
-
-    animationRafRef.current = requestAnimationFrame(animate);
-  }, [pageFrameMapRef]);
+  // animateToPage → panToPage 유틸로 통합 (viewport/panToPage.ts)
+  const animateToPage = panToPage;
 
   // ============================================
   // moveCameraToMinimapPoint: 미니맵 클릭/드래그 → 카메라 이동
@@ -241,7 +193,9 @@ export function useWorkflowInteraction({
           const hitPageId = hitTestPageFrame(sceneX, sceneY, pageFrameMap);
           if (hitPageId) {
             e.stopPropagation();
-            useStore.getState().setWorkflowFocusedPageId(hitPageId);
+            const state = useStore.getState();
+            state.setWorkflowFocusedPageId(hitPageId);
+            state.setCurrentPageId(hitPageId);
             animateToPage(hitPageId);
             return;
           }
@@ -256,7 +210,9 @@ export function useWorkflowInteraction({
       if (currentFocused !== hitPageId) {
         // 새 페이지 포커스
         e.stopPropagation();
-        useStore.getState().setWorkflowFocusedPageId(hitPageId);
+        const state = useStore.getState();
+        state.setWorkflowFocusedPageId(hitPageId);
+        state.setCurrentPageId(hitPageId);
         animateToPage(hitPageId);
         return;
       }
@@ -344,10 +300,7 @@ export function useWorkflowInteraction({
         cancelAnimationFrame(rafRef.current);
         rafRef.current = null;
       }
-      if (animationRafRef.current !== null) {
-        cancelAnimationFrame(animationRafRef.current);
-        animationRafRef.current = null;
-      }
+      cancelPanToPage();
     };
   }, [containerEl, handlePointerMove, handlePointerDown, handlePointerUp, hoverStateRef, overlayVersionRef]);
 }

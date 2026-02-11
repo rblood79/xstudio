@@ -16,6 +16,7 @@ import { PageTree } from "./tree/PageTree";
 import { pagesApi } from "../../../services/api/PagesApiService";
 import { getDB } from "../../../lib/db";
 import type { Page } from "../../../types/builder/unified.types";
+import { panToPage } from "../../workspace/canvas/viewport/panToPage";
 
 interface PagesSectionProps {
   projectId: string | undefined;
@@ -50,6 +51,7 @@ export const PagesSection = memo(function PagesSection({
   // 페이지 선택 핸들러
   const handlePageSelect = useCallback(
     (page: Page) => {
+      panToPage(page.id);
       setCurrentPageId(page.id);
       fetchElements(page.id);
     },
