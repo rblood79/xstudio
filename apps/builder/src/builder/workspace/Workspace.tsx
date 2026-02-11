@@ -24,7 +24,6 @@ import { isWebGLCanvas, isCanvasCompareMode } from "../../utils/featureFlags";
 // useZoomShortcuts는 useGlobalKeyboardShortcuts로 통합됨 (BuilderCore.tsx)
 import { CanvasScrollbar } from "./scrollbar";
 import { Checkbox } from "@xstudio/shared/components";
-import { WorkflowLegend } from "./components/WorkflowLegend";
 import "./Workspace.css";
 // ============================================
 // Types
@@ -47,11 +46,40 @@ export interface WorkspaceProps {
 }
 
 // ============================================
-// Workflow Canvas Toggles
+// Workflow Canvas Toggles (레전드 아이콘 통합)
 // ============================================
+
+/** 엣지 스타일 아이콘 (레전드 역할) */
+const EdgeStyleIcon: React.FC<{
+  style: "solid" | "dashed" | "dotted" | "group";
+  color: string;
+}> = ({ style, color }) => {
+  const w = 20;
+  const h = 10;
+  const y = h / 2;
+
+  if (style === "group") {
+    return (
+      <svg width={w} height={h} aria-hidden="true" style={{ flexShrink: 0 }}>
+        <rect x={1} y={0.5} width={18} height={9} rx={2} fill="none" stroke={color} strokeWidth={1.5} strokeDasharray="4 2" />
+      </svg>
+    );
+  }
+
+  let strokeDasharray: string | undefined;
+  if (style === "dashed") strokeDasharray = "6 4";
+  if (style === "dotted") strokeDasharray = "3 3";
+
+  return (
+    <svg width={w} height={h} aria-hidden="true" style={{ flexShrink: 0 }}>
+      <line x1={0} y1={y} x2={w} y2={y} stroke={color} strokeWidth={2} strokeDasharray={strokeDasharray} strokeLinecap="round" />
+    </svg>
+  );
+};
 
 /**
  * 워크플로우 오버레이 활성화 시 캔버스 상단에 표시되는 서브 토글
+ * 각 체크박스에 엣지 스타일 아이콘을 포함하여 레전드 역할도 겸함
  */
 const WorkflowCanvasToggles: React.FC = () => {
   const showOverlay = useStore((s) => s.showWorkflowOverlay);
@@ -69,16 +97,16 @@ const WorkflowCanvasToggles: React.FC = () => {
   return (
     <div className="workflow-canvas-toggles">
       <Checkbox isSelected={showNavigation} onChange={setNavigation} size="sm" isTreeItemChild>
-        Navigation
+        <span className="workflow-toggle-label"><EdgeStyleIcon style="solid" color="#3b82f6" />Navigation</span>
       </Checkbox>
       <Checkbox isSelected={showEvents} onChange={setEvents} size="sm" isTreeItemChild>
-        Events
+        <span className="workflow-toggle-label"><EdgeStyleIcon style="dashed" color="#a855f7" />Events</span>
       </Checkbox>
       <Checkbox isSelected={showDataSources} onChange={setDataSources} size="sm" isTreeItemChild>
-        Data Sources
+        <span className="workflow-toggle-label"><EdgeStyleIcon style="dotted" color="#22c55e" />Data Sources</span>
       </Checkbox>
       <Checkbox isSelected={showLayoutGroups} onChange={setLayoutGroups} size="sm" isTreeItemChild>
-        Layout Groups
+        <span className="workflow-toggle-label"><EdgeStyleIcon style="group" color="#a78bfa" />Layout Groups</span>
       </Checkbox>
     </div>
   );
@@ -425,11 +453,8 @@ export function Workspace({
         {/* TextEditOverlay will be added in B1.5 */}
       </div>
 
-      {/* Workflow Sub-Toggles (캔버스 상단) */}
+      {/* Workflow Sub-Toggles + Legend (캔버스 상단 통합) */}
       <WorkflowCanvasToggles />
-
-      {/* Phase 4: Workflow Legend (좌하단) + Page Summary (우상단) */}
-      <WorkflowLegend />
 
       {/* Figma-style Canvas Scrollbars */}
       <CanvasScrollbar direction="horizontal" />

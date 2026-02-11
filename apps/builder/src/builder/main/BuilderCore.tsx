@@ -65,14 +65,6 @@ export const BuilderCore: React.FC = () => {
   const setHistoryInfo = useStore((state) => state.setHistoryInfo);
   const showWorkflowOverlay = useStore((state) => state.showWorkflowOverlay);
   const toggleWorkflowOverlay = useStore((state) => state.toggleWorkflowOverlay);
-  const showWorkflowNavigation = useStore((state) => state.showWorkflowNavigation);
-  const showWorkflowEvents = useStore((state) => state.showWorkflowEvents);
-  const showWorkflowDataSources = useStore((state) => state.showWorkflowDataSources);
-  const showWorkflowLayoutGroups = useStore((state) => state.showWorkflowLayoutGroups);
-  const toggleWorkflowNavigation = useStore((state) => state.toggleWorkflowNavigation);
-  const toggleWorkflowEvents = useStore((state) => state.toggleWorkflowEvents);
-  const toggleWorkflowDataSources = useStore((state) => state.toggleWorkflowDataSources);
-  const toggleWorkflowLayoutGroups = useStore((state) => state.toggleWorkflowLayoutGroups);
 
   // 히스토리 정보 업데이트 (구독 기반)
   useEffect(() => {
@@ -853,16 +845,6 @@ export const BuilderCore: React.FC = () => {
         onPublish={handlePublish}
         showWorkflowOverlay={showWorkflowOverlay}
         onWorkflowOverlayToggle={toggleWorkflowOverlay}
-        workflowSubToggles={{
-          showNavigation: showWorkflowNavigation,
-          showEvents: showWorkflowEvents,
-          showDataSources: showWorkflowDataSources,
-          showLayoutGroups: showWorkflowLayoutGroups,
-          onToggleNavigation: toggleWorkflowNavigation,
-          onToggleEvents: toggleWorkflowEvents,
-          onToggleDataSources: toggleWorkflowDataSources,
-          onToggleLayoutGroups: toggleWorkflowLayoutGroups,
-        }}
       />
 
       {useWebGL ? (

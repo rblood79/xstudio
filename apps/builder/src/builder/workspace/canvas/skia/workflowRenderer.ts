@@ -591,7 +591,6 @@ export function renderPageFrameHighlight(
   const scope = new SkiaDisposable();
   try {
     const strokeWidth = 2 / zoom;
-    const cornerRadius = 6 / zoom;
 
     // 테두리 Paint
     const borderPaint = scope.track(new ck.Paint());
@@ -611,10 +610,9 @@ export function renderPageFrameHighlight(
       if (!frame) continue;
 
       const rect = ck.XYWHRect(frame.x, frame.y, frame.width, frame.height);
-      const rrect = ck.RRectXY(rect, cornerRadius, cornerRadius);
 
-      canvas.drawRRect(rrect, fillPaint);
-      canvas.drawRRect(rrect, borderPaint);
+      canvas.drawRect(rect, fillPaint);
+      canvas.drawRect(rect, borderPaint);
     }
   } finally {
     scope.dispose();

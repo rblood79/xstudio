@@ -151,18 +151,16 @@ export function renderXxx(
 ```
 BuilderCore
 ├── BuilderHeader
-│   └── GitBranch 토글 버튼 → showWorkflowOverlay 토글
+│   └── GitBranch 토글 버튼 → showWorkflowOverlay 토글 (서브 토글은 캔버스 상단으로 통합)
 └── Workspace (WebGL Canvas - 항상 표시)
-    ├── WorkflowCanvasToggles (캔버스 상단, 오버레이 활성 시 표시)
-    │   └── Checkbox × 4 (Navigation, Events, Data Sources, Layout Groups)
-    ├── WorkflowLegend (좌하단 고정)
-    ├── WorkflowPageSummary (우상단 고정, 페이지 포커스 시)
+    ├── WorkflowCanvasToggles (캔버스 상단, 레전드 아이콘 통합)
+    │   └── Checkbox × 4 (엣지 스타일 아이콘 + Navigation, Events, Data Sources, Layout Groups)
     ├── BuilderCanvas (PixiJS 씬 그래프)
     │   └── 모든 페이지 동시 렌더링 (pagePositions)
     └── SkiaOverlay
         └── Overlay Layer
             ├── AI 이펙트
-            ├── 페이지 타이틀
+            ├── 페이지 타이틀 + 요소 수 뱃지 ("24 elements")
             ├── 워크플로우 엣지 (navigation, event)
             ├── 데이터 바인딩 엣지, 레이아웃 그룹
             ├── 인터랙티브 호버/클릭
@@ -212,8 +210,8 @@ renderer.setOverlayNode({
 | `apps/builder/src/builder/workspace/canvas/skia/workflowRenderer.ts` | 신규 | Bezier 커브 + 화살표 CanvasKit 렌더링 |
 | `apps/builder/src/builder/workspace/canvas/skia/SkiaOverlay.tsx` | 수정 | 워크플로우 렌더링 파이프라인 통합 |
 | `apps/builder/src/builder/stores/canvasSettings.ts` | 수정 | `showWorkflowOverlay` 및 세부 토글 상태 추가 |
-| `apps/builder/src/builder/main/BuilderHeader.tsx` | 수정 | GitBranch 버튼 → 오버레이 토글 |
-| `apps/builder/src/builder/main/BuilderCore.tsx` | 수정 | `viewMode` 전환 제거 후 캔버스 상시 표시 |
+| `apps/builder/src/builder/main/BuilderHeader.tsx` | 수정 | GitBranch 버튼 → 오버레이 토글 (서브 토글 Popover 제거됨) |
+| `apps/builder/src/builder/main/BuilderCore.tsx` | 수정 | `viewMode` 전환 제거 후 캔버스 상시 표시 (서브 토글 props 제거됨) |
 
 #### 목표 데이터 흐름
 
@@ -330,10 +328,11 @@ interface SettingsState {
 }
 ```
 
-**UI**: Workspace 캔버스 상단에 `WorkflowCanvasToggles` 컴포넌트로 구현 (오버레이 활성 시 표시)
+**UI**: Workspace 캔버스 상단에 `WorkflowCanvasToggles` 컴포넌트 단일 진입점 (오버레이 활성 시 표시, 레전드 아이콘 통합)
 - 위치: `apps/builder/src/builder/workspace/Workspace.tsx`
-- React-Aria Checkbox × 4 (Navigation, Events, Data Sources, Layout Groups)
+- React-Aria Checkbox × 4 (엣지 스타일 아이콘 + Navigation, Events, Data Sources, Layout Groups)
 - 스타일: `apps/builder/src/builder/workspace/Workspace.css` (`.workflow-canvas-toggles`)
+- `BuilderHeader`의 중복 서브 토글 Popover(ChevronDown + Dialog) 제거됨 — `WorkflowSubToggles` 인터페이스 및 관련 props 삭제
 
 ---
 
@@ -352,7 +351,7 @@ Scene-local 좌표로 변환
     ↓
 가장 가까운 엣지 하이라이트 (strokeWidth 증가 + opacity 증가)
     ↓
-연결된 source/target 페이지 프레임 하이라이트
+연결된 source/target 페이지 프레임 하이라이트 (직각 테두리 + 반투명 배경)
 ```
 
 **구현 방향**:
@@ -382,13 +381,14 @@ A → B (navigation)     → 밝은 파란색, 굵은 선
 A → C (event)          → 밝은 보라색, 굵은 선
 B → D (navigation)     → 연한 파란색 (2차 연결)
 나머지 엣지             → 매우 연하게 (opacity 0.15)
+연결된 페이지 프레임     → 직각 테두리 + 반투명 배경 (페이지 프레임과 형태 일치)
 ```
 
 ---
 
 ### Phase 4: 고급 UI 기능 (구현 완료 ✓)
 
-**범위**: 미니맵, 레전드, 요약 패널
+**범위**: 미니맵, 페이지 타이틀 요소 수 뱃지, 토글+레전드 통합
 
 #### 4.1 워크플로우 미니맵
 
@@ -408,35 +408,32 @@ B → D (navigation)     → 연한 파란색 (2차 연결)
 - **동적 크기**: 캔버스 크기의 10% 비례 (width: 80~200px, height: 60~140px clamp)
 - inspector 패널 열림 시 패널 너비만큼 좌측으로 위치 보정
 
-#### 4.2 워크플로우 레전드
+#### 4.2 토글 + 레전드 통합
+
+기존 좌하단 `WorkflowLegend` 패널을 제거하고, 상단 `WorkflowCanvasToggles` 체크박스에 엣지 스타일 아이콘을 통합:
 
 ```
-┌───────────────────────┐
-│ ● ━━━  Navigation     │
-│ ● ┅┅┅  Event          │
-│ ● ···  Data Binding   │
-│ ┌┄┐ Layout Group      │
-└───────────────────────┘
+[✓ ━━━ Navigation] [✓ ┅┅┅ Events] [✓ ··· Data Sources] [✓ ┌┄┐ Layout Groups]
 ```
 
-- 화면 좌하단 고정 위치 (screen-space)
-- 활성 토글만 표시
+- 각 체크박스 레이블 앞에 해당 엣지 스타일의 SVG 아이콘 표시
+- 토글 ON/OFF와 범례가 한 곳에서 해결
+- 아이콘+텍스트를 `<span className="workflow-toggle-label">` (inline-flex, align-items: center)로 감싸 세로 중앙 정렬
+- `.workflow-toggle-label svg { width: auto; height: auto }` — shared Checkbox의 `.sm svg` 크기 override 방지
 
-#### 4.3 페이지 요약 패널
+#### 4.3 페이지 타이틀 요소 수 뱃지
 
-워크플로우 오버레이 활성 시 페이지 선택하면 요약 정보 표시:
+기존 `WorkflowPageSummary` 우상단 패널은 캔버스 오버레이와 정보가 중복되어 제거.
+요소 수만 페이지 타이틀 옆에 뱃지로 표시:
 
 ```
-┌─────────────────────────┐
-│ Home Page               │
-│ /home                   │
-│ ───────────────────     │
-│ Elements: 24            │
-│ Links to: About, Contact│
-│ Layout: DefaultLayout   │
-│ Data: UserTable (API)   │
-└─────────────────────────┘
+Home Page  24 elements
 ```
+
+- `renderPageTitle()`에서 타이틀 텍스트 오른쪽에 렌더링
+- 폰트: Pretendard Normal 10px, slate-400 (#94a3b8), opacity 0.6
+- 타이틀과 뱃지 사이 간격: 6px
+- 줌 불변: 기존 타이틀과 동일하게 `canvas.scale(1/zoom)` 적용
 
 ---
 
@@ -458,7 +455,7 @@ B → D (navigation)     → 연한 파란색 (2차 연결)
 │ 기본 엣지        │    │ 데이터+레이아웃 연결     │    │ 인터랙션+고급 UI     │
 │ navigation edge  │ → │ data source edges       │ → │ hover highlight      │
 │ event edge       │    │ layout group overlay    │    │ click navigation     │
-│ 토글 버튼        │    │ 캔버스 상단 서브 토글    │    │ minimap, legend      │
+│ 토글 버튼        │    │ 캔버스 상단 토글+레전드  │    │ minimap, 요소수 뱃지 │
 └─────────────────┘    └─────────────────────────┘    └──────────────────────┘
 ```
 
@@ -816,5 +813,5 @@ tests/
 - `apps/builder/src/builder/workspace/canvas/skia/workflowGraphUtils.ts` — 그래프 유틸리티 (Phase 1~2)
 - `apps/builder/src/builder/workspace/canvas/skia/workflowMinimap.ts` — 미니맵 렌더링 + 동적 크기 상수 (Phase 4)
 - `apps/builder/src/builder/workspace/canvas/hooks/useWorkflowInteraction.ts` — 인터랙션 훅 (Phase 3)
-- `apps/builder/src/builder/workspace/components/WorkflowLegend.tsx` — 레전드 패널 (Phase 4)
-- `apps/builder/src/builder/workspace/components/WorkflowPageSummary.tsx` — 페이지 요약 패널 (Phase 4)
+- ~~`apps/builder/src/builder/workspace/components/WorkflowLegend.tsx`~~ — 삭제됨 (레전드 아이콘을 `WorkflowCanvasToggles`에 통합)
+- ~~`apps/builder/src/builder/workspace/components/WorkflowPageSummary.tsx`~~ — 삭제됨 (요소 수 뱃지로 대체, `selectionRenderer.ts`의 `renderPageTitle`에 통합)

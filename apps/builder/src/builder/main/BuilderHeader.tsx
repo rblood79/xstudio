@@ -12,15 +12,9 @@ import {
   Activity,
   GitBranch,
   Settings,
-  ChevronDown,
 } from "lucide-react";
 import {
   Key,
-  DialogTrigger,
-  Button,
-  Popover,
-  Dialog,
-  Checkbox,
 } from "react-aria-components";
 import { ToggleButtonGroup, ToggleButton } from "@xstudio/shared/components";
 import { iconProps } from "../../utils/ui/uiConstants";
@@ -41,17 +35,6 @@ export interface HistoryInfo {
   total: number;
 }
 
-export interface WorkflowSubToggles {
-  showNavigation: boolean;
-  showEvents: boolean;
-  showDataSources: boolean;
-  showLayoutGroups: boolean;
-  onToggleNavigation: () => void;
-  onToggleEvents: () => void;
-  onToggleDataSources: () => void;
-  onToggleLayoutGroups: () => void;
-}
-
 export interface BuilderHeaderProps {
   projectId?: string;
   projectName?: string;
@@ -68,7 +51,6 @@ export interface BuilderHeaderProps {
   onPublish: () => void;
   showWorkflowOverlay: boolean;
   onWorkflowOverlayToggle: () => void;
-  workflowSubToggles: WorkflowSubToggles;
 }
 
 export const BuilderHeader: React.FC<BuilderHeaderProps> = ({
@@ -87,7 +69,6 @@ export const BuilderHeader: React.FC<BuilderHeaderProps> = ({
   onPublish,
   showWorkflowOverlay,
   onWorkflowOverlayToggle,
-  workflowSubToggles,
 }) => {
   const { layout, toggleBottomPanel, openPanelAsModal } = usePanelLayout();
   const isMonitorOpen =
@@ -266,59 +247,6 @@ export const BuilderHeader: React.FC<BuilderHeaderProps> = ({
             />
           </ToggleButton>
         </ToggleButtonGroup>
-        <DialogTrigger>
-          <Button
-            className="workflow-sub-toggle-trigger"
-            aria-label="Workflow display options"
-            isDisabled={!showWorkflowOverlay}
-          >
-            <ChevronDown
-              size={12}
-              strokeWidth={iconProps.strokeWidth}
-              color={showWorkflowOverlay ? iconProps.color : "#999"}
-            />
-          </Button>
-          <Popover placement="bottom end" className="zoom-menu-popover">
-            <Dialog className="workflow-sub-toggles" aria-label="Workflow toggles">
-              <Checkbox
-                isSelected={workflowSubToggles.showNavigation}
-                onChange={workflowSubToggles.onToggleNavigation}
-              >
-                <svg width={16} height={8} aria-hidden="true">
-                  <line x1={0} y1={4} x2={16} y2={4} stroke="#3b82f6" strokeWidth={2} strokeLinecap="round" />
-                </svg>
-                Navigation
-              </Checkbox>
-              <Checkbox
-                isSelected={workflowSubToggles.showEvents}
-                onChange={workflowSubToggles.onToggleEvents}
-              >
-                <svg width={16} height={8} aria-hidden="true">
-                  <line x1={0} y1={4} x2={16} y2={4} stroke="#a855f7" strokeWidth={2} strokeDasharray="6 4" strokeLinecap="round" />
-                </svg>
-                Events
-              </Checkbox>
-              <Checkbox
-                isSelected={workflowSubToggles.showDataSources}
-                onChange={workflowSubToggles.onToggleDataSources}
-              >
-                <svg width={16} height={8} aria-hidden="true">
-                  <line x1={0} y1={4} x2={16} y2={4} stroke="#22c55e" strokeWidth={2} strokeDasharray="3 3" strokeLinecap="round" />
-                </svg>
-                Data Sources
-              </Checkbox>
-              <Checkbox
-                isSelected={workflowSubToggles.showLayoutGroups}
-                onChange={workflowSubToggles.onToggleLayoutGroups}
-              >
-                <svg width={16} height={8} aria-hidden="true">
-                  <rect x={1} y={0} width={14} height={8} rx={1.5} fill="none" stroke="#a78bfa" strokeWidth={1.5} strokeDasharray="4 2" />
-                </svg>
-                Layout Groups
-              </Checkbox>
-            </Dialog>
-          </Popover>
-        </DialogTrigger>
         <button aria-label="Play" onClick={onPlay}>
           <Play
             color={iconProps.color}
