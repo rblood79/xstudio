@@ -915,7 +915,10 @@ export const ElementSprite = memo(function ElementSprite({
     };
   }, [effectiveElement, spriteType, elementStyle, elementProps, computedW, computedH, toggleGroupPosition]);
 
-  useSkiaNode(elementId, skiaNodeData);
+  // box/flex/grid 타입은 BoxSprite가 더 완전한 Skia 데이터를 등록하므로
+  // ElementSprite의 이중 등록을 방지한다. (effects, blendMode, 올바른 fillColor 포함)
+  const hasBoxSprite = spriteType === 'box' || spriteType === 'flex' || spriteType === 'grid';
+  useSkiaNode(elementId, hasBoxSprite ? null : skiaNodeData);
 
   // CheckboxGroup의 자식 Checkbox인지 확인
   const isCheckboxInGroup = spriteType === 'checkboxItem' && parentElement?.tag === 'CheckboxGroup';

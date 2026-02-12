@@ -177,7 +177,8 @@ export const BoxSprite = memo(function BoxSprite({ element, onClick }: BoxSprite
       fillColor = Float32Array.of(r, g, b, bgAlpha);
     }
 
-    const br = typeof borderRadius === 'number' ? borderRadius : borderRadius?.[0] ?? 0;
+    // 배열 borderRadius는 그대로 전달하여 개별 모서리 radius 정보를 보존
+    const br = borderRadius ?? 0;
 
     return {
       type: 'box' as const,

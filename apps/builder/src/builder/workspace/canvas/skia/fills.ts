@@ -99,12 +99,16 @@ export function applyFill(
 
     case 'angular-gradient': {
       const flatColors = flattenColors(fill.colors);
+      // MakeSweepGradient(cx, cy, colors, positions, tileMode, localMatrix, flags)
+      // localMatrix로 CSS conic-gradient(12시) → CanvasKit(3시) 보정
       const shader = ck.Shader.MakeSweepGradient(
         fill.cx,
         fill.cy,
         flatColors,
         fill.positions,
         ck.TileMode.Clamp,
+        fill.rotationMatrix ?? null, // localMatrix로 -90° 보정
+        0,                           // flags
       );
       if (!shader) {
         if (process.env.NODE_ENV === 'development') {
@@ -141,39 +145,46 @@ export function applyFill(
 
     case 'mesh-gradient': {
       // CanvasKit에 네이티브 mesh gradient API가 없으므로
-      // 4코너 bilinear interpolation → 2x2 LinearGradient 블렌드로 근사.
+      // SkSL RuntimeEffect로 4코너 bilinear interpolation 구현.
       // 2x2 그리드(4색)만 지원. 더 큰 그리드는 좌상 4셀로 폴백.
       const c = fill.colors;
       if (!c || c.length < 4 || fill.width <= 0 || fill.height <= 0) return null;
 
-      // Top-Left → Top-Right 수평 그래디언트 (상단 가중치용)
-      const topShader = ck.Shader.MakeLinearGradient(
-        [0, 0],
-        [fill.width, 0],
-        [c[0], c[1]],
-        [0, 1],
-        ck.TileMode.Clamp,
-      );
-      // Bottom-Left → Bottom-Right 수평 그래디언트 (하단 가중치용)
-      const bottomShader = ck.Shader.MakeLinearGradient(
-        [0, 0],
-        [fill.width, 0],
-        [c[2], c[3]],
-        [0, 1],
-        ck.TileMode.Clamp,
-      );
-      // 수직 블렌드: top(1→0) + bottom(0→1) 가중치
-      const blendShader = ck.Shader.MakeBlend(
-        ck.BlendMode.SrcOver,
-        topShader,
-        bottomShader,
-      );
-      paint.setShader(blendShader);
+      // SkSL: 4코너 bilinear interpolation (좌상·우상·좌하·우하)
+      const sksl = `
+        uniform half4 uTL, uTR, uBL, uBR;
+        uniform float2 uSize;
 
-      // topShader/bottomShader는 blendShader가 참조 유지하므로 안전하게 해제
-      topShader.delete();
-      bottomShader.delete();
-      return blendShader;
+        half4 main(float2 coord) {
+          float u = clamp(coord.x / uSize.x, 0.0, 1.0);
+          float v = clamp(coord.y / uSize.y, 0.0, 1.0);
+          half4 top = mix(uTL, uTR, half(u));
+          half4 bottom = mix(uBL, uBR, half(u));
+          return mix(top, bottom, half(v));
+        }
+      `;
+
+      const effect = ck.RuntimeEffect.Make(sksl);
+      if (!effect) {
+        if (process.env.NODE_ENV === 'development') {
+          console.warn('[applyFill] RuntimeEffect.Make failed for mesh-gradient');
+        }
+        return null;
+      }
+
+      // uniforms: [uTL(4), uTR(4), uBL(4), uBR(4), uSize(2)] = 18 floats
+      const uniforms = new Float32Array([
+        c[0][0], c[0][1], c[0][2], c[0][3],  // TL
+        c[1][0], c[1][1], c[1][2], c[1][3],  // TR
+        c[2][0], c[2][1], c[2][2], c[2][3],  // BL
+        c[3][0], c[3][1], c[3][2], c[3][3],  // BR
+        fill.width, fill.height,              // size
+      ]);
+
+      const shader = effect.makeShader(uniforms);
+      effect.delete(); // shader가 컴파일된 코드를 독립 보유
+      paint.setShader(shader);
+      return shader;
     }
   }
 }

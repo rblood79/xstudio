@@ -432,12 +432,16 @@ export const createInspectorActionsSlice: StateCreator<
       // 이전 background 관련 속성 정리
       delete currentStyle.backgroundColor;
       delete currentStyle.backgroundImage;
+      delete currentStyle.backgroundSize;
 
       if (cssBg.backgroundColor) {
         currentStyle.backgroundColor = cssBg.backgroundColor;
       }
       if (cssBg.backgroundImage) {
         currentStyle.backgroundImage = cssBg.backgroundImage;
+      }
+      if (cssBg.backgroundSize) {
+        currentStyle.backgroundSize = cssBg.backgroundSize;
       }
 
       updateAndSave(
@@ -467,12 +471,16 @@ export const createInspectorActionsSlice: StateCreator<
       // 이전 background 관련 속성 정리
       delete currentStyle.backgroundColor;
       delete currentStyle.backgroundImage;
+      delete currentStyle.backgroundSize;
 
       if (cssBg.backgroundColor) {
         currentStyle.backgroundColor = cssBg.backgroundColor;
       }
       if (cssBg.backgroundImage) {
         currentStyle.backgroundImage = cssBg.backgroundImage;
+      }
+      if (cssBg.backgroundSize) {
+        currentStyle.backgroundSize = cssBg.backgroundSize;
       }
 
       const newProps = { ...element.props, style: currentStyle };

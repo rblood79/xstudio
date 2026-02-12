@@ -333,14 +333,39 @@ export function calculateTextY(
 
 /**
  * CSS borderRadius를 PixiJS 반경 배열로 변환
+ *
+ * CSS border-radius 형식:
+ * - 단일 값: "8px" → 8
+ * - 2값: "8px 4px" → [8, 4, 8, 4] (tl=br, tr=bl)
+ * - 3값: "8px 4px 2px" → [8, 4, 2, 4] (tr=bl)
+ * - 4값: "8px 4px 2px 6px" → [8, 4, 2, 6] (tl, tr, br, bl)
  */
 export function convertBorderRadius(
   borderRadius: string | number | undefined
 ): number | [number, number, number, number] {
   if (!borderRadius) return 0;
 
-  const value = parseCSSSize(borderRadius, undefined, 0);
-  return value;
+  if (typeof borderRadius === 'number') return borderRadius;
+
+  // 공백 구분 다중 값 파싱
+  const parts = borderRadius.trim().split(/\s+/);
+  if (parts.length === 1) {
+    return parseCSSSize(parts[0], undefined, 0);
+  }
+
+  const values = parts.map(p => {
+    const v = parseCSSSize(p, undefined, 0);
+    // 음수 및 invalid 값 방어
+    return Number.isFinite(v) && v >= 0 ? v : 0;
+  });
+  if (values.length === 2) {
+    return [values[0], values[1], values[0], values[1]];
+  }
+  if (values.length === 3) {
+    return [values[0], values[1], values[2], values[1]];
+  }
+  // 4값: tl, tr, br, bl
+  return [values[0], values[1], values[2], values[3]];
 }
 
 // ============================================

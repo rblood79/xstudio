@@ -14,6 +14,7 @@ import type {
   RadialGradientFillItem,
   AngularGradientFillItem,
   ImageFillItem,
+  MeshGradientFillItem,
 } from '../../../../types/builder/fill.types';
 import { FillType, createDefaultColorFill } from '../../../../types/builder/fill.types';
 import { normalizeToHex8, gradientStopsToCss } from './colorUtils';
@@ -136,6 +137,32 @@ export function fillsToCssBackground(fills: FillItem[]): {
           backgroundSize: sizeMap[img.mode] ?? 'cover',
         };
       }
+      case FillType.MeshGradient: {
+        const mg = fill as MeshGradientFillItem;
+        if (!mg.points || mg.points.length < 4) continue;
+        // SVG mask로 4코너 bilinear interpolation 근사
+        // 하단: BL→BR 수평 gradient, 상단: TL→TR 수평 gradient + 수직 mask(위=불투명, 아래=투명)
+        const tl = mg.points[0].color.slice(0, 7);
+        const tr = mg.points[1].color.slice(0, 7);
+        const bl = mg.points[2].color.slice(0, 7);
+        const br = mg.points[3].color.slice(0, 7);
+        const svg = [
+          '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" preserveAspectRatio="none" width="100%" height="100%">',
+          '<defs>',
+          `<linearGradient id="t"><stop offset="0" stop-color="${tl}"/><stop offset="1" stop-color="${tr}"/></linearGradient>`,
+          `<linearGradient id="b"><stop offset="0" stop-color="${bl}"/><stop offset="1" stop-color="${br}"/></linearGradient>`,
+          '<linearGradient id="m" x2="0" y2="1"><stop offset="0" stop-color="white"/><stop offset="1" stop-color="black"/></linearGradient>',
+          '<mask id="fade"><rect width="100" height="100" fill="url(#m)"/></mask>',
+          '</defs>',
+          '<rect width="100" height="100" fill="url(#b)"/>',
+          '<rect width="100" height="100" fill="url(#t)" mask="url(#fade)"/>',
+          '</svg>',
+        ].join('');
+        return {
+          backgroundImage: `url("data:image/svg+xml,${encodeURIComponent(svg)}")`,
+          backgroundSize: '100% 100%',
+        };
+      }
       default:
         continue;
     }
@@ -143,3 +170,4 @@ export function fillsToCssBackground(fills: FillItem[]): {
 
   return {};
 }
+

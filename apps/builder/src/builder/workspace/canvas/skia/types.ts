@@ -63,6 +63,8 @@ export interface AngularGradientFill {
   cy: number;
   colors: Float32Array[];
   positions: number[];
+  /** CSS conic-gradient(12시) → CanvasKit(3시) 보정용 회전 행렬 */
+  rotationMatrix?: Float32Array;
 }
 
 export interface ImageFill {

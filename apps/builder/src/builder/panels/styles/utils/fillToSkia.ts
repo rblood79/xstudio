@@ -61,7 +61,9 @@ function linearGradientFillItemToSkia(
   });
   const positions = item.stops.map(s => s.position);
 
-  const rad = (item.rotation * Math.PI) / 180;
+  // CSS linear-gradient 각도는 12시 기준 시계방향 (0deg=bottom→top, 180deg=top→bottom)
+  // CanvasKit은 3시 기준 (cos/sin) → CSS 기준 맞추기 위해 -90° 오프셋
+  const rad = ((item.rotation - 90) * Math.PI) / 180;
   const cx = width / 2;
   const cy = height / 2;
   const len = Math.max(width, height) / 2;
@@ -119,12 +121,25 @@ function angularGradientFillItemToSkia(
   });
   const positions = item.stops.map(s => s.position);
 
+  // CSS conic-gradient: 0deg = 12시(top)에서 시계 방향
+  // CanvasKit MakeSweepGradient: 0deg = 3시(right)에서 시계 방향
+  // startAngle/endAngle이 WASM 빌드에서 무시되므로 localMatrix -90° 회전으로 보정
+  // (localMatrix는 gradient 좌표계를 회전시키므로 -90°가 시각적으로 3시→12시 이동)
+  const centerX = item.center.x * width;
+  const centerY = item.center.y * height;
   return {
     type: 'angular-gradient',
-    cx: item.center.x * width,
-    cy: item.center.y * height,
+    cx: centerX,
+    cy: centerY,
     colors,
     positions,
+    // -90° rotation matrix around (centerX, centerY)
+    // cos(-90°)=0, sin(-90°)=-1
+    rotationMatrix: Float32Array.of(
+      0,  1, centerX - centerY,
+     -1,  0, centerY + centerX,
+      0,  0, 1,
+    ),
   };
 }
 

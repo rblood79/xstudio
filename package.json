@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "turbo run build --filter=...^@xstudio/builder && pnpm -F @xstudio/builder dev",
+    "dev:kill": "kill -9 $(lsof -ti :5173) 2>/dev/null || true",
     "build": "turbo run build",
     "build:all": "turbo run build:all",
     "build:specs": "pnpm -F @xstudio/specs build",

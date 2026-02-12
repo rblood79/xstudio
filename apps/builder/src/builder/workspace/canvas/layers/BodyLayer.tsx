@@ -17,6 +17,9 @@ import { cssColorToHex, cssColorToAlpha, parseCSSSize } from '../sprites/styleCo
 import type { CSSStyle } from '../sprites/styleConverter';
 import { drawBox, parseBorderConfig } from '../utils';
 import { useSkiaNode } from '../skia/useSkiaNode';
+import { isFillV2Enabled } from '../../../../utils/featureFlags';
+import { fillsToSkiaFillColor, fillsToSkiaFillStyle } from '../../../panels/styles/utils/fillToSkia';
+import type { FillStyle } from '../skia/types';
 
 
 // ============================================
@@ -112,10 +115,31 @@ export const BodyLayer = memo(function BodyLayer({
 
   // Phase 5: Skia 렌더 데이터 등록 (body 배경)
   // Skia 모드에서 PixiJS canvas가 hidden이므로 body도 Skia로 렌더링해야 한다.
+  const fills = bodyElement?.fills;
   const bodySkiaData = useMemo(() => {
-    const r = ((backgroundColor >> 16) & 0xff) / 255;
-    const g = ((backgroundColor >> 8) & 0xff) / 255;
-    const b = (backgroundColor & 0xff) / 255;
+    // Fill V2: fills 배열에서 fillColor/gradient 추출
+    let fillColor: Float32Array;
+    const fillV2Color = isFillV2Enabled() && fills && fills.length > 0
+      ? fillsToSkiaFillColor(fills)
+      : null;
+
+    let gradientFill: FillStyle | undefined;
+    if (isFillV2Enabled() && fills && fills.length > 0) {
+      const fillV2Style = fillsToSkiaFillStyle(fills, pageWidth, pageHeight);
+      if (fillV2Style && fillV2Style.type !== 'color') {
+        gradientFill = fillV2Style;
+      }
+    }
+
+    if (fillV2Color) {
+      fillColor = fillV2Color;
+    } else {
+      const r = ((backgroundColor >> 16) & 0xff) / 255;
+      const g = ((backgroundColor >> 8) & 0xff) / 255;
+      const b = (backgroundColor & 0xff) / 255;
+      // gradient fill이 있으면 alpha=1 (shader가 alpha 처리)
+      fillColor = Float32Array.of(r, g, b, gradientFill ? 1 : backgroundAlpha);
+    }
 
     return {
       type: 'box' as const,
@@ -125,7 +149,8 @@ export const BodyLayer = memo(function BodyLayer({
       height: pageHeight,
       visible: true,
       box: {
-        fillColor: Float32Array.of(r, g, b, backgroundAlpha),
+        fillColor,
+        ...(gradientFill ? { fill: gradientFill } : {}),
         borderRadius,
         strokeColor: borderConfig
           ? (() => {
@@ -141,7 +166,7 @@ export const BodyLayer = memo(function BodyLayer({
         strokeWidth: borderConfig?.width,
       },
     };
-  }, [pageWidth, pageHeight, backgroundColor, backgroundAlpha, borderRadius, borderConfig]);
+  }, [pageWidth, pageHeight, backgroundColor, backgroundAlpha, borderRadius, borderConfig, fills]);
 
   useSkiaNode(bodyElement?.id ?? '', bodyElement ? bodySkiaData : null);
 

@@ -379,14 +379,20 @@ function renderBox(ck: CanvasKit, canvas: Canvas, node: SkiaNodeData): void {
       canvas.drawRect(rect, paint);
     }
 
-    // 셰이더 리소스 해제 (color fill은 null)
-    fillShader?.delete();
+    // fill 렌더링 후 shader를 paint에서 분리하고 리소스 해제
+    // paint.setShader(null)을 먼저 호출하여 dangling pointer 방지
+    if (fillShader) {
+      paint.setShader(null);
+      fillShader.delete();
+    }
 
     // Stroke (border-box: stroke를 요소 내부에 완전히 포함)
     // CanvasKit stroke는 경로 중앙에 그려지므로 strokeWidth/2 만큼 inset 필요
     if (node.box.strokeColor && node.box.strokeWidth) {
       const sw = node.box.strokeWidth;
       const inset = sw / 2;
+      // fill에서 설정된 gradient shader를 제거하여 stroke가 단색으로 그려지도록 한다
+      paint.setShader(null);
       paint.setStyle(ck.PaintStyle.Stroke);
       paint.setStrokeWidth(sw);
       paint.setColor(node.box.strokeColor);

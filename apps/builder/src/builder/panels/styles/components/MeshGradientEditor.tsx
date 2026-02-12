@@ -145,6 +145,7 @@ export const MeshGradientEditor = memo(function MeshGradientEditor({
 
   return (
     <div className="mesh-gradient-editor">
+      <div className="react-aria-control react-aria-Group">
       <Select
         aria-label="Gradient type"
         size="sm"
@@ -155,7 +156,7 @@ export const MeshGradientEditor = memo(function MeshGradientEditor({
       >
         {(item) => <SelectItem>{item.name}</SelectItem>}
       </Select>
-
+      </div>
       {/* Grid size controls */}
       <div className="mesh-gradient-editor__grid-controls">
         <span className="mesh-gradient-editor__label">Grid</span>
