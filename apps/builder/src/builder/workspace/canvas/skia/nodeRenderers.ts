@@ -76,7 +76,7 @@ function setCachedParagraph(key: string, paragraph: Paragraph): void {
 
 /** PixiJS Container에 부착되는 Skia 렌더 정보 */
 export interface SkiaNodeData {
-  type: 'box' | 'text' | 'image' | 'container';
+  type: 'box' | 'text' | 'image' | 'container' | 'line';
   /** 이 노드를 소유한 element의 ID (AI 이펙트 타겟팅용) */
   elementId?: string;
   /** 노드 로컬 위치/크기 */
@@ -130,6 +130,15 @@ export interface SkiaNodeData {
     contentY: number;
     contentWidth: number;
     contentHeight: number;
+  };
+  /** Line 전용 */
+  line?: {
+    x1: number;
+    y1: number;
+    x2: number;
+    y2: number;
+    strokeColor: Float32Array;
+    strokeWidth: number;
   };
   /** overflow:hidden 시 자식을 경계에서 클리핑 */
   clipChildren?: boolean;
@@ -224,6 +233,9 @@ function renderNodeInternal(
       break;
     case 'image':
       renderImage(ck, canvas, node);
+      break;
+    case 'line':
+      renderLine(ck, canvas, node);
       break;
     case 'container':
       // 컨테이너는 자체 콘텐츠 없음
@@ -424,6 +436,19 @@ function renderBox(ck: CanvasKit, canvas: Canvas, node: SkiaNodeData): void {
   }
 }
 
+/** Line 노드 렌더링 */
+function renderLine(ck: CanvasKit, canvas: Canvas, node: SkiaNodeData): void {
+  if (!node.line) return;
+  const paint = new ck.Paint();
+  paint.setAntiAlias(true);
+  paint.setStyle(ck.PaintStyle.Stroke);
+  paint.setStrokeWidth(node.line.strokeWidth);
+  paint.setStrokeCap(ck.StrokeCap.Round);
+  paint.setColor(node.line.strokeColor);
+  canvas.drawLine(node.line.x1, node.line.y1, node.line.x2, node.line.y2, paint);
+  paint.delete();
+}
+
 /** Text 노드 렌더링 */
 function renderText(
   ck: CanvasKit,
@@ -562,3 +587,4 @@ function renderImage(ck: CanvasKit, canvas: Canvas, node: SkiaNodeData): void {
     scope.dispose();
   }
 }
+

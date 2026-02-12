@@ -25,6 +25,7 @@ import { isCanvasKitInitialized, getCanvasKit } from './initCanvasKit';
 import { initAllWasm } from '../wasm-bindings/init';
 import { skiaFontManager } from './fontManager';
 import { useAIVisualFeedbackStore } from '../../../stores/aiVisualFeedback';
+import { renderGrid } from './gridRenderer';
 import { buildNodeBoundsMap, renderGeneratingEffects, renderFlashes } from './aiEffects';
 import { renderSelectionBox, renderTransformHandles, renderDimensionLabels, renderLasso, renderPageTitle } from './selectionRenderer';
 import type { LassoRenderData } from './selectionRenderer';
@@ -462,6 +463,10 @@ export function SkiaOverlay({
   const lastHoveredEdgeRef = useRef<string | null>(null);
   const lastFocusedPageRef = useRef<string | null>(null);
 
+  // Grid 상태 변경 감지용 ref
+  const lastShowGridRef = useRef(false);
+  const lastGridSizeRef = useRef(0);
+
   // Phase 4: 미니맵 config ref (inspector 패널 너비 반영)
   const minimapConfigRef = useRef<MinimapConfig>(DEFAULT_MINIMAP_CONFIG);
   // Phase 4: 미니맵 가시성 — 캔버스 이동 시에만 표시
@@ -712,6 +717,14 @@ export function SkiaOverlay({
         overlayVersionRef.current++;
       }
       lastAIActiveRef.current = currentAIActive;
+
+      // Grid 상태 변경 감지
+      const { showGrid: currentShowGrid, gridSize: currentGridSize } = useStore.getState();
+      if (currentShowGrid !== lastShowGridRef.current || currentGridSize !== lastGridSizeRef.current) {
+        overlayVersionRef.current++;
+        lastShowGridRef.current = currentShowGrid;
+        lastGridSizeRef.current = currentGridSize;
+      }
 
       // 드래그 중(라쏘/리사이즈/이동)에는 매 프레임 오버레이 갱신
       const dragState = dragStateRef?.current;
@@ -1030,6 +1043,22 @@ export function SkiaOverlay({
           }
         },
       });
+
+      // Grid 렌더링 (화면 고정, 카메라 변환 없음)
+      const { showGrid: gridVisible, gridSize: currentGridSz } = useStore.getState();
+      renderer.setScreenOverlayNode(gridVisible ? {
+        renderSkia(canvas) {
+          const screenW = skiaCanvas.width / dpr;
+          const screenH = skiaCanvas.height / dpr;
+          renderGrid(ck, canvas, {
+            width: screenW,
+            height: screenH,
+            gridSize: currentGridSz,
+            zoom: cameraZoom,
+            showGrid: true,
+          });
+        },
+      } : null);
 
       // 씬-로컬 좌표계에서의 가시 영역 (컬링용)
       const screenW = skiaCanvas.width / dpr;

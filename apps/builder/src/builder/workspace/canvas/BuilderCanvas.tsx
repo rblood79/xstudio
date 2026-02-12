@@ -37,7 +37,7 @@ import {
   type SelectionBoxHandle,
   type DragState,
 } from "./selection";
-import { GridLayer } from "./grid";
+// GridLayer는 Skia gridRenderer로 대체됨
 import { ViewportControlBridge } from "./viewport";
 import { BodyLayer } from "./layers";
 import { TextEditOverlay, useTextEdit } from "../overlay";
@@ -2178,15 +2178,6 @@ export function BuilderCanvas({
             zoom={zoom}
             panOffset={panOffset}
           />
-
-          {/* Grid Layer - Camera 밖, 화면 고정 (자체 containerSize 구독) */}
-          {showGrid && (
-            <GridLayer
-              zoom={zoom}
-              showGrid={showGrid}
-              gridSize={gridSize}
-            />
-          )}
 
           {/* Camera/Viewport - x, y, scale은 ViewportController가 직접 조작 */}
           <pixiContainer

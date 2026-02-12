@@ -17,6 +17,7 @@ import type { Element } from '../../../../types/core/store.types';
 // 🚀 Phase 7: registry 등록은 LayoutContainer에서 처리
 // import { registerElement, unregisterElement } from '../elementRegistry';
 import { useSkiaNode } from '../skia/useSkiaNode';
+import type { SkiaNodeData } from '../skia/nodeRenderers';
 import { LayoutComputedSizeContext } from '../layoutContext';
 import { convertStyle, cssColorToHex, parseCSSSize, type CSSStyle } from './styleConverter';
 import { isFillV2Enabled } from '../../../../utils/featureFlags';
@@ -25,6 +26,24 @@ import type { FillStyle } from '../skia/types';
 import { BoxSprite } from './BoxSprite';
 import { TextSprite } from './TextSprite';
 import { ImageSprite } from './ImageSprite';
+import { specShapesToSkia } from '../skia/specShapeConverter';
+import type { ComponentSpec } from '@xstudio/specs';
+import {
+  ButtonSpec, BadgeSpec, CardSpec, DialogSpec, LinkSpec, PopoverSpec,
+  SeparatorSpec, ToggleButtonSpec, ToggleButtonGroupSpec, TooltipSpec,
+  TextFieldSpec, TextAreaSpec, NumberFieldSpec, SearchFieldSpec,
+  CheckboxSpec, CheckboxGroupSpec, RadioSpec, SwitchSpec, FormSpec,
+  SelectSpec, ComboBoxSpec, ListBoxSpec, SliderSpec, MeterSpec,
+  ProgressBarSpec, TableSpec, TreeSpec, TabsSpec, MenuSpec,
+  BreadcrumbsSpec, PaginationSpec, TagGroupSpec, GridListSpec,
+  DisclosureSpec, DisclosureGroupSpec, ToolbarSpec, ToastSpec,
+  PanelSpec, GroupSpec, SlotSpec, SkeletonSpec, DropZoneSpec,
+  FileTriggerSpec, ScrollBoxSpec, MaskedFrameSpec, FancyButtonSpec,
+  InputSpec, ListSpec, SwitcherSpec,
+  DatePickerSpec, DateRangePickerSpec, DateFieldSpec, TimeFieldSpec,
+  CalendarSpec, ColorPickerSpec, ColorFieldSpec, ColorSliderSpec,
+  ColorAreaSpec, ColorWheelSpec, ColorSwatchSpec, ColorSwatchPickerSpec,
+} from '@xstudio/specs';
 import {
   PixiButton,
   PixiFancyButton,
@@ -387,6 +406,79 @@ function getSpriteType(element: Element): SpriteType {
 }
 
 // ============================================
+// Tag → ComponentSpec Mapping
+// ============================================
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const TAG_SPEC_MAP: Record<string, ComponentSpec<any>> = {
+  'Button': ButtonSpec, 'SubmitButton': ButtonSpec,
+  'FancyButton': FancyButtonSpec,
+  'CheckboxGroup': CheckboxGroupSpec,
+  'Checkbox': CheckboxSpec, 'CheckBox': CheckboxSpec,
+  'Switch': SwitchSpec, 'Toggle': SwitchSpec,
+  'RadioGroup': RadioSpec,
+  'Radio': RadioSpec,
+  'Slider': SliderSpec, 'RangeSlider': SliderSpec,
+  'Input': InputSpec, 'TextField': TextFieldSpec, 'TextInput': TextFieldSpec,
+  'SearchField': SearchFieldSpec,
+  'Select': SelectSpec, 'Dropdown': SelectSpec, 'ComboBox': ComboBoxSpec,
+  'ProgressBar': ProgressBarSpec, 'Progress': ProgressBarSpec, 'LoadingBar': ProgressBarSpec,
+  'Switcher': SwitcherSpec, 'SegmentedControl': SwitcherSpec, 'TabBar': SwitcherSpec,
+  'ScrollBox': ScrollBoxSpec, 'ScrollContainer': ScrollBoxSpec, 'ScrollView': ScrollBoxSpec,
+  'List': ListSpec, 'ItemList': ListSpec, 'VirtualList': ListSpec,
+  'MaskedFrame': MaskedFrameSpec, 'ClippedImage': MaskedFrameSpec, 'MaskedImage': MaskedFrameSpec, 'AvatarImage': MaskedFrameSpec,
+  'ToggleButton': ToggleButtonSpec,
+  'ToggleButtonGroup': ToggleButtonGroupSpec,
+  'ListBox': ListBoxSpec,
+  'Badge': BadgeSpec, 'Tag': BadgeSpec, 'Chip': BadgeSpec,
+  'Meter': MeterSpec, 'Gauge': MeterSpec,
+  'Separator': SeparatorSpec, 'Divider': SeparatorSpec, 'Hr': SeparatorSpec,
+  'Link': LinkSpec, 'Anchor': LinkSpec, 'A': LinkSpec,
+  'Breadcrumbs': BreadcrumbsSpec,
+  'Card': CardSpec, 'Box': CardSpec,
+  'Panel': PanelSpec,
+  'Menu': MenuSpec, 'ContextMenu': MenuSpec, 'DropdownMenu': MenuSpec,
+  'Tabs': TabsSpec, 'TabList': TabsSpec,
+  'NumberField': NumberFieldSpec,
+  'GridList': GridListSpec,
+  'TagGroup': TagGroupSpec, 'TagList': TagGroupSpec,
+  'Tree': TreeSpec, 'TreeView': TreeSpec,
+  'Table': TableSpec, 'DataTable': TableSpec, 'DataGrid': TableSpec,
+  'Disclosure': DisclosureSpec,
+  'DisclosureGroup': DisclosureGroupSpec, 'Accordion': DisclosureGroupSpec,
+  'Tooltip': TooltipSpec,
+  'Popover': PopoverSpec,
+  'Dialog': DialogSpec, 'Modal': DialogSpec, 'AlertDialog': DialogSpec,
+  'ColorSwatch': ColorSwatchSpec,
+  'ColorSlider': ColorSliderSpec,
+  'TimeField': TimeFieldSpec,
+  'DateField': DateFieldSpec,
+  'ColorArea': ColorAreaSpec,
+  'Calendar': CalendarSpec, 'RangeCalendar': CalendarSpec,
+  'ColorWheel': ColorWheelSpec,
+  'DatePicker': DatePickerSpec,
+  'ColorPicker': ColorPickerSpec,
+  'DateRangePicker': DateRangePickerSpec,
+  'TextArea': TextAreaSpec, 'Textarea': TextAreaSpec,
+  'Form': FormSpec,
+  'Toolbar': ToolbarSpec,
+  'FileTrigger': FileTriggerSpec, 'FileUpload': FileTriggerSpec, 'FileInput': FileTriggerSpec,
+  'DropZone': DropZoneSpec, 'FileDropZone': DropZoneSpec,
+  'Skeleton': SkeletonSpec, 'SkeletonLoader': SkeletonSpec,
+  'Toast': ToastSpec,
+  'Pagination': PaginationSpec,
+  'ColorField': ColorFieldSpec,
+  'ColorSwatchPicker': ColorSwatchPickerSpec,
+  'Group': GroupSpec,
+  'Slot': SlotSpec,
+};
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function getSpecForTag(tag: string): ComponentSpec<any> | null {
+  return TAG_SPEC_MAP[tag] ?? null;
+}
+
+// ============================================
 // Component
 // ============================================
 
@@ -673,28 +765,7 @@ export const ElementSprite = memo(function ElementSprite({
       }
     }
 
-    let textChildren: Array<{
-      type: 'text';
-      x: number;
-      y: number;
-      width: number;
-      height: number;
-      visible: boolean;
-      text: {
-        content: string;
-        fontFamilies: string[];
-        fontSize: number;
-        fontWeight?: number;
-        color: Float32Array;
-        letterSpacing?: number;
-        lineHeight?: number;
-        align?: 'left' | 'center' | 'right';
-        paddingLeft: number;
-        paddingTop: number;
-        maxWidth: number;
-        autoCenter?: boolean;
-      };
-    }> | undefined;
+    let textChildren: SkiaNodeData[] | undefined;
 
     let cardCalculatedHeight: number | undefined;
 
@@ -829,73 +900,102 @@ export const ElementSprite = memo(function ElementSprite({
           textChildren = nodes;
         }
       } else {
-        const textContent = String(
-          props?.children
-          || props?.text
-          || props?.label
-          || props?.value
-          || props?.placeholder
-          || props?.count
-          || ''
-        );
-        if (textContent) {
-          const defaultTextColor = VARIANT_TEXT_COLORS[variant] ?? 0x1d1b20;
+        // 🟢 Spec shapes 기반 렌더링
+        const spec = getSpecForTag(tag);
+        if (spec) {
+          const variantSpec = spec.variants[variant] || spec.variants[spec.defaultVariant];
+          const sizeSpec = spec.sizes[size] || spec.sizes[spec.defaultSize];
+          if (variantSpec && sizeSpec) {
+            // Use spec's intrinsic height (not Yoga-computed parent height)
+            const specHeight = sizeSpec.height || finalHeight;
 
-          const isPlaceholder = !props?.children && !props?.text && !props?.label
-            && !props?.value && !!props?.placeholder;
-          const placeholderColor = 0x9ca3af;
-          const baseTextColor = isPlaceholder ? placeholderColor : defaultTextColor;
-          const textColorHex = style?.color
-            ? cssColorToHex(style.color, baseTextColor)
-            : baseTextColor;
-          const tcR = ((textColorHex >> 16) & 0xff) / 255;
-          const tcG = ((textColorHex >> 8) & 0xff) / 255;
-          const tcB = (textColorHex & 0xff) / 255;
+            const shapes = spec.render.shapes(
+              (props || {}) as Record<string, unknown>,
+              variantSpec,
+              sizeSpec,
+              'default',
+            );
+            const specNode = specShapesToSkia(shapes, 'light', finalWidth, specHeight);
 
-          const size = String(props?.size || 'sm');
-          const SIZE_FONT: Record<string, number> = {
-            xs: 12, sm: 14, md: 16, lg: 18, xl: 20,
-          };
-          const defaultFontSize = SIZE_FONT[size] ?? 14;
-          const fontSize = style?.fontSize !== undefined
-            ? parseCSSSize(style.fontSize, undefined, defaultFontSize)
-            : defaultFontSize;
+            // Outer box becomes transparent container — spec shapes handle all visuals
+            boxData.fillColor = Float32Array.of(0, 0, 0, 0);
+            boxData.borderRadius = 0;
+            boxData.strokeColor = undefined;
+            boxData.strokeWidth = undefined;
+            boxData.fill = undefined;
 
-          const CENTER_ALIGN_TAGS = new Set([
-            'Button', 'SubmitButton', 'FancyButton',
-            'Badge', 'Tag', 'Chip',
-            'ToggleButton',
-          ]);
-          const textAlign = CENTER_ALIGN_TAGS.has(tag) ? 'center' as const : 'left' as const;
+            // Put entire specNode as a single child for rendering isolation
+            textChildren = [specNode];
+          }
+        } else {
+          // Fallback: Spec이 없는 컴포넌트 - 기존 텍스트 렌더링
+          const textContent = String(
+            props?.children
+            || props?.text
+            || props?.label
+            || props?.value
+            || props?.placeholder
+            || props?.count
+            || ''
+          );
+          if (textContent) {
+            const defaultTextColor = VARIANT_TEXT_COLORS[variant] ?? 0x1d1b20;
 
-          const INPUT_TAGS = new Set([
-            'Input', 'TextField', 'TextInput', 'SearchField',
-            'TextArea', 'Textarea', 'NumberField', 'ComboBox',
-            'Select', 'Dropdown', 'DateField', 'TimeField', 'ColorField',
-          ]);
-          const paddingLeft = INPUT_TAGS.has(tag) ? 8 : 0;
+            const isPlaceholder = !props?.children && !props?.text && !props?.label
+              && !props?.value && !!props?.placeholder;
+            const placeholderColor = 0x9ca3af;
+            const baseTextColor = isPlaceholder ? placeholderColor : defaultTextColor;
+            const textColorHex = style?.color
+              ? cssColorToHex(style.color, baseTextColor)
+              : baseTextColor;
+            const tcR = ((textColorHex >> 16) & 0xff) / 255;
+            const tcG = ((textColorHex >> 8) & 0xff) / 255;
+            const tcB = (textColorHex & 0xff) / 255;
 
-          const lineHeight = fontSize * 1.2;
-          const paddingTop = Math.max(0, (finalHeight - lineHeight) / 2);
+            const SIZE_FONT: Record<string, number> = {
+              xs: 12, sm: 14, md: 16, lg: 18, xl: 20,
+            };
+            const defaultFontSize = SIZE_FONT[size] ?? 14;
+            const fontSize = style?.fontSize !== undefined
+              ? parseCSSSize(style.fontSize, undefined, defaultFontSize)
+              : defaultFontSize;
 
-          textChildren = [{
-            type: 'text' as const,
-            x: 0,
-            y: 0,
-            width: finalWidth,
-            height: finalHeight,
-            visible: true,
-            text: {
-              content: textContent,
-              fontFamilies: ['Pretendard', 'Inter', 'system-ui', 'sans-serif'],
-              fontSize,
-              color: Float32Array.of(tcR, tcG, tcB, 1),
-              align: textAlign,
-              paddingLeft,
-              paddingTop,
-              maxWidth: finalWidth - paddingLeft * 2,
-            },
-          }];
+            const CENTER_ALIGN_TAGS = new Set([
+              'Button', 'SubmitButton', 'FancyButton',
+              'Badge', 'Tag', 'Chip',
+              'ToggleButton',
+            ]);
+            const textAlign = CENTER_ALIGN_TAGS.has(tag) ? 'center' as const : 'left' as const;
+
+            const INPUT_TAGS = new Set([
+              'Input', 'TextField', 'TextInput', 'SearchField',
+              'TextArea', 'Textarea', 'NumberField', 'ComboBox',
+              'Select', 'Dropdown', 'DateField', 'TimeField', 'ColorField',
+            ]);
+            const paddingLeft = INPUT_TAGS.has(tag) ? 8 : 0;
+
+            const lineHeight = fontSize * 1.2;
+            const paddingTop = Math.max(0, (finalHeight - lineHeight) / 2);
+
+            textChildren = [{
+              type: 'text' as const,
+              x: 0,
+              y: 0,
+              width: finalWidth,
+              height: finalHeight,
+              visible: true,
+              text: {
+                content: textContent,
+                fontFamilies: ['Pretendard', 'Inter', 'system-ui', 'sans-serif'],
+                fontSize,
+                color: Float32Array.of(tcR, tcG, tcB, 1),
+                align: textAlign,
+                paddingLeft,
+                paddingTop,
+                maxWidth: finalWidth - paddingLeft * 2,
+              },
+            }];
+          }
         }
       }
     }

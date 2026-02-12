@@ -63,7 +63,7 @@ export function buildNodeBoundsMap(
         y: absY,
         width: node.width,
         height: node.height,
-        borderRadius: node.box?.borderRadius ?? 0,
+        borderRadius: Array.isArray(node.box?.borderRadius) ? node.box.borderRadius[0] : (node.box?.borderRadius ?? 0),
       });
     }
     if (node.children) {

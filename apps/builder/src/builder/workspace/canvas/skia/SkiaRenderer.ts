@@ -24,6 +24,7 @@ export class SkiaRenderer {
   private ck: CanvasKit;
   private contentNode: SkiaRenderable | null = null;
   private overlayNode: SkiaRenderable | null = null;
+  private screenOverlayNode: SkiaRenderable | null = null;
   private backgroundColor: Float32Array;
   private disposed = false;
   private dpr: number;
@@ -58,6 +59,7 @@ export class SkiaRenderer {
   private contentDirty = true;
   private lastRegistryVersion = -1;
   private lastOverlayVersion = -1;
+  private lastScreenOverlayVersion = -1;
   /** 프레임 분류용 — 매 프레임 갱신 */
   private lastCamera: CameraState = { zoom: 1, panX: 0, panY: 0 };
   /** 스냅샷 캡처 시점의 카메라 — camera-only blit 델타 기준점 */
@@ -107,6 +109,11 @@ export class SkiaRenderer {
     this.overlayNode = node;
   }
 
+  /** 화면 고정 오버레이(그리드 등) 렌더러를 설정한다. 카메라 변환이 적용되지 않는다. */
+  setScreenOverlayNode(node: SkiaRenderable | null): void {
+    this.screenOverlayNode = node;
+  }
+
   /** 배경색을 변경한다. */
   setBackgroundColor(color: Float32Array): void {
     this.backgroundColor = color;
@@ -137,6 +144,7 @@ export class SkiaRenderer {
     registryVersion: number,
     camera: CameraState,
     overlayVersion: number,
+    screenOverlayVersion: number,
   ): FrameType {
     if (this.contentDirty) return 'full';
 
@@ -148,6 +156,7 @@ export class SkiaRenderer {
 
     const registryChanged = registryVersion !== this.lastRegistryVersion;
     const overlayChanged = overlayVersion !== this.lastOverlayVersion;
+    const screenOverlayChanged = screenOverlayVersion !== this.lastScreenOverlayVersion;
     const cameraChanged =
       camera.zoom !== this.lastCamera.zoom ||
       camera.panX !== this.lastCamera.panX ||
@@ -163,7 +172,7 @@ export class SkiaRenderer {
 
       // Pencil 모델: 팬/줌 중에는 snapshot blit(camera-only)으로 즉시 응답한다.
       //
-      // 단, 아래 조건에서는 “현재 스냅샷으로는 품질/커버리지를 유지할 수 없다”고 보고
+      // 단, 아래 조건에서는 "현재 스냅샷으로는 품질/커버리지를 유지할 수 없다"고 보고
       // 즉시 content를 재렌더링한다. (Pencil의 redrawContentIfNeeded() 패턴)
       //
       // 1) zoom in이 스냅샷 캡처 시점 대비 너무 커짐 → 리샘플링 blur/디테일 손실
@@ -179,7 +188,7 @@ export class SkiaRenderer {
       this.scheduleCleanupRender();
       return 'camera-only';
     }
-    if (overlayChanged) {
+    if (overlayChanged || screenOverlayChanged) {
       return 'present';
     }
     return 'idle';
@@ -311,7 +320,9 @@ export class SkiaRenderer {
       cullingBounds.height + padScene * 2,
     );
 
-    this.contentCanvas.clear(this.backgroundColor);
+    // 투명 배경으로 클리어 — 그리드가 콘텐츠 아래(main canvas)에서 보이도록
+    // 배경색은 present()에서 main canvas에 적용한다.
+    this.contentCanvas.clear(this.ck.Color4f(0, 0, 0, 0));
     this.contentCanvas.save();
     this.contentCanvas.scale(this.dpr, this.dpr);
     this.contentCanvas.translate(padCss, padCss);
@@ -336,7 +347,7 @@ export class SkiaRenderer {
   private blitToMainNoFlush(): void {
     if (!this.contentSnapshot) return;
 
-    this.mainCanvas.clear(this.backgroundColor);
+    // clear는 present()에서 수행 (그리드가 콘텐츠 아래에 위치하도록)
     this.mainCanvas.drawImage(this.contentSnapshot, -this.contentPaddingDevicePx, -this.contentPaddingDevicePx);
   }
 
@@ -350,7 +361,7 @@ export class SkiaRenderer {
   private blitWithCameraTransformNoFlush(camera: CameraState): void {
     if (!this.contentSnapshot) return;
 
-    this.mainCanvas.clear(this.backgroundColor);
+    // clear는 present()에서 수행 (그리드가 콘텐츠 아래에 위치하도록)
     this.mainCanvas.save();
 
     // 스냅샷 픽셀 (px, py) → 새 위치로 변환:
@@ -391,6 +402,20 @@ export class SkiaRenderer {
     this.mainCanvas.restore();
   }
 
+  /**
+   * 화면 고정 오버레이를 렌더링한다 (카메라 변환 없음).
+   *
+   * 그리드 등 스크린 좌표계에 고정된 요소를 렌더링한다.
+   * DPR 스케일만 적용하고 카메라 pan/zoom은 적용하지 않는다.
+   */
+  private renderScreenOverlay(): void {
+    if (!this.screenOverlayNode) return;
+    this.mainCanvas.save();
+    this.mainCanvas.scale(this.dpr, this.dpr);
+    this.screenOverlayNode.renderSkia(this.mainCanvas, new DOMRect(0, 0, 0, 0));
+    this.mainCanvas.restore();
+  }
+
   private renderOverlay(
     cullingBounds: DOMRect,
     camera: CameraState,
@@ -409,6 +434,12 @@ export class SkiaRenderer {
     cullingBounds: DOMRect,
     camera: CameraState,
   ): void {
+    // 렌더링 순서: 배경 → 그리드 → 콘텐츠 → 오버레이
+    // 그리드가 콘텐츠 아래에 위치하도록 content surface는 투명 배경을 사용하고,
+    // main canvas에서 배경색 → 그리드 → 콘텐츠 블릿 순서로 합성한다.
+    this.mainCanvas.clear(this.backgroundColor);
+    this.renderScreenOverlay();
+
     const cameraMatchesSnapshot =
       camera.zoom === this.snapshotCamera.zoom &&
       camera.panX === this.snapshotCamera.panX &&
@@ -439,6 +470,7 @@ export class SkiaRenderer {
     registryVersion: number,
     camera: CameraState,
     overlayVersion: number,
+    screenOverlayVersion = 0,
   ): void {
     if (this.disposed || !this.contentNode) return;
 
@@ -464,7 +496,7 @@ export class SkiaRenderer {
     }
 
     const frameStart = performance.now();
-    const frameType = this.classifyFrame(registryVersion, camera, overlayVersion);
+    const frameType = this.classifyFrame(registryVersion, camera, overlayVersion, screenOverlayVersion);
 
     switch (frameType) {
       case 'idle':
@@ -514,6 +546,7 @@ export class SkiaRenderer {
 
     this.lastRegistryVersion = registryVersion;
     this.lastOverlayVersion = overlayVersion;
+    this.lastScreenOverlayVersion = screenOverlayVersion;
     this.lastCamera = { ...camera };
   }
 
@@ -532,6 +565,7 @@ export class SkiaRenderer {
     const start = performance.now();
 
     this.mainCanvas.clear(this.backgroundColor);
+    this.renderScreenOverlay();
     this.mainCanvas.save();
     this.mainCanvas.scale(this.dpr, this.dpr);
     this.mainCanvas.translate(camera.panX, camera.panY);
@@ -557,8 +591,9 @@ export class SkiaRenderer {
     registryVersion: number,
     camera: CameraState,
     overlayVersion: number,
+    screenOverlayVersion = 0,
   ): void {
-    this.renderDualSurface(cullingBounds, registryVersion, camera, overlayVersion);
+    this.renderDualSurface(cullingBounds, registryVersion, camera, overlayVersion, screenOverlayVersion);
   }
 
   // ============================================
