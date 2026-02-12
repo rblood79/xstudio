@@ -152,7 +152,7 @@ tags: [tag1, tag2]
 주요 기술 결정의 배경과 근거:
 - **[ADR-001](../../../docs/adr/001-state-management.md)** - Zustand 선택 이유
 - **[ADR-002](../../../docs/adr/002-styling-approach.md)** - ITCSS + tv() 선택 이유
-- **[ADR-003](../../../docs/adr/003-canvas-rendering.md)** - PixiJS 선택 이유
+- **[ADR-003](../../../docs/adr/003-canvas-rendering.md)** - Canvas 렌더링 (PixiJS → CanvasKit/Skia 이중 렌더러)
 - **[ADR-004](../../../docs/adr/004-preview-isolation.md)** - iframe 격리 이유
 - **[Component Spec Architecture](../../../docs/COMPONENT_SPEC_ARCHITECTURE.md)** - 단일 소스 컴포넌트 스펙 설계
 - **[Layout Requirements](../../../docs/LAYOUT_REQUIREMENTS.md)** - 하이브리드 레이아웃 엔진 CSS 호환 구현

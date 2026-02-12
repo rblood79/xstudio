@@ -1,11 +1,11 @@
 ---
 title: Shape-based Rendering Pattern
 impact: HIGH
-impactDescription: React/PIXI 공통 렌더링 로직, 일관된 시각적 결과
-tags: [spec, shape, rendering, pixi]
+impactDescription: React/Skia 공통 렌더링 로직, 일관된 시각적 결과
+tags: [spec, shape, rendering, skia]
 ---
 
-ComponentSpec의 `render.shapes`는 **플랫폼 독립적 도형**을 반환합니다. React와 PIXI 렌더러가 이를 각각 해석합니다.
+ComponentSpec의 `render.shapes`는 **플랫폼 독립적 도형**을 반환합니다. React와 Skia 렌더러가 이를 각각 해석합니다.
 
 ## Incorrect
 
@@ -61,7 +61,7 @@ const ButtonSpec: ComponentSpec<ButtonProps> = {
 };
 
 // React 렌더러가 Shape → JSX 변환
-// PIXI 렌더러가 Shape → Graphics API 호출
+// Skia 렌더러: specShapesToSkia(shapes) → SkiaNodeData → nodeRenderers.ts
 ```
 
 ## Shape 타입
@@ -72,6 +72,7 @@ const ButtonSpec: ComponentSpec<ButtonProps> = {
 | `roundRect` | 둥근 모서리 사각형 |
 | `circle` | 원 |
 | `text` | 텍스트 |
+| `line` | 선분 (체크마크, 구분선 등) |
 | `shadow` | 그림자 (배경 뒤) |
 | `border` | 테두리 (배경 위) |
 | `container` | 자식 요소 그룹 |
@@ -81,8 +82,11 @@ const ButtonSpec: ComponentSpec<ButtonProps> = {
 - Shape의 `x`, `y`는 저수준 Graphics API용 (pixi-no-xy-props와 다른 컨텍스트)
 - `width: 'auto'`, `height: 'auto'`는 컨테이너 크기에 맞춤
 - `state` 파라미터로 상태별 스타일 분기 (기본값: 'default')
+- Spec `shapes()` 함수는 항상 row 레이아웃 좌표를 생성. column 방향에서는 `rearrangeShapesForColumn()`으로 좌표를 변환해야 함
 
 ## 참조
 
 - `docs/COMPONENT_SPEC_ARCHITECTURE.md` - Shape 타입 정의
-- `packages/specs/src/renderers/PixiRenderer.ts` - PIXI 렌더링 구현
+- `apps/builder/src/.../skia/specShapeConverter.ts` - Shape[] → SkiaNodeData 변환
+- `apps/builder/src/.../sprites/ElementSprite.tsx` - getSpecForTag(), spec shapes 통합
+- `apps/builder/src/.../skia/nodeRenderers.ts` - renderLine() 포함 Skia 렌더

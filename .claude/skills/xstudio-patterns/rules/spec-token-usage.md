@@ -80,7 +80,20 @@ resolveToken('{color.primary}', 'dark');   // → '#60a5fa'
 tokenToCSSVar('{color.primary}');   // → 'var(--primary)'
 tokenToCSSVar('{spacing.4}');       // → 'var(--spacing-4)'
 tokenToCSSVar('{shadow.md}');       // → 'var(--shadow-md)'
+
+// 숫자 토큰 해석 (Skia Shape 변환 시)
+// specShapeConverter.ts에서 Shape의 fontSize, radius 등이 TokenRef일 수 있음
+resolveNum('{typography.text-md}', theme);  // → 14
+resolveNum('{radius.md}', theme);           // → 6
+
+// ColorValue → Float32Array (Skia 색상)
+resolveColor('{color.primary}', theme);     // → '#3b82f6'
+// → hexToFloat32Array('#3b82f6')           // → Float32Array[0.23, 0.51, 0.96, 1.0]
 ```
+
+## 주의사항
+
+- Spec `shapes()` 반환값의 `fill`, `fontSize`, `radius` 등은 TokenRef(`'{category.name}'`) 또는 직접 값(string/number)일 수 있음. `specShapeConverter.ts`의 `resolveNum()`, `resolveColor()` 함수가 자동으로 분기 처리.
 
 ## 타입 안전성
 
@@ -100,3 +113,4 @@ const invalid: ColorTokenRef = '{color.invalid}';  // ❌ 타입 에러
 - `packages/specs/src/primitives/colors.ts` - 색상 토큰 정의
 - `packages/specs/src/primitives/shadows.ts` - 그림자 토큰 정의
 - `packages/specs/src/renderers/utils/tokenResolver.ts` - 토큰 해석
+- `apps/builder/src/.../skia/specShapeConverter.ts` - resolveColor(), resolveNum() 구현

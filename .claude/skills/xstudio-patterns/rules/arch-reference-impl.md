@@ -17,11 +17,12 @@ tags: [architecture, reference, patterns]
 |------|----------|------|
 | ComponentSpec 정의 | `components/Button.spec.ts` | Spec 표준 구조 (Single Source) |
 | React 렌더러 | `renderers/ReactRenderer.ts` | Spec → React Props 변환 |
-| PIXI 렌더러 | `renderers/PixiRenderer.ts` | Spec → PIXI Graphics 변환 |
+| PIXI 렌더러 | `renderers/PixiRenderer.ts` | Spec → PIXI Graphics (이벤트 레이어, alpha=0) |
 | CSS 생성기 | `renderers/CSSGenerator.ts` | Spec → CSS 파일 생성 |
 | 토큰 리졸버 | `renderers/utils/tokenResolver.ts` | 토큰 → 실제 값 변환 |
 | 색상 토큰 | `primitives/colors.ts` | 디자인 토큰 정의 |
 | 그림자 토큰 | `primitives/shadows.ts` | 그림자 토큰 정의 |
+| Skia Shape 변환기 | `(apps/builder) builder/workspace/canvas/skia/specShapeConverter.ts` | Shape[] → SkiaNodeData 변환 |
 
 자세한 설계는 `docs/COMPONENT_SPEC_ARCHITECTURE.md` 참조.
 
@@ -32,13 +33,16 @@ tags: [architecture, reference, patterns]
 | React-Aria 컴포넌트 | `builder/components/dialog/AddPageDialog.tsx` | Modal + Form 조합 |
 | 복합 컴포넌트 | `builder/panels/properties/PropertiesPanel.tsx` | 다중 섹션 구성 |
 
-## Canvas/PIXI 패턴
+## Canvas/PIXI/Skia 패턴
 
 | 패턴 | 참조 파일 | 설명 |
 |------|----------|------|
 | PIXI 컴포넌트 | `builder/workspace/canvas/ui/PixiButton.tsx` | Canvas UI 표준 |
 | Selection Layer | `builder/workspace/canvas/selection/SelectionLayer.tsx` | 선택 오버레이 |
 | Viewport Control | `builder/workspace/canvas/viewport/ViewportController.ts` | 줌/팬 처리 |
+| Spec → Skia 변환 | `builder/workspace/canvas/skia/specShapeConverter.ts` | Shape[] → SkiaNodeData |
+| Skia 노드 렌더링 | `builder/workspace/canvas/skia/nodeRenderers.ts` | box/text/image/line/container 렌더 |
+| Spec 태그 매핑 | `builder/workspace/canvas/sprites/ElementSprite.tsx` | getSpecForTag() + TAG_SPEC_MAP |
 
 ## Store 패턴
 

@@ -145,4 +145,30 @@ if (treatAsBorderBox && width !== undefined) {
 }
 ```
 
+### 인라인 폼 컨트롤 크기 계산
+
+Checkbox, Radio, Switch, Toggle은 BlockEngine에서 `inline-block`으로 처리됩니다.
+`calculateContentHeight`/`calculateContentWidth`에 Spec 기반 크기 테이블이 내장되어 있습니다:
+
+```typescript
+// engines/utils.ts
+const INLINE_FORM_HEIGHTS: Record<string, Record<string, number>> = {
+  checkbox: { sm: 20, md: 24, lg: 28 },
+  radio:    { sm: 20, md: 24, lg: 28 },
+  switch:   { sm: 20, md: 24, lg: 28 },
+  toggle:   { sm: 20, md: 24, lg: 28 },
+};
+```
+
+#### flexDirection 지원
+
+`element.props.style.flexDirection`이 `'column'`이면 크기 계산이 변경됩니다:
+
+| 방향 | width | height |
+|------|-------|--------|
+| row (기본) | indicator + gap + textWidth | `INLINE_FORM_HEIGHTS[tag][size]` |
+| column | max(indicator, textWidth) | indicator + gap + textLineHeight |
+
+동일한 분기가 `styleToLayout.ts`(Yoga 경로)와 `engines/utils.ts`(BlockEngine 경로) **양쪽**에 적용되어야 합니다.
+
 > **참고**: 레이아웃 엔진 상세 구현은 [LAYOUT_REQUIREMENTS.md](../../../../docs/LAYOUT_REQUIREMENTS.md) 참조.

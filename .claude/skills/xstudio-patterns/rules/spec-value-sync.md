@@ -44,6 +44,9 @@ md: { paddingLeft: 24, paddingRight: 24, borderWidth: 1 }  // 일치
 | CSS base `border: 1px solid` | `BUTTON_SIZE_CONFIG[size].borderWidth` (=1) | `Button.css base: border` |
 | `ButtonSpec.variants[v].border` | `PixiButton specDefaultBorderWidth` (=1) | `Button.css border-color` |
 | `ButtonSpec.sizes[size].borderRadius` | `UI_COMPONENT_DEFAULT_BORDER_RADIUS[size]` (ElementSprite.tsx) | `Button.css [data-size] border-radius` |
+| `spec.sizes[size].height` | `INLINE_FORM_HEIGHTS[tag][size]` (engines/utils.ts) | N/A (Skia 전용) |
+| `spec indicator size` | `INLINE_FORM_INDICATOR_WIDTHS[tag][size]` (engines/utils.ts) | N/A |
+| `spec indicator size` | `INDICATOR_SIZES[tag][size]` (styleToLayout.ts) | N/A |
 
 ## parseBoxModel 기본값
 
@@ -54,9 +57,9 @@ md: { paddingLeft: 24, paddingRight: 24, borderWidth: 1 }  // 일치
 - `parseBoxModel()` → padding/border 기본값 제공 (BUTTON_SIZE_CONFIG 또는 inline)
 - `BlockEngine` → `contentWidth + padding + border` = 정확한 한 번 계산
 
-## Skia 폴백 렌더링 주의사항
+## Skia Spec Shapes 렌더링 주의사항
 
-`ElementSprite.tsx`의 Skia 폴백 경로에서 시각 전용 속성(`borderRadius`, `borderColor` 등)을 읽을 때는
+`ElementSprite.tsx`의 Spec shapes 렌더링 경로에서 시각 전용 속성(`borderRadius`, `borderColor` 등)을 읽을 때는
 반드시 `convertStyle()`의 반환값을 사용해야 합니다. `style.borderRadius`는 UI 패널에서 CSS 문자열
 (`"12px"`)로 저장되므로, `typeof === 'number'` 직접 체크 시 항상 `0`이 됩니다.
 
@@ -100,10 +103,13 @@ const effectiveBorderRadius = isUIComponent ? 6 : 0;
 값 수정 시 반드시 확인:
 - [ ] `packages/specs/src/components/[Component].spec.ts`
 - [ ] `apps/builder/.../engines/utils.ts` (`BUTTON_SIZE_CONFIG` 등 내부 상수)
-- [ ] `apps/builder/.../canvas/ui/Pixi[Component].tsx` (self-rendering 기본값)
+- [ ] `apps/builder/.../canvas/ui/Pixi[Component].tsx` (이벤트 레이어 전용, alpha=0)
 - [ ] `apps/builder/.../sprites/ElementSprite.tsx` (Skia 폴백 — `convertStyle()` 사용 필수)
 - [ ] CSS 파일의 토큰/변수
 - [ ] `pnpm --filter @xstudio/specs build` 실행
+- [ ] `apps/builder/.../skia/specShapeConverter.ts` (색상/크기 변환)
+- [ ] `apps/builder/.../layout/engines/utils.ts` (`INLINE_FORM_HEIGHTS`, `INLINE_FORM_INDICATOR_WIDTHS`)
+- [ ] `apps/builder/.../layout/styleToLayout.ts` (`INDICATOR_SIZES`, `INLINE_FORM_HEIGHTS`)
 
 ## 참조
 

@@ -57,9 +57,11 @@ export const ButtonSpec: ComponentSpec<ButtonProps> = {
 import { renderToReact } from '@xstudio/specs/renderers';
 const Button = (props) => renderToReact(ButtonSpec, props);
 
-// PIXI - 동일한 Spec 사용
-import { renderToPixi } from '@xstudio/specs/renderers';
-renderToPixi(ButtonSpec, props, context);
+// Skia - 동일한 Spec 사용 (ElementSprite.tsx)
+import { specShapesToSkia } from '../skia/specShapeConverter';
+const shapes = ButtonSpec.render.shapes(props, variant, size, state);
+const skiaNode = specShapesToSkia(shapes, theme, width, height);
+// → nodeRenderers.ts → CanvasKit Canvas API
 ```
 
 ## Self-Rendering 컴포넌트 레이아웃 규칙
@@ -71,9 +73,13 @@ Button 등 self-rendering 컴포넌트는 Spec 기본값과 inline style이 올�
 - `PixiButton` → `specDefaultBorderWidth = 1` (CSS base `border: 1px solid`와 동기화)
 - 모든 variant에 `border`/`borderHover` 정의 필요 (CSS가 모든 variant에 border 적용하므로)
 
+**Note**: PixiButton 등 Pixi*.tsx 컴포넌트는 이벤트 처리(alpha=0) 전용. 실제 화면 렌더링은 `ElementSprite.tsx`의 `getSpecForTag()` → `specShapesToSkia()` 경로를 사용.
+
 ## 참조
 
 - `docs/COMPONENT_SPEC_ARCHITECTURE.md` - 전체 설계 문서 (§4.7.4.4~4.7.4.8)
 - `packages/specs/src/components/Button.spec.ts` - 참조 구현
+- `apps/builder/src/.../skia/specShapeConverter.ts` - Shape[] → SkiaNodeData 변환
+- `apps/builder/src/.../sprites/ElementSprite.tsx` - getSpecForTag() + TAG_SPEC_MAP
 - [spec-build-sync](spec-build-sync.md) - Spec 수정 후 빌드 필수
 - [spec-value-sync](spec-value-sync.md) - Spec ↔ Builder ↔ CSS 값 동기화
