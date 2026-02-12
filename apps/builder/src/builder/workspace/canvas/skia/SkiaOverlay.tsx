@@ -1044,15 +1044,12 @@ export function SkiaOverlay({
         },
       });
 
-      // Grid 렌더링 (화면 고정, 카메라 변환 없음)
+      // Grid 렌더링 (씬 좌표계, 카메라 변환은 SkiaRenderer에서 적용)
       const { showGrid: gridVisible, gridSize: currentGridSz } = useStore.getState();
       renderer.setScreenOverlayNode(gridVisible ? {
-        renderSkia(canvas) {
-          const screenW = skiaCanvas.width / dpr;
-          const screenH = skiaCanvas.height / dpr;
+        renderSkia(canvas, cullingBounds) {
           renderGrid(ck, canvas, {
-            width: screenW,
-            height: screenH,
+            cullingBounds,
             gridSize: currentGridSz,
             zoom: cameraZoom,
             showGrid: true,

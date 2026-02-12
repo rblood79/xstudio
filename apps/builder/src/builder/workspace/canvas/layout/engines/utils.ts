@@ -517,6 +517,32 @@ export function calculateContentWidth(element: Element): number {
   // 2. 텍스트 콘텐츠 기반 너비 측정 (Canvas 2D measureText 사용)
   const text = extractTextContent(element.props as Record<string, unknown>);
 
+  // 🚀 Checkbox/Radio/Switch: flexDirection에 따른 너비 계산
+  const INLINE_FORM_INDICATOR_WIDTHS: Record<string, Record<string, number>> = {
+    checkbox: { sm: 16, md: 20, lg: 24 },
+    radio: { sm: 16, md: 20, lg: 24 },
+    switch: { sm: 26, md: 34, lg: 42 },
+    toggle: { sm: 26, md: 34, lg: 42 },
+  };
+  const inlineFormIndicator = INLINE_FORM_INDICATOR_WIDTHS[tag];
+  if (inlineFormIndicator) {
+    const props = element.props as Record<string, unknown> | undefined;
+    const sizeName = (props?.size as string) ?? 'md';
+    const indicatorSize = inlineFormIndicator[sizeName] ?? 20;
+    const gap = sizeName === 'sm' ? 6 : sizeName === 'lg' ? 10 : 8;
+    const fontSize = sizeName === 'sm' ? 12 : sizeName === 'lg' ? 16 : 14;
+    const labelText = String(props?.children ?? props?.label ?? props?.text ?? '');
+    const textWidth = labelText ? calculateTextWidth(labelText, fontSize, 0) : 0;
+    const flexDir = style?.flexDirection as string | undefined;
+    const isColumn = flexDir === 'column' || flexDir === 'column-reverse';
+    if (isColumn) {
+      // Column: 너비 = max(indicator, text)
+      return Math.max(indicatorSize, textWidth);
+    }
+    // Row: 너비 = indicator + gap + text
+    return indicatorSize + gap + textWidth;
+  }
+
   if (text) {
     const props = element.props as Record<string, unknown> | undefined;
 
@@ -706,6 +732,36 @@ export function calculateContentHeight(element: Element, availableWidth?: number
 
     // minHeight 36 (60 - 24px default padding = 36px content)
     return Math.max(h, 36);
+  }
+
+  // 3.5. Checkbox/Radio/Switch/Toggle: flexDirection에 따른 높이 계산
+  const INLINE_FORM_HEIGHTS: Record<string, Record<string, number>> = {
+    checkbox: { sm: 20, md: 24, lg: 28 },
+    radio: { sm: 20, md: 24, lg: 28 },
+    switch: { sm: 20, md: 24, lg: 28 },
+    toggle: { sm: 20, md: 24, lg: 28 },
+  };
+  const INLINE_FORM_INDICATOR_HEIGHTS: Record<string, Record<string, number>> = {
+    checkbox: { sm: 16, md: 20, lg: 24 },
+    radio: { sm: 16, md: 20, lg: 24 },
+    switch: { sm: 20, md: 24, lg: 28 },
+    toggle: { sm: 20, md: 24, lg: 28 },
+  };
+  const inlineFormHeightConfig = INLINE_FORM_HEIGHTS[tag];
+  if (inlineFormHeightConfig) {
+    const props = element.props as Record<string, unknown> | undefined;
+    const sizeName = (props?.size as string) ?? 'md';
+    const flexDir = style?.flexDirection as string | undefined;
+    const isColumn = flexDir === 'column' || flexDir === 'column-reverse';
+    if (isColumn) {
+      // Column: 높이 = indicator + gap + text line-height
+      const indicatorH = INLINE_FORM_INDICATOR_HEIGHTS[tag]?.[sizeName] ?? 20;
+      const gap = sizeName === 'sm' ? 6 : sizeName === 'lg' ? 10 : 8;
+      const fs = sizeName === 'sm' ? 12 : sizeName === 'lg' ? 16 : 14;
+      return indicatorH + gap + Math.round(fs * 1.4);
+    }
+    // Row: spec 높이
+    return inlineFormHeightConfig[sizeName] ?? 24;
   }
 
   // 4. lineHeight가 명시적으로 지정되어 있으면 최소 높이로 사용

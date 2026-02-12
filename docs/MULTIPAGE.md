@@ -177,12 +177,14 @@ export function usePageDrag(zoom: number): UsePageDragReturn {
   // pointerDown → window.pointermove → window.pointerup
   // RAF 스로틀링으로 프레임당 1회 updatePagePosition() 호출
   // startPointer: DOM clientX/clientY 사용 (PixiJS global 좌표 아님 — 좌표계 통일)
+  // Snap to Grid: snapToGrid 활성 시 gridSize 단위로 스냅
 }
 ```
 
 - 타이틀 히트 영역: `PAGE_TITLE_HIT_HEIGHT = 24px`, 페이지 상단 위쪽에 투명 Graphics.
 - `onPointerDown`에서 `e.nativeEvent.clientX/clientY` 전달 (DOM 좌표계로 통일).
 - PixiJS EventBoundary가 타이틀 영역 vs 내부 요소 드래그를 자동 분리.
+- **Snap to Grid (2026-02-12):** `onPointerMove` (RAF 스로틀 내부)와 `onPointerUp` (최종 위치)에서 `useStore.getState().snapToGrid` 확인 후 `Math.round(pos / gridSize) * gridSize` 스냅 적용. RAF 취소 시 누락되는 마지막 이동분을 `onPointerUp`에서 보정.
 
 ---
 

@@ -27,7 +27,7 @@ import { BoxSprite } from './BoxSprite';
 import { TextSprite } from './TextSprite';
 import { ImageSprite } from './ImageSprite';
 import { specShapesToSkia } from '../skia/specShapeConverter';
-import type { ComponentSpec } from '@xstudio/specs';
+import type { ComponentSpec, Shape } from '@xstudio/specs';
 import {
   ButtonSpec, BadgeSpec, CardSpec, DialogSpec, LinkSpec, PopoverSpec,
   SeparatorSpec, ToggleButtonSpec, ToggleButtonGroupSpec, TooltipSpec,
@@ -478,6 +478,63 @@ function getSpecForTag(tag: string): ComponentSpec<any> | null {
   return TAG_SPEC_MAP[tag] ?? null;
 }
 
+/**
+ * Column layout: shapes 위치를 세로 쌓기로 재배치
+ *
+ * Spec shapes는 항상 row 레이아웃(가로 배치)으로 생성됨.
+ * flexDirection: column일 때 indicator 그룹을 상단 중앙에,
+ * 텍스트를 그 아래에 배치하도록 좌표를 변환한다.
+ */
+function rearrangeShapesForColumn(
+  shapes: Shape[],
+  containerWidth: number,
+  gap: number,
+): void {
+  // indicator 크기 찾기 (첫 번째 고정 크기 roundRect/rect)
+  let boxSize = 0;
+  for (const shape of shapes) {
+    if ((shape.type === 'roundRect' || shape.type === 'rect')
+        && typeof shape.width === 'number' && shape.width > 0
+        && shape.width !== containerWidth) {
+      boxSize = shape.width;
+      break;
+    }
+  }
+  if (boxSize === 0) return;
+
+  const centerX = Math.round((containerWidth - boxSize) / 2);
+
+  for (const shape of shapes) {
+    switch (shape.type) {
+      case 'roundRect':
+      case 'rect':
+        if (typeof shape.width === 'number' && shape.width <= boxSize) {
+          shape.x = centerX;
+        }
+        break;
+      case 'circle':
+        shape.x += centerX;
+        break;
+      case 'line':
+        shape.x1 += centerX;
+        shape.x2 += centerX;
+        break;
+      case 'text':
+        // 텍스트를 indicator 아래에 배치, 가운데 정렬
+        shape.x = 0;
+        shape.y = boxSize + gap;
+        shape.baseline = 'top';
+        shape.align = 'center';
+        shape.maxWidth = containerWidth;
+        break;
+      case 'border':
+      case 'shadow':
+        // target 참조 shape — 위치는 target을 따름
+        break;
+    }
+  }
+}
+
 // ============================================
 // Component
 // ============================================
@@ -906,8 +963,12 @@ export const ElementSprite = memo(function ElementSprite({
           const variantSpec = spec.variants[variant] || spec.variants[spec.defaultVariant];
           const sizeSpec = spec.sizes[size] || spec.sizes[spec.defaultSize];
           if (variantSpec && sizeSpec) {
-            // Use spec's intrinsic height (not Yoga-computed parent height)
-            const specHeight = sizeSpec.height || finalHeight;
+            const elementStyle = (props?.style || {}) as Record<string, unknown>;
+            const flexDir = (elementStyle.flexDirection as string) || '';
+            const isColumn = flexDir === 'column' || flexDir === 'column-reverse';
+
+            // Row: spec의 고유 높이 사용, Column: 컨테이너 높이 사용 (세로 쌓기)
+            const specHeight = isColumn ? finalHeight : (sizeSpec.height || finalHeight);
 
             const shapes = spec.render.shapes(
               (props || {}) as Record<string, unknown>,
@@ -915,7 +976,18 @@ export const ElementSprite = memo(function ElementSprite({
               sizeSpec,
               'default',
             );
+
+            // Column layout: shapes를 세로 쌓기로 재배치
+            if (isColumn) {
+              rearrangeShapesForColumn(shapes, finalWidth, sizeSpec.gap ?? 8);
+            }
+
             const specNode = specShapesToSkia(shapes, 'light', finalWidth, specHeight);
+
+            // Center specNode vertically if container is taller than spec content
+            if (specHeight < finalHeight) {
+              specNode.y = Math.round((finalHeight - specHeight) / 2);
+            }
 
             // Outer box becomes transparent container — spec shapes handle all visuals
             boxData.fillColor = Float32Array.of(0, 0, 0, 0);

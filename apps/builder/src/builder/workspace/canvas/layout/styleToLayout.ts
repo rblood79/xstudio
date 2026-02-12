@@ -10,6 +10,7 @@
 
 import type { Element } from '../../../../types/core/store.types';
 import { getBadgeSizePreset } from '../utils/cssVariableReader';
+// CHECKBOX_BOX_SIZES는 INDICATOR_SIZES로 인라인 처리됨
 
 // ============================================
 // Types
@@ -122,6 +123,11 @@ function measureBadgeTextWidth(text: string, fontSize: number): number {
   const fontFamily = 'Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif';
   badgeMeasureContext.font = `${fontSize}px ${fontFamily}`;
   return badgeMeasureContext.measureText(text).width;
+}
+
+/** 일반 텍스트 폭 측정 (Checkbox 라벨 등) */
+function measureTextWidth(text: string, fontSize: number): number {
+  return measureBadgeTextWidth(text, fontSize);
 }
 
 // ============================================
@@ -302,6 +308,66 @@ export function styleToLayout(
     // alignItems가 명시적으로 설정되지 않았으면 center (자식이 부모 높이로 늘어나지 않도록)
     if (!style.alignItems) {
       layout.alignItems = 'center';
+    }
+  }
+
+  // 🚀 Checkbox/Radio/Switch: 기본 flex row 레이아웃 + 크기 계산
+  // CSS 기본값: display: flex, flex-direction: row, align-items: center, justify-content: flex-start
+  const isInlineFormControl = tag === 'checkbox' || tag === 'radio' || tag === 'switch';
+  if (isInlineFormControl) {
+    if (!style.display) {
+      layout.display = 'flex';
+    }
+    if (!style.flexDirection) {
+      layout.flexDirection = 'row';
+    }
+    if (!style.alignItems) {
+      layout.alignItems = 'center';
+    }
+    if (!style.justifyContent) {
+      layout.justifyContent = 'flex-start';
+    }
+    // height/width: flexDirection에 따라 크기 계산
+    const sizeName = (props?.size as string) ?? 'md';
+    const flexDir = (style.flexDirection as string) || 'row';
+    const isColumn = flexDir === 'column' || flexDir === 'column-reverse';
+
+    // indicator/gap/fontSize 크기 테이블
+    const INDICATOR_SIZES: Record<string, Record<string, number>> = {
+      checkbox: { sm: 16, md: 20, lg: 24 },
+      radio: { sm: 16, md: 20, lg: 24 },
+      switch: { sm: 26, md: 34, lg: 42 },
+    };
+    const indicatorSize = INDICATOR_SIZES[tag]?.[sizeName] ?? 20;
+    const gap = sizeName === 'sm' ? 6 : sizeName === 'lg' ? 10 : 8;
+    const fontSize = sizeName === 'sm' ? 12 : sizeName === 'lg' ? 16 : 14;
+    const textLineHeight = Math.round(fontSize * 1.4);
+
+    if (isColumn) {
+      // Column: 세로 쌓기
+      if (height === undefined) {
+        layout.height = indicatorSize + gap + textLineHeight;
+      }
+      if (width === undefined) {
+        const labelText = String(props?.children ?? props?.label ?? props?.text ?? '');
+        const textWidth = labelText ? measureTextWidth(labelText, fontSize) : 0;
+        layout.width = Math.max(indicatorSize, Math.ceil(textWidth));
+      }
+    } else {
+      // Row: 가로 배치
+      if (height === undefined) {
+        const INLINE_FORM_HEIGHTS: Record<string, Record<string, number>> = {
+          checkbox: { sm: 20, md: 24, lg: 28 },
+          radio: { sm: 20, md: 24, lg: 28 },
+          switch: { sm: 20, md: 24, lg: 28 },
+        };
+        layout.height = INLINE_FORM_HEIGHTS[tag]?.[sizeName] ?? 24;
+      }
+      if (width === undefined) {
+        const labelText = String(props?.children ?? props?.label ?? props?.text ?? '');
+        const textWidth = labelText ? measureTextWidth(labelText, fontSize) : 0;
+        layout.width = Math.ceil(indicatorSize + gap + textWidth);
+      }
     }
   }
 

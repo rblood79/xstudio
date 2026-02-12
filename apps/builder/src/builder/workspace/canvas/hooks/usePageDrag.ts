@@ -54,21 +54,39 @@ export function usePageDrag(zoom: number): UsePageDragReturn {
         rafRef.current = null;
         const dx = (e.clientX - s.startPointer!.x) / zoom;
         const dy = (e.clientY - s.startPointer!.y) / zoom;
-        useStore.getState().updatePagePosition(
-          s.pageId!,
-          s.startPagePos!.x + dx,
-          s.startPagePos!.y + dy,
-        );
+        let newX = s.startPagePos!.x + dx;
+        let newY = s.startPagePos!.y + dy;
+        const { snapToGrid, gridSize } = useStore.getState();
+        if (snapToGrid) {
+          newX = Math.round(newX / gridSize) * gridSize;
+          newY = Math.round(newY / gridSize) * gridSize;
+        }
+        useStore.getState().updatePagePosition(s.pageId!, newX, newY);
       });
     };
 
-    const onPointerUp = () => {
-      stateRef.current.isDragging = false;
-      stateRef.current.pageId = null;
+    const onPointerUp = (e: PointerEvent) => {
+      const s = stateRef.current;
+      // 보류 중인 RAF 취소
       if (rafRef.current !== null) {
         cancelAnimationFrame(rafRef.current);
         rafRef.current = null;
       }
+      // 최종 위치 업데이트 (RAF 취소로 누락된 마지막 이동분 반영 + 스냅 적용)
+      if (s.isDragging && s.pageId && s.startPointer && s.startPagePos) {
+        const dx = (e.clientX - s.startPointer.x) / zoom;
+        const dy = (e.clientY - s.startPointer.y) / zoom;
+        let newX = s.startPagePos.x + dx;
+        let newY = s.startPagePos.y + dy;
+        const { snapToGrid, gridSize } = useStore.getState();
+        if (snapToGrid) {
+          newX = Math.round(newX / gridSize) * gridSize;
+          newY = Math.round(newY / gridSize) * gridSize;
+        }
+        useStore.getState().updatePagePosition(s.pageId, newX, newY);
+      }
+      stateRef.current.isDragging = false;
+      stateRef.current.pageId = null;
       window.removeEventListener('pointermove', onPointerMove);
       window.removeEventListener('pointerup', onPointerUp);
       cleanupRef.current = null;

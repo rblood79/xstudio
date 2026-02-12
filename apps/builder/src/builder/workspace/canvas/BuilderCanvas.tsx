@@ -1359,6 +1359,7 @@ export function BuilderCanvas({
 
   // Settings state (SettingsPanel 연동)
   const showGrid = useStore((state) => state.showGrid);
+  const snapToGrid = useStore((state) => state.snapToGrid);
   const gridSize = useStore((state) => state.gridSize);
 
   const zoom = useCanvasSyncStore((state) => state.zoom);
@@ -1856,11 +1857,18 @@ export function BuilderCanvas({
         const currentX = Number(style?.left) || 0;
         const currentY = Number(style?.top) || 0;
 
+        let newX = currentX + delta.x;
+        let newY = currentY + delta.y;
+        if (snapToGrid) {
+          newX = Math.round(newX / gridSize) * gridSize;
+          newY = Math.round(newY / gridSize) * gridSize;
+        }
+
         updateElementProps(elementId, {
           style: {
             ...style,
-            left: currentX + delta.x,
-            top: currentY + delta.y,
+            left: newX,
+            top: newY,
           },
         });
         dragPointerRef.current = null;
@@ -1872,6 +1880,8 @@ export function BuilderCanvas({
         findDropTarget,
         handleDragEnd,
         updateElementProps,
+        snapToGrid,
+        gridSize,
       ]
     ),
     onResizeEnd: useCallback(
@@ -1886,18 +1896,29 @@ export function BuilderCanvas({
           | Record<string, unknown>
           | undefined;
 
+        let { x, y, width, height } = newBounds;
+        if (snapToGrid) {
+          // 엣지를 그리드에 정렬하여 위치와 크기 모두 그리드에 맞춤
+          const right = Math.round((x + width) / gridSize) * gridSize;
+          const bottom = Math.round((y + height) / gridSize) * gridSize;
+          x = Math.round(x / gridSize) * gridSize;
+          y = Math.round(y / gridSize) * gridSize;
+          width = Math.max(gridSize, right - x);
+          height = Math.max(gridSize, bottom - y);
+        }
+
         updateElementProps(elementId, {
           style: {
             ...style,
-            left: newBounds.x,
-            top: newBounds.y,
-            width: newBounds.width,
-            height: newBounds.height,
+            left: x,
+            top: y,
+            width,
+            height,
           },
         });
         dragPointerRef.current = null;
       },
-      [elements, updateElementProps, handleDragEnd]
+      [elements, updateElementProps, handleDragEnd, snapToGrid, gridSize]
     ),
     onLassoEnd: useCallback(
       (selectedIds: string[]) => {
@@ -1925,18 +1946,34 @@ export function BuilderCanvas({
         switch (operation) {
           case 'move':
             if (data.delta) {
-              selectionBoxRef.current.updatePosition(data.delta);
+              const d = snapToGrid
+                ? { x: Math.round(data.delta.x / gridSize) * gridSize, y: Math.round(data.delta.y / gridSize) * gridSize }
+                : data.delta;
+              selectionBoxRef.current.updatePosition(d);
             }
             break;
           case 'resize':
             if (data.newBounds) {
-              selectionBoxRef.current.updateBounds(data.newBounds);
+              if (snapToGrid) {
+                const { x, y, width, height } = data.newBounds;
+                const r = Math.round((x + width) / gridSize) * gridSize;
+                const b = Math.round((y + height) / gridSize) * gridSize;
+                const sx = Math.round(x / gridSize) * gridSize;
+                const sy = Math.round(y / gridSize) * gridSize;
+                selectionBoxRef.current.updateBounds({
+                  x: sx, y: sy,
+                  width: Math.max(gridSize, r - sx),
+                  height: Math.max(gridSize, b - sy),
+                });
+              } else {
+                selectionBoxRef.current.updateBounds(data.newBounds);
+              }
             }
             break;
           // lasso는 기존 방식 유지 (LassoSelection 컴포넌트 사용)
         }
       },
-      []
+      [snapToGrid, gridSize]
     ),
   });
 

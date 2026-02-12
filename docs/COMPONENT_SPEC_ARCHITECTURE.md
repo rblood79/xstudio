@@ -1,7 +1,7 @@
 # Component Spec Architecture - 상세 설계 문서
 
 > **작성일**: 2026-01-27
-> **상태**: Phase 5 구현 완료 (CanvasKit/Skia 렌더링 전환)
+> **상태**: Phase 6 Skia Spec 렌더링 구현 완료
 > **목표**: Builder(CanvasKit/Skia)와 Publish(React)의 100% 시각적 일치
 
 ---
@@ -16,8 +16,9 @@
 6. [Phase 3: 복합 컴포넌트 마이그레이션](#6-phase-3-복합-컴포넌트-마이그레이션)
 7. [Phase 4: 특수 컴포넌트 마이그레이션](#7-phase-4-특수-컴포넌트-마이그레이션)
 8. [Phase 5: 검증 및 최적화](#8-phase-5-검증-및-최적화)
-9. [기술 명세](#9-기술-명세)
-10. [마이그레이션 전략](#10-마이그레이션-전략)
+9. [Phase 6: Spec Shapes → Skia 렌더링 파이프라인](#9-phase-6-spec-shapes--skia-렌더링-파이프라인)
+10. [기술 명세](#10-기술-명세)
+11. [마이그레이션 전략](#11-마이그레이션-전략)
 
 ---
 
@@ -66,8 +67,9 @@
 | 3 | 복합 컴포넌트 (20개) | 3주 | Table, Tree, Tabs 등 |
 | 4 | 특수 컴포넌트 (17개) | 2주 | DatePicker, ColorPicker 등 |
 | 5 | 검증 및 최적화 + **CanvasKit/Skia 전환** | 2주 | 테스트, 성능 최적화, Skia 렌더링 파이프라인 |
+| 6 | Spec Shapes → Skia 렌더링 파이프라인 | 2주 | specShapeConverter, line 렌더러, flexDirection 지원 |
 
-**총 기간: 14주 (약 3.5개월)**
+**총 기간: 16주 (약 4개월)**
 
 #### CanvasKit/Skia 렌더링 전환 (완료)
 
@@ -4574,11 +4576,104 @@ export type { ComponentSpec, Shape, TokenRef } from './types';
 - [ ] 번들 크기 분석 및 최적화
 - [ ] 문서화 완료
 
+## 9. Phase 6: Spec Shapes → Skia 렌더링 파이프라인
+
+> **상태**: ✅ 구현 완료 (2026-02-12)
+> **목표**: ComponentSpec `shapes()` → SkiaNodeData 변환으로 62개 UI 컴포넌트 정확한 Skia 렌더링
+
+### 9.1 배경
+
+Phase 5까지 CanvasKit/Skia 이중 렌더러 인프라가 완성되었지만, Card를 제외한 모든 UI 컴포넌트가
+`ElementSprite.tsx`의 텍스트-전용 fallback으로만 렌더링되고 있었다.
+각 ComponentSpec의 `render.shapes()` 함수는 모든 시각적 도형을 `Shape[]` 배열로 반환하므로,
+이를 `SkiaNodeData`로 변환하면 별도의 컴포넌트별 렌더링 코드 없이 모든 UI 컴포넌트를 정확히 렌더링할 수 있다.
+
+### 9.2 렌더링 파이프라인
+
+```
+ComponentSpec.render.shapes(props, variant, size, state)
+  → Shape[] (roundRect, rect, circle, line, border, text, shadow, ...)
+    → specShapesToSkia() 변환기
+      → SkiaNodeData { type:'box'|'line'|'text'|'container', children: [...] }
+        → nodeRenderers.ts renderNode()
+          → CanvasKit Canvas API 호출
+```
+
+### 9.3 구현 내용
+
+#### 9.3.1 nodeRenderers.ts — line 타입 추가
+
+`SkiaNodeData`에 `'line'` 타입 추가. 체크마크, 구분선 등 line shape 렌더링 지원.
+
+```typescript
+// SkiaNodeData.type 확장
+type: 'box' | 'text' | 'image' | 'container' | 'line'
+
+// line 전용 데이터
+line?: {
+  x1: number; y1: number;
+  x2: number; y2: number;
+  strokeColor: Float32Array;
+  strokeWidth: number;
+};
+```
+
+#### 9.3.2 specShapeConverter.ts — Shape[] → SkiaNodeData 변환기
+
+| Shape Type | → SkiaNodeData |
+|------------|----------------|
+| `roundRect` | `type:'box'`, `box:{ fillColor, borderRadius }` |
+| `rect` | `type:'box'`, `box:{ fillColor, borderRadius:0 }` |
+| `circle` | `type:'box'`, 정사각형 `width=height=radius*2`, `borderRadius=radius` |
+| `line` | `type:'line'`, `line:{ x1,y1,x2,y2,strokeColor,strokeWidth }` |
+| `border` | target Shape의 `box.strokeColor/strokeWidth` 설정 |
+| `text` | `type:'text'`, `text:{ content, fontSize, color, ... }` |
+| `shadow` | target Shape의 `effects[]`에 DropShadowEffect 추가 |
+
+색상 해석: `Shape.fill` (ColorValue = TokenRef | string | number) → `resolveColor(fill, theme)` → `Float32Array[r,g,b,a]`
+
+#### 9.3.3 ElementSprite.tsx — spec shapes 통합
+
+- `getSpecForTag(tag)`: 62개 태그 → ComponentSpec 매핑 함수
+- `rearrangeShapesForColumn()`: row 좌표 shapes를 column 배치로 변환
+- spec 렌더링 블록: shapes → specShapesToSkia → Skia 렌더 데이터 적용
+- 수직 중앙 정렬: `specNode.y = Math.round((finalHeight - specHeight) / 2)`
+
+#### 9.3.4 레이아웃 통합
+
+Body의 `display: 'block'` → BlockEngine 경로에서의 폼 컨트롤 크기 계산:
+
+| 파일 | 변경 |
+|------|------|
+| `styleToLayout.ts` | Yoga 경로: flexDirection별 크기 (row: `INLINE_FORM_HEIGHTS`, column: `indicator + gap + textLineHeight`) |
+| `engines/utils.ts` | BlockEngine 경로: `calculateContentHeight`/`Width`에 INLINE_FORM 테이블 추가 |
+
+### 9.4 flexDirection:column 지원
+
+Spec `shapes()` 함수는 항상 row 레이아웃 좌표를 생성. column 지원을 위한 3단계 변환:
+
+1. **shapes 좌표 변환** (`rearrangeShapesForColumn`): indicator 중앙 배치, text를 indicator 아래로 이동
+2. **크기 계산** (`styleToLayout.ts`): column → height = indicator + gap + textLineHeight, width = max(indicator, textWidth)
+3. **BlockEngine 동기화** (`engines/utils.ts`): 동일한 column 크기 계산을 BlockEngine 경로에도 적용
+
+### 9.5 수정 파일 목록
+
+| 파일 | 변경 내용 |
+|------|----------|
+| `skia/nodeRenderers.ts` | `SkiaNodeData` line 타입 + `renderLine()` |
+| `skia/specShapeConverter.ts` | **신규** — Shape[] → SkiaNodeData 변환기 |
+| `skia/aiEffects.ts` | borderRadius 튜플 타입 호환 |
+| `sprites/ElementSprite.tsx` | getSpecForTag, spec 렌더링, column 재배치 |
+| `layout/styleToLayout.ts` | 폼 컨트롤 flex 기본값 + flexDirection 크기 |
+| `layout/engines/utils.ts` | calculateContentHeight/Width 폼 컨트롤 + flexDirection |
+| `types/builder/unified.types.ts` | Checkbox/Radio/Switch 기본 props |
+
+
 ---
 
-## 9. 기술 명세
+## 10. 기술 명세
 
-### 9.1 패키지 의존성
+### 10.1 패키지 의존성
 
 ```json
 // packages/specs/package.json
@@ -4629,7 +4724,7 @@ export type { ComponentSpec, Shape, TokenRef } from './types';
 }
 ```
 
-### 9.2 빌드 설정
+### 10.2 빌드 설정
 
 ```json
 // packages/specs/tsconfig.json
@@ -4650,7 +4745,7 @@ export type { ComponentSpec, Shape, TokenRef } from './types';
 }
 ```
 
-### 9.3 스크립트
+### 10.3 스크립트
 
 ```json
 // packages/specs/package.json (scripts)
@@ -4677,7 +4772,7 @@ export type { ComponentSpec, Shape, TokenRef } from './types';
 > 구 버전을 참조하여 레이아웃↔렌더링 불일치가 발생합니다.
 > 자세한 내용은 [4.7.4.0 빌드 동기화](#4740-xstudiospecs-빌드-동기화-critical) 참조.
 
-### 9.4 Zustand 상태 관리 연동
+### 10.4 Zustand 상태 관리 연동
 
 #### 9.4.1 Store와 Spec 연동 아키텍처
 
@@ -4825,7 +4920,7 @@ function updateElementFromSpec(elementId: string, newProps: Partial<ButtonProps>
 }
 ```
 
-### 9.5 테스트 전략
+### 10.5 테스트 전략
 
 #### 9.5.1 테스트 피라미드
 
@@ -5070,9 +5165,9 @@ jobs:
 
 ---
 
-## 10. 마이그레이션 전략
+## 11. 마이그레이션 전략
 
-### 10.1 점진적 마이그레이션
+### 11.1 점진적 마이그레이션
 
 ```
 기존 코드와 병행 운영:
@@ -5096,7 +5191,7 @@ function ElementSpriteButton({ element }) {
 }
 ```
 
-### 10.2 롤백 계획
+### 11.2 롤백 계획
 
 ```
 문제 발생 시:
@@ -5107,7 +5202,7 @@ function ElementSpriteButton({ element }) {
 4. Feature flag ON
 ```
 
-### 10.3 성공 기준
+### 11.3 성공 기준
 
 | 기준 | 목표 | 측정 방법 |
 |------|------|----------|
@@ -5240,3 +5335,4 @@ function ElementSpriteButton({ element }) {
 | 2026-02-05 | 2.6 | **ElementsLayer/BodyLayer props 미전달 버그 수정 + SkiaOverlay 빌드 에러** (BuilderCanvas.tsx, SkiaOverlay.tsx): (1) **근본 원인 — ElementsLayer props 누락** — `ElementsLayer`가 내부 `useStore` 구독에서 외부 props(`pageElements`, `bodyElement`, `elementById`, `depthMap`)로 리팩토링되었으나, BuilderCanvas의 `<ElementsLayer>` render call에서 해당 props 미전달 → 모두 `undefined` → `pageElements.filter()` TypeError, body padding/layout 완전 무시, (2) **수정 — ElementsLayer render call 업데이트** — `bodyElement` computation을 BuilderCanvas에 추가, `<ElementsLayer>` render call에 `pageElements`, `bodyElement`, `elementById`, `depthMap` props 전달, (3) **근본 원인 — BodyLayer pageId 누락** — `BodyLayer`가 내부 `useStore(currentPageId)` → `pageId` prop으로 리팩토링되었으나 render call에서 미전달 → `bodyElement` 항상 `undefined` → Skia node 미등록 → body 배경색/border/selection 미표시, (4) **수정 — BodyLayer render call 업데이트** — `<BodyLayer pageId={currentPageId!}>` prop 추가, (5) **SkiaOverlay 빌드 에러** — `currentPageId`가 prop(line 407)과 `useStore`(line 789)에서 중복 선언 → esbuild 에러. 중복 `useStore` 구독 제거로 해결, (6) **공통 패턴** — "내부 store→외부 props 리팩토링 시 render call 업데이트 누락" — 증상: 새로고침하면 정상(store 재구독), 동적 변경 시 비정상(props가 undefined) |
 | 2026-02-06 | 2.7 | **Card display: block 완전 지원** (BuilderCanvas.tsx, PixiCard.tsx, unified.types.ts, utils.ts): (1) **Body 기본값 설정** — `createDefaultBodyProps()`에 `display: 'block'` 추가, Reset 시 컴포넌트 기본값 복원 (`useResetStyles.ts`), (2) **renderWithCustomEngine CONTAINER_TAGS 지원** — Card에 `display: 'block'` 추가 시 children이 외부 형제로 렌더링되는 문제 수정. `isContainerType` 체크 추가, `childElements`/`renderChildElement` props 전달로 children 내부 렌더링 구현. 3단계 nesting 지원 (Card > Panel > Button 등), (3) **Card 기본값 추가** — `createDefaultCardProps()`에 `display: 'block'`, `width: '100%'`, `padding: '12px'` 추가 (Preview CSS와 동기화), (4) **padding 이중 적용 수정** — `calculatedContentHeight` (PixiCard.tsx)와 `calculateContentHeight()` (utils.ts)에서 padding 제외. Yoga/BlockEngine이 별도 padding 추가하므로 content-only 값 반환. minHeight: 60→36 (padding 24px 제외), (5) **CONTAINER_TAGS siblings 자동 재배치** — `renderWithCustomEngine`에서 absolute→relative 위치 변환. flex column 래퍼로 감싸서 Card height 변경 시 siblings 자동 재배치. BlockEngine y→marginTop, x→marginLeft 변환, (6) **최종 결과** — children 내부 렌더링 ✅, padding 정상 적용 ✅, height auto-grow ✅, siblings 자동 재배치 ✅, Preview 일치 ✅ |
 | 2026-02-06 | 2.8 | **Block 레이아웃 라인 기반 렌더링 + Button 계열 사이즈 통일** (BuilderCanvas.tsx, cssVariableReader.ts, PixiToggleButton.tsx): (1) **inline 요소 가로 배치 수정** — `renderWithCustomEngine`에서 같은 y 값을 가진 요소들을 라인(flex row)으로 그룹화. 기존 flex column + marginLeft 방식 → 라인별 flex row + 라인 간 flex column으로 변경하여 계단식 배치 문제 해결, (2) **라인 그룹화 알고리즘** — BlockEngine 결과에서 y 값 기준(EPSILON=0.5) 라인 그룹 생성, x 기준 정렬 후 marginLeft로 간격 표현, 라인 간 marginTop으로 수직 간격 표현, (3) **ToggleButton/ToggleButtonGroup borderRadius 통일** — `TOGGLE_BUTTON_FALLBACKS` borderRadius를 Button과 동일하게 수정 (sm:6→4, md:8→6, lg:10→8), `TOGGLE_BUTTON_SIZE_MAPPING`에 borderRadius CSS 변수 추가, `getToggleButtonSizePreset()`에서 사이즈별 borderRadius 읽기, (4) **Button 계열 통일된 사이즈** — sm(fontSize:14, paddingY:4, paddingX:12, borderRadius:4), md(fontSize:16, paddingY:8, paddingX:24, borderRadius:6), lg(fontSize:18, paddingY:12, paddingX:32, borderRadius:8). Button, ToggleButton, ToggleButtonGroup 모두 동일 |
+| 2026-02-12 | 3.0 | **Phase 6 Spec Shapes → Skia 렌더링 파이프라인 문서화**: (1) 문서 상태를 "Phase 6 Skia Spec 렌더링 구현 완료"로 갱신, (2) 목차에 Phase 6 항목 추가 및 이후 섹션 번호 재조정 (9→10, 10→11), (3) Phase 요약 테이블에 Phase 6 행 추가 (specShapeConverter, line 렌더러, flexDirection 지원), (4) §9 Phase 6 섹션 신규 작성 — 전체 렌더링 흐름 다이어그램 (ComponentSpec → Shape[] → specShapesToSkia → SkiaNodeData → renderNode), Shape 타입 매핑 테이블 (8개 타입), 핵심 파일 구조, specShapeConverter 핵심 로직 (배경 box 추출/target 참조/색상 변환), ElementSprite TAG_SPEC_MAP 통합 코드, flexDirection row/column 지원 (rearrangeShapesForColumn), BlockEngine 통합 (calculateContentHeight/Width), Phase 6 체크리스트 (변환 인프라 9건 + 레이아웃 4건 + 검증 3건 완료) |

@@ -7,6 +7,49 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Feature - Spec Shapes 기반 Skia UI 컴포넌트 렌더링 (2026-02-12)
+
+#### 개요
+62개 UI 컴포넌트가 "배경색+텍스트" fallback 대신 ComponentSpec의 `shapes()` 함수가 반환하는 도형 배열을 기반으로 정확한 시각적 렌더링. Checkbox의 인디케이터 박스+체크마크+라벨, ToggleButton의 트랙+썸 등 세부 도형까지 Skia 캔버스에 표시.
+
+#### 근본 원인
+`ElementSprite.tsx`의 skiaNodeData useMemo에서 Card를 제외한 모든 UI 컴포넌트가 else 분기의 텍스트-전용 fallback으로 처리됨.
+
+#### 변경 내용
+
+**Phase 1: nodeRenderers.ts에 line 타입 추가**
+- `SkiaNodeData`에 `line` 타입 추가, `renderLine()` 함수 구현
+
+**Phase 2: specShapeConverter.ts 생성**
+- `Shape[]` → `SkiaNodeData` 변환기 신규 작성
+- 각 Shape 타입(rect, circle, line, text 등)별 Skia 렌더 데이터 매핑
+
+**Phase 3: ElementSprite.tsx에 spec shapes 렌더링 통합**
+- `getSpecForTag()` 헬퍼로 태그별 ComponentSpec 조회
+- spec shapes가 있는 컴포넌트는 `specShapeConverter`를 통해 렌더링
+- column 방향 flexDirection 재배치 지원
+
+**패치 1-6: 호환성 및 레이아웃 수정**
+- `aiEffects.ts`: borderRadius 튜플 타입 호환
+- bgBox 추출 조건 수정 (auto-sized only)
+- TokenRef 해석 (`resolveNum`)
+- Checkbox/Radio/Switch 기본 props + `styleToLayout` flex 기본값
+- `BlockEngine`: `calculateContentHeight`/`Width` 추가
+- flexDirection column 레이아웃 지원
+
+#### 수정 파일
+| 파일 | 변경 |
+|------|------|
+| `skia/nodeRenderers.ts` | `SkiaNodeData`에 line 타입 추가, `renderLine()` |
+| `skia/specShapeConverter.ts` | 신규 - `Shape[]` → `SkiaNodeData` 변환기 |
+| `skia/aiEffects.ts` | borderRadius 튜플 타입 호환 |
+| `sprites/ElementSprite.tsx` | `getSpecForTag()`, spec 렌더링, column 재배치 |
+| `layout/styleToLayout.ts` | Checkbox/Radio/Switch flex 기본값 + flexDirection 크기 |
+| `layout/engines/utils.ts` | `calculateContentHeight`/`Width` 폼 컨트롤 + flexDirection |
+| `types/builder/unified.types.ts` | `createDefaultCheckboxProps`/`Radio`/`Switch` 기본값 |
+
+---
+
 ### Performance - Fill 컬러피커 드래그 성능 최적화 (2026-02-12)
 
 #### 개요

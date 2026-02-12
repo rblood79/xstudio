@@ -1,7 +1,7 @@
 # Pixi Canvas 컴포넌트 검증 및 수정 계획
 
 > **작성일**: 2026-01-03
-> **상태**: 분석 완료, 수정 대기
+> **상태**: Spec Shapes 기반 Skia 렌더링 구현 완료 (2026-02-12)
 > **관련 경로**: `apps/builder/src/builder/workspace/canvas/ui/`
 
 ---
@@ -68,6 +68,34 @@ Property 패널과 Style 패널에서 변경한 값이 WebGL 컴포넌트에 **�
 2. **Variant 시스템 누락/불완전**: 18개 컴포넌트
 3. **Size Preset 불일치**: 6개 컴포넌트
 4. **React 컴포넌트와 아키텍처 차이**: 8개 컴포넌트
+
+---
+
+## 1.5. Spec Shapes 기반 Skia 렌더링 (2026-02-12)
+
+### 렌더링 전환 완료
+
+기존 62개 PixiJS 컴포넌트의 개별 렌더링 코드(Pixi*.tsx)는 이벤트 처리 전용(alpha=0)으로 유지되며, 실제 사용자에게 보이는 렌더링은 ComponentSpec의 shapes() 함수를 통해 Skia 캔버스에서 수행.
+
+| 구분 | 이전 | 현재 |
+|------|------|------|
+| Skia 렌더링 | Card만 자체 렌더링, 나머지 fallback | 62개 전체 Spec shapes 기반 |
+| PixiJS 역할 | 렌더링 + 이벤트 | 이벤트 전용 (alpha=0) |
+| 시각적 일치율 | ~70-80% | ~95% (Spec 기반) |
+
+### 구현 파일
+
+- `specShapeConverter.ts` — Shape[] → SkiaNodeData 제네릭 변환기
+- `ElementSprite.tsx` — getSpecForTag() + TAG_SPEC_MAP (62개 매핑)
+- `nodeRenderers.ts` — line 타입 추가
+
+### 해결된 이슈들
+
+1. Checkbox가 사각 박스로만 렌더링 → indicator+체크마크+라벨 정상 표시
+2. TokenRef 미해석 → resolveNum()으로 '{typography.text-md}' 등 정상 해석
+3. BlockEngine 36px fallback → spec 기반 24px(md) 정확한 크기
+4. flexDirection:column 미반영 → shapes 좌표 재배치 + 크기 재계산
+5. 세로 가운데 정렬 → specNode.y 오프셋으로 selection box 기준 센터링
 
 ---
 
@@ -672,3 +700,5 @@ const colors = useThemeColors();
 | 2026-01-03 | 1.0 | 초기 분석 및 계획 문서 작성 |
 | 2026-01-03 | 1.1 | Phase 의존 관계 다이어그램 추가, useThemeColors 훅 상태 반영, 일정 표현 개선 |
 | 2026-01-04 | 1.2 | Container 컴포넌트 CSS 동기화 패턴 추가 (Panel, Card) - 5.5절 |
+| 2026-02-12 | 1.3 | Spec shapes 기반 Skia 렌더링 전환 완료 상태 반영 - 1.5절 추가 |
+

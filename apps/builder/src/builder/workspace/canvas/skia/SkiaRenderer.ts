@@ -109,7 +109,7 @@ export class SkiaRenderer {
     this.overlayNode = node;
   }
 
-  /** 화면 고정 오버레이(그리드 등) 렌더러를 설정한다. 카메라 변환이 적용되지 않는다. */
+  /** 씬 좌표계 오버레이(그리드 등) 렌더러를 설정한다. 카메라 변환이 적용된다. */
   setScreenOverlayNode(node: SkiaRenderable | null): void {
     this.screenOverlayNode = node;
   }
@@ -403,16 +403,19 @@ export class SkiaRenderer {
   }
 
   /**
-   * 화면 고정 오버레이를 렌더링한다 (카메라 변환 없음).
+   * 씬 좌표계 오버레이를 렌더링한다 (카메라 변환 적용).
    *
-   * 그리드 등 스크린 좌표계에 고정된 요소를 렌더링한다.
-   * DPR 스케일만 적용하고 카메라 pan/zoom은 적용하지 않는다.
+   * 그리드 등 씬 좌표계에서 렌더링되는 요소를 그린다.
+   * DPR 스케일 + 카메라 pan/zoom을 적용하여
+   * 요소와 동일한 좌표계에서 동작하도록 한다.
    */
-  private renderScreenOverlay(): void {
+  private renderScreenOverlay(cullingBounds: DOMRect, camera: CameraState): void {
     if (!this.screenOverlayNode) return;
     this.mainCanvas.save();
     this.mainCanvas.scale(this.dpr, this.dpr);
-    this.screenOverlayNode.renderSkia(this.mainCanvas, new DOMRect(0, 0, 0, 0));
+    this.mainCanvas.translate(camera.panX, camera.panY);
+    this.mainCanvas.scale(camera.zoom, camera.zoom);
+    this.screenOverlayNode.renderSkia(this.mainCanvas, cullingBounds);
     this.mainCanvas.restore();
   }
 
@@ -436,9 +439,9 @@ export class SkiaRenderer {
   ): void {
     // 렌더링 순서: 배경 → 그리드 → 콘텐츠 → 오버레이
     // 그리드가 콘텐츠 아래에 위치하도록 content surface는 투명 배경을 사용하고,
-    // main canvas에서 배경색 → 그리드 → 콘텐츠 블릿 순서로 합성한다.
+    // main canvas에서 배경색 → 그리드(씬 좌표계) → 콘텐츠 블릿 순서로 합성한다.
     this.mainCanvas.clear(this.backgroundColor);
-    this.renderScreenOverlay();
+    this.renderScreenOverlay(cullingBounds, camera);
 
     const cameraMatchesSnapshot =
       camera.zoom === this.snapshotCamera.zoom &&
@@ -565,7 +568,7 @@ export class SkiaRenderer {
     const start = performance.now();
 
     this.mainCanvas.clear(this.backgroundColor);
-    this.renderScreenOverlay();
+    this.renderScreenOverlay(cullingBounds, camera);
     this.mainCanvas.save();
     this.mainCanvas.scale(this.dpr, this.dpr);
     this.mainCanvas.translate(camera.panX, camera.panY);

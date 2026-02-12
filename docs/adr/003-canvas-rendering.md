@@ -194,7 +194,7 @@ Yoga가 계산한 컨테이너 크기를 자식 스프라이트에 전달하는 
 ### 4. Dirty Rect 부분 렌더링 활성화 (Skia 콘텐츠 프레임) — (현재 제거됨)
 
 2026-02-03에 clipRect 기반 Dirty Rect 부분 렌더링을 활성화(좌표 변환 포함)했으나,
-2026-02-04~02-05에 “팬/줌/스냅샷/padding” 조합에서 잔상·미반영 리스크가 커서 제거(보류)했다.
+2026-02-04~02-05에 "팬/줌/스냅샷/padding" 조합에서 잔상·미반영 리스크가 커서 제거(보류)했다.
 현재는 Pencil 방식 2-pass(컨텐츠 캐시 + present blit + 오버레이 분리)로 대체된다.
 
 | 항목 | 당시(2026-02-03) | 현재(2026-02-05) |
@@ -278,7 +278,7 @@ Pencil 앱 대비 팬/줌 끊김 원인 5가지를 분석·수정:
 
 ### 6. Camera-Only Blit (Pencil 방식: padding + cleanup) — ✅ 활성화 (2026-02-05)
 
-Pencil 모델대로 “컨텐츠는 캐시 스냅샷, 카메라만 바뀌면 blit만”을 활성화했다.
+Pencil 모델대로 "컨텐츠는 캐시 스냅샷, 카메라만 바뀌면 blit만"을 활성화했다.
 핵심은 **contentSurface를 뷰포트보다 크게 생성(padding 512px)** 하여 팬/줌 중 가장자리 클리핑을 막는 것.
 
 | 항목 | 동작 |
@@ -327,7 +327,7 @@ Pencil 앱의 줌 속도와 동일하게 조정:
 
 ## Update: Dirty Rect 제거 + Pencil 2-pass 렌더러 완전 교체 (2026-02-05)
 
-Dirty Rect(clipRect) 기반 부분 렌더링은 “팬/줌/스냅샷/padding” 조합에서
+Dirty Rect(clipRect) 기반 부분 렌더링은 "팬/줌/스냅샷/padding" 조합에서
 좌표계·클리핑 경계 문제가 잔상·미반영 버그로 나타나기 쉬워 제거(보류)했다.
 
 대신 Pencil과 동일한 모델로 정리:
@@ -391,6 +391,131 @@ Camera                           Camera
 | 뷰포트 밖 페이지 | 전체 렌더링 | `ElementsLayer` 조건부 제외 (200px 마진) |
 
 **상세:** `docs/MULTIPAGE.md`
+
+## Update: Grid Skia 씬 좌표계 렌더링 + Snap to Grid (2026-02-12)
+
+### 1. Grid 렌더러 Screen-Space → Scene-Space 마이그레이션
+
+PixiJS `GridLayer.tsx` 기반 그리드를 CanvasKit/Skia `gridRenderer.ts`로 마이그레이션하면서,
+그리드 좌표계를 Screen-Space에서 Scene-Space로 전환하여 Snap to Grid 정합성을 확보:
+
+| 항목 | 수정 전 (Screen-Space) | 수정 후 (Scene-Space) |
+|------|----------------------|---------------------|
+| **좌표계** | `(0, 0)` ~ `(width, height)` 화면 고정 | `cullingBounds` 기반 씬 좌표 |
+| **그리드 정렬** | 카메라 독립 → 요소 snap 위치와 불일치 | 요소의 left/top 값과 동일한 좌표에 그리드선 위치 |
+| **선 두께** | 고정 1px | `1 / zoom` 보정으로 화면상 항상 1px |
+| **중앙선** | 화면 중앙 | 씬 원점 `(0, 0)` |
+| **카메라 변환** | 없음 | `renderScreenOverlay()`에서 DPR + translate + scale 적용 |
+
+**핵심:** 그리드가 씬 좌표계에서 렌더링되므로 Snap to Grid 위치와 시각적 그리드선이 항상 정확히 일치.
+
+### 2. renderScreenOverlay() 카메라 변환 추가
+
+`SkiaRenderer.ts`의 `renderScreenOverlay()`에 카메라 변환을 적용하여 씬 좌표계 오버레이를 지원:
+
+```typescript
+private renderScreenOverlay(cullingBounds: DOMRect, camera: CameraState): void {
+  this.mainCanvas.save();
+  this.mainCanvas.scale(this.dpr, this.dpr);
+  this.mainCanvas.translate(camera.panX, camera.panY);
+  this.mainCanvas.scale(camera.zoom, camera.zoom);
+  this.screenOverlayNode.renderSkia(this.mainCanvas, cullingBounds);
+  this.mainCanvas.restore();
+}
+```
+
+### 3. 페이지 드래그 Snap to Grid 지원
+
+`usePageDrag.ts`에 snap-to-grid 로직 추가 — 기존에는 요소 드래그만 snap을 지원하고 페이지 드래그는 미지원:
+
+| 항목 | 수정 전 | 수정 후 |
+|------|---------|---------|
+| **onPointerMove** | 자유 이동 | `snapToGrid` 활성 시 `gridSize` 단위 스냅 |
+| **onPointerUp** | 최종 위치만 업데이트 | 최종 위치 + 스냅 적용 (RAF 취소로 누락된 이동분 반영) |
+
+**상세:** `gridRenderer.ts`, `SkiaRenderer.ts`, `SkiaOverlay.tsx`, `usePageDrag.ts`
+
+## Update: Spec Shapes 기반 Skia UI 컴포넌트 렌더링 (2026-02-12)
+
+62개 UI 컴포넌트(Button, Checkbox, Radio, Switch 등)가 "배경색+텍스트" fallback으로만 Skia 렌더링되던 한계를 **ComponentSpec의 `render.shapes()` 기반 정확한 도형 렌더링**으로 교체:
+
+| 항목 | 수정 전 | 수정 후 |
+|------|---------|---------|
+| **UI 컴포넌트 렌더링** | 배경색+텍스트 fallback (`VARIANT_BG_COLORS` 테이블) | Spec shapes 기반 정확한 도형 렌더링 |
+| **지원 Shape 타입** | 없음 | roundRect, rect, circle, line, border, text, shadow, container |
+| **Column 레이아웃** | 미지원 | `rearrangeShapesForColumn()` — shapes 좌표 재배치 (indicator 중앙, text 아래) |
+| **BlockEngine 크기** | `DEFAULT_HEIGHT` 36px fallback | Spec 기반 24px (md) + `flexDirection` 인식 |
+
+### 1. 렌더링 파이프라인
+
+```
+ComponentSpec.render.shapes(props, size, theme)
+  → Shape[] (roundRect, rect, circle, line, border, text, shadow, container)
+  → specShapesToSkia(shapes, theme, width, height)
+  → SkiaNodeData (box, line, text, effects)
+  → renderNode() (nodeRenderers.ts)
+```
+
+### 2. specShapeConverter.ts (신규)
+
+`Shape[]` → `SkiaNodeData` 제네릭 변환기. Shape 타입별 매핑 규칙:
+
+| Shape 타입 | SkiaNodeData 타입 | 변환 규칙 |
+|-----------|-------------------|-----------|
+| `roundRect` | `box` | `radius` → `borderRadius`, `auto` 크기 → 컨테이너 크기 |
+| `rect` | `box` | `borderRadius: 0` |
+| `circle` | `box` | 중심→좌상단 변환 (`x - radius, y - radius`), `borderRadius = radius` |
+| `line` | `line` | `x1/y1/x2/y2` + `strokeColor/strokeWidth` (신규 SkiaNodeData 타입) |
+| `border` | 기존 노드에 stroke 추가 | `target` ID 또는 직전 노드의 `box.strokeColor/strokeWidth` 설정 |
+| `text` | `text` | baseline/align 기반 padding 계산, `TokenRef` fontSize 해석 |
+| `shadow` | `effects[]` 추가 | `target` 노드에 `drop-shadow` EffectStyle 부착 |
+| `container` | 재귀 호출 | 자식 `Shape[]` → `specShapesToSkia()` 재귀 |
+
+**bgBox 추출 규칙:** 첫 번째 `auto`-sized shape at `(0, 0)`만 컨테이너 배경으로 추출. 고정 크기 shape (예: checkbox indicator 20x20)는 추출하지 않음.
+
+**색상 해석:** `ColorValue` → `resolveColor()` → hex → `Float32Array(r, g, b, a)`
+**TokenRef 해석:** `resolveNum()` → `resolveToken()` (예: `'{typography.text-md}'` → `14`)
+
+### 3. ElementSprite.tsx 변경
+
+`TAG_SPEC_MAP`으로 62개 컴포넌트 태그를 ComponentSpec에 매핑:
+
+```typescript
+const TAG_SPEC_MAP: Record<string, ComponentSpec<any>> = {
+  'Button': ButtonSpec, 'SubmitButton': ButtonSpec,
+  'FancyButton': FancyButtonSpec,
+  // ... 62개 컴포넌트
+};
+
+function getSpecForTag(tag: string): ComponentSpec<any> | null {
+  return TAG_SPEC_MAP[tag] ?? null;
+}
+```
+
+**Column layout 지원:** `rearrangeShapesForColumn()` — `flexDirection: column` 일 때 indicator를 가로 중앙에, text를 indicator 아래에 재배치.
+
+**세로 가운데 정렬:** 컨테이너가 spec 콘텐츠보다 높을 때 `specNode.y = (finalHeight - specHeight) / 2`로 수직 센터링.
+
+### 4. BlockEngine 통합
+
+`engines/utils.ts`의 `calculateContentWidth/Height`에 Checkbox/Radio/Switch/Toggle 전용 크기 계산 추가:
+
+| 항목 | 수정 전 | 수정 후 |
+|------|---------|---------|
+| **기본 높이** | `DEFAULT_HEIGHT` (36px) | Spec 기반 크기 (md: 24px) |
+| **flexDirection row** | 미지원 | `indicatorW + gap + textW` |
+| **flexDirection column** | 미지원 | `max(indicatorW, textW)`, height: `indicatorH + gap + textH` |
+| **styleToLayout.ts** | 기본 flex 없음 | Checkbox/Radio/Switch 기본 flex 레이아웃 + `flexDirection` 인식 크기 계산 |
+
+### 5. 기타 변경
+
+| 파일 | 변경 |
+|------|------|
+| `skia/nodeRenderers.ts` | `SkiaNodeData`에 `'line'` 타입 추가, `renderLine()` 구현 |
+| `skia/aiEffects.ts` | `borderRadius` 튜플 타입 호환성 패치 (`number \| readonly [number, number, number, number]`) |
+| `types/builder/unified.types.ts` | `createDefaultCheckboxProps`/`RadioProps`/`SwitchProps`에 `variant`, `size`, `style` 기본값 추가 |
+
+**상세:** `apps/builder/src/.../skia/specShapeConverter.ts`, `apps/builder/src/.../sprites/ElementSprite.tsx`, `apps/builder/src/.../skia/nodeRenderers.ts`, `docs/COMPONENT_SPEC_ARCHITECTURE.md`
 
 ## Implementation
 

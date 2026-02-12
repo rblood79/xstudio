@@ -691,15 +691,29 @@ export function createDefaultTextFieldProps(): TextFieldElementProps {
 export function createDefaultCheckboxProps(): CheckboxElementProps {
   return {
     children: "Checkbox",
+    variant: "default",
+    size: "md",
     isSelected: false,
     isDisabled: false,
+    style: {
+      display: 'flex',
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
   };
 }
 
 export function createDefaultRadioProps(): RadioElementProps {
   return {
+    variant: "default",
+    size: "md",
     isSelected: false,
     isDisabled: false,
+    style: {
+      display: 'flex',
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
   };
 }
 
@@ -833,8 +847,15 @@ export function createDefaultDateRangePickerProps(): DateRangePickerElementProps
 export function createDefaultSwitchProps(): SwitchElementProps {
   return {
     children: "Switch",
+    variant: "default",
+    size: "md",
     isSelected: false,
     isDisabled: false,
+    style: {
+      display: 'flex',
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
   };
 }
 

@@ -53,7 +53,9 @@ apps/builder/src/builder/workspace/canvas/
 │   └── ...
 ├── skia/                   # CanvasKit/Skia WASM 렌더링
 │   ├── SkiaOverlay.tsx       # Skia 렌더 루프 + Selection 통합
+│   ├── SkiaRenderer.ts       # 이중 Surface 렌더러 (contentSurface + mainSurface)
 │   ├── selectionRenderer.ts  # Selection 오버레이 Skia 렌더 함수
+│   ├── gridRenderer.ts       # 씬 좌표계 그리드 렌더러 (Snap to Grid 정합)
 │   ├── aiEffects.ts          # AI 생성/완료 이펙트
 │   ├── disposable.ts         # CanvasKit 리소스 관리 (SkiaDisposable)
 │   └── ...
@@ -62,8 +64,10 @@ apps/builder/src/builder/workspace/canvas/
 │   ├── useViewportControl.ts   # React hook
 │   ├── ViewportControlBridge.tsx
 │   └── index.ts
-└── grid/                   # 그리드/줌 시스템
-    ├── GridLayer.tsx
+├── hooks/                  # 캔버스 커스텀 훅
+│   └── usePageDrag.ts      # 페이지 타이틀 드래그 (Snap to Grid 지원)
+└── grid/                   # 그리드/줌 시스템 (레거시)
+    ├── GridLayer.tsx        # (레거시, gridRenderer.ts로 대체)
     ├── useZoomPan.ts       # (레거시, ViewportController로 대체)
     └── index.ts
 ```
@@ -115,8 +119,11 @@ apps/builder/src/builder/workspace/canvas/
 > 투명 히트 영역(`alpha=0.001`)으로만 동작하며, 이벤트 처리(클릭 선택, 드래그, 리사이즈)를 담당.
 > (2026-02-02: `VITE_RENDER_MODE` 환경변수 제거, Skia 모드 하드코딩)
 
-### B1.4 GridLayer
-- 그리드 표시
+### B1.4 GridLayer → gridRenderer.ts (Skia 마이그레이션)
+- ~~PixiJS Graphics 기반 그리드~~ → CanvasKit/Skia `gridRenderer.ts`로 마이그레이션
+- **씬 좌표계(Scene-Space)** 렌더링: 그리드선이 요소의 left/top snap 위치와 정확히 일치
+- 카메라 변환은 `SkiaRenderer.renderScreenOverlay()`에서 적용 (DPR + translate + scale)
+- 선 두께 `1/zoom` 보정으로 화면상 항상 1px 유지
 - Zoom/Pan 인터랙션
 
 ### B1.5 TextEditOverlay

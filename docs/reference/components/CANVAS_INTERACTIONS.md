@@ -559,4 +559,80 @@ CSS transform 제거 + WebGL resize(1160px)
 - [PIXI_WEBGL_INTEGRATION.md](../PIXI_WEBGL_INTEGRATION.md) - PixiJS WebGL 통합
 - [Phase 10 B1.4](../phases/PHASE_10.md) - 줌/팬 구현 스펙
 
-**최종 업데이트:** 2026-02-03
+---
+
+## Grid & Snap to Grid (2026-02-12)
+
+### 개요
+
+캔버스 그리드와 Snap to Grid 시스템. 그리드는 CanvasKit/Skia로 씬 좌표계(Scene-Space)에서 렌더링되며, 스냅 위치와 시각적 그리드선이 항상 정확히 일치한다.
+
+### 아키텍처
+
+```
+Skia Canvas (z:2)
+├── contentSurface (디자인 노드)
+└── mainSurface (present 단계)
+    ├── content blit
+    ├── Selection 오버레이
+    └── Grid 오버레이 ← renderScreenOverlay() + 카메라 변환
+         └── gridRenderer.ts (씬 좌표계 렌더링)
+```
+
+### 파일 구조
+
+| 파일 | 역할 |
+|------|------|
+| `canvas/skia/gridRenderer.ts` | 씬 좌표계 그리드 렌더러 (일반/메이저/중앙선/스냅 그리드) |
+| `canvas/skia/SkiaRenderer.ts` | `renderScreenOverlay()`에서 카메라 변환 적용 |
+| `canvas/skia/SkiaOverlay.tsx` | Grid 렌더 콜백 설정 (`setScreenOverlayNode`) |
+| `canvas/hooks/usePageDrag.ts` | 페이지 드래그 시 Snap to Grid 적용 |
+| `canvas/BuilderCanvas.tsx` | 요소 드래그 시 Snap to Grid 적용 |
+
+### 좌표계 설계
+
+Grid와 Snap이 동일한 씬 좌표계를 사용하여 시각적 정합성을 보장:
+
+```
+씬 좌표계 (Scene-Space):
+- 그리드선: cullingBounds 기반, gridInterval 간격으로 배치
+- 요소 snap: Math.round(pos / gridSize) * gridSize
+- 두 좌표계가 동일 → 그리드선 위에 정확히 스냅
+```
+
+| 항목 | 값 |
+|------|-----|
+| **기본 그리드** | `gridSize` 간격, slate-200 색상, alpha 0.5 |
+| **메이저 그리드** | `gridSize * 5` 간격, slate-400 색상, alpha 0.3 |
+| **중앙선** | 씬 원점 `(0, 0)`, slate-600 색상, alpha 0.6 |
+| **스냅 그리드** | `snapSize` 간격, blue-500 도트, alpha 0.2 |
+| **선 두께** | `1 / zoom` (화면상 항상 1px) |
+
+### Snap to Grid 적용 범위
+
+| 대상 | 파일 | 방식 |
+|------|------|------|
+| **요소 드래그** | `BuilderCanvas.tsx` | 드래그 중 gridSize 단위 스냅 |
+| **페이지 드래그** | `usePageDrag.ts` | onPointerMove (RAF) + onPointerUp에서 스냅 |
+
+### 줌 레벨별 그리드 간격 자동 조정
+
+| 줌 레벨 | 그리드 간격 |
+|---------|------------|
+| `< 0.25` | `gridSize * 4` |
+| `< 0.5` | `gridSize * 2` |
+| `0.5 ~ 2` | `gridSize` |
+| `> 2` | `gridSize / 2` |
+| `> 4` | `gridSize / 4` |
+
+> 항상 `gridSize`의 정수 배수를 반환하여 모든 그리드선이 유효한 snap 위치에 놓이도록 보장.
+
+---
+
+**관련 문서:**
+- [CANVAS_SCROLLBAR.md](../../CANVAS_SCROLLBAR.md) - 캔버스 스크롤바 설계
+- [CANVAS_RUNTIME_ISOLATION.md](./CANVAS_RUNTIME_ISOLATION.md) - 캔버스 런타임 격리
+- [PIXI_WEBGL_INTEGRATION.md](../PIXI_WEBGL_INTEGRATION.md) - PixiJS WebGL 통합
+- [Phase 10 B1.4](../phases/PHASE_10.md) - 줌/팬 구현 스펙
+
+**최종 업데이트:** 2026-02-12
