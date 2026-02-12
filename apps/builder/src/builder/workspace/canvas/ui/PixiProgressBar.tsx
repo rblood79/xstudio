@@ -18,8 +18,15 @@ import { Container, Graphics } from 'pixi.js';
 import type { Element } from '../../../../types/core/store.types';
 import type { CSSStyle } from '../sprites/styleConverter';
 import { cssColorToHex } from '../sprites/styleConverter';
-import { getProgressBarSizePreset, getVariantColors } from '../utils/cssVariableReader';
-import { useThemeColors } from '../hooks/useThemeColors';
+
+// 🚀 Component Spec
+import {
+  ProgressBarSpec,
+  PROGRESSBAR_FILL_COLORS,
+  PROGRESSBAR_DIMENSIONS,
+  getVariantColors as getSpecVariantColors,
+  getSizePreset as getSpecSizePreset,
+} from '@xstudio/specs';
 
 // ============================================
 // Types
@@ -67,10 +74,15 @@ function convertToProgressBarStyle(
   const primaryColor = cssColorToHex(style?.backgroundColor, variantColors.bg);
   const trackColor = cssColorToHex(style?.borderColor, 0xe5e7eb); // track은 회색 유지
 
-  // 🚀 CSS에서 사이즈 프리셋 읽기
-  const sizePreset = getProgressBarSizePreset(size);
+  // 🚀 Spec Migration
+  const sizeSpec = ProgressBarSpec.sizes[size] || ProgressBarSpec.sizes[ProgressBarSpec.defaultSize];
+  const specPreset = getSpecSizePreset(sizeSpec, 'light');
+  const sizePreset = {
+    width: specPreset.paddingX ?? 200,
+    barHeight: specPreset.height ?? 8,
+    borderRadius: specPreset.borderRadius ?? 4,
+  };
 
-  // 🚀 Phase 8: parseCSSSize 제거 - CSS 프리셋 값 사용
   return {
     x: typeof style?.left === 'number' ? style.left : 0,
     y: typeof style?.top === 'number' ? style.top : 0,
@@ -144,17 +156,16 @@ export const PixiProgressBar = memo(function PixiProgressBar({
   const style = element.props?.style as CSSStyle | undefined;
   const props = element.props as Record<string, unknown> | undefined;
 
-  // 🚀 테마 색상 동적 로드
-  const themeColors = useThemeColors();
-
   // variant에 따른 색상 (default, primary, secondary, tertiary, error, surface)
   const variant = useMemo(() => {
     return String(props?.variant || 'default');
   }, [props?.variant]);
 
   const variantColors = useMemo(() => {
-    return getVariantColors(variant, themeColors) as VariantColors;
-  }, [variant, themeColors]);
+    const variantSpec = ProgressBarSpec.variants[variant] || ProgressBarSpec.variants[ProgressBarSpec.defaultVariant];
+    const colors = getSpecVariantColors(variantSpec, 'light');
+    return { bg: colors.bg, text: colors.text } as VariantColors;
+  }, [variant]);
 
   // 🚀 Phase 0: size prop 추출 (기본값: 'md')
   const size = useMemo(() => String(props?.size || 'md'), [props?.size]);

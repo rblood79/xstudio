@@ -24,12 +24,17 @@ import { ScrollBox } from "@pixi/ui";
 import type { Element } from "../../../../types/core/store.types";
 import type { CSSStyle } from "../sprites/styleConverter";
 import { toLayoutSize } from "../layout/styleToLayout";
-import {
-  getListBoxSizePreset,
-  getListBoxColorPreset,
-} from "../utils/cssVariableReader";
 import { drawBox } from "../utils";
 import { useStore } from "../../../stores";
+
+// 🚀 Spec Migration
+import { resolveTokenColor } from '../hooks/useSpecRenderer';
+import {
+  ListBoxSpec,
+  getVariantColors as getSpecVariantColors,
+  getSizePreset as getSpecSizePreset,
+} from '@xstudio/specs';
+import type { TokenRef } from '@xstudio/specs';
 
 // ============================================
 // Types
@@ -106,8 +111,26 @@ interface ListBoxItemComponentProps {
   isItemSelected: boolean;
   width: number;
   height: number;
-  sizePreset: ReturnType<typeof getListBoxSizePreset>;
-  colorPreset: ReturnType<typeof getListBoxColorPreset>;
+  sizePreset: {
+    fontSize: number;
+    height: number;
+    paddingX: number;
+    paddingY: number;
+    borderRadius: number;
+    gap: number;
+    containerPadding: number;
+    itemHeight: number;
+    itemPaddingX: number;
+  };
+  colorPreset: {
+    containerBackground: number;
+    containerBorder: number;
+    itemBackground: number;
+    itemHoverBackground: number;
+    itemSelectedBackground: number;
+    textColor: number;
+    selectedTextColor: number;
+  };
   onPress: (value: string) => void;
 }
 
@@ -306,9 +329,32 @@ export const PixiListBox = memo(function PixiListBox({
   const variant = useMemo(() => String(props?.variant || "primary"), [props?.variant]);
   const size = useMemo(() => String(props?.size || "md"), [props?.size]);
 
-  // 🚀 CSS에서 프리셋 읽기
-  const sizePreset = useMemo(() => getListBoxSizePreset(size), [size]);
-  const colorPreset = useMemo(() => getListBoxColorPreset(variant), [variant]);
+  // 🚀 CSS / Spec에서 프리셋 읽기
+  const sizePreset = useMemo(() => {
+    const sizeSpec = ListBoxSpec.sizes[size] || ListBoxSpec.sizes[ListBoxSpec.defaultSize];
+    const specPreset = getSpecSizePreset(sizeSpec, 'light');
+    return {
+      ...specPreset,
+      containerPadding: specPreset.paddingX,
+      itemHeight: specPreset.height,
+      itemPaddingX: specPreset.paddingX,
+      gap: specPreset.gap ?? 4,
+    };
+  }, [size]);
+
+  const colorPreset = useMemo(() => {
+    const variantSpec = ListBoxSpec.variants[variant] || ListBoxSpec.variants[ListBoxSpec.defaultVariant];
+    const vc = getSpecVariantColors(variantSpec, 'light');
+    return {
+      containerBackground: vc.bg,
+      containerBorder: vc.border ?? 0x79747e,
+      itemBackground: vc.bg,
+      itemHoverBackground: vc.bgHover,
+      itemSelectedBackground: resolveTokenColor('{color.secondary-container}' as TokenRef, 'light'),
+      textColor: vc.text,
+      selectedTextColor: resolveTokenColor('{color.on-secondary-container}' as TokenRef, 'light'),
+    };
+  }, [variant]);
 
   // selectionMode: "single" (기본) | "multiple"
   const selectionMode = useMemo(() => {

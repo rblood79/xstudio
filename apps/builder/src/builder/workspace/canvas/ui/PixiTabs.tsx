@@ -22,11 +22,14 @@ import {
 } from "pixi.js";
 import type { Element } from "../../../../types/core/store.types";
 import type { CSSStyle } from "../sprites/styleConverter";
-import {
-  getTabsSizePreset,
-  getTabsColorPreset,
-} from "../utils/cssVariableReader";
 import { useStore } from "../../../stores";
+
+// 🚀 Component Spec
+import {
+  TabsSpec,
+  getVariantColors as getSpecVariantColors,
+  getSizePreset as getSpecSizePreset,
+} from '@xstudio/specs';
 import { PixiPanel } from "./PixiPanel";
 import { ElementSprite } from "../sprites";
 import { styleToLayout } from "../layout";
@@ -115,14 +118,24 @@ export const PixiTabs = memo(function PixiTabs({
   // 탭 선택 핸들러에서 사용할 setter (기존 setSelectedTabId 대체)
   const setSelectedTabId = setUserSelectedTabId;
 
-  // 🚀 CSS에서 프리셋 읽기
-  const sizePreset = useMemo(() => getTabsSizePreset(size), [size]);
+  // 🚀 Spec Migration
+  const sizePreset = useMemo(() => {
+    const sizeSpec = TabsSpec.sizes[size] || TabsSpec.sizes[TabsSpec.defaultSize];
+    return getSpecSizePreset(sizeSpec, 'light');
+  }, [size]);
 
-  // 🚀 variant에 따른 Tabs 전용 색상 프리셋
-  const colorPreset = useMemo(
-    () => getTabsColorPreset(variant),
-    [variant]
-  );
+  // 🚀 Spec Migration: variant에 따른 Tabs 전용 색상 프리셋
+  const colorPreset = useMemo(() => {
+    const variantSpec = TabsSpec.variants[variant] || TabsSpec.variants[TabsSpec.defaultVariant];
+    const colors = getSpecVariantColors(variantSpec, 'light');
+    return {
+      borderColor: colors.border ?? 0xe5e7eb,
+      indicatorColor: colors.bg,
+      selectedTextColor: colors.text,
+      textColor: colors.text,
+      hoverBgColor: colors.bgHover,
+    };
+  }, [variant]);
 
   // hover 상태 관리
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);

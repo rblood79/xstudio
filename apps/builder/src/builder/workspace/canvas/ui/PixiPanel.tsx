@@ -20,11 +20,14 @@ import { memo, useCallback, useMemo, useRef, useState } from 'react';
 import { Graphics as PixiGraphics, TextStyle } from 'pixi.js';
 import type { Element } from '../../../../types/core/store.types';
 import type { CSSStyle } from '../sprites/styleConverter';
-import {
-  getPanelSizePreset,
-  getPanelColorPreset,
-} from '../utils/cssVariableReader';
 import { drawBox } from '../utils';
+
+// 🚀 Spec Migration
+import {
+  PanelSpec,
+  getVariantColors as getSpecVariantColors,
+  getSizePreset as getSpecSizePreset,
+} from '@xstudio/specs';
 
 // ============================================
 // Types
@@ -68,9 +71,22 @@ export const PixiPanel = memo(function PixiPanel({
   const size = useMemo(() => String(props?.size || 'md'), [props?.size]);
   const title = useMemo(() => String(props?.title || ''), [props?.title]);
 
-  // 🚀 CSS에서 프리셋 읽기
-  const sizePreset = useMemo(() => getPanelSizePreset(size), [size]);
-  const colorPreset = useMemo(() => getPanelColorPreset(variant), [variant]);
+  // 🚀 CSS에서 프리셋 읽기 (Spec Migration)
+  const sizePreset = useMemo(() => {
+    const sizeSpec = PanelSpec.sizes[size] || PanelSpec.sizes[PanelSpec.defaultSize];
+    return getSpecSizePreset(sizeSpec, 'light');
+  }, [size]);
+
+  const colorPreset = useMemo(() => {
+    const variantSpec = PanelSpec.variants[variant] || PanelSpec.variants[PanelSpec.defaultVariant];
+    const specColors = getSpecVariantColors(variantSpec, 'light');
+    return {
+      backgroundColor: specColors.bg,
+      borderColor: specColors.border ?? specColors.bg,
+      titleColor: specColors.text,
+      textColor: specColors.text,
+    };
+  }, [variant]);
 
   // 타이틀 높이 계산
   // CSS: .panel-title { padding: var(--spacing-sm) var(--spacing-md); font-size: var(--text-sm); }

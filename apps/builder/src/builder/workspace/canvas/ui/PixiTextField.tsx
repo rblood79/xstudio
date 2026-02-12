@@ -15,14 +15,19 @@ import { PIXI_COMPONENTS } from '../pixiSetup';
 import type { Graphics as PixiGraphics, TextStyle } from 'pixi.js';
 import type { Element } from '@/types/core/store.types';
 import type { CSSStyle } from '../sprites/styleConverter';
+
+// 🚀 Spec Migration
 import {
-  getTextFieldSizePreset,
-  getTextFieldColorPreset,
+  resolveTokenColor,
   getLabelStylePreset,
   getDescriptionStylePreset,
-  getVariantColors,
-} from '../utils/cssVariableReader';
-import { useThemeColors } from '../hooks/useThemeColors';
+} from '../hooks/useSpecRenderer';
+import {
+  TextFieldSpec,
+  getVariantColors as getSpecVariantColors,
+  getSizePreset as getSpecSizePreset,
+} from '@xstudio/specs';
+import type { TokenRef } from '@xstudio/specs';
 
 export interface PixiTextFieldProps {
   element: Element;
@@ -52,21 +57,35 @@ export function PixiTextField({
   const isInvalid = (props.isInvalid as boolean) || false;
   const errorMessage = (props.errorMessage as string) || '';
 
-  // Get presets from CSS
-  const sizePreset = useMemo(() => getTextFieldSizePreset(size), [size]);
-  const colorPreset = useMemo(() => getTextFieldColorPreset(variant), [variant]);
+  // Get presets from CSS / Spec
+  const sizePreset = useMemo(() => {
+    const sizeSpec = TextFieldSpec.sizes[size] || TextFieldSpec.sizes[TextFieldSpec.defaultSize];
+    return getSpecSizePreset(sizeSpec, 'light');
+  }, [size]);
+
+  const colorPreset = useMemo(() => {
+    const variantSpec = TextFieldSpec.variants[variant] || TextFieldSpec.variants[TextFieldSpec.defaultVariant];
+    const vc = getSpecVariantColors(variantSpec, 'light');
+    return {
+      backgroundColor: vc.bg,
+      textColor: vc.text,
+      borderColor: vc.border ?? 0x79747e,
+      focusBorderColor: resolveTokenColor('{color.primary}' as TokenRef, 'light'),
+      errorBorderColor: resolveTokenColor('{color.error}' as TokenRef, 'light'),
+      placeholderColor: resolveTokenColor('{color.on-surface-variant}' as TokenRef, 'light'),
+      disabledBackgroundColor: resolveTokenColor('{color.surface-container}' as TokenRef, 'light'),
+      disabledTextColor: resolveTokenColor('{color.on-surface-variant}' as TokenRef, 'light'),
+    };
+  }, [variant]);
   // 🚀 Phase 19: .react-aria-Label / .react-aria-FieldError 클래스에서 스타일 읽기
   const labelPreset = useMemo(() => getLabelStylePreset(size), [size]);
   const descPreset = useMemo(() => getDescriptionStylePreset(size), [size]);
 
-  // 🚀 테마 색상 동적 로드
-  const themeColors = useThemeColors();
-
   // 🚀 variant에 따른 테마 색상
-  const variantColors = useMemo(
-    () => getVariantColors(variant, themeColors),
-    [variant, themeColors]
-  );
+  const variantColors = useMemo(() => {
+    const variantSpec = TextFieldSpec.variants[variant] || TextFieldSpec.variants[TextFieldSpec.defaultVariant];
+    return getSpecVariantColors(variantSpec, 'light');
+  }, [variant]);
 
   // 🚀 Phase 19: flexDirection 지원 (row/column)
   const flexDirection = useMemo(() => {

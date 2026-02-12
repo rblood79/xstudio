@@ -14,12 +14,16 @@ import { useExtend } from '@pixi/react';
 import { PIXI_COMPONENTS } from '../pixiSetup';
 import type { Graphics as PixiGraphics, TextStyle } from 'pixi.js';
 import type { Element } from '@/types/core/store.types';
-import {
-  getFileTriggerSizePreset,
-  getFileTriggerColorPreset,
-  getVariantColors,
-} from '../utils/cssVariableReader';
-import { useThemeColors } from '../hooks/useThemeColors';
+
+// 🚀 Spec Migration
+import { FileTriggerSpec, getVariantColors as getSpecVariantColors, getSizePreset as getSpecSizePreset } from '@xstudio/specs';
+
+const FILE_TRIGGER_COLOR_PRESETS: Record<string, { backgroundColor: number; borderColor: number; textColor: number; iconColor: number; hoverBackgroundColor: number; focusRingColor: number }> = {
+  default: { backgroundColor: 0xffffff, borderColor: 0xcad3dc, textColor: 0x374151, iconColor: 0x6b7280, hoverBackgroundColor: 0xf3f4f6, focusRingColor: 0x3b82f6 },
+  primary: { backgroundColor: 0x3b82f6, borderColor: 0x3b82f6, textColor: 0xffffff, iconColor: 0xffffff, hoverBackgroundColor: 0x2563eb, focusRingColor: 0x3b82f6 },
+  secondary: { backgroundColor: 0x6366f1, borderColor: 0x6366f1, textColor: 0xffffff, iconColor: 0xffffff, hoverBackgroundColor: 0x4f46e5, focusRingColor: 0x6366f1 },
+  surface: { backgroundColor: 0xf3f4f6, borderColor: 0x00000000, textColor: 0x374151, iconColor: 0x6b7280, hoverBackgroundColor: 0xe5e7eb, focusRingColor: 0x3b82f6 },
+};
 
 export interface PixiFileTriggerProps {
   element: Element;
@@ -43,17 +47,17 @@ export function PixiFileTrigger({
   const label = (props.label as string) || (props.children as string) || 'Choose file';
 
   // Get presets from CSS
-  const sizePreset = useMemo(() => getFileTriggerSizePreset(size), [size]);
-  const colorPreset = useMemo(() => getFileTriggerColorPreset(variant), [variant]);
-
-  // 🚀 테마 색상 동적 로드
-  const themeColors = useThemeColors();
+  const sizePreset = useMemo(() => {
+    const sizeSpec = FileTriggerSpec.sizes[size] || FileTriggerSpec.sizes[FileTriggerSpec.defaultSize];
+    return getSpecSizePreset(sizeSpec, 'light');
+  }, [size]);
+  const colorPreset = useMemo(() => FILE_TRIGGER_COLOR_PRESETS[variant] ?? FILE_TRIGGER_COLOR_PRESETS.default, [variant]);
 
   // 🚀 variant에 따른 테마 색상
-  const variantColors = useMemo(
-    () => getVariantColors(variant, themeColors),
-    [variant, themeColors]
-  );
+  const variantColors = useMemo(() => {
+    const variantSpec = FileTriggerSpec.variants[variant] || FileTriggerSpec.variants[FileTriggerSpec.defaultVariant];
+    return getSpecVariantColors(variantSpec, 'light');
+  }, [variant]);
 
   // Calculate dimensions
   const buttonWidth = (props.width as number) || 140;

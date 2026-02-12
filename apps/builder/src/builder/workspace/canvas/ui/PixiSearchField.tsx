@@ -17,10 +17,15 @@ import { memo, useCallback, useMemo, useState } from "react";
 import { Graphics as PixiGraphics, TextStyle } from "pixi.js";
 import type { Element } from "../../../../types/core/store.types";
 import type { CSSStyle } from "../sprites/styleConverter";
+
+// 🚀 Spec Migration
+import { resolveTokenColor } from '../hooks/useSpecRenderer';
 import {
-  getSearchFieldSizePreset,
-  getSearchFieldColorPreset,
-} from "../utils/cssVariableReader";
+  SearchFieldSpec,
+  getVariantColors as getSpecVariantColors,
+  getSizePreset as getSpecSizePreset,
+} from '@xstudio/specs';
+import type { TokenRef } from '@xstudio/specs';
 
 // ============================================
 // Types
@@ -62,9 +67,33 @@ export const PixiSearchField = memo(function PixiSearchField({
   const isDisabled = Boolean(props?.isDisabled);
   const hasValue = value.length > 0;
 
-  // 🚀 CSS에서 프리셋 읽기
-  const sizePreset = useMemo(() => getSearchFieldSizePreset(size), [size]);
-  const colorPreset = useMemo(() => getSearchFieldColorPreset(variant), [variant]);
+  // 🚀 CSS / Spec에서 프리셋 읽기
+  const sizePreset = useMemo(() => {
+    const sizeSpec = SearchFieldSpec.sizes[size] || SearchFieldSpec.sizes[SearchFieldSpec.defaultSize];
+    const specPreset = getSpecSizePreset(sizeSpec, 'light');
+    return {
+      ...specPreset,
+      paddingY: specPreset.paddingY,
+      paddingX: specPreset.paddingX,
+      inputWidth: 240,
+      labelFontSize: specPreset.fontSize - 2,
+      clearButtonSize: specPreset.height * 0.5,
+    };
+  }, [size]);
+
+  const colorPreset = useMemo(() => {
+    const variantSpec = SearchFieldSpec.variants[variant] || SearchFieldSpec.variants[SearchFieldSpec.defaultVariant];
+    const vc = getSpecVariantColors(variantSpec, 'light');
+    return {
+      backgroundColor: vc.bg,
+      textColor: vc.text,
+      borderColor: vc.border ?? 0x79747e,
+      placeholderColor: resolveTokenColor('{color.on-surface-variant}' as TokenRef, 'light'),
+      labelColor: vc.text,
+      clearButtonBgColor: resolveTokenColor('{color.surface-container}' as TokenRef, 'light'),
+      clearButtonHoverBgColor: resolveTokenColor('{color.surface-container-high}' as TokenRef, 'light'),
+    };
+  }, [variant]);
 
   // hover 상태 관리
   const [isClearHovered, setIsClearHovered] = useState(false);

@@ -17,6 +17,9 @@ import type { Element } from '../../../../types/core/store.types';
 import type { CSSStyle } from '../sprites/styleConverter';
 // 🚀 Phase 8: parseCSSSize 제거
 
+// 🚀 Spec Migration
+import { RADIO_DIMENSIONS } from '@xstudio/specs';
+
 // ============================================
 // Types
 // ============================================
@@ -52,8 +55,9 @@ export const PixiRadioItem = memo(function PixiRadioItem({
   }, [props]);
 
   // 스타일
-  // 🚀 Phase 8: parseCSSSize 제거 - fallback 값 직접 사용
-  const radioSize = DEFAULT_RADIO_SIZE;
+  // 🚀 Spec Migration: RADIO_DIMENSIONS 사용
+  const size = useMemo(() => String(props?.size || 'md'), [props?.size]);
+  const radioSize = RADIO_DIMENSIONS[size]?.outer ?? RADIO_DIMENSIONS.md.outer;
   const fontSize = typeof style?.fontSize === 'number' ? style.fontSize : 14;
 
   // 크기 (LayoutEngine에서 계산된 크기 우선 사용)

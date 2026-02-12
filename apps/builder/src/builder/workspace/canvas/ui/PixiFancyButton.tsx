@@ -17,9 +17,9 @@ import { FancyButton } from '@pixi/ui';
 import { Container, Graphics, Text, TextStyle } from 'pixi.js';
 import type { Element } from '../../../../types/core/store.types';
 import type { CSSStyle } from '../sprites/styleConverter';
-// 🚀 Phase 8: parseCSSSize 제거
-import { getVariantColors } from '../utils/cssVariableReader';
-import { useThemeColors } from '../hooks/useThemeColors';
+
+// 🚀 Spec Migration
+import { FancyButtonSpec, getVariantColors as getSpecVariantColors, getSizePreset as getSpecSizePreset } from '@xstudio/specs';
 
 // ============================================
 // Types
@@ -159,15 +159,13 @@ export const PixiFancyButton = memo(function PixiFancyButton({
   const style = element.props?.style as CSSStyle | undefined;
   const props = element.props as Record<string, unknown> | undefined;
 
-  // 🚀 테마 색상 동적 로드
-  const themeColors = useThemeColors();
   const variant = useMemo(() => String(props?.variant || 'default'), [props?.variant]);
 
   // 🚀 variant에 따른 테마 색상
-  const variantColors = useMemo(
-    () => getVariantColors(variant, themeColors),
-    [variant, themeColors]
-  );
+  const variantColors = useMemo(() => {
+    const variantSpec = FancyButtonSpec.variants[variant] || FancyButtonSpec.variants[FancyButtonSpec.defaultVariant];
+    return getSpecVariantColors(variantSpec, 'light');
+  }, [variant]);
 
   // FancyButton 스타일 (테마 색상 적용)
   const layoutStyle = useMemo(() => convertToFancyButtonStyle(style, variantColors.bg), [style, variantColors.bg]);

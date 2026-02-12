@@ -24,10 +24,13 @@ import type { Element } from "../../../../types/core/store.types";
 import type { CSSStyle } from "../sprites/styleConverter";
 import { cssColorToHex, cssColorToAlpha, parseCSSSize } from "../sprites/styleConverter";
 import { parsePadding } from "../sprites/paddingUtils";
-import {
-  getToggleButtonSizePreset,
-} from "../utils/cssVariableReader";
 import { drawBox, parseBorderConfig } from "../utils";
+
+// 🚀 Component Spec
+import {
+  ToggleButtonGroupSpec,
+  getSizePreset as getSpecSizePreset,
+} from '@xstudio/specs';
 import { LayoutComputedSizeContext } from "../layoutContext";
 import { useStore } from "../../../stores";
 
@@ -156,8 +159,11 @@ export const PixiToggleButtonGroup = memo(function PixiToggleButtonGroup({
   // size - 최신 element에서 읽기
   const size = String((latestElement.props as Record<string, unknown>)?.size || "md");
 
-  // 🚀 CSS에서 사이즈 프리셋 읽기
-  const sizePreset = useMemo(() => getToggleButtonSizePreset(size), [size]);
+  // 🚀 Spec Migration
+  const sizePreset = useMemo(() => {
+    const sizeSpec = ToggleButtonGroupSpec.sizes[size] || ToggleButtonGroupSpec.sizes[ToggleButtonGroupSpec.defaultSize];
+    return getSpecSizePreset(sizeSpec, 'light');
+  }, [size]);
 
   // 기본 테두리 색상 (gray-300)
   const defaultBorderColor = 0xd1d5db;

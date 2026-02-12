@@ -80,8 +80,15 @@ function TextField({
   onChange: (v: string) => void;
 }) {
   const [localValue, setLocalValue] = useState(value);
+  const [isFocused, setIsFocused] = useState(false);
+
+  // 포커스가 아닐 때 외부 value 변경 추적 (ColorArea 드래그 등)
+  if (!isFocused && localValue !== value) {
+    setLocalValue(value);
+  }
 
   const handleBlur = useCallback(() => {
+    setIsFocused(false);
     onChange(localValue);
   }, [localValue, onChange]);
 
@@ -102,6 +109,7 @@ function TextField({
         value={localValue}
         onChange={(e) => setLocalValue(e.target.value)}
         onFocus={(e) => {
+          setIsFocused(true);
           setLocalValue(value);
           e.target.select();
         }}

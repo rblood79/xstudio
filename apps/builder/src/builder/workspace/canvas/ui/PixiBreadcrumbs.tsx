@@ -26,12 +26,14 @@ import { TextStyle, Graphics as PixiGraphics } from "pixi.js";
 import type { Element } from "../../../../types/core/store.types";
 import type { CSSStyle } from "../sprites/styleConverter";
 import { cssColorToHex } from "../sprites/styleConverter";
-import {
-  getBreadcrumbsSizePreset,
-  getVariantColors,
-} from "../utils/cssVariableReader";
-import { useThemeColors } from "../hooks/useThemeColors";
 import { useStore } from "../../../stores";
+
+// 🚀 Component Spec
+import {
+  BreadcrumbsSpec,
+  getVariantColors as getSpecVariantColors,
+  getSizePreset as getSpecSizePreset,
+} from '@xstudio/specs';
 
 // ============================================
 // Types
@@ -75,17 +77,17 @@ export const PixiBreadcrumbs = memo(function PixiBreadcrumbs({
   const size = useMemo(() => String(props?.size || "md"), [props?.size]);
   const separator = useMemo(() => String(props?.separator || "›"), [props?.separator]);
 
-  // 🚀 테마 색상 동적 로드
-  const themeColors = useThemeColors();
+  // 🚀 Spec Migration
+  const sizePreset = useMemo(() => {
+    const sizeSpec = BreadcrumbsSpec.sizes[size] || BreadcrumbsSpec.sizes[BreadcrumbsSpec.defaultSize];
+    return getSpecSizePreset(sizeSpec, 'light');
+  }, [size]);
 
-  // 🚀 CSS에서 프리셋 읽기
-  const sizePreset = useMemo(() => getBreadcrumbsSizePreset(size), [size]);
-
-  // 🚀 variant에 따른 테마 색상
-  const variantColors = useMemo(
-    () => getVariantColors(variant, themeColors),
-    [variant, themeColors]
-  );
+  // 🚀 Spec Migration: variant에 따른 테마 색상
+  const variantColors = useMemo(() => {
+    const variantSpec = BreadcrumbsSpec.variants[variant] || BreadcrumbsSpec.variants[BreadcrumbsSpec.defaultVariant];
+    return getSpecVariantColors(variantSpec, 'light');
+  }, [variant]);
 
   // 색상 프리셋 값들 (테마 색상 적용)
   const colorPreset = useMemo(() => ({

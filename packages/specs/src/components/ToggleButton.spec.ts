@@ -25,7 +25,7 @@ export interface ToggleButtonProps {
 }
 
 /** isSelected 시 variant별 반전 색상 */
-const SELECTED_COLORS: Record<string, { bg: TokenRef; text: TokenRef; border: TokenRef }> = {
+export const TOGGLE_SELECTED_COLORS: Record<string, { bg: TokenRef; text: TokenRef; border: TokenRef }> = {
   default: {
     bg: '{color.secondary}' as TokenRef,
     text: '{color.on-secondary}' as TokenRef,
@@ -143,7 +143,7 @@ export const ToggleButtonSpec: ComponentSpec<ToggleButtonProps> = {
       let borderColor: TokenRef | undefined;
 
       if (props.isSelected) {
-        const selected = SELECTED_COLORS[variantName] ?? SELECTED_COLORS.default;
+        const selected = TOGGLE_SELECTED_COLORS[variantName] ?? TOGGLE_SELECTED_COLORS.default;
         bgColor = selected.bg;
         textColor = selected.text;
         borderColor = selected.border;

@@ -20,11 +20,16 @@ import {
 } from "pixi.js";
 import type { Element } from "../../../../types/core/store.types";
 import type { CSSStyle } from "../sprites/styleConverter";
-import {
-  getComboBoxSizePreset,
-  getComboBoxColorPreset,
-} from "../utils/cssVariableReader";
 import { useStore } from "../../../stores";
+
+// 🚀 Spec Migration
+import { resolveTokenColor } from '../hooks/useSpecRenderer';
+import {
+  ComboBoxSpec,
+  getVariantColors as getSpecVariantColors,
+  getSizePreset as getSpecSizePreset,
+} from '@xstudio/specs';
+import type { TokenRef } from '@xstudio/specs';
 
 // ============================================
 // Types
@@ -83,9 +88,37 @@ export const PixiComboBox = memo(function PixiComboBox({
   const isDisabled = Boolean(props?.isDisabled);
   const isOpen = Boolean(props?.isOpen);
 
-  // 🚀 CSS에서 프리셋 읽기
-  const sizePreset = useMemo(() => getComboBoxSizePreset(size), [size]);
-  const colorPreset = useMemo(() => getComboBoxColorPreset(variant), [variant]);
+  // 🚀 CSS / Spec에서 프리셋 읽기
+  const sizePreset = useMemo(() => {
+    const sizeSpec = ComboBoxSpec.sizes[size] || ComboBoxSpec.sizes[ComboBoxSpec.defaultSize];
+    const specPreset = getSpecSizePreset(sizeSpec, 'light');
+    return {
+      ...specPreset,
+      paddingY: specPreset.paddingY,
+      paddingX: specPreset.paddingX,
+      inputWidth: 240,
+      buttonSize: specPreset.height * 0.7,
+      labelFontSize: specPreset.fontSize - 2,
+      itemPaddingX: specPreset.paddingX,
+      itemPaddingY: specPreset.paddingY * 0.6,
+    };
+  }, [size]);
+
+  const colorPreset = useMemo(() => {
+    const variantSpec = ComboBoxSpec.variants[variant] || ComboBoxSpec.variants[ComboBoxSpec.defaultVariant];
+    const vc = getSpecVariantColors(variantSpec, 'light');
+    return {
+      backgroundColor: vc.bg,
+      textColor: vc.text,
+      borderColor: vc.border ?? 0x79747e,
+      placeholderColor: resolveTokenColor('{color.on-surface-variant}' as TokenRef, 'light'),
+      labelColor: vc.text,
+      buttonBgColor: resolveTokenColor('{color.surface-container}' as TokenRef, 'light'),
+      dropdownBgColor: resolveTokenColor('{color.surface}' as TokenRef, 'light'),
+      itemSelectedBgColor: resolveTokenColor('{color.secondary-container}' as TokenRef, 'light'),
+      itemSelectedTextColor: resolveTokenColor('{color.on-secondary-container}' as TokenRef, 'light'),
+    };
+  }, [variant]);
 
   // 전체 너비/높이 계산
   const inputHeight = sizePreset.paddingY * 2 + sizePreset.fontSize;

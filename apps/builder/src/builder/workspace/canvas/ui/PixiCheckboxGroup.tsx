@@ -26,8 +26,15 @@ import type { CSSStyle } from '../sprites/styleConverter';
 import { cssColorToHex } from '../sprites/styleConverter';
 import { drawBox } from '../utils';
 import { useStore } from '../../../stores';
-import { getLabelStylePreset, getVariantColors, getCheckboxGroupSizePreset } from '../utils/cssVariableReader';
-import { useThemeColors } from '../hooks/useThemeColors';
+
+// 🚀 Spec Migration
+import { getLabelStylePreset } from '../hooks/useSpecRenderer';
+import {
+  CheckboxSpec,
+  CHECKBOX_BOX_SIZES,
+  getVariantColors as getSpecVariantColors,
+  getSizePreset as getSpecSizePreset,
+} from '@xstudio/specs';
 
 // ============================================
 // Types
@@ -314,17 +321,23 @@ export const PixiCheckboxGroup = memo(function PixiCheckboxGroup({
   // 🚀 Phase 11: CSS 변수 기반 size preset
   const size = useMemo(() => String(props?.size || 'md'), [props?.size]);
   const variant = useMemo(() => String(props?.variant || 'primary'), [props?.variant]);
-  const sizePreset = useMemo(() => getCheckboxGroupSizePreset(size), [size]);
+  const sizePreset = useMemo(() => {
+    const sizeSpec = CheckboxSpec.sizes[size] || CheckboxSpec.sizes[CheckboxSpec.defaultSize];
+    const specPreset = getSpecSizePreset(sizeSpec, 'light');
+    return {
+      ...specPreset,
+      boxSize: CHECKBOX_BOX_SIZES[size] ?? CHECKBOX_BOX_SIZES.md,
+      labelGap: specPreset.gap ?? 8,
+      gap: specPreset.gap ?? 8,
+    };
+  }, [size]);
   const labelPreset = useMemo(() => getLabelStylePreset(size), [size]);
 
-  // 🚀 테마 색상 동적 로드
-  const themeColors = useThemeColors();
-
   // 🚀 variant에 따른 테마 색상
-  const variantColors = useMemo(
-    () => getVariantColors(variant, themeColors),
-    [variant, themeColors]
-  );
+  const variantColors = useMemo(() => {
+    const variantSpec = CheckboxSpec.variants[variant] || CheckboxSpec.variants[CheckboxSpec.defaultVariant];
+    return getSpecVariantColors(variantSpec, 'light');
+  }, [variant]);
 
   // 🚀 Phase 11: CSS 변수 기반 스타일
   const checkboxSize = sizePreset.boxSize;

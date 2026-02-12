@@ -11,10 +11,15 @@ import { useCallback, useMemo, useRef } from 'react';
 import { useExtend } from '@pixi/react';
 import { PIXI_COMPONENTS } from '../pixiSetup';
 import { Graphics as PixiGraphics, TextStyle } from 'pixi.js';
-import { getTagGroupSizePreset, getVariantColors } from '../utils/cssVariableReader';
-import { useThemeColors } from '../hooks/useThemeColors';
 import type { Element } from '@/types/core/store.types';
 import { useStore } from '@/builder/stores';
+
+// 🚀 Component Spec
+import {
+  TagGroupSpec,
+  getVariantColors as getSpecVariantColors,
+  getSizePreset as getSpecSizePreset,
+} from '@xstudio/specs';
 
 export interface PixiTagGroupProps {
   element: Element;
@@ -35,17 +40,17 @@ export function PixiTagGroup({
   const size = (props.size as string) || 'md';
   const label = (props.label as string) || '';
 
-  // 🚀 테마 색상 동적 로드
-  const themeColors = useThemeColors();
+  // 🚀 Spec Migration
+  const sizePreset = useMemo(() => {
+    const sizeSpec = TagGroupSpec.sizes[size] || TagGroupSpec.sizes[TagGroupSpec.defaultSize];
+    return getSpecSizePreset(sizeSpec, 'light');
+  }, [size]);
 
-  // Get CSS presets
-  const sizePreset = useMemo(() => getTagGroupSizePreset(size), [size]);
-
-  // 🚀 variant에 따른 테마 색상
-  const variantColors = useMemo(
-    () => getVariantColors(variant, themeColors),
-    [variant, themeColors]
-  );
+  // 🚀 Spec Migration: variant에 따른 테마 색상
+  const variantColors = useMemo(() => {
+    const variantSpec = TagGroupSpec.variants[variant] || TagGroupSpec.variants[TagGroupSpec.defaultVariant];
+    return getSpecVariantColors(variantSpec, 'light');
+  }, [variant]);
 
   // 색상 프리셋 값들 (테마 색상 적용)
   const colorPreset = useMemo(() => ({

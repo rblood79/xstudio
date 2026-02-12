@@ -15,10 +15,10 @@ import { PIXI_COMPONENTS } from '../pixiSetup';
 import type { Graphics as PixiGraphics } from 'pixi.js';
 import type { Element } from '@/types/core/store.types';
 import {
-  getColorSliderSizePreset,
-  getVariantColors,
-} from '../utils/cssVariableReader';
-import { useThemeColors } from '../hooks/useThemeColors';
+  ColorSliderSpec,
+  getVariantColors as getSpecVariantColors,
+  getSizePreset as getSpecSizePreset,
+} from '@xstudio/specs';
 
 export interface PixiColorSliderProps {
   element: Element;
@@ -42,17 +42,15 @@ export function PixiColorSlider({
   const channel = (props.channel as string) || 'hue';
   const value = (props.value as number) ?? 0.5;
 
-  // 🚀 테마 색상 동적 로드
-  const themeColors = useThemeColors();
+  const sizePreset = useMemo(() => {
+    const sizeSpec = ColorSliderSpec.sizes[size] || ColorSliderSpec.sizes[ColorSliderSpec.defaultSize];
+    return getSpecSizePreset(sizeSpec, 'light');
+  }, [size]);
 
-  // Get presets from CSS
-  const sizePreset = useMemo(() => getColorSliderSizePreset(size), [size]);
-
-  // 🚀 variant에 따른 테마 색상
-  const variantColors = useMemo(
-    () => getVariantColors(variant, themeColors),
-    [variant, themeColors]
-  );
+  const variantColors = useMemo(() => {
+    const variantSpec = ColorSliderSpec.variants[variant] || ColorSliderSpec.variants[ColorSliderSpec.defaultVariant];
+    return getSpecVariantColors(variantSpec, 'light');
+  }, [variant]);
 
   // 색상 프리셋 값들 (테마 색상 적용)
   const colorPreset = useMemo(() => ({

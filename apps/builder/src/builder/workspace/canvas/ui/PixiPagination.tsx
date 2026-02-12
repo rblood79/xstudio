@@ -14,12 +14,13 @@ import { useExtend } from '@pixi/react';
 import { PIXI_COMPONENTS } from '../pixiSetup';
 import type { Graphics as PixiGraphics, TextStyle } from 'pixi.js';
 import type { Element } from '@/types/core/store.types';
+
+// 🚀 Component Spec
 import {
-  getPaginationSizePreset,
-  getPaginationColorPreset,
-  getVariantColors,
-} from '../utils/cssVariableReader';
-import { useThemeColors } from '../hooks/useThemeColors';
+  PaginationSpec,
+  getVariantColors as getSpecVariantColors,
+  getSizePreset as getSpecSizePreset,
+} from '@xstudio/specs';
 
 export interface PixiPaginationProps {
   element: Element;
@@ -44,18 +45,28 @@ export function PixiPagination({
   const totalPages = (props.totalPages as number) || 5;
   const showInfo = (props.showInfo as boolean) ?? true;
 
-  // Get presets from CSS
-  const sizePreset = useMemo(() => getPaginationSizePreset(size), [size]);
-  const colorPreset = useMemo(() => getPaginationColorPreset(variant), [variant]);
+  // 🚀 Spec Migration
+  const sizePreset = useMemo(() => {
+    const sizeSpec = PaginationSpec.sizes[size] || PaginationSpec.sizes[PaginationSpec.defaultSize];
+    return getSpecSizePreset(sizeSpec, 'light');
+  }, [size]);
+  const colorPreset = useMemo(() => {
+    const variantSpec = PaginationSpec.variants[variant] || PaginationSpec.variants[PaginationSpec.defaultVariant];
+    const colors = getSpecVariantColors(variantSpec, 'light');
+    return {
+      backgroundColor: colors.bg,
+      currentBackgroundColor: colors.bgPressed,
+      textColor: colors.text,
+      borderColor: colors.border ?? 0xe5e7eb,
+      hoverBgColor: colors.bgHover,
+    };
+  }, [variant]);
 
-  // 🚀 테마 색상 동적 로드
-  const themeColors = useThemeColors();
-
-  // 🚀 variant에 따른 테마 색상
-  const variantColors = useMemo(
-    () => getVariantColors(variant, themeColors),
-    [variant, themeColors]
-  );
+  // 🚀 Spec Migration: variant에 따른 테마 색상
+  const variantColors = useMemo(() => {
+    const variantSpec = PaginationSpec.variants[variant] || PaginationSpec.variants[PaginationSpec.defaultVariant];
+    return getSpecVariantColors(variantSpec, 'light');
+  }, [variant]);
 
   // Calculate visible pages
   const getVisiblePages = () => {

@@ -15,10 +15,10 @@ import { PIXI_COMPONENTS } from '../pixiSetup';
 import type { Graphics as PixiGraphics } from 'pixi.js';
 import type { Element } from '@/types/core/store.types';
 import {
-  getColorSwatchPickerSizePreset,
-  getVariantColors,
-} from '../utils/cssVariableReader';
-import { useThemeColors } from '../hooks/useThemeColors';
+  ColorSwatchPickerSpec,
+  getVariantColors as getSpecVariantColors,
+  getSizePreset as getSpecSizePreset,
+} from '@xstudio/specs';
 
 export interface PixiColorSwatchPickerProps {
   element: Element;
@@ -50,17 +50,15 @@ export function PixiColorSwatchPicker({
   const layout = (props.layout as string) || 'grid'; // grid or stack
   const columnsPerRow = (props.columns as number) || 5;
 
-  // Get presets from CSS
-  const sizePreset = useMemo(() => getColorSwatchPickerSizePreset(size), [size]);
+  const sizePreset = useMemo(() => {
+    const sizeSpec = ColorSwatchPickerSpec.sizes[size] || ColorSwatchPickerSpec.sizes[ColorSwatchPickerSpec.defaultSize];
+    return getSpecSizePreset(sizeSpec, 'light');
+  }, [size]);
 
-  // 🚀 테마 색상 동적 로드
-  const themeColors = useThemeColors();
-
-  // 🚀 variant에 따른 테마 색상
-  const variantColors = useMemo(
-    () => getVariantColors(variant, themeColors),
-    [variant, themeColors]
-  );
+  const variantColors = useMemo(() => {
+    const variantSpec = ColorSwatchPickerSpec.variants[variant] || ColorSwatchPickerSpec.variants[ColorSwatchPickerSpec.defaultVariant];
+    return getSpecVariantColors(variantSpec, 'light');
+  }, [variant]);
 
   // 색상 프리셋 값들 (테마 색상 적용)
   const colorPreset = useMemo(() => ({

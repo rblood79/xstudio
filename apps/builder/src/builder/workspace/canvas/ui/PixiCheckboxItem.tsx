@@ -17,6 +17,9 @@ import type { Element } from '../../../../types/core/store.types';
 import type { CSSStyle } from '../sprites/styleConverter';
 // 🚀 Phase 8: parseCSSSize 제거
 
+// 🚀 Spec Migration
+import { CHECKBOX_BOX_SIZES } from '@xstudio/specs';
+
 // ============================================
 // Types
 // ============================================
@@ -52,8 +55,9 @@ export const PixiCheckboxItem = memo(function PixiCheckboxItem({
   }, [props]);
 
   // 스타일
-  // 🚀 Phase 8: parseCSSSize 제거 - fallback 값 직접 사용
-  const checkboxSize = DEFAULT_CHECKBOX_SIZE;
+  // 🚀 Spec Migration: CHECKBOX_BOX_SIZES 사용
+  const size = useMemo(() => String(props?.size || 'md'), [props?.size]);
+  const checkboxSize = CHECKBOX_BOX_SIZES[size] ?? CHECKBOX_BOX_SIZES.md;
   const fontSize = typeof style?.fontSize === 'number' ? style.fontSize : 14;
 
   // 크기 (LayoutEngine에서 계산된 크기 우선 사용)

@@ -14,12 +14,16 @@ import { useExtend } from '@pixi/react';
 import { PIXI_COMPONENTS } from '../pixiSetup';
 import type { Graphics as PixiGraphics, TextStyle } from 'pixi.js';
 import type { Element } from '@/types/core/store.types';
+
+// 🚀 Spec Migration
+import { resolveTokenColor, getLabelStylePreset } from '../hooks/useSpecRenderer';
 import {
-  getSwitchSizePreset,
-  getLabelStylePreset,
-  getVariantColors,
-} from '../utils/cssVariableReader';
-import { useThemeColors } from '../hooks/useThemeColors';
+  SwitchSpec,
+  SWITCH_SELECTED_TRACK_COLORS,
+  SWITCH_DIMENSIONS,
+  getVariantColors as getSpecVariantColors,
+  getSizePreset as getSpecSizePreset,
+} from '@xstudio/specs';
 
 export interface PixiSwitchProps {
   element: Element;
@@ -44,28 +48,41 @@ export function PixiSwitch({
   const isChecked = (props.isSelected as boolean) || (props.checked as boolean) || false;
   const isDisabled = (props.isDisabled as boolean) || false;
 
-  // Get presets from CSS
-  const sizePreset = useMemo(() => getSwitchSizePreset(size), [size]);
-
-  // 🚀 테마 색상 동적 로드
-  const themeColors = useThemeColors();
+  // Get presets from CSS / Spec
+  const sizePreset = useMemo(() => {
+    const dims = SWITCH_DIMENSIONS[size] ?? SWITCH_DIMENSIONS.md;
+    const sizeSpec = SwitchSpec.sizes[size] || SwitchSpec.sizes[SwitchSpec.defaultSize];
+    const specPreset = getSpecSizePreset(sizeSpec, 'light');
+    return {
+      ...dims,
+      borderRadius: dims.trackHeight / 2,
+      gap: specPreset.gap ?? 10,
+      fontSize: specPreset.fontSize,
+    };
+  }, [size]);
 
   // 🚀 variant에 따른 테마 색상
-  const variantColors = useMemo(
-    () => getVariantColors(variant, themeColors),
-    [variant, themeColors]
-  );
+  const variantColors = useMemo(() => {
+    const variantSpec = SwitchSpec.variants[variant] || SwitchSpec.variants[SwitchSpec.defaultVariant];
+    return getSpecVariantColors(variantSpec, 'light');
+  }, [variant]);
 
   // 색상 프리셋 값들 (테마 색상 적용)
-  const colorPreset = useMemo(() => ({
-    trackColor: 0xd1d5db,
-    trackSelectedColor: variantColors.bg,
-    thumbColor: 0xffffff,
-    thumbBorderColor: 0x00000020,
-    disabledTrackColor: 0xe5e7eb,
-    disabledThumbColor: 0x9ca3af,
-    focusRingColor: variantColors.bg,
-  }), [variantColors]);
+  const colorPreset = useMemo(() => {
+    const selectedTrackColor = resolveTokenColor(
+      SWITCH_SELECTED_TRACK_COLORS[variant] ?? SWITCH_SELECTED_TRACK_COLORS.default,
+      'light',
+    );
+    return {
+      trackColor: variantColors.bg,
+      trackSelectedColor: selectedTrackColor,
+      thumbColor: 0xffffff,
+      thumbBorderColor: 0x00000020,
+      disabledTrackColor: 0xe5e7eb,
+      disabledThumbColor: 0x9ca3af,
+      focusRingColor: selectedTrackColor,
+    };
+  }, [variant, variantColors]);
   // 🚀 Phase 19: .react-aria-Label 클래스에서 스타일 읽기
   const labelPreset = useMemo(() => getLabelStylePreset(size), [size]);
 

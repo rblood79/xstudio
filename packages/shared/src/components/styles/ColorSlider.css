@@ -6,6 +6,7 @@
     grid-template-columns: 1fr auto;
     gap: 4px;
     max-width: 300px;
+    contain: layout style;
 
     .react-aria-Label {
       grid-area: label;
@@ -23,6 +24,7 @@
     &[data-orientation=horizontal] {
       .react-aria-SliderTrack {
         height: 28px;
+        touch-action: none;
       }
 
       .react-aria-ColorThumb {
@@ -38,6 +40,7 @@
     height: 16px;
     border-radius: 50%;
     box-sizing: border-box;
+    will-change: transform;
 
     &[data-focus-visible] {
       width: 20px;

@@ -15,12 +15,13 @@ import { PIXI_COMPONENTS } from '../pixiSetup';
 import type { Graphics as PixiGraphics, TextStyle } from 'pixi.js';
 import type { Element } from '@/types/core/store.types';
 import { useStore } from '@/builder/stores';
+
+// 🚀 Component Spec
 import {
-  getDisclosureSizePreset,
-  getDisclosureColorPreset,
-  getVariantColors,
-} from '../utils/cssVariableReader';
-import { useThemeColors } from '../hooks/useThemeColors';
+  DisclosureGroupSpec,
+  getVariantColors as getSpecVariantColors,
+  getSizePreset as getSpecSizePreset,
+} from '@xstudio/specs';
 
 export interface PixiDisclosureGroupProps {
   element: Element;
@@ -69,18 +70,27 @@ export function PixiDisclosureGroup({
 
   const [hoveredId, setHoveredId] = useState<string | null>(null);
 
-  // Get presets from CSS
-  const sizePreset = useMemo(() => getDisclosureSizePreset(size), [size]);
-  const colorPreset = useMemo(() => getDisclosureColorPreset(variant), [variant]);
+  // 🚀 Spec Migration
+  const sizePreset = useMemo(() => {
+    const sizeSpec = DisclosureGroupSpec.sizes[size] || DisclosureGroupSpec.sizes[DisclosureGroupSpec.defaultSize];
+    return getSpecSizePreset(sizeSpec, 'light');
+  }, [size]);
+  const colorPreset = useMemo(() => {
+    const variantSpec = DisclosureGroupSpec.variants[variant] || DisclosureGroupSpec.variants[DisclosureGroupSpec.defaultVariant];
+    const colors = getSpecVariantColors(variantSpec, 'light');
+    return {
+      backgroundColor: colors.bg,
+      borderColor: colors.border ?? 0xe5e7eb,
+      textColor: colors.text,
+      hoverBgColor: colors.bgHover,
+    };
+  }, [variant]);
 
-  // 🚀 테마 색상 동적 로드
-  const themeColors = useThemeColors();
-
-  // 🚀 variant에 따른 테마 색상
-  const variantColors = useMemo(
-    () => getVariantColors(variant, themeColors),
-    [variant, themeColors]
-  );
+  // 🚀 Spec Migration: variant에 따른 테마 색상
+  const variantColors = useMemo(() => {
+    const variantSpec = DisclosureGroupSpec.variants[variant] || DisclosureGroupSpec.variants[DisclosureGroupSpec.defaultVariant];
+    return getSpecVariantColors(variantSpec, 'light');
+  }, [variant]);
 
   // Calculate dimensions
   const containerWidth = (props.width as number) || 280;

@@ -10,7 +10,7 @@
  * @updated 2026-02-10 Gradient Phase 2
  */
 
-import { useCallback } from 'react';
+import { useCallback, useRef, useEffect } from 'react';
 import { useStore } from '../../../stores';
 import type { FillItem, ColorFillItem, GradientStop } from '../../../../types/builder/fill.types';
 import { FillType, createDefaultColorFill, createDefaultFill } from '../../../../types/builder/fill.types';
@@ -22,6 +22,8 @@ export interface FillActions {
   toggleFill: (fillId: string) => void;
   updateFill: (fillId: string, updates: Partial<FillItem>) => void;
   updateFillPreview: (fillId: string, updates: Partial<FillItem>) => void;
+  /** RAF-throttled 경량 프리뷰 (드래그 전용) */
+  updateFillPreviewThrottled: (fillId: string, updates: Partial<FillItem>) => void;
   changeFillType: (fillId: string, newType: FillType) => void;
 }
 
@@ -38,6 +40,19 @@ function getCurrentFills(): FillItem[] {
 }
 
 export function useFillActions(): FillActions {
+  // RAF throttle refs
+  const rafRef = useRef<number | null>(null);
+  const pendingUpdateRef = useRef<{ fillId: string; updates: Partial<FillItem> } | null>(null);
+
+  // cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (rafRef.current !== null) {
+        cancelAnimationFrame(rafRef.current);
+      }
+    };
+  }, []);
+
   const addFill = useCallback((type: FillType = FillType.Color, initialColor?: string) => {
     const fills = getCurrentFills();
     const newFill = initialColor && type === FillType.Color
@@ -90,6 +105,29 @@ export function useFillActions(): FillActions {
     });
     useStore.getState().updateSelectedFillsPreview(newFills);
   }, []);
+
+  const updateFillPreviewThrottled = useCallback(
+    (fillId: string, updates: Partial<FillItem>) => {
+      pendingUpdateRef.current = { fillId, updates };
+
+      if (rafRef.current !== null) return;
+
+      rafRef.current = requestAnimationFrame(() => {
+        rafRef.current = null;
+        const pending = pendingUpdateRef.current;
+        if (!pending) return;
+        pendingUpdateRef.current = null;
+
+        const fills = getCurrentFills();
+        const newFills = fills.map((f) => {
+          if (f.id !== pending.fillId) return f;
+          return { ...f, ...pending.updates } as FillItem;
+        });
+        useStore.getState().updateSelectedFillsPreviewLightweight(newFills);
+      });
+    },
+    [],
+  );
 
   const changeFillType = useCallback((fillId: string, newType: FillType) => {
     const fills = getCurrentFills();
@@ -159,5 +197,5 @@ export function useFillActions(): FillActions {
     useStore.getState().updateSelectedFills(newFills);
   }, []);
 
-  return { addFill, removeFill, reorderFill, toggleFill, updateFill, updateFillPreview, changeFillType };
+  return { addFill, removeFill, reorderFill, toggleFill, updateFill, updateFillPreview, updateFillPreviewThrottled, changeFillType };
 }

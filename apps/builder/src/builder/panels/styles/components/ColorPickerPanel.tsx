@@ -50,20 +50,44 @@ function ColorPickerPanelInner({
   });
   const lastSavedRef = useRef<string>(initialValue);
 
-  // 드래그 중: 로컬 상태만 업데이트 (프리뷰)
+  // RAF 스로틀: setLocalColor + onChange를 프레임당 1회로 제한
+  // ColorArea/ColorSlider는 내부적으로 포인터 위치를 직접 추적하므로
+  // value prop 업데이트 없이도 thumb이 부드럽게 이동함
+  const localRafRef = useRef<number | null>(null);
+  const latestColorRef = useRef<Color | null>(null);
+
+  // 드래그 중: RAF 스로틀로 로컬 상태 + 프리뷰 업데이트
   const handleChange = useCallback(
     (color: Color | null) => {
       if (!color) return;
-      setLocalColor(color);
-      const hex = color.toString('hexa');
-      onChange(hex);
+      latestColorRef.current = color;
+
+      if (localRafRef.current !== null) return;
+
+      localRafRef.current = requestAnimationFrame(() => {
+        localRafRef.current = null;
+        const latest = latestColorRef.current;
+        if (!latest) return;
+        setLocalColor(latest);
+        onChange(latest.toString('hexa'));
+      });
     },
     [onChange],
   );
 
-  // 드래그 종료: 실제 저장
+  // 드래그 종료: 보류 중인 RAF 취소 + 최종 값 flush + 실제 저장
   const handleChangeEnd = useCallback(
     (color: Color) => {
+      // 보류 중인 RAF 취소 (이중 업데이트 방지)
+      if (localRafRef.current !== null) {
+        cancelAnimationFrame(localRafRef.current);
+        localRafRef.current = null;
+      }
+      latestColorRef.current = null;
+
+      // 최종 색상으로 로컬 상태 동기화
+      setLocalColor(color);
+
       const hex = color.toString('hexa');
       if (hex !== lastSavedRef.current) {
         lastSavedRef.current = hex;

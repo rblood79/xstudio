@@ -15,11 +15,11 @@ import { PIXI_COMPONENTS } from '../pixiSetup';
 import type { Graphics as PixiGraphics, TextStyle } from 'pixi.js';
 import type { Element } from '@/types/core/store.types';
 import {
-  getDateRangePickerSizePreset,
-  getCalendarSizePreset,
-  getVariantColors,
-} from '../utils/cssVariableReader';
-import { useThemeColors } from '../hooks/useThemeColors';
+  DateRangePickerSpec,
+  CalendarSpec,
+  getVariantColors as getSpecVariantColors,
+  getSizePreset as getSpecSizePreset,
+} from '@xstudio/specs';
 
 export interface PixiDateRangePickerProps {
   element: Element;
@@ -48,18 +48,19 @@ export function PixiDateRangePicker({
   const endValue = (props.endValue as string) || (props.end as string) || '';
   const isOpen = (props.isOpen as boolean) ?? true;
 
-  // 🚀 테마 색상 동적 로드
-  const themeColors = useThemeColors();
+  const sizePreset = useMemo(() => {
+    const sizeSpec = DateRangePickerSpec.sizes[size] || DateRangePickerSpec.sizes[DateRangePickerSpec.defaultSize];
+    return getSpecSizePreset(sizeSpec, 'light');
+  }, [size]);
+  const calendarSizePreset = useMemo(() => {
+    const sizeSpec = CalendarSpec.sizes[size] || CalendarSpec.sizes[CalendarSpec.defaultSize];
+    return getSpecSizePreset(sizeSpec, 'light');
+  }, [size]);
 
-  // Get presets from CSS
-  const sizePreset = useMemo(() => getDateRangePickerSizePreset(size), [size]);
-  const calendarSizePreset = useMemo(() => getCalendarSizePreset(size), [size]);
-
-  // 🚀 variant에 따른 테마 색상
-  const variantColors = useMemo(
-    () => getVariantColors(variant, themeColors),
-    [variant, themeColors]
-  );
+  const variantColors = useMemo(() => {
+    const variantSpec = DateRangePickerSpec.variants[variant] || DateRangePickerSpec.variants[DateRangePickerSpec.defaultVariant];
+    return getSpecVariantColors(variantSpec, 'light');
+  }, [variant]);
 
   // 색상 프리셋 값들 (테마 색상 적용)
   const colorPreset = useMemo(() => ({

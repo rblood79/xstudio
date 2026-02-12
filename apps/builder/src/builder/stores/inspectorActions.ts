@@ -47,6 +47,8 @@ export interface InspectorActionsState {
   updateSelectedFills: (fills: FillItem[]) => void;
   /** fills 실시간 프리뷰: 히스토리/DB 저장 없이 캔버스만 업데이트 */
   updateSelectedFillsPreview: (fills: FillItem[]) => void;
+  /** fills 경량 프리뷰: CSS 변환 없이 fills만 업데이트 (드래그 전용) */
+  updateSelectedFillsPreviewLightweight: (fills: FillItem[]) => void;
 
   // ComputedStyle은 DB 저장 없이 메모리만 업데이트 (런타임 값)
   updateSelectedComputedStyle: (computedStyle: Record<string, string>) => void;
@@ -502,6 +504,32 @@ export const createInspectorActionsSlice: StateCreator<
 
       set({
         elements: newElements,
+        elementsMap: newElementsMap,
+      } as Partial<CombinedState>);
+    },
+
+    updateSelectedFillsPreviewLightweight: (fills) => {
+      const { elementsMap, selectedElementId } = get();
+      if (!selectedElementId) return;
+
+      const element = elementsMap.get(selectedElementId);
+      if (!element) return;
+
+      // 첫 프리뷰 시 원본 요소 스냅샷 저장 (히스토리 정확성)
+      if (!prePreviewElement || prePreviewElement.id !== selectedElementId) {
+        prePreviewElement = structuredClone(element);
+      }
+
+      // CSS 변환 없이 fills만 업데이트 (드래그 성능 최적화)
+      const updatedElement: Element = { ...element, fills };
+
+      // 🚀 elementsMap만 업데이트 (Skia 렌더러가 직접 읽는 소스)
+      // elements 배열 복사 + findIndex O(n) 제거 — 드래그 중에는 불필요
+      // (elements 배열은 onChangeEnd 시 updateSelectedFills에서 동기화됨)
+      const newElementsMap = new Map(elementsMap);
+      newElementsMap.set(selectedElementId, updatedElement);
+
+      set({
         elementsMap: newElementsMap,
       } as Partial<CombinedState>);
     },

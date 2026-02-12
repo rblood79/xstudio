@@ -14,11 +14,13 @@ import { useExtend } from '@pixi/react';
 import { PIXI_COMPONENTS } from '../pixiSetup';
 import type { Graphics as PixiGraphics, TextStyle } from 'pixi.js';
 import type { Element } from '@/types/core/store.types';
+
+// 🚀 Spec Migration
 import {
-  getGroupSizePreset,
-  getVariantColors,
-} from '../utils/cssVariableReader';
-import { useThemeColors } from '../hooks/useThemeColors';
+  GroupSpec,
+  getVariantColors as getSpecVariantColors,
+  getSizePreset as getSpecSizePreset,
+} from '@xstudio/specs';
 
 export interface PixiGroupProps {
   element: Element;
@@ -42,17 +44,17 @@ export function PixiGroup({
   const label = (props.label as string) || (props['data-group-label'] as string) || '';
   const isDisabled = (props.isDisabled as boolean) || false;
 
-  // 🚀 테마 색상 동적 로드
-  const themeColors = useThemeColors();
+  // Get presets from CSS (Spec Migration)
+  const sizePreset = useMemo(() => {
+    const sizeSpec = GroupSpec.sizes[size] || GroupSpec.sizes[GroupSpec.defaultSize];
+    return getSpecSizePreset(sizeSpec, 'light');
+  }, [size]);
 
-  // Get presets from CSS
-  const sizePreset = useMemo(() => getGroupSizePreset(size), [size]);
-
-  // 🚀 variant에 따른 테마 색상
-  const variantColors = useMemo(
-    () => getVariantColors(variant, themeColors),
-    [variant, themeColors]
-  );
+  // 🚀 variant에 따른 테마 색상 (Spec Migration)
+  const variantColors = useMemo(() => {
+    const variantSpec = GroupSpec.variants[variant] || GroupSpec.variants[GroupSpec.defaultVariant];
+    return getSpecVariantColors(variantSpec, 'light');
+  }, [variant]);
 
   // 색상 프리셋 값들 (테마 색상 적용)
   const colorPreset = useMemo(() => ({

@@ -14,12 +14,16 @@ import { useExtend } from '@pixi/react';
 import { PIXI_COMPONENTS } from '../pixiSetup';
 import type { Graphics as PixiGraphics, TextStyle } from 'pixi.js';
 import type { Element } from '@/types/core/store.types';
-import {
-  getToastSizePreset,
-  getToastColorPreset,
-  getVariantColors,
-} from '../utils/cssVariableReader';
-import { useThemeColors } from '../hooks/useThemeColors';
+
+// 🚀 Spec Migration
+import { ToastSpec, getVariantColors as getSpecVariantColors, getSizePreset as getSpecSizePreset } from '@xstudio/specs';
+
+const TOAST_COLOR_PRESETS: Record<string, { backgroundColor: number; borderColor: number; textColor: number; accentColor: number; iconColor: number; dismissButtonColor: number; shadowColor: number }> = {
+  info: { backgroundColor: 0xffffff, borderColor: 0x3b82f6, textColor: 0x374151, accentColor: 0x3b82f6, iconColor: 0x3b82f6, dismissButtonColor: 0x6b7280, shadowColor: 0x000000 },
+  success: { backgroundColor: 0xffffff, borderColor: 0x22c55e, textColor: 0x374151, accentColor: 0x22c55e, iconColor: 0x22c55e, dismissButtonColor: 0x6b7280, shadowColor: 0x000000 },
+  warning: { backgroundColor: 0xffffff, borderColor: 0xeab308, textColor: 0x374151, accentColor: 0xeab308, iconColor: 0xeab308, dismissButtonColor: 0x6b7280, shadowColor: 0x000000 },
+  error: { backgroundColor: 0xffffff, borderColor: 0xef4444, textColor: 0x374151, accentColor: 0xef4444, iconColor: 0xef4444, dismissButtonColor: 0x6b7280, shadowColor: 0x000000 },
+};
 
 export interface PixiToastProps {
   element: Element;
@@ -43,17 +47,17 @@ export function PixiToast({
   const message = (props.message as string) || (props.children as string) || 'Toast notification message';
 
   // Get presets from CSS
-  const sizePreset = useMemo(() => getToastSizePreset(size), [size]);
-  const colorPreset = useMemo(() => getToastColorPreset(toastType), [toastType]);
-
-  // 🚀 테마 색상 동적 로드
-  const themeColors = useThemeColors();
+  const sizePreset = useMemo(() => {
+    const sizeSpec = ToastSpec.sizes[size] || ToastSpec.sizes[ToastSpec.defaultSize];
+    return getSpecSizePreset(sizeSpec, 'light');
+  }, [size]);
+  const colorPreset = useMemo(() => TOAST_COLOR_PRESETS[toastType] ?? TOAST_COLOR_PRESETS.info, [toastType]);
 
   // 🚀 variant에 따른 테마 색상 (selection용)
-  const variantColors = useMemo(
-    () => getVariantColors('default', themeColors),
-    [themeColors]
-  );
+  const variantColors = useMemo(() => {
+    const variantSpec = ToastSpec.variants['default'] || ToastSpec.variants[ToastSpec.defaultVariant];
+    return getSpecVariantColors(variantSpec, 'light');
+  }, []);
 
   // Calculate dimensions
   const toastWidth = (props.width as number) || Math.min(sizePreset.maxWidth, 300);

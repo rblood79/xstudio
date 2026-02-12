@@ -19,7 +19,12 @@ import type { Element } from '../../../../types/core/store.types';
 import type { CSSStyle } from '../sprites/styleConverter';
 import { cssColorToHex } from '../sprites/styleConverter';
 import { drawBox } from '../utils';
-import { getSelectSizePreset } from '../utils/cssVariableReader';
+
+// 🚀 Spec Migration
+import {
+  SelectSpec,
+  getSizePreset as getSpecSizePreset,
+} from '@xstudio/specs';
 
 // ============================================
 // Types
@@ -63,8 +68,15 @@ interface SelectLayoutStyle {
  * 🚀 Phase 0: CSS 동기화 - getSelectSizePreset() 사용
  */
 function convertToSelectStyle(style: CSSStyle | undefined, size: string): SelectLayoutStyle {
-  // 🚀 CSS에서 사이즈 프리셋 읽기
-  const sizePreset = getSelectSizePreset(size);
+  // 🚀 CSS / Spec에서 사이즈 프리셋 읽기
+  const sizeSpec = SelectSpec.sizes[size] || SelectSpec.sizes[SelectSpec.defaultSize];
+  const specPreset = getSpecSizePreset(sizeSpec, 'light');
+  const sizePreset = {
+    ...specPreset,
+    paddingY: specPreset.paddingY,
+    paddingX: specPreset.paddingX,
+    chevronSize: 12,
+  };
 
   // 높이 계산: fontSize + paddingY * 2 + border (대략적 추정)
   const defaultHeight = sizePreset.fontSize + sizePreset.paddingY * 2 + 8;

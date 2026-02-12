@@ -37,12 +37,23 @@ export const lightColors: ColorTokens = {
   'error-pressed': '#8f1e18',
   'on-error': '#ffffff',
 
+  // Container (MD3 color roles)
+  'primary-container': '#eaddff',
+  'on-primary-container': '#21005d',
+  'secondary-container': '#e8def8',
+  'on-secondary-container': '#1d192b',
+  'tertiary-container': '#ffd8e4',
+  'on-tertiary-container': '#31111d',
+  'error-container': '#f9dedc',
+  'on-error-container': '#410e0b',
+
   // Surface
   surface: '#fef7ff',
   'surface-container': '#f3edf7',
   'surface-container-high': '#ece6f0',
   'surface-container-highest': '#e6e0e9',
   'on-surface': '#1d1b20',
+  'on-surface-variant': '#49454f',
 
   // Outline
   outline: '#79747e',
@@ -77,12 +88,23 @@ export const darkColors: ColorTokens = {
   'error-pressed': '#daa0a1',
   'on-error': '#601410',
 
+  // Container (MD3 color roles)
+  'primary-container': '#4f378b',
+  'on-primary-container': '#eaddff',
+  'secondary-container': '#4a4458',
+  'on-secondary-container': '#e8def8',
+  'tertiary-container': '#633b48',
+  'on-tertiary-container': '#ffd8e4',
+  'error-container': '#8c1d18',
+  'on-error-container': '#f9dedc',
+
   // Surface
   surface: '#141218',
   'surface-container': '#211f26',
   'surface-container-high': '#2b2930',
   'surface-container-highest': '#36343b',
   'on-surface': '#e6e0e9',
+  'on-surface-variant': '#cac4d0',
 
   // Outline
   outline: '#938f99',

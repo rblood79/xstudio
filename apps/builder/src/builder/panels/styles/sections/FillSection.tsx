@@ -92,7 +92,7 @@ function SortableFillRow({
  */
 const FillSectionContent = memo(function FillSectionContent() {
   const { fills } = useFillValuesJotai();
-  const { removeFill, reorderFill, toggleFill, updateFill, updateFillPreview, changeFillType } =
+  const { removeFill, reorderFill, toggleFill, updateFill, updateFillPreview, updateFillPreviewThrottled, changeFillType } =
     useFillActions();
 
   const sensors = useSensors(
@@ -136,7 +136,7 @@ const FillSectionContent = memo(function FillSectionContent() {
                 fill={fill}
                 onToggle={toggleFill}
                 onUpdate={updateFill}
-                onUpdatePreview={updateFillPreview}
+                onUpdatePreview={updateFillPreviewThrottled}
                 onRemove={removeFill}
                 onTypeChange={changeFillType}
               />
@@ -202,6 +202,7 @@ export const FillBackgroundInline = memo(function FillBackgroundInline() {
     toggleFill,
     updateFill,
     updateFillPreview,
+    updateFillPreviewThrottled,
     changeFillType,
   } = useFillActions();
 
@@ -261,13 +262,13 @@ export const FillBackgroundInline = memo(function FillBackgroundInline() {
   const handleColorChange = useCallback(
     (color: string) => {
       if (firstFill && firstFill.type === FillType.Color) {
-        updateFillPreview(firstFill.id, { color } as Partial<ColorFillItem>);
+        updateFillPreviewThrottled(firstFill.id, { color } as Partial<ColorFillItem>);
       } else if (!firstFill) {
         // 가상 fill 상태 → 실제 fill 생성 (사용자가 색상을 변경한 순간)
         addFill(FillType.Color, color);
       }
     },
-    [firstFill, updateFillPreview, addFill],
+    [firstFill, updateFillPreviewThrottled, addFill],
   );
 
   const handleColorChangeEnd = useCallback(
@@ -283,9 +284,9 @@ export const FillBackgroundInline = memo(function FillBackgroundInline() {
 
   const handleFillUpdate = useCallback(
     (updates: Partial<FillItem>) => {
-      if (firstFill) updateFillPreview(firstFill.id, updates);
+      if (firstFill) updateFillPreviewThrottled(firstFill.id, updates);
     },
-    [firstFill, updateFillPreview],
+    [firstFill, updateFillPreviewThrottled],
   );
 
   const handleFillUpdateEnd = useCallback(
@@ -411,7 +412,7 @@ export const FillBackgroundInline = memo(function FillBackgroundInline() {
                   fill={fill}
                   onToggle={toggleFill}
                   onUpdate={updateFill}
-                  onUpdatePreview={updateFillPreview}
+                  onUpdatePreview={updateFillPreviewThrottled}
                   onRemove={removeFill}
                   onTypeChange={changeFillType}
                 />

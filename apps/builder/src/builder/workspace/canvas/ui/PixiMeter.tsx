@@ -22,13 +22,17 @@ import {
 import type { Element } from "../../../../types/core/store.types";
 import type { CSSStyle } from "../sprites/styleConverter";
 import { toLayoutSize } from "../layout/styleToLayout";
-import {
-  getMeterSizePreset,
-  getVariantColors,
-} from "../utils/cssVariableReader";
 import { drawBox } from "../utils";
-import { useThemeColors } from "../hooks/useThemeColors";
 import { cssColorToHex } from "../sprites/styleConverter";
+
+// 🚀 Component Spec
+import {
+  MeterSpec,
+  METER_FILL_COLORS,
+  METER_DIMENSIONS,
+  getVariantColors as getSpecVariantColors,
+  getSizePreset as getSpecSizePreset,
+} from '@xstudio/specs';
 
 // ============================================
 // Types
@@ -116,17 +120,17 @@ export const PixiMeter = memo(function PixiMeter({
   const variant = useMemo(() => String(props?.variant || "default"), [props?.variant]);
   const size = useMemo(() => String(props?.size || "md"), [props?.size]);
 
-  // 🚀 테마 색상 동적 로드
-  const themeColors = useThemeColors();
+  // 🚀 Spec Migration
+  const sizePreset = useMemo(() => {
+    const sizeSpec = MeterSpec.sizes[size] || MeterSpec.sizes[MeterSpec.defaultSize];
+    return getSpecSizePreset(sizeSpec, 'light');
+  }, [size]);
 
-  // 🚀 CSS에서 사이즈 프리셋 읽기
-  const sizePreset = useMemo(() => getMeterSizePreset(size), [size]);
-
-  // 🚀 variant에 따른 테마 색상 (default, primary, secondary, tertiary, error, surface)
-  const variantColors = useMemo(
-    () => getVariantColors(variant, themeColors),
-    [variant, themeColors]
-  );
+  // 🚀 Spec Migration: variant에 따른 테마 색상
+  const variantColors = useMemo(() => {
+    const variantSpec = MeterSpec.variants[variant] || MeterSpec.variants[MeterSpec.defaultVariant];
+    return getSpecVariantColors(variantSpec, 'light');
+  }, [variant]);
 
   // 트랙 색상 (gray-200)과 라벨/값 색상
   const trackColor = 0xe5e7eb;

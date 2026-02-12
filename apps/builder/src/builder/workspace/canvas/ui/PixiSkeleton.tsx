@@ -14,12 +14,13 @@ import { useExtend } from '@pixi/react';
 import { PIXI_COMPONENTS } from '../pixiSetup';
 import type { Graphics as PixiGraphics } from 'pixi.js';
 import type { Element } from '@/types/core/store.types';
+
+// 🚀 Spec Migration
 import {
-  getSkeletonSizePreset,
-  getSkeletonColorPreset,
-  getVariantColors,
-} from '../utils/cssVariableReader';
-import { useThemeColors } from '../hooks/useThemeColors';
+  SkeletonSpec,
+  getVariantColors as getSpecVariantColors,
+  getSizePreset as getSpecSizePreset,
+} from '@xstudio/specs';
 
 export interface PixiSkeletonProps {
   element: Element;
@@ -42,18 +43,26 @@ export function PixiSkeleton({
   const size = (props.size as string) || 'md';
   const skeletonVariant = (props.skeletonVariant as string) || 'text'; // text, avatar, card, list
 
-  // Get presets from CSS
-  const sizePreset = useMemo(() => getSkeletonSizePreset(size), [size]);
-  const colorPreset = useMemo(() => getSkeletonColorPreset(variant), [variant]);
+  // Get presets from CSS (Spec Migration)
+  const sizePreset = useMemo(() => {
+    const sizeSpec = SkeletonSpec.sizes[size] || SkeletonSpec.sizes[SkeletonSpec.defaultSize];
+    return getSpecSizePreset(sizeSpec, 'light');
+  }, [size]);
 
-  // 🚀 테마 색상 동적 로드
-  const themeColors = useThemeColors();
+  const colorPreset = useMemo(() => {
+    const variantSpec = SkeletonSpec.variants[variant] || SkeletonSpec.variants[SkeletonSpec.defaultVariant];
+    const specColors = getSpecVariantColors(variantSpec, 'light');
+    return {
+      baseColor: specColors.bg,
+      shimmerColor: specColors.bgHover,
+    };
+  }, [variant]);
 
-  // 🚀 variant에 따른 테마 색상
-  const variantColors = useMemo(
-    () => getVariantColors(variant, themeColors),
-    [variant, themeColors]
-  );
+  // 🚀 variant에 따른 테마 색상 (Spec Migration)
+  const variantColors = useMemo(() => {
+    const variantSpec = SkeletonSpec.variants[variant] || SkeletonSpec.variants[SkeletonSpec.defaultVariant];
+    return getSpecVariantColors(variantSpec, 'light');
+  }, [variant]);
 
   // Calculate dimensions based on variant
   const getSkeletonDimensions = () => {

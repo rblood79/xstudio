@@ -18,11 +18,13 @@ import { TextStyle, CanvasTextMetrics, Graphics as PixiGraphics } from "pixi.js"
 import type { Element } from "../../../../types/core/store.types";
 import type { CSSStyle } from "../sprites/styleConverter";
 import { cssColorToHex } from "../sprites/styleConverter";
+
+// 🚀 Spec Migration
 import {
-  getLinkSizePreset,
-  getVariantColors,
-} from "../utils/cssVariableReader";
-import { useThemeColors } from "../hooks/useThemeColors";
+  LinkSpec,
+  getVariantColors as getSpecVariantColors,
+  getSizePreset as getSpecSizePreset,
+} from '@xstudio/specs';
 
 // ============================================
 // Types
@@ -70,17 +72,17 @@ export const PixiLink = memo(function PixiLink({
   const size = useMemo(() => String(props?.size || "md"), [props?.size]);
   const isDisabled = Boolean(props?.isDisabled);
 
-  // 🚀 테마 색상 동적 로드
-  const themeColors = useThemeColors();
+  // 🚀 CSS에서 프리셋 읽기 (Spec Migration)
+  const sizePreset = useMemo(() => {
+    const sizeSpec = LinkSpec.sizes[size] || LinkSpec.sizes[LinkSpec.defaultSize];
+    return getSpecSizePreset(sizeSpec, 'light');
+  }, [size]);
 
-  // 🚀 CSS에서 프리셋 읽기
-  const sizePreset = useMemo(() => getLinkSizePreset(size), [size]);
-
-  // 🚀 variant에 따른 테마 색상
-  const variantColors = useMemo(
-    () => getVariantColors(variant, themeColors),
-    [variant, themeColors]
-  );
+  // 🚀 variant에 따른 테마 색상 (Spec Migration)
+  const variantColors = useMemo(() => {
+    const variantSpec = LinkSpec.variants[variant] || LinkSpec.variants[LinkSpec.defaultVariant];
+    return getSpecVariantColors(variantSpec, 'light');
+  }, [variant]);
 
   // 색상 프리셋 값들 (테마 색상 적용)
   const colorPreset = useMemo(() => ({

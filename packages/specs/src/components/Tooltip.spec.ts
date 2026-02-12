@@ -23,7 +23,7 @@ export interface TooltipProps {
 }
 
 /** size별 maxWidth */
-const SIZE_MAX_WIDTH: Record<string, number> = {
+export const TOOLTIP_MAX_WIDTH: Record<string, number> = {
   sm: 120,
   md: 150,
   lg: 200,
@@ -96,7 +96,7 @@ export const TooltipSpec: ComponentSpec<TooltipProps> = {
   render: {
     shapes: (props, variant, size, _state = 'default') => {
       const sizeName = props.size ?? 'md';
-      const maxWidth = SIZE_MAX_WIDTH[sizeName] ?? 150;
+      const maxWidth = TOOLTIP_MAX_WIDTH[sizeName] ?? 150;
 
       const shapes: Shape[] = [
         // 배경

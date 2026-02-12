@@ -21,15 +21,18 @@ import {
 import type { Element } from "../../../../types/core/store.types";
 import type { CSSStyle } from "../sprites/styleConverter";
 import { cssColorToHex } from "../sprites/styleConverter";
-import {
-  getCardSizePreset,
-  getVariantColors,
-} from "../utils/cssVariableReader";
-import { useThemeColors } from "../hooks/useThemeColors";
 import { drawBox } from "../utils";
+
+// 🚀 Component Spec
+import {
+  CardSpec,
+  getVariantColors as getSpecVariantColors,
+  getSizePreset as getSpecSizePreset,
+} from '@xstudio/specs';
 import { measureWrappedTextHeight } from "../utils/textMeasure";
 import { useStore } from "../../../stores";
 import { LayoutComputedSizeContext } from "../layoutContext";
+import { useThemeColors } from "../hooks/useThemeColors";
 
 // ============================================
 // Types
@@ -81,8 +84,11 @@ export const PixiCard = memo(function PixiCard({
   const variant = useMemo(() => String(props?.variant || "default"), [props?.variant]);
   const size = useMemo(() => String(props?.size || "md"), [props?.size]);
 
-  // 🚀 CSS에서 프리셋 읽기
-  const sizePreset = useMemo(() => getCardSizePreset(size), [size]);
+  // 🚀 Spec Migration
+  const sizePreset = useMemo(() => {
+    const sizeSpec = CardSpec.sizes[size] || CardSpec.sizes[CardSpec.defaultSize];
+    return getSpecSizePreset(sizeSpec, 'light');
+  }, [size]);
 
   // 🚀 style.padding 우선 사용, 없으면 sizePreset.padding 사용
   const effectivePadding = useMemo(() => {
@@ -99,11 +105,11 @@ export const PixiCard = memo(function PixiCard({
   // 🚀 테마 색상 동적 로드
   const themeColors = useThemeColors();
 
-  // 🚀 variant에 따른 테마 색상
-  const variantColors = useMemo(
-    () => getVariantColors(variant, themeColors),
-    [variant, themeColors]
-  );
+  // 🚀 Spec Migration: variant에 따른 테마 색상
+  const variantColors = useMemo(() => {
+    const variantSpec = CardSpec.variants[variant] || CardSpec.variants[CardSpec.defaultVariant];
+    return getSpecVariantColors(variantSpec, 'light');
+  }, [variant]);
 
   // 색상 프리셋 값들 (CSS 변수에서 읽어온 테마 색상 적용)
   // 🚀 Phase 8+: .react-aria-Card CSS와 동기화

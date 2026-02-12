@@ -25,13 +25,30 @@ import { FancyButton } from "@pixi/ui";
 import type { Element } from "../../../../types/core/store.types";
 import type { CSSStyle } from "../sprites/styleConverter";
 import { cssColorToHex, parseCSSSize } from "../sprites/styleConverter";
-import { getToggleButtonSizePreset, getVariantColors, type ToggleButtonSizePreset } from "../utils/cssVariableReader";
-import { useThemeColors } from "../hooks/useThemeColors";
 import { drawBox } from "../utils";
 import { measureTextWidth as measureTextWidthCanvas } from "../layout/engines/utils";
 import { useCanvasSyncStore } from "../canvasSync";
 import { parsePadding, parseBorderWidth } from "../sprites/paddingUtils";
 import { useStore } from "../../../stores";
+
+interface ToggleButtonSizePreset {
+  fontSize: number;
+  paddingX: number;
+  paddingY: number;
+  borderRadius: number;
+}
+
+// ============================================
+// 🚀 Component Spec
+// ============================================
+
+import { resolveTokenColor } from '../hooks/useSpecRenderer';
+import {
+  ToggleButtonSpec,
+  TOGGLE_SELECTED_COLORS,
+  getVariantColors as getSpecVariantColors,
+  getSizePreset as getSpecSizePreset,
+} from '@xstudio/specs';
 
 // ============================================
 // Constants
@@ -137,8 +154,15 @@ function getToggleButtonLayout(
   const isToggleSelected = Boolean(buttonProps.isSelected);
   const isDisabled = Boolean(buttonProps.isDisabled);
 
-  // 🚀 CSS에서 사이즈 프리셋 읽기 (ToggleButtonGroup과 동일한 패턴)
-  const sizePreset = getToggleButtonSizePreset(size) || DEFAULT_SIZE_PRESET;
+  // 🚀 Spec Migration
+  const sizeSpec = ToggleButtonSpec.sizes[size] || ToggleButtonSpec.sizes[ToggleButtonSpec.defaultSize];
+  const specPreset = getSpecSizePreset(sizeSpec, 'light');
+  const sizePreset: ToggleButtonSizePreset = {
+    fontSize: specPreset.fontSize,
+    paddingX: specPreset.paddingX,
+    paddingY: specPreset.paddingY,
+    borderRadius: specPreset.borderRadius,
+  };
 
   // 폰트 설정 (inline style > size preset)
   // 🚀 Phase 8: parseCSSSize 제거 - CSS 프리셋 값 사용
@@ -428,19 +452,24 @@ export const PixiToggleButton = memo(function PixiToggleButton({
     };
   }, [parentElement, canvasSize]);
 
-  // 테마 색상 (동적으로 CSS 변수에서 읽어옴)
-  const themeColors = useThemeColors();
-
   // Unselected 상태 색상 (항상 default - surface-container-high)
   const unselectedColors = useMemo(() => {
-    return getVariantColors("default", themeColors) as VariantColors;
-  }, [themeColors]);
+    const variantSpec = ToggleButtonSpec.variants['default'] || ToggleButtonSpec.variants[ToggleButtonSpec.defaultVariant];
+    return getSpecVariantColors(variantSpec, 'light') as VariantColors;
+  }, []);
 
   // Selected 상태 색상 (variant에 맞게)
   const selectedColors = useMemo(() => {
-    const variant = props?.variant || "default"; // CSS와 일치하도록 default 사용
-    return getVariantColors(variant, themeColors) as VariantColors;
-  }, [props?.variant, themeColors]);
+    const variant = props?.variant || "default";
+    const selectedColorDef = TOGGLE_SELECTED_COLORS[variant] || TOGGLE_SELECTED_COLORS['default'];
+    return {
+      bg: resolveTokenColor(selectedColorDef.bg, 'light'),
+      bgHover: resolveTokenColor(selectedColorDef.bg, 'light'),
+      bgPressed: resolveTokenColor(selectedColorDef.bg, 'light'),
+      text: resolveTokenColor(selectedColorDef.text, 'light'),
+      border: resolveTokenColor(selectedColorDef.border, 'light'),
+    } as VariantColors;
+  }, [props?.variant]);
 
   // 버튼 텍스트
   const buttonText = useMemo(() => {

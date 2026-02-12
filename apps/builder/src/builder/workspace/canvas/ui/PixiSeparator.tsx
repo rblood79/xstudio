@@ -19,11 +19,14 @@ import { Graphics as PixiGraphics } from "pixi.js";
 import type { Element } from "../../../../types/core/store.types";
 import type { CSSStyle } from "../sprites/styleConverter";
 import { cssColorToHex } from "../sprites/styleConverter";
-import {
-  getSeparatorSizePreset,
-  getSeparatorColorPreset,
-} from "../utils/cssVariableReader";
 import { toLayoutSize } from "../layout/styleToLayout";
+
+// 🚀 Spec Migration
+import {
+  SeparatorSpec,
+  getVariantColors as getSpecVariantColors,
+  getSizePreset as getSpecSizePreset,
+} from '@xstudio/specs';
 
 // ============================================
 // Types
@@ -67,9 +70,19 @@ export const PixiSeparator = memo(function PixiSeparator({
     [props?.lineStyle]
   );
 
-  // 🚀 CSS에서 프리셋 읽기
-  const sizePreset = useMemo(() => getSeparatorSizePreset(size), [size]);
-  const colorPreset = useMemo(() => getSeparatorColorPreset(variant), [variant]);
+  // 🚀 CSS에서 프리셋 읽기 (Spec Migration)
+  const sizePreset = useMemo(() => {
+    const sizeSpec = SeparatorSpec.sizes[size] || SeparatorSpec.sizes[SeparatorSpec.defaultSize];
+    return getSpecSizePreset(sizeSpec, 'light');
+  }, [size]);
+
+  const colorPreset = useMemo(() => {
+    const variantSpec = SeparatorSpec.variants[variant] || SeparatorSpec.variants[SeparatorSpec.defaultVariant];
+    const specColors = getSpecVariantColors(variantSpec, 'light');
+    return {
+      color: specColors.border ?? specColors.bg,
+    };
+  }, [variant]);
 
   // 색상 (inline style 오버라이드 지원)
   const lineColor = useMemo(() => {

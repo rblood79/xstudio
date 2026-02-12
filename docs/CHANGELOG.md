@@ -7,6 +7,86 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Performance - Fill 컬러피커 드래그 성능 최적화 (2026-02-12)
+
+#### 개요
+ColorArea/ColorSlider 드래그 시 FPS가 ~50에서 ~20으로 하락하던 문제를 3계층 최적화로 해결. react-aria의 `onChange`가 매 pointer move(60-120+/sec)마다 호출되며, RAF 스로틀 없이 매번 전체 elementsMap 복사 + CSS 변환 + Zustand set()이 수행되던 것이 근본 원인.
+
+#### 근본 원인 (Hot Path)
+```
+onChange → setLocalColor + onChange(hex)              ← 매 pointer move (100+/sec)
+  → updateFillPreview(id, {color})
+    → fills.map(...)                                  ← 배열 재생성
+    → store.updateSelectedFillsPreview()
+      → structuredClone(element)                      ← deep clone
+      → fillsToCssBackground(fills)                   ← CSS 변환 (Skia 불필요)
+      → new Map(elementsMap)                          ← O(n) Map 복사
+      → [...elements]                                 ← O(n) 배열 복사
+      → set()                                         ← Zustand → 리렌더 연쇄
+```
+
+#### 변경 내용
+
+**P0: Critical — RAF 스로틀 + 경량 프리뷰 (CSS 변환 제거)**
+- `inspectorActions.ts`: `updateSelectedFillsPreviewLightweight(fills)` 추가
+  - `fillsToCssBackground()` 호출 제거 (Skia는 `element.fills`를 직접 읽음)
+  - `elements` 배열 복사/갱신 스킵 (elementsMap만 업데이트)
+  - `prePreviewElement` 패턴 유지 (히스토리 정확성)
+- `useFillActions.ts`: `updateFillPreviewThrottled(fillId, updates)` 추가
+  - GradientBar RAF 패턴 차용: `pendingUpdateRef`로 최신 값만 유지
+  - 내부에서 `updateSelectedFillsPreviewLightweight()` 호출
+- `FillSection.tsx`: 모든 드래그 프리뷰 경로를 `updateFillPreviewThrottled`로 전환
+
+**P0-2: ColorPickerPanel RAF 스로틀**
+- `ColorPickerPanel.tsx`: `handleChange`에 RAF 스로틀 적용
+  - `setLocalColor` + `onChange`를 프레임당 1회로 제한 (60fps cap)
+  - `handleChangeEnd`에서 보류 중 RAF 취소 + 최종 값 flush
+
+**P1: ColorInputFields 실시간 반영**
+- `ColorInputFields.tsx`: `TextField` 컴포넌트에 `isFocused` 상태 추가
+  - 포커스가 아닐 때 외부 `value` prop 변경 추적 (ColorArea 드래그 등)
+  - HEX/CSS 모드가 드래그 중 업데이트되지 않던 문제 해결
+
+**P2: CSS 성능 힌트**
+- `ColorArea.css`: `contain: layout style` + `touch-action: none` + `will-change: transform`
+- `ColorSlider.css`: `contain: layout style` + `touch-action: none` + `will-change: transform`
+
+#### 수정 파일
+| 파일 | 변경 |
+|------|------|
+| `stores/inspectorActions.ts` | `updateSelectedFillsPreviewLightweight` 추가 (CSS 변환 + elements 배열 스킵) |
+| `panels/styles/hooks/useFillActions.ts` | `updateFillPreviewThrottled` (RAF + lightweight store) 추가 |
+| `panels/styles/sections/FillSection.tsx` | 드래그 경로에서 throttled 프리뷰 사용 |
+| `panels/styles/components/ColorPickerPanel.tsx` | handleChange RAF 스로틀, handleChangeEnd flush |
+| `panels/styles/components/ColorInputFields.tsx` | TextField isFocused 추적으로 외부 value 동기화 |
+| `packages/shared/src/components/styles/ColorArea.css` | contain, touch-action, will-change 힌트 |
+| `packages/shared/src/components/styles/ColorSlider.css` | contain, touch-action, will-change 힌트 |
+
+#### 하위 호환성
+- 기존 `updateFillPreview` (non-throttled) 및 `updateSelectedFillsPreview` (CSS 포함) 유지
+- `onChangeEnd` 경로 변경 없음 (`updateFill` → `updateSelectedFills` → full commit)
+
+---
+
+### Fixed - SVG Mesh Gradient 크기 불일치 수정 (2026-02-12)
+
+#### 개요
+Mesh Gradient가 SVG로 렌더링될 때 요소 크기에 맞지 않고 원본 100×100 크기로 고정되던 문제를 수정.
+
+#### 근본 원인
+SVG의 `width`/`height`가 `100%`로 설정되었으나 `viewBox`와 `preserveAspectRatio`가 미지정이어서 SVG 내부 좌표계가 요소 크기에 맞게 스케일링되지 않음.
+
+#### 수정 내용
+- `fillMigration.ts`: SVG에 `viewBox="0 0 100 100"` + `preserveAspectRatio="none"` 추가
+  - SVG 내부 좌표가 요소 크기에 비례하여 스트레칭됨
+
+#### 수정 파일
+| 파일 | 변경 |
+|------|------|
+| `panels/styles/utils/fillMigration.ts` | SVG 태그에 viewBox, preserveAspectRatio 속성 추가 |
+
+---
+
 ### Added - 페이지 배치 방향 설정 (2026-02-11)
 
 #### 개요

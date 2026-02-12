@@ -17,10 +17,15 @@ import { memo, useCallback, useMemo, useState } from "react";
 import { Graphics as PixiGraphics, TextStyle } from "pixi.js";
 import type { Element } from "../../../../types/core/store.types";
 import type { CSSStyle } from "../sprites/styleConverter";
+
+// 🚀 Spec Migration
+import { resolveTokenColor } from '../hooks/useSpecRenderer';
 import {
-  getNumberFieldSizePreset,
-  getNumberFieldColorPreset,
-} from "../utils/cssVariableReader";
+  NumberFieldSpec,
+  getVariantColors as getSpecVariantColors,
+  getSizePreset as getSpecSizePreset,
+} from '@xstudio/specs';
+import type { TokenRef } from '@xstudio/specs';
 
 // ============================================
 // Types
@@ -60,9 +65,33 @@ export const PixiNumberField = memo(function PixiNumberField({
   const value = useMemo(() => Number(props?.value ?? 0), [props?.value]);
   const isDisabled = Boolean(props?.isDisabled);
 
-  // 🚀 CSS에서 프리셋 읽기
-  const sizePreset = useMemo(() => getNumberFieldSizePreset(size), [size]);
-  const colorPreset = useMemo(() => getNumberFieldColorPreset(variant), [variant]);
+  // 🚀 CSS / Spec에서 프리셋 읽기
+  const sizePreset = useMemo(() => {
+    const sizeSpec = NumberFieldSpec.sizes[size] || NumberFieldSpec.sizes[NumberFieldSpec.defaultSize];
+    const specPreset = getSpecSizePreset(sizeSpec, 'light');
+    // NumberField has extra fields not in spec, provide fallback
+    return {
+      ...specPreset,
+      paddingY: specPreset.paddingY,
+      paddingX: specPreset.paddingX,
+      buttonWidth: 36,
+      inputWidth: specPreset.height * 2.5,
+      labelFontSize: specPreset.fontSize - 2,
+    };
+  }, [size]);
+
+  const colorPreset = useMemo(() => {
+    const variantSpec = NumberFieldSpec.variants[variant] || NumberFieldSpec.variants[NumberFieldSpec.defaultVariant];
+    const vc = getSpecVariantColors(variantSpec, 'light');
+    return {
+      backgroundColor: vc.bg,
+      textColor: vc.text,
+      borderColor: vc.border ?? 0x79747e,
+      labelColor: vc.text,
+      buttonBgColor: resolveTokenColor('{color.surface-container}' as TokenRef, 'light'),
+      buttonHoverBgColor: resolveTokenColor('{color.surface-container-high}' as TokenRef, 'light'),
+    };
+  }, [variant]);
 
   // hover 상태 관리
   const [hoveredButton, setHoveredButton] = useState<"decrement" | "increment" | null>(null);

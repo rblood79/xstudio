@@ -14,12 +14,16 @@ import { useExtend } from '@pixi/react';
 import { PIXI_COMPONENTS } from '../pixiSetup';
 import type { Graphics as PixiGraphics } from 'pixi.js';
 import type { Element } from '@/types/core/store.types';
-import {
-  getToolbarSizePreset,
-  getToolbarColorPreset,
-  getVariantColors,
-} from '../utils/cssVariableReader';
-import { useThemeColors } from '../hooks/useThemeColors';
+
+// 🚀 Spec Migration
+import { ToolbarSpec, getVariantColors as getSpecVariantColors, getSizePreset as getSpecSizePreset } from '@xstudio/specs';
+
+const TOOLBAR_COLOR_PRESETS: Record<string, { backgroundColor: number; borderColor: number; separatorColor: number; iconColor: number; hoverBackgroundColor: number }> = {
+  default: { backgroundColor: 0xffffff, borderColor: 0xcad3dc, separatorColor: 0xe5e7eb, iconColor: 0x374151, hoverBackgroundColor: 0xf3f4f6 },
+  primary: { backgroundColor: 0xeff6ff, borderColor: 0x3b82f6, separatorColor: 0xbfdbfe, iconColor: 0x3b82f6, hoverBackgroundColor: 0xdbeafe },
+  secondary: { backgroundColor: 0xeef2ff, borderColor: 0x6366f1, separatorColor: 0xc7d2fe, iconColor: 0x6366f1, hoverBackgroundColor: 0xe0e7ff },
+  filled: { backgroundColor: 0xf3f4f6, borderColor: 0x00000000, separatorColor: 0xe5e7eb, iconColor: 0x374151, hoverBackgroundColor: 0xe5e7eb },
+};
 
 export interface PixiToolbarProps {
   element: Element;
@@ -43,17 +47,17 @@ export function PixiToolbar({
   const orientation = (props.orientation as string) || 'horizontal';
 
   // Get presets from CSS
-  const sizePreset = useMemo(() => getToolbarSizePreset(size), [size]);
-  const colorPreset = useMemo(() => getToolbarColorPreset(variant), [variant]);
-
-  // 🚀 테마 색상 동적 로드
-  const themeColors = useThemeColors();
+  const sizePreset = useMemo(() => {
+    const sizeSpec = ToolbarSpec.sizes[size] || ToolbarSpec.sizes[ToolbarSpec.defaultSize];
+    return getSpecSizePreset(sizeSpec, 'light');
+  }, [size]);
+  const colorPreset = useMemo(() => TOOLBAR_COLOR_PRESETS[variant] ?? TOOLBAR_COLOR_PRESETS.default, [variant]);
 
   // 🚀 variant에 따른 테마 색상
-  const variantColors = useMemo(
-    () => getVariantColors(variant, themeColors),
-    [variant, themeColors]
-  );
+  const variantColors = useMemo(() => {
+    const variantSpec = ToolbarSpec.variants[variant] || ToolbarSpec.variants[ToolbarSpec.defaultVariant];
+    return getSpecVariantColors(variantSpec, 'light');
+  }, [variant]);
 
   // Calculate dimensions based on orientation
   const isHorizontal = orientation === 'horizontal';

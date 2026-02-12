@@ -32,26 +32,11 @@ import type {
   ButtonVariant,
   ComponentSize,
 } from "../../../../types/builder/componentVariants.types";
-import { useThemeColors } from "../hooks/useThemeColors";
-import { getVariantColors as getLegacyVariantColors, getSizePreset as getLegacySizePreset, type SizePreset } from "../utils/cssVariableReader";
 import { drawBox } from "../utils";
 import { useCanvasSyncStore } from "../canvasSync";
 import { parsePadding, parseBorderWidth } from "../sprites/paddingUtils";
 import { measureTextWidth as measureTextWidthCanvas } from "../layout/engines/utils";
 import { useStore } from "../../../stores";
-
-// ============================================
-// 🚀 Component Spec Feature Flag
-// ============================================
-
-/**
- * Feature Flag: Component Spec 사용 여부
- * - true: @xstudio/specs에서 ButtonSpec 사용
- * - false: 기존 cssVariableReader 사용 (롤백용)
- */
-const USE_SPEC_RENDERER = true;
-
-// Spec imports (conditionally used based on feature flag)
 import {
   ButtonSpec,
   fontFamily as specFontFamily,
@@ -90,10 +75,7 @@ interface VariantColors {
 // Size Presets - 동적 CSS 변수 읽기
 // ============================================
 // Note: SIZE_PRESETS는 더 이상 하드코딩하지 않음
-// getSizePreset()으로 CSS 변수에서 동적으로 읽어옴
-// → CSS 스타일시트 값 변경 시 WebGL 컴포넌트에도 자동 반영
-
-const DEFAULT_SIZE_PRESET: SizePreset = { fontSize: 14, paddingX: 12, paddingY: 4, borderRadius: 4 };
+// getSizePreset()으로 Spec에서 동적으로 읽어옴
 
 // ============================================
 // Types
@@ -444,8 +426,6 @@ export const PixiButton = memo(function PixiButton({
   const style = element.props?.style as CSSStyle | undefined;
   const props = element.props as ButtonElementProps | undefined;
 
-  // 테마 색상 (동적으로 CSS 변수에서 읽어옴)
-  const themeColors = useThemeColors();
   // 페이지/뷰포트 크기 (%, vh, vw 단위 계산용)
   const canvasSize = useCanvasSyncStore((s) => s.canvasSize);
 
@@ -482,36 +462,20 @@ export const PixiButton = memo(function PixiButton({
     };
   }, [parentElement, canvasSize]);
 
-  // variant에 맞는 색상 가져오기
-  // 🚀 Feature Flag: Spec vs Legacy 분기
+  // variant에 맞는 색상 가져오기 (Spec 기반)
   const variantColors = useMemo(() => {
     const variant = props?.variant || "default";
+    const variantSpec = ButtonSpec.variants[variant] || ButtonSpec.variants[ButtonSpec.defaultVariant];
+    // TODO: 테마 감지 로직 추가 (현재는 'light' 고정)
+    return getSpecVariantColors(variantSpec, 'light');
+  }, [props?.variant]);
 
-    if (USE_SPEC_RENDERER) {
-      // 🚀 Spec 기반: ButtonSpec에서 variant 정보 가져와서 색상 변환
-      const variantSpec = ButtonSpec.variants[variant] || ButtonSpec.variants[ButtonSpec.defaultVariant];
-      // TODO: 테마 감지 로직 추가 (현재는 'light' 고정)
-      return getSpecVariantColors(variantSpec, 'light');
-    } else {
-      // 기존 방식: cssVariableReader 사용
-      return getLegacyVariantColors(variant, themeColors) as VariantColors;
-    }
-  }, [props?.variant, themeColors]);
-
-  // size에 맞는 프리셋 가져오기
-  // 🚀 Feature Flag: Spec vs Legacy 분기
+  // size에 맞는 프리셋 가져오기 (Spec 기반)
   const sizePreset = useMemo(() => {
     const size = props?.size || "sm";
-
-    if (USE_SPEC_RENDERER) {
-      // 🚀 Spec 기반: ButtonSpec에서 size 정보 가져와서 프리셋 변환
-      const sizeSpec = ButtonSpec.sizes[size] || ButtonSpec.sizes[ButtonSpec.defaultSize];
-      // TODO: 테마 감지 로직 추가 (현재는 'light' 고정)
-      return getSpecSizePreset(sizeSpec, 'light');
-    } else {
-      // 기존 방식: cssVariableReader 사용
-      return getLegacySizePreset(size) || DEFAULT_SIZE_PRESET;
-    }
+    const sizeSpec = ButtonSpec.sizes[size] || ButtonSpec.sizes[ButtonSpec.defaultSize];
+    // TODO: 테마 감지 로직 추가 (현재는 'light' 고정)
+    return getSpecSizePreset(sizeSpec, 'light');
   }, [props?.size]);
 
   // 버튼 텍스트 (isLoading일 때는 빈 문자열)

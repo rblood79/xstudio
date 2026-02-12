@@ -20,8 +20,17 @@ import { memo, useCallback, useMemo, useRef } from 'react';
 import type { Graphics as PixiGraphicsType, TextStyle } from 'pixi.js';
 import type { Element } from '../../../../types/core/store.types';
 import type { CSSStyle } from '../sprites/styleConverter';
-import { getTextFieldSizePreset, getTextFieldColorPreset, getLabelStylePreset, getDescriptionStylePreset, getVariantColors } from '../utils/cssVariableReader';
-import { useThemeColors } from '../hooks/useThemeColors';
+
+// 🚀 Spec Migration
+import { getLabelStylePreset, getDescriptionStylePreset } from '../hooks/useSpecRenderer';
+import { InputSpec, getVariantColors as getSpecVariantColors, getSizePreset as getSpecSizePreset } from '@xstudio/specs';
+
+const TEXT_FIELD_COLOR_PRESETS: Record<string, { backgroundColor: number; borderColor: number; textColor: number; placeholderColor: number; labelColor: number; descriptionColor: number; focusBorderColor: number; errorBorderColor: number; errorTextColor: number; disabledBackgroundColor: number; disabledTextColor: number }> = {
+  default: { backgroundColor: 0xffffff, borderColor: 0xcad3dc, textColor: 0x374151, placeholderColor: 0x9ca3af, labelColor: 0x374151, descriptionColor: 0x6b7280, focusBorderColor: 0x3b82f6, errorBorderColor: 0xef4444, errorTextColor: 0xef4444, disabledBackgroundColor: 0xf3f4f6, disabledTextColor: 0x9ca3af },
+  primary: { backgroundColor: 0xffffff, borderColor: 0x3b82f6, textColor: 0x374151, placeholderColor: 0x9ca3af, labelColor: 0x3b82f6, descriptionColor: 0x6b7280, focusBorderColor: 0x2563eb, errorBorderColor: 0xef4444, errorTextColor: 0xef4444, disabledBackgroundColor: 0xf3f4f6, disabledTextColor: 0x9ca3af },
+  secondary: { backgroundColor: 0xffffff, borderColor: 0x6366f1, textColor: 0x374151, placeholderColor: 0x9ca3af, labelColor: 0x6366f1, descriptionColor: 0x6b7280, focusBorderColor: 0x4f46e5, errorBorderColor: 0xef4444, errorTextColor: 0xef4444, disabledBackgroundColor: 0xf3f4f6, disabledTextColor: 0x9ca3af },
+  filled: { backgroundColor: 0xf3f4f6, borderColor: 0x00000000, textColor: 0x374151, placeholderColor: 0x9ca3af, labelColor: 0x374151, descriptionColor: 0x6b7280, focusBorderColor: 0x3b82f6, errorBorderColor: 0xef4444, errorTextColor: 0xef4444, disabledBackgroundColor: 0xe5e7eb, disabledTextColor: 0x9ca3af },
+};
 
 // ============================================
 // Types
@@ -67,20 +76,20 @@ export const PixiInput = memo(function PixiInput({
   const errorMessage = (props.errorMessage as string) || '';
 
   // Get presets from CSS (TextField preset has label/description support)
-  const sizePreset = useMemo(() => getTextFieldSizePreset(size), [size]);
-  const colorPreset = useMemo(() => getTextFieldColorPreset(variant), [variant]);
+  const sizePreset = useMemo(() => {
+    const sizeSpec = InputSpec.sizes[size] || InputSpec.sizes[InputSpec.defaultSize];
+    return getSpecSizePreset(sizeSpec, 'light');
+  }, [size]);
+  const colorPreset = useMemo(() => TEXT_FIELD_COLOR_PRESETS[variant] ?? TEXT_FIELD_COLOR_PRESETS.default, [variant]);
   // 🚀 Phase 19: .react-aria-Label / .react-aria-FieldError 클래스에서 스타일 읽기
   const labelPreset = useMemo(() => getLabelStylePreset(size), [size]);
   const descPreset = useMemo(() => getDescriptionStylePreset(size), [size]);
 
-  // 🚀 테마 색상 동적 로드
-  const themeColors = useThemeColors();
-
   // 🚀 variant에 따른 테마 색상
-  const variantColors = useMemo(
-    () => getVariantColors(variant, themeColors),
-    [variant, themeColors]
-  );
+  const variantColors = useMemo(() => {
+    const variantSpec = InputSpec.variants[variant] || InputSpec.variants[InputSpec.defaultVariant];
+    return getSpecVariantColors(variantSpec, 'light');
+  }, [variant]);
 
   // 🚀 Phase 19: flexDirection 지원 (row/column)
   const flexDirection = useMemo(() => {

@@ -18,8 +18,15 @@ import type { Element } from '../../../../types/core/store.types';
 import type { CSSStyle } from '../sprites/styleConverter';
 import { cssColorToHex } from '../sprites/styleConverter';
 import { drawBox, drawCircle } from '../utils';
-import { getSliderSizePreset, getVariantColors } from '../utils/cssVariableReader';
-import { useThemeColors } from '../hooks/useThemeColors';
+
+// 🚀 Component Spec
+import {
+  SliderSpec,
+  SLIDER_FILL_COLORS,
+  SLIDER_DIMENSIONS,
+  getVariantColors as getSpecVariantColors,
+  getSizePreset as getSpecSizePreset,
+} from '@xstudio/specs';
 
 // ============================================
 // Types
@@ -59,8 +66,14 @@ function convertToSliderStyle(style: CSSStyle | undefined, size: string, themeDe
   const primaryColor = cssColorToHex(style?.backgroundColor, themeDefaultColor);
   const trackColor = cssColorToHex(style?.borderColor, 0xe5e7eb);
 
-  // 🚀 CSS에서 사이즈 프리셋 읽기
-  const sizePreset = getSliderSizePreset(size);
+  // 🚀 Spec Migration
+  const sizeSpec = SliderSpec.sizes[size] || SliderSpec.sizes[SliderSpec.defaultSize];
+  const specPreset = getSpecSizePreset(sizeSpec, 'light');
+  const sizePreset = {
+    trackHeight: specPreset.height ?? 20,
+    trackWidth: (SLIDER_DIMENSIONS as Record<string, number>).trackWidth ?? 4,
+    thumbSize: (SLIDER_DIMENSIONS as Record<string, number>).thumbSize ?? 20,
+  };
 
   return {
     x: typeof style?.left === 'number' ? style.left : 0,
@@ -70,7 +83,7 @@ function convertToSliderStyle(style: CSSStyle | undefined, size: string, themeDe
     trackColor,
     fillColor: primaryColor,
     handleColor: primaryColor,
-    trackHeight: sizePreset.trackWidth, // CSS의 track width가 실제 track height
+    trackHeight: sizePreset.trackWidth,
     handleSize: sizePreset.thumbSize,
   };
 }
@@ -164,14 +177,11 @@ export const PixiSlider = memo(function PixiSlider({
   const size = useMemo(() => String(props?.size || 'md'), [props?.size]);
   const variant = useMemo(() => String(props?.variant || 'default'), [props?.variant]);
 
-  // 🚀 테마 색상 동적 로드
-  const themeColors = useThemeColors();
-
-  // 🚀 variant에 따른 테마 색상
-  const variantColors = useMemo(
-    () => getVariantColors(variant, themeColors),
-    [variant, themeColors]
-  );
+  // 🚀 Spec Migration: variant에 따른 테마 색상
+  const variantColors = useMemo(() => {
+    const variantSpec = SliderSpec.variants[variant] || SliderSpec.variants[SliderSpec.defaultVariant];
+    return getSpecVariantColors(variantSpec, 'light');
+  }, [variant]);
 
   // 슬라이더 스타일 (CSS 사이즈 프리셋 + 테마 색상 적용)
   const layoutStyle = useMemo(() => convertToSliderStyle(style, size, variantColors.bg), [style, size, variantColors.bg]);

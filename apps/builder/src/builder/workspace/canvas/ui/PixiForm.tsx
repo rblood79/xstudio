@@ -14,11 +14,9 @@ import { useExtend } from '@pixi/react';
 import { PIXI_COMPONENTS } from '../pixiSetup';
 import type { Graphics as PixiGraphics, TextStyle } from 'pixi.js';
 import type { Element } from '@/types/core/store.types';
-import {
-  getFormSizePreset,
-  getVariantColors,
-} from '../utils/cssVariableReader';
-import { useThemeColors } from '../hooks/useThemeColors';
+
+// 🚀 Spec Migration
+import { FormSpec, getVariantColors as getSpecVariantColors, getSizePreset as getSpecSizePreset } from '@xstudio/specs';
 
 export interface PixiFormProps {
   element: Element;
@@ -41,17 +39,17 @@ export function PixiForm({
   const size = (props.size as string) || 'md';
   const showBorder = (props.showBorder as boolean) ?? true;
 
-  // 🚀 테마 색상 동적 로드
-  const themeColors = useThemeColors();
-
   // Get presets from CSS
-  const sizePreset = useMemo(() => getFormSizePreset(size), [size]);
+  const sizePreset = useMemo(() => {
+    const sizeSpec = FormSpec.sizes[size] || FormSpec.sizes[FormSpec.defaultSize];
+    return getSpecSizePreset(sizeSpec, 'light');
+  }, [size]);
 
   // 🚀 variant에 따른 테마 색상
-  const variantColors = useMemo(
-    () => getVariantColors(variant, themeColors),
-    [variant, themeColors]
-  );
+  const variantColors = useMemo(() => {
+    const variantSpec = FormSpec.variants[variant] || FormSpec.variants[FormSpec.defaultVariant];
+    return getSpecVariantColors(variantSpec, 'light');
+  }, [variant]);
 
   // 색상 프리셋 값들 (테마 색상 적용)
   const colorPreset = useMemo(() => ({

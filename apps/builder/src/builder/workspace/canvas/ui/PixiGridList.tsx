@@ -11,10 +11,15 @@ import { useCallback, useMemo, useRef } from 'react';
 import { useExtend } from '@pixi/react';
 import { PIXI_COMPONENTS } from '../pixiSetup';
 import { Graphics as PixiGraphics, TextStyle } from 'pixi.js';
-import { getGridListSizePreset, getGridListColorPreset, getVariantColors } from '../utils/cssVariableReader';
-import { useThemeColors } from '../hooks/useThemeColors';
 import type { Element } from '@/types/core/store.types';
 import { useStore } from '@/builder/stores';
+
+// 🚀 Component Spec
+import {
+  GridListSpec,
+  getVariantColors as getSpecVariantColors,
+  getSizePreset as getSpecSizePreset,
+} from '@xstudio/specs';
 
 export interface PixiGridListProps {
   element: Element;
@@ -34,18 +39,30 @@ export function PixiGridList({
   const variant = (props.variant as string) || 'default';
   const size = (props.size as string) || 'md';
 
-  // Get CSS presets
-  const sizePreset = useMemo(() => getGridListSizePreset(size), [size]);
-  const colorPreset = useMemo(() => getGridListColorPreset(variant), [variant]);
+  // 🚀 Spec Migration
+  const sizePreset = useMemo(() => {
+    const sizeSpec = GridListSpec.sizes[size] || GridListSpec.sizes[GridListSpec.defaultSize];
+    return getSpecSizePreset(sizeSpec, 'light');
+  }, [size]);
+  const colorPreset = useMemo(() => {
+    const variantSpec = GridListSpec.variants[variant] || GridListSpec.variants[GridListSpec.defaultVariant];
+    const colors = getSpecVariantColors(variantSpec, 'light');
+    return {
+      backgroundColor: colors.bg,
+      textColor: colors.text,
+      borderColor: colors.border ?? 0xe5e7eb,
+      hoverBgColor: colors.bgHover,
+      selectedBgColor: colors.bgPressed,
+      selectedTextColor: colors.text,
+      focusColor: colors.bg,
+    };
+  }, [variant]);
 
-  // 🚀 테마 색상 동적 로드
-  const themeColors = useThemeColors();
-
-  // 🚀 variant에 따른 테마 색상
-  const variantColors = useMemo(
-    () => getVariantColors(variant, themeColors),
-    [variant, themeColors]
-  );
+  // 🚀 Spec Migration: variant에 따른 테마 색상
+  const variantColors = useMemo(() => {
+    const variantSpec = GridListSpec.variants[variant] || GridListSpec.variants[GridListSpec.defaultVariant];
+    return getSpecVariantColors(variantSpec, 'light');
+  }, [variant]);
 
   // Get children from store (GridListItem)
   const allElements = useStore((state) => state.elements);

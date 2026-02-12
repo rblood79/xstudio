@@ -11,9 +11,15 @@ import { useCallback, useMemo, useRef } from 'react';
 import { useExtend } from '@pixi/react';
 import { PIXI_COMPONENTS } from '../pixiSetup';
 import { Graphics as PixiGraphics, TextStyle } from 'pixi.js';
-import { getTableSizePreset, getTableColorPreset } from '../utils/cssVariableReader';
 import type { Element } from '@/types/core/store.types';
 import { useStore } from '@/builder/stores';
+
+// 🚀 Component Spec
+import {
+  TableSpec,
+  getVariantColors as getSpecVariantColors,
+  getSizePreset as getSpecSizePreset,
+} from '@xstudio/specs';
 
 export interface PixiTableProps {
   element: Element;
@@ -45,9 +51,26 @@ export function PixiTable({
   const variant = (props.variant as string) || 'default';
   const size = (props.size as string) || 'md';
 
-  // Get CSS presets
-  const sizePreset = useMemo(() => getTableSizePreset(size), [size]);
-  const colorPreset = useMemo(() => getTableColorPreset(variant), [variant]);
+  // 🚀 Spec Migration
+  const sizePreset = useMemo(() => {
+    const sizeSpec = TableSpec.sizes[size] || TableSpec.sizes[TableSpec.defaultSize];
+    return getSpecSizePreset(sizeSpec, 'light');
+  }, [size]);
+  const colorPreset = useMemo(() => {
+    const variantSpec = TableSpec.variants[variant] || TableSpec.variants[TableSpec.defaultVariant];
+    const colors = getSpecVariantColors(variantSpec, 'light');
+    return {
+      backgroundColor: colors.bg,
+      textColor: colors.text,
+      borderColor: colors.border ?? 0xe5e7eb,
+      headerBgColor: colors.bgHover,
+      headerTextColor: colors.text,
+      rowHoverBgColor: colors.bgHover,
+      rowSelectedBgColor: colors.bgPressed,
+      rowSelectedTextColor: colors.text,
+      focusColor: colors.bg,
+    };
+  }, [variant]);
 
   // 🚀 Performance: useRef로 hover 상태 관리 (리렌더링 없음)
   const rowGraphicsRefs = useRef<Map<string, PixiGraphics>>(new Map());

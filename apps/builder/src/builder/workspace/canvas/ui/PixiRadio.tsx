@@ -26,8 +26,16 @@ import type { CSSStyle } from '../sprites/styleConverter';
 import { cssColorToHex } from '../sprites/styleConverter';
 import { drawCircle } from '../utils';
 import { useStore } from '../../../stores';
-import { getRadioSizePreset, getLabelStylePreset, getVariantColors } from '../utils/cssVariableReader';
-import { useThemeColors } from '../hooks/useThemeColors';
+
+// 🚀 Spec Migration
+import { getLabelStylePreset } from '../hooks/useSpecRenderer';
+import {
+  RadioSpec,
+  RADIO_SELECTED_COLORS,
+  RADIO_DIMENSIONS,
+  getVariantColors as getSpecVariantColors,
+  getSizePreset as getSpecSizePreset,
+} from '@xstudio/specs';
 
 // ============================================
 // Types
@@ -232,17 +240,15 @@ export const PixiRadio = memo(function PixiRadio({
   const style = element.props?.style as CSSStyle | undefined;
   const props = element.props as Record<string, unknown> | undefined;
 
-  // 🚀 테마 색상 동적 로드
-  const themeColors = useThemeColors();
-
   // variant에 따른 색상 (default, primary, secondary, tertiary, error, surface)
   const variant = useMemo(() => {
     return String(props?.variant || 'default');
   }, [props?.variant]);
 
   const variantColors = useMemo(() => {
-    return getVariantColors(variant, themeColors);
-  }, [variant, themeColors]);
+    const variantSpec = RadioSpec.variants[variant] || RadioSpec.variants[RadioSpec.defaultVariant];
+    return getSpecVariantColors(variantSpec, 'light');
+  }, [variant]);
 
   // Store에서 자식 Radio 요소들 가져오기
   const elements = useStore((state) => state.elements);
@@ -306,7 +312,18 @@ export const PixiRadio = memo(function PixiRadio({
 
   // 🚀 Phase 0: CSS 동기화 - size prop에서 사이즈 프리셋 적용
   const size = useMemo(() => String(props?.size || 'md'), [props?.size]);
-  const sizePreset = useMemo(() => getRadioSizePreset(size), [size]);
+  const sizePreset = useMemo(() => {
+    const sizeSpec = RadioSpec.sizes[size] || RadioSpec.sizes[RadioSpec.defaultSize];
+    const specPreset = getSpecSizePreset(sizeSpec, 'light');
+    const dims = RADIO_DIMENSIONS[size] ?? RADIO_DIMENSIONS.md;
+    return {
+      ...specPreset,
+      radioSize: dims.outer,
+      innerDotSize: dims.inner,
+      labelGap: specPreset.gap ?? 8,
+      gap: specPreset.gap ?? 8,
+    };
+  }, [size]);
   // 🚀 Phase 19: .react-aria-Label 클래스에서 스타일 읽기
   const labelPreset = useMemo(() => getLabelStylePreset(size), [size]);
 

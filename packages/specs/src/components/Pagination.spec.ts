@@ -1,0 +1,176 @@
+/**
+ * Pagination Component Spec
+ *
+ * Material Design 3 기반 페이지네이션 컴포넌트
+ * Single Source of Truth - React와 PIXI 모두에서 동일한 시각적 결과
+ *
+ * @packageDocumentation
+ */
+
+import type { ComponentSpec, Shape, TokenRef } from '../types';
+import { fontFamily } from '../primitives/typography';
+
+/**
+ * Pagination Props
+ */
+export interface PaginationProps {
+  variant?: 'default' | 'primary';
+  size?: 'sm' | 'md' | 'lg';
+  totalPages?: number;
+  currentPage?: number;
+  style?: Record<string, string | number | undefined>;
+}
+
+/**
+ * Pagination Component Spec
+ */
+export const PaginationSpec: ComponentSpec<PaginationProps> = {
+  name: 'Pagination',
+  description: 'Material Design 3 기반 페이지네이션 컴포넌트',
+  element: 'nav',
+
+  defaultVariant: 'default',
+  defaultSize: 'md',
+
+  variants: {
+    default: {
+      background: '{color.surface}' as TokenRef,
+      backgroundHover: '{color.surface-container}' as TokenRef,
+      backgroundPressed: '{color.surface-container-high}' as TokenRef,
+      text: '{color.on-surface}' as TokenRef,
+      border: '{color.outline-variant}' as TokenRef,
+    },
+    primary: {
+      background: '{color.primary}' as TokenRef,
+      backgroundHover: '{color.primary-hover}' as TokenRef,
+      backgroundPressed: '{color.primary-pressed}' as TokenRef,
+      text: '{color.on-primary}' as TokenRef,
+      border: '{color.primary}' as TokenRef,
+    },
+  },
+
+  sizes: {
+    sm: {
+      height: 28,
+      paddingX: 6,
+      paddingY: 4,
+      fontSize: '{typography.text-sm}' as TokenRef,
+      borderRadius: '{radius.sm}' as TokenRef,
+      gap: 4,
+    },
+    md: {
+      height: 36,
+      paddingX: 10,
+      paddingY: 6,
+      fontSize: '{typography.text-md}' as TokenRef,
+      borderRadius: '{radius.md}' as TokenRef,
+      gap: 6,
+    },
+    lg: {
+      height: 44,
+      paddingX: 14,
+      paddingY: 8,
+      fontSize: '{typography.text-lg}' as TokenRef,
+      borderRadius: '{radius.md}' as TokenRef,
+      gap: 8,
+    },
+  },
+
+  states: {
+    hover: {},
+    disabled: {
+      opacity: 0.38,
+      pointerEvents: 'none',
+    },
+    focusVisible: {
+      outline: '2px solid var(--primary)',
+      outlineOffset: '2px',
+    },
+  },
+
+  render: {
+    shapes: (props, variant, size, _state = 'default') => {
+      const totalPages = props.totalPages || 5;
+      const currentPage = props.currentPage || 1;
+      const buttonSize = size.height;
+
+      const shapes: Shape[] = [];
+
+      // 페이지네이션 컨테이너
+      shapes.push({
+        type: 'container' as const,
+        x: 0,
+        y: 0,
+        width: 'auto',
+        height: 'auto',
+        children: [],
+        layout: {
+          display: 'flex',
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: size.gap,
+        },
+      });
+
+      // 이전 버튼
+      shapes.push({
+        type: 'roundRect' as const,
+        x: 0,
+        y: 0,
+        width: buttonSize,
+        height: buttonSize,
+        radius: size.borderRadius as unknown as number,
+        fill: '{color.surface-container}' as TokenRef,
+      });
+
+      // 페이지 버튼들
+      for (let i = 1; i <= Math.min(totalPages, 5); i++) {
+        const isActive = i === currentPage;
+        shapes.push({
+          type: 'roundRect' as const,
+          x: 0,
+          y: 0,
+          width: buttonSize,
+          height: buttonSize,
+          radius: size.borderRadius as unknown as number,
+          fill: isActive ? variant.background : ('{color.surface}' as TokenRef),
+        });
+        shapes.push({
+          type: 'text' as const,
+          x: 0,
+          y: 0,
+          text: String(i),
+          fontSize: size.fontSize as unknown as number,
+          fontFamily: fontFamily.sans,
+          fontWeight: isActive ? 600 : 400,
+          fill: isActive ? variant.text : ('{color.on-surface}' as TokenRef),
+          align: 'center' as const,
+          baseline: 'middle' as const,
+        });
+      }
+
+      // 다음 버튼
+      shapes.push({
+        type: 'roundRect' as const,
+        x: 0,
+        y: 0,
+        width: buttonSize,
+        height: buttonSize,
+        radius: size.borderRadius as unknown as number,
+        fill: '{color.surface-container}' as TokenRef,
+      });
+
+      return shapes;
+    },
+
+    react: () => ({
+      role: 'navigation',
+      'aria-label': 'Pagination',
+    }),
+
+    pixi: () => ({
+      eventMode: 'static' as const,
+      cursor: 'pointer',
+    }),
+  },
+};

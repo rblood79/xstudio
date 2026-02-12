@@ -11,9 +11,15 @@ import { useCallback, useMemo, useRef, useState } from 'react';
 import { useExtend } from '@pixi/react';
 import { PIXI_COMPONENTS } from '../pixiSetup';
 import { Graphics as PixiGraphics, TextStyle } from 'pixi.js';
-import { getTreeSizePreset, getTreeColorPreset } from '../utils/cssVariableReader';
 import type { Element } from '@/types/core/store.types';
 import { useStore } from '@/builder/stores';
+
+// 🚀 Component Spec
+import {
+  TreeSpec,
+  getVariantColors as getSpecVariantColors,
+  getSizePreset as getSpecSizePreset,
+} from '@xstudio/specs';
 
 export interface PixiTreeProps {
   element: Element;
@@ -43,9 +49,25 @@ export function PixiTree({
   const variant = (props.variant as string) || 'default';
   const size = (props.size as string) || 'md';
 
-  // Get CSS presets
-  const sizePreset = useMemo(() => getTreeSizePreset(size), [size]);
-  const colorPreset = useMemo(() => getTreeColorPreset(variant), [variant]);
+  // 🚀 Spec Migration
+  const sizePreset = useMemo(() => {
+    const sizeSpec = TreeSpec.sizes[size] || TreeSpec.sizes[TreeSpec.defaultSize];
+    return getSpecSizePreset(sizeSpec, 'light');
+  }, [size]);
+  const colorPreset = useMemo(() => {
+    const variantSpec = TreeSpec.variants[variant] || TreeSpec.variants[TreeSpec.defaultVariant];
+    const colors = getSpecVariantColors(variantSpec, 'light');
+    return {
+      backgroundColor: colors.bg,
+      textColor: colors.text,
+      borderColor: colors.border ?? 0xe5e7eb,
+      hoverBgColor: colors.bgHover,
+      selectedBgColor: colors.bgPressed,
+      selectedTextColor: colors.text,
+      focusColor: colors.bg,
+      expandIconColor: colors.text,
+    };
+  }, [variant]);
 
   // Expanded state (local)
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());

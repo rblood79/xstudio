@@ -80,12 +80,23 @@ export interface ColorTokens {
   'error-pressed': string;
   'on-error': string;
 
+  // Container (MD3 color roles)
+  'primary-container': string;
+  'on-primary-container': string;
+  'secondary-container': string;
+  'on-secondary-container': string;
+  'tertiary-container': string;
+  'on-tertiary-container': string;
+  'error-container': string;
+  'on-error-container': string;
+
   // Surface
   surface: string;
   'surface-container': string;
   'surface-container-high': string;
   'surface-container-highest': string;
   'on-surface': string;
+  'on-surface-variant': string;
 
   // Outline
   outline: string;

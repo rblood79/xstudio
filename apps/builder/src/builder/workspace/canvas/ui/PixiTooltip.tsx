@@ -17,12 +17,13 @@ import { useExtend } from '@pixi/react';
 import { PIXI_COMPONENTS } from '../pixiSetup';
 import type { Graphics as PixiGraphics, TextStyle } from 'pixi.js';
 import type { Element } from '@/types/core/store.types';
+
+// 🚀 Spec Migration
 import {
-  getTooltipSizePreset,
-  getTooltipColorPreset,
-  getVariantColors,
-} from '../utils/cssVariableReader';
-import { useThemeColors } from '../hooks/useThemeColors';
+  TooltipSpec,
+  getVariantColors as getSpecVariantColors,
+  getSizePreset as getSpecSizePreset,
+} from '@xstudio/specs';
 
 export interface PixiTooltipProps {
   element: Element;
@@ -46,18 +47,27 @@ export function PixiTooltip({
   const placement = (props.placement as string) || 'top';
   const content = (props.content as string) || (props.children as string) || 'Tooltip';
 
-  // Get presets from CSS
-  const sizePreset = useMemo(() => getTooltipSizePreset(size), [size]);
-  const colorPreset = useMemo(() => getTooltipColorPreset(variant), [variant]);
+  // Get presets from CSS (Spec Migration)
+  const sizePreset = useMemo(() => {
+    const sizeSpec = TooltipSpec.sizes[size] || TooltipSpec.sizes[TooltipSpec.defaultSize];
+    return getSpecSizePreset(sizeSpec, 'light');
+  }, [size]);
 
-  // 🚀 테마 색상 동적 로드
-  const themeColors = useThemeColors();
+  const colorPreset = useMemo(() => {
+    const variantSpec = TooltipSpec.variants[variant] || TooltipSpec.variants[TooltipSpec.defaultVariant];
+    const specColors = getSpecVariantColors(variantSpec, 'light');
+    return {
+      backgroundColor: specColors.bg,
+      textColor: specColors.text,
+      arrowColor: specColors.bg,
+    };
+  }, [variant]);
 
-  // 🚀 variant에 따른 테마 색상 (selection용)
-  const variantColors = useMemo(
-    () => getVariantColors(variant, themeColors),
-    [variant, themeColors]
-  );
+  // 🚀 variant에 따른 테마 색상 (selection용, Spec Migration)
+  const variantColors = useMemo(() => {
+    const variantSpec = TooltipSpec.variants[variant] || TooltipSpec.variants[TooltipSpec.defaultVariant];
+    return getSpecVariantColors(variantSpec, 'light');
+  }, [variant]);
 
   // Calculate dimensions based on content
   const textWidth = Math.min(content.length * sizePreset.fontSize * 0.6, sizePreset.maxWidth - sizePreset.paddingX * 2);

@@ -17,9 +17,16 @@ import { Graphics as PixiGraphics, TextStyle } from 'pixi.js';
 import type { Element } from '../../../../types/core/store.types';
 import type { CSSStyle } from '../sprites/styleConverter';
 import { cssColorToHex } from '../sprites/styleConverter';
-import { getCheckboxSizePreset, getVariantColors } from '../utils/cssVariableReader';
-import { useThemeColors } from '../hooks/useThemeColors';
 import { drawBox } from '../utils';
+
+// 🚀 Spec Migration
+import {
+  CheckboxSpec,
+  CHECKBOX_BOX_SIZES,
+  CHECKBOX_CHECKED_COLORS,
+  getVariantColors as getSpecVariantColors,
+  getSizePreset as getSpecSizePreset,
+} from '@xstudio/specs';
 
 // ============================================
 // Types
@@ -52,17 +59,15 @@ export const PixiCheckbox = memo(function PixiCheckbox({
   const style = element.props?.style as CSSStyle | undefined;
   const props = element.props as Record<string, unknown> | undefined;
 
-  // 🚀 테마 색상 동적 로드
-  const themeColors = useThemeColors();
-
   // variant에 따른 색상 (default, primary, secondary, tertiary, error, surface)
   const variant = useMemo(() => {
     return String(props?.variant || 'default');
   }, [props?.variant]);
 
   const variantColors = useMemo(() => {
-    return getVariantColors(variant, themeColors);
-  }, [variant, themeColors]);
+    const variantSpec = CheckboxSpec.variants[variant] || CheckboxSpec.variants[CheckboxSpec.defaultVariant];
+    return getSpecVariantColors(variantSpec, 'light');
+  }, [variant]);
 
   // 체크 상태
   const isChecked = useMemo(() => {
@@ -79,10 +84,14 @@ export const PixiCheckbox = memo(function PixiCheckbox({
   // 🚀 CSS 변수에서 동적으로 읽어옴
   const sizePreset = useMemo(() => {
     const size = props?.size ? String(props.size) : 'md';
-    return getCheckboxSizePreset(size);
+    const sizeSpec = CheckboxSpec.sizes[size] || CheckboxSpec.sizes[CheckboxSpec.defaultSize];
+    return getSpecSizePreset(sizeSpec, 'light');
   }, [props]);
 
-  const boxSize = sizePreset.boxSize;
+  const boxSize = useMemo(() => {
+    const size = props?.size ? String(props.size) : 'md';
+    return CHECKBOX_BOX_SIZES[size] ?? CHECKBOX_BOX_SIZES.md;
+  }, [props?.size]);
 
   // 🚀 Phase 8: parseCSSSize 제거 - CSS 프리셋 값 사용, 숫자 타입만 오버라이드 허용
   const borderRadius = typeof style?.borderRadius === 'number' ? style.borderRadius : DEFAULT_BORDER_RADIUS;

@@ -14,11 +14,15 @@ import { useExtend } from '@pixi/react';
 import { PIXI_COMPONENTS } from '../pixiSetup';
 import type { Graphics as PixiGraphics, TextStyle } from 'pixi.js';
 import type { Element } from '@/types/core/store.types';
+
+// 🚀 Spec Migration
+import { resolveTokenColor } from '../hooks/useSpecRenderer';
 import {
-  getTextAreaSizePreset,
-  getVariantColors,
-} from '../utils/cssVariableReader';
-import { useThemeColors } from '../hooks/useThemeColors';
+  TextAreaSpec,
+  getVariantColors as getSpecVariantColors,
+  getSizePreset as getSpecSizePreset,
+} from '@xstudio/specs';
+import type { TokenRef } from '@xstudio/specs';
 
 export interface PixiTextAreaProps {
   element: Element;
@@ -48,32 +52,44 @@ export function PixiTextArea({
   const errorMessage = (props.errorMessage as string) || '';
   const rows = (props.rows as number) || 3;
 
-  // 🚀 테마 색상 동적 로드
-  const themeColors = useThemeColors();
-
-  // Get presets from CSS
-  const sizePreset = useMemo(() => getTextAreaSizePreset(size), [size]);
+  // Get presets from CSS / Spec
+  const sizePreset = useMemo(() => {
+    const sizeSpec = TextAreaSpec.sizes[size] || TextAreaSpec.sizes[TextAreaSpec.defaultSize];
+    const specPreset = getSpecSizePreset(sizeSpec, 'light');
+    return {
+      ...specPreset,
+      minHeight: specPreset.height,
+      padding: specPreset.paddingY,
+      paddingX: specPreset.paddingX,
+      lineHeight: 1.5,
+      gap: specPreset.gap ?? 6,
+      labelFontSize: specPreset.fontSize - 2,
+      descriptionFontSize: specPreset.fontSize - 2,
+    };
+  }, [size]);
 
   // 🚀 variant에 따른 테마 색상
-  const variantColors = useMemo(
-    () => getVariantColors(variant, themeColors),
-    [variant, themeColors]
-  );
+  const variantColors = useMemo(() => {
+    const variantSpec = TextAreaSpec.variants[variant] || TextAreaSpec.variants[TextAreaSpec.defaultVariant];
+    return getSpecVariantColors(variantSpec, 'light');
+  }, [variant]);
 
   // 색상 프리셋 값들 (테마 색상 적용)
-  const colorPreset = useMemo(() => ({
-    backgroundColor: 0xffffff,
-    borderColor: 0xd1d5db,
-    focusBorderColor: variantColors.bg,
-    textColor: variantColors.text,
-    placeholderColor: 0x9ca3af,
-    labelColor: variantColors.text,
-    descriptionColor: 0x6b7280,
-    disabledBackgroundColor: 0xf3f4f6,
-    disabledTextColor: 0x9ca3af,
-    errorBorderColor: 0xef4444,
-    errorTextColor: 0xef4444,
-  }), [variantColors]);
+  const colorPreset = useMemo(() => {
+    return {
+      backgroundColor: variantColors.bg,
+      borderColor: variantColors.border ?? 0x79747e,
+      focusBorderColor: resolveTokenColor('{color.primary}' as TokenRef, 'light'),
+      textColor: variantColors.text,
+      placeholderColor: resolveTokenColor('{color.on-surface-variant}' as TokenRef, 'light'),
+      labelColor: variantColors.text,
+      descriptionColor: resolveTokenColor('{color.on-surface-variant}' as TokenRef, 'light'),
+      disabledBackgroundColor: resolveTokenColor('{color.surface-container}' as TokenRef, 'light'),
+      disabledTextColor: resolveTokenColor('{color.on-surface-variant}' as TokenRef, 'light'),
+      errorBorderColor: resolveTokenColor('{color.error}' as TokenRef, 'light'),
+      errorTextColor: resolveTokenColor('{color.error}' as TokenRef, 'light'),
+    };
+  }, [variantColors]);
 
   // Calculate dimensions
   const fieldWidth = (props.width as number) || 280;

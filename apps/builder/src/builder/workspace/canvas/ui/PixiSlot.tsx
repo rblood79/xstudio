@@ -14,11 +14,13 @@ import { useExtend } from '@pixi/react';
 import { PIXI_COMPONENTS } from '../pixiSetup';
 import type { Graphics as PixiGraphics, TextStyle } from 'pixi.js';
 import type { Element } from '@/types/core/store.types';
+
+// 🚀 Spec Migration
 import {
-  getSlotSizePreset,
-  getVariantColors,
-} from '../utils/cssVariableReader';
-import { useThemeColors } from '../hooks/useThemeColors';
+  SlotSpec,
+  getVariantColors as getSpecVariantColors,
+  getSizePreset as getSpecSizePreset,
+} from '@xstudio/specs';
 
 export interface PixiSlotProps {
   element: Element;
@@ -44,17 +46,17 @@ export function PixiSlot({
   const isRequired = (props.isRequired as boolean) || (props.required as boolean) || false;
   const isEmpty = (props.isEmpty as boolean) ?? true;
 
-  // 🚀 테마 색상 동적 로드
-  const themeColors = useThemeColors();
+  // Get presets from CSS (Spec Migration)
+  const sizePreset = useMemo(() => {
+    const sizeSpec = SlotSpec.sizes[size] || SlotSpec.sizes[SlotSpec.defaultSize];
+    return getSpecSizePreset(sizeSpec, 'light');
+  }, [size]);
 
-  // Get presets from CSS
-  const sizePreset = useMemo(() => getSlotSizePreset(size), [size]);
-
-  // 🚀 variant에 따른 테마 색상
-  const variantColors = useMemo(
-    () => getVariantColors(variant, themeColors),
-    [variant, themeColors]
-  );
+  // 🚀 variant에 따른 테마 색상 (Spec Migration)
+  const variantColors = useMemo(() => {
+    const variantSpec = SlotSpec.variants[variant] || SlotSpec.variants[SlotSpec.defaultVariant];
+    return getSpecVariantColors(variantSpec, 'light');
+  }, [variant]);
 
   // 색상 프리셋 값들 (테마 색상 적용)
   const colorPreset = useMemo(() => ({

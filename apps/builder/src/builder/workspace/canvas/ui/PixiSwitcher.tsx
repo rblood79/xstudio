@@ -18,8 +18,11 @@ import { Container, Graphics, Text, TextStyle } from 'pixi.js';
 import type { Element } from '../../../../types/core/store.types';
 import type { CSSStyle } from '../sprites/styleConverter';
 import { cssColorToHex } from '../sprites/styleConverter';
-import { getSwitchSizePreset, getVariantColors } from '../utils/cssVariableReader';
-import { useThemeColors } from '../hooks/useThemeColors';
+import {
+  SwitcherSpec,
+  getVariantColors as getSpecVariantColors,
+  getSizePreset as getSpecSizePreset,
+} from '@xstudio/specs';
 
 // ============================================
 // Types
@@ -67,11 +70,15 @@ function convertToSwitcherStyle(style: CSSStyle | undefined, itemCount: number, 
   const defaultWidth = 240;
   const width = typeof style?.width === 'number' ? style.width : defaultWidth;
 
-  // 🚀 CSS에서 사이즈 프리셋 읽기
-  const sizePreset = getSwitchSizePreset(size);
+  const sizeSpec = SwitcherSpec.sizes[size] || SwitcherSpec.sizes[SwitcherSpec.defaultSize];
+  const specPreset = getSpecSizePreset(sizeSpec, 'light');
+  const sizePreset = {
+    trackHeight: specPreset.height ?? 32,
+    labelFontSize: specPreset.fontSize ?? 14,
+  };
 
   // Switcher 높이는 Switch indicator 높이와 유사하게 설정
-  const defaultHeight = sizePreset.trackHeight + 8; // 약간의 패딩 추가
+  const defaultHeight = sizePreset.trackHeight + 8;
 
   return {
     x: typeof style?.left === 'number' ? style.left : 0,
@@ -206,18 +213,13 @@ export const PixiSwitcher = memo(function PixiSwitcher({
   // 아이템들
   const items = useMemo(() => parseSwitcherItems(props), [props]);
 
-  // 🚀 Phase 0: size prop 추출 (기본값: 'md')
   const size = useMemo(() => String(props?.size || 'md'), [props?.size]);
   const variant = useMemo(() => String(props?.variant || 'default'), [props?.variant]);
 
-  // 🚀 테마 색상 동적 로드
-  const themeColors = useThemeColors();
-
-  // 🚀 variant에 따른 테마 색상
-  const variantColors = useMemo(
-    () => getVariantColors(variant, themeColors),
-    [variant, themeColors]
-  );
+  const variantColors = useMemo(() => {
+    const variantSpec = SwitcherSpec.variants[variant] || SwitcherSpec.variants[SwitcherSpec.defaultVariant];
+    return getSpecVariantColors(variantSpec, 'light');
+  }, [variant]);
 
   // Switcher 스타일 (CSS 사이즈 프리셋 + 테마 색상 적용)
   const layoutStyle = useMemo(() => convertToSwitcherStyle(style, items.length, size, variantColors.bg), [style, items.length, size, variantColors.bg]);

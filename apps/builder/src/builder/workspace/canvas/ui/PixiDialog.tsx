@@ -17,12 +17,13 @@ import { useExtend } from '@pixi/react';
 import { PIXI_COMPONENTS } from '../pixiSetup';
 import type { Graphics as PixiGraphics, TextStyle } from 'pixi.js';
 import type { Element } from '@/types/core/store.types';
+
+// 🚀 Spec Migration
 import {
-  getDialogSizePreset,
-  getDialogColorPreset,
-  getVariantColors,
-} from '../utils/cssVariableReader';
-import { useThemeColors } from '../hooks/useThemeColors';
+  DialogSpec,
+  getVariantColors as getSpecVariantColors,
+  getSizePreset as getSpecSizePreset,
+} from '@xstudio/specs';
 
 export interface PixiDialogProps {
   element: Element;
@@ -49,18 +50,29 @@ export function PixiDialog({
 
   const [isHovered, setIsHovered] = useState(false);
 
-  // Get presets from CSS
-  const sizePreset = useMemo(() => getDialogSizePreset(size), [size]);
-  const colorPreset = useMemo(() => getDialogColorPreset(variant), [variant]);
+  // Get presets from CSS (Spec Migration)
+  const sizePreset = useMemo(() => {
+    const sizeSpec = DialogSpec.sizes[size] || DialogSpec.sizes[DialogSpec.defaultSize];
+    return getSpecSizePreset(sizeSpec, 'light');
+  }, [size]);
 
-  // 🚀 테마 색상 동적 로드
-  const themeColors = useThemeColors();
+  const colorPreset = useMemo(() => {
+    const variantSpec = DialogSpec.variants[variant] || DialogSpec.variants[DialogSpec.defaultVariant];
+    const specColors = getSpecVariantColors(variantSpec, 'light');
+    return {
+      backgroundColor: specColors.bg,
+      borderColor: specColors.border ?? specColors.bg,
+      titleColor: specColors.text,
+      textColor: specColors.text,
+      backdropColor: 0x00000033,
+    };
+  }, [variant]);
 
-  // 🚀 variant에 따른 테마 색상
-  const variantColors = useMemo(
-    () => getVariantColors(variant, themeColors),
-    [variant, themeColors]
-  );
+  // 🚀 variant에 따른 테마 색상 (Spec Migration)
+  const variantColors = useMemo(() => {
+    const variantSpec = DialogSpec.variants[variant] || DialogSpec.variants[DialogSpec.defaultVariant];
+    return getSpecVariantColors(variantSpec, 'light');
+  }, [variant]);
 
   // Calculate dimensions
   const containerWidth = (props.width as number) || sizePreset.minWidth;
