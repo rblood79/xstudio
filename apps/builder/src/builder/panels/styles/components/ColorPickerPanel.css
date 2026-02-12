@@ -24,4 +24,9 @@
     align-items: center;
     gap: 4px;
   }
+
+  /* Hue/Alpha 슬라이더: GradientBar와 동일 높이 통일 */
+  .color-picker-panel .react-aria-ColorSlider .react-aria-SliderTrack {
+    height: 28px;
+  }
 }

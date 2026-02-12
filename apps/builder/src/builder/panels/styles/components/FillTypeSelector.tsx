@@ -14,8 +14,6 @@ import { Circle, Blend, Image } from 'lucide-react';
 import type { Selection } from 'react-aria-components';
 import { iconProps } from '../../../../utils/ui/uiConstants';
 
-import './FillTypeSelector.css';
-
 /** 대분류 Fill 카테고리 */
 export type FillCategory = 'color' | 'gradient' | 'image';
 

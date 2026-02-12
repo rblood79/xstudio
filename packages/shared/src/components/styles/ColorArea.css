@@ -3,9 +3,9 @@
 @layer components {
 
   .react-aria-ColorArea {
-    width: 192px;
+    width: 100%;
     height: 192px;
-    border-radius: 4px;
+    border-radius: var(--radius-md);
     flex-shrink: 0;
   }
 

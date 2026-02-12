@@ -115,7 +115,7 @@ export const FillDetailPopover = memo(function FillDetailPopover({
   );
 
   return (
-    <div className="fill-detail-popover">
+    <div className="fill-detail-popover section">
       <FillTypeSelector value={currentCategory} onChange={handleCategoryChange} />
       {isColor && (
         <>

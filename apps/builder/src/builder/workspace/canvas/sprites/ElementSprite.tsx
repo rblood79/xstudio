@@ -600,7 +600,11 @@ export const ElementSprite = memo(function ElementSprite({
       r = ((fill.color >> 16) & 0xff) / 255;
       g = ((fill.color >> 8) & 0xff) / 255;
       b = (fill.color & 0xff) / 255;
-      effectiveAlpha = hasBgColor ? fill.alpha : (isUIComponent ? fill.alpha : 0);
+      // Fill V2: gradient/image fill이 있으면 shader가 alpha를 처리하므로 fillColor alpha=1
+      const hasFillV2NonColor = isFillV2Enabled() && effectiveElement.fills?.some(
+        (f: { enabled?: boolean; type: number }) => f.enabled && f.type !== 0, // 0 = FillType.Color
+      );
+      effectiveAlpha = (hasBgColor || hasFillV2NonColor) ? (fill.alpha || 1) : (isUIComponent ? fill.alpha : 0);
     }
 
     const hasBorderRadiusSet = style?.borderRadius !== undefined && style?.borderRadius !== null && style?.borderRadius !== '';

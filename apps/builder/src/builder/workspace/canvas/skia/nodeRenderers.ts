@@ -352,6 +352,10 @@ function renderBox(ck: CanvasKit, canvas: Canvas, node: SkiaNodeData): void {
     let fillShader: { delete(): void } | null = null;
     if (node.box.fill) {
       fillShader = applyFill(ck, paint, node.box.fill);
+      // 셰이더 생성 실패 시 fillColor로 폴백
+      if (!fillShader) {
+        paint.setColor(node.box.fillColor);
+      }
     } else {
       paint.setColor(node.box.fillColor);
     }

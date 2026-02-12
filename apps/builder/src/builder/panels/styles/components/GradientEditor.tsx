@@ -280,6 +280,7 @@ export const GradientEditor = memo(function GradientEditor({
 
   return (
     <div className="gradient-editor">
+      <div className="react-aria-control react-aria-Group">
       <Select
         aria-label="Gradient type"
         size="sm"
@@ -290,7 +291,7 @@ export const GradientEditor = memo(function GradientEditor({
       >
         {(item) => <SelectItem>{item.name}</SelectItem>}
       </Select>
-
+      </div>
       <GradientBar
         stops={localStops}
         gradientCss={gradientCss}

@@ -11,6 +11,22 @@ import type { CanvasKit, Paint } from 'canvaskit-wasm';
 import type { FillStyle } from './types';
 
 /**
+ * Float32Array[] → flat Float32Array 변환 (CanvasKit WASM 호환성 보장)
+ * MakeLinearGradient 등은 InputFlexibleColorArray를 받지만,
+ * flat Float32Array가 가장 안전한 형식이다.
+ */
+function flattenColors(colors: Float32Array[]): Float32Array {
+  const result = new Float32Array(colors.length * 4);
+  for (let i = 0; i < colors.length; i++) {
+    result[i * 4] = colors[i][0];
+    result[i * 4 + 1] = colors[i][1];
+    result[i * 4 + 2] = colors[i][2];
+    result[i * 4 + 3] = colors[i][3];
+  }
+  return result;
+}
+
+/**
  * FillStyle에 따라 CanvasKit Paint의 색상/셰이더를 설정한다.
  *
  * @param ck - CanvasKit 인스턴스
@@ -36,10 +52,11 @@ export function applyFill(
     }
 
     case 'linear-gradient': {
+      const flatColors = flattenColors(fill.colors);
       const shader = ck.Shader.MakeLinearGradient(
         fill.start,
         fill.end,
-        fill.colors,
+        flatColors,
         fill.positions,
         ck.TileMode.Clamp,
       );
@@ -57,12 +74,13 @@ export function applyFill(
     }
 
     case 'radial-gradient': {
+      const flatColors = flattenColors(fill.colors);
       const shader = ck.Shader.MakeTwoPointConicalGradient(
         fill.center,
         fill.startRadius,
         fill.center,
         fill.endRadius,
-        fill.colors,
+        flatColors,
         fill.positions,
         ck.TileMode.Clamp,
       );
@@ -80,10 +98,11 @@ export function applyFill(
     }
 
     case 'angular-gradient': {
+      const flatColors = flattenColors(fill.colors);
       const shader = ck.Shader.MakeSweepGradient(
         fill.cx,
         fill.cy,
-        fill.colors,
+        flatColors,
         fill.positions,
         ck.TileMode.Clamp,
       );
