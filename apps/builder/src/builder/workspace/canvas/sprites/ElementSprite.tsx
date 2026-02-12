@@ -490,13 +490,17 @@ function rearrangeShapesForColumn(
   containerWidth: number,
   gap: number,
 ): void {
-  // indicator 크기 찾기 (첫 번째 고정 크기 roundRect/rect)
+  // indicator 크기 찾기 (첫 번째 고정 크기 roundRect/rect/circle)
   let boxSize = 0;
   for (const shape of shapes) {
     if ((shape.type === 'roundRect' || shape.type === 'rect')
         && typeof shape.width === 'number' && shape.width > 0
         && shape.width !== containerWidth) {
       boxSize = shape.width;
+      break;
+    }
+    if (shape.type === 'circle' && shape.radius > 0) {
+      boxSize = shape.radius * 2;
       break;
     }
   }
@@ -960,6 +964,13 @@ export const ElementSprite = memo(function ElementSprite({
         // 🟢 Spec shapes 기반 렌더링
         const spec = getSpecForTag(tag);
         if (spec) {
+          // ⚡ Yoga 크기 확정 전에는 spec shapes 계산을 건너뛴다.
+          // computedW가 null인 상태에서 CSS 기본값으로 shapes를 계산하면
+          // Yoga 완료 후 다른 크기로 재계산되어 시각적 깜빡임이 발생한다.
+          // Yoga는 같은 프레임의 prerender에서 실행되므로 1프레임 내에 확정된다.
+          if (computedW == null && finalWidth <= 0) {
+            // Yoga 미확정 + CSS 크기도 없음 → 렌더링 보류
+          } else {
           const variantSpec = spec.variants[variant] || spec.variants[spec.defaultVariant];
           const sizeSpec = spec.sizes[size] || spec.sizes[spec.defaultSize];
           if (variantSpec && sizeSpec) {
@@ -998,6 +1009,7 @@ export const ElementSprite = memo(function ElementSprite({
 
             // Put entire specNode as a single child for rendering isolation
             textChildren = [specNode];
+          }
           }
         } else {
           // Fallback: Spec이 없는 컴포넌트 - 기존 텍스트 렌더링

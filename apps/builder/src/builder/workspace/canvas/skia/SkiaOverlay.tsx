@@ -504,6 +504,54 @@ export function SkiaOverlay({
 
   const isActive = true;
 
+  // ============================================
+  // Phase 0: Pixi 시각적 숨김 (WASM 로드와 독립적으로 즉시 실행)
+  // ============================================
+  // SkiaOverlay 마운트 시점에서 app은 이미 유효하다
+  // (BuilderCanvas에서 pixiApp && 조건으로 렌더링하므로).
+  // ready 상태(WASM + 폰트 로딩)와 무관하게 Pixi의 시각적 렌더링을 즉시 비활성화한다.
+  useEffect(() => {
+    if (!isActive) return;
+
+    // 1. Pixi 배경 투명화 (backgroundAlpha=0이 있으면 이미 0이지만, 방어적 설정)
+    app.renderer.background.alpha = 0;
+
+    // 2. Pixi 캔버스 z-index 설정 (이벤트 처리 레이어)
+    const pixiCanvas = app.canvas as HTMLCanvasElement;
+    pixiCanvas.style.zIndex = '3';
+
+    // 3. Camera 하위 레이어 즉시 숨김 (ticker로 매 프레임 보장)
+    //    alpha=0으로 숨기되, PixiJS 8의 EventBoundary._interactivePrune()는
+    //    alpha를 prune 조건으로 사용하지 않으므로 히트 테스팅은 유지된다.
+    const syncPixiVisibility = () => {
+      const cameraContainer = findCameraContainer(app.stage);
+      if (cameraContainer) {
+        if (originalCameraAlphaRef.current == null) {
+          originalCameraAlphaRef.current = cameraContainer.alpha;
+        }
+        // O(1): Camera 루트만 투명 처리
+        if (cameraContainer.alpha !== 0) {
+          cameraContainer.alpha = 0;
+        }
+      }
+    };
+
+    // HIGH priority (25): Application.render() (LOW=-25) 전에 실행
+    app.ticker.add(syncPixiVisibility, undefined, 25);
+
+    return () => {
+      app.ticker.remove(syncPixiVisibility);
+      // PixiJS 상태 복원 (SkiaOverlay unmount 시)
+      app.renderer.background.alpha = 1;
+      pixiCanvas.style.zIndex = '';
+      const camera = findCameraContainer(app.stage);
+      if (camera) {
+        camera.alpha = originalCameraAlphaRef.current ?? 1;
+        originalCameraAlphaRef.current = null;
+      }
+    };
+  }, [app, isActive]);
+
   // 페이지 프레임 변경 감지 → 오버레이 리렌더 트리거
   useEffect(() => {
     const frames = pageFrames ?? [];
@@ -568,7 +616,6 @@ export function SkiaOverlay({
 
     const ck = getCanvasKit();
     const skiaCanvas = canvasRef.current;
-    const pixiCanvas = app.canvas as HTMLCanvasElement;
 
     // DPR 적용
     const dpr = window.devicePixelRatio || 1;
@@ -587,33 +634,6 @@ export function SkiaOverlay({
     // SkiaRenderer 생성 (DPR 전달)
     const renderer = new SkiaRenderer(ck, skiaCanvas, bgColor, dpr);
     rendererRef.current = renderer;
-
-    // Pencil 방식: PixiJS는 이벤트 처리 전용 (시각적 렌더링 없음)
-    // Skia가 디자인 + AI 이펙트 + Selection 오버레이를 모두 렌더링
-    app.renderer.background.alpha = 0;
-    pixiCanvas.style.zIndex = '3';
-
-    // Camera 하위 레이어 alpha=0 설정 (PixiJS 렌더링 전에 실행)
-    // ⚠️ renderable=false는 PixiJS 8의 _interactivePrune()에서
-    //    hit testing까지 비활성화하므로 사용 금지.
-    //    alpha=0으로 시각적으로만 숨겨 이벤트 처리를 유지한다.
-    // HIGH priority (25): Application.render() (LOW=-25) 전에 실행하여
-    // PixiJS 렌더링 시 Camera 자식이 이미 숨겨진 상태 보장.
-    const syncPixiVisibility = () => {
-      const cameraContainer = findCameraContainer(app.stage);
-      if (cameraContainer) {
-        if (originalCameraAlphaRef.current == null) {
-          originalCameraAlphaRef.current = cameraContainer.alpha;
-        }
-        // O(1): 전체 하위 순회 대신 Camera 루트만 투명 처리
-        // PixiJS 이벤트(hit test)는 visible/renderable/measurable에 의해 prune되며,
-        // alpha는 prune 조건이 아니므로 상호작용은 유지된다. (pixi.js v8 EventBoundary._interactivePrune)
-        // 이미 0이면 스킵 (매 프레임 중복 설정 방지)
-        if (cameraContainer.alpha !== 0) {
-          cameraContainer.alpha = 0;
-        }
-      }
-    };
 
     // Skia 렌더 루프: PixiJS ticker에 통합
     // UTILITY priority (-50): Application.render() (LOW=-25) 이후에 실행.
@@ -1074,7 +1094,6 @@ export function SkiaOverlay({
       renderer.render(cullingBounds, registryVersion, camera, overlayVersionRef.current);
     };
 
-    app.ticker.add(syncPixiVisibility, undefined, 25);  // HIGH: before Application.render()
     app.ticker.add(renderFrame, undefined, -50);          // UTILITY: after Application.render()
 
     // WebGL 컨텍스트 손실 감시
@@ -1099,21 +1118,9 @@ export function SkiaOverlay({
     return () => {
       unwatchContext();
       if (minimapFadeTimerRef.current) clearTimeout(minimapFadeTimerRef.current);
-      app.ticker.remove(syncPixiVisibility);
       app.ticker.remove(renderFrame);
       renderer.dispose();
       rendererRef.current = null;
-
-      // PixiJS 상태 복원
-      app.renderer.background.alpha = 1;
-      pixiCanvas.style.zIndex = '';
-
-      // 디자인 레이어 렌더링 복원
-      const camera = findCameraContainer(app.stage);
-      if (camera) {
-        camera.alpha = originalCameraAlphaRef.current ?? 1;
-        originalCameraAlphaRef.current = null;
-      }
     };
   }, [ready, isActive, app, containerEl, backgroundColor]);
 

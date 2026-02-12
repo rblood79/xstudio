@@ -334,10 +334,12 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
     }
 
     // 페이지 로드 직후 즉시 order_num 재정렬 (검증보다 먼저 실행)
-    setTimeout(() => {
+    // ⚡ setTimeout(50) → queueMicrotask: 초기 로드와 reorder 사이의 타이밍 갭 제거
+    // 50ms 지연은 불필요한 재렌더링과 Skia 캐시 무효화를 유발함
+    queueMicrotask(() => {
       const { updateElementOrder } = get();
       reorderElements(migratedElements, pageId, updateElementOrder);
-    }, 50); // 검증(300ms)보다 빠르게 실행
+    });
   },
 
   // Factory 함수로 생성된 addElement 사용

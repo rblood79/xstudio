@@ -103,9 +103,10 @@ const PAGE_TITLE_HIT_HEIGHT = 24;
 /**
  * Phase 5: CanvasKit 오버레이 (Lazy Import)
  */
-const SkiaOverlayComponent = lazy(() =>
-  import('./skia/SkiaOverlay').then((mod) => ({ default: mod.SkiaOverlay }))
-);
+const skiaOverlayImport = () =>
+  import('./skia/SkiaOverlay').then((mod) => ({ default: mod.SkiaOverlay }));
+const SkiaOverlayComponent = lazy(skiaOverlayImport);
+skiaOverlayImport(); // 모듈 프리로드: lazy 해제 없이 초기 번들 크기 유지하면서 청크 로딩 선행
 
 function SkiaOverlayLazy(props: {
   containerEl: HTMLDivElement;
@@ -420,7 +421,12 @@ const LayoutContainer = memo(function LayoutContainer({
   }, [elementId]);
 
   // Yoga 계산된 pixel 크기를 하위 컴포넌트에 전달
-  const [computedSize, setComputedSize] = useState<{ width: number; height: number } | null>(null);
+  // ⚡ CSS layout에서 초기값 추론: null → 실제값 전환으로 인한 재렌더링 깜빡임 방지
+  const [computedSize, setComputedSize] = useState<{ width: number; height: number } | null>(() => {
+    const w = typeof layout.width === 'number' ? layout.width : 0;
+    const h = typeof layout.height === 'number' ? layout.height : 0;
+    return (w > 0 && h > 0) ? { width: w, height: h } : null;
+  });
 
   // @pixi/layout의 'layout' 이벤트를 구독하여 Yoga 계산 완료 시점에 정확히 읽기
   // 기존 requestAnimationFrame 방식은 @pixi/layout의 prerender보다 먼저 실행될 수 있어
@@ -2179,6 +2185,7 @@ export function BuilderCanvas({
         <Application
           resizeTo={containerEl}
           background={backgroundColor}
+          backgroundAlpha={0}
           // 🚀 Phase 5: 저사양 기기에서 antialias 비활성화
           antialias={!isLowEnd}
           // 🚀 Phase 5: 동적 해상도 (인터랙션 중 낮춤)

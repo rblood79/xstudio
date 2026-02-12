@@ -7,7 +7,7 @@
 
 import type { Shape, ColorValue } from '@xstudio/specs';
 import type { SkiaNodeData } from './nodeRenderers';
-import type { EffectStyle } from './types';
+import type { EffectStyle, FillStyle } from './types';
 import { resolveColor, resolveToken, hexStringToNumber } from '@xstudio/specs';
 
 // ========== Helpers ==========
@@ -21,6 +21,25 @@ function resolveNum(value: unknown, theme: 'light' | 'dark', fallback: number = 
   }
   if (typeof value === 'string') return parseFloat(value) || fallback;
   return fallback;
+}
+
+/**
+ * Resolve border radius that may be a number, array, or TokenRef.
+ * SkiaNodeData.box.borderRadius supports number | [tl, tr, br, bl].
+ */
+function resolveRadius(
+  value: unknown,
+  theme: 'light' | 'dark',
+): number | [number, number, number, number] {
+  if (Array.isArray(value)) {
+    return [
+      resolveNum(value[0], theme, 0),
+      resolveNum(value[1], theme, 0),
+      resolveNum(value[2], theme, 0),
+      resolveNum(value[3], theme, 0),
+    ] as [number, number, number, number];
+  }
+  return resolveNum(value, theme, 0);
 }
 
 /** ColorValue → Float32Array color for Skia */
@@ -48,6 +67,8 @@ const TRANSPARENT = Float32Array.of(0, 0, 0, 0);
  *
  * Returns a container SkiaNodeData with the first roundRect/rect as the background box,
  * and all other shapes as children.
+ *
+ * 2-pass 처리: shadow/border(target 참조)가 target보다 먼저 선언되어도 정상 동작.
  */
 export function specShapesToSkia(
   shapes: Shape[],
@@ -64,7 +85,39 @@ export function specShapesToSkia(
   let bgBox: SkiaNodeData['box'] | undefined;
   let bgExtracted = false;
 
+  // Deferred shapes: shadow/border with explicit target (forward reference)
+  const deferredShapes: Shape[] = [];
+
+  // ===== Pass 1: geometry shapes + targetless shadow/border =====
   for (const shape of shapes) {
+    // Defer shadow/border with explicit target to Pass 2
+    if ((shape.type === 'shadow' || shape.type === 'border') && shape.target) {
+      deferredShapes.push(shape);
+      continue;
+    }
+
+    processShape(shape);
+  }
+
+  // ===== Pass 2: deferred shadow/border (targets now registered) =====
+  for (const shape of deferredShapes) {
+    processShape(shape);
+  }
+
+  // Build the top-level container
+  return {
+    type: 'box',
+    x: 0,
+    y: 0,
+    width: containerWidth,
+    height: containerHeight,
+    visible: true,
+    box: bgBox ?? { fillColor: TRANSPARENT, borderRadius: 0 },
+    children: children.length > 0 ? children : undefined,
+  };
+
+  // ===== Shape processor (shared by both passes) =====
+  function processShape(shape: Shape): void {
     switch (shape.type) {
       case 'roundRect': {
         const w = shape.width === 'auto' ? containerWidth : shape.width;
@@ -72,7 +125,7 @@ export function specShapesToSkia(
         const fillColor = shape.fill
           ? colorValueToFloat32(shape.fill, theme, shape.fillAlpha ?? 1)
           : TRANSPARENT;
-        const radius = resolveNum(shape.radius, theme, 0);
+        const radius = resolveRadius(shape.radius, theme);
 
         const node: SkiaNodeData = {
           type: 'box',
@@ -155,6 +208,12 @@ export function specShapesToSkia(
       case 'line': {
         const strokeColor = colorValueToFloat32(shape.stroke, theme);
 
+        // Resolve 'auto' values (used by Tabs, Panel line shapes)
+        const x1 = (shape.x1 as unknown) === 'auto' ? containerWidth : shape.x1;
+        const y1 = (shape.y1 as unknown) === 'auto' ? containerHeight : shape.y1;
+        const x2 = (shape.x2 as unknown) === 'auto' ? containerWidth : shape.x2;
+        const y2 = (shape.y2 as unknown) === 'auto' ? containerHeight : shape.y2;
+
         const node: SkiaNodeData = {
           type: 'line',
           x: 0,
@@ -163,10 +222,10 @@ export function specShapesToSkia(
           height: 0,
           visible: true,
           line: {
-            x1: shape.x1,
-            y1: shape.y1,
-            x2: shape.x2,
-            y2: shape.y2,
+            x1,
+            y1,
+            x2,
+            y2,
             strokeColor,
             strokeWidth: shape.strokeWidth,
           },
@@ -200,7 +259,7 @@ export function specShapesToSkia(
           const by = shape.y ?? 0;
           const bw = shape.width === 'auto' ? containerWidth : (shape.width ?? containerWidth);
           const bh = shape.height === 'auto' ? containerHeight : (shape.height ?? containerHeight);
-          const br = resolveNum(shape.radius, theme, 0);
+          const br = resolveRadius(shape.radius, theme);
 
           children.push({
             type: 'box',
@@ -317,22 +376,61 @@ export function specShapesToSkia(
         break;
       }
 
-      case 'gradient':
+      case 'gradient': {
+        const w = shape.width === 'auto' ? containerWidth : shape.width;
+        const h = shape.height === 'auto' ? containerHeight : shape.height;
+        const colors = shape.gradient.stops.map(s => colorValueToFloat32(s.color, theme));
+        const positions = shape.gradient.stops.map(s => s.offset);
+
+        let fill: FillStyle;
+        if (shape.gradient.type === 'linear') {
+          const angle = (shape.gradient.angle ?? 0) * Math.PI / 180;
+          fill = {
+            type: 'linear-gradient',
+            start: [w / 2 - Math.sin(angle) * w / 2, h / 2 - Math.cos(angle) * h / 2],
+            end: [w / 2 + Math.sin(angle) * w / 2, h / 2 + Math.cos(angle) * h / 2],
+            colors,
+            positions,
+          };
+        } else {
+          fill = {
+            type: 'radial-gradient',
+            center: [w / 2, h / 2],
+            startRadius: 0,
+            endRadius: Math.max(w, h) / 2,
+            colors,
+            positions,
+          };
+        }
+
+        const radius = shape.radius ? resolveRadius(shape.radius, theme) : 0;
+        const node: SkiaNodeData = {
+          type: 'box',
+          x: shape.x,
+          y: shape.y,
+          width: w,
+          height: h,
+          visible: true,
+          box: { fillColor: TRANSPARENT, fill, borderRadius: radius },
+        };
+
+        // Gradient can also be a background (same logic as roundRect/rect)
+        if (!bgExtracted && shape.x === 0 && shape.y === 0
+            && shape.width === 'auto' && shape.height === 'auto') {
+          bgBox = node.box;
+          bgExtracted = true;
+        } else {
+          children.push(node);
+        }
+
+        if (shape.id) nodeById.set(shape.id, bgExtracted && children.length === 0 ? { ...node, box: bgBox } : node);
+        lastNode = bgExtracted && children.length === 0 ? { ...node, box: bgBox } : node;
+        break;
+      }
+
       case 'image':
         // Skip - not supported in simple box rendering
         break;
     }
   }
-
-  // Build the top-level container
-  return {
-    type: 'box',
-    x: 0,
-    y: 0,
-    width: containerWidth,
-    height: containerHeight,
-    visible: true,
-    box: bgBox ?? { fillColor: TRANSPARENT, borderRadius: 0 },
-    children: children.length > 0 ? children : undefined,
-  };
 }
