@@ -231,31 +231,37 @@ export function Workspace({
     const containerSize = containerSizeRef.current;
     if (containerSize.width <= 0 || containerSize.height <= 0) return false;
 
-    const scaleX = containerSize.width / canvasSize.width;
+    // 비교 모드에서는 WebGL 패널이 절반 너비만 차지
+    const effectiveWidth = compareMode ? containerSize.width / 2 : containerSize.width;
+
+    const scaleX = effectiveWidth / canvasSize.width;
     const scaleY = containerSize.height / canvasSize.height;
     const fitZoom = Math.min(scaleX, scaleY) * 0.9;
 
     setZoom(fitZoom);
     setPanOffset({
-      x: (containerSize.width - canvasSize.width * fitZoom) / 2,
+      x: (effectiveWidth - canvasSize.width * fitZoom) / 2,
       y: (containerSize.height - canvasSize.height * fitZoom) / 2,
     });
     return true;
-  }, [canvasSize.width, canvasSize.height, setZoom, setPanOffset]);
+  }, [canvasSize.width, canvasSize.height, compareMode, setZoom, setPanOffset]);
 
   // 100% 줌으로 캔버스 중앙 배치 (초기 로드용)
   const centerCanvasAt100 = useCallback(() => {
     const containerSize = containerSizeRef.current;
     if (containerSize.width <= 0 || containerSize.height <= 0) return false;
 
+    // 비교 모드에서는 WebGL 패널이 절반 너비만 차지
+    const effectiveWidth = compareMode ? containerSize.width / 2 : containerSize.width;
+
     const zoom100 = 1; // 100%
     setZoom(zoom100);
     setPanOffset({
-      x: (containerSize.width - canvasSize.width * zoom100) / 2,
+      x: (effectiveWidth - canvasSize.width * zoom100) / 2,
       y: (containerSize.height - canvasSize.height * zoom100) / 2,
     });
     return true;
-  }, [canvasSize.width, canvasSize.height, setZoom, setPanOffset]);
+  }, [canvasSize.width, canvasSize.height, compareMode, setZoom, setPanOffset]);
 
   // ref 동기화 (useEffect에서 stale closure 방지)
   const centerCanvasAt100Ref = useRef<() => boolean>(() => false);
@@ -303,21 +309,6 @@ export function Workspace({
     }
   }, [selectedBreakpoint, canvasSize.width, canvasSize.height, centerCanvas]);
 
-  // 🚀 비교 모드: WebGL Canvas offset 적용 (width만큼 왼쪽으로)
-  const compareOffsetAppliedRef = useRef(false);
-  useEffect(() => {
-    if (!compareMode || !isCanvasReady || compareOffsetAppliedRef.current) return;
-
-    // 한 번만 적용
-    compareOffsetAppliedRef.current = true;
-
-    // 현재 panOffset에서 canvasSize.width 만큼 왼쪽으로 이동
-    const currentPanOffset = useCanvasSyncStore.getState().panOffset;
-    setPanOffset({
-      x: currentPanOffset.x - canvasSize.width,
-      y: currentPanOffset.y,
-    });
-  }, [compareMode, isCanvasReady, canvasSize.width, setPanOffset]);
 
   // ============================================
   // Container Size Tracking
@@ -420,7 +411,6 @@ export function Workspace({
             <BuilderCanvas
               pageWidth={canvasSize.width}
               pageHeight={canvasSize.height}
-              initialPanOffsetX={-canvasSize.width}
             />
           </div>
         </div>
