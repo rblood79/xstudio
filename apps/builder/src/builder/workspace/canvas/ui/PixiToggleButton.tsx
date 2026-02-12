@@ -478,7 +478,7 @@ export const PixiToggleButton = memo(function PixiToggleButton({
 
   // 🚀 size 우선순위: 부모 ToggleButtonGroup size > props.size > 기본값 'sm'
   // ToggleButtonGroup 안의 버튼은 부모의 size를 따라야 함 (CSS 동작과 일치)
-  const effectiveSize = parentSize || props?.size || 'sm';
+  const effectiveSize = (parentSize || props?.size || 'sm') as 'xs' | 'sm' | 'md' | 'lg' | 'xl';
 
   // 🚀 effectiveProps: 부모에서 상속받은 size를 반영
   const effectiveProps = useMemo(() => ({

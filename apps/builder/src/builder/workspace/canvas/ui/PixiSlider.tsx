@@ -69,10 +69,11 @@ function convertToSliderStyle(style: CSSStyle | undefined, size: string, themeDe
   // 🚀 Spec Migration
   const sizeSpec = SliderSpec.sizes[size] || SliderSpec.sizes[SliderSpec.defaultSize];
   const specPreset = getSpecSizePreset(sizeSpec, 'light');
+  const dimensions = SLIDER_DIMENSIONS[size] || SLIDER_DIMENSIONS[SliderSpec.defaultSize];
   const sizePreset = {
     trackHeight: specPreset.height ?? 20,
-    trackWidth: (SLIDER_DIMENSIONS as Record<string, number>).trackWidth ?? 4,
-    thumbSize: (SLIDER_DIMENSIONS as Record<string, number>).thumbSize ?? 20,
+    trackWidth: dimensions.trackHeight ?? 4,
+    thumbSize: dimensions.thumbSize ?? 20,
   };
 
   return {

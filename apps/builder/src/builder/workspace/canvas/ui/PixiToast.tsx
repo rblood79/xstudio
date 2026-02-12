@@ -98,7 +98,7 @@ export function PixiToast({
     (g: PixiGraphics) => {
       g.clear();
 
-      const iconSize = sizePreset.iconSize;
+      const iconSize = sizePreset.iconSize ?? 20;
       const centerX = iconSize / 2;
       const centerY = iconSize / 2;
       const radius = iconSize * 0.4;
@@ -188,7 +188,7 @@ export function PixiToast({
       fill: colorPreset.textColor,
       fontFamily: 'Inter, system-ui, sans-serif',
       wordWrap: true,
-      wordWrapWidth: toastWidth - sizePreset.paddingX * 2 - sizePreset.iconSize - sizePreset.dismissButtonSize - sizePreset.gap * 2 - 10,
+      wordWrapWidth: toastWidth - sizePreset.paddingX * 2 - (sizePreset.iconSize ?? 20) - (sizePreset.dismissButtonSize ?? 16) - (sizePreset.gap ?? 8) * 2 - 10,
     }),
     [sizePreset, colorPreset, toastWidth]
   );

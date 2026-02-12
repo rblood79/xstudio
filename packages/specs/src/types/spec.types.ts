@@ -145,6 +145,10 @@ export interface SizeSpec {
 
   /** 간격 (optional) */
   gap?: number;
+
+  /** 컴포넌트별 추가 속성 */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  [key: string]: any;
 }
 
 /**

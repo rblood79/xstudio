@@ -214,11 +214,22 @@ export function getSizePreset(
   paddingY: number;
   fontSize: number;
   borderRadius: number;
-  iconSize?: number;
-  gap?: number;
+  iconSize: number;
+  gap: number;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  [key: string]: any;
 } {
   const fontSize = resolveToken(sizeSpec.fontSize, theme);
   const borderRadius = resolveToken(sizeSpec.borderRadius, theme);
+
+  // 기본 속성 외 컴포넌트별 추가 속성도 통과
+  const extra: Record<string, number | undefined> = {};
+  const standardKeys = new Set(['height', 'paddingX', 'paddingY', 'fontSize', 'borderRadius', 'iconSize', 'gap']);
+  for (const [key, value] of Object.entries(sizeSpec)) {
+    if (!standardKeys.has(key) && typeof value === 'number') {
+      extra[key] = value;
+    }
+  }
 
   return {
     height: sizeSpec.height,
@@ -226,7 +237,8 @@ export function getSizePreset(
     paddingY: sizeSpec.paddingY,
     fontSize: typeof fontSize === 'number' ? fontSize : 14,
     borderRadius: typeof borderRadius === 'number' ? borderRadius : 4,
-    iconSize: sizeSpec.iconSize,
-    gap: sizeSpec.gap,
+    iconSize: sizeSpec.iconSize ?? 0,
+    gap: sizeSpec.gap ?? 0,
+    ...extra,
   };
 }

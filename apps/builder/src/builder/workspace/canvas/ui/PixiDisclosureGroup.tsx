@@ -167,7 +167,7 @@ export function PixiDisclosureGroup({
   const contentStyle = useMemo<Partial<TextStyle>>(
     () => ({
       fontSize: sizePreset.fontSize * 0.9,
-      fill: colorPreset.panelTextColor,
+      fill: colorPreset.textColor,
       fontFamily: 'Inter, system-ui, sans-serif',
       wordWrap: true,
       wordWrapWidth: containerWidth - sizePreset.panelIndent - sizePreset.padding * 2,
@@ -259,7 +259,7 @@ export function PixiDisclosureGroup({
               triggerHeight,
               sizePreset.borderRadius - 2
             );
-            g.fill({ color: colorPreset.triggerHoverBgColor });
+            g.fill({ color: colorPreset.hoverBgColor });
           }
 
           // Expanded background
@@ -271,7 +271,7 @@ export function PixiDisclosureGroup({
               triggerHeight + panelHeight + sizePreset.gap,
               sizePreset.borderRadius - 2
             );
-            g.fill({ color: colorPreset.expandedBgColor });
+            g.fill({ color: colorPreset.backgroundColor });
           }
 
           // Chevron icon

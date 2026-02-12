@@ -144,11 +144,11 @@ export function PixiTree({
     () =>
       new TextStyle({
         fontSize: sizePreset.fontSize,
-        fill: colorPreset.itemSelectedTextColor,
+        fill: colorPreset.selectedTextColor,
         fontFamily: 'Inter, system-ui, sans-serif',
         fontWeight: '500',
       }),
-    [sizePreset.fontSize, colorPreset.itemSelectedTextColor]
+    [sizePreset.fontSize, colorPreset.selectedTextColor]
   );
 
   // Draw container
@@ -181,9 +181,9 @@ export function PixiTree({
 
       let bgColor = 0xffffff00; // transparent
       if (isItemSelected) {
-        bgColor = colorPreset.itemSelectedBgColor;
+        bgColor = colorPreset.selectedBgColor;
       } else if (isHovered) {
-        bgColor = colorPreset.itemHoverBgColor;
+        bgColor = colorPreset.hoverBgColor;
       }
 
       if (bgColor !== 0xffffff00) {
@@ -215,11 +215,11 @@ export function PixiTree({
       g.moveTo(-3, -5);
       g.lineTo(3, 0);
       g.lineTo(-3, 5);
-      g.stroke({ width: 2, color: colorPreset.chevronColor });
+      g.stroke({ width: 2, color: colorPreset.expandIconColor });
 
       g.setTransform(0, 0);
     },
-    [sizePreset.chevronSize, colorPreset.chevronColor]
+    [sizePreset.chevronSize, colorPreset.expandIconColor]
   );
 
   // Toggle expand/collapse

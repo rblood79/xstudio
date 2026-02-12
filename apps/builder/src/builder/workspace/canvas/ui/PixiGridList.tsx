@@ -106,11 +106,11 @@ export function PixiGridList({
     () =>
       new TextStyle({
         fontSize: sizePreset.fontSize,
-        fill: colorPreset.itemSelectedTextColor,
+        fill: colorPreset.selectedTextColor,
         fontFamily: 'Inter, system-ui, sans-serif',
         fontWeight: '500',
       }),
-    [sizePreset.fontSize, colorPreset.itemSelectedTextColor]
+    [sizePreset.fontSize, colorPreset.selectedTextColor]
   );
 
   // Draw list container
@@ -143,9 +143,9 @@ export function PixiGridList({
 
       let bgColor = colorPreset.backgroundColor;
       if (isItemSelected) {
-        bgColor = colorPreset.itemSelectedBgColor;
+        bgColor = colorPreset.selectedBgColor;
       } else if (isHovered) {
-        bgColor = colorPreset.itemHoverBgColor;
+        bgColor = colorPreset.hoverBgColor;
       }
 
       g.roundRect(0, 0, itemWidth, itemHeight, 4);

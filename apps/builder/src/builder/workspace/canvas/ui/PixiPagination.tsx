@@ -105,7 +105,7 @@ export function PixiPagination({
 
       // Background
       g.roundRect(0, 0, sizePreset.buttonSize, sizePreset.buttonSize, sizePreset.borderRadius);
-      g.fill({ color: isDisabled ? colorPreset.backgroundColor : colorPreset.hoverBackgroundColor, alpha: isDisabled ? 0.5 : 1 });
+      g.fill({ color: isDisabled ? colorPreset.backgroundColor : colorPreset.hoverBgColor, alpha: isDisabled ? 0.5 : 1 });
 
       // Arrow
       const centerX = sizePreset.buttonSize / 2;
@@ -121,7 +121,7 @@ export function PixiPagination({
         g.lineTo(centerX - arrowSize / 2, centerY);
         g.lineTo(centerX + arrowSize / 2, centerY + arrowSize);
       }
-      g.stroke({ color: isDisabled ? colorPreset.disabledTextColor : colorPreset.textColor, width: 2 });
+      g.stroke({ color: colorPreset.textColor, width: 2, alpha: isDisabled ? 0.5 : 1 });
     },
     [sizePreset, colorPreset]
   );
@@ -154,7 +154,7 @@ export function PixiPagination({
   const pageTextStyle = useCallback(
     (isCurrent: boolean): Partial<TextStyle> => ({
       fontSize: sizePreset.fontSize,
-      fill: isCurrent ? colorPreset.currentTextColor : colorPreset.textColor,
+      fill: colorPreset.textColor,
       fontFamily: 'Inter, system-ui, sans-serif',
       fontWeight: isCurrent ? 'bold' : 'normal',
     }),
@@ -164,7 +164,7 @@ export function PixiPagination({
   const ellipsisStyle = useMemo<Partial<TextStyle>>(
     () => ({
       fontSize: sizePreset.fontSize,
-      fill: colorPreset.ellipsisColor,
+      fill: colorPreset.textColor,
       fontFamily: 'Inter, system-ui, sans-serif',
     }),
     [sizePreset, colorPreset]
@@ -173,7 +173,7 @@ export function PixiPagination({
   const infoStyle = useMemo<Partial<TextStyle>>(
     () => ({
       fontSize: sizePreset.fontSize * 0.85,
-      fill: colorPreset.ellipsisColor,
+      fill: colorPreset.textColor,
       fontFamily: 'Inter, system-ui, sans-serif',
     }),
     [sizePreset, colorPreset]
