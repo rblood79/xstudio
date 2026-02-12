@@ -52,7 +52,6 @@ import {
  * 최소 버튼 크기 (너무 작아지는 것 방지)
  */
 const MIN_BUTTON_WIDTH = 32;
-const MIN_BUTTON_HEIGHT = 24;
 
 // ============================================
 // Variant Color Types
@@ -294,7 +293,6 @@ function getButtonLayout(
 
   if (isHeightAuto) {
     height = minRequiredHeight;
-    height = Math.max(height, MIN_BUTTON_HEIGHT);
   } else {
     height = explicitHeight;
   }

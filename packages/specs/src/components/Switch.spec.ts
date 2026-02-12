@@ -121,7 +121,7 @@ export const SwitchSpec: ComponentSpec<SwitchProps> = {
       const gap = size.gap ?? 10;
 
       const isChecked = props.isSelected;
-      const trackColor = isChecked
+      const defaultTrackColor = isChecked
         ? (SWITCH_SELECTED_TRACK_COLORS[variantName] ?? SWITCH_SELECTED_TRACK_COLORS.default)
         : variant.background;
 
@@ -129,6 +129,16 @@ export const SwitchSpec: ComponentSpec<SwitchProps> = {
         ? switchSize.trackWidth - switchSize.thumbSize - switchSize.thumbOffset
         : switchSize.thumbOffset;
       const trackRadius = switchSize.trackHeight / 2;
+
+      // 사용자 스타일 우선
+      const bgColor = props.style?.backgroundColor ?? defaultTrackColor;
+
+      const styleBw = props.style?.borderWidth;
+      const borderWidth = styleBw != null
+        ? (typeof styleBw === 'number' ? styleBw : parseFloat(String(styleBw)) || 0)
+        : 2;
+
+      const borderColor = props.style?.borderColor ?? variant.border!;
 
       const shapes: Shape[] = [];
 
@@ -141,7 +151,7 @@ export const SwitchSpec: ComponentSpec<SwitchProps> = {
         width: switchSize.trackWidth,
         height: switchSize.trackHeight,
         radius: trackRadius,
-        fill: trackColor,
+        fill: bgColor,
       });
 
       // 트랙 테두리 (비선택 시)
@@ -149,8 +159,8 @@ export const SwitchSpec: ComponentSpec<SwitchProps> = {
         shapes.push({
           type: 'border' as const,
           target: 'track',
-          borderWidth: 2,
-          color: variant.border!,
+          borderWidth,
+          color: borderColor,
           radius: trackRadius,
         });
       }
@@ -170,15 +180,20 @@ export const SwitchSpec: ComponentSpec<SwitchProps> = {
       // 라벨 텍스트
       const labelText = props.children || props.label;
       if (labelText) {
+        const textColor = props.style?.color ?? variant.text;
+        const fontSize = props.style?.fontSize ?? size.fontSize;
+        const ff = (props.style?.fontFamily as string) || fontFamily.sans;
+        const textAlign = (props.style?.textAlign as 'left' | 'center' | 'right') || 'left';
+
         shapes.push({
           type: 'text' as const,
           x: switchSize.trackWidth + gap,
           y: switchSize.trackHeight / 2,
           text: labelText,
-          fontSize: size.fontSize as unknown as number,
-          fontFamily: fontFamily.sans,
-          fill: variant.text,
-          align: 'left' as const,
+          fontSize: fontSize as unknown as number,
+          fontFamily: ff,
+          fill: textColor,
+          align: textAlign,
           baseline: 'middle' as const,
         });
       }

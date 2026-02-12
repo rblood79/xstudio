@@ -70,10 +70,32 @@ Button 등 self-rendering 컴포넌트는 Spec 기본값과 inline style이 올�
 
 - `calculateContentWidth()` → 순수 텍스트 너비만 반환 (padding/border 미포함)
 - `parseBoxModel()` → inline style이 없으면 `BUTTON_SIZE_CONFIG` 기본값 적용
-- `PixiButton` → `specDefaultBorderWidth = 1` (CSS base `border: 1px solid`와 동기화)
 - 모든 variant에 `border`/`borderHover` 정의 필요 (CSS가 모든 variant에 border 적용하므로)
 
 **Note**: PixiButton 등 Pixi*.tsx 컴포넌트는 이벤트 처리(alpha=0) 전용. 실제 화면 렌더링은 `ElementSprite.tsx`의 `getSpecForTag()` → `specShapesToSkia()` 경로를 사용.
+
+### props.style 오버라이드 패턴 (2026-02-12)
+
+모든 49개 spec의 `render.shapes()`에서 시각 속성은 `props.style` 인라인 스타일을 우선 참조합니다:
+
+```
+우선순위: props.style > state variant > variant default > spec size default
+```
+
+```typescript
+// ✅ 참조 패턴 (모든 spec에 적용)
+const bgColor = props.style?.backgroundColor ?? variant.background;
+const textColor = props.style?.color ?? variant.text;
+const borderRadius = props.style?.borderRadius ?? size.borderRadius;
+const borderWidth = props.style?.borderWidth ?? 1;
+const fontSize = props.style?.fontSize ?? size.fontSize;
+```
+
+**v1.13 변경사항:**
+- `MIN_BUTTON_HEIGHT` (24px) 제거 — padding:0으로 최소 높이까지 축소 가능
+- 배경 roundRect `height: 'auto'` — Yoga 레이아웃 높이 사용 (고정 높이 금지)
+- `specHeight = finalHeight` — ElementSprite에서 항상 Yoga 계산 높이 사용
+- gradient fill 이전: `boxData.fill → specNode.box.fill` (spec shapes가 외부 fill 클리어 방지)
 
 ## 참조
 

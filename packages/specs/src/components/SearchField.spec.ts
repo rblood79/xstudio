@@ -102,16 +102,41 @@ export const SearchFieldSpec: ComponentSpec<SearchFieldProps> = {
     shapes: (props, variant, size, state = 'default') => {
       const width = (props.style?.width as number) || 280;
       const height = size.height;
-      const borderRadius = size.borderRadius;
       const iconSize = size.iconSize ?? 18;
 
-      const bgColor = state === 'hover' ? variant.backgroundHover
-                    : state === 'pressed' ? variant.backgroundPressed
-                    : variant.background;
+      const styleBr = props.style?.borderRadius;
+      const borderRadius = styleBr != null
+        ? (typeof styleBr === 'number' ? styleBr : parseFloat(String(styleBr)) || 0)
+        : size.borderRadius as unknown as number;
 
-      const borderColor = (state === 'hover' && variant.borderHover)
-                        ? variant.borderHover
-                        : variant.border;
+      const bgColor = props.style?.backgroundColor
+                    ?? (state === 'hover' ? variant.backgroundHover
+                    : state === 'pressed' ? variant.backgroundPressed
+                    : variant.background);
+
+      const borderColor = props.style?.borderColor
+                        ?? ((state === 'hover' && variant.borderHover)
+                            ? variant.borderHover
+                            : variant.border);
+
+      const styleBw = props.style?.borderWidth;
+      const borderWidth = styleBw != null
+        ? (typeof styleBw === 'number' ? styleBw : parseFloat(String(styleBw)) || 0)
+        : 1;
+
+      const fontSize = props.style?.fontSize ?? size.fontSize as unknown as number;
+
+      const ff = (props.style?.fontFamily as string) || fontFamily.sans;
+
+      const textAlign = (props.style?.textAlign as 'left' | 'center' | 'right') || 'left';
+
+      const textColor = props.style?.color
+                      ?? (props.value ? variant.text : ('{color.on-surface-variant}' as TokenRef));
+
+      const stylePx = props.style?.paddingLeft ?? props.style?.paddingRight ?? props.style?.padding;
+      const paddingX = stylePx != null
+        ? (typeof stylePx === 'number' ? stylePx : parseFloat(String(stylePx)) || 0)
+        : size.paddingX;
 
       const shapes: Shape[] = [];
 
@@ -123,7 +148,7 @@ export const SearchFieldSpec: ComponentSpec<SearchFieldProps> = {
         y: 0,
         width,
         height,
-        radius: borderRadius as unknown as number,
+        radius: borderRadius,
         fill: bgColor,
       });
 
@@ -132,14 +157,14 @@ export const SearchFieldSpec: ComponentSpec<SearchFieldProps> = {
         shapes.push({
           type: 'border' as const,
           target: 'bg',
-          borderWidth: 1,
+          borderWidth,
           color: borderColor,
-          radius: borderRadius as unknown as number,
+          radius: borderRadius,
         });
       }
 
       // 검색 아이콘 (원 + 선으로 표현)
-      const iconX = size.paddingX + iconSize / 2;
+      const iconX = paddingX + iconSize / 2;
       const iconY = height / 2;
       shapes.push({
         type: 'circle' as const,
@@ -163,13 +188,13 @@ export const SearchFieldSpec: ComponentSpec<SearchFieldProps> = {
       const displayText = props.value || props.placeholder || 'Search...';
       shapes.push({
         type: 'text' as const,
-        x: size.paddingX + iconSize + (size.gap ?? 8),
+        x: paddingX + iconSize + (size.gap ?? 8),
         y: height / 2,
         text: displayText,
-        fontSize: size.fontSize as unknown as number,
-        fontFamily: fontFamily.sans,
-        fill: props.value ? variant.text : ('{color.on-surface-variant}' as TokenRef),
-        align: 'left' as const,
+        fontSize: fontSize as number,
+        fontFamily: ff,
+        fill: textColor,
+        align: textAlign,
         baseline: 'middle' as const,
       });
 
@@ -178,14 +203,14 @@ export const SearchFieldSpec: ComponentSpec<SearchFieldProps> = {
         shapes.push({
           id: 'clear',
           type: 'circle' as const,
-          x: width - size.paddingX - iconSize / 2,
+          x: width - paddingX - iconSize / 2,
           y: height / 2,
           radius: iconSize / 2.5,
           fill: '{color.on-surface-variant}' as TokenRef,
           fillAlpha: 0.15,
         });
         // X 마크
-        const cx = width - size.paddingX - iconSize / 2;
+        const cx = width - paddingX - iconSize / 2;
         const cy = height / 2;
         const cs = iconSize / 5;
         shapes.push({

@@ -96,6 +96,16 @@ export const CheckboxGroupSpec: ComponentSpec<CheckboxGroupProps> = {
     shapes: (props, variant, size, _state = 'default') => {
       const shapes: Shape[] = [];
 
+      // 사용자 스타일 우선
+      const textColor = props.style?.color ?? variant.text;
+      const fontSize = props.style?.fontSize ?? size.fontSize;
+      const fwRaw = props.style?.fontWeight;
+      const fw = fwRaw != null
+        ? (typeof fwRaw === 'number' ? fwRaw : parseInt(String(fwRaw), 10) || 500)
+        : 500;
+      const ff = (props.style?.fontFamily as string) || fontFamily.sans;
+      const textAlign = (props.style?.textAlign as 'left' | 'center' | 'right') || 'left';
+
       // 그룹 라벨
       if (props.label) {
         shapes.push({
@@ -103,11 +113,11 @@ export const CheckboxGroupSpec: ComponentSpec<CheckboxGroupProps> = {
           x: 0,
           y: 0,
           text: props.label,
-          fontSize: size.fontSize as unknown as number,
-          fontFamily: fontFamily.sans,
-          fontWeight: 500,
-          fill: variant.text,
-          align: 'left' as const,
+          fontSize: fontSize as unknown as number,
+          fontFamily: ff,
+          fontWeight: fw,
+          fill: textColor,
+          align: textAlign,
           baseline: 'top' as const,
         });
       }
@@ -136,9 +146,9 @@ export const CheckboxGroupSpec: ComponentSpec<CheckboxGroupProps> = {
           y: 0,
           text: descText,
           fontSize: (size.fontSize as unknown as number) - 2,
-          fontFamily: fontFamily.sans,
+          fontFamily: ff,
           fill: props.isInvalid ? ('{color.error}' as TokenRef) : ('{color.on-surface-variant}' as TokenRef),
-          align: 'left' as const,
+          align: textAlign,
           baseline: 'top' as const,
         });
       }

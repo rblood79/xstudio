@@ -292,13 +292,29 @@ export function specShapesToSkia(
         // Calculate paddingTop based on baseline
         let paddingTop = shape.y;
         if (shape.baseline === 'middle') {
-          paddingTop = shape.y - fontSize / 2;
+          // 수직 중앙 정렬: (컨테이너 높이 - 폰트 크기) / 2
+          // fontSize 대신 lineHeight(≈fontSize * 1.2)를 사용하여 시각적 중앙에 더 가깝게 배치
+          const lineHeight = fontSize * 1.2;
+          paddingTop = shape.y + (containerHeight - lineHeight) / 2;
         }
         // baseline='top' → paddingTop = y (already)
 
         // Calculate paddingLeft based on align
         let paddingLeft = shape.x;
-        const maxWidth = shape.maxWidth ?? containerWidth;
+        let maxWidth = shape.maxWidth ?? containerWidth;
+
+        // Auto-reduce maxWidth when text has padding offset (shape.x > 0) and no explicit maxWidth
+        if (shape.x > 0 && shape.maxWidth == null) {
+          if (shape.align === 'center') {
+            // Center-aligned: symmetric padding (subtract from both sides)
+            maxWidth = containerWidth - shape.x * 2;
+          } else {
+            // Left/right-aligned: subtract left padding only
+            maxWidth = containerWidth - shape.x;
+          }
+          // Clamp to prevent negative maxWidth when container is smaller than padding
+          if (maxWidth < 1) maxWidth = containerWidth;
+        }
 
         // Parse fontWeight
         let fontWeight: number | undefined;

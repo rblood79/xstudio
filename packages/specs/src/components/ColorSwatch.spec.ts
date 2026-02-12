@@ -92,7 +92,22 @@ export const ColorSwatchSpec: ComponentSpec<ColorSwatchProps> = {
   render: {
     shapes: (props, variant, size, _state = 'default') => {
       const swatchSize = size.height;
-      const borderRadius = size.borderRadius;
+
+      // 사용자 스타일 우선, 없으면 spec 기본값
+      const styleBr = props.style?.borderRadius;
+      const borderRadius = styleBr != null
+        ? (typeof styleBr === 'number' ? styleBr : parseFloat(String(styleBr)) || 0)
+        : size.borderRadius;
+
+      const borderColor = props.style?.borderColor
+        ?? (props.isSelected
+            ? '{color.primary}' as TokenRef
+            : variant.border ?? ('{color.outline-variant}' as TokenRef));
+      const styleBw = props.style?.borderWidth;
+      const defaultBw = props.isSelected ? 2 : 1;
+      const borderWidth = styleBw != null
+        ? (typeof styleBw === 'number' ? styleBw : parseFloat(String(styleBw)) || 0)
+        : defaultBw;
 
       const shapes: Shape[] = [
         // 체크 패턴 배경 (투명도 표시용)
@@ -121,10 +136,8 @@ export const ColorSwatchSpec: ComponentSpec<ColorSwatchProps> = {
         {
           type: 'border' as const,
           target: 'color',
-          borderWidth: props.isSelected ? 2 : 1,
-          color: props.isSelected
-            ? '{color.primary}' as TokenRef
-            : variant.border ?? '{color.outline-variant}' as TokenRef,
+          borderWidth,
+          color: borderColor,
           radius: borderRadius as unknown as number,
         },
       ];

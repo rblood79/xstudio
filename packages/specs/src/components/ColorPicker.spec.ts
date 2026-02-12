@@ -114,7 +114,28 @@ export const ColorPickerSpec: ComponentSpec<ColorPickerProps> = {
 
   render: {
     shapes: (props, variant, size, _state = 'default') => {
-      const borderRadius = size.borderRadius;
+      // 사용자 스타일 우선, 없으면 spec 기본값
+      const bgColor = props.style?.backgroundColor ?? variant.background;
+
+      const styleBr = props.style?.borderRadius;
+      const borderRadius = styleBr != null
+        ? (typeof styleBr === 'number' ? styleBr : parseFloat(String(styleBr)) || 0)
+        : size.borderRadius;
+
+      const borderColor = props.style?.borderColor ?? variant.border ?? ('{color.outline-variant}' as TokenRef);
+      const styleBw = props.style?.borderWidth;
+      const borderWidth = styleBw != null
+        ? (typeof styleBw === 'number' ? styleBw : parseFloat(String(styleBw)) || 0)
+        : 1;
+
+      const textColor = props.style?.color ?? variant.text;
+      const fontSize = props.style?.fontSize ?? size.fontSize;
+      const fwRaw = props.style?.fontWeight;
+      const fw = fwRaw != null
+        ? (typeof fwRaw === 'number' ? fwRaw : parseInt(String(fwRaw), 10) || 400)
+        : 400;
+      const ff = (props.style?.fontFamily as string) || fontFamily.mono;
+
       const areaSize = props.variant === 'compact' ? 120 : 180;
       const sliderHeight = 14;
 
@@ -141,14 +162,14 @@ export const ColorPickerSpec: ComponentSpec<ColorPickerProps> = {
           width: containerWidth,
           height: 'auto',
           radius: borderRadius as unknown as number,
-          fill: variant.background,
+          fill: bgColor,
         },
         // 테두리
         {
           type: 'border' as const,
           target: 'bg',
-          borderWidth: 1,
-          color: variant.border ?? '{color.outline-variant}' as TokenRef,
+          borderWidth,
+          color: borderColor,
           radius: borderRadius as unknown as number,
         },
       ];
@@ -232,10 +253,10 @@ export const ColorPickerSpec: ComponentSpec<ColorPickerProps> = {
         x: size.paddingX,
         y: alphaSliderY + sliderHeight + (size.gap ?? 10),
         text: hexValue.toUpperCase(),
-        fontSize: size.fontSize as unknown as number,
-        fontFamily: fontFamily.mono,
-        fontWeight: 400,
-        fill: variant.text,
+        fontSize: fontSize as unknown as number,
+        fontFamily: ff,
+        fontWeight: fw,
+        fill: textColor,
         align: 'left' as const,
         baseline: 'top' as const,
       });

@@ -144,6 +144,15 @@ export const RadioSpec: ComponentSpec<RadioProps> = {
       const gap = size.gap ?? 8;
       const outerRadius = radioSize.outer / 2;
 
+      // 사용자 스타일 우선
+      const styleBw = props.style?.borderWidth;
+      const borderWidth = styleBw != null
+        ? (typeof styleBw === 'number' ? styleBw : parseFloat(String(styleBw)) || 0)
+        : 2;
+
+      const borderColor = props.style?.borderColor
+                        ?? (props.isSelected ? selectedColors.ring : variant.border!);
+
       const shapes: Shape[] = [];
 
       // 외곽 원 (테두리)
@@ -161,8 +170,8 @@ export const RadioSpec: ComponentSpec<RadioProps> = {
       shapes.push({
         type: 'border' as const,
         target: 'ring',
-        borderWidth: 2,
-        color: props.isSelected ? selectedColors.ring : variant.border!,
+        borderWidth,
+        color: borderColor,
         radius: outerRadius,
       });
 
@@ -180,15 +189,20 @@ export const RadioSpec: ComponentSpec<RadioProps> = {
       // 라벨 텍스트
       const labelText = props.children || props.label || props.text;
       if (labelText) {
+        const textColor = props.style?.color ?? variant.text;
+        const fontSize = props.style?.fontSize ?? size.fontSize;
+        const ff = (props.style?.fontFamily as string) || fontFamily.sans;
+        const textAlign = (props.style?.textAlign as 'left' | 'center' | 'right') || 'left';
+
         shapes.push({
           type: 'text' as const,
           x: radioSize.outer + gap,
           y: outerRadius,
           text: labelText,
-          fontSize: size.fontSize as unknown as number,
-          fontFamily: fontFamily.sans,
-          fill: variant.text,
-          align: 'left' as const,
+          fontSize: fontSize as unknown as number,
+          fontFamily: ff,
+          fill: textColor,
+          align: textAlign,
           baseline: 'middle' as const,
         });
       }

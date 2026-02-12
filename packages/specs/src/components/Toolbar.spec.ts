@@ -88,7 +88,21 @@ export const ToolbarSpec: ComponentSpec<ToolbarProps> = {
   render: {
     shapes: (props, variant, size, _state = 'default') => {
       const isVertical = props.orientation === 'vertical';
-      const borderRadius = size.borderRadius;
+
+      // 사용자 스타일 우선, 없으면 spec 기본값
+      const styleBr = props.style?.borderRadius;
+      const borderRadius = styleBr != null
+        ? (typeof styleBr === 'number' ? styleBr : parseFloat(String(styleBr)) || 0)
+        : size.borderRadius;
+
+      const styleBw = props.style?.borderWidth;
+      const borderWidth = styleBw != null
+        ? (typeof styleBw === 'number' ? styleBw : parseFloat(String(styleBw)) || 0)
+        : 1;
+
+      const bgColor = props.style?.backgroundColor ?? variant.background;
+      const borderColor = props.style?.borderColor
+                        ?? (variant.border || ('{color.outline-variant}' as TokenRef));
 
       const shapes: Shape[] = [
         // 배경
@@ -100,14 +114,14 @@ export const ToolbarSpec: ComponentSpec<ToolbarProps> = {
           width: 'auto',
           height: isVertical ? 'auto' : size.height,
           radius: borderRadius as unknown as number,
-          fill: variant.background,
+          fill: bgColor,
         },
         // 테두리
         {
           type: 'border' as const,
           target: 'bg',
-          borderWidth: 1,
-          color: variant.border || ('{color.outline-variant}' as TokenRef),
+          borderWidth,
+          color: borderColor,
           radius: borderRadius as unknown as number,
         },
         // 도구 아이템 컨테이너

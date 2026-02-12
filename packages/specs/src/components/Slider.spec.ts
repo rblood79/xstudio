@@ -141,6 +141,16 @@ export const SliderSpec: ComponentSpec<SliderProps> = {
       const trackY = sliderDims.thumbSize / 2 - sliderDims.trackHeight / 2;
       const trackRadius = sliderDims.trackHeight / 2;
 
+      // 사용자 스타일 우선
+      const bgColor = props.style?.backgroundColor ?? variant.background;
+      const textColor = props.style?.color ?? variant.text;
+      const fontSize = props.style?.fontSize ?? size.fontSize;
+      const fwRaw = props.style?.fontWeight;
+      const fw = fwRaw != null
+        ? (typeof fwRaw === 'number' ? fwRaw : parseInt(String(fwRaw), 10) || 500)
+        : 500;
+      const ff = (props.style?.fontFamily as string) || fontFamily.sans;
+
       const shapes: Shape[] = [];
 
       // 라벨 + 값 행
@@ -151,10 +161,10 @@ export const SliderSpec: ComponentSpec<SliderProps> = {
             x: 0,
             y: 0,
             text: props.label,
-            fontSize: size.fontSize as unknown as number,
-            fontFamily: fontFamily.sans,
-            fontWeight: 500,
-            fill: variant.text,
+            fontSize: fontSize as unknown as number,
+            fontFamily: ff,
+            fontWeight: fw,
+            fill: textColor,
             align: 'left' as const,
             baseline: 'top' as const,
           });
@@ -165,9 +175,9 @@ export const SliderSpec: ComponentSpec<SliderProps> = {
             x: width,
             y: 0,
             text: String(value),
-            fontSize: size.fontSize as unknown as number,
-            fontFamily: fontFamily.sans,
-            fill: variant.text,
+            fontSize: fontSize as unknown as number,
+            fontFamily: ff,
+            fill: textColor,
             align: 'right' as const,
             baseline: 'top' as const,
           });
@@ -187,7 +197,7 @@ export const SliderSpec: ComponentSpec<SliderProps> = {
         width,
         height: sliderDims.trackHeight,
         radius: trackRadius,
-        fill: variant.background,
+        fill: bgColor,
       });
 
       // 채우기

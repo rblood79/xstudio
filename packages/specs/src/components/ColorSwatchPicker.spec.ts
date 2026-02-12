@@ -95,7 +95,19 @@ export const ColorSwatchPickerSpec: ComponentSpec<ColorSwatchPickerProps> = {
 
   render: {
     shapes: (props, variant, size, _state = 'default') => {
-      const borderRadius = size.borderRadius;
+      // 사용자 스타일 우선, 없으면 spec 기본값
+      const bgColor = props.style?.backgroundColor ?? variant.background;
+
+      const styleBr = props.style?.borderRadius;
+      const borderRadius = styleBr != null
+        ? (typeof styleBr === 'number' ? styleBr : parseFloat(String(styleBr)) || 0)
+        : size.borderRadius;
+
+      const stylePad = props.style?.padding;
+      const padding = stylePad != null
+        ? (typeof stylePad === 'number' ? stylePad : parseFloat(String(stylePad)) || 0)
+        : size.paddingY;
+
       const swatchSize = size.iconSize ?? 28;
       const columns = props.columns ?? 6;
 
@@ -109,7 +121,7 @@ export const ColorSwatchPickerSpec: ComponentSpec<ColorSwatchPickerProps> = {
           width: 'auto',
           height: 'auto',
           radius: borderRadius as unknown as number,
-          fill: variant.background,
+          fill: bgColor,
         },
         // 그리드 컨테이너
         {
@@ -123,7 +135,7 @@ export const ColorSwatchPickerSpec: ComponentSpec<ColorSwatchPickerProps> = {
             display: 'grid',
             gridTemplateColumns: `repeat(${columns}, ${swatchSize}px)`,
             gap: size.gap,
-            padding: size.paddingY,
+            padding,
           },
         },
       ];

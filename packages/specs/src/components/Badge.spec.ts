@@ -21,6 +21,7 @@ export interface BadgeProps {
   isDot?: boolean;
   isPulsing?: boolean;
   isLoading?: boolean;
+  style?: Record<string, string | number | undefined>;
 }
 
 /**
@@ -102,6 +103,14 @@ export const BadgeSpec: ComponentSpec<BadgeProps> = {
 
   render: {
     shapes: (props, variant, size, _state = 'default') => {
+      // 사용자 스타일 우선, 없으면 spec 기본값
+      const styleBr = props.style?.borderRadius;
+      const borderRadius = styleBr != null
+        ? (typeof styleBr === 'number' ? styleBr : parseFloat(String(styleBr)) || 0)
+        : size.borderRadius;
+
+      const bgColor = props.style?.backgroundColor ?? variant.background;
+
       const shapes: Shape[] = [];
 
       if (props.isDot) {
@@ -112,7 +121,7 @@ export const BadgeSpec: ComponentSpec<BadgeProps> = {
           x: dotSize / 2,
           y: dotSize / 2,
           radius: dotSize / 2,
-          fill: variant.background,
+          fill: bgColor,
         });
       } else {
         // 일반 모드: pill 형태 배경 + 텍스트
@@ -122,23 +131,39 @@ export const BadgeSpec: ComponentSpec<BadgeProps> = {
           x: 0,
           y: 0,
           width: 'auto',
-          height: size.height,
-          radius: size.borderRadius as unknown as number,
-          fill: variant.background,
+          height: 'auto' as unknown as number,
+          radius: borderRadius as unknown as number,
+          fill: bgColor,
         });
 
         const text = props.children || props.text;
         if (text) {
+          // 사용자 스타일 padding 우선, 없으면 spec 기본값
+          const stylePx = props.style?.paddingLeft ?? props.style?.paddingRight ?? props.style?.padding;
+          const paddingX = stylePx != null
+            ? (typeof stylePx === 'number' ? stylePx : parseFloat(String(stylePx)) || 0)
+            : size.paddingX;
+
+          // 사용자 스타일 font 속성 우선, 없으면 spec 기본값
+          const fontSize = props.style?.fontSize ?? size.fontSize;
+          const fwRaw = props.style?.fontWeight;
+          const fw = fwRaw != null
+            ? (typeof fwRaw === 'number' ? fwRaw : parseInt(String(fwRaw), 10) || 500)
+            : 500;
+          const ff = (props.style?.fontFamily as string) || fontFamily.sans;
+          const textAlign = (props.style?.textAlign as 'left' | 'center' | 'right') || 'center';
+          const textColor = props.style?.color ?? variant.text;
+
           shapes.push({
             type: 'text' as const,
-            x: 0,
+            x: paddingX,
             y: 0,
             text,
-            fontSize: size.fontSize as unknown as number,
-            fontFamily: fontFamily.sans,
-            fontWeight: 500,
-            fill: variant.text,
-            align: 'center' as const,
+            fontSize: fontSize as unknown as number,
+            fontFamily: ff,
+            fontWeight: fw,
+            fill: textColor,
+            align: textAlign,
             baseline: 'middle' as const,
           });
         }

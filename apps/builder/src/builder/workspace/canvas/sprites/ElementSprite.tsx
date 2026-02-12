@@ -978,8 +978,10 @@ export const ElementSprite = memo(function ElementSprite({
             const flexDir = (elementStyle.flexDirection as string) || '';
             const isColumn = flexDir === 'column' || flexDir === 'column-reverse';
 
-            // Row: spec의 고유 높이 사용, Column: 컨테이너 높이 사용 (세로 쌓기)
-            const specHeight = isColumn ? finalHeight : (sizeSpec.height || finalHeight);
+            // 실제 레이아웃 높이 사용: Yoga가 padding/content 포함하여 계산한 높이
+            // → baseline='middle' 텍스트가 CSS와 동일하게 중앙 배치됨
+            // → 사용자의 paddingTop/paddingBottom 변경이 자동 반영됨
+            const specHeight = finalHeight;
 
             const shapes = spec.render.shapes(
               (props || {}) as Record<string, unknown>,
@@ -995,9 +997,9 @@ export const ElementSprite = memo(function ElementSprite({
 
             const specNode = specShapesToSkia(shapes, 'light', finalWidth, specHeight);
 
-            // Center specNode vertically if container is taller than spec content
-            if (specHeight < finalHeight) {
-              specNode.y = Math.round((finalHeight - specHeight) / 2);
+            // Gradient fill을 specNode 배경으로 이전 (fills v2)
+            if (boxData.fill && specNode.box) {
+              specNode.box.fill = boxData.fill;
             }
 
             // Outer box becomes transparent container — spec shapes handle all visuals

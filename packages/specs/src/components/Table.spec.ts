@@ -120,7 +120,26 @@ export const TableSpec: ComponentSpec<TableProps> = {
       const columns = props.columns || [];
       const rows = props.rows || [];
       const totalWidth = columns.reduce((sum, col) => sum + (col.width || 100), 0) || 200;
-      const borderRadius = size.borderRadius;
+
+      // 사용자 스타일 우선, 없으면 spec 기본값
+      const bgColor = props.style?.backgroundColor ?? variant.background;
+
+      const styleBr = props.style?.borderRadius;
+      const borderRadius = styleBr != null
+        ? (typeof styleBr === 'number' ? styleBr : parseFloat(String(styleBr)) || 0)
+        : size.borderRadius;
+
+      const textColor = props.style?.color ?? variant.text;
+      const fontSize = props.style?.fontSize ?? size.fontSize;
+      const fwRaw = props.style?.fontWeight;
+      const headerFw = fwRaw != null
+        ? (typeof fwRaw === 'number' ? fwRaw : parseInt(String(fwRaw), 10) || 600)
+        : 600;
+      const cellFw = fwRaw != null
+        ? (typeof fwRaw === 'number' ? fwRaw : parseInt(String(fwRaw), 10) || 400)
+        : 400;
+      const ff = (props.style?.fontFamily as string) || fontFamily.sans;
+      const textAlign = (props.style?.textAlign as 'left' | 'center' | 'right') || 'left';
 
       const shapes: Shape[] = [];
 
@@ -133,16 +152,22 @@ export const TableSpec: ComponentSpec<TableProps> = {
         width: totalWidth,
         height: 'auto',
         radius: borderRadius as unknown as number,
-        fill: variant.background,
+        fill: bgColor,
       });
 
       // 테두리
-      if (variant.border) {
+      const borderColor = props.style?.borderColor ?? variant.border;
+      const styleBw = props.style?.borderWidth;
+      const defaultBw = props.variant === 'bordered' ? 2 : 1;
+      const borderWidth = styleBw != null
+        ? (typeof styleBw === 'number' ? styleBw : parseFloat(String(styleBw)) || 0)
+        : defaultBw;
+      if (borderColor) {
         shapes.push({
           type: 'border' as const,
           target: 'bg',
-          borderWidth: props.variant === 'bordered' ? 2 : 1,
-          color: variant.border,
+          borderWidth,
+          color: borderColor,
           radius: borderRadius as unknown as number,
         });
       }
@@ -165,12 +190,12 @@ export const TableSpec: ComponentSpec<TableProps> = {
           x: xOffset + size.paddingX,
           y: size.height / 2,
           text: col.label,
-          fontSize: size.fontSize as unknown as number,
-          fontFamily: fontFamily.sans,
-          fontWeight: 600,
-          fill: variant.text,
+          fontSize: fontSize as unknown as number,
+          fontFamily: ff,
+          fontWeight: headerFw,
+          fill: textColor,
           baseline: 'middle' as const,
-          align: 'left' as const,
+          align: textAlign,
         });
         xOffset += col.width || 100;
       });
@@ -182,7 +207,7 @@ export const TableSpec: ComponentSpec<TableProps> = {
         y1: size.height,
         x2: totalWidth,
         y2: size.height,
-        stroke: variant.border || ('{color.outline-variant}' as TokenRef),
+        stroke: borderColor || ('{color.outline-variant}' as TokenRef),
         strokeWidth: 1,
       });
 
@@ -192,7 +217,7 @@ export const TableSpec: ComponentSpec<TableProps> = {
         const isEven = rowIndex % 2 === 0;
         const rowBg = props.variant === 'striped' && !isEven
           ? '{color.surface-container}' as TokenRef
-          : variant.background;
+          : (bgColor ?? variant.background);
 
         // 행 배경
         shapes.push({
@@ -215,14 +240,14 @@ export const TableSpec: ComponentSpec<TableProps> = {
             x: cellXOffset + size.paddingX,
             y: yOffset + size.height / 2,
             text: cellValue,
-            fontSize: size.fontSize as unknown as number,
-            fontFamily: fontFamily.sans,
-            fontWeight: 400,
+            fontSize: fontSize as unknown as number,
+            fontFamily: ff,
+            fontWeight: cellFw,
             fill: row.isSelected
               ? ('{color.on-primary-container}' as TokenRef)
-              : variant.text,
+              : textColor,
             baseline: 'middle' as const,
-            align: 'left' as const,
+            align: textAlign,
           });
           cellXOffset += col.width || 100;
         });
@@ -234,7 +259,7 @@ export const TableSpec: ComponentSpec<TableProps> = {
           y1: yOffset + size.height,
           x2: totalWidth,
           y2: yOffset + size.height,
-          stroke: variant.border || ('{color.outline-variant}' as TokenRef),
+          stroke: borderColor || ('{color.outline-variant}' as TokenRef),
           strokeWidth: 1,
         });
 

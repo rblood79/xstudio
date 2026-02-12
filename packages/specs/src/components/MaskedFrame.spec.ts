@@ -81,7 +81,14 @@ export const MaskedFrameSpec: ComponentSpec<MaskedFrameProps> = {
 
   render: {
     shapes: (props, variant, size, _state = 'default') => {
-      const borderRadius = size.borderRadius;
+      // 사용자 스타일 우선, 없으면 spec 기본값
+      const bgColor = props.style?.backgroundColor ?? variant.background;
+
+      const styleBr = props.style?.borderRadius;
+      const borderRadius = styleBr != null
+        ? (typeof styleBr === 'number' ? styleBr : parseFloat(String(styleBr)) || 0)
+        : size.borderRadius;
+
       const maskShape = props.maskShape || 'roundRect';
       const width = (props.style?.width as number) || 'auto';
       const height = size.height;
@@ -100,7 +107,7 @@ export const MaskedFrameSpec: ComponentSpec<MaskedFrameProps> = {
           x: radius,
           y: radius,
           radius,
-          fill: variant.background,
+          fill: bgColor,
         });
       } else if (maskShape === 'rect') {
         shapes.push({
@@ -110,7 +117,7 @@ export const MaskedFrameSpec: ComponentSpec<MaskedFrameProps> = {
           y: 0,
           width,
           height,
-          fill: variant.background,
+          fill: bgColor,
         });
       } else {
         // roundRect (기본)
@@ -122,17 +129,22 @@ export const MaskedFrameSpec: ComponentSpec<MaskedFrameProps> = {
           width,
           height,
           radius: borderRadius as unknown as number,
-          fill: variant.background,
+          fill: bgColor,
         });
       }
 
       // 테두리
-      if (variant.border) {
+      const borderColor = props.style?.borderColor ?? variant.border;
+      const styleBw = props.style?.borderWidth;
+      const borderWidth = styleBw != null
+        ? (typeof styleBw === 'number' ? styleBw : parseFloat(String(styleBw)) || 0)
+        : 1;
+      if (borderColor) {
         shapes.push({
           type: 'border' as const,
           target: 'mask',
-          borderWidth: 1,
-          color: variant.border,
+          borderWidth,
+          color: borderColor,
           radius: maskShape === 'roundRect' ? borderRadius as unknown as number : undefined,
         });
       }

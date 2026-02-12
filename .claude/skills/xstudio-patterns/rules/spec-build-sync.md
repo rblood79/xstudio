@@ -38,6 +38,16 @@ pnpm --filter @xstudio/specs dev
 - **원인**: ButtonSpec variants에 border/borderHover 추가 후 dist/ 미빌드 → PixiButton이 구 Spec 참조
 - **해결**: `pnpm --filter @xstudio/specs build` 실행
 
+**사례 3 — props.style 오버라이드 미반영 (v1.13)**:
+- **증상**: Inspector에서 backgroundColor, borderRadius 등 변경 시 WebGL 캔버스에 반영 안 됨
+- **원인**: Spec shapes가 variant/size 기본값만 사용, `props.style` 우선 참조 누락 + 49개 spec 수정 후 dist/ 미빌드
+- **해결**: 모든 49개 spec의 `render.shapes()`에서 `props.style?.X ?? variant.X` 패턴 적용 + `pnpm --filter @xstudio/specs build`
+
+**사례 4 — 배경 높이 불일치 (v1.13)**:
+- **증상**: CSS Selection 영역은 정상이나 WebGL 배경이 더 크게 렌더링 (spec height > Yoga height)
+- **원인**: Spec의 배경 roundRect에 `height: size.height` (고정값 32px)가 Yoga 계산 높이(28px)와 불일치
+- **해결**: 배경 roundRect `height: 'auto'` + ElementSprite에서 `specHeight = finalHeight` + `pnpm --filter @xstudio/specs build`
+
 ## 참조
 
 - `packages/specs/package.json` — `"main": "./dist/index.js"`

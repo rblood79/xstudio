@@ -141,11 +141,27 @@ export const CheckboxSpec: ComponentSpec<CheckboxProps> = {
       const variantName = props.variant ?? 'default';
       const sizeName = props.size ?? 'md';
       const boxSize = CHECKBOX_BOX_SIZES[sizeName] ?? 20;
-      const borderRadius = size.borderRadius;
       const gap = size.gap ?? 8;
 
       const isChecked = props.isSelected;
       const checkedColors = CHECKBOX_CHECKED_COLORS[variantName] ?? CHECKBOX_CHECKED_COLORS.default;
+
+      // 사용자 스타일 우선, 없으면 spec 기본값
+      const styleBr = props.style?.borderRadius;
+      const borderRadius = styleBr != null
+        ? (typeof styleBr === 'number' ? styleBr : parseFloat(String(styleBr)) || 0)
+        : size.borderRadius;
+
+      const styleBw = props.style?.borderWidth;
+      const borderWidth = styleBw != null
+        ? (typeof styleBw === 'number' ? styleBw : parseFloat(String(styleBw)) || 0)
+        : 2;
+
+      const bgColor = props.style?.backgroundColor
+                    ?? (isChecked ? checkedColors.bg : variant.background);
+
+      const borderColor = props.style?.borderColor
+                        ?? (isChecked ? checkedColors.border : variant.border!);
 
       const shapes: Shape[] = [];
 
@@ -158,15 +174,15 @@ export const CheckboxSpec: ComponentSpec<CheckboxProps> = {
         width: boxSize,
         height: boxSize,
         radius: borderRadius as unknown as number,
-        fill: isChecked ? checkedColors.bg : variant.background,
+        fill: bgColor,
       });
 
       // 체크박스 박스 테두리
       shapes.push({
         type: 'border' as const,
         target: 'box',
-        borderWidth: 2,
-        color: isChecked ? checkedColors.border : variant.border!,
+        borderWidth,
+        color: borderColor,
         radius: borderRadius as unknown as number,
       });
 
@@ -210,15 +226,20 @@ export const CheckboxSpec: ComponentSpec<CheckboxProps> = {
       // 라벨 텍스트
       const labelText = props.children || props.label || props.text;
       if (labelText) {
+        const textColor = props.style?.color ?? variant.text;
+        const fontSize = props.style?.fontSize ?? size.fontSize;
+        const ff = (props.style?.fontFamily as string) || fontFamily.sans;
+        const textAlign = (props.style?.textAlign as 'left' | 'center' | 'right') || 'left';
+
         shapes.push({
           type: 'text' as const,
           x: boxSize + gap,
           y: boxSize / 2,
           text: labelText,
-          fontSize: size.fontSize as unknown as number,
-          fontFamily: fontFamily.sans,
-          fill: variant.text,
-          align: 'left' as const,
+          fontSize: fontSize as unknown as number,
+          fontFamily: ff,
+          fill: textColor,
+          align: textAlign,
           baseline: 'middle' as const,
         });
       }

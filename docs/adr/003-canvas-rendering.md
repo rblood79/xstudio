@@ -449,7 +449,7 @@ private renderScreenOverlay(cullingBounds: DOMRect, camera: CameraState): void {
 ### 1. 렌더링 파이프라인
 
 ```
-ComponentSpec.render.shapes(props, size, theme)
+ComponentSpec.render.shapes(props, variant, size, state = 'default')
   → Shape[] (roundRect, rect, circle, line, border, text, shadow, container)
   → specShapesToSkia(shapes, theme, width, height)
   → SkiaNodeData (box, line, text, effects)
@@ -516,6 +516,45 @@ function getSpecForTag(tag: string): ComponentSpec<any> | null {
 | `types/builder/unified.types.ts` | `createDefaultCheckboxProps`/`RadioProps`/`SwitchProps`에 `variant`, `size`, `style` 기본값 추가 |
 
 **상세:** `apps/builder/src/.../skia/specShapeConverter.ts`, `apps/builder/src/.../sprites/ElementSprite.tsx`, `apps/builder/src/.../skia/nodeRenderers.ts`, `docs/COMPONENT_SPEC_ARCHITECTURE.md`
+
+## Update: Spec Shapes props.style 오버라이드 패턴 (2026-02-12)
+
+모든 49개 ComponentSpec의 `render.shapes()` 함수에 **props.style 오버라이드 패턴**을 적용하여,
+Inspector에서 설정한 인라인 스타일이 WebGL(Skia) 렌더링에 정확히 반영되도록 수정:
+
+### 1. props.style 우선 참조 패턴
+
+| 속성 | 오버라이드 소스 | 폴백 |
+|------|---------------|------|
+| 배경색 | `props.style?.backgroundColor` | `variant.background` (state별) |
+| 텍스트색 | `props.style?.color` | `variant.text` |
+| 테두리색 | `props.style?.borderColor` | `variant.border` |
+| 모서리 반경 | `props.style?.borderRadius` | `size.borderRadius` |
+| 테두리 두께 | `props.style?.borderWidth` | spec 기본값 (1) |
+| 폰트 크기 | `props.style?.fontSize` | `size.fontSize` |
+| 폰트 굵기 | `props.style?.fontWeight` | spec 기본값 (500) |
+| 폰트 패밀리 | `props.style?.fontFamily` | `fontFamily.sans` |
+| 텍스트 정렬 | `props.style?.textAlign` | 'center' |
+| 패딩 | `props.style?.paddingLeft/Right/padding` | `size.paddingX` |
+
+### 2. Yoga 높이 통합
+
+| 항목 | 수정 전 | 수정 후 |
+|------|---------|---------|
+| **배경 roundRect** | `height: size.height` (고정) | `height: 'auto'` (컨테이너 크기) |
+| **specHeight** | `Math.min(sizeSpec.height, finalHeight)` | `finalHeight` (항상 Yoga) |
+| **MIN_BUTTON_HEIGHT** | 24px 최소값 제한 | 제거 |
+| **수직 센터링** | `specNode.y = (finalHeight - specHeight) / 2` | 불필요 (높이 동일) |
+
+### 3. specShapeConverter 개선
+
+| 항목 | 변경 |
+|------|------|
+| **텍스트 maxWidth** | `shape.x > 0`일 때 자동 감소: center → `containerWidth - x*2`, left/right → `containerWidth - x` |
+| **safety clamp** | `maxWidth < 1`이면 `containerWidth`로 폴백 (padding=0 안전 처리) |
+| **gradient fill 이전** | `boxData.fill → specNode.box.fill` 후 `boxData.fill = undefined` |
+
+**상세:** `packages/specs/src/components/*.spec.ts` (49개), `apps/builder/src/.../sprites/ElementSprite.tsx`, `apps/builder/src/.../skia/specShapeConverter.ts`, `apps/builder/src/.../ui/PixiButton.tsx`
 
 ## Implementation
 

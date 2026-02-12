@@ -22,6 +22,7 @@ export interface LinkProps {
   isExternal?: boolean;
   showExternalIcon?: boolean;
   isDisabled?: boolean;
+  style?: Record<string, string | number | undefined>;
 }
 
 /**
@@ -99,23 +100,35 @@ export const LinkSpec: ComponentSpec<LinkProps> = {
   render: {
     shapes: (props, variant, size, state = 'default') => {
       const text = props.children || props.text || '';
-      const textColor = (state === 'hover' && variant.textHover)
-                      ? variant.textHover
-                      : variant.text;
+
+      // 상태에 따른 텍스트색 선택 (사용자 스타일 우선)
+      const textColor = props.style?.color
+                      ?? ((state === 'hover' && variant.textHover)
+                          ? variant.textHover
+                          : variant.text);
 
       const shapes: Shape[] = [];
 
       if (text) {
+        // 사용자 스타일 font 속성 우선, 없으면 spec 기본값
+        const fontSize = props.style?.fontSize ?? size.fontSize;
+        const fwRaw = props.style?.fontWeight;
+        const fw = fwRaw != null
+          ? (typeof fwRaw === 'number' ? fwRaw : parseInt(String(fwRaw), 10) || 500)
+          : 500;
+        const ff = (props.style?.fontFamily as string) || fontFamily.sans;
+        const textAlign = (props.style?.textAlign as 'left' | 'center' | 'right') || 'left';
+
         shapes.push({
           type: 'text' as const,
-          x: 0,
+          x: size.paddingX,
           y: 0,
           text,
-          fontSize: size.fontSize as unknown as number,
-          fontFamily: fontFamily.sans,
-          fontWeight: 500,
+          fontSize: fontSize as unknown as number,
+          fontFamily: ff,
+          fontWeight: fw,
           fill: textColor,
-          align: 'left' as const,
+          align: textAlign,
           baseline: 'top' as const,
           textDecoration: state === 'hover' ? 'underline' : 'none',
         });

@@ -20,6 +20,7 @@ export interface TooltipProps {
   text?: string;
   placement?: 'top' | 'right' | 'bottom' | 'left';
   showArrow?: boolean;
+  style?: Record<string, string | number | undefined>;
 }
 
 /** size별 maxWidth */
@@ -98,6 +99,30 @@ export const TooltipSpec: ComponentSpec<TooltipProps> = {
       const sizeName = props.size ?? 'md';
       const maxWidth = TOOLTIP_MAX_WIDTH[sizeName] ?? 150;
 
+      // 사용자 스타일 우선, 없으면 spec 기본값
+      const styleBr = props.style?.borderRadius;
+      const borderRadius = styleBr != null
+        ? (typeof styleBr === 'number' ? styleBr : parseFloat(String(styleBr)) || 0)
+        : size.borderRadius;
+
+      const bgColor = props.style?.backgroundColor ?? variant.background;
+
+      // 사용자 스타일 padding 우선, 없으면 spec 기본값
+      const stylePx = props.style?.paddingLeft ?? props.style?.paddingRight ?? props.style?.padding;
+      const paddingX = stylePx != null
+        ? (typeof stylePx === 'number' ? stylePx : parseFloat(String(stylePx)) || 0)
+        : size.paddingX;
+
+      // 사용자 스타일 font 속성 우선, 없으면 spec 기본값
+      const fontSize = props.style?.fontSize ?? size.fontSize;
+      const fwRaw = props.style?.fontWeight;
+      const fw = fwRaw != null
+        ? (typeof fwRaw === 'number' ? fwRaw : parseInt(String(fwRaw), 10) || 400)
+        : 400;
+      const ff = (props.style?.fontFamily as string) || fontFamily.sans;
+      const textAlign = (props.style?.textAlign as 'left' | 'center' | 'right') || 'left';
+      const textColor = props.style?.color ?? variant.text;
+
       const shapes: Shape[] = [
         // 배경
         {
@@ -107,20 +132,20 @@ export const TooltipSpec: ComponentSpec<TooltipProps> = {
           y: 0,
           width: 'auto',
           height: 'auto',
-          radius: size.borderRadius as unknown as number,
-          fill: variant.background,
+          radius: borderRadius as unknown as number,
+          fill: bgColor,
         },
         // 텍스트
         {
           type: 'text' as const,
-          x: 0,
+          x: paddingX,
           y: 0,
           text: props.children || props.text || '',
-          fontSize: size.fontSize as unknown as number,
-          fontFamily: fontFamily.sans,
-          fontWeight: 400,
-          fill: variant.text,
-          align: 'left' as const,
+          fontSize: fontSize as unknown as number,
+          fontFamily: ff,
+          fontWeight: fw,
+          fill: textColor,
+          align: textAlign,
           baseline: 'top' as const,
           maxWidth,
         },

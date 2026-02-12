@@ -135,15 +135,46 @@ export const TextFieldSpec: ComponentSpec<TextFieldProps> = {
     shapes: (props, variant, size, state = 'default') => {
       const width = (props.style?.width as number) || 240;
       const height = size.height;
-      const borderRadius = size.borderRadius;
 
-      const bgColor = state === 'hover' ? variant.backgroundHover
+      const styleBr = props.style?.borderRadius;
+      const borderRadius = styleBr != null
+        ? (typeof styleBr === 'number' ? styleBr : parseFloat(String(styleBr)) || 0)
+        : size.borderRadius as unknown as number;
+
+      const bgColor = props.style?.backgroundColor
+                    ?? (state === 'hover' ? variant.backgroundHover
                     : state === 'pressed' ? variant.backgroundPressed
-                    : variant.background;
+                    : variant.background);
 
-      const borderColor = (state === 'hover' && variant.borderHover)
-                        ? variant.borderHover
-                        : variant.border;
+      const borderColor = props.style?.borderColor
+                        ?? ((state === 'hover' && variant.borderHover)
+                            ? variant.borderHover
+                            : variant.border);
+
+      const styleBw = props.style?.borderWidth;
+      const defaultBw = props.isInvalid ? 2 : 1;
+      const borderWidth = styleBw != null
+        ? (typeof styleBw === 'number' ? styleBw : parseFloat(String(styleBw)) || 0)
+        : defaultBw;
+
+      const fontSize = props.style?.fontSize ?? size.fontSize as unknown as number;
+
+      const fwRaw = props.style?.fontWeight;
+      const fontWeight = fwRaw != null
+        ? (typeof fwRaw === 'number' ? fwRaw : parseInt(String(fwRaw), 10) || 500)
+        : 500;
+
+      const ff = (props.style?.fontFamily as string) || fontFamily.sans;
+
+      const textAlign = (props.style?.textAlign as 'left' | 'center' | 'right') || 'left';
+
+      const textColor = props.style?.color
+                      ?? variant.text;
+
+      const stylePx = props.style?.paddingLeft ?? props.style?.paddingRight ?? props.style?.padding;
+      const paddingX = stylePx != null
+        ? (typeof stylePx === 'number' ? stylePx : parseFloat(String(stylePx)) || 0)
+        : size.paddingX;
 
       const shapes: Shape[] = [];
 
@@ -154,11 +185,11 @@ export const TextFieldSpec: ComponentSpec<TextFieldProps> = {
           x: 0,
           y: 0,
           text: props.label,
-          fontSize: (size.fontSize as unknown as number) - 2,
-          fontFamily: fontFamily.sans,
-          fontWeight: 500,
-          fill: variant.text,
-          align: 'left' as const,
+          fontSize: (fontSize as number) - 2,
+          fontFamily: ff,
+          fontWeight,
+          fill: textColor,
+          align: textAlign,
           baseline: 'top' as const,
         });
       }
@@ -171,7 +202,7 @@ export const TextFieldSpec: ComponentSpec<TextFieldProps> = {
         y: props.label ? 20 : 0,
         width,
         height,
-        radius: borderRadius as unknown as number,
+        radius: borderRadius,
         fill: bgColor,
       });
 
@@ -180,9 +211,9 @@ export const TextFieldSpec: ComponentSpec<TextFieldProps> = {
         shapes.push({
           type: 'border' as const,
           target: 'bg',
-          borderWidth: props.isInvalid ? 2 : 1,
+          borderWidth,
           color: props.isInvalid ? ('{color.error}' as TokenRef) : borderColor,
-          radius: borderRadius as unknown as number,
+          radius: borderRadius,
         });
       }
 
@@ -191,13 +222,13 @@ export const TextFieldSpec: ComponentSpec<TextFieldProps> = {
       if (displayText) {
         shapes.push({
           type: 'text' as const,
-          x: size.paddingX,
+          x: paddingX,
           y: (props.label ? 20 : 0) + height / 2,
           text: displayText,
-          fontSize: size.fontSize as unknown as number,
-          fontFamily: fontFamily.sans,
-          fill: props.value ? variant.text : ('{color.on-surface-variant}' as TokenRef),
-          align: 'left' as const,
+          fontSize: fontSize as number,
+          fontFamily: ff,
+          fill: props.value ? textColor : ('{color.on-surface-variant}' as TokenRef),
+          align: textAlign,
           baseline: 'middle' as const,
         });
       }
@@ -210,10 +241,10 @@ export const TextFieldSpec: ComponentSpec<TextFieldProps> = {
           x: 0,
           y: (props.label ? 20 : 0) + height + 4,
           text: descText,
-          fontSize: (size.fontSize as unknown as number) - 2,
-          fontFamily: fontFamily.sans,
+          fontSize: (fontSize as number) - 2,
+          fontFamily: ff,
           fill: props.isInvalid ? ('{color.error}' as TokenRef) : ('{color.on-surface-variant}' as TokenRef),
-          align: 'left' as const,
+          align: textAlign,
           baseline: 'top' as const,
         });
       }

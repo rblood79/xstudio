@@ -109,12 +109,44 @@ export const ColorFieldSpec: ComponentSpec<ColorFieldProps> = {
     shapes: (props, variant, size, state = 'default') => {
       const width = (props.style?.width as number) || 160;
       const height = size.height;
-      const borderRadius = size.borderRadius;
       const swatchSize = (size.iconSize ?? 26);
 
-      const borderColor = state === 'hover' && variant.borderHover
-        ? variant.borderHover
-        : variant.border;
+      const styleBr = props.style?.borderRadius;
+      const borderRadius = styleBr != null
+        ? (typeof styleBr === 'number' ? styleBr : parseFloat(String(styleBr)) || 0)
+        : size.borderRadius as unknown as number;
+
+      const bgColor = props.style?.backgroundColor
+                    ?? variant.background;
+
+      const borderColor = props.style?.borderColor
+                        ?? ((state === 'hover' && variant.borderHover)
+                            ? variant.borderHover
+                            : variant.border);
+
+      const styleBw = props.style?.borderWidth;
+      const borderWidth = styleBw != null
+        ? (typeof styleBw === 'number' ? styleBw : parseFloat(String(styleBw)) || 0)
+        : 1;
+
+      const fontSize = props.style?.fontSize ?? size.fontSize as unknown as number;
+
+      const fwRaw = props.style?.fontWeight;
+      const fontWeight = fwRaw != null
+        ? (typeof fwRaw === 'number' ? fwRaw : parseInt(String(fwRaw), 10) || 400)
+        : 400;
+
+      const ff = (props.style?.fontFamily as string) || fontFamily.mono;
+
+      const textAlign = (props.style?.textAlign as 'left' | 'center' | 'right') || 'left';
+
+      const textColor = props.style?.color
+                      ?? variant.text;
+
+      const stylePx = props.style?.paddingLeft ?? props.style?.paddingRight ?? props.style?.padding;
+      const paddingX = stylePx != null
+        ? (typeof stylePx === 'number' ? stylePx : parseFloat(String(stylePx)) || 0)
+        : size.paddingX;
 
       const shapes: Shape[] = [
         // 배경
@@ -125,21 +157,21 @@ export const ColorFieldSpec: ComponentSpec<ColorFieldProps> = {
           y: 0,
           width,
           height,
-          radius: borderRadius as unknown as number,
-          fill: variant.background,
+          radius: borderRadius,
+          fill: bgColor,
         },
         // 테두리
         {
           type: 'border' as const,
           target: 'bg',
-          borderWidth: 1,
+          borderWidth,
           color: borderColor ?? '{color.outline}' as TokenRef,
-          radius: borderRadius as unknown as number,
+          radius: borderRadius,
         },
       ];
 
       // Color swatch (왼쪽)
-      const swatchX = size.paddingX;
+      const swatchX = paddingX;
       const swatchY = (height - swatchSize) / 2;
       shapes.push({
         id: 'swatch',
@@ -168,11 +200,11 @@ export const ColorFieldSpec: ComponentSpec<ColorFieldProps> = {
         x: swatchX + swatchSize + (size.gap ?? 8),
         y: 0,
         text: hexValue.toUpperCase(),
-        fontSize: size.fontSize as unknown as number,
-        fontFamily: fontFamily.mono,
-        fontWeight: 400,
-        fill: variant.text,
-        align: 'left' as const,
+        fontSize: fontSize as number,
+        fontFamily: ff,
+        fontWeight,
+        fill: textColor,
+        align: textAlign,
         baseline: 'middle' as const,
       });
 

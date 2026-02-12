@@ -90,7 +90,23 @@ export const FormSpec: ComponentSpec<FormProps> = {
   render: {
     shapes: (props, variant, size, _state = 'default') => {
       const width = (props.style?.width as number) || 'auto';
-      const borderRadius = size.borderRadius;
+
+      // 사용자 스타일 우선, 없으면 spec 기본값
+      const bgColor = props.style?.backgroundColor ?? variant.background;
+
+      const styleBr = props.style?.borderRadius;
+      const borderRadius = styleBr != null
+        ? (typeof styleBr === 'number' ? styleBr : parseFloat(String(styleBr)) || 0)
+        : size.borderRadius;
+
+      const textColor = props.style?.color ?? variant.text;
+      const fontSize = props.style?.fontSize ?? size.fontSize;
+      const fwRaw = props.style?.fontWeight;
+      const fw = fwRaw != null
+        ? (typeof fwRaw === 'number' ? fwRaw : parseInt(String(fwRaw), 10) || 600)
+        : 600;
+      const ff = (props.style?.fontFamily as string) || fontFamily.sans;
+      const textAlign = (props.style?.textAlign as 'left' | 'center' | 'right') || 'left';
 
       const shapes: Shape[] = [];
 
@@ -103,16 +119,21 @@ export const FormSpec: ComponentSpec<FormProps> = {
         width,
         height: 'auto',
         radius: borderRadius as unknown as number,
-        fill: variant.background,
+        fill: bgColor,
       });
 
       // 테두리 (outlined variant)
-      if (variant.border) {
+      const borderColor = props.style?.borderColor ?? variant.border;
+      const styleBw = props.style?.borderWidth;
+      const borderWidth = styleBw != null
+        ? (typeof styleBw === 'number' ? styleBw : parseFloat(String(styleBw)) || 0)
+        : 1;
+      if (borderColor) {
         shapes.push({
           type: 'border' as const,
           target: 'bg',
-          borderWidth: 1,
-          color: variant.border,
+          borderWidth,
+          color: borderColor,
           radius: borderRadius as unknown as number,
         });
       }
@@ -124,11 +145,11 @@ export const FormSpec: ComponentSpec<FormProps> = {
           x: size.paddingX,
           y: size.paddingY,
           text: props.title,
-          fontSize: (size.fontSize as unknown as number) + 4,
-          fontFamily: fontFamily.sans,
-          fontWeight: 600,
-          fill: variant.text,
-          align: 'left' as const,
+          fontSize: (fontSize as unknown as number) + 4,
+          fontFamily: ff,
+          fontWeight: fw,
+          fill: textColor,
+          align: textAlign,
           baseline: 'top' as const,
         });
       }
@@ -138,17 +159,21 @@ export const FormSpec: ComponentSpec<FormProps> = {
         shapes.push({
           type: 'text' as const,
           x: size.paddingX,
-          y: size.paddingY + (props.title ? (size.fontSize as unknown as number) + 12 : 0),
+          y: size.paddingY + (props.title ? (fontSize as unknown as number) + 12 : 0),
           text: props.description,
-          fontSize: (size.fontSize as unknown as number) - 2,
-          fontFamily: fontFamily.sans,
+          fontSize: (fontSize as unknown as number) - 2,
+          fontFamily: ff,
           fill: '{color.on-surface-variant}' as TokenRef,
-          align: 'left' as const,
+          align: textAlign,
           baseline: 'top' as const,
         });
       }
 
       // 폼 필드 컨테이너
+      const stylePad = props.style?.padding;
+      const padding = stylePad != null
+        ? (typeof stylePad === 'number' ? stylePad : parseFloat(String(stylePad)) || 0)
+        : size.paddingY;
       shapes.push({
         type: 'container' as const,
         x: 0,
@@ -160,7 +185,7 @@ export const FormSpec: ComponentSpec<FormProps> = {
           display: 'flex',
           flexDirection: 'column',
           gap: size.gap,
-          padding: size.paddingY,
+          padding,
         },
       });
 

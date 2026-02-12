@@ -100,8 +100,41 @@ export const DisclosureSpec: ComponentSpec<DisclosureProps> = {
 
   render: {
     shapes: (props, variant, size, _state = 'default') => {
-      const borderRadius = size.borderRadius;
       const title = props.title || 'Disclosure';
+
+      // 사용자 스타일 우선
+      const styleBr = props.style?.borderRadius;
+      const borderRadius = styleBr != null
+        ? (typeof styleBr === 'number' ? styleBr : parseFloat(String(styleBr)) || 0)
+        : size.borderRadius;
+
+      const styleBw = props.style?.borderWidth;
+      const borderWidth = styleBw != null
+        ? (typeof styleBw === 'number' ? styleBw : parseFloat(String(styleBw)) || 0)
+        : 1;
+
+      const bgColor = props.style?.backgroundColor ?? variant.background;
+      const borderColor = props.style?.borderColor
+                        ?? (variant.border || ('{color.outline-variant}' as TokenRef));
+
+      const textColor = props.style?.color ?? variant.text;
+      const fontSize = props.style?.fontSize ?? size.fontSize;
+      const fwRaw = props.style?.fontWeight;
+      const fw = fwRaw != null
+        ? (typeof fwRaw === 'number' ? fwRaw : parseInt(String(fwRaw), 10) || 500)
+        : 500;
+      const ff = (props.style?.fontFamily as string) || fontFamily.sans;
+      const textAlign = (props.style?.textAlign as 'left' | 'center' | 'right') || 'left';
+
+      const stylePx = props.style?.paddingLeft ?? props.style?.paddingRight ?? props.style?.padding;
+      const paddingX = stylePx != null
+        ? (typeof stylePx === 'number' ? stylePx : parseFloat(String(stylePx)) || 0)
+        : size.paddingX;
+
+      const stylePy = props.style?.paddingTop ?? props.style?.paddingBottom ?? props.style?.padding;
+      const paddingY = stylePy != null
+        ? (typeof stylePy === 'number' ? stylePy : parseFloat(String(stylePy)) || 0)
+        : size.paddingY;
 
       const shapes: Shape[] = [
         // 배경
@@ -113,14 +146,14 @@ export const DisclosureSpec: ComponentSpec<DisclosureProps> = {
           width: 'auto',
           height: 'auto',
           radius: borderRadius as unknown as number,
-          fill: variant.background,
+          fill: bgColor,
         },
         // 테두리
         {
           type: 'border' as const,
           target: 'bg',
-          borderWidth: 1,
-          color: variant.border || ('{color.outline-variant}' as TokenRef),
+          borderWidth,
+          color: borderColor,
           radius: borderRadius as unknown as number,
         },
         // 헤더 (클릭 영역)
@@ -134,15 +167,15 @@ export const DisclosureSpec: ComponentSpec<DisclosureProps> = {
             // 타이틀 텍스트
             {
               type: 'text' as const,
-              x: size.paddingX,
+              x: paddingX,
               y: size.height / 2,
               text: title,
-              fontSize: size.fontSize as unknown as number,
-              fontFamily: fontFamily.sans,
-              fontWeight: 500,
-              fill: variant.text,
+              fontSize: fontSize as unknown as number,
+              fontFamily: ff,
+              fontWeight: fw,
+              fill: textColor,
               baseline: 'middle' as const,
-              align: 'left' as const,
+              align: textAlign,
             },
           ],
           layout: {
@@ -150,7 +183,7 @@ export const DisclosureSpec: ComponentSpec<DisclosureProps> = {
             flexDirection: 'row',
             alignItems: 'center',
             justifyContent: 'space-between',
-            padding: [0, size.paddingX, 0, size.paddingX],
+            padding: [0, paddingX, 0, paddingX],
           },
         },
         // 콘텐츠 패널 (isExpanded일 때만 표시)
@@ -164,7 +197,7 @@ export const DisclosureSpec: ComponentSpec<DisclosureProps> = {
           layout: {
             display: props.isExpanded ? 'flex' : 'none',
             flexDirection: 'column',
-            padding: [0, size.paddingX, size.paddingY, size.paddingX],
+            padding: [0, paddingX, paddingY, paddingX],
             gap: size.gap,
           },
         },

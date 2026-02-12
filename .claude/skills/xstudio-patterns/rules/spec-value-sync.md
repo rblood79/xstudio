@@ -44,7 +44,7 @@ md: { paddingLeft: 24, paddingRight: 24, borderWidth: 1 }  // 일치
 | CSS base `border: 1px solid` | `BUTTON_SIZE_CONFIG[size].borderWidth` (=1) | `Button.css base: border` |
 | `ButtonSpec.variants[v].border` | `PixiButton specDefaultBorderWidth` (=1) | `Button.css border-color` |
 | `ButtonSpec.sizes[size].borderRadius` | `UI_COMPONENT_DEFAULT_BORDER_RADIUS[size]` (ElementSprite.tsx) | `Button.css [data-size] border-radius` |
-| `spec.sizes[size].height` | `INLINE_FORM_HEIGHTS[tag][size]` (engines/utils.ts) | N/A (Skia 전용) |
+| `spec.sizes[size].height` | `INLINE_FORM_HEIGHTS[tag][size]` (engines/utils.ts) | N/A (Skia에서 Yoga finalHeight 사용, spec height는 참조용) |
 | `spec indicator size` | `INLINE_FORM_INDICATOR_WIDTHS[tag][size]` (engines/utils.ts) | N/A |
 | `spec indicator size` | `INDICATOR_SIZES[tag][size]` (styleToLayout.ts) | N/A |
 
@@ -74,6 +74,30 @@ const br = typeof convertedBorderRadius === 'number'
 ```
 
 > Yoga가 변환하는 레이아웃 속성(width, height, padding)과 달리, `borderRadius`는 시각 전용이므로 Yoga를 거치지 않고 CSS 문자열 형태로 남아 있다.
+
+### Spec Shapes 높이 및 Fill 통합 (2026-02-12 추가)
+
+**specHeight = finalHeight**: `ElementSprite.tsx`에서 spec shapes에 전달하는 높이는 항상 Yoga 계산 높이(`finalHeight`)를 사용합니다. 이전의 `Math.min(sizeSpec.height, finalHeight)` 패턴은 제거되었습니다.
+
+```typescript
+// ✅ 항상 Yoga 높이 사용
+const specHeight = finalHeight;
+
+// ❌ 금지: spec 고정 높이 혼합
+const specHeight = Math.min(sizeSpec.height || finalHeight, finalHeight);
+```
+
+**gradient fill 이전**: spec shapes가 외부 box 데이터를 클리어하므로, gradient fill이 손실될 수 있습니다. 반드시 `boxData.fill`을 `specNode.box.fill`로 이전한 후 클리어:
+
+```typescript
+// ✅ gradient fill 보존
+if (boxData.fill && specNode.box) {
+  specNode.box.fill = boxData.fill;
+}
+boxData.fill = undefined;  // spec shapes가 시각 담당하므로 클리어
+```
+
+**maxWidth safety clamp**: `containerWidth - padding * 2`가 1 미만이면 `containerWidth`로 폴백하여 padding=0 시 음수 maxWidth 방지.
 
 ### Size별 기본 borderRadius
 
@@ -110,6 +134,8 @@ const effectiveBorderRadius = isUIComponent ? 6 : 0;
 - [ ] `apps/builder/.../skia/specShapeConverter.ts` (색상/크기 변환)
 - [ ] `apps/builder/.../layout/engines/utils.ts` (`INLINE_FORM_HEIGHTS`, `INLINE_FORM_INDICATOR_WIDTHS`)
 - [ ] `apps/builder/.../layout/styleToLayout.ts` (`INDICATOR_SIZES`, `INLINE_FORM_HEIGHTS`)
+- [ ] spec shapes의 모든 시각 속성이 `props.style?.X` 오버라이드를 지원하는지 확인
+- [ ] 배경 roundRect의 height가 `'auto'`인지 확인 (고정 높이 금지)
 
 ## 참조
 

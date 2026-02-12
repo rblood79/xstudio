@@ -437,7 +437,42 @@ function getButtonLayout(style, buttonProps, buttonText, variantColors) {
 5. React state 업데이트 → PixiButton 리렌더링
 6. `FancyButton` Graphics 재생성 (새 색상 적용)
 
+### Spec Shapes props.style 오버라이드 (2026-02-12)
+
+49개 ComponentSpec의 `render.shapes()`가 모든 시각 속성에서 `props.style` 인라인 스타일을 우선 참조합니다.
+이전에는 variant/size 기본값만 사용되어 Inspector에서 설정한 값이 Skia에 반영되지 않았습니다.
+
+**오버라이드 우선순위:**
+
+| 속성 | 1순위 (inline) | 2순위 (state) | 3순위 (default) |
+|------|---------------|--------------|----------------|
+| 배경색 | `props.style?.backgroundColor` | `variant.backgroundHover/Pressed` | `variant.background` |
+| 텍스트색 | `props.style?.color` | `variant.textHover` | `variant.text` |
+| 테두리색 | `props.style?.borderColor` | `variant.borderHover` | `variant.border` |
+| 모서리 반경 | `props.style?.borderRadius` | — | `size.borderRadius` |
+| 테두리 두께 | `props.style?.borderWidth` | — | `1` |
+| 폰트 크기 | `props.style?.fontSize` | — | `size.fontSize` |
+| 폰트 굵기 | `props.style?.fontWeight` | — | `500` |
+| 폰트 패밀리 | `props.style?.fontFamily` | — | `fontFamily.sans` |
+| 텍스트 정렬 | `props.style?.textAlign` | — | `'center'` |
+| 패딩 | `props.style?.padding*` | — | `size.paddingX` |
+
+**Yoga 높이 통합:**
+
+| 항목 | 수정 전 | 수정 후 |
+|------|---------|---------|
+| 배경 roundRect height | `size.height` (고정) | `'auto'` (Yoga 높이) |
+| specHeight (ElementSprite) | `Math.min(sizeSpec.height, finalHeight)` | `finalHeight` |
+| MIN_BUTTON_HEIGHT | 24px 최소 제한 | 제거 |
+| Gradient fill | spec shapes가 `boxData.fill` 클리어 → 소실 | `boxData.fill → specNode.box.fill` 이전 후 클리어 |
+
+**관련 파일:** `packages/specs/src/components/*.spec.ts` (49개), `ElementSprite.tsx`, `specShapeConverter.ts`, `PixiButton.tsx`
+
 ### Skia 폴백 렌더링의 Variant 색상 매핑 (2026-02-02)
+
+> **Note (2026-02-12):** 아래 하드코딩 색상 테이블은 spec shapes 경로에서 variant 기본값으로 사용됩니다.
+> `props.style?.backgroundColor` 등 인라인 스타일이 설정되면 이 테이블 값보다 우선합니다.
+> 상세: 위 "Spec Shapes props.style 오버라이드" 섹션 참조.
 
 Skia 모드에서 PixiButton/PixiCheckbox 등 UI 컴포넌트는 PixiJS FancyButton 대신
 `ElementSprite.tsx`의 Skia 폴백 경로에서 렌더링된다. 이 경로에서는 CSS 변수 대신
@@ -491,6 +526,7 @@ Skia 폴백 경로에서 `borderRadius`는 `convertStyle()` 반환값을 통해 
 2. **Inline Style (`style: {}`)**: 개별 커스터마이징, Semantic Props 오버라이드 가능
 3. **우선순위**: `style > semantic props > 기본값`
 4. **동기화**: `LayoutEngine.ts`, `PixiButton.tsx`, `ElementSprite.tsx`, `Button.css` 간 값 동기화 유지
+5. **Spec Shapes 통합**: ComponentSpec의 `render.shapes()`가 `props.style` 오버라이드를 직접 처리 — Skia 렌더링에서 inline style 반영
 
 ---
 

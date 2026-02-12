@@ -97,7 +97,28 @@ export const ListSpec: ComponentSpec<ListProps> = {
   render: {
     shapes: (props, variant, size, _state = 'default') => {
       const width = (props.style?.width as number) || 'auto';
-      const borderRadius = size.borderRadius;
+
+      // 사용자 스타일 우선, 없으면 spec 기본값
+      const bgColor = props.style?.backgroundColor ?? variant.background;
+
+      const styleBr = props.style?.borderRadius;
+      const borderRadius = styleBr != null
+        ? (typeof styleBr === 'number' ? styleBr : parseFloat(String(styleBr)) || 0)
+        : size.borderRadius;
+
+      const textColor = props.style?.color ?? variant.text;
+      const fontSize = props.style?.fontSize ?? size.fontSize;
+      const fwRaw = props.style?.fontWeight;
+      const fw = fwRaw != null
+        ? (typeof fwRaw === 'number' ? fwRaw : parseInt(String(fwRaw), 10) || 400)
+        : 400;
+      const ff = (props.style?.fontFamily as string) || fontFamily.sans;
+      const textAlign = (props.style?.textAlign as 'left' | 'center' | 'right') || 'left';
+
+      const stylePad = props.style?.padding;
+      const padding = stylePad != null
+        ? (typeof stylePad === 'number' ? stylePad : parseFloat(String(stylePad)) || 0)
+        : size.paddingY;
 
       const shapes: Shape[] = [
         // 배경
@@ -109,7 +130,7 @@ export const ListSpec: ComponentSpec<ListProps> = {
           width,
           height: 'auto',
           radius: borderRadius as unknown as number,
-          fill: variant.background,
+          fill: bgColor,
         },
         // 콘텐츠 컨테이너
         {
@@ -123,7 +144,7 @@ export const ListSpec: ComponentSpec<ListProps> = {
             display: 'flex',
             flexDirection: 'column',
             gap: size.gap,
-            padding: size.paddingY,
+            padding,
           },
         },
       ];
@@ -140,11 +161,11 @@ export const ListSpec: ComponentSpec<ListProps> = {
           x: size.paddingX,
           y: size.paddingY + index * ((size.fontSize as unknown as number) + (size.gap ?? 4) + size.paddingY),
           text: item.label,
-          fontSize: size.fontSize as unknown as number,
-          fontFamily: fontFamily.sans,
-          fontWeight: 400,
-          fill: variant.text,
-          align: 'left' as const,
+          fontSize: fontSize as unknown as number,
+          fontFamily: ff,
+          fontWeight: fw,
+          fill: textColor,
+          align: textAlign,
           baseline: 'top' as const,
         });
       });

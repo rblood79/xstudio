@@ -94,6 +94,18 @@ export const PaginationSpec: ComponentSpec<PaginationProps> = {
       const currentPage = props.currentPage || 1;
       const buttonSize = size.height;
 
+      // 사용자 스타일 우선
+      const styleBr = props.style?.borderRadius;
+      const borderRadius = styleBr != null
+        ? (typeof styleBr === 'number' ? styleBr : parseFloat(String(styleBr)) || 0)
+        : size.borderRadius;
+
+      const bgColor = props.style?.backgroundColor ?? variant.background;
+      const textColor = props.style?.color ?? variant.text;
+      const fontSize = props.style?.fontSize ?? size.fontSize;
+      const ff = (props.style?.fontFamily as string) || fontFamily.sans;
+      const textAlign = (props.style?.textAlign as 'left' | 'center' | 'right') || 'center';
+
       const shapes: Shape[] = [];
 
       // 페이지네이션 컨테이너
@@ -119,7 +131,7 @@ export const PaginationSpec: ComponentSpec<PaginationProps> = {
         y: 0,
         width: buttonSize,
         height: buttonSize,
-        radius: size.borderRadius as unknown as number,
+        radius: borderRadius as unknown as number,
         fill: '{color.surface-container}' as TokenRef,
       });
 
@@ -132,19 +144,25 @@ export const PaginationSpec: ComponentSpec<PaginationProps> = {
           y: 0,
           width: buttonSize,
           height: buttonSize,
-          radius: size.borderRadius as unknown as number,
-          fill: isActive ? variant.background : ('{color.surface}' as TokenRef),
+          radius: borderRadius as unknown as number,
+          fill: isActive ? bgColor : ('{color.surface}' as TokenRef),
         });
+
+        const fwRaw = props.style?.fontWeight;
+        const fw = fwRaw != null
+          ? (typeof fwRaw === 'number' ? fwRaw : parseInt(String(fwRaw), 10) || (isActive ? 600 : 400))
+          : (isActive ? 600 : 400);
+
         shapes.push({
           type: 'text' as const,
           x: 0,
           y: 0,
           text: String(i),
-          fontSize: size.fontSize as unknown as number,
-          fontFamily: fontFamily.sans,
-          fontWeight: isActive ? 600 : 400,
-          fill: isActive ? variant.text : ('{color.on-surface}' as TokenRef),
-          align: 'center' as const,
+          fontSize: fontSize as unknown as number,
+          fontFamily: ff,
+          fontWeight: fw,
+          fill: isActive ? textColor : ('{color.on-surface}' as TokenRef),
+          align: textAlign,
           baseline: 'middle' as const,
         });
       }
@@ -156,7 +174,7 @@ export const PaginationSpec: ComponentSpec<PaginationProps> = {
         y: 0,
         width: buttonSize,
         height: buttonSize,
-        radius: size.borderRadius as unknown as number,
+        radius: borderRadius as unknown as number,
         fill: '{color.surface-container}' as TokenRef,
       });
 

@@ -101,6 +101,10 @@ export const TabsSpec: ComponentSpec<TabsProps> = {
     shapes: (props, variant, size, _state = 'default') => {
       const isVertical = props.orientation === 'vertical';
 
+      // 사용자 스타일 우선
+      const borderColor = props.style?.borderColor
+                        ?? (variant.border || ('{color.outline-variant}' as TokenRef));
+
       const shapes: Shape[] = [
         // 탭 리스트 컨테이너
         {
@@ -122,7 +126,7 @@ export const TabsSpec: ComponentSpec<TabsProps> = {
           y1: isVertical ? 0 : size.height,
           x2: isVertical ? 0 : 'auto' as unknown as number,
           y2: isVertical ? 'auto' as unknown as number : size.height,
-          stroke: variant.border || ('{color.outline-variant}' as TokenRef),
+          stroke: borderColor,
           strokeWidth: 1,
         },
         // 탭 패널 컨테이너

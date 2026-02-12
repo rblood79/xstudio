@@ -94,7 +94,23 @@ export const ListBoxSpec: ComponentSpec<ListBoxProps> = {
   render: {
     shapes: (props, variant, size, _state = 'default') => {
       const width = (props.style?.width as number) || 200;
-      const borderRadius = size.borderRadius;
+
+      // 사용자 스타일 우선, 없으면 spec 기본값
+      const bgColor = props.style?.backgroundColor ?? variant.background;
+
+      const styleBr = props.style?.borderRadius;
+      const borderRadius = styleBr != null
+        ? (typeof styleBr === 'number' ? styleBr : parseFloat(String(styleBr)) || 0)
+        : size.borderRadius;
+
+      const textColor = props.style?.color ?? variant.text;
+      const fontSize = props.style?.fontSize ?? size.fontSize;
+      const fwRaw = props.style?.fontWeight;
+      const fw = fwRaw != null
+        ? (typeof fwRaw === 'number' ? fwRaw : parseInt(String(fwRaw), 10) || 500)
+        : 500;
+      const ff = (props.style?.fontFamily as string) || fontFamily.sans;
+      const textAlign = (props.style?.textAlign as 'left' | 'center' | 'right') || 'left';
 
       const shapes: Shape[] = [];
 
@@ -105,11 +121,11 @@ export const ListBoxSpec: ComponentSpec<ListBoxProps> = {
           x: 0,
           y: 0,
           text: props.label,
-          fontSize: (size.fontSize as unknown as number) - 2,
-          fontFamily: fontFamily.sans,
-          fontWeight: 500,
-          fill: variant.text,
-          align: 'left' as const,
+          fontSize: (fontSize as unknown as number) - 2,
+          fontFamily: ff,
+          fontWeight: fw,
+          fill: textColor,
+          align: textAlign,
           baseline: 'top' as const,
         });
       }
@@ -123,21 +139,30 @@ export const ListBoxSpec: ComponentSpec<ListBoxProps> = {
         width,
         height: 'auto',
         radius: borderRadius as unknown as number,
-        fill: variant.background,
+        fill: bgColor,
       });
 
       // 테두리
-      if (variant.border) {
+      const borderColor = props.style?.borderColor ?? variant.border;
+      const styleBw = props.style?.borderWidth;
+      const borderWidth = styleBw != null
+        ? (typeof styleBw === 'number' ? styleBw : parseFloat(String(styleBw)) || 0)
+        : 1;
+      if (borderColor) {
         shapes.push({
           type: 'border' as const,
           target: 'bg',
-          borderWidth: 1,
-          color: variant.border,
+          borderWidth,
+          color: borderColor,
           radius: borderRadius as unknown as number,
         });
       }
 
       // 리스트 아이템 컨테이너
+      const stylePad = props.style?.padding;
+      const padding = stylePad != null
+        ? (typeof stylePad === 'number' ? stylePad : parseFloat(String(stylePad)) || 0)
+        : size.paddingY;
       shapes.push({
         type: 'container' as const,
         x: 0,
@@ -149,7 +174,7 @@ export const ListBoxSpec: ComponentSpec<ListBoxProps> = {
           display: 'flex',
           flexDirection: 'column',
           gap: size.gap,
-          padding: size.paddingY,
+          padding,
         },
       });
 

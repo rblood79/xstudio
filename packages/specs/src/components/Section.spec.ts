@@ -112,10 +112,16 @@ export const SectionSpec: ComponentSpec<SectionProps> = {
 
   render: {
     shapes: (props, variant, size, state = 'default') => {
-      const bgColor = state === 'hover' ? variant.backgroundHover
+      // 사용자 스타일 우선, 없으면 spec 기본값
+      const bgColor = props.style?.backgroundColor
+                    ?? (state === 'hover' ? variant.backgroundHover
                     : state === 'pressed' ? variant.backgroundPressed
-                    : variant.background;
-      const borderRadius = size.borderRadius;
+                    : variant.background);
+
+      const styleBr = props.style?.borderRadius;
+      const borderRadius = styleBr != null
+        ? (typeof styleBr === 'number' ? styleBr : parseFloat(String(styleBr)) || 0)
+        : size.borderRadius;
 
       const shapes: Shape[] = [];
 
@@ -133,12 +139,16 @@ export const SectionSpec: ComponentSpec<SectionProps> = {
       });
 
       // 테두리 (outlined variant)
-      const borderColor = variant.border;
+      const borderColor = props.style?.borderColor ?? variant.border;
+      const styleBw = props.style?.borderWidth;
+      const borderWidth = styleBw != null
+        ? (typeof styleBw === 'number' ? styleBw : parseFloat(String(styleBw)) || 0)
+        : 1;
       if (borderColor) {
         shapes.push({
           type: 'border' as const,
           target: 'bg',
-          borderWidth: 1,
+          borderWidth,
           color: borderColor,
           radius: borderRadius as unknown as number,
         });

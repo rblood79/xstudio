@@ -101,10 +101,26 @@ export const FileTriggerSpec: ComponentSpec<FileTriggerProps> = {
 
   render: {
     shapes: (props, variant, size, state = 'default') => {
-      const bgColor = state === 'hover' ? variant.backgroundHover
+      // 사용자 스타일 우선, 없으면 spec 기본값
+      const styleBr = props.style?.borderRadius;
+      const borderRadius = styleBr != null
+        ? (typeof styleBr === 'number' ? styleBr : parseFloat(String(styleBr)) || 0)
+        : size.borderRadius;
+
+      const styleBw = props.style?.borderWidth;
+      const borderWidth = styleBw != null
+        ? (typeof styleBw === 'number' ? styleBw : parseFloat(String(styleBw)) || 0)
+        : 1;
+
+      // 상태에 따른 배경색 선택 (사용자 스타일 우선)
+      const bgColor = props.style?.backgroundColor
+                    ?? (state === 'hover' ? variant.backgroundHover
                     : state === 'pressed' ? variant.backgroundPressed
-                    : variant.background;
-      const borderRadius = size.borderRadius;
+                    : variant.background);
+
+      // 상태에 따른 테두리색 선택 (사용자 스타일 우선)
+      const borderColor = props.style?.borderColor
+                        ?? (variant.border || ('{color.outline-variant}' as TokenRef));
 
       const shapes: Shape[] = [
         // 배경
@@ -114,7 +130,7 @@ export const FileTriggerSpec: ComponentSpec<FileTriggerProps> = {
           x: 0,
           y: 0,
           width: 'auto',
-          height: size.height,
+          height: 'auto' as unknown as number,
           radius: borderRadius as unknown as number,
           fill: bgColor,
         },
@@ -122,24 +138,41 @@ export const FileTriggerSpec: ComponentSpec<FileTriggerProps> = {
         {
           type: 'border' as const,
           target: 'bg',
-          borderWidth: 1,
-          color: variant.border || ('{color.outline-variant}' as TokenRef),
+          borderWidth,
+          color: borderColor,
           radius: borderRadius as unknown as number,
         },
       ];
 
       // 텍스트
       const text = props.children || props.text || props.label || 'Choose file';
+
+      // 사용자 스타일 padding 우선, 없으면 spec 기본값
+      const stylePx = props.style?.paddingLeft ?? props.style?.paddingRight ?? props.style?.padding;
+      const paddingX = stylePx != null
+        ? (typeof stylePx === 'number' ? stylePx : parseFloat(String(stylePx)) || 0)
+        : size.paddingX;
+
+      // 사용자 스타일 font 속성 우선, 없으면 spec 기본값
+      const fontSize = props.style?.fontSize ?? size.fontSize;
+      const fwRaw = props.style?.fontWeight;
+      const fw = fwRaw != null
+        ? (typeof fwRaw === 'number' ? fwRaw : parseInt(String(fwRaw), 10) || 500)
+        : 500;
+      const ff = (props.style?.fontFamily as string) || fontFamily.sans;
+      const textAlign = (props.style?.textAlign as 'left' | 'center' | 'right') || 'center';
+      const textColor = props.style?.color ?? variant.text;
+
       shapes.push({
         type: 'text' as const,
-        x: 0,
+        x: paddingX,
         y: 0,
         text,
-        fontSize: size.fontSize as unknown as number,
-        fontFamily: fontFamily.sans,
-        fontWeight: 500,
-        fill: variant.text,
-        align: 'center' as const,
+        fontSize: fontSize as unknown as number,
+        fontFamily: ff,
+        fontWeight: fw,
+        fill: textColor,
+        align: textAlign,
         baseline: 'middle' as const,
       });
 

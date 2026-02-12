@@ -116,8 +116,22 @@ export const ProgressBarSpec: ComponentSpec<ProgressBarProps> = {
       const fillColor = PROGRESSBAR_FILL_COLORS[variantName] ?? PROGRESSBAR_FILL_COLORS.default;
       const width = (props.style?.width as number) || barDims.width;
       const barHeight = barDims.barHeight;
-      const barRadius = size.borderRadius;
       const gap = size.gap ?? 8;
+
+      // 사용자 스타일 우선
+      const styleBr = props.style?.borderRadius;
+      const barRadius = styleBr != null
+        ? (typeof styleBr === 'number' ? styleBr : parseFloat(String(styleBr)) || 0)
+        : size.borderRadius;
+
+      const bgColor = props.style?.backgroundColor ?? variant.background;
+      const textColor = props.style?.color ?? variant.text;
+      const fontSize = props.style?.fontSize ?? size.fontSize;
+      const fwRaw = props.style?.fontWeight;
+      const fw = fwRaw != null
+        ? (typeof fwRaw === 'number' ? fwRaw : parseInt(String(fwRaw), 10) || 500)
+        : 500;
+      const ff = (props.style?.fontFamily as string) || fontFamily.sans;
 
       const value = Math.max(0, Math.min(100, props.value ?? 0));
       const fillWidth = (width * value) / 100;
@@ -133,10 +147,10 @@ export const ProgressBarSpec: ComponentSpec<ProgressBarProps> = {
             x: 0,
             y: 0,
             text: props.label,
-            fontSize: size.fontSize as unknown as number,
-            fontFamily: fontFamily.sans,
-            fontWeight: 500,
-            fill: variant.text,
+            fontSize: fontSize as unknown as number,
+            fontFamily: ff,
+            fontWeight: fw,
+            fill: textColor,
             align: 'left' as const,
             baseline: 'top' as const,
           });
@@ -147,9 +161,9 @@ export const ProgressBarSpec: ComponentSpec<ProgressBarProps> = {
             x: width,
             y: 0,
             text: `${Math.round(value)}%`,
-            fontSize: size.fontSize as unknown as number,
-            fontFamily: fontFamily.sans,
-            fill: variant.text,
+            fontSize: fontSize as unknown as number,
+            fontFamily: ff,
+            fill: textColor,
             align: 'right' as const,
             baseline: 'top' as const,
           });
@@ -167,7 +181,7 @@ export const ProgressBarSpec: ComponentSpec<ProgressBarProps> = {
         width,
         height: barHeight,
         radius: barRadius as unknown as number,
-        fill: variant.background,
+        fill: bgColor,
       });
 
       // 채우기 (determinate 모드)

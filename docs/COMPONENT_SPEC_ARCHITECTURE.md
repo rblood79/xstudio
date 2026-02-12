@@ -4668,6 +4668,71 @@ Spec `shapes()` 함수는 항상 row 레이아웃 좌표를 생성. column 지�
 | `layout/engines/utils.ts` | calculateContentHeight/Width 폼 컨트롤 + flexDirection |
 | `types/builder/unified.types.ts` | Checkbox/Radio/Switch 기본 props |
 
+### 9.6 props.style 오버라이드 패턴 (2026-02-12)
+
+모든 49개 ComponentSpec의 `render.shapes()`에 인라인 스타일 우선 참조 패턴을 적용:
+
+**참조 구현 (Button.spec.ts):**
+
+```typescript
+shapes: (props, variant, size, state = 'default') => {
+  // props.style 우선, 없으면 spec 기본값
+  const bgColor = props.style?.backgroundColor
+    ?? (state === 'hover' ? variant.backgroundHover
+    : state === 'pressed' ? variant.backgroundPressed
+    : variant.background);
+
+  const textColor = props.style?.color ?? variant.text;
+  const borderRadius = props.style?.borderRadius ?? size.borderRadius;
+  const borderWidth = props.style?.borderWidth ?? 1;
+  const paddingX = props.style?.paddingLeft ?? props.style?.padding ?? size.paddingX;
+
+  return [
+    { id: 'bg', type: 'roundRect', width: 'auto', height: 'auto', // ← Yoga 높이 사용
+      fill: bgColor, radius: borderRadius, fillAlpha: variant.backgroundAlpha ?? 1 },
+    { type: 'border', target: 'bg', borderWidth,
+      color: props.style?.borderColor ?? variant.border },
+    { type: 'text', x: paddingX,
+      fontSize: props.style?.fontSize ?? size.fontSize,
+      fontWeight: props.style?.fontWeight ?? 500,
+      fontFamily: props.style?.fontFamily ?? fontFamily.sans,
+      fill: textColor, align: props.style?.textAlign ?? 'center', baseline: 'middle' },
+  ];
+}
+```
+
+**우선순위 규칙:**
+
+| 속성 | 1순위 (inline) | 2순위 (state) | 3순위 (default) |
+|------|---------------|--------------|----------------|
+| 배경색 | `props.style?.backgroundColor` | `variant.backgroundHover/Pressed` | `variant.background` |
+| 텍스트색 | `props.style?.color` | `variant.textHover` | `variant.text` |
+| 테두리색 | `props.style?.borderColor` | `variant.borderHover` | `variant.border` |
+| 모서리 반경 | `props.style?.borderRadius` | — | `size.borderRadius` |
+| 테두리 두께 | `props.style?.borderWidth` | — | `1` |
+| 폰트 크기 | `props.style?.fontSize` | — | `size.fontSize` |
+| 폰트 굵기 | `props.style?.fontWeight` | — | `500` |
+| 폰트 패밀리 | `props.style?.fontFamily` | — | `fontFamily.sans` |
+| 텍스트 정렬 | `props.style?.textAlign` | — | `'center'` |
+| 패딩 | `props.style?.padding*` | — | `size.paddingX` |
+
+**ElementSprite 통합:**
+
+| 항목 | 수정 전 | 수정 후 |
+|------|---------|---------|
+| **배경 roundRect** | `height: size.height` (고정) | `height: 'auto'` (Yoga 높이) |
+| **specHeight** | `Math.min(sizeSpec.height, finalHeight)` | `finalHeight` (항상 Yoga) |
+| **MIN_BUTTON_HEIGHT** | 24px 최소값 제한 | 제거 (PixiButton.tsx) |
+| **gradient fill** | spec shapes가 `boxData.fill` 클리어 → 소실 | `boxData.fill → specNode.box.fill` 이전 후 클리어 |
+
+**specShapeConverter 개선:**
+
+| 항목 | 변경 |
+|------|------|
+| 텍스트 maxWidth | `shape.x > 0`일 때 자동 감소: center → `containerWidth - x*2`, left/right → `containerWidth - x` |
+| safety clamp | `maxWidth < 1`이면 `containerWidth`로 폴백 (padding=0 안전 처리) |
+
+**상세:** `packages/specs/src/components/*.spec.ts` (49개), `apps/builder/src/.../sprites/ElementSprite.tsx`, `apps/builder/src/.../skia/specShapeConverter.ts`, `apps/builder/src/.../ui/PixiButton.tsx`
 
 ---
 

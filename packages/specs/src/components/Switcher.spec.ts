@@ -94,7 +94,21 @@ export const SwitcherSpec: ComponentSpec<SwitcherProps> = {
     shapes: (props, variant, size, _state = 'default') => {
       const width = (props.style?.width as number) || 240;
       const height = size.height;
-      const borderRadius = size.borderRadius;
+
+      // 사용자 스타일 우선
+      const styleBr = props.style?.borderRadius;
+      const borderRadius = styleBr != null
+        ? (typeof styleBr === 'number' ? styleBr : parseFloat(String(styleBr)) || 0)
+        : size.borderRadius;
+
+      const styleBw = props.style?.borderWidth;
+      const borderWidth = styleBw != null
+        ? (typeof styleBw === 'number' ? styleBw : parseFloat(String(styleBw)) || 0)
+        : 1;
+
+      const bgColor = props.style?.backgroundColor ?? variant.background;
+      const borderColor = props.style?.borderColor
+                        ?? (variant.border ?? '{color.outline-variant}' as TokenRef);
 
       const items = props.items ?? ['Tab 1', 'Tab 2'];
       const activeIndex = props.activeIndex ?? 0;
@@ -111,14 +125,14 @@ export const SwitcherSpec: ComponentSpec<SwitcherProps> = {
           width,
           height,
           radius: borderRadius as unknown as number,
-          fill: variant.background,
+          fill: bgColor,
         },
         // 테두리
         {
           type: 'border' as const,
           target: 'track',
-          borderWidth: 1,
-          color: variant.border ?? '{color.outline-variant}' as TokenRef,
+          borderWidth,
+          color: borderColor,
           radius: borderRadius as unknown as number,
         },
       ];
@@ -139,21 +153,34 @@ export const SwitcherSpec: ComponentSpec<SwitcherProps> = {
         fill: '{color.primary}' as TokenRef,
       });
 
+      // 탭 텍스트 스타일
+      const fontSize = props.style?.fontSize ?? size.fontSize;
+      const ff = (props.style?.fontFamily as string) || fontFamily.sans;
+      const textAlign = (props.style?.textAlign as 'left' | 'center' | 'right') || 'center';
+
       // 탭 텍스트
       items.forEach((item, index) => {
         const label = typeof item === 'string' ? item : item.label;
         const isActive = index === activeIndex;
+
+        const fwRaw = props.style?.fontWeight;
+        const fw = fwRaw != null
+          ? (typeof fwRaw === 'number' ? fwRaw : parseInt(String(fwRaw), 10) || (isActive ? 600 : 400))
+          : (isActive ? 600 : 400);
+
+        const textColor = props.style?.color
+                        ?? (isActive ? '{color.on-primary}' as TokenRef : variant.text);
 
         shapes.push({
           type: 'text' as const,
           x: size.paddingX + index * itemWidth + itemWidth / 2,
           y: height / 2,
           text: label,
-          fontSize: size.fontSize as unknown as number,
-          fontFamily: fontFamily.sans,
-          fontWeight: isActive ? 600 : 400,
-          fill: isActive ? '{color.on-primary}' as TokenRef : variant.text,
-          align: 'center' as const,
+          fontSize: fontSize as unknown as number,
+          fontFamily: ff,
+          fontWeight: fw,
+          fill: textColor,
+          align: textAlign,
           baseline: 'middle' as const,
         });
       });

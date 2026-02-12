@@ -123,11 +123,43 @@ export const DatePickerSpec: ComponentSpec<DatePickerProps> = {
     shapes: (props, variant, size, state = 'default') => {
       const width = (props.style?.width as number) || 220;
       const height = size.height;
-      const borderRadius = size.borderRadius;
 
-      const borderColor = state === 'hover' && variant.borderHover
-        ? variant.borderHover
-        : variant.border;
+      const styleBr = props.style?.borderRadius;
+      const borderRadius = styleBr != null
+        ? (typeof styleBr === 'number' ? styleBr : parseFloat(String(styleBr)) || 0)
+        : size.borderRadius as unknown as number;
+
+      const bgColor = props.style?.backgroundColor
+                    ?? variant.background;
+
+      const borderColor = props.style?.borderColor
+                        ?? ((state === 'hover' && variant.borderHover)
+                            ? variant.borderHover
+                            : variant.border);
+
+      const styleBw = props.style?.borderWidth;
+      const borderWidth = styleBw != null
+        ? (typeof styleBw === 'number' ? styleBw : parseFloat(String(styleBw)) || 0)
+        : 1;
+
+      const fontSize = props.style?.fontSize ?? size.fontSize as unknown as number;
+
+      const fwRaw = props.style?.fontWeight;
+      const fontWeight = fwRaw != null
+        ? (typeof fwRaw === 'number' ? fwRaw : parseInt(String(fwRaw), 10) || 400)
+        : 400;
+
+      const ff = (props.style?.fontFamily as string) || fontFamily.sans;
+
+      const textAlign = (props.style?.textAlign as 'left' | 'center' | 'right') || 'left';
+
+      const textColor = props.style?.color
+                      ?? (props.value ? variant.text : '{color.on-surface-variant}' as TokenRef);
+
+      const stylePx = props.style?.paddingLeft ?? props.style?.paddingRight ?? props.style?.padding;
+      const paddingX = stylePx != null
+        ? (typeof stylePx === 'number' ? stylePx : parseFloat(String(stylePx)) || 0)
+        : size.paddingX;
 
       const shapes: Shape[] = [
         // Trigger 배경
@@ -138,28 +170,28 @@ export const DatePickerSpec: ComponentSpec<DatePickerProps> = {
           y: 0,
           width,
           height,
-          radius: borderRadius as unknown as number,
-          fill: variant.background,
+          radius: borderRadius,
+          fill: bgColor,
         },
         // Trigger 테두리
         {
           type: 'border' as const,
           target: 'trigger',
-          borderWidth: 1,
+          borderWidth,
           color: borderColor ?? '{color.outline}' as TokenRef,
-          radius: borderRadius as unknown as number,
+          radius: borderRadius,
         },
         // 날짜 텍스트
         {
           type: 'text' as const,
-          x: size.paddingX,
+          x: paddingX,
           y: 0,
           text: props.value || props.placeholder || 'Select date',
-          fontSize: size.fontSize as unknown as number,
-          fontFamily: fontFamily.sans,
-          fontWeight: 400,
-          fill: props.value ? variant.text : '{color.on-surface-variant}' as TokenRef,
-          align: 'left' as const,
+          fontSize: fontSize as number,
+          fontFamily: ff,
+          fontWeight,
+          fill: textColor,
+          align: textAlign,
           baseline: 'middle' as const,
         },
       ];
@@ -189,7 +221,7 @@ export const DatePickerSpec: ComponentSpec<DatePickerProps> = {
           y: calendarY,
           width: calendarWidth,
           height: 'auto',
-          radius: borderRadius as unknown as number,
+          radius: borderRadius,
           fill: '{color.surface-container}' as TokenRef,
         });
 
@@ -199,7 +231,7 @@ export const DatePickerSpec: ComponentSpec<DatePickerProps> = {
           target: 'calendar',
           borderWidth: 1,
           color: '{color.outline-variant}' as TokenRef,
-          radius: borderRadius as unknown as number,
+          radius: borderRadius,
         });
       }
 

@@ -108,8 +108,38 @@ export const ToastSpec: ComponentSpec<ToastProps> = {
 
   render: {
     shapes: (props, variant, size, _state = 'default') => {
-      const borderRadius = size.borderRadius;
       const message = props.message || props.children || 'Notification';
+
+      // 사용자 스타일 우선, 없으면 spec 기본값
+      const styleBr = props.style?.borderRadius;
+      const borderRadius = styleBr != null
+        ? (typeof styleBr === 'number' ? styleBr : parseFloat(String(styleBr)) || 0)
+        : size.borderRadius;
+
+      const styleBw = props.style?.borderWidth;
+      const borderWidth = styleBw != null
+        ? (typeof styleBw === 'number' ? styleBw : parseFloat(String(styleBw)) || 0)
+        : 1;
+
+      const bgColor = props.style?.backgroundColor ?? variant.background;
+      const borderColor = props.style?.borderColor
+                        ?? (variant.border || ('{color.outline-variant}' as TokenRef));
+
+      // 사용자 스타일 padding 우선, 없으면 spec 기본값
+      const stylePx = props.style?.paddingLeft ?? props.style?.paddingRight ?? props.style?.padding;
+      const paddingX = stylePx != null
+        ? (typeof stylePx === 'number' ? stylePx : parseFloat(String(stylePx)) || 0)
+        : size.paddingX;
+
+      // 사용자 스타일 font 속성 우선, 없으면 spec 기본값
+      const fontSize = props.style?.fontSize ?? size.fontSize;
+      const fwRaw = props.style?.fontWeight;
+      const fw = fwRaw != null
+        ? (typeof fwRaw === 'number' ? fwRaw : parseInt(String(fwRaw), 10) || 400)
+        : 400;
+      const ff = (props.style?.fontFamily as string) || fontFamily.sans;
+      const textAlign = (props.style?.textAlign as 'left' | 'center' | 'right') || 'left';
+      const textColor = props.style?.color ?? variant.text;
 
       const shapes: Shape[] = [
         // 그림자
@@ -132,14 +162,14 @@ export const ToastSpec: ComponentSpec<ToastProps> = {
           width: 'auto',
           height: size.height,
           radius: borderRadius as unknown as number,
-          fill: variant.background,
+          fill: bgColor,
         },
         // 테두리
         {
           type: 'border' as const,
           target: 'bg',
-          borderWidth: 1,
-          color: variant.border || ('{color.outline-variant}' as TokenRef),
+          borderWidth,
+          color: borderColor,
           radius: borderRadius as unknown as number,
         },
         // 좌측 액센트 바
@@ -154,15 +184,15 @@ export const ToastSpec: ComponentSpec<ToastProps> = {
         // 메시지 텍스트
         {
           type: 'text' as const,
-          x: size.paddingX + (size.iconSize || 20) + (size.gap || 10),
+          x: paddingX + (size.iconSize || 20) + (size.gap || 10),
           y: size.height / 2,
           text: message,
-          fontSize: size.fontSize as unknown as number,
-          fontFamily: fontFamily.sans,
-          fontWeight: 400,
-          fill: variant.text,
+          fontSize: fontSize as unknown as number,
+          fontFamily: ff,
+          fontWeight: fw,
+          fill: textColor,
           baseline: 'middle' as const,
-          align: 'left' as const,
+          align: textAlign,
         },
       ];
 

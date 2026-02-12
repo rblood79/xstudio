@@ -78,7 +78,14 @@ export const SkeletonSpec: ComponentSpec<SkeletonProps> = {
       const skeletonType = props.skeletonVariant || 'text';
       const width = props.width || 200;
       const height = props.height || size.height;
-      const borderRadius = size.borderRadius;
+
+      // 사용자 스타일 우선, 없으면 spec 기본값
+      const styleBr = props.style?.borderRadius;
+      const borderRadius = styleBr != null
+        ? (typeof styleBr === 'number' ? styleBr : parseFloat(String(styleBr)) || 0)
+        : size.borderRadius;
+
+      const bgColor = props.style?.backgroundColor ?? variant.background;
 
       const shapes: Shape[] = [];
 
@@ -90,7 +97,7 @@ export const SkeletonSpec: ComponentSpec<SkeletonProps> = {
           x: avatarSize / 2,
           y: avatarSize / 2,
           radius: avatarSize / 2,
-          fill: variant.background,
+          fill: bgColor,
         });
       } else if (skeletonType === 'card') {
         // 카드 스켈레톤
@@ -102,7 +109,7 @@ export const SkeletonSpec: ComponentSpec<SkeletonProps> = {
           width,
           height,
           radius: borderRadius as unknown as number,
-          fill: variant.background,
+          fill: bgColor,
         });
         // 이미지 영역
         shapes.push({
@@ -133,7 +140,7 @@ export const SkeletonSpec: ComponentSpec<SkeletonProps> = {
             x: size.height / 2,
             y: rowY + size.height / 2,
             radius: size.height / 2,
-            fill: variant.background,
+            fill: bgColor,
           });
           // 텍스트 라인
           shapes.push({
@@ -143,7 +150,7 @@ export const SkeletonSpec: ComponentSpec<SkeletonProps> = {
             width: width * 0.5,
             height: size.height * 0.6,
             radius: 4,
-            fill: variant.background,
+            fill: bgColor,
           });
         }
       } else {
@@ -156,7 +163,7 @@ export const SkeletonSpec: ComponentSpec<SkeletonProps> = {
           width,
           height,
           radius: borderRadius as unknown as number,
-          fill: variant.background,
+          fill: bgColor,
         });
       }
 

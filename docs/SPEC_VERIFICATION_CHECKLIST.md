@@ -17,6 +17,9 @@
 | V5 | flex-direction: row | 컨테이너-요소 구조에서 가로 배치(row)가 정상 동작하는가 |
 | V6 | flex-direction: column | 컨테이너-요소 구조에서 세로 배치(column)가 정상 동작하는가 |
 | V7 | Default 값 | defaultVariant, defaultSize, 기본 props가 설정되어 있는가 |
+| V8 | props.style 오버라이드 | `render.shapes()`에서 모든 시각 속성이 `props.style?.X` 우선 참조하는가 |
+| V9 | 배경 height: 'auto' | 배경 roundRect의 height가 `'auto'`인가 (고정 높이 금지) |
+| V10 | padding 오버라이드 | `props.style?.paddingLeft/Right/padding`이 `size.paddingX`보다 우선하는가 |
 
 ### 상태 표기
 
@@ -147,6 +150,24 @@
 
 ---
 
+## props.style 오버라이드 검증 (2026-02-12 추가)
+
+모든 49개 spec에 props.style 오버라이드 패턴이 적용되었습니다.
+
+### 검증 항목
+
+| 코드 | 검증 항목 | 설명 |
+|------|-----------|------|
+| V8 | props.style 오버라이드 | `render.shapes()`에서 모든 시각 속성이 `props.style?.X` 우선 참조하는가 |
+| V9 | 배경 height: 'auto' | 배경 roundRect의 height가 `'auto'`인가 (고정 높이 금지) |
+| V10 | padding 오버라이드 | `props.style?.paddingLeft/Right/padding`이 `size.paddingX`보다 우선하는가 |
+
+### 전체 적용 상태
+
+모든 49개 spec이 V8, V9, V10을 충족합니다 (2026-02-12 일괄 적용).
+
+---
+
 ## 검증 방법
 
 ### 코드 검증 (자동)
@@ -162,3 +183,8 @@
 2. `specShapeConverter.ts`에서 모든 Shape 타입 처리 확인
 3. `rearrangeShapesForColumn()` flex-direction 변환 로직 검증
 4. `nodeRenderers.ts`의 renderBox/renderText/renderLine 커버리지 확인
+
+### props.style 오버라이드 검증
+1. 각 spec의 `render.shapes()`에서 `props.style?.backgroundColor` 등 우선 참조 확인
+2. 배경 shape의 `height` 속성이 `'auto'`로 설정되어 있는지 확인
+3. padding 관련 속성들이 `props.style` 우선 → `size` fallback 순서로 적용되는지 확인

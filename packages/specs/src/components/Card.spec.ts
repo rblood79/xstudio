@@ -133,10 +133,16 @@ export const CardSpec: ComponentSpec<CardProps> = {
 
   render: {
     shapes: (props, variant, size, state = 'default') => {
-      const bgColor = state === 'hover' ? variant.backgroundHover
+      // 사용자 스타일 우선, 없으면 spec 기본값
+      const bgColor = props.style?.backgroundColor
+                    ?? (state === 'hover' ? variant.backgroundHover
                     : state === 'pressed' ? variant.backgroundPressed
-                    : variant.background;
-      const borderRadius = size.borderRadius;
+                    : variant.background);
+
+      const styleBr = props.style?.borderRadius;
+      const borderRadius = styleBr != null
+        ? (typeof styleBr === 'number' ? styleBr : parseFloat(String(styleBr)) || 0)
+        : size.borderRadius;
 
       const shapes: Shape[] = [];
 
@@ -167,12 +173,17 @@ export const CardSpec: ComponentSpec<CardProps> = {
       });
 
       // 테두리
-      const borderColor = variant.border;
+      const borderColor = props.style?.borderColor ?? variant.border;
+      const styleBw = props.style?.borderWidth;
+      const defaultBw = props.variant === 'outlined' ? 2 : 1;
+      const borderWidth = styleBw != null
+        ? (typeof styleBw === 'number' ? styleBw : parseFloat(String(styleBw)) || 0)
+        : defaultBw;
       if (borderColor) {
         shapes.push({
           type: 'border' as const,
           target: 'bg',
-          borderWidth: props.variant === 'outlined' ? 2 : 1,
+          borderWidth,
           color: borderColor,
           radius: borderRadius as unknown as number,
         });
@@ -190,6 +201,10 @@ export const CardSpec: ComponentSpec<CardProps> = {
       }
 
       // 콘텐츠 컨테이너
+      const stylePad = props.style?.padding;
+      const padding = stylePad != null
+        ? (typeof stylePad === 'number' ? stylePad : parseFloat(String(stylePad)) || 0)
+        : size.paddingY;
       shapes.push({
         type: 'container' as const,
         x: 0,
@@ -201,7 +216,7 @@ export const CardSpec: ComponentSpec<CardProps> = {
           display: 'flex',
           flexDirection: props.orientation === 'horizontal' ? 'row' : 'column',
           gap: size.gap,
-          padding: size.paddingY,
+          padding,
         },
       });
 
