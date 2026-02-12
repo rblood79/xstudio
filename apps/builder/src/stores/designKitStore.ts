@@ -15,7 +15,7 @@ import type {
   KitApplyOptions,
   KitLoadResult,
 } from '../types/builder/designKit.types';
-import { validateKitJSON, validateKitObject } from '../utils/designKit/kitValidator';
+import { validateKitJSON } from '../utils/designKit/kitValidator';
 import { applyDesignKit } from '../utils/designKit/kitLoader';
 import type { KitLoaderThemeAccess, KitLoaderElementAccess } from '../utils/designKit/kitLoader';
 import { exportProjectAsKit } from '../utils/designKit/kitExporter';

@@ -125,13 +125,18 @@ export const GradientEditor = memo(function GradientEditor({
   const [localStops, setLocalStops] = useState<GradientStop[]>(fill.stops);
 
   // 외부(store)에서 stops가 변경되면 로컬 상태 동기화
-  useEffect(() => {
+  // prev state를 함께 추적하여 useEffect + setState 없이 동기화
+  const [prevFillStops, setPrevFillStops] = useState(fill.stops);
+  if (prevFillStops !== fill.stops) {
+    setPrevFillStops(fill.stops);
     setLocalStops(fill.stops);
-  }, [fill.stops]);
+  }
 
   // Ref: stable callback에서 최신 localStops 접근 (dependency 없이)
   const localStopsRef = useRef(localStops);
-  localStopsRef.current = localStops;
+  useEffect(() => {
+    localStopsRef.current = localStops;
+  }, [localStops]);
 
   const activeStop = localStops[activeStopIndex] ?? localStops[0];
 
@@ -142,9 +147,12 @@ export const GradientEditor = memo(function GradientEditor({
   const [committedStopColor, setCommittedStopColor] = useState(activeStop?.color ?? '#000000FF');
 
   // 활성 스톱이 변경되면 (다른 스톱 선택) committed color 동기화
-  useEffect(() => {
+  const [prevActiveStopKey, setPrevActiveStopKey] = useState(`${activeStopIndex}-${fill.stops}`);
+  const activeStopKey = `${activeStopIndex}-${fill.stops}`;
+  if (prevActiveStopKey !== activeStopKey) {
+    setPrevActiveStopKey(activeStopKey);
     setCommittedStopColor(activeStop?.color ?? '#000000FF');
-  }, [activeStopIndex, fill.stops]);
+  }
 
   const gradientCss = useMemo(() => buildGradientCss(localStops), [localStops]);
 

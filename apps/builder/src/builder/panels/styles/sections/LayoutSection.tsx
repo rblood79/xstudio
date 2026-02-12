@@ -8,7 +8,7 @@
  * 🚀 Phase 23: 컨텐츠 분리로 접힌 섹션 훅 실행 방지
  */
 
-import { useState, useLayoutEffect, memo } from 'react';
+import React, { useState, useMemo, memo } from 'react';
 import { PropertySection, PropertyUnitInput } from '../../../components';
 import { ToggleButton, ToggleButtonGroup, Button } from "@xstudio/shared/components";
 import { Input } from 'react-aria-components';
@@ -59,23 +59,28 @@ function getDisplayValue(value: string): string {
 }
 
 function FourWayGrid({ values, onChange, onPreview }: FourWayGridProps) {
-  // Local state로 입력값을 관리하여 controlled input 즉시 반영
-  const [localValues, setLocalValues] = useState({
+  // useMemo로 외부 값에서 표시값 파생
+  const derivedValues = useMemo(() => ({
     top: getDisplayValue(values.top),
     right: getDisplayValue(values.right),
     bottom: getDisplayValue(values.bottom),
     left: getDisplayValue(values.left),
-  });
+  }), [values.top, values.right, values.bottom, values.left]);
 
-  // useLayoutEffect: paint 전에 동기화하여 외부 값 변경 시 플리커 방지
-  useLayoutEffect(() => {
-    setLocalValues({
-      top: getDisplayValue(values.top),
-      right: getDisplayValue(values.right),
-      bottom: getDisplayValue(values.bottom),
-      left: getDisplayValue(values.left),
-    });
-  }, [values.top, values.right, values.bottom, values.left]);
+  // Local state로 입력값을 관리하여 controlled input 즉시 반영
+  const [localValues, setLocalValues] = useState(derivedValues);
+
+  // 외부 값 변경 시 동기화 (prev state 패턴)
+  const [prevValues, setPrevValues] = useState(values);
+  if (
+    prevValues.top !== values.top ||
+    prevValues.right !== values.right ||
+    prevValues.bottom !== values.bottom ||
+    prevValues.left !== values.left
+  ) {
+    setPrevValues(values);
+    setLocalValues(derivedValues);
+  }
 
   const handleChange = (direction: 'Top' | 'Right' | 'Bottom' | 'Left', inputValue: string) => {
     const key = direction.toLowerCase() as 'top' | 'right' | 'bottom' | 'left';

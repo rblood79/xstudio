@@ -19,9 +19,6 @@ import type {
   KitApplyOptions,
   KitLoadResult,
   KitConflict,
-  KitComponent,
-  KitVariable,
-  KitThemeSnapshot,
 } from '../../types/builder/designKit.types';
 import { DEFAULT_KIT_APPLY_OPTIONS } from '../../types/builder/designKit.types';
 import type { DesignVariable, DesignVariableValue, DesignToken, DesignTheme } from '../../types/theme';

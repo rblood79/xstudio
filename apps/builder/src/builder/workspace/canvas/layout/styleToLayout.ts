@@ -139,7 +139,6 @@ function measureBadgeTextWidth(text: string, fontSize: number): number {
  */
 export function parseCSSValue(
   value: unknown,
-  viewport?: { width: number; height: number }
 ): number | string | undefined {
   if (value === undefined || value === null || value === '' || value === 'auto') {
     return undefined;
@@ -269,13 +268,11 @@ function parseFlexShorthand(flex: string | number): {
  */
 export function styleToLayout(
   element: Element,
-  viewport?: { width: number; height: number }
 ): LayoutStyle {
   const style = (element.props?.style || {}) as Record<string, unknown>;
   const layout: LayoutStyle = {};
 
-  // viewport를 포함하는 로컬 래퍼 (모든 CSS 값 파싱에 사용)
-  const parse = (value: unknown) => parseCSSValue(value, viewport);
+  const parse = (value: unknown) => parseCSSValue(value);
 
   // Dimensions
   // 🚀 @pixi/layout의 formatStyles가 이전 스타일과 병합하므로,

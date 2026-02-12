@@ -69,7 +69,6 @@ export interface WorkflowHighlightState {
 
 const EDGE_STROKE_WIDTH = 1;   // screen px
 const ARROW_SIZE = 8;          // screen px
-const LABEL_FONT_SIZE = 10;    // screen px
 const DS_INDICATOR_RADIUS = 5; // screen px (data source indicator circle)
 const DS_LABEL_FONT_SIZE = 9;  // screen px
 const LAYOUT_GROUP_PADDING = 20; // screen px

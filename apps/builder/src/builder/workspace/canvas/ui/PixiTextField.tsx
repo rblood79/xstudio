@@ -172,34 +172,6 @@ export function PixiTextField({
     onClick?.(element.id);
   }, [element.id, onClick]);
 
-  // 🚀 Phase 19: Row/Column 레이아웃 위치 계산
-  const labelPos = useMemo(() => {
-    if (isRow) {
-      // Row: Label 왼쪽, Input 중앙 정렬
-      return { x: 0, y: (sizePreset.height - labelPreset.fontSize) / 2 };
-    }
-    // Column: Label 위쪽
-    return { x: 0, y: 0 };
-  }, [isRow, sizePreset.height, labelPreset.fontSize]);
-
-  const inputPos = useMemo(() => {
-    if (isRow) {
-      // Row: Label 오른쪽에 Input
-      return { x: labelWidth, y: 0 };
-    }
-    // Column: Label 아래에 Input
-    return { x: 0, y: labelHeight };
-  }, [isRow, labelWidth, labelHeight]);
-
-  const descriptionPos = useMemo(() => {
-    if (isRow) {
-      // Row: Input 오른쪽에 Description (또는 Input 아래)
-      return { x: labelWidth, y: sizePreset.height + sizePreset.gap };
-    }
-    // Column: Input 아래에 Description
-    return { x: 0, y: labelHeight + sizePreset.height + sizePreset.gap };
-  }, [isRow, labelWidth, labelHeight, sizePreset]);
-
   // 🚀 Phase 12: 루트 레이아웃
   const rootLayout = useMemo(() => ({
     display: 'flex' as const,

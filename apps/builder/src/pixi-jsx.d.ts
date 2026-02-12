@@ -6,7 +6,7 @@
  */
 
 import type { LayoutOptions } from '@pixi/layout';
-import type { FederatedPointerEvent, Container as PixiContainer, Graphics, Text, Sprite, TextStyle } from 'pixi.js';
+import type { FederatedPointerEvent, Graphics, TextStyle } from 'pixi.js';
 
 // @pixi/layout onLayout 콜백 타입
 interface LayoutCallback {

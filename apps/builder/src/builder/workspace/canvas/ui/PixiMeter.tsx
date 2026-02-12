@@ -155,7 +155,6 @@ export const PixiMeter = memo(function PixiMeter({
 
   // 전체 높이 계산 (라벨/값 + 갭 + 바)
   const hasLabelRow = label || showValue;
-  const labelRowHeight = hasLabelRow ? sizePreset.fontSize + sizePreset.gap : 0;
 
   // 트랙(배경) 그리기
   const drawTrack = useCallback(

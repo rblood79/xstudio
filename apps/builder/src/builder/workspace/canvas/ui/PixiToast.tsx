@@ -189,14 +189,6 @@ export function PixiToast({
     [sizePreset, colorPreset, toastWidth]
   );
 
-  // Positions
-  const iconX = sizePreset.paddingX + 4;
-  const iconY = (toastHeight - sizePreset.iconSize) / 2;
-  const textX = iconX + sizePreset.iconSize + sizePreset.gap;
-  const textY = (toastHeight - sizePreset.fontSize) / 2;
-  const dismissX = toastWidth - sizePreset.paddingX - sizePreset.dismissButtonSize;
-  const dismissY = (toastHeight - sizePreset.dismissButtonSize) / 2;
-
   // 🚀 Phase 12: 루트 레이아웃
   const rootLayout = useMemo(() => ({
     display: 'flex' as const,

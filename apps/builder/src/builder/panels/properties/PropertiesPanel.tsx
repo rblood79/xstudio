@@ -280,7 +280,6 @@ const MultiSelectContent = memo(function MultiSelectContent({
 
   // Get actions without subscribing
   const removeElement = useStore.getState().removeElement;
-  const updateElementProps = useStore.getState().updateElementProps;
   const addElement = useStore.getState().addElement;
   const updateElement = useStore.getState().updateElement;
   const getElementsMap = () => useStore.getState().elementsMap;

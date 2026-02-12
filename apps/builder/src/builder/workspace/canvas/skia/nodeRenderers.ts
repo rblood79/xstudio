@@ -10,7 +10,7 @@
  * @see docs/WASM.md §5.11 노드별 renderSkia() 구현
  */
 
-import type { CanvasKit, Canvas, Paint, FontMgr, Paragraph, Image as SkImage, EmbindEnumEntity } from 'canvaskit-wasm';
+import type { CanvasKit, Canvas, FontMgr, Paragraph, Image as SkImage, EmbindEnumEntity } from 'canvaskit-wasm';
 import type { EffectStyle, FillStyle } from './types';
 import { applyFill } from './fills';
 import { beginRenderEffects, endRenderEffects } from './effects';

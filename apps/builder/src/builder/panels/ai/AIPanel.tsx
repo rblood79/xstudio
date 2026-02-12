@@ -10,7 +10,7 @@
  * - ChatInput: 메시지 입력 필드
  */
 
-import { useEffect, useCallback, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { KeyboardEvent } from "react";
 import type { PanelProps } from "../core/types";
 import { PanelHeader } from "../../components";

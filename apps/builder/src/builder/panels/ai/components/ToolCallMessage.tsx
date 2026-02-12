@@ -2,6 +2,7 @@
  * ToolCallMessage - 도구 호출 상태 표시
  */
 
+import type { ReactNode } from 'react';
 import type { ToolCallInfo } from '../../../../types/integrations/chat.types';
 import { Wrench, Check, X, Loader2 } from 'lucide-react';
 
@@ -22,24 +23,26 @@ const TOOL_LABELS: Record<string, string> = {
 export function ToolCallMessage({ toolCall }: ToolCallMessageProps) {
   const label = TOOL_LABELS[toolCall.name] || toolCall.name;
 
-  const StatusIcon = () => {
-    switch (toolCall.status) {
-      case 'pending':
-      case 'running':
-        return <Loader2 size={14} className="tool-call-spinner" />;
-      case 'success':
-        return <Check size={14} />;
-      case 'error':
-        return <X size={14} />;
-    }
-  };
+  let statusIcon: ReactNode;
+  switch (toolCall.status) {
+    case 'pending':
+    case 'running':
+      statusIcon = <Loader2 size={14} className="tool-call-spinner" />;
+      break;
+    case 'success':
+      statusIcon = <Check size={14} />;
+      break;
+    case 'error':
+      statusIcon = <X size={14} />;
+      break;
+  }
 
   return (
     <div className="tool-call-message" data-status={toolCall.status}>
       <div className="tool-call-header">
         <Wrench size={14} />
         <span className="tool-call-label">{label}</span>
-        <StatusIcon />
+        {statusIcon}
       </div>
       {toolCall.error && (
         <div className="tool-call-error">{toolCall.error}</div>

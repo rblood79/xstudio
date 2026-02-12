@@ -32,8 +32,6 @@ export function useAgentLoop() {
     incrementTurn,
   } = useConversationStore();
 
-  const selectedElementId = useStore((state) => state.selectedElementId);
-
   const agentRef = useRef<GroqAgentService | null>(null);
 
   // Agent 인스턴스 (한 번만 생성)

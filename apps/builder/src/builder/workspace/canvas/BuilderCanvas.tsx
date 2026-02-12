@@ -54,7 +54,7 @@ import {
   type ComputedLayout,
 } from "./layout";
 import { getElementBoundsSimple, getElementContainer, registerElement, unregisterElement, updateElementBounds } from "./elementRegistry";
-import { notifyLayoutChange, useSkiaNode } from "./skia/useSkiaNode";
+import { notifyLayoutChange } from "./skia/useSkiaNode";
 import { LayoutComputedSizeContext } from "./layoutContext";
 import { getOutlineVariantColor } from "./utils/cssVariableReader";
 import { GPUDebugOverlay } from "./utils/GPUDebugOverlay";
@@ -64,7 +64,7 @@ import { usePageDrag } from "./hooks/usePageDrag";
 import { longTaskMonitor } from "../../../utils/longTaskMonitor";
 import type { Element } from "../../../types/core/store.types";
 import { getPageElements } from "../../stores/utils/elementIndexer";
-import type { PageElementIndex } from "../../stores/utils/elementIndexer";
+
 import { useGPUProfiler } from "./utils/gpuProfilerCore";
 
 // ============================================
@@ -646,9 +646,6 @@ const ElementsLayer = memo(function ElementsLayer({
   // 🚀 Phase 10: Container 타입은 children을 내부에서 렌더링
   // 🚀 Phase 4 (2026-01-28): 하이브리드 레이아웃 엔진 (Grid/Block은 커스텀 엔진)
   const renderedTree = useMemo(() => {
-    // viewport 정보 (vh/vw 단위 변환용)
-    const viewport = { width: pageWidth, height: pageHeight };
-
     // 🚀 자체 padding/border 렌더링 컴포넌트용 layout 정리
     // Yoga가 padding/border를 inset으로 처리하면 이중 적용됨
     // → 컴포넌트 자체가 처리하는 속성은 외부 LayoutContainer에서 제거
@@ -807,7 +804,7 @@ const ElementsLayer = memo(function ElementsLayer({
           const marginTop = layout.y - line.y;
 
           // 🚀 CONTAINER_TAGS 처리
-          const childLayoutStyle = styleToLayout(child, viewport);
+          const childLayoutStyle = styleToLayout(child);
           const isContainerType = isContainerTagForLayout(child.tag, childLayoutStyle);
           const childElements = isContainerType ? (pageChildrenMap.get(child.id) ?? []) : [];
           const hasChildElements = (pageChildrenMap.get(child.id)?.length ?? 0) > 0;
@@ -873,7 +870,7 @@ const ElementsLayer = memo(function ElementsLayer({
                 onDoubleClick={onDoubleClick}
                 childElements={isContainerType ? childElements : undefined}
                 renderChildElement={isContainerType ? (childEl: Element) => {
-                  const childLayout = styleToLayout(childEl, viewport);
+                  const childLayout = styleToLayout(childEl);
                   const effectiveChildLayout = SELF_PADDING_TAGS.has(childEl.tag)
                     ? stripSelfRenderedProps(childLayout)
                     : childLayout;
@@ -906,7 +903,7 @@ const ElementsLayer = memo(function ElementsLayer({
                         onDoubleClick={onDoubleClick}
                         childElements={isChildContainerType ? nestedChildElements : undefined}
                         renderChildElement={isChildContainerType ? (nestedEl: Element) => {
-                          const nestedLayout = styleToLayout(nestedEl, viewport);
+                          const nestedLayout = styleToLayout(nestedEl);
                           const effectiveNestedLayout = SELF_PADDING_TAGS.has(nestedEl.tag)
                             ? stripSelfRenderedProps(nestedLayout)
                             : nestedLayout;
@@ -1025,14 +1022,14 @@ const ElementsLayer = memo(function ElementsLayer({
 
       // Flex 및 기본(암시적 flex)은 기존 @pixi/layout 방식
       // 🚀 부모의 flex 속성을 가져와서 자식 배치에 활용
-      const parentLayout = parentElement ? styleToLayout(parentElement, viewport) : {};
+      const parentLayout = parentElement ? styleToLayout(parentElement) : {};
 
       return children.map((child) => {
         if (!renderIdSet.has(child.id)) return null;
 
         // Element의 style에서 layout 속성 추출
         // @pixi/layout이 flexbox 기반으로 자동 배치
-        const baseLayout = styleToLayout(child, viewport);
+        const baseLayout = styleToLayout(child);
 
         // 🚀 자체 padding/border 렌더링 컴포넌트: 외부 LayoutContainer에서 padding/border 제거
         // PixiButton 등은 자체적으로 padding/border를 그래픽 크기에 반영하므로
@@ -1129,7 +1126,7 @@ const ElementsLayer = memo(function ElementsLayer({
               onDoubleClick={onDoubleClick}
               childElements={isContainerType ? childElements : undefined}
               renderChildElement={isContainerType ? (childEl: Element) => {
-                const childLayout = styleToLayout(childEl, viewport);
+                const childLayout = styleToLayout(childEl);
                 const effectiveChildLayout = SELF_PADDING_TAGS.has(childEl.tag)
                   ? stripSelfRenderedProps(childLayout)
                   : childLayout;
@@ -1166,7 +1163,7 @@ const ElementsLayer = memo(function ElementsLayer({
                       childElements={isChildContainerType ? nestedChildElements : undefined}
                       renderChildElement={isChildContainerType ? (nestedEl: Element) => {
                         // 재귀적으로 nested children 렌더링
-                        const nestedLayout = styleToLayout(nestedEl, viewport);
+                        const nestedLayout = styleToLayout(nestedEl);
                         const effectiveNestedLayout = SELF_PADDING_TAGS.has(nestedEl.tag)
                           ? stripSelfRenderedProps(nestedLayout)
                           : nestedLayout;
@@ -1205,7 +1202,7 @@ const ElementsLayer = memo(function ElementsLayer({
     }
 
     return renderTree(bodyElement?.id ?? null);
-  }, [pageChildrenMap, renderIdSet, onClick, onDoubleClick, bodyElement?.id, elementById, pageWidth, pageHeight, CONTAINER_TAGS, BLOCK_TAGS]);
+  }, [pageChildrenMap, renderIdSet, onClick, onDoubleClick, bodyElement, elementById, pageWidth, pageHeight, CONTAINER_TAGS, BLOCK_TAGS, SELF_PADDING_TAGS]);
 
   // 🚀 Phase 7: @pixi/layout 루트 컨테이너 layout 설정
   // Body 요소의 flex 스타일을 적용하여 자식 요소들이 올바르게 배치되도록 함
@@ -1232,7 +1229,7 @@ const ElementsLayer = memo(function ElementsLayer({
 
   const rootLayout = useMemo(() => {
     // Body 요소의 layout 스타일 가져오기
-    const bodyLayout = bodyElement ? styleToLayout(bodyElement, { width: pageWidth, height: pageHeight }) : {};
+    const bodyLayout = bodyElement ? styleToLayout(bodyElement) : {};
 
     // Body의 flexbox 속성 적용 (width/height는 page 크기로 고정)
     // 🚀 Phase 8: CSS body 기본값 동기화
@@ -1320,6 +1317,7 @@ export function BuilderCanvas({
   const [yogaReady, setYogaReady] = useState(false);
   // Phase 5: PixiJS app 인스턴스 (SkiaOverlay에 전달)
   const pixiAppRef = useRef<PixiApplication | null>(null);
+  const [pixiApp, setPixiApp] = useState<PixiApplication | null>(null);
 
   // 🚀 Phase 5 + 6.2: 저사양 기기 감지 (모듈 레벨 캐싱으로 useMemo 불필요)
   const isLowEnd = isLowEndDevice();
@@ -1409,14 +1407,6 @@ export function BuilderCanvas({
 
   // Zoom/Pan은 ViewportControlBridge에서 처리 (Application 내부에서 Container 직접 조작)
 
-  // 현재 페이지의 Body 요소
-  const bodyElement = useMemo(() => {
-    if (!currentPageId) return null;
-    return elements.find(
-      (el) => el.page_id === currentPageId && el.tag.toLowerCase() === "body"
-    ) ?? null;
-  }, [elements, currentPageId]);
-
   // 현재 페이지 요소 필터링 (Body 제외)
   const pageElements = useMemo(() => {
     return elements.filter(
@@ -1475,8 +1465,8 @@ export function BuilderCanvas({
         elementCount: count,
       };
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pages, pagePositionsVersion, pageWidth, pageHeight, elements]);
+     
+  }, [pages, pagePositions, pageWidth, pageHeight, elements]);
 
   // 🆕 Multi-page: 뷰포트 밖 페이지 컬링 (성능 최적화)
   const visiblePageIds = useMemo(() => {
@@ -1500,8 +1490,8 @@ export function BuilderCanvas({
       if (isInViewport) visible.add(page.id);
     }
     return visible;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pages, pagePositionsVersion, pageWidth, pageHeight, zoom, panOffset.x, panOffset.y, containerSize]);
+     
+  }, [pages, pagePositions, pageWidth, pageHeight, zoom, panOffset.x, panOffset.y, containerSize]);
 
   // 라쏘 선택 영역 내 요소 찾기
   // 🚀 Phase 6: ElementRegistry의 getBounds() 사용
@@ -2162,7 +2152,7 @@ export function BuilderCanvas({
           powerPreference="high-performance"
           // 🚀 Phase 7 Fix: LayoutSystem.init() 완료 후 Yoga 준비 완료 콜백
           // LayoutSystem.init()이 유일한 loadYoga() 호출 경로 → 인스턴스 중복 방지
-          onInit={(app) => { pixiAppRef.current = app; setYogaReady(true); }}
+          onInit={(app) => { pixiAppRef.current = app; setPixiApp(app); setYogaReady(true); }}
         >
           {/* P4: 메모이제이션된 컴포넌트 등록 (첫 번째 자식) */}
           <PixiExtendBridge />
@@ -2251,11 +2241,11 @@ export function BuilderCanvas({
       )}
 
       {/* Phase 5: CanvasKit 오버레이 */}
-      {containerEl && pixiAppRef.current && (
+      {containerEl && pixiApp && (
         <SkiaOverlayLazy
           containerEl={containerEl}
           backgroundColor={backgroundColor}
-          app={pixiAppRef.current}
+          app={pixiApp}
           dragStateRef={dragStateRef}
           pageWidth={pageWidth}
           pageHeight={pageHeight}

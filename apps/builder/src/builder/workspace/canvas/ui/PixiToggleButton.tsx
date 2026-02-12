@@ -32,7 +32,6 @@ import { measureTextWidth as measureTextWidthCanvas } from "../layout/engines/ut
 import { useCanvasSyncStore } from "../canvasSync";
 import { parsePadding, parseBorderWidth } from "../sprites/paddingUtils";
 import { useStore } from "../../../stores";
-import { useShallow } from "zustand/react/shallow";
 
 // ============================================
 // Constants
@@ -362,26 +361,45 @@ export const PixiToggleButton = memo(function PixiToggleButton({
 
   // 🚀 부모 ToggleButtonGroup의 orientation 및 그룹 내 위치 구독
   // CSS에서는 그룹 내 버튼들이 위치에 따라 다른 borderRadius를 가짐
-  // useShallow로 shallow comparison 적용하여 무한 루프 방지
-  const groupPositionInfo = useStore(
-    useShallow((state) => {
-      if (!element.parent_id) return null;
-      const parent = state.elementsMap.get(element.parent_id);
-      if (!parent || parent.tag !== 'ToggleButtonGroup') return null;
+  // 개별 selector로 분리하여 primitive 비교 (useShallow 대체)
+  const isInToggleGroup = useStore((state) => {
+    if (!element.parent_id) return false;
+    const parent = state.elementsMap.get(element.parent_id);
+    return parent?.tag === 'ToggleButtonGroup';
+  });
 
-      const orientation = ((parent.props as Record<string, unknown>)?.orientation as string) || 'horizontal';
-      // childrenMap은 Element[] 반환 - order_num 기준 정렬 후 위치 판별
-      const siblings = (state.childrenMap.get(parent.id) || [])
-        .slice()
-        .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
-      const index = siblings.findIndex(s => s.id === element.id);
-      const isFirst = index === 0;
-      const isLast = index === siblings.length - 1;
-      const isOnly = siblings.length === 1;
+  const groupOrientation = useStore((state) => {
+    if (!element.parent_id || !isInToggleGroup) return 'horizontal';
+    const parent = state.elementsMap.get(element.parent_id);
+    if (!parent) return 'horizontal';
+    return ((parent.props as Record<string, unknown>)?.orientation as string) || 'horizontal';
+  });
 
-      return { orientation, isFirst, isLast, isOnly };
-    })
-  );
+  const groupPositionIndex = useStore((state) => {
+    if (!element.parent_id || !isInToggleGroup) return -1;
+    const parent = state.elementsMap.get(element.parent_id);
+    if (!parent) return -1;
+    const siblings = (state.childrenMap.get(parent.id) || [])
+      .slice()
+      .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+    return siblings.findIndex(s => s.id === element.id);
+  });
+
+  const groupSiblingCount = useStore((state) => {
+    if (!element.parent_id || !isInToggleGroup) return 0;
+    const parent = state.elementsMap.get(element.parent_id);
+    if (!parent) return 0;
+    return (state.childrenMap.get(parent.id) || []).length;
+  });
+
+  const groupPositionInfo = isInToggleGroup
+    ? {
+        orientation: groupOrientation,
+        isFirst: groupPositionIndex === 0,
+        isLast: groupPositionIndex === groupSiblingCount - 1,
+        isOnly: groupSiblingCount === 1,
+      }
+    : null;
 
   // 부모의 content area 계산 (부모 너비 - padding - border)
   // CSS box model: 자식의 % 크기는 부모의 content area 기준

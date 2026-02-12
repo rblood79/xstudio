@@ -12,6 +12,7 @@ import { memo, useCallback } from 'react';
 import { ToggleButtonGroup, ToggleButton } from '@xstudio/shared/components';
 import { Circle, Blend, Image } from 'lucide-react';
 import type { Selection } from 'react-aria-components';
+import { iconProps } from '../../../../utils/ui/uiConstants';
 
 import './FillTypeSelector.css';
 
@@ -39,25 +40,32 @@ export const FillTypeSelector = memo(function FillTypeSelector({
   return (
     <ToggleButtonGroup
       aria-label="Fill type"
-      selectionMode="single"
       disallowEmptySelection
       indicator
-      variant="primary"
-      selectedKeys={new Set([value])}
+      selectedKeys={[value]}
       onSelectionChange={handleSelectionChange}
       className="fill-type-selector"
     >
-      <ToggleButton id="color">
-        <Circle size={14} strokeWidth={2} />
-        <span>Color</span>
+      <ToggleButton id="color" aria-label="Color">
+        <Circle
+          color={iconProps.color}
+          size={iconProps.size}
+          strokeWidth={iconProps.strokeWidth}
+        />
       </ToggleButton>
-      <ToggleButton id="gradient">
-        <Blend size={14} strokeWidth={2} />
-        <span>Gradient</span>
+      <ToggleButton id="gradient" aria-label="Gradient">
+        <Blend
+          color={iconProps.color}
+          size={iconProps.size}
+          strokeWidth={iconProps.strokeWidth}
+        />
       </ToggleButton>
-      <ToggleButton id="image">
-        <Image size={14} strokeWidth={2} />
-        <span>Image</span>
+      <ToggleButton id="image" aria-label="Image">
+        <Image
+          color={iconProps.color}
+          size={iconProps.size}
+          strokeWidth={iconProps.strokeWidth}
+        />
       </ToggleButton>
     </ToggleButtonGroup>
   );

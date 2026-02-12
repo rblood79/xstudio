@@ -11,7 +11,7 @@
 
 import type { Element } from '../../../../../types/core/store.types';
 import type { LayoutEngine, ComputedLayout, LayoutContext } from './LayoutEngine';
-import { BlockEngine, type BlockLayoutResult } from './BlockEngine';
+import { BlockEngine } from './BlockEngine';
 import { FlexEngine, shouldDelegateToPixiLayout } from './FlexEngine';
 import { GridEngine } from './GridEngine';
 

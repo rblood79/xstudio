@@ -1,4 +1,4 @@
-import React, { useLayoutEffect, useRef, memo, useState } from "react";
+import React, { useRef, memo, useState, useMemo, useEffect } from "react";
 import {
   ComboBox as AriaComboBox,
   Button,
@@ -70,28 +70,31 @@ export const PropertyUnitInput = memo(function PropertyUnitInput({
   min = 0,
   max = 9999,
 }: PropertyUnitInputProps) {
-  const [numericValue, setNumericValue] = useState<number | null>(null);
-  const [unit, setUnit] = useState<string>("px");
-  const [isKeyword, setIsKeyword] = useState(false);
-  const [inputValue, setInputValue] = useState("");
+  // useMemo로 value prop에서 파생값 계산 (useLayoutEffect + setState 대체)
+  const parsed = useMemo(() => parseUnitValue(value), [value]);
+  const numericValue = parsed.numericValue;
+  const unit = parsed.unit;
+  const isKeyword = parsed.numericValue === null;
+  const [inputValue, setInputValue] = useState(
+    parsed.numericValue !== null ? String(parsed.numericValue) : parsed.unit
+  );
   // ⭐ useRef로 변경: Enter 키로 저장했는지 추적 (useState는 비동기!)
   const justSavedViaEnterRef = useRef(false);
   // ⭐ 마지막으로 저장한 값 추적 - 중복 호출 방지
   const lastSavedValueRef = useRef<string>(value);
 
-  // useLayoutEffect: paint 전에 local state를 동기화하여
-  // 외부 값 변경(undo, 다른 패널) 시 1프레임 플리커 방지
-  useLayoutEffect(() => {
-    const parsed = parseUnitValue(value);
-    setNumericValue(parsed.numericValue);
-    setUnit(parsed.unit);
-    setIsKeyword(parsed.numericValue === null);
+  // 외부 value 변경 시 inputValue 동기화 (prev state 패턴)
+  const [prevValue, setPrevValue] = useState(value);
+  if (prevValue !== value) {
+    setPrevValue(value);
     setInputValue(
       parsed.numericValue !== null ? String(parsed.numericValue) : parsed.unit
     );
-    // Reset the flag when value changes from parent
+  }
+
+  // 외부 value 변경 시 refs 동기화 (렌더 중 ref 쓰기 금지이므로 effect 사용)
+  useEffect(() => {
     justSavedViaEnterRef.current = false;
-    // ⭐ 외부에서 값이 변경되면 lastSavedValueRef도 업데이트
     lastSavedValueRef.current = value;
   }, [value]);
 

@@ -111,7 +111,7 @@ export interface SettingsState {
 /**
  * Settings Slice 생성
  */
-export const createSettingsSlice: StateCreator<SettingsState> = (set, get) => ({
+export const createSettingsSlice: StateCreator<SettingsState> = (set) => ({
   showGrid: false,
   snapToGrid: false,
   showWorkflowOverlay: false,

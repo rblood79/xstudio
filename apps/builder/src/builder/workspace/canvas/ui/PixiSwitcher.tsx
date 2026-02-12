@@ -18,7 +18,6 @@ import { Container, Graphics, Text, TextStyle } from 'pixi.js';
 import type { Element } from '../../../../types/core/store.types';
 import type { CSSStyle } from '../sprites/styleConverter';
 import { cssColorToHex } from '../sprites/styleConverter';
-import { toLayoutSize } from '../layout/styleToLayout';
 import { getSwitchSizePreset, getVariantColors } from '../utils/cssVariableReader';
 import { useThemeColors } from '../hooks/useThemeColors';
 

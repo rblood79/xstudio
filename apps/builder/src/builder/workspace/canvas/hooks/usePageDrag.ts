@@ -17,7 +17,6 @@ interface PageDragState {
 }
 
 interface UsePageDragReturn {
-  isDragging: boolean;
   startDrag: (pageId: string, pointerX: number, pointerY: number) => void;
 }
 
@@ -29,37 +28,10 @@ export function usePageDrag(zoom: number): UsePageDragReturn {
     startPagePos: null,
   });
   const rafRef = useRef<number | null>(null);
-  // isDragging을 React state로 관리하지 않음 — 커서 변경은 CSS로 처리
-  // 드래그 중 React 리렌더링 방지
+  // isDragging은 내부에서만 사용 — 커서 변경은 CSS로 처리
 
-  const handlePointerMove = useCallback((e: PointerEvent) => {
-    const s = stateRef.current;
-    if (!s.isDragging || !s.pageId || !s.startPointer || !s.startPagePos) return;
-
-    // RAF 스로틀: 프레임당 1회 업데이트
-    if (rafRef.current !== null) return;
-    rafRef.current = requestAnimationFrame(() => {
-      rafRef.current = null;
-      const dx = (e.clientX - s.startPointer!.x) / zoom;
-      const dy = (e.clientY - s.startPointer!.y) / zoom;
-      useStore.getState().updatePagePosition(
-        s.pageId!,
-        s.startPagePos!.x + dx,
-        s.startPagePos!.y + dy,
-      );
-    });
-  }, [zoom]);
-
-  const handlePointerUp = useCallback(() => {
-    stateRef.current.isDragging = false;
-    stateRef.current.pageId = null;
-    if (rafRef.current !== null) {
-      cancelAnimationFrame(rafRef.current);
-      rafRef.current = null;
-    }
-    window.removeEventListener('pointermove', handlePointerMove);
-    window.removeEventListener('pointerup', handlePointerUp);
-  }, [handlePointerMove]);
+  // 이벤트 핸들러 cleanup 함수 ref (self-reference 회피)
+  const cleanupRef = useRef<(() => void) | null>(null);
 
   const startDrag = useCallback((pageId: string, pointerX: number, pointerY: number) => {
     const pos = useStore.getState().pagePositions[pageId];
@@ -72,12 +44,48 @@ export function usePageDrag(zoom: number): UsePageDragReturn {
       startPagePos: { x: pos.x, y: pos.y },
     };
 
-    window.addEventListener('pointermove', handlePointerMove);
-    window.addEventListener('pointerup', handlePointerUp);
-  }, [handlePointerMove, handlePointerUp]);
+    const onPointerMove = (e: PointerEvent) => {
+      const s = stateRef.current;
+      if (!s.isDragging || !s.pageId || !s.startPointer || !s.startPagePos) return;
+
+      // RAF 스로틀: 프레임당 1회 업데이트
+      if (rafRef.current !== null) return;
+      rafRef.current = requestAnimationFrame(() => {
+        rafRef.current = null;
+        const dx = (e.clientX - s.startPointer!.x) / zoom;
+        const dy = (e.clientY - s.startPointer!.y) / zoom;
+        useStore.getState().updatePagePosition(
+          s.pageId!,
+          s.startPagePos!.x + dx,
+          s.startPagePos!.y + dy,
+        );
+      });
+    };
+
+    const onPointerUp = () => {
+      stateRef.current.isDragging = false;
+      stateRef.current.pageId = null;
+      if (rafRef.current !== null) {
+        cancelAnimationFrame(rafRef.current);
+        rafRef.current = null;
+      }
+      window.removeEventListener('pointermove', onPointerMove);
+      window.removeEventListener('pointerup', onPointerUp);
+      cleanupRef.current = null;
+    };
+
+    // 이전 리스너 정리
+    cleanupRef.current?.();
+
+    window.addEventListener('pointermove', onPointerMove);
+    window.addEventListener('pointerup', onPointerUp);
+    cleanupRef.current = () => {
+      window.removeEventListener('pointermove', onPointerMove);
+      window.removeEventListener('pointerup', onPointerUp);
+    };
+  }, [zoom]);
 
   return {
-    isDragging: stateRef.current.isDragging,
     startDrag,
   };
 }

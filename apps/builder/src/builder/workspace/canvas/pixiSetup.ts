@@ -118,8 +118,6 @@ type CanvasSize = { width: number; height: number };
 const MIN_RESOLUTION = 1;
 const MAX_RENDER_PIXELS_IDLE_HIGH = 16_000_000;
 const MAX_RENDER_PIXELS_IDLE_LOW = 6_000_000;
-const MAX_RENDER_PIXELS_INTERACT_HIGH = 10_000_000;
-const MAX_RENDER_PIXELS_INTERACT_LOW = 4_000_000;
 
 function clampResolutionByPixelBudget(
   resolution: number,

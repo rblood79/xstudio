@@ -9,7 +9,7 @@
  * @since 2025-01-06 Phase 1 ElementRegistry
  */
 
-import { Container, Rectangle, Bounds } from 'pixi.js';
+import { Container, Bounds } from 'pixi.js';
 
 import { notifyLayoutChange } from './skia/useSkiaNode';
 

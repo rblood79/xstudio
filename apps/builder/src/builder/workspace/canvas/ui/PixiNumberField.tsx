@@ -69,7 +69,6 @@ export const PixiNumberField = memo(function PixiNumberField({
 
   // 전체 너비/높이 계산
   const inputHeight = sizePreset.paddingY * 2 + sizePreset.fontSize;
-  const labelHeight = label ? sizePreset.labelFontSize + 4 : 0;
 
   // 버튼 그리기 (decrement)
   const drawDecrementButton = useCallback(

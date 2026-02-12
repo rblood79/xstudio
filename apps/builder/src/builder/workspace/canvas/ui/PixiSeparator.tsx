@@ -102,7 +102,7 @@ export const PixiSeparator = memo(function PixiSeparator({
       width,
       height: sizePreset.thickness,
     };
-  }, [orientation, style?.width, style?.height, sizePreset.thickness]);
+  }, [orientation, style, sizePreset.thickness]);
 
   // 🚀 Phase 8: layout prop에 style 값 직접 전달 (% 단위 지원)
   const containerLayout = useMemo(() => ({

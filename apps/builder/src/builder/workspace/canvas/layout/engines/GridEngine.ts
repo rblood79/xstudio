@@ -7,7 +7,7 @@
  */
 
 import type { Element } from '../../../../../types/core/store.types';
-import type { LayoutEngine, ComputedLayout, LayoutContext } from './LayoutEngine';
+import type { LayoutEngine, ComputedLayout } from './LayoutEngine';
 import {
   parseGridTemplate,
   parseGap,
@@ -32,7 +32,6 @@ export class GridEngine implements LayoutEngine {
     children: Element[],
     availableWidth: number,
     availableHeight: number,
-    _context?: LayoutContext
   ): ComputedLayout[] {
     if (children.length === 0) return [];
 

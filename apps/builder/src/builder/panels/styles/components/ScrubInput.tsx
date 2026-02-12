@@ -48,6 +48,7 @@ export const ScrubInput = memo(function ScrubInput({
 }: ScrubInputProps) {
   const [editing, setEditing] = useState(false);
   const [displayValue, setDisplayValue] = useState(String(Math.round(value)));
+  const [isDraggingState, setIsDraggingState] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const scrubRef = useRef<HTMLDivElement>(null);
 
@@ -60,11 +61,13 @@ export const ScrubInput = memo(function ScrubInput({
   const hasMoved = useRef(false);
 
   // 외부 value 변경 시 display 동기화
-  useEffect(() => {
+  const [prevValue, setPrevValue] = useState(value);
+  if (prevValue !== value) {
+    setPrevValue(value);
     if (!editing) {
       setDisplayValue(String(Math.round(value)));
     }
-  }, [value, editing]);
+  }
 
   const clamp = useCallback(
     (v: number) => {
@@ -114,6 +117,8 @@ export const ScrubInput = memo(function ScrubInput({
   );
 
   // ---- 드래그 (Scrub) 모드 ----
+  // 이벤트 핸들러 cleanup 함수 ref (self-reference 회피)
+  const cleanupRef = useRef<(() => void) | null>(null);
 
   const handlePointerDown = useCallback(
     (e: React.PointerEvent<HTMLDivElement>) => {
@@ -123,91 +128,95 @@ export const ScrubInput = memo(function ScrubInput({
       if (e.button !== 0) return;
 
       isDragging.current = true;
+      setIsDraggingState(true);
       hasMoved.current = false;
       dragStartX.current = e.clientX;
       dragStartValue.current = value;
       accumulator.current = 0;
       currentValue.current = value;
 
+      const onPointerMove = (ev: PointerEvent) => {
+        if (!isDragging.current) return;
+
+        const dx = ev.clientX - dragStartX.current;
+
+        // 아직 threshold 미달이면 pointerLock 시도 안 함
+        if (!hasMoved.current) {
+          if (Math.abs(dx) < DRAG_THRESHOLD) return;
+          hasMoved.current = true;
+          // pointerLock 시도 (지원 시)
+          scrubRef.current?.requestPointerLock?.();
+        }
+
+        const effectiveStep = ev.shiftKey ? step / stepMultiplier : step;
+
+        // movementX 기반이면 직접 누적
+        if (document.pointerLockElement) {
+          accumulator.current += ev.movementX;
+        } else {
+          accumulator.current = dx;
+        }
+
+        const delta = accumulator.current * effectiveStep;
+        const newVal = clamp(dragStartValue.current + delta);
+
+        if (newVal !== currentValue.current) {
+          currentValue.current = newVal;
+          setDisplayValue(String(newVal));
+          onScrub?.(newVal);
+        }
+      };
+
+      const onPointerUp = () => {
+        const wasDragging = hasMoved.current;
+        isDragging.current = false;
+        setIsDraggingState(false);
+
+        // pointerLock 해제
+        if (document.pointerLockElement) {
+          document.exitPointerLock();
+        }
+
+        document.removeEventListener('pointermove', onPointerMove);
+        document.removeEventListener('pointerup', onPointerUp);
+        cleanupRef.current = null;
+
+        if (wasDragging) {
+          // 드래그 완료 → 값 커밋
+          onCommit(currentValue.current);
+        } else {
+          // 클릭 → 편집 모드 전환
+          setEditing(true);
+          // 다음 프레임에서 input에 포커스 + 전체 선택
+          requestAnimationFrame(() => {
+            inputRef.current?.focus();
+            inputRef.current?.select();
+          });
+        }
+      };
+
+      // 이전 리스너 정리
+      cleanupRef.current?.();
+
       // 전역 이벤트 등록 (pointer capture 대신 — pointerLock과 호환)
-      document.addEventListener('pointermove', handlePointerMove);
-      document.addEventListener('pointerup', handlePointerUp);
+      document.addEventListener('pointermove', onPointerMove);
+      document.addEventListener('pointerup', onPointerUp);
+      cleanupRef.current = () => {
+        document.removeEventListener('pointermove', onPointerMove);
+        document.removeEventListener('pointerup', onPointerUp);
+      };
 
       e.preventDefault();
     },
-    [editing, value],
+    [editing, value, step, stepMultiplier, clamp, onScrub, onCommit],
   );
-
-  const handlePointerMove = useCallback(
-    (e: PointerEvent) => {
-      if (!isDragging.current) return;
-
-      const dx = e.clientX - dragStartX.current;
-
-      // 아직 threshold 미달이면 pointerLock 시도 안 함
-      if (!hasMoved.current) {
-        if (Math.abs(dx) < DRAG_THRESHOLD) return;
-        hasMoved.current = true;
-        // pointerLock 시도 (지원 시)
-        scrubRef.current?.requestPointerLock?.();
-      }
-
-      // pointerLock 활성이면 movementX 사용, 아니면 절대 좌표 차이
-      const movement = document.pointerLockElement ? e.movementX : dx - accumulator.current + e.movementX;
-      const effectiveStep = e.shiftKey ? step / stepMultiplier : step;
-
-      // movementX 기반이면 직접 누적
-      if (document.pointerLockElement) {
-        accumulator.current += e.movementX;
-      } else {
-        accumulator.current = dx;
-      }
-
-      const delta = accumulator.current * effectiveStep;
-      const newValue = clamp(dragStartValue.current + delta);
-
-      if (newValue !== currentValue.current) {
-        currentValue.current = newValue;
-        setDisplayValue(String(newValue));
-        onScrub?.(newValue);
-      }
-    },
-    [step, stepMultiplier, clamp, onScrub],
-  );
-
-  const handlePointerUp = useCallback(() => {
-    const wasDragging = hasMoved.current;
-    isDragging.current = false;
-
-    // pointerLock 해제
-    if (document.pointerLockElement) {
-      document.exitPointerLock();
-    }
-
-    document.removeEventListener('pointermove', handlePointerMove);
-    document.removeEventListener('pointerup', handlePointerUp);
-
-    if (wasDragging) {
-      // 드래그 완료 → 값 커밋
-      onCommit(currentValue.current);
-    } else {
-      // 클릭 → 편집 모드 전환
-      setEditing(true);
-      // 다음 프레임에서 input에 포커스 + 전체 선택
-      requestAnimationFrame(() => {
-        inputRef.current?.focus();
-        inputRef.current?.select();
-      });
-    }
-  }, [handlePointerMove, onCommit]);
 
   // cleanup
   useEffect(() => {
     return () => {
-      document.removeEventListener('pointermove', handlePointerMove);
-      document.removeEventListener('pointerup', handlePointerUp);
+      cleanupRef.current?.();
     };
-  }, [handlePointerMove, handlePointerUp]);
+  }, []);
 
   if (editing) {
     return (
@@ -233,7 +242,7 @@ export const ScrubInput = memo(function ScrubInput({
       ref={scrubRef}
       className={`scrub-input ${className ?? ''}`}
       onPointerDown={handlePointerDown}
-      data-dragging={isDragging.current || undefined}
+      data-dragging={isDraggingState || undefined}
     >
       <span className="scrub-input__display" aria-label={label}>
         {displayValue}

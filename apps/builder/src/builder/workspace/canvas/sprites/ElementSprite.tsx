@@ -99,7 +99,6 @@ import {
   PixiPanel,
 } from '../ui';
 import { useStore } from '../../../stores';
-import { useShallow } from 'zustand/react/shallow';
 import { useResolvedElement } from './useResolvedElement';
 import { isFlexContainer, isGridContainer } from '../layout';
 import { measureWrappedTextHeight } from '../utils/textMeasure';
@@ -439,28 +438,45 @@ export const ElementSprite = memo(function ElementSprite({
 
   // 🚀 ToggleButtonGroup 내 ToggleButton의 위치 정보 (borderRadius 계산용)
   // CSS에서는 그룹 내 첫/끝 버튼만 외곽 모서리에 borderRadius 적용
-  // useShallow로 shallow comparison 적용하여 무한 루프 방지
-  const toggleGroupPosition = useStore(
-    useShallow((state) => {
-      if (element.tag !== 'ToggleButton' || !element.parent_id) return null;
-      const parent = state.elementsMap.get(element.parent_id);
-      if (!parent || parent.tag !== 'ToggleButtonGroup') return null;
+  // 개별 selector로 분리하여 primitive 비교 (useShallow 대체)
+  const isToggleInGroup = useStore((state) => {
+    if (element.tag !== 'ToggleButton' || !element.parent_id) return false;
+    const parent = state.elementsMap.get(element.parent_id);
+    return parent?.tag === 'ToggleButtonGroup';
+  });
 
-      const siblings = (state.childrenMap.get(parent.id) || [])
-        .slice()
-        .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
-      const index = siblings.findIndex(s => s.id === element.id);
-      if (index === -1) return null;
+  const toggleGroupOrientation = useStore((state) => {
+    if (!isToggleInGroup || !element.parent_id) return 'horizontal';
+    const parent = state.elementsMap.get(element.parent_id);
+    if (!parent) return 'horizontal';
+    return ((parent.props as Record<string, unknown>)?.orientation as string) || 'horizontal';
+  });
 
-      const orientation = ((parent.props as Record<string, unknown>)?.orientation as string) || 'horizontal';
-      return {
-        orientation,
-        isFirst: index === 0,
-        isLast: index === siblings.length - 1,
-        isOnly: siblings.length === 1,
-      };
-    })
-  );
+  const togglePositionIndex = useStore((state) => {
+    if (!isToggleInGroup || !element.parent_id) return -1;
+    const parent = state.elementsMap.get(element.parent_id);
+    if (!parent) return -1;
+    const siblings = (state.childrenMap.get(parent.id) || [])
+      .slice()
+      .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+    return siblings.findIndex(s => s.id === element.id);
+  });
+
+  const toggleSiblingCount = useStore((state) => {
+    if (!isToggleInGroup || !element.parent_id) return 0;
+    const parent = state.elementsMap.get(element.parent_id);
+    if (!parent) return 0;
+    return (state.childrenMap.get(parent.id) || []).length;
+  });
+
+  const toggleGroupPosition = isToggleInGroup && togglePositionIndex !== -1
+    ? {
+        orientation: toggleGroupOrientation,
+        isFirst: togglePositionIndex === 0,
+        isLast: togglePositionIndex === toggleSiblingCount - 1,
+        isOnly: toggleSiblingCount === 1,
+      }
+    : null;
 
   // layoutPosition이 있으면 style을 오버라이드한 새 element 생성
   // G.1/G.2: Instance resolution + Variable resolution
@@ -518,6 +534,384 @@ export const ElementSprite = memo(function ElementSprite({
   }, [resolvedElement, layoutPosition, computedContainerSize]);
 
   const spriteType = getSpriteType(effectiveElement);
+
+  // Phase 5: Skia 렌더 데이터 등록 (모든 요소 타입 공통)
+  // 🚀 rules-of-hooks: 조건부 early return 전에 모든 훅을 실행해야 함
+  const elementStyle = effectiveElement.props?.style;
+  const elementProps = effectiveElement.props;
+  const computedW = computedContainerSize?.width;
+  const computedH = computedContainerSize?.height;
+
+  const skiaNodeData = useMemo(() => {
+    const style = elementStyle as CSSStyle | undefined;
+
+    const isUIComponent = spriteType !== 'box' && spriteType !== 'text'
+      && spriteType !== 'image' && spriteType !== 'flex' && spriteType !== 'grid';
+
+    if (!style && !isUIComponent) return null;
+
+    const { transform, fill, stroke, borderRadius: convertedBorderRadius } = convertStyle(style);
+    const br = typeof convertedBorderRadius === 'number'
+      ? convertedBorderRadius
+      : convertedBorderRadius?.[0] ?? 0;
+
+    const finalWidth = (computedW != null && computedW > 0) ? computedW : transform.width;
+    const finalHeight = (computedH != null && computedH > 0) ? computedH : transform.height;
+
+    const hasBgColor = style?.backgroundColor !== undefined && style?.backgroundColor !== null && style?.backgroundColor !== '';
+
+    const VARIANT_BG_COLORS: Record<string, number> = {
+      default: 0xece6f0,
+      primary: 0x6750a4,
+      secondary: 0x625b71,
+      tertiary: 0x7d5260,
+      error: 0xb3261e,
+      surface: 0xe6e0e9,
+      outline: 0xfef7ff,
+      ghost: 0xfef7ff,
+    };
+    const VARIANT_BG_ALPHA: Record<string, number> = {
+      outline: 0,
+      ghost: 0,
+    };
+    const VARIANT_BORDER_COLORS: Record<string, number> = {
+      default: 0xcac4d0,
+      primary: 0x6750a4,
+      secondary: 0x625b71,
+      tertiary: 0x7d5260,
+      error: 0xb3261e,
+      surface: 0xcac4d0,
+      outline: 0x79747e,
+    };
+
+    const props = effectiveElement.props as Record<string, unknown> | undefined;
+    const variant = isUIComponent ? String(props?.variant || 'default') : '';
+
+    let r: number, g: number, b: number;
+    let effectiveAlpha: number;
+
+    if (isUIComponent && !hasBgColor) {
+      const bgColor = VARIANT_BG_COLORS[variant] ?? 0xece6f0;
+      r = ((bgColor >> 16) & 0xff) / 255;
+      g = ((bgColor >> 8) & 0xff) / 255;
+      b = (bgColor & 0xff) / 255;
+      effectiveAlpha = VARIANT_BG_ALPHA[variant] ?? 1;
+    } else {
+      r = ((fill.color >> 16) & 0xff) / 255;
+      g = ((fill.color >> 8) & 0xff) / 255;
+      b = (fill.color & 0xff) / 255;
+      effectiveAlpha = hasBgColor ? fill.alpha : (isUIComponent ? fill.alpha : 0);
+    }
+
+    const hasBorderRadiusSet = style?.borderRadius !== undefined && style?.borderRadius !== null && style?.borderRadius !== '';
+    const size = isUIComponent ? String(props?.size || 'md') : '';
+    const defaultBorderRadius = UI_COMPONENT_DEFAULT_BORDER_RADIUS[size] ?? 6;
+    let effectiveBorderRadius: number | [number, number, number, number] = hasBorderRadiusSet ? br : (isUIComponent && !hasBgColor ? defaultBorderRadius : 0);
+
+    if (toggleGroupPosition && typeof effectiveBorderRadius === 'number') {
+      const { orientation, isFirst, isLast, isOnly } = toggleGroupPosition;
+      const r = effectiveBorderRadius;
+
+      if (!isOnly) {
+        if (orientation === 'horizontal') {
+          if (isFirst) {
+            effectiveBorderRadius = [r, 0, 0, r];
+          } else if (isLast) {
+            effectiveBorderRadius = [0, r, r, 0];
+          } else {
+            effectiveBorderRadius = [0, 0, 0, 0];
+          }
+        } else {
+          if (isFirst) {
+            effectiveBorderRadius = [r, r, 0, 0];
+          } else if (isLast) {
+            effectiveBorderRadius = [0, 0, r, r];
+          } else {
+            effectiveBorderRadius = [0, 0, 0, 0];
+          }
+        }
+      }
+    }
+
+    const boxData: {
+      fillColor: Float32Array;
+      fill?: FillStyle;
+      borderRadius: number | [number, number, number, number];
+      strokeColor?: Float32Array;
+      strokeWidth?: number;
+    } = {
+      fillColor: Float32Array.of(r, g, b, effectiveAlpha),
+      borderRadius: effectiveBorderRadius,
+    };
+
+    const fills = effectiveElement.fills;
+    if (isFillV2Enabled() && fills && fills.length > 0) {
+      const fillV2Style = fillsToSkiaFillStyle(fills, finalWidth, finalHeight);
+      if (fillV2Style && fillV2Style.type !== 'color') {
+        boxData.fill = fillV2Style;
+      }
+    }
+
+    if (stroke) {
+      const sr = ((stroke.color >> 16) & 0xff) / 255;
+      const sg = ((stroke.color >> 8) & 0xff) / 255;
+      const sb = (stroke.color & 0xff) / 255;
+      boxData.strokeColor = Float32Array.of(sr, sg, sb, stroke.alpha);
+      boxData.strokeWidth = stroke.width;
+    } else if (isUIComponent && !hasBgColor) {
+      const borderColor = VARIANT_BORDER_COLORS[variant];
+      if (borderColor !== undefined) {
+        const sr = ((borderColor >> 16) & 0xff) / 255;
+        const sg = ((borderColor >> 8) & 0xff) / 255;
+        const sb = (borderColor & 0xff) / 255;
+        boxData.strokeColor = Float32Array.of(sr, sg, sb, 1);
+        boxData.strokeWidth = 1;
+      }
+    }
+
+    let textChildren: Array<{
+      type: 'text';
+      x: number;
+      y: number;
+      width: number;
+      height: number;
+      visible: boolean;
+      text: {
+        content: string;
+        fontFamilies: string[];
+        fontSize: number;
+        fontWeight?: number;
+        color: Float32Array;
+        letterSpacing?: number;
+        lineHeight?: number;
+        align?: 'left' | 'center' | 'right';
+        paddingLeft: number;
+        paddingTop: number;
+        maxWidth: number;
+        autoCenter?: boolean;
+      };
+    }> | undefined;
+
+    let cardCalculatedHeight: number | undefined;
+
+    if (isUIComponent) {
+      const tag = effectiveElement.tag;
+
+      const VARIANT_TEXT_COLORS: Record<string, number> = {
+        default: 0x1d1b20,
+        primary: 0xffffff,
+        secondary: 0xffffff,
+        surface: 0x1d1b20,
+        outline: 0x6750a4,
+        ghost: 0x6750a4,
+        tertiary: 0xffffff,
+        error: 0xffffff,
+      };
+
+      if (tag === 'Card') {
+        const cardTitle = String(props?.heading || props?.title || '');
+        const cardSubheading = String(props?.subheading || '');
+        const cardDescription = String(props?.description || props?.children || '');
+
+        if (cardTitle || cardSubheading || cardDescription) {
+          const defaultTextColor = VARIANT_TEXT_COLORS[variant] ?? 0x1d1b20;
+          const textColorHex = style?.color
+            ? cssColorToHex(style.color, defaultTextColor)
+            : defaultTextColor;
+          const tcR = ((textColorHex >> 16) & 0xff) / 255;
+          const tcG = ((textColorHex >> 8) & 0xff) / 255;
+          const tcB = (textColorHex & 0xff) / 255;
+          const textColor = Float32Array.of(tcR, tcG, tcB, 1);
+
+          const cardSize = String(props?.size || 'md');
+          const CARD_PADDING: Record<string, number> = { sm: 8, md: 12, lg: 16 };
+          const sizePresetPadding = CARD_PADDING[cardSize] ?? 12;
+          const padding = style?.padding !== undefined
+            ? (typeof style.padding === 'number' ? style.padding : parseInt(String(style.padding), 10) || 0)
+            : sizePresetPadding;
+          const fontFamilies = ['Pretendard', 'Inter', 'system-ui', 'sans-serif'];
+          const maxWidth = finalWidth - padding * 2;
+
+          const nodes: typeof textChildren = [];
+          let currentY = padding;
+
+          const fontFamilyStr = fontFamilies[0] ?? 'sans-serif';
+
+          if (cardTitle) {
+            const titleFontSize = 16;
+            const titleHeight = measureWrappedTextHeight(
+              cardTitle, titleFontSize, 600, fontFamilyStr, maxWidth,
+            );
+            nodes.push({
+              type: 'text' as const,
+              x: 0, y: 0,
+              width: finalWidth,
+              height: finalHeight,
+              visible: true,
+              text: {
+                content: cardTitle,
+                fontFamilies,
+                fontSize: titleFontSize,
+                fontWeight: 600,
+                color: textColor,
+                align: 'left' as const,
+                paddingLeft: padding,
+                paddingTop: currentY,
+                maxWidth,
+                autoCenter: false,
+              },
+            });
+            currentY += titleHeight;
+          }
+
+          if (cardSubheading) {
+            if (cardTitle) currentY += 2;
+            const subFontSize = 14;
+            const subHeight = measureWrappedTextHeight(
+              cardSubheading, subFontSize, 400, fontFamilyStr, maxWidth,
+            );
+            nodes.push({
+              type: 'text' as const,
+              x: 0, y: 0,
+              width: finalWidth,
+              height: finalHeight,
+              visible: true,
+              text: {
+                content: cardSubheading,
+                fontFamilies,
+                fontSize: subFontSize,
+                color: textColor,
+                align: 'left' as const,
+                paddingLeft: padding,
+                paddingTop: currentY,
+                maxWidth,
+                autoCenter: false,
+              },
+            });
+            currentY += subHeight;
+          }
+
+          if (cardTitle || cardSubheading) {
+            currentY += 8;
+          }
+
+          if (cardDescription) {
+            const descFontSize = 14;
+            const descHeight = measureWrappedTextHeight(
+              cardDescription, descFontSize, 400, fontFamilyStr, maxWidth,
+            );
+            nodes.push({
+              type: 'text' as const,
+              x: 0, y: 0,
+              width: finalWidth,
+              height: finalHeight,
+              visible: true,
+              text: {
+                content: cardDescription,
+                fontFamilies,
+                fontSize: descFontSize,
+                color: textColor,
+                align: 'left' as const,
+                paddingLeft: padding,
+                paddingTop: currentY,
+                maxWidth,
+                autoCenter: false,
+              },
+            });
+            currentY += descHeight;
+          }
+
+          cardCalculatedHeight = currentY + padding;
+          textChildren = nodes;
+        }
+      } else {
+        const textContent = String(
+          props?.children
+          || props?.text
+          || props?.label
+          || props?.value
+          || props?.placeholder
+          || props?.count
+          || ''
+        );
+        if (textContent) {
+          const defaultTextColor = VARIANT_TEXT_COLORS[variant] ?? 0x1d1b20;
+
+          const isPlaceholder = !props?.children && !props?.text && !props?.label
+            && !props?.value && !!props?.placeholder;
+          const placeholderColor = 0x9ca3af;
+          const baseTextColor = isPlaceholder ? placeholderColor : defaultTextColor;
+          const textColorHex = style?.color
+            ? cssColorToHex(style.color, baseTextColor)
+            : baseTextColor;
+          const tcR = ((textColorHex >> 16) & 0xff) / 255;
+          const tcG = ((textColorHex >> 8) & 0xff) / 255;
+          const tcB = (textColorHex & 0xff) / 255;
+
+          const size = String(props?.size || 'sm');
+          const SIZE_FONT: Record<string, number> = {
+            xs: 12, sm: 14, md: 16, lg: 18, xl: 20,
+          };
+          const defaultFontSize = SIZE_FONT[size] ?? 14;
+          const fontSize = style?.fontSize !== undefined
+            ? parseCSSSize(style.fontSize, undefined, defaultFontSize)
+            : defaultFontSize;
+
+          const CENTER_ALIGN_TAGS = new Set([
+            'Button', 'SubmitButton', 'FancyButton',
+            'Badge', 'Tag', 'Chip',
+            'ToggleButton',
+          ]);
+          const textAlign = CENTER_ALIGN_TAGS.has(tag) ? 'center' as const : 'left' as const;
+
+          const INPUT_TAGS = new Set([
+            'Input', 'TextField', 'TextInput', 'SearchField',
+            'TextArea', 'Textarea', 'NumberField', 'ComboBox',
+            'Select', 'Dropdown', 'DateField', 'TimeField', 'ColorField',
+          ]);
+          const paddingLeft = INPUT_TAGS.has(tag) ? 8 : 0;
+
+          const lineHeight = fontSize * 1.2;
+          const paddingTop = Math.max(0, (finalHeight - lineHeight) / 2);
+
+          textChildren = [{
+            type: 'text' as const,
+            x: 0,
+            y: 0,
+            width: finalWidth,
+            height: finalHeight,
+            visible: true,
+            text: {
+              content: textContent,
+              fontFamilies: ['Pretendard', 'Inter', 'system-ui', 'sans-serif'],
+              fontSize,
+              color: Float32Array.of(tcR, tcG, tcB, 1),
+              align: textAlign,
+              paddingLeft,
+              paddingTop,
+              maxWidth: finalWidth - paddingLeft * 2,
+            },
+          }];
+        }
+      }
+    }
+
+    const contentMinHeight = cardCalculatedHeight;
+
+    return {
+      type: 'box' as const,
+      x: transform.x,
+      y: transform.y,
+      width: finalWidth,
+      height: finalHeight,
+      visible: true,
+      box: boxData,
+      children: textChildren,
+      contentMinHeight,
+    };
+  }, [effectiveElement, spriteType, elementStyle, elementProps, computedW, computedH, toggleGroupPosition]);
+
+  useSkiaNode(elementId, skiaNodeData);
 
   // CheckboxGroup의 자식 Checkbox인지 확인
   const isCheckboxInGroup = spriteType === 'checkboxItem' && parentElement?.tag === 'CheckboxGroup';
@@ -1208,441 +1602,6 @@ export const ElementSprite = memo(function ElementSprite({
     }
   })();
 
-  // Phase 5: Skia 렌더 데이터 등록 (모든 요소 타입 공통)
-  // React useLayoutEffect는 자식→부모 순서로 실행되므로,
-  // 개별 Sprite(BoxSprite 등)의 useSkiaNode가 먼저 실행되고
-  // 이 부모(ElementSprite)의 useSkiaNode가 마지막에 실행되어 레지스트리를 덮어쓴다.
-  // 따라서 gradient fill 등 고급 fill 데이터는 이 레벨에서도 포함해야 한다.
-  // UI 컴포넌트(FancyButton 등)는 이 등록이 유일한 Skia 데이터 소스이다.
-
-  // 🚀 Style 변경 감지를 위해 useMemo 외부에서 참조 추출
-  // effectiveElement 참조가 같아도 style/props가 다르면 skiaNodeData 재계산
-  const elementStyle = effectiveElement.props?.style;
-  const elementProps = effectiveElement.props;
-
-  // 🚀 Yoga 계산된 크기를 skiaNodeData에 반영
-  // convertStyle의 폴백(100)이 아닌 실제 Yoga 레이아웃 결과를 사용
-  const computedW = computedContainerSize?.width;
-  const computedH = computedContainerSize?.height;
-
-  const skiaNodeData = useMemo(() => {
-    const style = elementStyle as CSSStyle | undefined;
-
-    // UI 컴포넌트는 자체 색상 시스템(variant 등)을 사용하므로
-    // CSS style에 backgroundColor가 없어도 가시적으로 렌더링해야 한다.
-    // 일반 컨테이너(box, flex, grid)는 backgroundColor 없으면 투명 처리 (CSS 기본 동작)
-    const isUIComponent = spriteType !== 'box' && spriteType !== 'text'
-      && spriteType !== 'image' && spriteType !== 'flex' && spriteType !== 'grid';
-
-    // style이 없는 일반 요소는 투명 컨테이너이므로 Skia 등록 불필요
-    // UI 컴포넌트는 style 없이도 variant 기반 렌더링 필요
-    if (!style && !isUIComponent) return null;
-
-    const { transform, fill, stroke, borderRadius: convertedBorderRadius } = convertStyle(style);
-    const br = typeof convertedBorderRadius === 'number'
-      ? convertedBorderRadius
-      : convertedBorderRadius?.[0] ?? 0;
-
-    // 🚀 Yoga 계산 크기 우선 사용 (convertStyle 폴백 100 대신)
-    // Card/Panel 등 auto-height 컴포넌트에서 Skia box 크기가 실제 콘텐츠와 일치하도록 보장
-    const finalWidth = (computedW != null && computedW > 0) ? computedW : transform.width;
-    const finalHeight = (computedH != null && computedH > 0) ? computedH : transform.height;
-
-    // backgroundColor 유무 확인 (style이 undefined일 수 있으므로 optional chaining)
-    const hasBgColor = style?.backgroundColor !== undefined && style?.backgroundColor !== null && style?.backgroundColor !== '';
-
-    // UI 컴포넌트 variant별 배경/테두리 색상 매핑 (Light 모드, ButtonSpec 토큰 기반)
-    // variant별 배경 색상
-    const VARIANT_BG_COLORS: Record<string, number> = {
-      default: 0xece6f0,   // surface-container-high
-      primary: 0x6750a4,   // primary
-      secondary: 0x625b71, // secondary
-      tertiary: 0x7d5260,  // tertiary
-      error: 0xb3261e,     // error
-      surface: 0xe6e0e9,   // surface-container-highest
-      outline: 0xfef7ff,   // surface (투명 — bgAlpha=0)
-      ghost: 0xfef7ff,     // surface (투명 — bgAlpha=0)
-    };
-    // outline/ghost variant는 배경이 투명
-    const VARIANT_BG_ALPHA: Record<string, number> = {
-      outline: 0,
-      ghost: 0,
-    };
-    // variant별 테두리 색상 (ghost는 테두리 없음)
-    const VARIANT_BORDER_COLORS: Record<string, number> = {
-      default: 0xcac4d0,   // outline-variant
-      primary: 0x6750a4,   // primary
-      secondary: 0x625b71, // secondary
-      tertiary: 0x7d5260,  // tertiary
-      error: 0xb3261e,     // error
-      surface: 0xcac4d0,   // outline-variant
-      outline: 0x79747e,   // outline
-    };
-
-    const props = effectiveElement.props as Record<string, unknown> | undefined;
-    const variant = isUIComponent ? String(props?.variant || 'default') : '';
-
-    let r: number, g: number, b: number;
-    let effectiveAlpha: number;
-
-    if (isUIComponent && !hasBgColor) {
-      // variant 기반 배경 색상 적용
-      const bgColor = VARIANT_BG_COLORS[variant] ?? 0xece6f0;
-      r = ((bgColor >> 16) & 0xff) / 255;
-      g = ((bgColor >> 8) & 0xff) / 255;
-      b = (bgColor & 0xff) / 255;
-      effectiveAlpha = VARIANT_BG_ALPHA[variant] ?? 1;
-    } else {
-      r = ((fill.color >> 16) & 0xff) / 255;
-      g = ((fill.color >> 8) & 0xff) / 255;
-      b = (fill.color & 0xff) / 255;
-      effectiveAlpha = hasBgColor ? fill.alpha : (isUIComponent ? fill.alpha : 0);
-    }
-
-    // UI 컴포넌트 기본 borderRadius: CSS에서 지정하지 않았으면 Spec size별 토큰 값 적용
-    // xs/sm=4px(radius.sm), md=6px(radius.md), lg/xl=8px(radius.lg)
-    // 명시적으로 0을 설정한 경우(style.borderRadius가 존재)와 미설정(undefined)을 구분
-    const hasBorderRadiusSet = style?.borderRadius !== undefined && style?.borderRadius !== null && style?.borderRadius !== '';
-    const size = isUIComponent ? String(props?.size || 'md') : '';
-    const defaultBorderRadius = UI_COMPONENT_DEFAULT_BORDER_RADIUS[size] ?? 6;
-    let effectiveBorderRadius: number | [number, number, number, number] = hasBorderRadiusSet ? br : (isUIComponent && !hasBgColor ? defaultBorderRadius : 0);
-
-    // 🚀 ToggleButtonGroup 내 ToggleButton: 위치에 따른 borderRadius 배열 적용
-    // CSS 규칙: 첫 버튼=외곽 모서리만, 중간=없음, 끝 버튼=외곽 모서리만
-    if (toggleGroupPosition && typeof effectiveBorderRadius === 'number') {
-      const { orientation, isFirst, isLast, isOnly } = toggleGroupPosition;
-      const r = effectiveBorderRadius;
-
-      if (!isOnly) {
-        if (orientation === 'horizontal') {
-          if (isFirst) {
-            effectiveBorderRadius = [r, 0, 0, r]; // 왼쪽만
-          } else if (isLast) {
-            effectiveBorderRadius = [0, r, r, 0]; // 오른쪽만
-          } else {
-            effectiveBorderRadius = [0, 0, 0, 0]; // 중간: 없음
-          }
-        } else {
-          // vertical
-          if (isFirst) {
-            effectiveBorderRadius = [r, r, 0, 0]; // 위쪽만
-          } else if (isLast) {
-            effectiveBorderRadius = [0, 0, r, r]; // 아래쪽만
-          } else {
-            effectiveBorderRadius = [0, 0, 0, 0]; // 중간: 없음
-          }
-        }
-      }
-    }
-
-    const boxData: {
-      fillColor: Float32Array;
-      fill?: FillStyle;
-      borderRadius: number | [number, number, number, number];
-      strokeColor?: Float32Array;
-      strokeWidth?: number;
-    } = {
-      fillColor: Float32Array.of(r, g, b, effectiveAlpha),
-      borderRadius: effectiveBorderRadius,
-    };
-
-    // Fill V2: gradient/image fill 지원 (BoxSprite의 useSkiaNode과 동일 데이터 보장)
-    const fills = effectiveElement.fills;
-    if (isFillV2Enabled() && fills && fills.length > 0) {
-      const fillV2Style = fillsToSkiaFillStyle(fills, finalWidth, finalHeight);
-      if (fillV2Style && fillV2Style.type !== 'color') {
-        boxData.fill = fillV2Style;
-      }
-    }
-
-    // stroke (border) 데이터 포함
-    if (stroke) {
-      const sr = ((stroke.color >> 16) & 0xff) / 255;
-      const sg = ((stroke.color >> 8) & 0xff) / 255;
-      const sb = (stroke.color & 0xff) / 255;
-      boxData.strokeColor = Float32Array.of(sr, sg, sb, stroke.alpha);
-      boxData.strokeWidth = stroke.width;
-    } else if (isUIComponent && !hasBgColor) {
-      // variant 기반 테두리 색상 적용
-      const borderColor = VARIANT_BORDER_COLORS[variant];
-      if (borderColor !== undefined) {
-        const sr = ((borderColor >> 16) & 0xff) / 255;
-        const sg = ((borderColor >> 8) & 0xff) / 255;
-        const sb = (borderColor & 0xff) / 255;
-        boxData.strokeColor = Float32Array.of(sr, sg, sb, 1);
-        boxData.strokeWidth = 1;
-      }
-      // ghost: 테두리 없음 (VARIANT_BORDER_COLORS에 미정의)
-    }
-
-    // UI 컴포넌트: props.children/text/label에서 텍스트를 추출하여
-    // Skia text children으로 추가한다.
-    // skia 모드에서 PixiJS 캔버스가 숨겨지므로 텍스트를 Skia로 렌더링해야 한다.
-    let textChildren: Array<{
-      type: 'text';
-      x: number;
-      y: number;
-      width: number;
-      height: number;
-      visible: boolean;
-      text: {
-        content: string;
-        fontFamilies: string[];
-        fontSize: number;
-        fontWeight?: number;
-        color: Float32Array;
-        letterSpacing?: number;
-        lineHeight?: number;
-        align?: 'left' | 'center' | 'right';
-        paddingLeft: number;
-        paddingTop: number;
-        maxWidth: number;
-        autoCenter?: boolean;
-      };
-    }> | undefined;
-
-    // Card 콘텐츠 기반 최소 높이 (Yoga가 계산하지 못한 경우의 폴백)
-    let cardCalculatedHeight: number | undefined;
-
-    if (isUIComponent) {
-      const tag = effectiveElement.tag;
-
-      // 텍스트 색상 공통 상수
-      const VARIANT_TEXT_COLORS: Record<string, number> = {
-        default: 0x1d1b20,
-        primary: 0xffffff,
-        secondary: 0xffffff,
-        surface: 0x1d1b20,
-        outline: 0x6750a4,
-        ghost: 0x6750a4,
-        tertiary: 0xffffff,
-        error: 0xffffff,
-      };
-
-      // Card 컴포넌트: title/heading, subheading, description 다중 텍스트
-      if (tag === 'Card') {
-        const cardTitle = String(props?.heading || props?.title || '');
-        const cardSubheading = String(props?.subheading || '');
-        const cardDescription = String(props?.description || props?.children || '');
-
-        if (cardTitle || cardSubheading || cardDescription) {
-          const defaultTextColor = VARIANT_TEXT_COLORS[variant] ?? 0x1d1b20;
-          const textColorHex = style?.color
-            ? cssColorToHex(style.color, defaultTextColor)
-            : defaultTextColor;
-          const tcR = ((textColorHex >> 16) & 0xff) / 255;
-          const tcG = ((textColorHex >> 8) & 0xff) / 255;
-          const tcB = (textColorHex & 0xff) / 255;
-          const textColor = Float32Array.of(tcR, tcG, tcB, 1);
-
-          // Card padding (style.padding 우선, 없으면 size preset 사용)
-          const cardSize = String(props?.size || 'md');
-          const CARD_PADDING: Record<string, number> = { sm: 8, md: 12, lg: 16 };
-          const sizePresetPadding = CARD_PADDING[cardSize] ?? 12;
-          // style.padding이 설정되면 해당 값 사용
-          const padding = style?.padding !== undefined
-            ? (typeof style.padding === 'number' ? style.padding : parseInt(String(style.padding), 10) || 0)
-            : sizePresetPadding;
-          const fontFamilies = ['Pretendard', 'Inter', 'system-ui', 'sans-serif'];
-          const maxWidth = finalWidth - padding * 2;
-
-          const nodes: typeof textChildren = [];
-          let currentY = padding;
-
-          const fontFamilyStr = fontFamilies[0] ?? 'sans-serif';
-
-          // Title (heading || title)
-          if (cardTitle) {
-            const titleFontSize = 16;
-            const titleHeight = measureWrappedTextHeight(
-              cardTitle, titleFontSize, 600, fontFamilyStr, maxWidth,
-            );
-            nodes.push({
-              type: 'text' as const,
-              x: 0, y: 0,
-              width: finalWidth,
-              height: finalHeight,
-              visible: true,
-              text: {
-                content: cardTitle,
-                fontFamilies,
-                fontSize: titleFontSize,
-                fontWeight: 600,
-                color: textColor,
-                align: 'left' as const,
-                paddingLeft: padding,
-                paddingTop: currentY,
-                maxWidth,
-                autoCenter: false,
-              },
-            });
-            currentY += titleHeight;
-          }
-
-          // Subheading
-          if (cardSubheading) {
-            if (cardTitle) currentY += 2; // header gap (PixiCard headerLayout.gap)
-            const subFontSize = 14;
-            const subHeight = measureWrappedTextHeight(
-              cardSubheading, subFontSize, 400, fontFamilyStr, maxWidth,
-            );
-            nodes.push({
-              type: 'text' as const,
-              x: 0, y: 0,
-              width: finalWidth,
-              height: finalHeight,
-              visible: true,
-              text: {
-                content: cardSubheading,
-                fontFamilies,
-                fontSize: subFontSize,
-                color: textColor,
-                align: 'left' as const,
-                paddingLeft: padding,
-                paddingTop: currentY,
-                maxWidth,
-                autoCenter: false,
-              },
-            });
-            currentY += subHeight;
-          }
-
-          // header → content gap (PixiCard headerLayout.marginBottom = 8)
-          if (cardTitle || cardSubheading) {
-            currentY += 8;
-          }
-
-          // Description (description || children)
-          if (cardDescription) {
-            const descFontSize = 14;
-            const descHeight = measureWrappedTextHeight(
-              cardDescription, descFontSize, 400, fontFamilyStr, maxWidth,
-            );
-            nodes.push({
-              type: 'text' as const,
-              x: 0, y: 0,
-              width: finalWidth,
-              height: finalHeight,
-              visible: true,
-              text: {
-                content: cardDescription,
-                fontFamilies,
-                fontSize: descFontSize,
-                color: textColor,
-                align: 'left' as const,
-                paddingLeft: padding,
-                paddingTop: currentY,
-                maxWidth,
-                autoCenter: false,
-              },
-            });
-            currentY += descHeight;
-          }
-
-          // 콘텐츠 기반 높이 = 모든 텍스트 위치 + 하단 패딩
-          cardCalculatedHeight = currentY + padding;
-          textChildren = nodes;
-        }
-      } else {
-        // 기존 단일 텍스트 추출 (Button, Badge, Input 등)
-        // 텍스트 추출 우선순위: children > text > label > value > placeholder > count
-        const textContent = String(
-          props?.children
-          || props?.text
-          || props?.label
-          || props?.value
-          || props?.placeholder
-          || props?.count
-          || ''
-        );
-        if (textContent) {
-          const defaultTextColor = VARIANT_TEXT_COLORS[variant] ?? 0x1d1b20;
-
-          // placeholder 텍스트는 연한 색상 사용
-          const isPlaceholder = !props?.children && !props?.text && !props?.label
-            && !props?.value && !!props?.placeholder;
-          const placeholderColor = 0x9ca3af; // Tailwind gray-400
-          const baseTextColor = isPlaceholder ? placeholderColor : defaultTextColor;
-          const textColorHex = style?.color
-            ? cssColorToHex(style.color, baseTextColor)
-            : baseTextColor;
-          const tcR = ((textColorHex >> 16) & 0xff) / 255;
-          const tcG = ((textColorHex >> 8) & 0xff) / 255;
-          const tcB = (textColorHex & 0xff) / 255;
-
-          // 폰트 크기: style.fontSize > size 프리셋
-          // size별 기본 fontSize: xs=12, sm=14, md=16, lg=18, xl=20
-          const size = String(props?.size || 'sm');
-          const SIZE_FONT: Record<string, number> = {
-            xs: 12, sm: 14, md: 16, lg: 18, xl: 20,
-          };
-          const defaultFontSize = SIZE_FONT[size] ?? 14;
-          const fontSize = style?.fontSize !== undefined
-            ? parseCSSSize(style.fontSize, undefined, defaultFontSize)
-            : defaultFontSize;
-
-          // 컴포넌트 타입별 정렬: Button/Badge = center, Input/Checkbox 등 = left
-          const CENTER_ALIGN_TAGS = new Set([
-            'Button', 'SubmitButton', 'FancyButton',
-            'Badge', 'Tag', 'Chip',
-            'ToggleButton',
-          ]);
-          const textAlign = CENTER_ALIGN_TAGS.has(tag) ? 'center' as const : 'left' as const;
-
-          // Input 계열은 좌측 패딩 적용
-          const INPUT_TAGS = new Set([
-            'Input', 'TextField', 'TextInput', 'SearchField',
-            'TextArea', 'Textarea', 'NumberField', 'ComboBox',
-            'Select', 'Dropdown', 'DateField', 'TimeField', 'ColorField',
-          ]);
-          const paddingLeft = INPUT_TAGS.has(tag) ? 8 : 0;
-
-          // 수직 중앙 정렬: paddingTop 근사 계산
-          const lineHeight = fontSize * 1.2;
-          const paddingTop = Math.max(0, (finalHeight - lineHeight) / 2);
-
-          textChildren = [{
-            type: 'text' as const,
-            x: 0,
-            y: 0,
-            width: finalWidth,
-            height: finalHeight,
-            visible: true,
-            text: {
-              content: textContent,
-              fontFamilies: ['Pretendard', 'Inter', 'system-ui', 'sans-serif'],
-              fontSize,
-              color: Float32Array.of(tcR, tcG, tcB, 1),
-              align: textAlign,
-              paddingLeft,
-              paddingTop,
-              maxWidth: finalWidth - paddingLeft * 2,
-            },
-          }];
-        }
-      }
-    }
-
-    // 🚀 Card 등 auto-height UI 컴포넌트: 콘텐츠 기반 최소 높이
-    // Yoga가 텍스트 bounds를 아직 반영하지 못한 경우(minHeight 폴백),
-    // SkiaOverlay에서 contentMinHeight를 최소값으로 적용하여
-    // yogaH가 콘텐츠보다 작은 경우를 보정
-    const contentMinHeight = cardCalculatedHeight;
-
-    return {
-      type: 'box' as const,
-      x: transform.x,
-      y: transform.y,
-      width: finalWidth,
-      height: finalHeight,
-      visible: true,
-      box: boxData,
-      children: textChildren,
-      contentMinHeight,
-    };
-  }, [effectiveElement, spriteType, elementStyle, elementProps, computedW, computedH, toggleGroupPosition]);
-
-  useSkiaNode(elementId, skiaNodeData);
 
   return content;
 });

@@ -76,7 +76,6 @@ export function PixiColorField({
   // Calculate dimensions
   const swatchSize = sizePreset.height - sizePreset.padding * 2;
   const fieldWidth = sizePreset.maxWidth;
-  const labelHeight = label ? sizePreset.labelFontSize + sizePreset.gap : 0;
 
   // Draw input field
   const drawField = useCallback(
@@ -145,10 +144,6 @@ export function PixiColorField({
   );
 
   // Positions
-  const swatchX = sizePreset.padding;
-  const swatchY = (sizePreset.height - swatchSize) / 2;
-  const textX = swatchX + swatchSize + sizePreset.gap;
-  const textY = (sizePreset.height - sizePreset.fontSize) / 2;
 
   // 🚀 Phase 12: 루트 레이아웃
   const rootLayout = useMemo(() => ({

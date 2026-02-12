@@ -71,7 +71,6 @@ export const PixiSearchField = memo(function PixiSearchField({
 
   // 전체 너비/높이 계산
   const inputHeight = sizePreset.paddingY * 2 + sizePreset.fontSize;
-  const labelHeight = label ? sizePreset.labelFontSize + 4 : 0;
 
   // Input 영역 그리기
   const drawInput = useCallback(
@@ -139,10 +138,6 @@ export const PixiSearchField = memo(function PixiSearchField({
   const handleClick = useCallback(() => {
     onClick?.(element.id);
   }, [onClick, element.id]);
-
-  // Clear 버튼 위치
-  const clearButtonX = sizePreset.inputWidth - sizePreset.clearButtonSize - sizePreset.paddingX;
-  const clearButtonY = (inputHeight - sizePreset.clearButtonSize) / 2;
 
   // 🚀 Phase 12: 루트 레이아웃
   const rootLayout = useMemo(() => ({

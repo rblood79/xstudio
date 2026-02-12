@@ -15,7 +15,6 @@ import {
   Send,
   Code,
   Database,
-  MousePointer,
   ClipboardCopy,
   ArrowDown,
   Table,

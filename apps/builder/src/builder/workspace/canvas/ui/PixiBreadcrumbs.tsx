@@ -208,7 +208,7 @@ export const PixiBreadcrumbs = memo(function PixiBreadcrumbs({
       {variant === "filled" && <pixiGraphics draw={drawBackground} />}
 
       {/* 🚀 Phase 11: @pixi/layout flex로 항목 배치 */}
-      {breadcrumbItems.map((item, idx) => {
+      {breadcrumbItems.map((item) => {
         const isHovered = hoveredIndex === item.index;
 
         return (

@@ -18,8 +18,8 @@ import { useEffect, useRef, useState } from 'react';
 import type { RefObject } from 'react';
 import type { Application, Container } from 'pixi.js';
 import { SkiaRenderer } from './SkiaRenderer';
-import { getSkiaNode, getRegistryVersion, clearSkiaRegistry } from './useSkiaNode';
-import { clearTextParagraphCache, renderNode } from './nodeRenderers';
+import { getSkiaNode, getRegistryVersion } from './useSkiaNode';
+import { renderNode } from './nodeRenderers';
 import type { SkiaNodeData } from './nodeRenderers';
 import { isCanvasKitInitialized, getCanvasKit } from './initCanvasKit';
 import { initAllWasm } from '../wasm-bindings/init';
@@ -40,7 +40,6 @@ import { getElementBoundsSimple } from '../elementRegistry';
 import { calculateCombinedBounds } from '../selection/types';
 import type { BoundingBox, DragState } from '../selection/types';
 import { watchContextLoss } from './createSurface';
-import { clearImageCache } from './imageCache';
 import { flushWasmMetrics, recordWasmMetric } from '../utils/gpuProfilerCore';
 
 interface SkiaOverlayProps {
@@ -877,7 +876,7 @@ export function SkiaOverlay({
       });
 
       renderer.setOverlayNode({
-        renderSkia(canvas, _bounds) {
+        renderSkia(canvas) {
           if (hasAIEffects && nodeBoundsMap) {
             const now = performance.now();
             renderGeneratingEffects(ck, canvas, now, currentAiState.generatingNodes, nodeBoundsMap);

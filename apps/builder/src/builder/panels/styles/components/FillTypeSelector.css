@@ -1,23 +1,35 @@
 /**
  * FillTypeSelector Styles
  *
- * 공유 ToggleButtonGroup 오버라이드: popover 내부 compact 사이즈
+ * Popover 내부에서 전체 너비 사용
+ * Typography Text Align 토글버튼그룹과 동일 스타일 유지
  */
 
 @layer components {
   .fill-type-selector.react-aria-ToggleButtonGroup {
     width: 100%;
 
+    padding: var(--spacing);
+    background: var(--outline-variant);
+    box-shadow: var(--inset-shadow-sm);
+    outline: 1px solid var(--border-color);
+    outline-offset: -1px;
+    border-radius: var(--radius-md);
+    justify-content: space-between;
+
     .react-aria-ToggleButton {
-      flex: 1;
+      border-width: 0;
+      padding: var(--spacing-xs);
+      height: var(--text-xl);
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 4px;
-      font-size: var(--text-xs);
-      font-weight: 500;
-      padding: 0 8px;
-      height: 28px;
+      /*
+      max-width: var(--text-xl);
+      
+      display: flex;
+      align-items: center;
+      justify-content: center;*/
     }
   }
 }

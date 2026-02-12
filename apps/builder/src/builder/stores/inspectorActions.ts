@@ -16,7 +16,7 @@ import type { Element, ComponentElementProps } from "../../types/core/store.type
 import type { SelectedElement, DataBinding, EventHandler } from "../inspector/types";
 import type { ElementEvent } from "../../types/events/events.types";
 import type { FillItem } from "../../types/builder/fill.types";
-import { fillsToBackgroundColor, fillsToCssBackground } from "../panels/styles/utils/fillMigration";
+import { fillsToCssBackground } from "../panels/styles/utils/fillMigration";
 import { saveService } from "../../services/save";
 import { historyManager } from "./history";
 import { normalizeElementTags } from "./utils/elementTagNormalizer";

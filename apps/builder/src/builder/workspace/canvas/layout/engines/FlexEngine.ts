@@ -19,8 +19,7 @@
  * @since 2026-01-28 Phase 2 - 하이브리드 레이아웃 엔진
  */
 
-import type { Element } from '../../../../../types/core/store.types';
-import type { LayoutEngine, ComputedLayout, LayoutContext } from './LayoutEngine';
+import type { LayoutEngine, ComputedLayout } from './LayoutEngine';
 
 /**
  * Flexbox 레이아웃 엔진 (Yoga 위임)
@@ -36,13 +35,7 @@ export class FlexEngine implements LayoutEngine {
    */
   readonly shouldDelegate = true;
 
-  calculate(
-    _parent: Element,
-    _children: Element[],
-    _availableWidth: number,
-    _availableHeight: number,
-    _context?: LayoutContext
-  ): ComputedLayout[] {
+  calculate(): ComputedLayout[] {
     // 이 메서드는 호출되지 않음 (shouldDelegate === true)
     // 만약 호출된다면 경고 로그 출력 (개발 모드에서만)
     if (import.meta.env.DEV) {

@@ -10,7 +10,7 @@
  * @since 2026-02-10 Gradient Phase 2
  */
 
-import { memo, useCallback, useRef, useEffect } from 'react';
+import { memo, useState, useCallback, useRef, useEffect } from 'react';
 import type { GradientStop } from '../../../../types/builder/fill.types';
 
 import './GradientBar.css';
@@ -41,6 +41,7 @@ export const GradientBar = memo(function GradientBar({
     index: number;
     startY: number;
   } | null>(null);
+  const [draggingIndex, setDraggingIndex] = useState<number | null>(null);
   const rafRef = useRef<number | null>(null);
 
   // 언마운트 시 pending RAF 정리
@@ -66,6 +67,7 @@ export const GradientBar = memo(function GradientBar({
       e.stopPropagation();
       (e.target as HTMLElement).setPointerCapture(e.pointerId);
       draggingRef.current = { index, startY: e.clientY };
+      setDraggingIndex(index);
       onStopSelect(index);
     },
     [onStopSelect],
@@ -103,6 +105,7 @@ export const GradientBar = memo(function GradientBar({
       const drag = draggingRef.current;
       if (!drag) return;
       draggingRef.current = null;
+      setDraggingIndex(null);
 
       // pending RAF 취소
       if (rafRef.current !== null) {
@@ -154,7 +157,7 @@ export const GradientBar = memo(function GradientBar({
             backgroundColor: stop.color.slice(0, 7),
           }}
           data-active={index === activeStopIndex || undefined}
-          data-dragging={draggingRef.current?.index === index || undefined}
+          data-dragging={draggingIndex === index || undefined}
           onPointerDown={(e) => handlePointerDown(e, index)}
         />
       ))}

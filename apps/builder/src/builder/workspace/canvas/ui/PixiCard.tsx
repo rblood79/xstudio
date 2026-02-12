@@ -94,7 +94,7 @@ export const PixiCard = memo(function PixiCard({
       return isNaN(parsed) ? sizePreset.padding : parsed;
     }
     return sizePreset.padding;
-  }, [style?.padding, sizePreset.padding]);
+  }, [style, sizePreset.padding]);
 
   // 🚀 테마 색상 동적 로드
   const themeColors = useThemeColors();

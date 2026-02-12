@@ -8,7 +8,7 @@
  * @see docs/WASM.md §5.7 폰트 관리
  */
 
-import type { CanvasKit, FontMgr, Typeface } from 'canvaskit-wasm';
+import type { FontMgr, Typeface } from 'canvaskit-wasm';
 import { getCanvasKit } from './initCanvasKit';
 
 const IDB_NAME = 'xstudio-fonts';

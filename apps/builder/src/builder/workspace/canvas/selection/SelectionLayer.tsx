@@ -184,7 +184,6 @@ export const SelectionLayer = memo(function SelectionLayer({
     });
 
     return calculateCombinedBounds(boxes);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- 의존성 트리거용
   }, [
     selectedElements,
     pageWidth,

@@ -78,7 +78,6 @@ export function PixiTextArea({
   // Calculate dimensions
   const fieldWidth = (props.width as number) || 280;
   const fieldHeight = Math.max(sizePreset.minHeight, rows * sizePreset.fontSize * sizePreset.lineHeight + sizePreset.padding * 2);
-  const labelHeight = label ? sizePreset.labelFontSize + sizePreset.gap : 0;
 
   // Draw textarea field
   const drawField = useCallback(

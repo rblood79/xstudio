@@ -31,7 +31,6 @@ const IMAGE_MODES: { value: ImageMode; label: string }[] = [
 
 export const ImageFillEditor = memo(function ImageFillEditor({
   fill,
-  onUpdate,
   onUpdateEnd,
 }: ImageFillEditorProps) {
   const [urlInput, setUrlInput] = useState(fill.url);
