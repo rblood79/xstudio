@@ -3,7 +3,8 @@
 > **작성일**: 2026-02-13
 > **수정일**: 2026-02-13 (v2 — 워크플로우 기반으로 아키텍처 전환)
 > **상태**: 계획 수립 (코드 미생성)
-> **관련 브랜치**: `claude/plan-sitemap-feature-J8Jiz`
+> **관련 브랜치**: `work`
+> **검토 기준**: 현재 저장소 코드베이스(`apps/builder` 구조) 기준으로 경로/영향 범위를 재검증
 
 ---
 
@@ -139,6 +140,17 @@ PageLayoutDirection = "horizontal" | "vertical" | "zigzag" | "sitemap"
 
 ## 3. 구현 계획: Hierarchy 워크플로우 엣지
 
+### 3.0 main 코드 대비 사전 검토 결과
+
+> 로컬 저장소에는 `main` 브랜치 ref가 없어서(`git branch --all` 기준 `work`만 존재),
+> 현재 코드베이스를 기준으로 계획서의 경로/영향 범위를 정합성 검토했다.
+
+**검토 결과 요약:**
+- 워크플로우 토글 UI 위치는 `SettingsPanel`이 아니라 `Workspace` 상단 토글 바(`WorkflowCanvasToggles`)가 기준이다.
+- 문서의 경로는 `src/...` 단축 경로가 아니라 `apps/builder/src/builder/...` 실경로로 정리해야 한다.
+- `addPage` 방향 미반영 버그는 여전히 존재한다(`usePageManager.ts`에서 신규 페이지를 `maxX, 0`에 고정 배치).
+- 워크플로우 엣지 타입은 현재 `navigation | event-navigation`만 지원하며, hierarchy 추가 시 타입/렌더러/필터 전 구간 수정이 필요하다.
+
 ### 3.1 개요
 
 기존 워크플로우 오버레이 시스템에 `hierarchy` 엣지 타입을 추가하여, `parent_id` 기반 부모-자식 관계를 캔버스 위에서 시각화한다.
@@ -192,7 +204,7 @@ PageLayoutDirection = "horizontal" | "vertical" | "zigzag" | "sitemap"
 
 | # | 파일 | 변경 내용 |
 |---|------|----------|
-| 1 | `workspace/canvas/skia/workflowEdges.ts` | `WorkflowEdge.type`에 `'hierarchy'` 추가, `computeHierarchyEdges()` 함수 신규 |
+| 1 | `apps/builder/src/builder/workspace/canvas/skia/workflowEdges.ts` | `WorkflowEdge.type`에 `'hierarchy'` 추가, `computeHierarchyEdges()` 함수 신규 |
 
 **`computeHierarchyEdges()` 알고리즘:**
 ```
@@ -216,7 +228,7 @@ PageLayoutDirection = "horizontal" | "vertical" | "zigzag" | "sitemap"
 
 | # | 파일 | 변경 내용 |
 |---|------|----------|
-| 2 | `stores/canvasSettings.ts` | `showWorkflowHierarchy: boolean` 추가, setter/toggle 추가 |
+| 2 | `apps/builder/src/builder/stores/canvasSettings.ts` | `showWorkflowHierarchy: boolean` 추가, setter/toggle 추가 |
 
 **기존 패턴 따라 추가:**
 ```typescript
@@ -232,16 +244,16 @@ showWorkflowHierarchy: boolean;       // ← NEW (기본값: true)
 
 | # | 파일 | 변경 내용 |
 |---|------|----------|
-| 3 | `panels/settings/SettingsPanel.tsx` | Workflow 섹션에 "Hierarchy" 체크박스 추가 |
+| 3 | `apps/builder/src/builder/workspace/Workspace.tsx` | `WorkflowCanvasToggles`에 "Hierarchy" 체크박스 + 레전드 아이콘 추가 |
 
-**기존 Workflow 토글 UI 패턴에 맞춰 1줄 추가.**
+**현재 구조상 Workflow 토글은 Settings 패널이 아니라 Workspace 오버레이 토글 영역에서 관리한다.**
 
 #### Phase 4: 렌더링 통합
 
 | # | 파일 | 변경 내용 |
 |---|------|----------|
-| 4 | `workspace/canvas/skia/SkiaOverlay.tsx` | hierarchy 엣지 계산 호출 + 필터링 분기 추가 |
-| 5 | `workspace/canvas/skia/workflowRenderer.ts` | `HIERARCHY_COLOR` 상수 추가, 엣지 타입별 색상 분기에 `'hierarchy'` 추가 |
+| 4 | `apps/builder/src/builder/workspace/canvas/skia/SkiaOverlay.tsx` | hierarchy 엣지 계산 호출 + 필터링 분기 추가 |
+| 5 | `apps/builder/src/builder/workspace/canvas/skia/workflowRenderer.ts` | `HIERARCHY_COLOR` 상수 추가, 엣지 타입별 색상 분기에 `'hierarchy'` 추가 |
 
 **SkiaOverlay 변경 (기존 패턴 따라):**
 ```
@@ -276,8 +288,8 @@ const color = e.type === 'hierarchy' ? HIERARCHY_COLOR
 
 | # | 파일 | 변경 내용 |
 |---|------|----------|
-| 6 | `workspace/canvas/skia/workflowHitTest.ts` | 변경 불필요 (엣지 타입 무관하게 동작) |
-| 7 | `workspace/canvas/skia/workflowGraphUtils.ts` | 변경 불필요 (computeConnectedEdges는 타입 무관) |
+| 6 | `apps/builder/src/builder/workspace/canvas/skia/workflowHitTest.ts` | 변경 불필요 (엣지 타입 무관하게 동작) |
+| 7 | `apps/builder/src/builder/workspace/canvas/skia/workflowGraphUtils.ts` | 변경 불필요 (computeConnectedEdges는 타입 무관) |
 
 **기존 히트테스트와 그래프 유틸은 엣지 타입에 무관하게 동작하므로 변경 없음.**
 
@@ -360,8 +372,8 @@ hierarchy 엣지 추가 위치:
 
 | # | 파일 | 변경 내용 |
 |---|------|----------|
-| 1 | `stores/elements.ts` | `autoArrangeByHierarchy()` 액션 추가 |
-| 2 | `panels/settings/SettingsPanel.tsx` 또는 `panels/nodes/PagesSection.tsx` | "Auto-arrange" 버튼 추가 |
+| 1 | `apps/builder/src/builder/stores/elements.ts` | `autoArrangeByHierarchy()` 액션 추가 |
+| 2 | `apps/builder/src/builder/workspace/Workspace.tsx` 또는 `apps/builder/src/builder/panels/nodes/PagesSection.tsx` | "Auto-arrange" 버튼 추가 |
 
 **이 Phase는 hierarchy 엣지 구현 후 별도로 진행 가능.**
 
@@ -427,13 +439,13 @@ Phase 5: Auto-Arrange (선택적, 별도)
 
 | 파일 | 변경 수준 | 설명 |
 |------|----------|------|
-| `workflowEdges.ts` | **Low** | `computeHierarchyEdges()` 함수 1개 추가 (~30줄) |
-| `canvasSettings.ts` | **Trivial** | 토글 상태 + setter 추가 (~5줄) |
-| `SettingsPanel.tsx` | **Trivial** | 체크박스 1개 추가 (~3줄) |
-| `SkiaOverlay.tsx` | **Trivial** | 필터 분기 1줄, 계산 호출 추가 (~10줄) |
-| `workflowRenderer.ts` | **Trivial** | 색상 상수 + 분기 1줄 (~5줄) |
-| `workflowHitTest.ts` | **None** | 변경 불필요 |
-| `workflowGraphUtils.ts` | **None** | 변경 불필요 |
+| `apps/builder/src/builder/workspace/canvas/skia/workflowEdges.ts` | **Low** | `computeHierarchyEdges()` 함수 1개 추가 (~30줄) |
+| `apps/builder/src/builder/stores/canvasSettings.ts` | **Trivial** | 토글 상태 + setter 추가 (~5줄) |
+| `apps/builder/src/builder/workspace/Workspace.tsx` | **Trivial** | 체크박스 1개 + 레전드 아이콘 색상 추가 (~8줄) |
+| `apps/builder/src/builder/workspace/canvas/skia/SkiaOverlay.tsx` | **Trivial** | 필터 분기 1줄, 계산 호출 추가 (~10줄) |
+| `apps/builder/src/builder/workspace/canvas/skia/workflowRenderer.ts` | **Trivial** | 색상 상수 + 분기 1줄 (~5줄) |
+| `apps/builder/src/builder/workspace/canvas/skia/workflowHitTest.ts` | **None** | 변경 불필요 |
+| `apps/builder/src/builder/workspace/canvas/skia/workflowGraphUtils.ts` | **None** | 변경 불필요 |
 
 **총 변경량: ~55줄 (신규 함수 포함)**
 
@@ -443,7 +455,7 @@ Phase 5: Auto-Arrange (선택적, 별도)
 
 | 위치 | 버그 | 영향 |
 |------|------|------|
-| `usePageManager.ts:224-232` | 새 페이지 추가 시 `pageLayoutDirection` 미참조, 항상 `maxX, 0` 배치 | vertical/zigzag 방향에서도 페이지가 오른쪽에 추가됨 |
+| `apps/builder/src/builder/hooks/usePageManager.ts:227-232` | 새 페이지 추가 시 `pageLayoutDirection` 미참조, 항상 `maxX, 0` 배치 | vertical/zigzag 방향에서도 페이지가 오른쪽에 추가됨 |
 
 **이 버그는 P2에서 별도 수정 권장.**
 
@@ -459,14 +471,14 @@ Phase 5: Auto-Arrange (선택적, 별도)
 - [Relume AI Tutorial](https://webplacide.com/blog/relume-ai-tutorial-generate-sitemaps-and-wireframes-in-seconds/)
 
 ### XStudio 코드베이스
-- **워크플로우 엣지**: `workspace/canvas/skia/workflowEdges.ts` — 엣지 타입 정의 & 계산
-- **워크플로우 렌더러**: `workspace/canvas/skia/workflowRenderer.ts` — 연결선 렌더링
-- **오버레이 통합**: `workspace/canvas/skia/SkiaOverlay.tsx` — 토글 필터링 & 렌더 호출
-- **히트테스트**: `workspace/canvas/skia/workflowHitTest.ts` — 마우스 인터랙션
-- **그래프 유틸**: `workspace/canvas/skia/workflowGraphUtils.ts` — 연결 분석
-- **캔버스 설정**: `stores/canvasSettings.ts` — 토글 상태 관리
-- **설정 UI**: `panels/settings/SettingsPanel.tsx` — 워크플로우 토글 UI
-- **페이지 트리**: `panels/nodes/tree/PageTree/usePageTreeData.ts` — parent_id 기반 트리
-- **Page 타입**: `types/builder/unified.types.ts:116-127` — parent_id 필드 존재
-- **레이아웃 알고리즘**: `stores/elements.ts:649-681` — initializePagePositions
-- **페이지 관리**: `hooks/usePageManager.ts` — addPage, 위치 계산
+- **워크플로우 엣지**: `apps/builder/src/builder/workspace/canvas/skia/workflowEdges.ts` — 엣지 타입 정의 & 계산
+- **워크플로우 렌더러**: `apps/builder/src/builder/workspace/canvas/skia/workflowRenderer.ts` — 연결선 렌더링
+- **오버레이 통합**: `apps/builder/src/builder/workspace/canvas/skia/SkiaOverlay.tsx` — 토글 필터링 & 렌더 호출
+- **히트테스트**: `apps/builder/src/builder/workspace/canvas/skia/workflowHitTest.ts` — 마우스 인터랙션
+- **그래프 유틸**: `apps/builder/src/builder/workspace/canvas/skia/workflowGraphUtils.ts` — 연결 분석
+- **캔버스 설정**: `apps/builder/src/builder/stores/canvasSettings.ts` — 토글 상태 관리
+- **설정 UI(워크플로우 토글)**: `apps/builder/src/builder/workspace/Workspace.tsx` — 워크플로우 토글 UI
+- **페이지 트리**: `apps/builder/src/builder/panels/nodes/tree/PageTree/usePageTreeData.ts` — parent_id 기반 트리
+- **Page 타입**: `apps/builder/src/types/builder/unified.types.ts` — parent_id 필드 존재
+- **레이아웃 알고리즘**: `apps/builder/src/builder/stores/elements.ts` — initializePagePositions
+- **페이지 관리**: `apps/builder/src/builder/hooks/usePageManager.ts` — addPage, 위치 계산
