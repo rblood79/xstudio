@@ -21,6 +21,10 @@
     // ==== ESLint ====
     "eslint.experimental.useFlatConfig": true,
     "eslint.validate": ["javascript", "typescript", "javascriptreact", "typescriptreact"],
+    "eslint.workingDirectories": [
+      { "pattern": "apps/*" },
+      { "pattern": "packages/*" }
+    ],
   
     // ==== Tailwind v4 ====
     // className 정렬/병합 시 가독성 향상 (tailwind-merge와 혼선 없게 저장 시 자동 정렬만)

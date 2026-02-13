@@ -13,7 +13,8 @@
     "build": "tsc && vite build",
     "build:ssg": "cross-env BUILD_MODE=ssg vite build",
     "preview": "vite preview",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "lint": "eslint src/"
   },
   "dependencies": {
     "@xstudio/shared": "workspace:*",
@@ -23,6 +24,7 @@
   },
   "devDependencies": {
     "@xstudio/config": "workspace:*",
+    "eslint": "^9.39.2",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
     "@vitejs/plugin-react-swc": "catalog:",
