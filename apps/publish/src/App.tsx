@@ -13,10 +13,13 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import type { Element, Page } from '@xstudio/shared';
 import {
+  CUSTOM_FONT_STORAGE_KEY,
+  buildCustomFontFaceCss,
   loadProjectFromUrl,
   loadProjectFromFile,
   type ExportedProjectData,
   type ExportError,
+  type CustomFontAsset,
   ExportErrorCode,
 } from '@xstudio/shared/utils';
 import { PageRenderer } from './renderer';
@@ -132,6 +135,30 @@ export function App() {
   const [warnings, setWarnings] = useState<ExportError[] | undefined>(undefined);
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(CUSTOM_FONT_STORAGE_KEY);
+      if (!raw) return;
+
+      const fonts = JSON.parse(raw) as CustomFontAsset[];
+      if (!Array.isArray(fonts)) return;
+
+      const css = buildCustomFontFaceCss(fonts);
+      if (!css) return;
+
+      const styleEl = document.createElement('style');
+      styleEl.id = 'xstudio-publish-custom-fonts';
+      styleEl.textContent = css;
+      document.head.appendChild(styleEl);
+
+      return () => {
+        styleEl.remove();
+      };
+    } catch {
+      return;
+    }
+  }, []);
 
   // 페이지 라우팅
   const { currentPageId, currentPage, setCurrentPageId } = usePageRouting({

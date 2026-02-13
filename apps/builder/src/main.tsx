@@ -15,6 +15,7 @@ import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 // Side-effect import to initialize monitors and attach to window
 import "./utils/longTaskMonitor";
 import "./utils/postMessageMonitor";
+import "./builder/fonts/initCustomFonts";
 
 // Single CSS entry point - all imports handled in index.css via @import
 import "./index.css";
