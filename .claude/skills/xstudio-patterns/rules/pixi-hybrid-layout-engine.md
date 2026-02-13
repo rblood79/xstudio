@@ -197,6 +197,35 @@ ToggleButtonGroup: { width: 'fit-content', display: 'flex', flexDirection: 'row'
 // → 런타임 기본값이 스타일 패널에 반영되지 않음
 ```
 
+### Factory 정의와 getDefaultProps style 동기화
+
+복합 컴포넌트(children 포함)는 `ComponentFactory` → `factories/definitions/*.ts`로 생성됩니다.
+**factory 정의의 `props.style`은 `unified.types.ts`의 `createDefaultXxxProps()` style과 반드시 일치**해야 합니다.
+
+```typescript
+// ✅ factory 정의에 CSS 기본값 style 포함
+// GroupComponents.ts
+{
+  tag: "ToggleButtonGroup",
+  props: {
+    style: { display: "flex", flexDirection: "row", alignItems: "center", width: "fit-content" },
+    // ...
+  }
+}
+
+// ❌ factory 정의에 style 누락 → 생성 시 기본값 미적용
+// → 리셋 버튼 클릭 후에만 기본값이 적용되는 버그 발생
+{
+  tag: "ToggleButtonGroup",
+  props: {
+    variant: "default",
+    // style이 없음!
+  }
+}
+```
+
+**검증 방법**: `unified.types.ts`에서 style이 있는 `createDefaultXxxProps`와 대응하는 factory 정의의 style이 일치하는지 확인.
+
 ### 인라인 폼 컨트롤 크기 계산
 
 Checkbox, Radio, Switch, Toggle은 BlockEngine에서 `inline-block`으로 처리됩니다.

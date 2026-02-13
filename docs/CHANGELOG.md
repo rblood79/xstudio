@@ -7,6 +7,49 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Bugfix - Factory 정의 style 기본값 누락 (2026-02-13)
+
+#### 근본 원인
+
+복합 컴포넌트(children 포함)는 `ComponentFactory` → `GroupComponents.ts`의 factory 정의로 생성됨.
+단순 컴포넌트는 `useElementCreator` → `getDefaultProps(tag)` (unified.types.ts)로 생성됨.
+**factory 정의의 `props`에 `style` 필드가 누락**되어 생성 시점에 CSS 기본값(display, flexDirection 등)이 적용되지 않음. 리셋 버튼은 `getDefaultProps()`를 사용하므로 리셋 후에만 기본값이 복원됨.
+
+#### 수정 내용
+
+**1. `GroupComponents.ts` — factory 정의에 style 추가**
+
+| 컴포넌트 | 추가된 style |
+|---------|------------|
+| ToggleButtonGroup (parent) | `{ display: 'flex', flexDirection: 'row', alignItems: 'center', width: 'fit-content' }` |
+| Checkbox (CheckboxGroup 자식) | `{ display: 'flex', flexDirection: 'row', alignItems: 'center' }` |
+| Radio (RadioGroup 자식) | `{ display: 'flex', flexDirection: 'row', alignItems: 'center' }` |
+
+**2. `unified.types.ts` — getDefaultProps 기본값 동기화**
+
+| 함수 | 추가된 속성 |
+|-----|-----------|
+| `createDefaultToggleButtonGroupProps` | `alignItems: 'center'`, `width: 'fit-content'` |
+
+#### 전수 조사 결과
+
+| 경로 | style 있음 (unified.types) | factory 정의 | 상태 |
+|------|--------------------------|-------------|------|
+| Button | `{ borderWidth: '1px' }` | 단순 컴포넌트 (factory 미사용) | 문제 없음 |
+| Switch | `{ display: 'flex', ... }` | 단순 컴포넌트 (factory 미사용) | 문제 없음 |
+| Card | `{ display: 'block', ... }` | 단순 컴포넌트 (factory 미사용) | 문제 없음 |
+| ToggleButtonGroup | `{ display: 'flex', ... }` | factory 사용 | **수정 완료** |
+| Checkbox (in CheckboxGroup) | `{ display: 'flex', ... }` | factory 자식 | **수정 완료** |
+| Radio (in RadioGroup) | `{ display: 'flex', ... }` | factory 자식 | **수정 완료** |
+
+#### 수정 파일
+| 파일 | 변경 |
+|------|------|
+| `factories/definitions/GroupComponents.ts` | ToggleButtonGroup, Checkbox×2, Radio×2에 style 추가 |
+| `types/builder/unified.types.ts` | `createDefaultToggleButtonGroupProps`에 alignItems, width 추가 |
+
+---
+
 ### Bugfix - ToggleButtonGroup 스타일 패널 display 기본값 + Selection 영역 (2026-02-13)
 
 #### 이슈 1: 스타일 패널 display 기본값 오류
