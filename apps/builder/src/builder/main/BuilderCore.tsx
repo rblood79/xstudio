@@ -45,6 +45,7 @@ import { useDataStore } from "../stores/data";
 import { MessageService } from "../../utils/messaging";
 import { getValueByPath, upsertData, appendData, mergeData, safeJsonParse } from "../../utils/dataHelpers";
 import { downloadStaticHtml } from "@xstudio/shared/utils";
+import { getCustomFonts } from '../fonts/customFonts';
 
 export const BuilderCore: React.FC = () => {
   const { projectId } = useParams<{ projectId: string }>();
@@ -767,7 +768,7 @@ export const BuilderCore: React.FC = () => {
     const name = projectInfo?.name || 'Untitled Project';
 
     // 정적 HTML 파일로 다운로드
-    downloadStaticHtml(id, name, pages, elements, storeCurrentPageId);
+    downloadStaticHtml(id, name, pages, elements, storeCurrentPageId, getCustomFonts());
   }, [projectId, projectInfo]);
 
   // 클릭 외부 감지

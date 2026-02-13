@@ -5,6 +5,8 @@
  * 개발 모드와 프로덕션 모드에서 다른 방식을 사용합니다.
  */
 
+import { CUSTOM_FONT_STORAGE_KEY, buildCustomFontFaceCss, type CustomFontAsset } from '@xstudio/shared/utils';
+
 // ============================================
 // Base HTML Template
 // ============================================
@@ -32,6 +34,23 @@ const BASE_STYLES = `
   }
 `;
 
+function getCustomFontStyleTag(): string {
+  if (typeof window === 'undefined') return '';
+
+  try {
+    const raw = localStorage.getItem(CUSTOM_FONT_STORAGE_KEY);
+    if (!raw) return '';
+
+    const fonts = JSON.parse(raw) as CustomFontAsset[];
+    if (!Array.isArray(fonts)) return '';
+
+    const css = buildCustomFontFaceCss(fonts);
+    return css ? `<style>${css}</style>` : '';
+  } catch {
+    return '';
+  }
+}
+
 // ============================================
 // Development Mode: Load from URL
 // ============================================
@@ -44,6 +63,7 @@ const BASE_STYLES = `
  * srcdoc iframe에서는 이를 수동으로 로드해야 합니다.
  */
 export function generateDevSrcdoc(projectId: string): string {
+  const customFontStyleTag = getCustomFontStyleTag();
   // 개발 모드에서는 ESM import를 사용하여 HMR 지원
   // React Refresh preamble 전역 변수를 먼저 설정해야 함
   // ⭐ React가 document.body에 직접 마운트됨 (DOM/데이터 트리 일치)
@@ -57,6 +77,7 @@ export function generateDevSrcdoc(projectId: string): string {
   <base href="${typeof window !== 'undefined' ? window.location.origin : 'http://localhost:5173'}/" />
   <title>XStudio Preview</title>
   <style>${BASE_STYLES}</style>
+  ${customFontStyleTag}
 </head>
 <body data-preview="true" data-project-id="${projectId}">
   <div class="preview-loading">Loading Preview Runtime...</div>
@@ -126,6 +147,9 @@ export function generateProdSrcdoc(projectId: string): string {
     return generateDevSrcdoc(projectId);
   }
 
+  const customFontStyleTag = getCustomFontStyleTag();
+
+
   // ⭐ React가 document.body에 직접 마운트됨 (DOM/데이터 트리 일치)
   return `
 <!DOCTYPE html>
@@ -135,6 +159,7 @@ export function generateProdSrcdoc(projectId: string): string {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>XStudio Preview</title>
   <style>${BASE_STYLES}</style>
+  ${customFontStyleTag}
   ${previewCSS ? `<style>${previewCSS}</style>` : ''}
 </head>
 <body data-preview="true" data-project-id="${projectId}">

@@ -7,7 +7,7 @@
  * 🚀 Phase 23: 컨텐츠 분리로 접힌 섹션 훅 실행 방지
  */
 
-import { memo } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react';
 import { PropertySection, PropertyUnitInput, PropertyColor, PropertySelect } from '../../../components';
 import { ToggleButton, ToggleButtonGroup, Button } from "@xstudio/shared/components";
 import { iconProps } from '../../../../utils/ui/uiConstants';
@@ -33,6 +33,12 @@ import { useStyleActions } from '../hooks/useStyleActions';
 import { useOptimizedStyleActions } from '../hooks/useOptimizedStyleActions';
 import { useTypographyValuesJotai } from '../hooks/useTypographyValuesJotai';
 import { useResetStyles } from '../hooks/useResetStyles';
+import {
+  DEFAULT_FONT_OPTIONS,
+  createCustomFontFromFile,
+  getCustomFonts,
+  saveCustomFonts,
+} from '../../../fonts/customFonts';
 
 /**
  * 🚀 Phase 3/23: 내부 컨텐츠 컴포넌트
@@ -45,6 +51,53 @@ const TypographySectionContent = memo(function TypographySectionContent() {
   const { updateStyleImmediate, updateStylePreview } = useOptimizedStyleActions();
   // 🚀 Phase 3: Jotai atom에서 직접 값 구독
   const styleValues = useTypographyValuesJotai();
+  const [customFonts, setCustomFonts] = useState(() => getCustomFonts());
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const syncFonts = () => setCustomFonts(getCustomFonts());
+
+    window.addEventListener('xstudio:custom-fonts-updated', syncFonts);
+    window.addEventListener('storage', syncFonts);
+    return () => {
+      window.removeEventListener('xstudio:custom-fonts-updated', syncFonts);
+      window.removeEventListener('storage', syncFonts);
+    };
+  }, []);
+
+  const fontOptions = useMemo(() => {
+    const dynamicOptions = customFonts.map((font) => ({
+      value: font.family,
+      label: `${font.family} (Custom)`,
+    }));
+
+    return [...DEFAULT_FONT_OPTIONS, ...dynamicOptions];
+  }, [customFonts]);
+
+  const handleAddCustomFont = useCallback(() => {
+    fileInputRef.current?.click();
+  }, []);
+
+  const handleFontFileChange = useCallback(async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const defaultFamily = file.name.replace(/\.[^.]+$/, '');
+    const familyInput = window.prompt('폰트 패밀리 이름을 입력하세요.', defaultFamily);
+    const family = familyInput?.trim();
+
+    if (!family) {
+      event.target.value = '';
+      return;
+    }
+
+    const font = await createCustomFontFromFile(file, family);
+    const merged = [...customFonts.filter((item) => item.family !== font.family), font];
+    saveCustomFonts(merged);
+    setCustomFonts(merged);
+    updateStyle('fontFamily', font.family);
+    event.target.value = '';
+  }, [customFonts, updateStyle]);
 
   if (!styleValues) return null;
 
@@ -55,15 +108,7 @@ const TypographySectionContent = memo(function TypographySectionContent() {
         label="Font Family"
         className="font-family"
         value={styleValues.fontFamily}
-        options={[
-          { value: 'reset', label: 'Reset' },
-          { value: 'Arial', label: 'Arial' },
-          { value: 'Helvetica', label: 'Helvetica' },
-          { value: 'Times New Roman', label: 'Times New Roman' },
-          { value: 'Georgia', label: 'Georgia' },
-          { value: 'Courier New', label: 'Courier New' },
-          { value: 'Verdana', label: 'Verdana' },
-        ]}
+        options={fontOptions}
         onChange={(value) => updateStyle('fontFamily', value)}
       />
 
@@ -77,13 +122,20 @@ const TypographySectionContent = memo(function TypographySectionContent() {
       />
 
       <div className="fieldset-actions actions-font">
-        <Button>
+        <Button onPress={handleAddCustomFont}>
           <EllipsisVertical
             color={iconProps.color}
             size={iconProps.size}
             strokeWidth={iconProps.strokeWidth}
           />
         </Button>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".woff,.woff2,.ttf,.otf,.eot,.svg"
+          style={{ display: 'none' }}
+          onChange={handleFontFileChange}
+        />
       </div>
 
       <PropertyUnitInput

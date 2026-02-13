@@ -26,6 +26,7 @@ import {
   findDuplicateSlugs,
 } from '../schemas/project.schema';
 import { migrateProject, CURRENT_VERSION as MIGRATION_VERSION } from './migration.utils';
+import { buildCustomFontFaceCss, type CustomFontAsset } from './font.utils';
 
 // ============================================
 // Constants
@@ -388,7 +389,8 @@ export function generateStaticHtml(
   projectName: string,
   pages: Page[],
   elements: Element[],
-  currentPageId?: string | null
+  currentPageId?: string | null,
+  customFonts: CustomFontAsset[] = []
 ): string {
   const projectData = {
     version: CURRENT_VERSION,
@@ -398,6 +400,8 @@ export function generateStaticHtml(
     elements,
     currentPageId,
   };
+
+  const customFontCss = buildCustomFontFaceCss(customFonts);
 
   return `<!DOCTYPE html>
 <html lang="ko">
@@ -415,6 +419,8 @@ export function generateStaticHtml(
       height: 100%;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     }
+
+    ${customFontCss}
 
     /* Navigation */
     .publish-nav {
@@ -603,9 +609,10 @@ export function downloadStaticHtml(
   projectName: string,
   pages: Page[],
   elements: Element[],
-  currentPageId?: string | null
+  currentPageId?: string | null,
+  customFonts: CustomFontAsset[] = []
 ): void {
-  const html = generateStaticHtml(projectId, projectName, pages, elements, currentPageId);
+  const html = generateStaticHtml(projectId, projectName, pages, elements, currentPageId, customFonts);
 
   const blob = new Blob([html], { type: 'text/html' });
   const url = URL.createObjectURL(blob);
