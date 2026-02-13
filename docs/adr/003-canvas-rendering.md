@@ -556,6 +556,59 @@ Inspector에서 설정한 인라인 스타일이 WebGL(Skia) 렌더링에 정확
 
 **상세:** `packages/specs/src/components/*.spec.ts` (49개), `apps/builder/src/.../sprites/ElementSprite.tsx`, `apps/builder/src/.../skia/specShapeConverter.ts`, `apps/builder/src/.../ui/PixiButton.tsx`
 
+## Update: TagGroup 컨테이너 구조 전환 & TextSprite 히트 영역 (2026-02-13)
+
+### 1. TagGroup/TagList → CONTAINER_TAGS 전환
+
+TagGroup과 TagList를 `TAG_SPEC_MAP` 기반 개별 렌더링에서 **BoxSprite 기반 컨테이너 렌더링**으로 전환:
+
+| 항목 | 수정 전 | 수정 후 |
+|------|---------|---------|
+| **렌더링 방식** | `TAG_SPEC_MAP`에서 개별 Spec 렌더링 | `CONTAINER_TAGS`에 추가하여 BoxSprite 기반 컨테이너 |
+| **isYogaSizedContainer** | TagGroup/TagList 미포함 | TagGroup/TagList 추가 (ToggleButtonGroup과 동일 패턴) |
+| **PixiTagGroup** | 특수 렌더링 코드 존재 | 제거 |
+
+**근거:** TagGroup/TagList는 자식 요소를 Yoga 레이아웃으로 배치하는 컨테이너 역할이므로, 개별 도형 렌더링보다 BoxSprite 컨테이너가 적합.
+
+### 2. ElementSprite useSkiaNode 이중 등록 방지
+
+`useSkiaNode` 훅에서 Skia 데이터 이중 등록을 방지하는 로직 개선:
+
+| 항목 | 수정 전 | 수정 후 |
+|------|---------|---------|
+| **변수명** | `hasBoxSprite` | `hasOwnSprite` (의미 명확화) |
+| **spriteType 체크** | BoxSprite만 체크 | `text` spriteType 추가 |
+| **문제** | style이 있는 텍스트 요소(예: fontSize/fontWeight가 설정된 Label)에서 ElementSprite가 box 데이터를 등록하여 TextSprite의 텍스트 데이터를 덮어씌움 | TextSprite가 자체적으로 Skia 데이터를 등록하므로 ElementSprite에서 덮어쓰기 방지 |
+
+**영향:** Label, Text, Heading, Paragraph 등 텍스트 요소에 인라인 스타일(fontSize, fontWeight 등)이 설정된 경우, Skia 렌더링에서 텍스트가 사라지거나 단순 박스로 대체되는 버그가 해결됨.
+
+### 3. TextSprite 투명 히트 영역
+
+backgroundColor가 없는 텍스트 요소에서도 PixiJS EventBoundary 클릭 감지가 가능하도록 투명 히트 영역 추가:
+
+| 항목 | 수정 전 | 수정 후 |
+|------|---------|---------|
+| **backgroundColor 없는 경우** | `g.clear()` 실행 → 히트 영역 0 | `alpha:0.001` 투명 사각형 렌더링 → 클릭 감지 가능 |
+| **사용자 경험** | 배경색 없는 텍스트를 캔버스에서 클릭/선택 불가 | 텍스트 영역 어디서든 클릭/선택 가능 |
+
+**원리:** PixiJS EventBoundary는 `alpha > 0`인 렌더된 영역에서만 히트 테스트를 수행. `alpha:0.001`은 시각적으로 투명하지만 이벤트 감지는 활성화됨 (`renderable=false`는 이벤트까지 비활성화하므로 사용 금지 — ADR-003 기존 규칙 참조).
+
+### 4. styleToLayout 텍스트 태그 높이 자동계산
+
+Yoga `measureFunc` 없이도 컨테이너 내에서 텍스트 요소의 높이를 올바르게 인식하도록 자동계산 로직 추가:
+
+| 항목 | 수정 전 | 수정 후 |
+|------|---------|---------|
+| **텍스트 높이** | 미지정 → Yoga가 0으로 처리 | `Math.ceil(fontSize * 1.4)` 자동계산 |
+| **대상 태그** | 없음 | `TEXT_LAYOUT_TAGS` 집합: label, text, heading, paragraph |
+| **size prop 해석** | 미지원 | typography 토큰 매핑 (xs:12, sm:14, md:16, lg:18, xl:20) |
+
+**계산 공식:** `height = Math.ceil(fontSize * 1.4)`
+- `fontSize`: `style.fontSize` > `size` prop 토큰 매핑 > 기본값 16px
+- `1.4`: CSS `line-height: 1.4` 근사값 (텍스트 baseline + descender 포함)
+
+**상세:** `apps/builder/src/.../sprites/ElementSprite.tsx`, `apps/builder/src/.../sprites/TextSprite.tsx`, `apps/builder/src/.../canvas/styleToLayout.ts`
+
 ## Implementation
 
 ```typescript

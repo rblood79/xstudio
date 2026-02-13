@@ -12,6 +12,7 @@ import { useStore } from "../../stores";
 import { PanelHeader } from "../../components";
 import { LayerTree } from "./tree/LayerTree";
 import { iconProps } from "../../../utils/ui/uiConstants";
+import { resolveEditingContextForTreeSelection } from "../../utils/hierarchicalSelection";
 
 interface LayersSectionProps {
   currentPageId: string;
@@ -72,8 +73,14 @@ export const LayersSection = memo(function LayersSection({
   }, [userExpandedKeys, autoExpandedParents, userCollapsedKeys]);
 
   // 🚀 useCallback으로 메모이제이션 - 매 렌더링마다 새 함수 생성 방지
+  // 계층적 선택: 트리에서 직접 선택 시 editingContext 자동 조정
   const handleItemClick = useCallback(
     (element: { id: string }) => {
+      const state = useStore.getState();
+      const newContextId = resolveEditingContextForTreeSelection(element.id, state.elementsMap);
+      if (newContextId !== state.editingContextId) {
+        state.setEditingContext(newContextId);
+      }
       setSelectedElement(element.id);
     },
     [setSelectedElement]

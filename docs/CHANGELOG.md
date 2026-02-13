@@ -7,6 +7,69 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+
+### Added
+
+- **계층적 선택 모델 (Pencil/Figma 스타일)**: 캔버스 클릭 시 현재 깊이 레벨 요소만 선택. 더블클릭으로 컨테이너 진입, Escape로 위로 복귀. `editingContextId` 상태 및 `resolveClickTarget` 유틸리티 구현 (`stores/selection.ts`, `utils/hierarchicalSelection.ts`)
+- **호버 하이라이트**: 마우스 오버 시 현재 깊이 레벨 요소에 반투명 테두리 표시. `useElementHoverInteraction` 훅 (RAF 스로틀), `hoverRenderer.ts` Skia 렌더러 (blue-500, alpha 0.5). 진입한 컨테이너 경계 점선 표시 (gray-400)
+- **Body 요소 선택**: 캔버스 빈 영역 클릭 또는 배경 클릭으로 body 선택 가능. `buildSelectionRenderData`에 pageFrames 기반 body bounds 폴백 추가. `isOnlyBodySelected` 오버레이 스킵 로직 제거
+
+### Changed
+
+- **레이어 트리 직접 선택**: 레이어 트리에서 깊은 요소 선택 시 `editingContext` 자동 조정 (`resolveEditingContextForTreeSelection`)
+- **Escape 키 우선순위**: editingContext 복귀 → 선택 해제 순서로 변경
+- **더블클릭 동작**: 컨테이너 요소는 `enterEditingContext`, 텍스트 요소는 기존 `startEdit` 유지
+
+### Fixed
+
+- **Body 선택 불가**: `resolveClickTarget`이 body에 대해 null 반환하던 문제 (`parent_id: null`). `handleElementClick`에 body 특수 처리 추가
+- **Body 오버레이 미표시**: `isOnlyBodySelected` 체크가 body 선택 시 오버레이 렌더링을 스킵하던 문제 해결
+- **Body Skia 선택 박스**: body가 `treeBoundsMap`에 없어 선택 박스가 렌더링되지 않던 문제. `pageFrames` 기반 폴백 추가
+
+---
+
+### Feature - TagGroup 컨테이너 구조 전환 (2026-02-13)
+
+#### 개요
+TagGroup과 TagList를 CONTAINER_TAGS로 전환하여 웹 CSS와 동일한 3-level 계층 구조를 구현. ComponentDefinition 타입을 재귀적 ChildDefinition으로 확장하고, Factory에서 재귀 생성을 지원. 텍스트 태그의 높이 자동 계산 및 TextSprite 클릭 선택 관련 수정 포함.
+
+#### 변경 내용
+
+**1. TagGroup/TagList → CONTAINER_TAGS 전환**
+- TagGroup과 TagList를 CONTAINER_TAGS로 등록하여 웹 CSS와 동일한 3-level 계층 구조 구현
+- 구조: `TagGroup → Label + TagList → Tag[]`
+- 기존 flat 렌더링에서 실제 DOM 구조와 일치하는 중첩 컨테이너 방식으로 전환
+
+**2. ComponentDefinition 재귀적 ChildDefinition 타입 확장**
+- 기존 2-level 구조(parent + flat children)에서 무한 중첩 children 지원으로 확장
+- `ChildDefinition` 타입에 재귀적 `children` 필드 추가
+- 복합 컴포넌트의 깊은 계층 구조를 선언적으로 정의 가능
+
+**3. Factory 재귀 생성 (`createElementsFromDefinition`)**
+- `processChildren()` 재귀 함수 도입으로 중첩 자식 요소 일괄 생성
+- ChildDefinition의 재귀적 children 구조를 순회하며 각 레벨의 요소를 생성
+- 기존 단일 레벨 자식 생성 로직을 재귀 패턴으로 일반화
+
+**4. styleToLayout 텍스트 높이 자동 계산**
+- `TEXT_LAYOUT_TAGS` (label, text, heading, paragraph)에 대해 size prop 기반 높이 자동 설정
+- typography 토큰 매핑: `xs:12, sm:14, md:16, lg:18, xl:20`
+- lineHeight 계산: fontSize × 1.4 패턴으로 height 자동 설정
+- Button sizes 패턴과 동일한 `size prop → 토큰 → lineHeight` 변환 경로
+
+**5. TextSprite 투명 히트 영역**
+- backgroundColor가 없는 텍스트 요소에도 `alpha: 0.001` 사각형 추가
+- 투명 배경 텍스트도 클릭으로 선택 가능하도록 수정
+
+**6. ElementSprite useSkiaNode text spriteType 추가**
+- `hasOwnSprite` 조건에 text spriteType 추가
+- TextSprite가 자체적으로 Skia 데이터를 등록하므로 ElementSprite에서 이중 등록 방지
+
+**7. isYogaSizedContainer 확장**
+- TagGroup/TagList를 ToggleButtonGroup과 동일한 Yoga 크기 결정 패턴에 추가
+- Yoga 레이아웃 엔진이 컨테이너 크기를 자식 기반으로 자동 계산
+
+---
+
 ### Bugfix - ToggleButtonGroup alignSelf 강제 설정으로 부모 align-items 무시 (2026-02-13)
 
 #### 이슈

@@ -1917,6 +1917,9 @@ Cmd+S → saveDocument() → FileManager.export()
 | A-14 | Snap to Grid | `SkiaOverlay.tsx` + grid 상태 연동 | ✅ (2026-02-12) |
 | A-15 | Workflow 오버레이 (xstudio 고유) | `workflowRenderer.ts` + `workflowMinimap.ts` + `workflowHitTest.ts` (1,384줄) | ✅ (2026-02-06) |
 | A-16 | Spec Shape → Skia 변환 (xstudio 고유) | `specShapeConverter.ts` — @xstudio/specs 60개+ 컴포넌트 | ✅ (2026-02-12) |
+| A-17 | Hover Highlight 오버레이 (Pencil 방식) | `hoverRenderer.ts` renderHoverHighlight + `SkiaOverlay.tsx` | ✅ (2026-02-14) |
+| A-18 | editingContext 경계 오버레이 (점선) | `hoverRenderer.ts` renderEditingContextBorder + `SkiaOverlay.tsx` | ✅ (2026-02-14) |
+| A-19 | Element Hover Interaction (AABB 히트 테스트) | `useElementHoverInteraction.ts` (window pointermove + RAF) | ✅ (2026-02-14) |
 
 ### 11.2 렌더링 파이프라인 (노드별 renderSkia)
 
@@ -1989,6 +1992,9 @@ Cmd+S → saveDocument() → FileManager.export()
 | H-5 | Camera 하위 숨김: `alpha=0` (renderable=false 금지) | SkiaOverlay.tsx renderFrame | ✅ |
 | H-6 | 페이지 타이틀 (활성: #3B82F6, 비활성: #64748b) | `selectionRenderer.ts` renderPageTitle (isActive) | ✅ (2026-02-05) |
 | H-7 | 치수 레이블 (width × height, 파란 배경 흰 텍스트) | `selectionRenderer.ts` renderDimensionLabels | ✅ |
+| H-8 | Hover Highlight (blue-500, alpha 0.5, Stroke 1/zoom) | `hoverRenderer.ts` renderHoverHighlight | ✅ (2026-02-14) |
+| H-9 | editingContext 경계 (gray-400, alpha 0.3, dash [6/zoom, 4/zoom]) | `hoverRenderer.ts` renderEditingContextBorder | ✅ (2026-02-14) |
+| H-10 | Body 요소 Selection bounds 폴백 (`pageFrames`) | `buildSelectionRenderData` pageFrames 파라미터 | ✅ (2026-02-14) |
 
 ### 11.9 AI 시각 피드백
 
@@ -2012,14 +2018,14 @@ Cmd+S → saveDocument() → FileManager.export()
 ```
 Pencil 렌더링 아키텍처 전환: 100% 완료 (2026-02-14 업데이트)
 
-✅ 완전 구현 (48/48 항목, +5 since 2026-02-05):
+✅ 완전 구현 (51/51 항목, +8 since 2026-02-05):
 ├── 아키텍처: CanvasKit 메인 렌더러 + PixiJS 이벤트 전용
 ├── 렌더 루프: 이중 Surface + 프레임 분류 (idle/present/camera-only/content/full) + padding 기반 camera-only blit + cleanup render (2026-02-05)
 ├── 노드 렌더링: Box/Text/Image/Container/Line + AABB 컬링 + 좌표계 정합성 수정
 ├── Fill: 6/6종 (Color, Linear, Radial, Angular, Image, **MeshGradient SkSL ✅ 2026-02-11**)
 ├── 이펙트: 5/5종 (Opacity, BackgroundBlur, **LayerBlur ✅ 2026-02-14**, DropShadow Outer/Inner)
 ├── 블렌드 모드: 18종 전체
-├── Selection: 선택 박스 + 핸들 + 라쏘 + 치수 레이블 + 페이지 타이틀 (Skia 렌더링)
+├── Selection: 선택 박스 + 핸들 + 라쏘 + 치수 레이블 + 페이지 타이틀 + **Hover Highlight + editingContext 경계** (Skia 렌더링)
 ├── AI: Generating + Flash 애니메이션
 ├── Export: PNG/JPEG/WEBP + DPR 스케일
 ├── 유틸리티: 초기화, Surface, Disposable, Font, 텍스트 측정
@@ -2035,7 +2041,10 @@ Pencil 렌더링 아키텍처 전환: 100% 완료 (2026-02-14 업데이트)
 ├── Spec Shape 통합: @xstudio/specs → SkiaNodeData 변환 (specShapeConverter.ts) ✅ (2026-02-12)
 ├── fit-content 네이티브: BlockEngine FIT_CONTENT sentinel + WASM 직렬화 ✅ (2026-02-13)
 ├── ToggleButtonGroup: border-radius 4-tuple + _groupPosition props ✅ (2026-02-13)
-└── Color 정규화: CSS 색상 파싱 유틸리티 (hex/rgb/rgba/hsl/hsla/named) ✅ (2026-02-13)
+├── Color 정규화: CSS 색상 파싱 유틸리티 (hex/rgb/rgba/hsl/hsla/named) ✅ (2026-02-13)
+├── Hover Highlight: **blue-500 Stroke 오버레이** (`hoverRenderer.ts`) ✅ (2026-02-14)
+├── editingContext 경계: **gray-400 점선 오버레이** (`hoverRenderer.ts`) ✅ (2026-02-14)
+└── Element Hover Interaction: window pointermove + RAF + AABB 히트 테스트 (`useElementHoverInteraction.ts`) ✅ (2026-02-14)
 ```
 
 ---
@@ -2385,3 +2394,110 @@ Pencil 렌더링 기능 매칭 상태:
        GPU 메모리 할당 빈도가 줄고 프레임 타임 안정성이 개선된다.
        구현 시 크기를 256px 단위로 반올림하여 재사용 적중률을 극대화한다 (§4.4 참조).
 ```
+
+---
+
+### 12.12 Hover Highlight + editingContext 오버레이 (2026-02-14)
+
+**이전 상태:** 요소 호버 시각 피드백 없음, editingContext 경계 표시 없음, body 선택 시 Selection bounds 미표시
+**현재 상태:** 3개 기능 구현 완료 (Pencil 동등)
+
+#### 12.12.1 Hover Highlight 렌더링
+
+`hoverRenderer.ts`의 `renderHoverHighlight()` 함수로 마우스 호버 요소의 테두리를 렌더링한다.
+
+| 항목 | 값 |
+|------|-----|
+| **색상** | blue-500 (`#3b82f6`) |
+| **투명도** | alpha 0.5 |
+| **스타일** | `PaintStyle.Stroke` |
+| **선 두께** | `1 / zoom` (화면상 항상 1px) |
+| **좌표계** | 씬-로컬 (카메라 변환 내부) |
+
+```typescript
+// hoverRenderer.ts — 핵심 로직
+const sw = 1 / zoom;
+const paint = scope.track(new ck.Paint());
+paint.setStyle(ck.PaintStyle.Stroke);
+paint.setStrokeWidth(sw);
+paint.setColor(ck.Color4f(HOVER_R, HOVER_G, HOVER_B, HOVER_ALPHA));
+canvas.drawRect(ck.LTRBRect(x, y, x + w, y + h), paint);
+```
+
+#### 12.12.2 editingContext 경계 렌더링
+
+`hoverRenderer.ts`의 `renderEditingContextBorder()` 함수로 진입한 컨테이너의 경계를 점선으로 표시한다.
+
+| 항목 | 값 |
+|------|-----|
+| **색상** | gray-400 (`#9ca3af`) |
+| **투명도** | alpha 0.3 |
+| **스타일** | `PaintStyle.Stroke` + 점선 |
+| **점선 패턴** | `[6/zoom, 4/zoom]` (dash on/off) |
+| **선 두께** | `1 / zoom` (화면상 항상 1px) |
+
+```typescript
+// hoverRenderer.ts — 점선 효과
+const dashEffect = ck.PathEffect.MakeDash([6 / zoom, 4 / zoom]);
+paint.setPathEffect(dashEffect);
+canvas.drawRect(rect, paint);
+dashEffect.delete();
+```
+
+- `SkiaOverlay.tsx`에서 `editingContextId` 변경 시 `overlayVersion++`로 Skia 리페인트 트리거
+- 렌더 순서: editingContext border → hover highlight → selection (z-order)
+
+#### 12.12.3 Element Hover Interaction 훅
+
+`useElementHoverInteraction.ts` — window-level `pointermove` + RAF 스로틀 기반 호버 감지.
+
+**아키텍처:**
+```
+window pointermove
+    ↓ RAF 스로틀 (프레임당 1회)
+스크린 → 씬-로컬 좌표 변환
+    ↓
+editingContext 직계 자식 후보 수집
+    ↓
+treeBoundsMap AABB 히트 테스트 (역순 = z-order 높은 것 우선)
+    ↓
+선택된 요소 제외 필터
+    ↓
+hoverStateRef.hoveredElementId 갱신
+overlayVersionRef++ → Skia 리페인트
+```
+
+**설계 포인트:**
+- **ref 기반 상태 관리**: React `useState` 대신 `useRef`로 호버 상태 보관 → 리렌더 없이 60fps 갱신
+- **subpixel jitter 방지**: `clientX/Y` 동일하면 스킵
+- **캔버스 밖 자동 해제**: 마우스가 캔버스 영역을 벗어나면 `hoveredElementId = null`
+- **editingContext 스코프**: 현재 깊이 레벨의 직계 자식만 호버 대상
+- **treeBoundsMap 공유**: SkiaOverlay의 Skia 트리 바운드맵을 ref로 공유하여 동일 좌표 소스 보장
+
+#### 12.12.4 Selection 오버레이 변경
+
+`buildSelectionRenderData`에 `pageFrames` 파라미터 추가:
+
+- Body 요소가 `treeBoundsMap`에 없을 때 `pageFrames`에서 bounds 계산 (폴백)
+- `isOnlyBodySelected` 스킵 로직 제거 → body도 Selection 오버레이 표시
+- 페이지 프레임의 `(x, y, width, height)`를 직접 사용하여 body bounds 구성
+
+#### 12.12.5 SkiaOverlay 렌더 파이프라인 순서 (업데이트)
+
+```
+renderer.setOverlayNode renderSkia():
+    1. AI 이펙트 (Generating + Flash)
+    2. 페이지 타이틀
+    3. Workflow 오버레이 (엣지 + 미니맵)
+    4. editingContext 경계 (점선)          ← 신규
+    5. Hover Highlight (파란 스트로크)      ← 신규
+    6. Selection Box + TransformHandle
+    7. 치수 레이블
+    8. 라쏘
+    9. 미니맵 (최상위, 스크린 고정)
+```
+
+**파일:**
+- `apps/builder/src/builder/workspace/canvas/skia/hoverRenderer.ts` (107줄, 신규)
+- `apps/builder/src/builder/workspace/canvas/hooks/useElementHoverInteraction.ts` (145줄, 신규)
+- `apps/builder/src/builder/workspace/canvas/skia/SkiaOverlay.tsx` (변경)

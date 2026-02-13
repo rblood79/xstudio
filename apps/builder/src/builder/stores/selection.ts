@@ -15,6 +15,12 @@ export interface SelectionState {
         height: number;
     } | null;
 
+    // 계층적 선택 상태
+    /** 현재 진입한 컨테이너 ID. null = body 직계 자식 레벨 (루트) */
+    editingContextId: string | null;
+    /** 호버 중인 요소 ID (레이어 트리 동기화용) */
+    hoveredElementId: string | null;
+
     // 액션들
     setMultiSelectMode: (enabled: boolean) => void;
     addToSelection: (elementId: string) => void;
@@ -23,14 +29,30 @@ export interface SelectionState {
     setSelectionBounds: (bounds: { x: number; y: number; width: number; height: number } | null) => void;
     selectAll: (elements: Array<{ id: string }>) => void;
     selectByParent: (parentId: string, elements: Array<{ id: string; parent_id?: string | null }>) => void;
+
+    // 계층적 선택 액션
+    setEditingContext: (contextId: string | null) => void;
+    enterEditingContext: (elementId: string) => void;
+    exitEditingContext: () => void;
+    setHoveredElementId: (elementId: string | null) => void;
 }
 
-export const createSelectionSlice: StateCreator<SelectionState> = (set, get) => ({
+// 다른 슬라이스(ElementsState)에서 필요한 상태
+interface RequiredElementsState {
+    elementsMap: Map<string, { id: string; tag: string; parent_id?: string | null }>;
+    childrenMap: Map<string, Array<{ id: string }>>;
+}
+
+type CombinedSelectionState = SelectionState & RequiredElementsState;
+
+export const createSelectionSlice: StateCreator<CombinedSelectionState, [], [], SelectionState> = (set, get) => ({
     multiSelectMode: false,
     selectedElementIds: [],
     // 🚀 O(1) 검색용 Set 초기화
     selectedElementIdsSet: new Set<string>(),
     selectionBounds: null,
+    editingContextId: null,
+    hoveredElementId: null,
 
     // 🚀 Phase 1: Immer → 함수형 업데이트
     setMultiSelectMode: (enabled) => {
@@ -106,4 +128,53 @@ export const createSelectionSlice: StateCreator<SelectionState> = (set, get) => 
             selectedElementIdsSet: new Set(ids),
         });
     },
+
+    // 계층적 선택 액션
+    setEditingContext: (contextId) => {
+        set({
+            editingContextId: contextId,
+            selectedElementIds: [],
+            selectedElementIdsSet: new Set<string>(),
+            selectionBounds: null,
+        });
+    },
+
+    enterEditingContext: (elementId) => {
+        const { childrenMap } = get();
+        const children = childrenMap.get(elementId);
+        if (!children || children.length === 0) return;
+        set({
+            editingContextId: elementId,
+            selectedElementIds: [],
+            selectedElementIdsSet: new Set<string>(),
+            selectionBounds: null,
+        });
+    },
+
+    exitEditingContext: () => {
+        const { editingContextId, elementsMap } = get();
+        if (editingContextId === null) return;
+
+        const contextElement = elementsMap.get(editingContextId);
+        if (!contextElement) {
+            set({ editingContextId: null });
+            return;
+        }
+
+        const parentId = contextElement.parent_id;
+        const parentElement = parentId ? elementsMap.get(parentId) : null;
+
+        // body 직계 자식이면 루트로, 아니면 부모로 이동
+        const newContextId = parentElement?.tag === 'body' ? null : (parentId ?? null);
+
+        // 빠져나온 컨테이너를 선택 상태로
+        set({
+            editingContextId: newContextId,
+            selectedElementIds: [editingContextId],
+            selectedElementIdsSet: new Set([editingContextId]),
+            selectionBounds: null,
+        });
+    },
+
+    setHoveredElementId: (elementId) => set({ hoveredElementId: elementId }),
 });

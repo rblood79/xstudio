@@ -64,6 +64,7 @@ import { usePageDrag } from "./hooks/usePageDrag";
 import { longTaskMonitor } from "../../../utils/longTaskMonitor";
 import type { Element } from "../../../types/core/store.types";
 import { getPageElements } from "../../stores/utils/elementIndexer";
+import { resolveClickTarget } from "../../utils/hierarchicalSelection";
 
 import { useGPUProfiler } from "./utils/gpuProfilerCore";
 
@@ -2092,6 +2093,29 @@ export function BuilderCanvas({
           setCurrentPageId(clickedElement.page_id);
         }
 
+        // 계층 해석: 클릭된 요소에서 현재 editingContext의 직계 자식을 찾음
+        const resolvedTarget = resolveClickTarget(
+          elementId,
+          state.editingContextId,
+          state.elementsMap,
+        );
+        if (!resolvedTarget) {
+          // Body 요소 클릭 시 body 선택 (root 레벨에서)
+          if (state.editingContextId === null) {
+            const clickedEl = state.elementsMap.get(elementId);
+            if (clickedEl && clickedEl.tag.toLowerCase() === 'body') {
+              // 페이지 전환 (필요시)
+              if (clickedEl.page_id && clickedEl.page_id !== state.currentPageId) {
+                setCurrentPageId(clickedEl.page_id);
+              }
+              startTransition(() => {
+                setSelectedElement(elementId);
+              });
+            }
+          }
+          return;
+        }
+
         // Cmd+Click (Mac) or Ctrl+Click (Windows) for multi-select
         const isMultiSelectKey = modifiers?.metaKey || modifiers?.ctrlKey;
 
@@ -2102,9 +2126,9 @@ export function BuilderCanvas({
             // 🆕 Multi-page: 크로스 페이지 다중 선택 방지
             // 다른 페이지 요소면 페이지 전환 + 단일 선택
             const curPageId = useStore.getState().currentPageId;
-            const targetEl = useStore.getState().elementsMap.get(elementId);
+            const targetEl = useStore.getState().elementsMap.get(resolvedTarget);
             if (targetEl?.page_id && targetEl.page_id !== curPageId) {
-              setSelectedElement(elementId);
+              setSelectedElement(resolvedTarget);
               return;
             }
 
@@ -2113,11 +2137,11 @@ export function BuilderCanvas({
 
             // 🚀 O(n) → O(1) 최적화: Set을 사용하여 빠른 검색
             const selectedSet = new Set(currentSelectedIds);
-            const isAlreadySelected = selectedSet.has(elementId);
+            const isAlreadySelected = selectedSet.has(resolvedTarget);
 
             if (isAlreadySelected) {
               // 선택 해제 - Set에서 제거 후 배열로 변환
-              selectedSet.delete(elementId);
+              selectedSet.delete(resolvedTarget);
               if (selectedSet.size > 0) {
                 setSelectedElements(Array.from(selectedSet));
               } else {
@@ -2125,12 +2149,12 @@ export function BuilderCanvas({
               }
             } else {
               // 선택에 추가 - Set에 추가 후 배열로 변환
-              selectedSet.add(elementId);
+              selectedSet.add(resolvedTarget);
               setSelectedElements(Array.from(selectedSet));
             }
           } else {
             // 단일 선택
-            setSelectedElement(elementId);
+            setSelectedElement(resolvedTarget);
           }
         });
       });
@@ -2138,12 +2162,41 @@ export function BuilderCanvas({
     [setSelectedElement, setSelectedElements, clearSelection, isEditing, setCurrentPageId]
   );
 
-  // Element double click handler (텍스트 편집 시작)
+  // Element double click handler (텍스트 편집 또는 컨테이너 진입)
   // 🚀 Phase 6: ElementRegistry의 getBounds() 사용
   const handleElementDoubleClick = useCallback(
     (elementId: string) => {
-      const layoutPosition = getElementBoundsSimple(elementId);
-      startEdit(elementId, layoutPosition ?? undefined);
+      const state = useStore.getState();
+
+      // 계층 해석: 더블클릭 대상을 현재 context 기준으로 해석
+      const resolvedTarget = resolveClickTarget(
+        elementId,
+        state.editingContextId,
+        state.elementsMap,
+      );
+      if (!resolvedTarget) return;
+
+      const resolvedElement = state.elementsMap.get(resolvedTarget);
+      if (!resolvedElement) return;
+
+      // 텍스트 요소: 텍스트 편집 시작 (기존 동작)
+      const textTags = new Set(['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'span', 'a', 'label', 'button']);
+      if (textTags.has(resolvedElement.tag)) {
+        const layoutPosition = getElementBoundsSimple(resolvedTarget);
+        startEdit(resolvedTarget, layoutPosition ?? undefined);
+        return;
+      }
+
+      // 자식이 있는 컨테이너: 한 단계 진입
+      const children = state.childrenMap.get(resolvedTarget);
+      if (children && children.length > 0) {
+        state.enterEditingContext(resolvedTarget);
+        return;
+      }
+
+      // 리프 요소: 텍스트 편집 시도 (기존 동작)
+      const layoutPosition = getElementBoundsSimple(resolvedTarget);
+      startEdit(resolvedTarget, layoutPosition ?? undefined);
     },
     [startEdit]
   );
@@ -2229,9 +2282,22 @@ export function BuilderCanvas({
             initialPanOffsetX={initialPanOffsetX}
           />
 
-          {/* 전체 Canvas 영역 클릭 → 선택 해제 + 라쏘 선택 시작 */}
+          {/* 전체 Canvas 영역 클릭 → body 선택 (editingContext 외부) 또는 선택 해제 */}
           <ClickableBackground
-            onClick={clearSelection}
+            onClick={() => {
+              const { editingContextId, currentPageId, elements } = useStore.getState();
+              if (editingContextId === null && currentPageId) {
+                // 루트 레벨 빈 영역 클릭 → body 요소 선택
+                const bodyElement = elements.find(
+                  (el) => el.page_id === currentPageId && el.tag === 'body'
+                );
+                if (bodyElement) {
+                  setSelectedElement(bodyElement.id);
+                  return;
+                }
+              }
+              clearSelection();
+            }}
             onLassoStart={startLasso}
             onLassoDrag={updateDrag}
             onLassoEnd={endDrag}

@@ -3732,7 +3732,7 @@ export const TextFieldSpec: ComponentSpec<TextFieldProps> = {
 | 4 | Menu | ⚠️ 부분 | 높음 |
 | 5 | Breadcrumbs | ⚠️ 부분 | 중간 |
 | 6 | Pagination | ⚠️ 부분 | 중간 |
-| 7 | TagGroup | ⚠️ 부분 | 중간 |
+| 7 | TagGroup | ✅ 정상 (CONTAINER_TAGS 전환) | 중간 |
 | 8 | GridList | ✅ 정상 | 높음 |
 | 9 | Disclosure | ✅ 정상 | 중간 |
 | 10 | DisclosureGroup | 🔵 PIXI전용 | 높음 |
@@ -3941,7 +3941,7 @@ export const TableSpec: ComponentSpec<TableProps> = {
 - [ ] Menu.spec.ts
 - [ ] Breadcrumbs.spec.ts
 - [ ] Pagination.spec.ts
-- [ ] TagGroup.spec.ts
+- [x] TagGroup.spec.ts (CONTAINER_TAGS 전환 완료)
 - [ ] GridList.spec.ts
 - [ ] Disclosure.spec.ts
 - [ ] DisclosureGroup.spec.ts
@@ -4734,6 +4734,208 @@ shapes: (props, variant, size, state = 'default') => {
 
 **상세:** `packages/specs/src/components/*.spec.ts` (49개), `apps/builder/src/.../sprites/ElementSprite.tsx`, `apps/builder/src/.../skia/specShapeConverter.ts`, `apps/builder/src/.../ui/PixiButton.tsx`
 
+
+### 9.7 ComponentDefinition 재귀 확장 및 TagGroup CONTAINER_TAGS 전환 (2026-02-13)
+
+#### 9.7.1 ChildDefinition 재귀 타입
+
+기존 `ComponentDefinition`의 children은 2-level 구조(parent + flat children)만 지원했다.
+TagGroup처럼 3-level 이상의 계층(TagGroup → TagList → Tag)이 필요한 컴포넌트를 위해
+`ChildDefinition` 타입에 재귀적 `children` 필드를 추가했다.
+
+**변경 전 (2-level):**
+
+```typescript
+// 기존: children은 Element와 동일 구조, 중첩 불가
+export interface ComponentDefinition {
+  tag: string;
+  parent: Omit<Element, "id" | "created_at" | "updated_at">;
+  children: Omit<Element, "id" | "created_at" | "updated_at" | "parent_id">[];
+}
+```
+
+**변경 후 (무한 중첩):**
+
+```typescript
+// apps/builder/src/builder/factories/types/index.ts
+
+/**
+ * 자식 요소 정의 (재귀적 중첩 지원)
+ */
+export type ChildDefinition = Omit<Element, "id" | "created_at" | "updated_at" | "parent_id"> & {
+  children?: ChildDefinition[];
+};
+
+export interface ComponentDefinition {
+  tag: string;
+  parent: Omit<Element, "id" | "created_at" | "updated_at">;
+  children: ChildDefinition[];
+}
+```
+
+**핵심 포인트:**
+- `children?: ChildDefinition[]` — optional 재귀 필드로 무한 중첩 가능
+- `parent_id` 제외 — Factory가 생성 시 자동 할당 (부모 Element의 id)
+- `id`, `created_at`, `updated_at` 제외 — Factory가 자동 생성
+
+#### 9.7.2 Factory createElementsFromDefinition 재귀 생성
+
+`createElementsFromDefinition()` 함수에 `processChildren()` 재귀 함수를 추가하여
+중첩된 `ChildDefinition[]`을 일괄 처리한다.
+
+```typescript
+// apps/builder/src/builder/factories/utils/elementCreation.ts
+
+export function createElementsFromDefinition(
+  definition: ComponentDefinition
+): { parent: Element; children: Element[] } {
+  const store = useStore.getState();
+  const currentElements = store.elements;
+
+  // 부모 요소 생성
+  const parent: Element = {
+    ...definition.parent,
+    id: ElementUtils.generateId(),
+    customId: generateCustomId(definition.parent.tag, currentElements),
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  };
+
+  // 자식 요소들 재귀 생성 (중첩 children 지원)
+  const allElementsSoFar = [...currentElements, parent];
+  const allChildren: Element[] = [];
+
+  function processChildren(childDefs: ChildDefinition[], parentId: string): void {
+    childDefs.forEach((childDef) => {
+      const { children: nestedChildren, ...elementDef } = childDef;
+      const child: Element = {
+        ...elementDef,
+        id: ElementUtils.generateId(),
+        customId: generateCustomId(elementDef.tag, allElementsSoFar),
+        parent_id: parentId,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+      allChildren.push(child);
+      allElementsSoFar.push(child);
+
+      // 중첩 children 재귀 처리
+      if (nestedChildren && nestedChildren.length > 0) {
+        processChildren(nestedChildren, child.id);
+      }
+    });
+  }
+
+  processChildren(definition.children, parent.id);
+
+  return { parent, children: allChildren };
+}
+```
+
+**`allElementsSoFar` 배열의 역할:**
+
+| 단계 | 배열 상태 | 목적 |
+|------|----------|------|
+| 초기화 | `[...currentElements, parent]` | 기존 페이지 요소 + 새 부모 |
+| 자식 생성 시 | `.push(child)` | 새 자식 추가 |
+| `generateCustomId` 호출 시 | 전체 참조 | customId 중복 방지 |
+
+- `generateCustomId(tag, allElementsSoFar)`는 기존 요소의 customId와 충돌하지 않는 고유 ID를 생성한다.
+- 재귀 처리 중에도 `allElementsSoFar`에 즉시 추가하여 같은 tag의 형제/사촌 간 customId 충돌을 방지한다.
+
+#### 9.7.3 TagGroup → CONTAINER_TAGS 전환 사례
+
+TagGroup은 기존에 `TAG_SPEC_MAP`에 등록된 전용 렌더러(`PixiTagGroup.tsx`)를 사용했다.
+이를 `CONTAINER_TAGS` 기반의 범용 BoxSprite 컨테이너로 전환하여, 웹 CSS와 동일한 계층 구조를 달성했다.
+
+**웹 CSS 구조 (3-level 계층):**
+
+```
+TagGroup (display: flex, flex-direction: column, gap: 2)
+├── Label ("Tag Group", fontSize: 12, fontWeight: 500)
+└── TagList (display: flex, flex-direction: row, flex-wrap: wrap, gap: 4)
+    ├── Tag ("Tag 1")
+    └── Tag ("Tag 2")
+```
+
+**Factory 정의 (재귀 children 활용):**
+
+```typescript
+// apps/builder/src/builder/factories/definitions/GroupComponents.ts
+
+return {
+  tag: "TagGroup",
+  parent: {
+    tag: "TagGroup",
+    props: {
+      label: "Tag Group",
+      style: { display: "flex", flexDirection: "column", gap: 2, width: "fit-content" },
+    },
+    ...ownerFields,
+    parent_id: parentId,
+    order_num: orderNum,
+  },
+  children: [
+    {
+      tag: "Label",
+      props: { children: "Tag Group", style: { fontSize: 12, fontWeight: 500 } },
+      ...ownerFields,
+      order_num: 1,
+    },
+    {
+      tag: "TagList",
+      props: { style: { display: "flex", flexDirection: "row", flexWrap: "wrap", gap: 4 } },
+      ...ownerFields,
+      order_num: 2,
+      children: [   // ← 재귀적 중첩
+        { tag: "Tag", props: { children: "Tag 1" }, ...ownerFields, order_num: 1 },
+        { tag: "Tag", props: { children: "Tag 2" }, ...ownerFields, order_num: 2 },
+      ],
+    },
+  ],
+};
+```
+
+**전환 전후 비교:**
+
+| 항목 | 전환 전 | 전환 후 |
+|------|---------|---------|
+| **렌더링** | `PixiTagGroup.tsx` (전용 Graphics 렌더링) | BoxSprite 기본 컨테이너 (CONTAINER_TAGS) |
+| **TAG_SPEC_MAP** | TagGroup 등록 | 제거 (spec shapes 미사용) |
+| **레이아웃** | PixiTagGroup 내부 계산 | Yoga flex layout (styleToLayout.ts) |
+| **구조** | 2-level (parent + flat children) | 3-level (TagGroup → TagList → Tag) |
+| **CSS 동기화** | 수동 동기화 | props.style로 직접 적용 |
+
+**styleToLayout.ts 레이아웃 기본값:**
+
+```typescript
+// TagGroup: 기본 flex column 레이아웃 (Label + TagList 수직 배치)
+const isTagGroup = tag === 'taggroup';
+if (isTagGroup) {
+  if (!style.display) layout.display = 'flex';
+  if (!style.flexDirection) layout.flexDirection = 'column';
+}
+
+// TagList: 기본 flex row wrap 레이아웃 (Tags 가로 배치)
+const isTagList = tag === 'taglist';
+if (isTagList) {
+  if (!style.display) layout.display = 'flex';
+  if (!style.flexDirection) layout.flexDirection = 'row';
+  if (!style.flexWrap) layout.flexWrap = 'wrap';
+}
+```
+
+**수정 파일:**
+
+| 파일 | 변경 |
+|------|------|
+| `factories/types/index.ts` | `ChildDefinition` 재귀 타입 추가 |
+| `factories/utils/elementCreation.ts` | `processChildren()` 재귀 생성 함수 |
+| `factories/definitions/GroupComponents.ts` | TagGroup 3-level 정의 (재귀 children) |
+| `layout/styleToLayout.ts` | TagGroup/TagList flex 기본 레이아웃 |
+| `sprites/ElementSprite.tsx` | TAG_SPEC_MAP에서 TagGroup/TagList 제거 |
+| `ui/PixiTagGroup.tsx` | 특수 렌더러 사용 중단 (CONTAINER_TAGS 대체) |
+
 ---
 
 ## 10. 기술 명세
@@ -5401,3 +5603,4 @@ function ElementSpriteButton({ element }) {
 | 2026-02-06 | 2.7 | **Card display: block 완전 지원** (BuilderCanvas.tsx, PixiCard.tsx, unified.types.ts, utils.ts): (1) **Body 기본값 설정** — `createDefaultBodyProps()`에 `display: 'block'` 추가, Reset 시 컴포넌트 기본값 복원 (`useResetStyles.ts`), (2) **renderWithCustomEngine CONTAINER_TAGS 지원** — Card에 `display: 'block'` 추가 시 children이 외부 형제로 렌더링되는 문제 수정. `isContainerType` 체크 추가, `childElements`/`renderChildElement` props 전달로 children 내부 렌더링 구현. 3단계 nesting 지원 (Card > Panel > Button 등), (3) **Card 기본값 추가** — `createDefaultCardProps()`에 `display: 'block'`, `width: '100%'`, `padding: '12px'` 추가 (Preview CSS와 동기화), (4) **padding 이중 적용 수정** — `calculatedContentHeight` (PixiCard.tsx)와 `calculateContentHeight()` (utils.ts)에서 padding 제외. Yoga/BlockEngine이 별도 padding 추가하므로 content-only 값 반환. minHeight: 60→36 (padding 24px 제외), (5) **CONTAINER_TAGS siblings 자동 재배치** — `renderWithCustomEngine`에서 absolute→relative 위치 변환. flex column 래퍼로 감싸서 Card height 변경 시 siblings 자동 재배치. BlockEngine y→marginTop, x→marginLeft 변환, (6) **최종 결과** — children 내부 렌더링 ✅, padding 정상 적용 ✅, height auto-grow ✅, siblings 자동 재배치 ✅, Preview 일치 ✅ |
 | 2026-02-06 | 2.8 | **Block 레이아웃 라인 기반 렌더링 + Button 계열 사이즈 통일** (BuilderCanvas.tsx, cssVariableReader.ts, PixiToggleButton.tsx): (1) **inline 요소 가로 배치 수정** — `renderWithCustomEngine`에서 같은 y 값을 가진 요소들을 라인(flex row)으로 그룹화. 기존 flex column + marginLeft 방식 → 라인별 flex row + 라인 간 flex column으로 변경하여 계단식 배치 문제 해결, (2) **라인 그룹화 알고리즘** — BlockEngine 결과에서 y 값 기준(EPSILON=0.5) 라인 그룹 생성, x 기준 정렬 후 marginLeft로 간격 표현, 라인 간 marginTop으로 수직 간격 표현, (3) **ToggleButton/ToggleButtonGroup borderRadius 통일** — `TOGGLE_BUTTON_FALLBACKS` borderRadius를 Button과 동일하게 수정 (sm:6→4, md:8→6, lg:10→8), `TOGGLE_BUTTON_SIZE_MAPPING`에 borderRadius CSS 변수 추가, `getToggleButtonSizePreset()`에서 사이즈별 borderRadius 읽기, (4) **Button 계열 통일된 사이즈** — sm(fontSize:14, paddingY:4, paddingX:12, borderRadius:4), md(fontSize:16, paddingY:8, paddingX:24, borderRadius:6), lg(fontSize:18, paddingY:12, paddingX:32, borderRadius:8). Button, ToggleButton, ToggleButtonGroup 모두 동일 |
 | 2026-02-12 | 3.0 | **Phase 6 Spec Shapes → Skia 렌더링 파이프라인 문서화**: (1) 문서 상태를 "Phase 6 Skia Spec 렌더링 구현 완료"로 갱신, (2) 목차에 Phase 6 항목 추가 및 이후 섹션 번호 재조정 (9→10, 10→11), (3) Phase 요약 테이블에 Phase 6 행 추가 (specShapeConverter, line 렌더러, flexDirection 지원), (4) §9 Phase 6 섹션 신규 작성 — 전체 렌더링 흐름 다이어그램 (ComponentSpec → Shape[] → specShapesToSkia → SkiaNodeData → renderNode), Shape 타입 매핑 테이블 (8개 타입), 핵심 파일 구조, specShapeConverter 핵심 로직 (배경 box 추출/target 참조/색상 변환), ElementSprite TAG_SPEC_MAP 통합 코드, flexDirection row/column 지원 (rearrangeShapesForColumn), BlockEngine 통합 (calculateContentHeight/Width), Phase 6 체크리스트 (변환 인프라 9건 + 레이아웃 4건 + 검증 3건 완료) |
+| 2026-02-13 | 3.1 | **ComponentDefinition 재귀 확장 + TagGroup CONTAINER_TAGS 전환** (§9.7): (1) ChildDefinition 재귀 타입 추가 — 기존 2-level (parent + flat children) → 무한 중첩 지원, optional children?: ChildDefinition[] 필드, (2) Factory createElementsFromDefinition 재귀 생성 — processChildren() 재귀 함수로 중첩 자식 일괄 생성, allElementsSoFar 배열로 customId 중복 방지, (3) TagGroup → CONTAINER_TAGS 전환 — TAG_SPEC_MAP에서 TagGroup/TagList 제거, PixiTagGroup 특수 렌더러 사용 중단, BoxSprite 기반 컨테이너로 전환, (4) TagGroup 3-level 계층 정의 — TagGroup(flex column) → Label + TagList(flex row wrap) → Tag×2, styleToLayout.ts에 TagGroup/TagList flex 기본값 추가, (5) Phase 3 §6.1 TagGroup 상태 "⚠️ 부분"→"✅ 정상 (CONTAINER_TAGS 전환)", Phase 3 체크리스트 TagGroup.spec.ts 완료 표기 |

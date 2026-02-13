@@ -1,7 +1,7 @@
 # xstudio WASM 렌더링 아키텍처 전환 계획
 
 > 작성일: 2026-01-29
-> 최종 수정: 2026-02-05 (Pencil 방식 2-pass: 컨텐츠 캐시 + present(blit) + 오버레이 분리 + padding 기반 camera-only + cleanup render)
+> 최종 수정: 2026-02-14 (Factory 재귀 생성 + styleToLayout 텍스트 높이 자동계산 + TagGroup/TagList 기본값)
 > 대상: `apps/builder/src/builder/workspace/canvas/`
 > 현재 스택: CanvasKit/Skia WASM + PixiJS v8.14.3 (이벤트 전용) + Yoga WASM v3.2.1 + Rust WASM (성능 가속) + Zustand
 > 참고: Pencil Desktop v1.1.10 아키텍처 분석 기반 (`docs/PENCIL_APP_ANALYSIS.md` §11)
@@ -1531,6 +1531,130 @@ calculate(parent, children, availableWidth, availableHeight): ComputedLayout[] {
 
 > **주의:** `collapseMargins()` 같은 단일 호출(~0.005ms)의 개별 WASM 위임은
 > 경계 넘기 오버헤드(~0.1μs)가 연산 비용과 비슷하여 이점이 없다.
+
+
+### 2.7 JS 측 레이아웃 파이프라인 개선 (styleToLayout + Factory)
+
+> **배경:** Phase 2의 WASM Layout Engine은 `styleToLayout.ts`가 변환한 Yoga 레이아웃 입력에 의존한다.
+> 아래 개선 사항은 WASM 배치 전 **JS 전처리 단계**의 정확도를 높이며,
+> 복합 컴포넌트 생성 시 **요소 트리 구성**의 정확성을 보장한다.
+
+#### 2.7.1 Factory 재귀 생성 (ChildDefinition 재귀 타입)
+
+3-level 이상의 중첩 컴포넌트(예: TagGroup → TagList → Tag)를 지원하기 위해
+Factory 시스템이 **재귀적 요소 생성**을 지원한다.
+
+**핵심 타입 (`factories/types/index.ts`):**
+```typescript
+/**
+ * 자식 요소 정의 (재귀적 중첩 지원)
+ */
+export type ChildDefinition = Omit<Element, "id" | "created_at" | "updated_at" | "parent_id"> & {
+  children?: ChildDefinition[];   // ← 재귀: 자식이 다시 자식을 가질 수 있음
+};
+```
+
+**재귀 순회 (`factories/utils/elementCreation.ts`):**
+```typescript
+// allElementsSoFar 배열로 customId 중복 방지
+const allElementsSoFar = [...currentElements, parent];
+const allChildren: Element[] = [];
+
+function processChildren(childDefs: ChildDefinition[], parentId: string): void {
+  childDefs.forEach((childDef) => {
+    const { children: nestedChildren, ...elementDef } = childDef;
+    const child: Element = {
+      ...elementDef,
+      id: ElementUtils.generateId(),
+      customId: generateCustomId(elementDef.tag, allElementsSoFar),
+      parent_id: parentId,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+    allChildren.push(child);
+    allElementsSoFar.push(child);  // ← 중복 customId 방지
+
+    // 중첩 children 재귀 처리
+    if (nestedChildren && nestedChildren.length > 0) {
+      processChildren(nestedChildren, child.id);
+    }
+  });
+}
+```
+
+| 항목 | 설명 |
+|------|------|
+| 재귀 타입 | `ChildDefinition.children?: ChildDefinition[]` — 깊이 제한 없음 |
+| customId 중복 방지 | `allElementsSoFar` 배열에 생성된 요소를 즉시 추가하여 `generateCustomId()`가 중복 회피 |
+| 실행 순서 | DFS(깊이 우선) — 부모 먼저 생성 후 자식 재귀 진입 |
+| Layout 영향 | 재귀 생성된 요소 트리가 Yoga `calculateLayout()`의 입력이 됨 |
+
+#### 2.7.2 텍스트 태그 높이 자동 계산 (styleToLayout.ts)
+
+`label`, `text`, `heading`, `paragraph` 등 **순수 텍스트 태그**는 Yoga `measureFunc` 없이도
+컨테이너 내에서 올바른 높이를 차지하도록 `styleToLayout()`에서 **자동 계산**한다.
+
+**대상 태그 (`styleToLayout.ts:350`):**
+```typescript
+const TEXT_LAYOUT_TAGS = new Set(['label', 'text', 'heading', 'paragraph']);
+```
+
+**size prop → typography 토큰 매핑:**
+
+| size prop | fontSize (px) |
+|-----------|---------------|
+| `xs` | 12 |
+| `sm` | 14 (기본값) |
+| `md` | 16 |
+| `lg` | 18 |
+| `xl` | 20 |
+
+**높이 계산 공식:**
+```
+height = Math.ceil(fontSize × 1.4)
+```
+
+> `1.4`는 CSS `line-height: 1.4`에 해당하며, Yoga가 텍스트 노드의 내재 높이를 알 수 없는 문제를
+> measureFunc 설정 없이 해결한다. Button sizes 패턴(`size → font-size: var(--text-{size})`)과
+> 동일한 토큰 매핑을 텍스트 태그에 적용한다.
+
+**적용 조건:**
+- `TEXT_LAYOUT_TAGS`에 해당하는 태그
+- `height`가 CSS에서 명시적으로 설정되지 않은 경우(`height === undefined`)
+- 명시적 `style.fontSize`가 있으면 size prop 매핑 대신 해당 값 사용
+
+#### 2.7.3 TagGroup/TagList styleToLayout 기본값
+
+ToggleButtonGroup(§2.7 상단)과 동일한 패턴으로, **TagGroup/TagList** 컴포넌트에
+Yoga 레이아웃 기본값을 설정한다.
+
+**TagGroup** (`styleToLayout.ts:332-337`):
+```typescript
+// TagGroup: Label + TagList 수직 배치
+if (isTagGroup) {
+  if (!style.display) layout.display = 'flex';
+  if (!style.flexDirection) layout.flexDirection = 'column';
+}
+```
+
+**TagList** (`styleToLayout.ts:339-345`):
+```typescript
+// TagList: Tags 가로 배치 + 줄바꿈
+if (isTagList) {
+  if (!style.display) layout.display = 'flex';
+  if (!style.flexDirection) layout.flexDirection = 'row';
+  if (!style.flexWrap) layout.flexWrap = 'wrap';
+}
+```
+
+| 컴포넌트 | display | flexDirection | flexWrap | 설명 |
+|----------|---------|---------------|----------|------|
+| TagGroup | `flex` | `column` | — | Label과 TagList를 수직으로 쌓음 |
+| TagList | `flex` | `row` | `wrap` | Tag 아이템을 가로 배치, 넘치면 줄바꿈 |
+| ToggleButtonGroup | `flex` | orientation 기반 | — | 기존 구현 (§2.4 참조) |
+
+> **참고:** 사용자가 CSS에서 `display`, `flexDirection`, `flexWrap`을 명시적으로 설정하면
+> 기본값은 무시된다 (조건부 적용 패턴).
 
 ---
 

@@ -168,20 +168,24 @@ export const TextSprite = memo(function TextSprite({
   const effectiveBorderRadius = typeof borderRadius === 'number' ? borderRadius : borderRadius?.[0] ?? 0;
   const drawBackground = useCallback(
     (g: PixiGraphics) => {
-      // Only draw if there's a background color, border, or borderRadius
-      if ((!style?.backgroundColor || style.backgroundColor === 'transparent') && !borderConfig && !effectiveBorderRadius) {
-        g.clear();
-        return;
-      }
+      const hasBg = style?.backgroundColor && style.backgroundColor !== 'transparent';
+      const hasVisual = hasBg || borderConfig || effectiveBorderRadius;
 
-      drawBox(g, {
-        width: transform.width,
-        height: transform.height,
-        backgroundColor: fill.color,
-        backgroundAlpha: fill.alpha,
-        borderRadius: effectiveBorderRadius,
-        border: borderConfig,
-      });
+      if (hasVisual) {
+        drawBox(g, {
+          width: transform.width,
+          height: transform.height,
+          backgroundColor: fill.color,
+          backgroundAlpha: fill.alpha,
+          borderRadius: effectiveBorderRadius,
+          border: borderConfig,
+        });
+      } else {
+        // 배경이 없어도 투명 히트 영역을 그려서 클릭 선택이 가능하도록 함
+        g.clear();
+        g.rect(0, 0, transform.width, transform.height);
+        g.fill({ color: 0xffffff, alpha: 0.001 });
+      }
     },
     [style, transform, fill, effectiveBorderRadius, borderConfig]
   );

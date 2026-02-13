@@ -34,6 +34,8 @@ import { renderWorkflowEdges, renderDataSourceEdges, renderLayoutGroups, renderP
 import { buildEdgeGeometryCache, type CachedEdgeGeometry } from './workflowHitTest';
 import { computeConnectedEdges } from './workflowGraphUtils';
 import { useWorkflowInteraction, type WorkflowHoverState } from '../hooks/useWorkflowInteraction';
+import { useElementHoverInteraction, type ElementHoverState } from '../hooks/useElementHoverInteraction';
+import { renderHoverHighlight, renderEditingContextBorder } from './hoverRenderer';
 import { renderWorkflowMinimap, DEFAULT_MINIMAP_CONFIG, MINIMAP_CANVAS_RATIO, MINIMAP_MIN_WIDTH, MINIMAP_MAX_WIDTH, MINIMAP_MIN_HEIGHT, MINIMAP_MAX_HEIGHT, type MinimapConfig } from './workflowMinimap';
 import { useStore } from '../../../stores';
 import { useLayoutsStore } from '../../../stores/layouts';
@@ -340,6 +342,7 @@ function buildSelectionRenderData(
   cameraZoom: number,
   treeBoundsMap: Map<string, BoundingBox>,
   dragStateRef?: RefObject<DragState | null>,
+  pageFrames?: SkiaOverlayProps["pageFrames"],
 ): SelectionRenderResult {
   const state = useStore.getState();
   const selectedIds = state.selectedElementIds;
@@ -377,6 +380,20 @@ function buildSelectionRenderData(
           width: globalBounds.width / cameraZoom,
           height: globalBounds.height / cameraZoom,
         });
+        continue;
+      }
+
+      // Body 요소 폴백: 페이지 프레임에서 바운드 계산
+      if (el.tag.toLowerCase() === 'body' && pageFrames) {
+        const pageFrame = pageFrames.find((frame) => frame.id === el.page_id);
+        if (pageFrame) {
+          boxes.push({
+            x: pageFrame.x,
+            y: pageFrame.y,
+            width: pageFrame.width,
+            height: pageFrame.height,
+          });
+        }
       }
     }
 
@@ -455,6 +472,11 @@ export function SkiaOverlay({
   // Phase 2: 서브 토글 변경 감지용
   const lastWfSubTogglesRef = useRef('');
 
+  // Phase 4: 요소 호버 상태 ref (React 리렌더 없이 Skia에서 직접 사용)
+  const elementHoverStateRef = useRef<ElementHoverState>({ hoveredElementId: null });
+  const lastEditingContextRef = useRef<string | null>(null);
+  const treeBoundsMapRef = useRef<Map<string, BoundingBox>>(new Map());
+
   // Phase 3: 인터랙션 refs
   const workflowHoverStateRef = useRef<WorkflowHoverState>({ hoveredEdgeId: null });
   const edgeGeometryCacheRef = useRef<CachedEdgeGeometry[]>([]);
@@ -488,6 +510,14 @@ export function SkiaOverlay({
     hoverStateRef: workflowHoverStateRef,
     overlayVersionRef,
     minimapConfigRef,
+  });
+
+  // Phase 4: 요소 호버 인터랙션
+  useElementHoverInteraction({
+    containerEl,
+    hoverStateRef: elementHoverStateRef,
+    overlayVersionRef,
+    treeBoundsMapRef,
   });
 
   // 🚀 페이지 위치 버전 React lifecycle에서 ref로 전파 (매 프레임 store.getState() 호출 제거)
@@ -703,6 +733,13 @@ export function SkiaOverlay({
         lastSelectedIdRef.current = currentSelectedId;
       }
 
+      // editingContext 변경 감지
+      const currentEditingContext = useStore.getState().editingContextId;
+      if (currentEditingContext !== lastEditingContextRef.current) {
+        overlayVersionRef.current++;
+        lastEditingContextRef.current = currentEditingContext;
+      }
+
       // AI 상태 변경 감지
       // AI 이펙트가 활성 상태(generating/flash)면 매 프레임 version 증가하여
       // 애니메이션이 idle 분류로 멈추는 것을 방지한다.
@@ -855,7 +892,10 @@ export function SkiaOverlay({
       const treeBoundsMap = needsSelectionBoundsMap
         ? getCachedTreeBoundsMap(tree, registryVersion, pagePosVersion)
         : emptyTreeBoundsMapRef.current;
-      const selectionData = buildSelectionRenderData(cameraX, cameraY, cameraZoom, treeBoundsMap, dragStateRef);
+      // Phase 4: treeBoundsMapRef 갱신 (호버 히트 테스트에서 사용)
+      treeBoundsMapRef.current = treeBoundsMap;
+
+      const selectionData = buildSelectionRenderData(cameraX, cameraY, cameraZoom, treeBoundsMap, dragStateRef, pageFramesRef.current);
       if (process.env.NODE_ENV === 'development' && needsSelectionBoundsMap) {
         recordWasmMetric('selectionBuildTime', performance.now() - selectionBuildStart);
       }
@@ -1006,6 +1046,23 @@ export function SkiaOverlay({
             // 데이터 소스 엣지
             if (showDS && dataSourceEdgesRef.current.length > 0) {
               renderDataSourceEdges(ck, canvas, dataSourceEdgesRef.current, pageFrameMap, elBoundsMap, cameraZoom, fontMgr);
+            }
+          }
+
+          // Phase 4: editingContext 경계 표시
+          const editingContextId = useStore.getState().editingContextId;
+          if (editingContextId && treeBoundsMap.has(editingContextId)) {
+            const contextBounds = treeBoundsMap.get(editingContextId)!;
+            renderEditingContextBorder(ck, canvas, contextBounds, cameraZoom);
+          }
+
+          // Phase 4: 호버 하이라이트 (선택된 요소 제외)
+          const hoveredId = elementHoverStateRef.current.hoveredElementId;
+          if (hoveredId && treeBoundsMap.has(hoveredId)) {
+            const selectedIdsSet = useStore.getState().selectedElementIdsSet;
+            if (!selectedIdsSet.has(hoveredId)) {
+              const hoverBounds = treeBoundsMap.get(hoveredId)!;
+              renderHoverHighlight(ck, canvas, hoverBounds, cameraZoom);
             }
           }
 

@@ -636,3 +636,211 @@ Grid와 Snap이 동일한 씬 좌표계를 사용하여 시각적 정합성을 �
 - [Phase 10 B1.4](../phases/PHASE_10.md) - 줌/팬 구현 스펙
 
 **최종 업데이트:** 2026-02-12
+
+---
+
+## 계층적 선택 시스템 (Hierarchical Selection) (2026-02-14)
+
+### 개요
+
+Pencil/Figma 스타일의 계층적 선택 모델. 캔버스에서 요소를 클릭하면 현재 `editingContext`의 직계 자식 레벨만 선택 대상이 된다. 더블클릭으로 컨테이너 내부에 진입하고, Escape로 상위 레벨로 복귀한다.
+
+### 파일 구조
+
+| 파일 | 역할 |
+|------|------|
+| `utils/hierarchicalSelection.ts` | `resolveClickTarget`, `hasEditableChildren`, `getAncestorChain` 순수 함수 |
+| `canvas/BuilderCanvas.tsx` | `handleElementClick`, `handleElementDoubleClick`, `ClickableBackground` |
+| `stores/selection.ts` | `editingContextId`, `enterEditingContext`, `exitEditingContext` |
+| `hooks/useGlobalKeyboardShortcuts.ts` | Escape 키 처리 |
+| `canvas/hooks/useElementHoverInteraction.ts` | 호버 감지 (현재 깊이 레벨) |
+| `canvas/skia/hoverRenderer.ts` | 호버/editingContext 렌더링 |
+
+### 클릭 동작 — `resolveClickTarget`을 통한 계층적 선택
+
+**기존 동작 (flat selection):**
+- 클릭된 요소를 직접 선택 (깊이 무관)
+
+**변경 후 동작 (hierarchical selection):**
+- 클릭된 요소에서 parent chain을 올라가 현재 `editingContext`의 **직계 자식**으로 해석 후 선택
+
+```typescript
+// hierarchicalSelection.ts
+export function resolveClickTarget(
+  clickedElementId: string,
+  editingContextId: string | null,
+  elementsMap: Map<string, MinimalElement>,
+): string | null {
+  let current = clickedElementId;
+  while (current) {
+    const element = elementsMap.get(current);
+    if (!element) return null;
+
+    if (editingContextId === null) {
+      // 루트 레벨: parent가 body인 요소를 찾는다
+      const parent = elementsMap.get(element.parent_id);
+      if (parent?.tag === 'body') return current;
+    } else {
+      // 특정 컨테이너 내부: parent_id === editingContextId인 요소
+      if (element.parent_id === editingContextId) return current;
+    }
+    current = element.parent_id;
+  }
+  return null;
+}
+```
+
+**예시:**
+```
+body
+├── div.container         ← editingContext = null → 이 레벨 선택 가능
+│   ├── div.card          ← editingContext = container → 이 레벨 선택 가능
+│   │   ├── h2.title      ← editingContext = card → 이 레벨 선택 가능
+│   │   └── p.desc
+│   └── div.sidebar
+└── div.footer
+```
+
+깊이 3의 `h2.title`을 클릭해도 `editingContext = null`이면 `div.container`가 선택된다.
+
+### 더블클릭 동작
+
+`handleElementDoubleClick`에서 `resolveClickTarget` 결과를 기준으로 분기:
+
+| 대상 요소 | 동작 | 설명 |
+|-----------|------|------|
+| **텍스트 요소** (p, h1-h6, span, a, label, button) | `startEdit()` | 텍스트 편집 시작 (기존 동작 유지) |
+| **컨테이너** (자식 있는 요소) | `enterEditingContext()` | 한 단계 진입, 직계 자식이 새 선택 대상 |
+| **리프 요소** (자식 없음) | `startEdit()` | 텍스트 편집 시도 |
+
+```typescript
+// BuilderCanvas.tsx — handleElementDoubleClick
+const resolvedTarget = resolveClickTarget(elementId, state.editingContextId, state.elementsMap);
+const resolvedElement = state.elementsMap.get(resolvedTarget);
+
+// 텍스트 요소 → startEdit
+const textTags = new Set(['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'span', 'a', 'label', 'button']);
+if (textTags.has(resolvedElement.tag)) {
+  startEdit(resolvedTarget, layoutPosition);
+  return;
+}
+
+// 자식이 있는 컨테이너 → 진입
+const children = state.childrenMap.get(resolvedTarget);
+if (children && children.length > 0) {
+  state.enterEditingContext(resolvedTarget);
+  return;
+}
+
+// 리프 요소 → startEdit 시도
+startEdit(resolvedTarget, layoutPosition);
+```
+
+### Body 선택
+
+Body 요소는 두 가지 경로로 선택된다:
+
+| 경로 | 설명 |
+|------|------|
+| **body 내부 빈 영역 클릭** | `handleElementClick`에서 `resolveClickTarget` 결과가 `null`이고 클릭된 요소의 tag가 `body`이면 해당 body를 선택 |
+| **캔버스 배경(페이지 외부) 클릭** | `ClickableBackground`의 `onClick`으로 body 선택 |
+
+```typescript
+// BuilderCanvas.tsx — body 빈 영역 클릭 처리
+const resolvedTarget = resolveClickTarget(elementId, state.editingContextId, state.elementsMap);
+if (!resolvedTarget) {
+  if (state.editingContextId === null) {
+    const clickedEl = state.elementsMap.get(elementId);
+    if (clickedEl?.tag.toLowerCase() === 'body') {
+      setSelectedElement(elementId); // body 직접 선택
+    }
+  }
+  return;
+}
+```
+
+### Escape 키 동작
+
+`useGlobalKeyboardShortcuts`에서 Escape 키를 처리. 우선순위 기반 분기:
+
+| 우선순위 | 조건 | 동작 |
+|----------|------|------|
+| 1 | `editingContextId !== null` | `exitEditingContext()` — 한 단계 상위로 복귀 |
+| 2 | `selectedElementIds.length > 0` | `setSelectedElement(null)` — 선택 해제 |
+
+```typescript
+// useGlobalKeyboardShortcuts.ts
+const handleEscape = useCallback(() => {
+  const { editingContextId, exitEditingContext, setSelectedElement, selectedElementIds } = useStore.getState();
+
+  // 1. editingContext 복귀
+  if (editingContextId !== null) {
+    exitEditingContext();
+    return;
+  }
+
+  // 2. 선택 해제
+  if (selectedElementIds.length > 0) {
+    setSelectedElement(null);
+  }
+}, []);
+```
+
+> **참고:** 텍스트 편집 중 Escape는 `TextEditOverlay`가 자체 처리하므로 이 핸들러에 도달하지 않는다.
+
+### 호버 인터랙션 (Element Hover)
+
+`useElementHoverInteraction` 훅으로 마우스 호버 감지. 현재 깊이 레벨 요소만 대상.
+
+**동작 흐름:**
+```
+window pointermove
+    ↓ RAF 스로틀 (프레임당 1회)
+스크린 → 씬-로컬 좌표 변환 (zoom, panOffset 적용)
+    ↓
+editingContext 직계 자식 후보 수집
+    ↓
+treeBoundsMap AABB 히트 테스트 (역순 = z-order 상위 우선)
+    ↓
+선택된 요소 제외 필터 (selectedElementIdsSet)
+    ↓
+hoverStateRef.hoveredElementId 갱신
+overlayVersionRef++ → Skia 리페인트 트리거
+```
+
+**설계 특성:**
+
+| 항목 | 설명 |
+|------|------|
+| **상태 관리** | ref 기반 (React 리렌더 없음, 60fps 성능 보장) |
+| **이벤트 레벨** | window-level `pointermove` (캔버스 밖 이동도 감지) |
+| **스로틀** | `requestAnimationFrame` (프레임당 1회 처리) |
+| **히트 테스트** | `treeBoundsMap` AABB (Skia 트리와 동일 좌표 소스) |
+| **대상 스코프** | `editingContext`의 직계 자식만 (현재 깊이 레벨) |
+| **제외 조건** | 선택된 요소는 호버 표시 안 함 |
+| **리페인트 트리거** | `overlayVersionRef.current++` → Skia 리렌더 |
+| **jitter 방지** | `clientX/Y` 변화 없으면 스킵 |
+
+**시각적 피드백 (Skia 렌더링):**
+
+| 오버레이 | 색상 | 스타일 |
+|----------|------|--------|
+| Hover Highlight | blue-500 `#3b82f6`, alpha 0.5 | Stroke, 두께 `1/zoom` |
+| editingContext 경계 | gray-400 `#9ca3af`, alpha 0.3 | Stroke + dash `[6/zoom, 4/zoom]` |
+
+**인터랙션 목록 (업데이트):**
+
+| 동작 | 입력 | 설명 |
+|------|------|------|
+| **클릭 (단일 선택)** | 좌클릭 | 현재 깊이 레벨의 직계 자식 선택 |
+| **클릭 (다중 선택)** | `Cmd/Ctrl + 클릭` | 현재 깊이 레벨에서 다중 선택 토글 |
+| **더블클릭 (텍스트)** | 더블클릭 | 텍스트 요소 편집 시작 |
+| **더블클릭 (컨테이너)** | 더블클릭 | 컨테이너 내부 진입 (`enterEditingContext`) |
+| **Escape** | Escape | editingContext 복귀 또는 선택 해제 |
+| **호버** | 마우스 이동 | 현재 깊이 레벨 요소 호버 하이라이트 |
+| **빈 영역 클릭** | body 내부 빈 곳 | body 선택 |
+| **배경 클릭** | 페이지 외부 | body 선택 |
+
+---
+
+**최종 업데이트:** 2026-02-14

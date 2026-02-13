@@ -473,7 +473,8 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
   // 🚀 Phase 1: Immer → 함수형 업데이트 (Low Risk)
   setCurrentPageId: (pageId) => {
     historyManager.setCurrentPage(pageId);
-    set({ currentPageId: pageId });
+    // 페이지 전환 시 editingContext 리셋
+    set({ currentPageId: pageId, editingContextId: null });
   },
 
   undo,

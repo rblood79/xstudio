@@ -285,11 +285,20 @@ export function useGlobalKeyboardShortcuts() {
   }, []);
 
   /**
-   * Escape - 선택 해제 / 모달 닫기
+   * Escape - 우선순위: editingContext 복귀 → 선택 해제 / 모달 닫기
+   * (텍스트 편집 중 Escape는 TextEditOverlay가 자체 처리)
    */
   const handleEscape = useCallback(() => {
-    const { setSelectedElement, selectedElementIds } = useStore.getState();
+    const { editingContextId, exitEditingContext, setSelectedElement, selectedElementIds } = useStore.getState();
 
+    // 1. editingContext 진입 상태 → 한 단계 위로 복귀
+    if (editingContextId !== null) {
+      exitEditingContext();
+      console.log('[Keyboard] Exited editing context');
+      return;
+    }
+
+    // 2. 요소 선택 상태 → 선택 해제
     if (selectedElementIds.length > 0) {
       setSelectedElement(null);
       console.log('[Keyboard] Selection cleared');

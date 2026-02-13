@@ -1,7 +1,7 @@
 # PixiJS WebGL Integration
 
 > Phase 10-11: PixiJS 기반 Figma-like WebGL 캔버스 구현
-> Last Updated: 2026-02-06
+> Last Updated: 2026-02-13
 
 ## 개요
 
@@ -71,6 +71,110 @@ apps/builder/src/builder/workspace/canvas/
     ├── useZoomPan.ts       # (레거시, ViewportController로 대체)
     └── index.ts
 ```
+
+## 2026-02-13 TagGroup/TagList 통합 및 Sprite 리팩토링
+
+### ElementSprite: `hasBoxSprite` → `hasOwnSprite` 리네이밍
+
+Skia 렌더 데이터 등록 시 특정 spriteType이 자체적으로 Skia 노드 데이터를 관리하는지 판별하는 플래그가 `hasBoxSprite`에서 `hasOwnSprite`로 변경되었다. `text` spriteType이 추가된 것이 핵심 변경점이다.
+
+```typescript
+// 수정 전
+const hasBoxSprite = spriteType === 'box' || spriteType === 'flex' || spriteType === 'grid';
+useSkiaNode(elementId, hasBoxSprite ? null : skiaNodeData);
+
+// 수정 후
+const hasOwnSprite = spriteType === 'box' || spriteType === 'text' || spriteType === 'flex' || spriteType === 'grid';
+useSkiaNode(elementId, hasOwnSprite ? null : skiaNodeData);
+```
+
+**배경:** TextSprite가 자체적으로 텍스트 Skia 데이터를 `useSkiaNode()`로 등록한다. 이전에는 `text`가 `hasBoxSprite` 목록에 없어서 ElementSprite가 box 데이터로 덮어쓰는 이중 등록 문제가 발생했다. `hasOwnSprite`에 `text`를 포함시켜 ElementSprite에서의 덮어쓰기를 방지한다.
+
+### ElementSprite: TagGroup 관련 코드 제거
+
+TagGroup/TagList가 `CONTAINER_TAGS` 기반 레이아웃으로 전환됨에 따라 ElementSprite에서 다음 항목이 제거되었다:
+
+| 제거 항목 | 설명 |
+|-----------|------|
+| `UI_TAGGROUP_TAGS` | TagGroup 태그 셋 상수 |
+| `'tagGroup'` spriteType | `getSpriteType()`에서 TagGroup 전용 분기 |
+| `tagGroupChildren` 셀렉터 | Store에서 TagGroup 자식 요소 조회 |
+| `tagGroupItems` 셀렉터 | Store에서 TagGroup의 Tag 아이템 조회 |
+| `_tagItems` props 주입 | 자식 Tag 텍스트를 spec shapes에 주입하는 로직 |
+| `TAG_SPEC_MAP`의 `TagGroup`/`TagList` | Spec 매핑에서 제거 |
+
+**이유:** TagGroup/TagList는 이제 `BuilderCanvas.tsx`의 `CONTAINER_TAGS`에 등록되어, ToggleButtonGroup과 동일한 Yoga Flexbox 기반 컨테이너 레이아웃 패턴을 사용한다. ElementSprite에서 자식을 직접 관리할 필요가 없어졌다.
+
+### TextSprite: 투명 히트 영역 추가
+
+`backgroundColor`가 설정되지 않은 텍스트 요소에서도 클릭 선택이 가능하도록 투명 히트 영역을 추가했다.
+
+```typescript
+// TextSprite.tsx - draw 콜백 내부
+if (hasBackgroundColor) {
+  // 기존: 배경색이 있으면 roundRect로 배경 렌더링
+  g.roundRect(0, 0, transform.width, transform.height, borderRadius);
+  g.fill({ color: bgColor, alpha: bgAlpha });
+} else {
+  // 수정: 배경이 없어도 투명 히트 영역을 그려서 클릭 선택 가능
+  g.clear();
+  g.rect(0, 0, transform.width, transform.height);
+  g.fill({ color: 0xffffff, alpha: 0.001 });
+}
+```
+
+| 항목 | 수정 전 | 수정 후 |
+|------|---------|---------|
+| backgroundColor 없는 텍스트 | `g.clear()`만 실행 | `alpha: 0.001` 투명 rect 그리기 |
+| EventBoundary 히트 감지 | 불가 (fill 없음) | 가능 (투명 fill 존재) |
+| 클릭 선택 | 불가 | 가능 |
+
+**원인:** PixiJS EventBoundary는 Graphics에 fill이 없으면 히트 테스팅 영역으로 인식하지 않는다. `g.clear()`만 호출하면 Graphics가 빈 상태가 되어 pointerDown 이벤트를 수신할 수 없다. `alpha: 0.001`의 투명 fill을 추가하면 시각적으로는 보이지 않으면서 히트 영역으로 동작한다.
+
+### BuilderCanvas: CONTAINER_TAGS에 TagGroup/TagList 추가
+
+```typescript
+const CONTAINER_TAGS = useMemo(() => new Set([
+  'Card', 'Box', 'Panel', 'Form', 'Group', 'Dialog', 'Modal',
+  'Disclosure', 'DisclosureGroup', 'Accordion',
+  'ToggleButtonGroup',
+  'TagGroup', 'TagList',  // 2026-02-13 추가
+]), []);
+```
+
+**구조:** 웹 CSS와 동일한 계층 구조를 따른다.
+
+```
+TagGroup (column flex)
+├── Label
+└── TagList (row wrap flex)
+    ├── Tag
+    ├── Tag
+    └── ...
+```
+
+### BuilderCanvas: isYogaSizedContainer에 TagGroup/TagList 추가
+
+ToggleButtonGroup과 동일한 `width: auto + flexGrow: 0 + flexShrink: 0` 패턴을 적용한다.
+
+```typescript
+const isToggleButtonGroup = child.tag === 'ToggleButtonGroup';
+const isFlexContainerTag = child.tag === 'TagGroup' || child.tag === 'TagList';
+const isYogaSizedContainer = isToggleButtonGroup || isFlexContainerTag;
+```
+
+`isYogaSizedContainer` 플래그는 다음 동작을 제어한다:
+
+| 동작 | 일반 컨테이너 | isYogaSizedContainer |
+|------|--------------|---------------------|
+| minHeight | `layout.height` 적용 | 미적용 (자식 높이에 맞게 자동) |
+| width (기본) | BlockEngine 계산값 | `auto` + `flexGrow: 0` + `flexShrink: 0` |
+| width (명시적) | BlockEngine 계산값 | `layout.width` (BlockEngine 값 사용) |
+
+**관련 파일**
+- `apps/builder/src/builder/workspace/canvas/sprites/ElementSprite.tsx`
+- `apps/builder/src/builder/workspace/canvas/sprites/TextSprite.tsx`
+- `apps/builder/src/builder/workspace/canvas/BuilderCanvas.tsx`
 
 ## 2026-02-06 안정화 패치
 
@@ -216,7 +320,8 @@ import { PixiButton, PixiCheckbox, PixiRadio } from './ui';
 Element 타입 감지 확장:
 
 ```tsx
-type SpriteType = 'box' | 'text' | 'image' | 'button' | 'checkbox' | 'radio' | 'flex' | 'grid';
+type SpriteType = 'box' | 'text' | 'image' | 'button' | 'checkbox' | 'radio' | 'flex' | 'grid'
+  | 'toggleButton' | 'toggleButtonGroup' | /* ... 50+ spec 기반 타입 */;
 
 function getSpriteType(element: Element): SpriteType {
   // UI 컴포넌트
@@ -234,6 +339,19 @@ function getSpriteType(element: Element): SpriteType {
 
   return 'box';
 }
+```
+
+> **Note (2026-02-13):** `UI_TAGGROUP_TAGS` 및 `'tagGroup'` spriteType은 제거되었다.
+> TagGroup/TagList는 `CONTAINER_TAGS` 기반 레이아웃으로 전환되어, ElementSprite에서
+> 별도의 spriteType으로 처리할 필요가 없다. 상세: "2026-02-13 TagGroup/TagList 통합" 섹션 참조.
+
+Skia 렌더 데이터 이중 등록 방지 (`hasOwnSprite`):
+
+```typescript
+// BoxSprite, TextSprite, FlexLayout, GridLayout은 자체적으로 useSkiaNode()를 호출하므로
+// ElementSprite에서 box 데이터로 덮어쓰지 않도록 방지
+const hasOwnSprite = spriteType === 'box' || spriteType === 'text' || spriteType === 'flex' || spriteType === 'grid';
+useSkiaNode(elementId, hasOwnSprite ? null : skiaNodeData);
 ```
 
 ## 스타일 시스템 아키텍처
