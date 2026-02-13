@@ -283,10 +283,20 @@ export function styleToLayout(
   // Dimensions
   // 🚀 @pixi/layout의 formatStyles가 이전 스타일과 병합하므로,
   // width/height가 없을 때 명시적으로 'auto'를 설정해야 이전 값이 리셋됨
+  const widthRaw = style.width as string | undefined;
+  const isFitContentWidth = widthRaw === 'fit-content';
   const width = parse(style.width);
   const height = parse(style.height);
   layout.width = width !== undefined ? width : 'auto';
   layout.height = height !== undefined ? height : 'auto';
+
+  // 🚀 fit-content: Yoga가 네이티브 지원하지 않으므로 워크어라운드 적용
+  // flexGrow:0 + flexShrink:0으로 콘텐츠 크기 유지 (부모 너비로 늘어나지 않음)
+  if (isFitContentWidth) {
+    layout.width = 'auto';
+    if (layout.flexGrow === undefined) layout.flexGrow = 0;
+    if (layout.flexShrink === undefined) layout.flexShrink = 0;
+  }
 
   // 🚀 태그별 기본 스타일 처리
   const tag = element.tag?.toLowerCase() ?? '';
@@ -309,12 +319,16 @@ export function styleToLayout(
     if (!style.alignItems) {
       layout.alignItems = 'center';
     }
-    // CSS: width: fit-content (콘텐츠 크기에 맞춤, 부모 너비를 채우지 않음)
-    // Yoga 등가: flexGrow:0 + flexShrink:0 + alignSelf:'flex-start'
-    if (width === undefined) {
+    // CSS 기본값: width: fit-content (horizontal/vertical 모두)
+    // width 미지정 시 CSS 스타일시트의 fit-content를 Yoga 워크어라운드로 적용
+    if (width === undefined && !isFitContentWidth) {
       layout.flexGrow = 0;
       layout.flexShrink = 0;
-      layout.alignSelf = 'flex-start';
+      if (layout.alignSelf === undefined) layout.alignSelf = 'flex-start';
+    }
+    // 명시적 fit-content는 상단 일반 워크어라운드에서 처리됨, alignSelf만 보정
+    if (isFitContentWidth) {
+      if (layout.alignSelf === undefined) layout.alignSelf = 'flex-start';
     }
   }
 

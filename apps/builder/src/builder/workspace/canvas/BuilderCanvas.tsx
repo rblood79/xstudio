@@ -18,7 +18,7 @@ import "@pixi/layout";
 import type { LayoutOptions } from "@pixi/layout";
 import { useCallback, useEffect, useRef, useMemo, useState, memo, startTransition, lazy, Suspense, type RefObject } from "react";
 import { Application, useApplication } from "@pixi/react";
-import { Graphics as PixiGraphics, Container, Application as PixiApplication } from "pixi.js";
+import { Graphics as PixiGraphics, Container, Application as PixiApplication, FederatedPointerEvent } from "pixi.js";
 import { useStore } from "../../stores";
 
 // P4: useExtend 훅으로 메모이제이션된 컴포넌트 등록
@@ -182,7 +182,7 @@ interface PageContainerProps {
   yogaReady: boolean;
   bodyElement: Element | null;
   pageElements: Element[];
-  elementById: (id: string) => Element | undefined;
+  elementById: Map<string, Element>;
   depthMap: Map<string, number>;
   onClick: (elementId: string, modifiers?: { metaKey: boolean; shiftKey: boolean; ctrlKey: boolean }) => void;
   onDoubleClick: (elementId: string) => void;
@@ -215,9 +215,9 @@ const PageContainer = memo(function PageContainer({
 }: PageContainerProps) {
   const draw = useMemo(() => titleHitDraw(pageWidth), [pageWidth]);
 
-  const handleTitlePointerDown = useCallback((e: { nativeEvent: PointerEvent; stopPropagation: () => void }) => {
+  const handleTitlePointerDown = useCallback((e: FederatedPointerEvent) => {
     e.stopPropagation();
-    onTitleDragStart(pageId, e.nativeEvent.clientX, e.nativeEvent.clientY);
+    onTitleDragStart(pageId, e.clientX, e.clientY);
   }, [pageId, onTitleDragStart]);
 
   return (
@@ -405,7 +405,7 @@ const LayoutContainer = memo(function LayoutContainer({
   layout,
   children,
 }: {
-  elementId: string;
+  elementId?: string;
   layout: LayoutStyle;
   children: React.ReactNode;
 }) {
@@ -415,7 +415,7 @@ const LayoutContainer = memo(function LayoutContainer({
   const containerRef = useRef<Container | null>(null);
   const handleContainerRef = useCallback((container: Container | null) => {
     containerRef.current = container;
-    if (container) {
+    if (container && elementId) {
       registerElement(elementId, container);
     }
   }, [elementId]);
@@ -440,7 +440,7 @@ const LayoutContainer = memo(function LayoutContainer({
       try {
         // 1) SelectionLayer용 global bounds 업데이트
         const bounds = container.getBounds();
-        if (bounds.width > 0 || bounds.height > 0) {
+        if (elementId && (bounds.width > 0 || bounds.height > 0)) {
           updateElementBounds(elementId, {
             x: bounds.x,
             y: bounds.y,
@@ -491,6 +491,7 @@ const LayoutContainer = memo(function LayoutContainer({
 
   // Cleanup: unmount 시 registry에서 해제
   useEffect(() => {
+    if (!elementId) return;
     return () => {
       unregisterElement(elementId);
     };
@@ -498,7 +499,7 @@ const LayoutContainer = memo(function LayoutContainer({
 
   return (
     <LayoutComputedSizeContext.Provider value={computedSize}>
-      <pixiContainer ref={handleContainerRef} layout={layout as unknown as LayoutOptions} label={elementId}>
+      <pixiContainer ref={handleContainerRef} layout={layout as unknown as LayoutOptions} label={elementId ?? 'layout-wrapper'}>
         {children}
       </pixiContainer>
     </LayoutComputedSizeContext.Provider>
@@ -831,13 +832,19 @@ const ElementsLayer = memo(function ElementsLayer({
           const childImplicitSectionBlockPatch = isContainerType
             ? getImplicitSectionBlockPatch(child.tag, childLayoutRest)
             : {};
+          // 🚀 ToggleButtonGroup: Yoga가 자식 ToggleButton 크기에 맞춰 width 자동 계산
+          // BlockEngine의 contentWidth(80px 기본값)가 아닌 실제 자식 크기 사용
+          const toggleGroupWidthOverride = isToggleButtonGroup
+            ? { width: 'auto' as unknown as number, flexGrow: 0, flexShrink: 0 }
+            : { width: layout.width };
+
           const containerLayout = isContainerType
             ? childNeedsImplicitFlexLayout
               ? {
                 position: 'relative' as const,
                 marginTop,
                 marginLeft,
-                width: layout.width,
+                ...toggleGroupWidthOverride,
                 height: 'auto' as unknown as number,
                 ...(isToggleButtonGroup ? {} : { minHeight: layout.height }),
                 display: 'flex' as const,
@@ -848,7 +855,7 @@ const ElementsLayer = memo(function ElementsLayer({
                 position: 'relative' as const,
                 marginTop,
                 marginLeft,
-                width: layout.width,
+                ...toggleGroupWidthOverride,
                 height: 'auto' as unknown as number,
                 ...(isToggleButtonGroup ? {} : { minHeight: layout.height }),
                 ...childLayoutRest,

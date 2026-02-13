@@ -47,7 +47,7 @@ const TransformSectionContent = memo(function TransformSectionContent() {
         label="Width"
         className="width"
         value={styleValues.width}
-        units={['reset', 'px', '%', 'vh', 'vw']}
+        units={['reset', 'fit-content', 'px', '%', 'vh', 'vw']}
         onChange={(value) => updateStyleImmediate('width', value)}
         onDrag={(value) => updateStylePreview('width', value)}
         min={0}
@@ -58,7 +58,7 @@ const TransformSectionContent = memo(function TransformSectionContent() {
         label="Height"
         className="height"
         value={styleValues.height}
-        units={['reset', 'px', '%', 'vh', 'vw']}
+        units={['reset', 'fit-content', 'px', '%', 'vh', 'vw']}
         onChange={(value) => updateStyleImmediate('height', value)}
         onDrag={(value) => updateStylePreview('height', value)}
         min={0}

@@ -25,6 +25,7 @@ import {
   parseVerticalAlign,
   parseLineHeight,
   calculateBaseline,
+  FIT_CONTENT,
 } from './utils';
 
 import {
@@ -33,6 +34,7 @@ import {
   DISPLAY,
   VALIGN,
   AUTO,
+  FIT_CONTENT as WASM_FIT_CONTENT,
   type BlockLayoutInput,
 } from '../../wasm-bindings/layoutAccelerator';
 import { getLayoutScheduler } from '../../wasm-worker';
@@ -361,13 +363,19 @@ export class BlockEngine implements LayoutEngine {
 
         // Block 너비: 명시적 width 또는 100%
         // 🚀 Phase 11: min/max clamp 적용
+        // 🚀 fit-content: contentWidth 사용 (inline-block과 동일한 shrink-to-fit)
+        const isFitContent = boxModel.width === FIT_CONTENT;
         const childContentWidth = clampSize(
-          boxModel.width ?? availableWidth - margin.left - margin.right,
+          isFitContent
+            ? boxModel.contentWidth
+            : (boxModel.width ?? availableWidth - margin.left - margin.right),
           boxModel.minWidth,
           boxModel.maxWidth
         );
         const childContentHeight = clampSize(
-          boxModel.height ?? boxModel.contentHeight,
+          (boxModel.height !== undefined && boxModel.height !== FIT_CONTENT)
+            ? boxModel.height
+            : boxModel.contentHeight,
           boxModel.minHeight,
           boxModel.maxHeight
         );
@@ -379,10 +387,12 @@ export class BlockEngine implements LayoutEngine {
         const blkPadBorderV = blkPad.top + blkPad.bottom + blkBdr.top + blkBdr.bottom;
 
         // Auto-width: 'availableWidth - margins'는 이미 border-box 크기
-        // Explicit width: content-box이므로 padding+border 추가
-        const childWidth = boxModel.width !== undefined
+        // Explicit width / fit-content: content-box이므로 padding+border 추가
+        const childWidth = (boxModel.width !== undefined && boxModel.width !== FIT_CONTENT)
           ? childContentWidth + blkPadBorderH
-          : childContentWidth;
+          : isFitContent
+            ? childContentWidth + blkPadBorderH
+            : childContentWidth;
         const childHeight = childContentHeight + blkPadBorderV;
 
         layouts.push({
@@ -804,8 +814,8 @@ export class BlockEngine implements LayoutEngine {
 
       inputs.push({
         display: displayType,
-        width: boxModel.width ?? AUTO,
-        height: boxModel.height ?? AUTO,
+        width: boxModel.width === FIT_CONTENT ? WASM_FIT_CONTENT : (boxModel.width ?? AUTO),
+        height: boxModel.height === FIT_CONTENT ? AUTO : (boxModel.height ?? AUTO),
         marginTop: margin.top,
         marginRight: margin.right,
         marginBottom: margin.bottom,

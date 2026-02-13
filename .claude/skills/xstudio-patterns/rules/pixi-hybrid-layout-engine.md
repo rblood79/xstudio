@@ -21,10 +21,28 @@ tags: [pixi, layout, canvas, hybrid-engine]
 ### 지원 CSS 속성
 
 - **Box Model**: `boxSizing`, `minWidth`, `maxWidth`, `minHeight`, `maxHeight`
+- **Intrinsic Sizing**: `width: fit-content` (FIT_CONTENT sentinel, Block/Flex 양쪽 지원)
 - **Overflow/BFC**: `overflow`, `overflowX`, `overflowY`
 - **Typography**: `lineHeight`, `verticalAlign`
 - **Visibility**: `visibility: hidden` (공간 유지, 렌더링 안 함)
 - **Grid 자식**: `alignSelf`, `justifySelf`
+
+### fit-content 처리 규칙
+
+`width: fit-content`는 두 가지 경로에서 처리됩니다:
+
+| 경로 | 처리 방식 |
+|------|-----------|
+| BlockEngine (JS/WASM) | `FIT_CONTENT = -2` sentinel → `contentWidth` 사용 |
+| Flex/Yoga (@pixi/layout) | `flexGrow:0 + flexShrink:0` 워크어라운드 |
+
+```typescript
+// ✅ parseSize가 'fit-content' → FIT_CONTENT(-2) 반환
+// BlockEngine: contentWidth 기반 크기 계산
+// Yoga: auto + flexGrow:0 + flexShrink:0로 에뮬레이션
+
+// ❌ fit-content를 수동으로 auto나 px로 변환하지 말 것
+```
 
 ## Incorrect
 
@@ -143,6 +161,40 @@ const treatAsBorderBox = boxSizing === 'border-box' ||
 if (treatAsBorderBox && width !== undefined) {
   width = Math.max(0, width - paddingH - borderH);  // content-box로 변환
 }
+```
+
+### CONTAINER_TAGS + inline-block 컴포넌트 Selection 크기
+
+CONTAINER_TAGS(Card, Panel, ToggleButtonGroup 등)는 `renderWithCustomEngine`에서 `containerLayout.width = layout.width`로 Yoga LayoutContainer에 BlockEngine 계산 결과를 전달합니다.
+
+**문제**: inline-block인 CONTAINER_TAG 컴포넌트의 `contentWidth`가 정확하지 않으면 selection bounds가 잘못됨.
+
+```typescript
+// ✅ ToggleButtonGroup: containerLayout width를 'auto'로 오버라이드
+// Yoga가 자식 ToggleButton 크기에 맞춰 자동 계산
+const toggleGroupWidthOverride = isToggleButtonGroup
+  ? { width: 'auto', flexGrow: 0, flexShrink: 0 }
+  : { width: layout.width };
+
+// ❌ BlockEngine의 contentWidth(80px 기본값)를 그대로 사용
+// → selection 영역이 실제 렌더링보다 작아짐
+const containerLayout = { width: layout.width };
+```
+
+**calculateContentWidth에 컴포넌트별 분기 필요**:
+`engines/utils.ts`의 `calculateContentWidth()`에서 `props.items` 등 컴포넌트 고유 데이터를 기반으로 실제 콘텐츠 폭을 계산해야 합니다.
+
+### 스타일 패널 display 기본값 (styleAtoms)
+
+`styleAtoms.ts`의 layout atoms는 `getLayoutDefault()` 4단계 우선순위를 따릅니다:
+1. inline style → 2. computed style → 3. `DEFAULT_CSS_VALUES[tag]` → 4. global default
+
+```typescript
+// ✅ DEFAULT_CSS_VALUES에 컴포넌트별 CSS 기본값 등록
+ToggleButtonGroup: { width: 'fit-content', display: 'flex', flexDirection: 'row', alignItems: 'center' }
+
+// ❌ atom에서 하드코딩된 'block' 폴백만 사용
+// → 런타임 기본값이 스타일 패널에 반영되지 않음
 ```
 
 ### 인라인 폼 컨트롤 크기 계산

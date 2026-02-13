@@ -7,6 +7,116 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Bugfix - ToggleButtonGroup 스타일 패널 display 기본값 + Selection 영역 (2026-02-13)
+
+#### 이슈 1: 스타일 패널 display 기본값 오류
+
+**문제**: ToggleButtonGroup 선택 시 스타일 패널에서 `display: block`으로 표시됨 (실제는 `display: flex`).
+`styleAtoms.ts`의 displayAtom이 `element.style.display ?? element.computedStyle.display ?? 'block'` 폴백을 사용하여, 인라인 스타일/computedStyle에 display가 없는 컴포넌트는 항상 'block' 표시.
+
+**수정**: `getLayoutDefault()` 4단계 우선순위 헬퍼 도입:
+1. inline style → 2. computed style → 3. `DEFAULT_CSS_VALUES[tag]` → 4. global default
+
+```typescript
+// styleAtoms.ts
+const DEFAULT_CSS_VALUES = {
+  ToggleButtonGroup: { width: 'fit-content', display: 'flex', flexDirection: 'row', alignItems: 'center' },
+  // ...
+};
+
+function getLayoutDefault(element, prop, globalDefault): string {
+  // inline → computed → tag default → global default
+}
+```
+
+**영향 atoms**: `displayAtom`, `flexDirectionAtom`, `layoutValuesAtom`, `flexDirectionKeysAtom`, `flexAlignmentKeysAtom`
+
+#### 이슈 2: Selection 영역이 실제 크기보다 작음
+
+**문제**: ToggleButtonGroup(CONTAINER_TAGS + inline-block)의 selection bounds가 80px(DEFAULT_WIDTH 폴백)로 계산됨.
+원인: BlockEngine → `calculateContentWidth()` → ToggleButtonGroup에 텍스트/명시적 width 없음 → DEFAULT_WIDTH=80px 폴백.
+
+**수정 1 — `engines/utils.ts` calculateContentWidth()**:
+ToggleButtonGroup 전용 분기 추가. `props.items`에서 자식 버튼 텍스트 폭 합산.
+
+**수정 2 — `BuilderCanvas.tsx` containerLayout**:
+ToggleButtonGroup의 containerLayout width를 `'auto'`로 오버라이드. Yoga가 자식 크기 기반 자동 계산.
+
+```typescript
+const toggleGroupWidthOverride = isToggleButtonGroup
+  ? { width: 'auto', flexGrow: 0, flexShrink: 0 }
+  : { width: layout.width };
+```
+
+#### 동일 패턴 분석
+
+| 조건 | 결과 |
+|------|------|
+| CONTAINER_TAGS ∩ DEFAULT_INLINE_BLOCK_TAGS | **ToggleButtonGroup만** 해당 |
+| 다른 CONTAINER_TAGS (Card, Panel 등) | block → width = availableWidth → 문제 없음 |
+| 다른 inline-block (Toolbar 등) | CONTAINER_TAGS 아님 → containerLayout 미사용 → 영향 없음 |
+
+#### 수정 파일
+| 파일 | 변경 |
+|------|------|
+| `panels/styles/atoms/styleAtoms.ts` | `getLayoutDefault()` 헬퍼, DEFAULT_CSS_VALUES 확장, 5개 atom 수정 |
+| `layout/engines/utils.ts` | `calculateContentWidth()`에 ToggleButtonGroup 분기 추가 |
+| `workspace/canvas/BuilderCanvas.tsx` | containerLayout width override for ToggleButtonGroup |
+
+---
+
+### Feature - `width: fit-content` 네이티브 구현 (2026-02-13)
+
+#### 개요
+CSS intrinsic sizing `width: fit-content`를 BlockEngine + WASM 하이브리드 레이아웃 엔진에 네이티브 구현. 기존 Yoga 워크어라운드(flexGrow:0 + flexShrink:0)를 보완하여 Block 레이아웃 경로에서도 fit-content가 정확히 동작.
+
+#### 구현 방식
+`FIT_CONTENT = -2` sentinel 값을 도입하여 기존 `AUTO = -1` 패턴과 동일한 방식으로 JS ↔ WASM 직렬화. FIELD_COUNT(19) 변경 없이 width 필드에 sentinel을 전달.
+
+```
+width 값 해석:
+  -1 (AUTO)         → Block: 부모 너비 채움 / Inline-block: contentWidth
+  -2 (FIT_CONTENT)  → Block: contentWidth 사용 (inline-block과 동일)
+  0 이상             → 명시적 px 값
+```
+
+#### 변경 내용
+
+**1. utils.ts — FIT_CONTENT 상수 + parseSize/parseBoxModel**
+- `FIT_CONTENT = -2` 상수 export
+- `parseSize()`: `'fit-content'` 문자열 감지 → `FIT_CONTENT` 반환
+- `parseBoxModel()`: `FIT_CONTENT` 값은 border-box 변환 건너뜀
+
+**2. layoutAccelerator.ts — WASM 바인딩 상수**
+- `FIT_CONTENT = -2` export 추가
+
+**3. BlockEngine.ts — JS/WASM 양쪽 경로**
+- JS 경로: `boxModel.width === FIT_CONTENT`일 때 `contentWidth` 사용
+- WASM 경로: `FIT_CONTENT` sentinel을 WASM에 전달
+
+**4. block_layout.rs — Rust WASM**
+- `FIT_CONTENT` 상수 추가, block/inline-block 양쪽 width 로직 수정
+- 6개 Rust 테스트 추가
+
+**5. styleToLayout.ts — Flex/Yoga 경로 일반화**
+- 모든 요소에 대해 fit-content Yoga 워크어라운드 적용 (`flexGrow:0, flexShrink:0`)
+- ToggleButtonGroup CSS 기본값(`width: fit-content`) 유지
+
+**6. TransformSection.tsx — StylesPanel UI**
+- Width/Height units에 `fit-content` 옵션 추가 (`reset` 아래)
+
+#### 수정 파일
+| 파일 | 변경 |
+|------|------|
+| `layout/engines/utils.ts` | `FIT_CONTENT` 상수, `parseSize`/`parseBoxModel` 수정 |
+| `wasm-bindings/layoutAccelerator.ts` | `FIT_CONTENT` 상수 export |
+| `layout/engines/BlockEngine.ts` | JS/WASM 경로 fit-content 처리 |
+| `wasm/src/block_layout.rs` | Rust fit-content 로직 + 6 테스트 |
+| `layout/styleToLayout.ts` | Yoga 워크어라운드 일반화 |
+| `panels/styles/sections/TransformSection.tsx` | Width/Height units에 fit-content 추가 |
+
+---
+
 ### Feature - Spec Shapes 기반 Skia UI 컴포넌트 렌더링 (2026-02-12)
 
 #### 개요

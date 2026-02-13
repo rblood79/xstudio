@@ -24,6 +24,7 @@ import { iconProps } from "../../../utils/ui/uiConstants";
 import { useParams } from "react-router-dom";
 import type { PanelProps } from "../core/types";
 import { useStore } from "../../stores";
+import type { PageLayoutDirection } from "../../stores/canvasSettings";
 import { useUnifiedThemeStore } from "../../../stores/themeStore";
 import { useUiStore } from "../../../stores/uiStore";
 import {
@@ -176,7 +177,7 @@ function SettingsContent() {
           <PropertySelect
             label="Page Layout"
             value={pageLayoutDirection}
-            onChange={setPageLayoutDirection}
+            onChange={(value) => setPageLayoutDirection(value as PageLayoutDirection)}
             options={pageLayoutOptions}
             icon={LayoutGrid}
           />

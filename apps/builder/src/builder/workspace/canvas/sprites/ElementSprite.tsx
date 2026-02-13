@@ -755,7 +755,7 @@ export const ElementSprite = memo(function ElementSprite({
       b = (fill.color & 0xff) / 255;
       // Fill V2: gradient/image fill이 있으면 shader가 alpha를 처리하므로 fillColor alpha=1
       const hasFillV2NonColor = isFillV2Enabled() && effectiveElement.fills?.some(
-        (f: { enabled?: boolean; type: number }) => f.enabled && f.type !== 0, // 0 = FillType.Color
+        (f) => f.enabled && f.type !== 'color',
       );
       effectiveAlpha = (hasBgColor || hasFillV2NonColor) ? (fill.alpha || 1) : (isUIComponent ? fill.alpha : 0);
     }

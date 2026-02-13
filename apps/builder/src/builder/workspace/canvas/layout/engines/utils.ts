@@ -43,6 +43,15 @@ export function resetWarnedTokens(): void {
   warnedTokens.clear();
 }
 
+/**
+ * CSS intrinsic sizing sentinel 값
+ *
+ * Yoga/WASM가 fit-content를 네이티브 지원하지 않으므로,
+ * parseSize()에서 sentinel 값으로 변환하여 BlockEngine/WASM에 전달한다.
+ * AUTO(-1)와 동일한 패턴으로 Float32Array 직렬화 시 그대로 전달 가능.
+ */
+export const FIT_CONTENT = -2;
+
 /** 허용되는 단위 패턴 */
 const PX_NUMBER_PATTERN = /^-?\d+(\.\d+)?(px)?$/;
 const PERCENT_PATTERN = /^-?\d+(\.\d+)?%$/;
@@ -81,6 +90,8 @@ export function parseSize(
   viewportHeight?: number
 ): number | undefined {
   if (value === undefined || value === 'auto') return undefined;
+  // CSS intrinsic sizing: fit-content → sentinel 값
+  if (value === 'fit-content') return FIT_CONTENT;
   if (typeof value === 'number') return value;
   if (typeof value === 'string') {
     const trimmed = value.trim();
@@ -514,6 +525,40 @@ export function calculateContentWidth(element: Element): number {
   const explicitWidth = parseNumericValue(style?.width);
   if (explicitWidth !== undefined) return explicitWidth;
 
+  // 🚀 ToggleButtonGroup: 자식 버튼 텍스트 크기 합산
+  // PixiToggleButtonGroup.tsx의 buttonSizes/contentWidth와 동일한 공식
+  if (tag === 'togglebuttongroup') {
+    const props = element.props as Record<string, unknown> | undefined;
+    const sizeName = (props?.size as string) ?? 'md';
+    const sizeConfig = TOGGLEBUTTON_SIZE_CONFIG[sizeName] ?? TOGGLEBUTTON_SIZE_CONFIG['md'];
+    const borderWidth = sizeConfig.borderWidth;
+    const paddingX = sizeConfig.paddingLeft; // paddingLeft === paddingRight
+    const fontSize = sizeConfig.fontSize;
+    const orientation = String(props?.orientation || 'horizontal');
+    const isHorizontal = orientation === 'horizontal';
+    const gap = parseNumericValue(style?.gap) ?? 0; // CSS gap (0 = default -1px overlap)
+
+    // items 배열에서 레이블 추출
+    const items = Array.isArray(props?.items) ? props.items as unknown[] : [];
+    if (items.length > 0) {
+      const buttonWidths = items.map((item) => {
+        const label = typeof item === 'string'
+          ? item
+          : (item as Record<string, unknown>)?.label as string ?? (item as Record<string, unknown>)?.children as string ?? '';
+        const textWidth = calculateTextWidth(String(label), fontSize, 0);
+        return Math.max(40, borderWidth + paddingX + textWidth + paddingX + borderWidth);
+      });
+      if (isHorizontal) {
+        // horizontal: 버튼 너비 합 + gap * (n-1) - margin overlap(1px * (n-1))
+        return buttonWidths.reduce((sum, w) => sum + w, 0) + gap * (items.length - 1) - (items.length - 1);
+      }
+      // vertical: 가장 넓은 버튼
+      return Math.max(...buttonWidths);
+    }
+    // items 없으면 기본값 (자식 Element로 렌더링되는 경우)
+    return DEFAULT_WIDTH;
+  }
+
   // 2. 텍스트 콘텐츠 기반 너비 측정 (Canvas 2D measureText 사용)
   const text = extractTextContent(element.props as Record<string, unknown>);
 
@@ -879,10 +924,11 @@ export function parseBoxModel(
     const paddingV = padding.top + padding.bottom;
     const borderV = border.top + border.bottom;
 
-    if (width !== undefined) {
+    // FIT_CONTENT sentinel은 border-box 변환 대상이 아님 (실제 px 값이 아니므로)
+    if (width !== undefined && width !== FIT_CONTENT) {
       width = Math.max(0, width - paddingH - borderH);
     }
-    if (height !== undefined) {
+    if (height !== undefined && height !== FIT_CONTENT) {
       height = Math.max(0, height - paddingV - borderV);
     }
   }

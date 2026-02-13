@@ -1,10 +1,18 @@
 # Sitemap(Hierarchy) 워크플로우 엣지 추가 계획
 
 > **작성일**: 2026-02-13
-> **수정일**: 2026-02-13 (v2 — 워크플로우 기반으로 아키텍처 전환)
+> **수정일**: 2026-02-13 (v3 — 미니맵/인터랙션 동일 적용 범위 확정)
 > **상태**: 계획 수립 (코드 미생성)
 > **관련 브랜치**: `work`
 > **검토 기준**: 현재 저장소 코드베이스(`apps/builder` 구조) 기준으로 경로/영향 범위를 재검증
+
+---
+
+## 0-1. 확정 결정 (2026-02-13)
+
+1. hierarchy 엣지의 시각 규칙(색상/토글/레이어)은 본 캔버스와 미니맵에 **동일 적용**한다.
+2. hierarchy 엣지가 숨김 상태일 때는 hover/클릭 대상에서도 제외한다(렌더/인터랙션 일치).
+3. 워크플로우 토글 UI의 기준 위치는 `Workspace`의 `WorkflowCanvasToggles`로 고정한다.
 
 ---
 
@@ -28,15 +36,20 @@ PageLayoutDirection = "horizontal" | "vertical" | "zigzag" | "sitemap"
 ### 수정된 접근 (v2) — Workflow Overlay의 새 엣지 타입
 
 ```
-기존 워크플로우 엣지 타입:
+WorkflowEdge.type (동일 인터페이스):
   navigation        → Link/Button href 기반     (blue-500, 실선)
   event-navigation  → 이벤트 핸들러 기반         (purple-500, 점선)
-  dataSource        → 데이터 바인딩              (green/amber/emerald)
-  layoutGroup       → 레이아웃 그룹              (violet-400, 박스)
 
-추가:
+별도 인터페이스 (독립 렌더 파이프라인):
+  DataSourceEdge    → 데이터 바인딩              (green/amber/emerald)
+  LayoutGroup       → 레이아웃 그룹              (violet-400, 박스)
+
+추가 (WorkflowEdge.type에 통합):
   hierarchy         → parent_id 기반             (teal-500, 실선) ← NEW
 ```
+
+> **주의:** `DataSourceEdge`와 `LayoutGroup`은 `WorkflowEdge`와 **별도의 독립 인터페이스**로 구현되어 있다.
+> hierarchy는 `WorkflowEdge.type` 유니온에 추가하여, 기존 navigation/event-navigation과 동일한 렌더 파이프라인을 재사용한다.
 
 ### 이점
 
@@ -44,7 +57,7 @@ PageLayoutDirection = "horizontal" | "vertical" | "zigzag" | "sitemap"
 |------|------|
 | **직교적 조합** | 어떤 배치 방향에서든 계층 연결선 표시 가능 (horizontal + hierarchy, zigzag + hierarchy 등) |
 | **독립 토글** | 기존 Navigation, Event, DataSource처럼 on/off 가능 |
-| **기존 패턴 재사용** | 필터링, 하이라이트, 히트테스트 자동 적용 |
+| **기존 패턴 재사용** | 필터링, 하이라이트, 히트테스트, 미니맵 렌더 파이프라인 재사용 |
 | **최소 변경** | 새 렌더러 불필요, 기존 `renderWorkflowEdges()` 그대로 재사용 |
 | **관심사 분리** | Layout Direction = 물리적 배치, Workflow = 관계 시각화 |
 
@@ -206,6 +219,22 @@ PageLayoutDirection = "horizontal" | "vertical" | "zigzag" | "sitemap"
 |---|------|----------|
 | 1 | `apps/builder/src/builder/workspace/canvas/skia/workflowEdges.ts` | `WorkflowEdge.type`에 `'hierarchy'` 추가, `computeHierarchyEdges()` 함수 신규 |
 
+**현재 `WorkflowEdge` 타입 (workflowEdges.ts):**
+```typescript
+export interface WorkflowEdge {
+  id: string;
+  type: 'navigation' | 'event-navigation';  // ← 'hierarchy' 추가 필요
+  sourcePageId: string;
+  targetPageId: string;
+  sourceElementId?: string;
+  label?: string;
+}
+```
+
+> **참고:** 같은 파일에 `DataSourceEdge`, `LayoutGroup` 인터페이스와
+> `computeDataSourceEdges()`, `computeLayoutGroups()` 함수도 존재한다.
+> hierarchy는 `WorkflowEdge` 타입을 확장하여 기존 렌더 파이프라인을 재사용한다.
+
 **`computeHierarchyEdges()` 알고리즘:**
 ```
 입력: pages[] (parent_id, id 포함)
@@ -254,10 +283,11 @@ showWorkflowHierarchy: boolean;       // ← NEW (기본값: true)
 |---|------|----------|
 | 4 | `apps/builder/src/builder/workspace/canvas/skia/SkiaOverlay.tsx` | hierarchy 엣지 계산 호출 + 필터링 분기 추가 |
 | 5 | `apps/builder/src/builder/workspace/canvas/skia/workflowRenderer.ts` | `HIERARCHY_COLOR` 상수 추가, 엣지 타입별 색상 분기에 `'hierarchy'` 추가 |
+| 6 | `apps/builder/src/builder/workspace/canvas/skia/workflowMinimap.ts` | hierarchy 색상 추가 + 미니맵 엣지 색상 분기에 `'hierarchy'` 추가 |
 
 **SkiaOverlay 변경 (기존 패턴 따라):**
 ```
-// 기존 (lines 994-1004):
+// 기존 패턴 (SkiaOverlay.tsx 내 filteredEdges):
 const filteredEdges = workflowEdgesRef.current.filter((e) => {
   if (e.type === 'navigation') return showNav;
   if (e.type === 'event-navigation') return showEvents;
@@ -273,25 +303,40 @@ const filteredEdges = workflowEdgesRef.current.filter((e) => {
 });
 ```
 
+> **참고:** `DataSourceEdge`와 `LayoutGroup`은 `WorkflowEdge`와 별도의 인터페이스이므로
+> `filteredEdges`에 포함되지 않는다. 이들은 독립적인 렌더 경로(`renderDataSourceEdges`, `renderLayoutGroups`)를 사용한다.
+
+추가 반영:
+- `renderWorkflowEdges()`뿐 아니라 `buildEdgeGeometryCache()`와 `renderWorkflowMinimap()`에도 `filteredEdges`를 전달해
+  **보이는 엣지와 인터랙션 대상 엣지**를 동일하게 유지한다.
+
 **workflowRenderer 변경:**
 ```
-// 기존 색상 분기 (lines 337):
-const color = e.type === 'event-navigation' ? EVENT_NAV_COLOR : NAVIGATION_COLOR;
+// 기존 색상 분기 (workflowRenderer.ts):
+const isEvent = edge.type === 'event-navigation';
+const color = isEvent ? EVENT_NAV_COLOR : NAVIGATION_COLOR;
 
 // 수정:
-const color = e.type === 'hierarchy' ? HIERARCHY_COLOR
-            : e.type === 'event-navigation' ? EVENT_NAV_COLOR
+const color = edge.type === 'hierarchy' ? HIERARCHY_COLOR
+            : edge.type === 'event-navigation' ? EVENT_NAV_COLOR
             : NAVIGATION_COLOR;
+```
+
+**workflowMinimap 변경:**
+```
+// 기존: navEdgePaint, eventEdgePaint만 존재 (workflowMinimap.ts)
+// 추가: hierarchyEdgePaint (teal-500 색상) Paint 객체 생성 필요
 ```
 
 #### Phase 5: 히트테스트 & 그래프 유틸
 
 | # | 파일 | 변경 내용 |
 |---|------|----------|
-| 6 | `apps/builder/src/builder/workspace/canvas/skia/workflowHitTest.ts` | 변경 불필요 (엣지 타입 무관하게 동작) |
-| 7 | `apps/builder/src/builder/workspace/canvas/skia/workflowGraphUtils.ts` | 변경 불필요 (computeConnectedEdges는 타입 무관) |
+| 7 | `apps/builder/src/builder/workspace/canvas/skia/workflowHitTest.ts` | 변경 불필요 (엣지 타입 무관하게 동작) |
+| 8 | `apps/builder/src/builder/workspace/canvas/skia/workflowGraphUtils.ts` | 변경 불필요 (computeConnectedEdges는 타입 무관) |
 
-**기존 히트테스트와 그래프 유틸은 엣지 타입에 무관하게 동작하므로 변경 없음.**
+**기존 히트테스트와 그래프 유틸은 엣지 타입에 무관하게 동작하므로 로직 변경 없음.**
+단, hidden 엣지 인터랙션 방지를 위해 SkiaOverlay에서 hit-test 입력 엣지를 필터링한다.
 
 ### 3.4 엣지 계산 타이밍
 
@@ -302,10 +347,15 @@ const color = e.type === 'hierarchy' ? HIERARCHY_COLOR
     → workflowEdgesRef에 캐싱
 
 hierarchy 엣지 추가 위치:
-  pagesVersion 변경 시 (페이지 추가/삭제/parent_id 변경)
+  pagesChanged 시 (페이지 추가/삭제/parent_id 변경)
     → computeHierarchyEdges() 호출
     → workflowEdgesRef에 합산 (기존 edges + hierarchy edges)
 ```
+
+실구현 기준 권장 트리거:
+- `registryVersion` 또는 `elementsChanged`
+- `pages` 참조 변경 또는 `pagesSignature(id,parent_id,slug)` 변경
+- `pagePositionsVersion`은 계산 트리거가 아니라 렌더/지오메트리 캐시 무효화 트리거로 분리
 
 ### 3.5 고려사항
 
@@ -329,6 +379,11 @@ hierarchy 엣지 추가 위치:
 - hierarchy 엣지는 navigation/event 아래에 렌더링 (배경 레이어)
 - 구조적 관계는 "맥락", 네비게이션/이벤트는 "동작" → 동작이 위에 표시
 
+#### 미니맵/인터랙션 동일 적용
+- 미니맵에서도 hierarchy는 teal-500으로 렌더링하고 토글 상태를 동일 반영
+- hierarchy 토글 OFF 시 main canvas 렌더 + 미니맵 렌더 + hover/hit-test에서 모두 제외
+- highlight/focus 로직은 visible edges 기준으로 계산
+
 ---
 
 ## 4. 선택적 확장: 트리 자동 배치 (Auto-Arrange)
@@ -338,7 +393,7 @@ hierarchy 엣지 추가 위치:
 ### 4.1 설계
 
 - `pageLayoutDirection` 변경 **아님** — 일회성 배치 액션
-- SettingsPanel 또는 컨텍스트 메뉴에 "Auto-arrange by Hierarchy" 버튼 추가
+- `Workspace` 또는 `PagesSection` 컨텍스트 메뉴에 "Auto-arrange by Hierarchy" 버튼 추가
 - 클릭 시 `initializePagePositions`를 트리 알고리즘으로 호출
 
 ### 4.2 트리 레이아웃 알고리즘
@@ -385,7 +440,8 @@ hierarchy 엣지 추가 위치:
 | 기능 | 설명 | 구현 위치 |
 |------|------|----------|
 | **Hierarchy 엣지** | parent_id 기반 부모-자식 연결선 | workflowEdges.ts |
-| **독립 토글** | Hierarchy 연결선 on/off | canvasSettings.ts, SettingsPanel |
+| **독립 토글** | Hierarchy 연결선 on/off | canvasSettings.ts, Workspace.tsx |
+| **미니맵 동일 적용** | hierarchy 색상/토글을 미니맵에도 동일 반영 | workflowMinimap.ts, SkiaOverlay.tsx |
 | **하이라이트** | 포커스 페이지의 부모/자식 강조 | 기존 computeConnectedEdges 자동 적용 |
 
 ### P2 (권장 — 다음 단계)
@@ -415,17 +471,19 @@ Phase 1: Hierarchy 엣지 타입 추가
 
 Phase 2: 스토어 & UI 토글
   ├─ canvasSettings에 showWorkflowHierarchy 추가
-  └─ SettingsPanel Workflow 섹션에 체크박스 추가
+  └─ Workspace WorkflowCanvasToggles에 체크박스 추가
 
 Phase 3: 렌더링 통합
   ├─ SkiaOverlay 엣지 필터링에 hierarchy 분기 추가
   ├─ workflowRenderer 색상 분기에 hierarchy 추가
-  └─ 렌더 레이어 순서 조정 (hierarchy → navigation → event 순)
+  ├─ workflowMinimap 색상 분기에 hierarchy 추가
+  └─ render/hit-test/minimap에 동일 filteredEdges 전달
 
 Phase 4: 검증 & 엣지 케이스
   ├─ parent_id 없는 페이지 처리 (루트 노드)
   ├─ dangling parent_id 검증 (삭제된 부모 참조)
   ├─ navigation 엣지와 동일 페이지 쌍 중복 시 시각적 구분
+  ├─ hierarchy OFF 시 미니맵/hover도 함께 비활성 확인
   └─ 대량 페이지 (50+) 성능 확인
 
 Phase 5: Auto-Arrange (선택적, 별도)
@@ -442,12 +500,13 @@ Phase 5: Auto-Arrange (선택적, 별도)
 | `apps/builder/src/builder/workspace/canvas/skia/workflowEdges.ts` | **Low** | `computeHierarchyEdges()` 함수 1개 추가 (~30줄) |
 | `apps/builder/src/builder/stores/canvasSettings.ts` | **Trivial** | 토글 상태 + setter 추가 (~5줄) |
 | `apps/builder/src/builder/workspace/Workspace.tsx` | **Trivial** | 체크박스 1개 + 레전드 아이콘 색상 추가 (~8줄) |
-| `apps/builder/src/builder/workspace/canvas/skia/SkiaOverlay.tsx` | **Trivial** | 필터 분기 1줄, 계산 호출 추가 (~10줄) |
+| `apps/builder/src/builder/workspace/canvas/skia/SkiaOverlay.tsx` | **Low** | 계산 트리거 보강 + 필터 분기 + filteredEdges 공유 (~20줄) |
 | `apps/builder/src/builder/workspace/canvas/skia/workflowRenderer.ts` | **Trivial** | 색상 상수 + 분기 1줄 (~5줄) |
+| `apps/builder/src/builder/workspace/canvas/skia/workflowMinimap.ts` | **Low** | hierarchy 색상 상수 + `hierarchyEdgePaint` 생성 + 분기 추가 (~12줄) |
 | `apps/builder/src/builder/workspace/canvas/skia/workflowHitTest.ts` | **None** | 변경 불필요 |
 | `apps/builder/src/builder/workspace/canvas/skia/workflowGraphUtils.ts` | **None** | 변경 불필요 |
 
-**총 변경량: ~55줄 (신규 함수 포함)**
+**총 변경량: ~90~120줄 (신규 함수 + Paint 객체 생성 포함)**
 
 ---
 
@@ -455,7 +514,41 @@ Phase 5: Auto-Arrange (선택적, 별도)
 
 | 위치 | 버그 | 영향 |
 |------|------|------|
-| `apps/builder/src/builder/hooks/usePageManager.ts:227-232` | 새 페이지 추가 시 `pageLayoutDirection` 미참조, 항상 `maxX, 0` 배치 | vertical/zigzag 방향에서도 페이지가 오른쪽에 추가됨 |
+| `apps/builder/src/builder/hooks/usePageManager.ts:224-232` | 새 페이지 추가 시 `pageLayoutDirection` 미참조, 항상 `maxX, 0` 배치 | vertical/zigzag 방향에서도 페이지가 오른쪽에 추가됨 |
+
+**현재 코드:**
+```typescript
+// usePageManager.ts — addPage 내부
+const { pagePositions } = useStore.getState();
+const currentCanvasWidth = useCanvasSyncStore.getState().canvasSize.width;
+let maxX = 0;
+for (const pos of Object.values(pagePositions)) {
+    const endX = pos.x + currentCanvasWidth + PAGE_STACK_GAP;
+    if (endX > maxX) maxX = endX;
+}
+useStore.getState().updatePagePosition(newPage.id, maxX, 0); // ← 항상 y=0
+```
+
+**수정 방향 (P2):**
+```typescript
+const direction = useStore.getState().pageLayoutDirection;
+const { width: canvasW, height: canvasH } = useCanvasSyncStore.getState().canvasSize;
+
+if (direction === 'vertical') {
+  let maxY = 0;
+  for (const pos of Object.values(pagePositions)) {
+    const endY = pos.y + canvasH + PAGE_STACK_GAP;
+    if (endY > maxY) maxY = endY;
+  }
+  useStore.getState().updatePagePosition(newPage.id, 0, maxY);
+} else if (direction === 'zigzag') {
+  // initializePagePositions의 zigzag 로직 참조
+  // pageCount 기반 row/col 계산
+} else {
+  // horizontal (기존 로직)
+  useStore.getState().updatePagePosition(newPage.id, maxX, 0);
+}
+```
 
 **이 버그는 P2에서 별도 수정 권장.**
 
@@ -473,6 +566,7 @@ Phase 5: Auto-Arrange (선택적, 별도)
 ### XStudio 코드베이스
 - **워크플로우 엣지**: `apps/builder/src/builder/workspace/canvas/skia/workflowEdges.ts` — 엣지 타입 정의 & 계산
 - **워크플로우 렌더러**: `apps/builder/src/builder/workspace/canvas/skia/workflowRenderer.ts` — 연결선 렌더링
+- **워크플로우 미니맵**: `apps/builder/src/builder/workspace/canvas/skia/workflowMinimap.ts` — 미니맵 엣지 렌더링
 - **오버레이 통합**: `apps/builder/src/builder/workspace/canvas/skia/SkiaOverlay.tsx` — 토글 필터링 & 렌더 호출
 - **히트테스트**: `apps/builder/src/builder/workspace/canvas/skia/workflowHitTest.ts` — 마우스 인터랙션
 - **그래프 유틸**: `apps/builder/src/builder/workspace/canvas/skia/workflowGraphUtils.ts` — 연결 분석
