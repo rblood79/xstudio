@@ -170,15 +170,21 @@ CONTAINER_TAGS(Card, Panel, ToggleButtonGroup 등)는 `renderWithCustomEngine`�
 **문제**: inline-block인 CONTAINER_TAG 컴포넌트의 `contentWidth`가 정확하지 않으면 selection bounds가 잘못됨.
 
 ```typescript
-// ✅ ToggleButtonGroup: containerLayout width를 'auto'로 오버라이드
-// Yoga가 자식 ToggleButton 크기에 맞춰 자동 계산
+// ✅ ToggleButtonGroup: 명시적 width 설정 여부에 따라 분기
+// - 명시적 width (100%, 200px 등): BlockEngine이 계산한 layout.width 사용
+// - 기본값 (fit-content/미지정): Yoga가 자식 크기에 맞춰 자동 계산
+const hasExplicitWidth = isToggleButtonGroup && childStyle?.width !== undefined
+  && childStyle.width !== 'fit-content';
+const toggleGroupWidthOverride = isToggleButtonGroup
+  ? hasExplicitWidth
+    ? { width: layout.width }
+    : { width: 'auto', flexGrow: 0, flexShrink: 0 }
+  : { width: layout.width };
+
+// ❌ 무조건 'auto' 오버라이드 → width: 100% 등 명시적 설정이 무시됨
 const toggleGroupWidthOverride = isToggleButtonGroup
   ? { width: 'auto', flexGrow: 0, flexShrink: 0 }
   : { width: layout.width };
-
-// ❌ BlockEngine의 contentWidth(80px 기본값)를 그대로 사용
-// → selection 영역이 실제 렌더링보다 작아짐
-const containerLayout = { width: layout.width };
 ```
 
 **calculateContentWidth에 컴포넌트별 분기 필요**:
@@ -251,5 +257,39 @@ const INLINE_FORM_HEIGHTS: Record<string, Record<string, number>> = {
 | column | max(indicator, textWidth) | indicator + gap + textLineHeight |
 
 동일한 분기가 `styleToLayout.ts`(Yoga 경로)와 `engines/utils.ts`(BlockEngine 경로) **양쪽**에 적용되어야 합니다.
+
+### Spec shapes border-radius 그룹 위치 처리
+
+ToggleButtonGroup 내 ToggleButton은 CSS에서 그룹 내 위치(first/middle/last)에 따라 모서리별 다른 border-radius를 적용합니다.
+Spec 기반 Skia 렌더링에서도 동일한 결과를 얻으려면 `_groupPosition` props를 통해 위치 정보를 전달해야 합니다.
+
+```typescript
+// ✅ ElementSprite.tsx: toggleGroupPosition을 _groupPosition으로 주입
+const specProps = toggleGroupPosition
+  ? { ...(props || {}), _groupPosition: toggleGroupPosition }
+  : (props || {});
+
+const shapes = spec.render.shapes(specProps, variantSpec, sizeSpec, 'default');
+
+// ✅ ToggleButton.spec.ts shapes(): per-corner border-radius
+// horizontal: first → [r,0,0,r], last → [0,r,r,0], middle → [0,0,0,0]
+// vertical:   first → [r,r,0,0], last → [0,0,r,r], middle → [0,0,0,0]
+const gp = props._groupPosition;
+let borderRadius = baseBorderRadius;
+if (gp && !gp.isOnly) {
+  const r = baseBorderRadius;
+  if (gp.orientation === 'horizontal') {
+    if (gp.isFirst) borderRadius = [r, 0, 0, r];
+    else if (gp.isLast) borderRadius = [0, r, r, 0];
+    else borderRadius = [0, 0, 0, 0];
+  }
+  // vertical도 동일 패턴
+}
+
+// ❌ 그룹 위치 무시 → 모든 버튼에 동일한 단일 borderRadius 적용
+const borderRadius = size.borderRadius; // [r,0,0,r] 대신 항상 r
+```
+
+**필수 조건**: `specShapeConverter.ts`의 `resolveRadius()`가 `number | [number, number, number, number]` 양쪽 타입을 지원해야 함 (현재 지원 확인됨).
 
 > **참고**: 레이아웃 엔진 상세 구현은 [LAYOUT_REQUIREMENTS.md](../../../../docs/LAYOUT_REQUIREMENTS.md) 참조.

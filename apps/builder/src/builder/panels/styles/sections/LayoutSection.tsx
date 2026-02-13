@@ -173,6 +173,7 @@ const LayoutSectionContent = memo(function LayoutSectionContent() {
     handleFlexAlignment,
     handleJustifyContentSpacing,
     handleFlexWrap,
+    updateStyles,
   } = useStyleActions();
   // 🚀 Phase 1: RAF 기반 스로틀 업데이트
   const { updateStyleImmediate, updateStylePreview } = useOptimizedStyleActions();
@@ -269,6 +270,9 @@ const LayoutSectionContent = memo(function LayoutSectionContent() {
               if (value) {
                 // 🚀 Phase 3: styleValues에서 직접 값 사용
                 handleFlexAlignment(value, styleValues.flexDirection);
+              } else {
+                // 활성화된 토글 재클릭 → alignment 스타일 제거
+                updateStyles({ alignItems: '', justifyContent: '' });
               }
             }}
           >
@@ -321,6 +325,9 @@ const LayoutSectionContent = memo(function LayoutSectionContent() {
               const value = Array.from(keys)[0] as string;
               if (value) {
                 handleJustifyContentSpacing(value);
+              } else {
+                // 활성화된 토글 재클릭 → justifyContent 스타일 제거
+                updateStyles({ justifyContent: '' });
               }
             }}
           >
@@ -358,6 +365,9 @@ const LayoutSectionContent = memo(function LayoutSectionContent() {
               const value = Array.from(keys)[0] as string;
               if (value) {
                 handleFlexWrap(value);
+              } else {
+                // 활성화된 토글 재클릭 → flexWrap 스타일 제거
+                updateStyles({ flexWrap: '' });
               }
             }}
           >

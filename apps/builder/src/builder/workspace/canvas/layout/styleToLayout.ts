@@ -321,14 +321,11 @@ export function styleToLayout(
     }
     // CSS 기본값: width: fit-content (horizontal/vertical 모두)
     // width 미지정 시 CSS 스타일시트의 fit-content를 Yoga 워크어라운드로 적용
+    // ⚠️ alignSelf는 설정하지 않음 — 부모의 align-items가 교차축 정렬을 결정해야 함
+    // (CSS에서 width: fit-content와 align-self는 독립적 속성)
     if (width === undefined && !isFitContentWidth) {
       layout.flexGrow = 0;
       layout.flexShrink = 0;
-      if (layout.alignSelf === undefined) layout.alignSelf = 'flex-start';
-    }
-    // 명시적 fit-content는 상단 일반 워크어라운드에서 처리됨, alignSelf만 보정
-    if (isFitContentWidth) {
-      if (layout.alignSelf === undefined) layout.alignSelf = 'flex-start';
     }
   }
 

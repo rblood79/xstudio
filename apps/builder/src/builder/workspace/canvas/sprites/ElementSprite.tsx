@@ -983,8 +983,13 @@ export const ElementSprite = memo(function ElementSprite({
             // → 사용자의 paddingTop/paddingBottom 변경이 자동 반영됨
             const specHeight = finalHeight;
 
+            // 🚀 ToggleButton: 그룹 내 위치 정보를 props에 주입하여 spec shapes에서 border-radius 분기 가능
+            const specProps = toggleGroupPosition
+              ? { ...(props || {}), _groupPosition: toggleGroupPosition }
+              : (props || {});
+
             const shapes = spec.render.shapes(
-              (props || {}) as Record<string, unknown>,
+              specProps as Record<string, unknown>,
               variantSpec,
               sizeSpec,
               'default',

@@ -7,6 +7,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Bugfix - ToggleButton spec border-radius 그룹 위치 기반 처리 (2026-02-13)
+
+#### 이슈
+
+ToggleButtonGroup 내부 ToggleButton의 border-radius가 CSS에서는 그룹 내 위치(first/middle/last)에 따라 모서리별로 다르게 적용되지만, Spec 기반 Skia 렌더링에서는 동일한 단일 borderRadius 값으로 렌더링됨.
+
+**CSS 규칙** (ToggleButtonGroup.css):
+- horizontal first: `border-top-right-radius: 0; border-bottom-right-radius: 0`
+- horizontal last: `border-top-left-radius: 0; border-bottom-left-radius: 0`
+- horizontal middle: 모든 모서리 `0`
+- vertical first: `border-bottom-left-radius: 0; border-bottom-right-radius: 0`
+- vertical last: `border-top-left-radius: 0; border-top-right-radius: 0`
+- vertical middle: 모든 모서리 `0`
+
+#### 수정 내용
+
+**1. `ToggleButton.spec.ts` — `_groupPosition` props + border-radius 분기**
+- `ToggleButtonProps` 인터페이스에 `_groupPosition` 추가 (orientation, isFirst, isLast, isOnly)
+- `shapes()` 함수에서 그룹 위치에 따른 per-corner border-radius 계산:
+  - `[tl, tr, br, bl]` 4-tuple 반환 (`specShapeConverter.ts`의 `resolveRadius()` 가 지원)
+
+```typescript
+// horizontal: first → [r,0,0,r], last → [0,r,r,0], middle → [0,0,0,0]
+// vertical: first → [r,r,0,0], last → [0,0,r,r], middle → [0,0,0,0]
+```
+
+**2. `ElementSprite.tsx` — `_groupPosition` 주입**
+- `toggleGroupPosition` 객체를 `_groupPosition` key로 spec shapes props에 주입
+- 기존 `PixiToggleButton.tsx`의 border-radius 처리와 동일한 결과
+
+#### 수정 파일
+| 파일 | 변경 |
+|------|------|
+| `packages/specs/src/components/ToggleButton.spec.ts` | `_groupPosition` props, shapes() border-radius 분기 |
+| `apps/builder/src/builder/workspace/canvas/sprites/ElementSprite.tsx` | `toggleGroupPosition` → `_groupPosition` 주입 |
+
+---
+
 ### Bugfix - Factory 정의 style 기본값 누락 (2026-02-13)
 
 #### 근본 원인
