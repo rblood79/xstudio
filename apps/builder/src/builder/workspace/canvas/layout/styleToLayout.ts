@@ -309,6 +309,13 @@ export function styleToLayout(
     if (!style.alignItems) {
       layout.alignItems = 'center';
     }
+    // CSS: width: fit-content (콘텐츠 크기에 맞춤, 부모 너비를 채우지 않음)
+    // Yoga 등가: flexGrow:0 + flexShrink:0 + alignSelf:'flex-start'
+    if (width === undefined) {
+      layout.flexGrow = 0;
+      layout.flexShrink = 0;
+      layout.alignSelf = 'flex-start';
+    }
   }
 
   // 🚀 Checkbox/Radio/Switch: 기본 flex row 레이아웃 + 크기 계산
