@@ -74,6 +74,19 @@ export function normalizeToHex8(input: string, fallback = '#000000FF'): string {
     return '#00000000';
   }
 
+  // CSS Color Level 4: color(srgb r g b) 또는 color(srgb r g b / a) 파싱
+  // 최신 브라우저의 getComputedStyle()이 이 형식을 반환할 수 있음
+  const srgbMatch = input.match(/^color\(srgb\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)(?:\s*\/\s*([\d.]+))?\)$/);
+  if (srgbMatch) {
+    const r = Math.round(parseFloat(srgbMatch[1]) * 255).toString(16).padStart(2, '0');
+    const g = Math.round(parseFloat(srgbMatch[2]) * 255).toString(16).padStart(2, '0');
+    const b = Math.round(parseFloat(srgbMatch[3]) * 255).toString(16).padStart(2, '0');
+    const a = srgbMatch[4] !== undefined
+      ? Math.round(parseFloat(srgbMatch[4]) * 255).toString(16).padStart(2, '0')
+      : 'FF';
+    return `#${r}${g}${b}${a}`.toUpperCase();
+  }
+
   try {
     const c = colord(input);
     if (!c.isValid()) return fallback;

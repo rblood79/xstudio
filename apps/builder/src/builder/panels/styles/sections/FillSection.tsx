@@ -42,7 +42,7 @@ import type { FillItem, ColorFillItem, GradientStop } from '../../../../types/bu
 import { FillType } from '../../../../types/builder/fill.types';
 import { FillLayerRow } from '../components/FillLayerRow';
 import { FillDetailPopover } from '../components/FillDetailPopover';
-import { gradientStopsToCss } from '../utils/colorUtils';
+import { gradientStopsToCss, normalizeToHex8 } from '../utils/colorUtils';
 import { useAppearanceValuesJotai } from '../hooks/useAppearanceValuesJotai';
 
 import './FillSection.css';
@@ -210,7 +210,8 @@ export const FillBackgroundInline = memo(function FillBackgroundInline() {
   const extraFills = fills.slice(1);
 
   // fills가 없을 때 표시할 기본 색상: 현재 요소의 backgroundColor 또는 #FFFFFF
-  const placeholderColor = styleValues?.backgroundColor || '#FFFFFF';
+  // computedStyle이 color(srgb ...) 형식을 반환할 수 있으므로 정규화 필요
+  const placeholderColor = normalizeToHex8(styleValues?.backgroundColor || '#FFFFFF');
   // hex6 → hex8 변환 (addFill에 전달용)
   const placeholderColorHex8 = placeholderColor.length === 7
     ? `${placeholderColor}FF`
