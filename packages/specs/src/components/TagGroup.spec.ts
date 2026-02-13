@@ -8,6 +8,7 @@
  */
 
 import type { ComponentSpec, Shape, TokenRef } from '../types';
+import { fontFamily } from '../primitives/typography';
 
 /**
  * TagGroup Props
@@ -18,6 +19,8 @@ export interface TagGroupProps {
   selectionMode?: 'none' | 'single' | 'multiple';
   label?: string;
   style?: Record<string, string | number | undefined>;
+  /** ElementSprite에서 주입: 자식 Tag 텍스트 배열 (Skia 렌더링용) */
+  _tagItems?: { text: string }[];
 }
 
 /**
@@ -102,25 +105,90 @@ export const TagGroupSpec: ComponentSpec<TagGroupProps> = {
   },
 
   render: {
-    shapes: (_props, _variant, size, _state = 'default') => {
-      const shapes: Shape[] = [
-        // 태그 그룹 컨테이너 (wrapping flex row)
-        {
-          type: 'container' as const,
+    shapes: (props, variant, size, _state = 'default') => {
+      const shapes: Shape[] = [];
+      const tagFontSize = size.fontSize as unknown as number || 14;
+      const tagGap = size.gap || 4;
+      let currentY = 0;
+
+      // ── CSS 구조: TagGroup (column) ──
+      // ├── Label
+      // └── TagList (row flex-wrap)
+      //     ├── Tag
+      //     └── Tag
+
+      // 1) Label 텍스트 (CSS: .react-aria-TagGroup > Label)
+      const label = props.label;
+      if (label) {
+        const labelFontSize = tagFontSize > 2 ? tagFontSize - 2 : 12;
+        shapes.push({
+          type: 'text' as const,
           x: 0,
-          y: 0,
-          width: 'auto',
-          height: 'auto',
-          children: [],
-          layout: {
-            display: 'flex',
-            flexDirection: 'row',
-            flexWrap: 'wrap',
-            alignItems: 'center',
-            gap: size.gap,
-          },
-        },
-      ];
+          y: currentY,
+          text: label,
+          fontSize: labelFontSize,
+          fontFamily: fontFamily.sans,
+          fontWeight: 500,
+          fill: variant.text,
+          align: 'left' as const,
+          baseline: 'top' as const,
+        });
+        currentY += labelFontSize + 4; // gap: 2px + 여유
+      }
+
+      // 2) TagList 영역: Tag chips (CSS: .react-aria-TagList > .react-aria-Tag)
+      const tagItems = props._tagItems;
+      if (tagItems && tagItems.length > 0) {
+        const tagPaddingX = size.paddingX || 8;
+        const tagPaddingY = size.paddingY || 2;
+        const tagHeight = tagFontSize + tagPaddingY * 2;
+        const borderRadius = size.borderRadius as unknown as number || 4;
+        let tagX = 0;
+
+        for (const item of tagItems) {
+          // 태그 칩 너비 추정
+          const charWidth = tagFontSize * 0.55;
+          const textWidth = item.text.length * charWidth;
+          const chipWidth = textWidth + tagPaddingX * 2;
+
+          // Tag 배경 (roundRect)
+          shapes.push({
+            id: `tag-bg-${tagX}-${currentY}`,
+            type: 'roundRect' as const,
+            x: tagX,
+            y: currentY,
+            width: chipWidth,
+            height: tagHeight,
+            radius: borderRadius,
+            fill: variant.background,
+          });
+
+          // Tag 테두리
+          shapes.push({
+            type: 'border' as const,
+            target: `tag-bg-${tagX}-${currentY}`,
+            borderWidth: 1,
+            color: variant.border || variant.text,
+            radius: borderRadius,
+          });
+
+          // Tag 텍스트
+          shapes.push({
+            type: 'text' as const,
+            x: tagX + tagPaddingX,
+            y: currentY + tagPaddingY,
+            text: item.text,
+            fontSize: tagFontSize,
+            fontFamily: fontFamily.sans,
+            fontWeight: 400,
+            fill: variant.text,
+            align: 'left' as const,
+            baseline: 'top' as const,
+          });
+
+          tagX += chipWidth + tagGap;
+        }
+      }
 
       return shapes;
     },

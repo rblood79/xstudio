@@ -35,7 +35,7 @@ import {
   CheckboxSpec, CheckboxGroupSpec, RadioSpec, SwitchSpec, FormSpec,
   SelectSpec, ComboBoxSpec, ListBoxSpec, SliderSpec, MeterSpec,
   ProgressBarSpec, TableSpec, TreeSpec, TabsSpec, MenuSpec,
-  BreadcrumbsSpec, PaginationSpec, TagGroupSpec, GridListSpec,
+  BreadcrumbsSpec, PaginationSpec, GridListSpec,
   DisclosureSpec, DisclosureGroupSpec, ToolbarSpec, ToastSpec,
   PanelSpec, GroupSpec, SlotSpec, SkeletonSpec, DropZoneSpec,
   FileTriggerSpec, ScrollBoxSpec, MaskedFrameSpec, FancyButtonSpec,
@@ -79,7 +79,6 @@ import {
   PixiComboBox,
   // Phase 4 WebGL Migration Components
   PixiGridList,
-  PixiTagGroup,
   PixiTree,
   PixiTable,
   // Phase 5 WebGL Migration Components
@@ -252,7 +251,6 @@ const UI_COMBOBOX_TAGS = new Set(['ComboBox']);
  * Phase 4 WebGL Migration 컴포넌트 태그들
  */
 const UI_GRIDLIST_TAGS = new Set(['GridList']);
-const UI_TAGGROUP_TAGS = new Set(['TagGroup', 'TagList']);
 const UI_TREE_TAGS = new Set(['Tree', 'TreeView']);
 const UI_TABLE_TAGS = new Set(['Table', 'DataTable', 'DataGrid']);
 
@@ -307,7 +305,7 @@ const UI_SLOT_TAGS = new Set(['Slot']);
 // Sprite Type Detection
 // ============================================
 
-type SpriteType = 'box' | 'text' | 'image' | 'button' | 'fancyButton' | 'checkboxGroup' | 'checkboxItem' | 'radioGroup' | 'radioItem' | 'slider' | 'input' | 'select' | 'progressBar' | 'switcher' | 'scrollBox' | 'list' | 'maskedFrame' | 'flex' | 'grid' | 'toggleButton' | 'toggleButtonGroup' | 'listBox' | 'badge' | 'meter' | 'separator' | 'link' | 'breadcrumbs' | 'card' | 'panel' | 'menu' | 'tabs' | 'numberField' | 'searchField' | 'comboBox' | 'gridList' | 'tagGroup' | 'tree' | 'table' | 'disclosure' | 'disclosureGroup' | 'tooltip' | 'popover' | 'dialog' | 'colorSwatch' | 'colorSlider' | 'timeField' | 'dateField' | 'colorArea' | 'calendar' | 'colorWheel' | 'datePicker' | 'colorPicker' | 'dateRangePicker' | 'textField' | 'switch' | 'textArea' | 'form' | 'toolbar' | 'fileTrigger' | 'dropZone' | 'skeleton' | 'toast' | 'pagination' | 'colorField' | 'colorSwatchPicker' | 'group' | 'slot';
+type SpriteType = 'box' | 'text' | 'image' | 'button' | 'fancyButton' | 'checkboxGroup' | 'checkboxItem' | 'radioGroup' | 'radioItem' | 'slider' | 'input' | 'select' | 'progressBar' | 'switcher' | 'scrollBox' | 'list' | 'maskedFrame' | 'flex' | 'grid' | 'toggleButton' | 'toggleButtonGroup' | 'listBox' | 'badge' | 'meter' | 'separator' | 'link' | 'breadcrumbs' | 'card' | 'panel' | 'menu' | 'tabs' | 'numberField' | 'searchField' | 'comboBox' | 'gridList' | 'tree' | 'table' | 'disclosure' | 'disclosureGroup' | 'tooltip' | 'popover' | 'dialog' | 'colorSwatch' | 'colorSlider' | 'timeField' | 'dateField' | 'colorArea' | 'calendar' | 'colorWheel' | 'datePicker' | 'colorPicker' | 'dateRangePicker' | 'textField' | 'switch' | 'textArea' | 'form' | 'toolbar' | 'fileTrigger' | 'dropZone' | 'skeleton' | 'toast' | 'pagination' | 'colorField' | 'colorSwatchPicker' | 'group' | 'slot';
 
 function getSpriteType(element: Element): SpriteType {
   const tag = element.tag;
@@ -351,7 +349,6 @@ function getSpriteType(element: Element): SpriteType {
 
   // Phase 4 WebGL Migration 컴포넌트
   if (UI_GRIDLIST_TAGS.has(tag)) return 'gridList';
-  if (UI_TAGGROUP_TAGS.has(tag)) return 'tagGroup';
   if (UI_TREE_TAGS.has(tag)) return 'tree';
   if (UI_TABLE_TAGS.has(tag)) return 'table';
 
@@ -441,7 +438,6 @@ const TAG_SPEC_MAP: Record<string, ComponentSpec<any>> = {
   'Tabs': TabsSpec, 'TabList': TabsSpec,
   'NumberField': NumberFieldSpec,
   'GridList': GridListSpec,
-  'TagGroup': TagGroupSpec, 'TagList': TagGroupSpec,
   'Tree': TreeSpec, 'TreeView': TreeSpec,
   'Table': TableSpec, 'DataTable': TableSpec, 'DataGrid': TableSpec,
   'Disclosure': DisclosureSpec,
@@ -984,9 +980,11 @@ export const ElementSprite = memo(function ElementSprite({
             const specHeight = finalHeight;
 
             // 🚀 ToggleButton: 그룹 내 위치 정보를 props에 주입하여 spec shapes에서 border-radius 분기 가능
-            const specProps = toggleGroupPosition
-              ? { ...(props || {}), _groupPosition: toggleGroupPosition }
-              : (props || {});
+            // 🚀 TagGroup: 자식 Tag 텍스트를 주입하여 spec shapes에서 label + tag chips 렌더링
+            let specProps: Record<string, unknown> = props || {};
+            if (toggleGroupPosition) {
+              specProps = { ...specProps, _groupPosition: toggleGroupPosition };
+            }
 
             const shapes = spec.render.shapes(
               specProps as Record<string, unknown>,
@@ -1108,8 +1106,10 @@ export const ElementSprite = memo(function ElementSprite({
 
   // box/flex/grid 타입은 BoxSprite가 더 완전한 Skia 데이터를 등록하므로
   // ElementSprite의 이중 등록을 방지한다. (effects, blendMode, 올바른 fillColor 포함)
-  const hasBoxSprite = spriteType === 'box' || spriteType === 'flex' || spriteType === 'grid';
-  useSkiaNode(elementId, hasBoxSprite ? null : skiaNodeData);
+  // text 타입은 TextSprite가 자체적으로 텍스트 Skia 데이터를 등록하므로
+  // ElementSprite에서 box 데이터로 덮어쓰지 않도록 방지한다.
+  const hasOwnSprite = spriteType === 'box' || spriteType === 'text' || spriteType === 'flex' || spriteType === 'grid';
+  useSkiaNode(elementId, hasOwnSprite ? null : skiaNodeData);
 
   // CheckboxGroup의 자식 Checkbox인지 확인
   const isCheckboxInGroup = spriteType === 'checkboxItem' && parentElement?.tag === 'CheckboxGroup';
@@ -1445,16 +1445,6 @@ export const ElementSprite = memo(function ElementSprite({
     case 'gridList':
       return (
         <PixiGridList
-          element={effectiveElement}
-          isSelected={isSelected}
-          onClick={onClick}
-          onChange={onChange ? (id, value) => onChange(id, value) : undefined}
-        />
-      );
-
-    case 'tagGroup':
-      return (
-        <PixiTagGroup
           element={effectiveElement}
           isSelected={isSelected}
           onClick={onClick}

@@ -971,6 +971,13 @@ export function createDefaultTagGroupProps(): TagGroupElementProps {
     selectedKeys: [],
     isDisabled: false,
     allowsRemoving: false,
+    style: { display: 'flex', flexDirection: 'column', gap: 2, width: 'fit-content' },
+  };
+}
+
+export function createDefaultTagListProps(): BaseElementProps {
+  return {
+    style: { display: 'flex', flexDirection: 'row', flexWrap: 'wrap', gap: 4 },
   };
 }
 
@@ -1088,6 +1095,7 @@ export function getDefaultProps(tag: string): ComponentElementProps {
     Cell: createDefaultCellProps,
     Card: createDefaultCardProps,
     TagGroup: createDefaultTagGroupProps,
+    TagList: createDefaultTagListProps,
     Tag: createDefaultTagProps,
     ListBox: createDefaultListBoxProps,
     ListBoxItem: createDefaultListBoxItemProps,

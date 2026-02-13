@@ -44,6 +44,27 @@ tags: [pixi, layout, canvas, hybrid-engine]
 // ❌ fit-content를 수동으로 auto나 px로 변환하지 말 것
 ```
 
+### fit-content와 alignSelf 독립성
+
+CSS에서 `width: fit-content`와 `align-self`는 완전히 독립적인 속성입니다.
+Yoga 워크어라운드에서 `alignSelf: 'flex-start'`를 강제 설정하면 부모의 `align-items`가 무시됩니다.
+
+```typescript
+// ✅ fit-content 워크어라운드: flexGrow/flexShrink만 설정
+// alignSelf는 설정하지 않음 → 부모의 align-items가 교차축 정렬 결정
+if (width === undefined && !isFitContentWidth) {
+  layout.flexGrow = 0;
+  layout.flexShrink = 0;
+}
+
+// ❌ alignSelf 강제 설정 → 부모의 align-items: center 등이 무시됨
+if (width === undefined && !isFitContentWidth) {
+  layout.flexGrow = 0;
+  layout.flexShrink = 0;
+  layout.alignSelf = 'flex-start'; // 부모 align-items 덮어씀!
+}
+```
+
 ## Incorrect
 
 ```tsx

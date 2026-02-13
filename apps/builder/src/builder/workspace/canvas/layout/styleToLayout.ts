@@ -329,6 +329,37 @@ export function styleToLayout(
     }
   }
 
+  // 🚀 TagGroup: 기본 flex column 레이아웃 (Label + TagList 수직 배치)
+  const isTagGroup = tag === 'taggroup';
+  if (isTagGroup) {
+    if (!style.display) layout.display = 'flex';
+    if (!style.flexDirection) layout.flexDirection = 'column';
+  }
+
+  // 🚀 TagList: 기본 flex row wrap 레이아웃 (Tags 가로 배치)
+  const isTagList = tag === 'taglist';
+  if (isTagList) {
+    if (!style.display) layout.display = 'flex';
+    if (!style.flexDirection) layout.flexDirection = 'row';
+    if (!style.flexWrap) layout.flexWrap = 'wrap';
+  }
+
+  // 🚀 순수 텍스트 태그: 컨테이너 자식으로 배치될 때 Yoga가 텍스트 높이를 알 수 없으므로
+  // height 미설정 시 size prop → fontSize → lineHeight(×1.4)로 높이를 자동 계산
+  // Button sizes 패턴: size → font-size: var(--text-{size}) 토큰 매핑
+  const TEXT_LAYOUT_TAGS = new Set(['label', 'text', 'heading', 'paragraph']);
+  if (TEXT_LAYOUT_TAGS.has(tag) && height === undefined) {
+    // size prop → typography 토큰 매핑 (xs:12, sm:14, md:16, lg:18, xl:20)
+    const TEXT_SIZE_FONT_MAP: Record<string, number> = {
+      xs: 12, sm: 14, md: 16, lg: 18, xl: 20,
+    };
+    const sizeName = (props?.size as string) ?? 'sm';
+    const fontSize = typeof style.fontSize === 'number'
+      ? style.fontSize
+      : TEXT_SIZE_FONT_MAP[sizeName] ?? 14;
+    layout.height = Math.ceil(fontSize * 1.4);
+  }
+
   // 🚀 Checkbox/Radio/Switch: 기본 flex row 레이아웃 + 크기 계산
   // CSS 기본값: display: flex, flex-direction: row, align-items: center, justify-content: flex-start
   const isInlineFormControl = tag === 'checkbox' || tag === 'radio' || tag === 'switch';

@@ -126,7 +126,8 @@ const DEFAULT_CSS_VALUES: Record<string, { width?: string; height?: string; disp
   ListBox: { width: 'fit-content' },
   GridList: { width: 'fit-content' },
   Menu: { width: 'fit-content' },
-  TagGroup: { width: 'fit-content' },
+  TagGroup: { width: 'fit-content', display: 'flex', flexDirection: 'column', gap: 2 },
+  TagList: { display: 'flex', flexDirection: 'row', flexWrap: 'wrap', gap: 4 },
 
   // === 네비게이션 ===
   Link: { width: 'fit-content' },

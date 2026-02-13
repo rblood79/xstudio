@@ -622,6 +622,7 @@ const ElementsLayer = memo(function ElementsLayer({
     'Card', 'Box', 'Panel', 'Form', 'Group', 'Dialog', 'Modal',
     'Disclosure', 'DisclosureGroup', 'Accordion',
     'ToggleButtonGroup',  // 🚀 Phase 7: flex container로 자식 ToggleButton 내부 렌더링
+    'TagGroup', 'TagList',  // 🚀 웹 CSS 구조 동일: TagGroup (column) → Label + TagList (row wrap) → Tags
   ]), []);
 
   // 🚀 Phase 8: CSS display: block 요소 목록
@@ -820,8 +821,10 @@ const ElementsLayer = memo(function ElementsLayer({
             ? stripSelfRenderedProps(childLayoutStyle)
             : childLayoutStyle;
 
-          // 🚀 ToggleButtonGroup: minHeight 미적용 (자식 ToggleButton 높이에 맞게 자동 계산)
+          // 🚀 ToggleButtonGroup/TagGroup/TagList: minHeight 미적용 (자식 높이에 맞게 자동 계산)
           const isToggleButtonGroup = child.tag === 'ToggleButtonGroup';
+          const isFlexContainerTag = child.tag === 'TagGroup' || child.tag === 'TagList';
+          const isYogaSizedContainer = isToggleButtonGroup || isFlexContainerTag;
           const isAutoHeightSection = child.tag === 'Section' &&
             hasChildElements &&
             (childLayoutStyle.height === undefined || childLayoutStyle.height === 'auto');
@@ -832,13 +835,13 @@ const ElementsLayer = memo(function ElementsLayer({
           const childImplicitSectionBlockPatch = isContainerType
             ? getImplicitSectionBlockPatch(child.tag, childLayoutRest)
             : {};
-          // 🚀 ToggleButtonGroup: 명시적 width 설정 여부에 따라 분기
+          // 🚀 Yoga 크기 결정 컨테이너: 명시적 width 설정 여부에 따라 분기
           // - 명시적 width (100%, 200px 등): BlockEngine이 계산한 layout.width 사용
           // - 기본값 (fit-content/미지정): Yoga가 자식 크기에 맞춰 자동 계산
           const childStyle = (child.props as Record<string, unknown>)?.style as Record<string, unknown> | undefined;
-          const hasExplicitWidth = isToggleButtonGroup && childStyle?.width !== undefined
+          const hasExplicitWidth = isYogaSizedContainer && childStyle?.width !== undefined
             && childStyle.width !== 'fit-content';
-          const toggleGroupWidthOverride = isToggleButtonGroup
+          const containerWidthOverride = isYogaSizedContainer
             ? hasExplicitWidth
               ? { width: layout.width }
               : { width: 'auto' as unknown as number, flexGrow: 0, flexShrink: 0 }
@@ -850,9 +853,9 @@ const ElementsLayer = memo(function ElementsLayer({
                 position: 'relative' as const,
                 marginTop,
                 marginLeft,
-                ...toggleGroupWidthOverride,
+                ...containerWidthOverride,
                 height: 'auto' as unknown as number,
-                ...(isToggleButtonGroup ? {} : { minHeight: layout.height }),
+                ...(isYogaSizedContainer ? {} : { minHeight: layout.height }),
                 display: 'flex' as const,
                 flexDirection: 'column' as const,
                 ...childLayoutRest,
@@ -861,9 +864,9 @@ const ElementsLayer = memo(function ElementsLayer({
                 position: 'relative' as const,
                 marginTop,
                 marginLeft,
-                ...toggleGroupWidthOverride,
+                ...containerWidthOverride,
                 height: 'auto' as unknown as number,
-                ...(isToggleButtonGroup ? {} : { minHeight: layout.height }),
+                ...(isYogaSizedContainer ? {} : { minHeight: layout.height }),
                 ...childLayoutRest,
                 ...childImplicitSectionBlockPatch,
               }

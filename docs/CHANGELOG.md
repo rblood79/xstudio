@@ -7,6 +7,51 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Bugfix - ToggleButtonGroup alignSelf 강제 설정으로 부모 align-items 무시 (2026-02-13)
+
+#### 이슈
+
+ToggleButtonGroup을 `display: flex; justify-content: center; align-items: center` 부모 안에 배치해도 수직 가운데 정렬이 되지 않음. `align-items: flex-start` 상태처럼 상단에 고정됨.
+
+#### 근본 원인
+
+`styleToLayout.ts`에서 ToggleButtonGroup의 `width: fit-content` Yoga 워크어라운드 처리 시 `alignSelf: 'flex-start'`를 강제 설정하고 있었음. CSS에서 `width: fit-content`와 `align-self`는 독립적 속성이지만, 코드에서는 fit-content 처리를 위해 `alignSelf`를 같이 설정하여 부모의 `align-items` 값이 무시됨.
+
+```typescript
+// ❌ 변경 전: alignSelf 강제 설정 → 부모 align-items 무시
+if (width === undefined && !isFitContentWidth) {
+  layout.flexGrow = 0;
+  layout.flexShrink = 0;
+  if (layout.alignSelf === undefined) layout.alignSelf = 'flex-start'; // ← 문제
+}
+if (isFitContentWidth) {
+  if (layout.alignSelf === undefined) layout.alignSelf = 'flex-start'; // ← 문제
+}
+
+// ✅ 변경 후: alignSelf 제거 → 부모 align-items 정상 적용
+if (width === undefined && !isFitContentWidth) {
+  layout.flexGrow = 0;
+  layout.flexShrink = 0;
+  // alignSelf 미설정 → 부모의 align-items가 교차축 정렬 결정
+}
+```
+
+#### 동일 패턴 조사
+
+| 위치 | alignSelf: flex-start 사용 | 수정 필요 |
+|------|---------------------------|----------|
+| `styleToLayout.ts` ToggleButtonGroup | 사용자 CSS 스타일 변환에서 강제 설정 | **수정 완료** |
+| `Pixi*.tsx` (10개: Popover, Disclosure, Menu, Tabs 등) | 내부 Pixi 렌더링 컴포넌트 자체 레이아웃용 | 사용자 CSS와 무관, 수정 불필요 |
+| `styleToLayout.ts` Checkbox/Radio/Switch | alignSelf 미사용 | 해당 없음 |
+| `styleToLayout.ts` Badge/Tag/Chip | alignSelf 미사용 | 해당 없음 |
+
+#### 수정 파일
+| 파일 | 변경 |
+|------|------|
+| `layout/styleToLayout.ts` | ToggleButtonGroup fit-content 워크어라운드에서 `alignSelf: 'flex-start'` 2줄 제거 |
+
+---
+
 ### Bugfix - ToggleButton spec border-radius 그룹 위치 기반 처리 (2026-02-13)
 
 #### 이슈
