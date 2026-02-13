@@ -738,6 +738,8 @@ export function createDefaultToggleButtonGroupProps(): ToggleButtonGroupElementP
     style: {
       display: 'flex',
       flexDirection: 'row',
+      alignItems: 'center',
+      width: 'fit-content',
     },
   };
 }

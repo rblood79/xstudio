@@ -832,10 +832,16 @@ const ElementsLayer = memo(function ElementsLayer({
           const childImplicitSectionBlockPatch = isContainerType
             ? getImplicitSectionBlockPatch(child.tag, childLayoutRest)
             : {};
-          // 🚀 ToggleButtonGroup: Yoga가 자식 ToggleButton 크기에 맞춰 width 자동 계산
-          // BlockEngine의 contentWidth(80px 기본값)가 아닌 실제 자식 크기 사용
+          // 🚀 ToggleButtonGroup: 명시적 width 설정 여부에 따라 분기
+          // - 명시적 width (100%, 200px 등): BlockEngine이 계산한 layout.width 사용
+          // - 기본값 (fit-content/미지정): Yoga가 자식 크기에 맞춰 자동 계산
+          const childStyle = (child.props as Record<string, unknown>)?.style as Record<string, unknown> | undefined;
+          const hasExplicitWidth = isToggleButtonGroup && childStyle?.width !== undefined
+            && childStyle.width !== 'fit-content';
           const toggleGroupWidthOverride = isToggleButtonGroup
-            ? { width: 'auto' as unknown as number, flexGrow: 0, flexShrink: 0 }
+            ? hasExplicitWidth
+              ? { width: layout.width }
+              : { width: 'auto' as unknown as number, flexGrow: 0, flexShrink: 0 }
             : { width: layout.width };
 
           const containerLayout = isContainerType
