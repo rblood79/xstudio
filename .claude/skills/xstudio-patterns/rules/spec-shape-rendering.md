@@ -100,9 +100,25 @@ const ButtonSpec: ComponentSpec<ButtonProps> = {
 
 - Shape의 `x`, `y`는 저수준 Graphics API용 (pixi-no-xy-props와 다른 컨텍스트)
 - `width: 'auto'`, `height: 'auto'`는 컨테이너 크기에 맞춤
-- **배경 roundRect의 `height`는 반드시 `'auto'`** -- 고정 높이 사용 금지 (Yoga 레이아웃 높이와 불일치 발생)
+- **배경 roundRect의 `width`와 `height`는 반드시 `'auto'`** -- `props.style?.width` 사용 금지
 - `state` 파라미터로 상태별 스타일 분기 (기본값: 'default')
 - Spec `shapes()` 함수는 항상 row 레이아웃 좌표를 생성. column 방향에서는 `rearrangeShapesForColumn()`으로 좌표를 변환해야 함
+
+### 배경 roundRect width/height 규칙 (CRITICAL)
+
+`specShapesToSkia`는 첫 번째 roundRect/rect에서 bgBox를 추출할 때 **`shape.width === 'auto' && shape.height === 'auto'`** 조건을 사용합니다. `props.style?.width`를 배경 roundRect에 사용하면 사용자가 px/% 크기를 설정할 때 숫자 값이 되어 bgBox 추출이 실패하고 배경이 렌더링되지 않습니다.
+
+```typescript
+// ❌ 배경 roundRect에 props.style?.width 사용 금지
+const width = (props.style?.width as number) || 'auto';
+// → 사용자가 width: 200px 설정 시 width = 200 → bgBox 추출 실패
+
+// ✅ 배경 roundRect는 항상 'auto' 사용
+const width = 'auto' as const;
+// → specShapesToSkia가 containerWidth로 대체하여 bgBox 정상 추출
+```
+
+**영향 범위**: Button, Section, ToggleButton, Card, Form, List, FancyButton, ScrollBox, MaskedFrame 등 모든 spec의 배경 roundRect
 
 ### props.style 오버라이드 (2026-02-12)
 

@@ -96,7 +96,8 @@ export const ListSpec: ComponentSpec<ListProps> = {
 
   render: {
     shapes: (props, variant, size, _state = 'default') => {
-      const width = (props.style?.width as number) || 'auto';
+      // 배경 roundRect는 항상 'auto'를 사용하여 specShapesToSkia의 containerWidth에 맞춤
+      const width = 'auto' as const;
 
       // 사용자 스타일 우선, 없으면 spec 기본값
       const bgColor = props.style?.backgroundColor ?? variant.background;

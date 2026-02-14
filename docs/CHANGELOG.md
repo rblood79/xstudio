@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **계층적 선택 모델 (Pencil/Figma 스타일)**: 캔버스 클릭 시 현재 깊이 레벨 요소만 선택. 더블클릭으로 컨테이너 진입, Escape로 위로 복귀. `editingContextId` 상태 및 `resolveClickTarget` 유틸리티 구현 (`stores/selection.ts`, `utils/hierarchicalSelection.ts`)
 - **Deep Hover 하이라이트 (Pencil 패턴)**: 그룹/컨테이너 호버 시 내부 모든 리프 노드를 동시 하이라이트. context 레벨 히트 테스트 → `collectLeafDescendants` 재귀 수집 → 전체 리프 렌더링. 리프 직접 호버는 실선 2px, 그룹 내부 리프는 점선 1px. 선택된 요소 위에서도 호버 표시. `hoverRenderer.ts` Skia 렌더러 (blue-500, alpha 0.5). 진입한 컨테이너 경계 점선 표시 (gray-400)
+- **캔버스 커서 통일 (Pencil 방식)**: 모든 캔버스 요소의 마우스 커서를 `default`로 통일. TextSprite(`text`→`default`), BoxSprite/ImageSprite/ElementSprite(`pointer`→`default`), UI 컴포넌트 55개(`pointer`/`text`/`crosshair`/조건식→`default`). Hand Tool의 `grab`/`grabbing` 및 리사이즈 핸들 커서는 유지
 - **Body 요소 선택**: 캔버스 빈 영역 클릭 또는 배경 클릭으로 body 선택 가능. `buildSelectionRenderData`에 pageFrames 기반 body bounds 폴백 추가. `isOnlyBodySelected` 오버레이 스킵 로직 제거
 
 ### Changed
@@ -19,6 +20,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **레이어 트리 직접 선택**: 레이어 트리에서 깊은 요소 선택 시 `editingContext` 자동 조정 (`resolveEditingContextForTreeSelection`)
 - **Escape 키 우선순위**: editingContext 복귀 → 선택 해제 순서로 변경
 - **더블클릭 동작**: 컨테이너 요소는 `enterEditingContext`, 텍스트 요소는 기존 `startEdit` 유지
+- **editingContext 복귀 (Pencil 방식)**: 빈 영역 클릭 시 `exitEditingContext` 호출. context 외부 요소 클릭 시에도 한 단계 위로 복귀. Escape 키 + 빈 영역 클릭 + 외부 요소 클릭 3가지 경로 지원
+- **호버 렌더 순서 변경**: Hover → Selection Box → Transform Handles 순서로 변경. 코너 핸들의 흰색 fill이 호버 선을 덮어 핸들 내부에 선이 나타나는 문제 해결
 
 ### Fixed
 
@@ -26,6 +29,48 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Body 오버레이 미표시**: `isOnlyBodySelected` 체크가 body 선택 시 오버레이 렌더링을 스킵하던 문제 해결
 - **Body Skia 선택 박스**: body가 `treeBoundsMap`에 없어 선택 박스가 렌더링되지 않던 문제. `pageFrames` 기반 폴백 추가
 - **멀티페이지 호버 불가**: 아무 요소도 선택되지 않은 상태에서 `treeBoundsMap`이 빈 Map으로 설정되어 호버 히트 테스트가 작동하지 않던 문제. `needsSelectionBoundsMap`을 항상 true로 변경하여 호버용 bounds를 상시 빌드 (`SkiaOverlay.tsx`)
+- **더블클릭 그룹 진입 불가**: BoxSprite와 ElementSprite 컨테이너 히트 영역에 더블클릭 감지가 없어 `enterEditingContext`가 호출되지 않던 문제. `lastPointerDownRef` 기반 300ms 더블클릭 감지 추가 (`BoxSprite.tsx`, `ElementSprite.tsx`)
+
+---
+
+### Fixed - Button/UI 컴포넌트 width 설정 시 배경 렌더링 실패 (2026-02-14)
+
+#### 증상
+- Button에 `width: 200px` 또는 `width: 50%` 설정 시 Skia 배경(background, border, borderRadius)이 렌더링되지 않음
+- Selection 영역은 정상이나 시각적 배경이 사라짐
+- 동일 문제가 Section, ToggleButton, Card, Form, List, FancyButton, ScrollBox, MaskedFrame에도 존재
+
+#### 원인
+
+**1. Spec shapes의 배경 roundRect `width`에 `props.style?.width` 사용**
+- 9개 spec 파일에서 배경 roundRect의 width를 `(props.style?.width as number) || 'auto'`로 설정
+- 사용자가 `width: 200px`를 설정하면 `shape.width = 200` (숫자)이 됨
+- `specShapesToSkia`의 bgBox 추출 조건은 `shape.width === 'auto' && shape.height === 'auto'`
+- 숫자 width → bgBox 미추출 → 배경이 children으로 들어감 → 투명 outer box만 표시
+
+**2. effectiveElement에서 퍼센트 값 이중 적용 (ElementSprite.tsx)**
+- `computedContainerSize`는 Yoga가 이미 `%`를 resolve한 pixel 값
+- 기존 코드: `(parseFloat('50%') / 100) * computedContainerSize.width` → 50% × 200px = 100px (이중 적용)
+- 수정: `computedContainerSize.width` 직접 사용
+
+**3. `@xstudio/specs` dist 미빌드**
+- 소스 파일 수정 후 `pnpm build` 미실행 → Builder가 구 dist/ 참조
+
+#### 수정 파일
+
+| 파일 | 변경 내용 |
+|------|----------|
+| `packages/specs/src/components/Button.spec.ts` | 배경 roundRect `width: 'auto' as const` |
+| `packages/specs/src/components/Section.spec.ts` | 동일 패턴 수정 |
+| `packages/specs/src/components/ToggleButton.spec.ts` | 동일 패턴 수정 |
+| `packages/specs/src/components/Card.spec.ts` | 동일 패턴 수정 |
+| `packages/specs/src/components/Form.spec.ts` | 동일 패턴 수정 |
+| `packages/specs/src/components/List.spec.ts` | 동일 패턴 수정 |
+| `packages/specs/src/components/FancyButton.spec.ts` | 동일 패턴 수정 |
+| `packages/specs/src/components/ScrollBox.spec.ts` | 동일 패턴 수정 |
+| `packages/specs/src/components/MaskedFrame.spec.ts` | 동일 패턴 수정 |
+| `apps/builder/.../sprites/ElementSprite.tsx` | 퍼센트 값 이중 적용 수정 |
+| `apps/builder/.../ui/PixiButton.tsx` | `isWidthAuto`/`isHeightAuto` minRequiredWidth 비교 제거 |
 
 ---
 

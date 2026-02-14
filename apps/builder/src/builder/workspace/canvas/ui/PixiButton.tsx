@@ -278,8 +278,8 @@ function getButtonLayout(
   // 명시적 크기가 있으면 (%, vh, vw 포함) auto 비활성화
   const hasExplicitWidth = style?.width !== undefined && style?.width !== "" && style?.width !== "auto";
   const hasExplicitHeight = style?.height !== undefined && style?.height !== "" && style?.height !== "auto";
-  const isWidthAuto = !hasExplicitWidth || explicitWidth < minRequiredWidth;
-  const isHeightAuto = !hasExplicitHeight || explicitHeight < minRequiredHeight;
+  const isWidthAuto = !hasExplicitWidth;
+  const isHeightAuto = !hasExplicitHeight;
 
   let width: number;
   let height: number;
@@ -706,8 +706,7 @@ export const PixiButton = memo(function PixiButton({
   );
 
   // 커서 스타일 (비활성화 시 not-allowed)
-  const cursorStyle =
-    layout.isDisabled || layout.isLoading ? "not-allowed" : "pointer";
+  // Note: cursorStyle 변수는 사용하지 않음 (Pencil 동작과 일치하도록 항상 default)
 
   // 🚀 Phase 9: @pixi/layout에 크기 전달 - children 레이아웃 계산에 필요
   const buttonLayout = useMemo(() => ({
@@ -729,7 +728,7 @@ export const PixiButton = memo(function PixiButton({
       <pixiGraphics
         draw={drawHitArea}
         eventMode="static"
-        cursor={cursorStyle}
+        cursor="default"
         onPointerDown={handleClick}
       />
     </pixiContainer>

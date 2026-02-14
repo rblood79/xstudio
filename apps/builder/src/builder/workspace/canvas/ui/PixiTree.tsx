@@ -257,7 +257,7 @@ export function PixiTree({
   return (
     <pixiContainer
       eventMode="static"
-      cursor="pointer"
+      cursor="default"
       onPointerDown={handleContainerClick}
     >
       {/* Container */}
@@ -276,7 +276,7 @@ export function PixiTree({
             x={sizePreset.treePadding}
             y={itemY}
             eventMode="static"
-            cursor="pointer"
+            cursor="default"
             onPointerOver={() => {
               // 🚀 Performance: 직접 그래픽스 업데이트 (리렌더링 없음)
               const g = itemGraphicsRefs.current.get(item.id);
@@ -308,7 +308,7 @@ export function PixiTree({
                 x={indent}
                 y={(sizePreset.itemMinHeight - sizePreset.chevronSize) / 2}
                 eventMode="static"
-                cursor="pointer"
+                cursor="default"
                 onPointerDown={(e: { stopPropagation: () => void }) => {
                   e.stopPropagation();
                   toggleExpand(item.id);

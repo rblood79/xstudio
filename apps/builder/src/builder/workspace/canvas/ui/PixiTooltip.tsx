@@ -145,7 +145,7 @@ export function PixiTooltip({
   return (
     <pixiContainer
       eventMode="static"
-      cursor="pointer"
+      cursor="default"
       onPointerTap={() => onClick?.(element.id)}
     >
       {/* Tooltip background with arrow */}

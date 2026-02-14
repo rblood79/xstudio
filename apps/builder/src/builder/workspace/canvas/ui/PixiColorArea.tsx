@@ -123,7 +123,7 @@ export function PixiColorArea({
   return (
     <pixiContainer
       eventMode="static"
-      cursor="crosshair"
+      cursor="default"
       onPointerTap={() => onClick?.(element.id)}
     >
       {/* Color gradient area */}

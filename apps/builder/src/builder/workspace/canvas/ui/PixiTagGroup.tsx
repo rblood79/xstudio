@@ -210,7 +210,7 @@ export function PixiTagGroup({
   return (
     <pixiContainer
       eventMode="static"
-      cursor="pointer"
+      cursor="default"
       onPointerDown={handleContainerClick}
     >
       {/* Selection indicator */}
@@ -236,7 +236,7 @@ export function PixiTagGroup({
             x={pos.x}
             y={pos.y}
             eventMode="static"
-            cursor="pointer"
+            cursor="default"
             onPointerOver={() => {
               // 🚀 Performance: 직접 그래픽스 업데이트 (리렌더링 없음)
               const g = tagGraphicsRefs.current.get(tag.id);
@@ -277,7 +277,7 @@ export function PixiTagGroup({
                 x={pos.width - 18}
                 y={(tagHeight - 14) / 2}
                 eventMode="static"
-                cursor="pointer"
+                cursor="default"
                 onPointerDown={(e: { stopPropagation: () => void }) => handleRemoveClick(tag.id, e)}
               >
                 <pixiGraphics draw={(g) => drawRemoveButton(g, false)} />

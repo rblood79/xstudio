@@ -167,7 +167,7 @@ export function PixiToolbar({
     <pixiContainer
       layout={toolbarLayout}
       eventMode="static"
-      cursor="pointer"
+      cursor="default"
       onPointerTap={() => onClick?.(element.id)}
     >
       {/* Toolbar container */}

@@ -346,7 +346,7 @@ export const PixiToggleButtonGroup = memo(function PixiToggleButtonGroup({
         draw={drawGroupBackground}
         layout={backgroundLayout}
         eventMode="static"
-        cursor="pointer"
+        cursor="default"
         onPointerDown={handleGroupClick}
       />
       {/* 자식 ToggleButton 렌더링 - 부모의 size 상속 */}

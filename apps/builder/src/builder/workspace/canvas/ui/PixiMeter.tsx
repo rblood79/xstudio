@@ -248,7 +248,7 @@ export const PixiMeter = memo(function PixiMeter({
     <pixiContainer
       layout={rootLayout}
       eventMode="static"
-      cursor="pointer"
+      cursor="default"
       onPointerDown={handleClick}
     >
       {/* 라벨과 값 행 */}

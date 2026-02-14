@@ -205,7 +205,7 @@ export const ToggleButtonSpec: ComponentSpec<ToggleButtonProps> = {
           type: 'roundRect' as const,
           x: 0,
           y: 0,
-          width: (props.style?.width as number) || 'auto',
+          width: 'auto' as const,
           height: 'auto' as unknown as number,
           radius: borderRadius as number | [number, number, number, number],
           fill: bgColor,

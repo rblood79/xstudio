@@ -14,7 +14,7 @@
 
 import { useExtend } from '@pixi/react';
 import { PIXI_COMPONENTS } from '../pixiSetup';
-import { useCallback, useMemo, memo, useContext } from 'react';
+import { useCallback, useMemo, memo, useContext, useRef } from 'react';
 import { Graphics as PixiGraphics, TextStyle } from 'pixi.js';
 import type { Element } from '../../../../types/core/store.types';
 import { convertStyle, cssColorToHex, cssColorToAlpha, buildSkiaEffects, type CSSStyle } from './styleConverter';
@@ -22,7 +22,7 @@ import { parsePadding, getContentBounds } from './paddingUtils';
 import { drawBox, parseBorderConfig } from '../utils';
 import { useSkiaNode } from '../skia/useSkiaNode';
 import { LayoutComputedSizeContext } from '../layoutContext';
-import { isFillV2Enabled } from '../../../../utils/featureFlags';
+import { isFillV2Enabled, isDebugHitAreas, DEBUG_HIT_AREA_COLORS } from '../../../../utils/featureFlags';
 import { fillsToSkiaFillColor, fillsToSkiaFillStyle } from '../../../panels/styles/utils/fillToSkia';
 
 
@@ -35,13 +35,14 @@ export interface BoxSpriteProps {
   isSelected?: boolean;
   /** onClick callback with modifier keys for multi-select */
   onClick?: (elementId: string, modifiers?: { metaKey: boolean; shiftKey: boolean; ctrlKey: boolean }) => void;
+  onDoubleClick?: (elementId: string) => void;
 }
 
 // ============================================
 // Component
 // ============================================
 
-export const BoxSprite = memo(function BoxSprite({ element, onClick }: BoxSpriteProps) {
+export const BoxSprite = memo(function BoxSprite({ element, onClick, onDoubleClick }: BoxSpriteProps) {
   useExtend(PIXI_COMPONENTS);
   const style = element.props?.style as CSSStyle | undefined;
   const converted = useMemo(() => convertStyle(style), [style]);
@@ -94,11 +95,16 @@ export const BoxSprite = memo(function BoxSprite({ element, onClick }: BoxSprite
   // Border-Box v2: drawBox 유틸리티 사용
   const draw = useCallback(
     (g: PixiGraphics) => {
+      const debug = isDebugHitAreas();
+      const debugAlpha = (debug && fill.alpha === 0)
+        ? DEBUG_HIT_AREA_COLORS.box.alpha : undefined;
+      const debugColor = (debug && fill.alpha === 0)
+        ? DEBUG_HIT_AREA_COLORS.box.color : undefined;
       drawBox(g, {
         width: transform.width,
         height: transform.height,
-        backgroundColor: fill.color,
-        backgroundAlpha: fill.alpha,
+        backgroundColor: debugColor ?? fill.color,
+        backgroundAlpha: debugAlpha ?? fill.alpha,
         borderRadius: typeof borderRadius === 'number' ? borderRadius : borderRadius?.[0] ?? 0,
         border: borderConfig,
       });
@@ -107,7 +113,12 @@ export const BoxSprite = memo(function BoxSprite({ element, onClick }: BoxSprite
     [transform.width, transform.height, fill.color, fill.alpha, borderRadius, borderConfig]
   );
 
+  const lastPointerDownRef = useRef(0);
   const handleClick = useCallback((e: unknown) => {
+    const now = Date.now();
+    const isDouble = now - lastPointerDownRef.current < 300;
+    lastPointerDownRef.current = now;
+
     // PixiJS FederatedPointerEvent has modifier keys directly
     const pixiEvent = e as {
       metaKey?: boolean;
@@ -122,7 +133,11 @@ export const BoxSprite = memo(function BoxSprite({ element, onClick }: BoxSprite
     const ctrlKey = pixiEvent?.ctrlKey ?? pixiEvent?.nativeEvent?.ctrlKey ?? false;
 
     onClick?.(element.id, { metaKey, shiftKey, ctrlKey });
-  }, [element.id, onClick]);
+
+    if (isDouble) {
+      onDoubleClick?.(element.id);
+    }
+  }, [element.id, onClick, onDoubleClick]);
 
   // P7.1: 텍스트 위치 (padding 적용 후 콘텐츠 영역 중앙)
   const contentBounds = useMemo(
@@ -217,7 +232,7 @@ export const BoxSprite = memo(function BoxSprite({ element, onClick }: BoxSprite
       <pixiGraphics
         draw={draw}
         eventMode="static"
-        cursor="pointer"
+        cursor="default"
         onPointerDown={handleClick}
       />
       {textContent && (

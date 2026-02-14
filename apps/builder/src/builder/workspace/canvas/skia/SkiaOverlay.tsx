@@ -1057,13 +1057,23 @@ export function SkiaOverlay({
             renderEditingContextBorder(ck, canvas, contextBounds, cameraZoom);
           }
 
-          // Phase 4: 호버 하이라이트 — 컨테이너면 모든 리프 자손 동시 렌더링 (점선)
-          const { hoveredLeafIds, isGroupHover } = elementHoverStateRef.current;
-          if (hoveredLeafIds.length > 0) {
+          // Phase 4: 호버 하이라이트 — Selection Box 아래, Handles 아래에 렌더링
+          const { hoveredElementId: hoveredCtxId, hoveredLeafIds, isGroupHover } = elementHoverStateRef.current;
+
+          // 대상(context 히트) 자체: 실선 (리프든 그룹이든 항상 표시)
+          if (hoveredCtxId) {
+            const ctxBounds = treeBoundsMap.get(hoveredCtxId);
+            if (ctxBounds) {
+              renderHoverHighlight(ck, canvas, ctxBounds, cameraZoom, false);
+            }
+          }
+
+          // 그룹 내부 리프: 점선 (그룹 호버일 때만 추가)
+          if (isGroupHover && hoveredLeafIds.length > 0) {
             for (const leafId of hoveredLeafIds) {
               const hoverBounds = treeBoundsMap.get(leafId);
               if (!hoverBounds) continue;
-              renderHoverHighlight(ck, canvas, hoverBounds, cameraZoom, isGroupHover);
+              renderHoverHighlight(ck, canvas, hoverBounds, cameraZoom, true);
             }
           }
 

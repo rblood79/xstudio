@@ -274,7 +274,7 @@ export function PixiDialog({
     <pixiContainer
       layout={dialogLayout}
       eventMode="static"
-      cursor="pointer"
+      cursor="default"
       onPointerEnter={() => setIsHovered(true)}
       onPointerLeave={() => setIsHovered(false)}
       onPointerTap={() => onClick?.(element.id)}

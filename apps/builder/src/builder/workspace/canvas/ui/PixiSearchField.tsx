@@ -216,7 +216,7 @@ export const PixiSearchField = memo(function PixiSearchField({
           draw={drawInput}
           layout={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
           eventMode="static"
-          cursor="text"
+          cursor="default"
           onPointerDown={handleClick}
         />
 
@@ -240,7 +240,7 @@ export const PixiSearchField = memo(function PixiSearchField({
             draw={drawClearButton}
             layout={clearButtonLayout}
             eventMode="static"
-            cursor="pointer"
+            cursor="default"
             onPointerEnter={() => setIsClearHovered(true)}
             onPointerLeave={() => setIsClearHovered(false)}
             onPointerDown={handleClick}

@@ -226,7 +226,6 @@ const ListBoxItemComponent = memo(function ListBoxItemComponent({
     }
   }, [bgColor, width, height, sizePreset.borderRadius]);
 
-  const cursorStyle = item.isDisabled ? "not-allowed" : "pointer";
   const alpha = item.isDisabled ? 0.5 : 1;
 
   // 🚀 Phase 12: 아이템 레이아웃
@@ -257,7 +256,7 @@ const ListBoxItemComponent = memo(function ListBoxItemComponent({
         draw={drawItem}
         layout={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
         eventMode="static"
-        cursor={cursorStyle}
+        cursor="default"
         onPointerDown={handlePointerDown}
         onPointerOver={handlePointerOver}
         onPointerOut={handlePointerOut}
@@ -269,7 +268,7 @@ const ListBoxItemComponent = memo(function ListBoxItemComponent({
         style={textStyle}
         layout={{ isLeaf: true }}
         eventMode="static"
-        cursor={cursorStyle}
+        cursor="default"
         onPointerDown={handlePointerDown}
       />
 

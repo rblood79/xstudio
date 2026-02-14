@@ -262,7 +262,7 @@ export const ImageSprite = memo(function ImageSprite({ element, onClick }: Image
             width={contentBounds.width}
             height={contentBounds.height}
             eventMode="static"
-            cursor="pointer"
+            cursor="default"
             onPointerDown={handleClick}
           />
           <pixiGraphics draw={drawOverlay} />
@@ -271,7 +271,7 @@ export const ImageSprite = memo(function ImageSprite({ element, onClick }: Image
         <pixiGraphics
           draw={drawPlaceholder}
           eventMode="static"
-          cursor="pointer"
+          cursor="default"
           onPointerDown={handleClick}
         />
       )}

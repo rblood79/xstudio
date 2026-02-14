@@ -97,6 +97,12 @@ const fontSize = props.style?.fontSize ?? size.fontSize;
 - `specHeight = finalHeight` — ElementSprite에서 항상 Yoga 계산 높이 사용
 - gradient fill 이전: `boxData.fill → specNode.box.fill` (spec shapes가 외부 fill 클리어 방지)
 
+**v1.14 변경사항:**
+- **배경 roundRect `width: 'auto' as const`** — `props.style?.width` 사용 금지 (9개 spec 수정)
+- `specShapesToSkia` bgBox 추출 조건: `shape.width === 'auto' && shape.height === 'auto'`
+- `props.style?.width`가 숫자일 경우 bgBox 미추출 → 배경 미렌더링 버그
+- ElementSprite 퍼센트 width 이중 적용 수정: `computedContainerSize.width` 직접 사용
+
 ## 참조
 
 - `docs/COMPONENT_SPEC_ARCHITECTURE.md` - 전체 설계 문서 (§4.7.4.4~4.7.4.8)

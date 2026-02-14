@@ -136,7 +136,7 @@ export function PixiForm({
     <pixiContainer
       layout={formLayout}
       eventMode="static"
-      cursor="pointer"
+      cursor="default"
       onPointerTap={() => onClick?.(element.id)}
     >
       {/* Form container */}

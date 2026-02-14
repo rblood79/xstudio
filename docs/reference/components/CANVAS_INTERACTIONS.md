@@ -844,6 +844,17 @@ overlayVersionRef++ → Skia 리페인트 트리거
 | **빈 영역 클릭** | body 내부 빈 곳 | body 선택 |
 | **배경 클릭** | 페이지 외부 | body 선택 |
 
+### 커서 스타일 (Pencil 방식 통일)
+
+Pencil의 `StateManager.handlePointerMove`는 항상 `setCursor("default")`를 호출하며, 요소 종류에 따라 커서를 변경하지 않는다. xstudio도 동일하게 모든 캔버스 요소의 커서를 `default`로 통일.
+
+| 상황 | 커서 |
+|------|------|
+| 모든 요소 호버 | `default` (화살표) |
+| Hand Tool (Space / H) | `grab` → 드래그 시 `grabbing` |
+| TransformHandle (리사이즈) | 방향별 resize 커서 |
+| Shift 키 (Lasso) | `crosshair` |
+
 ---
 
 **최종 업데이트:** 2026-02-14

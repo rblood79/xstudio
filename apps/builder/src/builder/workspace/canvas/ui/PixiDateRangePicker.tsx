@@ -281,7 +281,7 @@ export function PixiDateRangePicker({
   return (
     <pixiContainer
       eventMode="static"
-      cursor="pointer"
+      cursor="default"
       onPointerTap={() => onClick?.(element.id)}
     >
       {/* Fields row */}

@@ -609,6 +609,116 @@ Yoga `measureFunc` 없이도 컨테이너 내에서 텍스트 요소의 높이�
 
 **상세:** `apps/builder/src/.../sprites/ElementSprite.tsx`, `apps/builder/src/.../sprites/TextSprite.tsx`, `apps/builder/src/.../canvas/styleToLayout.ts`
 
+## Update: 컨테이너 히트 영역 Non-Layout 패턴 (2026-02-14)
+
+### 문제
+
+CSS padding이 설정된 컨테이너 요소(TagGroup, TagList, Card, Box 등)를 캔버스에서 클릭해도 선택되지 않는 버그.
+
+**근본 원인: Yoga 3의 absolute positioning과 padding의 상호작용**
+
+@pixi/layout은 Yoga 3 (`yoga-layout ^3.2.1`)을 레이아웃 엔진으로 사용한다. Yoga 3에는 `AbsolutePositionWithoutInsetsExcludesPadding` errata 플래그가 있으며, @pixi/layout (`^3.2.0`)은 Yoga errata를 별도로 구성하지 않고 기본값을 사용한다.
+
+이 기본 동작에서, `position: 'absolute'`이고 `left`/`top` inset이 명시된 자식 노드는 **부모의 content 영역 원점**(paddingLeft, paddingTop)을 기준으로 배치된다:
+
+```
+Container (padding: 16px)
+┌──────────────────────────┐  ← 컨테이너 border-box 원점 (0, 0)
+│  padding (16px)           │
+│  ┌────────────────────┐  │  ← content 영역 원점 (16, 16)
+│  │ absolute 자식       │  │  ← left:0, top:0 → (16, 16)에 배치됨
+│  │ (BoxSprite 히트영역) │  │
+│  └────────────────────┘  │
+│                          │
+└──────────────────────────┘
+```
+
+**시각적 렌더링(Skia)** 은 컨테이너의 전체 border-box 영역(padding 포함)을 올바르게 렌더링한다. 하지만 **인터랙티브 히트 영역(PixiJS)** 의 BoxSprite는 `layout={{ position: 'absolute', left: 0, top: 0 }}`으로 배치되어 있어, Yoga가 이를 content 영역 원점으로 오프셋한다. 결과적으로 padding 영역에 히트 영역이 존재하지 않아 클릭이 불가능하다.
+
+### 해결: Non-Layout `<pixiGraphics>` 히트 영역
+
+`layout` prop이 없는 `<pixiGraphics>`를 컨테이너의 **첫 번째 자식**으로 삽입한다:
+
+```tsx
+// ElementSprite.tsx — 컨테이너 렌더링 (box, flex, grid spriteType)
+<>
+  {/* Non-layout 히트 영역: layout prop 없음 → Yoga가 무시 → 컨테이너 원점(0,0)에 배치 */}
+  <pixiGraphics
+    draw={drawContainerHitRect}
+    eventMode="static"
+    cursor="pointer"
+    onPointerDown={handleContainerPointerDown}
+  />
+  {/* BoxSprite: absolute 배치 (기존) — padding 오프셋 영향받지만 시각적 역할만 */}
+  <pixiContainer layout={{ position: 'absolute' as const, left: 0, top: 0, right: 0, bottom: 0 }}>
+    <BoxSprite element={effectiveElement} isSelected={isSelected} onClick={onClick} />
+  </pixiContainer>
+  {/* 자식 요소들 */}
+  {childElements.map((childEl) => renderChildElement(childEl))}
+</>
+```
+
+**핵심 메커니즘:**
+
+| 항목 | BoxSprite (기존, absolute) | pixiGraphics (신규, non-layout) |
+|------|---------------------------|-------------------------------|
+| **layout prop** | `{ position: 'absolute', left: 0, top: 0 }` | 없음 |
+| **Yoga 참여** | 참여 — padding에 의한 오프셋 발생 | 무시 — Yoga 레이아웃 트리에 포함되지 않음 |
+| **배치 위치** | content 영역 원점 (paddingLeft, paddingTop) | 컨테이너 원점 (0, 0) |
+| **크기** | content 영역 (padding 제외) | `LayoutComputedSizeContext`의 border-box 크기 (padding 포함) |
+| **역할** | 배경/테두리 시각 렌더링 + Skia 데이터 등록 | 이벤트 히트 영역 전용 |
+| **이벤트 처리** | `eventMode="static"` (BoxSprite 자체) | `eventMode="static"` + `onPointerDown` |
+
+**`drawContainerHitRect` 구현:**
+
+```typescript
+const drawContainerHitRect = useCallback(
+  (g: PixiGraphics) => {
+    g.clear();
+    const w = computedW ?? 0;  // LayoutComputedSizeContext에서 Yoga border-box 크기
+    const h = computedH ?? 0;
+    if (w <= 0 || h <= 0) return;
+    g.rect(0, 0, w, h);
+    const debug = isDebugHitAreas();
+    g.fill(debug
+      ? { color: DEBUG_HIT_AREA_COLORS.box.color, alpha: DEBUG_HIT_AREA_COLORS.box.alpha }
+      : { color: 0xffffff, alpha: 0.001 });
+  },
+  [computedW, computedH],
+);
+```
+
+### 적용 대상
+
+이 패턴은 **자식 요소를 가진 모든 컨테이너 타입**에 적용된다:
+
+| spriteType | 적용 조건 |
+|-----------|----------|
+| `box` | `childElements.length > 0` |
+| `flex` | `childElements.length > 0` |
+| `grid` | `childElements.length > 0` |
+
+대상 태그 (`CONTAINER_TAGS`): Card, Box, Panel, Form, Group, Dialog, Modal, Disclosure, DisclosureGroup, Accordion, ToggleButtonGroup, TagGroup, TagList
+
+> **Note:** 자식이 없는 컨테이너는 BoxSprite 단독으로 렌더링되며, BoxSprite 자체의 히트 영역이 충분하므로 non-layout 패턴이 불필요하다.
+
+### 디버그 모드
+
+`.env` 파일에 `VITE_DEBUG_HIT_AREAS=true`를 설정하면 히트 영역이 시각적으로 표시된다:
+
+| 색상 | 대상 | alpha |
+|------|------|-------|
+| 초록 (`0x22c55e`) | BoxSprite / 컨테이너 히트 영역 | 0.2 |
+| 파랑 (`0x3b82f6`) | TextSprite 히트 영역 | 0.25 |
+
+Skia 렌더 트리의 노드별 히트 영역도 `nodeRenderers.ts`에서 동일한 플래그로 시각화된다.
+
+### 관련 규칙
+
+- **[pixi-hitarea-absolute](/.claude/skills/xstudio-patterns/rules/pixi-hitarea-absolute.md)** — 히트 영역 배치 패턴 (이 Update로 "Non-layout 히트 영역" 섹션 추가)
+
+**상세:** `apps/builder/src/.../sprites/ElementSprite.tsx` (drawContainerHitRect, handleContainerPointerDown)
+
 ## Implementation
 
 ```typescript

@@ -329,7 +329,7 @@ export const PixiMenu = memo(function PixiMenu({
                 draw={(g) => drawItemBackground(g, item, isHovered)}
                 layout={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
                 eventMode="static"
-                cursor={item.isSeparator || item.isDisabled ? "default" : "pointer"}
+                cursor="default"
                 onPointerEnter={() => !item.isSeparator && setHoveredIndex(index)}
                 onPointerLeave={() => setHoveredIndex(null)}
                 onPointerDown={() => handleItemClick(item)}
@@ -343,7 +343,7 @@ export const PixiMenu = memo(function PixiMenu({
                     style={createTextStyle(isHovered, Boolean(item.isDisabled))}
                     layout={{ isLeaf: true }}
                     eventMode="static"
-                    cursor={item.isDisabled ? "default" : "pointer"}
+                    cursor="default"
                     onPointerEnter={() => setHoveredIndex(index)}
                     onPointerLeave={() => setHoveredIndex(null)}
                     onPointerDown={() => handleItemClick(item)}

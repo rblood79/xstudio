@@ -377,7 +377,7 @@ export const PixiComboBox = memo(function PixiComboBox({
       <pixiGraphics
         draw={drawHitArea}
         eventMode="static"
-        cursor={isDisabled ? "not-allowed" : "pointer"}
+        cursor="default"
         onPointerDown={handleClick}
         layout={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
       />

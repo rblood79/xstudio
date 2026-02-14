@@ -265,7 +265,7 @@ export function createTagGroupDefinition(
         tag: "Label",
         props: {
           children: "Tag Group",
-          style: { fontSize: 12, fontWeight: 500 },
+          style: { fontSize: 14, fontWeight: 500, width: 'fit-content' },
         } as ComponentElementProps,
         ...ownerFields,
         order_num: 1,

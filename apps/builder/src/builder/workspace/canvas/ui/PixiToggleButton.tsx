@@ -737,7 +737,7 @@ export const PixiToggleButton = memo(function PixiToggleButton({
   );
 
   // 커서 스타일
-  const cursorStyle = layout.isDisabled ? "not-allowed" : "pointer";
+  // Note: cursorStyle 변수는 사용하지 않음 (Pencil 동작과 일치하도록 항상 default)
 
   // @pixi/layout에 크기 전달 - Yoga 레이아웃 계산용
   const containerLayout = useMemo(() => ({
@@ -758,7 +758,7 @@ export const PixiToggleButton = memo(function PixiToggleButton({
       <pixiGraphics
         draw={drawHitArea}
         eventMode="static"
-        cursor={cursorStyle}
+        cursor="default"
         onPointerDown={handleClick}
       />
     </pixiContainer>

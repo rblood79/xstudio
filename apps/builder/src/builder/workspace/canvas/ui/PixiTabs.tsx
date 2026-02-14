@@ -390,7 +390,7 @@ export const PixiTabs = memo(function PixiTabs({
                 draw={(g) => drawTabBackground(g, tab, isHovered)}
                 layout={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
                 eventMode="static"
-                cursor={tab.isDisabled ? "not-allowed" : "pointer"}
+                cursor="default"
                 onPointerEnter={() => !tab.isDisabled && setHoveredIndex(index)}
                 onPointerLeave={() => setHoveredIndex(null)}
                 onPointerDown={() => handleTabClick(tab)}
@@ -402,7 +402,7 @@ export const PixiTabs = memo(function PixiTabs({
                 style={createTextStyle(isSelected, isHovered, Boolean(tab.isDisabled))}
                 layout={{ isLeaf: true }}
                 eventMode="static"
-                cursor={tab.isDisabled ? "not-allowed" : "pointer"}
+                cursor="default"
                 onPointerEnter={() => !tab.isDisabled && setHoveredIndex(index)}
                 onPointerLeave={() => setHoveredIndex(null)}
                 onPointerDown={() => handleTabClick(tab)}

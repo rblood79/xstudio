@@ -146,7 +146,7 @@ export function PixiColorSlider({
   return (
     <pixiContainer
       eventMode="static"
-      cursor="pointer"
+      cursor="default"
       onPointerTap={() => onClick?.(element.id)}
     >
       {/* Gradient track */}

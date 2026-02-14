@@ -158,7 +158,7 @@ export function PixiGroup({
   return (
     <pixiContainer
       eventMode="static"
-      cursor="pointer"
+      cursor="default"
       onPointerTap={() => onClick?.(element.id)}
       alpha={isDisabled ? colorPreset.disabledOpacity : 1}
     >

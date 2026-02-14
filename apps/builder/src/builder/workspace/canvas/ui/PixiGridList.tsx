@@ -176,7 +176,7 @@ export function PixiGridList({
   return (
     <pixiContainer
       eventMode="static"
-      cursor="pointer"
+      cursor="default"
       onPointerDown={handleContainerClick}
     >
       {/* List Container */}
@@ -195,7 +195,7 @@ export function PixiGridList({
             x={sizePreset.listPadding}
             y={itemY}
             eventMode="static"
-            cursor="pointer"
+            cursor="default"
             onPointerOver={() => {
               // 🚀 Performance: 직접 그래픽스 업데이트 (리렌더링 없음)
               const g = itemGraphicsRefs.current.get(item.id);

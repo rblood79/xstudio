@@ -4721,9 +4721,11 @@ shapes: (props, variant, size, state = 'default') => {
 | 항목 | 수정 전 | 수정 후 |
 |------|---------|---------|
 | **배경 roundRect** | `height: size.height` (고정) | `height: 'auto'` (Yoga 높이) |
+| **배경 roundRect width** | `props.style?.width \|\| 'auto'` | `'auto' as const` (9개 spec 수정) |
 | **specHeight** | `Math.min(sizeSpec.height, finalHeight)` | `finalHeight` (항상 Yoga) |
 | **MIN_BUTTON_HEIGHT** | 24px 최소값 제한 | 제거 (PixiButton.tsx) |
 | **gradient fill** | spec shapes가 `boxData.fill` 클리어 → 소실 | `boxData.fill → specNode.box.fill` 이전 후 클리어 |
+| **effectiveElement %** | `(parseFloat(w) / 100) * computedContainerSize` (이중 적용) | `computedContainerSize.width` 직접 사용 |
 
 **specShapeConverter 개선:**
 

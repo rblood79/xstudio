@@ -16,6 +16,7 @@ import { applyFill } from './fills';
 import { beginRenderEffects, endRenderEffects } from './effects';
 import { toSkiaBlendMode } from './blendModes';
 import { SkiaDisposable } from './disposable';
+import { isDebugHitAreas } from '../../../../utils/featureFlags';
 
 // ============================================
 // Text paragraph cache (Pencil-style)
@@ -222,6 +223,33 @@ function renderNodeInternal(
   const layerCount = node.effects
     ? beginRenderEffects(ck, canvas, node.effects)
     : 0;
+
+  // 🔍 Debug: hit area 시각화 (.env VITE_DEBUG_HIT_AREAS=true)
+  // 타입별 렌더링 전에 반투명 배경을 깔아 콘텐츠 아래에 표시
+  if (isDebugHitAreas() && node.width > 0 && node.height > 0 && node.type !== 'container') {
+    const dp = new ck.Paint();
+    dp.setAntiAlias(true);
+    dp.setColor(
+      node.type === 'text'
+        ? Float32Array.of(0.23, 0.51, 0.96, 0.3)   // 파랑: text hit area
+        : node.type === 'box'
+          ? Float32Array.of(0.13, 0.77, 0.37, 0.25) // 초록: box hit area
+          : Float32Array.of(1.0, 0.5, 0.0, 0.25),   // 주황: image/기타
+    );
+    canvas.drawRect(ck.LTRBRect(0, 0, node.width, node.height), dp);
+    // 외곽선
+    dp.setStyle(ck.PaintStyle.Stroke);
+    dp.setStrokeWidth(1);
+    dp.setColor(
+      node.type === 'text'
+        ? Float32Array.of(0.23, 0.51, 0.96, 0.6)
+        : node.type === 'box'
+          ? Float32Array.of(0.13, 0.77, 0.37, 0.5)
+          : Float32Array.of(1.0, 0.5, 0.0, 0.5),
+    );
+    canvas.drawRect(ck.LTRBRect(0, 0, node.width, node.height), dp);
+    dp.delete();
+  }
 
   // 타입별 렌더링
   switch (node.type) {

@@ -220,7 +220,7 @@ export const PixiBreadcrumbs = memo(function PixiBreadcrumbs({
               text={item.text}
               style={createTextStyle(item.isLast, isHovered)}
               eventMode="static"
-              cursor={item.isLast ? "default" : "pointer"}
+              cursor="default"
               onPointerEnter={() => !item.isLast && setHoveredIndex(item.index)}
               onPointerLeave={() => setHoveredIndex(null)}
               onPointerDown={() => !item.isLast && handleItemClick(item.index)}

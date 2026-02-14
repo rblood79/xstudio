@@ -20,6 +20,7 @@ import { parsePadding } from './paddingUtils';
 import { drawBox, parseBorderConfig } from '../utils';
 import { useSkiaNode } from '../skia/useSkiaNode';
 import { LayoutComputedSizeContext } from '../layoutContext';
+import { isDebugHitAreas, DEBUG_HIT_AREA_COLORS } from '../../../../utils/featureFlags';
 
 
 // ============================================
@@ -206,7 +207,10 @@ export const TextSprite = memo(function TextSprite({
         // 배경이 없어도 투명 히트 영역을 그려서 클릭 선택이 가능하도록 함
         g.clear();
         g.rect(0, 0, transform.width, transform.height);
-        g.fill({ color: 0xffffff, alpha: 0.001 });
+        const debug = isDebugHitAreas();
+        g.fill(debug
+          ? { color: DEBUG_HIT_AREA_COLORS.text.color, alpha: DEBUG_HIT_AREA_COLORS.text.alpha }
+          : { color: 0xffffff, alpha: 0.001 });
       }
     },
     [style, transform, fill, effectiveBorderRadius, borderConfig]
@@ -309,7 +313,7 @@ export const TextSprite = memo(function TextSprite({
       <pixiGraphics
         draw={drawBackground}
         eventMode="static"
-        cursor="text"
+        cursor="default"
         onPointerDown={handlePointerDown}
       />
 

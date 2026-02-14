@@ -281,7 +281,7 @@ export const PixiPanel = memo(function PixiPanel({
       <pixiGraphics
         draw={drawHitArea}
         eventMode="static"
-        cursor="pointer"
+        cursor="default"
         onPointerDown={handleClick}
       />
     </pixiContainer>

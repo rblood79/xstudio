@@ -203,7 +203,7 @@ export function PixiPopover({
     <pixiContainer
       layout={popoverLayout}
       eventMode="static"
-      cursor="pointer"
+      cursor="default"
       onPointerEnter={() => setIsHovered(true)}
       onPointerLeave={() => setIsHovered(false)}
       onPointerTap={() => onClick?.(element.id)}

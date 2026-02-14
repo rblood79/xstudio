@@ -322,7 +322,7 @@ export function PixiTable({
     <pixiContainer
       layout={tableLayout}
       eventMode="static"
-      cursor="pointer"
+      cursor="default"
       onPointerDown={handleContainerClick}
     >
       {/* Container */}
@@ -375,7 +375,7 @@ export function PixiTable({
           key={row.id}
           layout={dataRowLayout}
           eventMode="static"
-          cursor="pointer"
+          cursor="default"
           onPointerOver={() => {
             // 🚀 Performance: 직접 그래픽스 업데이트 (리렌더링 없음)
             const g = rowGraphicsRefs.current.get(row.id);

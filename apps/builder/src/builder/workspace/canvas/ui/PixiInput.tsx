@@ -316,7 +316,7 @@ export const PixiInput = memo(function PixiInput({
       <pixiGraphics
         draw={drawHitArea}
         eventMode="static"
-        cursor={isDisabled ? 'not-allowed' : 'text'}
+        cursor="default"
         onPointerDown={handleClick}
         onPointerOver={handlePointerOver}
         onPointerOut={handlePointerOut}

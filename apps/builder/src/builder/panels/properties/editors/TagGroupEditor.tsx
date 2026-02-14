@@ -148,7 +148,16 @@ export const TagGroupEditor = memo(function TagGroupEditor({ elementId, currentP
                 <PropertyInput
                     label={PROPERTY_LABELS.LABEL}
                     value={String(currentProps.label || '')}
-                    onChange={(value) => updateProp('label', value)}
+                    onChange={(value) => {
+                        updateProp('label', value);
+                        // Label 자식 요소의 텍스트도 동기화
+                        const labelChild = storeElements.find(
+                            (el) => el.parent_id === elementId && el.tag === 'Label'
+                        );
+                        if (labelChild) {
+                            updateElementProps(labelChild.id, { ...labelChild.props, children: value });
+                        }
+                    }}
                     icon={Tag}
                 />
 

@@ -198,7 +198,7 @@ export function PixiSkeleton({
   return (
     <pixiContainer
       eventMode="static"
-      cursor="pointer"
+      cursor="default"
       onPointerTap={() => onClick?.(element.id)}
     >
       {/* Skeleton base */}

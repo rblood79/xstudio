@@ -12,7 +12,7 @@
 
 import { useExtend } from '@pixi/react';
 import { PIXI_COMPONENTS } from '../pixiSetup';
-import { memo, useMemo, useContext } from 'react';
+import { memo, useMemo, useContext, useCallback, useRef } from 'react';
 import type { Element } from '../../../../types/core/store.types';
 // 🚀 Phase 7: registry 등록은 LayoutContainer에서 처리
 // import { registerElement, unregisterElement } from '../elementRegistry';
@@ -20,7 +20,8 @@ import { useSkiaNode } from '../skia/useSkiaNode';
 import type { SkiaNodeData } from '../skia/nodeRenderers';
 import { LayoutComputedSizeContext } from '../layoutContext';
 import { convertStyle, cssColorToHex, parseCSSSize, type CSSStyle } from './styleConverter';
-import { isFillV2Enabled } from '../../../../utils/featureFlags';
+import { Graphics as PixiGraphics } from 'pixi.js';
+import { isFillV2Enabled, isDebugHitAreas, DEBUG_HIT_AREA_COLORS } from '../../../../utils/featureFlags';
 import { fillsToSkiaFillStyle } from '../../../panels/styles/utils/fillToSkia';
 import type { FillStyle } from '../skia/types';
 import { BoxSprite } from './BoxSprite';
@@ -654,9 +655,10 @@ export const ElementSprite = memo(function ElementSprite({
     }
 
     // 🚀 퍼센트 기반 width/height를 Yoga 계산 결과로 해석
-    // LayoutContainer가 Yoga를 통해 계산한 실제 pixel 크기를 사용하여
-    // '100%' 같은 퍼센트 값을 실제 pixel 값으로 변환
-    // (parseCSSSize는 parentSize 없이는 %를 해석할 수 없음)
+    // LayoutContainer가 Yoga를 통해 계산한 실제 pixel 크기를 직접 사용
+    // computedContainerSize는 Yoga가 '%' 값을 부모 기준으로 이미 resolve한 결과이므로
+    // 퍼센트를 다시 적용하면 이중 적용됨 (예: 50% → Yoga 200px → 50%*200=100 ❌)
+    // → Yoga 계산 결과를 그대로 pixel 값으로 사용
     if (computedContainerSize) {
       const currentStyle = (resolvedElement.props?.style || {}) as Record<string, unknown>;
       const w = currentStyle.width;
@@ -671,8 +673,8 @@ export const ElementSprite = memo(function ElementSprite({
             ...resolvedElement.props,
             style: {
               ...currentStyle,
-              ...(hasPercentWidth ? { width: (parseFloat(w as string) / 100) * computedContainerSize.width } : {}),
-              ...(hasPercentHeight ? { height: (parseFloat(h as string) / 100) * computedContainerSize.height } : {}),
+              ...(hasPercentWidth ? { width: computedContainerSize.width } : {}),
+              ...(hasPercentHeight ? { height: computedContainerSize.height } : {}),
             },
           },
         };
@@ -1110,6 +1112,45 @@ export const ElementSprite = memo(function ElementSprite({
   // ElementSprite에서 box 데이터로 덮어쓰지 않도록 방지한다.
   const hasOwnSprite = spriteType === 'box' || spriteType === 'text' || spriteType === 'flex' || spriteType === 'grid';
   useSkiaNode(elementId, hasOwnSprite ? null : skiaNodeData);
+
+  // 🚀 Non-layout 컨테이너 히트 영역: Yoga 계산된 전체 크기(padding 포함)를 커버
+  // layout prop 없이 렌더링하므로 Yoga padding에 의한 offset 없이 컨테이너 원점(0,0)에 배치됨
+  const drawContainerHitRect = useCallback(
+    (g: PixiGraphics) => {
+      g.clear();
+      const w = computedW ?? 0;
+      const h = computedH ?? 0;
+      if (w <= 0 || h <= 0) return;
+      g.rect(0, 0, w, h);
+      const debug = isDebugHitAreas();
+      g.fill(debug
+        ? { color: DEBUG_HIT_AREA_COLORS.box.color, alpha: DEBUG_HIT_AREA_COLORS.box.alpha }
+        : { color: 0xffffff, alpha: 0.001 });
+    },
+    [computedW, computedH],
+  );
+
+  const lastContainerPointerDownRef = useRef(0);
+  const handleContainerPointerDown = useCallback((e: unknown) => {
+    const now = Date.now();
+    const isDoubleClick = now - lastContainerPointerDownRef.current < 300;
+    lastContainerPointerDownRef.current = now;
+
+    const pixiEvent = e as {
+      metaKey?: boolean;
+      shiftKey?: boolean;
+      ctrlKey?: boolean;
+      nativeEvent?: MouseEvent | PointerEvent;
+    };
+    const metaKey = pixiEvent?.metaKey ?? pixiEvent?.nativeEvent?.metaKey ?? false;
+    const shiftKey = pixiEvent?.shiftKey ?? pixiEvent?.nativeEvent?.shiftKey ?? false;
+    const ctrlKey = pixiEvent?.ctrlKey ?? pixiEvent?.nativeEvent?.ctrlKey ?? false;
+    onClick?.(element.id, { metaKey, shiftKey, ctrlKey });
+
+    if (isDoubleClick) {
+      onDoubleClick?.(element.id);
+    }
+  }, [element.id, onClick, onDoubleClick]);
 
   // CheckboxGroup의 자식 Checkbox인지 확인
   const isCheckboxInGroup = spriteType === 'checkboxItem' && parentElement?.tag === 'CheckboxGroup';
@@ -1751,14 +1792,21 @@ export const ElementSprite = memo(function ElementSprite({
       if (childElements && childElements.length > 0 && renderChildElement) {
         return (
           <>
-            <pixiContainer layout={{ position: 'absolute' as const, left: 0, top: 0 }}>
-              <BoxSprite element={effectiveElement} isSelected={isSelected} onClick={onClick} />
+            {/* Non-layout 히트 영역: 컨테이너 원점(0,0)에 전체 Yoga 크기(padding 포함) 커버 */}
+            <pixiGraphics
+              draw={drawContainerHitRect}
+              eventMode="static"
+              cursor="default"
+              onPointerDown={handleContainerPointerDown}
+            />
+            <pixiContainer layout={{ position: 'absolute' as const, left: 0, top: 0, right: 0, bottom: 0 }}>
+              <BoxSprite element={effectiveElement} isSelected={isSelected} onClick={onClick} onDoubleClick={onDoubleClick} />
             </pixiContainer>
             {childElements.map((childEl) => renderChildElement(childEl))}
           </>
         );
       }
-      return <BoxSprite element={effectiveElement} isSelected={isSelected} onClick={onClick} />;
+      return <BoxSprite element={effectiveElement} isSelected={isSelected} onClick={onClick} onDoubleClick={onDoubleClick} />;
 
     // 기본 타입
     case 'text':
@@ -1779,14 +1827,21 @@ export const ElementSprite = memo(function ElementSprite({
       if (childElements && childElements.length > 0 && renderChildElement) {
         return (
           <>
-            <pixiContainer layout={{ position: 'absolute' as const, left: 0, top: 0 }}>
-              <BoxSprite element={effectiveElement} isSelected={isSelected} onClick={onClick} />
+            {/* Non-layout 히트 영역: 컨테이너 원점(0,0)에 전체 Yoga 크기(padding 포함) 커버 */}
+            <pixiGraphics
+              draw={drawContainerHitRect}
+              eventMode="static"
+              cursor="default"
+              onPointerDown={handleContainerPointerDown}
+            />
+            <pixiContainer layout={{ position: 'absolute' as const, left: 0, top: 0, right: 0, bottom: 0 }}>
+              <BoxSprite element={effectiveElement} isSelected={isSelected} onClick={onClick} onDoubleClick={onDoubleClick} />
             </pixiContainer>
             {childElements.map((childEl) => renderChildElement(childEl))}
           </>
         );
       }
-      return <BoxSprite element={effectiveElement} isSelected={isSelected} onClick={onClick} />;
+      return <BoxSprite element={effectiveElement} isSelected={isSelected} onClick={onClick} onDoubleClick={onDoubleClick} />;
     }
   })();
 

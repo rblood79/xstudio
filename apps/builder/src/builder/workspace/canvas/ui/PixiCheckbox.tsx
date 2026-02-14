@@ -189,7 +189,7 @@ export const PixiCheckbox = memo(function PixiCheckbox({
       <pixiGraphics
         draw={drawHitArea}
         eventMode="static"
-        cursor="pointer"
+        cursor="default"
         onPointerDown={handlePointerDown}
       />
 

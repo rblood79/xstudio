@@ -322,7 +322,7 @@ export const PixiBadge = memo(function PixiBadge({
       <pixiGraphics
         draw={drawHitArea}
         eventMode="static"
-        cursor="pointer"
+        cursor="default"
         onPointerDown={handleClick}
       />
     </pixiContainer>

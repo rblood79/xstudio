@@ -170,7 +170,7 @@ export function PixiTimeField({
   return (
     <pixiContainer
       eventMode="static"
-      cursor="text"
+      cursor="default"
       onPointerTap={() => onClick?.(element.id)}
     >
       {/* Container background */}

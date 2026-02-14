@@ -66,6 +66,7 @@ export function renderHoverHighlight(
       bounds.x + bounds.width,
       bounds.y + bounds.height,
     );
+
     canvas.drawRect(rect, paint);
   } finally {
     dashEffect?.delete();

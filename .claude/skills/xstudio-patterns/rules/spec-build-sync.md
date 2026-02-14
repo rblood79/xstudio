@@ -48,6 +48,11 @@ pnpm --filter @xstudio/specs dev
 - **원인**: Spec의 배경 roundRect에 `height: size.height` (고정값 32px)가 Yoga 계산 높이(28px)와 불일치
 - **해결**: 배경 roundRect `height: 'auto'` + ElementSprite에서 `specHeight = finalHeight` + `pnpm --filter @xstudio/specs build`
 
+**사례 5 — px/% width 설정 시 배경 미렌더링 (v1.14)**:
+- **증상**: Button에 `width: 200px` 또는 `width: 50%` 설정 시 Skia 배경이 사라짐 (Selection은 정상)
+- **원인**: 9개 spec 파일에서 배경 roundRect `width`에 `props.style?.width || 'auto'` 사용 → 숫자 값이면 `specShapesToSkia` bgBox 추출 실패. 소스 수정 후 dist/ 미빌드로 구 코드 참조
+- **해결**: 배경 roundRect `width: 'auto' as const` (Button, Section, ToggleButton, Card, Form, List, FancyButton, ScrollBox, MaskedFrame) + `pnpm --filter @xstudio/specs build`
+
 ## 참조
 
 - `packages/specs/package.json` — `"main": "./dist/index.js"`

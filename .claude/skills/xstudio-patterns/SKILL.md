@@ -39,6 +39,7 @@ XStudio Builder 애플리케이션의 코드 패턴, 규칙 및 모범 사례를
 - **[pixi-no-xy-props](rules/pixi-no-xy-props.md)** - x/y props 금지
 - **[pixi-layout-import-first](rules/pixi-layout-import-first.md)** - @pixi/layout 최우선 import
 - **[pixi-hybrid-layout-engine](rules/pixi-hybrid-layout-engine.md)** - 하이브리드 레이아웃 엔진 display 선택
+- **[pixi-container-hit-rect](rules/pixi-container-hit-rect.md)** - Non-layout 컨테이너 히트 영역 (padding offset 보정)
 
 #### Security (postmessage-*)
 - **[postmessage-origin-verify](rules/postmessage-origin-verify.md)** - origin 검증 필수

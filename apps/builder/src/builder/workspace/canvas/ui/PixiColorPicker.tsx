@@ -269,7 +269,7 @@ export function PixiColorPicker({
     <pixiContainer
       layout={rootLayout}
       eventMode="static"
-      cursor="pointer"
+      cursor="default"
       onPointerTap={() => onClick?.(element.id)}
     >
       {/* Container */}

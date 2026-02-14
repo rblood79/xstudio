@@ -423,7 +423,7 @@ export const PixiCard = memo(function PixiCard({
       <pixiGraphics
         draw={drawHitArea}
         eventMode="static"
-        cursor="pointer"
+        cursor="default"
         onPointerEnter={handlePointerEnter}
         onPointerLeave={handlePointerLeave}
         onPointerDown={handleClick}

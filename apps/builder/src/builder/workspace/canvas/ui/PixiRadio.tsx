@@ -209,7 +209,7 @@ const RadioItem = memo(function RadioItem({
         <pixiGraphics
           draw={drawRadio}
           eventMode="static"
-          cursor="pointer"
+          cursor="default"
           onPointerDown={handlePointerDown}
         />
       </pixiContainer>
@@ -220,7 +220,7 @@ const RadioItem = memo(function RadioItem({
         style={textStyle}
         layout={{ isLeaf: true }}
         eventMode="static"
-        cursor="pointer"
+        cursor="default"
         onPointerDown={handlePointerDown}
       />
     </pixiContainer>
@@ -449,7 +449,7 @@ export const PixiRadio = memo(function PixiRadio({
         draw={drawHitArea}
         layout={{ position: 'absolute', top: 0, left: 0 }}
         eventMode="static"
-        cursor="pointer"
+        cursor="default"
         onPointerDown={handleClick}
       />
     </pixiContainer>

@@ -139,7 +139,7 @@ export function PixiFileTrigger({
     <pixiContainer
       layout={buttonLayout}
       eventMode="static"
-      cursor="pointer"
+      cursor="default"
       onPointerTap={() => onClick?.(element.id)}
     >
       {/* Button background */}

@@ -219,7 +219,7 @@ export function PixiDisclosure({
     <pixiContainer
       layout={disclosureLayout}
       eventMode="static"
-      cursor="pointer"
+      cursor="default"
       onPointerEnter={() => setIsHovered(true)}
       onPointerLeave={() => setIsHovered(false)}
       onPointerTap={handleClick}

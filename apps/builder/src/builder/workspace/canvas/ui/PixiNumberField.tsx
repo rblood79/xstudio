@@ -239,7 +239,7 @@ export const PixiNumberField = memo(function PixiNumberField({
             draw={drawDecrementButton}
             layout={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
             eventMode="static"
-            cursor={isDisabled ? "not-allowed" : "pointer"}
+            cursor="default"
             onPointerEnter={() => !isDisabled && setHoveredButton("decrement")}
             onPointerLeave={() => setHoveredButton(null)}
             onPointerDown={handleClick}
@@ -257,7 +257,7 @@ export const PixiNumberField = memo(function PixiNumberField({
             draw={drawInput}
             layout={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
             eventMode="static"
-            cursor="text"
+            cursor="default"
             onPointerDown={handleClick}
           />
           <pixiText
@@ -273,7 +273,7 @@ export const PixiNumberField = memo(function PixiNumberField({
             draw={drawIncrementButton}
             layout={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
             eventMode="static"
-            cursor={isDisabled ? "not-allowed" : "pointer"}
+            cursor="default"
             onPointerEnter={() => !isDisabled && setHoveredButton("increment")}
             onPointerLeave={() => setHoveredButton(null)}
             onPointerDown={handleClick}

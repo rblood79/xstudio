@@ -2100,11 +2100,10 @@ export function BuilderCanvas({
           state.elementsMap,
         );
         if (!resolvedTarget) {
-          // Body 요소 클릭 시 body 선택 (root 레벨에서)
           if (state.editingContextId === null) {
+            // 루트 레벨: Body 요소 클릭 시 body 선택
             const clickedEl = state.elementsMap.get(elementId);
             if (clickedEl && clickedEl.tag.toLowerCase() === 'body') {
-              // 페이지 전환 (필요시)
               if (clickedEl.page_id && clickedEl.page_id !== state.currentPageId) {
                 setCurrentPageId(clickedEl.page_id);
               }
@@ -2112,6 +2111,9 @@ export function BuilderCanvas({
                 setSelectedElement(elementId);
               });
             }
+          } else {
+            // editingContext 내부에서 context 외부 요소 클릭 → 한 단계 위로 복귀
+            state.exitEditingContext();
           }
           return;
         }
@@ -2282,12 +2284,17 @@ export function BuilderCanvas({
             initialPanOffsetX={initialPanOffsetX}
           />
 
-          {/* 전체 Canvas 영역 클릭 → body 선택 (editingContext 외부) 또는 선택 해제 */}
+          {/* 전체 Canvas 영역 클릭 → editingContext 복귀 또는 body 선택 */}
           <ClickableBackground
             onClick={() => {
-              const { editingContextId, currentPageId, elements } = useStore.getState();
-              if (editingContextId === null && currentPageId) {
-                // 루트 레벨 빈 영역 클릭 → body 요소 선택
+              const { editingContextId, exitEditingContext, currentPageId, elements } = useStore.getState();
+              // editingContext 진입 상태 → 한 단계 위로 복귀 (Pencil 방식)
+              if (editingContextId !== null) {
+                exitEditingContext();
+                return;
+              }
+              // 루트 레벨 빈 영역 클릭 → body 요소 선택
+              if (currentPageId) {
                 const bodyElement = elements.find(
                   (el) => el.page_id === currentPageId && el.tag === 'body'
                 );

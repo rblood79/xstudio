@@ -221,7 +221,7 @@ const CheckboxItem = memo(function CheckboxItem({
         <pixiGraphics
           draw={drawCheckbox}
           eventMode="static"
-          cursor="pointer"
+          cursor="default"
           onPointerDown={handlePointerDown}
         />
       </pixiContainer>
@@ -232,7 +232,7 @@ const CheckboxItem = memo(function CheckboxItem({
         style={textStyle}
         layout={{ isLeaf: true }}
         eventMode="static"
-        cursor="pointer"
+        cursor="default"
         onPointerDown={handlePointerDown}
       />
     </pixiContainer>
@@ -467,7 +467,7 @@ export const PixiCheckboxGroup = memo(function PixiCheckboxGroup({
         draw={drawHitArea}
         layout={{ position: 'absolute', top: 0, left: 0 }}
         eventMode="static"
-        cursor="pointer"
+        cursor="default"
         onPointerDown={handleClick}
       />
     </pixiContainer>

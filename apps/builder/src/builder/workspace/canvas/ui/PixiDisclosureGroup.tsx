@@ -220,7 +220,7 @@ export function PixiDisclosureGroup({
       <pixiContainer
         layout={groupLayout}
         eventMode="static"
-        cursor="pointer"
+        cursor="default"
         onPointerTap={() => onClick?.(element.id)}
       >
         <pixiGraphics draw={drawContainer} />
@@ -303,7 +303,7 @@ export function PixiDisclosureGroup({
             key={item.id}
             y={itemY}
             eventMode="static"
-            cursor="pointer"
+            cursor="default"
             onPointerEnter={() => setHoveredId(item.id)}
             onPointerLeave={() => setHoveredId(null)}
             onPointerTap={() => handleItemClick(item.id)}

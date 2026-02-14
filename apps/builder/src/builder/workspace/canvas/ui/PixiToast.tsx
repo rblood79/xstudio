@@ -217,7 +217,7 @@ export function PixiToast({
     <pixiContainer
       layout={rootLayout}
       eventMode="static"
-      cursor="pointer"
+      cursor="default"
       onPointerTap={() => onClick?.(element.id)}
     >
       {/* Toast container - position: absolute */}

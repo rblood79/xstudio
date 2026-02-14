@@ -194,7 +194,7 @@ export const PixiSeparator = memo(function PixiSeparator({
       <pixiGraphics
         draw={drawSeparator}
         eventMode="static"
-        cursor="pointer"
+        cursor="default"
         onPointerDown={handleClick}
       />
     </pixiContainer>

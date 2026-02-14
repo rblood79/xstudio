@@ -2044,7 +2044,8 @@ Pencil 렌더링 아키텍처 전환: 100% 완료 (2026-02-14 업데이트)
 ├── Color 정규화: CSS 색상 파싱 유틸리티 (hex/rgb/rgba/hsl/hsla/named) ✅ (2026-02-13)
 ├── Hover Highlight: **blue-500 Stroke 오버레이** (`hoverRenderer.ts`) ✅ (2026-02-14)
 ├── editingContext 경계: **gray-400 점선 오버레이** (`hoverRenderer.ts`) ✅ (2026-02-14)
-└── Element Hover Interaction: window pointermove + RAF + AABB 히트 테스트 (`useElementHoverInteraction.ts`) ✅ (2026-02-14)
+├── Element Hover Interaction: window pointermove + RAF + AABB 히트 테스트 (`useElementHoverInteraction.ts`) ✅ (2026-02-14)
+└── 캔버스 커서 통일: 모든 요소 `cursor="default"` (Pencil 방식) ✅ (2026-02-14)
 ```
 
 ---
@@ -2502,15 +2503,47 @@ renderer.setOverlayNode renderSkia():
     1. AI 이펙트 (Generating + Flash)
     2. 페이지 타이틀
     3. Workflow 오버레이 (엣지 + 미니맵)
-    4. editingContext 경계 (점선)          ← 신규
-    5. Hover Highlight (파란 스트로크)      ← 신규
-    6. Selection Box + TransformHandle
-    7. 치수 레이블
-    8. 라쏘
-    9. 미니맵 (최상위, 스크린 고정)
+    4. editingContext 경계 (점선)
+    5. Hover Highlight (파란 스트로크)      ← Handles 아래에 렌더링
+    6. Selection Box (파란 테두리)
+    7. TransformHandle (흰색 fill → 호버 선 덮음)
+    8. 치수 레이블
+    9. 라쏘
+   10. 미니맵 (최상위, 스크린 고정)
 ```
+
+> **순서 변경 이유:** 호버가 Selection/Handles 위에 렌더링되면 코너 핸들(흰색 fill) 내부에 호버 선이 보이는 문제 발생. 호버를 Selection/Handles 아래로 이동하여 핸들이 호버 선을 덮도록 변경.
 
 **파일:**
 - `apps/builder/src/builder/workspace/canvas/skia/hoverRenderer.ts` (107줄, 신규)
 - `apps/builder/src/builder/workspace/canvas/hooks/useElementHoverInteraction.ts` (145줄, 신규)
 - `apps/builder/src/builder/workspace/canvas/skia/SkiaOverlay.tsx` (변경)
+
+#### 12.12.6 캔버스 커서 통일 (Pencil 방식)
+
+Pencil의 `StateManager.handlePointerMove`는 항상 `setCursor("default")`를 호출한다. 요소 종류에 따라 커서를 바꾸지 않고 기본 화살표 커서를 사용한다.
+
+**변경 전:**
+
+| 컴포넌트 | 커서 |
+|----------|------|
+| TextSprite | `text` (I-beam) |
+| BoxSprite | `pointer` (손가락) |
+| ImageSprite | `pointer` |
+| ElementSprite (컨테이너) | `pointer` |
+| UI 컴포넌트 55개 | `pointer` / `text` / `crosshair` / 조건식 |
+
+**변경 후:** 모든 요소 → `cursor="default"` (화살표)
+
+**유지:**
+- Hand Tool: `grab` / `grabbing` (패닝)
+- TransformHandle: `nwse-resize` / `nesw-resize` / `ns-resize` / `ew-resize` (리사이즈)
+- Shift 키: `crosshair` (Lasso 모드)
+- ClickableBackground: `default`
+
+**파일 (59개):**
+- `sprites/TextSprite.tsx` — `text` → `default`
+- `sprites/BoxSprite.tsx` — `pointer` → `default`
+- `sprites/ImageSprite.tsx` — `pointer` → `default` (2곳)
+- `sprites/ElementSprite.tsx` — `pointer` → `default` (2곳)
+- `ui/Pixi*.tsx` 55개 — `pointer`/`text`/`crosshair`/조건식 → `default`

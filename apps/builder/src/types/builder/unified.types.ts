@@ -965,6 +965,13 @@ export function createDefaultBadgeProps(): BadgeElementProps {
   };
 }
 
+export function createDefaultLabelProps(): BaseElementProps {
+  return {
+    children: 'Tag Group',
+    style: { fontSize: 14, fontWeight: 500, width: 'fit-content' },
+  };
+}
+
 export function createDefaultTagGroupProps(): TagGroupElementProps {
   return {
     items: [],
@@ -1094,6 +1101,7 @@ export function getDefaultProps(tag: string): ComponentElementProps {
     Row: createDefaultRowProps,
     Cell: createDefaultCellProps,
     Card: createDefaultCardProps,
+    Label: createDefaultLabelProps,
     TagGroup: createDefaultTagGroupProps,
     TagList: createDefaultTagListProps,
     Tag: createDefaultTagProps,

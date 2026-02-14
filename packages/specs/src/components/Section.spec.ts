@@ -131,7 +131,7 @@ export const SectionSpec: ComponentSpec<SectionProps> = {
         type: 'roundRect' as const,
         x: 0,
         y: 0,
-        width: (props.style?.width as number) || 'auto',
+        width: 'auto' as const,
         height: 'auto',
         radius: borderRadius as unknown as number,
         fill: bgColor,

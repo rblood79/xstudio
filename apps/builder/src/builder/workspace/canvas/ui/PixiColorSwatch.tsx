@@ -120,7 +120,7 @@ export function PixiColorSwatch({
   return (
     <pixiContainer
       eventMode="static"
-      cursor="pointer"
+      cursor="default"
       onPointerTap={() => onClick?.(element.id)}
     >
       <pixiGraphics draw={drawSwatch} />

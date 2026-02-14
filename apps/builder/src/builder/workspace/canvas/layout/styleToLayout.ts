@@ -10,6 +10,7 @@
 
 import type { Element } from '../../../../types/core/store.types';
 import { getBadgeSizePreset } from '../utils/cssVariableReader';
+import { calculateContentHeight, measureTextWidth } from './engines/utils';
 // CHECKBOX_BOX_SIZES는 INDICATOR_SIZES로 인라인 처리됨
 
 // ============================================
@@ -344,20 +345,22 @@ export function styleToLayout(
     if (!style.flexWrap) layout.flexWrap = 'wrap';
   }
 
+  // 🚀 Label: fit-content 시 텍스트 폭을 명시적으로 계산
+  // Label은 Yoga 리프 노드(자식 요소 없음)이므로, width: 'auto'만으로는
+  // Yoga가 콘텐츠 폭을 알 수 없어 width=0이 됨
+  // → 텍스트 폭을 measureTextWidth()로 계산하여 명시적 pixel 값 설정
+  if (tag === 'label' && isFitContentWidth) {
+    const textContent = String(props?.children || props?.text || props?.label || '');
+    const fontSize = typeof style.fontSize === 'number' ? style.fontSize : 14;
+    layout.width = Math.ceil(measureTextWidth(textContent, fontSize));
+  }
+
   // 🚀 순수 텍스트 태그: 컨테이너 자식으로 배치될 때 Yoga가 텍스트 높이를 알 수 없으므로
-  // height 미설정 시 size prop → fontSize → lineHeight(×1.4)로 높이를 자동 계산
-  // Button sizes 패턴: size → font-size: var(--text-{size}) 토큰 매핑
+  // height 미설정 시 BlockEngine의 calculateContentHeight() 패턴으로 높이를 자동 계산
+  // display:block 경로와 동일한 높이 계산 로직 사용 (태그별 기본 높이 + lineHeight 기반)
   const TEXT_LAYOUT_TAGS = new Set(['label', 'text', 'heading', 'paragraph']);
   if (TEXT_LAYOUT_TAGS.has(tag) && height === undefined) {
-    // size prop → typography 토큰 매핑 (xs:12, sm:14, md:16, lg:18, xl:20)
-    const TEXT_SIZE_FONT_MAP: Record<string, number> = {
-      xs: 12, sm: 14, md: 16, lg: 18, xl: 20,
-    };
-    const sizeName = (props?.size as string) ?? 'sm';
-    const fontSize = typeof style.fontSize === 'number'
-      ? style.fontSize
-      : TEXT_SIZE_FONT_MAP[sizeName] ?? 14;
-    layout.height = Math.ceil(fontSize * 1.4);
+    layout.height = calculateContentHeight(element);
   }
 
   // 🚀 Checkbox/Radio/Switch: 기본 flex row 레이아웃 + 크기 계산
