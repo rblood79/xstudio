@@ -473,7 +473,7 @@ export function SkiaOverlay({
   const lastWfSubTogglesRef = useRef('');
 
   // Phase 4: 요소 호버 상태 ref (React 리렌더 없이 Skia에서 직접 사용)
-  const elementHoverStateRef = useRef<ElementHoverState>({ hoveredElementId: null });
+  const elementHoverStateRef = useRef<ElementHoverState>({ hoveredElementId: null, hoveredLeafIds: [], isGroupHover: false });
   const lastEditingContextRef = useRef<string | null>(null);
   const treeBoundsMapRef = useRef<Map<string, BoundingBox>>(new Map());
 
@@ -883,9 +883,10 @@ export function SkiaOverlay({
         ? skiaFontManager.getFontMgr()
         : undefined;
 
-      // selection 또는 workflow 오버레이 활성 시 boundsMap 필요
+      // selection, workflow 오버레이 또는 호버 히트 테스트 시 boundsMap 필요
+      // 호버는 항상 활성이므로 treeBoundsMap을 항상 빌드 (캐시됨)
       const selectedIds = useStore.getState().selectedElementIds;
-      const needsSelectionBoundsMap = selectedIds.length > 0 || showWorkflowOverlay;
+      const needsSelectionBoundsMap = true;
       const selectionBuildStart = process.env.NODE_ENV === 'development' && needsSelectionBoundsMap
         ? performance.now()
         : 0;
@@ -1056,13 +1057,13 @@ export function SkiaOverlay({
             renderEditingContextBorder(ck, canvas, contextBounds, cameraZoom);
           }
 
-          // Phase 4: 호버 하이라이트 (선택된 요소 제외)
-          const hoveredId = elementHoverStateRef.current.hoveredElementId;
-          if (hoveredId && treeBoundsMap.has(hoveredId)) {
-            const selectedIdsSet = useStore.getState().selectedElementIdsSet;
-            if (!selectedIdsSet.has(hoveredId)) {
-              const hoverBounds = treeBoundsMap.get(hoveredId)!;
-              renderHoverHighlight(ck, canvas, hoverBounds, cameraZoom);
+          // Phase 4: 호버 하이라이트 — 컨테이너면 모든 리프 자손 동시 렌더링 (점선)
+          const { hoveredLeafIds, isGroupHover } = elementHoverStateRef.current;
+          if (hoveredLeafIds.length > 0) {
+            for (const leafId of hoveredLeafIds) {
+              const hoverBounds = treeBoundsMap.get(leafId);
+              if (!hoverBounds) continue;
+              renderHoverHighlight(ck, canvas, hoverBounds, cameraZoom, isGroupHover);
             }
           }
 

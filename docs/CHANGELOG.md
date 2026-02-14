@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - **계층적 선택 모델 (Pencil/Figma 스타일)**: 캔버스 클릭 시 현재 깊이 레벨 요소만 선택. 더블클릭으로 컨테이너 진입, Escape로 위로 복귀. `editingContextId` 상태 및 `resolveClickTarget` 유틸리티 구현 (`stores/selection.ts`, `utils/hierarchicalSelection.ts`)
-- **호버 하이라이트**: 마우스 오버 시 현재 깊이 레벨 요소에 반투명 테두리 표시. `useElementHoverInteraction` 훅 (RAF 스로틀), `hoverRenderer.ts` Skia 렌더러 (blue-500, alpha 0.5). 진입한 컨테이너 경계 점선 표시 (gray-400)
+- **Deep Hover 하이라이트 (Pencil 패턴)**: 그룹/컨테이너 호버 시 내부 모든 리프 노드를 동시 하이라이트. context 레벨 히트 테스트 → `collectLeafDescendants` 재귀 수집 → 전체 리프 렌더링. 리프 직접 호버는 실선 2px, 그룹 내부 리프는 점선 1px. 선택된 요소 위에서도 호버 표시. `hoverRenderer.ts` Skia 렌더러 (blue-500, alpha 0.5). 진입한 컨테이너 경계 점선 표시 (gray-400)
 - **Body 요소 선택**: 캔버스 빈 영역 클릭 또는 배경 클릭으로 body 선택 가능. `buildSelectionRenderData`에 pageFrames 기반 body bounds 폴백 추가. `isOnlyBodySelected` 오버레이 스킵 로직 제거
 
 ### Changed
@@ -25,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Body 선택 불가**: `resolveClickTarget`이 body에 대해 null 반환하던 문제 (`parent_id: null`). `handleElementClick`에 body 특수 처리 추가
 - **Body 오버레이 미표시**: `isOnlyBodySelected` 체크가 body 선택 시 오버레이 렌더링을 스킵하던 문제 해결
 - **Body Skia 선택 박스**: body가 `treeBoundsMap`에 없어 선택 박스가 렌더링되지 않던 문제. `pageFrames` 기반 폴백 추가
+- **멀티페이지 호버 불가**: 아무 요소도 선택되지 않은 상태에서 `treeBoundsMap`이 빈 Map으로 설정되어 호버 히트 테스트가 작동하지 않던 문제. `needsSelectionBoundsMap`을 항상 true로 변경하여 호버용 bounds를 상시 빌드 (`SkiaOverlay.tsx`)
 
 ---
 

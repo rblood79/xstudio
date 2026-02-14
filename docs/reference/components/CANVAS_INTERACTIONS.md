@@ -788,9 +788,9 @@ const handleEscape = useCallback(() => {
 
 > **참고:** 텍스트 편집 중 Escape는 `TextEditOverlay`가 자체 처리하므로 이 핸들러에 도달하지 않는다.
 
-### 호버 인터랙션 (Element Hover)
+### 호버 인터랙션 (Deep Hover — Pencil 패턴)
 
-`useElementHoverInteraction` 훅으로 마우스 호버 감지. 현재 깊이 레벨 요소만 대상.
+`useElementHoverInteraction` 훅으로 마우스 호버 감지. **그룹 호버 시 내부 모든 리프 노드를 동시 하이라이트** (Pencil 동일).
 
 **동작 흐름:**
 ```
@@ -798,13 +798,13 @@ window pointermove
     ↓ RAF 스로틀 (프레임당 1회)
 스크린 → 씬-로컬 좌표 변환 (zoom, panOffset 적용)
     ↓
-editingContext 직계 자식 후보 수집
+context 레벨 히트 테스트 (editingContext 직계 자식 또는 body 직계 자식)
+    ↓ 역순 = z-order 높은 것 우선
+contextHitId 결정
     ↓
-treeBoundsMap AABB 히트 테스트 (역순 = z-order 상위 우선)
+collectLeafDescendants: 리프면 [자신], 컨테이너면 모든 리프 자손 수집
     ↓
-선택된 요소 제외 필터 (selectedElementIdsSet)
-    ↓
-hoverStateRef.hoveredElementId 갱신
+hoveredLeafIds[] 전체를 Skia에서 동시 렌더링
 overlayVersionRef++ → Skia 리페인트 트리거
 ```
 
@@ -815,17 +815,20 @@ overlayVersionRef++ → Skia 리페인트 트리거
 | **상태 관리** | ref 기반 (React 리렌더 없음, 60fps 성능 보장) |
 | **이벤트 레벨** | window-level `pointermove` (캔버스 밖 이동도 감지) |
 | **스로틀** | `requestAnimationFrame` (프레임당 1회 처리) |
-| **히트 테스트** | `treeBoundsMap` AABB (Skia 트리와 동일 좌표 소스) |
-| **대상 스코프** | `editingContext`의 직계 자식만 (현재 깊이 레벨) |
-| **제외 조건** | 선택된 요소는 호버 표시 안 함 |
+| **히트 테스트** | context 레벨 flat AABB + `collectLeafDescendants` 재귀 수집 (상시 빌드) |
+| **대상 스코프** | editingContext 직계 자식 중 히트 → 컨테이너면 모든 리프 자손 동시 표시 |
+| **그룹 호버** | 그룹 위 어디든 마우스 올리면 내부 모든 리프 노드 하이라이트 (Pencil 동일) |
+| **선택 요소 호버** | 선택된 요소 위에서도 호버 표시 (selection 1px + hover 2px 중첩) |
 | **리페인트 트리거** | `overlayVersionRef.current++` → Skia 리렌더 |
 | **jitter 방지** | `clientX/Y` 변화 없으면 스킵 |
+| **treeBoundsMap** | `needsSelectionBoundsMap = true` — 선택 유무와 관계없이 항상 빌드 (version 캐싱) |
 
 **시각적 피드백 (Skia 렌더링):**
 
 | 오버레이 | 색상 | 스타일 |
 |----------|------|--------|
-| Hover Highlight | blue-500 `#3b82f6`, alpha 0.5 | Stroke, 두께 `1/zoom` |
+| Hover Highlight (리프 직접) | blue-500 `#3b82f6`, alpha 0.5 | Stroke 실선, 두께 `2/zoom` |
+| Hover Highlight (그룹 내부 리프) | blue-500 `#3b82f6`, alpha 0.5 | Stroke 점선 `[4/zoom, 3/zoom]`, 두께 `1/zoom` |
 | editingContext 경계 | gray-400 `#9ca3af`, alpha 0.3 | Stroke + dash `[6/zoom, 4/zoom]` |
 
 **인터랙션 목록 (업데이트):**

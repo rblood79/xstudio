@@ -36,21 +36,29 @@ const CONTEXT_ALPHA = 0.3;
  * 호버 요소의 테두리를 CanvasKit으로 렌더링한다.
  *
  * 씬-로컬 좌표계에서 호출. strokeWidth = 1/zoom으로 화면상 1px 유지.
+ * dashed=true이면 그룹 내부 리프 노드 스타일 (점선).
  */
 export function renderHoverHighlight(
   ck: CanvasKit,
   canvas: Canvas,
   bounds: BoundingBox,
   zoom: number,
+  dashed = false,
 ): void {
   const scope = new SkiaDisposable();
+  let dashEffect: ReturnType<typeof ck.PathEffect.MakeDash> | null = null;
   try {
-    const sw = 1 / zoom;
+    const sw = dashed ? 1 / zoom : 2 / zoom;
     const paint = scope.track(new ck.Paint());
     paint.setAntiAlias(true);
     paint.setStyle(ck.PaintStyle.Stroke);
     paint.setStrokeWidth(sw);
     paint.setColor(ck.Color4f(HOVER_R, HOVER_G, HOVER_B, HOVER_ALPHA));
+
+    if (dashed) {
+      dashEffect = ck.PathEffect.MakeDash([4 / zoom, 3 / zoom]);
+      paint.setPathEffect(dashEffect);
+    }
 
     const rect = ck.LTRBRect(
       bounds.x,
@@ -60,6 +68,7 @@ export function renderHoverHighlight(
     );
     canvas.drawRect(rect, paint);
   } finally {
+    dashEffect?.delete();
     scope.dispose();
   }
 }

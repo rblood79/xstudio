@@ -12,13 +12,14 @@
 
 import { useExtend } from '@pixi/react';
 import { PIXI_COMPONENTS } from '../pixiSetup';
-import { useCallback, useMemo, useRef, memo } from 'react';
+import { useCallback, useMemo, useRef, useContext, memo } from 'react';
 import { Graphics as PixiGraphics, TextStyle, Text } from 'pixi.js';
 import type { Element } from '../../../../types/core/store.types';
 import { convertStyle, applyTextTransform, buildSkiaEffects, type CSSStyle } from './styleConverter';
 import { parsePadding } from './paddingUtils';
 import { drawBox, parseBorderConfig } from '../utils';
 import { useSkiaNode } from '../skia/useSkiaNode';
+import { LayoutComputedSizeContext } from '../layoutContext';
 
 
 // ============================================
@@ -80,7 +81,28 @@ export const TextSprite = memo(function TextSprite({
   useExtend(PIXI_COMPONENTS);
   const style = element.props?.style as CSSStyle | undefined;
   const converted = useMemo(() => convertStyle(style), [style]);
-  const { transform, fill, text: textStyle, borderRadius } = converted;
+  const { fill, text: textStyle, borderRadius } = converted;
+  const computedContainerSize = useContext(LayoutComputedSizeContext);
+
+  // BoxSprite 패턴: Yoga 계산 크기를 우선 사용 (기본값 100×100 대신)
+  const transform = useMemo(() => {
+    if (!computedContainerSize) return converted.transform;
+
+    const styleWidth = style?.width;
+    const styleHeight = style?.height;
+    const usesLayoutWidth = styleWidth === undefined || styleWidth === 'auto' ||
+      (typeof styleWidth === 'string' && styleWidth.endsWith('%'));
+    const usesLayoutHeight = styleHeight === undefined || styleHeight === 'auto' ||
+      (typeof styleHeight === 'string' && styleHeight.endsWith('%'));
+
+    if (!usesLayoutWidth && !usesLayoutHeight) return converted.transform;
+
+    return {
+      ...converted.transform,
+      width: usesLayoutWidth ? computedContainerSize.width : converted.transform.width,
+      height: usesLayoutHeight ? computedContainerSize.height : converted.transform.height,
+    };
+  }, [computedContainerSize, converted.transform, style?.width, style?.height]);
 
   // Border-Box v2: parseBorderConfig로 border 정보 추출
   const borderConfig = useMemo(() => parseBorderConfig(style), [style]);

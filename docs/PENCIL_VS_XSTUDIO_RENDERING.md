@@ -1992,7 +1992,7 @@ Cmd+S → saveDocument() → FileManager.export()
 | H-5 | Camera 하위 숨김: `alpha=0` (renderable=false 금지) | SkiaOverlay.tsx renderFrame | ✅ |
 | H-6 | 페이지 타이틀 (활성: #3B82F6, 비활성: #64748b) | `selectionRenderer.ts` renderPageTitle (isActive) | ✅ (2026-02-05) |
 | H-7 | 치수 레이블 (width × height, 파란 배경 흰 텍스트) | `selectionRenderer.ts` renderDimensionLabels | ✅ |
-| H-8 | Hover Highlight (blue-500, alpha 0.5, Stroke 1/zoom) | `hoverRenderer.ts` renderHoverHighlight | ✅ (2026-02-14) |
+| H-8 | Hover Highlight (blue-500, alpha 0.5, 실선 2/zoom, 그룹 내부 점선 1/zoom) | `hoverRenderer.ts` renderHoverHighlight(dashed) | ✅ (2026-02-14) |
 | H-9 | editingContext 경계 (gray-400, alpha 0.3, dash [6/zoom, 4/zoom]) | `hoverRenderer.ts` renderEditingContextBorder | ✅ (2026-02-14) |
 | H-10 | Body 요소 Selection bounds 폴백 (`pageFrames`) | `buildSelectionRenderData` pageFrames 파라미터 | ✅ (2026-02-14) |
 
@@ -2411,7 +2411,7 @@ Pencil 렌더링 기능 매칭 상태:
 | **색상** | blue-500 (`#3b82f6`) |
 | **투명도** | alpha 0.5 |
 | **스타일** | `PaintStyle.Stroke` |
-| **선 두께** | `1 / zoom` (화면상 항상 1px) |
+| **선 두께** | 리프 직접 호버: `2 / zoom` (실선 2px), 그룹 내부 리프: `1 / zoom` (점선 1px) |
 | **좌표계** | 씬-로컬 (카메라 변환 내부) |
 
 ```typescript
@@ -2447,9 +2447,9 @@ dashEffect.delete();
 - `SkiaOverlay.tsx`에서 `editingContextId` 변경 시 `overlayVersion++`로 Skia 리페인트 트리거
 - 렌더 순서: editingContext border → hover highlight → selection (z-order)
 
-#### 12.12.3 Element Hover Interaction 훅
+#### 12.12.3 Element Hover Interaction 훅 — Deep Hover (Pencil 패턴)
 
-`useElementHoverInteraction.ts` — window-level `pointermove` + RAF 스로틀 기반 호버 감지.
+`useElementHoverInteraction.ts` — Pencil의 `SelectionManager.hoveredNode` 패턴으로 **그룹 호버 시 내부 모든 리프 노드를 동시 하이라이트**.
 
 **아키텍처:**
 ```
@@ -2457,22 +2457,35 @@ window pointermove
     ↓ RAF 스로틀 (프레임당 1회)
 스크린 → 씬-로컬 좌표 변환
     ↓
-editingContext 직계 자식 후보 수집
+Context 레벨 히트 테스트 (editingContext 직계 자식 또는 body 직계 자식)
+    ↓ 역순 = z-order 높은 것 우선
+히트 대상 결정 (contextHitId)
     ↓
-treeBoundsMap AABB 히트 테스트 (역순 = z-order 높은 것 우선)
+collectLeafDescendants(): 모든 리프 자손 재귀 수집
+  - childrenMap 없으면 리프 → [자신]
+  - childrenMap 있으면 재귀 → 모든 리프 concat
     ↓
-선택된 요소 제외 필터
-    ↓
-hoverStateRef.hoveredElementId 갱신
-overlayVersionRef++ → Skia 리페인트
+hoveredLeafIds[] 전체를 Skia에서 동시 렌더링
 ```
 
+**Pencil 동작 비교:**
+
+| 항목 | Pencil | xstudio |
+|------|--------|---------|
+| 리프 호버 | 해당 노드 1개 하이라이트 | 동일 |
+| 그룹 호버 | 내부 모든 리프 노드 동시 하이라이트 | 동일 (`collectLeafDescendants`) |
+| 히트 테스트 | `findNodeAtPosition` (깊이 우선) | context 레벨 flat + 리프 수집 |
+| 상태 | `hoveredNode: Node` | `hoveredElementId` + `hoveredLeafIds[]` |
+
 **설계 포인트:**
+- **그룹 전체 리프 렌더링**: context 레벨에서 컨테이너 히트 → `collectLeafDescendants`로 모든 리프 자손 수집 → `hoveredLeafIds[]`에 저장 → Skia에서 전부 렌더
+- **변경 감지 최적화**: `hoveredElementId`(context 레벨)만 비교하여 배열 비교 불필요
 - **ref 기반 상태 관리**: React `useState` 대신 `useRef`로 호버 상태 보관 → 리렌더 없이 60fps 갱신
 - **subpixel jitter 방지**: `clientX/Y` 동일하면 스킵
-- **캔버스 밖 자동 해제**: 마우스가 캔버스 영역을 벗어나면 `hoveredElementId = null`
-- **editingContext 스코프**: 현재 깊이 레벨의 직계 자식만 호버 대상
+- **캔버스 밖 자동 해제**: 마우스가 캔버스 영역을 벗어나면 `hoveredElementId = null`, `hoveredLeafIds = []`
 - **treeBoundsMap 공유**: SkiaOverlay의 Skia 트리 바운드맵을 ref로 공유하여 동일 좌표 소스 보장
+- **treeBoundsMap 상시 빌드**: `needsSelectionBoundsMap = true`로 변경 — 선택된 요소가 없어도 호버용 bounds를 항상 빌드
+- **성능**: `collectLeafDescendants`는 히트 대상 변경 시에만 실행 (마우스가 같은 요소 위면 스킵)
 
 #### 12.12.4 Selection 오버레이 변경
 
