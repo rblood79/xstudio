@@ -405,7 +405,8 @@ function getMeasureContext(): CanvasRenderingContext2D | null {
 export function measureTextWidth(
   text: string,
   fontSize: number = 14,
-  fontFamily: string = specFontFamily.sans
+  fontFamily: string = specFontFamily.sans,
+  fontWeight: number | string = 400,
 ): number {
   if (!text) return 0;
 
@@ -415,7 +416,7 @@ export function measureTextWidth(
     return text.length * (fontSize * 0.5);
   }
 
-  ctx.font = `${fontSize}px ${fontFamily}`;
+  ctx.font = `${fontWeight} ${fontSize}px ${fontFamily}`;
   const metrics = ctx.measureText(text);
   return metrics.width;
 }
@@ -734,7 +735,28 @@ export function calculateContentHeight(element: Element, availableWidth?: number
     const resolvedLineHeight = parseLineHeight(style, fontSize);
     const textHeight = estimateTextHeight(fontSize, resolvedLineHeight);
     // MIN_BUTTON_HEIGHT는 border-box 기준 → content-box 최소값으로 변환
-    const minContentHeight = Math.max(0, MIN_BUTTON_HEIGHT - sizeConfig.paddingY * 2 - sizeConfig.borderWidth * 2);
+    // 사용자가 인라인 padding을 설정한 경우 MIN_BUTTON_HEIGHT 미적용 (padding:0으로 축소 허용)
+    const hasInlinePadding = style?.padding !== undefined ||
+      style?.paddingTop !== undefined || style?.paddingBottom !== undefined;
+    const minContentHeight = hasInlinePadding
+      ? 0
+      : Math.max(0, MIN_BUTTON_HEIGHT - sizeConfig.paddingY * 2 - sizeConfig.borderWidth * 2);
+
+    // 텍스트 줄바꿈 높이 계산: availableWidth가 제공되면 줄바꿈 고려
+    if (availableWidth !== undefined && availableWidth > 0) {
+      const paddingX = parseNumericValue(style?.paddingLeft) ?? parseNumericValue(style?.padding) ?? sizeConfig.paddingLeft;
+      const maxTextWidth = availableWidth - paddingX * 2;
+      if (maxTextWidth > 0) {
+        const textContent = String(props?.children ?? props?.text ?? props?.label ?? '');
+        if (textContent) {
+          const wrappedH = measureWrappedTextHeight(textContent, fontSize, 500, specFontFamily.sans, maxTextWidth);
+          if (wrappedH > textHeight + 0.5) {
+            return Math.max(wrappedH, minContentHeight);
+          }
+        }
+      }
+    }
+
     return Math.max(textHeight, minContentHeight);
   }
 
@@ -918,6 +940,11 @@ export function parseBoxModel(
       boxSizing !== 'content-box' &&
       (width !== undefined || height !== undefined));
 
+  // Button 등 self-rendering 요소의 텍스트 줄바꿈 높이를 정확히 계산하려면
+  // 요소 자체의 border-box width를 사용해야 함 (부모의 availableWidth가 아닌)
+  // border-box 변환 전에 원래 width를 저장
+  const originalBorderBoxWidth = width;
+
   if (treatAsBorderBox) {
     const paddingH = padding.left + padding.right;
     const borderH = border.left + border.right;
@@ -934,8 +961,11 @@ export function parseBoxModel(
   }
 
   // 콘텐츠 크기 계산
+  const elementAvailableWidth = (originalBorderBoxWidth !== undefined && originalBorderBoxWidth !== FIT_CONTENT)
+    ? originalBorderBoxWidth
+    : availableWidth;
   const contentWidth = calculateContentWidth(element);
-  const contentHeight = calculateContentHeight(element, availableWidth);
+  const contentHeight = calculateContentHeight(element, elementAvailableWidth);
 
   return {
     width,

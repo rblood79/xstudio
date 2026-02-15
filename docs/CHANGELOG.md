@@ -33,6 +33,87 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+### Fixed - Spec 컴포넌트 텍스트 줄바꿈 시 Skia 높이 자동 확장 (2026-02-15)
+
+#### 증상
+- Button에 고정 `width` 설정 후 긴 텍스트 입력 시, CSS에서는 height가 동적으로 증가하지만 Skia 캔버스에서는 높이가 변하지 않음
+- 텍스트가 잘리거나 배경 밖으로 넘침
+
+#### 원인
+- Button은 `SELF_PADDING_TAGS`로 padding이 Yoga에서 제거되고, Yoga에 텍스트 measure 함수가 없어 auto height를 계산할 수 없음
+- `specShapesToSkia`는 Yoga가 결정한 고정 높이를 받아 배경과 텍스트를 그리므로, 텍스트가 줄바꿈되어도 높이가 확장되지 않음
+
+#### 수정 내용
+
+**1. `measureSpecTextMinHeight()` 헬퍼 추가 (ElementSprite.tsx)**
+- spec shapes 내 텍스트의 word-wrap 높이를 Canvas 2D API로 측정
+- TokenRef fontSize 해석, maxWidth 계산 (specShapesToSkia와 동일 로직)
+- 한 줄이면 `undefined` 반환, 다중 줄이면 `paddingY * 2 + wrappedHeight` 반환
+
+**2. contentMinHeight 계산 (ElementSprite.tsx)**
+- `specShapesToSkia` 호출 전에 `measureSpecTextMinHeight`로 다중 줄 높이 측정
+- 명시적 height가 없을 때만 (`hasExplicitHeight` 체크)
+- `specHeight`와 `cardCalculatedHeight` 갱신 → `contentMinHeight`로 전파
+
+**3. 다중 줄 텍스트 paddingTop 보정 (ElementSprite.tsx)**
+- `specShapesToSkia`는 한 줄 lineHeight 기준으로 수직 중앙 계산
+- 다중 줄일 때 `(specHeight - wrappedHeight) / 2`로 보정
+
+**4. `updateTextChildren` box 재귀 (SkiaOverlay.tsx)**
+- box 타입 자식 노드도 재귀적으로 width/height 갱신 + 내부 text 처리
+- `contentMinHeight`로 높이 증가 시 specNode 내부 텍스트도 올바른 크기로 갱신
+
+#### 수정 파일
+
+| 파일 | 변경 내용 |
+|------|----------|
+| `apps/builder/.../sprites/ElementSprite.tsx` | `measureSpecTextMinHeight()` + contentMinHeight 계산 + paddingTop 보정 |
+| `apps/builder/.../skia/SkiaOverlay.tsx` | `updateTextChildren`에 box 자식 재귀 추가 |
+
+#### 영향 범위
+- Button, SubmitButton, FancyButton, ToggleButton (SELF_PADDING_TAGS)
+- Badge, Tag, Chip 등 spec shapes 기반 모든 컴포넌트
+
+---
+
+### Fixed - BlockEngine 경로에서 Button 텍스트 줄바꿈 시 세로 겹침 (2026-02-15)
+
+#### 증상
+- 부모가 implicit block(display 미지정)일 때, Button(width:80px) 텍스트 2줄 + 다음 Button(width:100%)이 세로로 겹침
+- 첫 번째 Button의 Skia 렌더링은 정상(높이 확장)이나 Yoga 레이아웃 영역이 확장되지 않아 아래 요소가 겹침
+- 부모가 `display:flex, flex-direction:column`일 때는 정상 (Flex 경로 사용)
+
+#### 원인
+- **BlockEngine 경로의 `parseBoxModel`이 부모 `availableWidth`를 전달**: Button(width:80px)인데 `calculateContentHeight(element, 400)`처럼 부모 너비(400px)를 전달하여, 텍스트 줄바꿈이 발생하지 않는 것으로 계산 → 높이 미확장
+- **`styleToLayout`의 `minHeight`는 BlockEngine 경로에서 미사용**: BlockEngine은 `parseBoxModel` → `calculateContentHeight`로 높이를 직접 계산하며, `styleToLayout`의 결과는 width/height에 사용하지 않음
+
+#### 수정 내용
+
+**1. `parseBoxModel`에서 요소 자체 width 전달 (engines/utils.ts)**
+- border-box 변환 전 `originalBorderBoxWidth`를 저장
+- `calculateContentHeight(element, elementAvailableWidth)`에 요소 자체 width 우선 전달
+- Button(width:80px) → `calculateContentHeight(element, 80)` → `maxTextWidth = 80 - 24 = 56` → 올바른 줄바꿈
+
+**2. `styleToLayout` minHeight 기본 사이즈 수정**
+- Button 기본 사이즈를 `'md'` → `'sm'`으로 수정 (실제 기본값과 일치)
+- ToggleButton은 기존 `'md'` 유지
+
+#### 수정 파일
+
+| 파일 | 변경 내용 |
+|------|----------|
+| `apps/builder/.../layout/engines/utils.ts` | `parseBoxModel`에서 `originalBorderBoxWidth` → `calculateContentHeight`에 전달 |
+| `apps/builder/.../layout/styleToLayout.ts` | minHeight 기본 사이즈 `'md'` → `'sm'` 수정 |
+
+#### 두 렌더링 경로 차이
+
+| 경로 | 부모 조건 | 높이 결정 방식 | 텍스트 줄바꿈 반영 |
+|------|----------|---------------|------------------|
+| **Flex 경로** | `display:flex` 명시적 | `styleToLayout` → `minHeight` → Yoga | `styleToLayout`에서 계산 |
+| **BlockEngine 경로** | display 미지정 (implicit block) | `parseBoxModel` → `calculateContentHeight` | `parseBoxModel`에서 요소 자체 width로 계산 |
+
+---
+
 ### Fixed - Button/UI 컴포넌트 width 설정 시 배경 렌더링 실패 (2026-02-14)
 
 #### 증상

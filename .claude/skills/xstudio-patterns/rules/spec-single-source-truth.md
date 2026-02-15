@@ -103,6 +103,15 @@ const fontSize = props.style?.fontSize ?? size.fontSize;
 - `props.style?.width`가 숫자일 경우 bgBox 미추출 → 배경 미렌더링 버그
 - ElementSprite 퍼센트 width 이중 적용 수정: `computedContainerSize.width` 직접 사용
 
+**v1.15 변경사항:**
+- **텍스트 줄바꿈 시 Skia 높이 자동 확장** — `measureSpecTextMinHeight()` 헬퍼 추가
+- `specHeight`를 `let`으로 변경, 다중 줄 텍스트일 때 `paddingY * 2 + wrappedHeight`로 확장
+- `cardCalculatedHeight` → `contentMinHeight` 패턴으로 `buildSkiaTreeHierarchical`에서 높이 반영
+- 다중 줄 텍스트 `paddingTop` 보정: `(specHeight - wrappedHeight) / 2` 수직 중앙
+- `updateTextChildren` box 자식 재귀 추가 (SkiaOverlay.tsx)
+- **BlockEngine 경로 텍스트 줄바꿈 높이** — `parseBoxModel`에서 요소 자체 width를 `calculateContentHeight`에 전달
+- `styleToLayout` minHeight 기본 사이즈 `'md'` → `'sm'` 수정 (Button 실제 기본값)
+
 ## 참조
 
 - `docs/COMPONENT_SPEC_ARCHITECTURE.md` - 전체 설계 문서 (§4.7.4.4~4.7.4.8)

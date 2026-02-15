@@ -11,6 +11,7 @@
 import type { Element } from '../../../../types/core/store.types';
 import { getBadgeSizePreset } from '../utils/cssVariableReader';
 import { calculateContentHeight, measureTextWidth } from './engines/utils';
+import { measureWrappedTextHeight } from '../utils/textMeasure';
 // CHECKBOX_BOX_SIZES는 INDICATOR_SIZES로 인라인 처리됨
 
 // ============================================
@@ -355,6 +356,31 @@ export function styleToLayout(
     layout.width = Math.ceil(measureTextWidth(textContent, fontSize));
   }
 
+  // 🚀 Button/ToggleButton/FancyButton: fit-content 시 텍스트 폭 계산
+  // SELF_PADDING_TAGS 리프 노드 — padding이 strip되므로 Yoga가 콘텐츠 크기를 모름
+  // → textWidth + paddingX*2 + borderWidth*2 로 명시적 pixel width 설정
+  const SELF_RENDERING_BTN_TAGS = new Set(['button', 'submitbutton', 'fancybutton', 'togglebutton']);
+  if (SELF_RENDERING_BTN_TAGS.has(tag) && isFitContentWidth) {
+    const textContent = String(props?.children ?? props?.text ?? props?.label ?? '');
+    if (textContent) {
+      const BTN_PAD: Record<string, { px: number; fs: number }> = {
+        xs: { px: 8, fs: 12 }, sm: { px: 12, fs: 14 }, md: { px: 24, fs: 16 },
+        lg: { px: 32, fs: 18 }, xl: { px: 40, fs: 20 },
+      };
+      const defaultSize = tag === 'togglebutton' ? 'md' : 'sm';
+      const sizeName = (props?.size as string) ?? defaultSize;
+      const bp = BTN_PAD[sizeName] ?? BTN_PAD.sm;
+      const fontSize = typeof style.fontSize === 'number' ? style.fontSize : bp.fs;
+      const paddingX = typeof style.paddingLeft === 'number' ? style.paddingLeft
+        : typeof style.padding === 'number' ? style.padding : bp.px;
+      const borderW = typeof style.borderWidth === 'number' ? style.borderWidth : 1;
+      const fontWeight = typeof style.fontWeight === 'number' ? style.fontWeight : 500;
+      layout.width = Math.round(measureTextWidth(textContent, fontSize, 'Pretendard', fontWeight)) + paddingX * 2 + borderW * 2;
+      layout.flexGrow = 0;
+      layout.flexShrink = 0;
+    }
+  }
+
   // 🚀 순수 텍스트 태그: 컨테이너 자식으로 배치될 때 Yoga가 텍스트 높이를 알 수 없으므로
   // height 미설정 시 BlockEngine의 calculateContentHeight() 패턴으로 높이를 자동 계산
   // display:block 경로와 동일한 높이 계산 로직 사용 (태그별 기본 높이 + lineHeight 기반)
@@ -568,6 +594,52 @@ export function styleToLayout(
   // Visual (@pixi/layout 지원)
   if (style.backgroundColor !== undefined && style.backgroundColor !== null) {
     layout.backgroundColor = style.backgroundColor as string | number;
+  }
+
+  // 🚀 Button/ToggleButton/FancyButton: Yoga 리프 노드 높이 계산
+  // SELF_PADDING_TAGS는 stripSelfRenderedProps로 padding/border가 제거되어
+  // Yoga가 height를 결정할 수 없음 → 명시적 height 설정 필요
+  const SELF_RENDERING_BUTTON_TAGS = new Set(['button', 'submitbutton', 'fancybutton', 'togglebutton']);
+  if (SELF_RENDERING_BUTTON_TAGS.has(tag) && height === undefined) {
+    // parseFloat(v) || undefined는 0을 undefined로 처리하므로 ?? 사용
+    const toNum = (v: unknown): number | undefined =>
+      typeof v === 'number' ? v
+        : typeof v === 'string' ? (isNaN(parseFloat(v)) ? undefined : parseFloat(v))
+        : undefined;
+    // Button size config: paddingX, paddingY, fontSize
+    const BUTTON_PADDING: Record<string, { px: number; py: number; fs: number }> = {
+      xs: { px: 8, py: 2, fs: 12 },
+      sm: { px: 12, py: 4, fs: 14 },
+      md: { px: 24, py: 8, fs: 16 },
+      lg: { px: 32, py: 12, fs: 18 },
+      xl: { px: 40, py: 16, fs: 20 },
+    };
+    const defaultSize = tag === 'togglebutton' ? 'md' : 'sm';
+    const sizeName = (props?.size as string) ?? defaultSize;
+    const bp = BUTTON_PADDING[sizeName] ?? BUTTON_PADDING[defaultSize];
+    const fontSize = toNum(style.fontSize) ?? bp.fs;
+    const paddingY = toNum(style.paddingTop) ?? toNum(style.padding) ?? bp.py;
+    const borderW = toNum(style.borderWidth) ?? 1;
+    const lineHeight = fontSize * 1.2;
+    // 기본 높이: paddingY * 2 + lineHeight + border * 2 (한 줄 텍스트)
+    layout.height = paddingY * 2 + lineHeight + borderW * 2;
+
+    // 고정 width가 있으면 텍스트 줄바꿈 높이를 측정하여 minHeight로 Yoga에 전달
+    if (typeof width === 'number' && width > 0) {
+      const textContent = String(props?.children ?? props?.text ?? props?.label ?? '');
+      if (textContent) {
+        const paddingX = toNum(style.paddingLeft) ?? toNum(style.padding) ?? bp.px;
+        const maxTextWidth = width - paddingX * 2;
+        if (maxTextWidth > 0) {
+          const wrappedH = measureWrappedTextHeight(textContent, fontSize, 500, 'Pretendard', maxTextWidth);
+          if (wrappedH > lineHeight + 0.5) {
+            // 다중 줄: paddingY * 2 + wrappedHeight + border
+            const totalHeight = paddingY * 2 + wrappedH + borderW * 2;
+            layout.minHeight = totalHeight;
+          }
+        }
+      }
+    }
   }
 
   return layout;

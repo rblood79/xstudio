@@ -120,6 +120,63 @@ const width = 'auto' as const;
 
 **영향 범위**: Button, Section, ToggleButton, Card, Form, List, FancyButton, ScrollBox, MaskedFrame 등 모든 spec의 배경 roundRect
 
+### 텍스트 줄바꿈 시 높이 자동 확장 (v1.15, 2026-02-15)
+
+Button 등 SELF_PADDING_TAGS 컴포넌트에 고정 width를 설정하고 긴 텍스트를 입력하면 CSS에서는 height가 자동 확장되지만, Skia에서는 Yoga가 텍스트 measure 함수를 갖고 있지 않아 높이가 변하지 않았습니다.
+
+**해결**: `measureSpecTextMinHeight()` 헬퍼가 spec shapes 내 텍스트의 word-wrap 높이를 측정하고, `contentMinHeight` 패턴(Card와 동일)으로 Skia 높이를 확장합니다.
+
+```typescript
+// ElementSprite.tsx — spec shapes 경로
+let specHeight = finalHeight;
+const hasExplicitHeight = style?.height !== undefined && style?.height !== 'auto';
+if (!hasExplicitHeight && finalWidth > 0) {
+  const textMinHeight = measureSpecTextMinHeight(shapes, finalWidth, sizeSpec);
+  if (textMinHeight !== undefined && textMinHeight > specHeight) {
+    specHeight = textMinHeight;
+    cardCalculatedHeight = textMinHeight; // → contentMinHeight
+  }
+}
+const specNode = specShapesToSkia(shapes, 'light', finalWidth, specHeight);
+```
+
+**핵심 규칙**:
+- `measureSpecTextMinHeight`: TokenRef fontSize를 `resolveToken`으로 해석, `measureWrappedTextHeight`로 줄바꿈 높이 측정
+- 한 줄이면 `undefined` 반환 → 기존 동작 유지
+- 다중 줄이면 `paddingY * 2 + wrappedHeight` 반환
+- 명시적 height 설정 시 auto-grow 비활성화 (`hasExplicitHeight` 체크)
+- `updateTextChildren`이 box 자식도 재귀 처리하여 specNode 내부 텍스트 크기 갱신
+
+### BlockEngine 경로 텍스트 줄바꿈 높이 (v1.15.1, 2026-02-15)
+
+부모가 implicit block(display 미지정)일 때 **BlockEngine 경로**를 사용하며, `parseBoxModel` → `calculateContentHeight`로 높이를 계산합니다. `styleToLayout`의 `minHeight`는 이 경로에서 사용되지 않습니다.
+
+**문제**: `parseBoxModel`이 부모의 `availableWidth`를 `calculateContentHeight`에 전달하여, Button(width:80px)인데 부모 너비(400px)로 텍스트 줄바꿈을 판단 → 줄바꿈 미발생으로 계산 → 높이 미확장 → 아래 요소 겹침
+
+**해결**: `parseBoxModel`에서 요소 자체의 border-box width를 `calculateContentHeight`에 전달
+
+```typescript
+// engines/utils.ts — parseBoxModel
+const originalBorderBoxWidth = width; // border-box 변환 전 저장
+
+if (treatAsBorderBox) {
+  width = Math.max(0, width - paddingH - borderH); // content-box 변환
+}
+
+// 요소 자체 width 우선 사용 (부모 availableWidth 대신)
+const elementAvailableWidth = (originalBorderBoxWidth !== undefined && originalBorderBoxWidth !== FIT_CONTENT)
+  ? originalBorderBoxWidth
+  : availableWidth;
+const contentHeight = calculateContentHeight(element, elementAvailableWidth);
+```
+
+**두 경로 비교**:
+
+| 경로 | 부모 조건 | 높이 반영 | 파일 |
+|------|----------|----------|------|
+| Flex 경로 | `display:flex` 명시적 | `styleToLayout` → `minHeight` → Yoga | `styleToLayout.ts` |
+| BlockEngine 경로 | display 미지정 | `parseBoxModel` → `calculateContentHeight` | `engines/utils.ts` |
+
 ### props.style 오버라이드 (2026-02-12)
 
 모든 49개 spec의 `render.shapes()`는 시각 속성에서 `props.style` 인라인 스타일을 우선 참조합니다:
