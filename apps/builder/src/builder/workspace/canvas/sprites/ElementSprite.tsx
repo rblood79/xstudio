@@ -28,7 +28,8 @@ import { BoxSprite } from './BoxSprite';
 import { TextSprite } from './TextSprite';
 import { ImageSprite } from './ImageSprite';
 import { specShapesToSkia } from '../skia/specShapeConverter';
-import type { ComponentSpec, Shape } from '@xstudio/specs';
+import type { ComponentSpec, Shape, TokenRef } from '@xstudio/specs';
+import { resolveToken } from '@xstudio/specs';
 import {
   ButtonSpec, BadgeSpec, CardSpec, DialogSpec, LinkSpec, PopoverSpec,
   SeparatorSpec, ToggleButtonSpec, ToggleButtonGroupSpec, TooltipSpec,
@@ -473,6 +474,60 @@ const TAG_SPEC_MAP: Record<string, ComponentSpec<any>> = {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function getSpecForTag(tag: string): ComponentSpec<any> | null {
   return TAG_SPEC_MAP[tag] ?? null;
+}
+
+/**
+ * Spec shapes 내 텍스트가 word-wrap될 때 필요한 최소 높이를 계산한다.
+ * 텍스트가 한 줄에 들어가면 undefined 반환 (auto-height 불필요).
+ */
+function measureSpecTextMinHeight(
+  shapes: Shape[],
+  containerWidth: number,
+  sizeSpec: Record<string, unknown>,
+): number | undefined {
+  const paddingY = (sizeSpec.paddingY as number) ?? 8;
+
+  for (const shape of shapes) {
+    if (shape.type !== 'text' || !shape.text) continue;
+
+    // fontSize: TokenRef일 수 있으므로 resolveToken으로 해석
+    let fontSize = 14;
+    if (shape.fontSize !== undefined) {
+      if (typeof shape.fontSize === 'number') {
+        fontSize = shape.fontSize;
+      } else if (typeof shape.fontSize === 'string' && shape.fontSize.startsWith('{')) {
+        const resolved = resolveToken(shape.fontSize as TokenRef);
+        fontSize = typeof resolved === 'number' ? resolved : parseFloat(String(resolved)) || 14;
+      }
+    }
+
+    const fontWeight = typeof shape.fontWeight === 'number' ? shape.fontWeight : 500;
+    const fontFamily = shape.fontFamily || 'Pretendard';
+
+    // maxWidth 계산: specShapesToSkia와 동일한 로직
+    let maxWidth = shape.maxWidth ?? containerWidth;
+    if (shape.x > 0 && shape.maxWidth == null) {
+      if (shape.align === 'center') {
+        maxWidth = containerWidth - shape.x * 2;
+      } else {
+        maxWidth = containerWidth - shape.x;
+      }
+      if (maxWidth < 1) maxWidth = containerWidth;
+    }
+
+    const lineHeight = fontSize * 1.2;
+    const wrappedHeight = measureWrappedTextHeight(
+      shape.text, fontSize, fontWeight, fontFamily, maxWidth,
+    );
+
+    // 한 줄이면 auto-height 불필요
+    if (wrappedHeight <= lineHeight + 0.5) return undefined;
+
+    // 다중 줄: paddingY * 2 + wrappedHeight
+    return paddingY * 2 + wrappedHeight;
+  }
+
+  return undefined;
 }
 
 /**
@@ -979,7 +1034,7 @@ export const ElementSprite = memo(function ElementSprite({
             // 실제 레이아웃 높이 사용: Yoga가 padding/content 포함하여 계산한 높이
             // → baseline='middle' 텍스트가 CSS와 동일하게 중앙 배치됨
             // → 사용자의 paddingTop/paddingBottom 변경이 자동 반영됨
-            const specHeight = finalHeight;
+            let specHeight = finalHeight;
 
             // 🚀 ToggleButton: 그룹 내 위치 정보를 props에 주입하여 spec shapes에서 border-radius 분기 가능
             // 🚀 TagGroup: 자식 Tag 텍스트를 주입하여 spec shapes에서 label + tag chips 렌더링
@@ -1000,7 +1055,34 @@ export const ElementSprite = memo(function ElementSprite({
               rearrangeShapesForColumn(shapes, finalWidth, sizeSpec.gap ?? 8);
             }
 
+            // 텍스트 줄바꿈 시 높이 자동 확장: 명시적 height가 없을 때만
+            const hasExplicitHeight = style?.height !== undefined && style?.height !== 'auto';
+            if (!hasExplicitHeight && finalWidth > 0) {
+              const textMinHeight = measureSpecTextMinHeight(shapes, finalWidth, sizeSpec);
+              if (textMinHeight !== undefined && textMinHeight > specHeight) {
+                specHeight = textMinHeight;
+                cardCalculatedHeight = textMinHeight;
+              }
+            }
+
             const specNode = specShapesToSkia(shapes, 'light', finalWidth, specHeight);
+
+            // 다중 줄 텍스트 paddingTop 보정: specShapesToSkia는 한 줄 lineHeight 기준으로
+            // (height - lineHeight) / 2를 계산하지만, 다중 줄일 때는 wrappedHeight 기준으로 보정
+            if (cardCalculatedHeight && specNode.children) {
+              for (const child of specNode.children) {
+                if (child.type === 'text' && child.text) {
+                  const wrappedH = measureWrappedTextHeight(
+                    child.text.content, child.text.fontSize, child.text.fontWeight || 500,
+                    child.text.fontFamilies[0] || 'Pretendard', child.text.maxWidth,
+                  );
+                  const lineHeight = child.text.fontSize * 1.2;
+                  if (wrappedH > lineHeight + 0.5) {
+                    child.text.paddingTop = Math.max(0, (specHeight - wrappedH) / 2);
+                  }
+                }
+              }
+            }
 
             // Gradient fill을 specNode 배경으로 이전 (fills v2)
             if (boxData.fill && specNode.box) {

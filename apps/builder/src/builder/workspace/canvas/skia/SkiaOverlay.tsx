@@ -117,6 +117,16 @@ function updateTextChildren(
         },
       };
     }
+    // box 자식 (spec 컨테이너): width/height 갱신 + 내부 text 자식 재귀
+    if (child.type === 'box' && child.children && child.children.length > 0) {
+      const updatedChildren = updateTextChildren(child.children, parentWidth, parentHeight);
+      return {
+        ...child,
+        width: parentWidth,
+        height: parentHeight,
+        children: updatedChildren,
+      };
+    }
     return child;
   });
 }
