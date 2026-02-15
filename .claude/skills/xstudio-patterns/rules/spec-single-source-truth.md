@@ -111,6 +111,9 @@ const fontSize = props.style?.fontSize ?? size.fontSize;
 - `updateTextChildren` box 자식 재귀 추가 (SkiaOverlay.tsx)
 - **BlockEngine 경로 텍스트 줄바꿈 높이** — `parseBoxModel`에서 요소 자체 width를 `calculateContentHeight`에 전달
 - `styleToLayout` minHeight 기본 사이즈 `'md'` → `'sm'` 수정 (Button 실제 기본값)
+- **Button `layout.height` 명시적 설정** — `height: 'auto'` 대신 `paddingY*2 + lineHeight + borderW*2` 계산 (Yoga 리프 노드 자기 강화 방지)
+- **인라인 padding 시 `MIN_BUTTON_HEIGHT` 미적용** — padding:0으로 완전 축소 허용
+- **`toNum` 함수 0값 버그 수정** — `parseFloat(v) || undefined` → `isNaN(parseFloat(v))` 체크
 
 ## 참조
 

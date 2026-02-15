@@ -174,8 +174,40 @@ const contentHeight = calculateContentHeight(element, elementAvailableWidth);
 
 | 경로 | 부모 조건 | 높이 반영 | 파일 |
 |------|----------|----------|------|
-| Flex 경로 | `display:flex` 명시적 | `styleToLayout` → `minHeight` → Yoga | `styleToLayout.ts` |
+| Flex 경로 | `display:flex` 명시적 | `styleToLayout` → `layout.height` / `minHeight` → Yoga | `styleToLayout.ts` |
 | BlockEngine 경로 | display 미지정 | `parseBoxModel` → `calculateContentHeight` | `engines/utils.ts` |
+
+### Button padding:0 높이 축소 (v1.15.2, 2026-02-15)
+
+Button에 `paddingTop: 0, paddingBottom: 0`을 설정해도 높이가 변하지 않는 문제를 수정합니다.
+
+**원인 1 — Flex 경로 `height: 'auto'` 자기 강화**:
+Button은 Yoga 리프 노드이고 `stripSelfRenderedProps`로 padding/border가 제거되어, `height: 'auto'`는 0으로 계산 → 이전 프레임 크기(100px)가 유지됨.
+
+**해결**: `styleToLayout`에서 Button `layout.height`를 명시적으로 계산:
+```typescript
+// styleToLayout.ts — Button 높이 명시적 설정
+const paddingY = toNum(style.paddingTop) ?? toNum(style.padding) ?? bp.py;
+const borderW = toNum(style.borderWidth) ?? 1;
+const lineHeight = fontSize * 1.2;
+layout.height = paddingY * 2 + lineHeight + borderW * 2;
+```
+
+**원인 2 — BlockEngine `MIN_BUTTON_HEIGHT`가 인라인 padding 무시**:
+`MIN_BUTTON_HEIGHT = 24`의 content-box 변환에서 `sizeConfig.paddingY`(기본값)만 사용하여 인라인 padding=0 미반영.
+
+**해결**: 인라인 padding 설정 시 `MIN_BUTTON_HEIGHT` 미적용:
+```typescript
+// engines/utils.ts — calculateContentHeight
+const hasInlinePadding = style?.padding !== undefined ||
+  style?.paddingTop !== undefined || style?.paddingBottom !== undefined;
+const minContentHeight = hasInlinePadding
+  ? 0  // 사용자가 padding 제어 → 최소 높이 제거
+  : Math.max(0, MIN_BUTTON_HEIGHT - sizeConfig.paddingY * 2 - sizeConfig.borderWidth * 2);
+```
+
+**원인 3 — `toNum` 함수 '0' 버그**:
+`parseFloat('0') || undefined` → 0은 falsy → undefined 반환. `isNaN` 체크로 수정.
 
 ### props.style 오버라이드 (2026-02-12)
 

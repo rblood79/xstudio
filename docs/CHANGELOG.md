@@ -33,6 +33,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+### Fixed - Button padding:0 시 높이 미변경 (2026-02-15)
+
+#### 증상
+- Button에 `paddingTop: 0`, `paddingBottom: 0`을 설정해도 높이가 변하지 않음
+
+#### 원인
+
+**1. Flex 경로 — Button 높이 미결정**
+- Button은 Yoga 리프 노드(자식 없음)이고, `stripSelfRenderedProps`로 padding/border가 제거됨
+- `height: 'auto'`만 설정되어 Yoga가 높이를 0으로 계산 → 이전 프레임의 시각적 크기(100px)가 자기 강화적으로 유지
+
+**2. BlockEngine 경로 — `MIN_BUTTON_HEIGHT` 제약**
+- `MIN_BUTTON_HEIGHT = 24`에서 `sizeConfig.paddingY`(기본값 4)로 content-box 변환
+- 인라인 padding=0이 반영되지 않아 항상 최소 높이 강제
+
+**3. `toNum` 함수 — 문자열 '0' 무시**
+- `parseFloat('0') || undefined` → `0 || undefined` → `undefined`
+
+#### 수정 내용
+
+**1. `styleToLayout`에서 Button `layout.height` 명시적 설정**
+- `height: 'auto'` 대신 `paddingY * 2 + lineHeight + borderW * 2`로 계산
+- 인라인 padding=0이면 `0 + lineHeight + 2` = 텍스트 높이 + 테두리만큼 축소
+- `toNum` 함수를 `isNaN(parseFloat(v))` 체크로 수정하여 문자열 '0' 정상 처리
+
+**2. BlockEngine `calculateContentHeight`에서 인라인 padding 시 `MIN_BUTTON_HEIGHT` 미적용**
+- 사용자가 인라인 padding을 설정한 경우 `minContentHeight = 0` (padding:0으로 완전 축소 허용)
+- 인라인 padding 미설정 시 기존 동작 유지 (`MIN_BUTTON_HEIGHT` 기반 최소 높이)
+
+#### 수정 파일
+
+| 파일 | 변경 내용 |
+|------|----------|
+| `apps/builder/.../layout/styleToLayout.ts` | Button `layout.height` 명시적 계산 + `toNum` 0값 버그 수정 |
+| `apps/builder/.../layout/engines/utils.ts` | 인라인 padding 시 `MIN_BUTTON_HEIGHT` 미적용 |
+
+---
+
 ### Fixed - Spec 컴포넌트 텍스트 줄바꿈 시 Skia 높이 자동 확장 (2026-02-15)
 
 #### 증상
