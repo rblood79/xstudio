@@ -53,7 +53,7 @@
 | 11 | Checkbox | PASS | PASS | PASS | PASS | PASS | PASS | PASS | 컨테이너-요소 구조, roundRect indicator |
 | 12 | CheckboxGroup | PASS | PASS | PASS | PASS | PASS | PASS | PASS | group container |
 | 13 | Switch | PASS | PASS | PASS | PASS | PASS | PASS | PASS | 컨테이너-요소 구조, circle thumb |
-| 14 | Radio | PASS | PASS | PASS | PASS | PASS | FAIL | PASS | circle shape → rearrangeShapesForColumn 미감지 |
+| 14 | Radio | PASS | PASS | PASS | PASS | PASS | PASS | PASS | ~~circle shape column 변환 오류~~ → rearrangeShapesForColumn circle 좌표 직접 설정으로 해결 (ElementSprite.tsx:572) |
 | 15 | Input | PASS | PASS | PASS | PASS | N/A | N/A | PASS | ~~고정 width bg 미추출~~ → bg 추출 조건 완화 구현 완료 (specShapeConverter.ts:147-153) |
 | 16 | TextField | PASS | PASS | PASS | PASS | N/A | N/A | PASS | ~~고정 width bg 미추출~~ → bg 추출 조건 완화 구현 완료 (specShapeConverter.ts:147-153) |
 | 17 | TextArea | PASS | PASS | PASS | PASS | N/A | N/A | PASS | multi-line text |
@@ -120,10 +120,10 @@
 | Phase | 총 항목 | PASS | FAIL | WARN | 비고 |
 |-------|---------|------|------|------|------|
 | Phase 1 (핵심) | 10 | 10 | 0 | 0 | ~~FancyButton gradient~~ → gradient 구현 완료 |
-| Phase 2 (Form) | 15 | 14 | 1 | 0 | Radio circle column 미해결; ~~shadow순서, array radius, 고정 width bg~~ 모두 해결 |
+| Phase 2 (Form) | 15 | 15 | 0 | 0 | ~~Radio circle column~~ 해결; 전체 해결 |
 | Phase 3 (복합) | 20 | 20 | 0 | 0 | ~~shadow순서, auto cast, dashed border~~ 모두 해결 |
 | Phase 4 (특수) | 17 | 17 | 0 | 0 | ~~shadow순서, gradient, TokenRef~~ 모두 해결 |
-| **합계** | **62** | **61** | **1** | **0** | PASS율: **98.4%** (↑30.7%p from 67.7%) |
+| **합계** | **62** | **62** | **0** | **0** | PASS율: **100%** (↑32.3%p from 67.7%) |
 
 ---
 

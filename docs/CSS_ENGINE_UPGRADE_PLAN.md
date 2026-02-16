@@ -41,10 +41,10 @@ CSS Style (사용자 입력)
 | Grid | 60% | 85% | repeat(), minmax(), auto-placement, span |
 | CSS 단위 | 65% | 85% | em, calc(), min/max-content |
 | Position | 65% | 80% | fixed(viewport), z-index stacking context |
-| Spec 렌더링 정합성 | **98.4%** | **100%** | 잔여 FAIL 1건: Radio circle column |
-| **전체 가중 평균** | **~88%** | **~95%+** | |
+| Spec 렌더링 정합성 | **100%** | **100%** | 62/62 전체 PASS 달성 |
+| **전체 가중 평균** | **~89%** | **~95%+** | |
 
-> **Spec 렌더링 정합성** (`docs/SPEC_VERIFICATION_CHECKLIST.md` 기준): 62개 컴포넌트 중 PASS **61개(98.4%)**, FAIL **1개(1.6%)**, WARN **0개(0%)**. shadow-before-target 순서 오류(7개), gradient Skia 미지원(4개), 배열 borderRadius(1개), line auto cast(2개), dashed/dotted border(2건), 고정 width bg 미추출(3건), TokenRef 중첩 해석(3건)이 모두 구현 완료되었다. 잔여 FAIL은 Radio의 circle shape column 변환(1건)뿐이다.
+> **Spec 렌더링 정합성** (`docs/SPEC_VERIFICATION_CHECKLIST.md` 기준): 62개 컴포넌트 중 PASS **62개(100%)**, FAIL **0개**, WARN **0개**. shadow-before-target 순서 오류(7개), gradient Skia 미지원(4개), 배열 borderRadius(1개), line auto cast(2개), dashed/dotted border(2건), 고정 width bg 미추출(3건), TokenRef 중첩 해석(3건), Radio circle column 변환(1건)이 모두 구현 완료되었다.
 
 ### 0.3 일치율 산정 기준 (추가)
 

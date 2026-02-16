@@ -569,7 +569,8 @@ function rearrangeShapesForColumn(
         }
         break;
       case 'circle':
-        shape.x += centerX;
+        shape.x = centerX + shape.radius;
+        shape.y = shape.radius;
         break;
       case 'line':
         shape.x1 += centerX;
