@@ -36,9 +36,25 @@ CSS Style (사용자 입력)
 | Grid | 60% | 85% | repeat(), minmax(), auto-placement, span |
 | CSS 단위 | 65% | 85% | em, calc(), min/max-content |
 | Position | 65% | 80% | fixed(viewport), z-index stacking context |
-| **전체 가중 평균** | **~83%** | **~93%** | |
+| **전체 가중 평균** | **~83%** | **~95%+** | |
 
-### 0.3 근본 원인 분석
+### 0.3 일치율 산정 기준 (추가)
+
+본 문서의 "일치율"은 구현 완료율이 아니라 **브라우저 CSS 결과 대비 정합성**을 의미한다.
+산정은 아래 3개 축을 분리하여 추적한다.
+
+| 축 | 기준 | 집계 방식 |
+|----|------|-----------|
+| 컴포넌트 시각 정합성 | `docs/SPEC_VERIFICATION_CHECKLIST.md` | PASS / WARN / FAIL 분리 집계 |
+| 레이아웃 정합성 | `docs/LAYOUT_REQUIREMENTS.md` 체크리스트 + 벤치마크 | 지원 기능 커버리지 + 좌표 오차(±1px) |
+| 구현 완료도 | 마이그레이션 문서(`docs/how-to/migration/WEBGL.md`) | 구현/동기화 파일 수 기준 |
+
+> 운영 원칙
+>
+> - PR/리포트에는 세 지표를 혼합하지 않고 항상 **개별 수치**로 표기한다.
+> - "95%+"는 시각+레이아웃 통합 정합성 목표이며, 구현 완료율 100%와 동의어가 아니다.
+
+### 0.4 근본 원인 분석
 
 현재 갭의 근본 원인은 3가지 계층으로 분류된다:
 
@@ -616,7 +632,7 @@ Phase 2 (Grid):    █████████░ 90%  (+2%)
 Phase 3 (캐스케이드): █████████░ 91%  (+1%)
 Phase 4 (Block):   █████████▓ 93%  (+2%)
 Phase 5 (시각):    █████████▓ 95%  (+2%)
-Phase 6 (Position): █████████▓ 95%+ (+1%)
+Phase 6 (Position): ██████████ 95%+ (+1%)
 ```
 
 ### 7.3 의존성 그래프
@@ -646,6 +662,34 @@ Phase 1 (CSS 값 파서)
 | 1.10 | BlockEngine `FIT_CONTENT` 분기에 min/max-content 추가 | `BlockEngine.ts` | 1.9 |
 | 1.11 | WASM `block_layout.rs`에 min/max-content sentinel 추가 | `wasm/src/block_layout.rs` | 1.10 |
 | 1.12 | 단위 테스트 (calc, em, border shorthand, min/max-content) | `__tests__/cssValueParser.test.ts` | 1.1~1.11 |
+
+### 7.5 Phase Exit Criteria (완료 조건)
+
+각 Phase는 "코드 머지"가 아니라 아래 완료 조건을 만족해야 종료한다.
+
+| Phase | 기능 완료 조건 | 품질/성능 게이트 |
+|------|---------------|------------------|
+| 1 (값 파서) | `calc/em/min/max-content/border shorthand` 파싱 통합 | 파서 단위 테스트 100% 통과, 레이아웃 100요소 < 5ms 유지 |
+| 2 (Grid) | `repeat/minmax/auto-placement/span` 적용 | Grid 벤치마크 케이스 PASS율 85%+ |
+| 3 (캐스케이드) | `inherit/var()` 상속 체인 동작 | 회귀 테스트에서 상속 관련 FAIL 0건 |
+| 4 (Block 정밀화) | baseline/white-space/word-break 반영 | 텍스트 정렬 오차 ±1px 내 |
+| 5 (시각 효과) | multi-shadow/transform/gradient 반영 | Skia 회귀 스냅샷 diff 허용치 이내 |
+| 6 (Position) | fixed/z-index/stacking context 동작 | 주요 샘플 시나리오 PASS + FPS 60 유지 |
+
+---
+
+## 8.5 구현 순서 최적화 (스프린트 분할)
+
+리스크를 낮추기 위해 Phase 단위 일괄 투입 대신 세로 슬라이스 방식으로 진행한다.
+
+| Sprint | 범위 | 산출물 |
+|--------|------|--------|
+| S1 | Phase1-핵심(`calc`, `em`, parser 통합) | `cssValueParser.ts` + 통합 테스트 |
+| S2 | Phase2-핵심(`repeat`, `minmax`) + Grid 회귀 | Grid 파서 확장 + 벤치마크 케이스 |
+| S3 | Phase3(`inherit`, `var`) + Phase4-기초(baseline) | `cssResolver.ts` + 텍스트 정렬 개선 |
+| S4 | Phase5(transform/gradient) + Phase6(z-index/fixed) | 시각 효과/스태킹 정합성 패치 |
+
+각 Sprint는 "기능 + 테스트 + 성능 측정"을 한 묶음으로 머지한다.
 
 ---
 
@@ -724,6 +768,17 @@ const designTokensAsCSS: Map<string, string> = new Map([
 3. **Batch Invalidation:** 스타일 변경 시 dirty 마킹 후 RAF에서 일괄 재계산
 4. **WASM 임계값 유지:** children > 10일 때만 WASM 경로 사용
 
+### 9.2 관측 지표 대시보드 (추가)
+
+성능/정합성 지표는 아래 항목을 CI 리포트로 축적한다.
+
+| 지표 | 수집 지점 | 경고 임계값 |
+|------|-----------|-------------|
+| 레이아웃 평균 시간 | `LayoutEngine` 래퍼 `performance.measure()` | > 5ms |
+| 렌더 프레임 드랍율 | `GPUDebugOverlay` FPS 샘플링 | 55fps 미만 3초 지속 |
+| CSS 정합성 오차율 | 브라우저 vs 캔버스 좌표 비교 스크립트 | 오차 > ±1px 5% 초과 |
+| 번들 증가량 | build report | +20KB(gzip) 초과 |
+
 ---
 
 ## 10. Non-Goals (명시적 제외)
@@ -778,6 +833,16 @@ stories/
 // getBoundingClientRect() 결과와 ComputedLayout 결과를 비교
 // 허용 오차: ±1px (서브픽셀 반올림 차이)
 ```
+
+### 11.4 롤백 기준 (추가)
+
+아래 조건 중 하나라도 충족하면 해당 Phase 변경을 feature flag 뒤로 이동하거나 롤백한다.
+
+- 캔버스 FPS가 기준(60fps) 미만으로 지속 하락하고 1차 최적화 후에도 복구되지 않는 경우
+- 레이아웃 정합성 벤치마크에서 기존 대비 FAIL 케이스가 증가하는 경우
+- 핵심 편집 플로우(선택/드래그/리사이즈) 회귀가 발생하는 경우
+
+롤백은 "전체 되돌리기"보다 기능 단위 flag off를 우선 적용한다.
 
 ---
 
