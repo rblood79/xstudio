@@ -1070,7 +1070,8 @@ export const ElementSprite = memo(function ElementSprite({
 
             // 다중 줄 텍스트 paddingTop 보정: specShapesToSkia는 한 줄 lineHeight 기준으로
             // (height - lineHeight) / 2를 계산하지만, 다중 줄일 때는 wrappedHeight 기준으로 보정
-            if (cardCalculatedHeight && specNode.children) {
+            // 명시적 height(예: 100px)에서도 보정이 필요하므로 cardCalculatedHeight 조건 제거
+            if (specNode.children) {
               for (const child of specNode.children) {
                 if (child.type === 'text' && child.text) {
                   const wrappedH = measureWrappedTextHeight(

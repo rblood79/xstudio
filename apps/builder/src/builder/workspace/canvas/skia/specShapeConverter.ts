@@ -304,8 +304,8 @@ export function specShapesToSkia(
         // Calculate paddingTop based on baseline
         let paddingTop = shape.y;
         if (shape.baseline === 'middle') {
-          // 수직 중앙 정렬: (컨테이너 높이 - 폰트 크기) / 2
-          // fontSize 대신 lineHeight(≈fontSize * 1.2)를 사용하여 시각적 중앙에 더 가깝게 배치
+          // 수직 중앙 정렬: (컨테이너 높이 - 한 줄 높이) / 2
+          // 다중 줄 텍스트의 경우 ElementSprite에서 measureWrappedTextHeight 기반으로 보정
           const lineHeight = fontSize * 1.2;
           paddingTop = shape.y + (containerHeight - lineHeight) / 2;
         }
