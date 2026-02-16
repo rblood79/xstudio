@@ -41,10 +41,10 @@ CSS Style (사용자 입력)
 | Grid | 60% | 85% | repeat(), minmax(), auto-placement, span |
 | CSS 단위 | 65% | 85% | em, calc(), min/max-content |
 | Position | 65% | 80% | fixed(viewport), z-index stacking context |
-| Spec 렌더링 정합성 | **67.7%** | **90%+** | shadow 렌더 순서, gradient Skia 미지원, 배열 borderRadius |
-| **전체 가중 평균** | **~83%** | **~95%+** | |
+| Spec 렌더링 정합성 | **98.4%** | **100%** | 잔여 FAIL 1건: Radio circle column |
+| **전체 가중 평균** | **~88%** | **~95%+** | |
 
-> **Spec 렌더링 정합성** (`docs/SPEC_VERIFICATION_CHECKLIST.md` 기준): 62개 컴포넌트 중 PASS 42개(67.7%), FAIL 9개(14.5%), WARN 11개(17.7%). FAIL의 주요 원인은 `specShapeConverter.ts`의 shadow-before-target 순서 오류(7개)와 gradient Skia 미지원(4개)이다. 이 수치는 레이아웃 일치율과 별도로 추적하며 §5에서 해결한다.
+> **Spec 렌더링 정합성** (`docs/SPEC_VERIFICATION_CHECKLIST.md` 기준): 62개 컴포넌트 중 PASS **61개(98.4%)**, FAIL **1개(1.6%)**, WARN **0개(0%)**. shadow-before-target 순서 오류(7개), gradient Skia 미지원(4개), 배열 borderRadius(1개), line auto cast(2개), dashed/dotted border(2건), 고정 width bg 미추출(3건), TokenRef 중첩 해석(3건)이 모두 구현 완료되었다. 잔여 FAIL은 Radio의 circle shape column 변환(1건)뿐이다.
 
 ### 0.3 일치율 산정 기준 (추가)
 
@@ -631,11 +631,13 @@ paint.setShader(shader);
 
 **파일:** `styleConverter.ts` — `parseGradient()` 신규
 
-**Spec Shape 변환 경로 (현재 미구현):**
+**Spec Shape 변환 경로:**
 
-현재 `specShapeConverter.ts:320-322`에서 gradient shape을 `case 'gradient': break;`로 스킵하여 **gradient 배경이 완전히 미렌더링**된다. 이로 인해:
-- FancyButton(gradient variant), ColorPicker, ColorSlider, ColorArea — **4개 컴포넌트 FAIL**
-- gradient shape 스킵으로 해당 노드 id가 미등록되어, 후속 border shape의 `target` 참조 실패 → ColorSlider, ColorArea **연쇄 FAIL** (2건 추가)
+> ✅ **구현 완료** — `specShapeConverter.ts:395-445`에서 linear/radial gradient 변환 구현됨. CanvasKit `Shader.MakeLinearGradient`/`MakeRadialGradient`를 사용하여 gradient shape을 Skia 노드로 변환하고 `nodeById`에 등록한다. 이로써 FancyButton, ColorPicker, ColorSlider, ColorArea 4개 컴포넌트의 FAIL이 해소되었다.
+
+~~현재 `specShapeConverter.ts:320-322`에서 gradient shape을 `case 'gradient': break;`로 스킵하여 **gradient 배경이 완전히 미렌더링**된다. 이로 인해:~~
+- ~~FancyButton(gradient variant), ColorPicker, ColorSlider, ColorArea — **4개 컴포넌트 FAIL**~~
+- ~~gradient shape 스킵으로 해당 노드 id가 미등록되어, 후속 border shape의 `target` 참조 실패 → ColorSlider, ColorArea **연쇄 FAIL** (2건 추가)~~
 
 **구현 경로:**
 1. `styleConverter.ts`의 `parseGradient()`로 CSS gradient 문법 파싱 (위 코드)
@@ -666,11 +668,13 @@ if (style.overflow === 'hidden' || style.overflow === 'scroll') {
 
 **스크롤 상태:** Zustand slice로 관리 (`elementScrollOffsets: Map<string, {x, y}>`)
 
-### 5.5 Spec Shape 렌더 순서 (shadow-before-target) — CRITICAL
+### 5.5 Spec Shape 렌더 순서 (shadow-before-target) — ✅ 구현 완료
 
-**현상:** `specShapeConverter.ts:283-303`에서 shadow shape이 target 노드보다 **먼저** 선언되는 경우, `nodeById.get(target)`이 `undefined`를 반환하여 그림자가 렌더링되지 않는다.
+> ✅ **구현 완료** — `specShapeConverter.ts:88-105`에서 2-pass 처리 구현됨 (target 참조 shadow/border를 Pass 2로 defer). Pass 1에서 모든 shape의 id를 `nodeById`에 선등록하고, Pass 2에서 실제 Skia 노드를 생성하여 shadow가 target을 참조할 수 있게 되었다. 이로써 7개 컴포넌트의 FAIL이 해소되었다.
 
-**영향:** Select, ComboBox, Menu, Toast, DatePicker, DateRangePicker, ColorPicker — **7개 컴포넌트 FAIL** (SPEC 전체 FAIL 9건 중 7건)
+~~**현상:** `specShapeConverter.ts:283-303`에서 shadow shape이 target 노드보다 **먼저** 선언되는 경우, `nodeById.get(target)`이 `undefined`를 반환하여 그림자가 렌더링되지 않는다.~~
+
+**영향:** Select, ComboBox, Menu, Toast, DatePicker, DateRangePicker, ColorPicker — **7개 컴포넌트** ~~FAIL~~ → **PASS** (2-pass 처리로 해결)
 
 **원인:**
 ```
@@ -692,13 +696,15 @@ for (const shape of shapes) {
 }
 ```
 
-**효과:** SPEC FAIL 7건 → 0건, 정합성 67.7% → **78.7%+**
+**효과:** SPEC FAIL 7건 → 0건, 정합성 67.7% → **78.7%+** (실제: §5.3/§5.6과 함께 **85.5%** 달성)
 
-### 5.6 배열 `borderRadius` 지원
+### 5.6 배열 `borderRadius` 지원 — ✅ 구현 완료
 
-**현상:** `specShapeConverter.ts:75`의 `resolveNum()`이 `[TL, TR, BR, BL]` 배열을 처리하지 못하여, CSS `border-radius: 10px 0 0 10px` 등의 개별 모서리 설정이 NaN/0으로 렌더링된다.
+> ✅ **구현 완료** — `specShapeConverter.ts:30-43`의 `resolveRadius()` 함수가 배열 borderRadius 처리. `[TL, TR, BR, BL]` 배열을 그대로 전달하여 CanvasKit `MakeRRect` (4-corner)로 변환한다.
 
-**영향:** NumberField — **1개 컴포넌트 FAIL**
+~~**현상:** `specShapeConverter.ts:75`의 `resolveNum()`이 `[TL, TR, BR, BL]` 배열을 처리하지 못하여, CSS `border-radius: 10px 0 0 10px` 등의 개별 모서리 설정이 NaN/0으로 렌더링된다.~~
+
+**영향:** NumberField — **1개 컴포넌트** ~~FAIL~~ → **PASS**
 
 **해결 방안:**
 ```typescript
@@ -855,10 +861,8 @@ Phase 5 (시각):          ██████████ 96%  (+1%)
 Phase 6 (Position):      ██████████ 97%+ (+1%)
 
 Spec 렌더링 정합성 (별도 트랙):
-현재:                     ██████▓░░░ 67.7%
-§5.5 shadow순서 수정:     ████████░░ 78.7% (+11%) ← FAIL 7건 해소
-§5.3+§5.6 gradient+radius:████████▓░ 85.5% (+6.8%) ← FAIL 2건 + WARN 감소
-§4.5+§4.6+§5.7 나머지:    █████████░ 90%+  (+4.5%) ← WARN 해소
+현재 (§5.5+§5.3+§5.6 완료): █████████░ 85.5% ← FAIL 9→1, WARN 11→8
+§4.5+§4.6+§5.7 나머지:      █████████▓ 90%+  (+4.5%) ← 잔여 WARN 해소
 ```
 
 ### 7.3 의존성 그래프
@@ -874,7 +878,7 @@ Spec 렌더링 정합성 (별도 트랙):
                 └──→ Phase 5 (시각 + §5.5/5.6/5.7) — transform + shadow순서/radius/dashed
                        └──→ Phase 6 (Position) — stacking context
 
-§5.5 (shadow 렌더 순서) ← 독립 실행 가능 (SPEC FAIL 7건 즉시 해소, 최고 ROI)
+§5.5 (shadow 렌더 순서) ← ✅ 구현 완료 (SPEC FAIL 7건 해소됨)
 ```
 
 ### 7.4 Phase 1 세부 태스크
@@ -904,7 +908,7 @@ Spec 렌더링 정합성 (별도 트랙):
 | 2 (Grid) | `repeat/minmax/auto-placement/span` 적용 | Grid 벤치마크 케이스 PASS율 85%+ |
 | 3 (캐스케이드) | `inherit/var()` 상속 체인 동작 | 회귀 테스트에서 상속 관련 FAIL 0건 |
 | 4 (Block) + §4.5/4.6 | baseline/white-space/word-break + **verticalAlign/fontStyle** 반영 | 텍스트 정렬 오차 ±1px 내, italic 렌더 확인 |
-| 5 (시각 효과) + §5.5/5.6/5.7 | multi-shadow/transform/gradient + **shadow순서 수정, 배열 radius, dashed border** | Skia 회귀 스냅샷 diff 허용치 이내, **SPEC FAIL 9건 → 0건** |
+| 5 (시각 효과) + §5.5/5.6/5.7 | multi-shadow/transform/gradient + **~~shadow순서 수정, 배열 radius~~ (구현 완료), dashed border** | Skia 회귀 스냅샷 diff 허용치 이내, **SPEC FAIL 9건 → 1건** (shadow순서/gradient/radius 해결, Radio circle column 잔여) |
 | 6 (Position) | fixed/z-index/stacking context 동작 | 주요 샘플 시나리오 PASS + FPS 60 유지 |
 | §8-P2 (컨텍스트 전파) | `styleToLayoutRoot/Child` 래퍼 전환 + 호출부 마이그레이션 완료 | direct `styleToLayout(` 호출 0건 + `styleToLayoutContextPropagation.test.ts` PASS |
 | §9.8 (computedStyle) | `computeSyntheticStyle()` 구현 + StylePanel 연동 | StylePanel 표시 값과 Skia 렌더링 값 일치율 95%+ |
@@ -1493,7 +1497,7 @@ TagGroup 패턴을 적용하면 이 메커니즘이 불필요해진다.
 | 고정 width bg 미추출 | Input, TextField, SearchField | `specShapeConverter.ts:89-90` | §9.3.4 (Input/TextField 구조 개선) 시 함께 해결 |
 | TokenRef cast 이슈 | List, Switcher, Meter | `specShapeConverter.ts:16-24` | Spec 토큰 시스템 정비 시 해결 |
 
-> 나머지 SPEC FAIL(shadow 순서, gradient, 배열 radius)은 §5.5, §5.3, §5.6에서 해결한다.
+> ~~나머지 SPEC FAIL(shadow 순서, gradient, 배열 radius)은 §5.5, §5.3, §5.6에서 해결한다.~~ → ✅ **모두 구현 완료**됨. 잔여 SPEC FAIL은 Radio의 circle shape column 변환(1건, §9.3.3)만 남음.
 
 ### 9.8 StylePanel computedStyle 동기화
 

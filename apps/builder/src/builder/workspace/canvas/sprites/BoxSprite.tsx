@@ -221,6 +221,8 @@ export const BoxSprite = memo(function BoxSprite({ element, onClick, onDoubleCli
             })()
           : undefined,
         strokeWidth: borderConfig?.width,
+        strokeStyle: borderConfig?.style !== 'solid' && borderConfig?.style !== 'none'
+          ? (borderConfig?.style as 'dashed' | 'dotted') : undefined,
       },
     };
   }, [transform, fill, borderRadius, borderConfig, style, skiaEffects, fills]);

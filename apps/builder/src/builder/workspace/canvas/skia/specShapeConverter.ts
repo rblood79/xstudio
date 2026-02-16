@@ -13,10 +13,15 @@ import { resolveColor, resolveToken, hexStringToNumber } from '@xstudio/specs';
 // ========== Helpers ==========
 
 /** Resolve a value that might be a TokenRef string to a number */
-function resolveNum(value: unknown, theme: 'light' | 'dark', fallback: number = 0): number {
+function resolveNum(value: unknown, theme: 'light' | 'dark', fallback: number = 0, depth: number = 0): number {
+  if (depth > 5) return fallback;
   if (typeof value === 'number') return value;
   if (typeof value === 'string' && value.startsWith('{')) {
     const resolved = resolveToken(value as Parameters<typeof resolveToken>[0], theme);
+    // 중첩 TokenRef 재귀 해석 (e.g. {spacing.md} → {sizing.4} → 16)
+    if (typeof resolved === 'string' && resolved.startsWith('{')) {
+      return resolveNum(resolved, theme, fallback, depth + 1);
+    }
     return typeof resolved === 'number' ? resolved : (parseFloat(String(resolved)) || fallback);
   }
   if (typeof value === 'string') return parseFloat(value) || fallback;
@@ -137,10 +142,14 @@ export function specShapesToSkia(
           box: { fillColor, borderRadius: radius },
         };
 
-        // First rect/roundRect at origin with 'auto' dimensions = component background
+        // First rect/roundRect at origin = component background
+        // 'auto' 또는 containerWidth의 90% 이상이면 full-width 배경으로 추출
         // Fixed-size shapes at origin (e.g., checkbox indicator 20x20) should NOT be extracted as bg
+        const isFullWidthRR = shape.width === 'auto'
+          || (typeof shape.width === 'number' && shape.width >= containerWidth * 0.9);
+        const isFullHeightRR = shape.height === 'auto' || shape.height === containerHeight;
         if (!bgExtracted && shape.x === 0 && shape.y === 0
-            && shape.width === 'auto' && shape.height === 'auto') {
+            && isFullWidthRR && isFullHeightRR) {
           bgBox = node.box;
           bgExtracted = true;
         } else {
@@ -169,8 +178,11 @@ export function specShapesToSkia(
           box: { fillColor, borderRadius: 0 },
         };
 
+        const isFullWidthR = shape.width === 'auto'
+          || (typeof shape.width === 'number' && shape.width >= containerWidth * 0.9);
+        const isFullHeightR = shape.height === 'auto' || shape.height === containerHeight;
         if (!bgExtracted && shape.x === 0 && shape.y === 0
-            && shape.width === 'auto' && shape.height === 'auto') {
+            && isFullWidthR && isFullHeightR) {
           bgBox = node.box;
           bgExtracted = true;
         } else {
@@ -431,8 +443,11 @@ export function specShapesToSkia(
         };
 
         // Gradient can also be a background (same logic as roundRect/rect)
+        const isFullWidthG = shape.width === 'auto'
+          || (typeof shape.width === 'number' && shape.width >= containerWidth * 0.9);
+        const isFullHeightG = shape.height === 'auto' || shape.height === containerHeight;
         if (!bgExtracted && shape.x === 0 && shape.y === 0
-            && shape.width === 'auto' && shape.height === 'auto') {
+            && isFullWidthG && isFullHeightG) {
           bgBox = node.box;
           bgExtracted = true;
         } else {

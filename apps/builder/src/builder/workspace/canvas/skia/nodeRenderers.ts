@@ -104,6 +104,7 @@ export interface SkiaNodeData {
     borderRadius: number | [number, number, number, number];
     strokeColor?: Float32Array;
     strokeWidth?: number;
+    strokeStyle?: 'solid' | 'dashed' | 'dotted';
   };
   /** Text 전용 */
   text?: {
@@ -437,6 +438,19 @@ function renderBox(ck: CanvasKit, canvas: Canvas, node: SkiaNodeData): void {
       paint.setStrokeWidth(sw);
       paint.setColor(node.box.strokeColor);
 
+      // dashed/dotted border 지원 (CanvasKit PathEffect)
+      let dashEffect: ReturnType<typeof ck.PathEffect.MakeDash> | null = null;
+      if (node.box.strokeStyle === 'dashed') {
+        const dashLen = Math.max(sw * 3, 4);
+        const gapLen = Math.max(sw * 2, 3);
+        dashEffect = ck.PathEffect.MakeDash([dashLen, gapLen]);
+        paint.setPathEffect(dashEffect);
+      } else if (node.box.strokeStyle === 'dotted') {
+        dashEffect = ck.PathEffect.MakeDash([sw, sw * 1.5]);
+        paint.setPathEffect(dashEffect);
+        paint.setStrokeCap(ck.StrokeCap.Round);
+      }
+
       const strokeRect = ck.LTRBRect(inset, inset, node.width - inset, node.height - inset);
       if (hasRadius) {
         if (isArrayRadius) {
@@ -457,6 +471,12 @@ function renderBox(ck: CanvasKit, canvas: Canvas, node: SkiaNodeData): void {
         }
       } else {
         canvas.drawRect(strokeRect, paint);
+      }
+
+      // PathEffect 정리
+      if (dashEffect) {
+        paint.setPathEffect(null);
+        dashEffect.delete();
       }
     }
   } finally {

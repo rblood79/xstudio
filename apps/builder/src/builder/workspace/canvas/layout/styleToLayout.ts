@@ -621,8 +621,9 @@ export function styleToLayout(
     const paddingY = toNum(style.paddingTop) ?? toNum(style.padding) ?? bp.py;
     const borderW = toNum(style.borderWidth) ?? 1;
     const lineHeight = fontSize * 1.2;
-    // 기본 높이: paddingY * 2 + lineHeight + border * 2 (한 줄 텍스트)
-    layout.height = paddingY * 2 + lineHeight + borderW * 2;
+    // 기본 최소 높이: paddingY * 2 + lineHeight + border * 2 (한 줄 텍스트)
+    // height 대신 minHeight를 사용하여 부모 align-items: stretch 시 cross-axis 확장 허용
+    layout.minHeight = paddingY * 2 + lineHeight + borderW * 2;
 
     // 고정 width가 있으면 텍스트 줄바꿈 높이를 측정하여 minHeight로 Yoga에 전달
     if (typeof width === 'number' && width > 0) {
@@ -635,7 +636,7 @@ export function styleToLayout(
           if (wrappedH > lineHeight + 0.5) {
             // 다중 줄: paddingY * 2 + wrappedHeight + border
             const totalHeight = paddingY * 2 + wrappedH + borderW * 2;
-            layout.minHeight = totalHeight;
+            layout.minHeight = Math.max(layout.minHeight ?? 0, totalHeight);
           }
         }
       }

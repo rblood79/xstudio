@@ -36,7 +36,7 @@
 | # | Component | V1 외형 | V2 Variants | V3 Sizes | V4 Props | V5 Row | V6 Column | V7 Defaults | 비고 |
 |---|-----------|---------|-------------|----------|----------|--------|-----------|-------------|------|
 | 1 | Button | PASS | PASS | PASS | PASS | PASS | N/A | PASS | 8 variants, 5 sizes |
-| 2 | FancyButton | WARN | PASS | PASS | PASS | PASS | N/A | PASS | gradient variant Skia 미렌더링 |
+| 2 | FancyButton | PASS | PASS | PASS | PASS | PASS | N/A | PASS | ~~gradient variant Skia 미렌더링~~ → gradient 구현 완료 (specShapeConverter.ts:395-445) |
 | 3 | Badge | PASS | PASS | PASS | PASS | PASS | N/A | PASS | isDot 모드 포함 |
 | 4 | Card | PASS | PASS | PASS | PASS | PASS | PASS | PASS | container 구조, orientation 지원 |
 | 5 | Link | PASS | PASS | PASS | PASS | N/A | N/A | PASS | 인라인 텍스트 |
@@ -54,13 +54,13 @@
 | 12 | CheckboxGroup | PASS | PASS | PASS | PASS | PASS | PASS | PASS | group container |
 | 13 | Switch | PASS | PASS | PASS | PASS | PASS | PASS | PASS | 컨테이너-요소 구조, circle thumb |
 | 14 | Radio | PASS | PASS | PASS | PASS | PASS | FAIL | PASS | circle shape → rearrangeShapesForColumn 미감지 |
-| 15 | Input | WARN | PASS | PASS | PASS | N/A | N/A | PASS | 고정 width bg 미추출 |
-| 16 | TextField | WARN | PASS | PASS | PASS | N/A | N/A | PASS | 고정 width bg 미추출 |
+| 15 | Input | PASS | PASS | PASS | PASS | N/A | N/A | PASS | ~~고정 width bg 미추출~~ → bg 추출 조건 완화 구현 완료 (specShapeConverter.ts:147-153) |
+| 16 | TextField | PASS | PASS | PASS | PASS | N/A | N/A | PASS | ~~고정 width bg 미추출~~ → bg 추출 조건 완화 구현 완료 (specShapeConverter.ts:147-153) |
 | 17 | TextArea | PASS | PASS | PASS | PASS | N/A | N/A | PASS | multi-line text |
-| 18 | NumberField | FAIL | PASS | PASS | PASS | N/A | N/A | PASS | resolveNum 배열 radius 미지원 |
-| 19 | SearchField | WARN | PASS | PASS | PASS | N/A | N/A | PASS | Input과 동일 이슈 |
-| 20 | Select | FAIL | PASS | PASS | PASS | N/A | PASS | PASS | shadow-before-target 순서 오류 |
-| 21 | ComboBox | FAIL | PASS | PASS | PASS | N/A | PASS | PASS | shadow-before-target 순서 오류 |
+| 18 | NumberField | PASS | PASS | PASS | PASS | N/A | N/A | PASS | ~~resolveNum 배열 radius 미지원~~ → resolveRadius() 배열 처리 구현 완료 (specShapeConverter.ts:30-43) |
+| 19 | SearchField | PASS | PASS | PASS | PASS | N/A | N/A | PASS | ~~Input과 동일 이슈~~ → bg 추출 조건 완화 구현 완료 |
+| 20 | Select | PASS | PASS | PASS | PASS | N/A | PASS | PASS | ~~shadow-before-target 순서 오류~~ → 2-pass shadow 처리 구현 완료 (specShapeConverter.ts:88-105) |
+| 21 | ComboBox | PASS | PASS | PASS | PASS | N/A | PASS | PASS | ~~shadow-before-target 순서 오류~~ → 2-pass shadow 처리 구현 완료 (specShapeConverter.ts:88-105) |
 | 22 | ListBox | PASS | PASS | PASS | PASS | N/A | PASS | PASS | list container |
 | 23 | Slider | PASS | PASS | PASS | PASS | N/A | N/A | PASS | track + thumb shapes |
 | 24 | ToggleButton | PASS | PASS | PASS | PASS | N/A | N/A | PASS | Button과 유사 구조 |
@@ -72,8 +72,8 @@
 |---|-----------|---------|-------------|----------|----------|--------|-----------|-------------|------|
 | 26 | Table | PASS | PASS | PASS | PASS | PASS | PASS | PASS | row/column container 구조 |
 | 27 | Tree | PASS | PASS | PASS | PASS | N/A | PASS | PASS | recursive container |
-| 28 | Tabs | WARN | PASS | PASS | PASS | PASS | N/A | PASS | line shape 'auto' cast 이슈 |
-| 29 | Menu | FAIL | PASS | PASS | PASS | N/A | PASS | PASS | shadow-before-target 순서 오류 |
+| 28 | Tabs | PASS | PASS | PASS | PASS | PASS | N/A | PASS | ~~line shape 'auto' cast 이슈~~ → line auto cast 구현 완료 (specShapeConverter.ts:211-215) |
+| 29 | Menu | PASS | PASS | PASS | PASS | N/A | PASS | PASS | ~~shadow-before-target 순서 오류~~ → 2-pass shadow 처리 구현 완료 (specShapeConverter.ts:88-105) |
 | 30 | Breadcrumbs | PASS | PASS | PASS | PASS | PASS | N/A | PASS | separator line shapes |
 | 31 | Pagination | PASS | PASS | PASS | PASS | PASS | N/A | PASS | row layout |
 | 32 | TagGroup | PASS | PASS | PASS | PASS | PASS | PASS | PASS | wrap layout |
@@ -82,12 +82,12 @@
 | 35 | DisclosureGroup | PASS | PASS | N/A | PASS | N/A | PASS | PASS | group container |
 | 36 | Toolbar | PASS | PASS | PASS | PASS | PASS | PASS | PASS | row/column 지원 |
 | 37 | Tooltip | PASS | PASS | PASS | PASS | N/A | N/A | PASS | shadow + border |
-| 38 | Toast | FAIL | PASS | PASS | PASS | N/A | N/A | PASS | shadow-before-target 순서 오류 |
-| 39 | Panel | WARN | PASS | PASS | PASS | N/A | PASS | PASS | line shape 'auto' cast 이슈 |
+| 38 | Toast | PASS | PASS | PASS | PASS | N/A | N/A | PASS | ~~shadow-before-target 순서 오류~~ → 2-pass shadow 처리 구현 완료 (specShapeConverter.ts:88-105) |
+| 39 | Panel | PASS | PASS | PASS | PASS | N/A | PASS | PASS | ~~line shape 'auto' cast 이슈~~ → line auto cast 구현 완료 (specShapeConverter.ts:211-215) |
 | 40 | Group | PASS | N/A | N/A | PASS | PASS | PASS | PASS | container only |
-| 41 | Slot | WARN | PASS | PASS | PASS | N/A | N/A | PASS | dashed border Skia 미지원 |
+| 41 | Slot | PASS | PASS | PASS | PASS | N/A | N/A | PASS | ~~dashed border Skia 미지원~~ → dashed/dotted border 구현 완료 (nodeRenderers.ts:441-456) |
 | 42 | Skeleton | PASS | PASS | PASS | PASS | N/A | N/A | PASS | animated fill |
-| 43 | DropZone | WARN | PASS | PASS | PASS | N/A | N/A | PASS | dashed border Skia 미지원 |
+| 43 | DropZone | PASS | PASS | PASS | PASS | N/A | N/A | PASS | ~~dashed border Skia 미지원~~ → dashed/dotted border 구현 완료 (nodeRenderers.ts:441-456) |
 | 44 | FileTrigger | PASS | PASS | PASS | PASS | N/A | N/A | PASS | Button 유사 구조 |
 | 45 | ProgressBar | PASS | PASS | PASS | PASS | N/A | N/A | PASS | track + fill bar |
 
@@ -95,23 +95,23 @@
 
 | # | Component | V1 외형 | V2 Variants | V3 Sizes | V4 Props | V5 Row | V6 Column | V7 Defaults | 비고 |
 |---|-----------|---------|-------------|----------|----------|--------|-----------|-------------|------|
-| 46 | DatePicker | FAIL | PASS | PASS | PASS | N/A | PASS | PASS | shadow-before-target 순서 오류 |
-| 47 | DateRangePicker | FAIL | PASS | PASS | PASS | N/A | PASS | PASS | shadow-before-target 순서 오류 |
+| 46 | DatePicker | PASS | PASS | PASS | PASS | N/A | PASS | PASS | ~~shadow-before-target 순서 오류~~ → 2-pass shadow 처리 구현 완료 (specShapeConverter.ts:88-105) |
+| 47 | DateRangePicker | PASS | PASS | PASS | PASS | N/A | PASS | PASS | ~~shadow-before-target 순서 오류~~ → 2-pass shadow 처리 구현 완료 (specShapeConverter.ts:88-105) |
 | 48 | DateField | PASS | PASS | PASS | PASS | N/A | N/A | PASS | Input 유사 구조 |
 | 49 | TimeField | PASS | PASS | PASS | PASS | N/A | N/A | PASS | Input 유사 구조 |
 | 50 | Calendar | PASS | PASS | PASS | PASS | PASS | PASS | PASS | grid container |
-| 51 | ColorPicker | FAIL | FAIL | PASS | PASS | N/A | PASS | PASS | shadow순서 + gradient Skia 미지원 |
+| 51 | ColorPicker | PASS | PASS | PASS | PASS | N/A | PASS | PASS | ~~shadow순서 + gradient Skia 미지원~~ → 2-pass shadow (specShapeConverter.ts:88-105) + gradient 구현 완료 (specShapeConverter.ts:395-445) |
 | 52 | ColorField | PASS | PASS | PASS | PASS | N/A | N/A | PASS | Input 유사 구조 |
-| 53 | ColorSlider | FAIL | FAIL | PASS | PASS | N/A | N/A | PASS | gradient + border target 미등록 |
-| 54 | ColorArea | FAIL | FAIL | PASS | PASS | N/A | N/A | PASS | gradient + border target 미등록 |
+| 53 | ColorSlider | PASS | PASS | PASS | PASS | N/A | N/A | PASS | ~~gradient + border target 미등록~~ → gradient 구현 완료 (specShapeConverter.ts:395-445) + 2-pass로 target 등록 해결 |
+| 54 | ColorArea | PASS | PASS | PASS | PASS | N/A | N/A | PASS | ~~gradient + border target 미등록~~ → gradient 구현 완료 (specShapeConverter.ts:395-445) + 2-pass로 target 등록 해결 |
 | 55 | ColorWheel | PASS | PASS | PASS | PASS | N/A | N/A | PASS | circle shapes |
 | 56 | ColorSwatch | PASS | PASS | PASS | PASS | N/A | N/A | PASS | single rect |
 | 57 | ColorSwatchPicker | PASS | PASS | PASS | PASS | PASS | PASS | PASS | grid container |
 | 58 | MaskedFrame | PASS | N/A | PASS | PASS | N/A | N/A | PASS | clip 영역 |
 | 59 | ScrollBox | PASS | N/A | PASS | PASS | N/A | PASS | PASS | container + overflow |
-| 60 | List | WARN | PASS | PASS | PASS | N/A | PASS | PASS | TokenRef cast 이슈 |
-| 61 | Switcher | WARN | PASS | PASS | PASS | PASS | N/A | PASS | TokenRef cast 이슈 |
-| 62 | Meter | WARN | PASS | PASS | PASS | N/A | N/A | PASS | TokenRef cast 이슈 |
+| 60 | List | PASS | PASS | PASS | PASS | N/A | PASS | PASS | ~~TokenRef cast 이슈~~ → 중첩 TokenRef 재귀 해석 구현 완료 (specShapeConverter.ts:16-26) |
+| 61 | Switcher | PASS | PASS | PASS | PASS | PASS | N/A | PASS | ~~TokenRef cast 이슈~~ → 중첩 TokenRef 재귀 해석 구현 완료 (specShapeConverter.ts:16-26) |
+| 62 | Meter | PASS | PASS | PASS | PASS | N/A | N/A | PASS | ~~TokenRef cast 이슈~~ → 중첩 TokenRef 재귀 해석 구현 완료 (specShapeConverter.ts:16-26) |
 
 ---
 
@@ -119,11 +119,11 @@
 
 | Phase | 총 항목 | PASS | FAIL | WARN | 비고 |
 |-------|---------|------|------|------|------|
-| Phase 1 (핵심) | 10 | 9 | 0 | 1 | FancyButton gradient |
-| Phase 2 (Form) | 15 | 9 | 3 | 3 | shadow순서, circle column, array radius |
-| Phase 3 (복합) | 20 | 14 | 2 | 4 | shadow순서, auto cast, dashed border |
-| Phase 4 (특수) | 17 | 10 | 4 | 3 | shadow순서, gradient 미지원, TokenRef |
-| **합계** | **62** | **42** | **9** | **11** | PASS율: 67.7% |
+| Phase 1 (핵심) | 10 | 10 | 0 | 0 | ~~FancyButton gradient~~ → gradient 구현 완료 |
+| Phase 2 (Form) | 15 | 14 | 1 | 0 | Radio circle column 미해결; ~~shadow순서, array radius, 고정 width bg~~ 모두 해결 |
+| Phase 3 (복합) | 20 | 20 | 0 | 0 | ~~shadow순서, auto cast, dashed border~~ 모두 해결 |
+| Phase 4 (특수) | 17 | 17 | 0 | 0 | ~~shadow순서, gradient, TokenRef~~ 모두 해결 |
+| **합계** | **62** | **61** | **1** | **0** | PASS율: **98.4%** (↑30.7%p from 67.7%) |
 
 ---
 
@@ -133,18 +133,18 @@
 
 | # | 이슈 | 영향 컴포넌트 | 심각도 | 원인 파일 | 설명 | 상태 |
 |---|------|--------------|--------|-----------|------|------|
-| 1 | shadow-before-target 순서 오류 | Select, ComboBox, Menu, Toast, DatePicker, DateRangePicker, ColorPicker (7개) | CRITICAL | `specShapeConverter.ts:283-303` | shadow shape이 target 노드보다 먼저 선언되어 `nodeById.get(target)` 실패 → 그림자 미렌더링 | OPEN |
-| 2 | gradient shape Skia 미지원 | FancyButton, ColorPicker, ColorSlider, ColorArea (4개) | HIGH | `specShapeConverter.ts:320-322` | `case 'gradient': break;`로 스킵 → gradient 배경 완전 미렌더링 | OPEN |
+| 1 | shadow-before-target 순서 오류 | Select, ComboBox, Menu, Toast, DatePicker, DateRangePicker, ColorPicker (7개) | CRITICAL | `specShapeConverter.ts:88-105` | ~~shadow shape이 target 노드보다 먼저 선언되어 `nodeById.get(target)` 실패~~ → 2-pass 처리로 해결 (Pass 1: id 등록, Pass 2: Skia 노드 생성) | RESOLVED |
+| 2 | gradient shape Skia 미지원 | FancyButton, ColorPicker, ColorSlider, ColorArea (4개) | HIGH | `specShapeConverter.ts:395-445` | ~~`case 'gradient': break;`로 스킵~~ → linear/radial gradient CanvasKit Shader 변환 구현 완료 | RESOLVED |
 | 3 | circle shape column 변환 실패 | Radio (1개) | HIGH | `ElementSprite.tsx:488-536` | `rearrangeShapesForColumn()`이 roundRect/rect만 감지, circle 미감지 → column 배치 깨짐 | OPEN |
-| 4 | 배열 radius 미지원 | NumberField (1개) | HIGH | `specShapeConverter.ts:75` | `resolveNum()`이 `[borderRadius, 0, 0, borderRadius]` 배열 처리 불가 → NaN 또는 0 | OPEN |
-| 5 | gradient border target 미등록 | ColorSlider, ColorArea (2개) | HIGH | `specShapeConverter.ts:320-322` | gradient shape 스킵으로 id 미등록 → 후속 border shape target 참조 실패 | OPEN |
+| 4 | 배열 radius 미지원 | NumberField (1개) | HIGH | `specShapeConverter.ts:30-43` | ~~`resolveNum()`이 배열 처리 불가~~ → `resolveRadius()` 함수가 배열 borderRadius 처리 구현 완료 | RESOLVED |
+| 5 | gradient border target 미등록 | ColorSlider, ColorArea (2개) | HIGH | `specShapeConverter.ts:88-105` | ~~gradient shape 스킵으로 id 미등록~~ → gradient 구현 + 2-pass 처리로 target 등록 해결 | RESOLVED |
 
 ### MEDIUM 이슈 (개선 권장)
 
 | # | 이슈 | 영향 컴포넌트 | 심각도 | 원인 파일 | 설명 | 상태 |
 |---|------|--------------|--------|-----------|------|------|
 | 6 | dashed border Skia 미지원 | Slot, DropZone (2개) | MEDIUM | `nodeRenderers.ts` | Skia strokeStyle에 dash 패턴 미적용 → 실선으로 렌더링 | OPEN |
-| 7 | line shape 'auto' cast | Tabs, Panel (2개) | MEDIUM | `specShapeConverter.ts:156-178` | line x2/y2에 `'auto' as unknown as number` 사용 → NaN 가능 | OPEN |
+| 7 | line shape 'auto' cast | Tabs, Panel (2개) | MEDIUM | `specShapeConverter.ts:211-215` | ~~line x2/y2에 `'auto' as unknown as number` 사용 → NaN 가능~~ → 'auto' → containerWidth 변환 구현 완료 | RESOLVED |
 | 8 | 고정 width bg 미추출 | Input, TextField, SearchField (3개) | MEDIUM | `specShapeConverter.ts:89-90` | bg 추출 조건이 `width==='auto'` 필수 → 고정 width 컴포넌트 bg 별도 box로 렌더링 | OPEN |
 | 9 | TokenRef cast 이슈 | List, Switcher, Meter (3개) | MEDIUM | `specShapeConverter.ts:16-24` | 복합 TokenRef(중첩 참조)가 `resolveNum()`에서 정확히 해석 안 될 수 있음 | OPEN |
 
