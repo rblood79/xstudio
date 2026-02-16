@@ -626,24 +626,28 @@ renderNode(node):
 ### 7.2 Phase별 예상 일치율 변화
 
 ```
-Phase 0 (현재):    ████████░░ 83%
-Phase 1 (값 파서): █████████░ 88%  (+5%)
-Phase 2 (Grid):    █████████░ 90%  (+2%)
-Phase 3 (캐스케이드): █████████░ 91%  (+1%)
-Phase 4 (Block):   █████████▓ 93%  (+2%)
-Phase 5 (시각):    █████████▓ 95%  (+2%)
-Phase 6 (Position): ██████████ 95%+ (+1%)
+Phase 0 (현재):          ████████░░ 83%
+§12 (구조적 문제):       █████████░ 87%  (+4%) ← P1/P2/P3 수정
+§13 (컴포넌트 구조):     █████████░ 89%  (+2%) ← CSS-web 구조 미러링
+Phase 1 (값 파서):       █████████▓ 92%  (+3%)
+Phase 2 (Grid):          █████████▓ 93%  (+1%)
+Phase 3 (캐스케이드):    █████████▓ 94%  (+1%)
+Phase 4 (Block):         █████████▓ 95%  (+1%)
+Phase 5 (시각):          ██████████ 96%  (+1%)
+Phase 6 (Position):      ██████████ 97%+ (+1%)
 ```
 
 ### 7.3 의존성 그래프
 
 ```
-Phase 1 (CSS 값 파서)
-  ├──→ Phase 2 (Grid) — calc()와 minmax() 파서 공유
-  ├──→ Phase 3 (캐스케이드) — em 해석에 fontSize 상속 필요
-  └──→ Phase 4 (Block) — min-content/max-content 계산
-         └──→ Phase 5 (시각) — transform 파서
-                └──→ Phase 6 (Position) — stacking context
+§12 (구조적 문제 P1/P2/P3) ← 최우선, 독립 실행 가능
+  └──→ §13 (컴포넌트 CSS-web 구조) — P1/P2/P3 수정 후 적용
+         └──→ Phase 1 (CSS 값 파서) — 컴포넌트 구조 안정화 후
+               ├──→ Phase 2 (Grid) — calc()와 minmax() 파서 공유
+               ├──→ Phase 3 (캐스케이드) — em 해석에 fontSize 상속 필요
+               └──→ Phase 4 (Block) — min-content/max-content 계산
+                      └──→ Phase 5 (시각) — transform 파서
+                             └──→ Phase 6 (Position) — stacking context
 ```
 
 ### 7.4 Phase 1 세부 태스크
@@ -843,6 +847,426 @@ stories/
 - 핵심 편집 플로우(선택/드래그/리사이즈) 회귀가 발생하는 경우
 
 롤백은 "전체 되돌리기"보다 기능 단위 flag off를 우선 적용한다.
+
+---
+
+## 12. 구조적 문제 분석 및 해결 방안 (Self-Rendering 컴포넌트)
+
+> **배경:** Button(width:100px, height:auto)에서 텍스트 오버플로 시 높이 자동 조절이 부모의 display, flex-direction, align-items 등에 따라 CSS와 다르게 동작하는 문제 발견
+
+### 12.1 문제 정의
+
+Self-Rendering 컴포넌트(Button, Card, ToggleButton 등)는 `SELF_PADDING_TAGS`로 지정되어 `stripSelfRenderedProps()`가 padding/border를 Yoga에서 제거한다. 이로 인해 Yoga가 정확한 크기 정보를 잃고, CSS와 다른 레이아웃 결과를 생성한다.
+
+### 12.2 P1 — CRITICAL: `layout.height` 고정값 설정
+
+**위치:** `styleToLayout.ts:602-643`
+
+**현상:**
+```typescript
+// 현재 코드 (styleToLayout.ts:625)
+layout.height = paddingY * 2 + lineHeight + borderW * 2;
+```
+
+self-rendering 버튼 태그에 대해 `layout.height`를 고정 px로 설정한다.
+이로 인해 Yoga의 `align-items: stretch`가 무시되어 부모 flex 컨테이너에서 cross-axis 늘리기가 동작하지 않는다.
+
+**CSS 동작 vs 현재 동작:**
+
+| 시나리오 | CSS 기대값 | 현재 엔진 결과 | 원인 |
+|----------|-----------|--------------|------|
+| 부모 `flex-direction:row` + `align-items:stretch` | 부모 높이만큼 늘어남 | 고정 높이 유지 | `layout.height = fixed` |
+| 부모 `flex-direction:column` + 텍스트 overflow | 텍스트 wrap 높이로 자동 성장 | 1줄 높이 고정 | `layout.height = fixed` |
+| `height: auto` + 긴 텍스트 | content 높이 자동 조절 | 1줄 높이로 잘림 | height 고정 선점 |
+
+**해결 방안:**
+
+```typescript
+// 수정안: layout.height 대신 layout.minHeight 사용
+// layout.height = paddingY * 2 + lineHeight + borderW * 2;  // ❌ 삭제
+layout.minHeight = paddingY * 2 + lineHeight + borderW * 2;   // ✅ 최소 높이로 변경
+
+// height:auto일 때는 Yoga가 자유롭게 높이를 결정하도록 함
+if (style.height && style.height !== 'auto') {
+  layout.height = parseCSSValue(style.height, parentHeight);
+}
+```
+
+**효과:** Yoga가 `align-items: stretch`와 `flex-grow`에 따라 높이를 자유롭게 계산할 수 있게 됨
+
+### 12.3 P2 — HIGH: fit-content 워크어라운드가 stretch 차단
+
+**위치:** `styleToLayout.ts:297-301`
+
+**현상:**
+```typescript
+// 현재 코드
+if (effectiveWidth === FIT_CONTENT) {
+  layout.flexGrow = 0;
+  layout.flexShrink = 0;
+}
+```
+
+`width: fit-content` (sentinel -2)일 때 `flexGrow=0, flexShrink=0`을 설정한다.
+이는 `flex-direction: column`인 부모에서 cross-axis(width)가 stretch되지 않는 문제를 발생시킨다.
+
+**CSS 동작 vs 현재 동작:**
+
+| 시나리오 | CSS 기대값 | 현재 엔진 결과 | 원인 |
+|----------|-----------|--------------|------|
+| 부모 `flex-direction:column` + `align-items:stretch` | width가 부모 너비로 늘어남 | fit-content 너비 유지 | `flexGrow=0` |
+| 부모 `flex-direction:row` + fit-content width | 콘텐츠 너비 유지 (올바름) | 콘텐츠 너비 유지 | 정상 동작 |
+
+**해결 방안:**
+
+```typescript
+// 수정안: 부모의 flex-direction에 따라 조건부 적용
+if (effectiveWidth === FIT_CONTENT) {
+  // main-axis 방향에서만 grow/shrink 제한
+  // cross-axis에서는 stretch가 동작하도록 허용
+  const parentFlexDir = parentStyle?.flexDirection || 'row';
+  if (parentFlexDir === 'row' || parentFlexDir === 'row-reverse') {
+    // 가로 주축: width가 main-axis이므로 grow/shrink 제한 유지
+    layout.flexGrow = 0;
+    layout.flexShrink = 0;
+  }
+  // 세로 주축(column): width가 cross-axis이므로 제한하지 않음
+  // → align-items: stretch가 정상 동작
+}
+```
+
+### 12.4 P3 — HIGH: Yoga measureFunc 미설정
+
+**현상:**
+
+Yoga는 `measureFunc`를 통해 leaf 노드의 intrinsic 크기를 동적으로 계산한다.
+현재 self-rendering 컴포넌트에 measureFunc가 설정되지 않아, Yoga가 부모 크기 변경 시 자식의 텍스트 wrap 높이를 재계산하지 못한다.
+
+**CSS에서 일어나는 일:**
+```
+부모 width 변경 → 브라우저 reflow → 버튼 width 재계산 → 텍스트 wrap 발생 → height 자동 증가
+```
+
+**현재 엔진에서 일어나는 일:**
+```
+부모 width 변경 → Yoga layout 재계산 → 버튼 width는 업데이트됨
+→ 하지만 텍스트 wrap 높이가 "이전 width 기준"으로 남아 있음 → height 불일치
+```
+
+**해결 방안:**
+
+```typescript
+// @pixi/layout의 Yoga 노드에 measureFunc 설정
+import Yoga from 'yoga-layout';
+
+function setupMeasureFunc(yogaNode: YogaNode, element: Element) {
+  const tag = element.tag;
+  if (!SELF_RENDERING_TAGS.has(tag)) return;
+
+  yogaNode.setMeasureFunc((width, widthMode, height, heightMode) => {
+    // 1. 사용 가능한 width 결정
+    const availableWidth = widthMode === Yoga.MEASURE_MODE_EXACTLY
+      ? width
+      : widthMode === Yoga.MEASURE_MODE_AT_MOST
+        ? width
+        : Infinity;
+
+    // 2. 텍스트 wrap 높이 측정
+    const text = extractTextContent(element.props);
+    const fontSize = element.props.style?.fontSize || 14;
+    const fontWeight = element.props.style?.fontWeight || 400;
+    const fontFamily = element.props.style?.fontFamily || 'Pretendard';
+    const paddingX = getSizePreset(tag, element.props.size).paddingX;
+    const paddingY = getSizePreset(tag, element.props.size).paddingY;
+    const borderW = parseBorderWidth(element.props.style);
+
+    const textMaxWidth = availableWidth - paddingX * 2 - borderW * 2;
+    const textHeight = measureWrappedTextHeight(
+      text, fontSize, fontWeight, fontFamily, textMaxWidth
+    );
+
+    // 3. 결과 반환
+    return {
+      width: availableWidth,
+      height: paddingY * 2 + textHeight + borderW * 2,
+    };
+  });
+}
+```
+
+**효과:**
+- Yoga가 레이아웃 계산 중 버튼의 available width를 알려주면, 그에 맞는 텍스트 wrap 높이를 실시간 계산
+- 부모 크기 변경 시 자동으로 높이 재조정
+
+### 12.5 10-Case CSS Divergence Matrix
+
+부모 속성 조합에 따른 Button(width:100px, height:auto, text overflow) 동작 비교:
+
+| # | 부모 display | flex-direction | align-items | CSS 결과 | 현재 엔진 결과 | 원인 | 수정 Phase |
+|---|-------------|---------------|-------------|---------|---------------|------|-----------|
+| 1 | flex | row | stretch | height=부모높이 | height=1줄고정 | P1 | 12.2 |
+| 2 | flex | row | center | height=auto(wrap) | height=1줄고정 | P1+P3 | 12.2+12.4 |
+| 3 | flex | row | flex-start | height=auto(wrap) | height=1줄고정 | P1+P3 | 12.2+12.4 |
+| 4 | flex | column | stretch | width=부모너비, height=auto | width=fit-content | P2 | 12.3 |
+| 5 | flex | column | center | width=100px, height=auto | height=1줄고정 | P1+P3 | 12.2+12.4 |
+| 6 | flex | column | flex-start | width=100px, height=auto | height=1줄고정 | P1+P3 | 12.2+12.4 |
+| 7 | flex | row | baseline | height=auto, baseline정렬 | baseline 무시 | P1+P3 | 12.2+12.4+Phase4 |
+| 8 | block | - | - | width=100%(block), height=auto | width=100px | P2 | 12.3 |
+| 9 | flex | row-reverse | stretch | height=부모높이 (역순) | height=1줄고정 | P1 | 12.2 |
+| 10 | grid | - | stretch | 셀 크기에 맞춤 | height=1줄고정 | P1+P3 | 12.2+12.4 |
+
+### 12.6 수정 적용 순서
+
+```
+Step 1: P1 수정 (layout.height → layout.minHeight)
+  ├─ 영향: Case 1,2,3,5,6,7,9,10 부분 해결
+  ├─ 위험도: 중 (모든 self-rendering 컴포넌트에 영향)
+  └─ 검증: Button/Card 높이 자동 조절 테스트
+
+Step 2: P2 수정 (fit-content 조건부 적용)
+  ├─ 영향: Case 4,8 해결
+  ├─ 위험도: 중 (flex-direction 감지 로직 추가)
+  └─ 검증: column flex + fit-content 버튼 stretch 테스트
+
+Step 3: P3 수정 (measureFunc 설정)
+  ├─ 영향: Case 2,3,5,6,7,10 완전 해결
+  ├─ 위험도: 상 (@pixi/layout 내부 Yoga 노드 접근 필요)
+  └─ 검증: 부모 width 변경 시 텍스트 wrap + 높이 변경 테스트
+```
+
+---
+
+## 13. 컴포넌트 CSS-Web 구조 일치 계획
+
+> **원칙:** TagGroup의 CSS-web 구조 매칭 패턴을 레퍼런스로, 모든 컴포넌트가 CSS-web 구조와 동일하게 동작하도록 정비
+
+### 13.1 TagGroup 레퍼런스 패턴 분석
+
+TagGroup은 CSS-web 구조와 WebGL 구현이 올바르게 일치하는 유일한 레퍼런스 컴포넌트이다.
+
+**CSS-Web 구조:**
+```
+TagGroup (display:flex, flex-direction:column, gap:2px)
+  ├─ Label (text)
+  └─ TagList (display:flex, flex-wrap:wrap, gap:4px)
+       ├─ Tag (display:flex, align-items:center, padding, border-radius)
+       │   ├─ text
+       │   └─ RemoveButton (optional)
+       └─ ...more Tags
+```
+
+**WebGL 구현에서 올바른 점:**
+
+| 패턴 | 설명 |
+|------|------|
+| **Yoga 레이아웃 위임** | `styleToLayout.ts`에서 TagGroup→`flex+column`, TagList→`flex+row+wrap` 기본값 설정 |
+| **자식 요소 분리** | Tag를 독립 Element로 표현, 각각 Yoga 레이아웃에 참여 |
+| **CSS 속성 매핑** | gap, padding, border-radius가 CSS 변수와 동일한 값 |
+| **Spec 기반 통합** | `TagGroupSpec`에서 sizes/variants 공유 → CSS변수와 동일 토큰 |
+| **컨테이너 의미 보존** | TagGroup=column container, TagList=row+wrap container 역할 유지 |
+
+**핵심 원칙 (TagGroup에서 추출):**
+
+1. **DOM 구조 미러링**: CSS-web의 DOM 계층 구조를 Element 트리로 동일하게 재현
+2. **레이아웃 위임**: 수동 위치 계산 대신 Yoga/엔진에 레이아웃 위임 (display, flexDirection, gap 등)
+3. **Spec 기반 토큰 공유**: CSS 변수 값과 동일한 Spec sizes/variants 사용
+4. **자식 요소 독립성**: 자식을 별도 Element로 분리하여 각각 레이아웃 참여
+
+### 13.2 전체 컴포넌트 CSS-Web 구조 비교표
+
+63개 Pixi 컴포넌트를 CSS-web 구조와 비교하여 4단계로 분류:
+
+**A등급: CSS-web 구조 일치 (레이아웃 위임 + 자식 분리)**
+
+| 컴포넌트 | CSS-Web 구조 | WebGL 구현 | 상태 |
+|----------|-------------|-----------|------|
+| TagGroup | flex column → flex row wrap | Yoga flex column + row wrap | ✅ 일치 |
+| ToggleButtonGroup | flex row, 자식 ToggleButton | Yoga flex row | ✅ 일치 |
+| CheckboxGroup | flex column, 자식 Checkbox | Yoga flex column | ✅ 일치 |
+| Form | flex column, 자식 필드들 | Yoga flex column | ✅ 일치 |
+| Group | flex column/row | Yoga flex | ✅ 일치 |
+| DisclosureGroup | flex column | Yoga flex column | ✅ 일치 |
+
+**B등급: 부분 일치 (레이아웃 위임하나 자식 구조 차이)**
+
+| 컴포넌트 | CSS-Web 구조 | WebGL 구현 | 갭 |
+|----------|-------------|-----------|-----|
+| Card | block/flex column (header→content→footer) | Yoga flex + 자체 텍스트 배치 | 자체 measureWrappedTextHeight 사용, Yoga에 텍스트 높이 미위임 |
+| Disclosure | details/summary + content | Yoga flex column | summary/content 분리 불완전 |
+| Panel | flex column (header + body) | Yoga flex | header 영역 고정 높이 |
+| Tabs | flex column (tablist + panels) | Yoga flex | 탭 패널 전환 시 높이 재계산 |
+
+**C등급: 구조 불일치 (자체 렌더링 + 수동 배치)**
+
+| 컴포넌트 | CSS-Web 구조 | WebGL 구현 | 갭 |
+|----------|-------------|-----------|-----|
+| **Button** | `<button>` intrinsic sizing | Graphics + 고정 px 크기 | P1(height고정), P3(measureFunc없음) |
+| **Badge** | `inline-flex` + center | Graphics + 수동 크기 계산 | intrinsic sizing 미위임, min-width 미지원 |
+| **Checkbox** | `flex row` (box + label) | Graphics + 수동 위치 | 자식 분리 안됨, label wrap 높이 미반영 |
+| **Input/TextField** | `flex column` (label + input + error) | Graphics + 수동 레이아웃 | 전체 수동 배치, label/input 분리 안됨 |
+| **Select** | `flex column` (label + button) | Graphics + 수동 레이아웃 | popover 제외해도 trigger 부분 수동 |
+| **Radio** | `flex row` (circle + label) | Graphics + 수동 위치 | Checkbox와 동일 패턴 |
+| **Switch** | `flex row` (track + label) | Graphics + 수동 위치 | track 크기 고정, label 동적 |
+| **ToggleButton** | `<button>` intrinsic sizing | Graphics + 고정 크기 | Button과 동일 문제 |
+| **Breadcrumbs** | `flex row` (items + separators) | 수동 위치 계산 | separator 위치 수동 |
+| **Link** | `inline` text with decoration | Graphics + 텍스트 | inline 동작 미지원 |
+| **Slider** | `flex` (track + thumb) | Graphics + 수동 위치 | track/thumb 위치 수동 |
+| **ProgressBar** | block (label + track) | Graphics + 수동 레이아웃 | label/track 분리 안됨 |
+| **Meter** | block (label + track) | Graphics + 수동 레이아웃 | ProgressBar와 동일 |
+
+**D등급: 복합/특수 컴포넌트 (CSS-web 구조 매칭 불가능하거나 불필요)**
+
+| 컴포넌트 | 사유 |
+|----------|------|
+| Calendar, DatePicker, DateRangePicker | 캔버스에서 달력 위젯 상호작용 불필요 (프리뷰 전용) |
+| ColorPicker, ColorArea, ColorWheel, ColorSlider, ColorField | 색상 도구 상호작용 불필요 |
+| ComboBox, Menu, Popover, Dialog, Toast | 오버레이/팝업은 캔버스 레이어 밖 렌더링 |
+| Table, GridList, Tree | 대량 데이터 렌더링, 가상화 필요 → 별도 전략 |
+| NumberField, TimeField, DateField | 입력 필드 상호작용은 프리뷰 전용 |
+
+### 13.3 C등급 컴포넌트 구조 개선 계획
+
+C등급 컴포넌트들을 TagGroup 패턴(A등급)으로 개선하는 구체적 방안:
+
+#### 13.3.1 Button → Yoga 레이아웃 위임
+
+**현재:**
+```
+PixiButton (Graphics로 직접 그리기)
+  └─ 수동 계산: textWidth + paddingX*2 + borderW*2
+```
+
+**목표 (CSS-web 구조 미러링):**
+```
+Button Element (Yoga node, display:flex, align-items:center, justify-content:center)
+  ├─ padding: CSS에서 그대로 Yoga에 전달 (stripSelfRenderedProps 제거)
+  ├─ border: Yoga borderWidth로 전달
+  └─ TextChild (Yoga leaf node + measureFunc)
+       └─ text content → measureFunc로 intrinsic size 반환
+```
+
+**변경 사항:**
+1. `SELF_PADDING_TAGS`에서 Button 제거
+2. padding/border를 Yoga에 위임 (strip 중단)
+3. Skia 렌더러에서 배경/테두리만 그리기 (패딩은 Yoga가 처리)
+4. 텍스트를 Yoga leaf node로 설정 + measureFunc
+
+#### 13.3.2 Badge → inline-flex Yoga 노드
+
+**현재:**
+```
+PixiBadge (Graphics 직접 그리기)
+  └─ 수동: textWidth + paddingX*2 → totalWidth
+```
+
+**목표:**
+```
+Badge Element (Yoga node, display:inline-flex, align-items:center, justify-content:center)
+  ├─ min-width: sizePreset.minWidth (Yoga minWidth)
+  ├─ padding: sizePreset.paddingX/Y (Yoga padding)
+  └─ TextChild (measureFunc)
+```
+
+#### 13.3.3 Checkbox / Radio → flex row 자식 분리
+
+**현재:**
+```
+PixiCheckbox (Graphics 직접 그리기)
+  └─ 수동: indicatorBox(x=0) + labelText(x=indicatorSize+gap)
+```
+
+**목표:**
+```
+Checkbox Element (Yoga node, display:flex, flex-direction:row, align-items:center, gap)
+  ├─ IndicatorChild (Yoga node, fixed width/height)
+  │   └─ checkbox box 그래픽 (Skia)
+  └─ LabelChild (Yoga leaf node + measureFunc)
+       └─ label text → wrap 시 높이 자동 계산
+```
+
+#### 13.3.4 Input/TextField → flex column 자식 분리
+
+**현재:**
+```
+PixiTextField (Graphics 직접 그리기)
+  └─ 수동: label(y=0) + inputBox(y=labelHeight+gap) + error(y=...)
+```
+
+**목표:**
+```
+TextField Element (Yoga node, display:flex, flex-direction:column, gap)
+  ├─ LabelChild (Yoga leaf + measureFunc)
+  ├─ InputChild (Yoga node, padding, border, background)
+  │   └─ PlaceholderText (Yoga leaf)
+  └─ ErrorChild (Yoga leaf + measureFunc, conditional)
+```
+
+#### 13.3.5 Breadcrumbs → flex row + 자식 분리
+
+**현재:**
+```
+PixiBreadcrumbs (수동 위치 계산)
+  └─ items.forEach((item, i) => { x += itemWidth + separatorWidth })
+```
+
+**목표:**
+```
+Breadcrumbs Element (Yoga node, display:flex, flex-direction:row, align-items:center, gap)
+  ├─ BreadcrumbItem (Yoga leaf + measureFunc)
+  ├─ Separator (Yoga node, fixed width)
+  ├─ BreadcrumbItem (Yoga leaf + measureFunc)
+  └─ ...
+```
+
+### 13.4 구현 우선순위
+
+| 순위 | 컴포넌트 | 사용 빈도 | 구조 변경 규모 | CSS 일치 영향 |
+|------|----------|----------|-------------|-------------|
+| **1** | Button, ToggleButton | ★★★★★ | 중 | P1+P2+P3 해결로 대폭 개선 |
+| **2** | Card | ★★★★☆ | 중 | 높이 자동 조절 + children 렌더링 |
+| **3** | Checkbox, Radio | ★★★★☆ | 중 | label wrap + flex row 정확도 |
+| **4** | Badge | ★★★☆☆ | 소 | inline-flex + min-width |
+| **5** | Input/TextField, Select | ★★★☆☆ | 대 | flex column + 다중 자식 |
+| **6** | Switch, Slider | ★★☆☆☆ | 중 | track+thumb flex 배치 |
+| **7** | Breadcrumbs, ProgressBar, Meter | ★★☆☆☆ | 소~중 | flex row/column 정리 |
+
+### 13.5 SELF_PADDING_TAGS 전략 변경
+
+현재 `SELF_PADDING_TAGS`는 padding/border를 strip하여 이중 적용을 방지하는 임시 방편이다.
+TagGroup 패턴을 적용하면 이 메커니즘이 불필요해진다.
+
+**마이그레이션 계획:**
+
+```
+현재:
+  SELF_PADDING_TAGS = [Button, SubmitButton, FancyButton, ToggleButton, ToggleButtonGroup, Card]
+  → stripSelfRenderedProps()로 padding/border 제거
+  → 컴포넌트가 내부에서 padding/border를 직접 렌더링
+
+목표:
+  SELF_PADDING_TAGS = [] (빈 Set)
+  → padding/border를 Yoga에 위임
+  → Skia 렌더러에서 배경/테두리만 그리기 (content 영역은 Yoga가 계산)
+  → 컴포넌트 내부의 수동 크기 계산 로직 제거
+```
+
+**점진적 마이그레이션:**
+1. 새 패턴을 Button에 먼저 적용 → 검증
+2. 검증 후 Card, ToggleButton 등 순차 적용
+3. 모든 컴포넌트 마이그레이션 완료 후 `SELF_PADDING_TAGS` 및 `stripSelfRenderedProps()` 제거
+
+### 13.6 CSS-Web 구조 미러링 체크리스트
+
+모든 컴포넌트를 개선할 때 다음 체크리스트를 적용:
+
+- [ ] **DOM 구조 일치**: CSS-web의 HTML 요소 계층이 Element 트리에 반영되었는가?
+- [ ] **display 일치**: CSS-web에서 사용하는 display 값(flex, inline-flex, block)이 Yoga에 전달되는가?
+- [ ] **flex 속성 일치**: flex-direction, align-items, justify-content, gap, flex-wrap이 CSS와 동일한가?
+- [ ] **padding/border 위임**: Yoga가 padding과 border-width를 알고 있는가? (strip하지 않음)
+- [ ] **intrinsic sizing**: 텍스트 콘텐츠가 measureFunc를 통해 Yoga에 크기를 알려주는가?
+- [ ] **Spec 토큰 동기화**: CSS 변수 값과 Spec의 sizes/variants 값이 동일한가?
+- [ ] **자식 독립성**: 자식 요소가 별도 Yoga 노드로 레이아웃에 참여하는가?
+- [ ] **반응성**: 부모 크기 변경 시 자식의 크기와 위치가 CSS와 동일하게 재계산되는가?
 
 ---
 
