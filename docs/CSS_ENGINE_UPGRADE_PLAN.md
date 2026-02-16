@@ -36,12 +36,15 @@ CSS Style (사용자 입력)
 | Flexbox | 93% | 98% | order, baseline 정밀도, % gap |
 | Block Layout | 90% | 95% | margin %, 텍스트+블록 혼합 |
 | Box Model | 88% | 95% | padding/margin %, calc(), border shorthand |
-| Typography | 85% | 92% | white-space, word-break, 폰트 메트릭 baseline |
-| Visual Effects | 80% | 90% | 다중 box-shadow, transform, gradient |
+| Typography | 85% | 92% | white-space, word-break, 폰트 메트릭 baseline, **verticalAlign, fontStyle** |
+| Visual Effects | 80% | 90% | 다중 box-shadow, transform, gradient, **dashed/dotted border** |
 | Grid | 60% | 85% | repeat(), minmax(), auto-placement, span |
 | CSS 단위 | 65% | 85% | em, calc(), min/max-content |
 | Position | 65% | 80% | fixed(viewport), z-index stacking context |
+| Spec 렌더링 정합성 | **67.7%** | **90%+** | shadow 렌더 순서, gradient Skia 미지원, 배열 borderRadius |
 | **전체 가중 평균** | **~83%** | **~95%+** | |
+
+> **Spec 렌더링 정합성** (`docs/SPEC_VERIFICATION_CHECKLIST.md` 기준): 62개 컴포넌트 중 PASS 42개(67.7%), FAIL 9개(14.5%), WARN 11개(17.7%). FAIL의 주요 원인은 `specShapeConverter.ts`의 shadow-before-target 순서 오류(7개)와 gradient Skia 미지원(4개)이다. 이 수치는 레이아웃 일치율과 별도로 추적하며 §5에서 해결한다.
 
 ### 0.3 일치율 산정 기준 (추가)
 
@@ -61,7 +64,7 @@ CSS Style (사용자 입력)
 
 ### 0.4 근본 원인 분석
 
-현재 갭의 근본 원인은 4가지 계층으로 분류된다:
+현재 갭의 근본 원인은 5가지 계층으로 분류된다:
 
 | 계층 | 원인 | 영향 범위 | 해결 난이도 |
 |------|------|----------|-----------|
@@ -69,6 +72,14 @@ CSS Style (사용자 입력)
 | **L2: CSS 값 파서 부족** | `calc()`, `em`, `min-content/max-content`, `border` shorthand 미파싱 | 모든 엔진 공통 | 중 — 파서 확장 필요 |
 | **L3: 렌더링 피처 부재** | `transform`, 다중 `box-shadow`, `gradient`, `overflow: scroll` 미구현 | 시각 효과 | 상 — Skia API 활용 필요 |
 | **L4: CSS 값 파서 파편화** | 3개 독립 파서(`parseSize`, `parseCSSValue`, `parseCSSSize`)가 각각 다른 단위를 지원하여 동일 CSS 값이 경로별로 다르게 해석됨 | 모든 엔진 공통 (파싱 불일치) | 중 — Phase 1 통합 파서로 해결 |
+| **L5: @pixi/layout formatStyles 캐싱** | `formatStyles()`가 이전 프레임의 스타일과 **병합**(merge)하므로, 속성 삭제 시 이전 값이 잔존. 명시적 `auto`/`undefined` 리셋 필수 | Yoga 경로 전체 (styleToLayout 출력) | 중 — styleToLayout에서 명시적 기본값 설정으로 우회 중 |
+
+**L5 상세: formatStyles 캐싱 문제**
+
+`@pixi/layout`의 `formatStyles()`는 성능 최적화를 위해 이전 프레임의 스타일 객체를 shallow merge한다. 이로 인해:
+- `width: 100px` → `width: auto` 전환 시, `styleToLayout`에서 `width: 'auto'`를 **명시적으로** 반환하지 않으면 이전 `100px`이 잔존
+- `styleToLayout.ts:292`에서 `layout.width = width !== undefined ? width : 'auto'`로 이미 우회 중
+- 향후 새 스타일 속성 추가 시 동일 패턴 적용 필요 (누락 시 스타일이 "고착"되는 증상 발생)
 
 **L4 상세: 파서별 단위 지원 비교**
 
@@ -302,7 +313,7 @@ pub fn grid_auto_placement(
 | 빌드 명령 | `pnpm wasm:build` (`wasm-pack --target bundler`) | 변경 없음 |
 | JS 바인딩 | `wasm-bindings/pkg/xstudio_wasm.js` | 자동 생성 (wasm-bindgen) |
 | TS 래퍼 | `wasm-bindings/layoutAccelerator.ts` | Grid 가속 경로 추가 |
-| Feature Flag | `WASM_FLAGS.LAYOUT_ENGINE = false` | Grid 아이템 ≥ 20일 때 활성화 |
+| Feature Flag | WASM 경로 비활성 (`WASM_FLAGS.LAYOUT_ENGINE = false`) | `WASM_FLAGS.LAYOUT_ENGINE === true` 이고 Grid 아이템 `>= 20`일 때만 활성화 |
 | Vite 로드 | `vite-plugin-wasm` + `optimizeDeps.exclude` | 변경 없음 |
 
 > 기존 `xstudio-wasm` 크레이트(단일 WASM 모듈)에 Grid 함수를 추가한다.
@@ -476,6 +487,31 @@ function measureTextWithWhiteSpace(
 
 **구현:** `measureWrappedTextHeight()` 확장 — 줄바꿈 규칙 파라미터 추가
 
+### 4.5 `vertical-align` 동기화
+
+CSS의 `vertical-align`은 inline/inline-block 요소의 수직 정렬을 제어한다. 현재 Skia 렌더러에서 미동기화 상태.
+
+| 값 | CSS 동작 | 현재 Skia 구현 | 상태 |
+|-----|---------|--------------|------|
+| `top` | 줄 상단 정렬 | 미구현 | OPEN |
+| `middle` | 줄 중앙 정렬 | 미구현 | OPEN |
+| `bottom` | 줄 하단 정렬 | 미구현 | OPEN |
+| `baseline` | 기준선 정렬 (기본값) | §4.2 FontMetrics 기반 구현 예정 | §4.2 연동 |
+
+**구현:** `nodeRenderers.ts`의 텍스트 렌더링에서 `vertical-align` 값에 따라 `y` 오프셋 조정. §4.2의 `FontMetrics.ascent/descent`를 기반으로 정렬 위치를 계산한다.
+
+### 4.6 `font-style` (italic/oblique) 동기화
+
+현재 `styleConverter.ts`에서 `font-style` 파싱은 가능하지만, CanvasKit Paragraph API의 `fontStyle` 매핑이 불완전하다.
+
+| 값 | CSS 동작 | 현재 Skia 구현 | 상태 |
+|-----|---------|--------------|------|
+| `normal` | 정자체 | O | PASS |
+| `italic` | 이탤릭체 | CanvasKit `TextStyle.fontStyle.slant = Italic` 매핑 필요 | OPEN |
+| `oblique` | 경사체 | CanvasKit `TextStyle.fontStyle.slant = Oblique` 매핑 필요 | OPEN |
+
+**구현:** `skia/textMeasure.ts`의 `createParagraphStyle()`에서 `fontStyle.slant` 매핑 추가. 폰트 파일에 italic variant가 없는 경우 CanvasKit이 자동으로 synthetic italic을 적용한다.
+
 ---
 
 ## 5. Phase 5: 시각 효과 확장 (L3 해결)
@@ -483,6 +519,17 @@ function measureTextWithWhiteSpace(
 > **목표:** Skia 렌더러의 시각 효과 범위 확대
 >
 > **일치율 영향:** Visual 80% → 90%
+
+### 5.0 타입/파이프라인 선행 작업 (필수)
+
+웹 CSS와 동일한 결과를 얻으려면 렌더 단계 전에 데이터 모델 확장이 선행되어야 한다.
+
+- `CSSStyle` 확장: `transform`, `transformOrigin`, `zIndex`, `position` 필드 추가
+- `ConvertedStyle`/`SkiaNodeData` 확장: 변환된 transform 행렬 + origin 전달 필드 추가
+- `styleConverter.ts`에서 style → transform/z-index 파싱 결과를 `SkiaNodeData`로 전달
+- `nodeRenderers.ts`는 `SkiaNodeData`의 transform/stacking 정보를 기준으로 렌더 순서 적용
+
+> 이 선행 작업이 없으면 5.2/6.2의 코드 스니펫을 그대로 적용해도 타입/데이터 흐름에서 구현이 끊긴다.
 
 ### 5.1 다중 `box-shadow`
 
@@ -584,6 +631,17 @@ paint.setShader(shader);
 
 **파일:** `styleConverter.ts` — `parseGradient()` 신규
 
+**Spec Shape 변환 경로 (현재 미구현):**
+
+현재 `specShapeConverter.ts:320-322`에서 gradient shape을 `case 'gradient': break;`로 스킵하여 **gradient 배경이 완전히 미렌더링**된다. 이로 인해:
+- FancyButton(gradient variant), ColorPicker, ColorSlider, ColorArea — **4개 컴포넌트 FAIL**
+- gradient shape 스킵으로 해당 노드 id가 미등록되어, 후속 border shape의 `target` 참조 실패 → ColorSlider, ColorArea **연쇄 FAIL** (2건 추가)
+
+**구현 경로:**
+1. `styleConverter.ts`의 `parseGradient()`로 CSS gradient 문법 파싱 (위 코드)
+2. `specShapeConverter.ts`의 `case 'gradient'`에서 CanvasKit Shader 생성 + `nodeById` 등록
+3. Spec의 gradient shape 구조: `{ type: 'gradient', gradient: 'linear-gradient(...)', ...rect }` → CanvasKit `MakeLinearGradient`/`MakeRadialGradient` 변환
+
 ### 5.4 `overflow: scroll` / `auto`
 
 현재 `overflow`는 BFC 생성에만 사용되고 실제 클리핑/스크롤은 미구현이다.
@@ -607,6 +665,93 @@ if (style.overflow === 'hidden' || style.overflow === 'scroll') {
 ```
 
 **스크롤 상태:** Zustand slice로 관리 (`elementScrollOffsets: Map<string, {x, y}>`)
+
+### 5.5 Spec Shape 렌더 순서 (shadow-before-target) — CRITICAL
+
+**현상:** `specShapeConverter.ts:283-303`에서 shadow shape이 target 노드보다 **먼저** 선언되는 경우, `nodeById.get(target)`이 `undefined`를 반환하여 그림자가 렌더링되지 않는다.
+
+**영향:** Select, ComboBox, Menu, Toast, DatePicker, DateRangePicker, ColorPicker — **7개 컴포넌트 FAIL** (SPEC 전체 FAIL 9건 중 7건)
+
+**원인:**
+```
+Spec shapes 배열: [shadow(target="bg"), bg(id="bg"), ...]
+                    ↑ target 참조 시점에 bg가 아직 미등록
+```
+
+**해결 방안:**
+```typescript
+// specShapeConverter.ts — 2-pass 변환
+// Pass 1: 모든 shape를 nodeById에 등록 (렌더링 없이 id만 수집)
+for (const shape of shapes) {
+  if (shape.id) nodeById.set(shape.id, createPlaceholder(shape));
+}
+// Pass 2: 실제 Skia 노드 생성 (shadow가 target을 참조 가능)
+for (const shape of shapes) {
+  const node = convertShapeToSkia(shape, nodeById);
+  if (shape.id) nodeById.set(shape.id, node); // placeholder 교체
+}
+```
+
+**효과:** SPEC FAIL 7건 → 0건, 정합성 67.7% → **78.7%+**
+
+### 5.6 배열 `borderRadius` 지원
+
+**현상:** `specShapeConverter.ts:75`의 `resolveNum()`이 `[TL, TR, BR, BL]` 배열을 처리하지 못하여, CSS `border-radius: 10px 0 0 10px` 등의 개별 모서리 설정이 NaN/0으로 렌더링된다.
+
+**영향:** NumberField — **1개 컴포넌트 FAIL**
+
+**해결 방안:**
+```typescript
+// specShapeConverter.ts — resolveNum 배열 지원 확장
+function resolveRadius(
+  value: number | [number, number, number, number] | undefined
+): number | [number, number, number, number] {
+  if (Array.isArray(value)) return value; // 배열은 그대로 전달
+  return typeof value === 'number' ? value : 0;
+}
+
+// Skia rrect 변환: CanvasKit.RRectXY → CanvasKit.MakeRRect (4-corner)
+function makeSkiaRRect(
+  rect: Float32Array,
+  radius: number | [number, number, number, number]
+): Float32Array {
+  if (typeof radius === 'number') {
+    return CanvasKit.RRectXY(rect, radius, radius);
+  }
+  const [tl, tr, br, bl] = radius;
+  // CanvasKit RRect: [x, y, right, bottom, tlX, tlY, trX, trY, brX, brY, blX, blY]
+  return Float32Array.of(
+    rect[0], rect[1], rect[2], rect[3],
+    tl, tl, tr, tr, br, br, bl, bl
+  );
+}
+```
+
+### 5.7 `border-style: dashed / dotted`
+
+**현상:** `nodeRenderers.ts`에서 `border-style`이 `solid`만 지원되어, `dashed`/`dotted` 테두리가 실선으로 렌더링된다.
+
+**영향:** Slot, DropZone — **2개 컴포넌트 WARN**
+
+**구현:**
+```typescript
+// nodeRenderers.ts — Skia dash 효과
+import { CanvasKit } from 'canvaskit-wasm';
+
+function applyBorderStyle(paint: SkPaint, style: string, width: number) {
+  if (style === 'dashed') {
+    const dashLen = Math.max(width * 3, 4);
+    const gapLen = Math.max(width * 2, 3);
+    paint.setPathEffect(CanvasKit.PathEffect.MakeDash([dashLen, gapLen]));
+  } else if (style === 'dotted') {
+    paint.setPathEffect(CanvasKit.PathEffect.MakeDash([width, width * 1.5]));
+    paint.setStrokeCap(CanvasKit.StrokeCap.Round);
+  }
+  // 'solid'는 기본값 — PathEffect 없음
+}
+```
+
+**파일:** `nodeRenderers.ts` — `renderBox()` 내 `paint.setStroke()` 직후 `applyBorderStyle()` 호출 추가
 
 ---
 
@@ -695,6 +840,12 @@ Phase 3 (캐스케이드):    █████████▓ 94%  (+1%)
 Phase 4 (Block):         █████████▓ 95%  (+1%)
 Phase 5 (시각):          ██████████ 96%  (+1%)
 Phase 6 (Position):      ██████████ 97%+ (+1%)
+
+Spec 렌더링 정합성 (별도 트랙):
+현재:                     ██████▓░░░ 67.7%
+§5.5 shadow순서 수정:     ████████░░ 78.7% (+11%) ← FAIL 7건 해소
+§5.3+§5.6 gradient+radius:████████▓░ 85.5% (+6.8%) ← FAIL 2건 + WARN 감소
+§4.5+§4.6+§5.7 나머지:    █████████░ 90%+  (+4.5%) ← WARN 해소
 ```
 
 ### 7.3 의존성 그래프
@@ -702,12 +853,15 @@ Phase 6 (Position):      ██████████ 97%+ (+1%)
 ```
 §8 (구조적 문제 P1/P2/P3) ← 최우선, 독립 실행 가능
   └──→ §9 (컴포넌트 CSS-web 구조) — P1/P2/P3 수정 후 적용
-         └──→ Phase 1 (CSS 값 파서) — 컴포넌트 구조 안정화 후
-               ├──→ Phase 2 (Grid) — calc()와 minmax() 파서 공유
-               ├──→ Phase 3 (캐스케이드) — em 해석에 fontSize 상속 필요
-               └──→ Phase 4 (Block) — min-content/max-content 계산
-                      └──→ Phase 5 (시각) — transform 파서
-                             └──→ Phase 6 (Position) — stacking context
+  │      └──→ §9.8 (computedStyle 동기화) — 구조 개선 후 적용
+  └──→ Phase 1 (CSS 값 파서) — 컴포넌트 구조 안정화 후
+         ├──→ Phase 2 (Grid) — calc()와 minmax() 파서 공유
+         ├──→ Phase 3 (캐스케이드) — em 해석에 fontSize 상속 필요
+         └──→ Phase 4 (Block + §4.5/4.6) — min-content/max-content + verticalAlign/fontStyle
+                └──→ Phase 5 (시각 + §5.5/5.6/5.7) — transform + shadow순서/radius/dashed
+                       └──→ Phase 6 (Position) — stacking context
+
+§5.5 (shadow 렌더 순서) ← 독립 실행 가능 (SPEC FAIL 7건 즉시 해소, 최고 ROI)
 ```
 
 ### 7.4 Phase 1 세부 태스크
@@ -737,8 +891,11 @@ Phase 6 (Position):      ██████████ 97%+ (+1%)
 | 2 (Grid) | `repeat/minmax/auto-placement/span` 적용 | Grid 벤치마크 케이스 PASS율 85%+ |
 | 3 (캐스케이드) | `inherit/var()` 상속 체인 동작 | 회귀 테스트에서 상속 관련 FAIL 0건 |
 | 4 (Block 정밀화) | baseline/white-space/word-break 반영 | 텍스트 정렬 오차 ±1px 내 |
-| 5 (시각 효과) | multi-shadow/transform/gradient 반영 | Skia 회귀 스냅샷 diff 허용치 이내 |
+| 4 (Block) + §4.5/4.6 | baseline/white-space/word-break + **verticalAlign/fontStyle** 반영 | 텍스트 정렬 오차 ±1px 내, italic 렌더 확인 |
+| 5 (시각 효과) + §5.5/5.6/5.7 | multi-shadow/transform/gradient + **shadow순서 수정, 배열 radius, dashed border** | Skia 회귀 스냅샷 diff 허용치 이내, **SPEC FAIL 9건 → 0건** |
 | 6 (Position) | fixed/z-index/stacking context 동작 | 주요 샘플 시나리오 PASS + FPS 60 유지 |
+| §8-P2 (컨텍스트 전파) | `styleToLayoutRoot/Child` 래퍼 전환 + 호출부 마이그레이션 완료 | direct `styleToLayout(` 호출 0건 + `styleToLayoutContextPropagation.test.ts` PASS |
+| §9.8 (computedStyle) | `computeSyntheticStyle()` 구현 + StylePanel 연동 | StylePanel 표시 값과 Skia 렌더링 값 일치율 95%+ |
 
 ---
 
@@ -795,7 +952,7 @@ if (SELF_RENDERING_BUTTON_TAGS.has(tag) && height === undefined) {
 self-rendering 버튼 태그에 대해 `layout.height`를 고정 px로 설정한다.
 이로 인해 Yoga의 `align-items: stretch`가 무시되어 부모 flex 컨테이너에서 cross-axis 늘리기가 동작하지 않는다.
 
-**부분 수정 존재 (628-642행) — 비효과적:**
+**부분 수정 존재 (628-642행) — 제한적 효과:**
 
 625행 이후에 고정 width 버튼에 대한 부분 수정이 이미 존재한다:
 
@@ -817,22 +974,22 @@ if (typeof width === 'number' && width > 0) {
 }
 ```
 
-> **핵심 문제:** 625행에서 `layout.height`가 이미 고정 px 값으로 설정된 상태에서 638행에서 `layout.minHeight`를 추가 설정해도, **Yoga는 `height`(고정값)를 `minHeight`보다 우선 적용**하므로 부분 수정이 실질적 효과를 발휘하지 못한다. `height`가 명시적으로 설정되면 Yoga는 그 값을 최종 높이로 확정하고, `minHeight`/`maxHeight` 제약은 `height`가 `auto`(미설정)일 때만 의미를 갖는다.
+> **핵심 문제:** 625행에서 `layout.height`가 고정 px로 설정된 상태에서 638행 `layout.minHeight`는 **하한값 보완**으로는 동작할 수 있다. 다만 `height`가 명시되어 있는 동안에는 부모 `align-items: stretch`나 폭 변화에 따른 `auto` 재계산 경로가 제한되어, 웹 CSS와 동일한 동적 동작을 재현하기 어렵다.
 
 **CSS 동작 vs 현재 동작:**
 
 | 시나리오 | CSS 기대값 | 현재 엔진 결과 | 원인 |
 |----------|-----------|--------------|------|
 | 부모 `flex-direction:row` + `align-items:stretch` | 부모 높이만큼 늘어남 | 고정 높이 유지 | `layout.height = fixed` |
-| 부모 `flex-direction:column` + 텍스트 overflow | 텍스트 wrap 높이로 자동 성장 | 1줄 높이 고정 | `layout.height = fixed` (부분 수정 비효과적) |
+| 부모 `flex-direction:column` + 텍스트 overflow | 텍스트 wrap 높이로 자동 성장 | 조건부 확장만 발생 | `layout.height = fixed` (minHeight는 일부 케이스만 보완) |
 | `height: auto` + 긴 텍스트 | content 높이 자동 조절 | 1줄 높이로 잘림 | height 고정 선점 |
 
 **해결 방안:**
 
 ```typescript
 // 수정안: layout.height 삭제 → layout.minHeight만 사용
-// 이유: height가 설정되면 Yoga가 minHeight를 무시하므로, height 대신 minHeight만 설정해야
-//       align-items:stretch와 텍스트 wrap에 의한 높이 자동 조절이 가능해진다.
+// 이유: height가 고정되면 stretch/auto 재계산 경로가 제한되므로,
+//       baseline 높이는 minHeight로만 표현해야 웹 CSS 동작과 수렴한다.
 
 // layout.height = paddingY * 2 + lineHeight + borderW * 2;  // ❌ 삭제
 layout.minHeight = paddingY * 2 + lineHeight + borderW * 2;   // ✅ 최소 높이로 변경
@@ -890,6 +1047,24 @@ if (SELF_RENDERING_BTN_TAGS.has(tag) && isFitContentWidth) {
 **해결 방안:**
 
 ```typescript
+// 선행 변경: 부모 컨텍스트를 styleToLayout에 전달
+interface LayoutResolveContext {
+  parentFlexDirection?: 'row' | 'row-reverse' | 'column' | 'column-reverse';
+}
+
+function styleToLayoutInternal(
+  element: Element,
+  context: LayoutResolveContext
+): LayoutStyle;
+
+// 외부 호출은 래퍼로만 사용 (호출부 누락 리스크 제거)
+function styleToLayoutRoot(element: Element): LayoutStyle;
+function styleToLayoutChild(
+  child: Element,
+  parentElement: Element,
+  parentLayout: LayoutStyle
+): LayoutStyle;
+
 // 1) self-rendering fit-content width의 명시적 px 강제 제거
 //    (intrinsic size는 measureFunc가 담당)
 if (SELF_RENDERING_BTN_TAGS.has(tag) && isFitContentWidth) {
@@ -898,7 +1073,7 @@ if (SELF_RENDERING_BTN_TAGS.has(tag) && isFitContentWidth) {
 
 // 2) grow/shrink 제한은 row 주축에서만 적용
 if (isFitContentWidth) {
-  const parentFlexDir = parentStyle?.flexDirection || 'row';
+  const parentFlexDir = context.parentFlexDirection || 'row';
   if (parentFlexDir === 'row' || parentFlexDir === 'row-reverse') {
     layout.flexGrow = 0;
     layout.flexShrink = 0;
@@ -906,6 +1081,24 @@ if (isFitContentWidth) {
   // column 주축에서는 cross-axis stretch 허용
 }
 ```
+
+`BuilderCanvas.tsx`의 `styleToLayout(child)` 호출 지점은 부모의 `flexDirection`(effective 값)을 함께 전달하도록 수정한다.
+
+**호출부 마이그레이션 강제 절차 (잔여 리스크 해소):**
+
+1. `styleToLayout.ts`에 `styleToLayoutInternal`(context 필수) + `styleToLayoutRoot`/`styleToLayoutChild` 래퍼를 추가한다.
+2. 기존 직접 호출을 전면 교체한다.
+   - 루트 계산: `styleToLayoutRoot(element)`만 허용
+   - 자식 계산: `styleToLayoutChild(child, parentElement, parentLayout)`만 허용
+3. 호출부 교체 대상:
+   - `BuilderCanvas.tsx`의 모든 `styleToLayout(...)` 호출
+   - `PixiTabs.tsx`의 `styleToLayout(childEl)` 호출
+4. 정적 게이트를 CI에 추가한다.
+   - `rg -n "styleToLayout\\(" apps/builder/src/builder/workspace/canvas`
+   - 허용 패턴은 `styleToLayoutRoot(`, `styleToLayoutChild(`만 통과
+5. 위 1~4를 **단일 PR**로 머지한다 (부분 반영 금지).
+
+이 절차를 적용하면 “호출부 일부만 context 전달” 상태가 구조적으로 불가능해진다.
 
 ### 8.4 P3 — HIGH: Yoga measureFunc 미설정
 
@@ -991,17 +1184,17 @@ function setupMeasureFunc(yogaNode: YogaNode, element: Element) {
 | # | 부모 display | flex-direction | align-items | 자식 width 설정 | CSS 결과 | 현재 엔진 결과 | 원인 | 상태 | 수정 Phase |
 |---|-------------|---------------|-------------|----------------|---------|---------------|------|------|-----------|
 | 1 | flex | row | stretch | `100px` | height=부모높이 | height=1줄고정 | P1 | 미수정 | 8.2 |
-| 2 | flex | row | center | `100px` | height=auto(wrap) | height=1줄고정 (부분 수정: minHeight 설정하나 height 고정이 우선하여 비효과적) | P1+P3 | 부분 수정(비효과적) | 8.2+8.4 |
-| 3 | flex | row | flex-start | `100px` | height=auto(wrap) | height=1줄고정 (부분 수정: minHeight 설정하나 height 고정이 우선하여 비효과적) | P1+P3 | 부분 수정(비효과적) | 8.2+8.4 |
+| 2 | flex | row | center | `100px` | height=auto(wrap) | 조건부 확장만 발생 (부분 수정: minHeight 하한은 적용되나 stretch/auto 경로는 제한) | P1+P3 | 부분 수정(제한적 효과) | 8.2+8.4 |
+| 3 | flex | row | flex-start | `100px` | height=auto(wrap) | 조건부 확장만 발생 (부분 수정: minHeight 하한은 적용되나 stretch/auto 경로는 제한) | P1+P3 | 부분 수정(제한적 효과) | 8.2+8.4 |
 | 4 | flex | column | stretch | `fit-content` | width=부모너비, height=auto | width=fit-content | P2 | 미수정 | 8.3 |
-| 5 | flex | column | center | `100px` | width=100px, height=auto | height=1줄고정 (부분 수정: minHeight 설정하나 height 고정이 우선하여 비효과적) | P1+P3 | 부분 수정(비효과적) | 8.2+8.4 |
-| 6 | flex | column | flex-start | `100px` | width=100px, height=auto | height=1줄고정 (부분 수정: minHeight 설정하나 height 고정이 우선하여 비효과적) | P1+P3 | 부분 수정(비효과적) | 8.2+8.4 |
+| 5 | flex | column | center | `100px` | width=100px, height=auto | 조건부 확장만 발생 (부분 수정: minHeight 하한은 적용되나 stretch/auto 경로는 제한) | P1+P3 | 부분 수정(제한적 효과) | 8.2+8.4 |
+| 6 | flex | column | flex-start | `100px` | width=100px, height=auto | 조건부 확장만 발생 (부분 수정: minHeight 하한은 적용되나 stretch/auto 경로는 제한) | P1+P3 | 부분 수정(제한적 효과) | 8.2+8.4 |
 | 7 | flex | row | baseline | `100px` | height=auto, baseline정렬 | baseline 무시 | P1+P3 | 미수정 | 8.2+8.4+Phase4 |
 | 8 | block | - | - | `auto` | width=100%(block), height=auto | width=100px | P2 | 미수정 | 8.3 |
 | 9 | flex | row-reverse | stretch | `100px` | height=부모높이 (역순) | height=1줄고정 | P1 | 미수정 | 8.2 |
 | 10 | grid | - | stretch | `100px` | 셀 크기에 맞춤 | height=1줄고정 | P1+P3 | 미수정 | 8.2+8.4 |
 
-> **부분 수정(비효과적)**: Case 2,3,5,6에서 `styleToLayout.ts:628-642`의 코드가 고정 width 버튼에 대해 `layout.minHeight`를 설정하지만, 625행에서 이미 `layout.height`가 고정 px로 설정되어 있어 Yoga가 `minHeight`를 무시한다. §8.2의 해결 방안(height→minHeight 전환) 적용 시 이 부분 수정이 정상 동작하게 된다.
+> **부분 수정(제한적 효과)**: Case 2,3,5,6에서 `styleToLayout.ts:628-642`의 코드가 고정 width 버튼에 대해 `layout.minHeight`를 설정하므로 하한 보완은 적용될 수 있다. 다만 625행의 `layout.height` 고정 때문에 stretch/auto 재계산 경로가 제한되어 CSS-web 기준과는 여전히 차이가 남는다. §8.2의 해결 방안(height→minHeight 전환) 적용 시 부분 수정의 효과가 완전하게 살아난다.
 
 ### 8.6 수정 적용 순서
 
@@ -1103,7 +1296,7 @@ TagGroup (display:flex, flex-direction:column, gap:2px)
 | **Checkbox** | `flex row` (box + label) | Graphics + 수동 위치 | 자식 분리 안됨, label wrap 높이 미반영 |
 | **Input/TextField** | `flex column` (label + input + error) | Graphics + 수동 레이아웃 | 전체 수동 배치, label/input 분리 안됨 |
 | **Select** | `flex column` (label + button) | Graphics + 수동 레이아웃 | popover 제외해도 trigger 부분 수동 |
-| **Radio** | `flex row` (circle + label) | Graphics + 수동 위치 | Checkbox와 동일 패턴 |
+| **Radio** | `flex row` (circle + label) | Graphics + 수동 위치 | Checkbox와 동일 패턴 + `rearrangeShapesForColumn()`이 circle shape 미감지 → column 배치 깨짐 (SPEC FAIL) |
 | **Switch** | `flex row` (track + label) | Graphics + 수동 위치 | track 크기 고정, label 동적 |
 | **ToggleButton** | `<button>` intrinsic sizing | Graphics + 고정 크기 | Button과 동일 문제 |
 | **Breadcrumbs** | `flex row` (items + separators) | 수동 위치 계산 | separator 위치 수동 |
@@ -1111,6 +1304,8 @@ TagGroup (display:flex, flex-direction:column, gap:2px)
 | **Slider** | `flex` (track + thumb) | Graphics + 수동 위치 | track/thumb 위치 수동 |
 | **ProgressBar** | block (label + track) | Graphics + 수동 레이아웃 | label/track 분리 안됨 |
 | **Meter** | block (label + track) | Graphics + 수동 레이아웃 | ProgressBar와 동일 |
+
+> **참고:** C등급 목록은 `docs/how-to/development/PIXI_REFACTORING.md`의 "수동 좌표 컴포넌트 21개"와 대응된다. 위 13개 외에 Calendar, ColorArea, ColorSlider, ColorPicker, DatePicker, DateRangePicker, ComboBox, NumberField이 추가로 수동 좌표를 사용하나, 이들은 D등급(캔버스 상호작용 불필요)으로 분류한다.
 
 **D등급: 복합/특수 컴포넌트 (CSS-web 구조 매칭 불가능하거나 불필요)**
 
@@ -1275,6 +1470,61 @@ TagGroup 패턴을 적용하면 이 메커니즘이 불필요해진다.
 - [ ] **Spec 토큰 동기화**: CSS 변수 값과 Spec의 sizes/variants 값이 동일한가?
 - [ ] **자식 독립성**: 자식 요소가 별도 Yoga 노드로 레이아웃에 참여하는가?
 - [ ] **반응성**: 부모 크기 변경 시 자식의 크기와 위치가 CSS와 동일하게 재계산되는가?
+
+### 9.7 Spec 렌더링 파이프라인 이슈 (SPEC_VERIFICATION 기준)
+
+`docs/SPEC_VERIFICATION_CHECKLIST.md`에서 발견된 FAIL/WARN 이슈 중 컴포넌트 구조와 직접 관련된 항목:
+
+| 이슈 | 영향 컴포넌트 | 원인 파일 | 해결 Phase |
+|------|-------------|----------|-----------|
+| circle shape column 변환 실패 | Radio | `ElementSprite.tsx:488-536` `rearrangeShapesForColumn()` | §9.3.3 (Radio 구조 개선) 시 함께 해결 |
+| 고정 width bg 미추출 | Input, TextField, SearchField | `specShapeConverter.ts:89-90` | §9.3.4 (Input/TextField 구조 개선) 시 함께 해결 |
+| TokenRef cast 이슈 | List, Switcher, Meter | `specShapeConverter.ts:16-24` | Spec 토큰 시스템 정비 시 해결 |
+
+> 나머지 SPEC FAIL(shadow 순서, gradient, 배열 radius)은 §5.5, §5.3, §5.6에서 해결한다.
+
+### 9.8 StylePanel computedStyle 동기화
+
+**문제:** WebGL 요소는 실제 DOM 노드가 아니므로 `window.getComputedStyle()`을 사용할 수 없다. StylePanel이 요소 선택 시 보여주는 속성 값이 실제 Skia 렌더링 결과와 불일치한다.
+
+**영향 예시:**
+- Button `size="sm"` → Skia에서 `fontSize: 14px`로 렌더링되지만, StylePanel에는 `fontSize: 16px`(기본값)으로 표시
+- `cssVariableReader.ts`의 `getSizePreset()`이 반환하는 실제 값과 StylePanel 표시 값의 괴리
+
+**해결 전략:**
+
+```typescript
+// 합성 computedStyle 생성: 렌더링에 사용된 실제 해석값을 StylePanel에 전달
+interface SyntheticComputedStyle {
+  // Spec 프리셋에서 해석된 실제 값
+  fontSize: number;
+  paddingTop: number;
+  paddingRight: number;
+  paddingBottom: number;
+  paddingLeft: number;
+  borderRadius: number | [number, number, number, number];
+  backgroundColor: string;
+  color: string;
+  // ... 기타 시각 속성
+}
+
+function computeSyntheticStyle(element: Element): SyntheticComputedStyle {
+  const tag = element.tag;
+  const props = element.props;
+  const style = props?.style ?? {};
+  const sizePreset = getSizePreset(tag, props?.size);
+
+  return {
+    fontSize: style.fontSize ?? sizePreset.fontSize,
+    paddingTop: style.paddingTop ?? style.padding ?? sizePreset.paddingY,
+    // ... Skia 렌더링과 동일한 해석 로직 적용
+  };
+}
+```
+
+**파일:** `services/computedStyleService.ts` 신규 → StylePanel에서 `computeSyntheticStyle()` 호출
+
+**우선순위:** 중 — C등급 컴포넌트 구조 개선(§9.3) 후 적용. 구조 개선 시 Yoga가 padding/border를 직접 관리하게 되면 Yoga의 `getComputedLayout()`에서 실제 computed 값을 가져올 수 있어 합성 로직이 단순화된다.
 
 ---
 
@@ -1447,6 +1697,23 @@ __tests__/
 
 각 케이스는 CSS-web 기준 스냅샷(기준값)과 Canvas 결과를 비교해 PASS/FAIL을 기록한다.
 
+**추가 필수 테스트 (호출부 컨텍스트 전파):**
+
+```text
+layout/styleToLayoutContextPropagation.test.ts
+  - row 부모 + fit-content 자식: grow/shrink 제한 적용 확인
+  - column 부모 + fit-content 자식: stretch 허용 확인
+  - context 누락 시(직접 호출) 테스트 실패하도록 가드
+```
+
+**정적 검증 (CI):**
+
+```bash
+rg -n "styleToLayout\\(" apps/builder/src/builder/workspace/canvas
+# 허용: styleToLayoutRoot(, styleToLayoutChild(
+# 금지: direct styleToLayout(
+```
+
 ### 13.5 롤백 기준 (추가)
 
 아래 조건 중 하나라도 충족하면 해당 Phase 변경을 feature flag 뒤로 이동하거나 롤백한다.
@@ -1454,6 +1721,7 @@ __tests__/
 - 캔버스 FPS가 기준(60fps) 미만으로 지속 하락하고 1차 최적화 후에도 복구되지 않는 경우
 - 레이아웃 정합성 벤치마크에서 기존 대비 FAIL 케이스가 증가하는 경우
 - 핵심 편집 플로우(선택/드래그/리사이즈) 회귀가 발생하는 경우
+- `styleToLayoutContextPropagation.test.ts` 실패 또는 direct `styleToLayout(` 호출이 남아있는 경우
 
 롤백은 "전체 되돌리기"보다 기능 단위 flag off를 우선 적용한다.
 
