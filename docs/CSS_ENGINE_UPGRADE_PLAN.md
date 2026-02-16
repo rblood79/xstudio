@@ -903,7 +903,6 @@ Spec 렌더링 정합성 (별도 트랙):
 | 1 (값 파서) | `calc/em/min/max-content/border shorthand` 파싱 통합 | 파서 단위 테스트 100% 통과, 레이아웃 100요소 < 5ms 유지 |
 | 2 (Grid) | `repeat/minmax/auto-placement/span` 적용 | Grid 벤치마크 케이스 PASS율 85%+ |
 | 3 (캐스케이드) | `inherit/var()` 상속 체인 동작 | 회귀 테스트에서 상속 관련 FAIL 0건 |
-| 4 (Block 정밀화) | baseline/white-space/word-break 반영 | 텍스트 정렬 오차 ±1px 내 |
 | 4 (Block) + §4.5/4.6 | baseline/white-space/word-break + **verticalAlign/fontStyle** 반영 | 텍스트 정렬 오차 ±1px 내, italic 렌더 확인 |
 | 5 (시각 효과) + §5.5/5.6/5.7 | multi-shadow/transform/gradient + **shadow순서 수정, 배열 radius, dashed border** | Skia 회귀 스냅샷 diff 허용치 이내, **SPEC FAIL 9건 → 0건** |
 | 6 (Position) | fixed/z-index/stacking context 동작 | 주요 샘플 시나리오 PASS + FPS 60 유지 |
