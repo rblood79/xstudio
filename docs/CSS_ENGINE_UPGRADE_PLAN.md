@@ -1945,6 +1945,311 @@ rg -n "styleToLayout\\(" apps/builder/src/builder/workspace/canvas
 
 ---
 
+## 14. 자체 통합 레이아웃 엔진 전환 검토 (대안 아키텍처)
+
+> **배경:** 현재 계획이 @pixi/layout, yoga-layout, @pixi/ui 등 다수 외부 라이브러리에 의존하며, Skia 렌더러 전환 후에도 Yoga 통합 레이어의 워크어라운드가 누적되는 일관성 문제를 근본적으로 해결하기 위해 "기본 pixi.js만 유지 + 나머지 자체 개발" 방안을 검토한다.
+
+### 14.1 현재 외부 의존도 분석
+
+#### 라이브러리별 의존 깊이
+
+| 패키지 | 버전 | 임포트 파일 수 | 역할 | 제거 가능성 |
+|--------|------|-------------|------|-----------|
+| `pixi.js` | ^8.14.3 | 전역 | 씬 그래프 + EventBoundary 이벤트 전용 (alpha=0) | **유지** — 이벤트 처리 핵심 |
+| `@pixi/react` | ^8.0.5 | ~20+ | React 바인딩, JSX 선언적 문법 | **유지** — React 통합 필수 |
+| `@pixi/layout` | ^3.2.0 | 5개 | Yoga 초기화 + flex `layout` prop 전달 | **제거 대상** |
+| `yoga-layout` | ^3.2.1 | 1개 | WASM flex 레이아웃 (initYoga.ts) | **제거 대상** (@pixi/layout과 함께) |
+| `@pixi/ui` | ^2.3.2 | 12개 | PixiButton, PixiSlider 등 UI 컴포넌트 래퍼 | **제거 대상** (§9에서 이미 계획됨) |
+
+#### 엔진별 자체 구현 현황
+
+```
+┌────────────────────────────────────────────────┐
+│              Layout Dispatch                    │
+├────────────┬───────────────┬───────────────────┤
+│ FlexEngine │  BlockEngine  │    GridEngine      │
+│   57줄     │    949줄      │     560줄          │
+│ (위임만)   │ (100% 자체)   │  (100% 자체)       │
+│            │ + WASM 가속   │  + WASM 가속       │
+├────────────┼───────────────┼───────────────────┤
+│ @pixi/layout│     X        │       X            │
+│ + Yoga     │              │                    │
+└────────────┴───────────────┴───────────────────┘
+```
+
+> **핵심 사실:** Block(949줄)과 Grid(560줄)는 이미 100% 자체 구현이다.
+> 외부 의존이 남은 것은 **Flex 레이아웃 단 하나**뿐이며, FlexEngine.ts는 57줄 위임 코드에 불과하다.
+
+#### 워크어라운드 코드 부채량
+
+Yoga/\@pixi/layout 통합으로 인해 발생한 워크어라운드:
+
+| 위치 | 코드량 | 문제 |
+|------|--------|------|
+| `styleToLayout.ts` 전체 | 663줄 | CSS → Yoga prop 변환 + 40+ 태그별 특수 처리 |
+| `stripSelfRenderedProps()` | ~10줄 | padding/border/visual 이중 적용 방지 |
+| `SELF_PADDING_TAGS` 관리 | ~30줄 | 6개 태그 목록 + 조건 분기 |
+| FlexEngine fit-content 우회 | ~40줄 | `flexGrow=0`, `flexShrink=0` 강제 |
+| 버튼 height 고정 (§8.2) | ~50줄 | `layout.height` 고정 + minHeight 보완 |
+| BTN_PAD / BUTTON_PADDING 이중화 | ~60줄 | 3벌의 버튼 크기 config |
+| formatStyles 캐싱 우회 (L5) | ~20줄 | 명시적 `auto`/`undefined` 리셋 |
+| **합계** | **~870줄+** | styleToLayout.ts 거의 전체가 우회 코드 |
+
+### 14.2 자체 Flex 엔진 구현 범위
+
+CSS Flexbox Level 1 스펙 기준, 자체 구현 시 필요한 알고리즘:
+
+#### 14.2.1 핵심 알고리즘
+
+```
+CSS Flexbox Layout Algorithm (W3C §9)
+├── §9.1 Initial Setup
+│   ├─ flex container의 main-axis / cross-axis 결정
+│   ├─ flex items 수집 (blockification, order 정렬)
+│   └─ writing-mode 방향 매핑 (Non-Goal이므로 LTR/TTB 고정)
+│
+├── §9.2 Line Length Determination
+│   ├─ available main size 결정
+│   └─ flex items의 hypothetical main size 계산
+│       ├─ flex-basis 해석 (auto, content, length)
+│       ├─ min-content / max-content intrinsic size
+│       └─ min/max 제약 clamping
+│
+├── §9.3 Main Size Determination
+│   ├─ flex lines 생성 (flex-wrap: nowrap | wrap | wrap-reverse)
+│   ├─ 각 line에서 free space 계산
+│   ├─ flex-grow 분배 (양수 free space)
+│   ├─ flex-shrink 분배 (음수 free space, weighted 비율)
+│   └─ min/max 제약으로 frozen items 처리 + 재분배
+│
+├── §9.4 Cross Size Determination
+│   ├─ 각 item의 hypothetical cross size 결정
+│   ├─ align-self: stretch 적용
+│   ├─ 각 line의 cross size 결정
+│   └─ align-content로 line간 간격 분배
+│
+├── §9.5 Main-Axis Alignment
+│   ├─ justify-content (flex-start, flex-end, center, space-between, space-around, space-evenly)
+│   └─ margin: auto 처리 (flex에서 특수)
+│
+├── §9.6 Cross-Axis Alignment
+│   ├─ align-items / align-self (stretch, flex-start, flex-end, center, baseline)
+│   └─ baseline 정렬 그룹핑
+│
+└── §9.7 Resolving Flexible Lengths (핵심 반복 알고리즘)
+    ├─ 초기 free space → grow/shrink factor 적용
+    ├─ min/max 위반 item → freeze + 남은 space 재분배
+    └─ 수렴할 때까지 반복
+```
+
+#### 14.2.2 추정 코드량 및 복잡도
+
+| 모듈 | 추정 줄 수 | 복잡도 | 비고 |
+|------|-----------|--------|------|
+| Flex 주축 크기 결정 + grow/shrink | 400~500줄 | 상 | §9.7의 반복 수렴 알고리즘이 핵심 |
+| Flex 교차축 크기 + align | 200~300줄 | 중 | baseline 정렬이 가장 복잡 |
+| Line 분할 (wrap) + align-content | 150~200줄 | 중 | multi-line 간격 분배 |
+| Intrinsic sizing (min/max-content) | 100~150줄 | 중 | BlockEngine §4와 공유 가능 |
+| Gap 처리 | 30~50줄 | 하 | |
+| Order 정렬 | 20~30줄 | 하 | |
+| WASM 가속 (children > 10) | 300~400줄 | 중 | Rust 구현 + JS 바인딩 |
+| **합계** | **1,200~1,630줄** | | BlockEngine(949줄) 대비 약 1.3~1.7배 |
+
+> **비교:** 현재 styleToLayout.ts(663줄) + FlexEngine.ts(57줄) + Yoga WASM(~200KB) = **720줄 + 외부 바이너리**
+> 자체 구현: **~1,400줄 JS + ~400줄 Rust** — 코드량은 증가하지만 외부 의존성과 워크어라운드 ~870줄이 소멸
+
+### 14.3 이점 (Pros)
+
+#### 14.3.1 아키텍처 일관성
+
+```
+현재:
+  Block → 자체 엔진(JS+WASM) → position output
+  Grid  → 자체 엔진(JS+WASM) → position output
+  Flex  → styleToLayout.ts(663줄 변환) → @pixi/layout → Yoga(WASM) → position output
+                                         ↑ 완전히 다른 파이프라인
+
+자체 통합 후:
+  Block → LayoutEngine.calculate() → position output
+  Grid  → LayoutEngine.calculate() → position output
+  Flex  → LayoutEngine.calculate() → position output
+           ↑ 동일한 인터페이스, 동일한 데이터 모델
+```
+
+- 3개 엔진이 `LayoutEngine` 인터페이스와 `LayoutContext`를 공유
+- CSS 값 파서(cssValueParser.ts)가 단일 진입점
+- 박스 모델 계산(padding, border, margin)이 엔진 공통 레이어에서 1회 수행
+
+#### 14.3.2 워크어라운드 완전 제거
+
+| 제거 대상 | 줄 수 | 사유 |
+|----------|-------|------|
+| `styleToLayout.ts` 전체 | 663줄 | Yoga prop 변환 불필요 — CSS style을 직접 해석 |
+| `SELF_PADDING_TAGS` | ~30줄 | padding을 자체 엔진이 직접 관리 |
+| `stripSelfRenderedProps()` | ~10줄 | 이중 적용 구조 소멸 |
+| `formatStyles` 캐싱 우회 (L5) | ~20줄 | @pixi/layout 코드 없음 |
+| `initYoga.ts` | ~50줄 | Yoga WASM 로더 불필요 |
+| BTN_PAD / BUTTON_PADDING 이중화 | ~60줄 | 단일 크기 config로 통합 |
+
+#### 14.3.3 §8 문제의 구조적 해결
+
+§8의 10-Case Divergence Matrix 문제는 대부분 "Yoga에 정보를 전달하는 과정의 손실"에서 발생한다:
+
+- **P1 (height 고정):** 자체 엔진은 measureFunc 없이도 content 높이를 직접 계산
+- **P2 (fit-content stretch 차단):** 자체 엔진은 부모 flex-direction을 직접 알고 있어 조건부 처리 불필요
+- **P3 (measureFunc 미설정):** 자체 엔진이 텍스트 측정을 내장하므로 Yoga measureFunc 인터페이스 불필요
+
+#### 14.3.4 번들 크기 개선
+
+| 항목 | 현재 | 자체 구현 후 | 차이 |
+|------|------|------------|------|
+| yoga-layout WASM | ~200KB | 0 | **-200KB** |
+| @pixi/layout JS | ~45KB | 0 | **-45KB** |
+| @pixi/ui JS | ~80KB | 0 | **-80KB** |
+| 자체 FlexEngine JS | 0 | ~8KB (gzip) | +8KB |
+| 자체 Flex WASM (xstudio_wasm에 추가) | 0 | ~15KB | +15KB |
+| **순 절감** | | | **~-300KB** |
+
+### 14.4 리스크 (Cons)
+
+#### 14.4.1 Flexbox 스펙 복잡도
+
+CSS Flexbox Level 1의 §9.7 "Resolving Flexible Lengths"는 반복 수렴 알고리즘으로, edge case가 많다:
+
+- 음수 free space에서의 flex-shrink weighted 분배
+- min/max 제약 위반 시 item을 freeze하고 남은 space 재분배
+- flex-basis: auto가 width/height와 상호작용하는 방식
+- margin: auto가 flex에서 justify-content를 오버라이드하는 특수 동작
+
+**경감 방안:** W3C 테스트 스위트(css-flexbox-1/)에서 핵심 테스트 케이스를 추출하여 TDD 방식으로 구현
+
+#### 14.4.2 일시적 일치율 하락 리스크
+
+현재 Flex 일치율 93%를 자체 엔진으로 즉시 재현하기 어려울 수 있다.
+
+**경감 방안:** Feature flag(`CUSTOM_FLEX_ENGINE`)로 Yoga 경로와 병행 실행, 동일 입력에 대한 출력 비교 검증 후 전환
+
+#### 14.4.3 검증 비용
+
+Yoga는 React Native에서 수년간 검증되었다. 자체 엔진은 edge case 발견에 시간이 필요하다.
+
+**경감 방안:**
+- W3C css-flexbox-1 테스트 스위트의 핵심 300+ 케이스 자동화
+- Yoga 출력과의 A/B 비교 테스트 (전환 기간 동안)
+- 기존 62개 Spec PASS 케이스 + §8 10-Case Matrix 회귀 방지
+
+### 14.5 구현 전략: 점진적 전환
+
+**일괄 전환이 아닌 3단계 점진적 전환**을 제안한다.
+
+#### Phase A: @pixi/ui 제거 + 구조 정비 (현재 계획의 §9)
+
+```
+목표: @pixi/ui 의존성 제거, SELF_PADDING_TAGS 워크어라운드 축소
+범위: 12개 PixiUI 래퍼 → Skia 직접 렌더링 + Yoga 노드 구조 전환
+결과: @pixi/ui 제거 (-80KB), C등급 컴포넌트 구조 개선
+```
+
+이 단계에서는 Yoga를 유지하되, §8/§9의 구조 개선을 적용한다.
+구조 개선 과정에서 Yoga 통합 레이어의 한계가 더 명확해지며, 자체 엔진의 요구사항이 구체화된다.
+
+#### Phase B: 자체 FlexEngine 구현 + 병행 검증
+
+```
+목표: Yoga 대체 자체 Flex 엔진 개발
+범위: FlexEngine.ts → 완전한 CSS Flexbox §9 알고리즘
+검증: Feature flag로 Yoga/자체 엔진 병행, A/B 출력 비교
+
+파일 구조:
+  engines/
+    FlexEngine.ts         ← 57줄(위임) → ~1,400줄(자체 구현)
+    FlexEngine.utils.ts   ← 신규: grow/shrink 분배, line 분할
+    __tests__/
+      FlexEngine.test.ts  ← W3C 테스트 스위트 기반
+  wasm/src/
+    flex_layout.rs        ← 신규: WASM 가속 (~400줄)
+```
+
+**핵심 구현 순서:**
+
+```
+B-1: 단일 라인 flex (nowrap) — grow/shrink/basis 해결
+     → 가장 빈번한 케이스, 80% 커버리지
+B-2: 다중 라인 flex (wrap) + align-content
+     → 15% 추가 커버리지
+B-3: Baseline 정렬 + margin:auto 특수 케이스
+     → 나머지 5%
+B-4: WASM 가속 경로 (children > 10)
+     → 성능 최적화
+```
+
+#### Phase C: Yoga 제거 + 통합 레이어 정리
+
+```
+목표: @pixi/layout + yoga-layout 완전 제거, styleToLayout.ts 제거
+범위:
+  - initYoga.ts 삭제
+  - styleToLayout.ts 삭제 (663줄) → style dispatch만 남김 (~50줄)
+  - @pixi/layout import 5개 파일에서 제거
+  - SELF_PADDING_TAGS, stripSelfRenderedProps() 삭제
+
+결과:
+  - 외부 레이아웃 의존성: 0 (pixi.js 자체는 유지)
+  - 번들 크기: -300KB+
+  - 워크어라운드 코드: -870줄+
+  - 3개 엔진 동일 아키텍처 달성
+```
+
+#### Phase C 이후 통합 아키텍처
+
+```
+CSS Style (사용자 입력)
+    │
+    ├─ cssValueParser.ts ─── 통합 CSS 값 파서 (calc, em, rem, %, vh/vw)
+    │
+    ├─ cssResolver.ts ────── 스타일 상속 + var() + cascade
+    │
+    └─ LayoutDispatcher ──── display 속성으로 엔진 선택
+         │
+         ├─ FlexEngine ──── 자체 CSS Flexbox §9 (JS + WASM)
+         ├─ BlockEngine ─── 자체 CSS Block (JS + WASM)  [현재와 동일]
+         └─ GridEngine ──── 자체 CSS Grid (JS + WASM)   [현재와 동일]
+              │
+              └─ 공통 레이어
+                  ├─ BoxModel (padding, border, margin)
+                  ├─ IntrinsicSizing (min-content, max-content, fit-content)
+                  ├─ TextMeasure (Skia Paragraph API)
+                  └─ WASM Accelerator (layoutAccelerator.ts)
+```
+
+### 14.6 현재 계획 대비 비교
+
+| 기준 | 현재 계획 (Yoga 유지) | 대안 (자체 Flex 엔진) |
+|------|---------------------|---------------------|
+| Flex 일치율 도달 속도 | 빠름 (Yoga 93% 기반) | 느림 (자체 구현 후 93% 재달성) |
+| 최종 일치율 상한 | ~96% (Yoga 한계 존재) | **98%+** (CSS 스펙 직접 구현) |
+| 워크어라운드 코드 | 663줄+ 유지 | **소멸** |
+| 번들 크기 | +325KB (Yoga+@pixi/layout+@pixi/ui) | **-300KB** (자체 ~23KB 추가) |
+| 유지보수 복잡도 | 높음 (3개 파서 + Yoga 연동) | 중간 (단일 파이프라인) |
+| §8 문제 해결 방식 | 워크어라운드 개선 | **구조적 해결** |
+| 개발 비용 | 낮음 | 높음 (Flex 엔진 ~1,400줄 + WASM ~400줄) |
+| 리스크 | 낮음 (검증된 경로) | 중간 (검증 필요, feature flag로 경감) |
+
+### 14.7 권고
+
+**Phase A → B → C 점진적 전환을 권고한다.**
+
+근거:
+1. Block/Grid가 이미 자체 엔진이므로, Flex만 전환하면 **완전한 자체 레이아웃 스택**이 완성된다
+2. `styleToLayout.ts`의 870줄+ 워크어라운드는 기능 추가마다 증가하는 구조적 부채다
+3. §8의 10-Case Divergence Matrix 중 다수가 Yoga 통합 레이어에서 기인하며, 워크어라운드로는 근본 해결 불가
+4. 번들 크기 300KB+ 절감은 초기 로드 < 3초 목표에 직접 기여
+5. Feature flag 병행 운영으로 리스크를 충분히 통제 가능
+
+**단, Phase A(§9 구조 개선)를 먼저 완료하여 Yoga 통합 레이어의 문제를 충분히 이해한 후 Phase B를 시작해야 한다.** Phase A 없이 바로 자체 엔진을 만들면, 요구사항 누락으로 재작업 리스크가 높아진다.
+
+---
+
 ## 참조
 
 - [LAYOUT_REQUIREMENTS.md](./LAYOUT_REQUIREMENTS.md) — 하이브리드 레이아웃 엔진 CSS 호환 구현
@@ -1952,5 +2257,6 @@ rg -n "styleToLayout\\(" apps/builder/src/builder/workspace/canvas
 - [CSS Display Level 3](https://www.w3.org/TR/css-display-3/) — display, blockification
 - [CSS Box Sizing Level 3](https://www.w3.org/TR/css-sizing-3/) — fit-content, min-content, max-content
 - [CSS Grid Layout Level 1](https://www.w3.org/TR/css-grid-1/) — Grid 명세
+- [CSS Flexbox Level 1](https://www.w3.org/TR/css-flexbox-1/) — Flexbox 명세 (§14 자체 엔진 구현 기준)
 - [CSS Values and Units Level 4](https://www.w3.org/TR/css-values-4/) — calc(), min(), max(), clamp()
 - [Yoga Layout](https://yogalayout.dev/) — @pixi/layout 기반 엔진
