@@ -12,6 +12,8 @@ import type { Element } from '../../../../types/core/store.types';
 import { getBadgeSizePreset } from '../utils/cssVariableReader';
 import { calculateContentHeight, measureTextWidth } from './engines/utils';
 import { measureWrappedTextHeight } from '../utils/textMeasure';
+import { resolveCSSSizeValue } from './engines/cssValueParser';
+import type { ComputedStyle } from './engines/cssResolver';
 // CHECKBOX_BOX_SIZES는 INDICATOR_SIZES로 인라인 처리됨
 
 // ============================================
@@ -137,16 +139,18 @@ function measureTextWidth(text: string, fontSize: number): number {
 // ============================================
 
 /**
- * CSS 값을 숫자로 파싱 (px, %, vh, vw 등)
+ * CSS 값을 숫자로 파싱 (px, %, vh, vw, em, rem, calc 등)
  *
+ * 내부적으로 resolveCSSSizeValue()에 위임하되, Yoga 호환을 위해:
  * - %: 문자열로 유지 (@pixi/layout이 직접 처리)
  * - vh/vw: % 문자열로 변환 (@pixi/layout이 부모 기준으로 처리)
  *   빌더에서는 viewport = 페이지 = body이므로 vw/vh를 %로 변환하면
  *   Yoga가 부모의 padding/border를 고려하여 content area 기준으로 계산
- * - px, rem: 숫자로 변환
+ * - px, rem, em, calc: 숫자로 변환
  */
 export function parseCSSValue(
   value: unknown,
+  parentFontSize?: number,
 ): number | string | undefined {
   if (value === undefined || value === null || value === '' || value === 'auto') {
     return undefined;
@@ -171,13 +175,12 @@ export function parseCSSValue(
     if (value.endsWith('vw')) {
       return `${parseFloat(value)}%`;
     }
-    // rem 단위 (기본 16px 기준)
-    if (value.endsWith('rem')) {
-      return parseFloat(value) * 16;
-    }
-    // px 값 또는 숫자 문자열
-    const parsed = parseFloat(value);
-    return isNaN(parsed) ? undefined : parsed;
+
+    // 나머지 단위(px, rem, em, calc 등)는 통합 파서에 위임
+    // S4: parentFontSize가 있으면 em 단위 해석에 활용
+    return resolveCSSSizeValue(value, {
+      parentSize: parentFontSize,
+    });
   }
 
   return undefined;
@@ -276,11 +279,14 @@ function parseFlexShorthand(flex: string | number): {
  */
 export function styleToLayout(
   element: Element,
+  computedStyle?: ComputedStyle,
 ): LayoutStyle {
   const style = (element.props?.style || {}) as Record<string, unknown>;
   const layout: LayoutStyle = {};
 
-  const parse = (value: unknown) => parseCSSValue(value);
+  // S4: computedStyle이 제공되면 상속된 fontSize를 em 해석에 활용
+  const parentFontSize = computedStyle?.fontSize;
+  const parse = (value: unknown) => parseCSSValue(value, parentFontSize);
 
   // Dimensions
   // 🚀 @pixi/layout의 formatStyles가 이전 스타일과 병합하므로,
@@ -482,7 +488,7 @@ export function styleToLayout(
   // Position
   // position: 'absolute'가 명시적으로 지정된 경우에만 absolute 처리
   // 그 외에는 모두 flexbox 아이템으로 자동 배치
-  if (style.position === 'absolute') {
+  if (style.position === 'absolute' || style.position === 'fixed') {
     layout.position = 'absolute';
     const top = parse(style.top);
     const left = parse(style.left);

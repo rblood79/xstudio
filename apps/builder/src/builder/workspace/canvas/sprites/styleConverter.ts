@@ -13,6 +13,8 @@
 import { cssColorToPixiHex } from '../../../../utils/color';
 import { colord } from 'colord';
 import type { EffectStyle, DropShadowEffect } from '../skia/types';
+import { resolveCSSSizeValue } from '../layout/engines/cssValueParser';
+import type { CSSValueContext } from '../layout/engines/cssValueParser';
 
 // ============================================
 // Types
@@ -54,12 +56,21 @@ export interface CSSStyle {
   filter?: string;
   backdropFilter?: string;
   mixBlendMode?: string;
+  // Text wrapping
+  whiteSpace?: string;
+  wordBreak?: string;
+  overflowWrap?: string;
   // Layout properties
   display?: string;
   flexDirection?: string;
   gap?: number | string;
   // Visibility
   visibility?: 'visible' | 'hidden' | 'collapse';
+  // CSS Transform
+  transform?: string;
+  transformOrigin?: string;
+  // Stacking
+  zIndex?: number | string;
 }
 
 export interface PixiTransform {
@@ -140,12 +151,16 @@ export function cssColorToAlpha(color: string | undefined): number {
 /**
  * CSS 크기 값을 숫자로 변환
  *
+ * 내부적으로 resolveCSSSizeValue()에 위임하여 일관된 단위 해석을 제공한다.
+ * calc(), em, rem 등 확장 단위를 지원한다.
+ *
  * @example
  * parseCSSSize('100px') // 100
  * parseCSSSize('50%', 800) // 400
  * parseCSSSize(200) // 200
  * parseCSSSize('100vh', undefined, 0, { width: 1920, height: 1080 }) // 1080
  * parseCSSSize('50vw', undefined, 0, { width: 1920, height: 1080 }) // 960
+ * parseCSSSize('calc(100% - 20px)', 800) // 780
  */
 export function parseCSSSize(
   value: string | number | undefined,
@@ -154,50 +169,15 @@ export function parseCSSSize(
   viewport?: { width: number; height: number }
 ): number {
   if (value === undefined || value === null) return fallback;
-  if (typeof value === 'number') return value;
 
-  // Pixel value
-  if (value.endsWith('px')) {
-    return parseFloat(value);
-  }
+  const ctx: CSSValueContext = {
+    parentSize,
+    containerSize: parentSize,
+    viewportWidth: viewport?.width,
+    viewportHeight: viewport?.height,
+  };
 
-  // rem 단위 (기본 16px 기준)
-  if (value.endsWith('rem')) {
-    return parseFloat(value) * 16;
-  }
-
-  // vh 단위 (viewport height 기준)
-  if (value.endsWith('vh')) {
-    const vh = viewport?.height ?? 1080;
-    return (parseFloat(value) / 100) * vh;
-  }
-
-  // vw 단위 (viewport width 기준)
-  if (value.endsWith('vw')) {
-    const vw = viewport?.width ?? 1920;
-    return (parseFloat(value) / 100) * vw;
-  }
-
-  // em 단위 (parentSize가 있으면 사용, 없으면 16px)
-  // Note: 'rem' check must come before 'em' check (rem endsWith em)
-  if (value.endsWith('em')) {
-    const base = parentSize !== undefined ? parentSize : 16;
-    return parseFloat(value) * base;
-  }
-
-  // Percentage
-  if (value.endsWith('%') && parentSize !== undefined) {
-    return (parseFloat(value) / 100) * parentSize;
-  }
-
-  // Auto or other
-  if (value === 'auto') {
-    return fallback;
-  }
-
-  // Try parsing as number
-  const parsed = parseFloat(value);
-  return isNaN(parsed) ? fallback : parsed;
+  return resolveCSSSizeValue(value, ctx, fallback) ?? fallback;
 }
 
 // ============================================
@@ -402,6 +382,8 @@ export function convertStyle(style: CSSStyle | undefined): ConvertedStyle {
 interface SkiaEffectsResult {
   effects?: EffectStyle[];
   blendMode?: string;
+  /** CSS transform → CanvasKit 3x3 matrix (Float32Array(9)) */
+  transform?: Float32Array;
 }
 
 /**
@@ -427,10 +409,10 @@ export function buildSkiaEffects(style: CSSStyle | undefined): SkiaEffectsResult
     }
   }
 
-  // 2. boxShadow → DropShadowEffect
+  // 2. boxShadow → DropShadowEffect (다중 shadow 지원)
   if (style.boxShadow && style.boxShadow !== 'none') {
-    const shadow = parseFirstBoxShadow(style.boxShadow);
-    if (shadow) {
+    const shadows = parseAllBoxShadows(style.boxShadow);
+    for (const shadow of shadows) {
       effects.push(shadow);
     }
   }
@@ -451,24 +433,45 @@ export function buildSkiaEffects(style: CSSStyle | undefined): SkiaEffectsResult
     }
   }
 
+  // 5. CSS transform → CanvasKit 3x3 matrix
+  let transformMatrix: Float32Array | undefined;
+  if (style.transform && style.transform !== 'none') {
+    // width/height는 transform-origin의 % 해석에 필요 — SkiaEffectsResult에서는
+    // 호출측에서 별도 width/height 전달이 필요하나, 현재 buildSkiaEffects()는
+    // style만 받으므로 transform-origin의 % 및 키워드는 0 기반으로 처리한다.
+    // 실제 origin 적용은 BoxSprite 등에서 width/height를 알고 있는 시점에서 수행.
+    transformMatrix = parseTransform(style.transform);
+  }
+
   return {
     effects: effects.length > 0 ? effects : undefined,
     blendMode: style.mixBlendMode || undefined,
+    transform: transformMatrix,
   };
 }
 
 /**
- * CSS boxShadow의 첫 번째 shadow를 파싱하여 DropShadowEffect로 변환
+ * 다중 CSS boxShadow를 파싱하여 DropShadowEffect 배열로 변환
+ *
+ * 쉼표로 분리하되, 괄호 내부의 쉼표(rgb() 등)는 무시한다.
+ */
+function parseAllBoxShadows(raw: string): DropShadowEffect[] {
+  const parts = raw.split(/,(?![^(]*\))/);
+  return parts
+    .map(s => parseOneShadow(s.trim()))
+    .filter((s): s is DropShadowEffect => s !== null);
+}
+
+/**
+ * 단일 CSS boxShadow 값을 파싱하여 DropShadowEffect로 변환
  *
  * 지원 포맷: [inset] offsetX offsetY [blurRadius [spreadRadius]] [color]
  */
-function parseFirstBoxShadow(raw: string): DropShadowEffect | null {
-  // 콤마 분리 시 괄호 안의 콤마는 제외
-  const first = raw.split(/,(?![^(]*\))/)[0].trim();
-  if (!first || first === 'none') return null;
+function parseOneShadow(raw: string): DropShadowEffect | null {
+  if (!raw || raw === 'none') return null;
 
-  const inner = /\binset\b/.test(first);
-  let cleaned = first.replace(/\binset\b/, '').trim();
+  const inner = /\binset\b/.test(raw);
+  let cleaned = raw.replace(/\binset\b/, '').trim();
 
   // 색상 추출 (rgb/rgba/hsl/hsla/#hex)
   let colorStr = 'rgba(0,0,0,1)';
@@ -515,6 +518,213 @@ function parseFirstBoxShadow(raw: string): DropShadowEffect | null {
     color,
     inner,
   };
+}
+
+// ============================================
+// CSS Transform → CanvasKit 3x3 Matrix
+// ============================================
+
+/**
+ * 3x3 행렬 곱셈 (row-major, CanvasKit 규격)
+ *
+ * CanvasKit 3x3 layout:
+ * [scaleX, skewX,  transX]   [0, 1, 2]
+ * [skewY,  scaleY, transY] = [3, 4, 5]
+ * [persp0, persp1, persp2]   [6, 7, 8]
+ */
+function multiply3x3(a: Float32Array, b: Float32Array): Float32Array {
+  return Float32Array.of(
+    a[0] * b[0] + a[1] * b[3] + a[2] * b[6],
+    a[0] * b[1] + a[1] * b[4] + a[2] * b[7],
+    a[0] * b[2] + a[1] * b[5] + a[2] * b[8],
+    a[3] * b[0] + a[4] * b[3] + a[5] * b[6],
+    a[3] * b[1] + a[4] * b[4] + a[5] * b[7],
+    a[3] * b[2] + a[4] * b[5] + a[5] * b[8],
+    a[6] * b[0] + a[7] * b[3] + a[8] * b[6],
+    a[6] * b[1] + a[7] * b[4] + a[8] * b[7],
+    a[6] * b[2] + a[7] * b[5] + a[8] * b[8],
+  );
+}
+
+/** 단위 행렬 (3x3 identity) */
+function identity3x3(): Float32Array {
+  return Float32Array.of(1, 0, 0, 0, 1, 0, 0, 0, 1);
+}
+
+/** 이동 행렬 */
+function translateMatrix(tx: number, ty: number): Float32Array {
+  return Float32Array.of(1, 0, tx, 0, 1, ty, 0, 0, 1);
+}
+
+/** 회전 행렬 (라디안) */
+function rotateMatrix(radians: number): Float32Array {
+  const c = Math.cos(radians);
+  const s = Math.sin(radians);
+  return Float32Array.of(c, -s, 0, s, c, 0, 0, 0, 1);
+}
+
+/** 스케일 행렬 */
+function scaleMatrix(sx: number, sy: number): Float32Array {
+  return Float32Array.of(sx, 0, 0, 0, sy, 0, 0, 0, 1);
+}
+
+/** skew 행렬 (라디안) */
+function skewMatrix(ax: number, ay: number): Float32Array {
+  return Float32Array.of(1, Math.tan(ax), 0, Math.tan(ay), 1, 0, 0, 0, 1);
+}
+
+/** 각도 문자열을 라디안으로 변환 */
+function parseAngle(value: string): number {
+  const trimmed = value.trim();
+  if (trimmed.endsWith('rad')) return parseFloat(trimmed);
+  if (trimmed.endsWith('turn')) return parseFloat(trimmed) * Math.PI * 2;
+  if (trimmed.endsWith('grad')) return parseFloat(trimmed) * (Math.PI / 200);
+  // deg (기본)
+  return parseFloat(trimmed) * (Math.PI / 180);
+}
+
+/**
+ * CSS transform 문자열을 CanvasKit 3x3 matrix로 변환
+ *
+ * 지원 함수: translate, translateX, translateY, rotate, scale, scaleX, scaleY,
+ *           skew, skewX, skewY
+ *
+ * 여러 함수를 순서대로 왼쪽에서 오른쪽으로 합성한다.
+ */
+export function parseTransform(value: string): Float32Array | null {
+  if (!value || value === 'none') return null;
+
+  // 각 transform 함수를 추출: functionName(args)
+  const funcRegex = /(\w+)\(([^)]*)\)/g;
+  let result = identity3x3();
+  let matched = false;
+  let match: RegExpExecArray | null;
+
+  while ((match = funcRegex.exec(value)) !== null) {
+    const fn = match[1];
+    const args = match[2].split(/[\s,]+/).map(s => s.trim()).filter(Boolean);
+    let mat: Float32Array | null = null;
+
+    switch (fn) {
+      case 'translate': {
+        const tx = parseCSSSize(args[0], undefined, 0);
+        const ty = args[1] ? parseCSSSize(args[1], undefined, 0) : 0;
+        mat = translateMatrix(tx, ty);
+        break;
+      }
+      case 'translateX': {
+        mat = translateMatrix(parseCSSSize(args[0], undefined, 0), 0);
+        break;
+      }
+      case 'translateY': {
+        mat = translateMatrix(0, parseCSSSize(args[0], undefined, 0));
+        break;
+      }
+      case 'rotate': {
+        mat = rotateMatrix(parseAngle(args[0]));
+        break;
+      }
+      case 'scale': {
+        const sx = parseFloat(args[0]);
+        const sy = args[1] ? parseFloat(args[1]) : sx;
+        if (!isNaN(sx) && !isNaN(sy)) mat = scaleMatrix(sx, sy);
+        break;
+      }
+      case 'scaleX': {
+        const sx = parseFloat(args[0]);
+        if (!isNaN(sx)) mat = scaleMatrix(sx, 1);
+        break;
+      }
+      case 'scaleY': {
+        const sy = parseFloat(args[0]);
+        if (!isNaN(sy)) mat = scaleMatrix(1, sy);
+        break;
+      }
+      case 'skew': {
+        const ax = parseAngle(args[0]);
+        const ay = args[1] ? parseAngle(args[1]) : 0;
+        mat = skewMatrix(ax, ay);
+        break;
+      }
+      case 'skewX': {
+        mat = skewMatrix(parseAngle(args[0]), 0);
+        break;
+      }
+      case 'skewY': {
+        mat = skewMatrix(0, parseAngle(args[0]));
+        break;
+      }
+      // matrix()는 향후 확장 가능
+      default:
+        break;
+    }
+
+    if (mat) {
+      result = multiply3x3(result, mat);
+      matched = true;
+    }
+  }
+
+  return matched ? result : null;
+}
+
+/**
+ * CSS transform-origin 값을 [ox, oy] 좌표로 변환
+ *
+ * 지원 키워드: left, center, right, top, bottom
+ * 지원 단위: px, %, 숫자
+ *
+ * 기본값: center center → (width/2, height/2)
+ */
+export function parseTransformOrigin(
+  value: string | undefined,
+  width: number,
+  height: number,
+): [number, number] {
+  if (!value) return [width / 2, height / 2];
+
+  const parts = value.trim().split(/\s+/);
+  const resolveX = (v: string): number => {
+    switch (v) {
+      case 'left': return 0;
+      case 'center': return width / 2;
+      case 'right': return width;
+      default:
+        if (v.endsWith('%')) return (parseFloat(v) / 100) * width;
+        return parseCSSSize(v, width, width / 2);
+    }
+  };
+  const resolveY = (v: string): number => {
+    switch (v) {
+      case 'top': return 0;
+      case 'center': return height / 2;
+      case 'bottom': return height;
+      default:
+        if (v.endsWith('%')) return (parseFloat(v) / 100) * height;
+        return parseCSSSize(v, height, height / 2);
+    }
+  };
+
+  const ox = resolveX(parts[0]);
+  const oy = parts[1] ? resolveY(parts[1]) : height / 2;
+
+  return [ox, oy];
+}
+
+/**
+ * transform-origin을 적용한 최종 3x3 matrix 생성
+ *
+ * 원리: translate(ox, oy) × matrix × translate(-ox, -oy)
+ * → origin으로 이동 후 변환 적용, 다시 원위치
+ */
+export function applyTransformOrigin(
+  matrix: Float32Array,
+  ox: number,
+  oy: number,
+): Float32Array {
+  const pre = translateMatrix(ox, oy);
+  const post = translateMatrix(-ox, -oy);
+  return multiply3x3(multiply3x3(pre, matrix), post);
 }
 
 export default convertStyle;

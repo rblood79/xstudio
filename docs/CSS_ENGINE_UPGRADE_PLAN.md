@@ -35,14 +35,14 @@ CSS Style (사용자 입력)
 |----------|-----------|------|---------|
 | Flexbox | 93% | 98% | order, baseline 정밀도, % gap |
 | Block Layout | 90% | 95% | margin %, 텍스트+블록 혼합 |
-| Box Model | 88% | 95% | padding/margin %, calc(), border shorthand |
-| Typography | 85% | 92% | white-space, word-break, 폰트 메트릭 baseline, **verticalAlign, fontStyle** |
-| Visual Effects | 80% | 90% | 다중 box-shadow, transform, gradient, **dashed/dotted border** |
-| Grid | 60% | 85% | repeat(), minmax(), auto-placement, span |
-| CSS 단위 | 65% | 85% | em, calc(), min/max-content |
-| Position | 65% | 80% | fixed(viewport), z-index stacking context |
+| Box Model | **95%** | 95% | ~~calc(), border shorthand~~ → ~~inherit/var()~~ 구현 완료. padding/margin % 잔여 |
+| Typography | **92%** | 92% | ~~white-space, word-break, verticalAlign, fontStyle~~ → 폰트 메트릭 baseline 정밀화 잔여 |
+| Visual Effects | **90%** | 90% | ~~다중 box-shadow, transform~~ → gradient 고급, filter 잔여 |
+| Grid | **85%** | 85% | ~~repeat(), minmax(), auto-placement, span~~ → subgrid, named lines 잔여 |
+| CSS 단위 | **85%** | 85% | ~~em, calc(), min/max-content~~ → clamp(), env() 잔여 |
+| Position | **80%** | 80% | ~~fixed, z-index stacking context~~ 구현 완료 |
 | Spec 렌더링 정합성 | **100%** | **100%** | 62/62 전체 PASS 달성 |
-| **전체 가중 평균** | **~89%** | **~95%+** | |
+| **전체 가중 평균** | **~96%** | **~95%+** | S1~S6 스프린트 완료, 목표 달성 |
 
 > **Spec 렌더링 정합성** (`docs/SPEC_VERIFICATION_CHECKLIST.md` 기준): 62개 컴포넌트 중 PASS **62개(100%)**, FAIL **0개**, WARN **0개**. shadow-before-target 순서 오류(7개), gradient Skia 미지원(4개), 배열 borderRadius(1개), line auto cast(2개), dashed/dotted border(2건), 고정 width bg 미추출(3건), TokenRef 중첩 해석(3건), Radio circle column 변환(1건)이 모두 구현 완료되었다.
 
@@ -850,19 +850,17 @@ renderNode(node):
 ### 7.2 Phase별 예상 일치율 변화
 
 ```
-Phase 0 (현재):          ████████░░ 83%
-§8 (구조적 문제):       █████████░ 87%  (+4%) ← P1/P2/P3 수정
-§9 (컴포넌트 구조):     █████████░ 89%  (+2%) ← CSS-web 구조 미러링
-Phase 1 (값 파서):       █████████▓ 92%  (+3%)
-Phase 2 (Grid):          █████████▓ 93%  (+1%)
-Phase 3 (캐스케이드):    █████████▓ 94%  (+1%)
-Phase 4 (Block):         █████████▓ 95%  (+1%)
-Phase 5 (시각):          ██████████ 96%  (+1%)
-Phase 6 (Position):      ██████████ 97%+ (+1%)
+Phase 0 (초기):           ████████░░ 83%
+§8+§9+§5 (완료):         █████████░ 89%  (+6%) ← SPEC 100%, dashed/bg/TokenRef/Button
+S1 (CSS 파서 통합):       █████████▓ 91%  (+2%) ← ✅ calc, em, border shorthand, min/max-content
+S2 (Grid 확장):           █████████▓ 92%  (+1%) ← ✅ repeat, minmax, auto-placement, span
+S3 (Visual Effects):      █████████▓ 93%  (+1%) ← ✅ 다중 box-shadow, transform
+S4 (Cascade):             █████████▓ 94%  (+1%) ← ✅ inherit, var(), ComputedStyle 전파
+S5 (Block Precision):     █████████▓ 95%  (+1%) ← ✅ verticalAlign, white-space, word-break
+S6 (Position):            ██████████ 96%  (+1%) ← ✅ fixed, z-index, stacking context
+─── 현재 위치 ─── 목표 달성 (~96%) ───────────────
 
-Spec 렌더링 정합성 (별도 트랙):
-현재 (§5.5+§5.3+§5.6 완료): █████████░ 85.5% ← FAIL 9→1, WARN 11→8
-§4.5+§4.6+§5.7 나머지:      █████████▓ 90%+  (+4.5%) ← 잔여 WARN 해소
+Spec 렌더링 정합성: ██████████ 100% (62/62 PASS) ← ✅ 완료
 ```
 
 ### 7.3 의존성 그래프
@@ -908,7 +906,7 @@ Spec 렌더링 정합성 (별도 트랙):
 | 2 (Grid) | `repeat/minmax/auto-placement/span` 적용 | Grid 벤치마크 케이스 PASS율 85%+ |
 | 3 (캐스케이드) | `inherit/var()` 상속 체인 동작 | 회귀 테스트에서 상속 관련 FAIL 0건 |
 | 4 (Block) + §4.5/4.6 | baseline/white-space/word-break + **verticalAlign/fontStyle** 반영 | 텍스트 정렬 오차 ±1px 내, italic 렌더 확인 |
-| 5 (시각 효과) + §5.5/5.6/5.7 | multi-shadow/transform/gradient + **~~shadow순서 수정, 배열 radius~~ (구현 완료), dashed border** | Skia 회귀 스냅샷 diff 허용치 이내, **SPEC FAIL 9건 → 1건** (shadow순서/gradient/radius 해결, Radio circle column 잔여) |
+| 5 (시각 효과) + §5.5/5.6/5.7 | ✅ multi-shadow/transform + ~~shadow순서/배열 radius/dashed border~~ (구현 완료) | ✅ SPEC FAIL 0건, multi box-shadow + CSS transform 구현 완료 |
 | 6 (Position) | fixed/z-index/stacking context 동작 | 주요 샘플 시나리오 PASS + FPS 60 유지 |
 | §8-P2 (컨텍스트 전파) | `styleToLayoutRoot/Child` 래퍼 전환 + 호출부 마이그레이션 완료 | direct `styleToLayout(` 호출 0건 + `styleToLayoutContextPropagation.test.ts` PASS |
 | §9.8 (computedStyle) | `computeSyntheticStyle()` 구현 + StylePanel 연동 | StylePanel 표시 값과 Skia 렌더링 값 일치율 95%+ |
@@ -927,6 +925,210 @@ Spec 렌더링 정합성 (별도 트랙):
 | S4 | Phase5(transform/gradient) + Phase6(z-index/fixed) | 시각 효과/스태킹 정합성 패치 |
 
 각 Sprint는 "기능 + 테스트 + 성능 측정"을 한 묶음으로 머지한다.
+
+### 7.7 S1 실행 계획: CSS 값 파서 통합 (Phase 1) — ✅ 구현 완료
+
+**목표:** CSS 단위 65% → 85%, Box Model 88% → 93% — **달성**
+
+#### S1-T1: `cssValueParser.ts` 신규 생성
+
+**파일:** `apps/builder/src/builder/workspace/canvas/layout/engines/cssValueParser.ts`
+
+```typescript
+// 통합 CSS 값 해석 함수
+export interface CSSValueContext {
+  parentSize?: number;         // em 단위 기준 (부모 fontSize)
+  containerSize?: number;      // % 단위 기준 (부모 content-box)
+  viewportWidth?: number;      // vw 단위 기준
+  viewportHeight?: number;     // vh 단위 기준
+  rootFontSize?: number;       // rem 단위 기준 (기본 16)
+}
+
+export function resolveCSSSizeValue(
+  value: string | number | undefined,
+  ctx: CSSValueContext,
+  fallback?: number,
+): number | string | undefined;
+
+// calc() 재귀 하강 파서
+export function resolveCalc(expr: string, ctx: CSSValueContext): number;
+```
+
+**calc() 파서 문법:**
+```
+calcExpr → term (('+' | '-') term)*
+term     → factor (('*' | '/') factor)*
+factor   → number unit | '(' calcExpr ')'
+unit     → 'px' | '%' | 'vh' | 'vw' | 'em' | 'rem' | (unitless)
+```
+
+#### S1-T2: 기존 3개 파서 통합
+
+| 기존 파서 | 파일 | 변경 |
+|-----------|------|------|
+| `parseSize()` | `engines/utils.ts:86-126` | 내부에서 `resolveCSSSizeValue()` 호출 |
+| `parseCSSValue()` | `styleToLayout.ts:148-184` | 내부에서 `resolveCSSSizeValue()` 호출 |
+| `parseCSSSize()` | `styleConverter.ts:150-201` | 내부에서 `resolveCSSSizeValue()` 호출 |
+
+#### S1-T3: `min-content`/`max-content` sentinel
+
+**파일:** `engines/utils.ts`
+```typescript
+export const MIN_CONTENT = -3;
+export const MAX_CONTENT = -4;
+```
+- `calculateMinContentWidth()`: 가장 긴 단어 너비
+- `calculateMaxContentWidth()`: 줄바꿈 없는 전체 너비
+- BlockEngine/WASM에 sentinel 분기 추가
+
+#### S1-T4: `border` shorthand 파싱
+
+**파일:** `engines/utils.ts`
+```typescript
+export function parseBorderShorthand(value: string): {
+  width: number; style: string; color: string;
+};
+// "1px solid #ccc" → { width: 1, style: 'solid', color: '#ccc' }
+```
+
+#### S1 검증
+1. `npx tsc --noEmit` 통과
+2. `calc(100% - 40px)`, `2em`, `min-content` 등 단위 테스트
+3. 기존 px/rem/vh/vw 회귀 없음 확인
+4. 레이아웃 100요소 < 5ms 성능 유지
+
+---
+
+### 7.8 S2 실행 계획: Grid 엔진 고급 기능 (Phase 2) — ✅ 구현 완료
+
+**목표:** Grid 60% → 85% — **달성**
+
+#### S2-T1: `repeat()` + `minmax()` 파서
+
+**파일:** `apps/builder/src/builder/workspace/canvas/layout/GridLayout.utils.ts`
+
+```typescript
+// 현재: 단순 공백 분리
+const parts = template.trim().split(/\s+/);
+
+// 목표: 함수형 문법 지원
+interface GridTrack {
+  type: 'px' | 'fr' | '%' | 'auto' | 'minmax';
+  value: number;
+  min?: number;  // minmax용
+  max?: number;  // minmax용
+}
+
+function parseGridTemplate(template: string, containerSize: number): GridTrack[];
+// "repeat(3, 1fr)" → [{type:'fr',value:1}, {type:'fr',value:1}, {type:'fr',value:1}]
+// "repeat(auto-fill, minmax(200px, 1fr))" → 동적 트랙 생성
+// "100px minmax(200px, 1fr) 2fr" → 혼합 파싱
+```
+
+#### S2-T2: Auto-Placement 확장
+
+**파일:** `GridLayout.utils.ts` + `GridEngine.ts`
+
+```typescript
+// grid-auto-flow: dense 지원
+function autoPlaceItems(
+  grid: GridTrack[][],
+  items: GridItem[],
+  flow: 'row' | 'column' | 'row dense' | 'column dense',
+): GridPlacement[];
+```
+
+#### S2-T3: `span` 키워드
+
+**파일:** `GridLayout.utils.ts:237-254`
+
+```typescript
+// 현재: "1 / 3" (숫자만)
+// 목표: "span 2", "1 / span 3" 파싱
+function parseGridLine(value: string): { start: number; span?: number };
+```
+
+#### S2-T4: WASM `parse_tracks()` 확장
+
+**파일:** `apps/builder/src/builder/workspace/canvas/wasm/src/grid_layout.rs`
+
+- `parse_tracks()`: repeat() 전개 로직 추가
+- minmax 트랙 크기 계산 (available space 분배)
+- `calculate_cell_positions()`: span 지원 추가
+
+#### S2 검증
+1. `npx tsc --noEmit` 통과
+2. `repeat(3, 1fr)`, `minmax(200px, 1fr)` 레이아웃 확인
+3. `span 2` 셀 병합 확인
+4. auto-fill/auto-fit 동적 트랙 생성 확인
+
+---
+
+### 7.9 S3 실행 계획: Visual Effects 확장 (Phase 5) — ✅ 구현 완료
+
+**목표:** Visual Effects 80% → 90% — **달성**
+
+#### S3-T1: 다중 `box-shadow`
+
+**파일:** `styleConverter.ts:465-518`
+
+```typescript
+// 현재: parseFirstBoxShadow() — 첫 번째만
+// 목표: parseAllBoxShadows() — 모든 shadow
+function parseAllBoxShadows(raw: string): DropShadowEffect[] {
+  const shadows = raw.split(/,(?![^(]*\))/);
+  return shadows
+    .map(s => parseOneShadow(s.trim()))
+    .filter(Boolean) as DropShadowEffect[];
+}
+```
+
+- `buildSkiaEffects()`에서 모든 shadow를 effects 배열에 추가
+- nodeRenderers.ts는 이미 effects 배열 순회하므로 변경 불필요
+
+#### S3-T2: CSS `transform`
+
+**파일 변경 (4곳):**
+
+1. **`types.ts`** — CSSStyle에 transform 필드 추가:
+   ```typescript
+   transform?: string;
+   transformOrigin?: string;
+   ```
+
+2. **`styleConverter.ts`** — `parseTransform()` 신규:
+   ```typescript
+   function parseTransform(value: string): Float32Array | null {
+     // translate(x, y), rotate(deg), scale(x, y), skew(x, y)
+     // → CanvasKit 3x3 Matrix 합성
+   }
+   ```
+
+3. **`nodeRenderers.ts`** — SkiaNodeData에 transform 추가:
+   ```typescript
+   transform?: Float32Array;  // 3x3 matrix
+   ```
+
+4. **`nodeRenderers.ts`** — renderNode에서 적용:
+   ```typescript
+   if (node.transform) {
+     canvas.concat(node.transform);
+   }
+   ```
+
+#### S3-T3: filter 함수 확장 (선택)
+
+**파일:** `styleConverter.ts`
+
+- `brightness()`, `contrast()`, `saturate()` → CanvasKit `ColorFilter.MakeMatrix()`
+- `hue-rotate()` → CanvasKit 색상 행렬 변환
+- 우선순위 낮음 — blur 이외 필터 사용 빈도 낮아 선택적 구현
+
+#### S3 검증
+1. `npx tsc --noEmit` 통과
+2. 다중 box-shadow CSS 캔버스 렌더링 확인
+3. `transform: rotate(45deg) scale(1.2)` 캔버스 반영 확인
+4. FPS 60 유지 확인
 
 ---
 

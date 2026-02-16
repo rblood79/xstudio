@@ -17,7 +17,8 @@ import { PIXI_COMPONENTS } from '../pixiSetup';
 import { useCallback, useMemo, memo, useContext, useRef } from 'react';
 import { Graphics as PixiGraphics, TextStyle } from 'pixi.js';
 import type { Element } from '../../../../types/core/store.types';
-import { convertStyle, cssColorToHex, cssColorToAlpha, buildSkiaEffects, type CSSStyle } from './styleConverter';
+import { convertStyle, cssColorToHex, cssColorToAlpha, buildSkiaEffects, parseTransformOrigin, applyTransformOrigin, type CSSStyle } from './styleConverter';
+import { parseZIndex, createsStackingContext } from '../layout/engines/cssStackingContext';
 import { parsePadding, getContentBounds } from './paddingUtils';
 import { drawBox, parseBorderConfig } from '../utils';
 import { useSkiaNode } from '../skia/useSkiaNode';
@@ -139,13 +140,20 @@ export const BoxSprite = memo(function BoxSprite({ element, onClick, onDoubleCli
     }
   }, [element.id, onClick, onDoubleClick]);
 
-  // P7.1: 텍스트 위치 (padding 적용 후 콘텐츠 영역 중앙)
+  // P7.1: 텍스트 위치 (padding 적용 후 콘텐츠 영역)
   const contentBounds = useMemo(
     () => getContentBounds(transform.width, transform.height, padding),
     [transform.width, transform.height, padding]
   );
   const textX = contentBounds.x + contentBounds.width / 2;
-  const textY = contentBounds.y + contentBounds.height / 2;
+  // verticalAlign에 따른 텍스트 Y 위치 조정
+  const textY = useMemo(() => {
+    const va = style?.verticalAlign;
+    if (va === 'top') return contentBounds.y;
+    if (va === 'bottom') return contentBounds.y + contentBounds.height;
+    // middle(기본) → 중앙
+    return contentBounds.y + contentBounds.height / 2;
+  }, [style?.verticalAlign, contentBounds]);
 
   // Skia effects (opacity, boxShadow, filter, backdropFilter, mixBlendMode)
   const skiaEffects = useMemo(() => buildSkiaEffects(style), [style]);
@@ -195,6 +203,20 @@ export const BoxSprite = memo(function BoxSprite({ element, onClick, onDoubleCli
     // 배열 borderRadius는 그대로 전달하여 개별 모서리 radius 정보를 보존
     const br = borderRadius ?? 0;
 
+    // CSS transform → CanvasKit 3x3 matrix (transform-origin 적용)
+    let skiaTransform: Float32Array | undefined;
+    if (skiaEffects.transform) {
+      const [ox, oy] = parseTransformOrigin(
+        style?.transformOrigin,
+        transform.width,
+        transform.height,
+      );
+      skiaTransform = applyTransformOrigin(skiaEffects.transform, ox, oy);
+    }
+
+    const zIndex = parseZIndex(style?.zIndex);
+    const isStackingCtx = createsStackingContext(style as Record<string, unknown>);
+
     return {
       type: 'box' as const,
       x: transform.x,
@@ -205,6 +227,9 @@ export const BoxSprite = memo(function BoxSprite({ element, onClick, onDoubleCli
       ...(style?.overflow === 'hidden' ? { clipChildren: true } : {}),
       ...(skiaEffects.effects ? { effects: skiaEffects.effects } : {}),
       ...(fillBlendMode ? { blendMode: fillBlendMode } : skiaEffects.blendMode ? { blendMode: skiaEffects.blendMode } : {}),
+      ...(skiaTransform ? { transform: skiaTransform } : {}),
+      ...(zIndex !== undefined ? { zIndex } : {}),
+      ...(isStackingCtx ? { isStackingContext: true } : {}),
       box: {
         fillColor,
         ...(gradientFill ? { fill: gradientFill } : {}),
@@ -243,7 +268,7 @@ export const BoxSprite = memo(function BoxSprite({ element, onClick, onDoubleCli
           style={textStyle}
           x={textX}
           y={textY}
-          anchor={0.5}
+          anchor={{ x: 0.5, y: style?.verticalAlign === 'top' ? 0 : style?.verticalAlign === 'bottom' ? 1 : 0.5 }}
         />
       )}
     </pixiContainer>

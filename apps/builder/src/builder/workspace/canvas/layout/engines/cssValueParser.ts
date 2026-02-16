@@ -1,0 +1,535 @@
+/**
+ * CSS 값 파서 통합 모듈
+ *
+ * 분산된 CSS 값 파싱 로직을 하나로 통합하여
+ * 일관된 단위 해석과 calc() 지원을 제공한다.
+ *
+ * 지원 단위: px, %, vh, vw, em, rem, calc(), fit-content, min-content, max-content
+ *
+ * @since 2026-02-16 CSS 엔진 업그레이드
+ */
+
+// ============================================
+// 타입 정의
+// ============================================
+
+/**
+ * CSS 값 해석에 필요한 컨텍스트
+ *
+ * 각 단위의 기준값을 제공한다.
+ * 미제공 시 기본값: viewportWidth=1920, viewportHeight=1080, rootFontSize=16
+ */
+/**
+ * CSS 변수 스코프
+ *
+ * var() 함수 해석에 필요한 변수 이름→값 매핑.
+ * 요소의 조상 체인에서 수집된 CSS custom properties.
+ */
+export interface CSSVariableScope {
+  /** 변수 이름(--로 시작) → 값 매핑 */
+  variables: Record<string, string>;
+}
+
+export interface CSSValueContext {
+  /** em 단위 기준 (부모 font-size, px) */
+  parentSize?: number;
+  /** % 단위 기준 (부모 content-box 또는 컨테이너 크기, px) */
+  containerSize?: number;
+  /** vw 기준 (기본 1920) */
+  viewportWidth?: number;
+  /** vh 기준 (기본 1080) */
+  viewportHeight?: number;
+  /** rem 기준 (기본 16) */
+  rootFontSize?: number;
+  /** CSS 변수 스코프 (var() 해석용) */
+  variableScope?: CSSVariableScope;
+}
+
+/** CSS intrinsic sizing sentinel 값 */
+export const FIT_CONTENT = -2;
+export const MIN_CONTENT = -3;
+export const MAX_CONTENT = -4;
+
+/**
+ * border shorthand 파싱 결과
+ */
+export interface ParsedBorder {
+  width: number;
+  style: string;
+  color: string;
+}
+
+// ============================================
+// 기본 상수
+// ============================================
+
+/** 기본 뷰포트 너비 */
+const DEFAULT_VIEWPORT_WIDTH = 1920;
+/** 기본 뷰포트 높이 */
+const DEFAULT_VIEWPORT_HEIGHT = 1080;
+/** 기본 루트 폰트 크기 */
+const DEFAULT_ROOT_FONT_SIZE = 16;
+
+// ============================================
+// var() 해석
+// ============================================
+
+/** var() 재귀 해석 최대 깊이 (순환 참조 방지) */
+const VAR_MAX_DEPTH = 10;
+
+/**
+ * CSS var() 함수를 해석하여 실제 값으로 치환
+ *
+ * var(--name) 또는 var(--name, fallback) 형식을 지원한다.
+ * 중첩된 var()도 재귀적으로 해석한다.
+ *
+ * @param value - var()가 포함된 CSS 값 문자열
+ * @param scope - CSS 변수 스코프
+ * @param depth - 현재 재귀 깊이 (내부용)
+ * @returns var()가 해석된 문자열, 또는 해석 실패 시 원본 반환
+ *
+ * @example
+ * resolveVar('var(--spacing)', { variables: { '--spacing': '16px' } })
+ * // '16px'
+ *
+ * resolveVar('var(--missing, 8px)', { variables: {} })
+ * // '8px'
+ */
+export function resolveVar(
+  value: string,
+  scope: CSSVariableScope,
+  depth: number = 0,
+): string {
+  // 재귀 깊이 제한
+  if (depth >= VAR_MAX_DEPTH) return value;
+
+  // var() 패턴이 없으면 그대로 반환
+  if (!value.includes('var(')) return value;
+
+  // 가장 안쪽 var()부터 해석 (중첩 처리)
+  return value.replace(
+    /var\(([^()]*)\)/g,
+    (_match: string, content: string): string => {
+      // content: "--name" 또는 "--name, fallback"
+      const commaIdx = content.indexOf(',');
+
+      let varName: string;
+      let fallbackValue: string | undefined;
+
+      if (commaIdx === -1) {
+        varName = content.trim();
+      } else {
+        varName = content.slice(0, commaIdx).trim();
+        fallbackValue = content.slice(commaIdx + 1).trim();
+      }
+
+      // 변수 조회
+      const resolved = scope.variables[varName];
+
+      if (resolved !== undefined) {
+        // 해석된 값에 var()가 중첩되어 있을 수 있음
+        return resolveVar(resolved, scope, depth + 1);
+      }
+
+      // fallback 값 사용
+      if (fallbackValue !== undefined) {
+        return resolveVar(fallbackValue, scope, depth + 1);
+      }
+
+      // 해석 실패: 원본 유지
+      return _match;
+    },
+  );
+}
+
+// ============================================
+// 메인 파서
+// ============================================
+
+/**
+ * CSS 크기 값을 px 숫자로 해석하는 통합 함수
+ *
+ * @param value - CSS 값 (number, string, undefined 등)
+ * @param ctx - 단위 해석 컨텍스트
+ * @param fallback - 해석 실패 시 반환값 (기본 undefined)
+ * @returns px 단위 숫자, sentinel 값, 또는 fallback
+ *
+ * @example
+ * resolveCSSSizeValue('100px', {}) // 100
+ * resolveCSSSizeValue('50%', { containerSize: 800 }) // 400
+ * resolveCSSSizeValue('100vh', { viewportHeight: 1080 }) // 1080
+ * resolveCSSSizeValue('2rem', {}) // 32
+ * resolveCSSSizeValue('calc(100% - 20px)', { containerSize: 800 }) // 780
+ * resolveCSSSizeValue('fit-content', {}) // -2 (FIT_CONTENT sentinel)
+ */
+export function resolveCSSSizeValue(
+  value: unknown,
+  ctx: CSSValueContext = {},
+  fallback?: number,
+): number | undefined {
+  // var() 치환: variableScope가 있고 값에 var()가 포함된 경우
+  if (typeof value === 'string' && value.includes('var(') && ctx.variableScope) {
+    const resolved = resolveVar(value, ctx.variableScope);
+    return resolveCSSSizeValue(resolved, ctx, fallback);
+  }
+
+  if (value === undefined || value === null || value === '' || value === 'auto') {
+    return fallback;
+  }
+
+  // 숫자는 그대로 반환
+  if (typeof value === 'number') {
+    return value;
+  }
+
+  if (typeof value !== 'string') {
+    return fallback;
+  }
+
+  const trimmed = value.trim();
+
+  // intrinsic sizing 키워드
+  if (trimmed === 'fit-content') return FIT_CONTENT;
+  if (trimmed === 'min-content') return MIN_CONTENT;
+  if (trimmed === 'max-content') return MAX_CONTENT;
+
+  // calc() 표현식
+  if (trimmed.startsWith('calc(') && trimmed.endsWith(')')) {
+    const expr = trimmed.slice(5, -1);
+    const result = resolveCalc(expr, ctx);
+    return result ?? fallback;
+  }
+
+  // 단위별 해석
+  return resolveUnitValue(trimmed, ctx) ?? fallback;
+}
+
+/**
+ * 단위가 포함된 단일 CSS 값 해석
+ *
+ * rem은 em보다 먼저 검사해야 한다 ('rem'이 'em'으로 끝나므로).
+ */
+function resolveUnitValue(
+  trimmed: string,
+  ctx: CSSValueContext,
+): number | undefined {
+  // px 단위
+  if (trimmed.endsWith('px')) {
+    const num = parseFloat(trimmed);
+    return isNaN(num) ? undefined : num;
+  }
+
+  // rem 단위 (em보다 먼저 검사)
+  if (trimmed.endsWith('rem')) {
+    const num = parseFloat(trimmed);
+    if (isNaN(num)) return undefined;
+    const rootFs = ctx.rootFontSize ?? DEFAULT_ROOT_FONT_SIZE;
+    return num * rootFs;
+  }
+
+  // em 단위
+  if (trimmed.endsWith('em')) {
+    const num = parseFloat(trimmed);
+    if (isNaN(num)) return undefined;
+    const parentFs = ctx.parentSize ?? DEFAULT_ROOT_FONT_SIZE;
+    return num * parentFs;
+  }
+
+  // vh 단위
+  if (trimmed.endsWith('vh')) {
+    const num = parseFloat(trimmed);
+    if (isNaN(num)) return undefined;
+    const vh = ctx.viewportHeight ?? DEFAULT_VIEWPORT_HEIGHT;
+    return (num / 100) * vh;
+  }
+
+  // vw 단위
+  if (trimmed.endsWith('vw')) {
+    const num = parseFloat(trimmed);
+    if (isNaN(num)) return undefined;
+    const vw = ctx.viewportWidth ?? DEFAULT_VIEWPORT_WIDTH;
+    return (num / 100) * vw;
+  }
+
+  // % 단위
+  if (trimmed.endsWith('%')) {
+    const num = parseFloat(trimmed);
+    if (isNaN(num)) return undefined;
+    if (ctx.containerSize !== undefined) {
+      return (num / 100) * ctx.containerSize;
+    }
+    // containerSize 미제공 시 해석 불가
+    return undefined;
+  }
+
+  // 단위 없는 숫자 문자열
+  const num = parseFloat(trimmed);
+  return isNaN(num) ? undefined : num;
+}
+
+// ============================================
+// calc() 재귀 하강 파서
+// ============================================
+
+/** calc 토큰 타입 */
+type CalcTokenType = 'number' | 'operator' | 'lparen' | 'rparen';
+
+interface CalcToken {
+  type: CalcTokenType;
+  value: string;
+  numericValue?: number;
+}
+
+/** calc() 파서 최대 재귀 깊이 */
+const CALC_MAX_DEPTH = 10;
+
+/**
+ * calc() 표현식을 파싱하여 px 값으로 계산
+ *
+ * 지원 연산: +, -, *, /
+ * 지원 단위: px, %, vh, vw, em, rem
+ * 괄호 중첩 지원 (최대 깊이 10)
+ *
+ * @param expr - calc() 내부 표현식 문자열
+ * @param ctx - 단위 해석 컨텍스트
+ * @returns 계산된 px 값 또는 undefined
+ */
+export function resolveCalc(
+  expr: string,
+  ctx: CSSValueContext = {},
+): number | undefined {
+  const tokens = tokenizeCalc(expr.trim(), ctx);
+  if (tokens.length === 0) return undefined;
+
+  let pos = 0;
+
+  function peek(): CalcToken | undefined {
+    return tokens[pos];
+  }
+
+  function consume(): CalcToken | undefined {
+    return tokens[pos++];
+  }
+
+  // calcExpr → term (('+'/'-') term)*
+  function parseCalcExpr(depth: number): number | undefined {
+    if (depth > CALC_MAX_DEPTH) return undefined;
+
+    let result = parseTerm(depth);
+    if (result === undefined) return undefined;
+
+    while (peek()?.type === 'operator' && (peek()?.value === '+' || peek()?.value === '-')) {
+      const op = consume()!.value;
+      const right = parseTerm(depth);
+      if (right === undefined) return undefined;
+      result = op === '+' ? result + right : result - right;
+    }
+
+    return result;
+  }
+
+  // term → factor (('*'/'/') factor)*
+  function parseTerm(depth: number): number | undefined {
+    let result = parseFactor(depth);
+    if (result === undefined) return undefined;
+
+    while (peek()?.type === 'operator' && (peek()?.value === '*' || peek()?.value === '/')) {
+      const op = consume()!.value;
+      const right = parseFactor(depth);
+      if (right === undefined) return undefined;
+      if (op === '/') {
+        if (right === 0) return undefined; // 0으로 나누기 방지
+        result = result / right;
+      } else {
+        result = result * right;
+      }
+    }
+
+    return result;
+  }
+
+  // factor → number_with_unit | '(' calcExpr ')'
+  function parseFactor(depth: number): number | undefined {
+    const token = peek();
+    if (!token) return undefined;
+
+    // 괄호
+    if (token.type === 'lparen') {
+      consume();
+      const result = parseCalcExpr(depth + 1);
+      if (result === undefined) return undefined;
+      if (peek()?.type !== 'rparen') return undefined;
+      consume();
+      return result;
+    }
+
+    // 숫자 (단위 포함, 이미 px로 변환됨)
+    if (token.type === 'number') {
+      consume();
+      return token.numericValue;
+    }
+
+    return undefined;
+  }
+
+  const result = parseCalcExpr(0);
+
+  // 모든 토큰이 소비되었는지 확인
+  if (pos !== tokens.length) return undefined;
+
+  return result;
+}
+
+/**
+ * calc() 표현식을 토큰으로 분리
+ *
+ * 단위가 포함된 숫자는 즉시 px 값으로 변환한다.
+ */
+function tokenizeCalc(expr: string, ctx: CSSValueContext): CalcToken[] {
+  const tokens: CalcToken[] = [];
+  let i = 0;
+
+  while (i < expr.length) {
+    const ch = expr[i];
+
+    // 공백 건너뛰기
+    if (ch === ' ' || ch === '\t' || ch === '\n') {
+      i++;
+      continue;
+    }
+
+    // 괄호
+    if (ch === '(') {
+      tokens.push({ type: 'lparen', value: '(' });
+      i++;
+      continue;
+    }
+    if (ch === ')') {
+      tokens.push({ type: 'rparen', value: ')' });
+      i++;
+      continue;
+    }
+
+    // 연산자 (+, *, /)
+    if (ch === '+' || ch === '*' || ch === '/') {
+      tokens.push({ type: 'operator', value: ch });
+      i++;
+      continue;
+    }
+
+    // '-'는 연산자 또는 음수 부호
+    if (ch === '-') {
+      const prev = tokens[tokens.length - 1];
+      if (prev && (prev.type === 'number' || prev.type === 'rparen')) {
+        tokens.push({ type: 'operator', value: '-' });
+        i++;
+        continue;
+      }
+      // 음수 숫자의 시작 — 아래 숫자 파싱으로 진행
+    }
+
+    // 숫자 + 단위 파싱
+    if (ch === '-' || ch === '.' || (ch >= '0' && ch <= '9')) {
+      let numStr = '';
+      // 부호
+      if (expr[i] === '-') {
+        numStr += '-';
+        i++;
+      }
+      // 정수/소수부
+      while (i < expr.length && ((expr[i] >= '0' && expr[i] <= '9') || expr[i] === '.')) {
+        numStr += expr[i];
+        i++;
+      }
+      // 단위부 (알파벳)
+      let unit = '';
+      while (i < expr.length && expr[i] >= 'a' && expr[i] <= 'z') {
+        unit += expr[i];
+        i++;
+      }
+      // % 단위
+      if (i < expr.length && expr[i] === '%') {
+        unit = '%';
+        i++;
+      }
+
+      const fullValue = numStr + unit;
+      const resolved = resolveUnitValue(fullValue, ctx);
+      if (resolved !== undefined) {
+        tokens.push({ type: 'number', value: fullValue, numericValue: resolved });
+      } else {
+        // 해석 실패 시 빈 배열 반환으로 파싱 중단
+        return [];
+      }
+      continue;
+    }
+
+    // 알 수 없는 문자 → 파싱 실패
+    return [];
+  }
+
+  return tokens;
+}
+
+// ============================================
+// border shorthand 파서
+// ============================================
+
+/** border-style 키워드 목록 */
+const BORDER_STYLES = new Set([
+  'none', 'hidden', 'dotted', 'dashed', 'solid',
+  'double', 'groove', 'ridge', 'inset', 'outset',
+]);
+
+/**
+ * CSS border shorthand 파싱
+ *
+ * CSS border shorthand는 순서 무관하게 width, style, color를 지정할 수 있다.
+ *
+ * @param value - border shorthand 값 (예: "1px solid #ccc")
+ * @returns 파싱된 border 객체 또는 undefined
+ *
+ * @example
+ * parseBorderShorthand("1px solid #ccc")
+ * // { width: 1, style: 'solid', color: '#ccc' }
+ *
+ * parseBorderShorthand("solid 2px red")
+ * // { width: 2, style: 'solid', color: 'red' }
+ */
+export function parseBorderShorthand(value: unknown): ParsedBorder | undefined {
+  if (typeof value !== 'string' || !value.trim()) {
+    return undefined;
+  }
+
+  const parts = value.trim().split(/\s+/);
+
+  let width: number | undefined;
+  let style: string | undefined;
+  let color: string | undefined;
+
+  for (const part of parts) {
+    // border-style 키워드 확인
+    if (BORDER_STYLES.has(part.toLowerCase())) {
+      style = part.toLowerCase();
+      continue;
+    }
+
+    // 숫자 + 단위 (width)
+    const num = parseFloat(part);
+    if (!isNaN(num) && width === undefined) {
+      width = num;
+      continue;
+    }
+
+    // 나머지는 color로 취급
+    if (color === undefined) {
+      color = part;
+    }
+  }
+
+  return {
+    width: width ?? 0,
+    style: style ?? 'none',
+    color: color ?? '#000000',
+  };
+}

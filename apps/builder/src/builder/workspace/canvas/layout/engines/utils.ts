@@ -2,9 +2,9 @@
  * Layout Engine 공유 유틸리티
  *
  * 입력 규약 (P0):
- * - width, height: px, %, vh, vw, number, auto 지원
+ * - width, height: px, %, vh, vw, em, rem, calc(), number, auto 지원
  * - margin, padding, border-width: px, number만 지원 (% 미지원)
- * - rem, em, calc() 등은 지원하지 않음
+ * - intrinsic sizing: fit-content, min-content, max-content 지원
  *
  * @since 2026-01-28 Phase 2 - 하이브리드 레이아웃 엔진
  * @updated 2026-01-28 Phase 6 - P2 기능 (vertical-align, line-height)
@@ -14,6 +14,13 @@ import type { Margin, BoxModel, VerticalAlign } from './types';
 import type { Element } from '../../../../../types/core/store.types';
 import { fontFamily as specFontFamily } from '@xstudio/specs';
 import { measureWrappedTextHeight } from '../../utils/textMeasure';
+import {
+  resolveCSSSizeValue,
+  FIT_CONTENT as CSS_FIT_CONTENT,
+  MIN_CONTENT as CSS_MIN_CONTENT,
+  MAX_CONTENT as CSS_MAX_CONTENT,
+} from './cssValueParser';
+import type { CSSValueContext } from './cssValueParser';
 
 /**
  * 중복 경고 방지용 Set
@@ -49,8 +56,12 @@ export function resetWarnedTokens(): void {
  * Yoga/WASM가 fit-content를 네이티브 지원하지 않으므로,
  * parseSize()에서 sentinel 값으로 변환하여 BlockEngine/WASM에 전달한다.
  * AUTO(-1)와 동일한 패턴으로 Float32Array 직렬화 시 그대로 전달 가능.
+ *
+ * 통합 파서(cssValueParser.ts)에서 정의된 값을 re-export한다.
  */
-export const FIT_CONTENT = -2;
+export const FIT_CONTENT = CSS_FIT_CONTENT;
+export const MIN_CONTENT = CSS_MIN_CONTENT;
+export const MAX_CONTENT = CSS_MAX_CONTENT;
 
 /** 허용되는 단위 패턴 */
 const PX_NUMBER_PATTERN = /^-?\d+(\.\d+)?(px)?$/;
@@ -75,7 +86,9 @@ function parseNumericValue(value: unknown): number | undefined {
 }
 
 /**
- * 크기 값 파싱 (width/height용: px, %, vh, vw, number, auto 허용)
+ * 크기 값 파싱 (width/height용: px, %, vh, vw, em, rem, calc, number, auto 허용)
+ *
+ * 내부적으로 resolveCSSSizeValue()에 위임하여 일관된 단위 해석을 제공한다.
  *
  * @param value - 파싱할 값
  * @param available - % 계산 시 기준값 (부모 content-box)
@@ -90,39 +103,14 @@ export function parseSize(
   viewportHeight?: number
 ): number | undefined {
   if (value === undefined || value === 'auto') return undefined;
-  // CSS intrinsic sizing: fit-content → sentinel 값
-  if (value === 'fit-content') return FIT_CONTENT;
-  if (typeof value === 'number') return value;
-  if (typeof value === 'string') {
-    const trimmed = value.trim();
 
-    // % 허용 (부모 content-box 기준)
-    if (PERCENT_PATTERN.test(trimmed)) {
-      return (parseFloat(trimmed) / 100) * available;
-    }
+  const ctx: CSSValueContext = {
+    containerSize: available,
+    viewportWidth,
+    viewportHeight,
+  };
 
-    // vh/vw 허용 (viewport 기준)
-    if (VIEWPORT_PATTERN.test(trimmed)) {
-      const num = parseFloat(trimmed);
-      if (trimmed.endsWith('vh') && viewportHeight !== undefined) {
-        return (num / 100) * viewportHeight;
-      }
-      if (trimmed.endsWith('vw') && viewportWidth !== undefined) {
-        return (num / 100) * viewportWidth;
-      }
-      // viewport 크기 미제공 시 undefined
-      return undefined;
-    }
-
-    // px 또는 숫자만 허용
-    if (PX_NUMBER_PATTERN.test(trimmed)) {
-      return parseFloat(trimmed);
-    }
-
-    // rem, em, calc 등 미지원
-    return undefined;
-  }
-  return undefined;
+  return resolveCSSSizeValue(value, ctx);
 }
 
 /**
@@ -749,9 +737,10 @@ export function calculateContentHeight(element: Element, availableWidth?: number
       if (maxTextWidth > 0) {
         const textContent = String(props?.children ?? props?.text ?? props?.label ?? '');
         if (textContent) {
-          const wrappedH = measureWrappedTextHeight(textContent, fontSize, 500, specFontFamily.sans, maxTextWidth);
-          if (wrappedH > textHeight + 0.5) {
-            return Math.max(wrappedH, minContentHeight);
+          const ws = (style?.whiteSpace as string) ?? 'normal';
+          const measured = measureTextWithWhiteSpace(textContent, fontSize, specFontFamily.sans, 500, ws, maxTextWidth);
+          if (measured.height > textHeight + 0.5) {
+            return Math.max(measured.height, minContentHeight);
           }
         }
       }
@@ -1132,4 +1121,125 @@ export function calculateBaseline(
   // 기본값: 하단에서 약간 위 (폰트 baseline 추정)
   // 일반적인 폰트의 descender는 약 20% 정도
   return height * 0.8;
+}
+
+// ============================================
+// white-space 기반 텍스트 측정
+// ============================================
+
+/**
+ * white-space CSS 속성에 따른 텍스트 크기 측정
+ *
+ * - normal: 공백 축소 + 자동 줄바꿈 (기본 동작)
+ * - nowrap: 공백 축소 + 줄바꿈 없이 한 줄
+ * - pre: 공백 보존 + \n만 줄바꿈, 자동 줄바꿈 없음
+ * - pre-wrap: 공백 보존 + \n + 자동 줄바꿈
+ * - pre-line: 공백 축소 + \n + 자동 줄바꿈
+ */
+export function measureTextWithWhiteSpace(
+  text: string,
+  fontSize: number,
+  fontFamily: string,
+  fontWeight: number | string,
+  whiteSpace: string,
+  maxWidth: number,
+): { width: number; height: number } {
+  const lineHeight = fontSize * 1.2;
+
+  switch (whiteSpace) {
+    case 'nowrap': {
+      // 줄바꿈 없이 한 줄
+      const width = measureTextWidth(text, fontSize, fontFamily, fontWeight);
+      return { width, height: lineHeight };
+    }
+    case 'pre': {
+      // \n만 줄바꿈, 자동 줄바꿈 없음
+      const lines = text.split('\n');
+      let maxLineWidth = 0;
+      for (const line of lines) {
+        const w = measureTextWidth(line, fontSize, fontFamily, fontWeight);
+        if (w > maxLineWidth) maxLineWidth = w;
+      }
+      return { width: maxLineWidth, height: lines.length * lineHeight };
+    }
+    case 'pre-wrap':
+    case 'pre-line': {
+      // \n + 자동 줄바꿈 (pre-line은 공백 축소)
+      const processedText = whiteSpace === 'pre-line'
+        ? text.replace(/[ \t]+/g, ' ')
+        : text;
+      return {
+        width: maxWidth,
+        height: measureWrappedTextHeight(processedText, fontSize, fontWeight, fontFamily, maxWidth),
+      };
+    }
+    default: {
+      // normal: 기본 동작
+      return {
+        width: maxWidth,
+        height: measureWrappedTextHeight(text, fontSize, fontWeight, fontFamily, maxWidth),
+      };
+    }
+  }
+}
+
+// ============================================
+// min-content / max-content 텍스트 너비 측정
+// ============================================
+
+/**
+ * min-content 너비 계산
+ *
+ * CSS min-content: 가장 긴 단어(줄바꿈 불가능한 최소 단위)의 너비.
+ * 텍스트를 단어 단위로 분리하여 가장 긴 단어의 렌더링 너비를 반환한다.
+ *
+ * @param text - 측정할 텍스트
+ * @param fontSize - 폰트 크기 (기본 14px)
+ * @param fontFamily - 폰트 패밀리
+ * @param fontWeight - 폰트 두께
+ * @returns 가장 긴 단어의 px 너비
+ */
+export function calculateMinContentWidth(
+  text: string,
+  fontSize: number = 14,
+  fontFamily: string = specFontFamily.sans,
+  fontWeight: number | string = 400,
+): number {
+  if (!text) return 0;
+
+  // 공백/줄바꿈/탭으로 단어 분리
+  const words = text.split(/\s+/).filter(Boolean);
+  if (words.length === 0) return 0;
+
+  let maxWordWidth = 0;
+  for (const word of words) {
+    const width = measureTextWidth(word, fontSize, fontFamily, fontWeight);
+    if (width > maxWordWidth) {
+      maxWordWidth = width;
+    }
+  }
+
+  return Math.ceil(maxWordWidth);
+}
+
+/**
+ * max-content 너비 계산
+ *
+ * CSS max-content: 줄바꿈 없이 한 줄로 렌더링했을 때의 전체 너비.
+ *
+ * @param text - 측정할 텍스트
+ * @param fontSize - 폰트 크기 (기본 14px)
+ * @param fontFamily - 폰트 패밀리
+ * @param fontWeight - 폰트 두께
+ * @returns 전체 텍스트의 한 줄 px 너비
+ */
+export function calculateMaxContentWidth(
+  text: string,
+  fontSize: number = 14,
+  fontFamily: string = specFontFamily.sans,
+  fontWeight: number | string = 400,
+): number {
+  if (!text) return 0;
+
+  return Math.ceil(measureTextWidth(text, fontSize, fontFamily, fontWeight));
 }

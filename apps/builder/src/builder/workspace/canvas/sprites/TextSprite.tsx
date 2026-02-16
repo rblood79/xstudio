@@ -16,6 +16,7 @@ import { useCallback, useMemo, useRef, useContext, memo } from 'react';
 import { Graphics as PixiGraphics, TextStyle, Text } from 'pixi.js';
 import type { Element } from '../../../../types/core/store.types';
 import { convertStyle, applyTextTransform, buildSkiaEffects, type CSSStyle } from './styleConverter';
+import { parseZIndex, createsStackingContext } from '../layout/engines/cssStackingContext';
 import { parsePadding } from './paddingUtils';
 import { drawBox, parseBorderConfig } from '../utils';
 import { useSkiaNode } from '../skia/useSkiaNode';
@@ -269,6 +270,9 @@ export const TextSprite = memo(function TextSprite({
     // CSS fontStyle → numeric (0=upright, 1=italic, 2=oblique)
     const numericFontStyle = textStyle.fontStyle === 'italic' ? 1 : textStyle.fontStyle === 'oblique' ? 2 : 0;
 
+    const zIndex = parseZIndex(style?.zIndex);
+    const isStackingCtx = createsStackingContext(style as Record<string, unknown>);
+
     return {
       type: 'text' as const,
       x: transform.x,
@@ -278,6 +282,8 @@ export const TextSprite = memo(function TextSprite({
       visible: style?.display !== 'none' && style?.visibility !== 'hidden',
       ...(skiaEffects.effects ? { effects: skiaEffects.effects } : {}),
       ...(skiaEffects.blendMode ? { blendMode: skiaEffects.blendMode } : {}),
+      ...(zIndex !== undefined ? { zIndex } : {}),
+      ...(isStackingCtx ? { isStackingContext: true } : {}),
       text: {
         content: textContent,
         fontFamilies: [textStyle.fontFamily.split(',')[0].trim()],
@@ -298,9 +304,12 @@ export const TextSprite = memo(function TextSprite({
         paddingLeft: padding.left,
         paddingTop: padding.top,
         maxWidth: transform.width - padding.left - padding.right,
+        ...(style?.verticalAlign ? { verticalAlign: style.verticalAlign as 'top' | 'middle' | 'bottom' | 'baseline' } : {}),
+        ...(style?.whiteSpace ? { whiteSpace: style.whiteSpace as 'normal' | 'nowrap' | 'pre' | 'pre-wrap' | 'pre-line' } : {}),
+        ...(style?.wordBreak ? { wordBreak: style.wordBreak as 'normal' | 'break-all' | 'keep-all' } : {}),
       },
     };
-  }, [transform, textStyle, textContent, padding, skiaEffects, hasDecoration, textDecoration]);
+  }, [transform, textStyle, textContent, padding, skiaEffects, hasDecoration, textDecoration, style?.verticalAlign, style?.whiteSpace, style?.wordBreak]);
 
   useSkiaNode(element.id, skiaNodeData);
 

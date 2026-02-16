@@ -7,6 +7,7 @@
  */
 
 import type { Element } from '../../../../../types/core/store.types';
+import type { ComputedStyle } from './cssResolver';
 
 /**
  * 계산된 레이아웃 결과
@@ -51,6 +52,8 @@ export interface LayoutContext {
   viewportHeight?: number;
   /** 부모 요소의 display 값 (CSS blockification 계산용) */
   parentDisplay?: string;
+  /** 부모의 computed style (CSS 상속 해석용) */
+  parentComputedStyle?: ComputedStyle;
 }
 
 /**

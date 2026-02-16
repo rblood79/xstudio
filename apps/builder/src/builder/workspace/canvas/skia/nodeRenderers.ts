@@ -124,6 +124,9 @@ export interface SkiaNodeData {
     maxWidth: number;
     /** false이면 updateTextChildren에서 자동 중앙 정렬 스킵 (Card 등 다중 텍스트) */
     autoCenter?: boolean;
+    verticalAlign?: 'top' | 'middle' | 'bottom' | 'baseline';
+    whiteSpace?: 'normal' | 'nowrap' | 'pre' | 'pre-wrap' | 'pre-line';
+    wordBreak?: 'normal' | 'break-all' | 'keep-all';
   };
   /** Image 전용 */
   image?: {
@@ -142,13 +145,37 @@ export interface SkiaNodeData {
     strokeColor: Float32Array;
     strokeWidth: number;
   };
+  /** CSS transform → CanvasKit 3x3 matrix (Float32Array(9)) */
+  transform?: Float32Array;
   /** overflow:hidden 시 자식을 경계에서 클리핑 */
   clipChildren?: boolean;
   /** 콘텐츠 기반 최소 높이 (Card 등 auto-height UI 컴포넌트용)
    *  Yoga가 텍스트 bounds를 아직 반영하지 못한 경우의 폴백으로 사용 */
   contentMinHeight?: number;
+  /** z-index 값 (stacking order 정렬용) */
+  zIndex?: number;
+  /** 새로운 stacking context를 생성하는지 여부 */
+  isStackingContext?: boolean;
   /** 자식 노드 데이터 */
   children?: SkiaNodeData[];
+}
+
+// ============================================
+// Stacking Order
+// ============================================
+
+/**
+ * CSS stacking order에 따른 자식 정렬 (안정 정렬)
+ */
+function sortByStackingOrder(children: SkiaNodeData[]): SkiaNodeData[] {
+  const indexed = children.map((child, i) => ({ child, originalIndex: i }));
+  indexed.sort((a, b) => {
+    const zA = a.child.zIndex ?? 0;
+    const zB = b.child.zIndex ?? 0;
+    if (zA !== zB) return zA - zB;
+    return a.originalIndex - b.originalIndex;
+  });
+  return indexed.map(item => item.child);
 }
 
 // ============================================
@@ -209,6 +236,11 @@ function renderNodeInternal(
   // 캔버스 상태 저장 + 로컬 변환
   canvas.save();
   canvas.translate(node.x, node.y);
+
+  // CSS transform 적용 (transform-origin 포함 3x3 matrix)
+  if (node.transform) {
+    canvas.concat(node.transform);
+  }
 
   // blend mode 적용 (non-default인 경우 saveLayer로 분리)
   let hasBlendLayer = false;
@@ -285,7 +317,9 @@ function renderNodeInternal(
     const childCullTop = cullTop - node.y;
     const childCullRight = cullRight - node.x;
     const childCullBottom = cullBottom - node.y;
-    for (const child of node.children) {
+    const hasZIndex = node.children.some(c => c.zIndex !== undefined);
+    const childrenToRender = hasZIndex ? sortByStackingOrder(node.children) : node.children;
+    for (const child of childrenToRender) {
       renderNodeInternal(
         ck,
         canvas,
@@ -512,6 +546,18 @@ function renderText(
     lastParagraphFontMgr = fontMgr;
   }
 
+  // white-space 전처리
+  const whiteSpace = node.text.whiteSpace ?? 'normal';
+  let processedText = node.text.content;
+  if (whiteSpace === 'normal' || whiteSpace === 'pre-line') {
+    processedText = processedText.replace(/[ \t]+/g, ' ');
+  }
+
+  // nowrap/pre: 줄바꿈 없이 한 줄로 렌더링
+  const layoutMaxWidth = whiteSpace === 'nowrap' || whiteSpace === 'pre'
+    ? 100000
+    : node.text.maxWidth;
+
   // key는 텍스트 shaping/layout에 영향을 주는 값만 포함한다.
   const color = node.text.color;
   const colorKey = `${color[0].toFixed(3)},${color[1].toFixed(3)},${color[2].toFixed(3)},${color[3].toFixed(3)}`;
@@ -519,8 +565,8 @@ function renderText(
     ? node.text.lineHeight / node.text.fontSize
     : 0;
   const key = [
-    node.text.content,
-    node.text.maxWidth,
+    processedText,
+    layoutMaxWidth,
     node.text.fontFamilies.join('|'),
     node.text.fontSize,
     node.text.fontWeight ?? 400,
@@ -530,11 +576,30 @@ function renderText(
     typeof node.text.align === 'string' ? node.text.align : 'enum',
     node.text.decoration ?? 0,
     colorKey,
+    whiteSpace,
   ].join('\u0000');
+
+  // verticalAlign에 따른 drawY 계산 함수
+  const computeDrawY = (paragraph: Paragraph): number => {
+    const verticalAlign = node.text!.verticalAlign;
+    if (!verticalAlign || verticalAlign === 'top' || verticalAlign === 'baseline') {
+      return node.text!.paddingTop;
+    }
+    const textHeight = paragraph.getHeight();
+    switch (verticalAlign) {
+      case 'middle':
+        return (node.height - textHeight) / 2;
+      case 'bottom':
+        return node.height - textHeight;
+      default:
+        return node.text!.paddingTop;
+    }
+  };
 
   const cached = getCachedParagraph(key);
   if (cached) {
-    canvas.drawParagraph(cached, node.text.paddingLeft, node.text.paddingTop);
+    const drawY = computeDrawY(cached);
+    canvas.drawParagraph(cached, node.text.paddingLeft, drawY);
     return;
   }
 
@@ -598,11 +663,12 @@ function renderText(
     });
 
     const builder = scope.track(ck.ParagraphBuilder.Make(paraStyle, fontMgr));
-    builder.addText(node.text.content);
+    builder.addText(processedText);
     const paragraph = builder.build();
-    paragraph.layout(node.text.maxWidth);
+    paragraph.layout(layoutMaxWidth);
     setCachedParagraph(key, paragraph);
-    canvas.drawParagraph(paragraph, node.text.paddingLeft, node.text.paddingTop);
+    const drawY = computeDrawY(paragraph);
+    canvas.drawParagraph(paragraph, node.text.paddingLeft, drawY);
   } finally {
     scope.dispose();
   }

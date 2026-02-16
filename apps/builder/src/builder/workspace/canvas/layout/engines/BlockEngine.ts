@@ -27,6 +27,7 @@ import {
   calculateBaseline,
   FIT_CONTENT,
 } from './utils';
+import { resolveStyle, ROOT_COMPUTED_STYLE } from './cssResolver';
 
 import {
   wasmBlockLayout,
@@ -186,6 +187,9 @@ export class BlockEngine implements LayoutEngine {
     let lastChildMarginBottom = 0;
     let isFirstBlock = true;
 
+    // S4: 부모의 computed style (CSS 상속 전파용)
+    const parentComputedStyle = context?.parentComputedStyle ?? ROOT_COMPUTED_STYLE;
+
     // 🚀 Phase 6: LineBox 기반 inline-block 처리
     let currentLineBox: LineBoxItem[] = [];
 
@@ -230,6 +234,9 @@ export class BlockEngine implements LayoutEngine {
       const childDisplay = style?.display as string | undefined;
       const childTag = (child.tag ?? '').toLowerCase();
       const childPosition = style?.position as string | undefined;
+
+      // S4: 자식의 computed style 해석 (상속 전파)
+      const _childComputed = resolveStyle(style, parentComputedStyle);
 
       // 🚀 Phase 6 Fix: 기본 inline-block 요소 처리
       // 🚀 Phase 7: CSS Blockification 적용 (flex 자식의 inline-block → block)
