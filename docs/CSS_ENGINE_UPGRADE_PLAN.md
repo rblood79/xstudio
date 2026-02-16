@@ -780,13 +780,26 @@ if (style.position === 'fixed') {
 CSS stacking context 생성 조건:
 
 ```typescript
-function createsStackingContext(style: CSSStyle): boolean {
+interface StackingContextMeta {
+  isFlexItem?: boolean;
+  isGridItem?: boolean;
+}
+
+function createsStackingContext(style: CSSStyle, meta: StackingContextMeta): boolean {
   const position = style.position;
   const zIndexSpecified = style.zIndex !== undefined && style.zIndex !== 'auto';
+  const isFlexOrGridItem = Boolean(meta.isFlexItem || meta.isGridItem);
 
-  if (style.position === 'fixed' || style.position === 'sticky') return true;
-  // CSS: static + z-index는 stacking context를 만들지 않는다.
+  if (position === 'fixed') return true;
+  // sticky의 스크롤/위치 계산 자체는 Non-Goal이지만,
+  // paint order 정합성을 위해 stacking context 판정은 유지한다.
+  if (position === 'sticky') return true;
+
+  // positioned + z-index
   if ((position === 'relative' || position === 'absolute') && zIndexSpecified) return true;
+  // CSS: flex/grid item은 position이 static이어도 z-index가 auto가 아니면 stacking context 생성
+  if (isFlexOrGridItem && zIndexSpecified) return true;
+
   if (style.opacity !== undefined && parseFloat(String(style.opacity)) < 1) return true;
   if (style.transform) return true;
   if (style.filter) return true;
@@ -1624,7 +1637,7 @@ const designTokensAsCSS: Map<string, string> = new Map([
 |------|------|
 | `display: inline` (완전한 텍스트 흐름) | 텍스트 레이아웃 엔진 전체 구현 필요, ROI 낮음 |
 | `float: left/right` | 레거시 레이아웃, flex/grid로 대체 |
-| `position: sticky` | 스크롤 컨텍스트 필요, 노코드 빌더에서 사용 빈도 극히 낮음 |
+| `position: sticky` (스크롤 기반 위치 고정) | sticky의 위치 계산/스크롤 앵커링은 미지원. 단, `z-index` paint order 정합성을 위해 stacking context 생성 규칙만 반영 |
 | CSS `@media` queries | 반응형은 빌더의 브레이크포인트 시스템으로 처리 |
 | CSS `transition` / `animation` | 캔버스 에디터에서는 정적 레이아웃만 표시 (프리뷰에서 지원) |
 | `writing-mode` (세로 쓰기) / RTL | 노코드 빌더 1차 범위 외 |
