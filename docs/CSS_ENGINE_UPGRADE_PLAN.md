@@ -20,9 +20,14 @@ CSS Style (사용자 입력)
     ├─ display: grid ─────────────→ GridEngine (커스텀)
     │
     ├─ styleToLayout.ts ──────────→ Yoga layout prop 변환
+    │   └─ parseCSSValue()          (%, vh→%, vw→%, rem, px)
     ├─ styleConverter.ts ─────────→ PixiJS 시각 속성 변환
+    │   └─ parseCSSSize()           (px, rem, vh, vw, em, %)
     └─ engines/utils.ts ──────────→ Box Model, 텍스트 측정, 컴포넌트 크기
+        └─ parseSize()              (px, %, vh, vw, fit-content)
 ```
+
+> **주의:** 3개 파일에 독립적인 CSS 값 파서가 존재하며, 각각 지원 단위가 다르다 (→ §0.4 L4 참조).
 
 ### 0.2 카테고리별 일치율 현황
 
@@ -56,13 +61,26 @@ CSS Style (사용자 입력)
 
 ### 0.4 근본 원인 분석
 
-현재 갭의 근본 원인은 3가지 계층으로 분류된다:
+현재 갭의 근본 원인은 4가지 계층으로 분류된다:
 
 | 계층 | 원인 | 영향 범위 | 해결 난이도 |
 |------|------|----------|-----------|
 | **L1: Yoga 한계** | Yoga가 CSS 스펙의 일부만 구현 (block, margin collapse, fit-content, grid 미지원) | Block, Grid, intrinsic sizing 전체 | 이미 커스텀 엔진으로 우회 중 |
 | **L2: CSS 값 파서 부족** | `calc()`, `em`, `min-content/max-content`, `border` shorthand 미파싱 | 모든 엔진 공통 | 중 — 파서 확장 필요 |
 | **L3: 렌더링 피처 부재** | `transform`, 다중 `box-shadow`, `gradient`, `overflow: scroll` 미구현 | 시각 효과 | 상 — Skia API 활용 필요 |
+| **L4: CSS 값 파서 파편화** | 3개 독립 파서(`parseSize`, `parseCSSValue`, `parseCSSSize`)가 각각 다른 단위를 지원하여 동일 CSS 값이 경로별로 다르게 해석됨 | 모든 엔진 공통 (파싱 불일치) | 중 — Phase 1 통합 파서로 해결 |
+
+**L4 상세: 파서별 단위 지원 비교**
+
+| 단위 | `parseSize()` (`engines/utils.ts:86`) | `parseCSSValue()` (`styleToLayout.ts:148`) | `parseCSSSize()` (`styleConverter.ts:150`) |
+|------|:---:|:---:|:---:|
+| px / number | O | O | O |
+| % | O (값 해석) | O (문자열 유지) | O (값 해석) |
+| vh / vw | O (값 해석) | O (% 문자열 변환) | O (값 해석) |
+| rem | X | O (×16) | O (×16) |
+| em | X | X | O (parentSize 기반) |
+| fit-content | O (sentinel -2) | X (별도 경로) | X |
+| calc() | X | X | X |
 
 ---
 
@@ -71,6 +89,16 @@ CSS Style (사용자 입력)
 > **목표:** 모든 엔진이 공유하는 CSS 값 파싱 레이어를 강화하여 단위/함수 지원 범위 확대
 >
 > **일치율 영향:** +5~7% (전체 65% → 75% CSS 단위, Box Model 88% → 93%)
+
+### 현재 파서 현황 (Phase 1 동기)
+
+현재 CSS 값 파싱이 3개 파일에 독립적으로 구현되어 있다 (§0.4 L4 참조):
+
+- `engines/utils.ts` → `parseSize()`: BlockEngine/WASM용. px, %, vh, vw, fit-content만 지원. **em, rem, calc() 미지원** (122행 주석에 명시적 제외)
+- `styleToLayout.ts` → `parseCSSValue()`: @pixi/layout Yoga용. %, vh→% 변환, vw→% 변환, rem(×16), px. **em, calc() 미지원**
+- `styleConverter.ts` → `parseCSSSize()`: Skia 렌더러용. px, rem, vh, vw, em(parentSize 기반), %. **calc() 미지원**
+
+동일한 CSS 값 `2rem`이 경로에 따라 `parseSize()`에서는 `undefined`(미지원), `parseCSSValue()`에서는 `32`(px)로 해석되는 불일치가 존재한다. Phase 1에서 통합 파서(`cssValueParser.ts`)의 `resolveCSSSizeValue()`를 도입하여 3개 파서 내부에서 공통 호출하는 방식으로 해결한다.
 
 ### 1.1 `calc()` 파서
 
@@ -264,6 +292,22 @@ pub fn grid_auto_placement(
 
 ---
 
+**빌드 파이프라인:**
+
+기존 `grid_layout.rs`에 auto-placement 함수를 추가하며, 현재 WASM 빌드 구조를 그대로 활용한다.
+
+| 항목 | 현재 | 변경 후 |
+|------|------|---------|
+| Rust 소스 | `wasm/src/grid_layout.rs` (`parse_tracks`, `calculate_cell_positions`) | `grid_auto_placement()` 함수 추가 |
+| 빌드 명령 | `pnpm wasm:build` (`wasm-pack --target bundler`) | 변경 없음 |
+| JS 바인딩 | `wasm-bindings/pkg/xstudio_wasm.js` | 자동 생성 (wasm-bindgen) |
+| TS 래퍼 | `wasm-bindings/layoutAccelerator.ts` | Grid 가속 경로 추가 |
+| Feature Flag | `WASM_FLAGS.LAYOUT_ENGINE = false` | Grid 아이템 ≥ 20일 때 활성화 |
+| Vite 로드 | `vite-plugin-wasm` + `optimizeDeps.exclude` | 변경 없음 |
+
+> 기존 `xstudio-wasm` 크레이트(단일 WASM 모듈)에 Grid 함수를 추가한다.
+> 별도 WASM 파일 분리는 초기화 오버헤드 증가로 인해 지양한다.
+
 ## 3. Phase 3: CSS 캐스케이드 경량화 (L2 해결)
 
 > **목표:** `inherit`, CSS 변수(`var()`), 기본 스타일 상속을 지원하는 경량 캐스케이드 시스템
@@ -347,6 +391,8 @@ function resolveVar(
 ```
 
 **변수 소스:** 빌더의 디자인 토큰 시스템 (spacing, color, typography 토큰)을 CSS 변수로 노출
+
+**기존 인프라:** `cssVariableReader.ts` (`canvas/utils/cssVariableReader.ts:84-150`)가 이미 런타임에서 CSS 변수를 읽어 PixiJS hex 값으로 변환하는 기능을 갖추고 있다. `getCSSVariable(name)` → `getComputedStyle(document.documentElement).getPropertyValue(name)` 방식. Phase 3에서 `var()` 파싱 구현 시 이 기존 인프라와 연동하여 디자인 토큰 → CSS 변수 매핑을 활용할 수 있다.
 
 ---
 
@@ -478,8 +524,9 @@ transform: rotate(45deg) scale(1.5) translateX(10px);
 | `scale(x, y)` | `canvas.scale()` | O |
 | `skew(x, y)` | `canvas.concat(matrix)` | O |
 | `matrix(a,b,c,d,e,f)` | `canvas.concat(matrix)` | O |
+| `transform-origin` | `translate(origin) → concat(matrix) → translate(-origin)` | O |
 
-**파일:** `styleConverter.ts` — `parseTransform()` 신규, `PixiTransform`에 rotation/scale 추가
+**파일:** `styleConverter.ts` — `parseTransform()`, `parseTransformOrigin()` 신규
 
 ```typescript
 interface TransformMatrix {
@@ -487,20 +534,29 @@ interface TransformMatrix {
   d: number; e: number; f: number;
 }
 
+interface TransformSpec {
+  matrix: TransformMatrix;
+  originX: number;  // px (border-box 기준)
+  originY: number;  // px (border-box 기준)
+}
+
 function parseTransform(value: string): TransformMatrix;
-// "rotate(45deg) scale(1.5)" → 행렬 곱 결과
+function parseTransformOrigin(value: string, boxWidth: number, boxHeight: number): { x: number; y: number };
+// "rotate(45deg) scale(1.5)" + "50% 50%" → 중심점 기준 행렬 변환
 ```
 
-**Skia 통합:** `nodeRenderers.ts` — `renderNode()` 에서 transform 행렬 적용
+**Skia 통합:** `nodeRenderers.ts` — `renderNode()` 에서 transform-origin 반영 후 행렬 적용
 
 ```typescript
 if (node.transform) {
   canvas.save();
+  canvas.translate(node.transform.originX, node.transform.originY);
   canvas.concat(Float32Array.of(
     node.transform.a, node.transform.c, node.transform.e,
     node.transform.b, node.transform.d, node.transform.f,
     0, 0, 1
   ));
+  canvas.translate(-node.transform.originX, -node.transform.originY);
   // ... 렌더링 ...
   canvas.restore();
 }
@@ -580,8 +636,12 @@ CSS stacking context 생성 조건:
 
 ```typescript
 function createsStackingContext(style: CSSStyle): boolean {
+  const position = style.position;
+  const zIndexSpecified = style.zIndex !== undefined && style.zIndex !== 'auto';
+
   if (style.position === 'fixed' || style.position === 'sticky') return true;
-  if (style.position !== undefined && style.zIndex !== undefined) return true;
+  // CSS: static + z-index는 stacking context를 만들지 않는다.
+  if ((position === 'relative' || position === 'absolute') && zIndexSpecified) return true;
   if (style.opacity !== undefined && parseFloat(String(style.opacity)) < 1) return true;
   if (style.transform) return true;
   if (style.filter) return true;
@@ -627,8 +687,8 @@ renderNode(node):
 
 ```
 Phase 0 (현재):          ████████░░ 83%
-§12 (구조적 문제):       █████████░ 87%  (+4%) ← P1/P2/P3 수정
-§13 (컴포넌트 구조):     █████████░ 89%  (+2%) ← CSS-web 구조 미러링
+§8 (구조적 문제):       █████████░ 87%  (+4%) ← P1/P2/P3 수정
+§9 (컴포넌트 구조):     █████████░ 89%  (+2%) ← CSS-web 구조 미러링
 Phase 1 (값 파서):       █████████▓ 92%  (+3%)
 Phase 2 (Grid):          █████████▓ 93%  (+1%)
 Phase 3 (캐스케이드):    █████████▓ 94%  (+1%)
@@ -640,8 +700,8 @@ Phase 6 (Position):      ██████████ 97%+ (+1%)
 ### 7.3 의존성 그래프
 
 ```
-§12 (구조적 문제 P1/P2/P3) ← 최우선, 독립 실행 가능
-  └──→ §13 (컴포넌트 CSS-web 구조) — P1/P2/P3 수정 후 적용
+§8 (구조적 문제 P1/P2/P3) ← 최우선, 독립 실행 가능
+  └──→ §9 (컴포넌트 CSS-web 구조) — P1/P2/P3 수정 후 적용
          └──→ Phase 1 (CSS 값 파서) — 컴포넌트 구조 안정화 후
                ├──→ Phase 2 (Grid) — calc()와 minmax() 파서 공유
                ├──→ Phase 3 (캐스케이드) — em 해석에 fontSize 상속 필요
@@ -682,7 +742,7 @@ Phase 6 (Position):      ██████████ 97%+ (+1%)
 
 ---
 
-## 8.5 구현 순서 최적화 (스프린트 분할)
+### 7.6 구현 순서 최적화 (스프린트 분할)
 
 리스크를 낮추기 위해 Phase 단위 일괄 투입 대신 세로 슬라이스 방식으로 진행한다.
 
@@ -697,192 +757,83 @@ Phase 6 (Position):      ██████████ 97%+ (+1%)
 
 ---
 
-## 8. 아키텍처 결정 사항
+## 8. 구조적 문제 분석 및 해결 방안 (Self-Rendering 컴포넌트)
 
-### 8.1 CSS 값 파서를 JS vs WASM 중 어디에 구현할 것인가?
+> **배경:** Button(width:auto/fit-content/100px, height:auto)에서 텍스트 오버플로 시 높이 자동 조절이 부모의 display, flex-direction, align-items 등에 따라 CSS와 다르게 동작하는 문제 발견
 
-**결정: JS (TypeScript)**
-
-| 기준 | JS | WASM |
-|------|-----|------|
-| 문자열 파싱 성능 | 충분함 (파싱은 1회) | 마샬링 비용이 파싱 이점 상쇄 |
-| 디버깅 | 브라우저 devtools 직접 | source-map 필요 |
-| 번들 크기 | 0 (기존 번들에 포함) | +30~50KB |
-| 개발 속도 | 빠름 | 느림 (빌드 파이프라인) |
-
-파싱은 요소당 1회이고 결과가 캐싱되므로 JS 성능으로 충분하다.
-WASM은 레이아웃 계산(N개 자식 순회)에만 사용하는 현재 방침 유지.
-
-### 8.2 스타일 상속을 트리 순회 vs 캐시 중 어떻게 구현할 것인가?
-
-**결정: 트리 순회 + WeakMap 캐시**
-
-```typescript
-const computedStyleCache = new WeakMap<Element, ComputedStyle>();
-
-function getComputedStyle(element: Element, parent: Element | null): ComputedStyle {
-  const cached = computedStyleCache.get(element);
-  if (cached) return cached;
-
-  const parentComputed = parent ? getComputedStyle(parent, ...) : ROOT_STYLE;
-  const computed = resolveStyle(element, parentComputed, context);
-  computedStyleCache.set(element, computed);
-  return computed;
-}
-```
-
-- 요소 변경 시 해당 요소 + 하위 트리의 캐시만 무효화
-- WeakMap이므로 요소 삭제 시 자동 GC
-
-### 8.3 CSS 변수를 어디에 저장할 것인가?
-
-**결정: 디자인 토큰 스토어 연동**
-
-빌더의 기존 디자인 토큰 시스템(spacing, color, typography)을 CSS 변수로 매핑.
-사용자가 `:root`에 CSS 변수를 정의하는 것은 Phase 3 범위에서는 지원하지 않음.
-
-```typescript
-// 디자인 토큰 → CSS 변수 매핑
-const designTokensAsCSS: Map<string, string> = new Map([
-  ['--spacing-sm', '8px'],
-  ['--spacing-md', '12px'],
-  ['--color-primary', '#3b82f6'],
-  // ...
-]);
-```
-
----
-
-## 9. 성능 제약 조건
-
-모든 Phase에서 다음 성능 기준을 유지해야 한다:
-
-| 지표 | 기준 | 측정 방법 |
-|------|------|----------|
-| Canvas FPS | ≥ 60fps | `GPUDebugOverlay` RAF FPS |
-| 레이아웃 계산 (100 요소) | < 5ms | `performance.measure()` |
-| 스타일 해석 (단일 요소) | < 0.1ms | `performance.now()` |
-| 초기 로드 증가량 | < 20KB gzip | `vite-plugin-inspect` |
-| WASM 모듈 증가량 | < 30KB | `wasm-opt -Oz` |
-
-### 9.1 성능 최적화 전략
-
-1. **Lazy Parsing:** `calc()` 파서는 해당 값이 실제 사용될 때만 호출
-2. **결과 캐싱:** 동일 CSS 값 문자열 → 동일 결과 (LRU 캐시, 1000개)
-3. **Batch Invalidation:** 스타일 변경 시 dirty 마킹 후 RAF에서 일괄 재계산
-4. **WASM 임계값 유지:** children > 10일 때만 WASM 경로 사용
-
-### 9.2 관측 지표 대시보드 (추가)
-
-성능/정합성 지표는 아래 항목을 CI 리포트로 축적한다.
-
-| 지표 | 수집 지점 | 경고 임계값 |
-|------|-----------|-------------|
-| 레이아웃 평균 시간 | `LayoutEngine` 래퍼 `performance.measure()` | > 5ms |
-| 렌더 프레임 드랍율 | `GPUDebugOverlay` FPS 샘플링 | 55fps 미만 3초 지속 |
-| CSS 정합성 오차율 | 브라우저 vs 캔버스 좌표 비교 스크립트 | 오차 > ±1px 5% 초과 |
-| 번들 증가량 | build report | +20KB(gzip) 초과 |
-
----
-
-## 10. Non-Goals (명시적 제외)
-
-다음 기능은 이 설계안의 범위에 포함되지 않는다:
-
-| 기능 | 사유 |
-|------|------|
-| `display: inline` (완전한 텍스트 흐름) | 텍스트 레이아웃 엔진 전체 구현 필요, ROI 낮음 |
-| `float: left/right` | 레거시 레이아웃, flex/grid로 대체 |
-| `position: sticky` | 스크롤 컨텍스트 필요, 노코드 빌더에서 사용 빈도 극히 낮음 |
-| CSS `@media` queries | 반응형은 빌더의 브레이크포인트 시스템으로 처리 |
-| CSS `transition` / `animation` | 캔버스 에디터에서는 정적 레이아웃만 표시 (프리뷰에서 지원) |
-| `writing-mode` (세로 쓰기) / RTL | 노코드 빌더 1차 범위 외 |
-| CSS `@container` queries | CSS Containment Level 3, 복잡도 매우 높음 |
-| `::before` / `::after` pseudo-elements | 노코드 빌더에서 직접 요소로 표현 |
-| `table` display (table, table-row, table-cell) | HTML table 전용 레이아웃, Grid로 대체 |
-
----
-
-## 11. 테스트 전략
-
-### 11.1 단위 테스트 (Vitest)
-
-각 Phase의 파서/엔진에 대한 단위 테스트:
-
-```
-__tests__/
-  cssValueParser.test.ts      // Phase 1: calc, em, border shorthand
-  gridAutoPlacement.test.ts   // Phase 2: auto-placement 알고리즘
-  cssResolver.test.ts         // Phase 3: 상속, CSS 변수
-  blockEnginePhase4.test.ts   // Phase 4: baseline, white-space
-```
-
-### 11.2 시각 회귀 테스트
-
-Storybook + Chromatic 기반 스크린샷 비교:
-
-```
-stories/
-  LayoutCSS.stories.tsx       // CSS 속성별 레이아웃 결과 시각 검증
-  GridAdvanced.stories.tsx    // repeat, minmax, auto-placement
-  TypographyFlow.stories.tsx  // white-space, word-break
-```
-
-### 11.3 CSS 정합성 벤치마크
-
-브라우저 CSS 결과와 캔버스 레이아웃 결과를 자동 비교:
-
-```typescript
-// 동일한 DOM 구조를 브라우저 iframe과 캔버스 양쪽에 렌더링
-// getBoundingClientRect() 결과와 ComputedLayout 결과를 비교
-// 허용 오차: ±1px (서브픽셀 반올림 차이)
-```
-
-### 11.4 롤백 기준 (추가)
-
-아래 조건 중 하나라도 충족하면 해당 Phase 변경을 feature flag 뒤로 이동하거나 롤백한다.
-
-- 캔버스 FPS가 기준(60fps) 미만으로 지속 하락하고 1차 최적화 후에도 복구되지 않는 경우
-- 레이아웃 정합성 벤치마크에서 기존 대비 FAIL 케이스가 증가하는 경우
-- 핵심 편집 플로우(선택/드래그/리사이즈) 회귀가 발생하는 경우
-
-롤백은 "전체 되돌리기"보다 기능 단위 flag off를 우선 적용한다.
-
----
-
-## 12. 구조적 문제 분석 및 해결 방안 (Self-Rendering 컴포넌트)
-
-> **배경:** Button(width:100px, height:auto)에서 텍스트 오버플로 시 높이 자동 조절이 부모의 display, flex-direction, align-items 등에 따라 CSS와 다르게 동작하는 문제 발견
-
-### 12.1 문제 정의
+### 8.1 문제 정의
 
 Self-Rendering 컴포넌트(Button, Card, ToggleButton 등)는 `SELF_PADDING_TAGS`로 지정되어 `stripSelfRenderedProps()`가 padding/border를 Yoga에서 제거한다. 이로 인해 Yoga가 정확한 크기 정보를 잃고, CSS와 다른 레이아웃 결과를 생성한다.
 
-### 12.2 P1 — CRITICAL: `layout.height` 고정값 설정
+**주요 변수/함수 위치 참조:**
 
-**위치:** `styleToLayout.ts:602-643`
+| 변수/함수 | 파일 | 행 |
+|-----------|------|-----|
+| `SELF_PADDING_TAGS` | `BuilderCanvas.tsx` | 642-649 |
+| `stripSelfRenderedProps()` | `BuilderCanvas.tsx` | 662-670 |
+| `SELF_RENDERING_BTN_TAGS` | `styleToLayout.ts` | 362 |
+| `SELF_RENDERING_BUTTON_TAGS` | `styleToLayout.ts` | 602 |
+| `BUTTON_PADDING` (height용) | `styleToLayout.ts` | 610-616 |
+| `BTN_PAD` (fit-content width용) | `styleToLayout.ts` | 366-368 |
+| `BUTTON_SIZE_CONFIG` | `engines/utils.ts` | 290-304 |
+
+### 8.2 P1 — CRITICAL: `layout.height` 고정값 설정
+
+**위치:** `styleToLayout.ts:599-643`
 
 **현상:**
 ```typescript
-// 현재 코드 (styleToLayout.ts:625)
-layout.height = paddingY * 2 + lineHeight + borderW * 2;
+// 현재 코드 (styleToLayout.ts:602-625)
+const SELF_RENDERING_BUTTON_TAGS = new Set(['button', 'submitbutton', 'fancybutton', 'togglebutton']);
+if (SELF_RENDERING_BUTTON_TAGS.has(tag) && height === undefined) {
+  // ... BUTTON_PADDING config, fontSize/paddingY/borderW 계산 ...
+  const lineHeight = fontSize * 1.2;
+  layout.height = paddingY * 2 + lineHeight + borderW * 2;  // ← 고정 px 설정
+}
 ```
 
 self-rendering 버튼 태그에 대해 `layout.height`를 고정 px로 설정한다.
 이로 인해 Yoga의 `align-items: stretch`가 무시되어 부모 flex 컨테이너에서 cross-axis 늘리기가 동작하지 않는다.
+
+**부분 수정 존재 (628-642행) — 비효과적:**
+
+625행 이후에 고정 width 버튼에 대한 부분 수정이 이미 존재한다:
+
+```typescript
+// styleToLayout.ts:627-642 (부분 수정)
+if (typeof width === 'number' && width > 0) {
+  const textContent = String(props?.children ?? props?.text ?? props?.label ?? '');
+  if (textContent) {
+    const paddingX = toNum(style.paddingLeft) ?? toNum(style.padding) ?? bp.px;
+    const maxTextWidth = width - paddingX * 2;
+    if (maxTextWidth > 0) {
+      const wrappedH = measureWrappedTextHeight(textContent, fontSize, 500, 'Pretendard', maxTextWidth);
+      if (wrappedH > lineHeight + 0.5) {
+        const totalHeight = paddingY * 2 + wrappedH + borderW * 2;
+        layout.minHeight = totalHeight;  // ← minHeight 설정
+      }
+    }
+  }
+}
+```
+
+> **핵심 문제:** 625행에서 `layout.height`가 이미 고정 px 값으로 설정된 상태에서 638행에서 `layout.minHeight`를 추가 설정해도, **Yoga는 `height`(고정값)를 `minHeight`보다 우선 적용**하므로 부분 수정이 실질적 효과를 발휘하지 못한다. `height`가 명시적으로 설정되면 Yoga는 그 값을 최종 높이로 확정하고, `minHeight`/`maxHeight` 제약은 `height`가 `auto`(미설정)일 때만 의미를 갖는다.
 
 **CSS 동작 vs 현재 동작:**
 
 | 시나리오 | CSS 기대값 | 현재 엔진 결과 | 원인 |
 |----------|-----------|--------------|------|
 | 부모 `flex-direction:row` + `align-items:stretch` | 부모 높이만큼 늘어남 | 고정 높이 유지 | `layout.height = fixed` |
-| 부모 `flex-direction:column` + 텍스트 overflow | 텍스트 wrap 높이로 자동 성장 | 1줄 높이 고정 | `layout.height = fixed` |
+| 부모 `flex-direction:column` + 텍스트 overflow | 텍스트 wrap 높이로 자동 성장 | 1줄 높이 고정 | `layout.height = fixed` (부분 수정 비효과적) |
 | `height: auto` + 긴 텍스트 | content 높이 자동 조절 | 1줄 높이로 잘림 | height 고정 선점 |
 
 **해결 방안:**
 
 ```typescript
-// 수정안: layout.height 대신 layout.minHeight 사용
+// 수정안: layout.height 삭제 → layout.minHeight만 사용
+// 이유: height가 설정되면 Yoga가 minHeight를 무시하므로, height 대신 minHeight만 설정해야
+//       align-items:stretch와 텍스트 wrap에 의한 높이 자동 조절이 가능해진다.
+
 // layout.height = paddingY * 2 + lineHeight + borderW * 2;  // ❌ 삭제
 layout.minHeight = paddingY * 2 + lineHeight + borderW * 2;   // ✅ 최소 높이로 변경
 
@@ -892,55 +843,85 @@ if (style.height && style.height !== 'auto') {
 }
 ```
 
-**효과:** Yoga가 `align-items: stretch`와 `flex-grow`에 따라 높이를 자유롭게 계산할 수 있게 됨
+**효과:** Yoga가 `align-items: stretch`와 `flex-grow`에 따라 높이를 자유롭게 계산할 수 있게 됨. 기존 부분 수정(628-642행)의 minHeight 로직도 height 제약 없이 정상 동작하게 됨.
 
-### 12.3 P2 — HIGH: fit-content 워크어라운드가 stretch 차단
+### 8.3 P2 — HIGH: fit-content 워크어라운드가 stretch 차단
 
-**위치:** `styleToLayout.ts:297-301`
+**위치:** `styleToLayout.ts:297-301`, `styleToLayout.ts:362-381`
 
 **현상:**
 ```typescript
-// 현재 코드
-if (effectiveWidth === FIT_CONTENT) {
-  layout.flexGrow = 0;
-  layout.flexShrink = 0;
+// 현재 코드 (styleToLayout.ts:297-301) — 일반 fit-content 처리
+if (isFitContentWidth) {
+  layout.width = 'auto';
+  if (layout.flexGrow === undefined) layout.flexGrow = 0;    // ← 조건부 설정
+  if (layout.flexShrink === undefined) layout.flexShrink = 0; // ← 조건부 설정
+}
+
+// 현재 코드 (styleToLayout.ts:362-381) — self-rendering 버튼 fit-content 처리
+if (SELF_RENDERING_BTN_TAGS.has(tag) && isFitContentWidth) {
+  // ... BTN_PAD config, textWidth 측정 ...
+  layout.width = Math.round(measuredTextWidth) + paddingX * 2 + borderW * 2; // 명시적 px 강제
+  layout.flexGrow = 0;   // ← 무조건 설정 (297-301의 조건부와 불일치)
+  layout.flexShrink = 0; // ← 무조건 설정
 }
 ```
 
-`width: fit-content` (sentinel -2)일 때 `flexGrow=0, flexShrink=0`을 설정한다.
-이는 `flex-direction: column`인 부모에서 cross-axis(width)가 stretch되지 않는 문제를 발생시킨다.
+> **참고:** 297-301행의 일반 경로는 `if (layout.flexGrow === undefined)` 조건부로 사용자 명시 설정을 보존하지만, 362-381행의 버튼 경로는 무조건 `flexGrow = 0`을 강제한다. 이는 사용자가 명시적으로 `flex-grow`를 설정한 경우에도 덮어쓰게 되는 비일관적 동작이다.
+
+**Config 파편화 문제:** 버튼 크기 설정이 2벌 존재한다:
+- `BTN_PAD` (366-368행): fit-content width 계산용 — `{ px, fs }` 2개 필드
+- `BUTTON_PADDING` (610-616행): height 계산용 — `{ px, py, fs }` 3개 필드
+
+두 config가 동일한 버튼 사이즈 프리셋을 나타내지만 독립적으로 정의되어 있어, 하나만 수정하면 width/height 계산 간 불일치가 발생할 수 있다. `engines/utils.ts:290`의 `BUTTON_SIZE_CONFIG`까지 포함하면 총 3벌이다.
+
+`width: fit-content` 처리에서
+1) `flexGrow/flexShrink=0` 강제,
+2) self-rendering 버튼의 명시적 `layout.width(px)` 강제가 동시에 적용된다.
+특히 (2)는 cross-axis `align-items: stretch`를 직접 차단한다.
 
 **CSS 동작 vs 현재 동작:**
 
 | 시나리오 | CSS 기대값 | 현재 엔진 결과 | 원인 |
 |----------|-----------|--------------|------|
-| 부모 `flex-direction:column` + `align-items:stretch` | width가 부모 너비로 늘어남 | fit-content 너비 유지 | `flexGrow=0` |
+| 부모 `flex-direction:column` + `align-items:stretch` | width가 부모 너비로 늘어남 | fit-content 너비 유지 | `layout.width(px)` 강제 + `flexGrow=0` |
 | 부모 `flex-direction:row` + fit-content width | 콘텐츠 너비 유지 (올바름) | 콘텐츠 너비 유지 | 정상 동작 |
 
 **해결 방안:**
 
 ```typescript
-// 수정안: 부모의 flex-direction에 따라 조건부 적용
-if (effectiveWidth === FIT_CONTENT) {
-  // main-axis 방향에서만 grow/shrink 제한
-  // cross-axis에서는 stretch가 동작하도록 허용
+// 1) self-rendering fit-content width의 명시적 px 강제 제거
+//    (intrinsic size는 measureFunc가 담당)
+if (SELF_RENDERING_BTN_TAGS.has(tag) && isFitContentWidth) {
+  layout.width = 'auto';
+}
+
+// 2) grow/shrink 제한은 row 주축에서만 적용
+if (isFitContentWidth) {
   const parentFlexDir = parentStyle?.flexDirection || 'row';
   if (parentFlexDir === 'row' || parentFlexDir === 'row-reverse') {
-    // 가로 주축: width가 main-axis이므로 grow/shrink 제한 유지
     layout.flexGrow = 0;
     layout.flexShrink = 0;
   }
-  // 세로 주축(column): width가 cross-axis이므로 제한하지 않음
-  // → align-items: stretch가 정상 동작
+  // column 주축에서는 cross-axis stretch 허용
 }
 ```
 
-### 12.4 P3 — HIGH: Yoga measureFunc 미설정
+### 8.4 P3 — HIGH: Yoga measureFunc 미설정
 
 **현상:**
 
 Yoga는 `measureFunc`를 통해 leaf 노드의 intrinsic 크기를 동적으로 계산한다.
 현재 self-rendering 컴포넌트에 measureFunc가 설정되지 않아, Yoga가 부모 크기 변경 시 자식의 텍스트 wrap 높이를 재계산하지 못한다.
+
+**measureFunc 구현 현황:**
+
+| 컨텍스트 | measureFunc 여부 | 파일 | 비고 |
+|---------|:---:|------|------|
+| Skia 텍스트 노드 (CanvasKit Paragraph) | **O** | `skia/textMeasure.ts:91` `createYogaMeasureFunc()` | Skia 렌더러용, CanvasKit paragraph API로 텍스트 측정 |
+| @pixi/layout Yoga 버튼 노드 | **X** | (미구현 — **이것이 P3 문제**) | self-rendering 컴포넌트에 measureFunc 미설정 |
+
+> Skia 텍스트 노드에는 이미 `createYogaMeasureFunc()`가 구현되어 있으므로, P3 해결 시 이 구현을 참고하여 @pixi/layout Yoga 버튼 노드에도 유사한 measureFunc를 설정해야 한다.
 
 **CSS에서 일어나는 일:**
 ```
@@ -963,15 +944,7 @@ function setupMeasureFunc(yogaNode: YogaNode, element: Element) {
   const tag = element.tag;
   if (!SELF_RENDERING_TAGS.has(tag)) return;
 
-  yogaNode.setMeasureFunc((width, widthMode, height, heightMode) => {
-    // 1. 사용 가능한 width 결정
-    const availableWidth = widthMode === Yoga.MEASURE_MODE_EXACTLY
-      ? width
-      : widthMode === Yoga.MEASURE_MODE_AT_MOST
-        ? width
-        : Infinity;
-
-    // 2. 텍스트 wrap 높이 측정
+  yogaNode.setMeasureFunc((width, widthMode, _height, _heightMode) => {
     const text = extractTextContent(element.props);
     const fontSize = element.props.style?.fontSize || 14;
     const fontWeight = element.props.style?.fontWeight || 400;
@@ -980,14 +953,26 @@ function setupMeasureFunc(yogaNode: YogaNode, element: Element) {
     const paddingY = getSizePreset(tag, element.props.size).paddingY;
     const borderW = parseBorderWidth(element.props.style);
 
-    const textMaxWidth = availableWidth - paddingX * 2 - borderW * 2;
-    const textHeight = measureWrappedTextHeight(
-      text, fontSize, fontWeight, fontFamily, textMaxWidth
-    );
+    // intrinsic width: 줄바꿈 없이 측정
+    const intrinsicTextWidth = measureTextWidth(text, fontSize, fontFamily, fontWeight);
+    const intrinsicWidth = paddingX * 2 + intrinsicTextWidth + borderW * 2;
 
-    // 3. 결과 반환
+    // Yoga 계약:
+    // - EXACTLY: width를 그대로 사용
+    // - AT_MOST: min(intrinsic, available)
+    // - UNDEFINED: intrinsic width 사용
+    const resolvedWidth =
+      widthMode === Yoga.MEASURE_MODE_EXACTLY
+        ? width
+        : widthMode === Yoga.MEASURE_MODE_AT_MOST
+          ? Math.min(intrinsicWidth, width)
+          : intrinsicWidth;
+
+    const textMaxWidth = Math.max(0, resolvedWidth - paddingX * 2 - borderW * 2);
+    const textHeight = measureWrappedTextHeight(text, fontSize, fontWeight, fontFamily, textMaxWidth);
+
     return {
-      width: availableWidth,
+      width: resolvedWidth,
       height: paddingY * 2 + textHeight + borderW * 2,
     };
   });
@@ -995,27 +980,30 @@ function setupMeasureFunc(yogaNode: YogaNode, element: Element) {
 ```
 
 **효과:**
-- Yoga가 레이아웃 계산 중 버튼의 available width를 알려주면, 그에 맞는 텍스트 wrap 높이를 실시간 계산
+- Yoga measure mode 계약(EXACTLY/AT_MOST/UNDEFINED)을 준수하여 intrinsic sizing 오차를 줄임
+- available width가 제한될 때만 줄바꿈이 발생하고, 폭/높이 계산이 CSS와 동일한 방향으로 수렴
 - 부모 크기 변경 시 자동으로 높이 재조정
 
-### 12.5 10-Case CSS Divergence Matrix
+### 8.5 10-Case CSS Divergence Matrix
 
-부모 속성 조합에 따른 Button(width:100px, height:auto, text overflow) 동작 비교:
+부모 속성 + 자식 `width` 설정 조합에 따른 Button(height:auto, text overflow) 동작 비교:
 
-| # | 부모 display | flex-direction | align-items | CSS 결과 | 현재 엔진 결과 | 원인 | 수정 Phase |
-|---|-------------|---------------|-------------|---------|---------------|------|-----------|
-| 1 | flex | row | stretch | height=부모높이 | height=1줄고정 | P1 | 12.2 |
-| 2 | flex | row | center | height=auto(wrap) | height=1줄고정 | P1+P3 | 12.2+12.4 |
-| 3 | flex | row | flex-start | height=auto(wrap) | height=1줄고정 | P1+P3 | 12.2+12.4 |
-| 4 | flex | column | stretch | width=부모너비, height=auto | width=fit-content | P2 | 12.3 |
-| 5 | flex | column | center | width=100px, height=auto | height=1줄고정 | P1+P3 | 12.2+12.4 |
-| 6 | flex | column | flex-start | width=100px, height=auto | height=1줄고정 | P1+P3 | 12.2+12.4 |
-| 7 | flex | row | baseline | height=auto, baseline정렬 | baseline 무시 | P1+P3 | 12.2+12.4+Phase4 |
-| 8 | block | - | - | width=100%(block), height=auto | width=100px | P2 | 12.3 |
-| 9 | flex | row-reverse | stretch | height=부모높이 (역순) | height=1줄고정 | P1 | 12.2 |
-| 10 | grid | - | stretch | 셀 크기에 맞춤 | height=1줄고정 | P1+P3 | 12.2+12.4 |
+| # | 부모 display | flex-direction | align-items | 자식 width 설정 | CSS 결과 | 현재 엔진 결과 | 원인 | 상태 | 수정 Phase |
+|---|-------------|---------------|-------------|----------------|---------|---------------|------|------|-----------|
+| 1 | flex | row | stretch | `100px` | height=부모높이 | height=1줄고정 | P1 | 미수정 | 8.2 |
+| 2 | flex | row | center | `100px` | height=auto(wrap) | height=1줄고정 (부분 수정: minHeight 설정하나 height 고정이 우선하여 비효과적) | P1+P3 | 부분 수정(비효과적) | 8.2+8.4 |
+| 3 | flex | row | flex-start | `100px` | height=auto(wrap) | height=1줄고정 (부분 수정: minHeight 설정하나 height 고정이 우선하여 비효과적) | P1+P3 | 부분 수정(비효과적) | 8.2+8.4 |
+| 4 | flex | column | stretch | `fit-content` | width=부모너비, height=auto | width=fit-content | P2 | 미수정 | 8.3 |
+| 5 | flex | column | center | `100px` | width=100px, height=auto | height=1줄고정 (부분 수정: minHeight 설정하나 height 고정이 우선하여 비효과적) | P1+P3 | 부분 수정(비효과적) | 8.2+8.4 |
+| 6 | flex | column | flex-start | `100px` | width=100px, height=auto | height=1줄고정 (부분 수정: minHeight 설정하나 height 고정이 우선하여 비효과적) | P1+P3 | 부분 수정(비효과적) | 8.2+8.4 |
+| 7 | flex | row | baseline | `100px` | height=auto, baseline정렬 | baseline 무시 | P1+P3 | 미수정 | 8.2+8.4+Phase4 |
+| 8 | block | - | - | `auto` | width=100%(block), height=auto | width=100px | P2 | 미수정 | 8.3 |
+| 9 | flex | row-reverse | stretch | `100px` | height=부모높이 (역순) | height=1줄고정 | P1 | 미수정 | 8.2 |
+| 10 | grid | - | stretch | `100px` | 셀 크기에 맞춤 | height=1줄고정 | P1+P3 | 미수정 | 8.2+8.4 |
 
-### 12.6 수정 적용 순서
+> **부분 수정(비효과적)**: Case 2,3,5,6에서 `styleToLayout.ts:628-642`의 코드가 고정 width 버튼에 대해 `layout.minHeight`를 설정하지만, 625행에서 이미 `layout.height`가 고정 px로 설정되어 있어 Yoga가 `minHeight`를 무시한다. §8.2의 해결 방안(height→minHeight 전환) 적용 시 이 부분 수정이 정상 동작하게 된다.
+
+### 8.6 수정 적용 순서
 
 ```
 Step 1: P1 수정 (layout.height → layout.minHeight)
@@ -1023,7 +1011,7 @@ Step 1: P1 수정 (layout.height → layout.minHeight)
   ├─ 위험도: 중 (모든 self-rendering 컴포넌트에 영향)
   └─ 검증: Button/Card 높이 자동 조절 테스트
 
-Step 2: P2 수정 (fit-content 조건부 적용)
+Step 2: P2 수정 (fit-content px 강제 제거 + 조건부 grow/shrink)
   ├─ 영향: Case 4,8 해결
   ├─ 위험도: 중 (flex-direction 감지 로직 추가)
   └─ 검증: column flex + fit-content 버튼 stretch 테스트
@@ -1034,13 +1022,23 @@ Step 3: P3 수정 (measureFunc 설정)
   └─ 검증: 부모 width 변경 시 텍스트 wrap + 높이 변경 테스트
 ```
 
+**§8 관련 파일 요약:**
+
+| 파일 | 경로 | 핵심 역할 (§8 관점) |
+|------|------|-------------------|
+| `styleToLayout.ts` | `apps/builder/src/builder/workspace/canvas/layout/styleToLayout.ts` | fit-content 워크어라운드(297-301), 버튼 width 계산(362-381), 버튼 height 고정(599-643) |
+| `BuilderCanvas.tsx` | `apps/builder/src/builder/workspace/canvas/BuilderCanvas.tsx` | SELF_PADDING_TAGS 정의(642-649), stripSelfRenderedProps(662-670) |
+| `engines/utils.ts` | `apps/builder/src/builder/workspace/canvas/layout/engines/utils.ts` | parseSize(86-126), BUTTON_SIZE_CONFIG(290-304), FIT_CONTENT sentinel(53) |
+| `styleConverter.ts` | `apps/builder/src/builder/workspace/canvas/sprites/styleConverter.ts` | parseCSSSize — Skia용 CSS 값 파서(150-201) |
+| `textMeasure.ts` | `apps/builder/src/builder/workspace/canvas/skia/textMeasure.ts` | createYogaMeasureFunc — Skia 텍스트 노드용 measureFunc(91-102) |
+
 ---
 
-## 13. 컴포넌트 CSS-Web 구조 일치 계획
+## 9. 컴포넌트 CSS-Web 구조 일치 계획
 
 > **원칙:** TagGroup의 CSS-web 구조 매칭 패턴을 레퍼런스로, 모든 컴포넌트가 CSS-web 구조와 동일하게 동작하도록 정비
 
-### 13.1 TagGroup 레퍼런스 패턴 분석
+### 9.1 TagGroup 레퍼런스 패턴 분석
 
 TagGroup은 CSS-web 구조와 WebGL 구현이 올바르게 일치하는 유일한 레퍼런스 컴포넌트이다.
 
@@ -1072,7 +1070,7 @@ TagGroup (display:flex, flex-direction:column, gap:2px)
 3. **Spec 기반 토큰 공유**: CSS 변수 값과 동일한 Spec sizes/variants 사용
 4. **자식 요소 독립성**: 자식을 별도 Element로 분리하여 각각 레이아웃 참여
 
-### 13.2 전체 컴포넌트 CSS-Web 구조 비교표
+### 9.2 전체 컴포넌트 CSS-Web 구조 비교표
 
 63개 Pixi 컴포넌트를 CSS-web 구조와 비교하여 4단계로 분류:
 
@@ -1100,7 +1098,7 @@ TagGroup (display:flex, flex-direction:column, gap:2px)
 
 | 컴포넌트 | CSS-Web 구조 | WebGL 구현 | 갭 |
 |----------|-------------|-----------|-----|
-| **Button** | `<button>` intrinsic sizing | Graphics + 고정 px 크기 | P1(height고정), P3(measureFunc없음) |
+| **Button / FancyButton / SubmitButton** | `<button>` intrinsic sizing | Graphics + 고정 px 크기 | P1(height고정), P3(measureFunc없음) |
 | **Badge** | `inline-flex` + center | Graphics + 수동 크기 계산 | intrinsic sizing 미위임, min-width 미지원 |
 | **Checkbox** | `flex row` (box + label) | Graphics + 수동 위치 | 자식 분리 안됨, label wrap 높이 미반영 |
 | **Input/TextField** | `flex column` (label + input + error) | Graphics + 수동 레이아웃 | 전체 수동 배치, label/input 분리 안됨 |
@@ -1124,11 +1122,11 @@ TagGroup (display:flex, flex-direction:column, gap:2px)
 | Table, GridList, Tree | 대량 데이터 렌더링, 가상화 필요 → 별도 전략 |
 | NumberField, TimeField, DateField | 입력 필드 상호작용은 프리뷰 전용 |
 
-### 13.3 C등급 컴포넌트 구조 개선 계획
+### 9.3 C등급 컴포넌트 구조 개선 계획
 
 C등급 컴포넌트들을 TagGroup 패턴(A등급)으로 개선하는 구체적 방안:
 
-#### 13.3.1 Button → Yoga 레이아웃 위임
+#### 9.3.1 Button → Yoga 레이아웃 위임
 
 **현재:**
 ```
@@ -1151,7 +1149,7 @@ Button Element (Yoga node, display:flex, align-items:center, justify-content:cen
 3. Skia 렌더러에서 배경/테두리만 그리기 (패딩은 Yoga가 처리)
 4. 텍스트를 Yoga leaf node로 설정 + measureFunc
 
-#### 13.3.2 Badge → inline-flex Yoga 노드
+#### 9.3.2 Badge → inline-flex Yoga 노드
 
 **현재:**
 ```
@@ -1167,7 +1165,7 @@ Badge Element (Yoga node, display:inline-flex, align-items:center, justify-conte
   └─ TextChild (measureFunc)
 ```
 
-#### 13.3.3 Checkbox / Radio → flex row 자식 분리
+#### 9.3.3 Checkbox / Radio → flex row 자식 분리
 
 **현재:**
 ```
@@ -1184,7 +1182,7 @@ Checkbox Element (Yoga node, display:flex, flex-direction:row, align-items:cente
        └─ label text → wrap 시 높이 자동 계산
 ```
 
-#### 13.3.4 Input/TextField → flex column 자식 분리
+#### 9.3.4 Input/TextField → flex column 자식 분리
 
 **현재:**
 ```
@@ -1201,7 +1199,7 @@ TextField Element (Yoga node, display:flex, flex-direction:column, gap)
   └─ ErrorChild (Yoga leaf + measureFunc, conditional)
 ```
 
-#### 13.3.5 Breadcrumbs → flex row + 자식 분리
+#### 9.3.5 Breadcrumbs → flex row + 자식 분리
 
 **현재:**
 ```
@@ -1218,7 +1216,7 @@ Breadcrumbs Element (Yoga node, display:flex, flex-direction:row, align-items:ce
   └─ ...
 ```
 
-### 13.4 구현 우선순위
+### 9.4 구현 우선순위
 
 | 순위 | 컴포넌트 | 사용 빈도 | 구조 변경 규모 | CSS 일치 영향 |
 |------|----------|----------|-------------|-------------|
@@ -1230,18 +1228,28 @@ Breadcrumbs Element (Yoga node, display:flex, flex-direction:row, align-items:ce
 | **6** | Switch, Slider | ★★☆☆☆ | 중 | track+thumb flex 배치 |
 | **7** | Breadcrumbs, ProgressBar, Meter | ★★☆☆☆ | 소~중 | flex row/column 정리 |
 
-### 13.5 SELF_PADDING_TAGS 전략 변경
+### 9.5 SELF_PADDING_TAGS 전략 변경
 
-현재 `SELF_PADDING_TAGS`는 padding/border를 strip하여 이중 적용을 방지하는 임시 방편이다.
+현재 `SELF_PADDING_TAGS`는 padding/border/visual 속성을 strip하여 이중 적용을 방지하는 임시 방편이다.
 TagGroup 패턴을 적용하면 이 메커니즘이 불필요해진다.
+
+**`stripSelfRenderedProps()` 실제 strip 대상 (`BuilderCanvas.tsx:662-670`):**
+
+| 그룹 | 속성 |
+|------|------|
+| **Padding** | `padding`, `paddingTop`, `paddingRight`, `paddingBottom`, `paddingLeft` |
+| **Border** | `borderWidth`, `borderTopWidth`, `borderRightWidth`, `borderBottomWidth`, `borderLeftWidth` |
+| **Visual** | `borderRadius`, `borderColor`, `backgroundColor` |
+
+> **주의:** 문서에서 "padding/border를 strip"이라고 요약되지만, 실제로는 `borderRadius`, `borderColor`, `backgroundColor`도 함께 strip된다. 이는 Skia 렌더러에서 배경색, 테두리 색상, 테두리 반경을 자체 렌더링하기 때문이다.
 
 **마이그레이션 계획:**
 
 ```
 현재:
   SELF_PADDING_TAGS = [Button, SubmitButton, FancyButton, ToggleButton, ToggleButtonGroup, Card]
-  → stripSelfRenderedProps()로 padding/border 제거
-  → 컴포넌트가 내부에서 padding/border를 직접 렌더링
+  → stripSelfRenderedProps()로 padding/border/visual 속성 제거
+  → 컴포넌트가 내부에서 padding/border/borderRadius/backgroundColor를 직접 렌더링
 
 목표:
   SELF_PADDING_TAGS = [] (빈 Set)
@@ -1255,7 +1263,7 @@ TagGroup 패턴을 적용하면 이 메커니즘이 불필요해진다.
 2. 검증 후 Card, ToggleButton 등 순차 적용
 3. 모든 컴포넌트 마이그레이션 완료 후 `SELF_PADDING_TAGS` 및 `stripSelfRenderedProps()` 제거
 
-### 13.6 CSS-Web 구조 미러링 체크리스트
+### 9.6 CSS-Web 구조 미러링 체크리스트
 
 모든 컴포넌트를 개선할 때 다음 체크리스트를 적용:
 
@@ -1267,6 +1275,187 @@ TagGroup 패턴을 적용하면 이 메커니즘이 불필요해진다.
 - [ ] **Spec 토큰 동기화**: CSS 변수 값과 Spec의 sizes/variants 값이 동일한가?
 - [ ] **자식 독립성**: 자식 요소가 별도 Yoga 노드로 레이아웃에 참여하는가?
 - [ ] **반응성**: 부모 크기 변경 시 자식의 크기와 위치가 CSS와 동일하게 재계산되는가?
+
+---
+
+## 10. 아키텍처 결정 사항
+
+### 10.1 CSS 값 파서를 JS vs WASM 중 어디에 구현할 것인가?
+
+**결정: JS (TypeScript)**
+
+| 기준 | JS | WASM |
+|------|-----|------|
+| 문자열 파싱 성능 | 충분함 (파싱은 1회) | 마샬링 비용이 파싱 이점 상쇄 |
+| 디버깅 | 브라우저 devtools 직접 | source-map 필요 |
+| 번들 크기 | 0 (기존 번들에 포함) | +30~50KB |
+| 개발 속도 | 빠름 | 느림 (빌드 파이프라인) |
+
+파싱은 요소당 1회이고 결과가 캐싱되므로 JS 성능으로 충분하다.
+WASM은 레이아웃 계산(N개 자식 순회)에만 사용하는 현재 방침 유지.
+
+### 10.2 스타일 상속을 트리 순회 vs 캐시 중 어떻게 구현할 것인가?
+
+**결정: 트리 순회 + WeakMap 캐시**
+
+```typescript
+const computedStyleCache = new WeakMap<Element, ComputedStyle>();
+
+function getComputedStyle(element: Element, parent: Element | null): ComputedStyle {
+  const cached = computedStyleCache.get(element);
+  if (cached) return cached;
+
+  const parentComputed = parent ? getComputedStyle(parent, ...) : ROOT_STYLE;
+  const computed = resolveStyle(element, parentComputed, context);
+  computedStyleCache.set(element, computed);
+  return computed;
+}
+```
+
+- 요소 변경 시 해당 요소 + 하위 트리의 캐시만 무효화
+- WeakMap이므로 요소 삭제 시 자동 GC
+
+### 10.3 CSS 변수를 어디에 저장할 것인가?
+
+**결정: 디자인 토큰 스토어 연동**
+
+빌더의 기존 디자인 토큰 시스템(spacing, color, typography)을 CSS 변수로 매핑.
+사용자가 `:root`에 CSS 변수를 정의하는 것은 Phase 3 범위에서는 지원하지 않음.
+
+```typescript
+// 디자인 토큰 → CSS 변수 매핑
+const designTokensAsCSS: Map<string, string> = new Map([
+  ['--spacing-sm', '8px'],
+  ['--spacing-md', '12px'],
+  ['--color-primary', '#3b82f6'],
+  // ...
+]);
+```
+
+---
+
+## 11. 성능 제약 조건
+
+모든 Phase에서 다음 성능 기준을 유지해야 한다:
+
+| 지표 | 기준 | 측정 방법 |
+|------|------|----------|
+| Canvas FPS | ≥ 60fps | `GPUDebugOverlay` RAF FPS |
+| 레이아웃 계산 (100 요소) | < 5ms | `performance.measure()` |
+| 스타일 해석 (단일 요소) | < 0.1ms | `performance.now()` |
+| 초기 로드 증가량 | < 20KB gzip | `vite-plugin-inspect` |
+| WASM 모듈 증가량 | < 30KB | `wasm-opt -Oz` |
+
+### 11.1 성능 최적화 전략
+
+1. **Lazy Parsing:** `calc()` 파서는 해당 값이 실제 사용될 때만 호출
+2. **결과 캐싱:** 동일 CSS 값 문자열 → 동일 결과 (LRU 캐시, 1000개)
+3. **Batch Invalidation:** 스타일 변경 시 dirty 마킹 후 RAF에서 일괄 재계산
+4. **WASM 임계값 엔진별 유지:** BlockEngine은 `children > 10`, GridEngine은 `items >= 20`에서만 WASM 경로 사용 (벤치마크 기반 조정)
+
+### 11.2 관측 지표 대시보드 (추가)
+
+성능/정합성 지표는 아래 항목을 CI 리포트로 축적한다.
+
+| 지표 | 수집 지점 | 경고 임계값 |
+|------|-----------|-------------|
+| 레이아웃 평균 시간 | `LayoutEngine` 래퍼 `performance.measure()` | > 5ms |
+| 렌더 프레임 드랍율 | `GPUDebugOverlay` FPS 샘플링 | 55fps 미만 3초 지속 |
+| CSS 정합성 오차율 | 브라우저 vs 캔버스 좌표 비교 스크립트 | 오차 > ±1px 5% 초과 |
+| 번들 증가량 | build report | +20KB(gzip) 초과 |
+
+---
+
+## 12. Non-Goals (명시적 제외)
+
+다음 기능은 이 설계안의 범위에 포함되지 않는다:
+
+| 기능 | 사유 |
+|------|------|
+| `display: inline` (완전한 텍스트 흐름) | 텍스트 레이아웃 엔진 전체 구현 필요, ROI 낮음 |
+| `float: left/right` | 레거시 레이아웃, flex/grid로 대체 |
+| `position: sticky` | 스크롤 컨텍스트 필요, 노코드 빌더에서 사용 빈도 극히 낮음 |
+| CSS `@media` queries | 반응형은 빌더의 브레이크포인트 시스템으로 처리 |
+| CSS `transition` / `animation` | 캔버스 에디터에서는 정적 레이아웃만 표시 (프리뷰에서 지원) |
+| `writing-mode` (세로 쓰기) / RTL | 노코드 빌더 1차 범위 외 |
+| CSS `@container` queries | CSS Containment Level 3, 복잡도 매우 높음 |
+| `::before` / `::after` pseudo-elements | 노코드 빌더에서 직접 요소로 표현 |
+| `table` display (table, table-row, table-cell) | HTML table 전용 레이아웃, Grid로 대체 |
+
+---
+
+## 13. 테스트 전략
+
+
+> **테스트 파일 위치:**
+> - 레이아웃 엔진 단위 테스트: `apps/builder/src/builder/workspace/canvas/layout/engines/__tests__/`
+>   (기존 `BlockEngine.test.ts`, `utils.test.ts`와 동일 디렉토리)
+> - Storybook stories: `apps/builder/src/stories/` (신규 생성)
+> - CSS 정합성 벤치마크: `apps/builder/src/builder/workspace/canvas/layout/__tests__/`
+
+### 13.1 단위 테스트 (Vitest)
+
+각 Phase의 파서/엔진에 대한 단위 테스트:
+
+```
+__tests__/
+  cssValueParser.test.ts      // Phase 1: calc, em, border shorthand
+  gridAutoPlacement.test.ts   // Phase 2: auto-placement 알고리즘
+  cssResolver.test.ts         // Phase 3: 상속, CSS 변수
+  blockEnginePhase4.test.ts   // Phase 4: baseline, white-space
+```
+
+### 13.2 시각 회귀 테스트
+
+Storybook + Chromatic 기반 스크린샷 비교:
+
+```
+stories/
+  LayoutCSS.stories.tsx       // CSS 속성별 레이아웃 결과 시각 검증
+  GridAdvanced.stories.tsx    // repeat, minmax, auto-placement
+  TypographyFlow.stories.tsx  // white-space, word-break
+```
+
+### 13.3 CSS 정합성 벤치마크
+
+브라우저 CSS 결과와 캔버스 레이아웃 결과를 자동 비교:
+
+```typescript
+// 동일한 DOM 구조를 브라우저 iframe과 캔버스 양쪽에 렌더링
+// getBoundingClientRect() 결과와 ComputedLayout 결과를 비교
+// 허용 오차: ±1px (서브픽셀 반올림 차이)
+```
+
+### 13.4 §8 구조적 회귀 테스트 (필수)
+
+`8.5 10-Case Matrix`는 단순 문서가 아니라 자동 테스트 케이스로 관리한다.
+
+```text
+__tests__/
+  selfRenderingDivergence.test.ts
+    - case1_row_stretch_height
+    - case2_row_center_wrap_height
+    - case3_row_flex_start_wrap_height
+    - case4_column_stretch_fit_content_width
+    - case5_column_center_fixed_width_wrap_height
+    - case6_column_flex_start_fixed_width_wrap_height
+    - case7_row_baseline_alignment
+    - case8_block_auto_width_100pct
+    - case9_row_reverse_stretch_height
+    - case10_grid_cell_adaptive_height
+```
+
+각 케이스는 CSS-web 기준 스냅샷(기준값)과 Canvas 결과를 비교해 PASS/FAIL을 기록한다.
+
+### 13.5 롤백 기준 (추가)
+
+아래 조건 중 하나라도 충족하면 해당 Phase 변경을 feature flag 뒤로 이동하거나 롤백한다.
+
+- 캔버스 FPS가 기준(60fps) 미만으로 지속 하락하고 1차 최적화 후에도 복구되지 않는 경우
+- 레이아웃 정합성 벤치마크에서 기존 대비 FAIL 케이스가 증가하는 경우
+- 핵심 편집 플로우(선택/드래그/리사이즈) 회귀가 발생하는 경우
+
+롤백은 "전체 되돌리기"보다 기능 단위 flag off를 우선 적용한다.
 
 ---
 
