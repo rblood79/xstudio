@@ -21,7 +21,6 @@ import { parsePadding } from './paddingUtils';
 import { drawBox, parseBorderConfig } from '../utils';
 import { useSkiaNode } from '../skia/useSkiaNode';
 import { LayoutComputedSizeContext } from '../layoutContext';
-import { isDebugHitAreas, DEBUG_HIT_AREA_COLORS } from '../../../../utils/featureFlags';
 
 
 // ============================================
@@ -93,8 +92,10 @@ export const TextSprite = memo(function TextSprite({
     const styleWidth = style?.width;
     const styleHeight = style?.height;
     const usesLayoutWidth = styleWidth === undefined || styleWidth === 'auto' ||
+      styleWidth === 'fit-content' || styleWidth === 'min-content' || styleWidth === 'max-content' ||
       (typeof styleWidth === 'string' && styleWidth.endsWith('%'));
     const usesLayoutHeight = styleHeight === undefined || styleHeight === 'auto' ||
+      styleHeight === 'fit-content' || styleHeight === 'min-content' || styleHeight === 'max-content' ||
       (typeof styleHeight === 'string' && styleHeight.endsWith('%'));
 
     if (!usesLayoutWidth && !usesLayoutHeight) return converted.transform;
@@ -208,10 +209,7 @@ export const TextSprite = memo(function TextSprite({
         // 배경이 없어도 투명 히트 영역을 그려서 클릭 선택이 가능하도록 함
         g.clear();
         g.rect(0, 0, transform.width, transform.height);
-        const debug = isDebugHitAreas();
-        g.fill(debug
-          ? { color: DEBUG_HIT_AREA_COLORS.text.color, alpha: DEBUG_HIT_AREA_COLORS.text.alpha }
-          : { color: 0xffffff, alpha: 0.001 });
+        g.fill({ color: 0xffffff, alpha: 0.001 });
       }
     },
     [style, transform, fill, effectiveBorderRadius, borderConfig]

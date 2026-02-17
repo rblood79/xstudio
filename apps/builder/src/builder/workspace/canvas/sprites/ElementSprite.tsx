@@ -21,7 +21,7 @@ import type { SkiaNodeData } from '../skia/nodeRenderers';
 import { LayoutComputedSizeContext } from '../layoutContext';
 import { convertStyle, cssColorToHex, parseCSSSize, type CSSStyle } from './styleConverter';
 import { Graphics as PixiGraphics } from 'pixi.js';
-import { isFillV2Enabled, isDebugHitAreas, DEBUG_HIT_AREA_COLORS } from '../../../../utils/featureFlags';
+import { isFillV2Enabled } from '../../../../utils/featureFlags';
 import { fillsToSkiaFillStyle } from '../../../panels/styles/utils/fillToSkia';
 import type { FillStyle } from '../skia/types';
 import { BoxSprite } from './BoxSprite';
@@ -762,8 +762,12 @@ export const ElementSprite = memo(function ElementSprite({
       ? convertedBorderRadius
       : convertedBorderRadius?.[0] ?? 0;
 
-    const finalWidth = (computedW != null && computedW > 0) ? computedW : transform.width;
-    const finalHeight = (computedH != null && computedH > 0) ? computedH : transform.height;
+    // FIT_CONTENT(-2), MIN_CONTENT(-3), MAX_CONTENT(-4) sentinel 값이
+    // transform.width/height에 들어올 수 있으므로 음수일 때 0으로 클램프
+    const rawFallbackW = transform.width;
+    const rawFallbackH = transform.height;
+    const finalWidth = (computedW != null && computedW > 0) ? computedW : (rawFallbackW > 0 ? rawFallbackW : 0);
+    const finalHeight = (computedH != null && computedH > 0) ? computedH : (rawFallbackH > 0 ? rawFallbackH : 0);
 
     const hasBgColor = style?.backgroundColor !== undefined && style?.backgroundColor !== null && style?.backgroundColor !== '';
 
@@ -1206,10 +1210,7 @@ export const ElementSprite = memo(function ElementSprite({
       const h = computedH ?? 0;
       if (w <= 0 || h <= 0) return;
       g.rect(0, 0, w, h);
-      const debug = isDebugHitAreas();
-      g.fill(debug
-        ? { color: DEBUG_HIT_AREA_COLORS.box.color, alpha: DEBUG_HIT_AREA_COLORS.box.alpha }
-        : { color: 0xffffff, alpha: 0.001 });
+      g.fill({ color: 0xffffff, alpha: 0.001 });
     },
     [computedW, computedH],
   );

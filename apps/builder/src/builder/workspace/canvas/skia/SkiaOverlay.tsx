@@ -558,7 +558,19 @@ export function SkiaOverlay({
 
     // 2. Pixi 캔버스 z-index 설정 (이벤트 처리 레이어)
     const pixiCanvas = app.canvas as HTMLCanvasElement;
-    pixiCanvas.style.zIndex = '3';
+    const prevPosition = pixiCanvas.style.position;
+    const prevTop = pixiCanvas.style.top;
+    const prevLeft = pixiCanvas.style.left;
+    const prevWidth = pixiCanvas.style.width;
+    const prevHeight = pixiCanvas.style.height;
+    const prevZIndex = pixiCanvas.style.zIndex;
+
+    pixiCanvas.style.position = 'absolute';
+    pixiCanvas.style.top = '0';
+    pixiCanvas.style.left = '0';
+    pixiCanvas.style.width = '100%';
+    pixiCanvas.style.height = '100%';
+    pixiCanvas.style.zIndex = '4';
 
     // 3. Camera 하위 레이어 즉시 숨김 (ticker로 매 프레임 보장)
     //    alpha=0으로 숨기되, PixiJS 8의 EventBoundary._interactivePrune()는
@@ -583,7 +595,12 @@ export function SkiaOverlay({
       app.ticker.remove(syncPixiVisibility);
       // PixiJS 상태 복원 (SkiaOverlay unmount 시)
       app.renderer.background.alpha = 1;
-      pixiCanvas.style.zIndex = '';
+      pixiCanvas.style.position = prevPosition;
+      pixiCanvas.style.top = prevTop;
+      pixiCanvas.style.left = prevLeft;
+      pixiCanvas.style.width = prevWidth;
+      pixiCanvas.style.height = prevHeight;
+      pixiCanvas.style.zIndex = prevZIndex;
       const camera = findCameraContainer(app.stage);
       if (camera) {
         camera.alpha = originalCameraAlphaRef.current ?? 1;

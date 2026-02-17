@@ -292,18 +292,24 @@ export function styleToLayout(
   // 🚀 @pixi/layout의 formatStyles가 이전 스타일과 병합하므로,
   // width/height가 없을 때 명시적으로 'auto'를 설정해야 이전 값이 리셋됨
   const widthRaw = style.width as string | undefined;
+  const heightRaw = style.height as string | undefined;
   const isFitContentWidth = widthRaw === 'fit-content';
+  const isFitContentHeight = heightRaw === 'fit-content';
   const width = parse(style.width);
   const height = parse(style.height);
   layout.width = width !== undefined ? width : 'auto';
   layout.height = height !== undefined ? height : 'auto';
 
   // 🚀 fit-content: Yoga가 네이티브 지원하지 않으므로 워크어라운드 적용
-  // flexGrow:0 + flexShrink:0으로 콘텐츠 크기 유지 (부모 너비로 늘어나지 않음)
+  // FIT_CONTENT sentinel(-2)이 Yoga에 직접 전달되면 잘못된 레이아웃이 발생
+  // → 'auto'로 리셋하고, 리프 노드는 아래에서 명시적 크기 계산
   if (isFitContentWidth) {
     layout.width = 'auto';
     if (layout.flexGrow === undefined) layout.flexGrow = 0;
     if (layout.flexShrink === undefined) layout.flexShrink = 0;
+  }
+  if (isFitContentHeight) {
+    layout.height = 'auto';
   }
 
   // 🚀 태그별 기본 스타일 처리
@@ -352,14 +358,19 @@ export function styleToLayout(
     if (!style.flexWrap) layout.flexWrap = 'wrap';
   }
 
-  // 🚀 Label: fit-content 시 텍스트 폭을 명시적으로 계산
-  // Label은 Yoga 리프 노드(자식 요소 없음)이므로, width: 'auto'만으로는
-  // Yoga가 콘텐츠 폭을 알 수 없어 width=0이 됨
-  // → 텍스트 폭을 measureTextWidth()로 계산하여 명시적 pixel 값 설정
-  if (tag === 'label' && isFitContentWidth) {
+  // 🚀 Label: Yoga 리프 노드이므로 고유 크기를 명시적으로 제공해야 함
+  // width: 'auto'만으로는 Yoga가 콘텐츠 폭을 알 수 없어 width=0이 됨
+  // - fit-content: 텍스트 폭을 width로 설정 (shrink-to-fit)
+  // - width 미설정(auto): minWidth로 텍스트 폭 설정 (stretch는 유지하면서 부모 fit-content 시 최소 크기 제공)
+  if (tag === 'label') {
     const textContent = String(props?.children || props?.text || props?.label || '');
     const fontSize = typeof style.fontSize === 'number' ? style.fontSize : 14;
-    layout.width = Math.ceil(measureTextWidth(textContent, fontSize));
+    const measuredWidth = Math.ceil(measureTextWidth(textContent, fontSize));
+    if (isFitContentWidth) {
+      layout.width = measuredWidth;
+    } else if (width === undefined) {
+      layout.minWidth = measuredWidth;
+    }
   }
 
   // 🚀 Button/ToggleButton/FancyButton: fit-content 시 텍스트 폭 계산
@@ -387,12 +398,22 @@ export function styleToLayout(
     }
   }
 
-  // 🚀 순수 텍스트 태그: 컨테이너 자식으로 배치될 때 Yoga가 텍스트 높이를 알 수 없으므로
-  // height 미설정 시 BlockEngine의 calculateContentHeight() 패턴으로 높이를 자동 계산
-  // display:block 경로와 동일한 높이 계산 로직 사용 (태그별 기본 높이 + lineHeight 기반)
+  // 🚀 순수 텍스트 태그: 컨테이너 자식으로 배치될 때 Yoga가 텍스트 높이/너비를 알 수 없으므로
+  // height 미설정 또는 fit-content 시 calculateContentHeight()로 높이 자동 계산
+  // width 미설정 시 minWidth로 텍스트 폭 설정 (stretch 유지 + 부모 fit-content 시 최소 크기 제공)
   const TEXT_LAYOUT_TAGS = new Set(['label', 'text', 'heading', 'paragraph']);
-  if (TEXT_LAYOUT_TAGS.has(tag) && height === undefined) {
-    layout.height = calculateContentHeight(element);
+  if (TEXT_LAYOUT_TAGS.has(tag)) {
+    if (height === undefined || isFitContentHeight) {
+      layout.height = calculateContentHeight(element);
+    }
+    // Yoga 리프 노드 → 고유 너비 제공 (Label은 위에서 별도 처리)
+    if (tag !== 'label' && width === undefined && !isFitContentWidth) {
+      const textContent = String(props?.children || props?.text || props?.label || '');
+      if (textContent) {
+        const fontSize = typeof style.fontSize === 'number' ? style.fontSize : 14;
+        layout.minWidth = Math.ceil(measureTextWidth(textContent, fontSize));
+      }
+    }
   }
 
   // 🚀 Checkbox/Radio/Switch: 기본 flex row 레이아웃 + 크기 계산
@@ -429,17 +450,17 @@ export function styleToLayout(
 
     if (isColumn) {
       // Column: 세로 쌓기
-      if (height === undefined) {
+      if (height === undefined || isFitContentHeight) {
         layout.height = indicatorSize + gap + textLineHeight;
       }
-      if (width === undefined) {
+      if (width === undefined || isFitContentWidth) {
         const labelText = String(props?.children ?? props?.label ?? props?.text ?? '');
         const textWidth = labelText ? measureTextWidth(labelText, fontSize) : 0;
         layout.width = Math.max(indicatorSize, Math.ceil(textWidth));
       }
     } else {
       // Row: 가로 배치
-      if (height === undefined) {
+      if (height === undefined || isFitContentHeight) {
         const INLINE_FORM_HEIGHTS: Record<string, Record<string, number>> = {
           checkbox: { sm: 20, md: 24, lg: 28 },
           radio: { sm: 20, md: 24, lg: 28 },
@@ -447,7 +468,7 @@ export function styleToLayout(
         };
         layout.height = INLINE_FORM_HEIGHTS[tag]?.[sizeName] ?? 24;
       }
-      if (width === undefined) {
+      if (width === undefined || isFitContentWidth) {
         const labelText = String(props?.children ?? props?.label ?? props?.text ?? '');
         const textWidth = labelText ? measureTextWidth(labelText, fontSize) : 0;
         layout.width = Math.ceil(indicatorSize + gap + textWidth);
@@ -462,16 +483,16 @@ export function styleToLayout(
     const size = (props?.size as string) ?? 'md';
     const sizePreset = getBadgeSizePreset(size);
 
-    // width 자동 계산 (명시적 width가 없을 때만)
-    if (width === undefined) {
+    // width 자동 계산 (명시적 width가 없거나 fit-content일 때)
+    if (width === undefined || isFitContentWidth) {
       const badgeText = String(props?.children ?? props?.text ?? props?.label ?? '');
       const textWidth = measureBadgeTextWidth(badgeText, sizePreset.fontSize);
       const badgeWidth = Math.max(sizePreset.minWidth, textWidth + sizePreset.paddingX * 2);
       layout.width = Math.ceil(badgeWidth);
     }
 
-    // height 자동 계산 (명시적 height가 없을 때만)
-    if (height === undefined) {
+    // height 자동 계산 (명시적 height가 없거나 fit-content일 때)
+    if (height === undefined || isFitContentHeight) {
       layout.height = sizePreset.height;
     }
   }
@@ -606,7 +627,7 @@ export function styleToLayout(
   // SELF_PADDING_TAGS는 stripSelfRenderedProps로 padding/border가 제거되어
   // Yoga가 height를 결정할 수 없음 → 명시적 height 설정 필요
   const SELF_RENDERING_BUTTON_TAGS = new Set(['button', 'submitbutton', 'fancybutton', 'togglebutton']);
-  if (SELF_RENDERING_BUTTON_TAGS.has(tag) && height === undefined) {
+  if (SELF_RENDERING_BUTTON_TAGS.has(tag) && (height === undefined || isFitContentHeight)) {
     // parseFloat(v) || undefined는 0을 undefined로 처리하므로 ?? 사용
     const toNum = (v: unknown): number | undefined =>
       typeof v === 'number' ? v

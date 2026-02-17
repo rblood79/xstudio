@@ -789,6 +789,8 @@ const ElementsLayer = memo(function ElementsLayer({
       // y 값 기준으로 라인 정렬
       lines.sort((a, b) => a.y - b.y);
 
+
+
       // 라인별로 렌더링
       let previousLineBottom = 0;
 
@@ -879,6 +881,9 @@ const ElementsLayer = memo(function ElementsLayer({
                 ...(isAutoHeightSection
                   ? { height: 'auto' as unknown as number, minHeight: layout.height }
                   : { height: layout.height }),
+                // BlockEngine이 정확한 크기를 계산했으므로
+                // @pixi/layout 기본값 flexShrink:1 에 의한 축소 방지
+                flexShrink: 0,
               };
 
           return (
@@ -894,9 +899,21 @@ const ElementsLayer = memo(function ElementsLayer({
                 childElements={isContainerType ? childElements : undefined}
                 renderChildElement={isContainerType ? (childEl: Element) => {
                   const childLayout = styleToLayout(childEl);
-                  const effectiveChildLayout = SELF_PADDING_TAGS.has(childEl.tag)
+                  let effectiveChildLayout = SELF_PADDING_TAGS.has(childEl.tag)
                     ? stripSelfRenderedProps(childLayout)
                     : childLayout;
+
+                  // 🚀 Yoga % 해석: auto-width 부모(TagGroup 등)에서 자식의 % 값을
+                  // Yoga가 해석할 수 없으므로 BlockEngine 계산 부모 크기 기준으로 pixel 변환
+                  if (layout.width > 0 && typeof effectiveChildLayout.width === 'string' && effectiveChildLayout.width.endsWith('%')) {
+                    const pct = parseFloat(effectiveChildLayout.width);
+                    effectiveChildLayout = { ...effectiveChildLayout, width: Math.round(layout.width * pct / 100) };
+                  }
+                  if (layout.height > 0 && typeof effectiveChildLayout.height === 'string' && effectiveChildLayout.height.endsWith('%')) {
+                    const pct = parseFloat(effectiveChildLayout.height);
+                    effectiveChildLayout = { ...effectiveChildLayout, height: Math.round(layout.height * pct / 100) };
+                  }
+
                   const childHasChildren = (pageChildrenMap.get(childEl.id)?.length ?? 0) > 0;
 
                   const isChildContainerType = isContainerTagForLayout(childEl.tag, effectiveChildLayout);
@@ -927,9 +944,22 @@ const ElementsLayer = memo(function ElementsLayer({
                         childElements={isChildContainerType ? nestedChildElements : undefined}
                         renderChildElement={isChildContainerType ? (nestedEl: Element) => {
                           const nestedLayout = styleToLayout(nestedEl);
-                          const effectiveNestedLayout = SELF_PADDING_TAGS.has(nestedEl.tag)
+                          let effectiveNestedLayout = SELF_PADDING_TAGS.has(nestedEl.tag)
                             ? stripSelfRenderedProps(nestedLayout)
                             : nestedLayout;
+
+                          // 🚀 Yoga % 해석: 부모 크기 기준으로 pixel 변환
+                          const nestedParentW = typeof childContainerLayout.width === 'number' ? childContainerLayout.width : layout.width;
+                          const nestedParentH = typeof childContainerLayout.height === 'number' ? childContainerLayout.height : layout.height;
+                          if (nestedParentW > 0 && typeof effectiveNestedLayout.width === 'string' && effectiveNestedLayout.width.endsWith('%')) {
+                            const pct = parseFloat(effectiveNestedLayout.width);
+                            effectiveNestedLayout = { ...effectiveNestedLayout, width: Math.round(nestedParentW * pct / 100) };
+                          }
+                          if (nestedParentH > 0 && typeof effectiveNestedLayout.height === 'string' && effectiveNestedLayout.height.endsWith('%')) {
+                            const pct = parseFloat(effectiveNestedLayout.height);
+                            effectiveNestedLayout = { ...effectiveNestedLayout, height: Math.round(nestedParentH * pct / 100) };
+                          }
+
                           const nestedHasChildren = (pageChildrenMap.get(nestedEl.id)?.length ?? 0) > 0;
                           const nestedFlexShrinkDefault = effectiveNestedLayout.flexShrink !== undefined ? {} : { flexShrink: 0 };
                           const nestedBlockLayoutDefaults = { flexBasis: 'auto' as const, flexGrow: 0 };
@@ -970,9 +1000,11 @@ const ElementsLayer = memo(function ElementsLayer({
               layout={{
                 position: 'relative' as const,
                 marginTop: lineMarginTop,
+                width: availableWidth,
                 display: 'flex' as const,
                 flexDirection: 'row' as const,
                 alignItems: 'flex-start' as const,  // 각 요소의 marginTop으로 vertical-align 반영
+                flexShrink: 0,
               }}
             >
               {rowElements}
@@ -987,10 +1019,12 @@ const ElementsLayer = memo(function ElementsLayer({
             layout={{
               position: 'relative' as const,
               marginTop: lineMarginTop,
+              width: availableWidth,
               display: 'flex' as const,
               flexDirection: 'row' as const,
               alignItems: 'flex-start' as const,  // 각 요소의 marginTop으로 vertical-align 반영
               flexWrap: 'nowrap' as const,
+              flexShrink: 0,
             }}
           >
             {rowElements}
@@ -1150,9 +1184,22 @@ const ElementsLayer = memo(function ElementsLayer({
               childElements={isContainerType ? childElements : undefined}
               renderChildElement={isContainerType ? (childEl: Element) => {
                 const childLayout = styleToLayout(childEl);
-                const effectiveChildLayout = SELF_PADDING_TAGS.has(childEl.tag)
+                let effectiveChildLayout = SELF_PADDING_TAGS.has(childEl.tag)
                   ? stripSelfRenderedProps(childLayout)
                   : childLayout;
+
+                // 🚀 Yoga % 해석: auto-width 부모에서 자식의 % 값을 pixel 변환
+                const parentW = typeof containerLayout.width === 'number' ? containerLayout.width : 0;
+                const parentH = typeof containerLayout.height === 'number' ? containerLayout.height : 0;
+                if (parentW > 0 && typeof effectiveChildLayout.width === 'string' && effectiveChildLayout.width.endsWith('%')) {
+                  const pct = parseFloat(effectiveChildLayout.width);
+                  effectiveChildLayout = { ...effectiveChildLayout, width: Math.round(parentW * pct / 100) };
+                }
+                if (parentH > 0 && typeof effectiveChildLayout.height === 'string' && effectiveChildLayout.height.endsWith('%')) {
+                  const pct = parseFloat(effectiveChildLayout.height);
+                  effectiveChildLayout = { ...effectiveChildLayout, height: Math.round(parentH * pct / 100) };
+                }
+
                 const childHasChildren = (pageChildrenMap.get(childEl.id)?.length ?? 0) > 0;
 
                 // 🚀 Phase 11: nested Container 타입 처리
@@ -1187,9 +1234,22 @@ const ElementsLayer = memo(function ElementsLayer({
                       renderChildElement={isChildContainerType ? (nestedEl: Element) => {
                         // 재귀적으로 nested children 렌더링
                         const nestedLayout = styleToLayout(nestedEl);
-                        const effectiveNestedLayout = SELF_PADDING_TAGS.has(nestedEl.tag)
+                        let effectiveNestedLayout = SELF_PADDING_TAGS.has(nestedEl.tag)
                           ? stripSelfRenderedProps(nestedLayout)
                           : nestedLayout;
+
+                        // 🚀 Yoga % 해석: 부모 크기 기준으로 pixel 변환
+                        const nestedParentW = typeof childContainerLayout.width === 'number' ? childContainerLayout.width : 0;
+                        const nestedParentH = typeof childContainerLayout.height === 'number' ? childContainerLayout.height : 0;
+                        if (nestedParentW > 0 && typeof effectiveNestedLayout.width === 'string' && effectiveNestedLayout.width.endsWith('%')) {
+                          const pct = parseFloat(effectiveNestedLayout.width);
+                          effectiveNestedLayout = { ...effectiveNestedLayout, width: Math.round(nestedParentW * pct / 100) };
+                        }
+                        if (nestedParentH > 0 && typeof effectiveNestedLayout.height === 'string' && effectiveNestedLayout.height.endsWith('%')) {
+                          const pct = parseFloat(effectiveNestedLayout.height);
+                          effectiveNestedLayout = { ...effectiveNestedLayout, height: Math.round(nestedParentH * pct / 100) };
+                        }
+
                         const nestedHasChildren = (pageChildrenMap.get(nestedEl.id)?.length ?? 0) > 0;
                         const nestedFlexShrinkDefault = effectiveNestedLayout.flexShrink !== undefined ? {} : { flexShrink: 0 };
                         const nestedBlockLayoutDefaults = { flexBasis: 'auto' as const, flexGrow: 0 };
@@ -1339,7 +1399,6 @@ export function BuilderCanvas({
   // 🚀 Phase 7: @pixi/layout용 Yoga 초기화 상태
   const [yogaReady, setYogaReady] = useState(false);
   // Phase 5: PixiJS app 인스턴스 (SkiaOverlay에 전달)
-  const pixiAppRef = useRef<PixiApplication | null>(null);
   const [pixiApp, setPixiApp] = useState<PixiApplication | null>(null);
 
   // 🚀 Phase 5 + 6.2: 저사양 기기 감지 (모듈 레벨 캐싱으로 useMemo 불필요)
@@ -2267,7 +2326,10 @@ export function BuilderCanvas({
           powerPreference="high-performance"
           // 🚀 Phase 7 Fix: LayoutSystem.init() 완료 후 Yoga 준비 완료 콜백
           // LayoutSystem.init()이 유일한 loadYoga() 호출 경로 → 인스턴스 중복 방지
-          onInit={(app) => { pixiAppRef.current = app; setPixiApp(app); setYogaReady(true); }}
+          onInit={(app) => {
+            setPixiApp(app);
+            setYogaReady(true);
+          }}
         >
           {/* P4: 메모이제이션된 컴포넌트 등록 (첫 번째 자식) */}
           <PixiExtendBridge />
@@ -2361,6 +2423,7 @@ export function BuilderCanvas({
               pagePositionsVersion={pagePositionsVersion}
             />
           </pixiContainer>
+
         </Application>
       )}
 

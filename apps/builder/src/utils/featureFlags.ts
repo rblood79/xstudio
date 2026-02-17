@@ -32,8 +32,6 @@ export interface FeatureFlags {
   renderMode: RenderMode;
   /** Fill V2: 다중 Fill 레이어 + 색상 모드 전환 (Color Picker Phase 1) */
   fillV2: boolean;
-  /** WebGL 컴포넌트 hit area 시각화 디버그 */
-  debugHitAreas: boolean;
 }
 
 // ============================================
@@ -187,7 +185,6 @@ export function getFeatureFlags(): FeatureFlags {
     wasmLayoutEngine: true,
     renderMode: 'skia' as RenderMode,
     fillV2: parseBoolean(import.meta.env.VITE_FEATURE_FILL_V2, false),
-    debugHitAreas: parseBoolean(import.meta.env.VITE_DEBUG_HIT_AREAS, false),
   };
 }
 
@@ -209,28 +206,6 @@ if (import.meta.env.DEV && typeof window !== 'undefined') {
     setTimeout(() => logFeatureFlags(), 100);
   }
 }
-
-// ============================================
-// Debug: Hit Area Visualization
-// ============================================
-
-/**
- * WebGL 컴포넌트의 hit area를 시각적으로 표시
- *
- * .env에서 설정: VITE_DEBUG_HIT_AREAS=true
- *
- * 색상:
- *   - TextSprite: 파랑 (0x3b82f6, alpha 0.25)
- *   - BoxSprite: 초록 (0x22c55e, alpha 0.2)
- */
-export function isDebugHitAreas(): boolean {
-  return parseBoolean(import.meta.env.VITE_DEBUG_HIT_AREAS, false);
-}
-
-export const DEBUG_HIT_AREA_COLORS = {
-  text: { color: 0x3b82f6, alpha: 0.25 },
-  box: { color: 0x22c55e, alpha: 0.2 },
-} as const;
 
 // ============================================
 // Window augmentation (for dev logging)

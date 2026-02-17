@@ -679,10 +679,7 @@ const drawContainerHitRect = useCallback(
     const h = computedH ?? 0;
     if (w <= 0 || h <= 0) return;
     g.rect(0, 0, w, h);
-    const debug = isDebugHitAreas();
-    g.fill(debug
-      ? { color: DEBUG_HIT_AREA_COLORS.box.color, alpha: DEBUG_HIT_AREA_COLORS.box.alpha }
-      : { color: 0xffffff, alpha: 0.001 });
+    g.fill({ color: 0xffffff, alpha: 0.001 });
   },
   [computedW, computedH],
 );
@@ -701,17 +698,6 @@ const drawContainerHitRect = useCallback(
 대상 태그 (`CONTAINER_TAGS`): Card, Box, Panel, Form, Group, Dialog, Modal, Disclosure, DisclosureGroup, Accordion, ToggleButtonGroup, TagGroup, TagList
 
 > **Note:** 자식이 없는 컨테이너는 BoxSprite 단독으로 렌더링되며, BoxSprite 자체의 히트 영역이 충분하므로 non-layout 패턴이 불필요하다.
-
-### 디버그 모드
-
-`.env` 파일에 `VITE_DEBUG_HIT_AREAS=true`를 설정하면 히트 영역이 시각적으로 표시된다:
-
-| 색상 | 대상 | alpha |
-|------|------|-------|
-| 초록 (`0x22c55e`) | BoxSprite / 컨테이너 히트 영역 | 0.2 |
-| 파랑 (`0x3b82f6`) | TextSprite 히트 영역 | 0.25 |
-
-Skia 렌더 트리의 노드별 히트 영역도 `nodeRenderers.ts`에서 동일한 플래그로 시각화된다.
 
 ### 관련 규칙
 

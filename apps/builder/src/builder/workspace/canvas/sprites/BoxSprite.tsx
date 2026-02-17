@@ -23,7 +23,7 @@ import { parsePadding, getContentBounds } from './paddingUtils';
 import { drawBox, parseBorderConfig } from '../utils';
 import { useSkiaNode } from '../skia/useSkiaNode';
 import { LayoutComputedSizeContext } from '../layoutContext';
-import { isFillV2Enabled, isDebugHitAreas, DEBUG_HIT_AREA_COLORS } from '../../../../utils/featureFlags';
+import { isFillV2Enabled } from '../../../../utils/featureFlags';
 import { fillsToSkiaFillColor, fillsToSkiaFillStyle } from '../../../panels/styles/utils/fillToSkia';
 
 
@@ -56,8 +56,10 @@ export const BoxSprite = memo(function BoxSprite({ element, onClick, onDoubleCli
     const styleWidth = style?.width;
     const styleHeight = style?.height;
     const usesLayoutWidth = styleWidth === undefined || styleWidth === 'auto' ||
+      styleWidth === 'fit-content' || styleWidth === 'min-content' || styleWidth === 'max-content' ||
       (typeof styleWidth === 'string' && styleWidth.endsWith('%'));
     const usesLayoutHeight = styleHeight === undefined || styleHeight === 'auto' ||
+      styleHeight === 'fit-content' || styleHeight === 'min-content' || styleHeight === 'max-content' ||
       (typeof styleHeight === 'string' && styleHeight.endsWith('%'));
 
     if (!usesLayoutWidth && !usesLayoutHeight) return converted.transform;
@@ -96,16 +98,11 @@ export const BoxSprite = memo(function BoxSprite({ element, onClick, onDoubleCli
   // Border-Box v2: drawBox 유틸리티 사용
   const draw = useCallback(
     (g: PixiGraphics) => {
-      const debug = isDebugHitAreas();
-      const debugAlpha = (debug && fill.alpha === 0)
-        ? DEBUG_HIT_AREA_COLORS.box.alpha : undefined;
-      const debugColor = (debug && fill.alpha === 0)
-        ? DEBUG_HIT_AREA_COLORS.box.color : undefined;
       drawBox(g, {
         width: transform.width,
         height: transform.height,
-        backgroundColor: debugColor ?? fill.color,
-        backgroundAlpha: debugAlpha ?? fill.alpha,
+        backgroundColor: fill.color,
+        backgroundAlpha: fill.alpha,
         borderRadius: typeof borderRadius === 'number' ? borderRadius : borderRadius?.[0] ?? 0,
         border: borderConfig,
       });

@@ -276,8 +276,11 @@ function getButtonLayout(
   const explicitHeight = parseCSSSize(style?.height, pctRefHeight, 0, resolveViewport);
 
   // 명시적 크기가 있으면 (%, vh, vw 포함) auto 비활성화
-  const hasExplicitWidth = style?.width !== undefined && style?.width !== "" && style?.width !== "auto";
-  const hasExplicitHeight = style?.height !== undefined && style?.height !== "" && style?.height !== "auto";
+  // fit-content, min-content, max-content는 intrinsic sizing → auto와 동일 (텍스트 기반 자동 크기)
+  const hasExplicitWidth = style?.width !== undefined && style?.width !== "" && style?.width !== "auto"
+    && style?.width !== "fit-content" && style?.width !== "min-content" && style?.width !== "max-content";
+  const hasExplicitHeight = style?.height !== undefined && style?.height !== "" && style?.height !== "auto"
+    && style?.height !== "fit-content" && style?.height !== "min-content" && style?.height !== "max-content";
   const isWidthAuto = !hasExplicitWidth;
   const isHeightAuto = !hasExplicitHeight;
 
