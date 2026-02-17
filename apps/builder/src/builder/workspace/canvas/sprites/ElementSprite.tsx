@@ -495,8 +495,8 @@ function measureSpecTextMinHeight(
     if (shape.fontSize !== undefined) {
       if (typeof shape.fontSize === 'number') {
         fontSize = shape.fontSize;
-      } else if (typeof shape.fontSize === 'string' && shape.fontSize.startsWith('{')) {
-        const resolved = resolveToken(shape.fontSize as TokenRef);
+      } else if (typeof (shape.fontSize as unknown) === 'string' && (shape.fontSize as unknown as string).startsWith('{')) {
+        const resolved = resolveToken(shape.fontSize as unknown as TokenRef);
         fontSize = typeof resolved === 'number' ? resolved : parseFloat(String(resolved)) || 14;
       }
     }

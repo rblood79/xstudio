@@ -1,16 +1,19 @@
 /**
  * Style to Layout Converter
  *
- * 🚀 Phase 4: @pixi/layout 마이그레이션
- *
  * Element의 CSS style을 @pixi/layout의 layout prop으로 변환합니다.
  *
+ * @deprecated Phase 8: 사용자 컨텐츠 레이아웃은 Taffy/Dropflow 엔진이 직접 처리.
+ * 이 모듈은 @pixi/layout 기반 LayoutContainer의 layout prop 변환에만 사용됨.
+ * Phase 9에서 @pixi/layout 제거 시 LayoutContainer → 직접 위치 지정으로 전환 후 삭제 예정.
+ *
  * @since 2025-01-06 Phase 4
+ * @updated 2026-02-17 Phase 8 - deprecated 표시
  */
 
 import type { Element } from '../../../../types/core/store.types';
 import { getBadgeSizePreset } from '../utils/cssVariableReader';
-import { calculateContentHeight, measureTextWidth } from './engines/utils';
+import { calculateContentHeight, measureTextWidth as measureTextWidthFull } from './engines/utils';
 import { measureWrappedTextHeight } from '../utils/textMeasure';
 import { resolveCSSSizeValue } from './engines/cssValueParser';
 import type { ComputedStyle } from './engines/cssResolver';
@@ -392,7 +395,7 @@ export function styleToLayout(
         : typeof style.padding === 'number' ? style.padding : bp.px;
       const borderW = typeof style.borderWidth === 'number' ? style.borderWidth : 1;
       const fontWeight = typeof style.fontWeight === 'number' ? style.fontWeight : 500;
-      layout.width = Math.round(measureTextWidth(textContent, fontSize, 'Pretendard', fontWeight)) + paddingX * 2 + borderW * 2;
+      layout.width = Math.round(measureTextWidthFull(textContent, fontSize, 'Pretendard', fontWeight)) + paddingX * 2 + borderW * 2;
       layout.flexGrow = 0;
       layout.flexShrink = 0;
     }

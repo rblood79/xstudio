@@ -123,7 +123,7 @@ export function isWasmSpatialIndex(): boolean {
 /**
  * WASM Layout Engine 활성화 여부 (Phase 2)
  *
- * BlockEngine/GridEngine 배치 계산을 WASM으로 가속
+ * 레이아웃 배치 계산을 WASM으로 가속
  */
 export function isWasmLayoutEngine(): boolean {
   return true;

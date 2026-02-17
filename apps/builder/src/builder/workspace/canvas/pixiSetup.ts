@@ -30,11 +30,12 @@ import {
   AbstractRenderer,
   TextureSource,
 } from 'pixi.js';
+// @deprecated Phase 8: @pixi/layout 컴포넌트는 Canvas UI에서만 사용.
+// Phase 9에서 직접 위치 지정으로 전환 후 제거 예정.
 import {
   LayoutContainer,
   LayoutText,
 } from '@pixi/layout/components';
-import { FancyButton } from '@pixi/ui';
 import { extend } from '@pixi/react';
 
 // ============================================
@@ -185,8 +186,7 @@ export const PIXI_COMPONENTS = {
   // @pixi/layout 컴포넌트
   LayoutContainer,
   LayoutText,
-  // @pixi/ui 컴포넌트
-  FancyButton,
+  // Note: @pixi/ui 컴포넌트는 각 Pixi*.tsx에서 직접 import (Phase 0)
 };
 
 // 모듈 로드 시점에 즉시 등록 (컴포넌트 렌더링 전에 보장)

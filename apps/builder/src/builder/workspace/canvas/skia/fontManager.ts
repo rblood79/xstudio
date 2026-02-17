@@ -113,6 +113,14 @@ export class SkiaFontManager {
     return Array.from(this.typefaces.keys());
   }
 
+  /**
+   * 특정 폰트 패밀리의 Typeface를 반환한다.
+   * CanvasKitShaper의 registerFace()에서 사용한다.
+   */
+  getTypeface(family: string): Typeface | undefined {
+    return this.typefaces.get(family);
+  }
+
   /** 모든 리소스 해제 */
   dispose(): void {
     for (const typeface of this.typefaces.values()) {

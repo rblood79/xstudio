@@ -135,6 +135,9 @@ importers:
       '@types/three':
         specifier: ^0.182.0
         version: 0.182.0
+      '@xstudio/layout-flow':
+        specifier: workspace:*
+        version: link:../../packages/layout-flow
       '@xstudio/publish':
         specifier: workspace:*
         version: link:../publish
@@ -362,6 +365,12 @@ importers:
       typescript-eslint:
         specifier: ^8.50.0
         version: 8.50.1(eslint@9.39.2(jiti@2.6.1))(typescript@5.9.3)
+
+  packages/layout-flow:
+    devDependencies:
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
 
   packages/shared:
     dependencies:

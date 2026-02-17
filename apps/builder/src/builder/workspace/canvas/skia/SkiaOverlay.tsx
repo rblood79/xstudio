@@ -656,6 +656,31 @@ export function SkiaOverlay({
       }
 
       if (cancelled) return;
+
+      // CanvasKit + 폰트 준비 완료 → layout-flow TextShaper + TextMeasurer 초기화
+      if (skiaFontManager.getFamilies().length > 0) {
+        try {
+          const { initCanvasKitShaper } = await import(
+            '../layout/canvaskit-shaper'
+          );
+          initCanvasKitShaper();
+        } catch (e) {
+          console.warn('[SkiaOverlay] CanvasKit Shaper 초기화 실패:', e);
+        }
+        try {
+          const { CanvasKitTextMeasurer } = await import(
+            '../utils/canvaskitTextMeasurer'
+          );
+          const { setTextMeasurer } = await import(
+            '../utils/textMeasure'
+          );
+          setTextMeasurer(new CanvasKitTextMeasurer());
+        } catch (e) {
+          console.warn('[SkiaOverlay] CanvasKit TextMeasurer 초기화 실패:', e);
+        }
+      }
+
+      if (cancelled) return;
       setReady(true);
     }).catch((err) => {
       console.error('[SkiaOverlay] WASM 초기화 실패:', err);

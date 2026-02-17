@@ -68,6 +68,7 @@ export interface ElementsState {
   // 🚀 O(1) 검색용 Set (selectedElementIds와 동기화)
   selectedElementIdsSet: Set<string>;
   multiSelectMode: boolean;
+  editingContextId: string | null;
 
   // 🆕 Multi-page: 페이지별 캔버스 위치
   pagePositions: Record<string, { x: number; y: number }>;
@@ -268,6 +269,7 @@ export const createElementsSlice: StateCreator<ElementsState> = (set, get) => {
     // 🚀 O(1) 검색용 Set
     selectedElementIdsSet: new Set<string>(),
     multiSelectMode: false,
+    editingContextId: null,
 
     // 🆕 Multi-page: 페이지별 캔버스 위치
     pagePositions: {},

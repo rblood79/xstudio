@@ -440,7 +440,7 @@ export function buildSkiaEffects(style: CSSStyle | undefined): SkiaEffectsResult
     // 호출측에서 별도 width/height 전달이 필요하나, 현재 buildSkiaEffects()는
     // style만 받으므로 transform-origin의 % 및 키워드는 0 기반으로 처리한다.
     // 실제 origin 적용은 BoxSprite 등에서 width/height를 알고 있는 시점에서 수행.
-    transformMatrix = parseTransform(style.transform);
+    transformMatrix = parseTransform(style.transform) ?? undefined;
   }
 
   return {

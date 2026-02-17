@@ -17,6 +17,7 @@ import { FancyButton } from '@pixi/ui';
 import { Container, Graphics, Text, TextStyle } from 'pixi.js';
 import type { Element } from '../../../../types/core/store.types';
 import type { CSSStyle } from '../sprites/styleConverter';
+import { adjustColor } from '../utils/colorMath';
 
 // 🚀 Spec Migration
 import { FancyButtonSpec, getVariantColors as getSpecVariantColors, getSizePreset as getSpecSizePreset } from '@xstudio/specs';
@@ -100,16 +101,6 @@ function convertToFancyButtonStyle(style: CSSStyle | undefined, themeDefaultColo
     paddingTop: typeof (style?.paddingTop || style?.padding) === 'number' ? (style?.paddingTop || style?.padding) as number : 8,
     paddingBottom: typeof (style?.paddingBottom || style?.padding) === 'number' ? (style?.paddingBottom || style?.padding) as number : 8,
   };
-}
-
-/**
- * 색상 밝기 조절
- */
-function adjustColor(color: number, factor: number): number {
-  const r = Math.floor(((color >> 16) & 0xff) * factor);
-  const g = Math.floor(((color >> 8) & 0xff) * factor);
-  const b = Math.floor((color & 0xff) * factor);
-  return (r << 16) | (g << 8) | b;
 }
 
 // ============================================

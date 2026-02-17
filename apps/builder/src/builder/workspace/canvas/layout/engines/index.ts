@@ -3,22 +3,27 @@
  *
  * display 속성에 따라 적절한 레이아웃 엔진을 선택합니다.
  *
+ * Phase 9 엔진 구성:
+ * - flex/inline-flex  → TaffyFlexEngine (Taffy WASM)
+ * - grid/inline-grid  → TaffyGridEngine (Taffy WASM)
+ * - block/inline 등   → DropflowBlockEngine (기본)
+ *
+ * WASM 미로드 시 DropflowBlockEngine으로 폴백.
+ *
  * @since 2026-01-28 Phase 2 - 하이브리드 레이아웃 엔진
- * @updated 2026-01-28 Phase 3 - BlockEngine 추가
- * @updated 2026-01-28 Phase 5 - P1 기능 (BFC, 부모-자식 margin collapse)
- * @updated 2026-01-28 Phase 6 - P2 기능 (vertical-align, LineBox)
+ * @updated 2026-02-17 Phase 9A - 레거시 엔진(BlockEngine, FlexEngine, GridEngine) 삭제
  */
 
 import type { Element } from '../../../../../types/core/store.types';
 import type { LayoutEngine, ComputedLayout, LayoutContext } from './LayoutEngine';
-import { BlockEngine } from './BlockEngine';
-import { FlexEngine, shouldDelegateToPixiLayout } from './FlexEngine';
-import { GridEngine } from './GridEngine';
+import { DropflowBlockEngine } from './DropflowBlockEngine';
+import { TaffyFlexEngine } from './TaffyFlexEngine';
+import { TaffyGridEngine } from './TaffyGridEngine';
+import { isRustWasmReady } from '../../wasm-bindings/rustWasm';
 
 // Re-export types
 export type { LayoutEngine, ComputedLayout, LayoutContext } from './LayoutEngine';
 export type { Margin, BoxModel, VerticalAlign, LineBoxItem, LineBox } from './types';
-export type { BlockLayoutResult } from './BlockEngine';
 
 // Re-export utilities
 export {
@@ -36,8 +41,10 @@ export {
   calculateBaseline,
 } from './utils';
 
-// Re-export engine utilities
-export { shouldDelegateToPixiLayout } from './FlexEngine';
+// 싱글톤 엔진 인스턴스
+const dropflowBlockEngine = new DropflowBlockEngine();
+const taffyFlexEngine = new TaffyFlexEngine();
+const taffyGridEngine = new TaffyGridEngine();
 
 /**
  * 요소가 새로운 BFC(Block Formatting Context)를 생성하는지 확인
@@ -45,54 +52,46 @@ export { shouldDelegateToPixiLayout } from './FlexEngine';
  * BFC 생성 조건: flow-root, flex, grid, inline-block, overflow 등
  */
 export function createsBFC(element: Element): boolean {
-  return blockEngine.createsBFC(element);
+  return dropflowBlockEngine.createsBFC(element);
 }
-
-// 싱글톤 엔진 인스턴스
-const blockEngine = new BlockEngine();
-const flexEngine = new FlexEngine();
-const gridEngine = new GridEngine();
 
 /**
  * display 속성에 따라 적절한 레이아웃 엔진 선택
  *
- * @example
- * const engine = selectEngine('flex');
- * if (shouldDelegateToPixiLayout(engine)) {
- *   // @pixi/layout 사용
- * } else {
- *   // engine.calculate() 호출
- * }
+ * - 'flex' | 'inline-flex'  → TaffyFlexEngine
+ * - 'grid' | 'inline-grid'  → TaffyGridEngine
+ * - 'block' | 그 외          → DropflowBlockEngine
+ *
+ * WASM 미로드 시 DropflowBlockEngine으로 안전하게 폴백.
  */
 export function selectEngine(display: string | undefined): LayoutEngine {
+  const wasmReady = isRustWasmReady();
+
   switch (display) {
     case 'flex':
     case 'inline-flex':
-      return flexEngine;
+      return wasmReady ? taffyFlexEngine : dropflowBlockEngine;
 
     case 'grid':
     case 'inline-grid':
-      return gridEngine;
+      return wasmReady ? taffyGridEngine : dropflowBlockEngine;
 
     case 'block':
     case 'inline-block':
-      return blockEngine;
+    case 'flow-root':
+    case 'inline':
+      return dropflowBlockEngine;
 
     case undefined:
-      // display 미지정 시 block (CSS 기본값)
-      return blockEngine;
+      return dropflowBlockEngine;
 
     default:
-      // 알 수 없는 display는 block으로 폴백
-      return blockEngine;
+      return dropflowBlockEngine;
   }
 }
 
 /**
  * 요소의 자식들에 대한 레이아웃 계산
- *
- * 주의: Flex 엔진은 shouldDelegate === true이므로
- * 이 함수 대신 @pixi/layout을 직접 사용해야 함
  */
 export function calculateChildrenLayout(
   parent: Element,
@@ -105,16 +104,6 @@ export function calculateChildrenLayout(
   const display = style?.display as string | undefined;
 
   const engine = selectEngine(display);
-
-  // Flex 엔진은 @pixi/layout에 위임
-  if (shouldDelegateToPixiLayout(engine)) {
-    if (import.meta.env.DEV) {
-      console.warn(
-        '[calculateChildrenLayout] Flex layout should use @pixi/layout directly'
-      );
-    }
-    return [];
-  }
 
   return engine.calculate(parent, children, availableWidth, availableHeight, context);
 }

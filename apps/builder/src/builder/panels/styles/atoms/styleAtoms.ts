@@ -85,7 +85,7 @@ export function getStyleValueFromAtoms(
  * 참고: 대부분의 컴포넌트는 fit-content 또는 auto를 사용
  * 명시적 크기가 있는 컴포넌트만 여기에 정의
  */
-const DEFAULT_CSS_VALUES: Record<string, { width?: string; height?: string; display?: string; flexDirection?: string; alignItems?: string }> = {
+const DEFAULT_CSS_VALUES: Record<string, { width?: string; height?: string; display?: string; flexDirection?: string; alignItems?: string; gap?: number | string; flexWrap?: string }> = {
   // === 컨테이너 (width: 100%) ===
   Card: { width: '100%' },
   Box: { width: '100%' },
