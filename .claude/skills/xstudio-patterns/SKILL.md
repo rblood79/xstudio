@@ -113,7 +113,7 @@ XStudio Builder 애플리케이션의 코드 패턴, 규칙 및 모범 사례를
 | State | Zustand, TanStack Query |
 | Styling | Tailwind CSS v4, tailwind-variants |
 | Canvas | **CanvasKit/Skia WASM** (메인 렌더러) + PixiJS 8 (이벤트 전용), @pixi/layout, @pixi/react |
-| Layout Engine | 하이브리드 (BlockEngine, FlexEngine, GridEngine) |
+| Layout Engine | Taffy WASM (TaffyFlexEngine, TaffyGridEngine) + Dropflow Fork (DropflowBlockEngine) |
 | Backend | Supabase (Auth, Database, RLS) |
 | Build | Vite, TypeScript 5 |
 | Testing | Storybook, Vitest |
@@ -153,10 +153,11 @@ tags: [tag1, tag2]
 주요 기술 결정의 배경과 근거:
 - **[ADR-001](../../../docs/adr/001-state-management.md)** - Zustand 선택 이유
 - **[ADR-002](../../../docs/adr/002-styling-approach.md)** - ITCSS + tv() 선택 이유
-- **[ADR-003](../../../docs/adr/003-canvas-rendering.md)** - Canvas 렌더링 (PixiJS → CanvasKit/Skia 이중 렌더러)
+- **[ADR-003](../../../docs/adr/003-canvas-rendering.md)** - Canvas 렌더링 (CanvasKit/Skia 이중 렌더러 + Taffy/Dropflow 레이아웃 엔진)
 - **[ADR-004](../../../docs/adr/004-preview-isolation.md)** - iframe 격리 이유
 - **[Component Spec Architecture](../../../docs/COMPONENT_SPEC_ARCHITECTURE.md)** - 단일 소스 컴포넌트 스펙 설계
-- **[Layout Requirements](../../../docs/LAYOUT_REQUIREMENTS.md)** - 하이브리드 레이아웃 엔진 CSS 호환 구현
+- **[Layout Requirements](../../../docs/LAYOUT_REQUIREMENTS.md)** - Taffy/Dropflow 레이아웃 엔진 CSS 호환 구현
+- **[Engine Strategy D](../../../docs/ENGINE.md)** - 레이아웃 엔진 전환 전략 (Taffy WASM + Dropflow Fork)
 
 ## 기여
 

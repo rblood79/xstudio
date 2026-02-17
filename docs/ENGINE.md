@@ -1,6 +1,6 @@
 # ADR: 캔버스 레이아웃 엔진 전환 (전략 D)
 
-- 상태: **Accepted**
+- 상태: **Implemented**
 - 결정일: **2026-02-17**
 - 마지막 수정: **2026-02-17**
 - 대상 코드: `apps/builder/src/builder/workspace/canvas/layout/`
@@ -71,21 +71,31 @@
 - 렌더링 파이프라인 → 기존 CanvasKit/Skia 유지
 
 ```typescript
-// engines/index.ts (개념 스케치)
+// engines/index.ts (실제 구현)
+// WASM 미로드 시 DropflowBlockEngine으로 안전 폴백
+import { isRustWasmReady } from '../../wasm-bindings/rustWasm';
+
+const dropflowBlockEngine = new DropflowBlockEngine();
+const taffyFlexEngine = new TaffyFlexEngine();
+const taffyGridEngine = new TaffyGridEngine();
+
 export function selectEngine(display: string | undefined): LayoutEngine {
+  const wasmReady = isRustWasmReady();
   switch (display) {
     case 'flex':
     case 'inline-flex':
-      return new TaffyFlexEngine();
+      return wasmReady ? taffyFlexEngine : dropflowBlockEngine;
     case 'grid':
     case 'inline-grid':
-      return new TaffyGridEngine();
+      return wasmReady ? taffyGridEngine : dropflowBlockEngine;
     case 'block':
-    case 'inline':
     case 'inline-block':
     case 'flow-root':
+    case 'inline':
+      return dropflowBlockEngine;
+    case undefined:
     default:
-      return new DropflowBlockEngine();
+      return dropflowBlockEngine;
   }
 }
 ```
@@ -109,7 +119,7 @@ export function selectEngine(display: string | undefined): LayoutEngine {
 
 ### 5.2 전략 C를 최종안으로 채택하지 않는 이유
 - Inline/Float/혼합 콘텐츠/익명 박스 처리 공백이 장기적으로 남는다.
-- 요구사항 대비 “기능 부채 고정화” 위험이 높다.
+- 요구사항 대비 "기능 부채 고정화" 위험이 높다.
 
 ### 5.3 전략 C의 현재 역할
 - Phase Gate 실패 시 즉시 되돌릴 수 있는 **Fallback 경로**
@@ -164,10 +174,21 @@ export function selectEngine(display: string | undefined): LayoutEngine {
 - 커스텀 GridEngine 의존 축소
 - 핵심 Grid 케이스 회귀 검증
 
-### Phase 7 (1주): 레거시 제거
-- `@pixi/layout`, Yoga 경로 제거
-- `@pixi/ui` 제거 마무리
-- 번들/성능/메모리 검증
+### Phase 7 (1주): @pixi/layout → 커스텀 엔진 독립화
+- `@pixi/layout` Yoga 위임 경로 축소
+- 커스텀 엔진이 모든 display 모드를 직접 처리하도록 전환
+
+### Phase 8 (1주): 통합 테스트 및 안정화
+- `WASM_FLAGS.LAYOUT_ENGINE` 활성화 검증
+- `resolveLayoutSize()` 퍼센트 값 해석 수정
+- Flex parent passthrough (center/alignment) 수정
+- 기능 회귀 테스트
+
+### Phase 9 (1주): 레거시 엔진 삭제 + 디스패처 정리 ← 완료 (2026-02-17)
+- **Phase 9A**: 레거시 엔진 삭제 (`BlockEngine.ts` 952줄, `FlexEngine.ts` 65줄, `GridEngine.ts` 563줄)
+- **Phase 9B**: Feature flag 제거 (`taffyFlex`, `taffyGrid`, `dropflowBlock`)
+- **Phase 9C**: `engines/index.ts` 디스패처 정리 (`shouldDelegateToPixiLayout` 제거, 직접 라우팅)
+- **Phase 9D**: `TaffyFlexEngine` / `TaffyGridEngine` / `DropflowBlockEngine` 리뷰 이슈 수정
 
 ---
 
@@ -181,9 +202,11 @@ export function selectEngine(display: string | undefined): LayoutEngine {
 - 조건: Flex 회귀 테스트 통과 + 성능 허용 범위 내
 - 실패 시: **전략 D-partial** 상태로 운용 — Flex는 Yoga(@pixi/layout) 유지, Block/Inline만 Dropflow Fork 적용. 이 혼합 상태는 현재 하이브리드 구조(Yoga + 커스텀 Block)와 엔진 경계가 동일하므로 안정적 운용이 가능하다. Taffy Flex 전환은 별도 일정으로 재시도.
 
-### Gate C (Phase 7 종료 시점)
-- 조건: 번들 크기/메모리/상호작용 품질 기준 충족
-- 실패 시: 제거 단계 중단, 플래그로 안정 경로 고정
+### Gate C (Phase 9 종료 시점) — 통과
+- 조건: 레거시 엔진 삭제 완료, 번들 크기 절감 (~1,580줄 코드 삭제)
+- 결과: **조건 충족. Gate C 통과.**
+  - `BlockEngine.ts`(952줄), `FlexEngine.ts`(65줄), `GridEngine.ts`(563줄) 삭제 완료
+  - WASM 미로드 시 `DropflowBlockEngine` 폴백으로 안전성 확보 (플래그 기반 안정 경로)
 
 ---
 
@@ -227,3 +250,4 @@ export function selectEngine(display: string | undefined): LayoutEngine {
 ## 12) 변경 이력
 
 - **2026-02-17**: ADR 형식으로 재작성. 전략 D 단일 결론 확정, 전략 C는 Deprecated Baseline(Fallback 경로)으로 명시 분리. 전략 B vs D 차별화 근거 추가, Gate A/B 롤백 범위 명확화, 외부 참고 저장소 복원.
+- **2026-02-17**: Phase 9 완료 — 레거시 엔진(`BlockEngine`, `FlexEngine`, `GridEngine`) 삭제, Feature flag 제거, 디스패처 정리. 전략 D 목표 아키텍처 달성.

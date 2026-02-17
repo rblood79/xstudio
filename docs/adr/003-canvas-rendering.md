@@ -276,7 +276,7 @@ Pencil 앱 대비 팬/줌 끊김 원인 5가지를 분석·수정:
 
 **상세:** `apps/builder/src/.../viewport/useViewportControl.ts`
 
-### 6. Camera-Only Blit (Pencil 방식: padding + cleanup) — ✅ 활성화 (2026-02-05)
+### 6. Camera-Only Blit (Pencil 방식: padding + cleanup) — 활성화 (2026-02-05)
 
 Pencil 모델대로 "컨텐츠는 캐시 스냅샷, 카메라만 바뀌면 blit만"을 활성화했다.
 핵심은 **contentSurface를 뷰포트보다 크게 생성(padding 512px)** 하여 팬/줌 중 가장자리 클리핑을 막는 것.
@@ -294,7 +294,7 @@ Pencil 모델대로 "컨텐츠는 캐시 스냅샷, 카메라만 바뀌면 blit�
 
 Pencil 앱 분석(`docs/PENCIL_APP_ANALYSIS.md` 섹션 16-19)에서 확인된 미적용 렌더링 기법을 도입:
 
-### 1. Cleanup Render (200ms 디바운스) — ✅ 활성화
+### 1. Cleanup Render (200ms 디바운스) — 활성화
 
 Pencil의 `debouncedMoveEnd(200ms) → invalidateContent()` 패턴. Camera-only blit과 함께 사용하여 가장자리 아티팩트를 해소하는 역할.
 
@@ -704,6 +704,53 @@ const drawContainerHitRect = useCallback(
 - **[pixi-hitarea-absolute](/.claude/skills/xstudio-patterns/rules/pixi-hitarea-absolute.md)** — 히트 영역 배치 패턴 (이 Update로 "Non-layout 히트 영역" 섹션 추가)
 
 **상세:** `apps/builder/src/.../sprites/ElementSprite.tsx` (drawContainerHitRect, handleContainerPointerDown)
+
+## Update: 레이아웃 엔진 마이그레이션 완료 — 전략 D Phase 9 (2026-02-17)
+
+ENGINE.md 전략 D의 최종 단계인 Phase 9를 완료하여, 레거시 레이아웃 엔진을 모두 삭제하고 새 엔진 아키텍처로 완전 전환:
+
+### 1. 레거시 엔진 삭제 (Phase 9A)
+
+| 삭제 대상 | 라인 수 | 대체 엔진 |
+|-----------|---------|-----------|
+| `BlockEngine.ts` | 952줄 | `DropflowBlockEngine` |
+| `FlexEngine.ts` | 65줄 | `TaffyFlexEngine` (Taffy WASM) |
+| `GridEngine.ts` | 563줄 | `TaffyGridEngine` (Taffy WASM) |
+
+### 2. 현재 엔진 아키텍처
+
+| display 값 | 엔진 | 기술 |
+|------------|------|------|
+| `flex`, `inline-flex` | `TaffyFlexEngine` | Taffy WASM |
+| `grid`, `inline-grid` | `TaffyGridEngine` | Taffy WASM |
+| `block`, `inline-block`, `flow-root`, `inline` | `DropflowBlockEngine` | Dropflow Fork (JS) |
+
+**WASM 폴백:** `WASM_FLAGS.LAYOUT_ENGINE`이 `true`여야 `initRustWasm()`이 호출됨. WASM 미로드 시 모든 display 모드가 `DropflowBlockEngine`으로 안전 폴백.
+
+### 3. 디스패처 정리 (Phase 9C)
+
+- `engines/index.ts`에서 `shouldDelegateToPixiLayout` 제거
+- Feature flag 분기 (`isTaffyFlexEnabled`, `isTaffyGridEnabled`, `isDropflowBlockEnabled`) 제거
+- `selectEngine()` 직접 라우팅으로 단순화
+- 싱글톤 엔진 인스턴스 (매 호출마다 new 생성 → 싱글톤)
+
+### 4. 주요 수정 사항
+
+| 수정 | 원인 | 해결 |
+|------|------|------|
+| `WASM_FLAGS.LAYOUT_ENGINE` 활성화 | `false`일 때 Taffy 엔진 비활성화 | `true`로 변경 |
+| `resolveLayoutSize()` 추가 | `width:'100%'` 문자열이 0으로 평가 | `%` 문자열을 부모 크기 기준으로 해석 |
+| Flex parent passthrough | wrapper가 `alignItems:flex-start` 강제 | 부모 flex 속성을 Yoga wrapper에 전달 |
+
+### 5. 기술 스택 변경
+
+| 항목 | 변경 전 | 변경 후 |
+|------|---------|---------|
+| **Layout Engine** | 하이브리드 (BlockEngine, FlexEngine, GridEngine) + Feature flags | Taffy WASM (Flex/Grid) + Dropflow Fork (Block) — 직접 라우팅 |
+| **Feature flags** | `taffyFlex`, `taffyGrid`, `dropflowBlock` | 제거 (항상 활성) |
+| **코드 라인** | ~1,580줄 레거시 코드 | 삭제 완료 |
+
+**상세:** `docs/ENGINE.md`, `apps/builder/src/.../layout/engines/index.ts`
 
 ## Implementation
 

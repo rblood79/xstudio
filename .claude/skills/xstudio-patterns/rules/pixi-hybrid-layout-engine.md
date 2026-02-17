@@ -12,11 +12,33 @@ tags: [pixi, layout, canvas, hybrid-engine]
 
 | display 값 | 엔진 | 설명 |
 |------------|------|------|
-| `block` (기본값) | BlockEngine | 수직 쌓임, width 100%, margin collapse |
-| `inline-block` | BlockEngine | 가로 배치, 줄바꿈, vertical-align |
-| `flex` | FlexEngine (Yoga/@pixi/layout) | Flexbox 레이아웃 |
-| `grid` | GridEngine | 2D 그리드 레이아웃 |
-| `flow-root` | BlockEngine | BFC 생성 (margin collapse 차단) |
+| `block` (기본값) | DropflowBlockEngine | 수직 쌓임, width 100%, margin collapse |
+| `inline-block` | DropflowBlockEngine | 가로 배치, 줄바꿈, vertical-align |
+| `inline` | DropflowBlockEngine | 인라인 포매팅 |
+| `flow-root` | DropflowBlockEngine | BFC 생성 (margin collapse 차단) |
+| `flex`, `inline-flex` | TaffyFlexEngine (Taffy WASM) | Flexbox 레이아웃 |
+| `grid`, `inline-grid` | TaffyGridEngine (Taffy WASM) | 2D 그리드 레이아웃 |
+
+### WASM 활성화 요구사항
+
+Taffy 엔진은 Rust WASM이 로드되어야 활성화됩니다:
+
+- `WASM_FLAGS.LAYOUT_ENGINE`이 `true`여야 `initRustWasm()` 호출
+- `isRustWasmReady()`가 `true`일 때만 TaffyFlexEngine/TaffyGridEngine 사용
+- WASM 미로드 시 모든 display 모드가 DropflowBlockEngine으로 안전 폴백
+
+```typescript
+// engines/index.ts — WASM 폴백 예시
+export function selectEngine(display: string | undefined): LayoutEngine {
+  const wasmReady = isRustWasmReady();
+  switch (display) {
+    case 'flex':
+    case 'inline-flex':
+      return wasmReady ? taffyFlexEngine : dropflowBlockEngine;
+    // ...
+  }
+}
+```
 
 ### 지원 CSS 속성
 
@@ -33,13 +55,14 @@ tags: [pixi, layout, canvas, hybrid-engine]
 
 | 경로 | 처리 방식 |
 |------|-----------|
-| BlockEngine (JS/WASM) | `FIT_CONTENT = -2` sentinel → `contentWidth` 사용 |
-| Flex/Yoga (@pixi/layout) | `flexGrow:0 + flexShrink:0` 워크어라운드 |
+| DropflowBlockEngine | `FIT_CONTENT = -2` sentinel → `contentWidth` 사용 |
+| TaffyFlexEngine (Taffy WASM) | Taffy가 `width:auto` + Yoga wrapper에서 `flexGrow:0 + flexShrink:0` |
+| TaffyGridEngine (Taffy WASM) | Taffy가 `width:auto` 처리 |
 
 ```typescript
 // ✅ parseSize가 'fit-content' → FIT_CONTENT(-2) 반환
-// BlockEngine: contentWidth 기반 크기 계산
-// Yoga: auto + flexGrow:0 + flexShrink:0로 에뮬레이션
+// DropflowBlockEngine: contentWidth 기반 크기 계산
+// TaffyFlexEngine: auto + flexGrow:0 + flexShrink:0로 에뮬레이션
 
 // ❌ fit-content를 수동으로 auto나 px로 변환하지 말 것
 ```
@@ -156,9 +179,40 @@ top: layout.y + parentPadding.top,
 left: layout.x + parentPadding.left + parentBorder.left,
 ```
 
+### Flex parent passthrough (center/alignment)
+
+부모가 명시적 `display: flex`일 때, Yoga wrapper에 부모의 flex 속성을 전달하여 center/alignment가 올바르게 동작합니다:
+
+```typescript
+// ✅ isParentExplicitFlex일 때 부모 flex 속성을 wrapper에 전달
+const parentFlexProps = isParentExplicitFlex ? {
+  flexDirection: parentStyle?.flexDirection ?? 'row',
+  justifyContent: parentStyle?.justifyContent,
+  alignItems: parentStyle?.alignItems,
+  gap: parentStyle?.gap,
+} : {};
+
+// ❌ 항상 flexDirection: column, alignItems: flex-start 강제
+// → 부모의 justify-content: center, align-items: center가 무시됨
+```
+
+### 퍼센트 크기 해석 (resolveLayoutSize)
+
+`width: '100%'` 등 퍼센트 문자열은 `resolveLayoutSize()` 헬퍼로 부모 크기 기준 해석:
+
+```typescript
+// ✅ resolveLayoutSize로 퍼센트 값 해석
+resolveLayoutSize(containerLayout.width, parentWidth)
+// '100%' + parentWidth=800 → 800
+
+// ❌ typeof 체크로 0 폴백
+typeof containerLayout.width === 'number' ? containerLayout.width : 0
+// '100%' → 0 (문자열이므로)
+```
+
 ### content-box 기준 높이 계산
 
-`calculateContentHeight`는 **순수 텍스트 높이만 반환**, padding/border는 호출 측(BlockEngine)에서 합산:
+`calculateContentHeight`는 **순수 텍스트 높이만 반환**, padding/border는 호출 측(DropflowBlockEngine)에서 합산:
 
 ```typescript
 // ✅ contentHeight = 텍스트 높이만
@@ -166,7 +220,7 @@ left: layout.x + parentPadding.left + parentBorder.left,
 const minContentHeight = Math.max(0, MIN_BUTTON_HEIGHT - paddingY * 2 - borderWidth * 2);
 return Math.max(textHeight, minContentHeight);
 
-// ❌ padding 포함 → BlockEngine에서 이중 계산
+// ❌ padding 포함 → DropflowBlockEngine에서 이중 계산
 return Math.max(paddingY * 2 + textHeight, MIN_BUTTON_HEIGHT);
 ```
 
@@ -186,13 +240,13 @@ if (treatAsBorderBox && width !== undefined) {
 
 ### CONTAINER_TAGS + inline-block 컴포넌트 Selection 크기
 
-CONTAINER_TAGS(Card, Panel, ToggleButtonGroup 등)는 `renderWithCustomEngine`에서 `containerLayout.width = layout.width`로 Yoga LayoutContainer에 BlockEngine 계산 결과를 전달합니다.
+CONTAINER_TAGS(Card, Panel, ToggleButtonGroup 등)는 `renderWithCustomEngine`에서 `containerLayout.width = layout.width`로 Yoga LayoutContainer에 DropflowBlockEngine 계산 결과를 전달합니다.
 
 **문제**: inline-block인 CONTAINER_TAG 컴포넌트의 `contentWidth`가 정확하지 않으면 selection bounds가 잘못됨.
 
 ```typescript
 // ✅ ToggleButtonGroup: 명시적 width 설정 여부에 따라 분기
-// - 명시적 width (100%, 200px 등): BlockEngine이 계산한 layout.width 사용
+// - 명시적 width (100%, 200px 등): DropflowBlockEngine이 계산한 layout.width 사용
 // - 기본값 (fit-content/미지정): Yoga가 자식 크기에 맞춰 자동 계산
 const hasExplicitWidth = isToggleButtonGroup && childStyle?.width !== undefined
   && childStyle.width !== 'fit-content';
@@ -255,7 +309,7 @@ ToggleButtonGroup: { width: 'fit-content', display: 'flex', flexDirection: 'row'
 
 ### 인라인 폼 컨트롤 크기 계산
 
-Checkbox, Radio, Switch, Toggle은 BlockEngine에서 `inline-block`으로 처리됩니다.
+Checkbox, Radio, Switch, Toggle은 DropflowBlockEngine에서 `inline-block`으로 처리됩니다.
 `calculateContentHeight`/`calculateContentWidth`에 Spec 기반 크기 테이블이 내장되어 있습니다:
 
 ```typescript
@@ -277,7 +331,7 @@ const INLINE_FORM_HEIGHTS: Record<string, Record<string, number>> = {
 | row (기본) | indicator + gap + textWidth | `INLINE_FORM_HEIGHTS[tag][size]` |
 | column | max(indicator, textWidth) | indicator + gap + textLineHeight |
 
-동일한 분기가 `styleToLayout.ts`(Yoga 경로)와 `engines/utils.ts`(BlockEngine 경로) **양쪽**에 적용되어야 합니다.
+동일한 분기가 `styleToLayout.ts`(Yoga 경로)와 `engines/utils.ts`(DropflowBlockEngine 경로) **양쪽**에 적용되어야 합니다.
 
 ### Spec shapes border-radius 그룹 위치 처리
 
