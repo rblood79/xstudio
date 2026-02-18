@@ -32,6 +32,7 @@ import { useScrollState } from '../../../../stores/scrollState';
 // Re-export types
 export type { LayoutEngine, ComputedLayout, LayoutContext } from './LayoutEngine';
 export type { Margin, BoxModel, VerticalAlign, LineBoxItem, LineBox } from './types';
+export type { CSSVariableScope } from './cssValueParser';
 
 // Re-export utilities
 export {
@@ -53,6 +54,9 @@ export {
   enrichWithIntrinsicSize,
   INLINE_BLOCK_TAGS,
 } from './utils';
+
+// W3-7: CSS var() DOM fallback 헬퍼
+export { createVariableScopeWithDOMFallback } from './cssValueParser';
 
 // 싱글톤 엔진 인스턴스
 const dropflowBlockEngine = new DropflowBlockEngine();

@@ -117,6 +117,80 @@ XStudio Builder 애플리케이션의 코드 패턴, 규칙 및 모범 사례를
 | Build | Vite, TypeScript 5 |
 | Testing | Storybook, Vitest |
 
+## 레이아웃 엔진 핵심 패턴
+
+> Wave 3-4 (2026-02-19) 이후 현행 아키텍처.
+
+### 엔진 선택
+
+| display 값 | 엔진 |
+|------------|------|
+| `block`, `inline-block`, `inline`, `flow-root` | DropflowBlockEngine (JS) |
+| `flex`, `inline-flex` | TaffyFlexEngine (Taffy WASM) |
+| `grid`, `inline-grid` | TaffyGridEngine (Taffy WASM) |
+
+### DirectContainer 패턴
+
+@pixi/layout 제거 후, 엔진 계산 결과(x/y/w/h)를 DirectContainer에서 직접 배치합니다:
+
+```typescript
+// ✅ 엔진 계산 결과를 DirectContainer x/y로 직접 주입
+<DirectContainer x={layout.x} y={layout.y}>
+  <ElementSprite element={element} width={layout.width} height={layout.height} />
+</DirectContainer>
+
+// ❌ 레이아웃 prop으로 재계산 요청 (구 @pixi/layout 패턴 — 제거됨)
+<pixiContainer layout={{ display: 'flex', flexDirection: 'column' }}>
+```
+
+### LayoutComputedSizeContext 패턴
+
+컴포넌트 내부 Sprite가 엔진이 계산한 border-box 크기를 읽어야 할 때 사용합니다.
+퍼센트(`%`) 크기나 자동 크기(`auto`, `fit-content`) 요소의 최종 픽셀 크기를 엔진에서 전파합니다.
+
+```typescript
+// ✅ LayoutComputedSizeContext로 엔진 계산 크기 읽기
+const computedSize = useContext(LayoutComputedSizeContext);
+const width = (computedSize?.width && computedSize.width > 0)
+  ? computedSize.width
+  : fallbackWidth;
+
+// ❌ props.style?.width를 직접 파싱 (% 값이 100px로 오해석됨)
+const width = parseCSSSize(style?.width, undefined) ?? 0;
+```
+
+**Provider:** `BuilderCanvas.tsx` DirectContainer 래퍼
+**Consumer:** `ElementSprite.tsx`, `BoxSprite.tsx`, 히트 영역 Graphics 컴포넌트
+
+### enrichWithIntrinsicSize (텍스트 크기 주입)
+
+Button, Badge 등 텍스트 기반 intrinsic 크기를 가진 컴포넌트는 `enrichWithIntrinsicSize()`로 엔진에 크기를 주입합니다.
+구 `styleToLayout.ts` 방식의 수동 `layout.height` 계산은 삭제됐습니다 (W3-6 완료).
+
+```typescript
+// ✅ enrichWithIntrinsicSize — 엔진 layout 호출 전 intrinsic 크기 주입
+enrichWithIntrinsicSize(element, availableWidth, cssContext);
+// → element.intrinsicWidth / intrinsicHeight 설정
+// → TaffyFlexEngine/DropflowBlockEngine이 측정값으로 노드 크기 결정
+
+// ❌ styleToLayout.ts에서 layout.height 직접 설정 (삭제됨)
+// layout.height = calculateContentHeight(element, availableWidth);
+```
+
+### 컴포넌트 등급 현황 (Wave 4 완료, 2026-02-19)
+
+모든 Pixi 컴포넌트가 A 또는 B+ 등급으로 전환 완료됐습니다.
+
+| 등급 | 의미 | 예시 |
+|------|------|------|
+| A | Taffy/Dropflow 레이아웃 위임 + 자식 분리 | Button, Badge, ProgressBar, TagGroup |
+| B+ | Context 우선 + fallback, 일부 자체 계산 | Checkbox, Radio, Switch, Input, Breadcrumbs |
+| B | 엔진 위임하나 자체 텍스트 배치 | Card, Meter |
+| D | 캔버스 상호작용 불필요 (프리뷰 전용) | Calendar, DatePicker, ColorPicker |
+
+> C등급 (자체 렌더링 + 수동 배치)은 Wave 4에서 전부 제거됐습니다.
+> `SELF_PADDING_TAGS`, `renderWithPixiLayout()` 등 구 패턴도 삭제 완료.
+
 ## 사용법
 
 ```bash

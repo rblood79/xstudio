@@ -21,7 +21,7 @@ import {
   MIN_CONTENT as CSS_MIN_CONTENT,
   MAX_CONTENT as CSS_MAX_CONTENT,
 } from './cssValueParser';
-import type { CSSValueContext } from './cssValueParser';
+import type { CSSValueContext, CSSVariableScope } from './cssValueParser';
 import type { ComputedStyle } from './cssResolver';
 
 /**

@@ -13,6 +13,7 @@ import {
   resolveCalc,
   resolveVar,
   parseBorderShorthand,
+  createVariableScopeWithDOMFallback,
   FIT_CONTENT,
   MIN_CONTENT,
   MAX_CONTENT,
@@ -603,5 +604,140 @@ describe('resolveVar - resolveCSSSizeValue와 연동', () => {
       variableScope: scope,
     };
     expect(resolveCSSSizeValue('var(--ratio)', ctx)).toBe(200);
+  });
+});
+
+// ============================================
+// W3-7: DOM fallback 연동
+// ============================================
+
+describe('resolveVar - W3-7 DOM fallback', () => {
+  it('domFallback=true + domResolver 주입: 인메모리에 없는 변수를 DOM에서 조회', () => {
+    const mockResolver = (varName: string): string => {
+      const tokens: Record<string, string> = {
+        '--primary': '#6750a4',
+        '--spacing-md': '16px',
+      };
+      return tokens[varName] ?? '';
+    };
+
+    const scope: CSSVariableScope = {
+      variables: {},
+      domFallback: true,
+      domResolver: mockResolver,
+    };
+
+    expect(resolveVar('var(--primary)', scope)).toBe('#6750a4');
+    expect(resolveVar('var(--spacing-md)', scope)).toBe('16px');
+  });
+
+  it('domFallback=true: DOM에서 조회한 값을 variables에 캐시', () => {
+    const callCount = { count: 0 };
+    const mockResolver = (varName: string): string => {
+      callCount.count++;
+      if (varName === '--accent') return '#ff5722';
+      return '';
+    };
+
+    const scope: CSSVariableScope = {
+      variables: {},
+      domFallback: true,
+      domResolver: mockResolver,
+    };
+
+    // 첫 번째 호출: DOM에서 조회
+    expect(resolveVar('var(--accent)', scope)).toBe('#ff5722');
+    expect(callCount.count).toBe(1);
+
+    // 두 번째 호출: 캐시에서 조회 (domResolver 호출 안 함)
+    expect(resolveVar('var(--accent)', scope)).toBe('#ff5722');
+    expect(callCount.count).toBe(1); // 변하지 않음
+  });
+
+  it('domFallback=true: DOM에서도 못 찾으면 CSS fallback 값 사용', () => {
+    const mockResolver = (): string => '';
+
+    const scope: CSSVariableScope = {
+      variables: {},
+      domFallback: true,
+      domResolver: mockResolver,
+    };
+
+    expect(resolveVar('var(--nonexistent, 8px)', scope)).toBe('8px');
+  });
+
+  it('domFallback=false (기본): DOM 조회 안 함', () => {
+    const mockResolver = (): string => '24px';
+
+    const scope: CSSVariableScope = {
+      variables: {},
+      domFallback: false,
+      domResolver: mockResolver,
+    };
+
+    // domFallback이 false이면 domResolver를 호출하지 않음
+    expect(resolveVar('var(--spacing)', scope)).toBe('var(--spacing)');
+  });
+
+  it('domFallback 미지정 (기본 동작): DOM 조회 안 함', () => {
+    const scope: CSSVariableScope = {
+      variables: {},
+    };
+
+    expect(resolveVar('var(--anything)', scope)).toBe('var(--anything)');
+  });
+
+  it('인메모리 변수 우선: variables에 있으면 DOM 조회 스킵', () => {
+    const callCount = { count: 0 };
+    const mockResolver = (): string => {
+      callCount.count++;
+      return 'from-dom';
+    };
+
+    const scope: CSSVariableScope = {
+      variables: { '--color': 'from-memory' },
+      domFallback: true,
+      domResolver: mockResolver,
+    };
+
+    expect(resolveVar('var(--color)', scope)).toBe('from-memory');
+    expect(callCount.count).toBe(0); // DOM 호출 안 함
+  });
+
+  it('resolveCSSSizeValue와 연동: DOM fallback으로 해석된 값 계산', () => {
+    const mockResolver = (varName: string): string => {
+      if (varName === '--grid-gap') return '24px';
+      return '';
+    };
+
+    const scope: CSSVariableScope = {
+      variables: {},
+      domFallback: true,
+      domResolver: mockResolver,
+    };
+
+    const ctx: CSSValueContext = { variableScope: scope };
+    expect(resolveCSSSizeValue('var(--grid-gap)', ctx)).toBe(24);
+  });
+});
+
+describe('createVariableScopeWithDOMFallback', () => {
+  it('기본: domFallback=true, 빈 variables', () => {
+    const scope = createVariableScopeWithDOMFallback();
+    expect(scope.domFallback).toBe(true);
+    expect(Object.keys(scope.variables)).toHaveLength(0);
+  });
+
+  it('인라인 변수와 함께 생성', () => {
+    const scope = createVariableScopeWithDOMFallback({ '--gap': '8px' });
+    expect(scope.variables['--gap']).toBe('8px');
+    expect(scope.domFallback).toBe(true);
+  });
+
+  it('커스텀 domResolver 주입', () => {
+    const mockResolver = (): string => 'mock-value';
+    const scope = createVariableScopeWithDOMFallback({}, mockResolver);
+    expect(scope.domResolver).toBe(mockResolver);
+    expect(scope.domFallback).toBe(true);
   });
 });

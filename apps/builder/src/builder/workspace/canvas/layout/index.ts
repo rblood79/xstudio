@@ -60,4 +60,7 @@ export {
   type VerticalAlign,
   type LineBoxItem,
   type LineBox,
+  // W3-7: CSS var() DOM fallback
+  type CSSVariableScope,
+  createVariableScopeWithDOMFallback,
 } from './engines';
