@@ -163,31 +163,6 @@ export const PixiSearchField = memo(function PixiSearchField({
     [sizePreset.fontSize, isDisabled, hasValue, colorPreset.textColor, colorPreset.placeholderColor]
   );
 
-  // 클릭 핸들러
-  const handleClick = useCallback(() => {
-    onClick?.(element.id);
-  }, [onClick, element.id]);
-
-  // 🚀 Phase 12: 루트 레이아웃
-  const rootLayout = useMemo(() => ({
-    display: 'flex' as const,
-    flexDirection: 'column' as const,
-    gap: 4,
-  }), []);
-
-  // 🚀 Phase 12: Input 레이아웃
-  const inputLayout = useMemo(() => ({
-    display: 'flex' as const,
-    flexDirection: 'row' as const,
-    alignItems: 'center' as const,
-    width: sizePreset.inputWidth,
-    height: inputHeight,
-    paddingLeft: sizePreset.paddingX,
-    paddingRight: sizePreset.paddingX,
-    gap: 4,
-    position: 'relative' as const,
-  }), [sizePreset.inputWidth, inputHeight, sizePreset.paddingX]);
-
   // 🚀 Phase 12: 검색 아이콘 스타일
   const iconTextStyle = useMemo(() => new TextStyle({
     fontFamily: "Pretendard, sans-serif",
@@ -195,26 +170,25 @@ export const PixiSearchField = memo(function PixiSearchField({
     fill: colorPreset.placeholderColor,
   }), [sizePreset.fontSize, colorPreset.placeholderColor]);
 
-  // 🚀 Phase 12: Clear 버튼 레이아웃
-  const clearButtonLayout = useMemo(() => ({
-    position: 'absolute' as const,
-    right: sizePreset.paddingX,
-    top: (inputHeight - sizePreset.clearButtonSize) / 2,
-  }), [sizePreset.paddingX, inputHeight, sizePreset.clearButtonSize]);
+  // 클릭 핸들러
+  const handleClick = useCallback(() => {
+    onClick?.(element.id);
+  }, [onClick, element.id]);
 
   return (
-    <pixiContainer layout={rootLayout}>
+    <pixiContainer>
       {/* 라벨 */}
       {label && (
-        <pixiText text={label} style={labelTextStyle} layout={{ isLeaf: true }} />
+        <pixiText text={label} style={labelTextStyle} />
       )}
 
       {/* SearchField 그룹 */}
-      <pixiContainer layout={inputLayout}>
-        {/* Input 배경 - position: absolute */}
+      <pixiContainer>
+        {/* Input 배경 */}
         <pixiGraphics
           draw={drawInput}
-          layout={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
+          x={0}
+          y={0}
           eventMode="static"
           cursor="default"
           onPointerDown={handleClick}
@@ -224,21 +198,20 @@ export const PixiSearchField = memo(function PixiSearchField({
         <pixiText
           text="🔍"
           style={iconTextStyle}
-          layout={{ isLeaf: true }}
         />
 
         {/* 값 또는 placeholder */}
         <pixiText
           text={hasValue ? value : placeholder}
           style={valueTextStyle}
-          layout={{ isLeaf: true, flexGrow: 1 }}
         />
 
         {/* Clear 버튼 */}
         {hasValue && (
           <pixiGraphics
             draw={drawClearButton}
-            layout={clearButtonLayout}
+            x={sizePreset.inputWidth - sizePreset.paddingX - sizePreset.clearButtonSize}
+            y={(inputHeight - sizePreset.clearButtonSize) / 2}
             eventMode="static"
             cursor="default"
             onPointerEnter={() => setIsClearHovered(true)}

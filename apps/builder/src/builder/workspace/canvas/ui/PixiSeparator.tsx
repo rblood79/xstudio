@@ -19,8 +19,6 @@ import { Graphics as PixiGraphics } from "pixi.js";
 import type { Element } from "../../../../types/core/store.types";
 import type { CSSStyle } from "../sprites/styleConverter";
 import { cssColorToHex } from "../sprites/styleConverter";
-import { toLayoutSize } from "../layout/styleToLayout";
-
 // 🚀 Spec Migration
 import {
   SeparatorSpec,
@@ -117,12 +115,6 @@ export const PixiSeparator = memo(function PixiSeparator({
     };
   }, [orientation, style, sizePreset.thickness]);
 
-  // 🚀 Phase 8: layout prop에 style 값 직접 전달 (% 단위 지원)
-  const containerLayout = useMemo(() => ({
-    width: orientation === "horizontal" ? toLayoutSize(style?.width, fallbackWidth) : sizePreset.thickness,
-    height: orientation === "vertical" ? toLayoutSize(style?.height, fallbackHeight) : sizePreset.thickness,
-  }), [orientation, style?.width, style?.height, sizePreset.thickness]);
-
   // 구분선 그리기
   const drawSeparator = useCallback(
     (g: PixiGraphics) => {
@@ -190,7 +182,7 @@ export const PixiSeparator = memo(function PixiSeparator({
   }, [element.id, onClick]);
 
   return (
-    <pixiContainer layout={containerLayout}>
+    <pixiContainer>
       <pixiGraphics
         draw={drawSeparator}
         eventMode="static"

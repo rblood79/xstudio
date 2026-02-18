@@ -1,30 +1,26 @@
 /**
  * Pixi Button
  *
- * 🚀 Phase 11 B2.4: @pixi/ui FancyButton 기반 Button
- *
- * @pixi/ui의 FancyButton을 명령형으로 생성하여 Container에 추가
- * - JSX 방식은 @pixi/react v8에서 제한적이므로 useEffect로 직접 생성
- *
- * @see https://pixijs.io/ui/storybook/?path=/story/fancybutton--simple
- * @see https://github.com/pixijs/ui/blob/main/src/FancyButton.ts
+ * 투명 히트 영역(pixiGraphics) 기반 Button
+ * - Skia가 시각적 렌더링을 담당, PixiJS는 이벤트 히트 영역만 제공
+ * - getButtonLayout()으로 크기 계산 (Skia 렌더링에 필요)
  *
  * @since 2025-12-11 Phase 11 B2.4
  * @updated 2025-12-14 P8: useEffect 명령형 FancyButton 생성
  * @updated 2025-12-15 P9: variant, size, isDisabled, isLoading 지원 추가
  * @updated 2026-01-27 Component Spec 마이그레이션 (Feature Flag)
+ * @updated 2026-02-18 @pixi/ui FancyButton 의존성 제거 (Skia 렌더링 전환)
  */
 
 import { useExtend } from '@pixi/react';
 import { PIXI_COMPONENTS } from '../pixiSetup';
-import { memo, useCallback, useRef, useEffect, useMemo } from "react";
+import { memo, useCallback, useRef, useMemo } from "react";
 import {
   Container as PixiContainer,
   Graphics as PixiGraphicsClass,
   Text as PixiText,
   TextStyle,
 } from "pixi.js";
-import { FancyButton } from "@pixi/ui";
 import type { Element } from "../../../../types/core/store.types";
 import type { CSSStyle } from "../sprites/styleConverter";
 import { cssColorToHex, parseCSSSize } from "../sprites/styleConverter";
@@ -32,7 +28,6 @@ import type {
   ButtonVariant,
   ComponentSize,
 } from "../../../../types/builder/componentVariants.types";
-import { drawBox } from "../utils";
 import { useCanvasSyncStore } from "../canvasSync";
 import { parsePadding, parseBorderWidth } from "../sprites/paddingUtils";
 import { measureTextWidth as measureTextWidthCanvas } from "../layout/engines/utils";
@@ -324,86 +319,6 @@ function getButtonLayout(
   };
 }
 
-/**
- * 버튼 배경 Graphics 생성
- * 🚀 Border-Box v2: drawBox 유틸리티 사용
- */
-function createButtonGraphics(
-  width: number,
-  height: number,
-  backgroundColor: number,
-  borderRadius: number,
-  options?: {
-    alpha?: number;
-    borderColor?: number | null;
-    borderWidth?: number;
-  }
-): PixiGraphicsClass {
-  const graphics = new PixiGraphicsClass();
-  const alpha = options?.alpha ?? 1;
-  const borderColor = options?.borderColor;
-  const borderWidth = options?.borderWidth ?? 1;
-
-  // Border-Box v2: drawBox 유틸리티 사용
-  drawBox(graphics, {
-    width,
-    height,
-    backgroundColor,
-    backgroundAlpha: alpha,
-    borderRadius,
-    border: borderColor !== null && borderColor !== undefined ? {
-      width: borderWidth,
-      color: borderColor,
-      alpha: 1,
-      style: 'solid',
-      radius: borderRadius,
-    } : null,
-  });
-
-  return graphics;
-}
-
-/**
- * 비활성화 오버레이 Graphics 생성
- * 🚀 Border-Box v2: drawBox 유틸리티 사용
- */
-function createDisabledOverlay(
-  width: number,
-  height: number,
-  borderRadius: number
-): PixiGraphicsClass {
-  const graphics = new PixiGraphicsClass();
-  drawBox(graphics, {
-    width,
-    height,
-    backgroundColor: 0xffffff,
-    backgroundAlpha: 0.5,
-    borderRadius,
-  });
-  return graphics;
-}
-
-/**
- * 로딩 인디케이터 (점 3개 애니메이션용 - 간단한 버전)
- */
-function createLoadingIndicator(
-  width: number,
-  height: number
-): PixiGraphicsClass {
-  const graphics = new PixiGraphicsClass();
-  const dotRadius = 3;
-  const spacing = 8;
-  const centerX = width / 2;
-  const centerY = height / 2;
-
-  // 3개의 점 그리기
-  for (let i = -1; i <= 1; i++) {
-    graphics.circle(centerX + i * spacing, centerY, dotRadius);
-  }
-  graphics.fill({ color: 0xffffff, alpha: 0.8 });
-
-  return graphics;
-}
 
 // ============================================
 // Component
@@ -412,7 +327,7 @@ function createLoadingIndicator(
 /**
  * PixiButton
  *
- * @pixi/ui FancyButton을 명령형으로 생성
+ * 투명 히트 영역 기반 Button (Skia 렌더링)
  * variant, size, isDisabled, isLoading 지원
  *
  * @example
@@ -500,176 +415,6 @@ export const PixiButton = memo(function PixiButton({
 
   // Container ref
   const containerRef = useRef<PixiContainer | null>(null);
-  const buttonRef = useRef<FancyButton | null>(null);
-  const disabledOverlayRef = useRef<PixiGraphicsClass | null>(null);
-  const loadingIndicatorRef = useRef<PixiGraphicsClass | null>(null);
-
-  // FancyButton 생성 및 업데이트
-  useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
-
-    // 기존 요소들 제거
-    if (buttonRef.current) {
-      container.removeChild(buttonRef.current);
-      buttonRef.current.destroy();
-      buttonRef.current = null;
-    }
-    if (disabledOverlayRef.current) {
-      container.removeChild(disabledOverlayRef.current);
-      disabledOverlayRef.current.destroy();
-      disabledOverlayRef.current = null;
-    }
-    if (loadingIndicatorRef.current) {
-      container.removeChild(loadingIndicatorRef.current);
-      loadingIndicatorRef.current.destroy();
-      loadingIndicatorRef.current = null;
-    }
-
-    // Graphics 옵션 (alpha, border)
-    const defaultGraphicsOptions = {
-      alpha: layout.backgroundAlpha,
-      borderColor: layout.borderColor,
-      borderWidth: layout.borderWidth,
-    };
-
-    // Hover/Pressed는 borderHoverColor 사용 (CSS variant별 hover border-color)
-    const hoverGraphicsOptions = {
-      alpha: layout.backgroundAlpha,
-      borderColor: layout.borderHoverColor,
-      borderWidth: layout.borderWidth,
-    };
-
-    // 배경 Graphics 생성
-    const defaultView = createButtonGraphics(
-      layout.width,
-      layout.height,
-      layout.backgroundColor,
-      layout.borderRadius,
-      defaultGraphicsOptions
-    );
-
-    const hoverView = createButtonGraphics(
-      layout.width,
-      layout.height,
-      layout.hoverColor,
-      layout.borderRadius,
-      hoverGraphicsOptions
-    );
-
-    const pressedView = createButtonGraphics(
-      layout.width,
-      layout.height,
-      layout.pressedColor,
-      layout.borderRadius,
-      hoverGraphicsOptions // pressed도 hover와 같은 border color (CSS 동작)
-    );
-
-    // TextStyle 및 Text 객체 생성
-    const textStyle = new TextStyle({
-      fill: layout.textColor,
-      fontSize: layout.fontSize,
-      fontFamily: layout.fontFamily,
-      align: "center",
-    });
-
-    const textView = new PixiText({
-      text: buttonText,
-      style: textStyle,
-    });
-
-    // FancyButton 생성
-    // Note: FancyButton은 text를 중앙에 배치하며, padding은 Graphics 크기에 이미 반영됨
-    const button = new FancyButton({
-      defaultView,
-      hoverView,
-      pressedView,
-      text: layout.isLoading ? undefined : textView,
-      anchor: 0.5,
-      padding: 0, // 명시적으로 0 설정 (Graphics에 padding이 포함됨)
-    });
-
-    // 버튼 위치 조정 (anchor 0.5이므로 중앙 기준)
-    button.x = layout.width / 2;
-    button.y = layout.height / 2;
-
-    // FancyButton의 이벤트 모드를 none으로 설정
-    button.eventMode = "none";
-
-    // Container에 추가
-    container.addChild(button);
-    buttonRef.current = button;
-
-    // 비활성화 오버레이 추가
-    if (layout.isDisabled || layout.isLoading) {
-      const disabledOverlay = createDisabledOverlay(
-        layout.width,
-        layout.height,
-        layout.borderRadius
-      );
-      container.addChild(disabledOverlay);
-      disabledOverlayRef.current = disabledOverlay;
-    }
-
-    // 로딩 인디케이터 추가
-    if (layout.isLoading) {
-      const loadingIndicator = createLoadingIndicator(
-        layout.width,
-        layout.height
-      );
-      container.addChild(loadingIndicator);
-      loadingIndicatorRef.current = loadingIndicator;
-    }
-
-    // Cleanup - Graphics 객체 명시적 destroy (GPU 리소스 해제)
-    return () => {
-      // FancyButton destroy (children: true로 내부 Graphics/Text도 함께 정리)
-      // Note: defaultView, hoverView, pressedView, textView는 FancyButton의 children이므로
-      // destroy({ children: true })로 함께 정리됨 - 별도 destroy 불필요
-      // ⚠️ try-catch: CanvasTextSystem이 이미 정리된 경우 에러 방지
-      if (buttonRef.current) {
-        try {
-          if (container.children.includes(buttonRef.current)) {
-            container.removeChild(buttonRef.current);
-          }
-          if (!buttonRef.current.destroyed) {
-            buttonRef.current.destroy({ children: true });
-          }
-        } catch {
-          // CanvasTextSystem race condition - 무시 (시스템이 이미 정리됨)
-        }
-        buttonRef.current = null;
-      }
-
-      // disabledOverlay와 loadingIndicator는 container의 직접 children이므로 별도 정리
-      if (disabledOverlayRef.current) {
-        try {
-          if (container.children.includes(disabledOverlayRef.current)) {
-            container.removeChild(disabledOverlayRef.current);
-          }
-          if (!disabledOverlayRef.current.destroyed) {
-            disabledOverlayRef.current.destroy(true);
-          }
-        } catch {
-          // ignore
-        }
-        disabledOverlayRef.current = null;
-      }
-      if (loadingIndicatorRef.current) {
-        try {
-          if (container.children.includes(loadingIndicatorRef.current)) {
-            container.removeChild(loadingIndicatorRef.current);
-          }
-          if (!loadingIndicatorRef.current.destroyed) {
-            loadingIndicatorRef.current.destroy(true);
-          }
-        } catch {
-          // ignore
-        }
-        loadingIndicatorRef.current = null;
-      }
-    };
-  }, [layout, buttonText]);
 
   // 투명 히트 영역 (modifier 키 감지용)
   const drawHitArea = useCallback(
@@ -711,23 +456,14 @@ export const PixiButton = memo(function PixiButton({
   // 커서 스타일 (비활성화 시 not-allowed)
   // Note: cursorStyle 변수는 사용하지 않음 (Pencil 동작과 일치하도록 항상 default)
 
-  // 🚀 Phase 9: @pixi/layout에 크기 전달 - children 레이아웃 계산에 필요
-  const buttonLayout = useMemo(() => ({
-    width: layout.width,
-    height: layout.height,
-  }), [layout.width, layout.height]);
-
-  // 🚀 Phase 5: x/y 제거 - 위치는 ElementSprite에서 layout prop으로 처리
+  // 🚀 Phase 5: x/y 제거 - 위치는 ElementSprite에서 처리
   return (
     <pixiContainer
       ref={(c: PixiContainer | null) => {
         containerRef.current = c;
       }}
-      layout={buttonLayout}
     >
-      {/* FancyButton, disabled overlay, loading indicator는 useEffect에서 명령형으로 추가됨 */}
-
-      {/* 투명 히트 영역 (modifier 키 감지용) */}
+      {/* 투명 히트 영역 (modifier 키 감지용) - Skia가 시각적 렌더링 담당 */}
       <pixiGraphics
         draw={drawHitArea}
         eventMode="static"

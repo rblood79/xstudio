@@ -31,7 +31,6 @@ import { useStore } from '../../../stores';
 import { getLabelStylePreset } from '../hooks/useSpecRenderer';
 import {
   RadioSpec,
-  RADIO_SELECTED_COLORS,
   RADIO_DIMENSIONS,
   getVariantColors as getSpecVariantColors,
   getSizePreset as getSpecSizePreset,
@@ -195,16 +194,8 @@ const RadioItem = memo(function RadioItem({
   }, [option.value, onSelect]);
 
   return (
-    <pixiContainer
-      layout={{
-        display: 'flex',
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: labelGap,
-        width: itemWidth,
-      }}
-    >
-      <pixiContainer layout={{ width: radioSize, height: radioSize }}>
+    <pixiContainer>
+      <pixiContainer>
         {/* 라디오 원 */}
         <pixiGraphics
           draw={drawRadio}
@@ -218,7 +209,6 @@ const RadioItem = memo(function RadioItem({
       <pixiText
         text={option.label}
         style={textStyle}
-        layout={{ isLeaf: true }}
         eventMode="static"
         cursor="default"
         onPointerDown={handlePointerDown}
@@ -341,22 +331,6 @@ export const PixiRadio = memo(function PixiRadio({
   const labelHeight = groupLabel ? labelPreset.fontSize + 8 : 0;
   const itemWidth = 120;
 
-  // 🚀 Phase 11: CSS .react-aria-RadioGroup 동기화
-  // CSS: .react-aria-RadioGroup { display: flex; flex-direction: column; gap: var(--gap); }
-  // CSS block 요소는 기본적으로 width: 100%
-  const groupLayout = useMemo(() => ({
-    display: 'flex' as const,
-    flexDirection: 'column' as const,
-    gap,
-    width: '100%' as unknown as number,
-  }), [gap]);
-
-  const itemsLayout = useMemo(() => ({
-    display: 'flex' as const,
-    flexDirection: (isHorizontal ? 'row' : 'column') as 'row' | 'column',
-    gap: isHorizontal ? 0 : gap,
-  }), [isHorizontal, gap]);
-
   // 🚀 Phase 19: 전체 그룹 크기 계산 (hitArea용)
   const groupDimensions = useMemo(() => {
     const optionCount = options.length;
@@ -410,19 +384,18 @@ export const PixiRadio = memo(function PixiRadio({
   );
 
   return (
-    <pixiContainer layout={groupLayout}>
+    <pixiContainer>
       {/* RadioGroup 라벨 */}
       {groupLabel && (
         <pixiText
           text={groupLabel}
           style={labelTextStyle}
-          layout={{ isLeaf: true }}
           eventMode="none"
         />
       )}
 
       {/* Radio 옵션들 */}
-      <pixiContainer layout={itemsLayout}>
+      <pixiContainer>
         {options.map((option, index) => {
           const isOptionSelected = option.value === selectedValue;
 
@@ -444,10 +417,11 @@ export const PixiRadio = memo(function PixiRadio({
         })}
       </pixiContainer>
 
-      {/* 🚀 Phase 19: 투명 히트 영역 (그룹 전체 선택용) - position: absolute로 레이아웃에서 제외 */}
+      {/* 🚀 Phase 19: 투명 히트 영역 (그룹 전체 선택용) */}
       <pixiGraphics
         draw={drawHitArea}
-        layout={{ position: 'absolute', top: 0, left: 0 }}
+        x={0}
+        y={0}
         eventMode="static"
         cursor="default"
         onPointerDown={handleClick}

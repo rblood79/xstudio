@@ -119,22 +119,8 @@ export function PixiForm({
     [sizePreset, colorPreset]
   );
 
-  // 🚀 Phase 8: 주 컨테이너 layout (iframe CSS와 동기화)
-  // CSS: .react-aria-Form { display: flex; flex-direction: column; align-items: start; gap: 8px; }
-  const formLayout = useMemo(() => ({
-    display: 'flex' as const,
-    flexDirection: 'column' as const,
-    alignItems: 'flex-start' as const,
-    gap: sizePreset.gap,
-    // 콘텐츠 크기에 맞춤 (부모 flex에서 늘어나지 않도록)
-    flexGrow: 0,
-    flexShrink: 0,
-    alignSelf: 'flex-start' as const,
-  }), [sizePreset.gap]);
-
   return (
     <pixiContainer
-      layout={formLayout}
       eventMode="static"
       cursor="default"
       onPointerTap={() => onClick?.(element.id)}

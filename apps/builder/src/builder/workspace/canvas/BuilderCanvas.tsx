@@ -1,23 +1,17 @@
 /**
  * Builder Canvas
  *
- * 🚀 Phase 10 B1.1: WebGL 기반 메인 캔버스
- * 🚀 Phase 10 B1.2: ElementSprite 렌더링 시스템 통합
+ * Phase 11: DirectContainer 기반 캔버스
  *
  * 기능:
  * - PixiJS Application 초기화
  * - Element 렌더링 (ElementSprite)
- * - Selection Overlay (B1.3에서 완성)
- * - Zoom/Pan (B1.4에서 완성)
+ * - Selection Overlay
+ * - Zoom/Pan
  *
  * @since 2025-12-11 Phase 10 B1.1
- * @updated 2025-12-11 Phase 10 B1.2 - ElementSprite 통합
+ * @updated 2026-02-18 Phase 11 - @pixi/layout 완전 제거, DirectContainer 전환
  */
-
-// @deprecated Phase 8: @pixi/layout side-effect는 LayoutContainer의 layout prop에 필요.
-// Phase 9에서 LayoutContainer → 직접 Container 위치 지정으로 전환 후 제거 예정.
-import "@pixi/layout";
-import type { LayoutOptions } from "@pixi/layout";
 import { useCallback, useEffect, useRef, useMemo, useState, memo, startTransition, lazy, Suspense, type RefObject } from "react";
 import { Application, useApplication } from "@pixi/react";
 import { Graphics as PixiGraphics, Container, Application as PixiApplication, FederatedPointerEvent } from "pixi.js";
@@ -45,11 +39,9 @@ import { BodyLayer } from "./layers";
 import { TextEditOverlay, useTextEdit } from "../overlay";
 // 사용자 컨텐츠 레이아웃은 Taffy/Dropflow 엔진이 처리
 import {
-  styleToLayout,
   selectEngine,
   parsePadding,
   parseBorder,
-  type LayoutStyle,
   type ComputedLayout,
 } from "./layout";
 import { getElementBoundsSimple, getElementContainer, registerElement, unregisterElement, updateElementBounds } from "./elementRegistry";
@@ -180,7 +172,7 @@ interface PageContainerProps {
   zoom: number;
   panOffset: { x: number; y: number };
   isVisible: boolean;
-  /** @pixi/layout 초기화 포함 Application 준비 완료 */
+  /** PixiJS Application 준비 완료 */
   appReady: boolean;
   /** Rust WASM(Taffy/Grid) 엔진 로드 완료 여부 */
   wasmLayoutReady: boolean;
@@ -401,23 +393,28 @@ function ClickableBackground({ onClick, onLassoStart, onLassoDrag, onLassoEnd, z
 // CanvasSmoothResizeBridge 제거됨 - resizeTo={containerEl}로 대체 (Panel Toggle 성능 최적화)
 
 /**
- * 🚀 Phase 7: Layout Container
+ * Phase 11: Direct Container
  *
- * @pixi/layout의 layout prop과 ElementRegistry 등록을 함께 처리합니다.
- * SelectionBox가 올바른 위치에 표시되도록 layout이 적용된 Container를 등록합니다.
+ * 엔진이 계산한 x/y/width/height로 직접 배치하는 Container 래퍼.
+ * ElementRegistry 등록과 LayoutComputedSizeContext 설정을 함께 처리합니다.
  */
-const LayoutContainer = memo(function LayoutContainer({
+const DirectContainer = memo(function DirectContainer({
   elementId,
-  layout,
+  x,
+  y,
+  width,
+  height,
   children,
 }: {
   elementId?: string;
-  layout: LayoutStyle;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
   children: React.ReactNode;
 }) {
   useExtend(PIXI_COMPONENTS);
 
-  // Layout이 적용된 Container를 registry에 등록
   const containerRef = useRef<Container | null>(null);
   const handleContainerRef = useCallback((container: Container | null) => {
     containerRef.current = container;
@@ -426,27 +423,35 @@ const LayoutContainer = memo(function LayoutContainer({
     }
   }, [elementId]);
 
-  // Yoga 계산된 pixel 크기를 하위 컴포넌트에 전달
-  // ⚡ CSS layout에서 초기값 추론: null → 실제값 전환으로 인한 재렌더링 깜빡임 방지
-  const [computedSize, setComputedSize] = useState<{ width: number; height: number } | null>(() => {
-    const w = typeof layout.width === 'number' ? layout.width : 0;
-    const h = typeof layout.height === 'number' ? layout.height : 0;
-    return (w > 0 && h > 0) ? { width: w, height: h } : null;
-  });
-
-  // @pixi/layout의 'layout' 이벤트를 구독하여 Yoga 계산 완료 시점에 정확히 읽기
-  // 기존 requestAnimationFrame 방식은 @pixi/layout의 prerender보다 먼저 실행될 수 있어
-  // 스타일 변경 시 즉시 반영되지 않는 문제가 있었음
+  // Props 변경 시 elementBounds 업데이트 + Skia 재렌더링 트리거
   useEffect(() => {
     const container = containerRef.current;
-    if (!container) return;
+    if (!container || !elementId || container.destroyed) return;
+    try {
+      const bounds = container.getBounds();
+      if (bounds.width > 0 || bounds.height > 0) {
+        updateElementBounds(elementId, {
+          x: bounds.x,
+          y: bounds.y,
+          width: bounds.width,
+          height: bounds.height,
+        });
+      }
+    } catch {
+      // Container destroyed 또는 아직 미렌더링
+    }
+    notifyLayoutChange();
+  }, [elementId, x, y, width, height]);
 
-    const syncLayoutData = () => {
+  // 최초 마운트 후 bounds 업데이트 (rAF로 PixiJS 렌더 후 실행)
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container || !elementId) return;
+    const rafId = requestAnimationFrame(() => {
       if (container.destroyed) return;
       try {
-        // 1) SelectionLayer용 global bounds 업데이트
         const bounds = container.getBounds();
-        if (elementId && (bounds.width > 0 || bounds.height > 0)) {
+        if (bounds.width > 0 || bounds.height > 0) {
           updateElementBounds(elementId, {
             x: bounds.x,
             y: bounds.y,
@@ -454,45 +459,12 @@ const LayoutContainer = memo(function LayoutContainer({
             height: bounds.height,
           });
         }
-
-        // 2) Yoga 계산된 layout dimensions를 하위 컴포넌트에 전달
-        const yogaLayout = (container as unknown as Record<string, unknown>)._layout as
-          { computedLayout?: { width: number; height: number } } | undefined;
-        const yogaWidth = yogaLayout?.computedLayout?.width;
-        const yogaHeight = yogaLayout?.computedLayout?.height;
-
-        if (yogaWidth !== undefined && yogaHeight !== undefined && (yogaWidth > 0 || yogaHeight > 0)) {
-          setComputedSize((prev) => {
-            if (prev && prev.width === yogaWidth && prev.height === yogaHeight) return prev;
-            return { width: yogaWidth, height: yogaHeight };
-          });
-        }
       } catch {
-        // Container destroyed 또는 아직 미렌더링
+        // Container destroyed
       }
-    };
-
-    // @pixi/layout의 'layout' 이벤트 핸들러
-    // updateLayout() 내부에서 emit('layout')이 _onUpdate()보다 먼저 호출되어
-    // getBounds()가 stale worldTransform을 읽음 → updateElementBounds의 epsilon check 통과
-    // → notifyLayoutChange 미호출 → Skia 캐시 미갱신.
-    // 해결: 'layout' 이벤트에서 무조건 notifyLayoutChange() 호출.
-    // 'layout'은 hasNewLayout()이 true인 경우에만 발생하므로 안전하며,
-    // Skia renderFrame은 PixiJS render 이후(priority -50)에 실행되어
-    // 이 시점에서 worldTransform은 이미 갱신되어 있다.
-    const onLayoutEvent = () => {
-      syncLayoutData();
       notifyLayoutChange();
-    };
-
-    container.on('layout', onLayoutEvent);
-    // 최초 마운트 시 첫 prerender가 아직 미실행일 수 있으므로 rAF fallback
-    const rafId = requestAnimationFrame(syncLayoutData);
-
-    return () => {
-      container.off('layout', onLayoutEvent);
-      cancelAnimationFrame(rafId);
-    };
+    });
+    return () => cancelAnimationFrame(rafId);
   }, [elementId]);
 
   // Cleanup: unmount 시 registry에서 해제
@@ -503,9 +475,15 @@ const LayoutContainer = memo(function LayoutContainer({
     };
   }, [elementId]);
 
+  // LayoutComputedSizeContext (엔진 결과에서 직접 설정)
+  const computedSize = useMemo(() =>
+    width > 0 && height > 0 ? { width, height } : null,
+    [width, height]
+  );
+
   return (
     <LayoutComputedSizeContext.Provider value={computedSize}>
-      <pixiContainer ref={handleContainerRef} layout={layout as unknown as LayoutOptions} label={elementId ?? 'layout-wrapper'}>
+      <pixiContainer ref={handleContainerRef} x={x} y={y} label={elementId ?? 'direct-wrapper'}>
         {children}
       </pixiContainer>
     </LayoutComputedSizeContext.Provider>
@@ -527,8 +505,6 @@ const LayoutContainer = memo(function LayoutContainer({
  * - 뷰포트 외부 요소 렌더링 제외 → GPU 부하 20-40% 감소
  * - 대형 캔버스에서 줌아웃 시 특히 효과적
  */
-// 🚀 Phase 6: layoutResult prop 제거 - @pixi/layout 자동 레이아웃
-// 🚀 Phase 7: pageWidth/pageHeight 추가 - 루트 layout 설정에 필요
 const ElementsLayer = memo(function ElementsLayer({
   pageElements,
   bodyElement,
@@ -599,8 +575,7 @@ const ElementsLayer = memo(function ElementsLayer({
     });
   }, [pageElements, depthMap]);
 
-  // 🚀 Phase 11: Viewport Culling - 뷰포트 외부 요소 필터링
-  // 🚀 Phase 3: layoutResult 제거 - ElementRegistry 사용
+  // Viewport Culling - 뷰포트 외부 요소 필터링
   const { visibleElements } = useViewportCulling({
     elements: sortedElements,
     zoom,
@@ -634,168 +609,76 @@ const ElementsLayer = memo(function ElementsLayer({
     'TagGroup', 'TagList',  // 🚀 웹 CSS 구조 동일: TagGroup (column) → Label + TagList (row wrap) → Tags
   ]), []);
 
-  // 🚀 Phase 8: CSS display: block 요소 목록
-  // body가 flexDirection: 'row'일 때, block 요소들이 한 줄 전체를 차지하도록
-  // flexBasis: '100%'를 적용해야 함 (CSS width: auto의 block 동작 재현)
-  const BLOCK_TAGS = useMemo(() => new Set([
-    'Card', 'Panel', 'Form', 'Disclosure', 'DisclosureGroup', 'Accordion',
-    'Dialog', 'Modal', 'Box', 'Tabs', 'CheckboxGroup', 'RadioGroup',
-    'Section',
-  ]), []);
-
-  // 🚀 자체 padding/border 렌더링 컴포넌트 (leaf UI)
-  // 이 태그들은 자체적으로 padding/border를 그래픽 크기에 반영하므로
-  // 외부 LayoutContainer(Yoga)에 padding/border를 전달하면 이중 적용됨
-  // → Yoga가 내부 콘텐츠를 오프셋 + 컴포넌트가 자체 크기에 반영 = 이중
-  const SELF_PADDING_TAGS = useMemo(() => new Set([
-    'Button', 'SubmitButton',
-    'FancyButton',
-    'ToggleButton',
-    'ToggleButtonGroup',
-    'Card',  // PixiCard가 sizePreset.padding으로 내부 처리
-    // 향후 자체 padding/border 렌더링하는 컴포넌트 추가 시 여기에 등록
-  ]), []);
-
-  // 🚀 Phase 6: @pixi/layout 완전 전환 - layoutResult 제거
-  // @pixi/layout이 자동으로 flexbox 레이아웃 처리
-  // 🚀 Phase 7: LayoutContainer 사용 - layout + registry 등록 통합
-  // 🚀 Phase 9: children이 있는 요소에 기본 flex 레이아웃 적용
-  // 🚀 Phase 10: Container 타입은 children을 내부에서 렌더링
-  // 🚀 Phase 4 (2026-01-28): 하이브리드 레이아웃 엔진 (Grid/Block은 커스텀 엔진)
+  // Phase 11: 엔진이 계산한 레이아웃으로 직접 배치 (Yoga 제거)
   const renderedTree = useMemo(() => {
-    // 🚀 자체 padding/border 렌더링 컴포넌트용 layout 정리
-    // Yoga가 padding/border를 inset으로 처리하면 이중 적용됨
-    // → 컴포넌트 자체가 처리하는 속성은 외부 LayoutContainer에서 제거
-    // Note: 버튼 겹침은 Skia stroke inset(nodeRenderers.ts)으로 해결
-    function stripSelfRenderedProps(layout: LayoutStyle): LayoutStyle {
-      const {
-        padding: _p, paddingTop: _pt, paddingRight: _pr, paddingBottom: _pb, paddingLeft: _pl,
-        borderWidth: _bw, borderTopWidth: _btw, borderRightWidth: _brw, borderBottomWidth: _bbw, borderLeftWidth: _blw,
-        borderRadius: _br, borderColor: _bc, backgroundColor: _bg,
-        ...rest
-      } = layout;
-      return rest;
-    }
-
-    function isImplicitFlexColumnLayout(layout: LayoutStyle): boolean {
-      return !layout.display && !layout.flexDirection;
-    }
-
-    function shouldUseImplicitFlexColumn(tag: string, layout: LayoutStyle): boolean {
-      if (!isImplicitFlexColumnLayout(layout)) {
-        return false;
-      }
-      // Section은 CSS 기본값(display: block)을 유지한다.
-      return tag !== 'Section';
-    }
-
-    function getImplicitSectionBlockPatch(tag: string, layout: LayoutStyle): Partial<LayoutStyle> {
-      if (tag !== 'Section' || !isImplicitFlexColumnLayout(layout)) {
-        return {};
-      }
-      return { display: 'block' as const };
-    }
-
-    function isContainerTagForLayout(tag: string, layout: LayoutStyle): boolean {
+    // Container 태그 판별 (children을 내부에서 렌더링하는 컴포넌트)
+    function isContainerTagForLayout(tag: string, style?: Record<string, unknown>): boolean {
       if (tag === 'Section') {
-        // Section은 명시적으로 flex 컨테이너일 때만 내부 children 렌더링 경로 사용
-        return layout.display === 'flex' || layout.flexDirection !== undefined;
+        return style?.display === 'flex' || style?.flexDirection !== undefined;
       }
       return CONTAINER_TAGS.has(tag);
     }
 
-    // 🚀 Phase 9: layout 값에서 pixel 크기를 해석하는 헬퍼
-    // containerLayout.width가 number면 그대로, '%' 문자열이면 부모 크기 기준 해석, 그 외 부모 크기 폴백
-    function resolveLayoutSize(value: unknown, parentSize: number): number {
-      if (typeof value === 'number') return value;
-      if (typeof value === 'string' && value.endsWith('%')) {
-        const pct = parseFloat(value);
-        if (!isNaN(pct) && parentSize > 0) return Math.round(parentSize * pct / 100);
-      }
-      return parentSize;
+    // Container 자식 렌더러 생성 (재귀적)
+    // 컨테이너 내부의 자식들을 엔진으로 레이아웃 계산 후 DirectContainer로 배치
+    function createContainerChildRenderer(
+      containerEl: Element,
+      containerWidth: number,
+      containerHeight: number,
+    ): (childEl: Element) => React.ReactNode {
+      let cachedLayoutMap: Map<string, ComputedLayout> | null = null;
+      let cachedPadding = { top: 0, right: 0, bottom: 0, left: 0 };
+      const containerChildren = pageChildrenMap.get(containerEl.id) ?? [];
+
+      return (childEl: Element): React.ReactNode => {
+        // Lazy initialization: 첫 자식 렌더 시 모든 자식의 레이아웃 일괄 계산
+        if (!cachedLayoutMap) {
+          const parentStyle = containerEl.props?.style as Record<string, unknown> | undefined;
+          cachedPadding = parsePadding(parentStyle);
+          const parentDisplay = (parentStyle?.display as string | undefined)
+            ?? (containerEl.tag === 'Section' ? 'block' : undefined);
+          const innerEngine = selectEngine(parentDisplay);
+          const avW = Math.max(0, containerWidth - cachedPadding.left - cachedPadding.right);
+          const avH = Math.max(0, containerHeight - cachedPadding.top - cachedPadding.bottom);
+          const innerLayouts = innerEngine.calculate(
+            containerEl, containerChildren, avW, avH,
+            { bfcId: containerEl.id, parentDisplay }
+          );
+          cachedLayoutMap = new Map(innerLayouts.map(l => [l.elementId, l]));
+        }
+
+        const layout = cachedLayoutMap.get(childEl.id);
+        if (!layout) return null;
+
+        const childStyle = childEl.props?.style as Record<string, unknown> | undefined;
+        const isContainerType = isContainerTagForLayout(childEl.tag, childStyle);
+        const childElements = isContainerType ? (pageChildrenMap.get(childEl.id) ?? []) : [];
+
+        return (
+          <DirectContainer
+            key={childEl.id}
+            elementId={childEl.id}
+            x={layout.x + cachedPadding.left}
+            y={layout.y + cachedPadding.top}
+            width={layout.width}
+            height={layout.height}
+          >
+            <ElementSprite
+              element={childEl}
+              onClick={onClick}
+              onDoubleClick={onDoubleClick}
+              childElements={isContainerType ? childElements : undefined}
+              renderChildElement={isContainerType && childElements.length > 0
+                ? createContainerChildRenderer(childEl, layout.width, layout.height)
+                : undefined}
+            />
+            {!isContainerType && renderTree(childEl.id, { width: layout.width, height: layout.height })}
+          </DirectContainer>
+        );
+      };
     }
 
-    // 🚀 Phase 8: Container 자식 재귀 렌더링 헬퍼
-    // renderWithCustomEngine의 level 2+ 렌더링을 재귀 함수로 추출하여
-    // 중첩 깊이 제한(기존 3레벨)을 제거하고, 부모의 실제 computed 크기를
-    // 자식에게 전달하여 % 해석과 availableWidth를 올바르게 처리.
-    function renderChildInContainer(
-      childEl: Element,
-      parentWidth: number,
-      parentHeight: number,
-      renderTreeFn: (parentId: string | null, parentComputedSize?: { width: number; height: number }) => React.ReactNode,
-    ): React.ReactNode {
-      const childLayout = styleToLayout(childEl);
-      let effectiveLayout = SELF_PADDING_TAGS.has(childEl.tag)
-        ? stripSelfRenderedProps(childLayout)
-        : childLayout;
-
-      // % → pixel 변환: Yoga가 auto-width 부모에서 % 해석 불가하므로 pixel로 변환
-      if (parentWidth > 0 && typeof effectiveLayout.width === 'string' && effectiveLayout.width.endsWith('%')) {
-        const pct = parseFloat(effectiveLayout.width);
-        effectiveLayout = { ...effectiveLayout, width: Math.round(parentWidth * pct / 100) };
-      }
-      if (parentHeight > 0 && typeof effectiveLayout.height === 'string' && effectiveLayout.height.endsWith('%')) {
-        const pct = parseFloat(effectiveLayout.height);
-        effectiveLayout = { ...effectiveLayout, height: Math.round(parentHeight * pct / 100) };
-      }
-
-      const hasChildren = (pageChildrenMap.get(childEl.id)?.length ?? 0) > 0;
-      const isContainerType = isContainerTagForLayout(childEl.tag, effectiveLayout);
-      const isBlockElement = BLOCK_TAGS.has(childEl.tag);
-      const hasExplicitWidth = effectiveLayout.width !== undefined && effectiveLayout.width !== 'auto';
-      const blockLayout = isBlockElement && !hasExplicitWidth
-        ? { flexBasis: '100%' as const }
-        : {};
-      const flexShrinkDefault = effectiveLayout.flexShrink !== undefined ? {} : { flexShrink: 0 };
-      const blockLayoutDefaults = { flexBasis: 'auto' as const, flexGrow: 0 };
-      const needsImplicitFlex = hasChildren && shouldUseImplicitFlexColumn(childEl.tag, effectiveLayout);
-      const sectionBlockPatch = !needsImplicitFlex
-        ? getImplicitSectionBlockPatch(childEl.tag, effectiveLayout)
-        : {};
-
-      const containerLayout = needsImplicitFlex
-        ? {
-            position: 'relative' as const,
-            ...blockLayoutDefaults,
-            flexShrink: 0,
-            display: 'flex' as const,
-            flexDirection: 'column' as const,
-            ...blockLayout,
-            ...effectiveLayout,
-          }
-        : {
-            position: 'relative' as const,
-            ...blockLayoutDefaults,
-            ...flexShrinkDefault,
-            ...blockLayout,
-            ...effectiveLayout,
-            ...sectionBlockPatch,
-          };
-
-      const childElements = isContainerType ? (pageChildrenMap.get(childEl.id) ?? []) : [];
-      // 자식에게 전달할 computed 크기 (% 해석 및 availableWidth 계산 기준)
-      const computedWidth = typeof containerLayout.width === 'number' ? containerLayout.width : parentWidth;
-      const computedHeight = typeof containerLayout.height === 'number' ? containerLayout.height : parentHeight;
-
-      return (
-        <LayoutContainer key={childEl.id} elementId={childEl.id} layout={containerLayout}>
-          <ElementSprite
-            element={childEl}
-            onClick={onClick}
-            onDoubleClick={onDoubleClick}
-            childElements={isContainerType ? childElements : undefined}
-            renderChildElement={isContainerType ? (nestedEl: Element) =>
-              renderChildInContainer(nestedEl, computedWidth, computedHeight, renderTreeFn)
-            : undefined}
-          />
-          {!isContainerType && renderTreeFn(childEl.id, { width: computedWidth, height: computedHeight })}
-        </LayoutContainer>
-      );
-    }
-
-    // 🚀 Phase 4: 커스텀 엔진으로 렌더링 (display: grid/block)
-    // Grid/Block은 @pixi/layout 대신 커스텀 엔진으로 레이아웃 계산 후 absolute 배치
+    // 커스텀 엔진으로 렌더링 (display: block/grid/flex/inline 모두 처리)
     function renderWithCustomEngine(
       parentElement: Element,
       children: Element[],
@@ -807,17 +690,11 @@ const ElementsLayer = memo(function ElementsLayer({
       const parentDisplay = rawParentDisplay ?? (parentElement.tag === 'Section' ? 'block' : undefined);
       const engine = selectEngine(parentDisplay);
 
-      // 🚀 Body 이중 패딩 방지
-      // Body가 부모일 때: root pixiContainer가 이미 border+padding 오프셋을 적용하고
-      // width=contentWidth로 설정되었으므로, 여기서 다시 padding을 적용하면 이중 적용된다.
-      // 비-Body 부모: border는 시각 렌더링 전용, padding만 inset으로 사용
+      // Body 이중 패딩 방지
       const isBodyParent = parentElement === bodyElement;
       const parentPadding = parsePadding(parentStyle);
       const parentBorderVal = isBodyParent ? parseBorder(parentStyle) : { top: 0, right: 0, bottom: 0, left: 0 };
 
-      // Body: content-box 크기 (pageWidth - border - padding).
-      // 비-Body: 부모의 실제 computed 크기에서 padding을 뺀 값.
-      // parentComputedSize가 없으면 pageWidth로 폴백 (최상위 호출 시).
       const parentContentWidth = parentComputedSize?.width ?? pageWidth;
       const parentContentHeight = parentComputedSize?.height ?? pageHeight;
       const availableWidth = isBodyParent
@@ -831,567 +708,91 @@ const ElementsLayer = memo(function ElementsLayer({
       const paddingOffsetX = isBodyParent ? 0 : parentPadding.left;
       const paddingOffsetY = isBodyParent ? 0 : parentPadding.top;
 
-      // 레이아웃 계산 (padding이 적용된 content-box 크기 사용)
-      // 🚀 Phase 7: parentDisplay 전달로 CSS blockification 지원
+      // 엔진 레이아웃 계산
       const layouts = engine.calculate(
-        parentElement,
-        children,
-        availableWidth,
-        availableHeight,
+        parentElement, children, availableWidth, availableHeight,
         { bfcId: parentElement.id, parentDisplay }
       );
 
       if (import.meta.env.DEV && layouts.length === 0 && children.length > 0) {
-        console.warn('[renderWithCustomEngine] 빈 레이아웃 결과!',
-          { engine: engine.constructor.name, parentTag: parentElement.tag,
-            parentDisplay, childCount: children.length, availableWidth, availableHeight });
-      }
-      if (import.meta.env.DEV && layouts.length > 0) {
-        console.debug('[renderWithCustomEngine]', engine.constructor.name,
-          { parentTag: parentElement.tag, parentDisplay, results: layouts.slice(0, 3) });
+        console.warn('[renderWithCustomEngine] Empty layout result!',
+          { engine: engine.constructor.name, parentTag: parentElement.tag, parentDisplay, childCount: children.length });
       }
 
       const layoutMap = new Map<string, ComputedLayout>(
         layouts.map((l) => [l.elementId, l])
       );
 
-      // 🚀 Phase 5: 라인 기반 렌더링 - inline 요소들을 가로로 배치
-      // BlockEngine은 같은 줄의 inline 요소들을 LineBox로 그룹화하지만,
-      // vertical-align으로 인해 각 요소의 y 값이 다를 수 있음 (baseline, top, bottom, middle)
-      // 따라서 수직 범위가 겹치는 요소들을 같은 라인으로 그룹화
-      interface LineGroup {
-        y: number;
-        height: number;
-        elements: Array<{ child: Element; layout: ComputedLayout }>;
-      }
-
-      const lines: LineGroup[] = [];
-
-      children.forEach((child) => {
-        if (!renderIdSet.has(child.id)) return;
-        const layout = layoutMap.get(child.id);
-        if (!layout) return;
-
-        const elementTop = layout.y;
-        const elementBottom = layout.y + layout.height;
-
-        // 기존 라인과 수직 범위가 겹치는지 확인 (vertical-align으로 인한 y 차이 허용)
-        const existingLine = lines.find((line) => {
-          const lineTop = line.y;
-          const lineBottom = line.y + line.height;
-          // 수직 범위가 겹치면 같은 라인
-          return elementTop < lineBottom && elementBottom > lineTop;
-        });
-
-        if (existingLine) {
-          existingLine.elements.push({ child, layout });
-          // 라인 범위 확장 (가장 위쪽 y와 가장 아래쪽 bottom 기준)
-          const newTop = Math.min(existingLine.y, elementTop);
-          const newBottom = Math.max(existingLine.y + existingLine.height, elementBottom);
-          existingLine.y = newTop;
-          existingLine.height = newBottom - newTop;
-        } else {
-          // 새 라인 생성
-          lines.push({
-            y: layout.y,
-            height: layout.height,
-            elements: [{ child, layout }],
-          });
-        }
-      });
-
-      // y 값 기준으로 라인 정렬
-      lines.sort((a, b) => a.y - b.y);
-
-
-
-      // 라인별로 렌더링
-      let previousLineBottom = 0;
-
-      const lineElements = lines.map((line, lineIndex) => {
-        // 라인의 marginTop 계산
-        const lineMarginTop = lineIndex === 0 ? line.y : Math.max(0, line.y - previousLineBottom);
-        previousLineBottom = line.y + line.height;
-
-        // x 기준으로 요소 정렬
-        line.elements.sort((a, b) => a.layout.x - b.layout.x);
-
-        // 라인 내 요소들 렌더링
-        let previousRight = 0;
-
-        const rowElements = line.elements.map(({ child, layout }, elemIndex) => {
-          // 요소 간 gap 계산 (x 위치 차이)
-          const marginLeft = elemIndex === 0 ? layout.x : Math.max(0, layout.x - previousRight);
-          previousRight = layout.x + layout.width;
-
-          // 🚀 vertical-align 반영: BlockEngine이 계산한 y 위치를 marginTop으로 변환
-          // 라인 상단(line.y) 기준으로 각 요소의 y 오프셋 계산
-          const marginTop = layout.y - line.y;
-
-          // 🚀 CONTAINER_TAGS 처리
-          const childLayoutStyle = styleToLayout(child);
-          const isContainerType = isContainerTagForLayout(child.tag, childLayoutStyle);
-          const childElements = isContainerType ? (pageChildrenMap.get(child.id) ?? []) : [];
-          const hasChildElements = (pageChildrenMap.get(child.id)?.length ?? 0) > 0;
-
-          const effectiveChildLayoutStyle = isContainerType && SELF_PADDING_TAGS.has(child.tag)
-            ? stripSelfRenderedProps(childLayoutStyle)
-            : childLayoutStyle;
-
-          // 🚀 ToggleButtonGroup/TagGroup/TagList: minHeight 미적용 (자식 높이에 맞게 자동 계산)
-          const isToggleButtonGroup = child.tag === 'ToggleButtonGroup';
-          const isFlexContainerTag = child.tag === 'TagGroup' || child.tag === 'TagList';
-          const isYogaSizedContainer = isToggleButtonGroup || isFlexContainerTag;
-          const isAutoHeightSection = child.tag === 'Section' &&
-            hasChildElements &&
-            (childLayoutStyle.height === undefined || childLayoutStyle.height === 'auto');
-          // effectiveChildLayoutStyle에서 width/height 분리
-          // BlockEngine이 계산한 크기가 styleToLayout의 'auto' 기본값에 덮어씌워지지 않도록
-          const { width: _csw, height: _csh, ...childLayoutRest } = effectiveChildLayoutStyle;
-          const childNeedsImplicitFlexLayout = isContainerType && shouldUseImplicitFlexColumn(child.tag, childLayoutRest);
-          const childImplicitSectionBlockPatch = isContainerType
-            ? getImplicitSectionBlockPatch(child.tag, childLayoutRest)
-            : {};
-          // 🚀 Yoga 크기 결정 컨테이너: 명시적 width 설정 여부에 따라 분기
-          // - 명시적 width (100%, 200px 등): BlockEngine이 계산한 layout.width 사용
-          // - 기본값 (fit-content/미지정): Yoga가 자식 크기에 맞춰 자동 계산
-          const childStyle = (child.props as Record<string, unknown>)?.style as Record<string, unknown> | undefined;
-          const hasExplicitWidth = isYogaSizedContainer && childStyle?.width !== undefined
-            && childStyle.width !== 'fit-content';
-          const containerWidthOverride = isYogaSizedContainer
-            ? hasExplicitWidth
-              ? { width: layout.width }
-              : { width: 'auto' as unknown as number, flexGrow: 0, flexShrink: 0 }
-            : { width: layout.width };
-
-          // 🚀 Phase 8: fit-content / auto height 처리
-          // DropflowBlockEngine은 leaf 요소(Button, Text 등)의 내부 콘텐츠를 모르므로:
-          // - width: fit-content → block auto(=100%) 잘못 계산 → Yoga auto로 위임
-          // - height: auto/undefined → 콘텐츠 높이 0 → Yoga auto로 위임
-          const rawChildWidth = childStyle?.width;
-          const rawChildHeight = childStyle?.height;
-          const isFitContentWidth = rawChildWidth === 'fit-content';
-          const isLeafAutoHeight = !isContainerType && (
-            rawChildHeight === undefined || rawChildHeight === 'auto' || rawChildHeight === 'fit-content'
-          );
-
-          const containerLayout = isContainerType
-            ? childNeedsImplicitFlexLayout
-              ? {
-                position: 'relative' as const,
-                marginTop,
-                marginLeft,
-                ...containerWidthOverride,
-                height: 'auto' as unknown as number,
-                ...(isYogaSizedContainer ? {} : { minHeight: layout.height }),
-                display: 'flex' as const,
-                flexDirection: 'column' as const,
-                ...childLayoutRest,
-              }
-              : {
-                position: 'relative' as const,
-                marginTop,
-                marginLeft,
-                ...containerWidthOverride,
-                height: 'auto' as unknown as number,
-                ...(isYogaSizedContainer ? {} : { minHeight: layout.height }),
-                ...childLayoutRest,
-                ...childImplicitSectionBlockPatch,
-              }
-            : {
-                position: 'relative' as const,
-                marginTop,
-                marginLeft,
-                // fit-content: Yoga가 콘텐츠 기반으로 자동 결정
-                ...(isFitContentWidth
-                  ? { width: 'auto' as unknown as number, flexGrow: 0 }
-                  : { width: layout.width }),
-                // leaf 요소의 auto height: Yoga에 위임 (엔진 높이는 minHeight로 보존)
-                ...(isAutoHeightSection || isLeafAutoHeight
-                  ? { height: 'auto' as unknown as number, ...(layout.height > 0 ? { minHeight: layout.height } : {}) }
-                  : { height: layout.height }),
-                flexShrink: 0,
-              };
-
-          return (
-            <LayoutContainer
-              key={`custom-${child.id}`}
-              elementId={child.id}
-              layout={containerLayout}
-            >
-              <ElementSprite
-                element={child}
-                onClick={onClick}
-                onDoubleClick={onDoubleClick}
-                childElements={isContainerType ? childElements : undefined}
-                renderChildElement={isContainerType ? (childEl: Element) =>
-                  renderChildInContainer(childEl, layout.width, layout.height, renderTreeFn)
-                : undefined}
-              />
-              {!isContainerType && renderTreeFn(child.id, { width: layout.width, height: layout.height })}
-            </LayoutContainer>
-          );
-        });
-
-        // 라인이 하나의 요소만 가지면 flex row 래퍼 불필요
-        if (rowElements.length === 1) {
-          return (
-            <LayoutContainer
-              key={`line-${lineIndex}`}
-              layout={{
-                position: 'relative' as const,
-                marginTop: lineMarginTop,
-                width: availableWidth,
-                display: 'flex' as const,
-                flexDirection: 'row' as const,
-                alignItems: 'flex-start' as const,  // 각 요소의 marginTop으로 vertical-align 반영
-                flexShrink: 0,
-              }}
-            >
-              {rowElements}
-            </LayoutContainer>
-          );
-        }
-
-        // 여러 요소가 있는 라인은 flex row로 감싸기
-        return (
-          <LayoutContainer
-            key={`line-${lineIndex}`}
-            layout={{
-              position: 'relative' as const,
-              marginTop: lineMarginTop,
-              width: availableWidth,
-              display: 'flex' as const,
-              flexDirection: 'row' as const,
-              alignItems: 'flex-start' as const,  // 각 요소의 marginTop으로 vertical-align 반영
-              flexWrap: 'nowrap' as const,
-              flexShrink: 0,
-            }}
-          >
-            {rowElements}
-          </LayoutContainer>
-        );
-      });
-
-      const isSectionBlockParent = parentElement.tag === 'Section' && parentDisplay !== 'flex' && parentDisplay !== 'inline-flex';
-      // 🚀 부모가 명시적 flex인 경우 justify/align 속성을 래퍼에 전달
-      // Taffy가 leaf 요소의 콘텐츠 크기를 모르므로, 정확한 x/y 계산이 불가능할 수 있음.
-      // Yoga(@pixi/layout)에 부모의 flex 속성을 전달하여 올바른 배치를 보장.
-      const isParentExplicitFlex = parentDisplay === 'flex' || parentDisplay === 'inline-flex';
-      const parentFlexProps = isParentExplicitFlex ? {
-        flexDirection: (parentStyle?.flexDirection as string | undefined) ?? 'row',
-        justifyContent: parentStyle?.justifyContent as string | undefined,
-        alignItems: parentStyle?.alignItems as string | undefined,
-        alignContent: parentStyle?.alignContent as string | undefined,
-        flexWrap: parentStyle?.flexWrap as string | undefined,
-        ...(parentStyle?.gap !== undefined ? { gap: parseFloat(String(parentStyle.gap)) || 0 } : {}),
-        ...(parentStyle?.rowGap !== undefined ? { rowGap: parseFloat(String(parentStyle.rowGap)) || 0 } : {}),
-        ...(parentStyle?.columnGap !== undefined ? { columnGap: parseFloat(String(parentStyle.columnGap)) || 0 } : {}),
-      } : {};
-      // 🚀 flex column 래퍼로 라인들을 감싸기
+      // 엔진 결과의 x/y로 직접 배치 (Yoga 불필요)
       return (
-        <LayoutContainer
-          key={`custom-wrapper-${parentElement.id}`}
-          layout={{
-            position: isSectionBlockParent ? ('relative' as const) : ('absolute' as const),
-            ...(isSectionBlockParent
-              ? { marginLeft: paddingOffsetX, marginTop: paddingOffsetY, marginBottom: parentPadding.bottom }
-              : { left: paddingOffsetX, top: paddingOffsetY }),
-            width: availableWidth,
-            ...(isParentExplicitFlex ? { height: availableHeight } : {}),
-            display: 'flex' as const,
-            ...(isParentExplicitFlex
-              ? parentFlexProps  // 부모의 flex 속성 전달 → Yoga가 직접 배치
-              : { flexDirection: 'column' as const, alignItems: 'flex-start' as const }),
-          }}
-        >
-          {isParentExplicitFlex
-            ? /* Flex 부모: Yoga가 직접 배치하므로 라인 그룹 대신 자식 직접 렌더링 */
-              lines.flatMap((line) => line.elements.map(({ child, layout }) => {
-                const childLayoutStyle = styleToLayout(child);
-                const isContainerType = isContainerTagForLayout(child.tag, childLayoutStyle);
-                const childElements = isContainerType ? (pageChildrenMap.get(child.id) ?? []) : [];
-                const effectiveChildLayoutStyle = isContainerType && SELF_PADDING_TAGS.has(child.tag)
-                  ? stripSelfRenderedProps(childLayoutStyle)
-                  : childLayoutStyle;
-                const { width: _csw, height: _csh, ...childLayoutRest } = effectiveChildLayoutStyle;
-                const childStyle = (child.props as Record<string, unknown>)?.style as Record<string, unknown> | undefined;
-                const rawChildWidth = childStyle?.width;
-                const rawChildHeight = childStyle?.height;
-                const isFitContentWidth = rawChildWidth === 'fit-content';
-                const isLeafAutoHeight = !isContainerType && (
-                  rawChildHeight === undefined || rawChildHeight === 'auto' || rawChildHeight === 'fit-content'
-                );
-                const hasChildElements = (pageChildrenMap.get(child.id)?.length ?? 0) > 0;
-                const childNeedsImplicitFlexLayout = isContainerType && shouldUseImplicitFlexColumn(child.tag, childLayoutRest);
-                const childImplicitSectionBlockPatch = isContainerType
-                  ? getImplicitSectionBlockPatch(child.tag, childLayoutRest)
-                  : {};
-                const isAutoHeightSection = child.tag === 'Section' &&
-                  hasChildElements &&
-                  (childLayoutStyle.height === undefined || childLayoutStyle.height === 'auto');
-                const isYogaSizedContainer = child.tag === 'ToggleButtonGroup' || child.tag === 'TagGroup' || child.tag === 'TagList';
-                const hasExplicitWidth = isYogaSizedContainer && childStyle?.width !== undefined && childStyle.width !== 'fit-content';
-                const containerWidthOverride = isYogaSizedContainer
-                  ? hasExplicitWidth
-                    ? { width: layout.width }
-                    : { width: 'auto' as unknown as number, flexGrow: 0, flexShrink: 0 }
-                  : isFitContentWidth
-                    ? { width: 'auto' as unknown as number, flexGrow: 0 }
-                    : { width: layout.width };
-                const heightOverride = isAutoHeightSection || isLeafAutoHeight
-                  ? { height: 'auto' as unknown as number, ...(layout.height > 0 ? { minHeight: layout.height } : {}) }
-                  : { height: layout.height };
+        <pixiContainer key={`engine-wrapper-${parentElement.id}`} x={paddingOffsetX} y={paddingOffsetY}>
+          {children.map((child) => {
+            if (!renderIdSet.has(child.id)) return null;
+            const layout = layoutMap.get(child.id);
+            if (!layout) return null;
 
-                const containerLayout = isContainerType
-                  ? childNeedsImplicitFlexLayout
-                    ? { position: 'relative' as const, ...containerWidthOverride, ...heightOverride, display: 'flex' as const, flexDirection: 'column' as const, ...childLayoutRest }
-                    : { position: 'relative' as const, ...containerWidthOverride, ...heightOverride, ...childLayoutRest, ...childImplicitSectionBlockPatch }
-                  : { position: 'relative' as const, ...containerWidthOverride, ...heightOverride, ...childLayoutRest };
+            const childStyle = child.props?.style as Record<string, unknown> | undefined;
+            const isContainerType = isContainerTagForLayout(child.tag, childStyle);
+            const childElements = isContainerType ? (pageChildrenMap.get(child.id) ?? []) : [];
 
-                return (
-                  <LayoutContainer key={child.id} elementId={child.id} layout={containerLayout}>
-                    <ElementSprite
-                      element={child}
-                      onClick={onClick}
-                      onDoubleClick={onDoubleClick}
-                      childElements={isContainerType ? childElements : undefined}
-                      renderChildElement={isContainerType ? (childEl: Element) =>
-                        renderChildInContainer(childEl, resolveLayoutSize(containerLayout.width, availableWidth), resolveLayoutSize(containerLayout.height, availableHeight), renderTreeFn)
-                      : undefined}
-                    />
-                    {!isContainerType && renderTreeFn(child.id, { width: resolveLayoutSize(containerLayout.width, availableWidth), height: resolveLayoutSize(containerLayout.height, availableHeight) })}
-                  </LayoutContainer>
-                );
-              }))
-            : lineElements}
-        </LayoutContainer>
+            return (
+              <DirectContainer
+                key={child.id}
+                elementId={child.id}
+                x={layout.x}
+                y={layout.y}
+                width={layout.width}
+                height={layout.height}
+              >
+                <ElementSprite
+                  element={child}
+                  onClick={onClick}
+                  onDoubleClick={onDoubleClick}
+                  childElements={isContainerType ? childElements : undefined}
+                  renderChildElement={isContainerType && childElements.length > 0
+                    ? createContainerChildRenderer(child, layout.width, layout.height)
+                    : undefined}
+                />
+                {!isContainerType && renderTreeFn(child.id, { width: layout.width, height: layout.height })}
+              </DirectContainer>
+            );
+          })}
+        </pixiContainer>
       );
     }
 
+    // 재귀 렌더 트리
     function renderTree(parentId: string | null, parentComputedSize?: { width: number; height: number }): React.ReactNode {
       const children = pageChildrenMap.get(parentId) ?? [];
       if (children.length === 0) return null;
 
-      // 🚀 Phase 4: 부모의 display 확인하여 엔진 선택
       const parentElement = parentId ? elementById.get(parentId) : bodyElement;
-      const parentStyle = parentElement?.props?.style as Record<string, unknown> | undefined;
-      const rawParentDisplay = parentStyle?.display as string | undefined;
-      const parentDisplay = rawParentDisplay ?? (parentElement?.tag === 'Section' ? 'block' : undefined);
+      if (!parentElement) return null;
 
-      // 커스텀 엔진(Taffy/Dropflow)으로 레이아웃 계산
-      if (parentElement) {
-        return renderWithCustomEngine(parentElement, children, renderTree, parentComputedSize);
-      }
-
-      // 부모 요소가 없는 경우 @pixi/layout 폴백
-      const parentLayout = parentElement ? styleToLayout(parentElement) : {};
-      // % 해석을 위한 부모 computed 크기 (parentComputedSize 또는 pageWidth/pageHeight 폴백)
-      const treeParentWidth = parentComputedSize?.width ?? pageWidth;
-      const treeParentHeight = parentComputedSize?.height ?? pageHeight;
-
-      return children.map((child) => {
-        if (!renderIdSet.has(child.id)) return null;
-
-        // Element의 style에서 layout 속성 추출
-        // @pixi/layout이 flexbox 기반으로 자동 배치
-        const baseLayout = styleToLayout(child);
-
-        // 🚀 자체 padding/border 렌더링 컴포넌트: 외부 LayoutContainer에서 padding/border 제거
-        // PixiButton 등은 자체적으로 padding/border를 그래픽 크기에 반영하므로
-        // Yoga에도 전달하면 이중 적용 (위치 이동 + 크기 변경)
-        const effectiveLayout = SELF_PADDING_TAGS.has(child.tag)
-          ? stripSelfRenderedProps(baseLayout)
-          : baseLayout;
-
-        // 🚀 Phase 9: children이 있지만 flexDirection이 없으면 기본 flex 레이아웃 적용
-        // 이렇게 하면 children이 0,0에 쌓이는 문제 해결
-        const hasChildren = (pageChildrenMap.get(child.id)?.length ?? 0) > 0;
-
-        // 🚀 Phase 8: CSS display: block 요소에 flexBasis: '100%' 적용
-        // 부모가 암시적 flex-row일 때 block 요소가 한 줄 전체를 차지하도록
-        // 단, 부모가 명시적으로 display:flex를 설정한 경우 CSS flex 명세에 따라
-        // block 요소도 flex item으로 취급 → flexBasis: '100%' 미적용
-        const isBlockElement = BLOCK_TAGS.has(child.tag);
-        const parentHasExplicitFlex = parentDisplay === 'flex' || parentDisplay === 'inline-flex';
-        // Body 기본값: rootLayout은 항상 flexDirection: 'row' (bodyLayout에서 override 가능)
-        const isParentFlexRow = parentElement === bodyElement
-          ? (parentLayout.flexDirection ?? 'row') === 'row'
-          : parentLayout.flexDirection === 'row' || (!parentLayout.flexDirection && parentLayout.display === 'flex');
-        // styleToLayout은 기본 width: 'auto'를 반환하므로, 사용자가 명시적으로
-        // 설정한 width만 체크 (auto는 "미지정"으로 취급)
-        const hasExplicitWidth = effectiveLayout.width !== undefined && effectiveLayout.width !== 'auto';
-        const blockLayout = isBlockElement && !hasExplicitWidth && isParentFlexRow
-          ? parentHasExplicitFlex
-            ? { flexGrow: 1, flexShrink: 1 }              // 명시적 flex row: 나머지 공간 채움
-            : { flexBasis: '100%' as const }               // 암시적 flex row: 한 줄 전체 차지 (block 동작)
-          : {};
-        // 🚀 Block 요소 width 강제: flex column에서 align-items: flex-start여도 전체 너비 차지
-        // alignSelf: 'stretch'는 Yoga에서 height에도 영향 → width: '100%'로 명시적 처리
-        // effectiveLayout 뒤에 spread하여 styleToLayout의 width: 'auto'를 덮어씀
-        const blockWidthOverride = isBlockElement && !hasExplicitWidth && !isParentFlexRow
-          ? { width: '100%' as const }
-          : {};
-
-        // 🚀 자식 요소에 display: flex가 있으면 해당 속성 적용
-        // 🚀 Phase 12: position: 'relative' 명시적 설정
-        // custom engine(block/grid) → @pixi/layout(flex) 전환 시
-        // Yoga가 이전 position: 'absolute'를 유지하는 문제 방지
-        // baseLayout에 position: 'absolute'가 있으면 그것으로 override됨
-        //
-        // 🚀 Phase 12 Fix: flexShrink 조건부 기본값 (CSS 동작 에뮬레이션)
-        //
-        // CSS 동작:
-        //   - flex-shrink 기본값 = 1 (축소 허용)
-        //   - min-width 기본값 = auto (콘텐츠 크기 이하로 축소 방지)
-        //   → 퍼센트 width: 부모 기준으로 비례 축소됨
-        //   → 고정/미지정 width: 콘텐츠 크기까지만 축소
-        //
-        // Yoga 동작:
-        //   - flex-shrink 기본값 = 0
-        //   - min-width 기본값 = 0 (콘텐츠 크기 이하로도 축소 → 겹침)
-        //
-        // 조건부 분기:
-        //   - 퍼센트 width/flexBasis → flexShrink: 1 (CSS처럼 비례 축소 허용)
-        //   - 고정/미지정 width → flexShrink: 0 (min-width: auto 에뮬레이션)
-        // 사용자가 명시적으로 flexShrink를 설정하면 그 값이 우선
-        const hasPercentSize =
-          (typeof effectiveLayout.width === 'string' && effectiveLayout.width.endsWith('%')) ||
-          (typeof effectiveLayout.flexBasis === 'string' && String(effectiveLayout.flexBasis).endsWith('%'));
-        const flexShrinkDefault = effectiveLayout.flexShrink !== undefined
-          ? {}
-          : { flexShrink: hasPercentSize ? 1 : 0 };
-        // 🚀 Container 타입(Card, Panel 등)은 child element 없이도 내부 Yoga 레이아웃이
-        // 올바르게 계산되도록 display: flex + flexDirection: column 보장
-        // (PixiCard 등이 내부에서 flex column 레이아웃을 사용하므로 외부도 동기화)
-        const isContainerTag = isContainerTagForLayout(child.tag, effectiveLayout);
-        const needsFlexLayout = (hasChildren || isContainerTag) && shouldUseImplicitFlexColumn(child.tag, effectiveLayout);
-        const implicitSectionBlockPatch = !needsFlexLayout
-          ? getImplicitSectionBlockPatch(child.tag, effectiveLayout)
-          : {};
-        // 🚀 @pixi/layout의 formatStyles는 이전 스타일과 merge하므로,
-        // 부모 flexDirection 변경 시 이전 blockLayout의 flexBasis/flexGrow가 잔류.
-        // 명시적 기본값으로 stale 속성을 항상 리셋.
-        const blockLayoutDefaults = { flexBasis: 'auto' as const, flexGrow: 0 };
-        const containerLayout = needsFlexLayout
-          ? { position: 'relative' as const, ...blockLayoutDefaults, ...flexShrinkDefault, display: 'flex' as const, flexDirection: 'column' as const, ...blockLayout, ...effectiveLayout, ...blockWidthOverride }
-          : { position: 'relative' as const, ...blockLayoutDefaults, ...flexShrinkDefault, ...blockLayout, ...effectiveLayout, ...blockWidthOverride, ...implicitSectionBlockPatch };
-
-        // 🚀 Phase 10: Container 타입은 children을 ElementSprite에 전달
-        // Container 컴포넌트가 children을 배경 안에 렌더링
-        const isContainerType = isContainerTagForLayout(child.tag, effectiveLayout);
-        const childElements = isContainerType ? (pageChildrenMap.get(child.id) ?? []) : [];
-
-        // LayoutContainer: layout + registry 등록을 함께 처리
-        // SelectionBox가 올바른 위치에 표시되도록 함
-        return (
-          <LayoutContainer key={child.id} elementId={child.id} layout={containerLayout}>
-            <ElementSprite
-              element={child}
-              onClick={onClick}
-              onDoubleClick={onDoubleClick}
-              childElements={isContainerType ? childElements : undefined}
-              renderChildElement={isContainerType ? (childEl: Element) =>
-                renderChildInContainer(childEl, resolveLayoutSize(containerLayout.width, treeParentWidth), resolveLayoutSize(containerLayout.height, treeParentHeight), renderTree)
-              : undefined}
-            />
-            {/* Container 타입이 아닌 경우에만 children을 형제로 렌더링 */}
-            {!isContainerType && renderTree(child.id, { width: resolveLayoutSize(containerLayout.width, treeParentWidth), height: resolveLayoutSize(containerLayout.height, treeParentHeight) })}
-          </LayoutContainer>
-        );
-      });
+      return renderWithCustomEngine(parentElement, children, renderTree, parentComputedSize);
     }
 
     return renderTree(bodyElement?.id ?? null);
     // wasmLayoutReady: WASM 로드 완료 시 selectEngine()이 Taffy를 반환하므로 재계산 필요
-  }, [pageChildrenMap, renderIdSet, onClick, onDoubleClick, bodyElement, elementById, pageWidth, pageHeight, CONTAINER_TAGS, BLOCK_TAGS, SELF_PADDING_TAGS, wasmLayoutReady]);
+  }, [pageChildrenMap, renderIdSet, onClick, onDoubleClick, bodyElement, elementById, pageWidth, pageHeight, CONTAINER_TAGS, wasmLayoutReady]);
 
-  // 🚀 Phase 7: @pixi/layout 루트 컨테이너 layout 설정
-  // Body 요소의 flex 스타일을 적용하여 자식 요소들이 올바르게 배치되도록 함
-  //
-  // 🚀 Phase 13: CSS border-box 모델 에뮬레이션
-  // CSS는 기본적으로 border-box (width가 border+padding+content 포함)
-  // Yoga는 기본적으로 content-box (width가 content만, padding/border는 외부에 추가)
-  //
-  // 해결책:
-  // - width/height = content-box (pageWidth - border - padding)
-  // - padding/border = undefined (Yoga에 전달하지 않음)
-  // - offset Container로 border+padding 안쪽에서 자식 배치
+  // body의 border+padding 오프셋 계산 (자식 시작 위치)
   const bodyStyle = bodyElement?.props?.style as Record<string, unknown> | undefined;
   const bodyBorder = useMemo(() => parseBorder(bodyStyle), [bodyStyle]);
   const bodyPadding = useMemo(() => parsePadding(bodyStyle), [bodyStyle]);
-
-  // content-box 크기 (CSS에서 자식의 100% 기준)
-  const contentWidth = pageWidth - bodyBorder.left - bodyBorder.right - bodyPadding.left - bodyPadding.right;
-  const contentHeight = pageHeight - bodyBorder.top - bodyBorder.bottom - bodyPadding.top - bodyPadding.bottom;
 
   // 자식 시작 위치 오프셋 (border + padding 안쪽)
   const contentOffsetX = bodyBorder.left + bodyPadding.left;
   const contentOffsetY = bodyBorder.top + bodyPadding.top;
 
-  const rootLayout = useMemo(() => {
-    // Body 요소의 layout 스타일 가져오기
-    const bodyLayout = bodyElement ? styleToLayout(bodyElement) : {};
-
-    // Body의 flexbox 속성 적용 (width/height는 page 크기로 고정)
-    // 🚀 Phase 8: CSS body 기본값 동기화
-    // - CSS body(block) + inline-block 자식들 → 가로 배치 + 줄바꿈
-    // - @pixi/layout에서 이를 재현: flexDirection: 'row' + flexWrap: 'wrap'
-    // - justifyContent: 'flex-start' → 좌측부터 순서대로 배치 (CSS inline-block 동작)
-    // 🚀 Phase 9: display: 'flex' 명시적 추가 - @pixi/layout이 flex 컨테이너로 인식하도록
-    // 🚀 Phase 12: body가 display: flex를 명시한 경우 CSS flex 기본값 사용
-    // - CSS flex 기본값: flexWrap: 'nowrap', alignItems: 'stretch', alignContent: 'stretch'
-    // - 암시적(block) 기본값: flexWrap: 'wrap', alignItems: 'flex-start', alignContent: 'flex-start'
-    // - Yoga에서 flexWrap: 'wrap' + alignContent: 'flex-start'는 alignItems를 무시하므로
-    //   body가 flex일 때 CSS 기본값을 적용해야 justify-content/align-items가 정상 동작
-    const isBodyFlex = bodyLayout.display === 'flex';
-    // 🚀 bodyLayout에서 display를 분리하여 항상 'flex'로 강제
-    // body가 display: 'block'일 때 bodyLayout.display = 'block'이 spread되면
-    // @pixi/layout(Yoga)의 레이아웃 계산이 비정상 동작 → 중첩 flex 컨테이너 깨짐
-    // 커스텀 엔진(BlockEngine)이 block 레이아웃을 외부에서 처리하므로
-    // Yoga 트리의 루트 노드는 항상 flex 컨텍스트로 유지해야 함
-    const { display: _bodyDisplay, ...bodyLayoutWithoutDisplay } = bodyLayout;
-    const result = {
-      display: 'flex' as const,
-      flexDirection: 'row' as const,
-      flexWrap: isBodyFlex ? ('nowrap' as const) : ('wrap' as const),
-      justifyContent: 'flex-start' as const,
-      alignItems: isBodyFlex ? ('stretch' as const) : ('flex-start' as const),
-      alignContent: isBodyFlex ? ('stretch' as const) : ('flex-start' as const),
-      ...bodyLayoutWithoutDisplay,
-      // 🚀 Phase 13: content-box 크기로 설정 (자식의 100% 기준)
-      width: Math.max(0, contentWidth),
-      height: Math.max(0, contentHeight),
-      // padding/border는 Yoga에 전달하지 않음 (offset Container에서 처리)
-      padding: undefined,
-      paddingTop: undefined,
-      paddingRight: undefined,
-      paddingBottom: undefined,
-      paddingLeft: undefined,
-      borderWidth: undefined,
-      borderTopWidth: undefined,
-      borderRightWidth: undefined,
-      borderBottomWidth: undefined,
-      borderLeftWidth: undefined,
-      position: 'relative' as const,
-    };
-
-    return result;
-  }, [pageWidth, pageHeight, bodyElement, contentWidth, contentHeight]);
-
   return (
-    // 🚀 Phase 13: offset Container로 body의 border+padding 안쪽에서 자식 배치
-    // PixiJS Container의 x/y는 @pixi/layout의 layout prop과 별도로 적용됨
     <pixiContainer
       label="ElementsLayer"
       x={contentOffsetX}
       y={contentOffsetY}
-      layout={rootLayout as unknown as LayoutOptions}
       eventMode="static"
       interactiveChildren={true}
     >
-      {/* 🚀 성능 최적화: isSelected prop 제거 - 각 ElementSprite가 자체 구독 */}
-      {/* 🚀 Phase 11: visibleElements 기준으로 ancestor까지 포함한 계층 렌더링 */}
       {renderedTree}
     </pixiContainer>
   );
@@ -1415,8 +816,7 @@ export function BuilderCanvas({
   const selectionBoxRef = useRef<SelectionBoxHandle>(null);
   const dragPointerRef = useRef<{ x: number; y: number } | null>(null);
   const [containerEl, setContainerEl] = useState<HTMLDivElement | null>(null);
-  // 🚀 Phase 8: Application + LayoutSystem 초기화 완료 상태
-  // Phase 7 이후 Yoga 직접 사용하지 않으나, @pixi/layout LayoutSystem이 내부적으로 초기화
+  // PixiJS Application 초기화 완료 상태
   const [appReady, setAppReady] = useState(false);
   // 🚀 Phase 9: Rust WASM 로드 완료 상태 (Taffy/Grid 엔진 활성화 시점에 레이아웃 재계산 트리거)
   const [wasmLayoutReady, setWasmLayoutReady] = useState(() => isRustWasmReady());
@@ -1436,12 +836,9 @@ export function BuilderCanvas({
     [isInteracting, containerSize]
   );
 
-  // 🚀 Phase 8: LayoutSystem.init()에 위임 (Yoga 내부 초기화)
   // Application onInit 콜백에서 appReady 설정 (아래 onInit prop 참고)
-  // Phase 7+: TaffyFlexEngine/TaffyGridEngine이 기본이므로 Yoga 직접 사용 없음
-  // @pixi/layout은 canvas UI 컴포넌트(PixiBreadcrumbs, PixiTabs 등)에서 여전히 사용
 
-  // 🚀 Phase 9: WASM 로드 완료 시 레이아웃 재계산 트리거
+  // WASM 로드 완료 시 레이아웃 재계산 트리거
   // Rust WASM(Taffy)이 비동기로 로드되므로, 로드 완료 시점에 renderedTree 재계산 필요
   useEffect(() => {
     if (wasmLayoutReady) return;
@@ -1491,9 +888,7 @@ export function BuilderCanvas({
   const syncPixiVersion = useCanvasSyncStore((state) => state.syncPixiVersion);
   const renderVersion = useCanvasSyncStore((state) => state.renderVersion);
 
-  // 🚀 Phase 6: calculateLayout 제거 - @pixi/layout이 자동으로 레이아웃 처리
-
-  // 🚀 elementsMap을 직접 사용 (elements로부터 중복 Map 생성 제거)
+  // elementsMap을 직접 사용 (elements로부터 중복 Map 생성 제거)
   const elementsMap = useStore((state) => state.elementsMap);
   const elementById = elementsMap;
 

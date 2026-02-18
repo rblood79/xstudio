@@ -1884,7 +1884,7 @@ export const ElementSprite = memo(function ElementSprite({
               cursor="default"
               onPointerDown={handleContainerPointerDown}
             />
-            <pixiContainer layout={{ position: 'absolute' as const, left: 0, top: 0, right: 0, bottom: 0 }}>
+            <pixiContainer x={0} y={0}>
               <BoxSprite element={effectiveElement} isSelected={isSelected} onClick={onClick} onDoubleClick={onDoubleClick} />
             </pixiContainer>
             {childElements.map((childEl) => renderChildElement(childEl))}
@@ -1912,14 +1912,14 @@ export const ElementSprite = memo(function ElementSprite({
       if (childElements && childElements.length > 0 && renderChildElement) {
         return (
           <>
-            {/* Non-layout 히트 영역: 컨테이너 원점(0,0)에 전체 Yoga 크기(padding 포함) 커버 */}
+            {/* 히트 영역: 컨테이너 원점(0,0)에 전체 크기 커버 */}
             <pixiGraphics
               draw={drawContainerHitRect}
               eventMode="static"
               cursor="default"
               onPointerDown={handleContainerPointerDown}
             />
-            <pixiContainer layout={{ position: 'absolute' as const, left: 0, top: 0, right: 0, bottom: 0 }}>
+            <pixiContainer x={0} y={0}>
               <BoxSprite element={effectiveElement} isSelected={isSelected} onClick={onClick} onDoubleClick={onDoubleClick} />
             </pixiContainer>
             {childElements.map((childEl) => renderChildElement(childEl))}

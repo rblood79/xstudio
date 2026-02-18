@@ -292,18 +292,11 @@ export const PixiBadge = memo(function PixiBadge({
     [badgeSize.width, badgeSize.height]
   );
 
-  // @pixi/layout에 크기 전달 - Yoga 레이아웃 계산용
-  const badgeLayout = useMemo(() => ({
-    width: badgeSize.width,
-    height: badgeSize.height,
-  }), [badgeSize.width, badgeSize.height]);
-
   return (
     <pixiContainer
       ref={(c: PixiContainer | null) => {
         containerRef.current = c;
       }}
-      layout={badgeLayout}
     >
       {/* 배지 배경 */}
       <pixiGraphics draw={drawBadge} />

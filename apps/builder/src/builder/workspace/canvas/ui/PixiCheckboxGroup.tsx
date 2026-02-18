@@ -207,16 +207,8 @@ const CheckboxItem = memo(function CheckboxItem({
   }, [option.value, onToggle]);
 
   return (
-    <pixiContainer
-      layout={{
-        display: 'flex',
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: labelGap,
-        width: itemWidth,
-      }}
-    >
-      <pixiContainer layout={{ width: checkboxSize, height: checkboxSize }}>
+    <pixiContainer>
+      <pixiContainer>
         {/* 체크박스 */}
         <pixiGraphics
           draw={drawCheckbox}
@@ -230,7 +222,6 @@ const CheckboxItem = memo(function CheckboxItem({
       <pixiText
         text={option.label}
         style={textStyle}
-        layout={{ isLeaf: true }}
         eventMode="static"
         cursor="default"
         onPointerDown={handlePointerDown}
@@ -351,23 +342,6 @@ export const PixiCheckboxGroup = memo(function PixiCheckboxGroup({
   const labelHeight = groupLabel ? labelPreset.fontSize + 8 : 0;
   const itemWidth = 120;
 
-  // 🚀 Phase 11: CSS 변수 기반 gap
-  const itemsLayout = useMemo(() => ({
-    display: 'flex' as const,
-    flexDirection: (isHorizontal ? 'row' : 'column') as 'row' | 'column',
-    gap: isHorizontal ? 0 : sizePreset.gap,
-  }), [isHorizontal, sizePreset.gap]);
-
-  // 🚀 Phase 11: CSS .react-aria-CheckboxGroup 동기화
-  // CSS: .react-aria-CheckboxGroup { display: flex; flex-direction: column; gap: var(--gap); }
-  // CSS block 요소는 기본적으로 width: 100%
-  const groupLayout = useMemo(() => ({
-    display: 'flex' as const,
-    flexDirection: 'column' as const,
-    gap: sizePreset.gap,
-    width: '100%' as unknown as number,
-  }), [sizePreset.gap]);
-
   // 🚀 Phase 11: 전체 그룹 크기 계산 (hitArea용) - CSS 변수 기반
   const groupDimensions = useMemo(() => {
     const optionCount = options.length;
@@ -427,19 +401,18 @@ export const PixiCheckboxGroup = memo(function PixiCheckboxGroup({
   );
 
   return (
-    <pixiContainer layout={groupLayout}>
+    <pixiContainer>
       {/* CheckboxGroup 라벨 */}
       {groupLabel && (
         <pixiText
           text={groupLabel}
           style={labelTextStyle}
-          layout={{ isLeaf: true }}
           eventMode="none"
         />
       )}
 
       {/* Checkbox 옵션들 */}
-      <pixiContainer layout={itemsLayout}>
+      <pixiContainer>
         {options.map((option, index) => {
           const isOptionChecked = selectedValues.includes(option.value);
 
@@ -462,10 +435,9 @@ export const PixiCheckboxGroup = memo(function PixiCheckboxGroup({
         })}
       </pixiContainer>
 
-      {/* 🚀 Phase 19: 투명 히트 영역 (그룹 전체 선택용) - position: absolute로 레이아웃에서 제외 */}
+      {/* 🚀 Phase 19: 투명 히트 영역 (그룹 전체 선택용) */}
       <pixiGraphics
         draw={drawHitArea}
-        layout={{ position: 'absolute', top: 0, left: 0 }}
         eventMode="static"
         cursor="default"
         onPointerDown={handleClick}

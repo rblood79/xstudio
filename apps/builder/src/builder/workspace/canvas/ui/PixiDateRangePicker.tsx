@@ -249,35 +249,6 @@ export function PixiDateRangePicker({
     });
   };
 
-  // 🚀 Phase 12: 필드 행 레이아웃
-  const fieldRowLayout = useMemo(() => ({
-    display: 'flex' as const,
-    flexDirection: 'row' as const,
-    alignItems: 'center' as const,
-    gap: sizePreset.gap,
-    position: 'relative' as const,
-  }), [sizePreset.gap]);
-
-  // 🚀 Phase 12: 개별 필드 레이아웃
-  const singleFieldLayout = useMemo(() => ({
-    display: 'flex' as const,
-    alignItems: 'center' as const,
-    width: fieldWidth,
-    height: sizePreset.fieldHeight,
-    paddingLeft: sizePreset.fieldPadding,
-    paddingRight: sizePreset.fieldPadding,
-    position: 'relative' as const,
-  }), [fieldWidth, sizePreset.fieldHeight, sizePreset.fieldPadding]);
-
-  // 🚀 Phase 12: Separator 레이아웃
-  const separatorLayout = useMemo(() => ({
-    display: 'flex' as const,
-    justifyContent: 'center' as const,
-    alignItems: 'center' as const,
-    width: sizePreset.separatorWidth,
-    height: sizePreset.fieldHeight,
-  }), [sizePreset.separatorWidth, sizePreset.fieldHeight]);
-
   return (
     <pixiContainer
       eventMode="static"
@@ -285,28 +256,26 @@ export function PixiDateRangePicker({
       onPointerTap={() => onClick?.(element.id)}
     >
       {/* Fields row */}
-      <pixiContainer layout={fieldRowLayout}>
+      <pixiContainer>
         {/* Start field */}
-        <pixiContainer layout={singleFieldLayout}>
+        <pixiContainer>
           <pixiGraphics
             draw={(g) => drawField(g, fieldWidth)}
-            layout={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
           />
-          <pixiText text={startText} style={fieldTextStyle} layout={{ isLeaf: true }} />
+          <pixiText text={startText} style={fieldTextStyle} />
         </pixiContainer>
 
         {/* Separator */}
-        <pixiContainer layout={separatorLayout}>
-          <pixiText text="→" style={separatorStyle} layout={{ isLeaf: true }} />
+        <pixiContainer>
+          <pixiText text="→" style={separatorStyle} />
         </pixiContainer>
 
         {/* End field */}
-        <pixiContainer layout={singleFieldLayout}>
+        <pixiContainer>
           <pixiGraphics
             draw={(g) => drawField(g, fieldWidth)}
-            layout={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
           />
-          <pixiText text={endText} style={fieldTextStyle} layout={{ isLeaf: true }} />
+          <pixiText text={endText} style={fieldTextStyle} />
         </pixiContainer>
 
         {/* Selection indicator */}
@@ -317,7 +286,6 @@ export function PixiDateRangePicker({
               g.roundRect(-2, -2, totalFieldWidth + 4, sizePreset.fieldHeight + 4, sizePreset.fieldBorderRadius + 2);
               g.stroke({ color: colorPreset.focusBorderColor, width: 2 });
             }}
-            layout={{ position: 'absolute', top: 0, left: 0 }}
           />
         )}
       </pixiContainer>

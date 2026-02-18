@@ -1,14 +1,13 @@
 /**
  * Style to Layout Converter
  *
- * Element의 CSS style을 @pixi/layout의 layout prop으로 변환합니다.
+ * Element의 CSS style을 레이아웃 엔진용 LayoutStyle 객체로 변환합니다.
  *
- * @deprecated Phase 8: 사용자 컨텐츠 레이아웃은 Taffy/Dropflow 엔진이 직접 처리.
- * 이 모듈은 @pixi/layout 기반 LayoutContainer의 layout prop 변환에만 사용됨.
- * Phase 9에서 @pixi/layout 제거 시 LayoutContainer → 직접 위치 지정으로 전환 후 삭제 예정.
+ * @note Phase 11에서 @pixi/layout(Yoga)이 제거됨. 현재 이 모듈은
+ * TaffyFlexEngine의 스타일 파싱과 useLayoutValues 훅에서 사용됨.
  *
  * @since 2025-01-06 Phase 4
- * @updated 2026-02-17 Phase 8 - deprecated 표시
+ * @updated 2026-02-18 Phase 11 - @pixi/layout 제거 완료, 엔진 전용으로 유지
  */
 
 import type { Element } from '../../../../types/core/store.types';

@@ -1,31 +1,28 @@
 /**
  * Pixi ToggleButton
  *
- * 🚀 Phase 1: ToggleButton WebGL 컴포넌트
- *
- * @pixi/ui의 FancyButton을 사용하여 토글 버튼 렌더링
+ * 투명 히트 영역(pixiGraphics) 기반 ToggleButton
+ * - Skia가 시각적 렌더링을 담당, PixiJS는 이벤트 히트 영역만 제공
  * - selected/unselected 상태에 따른 색상 변경
  * - variant (default, primary, secondary, surface) 지원
  * - size (sm, md, lg) 지원
  *
  * @since 2025-12-16 Phase 1 WebGL Migration
+ * @updated 2026-02-18 @pixi/ui FancyButton 의존성 제거 (Skia 렌더링 전환)
  */
 
 import { useExtend } from '@pixi/react';
 import { PIXI_COMPONENTS } from '../pixiSetup';
-import { memo, useCallback, useRef, useEffect, useMemo } from "react";
+import { memo, useCallback, useRef, useMemo } from "react";
 import {
   Container as PixiContainer,
   Graphics as PixiGraphicsClass,
-  Text as PixiText,
   TextStyle,
   CanvasTextMetrics,
 } from "pixi.js";
-import { FancyButton } from "@pixi/ui";
 import type { Element } from "../../../../types/core/store.types";
 import type { CSSStyle } from "../sprites/styleConverter";
 import { cssColorToHex, parseCSSSize } from "../sprites/styleConverter";
-import { drawBox } from "../utils";
 import { measureTextWidth as measureTextWidthCanvas } from "../layout/engines/utils";
 import { useCanvasSyncStore } from "../canvasSync";
 import { parsePadding, parseBorderWidth } from "../sprites/paddingUtils";
@@ -281,60 +278,6 @@ function getToggleButtonLayout(
   };
 }
 
-/**
- * 토글 버튼 배경 Graphics 생성
- *
- * @param borderRadius - 단일 값 또는 [tl, tr, br, bl] 배열
- */
-function createToggleButtonGraphics(
-  width: number,
-  height: number,
-  backgroundColor: number,
-  borderColor: number,
-  borderRadius: number | [number, number, number, number]
-): PixiGraphicsClass {
-  const graphics = new PixiGraphicsClass();
-
-  // 단일 값인 경우 border.radius로 사용, 배열인 경우 borderRadius로 사용
-  const uniformRadius = Array.isArray(borderRadius) ? Math.max(...borderRadius) : borderRadius;
-
-  drawBox(graphics, {
-    width,
-    height,
-    backgroundColor,
-    backgroundAlpha: 1,
-    borderRadius,
-    border: {
-      width: 1,
-      color: borderColor,
-      alpha: 1,
-      style: "solid",
-      radius: uniformRadius,
-    },
-  });
-
-  return graphics;
-}
-
-/**
- * 비활성화 오버레이 생성
- */
-function createDisabledOverlay(
-  width: number,
-  height: number,
-  borderRadius: number | [number, number, number, number]
-): PixiGraphicsClass {
-  const graphics = new PixiGraphicsClass();
-  drawBox(graphics, {
-    width,
-    height,
-    backgroundColor: 0xffffff,
-    backgroundAlpha: 0.5,
-    borderRadius,
-  });
-  return graphics;
-}
-
 // ============================================
 // Component
 // ============================================
@@ -493,213 +436,6 @@ export const PixiToggleButton = memo(function PixiToggleButton({
 
   // Container ref
   const containerRef = useRef<PixiContainer | null>(null);
-  const buttonRef = useRef<FancyButton | null>(null);
-  const disabledOverlayRef = useRef<PixiGraphicsClass | null>(null);
-
-  // FancyButton 생성 및 업데이트
-  useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
-
-    // 기존 요소들 제거
-    if (buttonRef.current) {
-      container.removeChild(buttonRef.current);
-      buttonRef.current.destroy();
-      buttonRef.current = null;
-    }
-    if (disabledOverlayRef.current) {
-      container.removeChild(disabledOverlayRef.current);
-      disabledOverlayRef.current.destroy();
-      disabledOverlayRef.current = null;
-    }
-
-    // 🚀 그룹 내 위치에 따른 borderRadius 계산
-    // CSS 규칙: 그룹 내 버튼은 외곽 모서리만 radius 적용
-    let effectiveBorderRadius: number | [number, number, number, number] = layout.borderRadius;
-
-    if (groupPositionInfo) {
-      const { orientation, isFirst, isLast, isOnly } = groupPositionInfo;
-      const r = layout.borderRadius;
-
-      if (isOnly) {
-        // 단일 버튼: 모든 모서리에 radius
-        effectiveBorderRadius = r;
-      } else if (orientation === 'horizontal') {
-        // 가로 배치
-        if (isFirst) {
-          // 첫 번째: 왼쪽만 [tl, 0, 0, bl]
-          effectiveBorderRadius = [r, 0, 0, r];
-        } else if (isLast) {
-          // 마지막: 오른쪽만 [0, tr, br, 0]
-          effectiveBorderRadius = [0, r, r, 0];
-        } else {
-          // 중간: 모두 0
-          effectiveBorderRadius = [0, 0, 0, 0];
-        }
-      } else {
-        // 세로 배치 (vertical)
-        if (isFirst) {
-          // 첫 번째: 위쪽만 [tl, tr, 0, 0]
-          effectiveBorderRadius = [r, r, 0, 0];
-        } else if (isLast) {
-          // 마지막: 아래쪽만 [0, 0, br, bl]
-          effectiveBorderRadius = [0, 0, r, r];
-        } else {
-          // 중간: 모두 0
-          effectiveBorderRadius = [0, 0, 0, 0];
-        }
-      }
-    }
-
-    // 현재 상태에 따른 색상 선택
-    const bgColor = layout.isToggleSelected
-      ? layout.selectedBackgroundColor
-      : layout.backgroundColor;
-    const hoverBgColor = layout.isToggleSelected
-      ? layout.selectedHoverColor
-      : layout.hoverColor;
-    const pressedBgColor = layout.isToggleSelected
-      ? layout.selectedPressedColor
-      : layout.pressedColor;
-    const borderCol = layout.isToggleSelected
-      ? layout.selectedBorderColor
-      : layout.borderColor;
-    const textCol = layout.isToggleSelected
-      ? layout.selectedTextColor
-      : layout.textColor;
-
-    // 배경 Graphics 생성
-    const defaultView = createToggleButtonGraphics(
-      layout.width,
-      layout.height,
-      bgColor,
-      borderCol,
-      effectiveBorderRadius
-    );
-
-    const hoverView = createToggleButtonGraphics(
-      layout.width,
-      layout.height,
-      hoverBgColor,
-      borderCol,
-      effectiveBorderRadius
-    );
-
-    const pressedView = createToggleButtonGraphics(
-      layout.width,
-      layout.height,
-      pressedBgColor,
-      borderCol,
-      effectiveBorderRadius
-    );
-
-    // TextStyle 및 Text 객체 생성
-    const textStyle = new TextStyle({
-      fill: textCol,
-      fontSize: layout.fontSize,
-      fontFamily: layout.fontFamily,
-      align: "center",
-    });
-
-    const textView = new PixiText({
-      text: buttonText,
-      style: textStyle,
-    });
-
-    // FancyButton 생성
-    // Note: FancyButton은 text를 중앙에 배치하며, padding은 Graphics 크기에 이미 반영됨
-    const button = new FancyButton({
-      defaultView,
-      hoverView,
-      pressedView,
-      text: textView,
-      anchor: 0.5,
-      padding: 0, // 명시적으로 0 설정 (Graphics에 padding이 포함됨)
-    });
-
-    // 버튼 위치 조정
-    button.x = layout.width / 2;
-    button.y = layout.height / 2;
-
-    // FancyButton의 이벤트 모드를 none으로 설정
-    button.eventMode = "none";
-
-    // Container에 추가
-    container.addChild(button);
-    buttonRef.current = button;
-
-    // 비활성화 오버레이 추가
-    if (layout.isDisabled) {
-      const disabledOverlay = createDisabledOverlay(
-        layout.width,
-        layout.height,
-        effectiveBorderRadius
-      );
-      container.addChild(disabledOverlay);
-      disabledOverlayRef.current = disabledOverlay;
-    }
-
-    // Cleanup
-    // ⚠️ try-catch: CanvasTextSystem이 이미 정리된 경우 에러 방지
-    return () => {
-      try {
-        // Graphics 객체 명시적 destroy (GPU 리소스 해제)
-        defaultView.destroy(true);
-        hoverView.destroy(true);
-        pressedView.destroy(true);
-        textView.destroy(true);
-      } catch {
-        // CanvasTextSystem race condition - 무시
-      }
-
-      if (buttonRef.current) {
-        try {
-          if (container.children.includes(buttonRef.current)) {
-            container.removeChild(buttonRef.current);
-          }
-          if (!buttonRef.current.destroyed) {
-            buttonRef.current.destroy({ children: true });
-          }
-        } catch {
-          // ignore
-        }
-        buttonRef.current = null;
-      }
-      if (disabledOverlayRef.current) {
-        try {
-          if (container.children.includes(disabledOverlayRef.current)) {
-            container.removeChild(disabledOverlayRef.current);
-          }
-          if (!disabledOverlayRef.current.destroyed) {
-            disabledOverlayRef.current.destroy(true);
-          }
-        } catch {
-          // ignore
-        }
-        disabledOverlayRef.current = null;
-      }
-    };
-  }, [
-    layout.width,
-    layout.height,
-    layout.backgroundColor,
-    layout.hoverColor,
-    layout.pressedColor,
-    layout.textColor,
-    layout.borderColor,
-    layout.selectedBackgroundColor,
-    layout.selectedHoverColor,
-    layout.selectedPressedColor,
-    layout.selectedTextColor,
-    layout.selectedBorderColor,
-    layout.borderRadius,
-    layout.fontSize,
-    layout.fontFamily,
-    layout.isToggleSelected,
-    layout.isDisabled,
-    buttonText,
-    groupPositionInfo,
-  ]);
 
   // 투명 히트 영역
   const drawHitArea = useCallback(
@@ -739,12 +475,6 @@ export const PixiToggleButton = memo(function PixiToggleButton({
   // 커서 스타일
   // Note: cursorStyle 변수는 사용하지 않음 (Pencil 동작과 일치하도록 항상 default)
 
-  // @pixi/layout에 크기 전달 - Yoga 레이아웃 계산용
-  const containerLayout = useMemo(() => ({
-    width: layout.width,
-    height: layout.height,
-  }), [layout.width, layout.height]);
-
   return (
     <pixiContainer
       x={layout.left}
@@ -752,7 +482,6 @@ export const PixiToggleButton = memo(function PixiToggleButton({
       ref={(c: PixiContainer | null) => {
         containerRef.current = c;
       }}
-      layout={containerLayout}
     >
       {/* 투명 히트 영역 */}
       <pixiGraphics

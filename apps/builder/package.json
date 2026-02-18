@@ -24,9 +24,7 @@
     "@internationalized/date": "^3.10.1",
     "@internationalized/number": "^3.6.5",
     "@material/material-color-utilities": "^0.3.0",
-    "@pixi/layout": "^3.2.0",
     "@pixi/react": "^8.0.5",
-    "@pixi/ui": "^2.3.2",
     "@react-aria/focus": "^3.21.3",
     "@react-aria/i18n": "^3.12.14",
     "@react-aria/utils": "^3.32.0",
@@ -69,7 +67,6 @@
     "tailwindcss-react-aria-components": "^2.0.1",
     "three": "^0.182.0",
     "uuid": "^13.0.0",
-    "yoga-layout": "^3.2.1",
     "zod": "^4.2.1",
     "zustand": "catalog:"
   },

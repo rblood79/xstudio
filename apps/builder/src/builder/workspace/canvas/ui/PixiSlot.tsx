@@ -183,80 +183,33 @@ export function PixiSlot({
     [sizePreset, colorPreset]
   );
 
-  // 🚀 Phase 12: 슬롯 루트 레이아웃
-  const slotLayout = useMemo(() => ({
-    display: 'flex' as const,
-    flexDirection: 'column' as const,
-    justifyContent: 'center' as const,
-    alignItems: 'center' as const,
-    width: slotWidth,
-    height: slotHeight,
-    position: 'relative' as const,
-  }), [slotWidth, slotHeight]);
-
-  // 🚀 Phase 12: 콘텐츠 레이아웃
-  const contentLayout = useMemo(() => ({
-    display: 'flex' as const,
-    flexDirection: 'column' as const,
-    alignItems: 'center' as const,
-    gap: sizePreset.gap,
-  }), [sizePreset.gap]);
-
-  // 🚀 Phase 12: 이름 행 레이아웃
-  const nameRowLayout = useMemo(() => ({
-    display: 'flex' as const,
-    flexDirection: 'row' as const,
-    alignItems: 'center' as const,
-    gap: 8,
-  }), []);
-
-  // 🚀 Phase 12: Required 뱃지 레이아웃
-  const badgeLayout = useMemo(() => ({
-    display: 'flex' as const,
-    alignItems: 'center' as const,
-    paddingLeft: 8,
-    paddingRight: 8,
-    paddingTop: 2,
-    paddingBottom: 2,
-    position: 'relative' as const,
-  }), []);
-
   return (
     <pixiContainer
-      layout={slotLayout}
       eventMode="static"
       cursor="default"
       onPointerTap={() => onClick?.(element.id)}
     >
       {/* Slot container */}
-      <pixiGraphics
-        draw={drawContainer}
-        layout={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
-      />
+      <pixiGraphics draw={drawContainer} />
 
       {/* Empty state content */}
       {isEmpty && (
-        <pixiContainer layout={contentLayout}>
+        <pixiContainer>
           {/* Icon */}
           <pixiGraphics draw={drawIcon} />
 
           {/* Name with optional required badge */}
-          <pixiContainer layout={nameRowLayout}>
+          <pixiContainer>
             <pixiText
               text={name}
               style={nameStyle}
-              layout={{ isLeaf: true }}
             />
             {isRequired && (
-              <pixiContainer layout={badgeLayout}>
-                <pixiGraphics
-                  draw={drawRequiredBadge}
-                  layout={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
-                />
+              <pixiContainer>
+                <pixiGraphics draw={drawRequiredBadge} />
                 <pixiText
                   text="Required"
                   style={requiredStyle}
-                  layout={{ isLeaf: true }}
                 />
               </pixiContainer>
             )}
@@ -266,7 +219,6 @@ export function PixiSlot({
           <pixiText
             text={description}
             style={descriptionStyle}
-            layout={{ isLeaf: true }}
           />
         </pixiContainer>
       )}

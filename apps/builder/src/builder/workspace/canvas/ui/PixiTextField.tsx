@@ -191,57 +191,25 @@ export function PixiTextField({
     onClick?.(element.id);
   }, [element.id, onClick]);
 
-  // 🚀 Phase 12: 루트 레이아웃
-  const rootLayout = useMemo(() => ({
-    display: 'flex' as const,
-    flexDirection: (isRow ? 'row' : 'column') as 'row' | 'column',
-    alignItems: isRow ? ('center' as const) : ('flex-start' as const),
-    gap: sizePreset.gap,
-    position: 'relative' as const,
-  }), [isRow, sizePreset.gap]);
-
-  // 🚀 Phase 12: Input 컨테이너 레이아웃
-  const inputContainerLayout = useMemo(() => ({
-    display: 'flex' as const,
-    flexDirection: 'column' as const,
-    gap: sizePreset.gap,
-  }), [sizePreset.gap]);
-
-  // 🚀 Phase 12: Input 필드 레이아웃
-  const inputFieldLayout = useMemo(() => ({
-    display: 'flex' as const,
-    alignItems: 'center' as const,
-    width: fieldWidth,
-    height: sizePreset.height,
-    paddingLeft: sizePreset.paddingX,
-    paddingRight: sizePreset.paddingX,
-    position: 'relative' as const,
-  }), [fieldWidth, sizePreset.height, sizePreset.paddingX]);
-
   return (
-    <pixiContainer layout={rootLayout}>
+    <pixiContainer>
       {/* Label */}
       {label && (
         <pixiText
           text={label}
           style={labelStyle}
-          layout={{ isLeaf: true }}
         />
       )}
 
       {/* Input container */}
-      <pixiContainer layout={inputContainerLayout}>
+      <pixiContainer>
         {/* Input field */}
-        <pixiContainer layout={inputFieldLayout}>
-          {/* Field background - position: absolute */}
-          <pixiGraphics
-            draw={drawField}
-            layout={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
-          />
+        <pixiContainer>
+          {/* Field background */}
+          <pixiGraphics draw={drawField} />
           <pixiText
             text={displayText}
             style={inputStyle}
-            layout={{ isLeaf: true }}
           />
         </pixiContainer>
 
@@ -250,15 +218,13 @@ export function PixiTextField({
           <pixiText
             text={descriptionText}
             style={descriptionStyle}
-            layout={{ isLeaf: true }}
           />
         )}
       </pixiContainer>
 
-      {/* 🚀 Phase 19: 투명 히트 영역 (클릭 감지용) - position: absolute */}
+      {/* 🚀 Phase 19: 투명 히트 영역 (클릭 감지용) */}
       <pixiGraphics
         draw={drawHitArea}
-        layout={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
         eventMode="static"
         cursor="default"
         onPointerDown={handleClick}

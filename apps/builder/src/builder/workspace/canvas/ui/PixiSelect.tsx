@@ -1,26 +1,22 @@
 /**
  * Pixi Select
  *
- * 🚀 Phase 6.3: @pixi/ui Select 래퍼
- *
- * @pixi/ui의 Select 컴포넌트를 xstudio Element 시스템과 통합
- * 드롭다운 선택 UI를 제공합니다.
+ * 투명 히트 영역(pixiGraphics) 기반 Select
+ * - Skia가 시각적 렌더링을 담당, PixiJS는 이벤트 히트 영역만 제공
+ * - convertToSelectStyle()로 크기 계산 (Skia 렌더링에 필요)
  *
  * @since 2025-12-13 Phase 6.3
+ * @updated 2026-02-18 @pixi/ui Select 의존성 제거 (Skia 렌더링 전환)
  */
 
 import { useExtend } from '@pixi/react';
 import { PIXI_COMPONENTS } from '../pixiSetup';
-import { memo, useCallback, useEffect, useMemo, useRef } from 'react';
-import { useApplication } from '@pixi/react';
-import { Select } from '@pixi/ui';
-import { Container, Graphics, TextStyle } from 'pixi.js';
+import { memo, useCallback, useMemo } from 'react';
+import { Graphics as PixiGraphics } from 'pixi.js';
 import type { Element } from '../../../../types/core/store.types';
 import type { CSSStyle } from '../sprites/styleConverter';
-import { cssColorToHex } from '../sprites/styleConverter';
-import { drawBox } from '../utils';
 
-// 🚀 Spec Migration
+// Spec Migration
 import {
   SelectSpec,
   getSizePreset as getSpecSizePreset,
@@ -37,126 +33,29 @@ export interface PixiSelectProps {
   onChange?: (elementId: string, value: string) => void;
 }
 
-interface SelectOption {
-  value: string;
-  label: string;
-}
-
 // ============================================
 // Style Conversion
 // ============================================
 
 interface SelectLayoutStyle {
-  x: number;
-  y: number;
   width: number;
   height: number;
-  backgroundColor: number;
-  borderColor: number;
-  borderWidth: number;
-  borderRadius: number;
-  textColor: number;
-  fontSize: number;
-  fontFamily: string;
-  paddingLeft: number;
-  paddingRight: number;
-  chevronSize: number;
 }
 
 /**
  * CSS 스타일을 Select 레이아웃 스타일로 변환
- * 🚀 Phase 0: CSS 동기화 - getSelectSizePreset() 사용
  */
 function convertToSelectStyle(style: CSSStyle | undefined, size: string): SelectLayoutStyle {
-  // 🚀 CSS / Spec에서 사이즈 프리셋 읽기
   const sizeSpec = SelectSpec.sizes[size] || SelectSpec.sizes[SelectSpec.defaultSize];
   const specPreset = getSpecSizePreset(sizeSpec, 'light');
-  const sizePreset = {
-    ...specPreset,
-    paddingY: specPreset.paddingY,
-    paddingX: specPreset.paddingX,
-    chevronSize: 12,
-  };
 
   // 높이 계산: fontSize + paddingY * 2 + border (대략적 추정)
-  const defaultHeight = sizePreset.fontSize + sizePreset.paddingY * 2 + 8;
+  const defaultHeight = specPreset.fontSize + specPreset.paddingY * 2 + 8;
 
-  // 🚀 Phase 8: parseCSSSize 제거 - CSS 프리셋 값 사용
   return {
-    x: typeof style?.left === 'number' ? style.left : 0,
-    y: typeof style?.top === 'number' ? style.top : 0,
     width: typeof style?.width === 'number' ? style.width : 200,
     height: typeof style?.height === 'number' ? style.height : defaultHeight,
-    backgroundColor: cssColorToHex(style?.backgroundColor, 0xffffff),
-    borderColor: cssColorToHex(style?.borderColor, 0xd1d5db),
-    borderWidth: typeof style?.borderWidth === 'number' ? style.borderWidth : 1,
-    borderRadius: typeof style?.borderRadius === 'number' ? style.borderRadius : sizePreset.borderRadius,
-    textColor: cssColorToHex(style?.color, 0x000000),
-    fontSize: typeof style?.fontSize === 'number' ? style.fontSize : sizePreset.fontSize,
-    fontFamily: style?.fontFamily || 'Pretendard, sans-serif',
-    paddingLeft: typeof (style?.paddingLeft || style?.padding) === 'number' ? (style?.paddingLeft || style?.padding) as number : sizePreset.paddingX,
-    paddingRight: typeof (style?.paddingRight || style?.padding) === 'number' ? (style?.paddingRight || style?.padding) as number : sizePreset.paddingX,
-    chevronSize: sizePreset.chevronSize,
   };
-}
-
-function parseSelectOptions(props: Record<string, unknown> | undefined): SelectOption[] {
-  if (!props) return [];
-
-  if (Array.isArray(props.options)) {
-    return props.options.map((opt: unknown, index: number) => {
-      if (typeof opt === 'string') {
-        return { value: opt, label: opt };
-      }
-      if (typeof opt === 'object' && opt !== null) {
-        const optObj = opt as Record<string, unknown>;
-        return {
-          value: String(optObj.value || optObj.id || index),
-          label: String(optObj.label || optObj.name || optObj.value || ''),
-        };
-      }
-      return { value: String(index), label: String(opt) };
-    });
-  }
-
-  return [];
-}
-
-// ============================================
-// Graphics Creation
-// ============================================
-
-/**
- * Select 버튼 배경 생성
- * 🚀 Border-Box v2: drawBox 유틸리티 사용
- */
-function createSelectBackground(
-  width: number,
-  height: number,
-  backgroundColor: number,
-  borderColor: number,
-  borderWidth: number,
-  borderRadius: number
-): Graphics {
-  const g = new Graphics();
-
-  // Border-Box v2: drawBox 유틸리티 사용
-  drawBox(g, {
-    width,
-    height,
-    backgroundColor,
-    backgroundAlpha: 1,
-    borderRadius,
-    border: {
-      width: borderWidth,
-      color: borderColor,
-      alpha: 1,
-      style: 'solid',
-      radius: borderRadius,
-    },
-  });
-
-  return g;
 }
 
 // ============================================
@@ -166,7 +65,7 @@ function createSelectBackground(
 /**
  * PixiSelect
  *
- * @pixi/ui의 Select를 사용하여 드롭다운 렌더링
+ * 투명 히트 영역만 제공 (Skia가 시각적 렌더링 담당)
  *
  * @example
  * <PixiSelect
@@ -177,149 +76,43 @@ function createSelectBackground(
 export const PixiSelect = memo(function PixiSelect({
   element,
   onClick,
-  onChange,
 }: PixiSelectProps) {
   useExtend(PIXI_COMPONENTS);
-  const { app } = useApplication();
-  const containerRef = useRef<Container | null>(null);
-  const selectRef = useRef<Select | null>(null);
 
   const style = element.props?.style as CSSStyle | undefined;
   const props = element.props as Record<string, unknown> | undefined;
 
-  // 🚀 Phase 0: size prop 추출 (기본값: 'md')
+  // size prop 추출 (기본값: 'md')
   const size = useMemo(() => String(props?.size || 'md'), [props?.size]);
 
-  // Select 스타일 (CSS 사이즈 프리셋 적용)
+  // Select 스타일 계산 (Skia 렌더링에 필요)
   const layoutStyle = useMemo(() => convertToSelectStyle(style, size), [style, size]);
 
-  // 옵션들
-  const options = useMemo(() => parseSelectOptions(props), [props]);
-
-  // 선택된 값
-  const selectedValue = useMemo(
-    () => String(props?.value || props?.selectedValue || props?.defaultValue || ''),
-    [props?.value, props?.selectedValue, props?.defaultValue]
-  );
-
   // 이벤트 핸들러
-  const handleChange = useCallback(
-    (_index: number, value: string) => {
-      onChange?.(element.id, value);
-    },
-    [element.id, onChange]
-  );
-
   const handleClick = useCallback(() => {
     onClick?.(element.id);
   }, [element.id, onClick]);
 
-  // Select 생성 및 관리
-  useEffect(() => {
-    if (!app?.stage || options.length === 0) return;
+  // 투명 히트 영역
+  const drawHitArea = useCallback(
+    (g: PixiGraphics) => {
+      g.clear();
+      g.rect(0, 0, layoutStyle.width, layoutStyle.height);
+      g.fill({ color: 0xffffff, alpha: 0.001 });
+    },
+    [layoutStyle.width, layoutStyle.height]
+  );
 
-    // 컨테이너 생성
-    const container = new Container();
-    container.x = layoutStyle.x;
-    container.y = layoutStyle.y;
-    container.eventMode = 'static';
-    container.cursor = 'pointer';
-    container.on('pointerdown', handleClick);
-
-    // 텍스트 스타일
-    const textStyle = new TextStyle({
-      fontSize: layoutStyle.fontSize,
-      fontFamily: layoutStyle.fontFamily,
-      fill: layoutStyle.textColor,
-    });
-
-    // @pixi/ui Select 생성
-    const select = new Select({
-      closedBG: createSelectBackground(
-        layoutStyle.width,
-        layoutStyle.height,
-        layoutStyle.backgroundColor,
-        layoutStyle.borderColor,
-        layoutStyle.borderWidth,
-        layoutStyle.borderRadius
-      ),
-      openBG: createSelectBackground(
-        layoutStyle.width,
-        layoutStyle.height * (options.length + 1),
-        layoutStyle.backgroundColor,
-        layoutStyle.borderColor,
-        layoutStyle.borderWidth,
-        layoutStyle.borderRadius
-      ),
-      textStyle,
-      items: {
-        items: options.map((opt) => opt.label),
-        backgroundColor: 0xf9fafb,
-        hoverColor: 0xe5e7eb,
-        width: layoutStyle.width,
-        height: layoutStyle.height,
-      },
-      scrollBox: {
-        width: layoutStyle.width,
-        height: layoutStyle.height * Math.min(options.length, 5),
-      },
-    });
-
-    // 초기 값 설정
-    const selectedIndex = options.findIndex((opt) => opt.value === selectedValue);
-    if (selectedIndex >= 0) {
-      select.value = selectedIndex;
-    }
-
-    // 이벤트 연결
-    select.onSelect.connect(handleChange);
-
-    // 컨테이너에 추가
-    container.addChild(select);
-
-    // Stage에 추가
-    app.stage.addChild(container);
-
-    containerRef.current = container;
-    selectRef.current = select;
-
-    // ⚠️ try-catch: CanvasTextSystem이 이미 정리된 경우 에러 방지
-    return () => {
-      // 이벤트 연결 해제
-      try {
-        select.onSelect.disconnectAll();
-        container.off('pointerdown', handleClick);
-      } catch {
-        // ignore
-      }
-
-      // Stage에서 제거
-      try {
-        app.stage.removeChild(container);
-      } catch {
-        // ignore
-      }
-
-      // Select 내부 Graphics는 Select destroy시 자동 처리됨
-      // Select 및 Container destroy
-      try {
-        if (!select.destroyed) {
-          select.destroy({ children: true });
-        }
-        if (!container.destroyed) {
-          container.destroy({ children: true });
-        }
-      } catch {
-        // ignore
-      }
-
-      containerRef.current = null;
-      selectRef.current = null;
-    };
-  }, [app, layoutStyle, options, selectedValue, handleClick, handleChange]);
-
-  // @pixi/ui는 imperative이므로 JSX 반환 없음
-  return null;
+  return (
+    <pixiContainer>
+      <pixiGraphics
+        draw={drawHitArea}
+        eventMode="static"
+        cursor="pointer"
+        onPointerDown={handleClick}
+      />
+    </pixiContainer>
+  );
 });
 
 export default PixiSelect;

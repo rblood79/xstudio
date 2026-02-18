@@ -121,30 +121,6 @@ export const PixiInput = memo(function PixiInput({
     ? sizePreset.height + (descriptionText ? descPreset.fontSize + sizePreset.gap : 0)
     : labelHeight + sizePreset.height + (descriptionText ? descPreset.fontSize + sizePreset.gap : 0);
 
-  const rootLayout = useMemo(() => ({
-    display: 'flex' as const,
-    flexDirection: 'column' as const,
-    gap: sizePreset.gap,
-  }), [sizePreset.gap]);
-
-  const rowLayout = useMemo(() => ({
-    display: 'flex' as const,
-    flexDirection: 'row' as const,
-    alignItems: 'center' as const,
-    gap: sizePreset.gap,
-  }), [sizePreset.gap]);
-
-  // 🚀 @pixi/layout: layout에 style 값 직접 전달 (% 지원)
-  const inputLayout = useMemo(() => ({
-    width: (styleWidth ?? fallbackWidth) as number,
-    height: sizePreset.height,
-  }), [styleWidth, sizePreset.height]);
-
-  const spacerLayout = useMemo(() => ({
-    width: labelWidth,
-    height: 0,
-  }), [labelWidth]);
-
   // 🚀 Performance: useRef로 hover 상태 관리
   const graphicsRef = useRef<PixiGraphicsType>(null);
 
@@ -247,17 +223,16 @@ export const PixiInput = memo(function PixiInput({
   );
 
   return (
-    <pixiContainer layout={rootLayout}>
+    <pixiContainer>
       {isRow ? (
-        <pixiContainer layout={rowLayout}>
+        <pixiContainer>
           {label && (
             <pixiText
               text={label}
               style={labelStyle}
-              layout={{ isLeaf: true }}
             />
           )}
-          <pixiContainer layout={inputLayout}>
+          <pixiContainer>
             <pixiGraphics
               ref={graphicsRef}
               draw={(g) => drawBackground(g, false)}
@@ -276,10 +251,9 @@ export const PixiInput = memo(function PixiInput({
             <pixiText
               text={label}
               style={labelStyle}
-              layout={{ isLeaf: true }}
             />
           )}
-          <pixiContainer layout={inputLayout}>
+          <pixiContainer>
             <pixiGraphics
               ref={graphicsRef}
               draw={(g) => drawBackground(g, false)}
@@ -296,19 +270,16 @@ export const PixiInput = memo(function PixiInput({
 
       {/* Description / Error message */}
       {descriptionText && (isRow ? (
-        <pixiContainer layout={{ display: 'flex' as const, flexDirection: 'row' as const }}>
-          {label && <pixiContainer layout={spacerLayout} />}
+        <pixiContainer>
           <pixiText
             text={descriptionText}
             style={descriptionStyle}
-            layout={{ isLeaf: true }}
           />
         </pixiContainer>
       ) : (
         <pixiText
           text={descriptionText}
           style={descriptionStyle}
-          layout={{ isLeaf: true }}
         />
       ))}
 

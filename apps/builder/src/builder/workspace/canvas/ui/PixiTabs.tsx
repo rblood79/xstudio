@@ -32,7 +32,6 @@ import {
 } from '@xstudio/specs';
 import { PixiPanel } from "./PixiPanel";
 import { ElementSprite } from "../sprites";
-import { styleToLayout } from "../layout";
 
 // ============================================
 // Types
@@ -194,48 +193,6 @@ export const PixiTabs = memo(function PixiTabs({
     };
   }, [tabItems, sizePreset, isVertical]);
 
-  // 🚀 @pixi/layout: style?.width를 그대로 전달 (% 문자열 지원)
-  // @pixi/layout이 % 값을 부모 크기 기준으로 자동 계산
-  const styleWidth = style?.width;
-
-  // 🚀 Phase 11: CSS .react-aria-Tabs와 동기화
-  // CSS: .react-aria-Tabs { width: 100%; display: flex; }
-  // CSS: [data-orientation="horizontal"] { flex-direction: column; }
-  // CSS: [data-orientation="vertical"] { flex-direction: row; }
-  const rootLayout = useMemo(() => ({
-    display: 'flex' as const,
-    flexDirection: (isVertical ? 'row' : 'column') as 'row' | 'column',
-    width: (styleWidth ?? '100%') as number | 'auto',
-    // 🚀 Phase 12: 콘텐츠 기반 높이 - 세로 늘어남 방지
-    height: 'auto' as const,
-    flexGrow: 0,
-    flexShrink: 0,
-    alignSelf: 'flex-start' as const,
-  }), [isVertical, styleWidth]);
-
-  // 🚀 Phase 11: CSS .react-aria-TabList와 동기화
-  // CSS: .react-aria-TabList { display: flex; position: relative; }
-  // CSS: [data-orientation="horizontal"] { border-bottom: 1px solid var(--outline-variant); }
-  // CSS: [data-orientation="vertical"] { flex-direction: column; border-right: 1px solid; }
-  const tabListLayout = useMemo(() => ({
-    display: 'flex' as const,
-    flexDirection: (isVertical ? 'column' : 'row') as 'column' | 'row',
-    // vertical: 고정 너비, horizontal: 부모 너비 채움
-    width: (isVertical ? tabsLayout.totalWidth : '100%') as number | 'auto',
-    flexShrink: 0,
-    position: 'relative' as const,
-  }), [isVertical, tabsLayout.totalWidth]);
-
-  // 🚀 Phase 11: CSS .react-aria-TabPanel과 동기화
-  // CSS: .react-aria-TabPanel { padding: var(--spacing-lg); } (md)
-  // CSS: sm: padding: var(--spacing-md), lg: padding: var(--spacing-xl)
-  const panelLayout = useMemo(() => ({
-    display: 'flex' as const,
-    flexDirection: 'column' as const,
-    // 🚀 Phase 12: 콘텐츠 기반 높이로 변경 (flexGrow 제거)
-    padding: sizePreset.panelPadding,
-  }), [sizePreset.panelPadding]);
-
   // 🚀 Phase 11: CSS .react-aria-TabList border 동기화
   // CSS: [data-orientation="horizontal"] { border-bottom: 1px solid var(--outline-variant); }
   // CSS: [data-orientation="vertical"] { border-right: 1px solid var(--outline-variant); }
@@ -346,11 +303,8 @@ export const PixiTabs = memo(function PixiTabs({
 
   // 🚀 Panel children 렌더링 함수
   const renderPanelChild = useCallback((childEl: Element) => {
-    // styleToLayout은 Element 객체를 받음
-    const childLayout = styleToLayout(childEl);
-
     return (
-      <pixiContainer key={childEl.id} layout={childLayout as Record<string, unknown>}>
+      <pixiContainer key={childEl.id}>
         <ElementSprite
           element={childEl}
           onClick={onClick}
@@ -360,9 +314,8 @@ export const PixiTabs = memo(function PixiTabs({
   }, [onClick]);
 
   return (
-    <pixiContainer layout={rootLayout}>
-      {/* @ts-expect-error onLayout is a valid @pixi/layout prop but not in @pixi/react types */}
-      <pixiContainer layout={tabListLayout} onLayout={handleTabListLayout}>
+    <pixiContainer>
+      <pixiContainer>
         {/* 🚀 Phase 11: CSS border-bottom/border-right 동기화 */}
         <pixiGraphics draw={drawTabListBorder} />
 
@@ -372,23 +325,10 @@ export const PixiTabs = memo(function PixiTabs({
           const isSelected = tab.tabId === activeTabId;
 
           return (
-            <pixiContainer
-              key={tab.id}
-              layout={{
-                width: tab.width,
-                height: tab.height,
-                display: 'flex',
-                alignItems: 'center',
-                paddingLeft: sizePreset.tabPaddingX,
-                paddingRight: sizePreset.tabPaddingX,
-                paddingTop: sizePreset.tabPaddingY,
-                paddingBottom: sizePreset.tabPaddingY,
-              }}
-            >
-              {/* hover 배경 - position: absolute로 레이아웃에서 제외 */}
+            <pixiContainer key={tab.id}>
+              {/* hover 배경 */}
               <pixiGraphics
                 draw={(g) => drawTabBackground(g, tab, isHovered)}
-                layout={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
                 eventMode="static"
                 cursor="default"
                 onPointerEnter={() => !tab.isDisabled && setHoveredIndex(index)}
@@ -400,7 +340,6 @@ export const PixiTabs = memo(function PixiTabs({
               <pixiText
                 text={tab.text}
                 style={createTextStyle(isSelected, isHovered, Boolean(tab.isDisabled))}
-                layout={{ isLeaf: true }}
                 eventMode="static"
                 cursor="default"
                 onPointerEnter={() => !tab.isDisabled && setHoveredIndex(index)}
@@ -408,15 +347,9 @@ export const PixiTabs = memo(function PixiTabs({
                 onPointerDown={() => handleTabClick(tab)}
               />
 
-              {/* 선택 인디케이터 - position: absolute로 레이아웃에서 제외 */}
+              {/* 선택 인디케이터 */}
               <pixiGraphics
                 draw={(g) => drawIndicator(g, tab, isSelected)}
-                layout={{
-                  position: 'absolute',
-                  ...(isVertical
-                    ? { right: 0, top: 0 }
-                    : { bottom: 0, left: 0 }),
-                }}
               />
             </pixiContainer>
           );
@@ -426,7 +359,7 @@ export const PixiTabs = memo(function PixiTabs({
       {/* 선택된 TabPanel 렌더링 */}
       {/* 🚀 Phase 11: Panel children을 PixiPanel에 전달 */}
       {selectedPanel && (
-        <pixiContainer layout={panelLayout}>
+        <pixiContainer>
           <PixiPanel
             element={selectedPanel}
             isSelected={false}

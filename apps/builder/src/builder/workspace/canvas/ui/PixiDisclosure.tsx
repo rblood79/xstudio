@@ -180,84 +180,37 @@ export function PixiDisclosure({
     onChange?.(element.id, !isExpanded);
   }, [element.id, isExpanded, onClick, onChange]);
 
-  // 🚀 Phase 8: 주 컨테이너 layout (iframe CSS와 동기화)
-  // CSS: .react-aria-Disclosure { width: 100%; padding: var(--spacing-sm); }
-  const disclosureLayout = useMemo(() => ({
-    display: 'flex' as const,
-    flexDirection: 'column' as const,
-    width: '100%' as unknown as number,
-    padding: sizePreset.padding,
-    // 콘텐츠 높이에 맞춤 (세로 늘어남 방지)
-    flexGrow: 0,
-    flexShrink: 0,
-    alignSelf: 'flex-start' as const,
-  }), [sizePreset.padding]);
-
-  // 🚀 Phase 12: 트리거 영역 레이아웃
-  const triggerLayout = useMemo(() => ({
-    display: 'flex' as const,
-    flexDirection: 'row' as const,
-    alignItems: 'center' as const,
-    paddingLeft: sizePreset.padding * 2 + sizePreset.chevronSize + sizePreset.gap,
-    paddingRight: sizePreset.padding,
-    height: triggerHeight,
-    position: 'relative' as const,
-  }), [sizePreset, triggerHeight]);
-
-  // 🚀 Phase 12: 패널 영역 레이아웃
-  const panelContainerLayout = useMemo(() => ({
-    display: 'flex' as const,
-    flexDirection: 'column' as const,
-    paddingLeft: sizePreset.panelIndent,
-    paddingRight: sizePreset.padding,
-    paddingTop: sizePreset.padding,
-    paddingBottom: sizePreset.padding,
-    position: 'relative' as const,
-  }), [sizePreset]);
-
   return (
     <pixiContainer
-      layout={disclosureLayout}
       eventMode="static"
       cursor="default"
       onPointerEnter={() => setIsHovered(true)}
       onPointerLeave={() => setIsHovered(false)}
       onPointerTap={handleClick}
     >
-      {/* Container background - position: absolute */}
-      <pixiGraphics
-        draw={drawContainer}
-        layout={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
-      />
+      {/* Container background */}
+      <pixiGraphics draw={drawContainer} />
 
       {/* Trigger area */}
-      <pixiContainer layout={triggerLayout}>
-        {/* Trigger background (hover) - position: absolute */}
-        <pixiGraphics
-          draw={drawTrigger}
-          layout={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
-        />
+      <pixiContainer>
+        {/* Trigger background (hover) */}
+        <pixiGraphics draw={drawTrigger} />
 
         {/* Title text */}
         <pixiText
           text={title}
           style={titleStyle}
-          layout={{ isLeaf: true }}
         />
       </pixiContainer>
 
       {/* Panel content (only when expanded) */}
       {isExpanded && (
-        <pixiContainer layout={panelContainerLayout}>
-          {/* Panel separator line - position: absolute */}
-          <pixiGraphics
-            draw={drawPanel}
-            layout={{ position: 'absolute', top: 0, left: 0, width: '100%' }}
-          />
+        <pixiContainer>
+          {/* Panel separator line */}
+          <pixiGraphics draw={drawPanel} />
           <pixiText
             text={content}
             style={contentStyle}
-            layout={{ isLeaf: true }}
           />
         </pixiContainer>
       )}

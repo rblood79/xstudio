@@ -146,7 +146,7 @@ export function PixiSwitch({
     [labelPreset, colorPreset, isDisabled]
   );
 
-  // 🚀 Phase 19: 전체 크기 계산 (hitArea용)
+  // 🚀 Phase 19: 투명 히트 영역
   const totalWidth = label
     ? sizePreset.trackWidth + sizePreset.gap + label.length * labelPreset.fontSize * 0.6
     : sizePreset.trackWidth;
@@ -169,41 +169,19 @@ export function PixiSwitch({
     }
   }, [element.id, onClick, isDisabled]);
 
-  // 🚀 Phase 12: 루트 컨테이너 레이아웃
-  const rootLayout = useMemo(() => ({
-    display: 'flex' as const,
-    flexDirection: 'row' as const,
-    alignItems: 'center' as const,
-    gap: sizePreset.gap,
-    position: 'relative' as const,
-  }), [sizePreset.gap]);
-
-  // 🚀 Phase 12: 트랙 컨테이너 레이아웃 (thumb 배치용)
-  const trackLayout = useMemo(() => ({
-    width: sizePreset.trackWidth,
-    height: sizePreset.trackHeight,
-    position: 'relative' as const,
-  }), [sizePreset.trackWidth, sizePreset.trackHeight]);
-
-  // 🚀 Phase 12: Thumb 레이아웃 (position: absolute)
-  const thumbLayout = useMemo(() => ({
-    position: 'absolute' as const,
-    left: thumbX,
-    top: thumbY,
-  }), [thumbX, thumbY]);
-
   return (
-    <pixiContainer layout={rootLayout}>
+    <pixiContainer>
       {/* Track + Thumb 컨테이너 */}
-      <pixiContainer layout={trackLayout}>
-        {/* Track - position: absolute */}
+      <pixiContainer>
+        {/* Track */}
         <pixiGraphics
           draw={drawTrack}
-          layout={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
+          x={0}
+          y={0}
         />
 
-        {/* Thumb - position: absolute */}
-        <pixiGraphics draw={drawThumb} layout={thumbLayout} />
+        {/* Thumb */}
+        <pixiGraphics draw={drawThumb} x={thumbX} y={thumbY} />
       </pixiContainer>
 
       {/* Label */}
@@ -211,14 +189,14 @@ export function PixiSwitch({
         <pixiText
           text={label}
           style={labelStyle}
-          layout={{ isLeaf: true }}
         />
       )}
 
-      {/* 🚀 Phase 19: 투명 히트 영역 (클릭 감지용) - position: absolute */}
+      {/* 🚀 Phase 19: 투명 히트 영역 (클릭 감지용) */}
       <pixiGraphics
         draw={drawHitArea}
-        layout={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
+        x={0}
+        y={0}
         eventMode="static"
         cursor="default"
         onPointerDown={handleClick}

@@ -196,18 +196,6 @@ export function PixiDisclosureGroup({
     }, []);
   }, [childItems, expandedIds, triggerHeight, panelHeight, sizePreset.padding, sizePreset.gap, itemSpacing]);
 
-  // 🚀 Phase 8: 주 컨테이너 layout (iframe CSS와 동기화)
-  // CSS: DisclosureGroup은 별도 CSS 없음 - Disclosure 자식들 배치용
-  const groupLayout = useMemo(() => ({
-    display: 'flex' as const,
-    flexDirection: 'column' as const,
-    gap: sizePreset.gap,
-    // 콘텐츠 크기에 맞춤 (부모 flex에서 늘어나지 않도록)
-    flexGrow: 0,
-    flexShrink: 0,
-    alignSelf: 'flex-start' as const,
-  }), [sizePreset.gap]);
-
   // Empty state
   if (childItems.length === 0) {
     const emptyStyle: Partial<TextStyle> = {
@@ -218,7 +206,6 @@ export function PixiDisclosureGroup({
 
     return (
       <pixiContainer
-        layout={groupLayout}
         eventMode="static"
         cursor="default"
         onPointerTap={() => onClick?.(element.id)}
@@ -236,7 +223,7 @@ export function PixiDisclosureGroup({
   }
 
   return (
-    <pixiContainer layout={groupLayout}>
+    <pixiContainer>
       {/* Container background */}
       <pixiGraphics draw={drawContainer} />
 

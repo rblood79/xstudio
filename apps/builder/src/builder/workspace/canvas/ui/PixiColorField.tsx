@@ -141,31 +141,8 @@ export function PixiColorField({
     [sizePreset, colorPreset, isDisabled]
   );
 
-  // Positions
-
-  // 🚀 Phase 12: 루트 레이아웃
-  const rootLayout = useMemo(() => ({
-    display: 'flex' as const,
-    flexDirection: 'column' as const,
-    gap: sizePreset.gap,
-  }), [sizePreset.gap]);
-
-  // 🚀 Phase 12: 필드 레이아웃
-  const fieldContainerLayout = useMemo(() => ({
-    display: 'flex' as const,
-    flexDirection: 'row' as const,
-    alignItems: 'center' as const,
-    width: fieldWidth,
-    height: sizePreset.height,
-    paddingLeft: sizePreset.padding,
-    paddingRight: sizePreset.padding,
-    gap: sizePreset.gap,
-    position: 'relative' as const,
-  }), [fieldWidth, sizePreset.height, sizePreset.padding, sizePreset.gap]);
-
   return (
     <pixiContainer
-      layout={rootLayout}
       eventMode="static"
       cursor="default"
       onPointerTap={() => !isDisabled && onClick?.(element.id)}
@@ -175,15 +152,15 @@ export function PixiColorField({
         <pixiText
           text={label}
           style={labelStyle}
-          layout={{ isLeaf: true }}
         />
       )}
 
       {/* Field container */}
-      <pixiContainer layout={fieldContainerLayout}>
+      <pixiContainer>
         <pixiGraphics
           draw={drawField}
-          layout={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
+          x={0}
+          y={0}
         />
 
         {/* Color swatch */}
@@ -193,7 +170,6 @@ export function PixiColorField({
         <pixiText
           text={value.toUpperCase()}
           style={valueStyle}
-          layout={{ isLeaf: true }}
         />
       </pixiContainer>
     </pixiContainer>

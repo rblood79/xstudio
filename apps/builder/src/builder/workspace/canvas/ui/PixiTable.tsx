@@ -282,80 +282,26 @@ export function PixiTable({
     }
   }, [element.id, onClick]);
 
-  // 🚀 Phase 12: 테이블 루트 레이아웃
-  const tableLayout = useMemo(() => ({
-    display: 'flex' as const,
-    flexDirection: 'column' as const,
-    width: totalWidth,
-    height: totalHeight,
-    position: 'relative' as const,
-  }), [totalWidth, totalHeight]);
-
-  // 🚀 Phase 12: 헤더 행 레이아웃
-  const headerRowLayout = useMemo(() => ({
-    display: 'flex' as const,
-    flexDirection: 'row' as const,
-    width: totalWidth,
-    height: headerHeight,
-    position: 'relative' as const,
-  }), [totalWidth, headerHeight]);
-
-  // 🚀 Phase 12: 데이터 행 레이아웃
-  const dataRowLayout = useMemo(() => ({
-    display: 'flex' as const,
-    flexDirection: 'row' as const,
-    width: totalWidth,
-    height: sizePreset.rowMinHeight,
-    position: 'relative' as const,
-  }), [totalWidth, sizePreset.rowMinHeight]);
-
-  // 🚀 Phase 12: Empty state 레이아웃
-  const emptyStateLayout = useMemo(() => ({
-    display: 'flex' as const,
-    justifyContent: 'center' as const,
-    alignItems: 'center' as const,
-    width: totalWidth,
-    height: 40,
-  }), [totalWidth]);
-
   return (
     <pixiContainer
-      layout={tableLayout}
       eventMode="static"
       cursor="default"
       onPointerDown={handleContainerClick}
     >
       {/* Container */}
-      <pixiGraphics
-        draw={drawContainer}
-        layout={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
-      />
+      <pixiGraphics draw={drawContainer} />
 
       {/* Header */}
-      <pixiContainer layout={headerRowLayout}>
-        <pixiGraphics
-          draw={drawHeaderBg}
-          layout={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
-        />
+      <pixiContainer>
+        <pixiGraphics draw={drawHeaderBg} />
 
         {/* Header cells */}
         {columns.map((col, colIndex) => (
-          <pixiContainer
-            key={col.id}
-            layout={{
-              display: 'flex',
-              alignItems: 'center',
-              width: col.width,
-              height: headerHeight,
-              paddingLeft: sizePreset.cellPaddingX,
-              position: 'relative',
-            }}
-          >
+          <pixiContainer key={col.id}>
             {/* Column separator */}
             {colIndex > 0 && (
               <pixiGraphics
                 draw={(g) => drawColumnSeparator(g, headerHeight)}
-                layout={{ position: 'absolute', top: 0, left: 0 }}
               />
             )}
 
@@ -363,7 +309,6 @@ export function PixiTable({
             <pixiText
               text={col.label}
               style={headerTextStyle}
-              layout={{ isLeaf: true }}
             />
           </pixiContainer>
         ))}
@@ -373,7 +318,6 @@ export function PixiTable({
       {rows.map((row) => (
         <pixiContainer
           key={row.id}
-          layout={dataRowLayout}
           eventMode="static"
           cursor="default"
           onPointerOver={() => {
@@ -399,7 +343,6 @@ export function PixiTable({
             draw={(g) =>
               drawRowBg(g, totalWidth, sizePreset.rowMinHeight, false, row.isSelected || false)
             }
-            layout={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
           />
 
           {/* Cells */}
@@ -407,22 +350,11 @@ export function PixiTable({
             const cellValue = row.cells[colIndex]?.value || '';
 
             return (
-              <pixiContainer
-                key={`${row.id}-${col.id}`}
-                layout={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  width: col.width,
-                  height: sizePreset.rowMinHeight,
-                  paddingLeft: sizePreset.cellPaddingX,
-                  position: 'relative',
-                }}
-              >
+              <pixiContainer key={`${row.id}-${col.id}`}>
                 {/* Column separator */}
                 {colIndex > 0 && (
                   <pixiGraphics
                     draw={(g) => drawColumnSeparator(g, sizePreset.rowMinHeight)}
-                    layout={{ position: 'absolute', top: 0, left: 0 }}
                   />
                 )}
 
@@ -430,7 +362,6 @@ export function PixiTable({
                 <pixiText
                   text={cellValue}
                   style={row.isSelected ? selectedCellTextStyle : cellTextStyle}
-                  layout={{ isLeaf: true }}
                 />
               </pixiContainer>
             );
@@ -440,7 +371,7 @@ export function PixiTable({
 
       {/* Empty state */}
       {rows.length === 0 && (
-        <pixiContainer layout={emptyStateLayout}>
+        <pixiContainer>
           <pixiText
             text="No data"
             style={
@@ -451,7 +382,6 @@ export function PixiTable({
                 fontStyle: 'italic',
               })
             }
-            layout={{ isLeaf: true }}
           />
         </pixiContainer>
       )}

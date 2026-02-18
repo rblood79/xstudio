@@ -265,67 +265,6 @@ export const PixiCard = memo(function PixiCard({
     [textColor, cardWidth, effectivePadding]
   );
 
-  // 🚀 Phase 9: 외부 LayoutContainer가 width를 제어
-  // height: 'auto' → Yoga가 children(Button 등) 포함 자동 높이 계산
-  // minHeight: calculatedContentHeight → 텍스트만 있는 경우 최소 높이 보장
-  //   (Yoga가 텍스트 leaf를 정확히 측정하지 못하는 경우의 안전장치)
-  // width: 설정하지 않음 — 부모 방향에 따라 Yoga가 결정:
-  //   - column 부모: alignSelf: 'stretch' → 전체 너비 차지
-  //   - row 부모: 콘텐츠 기반 너비 사용 (형제 요소와 공간 분배)
-  const cardLayout = useMemo(() => ({
-    display: 'flex' as const,
-    flexDirection: 'column' as const,
-    height: 'auto' as unknown as number,
-    minHeight: calculatedContentHeight,
-    padding: effectivePadding,
-    flexGrow: 0,
-    flexShrink: 1,
-    alignSelf: 'stretch' as const,
-  }), [effectivePadding, calculatedContentHeight]);
-
-  // card-header 레이아웃 (제목, 부제목)
-  const headerLayout = useMemo(() => ({
-    display: 'flex' as const,
-    flexDirection: 'column' as const,
-    width: '100%' as unknown as number,
-    gap: 2,
-    marginBottom: (cardTitle || props?.subheading) ? 8 : 0,
-  }), [cardTitle, props?.subheading]);
-
-  // card-content 레이아웃 (description + children)
-  // @pixi/layout에서 display: 'block'은 CSS와 다르게 동작
-  // flex column으로 description과 children-row를 수직 배치
-  // alignItems: 'flex-start'로 왼쪽 정렬
-  // gap: 8 — description과 children-row 사이 간격 (headerLayout.marginBottom과 동일)
-  const contentLayout = useMemo(() => ({
-    display: 'flex' as const,
-    flexDirection: 'column' as const,
-    alignItems: 'flex-start' as const,
-    width: '100%' as unknown as number,
-    gap: 8,
-  }), []);
-
-  // card-description 레이아웃 (display: block, width: 100%)
-  // iframe: .card-description { display: block }
-  // 전체 너비를 차지하여 다음 요소가 아래로 배치됨
-  // alignItems: 'flex-start'로 텍스트 왼쪽 정렬
-  const descriptionLayout = useMemo(() => ({
-    display: 'flex' as const,
-    alignItems: 'flex-start' as const,
-    width: '100%' as unknown as number,
-  }), []);
-
-  // children-row 레이아웃 (가로 배치 + 줄바꿈)
-  // iframe에서 Card 내부 children은 inline-block으로 가로 배치
-  // @pixi/layout에서는 flex row wrap으로 동일한 효과 구현
-  // gap 없음 (iframe CSS와 동일)
-  const childrenRowLayout = useMemo(() => ({
-    display: 'flex' as const,
-    flexDirection: 'row' as const,
-    flexWrap: 'wrap' as const,
-    width: '100%' as unknown as number,
-  }), []);
-
   // 이벤트 핸들러
   const handlePointerEnter = useCallback(() => {
     setIsHovered(true);
@@ -370,19 +309,18 @@ export const PixiCard = memo(function PixiCard({
   const hasContent = cardDescription || hasChildren;
 
   return (
-    <pixiContainer layout={cardLayout}>
+    <pixiContainer>
       {/* 카드 배경 */}
       <pixiGraphics draw={drawCard} />
 
       {/* 🚀 Phase 10: card-header (iframe 구조 동기화) */}
       {hasHeader && (
-        <pixiContainer layout={headerLayout}>
+        <pixiContainer>
           {/* heading (또는 title) */}
           {cardTitle && (
             <pixiText
               text={cardTitle}
               style={titleStyle}
-              layout={{ isLeaf: true }}
             />
           )}
           {/* subheading */}
@@ -390,7 +328,6 @@ export const PixiCard = memo(function PixiCard({
             <pixiText
               text={String(props.subheading)}
               style={descriptionStyle}
-              layout={{ isLeaf: true }}
             />
           )}
         </pixiContainer>
@@ -399,20 +336,19 @@ export const PixiCard = memo(function PixiCard({
       {/* 🚀 Phase 10: card-content (iframe 구조 동기화) */}
       {/* description과 children이 card-content 안에 수직 배치됨 */}
       {hasContent && (
-        <pixiContainer layout={contentLayout}>
+        <pixiContainer>
           {/* card-description (width: 100%) - 전체 너비 차지 */}
           {cardDescription && (
-            <pixiContainer layout={descriptionLayout}>
+            <pixiContainer>
               <pixiText
                 text={cardDescription}
                 style={descriptionStyle}
-                layout={{ isLeaf: true }}
               />
             </pixiContainer>
           )}
           {/* children-row: 가로 배치 (flex row wrap) - description 아래 */}
           {hasChildren && renderChildElement && (
-            <pixiContainer layout={childrenRowLayout}>
+            <pixiContainer>
               {childElements.map((childEl) => renderChildElement(childEl))}
             </pixiContainer>
           )}

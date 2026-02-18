@@ -190,54 +190,19 @@ export const PixiNumberField = memo(function PixiNumberField({
     onClick?.(element.id);
   }, [onClick, element.id]);
 
-  // 🚀 Phase 12: 루트 레이아웃
-  const rootLayout = useMemo(() => ({
-    display: 'flex' as const,
-    flexDirection: 'column' as const,
-    gap: 4,
-  }), []);
-
-  // 🚀 Phase 12: 필드 그룹 레이아웃
-  const fieldGroupLayout = useMemo(() => ({
-    display: 'flex' as const,
-    flexDirection: 'row' as const,
-    alignItems: 'stretch' as const,
-  }), []);
-
-  // 🚀 Phase 12: 버튼 레이아웃
-  const buttonLayout = useMemo(() => ({
-    display: 'flex' as const,
-    alignItems: 'center' as const,
-    justifyContent: 'center' as const,
-    width: sizePreset.buttonWidth,
-    height: inputHeight,
-    position: 'relative' as const,
-  }), [sizePreset.buttonWidth, inputHeight]);
-
-  // 🚀 Phase 12: Input 레이아웃
-  const inputAreaLayout = useMemo(() => ({
-    display: 'flex' as const,
-    alignItems: 'center' as const,
-    justifyContent: 'center' as const,
-    width: sizePreset.inputWidth,
-    height: inputHeight,
-    position: 'relative' as const,
-  }), [sizePreset.inputWidth, inputHeight]);
-
   return (
-    <pixiContainer layout={rootLayout}>
+    <pixiContainer>
       {/* 라벨 */}
       {label && (
-        <pixiText text={label} style={labelTextStyle} layout={{ isLeaf: true }} />
+        <pixiText text={label} style={labelTextStyle} />
       )}
 
       {/* NumberField 그룹 */}
-      <pixiContainer layout={fieldGroupLayout}>
+      <pixiContainer>
         {/* Decrement 버튼 */}
-        <pixiContainer layout={buttonLayout}>
+        <pixiContainer>
           <pixiGraphics
             draw={drawDecrementButton}
-            layout={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
             eventMode="static"
             cursor="default"
             onPointerEnter={() => !isDisabled && setHoveredButton("decrement")}
@@ -247,15 +212,13 @@ export const PixiNumberField = memo(function PixiNumberField({
           <pixiText
             text="−"
             style={buttonTextStyle}
-            layout={{ isLeaf: true }}
           />
         </pixiContainer>
 
         {/* Input 영역 */}
-        <pixiContainer layout={inputAreaLayout}>
+        <pixiContainer>
           <pixiGraphics
             draw={drawInput}
-            layout={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
             eventMode="static"
             cursor="default"
             onPointerDown={handleClick}
@@ -263,15 +226,13 @@ export const PixiNumberField = memo(function PixiNumberField({
           <pixiText
             text={String(value)}
             style={valueTextStyle}
-            layout={{ isLeaf: true }}
           />
         </pixiContainer>
 
         {/* Increment 버튼 */}
-        <pixiContainer layout={buttonLayout}>
+        <pixiContainer>
           <pixiGraphics
             draw={drawIncrementButton}
-            layout={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
             eventMode="static"
             cursor="default"
             onPointerEnter={() => !isDisabled && setHoveredButton("increment")}
@@ -281,7 +242,6 @@ export const PixiNumberField = memo(function PixiNumberField({
           <pixiText
             text="+"
             style={buttonTextStyle}
-            layout={{ isLeaf: true }}
           />
         </pixiContainer>
       </pixiContainer>

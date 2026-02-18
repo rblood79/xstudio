@@ -1,25 +1,14 @@
 /**
  * PixiJS Setup
  *
- * @pixi/react와 @pixi/layout 컴포넌트 카탈로그를 정의합니다.
+ * @pixi/react 컴포넌트 카탈로그를 정의합니다.
  *
  * 컴포넌트 등록 전략:
  * 1. 모듈 로드 시점에 extend() 호출 - 렌더링 전 등록 보장
  * 2. 컴포넌트 내에서 useExtend() 훅 - 추가 안전장치
  *
- * @example
- * // 컴포넌트 파일에서
- * import { useExtend } from '@pixi/react';
- * import { PIXI_COMPONENTS } from './pixiSetup';
- *
- * function MyComponent() {
- *   useExtend(PIXI_COMPONENTS); // 추가 안전장치 (이미 등록됨)
- *   return <pixiContainer>...</pixiContainer>;
- * }
- *
  * @since 2025-12-12
- * @updated 2025-12-13 P4: useExtend 훅 도입
- * @updated 2025-12-17 모듈 로드 시점 extend() 추가 + 클래스 이름 등록
+ * @updated 2026-02-17 Phase 11: @pixi/layout 제거 — 순수 PixiJS 이벤트 레이어
  */
 
 import {
@@ -30,12 +19,6 @@ import {
   AbstractRenderer,
   TextureSource,
 } from 'pixi.js';
-// @deprecated Phase 8: @pixi/layout 컴포넌트는 Canvas UI에서만 사용.
-// Phase 9에서 직접 위치 지정으로 전환 후 제거 예정.
-import {
-  LayoutContainer,
-  LayoutText,
-} from '@pixi/layout/components';
 import { extend } from '@pixi/react';
 
 // ============================================
@@ -141,8 +124,6 @@ export function getDynamicResolution(
   const isLowEnd = isLowEndDevice();
 
   // Skia 모드: PixiJS는 이벤트 처리 전용 (alpha=0, 시각적 렌더링 없음)
-  // 인터랙션 중 해상도 하향은 불필요하고, 오히려 PixiJS 캔버스 리사이즈 →
-  // @pixi/layout 재계산 → React 리렌더를 유발하여 끊김의 원인이 됨.
   // 항상 고정 해상도를 사용한다.
   const baseResolution = isLowEnd
     ? Math.min(devicePixelRatio, 1.5)
@@ -183,10 +164,6 @@ export const PIXI_COMPONENTS = {
   Graphics: PixiGraphics,
   Sprite: PixiSprite,
   Text: PixiText,
-  // @pixi/layout 컴포넌트
-  LayoutContainer,
-  LayoutText,
-  // Note: @pixi/ui 컴포넌트는 각 Pixi*.tsx에서 직접 import (Phase 0)
 };
 
 // 모듈 로드 시점에 즉시 등록 (컴포넌트 렌더링 전에 보장)

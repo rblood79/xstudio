@@ -18,7 +18,9 @@ XStudio Builder는 시각적 캔버스 에디터가 필요합니다:
 
 ## Decision
 
-**PixiJS 8 + @pixi/layout + @pixi/react**를 캔버스 렌더링에 사용합니다.
+**PixiJS 8 + @pixi/react**를 캔버스 이벤트 레이어에 사용합니다.
+
+> **Note (2026-02-18):** Phase 10-11에서 `@pixi/layout`(Yoga), `@pixi/ui` 의존성 완전 제거됨. DirectContainer(x/y 직접 배치) 패턴으로 전환.
 
 ## Alternatives Considered
 
@@ -33,38 +35,32 @@ XStudio Builder는 시각적 캔버스 에디터가 필요합니다:
 ## Rationale
 
 1. **WebGL 성능**: GPU 가속으로 수천 개 요소도 60fps
-2. **@pixi/layout**: Yoga 기반 Flexbox 레이아웃
-3. **@pixi/react**: React 선언적 문법 유지
+2. **@pixi/react**: React 선언적 문법 유지 (DirectContainer x/y 직접 배치)
 4. **생태계**: 필터, 마스킹, 텍스처 등 풍부한 기능
 
 ## Key Constraints
 
-### @pixi/layout 규칙
+### DirectContainer 배치 규칙 (Phase 11+)
 ```typescript
-// ❌ x/y props 금지
-<Container x={100} y={50} />
+// ✅ 엔진 계산 결과로 x/y 직접 배치
+<DirectContainer elementId={id} x={layout.x} y={layout.y}
+  width={layout.width} height={layout.height}>
+  {children}
+</DirectContainer>
 
-// ✅ style 기반 레이아웃
-<Container style={{ marginLeft: 100, marginTop: 50 }} />
-
-// ✅ Text는 isLeaf 필수
-<Text text="Hello" isLeaf />
-
-// ✅ @pixi/layout 최우선 import
-import '@pixi/layout';
-import { Container, Text } from '@pixi/react';
+// ✅ alpha=0 이벤트 전용 레이어 — 시각 렌더링은 Skia가 담당
+// ✅ @pixi/layout, yoga-layout 의존성 없음
 ```
 
 ## Consequences
 
 ### Positive
 - 대규모 프로젝트에서도 부드러운 인터랙션
-- Yoga 레이아웃으로 CSS-like 레이아웃
 - React 패턴과 자연스러운 통합
+- 엔진 계산 결과 직접 사용으로 이중 계산 제거 (Phase 11)
 
 ### Negative
 - 접근성 직접 구현 필요
-- @pixi/layout 규칙 학습 필요
 - 디버깅이 DOM보다 어려움
 
 ## Update: CanvasKit/Skia WASM 이중 렌더러 (2026-02-01)
@@ -752,23 +748,59 @@ ENGINE.md 전략 D의 최종 단계인 Phase 9를 완료하여, 레거시 레이
 
 **상세:** `docs/ENGINE.md`, `apps/builder/src/.../layout/engines/index.ts`
 
+## Update: @pixi/layout + @pixi/ui 완전 제거 — Phase 10-11 (2026-02-18)
+
+### Phase 10: @pixi/ui 제거 (완료)
+
+11개 UI 컴포넌트 파일에서 `@pixi/ui` 의존성 제거. 순수 PixiJS Container + Graphics(alpha=0.001) 히트 영역으로 대체.
+
+### Phase 11: @pixi/layout (Yoga) 제거 (완료)
+
+**이중 계산 문제 해결:**
+
+| 항목 | 수정 전 | 수정 후 |
+|------|---------|---------|
+| **레이아웃 경로** | Engine → ComputedLayout → marginTop/marginLeft 변환 → Yoga 재계산 | Engine → ComputedLayout → x/y 직접 배치 |
+| **LayoutContainer** | Yoga layout={} prop 기반 | DirectContainer x/y/width/height props |
+| **UI 컴포넌트 (42개)** | layout={} prop + Yoga 연동 | layout prop 완전 제거 |
+| **패키지** | `@pixi/layout ^3.2.0`, `yoga-layout ^3.2.1` | 제거됨 |
+
+**수정 범위 (49개 파일):**
+- `BuilderCanvas.tsx` — DirectContainer + renderWithCustomEngine 리팩터
+- `sprites/ElementSprite.tsx` — layout prop → x/y
+- `ui/` 하위 42개 파일 — layout prop 제거
+- `pixiSetup.ts` — LayoutContainer/LayoutText 제거
+- `pixi-jsx.d.ts`, `types/pixi-react.d.ts` — 타입 정리
+- `package.json` — @pixi/layout, yoga-layout 제거
+
+**핵심 원리:** PixiJS는 alpha=0 이벤트 전용 레이어이므로, 엔진 계산 결과의 근사치가 히트 테스트에 충분. Skia가 정확한 시각적 렌더링 담당.
+
+### 현재 기술 스택
+
+| 항목 | 상태 |
+|------|------|
+| **CanvasKit/Skia WASM** | 메인 렌더러 (디자인 노드 + AI 이펙트 + Selection 오버레이) |
+| **PixiJS 8 + @pixi/react** | 이벤트 전용 레이어 (alpha=0, DirectContainer 직접 배치) |
+| **Taffy WASM** | Flex/Grid 레이아웃 엔진 |
+| **Dropflow Fork** | Block 레이아웃 엔진 |
+| ~~@pixi/layout~~ | **제거됨** (Phase 11) |
+| ~~@pixi/ui~~ | **제거됨** (Phase 10) |
+| ~~yoga-layout~~ | **제거됨** (Phase 11) |
+
 ## Implementation
 
 ```typescript
-import '@pixi/layout';
-import { Stage, Container, Text } from '@pixi/react';
+// Phase 11+: @pixi/layout 없이 DirectContainer로 직접 배치
+import { Application, extend } from '@pixi/react';
 
-function BuilderCanvas() {
-  return (
-    <Stage>
-      <Container style={{ display: 'flex', flexDirection: 'column' }}>
-        <Container style={{ flex: 1 }}>
-          <Text text="Content" isLeaf />
-        </Container>
-      </Container>
-    </Stage>
-  );
-}
+// DirectContainer: 엔진 계산 결과를 직접 사용
+<DirectContainer
+  elementId={child.id}
+  x={layout.x} y={layout.y}
+  width={layout.width} height={layout.height}
+>
+  <ElementSprite element={child} ... />
+</DirectContainer>
 ```
 
 ## References

@@ -232,54 +232,21 @@ export function PixiColorPicker({
     [colorPreset]
   );
 
-  // 🚀 Phase 12: 루트 레이아웃
-  const rootLayout = useMemo(() => ({
-    display: 'flex' as const,
-    flexDirection: 'column' as const,
-    width: containerWidth,
-    height: containerHeight,
-    padding: sizePreset.padding,
-    gap: sizePreset.gap,
-    position: 'relative' as const,
-  }), [containerWidth, containerHeight, sizePreset.padding, sizePreset.gap]);
-
-  // 🚀 Phase 12: 색상 영역 레이아웃
-  const colorAreaLayout = useMemo(() => ({
-    width: sizePreset.areaSize,
-    height: sizePreset.areaSize,
-    position: 'relative' as const,
-  }), [sizePreset.areaSize]);
-
-  // 🚀 Phase 12: 슬라이더 레이아웃
-  const sliderLayout = useMemo(() => ({
-    width: sizePreset.sliderWidth,
-    height: sizePreset.sliderHeight,
-    position: 'relative' as const,
-  }), [sizePreset.sliderWidth, sizePreset.sliderHeight]);
-
-  // 🚀 Phase 12: Swatch 행 레이아웃
-  const swatchRowLayout = useMemo(() => ({
-    display: 'flex' as const,
-    flexDirection: 'row' as const,
-    alignItems: 'center' as const,
-    gap: sizePreset.gap,
-  }), [sizePreset.gap]);
-
   return (
     <pixiContainer
-      layout={rootLayout}
       eventMode="static"
       cursor="default"
       onPointerTap={() => onClick?.(element.id)}
     >
-      {/* Container */}
+      {/* Container background */}
       <pixiGraphics
         draw={drawContainer}
-        layout={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
+        x={0}
+        y={0}
       />
 
       {/* Color area */}
-      <pixiContainer layout={colorAreaLayout}>
+      <pixiContainer>
         <pixiGraphics draw={drawColorArea} />
         {/* Thumb - 동적 위치 (value 기반) */}
         <pixiGraphics
@@ -290,7 +257,7 @@ export function PixiColorPicker({
       </pixiContainer>
 
       {/* Hue slider */}
-      <pixiContainer layout={sliderLayout}>
+      <pixiContainer>
         <pixiGraphics draw={drawHueSlider} />
         {/* Thumb - 동적 위치 (hue 기반) */}
         <pixiGraphics
@@ -300,7 +267,7 @@ export function PixiColorPicker({
       </pixiContainer>
 
       {/* Alpha slider */}
-      <pixiContainer layout={sliderLayout}>
+      <pixiContainer>
         <pixiGraphics draw={drawAlphaSlider} />
         {/* Thumb - 동적 위치 (alpha 기반) */}
         <pixiGraphics
@@ -310,12 +277,11 @@ export function PixiColorPicker({
       </pixiContainer>
 
       {/* Color swatch and hex value */}
-      <pixiContainer layout={swatchRowLayout}>
+      <pixiContainer>
         <pixiGraphics draw={drawSwatch} />
         <pixiText
           text={`#${currentColor.toString(16).padStart(6, '0').toUpperCase()}`}
           style={labelStyle}
-          layout={{ isLeaf: true }}
         />
       </pixiContainer>
     </pixiContainer>

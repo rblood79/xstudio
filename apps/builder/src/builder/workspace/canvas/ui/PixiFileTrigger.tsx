@@ -122,22 +122,8 @@ export function PixiFileTrigger({
     [sizePreset, colorPreset]
   );
 
-  // 🚀 Phase 12: 버튼 레이아웃
-  const buttonLayout = useMemo(() => ({
-    display: 'flex' as const,
-    flexDirection: 'row' as const,
-    alignItems: 'center' as const,
-    width: buttonWidth,
-    height: sizePreset.height,
-    paddingLeft: sizePreset.paddingX,
-    paddingRight: sizePreset.paddingX,
-    gap: sizePreset.gap,
-    position: 'relative' as const,
-  }), [buttonWidth, sizePreset.height, sizePreset.paddingX, sizePreset.gap]);
-
   return (
     <pixiContainer
-      layout={buttonLayout}
       eventMode="static"
       cursor="default"
       onPointerTap={() => onClick?.(element.id)}
@@ -145,7 +131,8 @@ export function PixiFileTrigger({
       {/* Button background */}
       <pixiGraphics
         draw={drawButton}
-        layout={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
+        x={0}
+        y={0}
       />
 
       {/* Upload icon */}
@@ -155,7 +142,6 @@ export function PixiFileTrigger({
       <pixiText
         text={label}
         style={textStyle}
-        layout={{ isLeaf: true }}
       />
     </pixiContainer>
   );
