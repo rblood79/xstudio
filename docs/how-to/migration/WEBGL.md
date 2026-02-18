@@ -827,8 +827,7 @@ WebGL 마이그레이션 문서에는 "구현 완료율"과 "검증 통과율"�
 
 | 구분 | 기준 문서/데이터 | 수치 | 해석 |
 |------|------------------|------|------|
-| 컴포넌트 일치율 (엄격) | `docs/SPEC_VERIFICATION_CHECKLIST.md` 합계 | **67.7%** (42/62 PASS) | FAIL/WARN을 제외하고 PASS만 집계 |
-| 컴포넌트 일치율 (완화) | `docs/SPEC_VERIFICATION_CHECKLIST.md` 합계 | **85.5%** ((42 PASS + 11 WARN)/62) | WARN을 "치명적 불일치 아님"으로 분리 해석 |
+| CSS 속성 지원율 | `docs/ENGINE_CHECKLIST.md` 합계 | **66%** (113/186 ✅) | CSS Level 3 기준 18개 Spec Module 속성 지원 현황 |
 | 컴포넌트 구현 완료율 | 본 문서 11.0.3 | **100%** (62/62) | 구현/이관 완료 상태, 시각 검증 PASS율과 별도 |
 | CSS 동기화 완료율 | 본 문서 11.0.3 | **100%** (62/62) | 토큰/프리셋 동기화 완료 상태 |
 | 레이아웃 일치율 (Grid 기능 커버리지) | `docs/ENGINE_UPGRADE.md` §2 체크리스트 | **54.5%** (6/11) | `repeat()`, `minmax()`, `auto-fit/fill`, `subgrid` 등은 명시적 미지원 |

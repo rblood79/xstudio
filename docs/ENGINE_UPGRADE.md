@@ -54,7 +54,7 @@
 | Spec 렌더링 정합성 | **100%** | **100%** | 62/62 전체 PASS 달성 |
 | **전체 가중 평균** | **~96%** | **~95%+** | S1~S6 스프린트 완료, 목표 달성 |
 
-> **Spec 렌더링 정합성** (`docs/SPEC_VERIFICATION_CHECKLIST.md` 기준): 62개 컴포넌트 중 PASS **62개(100%)**, FAIL **0개**, WARN **0개**. shadow-before-target 순서 오류(7개), gradient Skia 미지원(4개), 배열 borderRadius(1개), line auto cast(2개), dashed/dotted border(2건), 고정 width bg 미추출(3건), TokenRef 중첩 해석(3건), Radio circle column 변환(1건)이 모두 구현 완료되었다.
+> **CSS 속성 지원 현황**: `docs/ENGINE_CHECKLIST.md` 참조 — CSS Level 3 기준 18개 Spec Module, 186개 속성 중 ✅ 113개(66%), ⚠️ 12개, ❌ 61개. 레이아웃(Flexbox 86%, Grid 89%, Box Model 96%) 및 시각 속성(배경/테두리 71%, Transform 77%)은 높은 지원율을 보이며, Transitions/Animations/Logical Properties는 미지원.
 
 ### 0.3 일치율 산정 기준
 
@@ -63,7 +63,7 @@
 
 | 축 | 기준 | 집계 방식 |
 |----|------|-----------|
-| 컴포넌트 시각 정합성 | `docs/SPEC_VERIFICATION_CHECKLIST.md` | PASS / WARN / FAIL 분리 집계 |
+| CSS 속성 지원율 | `docs/ENGINE_CHECKLIST.md` | CSS Level 3 기준 카테고리별 ✅/⚠️/❌ 집계 |
 | 레이아웃 정합성 | 본 문서 §2 체크리스트 + 벤치마크 | 지원 기능 커버리지 + 좌표 오차(±1px) |
 | 구현 완료도 | 마이그레이션 문서(`docs/how-to/migration/WEBGL.md`) | 구현/동기화 파일 수 기준 |
 
@@ -2593,7 +2593,7 @@ function computeSyntheticStyle(element: Element): SyntheticComputedStyle {
 
 #### Spec 렌더링 파이프라인 이슈 (SPEC_VERIFICATION 기준)
 
-`docs/SPEC_VERIFICATION_CHECKLIST.md`에서 발견된 FAIL/WARN 이슈 중 컴포넌트 구조와 직접 관련된 항목:
+`docs/ENGINE_CHECKLIST.md`에서 추적하는 CSS 속성 지원 현황 중 컴포넌트 구조와 직접 관련된 항목:
 
 | 이슈 | 영향 컴포넌트 | 원인 파일 | 해결 Phase |
 |------|-------------|----------|-----------|
