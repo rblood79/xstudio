@@ -1268,5 +1268,5 @@ useEffect(() => {
 - Retool Resources: https://docs.retool.com/apps/tutorial
 - Bubble Database: https://manual.bubble.io/help-guides/design/elements/containers/repeating-groups
 
-**작성:** AI Assistant (Claude Sonnet 4.5)
+**작성:** AI Assistant (Claude)
 **검토 필요:** XStudio 개발팀

@@ -191,8 +191,8 @@ executeIntent() — 단일 요소 생성/수정/삭제
 
 | 환경 | 사용 가능 모델 | 기본 모델 |
 |------|--------------|----------|
-| Electron (데스크톱) | Sonnet 4.5, Haiku 4.5, Opus 4.5 | Opus 4.5 |
-| Cursor (IDE 통합) | Sonnet 4.5, Haiku 4.5, Composer | Composer |
+| Electron (데스크톱) | Sonnet, Haiku, Opus | Opus |
+| Cursor (IDE 통합) | Sonnet, Haiku, Composer | Composer |
 
 ---
 

@@ -5609,7 +5609,7 @@ if (pageInfo.layoutId && pageInfo.pageId && hasPageElements && hasLayoutElements
 
 ---
 
-**작성:** Claude Sonnet 4.5
+**작성:** Claude
 **버전:** 2.3 (Layout Preset & BodyEditor 분리 추가)
 **최종 업데이트:** 2025-11-24
 **예상 개발 기간:** 6-8주 (Phase 1-7)

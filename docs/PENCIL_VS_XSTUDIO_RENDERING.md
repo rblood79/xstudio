@@ -1311,8 +1311,8 @@ Pencil은 Claude AI를 에디터에 직접 통합하여 디자인-코드 변환�
 
 | 환경 | 사용 가능 모델 | 기본 모델 |
 |------|--------------|----------|
-| **Electron** (데스크톱) | Sonnet 4.5, Haiku 4.5, Opus 4.5 | Opus 4.5 |
-| **Cursor** (IDE 통합) | Sonnet 4.5, Haiku 4.5, Composer | Composer |
+| **Electron** (데스크톱) | Sonnet, Haiku, Opus | Opus |
+| **Cursor** (IDE 통합) | Sonnet, Haiku, Composer | Composer |
 | **기타** (웹) | — | — |
 
 **통신 방식:**
@@ -1322,16 +1322,16 @@ submitPrompt(prompt, model) {
   this.ipc.notify("submit-prompt", { prompt, model });
 }
 
-// 모델 선택
+// 모델 선택 — 최신 Claude 모델을 자동 사용
 getAvailableModels() {
   if (mR === "Electron") {
     return {
       models: [
-        { label: "Sonnet 4.5", id: "claude-4.5-sonnet" },
-        { label: "Haiku 4.5", id: "claude-4.5-haiku" },
-        { label: "Opus 4.5", id: "claude-4.5-opus" }
+        { label: "Sonnet", id: "claude-sonnet-latest" },
+        { label: "Haiku", id: "claude-haiku-latest" },
+        { label: "Opus", id: "claude-opus-latest" }
       ],
-      defaultModel: { label: "Opus 4.5", id: "claude-4.5-opus" }
+      defaultModel: { label: "Opus", id: "claude-opus-latest" }
     };
   }
 }

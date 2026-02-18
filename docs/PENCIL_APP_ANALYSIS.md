@@ -1734,13 +1734,13 @@ config.on("change") → requestFrame()
 
 **AI 모델 목록**:
 ```javascript
-// Electron 환경
-{ label: "Sonnet 4.5", id: "claude-4.5-sonnet" }
-{ label: "Haiku 4.5", id: "claude-4.5-haiku" }
-{ label: "Opus 4.5", id: "claude-4.5-opus" }   // 기본 모델
+// Electron 환경 — 최신 Claude 모델을 자동 사용
+{ label: "Sonnet", id: "claude-sonnet-latest" }
+{ label: "Haiku", id: "claude-haiku-latest" }
+{ label: "Opus", id: "claude-opus-latest" }   // 기본 모델
 
 // Cursor IDE 환경
-{ label: "Composer", id: "cursor-composer" }     // 기본 모델
+{ label: "Composer", id: "cursor-composer" }   // 기본 모델
 ```
 
 ### 19.6 SkiaRenderer (`M_t`) — 15_skia-renderer.txt (6,517줄)
