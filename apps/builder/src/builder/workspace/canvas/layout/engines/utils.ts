@@ -276,19 +276,20 @@ const DEFAULT_WIDTH = 80;
  * 동일 공식을 사용하여 CSS/WebGL 정합성 보장.
  */
 const BUTTON_SIZE_CONFIG: Record<string, {
+  height?: number;
   paddingLeft: number;
   paddingRight: number;
   paddingY: number;
   fontSize: number;
   borderWidth: number;
 }> = {
-  // @sync Button.css [data-size] padding 값과 일치해야 함
+  // @sync Button.spec.ts sizes + Button.css [data-size] padding 값과 일치해야 함
   // @sync Button.css base: border: 1px solid (all variants, all sizes)
-  xs: { paddingLeft: 8, paddingRight: 8, paddingY: 2, fontSize: 12, borderWidth: 1 },     // --spacing-sm = 8px
-  sm: { paddingLeft: 12, paddingRight: 12, paddingY: 4, fontSize: 14, borderWidth: 1 },   // --spacing-md = 12px
-  md: { paddingLeft: 24, paddingRight: 24, paddingY: 8, fontSize: 16, borderWidth: 1 },   // --spacing-xl = 24px
-  lg: { paddingLeft: 32, paddingRight: 32, paddingY: 12, fontSize: 18, borderWidth: 1 },  // --spacing-2xl = 32px
-  xl: { paddingLeft: 40, paddingRight: 40, paddingY: 16, fontSize: 20, borderWidth: 1 },  // --spacing-3xl = 40px
+  xs: { height: 24, paddingLeft: 8, paddingRight: 8, paddingY: 2, fontSize: 12, borderWidth: 1 },
+  sm: { height: 32, paddingLeft: 12, paddingRight: 12, paddingY: 4, fontSize: 14, borderWidth: 1 },
+  md: { height: 40, paddingLeft: 24, paddingRight: 24, paddingY: 8, fontSize: 16, borderWidth: 1 },
+  lg: { height: 48, paddingLeft: 32, paddingRight: 32, paddingY: 12, fontSize: 18, borderWidth: 1 },
+  xl: { height: 56, paddingLeft: 40, paddingRight: 40, paddingY: 16, fontSize: 20, borderWidth: 1 },
 };
 
 /** PixiButton MIN_BUTTON_HEIGHT과 동일 */
@@ -712,10 +713,15 @@ export function calculateContentHeight(element: Element, availableWidth?: number
     const configMap = tag === 'button' ? BUTTON_SIZE_CONFIG : inlineUIConfig!;
     const sizeConfig = configMap[size] ?? configMap[defaultSize] ?? Object.values(configMap)[0];
 
+    // 사용자가 인라인 padding을 설정했는지 확인 (configHeight 분기보다 먼저 판별 필요)
+    const hasInlinePadding = style?.padding !== undefined ||
+      style?.paddingTop !== undefined || style?.paddingBottom !== undefined;
+
     // Badge 등은 고정 height 사용 (BADGE_FALLBACKS와 동기화)
     // height는 border-box 기준 → content-box로 변환
+    // ⚠️ 인라인 padding이 있으면 스킵 — 사용자가 padding:0으로 축소할 수 있어야 함
     const configHeight = (sizeConfig as { height?: number }).height;
-    if (configHeight !== undefined) {
+    if (configHeight !== undefined && !hasInlinePadding) {
       return Math.max(0, configHeight - sizeConfig.paddingY * 2 - sizeConfig.borderWidth * 2);
     }
 
@@ -724,8 +730,6 @@ export function calculateContentHeight(element: Element, availableWidth?: number
     const textHeight = estimateTextHeight(fontSize, resolvedLineHeight);
     // MIN_BUTTON_HEIGHT는 border-box 기준 → content-box 최소값으로 변환
     // 사용자가 인라인 padding을 설정한 경우 MIN_BUTTON_HEIGHT 미적용 (padding:0으로 축소 허용)
-    const hasInlinePadding = style?.padding !== undefined ||
-      style?.paddingTop !== undefined || style?.paddingBottom !== undefined;
     const minContentHeight = hasInlinePadding
       ? 0
       : Math.max(0, MIN_BUTTON_HEIGHT - sizeConfig.paddingY * 2 - sizeConfig.borderWidth * 2);

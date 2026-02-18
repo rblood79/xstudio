@@ -26,6 +26,7 @@ import type {
   XComputedLayout,
   XLayoutContext,
 } from '@xstudio/layout-flow';
+import { parseBoxModel } from './utils';
 
 // ---------------------------------------------------------------------------
 // Element → XElement 변환
@@ -77,6 +78,316 @@ function xLayoutToComputedLayout(xl: XComputedLayout): ComputedLayout {
 }
 
 // ---------------------------------------------------------------------------
+// Intrinsic height 주입
+// ---------------------------------------------------------------------------
+
+/**
+ * CSS 스펙에서 기본 display가 inline-block인 태그
+ *
+ * Dropflow는 이 요소들을 block으로 처리하므로 (IFC 미지원),
+ * width가 없으면 100%로 확장된다.
+ * fit-content 동작을 에뮬레이트하기 위해 intrinsic width를 주입한다.
+ */
+const INLINE_BLOCK_TAGS = new Set([
+  'button', 'submitbutton', 'fancybutton', 'togglebutton',
+  'badge', 'tag', 'chip',
+  'checkbox', 'radio', 'switch', 'toggle',
+  'togglebuttongroup',
+]);
+
+/**
+ * 리프 UI 컴포넌트에 intrinsic size(width/height)를 주입
+ *
+ * Dropflow는 자식이 없는 블록의 height를 0으로 collapse하고,
+ * block 요소의 width를 부모 100%로 확장한다.
+ *
+ * Button, Badge 등은 텍스트/인디케이터가 props에만 있어
+ * Dropflow가 콘텐츠 크기를 계산할 수 없다.
+ *
+ * parseBoxModel()의 contentWidth/contentHeight + spec padding/border를
+ * 사용하여 border-box 크기를 CSS width/height로 주입한다.
+ */
+function enrichWithIntrinsicSize(
+  element: Element,
+  availableWidth: number,
+  availableHeight: number,
+): Element {
+  const style = element.props?.style as Record<string, unknown> | undefined;
+  const tag = (element.tag ?? '').toLowerCase();
+
+  // height도 fit-content/auto일 때 intrinsic height 주입 필요
+  // Dropflow는 'fit-content' 문자열을 이해하지 못함
+  // %는 Dropflow가 직접 처리하므로 스킵
+  const rawHeight = style?.height;
+  const needsHeight = !rawHeight || rawHeight === 'fit-content' || rawHeight === 'auto';
+  // inline-block 태그는 width 미지정 또는 fit-content일 때 intrinsic width 주입
+  // Dropflow는 'fit-content' 문자열을 이해하지 못하므로 pixel 값으로 변환 필요
+  // width가 %, px 등 구체적 값으로 명시되었으면 스킵
+  const rawWidth = style?.width;
+  const needsWidth = INLINE_BLOCK_TAGS.has(tag) && (!rawWidth || rawWidth === 'fit-content' || rawWidth === 'auto');
+
+  if (!needsHeight && !needsWidth) return element;
+
+  const box = parseBoxModel(element, availableWidth, availableHeight);
+
+  // contentHeight <= 0이면 컨테이너 요소 (div, section 등) — 스킵
+  if (box.contentHeight <= 0 && !needsWidth) return element;
+
+  // Dropflow adapter(elementStyleToDropflowStyle)는 CSS style에서만 padding/border를 읽음.
+  // spec-defined padding/border(BUTTON_SIZE_CONFIG 등)는 CSS에 없으므로 Dropflow는 0으로 처리.
+  //
+  // padding과 border를 독립적으로 처리:
+  // - CSS에 해당 속성이 없으면 → spec 기본값을 크기에 포함 (Dropflow가 추가하지 않으므로)
+  // - CSS에 해당 속성이 있으면 → 해당 부분 생략 (Dropflow가 CSS 값을 추가하므로)
+  const hasCSSVerticalPadding = style?.padding !== undefined ||
+    style?.paddingTop !== undefined || style?.paddingBottom !== undefined;
+  const hasCSSVerticalBorder = style?.borderWidth !== undefined ||
+    style?.borderTopWidth !== undefined || style?.borderBottomWidth !== undefined;
+  const hasCSSHorizontalPadding = style?.padding !== undefined ||
+    style?.paddingLeft !== undefined || style?.paddingRight !== undefined;
+  const hasCSSHorizontalBorder = style?.borderWidth !== undefined ||
+    style?.borderLeftWidth !== undefined || style?.borderRightWidth !== undefined;
+
+  const injectedStyle: Record<string, unknown> = { ...style };
+
+  // Height 주입
+  if (needsHeight && box.contentHeight > 0) {
+    let injectHeight = box.contentHeight;
+    if (!hasCSSVerticalPadding) {
+      injectHeight += box.padding.top + box.padding.bottom;
+    }
+    if (!hasCSSVerticalBorder) {
+      injectHeight += box.border.top + box.border.bottom;
+    }
+    injectedStyle.height = injectHeight;
+  }
+
+  // Width 주입 (inline-block 태그의 fit-content 에뮬레이션)
+  if (needsWidth && box.contentWidth > 0) {
+    let injectWidth = box.contentWidth;
+    if (!hasCSSHorizontalPadding) {
+      injectWidth += box.padding.left + box.padding.right;
+    }
+    if (!hasCSSHorizontalBorder) {
+      injectWidth += box.border.left + box.border.right;
+    }
+    injectedStyle.width = injectWidth;
+  }
+
+  // 변경이 없으면 원본 반환
+  if (injectedStyle.height === undefined && injectedStyle.width === style?.width) {
+    return element;
+  }
+
+  return {
+    ...element,
+    props: {
+      ...element.props,
+      style: injectedStyle,
+    },
+  } as Element;
+}
+
+// ---------------------------------------------------------------------------
+// Inline-block 흐름 계산
+// ---------------------------------------------------------------------------
+
+/**
+ * 요소가 inline-block으로 배치되어야 하는지 판별
+ *
+ * CSS 스펙에서 기본 display가 inline-block인 태그이면서
+ * 명시적으로 display: block 등이 설정되지 않은 경우 true.
+ */
+function isInlineBlockElement(element: Element): boolean {
+  const style = element.props?.style as Record<string, unknown> | undefined;
+  const display = style?.display as string | undefined;
+
+  // 명시적 display가 있으면 그것을 따름
+  if (display === 'block' || display === 'flex' || display === 'grid' ||
+      display === 'flow-root' || display === 'none') {
+    return false;
+  }
+  if (display === 'inline' || display === 'inline-block') {
+    return true;
+  }
+
+  // display 미지정: 태그 기반 기본값
+  const tag = (element.tag ?? '').toLowerCase();
+  return INLINE_BLOCK_TAGS.has(tag);
+}
+
+/** 세그먼트 타입 */
+type Segment = {
+  type: 'inline' | 'block';
+  children: Element[];
+};
+
+/**
+ * 자식 요소들을 연속된 inline/block 세그먼트로 분할
+ *
+ * [button, button, div, button] →
+ * [{ type: 'inline', [button, button] }, { type: 'block', [div] }, { type: 'inline', [button] }]
+ */
+function segmentChildren(children: Element[]): Segment[] {
+  const segments: Segment[] = [];
+  let current: Segment | null = null;
+
+  for (const child of children) {
+    const isInline = isInlineBlockElement(child);
+    const type = isInline ? 'inline' : 'block';
+
+    if (current && current.type === type) {
+      current.children.push(child);
+    } else {
+      current = { type, children: [child] };
+      segments.push(current);
+    }
+  }
+
+  return segments;
+}
+
+/**
+ * inline-block 요소들을 가로 배치 (줄바꿈 포함)
+ *
+ * CSS inline formatting context의 inline-block 배치를 에뮬레이트:
+ * - 왼쪽에서 오른쪽으로 배치
+ * - availableWidth 초과 시 다음 줄로 이동
+ * - 각 줄 높이는 해당 줄 요소들의 최대 높이
+ */
+function layoutInlineRun(
+  children: Element[],
+  availableWidth: number,
+  availableHeight: number,
+  startY: number,
+): ComputedLayout[] {
+  // --- Pass 1: 줄 분할 + 요소 크기 계산 ---
+  type ItemInfo = {
+    child: Element;
+    w: number;
+    h: number;
+    margin: { top: number; right: number; bottom: number; left: number };
+    verticalAlign: string;
+  };
+  type Line = { items: ItemInfo[]; lineHeight: number; lineX: number };
+
+  const lines: Line[] = [];
+  let currentLine: Line = { items: [], lineHeight: 0, lineX: 0 };
+  lines.push(currentLine);
+
+  for (const child of children) {
+    const style = child.props?.style as Record<string, unknown> | undefined;
+
+    const w = resolveCSSLength(style?.width, availableWidth);
+    const h = resolveCSSLength(style?.height, availableHeight);
+
+    const marginLeft = parseNumericStyle(style?.marginLeft) ?? parseNumericStyle(style?.margin) ?? 0;
+    const marginRight = parseNumericStyle(style?.marginRight) ?? parseNumericStyle(style?.margin) ?? 0;
+    const marginTop = parseNumericStyle(style?.marginTop) ?? parseNumericStyle(style?.margin) ?? 0;
+    const marginBottom = parseNumericStyle(style?.marginBottom) ?? parseNumericStyle(style?.margin) ?? 0;
+    const verticalAlign = (style?.verticalAlign as string) ?? 'baseline';
+
+    const totalW = marginLeft + w + marginRight;
+    const totalH = marginTop + h + marginBottom;
+
+    // 줄바꿈
+    if (currentLine.lineX > 0 && currentLine.lineX + totalW > availableWidth) {
+      currentLine = { items: [], lineHeight: 0, lineX: 0 };
+      lines.push(currentLine);
+    }
+
+    const item: ItemInfo = { child, w, h, margin: { top: marginTop, right: marginRight, bottom: marginBottom, left: marginLeft }, verticalAlign };
+    currentLine.items.push(item);
+    currentLine.lineX += totalW;
+    currentLine.lineHeight = Math.max(currentLine.lineHeight, totalH);
+  }
+
+  // --- Pass 2: 수직 정렬 적용 후 ComputedLayout 생성 ---
+  const results: ComputedLayout[] = [];
+  let lineY = startY;
+
+  for (const line of lines) {
+    let x = 0;
+    for (const item of line.items) {
+      const { child, w, h, margin, verticalAlign } = item;
+      const outerH = margin.top + h + margin.bottom;
+
+      // vertical-align에 따른 Y 오프셋 계산
+      let yOffset: number;
+      switch (verticalAlign) {
+        case 'top':
+          yOffset = margin.top;
+          break;
+        case 'bottom':
+          yOffset = line.lineHeight - h - margin.bottom;
+          break;
+        case 'middle':
+          yOffset = (line.lineHeight - outerH) / 2 + margin.top;
+          break;
+        case 'baseline':
+        default:
+          // CSS Preview에서 inline-block 버튼들은 가운데 정렬로 렌더링됨
+          // baseline 정렬 시 텍스트가 동일한 패딩 구조를 가진 요소들은 middle과 유사
+          yOffset = (line.lineHeight - outerH) / 2 + margin.top;
+          break;
+      }
+
+      results.push({
+        elementId: child.id,
+        x: x + margin.left,
+        y: lineY + yOffset,
+        width: w,
+        height: h,
+        margin,
+      });
+
+      x += margin.left + w + margin.right;
+    }
+
+    lineY += line.lineHeight;
+  }
+
+  return results;
+}
+
+/**
+ * CSS 길이 값을 pixel 숫자로 변환
+ *
+ * - number: 그대로 사용 (enrichWithIntrinsicSize가 주입한 값)
+ * - '200px': 200
+ * - '100%': available 기준으로 계산
+ * - 'auto', 'fit-content': 0 (enrichWithIntrinsicSize가 이미 처리)
+ */
+function resolveCSSLength(value: unknown, available: number): number {
+  if (typeof value === 'number') return value;
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    if (trimmed.endsWith('%')) {
+      return (parseFloat(trimmed) / 100) * available;
+    }
+    if (trimmed.endsWith('px')) {
+      return parseFloat(trimmed);
+    }
+    // 단위 없는 숫자 문자열
+    const n = parseFloat(trimmed);
+    if (!isNaN(n) && /^-?\d+(\.\d+)?$/.test(trimmed)) return n;
+  }
+  return 0;
+}
+
+/**
+ * 스타일 값을 숫자로 파싱 (undefined/비숫자는 null 반환)
+ */
+function parseNumericStyle(value: unknown): number | null {
+  if (typeof value === 'number') return value;
+  if (typeof value === 'string') {
+    const n = parseFloat(value);
+    if (!isNaN(n)) return n;
+  }
+  return null;
+}
+
+// ---------------------------------------------------------------------------
 // DropflowBlockEngine
 // ---------------------------------------------------------------------------
 
@@ -106,6 +417,33 @@ export class DropflowBlockEngine implements LayoutEngine {
   ): ComputedLayout[] {
     if (children.length === 0) return [];
 
+    // intrinsic size 주입 (height + inline-block width)
+    const enriched = children.map(child =>
+      enrichWithIntrinsicSize(child, availableWidth, availableHeight),
+    );
+
+    // inline-block 태그 존재 여부 확인
+    const hasInlineBlock = enriched.some(child => isInlineBlockElement(child));
+
+    // inline-block이 없으면 전통적인 Dropflow 경로
+    if (!hasInlineBlock) {
+      return this._dropflowCalculate(parent, enriched, availableWidth, availableHeight, context);
+    }
+
+    // inline-block이 있으면 세그먼트 분할 후 혼합 레이아웃
+    return this._mixedCalculate(parent, enriched, availableWidth, availableHeight, context);
+  }
+
+  /**
+   * 순수 block 레이아웃 (Dropflow 위임)
+   */
+  private _dropflowCalculate(
+    parent: Element,
+    children: Element[],
+    availableWidth: number,
+    availableHeight: number,
+    context?: LayoutContext,
+  ): ComputedLayout[] {
     const xParent = elementToXElement(parent);
     const xChildren = children.map(elementToXElement);
     const xContext = contextToXContext(context);
@@ -119,6 +457,72 @@ export class DropflowBlockEngine implements LayoutEngine {
     );
 
     return xLayouts.map(xLayoutToComputedLayout);
+  }
+
+  /**
+   * block + inline-block 혼합 레이아웃
+   *
+   * CSS 스펙에 따라 block 컨테이너 내에서:
+   * - block 요소: full-width, 세로 쌓임 (Dropflow 위임)
+   * - inline-block 요소: 가로 배치 + 줄바꿈 (직접 계산)
+   *
+   * 연속된 inline-block 요소들은 "inline run"으로 묶여 가로 배치됨.
+   * block 요소가 나타나면 inline run을 끊고 세로 쌓임으로 전환.
+   */
+  private _mixedCalculate(
+    parent: Element,
+    children: Element[],
+    availableWidth: number,
+    availableHeight: number,
+    context?: LayoutContext,
+  ): ComputedLayout[] {
+    // 1. 세그먼트 분할: 연속된 inline-block → 'inline' 세그먼트, block → 'block' 세그먼트
+    const segments = segmentChildren(children);
+
+    const results: ComputedLayout[] = [];
+    let currentY = 0;
+
+    // 부모 margin 정보
+    const parentStyle = parent.props?.style as Record<string, unknown> | undefined;
+    const parentMarginTop = parseNumericStyle(parentStyle?.marginTop) ?? 0;
+    currentY += parentMarginTop > 0 ? 0 : 0; // margin은 외부에서 처리
+
+    for (const segment of segments) {
+      if (segment.type === 'inline') {
+        // inline-block 가로 배치 (줄바꿈 포함)
+        const inlineResults = layoutInlineRun(
+          segment.children,
+          availableWidth,
+          availableHeight,
+          currentY,
+        );
+        results.push(...inlineResults);
+        // 다음 세그먼트의 Y 시작점 = inline run의 최대 하단
+        for (const r of inlineResults) {
+          currentY = Math.max(currentY, r.y + r.height);
+        }
+      } else {
+        // block 요소 Dropflow 위임
+        const blockResults = this._dropflowCalculate(
+          parent,
+          segment.children,
+          availableWidth,
+          availableHeight - currentY,
+          context,
+        );
+        // Dropflow 결과에 Y 오프셋 적용
+        for (const r of blockResults) {
+          r.y += currentY;
+          results.push(r);
+        }
+        // 다음 세그먼트의 Y 시작점
+        for (const r of blockResults) {
+          currentY = Math.max(currentY, r.y + r.height);
+        }
+      }
+    }
+
+    return results;
   }
 
   /**

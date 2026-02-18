@@ -23,11 +23,11 @@ import type { ComputedStyle } from './engines/cssResolver';
 // ============================================
 
 /**
- * @pixi/layout layout prop 타입
- * CSS Flexbox 속성과 유사한 구조
+ * 레이아웃 엔진 입력 타입
+ * CSS Flexbox/Block 속성과 유사한 구조
  */
 export interface LayoutStyle {
-  // Display (@pixi/layout 지원)
+  // Display
   display?: 'flex' | 'block' | 'none';
 
   // Dimensions
@@ -73,7 +73,7 @@ export interface LayoutStyle {
   paddingBottom?: number | string;
   paddingLeft?: number | string;
 
-  // Border (@pixi/layout 지원)
+  // Border
   borderWidth?: number;
   borderTopWidth?: number;
   borderRightWidth?: number;
@@ -82,16 +82,16 @@ export interface LayoutStyle {
   borderRadius?: number;
   borderColor?: string | number;
 
-  // Visual (@pixi/layout 지원)
+  // Visual
   backgroundColor?: string | number;
 }
 
 // ============================================
-// Types for @pixi/layout
+// 유틸리티 타입
 // ============================================
 
 /**
- * @pixi/layout NumberValue 타입
+ * NumberValue 타입
  * - number: 픽셀 값
  * - `${number}%`: 퍼센트 값
  * - `${number}`: 숫자 문자열
@@ -143,11 +143,11 @@ function measureTextWidth(text: string, fontSize: number): number {
 /**
  * CSS 값을 숫자로 파싱 (px, %, vh, vw, em, rem, calc 등)
  *
- * 내부적으로 resolveCSSSizeValue()에 위임하되, Yoga 호환을 위해:
- * - %: 문자열로 유지 (@pixi/layout이 직접 처리)
- * - vh/vw: % 문자열로 변환 (@pixi/layout이 부모 기준으로 처리)
+ * 내부적으로 resolveCSSSizeValue()에 위임하되, 레이아웃 엔진 호환을 위해:
+ * - %: 문자열로 유지 (엔진이 직접 처리)
+ * - vh/vw: % 문자열로 변환 (엔진이 부모 기준으로 처리)
  *   빌더에서는 viewport = 페이지 = body이므로 vw/vh를 %로 변환하면
- *   Yoga가 부모의 padding/border를 고려하여 content area 기준으로 계산
+ *   엔진이 부모의 padding/border를 고려하여 content area 기준으로 계산
  * - px, rem, em, calc: 숫자로 변환
  */
 export function parseCSSValue(
@@ -163,16 +163,16 @@ export function parseCSSValue(
   }
 
   if (typeof value === 'string') {
-    // 퍼센트 값은 문자열로 유지 (@pixi/layout이 Yoga를 통해 처리)
+    // 퍼센트 값은 문자열로 유지 (레이아웃 엔진이 직접 처리)
     if (value.endsWith('%')) {
       return value;
     }
-    // vh 단위: % 문자열로 변환 (Yoga가 부모 기준으로 처리)
+    // vh 단위: % 문자열로 변환 (엔진이 부모 기준으로 처리)
     // 빌더에서 viewport height ≈ body height이므로 Xvh → "X%" 변환
     if (value.endsWith('vh')) {
       return `${parseFloat(value)}%`;
     }
-    // vw 단위: % 문자열로 변환 (Yoga가 부모 기준으로 처리)
+    // vw 단위: % 문자열로 변환 (엔진이 부모 기준으로 처리)
     // 빌더에서 viewport width ≈ body width이므로 Xvw → "X%" 변환
     if (value.endsWith('vw')) {
       return `${parseFloat(value)}%`;
@@ -189,7 +189,7 @@ export function parseCSSValue(
 }
 
 /**
- * 🚀 Phase 8: CSS 값을 @pixi/layout NumberValue로 변환
+ * 🚀 Phase 8: CSS 값을 레이아웃 엔진 NumberValue로 변환
  *
  * - number: 그대로 반환
  * - '100%' 형식: 그대로 반환 (LayoutNumberValue 호환)
@@ -199,7 +199,7 @@ export function parseCSSValue(
  *
  * @param value - CSS 값 (number | string | undefined)
  * @param fallback - 기본값
- * @returns @pixi/layout 호환 NumberValue
+ * @returns 레이아웃 엔진 호환 NumberValue
  */
 export function toLayoutSize(
   value: number | string | undefined | null,
@@ -273,7 +273,7 @@ function parseFlexShorthand(flex: string | number): {
 // ============================================
 
 /**
- * Element의 style을 @pixi/layout layout prop으로 변환
+ * Element의 style을 레이아웃 엔진용 LayoutStyle로 변환
  *
  * @param element - Element 객체
  * @param viewport - 뷰포트 크기 (vh/vw 단위 변환용, 선택사항)
@@ -291,7 +291,6 @@ export function styleToLayout(
   const parse = (value: unknown) => parseCSSValue(value, parentFontSize);
 
   // Dimensions
-  // 🚀 @pixi/layout의 formatStyles가 이전 스타일과 병합하므로,
   // width/height가 없을 때 명시적으로 'auto'를 설정해야 이전 값이 리셋됨
   const widthRaw = style.width as string | undefined;
   const heightRaw = style.height as string | undefined;
@@ -302,8 +301,8 @@ export function styleToLayout(
   layout.width = width !== undefined ? width : 'auto';
   layout.height = height !== undefined ? height : 'auto';
 
-  // 🚀 fit-content: Yoga가 네이티브 지원하지 않으므로 워크어라운드 적용
-  // FIT_CONTENT sentinel(-2)이 Yoga에 직접 전달되면 잘못된 레이아웃이 발생
+  // 🚀 fit-content: 엔진이 네이티브 지원하지 않으므로 워크어라운드 적용
+  // FIT_CONTENT sentinel(-2)이 엔진에 직접 전달되면 잘못된 레이아웃이 발생
   // → 'auto'로 리셋하고, 리프 노드는 아래에서 명시적 크기 계산
   if (isFitContentWidth) {
     layout.width = 'auto';
@@ -336,7 +335,7 @@ export function styleToLayout(
       layout.alignItems = 'center';
     }
     // CSS 기본값: width: fit-content (horizontal/vertical 모두)
-    // width 미지정 시 CSS 스타일시트의 fit-content를 Yoga 워크어라운드로 적용
+    // width 미지정 시 CSS 스타일시트의 fit-content 워크어라운드 적용
     // ⚠️ alignSelf는 설정하지 않음 — 부모의 align-items가 교차축 정렬을 결정해야 함
     // (CSS에서 width: fit-content와 align-self는 독립적 속성)
     if (width === undefined && !isFitContentWidth) {
@@ -360,8 +359,8 @@ export function styleToLayout(
     if (!style.flexWrap) layout.flexWrap = 'wrap';
   }
 
-  // 🚀 Label: Yoga 리프 노드이므로 고유 크기를 명시적으로 제공해야 함
-  // width: 'auto'만으로는 Yoga가 콘텐츠 폭을 알 수 없어 width=0이 됨
+  // 🚀 Label: 리프 노드이므로 고유 크기를 명시적으로 제공해야 함
+  // width: 'auto'만으로는 엔진이 콘텐츠 폭을 알 수 없어 width=0이 됨
   // - fit-content: 텍스트 폭을 width로 설정 (shrink-to-fit)
   // - width 미설정(auto): minWidth로 텍스트 폭 설정 (stretch는 유지하면서 부모 fit-content 시 최소 크기 제공)
   if (tag === 'label') {
@@ -376,7 +375,7 @@ export function styleToLayout(
   }
 
   // 🚀 Button/ToggleButton/FancyButton: fit-content 시 텍스트 폭 계산
-  // SELF_PADDING_TAGS 리프 노드 — padding이 strip되므로 Yoga가 콘텐츠 크기를 모름
+  // SELF_PADDING_TAGS 리프 노드 — padding이 strip되므로 엔진이 콘텐츠 크기를 모름
   // → textWidth + paddingX*2 + borderWidth*2 로 명시적 pixel width 설정
   const SELF_RENDERING_BTN_TAGS = new Set(['button', 'submitbutton', 'fancybutton', 'togglebutton']);
   if (SELF_RENDERING_BTN_TAGS.has(tag) && isFitContentWidth) {
@@ -400,7 +399,7 @@ export function styleToLayout(
     }
   }
 
-  // 🚀 순수 텍스트 태그: 컨테이너 자식으로 배치될 때 Yoga가 텍스트 높이/너비를 알 수 없으므로
+  // 🚀 순수 텍스트 태그: 컨테이너 자식으로 배치될 때 엔진이 텍스트 높이/너비를 알 수 없으므로
   // height 미설정 또는 fit-content 시 calculateContentHeight()로 높이 자동 계산
   // width 미설정 시 minWidth로 텍스트 폭 설정 (stretch 유지 + 부모 fit-content 시 최소 크기 제공)
   const TEXT_LAYOUT_TAGS = new Set(['label', 'text', 'heading', 'paragraph']);
@@ -408,7 +407,7 @@ export function styleToLayout(
     if (height === undefined || isFitContentHeight) {
       layout.height = calculateContentHeight(element);
     }
-    // Yoga 리프 노드 → 고유 너비 제공 (Label은 위에서 별도 처리)
+    // 리프 노드 → 고유 너비 제공 (Label은 위에서 별도 처리)
     if (tag !== 'label' && width === undefined && !isFitContentWidth) {
       const textContent = String(props?.children || props?.text || props?.label || '');
       if (textContent) {
@@ -479,7 +478,7 @@ export function styleToLayout(
   }
 
   // 🚀 Badge/Tag/Chip: 명시적 width/height가 없으면 자체 크기 계산
-  // PixiBadge와 동일한 방식으로 계산하여 Yoga 레이아웃에 전달
+  // PixiBadge와 동일한 방식으로 계산하여 레이아웃 엔진에 전달
   const isBadgeType = tag === 'badge' || tag === 'tag' || tag === 'chip';
   if (isBadgeType) {
     const size = (props?.size as string) ?? 'md';
@@ -524,7 +523,7 @@ export function styleToLayout(
   }
 
   // Display
-  // @pixi/layout은 display: 'flex', 'block', 'none' 지원
+  // TaffyFlexEngine에서 사용: 'flex', 'block', 'none' 지원
   if (style.display === 'flex' || style.display === 'inline-flex') {
     layout.display = 'flex';
     // CSS flex의 기본 flexDirection은 'row'
@@ -600,7 +599,7 @@ export function styleToLayout(
   if (paddingBottom !== undefined) layout.paddingBottom = paddingBottom;
   if (paddingLeft !== undefined) layout.paddingLeft = paddingLeft;
 
-  // Border (@pixi/layout 지원)
+  // Border
   const borderWidth = parse(style.borderWidth);
   if (typeof borderWidth === 'number') layout.borderWidth = borderWidth;
   const borderTopWidth = parse(style.borderTopWidth);
@@ -620,14 +619,14 @@ export function styleToLayout(
     layout.borderColor = style.borderColor as string | number;
   }
 
-  // Visual (@pixi/layout 지원)
+  // Visual
   if (style.backgroundColor !== undefined && style.backgroundColor !== null) {
     layout.backgroundColor = style.backgroundColor as string | number;
   }
 
-  // 🚀 Button/ToggleButton/FancyButton: Yoga 리프 노드 높이 계산
+  // 🚀 Button/ToggleButton/FancyButton: 리프 노드 높이 계산
   // SELF_PADDING_TAGS는 stripSelfRenderedProps로 padding/border가 제거되어
-  // Yoga가 height를 결정할 수 없음 → 명시적 height 설정 필요
+  // Flex 엔진이 height를 결정할 수 없음 → 명시적 height 설정 필요
   const SELF_RENDERING_BUTTON_TAGS = new Set(['button', 'submitbutton', 'fancybutton', 'togglebutton']);
   if (SELF_RENDERING_BUTTON_TAGS.has(tag) && (height === undefined || isFitContentHeight)) {
     // parseFloat(v) || undefined는 0을 undefined로 처리하므로 ?? 사용
@@ -654,7 +653,7 @@ export function styleToLayout(
     // height 대신 minHeight를 사용하여 부모 align-items: stretch 시 cross-axis 확장 허용
     layout.minHeight = paddingY * 2 + lineHeight + borderW * 2;
 
-    // 고정 width가 있으면 텍스트 줄바꿈 높이를 측정하여 minHeight로 Yoga에 전달
+    // 고정 width가 있으면 텍스트 줄바꿈 높이를 측정하여 minHeight로 엔진에 전달
     if (typeof width === 'number' && width > 0) {
       const textContent = String(props?.children ?? props?.text ?? props?.label ?? '');
       if (textContent) {

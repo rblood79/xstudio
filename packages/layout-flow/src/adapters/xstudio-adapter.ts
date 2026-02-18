@@ -383,6 +383,12 @@ function extractImageDimensions(element: XElement): ImageDimensions | undefined 
  *
  * inline-block은 BlockContainerOfBlocks 안에 inline-level로 들어가므로
  * outer display가 'inline'이면서 inner가 'flow'인 BlockContainer로 처리.
+ *
+ * ⚠️ 제한사항: CSS 스펙에서 button/input 등은 기본 display가 inline-block이지만,
+ * Dropflow IFC는 DOM 텍스트 노드(Run) 기반으로 동작하므로 XStudio의 prop 기반
+ * 컴포넌트(Button, Badge 등)를 inline-block으로 처리할 수 없다.
+ * display 미지정 시 block으로 폴백하여 세로 쌓임으로 렌더링한다.
+ * 가로 배치가 필요하면 사용자가 부모에 display:flex를 명시적으로 설정해야 한다.
  */
 type ChildDisplayClass =
   | 'block'       // outer=block → BlockContainerOfBlocks 자식으로 추가
@@ -399,7 +405,7 @@ function classifyChild(element: XElement): ChildDisplayClass {
   // replaced elements는 항상 ReplacedBox
   if (isReplacedElement(element.tag)) return 'replaced';
 
-  // inline / inline-block → inline class
+  // inline / inline-block → inline class (명시적 설정만)
   if (display === 'inline' || display === 'inline-block') return 'inline';
 
   // block / flow-root / flex / grid / 미지정 → block class

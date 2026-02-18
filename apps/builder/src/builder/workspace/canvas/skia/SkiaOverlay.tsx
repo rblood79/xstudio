@@ -205,21 +205,16 @@ function buildSkiaTreeHierarchical(
           const relX = absX - parentAbsX;
           const relY = absY - parentAbsY;
 
-          // Yoga 계산 완료 후 visual bounds 갱신 전(React 재렌더 대기)인 경우,
-          // c.width(visual bounds)는 stale 값일 수 있다.
-          // _layout.computedLayout는 Yoga가 즉시 설정하므로 우선 사용한다.
-          const yogaLayout = (c as unknown as Record<string, unknown>)._layout as
-            { computedLayout?: { width: number; height: number } } | undefined;
-          const yogaW = yogaLayout?.computedLayout?.width;
-          const yogaH = yogaLayout?.computedLayout?.height;
-          const actualWidth = (yogaW != null && yogaW > 0)
-            ? yogaW
-            : (c.width > 0 ? c.width : nodeData.width);
-          // 🚀 Card 등 auto-height UI 컴포넌트: Yoga가 텍스트 bounds를
-          // 아직 반영하지 못한 경우(minHeight 폴백), contentMinHeight를 최소값으로 적용
-          const baseHeight = (yogaH != null && yogaH > 0)
-            ? yogaH
-            : (c.height > 0 ? c.height : nodeData.height);
+          // Phase 11: @pixi/layout(Yoga) 제거 — nodeData(엔진 결과 기반)를 우선 사용.
+          // c.width/c.height(PixiJS Container bounds)는 자식 bounding box 기반이므로
+          // 엔진 결과와 다를 수 있어 폴백으로만 사용.
+          const actualWidth = nodeData.width > 0
+            ? nodeData.width
+            : (c.width > 0 ? c.width : 0);
+          // Card 등 auto-height UI 컴포넌트: contentMinHeight를 최소값으로 적용
+          const baseHeight = nodeData.height > 0
+            ? nodeData.height
+            : (c.height > 0 ? c.height : 0);
           const actualHeight = nodeData.contentMinHeight
             ? Math.max(baseHeight, nodeData.contentMinHeight)
             : baseHeight;
