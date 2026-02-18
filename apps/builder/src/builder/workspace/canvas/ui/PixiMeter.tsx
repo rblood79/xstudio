@@ -1,20 +1,22 @@
 /**
  * Pixi Meter
  *
- * 🚀 Phase 1: Meter WebGL 컴포넌트 (Pattern A)
+ * Meter WebGL 컴포넌트 (Pattern A)
  *
  * JSX + Graphics.draw() 패턴을 사용한 미터 컴포넌트
  * - variant (default, primary, secondary, tertiary, error, surface) 지원
  * - size (sm, md, lg) 지원
  * - label과 value 표시 지원
  * - formatOptions으로 값 포맷팅 지원
+ * - 히트 영역 크기는 LayoutComputedSizeContext(엔진 계산 결과) 우선 사용
  *
  * @since 2025-12-16 Phase 1 WebGL Migration
+ * @updated 2026-02-19 Wave 4: LayoutComputedSizeContext로 히트 영역 통합
  */
 
 import { useExtend } from '@pixi/react';
 import { PIXI_COMPONENTS } from '../pixiSetup';
-import { memo, useCallback, useMemo } from "react";
+import { memo, useCallback, useMemo, useContext } from "react";
 import {
   Graphics as PixiGraphics,
   TextStyle,
@@ -23,8 +25,9 @@ import type { Element } from "../../../../types/core/store.types";
 import type { CSSStyle } from "../sprites/styleConverter";
 import { drawBox } from "../utils";
 import { cssColorToHex } from "../sprites/styleConverter";
+import { LayoutComputedSizeContext } from '../layoutContext';
 
-// 🚀 Component Spec
+// Component Spec
 import {
   MeterSpec,
   getVariantColors as getSpecVariantColors,
@@ -91,6 +94,17 @@ function formatMeterValue(
 // Component
 // ============================================
 
+/**
+ * PixiMeter
+ *
+ * Meter 컴포넌트 (Skia 시각 렌더링 + PixiJS 이벤트)
+ * - 크기: LayoutComputedSizeContext에서 엔진(Taffy/Dropflow) 계산 결과 우선 사용
+ * - 위치: DirectContainer가 x/y 설정 (이 컴포넌트에서 처리하지 않음)
+ * - 시각: track/fill/label은 이 컴포넌트에서 직접 렌더링
+ *
+ * @example
+ * <PixiMeter element={meterElement} onClick={handleClick} />
+ */
 export const PixiMeter = memo(function PixiMeter({
   element,
   onClick,
@@ -98,6 +112,9 @@ export const PixiMeter = memo(function PixiMeter({
   useExtend(PIXI_COMPONENTS);
   const style = element.props?.style as CSSStyle | undefined;
   const props = element.props as MeterElementProps | undefined;
+
+  // 레이아웃 엔진(Taffy/Dropflow) 계산 결과 — DirectContainer가 제공
+  const computedSize = useContext(LayoutComputedSizeContext);
 
   // 값 설정
   const value = useMemo(() => {
@@ -117,13 +134,13 @@ export const PixiMeter = memo(function PixiMeter({
   const variant = useMemo(() => String(props?.variant || "default"), [props?.variant]);
   const size = useMemo(() => String(props?.size || "md"), [props?.size]);
 
-  // 🚀 Spec Migration
+  // Spec Migration
   const sizePreset = useMemo(() => {
     const sizeSpec = MeterSpec.sizes[size] || MeterSpec.sizes[MeterSpec.defaultSize];
     return getSpecSizePreset(sizeSpec, 'light');
   }, [size]);
 
-  // 🚀 Spec Migration: variant에 따른 테마 색상
+  // variant에 따른 테마 색상
   const variantColors = useMemo(() => {
     const variantSpec = MeterSpec.variants[variant] || MeterSpec.variants[MeterSpec.defaultVariant];
     return getSpecVariantColors(variantSpec, 'light');
@@ -144,10 +161,11 @@ export const PixiMeter = memo(function PixiMeter({
     return formatMeterValue(value, minValue, maxValue, valueFormat, props?.formatOptions);
   }, [value, minValue, maxValue, valueFormat, props?.formatOptions]);
 
-  // 크기 계산
-  const meterWidthValue = typeof style?.width === 'number' ? style.width : sizePreset.width;
+  // 크기 계산: 엔진 계산 결과 우선, 없으면 style/Spec fallback
+  const fallbackWidth = typeof style?.width === 'number' ? style.width : sizePreset.width;
+  const meterWidth = computedSize?.width ?? fallbackWidth;
   const barHeight = sizePreset.barHeight;
-  const fillWidth = (meterWidthValue * percent) / 100;
+  const fillWidth = (meterWidth * percent) / 100;
 
   // 전체 높이 계산 (라벨/값 + 갭 + 바)
   const hasLabelRow = label || showValue;
@@ -158,17 +176,17 @@ export const PixiMeter = memo(function PixiMeter({
       g.clear();
 
       drawBox(g, {
-        width: meterWidthValue,
+        width: meterWidth,
         height: barHeight,
         backgroundColor: trackColor,
         backgroundAlpha: 1,
         borderRadius: sizePreset.borderRadius,
       });
     },
-    [meterWidthValue, barHeight, trackColor, sizePreset.borderRadius]
+    [meterWidth, barHeight, trackColor, sizePreset.borderRadius]
   );
 
-  // 채우기 그리기 - 🚀 테마 색상 사용
+  // 채우기 그리기 — 테마 색상 사용
   const drawFill = useCallback(
     (g: PixiGraphics) => {
       g.clear();
@@ -191,7 +209,7 @@ export const PixiMeter = memo(function PixiMeter({
     onClick?.(element.id);
   }, [element.id, onClick]);
 
-  // 라벨 텍스트 스타일 - 🚀 테마 색상 사용
+  // 라벨 텍스트 스타일 — 테마 색상 사용
   const labelTextStyle = useMemo(
     () =>
       new TextStyle({
@@ -202,7 +220,7 @@ export const PixiMeter = memo(function PixiMeter({
     [sizePreset.fontSize, labelColor]
   );
 
-  // 값 텍스트 스타일 - 🚀 테마 색상 사용
+  // 값 텍스트 스타일 — 테마 색상 사용
   const valueTextStyle = useMemo(
     () =>
       new TextStyle({
@@ -247,16 +265,12 @@ export const PixiMeter = memo(function PixiMeter({
         {/* 트랙 (배경) */}
         <pixiGraphics
           draw={drawTrack}
-          x={0}
-          y={0}
           eventMode="none"
         />
 
         {/* 채우기 */}
         <pixiGraphics
           draw={drawFill}
-          x={0}
-          y={0}
           eventMode="none"
         />
       </pixiContainer>

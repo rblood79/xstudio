@@ -8,39 +8,7 @@
 
 ---
 
-## ⚠️ 아키텍처 정정 (2026-01-30, 2026-02-18 업데이트)
-
-초기 분석에서 "PixiJS가 메인 렌더러, pencil.wasm이 보조 최적화"로 기술하여,
-본 문서가 **PixiJS를 메인 렌더러로 유지하면서 보조 WASM 모듈만 추가하는 계획**으로 수립되었다.
-
-그러나 `renderSkia()` 메서드 역공학 결과, 실제 Pencil 아키텍처는:
-
-| 계층 | 역할 | 기술 |
-|------|------|------|
-| **메인 렌더러** | 모든 디자인 노드의 벡터/텍스트/이미지/이펙트 렌더링 | **CanvasKit/Skia WASM** (7.8MB) |
-| 씬 그래프/이벤트 | 씬 트리 관리 + EventBoundary (Hit Testing) 전용 | PixiJS v8 |
-| 레이아웃 | Flexbox 계산 | Yoga WASM |
-
-```
-Pencil 실제 구조:                    현재 xstudio (Phase 11):
-┌──────────────────────┐             ┌──────────────────────┐
-│ CanvasKit/Skia WASM  │ ← 메인      │ CanvasKit/Skia WASM  │ ← 메인 (렌더링)
-│ (renderSkia 파이프라인)│             │ (renderSkia 파이프라인)│
-├──────────────────────┤             ├──────────────────────┤
-│ PixiJS v8            │ ← 보조      │ PixiJS v8            │ ← 보조 (씬 그래프 + 이벤트)
-│ (씬 그래프 + 이벤트)   │             │                      │
-├──────────────────────┤             ├──────────────────────┤
-│ Yoga WASM            │ ← 레이아웃  │ Dropflow + Taffy WASM│ ← 레이아웃
-└──────────────────────┘             └──────────────────────┘
-```
-
-**현재 상태:** Pencil §11 아키텍처를 xstudio에 적용하여, **CanvasKit/Skia WASM 메인 렌더러 전환이 완료**되었고 PixiJS는 씬 그래프/이벤트 레이어로 축소되었다.
-
-- **Phase 0–4** (기존): PixiJS 중심 아키텍처 시점의 점진적 WASM 최적화 (Spatial Index, Layout 가속, Worker). CanvasKit 전환 전에도 독립적으로 유효하다.
-- **Phase 5** (신규): CanvasKit/Skia WASM 메인 렌더러 도입 — Pencil의 renderSkia 패턴 적용
-- **Phase 6** (신규): 고급 렌더링 기능 — 이중 Surface 캐싱(컨텐츠 캐시 + 오버레이 분리), padding 기반 camera-only blit, cleanup render
-- **현재 런타임 기준 보정:** 레이아웃 실행 경로는 `selectEngine()` → `TaffyFlexEngine`/`TaffyGridEngine`/`DropflowBlockEngine`이며,
-  `layoutAccelerator.ts` + `wasm-worker` 기반 Block/Grid 배치 가속은 레거시 PoC 경로(기본 비활성/미연결)로 분류한다.
+> 초기 분석 정정 이력은 [부록 A: 아키텍처 정정 이력](#부록-a-아키텍처-정정-이력) 참조
 
 ---
 
@@ -3437,3 +3405,43 @@ ID→Element 매핑(`elementsMap`) 경로가 다시 필요해진다.
 
 > **주의:** 블로그 URL은 시간에 따라 변경될 수 있다. 제목으로 검색하면 최신 URL을 확인할 수 있다.
 > Figma의 내부 구현 상세 일부는 비공개이며, 공개 발표/블로그에서 추론한 내용을 포함한다.
+
+---
+
+## 부록 A: 아키텍처 정정 이력
+
+> 이 섹션은 초기 분석의 오류 수정 이력을 기록합니다. 현재 아키텍처는 문서 상단 메타데이터의 "현재 스택" 참조.
+
+### 정정 (2026-01-30, 2026-02-18 업데이트)
+
+초기 분석에서 "PixiJS가 메인 렌더러, pencil.wasm이 보조 최적화"로 기술하여,
+본 문서가 **PixiJS를 메인 렌더러로 유지하면서 보조 WASM 모듈만 추가하는 계획**으로 수립되었다.
+
+그러나 `renderSkia()` 메서드 역공학 결과, 실제 Pencil 아키텍처는:
+
+| 계층 | 역할 | 기술 |
+|------|------|------|
+| **메인 렌더러** | 모든 디자인 노드의 벡터/텍스트/이미지/이펙트 렌더링 | **CanvasKit/Skia WASM** (7.8MB) |
+| 씬 그래프/이벤트 | 씬 트리 관리 + EventBoundary (Hit Testing) 전용 | PixiJS v8 |
+| 레이아웃 | Flexbox 계산 | Yoga WASM |
+
+```
+Pencil 실제 구조:                    현재 xstudio (Phase 11):
+┌──────────────────────┐             ┌──────────────────────┐
+│ CanvasKit/Skia WASM  │ ← 메인      │ CanvasKit/Skia WASM  │ ← 메인 (렌더링)
+│ (renderSkia 파이프라인)│             │ (renderSkia 파이프라인)│
+├──────────────────────┤             ├──────────────────────┤
+│ PixiJS v8            │ ← 보조      │ PixiJS v8            │ ← 보조 (씬 그래프 + 이벤트)
+│ (씬 그래프 + 이벤트)   │             │                      │
+├──────────────────────┤             ├──────────────────────┤
+│ Yoga WASM            │ ← 레이아웃  │ Dropflow + Taffy WASM│ ← 레이아웃
+└──────────────────────┘             └──────────────────────┘
+```
+
+**현재 상태:** Pencil §11 아키텍처를 xstudio에 적용하여, **CanvasKit/Skia WASM 메인 렌더러 전환이 완료**되었고 PixiJS는 씬 그래프/이벤트 레이어로 축소되었다.
+
+- **Phase 0–4** (기존): PixiJS 중심 아키텍처 시점의 점진적 WASM 최적화 (Spatial Index, Layout 가속, Worker). CanvasKit 전환 전에도 독립적으로 유효하다.
+- **Phase 5** (신규): CanvasKit/Skia WASM 메인 렌더러 도입 — Pencil의 renderSkia 패턴 적용
+- **Phase 6** (신규): 고급 렌더링 기능 — 이중 Surface 캐싱(컨텐츠 캐시 + 오버레이 분리), padding 기반 camera-only blit, cleanup render
+- **현재 런타임 기준 보정:** 레이아웃 실행 경로는 `selectEngine()` → `TaffyFlexEngine`/`TaffyGridEngine`/`DropflowBlockEngine`이며,
+  `layoutAccelerator.ts` + `wasm-worker` 기반 Block/Grid 배치 가속은 레거시 PoC 경로(기본 비활성/미연결)로 분류한다.

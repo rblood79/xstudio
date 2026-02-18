@@ -59,7 +59,7 @@ xstudio/
 | 영역 | 기술 |
 |------|------|
 | UI | React 19, React-Aria Components |
-| State | Zustand, TanStack Query |
+| State | Zustand (메인), Jotai (스타일 패널), TanStack Query |
 | Styling | Tailwind CSS v4, tailwind-variants |
 | Canvas | **CanvasKit/Skia WASM** (메인 렌더러) + PixiJS 8 (이벤트 전용), @pixi/react |
 | AI | Groq SDK (llama-3.3-70b-versatile), Tool Calling + Agent Loop |
@@ -117,6 +117,8 @@ pnpm storybook
 ## 참조 문서
 
 - [AI Feature Design](docs/AI.md)
+- [WASM Architecture](docs/WASM.md)
+- [Component Spec](docs/COMPONENT_SPEC_ARCHITECTURE.md)
 - [CSS Architecture](docs/reference/components/CSS_ARCHITECTURE.md)
 - [Skill Rules](.claude/skills/xstudio-patterns/SKILL.md)
 - [ADR: State Management](docs/adr/001-state-management.md)

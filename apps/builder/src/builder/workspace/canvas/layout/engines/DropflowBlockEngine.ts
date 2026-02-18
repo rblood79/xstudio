@@ -26,7 +26,14 @@ import type {
   XComputedLayout,
   XLayoutContext,
 } from '@xstudio/layout-flow';
-import { parseBoxModel } from './utils';
+import { enrichWithIntrinsicSize, INLINE_BLOCK_TAGS } from './utils';
+import { resolveStyle, ROOT_COMPUTED_STYLE } from './cssResolver';
+import type { ComputedStyle } from './cssResolver';
+import {
+  MIN_CONTENT,
+  MAX_CONTENT,
+  FIT_CONTENT,
+} from './cssValueParser';
 
 // ---------------------------------------------------------------------------
 // Element → XElement 변환
@@ -50,6 +57,9 @@ function elementToXElement(element: Element): XElement {
 
 /**
  * LayoutContext를 XLayoutContext로 변환
+ *
+ * parentComputedStyle은 XLayoutContext에 없으므로 전달하지 않는다.
+ * CSS 상속 처리는 DropflowBlockEngine 레이어에서 담당한다.
  */
 function contextToXContext(context: LayoutContext | undefined): XLayoutContext | undefined {
   if (!context) return undefined;
@@ -75,117 +85,6 @@ function xLayoutToComputedLayout(xl: XComputedLayout): ComputedLayout {
     height: xl.height,
     margin: xl.margin,
   };
-}
-
-// ---------------------------------------------------------------------------
-// Intrinsic height 주입
-// ---------------------------------------------------------------------------
-
-/**
- * CSS 스펙에서 기본 display가 inline-block인 태그
- *
- * Dropflow는 이 요소들을 block으로 처리하므로 (IFC 미지원),
- * width가 없으면 100%로 확장된다.
- * fit-content 동작을 에뮬레이트하기 위해 intrinsic width를 주입한다.
- */
-const INLINE_BLOCK_TAGS = new Set([
-  'button', 'submitbutton', 'fancybutton', 'togglebutton',
-  'badge', 'tag', 'chip',
-  'checkbox', 'radio', 'switch', 'toggle',
-  'togglebuttongroup',
-]);
-
-/**
- * 리프 UI 컴포넌트에 intrinsic size(width/height)를 주입
- *
- * Dropflow는 자식이 없는 블록의 height를 0으로 collapse하고,
- * block 요소의 width를 부모 100%로 확장한다.
- *
- * Button, Badge 등은 텍스트/인디케이터가 props에만 있어
- * Dropflow가 콘텐츠 크기를 계산할 수 없다.
- *
- * parseBoxModel()의 contentWidth/contentHeight + spec padding/border를
- * 사용하여 border-box 크기를 CSS width/height로 주입한다.
- */
-function enrichWithIntrinsicSize(
-  element: Element,
-  availableWidth: number,
-  availableHeight: number,
-): Element {
-  const style = element.props?.style as Record<string, unknown> | undefined;
-  const tag = (element.tag ?? '').toLowerCase();
-
-  // height도 fit-content/auto일 때 intrinsic height 주입 필요
-  // Dropflow는 'fit-content' 문자열을 이해하지 못함
-  // %는 Dropflow가 직접 처리하므로 스킵
-  const rawHeight = style?.height;
-  const needsHeight = !rawHeight || rawHeight === 'fit-content' || rawHeight === 'auto';
-  // inline-block 태그는 width 미지정 또는 fit-content일 때 intrinsic width 주입
-  // Dropflow는 'fit-content' 문자열을 이해하지 못하므로 pixel 값으로 변환 필요
-  // width가 %, px 등 구체적 값으로 명시되었으면 스킵
-  const rawWidth = style?.width;
-  const needsWidth = INLINE_BLOCK_TAGS.has(tag) && (!rawWidth || rawWidth === 'fit-content' || rawWidth === 'auto');
-
-  if (!needsHeight && !needsWidth) return element;
-
-  const box = parseBoxModel(element, availableWidth, availableHeight);
-
-  // contentHeight <= 0이면 컨테이너 요소 (div, section 등) — 스킵
-  if (box.contentHeight <= 0 && !needsWidth) return element;
-
-  // Dropflow adapter(elementStyleToDropflowStyle)는 CSS style에서만 padding/border를 읽음.
-  // spec-defined padding/border(BUTTON_SIZE_CONFIG 등)는 CSS에 없으므로 Dropflow는 0으로 처리.
-  //
-  // padding과 border를 독립적으로 처리:
-  // - CSS에 해당 속성이 없으면 → spec 기본값을 크기에 포함 (Dropflow가 추가하지 않으므로)
-  // - CSS에 해당 속성이 있으면 → 해당 부분 생략 (Dropflow가 CSS 값을 추가하므로)
-  const hasCSSVerticalPadding = style?.padding !== undefined ||
-    style?.paddingTop !== undefined || style?.paddingBottom !== undefined;
-  const hasCSSVerticalBorder = style?.borderWidth !== undefined ||
-    style?.borderTopWidth !== undefined || style?.borderBottomWidth !== undefined;
-  const hasCSSHorizontalPadding = style?.padding !== undefined ||
-    style?.paddingLeft !== undefined || style?.paddingRight !== undefined;
-  const hasCSSHorizontalBorder = style?.borderWidth !== undefined ||
-    style?.borderLeftWidth !== undefined || style?.borderRightWidth !== undefined;
-
-  const injectedStyle: Record<string, unknown> = { ...style };
-
-  // Height 주입
-  if (needsHeight && box.contentHeight > 0) {
-    let injectHeight = box.contentHeight;
-    if (!hasCSSVerticalPadding) {
-      injectHeight += box.padding.top + box.padding.bottom;
-    }
-    if (!hasCSSVerticalBorder) {
-      injectHeight += box.border.top + box.border.bottom;
-    }
-    injectedStyle.height = injectHeight;
-  }
-
-  // Width 주입 (inline-block 태그의 fit-content 에뮬레이션)
-  if (needsWidth && box.contentWidth > 0) {
-    let injectWidth = box.contentWidth;
-    if (!hasCSSHorizontalPadding) {
-      injectWidth += box.padding.left + box.padding.right;
-    }
-    if (!hasCSSHorizontalBorder) {
-      injectWidth += box.border.left + box.border.right;
-    }
-    injectedStyle.width = injectWidth;
-  }
-
-  // 변경이 없으면 원본 반환
-  if (injectedStyle.height === undefined && injectedStyle.width === style?.width) {
-    return element;
-  }
-
-  return {
-    ...element,
-    props: {
-      ...element.props,
-      style: injectedStyle,
-    },
-  } as Element;
 }
 
 // ---------------------------------------------------------------------------
@@ -356,12 +255,29 @@ function layoutInlineRun(
  * - number: 그대로 사용 (enrichWithIntrinsicSize가 주입한 값)
  * - '200px': 200
  * - '100%': available 기준으로 계산
- * - 'auto', 'fit-content': 0 (enrichWithIntrinsicSize가 이미 처리)
+ * - 'auto', 'fit-content', 'min-content', 'max-content': 0 (enrichWithIntrinsicSize가 이미 처리)
+ * - sentinel 숫자(FIT_CONTENT=-2, MIN_CONTENT=-3, MAX_CONTENT=-4): 0으로 처리
+ *   (layoutInlineRun에서 enriched 요소의 스타일을 읽으므로 sentinel이 그대로 전달될 수 있음)
  */
 function resolveCSSLength(value: unknown, available: number): number {
-  if (typeof value === 'number') return value;
+  if (typeof value === 'number') {
+    // sentinel 값 방어: FIT_CONTENT(-2), MIN_CONTENT(-3), MAX_CONTENT(-4)는
+    // enrichWithIntrinsicSize에서 pixel 값으로 변환되어야 하지만,
+    // 변환이 이루어지지 않은 경우를 대비하여 0으로 처리한다.
+    if (value === FIT_CONTENT || value === MIN_CONTENT || value === MAX_CONTENT) return 0;
+    return value;
+  }
   if (typeof value === 'string') {
     const trimmed = value.trim();
+    // intrinsic sizing 키워드는 0으로 처리 (enrichWithIntrinsicSize가 이미 pixel로 변환)
+    if (
+      trimmed === 'auto' ||
+      trimmed === 'fit-content' ||
+      trimmed === 'min-content' ||
+      trimmed === 'max-content'
+    ) {
+      return 0;
+    }
     if (trimmed.endsWith('%')) {
       return (parseFloat(trimmed) / 100) * available;
     }
@@ -417,10 +333,21 @@ export class DropflowBlockEngine implements LayoutEngine {
   ): ComputedLayout[] {
     if (children.length === 0) return [];
 
+    // ── CSS 상속 체인 구성 ──────────────────────────────────────────
+    // 부모의 computed style 결정:
+    //   - context에 parentComputedStyle이 있으면 사용 (상위 엔진에서 전파됨)
+    //   - 없으면 부모 요소 style을 ROOT_COMPUTED_STYLE 기반으로 직접 해석
+    const parentRawStyle = parent.props?.style as Record<string, unknown> | undefined;
+    const parentComputed: ComputedStyle = context?.parentComputedStyle
+      ?? resolveStyle(parentRawStyle, ROOT_COMPUTED_STYLE);
+
     // intrinsic size 주입 (height + inline-block width)
-    const enriched = children.map(child =>
-      enrichWithIntrinsicSize(child, availableWidth, availableHeight),
-    );
+    // 각 자식의 computed style을 계산하여 enrichWithIntrinsicSize에 전달
+    const enriched = children.map(child => {
+      const childRawStyle = child.props?.style as Record<string, unknown> | undefined;
+      const childComputed = resolveStyle(childRawStyle, parentComputed);
+      return enrichWithIntrinsicSize(child, availableWidth, availableHeight, childComputed);
+    });
 
     // inline-block 태그 존재 여부 확인
     const hasInlineBlock = enriched.some(child => isInlineBlockElement(child));

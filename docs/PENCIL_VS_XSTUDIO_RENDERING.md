@@ -17,8 +17,8 @@
 | 씬 그래프/이벤트 | PixiJS v8 — 씬 트리 관리 + EventBoundary (Hit Testing) 전용, 디자인 노드 렌더링에 불참여 | PixiJS v8.14.3 — 씬 그래프 + EventBoundary (Hit Testing) 전용, Camera 하위 `alpha=0`으로 시각적 렌더링 비활성화 |
 | GPU Surface | CanvasKit MakeWebGLCanvasSurface → GrDirectContext → MakeOnScreenGLSurface (폴백: MakeSWCanvasSurface) | CanvasKit MakeWebGLCanvasSurface (`createGPUSurface`) — on-screen surface (폴백: SW). PixiJS는 별도 WebGL 컨텍스트(이벤트 전용) |
 | React 바인딩 | @pixi/react v8 | @pixi/react v8.0.5 |
-| 레이아웃 | @pixi/layout (Yoga WASM) | @pixi/layout v3.2.0 (Yoga WASM) |
-| WASM 모듈 | **CanvasKit (Skia) WASM** (7.8MB) — 메인 렌더 엔진 + Yoga | **CanvasKit WASM** (메인 렌더러) + **Rust WASM** (SpatialIndex + Layout 가속, 70KB) + Yoga WASM ✅ (2026-02-02) |
+| 레이아웃 | @pixi/layout (Yoga WASM) | **Taffy WASM** (Flex/Grid) + **Dropflow Fork** (Block) — Phase 11에서 @pixi/layout 제거 |
+| WASM 모듈 | **CanvasKit (Skia) WASM** (7.8MB) — 메인 렌더 엔진 + Yoga | **CanvasKit WASM** (메인 렌더러) + **Taffy WASM** (Flex/Grid) + **Rust WASM** (SpatialIndex, 70KB) ✅ (2026-02-18) |
 | **컴포넌트 렌더링** | 6개 노드 클래스 (Frame/Group/Shape/Text/Sticky/IconFont) + `renderSkia()` | **@xstudio/specs** — 60개+ ComponentSpec → Shape[] → `specShapeConverter.ts` → SkiaNodeData ✅ (2026-02-12) |
 | 번들 크기 | index.js 5.7MB + WASM 7.8MB = ~13.5MB | 측정 필요 |
 | 플랫폼 | Electron (GPU 직접 접근) | 웹 브라우저 (WebGL 제약) |
@@ -1714,7 +1714,7 @@ z_ (Base Node)
 | **노드 클래스** | 6개 구체 클래스, 단일 Base | PixiJS Container 기반 확장 |
 | **다형성** | ShapeNode 1개 클래스 = 5종 도형 | 각 도형별 별도 컴포넌트 |
 | **타입 판별** | `this.type` 문자열 판별자 | React 컴포넌트 타입 |
-| **레이아웃** | Yoga WASM (Flexbox) + Auto Layout | @pixi/layout (Yoga WASM) + 커스텀 Grid/Block |
+| **레이아웃** | Yoga WASM (Flexbox) + Auto Layout | Taffy WASM (Flex/Grid) + Dropflow Fork (Block) — Phase 11에서 @pixi/layout 제거 |
 | **사이징** | Fixed / FitContent / FillContainer | 유사 (확인 필요) |
 | **컴포넌트 시스템** | prototype + overriddenProperties Set | Zustand store 기반 |
 | **슬롯** | FrameNode 전용 Slot 시스템 | (미확인) |

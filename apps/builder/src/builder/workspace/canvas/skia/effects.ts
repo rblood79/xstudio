@@ -1,7 +1,7 @@
 /**
  * CanvasKit 이펙트 파이프라인
  *
- * saveLayer 기반으로 Opacity, Background Blur, Drop Shadow를 적용한다.
+ * saveLayer 기반으로 Opacity, Background Blur, Drop Shadow, Color Matrix를 적용한다.
  * Pencil §10.9.5 패턴을 따른다.
  *
  * @see docs/WASM.md §5.6 이펙트 파이프라인
@@ -87,6 +87,19 @@ export function beginRenderEffects(
           );
           const paint = scope.track(new ck.Paint());
           paint.setImageFilter(filter);
+          canvas.saveLayer(paint);
+          layerCount++;
+          break;
+        }
+
+        case 'color-matrix': {
+          // CSS filter(brightness, contrast, saturate, hue-rotate)에서
+          // 합성된 4x5 색상 행렬을 CanvasKit ColorFilter로 적용한다.
+          const colorFilter = scope.track(
+            ck.ColorFilter.MakeMatrix(effect.matrix),
+          );
+          const paint = scope.track(new ck.Paint());
+          paint.setColorFilter(colorFilter);
           canvas.saveLayer(paint);
           layerCount++;
           break;

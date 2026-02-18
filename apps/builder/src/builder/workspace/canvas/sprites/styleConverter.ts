@@ -12,7 +12,7 @@
 
 import { cssColorToPixiHex } from '../../../../utils/color';
 import { colord } from 'colord';
-import type { EffectStyle, DropShadowEffect } from '../skia/types';
+import type { EffectStyle, DropShadowEffect, ColorMatrixEffect } from '../skia/types';
 import { resolveCSSSizeValue } from '../layout/engines/cssValueParser';
 import type { CSSValueContext } from '../layout/engines/cssValueParser';
 
@@ -393,6 +393,10 @@ interface SkiaEffectsResult {
  * - opacity → OpacityEffect
  * - boxShadow → DropShadowEffect
  * - filter: blur() → LayerBlurEffect
+ * - filter: brightness() → ColorMatrixEffect
+ * - filter: contrast() → ColorMatrixEffect
+ * - filter: saturate() → ColorMatrixEffect
+ * - filter: hue-rotate() → ColorMatrixEffect
  * - backdropFilter: blur() → BackgroundBlurEffect
  * - mixBlendMode → blendMode string
  */
@@ -417,11 +421,11 @@ export function buildSkiaEffects(style: CSSStyle | undefined): SkiaEffectsResult
     }
   }
 
-  // 3. filter: blur(Xpx) → LayerBlurEffect
+  // 3. filter → LayerBlurEffect + ColorMatrixEffect
   if (style.filter) {
-    const blurMatch = style.filter.match(/blur\((\d+(?:\.\d+)?)(px)?\)/);
-    if (blurMatch) {
-      effects.push({ type: 'layer-blur', sigma: parseFloat(blurMatch[1]) });
+    const filterEffects = parseCSSFilter(style.filter);
+    for (const fe of filterEffects) {
+      effects.push(fe);
     }
   }
 
@@ -587,7 +591,7 @@ function parseAngle(value: string): number {
  * CSS transform 문자열을 CanvasKit 3x3 matrix로 변환
  *
  * 지원 함수: translate, translateX, translateY, rotate, scale, scaleX, scaleY,
- *           skew, skewX, skewY
+ *           skew, skewX, skewY, matrix
  *
  * 여러 함수를 순서대로 왼쪽에서 오른쪽으로 합성한다.
  */
@@ -654,7 +658,20 @@ export function parseTransform(value: string): Float32Array | null {
         mat = skewMatrix(0, parseAngle(args[0]));
         break;
       }
-      // matrix()는 향후 확장 가능
+      case 'matrix': {
+        // CSS matrix(a, b, c, d, e, f) → CanvasKit row-major 3x3
+        // CSS 행렬:        CanvasKit 배열:
+        // | a  c  e |      [a, c, e,
+        // | b  d  f |  →    b, d, f,
+        // | 0  0  1 |       0, 0, 1]
+        if (args.length === 6) {
+          const [a, b, c, d, e, f] = args.map(Number);
+          if ([a, b, c, d, e, f].every(n => isFinite(n))) {
+            mat = Float32Array.of(a, c, e, b, d, f, 0, 0, 1);
+          }
+        }
+        break;
+      }
       default:
         break;
     }
@@ -725,6 +742,287 @@ export function applyTransformOrigin(
   const pre = translateMatrix(ox, oy);
   const post = translateMatrix(-ox, -oy);
   return multiply3x3(multiply3x3(pre, matrix), post);
+}
+
+// ============================================
+// CSS Filter → EffectStyle 변환
+// ============================================
+
+/** 4x5 identity color matrix */
+function identityColorMatrix(): Float32Array {
+  // prettier-ignore
+  return Float32Array.of(
+    1, 0, 0, 0, 0,
+    0, 1, 0, 0, 0,
+    0, 0, 1, 0, 0,
+    0, 0, 0, 1, 0,
+  );
+}
+
+/**
+ * 두 4x5 색상 행렬을 합성한다 (a * b).
+ *
+ * 4x5 행렬은 4x4 선형 부분 + 4x1 오프셋 열로 구성된다.
+ * result[i,j] = sum(a[i,k] * b[k,j]) (k=0..3)   — 선형 부분
+ * result[i,4] = sum(a[i,k] * b[k,4]) + a[i,4]    — 오프셋 열
+ */
+function multiplyColorMatrix(a: Float32Array, b: Float32Array): Float32Array {
+  const r = new Float32Array(20);
+  for (let row = 0; row < 4; row++) {
+    for (let col = 0; col < 5; col++) {
+      let sum = 0;
+      for (let k = 0; k < 4; k++) {
+        sum += a[row * 5 + k] * b[k * 5 + col];
+      }
+      // 오프셋 열(col=4)에 자기 오프셋 추가
+      if (col === 4) {
+        sum += a[row * 5 + 4];
+      }
+      r[row * 5 + col] = sum;
+    }
+  }
+  return r;
+}
+
+/**
+ * brightness(val) → 4x5 색상 행렬
+ *
+ * RGB 채널에 val을 곱한다. Alpha는 변경 없음.
+ */
+function brightnessMatrix(val: number): Float32Array {
+  // prettier-ignore
+  return Float32Array.of(
+    val, 0,   0,   0, 0,
+    0,   val, 0,   0, 0,
+    0,   0,   val, 0, 0,
+    0,   0,   0,   1, 0,
+  );
+}
+
+/**
+ * contrast(val) → 4x5 색상 행렬
+ *
+ * 대각선에 val, 오프셋에 0.5 * (1 - val) 을 적용한다.
+ * (CanvasKit의 ColorFilter.MakeMatrix는 오프셋을 0-1 범위로 해석)
+ */
+function contrastMatrix(val: number): Float32Array {
+  const offset = 0.5 * (1 - val);
+  // prettier-ignore
+  return Float32Array.of(
+    val, 0,   0,   0, offset,
+    0,   val, 0,   0, offset,
+    0,   0,   val, 0, offset,
+    0,   0,   0,   1, 0,
+  );
+}
+
+/**
+ * saturate(val) → 4x5 색상 행렬
+ *
+ * SVG/CSS 사양(feColorMatrix type="saturate")을 따른다.
+ * https://www.w3.org/TR/filter-effects-1/#feColorMatrixElement
+ */
+function saturateMatrix(val: number): Float32Array {
+  const s = val;
+  // ITU-R BT.709 luminance coefficients
+  const rL = 0.2126;
+  const gL = 0.7152;
+  const bL = 0.0722;
+
+  // prettier-ignore
+  return Float32Array.of(
+    rL * (1 - s) + s,   gL * (1 - s),       bL * (1 - s),       0, 0,
+    rL * (1 - s),       gL * (1 - s) + s,   bL * (1 - s),       0, 0,
+    rL * (1 - s),       gL * (1 - s),       bL * (1 - s) + s,   0, 0,
+    0,                  0,                  0,                  1, 0,
+  );
+}
+
+/**
+ * hue-rotate(deg) → 4x5 색상 행렬
+ *
+ * SVG/CSS 사양(feColorMatrix type="hueRotate")을 따른다.
+ * https://www.w3.org/TR/filter-effects-1/#feColorMatrixElement
+ */
+function hueRotateMatrix(degrees: number): Float32Array {
+  const rad = degrees * (Math.PI / 180);
+  const cos = Math.cos(rad);
+  const sin = Math.sin(rad);
+
+  // ITU-R BT.709 luminance coefficients
+  const rL = 0.2126;
+  const gL = 0.7152;
+  const bL = 0.0722;
+
+  // 사양에 따른 3x3 RGB 회전 행렬
+  const m00 = rL + cos * (1 - rL) + sin * (-rL);
+  const m01 = gL + cos * (-gL) + sin * (-gL);
+  const m02 = bL + cos * (-bL) + sin * (1 - bL);
+  const m10 = rL + cos * (-rL) + sin * 0.143;
+  const m11 = gL + cos * (1 - gL) + sin * 0.140;
+  const m12 = bL + cos * (-bL) + sin * (-0.283);
+  const m20 = rL + cos * (-rL) + sin * (-(1 - rL));
+  const m21 = gL + cos * (-gL) + sin * gL;
+  const m22 = bL + cos * (1 - bL) + sin * bL;
+
+  // prettier-ignore
+  return Float32Array.of(
+    m00, m01, m02, 0, 0,
+    m10, m11, m12, 0, 0,
+    m20, m21, m22, 0, 0,
+    0,   0,   0,   1, 0,
+  );
+}
+
+/**
+ * CSS filter 문자열에서 모든 필터 함수를 파싱하여 EffectStyle 배열로 변환한다.
+ *
+ * 지원 함수:
+ * - blur(Xpx) → LayerBlurEffect
+ * - brightness(X) → ColorMatrixEffect
+ * - contrast(X) → ColorMatrixEffect
+ * - saturate(X) → ColorMatrixEffect
+ * - hue-rotate(Xdeg) → ColorMatrixEffect
+ *
+ * 여러 color matrix 함수가 있으면 하나의 합성 행렬로 병합하여
+ * 단일 ColorMatrixEffect로 출력한다 (GPU pass 최소화).
+ */
+function parseCSSFilter(filter: string): EffectStyle[] {
+  const results: EffectStyle[] = [];
+
+  // 각 필터 함수 추출
+  const funcRegex = /([\w-]+)\(([^)]*)\)/g;
+  let composedMatrix: Float32Array | null = null;
+  let funcMatch: RegExpExecArray | null;
+
+  while ((funcMatch = funcRegex.exec(filter)) !== null) {
+    const fn = funcMatch[1];
+    const arg = funcMatch[2].trim();
+
+    switch (fn) {
+      case 'blur': {
+        const sigma = parseFloat(arg);
+        if (!isNaN(sigma) && sigma > 0) {
+          results.push({ type: 'layer-blur', sigma });
+        }
+        break;
+      }
+
+      case 'brightness': {
+        const val = parseFilterNumericArg(arg, 1);
+        if (val !== null) {
+          const mat = brightnessMatrix(val);
+          composedMatrix = composedMatrix
+            ? multiplyColorMatrix(mat, composedMatrix)
+            : mat;
+        }
+        break;
+      }
+
+      case 'contrast': {
+        const val = parseFilterNumericArg(arg, 1);
+        if (val !== null) {
+          const mat = contrastMatrix(val);
+          composedMatrix = composedMatrix
+            ? multiplyColorMatrix(mat, composedMatrix)
+            : mat;
+        }
+        break;
+      }
+
+      case 'saturate': {
+        const val = parseFilterNumericArg(arg, 1);
+        if (val !== null) {
+          const mat = saturateMatrix(val);
+          composedMatrix = composedMatrix
+            ? multiplyColorMatrix(mat, composedMatrix)
+            : mat;
+        }
+        break;
+      }
+
+      case 'hue-rotate': {
+        const degrees = parseFilterAngleArg(arg);
+        if (degrees !== null) {
+          const mat = hueRotateMatrix(degrees);
+          composedMatrix = composedMatrix
+            ? multiplyColorMatrix(mat, composedMatrix)
+            : mat;
+        }
+        break;
+      }
+
+      default:
+        // 지원하지 않는 함수는 무시 (grayscale, invert 등은 향후 확장)
+        break;
+    }
+  }
+
+  // 합성된 color matrix가 있으면 단일 이펙트로 추가
+  if (composedMatrix) {
+    // identity인지 확인 — identity이면 GPU pass 불필요
+    const identity = identityColorMatrix();
+    let isIdentity = true;
+    for (let i = 0; i < 20; i++) {
+      if (Math.abs(composedMatrix[i] - identity[i]) > 1e-6) {
+        isIdentity = false;
+        break;
+      }
+    }
+    if (!isIdentity) {
+      results.push({ type: 'color-matrix', matrix: composedMatrix });
+    }
+  }
+
+  return results;
+}
+
+/**
+ * CSS filter 함수의 숫자/퍼센트 인자를 파싱한다.
+ *
+ * - "1.5" → 1.5
+ * - "150%" → 1.5
+ * - 파싱 실패 시 null 반환
+ */
+function parseFilterNumericArg(arg: string, _defaultValue: number): number | null {
+  if (!arg) return null;
+  const trimmed = arg.trim();
+  if (trimmed.endsWith('%')) {
+    const num = parseFloat(trimmed);
+    return isNaN(num) ? null : num / 100;
+  }
+  const num = parseFloat(trimmed);
+  return isNaN(num) ? null : num;
+}
+
+/**
+ * CSS filter 함수의 각도 인자를 도(degree) 단위로 파싱한다.
+ *
+ * - "90deg" → 90
+ * - "1.57rad" → ~90
+ * - "0.25turn" → 90
+ * - "100grad" → 90
+ * - "90" → 90 (deg 기본값)
+ */
+function parseFilterAngleArg(arg: string): number | null {
+  if (!arg) return null;
+  const trimmed = arg.trim();
+
+  if (trimmed.endsWith('rad')) {
+    const rad = parseFloat(trimmed);
+    return isNaN(rad) ? null : rad * (180 / Math.PI);
+  }
+  if (trimmed.endsWith('turn')) {
+    const turn = parseFloat(trimmed);
+    return isNaN(turn) ? null : turn * 360;
+  }
+  if (trimmed.endsWith('grad')) {
+    const grad = parseFloat(trimmed);
+    return isNaN(grad) ? null : grad * (180 / 200);
+  }
+  // deg (기본값)
+  const deg = parseFloat(trimmed);
+  return isNaN(deg) ? null : deg;
 }
 
 export default convertStyle;

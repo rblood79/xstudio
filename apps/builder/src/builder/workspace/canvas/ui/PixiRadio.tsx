@@ -15,17 +15,19 @@
  * @since 2025-12-11 Phase 11 B2.4
  * @updated 2025-12-15 P10: Graphics 기반으로 리팩토링
  * @updated 2025-01-07 Phase 11 CSS 변수 기반 리팩토링
+ * @updated 2026-02-19 Wave 4: LayoutComputedSizeContext로 히트 영역 통합 (수동 groupDimensions 제거)
  */
 
 import { useExtend } from '@pixi/react';
 import { PIXI_COMPONENTS } from '../pixiSetup';
-import { memo, useCallback, useMemo } from 'react';
+import { memo, useCallback, useContext, useMemo } from 'react';
 import { Graphics as PixiGraphics, TextStyle } from 'pixi.js';
 import type { Element } from '../../../../types/core/store.types';
 import type { CSSStyle } from '../sprites/styleConverter';
 import { cssColorToHex } from '../sprites/styleConverter';
 import { drawCircle } from '../utils';
 import { useStore } from '../../../stores';
+import { LayoutComputedSizeContext } from '../layoutContext';
 
 // 🚀 Spec Migration
 import { getLabelStylePreset } from '../hooks/useSpecRenderer';
@@ -230,6 +232,9 @@ export const PixiRadio = memo(function PixiRadio({
   const style = element.props?.style as CSSStyle | undefined;
   const props = element.props as Record<string, unknown> | undefined;
 
+  // 레이아웃 엔진(Taffy/Dropflow) 계산 결과 — DirectContainer가 제공
+  const computedSize = useContext(LayoutComputedSizeContext);
+
   // variant에 따른 색상 (default, primary, secondary, tertiary, error, surface)
   const variant = useMemo(() => {
     return String(props?.variant || 'default');
@@ -331,8 +336,10 @@ export const PixiRadio = memo(function PixiRadio({
   const labelHeight = groupLabel ? labelPreset.fontSize + 8 : 0;
   const itemWidth = 120;
 
-  // 🚀 Phase 19: 전체 그룹 크기 계산 (hitArea용)
-  const groupDimensions = useMemo(() => {
+  // 🚀 Wave 4: LayoutComputedSizeContext 우선, fallback은 수동 계산
+  // computedSize가 있으면 엔진(Taffy/Dropflow) 계산 결과 사용,
+  // 없으면 기존 수동 추정값을 유지하여 하위 호환성 보장
+  const fallbackDimensions = useMemo(() => {
     const optionCount = options.length;
     const optionHeight = radioSize + gap;
 
@@ -348,14 +355,17 @@ export const PixiRadio = memo(function PixiRadio({
     };
   }, [options.length, radioSize, gap, labelHeight, isHorizontal, itemWidth]);
 
-  // 🚀 Phase 19: 투명 히트 영역
+  const hitWidth = computedSize?.width ?? fallbackDimensions.width;
+  const hitHeight = computedSize?.height ?? fallbackDimensions.height;
+
+  // 투명 히트 영역 (엔진 계산 크기 기반)
   const drawHitArea = useCallback(
     (g: PixiGraphics) => {
       g.clear();
-      g.rect(0, 0, groupDimensions.width, groupDimensions.height);
+      g.rect(0, 0, hitWidth, hitHeight);
       g.fill({ color: 0xffffff, alpha: 0 });
     },
-    [groupDimensions]
+    [hitWidth, hitHeight]
   );
 
   // 라벨 텍스트 스타일 - 🚀 Phase 19: .react-aria-Label 클래스에서 스타일 읽기
@@ -417,11 +427,9 @@ export const PixiRadio = memo(function PixiRadio({
         })}
       </pixiContainer>
 
-      {/* 🚀 Phase 19: 투명 히트 영역 (그룹 전체 선택용) */}
+      {/* 투명 히트 영역 (그룹 전체 선택용) — 크기는 LayoutComputedSizeContext에서 */}
       <pixiGraphics
         draw={drawHitArea}
-        x={0}
-        y={0}
         eventMode="static"
         cursor="default"
         onPointerDown={handleClick}

@@ -7,13 +7,16 @@
  * CSS 동기화:
  * - getSwitchSizePreset(): trackWidth, trackHeight, thumbSize
  * - getSwitchColorPreset(): trackColor, trackSelectedColor, thumbColor
+ *
+ * @updated 2026-02-19 Wave 4: LayoutComputedSizeContext로 히트 영역 통합
  */
 
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useContext } from 'react';
 import { useExtend } from '@pixi/react';
 import { PIXI_COMPONENTS } from '../pixiSetup';
 import type { Graphics as PixiGraphics, TextStyle } from 'pixi.js';
 import type { Element } from '@/types/core/store.types';
+import { LayoutComputedSizeContext } from '../layoutContext';
 
 // 🚀 Spec Migration
 import { resolveTokenColor, getLabelStylePreset } from '../hooks/useSpecRenderer';
@@ -146,20 +149,26 @@ export function PixiSwitch({
     [labelPreset, colorPreset, isDisabled]
   );
 
-  // 🚀 Phase 19: 투명 히트 영역
-  const totalWidth = label
+  // 레이아웃 엔진(Taffy/Dropflow) 계산 결과 — DirectContainer가 제공
+  const computedSize = useContext(LayoutComputedSizeContext);
+
+  // 히트 영역 크기: 엔진 계산 결과 우선, null이면 수동 계산으로 fallback
+  const fallbackWidth = label
     ? sizePreset.trackWidth + sizePreset.gap + label.length * labelPreset.fontSize * 0.6
     : sizePreset.trackWidth;
-  const totalHeight = sizePreset.trackHeight;
+  const fallbackHeight = sizePreset.trackHeight;
 
-  // 🚀 Phase 19: 투명 히트 영역
+  const hitAreaWidth = computedSize?.width ?? fallbackWidth;
+  const hitAreaHeight = computedSize?.height ?? fallbackHeight;
+
+  // 투명 히트 영역 그리기 (엔진 계산 크기 사용 — PixiButton A등급 패턴)
   const drawHitArea = useCallback(
     (g: PixiGraphics) => {
       g.clear();
-      g.rect(0, 0, totalWidth, totalHeight);
+      g.rect(0, 0, hitAreaWidth, hitAreaHeight);
       g.fill({ color: 0xffffff, alpha: 0 });
     },
-    [totalWidth, totalHeight]
+    [hitAreaWidth, hitAreaHeight]
   );
 
   // 클릭 핸들러
@@ -176,8 +185,6 @@ export function PixiSwitch({
         {/* Track */}
         <pixiGraphics
           draw={drawTrack}
-          x={0}
-          y={0}
         />
 
         {/* Thumb */}
@@ -192,11 +199,9 @@ export function PixiSwitch({
         />
       )}
 
-      {/* 🚀 Phase 19: 투명 히트 영역 (클릭 감지용) */}
+      {/* 투명 히트 영역 (클릭 감지용) — 엔진 계산 크기 사용 */}
       <pixiGraphics
         draw={drawHitArea}
-        x={0}
-        y={0}
         eventMode="static"
         cursor="default"
         onPointerDown={handleClick}

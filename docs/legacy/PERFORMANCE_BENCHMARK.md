@@ -1,3 +1,5 @@
+> **⚠️ 레거시 문서**: 현재 아키텍처와 일치하지 않을 수 있습니다. 역사적 참조 목적.
+
 # React Stately 리팩토링 성능 벤치마크
 
 **프로젝트**: XStudio React Stately Integration

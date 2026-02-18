@@ -87,7 +87,7 @@ Camera
 - `allPageData`: `pageIndex` 기반 O(1) 조회로 페이지별 body/elements 사전 계산 (기존 `elements.find/filter` O(N*M) 제거).
 - `elementById`: store의 `elementsMap`을 직접 사용 (중복 Map 생성 제거).
 - 페이지 컨테이너에 `x/y` 직접 배치 (Yoga layout 외부이므로 x/y prop 예외 허용).
-- `@pixi/layout` formatStyles 병합 이슈 회피: 페이지 컨테이너에 `layout` prop 미사용.
+- `@pixi/layout` formatStyles 병합 이슈 회피: 페이지 컨테이너에 `layout` prop 미사용. **(Phase 11에서 @pixi/layout 제거됨 — 이 이슈는 더 이상 발생하지 않음)**
 
 ### Phase 3: Skia 렌더링 멀티페이지 대응
 

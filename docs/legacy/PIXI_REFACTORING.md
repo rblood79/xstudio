@@ -1,3 +1,6 @@
+> **⚠️ 레거시 문서 (2026-02-19)**: Phase 11에서 @pixi/layout, @pixi/ui 완전 제거됨. 역사적 참조 목적으로 보관.
+> 최신 아키텍처는 [ADR-003](../../../adr/003-canvas-rendering.md), [ENGINE.md](../../../ENGINE.md) 참조
+
 # Pixi.js 사용 개선 Phase Plan
 
 > **생성일**: 2025-12-13

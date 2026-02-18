@@ -1,7 +1,7 @@
 # CSS 레이아웃 엔진 설계문서
 
-> Status: Phase 9-11 Complete, Ongoing Refinement
-> Date: 2026-02-18
+> Status: Wave 1-2 Complete (Phase 1-6, 9-12), Wave 3-6 실행 계획 수립 완료
+> Date: 2026-02-19 (Wave 3-6 계획 수립)
 > 현재 엔진: TaffyFlexEngine (Taffy WASM) + TaffyGridEngine (Taffy WASM) + DropflowBlockEngine (Dropflow Fork JS)
 > 현재 렌더러: CanvasKit/Skia WASM (시각 렌더링) + PixiJS v8 (씬 그래프/이벤트)
 
@@ -316,7 +316,7 @@ CSS의 가장 복잡한 기능 중 하나. DropflowBlockEngine이 CSS 명세에 
 | 새 줄 시작 | 항상 | X | X |
 | width/height 설정 | O | O | **X** |
 
-#### 2.4.0 CSS Blockification (Flex/Grid 자식 요소) ⚠️
+#### 2.4.0 CSS Blockification (Flex/Grid 자식 요소) ✅
 
 **CSS Display Level 3 명세**: Flex 또는 Grid 컨테이너의 자식 요소들은 자동으로 "blockified" 됩니다.
 
@@ -1420,7 +1420,7 @@ resolveStyle(element, parentComputedStyle):
   4. ComputedStyle 반환
 ```
 
-**파일:** `engines/cssResolver.ts` (부분 구현 — `inherit` 및 기본 상속 속성 해석 유틸 제공, `initial`/`unset` 처리와 엔진 통합은 OPEN)
+**파일:** `engines/cssResolver.ts` (✅ 구현 완료 — `inherit`/`initial`/`unset` 처리 + 모든 엔진에 통합됨. `resolveStyle()`이 `DropflowBlockEngine.calculate()`, `TaffyFlexEngine.computeWithTaffy()`, `TaffyGridEngine.calculate()` 진입부에서 호출되어 parentComputedStyle 전파 체인을 구성. `engines/index.ts`의 `calculateChildrenLayout()`에서도 CSS 상속 context를 보강하여 전달.)
 
 ```typescript
 interface ComputedStyle {
@@ -2097,30 +2097,25 @@ function enrichWithIntrinsicSize(element: Element): void {
 
 | 컨텍스트 | 방식 | 파일 | 비고 |
 |---------|------|------|------|
-| Skia 텍스트 노드 (CanvasKit Paragraph) | `createYogaMeasureFunc()` (동적 콜백) | `skia/textMeasure.ts:91` | Yoga 시절 구현, 현재도 Skia 텍스트 측정용으로 유지됨 |
-| INLINE_BLOCK_TAGS (button, badge 등) | `enrichWithIntrinsicSize()` (정적 주입) | `DropflowBlockEngine.ts` | Yoga measureFunc 대체 패턴 |
+| Skia 텍스트 노드 (CanvasKit Paragraph) | `createTextMeasureFunc()` (동적 콜백) | `skia/textMeasure.ts:91` | ✅ 리네이밍 완료 (구 `createYogaMeasureFunc`) |
+| INLINE_BLOCK_TAGS (button, badge 등) | `enrichWithIntrinsicSize()` (정적 주입) | `engines/utils.ts` | ✅ DropflowBlockEngine + TaffyFlexEngine 공유 (2-pass 지원) |
 
-> `skia/textMeasure.ts:91`의 `createYogaMeasureFunc()`는 Yoga 제거 후에도 Skia 텍스트 측정 용도로 파일에 남아있다. 이 함수 자체는 Yoga 노드에 설정하는 콜백이 아니라 Skia CanvasKit Paragraph API 기반 텍스트 측정 헬퍼이므로, `enrichWithIntrinsicSize()`에서 텍스트 측정 시 재활용할 수 있다.
->
-> **리네이밍 권장:** Yoga가 제거된 현재, 함수명 `createYogaMeasureFunc`는 혼란을 유발한다. `createTextMeasureFunc()` 또는 `createLayoutMeasureFunc()`로 리네이밍을 권장한다.
+> `skia/textMeasure.ts:91`의 `createTextMeasureFunc()`는 Skia CanvasKit Paragraph API 기반 텍스트 측정 헬퍼로, `enrichWithIntrinsicSize()`에서 텍스트 측정 시 재활용할 수 있다.
 
 **CSS에서 일어나는 일:**
 ```
 부모 width 변경 → 브라우저 reflow → 버튼 width 재계산 → 텍스트 wrap 발생 → height 자동 증가
 ```
 
-**현재 엔진에서 일어나는 일:**
+**현재 엔진에서 일어나는 일 (§6 P3 해결 후):**
 ```
-부모 width 변경 → DropflowBlockEngine 재계산 → 버튼 width 업데이트됨
-→ enrichWithIntrinsicSize()는 이전 레이아웃 사이클의 availableWidth 값 참조
-→ 텍스트 wrap 높이 재계산이 1 사이클 지연 → height 일시 불일치
+부모 width 변경 → TaffyFlexEngine 2-pass 계산:
+  1차 pass: 부모 availableWidth로 enrichment → Taffy 계산 → 자식별 actual width 획득
+  2차 pass (조건부): actual width ≠ enrichment width인 inline-block 자식만 re-enrich → 재계산
+→ 텍스트 wrap 높이가 현재 사이클의 실제 width 기준으로 교정됨
 ```
 
-**잔여 과제 (현재 한계):**
-
-- `enrichWithIntrinsicSize()`는 레이아웃 실행 전에 호출되므로, 현재 사이클의 `availableWidth`가 아닌 **이전 레이아웃 사이클의 값**을 참조한다.
-- 부모 width가 급격히 변경되는 경우(예: 패널 크기 조절) 1 사이클 동안 height 불일치가 발생할 수 있다.
-- 완전한 해결을 위해서는 레이아웃 엔진 내부에서 availableWidth 확정 후 intrinsic size를 재주입하는 **2-pass 레이아웃** 또는 Taffy의 measure callback 연동이 필요하다.
+> **✅ 해결 완료 (2026-02-19):** `TaffyFlexEngine`에 선택적 2-pass 레이아웃이 구현됨. inline-block 자식의 실제 Taffy 할당 width가 enrichment width와 2px 이상 다를 때만 2차 pass를 실행하여 성능 영향을 최소화. `DropflowBlockEngine`은 block 레이아웃 특성상 부모 availableWidth가 자식 width와 동일하여 1-pass로 충분.
 
 **해결 방안:**
 
@@ -2164,38 +2159,46 @@ function enrichWithIntrinsicSize(
 ### 6.6 수정 적용 순서
 
 ```
-Step 1: styleToLayout.ts 레거시 패턴 → enrichWithIntrinsicSize 통합
+Step 1: styleToLayout.ts 레거시 패턴 → enrichWithIntrinsicSize 통합 ✅ (2026-02-19)
   ├─ 영향: Case 1,2,3,5,6,7,9,10 부분 해결
-  ├─ 작업: SELF_RENDERING_BTN_TAGS, SELF_RENDERING_BUTTON_TAGS, BTN_PAD, BUTTON_PADDING 블록을
-  │         enrichWithIntrinsicSize 패턴으로 통합, 고정 layout.height 설정 제거
-  ├─ 위험도: 중 (모든 self-rendering 컴포넌트에 영향)
-  └─ 검증: Button/Card 높이 자동 조절 테스트
+  ├─ 작업 완료:
+  │   - BUTTON_PADDING 중복 제거 → getButtonSizeConfig() 단일 소스
+  │   - enrichWithIntrinsicSize()를 utils.ts로 이동, DropflowBlockEngine + TaffyFlexEngine 공유
+  │   - TaffyFlexEngine에 enrichWithIntrinsicSize 통합 (flex 자식 intrinsic size 주입)
+  │   - submitbutton/fancybutton을 INLINE_UI_SIZE_CONFIGS에 추가
+  │   - engines/index.ts의 enrichedContext 버그 수정 (flex/grid CSS 상속 누락)
+  │   - getMeasureContext()/getMeasureCtx() SSR-safe 처리
+  └─ 검증: 261/261 테스트 통과 (17개 신규 회귀 테스트 포함)
 
-Step 2: P2 수정 (fit-content px 강제 제거 + 조건부 grow/shrink, Taffy 컨텍스트)
+Step 2: P2 수정 (fit-content px 강제 제거 + 조건부 grow/shrink) ✅ (2026-02-19)
   ├─ 영향: Case 4,8 해결
-  ├─ 작업: styleToLayout.ts 레거시 패턴을 TaffyFlexEngine 컨텍스트 기준으로 재작성
-  │         부모 flexDirection 감지 후 row 주축에서만 grow/shrink 제한 적용
-  ├─ 위험도: 중 (flex-direction 감지 로직 추가)
-  └─ 검증: column flex + fit-content 버튼 stretch 테스트
+  ├─ 작업 완료:
+  │   - BTN_PAD 중복 제거 → getButtonSizeConfig() 단일 소스
+  │   - fit-content의 flexGrow=0/flexShrink=0 무조건 적용 제거 (리프 노드 블록에서만 적용)
+  │   - 참고: styleToLayout()은 dead code (호출부 0건). 래퍼/마이그레이션은 불필요.
+  └─ 검증: 261/261 테스트 통과
 
-Step 3: SELF_PADDING_TAGS 점진적 축소
+Step 3: enrichWithIntrinsicSize 동적 availableWidth + 2-pass 레이아웃 ✅ (2026-02-19)
   ├─ 영향: Case 2,3,5,6,7,10 완전 해결
-  ├─ 작업: enrichWithIntrinsicSize에 현재 레이아웃 사이클 availableWidth 전달
-  │         Button → 검증 후 Card, ToggleButton 순차 적용
-  │         SELF_PADDING_TAGS를 빈 Set으로 점진적 축소
-  ├─ 위험도: 중 (enrichWithIntrinsicSize 확장, 컴포넌트별 검증 필요)
-  └─ 검증: 부모 width 변경 시 텍스트 wrap + 높이 변경 테스트
+  ├─ 작업 완료:
+  │   - TaffyFlexEngine에 선택적 2-pass 레이아웃 구현
+  │   - 1차 pass: 부모 availableWidth로 enrichment → Taffy 계산
+  │   - 2차 pass (조건부): inline-block 자식의 actual width ≠ enrichment width (>2px) 시 re-enrich
+  │   - computeWithTaffy() → _runTaffyPass() + _runTaffyPassRaw() 메서드 분리
+  │   - createYogaMeasureFunc → createTextMeasureFunc 리네이밍
+  └─ 검증: 261/261 테스트 통과
 ```
 
 **§6 관련 파일 요약:**
 
 | 파일 | 경로 | 핵심 역할 (§6 관점) |
 |------|------|-------------------|
-| `styleToLayout.ts` | `apps/builder/src/builder/workspace/canvas/layout/styleToLayout.ts` | TaffyFlexEngine 경로에서 활용 중인 레거시 패턴: fit-content 처리(297-301), 버튼 width 계산(380-400), 버튼 height 고정(627-660) → Step 1~2에서 enrichWithIntrinsicSize 통합 대상 |
-| `BuilderCanvas.tsx` | `apps/builder/src/builder/workspace/canvas/BuilderCanvas.tsx` | ~~SELF_PADDING_TAGS(642-649), stripSelfRenderedProps(662-670)~~ — **Phase 11에서 제거됨**. §7.3 마이그레이션 계획은 레거시 참조용 유지 |
-| `engines/utils.ts` | `apps/builder/src/builder/workspace/canvas/layout/engines/utils.ts` | parseSize(86-126), BUTTON_SIZE_CONFIG(290-304), FIT_CONTENT sentinel(53) → BTN_PAD/BUTTON_PADDING 통합 후 단일 소스 |
+| `styleToLayout.ts` | `apps/builder/src/builder/workspace/canvas/layout/styleToLayout.ts` | ⚠️ **Dead code** (호출부 0건). getButtonSizeConfig() 단일 소스로 중복 제거 완료. 향후 필요 시 재활용 가능 |
+| `engines/utils.ts` | `apps/builder/src/builder/workspace/canvas/layout/engines/utils.ts` | ✅ **§6 핵심 파일**: BUTTON_SIZE_CONFIG, getButtonSizeConfig(), enrichWithIntrinsicSize(), INLINE_BLOCK_TAGS — DropflowBlockEngine + TaffyFlexEngine 공유 |
+| `TaffyFlexEngine.ts` | `apps/builder/src/builder/workspace/canvas/layout/engines/TaffyFlexEngine.ts` | ✅ 2-pass 레이아웃 구현: enrichWithIntrinsicSize 통합 + 선택적 재계산 |
+| `BuilderCanvas.tsx` | `apps/builder/src/builder/workspace/canvas/BuilderCanvas.tsx` | ~~SELF_PADDING_TAGS~~ — **Phase 11에서 제거됨** |
 | `styleConverter.ts` | `apps/builder/src/builder/workspace/canvas/sprites/styleConverter.ts` | parseCSSSize — Skia용 CSS 값 파서(150-201) |
-| `textMeasure.ts` | `apps/builder/src/builder/workspace/canvas/skia/textMeasure.ts` | `createYogaMeasureFunc` — Skia CanvasKit Paragraph 기반 텍스트 측정 헬퍼. 함수명 리네이밍 권장(`createTextMeasureFunc`). enrichWithIntrinsicSize에서 텍스트 측정 재활용 가능(91-102) |
+| `textMeasure.ts` | `apps/builder/src/builder/workspace/canvas/skia/textMeasure.ts` | ✅ `createTextMeasureFunc()` — Skia CanvasKit Paragraph 기반 텍스트 측정 헬퍼 (리네이밍 완료) |
 
 ---
 
@@ -2632,7 +2635,12 @@ S3 (Visual Effects):      █████████▓ 93%  (+1%) ← ✅ 다�
 S4 (Cascade):             █████████▓ 94%  (+1%) ← ✅ inherit, var(), ComputedStyle 전파
 S5 (Block Precision):     █████████▓ 95%  (+1%) ← ✅ verticalAlign, white-space, word-break
 S6 (Position):            ██████████ 96%  (+1%) ← ✅ fixed, z-index, stacking context
-─── 현재 위치 ─── 목표 달성 (~96%) ───────────────
+─── Wave 1-2 완료 ─── 목표 달성 (~96%) ───────────────
+
+Wave 3 (정밀도):          ██████████ 97%  (+1%) ← 🔲 baseline 정밀화, overflow:scroll, clamp()
+Wave 4 (컴포넌트):        ██████████ 98%  (+1%) ← 🔲 C등급 13개 → Taffy/Dropflow 위임
+Wave 5 (StylePanel):      ██████████ 98%+ (+0%) ← 🔲 computeSyntheticStyle, UI 표시 정합성
+Wave 6 (정리):            ██████████ 98%+ (+0%) ← 🔲 dead code, 문서 현행화
 
 Spec 렌더링 정합성: ██████████ 100% (62/62 PASS) ← ✅ 완료
 ```
@@ -2880,6 +2888,129 @@ function parseAllBoxShadows(raw: string): DropShadowEffect[] {
 
 롤백은 "전체 되돌리기"보다 기능 단위 flag off를 우선 적용한다.
 
+#### 8.5 Wave 3-6 실행 계획 (2026-02-19 수립)
+
+> **배경:** Wave 1-2 (Phase 1-6, S1-S6, Phase 9-12) 완료 후 잔여 작업을 4개 Wave로 재구성.
+> 코드 검증 결과: 핵심 엔진(cssValueParser, cssResolver, cssStackingContext, TaffyFlexEngine 2-pass, DropflowBlockEngine, gradient/transform/shadow) **모두 구현 완료 확인.**
+
+##### 완료 현황 체크 (코드 검증 기준, 2026-02-19)
+
+| 항목 | 파일 | 상태 | 비고 |
+|------|------|------|------|
+| Phase 1: CSS 값 파서 | `cssValueParser.ts` | ✅ 완료 | resolveCSSSizeValue, resolveCalc, resolveVar |
+| Phase 2: Grid 엔진 | `TaffyGridEngine.ts` | ✅ 완료 | Taffy WASM 네이티브 |
+| Phase 3: CSS 캐스케이드 | `cssResolver.ts` | ✅ 완료 | resolveStyle, 14개 INHERITABLE_PROPERTIES |
+| Phase 4: Block 정밀도 | `DropflowBlockEngine.ts` | ✅ 완료 | layoutInlineRun, vertical-align 4모드 |
+| Phase 5: 시각 효과 | `styleConverter.ts`, `fills.ts`, `specShapeConverter.ts` | ✅ 완료 | transform, shadow, gradient, dashed border |
+| Phase 6: Position/Stacking | `cssStackingContext.ts` | ✅ 완료 | createsStackingContext, parseZIndex |
+| §6: Self-Rendering | `utils.ts:1046`, `TaffyFlexEngine.ts` | ✅ 완료 | enrichWithIntrinsicSize, 2-pass |
+| Phase 9-12: 엔진 교체 | `engines/index.ts` | ✅ 완료 | Yoga/@pixi/layout 완전 제거 |
+| styleToLayout.ts | `styleToLayout.ts` | ✅ Dead code | 호출부 0건 확인 |
+| Gradient | `fills.ts:54-170`, `specShapeConverter.ts:395-445` | ✅ 완료 | linear/radial/angular/mesh |
+| overflow:hidden | `nodeRenderers.ts` | ✅ 완료 | clipRect 적용 |
+| overflow:scroll/auto | — | ❌ 미구현 | 스크롤 상태 관리 없음 |
+| computeSyntheticStyle | — | ❌ 미구현 | 전용 서비스 파일 없음 |
+| 폰트 메트릭 baseline | — | ⚠️ 근사 | height * 0.8 사용 중 |
+| clamp(), env() | — | ❌ 미구현 | |
+| matrix() transform | — | ❌ 미구현 | |
+
+##### Wave 3: CSS 정밀도 완성
+
+> **목표:** Phase 3/4/5 잔여 항목 마무리. 일치율 96% → 97%.
+> **팀:** 은서 (Refactorer)
+> **의존성:** 없음 (독립 실행)
+
+| # | 태스크 | 파일 | 난이도 | 상태 |
+|---|--------|------|--------|------|
+| W3-1 | 폰트 메트릭 기반 baseline 정밀화 (`TextMetrics.alphabeticBaseline`) | `engines/utils.ts`, `DropflowBlockEngine.ts` | 중 | 🔲 |
+| W3-2 | `clamp()` 파서 추가 (`resolveCSSSizeValue` 확장) | `cssValueParser.ts` | 낮음 | 🔲 |
+| W3-3 | `matrix(a,b,c,d,e,f)` transform 함수 지원 | `styleConverter.ts` | 낮음 | 🔲 |
+| W3-4 | filter 확장 (`brightness/contrast/saturate/hue-rotate`) | `styleConverter.ts`, `nodeRenderers.ts` | 중 | 🔲 |
+| W3-5 | `overflow: scroll/auto` 스크롤 상태 관리 | `nodeRenderers.ts`, Zustand slice | 높음 | 🔲 |
+| W3-6 | `styleToLayout.ts` dead code 정리 | `styleToLayout.ts`, `engines/index.ts` | 낮음 | 🔲 |
+| W3-7 | `var()` + `cssVariableReader.ts` 디자인 토큰 연동 강화 | `cssValueParser.ts`, `cssVariableReader.ts` | 중 | 🔲 |
+
+**Exit Criteria:** baseline 오차 ±1px, clamp() 파서 테스트 통과, FPS 60 유지
+
+##### Wave 4: C등급 컴포넌트 구조 개선 (§7.2)
+
+> **목표:** C등급 13개 컴포넌트를 TagGroup 패턴(A등급)으로 전환. 일치율 97% → 98%.
+> **팀:** 하은 (Implementer) + 시연 (Tester)
+> **의존성:** Wave 3의 W3-1(baseline) 완료 권장
+
+| # | 태스크 | 대상 컴포넌트 | 규모 | 상태 |
+|---|--------|-------------|------|------|
+| W4-1 | Button, ToggleButton → Taffy flex 레이아웃 위임 | `PixiButton.tsx`, `PixiToggleButton.tsx` | 중 | 🔲 |
+| W4-2 | Card → flex column 자식 분리 | `PixiCard.tsx` | 중 | 🔲 |
+| W4-3 | Checkbox, Radio → flex row 자식 분리 | `PixiCheckbox.tsx`, `PixiRadio.tsx` | 중 | 🔲 |
+| W4-4 | Badge → inline-flex + min-width | `PixiBadge.tsx` | 소 | 🔲 |
+| W4-5 | Input/TextField, Select → flex column 다중 자식 | `PixiTextField.tsx`, `PixiSelect.tsx` | 대 | 🔲 |
+| W4-6 | Switch, Slider → track+thumb flex | `PixiSwitch.tsx`, `PixiSlider.tsx` | 중 | 🔲 |
+| W4-7 | Breadcrumbs, ProgressBar, Meter → flex row/column | `PixiBreadcrumbs.tsx` 등 | 소~중 | 🔲 |
+| W4-8 | SELF_PADDING_TAGS 제거 (§7.3) | `BuilderCanvas.tsx` | 소 | 🔲 |
+| W4-9 | Radio circle shape column 변환 수정 (SPEC 잔여 1건) | `ElementSprite.tsx:488-536` | 중 | 🔲 |
+
+**Exit Criteria:** C등급 → B등급 이상 전환, SPEC FAIL 0건, §7 CSS-Web 체크리스트 전체 통과
+
+##### Wave 5: StylePanel computedStyle 동기화 (§7.4)
+
+> **목표:** StylePanel이 Skia 렌더링과 동일한 값을 표시. UI 정합성 95%+.
+> **팀:** 하은 (Implementer)
+> **의존성:** Wave 4 완료 필수 (컴포넌트가 Taffy 위임 후 getComputedLayout() 활용 가능)
+
+| # | 태스크 | 파일 | 난이도 | 상태 |
+|---|--------|------|--------|------|
+| W5-1 | `computedStyleService.ts` 신규 + `computeSyntheticStyle()` 구현 | `services/computedStyleService.ts` | 중 | 🔲 |
+| W5-2 | `styleAtoms.ts` fontSizeAtom 등 fallback 교체 | `styleAtoms.ts` | 낮음 | 🔲 |
+| W5-3 | `useTypographyValuesJotai.ts` preset 인식 | `useTypographyValuesJotai.ts` | 낮음 | 🔲 |
+| W5-4 | 검증: StylePanel ↔ Skia 값 일치율 측정 | 전체 | 중 | 🔲 |
+
+**Exit Criteria:** StylePanel 표시 값 ↔ Skia 렌더링 값 일치율 95%+
+
+##### Wave 6: 정리 + 문서 현행화
+
+> **목표:** Dead code 제거, 문서 갱신.
+> **팀:** 다인 (Documenter) + 힐린 (Reviewer)
+> **의존성:** Wave 3-5 병행 가능 (문서 현행화는 각 Wave 완료 후 갱신)
+
+| # | 태스크 | 파일 | 상태 |
+|---|--------|------|------|
+| W6-1 | ENGINE_UPGRADE.md 완료 항목 체크 갱신 | `docs/ENGINE_UPGRADE.md` | 🔲 |
+| W6-2 | ENGINE_CHECKLIST.md CSS 속성 지원 현황 갱신 | `docs/ENGINE_CHECKLIST.md` | 🔲 |
+| W6-3 | 변경 이력 v1.43+ 추가 | `docs/ENGINE_UPGRADE.md` | 🔲 |
+| W6-4 | SKILL.md 규칙 현행화 (Wave 4 구조 변경 반영) | `.claude/skills/xstudio-patterns/SKILL.md` | 🔲 |
+
+##### 팀 구성 및 의존성 그래프
+
+```
+Wave 3 (은서/Refactorer)     Wave 6 (다인/Documenter)
+  │ baseline, clamp,           │ 문서 현행화
+  │ filter, scroll             │ (각 Wave 완료 시 갱신)
+  │                            │
+  ▼                            │
+Wave 4 (하은/Implementer      │
+       + 시연/Tester)          │
+  │ C등급 컴포넌트 →           │
+  │ Taffy/Dropflow 위임        │
+  │                            │
+  ▼                            │
+Wave 5 (하은/Implementer)     │
+  │ computeSyntheticStyle      │
+  │ StylePanel 동기화          │
+  └────────────────────────────┘
+         ↓
+    힐린 (Reviewer) — 전 Wave PR 리뷰
+```
+
+##### 실행 순서 및 병렬화
+
+```
+Week 1-2: Wave 3 (은서) + Wave 6-W6.1 (다인) — 병렬 실행
+Week 3-4: Wave 4-W4.1~W4.3 (하은+시연) + Wave 3 잔여 (은서) — 병렬
+Week 5-6: Wave 4-W4.4~W4.9 (하은+시연) — 컴포넌트 순차 적용
+Week 7:   Wave 5 (하은) — StylePanel 동기화
+Week 8:   Wave 6 마무리 (다인) + 전체 회귀 테스트 (시연)
+```
 
 ---
 
@@ -3228,15 +3359,15 @@ apps/builder/src/builder/workspace/canvas/layout/
 │   ├── LayoutEngine.ts          # 엔진 인터페이스 (ComputedLayout, LayoutContext)
 │   ├── TaffyFlexEngine.ts       # Flex/Inline-Flex 엔진 (Taffy WASM)
 │   ├── TaffyGridEngine.ts       # Grid/Inline-Grid 엔진 (Taffy WASM)
-│   ├── DropflowBlockEngine.ts   # Block/Inline-Block/Inline/Flow-Root 엔진 (Dropflow Fork JS) + enrichWithIntrinsicSize()
-│   ├── utils.ts                 # 공유 유틸리티 (parseMargin, parseBoxModel)
+│   ├── DropflowBlockEngine.ts   # Block/Inline-Block/Inline/Flow-Root 엔진 (Dropflow Fork JS)
+│   ├── utils.ts                 # 공유 유틸리티 (parseMargin, parseBoxModel, enrichWithIntrinsicSize, getButtonSizeConfig, INLINE_BLOCK_TAGS)
 │   ├── cssValueParser.ts        # 통합 CSS 값 파서 (resolveCSSSizeValue)
-│   ├── cssResolver.ts           # CSS 캐스케이드 + 상속
+│   ├── cssResolver.ts           # CSS 캐스케이드 + 상속 (✅ 모든 엔진에 통합)
 │   ├── cssStackingContext.ts    # CSS stacking context 판정
 │   └── index.ts                 # 엔진 디스패처 (selectEngine)
 ├── DirectContainer              # x/y/width/height 직접 설정 (@pixi/react 컴포넌트, BuilderCanvas.tsx에서 사용)
 ├── GridLayout.utils.ts          # Grid 유틸리티
-├── styleToLayout.ts             # 스타일 변환 (레거시 잔여 코드 포함)
+├── styleToLayout.ts             # 스타일 변환 (dead code — 호출부 0건, 참조용 유지)
 └── index.ts                     # 공개 API
 ```
 
@@ -3357,7 +3488,9 @@ function renderWithEngine(...) {
 
 ---
 
-### 11.2 Phase 10: CSS Blockification 지원 (2026-01-28)
+### 11.2 Phase 10: CSS Blockification 지원 (2026-01-28) ✅ 완전 구현
+
+> **현재 상태 (2026-02-19):** CSS Blockification은 `engines/index.ts`의 `blockifyDisplay()` + `calculateChildrenLayout()`에서 구현됨. flex/grid 자식의 `inline → block`, `inline-block → block`, `inline-flex → flex`, `inline-grid → grid` 변환이 적용되며, `isFlexOrGridContainer()` 판별 함수로 부모 display를 확인. 아래는 이력 참고용.
 
 #### 이슈 5: Flex 컨테이너 자식의 display가 WebGL에서 변환되지 않음
 
@@ -3758,6 +3891,7 @@ function estimateTextHeight(fontSize: number, lineHeight?: number): number {
 | 2026-02-13 | 1.40 | ToggleButtonGroup alignSelf 강제 설정 제거: styleToLayout.ts에서 ToggleButtonGroup fit-content 워크어라운드의 `alignSelf: 'flex-start'` 2줄 제거 — CSS에서 width: fit-content와 align-self는 독립적 속성이므로, 부모의 align-items (center, flex-end 등)가 정상 적용되도록 수정. flexGrow:0 + flexShrink:0만으로 주축 방향 너비 확장 방지 충분. 동일 패턴 조사: Pixi*.tsx 10개 파일은 내부 렌더링 컴포넌트 자체 레이아웃용으로 수정 불필요, Checkbox/Radio/Switch/Badge/Tag/Chip은 alignSelf 미사용 |
 | 2026-02-17 | 1.41 | Phase 9-10 엔진 교체: @pixi/layout, yoga-layout, @pixi/ui 완전 제거. LayoutContainer → DirectContainer 교체. shouldDelegateToPixiLayout() 삭제, renderWithPixiLayout() 제거 후 renderWithCustomEngine() 단일 경로로 통합 |
 | 2026-02-18 | 1.42 | Phase 11 엔진 전환 완료 및 문서 현행화: (1) 레거시 엔진 삭제 (BlockEngine.ts, FlexEngine.ts, GridEngine.ts), (2) Taffy WASM 기반 TaffyFlexEngine(flex/inline-flex) + TaffyGridEngine(grid/inline-grid) 도입, (3) Dropflow Fork JS 기반 DropflowBlockEngine(block/inline-block/inline/flow-root) 도입, (4) enrichWithIntrinsicSize()로 Yoga measureFunc 대체, (5) cssValueParser.ts의 resolveCSSSizeValue() 통합 CSS 값 파서 도입, (6) cssResolver.ts CSS 캐스케이드 + 상속 도입, (7) 문서 §4-§9 전면 현행화: LayoutContainer→DirectContainer, Yoga→Taffy/Dropflow, @pixi/layout 참조 제거/레거시 표시, §6 파일 구조 갱신, §7 참조 문서에 Taffy/Dropflow 추가 |
+| 2026-02-19 | 1.43 | Wave 3-6 실행 계획 수립: (1) 코드 기반 완료 현황 전수 검증 — cssValueParser/cssResolver/cssStackingContext/TaffyFlexEngine 2-pass/DropflowBlockEngine/gradient/transform/shadow 모두 구현 완료 확인, styleToLayout.ts 호출부 0건(dead code) 확인, (2) §8.2에 Wave 3-6 예상 일치율 추가 (97%→98%+), (3) §8.5 Wave 3-6 실행 계획 신규 — 완료 현황 체크표 + Wave별 태스크 + 팀 구성(은서/하은/시연/다인/힐린) + 의존성 그래프 + 8주 실행 타임라인 |
 
 ---
 

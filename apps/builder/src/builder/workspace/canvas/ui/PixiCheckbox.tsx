@@ -5,15 +5,18 @@
  *
  * Graphics를 사용하여 직접 체크박스를 그립니다.
  * - PixiButton과 동일한 패턴 (명령형 Graphics)
+ * - 히트 영역 크기는 LayoutComputedSizeContext(엔진 계산 결과) 사용
  *
  * @since 2025-12-11 Phase 11 B2.4
  * @updated 2025-12-15 P10: Graphics 기반으로 리팩토링
+ * @updated 2026-02-19 Wave 4: LayoutComputedSizeContext로 히트 영역 통합 (estimatedTextWidth 제거)
  */
 
 import { useExtend } from '@pixi/react';
 import { PIXI_COMPONENTS } from '../pixiSetup';
-import { memo, useCallback, useMemo } from 'react';
+import { memo, useCallback, useMemo, useContext } from 'react';
 import { Graphics as PixiGraphics, TextStyle } from 'pixi.js';
+import { LayoutComputedSizeContext } from '../layoutContext';
 import type { Element } from '../../../../types/core/store.types';
 import type { CSSStyle } from '../sprites/styleConverter';
 import { cssColorToHex } from '../sprites/styleConverter';
@@ -156,23 +159,28 @@ export const PixiCheckbox = memo(function PixiCheckbox({
     [style, fontSize, textColor]
   );
 
+  // 레이아웃 엔진(Taffy/Dropflow) 계산 결과 — DirectContainer가 제공
+  const computedSize = useContext(LayoutComputedSizeContext);
+
+  // 히트 영역 크기: 엔진 계산 결과 우선, null이면 수동 계산으로 fallback
+  const estimatedTextWidth = labelText ? Math.max(labelText.length * fontSize * 0.6, 50) : 0;
+  const fallbackWidth = boxSize + (labelText ? 8 + estimatedTextWidth : 0);
+  const fallbackHeight = Math.max(boxSize, fontSize + 4);
+
+  const hitAreaWidth = computedSize?.width ?? fallbackWidth;
+  const hitAreaHeight = computedSize?.height ?? fallbackHeight;
+
+  // 수직 중앙 정렬을 위한 오프셋
+  const boxOffsetY = (hitAreaHeight - boxSize) / 2;
+  const textOffsetY = (hitAreaHeight - fontSize) / 2;
+
   // 클릭 핸들러
   const handlePointerDown = useCallback(() => {
     onClick?.(element.id);
     onChange?.(element.id, !isChecked);
   }, [element.id, onClick, onChange, isChecked]);
 
-  // 전체 히트 영역 (박스 + gap + 텍스트 영역)
-  // 텍스트 너비는 대략 fontSize * 글자수로 추정, 최소 50px 확보
-  const estimatedTextWidth = labelText ? Math.max(labelText.length * fontSize * 0.6, 50) : 0;
-  const hitAreaWidth = boxSize + (labelText ? 8 + estimatedTextWidth : 0);
-  const hitAreaHeight = Math.max(boxSize, fontSize + 4);
-
-  // 수직 중앙 정렬을 위한 오프셋
-  const boxOffsetY = (hitAreaHeight - boxSize) / 2;
-  const textOffsetY = (hitAreaHeight - fontSize) / 2;
-
-  // 투명 히트 영역 그리기
+  // 투명 히트 영역 그리기 (엔진 계산 크기 사용 — PixiButton A등급 패턴)
   const drawHitArea = useCallback(
     (g: PixiGraphics) => {
       g.clear();

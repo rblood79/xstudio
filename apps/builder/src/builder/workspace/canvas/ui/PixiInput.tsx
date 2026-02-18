@@ -12,14 +12,16 @@
  *
  * @since 2025-12-13 Phase 6.2
  * @updated 2025-12-19 Phase 19 - JSX 기반 재작성 + Label/Description 지원
+ * @updated 2026-02-19 Wave 4: LayoutComputedSizeContext로 히트 영역 통합
  */
 
 import { useExtend } from '@pixi/react';
 import { PIXI_COMPONENTS } from '../pixiSetup';
-import { memo, useCallback, useMemo, useRef } from 'react';
+import { memo, useCallback, useContext, useMemo, useRef } from 'react';
 import type { Graphics as PixiGraphicsType, TextStyle } from 'pixi.js';
 import type { Element } from '../../../../types/core/store.types';
 import type { CSSStyle } from '../sprites/styleConverter';
+import { LayoutComputedSizeContext } from '../layoutContext';
 
 // 🚀 Spec Migration
 import { getLabelStylePreset, getDescriptionStylePreset } from '../hooks/useSpecRenderer';
@@ -63,6 +65,9 @@ export const PixiInput = memo(function PixiInput({
 }: PixiInputProps) {
   useExtend(PIXI_COMPONENTS);
 
+  // 레이아웃 엔진(Taffy/Dropflow) 계산 결과 — DirectContainer가 제공
+  const computedSize = useContext(LayoutComputedSizeContext);
+
   const props = element.props || {};
   const style = props.style as CSSStyle | undefined;
   const variant = (props.variant as string) || 'default';
@@ -100,8 +105,6 @@ export const PixiInput = memo(function PixiInput({
 
   const isRow = flexDirection === 'row';
 
-  // 🚀 @pixi/layout: style?.width를 그대로 전달 (% 문자열 지원)
-  const styleWidth = style?.width;
   const fallbackWidth = 240;
 
   // Column 레이아웃용 높이 계산
@@ -115,19 +118,24 @@ export const PixiInput = memo(function PixiInput({
   const isPlaceholder = !value && placeholder;
   const descriptionText = isInvalid && errorMessage ? errorMessage : description;
 
-  // 🚀 Phase 19: 전체 영역 계산 (hitArea용) - fallback 사용
-  const totalWidth = isRow ? labelWidth + fallbackWidth : fallbackWidth;
-  const totalHeightCalc = isRow
+  // 🚀 Wave 4: LayoutComputedSizeContext에서 엔진 계산 결과 사용, fallback은 수동 계산값 유지
+  const fallbackTotalWidth = isRow ? labelWidth + fallbackWidth : fallbackWidth;
+  const fallbackTotalHeight = isRow
     ? sizePreset.height + (descriptionText ? descPreset.fontSize + sizePreset.gap : 0)
     : labelHeight + sizePreset.height + (descriptionText ? descPreset.fontSize + sizePreset.gap : 0);
+
+  const hitAreaWidth = computedSize?.width ?? fallbackTotalWidth;
+  const hitAreaHeight = computedSize?.height ?? fallbackTotalHeight;
 
   // 🚀 Performance: useRef로 hover 상태 관리
   const graphicsRef = useRef<PixiGraphicsType>(null);
 
-  // Draw input background - 🚀 @pixi/layout: Graphics는 fallback 사용
+  // Draw input background - 🚀 Wave 4: computedSize 우선, fallbackWidth 유지
   const drawBackground = useCallback(
     (g: PixiGraphicsType, isHovered = false) => {
       g.clear();
+
+      const bgWidth = computedSize?.width ?? fallbackWidth;
 
       // Background (hover 시 약간 어둡게)
       let bgColor = colorPreset.backgroundColor;
@@ -137,7 +145,7 @@ export const PixiInput = memo(function PixiInput({
         bgColor = Math.max(0, colorPreset.backgroundColor - 0x0a0a0a);
       }
 
-      g.roundRect(0, 0, fallbackWidth, sizePreset.height, sizePreset.borderRadius);
+      g.roundRect(0, 0, bgWidth, sizePreset.height, sizePreset.borderRadius);
       g.fill({ color: bgColor });
 
       // Border
@@ -154,11 +162,11 @@ export const PixiInput = memo(function PixiInput({
 
       // Selection indicator
       if (isSelected) {
-        g.roundRect(-2, -2, fallbackWidth + 4, sizePreset.height + 4, sizePreset.borderRadius + 2);
+        g.roundRect(-2, -2, bgWidth + 4, sizePreset.height + 4, sizePreset.borderRadius + 2);
         g.stroke({ color: variantColors.bg, width: 2 });
       }
     },
-    [fallbackWidth, sizePreset, colorPreset, isSelected, isDisabled, isInvalid, variantColors.bg]
+    [computedSize, fallbackWidth, sizePreset, colorPreset, isSelected, isDisabled, isInvalid, variantColors.bg]
   );
 
   // Text styles - 🚀 Phase 19: .react-aria-Label 클래스에서 스타일 읽기
@@ -212,14 +220,14 @@ export const PixiInput = memo(function PixiInput({
     }
   }, [drawBackground]);
 
-  // 🚀 Phase 19: 투명 히트 영역 (클릭 감지용)
+  // 🚀 Wave 4: 투명 히트 영역 — LayoutComputedSizeContext 우선, 수동 계산 fallback
   const drawHitArea = useCallback(
     (g: PixiGraphicsType) => {
       g.clear();
-      g.rect(0, 0, totalWidth, totalHeightCalc);
+      g.rect(0, 0, hitAreaWidth, hitAreaHeight);
       g.fill({ color: 0xffffff, alpha: 0 });
     },
-    [totalWidth, totalHeightCalc]
+    [hitAreaWidth, hitAreaHeight]
   );
 
   return (

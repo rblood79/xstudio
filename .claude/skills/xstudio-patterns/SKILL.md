@@ -37,7 +37,6 @@ XStudio Builder 애플리케이션의 코드 패턴, 규칙 및 모범 사례를
 
 #### PIXI Layout (pixi-*)
 - **[pixi-direct-container](rules/pixi-no-xy-props.md)** - DirectContainer 직접 배치 패턴 (엔진 결과 x/y 사용)
-- ~~**[pixi-layout-import-first](rules/pixi-layout-import-first.md)**~~ - ~~@pixi/layout 최우선 import~~ **(폐기됨 — Phase 11에서 @pixi/layout 제거)**
 - **[pixi-hybrid-layout-engine](rules/pixi-hybrid-layout-engine.md)** - 하이브리드 레이아웃 엔진 display 선택
 - **[pixi-container-hit-rect](rules/pixi-container-hit-rect.md)** - Non-layout 컨테이너 히트 영역 (padding offset 보정)
 
@@ -110,7 +109,7 @@ XStudio Builder 애플리케이션의 코드 패턴, 규칙 및 모범 사례를
 | 영역 | 기술 |
 |------|------|
 | UI Framework | React 19, React-Aria Components |
-| State | Zustand, TanStack Query |
+| State | Zustand (메인), Jotai (스타일 패널), TanStack Query |
 | Styling | Tailwind CSS v4, tailwind-variants |
 | Canvas | **CanvasKit/Skia WASM** (메인 렌더러) + PixiJS 8 (이벤트 전용, DirectContainer 직접 배치), @pixi/react |
 | Layout Engine | Taffy WASM (TaffyFlexEngine, TaffyGridEngine) + Dropflow Fork (DropflowBlockEngine) |
@@ -147,6 +146,10 @@ tags: [tag1, tag2]
 ## Correct
 올바른 코드 예시
 ```
+
+## Deprecated Rules (폐기된 규칙)
+
+- ~~**[pixi-layout-import-first](rules/pixi-layout-import-first.md)**~~ - Phase 11에서 @pixi/layout 제거로 폐기
 
 ## 아키텍처 결정 기록 (ADR)
 

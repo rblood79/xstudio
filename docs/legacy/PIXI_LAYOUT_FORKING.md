@@ -1,3 +1,5 @@
+> **⚠️ 레거시 문서**: 현재 아키텍처와 일치하지 않을 수 있습니다. 역사적 참조 목적.
+
 # Pixi Layout 포크 검토 가이드
 
 이 문서는 WebGL 캔버스에서 HTML과 유사한 레이아웃(`display: block/inline/flex/grid` 등)을 구현할 때,

@@ -1,9 +1,6 @@
 /**
  * Pixi Breadcrumbs
  *
- * 🚀 Phase 2: Breadcrumbs WebGL 컴포넌트 (Pattern C)
- * 🚀 Phase 11: @pixi/layout 기반 리팩토링
- *
  * 네비게이션 경로 표시 컴포넌트
  * - variant (default, primary, secondary, tertiary, error, filled) 지원
  * - size (sm, md, lg) 지원
@@ -16,16 +13,18 @@
  *
  * @since 2025-12-16 Phase 2 WebGL Migration
  * @updated 2025-01-07 Phase 11 @pixi/layout migration
+ * @updated 2026-02-19 Wave 4: LayoutComputedSizeContext로 히트 영역 통합
  */
 
 import { useExtend } from '@pixi/react';
 import { PIXI_COMPONENTS } from '../pixiSetup';
-import { memo, useCallback, useMemo, useState } from "react";
+import { memo, useCallback, useMemo, useState, useContext } from "react";
 import { TextStyle, Graphics as PixiGraphics } from "pixi.js";
 import type { Element } from "../../../../types/core/store.types";
 import type { CSSStyle } from "../sprites/styleConverter";
 import { cssColorToHex } from "../sprites/styleConverter";
 import { useStore } from "../../../stores";
+import { LayoutComputedSizeContext } from '../layoutContext';
 
 // 🚀 Component Spec
 import {
@@ -33,6 +32,13 @@ import {
   getVariantColors as getSpecVariantColors,
   getSizePreset as getSpecSizePreset,
 } from '@xstudio/specs';
+
+// ============================================
+// Constants
+// ============================================
+
+const FALLBACK_WIDTH = 200;
+const FALLBACK_HEIGHT = 32;
 
 // ============================================
 // Types
@@ -62,6 +68,11 @@ export const PixiBreadcrumbs = memo(function PixiBreadcrumbs({
   useExtend(PIXI_COMPONENTS);
   const style = element.props?.style as CSSStyle | undefined;
   const props = element.props as BreadcrumbsElementProps | undefined;
+
+  // 레이아웃 엔진(Taffy/Dropflow) 계산 결과 — DirectContainer가 제공
+  const computedSize = useContext(LayoutComputedSizeContext);
+  const hitWidth = computedSize?.width ?? FALLBACK_WIDTH;
+  const hitHeight = computedSize?.height ?? FALLBACK_HEIGHT;
 
   // Store에서 자식 요소 읽기
   const elements = useStore((state) => state.elements);
@@ -131,16 +142,16 @@ export const PixiBreadcrumbs = memo(function PixiBreadcrumbs({
     [sizePreset.fontSize, colorPreset.separatorColor]
   );
 
-  // 배경 그리기 (filled variant용)
+  // 배경 그리기 (filled variant용) — 엔진 계산 크기 사용, fallback: FALLBACK_WIDTH x FALLBACK_HEIGHT
   const drawBackground = useCallback(
     (g: PixiGraphics) => {
       g.clear();
       if (variant === "filled") {
-        g.roundRect(0, 0, 200, 32, 8);
+        g.roundRect(0, 0, hitWidth, hitHeight, 8);
         g.fill({ color: 0xf3f4f6 });
       }
     },
-    [variant]
+    [variant, hitWidth, hitHeight]
   );
 
   // 클릭 핸들러
@@ -166,7 +177,7 @@ export const PixiBreadcrumbs = memo(function PixiBreadcrumbs({
 
   return (
     <pixiContainer>
-      {/* 배경 (filled variant) */}
+      {/* 배경 (filled variant) — 엔진 계산 크기 적용 */}
       {variant === "filled" && <pixiGraphics draw={drawBackground} />}
 
       {breadcrumbItems.map((item) => {

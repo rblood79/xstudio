@@ -1,3 +1,7 @@
+> **⚠️ 레거시 문서 (2026-02-19)**: 이 문서는 Phase 9-11 이전(@pixi/layout 시절) 기준으로 작성되었습니다.
+> 현재 스택: CanvasKit/Skia WASM (렌더링) + PixiJS v8 (이벤트 전용, DirectContainer) + Taffy WASM (Flex/Grid) + Dropflow Fork (Block)
+> 최신 아키텍처는 [ADR-003](../../adr/003-canvas-rendering.md), [ENGINE.md](../../ENGINE.md) 참조
+
 # PixiJS WebGL Integration
 
 > Phase 10-11: PixiJS 기반 Figma-like WebGL 캔버스 구현

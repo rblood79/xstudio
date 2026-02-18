@@ -1,3 +1,5 @@
+> **성능 문서 네비게이션**: [인덱스](./PERFORMANCE_INDEX.md) | [태스크](./PERFORMANCE_TASKS.md) | [계획](./PERFORMANCE_PLAN.md) | [Phase 1-4](./PERF_PHASE_1_4.md) | [Phase 5-8](./PERF_PHASE_5_8.md) | [결정사항](./PERF_DECISIONS.md) | [아이디어](./PERF_IDEAS.md) | [보충](./PERF_SUPPLEMENT.md)
+
 # 보완 제안 (추가 검토 결과)
 
 > **관련 문서**: [04-phase-5-8.md](./04-phase-5-8.md) | [06-implementation.md](./06-implementation.md)

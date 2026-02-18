@@ -127,11 +127,30 @@ export interface LayerBlurEffect {
   sigma: number;
 }
 
+/**
+ * CSS filter 함수(brightness, contrast, saturate, hue-rotate)를
+ * CanvasKit ColorFilter.MakeMatrix()용 4x5 색상 행렬로 변환한 이펙트.
+ *
+ * 행렬 레이아웃 (row-major, 20개 요소):
+ * | R' |   | m0  m1  m2  m3  m4  |   | R |
+ * | G' | = | m5  m6  m7  m8  m9  | x | G |
+ * | B' |   | m10 m11 m12 m13 m14 |   | B |
+ * | A' |   | m15 m16 m17 m18 m19 |   | A |
+ *                                     | 1 |
+ *
+ * m4, m9, m14, m19 는 오프셋 열 (0-255 범위 / 255 정규화)
+ */
+export interface ColorMatrixEffect {
+  type: 'color-matrix';
+  matrix: Float32Array; // 4x5 = 20개 요소
+}
+
 export type EffectStyle =
   | OpacityEffect
   | BackgroundBlurEffect
   | DropShadowEffect
-  | LayerBlurEffect;
+  | LayerBlurEffect
+  | ColorMatrixEffect;
 
 // ============================================
 // AI Visual Feedback Types (G.3)

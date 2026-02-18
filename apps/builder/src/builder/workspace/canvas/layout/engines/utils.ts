@@ -13,7 +13,8 @@
 import type { Margin, BoxModel, VerticalAlign } from './types';
 import type { Element } from '../../../../../types/core/store.types';
 import { fontFamily as specFontFamily } from '@xstudio/specs';
-import { measureWrappedTextHeight } from '../../utils/textMeasure';
+import { measureWrappedTextHeight, measureFontMetrics } from '../../utils/textMeasure';
+import type { FontMetrics } from '../../utils/textMeasure';
 import {
   resolveCSSSizeValue,
   FIT_CONTENT as CSS_FIT_CONTENT,
@@ -21,6 +22,7 @@ import {
   MAX_CONTENT as CSS_MAX_CONTENT,
 } from './cssValueParser';
 import type { CSSValueContext } from './cssValueParser';
+import type { ComputedStyle } from './cssResolver';
 
 /**
  * 중복 경고 방지용 Set
@@ -363,7 +365,40 @@ const INLINE_UI_SIZE_CONFIGS: Record<string, Record<string, {
   tag: BADGE_SIZE_CONFIG,
   chip: BADGE_SIZE_CONFIG,
   togglebutton: TOGGLEBUTTON_SIZE_CONFIG,
+  submitbutton: BUTTON_SIZE_CONFIG,
+  fancybutton: BUTTON_SIZE_CONFIG,
 };
+
+/**
+ * 버튼 계열 요소의 size config 조회 (단일 소스)
+ *
+ * 엔진 모듈에서 버튼 크기 계산 시
+ * BUTTON_SIZE_CONFIG / TOGGLEBUTTON_SIZE_CONFIG의 단일 진입점으로 사용.
+ *
+ * @returns 해당 tag/size의 config. 버튼 계열이 아니면 null.
+ */
+export function getButtonSizeConfig(
+  tag: string,
+  sizePropValue?: string,
+): { paddingY: number; paddingX: number; fontSize: number; borderWidth: number } | null {
+  const t = tag.toLowerCase();
+
+  // button / submitbutton / fancybutton → BUTTON_SIZE_CONFIG
+  if (t === 'button' || t === 'submitbutton' || t === 'fancybutton') {
+    const size = sizePropValue ?? 'sm';
+    const c = BUTTON_SIZE_CONFIG[size] ?? BUTTON_SIZE_CONFIG['sm'];
+    return { paddingY: c.paddingY, paddingX: c.paddingLeft, fontSize: c.fontSize, borderWidth: c.borderWidth };
+  }
+
+  // togglebutton → TOGGLEBUTTON_SIZE_CONFIG
+  if (t === 'togglebutton') {
+    const size = sizePropValue ?? 'md';
+    const c = TOGGLEBUTTON_SIZE_CONFIG[size] ?? TOGGLEBUTTON_SIZE_CONFIG['md'];
+    return { paddingY: c.paddingY, paddingX: c.paddingLeft, fontSize: c.fontSize, borderWidth: c.borderWidth };
+  }
+
+  return null;
+}
 
 /**
  * Canvas 2D 텍스트 측정용 컨텍스트 (싱글톤)
@@ -376,6 +411,7 @@ let measureContext: CanvasRenderingContext2D | null = null;
 
 function getMeasureContext(): CanvasRenderingContext2D | null {
   if (!measureContext) {
+    if (typeof document === 'undefined') return null;
     measureCanvas = document.createElement('canvas');
     measureContext = measureCanvas.getContext('2d');
   }
@@ -491,6 +527,8 @@ const DEFAULT_SIZE_BY_TAG: Record<string, string> = {
   chip: 'md',
   // Button 계열: 'sm' 기본값
   button: 'sm',
+  submitbutton: 'sm',
+  fancybutton: 'sm',
   input: 'sm',
   select: 'sm',
   a: 'sm',
@@ -974,6 +1012,131 @@ export function parseBoxModel(
   };
 }
 
+// ---------------------------------------------------------------------------
+// Intrinsic Size 주입 (§6 P1: DropflowBlockEngine + TaffyFlexEngine 공유)
+// ---------------------------------------------------------------------------
+
+/**
+ * CSS 스펙에서 기본 display가 inline-block인 태그
+ *
+ * 레이아웃 엔진이 이 요소들을 block으로 처리할 때,
+ * width가 없으면 100%로 확장된다.
+ * fit-content 동작을 에뮬레이트하기 위해 intrinsic width를 주입한다.
+ */
+export const INLINE_BLOCK_TAGS = new Set([
+  'button', 'submitbutton', 'fancybutton', 'togglebutton',
+  'badge', 'tag', 'chip',
+  'checkbox', 'radio', 'switch', 'toggle',
+  'togglebuttongroup',
+]);
+
+/**
+ * 리프 UI 컴포넌트에 intrinsic size(width/height)를 주입
+ *
+ * 레이아웃 엔진(Dropflow/Taffy)은 자식이 없는 블록의 height를 0으로 collapse하고,
+ * block 요소의 width를 부모 100%로 확장한다.
+ *
+ * Button, Badge 등은 텍스트/인디케이터가 props에만 있어
+ * 엔진이 콘텐츠 크기를 계산할 수 없다.
+ *
+ * parseBoxModel()의 contentWidth/contentHeight + spec padding/border를
+ * 사용하여 border-box 크기를 CSS width/height로 주입한다.
+ *
+ * @param computedStyle - 상속 적용 후 해당 요소의 computed style (fontSize 등 활용)
+ */
+export function enrichWithIntrinsicSize(
+  element: Element,
+  availableWidth: number,
+  availableHeight: number,
+  _computedStyle?: ComputedStyle,
+): Element {
+  const style = element.props?.style as Record<string, unknown> | undefined;
+  const tag = (element.tag ?? '').toLowerCase();
+
+  const rawHeight = style?.height;
+  const INTRINSIC_HEIGHT_KEYWORDS = new Set(['fit-content', 'min-content', 'max-content', 'auto']);
+  const needsHeight = !rawHeight || INTRINSIC_HEIGHT_KEYWORDS.has(rawHeight as string);
+
+  const rawWidth = style?.width;
+  const INTRINSIC_WIDTH_KEYWORDS = new Set(['fit-content', 'min-content', 'max-content', 'auto']);
+  const needsWidth = INLINE_BLOCK_TAGS.has(tag) && (!rawWidth || INTRINSIC_WIDTH_KEYWORDS.has(rawWidth as string));
+
+  if (!needsHeight && !needsWidth) return element;
+
+  const box = parseBoxModel(element, availableWidth, availableHeight);
+
+  // min-content / max-content 너비 직접 계산
+  let resolvedIntrinsicWidth: number | undefined;
+  if (needsWidth && (rawWidth === 'min-content' || rawWidth === 'max-content')) {
+    const props = element.props as Record<string, unknown> | undefined;
+    const textContent = String(
+      props?.children ?? props?.text ?? props?.label ?? props?.title ?? '',
+    );
+    if (textContent) {
+      const styleRecord = style as Record<string, unknown> | undefined;
+      const fontSize = typeof styleRecord?.fontSize === 'number' ? styleRecord.fontSize : 14;
+      resolvedIntrinsicWidth = rawWidth === 'min-content'
+        ? calculateMinContentWidth(textContent, fontSize)
+        : calculateMaxContentWidth(textContent, fontSize);
+    }
+  }
+
+  // contentHeight <= 0이면 컨테이너 요소 (div, section 등) — 스킵
+  if (box.contentHeight <= 0 && !needsWidth) return element;
+
+  // padding과 border를 독립적으로 처리:
+  // - CSS에 해당 속성이 없으면 → spec 기본값을 크기에 포함
+  // - CSS에 해당 속성이 있으면 → 해당 부분 생략 (엔진이 CSS 값을 추가)
+  const hasCSSVerticalPadding = style?.padding !== undefined ||
+    style?.paddingTop !== undefined || style?.paddingBottom !== undefined;
+  const hasCSSVerticalBorder = style?.borderWidth !== undefined ||
+    style?.borderTopWidth !== undefined || style?.borderBottomWidth !== undefined;
+  const hasCSSHorizontalPadding = style?.padding !== undefined ||
+    style?.paddingLeft !== undefined || style?.paddingRight !== undefined;
+  const hasCSSHorizontalBorder = style?.borderWidth !== undefined ||
+    style?.borderLeftWidth !== undefined || style?.borderRightWidth !== undefined;
+
+  const injectedStyle: Record<string, unknown> = { ...style };
+
+  // Height 주입
+  if (needsHeight && box.contentHeight > 0) {
+    let injectHeight = box.contentHeight;
+    if (!hasCSSVerticalPadding) {
+      injectHeight += box.padding.top + box.padding.bottom;
+    }
+    if (!hasCSSVerticalBorder) {
+      injectHeight += box.border.top + box.border.bottom;
+    }
+    injectedStyle.height = injectHeight;
+  }
+
+  // Width 주입 (inline-block 태그의 fit-content / min-content / max-content 에뮬레이션)
+  const baseContentWidth = resolvedIntrinsicWidth ?? box.contentWidth;
+  if (needsWidth && baseContentWidth > 0) {
+    let injectWidth = baseContentWidth;
+    if (!hasCSSHorizontalPadding) {
+      injectWidth += box.padding.left + box.padding.right;
+    }
+    if (!hasCSSHorizontalBorder) {
+      injectWidth += box.border.left + box.border.right;
+    }
+    injectedStyle.width = injectWidth;
+  }
+
+  // 변경이 없으면 원본 반환
+  if (injectedStyle.height === undefined && injectedStyle.width === style?.width) {
+    return element;
+  }
+
+  return {
+    ...element,
+    props: {
+      ...element.props,
+      style: injectedStyle,
+    },
+  } as Element;
+}
+
 /**
  * vertical-align 값 파싱
  *
@@ -1076,6 +1239,98 @@ const VERTICALLY_CENTERED_TAGS = new Set([
   'badge', 'tag', 'chip',  // inline-flex 컴포넌트
 ]);
 
+/**
+ * 스타일에서 폰트 속성을 개별값으로 파싱
+ *
+ * measureFontMetrics()에 전달할 개별 폰트 속성 값을 추출합니다.
+ * 기존 buildFontSpec()을 대체하여 구조화된 값으로 반환합니다.
+ * 이를 통해 캐시 키 생성과 메트릭 측정을 효율적으로 수행합니다.
+ */
+interface ParsedFontProps {
+  fontFamily: string;
+  fontSize: number;
+  fontWeight: string | number;
+}
+
+function parseFontProps(style: Record<string, unknown> | undefined): ParsedFontProps {
+  if (!style) {
+    return { fontFamily: 'sans-serif', fontSize: 16, fontWeight: 400 };
+  }
+
+  const sizeProp = style.fontSize;
+  const familyProp = style.fontFamily;
+  const weightProp = style.fontWeight;
+
+  // fontSize 파싱
+  let fontSize = 16;
+  if (typeof sizeProp === 'number') {
+    fontSize = sizeProp;
+  } else if (typeof sizeProp === 'string' && sizeProp.trim()) {
+    const parsed = parseFloat(sizeProp.trim());
+    if (!isNaN(parsed)) fontSize = parsed;
+  }
+
+  // fontFamily 파싱
+  let fontFamily = 'sans-serif';
+  if (typeof familyProp === 'string' && familyProp.trim()) {
+    fontFamily = familyProp.trim();
+  }
+
+  // fontWeight 파싱
+  let fontWeight: string | number = 400;
+  if (typeof weightProp === 'number') {
+    fontWeight = weightProp;
+  } else if (typeof weightProp === 'string' && weightProp.trim()) {
+    fontWeight = weightProp.trim();
+  }
+
+  return { fontFamily, fontSize, fontWeight };
+}
+
+/**
+ * 스타일에서 FontMetrics를 조회 (캐싱 포함)
+ *
+ * textMeasure.ts의 measureFontMetrics()에 위임하여
+ * Canvas 2D TextMetrics 기반 정밀 ascent/descent를 반환합니다.
+ *
+ * 기존 measureAlphabeticAscent() + measureAlphabeticDescent()를 통합 교체:
+ *
+ * [Before] 매 호출마다 document.createElement('canvas') 생성:
+ *   - measureAlphabeticAscent(fontSpec) → 새 Canvas 생성 → ascent | null
+ *   - measureAlphabeticDescent(fontSpec) → 새 Canvas 생성 → descent | null
+ *   - 2번 호출 시 Canvas 4개 생성 (ascent + descent 각각)
+ *
+ * [After] 싱글톤 context + Map 캐시로 O(1) 조회:
+ *   - getFontMetricsFromStyle(style) → { ascent, descent, fontHeight }
+ *   - 캐시 히트 시 Canvas context 접근 없음
+ *   - SSR 환경에서도 fontSize 기반 근사값 자동 반환 (null 대신)
+ */
+function getFontMetricsFromStyle(style: Record<string, unknown> | undefined): FontMetrics {
+  const { fontFamily, fontSize, fontWeight } = parseFontProps(style);
+  return measureFontMetrics(fontFamily, fontSize, fontWeight);
+}
+
+/**
+ * inline-block 요소의 baseline 위치 계산
+ *
+ * CSS 명세 (Chrome 구현):
+ * - 일반적인 경우: 마지막 줄 텍스트의 baseline
+ * - overflow: hidden/auto/scroll → margin-box 하단
+ * - 콘텐츠 없음 → margin-box 하단
+ *
+ * Wave 3 정밀화: measureFontMetrics()의 캐싱된 ascent/descent를 활용하여
+ * 폰트 메트릭 기반 정밀 계산을 수행합니다.
+ * 기존 measureAlphabeticAscent()/measureAlphabeticDescent()의 매 호출
+ * Canvas 생성 문제를 해결하고, SSR 환경에서도 근사값을 안정적으로 제공합니다.
+ *
+ * @param element - 대상 요소
+ * @param height - 요소 높이 (margin 제외)
+ * @returns baseline 위치 (요소 상단 기준 오프셋)
+ *
+ * @example
+ * // 높이 100px, baseline이 하단에서 20px 위
+ * calculateBaseline(element, 100) // → 80 (상단에서 80px 아래)
+ */
 export function calculateBaseline(
   element: Element,
   height: number
@@ -1097,34 +1352,48 @@ export function calculateBaseline(
   }
 
   // 콘텐츠가 없으면 하단이 baseline
-  // TODO: 실제 구현에서는 자식 요소/텍스트 유무 확인 필요
-  // 현재는 높이가 0이면 콘텐츠 없음으로 간주
+  // 높이가 0이면 콘텐츠 없음으로 간주
   if (height === 0) {
     return 0;
   }
 
-  // 🚀 버튼/input 등 텍스트 수직 중앙 정렬 요소
+  // 폰트 메트릭 조회 (캐싱됨, SSR-safe — 근사값 자동 반환)
+  const fm = getFontMetricsFromStyle(style);
+
+  // 버튼/input 등 텍스트 수직 중앙 정렬 요소
   // CSS에서 이 요소들의 baseline은 수직 중앙의 텍스트 baseline
-  // 텍스트가 중앙에 위치하므로 baseline ≈ height / 2
-  // (동일 폰트 크기의 다른 높이 요소들 간 baseline 정렬 시
-  //  결과적으로 수직 중앙 정렬과 동일한 효과)
   if (VERTICALLY_CENTERED_TAGS.has(tag)) {
-    return height / 2;
+    // baseline = (height - effectiveLineHeight) / 2 + ascent
+    const lineHeight = parseLineHeight(style);
+    const effectiveLineHeight = lineHeight ?? height;
+
+    // 텍스트 블록은 요소 수직 중앙에 위치:
+    //   텍스트 블록 상단 = (height - effectiveLineHeight) / 2
+    const textBlockTop = (height - effectiveLineHeight) / 2;
+    return textBlockTop + fm.ascent;
   }
 
-  // 일반적인 경우: 텍스트 baseline 계산
-  // TODO: 실제 구현에서는 폰트 메트릭 기반 baseline 계산 필요
-  // 현재는 간단히 하단에서 약간 위 (폰트 descender 가정)
+  // 일반적인 경우: 폰트 메트릭 기반 baseline 계산
   const lineHeight = parseLineHeight(style);
+
   if (lineHeight !== undefined && lineHeight <= height) {
-    // line-height 기반 baseline 추정
-    // 일반적으로 baseline은 line-height의 약 80% 지점
-    return height - lineHeight * 0.2;
+    // line-height가 있으면 half-leading 모델로 정밀 계산
+    // CSS half-leading: (lineHeight - fontHeight) / 2
+    // baseline from line box top = half-leading + ascent
+    const halfLeading = (lineHeight - fm.fontHeight) / 2;
+
+    if (height <= lineHeight * 1.5) {
+      // 단일 줄로 간주
+      return Math.max(halfLeading + fm.ascent, 0);
+    } else {
+      // 여러 줄: 마지막 줄 baseline
+      return height - lineHeight + halfLeading + fm.ascent;
+    }
   }
 
-  // 기본값: 하단에서 약간 위 (폰트 baseline 추정)
-  // 일반적인 폰트의 descender는 약 20% 정도
-  return height * 0.8;
+  // line-height 없음: 요소 높이를 단일 line box로 간주
+  // ascent가 곧 baseline 위치
+  return fm.ascent;
 }
 
 // ============================================

@@ -312,7 +312,7 @@ return (
 
 - 외부 `LayoutContainer`가 `styleToLayout`을 통해 width/height 처리
 - 내부 `PixiToggleButtonGroup`은 배경 크기를 `LayoutComputedSizeContext`에서 가져옴
-- `@pixi/layout`의 `formatStyles` 캐싱 때문에 `styleToLayout.ts`에서 `width: 'auto'` 명시적 설정 필요
+- `@pixi/layout`의 `formatStyles` 캐싱 때문에 `styleToLayout.ts`에서 `width: 'auto'` 명시적 설정 필요 **(Phase 11에서 @pixi/layout 제거됨 — 이 이슈는 더 이상 발생하지 않음)**
 
 ### 수정된 파일
 

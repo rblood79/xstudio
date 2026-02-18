@@ -13,7 +13,8 @@ import type { Element } from '../../../../../types/core/store.types';
 import type { LayoutEngine, ComputedLayout, LayoutContext } from './LayoutEngine';
 import { TaffyLayout } from '../../wasm-bindings/taffyLayout';
 import type { TaffyStyle, TaffyNodeHandle } from '../../wasm-bindings/taffyLayout';
-import { parseMargin, parsePadding, parseBorder } from './utils';
+import { parseMargin, parsePadding, parseBorder, enrichWithIntrinsicSize, INLINE_BLOCK_TAGS } from './utils';
+import { resolveStyle, ROOT_COMPUTED_STYLE } from './cssResolver';
 import type { ComputedStyle } from './cssResolver';
 
 // ─── Style conversion ────────────────────────────────────────────────
@@ -33,8 +34,8 @@ function dimStr(value: number | string | undefined): string | undefined {
 /**
  * Element의 style을 TaffyStyle로 변환
  *
- * styleToLayout.ts의 LayoutStyle과 달리 Taffy 네이티브 형식으로 직접 변환합니다.
- * fit-content, 태그별 크기 계산 등은 기존 styleToLayout 로직을 참조합니다.
+ * Taffy 네이티브 형식으로 직접 변환합니다.
+ * fit-content, 태그별 크기 계산은 engines/utils.ts의 유틸리티를 사용합니다.
  */
 export function elementToTaffyStyle(
   element: Element,
@@ -55,9 +56,17 @@ export function elementToTaffyStyle(
   }
 
   // Position
+  // CSS position:absolute / position:fixed → Taffy Position::Absolute
+  // CSS position:relative → Taffy Position::Relative (Taffy 기본값이지만 명시적으로 전달)
+  // CSS position:static / 미지정 → Taffy 기본값(Relative)
   if (style.position === 'absolute' || style.position === 'fixed') {
     result.position = 'absolute';
+  } else if (style.position === 'relative') {
+    result.position = 'relative';
+    // relative offset(top/left/right/bottom)은 Taffy가 직접 지원하지 않으므로
+    // 레이아웃 계산 결과에 가산하는 방식으로 처리 (computeWithTaffy에서 적용)
   }
+  // static / sticky / 미지정은 Taffy 기본값(relative)으로 처리되므로 별도 설정 불필요
 
   // Size
   const widthVal = parseCSSProp(style.width);
@@ -185,6 +194,21 @@ function parseCSSProp(value: unknown): number | string | undefined {
   return undefined;
 }
 
+/**
+ * CSS 오프셋 값(top/left/right/bottom)을 픽셀 숫자로 변환
+ *
+ * % 값은 현재 컨텍스트 없이는 계산 불가하므로 0으로 처리.
+ * relative 오프셋 계산 전용으로 사용합니다.
+ *
+ * @returns 픽셀 수치, 변환 불가 시 0
+ */
+function resolvePxOffset(value: unknown): number {
+  const parsed = parseCSSProp(value);
+  if (typeof parsed === 'number') return parsed;
+  // % 문자열 등 변환 불가한 경우 0 반환 (conservative)
+  return 0;
+}
+
 // ─── TaffyFlexEngine ─────────────────────────────────────────────────
 
 /** 싱글톤 TaffyLayout 인스턴스 */
@@ -219,7 +243,7 @@ export class TaffyFlexEngine implements LayoutEngine {
     children: Element[],
     availableWidth: number,
     availableHeight: number,
-    _context?: LayoutContext,
+    context?: LayoutContext,
   ): ComputedLayout[] {
     // 빈 children은 WASM 호출 없이 즉시 반환
     if (children.length === 0) {
@@ -237,8 +261,16 @@ export class TaffyFlexEngine implements LayoutEngine {
       return [];
     }
 
+    // ── CSS 상속 체인 구성 ──────────────────────────────────────────
+    // 부모의 computed style 결정:
+    //   - context에 parentComputedStyle이 있으면 사용 (상위 엔진에서 전파됨)
+    //   - 없으면 부모 요소 style을 ROOT_COMPUTED_STYLE 기반으로 직접 해석
+    const parentRawStyle = parent.props?.style as Record<string, unknown> | undefined;
+    const parentComputed = context?.parentComputedStyle
+      ?? resolveStyle(parentRawStyle, ROOT_COMPUTED_STYLE);
+
     try {
-      return this.computeWithTaffy(taffy, parent, children, availableWidth, availableHeight);
+      return this.computeWithTaffy(taffy, parent, children, availableWidth, availableHeight, parentComputed);
     } finally {
       // 매 계산 후 트리를 클리어하여 메모리 누적 방지
       // 추후 증분 업데이트가 필요하면 노드 캐시 도입
@@ -258,20 +290,127 @@ export class TaffyFlexEngine implements LayoutEngine {
     children: Element[],
     availableWidth: number,
     availableHeight: number,
+    parentComputed: ComputedStyle,
+  ): ComputedLayout[] {
+    // §6 P3: 2-pass 레이아웃
+    // 1차 pass: 부모 availableWidth로 enrichment → Taffy 계산
+    // 2차 pass (조건부): inline-block 자식의 실제 Taffy 할당 width가
+    //   enrichment 시 사용한 width와 다르면 → 정확한 width로 re-enrich → Taffy 재계산
+    // 이는 flex row에서 자식 width가 flex-grow/shrink로 변경될 때 텍스트 wrap 높이를 교정
+
+    // ── 자식별 computed style 캐시 (1차/2차 공용) ─────────────────────
+    const childComputedStyles = children.map(child => {
+      const childRawStyle = child.props?.style as Record<string, unknown> | undefined;
+      return resolveStyle(childRawStyle, parentComputed);
+    });
+
+    // ── 1차 pass: enrichment + Taffy 계산 ─────────────────────────────
+    const firstPassResult = this._runTaffyPass(
+      taffy, parent, children, availableWidth, availableHeight, parentComputed, childComputedStyles,
+    );
+
+    // ── 2차 pass 필요성 판단 ──────────────────────────────────────────
+    // inline-block 자식 중 height가 주입되고 실제 width가 enrichment width와 다른 경우
+    let needsSecondPass = false;
+    const WIDTH_TOLERANCE = 2; // 2px 이내 차이는 무시
+
+    for (let i = 0; i < children.length; i++) {
+      const child = children[i];
+      const tag = (child.tag ?? '').toLowerCase();
+      if (!INLINE_BLOCK_TAGS.has(tag)) continue;
+
+      const childStyle = child.props?.style as Record<string, unknown> | undefined;
+      const rawHeight = childStyle?.height;
+      const hasAutoHeight = !rawHeight || rawHeight === 'auto' || rawHeight === 'fit-content';
+      if (!hasAutoHeight) continue;
+
+      const layout = firstPassResult.find(l => l.elementId === child.id);
+      if (!layout) continue;
+
+      // enrichment 시 사용된 width와 Taffy가 계산한 실제 width 비교
+      if (Math.abs(layout.width - availableWidth) > WIDTH_TOLERANCE) {
+        needsSecondPass = true;
+        break;
+      }
+    }
+
+    if (!needsSecondPass) {
+      return firstPassResult;
+    }
+
+    // ── 2차 pass: 실제 Taffy width로 re-enrich ───────────────────────
+    // 1차 pass 결과에서 각 자식의 실제 width를 가져와 availableWidth로 사용
+    taffy.clear();
+    const actualWidths = new Map<string, number>();
+    for (const layout of firstPassResult) {
+      actualWidths.set(layout.elementId, layout.width);
+    }
+
+    const secondPassChildren = children.map((child, i) => {
+      const tag = (child.tag ?? '').toLowerCase();
+      if (!INLINE_BLOCK_TAGS.has(tag)) return child;
+
+      const actualWidth = actualWidths.get(child.id);
+      if (actualWidth === undefined) return child;
+
+      return enrichWithIntrinsicSize(child, actualWidth, availableHeight, childComputedStyles[i]);
+    });
+
+    return this._runTaffyPassRaw(
+      taffy, parent, secondPassChildren, children, availableWidth, availableHeight, parentComputed,
+    );
+  }
+
+  /**
+   * Taffy 1-pass: enrich + 노드 생성 + 계산 + 결과 수집
+   */
+  private _runTaffyPass(
+    taffy: TaffyLayout,
+    parent: Element,
+    children: Element[],
+    availableWidth: number,
+    availableHeight: number,
+    parentComputed: ComputedStyle,
+    childComputedStyles: ComputedStyle[],
+  ): ComputedLayout[] {
+    const enrichedChildren = children.map((child, i) =>
+      enrichWithIntrinsicSize(child, availableWidth, availableHeight, childComputedStyles[i]),
+    );
+    return this._runTaffyPassRaw(taffy, parent, enrichedChildren, children, availableWidth, availableHeight, parentComputed);
+  }
+
+  /**
+   * Taffy pass 공통 로직: 노드 생성 → 계산 → 결과 수집
+   *
+   * @param enrichedChildren - enrichment 적용된 자식 (Taffy 스타일 변환용)
+   * @param originalChildren - 원본 자식 (margin 파싱, elementId 매칭용)
+   */
+  private _runTaffyPassRaw(
+    taffy: TaffyLayout,
+    parent: Element,
+    enrichedChildren: Element[],
+    originalChildren: Element[],
+    availableWidth: number,
+    availableHeight: number,
+    parentComputed: ComputedStyle,
   ): ComputedLayout[] {
     // 1. 자식 노드 생성
     const childHandles: TaffyNodeHandle[] = [];
     const childMap = new Map<TaffyNodeHandle, Element>();
 
-    for (const child of children) {
-      const taffyStyle = elementToTaffyStyle(child);
+    for (let i = 0; i < enrichedChildren.length; i++) {
+      const enrichedChild = enrichedChildren[i];
+      const originalChild = originalChildren[i];
+      const childRawStyle = enrichedChild.props?.style as Record<string, unknown> | undefined;
+      const childComputed = resolveStyle(childRawStyle, parentComputed);
+      const taffyStyle = elementToTaffyStyle(enrichedChild, childComputed);
       const handle = taffy.createNode(taffyStyle);
       childHandles.push(handle);
-      childMap.set(handle, child);
+      childMap.set(handle, originalChild);
     }
 
     // 2. 부모 노드 생성 (자식 포함)
-    const parentStyle = elementToTaffyStyle(parent);
+    const parentStyle = elementToTaffyStyle(parent, parentComputed);
     // 부모의 display는 반드시 flex
     parentStyle.display = 'flex';
     // 부모의 width/height는 available space로 설정
@@ -301,12 +440,40 @@ export class TaffyFlexEngine implements LayoutEngine {
       const layout = layoutMap.get(handle);
       if (!child || !layout) continue;
 
-      const margin = parseMargin(child.props?.style as Record<string, unknown> | undefined);
+      const childStyle = child.props?.style as Record<string, unknown> | undefined;
+      const margin = parseMargin(childStyle);
+
+      // position:relative 오프셋 처리
+      // Taffy는 relative offset을 직접 지원하지 않으므로,
+      // Taffy가 계산한 정적 위치에 top/left/right/bottom을 수동으로 가산합니다.
+      // CSS 명세에 따라: left/right 중 left가 우선, top/bottom 중 top이 우선
+      let relativeOffsetX = 0;
+      let relativeOffsetY = 0;
+
+      if (childStyle?.position === 'relative') {
+        const topVal = childStyle.top;
+        const leftVal = childStyle.left;
+        const rightVal = childStyle.right;
+        const bottomVal = childStyle.bottom;
+
+        // X축: left가 있으면 left 우선, 없으면 right의 반대 방향
+        if (topVal !== undefined && topVal !== null && topVal !== 'auto') {
+          relativeOffsetY = resolvePxOffset(topVal);
+        } else if (bottomVal !== undefined && bottomVal !== null && bottomVal !== 'auto') {
+          relativeOffsetY = -resolvePxOffset(bottomVal);
+        }
+
+        if (leftVal !== undefined && leftVal !== null && leftVal !== 'auto') {
+          relativeOffsetX = resolvePxOffset(leftVal);
+        } else if (rightVal !== undefined && rightVal !== null && rightVal !== 'auto') {
+          relativeOffsetX = -resolvePxOffset(rightVal);
+        }
+      }
 
       results.push({
         elementId: child.id,
-        x: layout.x,
-        y: layout.y,
+        x: layout.x + relativeOffsetX,
+        y: layout.y + relativeOffsetY,
         width: layout.width,
         height: layout.height,
         margin: {

@@ -1,3 +1,5 @@
+> **성능 문서 네비게이션**: [인덱스](./PERFORMANCE_INDEX.md) | [태스크](./PERFORMANCE_TASKS.md) | [계획](./PERFORMANCE_PLAN.md) | [Phase 1-4](./PERF_PHASE_1_4.md) | [Phase 5-8](./PERF_PHASE_5_8.md) | [결정사항](./PERF_DECISIONS.md) | [아이디어](./PERF_IDEAS.md) | [보충](./PERF_SUPPLEMENT.md)
+
 # XStudio Builder 성능 최적화 가이드
 
 > **작성일**: 2025-12-09

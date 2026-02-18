@@ -142,6 +142,60 @@ export function getDynamicResolution(
 // 모듈 로드 시점에 전역 설정 적용
 initPixiSettings();
 
+// ============================================
+// 🔍 히트 영역 디버그 시각화
+// ============================================
+
+/**
+ * VITE_ENABLE_HITAREA_MODE=true 시 투명 히트 영역을 빨간색으로 시각화
+ *
+ * 전략:
+ * 1. rect() 패치 → 마지막 rect 넓이 추적
+ * 2. fill() 패치 → alpha ≤ 0.001 + 넓이 < 임계값 → 빨간색 (히트 영역)
+ *    - ClickableBackground(10000×10000) 등 거대 배경은 자동 제외
+ * 3. Camera alpha=1 + PixiJS 캔버스 CSS opacity → Skia 위에 오버레이
+ *
+ * 부모 체인(isInsideCamera) 불필요 → draw 시점 타이밍 문제 없음
+ */
+if (import.meta.env.VITE_ENABLE_HITAREA_MODE === 'true') {
+  // rect() 패치: 마지막 rect 넓이를 Graphics 인스턴스에 기록
+  const MAX_HIT_AREA = 2_000_000; // 2M px² 이상은 배경으로 간주
+  const originalRect = PixiGraphics.prototype.rect;
+  PixiGraphics.prototype.rect = function (
+    x: number, y: number, w: number, h: number
+  ) {
+    (this as unknown as Record<string, number>).__lastRectArea = Math.abs(w * h);
+    return originalRect.call(this, x, y, w, h);
+  };
+
+  // fill() 패치: 투명 히트 영역 → 빨간색
+  const originalFill = PixiGraphics.prototype.fill;
+  PixiGraphics.prototype.fill = function (
+    ...args: Parameters<typeof originalFill>
+  ) {
+    const style = args[0];
+    if (
+      style &&
+      typeof style === 'object' &&
+      'alpha' in style &&
+      typeof (style as Record<string, unknown>).alpha === 'number' &&
+      ((style as Record<string, unknown>).alpha as number) <= 0.001
+    ) {
+      const area = (this as unknown as Record<string, number>).__lastRectArea ?? 0;
+      if (area > 0 && area < MAX_HIT_AREA) {
+        return originalFill.call(this, {
+          ...(style as Record<string, unknown>),
+          color: 0xff0000,
+          alpha: 0.8,
+        });
+      }
+    }
+    return originalFill.apply(this, args);
+  };
+
+  console.info('[HitArea Debug] 히트 영역 시각화 활성화 (빨간색, 배경 제외)');
+}
+
 /**
  * PixiJS 컴포넌트 카탈로그
  *

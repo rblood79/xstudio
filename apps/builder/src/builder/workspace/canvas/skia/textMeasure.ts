@@ -84,11 +84,11 @@ export function measureText(
 }
 
 /**
- * Yoga measureFunc에 연결할 수 있는 측정 함수를 반환한다.
+ * 텍스트 측정 함수를 반환한다.
  *
- * Yoga가 텍스트 노드의 크기를 요청할 때마다 이 함수가 호출된다.
+ * 레이아웃 엔진이 텍스트 노드의 크기를 요청할 때마다 이 함수가 호출된다.
  */
-export function createYogaMeasureFunc(
+export function createTextMeasureFunc(
   ck: CanvasKit,
   fontMgr: FontMgr,
   text: string,

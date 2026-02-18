@@ -559,6 +559,7 @@ export function SkiaOverlay({
     const prevWidth = pixiCanvas.style.width;
     const prevHeight = pixiCanvas.style.height;
     const prevZIndex = pixiCanvas.style.zIndex;
+    const prevOpacity = pixiCanvas.style.opacity;
 
     pixiCanvas.style.position = 'absolute';
     pixiCanvas.style.top = '0';
@@ -570,15 +571,29 @@ export function SkiaOverlay({
     // 3. Camera 하위 레이어 즉시 숨김 (ticker로 매 프레임 보장)
     //    alpha=0으로 숨기되, PixiJS 8의 EventBoundary._interactivePrune()는
     //    alpha를 prune 조건으로 사용하지 않으므로 히트 테스팅은 유지된다.
+    const hitAreaDebug = import.meta.env.VITE_ENABLE_HITAREA_MODE === 'true';
+
+    // 히트 영역 디버그: PixiJS 캔버스를 반투명 오버레이로 표시
+    // Camera alpha=1로 히트 영역 렌더링 + CSS opacity로 Skia가 비쳐 보이게
+    if (hitAreaDebug) {
+      pixiCanvas.style.opacity = '0.35';
+    }
+
     const syncPixiVisibility = () => {
       const cameraContainer = findCameraContainer(app.stage);
       if (cameraContainer) {
         if (originalCameraAlphaRef.current == null) {
           originalCameraAlphaRef.current = cameraContainer.alpha;
         }
-        // O(1): Camera 루트만 투명 처리
-        if (cameraContainer.alpha !== 0) {
-          cameraContainer.alpha = 0;
+        if (hitAreaDebug) {
+          if (cameraContainer.alpha !== 1) {
+            cameraContainer.alpha = 1;
+          }
+        } else {
+          // O(1): Camera 루트만 투명 처리
+          if (cameraContainer.alpha !== 0) {
+            cameraContainer.alpha = 0;
+          }
         }
       }
     };
@@ -596,6 +611,7 @@ export function SkiaOverlay({
       pixiCanvas.style.width = prevWidth;
       pixiCanvas.style.height = prevHeight;
       pixiCanvas.style.zIndex = prevZIndex;
+      pixiCanvas.style.opacity = prevOpacity;
       const camera = findCameraContainer(app.stage);
       if (camera) {
         camera.alpha = originalCameraAlphaRef.current ?? 1;

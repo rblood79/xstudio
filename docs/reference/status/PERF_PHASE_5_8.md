@@ -1,3 +1,5 @@
+> **성능 문서 네비게이션**: [인덱스](./PERFORMANCE_INDEX.md) | [태스크](./PERFORMANCE_TASKS.md) | [계획](./PERFORMANCE_PLAN.md) | [Phase 1-4](./PERF_PHASE_1_4.md) | [Phase 5-8](./PERF_PHASE_5_8.md) | [결정사항](./PERF_DECISIONS.md) | [아이디어](./PERF_IDEAS.md) | [보충](./PERF_SUPPLEMENT.md)
+
 # Phase 5-8: Lazy Loading, React Query, 모니터링, CI
 
 > **관련 문서**: [03-phase-1-4.md](./03-phase-1-4.md) | [05-supplement.md](./05-supplement.md)

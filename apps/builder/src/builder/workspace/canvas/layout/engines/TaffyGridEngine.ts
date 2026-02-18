@@ -21,6 +21,7 @@ import type { LayoutEngine, ComputedLayout, LayoutContext } from './LayoutEngine
 import { TaffyLayout } from '../../wasm-bindings/taffyLayout';
 import type { TaffyStyle, TaffyNodeHandle } from '../../wasm-bindings/taffyLayout';
 import { parseMargin, parsePadding, parseBorder } from './utils';
+import { resolveStyle, ROOT_COMPUTED_STYLE } from './cssResolver';
 import type { ComputedStyle } from './cssResolver';
 
 // ─── CSS 파싱 유틸리티 ────────────────────────────────────────────────
@@ -529,7 +530,7 @@ export class TaffyGridEngine implements LayoutEngine {
     children: Element[],
     availableWidth: number,
     availableHeight: number,
-    _context?: LayoutContext,
+    context?: LayoutContext,
   ): ComputedLayout[] {
     // 빈 children은 WASM 호출 없이 즉시 반환
     if (children.length === 0) {
@@ -547,8 +548,16 @@ export class TaffyGridEngine implements LayoutEngine {
       return [];
     }
 
+    // ── CSS 상속 체인 구성 ──────────────────────────────────────────
+    // 부모의 computed style 결정:
+    //   - context에 parentComputedStyle이 있으면 사용 (상위 엔진에서 전파됨)
+    //   - 없으면 부모 요소 style을 ROOT_COMPUTED_STYLE 기반으로 직접 해석
+    const parentRawStyle = parent.props?.style as Record<string, unknown> | undefined;
+    const parentComputed = context?.parentComputedStyle
+      ?? resolveStyle(parentRawStyle, ROOT_COMPUTED_STYLE);
+
     try {
-      return this.computeWithTaffy(taffy, parent, children, availableWidth, availableHeight);
+      return this.computeWithTaffy(taffy, parent, children, availableWidth, availableHeight, parentComputed);
     } finally {
       // 매 계산 후 트리를 클리어하여 메모리 누적 방지
       try {
@@ -567,6 +576,7 @@ export class TaffyGridEngine implements LayoutEngine {
     children: Element[],
     availableWidth: number,
     availableHeight: number,
+    parentComputed: ComputedStyle,
   ): ComputedLayout[] {
     // grid-template-areas 파싱 (자식 gridArea 해석에 필요)
     const parentRawStyle = (parent.props?.style || {}) as Record<string, unknown>;
@@ -579,7 +589,10 @@ export class TaffyGridEngine implements LayoutEngine {
     const childMap = new Map<TaffyNodeHandle, Element>();
 
     for (const child of children) {
-      const taffyStyle = elementToTaffyGridStyle(child, undefined, templateAreas);
+      const childRawStyle = child.props?.style as Record<string, unknown> | undefined;
+      // 부모 computed style 기반으로 자식 CSS 상속 해석 (em 단위 등)
+      const childComputed = resolveStyle(childRawStyle, parentComputed);
+      const taffyStyle = elementToTaffyGridStyle(child, childComputed, templateAreas);
       // 자식 노드는 grid item이므로 display를 grid로 강제하지 않음
       // Taffy는 grid 컨테이너 내에서 아이템을 자동으로 처리함
       // grid item에서 display 속성은 아이템 자체의 inner display를 의미하므로 제거
@@ -590,7 +603,7 @@ export class TaffyGridEngine implements LayoutEngine {
     }
 
     // 2. 부모 노드 생성 (grid container 속성)
-    const parentStyle = elementToTaffyGridStyle(parent);
+    const parentStyle = elementToTaffyGridStyle(parent, parentComputed);
     // 부모의 display는 반드시 grid
     parentStyle.display = 'grid';
     // 부모의 width/height는 available space로 설정

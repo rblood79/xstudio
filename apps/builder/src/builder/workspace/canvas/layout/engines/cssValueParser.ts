@@ -4,7 +4,7 @@
  * 분산된 CSS 값 파싱 로직을 하나로 통합하여
  * 일관된 단위 해석과 calc() 지원을 제공한다.
  *
- * 지원 단위: px, %, vh, vw, em, rem, calc(), fit-content, min-content, max-content
+ * 지원 단위: px, %, vh, vw, em, rem, calc(), clamp(), min(), max(), fit-content, min-content, max-content
  *
  * @since 2026-02-16 CSS 엔진 업그레이드
  */
@@ -200,6 +200,24 @@ export function resolveCSSSizeValue(
     return result ?? fallback;
   }
 
+  // clamp(min, val, max) 함수
+  if (trimmed.startsWith('clamp(') && trimmed.endsWith(')')) {
+    const result = resolveClamp(trimmed, ctx);
+    return result ?? fallback;
+  }
+
+  // min(a, b, ...) 함수
+  if (trimmed.startsWith('min(') && trimmed.endsWith(')')) {
+    const result = resolveCSSMin(trimmed, ctx);
+    return result ?? fallback;
+  }
+
+  // max(a, b, ...) 함수
+  if (trimmed.startsWith('max(') && trimmed.endsWith(')')) {
+    const result = resolveCSSMax(trimmed, ctx);
+    return result ?? fallback;
+  }
+
   // 단위별 해석
   return resolveUnitValue(trimmed, ctx) ?? fallback;
 }
@@ -265,6 +283,151 @@ function resolveUnitValue(
   // 단위 없는 숫자 문자열
   const num = parseFloat(trimmed);
   return isNaN(num) ? undefined : num;
+}
+
+// ============================================
+// CSS 함수 인자 분리 유틸리티
+// ============================================
+
+/**
+ * CSS 함수의 인자를 괄호 깊이를 추적하며 쉼표로 분리
+ *
+ * 중첩된 함수 호출(예: calc() 내부의 괄호)을 올바르게 처리한다.
+ *
+ * @param argsStr - 괄호 안쪽 인자 문자열 (예: "100px, 50%, 500px")
+ * @returns 분리된 인자 배열 (각 인자는 trim 됨)
+ *
+ * @example
+ * splitCSSFunctionArgs('100px, 50%, 500px')
+ * // ['100px', '50%', '500px']
+ *
+ * splitCSSFunctionArgs('100px, calc(50% - 10px), 500px')
+ * // ['100px', 'calc(50% - 10px)', '500px']
+ */
+function splitCSSFunctionArgs(argsStr: string): string[] {
+  const args: string[] = [];
+  let depth = 0;
+  let current = '';
+
+  for (let i = 0; i < argsStr.length; i++) {
+    const ch = argsStr[i];
+
+    if (ch === '(') {
+      depth++;
+      current += ch;
+    } else if (ch === ')') {
+      depth--;
+      current += ch;
+    } else if (ch === ',' && depth === 0) {
+      args.push(current.trim());
+      current = '';
+    } else {
+      current += ch;
+    }
+  }
+
+  // 마지막 인자
+  const last = current.trim();
+  if (last.length > 0) {
+    args.push(last);
+  }
+
+  return args;
+}
+
+// ============================================
+// clamp() / min() / max() 함수
+// ============================================
+
+/**
+ * CSS clamp(min, val, max) 함수를 해석
+ *
+ * clamp(min, val, max) → Math.max(min, Math.min(val, max))
+ * 각 인자는 resolveCSSSizeValue()로 재귀 해석된다.
+ *
+ * @param expr - 전체 clamp() 문자열 (예: "clamp(100px, 50%, 500px)")
+ * @param ctx - 단위 해석 컨텍스트
+ * @returns 계산된 px 값 또는 undefined
+ */
+function resolveClamp(
+  expr: string,
+  ctx: CSSValueContext,
+): number | undefined {
+  // "clamp(" (6글자) ~ ")" (마지막 1글자) 제거
+  const inner = expr.slice(6, -1);
+  const args = splitCSSFunctionArgs(inner);
+
+  if (args.length !== 3) return undefined;
+
+  const minVal = resolveCSSSizeValue(args[0], ctx);
+  const valVal = resolveCSSSizeValue(args[1], ctx);
+  const maxVal = resolveCSSSizeValue(args[2], ctx);
+
+  if (minVal === undefined || valVal === undefined || maxVal === undefined) {
+    return undefined;
+  }
+
+  return Math.max(minVal, Math.min(valVal, maxVal));
+}
+
+/**
+ * CSS min(a, b, ...) 함수를 해석
+ *
+ * min(a, b, ...) → Math.min(resolve(a), resolve(b), ...)
+ * 각 인자는 resolveCSSSizeValue()로 재귀 해석된다.
+ *
+ * @param expr - 전체 min() 문자열 (예: "min(100px, 50%)")
+ * @param ctx - 단위 해석 컨텍스트
+ * @returns 계산된 px 값 또는 undefined
+ */
+function resolveCSSMin(
+  expr: string,
+  ctx: CSSValueContext,
+): number | undefined {
+  // "min(" (4글자) ~ ")" (마지막 1글자) 제거
+  const inner = expr.slice(4, -1);
+  const args = splitCSSFunctionArgs(inner);
+
+  if (args.length < 1) return undefined;
+
+  const resolved: number[] = [];
+  for (const arg of args) {
+    const val = resolveCSSSizeValue(arg, ctx);
+    if (val === undefined) return undefined;
+    resolved.push(val);
+  }
+
+  return Math.min(...resolved);
+}
+
+/**
+ * CSS max(a, b, ...) 함수를 해석
+ *
+ * max(a, b, ...) → Math.max(resolve(a), resolve(b), ...)
+ * 각 인자는 resolveCSSSizeValue()로 재귀 해석된다.
+ *
+ * @param expr - 전체 max() 문자열 (예: "max(100px, 50%)")
+ * @param ctx - 단위 해석 컨텍스트
+ * @returns 계산된 px 값 또는 undefined
+ */
+function resolveCSSMax(
+  expr: string,
+  ctx: CSSValueContext,
+): number | undefined {
+  // "max(" (4글자) ~ ")" (마지막 1글자) 제거
+  const inner = expr.slice(4, -1);
+  const args = splitCSSFunctionArgs(inner);
+
+  if (args.length < 1) return undefined;
+
+  const resolved: number[] = [];
+  for (const arg of args) {
+    const val = resolveCSSSizeValue(arg, ctx);
+    if (val === undefined) return undefined;
+    resolved.push(val);
+  }
+
+  return Math.max(...resolved);
 }
 
 // ============================================

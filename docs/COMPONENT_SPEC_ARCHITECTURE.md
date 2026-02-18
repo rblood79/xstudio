@@ -767,7 +767,7 @@ export interface ContainerShape {
   children: Shape[];
   clip?: boolean;
 
-  /** 레이아웃 설정 (@pixi/layout 연동) */
+  /** 레이아웃 설정 (Taffy WASM/Dropflow 연동) */
   layout?: ContainerLayout;
 }
 

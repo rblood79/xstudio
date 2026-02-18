@@ -30,13 +30,6 @@ export {
   type GridLayoutProps,
 } from './GridLayout.utils';
 
-// 🚀 Phase 4: Style to Layout Converter
-export {
-  styleToLayout,
-  isEmptyLayout,
-  type LayoutStyle,
-} from './styleToLayout';
-
 // 엔진 디스패처 + 유틸리티 re-export
 export {
   // 엔진 선택 및 계산
