@@ -29,7 +29,6 @@ import {
   getVariantColors as getSpecVariantColors,
   getSizePreset as getSpecSizePreset,
 } from '@xstudio/specs';
-import { measureWrappedTextHeight } from "../utils/textMeasure";
 import { useStore } from "../../../stores";
 import { LayoutComputedSizeContext } from "../layoutContext";
 import { useThemeColors } from "../hooks/useThemeColors";
@@ -155,47 +154,16 @@ export const PixiCard = memo(function PixiCard({
     return String(props?.description || props?.children || "");
   }, [props?.description, props?.children]);
 
-  // 🚀 LayoutComputedSizeContext로 레이아웃 엔진 계산값 즉시 반영 (ToggleButtonGroup 패턴)
-  // onLayout + useState 방식은 1프레임 이상 지연되어 크기 불일치 발생
+  // 🚀 A등급 패턴: LayoutComputedSizeContext만 사용 (PixiButton 패턴)
+  // engines/utils.ts의 calculateContentHeight()가 Card 텍스트 콘텐츠 높이를 정확히 계산하므로
+  // PixiCard에서 자체 높이 계산(measureWrappedTextHeight)을 제거하고 엔진 결과만 신뢰한다.
   const computedSize = useContext(LayoutComputedSizeContext);
   const fallbackWidth = 200;
   const fallbackHeight = 60;
 
   // Graphics 그리기용 픽셀 값 (레이아웃 엔진 계산값 우선, fallback 사용)
-  const cardWidth = (computedSize?.width && computedSize.width > 0)
-    ? computedSize.width : fallbackWidth;
-
-  // 🚀 콘텐츠 기반 높이 계산 (레이아웃 엔진이 텍스트 leaf를 정확히 측정하지 못하는 경우 대비)
-  // Canvas 2D API로 word-wrap 줄 수를 정확히 측정하여 명시적 height 설정
-  // 🚀 주의: padding은 cardLayout에서 레이아웃 엔진이 처리하므로 여기서는 content-box만 계산
-  const calculatedContentHeight = useMemo(() => {
-    const pad = effectivePadding;
-    const wrapWidth = cardWidth - pad * 2;
-    const fontFamily = 'Pretendard';
-    let h = 0; // content-box height (padding 제외)
-
-    if (cardTitle) {
-      h += measureWrappedTextHeight(cardTitle, 16, 600, fontFamily, wrapWidth);
-    }
-    if (props?.subheading) {
-      if (cardTitle) h += 2; // header gap
-      h += measureWrappedTextHeight(String(props.subheading), 14, 400, fontFamily, wrapWidth);
-    }
-    if (cardTitle || props?.subheading) {
-      h += 8; // marginBottom between header and content
-    }
-    if (cardDescription) {
-      h += measureWrappedTextHeight(cardDescription, 14, 400, fontFamily, wrapWidth);
-    }
-
-    // minHeight 36 (60 - 24px padding = 36px content)
-    return Math.max(h, 36);
-  }, [cardTitle, props?.subheading, cardDescription, cardWidth, effectivePadding]);
-
-  // 🚀 높이는 콘텐츠 기반 계산값과 레이아웃 엔진 값 중 큰 값 사용
-  const layoutHeight = (computedSize?.height && computedSize.height > 0)
-    ? computedSize.height : fallbackHeight;
-  const cardHeight = Math.max(layoutHeight, calculatedContentHeight);
+  const cardWidth = computedSize?.width ?? fallbackWidth;
+  const cardHeight = computedSize?.height ?? fallbackHeight;
 
   // 카드 배경 그리기
   const drawCard = useCallback(

@@ -534,6 +534,13 @@ function measureSpecTextMinHeight(
  * Spec shapes는 항상 row 레이아웃(가로 배치)으로 생성됨.
  * flexDirection: column일 때 indicator 그룹을 상단 중앙에,
  * 텍스트를 그 아래에 배치하도록 좌표를 변환한다.
+ *
+ * 수정 이력 (W4-9):
+ * Radio circle shape column 변환 수정.
+ * 기존: 모든 circle에 `x = centerX + shape.radius` 적용 →
+ *   outer/inner circle의 radius가 달라 center X가 불일치 (dot이 ring 중심에서 이탈).
+ * 수정: indicator 블록의 center X = `centerX + boxSize / 2`를 고정하여
+ *   모든 circle(ring, dot)이 동일한 center X를 공유하도록 변경.
  */
 function rearrangeShapesForColumn(
   shapes: Shape[],
@@ -556,7 +563,11 @@ function rearrangeShapesForColumn(
   }
   if (boxSize === 0) return;
 
+  // indicator 블록 top-left X (box 전체를 수평 중앙 배치)
   const centerX = Math.round((containerWidth - boxSize) / 2);
+  // indicator 블록 center X: circle의 center 좌표로 사용 (모든 circle 공통)
+  // 수정(W4-9): 각 circle의 radius가 달라도 indicator 중앙(centerX + boxSize/2)에 고정
+  const indicatorCenterX = centerX + boxSize / 2;
 
   for (const shape of shapes) {
     switch (shape.type) {
@@ -567,8 +578,11 @@ function rearrangeShapesForColumn(
         }
         break;
       case 'circle':
-        shape.x = centerX + shape.radius;
-        shape.y = shape.radius;
+        // specShapeConverter가 center → top-left 변환(x - radius)을 수행하므로
+        // shape.x에는 center X를 유지해야 한다.
+        // ring(outer)과 dot(inner) 모두 indicator 블록의 중앙 X를 공유한다.
+        shape.x = indicatorCenterX;
+        shape.y = boxSize / 2;
         break;
       case 'line':
         shape.x1 += centerX;

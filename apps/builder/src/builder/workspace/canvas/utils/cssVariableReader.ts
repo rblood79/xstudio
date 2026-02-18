@@ -80,9 +80,32 @@ export interface M3ButtonColors {
 
 /**
  * CSS 변수 값을 읽어옴
+ *
+ * document.documentElement (`:root`)에서 computed style을 읽어
+ * CSS custom property 값을 반환한다.
+ *
+ * @param name - CSS 변수 이름 (예: '--primary', '--spacing-md')
+ * @returns 변수 값 문자열 (존재하지 않으면 빈 문자열)
  */
-function getCSSVariable(name: string): string {
+export function getCSSVariable(name: string): string {
   return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+}
+
+/**
+ * W3-7: DOM에서 CSS 변수를 조회하는 fallback 함수
+ *
+ * resolveVar()에서 CSSVariableScope.variables에 없는 변수를
+ * document.documentElement의 computed style에서 조회한다.
+ *
+ * 이 함수는 브라우저 환경에서만 동작하며,
+ * SSR이나 테스트 환경에서는 빈 문자열을 반환한다.
+ *
+ * @param varName - CSS 변수 이름 (예: '--primary')
+ * @returns 변수 값 문자열, 없으면 빈 문자열
+ */
+export function resolveVariableFromDOM(varName: string): string {
+  if (typeof document === 'undefined') return '';
+  return getCSSVariable(varName);
 }
 
 /**

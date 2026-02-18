@@ -146,8 +146,10 @@ export interface SkiaNodeData {
   };
   /** CSS transform → CanvasKit 3x3 matrix (Float32Array(9)) */
   transform?: Float32Array;
-  /** overflow:hidden 시 자식을 경계에서 클리핑 */
+  /** overflow:hidden/scroll/auto 시 자식을 경계에서 클리핑 */
   clipChildren?: boolean;
+  /** overflow:scroll/auto 시 자식 좌표에 적용할 스크롤 오프셋 */
+  scrollOffset?: { scrollTop: number; scrollLeft: number };
   /** 콘텐츠 기반 최소 높이 (Card 등 auto-height UI 컴포넌트용)
    *  Yoga가 텍스트 bounds를 아직 반영하지 못한 경우의 폴백으로 사용 */
   contentMinHeight?: number;
@@ -278,17 +280,25 @@ function renderNodeInternal(
   // 자식 재귀 렌더링 — canvas.translate() 후 좌표계가 부모 로컬로 변환되었으므로
   // cullingBounds도 부모 오프셋만큼 역변환하여 좌표계를 일치시킨다.
   if (node.children) {
-    // overflow:hidden → 자식을 부모 경계에서 클리핑
+    // overflow:hidden/scroll/auto → 자식을 부모 경계에서 클리핑
     if (node.clipChildren && node.width > 0 && node.height > 0) {
       canvas.save();
       const clipRect = ck.LTRBRect(0, 0, node.width, node.height);
       canvas.clipRect(clipRect, ck.ClipOp.Intersect, true);
     }
 
-    const childCullLeft = cullLeft - node.x;
-    const childCullTop = cullTop - node.y;
-    const childCullRight = cullRight - node.x;
-    const childCullBottom = cullBottom - node.y;
+    // overflow:scroll/auto → 스크롤 오프셋을 canvas 변환으로 적용
+    const hasScrollOffset = node.scrollOffset &&
+      (node.scrollOffset.scrollTop !== 0 || node.scrollOffset.scrollLeft !== 0);
+    if (hasScrollOffset) {
+      canvas.save();
+      canvas.translate(-node.scrollOffset!.scrollLeft, -node.scrollOffset!.scrollTop);
+    }
+
+    const childCullLeft = cullLeft - node.x + (node.scrollOffset?.scrollLeft ?? 0);
+    const childCullTop = cullTop - node.y + (node.scrollOffset?.scrollTop ?? 0);
+    const childCullRight = cullRight - node.x + (node.scrollOffset?.scrollLeft ?? 0);
+    const childCullBottom = cullBottom - node.y + (node.scrollOffset?.scrollTop ?? 0);
     const hasZIndex = node.children.some(c => c.zIndex !== undefined);
     const childrenToRender = hasZIndex ? sortByStackingOrder(node.children) : node.children;
     for (const child of childrenToRender) {
@@ -302,6 +312,11 @@ function renderNodeInternal(
         childCullBottom,
         fontMgr,
       );
+    }
+
+    // 스크롤 오프셋 변환 복원
+    if (hasScrollOffset) {
+      canvas.restore();
     }
 
     if (node.clipChildren && node.width > 0 && node.height > 0) {

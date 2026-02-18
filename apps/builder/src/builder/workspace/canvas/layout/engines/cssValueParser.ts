@@ -28,6 +28,26 @@
 export interface CSSVariableScope {
   /** 변수 이름(--로 시작) → 값 매핑 */
   variables: Record<string, string>;
+  /**
+   * W3-7: DOM fallback 활성화 플래그
+   *
+   * true인 경우, variables 딕셔너리에서 변수를 찾지 못하면
+   * document.documentElement의 computed style에서 CSS 변수를 조회한다.
+   * 이를 통해 디자인 토큰(color/spacing/typography)이 var()로 참조될 때
+   * 정상 해석된다.
+   *
+   * 기본값: false (기존 동작 유지)
+   */
+  domFallback?: boolean;
+  /**
+   * W3-7: 외부 DOM 변수 조회 함수 (DI용)
+   *
+   * domFallback이 true일 때 사용되는 조회 함수.
+   * 기본값: cssVariableReader.resolveVariableFromDOM
+   *
+   * 테스트 환경에서 mock 함수를 주입할 수 있다.
+   */
+  domResolver?: (varName: string) => string;
 }
 
 export interface CSSValueContext {
@@ -49,6 +69,27 @@ export interface CSSValueContext {
 export const FIT_CONTENT = -2;
 export const MIN_CONTENT = -3;
 export const MAX_CONTENT = -4;
+
+/**
+ * W3-7: DOM fallback이 활성화된 CSSVariableScope 생성
+ *
+ * 요소의 커스텀 프로퍼티(인라인 변수)와 함께
+ * document.documentElement의 CSS 변수(디자인 토큰)를 fallback으로 조회한다.
+ *
+ * @param inlineVariables - 요소 조상 체인에서 수집된 인라인 CSS 변수
+ * @param domResolver - 테스트용 DOM 조회 함수 오버라이드
+ * @returns DOM fallback이 활성화된 CSSVariableScope
+ */
+export function createVariableScopeWithDOMFallback(
+  inlineVariables: Record<string, string> = {},
+  domResolver?: (varName: string) => string,
+): CSSVariableScope {
+  return {
+    variables: { ...inlineVariables },
+    domFallback: true,
+    ...(domResolver ? { domResolver } : {}),
+  };
+}
 
 /**
  * border shorthand 파싱 결과
@@ -123,12 +164,24 @@ export function resolveVar(
         fallbackValue = content.slice(commaIdx + 1).trim();
       }
 
-      // 변수 조회
+      // 1차: 인메모리 변수 딕셔너리 조회
       const resolved = scope.variables[varName];
 
       if (resolved !== undefined) {
         // 해석된 값에 var()가 중첩되어 있을 수 있음
         return resolveVar(resolved, scope, depth + 1);
+      }
+
+      // 2차: W3-7 DOM fallback 조회 (디자인 토큰 지원)
+      if (scope.domFallback) {
+        const domResolved = scope.domResolver
+          ? scope.domResolver(varName)
+          : resolveVariableFromDOMDefault(varName);
+        if (domResolved) {
+          // DOM에서 조회한 값을 캐시하여 동일 변수 재조회 방지
+          scope.variables[varName] = domResolved;
+          return resolveVar(domResolved, scope, depth + 1);
+        }
       }
 
       // fallback 값 사용
@@ -140,6 +193,22 @@ export function resolveVar(
       return _match;
     },
   );
+}
+
+/**
+ * W3-7: DOM에서 CSS 변수를 조회하는 기본 구현
+ *
+ * cssVariableReader.ts의 resolveVariableFromDOM을 직접 import하면
+ * 순환 의존 위험이 있으므로, 동일한 로직을 인라인으로 구현한다.
+ * 브라우저 환경이 아니면 빈 문자열을 반환한다.
+ */
+function resolveVariableFromDOMDefault(varName: string): string {
+  if (typeof document === 'undefined') return '';
+  try {
+    return getComputedStyle(document.documentElement).getPropertyValue(varName).trim();
+  } catch {
+    return '';
+  }
 }
 
 // ============================================

@@ -2,7 +2,7 @@
 title: Absolute Position for Interactive Hit Areas
 impact: HIGH
 impactDescription: 이벤트 처리 정확성, 클릭 영역 제어
-tags: [pixi, layout, interaction, yoga]
+tags: [pixi, layout, interaction, direct-container]
 ---
 
 클릭 가능한 오버레이나 히트 영역은 position: 'absolute'를 사용합니다.
@@ -65,8 +65,7 @@ tags: [pixi, layout, interaction, yoga]
 
 ```tsx
 // ✅ Container-only: pixiGraphics 직접 반환 (BoxSprite 패턴)
-// - layout 속성 없음 → Yoga flex에 미참여 (자식과 경쟁 없음)
-// - LayoutComputedSizeContext로 Yoga 계산 크기 사용
+// - DirectContainer로 엔진 계산 x/y 직접 배치 (LayoutComputedSizeContext 활용)
 const computedSize = useContext(LayoutComputedSizeContext);
 
 // ⚠️ computedSize.height가 0일 수 있음 → ?? 대신 > 0 체크 필수
@@ -85,14 +84,14 @@ return (
 
 **주의사항:**
 - `??` 연산자는 `0`을 falsy로 취급하지 않음 → `computedSize.height === 0`이면 `bgHeight = 0` → hit area 없음
-- `position: absolute` pixiContainer 래퍼는 PixiJS EventBoundary에서 올바른 hit area를 가지지 못할 수 있음
+- DirectContainer에서 x/y는 엔진(Taffy/Dropflow)이 계산한 결과를 직접 사용
 - `eventMode="none"`인 pixiGraphics는 클릭이 관통됨 — 반드시 `eventMode="static"` 설정
 
 ## Non-layout 히트 영역 패턴 (padding이 있는 컨테이너)
 
-### 문제: Yoga 3 absolute positioning + padding
+### 문제: DirectContainer + padding offset
 
-@pixi/layout은 Yoga 3 (`yoga-layout ^3.2.1`)을 사용한다. Yoga 3의 기본 errata 동작에서 `position: 'absolute'`이고 `left`/`top` inset이 명시된 자식은 부모의 **content 영역 원점**(paddingLeft, paddingTop)을 기준으로 배치된다:
+DirectContainer는 엔진이 계산한 x/y를 직접 배치한다. padding이 있는 컨테이너에서 `position: 'absolute'`로 BoxSprite를 배치하면 content 영역 원점(paddingLeft, paddingTop)에서 시작하여 padding 영역에 히트 영역이 없다:
 
 ```
 Container (padding: 16px)
@@ -110,9 +109,9 @@ BoxSprite(배경/테두리)가 absolute로 배치되면 padding 영역에 히트
 ### 해결: layout prop이 없는 pixiGraphics
 
 ```tsx
-// ✅ Non-layout 히트 영역: 컨테이너 원점(0,0)에 전체 Yoga 크기(padding 포함) 커버
+// ✅ Non-layout 히트 영역: 컨테이너 원점(0,0)에 전체 엔진 계산 크기(padding 포함) 커버
 <>
-  {/* layout prop 없음 → Yoga가 무시 → 부모 원점(0,0)에 배치 */}
+  {/* layout prop 없음 → 엔진이 무시 → 부모 원점(0,0)에 배치 */}
   <pixiGraphics
     draw={drawContainerHitRect}
     eventMode="static"
@@ -145,7 +144,7 @@ BoxSprite(배경/테두리)가 absolute로 배치되면 padding 영역에 히트
 const drawContainerHitRect = useCallback(
   (g: PixiGraphics) => {
     g.clear();
-    const w = computedW ?? 0;  // LayoutComputedSizeContext → Yoga border-box 크기
+    const w = computedW ?? 0;  // LayoutComputedSizeContext → 엔진 계산 border-box 크기
     const h = computedH ?? 0;
     if (w <= 0 || h <= 0) return;
     g.rect(0, 0, w, h);

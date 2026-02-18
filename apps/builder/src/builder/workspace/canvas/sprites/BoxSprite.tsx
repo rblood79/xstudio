@@ -25,6 +25,7 @@ import { useSkiaNode } from '../skia/useSkiaNode';
 import { LayoutComputedSizeContext } from '../layoutContext';
 import { isFillV2Enabled } from '../../../../utils/featureFlags';
 import { fillsToSkiaFillColor, fillsToSkiaFillStyle } from '../../../panels/styles/utils/fillToSkia';
+import { getScrollState } from '../../../stores/scrollState';
 
 
 // ============================================
@@ -221,7 +222,17 @@ export const BoxSprite = memo(function BoxSprite({ element, onClick, onDoubleCli
       width: transform.width,
       height: transform.height,
       visible: style?.display !== 'none' && style?.visibility !== 'hidden',
-      ...(style?.overflow === 'hidden' ? { clipChildren: true } : {}),
+      ...((style?.overflow === 'hidden' || style?.overflow === 'scroll' || style?.overflow === 'auto')
+        ? { clipChildren: true }
+        : {}),
+      ...((style?.overflow === 'scroll' || style?.overflow === 'auto')
+        ? (() => {
+            const scroll = getScrollState(element.id);
+            return scroll
+              ? { scrollOffset: { scrollTop: scroll.scrollTop, scrollLeft: scroll.scrollLeft } }
+              : {};
+          })()
+        : {}),
       ...(skiaEffects.effects ? { effects: skiaEffects.effects } : {}),
       ...(fillBlendMode ? { blendMode: fillBlendMode } : skiaEffects.blendMode ? { blendMode: skiaEffects.blendMode } : {}),
       ...(skiaTransform ? { transform: skiaTransform } : {}),

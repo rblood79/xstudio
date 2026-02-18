@@ -27,6 +27,7 @@ import { DropflowBlockEngine } from './DropflowBlockEngine';
 import { TaffyFlexEngine } from './TaffyFlexEngine';
 import { TaffyGridEngine } from './TaffyGridEngine';
 import { isRustWasmReady } from '../../wasm-bindings/rustWasm';
+import { useScrollState } from '../../../../stores/scrollState';
 
 // Re-export types
 export type { LayoutEngine, ComputedLayout, LayoutContext } from './LayoutEngine';
@@ -186,6 +187,7 @@ export function calculateChildrenLayout(
 
   // Phase 10: flex/grid container의 직계 자식에 blockification 적용
   // 자식의 내부 display(자신의 자식들을 어떻게 배치할지)를 변환합니다.
+  let results: ComputedLayout[];
   if (isFlexOrGridContainer(display)) {
     const blockifiedChildren = children.map((child) => {
       const childStyle = child.props?.style as Record<string, unknown> | undefined;
@@ -208,8 +210,42 @@ export function calculateChildrenLayout(
       } as Element;
     });
 
-    return engine.calculate(parent, blockifiedChildren, availableWidth, availableHeight, enrichedContext);
+    results = engine.calculate(parent, blockifiedChildren, availableWidth, availableHeight, enrichedContext);
+  } else {
+    results = engine.calculate(parent, children, availableWidth, availableHeight, enrichedContext);
   }
 
-  return engine.calculate(parent, children, availableWidth, availableHeight, enrichedContext);
+  // W3-5: overflow:scroll/auto 인 경우 자식 콘텐츠 총 크기를 계산하여
+  // maxScroll을 scrollState store에 업데이트한다.
+  const overflow = style?.overflow as string | undefined;
+  if (overflow === 'scroll' || overflow === 'auto') {
+    const contentBounds = computeContentBounds(results);
+    const maxScrollTop = Math.max(0, contentBounds.height - availableHeight);
+    const maxScrollLeft = Math.max(0, contentBounds.width - availableWidth);
+    useScrollState.getState().updateMaxScroll(parent.id, maxScrollTop, maxScrollLeft);
+  }
+
+  return results;
+}
+
+/**
+ * W3-5: 자식 레이아웃 결과에서 콘텐츠 전체 경계(bounding box) 계산
+ *
+ * 모든 자식의 (x + width, y + height)의 최대값으로 콘텐츠 크기를 결정한다.
+ * 이 값과 컨테이너 크기의 차이가 maxScroll이 된다.
+ */
+function computeContentBounds(
+  layouts: ComputedLayout[],
+): { width: number; height: number } {
+  let maxRight = 0;
+  let maxBottom = 0;
+
+  for (const layout of layouts) {
+    const right = layout.x + layout.width + (layout.margin?.right ?? 0);
+    const bottom = layout.y + layout.height + (layout.margin?.bottom ?? 0);
+    if (right > maxRight) maxRight = right;
+    if (bottom > maxBottom) maxBottom = bottom;
+  }
+
+  return { width: maxRight, height: maxBottom };
 }

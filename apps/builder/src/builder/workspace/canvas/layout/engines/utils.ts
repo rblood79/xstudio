@@ -92,17 +92,22 @@ function parseNumericValue(value: unknown): number | undefined {
  *
  * 내부적으로 resolveCSSSizeValue()에 위임하여 일관된 단위 해석을 제공한다.
  *
+ * W3-7: variableScope 파라미터 추가로 var() 참조 해석 지원.
+ * 디자인 토큰(color/spacing/typography)이 var()로 참조될 때 정상 해석된다.
+ *
  * @param value - 파싱할 값
  * @param available - % 계산 시 기준값 (부모 content-box)
  * @param viewportWidth - vw 계산 시 기준값
  * @param viewportHeight - vh 계산 시 기준값
+ * @param variableScope - CSS 변수 스코프 (var() 해석용, W3-7)
  * @returns 파싱된 숫자 또는 undefined (auto 또는 미지원 단위)
  */
 export function parseSize(
   value: unknown,
   available: number,
   viewportWidth?: number,
-  viewportHeight?: number
+  viewportHeight?: number,
+  variableScope?: CSSVariableScope,
 ): number | undefined {
   if (value === undefined || value === 'auto') return undefined;
 
@@ -110,6 +115,7 @@ export function parseSize(
     containerSize: available,
     viewportWidth,
     viewportHeight,
+    variableScope,
   };
 
   return resolveCSSSizeValue(value, ctx);

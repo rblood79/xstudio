@@ -1,6 +1,6 @@
 # CSS Level 3 엔진 정합성 체크리스트
 
-> **최종 갱신**: 2026-02-18
+> **최종 갱신**: 2026-02-19
 > **목적**: XStudio 레이아웃/렌더링 엔진의 CSS Level 3 속성 지원 현황 추적
 > **엔진**: TaffyFlexEngine (Taffy WASM) · TaffyGridEngine (Taffy WASM) · DropflowBlockEngine (Dropflow Fork JS)
 > **렌더러**: CanvasKit/Skia WASM
@@ -280,7 +280,7 @@
 | `letter-spacing` | ✅ | `cssResolver.ts:27`, `nodeRenderers.ts:625` | 상속 가능 |
 | `word-spacing` | ❌ | — | |
 | `text-indent` | ❌ | — | |
-| `vertical-align` | ⚠️ | `utils.ts:983-1007` | baseline, top, bottom, middle만 — text-top/text-bottom/super/sub은 baseline 폴백 |
+| `vertical-align` | ⚠️ | `utils.ts:983-1007`, `utils.ts:1334-1374` | baseline(FontMetrics ascent 기반), top, bottom, middle — text-top/text-bottom/super/sub은 baseline 폴백 |
 
 ---
 
@@ -297,7 +297,7 @@
 | `scaleX()` / `scaleY()` | ✅ | `styleConverter.ts:633-641` | |
 | `skew()` | ✅ | `styleConverter.ts:643-647` | |
 | `skewX()` / `skewY()` | ✅ | `styleConverter.ts:649-655` | |
-| `matrix()` | ❌ | `styleConverter.ts:657` | TODO |
+| `matrix()` | ✅ | `styleConverter.ts:661-673` | CSS matrix(a,b,c,d,e,f) → CanvasKit row-major 3x3 변환 |
 | `transform-origin` | ✅ | `styleConverter.ts:679-728` | px, %, 키워드(left/center/right/top/bottom) |
 | 다중 함수 조합 | ✅ | `styleConverter.ts:594-668` | 3x3 행렬 곱셈 (좌→우) |
 | 3D transforms (`matrix3d`, `perspective`, `rotate3d`) | ❌ | — | |
@@ -326,10 +326,10 @@
 | `filter: blur()` | ✅ | `styleConverter.ts:421-426` | LayerBlurEffect (전경 블러) |
 | `filter: brightness()` | ❌ | — | |
 | `filter: contrast()` | ❌ | — | |
-| `filter: grayscale()` | ❌ | — | |
+| `filter: grayscale()` | ✅ | `styleConverter.ts:884-902`, `styleConverter.ts:1026-1036` | SVG Filter Effects Level 1 사양 4x5 색상 행렬, CanvasKit ColorFilter |
 | `filter: saturate()` | ❌ | — | |
-| `filter: sepia()` | ❌ | — | |
-| `filter: invert()` | ❌ | — | |
+| `filter: sepia()` | ✅ | `styleConverter.ts:932-952`, `styleConverter.ts:1048-1058` | SVG Filter Effects Level 1 사양 4x5 색상 행렬, CanvasKit ColorFilter |
+| `filter: invert()` | ✅ | `styleConverter.ts:909-924`, `styleConverter.ts:1038-1047` | 4x5 색상 행렬, CanvasKit ColorFilter |
 | `filter: hue-rotate()` | ❌ | — | |
 | `filter: drop-shadow()` | ❌ | — | `box-shadow`로 대체 가능 |
 | `backdrop-filter: blur()` | ✅ | `styleConverter.ts:429-434` | BackgroundBlurEffect (배경 블러) |
@@ -374,7 +374,7 @@
 |------|------|-----------|------|
 | `calc()` | ✅ | `cssValueParser.ts:297-381` | +, −, ×, ÷, 괄호 중첩, 혼합 단위 |
 | `var()` | ✅ | `cssValueParser.ts:98-143` | 중첩, fallback, 순환 참조 방지 |
-| `min()` / `max()` / `clamp()` | ❌ | — | |
+| `min()` / `max()` / `clamp()` | ✅ | `cssValueParser.ts:204-218`, `cssValueParser.ts:339-437` | CSS Values Level 4 준수, 혼합 단위 지원 |
 | `env()` | ❌ | — | |
 
 ---
@@ -428,14 +428,23 @@
 | 9 | Color Level 4 | 6 | 0 | 3 | 67% |
 | 10 | Fonts Level 3 | 5 | 0 | 3 | 63% |
 | 11 | Text Level 3 | 6 | 1 | 5 | 54% |
-| 12 | Transforms Level 1 | 10 | 0 | 3 | 77% |
+| 12 | Transforms Level 1 | 11 | 0 | 2 | 85% |
 | 13 | Transitions/Animations | 0 | 0 | 4 | 0% |
-| 14 | Filter Effects Level 1 | 2 | 0 | 8 | 20% |
+| 14 | Filter Effects Level 1 | 5 | 0 | 5 | 50% |
 | 15 | Visual Effects | 3 | 0 | 5 | 38% |
-| 16 | Values/Units Level 3 | 7 | 0 | 5 | 58% |
+| 16 | Values/Units Level 3 | 8 | 0 | 4 | 67% |
 | 17 | Cascade Level 4 | 2 | 0 | 5 | 29% |
 | 18 | Logical Properties Level 1 | 0 | 0 | 7 | 0% |
-| | **합계** | **113** | **12** | **61** | **66%** |
+| | **합계** | **118** | **12** | **56** | **68%** |
+
+> **변경 내역 (2026-02-19 갱신):**
+> - `matrix()` transform: ❌ → ✅ (`styleConverter.ts:661-673`)
+> - `grayscale()` filter: ❌ → ✅ (`styleConverter.ts:884-902, 1026-1036`)
+> - `sepia()` filter: ❌ → ✅ (`styleConverter.ts:932-952, 1048-1058`)
+> - `invert()` filter: ❌ → ✅ (`styleConverter.ts:909-924, 1038-1047`)
+> - `min()` / `max()` / `clamp()`: ❌ → ✅ (`cssValueParser.ts:204-218, 339-437`)
+> - `vertical-align` 비고 갱신: FontMetrics ascent 기반 baseline 정밀 계산 반영
+> - 총 지원 속성: 113 → **118** (⚠️ 유지, ❌ 감소: 61 → **56**)
 
 ### P0 개선 대상 (캔버스 렌더링 정합성 핵심)
 
@@ -452,7 +461,7 @@
 | P1 | `fit-content` / `min-content` / `max-content` 네이티브 | 현재 워크어라운드, Taffy 네이티브 전달 필요 |
 | P1 | `background-size` / `background-position` | 이미지 배경 제어 불가 |
 | P1 | `cursor` / `pointer-events` | 인터랙션 힌트 부재 |
-| P1 | `filter` 함수 확장 (brightness, contrast 등) | 디자인 도구 필수 기능 |
+| P1 | `filter` 함수 확장 (brightness, contrast, saturate, hue-rotate) | 디자인 도구 필수 기능 |
 | P1 | `currentColor` | CSS 변수 시스템과 연동 필요 |
 
 ---
@@ -462,3 +471,4 @@
 | 날짜 | 버전 | 설명 |
 |------|------|------|
 | 2026-02-18 | 1.0 | 최초 작성 — CSS Level 3 기준 전체 속성 지원 현황 조사 |
+| 2026-02-19 | 1.1 | Wave 3-4 구현 반영: matrix() transform, grayscale/sepia/invert filter, min()/max()/clamp() 함수, FontMetrics 기반 baseline 갱신. 총 지원 속성 113 → 118 |
