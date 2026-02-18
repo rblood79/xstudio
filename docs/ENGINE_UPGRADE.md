@@ -3,6 +3,7 @@
 > Status: Phase 9-11 Complete, Ongoing Refinement
 > Date: 2026-02-18
 > 현재 엔진: TaffyFlexEngine (Taffy WASM) + TaffyGridEngine (Taffy WASM) + DropflowBlockEngine (Dropflow Fork JS)
+> 현재 렌더러: CanvasKit/Skia WASM (시각 렌더링) + PixiJS v8 (씬 그래프/이벤트)
 
 ---
 
@@ -41,18 +42,18 @@
 
 ### 0.2 카테고리별 일치율 현황
 
-| 카테고리 | 현재 일치율 | 목표 | 핵심 갭 |
-|----------|-----------|------|---------|
-| Flexbox | 93% | 98% | order, baseline 정밀도, % gap |
-| Block Layout | 90% | 95% | margin %, 텍스트+블록 혼합 |
-| Box Model | **95%** | 95% | ~~calc(), border shorthand~~ → ~~inherit/var()~~ 구현 완료. padding/margin % 잔여 |
-| Typography | **92%** | 92% | ~~white-space, word-break, verticalAlign, fontStyle~~ → 폰트 메트릭 baseline 정밀화 잔여 |
-| Visual Effects | **90%** | 90% | ~~다중 box-shadow, transform~~ → gradient 고급, filter 잔여 |
-| Grid | **85%** | 85% | ~~repeat(), minmax(), auto-placement, span~~ → subgrid, named lines 잔여 |
-| CSS 단위 | **85%** | 85% | ~~em, calc(), min/max-content~~ → clamp(), env() 잔여 |
-| Position | **80%** | 80% | ~~fixed, z-index stacking context~~ 구현 완료 |
-| Spec 렌더링 정합성 | **100%** | **100%** | 62/62 전체 PASS 달성 |
-| **전체 가중 평균** | **~96%** | **~95%+** | S1~S6 스프린트 완료, 목표 달성 |
+| 카테고리 | 달성 일치율 | 목표 | 상태 | 잔여 갭 |
+|----------|-----------|------|------|---------|
+| Flexbox | **93%** | 98% | ✅ 목표 근접 | order, baseline 정밀도, % gap |
+| Block Layout | **90%** | 95% | ✅ 목표 근접 | margin %, 텍스트+블록 혼합 |
+| Box Model | **95%** | 95% | ✅ 달성 | padding/margin % 잔여 |
+| Typography | **92%** | 92% | ✅ 달성 | 폰트 메트릭 baseline 정밀화 잔여 |
+| Visual Effects | **90%** | 90% | ✅ 달성 | gradient 고급, filter 잔여 |
+| Grid | **85%** | 85% | ✅ 달성 | subgrid, named lines 잔여 (Taffy 미지원) |
+| CSS 단위 | **85%** | 85% | ✅ 달성 | clamp(), env() 잔여 |
+| Position | **80%** | 80% | ✅ 달성 | sticky 미지원 (Non-Goal) |
+| Spec 렌더링 정합성 | **100%** | 100% | ✅ 달성 | 62/62 전체 PASS |
+| **전체 가중 평균** | **~96%** | ~95%+ | ✅ **목표 달성** | S1~S6 스프린트 완료 |
 
 > **CSS 속성 지원 현황**: `docs/ENGINE_CHECKLIST.md` 참조 — CSS Level 3 기준 18개 Spec Module, 186개 속성 중 ✅ 113개(66%), ⚠️ 12개, ❌ 61개. 레이아웃(Flexbox 86%, Grid 89%, Box Model 96%) 및 시각 속성(배경/테두리 71%, Transform 77%)은 높은 지원율을 보이며, Transitions/Animations/Logical Properties는 미지원.
 
@@ -65,12 +66,13 @@
 |----|------|-----------|
 | CSS 속성 지원율 | `docs/ENGINE_CHECKLIST.md` | CSS Level 3 기준 카테고리별 ✅/⚠️/❌ 집계 |
 | 레이아웃 정합성 | 본 문서 §2 체크리스트 + 벤치마크 | 지원 기능 커버리지 + 좌표 오차(±1px) |
-| 구현 완료도 | 마이그레이션 문서(`docs/how-to/migration/WEBGL.md`) | 구현/동기화 파일 수 기준 |
+| 구현 완료도 | 마이그레이션 문서(`docs/how-to/migration/WEBGL.md`) + 컴포넌트 아키텍처 문서(`docs/reference/components/PIXI_WEBGL.md`) | 마이그레이션 단계 + 현행 구현 반영 여부 기준 |
 
 > 운영 원칙
 >
 > - PR/리포트에는 세 지표를 혼합하지 않고 항상 **개별 수치**로 표기한다.
 > - "95%+"는 시각+레이아웃 통합 정합성 목표이며, 구현 완료율 100%와 동의어가 아니다.
+> - `WEBGL.md`는 마이그레이션 이력 성격이 있으므로, 최신 상태 판단은 코드(`apps/builder/src/builder/workspace/canvas/*`)와 `ENGINE_CHECKLIST.md`를 우선한다.
 
 ### 0.4 근본 원인 분석
 
@@ -81,7 +83,7 @@
 | ~~**L1: Yoga 한계**~~ | ~~Yoga가 CSS 스펙의 일부만 구현~~ | ~~Block, Grid 전체~~ | ✅ **해결됨** — Taffy WASM(Flex/Grid) + Dropflow Fork(Block) |
 | **L1': Taffy/Dropflow 제한** | Dropflow IFC는 DOM 텍스트 노드 필요. XStudio prop 기반 컴포넌트와 직접 호환 불가 | Block 레이아웃의 inline-block 처리 | DropflowBlockEngine에서 inline-block 에뮬레이션(layoutInlineRun)으로 우회 중 |
 | **L2: CSS 값 파서 부족** | ~~`calc()`, `em`, `min-content/max-content`, `border` shorthand 미파싱~~ → 대부분 해결 | 모든 엔진 공통 | ✅ Phase 1 완료 — `resolveCSSSizeValue()` 통합. 잔여: `clamp()`, `env()` |
-| **L3: 렌더링 피처 부재** | `transform`, 다중 `box-shadow`, `overflow: scroll` 미구현 | 시각 효과 | 부분 완료 — ✅ gradient, shadow 순서, 배열 borderRadius 완료. 미완: transform, multi-shadow, overflow scroll |
+| **L3: 렌더링 피처 잔여 갭** | `overflow: scroll/auto`, 고급 `filter` 함수, 일부 `transform` 함수(`matrix()`) | 시각 효과 | 부분 완료 — ✅ transform(translate/rotate/scale/skew), 다중 box-shadow, overflow:hidden clip, gradient 완료 |
 | ~~**L4: CSS 값 파서 파편화**~~ | ~~3개 독립 파서가 각각 다른 단위를 지원~~ | ~~모든 엔진 공통~~ | ✅ **해결됨** — `cssValueParser.ts`의 `resolveCSSSizeValue()`로 통합 |
 | ~~**L5: @pixi/layout formatStyles 캐싱**~~ | ~~`formatStyles()`가 이전 프레임 스타일 병합~~ | ~~Yoga 경로 전체~~ | ✅ **해결됨** — @pixi/layout 완전 제거 (Phase 11), 문제 자체 소멸 |
 
@@ -730,49 +732,59 @@ import type { LayoutEngine, ComputedLayout, LayoutContext } from './LayoutEngine
 import { DropflowBlockEngine } from './DropflowBlockEngine';
 import { TaffyFlexEngine } from './TaffyFlexEngine';
 import { TaffyGridEngine } from './TaffyGridEngine';
+import { isRustWasmReady } from '../../../../../utils/featureFlags';
 
 // Re-export
 export type { LayoutEngine, ComputedLayout, LayoutContext };
 
 // 싱글톤 엔진 인스턴스
-const blockEngine = new DropflowBlockEngine();
-const flexEngine = new TaffyFlexEngine();
-const gridEngine = new TaffyGridEngine();
+const dropflowBlockEngine = new DropflowBlockEngine();
+const taffyFlexEngine = new TaffyFlexEngine();
+const taffyGridEngine = new TaffyGridEngine();
 
 /**
  * display 속성에 따라 적절한 레이아웃 엔진 선택
  *
+ * Taffy WASM이 로드되지 않은 경우 DropflowBlockEngine으로 안전 폴백한다.
+ *
  * @example
  * const engine = selectEngine('flex');
- * // 모든 엔진이 직접 calculate()를 호출
  * const layouts = engine.calculate(parent, children, w, h, ctx);
  */
 export function selectEngine(display: string | undefined): LayoutEngine {
+  const wasmReady = isRustWasmReady();
+
   switch (display) {
     case 'flex':
     case 'inline-flex':
-      return flexEngine;
+      return wasmReady ? taffyFlexEngine : dropflowBlockEngine;
 
     case 'grid':
     case 'inline-grid':
-      return gridEngine;
+      return wasmReady ? taffyGridEngine : dropflowBlockEngine;
 
     case 'block':
     case 'inline-block':
+    case 'flow-root':
+    case 'inline':
+      return dropflowBlockEngine;
+
     case undefined: // 기본값은 block
-      return blockEngine;
+      return dropflowBlockEngine;
 
     default:
       // 알 수 없는 display는 block으로 폴백
-      return blockEngine;
+      return dropflowBlockEngine;
   }
 }
 
 /**
  * 요소의 자식들에 대한 레이아웃 계산
  *
- * 모든 엔진(TaffyFlexEngine, TaffyGridEngine, DropflowBlockEngine)이
- * 직접 calculate()를 호출합니다. 레거시 shouldDelegateToPixiLayout 패턴은 제거됨.
+ * selectEngine()이 display 값에 따라 엔진을 선택하고,
+ * 해당 엔진이 직접 calculate()를 호출하여 ComputedLayout[]을 반환한다.
+ *
+ * WASM 미로드 시 Taffy 엔진 대신 DropflowBlockEngine으로 폴백된다.
  */
 export function calculateChildrenLayout(
   parent: Element,
@@ -867,30 +879,19 @@ export function calculateChildrenLayout(
 
 ### 4.1 레거시 구조 (Phase 1-8, 제거됨)
 
-> 아래 코드는 @pixi/layout의 `LayoutContainer`를 사용하던 레거시 구조이다.
-> Phase 9-10에서 @pixi/layout이 제거되면서 이 패턴은 더 이상 사용되지 않는다.
-
-```typescript
-// [레거시] BuilderCanvas.tsx — @pixi/layout 시대
-const renderTree = useCallback((parentId: string | null) => {
-  // ...
-  const containerLayout = hasChildren && !baseLayout.flexDirection
-    ? { display: 'flex', flexDirection: 'column', ...baseLayout }
-    : baseLayout;
-
-  return (
-    <LayoutContainer layout={containerLayout}>  {/* ← 제거됨 */}
-      <ElementSprite ... />
-      {renderTree(child.id)}
-    </LayoutContainer>
-  );
-}, [/* deps */]);
-```
+> Phase 9-10에서 @pixi/layout이 제거되면서 `LayoutContainer` 기반 패턴은 더 이상 사용되지 않는다.
+> 레거시 구조의 상세 배경과 제거 경위는 [ADR-003 §Alternatives Considered](./adr/003-canvas-rendering.md) 참조.
+>
+> **핵심 변경:** `<LayoutContainer layout={containerLayout}>` → `<DirectContainer x={layout.x} y={layout.y} ...>`
 
 ### 4.2 현재 구조 (Phase 11+)
 
+> **Note:** 아래 코드는 핵심 흐름을 보여주기 위한 **개념적 단순화**이다.
+> 실제 `BuilderCanvas.tsx`에는 멀티페이지 구조(`PageContainer` 래핑),
+> `DirectContainer`의 `memo` 최적화, `elementId` prop 등 추가 로직이 포함된다.
+
 ```typescript
-// BuilderCanvas.tsx — 현재 엔진 디스패처
+// BuilderCanvas.tsx — 현재 엔진 디스패처 (개념적 단순화)
 
 import { Container } from '@pixi/react';
 import { selectEngine } from './layout/engines';
@@ -996,7 +997,8 @@ Phase 11 (레거시 엔진 삭제, Taffy WASM + Dropflow Fork 전환) ✅
 
 > PixiJS 렌더링은 CanvasKit으로 대체되었다.
 > PixiJS는 씬 그래프 관리 + EventBoundary(Hit Testing)에만 사용된다.
-> 상세: `docs/WASM.md` Phase 5.3-5.7 참조
+> 이중 렌더러 아키텍처 결정 배경 및 제약 사항은 [ADR-003](./adr/003-canvas-rendering.md) 참조.
+> 아래는 렌더 파이프라인의 구현 상세를 기술한다.
 
 #### 4.4.1 렌더 파이프라인 전환
 
@@ -1078,7 +1080,9 @@ Store → ElementSprite → useResolvedElement($-- 변수 resolve 포함)
 └───────────────────────────────────────────────────────────────────┘
 ```
 
-#### 4.4.3 핵심 변경 사항
+#### 4.4.3 핵심 변경 사항 (Phase 1-4 → Phase 5-6 마이그레이션 이력)
+
+> **참고:** 아래 비교표는 마이그레이션 이력 기록 목적이다. 현재 아키텍처는 "Phase 5-6" 열을 참조.
 
 | 기존 (Phase 1-4) | Phase 5-6 (CanvasKit) | 비고 |
 |------------------|----------------------|------|
@@ -1551,28 +1555,28 @@ function measureTextWithWhiteSpace(
 
 #### 5.4.5 `vertical-align` 동기화
 
-CSS의 `vertical-align`은 inline/inline-block 요소의 수직 정렬을 제어한다. `DropflowBlockEngine.ts`의 `layoutInlineRun()`에서 레이아웃 계산은 구현 완료, Skia 렌더러 동기화는 진행 중.
+CSS의 `vertical-align`은 inline/inline-block 요소의 수직 정렬을 제어한다. 현재 `DropflowBlockEngine.ts`의 `layoutInlineRun()`과 Skia 텍스트 렌더링(`nodeRenderers.ts`)에 동기화되어 있다.
 
 | 값 | CSS 동작 | 현재 Skia 구현 | 상태 |
 |-----|---------|--------------|------|
-| `top` | 줄 상단 정렬 | layoutInlineRun에서 계산 | ✅ 레이아웃 계산: 구현 완료 / Skia 렌더러 동기화: OPEN |
-| `middle` | 줄 중앙 정렬 | layoutInlineRun에서 계산 | ✅ 레이아웃 계산: 구현 완료 / Skia 렌더러 동기화: OPEN |
-| `bottom` | 줄 하단 정렬 | layoutInlineRun에서 계산 | ✅ 레이아웃 계산: 구현 완료 / Skia 렌더러 동기화: OPEN |
-| `baseline` | 기준선 정렬 (기본값) | layoutInlineRun에서 FontMetrics 기반 계산 | ✅ 레이아웃 계산: 구현 완료 / Skia 렌더러 동기화: OPEN |
+| `top` | 줄 상단 정렬 | `computeDrawY()`에서 상단 기준 렌더 | ✅ PASS |
+| `middle` | 줄 중앙 정렬 | `computeDrawY()`에서 텍스트 높이 기준 중앙 정렬 | ✅ PASS |
+| `bottom` | 줄 하단 정렬 | `computeDrawY()`에서 하단 정렬 | ✅ PASS |
+| `baseline` | 기준선 정렬 (기본값) | `layoutInlineRun()`에서 middle 근사, Skia는 top/baseline 동일 처리 | ⚠️ 정밀화 잔여 |
 
-**구현:** `nodeRenderers.ts`의 텍스트 렌더링에서 `vertical-align` 값에 따라 `y` 오프셋 조정. `layoutInlineRun()`이 전달하는 `FontMetrics.ascent/descent` 기반 정렬 위치를 Skia 렌더러에서 반영한다.
+**구현:** `TextSprite.tsx`에서 `verticalAlign` 값을 Skia 노드로 전달하고, `nodeRenderers.ts`의 `computeDrawY()`가 `middle/bottom/top`을 반영한다. baseline은 폰트 메트릭 기반 정밀 계산이 아직 남아 있다.
 
 #### 5.4.6 `font-style` (italic/oblique) 동기화
 
-현재 `styleConverter.ts`에서 `font-style` 파싱은 가능하지만, CanvasKit Paragraph API의 `fontStyle` 매핑이 불완전하다.
+현재 `styleConverter.ts`와 `TextSprite.tsx`에서 `font-style`을 파싱하고, `nodeRenderers.ts`에서 CanvasKit `FontSlant`로 매핑한다.
 
 | 값 | CSS 동작 | 현재 Skia 구현 | 상태 |
 |-----|---------|--------------|------|
 | `normal` | 정자체 | O | PASS |
-| `italic` | 이탤릭체 | CanvasKit `TextStyle.fontStyle.slant = Italic` 매핑 필요 | OPEN |
-| `oblique` | 경사체 | CanvasKit `TextStyle.fontStyle.slant = Oblique` 매핑 필요 | OPEN |
+| `italic` | 이탤릭체 | `FontSlant.Italic` 매핑 적용 | ✅ PASS |
+| `oblique` | 경사체 | `FontSlant.Oblique` 매핑 적용 | ✅ PASS |
 
-**구현:** `skia/textMeasure.ts`의 `createParagraphStyle()`에서 `fontStyle.slant` 매핑 추가. 폰트 파일에 italic variant가 없는 경우 CanvasKit이 자동으로 synthetic italic을 적용한다.
+**구현:** `TextSprite.tsx`가 `fontStyle` 문자열을 숫자(0/1/2)로 정규화하고, `nodeRenderers.ts`가 이를 `FontSlant.Upright/Italic/Oblique`로 변환한다.
 
 ---
 
@@ -1582,20 +1586,20 @@ CSS의 `vertical-align`은 inline/inline-block 요소의 수직 정렬을 제어
 >
 > **일치율 영향:** Visual 80% → 90%
 
-#### 5.5.0 타입/파이프라인 선행 작업 (필수)
+#### 5.5.0 타입/파이프라인 선행 작업 (✅ 완료)
 
-웹 CSS와 동일한 결과를 얻으려면 렌더 단계 전에 데이터 모델 확장이 선행되어야 한다.
+> **상태:** 아래 선행 작업은 모두 구현 완료되었다.
 
 - `CSSStyle` 확장: `transform`, `transformOrigin`, `zIndex`, `position` 필드 추가
 - `ConvertedStyle`/`SkiaNodeData` 확장: 변환된 transform 행렬 + origin 전달 필드 추가
 - `styleConverter.ts`에서 style → transform/z-index 파싱 결과를 `SkiaNodeData`로 전달
 - `nodeRenderers.ts`는 `SkiaNodeData`의 transform/stacking 정보를 기준으로 렌더 순서 적용
 
-> 이 선행 작업이 없으면 5.5.2/5.6.2의 코드 스니펫을 그대로 적용해도 타입/데이터 흐름에서 구현이 끊긴다.
+#### 5.5.1 다중 `box-shadow` (✅ 완료)
 
-#### 5.5.1 다중 `box-shadow`
+> **상태:** 다중 box-shadow 파싱 및 Skia 렌더링 구현 완료.
 
-현재 `parseFirstBoxShadow()`로 첫 번째 shadow만 파싱한다.
+기존 `parseFirstBoxShadow()`를 `parseAllBoxShadows()`로 대체하여 다중 shadow를 지원한다.
 
 ```css
 box-shadow:
@@ -1618,7 +1622,9 @@ function parseAllBoxShadows(raw: string): DropShadowEffect[] {
 
 **Skia 렌더링:** `renderBox()` 에서 `effects[]` 순회하며 각 shadow를 별도 레이어로 렌더
 
-#### 5.5.2 CSS `transform`
+#### 5.5.2 CSS `transform` (✅ 완료)
+
+> **상태:** translate/rotate/scale/skew 및 transform-origin 구현 완료. `matrix()` 함수만 미지원.
 
 ```css
 transform: rotate(45deg) scale(1.5) translateX(10px);
@@ -1632,46 +1638,30 @@ transform: rotate(45deg) scale(1.5) translateX(10px);
 | `rotate(deg)` | `canvas.rotate()` | O |
 | `scale(x, y)` | `canvas.scale()` | O |
 | `skew(x, y)` | `canvas.concat(matrix)` | O |
-| `matrix(a,b,c,d,e,f)` | `canvas.concat(matrix)` | O |
+| `matrix(a,b,c,d,e,f)` | `canvas.concat(matrix)` | ❌ 미지원 (향후 확장) |
 | `transform-origin` | `translate(origin) → concat(matrix) → translate(-origin)` | O |
 
-**파일:** `styleConverter.ts` — `parseTransform()`, `parseTransformOrigin()` 신규
+**파일:** `styleConverter.ts` — `parseTransform()`, `parseTransformOrigin()`
 
 ```typescript
-interface TransformMatrix {
-  a: number; b: number; c: number;
-  d: number; e: number; f: number;
-}
+type TransformMatrix3x3 = Float32Array; // CanvasKit 3x3 matrix
 
-interface TransformSpec {
-  matrix: TransformMatrix;
-  originX: number;  // px (border-box 기준)
-  originY: number;  // px (border-box 기준)
-}
-
-function parseTransform(value: string): TransformMatrix;
-function parseTransformOrigin(value: string, boxWidth: number, boxHeight: number): { x: number; y: number };
-// "rotate(45deg) scale(1.5)" + "50% 50%" → 중심점 기준 행렬 변환
+function parseTransform(value: string): TransformMatrix3x3 | null;
+function parseTransformOrigin(value: string, boxWidth: number, boxHeight: number): [number, number];
+function applyTransformOrigin(matrix: TransformMatrix3x3, ox: number, oy: number): TransformMatrix3x3;
+// BoxSprite에서 transform-origin을 반영한 최종 matrix를 생성해 SkiaNodeData.transform에 저장
 ```
 
-**Skia 통합:** `nodeRenderers.ts` — `renderNode()` 에서 transform-origin 반영 후 행렬 적용
+**Skia 통합:** `BoxSprite.tsx`에서 `applyTransformOrigin()`으로 origin 보정 후 `skiaTransform` 생성, `nodeRenderers.ts`는 해당 matrix를 그대로 적용
 
 ```typescript
 if (node.transform) {
-  canvas.save();
-  canvas.translate(node.transform.originX, node.transform.originY);
-  canvas.concat(Float32Array.of(
-    node.transform.a, node.transform.c, node.transform.e,
-    node.transform.b, node.transform.d, node.transform.f,
-    0, 0, 1
-  ));
-  canvas.translate(-node.transform.originX, -node.transform.originY);
-  // ... 렌더링 ...
-  canvas.restore();
+  // transform-origin은 BoxSprite에서 matrix에 선반영됨
+  canvas.concat(node.transform);
 }
 ```
 
-#### 5.5.3 CSS `gradient`
+#### 5.5.3 CSS `gradient` (✅ 완료)
 
 ```css
 background: linear-gradient(45deg, #f00, #00f);
@@ -1691,20 +1681,20 @@ const shader = CanvasKit.Shader.MakeLinearGradient(
 paint.setShader(shader);
 ```
 
-**파일:** `styleConverter.ts` — `parseGradient()` 신규
+**파일:** `skia/fills.ts` + `skia/specShapeConverter.ts`
 
 **Spec Shape 변환 경로:**
 
-> ✅ **구현 완료** — `specShapeConverter.ts:395-445`에서 linear/radial gradient 변환 구현됨. CanvasKit `Shader.MakeLinearGradient`/`MakeRadialGradient`를 사용하여 gradient shape을 Skia 노드로 변환하고 `nodeById`에 등록한다. 이로써 FancyButton, ColorPicker, ColorSlider, ColorArea 4개 컴포넌트의 FAIL이 해소되었다.
+> ✅ **구현 완료** — `specShapeConverter.ts:395-445`에서 linear/radial gradient 변환 구현됨. CanvasKit `Shader.MakeLinearGradient`/`MakeTwoPointConicalGradient`를 사용하여 gradient shape을 Skia 노드로 변환하고 `nodeById`에 등록한다. 이로써 FancyButton, ColorPicker, ColorSlider, ColorArea 4개 컴포넌트의 FAIL이 해소되었다.
 
 **구현 경로:**
-1. `styleConverter.ts`의 `parseGradient()`로 CSS gradient 문법 파싱 (위 코드)
-2. `specShapeConverter.ts`의 `case 'gradient'`에서 CanvasKit Shader 생성 + `nodeById` 등록
-3. Spec의 gradient shape 구조: `{ type: 'gradient', gradient: 'linear-gradient(...)', ...rect }` → CanvasKit `MakeLinearGradient`/`MakeRadialGradient` 변환
+1. `fills.ts`의 `applyFill()`에서 linear/radial/angular/mesh gradient를 CanvasKit shader로 변환
+2. `specShapeConverter.ts`의 `case 'gradient'`에서 Spec shape를 CanvasKit gradient 노드로 변환
+3. Spec 구조 `{ type: 'gradient', gradient: 'linear-gradient(...)', ...rect }`를 `MakeLinearGradient`/`MakeTwoPointConicalGradient`로 매핑
 
 #### 5.5.4 `overflow: scroll` / `auto`
 
-현재 `overflow`는 BFC 생성에만 사용되고 실제 클리핑/스크롤은 미구현이다.
+현재 `overflow: hidden`은 Skia 클리핑이 구현되어 있고, `overflow: scroll/auto`의 스크롤 상태/스크롤바 동작은 미구현이다.
 
 **구현 범위:**
 - `overflow: hidden` → Skia `canvas.clipRect()` (클리핑만)
@@ -1885,11 +1875,11 @@ renderNode(node):
 
 > **배경:** Button(width:auto/fit-content/100px, height:auto)에서 텍스트 오버플로 시 높이 자동 조절이 부모의 display, flex-direction, align-items 등에 따라 CSS와 다르게 동작하는 문제 발견
 
-> **아키텍처 현황 (Phase 11 이후):** Yoga/@pixi/layout이 완전히 제거되었다. `enrichWithIntrinsicSize()` + `DropflowBlockEngine`이 Yoga measureFunc를 대체하여 리프 UI 컴포넌트의 intrinsic size를 계산한다. 단, `styleToLayout.ts`에는 Yoga 시절 잔여코드(`SELF_RENDERING_BTN_TAGS`, `BUTTON_PADDING` 등)가 남아 있어 정리가 필요하다.
+> **아키텍처 현황 (Phase 11 이후):** Yoga/@pixi/layout이 완전히 제거되었다. `enrichWithIntrinsicSize()` + `DropflowBlockEngine`이 Yoga measureFunc를 대체하여 리프 UI 컴포넌트의 intrinsic size를 계산한다. 단, `styleToLayout.ts`에는 Yoga 시절에 작성되어 현재 TaffyFlexEngine 경로에서 활용 중인 **레거시 크기 계산 패턴**(`SELF_RENDERING_BTN_TAGS`, `BUTTON_PADDING` 등)이 남아 있어, `enrichWithIntrinsicSize()` 패턴으로의 통합 정리가 필요하다.
 
 ### 6.1 문제 정의
 
-Self-Rendering 컴포넌트(Button, Card, ToggleButton 등)는 `SELF_PADDING_TAGS`로 지정되어 `stripSelfRenderedProps()`가 padding/border를 제거한다. Yoga가 제거된 현재, `DropflowBlockEngine`의 `enrichWithIntrinsicSize()`가 리프 UI 컴포넌트에 intrinsic width/height를 주입하는 방식으로 대체되었다. 그러나 `styleToLayout.ts`에는 아직 Yoga 시절 잔여코드(`SELF_RENDERING_BTN_TAGS`, `SELF_RENDERING_BUTTON_TAGS`, `BUTTON_PADDING`, `BTN_PAD`)가 남아 있어, 이 코드들이 `TaffyFlexEngine` 경로에서 참조될 가능성이 있으며 정리가 필요하다.
+Self-Rendering 컴포넌트(Button, Card, ToggleButton 등)는 `SELF_PADDING_TAGS`로 지정되어 `stripSelfRenderedProps()`가 padding/border를 제거한다. Yoga가 제거된 현재, `DropflowBlockEngine`의 `enrichWithIntrinsicSize()`가 리프 UI 컴포넌트에 intrinsic width/height를 주입하는 방식으로 대체되었다. 그러나 `styleToLayout.ts`에는 Yoga 시절에 작성되어 **현재 TaffyFlexEngine 경로에서 능동적으로 사용 중인** 레거시 크기 계산 패턴(`SELF_RENDERING_BTN_TAGS`, `SELF_RENDERING_BUTTON_TAGS`, `BUTTON_PADDING`, `BTN_PAD`)이 남아 있다. 이 코드들은 `enrichWithIntrinsicSize()` 패턴으로 통합 정리가 필요하다.
 
 **주요 변수/함수 위치 참조:**
 
@@ -1905,11 +1895,11 @@ Self-Rendering 컴포넌트(Button, Card, ToggleButton 등)는 `SELF_PADDING_TAG
 
 ### 6.2 P1 — CRITICAL: `layout.height` 고정값 설정
 
-**위치:** `styleToLayout.ts:599-643` (Yoga 시절 잔여코드)
+**위치:** `styleToLayout.ts:599-643` (TaffyFlexEngine 경로에서 활용 중인 레거시 패턴)
 
 **현상:**
 ```typescript
-// 잔여코드 (styleToLayout.ts:602-625) — Yoga 시절 작성, 현재 TaffyFlexEngine 경로에서 참조 가능
+// 레거시 패턴 (styleToLayout.ts:602-625) — Yoga 시절 작성, 현재 TaffyFlexEngine 경로에서 활용 중
 const SELF_RENDERING_BUTTON_TAGS = new Set(['button', 'submitbutton', 'fancybutton', 'togglebutton']);
 if (SELF_RENDERING_BUTTON_TAGS.has(tag) && height === undefined) {
   // ... BUTTON_PADDING config, fontSize/paddingY/borderW 계산 ...
@@ -1918,7 +1908,7 @@ if (SELF_RENDERING_BUTTON_TAGS.has(tag) && height === undefined) {
 }
 ```
 
-Yoga 제거 이후 이 고정 height 설정은 `enrichWithIntrinsicSize()` 패턴으로 대체되어야 한다. `enrichWithIntrinsicSize()`는 `INLINE_BLOCK_TAGS`(button, badge, checkbox 등)에 대해 `parseBoxModel()`의 contentHeight + spec padding/border 합산으로 height를 주입하고, fit-content 에뮬레이션으로 width를 결정한다.
+이 고정 height 설정은 `enrichWithIntrinsicSize()` 패턴으로 대체되어야 한다. `enrichWithIntrinsicSize()`는 `INLINE_BLOCK_TAGS`(button, badge, checkbox 등)에 대해 `parseBoxModel()`의 contentHeight + spec padding/border 합산으로 height를 주입하고, fit-content 에뮬레이션으로 width를 결정한다.
 
 **부분 수정 존재 (628-642행) — 제한적 효과:**
 
@@ -1966,7 +1956,7 @@ if (style.height && style.height !== 'auto') {
 }
 ```
 
-> **상태:** Yoga 경로 소멸로 직접적 영향이 축소됨. 그러나 잔여코드가 TaffyFlexEngine 경로에서 여전히 실행될 경우 동일한 고정 height 문제가 재현되므로, 잔여코드 정리가 필요하다.
+> **상태:** 이 레거시 패턴은 현재 TaffyFlexEngine 경로에서 능동적으로 실행되고 있어, 고정 height 문제가 재현된다. `enrichWithIntrinsicSize()` 패턴으로의 통합 정리가 필요하다.
 
 **효과:** `enrichWithIntrinsicSize()`가 `align-items: stretch`와 `flex-grow`에 따라 높이를 자유롭게 계산할 수 있게 됨. 기존 부분 수정(628-642행)의 minHeight 로직도 height 제약 없이 정상 동작하게 됨.
 
@@ -1976,14 +1966,14 @@ if (style.height && style.height !== 'auto') {
 
 **현상:**
 ```typescript
-// 잔여코드 (styleToLayout.ts:297-301) — TaffyFlexEngine 경로에서 fit-content 처리
+// 레거시 패턴 (styleToLayout.ts:297-301) — TaffyFlexEngine 경로에서 fit-content 처리
 if (isFitContentWidth) {
   layout.width = 'auto';
   if (layout.flexGrow === undefined) layout.flexGrow = 0;    // ← 조건부 설정
   if (layout.flexShrink === undefined) layout.flexShrink = 0; // ← 조건부 설정
 }
 
-// 잔여코드 (styleToLayout.ts:362-381) — Yoga 시절 작성, TaffyFlexEngine 경로에서 참조 가능
+// 레거시 패턴 (styleToLayout.ts:362-381) — Yoga 시절 작성, 현재 TaffyFlexEngine 경로에서 활용 중
 if (SELF_RENDERING_BTN_TAGS.has(tag) && isFitContentWidth) {
   // ... BTN_PAD config, textWidth 측정 ...
   layout.width = Math.round(measuredTextWidth) + paddingX * 2 + borderW * 2; // 명시적 px 강제
@@ -1992,13 +1982,13 @@ if (SELF_RENDERING_BTN_TAGS.has(tag) && isFitContentWidth) {
 }
 ```
 
-> **참고:** 297-301행의 일반 경로는 `if (layout.flexGrow === undefined)` 조건부로 사용자 명시 설정을 보존하지만, 362-381행의 버튼 경로(Yoga 시절 잔여코드)는 무조건 `flexGrow = 0`을 강제한다. 이는 사용자가 명시적으로 `flex-grow`를 설정한 경우에도 덮어쓰게 되는 비일관적 동작이다. `styleToLayout.ts`의 잔여코드 정리 시 이 코드를 TaffyFlexEngine 컨텍스트 기준으로 재작성하거나 제거해야 한다.
+> **참고:** 297-301행의 일반 경로는 `if (layout.flexGrow === undefined)` 조건부로 사용자 명시 설정을 보존하지만, 362-381행의 버튼 경로(레거시 패턴)는 무조건 `flexGrow = 0`을 강제한다. 이는 사용자가 명시적으로 `flex-grow`를 설정한 경우에도 덮어쓰게 되는 비일관적 동작이다. 정리 시 이 코드를 `enrichWithIntrinsicSize()` 패턴으로 통합하거나 TaffyFlexEngine 컨텍스트 기준으로 재작성해야 한다.
 
-**Config 파편화 문제:** 버튼 크기 설정이 2벌 존재한다 (모두 Yoga 시절 잔여코드):
+**Config 파편화 문제:** 버튼 크기 설정이 2벌 존재한다 (모두 레거시 패턴):
 - `BTN_PAD` (366-368행): fit-content width 계산용 — `{ px, fs }` 2개 필드
 - `BUTTON_PADDING` (610-616행): height 계산용 — `{ px, py, fs }` 3개 필드
 
-두 config가 동일한 버튼 사이즈 프리셋을 나타내지만 독립적으로 정의되어 있어, 하나만 수정하면 width/height 계산 간 불일치가 발생할 수 있다. `engines/utils.ts:290`의 `BUTTON_SIZE_CONFIG`까지 포함하면 총 3벌이다. 잔여코드 정리 시 `BUTTON_SIZE_CONFIG` 단일 소스로 통합해야 한다.
+두 config가 동일한 버튼 사이즈 프리셋을 나타내지만 독립적으로 정의되어 있어, 하나만 수정하면 width/height 계산 간 불일치가 발생할 수 있다. `engines/utils.ts:290`의 `BUTTON_SIZE_CONFIG`까지 포함하면 총 3벌이다. 레거시 패턴 정리 시 `BUTTON_SIZE_CONFIG` 단일 소스로 통합해야 한다.
 
 `width: fit-content` 처리에서
 1) `flexGrow/flexShrink=0` 강제,
@@ -2107,6 +2097,8 @@ function enrichWithIntrinsicSize(element: Element): void {
 | INLINE_BLOCK_TAGS (button, badge 등) | `enrichWithIntrinsicSize()` (정적 주입) | `DropflowBlockEngine.ts` | Yoga measureFunc 대체 패턴 |
 
 > `skia/textMeasure.ts:91`의 `createYogaMeasureFunc()`는 Yoga 제거 후에도 Skia 텍스트 측정 용도로 파일에 남아있다. 이 함수 자체는 Yoga 노드에 설정하는 콜백이 아니라 Skia CanvasKit Paragraph API 기반 텍스트 측정 헬퍼이므로, `enrichWithIntrinsicSize()`에서 텍스트 측정 시 재활용할 수 있다.
+>
+> **리네이밍 권장:** Yoga가 제거된 현재, 함수명 `createYogaMeasureFunc`는 혼란을 유발한다. `createTextMeasureFunc()` 또는 `createLayoutMeasureFunc()`로 리네이밍을 권장한다.
 
 **CSS에서 일어나는 일:**
 ```
@@ -2152,15 +2144,15 @@ function enrichWithIntrinsicSize(
 
 | # | 부모 display | flex-direction | align-items | 자식 width 설정 | CSS 결과 | 현재 엔진 결과 | 원인 | 상태 | 수정 Phase |
 |---|-------------|---------------|-------------|----------------|---------|---------------|------|------|-----------|
-| 1 | flex | row | stretch | `100px` | height=부모높이 | height=1줄고정 | P1 — enrichWithIntrinsicSize 한계 (styleToLayout.ts 잔여코드의 고정 height 설정) | 미수정 | 6.2 |
+| 1 | flex | row | stretch | `100px` | height=부모높이 | height=1줄고정 | P1 — enrichWithIntrinsicSize 한계 (styleToLayout.ts 레거시 패턴의 고정 height 설정) | 미수정 | 6.2 |
 | 2 | flex | row | center | `100px` | height=auto(wrap) | 조건부 확장만 발생 (부분 수정: minHeight 하한은 적용되나 stretch/auto 경로는 제한) | P1+P3 — enrichWithIntrinsicSize 한계 + intrinsic size 정적 주입 한계 | 부분 수정(제한적 효과) | 6.2+6.4 |
 | 3 | flex | row | flex-start | `100px` | height=auto(wrap) | 조건부 확장만 발생 (부분 수정: minHeight 하한은 적용되나 stretch/auto 경로는 제한) | P1+P3 — enrichWithIntrinsicSize 한계 + intrinsic size 정적 주입 한계 | 부분 수정(제한적 효과) | 6.2+6.4 |
-| 4 | flex | column | stretch | `fit-content` | width=부모너비, height=auto | width=fit-content | P2 — styleToLayout.ts 잔여코드의 px 강제 + flexGrow=0 | 미수정 | 6.3 |
+| 4 | flex | column | stretch | `fit-content` | width=부모너비, height=auto | width=fit-content | P2 — styleToLayout.ts 레거시 패턴의 px 강제 + flexGrow=0 | 미수정 | 6.3 |
 | 5 | flex | column | center | `100px` | width=100px, height=auto | 조건부 확장만 발생 (부분 수정: minHeight 하한은 적용되나 stretch/auto 경로는 제한) | P1+P3 — enrichWithIntrinsicSize 한계 + intrinsic size 정적 주입 한계 | 부분 수정(제한적 효과) | 6.2+6.4 |
 | 6 | flex | column | flex-start | `100px` | width=100px, height=auto | 조건부 확장만 발생 (부분 수정: minHeight 하한은 적용되나 stretch/auto 경로는 제한) | P1+P3 — enrichWithIntrinsicSize 한계 + intrinsic size 정적 주입 한계 | 부분 수정(제한적 효과) | 6.2+6.4 |
 | 7 | flex | row | baseline | `100px` | height=auto, baseline정렬 | baseline 무시 | P1+P3 — enrichWithIntrinsicSize 한계 + intrinsic size 정적 주입 한계 | 미수정 | 6.2+6.4+Phase4 |
-| 8 | block | - | - | `auto` | width=100%(block), height=auto | width=100px | P2 — styleToLayout.ts 잔여코드의 px 강제 (TaffyFlexEngine 경로) | 미수정 | 6.3 |
-| 9 | flex | row-reverse | stretch | `100px` | height=부모높이 (역순) | height=1줄고정 | P1 — enrichWithIntrinsicSize 한계 (styleToLayout.ts 잔여코드의 고정 height 설정) | 미수정 | 6.2 |
+| 8 | block | - | - | `auto` | width=100%(block), height=auto | width=100px | P2 — styleToLayout.ts 레거시 패턴의 px 강제 (TaffyFlexEngine 경로) | 미수정 | 6.3 |
+| 9 | flex | row-reverse | stretch | `100px` | height=부모높이 (역순) | height=1줄고정 | P1 — enrichWithIntrinsicSize 한계 (styleToLayout.ts 레거시 패턴의 고정 height 설정) | 미수정 | 6.2 |
 | 10 | grid | - | stretch | `100px` | 셀 크기에 맞춤 | height=1줄고정 | P1+P3 — enrichWithIntrinsicSize 한계 + intrinsic size 정적 주입 한계 | 미수정 | 6.2+6.4 |
 
 > **부분 수정(제한적 효과)**: Case 2,3,5,6에서 `styleToLayout.ts:628-642`의 코드가 고정 width 버튼에 대해 `layout.minHeight`를 설정하므로 하한 보완은 적용될 수 있다. 다만 625행의 `layout.height` 고정 때문에 stretch/auto 재계산 경로가 제한되어 CSS-web 기준과는 여전히 차이가 남는다. §6.2의 해결 방안(styleToLayout.ts 잔여코드 정리 + enrichWithIntrinsicSize 통합) 적용 시 부분 수정의 효과가 완전하게 살아난다.
@@ -2168,16 +2160,16 @@ function enrichWithIntrinsicSize(
 ### 6.6 수정 적용 순서
 
 ```
-Step 1: styleToLayout.ts 레거시 정리
+Step 1: styleToLayout.ts 레거시 패턴 → enrichWithIntrinsicSize 통합
   ├─ 영향: Case 1,2,3,5,6,7,9,10 부분 해결
-  ├─ 작업: SELF_RENDERING_BTN_TAGS, SELF_RENDERING_BUTTON_TAGS, BTN_PAD, BUTTON_PADDING 블록 제거
-  │         고정 layout.height 설정 제거 → enrichWithIntrinsicSize 위임
+  ├─ 작업: SELF_RENDERING_BTN_TAGS, SELF_RENDERING_BUTTON_TAGS, BTN_PAD, BUTTON_PADDING 블록을
+  │         enrichWithIntrinsicSize 패턴으로 통합, 고정 layout.height 설정 제거
   ├─ 위험도: 중 (모든 self-rendering 컴포넌트에 영향)
   └─ 검증: Button/Card 높이 자동 조절 테스트
 
 Step 2: P2 수정 (fit-content px 강제 제거 + 조건부 grow/shrink, Taffy 컨텍스트)
   ├─ 영향: Case 4,8 해결
-  ├─ 작업: styleToLayout.ts 잔여코드를 TaffyFlexEngine 컨텍스트 기준으로 재작성
+  ├─ 작업: styleToLayout.ts 레거시 패턴을 TaffyFlexEngine 컨텍스트 기준으로 재작성
   │         부모 flexDirection 감지 후 row 주축에서만 grow/shrink 제한 적용
   ├─ 위험도: 중 (flex-direction 감지 로직 추가)
   └─ 검증: column flex + fit-content 버튼 stretch 테스트
@@ -2195,11 +2187,11 @@ Step 3: SELF_PADDING_TAGS 점진적 축소
 
 | 파일 | 경로 | 핵심 역할 (§6 관점) |
 |------|------|-------------------|
-| `styleToLayout.ts` | `apps/builder/src/builder/workspace/canvas/layout/styleToLayout.ts` | Yoga 시절 잔여코드: fit-content 처리(297-301), 버튼 width 계산(362-381), 버튼 height 고정(599-643) → Step 1~2에서 정리 대상 |
+| `styleToLayout.ts` | `apps/builder/src/builder/workspace/canvas/layout/styleToLayout.ts` | TaffyFlexEngine 경로에서 활용 중인 레거시 패턴: fit-content 처리(297-301), 버튼 width 계산(362-381), 버튼 height 고정(599-643) → Step 1~2에서 enrichWithIntrinsicSize 통합 대상 |
 | `BuilderCanvas.tsx` | `apps/builder/src/builder/workspace/canvas/BuilderCanvas.tsx` | SELF_PADDING_TAGS 정의(642-649), stripSelfRenderedProps(662-670) → Step 3에서 점진적 축소 |
 | `engines/utils.ts` | `apps/builder/src/builder/workspace/canvas/layout/engines/utils.ts` | parseSize(86-126), BUTTON_SIZE_CONFIG(290-304), FIT_CONTENT sentinel(53) → BTN_PAD/BUTTON_PADDING 통합 후 단일 소스 |
 | `styleConverter.ts` | `apps/builder/src/builder/workspace/canvas/sprites/styleConverter.ts` | parseCSSSize — Skia용 CSS 값 파서(150-201) |
-| `textMeasure.ts` | `apps/builder/src/builder/workspace/canvas/skia/textMeasure.ts` | `createYogaMeasureFunc` — Yoga 시절 구현이나 Skia 텍스트 측정 헬퍼로 유지됨. enrichWithIntrinsicSize에서 텍스트 측정 재활용 가능(91-102) |
+| `textMeasure.ts` | `apps/builder/src/builder/workspace/canvas/skia/textMeasure.ts` | `createYogaMeasureFunc` — Skia CanvasKit Paragraph 기반 텍스트 측정 헬퍼. 함수명 리네이밍 권장(`createTextMeasureFunc`). enrichWithIntrinsicSize에서 텍스트 측정 재활용 가능(91-102) |
 
 ---
 
@@ -2873,7 +2865,7 @@ function parseAllBoxShadows(raw: string): DropShadowEffect[] {
 3. `transform: rotate(45deg) scale(1.2)` 캔버스 반영 확인
 4. FPS 60 유지 확인
 
-#### 롤백 기준
+#### 8.4 롤백 기준
 
 아래 조건 중 하나라도 충족하면 해당 Phase 변경을 feature flag 뒤로 이동하거나 롤백한다.
 
@@ -2981,14 +2973,7 @@ const designTokensAsCSS: Map<string, string> = new Map([
 
 #### 10.1.4 롤백 기준
 
-아래 조건 중 하나라도 충족하면 해당 Phase 변경을 feature flag 뒤로 이동하거나 롤백한다.
-
-- 캔버스 FPS가 기준(60fps) 미만으로 지속 하락하고 1차 최적화 후에도 복구되지 않는 경우
-- 레이아웃 정합성 벤치마크에서 기존 대비 FAIL 케이스가 증가하는 경우
-- 핵심 편집 플로우(선택/드래그/리사이즈) 회귀가 발생하는 경우
-- `styleToLayoutContextPropagation.test.ts` 실패 또는 direct `styleToLayout(` 호출이 남아있는 경우
-
-롤백은 "전체 되돌리기"보다 기능 단위 flag off를 우선 적용한다.
+> §8.4 롤백 기준 참조 — FPS 하락, 정합성 FAIL 증가, 편집 플로우 회귀, 테스트 실패 시 feature flag off 우선 적용.
 
 ### 10.2 테스트 전략
 

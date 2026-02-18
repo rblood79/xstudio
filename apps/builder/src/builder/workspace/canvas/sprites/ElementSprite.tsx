@@ -688,7 +688,7 @@ export const ElementSprite = memo(function ElementSprite({
   // G.1/G.2: Instance resolution + Variable resolution
   const resolvedElement = useResolvedElement(element);
 
-  // 🚀 LayoutContainer의 Yoga 계산된 pixel 크기 수신
+  // 🚀 레이아웃 엔진(Taffy/Dropflow)이 계산한 pixel 크기 수신
   // 퍼센트 기반 width/height를 실제 pixel 값으로 해석하는 데 사용
   const computedContainerSize = useContext(LayoutComputedSizeContext);
 
@@ -710,11 +710,11 @@ export const ElementSprite = memo(function ElementSprite({
       };
     }
 
-    // 🚀 퍼센트 기반 width/height를 Yoga 계산 결과로 해석
-    // LayoutContainer가 Yoga를 통해 계산한 실제 pixel 크기를 직접 사용
-    // computedContainerSize는 Yoga가 '%' 값을 부모 기준으로 이미 resolve한 결과이므로
-    // 퍼센트를 다시 적용하면 이중 적용됨 (예: 50% → Yoga 200px → 50%*200=100 ❌)
-    // → Yoga 계산 결과를 그대로 pixel 값으로 사용
+    // 🚀 퍼센트 기반 width/height를 엔진 계산 결과로 해석
+    // DirectContainer가 Taffy/Dropflow를 통해 계산한 실제 pixel 크기를 직접 사용
+    // computedContainerSize는 엔진이 '%' 값을 부모 기준으로 이미 resolve한 결과이므로
+    // 퍼센트를 다시 적용하면 이중 적용됨 (예: 50% → 엔진 200px → 50%*200=100 ❌)
+    // → 엔진 계산 결과를 그대로 pixel 값으로 사용
     if (computedContainerSize) {
       const currentStyle = (resolvedElement.props?.style || {}) as Record<string, unknown>;
       const w = currentStyle.width;
@@ -1022,12 +1022,12 @@ export const ElementSprite = memo(function ElementSprite({
         // 🟢 Spec shapes 기반 렌더링
         const spec = getSpecForTag(tag);
         if (spec) {
-          // ⚡ Yoga 크기 확정 전에는 spec shapes 계산을 건너뛴다.
+          // ⚡ 엔진 크기 확정 전에는 spec shapes 계산을 건너뛴다.
           // computedW가 null인 상태에서 CSS 기본값으로 shapes를 계산하면
-          // Yoga 완료 후 다른 크기로 재계산되어 시각적 깜빡임이 발생한다.
-          // Yoga는 같은 프레임의 prerender에서 실행되므로 1프레임 내에 확정된다.
+          // 엔진 완료 후 다른 크기로 재계산되어 시각적 깜빡임이 발생한다.
+          // 엔진은 같은 프레임의 prerender에서 실행되므로 1프레임 내에 확정된다.
           if (computedW == null && finalWidth <= 0) {
-            // Yoga 미확정 + CSS 크기도 없음 → 렌더링 보류
+            // 엔진 미확정 + CSS 크기도 없음 → 렌더링 보류
           } else {
           const variantSpec = spec.variants[variant] || spec.variants[spec.defaultVariant];
           const sizeSpec = spec.sizes[size] || spec.sizes[spec.defaultSize];
@@ -1201,8 +1201,8 @@ export const ElementSprite = memo(function ElementSprite({
   const hasOwnSprite = spriteType === 'box' || spriteType === 'text' || spriteType === 'flex' || spriteType === 'grid';
   useSkiaNode(elementId, hasOwnSprite ? null : skiaNodeData);
 
-  // 🚀 Non-layout 컨테이너 히트 영역: Yoga 계산된 전체 크기(padding 포함)를 커버
-  // layout prop 없이 렌더링하므로 Yoga padding에 의한 offset 없이 컨테이너 원점(0,0)에 배치됨
+  // 🚀 Non-layout 컨테이너 히트 영역: 엔진 계산된 전체 크기(padding 포함)를 커버
+  // layout prop 없이 렌더링하므로 엔진 padding에 의한 offset 없이 컨테이너 원점(0,0)에 배치됨
   const drawContainerHitRect = useCallback(
     (g: PixiGraphics) => {
       g.clear();

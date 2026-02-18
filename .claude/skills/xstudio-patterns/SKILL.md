@@ -36,8 +36,8 @@ XStudio Builder 애플리케이션의 코드 패턴, 규칙 및 모범 사례를
 - **[type-explicit-return](rules/type-explicit-return.md)** - 명시적 반환 타입
 
 #### PIXI Layout (pixi-*)
-- **[pixi-no-xy-props](rules/pixi-no-xy-props.md)** - x/y props 금지
-- **[pixi-layout-import-first](rules/pixi-layout-import-first.md)** - @pixi/layout 최우선 import
+- **[pixi-direct-container](rules/pixi-no-xy-props.md)** - DirectContainer 직접 배치 패턴 (엔진 결과 x/y 사용)
+- ~~**[pixi-layout-import-first](rules/pixi-layout-import-first.md)**~~ - ~~@pixi/layout 최우선 import~~ **(폐기됨 — Phase 11에서 @pixi/layout 제거)**
 - **[pixi-hybrid-layout-engine](rules/pixi-hybrid-layout-engine.md)** - 하이브리드 레이아웃 엔진 display 선택
 - **[pixi-container-hit-rect](rules/pixi-container-hit-rect.md)** - Non-layout 컨테이너 히트 영역 (padding offset 보정)
 
@@ -112,7 +112,7 @@ XStudio Builder 애플리케이션의 코드 패턴, 규칙 및 모범 사례를
 | UI Framework | React 19, React-Aria Components |
 | State | Zustand, TanStack Query |
 | Styling | Tailwind CSS v4, tailwind-variants |
-| Canvas | **CanvasKit/Skia WASM** (메인 렌더러) + PixiJS 8 (이벤트 전용), @pixi/layout, @pixi/react |
+| Canvas | **CanvasKit/Skia WASM** (메인 렌더러) + PixiJS 8 (이벤트 전용, DirectContainer 직접 배치), @pixi/react |
 | Layout Engine | Taffy WASM (TaffyFlexEngine, TaffyGridEngine) + Dropflow Fork (DropflowBlockEngine) |
 | Backend | Supabase (Auth, Database, RLS) |
 | Build | Vite, TypeScript 5 |

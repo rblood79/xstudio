@@ -385,7 +385,7 @@ export const PixiToggleButton = memo(function PixiToggleButton({
     const pw = isBody ? vw : parseCSSSize(parentStyle?.width, vw, vw, canvasSize);
     const ph = isBody ? vh : parseCSSSize(parentStyle?.height, vh, vh, canvasSize);
 
-    // padding + border 차감 (Yoga border-box 모델)
+    // padding + border 차감 (border-box 모델)
     const pp = parsePadding(parentStyle);
     const pb = parseBorderWidth(parentStyle);
 

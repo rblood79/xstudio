@@ -72,10 +72,10 @@ export function getRegistryVersion(): number {
 }
 
 /**
- * 외부 레이아웃 변경(Yoga 재계산 등)을 Skia 렌더 루프에 알린다.
+ * 외부 레이아웃 변경(Taffy/Dropflow 엔진 재계산 등)을 Skia 렌더 루프에 알린다.
  * registryVersion을 증가시켜 다음 프레임에서 재렌더링하도록 한다.
  *
- * elementRegistry.updateElementBounds() → LayoutContainer Yoga 재계산 후 호출
+ * elementRegistry.updateElementBounds() → DirectContainer 엔진 재계산 후 호출
  */
 export function notifyLayoutChange(): void {
   registryVersion++;
