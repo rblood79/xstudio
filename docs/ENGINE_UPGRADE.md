@@ -1,7 +1,7 @@
 # CSS 레이아웃 엔진 설계문서
 
-> Status: Wave 1-2 Complete (Phase 1-6, 9-12), Wave 3-6 실행 계획 수립 완료
-> Date: 2026-02-19 (Wave 3-6 계획 수립)
+> Status: Wave 1-2 Complete, Wave 3-4 대부분 완료 (코드 검증), Wave 5-6 실행 대기
+> Date: 2026-02-19 (Wave 3-6 재검증 및 실행 계획 재수립)
 > 현재 엔진: TaffyFlexEngine (Taffy WASM) + TaffyGridEngine (Taffy WASM) + DropflowBlockEngine (Dropflow Fork JS)
 > 현재 렌더러: CanvasKit/Skia WASM (시각 렌더링) + PixiJS v8 (씬 그래프/이벤트)
 
@@ -1223,7 +1223,7 @@ ElementSprite
 Phase 1 이전에는 CSS 값 파싱이 3개 파일에 독립적으로 구현되어 있었다 (§0.4 L4 참조):
 
 - `engines/utils.ts` → `parseSize()`: DropflowBlockEngine/WASM용. px, %, vh, vw, fit-content만 지원. **em, rem, calc() 미지원** (122행 주석에 명시적 제외)
-- `styleToLayout.ts` → `parseCSSValue()`: TaffyFlexEngine/TaffyGridEngine용. %, vh→% 변환, vw→% 변환, rem(×16), px. **em, calc() 미지원**
+- ~~`styleToLayout.ts` → `parseCSSValue()`~~: **삭제됨** (W3-6). TaffyFlexEngine/TaffyGridEngine용이었으나 `enrichWithIntrinsicSize()` 통합 후 dead code로 제거
 - `styleConverter.ts` → `parseCSSSize()`: Skia 렌더러용. px, rem, vh, vw, em(parentSize 기반), %. **calc() 미지원**
 
 동일한 CSS 값 `2rem`이 경로에 따라 `parseSize()`에서는 `undefined`(미지원), `parseCSSValue()`에서는 `32`(px)로 해석되는 불일치가 존재했다. Phase 1에서 통합 파서(`cssValueParser.ts`)의 `resolveCSSSizeValue()`를 도입하여 3개 파서 내부에서 공통 호출하는 방식으로 해결하였다.
@@ -1273,7 +1273,7 @@ function resolveCSSSizeValue(
 
 **통합 지점 (✅ 구현 완료):**
 - `engines/utils.ts` → `parseSize()`, `parseNumericValue()` 내부에서 `resolveCSSSizeValue()` 호출 완료
-- `styleToLayout.ts` → `parseCSSValue()` 내부에서 동일 함수 호출 완료
+- ~~`styleToLayout.ts` → `parseCSSValue()`~~ — **삭제됨** (W3-6)
 - `styleConverter.ts` → `parseCSSSize()` 교체 완료
 
 #### 5.1.2 `em` 단위 완전 지원
@@ -2193,7 +2193,7 @@ Step 3: enrichWithIntrinsicSize 동적 availableWidth + 2-pass 레이아웃 ✅ 
 
 | 파일 | 경로 | 핵심 역할 (§6 관점) |
 |------|------|-------------------|
-| `styleToLayout.ts` | `apps/builder/src/builder/workspace/canvas/layout/styleToLayout.ts` | ⚠️ **Dead code** (호출부 0건). getButtonSizeConfig() 단일 소스로 중복 제거 완료. 향후 필요 시 재활용 가능 |
+| ~~`styleToLayout.ts`~~ | ~~`apps/builder/src/builder/workspace/canvas/layout/styleToLayout.ts`~~ | ✅ **W3-6에서 삭제됨** (2026-02-19). getButtonSizeConfig() 단일 소스로 중복 제거 완료 후 파일 삭제 |
 | `engines/utils.ts` | `apps/builder/src/builder/workspace/canvas/layout/engines/utils.ts` | ✅ **§6 핵심 파일**: BUTTON_SIZE_CONFIG, getButtonSizeConfig(), enrichWithIntrinsicSize(), INLINE_BLOCK_TAGS — DropflowBlockEngine + TaffyFlexEngine 공유 |
 | `TaffyFlexEngine.ts` | `apps/builder/src/builder/workspace/canvas/layout/engines/TaffyFlexEngine.ts` | ✅ 2-pass 레이아웃 구현: enrichWithIntrinsicSize 통합 + 선택적 재계산 |
 | `BuilderCanvas.tsx` | `apps/builder/src/builder/workspace/canvas/BuilderCanvas.tsx` | ~~SELF_PADDING_TAGS~~ — **Phase 11에서 제거됨** |
@@ -2637,8 +2637,8 @@ S5 (Block Precision):     █████████▓ 95%  (+1%) ← ✅ vert
 S6 (Position):            ██████████ 96%  (+1%) ← ✅ fixed, z-index, stacking context
 ─── Wave 1-2 완료 ─── 목표 달성 (~96%) ───────────────
 
-Wave 3 (정밀도):          ██████████ 97%  (+1%) ← 🔲 baseline 정밀화, overflow:scroll, clamp()
-Wave 4 (컴포넌트):        ██████████ 98%  (+1%) ← 🔲 C등급 13개 → Taffy/Dropflow 위임
+Wave 3 (정밀도):          ██████████ 97%  (+1%) ← ✅ baseline/clamp/matrix/filter 완료. 잔여: grayscale, scroll, var() 토큰
+Wave 4 (컴포넌트):        ██████████ 98%  (+1%) ← ✅ 전체 A~B+ 등급 확인. 잔여: Card 확인, Radio shape
 Wave 5 (StylePanel):      ██████████ 98%+ (+0%) ← 🔲 computeSyntheticStyle, UI 표시 정합성
 Wave 6 (정리):            ██████████ 98%+ (+0%) ← 🔲 dead code, 문서 현행화
 
@@ -2671,7 +2671,7 @@ Spec 렌더링 정합성: ██████████ 100% (62/62 PASS) ← �
 | 1.2 | `calc()` 토크나이저 + 재귀 하강 파서 | `engines/cssValueParser.ts` | 1.1 |
 | 1.3 | `resolveCSSSizeValue()` 구현 (px, %, vh, vw, em, rem, calc) | `engines/cssValueParser.ts` | 1.2 |
 | 1.4 | `parseSize()` → `resolveCSSSizeValue()` 통합 | `engines/utils.ts` | 1.3 |
-| 1.5 | `parseCSSValue()` → `resolveCSSSizeValue()` 통합 | `styleToLayout.ts` | 1.3 |
+| ~~1.5~~ | ~~`parseCSSValue()` → `resolveCSSSizeValue()` 통합~~ | ~~`styleToLayout.ts`~~ — **삭제됨** (W3-6) | 1.3 |
 | 1.6 | `parseCSSSize()` → `resolveCSSSizeValue()` 통합 | `styleConverter.ts` | 1.3 |
 | 1.7 | `parseBorderShorthand()` 구현 | `engines/utils.ts` | 없음 |
 | 1.8 | `MIN_CONTENT(-3)`, `MAX_CONTENT(-4)` sentinel 추가 | `engines/utils.ts` | 없음 |
@@ -2751,7 +2751,7 @@ unit     → 'px' | '%' | 'vh' | 'vw' | 'em' | 'rem' | (unitless)
 | 기존 파서 | 파일 | 변경 |
 |-----------|------|------|
 | `parseSize()` | `engines/utils.ts:86-126` | 내부에서 `resolveCSSSizeValue()` 호출 |
-| `parseCSSValue()` | `styleToLayout.ts:148-184` | 내부에서 `resolveCSSSizeValue()` 호출 |
+| ~~`parseCSSValue()`~~ | ~~`styleToLayout.ts:148-184`~~ | **삭제됨** (W3-6) |
 | `parseCSSSize()` | `styleConverter.ts:150-201` | 내부에서 `resolveCSSSizeValue()` 호출 |
 
 **S1-T3: `min-content`/`max-content` sentinel**
@@ -2905,52 +2905,61 @@ function parseAllBoxShadows(raw: string): DropShadowEffect[] {
 | Phase 6: Position/Stacking | `cssStackingContext.ts` | ✅ 완료 | createsStackingContext, parseZIndex |
 | §6: Self-Rendering | `utils.ts:1046`, `TaffyFlexEngine.ts` | ✅ 완료 | enrichWithIntrinsicSize, 2-pass |
 | Phase 9-12: 엔진 교체 | `engines/index.ts` | ✅ 완료 | Yoga/@pixi/layout 완전 제거 |
-| styleToLayout.ts | `styleToLayout.ts` | ✅ Dead code | 호출부 0건 확인 |
+| ~~styleToLayout.ts~~ | ~~`styleToLayout.ts`~~ | ✅ **삭제됨** | W3-6에서 파일 삭제 완료 (2026-02-19) |
 | Gradient | `fills.ts:54-170`, `specShapeConverter.ts:395-445` | ✅ 완료 | linear/radial/angular/mesh |
 | overflow:hidden | `nodeRenderers.ts` | ✅ 완료 | clipRect 적용 |
 | overflow:scroll/auto | — | ❌ 미구현 | 스크롤 상태 관리 없음 |
 | computeSyntheticStyle | — | ❌ 미구현 | 전용 서비스 파일 없음 |
-| 폰트 메트릭 baseline | — | ⚠️ 근사 | height * 0.8 사용 중 |
-| clamp(), env() | — | ❌ 미구현 | |
-| matrix() transform | — | ❌ 미구현 | |
+| 폰트 메트릭 baseline | `utils.ts:1334` | ✅ 완료 | FontMetrics ascent 기반 (height*0.8 아님), line-height half-leading 모델 |
+| clamp() | `cssValueParser.ts:352` | ✅ 완료 | clamp(min,val,max) + min()/max() 지원 |
+| env() | — | ❌ 미구현 | 낮은 우선순위 |
+| matrix() transform | `styleConverter.ts:661-673` | ✅ 완료 | CSS 2D matrix(a,b,c,d,e,f) → CanvasKit 3x3 변환 |
+| filter 확장 | `styleConverter.ts:790-870` | ✅ 대부분 완료 | brightness/contrast/saturate/hue-rotate ✅, grayscale/invert/sepia ❌ |
+| C등급 컴포넌트 → A/B등급 | `PixiButton.tsx` 등 10개 | ✅ 완료 | 전체 A~B+ 등급, LayoutComputedSizeContext 통합 |
+| SELF_PADDING_TAGS | `BuilderCanvas.tsx` | ✅ 제거됨 | Phase 11에서 제거, 코드 참조 0건 |
 
 ##### Wave 3: CSS 정밀도 완성
 
 > **목표:** Phase 3/4/5 잔여 항목 마무리. 일치율 96% → 97%.
 > **팀:** 은서 (Refactorer)
 > **의존성:** 없음 (독립 실행)
+> **2026-02-19 재검증:** W3-1~W3-4 코드 검증 결과 이미 구현 완료 확인. 잔여 3건만 실행 필요.
 
 | # | 태스크 | 파일 | 난이도 | 상태 |
 |---|--------|------|--------|------|
-| W3-1 | 폰트 메트릭 기반 baseline 정밀화 (`TextMetrics.alphabeticBaseline`) | `engines/utils.ts`, `DropflowBlockEngine.ts` | 중 | 🔲 |
-| W3-2 | `clamp()` 파서 추가 (`resolveCSSSizeValue` 확장) | `cssValueParser.ts` | 낮음 | 🔲 |
-| W3-3 | `matrix(a,b,c,d,e,f)` transform 함수 지원 | `styleConverter.ts` | 낮음 | 🔲 |
-| W3-4 | filter 확장 (`brightness/contrast/saturate/hue-rotate`) | `styleConverter.ts`, `nodeRenderers.ts` | 중 | 🔲 |
+| W3-1 | ~~폰트 메트릭 기반 baseline 정밀화~~ | `engines/utils.ts:1334` | 중 | ✅ 완료 — FontMetrics ascent 기반, VERTICALLY_CENTERED_TAGS, half-leading 모델 |
+| W3-2 | ~~`clamp()` 파서 추가~~ | `cssValueParser.ts:352` | 낮음 | ✅ 완료 — clamp(min,val,max) + min()/max() 다중 인수 |
+| W3-3 | ~~`matrix(a,b,c,d,e,f)` transform 함수~~ | `styleConverter.ts:661-673` | 낮음 | ✅ 완료 — CSS 2D matrix → CanvasKit 3x3 변환 |
+| W3-4 | ~~filter 확장 (brightness/contrast/saturate/hue-rotate)~~ | `styleConverter.ts:790-870` | 중 | ✅ 완료 — ITU-R BT.709 기반 색상 행렬 합성 |
+| W3-4b | ~~filter 잔여: `grayscale()`, `invert()`, `sepia()` 추가~~ | `styleConverter.ts:877-943,1034-1066` | 낮음 | ✅ 완료 — SVG Filter Effects spec 준수, ColorMatrixEffect 합성 |
 | W3-5 | `overflow: scroll/auto` 스크롤 상태 관리 | `nodeRenderers.ts`, Zustand slice | 높음 | 🔲 |
-| W3-6 | `styleToLayout.ts` dead code 정리 | `styleToLayout.ts`, `engines/index.ts` | 낮음 | 🔲 |
+| W3-6 | ~~`styleToLayout.ts` dead code 삭제~~ | ~~`styleToLayout.ts`~~ | 낮음 | ✅ 완료 — 파일 삭제 (2026-02-19) |
 | W3-7 | `var()` + `cssVariableReader.ts` 디자인 토큰 연동 강화 | `cssValueParser.ts`, `cssVariableReader.ts` | 중 | 🔲 |
 
-**Exit Criteria:** baseline 오차 ±1px, clamp() 파서 테스트 통과, FPS 60 유지
+**잔여 태스크:** W3-5, W3-7 (2건)
+**Exit Criteria:** grayscale/invert/sepia 테스트 통과, FPS 60 유지
 
 ##### Wave 4: C등급 컴포넌트 구조 개선 (§7.2)
 
 > **목표:** C등급 13개 컴포넌트를 TagGroup 패턴(A등급)으로 전환. 일치율 97% → 98%.
 > **팀:** 하은 (Implementer) + 시연 (Tester)
 > **의존성:** Wave 3의 W3-1(baseline) 완료 권장
+> **2026-02-19 재검증:** 전체 컴포넌트 A~B+ 등급 확인. LayoutComputedSizeContext 통합 완료. 잔여 1건(W4-9).
 
 | # | 태스크 | 대상 컴포넌트 | 규모 | 상태 |
 |---|--------|-------------|------|------|
-| W4-1 | Button, ToggleButton → Taffy flex 레이아웃 위임 | `PixiButton.tsx`, `PixiToggleButton.tsx` | 중 | 🔲 |
-| W4-2 | Card → flex column 자식 분리 | `PixiCard.tsx` | 중 | 🔲 |
-| W4-3 | Checkbox, Radio → flex row 자식 분리 | `PixiCheckbox.tsx`, `PixiRadio.tsx` | 중 | 🔲 |
-| W4-4 | Badge → inline-flex + min-width | `PixiBadge.tsx` | 소 | 🔲 |
-| W4-5 | Input/TextField, Select → flex column 다중 자식 | `PixiTextField.tsx`, `PixiSelect.tsx` | 대 | 🔲 |
-| W4-6 | Switch, Slider → track+thumb flex | `PixiSwitch.tsx`, `PixiSlider.tsx` | 중 | 🔲 |
-| W4-7 | Breadcrumbs, ProgressBar, Meter → flex row/column | `PixiBreadcrumbs.tsx` 등 | 소~중 | 🔲 |
-| W4-8 | SELF_PADDING_TAGS 제거 (§7.3) | `BuilderCanvas.tsx` | 소 | 🔲 |
+| W4-1 | ~~Button, ToggleButton → Taffy flex 레이아웃 위임~~ | `PixiButton.tsx`, `PixiToggleButton.tsx` | 중 | ✅ A등급 — LayoutComputedSizeContext, 투명 히트 영역만 |
+| W4-2 | Card 높이 계산 엔진 위임 (현재 B등급: measureWrappedTextHeight 자체 계산→Math.max override) | `PixiCard.tsx:171-198` | 중 | 🔲 A등급 승격 필요 |
+| W4-3 | ~~Checkbox, Radio → flex row 자식 분리~~ | `PixiCheckbox.tsx`, `PixiRadio.tsx` | 중 | ✅ B+등급 — Context 우선 + fallback |
+| W4-4 | ~~Badge → inline-flex + min-width~~ | `PixiBadge.tsx` | 소 | ✅ A등급 — Context만 사용, pulsing 애니메이션 |
+| W4-5 | ~~Input/TextField, Select → flex column 다중 자식~~ | `PixiInput.tsx` | 대 | ✅ B+등급 — flexDirection row/column, Context 우선 |
+| W4-6 | ~~Switch, Slider → track+thumb flex~~ | `PixiSwitch.tsx` | 중 | ✅ B등급 — Context 우선 + fallback |
+| W4-7 | ~~Breadcrumbs, ProgressBar, Meter → flex row/column~~ | `PixiBreadcrumbs.tsx` 등 | 소~중 | ✅ A~B등급 — ProgressBar A등급, Breadcrumbs/Meter B등급 |
+| W4-8 | ~~SELF_PADDING_TAGS 제거 (§7.3)~~ | `BuilderCanvas.tsx` | 소 | ✅ Phase 11에서 제거됨, 코드 참조 0건 |
 | W4-9 | Radio circle shape column 변환 수정 (SPEC 잔여 1건) | `ElementSprite.tsx:488-536` | 중 | 🔲 |
 
-**Exit Criteria:** C등급 → B등급 이상 전환, SPEC FAIL 0건, §7 CSS-Web 체크리스트 전체 통과
+**잔여 태스크:** W4-2(Card 확인), W4-9(Radio shape) (2건)
+**Exit Criteria:** SPEC FAIL 0건, §7 CSS-Web 체크리스트 전체 통과
 
 ##### Wave 5: StylePanel computedStyle 동기화 (§7.4)
 
@@ -2980,37 +2989,50 @@ function parseAllBoxShadows(raw: string): DropShadowEffect[] {
 | W6-3 | 변경 이력 v1.43+ 추가 | `docs/ENGINE_UPGRADE.md` | 🔲 |
 | W6-4 | SKILL.md 규칙 현행화 (Wave 4 구조 변경 반영) | `.claude/skills/xstudio-patterns/SKILL.md` | 🔲 |
 
-##### 팀 구성 및 의존성 그래프
+##### 팀 구성 및 의존성 그래프 (2026-02-19 재수립)
+
+> **재검증 결과:** Wave 3-4의 대부분이 이미 구현 완료. 잔여 작업량 대폭 축소.
+> 총 잔여 태스크: Wave 3(4건) + Wave 4(2건) + Wave 5(4건) + Wave 6(4건) = **14건**
 
 ```
-Wave 3 (은서/Refactorer)     Wave 6 (다인/Documenter)
-  │ baseline, clamp,           │ 문서 현행화
-  │ filter, scroll             │ (각 Wave 완료 시 갱신)
-  │                            │
-  ▼                            │
-Wave 4 (하은/Implementer      │
-       + 시연/Tester)          │
-  │ C등급 컴포넌트 →           │
-  │ Taffy/Dropflow 위임        │
-  │                            │
-  ▼                            │
-Wave 5 (하은/Implementer)     │
-  │ computeSyntheticStyle      │
-  │ StylePanel 동기화          │
-  └────────────────────────────┘
-         ↓
-    힐린 (Reviewer) — 전 Wave PR 리뷰
+┌─ Phase A: 즉시 실행 (병렬) ─────────────────────────────────────┐
+│                                                                  │
+│  은서/Refactorer              다인/Documenter                    │
+│  ├─ W3-6 dead code 삭제      ├─ W6-1 완료 항목 체크 갱신 ✅     │
+│  ├─ W3-4b grayscale 등       ├─ W6-2 ENGINE_CHECKLIST 갱신      │
+│  └─ W3-7 var() 토큰 연동     └─ W6-3 변경 이력 추가             │
+│                                                                  │
+│  힐린/Reviewer — PR 리뷰                                        │
+└──────────────────────────────────────────────────────────────────┘
+         │
+         ▼
+┌─ Phase B: 순차 실행 ────────────────────────────────────────────┐
+│                                                                  │
+│  하은/Implementer + 시연/Tester                                  │
+│  ├─ W4-2 Card 확인/수정                                         │
+│  ├─ W4-9 Radio circle shape                                     │
+│  └─ W5-1~W5-4 computeSyntheticStyle + StylePanel 동기화         │
+│                                                                  │
+│  은서/Refactorer                                                 │
+│  └─ W3-5 overflow:scroll/auto (높은 난이도, 선택적)              │
+│                                                                  │
+│  다인/Documenter                                                 │
+│  └─ W6-4 SKILL.md 현행화                                        │
+│                                                                  │
+│  힐린/Reviewer — 전 Wave PR 리뷰                                │
+└──────────────────────────────────────────────────────────────────┘
 ```
 
-##### 실행 순서 및 병렬화
+##### 실행 순서 및 병렬화 (2026-02-19 재수립)
 
 ```
-Week 1-2: Wave 3 (은서) + Wave 6-W6.1 (다인) — 병렬 실행
-Week 3-4: Wave 4-W4.1~W4.3 (하은+시연) + Wave 3 잔여 (은서) — 병렬
-Week 5-6: Wave 4-W4.4~W4.9 (하은+시연) — 컴포넌트 순차 적용
-Week 7:   Wave 5 (하은) — StylePanel 동기화
-Week 8:   Wave 6 마무리 (다인) + 전체 회귀 테스트 (시연)
+Week 1:   Phase A — Wave 3 잔여(은서) + Wave 6-W6.1~W6.3(다인) — 병렬 실행
+Week 2:   Phase B-1 — Wave 4 잔여(하은+시연) + Wave 3-5 scroll(은서, 선택적)
+Week 3:   Phase B-2 — Wave 5(하은) — computeSyntheticStyle + StylePanel
+Week 4:   Wave 6-W6.4(다인) + 전체 회귀 테스트(시연) + 문서 최종 갱신
 ```
+
+> **기존 8주 → 4주로 단축**: Wave 3-4 대부분 완료 확인으로 실행 기간 50% 단축.
 
 ---
 
@@ -3367,7 +3389,6 @@ apps/builder/src/builder/workspace/canvas/layout/
 │   └── index.ts                 # 엔진 디스패처 (selectEngine)
 ├── DirectContainer              # x/y/width/height 직접 설정 (@pixi/react 컴포넌트, BuilderCanvas.tsx에서 사용)
 ├── GridLayout.utils.ts          # Grid 유틸리티
-├── styleToLayout.ts             # 스타일 변환 (dead code — 호출부 0건, 참조용 유지)
 └── index.ts                     # 공개 API
 ```
 
@@ -3891,7 +3912,8 @@ function estimateTextHeight(fontSize: number, lineHeight?: number): number {
 | 2026-02-13 | 1.40 | ToggleButtonGroup alignSelf 강제 설정 제거: styleToLayout.ts에서 ToggleButtonGroup fit-content 워크어라운드의 `alignSelf: 'flex-start'` 2줄 제거 — CSS에서 width: fit-content와 align-self는 독립적 속성이므로, 부모의 align-items (center, flex-end 등)가 정상 적용되도록 수정. flexGrow:0 + flexShrink:0만으로 주축 방향 너비 확장 방지 충분. 동일 패턴 조사: Pixi*.tsx 10개 파일은 내부 렌더링 컴포넌트 자체 레이아웃용으로 수정 불필요, Checkbox/Radio/Switch/Badge/Tag/Chip은 alignSelf 미사용 |
 | 2026-02-17 | 1.41 | Phase 9-10 엔진 교체: @pixi/layout, yoga-layout, @pixi/ui 완전 제거. LayoutContainer → DirectContainer 교체. shouldDelegateToPixiLayout() 삭제, renderWithPixiLayout() 제거 후 renderWithCustomEngine() 단일 경로로 통합 |
 | 2026-02-18 | 1.42 | Phase 11 엔진 전환 완료 및 문서 현행화: (1) 레거시 엔진 삭제 (BlockEngine.ts, FlexEngine.ts, GridEngine.ts), (2) Taffy WASM 기반 TaffyFlexEngine(flex/inline-flex) + TaffyGridEngine(grid/inline-grid) 도입, (3) Dropflow Fork JS 기반 DropflowBlockEngine(block/inline-block/inline/flow-root) 도입, (4) enrichWithIntrinsicSize()로 Yoga measureFunc 대체, (5) cssValueParser.ts의 resolveCSSSizeValue() 통합 CSS 값 파서 도입, (6) cssResolver.ts CSS 캐스케이드 + 상속 도입, (7) 문서 §4-§9 전면 현행화: LayoutContainer→DirectContainer, Yoga→Taffy/Dropflow, @pixi/layout 참조 제거/레거시 표시, §6 파일 구조 갱신, §7 참조 문서에 Taffy/Dropflow 추가 |
-| 2026-02-19 | 1.43 | Wave 3-6 실행 계획 수립: (1) 코드 기반 완료 현황 전수 검증 — cssValueParser/cssResolver/cssStackingContext/TaffyFlexEngine 2-pass/DropflowBlockEngine/gradient/transform/shadow 모두 구현 완료 확인, styleToLayout.ts 호출부 0건(dead code) 확인, (2) §8.2에 Wave 3-6 예상 일치율 추가 (97%→98%+), (3) §8.5 Wave 3-6 실행 계획 신규 — 완료 현황 체크표 + Wave별 태스크 + 팀 구성(은서/하은/시연/다인/힐린) + 의존성 그래프 + 8주 실행 타임라인 |
+| 2026-02-19 | 1.43 | Wave 3-6 실행 계획 수립: (1) 코드 기반 완료 현황 전수 검증 — cssValueParser/cssResolver/cssStackingContext/TaffyFlexEngine 2-pass/DropflowBlockEngine/gradient/transform/shadow 모두 구현 완료 확인, styleToLayout.ts 호출부 0건(dead code) 확인, (2) §8.2에 Wave 3-6 예상 일치율 추가 (97%→98%+), (3) §8.5 Wave 3-6 실행 계획 신규 — 완료 현황 체크표 + Wave별 태스크 + 팀 구성(은서/하은/시연/다인/혜린) + 의존성 그래프 + 8주 실행 타임라인 |
+| 2026-02-19 | 1.44 | Wave 3-6 재검증 및 실행: (1) W3-1~W3-4 코드 검증 결과 이미 완료 확인 — baseline은 FontMetrics ascent 기반(height*0.8 아님), clamp()/min()/max() 구현됨, matrix() transform 구현됨, brightness/contrast/saturate/hue-rotate 구현됨, (2) W4-1~W4-8 전체 A~B+ 등급 확인 — SELF_PADDING_TAGS 이미 제거, LayoutComputedSizeContext 통합, (3) W4-2 Card = B등급 판정(높이 measureWrappedTextHeight 자체 계산), (4) W3-6 styleToLayout.ts dead code 삭제 + 스킬 규칙 파일 참조 정리(4개), (5) W3-4b grayscale/invert/sepia 필터 구현(SVG Filter Effects spec 준수), (6) 실행 계획 재수립 — 8주→4주 단축, 잔여 14건, Phase A(병렬 즉시)+Phase B(순차) 2단계 구성 |
 
 ---
 

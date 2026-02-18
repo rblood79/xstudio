@@ -46,7 +46,6 @@ md: { paddingLeft: 24, paddingRight: 24, borderWidth: 1 }  // 일치
 | `ButtonSpec.sizes[size].borderRadius` | `UI_COMPONENT_DEFAULT_BORDER_RADIUS[size]` (ElementSprite.tsx) | `Button.css [data-size] border-radius` |
 | `spec.sizes[size].height` | `INLINE_FORM_HEIGHTS[tag][size]` (engines/utils.ts) | N/A (Skia에서 Yoga finalHeight 사용, spec height는 참조용) |
 | `spec indicator size` | `INLINE_FORM_INDICATOR_WIDTHS[tag][size]` (engines/utils.ts) | N/A |
-| `spec indicator size` | `INDICATOR_SIZES[tag][size]` (styleToLayout.ts) | N/A |
 
 ## parseBoxModel 기본값
 
@@ -133,7 +132,6 @@ const effectiveBorderRadius = isUIComponent ? 6 : 0;
 - [ ] `pnpm --filter @xstudio/specs build` 실행
 - [ ] `apps/builder/.../skia/specShapeConverter.ts` (색상/크기 변환)
 - [ ] `apps/builder/.../layout/engines/utils.ts` (`INLINE_FORM_HEIGHTS`, `INLINE_FORM_INDICATOR_WIDTHS`)
-- [ ] `apps/builder/.../layout/styleToLayout.ts` (`INDICATOR_SIZES`, `INLINE_FORM_HEIGHTS`)
 - [ ] spec shapes의 모든 시각 속성이 `props.style?.X` 오버라이드를 지원하는지 확인
 - [ ] 배경 roundRect의 height가 `'auto'`인지 확인 (고정 높이 금지)
 

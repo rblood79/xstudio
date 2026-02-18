@@ -875,6 +875,74 @@ function hueRotateMatrix(degrees: number): Float32Array {
 }
 
 /**
+ * grayscale(amount) → 4x5 색상 행렬
+ *
+ * SVG Filter Effects Level 1 사양의 grayscale 행렬을 따른다.
+ * amount=0: 원본, amount=1: 완전 회색조.
+ * https://www.w3.org/TR/filter-effects-1/#grayscaleEquivalent
+ */
+function grayscaleMatrix(amount: number): Float32Array {
+  // amount=0 → 원본(항등), amount=1 → 완전 회색조
+  // s: 원본 유지 비율. s=1이면 saturate(1)과 동일 (원본), s=0이면 모든 채널이 휘도값으로 수렴
+  const s = Math.max(0, Math.min(1, 1 - amount));
+  // ITU-R BT.709 luminance coefficients
+  const rL = 0.2126;
+  const gL = 0.7152;
+  const bL = 0.0722;
+
+  // SVG spec: grayscale(amount) = saturate(1 - amount)
+  // prettier-ignore
+  return Float32Array.of(
+    rL + (1 - rL) * s,  gL - gL * s,         bL - bL * s,         0, 0,
+    rL - rL * s,         gL + (1 - gL) * s,  bL - bL * s,         0, 0,
+    rL - rL * s,         gL - gL * s,         bL + (1 - bL) * s,  0, 0,
+    0,                   0,                   0,                   1, 0,
+  );
+}
+
+/**
+ * invert(amount) → 4x5 색상 행렬
+ *
+ * 각 RGB 채널을 (1 - 2*amount)로 스케일하고 amount 오프셋을 더한다.
+ * amount=0: 원본, amount=1: 완전 반전.
+ */
+function invertMatrix(amount: number): Float32Array {
+  const a = Math.max(0, Math.min(1, amount));
+  // amount=0 → scale=1, offset=0 (원본)
+  // amount=1 → scale=-1, offset=1 (완전 반전: R' = -R + 1)
+  const scale = 1 - 2 * a;
+  const offset = a;
+
+  // prettier-ignore
+  return Float32Array.of(
+    scale, 0,     0,     0, offset,
+    0,     scale, 0,     0, offset,
+    0,     0,     scale, 0, offset,
+    0,     0,     0,     1, 0,
+  );
+}
+
+/**
+ * sepia(amount) → 4x5 색상 행렬
+ *
+ * SVG Filter Effects Level 1 사양의 sepia 행렬을 따른다.
+ * amount=0: 원본, amount=1: 완전 세피아.
+ * https://www.w3.org/TR/filter-effects-1/#sepiaEquivalent
+ */
+function sepiaMatrix(amount: number): Float32Array {
+  // s: 원본 유지 비율. s=1이면 항등(원본), s=0이면 완전 세피아
+  const s = Math.max(0, Math.min(1, 1 - amount));
+
+  // prettier-ignore
+  return Float32Array.of(
+    0.393 + 0.607 * s,  0.769 - 0.769 * s,  0.189 - 0.189 * s,  0, 0,
+    0.349 - 0.349 * s,  0.686 + 0.314 * s,  0.168 - 0.168 * s,  0, 0,
+    0.272 - 0.272 * s,  0.534 - 0.534 * s,  0.131 + 0.869 * s,  0, 0,
+    0,                  0,                  0,                   1, 0,
+  );
+}
+
+/**
  * CSS filter 문자열에서 모든 필터 함수를 파싱하여 EffectStyle 배열로 변환한다.
  *
  * 지원 함수:
@@ -883,6 +951,9 @@ function hueRotateMatrix(degrees: number): Float32Array {
  * - contrast(X) → ColorMatrixEffect
  * - saturate(X) → ColorMatrixEffect
  * - hue-rotate(Xdeg) → ColorMatrixEffect
+ * - grayscale(X) → ColorMatrixEffect
+ * - invert(X) → ColorMatrixEffect
+ * - sepia(X) → ColorMatrixEffect
  *
  * 여러 color matrix 함수가 있으면 하나의 합성 행렬로 병합하여
  * 단일 ColorMatrixEffect로 출력한다 (GPU pass 최소화).
@@ -952,8 +1023,44 @@ function parseCSSFilter(filter: string): EffectStyle[] {
         break;
       }
 
+      case 'grayscale': {
+        const val = parseFilterNumericArg(arg, 1);
+        if (val !== null) {
+          // 클램핑은 grayscaleMatrix 내부에서 처리
+          const mat = grayscaleMatrix(val);
+          composedMatrix = composedMatrix
+            ? multiplyColorMatrix(mat, composedMatrix)
+            : mat;
+        }
+        break;
+      }
+
+      case 'invert': {
+        const val = parseFilterNumericArg(arg, 1);
+        if (val !== null) {
+          // 클램핑은 invertMatrix 내부에서 처리
+          const mat = invertMatrix(val);
+          composedMatrix = composedMatrix
+            ? multiplyColorMatrix(mat, composedMatrix)
+            : mat;
+        }
+        break;
+      }
+
+      case 'sepia': {
+        const val = parseFilterNumericArg(arg, 1);
+        if (val !== null) {
+          // 클램핑은 sepiaMatrix 내부에서 처리
+          const mat = sepiaMatrix(val);
+          composedMatrix = composedMatrix
+            ? multiplyColorMatrix(mat, composedMatrix)
+            : mat;
+        }
+        break;
+      }
+
       default:
-        // 지원하지 않는 함수는 무시 (grayscale, invert 등은 향후 확장)
+        // 지원하지 않는 필터 함수는 무시
         break;
     }
   }

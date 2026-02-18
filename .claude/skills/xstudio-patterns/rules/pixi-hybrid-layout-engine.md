@@ -331,7 +331,7 @@ const INLINE_FORM_HEIGHTS: Record<string, Record<string, number>> = {
 | row (기본) | indicator + gap + textWidth | `INLINE_FORM_HEIGHTS[tag][size]` |
 | column | max(indicator, textWidth) | indicator + gap + textLineHeight |
 
-동일한 분기가 `styleToLayout.ts`(Yoga 경로)와 `engines/utils.ts`(DropflowBlockEngine 경로) **양쪽**에 적용되어야 합니다.
+이 분기는 `engines/utils.ts`의 `enrichWithIntrinsicSize()`에 통합되어 있으며, DropflowBlockEngine + TaffyFlexEngine **양쪽**에서 공유됩니다.
 
 ### Spec shapes border-radius 그룹 위치 처리
 

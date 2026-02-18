@@ -149,7 +149,7 @@ const specNode = specShapesToSkia(shapes, 'light', finalWidth, specHeight);
 
 ### BlockEngine 경로 텍스트 줄바꿈 높이 (v1.15.1, 2026-02-15)
 
-부모가 implicit block(display 미지정)일 때 **BlockEngine 경로**를 사용하며, `parseBoxModel` → `calculateContentHeight`로 높이를 계산합니다. `styleToLayout`의 `minHeight`는 이 경로에서 사용되지 않습니다.
+부모가 implicit block(display 미지정)일 때 **BlockEngine 경로**를 사용하며, `parseBoxModel` → `calculateContentHeight`로 높이를 계산합니다.
 
 **문제**: `parseBoxModel`이 부모의 `availableWidth`를 `calculateContentHeight`에 전달하여, Button(width:80px)인데 부모 너비(400px)로 텍스트 줄바꿈을 판단 → 줄바꿈 미발생으로 계산 → 높이 미확장 → 아래 요소 겹침
 
@@ -174,24 +174,15 @@ const contentHeight = calculateContentHeight(element, elementAvailableWidth);
 
 | 경로 | 부모 조건 | 높이 반영 | 파일 |
 |------|----------|----------|------|
-| Flex 경로 | `display:flex` 명시적 | `styleToLayout` → `layout.height` / `minHeight` → Yoga | `styleToLayout.ts` |
+| Flex 경로 | `display:flex` 명시적 | `enrichWithIntrinsicSize` → TaffyFlexEngine | `engines/utils.ts` + `TaffyFlexEngine.ts` |
 | BlockEngine 경로 | display 미지정 | `parseBoxModel` → `calculateContentHeight` | `engines/utils.ts` |
 
 ### Button padding:0 높이 축소 (v1.15.2, 2026-02-15)
 
 Button에 `paddingTop: 0, paddingBottom: 0`을 설정해도 높이가 변하지 않는 문제를 수정합니다.
 
-**원인 1 — Flex 경로 `height: 'auto'` 자기 강화**:
-Button은 Yoga 리프 노드이고 `stripSelfRenderedProps`로 padding/border가 제거되어, `height: 'auto'`는 0으로 계산 → 이전 프레임 크기(100px)가 유지됨.
-
-**해결**: `styleToLayout`에서 Button `layout.height`를 명시적으로 계산:
-```typescript
-// styleToLayout.ts — Button 높이 명시적 설정
-const paddingY = toNum(style.paddingTop) ?? toNum(style.padding) ?? bp.py;
-const borderW = toNum(style.borderWidth) ?? 1;
-const lineHeight = fontSize * 1.2;
-layout.height = paddingY * 2 + lineHeight + borderW * 2;
-```
+**원인 1 — (레거시, 해결됨)** Flex 경로 `height: 'auto'` 자기 강화:
+Yoga 시절 `styleToLayout.ts`에서 Button `layout.height`를 명시적으로 계산하여 해결했으나, 현재는 `enrichWithIntrinsicSize()` (`engines/utils.ts`)에서 통합 처리됩니다. `styleToLayout.ts`는 W3-6에서 삭제 완료.
 
 **원인 2 — BlockEngine `MIN_BUTTON_HEIGHT`가 인라인 padding 무시**:
 `MIN_BUTTON_HEIGHT = 24`의 content-box 변환에서 `sizeConfig.paddingY`(기본값)만 사용하여 인라인 padding=0 미반영.
