@@ -831,7 +831,7 @@ export function calculateChildrenLayout(
 // - Block: CSS 명세 준수 수직 쌓임 + margin collapse
 // - Inline-Block: layoutInlineRun() 2-pass 에뮬레이션
 // - Flow-Root: BFC 생성 (margin collapse 차단)
-// - enrichWithIntrinsicSize(): 리프 UI 컴포넌트 intrinsic size 정적 주입
+// - enrichWithIntrinsicSize(): 리프 UI 컴포넌트 intrinsic size 정적 주입 (§6.4 상세)
 ```
 
 > **레거시 BlockEngine 참조:** Phase 9-11에서 제거된 자체 구현 `BlockEngine.ts`는 margin collapse, inline-block 가로 배치, 빈 블록 self-collapse를 직접 구현했으나, CSS 명세와의 괴리(float, replaced elements, BFC 미지원)로 인해 Dropflow Fork 기반 `DropflowBlockEngine`으로 교체되었다.
@@ -986,7 +986,7 @@ Phase 11 (레거시 엔진 삭제, Taffy WASM + Dropflow Fork 전환) ✅
 ├── TaffyFlexEngine (flex/inline-flex) — Taffy WASM
 ├── TaffyGridEngine (grid/inline-grid) — Taffy WASM
 ├── DropflowBlockEngine (block/inline-block/inline/flow-root) — Dropflow Fork JS
-├── enrichWithIntrinsicSize() — 리프 UI 컴포넌트 intrinsic size 주입
+├── enrichWithIntrinsicSize() — 리프 UI 컴포넌트 intrinsic size 주입 (§6.4 상세)
 ├── DirectContainer — x/y/width/height 직접 설정
 └── cssResolver.ts — CSS 캐스케이드 + 상속
 
@@ -3764,17 +3764,17 @@ function estimateTextHeight(fontSize: number, lineHeight?: number): number {
 ## 참조
 
 ### 내부 참조
-- [PIXI_LAYOUT.md](./legacy/PIXI_LAYOUT.md) - @pixi/layout 마이그레이션 기록 (역사적 참조, Phase 9-10에서 제거됨)
-- [PIXI_WEBGL.md](./reference/components/PIXI_WEBGL.md) - WebGL 캔버스 아키텍처
-- [GridLayout.utils.ts](../apps/builder/src/builder/workspace/canvas/layout/GridLayout.utils.ts) - Grid 계산 로직
+- [PIXI_LAYOUT.md](./legacy/PIXI_LAYOUT.md) — @pixi/layout 마이그레이션 기록 (역사적 참조, Phase 9-10에서 제거됨)
+- [PIXI_WEBGL.md](./reference/components/PIXI_WEBGL.md) — WebGL 캔버스 아키텍처
+- [GridLayout.utils.ts](../apps/builder/src/builder/workspace/canvas/layout/GridLayout.utils.ts) — Grid 계산 로직
 - [ADR-003: Canvas Rendering](./adr/003-canvas-rendering.md) — PixiJS + Skia 이중 렌더러
-- [WASM.md](./WASM.md) - XStudio WASM 렌더링 아키텍처 전환 계획 (Phase 5-6)
-- [PENCIL_APP_ANALYSIS.md](./PENCIL_APP_ANALYSIS.md) - Pencil Desktop 아키텍처 분석 (renderSkia() 패턴 원본, §11)
-- [PENCIL_VS_XSTUDIO_RENDERING.md](./PENCIL_VS_XSTUDIO_RENDERING.md) - Pencil vs XStudio 렌더링 아키텍처 비교
+- [WASM.md](./WASM.md) — XStudio WASM 렌더링 아키텍처 전환 계획 (Phase 5-6)
+- [PENCIL_APP_ANALYSIS.md](./PENCIL_APP_ANALYSIS.md) — Pencil Desktop 아키텍처 분석 (renderSkia() 패턴 원본, §11)
+- [PENCIL_VS_XSTUDIO_RENDERING.md](./PENCIL_VS_XSTUDIO_RENDERING.md) — Pencil vs XStudio 렌더링 아키텍처 비교
 
 ### 외부 참조 (레이아웃 엔진)
-- [Taffy Layout](https://github.com/DioxusLabs/taffy) - Taffy WASM Flexbox/Grid 레이아웃 엔진 (현재 flex/grid 담당)
-- Dropflow Fork (`packages/layout-flow`) - Block/Inline-Block/Inline/Flow-Root 레이아웃 엔진 (현재 block 계열 담당)
+- [Taffy Layout](https://github.com/DioxusLabs/taffy) — Taffy WASM Flexbox/Grid 레이아웃 엔진 (현재 flex/grid 담당)
+- Dropflow Fork (`packages/layout-flow`) — Block/Inline-Block/Inline/Flow-Root 레이아웃 엔진 (현재 block 계열 담당)
 - ~~[Yoga Layout](https://yogalayout.dev/)~~ — 제거됨 (Phase 9-10)
 - ~~[@pixi/layout](https://layout.pixijs.io/)~~ — 제거됨 (Phase 9-10)
 
@@ -3783,8 +3783,8 @@ function estimateTextHeight(fontSize: number, lineHeight?: number): number {
 - [CSS Box Sizing Level 3](https://www.w3.org/TR/css-sizing-3/) — fit-content, min-content, max-content
 - [CSS Grid Layout Level 1](https://www.w3.org/TR/css-grid-1/) — Grid 명세
 - [CSS Values and Units Level 4](https://www.w3.org/TR/css-values-4/) — calc(), min(), max(), clamp()
-- [CSS Visual Formatting Model](https://www.w3.org/TR/CSS2/visuren.html) - CSS 명세
-- [CSS Box Model](https://www.w3.org/TR/CSS2/box.html) - 박스 모델 명세
+- [CSS Visual Formatting Model](https://www.w3.org/TR/CSS2/visuren.html) — CSS 명세
+- [CSS Box Model](https://www.w3.org/TR/CSS2/box.html) — 박스 모델 명세
 - [Block Formatting Context - MDN](https://developer.mozilla.org/en-US/docs/Web/CSS/Guides/Display/Block_formatting_context) - BFC 상세
 - [Mastering Margin Collapsing - MDN](https://developer.mozilla.org/en-US/docs/Web/CSS/Guides/Box_model/Margin_collapsing) - Margin Collapse
 - [The Rules of Margin Collapse - Josh Comeau](https://www.joshwcomeau.com/css/rules-of-margin-collapse/) - 실용적 가이드

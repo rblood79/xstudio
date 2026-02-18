@@ -161,8 +161,6 @@ export interface ClickModifiers {
 
 export interface ElementSpriteProps {
   element: Element;
-  /** @deprecated 더 이상 사용하지 않음. 각 ElementSprite가 자체적으로 선택 상태를 구독합니다. */
-  isSelected?: boolean;
   /** 레이아웃 계산된 위치 (있으면 style보다 우선) */
   layoutPosition?: LayoutPosition;
   onClick?: (elementId: string, modifiers?: ClickModifiers) => void;
@@ -610,7 +608,6 @@ function rearrangeShapesForColumn(
  */
 export const ElementSprite = memo(function ElementSprite({
   element,
-  isSelected: isSelectedProp, // @deprecated - fallback용으로만 사용
   layoutPosition,
   onClick,
   onDoubleClick,
@@ -631,7 +628,7 @@ export const ElementSprite = memo(function ElementSprite({
   // 🚀 O(1) 최적화: Set.has() 사용 (includes() 대신)
   const isSelected = useStore((state) =>
     state.selectedElementIdsSet.has(elementId)
-  ) ?? isSelectedProp ?? false;
+  ) ?? false;
 
   // 부모 요소 확인 (CheckboxGroup 자식 여부 판단용)
   // 🚀 최적화: elements 배열 대신 elementsMap 사용 (O(1) 조회)
@@ -1036,7 +1033,7 @@ export const ElementSprite = memo(function ElementSprite({
             const flexDir = (elementStyle.flexDirection as string) || '';
             const isColumn = flexDir === 'column' || flexDir === 'column-reverse';
 
-            // 실제 레이아웃 높이 사용: Yoga가 padding/content 포함하여 계산한 높이
+            // 실제 레이아웃 높이 사용: 레이아웃 엔진이 padding/content 포함하여 계산한 높이
             // → baseline='middle' 텍스트가 CSS와 동일하게 중앙 배치됨
             // → 사용자의 paddingTop/paddingBottom 변경이 자동 반영됨
             let specHeight = finalHeight;
@@ -1871,13 +1868,13 @@ export const ElementSprite = memo(function ElementSprite({
 
     // 레이아웃 컨테이너 (Phase 11 B2.5)
     // Flex/Grid 컨테이너도 BoxSprite로 렌더링 (배경/테두리 표시)
-    // 실제 레이아웃 계산은 BuilderCanvas에서 @pixi/layout으로 처리
+    // 실제 레이아웃 계산은 BuilderCanvas의 renderWithCustomEngine()에서 Taffy/Dropflow로 처리
     case 'flex':
     case 'grid':
       if (childElements && childElements.length > 0 && renderChildElement) {
         return (
           <>
-            {/* Non-layout 히트 영역: 컨테이너 원점(0,0)에 전체 Yoga 크기(padding 포함) 커버 */}
+            {/* Non-layout 히트 영역: 컨테이너 원점(0,0)에 전체 레이아웃 크기(padding 포함) 커버 */}
             <pixiGraphics
               draw={drawContainerHitRect}
               eventMode="static"
