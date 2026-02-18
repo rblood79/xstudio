@@ -171,9 +171,9 @@ Element props  ──→  skiaNodeData 생성  ──→  글로벌 레지스트
 ```
 
 > **레이아웃 계층 분리**: Spec은 컴포넌트 **내부** Shape 배치를 정의하고,
-> **외부** 컨테이너 간 배치는 Yoga 레이아웃 엔진이 담당합니다.
-> React 경로는 브라우저 CSS 레이아웃을, Canvas 경로는 Yoga가 계산한 절대 px 값을 CanvasKit이 사용합니다.
-> 자세한 내용은 [LAYOUT_REQUIREMENTS.md](./LAYOUT_REQUIREMENTS.md)를 참조하세요.
+> **외부** 컨테이너 간 배치는 Taffy/Dropflow 레이아웃 엔진이 담당합니다.
+> React 경로는 브라우저 CSS 레이아웃을, Canvas 경로는 Taffy/Dropflow가 계산한 절대 px 값을 CanvasKit이 사용합니다.
+> 자세한 내용은 [ENGINE_UPGRADE.md](./ENGINE_UPGRADE.md)를 참조하세요.
 
 <details>
 <summary>Phase 1-4 레거시 데이터 흐름 (PixiJS 중심)</summary>

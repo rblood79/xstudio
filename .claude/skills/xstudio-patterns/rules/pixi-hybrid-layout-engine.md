@@ -367,4 +367,4 @@ const borderRadius = size.borderRadius; // [r,0,0,r] 대신 항상 r
 
 **필수 조건**: `specShapeConverter.ts`의 `resolveRadius()`가 `number | [number, number, number, number]` 양쪽 타입을 지원해야 함 (현재 지원 확인됨).
 
-> **참고**: 레이아웃 엔진 상세 구현은 [LAYOUT_REQUIREMENTS.md](../../../../docs/LAYOUT_REQUIREMENTS.md) 참조.
+> **참고**: 레이아웃 엔진 상세 구현은 [ENGINE_UPGRADE.md](../../../../docs/ENGINE_UPGRADE.md) 참조.
