@@ -12,6 +12,7 @@ export {
   selectedElementAtom,
   inlineStyleAtom,
   computedStyleAtom,
+  syntheticComputedStyleAtom,
 
   // Helper functions
   getStyleValueFromAtoms,
