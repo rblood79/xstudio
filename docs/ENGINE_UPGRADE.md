@@ -120,15 +120,15 @@ TaffyFlexEngine/TaffyGridEngine(Taffy WASM) + DropflowBlockEngine(Dropflow Fork)
 |------|------|------|
 | `display: inline` (완전한 인라인 텍스트 흐름, IFC) | 기본 inline 지원됨 (DropflowBlockEngine) | 완전한 Inline Formatting Context (line breaking, bidi 등)는 미지원 |
 | `float` 고급 시나리오 (`shape-outside` 등) | 기본 float 지원됨 (DropflowBlockEngine) | `shape-outside` 등 고급 float 시나리오는 미지원 |
-| `vertical-align` (baseline 정렬) | Phase 6에서 지원됨 | 폰트 메트릭 계산 기반 지원 완료. P2 이후 정밀화 검토 |
+| `vertical-align` (baseline 정렬) | ⚠️ 부분 지원 | `top/middle/bottom` 지원, `baseline`은 근사 처리(정밀화 잔여) |
 | `writing-mode` (세로 쓰기) / RTL | 미지원 | 노코드 빌더 1차 범위 외 |
 | CSS 단위 `rem`, `em`, `calc()` | ✅ 구현 완료 | `resolveCSSSizeValue()`로 지원 |
 | Grid `repeat()`, `minmax()`, auto-placement | ✅ 지원 | TaffyGridEngine에서 지원 |
 | `z-index` / stacking context | ✅ 지원 | Phase 6에서 구현 완료 |
 | `position: sticky` | 미지원 | 스크롤 컨텍스트 필요, 복잡도 높음. z-index paint order 정합성을 위해 stacking context 생성 규칙만 반영 |
 | `white-space` 상호작용 | 기본 지원 | 텍스트 레이아웃 엔진 필요. Phase 4에서 기본 지원 |
-| `inherit`, `initial`, `unset` 키워드 | ✅ 지원 | cssResolver.ts에서 CSS 캐스케이드 + 상속 지원 |
-| 폰트 메트릭 기반 baseline 계산 | Phase 6에서 지원됨 | 텍스트 측정 엔진 기반 구현 완료 |
+| `inherit`, `initial`, `unset` 키워드 | ⚠️ 부분 지원 | `inherit` 유틸은 존재하나, `initial`/`unset` 및 엔진 통합 경로는 미완료 |
+| 폰트 메트릭 기반 baseline 계산 | ⚠️ 부분 지원 | baseline은 현재 middle 근사. 폰트 메트릭 기반 정밀 baseline은 미완료 |
 | CSS `@media` queries | 미지원 | 반응형은 빌더의 브레이크포인트 시스템으로 처리 |
 | CSS `transition` / `animation` | 미지원 | 캔버스 에디터에서는 정적 레이아웃만 표시 (프리뷰에서 지원) |
 | CSS `@container` queries | 미지원 | CSS Containment Level 3, 복잡도 매우 높음 |
@@ -389,7 +389,7 @@ console.log(getComputedStyle(button).display); // "block" (blockified!)
 **✅ 해결됨**: DropflowBlockEngine의 `layoutInlineRun` 2-pass 알고리즘이 inline-block 가로 배치와 줄바꿈을 네이티브로 처리합니다. 레거시 `flexDirection: 'row'` + `flexWrap: 'wrap'` 워크어라운드는 제거됨.
 
 **남은 제한사항**:
-- `vertical-align` baseline 정렬은 P2 (현재 top 정렬)
+- `vertical-align` baseline 정렬은 부분 지원 (현재 middle 근사, 정밀 baseline 계산 잔여)
 - 완전한 inline 요소와의 혼합은 부분 지원
 
 #### 2.4.4 Inline vs Inline-Block 차이점 (참고)
@@ -732,7 +732,7 @@ import type { LayoutEngine, ComputedLayout, LayoutContext } from './LayoutEngine
 import { DropflowBlockEngine } from './DropflowBlockEngine';
 import { TaffyFlexEngine } from './TaffyFlexEngine';
 import { TaffyGridEngine } from './TaffyGridEngine';
-import { isRustWasmReady } from '../../../../../utils/featureFlags';
+import { isRustWasmReady } from '../../wasm-bindings/rustWasm';
 
 // Re-export
 export type { LayoutEngine, ComputedLayout, LayoutContext };
@@ -880,7 +880,7 @@ export function calculateChildrenLayout(
 ### 4.1 레거시 구조 (Phase 1-8, 제거됨)
 
 > Phase 9-10에서 @pixi/layout이 제거되면서 `LayoutContainer` 기반 패턴은 더 이상 사용되지 않는다.
-> 레거시 구조의 상세 배경과 제거 경위는 [ADR-003 §Alternatives Considered](./adr/003-canvas-rendering.md) 참조.
+> 레거시 구조의 상세 배경과 제거 경위는 [ADR-003](./adr/003-canvas-rendering.md) 참조.
 >
 > **핵심 변경:** `<LayoutContainer layout={containerLayout}>` → `<DirectContainer x={layout.x} y={layout.y} ...>`
 
@@ -906,13 +906,13 @@ const renderTree = useCallback((parentId: string | null) => {
   const engine = selectEngine(display);
 
   // 모든 display 타입에 대해 엔진이 직접 레이아웃 계산
-  return renderWithEngine(engine, parent, children);
+  return renderWithCustomEngine(engine, parent, children);
 }, [/* deps */]);
 
 /**
  * 엔진이 계산한 절대 위치를 DirectContainer로 적용
  */
-const renderWithEngine = (
+const renderWithCustomEngine = (
   engine: LayoutEngine,
   parent: Element | undefined,
   children: Element[]
@@ -1093,7 +1093,7 @@ Store → ElementSprite → useResolvedElement($-- 변수 resolve 포함)
 | PixiJS SelectionBox 컴포넌트 | Skia `selectionRenderer.ts` 직접 렌더링 | Box/Handle/Lasso 모두 Skia |
 | 없음 | AI 시각 피드백 (`aiEffects.ts`) Skia 오버레이 | generating + flash 효과 |
 | 없음 | AABB 뷰포트 컬링 — 화면 밖 노드 스킵 | `buildSkiaTreeHierarchical` + `renderNode` |
-| `renderWithPixiLayout()` / `renderWithCustomEngine()` (레거시, 제거됨) | `renderWithEngine()` 단일 경로 — 렌더링은 SkiaOverlay가 담당 | §4.2 현재 구조 참조 |
+| `renderWithPixiLayout()` (레거시, 제거됨) | `renderWithCustomEngine()` 단일 경로 — 렌더링은 SkiaOverlay가 담당 | §4.2 현재 구조 참조 |
 
 #### 4.4.4 레이아웃 → 렌더링 데이터 흐름
 
@@ -1132,7 +1132,7 @@ useSkiaNode(element.id, skiaNodeData);
 ```
 
 > **주의:** Phase 11 이후 `LayoutContainer`는 `DirectContainer`로 교체되었고,
-> `renderWithPixiLayout`/`renderWithCustomEngine`은 `renderWithEngine` 단일 경로로 통합되었다.
+> `renderWithPixiLayout`은 제거되었다. 현재 BuilderCanvas는 `renderWithCustomEngine` 단일 경로를 사용한다.
 > 레이아웃 계산은 Taffy/Dropflow 엔진이 수행하고, CanvasKit은 계산된 결과를 받아 렌더링한다.
 
 #### 4.4.5 Phase 6 이중 Surface 캐싱 아키텍처
@@ -1232,7 +1232,7 @@ Phase 1 이전에는 CSS 값 파싱이 3개 파일에 독립적으로 구현되�
 
 #### 5.1.1 `calc()` 파서
 
-현재 `parseSize()`와 `parseCSSValue()`는 `calc()` 를 완전히 무시한다. CSS에서 가장 빈번하게 사용되는 동적 값 계산 함수이므로 최우선 지원 대상이다.
+Phase 1 이전에는 `parseSize()`와 `parseCSSValue()`가 `calc()`를 무시했다. 현재는 `resolveCSSSizeValue()` 통합 경로에서 처리한다.
 
 **지원 범위:**
 
@@ -1278,7 +1278,7 @@ function resolveCSSSizeValue(
 
 #### 5.1.2 `em` 단위 완전 지원
 
-현재 `styleConverter.ts`에서만 `em` 부분 지원. `engines/utils.ts`에서는 미지원.
+Phase 1 이전에는 `styleConverter.ts`에서만 `em`이 부분 지원됐고 `engines/utils.ts`에서는 미지원이었다. 현재는 통합 파서 경로에서 처리한다.
 
 **구현:** `CSSValueContext.fontSize`를 상속 체인으로 전파
 
@@ -1402,8 +1402,7 @@ CSS에서 일부 속성은 부모로부터 자동 상속된다 (color, font-*, l
 const INHERITABLE_PROPERTIES = new Set([
   'color', 'fontSize', 'fontFamily', 'fontWeight', 'fontStyle',
   'lineHeight', 'letterSpacing', 'textAlign', 'textTransform',
-  'visibility', 'cursor', 'wordBreak', 'overflowWrap',
-  'whiteSpace', 'direction', 'textIndent',
+  'visibility', 'wordBreak', 'overflowWrap', 'whiteSpace',
 ]);
 ```
 
@@ -1421,7 +1420,7 @@ resolveStyle(element, parentComputedStyle):
   4. ComputedStyle 반환
 ```
 
-**파일:** `engines/cssResolver.ts` (부분 구현 — `inherit`, `var()` 기본 지원 완료, `initial` 값 전파 OPEN)
+**파일:** `engines/cssResolver.ts` (부분 구현 — `inherit` 및 기본 상속 속성 해석 유틸 제공, `initial`/`unset` 처리와 엔진 통합은 OPEN)
 
 ```typescript
 interface ComputedStyle {
@@ -1435,13 +1434,12 @@ interface ComputedStyle {
 }
 
 function resolveStyle(
-  element: Element,
+  style: Record<string, unknown> | undefined,
   parentComputed: ComputedStyle,
-  context: CSSValueContext
 ): ComputedStyle;
 ```
 
-**통합 지점:** `DropflowBlockEngine.calculate()`, `TaffyFlexEngine/TaffyGridEngine 스타일 resolve` 에서 자식 순회 시 `resolveStyle()` 호출하여 computed style 전파
+**통합 지점(예정):** `DropflowBlockEngine.calculate()`, `TaffyFlexEngine/TaffyGridEngine` 스타일 resolve 경로에서 `resolveStyle()`를 호출하도록 연동 예정
 
 #### 5.3.2 CSS 변수 (`var()`)
 
@@ -1585,6 +1583,10 @@ CSS의 `vertical-align`은 inline/inline-block 요소의 수직 정렬을 제어
 > **목표:** Skia 렌더러의 시각 효과 범위 확대
 >
 > **일치율 영향:** Visual 80% → 90%
+>
+> **§5.5 구현 상태 요약:**
+> - ✅ 완료: §5.5.0 (타입/파이프라인), §5.5.1 (multi box-shadow), §5.5.2 (CSS transform), §5.5.3 (CSS gradient), §5.5.5 (shadow 렌더 순서), §5.5.6 (배열 borderRadius), §5.5.7 (dashed/dotted border)
+> - 미구현: §5.5.4 (overflow: scroll/auto)
 
 #### 5.5.0 타입/파이프라인 선행 작업 (✅ 완료)
 
@@ -1692,7 +1694,7 @@ paint.setShader(shader);
 2. `specShapeConverter.ts`의 `case 'gradient'`에서 Spec shape를 CanvasKit gradient 노드로 변환
 3. Spec 구조 `{ type: 'gradient', gradient: 'linear-gradient(...)', ...rect }`를 `MakeLinearGradient`/`MakeTwoPointConicalGradient`로 매핑
 
-#### 5.5.4 `overflow: scroll` / `auto`
+#### 5.5.4 `overflow: scroll` / `auto` (미구현)
 
 현재 `overflow: hidden`은 Skia 클리핑이 구현되어 있고, `overflow: scroll/auto`의 스크롤 상태/스크롤바 동작은 미구현이다.
 
@@ -1777,7 +1779,7 @@ function makeSkiaRRect(
 }
 ```
 
-#### 5.5.7 `border-style: dashed / dotted`
+#### 5.5.7 `border-style: dashed / dotted` (✅ 구현 완료)
 
 **현상:** `nodeRenderers.ts`에서 `border-style`이 `solid`만 지원되어, `dashed`/`dotted` 테두리가 실선으로 렌더링된다.
 
@@ -1876,30 +1878,32 @@ renderNode(node):
 > **배경:** Button(width:auto/fit-content/100px, height:auto)에서 텍스트 오버플로 시 높이 자동 조절이 부모의 display, flex-direction, align-items 등에 따라 CSS와 다르게 동작하는 문제 발견
 
 > **아키텍처 현황 (Phase 11 이후):** Yoga/@pixi/layout이 완전히 제거되었다. `enrichWithIntrinsicSize()` + `DropflowBlockEngine`이 Yoga measureFunc를 대체하여 리프 UI 컴포넌트의 intrinsic size를 계산한다. 단, `styleToLayout.ts`에는 Yoga 시절에 작성되어 현재 TaffyFlexEngine 경로에서 활용 중인 **레거시 크기 계산 패턴**(`SELF_RENDERING_BTN_TAGS`, `BUTTON_PADDING` 등)이 남아 있어, `enrichWithIntrinsicSize()` 패턴으로의 통합 정리가 필요하다.
+>
+> **용어 참고:** 본 절에서 "Yoga 시절"이란 Phase 1-8의 `@pixi/layout(Yoga)` 기반 아키텍처를 의미한다. Phase 9-10에서 Yoga/@pixi/layout은 완전히 제거되었으며, 현재 "Yoga 시절 코드"는 `styleToLayout.ts`에 남아 TaffyFlexEngine 경로에서 활용 중인 레거시 패턴만을 지칭한다.
 
 ### 6.1 문제 정의
 
-Self-Rendering 컴포넌트(Button, Card, ToggleButton 등)는 `SELF_PADDING_TAGS`로 지정되어 `stripSelfRenderedProps()`가 padding/border를 제거한다. Yoga가 제거된 현재, `DropflowBlockEngine`의 `enrichWithIntrinsicSize()`가 리프 UI 컴포넌트에 intrinsic width/height를 주입하는 방식으로 대체되었다. 그러나 `styleToLayout.ts`에는 Yoga 시절에 작성되어 **현재 TaffyFlexEngine 경로에서 능동적으로 사용 중인** 레거시 크기 계산 패턴(`SELF_RENDERING_BTN_TAGS`, `SELF_RENDERING_BUTTON_TAGS`, `BUTTON_PADDING`, `BTN_PAD`)이 남아 있다. 이 코드들은 `enrichWithIntrinsicSize()` 패턴으로 통합 정리가 필요하다.
+Self-Rendering 컴포넌트(Button, Card, ToggleButton 등)는 과거 `SELF_PADDING_TAGS`로 지정되어 `stripSelfRenderedProps()`가 padding/border를 제거했다 (Phase 11에서 `BuilderCanvas.tsx`에서 제거됨, `styleToLayout.ts` 주석에서만 참조). Yoga가 제거된 현재, `DropflowBlockEngine`의 `enrichWithIntrinsicSize()`가 리프 UI 컴포넌트에 intrinsic width/height를 주입하는 방식으로 대체되었다. 그러나 `styleToLayout.ts`에는 Yoga 시절에 작성되어 **현재 TaffyFlexEngine 경로에서 능동적으로 사용 중인** 레거시 크기 계산 패턴(`SELF_RENDERING_BTN_TAGS`, `SELF_RENDERING_BUTTON_TAGS`, `BUTTON_PADDING`, `BTN_PAD`)이 남아 있다. 이 코드들은 `enrichWithIntrinsicSize()` 패턴으로 통합 정리가 필요하다.
 
 **주요 변수/함수 위치 참조:**
 
 | 변수/함수 | 파일 | 행 |
 |-----------|------|-----|
-| `SELF_PADDING_TAGS` | `BuilderCanvas.tsx` | 642-649 |
-| `stripSelfRenderedProps()` | `BuilderCanvas.tsx` | 662-670 |
-| `SELF_RENDERING_BTN_TAGS` | `styleToLayout.ts` | 362 |
-| `SELF_RENDERING_BUTTON_TAGS` | `styleToLayout.ts` | 602 |
-| `BUTTON_PADDING` (height용) | `styleToLayout.ts` | 610-616 |
-| `BTN_PAD` (fit-content width용) | `styleToLayout.ts` | 366-368 |
+| ~~`SELF_PADDING_TAGS`~~ | ~~`BuilderCanvas.tsx`~~ | ~~642-649~~ — **Phase 11에서 제거됨**. `styleToLayout.ts` 주석(378, 628행)에서만 참조 |
+| ~~`stripSelfRenderedProps()`~~ | ~~`BuilderCanvas.tsx`~~ | ~~662-670~~ — **Phase 11에서 제거됨**. `styleToLayout.ts` 주석(628행)에서만 참조 |
+| `SELF_RENDERING_BTN_TAGS` | `styleToLayout.ts` | 380 |
+| `SELF_RENDERING_BUTTON_TAGS` | `styleToLayout.ts` | 630 |
+| `BUTTON_PADDING` (height용) | `styleToLayout.ts` | 638-644 |
+| `BTN_PAD` (fit-content width용) | `styleToLayout.ts` | 384-387 |
 | `BUTTON_SIZE_CONFIG` | `engines/utils.ts` | 290-304 |
 
 ### 6.2 P1 — CRITICAL: `layout.height` 고정값 설정
 
-**위치:** `styleToLayout.ts:599-643` (TaffyFlexEngine 경로에서 활용 중인 레거시 패턴)
+**위치:** `styleToLayout.ts:627-660` (TaffyFlexEngine 경로에서 활용 중인 레거시 패턴)
 
 **현상:**
 ```typescript
-// 레거시 패턴 (styleToLayout.ts:602-625) — Yoga 시절 작성, 현재 TaffyFlexEngine 경로에서 활용 중
+// 레거시 패턴 (styleToLayout.ts:630-660) — Yoga 시절 작성, 현재 TaffyFlexEngine 경로에서 활용 중
 const SELF_RENDERING_BUTTON_TAGS = new Set(['button', 'submitbutton', 'fancybutton', 'togglebutton']);
 if (SELF_RENDERING_BUTTON_TAGS.has(tag) && height === undefined) {
   // ... BUTTON_PADDING config, fontSize/paddingY/borderW 계산 ...
@@ -1962,7 +1966,7 @@ if (style.height && style.height !== 'auto') {
 
 ### 6.3 P2 — HIGH: fit-content 워크어라운드가 stretch 차단
 
-**위치:** `styleToLayout.ts:297-301`, `styleToLayout.ts:362-381`
+**위치:** `styleToLayout.ts:297-301`, `styleToLayout.ts:380-400`
 
 **현상:**
 ```typescript
@@ -1973,7 +1977,7 @@ if (isFitContentWidth) {
   if (layout.flexShrink === undefined) layout.flexShrink = 0; // ← 조건부 설정
 }
 
-// 레거시 패턴 (styleToLayout.ts:362-381) — Yoga 시절 작성, 현재 TaffyFlexEngine 경로에서 활용 중
+// 레거시 패턴 (styleToLayout.ts:380-400) — Yoga 시절 작성, 현재 TaffyFlexEngine 경로에서 활용 중
 if (SELF_RENDERING_BTN_TAGS.has(tag) && isFitContentWidth) {
   // ... BTN_PAD config, textWidth 측정 ...
   layout.width = Math.round(measuredTextWidth) + paddingX * 2 + borderW * 2; // 명시적 px 강제
@@ -1982,11 +1986,11 @@ if (SELF_RENDERING_BTN_TAGS.has(tag) && isFitContentWidth) {
 }
 ```
 
-> **참고:** 297-301행의 일반 경로는 `if (layout.flexGrow === undefined)` 조건부로 사용자 명시 설정을 보존하지만, 362-381행의 버튼 경로(레거시 패턴)는 무조건 `flexGrow = 0`을 강제한다. 이는 사용자가 명시적으로 `flex-grow`를 설정한 경우에도 덮어쓰게 되는 비일관적 동작이다. 정리 시 이 코드를 `enrichWithIntrinsicSize()` 패턴으로 통합하거나 TaffyFlexEngine 컨텍스트 기준으로 재작성해야 한다.
+> **참고:** 297-301행의 일반 경로는 `if (layout.flexGrow === undefined)` 조건부로 사용자 명시 설정을 보존하지만, 380-400행의 버튼 경로(레거시 패턴)는 무조건 `flexGrow = 0`을 강제한다. 이는 사용자가 명시적으로 `flex-grow`를 설정한 경우에도 덮어쓰게 되는 비일관적 동작이다. 정리 시 이 코드를 `enrichWithIntrinsicSize()` 패턴으로 통합하거나 TaffyFlexEngine 컨텍스트 기준으로 재작성해야 한다.
 
 **Config 파편화 문제:** 버튼 크기 설정이 2벌 존재한다 (모두 레거시 패턴):
-- `BTN_PAD` (366-368행): fit-content width 계산용 — `{ px, fs }` 2개 필드
-- `BUTTON_PADDING` (610-616행): height 계산용 — `{ px, py, fs }` 3개 필드
+- `BTN_PAD` (384-387행): fit-content width 계산용 — `{ px, fs }` 2개 필드
+- `BUTTON_PADDING` (638-644행): height 계산용 — `{ px, py, fs }` 3개 필드
 
 두 config가 동일한 버튼 사이즈 프리셋을 나타내지만 독립적으로 정의되어 있어, 하나만 수정하면 width/height 계산 간 불일치가 발생할 수 있다. `engines/utils.ts:290`의 `BUTTON_SIZE_CONFIG`까지 포함하면 총 3벌이다. 레거시 패턴 정리 시 `BUTTON_SIZE_CONFIG` 단일 소스로 통합해야 한다.
 
@@ -2187,8 +2191,8 @@ Step 3: SELF_PADDING_TAGS 점진적 축소
 
 | 파일 | 경로 | 핵심 역할 (§6 관점) |
 |------|------|-------------------|
-| `styleToLayout.ts` | `apps/builder/src/builder/workspace/canvas/layout/styleToLayout.ts` | TaffyFlexEngine 경로에서 활용 중인 레거시 패턴: fit-content 처리(297-301), 버튼 width 계산(362-381), 버튼 height 고정(599-643) → Step 1~2에서 enrichWithIntrinsicSize 통합 대상 |
-| `BuilderCanvas.tsx` | `apps/builder/src/builder/workspace/canvas/BuilderCanvas.tsx` | SELF_PADDING_TAGS 정의(642-649), stripSelfRenderedProps(662-670) → Step 3에서 점진적 축소 |
+| `styleToLayout.ts` | `apps/builder/src/builder/workspace/canvas/layout/styleToLayout.ts` | TaffyFlexEngine 경로에서 활용 중인 레거시 패턴: fit-content 처리(297-301), 버튼 width 계산(380-400), 버튼 height 고정(627-660) → Step 1~2에서 enrichWithIntrinsicSize 통합 대상 |
+| `BuilderCanvas.tsx` | `apps/builder/src/builder/workspace/canvas/BuilderCanvas.tsx` | ~~SELF_PADDING_TAGS(642-649), stripSelfRenderedProps(662-670)~~ — **Phase 11에서 제거됨**. §7.3 마이그레이션 계획은 레거시 참조용 유지 |
 | `engines/utils.ts` | `apps/builder/src/builder/workspace/canvas/layout/engines/utils.ts` | parseSize(86-126), BUTTON_SIZE_CONFIG(290-304), FIT_CONTENT sentinel(53) → BTN_PAD/BUTTON_PADDING 통합 후 단일 소스 |
 | `styleConverter.ts` | `apps/builder/src/builder/workspace/canvas/sprites/styleConverter.ts` | parseCSSSize — Skia용 CSS 값 파서(150-201) |
 | `textMeasure.ts` | `apps/builder/src/builder/workspace/canvas/skia/textMeasure.ts` | `createYogaMeasureFunc` — Skia CanvasKit Paragraph 기반 텍스트 측정 헬퍼. 함수명 리네이밍 권장(`createTextMeasureFunc`). enrichWithIntrinsicSize에서 텍스트 측정 재활용 가능(91-102) |
@@ -2398,7 +2402,7 @@ Breadcrumbs Element (Taffy flex node, display:flex, flex-direction:row, align-it
 현재 `SELF_PADDING_TAGS`는 padding/border/visual 속성을 strip하여 이중 적용을 방지하는 임시 방편이다.
 TagGroup 패턴을 적용하면 이 메커니즘이 불필요해진다.
 
-**`stripSelfRenderedProps()` 실제 strip 대상 (`BuilderCanvas.tsx:662-670`):**
+**`stripSelfRenderedProps()` 실제 strip 대상 (레거시 — Phase 11에서 `BuilderCanvas.tsx`에서 제거됨):**
 
 | 그룹 | 속성 |
 |------|------|
@@ -2621,7 +2625,7 @@ function computeSyntheticStyle(element: Element): SyntheticComputedStyle {
 
 ```
 Phase 0 (초기):           ████████░░ 83%
-§6+§7+§5 (완료):         █████████░ 89%  (+6%) ← SPEC 100%, dashed/bg/TokenRef/Button
+§6+§7+§5 (SPEC 완료):    █████████░ 89%  (+6%) ← SPEC 문서화 완료 (§6 구조적 리팩터링은 별도 진행)
 S1 (CSS 파서 통합):       █████████▓ 91%  (+2%) ← ✅ calc, em, border shorthand, min/max-content
 S2 (Grid 확장):           █████████▓ 92%  (+1%) ← ✅ repeat, minmax, auto-placement, span
 S3 (Visual Effects):      █████████▓ 93%  (+1%) ← ✅ 다중 box-shadow, transform
@@ -3117,7 +3121,7 @@ describe('Browser CSS Comparison', () => {
 
 **비교 방법론:**
 
-> **현재 상태:** 아래 방법론은 Phase 5+ 안정화 단계에서 구현 예정이다.
+> **현재 상태:** 아래 방법론은 Phase 5+ 안정화 단계에서 구현할 계획이며, 현재 미구현 상태이다.
 > §10.2.4의 CanvasKit API는 모두 구현 완료되어 있으나, 자동화된 픽셀 비교 테스트 인프라는 아직 미구축이다.
 
 ```
@@ -3127,7 +3131,7 @@ React CSS 렌더링 (Preview iframe) ↔ CanvasKit 렌더링 (Builder Canvas)
 ```
 
 1. **동일 element를 CSS와 CanvasKit으로 각각 렌더링**
-2. **스크린샷 기반 비교**: Playwright 스크린샷 캡처 (구현 예정)
+2. **스크린샷 기반 비교**: Playwright 스크린샷 캡처 (미구현 상태)
 3. **허용 오차**: 안티앨리어싱 차이로 인해 SSIM >= 0.95 또는 픽셀 차이 < 2%
 4. **테스트 케이스 우선순위**:
    - P0: 단색 박스, border-radius, 텍스트 기본 렌더링
@@ -3136,7 +3140,7 @@ React CSS 렌더링 (Preview iframe) ↔ CanvasKit 렌더링 (Builder Canvas)
 
 **텍스트 렌더링 전용 검증:**
 
-> **현재 상태:** 텍스트 측정 인프라(`textMeasure.ts`)는 구현 완료. 아래 테스트 코드는 비교 검증 구현 예정 시점의 설계 예시이다.
+> **현재 상태:** 텍스트 측정 인프라(`textMeasure.ts`)는 구현 완료. 아래 테스트 코드는 비교 검증 인프라 구축 시의 설계 예시이며, 현재 미구현 상태이다.
 
 ```typescript
 // CanvasKit ParagraphBuilder 텍스트 측정 vs CSS 텍스트 측정 비교
@@ -3224,13 +3228,13 @@ apps/builder/src/builder/workspace/canvas/layout/
 │   ├── LayoutEngine.ts          # 엔진 인터페이스 (ComputedLayout, LayoutContext)
 │   ├── TaffyFlexEngine.ts       # Flex/Inline-Flex 엔진 (Taffy WASM)
 │   ├── TaffyGridEngine.ts       # Grid/Inline-Grid 엔진 (Taffy WASM)
-│   ├── DropflowBlockEngine.ts   # Block/Inline-Block/Inline/Flow-Root 엔진 (Dropflow Fork JS)
+│   ├── DropflowBlockEngine.ts   # Block/Inline-Block/Inline/Flow-Root 엔진 (Dropflow Fork JS) + enrichWithIntrinsicSize()
 │   ├── utils.ts                 # 공유 유틸리티 (parseMargin, parseBoxModel)
+│   ├── cssValueParser.ts        # 통합 CSS 값 파서 (resolveCSSSizeValue)
+│   ├── cssResolver.ts           # CSS 캐스케이드 + 상속
+│   ├── cssStackingContext.ts    # CSS stacking context 판정
 │   └── index.ts                 # 엔진 디스패처 (selectEngine)
-├── enrichWithIntrinsicSize.ts   # 리프 UI 컴포넌트 intrinsic size 주입
-├── cssValueParser.ts            # 통합 CSS 값 파서 (resolveCSSSizeValue)
-├── cssResolver.ts               # CSS 캐스케이드 + 상속
-├── DirectContainer.ts           # x/y/width/height 직접 설정 컨테이너
+├── DirectContainer              # x/y/width/height 직접 설정 (@pixi/react 컴포넌트, BuilderCanvas.tsx에서 사용)
 ├── GridLayout.utils.ts          # Grid 유틸리티
 ├── styleToLayout.ts             # 스타일 변환 (레거시 잔여 코드 포함)
 └── index.ts                     # 공개 API
@@ -3738,21 +3742,21 @@ function estimateTextHeight(fontSize: number, lineHeight?: number): number {
 | 2026-01-29 | 1.24 | Phase 11 이슈 10+11 구현 완료: COMPUTED_STYLE_WHITELIST에 visibility 추가, GridEngine에 align-self/justify-self 셀 내 정렬 지원 (start/center/end, parseBoxModel 기반 자식 크기 계산) |
 | 2026-01-29 | 1.25 | P2 line-height 레이아웃 반영: estimateTextHeight에 lineHeight 매개변수 추가, calculateContentHeight에서 parseLineHeight 결과 우선 반영, LineBoxItem에 lineHeight 필드 추가, calculateLineBox에서 lineHeight 기반 line box 최소 높이 계산 |
 | 2026-01-29 | 1.26 | SelectionLayer bounds 갱신 버그 수정: 스타일/display 변경 시 selectionLayer가 0,0에 고정되는 문제 해결. elementRegistry에 layoutBoundsRegistry 추가하여 layout bounds 직접 저장, LayoutContainer에서 layout prop 변경 시 RAF로 bounds 캐싱, SelectionLayer에 selectedStyleSignature 구독 추가로 스타일 변경 감지 |
-| 2026-01-29 | 1.27 | Pixi UI 컴포넌트 CSS 단위 해석 규칙 추가: (1) vh/vw → % 변환 정책 (styleToLayout.ts parseCSSValue에서 Yoga가 부모 기준으로 처리), (2) Pixi 컴포넌트 getButtonLayout 패턴 (parseCSSSize + parentContentArea 기준 해석, typeof === 'number' 사용 금지), (3) 부모 content area 계산 필수 (useStore → parsePadding + parseBorderWidth 차감), (4) padding shorthand + border width 4방향 계산 포함 |
+| 2026-01-29 | 1.27 | Pixi UI 컴포넌트 CSS 단위 해석 규칙 추가: (1) vh/vw → % 변환 정책 (styleToLayout.ts parseCSSValue에서 Yoga(당시)가 부모 기준으로 처리), (2) Pixi 컴포넌트 getButtonLayout 패턴 (parseCSSSize + parentContentArea 기준 해석, typeof === 'number' 사용 금지), (3) 부모 content area 계산 필수 (useStore → parsePadding + parseBorderWidth 차감), (4) padding shorthand + border width 4방향 계산 포함 |
 | 2026-01-30 | 1.28 | Button borderWidth/레이아웃 이중 계산 수정: (1) BUTTON_SIZE_CONFIG에 borderWidth:1 필드 추가, (2) Phase 9 BUTTON_SIZE_CONFIG 코드 최신화 (paddingY + borderWidth + CSS paddingX 동기화), (3) parseBoxModel에 폼 요소 BUTTON_SIZE_CONFIG 기본값 적용 (inline style 미지정 시), (4) calculateContentWidth가 폼 요소에서 순수 텍스트 너비만 반환 (padding/border를 parseBoxModel으로 분리하여 이중 계산 제거), (5) 상세: docs/COMPONENT_SPEC_ARCHITECTURE.md §4.7.4.4~4.7.4.8 |
 | 2026-01-31 | 1.29 | 버튼/Body 레이아웃 버그 수정 3건: (1) calculateContentHeight padding 이중 계산 제거 — content-box 기준 textHeight만 반환, MIN_BUTTON_HEIGHT도 content-box로 변환 후 비교, (2) renderWithCustomEngine availableWidth에 border 차감 추가 — parseBorder()로 부모 border를 padding과 함께 차감 (자식 offset은 padding만 — Yoga가 border offset 자동 처리), (3) parseBoxModel에 treatAsBorderBox 로직 추가 — box-sizing: border-box 또는 폼 요소 명시적 width/height 시 padding+border 차감으로 content-box 변환 |
 | 2026-02-01 | 1.30 | Phase 5 CanvasKit/Skia 통합 문서 추가: (1) §3.5 엔진 디스패처에 Phase 5+ 렌더링 전환 주석 (레이아웃 계산 불변, 렌더링만 CanvasKit), (2) §4.4 CanvasKit 렌더 파이프라인 추가 (Store → ElementSprite → useSkiaNode → SkiaOverlay → nodeRenderers → CanvasKit Surface), (3) §5.4 CanvasKit 렌더링 정확성 검증 방법 추가 (border-radius, 텍스트, 그래디언트, 그림자, 픽셀 비교), (4) §7 CanvasKit/Skia 외부 참조 문서 추가, (5) 상세: docs/WASM.md Phase 5, docs/WASM_DOC_IMPACT_ANALYSIS.md §A |
 | 2026-02-01 | 1.31 | §5.4 코드 검증 반영: (1) §5.4.1 Radial gradient API명 수정 (MakeRadialGradient → MakeTwoPointConicalGradient, fills.ts:51-61 실제 구현과 일치), (2) §5.4.2 픽셀 비교 테스트 인프라 미구현 상태 명시 (Playwright 구현 예정), (3) §5.4.3 텍스트 측정 인프라(textMeasure.ts) 존재 / 비교 테스트 미구현 상태 명시 |
 | 2026-02-02 | 1.32 | Phase 6 Skia 렌더링 완성 반영: (1) §4.4.1 렌더 파이프라인에 Phase 6 이중 Surface 경로 추가 (classifyFrame → idle/camera-only/content/full 분류), (2) §4.4.2 구조 다이어그램 전면 재작성 (이중 Surface, AABB 컬링, Selection/AI 오버레이, eventBridge, overlayVersion), (3) §4.4.3 테이블에 Selection/AI/AABB 컬링 행 추가, (4) §4.4.5 Phase 6 이중 Surface 캐싱 아키텍처 신규 (effectiveVersion 계산, overlayVersionRef 설계 의도), (5) §4.4.6 Selection/AI 오버레이 렌더링 신규, (6) §4.4.7 AABB 뷰포트 컬링 신규, (7) §4.4.8 변수 Resolve 렌더링 경로 신규, (8) §5.4.1에 메시 그래디언트·레이어 블러·Selection 오버레이 검증 행 추가, (9) §5.4 P2 테스트에 mesh gradient·layer-blur·AI 피드백 추가 |
 | 2026-02-05 | 1.33 | Phase 6 렌더 파이프라인 정정: (1) Dirty Rect 경로 제거(보류) 및 2-pass(content cache + present blit + overlay 분리)로 대체, (2) classifyFrame을 registryVersion/overlayVersion 분리 입력으로 갱신(idle/present/camera-only/content/full), (3) eventBridge 삭제 및 PixiJS 캔버스 DOM 이벤트 직접 수신 모델로 정리, (4) CanvasKit 캔버스 pointer-events: none으로 명확화 |
-| 2026-02-06 | 1.34 | renderWithCustomEngine CONTAINER_TAGS 지원: (1) `display: 'block'` CONTAINER_TAGS 지원 — childElements/renderChildElement props 전달로 children 내부 렌더링, (2) padding 이중 적용 수정 — calculateContentHeight를 content-only로 변경 (Yoga/BlockEngine이 별도 padding 추가), (3) flex column 래퍼 — absolute→relative 변환으로 CONTAINER_TAGS height 변경 시 siblings 자동 재배치, (4) 상세: CHANGELOG.md "Card display: block 완전 지원" |
+| 2026-02-06 | 1.34 | renderWithCustomEngine CONTAINER_TAGS 지원: (1) `display: 'block'` CONTAINER_TAGS 지원 — childElements/renderChildElement props 전달로 children 내부 렌더링, (2) padding 이중 적용 수정 — calculateContentHeight를 content-only로 변경 (Yoga(당시)/BlockEngine이 별도 padding 추가), (3) flex column 래퍼 — absolute→relative 변환으로 CONTAINER_TAGS height 변경 시 siblings 자동 재배치, (4) 상세: CHANGELOG.md "Card display: block 완전 지원" |
 | 2026-02-06 | 1.35 | Block 레이아웃 라인 기반 렌더링 + 사이즈 통일: (1) inline 요소 가로 배치 — 같은 y 값을 가진 요소들을 라인(flex row)으로 그룹화하여 계단식 배치 수정, (2) ToggleButton/ToggleButtonGroup borderRadius 통일 — Button과 동일하게 sm:4/md:6/lg:8로 변경, (3) 상세: `.claude/plans/giggly-wibbling-mango.md` Phase 5-6 |
 | 2026-02-13 | 1.36 | width: fit-content 네이티브 구현: (1) FIT_CONTENT=-2 sentinel 도입 (AUTO=-1 패턴 확장), (2) parseSize()에서 'fit-content' 감지→FIT_CONTENT 반환, parseBoxModel()에서 border-box 변환 건너뜀, (3) BlockEngine JS/WASM 경로에서 FIT_CONTENT일 때 contentWidth 사용, (4) block_layout.rs에 FIT_CONTENT 상수+로직+6개 테스트 추가, (5) styleToLayout.ts에서 모든 요소 대상 Yoga fit-content 워크어라운드 일반화 (flexGrow:0, flexShrink:0), (6) TransformSection.tsx Width/Height units에 'fit-content' 옵션 추가 |
-| 2026-02-13 | 1.37 | ToggleButtonGroup 스타일 패널 + Selection 수정: (1) styleAtoms.ts에 `getLayoutDefault()` 4단계 우선순위 헬퍼 도입 (inline→computed→tag default→global), DEFAULT_CSS_VALUES에 display/flexDirection/alignItems 확장, displayAtom 외 4개 atom 수정, (2) calculateContentWidth()에 ToggleButtonGroup 전용 분기 추가 — props.items에서 자식 버튼 텍스트 폭 합산, (3) BuilderCanvas.tsx containerLayout에 ToggleButtonGroup width 'auto' 오버라이드 — Yoga가 자식 크기 기반 자동 계산하여 selection bounds 정확도 보장, (4) 동일 패턴 분석: CONTAINER_TAGS∩DEFAULT_INLINE_BLOCK_TAGS = ToggleButtonGroup만 해당, 다른 CONTAINER_TAGS는 block→영향 없음 |
+| 2026-02-13 | 1.37 | ToggleButtonGroup 스타일 패널 + Selection 수정: (1) styleAtoms.ts에 `getLayoutDefault()` 4단계 우선순위 헬퍼 도입 (inline→computed→tag default→global), DEFAULT_CSS_VALUES에 display/flexDirection/alignItems 확장, displayAtom 외 4개 atom 수정, (2) calculateContentWidth()에 ToggleButtonGroup 전용 분기 추가 — props.items에서 자식 버튼 텍스트 폭 합산, (3) BuilderCanvas.tsx containerLayout에 ToggleButtonGroup width 'auto' 오버라이드 — Yoga(당시)가 자식 크기 기반 자동 계산하여 selection bounds 정확도 보장, (4) 동일 패턴 분석: CONTAINER_TAGS∩DEFAULT_INLINE_BLOCK_TAGS = ToggleButtonGroup만 해당, 다른 CONTAINER_TAGS는 block→영향 없음 |
 | 2026-02-13 | 1.38 | Factory 정의 style 기본값 동기화: (1) GroupComponents.ts — ToggleButtonGroup/Checkbox/Radio factory 정의에 CSS 기본 style 추가 (display:flex, flexDirection:row, alignItems:center 등), (2) unified.types.ts — createDefaultToggleButtonGroupProps에 alignItems/width:fit-content 추가, (3) BuilderCanvas.tsx — ToggleButtonGroup containerLayout width를 명시적 width 설정 시 layout.width 사용, 기본값 시 auto 유지 (width:100% 지원), (4) 전수 조사: factory 사용 복합 컴포넌트 중 style 누락은 ToggleButtonGroup+Checkbox+Radio만 해당 |
 | 2026-02-13 | 1.39 | ToggleButton spec border-radius 그룹 위치 처리: (1) ToggleButton.spec.ts에 `_groupPosition` props 추가 (orientation, isFirst, isLast, isOnly), shapes()에서 그룹 위치별 per-corner border-radius 계산 — horizontal: first→[r,0,0,r]/last→[0,r,r,0]/middle→[0,0,0,0], vertical: first→[r,r,0,0]/last→[0,0,r,r]/middle→[0,0,0,0], (2) ElementSprite.tsx에서 toggleGroupPosition 객체를 _groupPosition key로 spec shapes props에 주입, (3) specShapeConverter.ts resolveRadius()는 이미 [tl,tr,br,bl] 4-tuple 지원 확인 |
 | 2026-02-13 | 1.40 | ToggleButtonGroup alignSelf 강제 설정 제거: styleToLayout.ts에서 ToggleButtonGroup fit-content 워크어라운드의 `alignSelf: 'flex-start'` 2줄 제거 — CSS에서 width: fit-content와 align-self는 독립적 속성이므로, 부모의 align-items (center, flex-end 등)가 정상 적용되도록 수정. flexGrow:0 + flexShrink:0만으로 주축 방향 너비 확장 방지 충분. 동일 패턴 조사: Pixi*.tsx 10개 파일은 내부 렌더링 컴포넌트 자체 레이아웃용으로 수정 불필요, Checkbox/Radio/Switch/Badge/Tag/Chip은 alignSelf 미사용 |
-| 2026-02-17 | 1.41 | Phase 9-10 엔진 교체: @pixi/layout, yoga-layout, @pixi/ui 완전 제거. LayoutContainer → DirectContainer 교체. shouldDelegateToPixiLayout() 삭제, renderWithPixiLayout()/renderWithCustomEngine() → renderWithEngine() 단일 경로 통합 |
+| 2026-02-17 | 1.41 | Phase 9-10 엔진 교체: @pixi/layout, yoga-layout, @pixi/ui 완전 제거. LayoutContainer → DirectContainer 교체. shouldDelegateToPixiLayout() 삭제, renderWithPixiLayout() 제거 후 renderWithCustomEngine() 단일 경로로 통합 |
 | 2026-02-18 | 1.42 | Phase 11 엔진 전환 완료 및 문서 현행화: (1) 레거시 엔진 삭제 (BlockEngine.ts, FlexEngine.ts, GridEngine.ts), (2) Taffy WASM 기반 TaffyFlexEngine(flex/inline-flex) + TaffyGridEngine(grid/inline-grid) 도입, (3) Dropflow Fork JS 기반 DropflowBlockEngine(block/inline-block/inline/flow-root) 도입, (4) enrichWithIntrinsicSize()로 Yoga measureFunc 대체, (5) cssValueParser.ts의 resolveCSSSizeValue() 통합 CSS 값 파서 도입, (6) cssResolver.ts CSS 캐스케이드 + 상속 도입, (7) 문서 §4-§9 전면 현행화: LayoutContainer→DirectContainer, Yoga→Taffy/Dropflow, @pixi/layout 참조 제거/레거시 표시, §6 파일 구조 갱신, §7 참조 문서에 Taffy/Dropflow 추가 |
 
 ---
@@ -3760,7 +3764,7 @@ function estimateTextHeight(fontSize: number, lineHeight?: number): number {
 ## 참조
 
 ### 내부 참조
-- [PIXI_LAYOUT.md](./PIXI_LAYOUT.md) - @pixi/layout 마이그레이션 기록 (역사적 참조, Phase 9-10에서 제거됨)
+- [PIXI_LAYOUT.md](./legacy/PIXI_LAYOUT.md) - @pixi/layout 마이그레이션 기록 (역사적 참조, Phase 9-10에서 제거됨)
 - [PIXI_WEBGL.md](./reference/components/PIXI_WEBGL.md) - WebGL 캔버스 아키텍처
 - [GridLayout.utils.ts](../apps/builder/src/builder/workspace/canvas/layout/GridLayout.utils.ts) - Grid 계산 로직
 - [ADR-003: Canvas Rendering](./adr/003-canvas-rendering.md) — PixiJS + Skia 이중 렌더러

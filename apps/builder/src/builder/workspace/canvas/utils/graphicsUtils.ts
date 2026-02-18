@@ -204,16 +204,6 @@ function getRoundRectSegments(radius: number): number {
 }
 
 // ============================================
-// Feature Flag
-// ============================================
-
-/**
- * border-box 렌더링 활성화 플래그
- * false로 설정하면 기존 방식(stroke at edge)으로 롤백
- */
-export const ENABLE_BORDER_BOX = true;
-
-// ============================================
 // Types
 // ============================================
 
@@ -315,27 +305,22 @@ export function drawBox(g: PixiGraphics, options: DrawBoxOptions): void {
       ? Math.max(...(rawRadius as number[]))
       : rawRadius as number;
 
-    if (ENABLE_BORDER_BOX) {
-      // border-box 방식: 안쪽으로 offset
-      const inner = getBorderBoxInnerBounds(width, height, border.width, uniformRadius);
+    // border-box 방식: 안쪽으로 offset
+    const inner = getBorderBoxInnerBounds(width, height, border.width, uniformRadius);
 
-      // 개별 모서리인 경우 drawBorderByStyleCorners 사용
-      if (isArrayRadius) {
-        const radii = rawRadius as [number, number, number, number];
-        // inner radius 계산: 각 모서리별로 border.width 만큼 축소
-        const innerRadii: [number, number, number, number] = [
-          Math.max(0, radii[0] - border.width),
-          Math.max(0, radii[1] - border.width),
-          Math.max(0, radii[2] - border.width),
-          Math.max(0, radii[3] - border.width),
-        ];
-        drawSolidBorderCorners(g, inner, innerRadii, border);
-      } else {
-        drawBorderByStyle(g, width, height, inner, border);
-      }
+    // 개별 모서리인 경우 drawBorderByStyleCorners 사용
+    if (isArrayRadius) {
+      const radii = rawRadius as [number, number, number, number];
+      // inner radius 계산: 각 모서리별로 border.width 만큼 축소
+      const innerRadii: [number, number, number, number] = [
+        Math.max(0, radii[0] - border.width),
+        Math.max(0, radii[1] - border.width),
+        Math.max(0, radii[2] - border.width),
+        Math.max(0, radii[3] - border.width),
+      ];
+      drawSolidBorderCorners(g, inner, innerRadii, border);
     } else {
-      // 기존 방식: stroke at edge (롤백용)
-      drawBorderLegacy(g, width, height, uniformRadius, border);
+      drawBorderByStyle(g, width, height, inner, border);
     }
   }
 }
@@ -365,9 +350,7 @@ export function drawCircle(g: PixiGraphics, options: DrawCircleOptions): void {
   const borderWidth = border?.width ?? 0;
 
   // border-box: 실제 반지름은 border 포함
-  const innerRadius = ENABLE_BORDER_BOX
-    ? Math.max(0, radius - borderWidth / 2)
-    : radius;
+  const innerRadius = Math.max(0, radius - borderWidth / 2);
 
   // Fill
   g.circle(x, y, innerRadius);
@@ -578,21 +561,3 @@ function drawDoubleBorder(
   g.stroke();
 }
 
-/**
- * 기존 방식 border 그리기 (롤백용)
- * 🚀 smoothRoundRect 사용: 확대 시에도 부드러운 모서리
- */
-function drawBorderLegacy(
-  g: PixiGraphics,
-  width: number,
-  height: number,
-  borderRadius: number,
-  border: BorderConfig
-): void {
-  if (borderRadius > 0) {
-    smoothRoundRect(g, 0, 0, width, height, borderRadius);
-  } else {
-    g.rect(0, 0, width, height);
-  }
-  g.stroke({ width: border.width, color: border.color, alpha: border.alpha });
-}

@@ -17,12 +17,6 @@ export * from './cssVariableReader';
 // GPU 프로파일링
 export * from './gpuProfilerCore';
 
-// 메모리 풀링 (Phase E)
-export { spritePool, SpritePool } from './SpritePool';
-
-// 캐싱 최적화 (Phase F)
-export { useCacheOptimization, useStaticCache } from './useCacheOptimization';
-
 // Phase 0: @pixi/ui 순수 로직 추출
 export * from './colorMath';
 export * from './boxCalculation';

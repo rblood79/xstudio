@@ -39,6 +39,8 @@ Pencil 실제 구조:                    현재 xstudio (Phase 11):
 - **Phase 0–4** (기존): PixiJS 중심 아키텍처 시점의 점진적 WASM 최적화 (Spatial Index, Layout 가속, Worker). CanvasKit 전환 전에도 독립적으로 유효하다.
 - **Phase 5** (신규): CanvasKit/Skia WASM 메인 렌더러 도입 — Pencil의 renderSkia 패턴 적용
 - **Phase 6** (신규): 고급 렌더링 기능 — 이중 Surface 캐싱(컨텐츠 캐시 + 오버레이 분리), padding 기반 camera-only blit, cleanup render
+- **현재 런타임 기준 보정:** 레이아웃 실행 경로는 `selectEngine()` → `TaffyFlexEngine`/`TaffyGridEngine`/`DropflowBlockEngine`이며,
+  `layoutAccelerator.ts` + `wasm-worker` 기반 Block/Grid 배치 가속은 레거시 PoC 경로(기본 비활성/미연결)로 분류한다.
 
 ---
 
@@ -268,9 +270,9 @@ interface WasmBenchmark {
   cullingFilterAvgMs: number;       // useViewportCulling 필터 소요 시간
 
   // 레이아웃 관련
-  blockLayoutAvgMs: number;         // BlockEngine.calculate() 소요 시간
-  gridLayoutAvgMs: number;          // GridEngine.calculate() 소요 시간
-  marginCollapseAvgMs: number;      // collapseMargins() 호출 빈도 및 시간
+  blockLayoutAvgMs: number;         // DropflowBlockEngine.calculate() 소요 시간
+  gridLayoutAvgMs: number;          // TaffyGridEngine.calculate() 소요 시간
+  marginCollapseAvgMs: number;      // Dropflow margin collapse 구간 호출 빈도 및 시간
 
   // 텍스트 관련
   textMeasureAvgMs: number;         // TextSprite getBounds() 소요 시간
@@ -853,11 +855,11 @@ export function unregisterElement(id: string): void {
 - [x] `idMapper.ts` 구현 (string ↔ u32 양방향 매핑)
 - [x] `spatialIndex.ts` TypeScript 바인딩
 - [x] `elementRegistry.ts` 수정 (SpatialIndex 동기화 + RAF 타이밍 대책)
-- [x] `useViewportCulling.ts` 수정 (SpatialIndex 쿼리)
-- [x] `SelectionLayer.utils.ts` 수정 (라쏘 선택에 SpatialIndex `query_rect` 적용)
+- [x] `useViewportCulling.ts` 실시간 `getBounds()` 기반 경로로 전환 (SpatialIndex query 경로 제거)
+- [ ] `SelectionLayer.utils.ts` SpatialIndex `query_rect` 재연동 (현재는 O(n) 필터)
 - [ ] 단위 테스트: Rust `wasm-pack test` (삽입, 삭제, 쿼리, query_rect, 엣지 케이스)
 - [ ] 통합 테스트: 1,000개 요소 뷰포트 쿼리 벤치마크
-- [x] ~~Feature Flag (`VITE_WASM_SPATIAL`)로 A/B 비교~~ → 환경변수 제거, 무조건 활성화
+- [x] ~~Feature Flag (`VITE_WASM_SPATIAL`)로 A/B 비교~~ → 환경변수 제거, 하드코딩 플래그(`WASM_FLAGS.SPATIAL_INDEX`)로 전환
 - [x] 페이지별 SpatialIndex 범위 관리 (페이지 전환 시 clearAll + 현재 페이지 batch_upsert)
 - [ ] 배치 인덱스 리빌드 최적화 (suspendIndexRebuild/resumeAndRebuildIndexes 패턴)
 
@@ -873,11 +875,15 @@ export function unregisterElement(id: string): void {
 
 ---
 
-## Phase 2: Layout Engine 배치 가속
+## Phase 2: Layout Engine 배치 가속 (레거시 PoC)
 
-> 목표: BlockEngine, GridEngine의 **전체 레이아웃 루프**를 WASM으로 이전
+> 목표(당시 PoC): BlockEngine, GridEngine의 **전체 레이아웃 루프**를 WASM으로 이전
 > 원칙: 개별 함수(collapseMargins, createsBFC)의 WASM 위임은 하지 않는다.
 >        JS→WASM 경계 넘기는 배치 단위(1회/레이아웃)로만 수행한다.
+>
+> ⚠️ **현행 런타임 주의 (2026-02-18):** Phase 11에서 `BlockEngine.ts`/`GridEngine.ts`는 제거되었다.
+> 현재 레이아웃은 `DropflowBlockEngine` + `TaffyFlexEngine` + `TaffyGridEngine`이 담당하며,
+> 본 섹션은 레거시 실험 기록으로 유지한다.
 
 ### 2.1 문제 정의
 
@@ -1500,13 +1506,15 @@ calculate(parent, children, availableWidth, availableHeight): ComputedLayout[] {
 }
 ```
 
-### 2.5 Phase 2 산출물
+### 2.5 Phase 2 산출물 (레거시 기록)
+
+> 현재 코드 기준으로 `layoutAccelerator.ts` API는 남아 있으나, BuilderCanvas의 기본 레이아웃 실행 경로에는 직접 연결되어 있지 않다.
 
 - [x] `block_layout.rs` 구현 (전체 레이아웃 루프, margin collapse 내장)
 - [x] `grid_layout.rs` 구현 (트랙 파싱, 셀 위치 계산)
 - [x] `layoutAccelerator.ts` TypeScript 바인딩 (배치 API만 노출)
-- [x] `BlockEngine.ts` — `calculate()` 진입점에 WASM 배치 위임 추가
-- [x] `GridEngine.ts` — `calculate()` 진입점에 WASM 배치 위임 추가
+- [~] `BlockEngine.ts` — `calculate()` 진입점 통합 기록 (Phase 11 이후 파일 제거)
+- [~] `GridEngine.ts` — `calculate()` 진입점 통합 기록 (Phase 11 이후 파일 제거)
 - [x] 데이터 마샬링 헬퍼 (`serialize/deserialize`) 구현
 - [x] 최소 요소 수 임계값 결정 _(children > 10 기준, BlockEngine.ts:137)_
 - [ ] 단위 테스트: margin collapse, LineBox, BFC 엣지 케이스
@@ -3230,7 +3238,7 @@ Phase 0: 환경 구축 및 벤치마크 기준선 ✅ (2026-02-02 구현 완료)
   └─ Rust 1.93.0 + wasm-pack 0.14.0 설정
   └─ Vite WASM 플러그인 (vite-plugin-wasm 3.5.0)
   └─ WASM 빌드 완료 (xstudio_wasm_bg.wasm 70KB)
-  └─ Feature Flag 인프라 (featureFlags.ts + .env)
+  └─ Feature Flag 인프라 (featureFlags.ts 하드코딩, 환경변수 분기 제거)
   └─ 벤치마크 유틸리티 (미완)
   └─ 실측 기준선 수집 (미완)
       │
@@ -3238,17 +3246,17 @@ Phase 1: Spatial Index ✅ (2026-02-02 구현 완료)
   └─ spatial_index.rs (i64 키 인코딩, AABB 교차 검증 포함)
   └─ idMapper.ts (string ↔ u32 양방향 매핑, tryGetNumericId 안전 조회)
   └─ elementRegistry.ts — SpatialIndex 동기화 추가
-  └─ useViewportCulling.ts — query_viewport로 대체
-  └─ SelectionLayer.utils.ts — query_rect로 라쏘 선택 O(n) → O(k)
+  └─ useViewportCulling.ts — 실시간 getBounds 기반 경로로 전환 (query_viewport 미사용)
+  └─ SelectionLayer.utils.ts — 현재 O(n) 필터 (query_rect 재연동 대기)
   └─ ~~BoundsCache~~ 제거 (기존 layoutBoundsRegistry로 충분)
       │
-Phase 2: Layout Engine 배치 가속 ✅ (2026-02-02 구현 완료)
+Phase 2: Layout Engine 배치 가속 ✅ (2026-02-02 PoC 완료, 현재 기본 경로 미사용)
   └─ block_layout.rs — 정규화된 블록 배치 (수직 스태킹 + margin collapse + BFC 경계)
   └─ grid_layout.rs — 트랙 파싱(auto 포함) + 셀 위치 계산
   └─ JS 전처리 책임: out-of-flow 분리, inline-block LineBox 그룹화, blockification, BFC 판별
   └─ WASM calculate()는 전처리된 데이터만 수신 (경계 넘기 1회)
-  └─ 데이터 마샬링 헬퍼 (serialize/deserialize, 19 fields/child for block)
-  └─ 최소 요소 수 임계값: children > 10 (BlockEngine.ts:137)
+  └─ 데이터 마샬링 헬퍼 (serialize/deserialize)
+  └─ Phase 11 이후 기본 레이아웃은 TaffyFlex/TaffyGrid/Dropflow 경로로 전환
       │
 Phase 3: 제거됨
   └─ 텍스트 데코레이션, CSS 파싱은 WASM 부적합
@@ -3315,7 +3323,7 @@ Phase 6: 고급 렌더링 기능 (CanvasKit 활용)
 | 지표 | 목표 | 검증 시점 |
 |------|------|----------|
 | Viewport Culling | O(n) → O(k) | Phase 1 완료 후 |
-| 라쏘 선택 | O(n) → O(k) (query_rect) | Phase 1 완료 후 |
+| 라쏘 선택 | O(n) (현재) → O(k) (SpatialIndex 재연동 시) | Phase 1 후속 |
 | 레이아웃 재계산 | 실측 기준선 대비 개선 | Phase 2 완료 후 |
 | 메인 스레드 부하 | UI jank 제거 | Phase 4 완료 후 |
 | Phase 1-4 WASM 바이너리 | < 60KB (gzip) | Phase 4 완료 후 |
@@ -3336,31 +3344,20 @@ Phase 6: 고급 렌더링 기능 (CanvasKit 활용)
 
 ### Q1: SpatialIndex 결과를 O(k)로 활용하기 위해 id → element 맵을 별도 유지할 계획인가?
 
-`query_viewport`와 `query_rect`는 string ID 배열을 반환한다.
-별도 맵은 불필요하며, Zustand store의 기존 `elementsMap` (O(1) 인덱스)을 `useStore.getState().elementsMap`으로 조회한다.
+현재 기본 경로에서 `useViewportCulling`은 SpatialIndex 쿼리를 사용하지 않는다.
+`getElementContainer(id)?.getBounds()` 기반의 실시간 스크린 좌표 AABB 판별을 사용하며,
+부모 가시성 캐시를 함께 적용해 overflow-visible 케이스를 보호한다.
 
-**useViewportCulling에서의 O(k) 수집 경로:**
-```typescript
-const visibleIds = queryVisibleElements(...);                  // O(k) — SpatialIndex 반환
-const elementsMap = useStore.getState().elementsMap;            // 구독이 아닌 getState() 직접 조회
-const visibleElements = visibleIds
-  .map(id => elementsMap.get(id))                              // O(1) × k = O(k)
-  .filter((el): el is Element => el !== undefined);
-```
-`getState()` 경로를 사용하는 이유: `useViewportCulling`은 `useMemo` 내부에서 실행되므로
-`elementsMap`을 React 구독 대상으로 추가하면 불필요한 리렌더가 발생한다.
-`getState()`는 스냅샷 조회만 수행하여 리렌더 의존성을 추가하지 않는다.
-
-라쏘 선택의 경우 `queryRect`가 직접 ID 배열을 반환하므로 element 순회 자체가 불필요하다.
+SpatialIndex(`query_viewport`, `query_rect`)는 바인딩/API는 준비되어 있으나,
+뷰포트 컬링/라쏘 선택의 기본 경로에는 아직 재연동되지 않았다.
 
 ### Q2: Grid 템플릿 파싱 지원 범위
 
-현재 Phase 2 범위:
-- **지원:** `fr`, `px`, `%`, 숫자 리터럴, `auto`
-- **미지원:** `minmax()`, `repeat()`, `fit-content()`, `min-content`, `max-content`
+현재 런타임(`TaffyGridEngine`) 범위:
+- **지원:** `fr`, `px`, `%`, `auto`, `repeat()`, `minmax()`, `auto-fill/auto-fit`, auto-placement
+- **미지원:** `subgrid`, named grid lines
 
-`minmax()`/`repeat()`은 xstudio의 GridEngine.ts에서도 미지원이므로 WASM 포팅 범위에서 제외한다.
-향후 GridEngine.ts에 해당 기능이 추가되면 `grid_layout.rs`도 함께 확장한다.
+따라서 Grid 기능 기준선은 `grid_layout.rs` PoC가 아니라 `TaffyGridEngine` + `taffyLayout.ts` 구현을 기준으로 본다.
 
 ### Q3: Worker 결과 전달 방식
 
@@ -3382,10 +3379,9 @@ self.postMessage({ layouts: result }, { transfer: [result.buffer] }); // 복사�
 
 ### Q5: useViewportCulling에서 elementsMap 접근 경로
 
-`useStore.getState().elementsMap`으로 직접 조회한다 (구독이 아닌 스냅샷).
-`useMemo` 내부에서 실행되므로 `useStore(state => state.elementsMap)` 구독을 사용하면
-elementsMap 변경 시 불필요한 리렌더가 발생한다. `getState()`는 리렌더 의존성을 추가하지 않으므로
-기존 `useMemo` 의존성(zoom, panOffset)만으로 재계산 타이밍을 제어할 수 있다.
+현재 `useViewportCulling`은 `elementsMap` 매핑 경로를 사용하지 않는다.
+요소별 `getBounds()`를 직접 읽어 가시성을 판정하며, SpatialIndex 재연동 시에만
+ID→Element 매핑(`elementsMap`) 경로가 다시 필요해진다.
 
 ---
 
