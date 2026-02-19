@@ -3495,7 +3495,7 @@ export function smoothRoundRect(
 
 ## 5. Phase 2: Form 컴포넌트 마이그레이션
 
-### 5.1 대상 컴포넌트 (15개)
+### 5.1 대상 컴포넌트 (16개)
 
 | # | 컴포넌트 | 현재 상태 | 복잡도 |
 |---|----------|----------|--------|
@@ -3514,6 +3514,7 @@ export function smoothRoundRect(
 | 13 | Meter | ⚠️ 부분 | 중간 |
 | 14 | ProgressBar | ⚠️ 부분 | 중간 |
 | 15 | Form | ⚠️ 부분 | 낮음 |
+| 16 | Autocomplete | ❌ 미구현 | 높음 |
 
 ### 5.2 TextField Spec 예시
 
@@ -5147,6 +5148,14 @@ Skia가 시각 렌더링을 담당하지만, 불필요한 PixiJS 드로잉이 �
 |----------|------:|------|
 | PixiTagGroup | 310 | CONTAINER_TAGS로 대체, 삭제 대상 |
 
+**미구현 — Pixi/Spec 미생성 (1개)**: 웹 컴포넌트만 존재, Canvas 구현 없음.
+
+| 컴포넌트 | 웹 파일 | 구조 | 비고 |
+|----------|---------|------|------|
+| Autocomplete | `packages/shared/src/components/Autocomplete.tsx` | SearchField + Menu 복합 | Pixi 파일, TAG_SPEC_MAP 모두 미등록. Phase 2에 추가 |
+
+> **참고**: `Breadcrumb.tsx`는 `Breadcrumbs`의 하위 아이템 컴포넌트로 독립 등록 불필요 (Breadcrumbs 내부에서 사용).
+
 **요약:**
 
 | 등급 | 수량 | 총 줄 수 | 조치 |
@@ -5732,7 +5741,7 @@ function ElementSpriteButton({ element }) {
 
 ## 부록
 
-### A. 전체 컴포넌트 목록 (72개)
+### A. 전체 컴포넌트 목록 (73개)
 
 <details>
 <summary>클릭하여 펼치기</summary>
@@ -5811,6 +5820,7 @@ function ElementSpriteButton({ element }) {
 | 70 | Drawer | 4 | 높음 |
 | 71 | Accordion | 4 | 중간 |
 | 72 | Overlay | 4 | 중간 |
+| 73 | Autocomplete | 2 | 높음 |
 
 </details>
 
@@ -5855,5 +5865,6 @@ function ElementSpriteButton({ element }) {
 | 2026-02-15 | 3.2 | **Button 텍스트 줄바꿈 시 높이 확장 (Skia + BlockEngine)**: (1) `measureSpecTextMinHeight()` 헬퍼 — spec shapes 내 텍스트 word-wrap 높이 측정 (ElementSprite.tsx), (2) `contentMinHeight` 패턴 — 다중 줄 시 `specHeight` 확장 + `cardCalculatedHeight` 전파 (ElementSprite.tsx), (3) 다중 줄 텍스트 `paddingTop` 보정 — `(specHeight - wrappedHeight) / 2` 수직 중앙 (ElementSprite.tsx), (4) `updateTextChildren` box 재귀 — specNode 내부 텍스트 크기 갱신 (SkiaOverlay.tsx), (5) **BlockEngine `parseBoxModel` 수정** — 요소 자체 border-box width를 `calculateContentHeight`에 전달, 부모 `availableWidth` 대신 사용하여 올바른 텍스트 줄바꿈 높이 계산 (utils.ts), (6) `styleToLayout` minHeight 기본 사이즈 `'md'`→`'sm'` 수정 (styleToLayout.ts), (7) Flex 경로는 `minHeight` → Yoga, BlockEngine 경로는 `parseBoxModel` → `calculateContentHeight`로 각각 처리, (8) **Button `layout.height` 명시적 설정** — Yoga 리프 노드 `height:'auto'` 자기 강화 방지, `paddingY*2 + lineHeight + borderW*2` 계산 (styleToLayout.ts), (9) 인라인 padding 시 `MIN_BUTTON_HEIGHT` 미적용 — padding:0으로 완전 축소 허용 (utils.ts), (10) `toNum` 함수 0값 버그 수정 — `parseFloat(v) \|\| undefined` → `isNaN` 체크 (styleToLayout.ts) |
 | 2026-02-13 | 3.1 | **ComponentDefinition 재귀 확장 + TagGroup CONTAINER_TAGS 전환** (§9.7): (1) ChildDefinition 재귀 타입 추가 — 기존 2-level (parent + flat children) → 무한 중첩 지원, optional children?: ChildDefinition[] 필드, (2) Factory createElementsFromDefinition 재귀 생성 — processChildren() 재귀 함수로 중첩 자식 일괄 생성, allElementsSoFar 배열로 customId 중복 방지, (3) TagGroup → CONTAINER_TAGS 전환 — TAG_SPEC_MAP에서 TagGroup/TagList 제거, PixiTagGroup 특수 렌더러 사용 중단, BoxSprite 기반 컨테이너로 전환, (4) TagGroup 3-level 계층 정의 — TagGroup(flex column) → Label + TagList(flex row wrap) → Tag×2, styleToLayout.ts에 TagGroup/TagList flex 기본값 추가, (5) Phase 3 §6.1 TagGroup 상태 "⚠️ 부분"→"✅ 정상 (CONTAINER_TAGS 전환)", Phase 3 체크리스트 TagGroup.spec.ts 완료 표기 |
 | 2026-02-19 | 3.5 | **§9.8.6 Pixi UI 컴포넌트 Skia 전환 현황**: 62개 전수 조사 — A등급(투명 히트영역, 전환 완료) 14개, B등급(WebGL 드로잉 잔존, 전환 필요) 47개, C등급(Dead Code) 1개. A등급 목표 패턴(PixiButton 참조) 문서화. B등급 47개 재작성 로드맵 |
+| 2026-02-19 | 3.6 | **웹 컴포넌트 전수 교차 대조**: (1) `packages/shared/src/components/` 60개 vs 설계 문서 대조 — 58/60 정상 등록(96.7%), (2) **Autocomplete 누락 발견** — SearchField+Menu 복합 컴포넌트, Pixi 파일·TAG_SPEC_MAP 모두 미등록. Phase 2 §5.1에 16번째 컴포넌트로 추가, 부록 A에 #73으로 추가, §9.8.6에 미구현 섹션 추가, (3) Breadcrumb.tsx는 Breadcrumbs 하위 아이템 컴포넌트로 독립 등록 불필요 확인, (4) 부록 A 전체 컴포넌트 수 72→73개로 갱신 |
 | 2026-02-19 | 3.4 | **§9.8 CONTAINER_TAGS 계층 선택(Drill-Down) 아키텍처 섹션 신규 작성**: (1) 설계 원칙 — 웹 컴포넌트 DOM 계층 = 캔버스 요소 계층 1:1 일치, (2) editingContextId 기반 계층 선택 메커니즘 — resolveClickTarget 알고리즘 + 더블클릭 enterEditingContext + Escape exitEditingContext + Layer Tree 자동 동기화, (3) 캔버스 이벤트 처리 구조 — CanvasKit(시각) + PixiJS alpha=0(이벤트) 이중 레이어, EventBoundary 히트테스팅, (4) 13개 CONTAINER_TAGS 구조적 일관성 현황 테이블 — Group/ToggleButtonGroup/TagGroup 정상, Card/Panel/Form/Dialog/Modal/Disclosure 등 Factory/Renderer 미비 현황 명시, (5) 웹 컴포넌트 구조 동일성 가이드라인 — 7개 체크리스트 + 5개 구조 동일성 원칙 |
 | 2026-02-19 | 3.3 | **렌더링 엔진 변경 반영 — 문서 갱신**: (1) §4.7.4 CSS 단위 처리 규칙 — `Yoga` → `Taffy/Dropflow` 레이아웃 엔진, `parseCSSSize()` → `resolveCSSSizeValue()` + `CSSValueContext` 통합 파서 (cssValueParser.ts), 단위 테이블에 em/calc()/fit-content 추가, (2) §4.7.4.1 이중 padding 방지 — `SELF_PADDING_TAGS` + `stripSelfRenderedProps()` → `enrichWithIntrinsicSize()` + `parseBoxModel()` + `INLINE_BLOCK_TAGS` 패턴으로 교체, 레거시 코드를 접이식 블록으로 이동, (3) §9.3.4 레이아웃 통합 — `styleToLayout.ts` (Yoga) → `engines/utils.ts`의 `enrichWithIntrinsicSize()` (Taffy/Dropflow 공용), (4) §9.4 flexDirection:column — `styleToLayout.ts` 크기 계산 → `engines/utils.ts`의 `enrichWithIntrinsicSize()`, BlockEngine → DropflowBlockEngine, (5) §9.5 수정 파일 목록 — `layout/styleToLayout.ts` → `layout/engines/utils.ts` 참조 갱신, (6) §9.7 TagGroup — `Yoga flex layout (styleToLayout.ts)` → `Taffy flex layout (TaffyFlexEngine)`, styleToLayout.ts 파일 참조 제거, (7) §4.7.7 파일 목록 — SELF_PADDING_TAGS 참조에 대체 패턴 주석 추가, (8) Checkbox/Radio shapes 비교 테이블 — `Yoga 높이` → `엔진 계산 높이` |
