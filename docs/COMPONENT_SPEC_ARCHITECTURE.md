@@ -5067,6 +5067,124 @@ PixiJS Canvas (z-index: 4)        ← 이벤트 전용 (alpha=0, 보이지 않�
 규칙 5: Layer Tree 선택 = Canvas Drill-Down 선택 (editingContextId 동기화)
 ```
 
+#### 9.8.6 Pixi UI 컴포넌트 Skia 전환 현황 (2026-02-19)
+
+62개 Pixi UI 컴포넌트의 CanvasKit/Skia 전환 상태를 3등급으로 분류한다.
+
+**A등급 — 전환 완료 (14개)**: 투명 히트 영역 + 이벤트만. WebGL 드로잉 코드 제거됨.
+
+| 컴포넌트 | 줄 수 | 설명 |
+|----------|------:|------|
+| PixiButton | 130 | `LayoutComputedSizeContext` 히트 영역 |
+| PixiFancyButton | 172 | 히트 영역 전용 |
+| PixiToggleButton | 135 | 히트 영역 전용 |
+| PixiSlider | 124 | 히트 영역 전용 |
+| PixiBadge | 145 | 히트 영역 전용 |
+| PixiCheckboxItem | 100 | 히트 영역 전용 (그룹 내 자식) |
+| PixiRadioItem | 100 | 히트 영역 전용 (그룹 내 자식) |
+| PixiProgressBar | 135 | 히트 영역 전용 |
+| PixiSelect | 118 | 히트 영역 전용 |
+| PixiScrollBox | 75 | 히트 영역 전용 |
+| PixiMaskedFrame | 75 | 히트 영역 전용 |
+| PixiSeparator | 196 | 히트 영역 전용 |
+
+**B등급 — 전환 필요 (47개)**: WebGL Graphics 드로잉 코드(g.roundRect, g.fill, TextStyle 등) 잔존.
+Skia가 시각 렌더링을 담당하지만, 불필요한 PixiJS 드로잉이 남아있어 **A등급 패턴으로 재작성** 필요.
+
+| 컴포넌트 | 줄 수 | Draw 호출 | TextStyle | 비고 |
+|----------|------:|----------:|----------:|------|
+| PixiCard | 339 | 4 | 2 | CONTAINER_TAG + 다중 텍스트 |
+| PixiPanel | 222 | 3 | 2 | CONTAINER_TAG |
+| PixiDialog | 262 | 17 | — | backdrop + title + content |
+| PixiDisclosure | 219 | 9 | — | header + content |
+| PixiDisclosureGroup | 323 | 11 | — | 복합 아코디언 |
+| PixiColorPicker | 315 | 25 | — | 최다 Draw — 완전 재작성 |
+| PixiToast | 218 | 23 | — | 복합 UI |
+| PixiSkeleton | 211 | 22 | — | 다중 레이어 |
+| PixiDatePicker | 296 | 16 | — | 캘린더 + 입력 |
+| PixiPopover | 220 | 16 | — | backdrop + 말풍선 |
+| PixiToolbar | 166 | 15 | — | 다중 버튼 |
+| PixiDateRangePicker | 349 | 11 | — | 2x 캘린더 |
+| PixiCalendar | 347 | 10 | — | 그리드 셀 |
+| PixiColorField | 177 | 10 | — | swatch + input |
+| PixiSlot | 288 | 10 | — | placeholder 패턴 |
+| PixiComboBox | 335 | 9 | 4 | input + dropdown |
+| PixiDropZone | 253 | 9 | — | 점선 + 아이콘 |
+| PixiFileTrigger | 148 | 8 | — | 버튼 + 아이콘 |
+| PixiColorArea | 162 | 8 | — | 2D gradient |
+| PixiColorSlider | 184 | 8 | — | track + thumb |
+| PixiColorSwatchPicker | 154 | 8 | — | 그리드 |
+| PixiColorSwatch | 129 | 7 | — | 단일 swatch |
+| PixiTooltip | 163 | 8 | — | 말풍선 |
+| PixiSwitch | 211 | 7 | — | track + thumb |
+| PixiColorWheel | 174 | 5 | — | 원형 gradient |
+| PixiForm | 144 | 7 | — | CONTAINER_TAG |
+| PixiInput | 307 | 6 | — | border + placeholder |
+| PixiTextField | 234 | 6 | — | label + input |
+| PixiTextArea | 201 | 5 | — | multiline input |
+| PixiGroup | 182 | 6 | — | CONTAINER_TAG |
+| PixiTable | 392 | 8 | 4 | header + rows |
+| PixiTree | 355 | 6 | 3 | indent + nodes |
+| PixiGridList | 253 | 5 | 3 | header + cells |
+| PixiNumberField | 252 | 5 | 3 | input + spinner |
+| PixiTimeField | 191 | 5 | — | segments |
+| PixiDateField | 173 | 5 | — | segments |
+| PixiMenu | 333 | 4 | 4 | items + separators |
+| PixiTabs | 376 | 3 | 3 | tab bar + content |
+| PixiSearchField | 227 | 3 | 3 | input + icon |
+| PixiBreadcrumbs | 215 | 2 | 3 | items + separators |
+| PixiPagination | 245 | 7 | 1 | 페이지 버튼 |
+| PixiMeter | 281 | 2 | 2 | track + fill |
+| PixiLink | 184 | 0 | 1 | 텍스트만 (TextStyle) |
+| PixiToggleButtonGroup | 346 | 1 | 1 | CONTAINER_TAG + children |
+| PixiCheckbox | 225 | 2 | 1 | indicator + label |
+| PixiCheckboxGroup | 449 | 2 | 2 | children 반복 |
+| PixiRadio | 441 | 2 | 2 | indicator + label |
+
+**C등급 — Dead Code (1개)**: import 없음, 완전 대체됨.
+
+| 컴포넌트 | 줄 수 | 상태 |
+|----------|------:|------|
+| PixiTagGroup | 310 | CONTAINER_TAGS로 대체, 삭제 대상 |
+
+**요약:**
+
+| 등급 | 수량 | 총 줄 수 | 조치 |
+|------|-----:|--------:|------|
+| A (완료) | 14 | ~1,730 | 유지 |
+| B (전환 필요) | 47 | ~11,700 | A등급 패턴으로 재작성 |
+| C (Dead Code) | 1 | 310 | 삭제 |
+
+**A등급 목표 패턴 (PixiButton 참조):**
+
+```typescript
+// A등급: 투명 히트 영역 + 이벤트만 (Skia가 시각 렌더링 전담)
+export const PixiXXX = memo(function PixiXXX({ element, onClick }: Props) {
+  useExtend(PIXI_COMPONENTS);
+  const computedSize = useContext(LayoutComputedSizeContext);
+  const hitW = computedSize?.width ?? 0;
+  const hitH = computedSize?.height ?? 0;
+
+  const drawHitArea = useCallback((g: PixiGraphicsClass) => {
+    g.clear();
+    g.rect(0, 0, hitW, hitH);
+    g.fill({ color: 0xffffff, alpha: 0 });
+  }, [hitW, hitH]);
+
+  const handleClick = useCallback((e: unknown) => {
+    // modifier key 추출 후 onClick 호출
+    onClick?.(element.id, extractModifiers(e));
+  }, [element.id, onClick]);
+
+  return (
+    <pixiContainer>
+      <pixiGraphics draw={drawHitArea} eventMode="static" cursor="pointer"
+        onPointerDown={handleClick} />
+    </pixiContainer>
+  );
+});
+```
+
 ---
 
 ## 10. 기술 명세
@@ -5736,5 +5854,6 @@ function ElementSpriteButton({ element }) {
 | 2026-02-12 | 3.0 | **Phase 6 Spec Shapes → Skia 렌더링 파이프라인 문서화**: (1) 문서 상태를 "Phase 6 Skia Spec 렌더링 구현 완료"로 갱신, (2) 목차에 Phase 6 항목 추가 및 이후 섹션 번호 재조정 (9→10, 10→11), (3) Phase 요약 테이블에 Phase 6 행 추가 (specShapeConverter, line 렌더러, flexDirection 지원), (4) §9 Phase 6 섹션 신규 작성 — 전체 렌더링 흐름 다이어그램 (ComponentSpec → Shape[] → specShapesToSkia → SkiaNodeData → renderNode), Shape 타입 매핑 테이블 (8개 타입), 핵심 파일 구조, specShapeConverter 핵심 로직 (배경 box 추출/target 참조/색상 변환), ElementSprite TAG_SPEC_MAP 통합 코드, flexDirection row/column 지원 (rearrangeShapesForColumn), BlockEngine 통합 (calculateContentHeight/Width), Phase 6 체크리스트 (변환 인프라 9건 + 레이아웃 4건 + 검증 3건 완료) |
 | 2026-02-15 | 3.2 | **Button 텍스트 줄바꿈 시 높이 확장 (Skia + BlockEngine)**: (1) `measureSpecTextMinHeight()` 헬퍼 — spec shapes 내 텍스트 word-wrap 높이 측정 (ElementSprite.tsx), (2) `contentMinHeight` 패턴 — 다중 줄 시 `specHeight` 확장 + `cardCalculatedHeight` 전파 (ElementSprite.tsx), (3) 다중 줄 텍스트 `paddingTop` 보정 — `(specHeight - wrappedHeight) / 2` 수직 중앙 (ElementSprite.tsx), (4) `updateTextChildren` box 재귀 — specNode 내부 텍스트 크기 갱신 (SkiaOverlay.tsx), (5) **BlockEngine `parseBoxModel` 수정** — 요소 자체 border-box width를 `calculateContentHeight`에 전달, 부모 `availableWidth` 대신 사용하여 올바른 텍스트 줄바꿈 높이 계산 (utils.ts), (6) `styleToLayout` minHeight 기본 사이즈 `'md'`→`'sm'` 수정 (styleToLayout.ts), (7) Flex 경로는 `minHeight` → Yoga, BlockEngine 경로는 `parseBoxModel` → `calculateContentHeight`로 각각 처리, (8) **Button `layout.height` 명시적 설정** — Yoga 리프 노드 `height:'auto'` 자기 강화 방지, `paddingY*2 + lineHeight + borderW*2` 계산 (styleToLayout.ts), (9) 인라인 padding 시 `MIN_BUTTON_HEIGHT` 미적용 — padding:0으로 완전 축소 허용 (utils.ts), (10) `toNum` 함수 0값 버그 수정 — `parseFloat(v) \|\| undefined` → `isNaN` 체크 (styleToLayout.ts) |
 | 2026-02-13 | 3.1 | **ComponentDefinition 재귀 확장 + TagGroup CONTAINER_TAGS 전환** (§9.7): (1) ChildDefinition 재귀 타입 추가 — 기존 2-level (parent + flat children) → 무한 중첩 지원, optional children?: ChildDefinition[] 필드, (2) Factory createElementsFromDefinition 재귀 생성 — processChildren() 재귀 함수로 중첩 자식 일괄 생성, allElementsSoFar 배열로 customId 중복 방지, (3) TagGroup → CONTAINER_TAGS 전환 — TAG_SPEC_MAP에서 TagGroup/TagList 제거, PixiTagGroup 특수 렌더러 사용 중단, BoxSprite 기반 컨테이너로 전환, (4) TagGroup 3-level 계층 정의 — TagGroup(flex column) → Label + TagList(flex row wrap) → Tag×2, styleToLayout.ts에 TagGroup/TagList flex 기본값 추가, (5) Phase 3 §6.1 TagGroup 상태 "⚠️ 부분"→"✅ 정상 (CONTAINER_TAGS 전환)", Phase 3 체크리스트 TagGroup.spec.ts 완료 표기 |
+| 2026-02-19 | 3.5 | **§9.8.6 Pixi UI 컴포넌트 Skia 전환 현황**: 62개 전수 조사 — A등급(투명 히트영역, 전환 완료) 14개, B등급(WebGL 드로잉 잔존, 전환 필요) 47개, C등급(Dead Code) 1개. A등급 목표 패턴(PixiButton 참조) 문서화. B등급 47개 재작성 로드맵 |
 | 2026-02-19 | 3.4 | **§9.8 CONTAINER_TAGS 계층 선택(Drill-Down) 아키텍처 섹션 신규 작성**: (1) 설계 원칙 — 웹 컴포넌트 DOM 계층 = 캔버스 요소 계층 1:1 일치, (2) editingContextId 기반 계층 선택 메커니즘 — resolveClickTarget 알고리즘 + 더블클릭 enterEditingContext + Escape exitEditingContext + Layer Tree 자동 동기화, (3) 캔버스 이벤트 처리 구조 — CanvasKit(시각) + PixiJS alpha=0(이벤트) 이중 레이어, EventBoundary 히트테스팅, (4) 13개 CONTAINER_TAGS 구조적 일관성 현황 테이블 — Group/ToggleButtonGroup/TagGroup 정상, Card/Panel/Form/Dialog/Modal/Disclosure 등 Factory/Renderer 미비 현황 명시, (5) 웹 컴포넌트 구조 동일성 가이드라인 — 7개 체크리스트 + 5개 구조 동일성 원칙 |
 | 2026-02-19 | 3.3 | **렌더링 엔진 변경 반영 — 문서 갱신**: (1) §4.7.4 CSS 단위 처리 규칙 — `Yoga` → `Taffy/Dropflow` 레이아웃 엔진, `parseCSSSize()` → `resolveCSSSizeValue()` + `CSSValueContext` 통합 파서 (cssValueParser.ts), 단위 테이블에 em/calc()/fit-content 추가, (2) §4.7.4.1 이중 padding 방지 — `SELF_PADDING_TAGS` + `stripSelfRenderedProps()` → `enrichWithIntrinsicSize()` + `parseBoxModel()` + `INLINE_BLOCK_TAGS` 패턴으로 교체, 레거시 코드를 접이식 블록으로 이동, (3) §9.3.4 레이아웃 통합 — `styleToLayout.ts` (Yoga) → `engines/utils.ts`의 `enrichWithIntrinsicSize()` (Taffy/Dropflow 공용), (4) §9.4 flexDirection:column — `styleToLayout.ts` 크기 계산 → `engines/utils.ts`의 `enrichWithIntrinsicSize()`, BlockEngine → DropflowBlockEngine, (5) §9.5 수정 파일 목록 — `layout/styleToLayout.ts` → `layout/engines/utils.ts` 참조 갱신, (6) §9.7 TagGroup — `Yoga flex layout (styleToLayout.ts)` → `Taffy flex layout (TaffyFlexEngine)`, styleToLayout.ts 파일 참조 제거, (7) §4.7.7 파일 목록 — SELF_PADDING_TAGS 참조에 대체 패턴 주석 추가, (8) Checkbox/Radio shapes 비교 테이블 — `Yoga 높이` → `엔진 계산 높이` |
