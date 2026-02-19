@@ -32,7 +32,7 @@
 | `inline-grid` | ⚠️ | TaffyGrid | `TaffyGridEngine.ts:520` | `grid`로 정규화됨 — inline 특성 미반영 |
 | `flow-root` | ✅ | DropflowBlock | `DropflowBlockEngine.ts:539` | BFC 생성 |
 | `none` | ✅ | 공통 | `TaffyFlexEngine.ts:52`, `nodeRenderers.ts:219` | 레이아웃 제외 + 렌더 스킵 |
-| `contents` | ❌ | — | — | |
+| `contents` | ✅ | 공통 | `BuilderCanvas.tsx` pageChildrenMap 플래튼 | 자식을 부모에 직접 배치, 자체 박스 생성 안 함 |
 
 ---
 
@@ -417,7 +417,7 @@
 
 | # | CSS Spec Module | ✅ | ⚠️ | ❌ | 지원율 |
 |---|----------------|-----|-----|-----|--------|
-| 1 | Display Level 3 | 8 | 2 | 1 | 82% |
+| 1 | Display Level 3 | 9 | 2 | 0 | 82% |
 | 2 | Box Model Level 3 | 13 | 1 | 0 | 96% |
 | 3 | Box Sizing Level 3 | 1 | 3 | 0 | 63% |
 | 4 | Flexbox Level 1 | 14 | 0 | 0 | 100% |
@@ -435,7 +435,7 @@
 | 16 | Values/Units Level 3 | 11 | 0 | 1 | 92% |
 | 17 | Cascade Level 4 | 5 | 0 | 2 | 71% |
 | 18 | Logical Properties Level 1 | 0 | 0 | 7 | 0% |
-| | **합계** | **151** | **11** | **24** | **81%** |
+| | **합계** | **152** | **11** | **23** | **82%** |
 
 > **변경 내역 (2026-02-19 v1.1 갱신):**
 > - `matrix()` transform: ❌ → ✅ (`styleConverter.ts:661-673`)
@@ -554,4 +554,5 @@
 | 2026-02-19 | 1.1 | Wave 3-4 구현 반영: matrix() transform, grayscale/sepia/invert filter, min()/max()/clamp() 함수, FontMetrics 기반 baseline 갱신. 총 지원 속성 113 → 118 |
 | 2026-02-19 | 1.2 | 기존 구현 누락 확인: brightness/contrast/saturate/hue-rotate filter 4종 ❌→✅. 총 지원 속성 118 → 122 (72%) |
 | 2026-02-19 | 1.3 | Phase 1-6 일괄 구현 (23개 ❌→✅): drop-shadow filter, vmin/vmax, overflow:clip, visibility:collapse, order, flex-flow, place-items/content, word-spacing, overflow-wrap, text-overflow, text-decoration-style/color, text-indent, background-size/position/repeat, currentColor, initial/unset/revert, cursor, pointer-events. 집계 보정 포함: ✅144, ⚠️11, ❌31 (77%) |
-| 2026-02-19 | 1.4 | Phase 7 추가 구현 (7개 ❌→✅): cm/mm/in/pt/pc 물리 단위, ch/ex 단위, font shorthand, border-style double/groove/ridge/inset/outset, clip-path 기본 도형, color-mix(). 총 ✅151, ⚠️11, ❌24 (**81%**) |
+| 2026-02-19 | 1.4 | Phase 7 추가 구현 (7개 ❌→✅): cm/mm/in/pt/pc 물리 단위, ch/ex 단위, font shorthand, border-style double/groove/ridge/inset/outset, clip-path 기본 도형, color-mix(). 총 ✅151, ⚠️11, ❌24 (81%) |
+| 2026-02-19 | 1.5 | display:contents 구현: pageChildrenMap 플래튼, depthMap 보정, ElementSprite/BoxSprite 렌더 스킵. 총 ✅152, ⚠️11, ❌23 (**82%**) |

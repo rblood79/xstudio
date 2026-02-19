@@ -248,7 +248,7 @@ export const BoxSprite = memo(function BoxSprite({ element, onClick, onDoubleCli
       y: transform.y,
       width: transform.width,
       height: transform.height,
-      visible: style?.display !== 'none' && style?.visibility !== 'hidden' && style?.visibility !== 'collapse',
+      visible: style?.display !== 'none' && style?.display !== 'contents' && style?.visibility !== 'hidden' && style?.visibility !== 'collapse',
       ...((style?.overflow === 'hidden' || style?.overflow === 'clip' || style?.overflow === 'scroll' || style?.overflow === 'auto')
         ? { clipChildren: true }
         : {}),

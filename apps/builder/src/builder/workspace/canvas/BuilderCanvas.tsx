@@ -542,9 +542,29 @@ const ElementsLayer = memo(function ElementsLayer({
     const map = new Map<string | null, Element[]>();
     const bodyId = bodyElement?.id ?? null;
 
+    // display:contents 요소의 자식을 실제 레이아웃 부모에 직접 포함 (플래튼)
+    const isContentsElement = (el: Element): boolean => {
+      const style = el.props?.style as Record<string, unknown> | undefined;
+      return style?.display === 'contents';
+    };
+
+    // contents 체인을 따라 올라가서 실제 레이아웃 부모 찾기
+    const getLayoutParentId = (parentId: string | null): string | null => {
+      let currentId = parentId;
+      while (currentId) {
+        const parentEl = elementById.get(currentId);
+        if (!parentEl || !isContentsElement(parentEl)) break;
+        currentId = parentEl.parent_id ?? bodyId;
+      }
+      return currentId;
+    };
+
     for (const el of pageElements) {
-      const parentId = el.parent_id ?? bodyId;
-      const key = parentId ?? null;
+      // contents 요소 자체는 레이아웃 트리에서 제외
+      if (isContentsElement(el)) continue;
+
+      const rawParentId = el.parent_id ?? bodyId;
+      const key = getLayoutParentId(rawParentId);
       const list = map.get(key);
       if (list) {
         list.push(el);
@@ -558,7 +578,7 @@ const ElementsLayer = memo(function ElementsLayer({
     }
 
     return map;
-  }, [pageElements, bodyElement?.id]);
+  }, [pageElements, bodyElement?.id, elementById]);
 
   // 깊이 + order_num 기준으로 정렬 (부모 먼저 → 자식 나중에 렌더링)
   // DOM 방식: 자식이 부모 위에 표시됨
@@ -904,6 +924,14 @@ export function BuilderCanvas({
       if (!el || el.tag.toLowerCase() === "body") {
         cache.set(id, 0);
         return 0;
+      }
+
+      // display:contents 요소는 레이아웃 트리에서 투명 — 깊이 증가 없이 부모를 따라감
+      const parentStyle = el.props?.style as Record<string, unknown> | undefined;
+      if (parentStyle?.display === 'contents') {
+        const depth = computeDepth(el.parent_id as string | null);
+        cache.set(id, depth);
+        return depth;
       }
 
       const depth = 1 + computeDepth(el.parent_id as string | null);

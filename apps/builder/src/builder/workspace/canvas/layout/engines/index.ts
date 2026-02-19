@@ -93,6 +93,7 @@ export function selectEngine(display: string | undefined): LayoutEngine {
     case 'inline-grid':
       return wasmReady ? taffyGridEngine : dropflowBlockEngine;
 
+    case 'contents':
     case 'block':
     case 'inline-block':
     case 'flow-root':

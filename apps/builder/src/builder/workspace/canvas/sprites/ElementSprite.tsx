@@ -1273,6 +1273,12 @@ export const ElementSprite = memo(function ElementSprite({
     return null;
   }
 
+  // display:contents 요소는 자체 박스를 생성하지 않음 — 렌더링 스킵
+  const elementDisplay = (element.props?.style as Record<string, unknown> | undefined)?.display;
+  if (elementDisplay === 'contents') {
+    return null;
+  }
+
   // 🚀 Breadcrumbs 자식 요소 처리:
   // - Breadcrumb 요소는 PixiBreadcrumbs에서 직접 렌더링하므로 skip
   const isBreadcrumbsChild = parentElement?.tag === 'Breadcrumbs';
