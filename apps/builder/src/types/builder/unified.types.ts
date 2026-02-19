@@ -730,6 +730,14 @@ export function createDefaultToggleButtonProps(): ToggleButtonElementProps {
     size: "sm",
     isSelected: false,
     isDisabled: false,
+    // CSS base: display:flex; border:1px solid var(--outline-variant); width:fit-content
+    style: {
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      width: 'fit-content',
+      borderWidth: '1px',
+    },
   };
 }
 
@@ -1005,10 +1013,14 @@ export function createDefaultCardProps(): CardElementProps {
     orientation: "vertical",
     title: "Title",
     description: "Description",
+    // CSS base: display:block; border:1px solid var(--outline-variant); width:100%; padding:12px
+    // variant=elevated → border:0 + shadow
+    // variant=outlined → border-width:2px
     style: {
       display: 'block',
       width: '100%',
       padding: '12px',  // var(--spacing-md) = 12px
+      borderWidth: '1px',
     },
   };
 }
@@ -1146,6 +1158,239 @@ export function createDefaultSlotProps(): SlotElementProps {
   };
 }
 
+// === 전용 타입 없는 컴포넌트 기본 props (BaseElementProps) ===
+
+export function createDefaultToolbarProps(): BaseElementProps {
+  return {
+    // CSS base: display:flex; flex-wrap:wrap; gap:5px; width:fit-content
+    // orientation=horizontal → flex-direction:row
+    style: {
+      display: 'flex',
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: 5,
+      width: 'fit-content',
+    },
+  };
+}
+
+export function createDefaultBreadcrumbsProps(): BaseElementProps {
+  return {
+    // CSS base: display:flex; align-items:center (implicit row)
+    style: {
+      display: 'flex',
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+  };
+}
+
+export function createDefaultSeparatorProps(): BaseElementProps {
+  return {
+    // CSS base: width:100%; height:1px (horizontal)
+    // orientation=vertical → height:100%; width:1px
+    style: {
+      width: '100%',
+      height: '1px',
+    },
+  };
+}
+
+export function createDefaultDisclosureProps(): BaseElementProps {
+  return {
+    // CSS base: width:100%
+    style: {
+      width: '100%',
+    },
+  };
+}
+
+export function createDefaultDisclosureGroupProps(): BaseElementProps {
+  return {
+    // CSS base: display:flex; flex-direction:column; width:100%
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+      width: '100%',
+    },
+  };
+}
+
+export function createDefaultDialogProps(): BaseElementProps {
+  return {
+    // CSS base: display:flex; flex-direction:column; max-height:inherit
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+    },
+  };
+}
+
+export function createDefaultFormProps(): BaseElementProps {
+  return {
+    // CSS base: display:flex; flex-direction:column; gap:var(--spacing-md)
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 12,
+    },
+  };
+}
+
+export function createDefaultMenuProps(): BaseElementProps {
+  return {
+    // CSS base: display:flex; flex-direction:column; outline:none
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+    },
+  };
+}
+
+export function createDefaultNumberFieldProps(): BaseElementProps {
+  return {
+    // CSS base: display:grid; Group 내부에 border:1px solid var(--outline-variant)
+    style: {
+      display: 'grid',
+    },
+  };
+}
+
+export function createDefaultSearchFieldProps(): BaseElementProps {
+  return {
+    // CSS base: display:flex; flex-direction:column; Group border:1px solid var(--outline-variant)
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+    },
+  };
+}
+
+export function createDefaultProgressBarProps(): BaseElementProps {
+  return {
+    // CSS base: display:grid; gap:4px; width:100%
+    style: {
+      display: 'grid',
+      width: '100%',
+    },
+  };
+}
+
+export function createDefaultMeterProps(): BaseElementProps {
+  return {
+    // CSS base: display:grid; gap:4px; width:100%
+    style: {
+      display: 'grid',
+      width: '100%',
+    },
+  };
+}
+
+export function createDefaultDateFieldProps(): BaseElementProps {
+  return {
+    // CSS base: display:flex; flex-direction:column; Group border:1px
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+    },
+  };
+}
+
+export function createDefaultTimeFieldProps(): BaseElementProps {
+  return {
+    // CSS base: display:flex; flex-direction:column; Group border:1px
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+    },
+  };
+}
+
+export function createDefaultColorFieldProps(): BaseElementProps {
+  return {
+    // CSS base: Group border:1px solid var(--outline-variant)
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+    },
+  };
+}
+
+export function createDefaultColorPickerProps(): BaseElementProps {
+  return {
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 8,
+    },
+  };
+}
+
+export function createDefaultColorSwatchProps(): BaseElementProps {
+  return {
+    // CSS base: display:inline-block; border:1px solid var(--outline-variant); border-radius:var(--radius-sm)
+    style: {
+      display: 'inline-block',
+      borderWidth: '1px',
+    },
+  };
+}
+
+export function createDefaultDropZoneProps(): BaseElementProps {
+  return {
+    // CSS base: display:flex; flex-direction:column; border:2px dashed var(--outline-variant)
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderWidth: '2px',
+    },
+  };
+}
+
+export function createDefaultFileTriggerProps(): BaseElementProps {
+  return {
+    style: {
+      display: 'inline-flex',
+    },
+  };
+}
+
+export function createDefaultTooltipProps(): BaseElementProps {
+  return {
+    style: {},
+  };
+}
+
+export function createDefaultPopoverProps(): BaseElementProps {
+  return {
+    // CSS base: border:1px solid var(--outline-variant)
+    style: {
+      borderWidth: '1px',
+    },
+  };
+}
+
+export function createDefaultModalProps(): BaseElementProps {
+  return {
+    // CSS base: border:1px solid var(--outline-variant)
+    style: {
+      borderWidth: '1px',
+    },
+  };
+}
+
+export function createDefaultGroupProps(): BaseElementProps {
+  return {
+    style: {
+      display: 'flex',
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+  };
+}
+
 // === 통합된 기본 props 생성 함수 ===
 export function getDefaultProps(tag: string): ComponentElementProps {
   const defaultPropsMap: Record<string, () => ComponentElementProps> = {
@@ -1174,9 +1419,12 @@ export function getDefaultProps(tag: string): ComponentElementProps {
     TableHeader: createDefaultTableHeaderProps,
     TableBody: createDefaultTableBodyProps,
     Column: createDefaultColumnProps,
+    ColumnGroup: createDefaultColumnGroupProps,
     Row: createDefaultRowProps,
     Cell: createDefaultCellProps,
     Card: createDefaultCardProps,
+    Badge: createDefaultBadgeProps,
+    Link: createDefaultLinkProps,
     Label: createDefaultLabelProps,
     TagGroup: createDefaultTagGroupProps,
     TagList: createDefaultTagListProps,
@@ -1192,6 +1440,30 @@ export function getDefaultProps(tag: string): ComponentElementProps {
     Nav: createDefaultNavProps,
     Slot: createDefaultSlotProps,
     body: createDefaultBodyProps,
+    // 신규 등록 — CSS 기본 스타일 매칭
+    Toolbar: createDefaultToolbarProps,
+    Breadcrumbs: createDefaultBreadcrumbsProps,
+    Separator: createDefaultSeparatorProps,
+    Disclosure: createDefaultDisclosureProps,
+    DisclosureGroup: createDefaultDisclosureGroupProps,
+    Dialog: createDefaultDialogProps,
+    Form: createDefaultFormProps,
+    Menu: createDefaultMenuProps,
+    NumberField: createDefaultNumberFieldProps,
+    SearchField: createDefaultSearchFieldProps,
+    ProgressBar: createDefaultProgressBarProps,
+    Meter: createDefaultMeterProps,
+    DateField: createDefaultDateFieldProps,
+    TimeField: createDefaultTimeFieldProps,
+    ColorField: createDefaultColorFieldProps,
+    ColorPicker: createDefaultColorPickerProps,
+    ColorSwatch: createDefaultColorSwatchProps,
+    DropZone: createDefaultDropZoneProps,
+    FileTrigger: createDefaultFileTriggerProps,
+    Tooltip: createDefaultTooltipProps,
+    Popover: createDefaultPopoverProps,
+    Modal: createDefaultModalProps,
+    Group: createDefaultGroupProps,
   };
 
   const createProps = defaultPropsMap[tag];
