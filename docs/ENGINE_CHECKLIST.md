@@ -559,7 +559,7 @@
 
 > **작성일**: 2026-02-19
 > **현재 전체 정합성**: 약 62% (66개 컴포넌트 가중 평균)
-> **목표**: ~80% (캔버스 정적 렌더링 아키텍처의 현실적 상한)
+> **목표**: ~92% (Quick Win + Medium 포함 시 현실적 상한)
 
 ### 카테고리별 현황
 
@@ -583,6 +583,7 @@
 | 구조/레이아웃 | **85%** | Taffy + Dropflow 엔진 |
 | 색상/Variant | **80%** | Spec variant + CSS variable reader |
 | 타이포그래피 | **80%** | CanvasKit Paragraph API |
+| 렌더링 정밀도 (shadow/outline/border) | **60%** | multi-shadow, focus ring, border style 미전달 |
 | 시각 장식 (아이콘/pseudo) | **50%** | 아이콘 폰트 도입으로 해결 가능 |
 | 상태 표현 | **35%** | Spec state 인프라 존재, 연결만 필요 |
 | 애니메이션 | **5%** | 최후순위 (§13 참조) |
@@ -591,6 +592,8 @@
 
 > **원칙**: 애니메이션은 최후순위. 상태 표현은 기존 CSS 웹 방식을 따름.
 
+#### 기존 로드맵 (기능 단위)
+
 | Phase | 작업 | 예상 향상 | 누적 목표 | 우선순위 |
 |-------|------|----------|----------|----------|
 | **A** | **상태 표현 연결** — ElementSprite `'default'` 하드코딩 → `ComponentState` 전달. 스타일 패널 state selector 추가 | **+5~6%** | **67~68%** | P1 |
@@ -598,9 +601,31 @@
 | **C** | **컬렉션 아이템 Shape 생성** — Table/ListBox/Menu/Tree/Calendar 자식 렌더링 | **+6~8%** | **78~82%** | P2 |
 | **D** | **FancyButton 제거** — Button의 엄밀한 부분집합, gradient variant로 대체 | 코드 정리 | — | P2 |
 | **E** | **overflow: scroll/auto 완성** — 스크롤바 UI + wheel/touch 이벤트 (엔진 인프라 이미 존재) | **+1~2%** | **79~84%** | P2 |
-| **F** | **Overlay 개선** — arrow, backdrop 렌더링 | **+2~3%** | **~80%** | P3 |
-| **G** | **Color 그라디언트** — ColorArea/ColorWheel 2D/원형 그라디언트 | **+3~4%** | **~80%** | P3 |
-| **Z** | **애니메이션 인프라** — transition/keyframe 프레임 기반 (최후순위) | **+5~10%** | **~90%** | **P4 (최후)** |
+| **F** | **Overlay 개선** — arrow, backdrop 렌더링 | **+2~3%** | **~84%** | P3 |
+| **G** | **Color 그라디언트** — ColorArea/ColorWheel 2D/원형 그라디언트 | **+3~4%** | **~86%** | P3 |
+| **Z** | **애니메이션 인프라** — transition/keyframe 프레임 기반 (최후순위) | **+5~10%** | **~95%** | **P4 (최후)** |
+
+#### 추가 개선 방안: Quick Win (렌더링 정밀도)
+
+> specShapeConverter / nodeRenderers / effects 레벨의 누락 전달 수정.
+> 개별 컴포넌트 수정 불필요, 전체 Spec 컴포넌트에 일괄 적용됨.
+
+| Phase | 작업 | 예상 향상 | 난이도 | 우선순위 |
+|-------|------|----------|--------|----------|
+| **QW-1** | **border style 전달** — `specShapeConverter`에서 `BorderShape.style` (dashed/dotted) → `SkiaNodeData.box.strokeStyle` 전달. 현재 1줄 누락 | **+1~2%** | 🟢 1줄 | P1 |
+| **QW-2** | **disabled opacity 일괄 적용** — `state === 'disabled'` 시 `saveLayer(opacity: 0.38)` effect 추가. 모든 Spec 공통 | **+2~4%** | 🟢 | P1 |
+| **QW-3** | **focus ring 렌더링** — `SkiaNodeData.box`에 `outline` 필드 추가 → `nodeRenderers`에서 외곽 stroke. 50+ 컴포넌트 영향 | **+3~5%** | 🟡 | P1 |
+
+#### 추가 개선 방안: Medium (렌더링 정밀도 + 인프라)
+
+| Phase | 작업 | 예상 향상 | 난이도 | 우선순위 |
+|-------|------|----------|--------|----------|
+| **M-1** | **multi-layer shadow** — M3 elevation 2~3겹 shadow 지원. `effects.ts`에서 shadow 배열 → 순차 `MakeDropShadow()`. Card/Dialog/Menu 영향 | **+5~8%** | 🟡 | P2 |
+| **M-2** | **shadow spread radius** — `ShadowShape.spread` 렌더러 전달. CanvasKit 네이티브 미지원 → sigma 확장 워크어라운드 | **+2~3%** | 🟡 | P2 |
+| **M-3** | **image shape 렌더링** — `specShapeConverter` `case 'image'` skip → `getSkImage()` + `drawImageRect()` 구현. imageCache 재활용 | **+3~5%** | 🟡 | P2 |
+| **M-4** | **CSS variable 실시간 캐시** — `:root` 전체 `--*` 변수 메모리 캐시 + 테마 변경 시 무효화. hardcoded fallback 의존 탈피 | **+2~3%** | 🟡 | P3 |
+| **M-5** | **state 파라미터 일관성 강제** — 72개 spec 중 25개 `_state` 미사용 → 공통 `applyStateEffect()` 헬퍼 추출 | **+2%** | 🟡 반복작업 | P3 |
+| **M-6** | **partial border 지원** — `BorderShape.sides` (top/right/bottom/left) → 개별 Line 렌더링 | **+1%** | 🟡 | P3 |
 
 ### Phase A 상세: 상태 표현 연결
 
@@ -664,6 +689,235 @@ gradient 효과가 필요하면 Button에 `variant: 'gradient'` 추가.
 
 **필요 작업**: 스크롤바 Skia 렌더링 + wheel 이벤트 바인딩 + Taffy에 overflow 전달
 
+### Quick Win 상세: 렌더링 정밀도 개선
+
+> 개별 컴포넌트 수정 없이, specShapeConverter/nodeRenderers 레벨에서 **전체 Spec 컴포넌트에 일괄 적용**되는 수정.
+
+#### QW-1: border style 전달 (1줄)
+
+`BorderShape`에 `style?: 'solid' | 'dashed' | 'dotted'` 타입이 존재하나 렌더러에 전달되지 않음.
+
+```typescript
+// specShapeConverter.ts — BorderShape 처리부에 1줄 추가
+if (shape.style) {
+  targetNode.box.strokeStyle = shape.style;
+}
+```
+
+| 대상 파일 | `specShapeConverter.ts` (line ~265) |
+|---|---|
+| 영향 | Separator(dashed), DropZone(dashed border), TextField(underline) |
+
+#### QW-2: disabled opacity 일괄 적용
+
+모든 Spec이 `disabled: { opacity: 0.38 }` 정의. 캔버스에서 미적용.
+
+```typescript
+// specShapeConverter.ts — specShapesToSkia() 함수 끝부분
+function specShapesToSkia(shapes, theme, width, height, state?: ComponentState): SkiaNodeData {
+  const root = convertShapes(shapes, ...);
+  if (state === 'disabled') {
+    root.effects = [...(root.effects || []), { type: 'opacity', value: 0.38 }];
+  }
+  return root;
+}
+```
+
+| 대상 파일 | `specShapeConverter.ts`, `ElementSprite.tsx` (isDisabled → state 전달) |
+|---|---|
+| 영향 | 전체 66개 컴포넌트 disabled 상태 |
+
+#### QW-3: focus ring / outline 렌더링
+
+50+ 컴포넌트가 `focusVisible: { outline: '2px solid var(--primary)', outlineOffset: '2px' }` 정의. 캔버스에서 outline 렌더링 **제로**.
+
+```typescript
+// types.ts — SkiaNodeData.box 확장
+interface SkiaBox {
+  // ... 기존 필드
+  outline?: {
+    color: Float32Array;
+    width: number;
+    offset: number;
+  };
+}
+
+// nodeRenderers.ts — renderBoxNode() 끝부분
+if (node.box.outline) {
+  const { color, width, offset } = node.box.outline;
+  const outlinePaint = new ck.Paint();
+  outlinePaint.setStyle(ck.PaintStyle.Stroke);
+  outlinePaint.setStrokeWidth(width);
+  outlinePaint.setColor(color);
+  const outlineRect = ck.LTRBRect(
+    -offset, -offset,
+    node.width + offset, node.height + offset
+  );
+  canvas.drawRRect(
+    ck.RRectXY(outlineRect, node.box.borderRadius + offset, node.box.borderRadius + offset),
+    outlinePaint
+  );
+}
+```
+
+| 대상 파일 | `types.ts`, `specShapeConverter.ts`, `nodeRenderers.ts` |
+|---|---|
+| 영향 | 전체 interactive 컴포넌트 (Button, Input, Select, Checkbox...) |
+
+### Medium 상세: 렌더링 인프라 확장
+
+#### M-1: multi-layer shadow
+
+M3 elevation은 2~3겹 shadow를 사용. 현재 1겹만 지원.
+
+```
+CSS:  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1),
+                  0 2px 4px -2px rgba(0,0,0,0.1);    ← 2겹
+Canvas: MakeDropShadow(첫 번째만) → 1겹
+```
+
+| 대상 파일 | `effects.ts` (shadow 배열 지원), `specShapeConverter.ts` (multi-shadow 파싱) |
+|---|---|
+| 영향 | Card(elevated), Dialog, Menu, Popover, Tooltip, Select dropdown |
+
+#### M-2: shadow spread radius
+
+`ShadowShape`에 `spread?: number` 필드 존재하나 렌더러에서 무시.
+
+| 대상 파일 | `effects.ts` (sigma 확장 워크어라운드) |
+|---|---|
+| 워크어라운드 | CanvasKit에 네이티브 spread 없음 → `adjustedSigma = sigma + abs(spread) * 0.2` |
+
+#### M-3: image shape 렌더링
+
+`specShapeConverter.ts`에서 `case 'image'`를 skip 처리 중. imageCache + CanvasKit Image API 이미 존재.
+
+```typescript
+// specShapeConverter.ts — 현재
+case 'image': // Skip — not supported
+
+// 수정
+case 'image': {
+  const skImage = imageCache.get(shape.src);
+  if (skImage) {
+    children.push({
+      type: 'image',
+      x: shape.x, y: shape.y,
+      width: resolve(shape.width), height: resolve(shape.height),
+      image: { skImage, contentWidth: skImage.width(), contentHeight: skImage.height() },
+    });
+  }
+  break;
+}
+```
+
+| 대상 파일 | `specShapeConverter.ts` (image case 구현) |
+|---|---|
+| 영향 | Avatar, Badge(이미지 배경), Card(커버 이미지) |
+
+#### M-4: CSS variable 실시간 캐시
+
+`cssVariableReader.ts`(4,470줄)가 하드코딩 fallback에 의존. 테마 변경 시 캔버스에 미반영.
+
+```typescript
+// cssVariableReader.ts — 캐시 레이어 추가
+const CSS_VAR_CACHE = new Map<string, string>();
+
+export function cacheCSSVariables(): void {
+  const computed = getComputedStyle(document.documentElement);
+  for (const prop of computed) {
+    if (prop.startsWith('--')) {
+      CSS_VAR_CACHE.set(prop, computed.getPropertyValue(prop).trim());
+    }
+  }
+}
+
+// 테마 변경 이벤트 시 → cacheCSSVariables() 호출
+```
+
+| 대상 파일 | `cssVariableReader.ts` |
+|---|---|
+| 영향 | 전체 컴포넌트 색상 정확도 + 커스텀 테마 지원 |
+
+#### M-5: state 파라미터 일관성 강제
+
+72개 spec 중 25개가 `_state` (underscore = unused). 공통 헬퍼 추출로 일관성 확보.
+
+```typescript
+// packages/specs/src/utils/stateEffect.ts (신규)
+export function applyStateToShapes(shapes: Shape[], state: ComponentState): Shape[] {
+  if (state === 'disabled') return shapes.map(s => ({ ...s, opacity: 0.38 }));
+  if (state === 'hover') return shapes.map(s => applyHoverColor(s));
+  if (state === 'pressed') return shapes.map(s => applyPressedColor(s));
+  if (state === 'focusVisible') return shapes.map(s => addFocusOutline(s));
+  return shapes;
+}
+```
+
+| 대상 파일 | 신규 `stateEffect.ts` + 25개 spec 리팩터 |
+|---|---|
+| 영향 | Phase A(상태 연결)의 효과 극대화 |
+
+#### M-6: partial border 지원
+
+`BorderShape`에 `sides?: { top?, right?, bottom?, left? }` 타입 존재하나 미구현.
+
+| 대상 파일 | `specShapeConverter.ts`, `nodeRenderers.ts` |
+|---|---|
+| 영향 | Separator(top-only), TextField(bottom-only underline) |
+
+### 정합성 도달 예측
+
+```
+현재 기준                                           62%
+
+기존 로드맵 (Phase A~G):
+  A. 상태 표현 연결                                 +5~6%
+  B. 아이콘 폰트                                    +5~6%
+  C. 컬렉션 아이템                                  +6~8%
+  E. overflow scroll                                +1~2%
+  F. Overlay 개선                                   +2~3%
+  G. Color 그라디언트                                +3~4%
+                                           소계 ≈ +22~29%
+
+Quick Win (QW-1~3):
+  QW-1. border style 전달                           +1~2%
+  QW-2. disabled opacity                            +2~4%
+  QW-3. focus ring                                  +3~5%
+                                           소계 ≈ +6~11%
+
+Medium (M-1~6):
+  M-1. multi-layer shadow                           +5~8%
+  M-2. shadow spread                                +2~3%
+  M-3. image shape                                  +3~5%
+  M-4. CSS var 캐시                                  +2~3%
+  M-5. state 일관성                                  +2%
+  M-6. partial border                               +1%
+                                           소계 ≈ +15~22%
+
+※ 중복 효과 감안 실효 합산
+```
+
+| 시나리오 | 예상 정합성 | 비고 |
+|----------|------------|------|
+| 현재 | **62%** | — |
+| 기존 로드맵만 (A~G) | **~84%** | 기능 단위 개선 |
+| + Quick Win (QW-1~3) | **~88%** | 가성비 최고, 전체 일괄 적용 |
+| + Medium (M-1~6) | **~92%** | shadow/image/CSS var까지 |
+| + 애니메이션 (Z) | **~95%** | 이론적 상한 |
+
+### 권장 실행 순서
+
+```
+1단계 (즉시): QW-1 → QW-2 → QW-3             (1~2일, +6~11%)
+2단계 (P1):   Phase A → Phase B                (1주, +10~12%)
+3단계 (P2):   M-1 → M-3 → Phase C → Phase E   (2주, +15~23%)
+4단계 (P3):   M-2 → M-4 → M-5 → M-6 → F → G  (2주, +7~10%)
+5단계 (P4):   Phase Z (애니메이션)              (최후순위)
+```
+
+> **Quick Win을 먼저 실행하는 이유**: 개별 컴포넌트 수정 없이 specShapeConverter/nodeRenderers만 변경하면 **전체 66개 컴포넌트에 일괄 적용**. 최소 노력 대비 최대 효과.
+
 ---
 
 ## 변경 이력
@@ -678,3 +932,4 @@ gradient 효과가 필요하면 Button에 `variant: 'gradient'` 추가.
 | 2026-02-19 | 1.5 | display:contents 구현: pageChildrenMap 플래튼, depthMap 보정, ElementSprite/BoxSprite 렌더 스킵. ✅152, ⚠️11, ❌23 (82%) |
 | 2026-02-19 | 1.6 | Phase 9 구현 (12개 ❌→✅): Logical Properties 7종 (LTR→물리 매핑), font-variant (fontFeatures), font-stretch (FontWidth), lab/lch/oklch (색상 공간 변환), color() 함수, env() (safe-area), !important 우선순위. 총 ✅164, ⚠️11, ❌11 (**88%**) — 목표 85% 초과 달성 |
 | 2026-02-19 | 1.7 | **컴포넌트 수준 정합성 로드맵** 추가 (CSS 웹 ↔ 캔버스 62% → 목표 80%). Phase A~Z 개선 계획: 상태 표현 연결, 아이콘 폰트 도입 (Pencil 방식), 컬렉션 아이템 생성, FancyButton 제거, overflow scroll 완성, 애니메이션 최후순위 확정. P0 overflow 설명 갱신 (인프라 존재 확인) |
+| 2026-02-19 | 1.8 | **추가 개선 방안** 추가: Quick Win 3개 (border style 전달, disabled opacity, focus ring) + Medium 6개 (multi-shadow, shadow spread, image shape, CSS var 캐시, state 일관성, partial border). 목표 상향 80% → **92%**. 정합성 도달 예측 + 권장 실행 순서 추가 |

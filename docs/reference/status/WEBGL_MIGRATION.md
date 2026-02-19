@@ -1,6 +1,6 @@
 # WebGL Canvas Component Migration Status
 
-> **Last Updated**: 2026-02-06
+> **Last Updated**: 2026-02-19
 > **Branch**: claude/migrate-panel-components-webgl-96QYI
 
 ## Overview
@@ -401,7 +401,7 @@ apps/builder/src/builder/workspace/canvas/layout/
 ## CSS 웹 ↔ 캔버스 정합성 분석 (2026-02-19)
 
 > 전체 정합성: **62%** (66개 컴포넌트 가중 평균)
-> 목표: **~80%** (캔버스 정적 렌더링 아키텍처의 현실적 상한)
+> 목표: **~92%** (렌더링 정밀도 Quick Win + Medium 개선 포함)
 > 상세 로드맵: [ENGINE_CHECKLIST.md § 컴포넌트 수준 정합성 로드맵](../../ENGINE_CHECKLIST.md#컴포넌트-수준-정합성-로드맵-css-웹--캔버스)
 
 ### 주요 결정사항
@@ -424,6 +424,27 @@ apps/builder/src/builder/workspace/canvas/layout/
 | 애니메이션 인프라 부재 | -4.0% | Phase Z (최후) |
 | 그라디언트/복합 렌더링 (Color 계열) | -3.5% | Phase G |
 | 오버레이 아키텍처 부재 | -3.0% | Phase F |
+
+### 렌더링 정밀도 추가 개선 (Quick Win + Medium)
+
+> 상세: [ENGINE_CHECKLIST.md §15 렌더링 정밀도 개선](../../ENGINE_CHECKLIST.md)
+
+specShapeConverter / nodeRenderers 레벨 수정으로 **전 66개 컴포넌트**에 일괄 적용.
+
+| 구분 | 항목 | 예상 효과 | 난이도 |
+|------|------|-----------|--------|
+| **QW-1** | border-style 패스스루 (dashed/dotted/double) | +1-2% | ~1시간 |
+| **QW-2** | disabled 상태 opacity 일괄 적용 | +2-4% | ~2시간 |
+| **QW-3** | focus ring (outline) 렌더링 | +3-5% | ~4시간 |
+| **M-1** | 다중 레이어 box-shadow (M3 elevation) | +5-8% | 1-2일 |
+| **M-2** | box-shadow spread 파라미터 | +2-3% | 4-8시간 |
+| **M-3** | image shape 렌더링 (aspectRatio, objectFit) | +3-5% | 1-2일 |
+| **M-4** | CSS 변수 캐시 레이어 (theme 전환 정합성) | +2-3% | 1일 |
+| **M-5** | 상태별 스타일 일관성 (hover/active/focus 전환) | +2% | 4-8시간 |
+| **M-6** | partial border (border-top/right/bottom/left) | +1% | 4-8시간 |
+
+**예상 도달 시나리오**:
+- 현재: **62%** → QW 완료: **~70%** → Phase A~G: **~88%** → M 완료: **~92%**
 
 ---
 
