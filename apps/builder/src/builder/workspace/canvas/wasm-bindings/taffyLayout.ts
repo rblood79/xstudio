@@ -107,6 +107,7 @@ export interface TaffyStyle {
   flexBasis?: TaffyDimensionValue;
   alignSelf?: TaffyAlignSelf;
   justifySelf?: TaffyJustifySelf;
+  order?: number;
 
   // Grid container
   gridTemplateColumns?: TaffyTrackValue[];
@@ -226,6 +227,7 @@ function normalizeStyle(style: TaffyStyle): Record<string, unknown> {
   if (style.flexShrink !== undefined) result.flexShrink = style.flexShrink;
   if (style.alignSelf !== undefined) result.alignSelf = style.alignSelf;
   if (style.justifySelf !== undefined) result.justifySelf = style.justifySelf;
+  if (style.order !== undefined) result.order = style.order;
   if (style.gridAutoFlow !== undefined) result.gridAutoFlow = style.gridAutoFlow;
   if (style.aspectRatio !== undefined) result.aspectRatio = style.aspectRatio;
 

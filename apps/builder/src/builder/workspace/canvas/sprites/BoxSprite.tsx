@@ -24,7 +24,7 @@ import { drawBox, parseBorderConfig } from '../utils';
 import { useSkiaNode } from '../skia/useSkiaNode';
 import { LayoutComputedSizeContext } from '../layoutContext';
 import { isFillV2Enabled } from '../../../../utils/featureFlags';
-import { fillsToSkiaFillColor, fillsToSkiaFillStyle } from '../../../panels/styles/utils/fillToSkia';
+import { fillsToSkiaFillColor, fillsToSkiaFillStyle, cssBgImageToSkia } from '../../../panels/styles/utils/fillToSkia';
 import { getScrollState } from '../../../stores/scrollState';
 
 
@@ -153,6 +153,12 @@ export const BoxSprite = memo(function BoxSprite({ element, onClick, onDoubleCli
     return contentBounds.y + contentBounds.height / 2;
   }, [style?.verticalAlign, contentBounds]);
 
+  // Phase 6: Interaction 속성
+  // pointer-events: none → eventMode="none" (이벤트 완전 무시)
+  const isPointerEventsNone = style?.pointerEvents === 'none';
+  // cursor: CSS 커서 값을 PixiJS cursor로 직접 매핑 (PixiJS 8은 CSS cursor 값을 그대로 지원)
+  const pixiCursor = style?.cursor ?? 'default';
+
   // Skia effects (opacity, boxShadow, filter, backdropFilter, mixBlendMode)
   const skiaEffects = useMemo(() => buildSkiaEffects(style), [style]);
 
@@ -172,6 +178,27 @@ export const BoxSprite = memo(function BoxSprite({ element, onClick, onDoubleCli
       : null;
     // 그래디언트 FillStyle이면 box.fill로 사용 (color 타입은 fillColor로 처리)
     const gradientFill = fillV2Style && fillV2Style.type !== 'color' ? fillV2Style : undefined;
+
+    // CSS background-image: url(...) → Skia ImageFill (Phase 4)
+    // Fill V2가 없고 style.backgroundImage가 url() 형식일 때 처리
+    // gradientFill이 이미 있으면 우선순위상 스킵
+    let cssBgImageFill = gradientFill ? undefined
+      : (() => {
+          const bgImg = style?.backgroundImage;
+          if (!bgImg || !bgImg.startsWith('url(')) return undefined;
+          // url("...") 또는 url(...) 에서 순수 URL 추출
+          const urlMatch = bgImg.match(/url\(\s*["']?([^"')]+)["']?\s*\)/);
+          if (!urlMatch) return undefined;
+          const url = urlMatch[1];
+          return cssBgImageToSkia(
+            url,
+            transform.width,
+            transform.height,
+            style?.backgroundSize,
+            style?.backgroundPosition,
+            style?.backgroundRepeat,
+          ) ?? undefined;
+        })();
 
     // Fill V2: 최상위 enabled fill의 blendMode 추출
     let fillBlendMode: string | undefined;
@@ -221,8 +248,8 @@ export const BoxSprite = memo(function BoxSprite({ element, onClick, onDoubleCli
       y: transform.y,
       width: transform.width,
       height: transform.height,
-      visible: style?.display !== 'none' && style?.visibility !== 'hidden',
-      ...((style?.overflow === 'hidden' || style?.overflow === 'scroll' || style?.overflow === 'auto')
+      visible: style?.display !== 'none' && style?.visibility !== 'hidden' && style?.visibility !== 'collapse',
+      ...((style?.overflow === 'hidden' || style?.overflow === 'clip' || style?.overflow === 'scroll' || style?.overflow === 'auto')
         ? { clipChildren: true }
         : {}),
       ...((style?.overflow === 'scroll' || style?.overflow === 'auto')
@@ -240,7 +267,8 @@ export const BoxSprite = memo(function BoxSprite({ element, onClick, onDoubleCli
       ...(isStackingCtx ? { isStackingContext: true } : {}),
       box: {
         fillColor,
-        ...(gradientFill ? { fill: gradientFill } : {}),
+        // 우선순위: cssBgImageFill > gradientFill
+        ...(cssBgImageFill ? { fill: cssBgImageFill } : gradientFill ? { fill: gradientFill } : {}),
         borderRadius: br,
         strokeColor: borderConfig
           ? (() => {
@@ -266,9 +294,9 @@ export const BoxSprite = memo(function BoxSprite({ element, onClick, onDoubleCli
     <pixiContainer x={transform.x} y={transform.y}>
       <pixiGraphics
         draw={draw}
-        eventMode="static"
-        cursor="default"
-        onPointerDown={handleClick}
+        eventMode={isPointerEventsNone ? 'none' : 'static'}
+        cursor={pixiCursor}
+        {...(!isPointerEventsNone && { onPointerDown: handleClick })}
       />
       {textContent && (
         <pixiText

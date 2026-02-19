@@ -86,14 +86,29 @@ export function elementToTaffyStyle(
   if (maxW) result.maxWidth = maxW;
   if (maxH) result.maxHeight = maxH;
 
+  // flex-flow shorthand 파싱: "flex-direction flex-wrap" 복합 값
+  // 개별 속성(flexDirection, flexWrap)이 이미 설정되어 있으면 shorthand보다 우선합니다.
+  let resolvedFlexDirection = style.flexDirection as string | undefined;
+  let resolvedFlexWrap = style.flexWrap as string | undefined;
+  if (style.flexFlow) {
+    const parts = String(style.flexFlow).split(/\s+/);
+    for (const part of parts) {
+      if (['row', 'column', 'row-reverse', 'column-reverse'].includes(part)) {
+        resolvedFlexDirection = resolvedFlexDirection ?? part;
+      } else if (['nowrap', 'wrap', 'wrap-reverse'].includes(part)) {
+        resolvedFlexWrap = resolvedFlexWrap ?? part;
+      }
+    }
+  }
+
   // Flex direction
-  if (style.flexDirection) {
-    result.flexDirection = style.flexDirection as TaffyStyle['flexDirection'];
+  if (resolvedFlexDirection) {
+    result.flexDirection = resolvedFlexDirection as TaffyStyle['flexDirection'];
   }
 
   // Flex wrap
-  if (style.flexWrap) {
-    result.flexWrap = style.flexWrap as TaffyStyle['flexWrap'];
+  if (resolvedFlexWrap) {
+    result.flexWrap = resolvedFlexWrap as TaffyStyle['flexWrap'];
   }
 
   // Justify content
@@ -122,6 +137,12 @@ export function elementToTaffyStyle(
   // Align self
   if (style.alignSelf) {
     result.alignSelf = style.alignSelf as TaffyStyle['alignSelf'];
+  }
+
+  // Order (flex item 순서 제어)
+  const order = parseInt(String(style.order ?? '0'), 10);
+  if (!isNaN(order) && order !== 0) {
+    result.order = order;
   }
 
   // Margin

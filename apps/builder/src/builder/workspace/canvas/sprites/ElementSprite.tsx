@@ -1212,6 +1212,10 @@ export const ElementSprite = memo(function ElementSprite({
   const hasOwnSprite = spriteType === 'box' || spriteType === 'text' || spriteType === 'flex' || spriteType === 'grid';
   useSkiaNode(elementId, hasOwnSprite ? null : skiaNodeData);
 
+  // Phase 6: Interaction 속성 (컨테이너 히트 영역용)
+  const containerIsPointerEventsNone = (elementStyle as CSSStyle | undefined)?.pointerEvents === 'none';
+  const containerPixiCursor = (elementStyle as CSSStyle | undefined)?.cursor ?? 'default';
+
   // 🚀 Non-layout 컨테이너 히트 영역: 엔진 계산된 전체 크기(padding 포함)를 커버
   // layout prop 없이 렌더링하므로 엔진 padding에 의한 offset 없이 컨테이너 원점(0,0)에 배치됨
   const drawContainerHitRect = useCallback(
@@ -1891,9 +1895,9 @@ export const ElementSprite = memo(function ElementSprite({
             {/* Non-layout 히트 영역: 컨테이너 원점(0,0)에 전체 레이아웃 크기(padding 포함) 커버 */}
             <pixiGraphics
               draw={drawContainerHitRect}
-              eventMode="static"
-              cursor="default"
-              onPointerDown={handleContainerPointerDown}
+              eventMode={containerIsPointerEventsNone ? 'none' : 'static'}
+              cursor={containerPixiCursor}
+              {...(!containerIsPointerEventsNone && { onPointerDown: handleContainerPointerDown })}
             />
             <pixiContainer x={0} y={0}>
               <BoxSprite element={effectiveElement} isSelected={isSelected} onClick={onClick} onDoubleClick={onDoubleClick} />
@@ -1926,9 +1930,9 @@ export const ElementSprite = memo(function ElementSprite({
             {/* 히트 영역: 컨테이너 원점(0,0)에 전체 크기 커버 */}
             <pixiGraphics
               draw={drawContainerHitRect}
-              eventMode="static"
-              cursor="default"
-              onPointerDown={handleContainerPointerDown}
+              eventMode={containerIsPointerEventsNone ? 'none' : 'static'}
+              cursor={containerPixiCursor}
+              {...(!containerIsPointerEventsNone && { onPointerDown: handleContainerPointerDown })}
             />
             <pixiContainer x={0} y={0}>
               <BoxSprite element={effectiveElement} isSelected={isSelected} onClick={onClick} onDoubleClick={onDoubleClick} />

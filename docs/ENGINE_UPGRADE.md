@@ -1,7 +1,7 @@
 # CSS 레이아웃 엔진 설계문서
 
-> Status: Wave 1-2 Complete, Wave 3-4 대부분 완료 (코드 검증), Wave 5-6 실행 대기
-> Date: 2026-02-19 (Wave 3-6 재검증 및 실행 계획 재수립)
+> Status: Wave 1-6 Complete (전 Wave 완료)
+> Date: 2026-02-19 (Wave 3-6 실행 완료)
 > 현재 엔진: TaffyFlexEngine (Taffy WASM) + TaffyGridEngine (Taffy WASM) + DropflowBlockEngine (Dropflow Fork JS)
 > 현재 렌더러: CanvasKit/Skia WASM (시각 렌더링) + PixiJS v8 (씬 그래프/이벤트)
 
@@ -2969,10 +2969,10 @@ function parseAllBoxShadows(raw: string): DropShadowEffect[] {
 
 | # | 태스크 | 파일 | 난이도 | 상태 |
 |---|--------|------|--------|------|
-| W5-1 | `computedStyleService.ts` 신규 + `computeSyntheticStyle()` 구현 | `services/computedStyleService.ts` | 중 | 🔲 |
-| W5-2 | `styleAtoms.ts` fontSizeAtom 등 fallback 교체 | `styleAtoms.ts` | 낮음 | 🔲 |
-| W5-3 | `useTypographyValuesJotai.ts` preset 인식 | `useTypographyValuesJotai.ts` | 낮음 | 🔲 |
-| W5-4 | 검증: StylePanel ↔ Skia 값 일치율 측정 | 전체 | 중 | 🔲 |
+| W5-1 | `computedStyleService.ts` 신규 + `computeSyntheticStyle()` 구현 | `services/computedStyleService.ts` | 중 | ✅ |
+| W5-2 | `styleAtoms.ts` fontSizeAtom 등 fallback 교체 + `syntheticComputedStyleAtom` | `styleAtoms.ts` | 낮음 | ✅ |
+| W5-3 | `useTypographyValuesJotai.ts` preset 인식 + `isFontSizeFromPreset` | `useTypographyValuesJotai.ts` | 낮음 | ✅ |
+| W5-4 | 검증: StylePanel ↔ Skia 값 일치율 측정 (63 tests, 371 total passed) | 전체 | 중 | ✅ |
 
 **Exit Criteria:** StylePanel 표시 값 ↔ Skia 렌더링 값 일치율 95%+
 

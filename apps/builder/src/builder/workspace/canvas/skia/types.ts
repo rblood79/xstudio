@@ -70,7 +70,12 @@ export interface AngularGradientFill {
 export interface ImageFill {
   type: 'image';
   image: unknown; // CanvasKit.Image
-  tileMode: unknown; // CanvasKit.TileMode
+  /** X축 TileMode (repeat-x 등 축별 분리 지원) */
+  tileModeX: unknown; // CanvasKit.TileMode
+  /** Y축 TileMode */
+  tileModeY: unknown; // CanvasKit.TileMode
+  /** @deprecated tileModeX/Y로 대체됨. 하위 호환성 유지용 */
+  tileMode?: unknown; // CanvasKit.TileMode
   sampling: unknown; // CanvasKit.FilterMode
   matrix?: Float32Array;
 }

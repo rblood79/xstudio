@@ -338,6 +338,24 @@ function resolveUnitValue(
     return (num / 100) * vw;
   }
 
+  // vmin 단위 (vw, vh보다 먼저 검사해야 함 — 'vmin'이 'min'으로 끝나지 않으므로 순서 무관하지만 명시적으로 배치)
+  if (trimmed.endsWith('vmin')) {
+    const num = parseFloat(trimmed);
+    if (isNaN(num)) return undefined;
+    const vw = ctx.viewportWidth ?? DEFAULT_VIEWPORT_WIDTH;
+    const vh = ctx.viewportHeight ?? DEFAULT_VIEWPORT_HEIGHT;
+    return (num / 100) * Math.min(vw, vh);
+  }
+
+  // vmax 단위
+  if (trimmed.endsWith('vmax')) {
+    const num = parseFloat(trimmed);
+    if (isNaN(num)) return undefined;
+    const vw = ctx.viewportWidth ?? DEFAULT_VIEWPORT_WIDTH;
+    const vh = ctx.viewportHeight ?? DEFAULT_VIEWPORT_HEIGHT;
+    return (num / 100) * Math.max(vw, vh);
+  }
+
   // % 단위
   if (trimmed.endsWith('%')) {
     const num = parseFloat(trimmed);

@@ -369,17 +369,37 @@ export function elementToTaffyGridStyle(
   }
 
   // --- Grid container: 정렬 ---
-  if (style.justifyContent) {
-    result.justifyContent = style.justifyContent as TaffyStyle['justifyContent'];
+  // place-items shorthand 파싱: "align-items justify-items" 또는 단일값
+  // 개별 속성(alignItems, justifyItems)이 이미 설정되어 있으면 shorthand보다 우선합니다.
+  let resolvedAlignItems = style.alignItems as string | undefined;
+  let resolvedJustifyItems = style.justifyItems as string | undefined;
+  if (style.placeItems) {
+    const parts = String(style.placeItems).split(/\s+/);
+    resolvedAlignItems = resolvedAlignItems ?? parts[0];
+    resolvedJustifyItems = resolvedJustifyItems ?? (parts[1] ?? parts[0]);
   }
-  if (style.justifyItems) {
-    result.justifyItems = style.justifyItems as TaffyStyle['justifyItems'];
+
+  // place-content shorthand 파싱: "align-content justify-content" 또는 단일값
+  // 개별 속성(alignContent, justifyContent)이 이미 설정되어 있으면 shorthand보다 우선합니다.
+  let resolvedAlignContent = style.alignContent as string | undefined;
+  let resolvedJustifyContent = style.justifyContent as string | undefined;
+  if (style.placeContent) {
+    const parts = String(style.placeContent).split(/\s+/);
+    resolvedAlignContent = resolvedAlignContent ?? parts[0];
+    resolvedJustifyContent = resolvedJustifyContent ?? (parts[1] ?? parts[0]);
   }
-  if (style.alignItems) {
-    result.alignItems = style.alignItems as TaffyStyle['alignItems'];
+
+  if (resolvedJustifyContent) {
+    result.justifyContent = resolvedJustifyContent as TaffyStyle['justifyContent'];
   }
-  if (style.alignContent) {
-    result.alignContent = style.alignContent as TaffyStyle['alignContent'];
+  if (resolvedJustifyItems) {
+    result.justifyItems = resolvedJustifyItems as TaffyStyle['justifyItems'];
+  }
+  if (resolvedAlignItems) {
+    result.alignItems = resolvedAlignItems as TaffyStyle['alignItems'];
+  }
+  if (resolvedAlignContent) {
+    result.alignContent = resolvedAlignContent as TaffyStyle['alignContent'];
   }
 
   // --- Gap ---

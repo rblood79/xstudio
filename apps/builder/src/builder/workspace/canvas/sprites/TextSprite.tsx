@@ -15,7 +15,8 @@ import { PIXI_COMPONENTS } from '../pixiSetup';
 import { useCallback, useMemo, useRef, useContext, memo } from 'react';
 import { Graphics as PixiGraphics, TextStyle, Text } from 'pixi.js';
 import type { Element } from '../../../../types/core/store.types';
-import { convertStyle, applyTextTransform, buildSkiaEffects, type CSSStyle } from './styleConverter';
+import { convertStyle, applyTextTransform, buildSkiaEffects, parseCSSSize, type CSSStyle } from './styleConverter';
+import { colord } from 'colord';
 import { parseZIndex, createsStackingContext } from '../layout/engines/cssStackingContext';
 import { parsePadding } from './paddingUtils';
 import { drawBox, parseBorderConfig } from '../utils';
@@ -252,6 +253,10 @@ export const TextSprite = memo(function TextSprite({
     textRef.current = text;
   }, []);
 
+  // Phase 6: Interaction 속성
+  const isPointerEventsNone = style?.pointerEvents === 'none';
+  const pixiCursor = style?.cursor ?? 'default';
+
   // Skia effects (opacity, boxShadow, filter, backdropFilter, mixBlendMode)
   const skiaEffects = useMemo(() => buildSkiaEffects(style), [style]);
 
@@ -277,7 +282,7 @@ export const TextSprite = memo(function TextSprite({
       y: transform.y,
       width: transform.width,
       height: transform.height,
-      visible: style?.display !== 'none' && style?.visibility !== 'hidden',
+      visible: style?.display !== 'none' && style?.visibility !== 'hidden' && style?.visibility !== 'collapse',
       ...(skiaEffects.effects ? { effects: skiaEffects.effects } : {}),
       ...(skiaEffects.blendMode ? { blendMode: skiaEffects.blendMode } : {}),
       ...(zIndex !== undefined ? { zIndex } : {}),
@@ -298,6 +303,15 @@ export const TextSprite = memo(function TextSprite({
           decoration: (textDecoration.underline ? 1 : 0)
             | (textDecoration.overline ? 2 : 0)
             | (textDecoration.lineThrough ? 4 : 0),
+          // text-decoration-style (C-5)
+          ...(style?.textDecorationStyle ? { decorationStyle: style.textDecorationStyle as 'solid' | 'dashed' | 'dotted' | 'double' | 'wavy' } : {}),
+          // text-decoration-color (C-6): colord로 파싱 후 Float32Array로 변환
+          ...(style?.textDecorationColor ? (() => {
+            const parsed = colord(style.textDecorationColor);
+            if (!parsed.isValid()) return {};
+            const rgba = parsed.toRgb();
+            return { decorationColor: Float32Array.of(rgba.r / 255, rgba.g / 255, rgba.b / 255, rgba.a) };
+          })() : {}),
         } : {}),
         paddingLeft: padding.left,
         paddingTop: padding.top,
@@ -305,9 +319,15 @@ export const TextSprite = memo(function TextSprite({
         ...(style?.verticalAlign ? { verticalAlign: style.verticalAlign as 'top' | 'middle' | 'bottom' | 'baseline' } : {}),
         ...(style?.whiteSpace ? { whiteSpace: style.whiteSpace as 'normal' | 'nowrap' | 'pre' | 'pre-wrap' | 'pre-line' } : {}),
         ...(style?.wordBreak ? { wordBreak: style.wordBreak as 'normal' | 'break-all' | 'keep-all' } : {}),
+        ...(style?.overflowWrap ? { overflowWrap: style.overflowWrap as 'normal' | 'break-word' | 'anywhere' } : {}),
+        ...(style?.wordSpacing != null ? { wordSpacing: parseCSSSize(style.wordSpacing, undefined, 0) } : {}),
+        // text-overflow: ellipsis (C-1): overflow:hidden + white-space:nowrap 조합에서 동작
+        ...(style?.textOverflow ? { textOverflow: style.textOverflow as 'ellipsis' | 'clip' } : {}),
+        // text-indent: 첫 줄 들여쓰기 (C-3)
+        ...(style?.textIndent != null ? { textIndent: parseCSSSize(style.textIndent, undefined, 0) } : {}),
       },
     };
-  }, [transform, textStyle, textContent, padding, skiaEffects, hasDecoration, textDecoration, style?.verticalAlign, style?.whiteSpace, style?.wordBreak]);
+  }, [transform, textStyle, textContent, padding, skiaEffects, hasDecoration, textDecoration, style?.verticalAlign, style?.whiteSpace, style?.wordBreak, style?.overflowWrap, style?.wordSpacing, style?.textOverflow, style?.textDecorationStyle, style?.textDecorationColor, style?.textIndent]);
 
   useSkiaNode(element.id, skiaNodeData);
 
@@ -319,9 +339,9 @@ export const TextSprite = memo(function TextSprite({
       {/* Background - clickable */}
       <pixiGraphics
         draw={drawBackground}
-        eventMode="static"
-        cursor="default"
-        onPointerDown={handlePointerDown}
+        eventMode={isPointerEventsNone ? 'none' : 'static'}
+        cursor={pixiCursor}
+        {...(!isPointerEventsNone && { onPointerDown: handlePointerDown })}
       />
 
       {/* Text with ref for decoration measurement */}

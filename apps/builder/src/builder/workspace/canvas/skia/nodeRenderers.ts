@@ -115,6 +115,7 @@ export interface SkiaNodeData {
     color: Float32Array;
     align?: EmbindEnumEntity | 'left' | 'center' | 'right';
     letterSpacing?: number;
+    wordSpacing?: number;
     lineHeight?: number;
     /** CanvasKit TextDecoration 비트마스크: underline=1, overline=2, lineThrough=4 */
     decoration?: number;
@@ -126,6 +127,15 @@ export interface SkiaNodeData {
     verticalAlign?: 'top' | 'middle' | 'bottom' | 'baseline';
     whiteSpace?: 'normal' | 'nowrap' | 'pre' | 'pre-wrap' | 'pre-line';
     wordBreak?: 'normal' | 'break-all' | 'keep-all';
+    overflowWrap?: 'normal' | 'break-word' | 'anywhere';
+    /** text-overflow: ellipsis 처리 여부 */
+    textOverflow?: 'ellipsis' | 'clip';
+    /** text-decoration-style: solid, dashed, dotted, double, wavy */
+    decorationStyle?: 'solid' | 'dashed' | 'dotted' | 'double' | 'wavy';
+    /** text-decoration-color (미지정 시 text color 사용) */
+    decorationColor?: Float32Array;
+    /** text-indent: 첫 줄 들여쓰기 (px) */
+    textIndent?: number;
   };
   /** Image 전용 */
   image?: {
@@ -545,12 +555,28 @@ function renderText(
     ? 100000
     : node.text.maxWidth;
 
+  // wordBreak/overflowWrap: break-all 또는 break-word/anywhere일 때 단어 중간 줄바꿈 허용
+  const wordBreak = node.text.wordBreak ?? 'normal';
+  const overflowWrap = node.text.overflowWrap ?? 'normal';
+  const allowBreakAll = wordBreak === 'break-all'
+    || overflowWrap === 'break-word'
+    || overflowWrap === 'anywhere';
+
   // key는 텍스트 shaping/layout에 영향을 주는 값만 포함한다.
   const color = node.text.color;
   const colorKey = `${color[0].toFixed(3)},${color[1].toFixed(3)},${color[2].toFixed(3)},${color[3].toFixed(3)}`;
   const heightMultiplier = node.text.lineHeight
     ? node.text.lineHeight / node.text.fontSize
     : 0;
+  // text-indent: 첫 줄 들여쓰기 (px)
+  const textIndent = node.text.textIndent ?? 0;
+  // text-overflow: ellipsis 여부 (nowrap 조합에서만 의미)
+  const isEllipsis = node.text.textOverflow === 'ellipsis';
+  // decoration color key
+  const dc = node.text.decorationColor;
+  const decorationColorKey = dc
+    ? `${dc[0].toFixed(3)},${dc[1].toFixed(3)},${dc[2].toFixed(3)},${dc[3].toFixed(3)}`
+    : '';
   const key = [
     processedText,
     layoutMaxWidth,
@@ -559,11 +585,18 @@ function renderText(
     node.text.fontWeight ?? 400,
     node.text.fontStyle ?? 0,
     node.text.letterSpacing ?? 0,
+    node.text.wordSpacing ?? 0,
     heightMultiplier,
     typeof node.text.align === 'string' ? node.text.align : 'enum',
     node.text.decoration ?? 0,
+    node.text.decorationStyle ?? 'solid',
+    decorationColorKey,
     colorKey,
     whiteSpace,
+    wordBreak,
+    overflowWrap,
+    isEllipsis ? '1' : '0',
+    textIndent,
   ].join('\u0000');
 
   // verticalAlign에 따른 drawY 계산 함수
@@ -586,7 +619,7 @@ function renderText(
   const cached = getCachedParagraph(key);
   if (cached) {
     const drawY = computeDrawY(cached);
-    canvas.drawParagraph(cached, node.text.paddingLeft, drawY);
+    canvas.drawParagraph(cached, node.text.paddingLeft + textIndent, drawY);
     return;
   }
 
@@ -638,24 +671,48 @@ function renderText(
         fontStyle: { weight: fontWeight, slant: fontSlant },
         color: node.text.color,
         letterSpacing: node.text.letterSpacing ?? 0,
+        wordSpacing: node.text.wordSpacing ?? 0,
         ...(heightMultiplierOpt !== undefined ? { heightMultiplier: heightMultiplierOpt } : {}),
         // textDecoration: CanvasKit TextDecoration 비트마스크
         ...(node.text.decoration ? {
           decoration: node.text.decoration,
-          decorationColor: node.text.color,
+          // text-decoration-color: 미지정 시 텍스트 color 사용
+          decorationColor: node.text.decorationColor ?? node.text.color,
           decorationThickness: 1,
+          // text-decoration-style → CanvasKit DecorationStyle enum
+          ...(() => {
+            if (!node.text!.decorationStyle || node.text!.decorationStyle === 'solid') return {};
+            const ckDs = (ck as unknown as Record<string, Record<string, EmbindEnumEntity>>).DecorationStyle;
+            if (!ckDs) return {};
+            const styleMap: Record<string, EmbindEnumEntity | undefined> = {
+              dashed: ckDs.Dashed,
+              dotted: ckDs.Dotted,
+              double: ckDs.Double,
+              wavy: ckDs.Wavy,
+            };
+            const resolved = styleMap[node.text!.decorationStyle];
+            return resolved ? { decorationStyle: resolved } : {};
+          })(),
         } : {}),
       },
       textAlign,
+      // text-overflow: ellipsis → maxLines:1 + ellipsis 문자열
+      ...(isEllipsis ? { maxLines: 1, ellipsis: '...' } : {}),
+      // NOTE: CanvasKit 0.40 ParagraphStyle에는 wordBreak/breakStrategy API가 없다.
+      // allowBreakAll(wordBreak: break-all, overflowWrap: break-word/anywhere) 상태는
+      // key에 포함되어 캐시를 분리하며, 향후 CanvasKit API 업데이트 시 여기서 처리 예정.
     });
 
     const builder = scope.track(ck.ParagraphBuilder.Make(paraStyle, fontMgr));
     builder.addText(processedText);
     const paragraph = builder.build();
-    paragraph.layout(layoutMaxWidth);
+    // text-overflow ellipsis 시 nowrap layoutMaxWidth가 매우 크므로
+    // 실제 컨테이너 maxWidth로 재레이아웃하여 잘림 처리
+    paragraph.layout(isEllipsis ? node.text.maxWidth : layoutMaxWidth);
     setCachedParagraph(key, paragraph);
     const drawY = computeDrawY(paragraph);
-    canvas.drawParagraph(paragraph, node.text.paddingLeft, drawY);
+    // text-indent: 첫 줄 들여쓰기 → paddingLeft에 offset 추가
+    canvas.drawParagraph(paragraph, node.text.paddingLeft + textIndent, drawY);
   } finally {
     scope.dispose();
   }

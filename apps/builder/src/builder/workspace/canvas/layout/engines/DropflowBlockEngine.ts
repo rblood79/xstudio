@@ -468,8 +468,8 @@ export class DropflowBlockEngine implements LayoutEngine {
     // display.outer === 'inline' (inline-block)
     if (style.display.outer === 'inline') return true;
 
-    // overflow 기반 BFC (hidden, scroll, auto 모두 BFC 생성)
-    if (style.overflow === 'hidden' || style.overflow === 'scroll' || style.overflow === 'auto') return true;
+    // overflow 기반 BFC (hidden, clip, scroll, auto 모두 BFC 생성)
+    if (style.overflow === 'hidden' || style.overflow === 'clip' || style.overflow === 'scroll' || style.overflow === 'auto') return true;
 
     // float 기반 BFC
     if (style.float !== 'none') return true;

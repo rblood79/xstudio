@@ -15,6 +15,7 @@ import { colord } from 'colord';
 import type { EffectStyle, DropShadowEffect, ColorMatrixEffect } from '../skia/types';
 import { resolveCSSSizeValue } from '../layout/engines/cssValueParser';
 import type { CSSValueContext } from '../layout/engines/cssValueParser';
+import { resolveCurrentColor, preprocessStyle } from '../layout/engines/cssResolver';
 
 // ============================================
 // Types
@@ -56,10 +57,16 @@ export interface CSSStyle {
   filter?: string;
   backdropFilter?: string;
   mixBlendMode?: string;
-  // Text wrapping
+  // Text overflow & wrapping
+  textOverflow?: string; // C-1: ellipsis, clip
+  wordSpacing?: number | string; // C-2: word spacing
+  textIndent?: number | string; // C-3: first-line indent
   whiteSpace?: string;
   wordBreak?: string;
-  overflowWrap?: string;
+  overflowWrap?: string; // C-4: break-word, anywhere
+  // Text decoration extended
+  textDecorationStyle?: string; // C-5: solid, dashed, dotted, wavy, double
+  textDecorationColor?: string; // C-6: decoration color
   // Layout properties
   display?: string;
   flexDirection?: string;
@@ -71,6 +78,14 @@ export interface CSSStyle {
   transformOrigin?: string;
   // Stacking
   zIndex?: number | string;
+  // Interaction
+  cursor?: string;
+  pointerEvents?: string;
+  // Background image positioning (Phase 4)
+  backgroundImage?: string;
+  backgroundSize?: string;
+  backgroundPosition?: string;
+  backgroundRepeat?: string;
 }
 
 export interface PixiTransform {
@@ -116,27 +131,42 @@ export interface PixiTextStyle {
  *
  * 🚀 Phase 22: colord 기반으로 리팩토링
  * - 모든 CSS 색상 형식 지원 (hex, rgb, hsl, named colors 등)
+ * 🚀 Phase 5: currentColor 키워드 지원
+ * - currentColor가 전달되면 resolvedColor(현재 요소의 color 값)로 대체
  *
  * @example
  * cssColorToHex('#3b82f6') // 0x3b82f6
  * cssColorToHex('rgb(59, 130, 246)') // 0x3b82f6
  * cssColorToHex('blue') // 0x0000ff
  * cssColorToHex('hsl(217, 91%, 60%)') // 0x3b82f6
+ * cssColorToHex('currentColor', 0x000000, '#3b82f6') // 0x3b82f6
  */
-export function cssColorToHex(color: string | undefined, fallback = 0x000000): number {
-  return cssColorToPixiHex(color, fallback);
+export function cssColorToHex(
+  color: string | undefined,
+  fallback = 0x000000,
+  resolvedColor?: string,
+): number {
+  if (!color) return fallback;
+  const effective = resolvedColor
+    ? String(resolveCurrentColor(color, resolvedColor))
+    : color;
+  return cssColorToPixiHex(effective, fallback);
 }
 
 /**
  * CSS 색상에서 알파 값 추출
  *
  * colord를 사용하여 rgba/hsla/oklch/#rrggbbaa 등 모든 CSS 색상 형식을 지원한다 (I-L17).
+ * 🚀 Phase 5: currentColor 키워드 지원
  */
-export function cssColorToAlpha(color: string | undefined): number {
+export function cssColorToAlpha(color: string | undefined, resolvedColor?: string): number {
   if (!color) return 1;
-  if (color.toLowerCase() === 'transparent') return 0;
+  const effective = resolvedColor
+    ? String(resolveCurrentColor(color, resolvedColor))
+    : color;
+  if (effective.toLowerCase() === 'transparent') return 0;
 
-  const parsed = colord(color);
+  const parsed = colord(effective);
   if (parsed.isValid()) {
     return parsed.toRgb().a ?? 1;
   }
@@ -202,28 +232,34 @@ export function convertToTransform(style: CSSStyle | undefined): PixiTransform {
 
 /**
  * CSS 스타일을 PixiJS Fill 스타일로 변환
+ *
+ * @param style - CSS 스타일 객체
+ * @param resolvedColor - currentColor 해석을 위한 현재 요소의 color 값
  */
-export function convertToFillStyle(style: CSSStyle | undefined): PixiFillStyle {
-  const color = cssColorToHex(style?.backgroundColor, 0xffffff);
+export function convertToFillStyle(style: CSSStyle | undefined, resolvedColor?: string): PixiFillStyle {
+  const color = cssColorToHex(style?.backgroundColor, 0xffffff, resolvedColor);
   const alpha = style?.opacity !== undefined
     ? parseCSSSize(style.opacity, undefined, 1)
-    : cssColorToAlpha(style?.backgroundColor);
+    : cssColorToAlpha(style?.backgroundColor, resolvedColor);
 
   return { color, alpha };
 }
 
 /**
  * CSS 스타일을 PixiJS Stroke 스타일로 변환
+ *
+ * @param style - CSS 스타일 객체
+ * @param resolvedColor - currentColor 해석을 위한 현재 요소의 color 값
  */
-export function convertToStrokeStyle(style: CSSStyle | undefined): PixiStrokeStyle | null {
+export function convertToStrokeStyle(style: CSSStyle | undefined, resolvedColor?: string): PixiStrokeStyle | null {
   if (!style?.borderWidth && !style?.borderColor) {
     return null;
   }
 
   return {
     width: parseCSSSize(style.borderWidth, undefined, 1),
-    color: cssColorToHex(style.borderColor, 0x000000),
-    alpha: cssColorToAlpha(style.borderColor),
+    color: cssColorToHex(style.borderColor, 0x000000, resolvedColor),
+    alpha: cssColorToAlpha(style.borderColor, resolvedColor),
   };
 }
 
@@ -362,16 +398,34 @@ export interface ConvertedStyle {
 
 /**
  * CSS 스타일을 모든 PixiJS 스타일로 변환
+ *
+ * Phase 5: currentColor + initial/unset/revert 지원
+ * - style.color를 resolvedColor로 사용하여 색상 속성의 currentColor를 해석한다.
+ * - initial/unset/revert 키워드는 preprocessStyle()에서 전처리된다.
+ *
+ * @param style - CSS 스타일 객체
+ * @param computedColor - 상위 resolved color (cssResolver.resolveStyle()의 결과)
+ *                        전달하지 않으면 style.color 값을 사용한다.
  */
-export function convertStyle(style: CSSStyle | undefined): ConvertedStyle {
+export function convertStyle(style: CSSStyle | undefined, computedColor?: string): ConvertedStyle {
   const transform = convertToTransform(style);
+
+  // currentColor 해석을 위한 color 값 결정
+  // computedColor가 전달된 경우: 상위 cascade에서 이미 계산된 값 사용
+  // 그렇지 않은 경우: 현재 style의 color 값 사용 (fallback: #000000)
+  const resolvedColor = computedColor ?? style?.color ?? '#000000';
+
+  // 비상속 속성의 cascade 키워드(initial, unset, revert) 및 currentColor 전처리
+  const processedStyle = style
+    ? (preprocessStyle(style as Record<string, unknown>, resolvedColor) as CSSStyle)
+    : style;
 
   return {
     transform,
-    fill: convertToFillStyle(style),
-    stroke: convertToStrokeStyle(style),
-    text: convertToTextStyle(style, transform.width),
-    borderRadius: convertBorderRadius(style?.borderRadius),
+    fill: convertToFillStyle(processedStyle, resolvedColor),
+    stroke: convertToStrokeStyle(processedStyle, resolvedColor),
+    text: convertToTextStyle(processedStyle, transform.width),
+    borderRadius: convertBorderRadius(processedStyle?.borderRadius),
   };
 }
 
@@ -943,6 +997,69 @@ function sepiaMatrix(amount: number): Float32Array {
 }
 
 /**
+ * CSS filter: drop-shadow() 인자를 파싱하여 DropShadowEffect로 변환한다.
+ *
+ * 포맷: "offsetX offsetY [blurRadius [spread]] [color]"
+ * - spread는 CSS filter drop-shadow에서 무시된다 (box-shadow와 다름).
+ * - color는 colord로 파싱하여 Float32Array로 변환한다.
+ *
+ * @param arg - drop-shadow() 괄호 안쪽 문자열
+ * @returns DropShadowEffect 또는 null
+ */
+function parseDropShadowFilterArgs(arg: string): DropShadowEffect | null {
+  if (!arg) return null;
+
+  let cleaned = arg.trim();
+
+  // 색상 추출 (rgb/rgba/hsl/hsla/#hex) — box-shadow 파서와 동일한 패턴
+  let colorStr = 'rgba(0,0,0,1)';
+  const colorPatterns = [
+    /rgba?\([^)]+\)/,
+    /hsla?\([^)]+\)/,
+    /#[0-9a-fA-F]{3,8}/,
+  ];
+  for (const pattern of colorPatterns) {
+    const match = cleaned.match(pattern);
+    if (match) {
+      colorStr = match[0];
+      cleaned = cleaned.replace(match[0], '').trim();
+      break;
+    }
+  }
+
+  // 숫자값 추출: offsetX offsetY [blurRadius [spread]]
+  const nums = cleaned.match(/-?\d+(?:\.\d+)?/g)?.map(Number) ?? [];
+  if (nums.length < 2) return null;
+
+  const dx = nums[0];
+  const dy = nums[1];
+  const blurRadius = nums[2] ?? 0;
+  // CSS blur-radius → Skia sigma (sigma ≈ blurRadius / 2)
+  const sigma = blurRadius / 2;
+  // nums[3]은 spread — filter drop-shadow에서는 무시
+
+  // 색상 → Float32Array (box-shadow 파서와 동일한 변환)
+  const hex = cssColorToHex(colorStr, 0x000000);
+  const alpha = cssColorToAlpha(colorStr);
+  const color = Float32Array.of(
+    ((hex >> 16) & 0xff) / 255,
+    ((hex >> 8) & 0xff) / 255,
+    (hex & 0xff) / 255,
+    alpha,
+  );
+
+  return {
+    type: 'drop-shadow',
+    dx,
+    dy,
+    sigmaX: sigma,
+    sigmaY: sigma,
+    color,
+    inner: false, // CSS filter drop-shadow는 항상 외부 그림자
+  };
+}
+
+/**
  * CSS filter 문자열에서 모든 필터 함수를 파싱하여 EffectStyle 배열로 변환한다.
  *
  * 지원 함수:
@@ -954,6 +1071,7 @@ function sepiaMatrix(amount: number): Float32Array {
  * - grayscale(X) → ColorMatrixEffect
  * - invert(X) → ColorMatrixEffect
  * - sepia(X) → ColorMatrixEffect
+ * - drop-shadow(offsetX offsetY blur color) → DropShadowEffect
  *
  * 여러 color matrix 함수가 있으면 하나의 합성 행렬로 병합하여
  * 단일 ColorMatrixEffect로 출력한다 (GPU pass 최소화).
@@ -1055,6 +1173,15 @@ function parseCSSFilter(filter: string): EffectStyle[] {
           composedMatrix = composedMatrix
             ? multiplyColorMatrix(mat, composedMatrix)
             : mat;
+        }
+        break;
+      }
+
+      case 'drop-shadow': {
+        // arg: "4px 4px 10px rgba(0,0,0,0.5)" 형식
+        const shadow = parseDropShadowFilterArgs(arg);
+        if (shadow) {
+          results.push(shadow);
         }
         break;
       }

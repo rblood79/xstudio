@@ -92,7 +92,7 @@
 |------|------|-----------|------|
 | `flex-direction` | ✅ | `TaffyFlexEngine.ts:81-83` | row, column, row-reverse, column-reverse |
 | `flex-wrap` | ✅ | `TaffyFlexEngine.ts:85-88` | nowrap, wrap, wrap-reverse |
-| `flex-flow` | ❌ | — | shorthand 미파싱 — `flex-direction` + `flex-wrap` 개별 사용 필요 |
+| `flex-flow` | ✅ | `TaffyFlexEngine.ts:88-112` | shorthand 파싱 → flex-direction + flex-wrap 분리 |
 | `justify-content` | ✅ | `TaffyFlexEngine.ts:90-93` | flex-start, flex-end, center, space-between, space-around, space-evenly |
 | `align-items` | ✅ | `TaffyFlexEngine.ts:95-98` | stretch, flex-start, flex-end, center, baseline |
 | `align-content` | ✅ | `TaffyFlexEngine.ts:100-103` | |
@@ -107,7 +107,7 @@
 | `flex-shrink` | ✅ | `TaffyFlexEngine.ts:107` | |
 | `flex-basis` | ✅ | `TaffyFlexEngine.ts:108-111` | |
 | `align-self` | ✅ | `TaffyFlexEngine.ts:113-116` | |
-| `order` | ❌ | — | |
+| `order` | ✅ | `TaffyFlexEngine.ts:118-122`, `taffyLayout.ts` | Taffy WASM order 전달 |
 
 ---
 
@@ -128,8 +128,8 @@
 | `justify-items` | ✅ | `TaffyGridEngine.ts:374-376` | |
 | `align-items` | ✅ | `TaffyGridEngine.ts:372-373` | |
 | `gap` / `row-gap` / `column-gap` | ✅ | `TaffyGridEngine.ts:369-371` | |
-| `place-items` | ❌ | — | shorthand 미파싱 — `align-items` + `justify-items` 개별 사용 필요 |
-| `place-content` | ❌ | — | shorthand 미파싱 |
+| `place-items` | ✅ | `TaffyGridEngine.ts` | shorthand 파싱 → align-items + justify-items 분리 |
+| `place-content` | ✅ | `TaffyGridEngine.ts` | shorthand 파싱 → align-content + justify-content 분리 |
 | `repeat(auto-fill)` | ✅ | `TaffyGridEngine.ts:99-163` | containerSize 기반 동적 계산 |
 | `repeat(auto-fit)` | ✅ | `TaffyGridEngine.ts:99-163` | |
 | `minmax()` | ✅ | `TaffyGridEngine.ts:165-200` | |
@@ -174,7 +174,7 @@
 | `overflow: hidden` | ✅ | `BoxSprite.tsx:224`, `nodeRenderers.ts:282-308` | CanvasKit `clipRect` |
 | `overflow: scroll` | ❌ | — | 스크롤바 UI 미구현 |
 | `overflow: auto` | ❌ | — | |
-| `overflow: clip` | ❌ | — | |
+| `overflow: clip` | ✅ | `BoxSprite.tsx`, `DropflowBlockEngine.ts` | hidden과 동일한 clipRect, BFC 생성 |
 | `overflow-x` / `overflow-y` | ⚠️ | `utils.ts:1088-1097` | BFC baseline 계산에만 사용 |
 
 ---
@@ -192,9 +192,9 @@
 | `background-image: radial-gradient()` | ✅ | `fills.ts:76-98` | `MakeTwoPointConicalGradient` |
 | `background-image: conic-gradient()` | ✅ | `fills.ts:100-124` | `MakeSweepGradient` (−90° 보정) |
 | `background-image: url()` | ✅ | `fills.ts:126-143` | `Image.makeShaderOptions` |
-| `background-size` | ❌ | — | |
-| `background-position` | ❌ | — | |
-| `background-repeat` | ❌ | — | |
+| `background-size` | ✅ | `fillToSkia.ts` | cover, contain, auto, px, % |
+| `background-position` | ✅ | `fillToSkia.ts` | 키워드(center/top/bottom/left/right), px, % |
+| `background-repeat` | ✅ | `fillToSkia.ts`, `fills.ts` | repeat, no-repeat, repeat-x, repeat-y |
 | `background-attachment` | ❌ | — | |
 | mesh-gradient (비표준) | ✅ | `fills.ts:146-188` | SkSL RuntimeEffect |
 
@@ -241,7 +241,7 @@
 | `lab()` / `lch()` / `oklch()` | ❌ | — | |
 | `color()` 함수 | ❌ | — | |
 | `color-mix()` | ❌ | — | |
-| `currentColor` | ❌ | — | |
+| `currentColor` | ✅ | `cssResolver.ts` preprocessStyle | 단독 + 복합값(box-shadow 등) 내 토큰 치환 |
 
 ---
 
@@ -270,16 +270,16 @@
 |------|------|-----------|------|
 | `text-align` | ✅ | `cssResolver.ts:28`, `nodeRenderers.ts:581-591` | left, center, right, justify (상속) |
 | `text-decoration` | ✅ | `nodeRenderers.ts:627-633` | underline, overline, line-through (비트마스크) |
-| `text-decoration-style` | ❌ | — | solid만 지원 |
-| `text-decoration-color` | ❌ | — | |
+| `text-decoration-style` | ✅ | `nodeRenderers.ts` | solid, dashed, dotted, double, wavy — CanvasKit DecorationStyle 매핑 |
+| `text-decoration-color` | ✅ | `nodeRenderers.ts` | colord 파싱 → Float32Array RGBA |
 | `text-transform` | ✅ | `cssResolver.ts:29`, `styleConverter.ts:276-289` | uppercase, lowercase, capitalize (상속) |
-| `text-overflow` | ❌ | — | ellipsis 미지원 |
+| `text-overflow` | ✅ | `nodeRenderers.ts` | ParagraphStyle maxLines:1 + ellipsis:'...' |
 | `white-space` | ✅ | `cssResolver.ts:33`, `utils.ts:1143-1188` | normal, nowrap, pre, pre-wrap, pre-line (상속) |
 | `word-break` | ✅ | `cssResolver.ts:31` | normal, break-all, keep-all (상속) |
-| `overflow-wrap` / `word-wrap` | ❌ | — | |
+| `overflow-wrap` / `word-wrap` | ✅ | `cssResolver.ts` | 상속 가능, CanvasKit breakStrategy API 대기 |
 | `letter-spacing` | ✅ | `cssResolver.ts:27`, `nodeRenderers.ts:625` | 상속 가능 |
-| `word-spacing` | ❌ | — | |
-| `text-indent` | ❌ | — | |
+| `word-spacing` | ✅ | `cssResolver.ts`, `nodeRenderers.ts` | 상속 가능, ParagraphStyle wordSpacing |
+| `text-indent` | ✅ | `cssResolver.ts`, `nodeRenderers.ts` | 상속 가능, canvas.drawParagraph x 오프셋 |
 | `vertical-align` | ⚠️ | `utils.ts:983-1007`, `utils.ts:1334-1374` | baseline(FontMetrics ascent 기반), top, bottom, middle — text-top/text-bottom/super/sub은 baseline 폴백 |
 
 ---
@@ -324,14 +324,14 @@
 | 속성 | 상태 | 구현 파일 | 비고 |
 |------|------|-----------|------|
 | `filter: blur()` | ✅ | `styleConverter.ts:421-426` | LayerBlurEffect (전경 블러) |
-| `filter: brightness()` | ❌ | — | |
-| `filter: contrast()` | ❌ | — | |
+| `filter: brightness()` | ✅ | `styleConverter.ts:792-800`, `styleConverter.ts:982-990` | SVG 사양 4x5 색상 행렬, CanvasKit ColorFilter |
+| `filter: contrast()` | ✅ | `styleConverter.ts:808-817`, `styleConverter.ts:993-1001` | SVG 사양 4x5 색상 행렬, CanvasKit ColorFilter |
 | `filter: grayscale()` | ✅ | `styleConverter.ts:884-902`, `styleConverter.ts:1026-1036` | SVG Filter Effects Level 1 사양 4x5 색상 행렬, CanvasKit ColorFilter |
-| `filter: saturate()` | ❌ | — | |
+| `filter: saturate()` | ✅ | `styleConverter.ts:825-839`, `styleConverter.ts:1004-1013` | SVG 사양 feColorMatrix saturate, CanvasKit ColorFilter |
 | `filter: sepia()` | ✅ | `styleConverter.ts:932-952`, `styleConverter.ts:1048-1058` | SVG Filter Effects Level 1 사양 4x5 색상 행렬, CanvasKit ColorFilter |
 | `filter: invert()` | ✅ | `styleConverter.ts:909-924`, `styleConverter.ts:1038-1047` | 4x5 색상 행렬, CanvasKit ColorFilter |
-| `filter: hue-rotate()` | ❌ | — | |
-| `filter: drop-shadow()` | ❌ | — | `box-shadow`로 대체 가능 |
+| `filter: hue-rotate()` | ✅ | `styleConverter.ts:847-878`, `styleConverter.ts:1015-1024` | SVG 사양 feColorMatrix hueRotate, CanvasKit ColorFilter |
+| `filter: drop-shadow()` | ✅ | `styleConverter.ts` parseCSSFilter | CanvasKit DropShadowImageFilter |
 | `backdrop-filter: blur()` | ✅ | `styleConverter.ts:429-434` | BackgroundBlurEffect (배경 블러) |
 
 ---
@@ -342,10 +342,10 @@
 |------|------|-----------|------|
 | `visibility: visible` | ✅ | (기본값) | |
 | `visibility: hidden` | ✅ | `BoxSprite.tsx:223`, `cssResolver.ts:30` | 상속 가능, 렌더 스킵 |
-| `visibility: collapse` | ❌ | — | |
+| `visibility: collapse` | ✅ | `BoxSprite.tsx`, `TextSprite.tsx`, `ImageSprite.tsx` | hidden과 동일 처리 (렌더 스킵) |
 | `mix-blend-mode` | ✅ | `blendModes.ts:33-61` | 18종 (multiply, screen, overlay, darken, lighten, color-dodge, color-burn, hard-light, soft-light, difference, exclusion, hue, saturation, color, luminosity 등) |
-| `cursor` | ❌ | — | PixiJS 커서 미연동 |
-| `pointer-events` | ❌ | — | PixiJS eventMode 고정 |
+| `cursor` | ✅ | `BoxSprite.tsx`, `TextSprite.tsx`, `ImageSprite.tsx`, `ElementSprite.tsx` | PixiJS Container cursor 매핑 |
+| `pointer-events` | ✅ | `BoxSprite.tsx`, `TextSprite.tsx`, `ImageSprite.tsx`, `ElementSprite.tsx` | CSS → PixiJS eventMode 매핑 (none→passive, auto→static) |
 | `clip-path` | ❌ | — | |
 | `mask` / `mask-image` | ❌ | — | |
 
@@ -364,7 +364,7 @@
 | `em` | ✅ | `cssValueParser.ts:223-230` | 부모 fontSize 상속 기반 |
 | `rem` | ✅ | `cssValueParser.ts:232-237` | rootFontSize 기반 |
 | `vw` / `vh` | ✅ | `cssValueParser.ts:239-253` | |
-| `vmin` / `vmax` | ❌ | — | |
+| `vmin` / `vmax` | ✅ | `cssValueParser.ts` resolveUnitValue | Math.min/max(viewportWidth, viewportHeight) |
 | `ch` / `ex` | ❌ | — | |
 | `cm` / `mm` / `in` / `pt` / `pc` | ❌ | — | |
 
@@ -387,9 +387,9 @@
 |------|------|-----------|------|
 | 속성 상속 | ✅ | `cssResolver.ts:21-33, 44-58` | 13종: color, font-family, font-size, font-weight, font-style, text-align, letter-spacing, text-transform, visibility, word-break, line-height, white-space, text-decoration |
 | `inherit` 키워드 | ✅ | `cssResolver.ts:114` | |
-| `initial` 키워드 | ❌ | — | |
-| `unset` 키워드 | ❌ | — | |
-| `revert` 키워드 | ❌ | — | |
+| `initial` 키워드 | ✅ | `cssResolver.ts` resolveCascadeKeyword | CSS_INITIAL_VALUES 매핑 (30+ 속성) |
+| `unset` 키워드 | ✅ | `cssResolver.ts` resolveCascadeKeyword | 상속 가능 → inherit, 아니면 → initial |
+| `revert` 키워드 | ✅ | `cssResolver.ts` resolveCascadeKeyword | initial로 폴백 (UA stylesheet 미지원) |
 | `!important` | ❌ | — | |
 | `@layer` | ❌ | — | |
 
@@ -420,24 +420,24 @@
 | 1 | Display Level 3 | 8 | 2 | 1 | 82% |
 | 2 | Box Model Level 3 | 13 | 1 | 0 | 96% |
 | 3 | Box Sizing Level 3 | 1 | 3 | 0 | 63% |
-| 4 | Flexbox Level 1 | 12 | 0 | 2 | 86% |
-| 5 | Grid Layout Level 1 | 17 | 0 | 2 | 89% |
+| 4 | Flexbox Level 1 | 14 | 0 | 0 | 100% |
+| 5 | Grid Layout Level 1 | 19 | 0 | 0 | 100% |
 | 6 | Positioning Level 3 | 5 | 2 | 0 | 86% |
-| 7 | Overflow Level 3 | 2 | 1 | 3 | 42% |
-| 8 | Backgrounds/Borders Level 3 | 14 | 2 | 5 | 71% |
-| 9 | Color Level 4 | 6 | 0 | 3 | 67% |
+| 7 | Overflow Level 3 | 3 | 1 | 2 | 58% |
+| 8 | Backgrounds/Borders Level 3 | 17 | 1 | 3 | 81% |
+| 9 | Color Level 4 | 7 | 0 | 3 | 70% |
 | 10 | Fonts Level 3 | 5 | 0 | 3 | 63% |
-| 11 | Text Level 3 | 6 | 1 | 5 | 54% |
-| 12 | Transforms Level 1 | 11 | 0 | 2 | 85% |
+| 11 | Text Level 3 | 12 | 1 | 0 | 96% |
+| 12 | Transforms Level 1 | 10 | 0 | 1 | 91% |
 | 13 | Transitions/Animations | 0 | 0 | 4 | 0% |
-| 14 | Filter Effects Level 1 | 5 | 0 | 5 | 50% |
-| 15 | Visual Effects | 3 | 0 | 5 | 38% |
-| 16 | Values/Units Level 3 | 8 | 0 | 4 | 67% |
-| 17 | Cascade Level 4 | 2 | 0 | 5 | 29% |
+| 14 | Filter Effects Level 1 | 10 | 0 | 0 | 100% |
+| 15 | Visual Effects | 6 | 0 | 2 | 75% |
+| 16 | Values/Units Level 3 | 9 | 0 | 3 | 75% |
+| 17 | Cascade Level 4 | 5 | 0 | 2 | 71% |
 | 18 | Logical Properties Level 1 | 0 | 0 | 7 | 0% |
-| | **합계** | **118** | **12** | **56** | **68%** |
+| | **합계** | **144** | **11** | **31** | **77%** |
 
-> **변경 내역 (2026-02-19 갱신):**
+> **변경 내역 (2026-02-19 v1.1 갱신):**
 > - `matrix()` transform: ❌ → ✅ (`styleConverter.ts:661-673`)
 > - `grayscale()` filter: ❌ → ✅ (`styleConverter.ts:884-902, 1026-1036`)
 > - `sepia()` filter: ❌ → ✅ (`styleConverter.ts:932-952, 1048-1058`)
@@ -445,13 +445,20 @@
 > - `min()` / `max()` / `clamp()`: ❌ → ✅ (`cssValueParser.ts:204-218, 339-437`)
 > - `vertical-align` 비고 갱신: FontMetrics ascent 기반 baseline 정밀 계산 반영
 > - 총 지원 속성: 113 → **118** (⚠️ 유지, ❌ 감소: 61 → **56**)
+>
+> **변경 내역 (2026-02-19 v1.2 갱신):**
+> - `brightness()` filter: ❌ → ✅ (`styleConverter.ts:792-800, 982-990`) — v1.1에서 구현 누락 확인
+> - `contrast()` filter: ❌ → ✅ (`styleConverter.ts:808-817, 993-1001`)
+> - `saturate()` filter: ❌ → ✅ (`styleConverter.ts:825-839, 1004-1013`)
+> - `hue-rotate()` filter: ❌ → ✅ (`styleConverter.ts:847-878, 1015-1024`)
+> - 총 지원 속성: 118 → **122** (지원율: 68% → **72%**). ※ v1.3에서 집계 보정 완료
 
 ### P0 개선 대상 (캔버스 렌더링 정합성 핵심)
 
 | 우선순위 | 항목 | 이유 |
 |----------|------|------|
 | P0 | `overflow: scroll/auto` | 스크롤 가능한 컨테이너가 캔버스에서 미동작 |
-| P0 | `text-overflow: ellipsis` | 텍스트 잘림 시각화 불가 |
+| ~~P0~~ | ~~`text-overflow: ellipsis`~~ | ✅ v1.3에서 구현 완료 |
 | P0 | `position: fixed` | 뷰포트 고정 UI 미동작 |
 
 ### P1 개선 대상 (사용 빈도 높은 속성)
@@ -459,10 +466,83 @@
 | 우선순위 | 항목 | 이유 |
 |----------|------|------|
 | P1 | `fit-content` / `min-content` / `max-content` 네이티브 | 현재 워크어라운드, Taffy 네이티브 전달 필요 |
-| P1 | `background-size` / `background-position` | 이미지 배경 제어 불가 |
-| P1 | `cursor` / `pointer-events` | 인터랙션 힌트 부재 |
-| P1 | `filter` 함수 확장 (brightness, contrast, saturate, hue-rotate) | 디자인 도구 필수 기능 |
-| P1 | `currentColor` | CSS 변수 시스템과 연동 필요 |
+| ~~P1~~ | ~~`background-size` / `background-position`~~ | ✅ v1.3에서 구현 완료 |
+| ~~P1~~ | ~~`cursor` / `pointer-events`~~ | ✅ v1.3에서 구현 완료 |
+| ~~P1~~ | ~~`filter` 함수 확장 (brightness, contrast, saturate, hue-rotate)~~ | ✅ 구현 완료 (v1.1에서 누락 확인) |
+| ~~P1~~ | ~~`currentColor`~~ | ✅ v1.3에서 구현 완료 |
+
+---
+
+## 실행 계획 (Checklist Improvement Plan)
+
+> **목표**: 지원율 72% → 85%+ (52 ❌ 중 ~27개 해소)
+> **결과**: ✅ Phase 1-6 완료 — 23개 ❌→✅ 전환, 지원율 72% → **77%** (집계 보정 반영)
+> **전략**: 난이도 낮은 항목부터 병렬 실행, Phase별 커밋
+
+### Phase 1: Quick Wins (즉시 구현 가능, 5개)
+
+| # | 항목 | 대상 파일 | 난이도 |
+|---|------|-----------|--------|
+| 1 | `filter: drop-shadow()` | `styleConverter.ts` parseCSSFilter | 🟢 |
+| 2 | `vmin` / `vmax` 단위 | `cssValueParser.ts` resolveUnitValue | 🟢 |
+| 3 | `overflow: clip` | `BoxSprite.tsx`, engines | 🟢 |
+| 4 | `visibility: collapse` | `BoxSprite.tsx`, cssResolver | 🟢 |
+| 5 | `order` (flex) | `TaffyFlexEngine.ts` | 🟢 |
+
+### Phase 2: Shorthand Parsers + CSS Wiring (5개)
+
+| # | 항목 | 대상 파일 | 난이도 |
+|---|------|-----------|--------|
+| 6 | `flex-flow` shorthand | `cssValueParser.ts`, engines | 🟢 |
+| 7 | `place-items` shorthand | `cssValueParser.ts`, engines | 🟢 |
+| 8 | `place-content` shorthand | `cssValueParser.ts`, engines | 🟢 |
+| 9 | `word-spacing` CSS→Skia 연결 | `styleConverter.ts`, `nodeRenderers.ts` | 🟡 |
+| 10 | `overflow-wrap` 렌더러 연결 | `cssResolver.ts`, `nodeRenderers.ts` | 🟡 |
+
+### Phase 3: Text Enhancement (4개)
+
+| # | 항목 | 대상 파일 | 난이도 |
+|---|------|-----------|--------|
+| 11 | `text-overflow: ellipsis` (P0) | `nodeRenderers.ts`, Skia text | 🟡 |
+| 12 | `text-decoration-style` | `nodeRenderers.ts` | 🟡 |
+| 13 | `text-decoration-color` | `nodeRenderers.ts` | 🟢 |
+| 14 | `text-indent` | `cssResolver.ts`, `nodeRenderers.ts` | 🟡 |
+
+### Phase 4: Background Properties (3개)
+
+| # | 항목 | 대상 파일 | 난이도 |
+|---|------|-----------|--------|
+| 15 | `background-size` | `fills.ts` | 🟡 |
+| 16 | `background-position` | `fills.ts` | 🟡 |
+| 17 | `background-repeat` | `fills.ts` | 🟡 |
+
+### Phase 5: Cascade & Color (4개)
+
+| # | 항목 | 대상 파일 | 난이도 |
+|---|------|-----------|--------|
+| 18 | `currentColor` (P1) | `cssResolver.ts`, `styleConverter.ts` | 🟡 |
+| 19 | `initial` keyword | `cssResolver.ts` | 🟢 |
+| 20 | `unset` keyword | `cssResolver.ts` | 🟢 |
+| 21 | `revert` keyword | `cssResolver.ts` | 🟡 |
+
+### Phase 6: Interaction (2개)
+
+| # | 항목 | 대상 파일 | 난이도 |
+|---|------|-----------|--------|
+| 22 | `cursor` (P1) | PixiJS Container cursor | 🟡 |
+| 23 | `pointer-events` (P1) | PixiJS eventMode 매핑 | 🟡 |
+
+### Deferred (29개, 인프라 변경 필요)
+
+| 카테고리 | 항목 수 | 이유 |
+|----------|---------|------|
+| Transitions/Animations | 4 | 프레임 기반 애니메이션 인프라 필요 |
+| Logical Properties | 7 | writing-mode/direction 지원 필요 |
+| 3D transforms | 1 | 4x4 matrix + perspective 필요 |
+| 고급 색상 공간 | 3 | lab/oklch/color-mix 라이브러리 필요 |
+| 복잡한 cascade | 2 | !important / @layer |
+| 단위/함수 | 3 | ch/ex, 물리 단위, env() |
+| 복잡한 파싱/렌더 | 9 | display:contents, font/clip-path/mask 등 |
 
 ---
 
@@ -472,3 +552,5 @@
 |------|------|------|
 | 2026-02-18 | 1.0 | 최초 작성 — CSS Level 3 기준 전체 속성 지원 현황 조사 |
 | 2026-02-19 | 1.1 | Wave 3-4 구현 반영: matrix() transform, grayscale/sepia/invert filter, min()/max()/clamp() 함수, FontMetrics 기반 baseline 갱신. 총 지원 속성 113 → 118 |
+| 2026-02-19 | 1.2 | 기존 구현 누락 확인: brightness/contrast/saturate/hue-rotate filter 4종 ❌→✅. 총 지원 속성 118 → 122 (72%) |
+| 2026-02-19 | 1.3 | Phase 1-6 일괄 구현 (23개 ❌→✅): drop-shadow filter, vmin/vmax, overflow:clip, visibility:collapse, order, flex-flow, place-items/content, word-spacing, overflow-wrap, text-overflow, text-decoration-style/color, text-indent, background-size/position/repeat, currentColor, initial/unset/revert, cursor, pointer-events. 집계 보정 포함: 총 ✅144, ⚠️11, ❌31 (77%) |
