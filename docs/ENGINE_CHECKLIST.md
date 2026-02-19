@@ -207,8 +207,8 @@
 | `border-style: solid` | ✅ | `nodeRenderers.ts:449-486` | |
 | `border-style: dashed` | ✅ | `nodeRenderers.ts:449-486` | |
 | `border-style: dotted` | ✅ | `nodeRenderers.ts:449-486` | |
-| `border-style: double` | ❌ | — | |
-| `border-style: groove/ridge/inset/outset` | ❌ | — | |
+| `border-style: double` | ✅ | `nodeRenderers.ts` renderDoubleBorder | 3등분 outer/inner 선, sw<3px 시 solid 폴백 |
+| `border-style: groove/ridge/inset/outset` | ✅ | `nodeRenderers.ts` renderGrooveRidge/InsetOutset | colord darken/lighten 명암 계산 |
 | `border` (shorthand) | ⚠️ | `cssValueParser.ts:499-535` | 파서 존재하나 레이아웃에서 미사용 |
 
 ### 8.3 모서리
@@ -240,7 +240,7 @@
 | Named colors | ✅ | `styleConverter.ts:126-145` | CSS named colors 전체 |
 | `lab()` / `lch()` / `oklch()` | ❌ | — | |
 | `color()` 함수 | ❌ | — | |
-| `color-mix()` | ❌ | — | |
+| `color-mix()` | ✅ | `styleConverter.ts` resolveColorMix | in srgb RGB 보간, 재귀 중첩 지원 (depth 5) |
 | `currentColor` | ✅ | `cssResolver.ts` preprocessStyle | 단독 + 복합값(box-shadow 등) 내 토큰 치환 |
 
 ---
@@ -255,7 +255,7 @@
 | `font-size` | ✅ | `cssResolver.ts:121-135` | em/rem 상속 기반 해석 |
 | `font-weight` | ✅ | `cssResolver.ts:23`, `nodeRenderers.ts:595-606` | 100-900, normal, bold — CanvasKit FontWeight 매핑 |
 | `font-style` | ✅ | `cssResolver.ts:24`, `nodeRenderers.ts:608-615` | normal, italic, oblique |
-| `font` (shorthand) | ❌ | — | |
+| `font` (shorthand) | ✅ | `cssValueParser.ts` parseFontShorthand, `cssResolver.ts` | style/weight/size/line-height/family 분리, 개별 속성 우선 |
 | `font-variant` | ❌ | — | |
 | `font-stretch` | ❌ | — | |
 | `line-height` | ✅ | `utils.ts:1019-1052`, `nodeRenderers.ts:537` | 배수, px, normal |
@@ -346,7 +346,7 @@
 | `mix-blend-mode` | ✅ | `blendModes.ts:33-61` | 18종 (multiply, screen, overlay, darken, lighten, color-dodge, color-burn, hard-light, soft-light, difference, exclusion, hue, saturation, color, luminosity 등) |
 | `cursor` | ✅ | `BoxSprite.tsx`, `TextSprite.tsx`, `ImageSprite.tsx`, `ElementSprite.tsx` | PixiJS Container cursor 매핑 |
 | `pointer-events` | ✅ | `BoxSprite.tsx`, `TextSprite.tsx`, `ImageSprite.tsx`, `ElementSprite.tsx` | CSS → PixiJS eventMode 매핑 (none→passive, auto→static) |
-| `clip-path` | ❌ | — | |
+| `clip-path` | ✅ | `styleConverter.ts` parseClipPath, `nodeRenderers.ts` buildClipPath | inset, circle, ellipse, polygon — CanvasKit clipPath |
 | `mask` / `mask-image` | ❌ | — | |
 
 ---
@@ -365,8 +365,8 @@
 | `rem` | ✅ | `cssValueParser.ts:232-237` | rootFontSize 기반 |
 | `vw` / `vh` | ✅ | `cssValueParser.ts:239-253` | |
 | `vmin` / `vmax` | ✅ | `cssValueParser.ts` resolveUnitValue | Math.min/max(viewportWidth, viewportHeight) |
-| `ch` / `ex` | ❌ | — | |
-| `cm` / `mm` / `in` / `pt` / `pc` | ❌ | — | |
+| `ch` / `ex` | ✅ | `cssValueParser.ts` resolveUnitValue | fontSize×0.5 근사치 |
+| `cm` / `mm` / `in` / `pt` / `pc` | ✅ | `cssValueParser.ts` resolveUnitValue | 1in=96px 기준 물리 단위 변환 |
 
 ### 16.2 값 함수
 
@@ -424,18 +424,18 @@
 | 5 | Grid Layout Level 1 | 19 | 0 | 0 | 100% |
 | 6 | Positioning Level 3 | 5 | 2 | 0 | 86% |
 | 7 | Overflow Level 3 | 3 | 1 | 2 | 58% |
-| 8 | Backgrounds/Borders Level 3 | 17 | 1 | 3 | 81% |
-| 9 | Color Level 4 | 7 | 0 | 3 | 70% |
-| 10 | Fonts Level 3 | 5 | 0 | 3 | 63% |
+| 8 | Backgrounds/Borders Level 3 | 19 | 1 | 1 | 95% |
+| 9 | Color Level 4 | 8 | 0 | 2 | 80% |
+| 10 | Fonts Level 3 | 6 | 0 | 2 | 75% |
 | 11 | Text Level 3 | 12 | 1 | 0 | 96% |
 | 12 | Transforms Level 1 | 10 | 0 | 1 | 91% |
 | 13 | Transitions/Animations | 0 | 0 | 4 | 0% |
 | 14 | Filter Effects Level 1 | 10 | 0 | 0 | 100% |
-| 15 | Visual Effects | 6 | 0 | 2 | 75% |
-| 16 | Values/Units Level 3 | 9 | 0 | 3 | 75% |
+| 15 | Visual Effects | 7 | 0 | 1 | 88% |
+| 16 | Values/Units Level 3 | 11 | 0 | 1 | 92% |
 | 17 | Cascade Level 4 | 5 | 0 | 2 | 71% |
 | 18 | Logical Properties Level 1 | 0 | 0 | 7 | 0% |
-| | **합계** | **144** | **11** | **31** | **77%** |
+| | **합계** | **151** | **11** | **24** | **81%** |
 
 > **변경 내역 (2026-02-19 v1.1 갱신):**
 > - `matrix()` transform: ❌ → ✅ (`styleConverter.ts:661-673`)
@@ -476,7 +476,7 @@
 ## 실행 계획 (Checklist Improvement Plan)
 
 > **목표**: 지원율 72% → 85%+ (52 ❌ 중 ~27개 해소)
-> **결과**: ✅ Phase 1-6 완료 — 23개 ❌→✅ 전환, 지원율 72% → **77%** (집계 보정 반영)
+> **결과**: ✅ Phase 1-7 완료 — 30개 ❌→✅ 전환, 지원율 72% → **81%** (집계 보정 반영)
 > **전략**: 난이도 낮은 항목부터 병렬 실행, Phase별 커밋
 
 ### Phase 1: Quick Wins (즉시 구현 가능, 5개)
@@ -553,4 +553,5 @@
 | 2026-02-18 | 1.0 | 최초 작성 — CSS Level 3 기준 전체 속성 지원 현황 조사 |
 | 2026-02-19 | 1.1 | Wave 3-4 구현 반영: matrix() transform, grayscale/sepia/invert filter, min()/max()/clamp() 함수, FontMetrics 기반 baseline 갱신. 총 지원 속성 113 → 118 |
 | 2026-02-19 | 1.2 | 기존 구현 누락 확인: brightness/contrast/saturate/hue-rotate filter 4종 ❌→✅. 총 지원 속성 118 → 122 (72%) |
-| 2026-02-19 | 1.3 | Phase 1-6 일괄 구현 (23개 ❌→✅): drop-shadow filter, vmin/vmax, overflow:clip, visibility:collapse, order, flex-flow, place-items/content, word-spacing, overflow-wrap, text-overflow, text-decoration-style/color, text-indent, background-size/position/repeat, currentColor, initial/unset/revert, cursor, pointer-events. 집계 보정 포함: 총 ✅144, ⚠️11, ❌31 (77%) |
+| 2026-02-19 | 1.3 | Phase 1-6 일괄 구현 (23개 ❌→✅): drop-shadow filter, vmin/vmax, overflow:clip, visibility:collapse, order, flex-flow, place-items/content, word-spacing, overflow-wrap, text-overflow, text-decoration-style/color, text-indent, background-size/position/repeat, currentColor, initial/unset/revert, cursor, pointer-events. 집계 보정 포함: ✅144, ⚠️11, ❌31 (77%) |
+| 2026-02-19 | 1.4 | Phase 7 추가 구현 (7개 ❌→✅): cm/mm/in/pt/pc 물리 단위, ch/ex 단위, font shorthand, border-style double/groove/ridge/inset/outset, clip-path 기본 도형, color-mix(). 총 ✅151, ⚠️11, ❌24 (**81%**) |

@@ -19,7 +19,7 @@ import {
 // Types
 // ============================================
 
-export type BorderStyleType = 'solid' | 'dashed' | 'dotted' | 'double' | 'none';
+export type BorderStyleType = 'solid' | 'dashed' | 'dotted' | 'double' | 'groove' | 'ridge' | 'inset' | 'outset' | 'none';
 
 export interface BorderConfig {
   /** border 두께 (px) */
@@ -61,6 +61,10 @@ export function parseBorderStyle(style: string | undefined): BorderStyleType {
   if (lower === 'dashed') return 'dashed';
   if (lower === 'dotted') return 'dotted';
   if (lower === 'double') return 'double';
+  if (lower === 'groove') return 'groove';
+  if (lower === 'ridge') return 'ridge';
+  if (lower === 'inset') return 'inset';
+  if (lower === 'outset') return 'outset';
   return 'solid';
 }
 

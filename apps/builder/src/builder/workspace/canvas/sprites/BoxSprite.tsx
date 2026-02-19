@@ -17,7 +17,7 @@ import { PIXI_COMPONENTS } from '../pixiSetup';
 import { useCallback, useMemo, memo, useContext, useRef } from 'react';
 import { Graphics as PixiGraphics, TextStyle } from 'pixi.js';
 import type { Element } from '../../../../types/core/store.types';
-import { convertStyle, cssColorToHex, cssColorToAlpha, buildSkiaEffects, parseTransformOrigin, applyTransformOrigin, type CSSStyle } from './styleConverter';
+import { convertStyle, cssColorToHex, cssColorToAlpha, buildSkiaEffects, parseTransformOrigin, applyTransformOrigin, parseClipPath, type CSSStyle } from './styleConverter';
 import { parseZIndex, createsStackingContext } from '../layout/engines/cssStackingContext';
 import { parsePadding, getContentBounds } from './paddingUtils';
 import { drawBox, parseBorderConfig } from '../utils';
@@ -265,6 +265,12 @@ export const BoxSprite = memo(function BoxSprite({ element, onClick, onDoubleCli
       ...(skiaTransform ? { transform: skiaTransform } : {}),
       ...(zIndex !== undefined ? { zIndex } : {}),
       ...(isStackingCtx ? { isStackingContext: true } : {}),
+      ...(style?.clipPath
+        ? (() => {
+            const parsed = parseClipPath(style.clipPath, transform.width, transform.height);
+            return parsed ? { clipPath: parsed } : {};
+          })()
+        : {}),
       box: {
         fillColor,
         // 우선순위: cssBgImageFill > gradientFill
@@ -283,7 +289,7 @@ export const BoxSprite = memo(function BoxSprite({ element, onClick, onDoubleCli
           : undefined,
         strokeWidth: borderConfig?.width,
         strokeStyle: borderConfig?.style !== 'solid' && borderConfig?.style !== 'none'
-          ? (borderConfig?.style as 'dashed' | 'dotted') : undefined,
+          ? (borderConfig?.style as 'dashed' | 'dotted' | 'double' | 'groove' | 'ridge' | 'inset' | 'outset') : undefined,
       },
     };
   }, [transform, fill, borderRadius, borderConfig, style, skiaEffects, fills]);

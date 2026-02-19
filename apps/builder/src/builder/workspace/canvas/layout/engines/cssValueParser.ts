@@ -356,6 +356,52 @@ function resolveUnitValue(
     return (num / 100) * Math.max(vw, vh);
   }
 
+  // in 단위 (1in = 96px)
+  if (trimmed.endsWith('in')) {
+    const num = parseFloat(trimmed);
+    return isNaN(num) ? undefined : num * 96;
+  }
+
+  // cm 단위 (1cm = 96/2.54px)
+  if (trimmed.endsWith('cm')) {
+    const num = parseFloat(trimmed);
+    return isNaN(num) ? undefined : num * (96 / 2.54);
+  }
+
+  // mm 단위 (1mm = 96/25.4px)
+  if (trimmed.endsWith('mm')) {
+    const num = parseFloat(trimmed);
+    return isNaN(num) ? undefined : num * (96 / 25.4);
+  }
+
+  // pc 단위 (1pc = 16px) — pt보다 먼저 검사 ('pc'가 'c'로 끝나므로 순서 무관하지만 명시적 배치)
+  if (trimmed.endsWith('pc')) {
+    const num = parseFloat(trimmed);
+    return isNaN(num) ? undefined : num * 16;
+  }
+
+  // pt 단위 (1pt = 96/72px)
+  if (trimmed.endsWith('pt')) {
+    const num = parseFloat(trimmed);
+    return isNaN(num) ? undefined : num * (96 / 72);
+  }
+
+  // ch 단위 ('0' 문자 advance width 근사: fontSize * 0.5)
+  if (trimmed.endsWith('ch')) {
+    const num = parseFloat(trimmed);
+    if (isNaN(num)) return undefined;
+    const fontSize = ctx.parentSize ?? DEFAULT_ROOT_FONT_SIZE;
+    return num * fontSize * 0.5;
+  }
+
+  // ex 단위 (x-height 근사: fontSize * 0.5)
+  if (trimmed.endsWith('ex')) {
+    const num = parseFloat(trimmed);
+    if (isNaN(num)) return undefined;
+    const fontSize = ctx.parentSize ?? DEFAULT_ROOT_FONT_SIZE;
+    return num * fontSize * 0.5;
+  }
+
   // % 단위
   if (trimmed.endsWith('%')) {
     const num = parseFloat(trimmed);
@@ -719,6 +765,114 @@ function tokenizeCalc(expr: string, ctx: CSSValueContext): CalcToken[] {
   }
 
   return tokens;
+}
+
+// ============================================
+// font shorthand 파서
+// ============================================
+
+export interface ParsedFont {
+  fontStyle?: string;
+  fontWeight?: string;
+  fontSize?: string;
+  lineHeight?: string;
+  fontFamily?: string;
+}
+
+const FONT_STYLES = new Set(['italic', 'oblique', 'normal']);
+const FONT_WEIGHTS = new Set(['bold', 'bolder', 'lighter', 'normal']);
+const FONT_VARIANTS = new Set(['small-caps', 'normal']);
+
+function isFontWeightNumber(token: string): boolean {
+  return /^\d+$/.test(token) && !token.endsWith('px') && !token.endsWith('em');
+}
+
+function isFontSizeToken(token: string): boolean {
+  if (isFontWeightNumber(token)) return false;
+  return (
+    /^[\d.]/.test(token) ||
+    token.endsWith('px') ||
+    token.endsWith('em') ||
+    token.endsWith('rem') ||
+    token.endsWith('%') ||
+    token.endsWith('vw') ||
+    token.endsWith('vh') ||
+    ['xx-small', 'x-small', 'small', 'medium', 'large', 'x-large', 'xx-large', 'smaller', 'larger'].includes(token)
+  );
+}
+
+export function parseFontShorthand(value: unknown): ParsedFont | undefined {
+  if (typeof value !== 'string' || !value.trim()) {
+    return undefined;
+  }
+
+  const trimmed = value.trim();
+
+  const firstCommaIdx = trimmed.indexOf(',');
+
+  let preFamilyStr: string;
+  let remainingFamilyStr: string;
+
+  if (firstCommaIdx === -1) {
+    preFamilyStr = trimmed;
+    remainingFamilyStr = '';
+  } else {
+    preFamilyStr = trimmed.slice(0, firstCommaIdx);
+    remainingFamilyStr = trimmed.slice(firstCommaIdx);
+  }
+
+  const preTokens = preFamilyStr.trim().split(/\s+/);
+
+  const result: ParsedFont = {};
+
+  let sizeTokenIdx = -1;
+  for (let i = 0; i < preTokens.length; i++) {
+    const token = preTokens[i];
+    const slashIdx = token.indexOf('/');
+
+    if (slashIdx !== -1) {
+      const sizePart = token.slice(0, slashIdx);
+      const lineHeightPart = token.slice(slashIdx + 1);
+      if (isFontSizeToken(sizePart)) {
+        result.fontSize = sizePart;
+        if (lineHeightPart) result.lineHeight = lineHeightPart;
+        sizeTokenIdx = i;
+        break;
+      }
+    } else if (
+      isFontSizeToken(token) &&
+      !FONT_STYLES.has(token) &&
+      !FONT_WEIGHTS.has(token) &&
+      !FONT_VARIANTS.has(token)
+    ) {
+      result.fontSize = token;
+      sizeTokenIdx = i;
+      break;
+    }
+  }
+
+  const prePreTokens = sizeTokenIdx >= 0 ? preTokens.slice(0, sizeTokenIdx) : preTokens;
+  for (const token of prePreTokens) {
+    const lower = token.toLowerCase();
+    if (FONT_STYLES.has(lower) && lower !== 'normal' && result.fontStyle === undefined) {
+      result.fontStyle = lower;
+    } else if (FONT_WEIGHTS.has(lower) && lower !== 'normal' && result.fontWeight === undefined) {
+      result.fontWeight = lower;
+    } else if (isFontWeightNumber(lower) && result.fontWeight === undefined) {
+      result.fontWeight = lower;
+    }
+  }
+
+  if (sizeTokenIdx >= 0 && sizeTokenIdx + 1 < preTokens.length) {
+    const familyFirstWord = preTokens.slice(sizeTokenIdx + 1).join(' ');
+    result.fontFamily = remainingFamilyStr
+      ? familyFirstWord + remainingFamilyStr
+      : familyFirstWord;
+  } else if (remainingFamilyStr && sizeTokenIdx >= 0) {
+    result.fontFamily = remainingFamilyStr.slice(1).trim();
+  }
+
+  return result;
 }
 
 // ============================================

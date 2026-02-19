@@ -12,10 +12,12 @@
 
 import type { CanvasKit, Canvas, FontMgr, Paragraph, Image as SkImage, EmbindEnumEntity } from 'canvaskit-wasm';
 import type { EffectStyle, FillStyle } from './types';
+import type { ClipPathShape } from '../sprites/styleConverter';
 import { applyFill } from './fills';
 import { beginRenderEffects, endRenderEffects } from './effects';
 import { toSkiaBlendMode } from './blendModes';
 import { SkiaDisposable } from './disposable';
+import { colord } from 'colord';
 
 // ============================================
 // Text paragraph cache (Pencil-style)
@@ -103,7 +105,7 @@ export interface SkiaNodeData {
     borderRadius: number | [number, number, number, number];
     strokeColor?: Float32Array;
     strokeWidth?: number;
-    strokeStyle?: 'solid' | 'dashed' | 'dotted';
+    strokeStyle?: 'solid' | 'dashed' | 'dotted' | 'double' | 'groove' | 'ridge' | 'inset' | 'outset';
   };
   /** Text 전용 */
   text?: {
@@ -156,6 +158,8 @@ export interface SkiaNodeData {
   };
   /** CSS transform → CanvasKit 3x3 matrix (Float32Array(9)) */
   transform?: Float32Array;
+  /** CSS clip-path 도형 (inset, circle, ellipse, polygon) */
+  clipPath?: ClipPathShape;
   /** overflow:hidden/scroll/auto 시 자식을 경계에서 클리핑 */
   clipChildren?: boolean;
   /** overflow:scroll/auto 시 자식 좌표에 적용할 스크롤 오프셋 */
@@ -251,6 +255,15 @@ function renderNodeInternal(
   // CSS transform 적용 (transform-origin 포함 3x3 matrix)
   if (node.transform) {
     canvas.concat(node.transform);
+  }
+
+  // CSS clip-path 적용
+  if (node.clipPath) {
+    const clipP = buildClipPath(ck, node.clipPath, node.width, node.height);
+    if (clipP) {
+      canvas.clipPath(clipP, ck.ClipOp.Intersect, true);
+      clipP.delete();
+    }
   }
 
   // blend mode 적용 (non-default인 경우 saveLayer로 분리)
@@ -410,6 +423,273 @@ function createRoundRectPath(
   return path;
 }
 
+/**
+ * ClipPathShape → CanvasKit Path 변환
+ * 반환된 Path는 호출측에서 delete() 해야 한다.
+ */
+function buildClipPath(
+  ck: CanvasKit,
+  shape: ClipPathShape,
+  width: number,
+  height: number,
+): ReturnType<CanvasKit['Path']['prototype']['constructor']> | null {
+  switch (shape.type) {
+    case 'inset': {
+      const { top, right, bottom, left, borderRadius } = shape;
+      const x = left;
+      const y = top;
+      const w = width - left - right;
+      const h = height - top - bottom;
+      if (w <= 0 || h <= 0) return null;
+      const path = new ck.Path();
+      if (borderRadius > 0) {
+        const r = Math.min(borderRadius, Math.min(w, h) / 2);
+        const rrect = ck.RRectXY(ck.LTRBRect(x, y, x + w, y + h), r, r);
+        path.addRRect(rrect);
+      } else {
+        path.addRect(ck.LTRBRect(x, y, x + w, y + h));
+      }
+      return path;
+    }
+
+    case 'circle': {
+      const { radius, cx, cy } = shape;
+      const path = new ck.Path();
+      path.addCircle(cx, cy, radius);
+      return path;
+    }
+
+    case 'ellipse': {
+      const { rx, ry, cx, cy } = shape;
+      const path = new ck.Path();
+      path.addOval(ck.LTRBRect(cx - rx, cy - ry, cx + rx, cy + ry));
+      return path;
+    }
+
+    case 'polygon': {
+      const { points } = shape;
+      if (points.length < 3) return null;
+      const path = new ck.Path();
+      path.moveTo(points[0].x, points[0].y);
+      for (let i = 1; i < points.length; i++) {
+        path.lineTo(points[i].x, points[i].y);
+      }
+      path.close();
+      return path;
+    }
+
+    default:
+      return null;
+  }
+}
+
+// ============================================
+// Border 렌더 헬퍼
+// ============================================
+
+type BorderRadius = number | [number, number, number, number];
+
+type SkiaPaint = ReturnType<InstanceType<CanvasKit['Paint']>['constructor']>;
+
+function parseSkiaColor(color: Float32Array): string {
+  const r = Math.round(color[0] * 255);
+  const g = Math.round(color[1] * 255);
+  const b = Math.round(color[2] * 255);
+  return `rgb(${r},${g},${b})`;
+}
+
+function hexToSkiaColor(hex: string, alpha: number): Float32Array {
+  const c = colord(hex);
+  const rgb = c.toRgb();
+  return Float32Array.of(rgb.r / 255, rgb.g / 255, rgb.b / 255, alpha);
+}
+
+function drawStrokeShape(
+  ck: CanvasKit,
+  canvas: Canvas,
+  paint: SkiaPaint,
+  inset: number,
+  width: number,
+  height: number,
+  br: BorderRadius,
+  hasRadius: boolean,
+  isArrayRadius: boolean,
+): void {
+  const strokeRect = ck.LTRBRect(inset, inset, width - inset, height - inset);
+  if (hasRadius) {
+    if (isArrayRadius) {
+      const radii = br as [number, number, number, number];
+      const innerRadii: [number, number, number, number] = [
+        Math.max(0, radii[0] - inset),
+        Math.max(0, radii[1] - inset),
+        Math.max(0, radii[2] - inset),
+        Math.max(0, radii[3] - inset),
+      ];
+      const path = createRoundRectPath(ck, inset, inset, width - inset * 2, height - inset * 2, innerRadii);
+      canvas.drawPath(path, paint);
+      path.delete();
+    } else {
+      const adjustedRadius = Math.max(0, (br as number) - inset);
+      const rrect = ck.RRectXY(strokeRect, adjustedRadius, adjustedRadius);
+      canvas.drawRRect(rrect, paint);
+    }
+  } else {
+    canvas.drawRect(strokeRect, paint);
+  }
+}
+
+function renderSolidBorder(
+  ck: CanvasKit,
+  canvas: Canvas,
+  node: SkiaNodeData,
+  paint: SkiaPaint,
+  sw: number,
+  br: BorderRadius,
+  hasRadius: boolean,
+  isArrayRadius: boolean,
+  strokeStyle: 'solid' | 'dashed' | 'dotted' | undefined,
+): void {
+  const inset = sw / 2;
+  paint.setStyle(ck.PaintStyle.Stroke);
+  paint.setStrokeWidth(sw);
+  paint.setColor(node.box!.strokeColor!);
+
+  let dashEffect: ReturnType<typeof ck.PathEffect.MakeDash> | null = null;
+  if (strokeStyle === 'dashed') {
+    const dashLen = Math.max(sw * 3, 4);
+    const gapLen = Math.max(sw * 2, 3);
+    dashEffect = ck.PathEffect.MakeDash([dashLen, gapLen]);
+    paint.setPathEffect(dashEffect);
+  } else if (strokeStyle === 'dotted') {
+    dashEffect = ck.PathEffect.MakeDash([sw, sw * 1.5]);
+    paint.setPathEffect(dashEffect);
+    paint.setStrokeCap(ck.StrokeCap.Round);
+  }
+
+  drawStrokeShape(ck, canvas, paint, inset, node.width, node.height, br, hasRadius, isArrayRadius);
+
+  if (dashEffect) {
+    paint.setPathEffect(null);
+    dashEffect.delete();
+  }
+}
+
+function renderDoubleBorder(
+  ck: CanvasKit,
+  canvas: Canvas,
+  node: SkiaNodeData,
+  paint: SkiaPaint,
+  sw: number,
+  br: BorderRadius,
+  hasRadius: boolean,
+  isArrayRadius: boolean,
+): void {
+  if (sw < 3) {
+    renderSolidBorder(ck, canvas, node, paint, sw, br, hasRadius, isArrayRadius, 'solid');
+    return;
+  }
+
+  const lineW = sw / 3;
+  const color = node.box!.strokeColor!;
+
+  paint.setStyle(ck.PaintStyle.Stroke);
+  paint.setColor(color);
+  paint.setStrokeWidth(lineW);
+
+  drawStrokeShape(ck, canvas, paint, lineW / 2, node.width, node.height, br, hasRadius, isArrayRadius);
+  drawStrokeShape(ck, canvas, paint, sw - lineW / 2, node.width, node.height, br, hasRadius, isArrayRadius);
+}
+
+function renderGrooveRidgeBorder(
+  ck: CanvasKit,
+  canvas: Canvas,
+  node: SkiaNodeData,
+  paint: SkiaPaint,
+  sw: number,
+  br: BorderRadius,
+  hasRadius: boolean,
+  isArrayRadius: boolean,
+  style: 'groove' | 'ridge',
+): void {
+  const halfSw = sw / 2;
+  const color = node.box!.strokeColor!;
+  const alpha = color[3];
+  const baseHex = parseSkiaColor(color);
+
+  const darkColor = hexToSkiaColor(colord(baseHex).darken(0.3).toHex(), alpha);
+  const lightColor = hexToSkiaColor(colord(baseHex).lighten(0.3).toHex(), alpha);
+
+  const outerColor = style === 'groove' ? darkColor : lightColor;
+  const innerColor = style === 'groove' ? lightColor : darkColor;
+
+  paint.setStyle(ck.PaintStyle.Stroke);
+  paint.setStrokeWidth(halfSw);
+
+  paint.setColor(outerColor);
+  drawStrokeShape(ck, canvas, paint, halfSw / 2, node.width, node.height, br, hasRadius, isArrayRadius);
+
+  paint.setColor(innerColor);
+  drawStrokeShape(ck, canvas, paint, halfSw + halfSw / 2, node.width, node.height, br, hasRadius, isArrayRadius);
+}
+
+function renderInsetOutsetBorder(
+  ck: CanvasKit,
+  canvas: Canvas,
+  node: SkiaNodeData,
+  paint: SkiaPaint,
+  sw: number,
+  br: BorderRadius,
+  hasRadius: boolean,
+  isArrayRadius: boolean,
+  style: 'inset' | 'outset',
+): void {
+  const color = node.box!.strokeColor!;
+  const alpha = color[3];
+  const baseHex = parseSkiaColor(color);
+
+  const darkColor = hexToSkiaColor(colord(baseHex).darken(0.3).toHex(), alpha);
+  const lightColor = hexToSkiaColor(colord(baseHex).lighten(0.3).toHex(), alpha);
+
+  const tlColor = style === 'inset' ? darkColor : lightColor;
+  const brColor = style === 'inset' ? lightColor : darkColor;
+
+  const inset = sw / 2;
+
+  canvas.save();
+  const tlClipPath = new ck.Path();
+  tlClipPath.moveTo(0, 0);
+  tlClipPath.lineTo(node.width, 0);
+  tlClipPath.lineTo(node.width - sw, sw);
+  tlClipPath.lineTo(sw, sw);
+  tlClipPath.lineTo(sw, node.height - sw);
+  tlClipPath.lineTo(0, node.height);
+  tlClipPath.close();
+  canvas.clipPath(tlClipPath, ck.ClipOp.Intersect, true);
+  tlClipPath.delete();
+
+  paint.setStyle(ck.PaintStyle.Stroke);
+  paint.setStrokeWidth(sw);
+  paint.setColor(tlColor);
+  drawStrokeShape(ck, canvas, paint, inset, node.width, node.height, br, hasRadius, isArrayRadius);
+  canvas.restore();
+
+  canvas.save();
+  const brClipPath = new ck.Path();
+  brClipPath.moveTo(node.width, node.height);
+  brClipPath.lineTo(0, node.height);
+  brClipPath.lineTo(sw, node.height - sw);
+  brClipPath.lineTo(node.width - sw, node.height - sw);
+  brClipPath.lineTo(node.width - sw, sw);
+  brClipPath.lineTo(node.width, 0);
+  brClipPath.close();
+  canvas.clipPath(brClipPath, ck.ClipOp.Intersect, true);
+  brClipPath.delete();
+
+  paint.setColor(brColor);
+  drawStrokeShape(ck, canvas, paint, inset, node.width, node.height, br, hasRadius, isArrayRadius);
+  canvas.restore();
+}
+
 /** Box 노드 렌더링 */
 function renderBox(ck: CanvasKit, canvas: Canvas, node: SkiaNodeData): void {
   if (!node.box) return;
@@ -462,52 +742,18 @@ function renderBox(ck: CanvasKit, canvas: Canvas, node: SkiaNodeData): void {
     // CanvasKit stroke는 경로 중앙에 그려지므로 strokeWidth/2 만큼 inset 필요
     if (node.box.strokeColor && node.box.strokeWidth) {
       const sw = node.box.strokeWidth;
-      const inset = sw / 2;
-      // fill에서 설정된 gradient shader를 제거하여 stroke가 단색으로 그려지도록 한다
+      const strokeStyle = node.box.strokeStyle;
+
       paint.setShader(null);
-      paint.setStyle(ck.PaintStyle.Stroke);
-      paint.setStrokeWidth(sw);
-      paint.setColor(node.box.strokeColor);
 
-      // dashed/dotted border 지원 (CanvasKit PathEffect)
-      let dashEffect: ReturnType<typeof ck.PathEffect.MakeDash> | null = null;
-      if (node.box.strokeStyle === 'dashed') {
-        const dashLen = Math.max(sw * 3, 4);
-        const gapLen = Math.max(sw * 2, 3);
-        dashEffect = ck.PathEffect.MakeDash([dashLen, gapLen]);
-        paint.setPathEffect(dashEffect);
-      } else if (node.box.strokeStyle === 'dotted') {
-        dashEffect = ck.PathEffect.MakeDash([sw, sw * 1.5]);
-        paint.setPathEffect(dashEffect);
-        paint.setStrokeCap(ck.StrokeCap.Round);
-      }
-
-      const strokeRect = ck.LTRBRect(inset, inset, node.width - inset, node.height - inset);
-      if (hasRadius) {
-        if (isArrayRadius) {
-          // 개별 모서리: stroke용 inner radius 계산
-          const innerRadii: [number, number, number, number] = [
-            Math.max(0, br[0] - inset),
-            Math.max(0, br[1] - inset),
-            Math.max(0, br[2] - inset),
-            Math.max(0, br[3] - inset),
-          ];
-          const path = createRoundRectPath(ck, inset, inset, node.width - inset * 2, node.height - inset * 2, innerRadii);
-          canvas.drawPath(path, paint);
-          path.delete();
-        } else {
-          const adjustedRadius = Math.max(0, br - inset);
-          const rrect = ck.RRectXY(strokeRect, adjustedRadius, adjustedRadius);
-          canvas.drawRRect(rrect, paint);
-        }
+      if (strokeStyle === 'double') {
+        renderDoubleBorder(ck, canvas, node, paint, sw, br, hasRadius, isArrayRadius);
+      } else if (strokeStyle === 'groove' || strokeStyle === 'ridge') {
+        renderGrooveRidgeBorder(ck, canvas, node, paint, sw, br, hasRadius, isArrayRadius, strokeStyle);
+      } else if (strokeStyle === 'inset' || strokeStyle === 'outset') {
+        renderInsetOutsetBorder(ck, canvas, node, paint, sw, br, hasRadius, isArrayRadius, strokeStyle);
       } else {
-        canvas.drawRect(strokeRect, paint);
-      }
-
-      // PathEffect 정리
-      if (dashEffect) {
-        paint.setPathEffect(null);
-        dashEffect.delete();
+        renderSolidBorder(ck, canvas, node, paint, sw, br, hasRadius, isArrayRadius, strokeStyle);
       }
     }
   } finally {

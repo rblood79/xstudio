@@ -10,10 +10,13 @@
  * - initial 키워드: CSS 사양 초기값으로 되돌림
  * - unset 키워드: 상속 가능 → inherit, 비상속 → initial
  * - revert 키워드: 노코드 빌더에서는 initial과 동일하게 처리
+ * - font shorthand: parseFontShorthand()로 개별 속성 분리
  *
  * @since 2026-02-16 S4 - CSS Cascade (inherit + var())
  * @updated 2026-02-19 Phase 5 - currentColor + initial/unset/revert
  */
+
+import { parseFontShorthand } from './cssValueParser';
 
 // ============================================
 // 상속 가능 속성 목록
@@ -284,11 +287,37 @@ export function resolveStyle(
   // 스타일 미선언 시 부모 값 전체 상속
   if (!style) return { ...parentComputed };
 
+  // font shorthand를 개별 속성으로 전개 (개별 속성이 있으면 shorthand보다 우선)
+  let effectiveStyle = style;
+  if (style['font'] !== undefined) {
+    const parsed = parseFontShorthand(style['font']);
+    if (parsed) {
+      const expanded: Record<string, unknown> = { ...style };
+      delete expanded['font'];
+      if (parsed.fontStyle !== undefined && expanded['fontStyle'] === undefined) {
+        expanded['fontStyle'] = parsed.fontStyle;
+      }
+      if (parsed.fontWeight !== undefined && expanded['fontWeight'] === undefined) {
+        expanded['fontWeight'] = parsed.fontWeight;
+      }
+      if (parsed.fontSize !== undefined && expanded['fontSize'] === undefined) {
+        expanded['fontSize'] = parsed.fontSize;
+      }
+      if (parsed.lineHeight !== undefined && expanded['lineHeight'] === undefined) {
+        expanded['lineHeight'] = parsed.lineHeight;
+      }
+      if (parsed.fontFamily !== undefined && expanded['fontFamily'] === undefined) {
+        expanded['fontFamily'] = parsed.fontFamily;
+      }
+      effectiveStyle = expanded;
+    }
+  }
+
   // 부모 computed 기반으로 시작 (상속 가능 속성 기본값)
   const computed = { ...parentComputed };
 
   for (const prop of INHERITABLE_PROPERTIES) {
-    const rawValue = style[prop];
+    const rawValue = effectiveStyle[prop];
     if (rawValue === undefined || rawValue === null || rawValue === '') continue;
 
     const resolved = resolveCascadeKeyword(prop, rawValue, computed[prop as keyof ComputedStyle]);

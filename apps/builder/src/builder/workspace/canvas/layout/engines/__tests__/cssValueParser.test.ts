@@ -13,6 +13,7 @@ import {
   resolveCalc,
   resolveVar,
   parseBorderShorthand,
+  parseFontShorthand,
   createVariableScopeWithDOMFallback,
   FIT_CONTENT,
   MIN_CONTENT,
@@ -721,6 +722,120 @@ describe('resolveVar - W3-7 DOM fallback', () => {
   });
 });
 
+// ============================================
+// 물리 단위 (cm, mm, in, pt, pc)
+// ============================================
+
+describe('resolveCSSSizeValue - in 단위', () => {
+  it('1in → 96', () => {
+    expect(resolveCSSSizeValue('1in')).toBe(96);
+  });
+
+  it('2in → 192', () => {
+    expect(resolveCSSSizeValue('2in')).toBe(192);
+  });
+
+  it('0.5in → 48', () => {
+    expect(resolveCSSSizeValue('0.5in')).toBe(48);
+  });
+});
+
+describe('resolveCSSSizeValue - cm 단위', () => {
+  it('1cm → 96/2.54px', () => {
+    expect(resolveCSSSizeValue('1cm')).toBeCloseTo(96 / 2.54);
+  });
+
+  it('2.54cm → 96px (1inch)', () => {
+    expect(resolveCSSSizeValue('2.54cm')).toBeCloseTo(96);
+  });
+
+  it('0cm → 0', () => {
+    expect(resolveCSSSizeValue('0cm')).toBe(0);
+  });
+});
+
+describe('resolveCSSSizeValue - mm 단위', () => {
+  it('1mm → 96/25.4px', () => {
+    expect(resolveCSSSizeValue('1mm')).toBeCloseTo(96 / 25.4);
+  });
+
+  it('25.4mm → 96px (1inch)', () => {
+    expect(resolveCSSSizeValue('25.4mm')).toBeCloseTo(96);
+  });
+
+  it('10mm → 약 37.795px', () => {
+    expect(resolveCSSSizeValue('10mm')).toBeCloseTo(37.795, 2);
+  });
+});
+
+describe('resolveCSSSizeValue - pt 단위', () => {
+  it('72pt → 96px (1inch)', () => {
+    expect(resolveCSSSizeValue('72pt')).toBeCloseTo(96);
+  });
+
+  it('1pt → 96/72px', () => {
+    expect(resolveCSSSizeValue('1pt')).toBeCloseTo(96 / 72);
+  });
+
+  it('12pt → 16px', () => {
+    expect(resolveCSSSizeValue('12pt')).toBeCloseTo(16);
+  });
+});
+
+describe('resolveCSSSizeValue - pc 단위', () => {
+  it('1pc → 16px', () => {
+    expect(resolveCSSSizeValue('1pc')).toBe(16);
+  });
+
+  it('6pc → 96px (1inch)', () => {
+    expect(resolveCSSSizeValue('6pc')).toBe(96);
+  });
+
+  it('0.5pc → 8px', () => {
+    expect(resolveCSSSizeValue('0.5pc')).toBe(8);
+  });
+});
+
+// ============================================
+// 타이포그래피 상대 단위 (ch, ex)
+// ============================================
+
+describe('resolveCSSSizeValue - ch 단위', () => {
+  it('1ch, parentSize=16 → 8 (fontSize * 0.5 근사)', () => {
+    expect(resolveCSSSizeValue('1ch', { parentSize: 16 })).toBe(8);
+  });
+
+  it('2ch, parentSize=20 → 20 (2 * 20 * 0.5)', () => {
+    expect(resolveCSSSizeValue('2ch', { parentSize: 20 })).toBe(20);
+  });
+
+  it('parentSize 미제공 시 기본값 16px 기준 → 1ch = 8', () => {
+    expect(resolveCSSSizeValue('1ch', {})).toBe(8);
+  });
+
+  it('0ch → 0', () => {
+    expect(resolveCSSSizeValue('0ch', { parentSize: 16 })).toBe(0);
+  });
+});
+
+describe('resolveCSSSizeValue - ex 단위', () => {
+  it('1ex, parentSize=16 → 8 (fontSize * 0.5 근사)', () => {
+    expect(resolveCSSSizeValue('1ex', { parentSize: 16 })).toBe(8);
+  });
+
+  it('2ex, parentSize=20 → 20 (2 * 20 * 0.5)', () => {
+    expect(resolveCSSSizeValue('2ex', { parentSize: 20 })).toBe(20);
+  });
+
+  it('parentSize 미제공 시 기본값 16px 기준 → 1ex = 8', () => {
+    expect(resolveCSSSizeValue('1ex', {})).toBe(8);
+  });
+
+  it('0ex → 0', () => {
+    expect(resolveCSSSizeValue('0ex', { parentSize: 16 })).toBe(0);
+  });
+});
+
 describe('createVariableScopeWithDOMFallback', () => {
   it('기본: domFallback=true, 빈 variables', () => {
     const scope = createVariableScopeWithDOMFallback();
@@ -739,5 +854,125 @@ describe('createVariableScopeWithDOMFallback', () => {
     const scope = createVariableScopeWithDOMFallback({}, mockResolver);
     expect(scope.domResolver).toBe(mockResolver);
     expect(scope.domFallback).toBe(true);
+  });
+});
+
+// ============================================
+// parseFontShorthand
+// ============================================
+
+describe('parseFontShorthand - 정상 케이스', () => {
+  it('"italic bold 16px/1.5 Arial, sans-serif"', () => {
+    const result = parseFontShorthand('italic bold 16px/1.5 Arial, sans-serif');
+    expect(result?.fontStyle).toBe('italic');
+    expect(result?.fontWeight).toBe('bold');
+    expect(result?.fontSize).toBe('16px');
+    expect(result?.lineHeight).toBe('1.5');
+    expect(result?.fontFamily).toBe('Arial, sans-serif');
+  });
+
+  it('"14px Helvetica" — style/weight 없는 최소 형태', () => {
+    const result = parseFontShorthand('14px Helvetica');
+    expect(result?.fontSize).toBe('14px');
+    expect(result?.fontFamily).toBe('Helvetica');
+    expect(result?.fontStyle).toBeUndefined();
+    expect(result?.fontWeight).toBeUndefined();
+  });
+
+  it('"bold 1.2em \\"Fira Sans\\", serif" — 숫자 단위 font-size', () => {
+    const result = parseFontShorthand('bold 1.2em "Fira Sans", serif');
+    expect(result?.fontWeight).toBe('bold');
+    expect(result?.fontSize).toBe('1.2em');
+    expect(result?.fontFamily).toBe('"Fira Sans", serif');
+  });
+
+  it('"italic small-caps bold 16px/2 cursive" — font-variant 포함', () => {
+    const result = parseFontShorthand('italic small-caps bold 16px/2 cursive');
+    expect(result?.fontStyle).toBe('italic');
+    expect(result?.fontWeight).toBe('bold');
+    expect(result?.fontSize).toBe('16px');
+    expect(result?.lineHeight).toBe('2');
+    expect(result?.fontFamily).toBe('cursive');
+  });
+
+  it('"700 16px Arial" — 숫자 weight', () => {
+    const result = parseFontShorthand('700 16px Arial');
+    expect(result?.fontWeight).toBe('700');
+    expect(result?.fontSize).toBe('16px');
+    expect(result?.fontFamily).toBe('Arial');
+  });
+
+  it('"16px/2 serif" — line-height만 있는 경우', () => {
+    const result = parseFontShorthand('16px/2 serif');
+    expect(result?.fontSize).toBe('16px');
+    expect(result?.lineHeight).toBe('2');
+    expect(result?.fontFamily).toBe('serif');
+  });
+
+  it('"oblique 12px mono" — oblique style', () => {
+    const result = parseFontShorthand('oblique 12px mono');
+    expect(result?.fontStyle).toBe('oblique');
+    expect(result?.fontSize).toBe('12px');
+    expect(result?.fontFamily).toBe('mono');
+  });
+});
+
+describe('parseFontShorthand - font-family 다중 fallback', () => {
+  it('"italic 16px Arial, Helvetica, sans-serif" — 3개 패밀리', () => {
+    const result = parseFontShorthand('italic 16px Arial, Helvetica, sans-serif');
+    expect(result?.fontFamily).toBe('Arial, Helvetica, sans-serif');
+  });
+
+  it('"bold 14px \\"Noto Sans KR\\", \\"Apple SD Gothic Neo\\", sans-serif"', () => {
+    const result = parseFontShorthand('bold 14px "Noto Sans KR", "Apple SD Gothic Neo", sans-serif');
+    expect(result?.fontWeight).toBe('bold');
+    expect(result?.fontSize).toBe('14px');
+    expect(result?.fontFamily).toBe('"Noto Sans KR", "Apple SD Gothic Neo", sans-serif');
+  });
+});
+
+describe('parseFontShorthand - 잘못된 입력', () => {
+  it('undefined → undefined', () => {
+    expect(parseFontShorthand(undefined)).toBeUndefined();
+  });
+
+  it('null → undefined', () => {
+    expect(parseFontShorthand(null)).toBeUndefined();
+  });
+
+  it('빈 문자열 → undefined', () => {
+    expect(parseFontShorthand('')).toBeUndefined();
+  });
+
+  it('공백만 → undefined', () => {
+    expect(parseFontShorthand('   ')).toBeUndefined();
+  });
+
+  it('숫자 타입 → undefined', () => {
+    expect(parseFontShorthand(42)).toBeUndefined();
+  });
+});
+
+describe('parseFontShorthand - 개별 속성 우선 (cssResolver 연동)', () => {
+  it('font shorthand와 fontStyle 개별 속성이 공존 시 개별 속성 우선', async () => {
+    const { resolveStyle, ROOT_COMPUTED_STYLE } = await import('../cssResolver');
+    const result = resolveStyle(
+      { font: 'italic bold 16px Arial', fontStyle: 'normal' },
+      ROOT_COMPUTED_STYLE,
+    );
+    expect(result.fontStyle).toBe('normal');
+    expect(result.fontWeight).toBe('bold');
+    expect(result.fontSize).toBe(16);
+  });
+
+  it('font shorthand만 있으면 파싱 결과 적용', async () => {
+    const { resolveStyle, ROOT_COMPUTED_STYLE } = await import('../cssResolver');
+    const result = resolveStyle(
+      { font: 'bold 20px "Pretendard", sans-serif' },
+      ROOT_COMPUTED_STYLE,
+    );
+    expect(result.fontWeight).toBe('bold');
+    expect(result.fontSize).toBe(20);
+    expect(result.fontFamily).toBe('"Pretendard", sans-serif');
   });
 });

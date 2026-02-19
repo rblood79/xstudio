@@ -86,6 +86,8 @@ export interface CSSStyle {
   backgroundSize?: string;
   backgroundPosition?: string;
   backgroundRepeat?: string;
+  // CSS clip-path
+  clipPath?: string;
 }
 
 export interface PixiTransform {
@@ -126,6 +128,123 @@ export interface PixiTextStyle {
 // Color Conversion
 // ============================================
 
+const COLOR_MIX_MAX_DEPTH = 5;
+
+/**
+ * color-mix() 내부 인자 문자열에서 색상과 퍼센트를 분리한다.
+ *
+ * "red 70%"  → { color: "red", pct: 70 }
+ * "#ff0000"  → { color: "#ff0000", pct: null }
+ */
+function parseColorMixArg(arg: string): { color: string; pct: number | null } {
+  const trimmed = arg.trim();
+  const pctMatch = trimmed.match(/(\s+(\d+(?:\.\d+)?)%)\s*$/);
+  if (pctMatch) {
+    const pct = parseFloat(pctMatch[2]);
+    const color = trimmed.slice(0, trimmed.length - pctMatch[1].length).trim();
+    return { color, pct };
+  }
+  return { color: trimmed, pct: null };
+}
+
+/**
+ * color-mix() 함수 내부 문자열을 최상위 쉼표 기준으로 분리한다.
+ * 중첩 괄호 내부의 쉼표는 무시한다.
+ */
+function splitColorMixArgs(inner: string): string[] {
+  const parts: string[] = [];
+  let depth = 0;
+  let start = 0;
+
+  for (let i = 0; i < inner.length; i++) {
+    const ch = inner[i];
+    if (ch === '(') {
+      depth++;
+    } else if (ch === ')') {
+      depth--;
+    } else if (ch === ',' && depth === 0) {
+      parts.push(inner.slice(start, i).trim());
+      start = i + 1;
+    }
+  }
+  parts.push(inner.slice(start).trim());
+  return parts;
+}
+
+/**
+ * CSS color-mix() 함수를 해석하여 hex 색상 문자열을 반환한다.
+ *
+ * 지원 색 공간: srgb (oklch, hsl 등은 srgb 폴백)
+ * 미지정 퍼센트: 50%/50% 기본값 또는 (100% - 명시된 쪽) 자동 계산
+ * 재귀 지원: 최대 COLOR_MIX_MAX_DEPTH depth까지 중첩 color-mix() 처리
+ *
+ * @param value - "color-mix(in srgb, red 70%, blue)" 형식의 전체 문자열
+ * @param depth - 재귀 깊이 (내부 전용)
+ * @returns hex 색상 문자열 또는 null (파싱 실패 시)
+ */
+export function resolveColorMix(value: string, depth = 0): string | null {
+  if (depth >= COLOR_MIX_MAX_DEPTH) return null;
+
+  const trimmed = value.trim();
+  if (!trimmed.toLowerCase().startsWith('color-mix(')) return null;
+
+  const innerStart = trimmed.indexOf('(');
+  const innerEnd = trimmed.lastIndexOf(')');
+  if (innerStart === -1 || innerEnd === -1 || innerEnd <= innerStart) return null;
+
+  const inner = trimmed.slice(innerStart + 1, innerEnd);
+  const parts = splitColorMixArgs(inner);
+
+  if (parts.length < 3) return null;
+
+  const arg1 = parseColorMixArg(parts[1]);
+  const arg2 = parseColorMixArg(parts[2]);
+
+  let p1: number;
+  let p2: number;
+
+  if (arg1.pct !== null && arg2.pct !== null) {
+    p1 = arg1.pct / 100;
+    p2 = arg2.pct / 100;
+  } else if (arg1.pct !== null) {
+    p1 = arg1.pct / 100;
+    p2 = 1 - p1;
+  } else if (arg2.pct !== null) {
+    p2 = arg2.pct / 100;
+    p1 = 1 - p2;
+  } else {
+    p1 = 0.5;
+    p2 = 0.5;
+  }
+
+  const resolveArg = (raw: string): string => {
+    if (raw.toLowerCase().startsWith('color-mix(')) {
+      return resolveColorMix(raw, depth + 1) ?? raw;
+    }
+    return raw;
+  };
+
+  const color1Str = resolveArg(arg1.color);
+  const color2Str = resolveArg(arg2.color);
+
+  const c1 = colord(color1Str);
+  const c2 = colord(color2Str);
+
+  if (!c1.isValid() || !c2.isValid()) return null;
+
+  const r1 = c1.toRgb();
+  const r2 = c2.toRgb();
+
+  const mixed = colord({
+    r: Math.round(r1.r * p1 + r2.r * p2),
+    g: Math.round(r1.g * p1 + r2.g * p2),
+    b: Math.round(r1.b * p1 + r2.b * p2),
+    a: r1.a * p1 + r2.a * p2,
+  });
+
+  return mixed.toHex();
+}
+
 /**
  * CSS 색상을 PixiJS 숫자로 변환
  *
@@ -133,6 +252,7 @@ export interface PixiTextStyle {
  * - 모든 CSS 색상 형식 지원 (hex, rgb, hsl, named colors 등)
  * 🚀 Phase 5: currentColor 키워드 지원
  * - currentColor가 전달되면 resolvedColor(현재 요소의 color 값)로 대체
+ * color-mix() 함수는 resolveColorMix()로 먼저 해석한다.
  *
  * @example
  * cssColorToHex('#3b82f6') // 0x3b82f6
@@ -140,6 +260,7 @@ export interface PixiTextStyle {
  * cssColorToHex('blue') // 0x0000ff
  * cssColorToHex('hsl(217, 91%, 60%)') // 0x3b82f6
  * cssColorToHex('currentColor', 0x000000, '#3b82f6') // 0x3b82f6
+ * cssColorToHex('color-mix(in srgb, red 70%, blue)') // ~0xb30000
  */
 export function cssColorToHex(
   color: string | undefined,
@@ -150,6 +271,10 @@ export function cssColorToHex(
   const effective = resolvedColor
     ? String(resolveCurrentColor(color, resolvedColor))
     : color;
+  if (effective.toLowerCase().startsWith('color-mix(')) {
+    const resolved = resolveColorMix(effective);
+    if (resolved) return cssColorToPixiHex(resolved, fallback);
+  }
   return cssColorToPixiHex(effective, fallback);
 }
 
@@ -158,6 +283,7 @@ export function cssColorToHex(
  *
  * colord를 사용하여 rgba/hsla/oklch/#rrggbbaa 등 모든 CSS 색상 형식을 지원한다 (I-L17).
  * 🚀 Phase 5: currentColor 키워드 지원
+ * color-mix() 함수는 resolveColorMix()로 먼저 해석한다.
  */
 export function cssColorToAlpha(color: string | undefined, resolvedColor?: string): number {
   if (!color) return 1;
@@ -166,7 +292,11 @@ export function cssColorToAlpha(color: string | undefined, resolvedColor?: strin
     : color;
   if (effective.toLowerCase() === 'transparent') return 0;
 
-  const parsed = colord(effective);
+  const target = effective.toLowerCase().startsWith('color-mix(')
+    ? (resolveColorMix(effective) ?? effective)
+    : effective;
+
+  const parsed = colord(target);
   if (parsed.isValid()) {
     return parsed.toRgb().a ?? 1;
   }
@@ -345,6 +475,179 @@ export function calculateTextY(
     default:
       return paddingTop + (contentHeight - textHeight) / 2;
   }
+}
+
+// ============================================
+// CSS clip-path 파싱
+// ============================================
+
+export type ClipPathShape =
+  | { type: 'inset'; top: number; right: number; bottom: number; left: number; borderRadius: number }
+  | { type: 'circle'; radius: number; cx: number; cy: number }
+  | { type: 'ellipse'; rx: number; ry: number; cx: number; cy: number }
+  | { type: 'polygon'; points: Array<{ x: number; y: number }> };
+
+/**
+ * CSS clip-path 값을 파싱하여 ClipPathShape로 변환
+ *
+ * 지원 도형:
+ * - inset(top right bottom left round <radius>)
+ * - circle(<radius> at <cx> <cy>)
+ * - ellipse(<rx> <ry> at <cx> <cy>)
+ * - polygon(<x1> <y1>, <x2> <y2>, ...)
+ *
+ * @param value - CSS clip-path 속성 값 (함수 문자열)
+ * @param width - 요소 너비 (% 값 해석용)
+ * @param height - 요소 높이 (% 값 해석용)
+ */
+export function parseClipPath(
+  value: string,
+  width: number,
+  height: number,
+): ClipPathShape | null {
+  if (!value || value === 'none') return null;
+
+  const trimmed = value.trim();
+
+  const insetMatch = trimmed.match(/^inset\(([^)]*)\)$/i);
+  if (insetMatch) {
+    return parseInset(insetMatch[1].trim(), width, height);
+  }
+
+  const circleMatch = trimmed.match(/^circle\(([^)]*)\)$/i);
+  if (circleMatch) {
+    return parseCircle(circleMatch[1].trim(), width, height);
+  }
+
+  const ellipseMatch = trimmed.match(/^ellipse\(([^)]*)\)$/i);
+  if (ellipseMatch) {
+    return parseEllipse(ellipseMatch[1].trim(), width, height);
+  }
+
+  const polygonMatch = trimmed.match(/^polygon\(([^)]*)\)$/i);
+  if (polygonMatch) {
+    return parsePolygon(polygonMatch[1].trim(), width, height);
+  }
+
+  return null;
+}
+
+function resolveClipLength(raw: string, base: number): number {
+  const trimmed = raw.trim();
+  if (trimmed.endsWith('%')) {
+    return (parseFloat(trimmed) / 100) * base;
+  }
+  return parseCSSSize(trimmed, base, 0);
+}
+
+function resolveClipPosition(raw: string, width: number, height: number): [number, number] {
+  const keyword = raw.trim().toLowerCase();
+  if (keyword === 'center') return [width / 2, height / 2];
+  if (keyword === 'top') return [width / 2, 0];
+  if (keyword === 'bottom') return [width / 2, height];
+  if (keyword === 'left') return [0, height / 2];
+  if (keyword === 'right') return [width, height / 2];
+
+  const parts = raw.trim().split(/\s+/);
+  const cx = resolveClipAxisValue(parts[0] ?? '50%', width, 'x', width, height);
+  const cy = parts[1]
+    ? resolveClipAxisValue(parts[1], height, 'y', width, height)
+    : height / 2;
+  return [cx, cy];
+}
+
+function resolveClipAxisValue(
+  raw: string,
+  base: number,
+  _axis: 'x' | 'y',
+  width: number,
+  height: number,
+): number {
+  const keyword = raw.trim().toLowerCase();
+  if (keyword === 'center') return base / 2;
+  if (keyword === 'left') return 0;
+  if (keyword === 'right') return width;
+  if (keyword === 'top') return 0;
+  if (keyword === 'bottom') return height;
+  return resolveClipLength(raw, base);
+}
+
+function parseInset(args: string, width: number, height: number): ClipPathShape | null {
+  // 분리: round 키워드 앞/뒤
+  const roundIdx = args.toLowerCase().indexOf('round');
+  let sidesPart = roundIdx >= 0 ? args.slice(0, roundIdx).trim() : args;
+  const roundPart = roundIdx >= 0 ? args.slice(roundIdx + 5).trim() : '';
+
+  const sides = sidesPart.split(/\s+/).filter(Boolean);
+  if (sides.length === 0) return null;
+
+  let top = 0, right = 0, bottom = 0, left = 0;
+  if (sides.length === 1) {
+    top = right = bottom = left = resolveClipLength(sides[0], Math.min(width, height));
+  } else if (sides.length === 2) {
+    top = bottom = resolveClipLength(sides[0], height);
+    right = left = resolveClipLength(sides[1], width);
+  } else if (sides.length === 3) {
+    top = resolveClipLength(sides[0], height);
+    right = left = resolveClipLength(sides[1], width);
+    bottom = resolveClipLength(sides[2], height);
+  } else {
+    top = resolveClipLength(sides[0], height);
+    right = resolveClipLength(sides[1], width);
+    bottom = resolveClipLength(sides[2], height);
+    left = resolveClipLength(sides[3], width);
+  }
+
+  const borderRadius = roundPart
+    ? resolveClipLength(roundPart.split(/\s+/)[0], Math.min(width, height))
+    : 0;
+
+  return { type: 'inset', top, right, bottom, left, borderRadius };
+}
+
+function parseCircle(args: string, width: number, height: number): ClipPathShape | null {
+  const atIdx = args.toLowerCase().indexOf(' at ');
+  const radiusPart = atIdx >= 0 ? args.slice(0, atIdx).trim() : args.trim();
+  const centerPart = atIdx >= 0 ? args.slice(atIdx + 4).trim() : 'center';
+
+  const base = Math.sqrt((width * width + height * height) / 2);
+  const radius = radiusPart === 'closest-side' || radiusPart === 'farthest-side' || !radiusPart
+    ? Math.min(width, height) / 2
+    : resolveClipLength(radiusPart, base);
+
+  const [cx, cy] = resolveClipPosition(centerPart, width, height);
+
+  return { type: 'circle', radius, cx, cy };
+}
+
+function parseEllipse(args: string, width: number, height: number): ClipPathShape | null {
+  const atIdx = args.toLowerCase().indexOf(' at ');
+  const radiiPart = atIdx >= 0 ? args.slice(0, atIdx).trim() : args.trim();
+  const centerPart = atIdx >= 0 ? args.slice(atIdx + 4).trim() : 'center';
+
+  const radii = radiiPart.split(/\s+/).filter(Boolean);
+  const rx = radii[0] ? resolveClipLength(radii[0], width) : width / 2;
+  const ry = radii[1] ? resolveClipLength(radii[1], height) : height / 2;
+
+  const [cx, cy] = resolveClipPosition(centerPart, width, height);
+
+  return { type: 'ellipse', rx, ry, cx, cy };
+}
+
+function parsePolygon(args: string, width: number, height: number): ClipPathShape | null {
+  // 'evenodd' 또는 'nonzero' fill rule 접두어 제거
+  const cleaned = args.replace(/^(evenodd|nonzero)\s*,?\s*/i, '');
+  const pointPairs = cleaned.split(',').map(s => s.trim()).filter(Boolean);
+
+  const points = pointPairs.map(pair => {
+    const coords = pair.split(/\s+/).filter(Boolean);
+    const x = coords[0] ? resolveClipLength(coords[0], width) : 0;
+    const y = coords[1] ? resolveClipLength(coords[1], height) : 0;
+    return { x, y };
+  });
+
+  if (points.length < 3) return null;
+  return { type: 'polygon', points };
 }
 
 /**
