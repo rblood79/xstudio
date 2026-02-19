@@ -580,7 +580,7 @@
 
 | 차원 | v1 추정 | v2 보정 | Δ | 비고 |
 |------|---------|---------|---|------|
-| 구조/레이아웃 | 85% | **85%** | 0 | Taffy + Dropflow 엔진. CSS 엔진 88% 재확인 |
+| 구조/레이아웃 | 85% | **85%** | 0 | Taffy + Dropflow 엔진. CSS 엔진 88%. ⚠️ [7건 구조적 근본 원인](#레이아웃-엔진-구조적-근본-원인-7건-전수-코드-검증-완료) 해결 시 93~97% |
 | 색상/Variant | 80% | **80%** | 0 | Spec variant + CSS variable reader |
 | 타이포그래피 | 80% | **82%** | +2 | CanvasKit Paragraph API — font-variant, font-stretch 포함 확인 |
 | 렌더링 정밀도 (shadow/outline/border) | 60% | **65%** | **+5** | **multi-shadow ✅ 이미 동작**, border 8종 ✅ 확인. 잔존 갭: focus ring, shadow spread, spec border-style 패스스루 |
@@ -940,6 +940,59 @@ M-5 (state 일관성)   ────────────── Phase A 이�
 
 ---
 
+## 레이아웃 엔진 구조적 근본 원인 (7건, 전수 코드 검증 완료)
+
+> **상세 분석**: [docs/analysis/webgl-layout-root-cause-2026-02.md](analysis/webgl-layout-root-cause-2026-02.md)
+> **검증일**: 2026-02-19 | **검증 결과**: 7건 전항목 ✅ CONFIRMED
+
+CSS Level 3 속성 지원(88%)과 별도로, **레이아웃 계산 파이프라인 자체**에 구조적 불일치가 존재한다.
+이 문제들은 개별 CSS 속성 구현과 무관하게 모든 컴포넌트의 배치·크기 계산에 영향을 준다.
+
+### 불변식 위반 요약
+
+| 불변식 | 기대 동작 | 실제 구현 |
+|--------|----------|----------|
+| **A. Available Space 모델 일치** | 부모/자식 동일한 sizing 모델 사용 | 부모는 Definite 고정, 자식은 auto/intrinsic 혼합 |
+| **B. Display 변경 시 자식 의미 보존** | blockification 후에도 자식 의도 유지 | 엔진 경계에서 내부/외부 display 의미 변질 |
+| **C. Intrinsic 키워드 엔진 간 일관성** | auto/fit-content 동일 규칙 해석 | Taffy: auto→undefined, Dropflow: fit-content→0 붕괴 |
+
+### 7건 근본 원인 목록
+
+| # | 근본 원인 | 관련 파일 | 심각도 | 구조/레이아웃 차원 영향 |
+|---|-----------|----------|--------|----------------------|
+| **RC-1** | AvailableSpace 항상 Definite 고정 | `TaffyFlexEngine.ts:438-439`, `BuilderCanvas.tsx:720-725` | HIGH | stretch/overflow/min-content 왜곡 |
+| **RC-2** | 부모 height 무조건 강제 주입 | `TaffyFlexEngine.ts:434-439`, `TaffyGridEngine.ts:626-631` | HIGH | cross-axis stretch, auto height 무시 |
+| **RC-3** | CSS 단위 px 중심 `parseFloat` 축소 | `TaffyFlexEngine.ts:205-216` | HIGH | rem/em/vh/vw/calc 전역 오차 |
+| **RC-4** | 2-pass 트리거 비교 기준 부정확 | `TaffyFlexEngine.ts:352` | HIGH | 과/미재계산 → 텍스트 줄바꿈 높이 불일치 |
+| **RC-5** | inline-run baseline ≈ middle 단순화 | `DropflowBlockEngine.ts:226-231` | MEDIUM | y-offset 누적, line break 불연속 |
+| **RC-6** | auto/fit-content 엔진별 분기 처리 | `DropflowBlockEngine.ts:262-268` | HIGH | enrichment 실패 시 width/height 0 붕괴 |
+| **RC-7** | blockification 경계 처리 불완전 | `index.ts:131-144, 193-221` | MEDIUM | display 전환 시 자식 shrink/stretch 불일치 |
+
+### 구조/레이아웃 차원 영향도
+
+현재 **구조/레이아웃 차원 85%** (피처 차원별 현황 참조)에서 이 7건의 근본 원인이 해결되면:
+
+| 원인 그룹 | 해결 시 예상 향상 | 비고 |
+|-----------|------------------|------|
+| RC-1 + RC-2 (available space / height 주입) | +3~5% | 가장 광범위한 영향. stretch/auto height 정확도 회복 |
+| RC-3 (단위 정규화 통합) | +2~3% | `cssValueParser.resolveCSSSizeValue()` 연결만으로 해결 가능 |
+| RC-4 (2-pass 기준) | +1~2% | flex row + inline-block 조합에서 가시적 개선 |
+| RC-6 (intrinsic 통합) | +1~2% | fit-content 0 붕괴 방지 |
+| RC-5 + RC-7 (inline-run / blockification) | +1% | 엣지 케이스, 장기 개선 |
+
+> **합계 예상**: 구조/레이아웃 차원 85% → **93~97%** (전체 정합성에 +3~5% 기여)
+
+### 권장 실행 순서 (RC 기반)
+
+```
+1단계: RC-3 (단위 정규화) — 최소 비용 최대 효과 (cssValueParser 연결)
+2단계: RC-1 + RC-2 (available space / height) — 엔진 계약 수정
+3단계: RC-6 (intrinsic 통합) + RC-4 (2-pass 기준)
+4단계: RC-7 (blockification 경계) + RC-5 (inline formatting 고도화)
+```
+
+---
+
 ## 변경 이력
 
 | 날짜 | 버전 | 설명 |
@@ -954,3 +1007,4 @@ M-5 (state 일관성)   ────────────── Phase A 이�
 | 2026-02-19 | 1.7 | **컴포넌트 수준 정합성 로드맵** 추가 (CSS 웹 ↔ 캔버스 62% → 목표 80%). Phase A~Z 개선 계획: 상태 표현 연결, 아이콘 폰트 도입 (Pencil 방식), 컬렉션 아이템 생성, FancyButton 제거, overflow scroll 완성, 애니메이션 최후순위 확정. P0 overflow 설명 갱신 (인프라 존재 확인) |
 | 2026-02-19 | 1.8 | **추가 개선 방안** 추가: Quick Win 3개 (border style 전달, disabled opacity, focus ring) + Medium 6개 (multi-shadow, shadow spread, image shape, CSS var 캐시, state 일관성, partial border). 목표 상향 80% → **92%**. 정합성 도달 예측 + 권장 실행 순서 추가 |
 | 2026-02-19 | **1.9** | **v2 코드 검증 기반 보정**: (1) M-1 multi-shadow 이미 동작 확인 → 제거 (2) QW-2/QW-3 → Phase A 선행 필수 발견 → 실행 순서 변경 (3) state 활용 spec 20/62개(32%) 정밀 측정 (4) 카테고리별·차원별 수치 보정 (5) Phase 의존성 그래프 추가. 목표 상향 92% → **93%** |
+| 2026-02-19 | **2.0** | **레이아웃 엔진 구조적 근본 원인 7건 추가** ([분석 문서](analysis/webgl-layout-root-cause-2026-02.md) 전수 코드 검증): RC-1~7 전항목 CONFIRMED. 불변식 위반 요약, 심각도·영향도 분류, 구조/레이아웃 차원 85%→93~97% 예측, RC 기반 실행 순서 추가 |

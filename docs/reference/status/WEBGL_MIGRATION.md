@@ -421,9 +421,27 @@ apps/builder/src/builder/workspace/canvas/layout/
 | 컬렉션 아이템 미렌더링 | -8.2% | Phase C |
 | 상태 시각화 부재 (hover/focus/pressed) | -6.8% | Phase A |
 | 아이콘 미렌더링 | -5.5% | Phase B |
+| **레이아웃 엔진 구조적 원인 (7건)** | **-3~5%** | **RC-1~7** |
 | 애니메이션 인프라 부재 | -4.0% | Phase Z (최후) |
 | 그라디언트/복합 렌더링 (Color 계열) | -3.5% | Phase G |
 | 오버레이 아키텍처 부재 | -3.0% | Phase F |
+
+### 레이아웃 엔진 구조적 근본 원인 (7건 검증 완료)
+
+> 상세: [docs/analysis/webgl-layout-root-cause-2026-02.md](../../../docs/analysis/webgl-layout-root-cause-2026-02.md)
+> 로드맵: [ENGINE_CHECKLIST.md § RC 기반 실행 순서](../../ENGINE_CHECKLIST.md#권장-실행-순서-rc-기반)
+
+CSS 속성 지원(88%)과 별개로, 레이아웃 계산 파이프라인에 7건의 구조적 불일치 존재.
+
+| RC# | 원인 | 심각도 |
+|-----|------|--------|
+| RC-1 | AvailableSpace 항상 Definite 고정 | HIGH |
+| RC-2 | 부모 height 무조건 강제 주입 | HIGH |
+| RC-3 | CSS 단위 px 중심 parseFloat 축소 | HIGH |
+| RC-4 | 2-pass 트리거 비교 기준 부정확 | HIGH |
+| RC-5 | inline-run baseline ≈ middle 단순화 | MEDIUM |
+| RC-6 | auto/fit-content 엔진별 분기 처리 | HIGH |
+| RC-7 | blockification 경계 처리 불완전 | MEDIUM |
 
 ### 렌더링 정밀도 추가 개선 (Quick Win + Medium) — v2 보정
 
