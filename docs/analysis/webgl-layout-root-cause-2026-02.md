@@ -352,6 +352,36 @@ if (isFlexOrGridContainer(display)) {
 - grid `repeat(auto-fill/auto-fit)`와 gap 계산에서 트랙 수 차이
 - margin collapse가 block 경계/세그먼트 전환에서 CSS와 다르게 적용
 
+## 수정 추적 (Remediation Tracker)
+
+> 최종 갱신: 2026-02-19
+
+| RC # | 근본 원인 | 수정 상태 | 권장 실행 순서 | 관련 파일 | 비고 |
+|------|-----------|----------|---------------|-----------|------|
+| RC-1 | AvailableSpace 항상 Definite | 📋 미착수 | 2단계 | `BuilderCanvas.tsx:720-725`, `TaffyFlexEngine.ts:438-439,453` | RC-2와 함께 수정 권장 |
+| RC-2 | 부모 height 강제 주입 | 📋 미착수 | 2단계 | `TaffyFlexEngine.ts:434-439`, `TaffyGridEngine.ts:626-631` | auto height 체크 조건문 추가 필요 |
+| RC-3 | CSS 단위 px 축소 | 📋 미착수 | **1단계** (최우선) | `TaffyFlexEngine.ts:205-216`, `cssValueParser.ts:295-359` | `resolveCSSSizeValue()` 연결만으로 해결 가능 |
+| RC-4 | 2-pass 재계산 기준 부정확 | 📋 미착수 | 3단계 | `TaffyFlexEngine.ts:352` | 자식별 1차 입력폭 대비 실제폭 비교로 변경 |
+| RC-5 | inline-run baseline 단순화 | 📋 미착수 | 4단계 | `DropflowBlockEngine.ts:157-250,226-231,399-453` | 장기 개선 |
+| RC-6 | auto/fit-content 엔진별 분기 | 📋 미착수 | 3단계 | `DropflowBlockEngine.ts:262-268`, `cssValueParser.ts:306-324` | RC-4와 함께 수정 |
+| RC-7 | blockification 경계 | 📋 미착수 | 4단계 | `index.ts:131-144,193-221` | 장기 개선 |
+
+### 검증 테스트 케이스 (RC별)
+
+수정 완료 시 아래 시나리오로 CSS Preview ↔ Canvas 비교 검증:
+
+| RC # | 테스트 시나리오 | 기대 결과 |
+|------|----------------|-----------|
+| RC-1 | flex 컨테이너(`height:auto`) + 자식 3개 → 콘텐츠 기반 높이 | Canvas 높이 = CSS Preview 높이 |
+| RC-2 | flex 컨테이너(`height:auto`) + `align-items:stretch` + 자식 `height:auto` | 자식 높이가 콘텐츠 기반으로 결정 (과확장 없음) |
+| RC-3 | 자식 `width:50%`, `padding:2rem`, `margin:1em` | 단위 환산 후 px 결과가 CSS Preview와 일치 |
+| RC-4 | flex row + inline-block 자식 + 텍스트 줄바꿈 | 2-pass 후 자식 너비가 정확히 재계산 |
+| RC-5 | block 컨테이너 + inline 텍스트 2줄 + `vertical-align:baseline` | baseline 위치가 CSS Preview와 일치 |
+| RC-6 | 부모 flex + 자식 `width:fit-content` | fit-content가 0으로 붕괴하지 않음 |
+| RC-7 | 부모 `display:flex→block` 전환 + 자식 `display:inline-block` | 전환 후 자식 배치가 CSS Preview와 일치 |
+
+---
+
 ## 실무 권장: 버그 리포트 최소 재현 템플릿
 
 문제 제보 시 아래 5가지를 함께 기록하면 원인 분류가 빠르다.

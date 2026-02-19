@@ -5433,6 +5433,36 @@ function ElementSpriteButton({ element }) {
 
 ---
 
+## Spec 에러 처리 및 버전 관리
+
+### 에러 처리 정책
+
+ComponentSpec 렌더링 실패 시 fallback 동작:
+
+| 단계 | 실패 시점 | fallback 동작 |
+|------|----------|---------------|
+| 1. Spec 로드 | `TAG_SPEC_MAP`에 태그 미등록 | BoxSprite 기본 렌더링 (회색 placeholder) |
+| 2. shapes() 호출 | props/variant/size 미스매치 | 빈 Shape[] 반환 → 빈 노드 렌더 (크기 0 방지: minWidth/minHeight 적용) |
+| 3. specShapesToSkia() | Shape → SkiaNodeData 변환 실패 | `console.warn` + 해당 shape skip, 나머지 정상 렌더 |
+| 4. CanvasKit 렌더 | GPU 리소스 부족/Paint 실패 | dirty flag 유지 → 다음 프레임 재시도 |
+
+### ComponentSpec 인터페이스 버전 관리
+
+현재 Spec 인터페이스는 **implicit versioning** (파일 수정 시 `@xstudio/specs` 빌드 필요):
+
+```
+Spec 수정 → pnpm --filter @xstudio/specs build → dist/ 갱신 → Builder 핫리로드
+```
+
+**Breaking Change 시 체크리스트:**
+
+1. `packages/specs/src/types/shape.types.ts` — Shape 유니온 변경 시 `specShapeConverter.ts` case 추가 필수
+2. `packages/specs/src/types/component.types.ts` — RenderSpec 시그니처 변경 시 62개 spec 파일 일괄 수정
+3. `packages/specs/src/types/token.types.ts` — TokenRef 변경 시 tokenResolver.ts + cssVariableReader.ts 동기화
+4. 변경 후 반드시 `pnpm --filter @xstudio/specs build` 실행 (CRITICAL: v1.11에서 발견된 빌드 동기화 이슈 참조)
+
+---
+
 ## 변경 이력
 
 | 날짜 | 버전 | 변경 내용 |

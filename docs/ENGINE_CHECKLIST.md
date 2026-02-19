@@ -780,16 +780,24 @@ if (node.box.outline) {
 
 `ShadowShape`에 `spread?: number` 필드 존재하나 렌더러에서 무시.
 
-| 대상 파일 | `effects.ts` (sigma 확장 워크어라운드) |
+| 항목 | 상세 |
 |---|---|
+| 타입 정의 | `packages/specs/src/types/shape.types.ts:147` — `ShadowShape.spread?: number` |
+| 렌더 경로 | `specShapeConverter.ts:370-391` — shadow case, `382-383`에서 `sigmaX/Y = shape.blur / 2` 계산 시 spread 미반영 |
 | 워크어라운드 | CanvasKit에 네이티브 spread 없음 → `adjustedSigma = sigma + abs(spread) * 0.2` |
 
 #### M-3: image shape 렌더링
 
 `specShapeConverter.ts`에서 `case 'image'`를 skip 처리 중. imageCache + CanvasKit Image API 이미 존재.
 
+| 항목 | 상세 |
+|---|---|
+| skip 위치 | `specShapeConverter.ts:462-464` — `case 'image': // Skip - not supported in simple box rendering` |
+| 타입 정의 | `packages/specs/src/types/shape.types.ts:284-293` — `ImageShape` 인터페이스 |
+| 영향 | Avatar, Badge(이미지 배경), Card(커버 이미지) |
+
 ```typescript
-// specShapeConverter.ts — 현재
+// specShapeConverter.ts:463 — 현재
 case 'image': // Skip — not supported
 
 // 수정
@@ -807,13 +815,15 @@ case 'image': {
 }
 ```
 
-| 대상 파일 | `specShapeConverter.ts` (image case 구현) |
-|---|---|
-| 영향 | Avatar, Badge(이미지 배경), Card(커버 이미지) |
-
 #### M-4: CSS variable 실시간 캐시
 
 `cssVariableReader.ts`(4,470줄)가 하드코딩 fallback에 의존. 테마 변경 시 캔버스에 미반영.
+
+| 항목 | 상세 |
+|---|---|
+| fallback 위치 | `cssVariableReader.ts:180-195` — `FALLBACK_COLORS` 상수 (하드코딩) |
+| label fallback | `cssVariableReader.ts:216-220` — `LABEL_STYLE_FALLBACKS` 상수 |
+| 영향 | 전체 컴포넌트 색상 정확도 + 커스텀 테마 지원 |
 
 ```typescript
 // cssVariableReader.ts — 캐시 레이어 추가
@@ -831,13 +841,16 @@ export function cacheCSSVariables(): void {
 // 테마 변경 이벤트 시 → cacheCSSVariables() 호출
 ```
 
-| 대상 파일 | `cssVariableReader.ts` |
-|---|---|
-| 영향 | 전체 컴포넌트 색상 정확도 + 커스텀 테마 지원 |
-
 #### M-5: state 파라미터 일관성 강제
 
 62개 spec 중 42개가 `_state` (underscore = unused, v2 검증 보정). 20개만 state 활용 (32%). 공통 헬퍼 추출로 일관성 확보.
+
+| 항목 | 상세 |
+|---|---|
+| state 활용 예시 | `packages/specs/src/components/Button.spec.ts:169` — `shapes: (props, variant, size, state = 'default') => {` (state 사용) |
+| 미사용 예시 | 42개 spec에서 `_state` 패턴으로 무시됨 |
+| 신규 파일 | `packages/specs/src/utils/stateEffect.ts` |
+| 영향 | Phase A(상태 연결) 선행 필수 — 42개 spec 리팩터 |
 
 ```typescript
 // packages/specs/src/utils/stateEffect.ts (신규)
@@ -850,16 +863,15 @@ export function applyStateToShapes(shapes: Shape[], state: ComponentState): Shap
 }
 ```
 
-| 대상 파일 | 신규 `stateEffect.ts` + 42개 spec 리팩터 |
-|---|---|
-| 영향 | Phase A(상태 연결)의 효과 극대화 |
-
 #### M-6: partial border 지원
 
 `BorderShape`에 `sides?: { top?, right?, bottom?, left? }` 타입 존재하나 미구현.
 
-| 대상 파일 | `specShapeConverter.ts`, `nodeRenderers.ts` |
+| 항목 | 상세 |
 |---|---|
+| 타입 정의 | `packages/specs/src/types/shape.types.ts:191-196` — `sides?: { top?, right?, bottom?, left? }` |
+| 변환 경로 | `specShapeConverter.ts:251-292` — border case 처리 (sides 미참조) |
+| 렌더 경로 | `nodeRenderers.ts:748-763` — border 렌더링 (전 변 동일 적용) |
 | 영향 | Separator(top-only), TextField(bottom-only underline) |
 
 ### 정합성 도달 예측 (v2 보정)
@@ -1008,3 +1020,14 @@ CSS Level 3 속성 지원(88%)과 별도로, **레이아웃 계산 파이프라�
 | 2026-02-19 | 1.8 | **추가 개선 방안** 추가: Quick Win 3개 (border style 전달, disabled opacity, focus ring) + Medium 6개 (multi-shadow, shadow spread, image shape, CSS var 캐시, state 일관성, partial border). 목표 상향 80% → **92%**. 정합성 도달 예측 + 권장 실행 순서 추가 |
 | 2026-02-19 | **1.9** | **v2 코드 검증 기반 보정**: (1) M-1 multi-shadow 이미 동작 확인 → 제거 (2) QW-2/QW-3 → Phase A 선행 필수 발견 → 실행 순서 변경 (3) state 활용 spec 20/62개(32%) 정밀 측정 (4) 카테고리별·차원별 수치 보정 (5) Phase 의존성 그래프 추가. 목표 상향 92% → **93%** |
 | 2026-02-19 | **2.0** | **레이아웃 엔진 구조적 근본 원인 7건 추가** ([분석 문서](analysis/webgl-layout-root-cause-2026-02.md) 전수 코드 검증): RC-1~7 전항목 CONFIRMED. 불변식 위반 요약, 심각도·영향도 분류, 구조/레이아웃 차원 85%→93~97% 예측, RC 기반 실행 순서 추가 |
+
+### v1 → v2 기준 변경 사유
+
+v1.0(2026-02-18)에서 v2.0(2026-02-19)으로의 수치 변동은 **측정 기준 엄격화**에 의한 것이며, 실제 코드 회귀가 아님:
+
+| 변경 항목 | v1.x 기준 | v2.0 기준 | 이유 |
+|-----------|----------|----------|------|
+| CSS 속성 지원율 | API 존재 여부 판정 | **코드 경로 실행 검증** (실제 parseCSSProp 호출 → Taffy/Dropflow 입력까지 전달 확인) | 선언만 있고 미연결된 속성 제외 |
+| 컴포넌트 정합성 | Spec 파일 존재 기준 | **state 활용 + 렌더 경로 비교** (CSS Preview ↔ Canvas 시각 비교 기반) | 62 Spec 중 state 활용 20개(32%) 정밀 측정 |
+| Quick Win 분류 | 독립 실행 가정 | **의존성 그래프 기반** (QW-2/QW-3은 Phase A 선행 필수 발견) | 실행 순서 보정 |
+| M-1 multi-shadow | ❌ 미지원 | **이미 동작 확인 → 항목 제거** | 코드 검증으로 오보 정정 |

@@ -6,7 +6,15 @@
 
 > **Superseded By:** Pencil 방식 CanvasKit/Skia 2-pass 렌더러(컨텐츠 캐시 + present(blit) + 오버레이 분리).
 > PixiJS는 렌더링이 아니라 **씬 그래프/히트테스트(EventBoundary)/이벤트** 전용 레이어로 유지.
-> 상세: `docs/WASM.md`, `docs/PENCIL_VS_XSTUDIO_RENDERING.md`
+>
+> **후속 문서:**
+> - [`docs/WASM.md`](../WASM.md) — CanvasKit/Skia WASM 렌더링 아키텍처 (현행 기준 문서)
+> - [`docs/PENCIL_VS_XSTUDIO_RENDERING.md`](../PENCIL_VS_XSTUDIO_RENDERING.md) — 렌더링 비교 분석
+> - [`docs/ENGINE.md`](../ENGINE.md) — Taffy+Dropflow 레이아웃 엔진 전략
+> - [`docs/ENGINE_CHECKLIST.md`](../ENGINE_CHECKLIST.md) — CSS Level 3 지원 현황
+>
+> **참고:** 본 ADR의 Updates 섹션(2026-02-01~02-18, 30+ 항목)은 전환 과정의 상세 이력입니다.
+> 현행 아키텍처는 `docs/WASM.md`를 기준으로 참조하세요.
 
 ## Context
 
