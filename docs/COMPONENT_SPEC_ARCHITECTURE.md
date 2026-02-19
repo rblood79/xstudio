@@ -4924,6 +4924,149 @@ return {
 | `sprites/ElementSprite.tsx` | TAG_SPEC_MAP에서 TagGroup/TagList 제거 |
 | `ui/PixiTagGroup.tsx` | 특수 렌더러 사용 중단 (CONTAINER_TAGS 대체) |
 
+### 9.8 CONTAINER_TAGS 계층 선택 (Drill-Down) 아키텍처 (2026-02-19)
+
+#### 9.8.1 설계 원칙: 웹 컴포넌트 구조 = 캔버스 구조
+
+모든 CONTAINER_TAGS 컴포넌트는 **웹 컴포넌트(Preview/Publish)의 DOM 계층과 캔버스(Builder)의 요소 계층이 1:1로 일치**해야 한다.
+이 원칙이 지켜져야 Layer Tree 선택, Double-Click Drill-Down, 그리고 Preview↔Builder 시각적 일치가 보장된다.
+
+```
+설계 원칙:
+
+Web (packages/shared/src/components/)     Canvas (Builder 요소 트리)
+├── TagGroup                              ├── TagGroup (CONTAINER_TAG)
+│   ├── Label                             │   ├── Label
+│   ├── TagList                           │   ├── TagList (CONTAINER_TAG)
+│   │   ├── Tag                           │   │   ├── Tag → BadgeSpec (Skia)
+│   │   └── Tag                           │   │   └── Tag → BadgeSpec (Skia)
+│   └── description                       │   └── (description은 props)
+└── (CSS flex layout)                     └── (TaffyFlexEngine layout)
+```
+
+#### 9.8.2 계층 선택 메커니즘
+
+**핵심 상태: `editingContextId`** (selection.ts)
+
+```
+editingContextId = null  → Body 직계 자식만 선택 가능 (루트 레벨)
+editingContextId = "X"   → 요소 X의 직계 자식만 선택 가능 (컨테이너 내부)
+```
+
+**선택 흐름:**
+
+```
+[1] 클릭 → resolveClickTarget()로 현재 context 레벨의 대상 결정
+
+    예: TagGroup > TagList > Tag를 클릭했을 때
+    editingContextId = null → resolveClickTarget가 body 직계인 TagGroup 반환
+    editingContextId = "TagGroup" → TagList 반환
+    editingContextId = "TagList" → Tag 반환
+
+[2] 더블클릭 → enterEditingContext()로 컨테이너 진입
+    TagGroup 더블클릭 → editingContextId = TagGroup.id
+    → 이제 Label, TagList 선택 가능
+
+[3] Escape → exitEditingContext()로 상위 컨텍스트 복귀
+    editingContextId = TagList → TagGroup
+    editingContextId = TagGroup → null (루트)
+```
+
+**resolveClickTarget 알고리즘** (hierarchicalSelection.ts):
+
+```typescript
+// 클릭된 요소에서 부모 방향으로 올라가며 현재 context의 직계 자식을 찾는다
+function resolveClickTarget(clickedId, editingContextId, elementsMap): string | null {
+  let current = clickedId;
+  while (current) {
+    const el = elementsMap.get(current);
+    if (editingContextId === null) {
+      // 루트 레벨: parent가 body인 요소를 찾는다
+      if (elementsMap.get(el.parent_id)?.tag === 'body') return current;
+    } else {
+      // 컨테이너 내부: parent가 editingContextId인 요소를 찾는다
+      if (el.parent_id === editingContextId) return current;
+    }
+    current = el.parent_id;  // 부모로 올라감
+  }
+  return null;
+}
+```
+
+**Layer Tree 동기화** (LayersSection.tsx):
+
+Layer Tree에서 요소를 클릭하면 `editingContextId`가 자동으로 조정된다.
+깊은 요소(예: Tag)를 선택하면 그 부모(TagList)가 editingContextId로 설정되어 Canvas에서도 동일 레벨이 활성화된다.
+
+#### 9.8.3 캔버스 이벤트 처리 구조
+
+```
+CanvasKit Surface (z-index: 3)    ← 시각적 렌더링만 (pointerEvents: auto)
+PixiJS Canvas (z-index: 4)        ← 이벤트 전용 (alpha=0, 보이지 않음)
+  └── Camera Container (alpha=0)
+      └── ElementSprite[]         ← 각각 eventMode="static" + onPointerDown
+          └── 재귀적 자식 ElementSprite (CONTAINER_TAGS 내부)
+```
+
+- PixiJS 8 EventBoundary는 `alpha=0`을 prune 조건으로 사용하지 않음 → 히트 테스팅 유지
+- 각 ElementSprite는 300ms 기반 더블클릭 감지 (handleContainerPointerDown)
+- CONTAINER_TAGS의 자식은 `createContainerChildRenderer()`로 재귀 렌더링 → 각 자식이 독립 ElementSprite
+
+#### 9.8.4 CONTAINER_TAGS 구조적 일관성 현황
+
+| 컴포넌트 | 웹 컴포넌트 | Factory | Renderer | Drill-Down | 상태 |
+|----------|:-----------:|:-------:|:--------:|:----------:|------|
+| **TagGroup** | ✅ | ✅ 3-level | ✅ | ✅ | ✅ 정상 |
+| **TagList** | (TagGroup 내부) | ✅ (자식) | — | ✅ | ✅ 정상 |
+| **ToggleButtonGroup** | ✅ | ✅ | ✅ | ✅ | ✅ 정상 |
+| **Card** | ✅ | ❌ 미정의 | ✅ | ✅ | ⚠️ Factory 필요 |
+| **Panel** | ✅ | ❌ 미정의 | ✅ | ✅ | ⚠️ Factory 필요 |
+| **Group** | ✅ | ✅ | ✅ | ✅ | ✅ 정상 |
+| **Form** | ✅ | ❌ 미정의 | ❌ | ✅ | ⚠️ Factory + Renderer 필요 |
+| **Dialog** | ✅ | ❌ 미정의 | ❌ | ✅ | ⚠️ Factory + Renderer 필요 |
+| **Modal** | ✅ | ❌ 미정의 | ⚠️ div | ✅ | ⚠️ Factory + Renderer 수정 필요 |
+| **Disclosure** | ✅ | ❌ 미정의 | ❌ | ✅ | ⚠️ Factory + Renderer 필요 |
+| **DisclosureGroup** | ✅ | ❌ 미정의 | ❌ | ✅ | ⚠️ Factory + Renderer 필요 |
+| **Accordion** | (= DisclosureGroup) | ❌ | ❌ | ✅ | ⚠️ DisclosureGroup 별칭 |
+| **Box** | (= Card 별칭) | ❌ | ❌ | ✅ | ⚠️ Card Factory 재사용 |
+
+> **Note**: Drill-Down 자체는 CONTAINER_TAGS 등록만으로 작동한다 (`enterEditingContext` + `createContainerChildRenderer`).
+> Factory/Renderer 미비는 **초기 요소 생성과 Preview 렌더링**에만 영향을 준다.
+
+#### 9.8.5 웹 컴포넌트 구조 동일성 가이드라인
+
+새 CONTAINER_TAG 컴포넌트 추가 시 반드시 아래 체크리스트를 따른다:
+
+**필수 체크리스트:**
+
+- [ ] **1. 웹 컴포넌트 구조 분석**: `packages/shared/src/components/XXX.tsx`의 JSX 계층 확인
+- [ ] **2. Factory 정의**: `factories/definitions/`에 웹 컴포넌트와 **동일한 자식 계층** 생성
+  ```typescript
+  // 예: Disclosure의 경우
+  createDisclosureDefinition() → {
+    tag: 'Disclosure',
+    children: [
+      { tag: 'Heading', children: [{ tag: 'Button', props: { children: 'Trigger' } }] },
+      { tag: 'DisclosurePanel', children: [{ tag: 'p', props: { children: 'Content' } }] },
+    ]
+  }
+  ```
+- [ ] **3. CONTAINER_TAGS 등록**: `BuilderCanvas.tsx`의 `CONTAINER_TAGS` Set에 추가
+- [ ] **4. Default Props**: `unified.types.ts`에 `createDefaultXXXProps()` 추가 (display, layout 기본값)
+- [ ] **5. Renderer 등록**: `packages/shared/src/renderers/`에서 children 렌더링 지원
+- [ ] **6. Spec 등록 (leaf일 경우)**: `TAG_SPEC_MAP`에 매핑 (컨테이너는 등록하지 않음)
+- [ ] **7. Drill-Down 테스트**: 클릭→컨테이너 선택, 더블클릭→자식 선택, Escape→상위 복귀
+
+**구조 동일성 원칙:**
+
+```
+규칙 1: 웹 컴포넌트의 JSX children 계층 = Factory의 children 계층
+규칙 2: 컨테이너 → CONTAINER_TAGS + display 기본값 (flex/block)
+규칙 3: 리프 UI → TAG_SPEC_MAP + ComponentSpec (Skia 렌더링)
+규칙 4: 컨테이너의 레이아웃 = 웹 CSS와 동일 (TaffyFlexEngine/DropflowBlockEngine)
+규칙 5: Layer Tree 선택 = Canvas Drill-Down 선택 (editingContextId 동기화)
+```
+
 ---
 
 ## 10. 기술 명세
@@ -5593,4 +5736,5 @@ function ElementSpriteButton({ element }) {
 | 2026-02-12 | 3.0 | **Phase 6 Spec Shapes → Skia 렌더링 파이프라인 문서화**: (1) 문서 상태를 "Phase 6 Skia Spec 렌더링 구현 완료"로 갱신, (2) 목차에 Phase 6 항목 추가 및 이후 섹션 번호 재조정 (9→10, 10→11), (3) Phase 요약 테이블에 Phase 6 행 추가 (specShapeConverter, line 렌더러, flexDirection 지원), (4) §9 Phase 6 섹션 신규 작성 — 전체 렌더링 흐름 다이어그램 (ComponentSpec → Shape[] → specShapesToSkia → SkiaNodeData → renderNode), Shape 타입 매핑 테이블 (8개 타입), 핵심 파일 구조, specShapeConverter 핵심 로직 (배경 box 추출/target 참조/색상 변환), ElementSprite TAG_SPEC_MAP 통합 코드, flexDirection row/column 지원 (rearrangeShapesForColumn), BlockEngine 통합 (calculateContentHeight/Width), Phase 6 체크리스트 (변환 인프라 9건 + 레이아웃 4건 + 검증 3건 완료) |
 | 2026-02-15 | 3.2 | **Button 텍스트 줄바꿈 시 높이 확장 (Skia + BlockEngine)**: (1) `measureSpecTextMinHeight()` 헬퍼 — spec shapes 내 텍스트 word-wrap 높이 측정 (ElementSprite.tsx), (2) `contentMinHeight` 패턴 — 다중 줄 시 `specHeight` 확장 + `cardCalculatedHeight` 전파 (ElementSprite.tsx), (3) 다중 줄 텍스트 `paddingTop` 보정 — `(specHeight - wrappedHeight) / 2` 수직 중앙 (ElementSprite.tsx), (4) `updateTextChildren` box 재귀 — specNode 내부 텍스트 크기 갱신 (SkiaOverlay.tsx), (5) **BlockEngine `parseBoxModel` 수정** — 요소 자체 border-box width를 `calculateContentHeight`에 전달, 부모 `availableWidth` 대신 사용하여 올바른 텍스트 줄바꿈 높이 계산 (utils.ts), (6) `styleToLayout` minHeight 기본 사이즈 `'md'`→`'sm'` 수정 (styleToLayout.ts), (7) Flex 경로는 `minHeight` → Yoga, BlockEngine 경로는 `parseBoxModel` → `calculateContentHeight`로 각각 처리, (8) **Button `layout.height` 명시적 설정** — Yoga 리프 노드 `height:'auto'` 자기 강화 방지, `paddingY*2 + lineHeight + borderW*2` 계산 (styleToLayout.ts), (9) 인라인 padding 시 `MIN_BUTTON_HEIGHT` 미적용 — padding:0으로 완전 축소 허용 (utils.ts), (10) `toNum` 함수 0값 버그 수정 — `parseFloat(v) \|\| undefined` → `isNaN` 체크 (styleToLayout.ts) |
 | 2026-02-13 | 3.1 | **ComponentDefinition 재귀 확장 + TagGroup CONTAINER_TAGS 전환** (§9.7): (1) ChildDefinition 재귀 타입 추가 — 기존 2-level (parent + flat children) → 무한 중첩 지원, optional children?: ChildDefinition[] 필드, (2) Factory createElementsFromDefinition 재귀 생성 — processChildren() 재귀 함수로 중첩 자식 일괄 생성, allElementsSoFar 배열로 customId 중복 방지, (3) TagGroup → CONTAINER_TAGS 전환 — TAG_SPEC_MAP에서 TagGroup/TagList 제거, PixiTagGroup 특수 렌더러 사용 중단, BoxSprite 기반 컨테이너로 전환, (4) TagGroup 3-level 계층 정의 — TagGroup(flex column) → Label + TagList(flex row wrap) → Tag×2, styleToLayout.ts에 TagGroup/TagList flex 기본값 추가, (5) Phase 3 §6.1 TagGroup 상태 "⚠️ 부분"→"✅ 정상 (CONTAINER_TAGS 전환)", Phase 3 체크리스트 TagGroup.spec.ts 완료 표기 |
+| 2026-02-19 | 3.4 | **§9.8 CONTAINER_TAGS 계층 선택(Drill-Down) 아키텍처 섹션 신규 작성**: (1) 설계 원칙 — 웹 컴포넌트 DOM 계층 = 캔버스 요소 계층 1:1 일치, (2) editingContextId 기반 계층 선택 메커니즘 — resolveClickTarget 알고리즘 + 더블클릭 enterEditingContext + Escape exitEditingContext + Layer Tree 자동 동기화, (3) 캔버스 이벤트 처리 구조 — CanvasKit(시각) + PixiJS alpha=0(이벤트) 이중 레이어, EventBoundary 히트테스팅, (4) 13개 CONTAINER_TAGS 구조적 일관성 현황 테이블 — Group/ToggleButtonGroup/TagGroup 정상, Card/Panel/Form/Dialog/Modal/Disclosure 등 Factory/Renderer 미비 현황 명시, (5) 웹 컴포넌트 구조 동일성 가이드라인 — 7개 체크리스트 + 5개 구조 동일성 원칙 |
 | 2026-02-19 | 3.3 | **렌더링 엔진 변경 반영 — 문서 갱신**: (1) §4.7.4 CSS 단위 처리 규칙 — `Yoga` → `Taffy/Dropflow` 레이아웃 엔진, `parseCSSSize()` → `resolveCSSSizeValue()` + `CSSValueContext` 통합 파서 (cssValueParser.ts), 단위 테이블에 em/calc()/fit-content 추가, (2) §4.7.4.1 이중 padding 방지 — `SELF_PADDING_TAGS` + `stripSelfRenderedProps()` → `enrichWithIntrinsicSize()` + `parseBoxModel()` + `INLINE_BLOCK_TAGS` 패턴으로 교체, 레거시 코드를 접이식 블록으로 이동, (3) §9.3.4 레이아웃 통합 — `styleToLayout.ts` (Yoga) → `engines/utils.ts`의 `enrichWithIntrinsicSize()` (Taffy/Dropflow 공용), (4) §9.4 flexDirection:column — `styleToLayout.ts` 크기 계산 → `engines/utils.ts`의 `enrichWithIntrinsicSize()`, BlockEngine → DropflowBlockEngine, (5) §9.5 수정 파일 목록 — `layout/styleToLayout.ts` → `layout/engines/utils.ts` 참조 갱신, (6) §9.7 TagGroup — `Yoga flex layout (styleToLayout.ts)` → `Taffy flex layout (TaffyFlexEngine)`, styleToLayout.ts 파일 참조 제거, (7) §4.7.7 파일 목록 — SELF_PADDING_TAGS 참조에 대체 패턴 주석 추가, (8) Checkbox/Radio shapes 비교 테이블 — `Yoga 높이` → `엔진 계산 높이` |
