@@ -677,6 +677,11 @@ export function createDefaultLinkProps(): LinkElementProps {
     isDisabled: false,
     isExternal: false,
     showExternalIcon: true,
+    // CSS base: display:inline-flex; align-items:center; gap:var(--spacing)
+    style: {
+      display: 'inline-flex',
+      alignItems: 'center',
+    },
   };
 }
 
@@ -750,6 +755,14 @@ export function createDefaultCheckboxGroupProps(): CheckboxGroupElementProps {
     value: [],
     isDisabled: false,
     orientation: "horizontal",
+    // CSS base: display:flex; flex-direction:column; gap:var(--gap)
+    // orientation=horizontal → flex-direction:row; align-items:center
+    style: {
+      display: 'flex',
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+    },
   };
 }
 
@@ -758,12 +771,26 @@ export function createDefaultRadioGroupProps(): RadioGroupElementProps {
     value: "",
     isDisabled: false,
     orientation: "horizontal",
+    // CSS base: display:flex; flex-direction:column; gap:var(--gap)
+    // orientation=horizontal → flex-direction:row; align-items:center
+    style: {
+      display: 'flex',
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+    },
   };
 }
 
 export function createDefaultSelectProps(): SelectElementProps {
   return {
     isDisabled: false,
+    // CSS base: display:flex; flex-direction:column; gap:var(--spacing-xs)
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 4,
+    },
   };
 }
 
@@ -771,6 +798,12 @@ export function createDefaultComboBoxProps(): ComboBoxElementProps {
   return {
     isDisabled: false,
     allowsCustomValue: false,
+    // CSS base: display:flex; flex-direction:column; gap:var(--spacing-xs)
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 4,
+    },
   };
 }
 
@@ -783,6 +816,11 @@ export function createDefaultSliderProps(): SliderElementProps {
     step: 1,
     isDisabled: false,
     orientation: "horizontal",
+    // CSS base: display:grid; max-width:300px
+    style: {
+      display: 'grid',
+      maxWidth: '300px',
+    },
   };
 }
 
@@ -797,6 +835,13 @@ export function createDefaultTailSwatchProps(): TailSwatchElementProps {
 export function createDefaultTabsProps(): TabsElementProps {
   return {
     orientation: "horizontal",
+    // CSS base: display:flex; width:100%
+    // orientation=horizontal → flex-direction:column (TabList 위 + TabPanel 아래)
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+      width: '100%',
+    },
   };
 }
 
@@ -809,6 +854,12 @@ export function createDefaultTabProps(): TabElementProps {
 export function createDefaultPanelProps(): PanelElementProps {
   return {
     variant: "default",
+    // CSS base: display:flex; flex-direction:column; width:100%
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+      width: '100%',
+    },
   };
 }
 
@@ -817,6 +868,12 @@ export function createDefaultTreeProps(): TreeElementProps {
     items: [],
     selectedKeys: [],
     isDisabled: false,
+    // CSS base: display:flex; flex-direction:column; gap:var(--spacing-2xs); width:100%
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+      width: '100%',
+    },
   };
 }
 
@@ -963,6 +1020,12 @@ export function createDefaultBadgeProps(): BadgeElementProps {
     size: "sm",
     isDot: false,
     isPulsing: false,
+    // CSS base: display:inline-flex; align-items:center; justify-content:center
+    style: {
+      display: 'inline-flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
   };
 }
 
@@ -1001,6 +1064,12 @@ export function createDefaultListBoxProps(): ListBoxElementProps {
     selectedKeys: [],
     isDisabled: false,
     selectionMode: "single",
+    // CSS base: display:flex; flex-direction:column; width:100%
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+      width: '100%',
+    },
   };
 }
 
@@ -1024,6 +1093,12 @@ export function createDefaultGridListProps(): GridListElementProps {
     selectedKeys: [],
     isDisabled: false,
     selectionMode: "single",
+    // CSS base: display:flex; flex-direction:column; width:100%
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+      width: '100%',
+    },
   };
 }
 
