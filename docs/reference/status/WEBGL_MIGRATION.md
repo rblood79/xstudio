@@ -89,7 +89,7 @@ This document tracks the migration progress of React Aria Components from the if
 | Component | Priority | Complexity | Notes |
 |-----------|----------|------------|-------|
 | ToggleButton | ~~High~~ | ~~Medium~~ | ✅ 렌더링, 선택, 크기 동기화 확인 완료 (2026-02-04) |
-| ToggleButtonGroup | ~~High~~ | ~~Medium~~ | ✅ container-only 패턴, 선택, width/height 스타일 적용 확인 완료 (2026-02-04) |
+| ToggleButtonGroup | ~~High~~ | ~~Medium~~ | ✅ container-only 패턴, 선택, width/height 스타일 적용 확인 완료 (2026-02-04). ⚠️ `indicator` prop 캔버스 미구현 — [구현 계획](../components/TOGGLEBUTTONGROUP.md#캔버스-selectionindicator-구현-계획) 참조 |
 | Badge | Low | Low | Text with background |
 
 #### Form Controls (7 remaining)
@@ -372,6 +372,29 @@ apps/builder/src/builder/workspace/canvas/layout/
 ├── LayoutEngine.ts         # Yoga v3 Flexbox
 └── GridLayout.tsx          # CSS Grid manual
 ```
+
+---
+
+## Component Indicator 캔버스 구현 현황
+
+> **작성일**: 2026-02-19
+
+일부 컴포넌트는 `indicator` (SelectionIndicator, 토글 dot 등) 시각 피드백을 포함한다. CSS 웹과 캔버스 간 구현 정합성 추적.
+
+| 컴포넌트 | Indicator 타입 | CSS 웹 | 캔버스 | 비고 |
+|----------|---------------|--------|--------|------|
+| **Tabs** | 선택 bar (2-4px) | ✅ `SelectionIndicator` | ✅ `PixiTabs.tsx` `drawIndicator()` | 구현 완료 |
+| **Switch** | 토글 dot + 트랙 | ✅ `.indicator` + `:before` | ✅ Spec shapes | 구현 완료 |
+| **Checkbox** | 체크마크 | ✅ `::before` pseudo | ✅ Spec line shapes | 구현 완료 |
+| **Radio** | 내부 dot | ✅ `::after` pseudo | ✅ Spec circle shapes | 구현 완료 |
+| **Badge** | Dot 모드 | ✅ `[data-dot]` | ✅ Spec shapes | 구현 완료 |
+| **ToggleButtonGroup** | 배경 하이라이트 슬라이드 | ✅ `SelectionIndicator` | ❌ **미구현** | [구현 계획](../components/TOGGLEBUTTONGROUP.md#캔버스-selectionindicator-구현-계획) |
+
+### 공통 제약
+
+- **애니메이션 미지원**: 캔버스는 정적 렌더링 (`ENGINE_CHECKLIST.md` §13: Transitions/Animations ❌)
+- CSS `transition` 기반 슬라이드/페이드 효과는 캔버스에서 재현하지 않음
+- 디자인 도구 특성상 정적 indicator 위치 표시로 충분
 
 ---
 
