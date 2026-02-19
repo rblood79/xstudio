@@ -457,7 +457,7 @@
 
 | 우선순위 | 항목 | 이유 |
 |----------|------|------|
-| P0 | `overflow: scroll/auto` | 스크롤 가능한 컨테이너가 캔버스에서 미동작 |
+| P0 | `overflow: scroll/auto` | 클리핑+오프셋+store 인프라 존재, 스크롤바 UI + 이벤트 바인딩만 추가 필요 → Phase E |
 | ~~P0~~ | ~~`text-overflow: ellipsis`~~ | ✅ v1.3에서 구현 완료 |
 | P0 | `position: fixed` | 뷰포트 고정 UI 미동작 |
 
@@ -555,6 +555,117 @@
 
 ---
 
+## 컴포넌트 수준 정합성 로드맵 (CSS 웹 ↔ 캔버스)
+
+> **작성일**: 2026-02-19
+> **현재 전체 정합성**: 약 62% (66개 컴포넌트 가중 평균)
+> **목표**: ~80% (캔버스 정적 렌더링 아키텍처의 현실적 상한)
+
+### 카테고리별 현황
+
+| 카테고리 | 컴포넌트 수 | 현재 일치율 | 주요 갭 |
+|----------|------------|------------|---------|
+| Primitives (Box/Text/Image) | 3 | **88%** | — |
+| Basic UI | 12 | **75%** | 아이콘 미렌더링, FancyButton 중복 |
+| Form Controls | 11 | **75%** | 드롭다운 아이템 미렌더링 |
+| Layout | 7 | **70%** | chevron 아이콘, expand 애니메이션 |
+| Navigation | 3 | **65%** | — |
+| Misc | 5 | **56%** | scrollbar UI |
+| Data Display | 8 | **49%** | 컬렉션 아이템 미생성 |
+| Overlay | 5 | **49%** | arrow, backdrop, 진입 애니메이션 |
+| Date/Time | 5 | **45%** | 날짜 셀 미렌더링 |
+| Color | 7 | **41%** | 2D/원형 그라디언트 미지원 |
+
+### 피처 차원별 현황
+
+| 차원 | 현재 일치율 | 비고 |
+|------|------------|------|
+| 구조/레이아웃 | **85%** | Taffy + Dropflow 엔진 |
+| 색상/Variant | **80%** | Spec variant + CSS variable reader |
+| 타이포그래피 | **80%** | CanvasKit Paragraph API |
+| 시각 장식 (아이콘/pseudo) | **50%** | 아이콘 폰트 도입으로 해결 가능 |
+| 상태 표현 | **35%** | Spec state 인프라 존재, 연결만 필요 |
+| 애니메이션 | **5%** | 최후순위 (§13 참조) |
+
+### 개선 로드맵
+
+> **원칙**: 애니메이션은 최후순위. 상태 표현은 기존 CSS 웹 방식을 따름.
+
+| Phase | 작업 | 예상 향상 | 누적 목표 | 우선순위 |
+|-------|------|----------|----------|----------|
+| **A** | **상태 표현 연결** — ElementSprite `'default'` 하드코딩 → `ComponentState` 전달. 스타일 패널 state selector 추가 | **+5~6%** | **67~68%** | P1 |
+| **B** | **아이콘 폰트 도입** — Pencil 방식: Icon Font Node + CanvasKit Paragraph. Lucide/Material Symbols 지원 | **+5~6%** | **72~74%** | P1 |
+| **C** | **컬렉션 아이템 Shape 생성** — Table/ListBox/Menu/Tree/Calendar 자식 렌더링 | **+6~8%** | **78~82%** | P2 |
+| **D** | **FancyButton 제거** — Button의 엄밀한 부분집합, gradient variant로 대체 | 코드 정리 | — | P2 |
+| **E** | **overflow: scroll/auto 완성** — 스크롤바 UI + wheel/touch 이벤트 (엔진 인프라 이미 존재) | **+1~2%** | **79~84%** | P2 |
+| **F** | **Overlay 개선** — arrow, backdrop 렌더링 | **+2~3%** | **~80%** | P3 |
+| **G** | **Color 그라디언트** — ColorArea/ColorWheel 2D/원형 그라디언트 | **+3~4%** | **~80%** | P3 |
+| **Z** | **애니메이션 인프라** — transition/keyframe 프레임 기반 (최후순위) | **+5~10%** | **~90%** | **P4 (최후)** |
+
+### Phase A 상세: 상태 표현 연결
+
+Spec에 이미 `state: ComponentState` 파라미터가 존재하며, 각 컴포넌트 render.shapes()가 state별 색상을 반환함.
+
+**변경 대상:**
+
+| # | 파일 | 변경 내용 | 난이도 |
+|---|------|----------|--------|
+| 1 | `ElementSprite.tsx` | `'default'` → `previewState` 변수로 교체 | 🟢 |
+| 2 | Zustand store (신규 또는 기존) | `previewState: ComponentState` 상태 추가 | 🟢 |
+| 3 | `StylesPanel.tsx` | State selector UI (Default\|Hover\|Pressed\|Disabled\|Focus) 추가 | 🟡 |
+
+**동작 방식:**
+- **스타일 패널**: 사용자가 state 전환 → store 업데이트 → render.shapes(…, state) 호출 → 캔버스 갱신
+- **캔버스 인터랙션**: PixiJS pointerOver/pointerDown → ComponentState 변환 → CSS 웹과 동일한 상태 전환
+
+### Phase B 상세: 아이콘 폰트 도입 (Pencil 방식 참조)
+
+**Pencil의 아이콘 렌더링 파이프라인:**
+```
+Icon Name ("activity") → Codepoint (57400) → String.fromCodePoint()
+→ CanvasKit ParagraphBuilder (font: "Lucide") → Skia render
+→ getFillPath() → 벡터 경로 캐싱
+```
+
+**XStudio 적용 방안:**
+
+| # | 작업 | 비고 |
+|---|------|------|
+| 1 | 아이콘 폰트 번들 (Lucide WOFF, ~100KB) | CanvasKit fontManager에 등록 |
+| 2 | `icon_font` Shape 타입 추가 | specShapeConverter에 codepoint → text 변환 |
+| 3 | Spec shapes에 아이콘 적용 | Select chevron, Disclosure chevron, Dialog close 등 |
+| 4 | 아이콘 피커 UI (선택사항) | Pencil 방식: GridVirtuoso + Fuse.js 검색 |
+
+### Phase D 상세: FancyButton 제거
+
+FancyButton은 Button의 **엄밀한 부분집합** (variants 4/8, sizes 3/5, 특수 기능 0개). 템플릿/프리셋 참조 0건.
+
+**제거 대상 파일:**
+- `packages/specs/src/components/FancyButton.spec.ts`
+- `apps/builder/src/builder/workspace/canvas/ui/PixiFancyButton.tsx`
+- `ElementSprite.tsx` 내 `UI_FANCYBUTTON_TAGS` + dispatch
+- index.ts export 3곳
+
+gradient 효과가 필요하면 Button에 `variant: 'gradient'` 추가.
+
+### Phase E 상세: overflow: scroll/auto 완성
+
+현재 인프라 현황:
+
+| 레이어 | 상태 | 구현 파일 |
+|--------|------|----------|
+| 클리핑 | ✅ | BoxSprite `clipChildren` + CanvasKit `clipRect()` |
+| scroll offset | ✅ | `canvas.translate(-scrollLeft, -scrollTop)` |
+| 콘텐츠 측정 | ✅ | `computeContentBounds()` → maxScroll 계산 |
+| Zustand store | ✅ | `scrollState.ts` (scrollTop/Left/max) |
+| Taffy overflow 전달 | ❌ | TaffyStyle에 타입 있으나 엔진에서 미전달 |
+| **스크롤바 UI** | ❌ | 미구현 |
+| **이벤트 바인딩** | ❌ | wheel/touch → scrollBy() 미연결 |
+
+**필요 작업**: 스크롤바 Skia 렌더링 + wheel 이벤트 바인딩 + Taffy에 overflow 전달
+
+---
+
 ## 변경 이력
 
 | 날짜 | 버전 | 설명 |
@@ -566,3 +677,4 @@
 | 2026-02-19 | 1.4 | Phase 7 추가 구현 (7개 ❌→✅): cm/mm/in/pt/pc 물리 단위, ch/ex 단위, font shorthand, border-style double/groove/ridge/inset/outset, clip-path 기본 도형, color-mix(). 총 ✅151, ⚠️11, ❌24 (81%) |
 | 2026-02-19 | 1.5 | display:contents 구현: pageChildrenMap 플래튼, depthMap 보정, ElementSprite/BoxSprite 렌더 스킵. ✅152, ⚠️11, ❌23 (82%) |
 | 2026-02-19 | 1.6 | Phase 9 구현 (12개 ❌→✅): Logical Properties 7종 (LTR→물리 매핑), font-variant (fontFeatures), font-stretch (FontWidth), lab/lch/oklch (색상 공간 변환), color() 함수, env() (safe-area), !important 우선순위. 총 ✅164, ⚠️11, ❌11 (**88%**) — 목표 85% 초과 달성 |
+| 2026-02-19 | 1.7 | **컴포넌트 수준 정합성 로드맵** 추가 (CSS 웹 ↔ 캔버스 62% → 목표 80%). Phase A~Z 개선 계획: 상태 표현 연결, 아이콘 폰트 도입 (Pencil 방식), 컬렉션 아이템 생성, FancyButton 제거, overflow scroll 완성, 애니메이션 최후순위 확정. P0 overflow 설명 갱신 (인프라 존재 확인) |

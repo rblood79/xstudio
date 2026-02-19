@@ -398,6 +398,35 @@ apps/builder/src/builder/workspace/canvas/layout/
 
 ---
 
+## CSS 웹 ↔ 캔버스 정합성 분석 (2026-02-19)
+
+> 전체 정합성: **62%** (66개 컴포넌트 가중 평균)
+> 목표: **~80%** (캔버스 정적 렌더링 아키텍처의 현실적 상한)
+> 상세 로드맵: [ENGINE_CHECKLIST.md § 컴포넌트 수준 정합성 로드맵](../../ENGINE_CHECKLIST.md#컴포넌트-수준-정합성-로드맵-css-웹--캔버스)
+
+### 주요 결정사항
+
+| # | 결정 | 근거 |
+|---|------|------|
+| 1 | **애니메이션은 최후순위** (Phase Z) | CSS transition/keyframe 인프라 부재. 정적 디자인 도구 특성상 우선순위 낮음 |
+| 2 | **상태 표현은 CSS 웹 방식 준수** | Spec에 `state: ComponentState` 파라미터 이미 존재. ElementSprite `'default'` 하드코딩만 해제하면 됨 |
+| 3 | **아이콘은 Icon Font 방식 도입** (Pencil 참조) | CanvasKit ParagraphBuilder로 codepoint 렌더링. SVG 변환 불필요, 추가 번들 최소화 |
+| 4 | **FancyButton 제거** | Button의 엄밀한 부분집합 (variants 4/8, sizes 3/5). 참조 0건. gradient 필요 시 Button variant 추가 |
+| 5 | **ScrollBox는 CSS overflow 문제** | 별도 컴포넌트 불필요. 클리핑+오프셋+store 인프라 존재, 스크롤바 UI + 이벤트만 추가 |
+
+### 정합성 갭 원인
+
+| 원인 | 영향도 | 해결 Phase |
+|------|--------|-----------|
+| 컬렉션 아이템 미렌더링 | -8.2% | Phase C |
+| 상태 시각화 부재 (hover/focus/pressed) | -6.8% | Phase A |
+| 아이콘 미렌더링 | -5.5% | Phase B |
+| 애니메이션 인프라 부재 | -4.0% | Phase Z (최후) |
+| 그라디언트/복합 렌더링 (Color 계열) | -3.5% | Phase G |
+| 오버레이 아키텍처 부재 | -3.0% | Phase F |
+
+---
+
 ## Notes
 
 - Migration uses `@pixi/ui` v2.3.2 components where applicable
