@@ -172,6 +172,12 @@ Element props  ──→  skiaNodeData 생성  ──→  글로벌 레지스트
 
 > **레이아웃 계층 분리**: Spec은 컴포넌트 **내부** Shape 배치를 정의하고,
 > **외부** 컨테이너 간 배치는 Taffy/Dropflow 레이아웃 엔진이 담당합니다.
+>
+> | 엔진 | 담당 | CSS display |
+> |------|------|-------------|
+> | **Taffy WASM** | Flex/Grid 레이아웃 | `flex`, `grid`, `inline-flex` |
+> | **Dropflow Fork** | Block/Inline 레이아웃 | `block`, `inline`, `inline-block` |
+>
 > React 경로는 브라우저 CSS 레이아웃을, Canvas 경로는 Taffy/Dropflow가 계산한 절대 px 값을 CanvasKit이 사용합니다.
 > 자세한 내용은 [ENGINE_UPGRADE.md](./ENGINE_UPGRADE.md)를 참조하세요.
 
@@ -273,8 +279,8 @@ apps/builder/src/builder/workspace/canvas/skia/
     ├── textMeasure.ts           # 텍스트 측정 유틸리티
     ├── selectionRenderer.ts     # 선택 박스, 트랜스폼 핸들, 라쏘 렌더링
     ├── aiEffects.ts             # AI 생성 이펙트 (파티클/블러/플래시)
-    ├── eventBridge.ts           # (삭제됨) 과거 DOM 이벤트 브릿지 시도 — 현재 PixiJS EventBoundary로 충분
-    ├── dirtyRectTracker.ts      # (보류/미사용) clipRect 기반 Dirty Rect 부분 렌더링 시도 흔적
+    # eventBridge.ts — 삭제됨 (PixiJS EventBoundary로 대체)
+    # dirtyRectTracker.ts — 보류/미사용 (DirtyRect는 SkiaRenderer에서 구현)
     ├── disposable.ts            # 리소스 정리 패턴 (SkiaDisposable)
     ├── createSurface.ts         # GPU Surface 팩토리
     ├── initCanvasKit.ts         # CanvasKit WASM 초기화
@@ -1341,9 +1347,7 @@ export function resolveToken(ref: TokenRef, theme: 'light' | 'dark' = 'light'): 
     case 'radius':
       return radius[name as keyof typeof radius];
     case 'shadow':
-      return theme === 'dark'
-        ? shadows.dark[name as keyof typeof shadows.dark]
-        : shadows.light[name as keyof typeof shadows.light];
+      return shadows[name as keyof typeof shadows];
     default:
       console.warn(`Unknown token category: ${category}`);
       return ref;
@@ -1588,335 +1592,40 @@ function cssColorToSkiaColor(
 ```
 
 <details>
-<summary>Phase 1-4 레거시: PixiRenderer (씬 그래프 이벤트 전용으로 축소)</summary>
+<summary>Phase 1-4 레거시: PixiRenderer (폐기 — 참조용)</summary>
 
-> Phase 5 이후 PixiRenderer는 시각적 렌더링을 수행하지 않으며,
-> EventBoundary Hit Testing + Container 트리 관리 전용이다.
+> **⚠️ 폐기됨**: Phase 5 이후 PixiRenderer는 시각적 렌더링을 수행하지 않는다.
+> 현재 PixiJS는 EventBoundary Hit Testing + Container 트리 관리 전용이다.
+> 시각 렌더링은 CanvasKit/Skia가 담당한다 (§3.5.3.1 참조).
+
+**핵심 인터페이스 (참조용):**
 
 ```typescript
-// packages/specs/src/renderers/PixiRenderer.ts (레거시 — 이벤트 전용)
-
-import type { Graphics } from 'pixi.js';
-import type { ComponentSpec, Shape, VariantSpec, SizeSpec } from '../types';
-import { resolveColor, resolveToken } from './utils/tokenResolver';
+// packages/specs/src/renderers/PixiRenderer.ts (폐기됨)
 
 export interface PixiRenderContext {
   graphics: Graphics;
   theme: 'light' | 'dark';
   width: number;
   height: number;
-  /** 현재 상태 (기본값: 'default') */
   state?: ComponentState;
 }
 
-/**
- * ComponentSpec의 Shapes를 PIXI Graphics로 렌더링
- * ⚠️ Phase 5+ 에서는 시각적 렌더링에 사용되지 않음 (CanvasKit이 담당)
- */
-export function renderToPixi<Props extends Record<string, unknown>>(
-  spec: ComponentSpec<Props>,
-  props: Props,
-  context: PixiRenderContext
-): void {
-  const { graphics, theme, width, height, state = 'default' } = context;
+// Shape 타입별 렌더링 매핑 (폐기됨 → CanvasKit 대체):
+// roundRect/rect → canvas.drawRRect() / canvas.drawRect()
+// circle        → canvas.drawCircle()
+// border        → paint.setStyle(ck.PaintStyle.Stroke)
+// text          → canvas.drawParagraph()
+// shadow        → ImageFilter.MakeDropShadow()
+// container     → 재귀 렌더링 (CanvasKit 트리로 대체)
+```
 
-  const variant = (props.variant as string) || spec.defaultVariant;
-  const size = (props.size as string) || spec.defaultSize;
+**색상 변환 함수 (현재 사용):**
 
-  const variantSpec = spec.variants[variant];
-  const sizeSpec = spec.sizes[size];
-
-  if (!variantSpec || !sizeSpec) {
-    console.warn(`Invalid variant/size: ${variant}/${size}`);
-    return;
-  }
-
-  // Shapes 생성 (state 파라미터 전달)
-  const shapes = spec.render.shapes(props, variantSpec, sizeSpec, state);
-
-  // Graphics 초기화
-  graphics.clear();
-
-  // 각 Shape 렌더링
-  shapes.forEach(shape => {
-    renderShape(graphics, shape, theme, width, height);
-  });
-}
-
-/**
- * 개별 Shape 렌더링
- */
-function renderShape(
-  g: Graphics,
-  shape: Shape,
-  theme: 'light' | 'dark',
-  containerWidth: number,
-  containerHeight: number
-): void {
-  switch (shape.type) {
-    case 'roundRect': {
-      const width = shape.width === 'auto' ? containerWidth : shape.width;
-      const height = shape.height === 'auto' ? containerHeight : shape.height;
-      const fill = resolveColor(shape.fill!, theme);
-      const radius = typeof shape.radius === 'number'
-        ? shape.radius
-        : shape.radius[0]; // 단순화: 첫 번째 값만 사용
-
-      g.roundRect(shape.x, shape.y, width, height, radius);
-
-      if (typeof fill === 'string') {
-        g.fill({ color: hexStringToNumber(fill), alpha: shape.fillAlpha ?? 1 });
-      } else {
-        g.fill({ color: fill, alpha: shape.fillAlpha ?? 1 });
-      }
-      break;
-    }
-
-    case 'rect': {
-      const width = shape.width === 'auto' ? containerWidth : shape.width;
-      const height = shape.height === 'auto' ? containerHeight : shape.height;
-      const fill = resolveColor(shape.fill!, theme);
-
-      g.rect(shape.x, shape.y, width, height);
-
-      if (typeof fill === 'string') {
-        g.fill({ color: hexStringToNumber(fill), alpha: shape.fillAlpha ?? 1 });
-      } else {
-        g.fill({ color: fill, alpha: shape.fillAlpha ?? 1 });
-      }
-      break;
-    }
-
-    case 'circle': {
-      const fill = resolveColor(shape.fill!, theme);
-
-      g.circle(shape.x, shape.y, shape.radius);
-
-      if (typeof fill === 'string') {
-        g.fill({ color: hexStringToNumber(fill), alpha: shape.fillAlpha ?? 1 });
-      } else {
-        g.fill({ color: fill, alpha: shape.fillAlpha ?? 1 });
-      }
-      break;
-    }
-
-    case 'border': {
-      const color = resolveColor(shape.color, theme);
-      const colorNum = typeof color === 'string' ? hexStringToNumber(color) : color;
-
-      // 타겟 영역 또는 이전 shape 영역에 테두리 그리기
-      const borderX = shape.x ?? 0;
-      const borderY = shape.y ?? 0;
-      const borderW = shape.width === 'auto' ? containerWidth : (shape.width ?? containerWidth);
-      const borderH = shape.height === 'auto' ? containerHeight : (shape.height ?? containerHeight);
-      const borderR = typeof shape.radius === 'number' ? shape.radius : (shape.radius?.[0] ?? 0);
-
-      g.roundRect(borderX, borderY, borderW, borderH, borderR);
-      g.stroke({
-        color: colorNum,
-        width: shape.borderWidth, // borderWidth 필드 사용
-        // TODO: dashed/dotted 지원 (PIXI v8 Graphics API)
-      });
-      break;
-    }
-
-    case 'container': {
-      // 자식 요소들 렌더링
-      shape.children.forEach(child => {
-        renderShape(g, child, theme, containerWidth, containerHeight);
-      });
-      break;
-    }
-
-    // text와 shadow는 별도 처리 필요 (Graphics가 아닌 다른 객체)
-    // Phase 5+ (CanvasKit): text → ParagraphBuilder.drawParagraph(),
-    //   shadow → ImageFilter.MakeDropShadow() / canvas.saveLayer()로 통합 처리.
-    //   PixiJS Graphics의 제약이 없어 별도 처리 불필요.
-    case 'text':
-    case 'shadow':
-      // PixiButton.tsx 등에서 별도 처리
-      break;
-  }
-}
-
-/**
- * hex 문자열 → PixiJS 숫자 변환
- */
-function hexStringToNumber(hex: string): number {
-  return parseInt(hex.replace('#', ''), 16);
-}
-
-/**
- * CSS 색상 문자열 → PixiJS hex 숫자 변환
- * colord 라이브러리로 모든 CSS 색상 포맷 지원
- */
-import { colord, extend } from 'colord';
-import mixPlugin from 'colord/plugins/mix';
-
-// color-mix() 지원을 위한 플러그인 확장
-extend([mixPlugin]);
-
-function cssColorToPixiHex(color: string, fallback: number = 0x000000): number {
-  // 1. 빈 값 처리
-  if (!color || color === 'transparent') {
-    return fallback;
-  }
-
-  // 2. 이미 숫자인 경우
-  if (typeof color === 'number') {
-    return color;
-  }
-
-  // 3. 0x 접두사 hex
-  if (color.startsWith('0x')) {
-    return parseInt(color, 16);
-  }
-
-  // 4. # 접두사 hex
-  if (color.startsWith('#')) {
-    const parsed = colord(color);
-    if (parsed.isValid()) {
-      return parseInt(parsed.toHex().slice(1), 16);
-    }
-    return fallback;
-  }
-
-  // 5. rgb(), rgba(), hsl(), hsla() 등
-  const parsed = colord(color);
-  if (parsed.isValid()) {
-    return parseInt(parsed.toHex().slice(1), 16);
-  }
-
-  // 6. color-mix() 처리 (브라우저 계산값 읽기)
-  if (color.includes('color-mix')) {
-    return parseColorMix(color, fallback);
-  }
-
-  return fallback;
-}
-
-/**
- * Phase 5+: CSS 색상 문자열 → CanvasKit/Skia Float32Array 변환 (설계 예시)
- *
- * Skia는 ck.Color4f(r, g, b, a) 형식의 Float32Array를 사용한다.
- * PixiJS의 0xRRGGBB와 달리 알파 채널을 포함한다.
- *
- * 현재 구현: 전용 변환 함수 없이 fills.ts, aiEffects.ts 등에서
- * ck.Color4f(r, g, b, a)를 인라인으로 직접 호출한다.
- */
-function cssColorToSkiaColor(
-  color: string,
-  ck: CanvasKit,
-  fallback?: Float32Array
-): Float32Array {
-  if (!color || color === 'transparent') {
-    return fallback ?? ck.Color4f(0, 0, 0, 0);
-  }
-
-  const parsed = colord(color);
-  if (!parsed.isValid()) {
-    return fallback ?? ck.Color4f(0, 0, 0, 1);
-  }
-
-  const { r, g, b, a } = parsed.toRgb();
-  return ck.Color4f(r / 255, g / 255, b / 255, a);
-}
-
-// 또는 uint32 ARGB 형식 (저수준 API용):
-function cssColorToSkiaUint32(color: string, fallback: number = 0xFF000000): number {
-  const parsed = colord(color);
-  if (!parsed.isValid()) return fallback;
-
-  const { r, g, b, a } = parsed.toRgb();
-  const alpha = Math.round(a * 255);
-  return ((alpha << 24) | (r << 16) | (g << 8) | b) >>> 0;
-}
-
-/**
- * color-mix() CSS 함수 파싱
- * 브라우저의 계산된 값을 읽어서 변환
- */
-function parseColorMix(colorMixStr: string, fallback: number): number {
-  // 서버 사이드에서는 fallback 반환
-  if (typeof document === 'undefined') {
-    return fallback;
-  }
-
-  try {
-    // 임시 DOM 요소로 브라우저 계산값 읽기
-    const temp = document.createElement('div');
-    temp.style.color = colorMixStr;
-    document.body.appendChild(temp);
-    const computed = getComputedStyle(temp).color;
-    document.body.removeChild(temp);
-
-    // rgb(r, g, b) 형식 파싱
-    const match = computed.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
-    if (match) {
-      const [, r, g, b] = match.map(Number);
-      return (r << 16) | (g << 8) | b;
-    }
-  } catch (e) {
-    console.warn('color-mix parsing failed:', e);
-  }
-
-  return fallback;
-}
-
-/**
- * Variant 색상 세트 가져오기
- */
-export function getVariantColors(
-  variantSpec: VariantSpec,
-  theme: 'light' | 'dark' = 'light'
-): {
-  bg: number;
-  bgHover: number;
-  bgPressed: number;
-  text: number;
-  border?: number;
-  bgAlpha: number;
-} {
-  const bg = resolveColor(variantSpec.background, theme);
-  const bgHover = resolveColor(variantSpec.backgroundHover, theme);
-  const bgPressed = resolveColor(variantSpec.backgroundPressed, theme);
-  const text = resolveColor(variantSpec.text, theme);
-  const border = variantSpec.border ? resolveColor(variantSpec.border, theme) : undefined;
-
-  return {
-    bg: typeof bg === 'string' ? hexStringToNumber(bg) : bg,
-    bgHover: typeof bgHover === 'string' ? hexStringToNumber(bgHover) : bgHover,
-    bgPressed: typeof bgPressed === 'string' ? hexStringToNumber(bgPressed) : bgPressed,
-    text: typeof text === 'string' ? hexStringToNumber(text) : text,
-    border: border ? (typeof border === 'string' ? hexStringToNumber(border) : border) : undefined,
-    bgAlpha: variantSpec.backgroundAlpha ?? 1,
-  };
-}
-
-/**
- * Size 프리셋 가져오기
- */
-export function getSizePreset(
-  sizeSpec: SizeSpec
-): {
-  height: number;
-  paddingX: number;
-  paddingY: number;
-  fontSize: number;
-  borderRadius: number;
-  iconSize?: number;
-  gap?: number;
-} {
-  return {
-    height: sizeSpec.height,
-    paddingX: sizeSpec.paddingX,
-    paddingY: sizeSpec.paddingY,
-    fontSize: resolveToken(sizeSpec.fontSize) as number,
-    borderRadius: resolveToken(sizeSpec.borderRadius) as number,
-    iconSize: sizeSpec.iconSize,
-    gap: sizeSpec.gap,
-  };
-}
+```typescript
+// CSS → CanvasKit: ck.Color4f(r/255, g/255, b/255, a) — Float32Array
+// CSS → CanvasKit: ((alpha << 24) | (r << 16) | (g << 8) | b) >>> 0 — uint32
+// 실제 구현: fills.ts, aiEffects.ts 등에서 인라인 호출
 ```
 
 </details>
@@ -2003,7 +1712,10 @@ function renderSkiaShape(
       const paint = new ck.Paint();
       paint.setStyle(ck.PaintStyle.Fill);
       paint.setColor(cssColorToSkiaColor(shape.fill, ck));
-      const r = typeof shape.radius === 'number' ? shape.radius : (shape.radius?.[0] ?? 0);
+      // per-corner radius: number → 균일, [tl,tr,br,bl] → 개별
+      const r = typeof shape.radius === 'number'
+        ? shape.radius : (shape.radius?.[0] ?? 0);
+      // TODO: per-corner radius 시 rrect 12-float 배열 사용
       const rrect = ck.RRectXY(
         ck.LTRBRect(shape.x, shape.y,
           shape.x + resolveSize(shape.width, width),
@@ -2992,6 +2704,11 @@ if (ENABLE_BUTTON_SPEC) {
 
 #### 4.7.4 CSS 단위 처리 규칙
 
+> **관련 파일 정리:**
+> - `layout/engines/cssValueParser.ts` — `resolveCSSSizeValue()`, `CSSValueContext` (CSS 단위 → px 변환)
+> - `layout/engines/utils.ts` — `enrichWithIntrinsicSize()`, `parseBoxModel()`, `calculateContentHeight/Width()` (intrinsic 크기)
+> - 레거시 `parseCSSSize()` (`sprites/styleConverter`) — 폐기됨, 위 함수로 대체
+
 **CanvasKit/Skia 렌더링 (현재):** Taffy/Dropflow 레이아웃 엔진이 CSS 단위(%, vw, vh, rem, calc 등)를 **절대 px로 변환**한 결과를 CanvasKit이 받으므로, CanvasKit 렌더러에서는 CSS 단위 해석이 **불필요**하다. `skiaNodeData.width/height` 등 이미 계산된 숫자를 직접 사용한다.
 
 | 항목 | Phase 1-4 (PixiJS) | 현재 (CanvasKit + Taffy/Dropflow) |
@@ -3058,59 +2775,15 @@ interface CSSValueContext {
 > (2026-02-03 수정: ElementSprite에서 이 패턴 위반으로 borderRadius가 반영되지 않던 버그 수정)
 
 <details>
-<summary>Phase 1-4 레거시: Pixi UI 컴포넌트 CSS 단위 해석 규칙</summary>
+<summary>Phase 1-4 레거시: Pixi UI 컴포넌트 CSS 단위 해석 규칙 (폐기됨)</summary>
 
-> 아래 규칙은 Phase 1-4 PixiJS 컴포넌트에만 적용되었던 레거시 규칙이다.
-> 현재는 Taffy/Dropflow 레이아웃 엔진 + `resolveCSSSizeValue()`로 대체되어 불필요.
-
-모든 Pixi UI 컴포넌트(PixiButton, PixiToggleButton, PixiSlider 등)에서 inline style의 CSS 값을
-WebGL 그래픽 크기로 변환할 때 반드시 아래 규칙을 따라야 합니다.
-
-**❌ 금지 패턴 (버그 원인)**:
-```typescript
-// typeof === 'number'는 CSS 문자열 값("200px", "50%", "100vw")을 무시함
-const width = typeof style?.width === 'number' ? style.width : fallback;
-```
-
-**✅ 필수 패턴**:
-```typescript
-import { parseCSSSize } from "../sprites/styleConverter";
-import { parsePadding, parseBorderWidth } from "../sprites/paddingUtils";
-import { useStore } from "../../../stores";
-import { useCanvasSyncStore } from "../canvasSync";
-
-// 1. 뷰포트 + 부모 요소 조회
-const canvasSize = useCanvasSyncStore((s) => s.canvasSize);
-const parentElement = useStore((state) => {
-  if (!element.parent_id) return null;
-  return state.elementsMap.get(element.parent_id) ?? null;
-});
-
-// 2. 부모 content area 계산 (% 및 vw/vh 해석 기준)
-const parentContentArea = useMemo(() => {
-  if (!parentElement) return { width: canvasSize.width, height: canvasSize.height };
-  const parentStyle = parentElement.props?.style;
-  const isBody = parentElement.tag.toLowerCase() === 'body';
-  const pw = isBody ? canvasSize.width : parseCSSSize(parentStyle?.width, canvasSize.width, canvasSize.width, canvasSize);
-  const ph = isBody ? canvasSize.height : parseCSSSize(parentStyle?.height, canvasSize.height, canvasSize.height, canvasSize);
-  const pp = parsePadding(parentStyle);
-  const pb = parseBorderWidth(parentStyle);
-  return {
-    width: Math.max(0, pw - pp.left - pp.right - pb.left - pb.right),
-    height: Math.max(0, ph - pp.top - pp.bottom - pb.top - pb.bottom),
-  };
-}, [parentElement, canvasSize]);
-
-// 3. CSS 값 파싱 (% → parentContentArea, vw/vh → parentContentArea, px → 절대값)
-const width = parseCSSSize(style?.width, parentContentArea.width, fallback, parentContentArea);
-const height = parseCSSSize(style?.height, parentContentArea.height, fallback, parentContentArea);
-
-// 4. padding shorthand + 개별 속성 지원
-const parsedPadding = parsePadding(style);  // "8px" → 4방향, paddingTop 등으로 override
-
-// 5. border width 4방향 파싱
-const parsedBorder = parseBorderWidth(style);  // "2px" → 4방향, borderTopWidth 등으로 override
-```
+> **⚠️ 폐기됨**: 아래 규칙은 Phase 1-4 PixiJS 컴포넌트에만 적용되었던 레거시 규칙이다.
+> 현재는 Taffy/Dropflow 레이아웃 엔진이 CSS 단위를 자동 해석하며,
+> `resolveCSSSizeValue()` + `CSSValueContext` (`layout/engines/cssValueParser.ts`)로 대체되었다.
+>
+> - `parseCSSSize()` → `resolveCSSSizeValue()`
+> - `parsePadding()` / `parseBorderWidth()` → `parseBoxModel()`
+> - 뷰포트/부모 content area 수동 계산 → 레이아웃 엔진 자동 처리
 
 </details>
 
@@ -4248,18 +3921,14 @@ export async function waitForAnimations(page: Page): Promise<void> {
 }
 
 /**
- * PIXI 캔버스 렌더링 완료 대기
+ * CanvasKit 렌더링 완료 대기 (waitForPixiRender 대체)
+ * __canvasKitReady 플래그: SkiaRenderer 초기화 완료 시
+ * SkiaOverlay.tsx에서 window.__canvasKitReady = true 설정
  */
-export async function waitForPixiRender(page: Page): Promise<void> {
-  await page.waitForFunction(() => {
-    const canvas = document.querySelector('canvas');
-    if (!canvas) return false;
-    // WebGL 컨텍스트 확인
-    const gl = canvas.getContext('webgl2') || canvas.getContext('webgl');
-    return gl !== null;
-  });
-  // 추가 프레임 대기 (렌더링 안정화)
+export async function waitForCanvasKitRender(page: Page): Promise<void> {
+  await page.waitForFunction(() => (window as any).__canvasKitReady === true);
   await page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
+  await page.waitForTimeout(100); // 폰트 로드 등 안정화
 }
 
 /**
@@ -4285,7 +3954,10 @@ export async function stableScreenshot(
 }
 ```
 
-#### 8.1.3 테스트 코드 (플래키 가드 적용)
+#### 8.1.3 테스트 코드 — React ↔ CanvasKit 비교
+
+> **구현 상태:** `waitForCanvasKitRender` 및 Playwright 비주얼 리그레션 테스트 구축 예정.
+> 상세: `docs/WASM.md` Phase 5.3 참조
 
 ```typescript
 // packages/specs/tests/visual/button.test.ts
@@ -4294,20 +3966,16 @@ import { test, expect } from '@playwright/test';
 import { ButtonSpec } from '../../src/components/Button.spec';
 import {
   waitForFonts,
-  waitForPixiRender,
+  waitForCanvasKitRender,
   stableScreenshot,
 } from './helpers';
 
-// 테스트 전 공통 설정
 test.beforeEach(async ({ page }) => {
-  // CSS 애니메이션/트랜지션 비활성화
   await page.addStyleTag({
-    content: `
-      *, *::before, *::after {
-        animation-duration: 0s !important;
-        transition-duration: 0s !important;
-      }
-    `,
+    content: `*, *::before, *::after {
+      animation-duration: 0s !important;
+      transition-duration: 0s !important;
+    }`,
   });
 });
 
@@ -4318,97 +3986,26 @@ test.describe('Button Visual Regression', () => {
   for (const variant of variants) {
     for (const size of sizes) {
       test(`Button ${variant}/${size} matches snapshot`, async ({ page }) => {
-        // React 버전 렌더링
+        // React 버전 캡처
         await page.goto(`/storybook/button?variant=${variant}&size=${size}`);
         await waitForFonts(page);
         const reactScreenshot = await stableScreenshot(page, '.react-aria-Button');
 
-        // PIXI 버전 렌더링
+        // CanvasKit 버전 캡처
         await page.goto(`/builder-preview/button?variant=${variant}&size=${size}`);
-        await waitForPixiRender(page);
-        const pixiScreenshot = await stableScreenshot(page, 'canvas');
+        await waitForCanvasKitRender(page);
+        const canvasKitScreenshot = await stableScreenshot(page, 'canvas[data-skia-overlay]');
 
-        // 스냅샷 비교
+        // 스냅샷 비교 (React ↔ CanvasKit 최대 1% 차이 허용)
         expect(reactScreenshot).toMatchSnapshot(`button-${variant}-${size}-react.png`);
-        expect(pixiScreenshot).toMatchSnapshot(`button-${variant}-${size}-pixi.png`);
-
-        // React와 PIXI 간 차이 비교
-        const diffResult = await compareScreenshots(reactScreenshot, pixiScreenshot);
-        expect(diffResult.diffPercent).toBeLessThan(1);
+        expect(canvasKitScreenshot).toMatchSnapshot(`button-${variant}-${size}-skia.png`);
       });
     }
   }
 });
-
-/**
- * 두 스크린샷 간 픽셀 비교
- */
-async function compareScreenshots(
-  img1: Buffer,
-  img2: Buffer
-): Promise<{ diffPercent: number; diffImage: Buffer }> {
-  const { PNG } = await import('pngjs');
-  const pixelmatch = (await import('pixelmatch')).default;
-
-  const png1 = PNG.sync.read(img1);
-  const png2 = PNG.sync.read(img2);
-
-  // 크기가 다르면 리사이즈
-  const width = Math.max(png1.width, png2.width);
-  const height = Math.max(png1.height, png2.height);
-
-  const diff = new PNG({ width, height });
-
-  const numDiffPixels = pixelmatch(
-    png1.data,
-    png2.data,
-    diff.data,
-    width,
-    height,
-    { threshold: 0.1, includeAA: false }
-  );
-
-  const totalPixels = width * height;
-  const diffPercent = (numDiffPixels / totalPixels) * 100;
-
-  return {
-    diffPercent,
-    diffImage: PNG.sync.write(diff),
-  };
-}
 ```
 
-#### 8.1.3.1 CanvasKit Visual Regression Testing (현재)
-
-Visual Regression Testing은 React vs **CanvasKit** 비교로 수행한다.
-상세: `docs/WASM.md` Phase 5.3 참조
-
-> **구현 상태:** 아래 테스트 헬퍼(`waitForCanvasKitRender`)는 구현 예정이다.
-> CanvasKit 렌더링 안정화 후 Playwright 기반 비주얼 리그레션 테스트를 구축할 계획이다.
-
-**Phase 1-4 → 현재 변경 사항:**
-
-| Phase 1-4 (PixiJS) | 현재 (CanvasKit) | 비고 |
-|------------------|---------------------|------|
-| `/builder-preview/` PixiJS 캔버스 | CanvasKit `<canvas data-skia-overlay>` 캡처 | 캡처 대상 변경 |
-| `waitForPixiRender()` | `waitForCanvasKitRender()` | 안정화 대기 함수 변경 |
-| PixiJS Graphics 렌더링 비교 | CanvasKit Surface 렌더링 비교 | 렌더링 파이프라인 변경 |
-
 ```typescript
-// CanvasKit 렌더링 안정화 대기 (구현 예정)
-async function waitForCanvasKitRender(page: Page): Promise<void> {
-  // CanvasKit WASM 초기화 완료 대기
-  await page.waitForFunction(() =>
-    (window as any).__canvasKitReady === true
-  );
-  // requestAnimationFrame 2회 대기 (더블 버퍼링)
-  await page.evaluate(() => new Promise(resolve => {
-    requestAnimationFrame(() => requestAnimationFrame(resolve));
-  }));
-  // 추가 안정화 (폰트 로드 등)
-  await page.waitForTimeout(100);
-}
-
 // CanvasKit 캔버스 캡처
 async function captureCanvasKit(page: Page): Promise<Buffer> {
   return page.locator('canvas[data-skia-overlay]').screenshot();
@@ -4420,16 +4017,16 @@ async function captureCanvasKit(page: Page): Promise<Buffer> {
 각 Spec Shape 타입과 CanvasKit API의 1:1 매핑 참조.
 > 상세: `docs/WASM.md` Phase 6.3, `docs/PENCIL_APP_ANALYSIS.md` §11 참조
 
-| Spec Shape | CanvasKit Canvas API | Skia Paint/Path | 현재 PixiJS | 비고 |
+| Spec Shape | CanvasKit Canvas API (현재) | Skia Paint/Path | 레거시 PixiJS | 비고 |
 |------------|---------------------|-----------------|------------|------|
-| `RectShape` | `canvas.drawRect()` / `canvas.drawRRect()` | `Paint` + `RRect` | `graphics.rect()` / `graphics.roundRect()` | radius 있으면 RRect |
-| `CircleShape` | `canvas.drawCircle()` | `Paint` | `graphics.circle()` | cx, cy, r |
-| `TextShape` | `canvas.drawParagraph()` | `ParagraphBuilder` → `Paragraph` | `new Text()` (별도 객체) | Phase 5에서 통합 |
-| `ShadowShape` | `ImageFilter.MakeDropShadow()` | `canvas.saveLayer(paint)` | 별도 처리 (불완전) | Phase 5에서 통합 |
-| `BorderShape` | `canvas.drawRRect()` (stroke) | `Paint.setStyle(Stroke)` | `graphics.stroke()` | strokeAlignment 추가 |
-| `GradientShape` | `Shader.MakeLinearGradient()` / `MakeRadialGradient()` / `MakeSweepGradient()` | `Paint.setShader()` | `graphics.fill()` + gradient | angular = Sweep |
-| `ImageShape` | `canvas.drawImageRect()` | `Image` + `Paint` | `Sprite` (별도 객체) | fit/fill/crop |
-| `ContainerShape` | `canvas.save()` / `canvas.clipRect()` / `canvas.restore()` | clip + children 재귀 | `Container` | overflow clipping |
+| `RectShape` | `canvas.drawRect()` / `canvas.drawRRect()` | `Paint` + `RRect` | ~~`graphics.rect()`~~ | radius 있으면 RRect |
+| `CircleShape` | `canvas.drawCircle()` | `Paint` | ~~`graphics.circle()`~~ | cx, cy, r |
+| `TextShape` | `canvas.drawParagraph()` | `ParagraphBuilder` → `Paragraph` | ~~`new Text()`~~ | Phase 5에서 통합 |
+| `ShadowShape` | `ImageFilter.MakeDropShadow()` | `canvas.saveLayer(paint)` | ~~별도 처리~~ | Phase 5에서 통합 |
+| `BorderShape` | `canvas.drawRRect()` (stroke) | `Paint.setStyle(Stroke)` | ~~`graphics.stroke()`~~ | strokeAlignment 추가 |
+| `GradientShape` | `Shader.MakeLinearGradient()` / `MakeRadialGradient()` / `MakeSweepGradient()` | `Paint.setShader()` | ~~`graphics.fill()`~~ | angular = Sweep |
+| `ImageShape` | `canvas.drawImageRect()` | `Image` + `Paint` | ~~`Sprite`~~ | fit/fill/crop |
+| `ContainerShape` | `canvas.save()` / `canvas.clipRect()` / `canvas.restore()` | clip + children 재귀 | ~~`Container`~~ | overflow clipping |
 
 **Fill + Stroke 분리 패턴 (CanvasKit):**
 ```typescript
@@ -4623,6 +4220,7 @@ line?: {
 | `border` | target Shape의 `box.strokeColor/strokeWidth` 설정 |
 | `text` | `type:'text'`, `text:{ content, fontSize, color, ... }` |
 | `shadow` | target Shape의 `effects[]`에 DropShadowEffect 추가 |
+| `gradient` | target Shape의 `box.fills[]`에 LinearGradient/RadialGradient Shader 추가 |
 
 색상 해석: `Shape.fill` (ColorValue = TokenRef | string | number) → `resolveColor(fill, theme)` → `Float32Array[r,g,b,a]`
 
@@ -4643,6 +4241,8 @@ Body의 `display: 'block'` → DropflowBlockEngine 경로에서의 폼 컨트롤
 | `engines/utils.ts` | `calculateContentHeight`/`Width`: INLINE_FORM 테이블 기반 크기 계산 |
 
 ### 9.4 flexDirection:column 지원
+
+> 레이아웃 엔진 관련 — §4.7.4 CSS 단위 규칙 및 [ENGINE_UPGRADE.md](./ENGINE_UPGRADE.md) 참조.
 
 Spec `shapes()` 함수는 항상 row 레이아웃 좌표를 생성. column 지원을 위한 3단계 변환:
 
@@ -5299,7 +4899,7 @@ export const PixiXXX = memo(function PixiXXX({ element, onClick }: Props) {
 
 ### 10.4 Zustand 상태 관리 연동
 
-#### 9.4.1 Store와 Spec 연동 아키텍처
+#### 10.4.1 Store와 Spec 연동 아키텍처
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -5325,13 +4925,13 @@ export const PixiXXX = memo(function PixiXXX({ element, onClick }: Props) {
 │           │                                                  │
 │    ┌──────┴──────┐                                          │
 │    ▼             ▼                                          │
-│  React         PIXI                                         │
+│  React         CanvasKit/Skia                               │
 │  Renderer      Renderer                                     │
 │                                                              │
 └─────────────────────────────────────────────────────────────┘
 ```
 
-#### 9.4.2 Spec Adapter 구현
+#### 10.4.2 Spec Adapter 구현
 
 ```typescript
 // packages/specs/src/adapters/storeAdapter.ts
@@ -5387,7 +4987,7 @@ export function specPropsToElement<T>(
 }
 ```
 
-#### 9.4.3 ElementSprite에서 Skia 렌더링 사용 예시
+#### 10.4.3 ElementSprite에서 Skia 렌더링 사용 예시
 
 ```typescript
 // apps/builder/src/builder/workspace/canvas/ElementSprite.tsx (개념)
@@ -5423,7 +5023,7 @@ function ElementSpriteButton({ elementId }: { elementId: string }) {
 });
 ```
 
-#### 9.4.4 히스토리 연동
+#### 10.4.4 히스토리 연동
 
 ```typescript
 // Spec 변경 시 히스토리 기록 (CRITICAL 규칙 준수)
@@ -5447,7 +5047,7 @@ function updateElementFromSpec(elementId: string, newProps: Partial<ButtonProps>
 
 ### 10.5 테스트 전략
 
-#### 9.5.1 테스트 피라미드
+#### 10.5.1 테스트 피라미드
 
 ```
                     ┌─────────────┐
@@ -5464,7 +5064,7 @@ function updateElementFromSpec(elementId: string, newProps: Partial<ButtonProps>
               └─────────────────────────┘  - 80% of tests
 ```
 
-#### 9.5.2 Unit Test 범위
+#### 10.5.2 Unit Test 범위
 
 ```typescript
 // packages/specs/tests/unit/Button.spec.test.ts
@@ -5573,7 +5173,7 @@ describe('ButtonSpec', () => {
 });
 ```
 
-#### 9.5.3 Integration Test 범위
+#### 10.5.3 Integration Test 범위
 
 ```typescript
 // packages/specs/tests/integration/ReactRenderer.test.ts
@@ -5599,7 +5199,7 @@ describe('ReactRenderer Integration', () => {
 });
 ```
 
-#### 9.5.4 Visual Regression Test (확장)
+#### 10.5.4 Visual Regression Test (확장)
 
 ```typescript
 // packages/specs/tests/visual/consistency.test.ts
@@ -5643,7 +5243,7 @@ test.describe('React ↔ CanvasKit Visual Consistency', () => {
 });
 ```
 
-#### 9.5.5 테스트 커버리지 목표
+#### 10.5.5 테스트 커버리지 목표
 
 | 영역 | 최소 커버리지 | 목표 커버리지 |
 |------|-------------|-------------|
@@ -5654,7 +5254,7 @@ test.describe('React ↔ CanvasKit Visual Consistency', () => {
 | adapters/*.ts | 70% | 85% |
 | **전체** | **80%** | **90%** |
 
-#### 9.5.6 CI 테스트 파이프라인
+#### 10.5.6 CI 테스트 파이프라인
 
 ```yaml
 # .github/workflows/test.yml
@@ -5735,7 +5335,7 @@ function ElementSpriteButton({ element }) {
 | 성능 | 60fps 유지 | Chrome DevTools |
 | 번들 크기 | +10% 이하 | webpack-bundle-analyzer |
 | 테스트 커버리지 | > 80% | Vitest |
-| 마이그레이션 완료 | 72개 전체 | 체크리스트 |
+| 마이그레이션 완료 | 73개 전체 | 체크리스트 |
 
 ---
 
@@ -5862,9 +5462,10 @@ function ElementSpriteButton({ element }) {
 | 2026-02-06 | 2.7 | **Card display: block 완전 지원** (BuilderCanvas.tsx, PixiCard.tsx, unified.types.ts, utils.ts): (1) **Body 기본값 설정** — `createDefaultBodyProps()`에 `display: 'block'` 추가, Reset 시 컴포넌트 기본값 복원 (`useResetStyles.ts`), (2) **renderWithCustomEngine CONTAINER_TAGS 지원** — Card에 `display: 'block'` 추가 시 children이 외부 형제로 렌더링되는 문제 수정. `isContainerType` 체크 추가, `childElements`/`renderChildElement` props 전달로 children 내부 렌더링 구현. 3단계 nesting 지원 (Card > Panel > Button 등), (3) **Card 기본값 추가** — `createDefaultCardProps()`에 `display: 'block'`, `width: '100%'`, `padding: '12px'` 추가 (Preview CSS와 동기화), (4) **padding 이중 적용 수정** — `calculatedContentHeight` (PixiCard.tsx)와 `calculateContentHeight()` (utils.ts)에서 padding 제외. Yoga/BlockEngine이 별도 padding 추가하므로 content-only 값 반환. minHeight: 60→36 (padding 24px 제외), (5) **CONTAINER_TAGS siblings 자동 재배치** — `renderWithCustomEngine`에서 absolute→relative 위치 변환. flex column 래퍼로 감싸서 Card height 변경 시 siblings 자동 재배치. BlockEngine y→marginTop, x→marginLeft 변환, (6) **최종 결과** — children 내부 렌더링 ✅, padding 정상 적용 ✅, height auto-grow ✅, siblings 자동 재배치 ✅, Preview 일치 ✅ |
 | 2026-02-06 | 2.8 | **Block 레이아웃 라인 기반 렌더링 + Button 계열 사이즈 통일** (BuilderCanvas.tsx, cssVariableReader.ts, PixiToggleButton.tsx): (1) **inline 요소 가로 배치 수정** — `renderWithCustomEngine`에서 같은 y 값을 가진 요소들을 라인(flex row)으로 그룹화. 기존 flex column + marginLeft 방식 → 라인별 flex row + 라인 간 flex column으로 변경하여 계단식 배치 문제 해결, (2) **라인 그룹화 알고리즘** — BlockEngine 결과에서 y 값 기준(EPSILON=0.5) 라인 그룹 생성, x 기준 정렬 후 marginLeft로 간격 표현, 라인 간 marginTop으로 수직 간격 표현, (3) **ToggleButton/ToggleButtonGroup borderRadius 통일** — `TOGGLE_BUTTON_FALLBACKS` borderRadius를 Button과 동일하게 수정 (sm:6→4, md:8→6, lg:10→8), `TOGGLE_BUTTON_SIZE_MAPPING`에 borderRadius CSS 변수 추가, `getToggleButtonSizePreset()`에서 사이즈별 borderRadius 읽기, (4) **Button 계열 통일된 사이즈** — sm(fontSize:14, paddingY:4, paddingX:12, borderRadius:4), md(fontSize:16, paddingY:8, paddingX:24, borderRadius:6), lg(fontSize:18, paddingY:12, paddingX:32, borderRadius:8). Button, ToggleButton, ToggleButtonGroup 모두 동일 |
 | 2026-02-12 | 3.0 | **Phase 6 Spec Shapes → Skia 렌더링 파이프라인 문서화**: (1) 문서 상태를 "Phase 6 Skia Spec 렌더링 구현 완료"로 갱신, (2) 목차에 Phase 6 항목 추가 및 이후 섹션 번호 재조정 (9→10, 10→11), (3) Phase 요약 테이블에 Phase 6 행 추가 (specShapeConverter, line 렌더러, flexDirection 지원), (4) §9 Phase 6 섹션 신규 작성 — 전체 렌더링 흐름 다이어그램 (ComponentSpec → Shape[] → specShapesToSkia → SkiaNodeData → renderNode), Shape 타입 매핑 테이블 (8개 타입), 핵심 파일 구조, specShapeConverter 핵심 로직 (배경 box 추출/target 참조/색상 변환), ElementSprite TAG_SPEC_MAP 통합 코드, flexDirection row/column 지원 (rearrangeShapesForColumn), BlockEngine 통합 (calculateContentHeight/Width), Phase 6 체크리스트 (변환 인프라 9건 + 레이아웃 4건 + 검증 3건 완료) |
-| 2026-02-15 | 3.2 | **Button 텍스트 줄바꿈 시 높이 확장 (Skia + BlockEngine)**: (1) `measureSpecTextMinHeight()` 헬퍼 — spec shapes 내 텍스트 word-wrap 높이 측정 (ElementSprite.tsx), (2) `contentMinHeight` 패턴 — 다중 줄 시 `specHeight` 확장 + `cardCalculatedHeight` 전파 (ElementSprite.tsx), (3) 다중 줄 텍스트 `paddingTop` 보정 — `(specHeight - wrappedHeight) / 2` 수직 중앙 (ElementSprite.tsx), (4) `updateTextChildren` box 재귀 — specNode 내부 텍스트 크기 갱신 (SkiaOverlay.tsx), (5) **BlockEngine `parseBoxModel` 수정** — 요소 자체 border-box width를 `calculateContentHeight`에 전달, 부모 `availableWidth` 대신 사용하여 올바른 텍스트 줄바꿈 높이 계산 (utils.ts), (6) `styleToLayout` minHeight 기본 사이즈 `'md'`→`'sm'` 수정 (styleToLayout.ts), (7) Flex 경로는 `minHeight` → Yoga, BlockEngine 경로는 `parseBoxModel` → `calculateContentHeight`로 각각 처리, (8) **Button `layout.height` 명시적 설정** — Yoga 리프 노드 `height:'auto'` 자기 강화 방지, `paddingY*2 + lineHeight + borderW*2` 계산 (styleToLayout.ts), (9) 인라인 padding 시 `MIN_BUTTON_HEIGHT` 미적용 — padding:0으로 완전 축소 허용 (utils.ts), (10) `toNum` 함수 0값 버그 수정 — `parseFloat(v) \|\| undefined` → `isNaN` 체크 (styleToLayout.ts) |
 | 2026-02-13 | 3.1 | **ComponentDefinition 재귀 확장 + TagGroup CONTAINER_TAGS 전환** (§9.7): (1) ChildDefinition 재귀 타입 추가 — 기존 2-level (parent + flat children) → 무한 중첩 지원, optional children?: ChildDefinition[] 필드, (2) Factory createElementsFromDefinition 재귀 생성 — processChildren() 재귀 함수로 중첩 자식 일괄 생성, allElementsSoFar 배열로 customId 중복 방지, (3) TagGroup → CONTAINER_TAGS 전환 — TAG_SPEC_MAP에서 TagGroup/TagList 제거, PixiTagGroup 특수 렌더러 사용 중단, BoxSprite 기반 컨테이너로 전환, (4) TagGroup 3-level 계층 정의 — TagGroup(flex column) → Label + TagList(flex row wrap) → Tag×2, styleToLayout.ts에 TagGroup/TagList flex 기본값 추가, (5) Phase 3 §6.1 TagGroup 상태 "⚠️ 부분"→"✅ 정상 (CONTAINER_TAGS 전환)", Phase 3 체크리스트 TagGroup.spec.ts 완료 표기 |
-| 2026-02-19 | 3.5 | **§9.8.6 Pixi UI 컴포넌트 Skia 전환 현황**: 62개 전수 조사 — A등급(투명 히트영역, 전환 완료) 14개, B등급(WebGL 드로잉 잔존, 전환 필요) 47개, C등급(Dead Code) 1개. A등급 목표 패턴(PixiButton 참조) 문서화. B등급 47개 재작성 로드맵 |
-| 2026-02-19 | 3.6 | **웹 컴포넌트 전수 교차 대조**: (1) `packages/shared/src/components/` 60개 vs 설계 문서 대조 — 58/60 정상 등록(96.7%), (2) **Autocomplete 누락 발견** — SearchField+Menu 복합 컴포넌트, Pixi 파일·TAG_SPEC_MAP 모두 미등록. Phase 2 §5.1에 16번째 컴포넌트로 추가, 부록 A에 #73으로 추가, §9.8.6에 미구현 섹션 추가, (3) Breadcrumb.tsx는 Breadcrumbs 하위 아이템 컴포넌트로 독립 등록 불필요 확인, (4) 부록 A 전체 컴포넌트 수 72→73개로 갱신 |
-| 2026-02-19 | 3.4 | **§9.8 CONTAINER_TAGS 계층 선택(Drill-Down) 아키텍처 섹션 신규 작성**: (1) 설계 원칙 — 웹 컴포넌트 DOM 계층 = 캔버스 요소 계층 1:1 일치, (2) editingContextId 기반 계층 선택 메커니즘 — resolveClickTarget 알고리즘 + 더블클릭 enterEditingContext + Escape exitEditingContext + Layer Tree 자동 동기화, (3) 캔버스 이벤트 처리 구조 — CanvasKit(시각) + PixiJS alpha=0(이벤트) 이중 레이어, EventBoundary 히트테스팅, (4) 13개 CONTAINER_TAGS 구조적 일관성 현황 테이블 — Group/ToggleButtonGroup/TagGroup 정상, Card/Panel/Form/Dialog/Modal/Disclosure 등 Factory/Renderer 미비 현황 명시, (5) 웹 컴포넌트 구조 동일성 가이드라인 — 7개 체크리스트 + 5개 구조 동일성 원칙 |
+| 2026-02-15 | 3.2 | **Button 텍스트 줄바꿈 시 높이 확장 (Skia + BlockEngine)**: (1) `measureSpecTextMinHeight()` 헬퍼 — spec shapes 내 텍스트 word-wrap 높이 측정 (ElementSprite.tsx), (2) `contentMinHeight` 패턴 — 다중 줄 시 `specHeight` 확장 + `cardCalculatedHeight` 전파 (ElementSprite.tsx), (3) 다중 줄 텍스트 `paddingTop` 보정 — `(specHeight - wrappedHeight) / 2` 수직 중앙 (ElementSprite.tsx), (4) `updateTextChildren` box 재귀 — specNode 내부 텍스트 크기 갱신 (SkiaOverlay.tsx), (5) **BlockEngine `parseBoxModel` 수정** — 요소 자체 border-box width를 `calculateContentHeight`에 전달, 부모 `availableWidth` 대신 사용하여 올바른 텍스트 줄바꿈 높이 계산 (utils.ts), (6) `styleToLayout` minHeight 기본 사이즈 `'md'`→`'sm'` 수정 (styleToLayout.ts), (7) Flex 경로는 `minHeight` → Yoga, BlockEngine 경로는 `parseBoxModel` → `calculateContentHeight`로 각각 처리, (8) **Button `layout.height` 명시적 설정** — Yoga 리프 노드 `height:'auto'` 자기 강화 방지, `paddingY*2 + lineHeight + borderW*2` 계산 (styleToLayout.ts), (9) 인라인 padding 시 `MIN_BUTTON_HEIGHT` 미적용 — padding:0으로 완전 축소 허용 (utils.ts), (10) `toNum` 함수 0값 버그 수정 — `parseFloat(v) \|\| undefined` → `isNaN` 체크 (styleToLayout.ts) |
 | 2026-02-19 | 3.3 | **렌더링 엔진 변경 반영 — 문서 갱신**: (1) §4.7.4 CSS 단위 처리 규칙 — `Yoga` → `Taffy/Dropflow` 레이아웃 엔진, `parseCSSSize()` → `resolveCSSSizeValue()` + `CSSValueContext` 통합 파서 (cssValueParser.ts), 단위 테이블에 em/calc()/fit-content 추가, (2) §4.7.4.1 이중 padding 방지 — `SELF_PADDING_TAGS` + `stripSelfRenderedProps()` → `enrichWithIntrinsicSize()` + `parseBoxModel()` + `INLINE_BLOCK_TAGS` 패턴으로 교체, 레거시 코드를 접이식 블록으로 이동, (3) §9.3.4 레이아웃 통합 — `styleToLayout.ts` (Yoga) → `engines/utils.ts`의 `enrichWithIntrinsicSize()` (Taffy/Dropflow 공용), (4) §9.4 flexDirection:column — `styleToLayout.ts` 크기 계산 → `engines/utils.ts`의 `enrichWithIntrinsicSize()`, BlockEngine → DropflowBlockEngine, (5) §9.5 수정 파일 목록 — `layout/styleToLayout.ts` → `layout/engines/utils.ts` 참조 갱신, (6) §9.7 TagGroup — `Yoga flex layout (styleToLayout.ts)` → `Taffy flex layout (TaffyFlexEngine)`, styleToLayout.ts 파일 참조 제거, (7) §4.7.7 파일 목록 — SELF_PADDING_TAGS 참조에 대체 패턴 주석 추가, (8) Checkbox/Radio shapes 비교 테이블 — `Yoga 높이` → `엔진 계산 높이` |
+| 2026-02-19 | 3.4 | **§9.8 CONTAINER_TAGS 계층 선택(Drill-Down) 아키텍처 섹션 신규 작성**: (1) 설계 원칙 — 웹 컴포넌트 DOM 계층 = 캔버스 요소 계층 1:1 일치, (2) editingContextId 기반 계층 선택 메커니즘 — resolveClickTarget 알고리즘 + 더블클릭 enterEditingContext + Escape exitEditingContext + Layer Tree 자동 동기화, (3) 캔버스 이벤트 처리 구조 — CanvasKit(시각) + PixiJS alpha=0(이벤트) 이중 레이어, EventBoundary 히트테스팅, (4) 13개 CONTAINER_TAGS 구조적 일관성 현황 테이블 — Group/ToggleButtonGroup/TagGroup 정상, Card/Panel/Form/Dialog/Modal/Disclosure 등 Factory/Renderer 미비 현황 명시, (5) 웹 컴포넌트 구조 동일성 가이드라인 — 7개 체크리스트 + 5개 구조 동일성 원칙 |
+| 2026-02-19 | 3.5 | **§9.8.6 Pixi UI 컴포넌트 Skia 전환 현황**: 62개 전수 조사 — A등급(투명 히트영역, 전환 완료) 14개, B등급(WebGL 드로잉 잔존, 전환 필요) 47개, C등급(Dead Code) 1개. A등급 목표 패턴(PixiButton 참조) 문서화. B등급 47개 재작성 로드맵 |
+| 2026-02-19 | 3.7 | **문서 품질 검토 21건 수정**: (1) **CRITICAL** — §10.4/10.5 하위 10개 소섹션 번호 `9.x.x`→`10.x.x` 수정, 변경 이력 v3.0-3.6 시간순 정렬, 성공 기준 컴포넌트 수 72→73, Token Resolver `shadows.dark/light`→단일 `shadows` 객체, (2) **레거시 축소** — PixiRenderer 코드 블록 ~330줄→~30줄 핵심 인터페이스만 유지, parseCSSSize 레거시 패턴 ~55줄→폐기 요약 10줄, Phase 1-4 테스트 코드를 CanvasKit 기반으로 교체, waitForPixiRender→waitForCanvasKitRender, (3) **불일치 수정** — Shape→API 테이블 "현재 PixiJS"→"레거시 PixiJS"로 헤더 수정, 삭제된 eventBridge.ts/dirtyRectTracker.ts 디렉토리 구조에서 정리, roundRect per-corner radius TODO 추가, (4) **누락 보완** — Taffy(Flex/Grid) vs Dropflow(Block/Inline) 역할 분담 테이블 추가, GradientShape→SkiaNodeData 매핑 테이블 추가, __canvasKitReady 플래그 설정 위치 설명 추가, §4.7.4 관련 파일 정리 블록 추가, (5) **구조 개선** — §9.4 flexDirection에 레이아웃 아키텍처 교차 참조 추가, CSS 단위 파싱 관련 파일 3종 정리 블록으로 혼동 방지, §10.4.1 다이어그램 PIXI→CanvasKit/Skia Renderer 수정 |
+| 2026-02-19 | 3.6 | **웹 컴포넌트 전수 교차 대조**: (1) `packages/shared/src/components/` 60개 vs 설계 문서 대조 — 58/60 정상 등록(96.7%), (2) **Autocomplete 누락 발견** — SearchField+Menu 복합 컴포넌트, Pixi 파일·TAG_SPEC_MAP 모두 미등록. Phase 2 §5.1에 16번째 컴포넌트로 추가, 부록 A에 #73으로 추가, §9.8.6에 미구현 섹션 추가, (3) Breadcrumb.tsx는 Breadcrumbs 하위 아이템 컴포넌트로 독립 등록 불필요 확인, (4) 부록 A 전체 컴포넌트 수 72→73개로 갱신 |
