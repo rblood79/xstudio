@@ -2992,22 +2992,58 @@ if (ENABLE_BUTTON_SPEC) {
 
 #### 4.7.4 CSS 단위 처리 규칙
 
-**CanvasKit/Skia 렌더링 (현재):** Yoga 레이아웃 엔진이 CSS 단위(%, vw, vh, rem)를 **절대 px로 변환**한 결과를 CanvasKit이 받으므로, CanvasKit 렌더러에서는 CSS 단위 해석이 **불필요**하다. `skiaNodeData.width/height` 등 이미 계산된 숫자를 직접 사용한다.
+**CanvasKit/Skia 렌더링 (현재):** Taffy/Dropflow 레이아웃 엔진이 CSS 단위(%, vw, vh, rem, calc 등)를 **절대 px로 변환**한 결과를 CanvasKit이 받으므로, CanvasKit 렌더러에서는 CSS 단위 해석이 **불필요**하다. `skiaNodeData.width/height` 등 이미 계산된 숫자를 직접 사용한다.
 
-| 항목 | Phase 1-4 (PixiJS) | 현재 (CanvasKit) |
+| 항목 | Phase 1-4 (PixiJS) | 현재 (CanvasKit + Taffy/Dropflow) |
 |------|---------------------|---------------------|
-| CSS 단위 해석 | 각 Pixi 컴포넌트에서 `parseCSSSize()` 필요 | **불필요** — Yoga가 px로 변환 완료 |
-| viewport 크기 참조 | vw/vh → parentContentArea 기준 변환 | Yoga가 처리, CanvasKit은 결과만 수신 |
-| % 단위 | 부모 content area 수동 계산 | Yoga가 자동 계산 |
+| CSS 단위 해석 | 각 Pixi 컴포넌트에서 `parseCSSSize()` 필요 | **불필요** — 레이아웃 엔진이 px로 변환 완료 |
+| viewport 크기 참조 | vw/vh → parentContentArea 기준 변환 | `resolveCSSSizeValue()`가 `CSSValueContext`로 처리, CanvasKit은 결과만 수신 |
+| % 단위 | 부모 content area 수동 계산 | Taffy/Dropflow가 자동 계산 |
 | 입력 형식 | CSS 문자열 ("16px", "50%") | 숫자 (px 절대값) |
+
+**CSS 단위 파서 (`cssValueParser.ts`):**
+
+```typescript
+import { resolveCSSSizeValue, CSSValueContext } from '../layout/engines/cssValueParser';
+
+// 통합 CSS 크기 값 파서 — px, %, vh, vw, em, rem, calc(), clamp(), min(), max() 지원
+function resolveCSSSizeValue(
+  value: unknown,
+  ctx: CSSValueContext = {},
+  fallback?: number,
+): number | undefined;
+
+interface CSSValueContext {
+  parentSize?: number;          // em 참조
+  containerSize?: number;       // % 참조
+  viewportWidth?: number;       // vw 참조
+  viewportHeight?: number;      // vh 참조
+  rootFontSize?: number;        // rem 참조 (기본 16)
+  variableScope?: CSSVariableScope;  // CSS var() 참조
+}
+```
+
+**단위별 해석 기준**:
+
+| 단위 | resolveCSSSizeValue 해석 | 참조 컨텍스트 |
+|------|--------------------------|--------------|
+| `px` | 절대 픽셀값 | — |
+| `%` | `ctx.containerSize` 기준 비율 | 부모 content area |
+| `vw` | `ctx.viewportWidth` 기준 비율 | 캔버스 너비 |
+| `vh` | `ctx.viewportHeight` 기준 비율 | 캔버스 높이 |
+| `rem` | `ctx.rootFontSize` × 계수 (기본 16) | 루트 폰트 크기 |
+| `em` | `ctx.parentSize` × 계수 | 부모 폰트 크기 |
+| `calc()` | 중첩 단위 해석 + 산술 연산 | 복합 컨텍스트 |
+| `fit-content` | sentinel -2 | 엔진 내부 처리 |
+| `auto` | undefined (엔진 자동 계산) | — |
 
 > **⚠️ 예외: 시각 전용 속성 (borderRadius, borderColor 등)**
 >
-> Yoga가 변환하는 것은 **레이아웃 속성**(width, height, padding, margin 등)뿐이다.
-> `borderRadius`와 같은 **시각 전용 속성**은 Yoga를 거치지 않으므로 `element.props.style`에
+> Taffy/Dropflow가 변환하는 것은 **레이아웃 속성**(width, height, padding, margin 등)뿐이다.
+> `borderRadius`와 같은 **시각 전용 속성**은 레이아웃 엔진을 거치지 않으므로 `element.props.style`에
 > CSS 문자열 형태(`"12px"`, `"8"`)로 남아 있다.
 > `ElementSprite`의 Skia 폴백에서 이런 속성을 읽을 때는 반드시 `convertStyle()`의 반환값을
-> 사용하거나 `parseCSSSize()`로 파싱해야 한다.
+> 사용해야 한다.
 >
 > ```typescript
 > // ❌ 금지: raw style 직접 typeof 체크 (CSS 문자열이면 항상 0)
@@ -3024,8 +3060,8 @@ if (ENABLE_BUTTON_SPEC) {
 <details>
 <summary>Phase 1-4 레거시: Pixi UI 컴포넌트 CSS 단위 해석 규칙</summary>
 
-> 아래 규칙은 Phase 1-4 PixiJS 컴포넌트에만 적용된다.
-> CanvasKit 렌더러에서는 Yoga가 px 변환을 완료하므로 불필요.
+> 아래 규칙은 Phase 1-4 PixiJS 컴포넌트에만 적용되었던 레거시 규칙이다.
+> 현재는 Taffy/Dropflow 레이아웃 엔진 + `resolveCSSSizeValue()`로 대체되어 불필요.
 
 모든 Pixi UI 컴포넌트(PixiButton, PixiToggleButton, PixiSlider 등)에서 inline style의 CSS 값을
 WebGL 그래픽 크기로 변환할 때 반드시 아래 규칙을 따라야 합니다.
@@ -3075,47 +3111,6 @@ const parsedPadding = parsePadding(style);  // "8px" → 4방향, paddingTop 등
 // 5. border width 4방향 파싱
 const parsedBorder = parseBorderWidth(style);  // "2px" → 4방향, borderTopWidth 등으로 override
 ```
-
-**단위별 해석 기준**:
-
-| 단위 | parseCSSSize 해석 | Yoga (styleToLayout) 해석 |
-|------|------------------|--------------------------|
-| `px` | 절대 픽셀값 | 절대 픽셀값 |
-| `%` | parentContentArea 기준 | 부모 content area 기준 (문자열 유지) |
-| `vw` | parentContentArea.width 기준 | `%` 문자열로 변환 → 부모 기준 |
-| `vh` | parentContentArea.height 기준 | `%` 문자열로 변환 → 부모 기준 |
-| `rem` | × 16 (절대값) | × 16 (절대값) |
-| `auto` | fallback 값 | undefined (Yoga 자동 계산) |
-
-**적용 필수 컴포넌트 목록** (18개):
-
-| 컴포넌트 | CSS 단위 파싱 | SELF_PADDING_TAGS | 잔여 작업 |
-|----------|:----------:|:-----------------:|----------|
-| **PixiButton** | ✅ 완료 | ✅ 등록됨 | — |
-| **PixiFancyButton** | ❌ typeof 사용 중 | ✅ 등록됨 | parseCSSSize/parsePadding/parseBorderWidth 전환 필요 |
-| **PixiToggleButton** | ❌ typeof 사용 중 | ✅ 등록됨 | parseCSSSize/parsePadding/parseBorderWidth 전환 필요 |
-| PixiToggleButtonGroup | ✅ 완료 | — | container-only 패턴, LayoutComputedSizeContext 사용 (2026-02-04) |
-| **PixiCard** | ✅ 완료 | — | LayoutComputedSizeContext 패턴, 다중 텍스트 Skia 렌더링 (2026-02-04) |
-| PixiSlider | ❌ | — | 전체 마이그레이션 |
-| PixiSwitcher | ❌ | — | 전체 마이그레이션 |
-| PixiSelect | ❌ | — | 전체 마이그레이션 |
-| PixiSeparator | ❌ | — | 전체 마이그레이션 |
-| PixiMeter | ❌ | — | 전체 마이그레이션 |
-| PixiProgressBar | ❌ | — | 전체 마이그레이션 |
-| PixiRadio | ❌ | — | 전체 마이그레이션 |
-| PixiRadioItem | ❌ | — | 전체 마이그레이션 |
-| PixiScrollBox | ❌ | — | 전체 마이그레이션 |
-| PixiList | ❌ | — | 전체 마이그레이션 |
-| PixiListBox | ❌ | — | 전체 마이그레이션 |
-| PixiMaskedFrame | ❌ | — | 전체 마이그레이션 |
-| PixiCheckbox | ❌ | — | 전체 마이그레이션 |
-| PixiCheckboxGroup | ❌ | — | 전체 마이그레이션 |
-| PixiCheckboxItem | ❌ | — | 전체 마이그레이션 |
-
-> **Note**: PixiFancyButton, PixiToggleButton은 `SELF_PADDING_TAGS` 등록으로 이중 padding 방지는 완료.
-> 그러나 `typeof === 'number'` → `parseCSSSize()`/`parsePadding()`/`parseBorderWidth()` 전환은 미완료 상태.
-> CSS 문자열 값("16px", "50%", "100vw")이 무시되는 버그가 잔존.
-
 
 </details>
 
@@ -3179,41 +3174,39 @@ pnpm --filter @xstudio/builder dev
 
 #### 4.7.4.1 Padding/Border 이중 적용 방지 (CRITICAL)
 
-자체적으로 padding/border를 그래픽 크기에 반영하는 Pixi UI 컴포넌트(PixiButton 등)는
-외부 LayoutContainer(Yoga)에 padding/border를 전달하면 **이중 적용**됩니다.
+자체적으로 padding/border를 그래픽 크기에 반영하는 leaf UI 컴포넌트(Button 등)는
+레이아웃 엔진(Taffy/Dropflow)에도 padding/border를 전달하면 **이중 적용**된다.
 
-- **Yoga 경로**: `styleToLayout()`이 padding/border를 LayoutContainer에 전달
-  → Yoga가 내부 콘텐츠를 해당 값만큼 오프셋
-- **컴포넌트 자체**: padding/border를 Graphics 크기에 반영
-- **결과**: 위치 이동 + 크기 변경 이중 발생
+**현행 해결 방식: `enrichWithIntrinsicSize()` + `parseBoxModel()`**
 
-**해결**: `BuilderCanvas.tsx`의 `stripSelfRenderedProps()` + `SELF_PADDING_TAGS`
+```
+layout/engines/utils.ts
+├── enrichWithIntrinsicSize()    # leaf UI 컴포넌트의 intrinsic 크기 주입
+├── parseBoxModel()              # 폼 요소 기본 padding/border + border-box 변환
+└── INLINE_BLOCK_TAGS            # 대상 컴포넌트 목록
+```
+
+- **`INLINE_BLOCK_TAGS`**: leaf UI 컴포넌트 식별 (`button`, `badge`, `chip`, `checkbox`, `radio`, `switch`, `togglebutton`, `togglebuttongroup` 등)
+- **`enrichWithIntrinsicSize()`**: CSS 미지정 시 spec 기본 padding/border를 포함한 intrinsic width/height 계산 → 엔진에 content 크기로 전달
+- **`parseBoxModel()`**: 폼 요소에서 명시적 CSS가 없으면 `INLINE_UI_SIZE_CONFIGS` 기본값 적용, border-box → content-box 변환으로 엔진과 self-rendering 간 이중 계산 방지
+
+**핵심 원칙**: 레이아웃 엔진은 **content-box 크기**만 받고, 시각적 padding/border는 spec shapes 또는 컴포넌트 self-rendering에서 처리
+
+<details>
+<summary>레거시: SELF_PADDING_TAGS 패턴 (제거됨)</summary>
+
+> 아래 패턴은 @pixi/layout LayoutContainer + Yoga 시절에 사용되었으며, 현재는 제거되었다.
+> `enrichWithIntrinsicSize()` + `parseBoxModel()`이 이 역할을 대체한다.
 
 ```typescript
-// 자체 padding/border 렌더링 컴포넌트 (leaf UI)
+// [제거됨] BuilderCanvas.tsx의 SELF_PADDING_TAGS
 const SELF_PADDING_TAGS = new Set([
   'Button', 'SubmitButton', 'FancyButton', 'ToggleButton',
 ]);
-
-// 외부 LayoutContainer에서 padding/border/visual 속성 제거
-function stripSelfRenderedProps(layout: LayoutStyle): LayoutStyle {
-  const {
-    padding: _p, paddingTop: _pt, paddingRight: _pr, paddingBottom: _pb, paddingLeft: _pl,
-    borderWidth: _bw, borderTopWidth: _btw, borderRightWidth: _brw,
-    borderBottomWidth: _bbw, borderLeftWidth: _blw,
-    borderRadius: _br, borderColor: _bc, backgroundColor: _bg,
-    ...rest
-  } = layout;
-  return rest;
-}
-
-// renderTree에서 적용
-const effectiveLayout = SELF_PADDING_TAGS.has(child.tag)
-  ? stripSelfRenderedProps(baseLayout)
-  : baseLayout;
+function stripSelfRenderedProps(layout: LayoutStyle): LayoutStyle { ... }
 ```
 
-**새 컴포넌트가 자체 padding/border 렌더링을 구현하면 반드시 `SELF_PADDING_TAGS`에 추가**
+</details>
 
 #### 4.7.4.2 BlockEngine Border-Box 크기 계산 (CRITICAL)
 
@@ -3489,7 +3482,7 @@ export function smoothRoundRect(
 | `apps/builder/.../stores/utils/elementHelpers.ts` | computeCanvasElementStyle 추가 |
 | `apps/builder/.../canvas/ui/PixiButton.tsx` | Feature Flag 마이그레이션, spec 기본 borderWidth 적용 (v1.10) |
 | `apps/builder/.../canvas/utils/graphicsUtils.ts` | smoothRoundRect 구현 |
-| `apps/builder/.../canvas/BuilderCanvas.tsx` | `SELF_PADDING_TAGS` + `stripSelfRenderedProps` 추가 (v1.10) |
+| `apps/builder/.../canvas/BuilderCanvas.tsx` | ~~`SELF_PADDING_TAGS` + `stripSelfRenderedProps`~~ → `enrichWithIntrinsicSize` + `parseBoxModel` 패턴으로 대체 (v1.10→v3.3) |
 | `apps/builder/.../canvas/layout/engines/BlockEngine.ts` | content-box → border-box 크기 변환 (v1.10) |
 | `apps/builder/.../canvas/layout/engines/utils.ts` | `VERTICALLY_CENTERED_TAGS` baseline 수정 (v1.10), `BUTTON_SIZE_CONFIG` padding 동기화 + fontFamily specs 참조 (v1.11), `BUTTON_SIZE_CONFIG.borderWidth` 추가 + `calculateContentWidth` 순수 텍스트 반환 + `parseBoxModel` 폼 요소 기본값 + `measureTextWidth` export (v1.12), `parseBoxModel`에서 요소 자체 width를 `calculateContentHeight`에 전달 (v1.15.1) |
 | `packages/specs/src/components/Button.spec.ts` | paddingX md:16→24, lg:24→32, xl:32→40, fontFamily specs 상수 사용 (v1.11), 전 variant border/borderHover 추가 (v1.12) |
@@ -4641,20 +4634,20 @@ line?: {
 
 #### 9.3.4 레이아웃 통합
 
-Body의 `display: 'block'` → BlockEngine 경로에서의 폼 컨트롤 크기 계산:
+Body의 `display: 'block'` → DropflowBlockEngine 경로에서의 폼 컨트롤 크기 계산:
 
 | 파일 | 변경 |
 |------|------|
-| `styleToLayout.ts` | Yoga 경로: flexDirection별 크기 (row: `INLINE_FORM_HEIGHTS`, column: `indicator + gap + textLineHeight`) |
-| `engines/utils.ts` | BlockEngine 경로: `calculateContentHeight`/`Width`에 INLINE_FORM 테이블 추가 |
+| `engines/utils.ts` | `enrichWithIntrinsicSize()`: leaf UI 컴포넌트 intrinsic 크기 주입 (Taffy Flex/Dropflow Block 공용) |
+| `engines/utils.ts` | `calculateContentHeight`/`Width`: INLINE_FORM 테이블 기반 크기 계산 |
 
 ### 9.4 flexDirection:column 지원
 
 Spec `shapes()` 함수는 항상 row 레이아웃 좌표를 생성. column 지원을 위한 3단계 변환:
 
 1. **shapes 좌표 변환** (`rearrangeShapesForColumn`): indicator 중앙 배치, text를 indicator 아래로 이동
-2. **크기 계산** (`styleToLayout.ts`): column → height = indicator + gap + textLineHeight, width = max(indicator, textWidth)
-3. **BlockEngine 동기화** (`engines/utils.ts`): 동일한 column 크기 계산을 BlockEngine 경로에도 적용
+2. **크기 계산** (`engines/utils.ts`의 `enrichWithIntrinsicSize()`): column → height = indicator + gap + textLineHeight, width = max(indicator, textWidth)
+3. **BlockEngine 동기화** (`engines/utils.ts`): 동일한 column 크기 계산을 DropflowBlockEngine 경로에도 적용
 
 ### 9.5 수정 파일 목록
 
@@ -4664,8 +4657,7 @@ Spec `shapes()` 함수는 항상 row 레이아웃 좌표를 생성. column 지�
 | `skia/specShapeConverter.ts` | **신규** — Shape[] → SkiaNodeData 변환기 |
 | `skia/aiEffects.ts` | borderRadius 튜플 타입 호환 |
 | `sprites/ElementSprite.tsx` | getSpecForTag, spec 렌더링, column 재배치 |
-| `layout/styleToLayout.ts` | 폼 컨트롤 flex 기본값 + flexDirection 크기 |
-| `layout/engines/utils.ts` | calculateContentHeight/Width 폼 컨트롤 + flexDirection |
+| `layout/engines/utils.ts` | enrichWithIntrinsicSize + calculateContentHeight/Width 폼 컨트롤 + flexDirection |
 | `types/builder/unified.types.ts` | Checkbox/Radio/Switch 기본 props |
 
 ### 9.6 props.style 오버라이드 패턴 (2026-02-12)
@@ -4688,7 +4680,7 @@ shapes: (props, variant, size, state = 'default') => {
   const paddingX = props.style?.paddingLeft ?? props.style?.padding ?? size.paddingX;
 
   return [
-    { id: 'bg', type: 'roundRect', width: 'auto', height: 'auto', // ← Yoga 높이 사용
+    { id: 'bg', type: 'roundRect', width: 'auto', height: 'auto', // ← 레이아웃 엔진 높이 사용
       fill: bgColor, radius: borderRadius, fillAlpha: variant.backgroundAlpha ?? 1 },
     { type: 'border', target: 'bg', borderWidth,
       color: props.style?.borderColor ?? variant.border },
@@ -4720,9 +4712,9 @@ shapes: (props, variant, size, state = 'default') => {
 
 | 항목 | 수정 전 | 수정 후 |
 |------|---------|---------|
-| **배경 roundRect** | `height: size.height` (고정) | `height: 'auto'` (Yoga 높이) |
+| **배경 roundRect** | `height: size.height` (고정) | `height: 'auto'` (엔진 계산 높이) |
 | **배경 roundRect width** | `props.style?.width \|\| 'auto'` | `'auto' as const` (9개 spec 수정) |
-| **specHeight** | `Math.min(sizeSpec.height, finalHeight)` | `finalHeight` (항상 Yoga) |
+| **specHeight** | `Math.min(sizeSpec.height, finalHeight)` | `finalHeight` (항상 엔진 계산값) |
 | **MIN_BUTTON_HEIGHT** | 24px 최소값 제한 | 제거 (PixiButton.tsx) |
 | **gradient fill** | spec shapes가 `boxData.fill` 클리어 → 소실 | `boxData.fill → specNode.box.fill` 이전 후 클리어 |
 | **effectiveElement %** | `(parseFloat(w) / 100) * computedContainerSize` (이중 적용) | `computedContainerSize.width` 직접 사용 |
@@ -4906,27 +4898,20 @@ return {
 |------|---------|---------|
 | **렌더링** | `PixiTagGroup.tsx` (전용 Graphics 렌더링) | BoxSprite 기본 컨테이너 (CONTAINER_TAGS) |
 | **TAG_SPEC_MAP** | TagGroup 등록 | 제거 (spec shapes 미사용) |
-| **레이아웃** | PixiTagGroup 내부 계산 | Yoga flex layout (styleToLayout.ts) |
+| **레이아웃** | PixiTagGroup 내부 계산 | Taffy flex layout (TaffyFlexEngine) |
 | **구조** | 2-level (parent + flat children) | 3-level (TagGroup → TagList → Tag) |
 | **CSS 동기화** | 수동 동기화 | props.style로 직접 적용 |
 
-**styleToLayout.ts 레이아웃 기본값:**
+**레이아웃 기본값 (props.style로 적용):**
 
 ```typescript
 // TagGroup: 기본 flex column 레이아웃 (Label + TagList 수직 배치)
-const isTagGroup = tag === 'taggroup';
-if (isTagGroup) {
-  if (!style.display) layout.display = 'flex';
-  if (!style.flexDirection) layout.flexDirection = 'column';
-}
+// → props.style: { display: 'flex', flexDirection: 'column' }
+// → TaffyFlexEngine이 Flex 레이아웃 계산
 
 // TagList: 기본 flex row wrap 레이아웃 (Tags 가로 배치)
-const isTagList = tag === 'taglist';
-if (isTagList) {
-  if (!style.display) layout.display = 'flex';
-  if (!style.flexDirection) layout.flexDirection = 'row';
-  if (!style.flexWrap) layout.flexWrap = 'wrap';
-}
+// → props.style: { display: 'flex', flexDirection: 'row', flexWrap: 'wrap', gap: 4 }
+// → TaffyFlexEngine이 Flex 레이아웃 계산
 ```
 
 **수정 파일:**
@@ -4936,7 +4921,6 @@ if (isTagList) {
 | `factories/types/index.ts` | `ChildDefinition` 재귀 타입 추가 |
 | `factories/utils/elementCreation.ts` | `processChildren()` 재귀 생성 함수 |
 | `factories/definitions/GroupComponents.ts` | TagGroup 3-level 정의 (재귀 children) |
-| `layout/styleToLayout.ts` | TagGroup/TagList flex 기본 레이아웃 |
 | `sprites/ElementSprite.tsx` | TAG_SPEC_MAP에서 TagGroup/TagList 제거 |
 | `ui/PixiTagGroup.tsx` | 특수 렌더러 사용 중단 (CONTAINER_TAGS 대체) |
 
@@ -5609,3 +5593,4 @@ function ElementSpriteButton({ element }) {
 | 2026-02-12 | 3.0 | **Phase 6 Spec Shapes → Skia 렌더링 파이프라인 문서화**: (1) 문서 상태를 "Phase 6 Skia Spec 렌더링 구현 완료"로 갱신, (2) 목차에 Phase 6 항목 추가 및 이후 섹션 번호 재조정 (9→10, 10→11), (3) Phase 요약 테이블에 Phase 6 행 추가 (specShapeConverter, line 렌더러, flexDirection 지원), (4) §9 Phase 6 섹션 신규 작성 — 전체 렌더링 흐름 다이어그램 (ComponentSpec → Shape[] → specShapesToSkia → SkiaNodeData → renderNode), Shape 타입 매핑 테이블 (8개 타입), 핵심 파일 구조, specShapeConverter 핵심 로직 (배경 box 추출/target 참조/색상 변환), ElementSprite TAG_SPEC_MAP 통합 코드, flexDirection row/column 지원 (rearrangeShapesForColumn), BlockEngine 통합 (calculateContentHeight/Width), Phase 6 체크리스트 (변환 인프라 9건 + 레이아웃 4건 + 검증 3건 완료) |
 | 2026-02-15 | 3.2 | **Button 텍스트 줄바꿈 시 높이 확장 (Skia + BlockEngine)**: (1) `measureSpecTextMinHeight()` 헬퍼 — spec shapes 내 텍스트 word-wrap 높이 측정 (ElementSprite.tsx), (2) `contentMinHeight` 패턴 — 다중 줄 시 `specHeight` 확장 + `cardCalculatedHeight` 전파 (ElementSprite.tsx), (3) 다중 줄 텍스트 `paddingTop` 보정 — `(specHeight - wrappedHeight) / 2` 수직 중앙 (ElementSprite.tsx), (4) `updateTextChildren` box 재귀 — specNode 내부 텍스트 크기 갱신 (SkiaOverlay.tsx), (5) **BlockEngine `parseBoxModel` 수정** — 요소 자체 border-box width를 `calculateContentHeight`에 전달, 부모 `availableWidth` 대신 사용하여 올바른 텍스트 줄바꿈 높이 계산 (utils.ts), (6) `styleToLayout` minHeight 기본 사이즈 `'md'`→`'sm'` 수정 (styleToLayout.ts), (7) Flex 경로는 `minHeight` → Yoga, BlockEngine 경로는 `parseBoxModel` → `calculateContentHeight`로 각각 처리, (8) **Button `layout.height` 명시적 설정** — Yoga 리프 노드 `height:'auto'` 자기 강화 방지, `paddingY*2 + lineHeight + borderW*2` 계산 (styleToLayout.ts), (9) 인라인 padding 시 `MIN_BUTTON_HEIGHT` 미적용 — padding:0으로 완전 축소 허용 (utils.ts), (10) `toNum` 함수 0값 버그 수정 — `parseFloat(v) \|\| undefined` → `isNaN` 체크 (styleToLayout.ts) |
 | 2026-02-13 | 3.1 | **ComponentDefinition 재귀 확장 + TagGroup CONTAINER_TAGS 전환** (§9.7): (1) ChildDefinition 재귀 타입 추가 — 기존 2-level (parent + flat children) → 무한 중첩 지원, optional children?: ChildDefinition[] 필드, (2) Factory createElementsFromDefinition 재귀 생성 — processChildren() 재귀 함수로 중첩 자식 일괄 생성, allElementsSoFar 배열로 customId 중복 방지, (3) TagGroup → CONTAINER_TAGS 전환 — TAG_SPEC_MAP에서 TagGroup/TagList 제거, PixiTagGroup 특수 렌더러 사용 중단, BoxSprite 기반 컨테이너로 전환, (4) TagGroup 3-level 계층 정의 — TagGroup(flex column) → Label + TagList(flex row wrap) → Tag×2, styleToLayout.ts에 TagGroup/TagList flex 기본값 추가, (5) Phase 3 §6.1 TagGroup 상태 "⚠️ 부분"→"✅ 정상 (CONTAINER_TAGS 전환)", Phase 3 체크리스트 TagGroup.spec.ts 완료 표기 |
+| 2026-02-19 | 3.3 | **렌더링 엔진 변경 반영 — 문서 갱신**: (1) §4.7.4 CSS 단위 처리 규칙 — `Yoga` → `Taffy/Dropflow` 레이아웃 엔진, `parseCSSSize()` → `resolveCSSSizeValue()` + `CSSValueContext` 통합 파서 (cssValueParser.ts), 단위 테이블에 em/calc()/fit-content 추가, (2) §4.7.4.1 이중 padding 방지 — `SELF_PADDING_TAGS` + `stripSelfRenderedProps()` → `enrichWithIntrinsicSize()` + `parseBoxModel()` + `INLINE_BLOCK_TAGS` 패턴으로 교체, 레거시 코드를 접이식 블록으로 이동, (3) §9.3.4 레이아웃 통합 — `styleToLayout.ts` (Yoga) → `engines/utils.ts`의 `enrichWithIntrinsicSize()` (Taffy/Dropflow 공용), (4) §9.4 flexDirection:column — `styleToLayout.ts` 크기 계산 → `engines/utils.ts`의 `enrichWithIntrinsicSize()`, BlockEngine → DropflowBlockEngine, (5) §9.5 수정 파일 목록 — `layout/styleToLayout.ts` → `layout/engines/utils.ts` 참조 갱신, (6) §9.7 TagGroup — `Yoga flex layout (styleToLayout.ts)` → `Taffy flex layout (TaffyFlexEngine)`, styleToLayout.ts 파일 참조 제거, (7) §4.7.7 파일 목록 — SELF_PADDING_TAGS 참조에 대체 패턴 주석 추가, (8) Checkbox/Radio shapes 비교 테이블 — `Yoga 높이` → `엔진 계산 높이` |
