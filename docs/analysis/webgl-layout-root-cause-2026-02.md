@@ -163,3 +163,42 @@ main 브랜치 코드 기준으로, 특정 버튼 사례를 넘어 **전반적�
 7. **inline formatting 고도화**: line box/baseline/white-space 규칙을 Dropflow 경로와 정합
 
 이 순서대로 진행해야 "증상 패치"가 아닌 근본 개선이 가능하다.
+
+---
+
+## 추가 점검: WebGL에서 CSS와 다르게 보일 가능성이 높은 항목
+
+아래 항목은 현재 구조에서 **재현 가능성이 높은 차이 지점**이다.
+
+### A. 컨테이너(flex/block/grid) ↔ 자식 상호작용
+- `align-items: stretch` + 자식 `height:auto` 조합에서 자식 높이 과확장/과축소
+- `flex-direction: row/column` 전환 시 동일 자식의 wrap 기준점 변화
+- 부모 `display` 변경(block ↔ flex ↔ grid) 시 자식 `inline/inline-block` 의미 변화
+- `overflow:auto/scroll`에서 콘텐츠 경계 계산과 실제 스크롤 max 불일치
+
+### B. 크기/단위 해석
+- `width/height: auto`가 엔진별로 다른 시점에 해석되어 결과 불일치
+- `fit-content/min-content/max-content`가 사전 주입 실패 시 0 근처로 붕괴
+- `rem/em/vh/vw/calc()/var()` 조합에서 parseFloat 기반 축약으로 오차 누적
+- `min/max-width/height` 제약이 부모의 Definite 공간 강제와 충돌
+
+### C. 자식 텍스트/인라인 포맷팅
+- 고정 width + 긴 텍스트(2줄 이상)에서 실제 줄바꿈 높이와 계산 높이 차이
+- baseline/middle 정렬이 line box 규칙과 달라 y-offset 누적
+- inline-block 연속 배치 중간에 block 자식이 삽입될 때 line break 불연속
+
+### D. 위치/오프셋/특수 케이스
+- `position: relative` + `%` 오프셋이 0 처리되어 CSS 대비 위치 오차
+- `position: absolute/fixed` 자식의 containing block 해석 차이
+- grid `repeat(auto-fill/auto-fit)`와 gap 계산에서 트랙 수 차이
+- margin collapse가 block 경계/세그먼트 전환에서 CSS와 다르게 적용
+
+## 실무 권장: 버그 리포트 최소 재현 템플릿
+
+문제 제보 시 아래 5가지를 함께 기록하면 원인 분류가 빠르다.
+
+1. 부모 `display`, `flex-direction`, `align-items/justify-content`
+2. 자식의 `width/height/min/max`와 단위(px/%/rem/calc/var)
+3. 자식 텍스트 길이, `white-space`, 줄 수 변화 여부
+4. 부모/자식 `position`, `overflow`, `gap`, `margin/padding`
+5. 같은 트리를 iframe CSS Preview와 WebGL에서 캡처한 비교 이미지
