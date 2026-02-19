@@ -238,8 +238,8 @@
 | `rgb()` / `rgba()` | ✅ | `styleConverter.ts:126-145` | |
 | `hsl()` / `hsla()` | ✅ | `styleConverter.ts:126-145` | |
 | Named colors | ✅ | `styleConverter.ts:126-145` | CSS named colors 전체 |
-| `lab()` / `lch()` / `oklch()` | ❌ | — | |
-| `color()` 함수 | ❌ | — | |
+| `lab()` / `lch()` / `oklch()` | ✅ | `styleConverter.ts` | oklch: LMS 경유 직접 변환, lab/lch: colord 플러그인 |
+| `color()` 함수 | ✅ | `styleConverter.ts` | srgb, display-p3 지원 (P3→sRGB 행렬 변환) |
 | `color-mix()` | ✅ | `styleConverter.ts` resolveColorMix | in srgb RGB 보간, 재귀 중첩 지원 (depth 5) |
 | `currentColor` | ✅ | `cssResolver.ts` preprocessStyle | 단독 + 복합값(box-shadow 등) 내 토큰 치환 |
 
@@ -256,8 +256,8 @@
 | `font-weight` | ✅ | `cssResolver.ts:23`, `nodeRenderers.ts:595-606` | 100-900, normal, bold — CanvasKit FontWeight 매핑 |
 | `font-style` | ✅ | `cssResolver.ts:24`, `nodeRenderers.ts:608-615` | normal, italic, oblique |
 | `font` (shorthand) | ✅ | `cssValueParser.ts` parseFontShorthand, `cssResolver.ts` | style/weight/size/line-height/family 분리, 개별 속성 우선 |
-| `font-variant` | ❌ | — | |
-| `font-stretch` | ❌ | — | |
+| `font-variant` | ✅ | `cssResolver.ts`, `nodeRenderers.ts` | small-caps, oldstyle-nums 등 → CanvasKit fontFeatures |
+| `font-stretch` | ✅ | `cssResolver.ts`, `nodeRenderers.ts` | condensed~expanded → CanvasKit FontWidth 매핑 |
 | `line-height` | ✅ | `utils.ts:1019-1052`, `nodeRenderers.ts:537` | 배수, px, normal |
 
 ---
@@ -375,7 +375,7 @@
 | `calc()` | ✅ | `cssValueParser.ts:297-381` | +, −, ×, ÷, 괄호 중첩, 혼합 단위 |
 | `var()` | ✅ | `cssValueParser.ts:98-143` | 중첩, fallback, 순환 참조 방지 |
 | `min()` / `max()` / `clamp()` | ✅ | `cssValueParser.ts:204-218`, `cssValueParser.ts:339-437` | CSS Values Level 4 준수, 혼합 단위 지원 |
-| `env()` | ❌ | — | |
+| `env()` | ✅ | `cssValueParser.ts` resolveEnv | safe-area-inset → 0, fallback 지원 |
 
 ---
 
@@ -390,7 +390,7 @@
 | `initial` 키워드 | ✅ | `cssResolver.ts` resolveCascadeKeyword | CSS_INITIAL_VALUES 매핑 (30+ 속성) |
 | `unset` 키워드 | ✅ | `cssResolver.ts` resolveCascadeKeyword | 상속 가능 → inherit, 아니면 → initial |
 | `revert` 키워드 | ✅ | `cssResolver.ts` resolveCascadeKeyword | initial로 폴백 (UA stylesheet 미지원) |
-| `!important` | ❌ | — | |
+| `!important` | ✅ | `cssResolver.ts` preprocessImportant | inline !important > inline normal > inherited |
 | `@layer` | ❌ | — | |
 
 ---
@@ -401,13 +401,13 @@
 
 | 속성 | 상태 | 비고 |
 |------|------|------|
-| `margin-inline-start/end` | ❌ | 물리적 방향 속성만 지원 |
-| `margin-block-start/end` | ❌ | |
-| `padding-inline-start/end` | ❌ | |
-| `padding-block-start/end` | ❌ | |
-| `border-inline-*` / `border-block-*` | ❌ | |
-| `inset-inline` / `inset-block` | ❌ | |
-| `inline-size` / `block-size` | ❌ | |
+| `margin-inline-start/end` | ✅ | `cssResolver.ts` resolveLogicalProperties | LTR 가정 → marginLeft/Right 매핑 |
+| `margin-block-start/end` | ✅ | `cssResolver.ts` resolveLogicalProperties | → marginTop/Bottom 매핑 |
+| `padding-inline-start/end` | ✅ | `cssResolver.ts` resolveLogicalProperties | → paddingLeft/Right 매핑 |
+| `padding-block-start/end` | ✅ | `cssResolver.ts` resolveLogicalProperties | → paddingTop/Bottom 매핑 |
+| `border-inline-*` / `border-block-*` | ✅ | `cssResolver.ts` resolveLogicalProperties | width/color/style 포함 28개 매핑 |
+| `inset-inline` / `inset-block` | ✅ | `cssResolver.ts` resolveLogicalProperties | shorthand → left/right, top/bottom 분리 |
+| `inline-size` / `block-size` | ✅ | `cssResolver.ts` resolveLogicalProperties | → width/height + min/max 포함 |
 
 ---
 
@@ -425,17 +425,17 @@
 | 6 | Positioning Level 3 | 5 | 2 | 0 | 86% |
 | 7 | Overflow Level 3 | 3 | 1 | 2 | 58% |
 | 8 | Backgrounds/Borders Level 3 | 19 | 1 | 1 | 95% |
-| 9 | Color Level 4 | 8 | 0 | 2 | 80% |
-| 10 | Fonts Level 3 | 6 | 0 | 2 | 75% |
+| 9 | Color Level 4 | 10 | 0 | 0 | 100% |
+| 10 | Fonts Level 3 | 8 | 0 | 0 | 100% |
 | 11 | Text Level 3 | 12 | 1 | 0 | 96% |
 | 12 | Transforms Level 1 | 10 | 0 | 1 | 91% |
 | 13 | Transitions/Animations | 0 | 0 | 4 | 0% |
 | 14 | Filter Effects Level 1 | 10 | 0 | 0 | 100% |
 | 15 | Visual Effects | 7 | 0 | 1 | 88% |
-| 16 | Values/Units Level 3 | 11 | 0 | 1 | 92% |
-| 17 | Cascade Level 4 | 5 | 0 | 2 | 71% |
-| 18 | Logical Properties Level 1 | 0 | 0 | 7 | 0% |
-| | **합계** | **152** | **11** | **23** | **82%** |
+| 16 | Values/Units Level 3 | 12 | 0 | 0 | 100% |
+| 17 | Cascade Level 4 | 6 | 0 | 1 | 86% |
+| 18 | Logical Properties Level 1 | 7 | 0 | 0 | 100% |
+| | **합계** | **164** | **11** | **11** | **88%** |
 
 > **변경 내역 (2026-02-19 v1.1 갱신):**
 > - `matrix()` transform: ❌ → ✅ (`styleConverter.ts:661-673`)
@@ -476,7 +476,7 @@
 ## 실행 계획 (Checklist Improvement Plan)
 
 > **목표**: 지원율 72% → 85%+ (52 ❌ 중 ~27개 해소)
-> **결과**: ✅ Phase 1-7 완료 — 30개 ❌→✅ 전환, 지원율 72% → **81%** (집계 보정 반영)
+> **결과**: ✅ Phase 1-9 완료 — 42개 ❌→✅ 전환, 지원율 72% → **88%** (목표 85% 초과 달성)
 > **전략**: 난이도 낮은 항목부터 병렬 실행, Phase별 커밋
 
 ### Phase 1: Quick Wins (즉시 구현 가능, 5개)
@@ -555,4 +555,5 @@
 | 2026-02-19 | 1.2 | 기존 구현 누락 확인: brightness/contrast/saturate/hue-rotate filter 4종 ❌→✅. 총 지원 속성 118 → 122 (72%) |
 | 2026-02-19 | 1.3 | Phase 1-6 일괄 구현 (23개 ❌→✅): drop-shadow filter, vmin/vmax, overflow:clip, visibility:collapse, order, flex-flow, place-items/content, word-spacing, overflow-wrap, text-overflow, text-decoration-style/color, text-indent, background-size/position/repeat, currentColor, initial/unset/revert, cursor, pointer-events. 집계 보정 포함: ✅144, ⚠️11, ❌31 (77%) |
 | 2026-02-19 | 1.4 | Phase 7 추가 구현 (7개 ❌→✅): cm/mm/in/pt/pc 물리 단위, ch/ex 단위, font shorthand, border-style double/groove/ridge/inset/outset, clip-path 기본 도형, color-mix(). 총 ✅151, ⚠️11, ❌24 (81%) |
-| 2026-02-19 | 1.5 | display:contents 구현: pageChildrenMap 플래튼, depthMap 보정, ElementSprite/BoxSprite 렌더 스킵. 총 ✅152, ⚠️11, ❌23 (**82%**) |
+| 2026-02-19 | 1.5 | display:contents 구현: pageChildrenMap 플래튼, depthMap 보정, ElementSprite/BoxSprite 렌더 스킵. ✅152, ⚠️11, ❌23 (82%) |
+| 2026-02-19 | 1.6 | Phase 9 구현 (12개 ❌→✅): Logical Properties 7종 (LTR→물리 매핑), font-variant (fontFeatures), font-stretch (FontWidth), lab/lch/oklch (색상 공간 변환), color() 함수, env() (safe-area), !important 우선순위. 총 ✅164, ⚠️11, ❌11 (**88%**) — 목표 85% 초과 달성 |

@@ -11,11 +11,16 @@
  */
 
 import { cssColorToPixiHex } from '../../../../utils/color';
-import { colord } from 'colord';
+import { colord, extend } from 'colord';
+import lchPlugin from 'colord/plugins/lch';
+import labPlugin from 'colord/plugins/lab';
+
 import type { EffectStyle, DropShadowEffect, ColorMatrixEffect } from '../skia/types';
 import { resolveCSSSizeValue } from '../layout/engines/cssValueParser';
 import type { CSSValueContext } from '../layout/engines/cssValueParser';
 import { resolveCurrentColor, preprocessStyle } from '../layout/engines/cssResolver';
+
+extend([lchPlugin, labPlugin]);
 
 // ============================================
 // Types
@@ -41,6 +46,8 @@ export interface CSSStyle {
   fontWeight?: string | number;
   fontFamily?: string;
   fontStyle?: string; // P7.2: italic, oblique
+  fontVariant?: string;
+  fontStretch?: string;
   textAlign?: string;
   lineHeight?: number | string; // P7.4: 줄 간격
   letterSpacing?: number | string; // P7.3: 자간
@@ -127,6 +134,170 @@ export interface PixiTextStyle {
 // ============================================
 // Color Conversion
 // ============================================
+
+// -----------------------------------------------
+// CSS Color Level 4: oklch / lab / lch / color()
+// -----------------------------------------------
+
+function gammaEncode(linear: number): number {
+  if (linear <= 0.0031308) return 12.92 * linear;
+  return 1.055 * Math.pow(linear, 1 / 2.4) - 0.055;
+}
+
+function clampByte(v: number): number {
+  return Math.max(0, Math.min(255, Math.round(v)));
+}
+
+function rgbToHexStr(r: number, g: number, b: number, alpha?: number): string {
+  const hex = `#${clampByte(r).toString(16).padStart(2, '0')}${clampByte(g).toString(16).padStart(2, '0')}${clampByte(b).toString(16).padStart(2, '0')}`;
+  if (alpha !== undefined && alpha < 1) {
+    return hex + clampByte(alpha * 255).toString(16).padStart(2, '0');
+  }
+  return hex;
+}
+
+function oklchToHex(L: number, C: number, H: number, alpha?: number): string {
+  const hRad = H * (Math.PI / 180);
+  const a = C * Math.cos(hRad);
+  const b = C * Math.sin(hRad);
+
+  const l_ = L + 0.3963377774 * a + 0.2158037573 * b;
+  const m_ = L - 0.1055613458 * a - 0.0638541728 * b;
+  const s_ = L - 0.0894841775 * a - 1.2914855480 * b;
+
+  const l = l_ * l_ * l_;
+  const m = m_ * m_ * m_;
+  const s = s_ * s_ * s_;
+
+  const linR = +4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s;
+  const linG = -1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s;
+  const linB = -0.0041960863 * l - 0.7034186147 * m + 1.7076147010 * s;
+
+  return rgbToHexStr(
+    gammaEncode(linR) * 255,
+    gammaEncode(linG) * 255,
+    gammaEncode(linB) * 255,
+    alpha,
+  );
+}
+
+function labToHex(L: number, a: number, b: number, alpha?: number): string {
+  const input = alpha !== undefined
+    ? { l: L, a, b, alpha }
+    : { l: L, a, b };
+  const c = colord(input);
+  if (!c.isValid()) return '#000000';
+  const rgb = c.toRgb();
+  return rgbToHexStr(rgb.r, rgb.g, rgb.b, alpha);
+}
+
+function lchToHex(L: number, C: number, H: number, alpha?: number): string {
+  const input = alpha !== undefined
+    ? { l: L, c: C, h: H, alpha }
+    : { l: L, c: C, h: H };
+  const c = colord(input);
+  if (!c.isValid()) return '#000000';
+  const rgb = c.toRgb();
+  return rgbToHexStr(rgb.r, rgb.g, rgb.b, alpha);
+}
+
+function colorFuncToHex(colorspace: string, r: number, g: number, b: number, alpha?: number): string {
+  const cs = colorspace.toLowerCase();
+
+  if (cs === 'srgb') {
+    return rgbToHexStr(r * 255, g * 255, b * 255, alpha);
+  }
+
+  if (cs === 'display-p3') {
+    // display-p3 → linear-sRGB (Bradford-adapted D65 → D65, IEC 61966-2-1)
+    const linR = 0.4865709 * r + 0.2656677 * g + 0.1982173 * b;
+    const linG = 0.2289746 * r + 0.6917385 * g + 0.0792869 * b;
+    const linB = 0.0000000 * r + 0.0451134 * g + 1.0439444 * b;
+    return rgbToHexStr(
+      gammaEncode(linR) * 255,
+      gammaEncode(linG) * 255,
+      gammaEncode(linB) * 255,
+      alpha,
+    );
+  }
+
+  // 미지원 색공간: sRGB 폴백
+  return rgbToHexStr(r * 255, g * 255, b * 255, alpha);
+}
+
+/**
+ * CSS Color Level 4 함수 인자 문자열에서 숫자 배열과 alpha를 파싱한다.
+ *
+ * "0.7 0.15 180 / 0.5" → { values: [0.7, 0.15, 180], alpha: 0.5 }
+ * "50% 0.15 180"        → { values: [0.5, 0.15, 180], alpha: undefined }
+ *
+ * percentIndices: 해당 인덱스의 값이 %일 경우 적용할 변환 함수 (기본: /100)
+ */
+function parseColorFuncArgs(
+  inner: string,
+  percentScales: number[],
+): { values: number[]; alpha: number | undefined } {
+  const slashIdx = inner.lastIndexOf('/');
+  let valuesPart = inner;
+  let alpha: number | undefined;
+
+  if (slashIdx !== -1) {
+    valuesPart = inner.slice(0, slashIdx).trim();
+    const alphaPart = inner.slice(slashIdx + 1).trim();
+    if (alphaPart.endsWith('%')) {
+      alpha = parseFloat(alphaPart) / 100;
+    } else {
+      alpha = parseFloat(alphaPart);
+    }
+    if (isNaN(alpha)) alpha = undefined;
+  }
+
+  const tokens = valuesPart.trim().split(/[\s,]+/).filter(Boolean);
+  const values = tokens.map((token, i) => {
+    if (token.endsWith('%')) {
+      const scale = percentScales[i] ?? 1;
+      return (parseFloat(token) / 100) * scale;
+    }
+    return parseFloat(token);
+  });
+
+  return { values, alpha };
+}
+
+function parseOklch(color: string): string | null {
+  const inner = color.slice(6, -1).trim();
+  // oklch: L(0-1 or 0-100%), C(0-0.4 or 0-100%), H(0-360)
+  const { values, alpha } = parseColorFuncArgs(inner, [1, 0.4, 360]);
+  if (values.length < 3 || values.some(isNaN)) return null;
+  return oklchToHex(values[0], values[1], values[2], alpha);
+}
+
+function parseLab(color: string): string | null {
+  const inner = color.slice(4, -1).trim();
+  // lab: L(0-100), a(-125..125), b(-125..125)
+  const { values, alpha } = parseColorFuncArgs(inner, [100, 125, 125]);
+  if (values.length < 3 || values.some(isNaN)) return null;
+  return labToHex(values[0], values[1], values[2], alpha);
+}
+
+function parseLch(color: string): string | null {
+  const inner = color.slice(4, -1).trim();
+  // lch: L(0-100), C(0-150), H(0-360)
+  const { values, alpha } = parseColorFuncArgs(inner, [100, 150, 360]);
+  if (values.length < 3 || values.some(isNaN)) return null;
+  return lchToHex(values[0], values[1], values[2], alpha);
+}
+
+function parseColorFunc(color: string): string | null {
+  const inner = color.slice(6, -1).trim();
+  const spaceEnd = inner.search(/\s/);
+  if (spaceEnd === -1) return null;
+  const colorspace = inner.slice(0, spaceEnd);
+  const rest = inner.slice(spaceEnd + 1).trim();
+  const { values, alpha } = parseColorFuncArgs(rest, [1, 1, 1]);
+  if (values.length < 3 || values.some(isNaN)) return null;
+  return colorFuncToHex(colorspace, values[0], values[1], values[2], alpha);
+}
 
 const COLOR_MIX_MAX_DEPTH = 5;
 
@@ -271,7 +442,30 @@ export function cssColorToHex(
   const effective = resolvedColor
     ? String(resolveCurrentColor(color, resolvedColor))
     : color;
-  if (effective.toLowerCase().startsWith('color-mix(')) {
+
+  const lower = effective.toLowerCase();
+
+  if (lower.startsWith('oklch(')) {
+    const hex = parseOklch(effective);
+    if (hex) return cssColorToPixiHex(hex, fallback);
+    return fallback;
+  }
+  if (lower.startsWith('lab(')) {
+    const hex = parseLab(effective);
+    if (hex) return cssColorToPixiHex(hex, fallback);
+    return fallback;
+  }
+  if (lower.startsWith('lch(')) {
+    const hex = parseLch(effective);
+    if (hex) return cssColorToPixiHex(hex, fallback);
+    return fallback;
+  }
+  if (lower.startsWith('color(')) {
+    const hex = parseColorFunc(effective);
+    if (hex) return cssColorToPixiHex(hex, fallback);
+    return fallback;
+  }
+  if (lower.startsWith('color-mix(')) {
     const resolved = resolveColorMix(effective);
     if (resolved) return cssColorToPixiHex(resolved, fallback);
   }
@@ -292,7 +486,18 @@ export function cssColorToAlpha(color: string | undefined, resolvedColor?: strin
     : color;
   if (effective.toLowerCase() === 'transparent') return 0;
 
-  const target = effective.toLowerCase().startsWith('color-mix(')
+  const lower = effective.toLowerCase();
+
+  if (
+    lower.startsWith('oklch(') ||
+    lower.startsWith('lab(') ||
+    lower.startsWith('lch(') ||
+    lower.startsWith('color(')
+  ) {
+    return extractLevel4Alpha(effective);
+  }
+
+  const target = lower.startsWith('color-mix(')
     ? (resolveColorMix(effective) ?? effective)
     : effective;
 
@@ -302,6 +507,22 @@ export function cssColorToAlpha(color: string | undefined, resolvedColor?: strin
   }
 
   return 1;
+}
+
+function extractLevel4Alpha(color: string): number {
+  const parenStart = color.indexOf('(');
+  const parenEnd = color.lastIndexOf(')');
+  if (parenStart === -1 || parenEnd === -1) return 1;
+  const inner = color.slice(parenStart + 1, parenEnd);
+  const slashIdx = inner.lastIndexOf('/');
+  if (slashIdx === -1) return 1;
+  const alphaPart = inner.slice(slashIdx + 1).trim();
+  if (alphaPart.endsWith('%')) {
+    const v = parseFloat(alphaPart) / 100;
+    return isNaN(v) ? 1 : Math.max(0, Math.min(1, v));
+  }
+  const v = parseFloat(alphaPart);
+  return isNaN(v) ? 1 : Math.max(0, Math.min(1, v));
 }
 
 // ============================================

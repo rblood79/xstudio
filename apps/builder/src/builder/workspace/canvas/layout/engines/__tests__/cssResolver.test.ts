@@ -6,6 +6,7 @@
  * - initial / unset / revert cascade 키워드
  * - resolveStyle() 상속 체인
  * - preprocessStyle() 비상속 속성 전처리
+ * - resolveLogicalProperties() CSS Logical Properties → Physical
  *
  * @since 2026-02-19 Phase 5
  */
@@ -15,6 +16,7 @@ import {
   resolveStyle,
   resolveCurrentColor,
   preprocessStyle,
+  resolveLogicalProperties,
   CSS_INITIAL_VALUES,
   INHERITABLE_PROPERTIES,
   ROOT_COMPUTED_STYLE,
@@ -280,5 +282,241 @@ describe('INHERITABLE_PROPERTIES', () => {
     expect(INHERITABLE_PROPERTIES.has('borderColor')).toBe(false);
     expect(INHERITABLE_PROPERTIES.has('opacity')).toBe(false);
     expect(INHERITABLE_PROPERTIES.has('padding')).toBe(false);
+  });
+});
+
+// ============================================
+// resolveLogicalProperties()
+// ============================================
+
+describe('resolveLogicalProperties() - margin', () => {
+  it('marginInlineStart → marginLeft', () => {
+    const result = resolveLogicalProperties({ marginInlineStart: 8 });
+    expect(result['marginLeft']).toBe(8);
+    expect(result['marginInlineStart']).toBeUndefined();
+  });
+
+  it('marginInlineEnd → marginRight', () => {
+    const result = resolveLogicalProperties({ marginInlineEnd: 16 });
+    expect(result['marginRight']).toBe(16);
+  });
+
+  it('marginBlockStart → marginTop', () => {
+    const result = resolveLogicalProperties({ marginBlockStart: 4 });
+    expect(result['marginTop']).toBe(4);
+  });
+
+  it('marginBlockEnd → marginBottom', () => {
+    const result = resolveLogicalProperties({ marginBlockEnd: 4 });
+    expect(result['marginBottom']).toBe(4);
+  });
+
+  it('물리 속성이 이미 있으면 논리 속성 무시', () => {
+    const result = resolveLogicalProperties({ marginLeft: 99, marginInlineStart: 8 });
+    expect(result['marginLeft']).toBe(99);
+  });
+});
+
+describe('resolveLogicalProperties() - padding', () => {
+  it('paddingInlineStart → paddingLeft', () => {
+    const result = resolveLogicalProperties({ paddingInlineStart: 12 });
+    expect(result['paddingLeft']).toBe(12);
+  });
+
+  it('paddingInlineEnd → paddingRight', () => {
+    const result = resolveLogicalProperties({ paddingInlineEnd: 12 });
+    expect(result['paddingRight']).toBe(12);
+  });
+
+  it('paddingBlockStart → paddingTop', () => {
+    const result = resolveLogicalProperties({ paddingBlockStart: 8 });
+    expect(result['paddingTop']).toBe(8);
+  });
+
+  it('paddingBlockEnd → paddingBottom', () => {
+    const result = resolveLogicalProperties({ paddingBlockEnd: 8 });
+    expect(result['paddingBottom']).toBe(8);
+  });
+
+  it('물리 속성이 이미 있으면 논리 속성 무시', () => {
+    const result = resolveLogicalProperties({ paddingTop: 20, paddingBlockStart: 5 });
+    expect(result['paddingTop']).toBe(20);
+  });
+});
+
+describe('resolveLogicalProperties() - border', () => {
+  it('borderInlineStartWidth → borderLeftWidth', () => {
+    const result = resolveLogicalProperties({ borderInlineStartWidth: 2 });
+    expect(result['borderLeftWidth']).toBe(2);
+  });
+
+  it('borderInlineEndWidth → borderRightWidth', () => {
+    const result = resolveLogicalProperties({ borderInlineEndWidth: 2 });
+    expect(result['borderRightWidth']).toBe(2);
+  });
+
+  it('borderBlockStartWidth → borderTopWidth', () => {
+    const result = resolveLogicalProperties({ borderBlockStartWidth: 1 });
+    expect(result['borderTopWidth']).toBe(1);
+  });
+
+  it('borderBlockEndWidth → borderBottomWidth', () => {
+    const result = resolveLogicalProperties({ borderBlockEndWidth: 1 });
+    expect(result['borderBottomWidth']).toBe(1);
+  });
+
+  it('borderInlineStartColor → borderLeftColor', () => {
+    const result = resolveLogicalProperties({ borderInlineStartColor: '#ff0000' });
+    expect(result['borderLeftColor']).toBe('#ff0000');
+  });
+
+  it('borderInlineStartStyle → borderLeftStyle', () => {
+    const result = resolveLogicalProperties({ borderInlineStartStyle: 'solid' });
+    expect(result['borderLeftStyle']).toBe('solid');
+  });
+});
+
+describe('resolveLogicalProperties() - inset 단일', () => {
+  it('insetInlineStart → left', () => {
+    const result = resolveLogicalProperties({ insetInlineStart: 0 });
+    expect(result['left']).toBe(0);
+  });
+
+  it('insetInlineEnd → right', () => {
+    const result = resolveLogicalProperties({ insetInlineEnd: 0 });
+    expect(result['right']).toBe(0);
+  });
+
+  it('insetBlockStart → top', () => {
+    const result = resolveLogicalProperties({ insetBlockStart: 10 });
+    expect(result['top']).toBe(10);
+  });
+
+  it('insetBlockEnd → bottom', () => {
+    const result = resolveLogicalProperties({ insetBlockEnd: 10 });
+    expect(result['bottom']).toBe(10);
+  });
+});
+
+describe('resolveLogicalProperties() - size', () => {
+  it('inlineSize → width', () => {
+    const result = resolveLogicalProperties({ inlineSize: '100%' });
+    expect(result['width']).toBe('100%');
+  });
+
+  it('blockSize → height', () => {
+    const result = resolveLogicalProperties({ blockSize: 200 });
+    expect(result['height']).toBe(200);
+  });
+
+  it('minInlineSize → minWidth', () => {
+    const result = resolveLogicalProperties({ minInlineSize: 100 });
+    expect(result['minWidth']).toBe(100);
+  });
+
+  it('maxInlineSize → maxWidth', () => {
+    const result = resolveLogicalProperties({ maxInlineSize: 800 });
+    expect(result['maxWidth']).toBe(800);
+  });
+
+  it('minBlockSize → minHeight', () => {
+    const result = resolveLogicalProperties({ minBlockSize: 50 });
+    expect(result['minHeight']).toBe(50);
+  });
+
+  it('maxBlockSize → maxHeight', () => {
+    const result = resolveLogicalProperties({ maxBlockSize: 600 });
+    expect(result['maxHeight']).toBe(600);
+  });
+});
+
+describe('resolveLogicalProperties() - shorthand', () => {
+  it('insetInline (단일 값) → left, right 동일하게', () => {
+    const result = resolveLogicalProperties({ insetInline: 0 });
+    expect(result['left']).toBe(0);
+    expect(result['right']).toBe(0);
+    expect(result['insetInline']).toBeUndefined();
+  });
+
+  it('insetInline (문자열 두 값) → left, right 분리', () => {
+    const result = resolveLogicalProperties({ insetInline: '10px 20px' });
+    expect(result['left']).toBe('10px');
+    expect(result['right']).toBe('20px');
+  });
+
+  it('insetBlock (단일 값) → top, bottom 동일하게', () => {
+    const result = resolveLogicalProperties({ insetBlock: 8 });
+    expect(result['top']).toBe(8);
+    expect(result['bottom']).toBe(8);
+  });
+
+  it('insetBlock (문자열 두 값) → top, bottom 분리', () => {
+    const result = resolveLogicalProperties({ insetBlock: '5px 15px' });
+    expect(result['top']).toBe('5px');
+    expect(result['bottom']).toBe('15px');
+  });
+
+  it('marginInline (단일 값) → marginLeft, marginRight 동일하게', () => {
+    const result = resolveLogicalProperties({ marginInline: 'auto' });
+    expect(result['marginLeft']).toBe('auto');
+    expect(result['marginRight']).toBe('auto');
+  });
+
+  it('marginBlock (두 값) → marginTop, marginBottom 분리', () => {
+    const result = resolveLogicalProperties({ marginBlock: '8px 16px' });
+    expect(result['marginTop']).toBe('8px');
+    expect(result['marginBottom']).toBe('16px');
+  });
+
+  it('paddingInline (단일 값) → paddingLeft, paddingRight 동일하게', () => {
+    const result = resolveLogicalProperties({ paddingInline: 12 });
+    expect(result['paddingLeft']).toBe(12);
+    expect(result['paddingRight']).toBe(12);
+  });
+
+  it('paddingBlock (두 값) → paddingTop, paddingBottom 분리', () => {
+    const result = resolveLogicalProperties({ paddingBlock: '4px 8px' });
+    expect(result['paddingTop']).toBe('4px');
+    expect(result['paddingBottom']).toBe('8px');
+  });
+
+  it('shorthand 물리 속성이 이미 있으면 논리 shorthand 무시', () => {
+    const result = resolveLogicalProperties({ left: 5, insetInline: '10px 20px' });
+    expect(result['left']).toBe(5);
+    expect(result['right']).toBe('20px');
+  });
+});
+
+describe('resolveLogicalProperties() - 불변성 및 논리 속성 없을 때', () => {
+  it('논리 속성 없으면 동일 객체 참조 반환', () => {
+    const style = { color: 'red', width: 100 };
+    const result = resolveLogicalProperties(style);
+    expect(result).toBe(style);
+  });
+
+  it('원본 객체를 수정하지 않음', () => {
+    const original = { marginInlineStart: 8, color: 'blue' };
+    resolveLogicalProperties(original);
+    expect(original['marginInlineStart']).toBe(8);
+  });
+
+  it('논리 속성 키가 결과에 남지 않음', () => {
+    const result = resolveLogicalProperties({ paddingInlineStart: 10, paddingBlockEnd: 5 });
+    expect(result['paddingInlineStart']).toBeUndefined();
+    expect(result['paddingBlockEnd']).toBeUndefined();
+    expect(result['paddingLeft']).toBe(10);
+    expect(result['paddingBottom']).toBe(5);
+  });
+});
+
+describe('resolveStyle() - 논리 속성 통합', () => {
+  it('marginInlineStart가 resolveStyle 진입부에서 변환됨', () => {
+    const parent = { ...ROOT_COMPUTED_STYLE };
+    resolveStyle({ marginInlineStart: 8 }, parent);
+  });
+
+  it('inlineSize가 resolveStyle 진입부에서 변환됨', () => {
+    const parent = { ...ROOT_COMPUTED_STYLE };
+    resolveStyle({ inlineSize: 200 }, parent);
   });
 });

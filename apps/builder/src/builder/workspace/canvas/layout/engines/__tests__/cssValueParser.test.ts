@@ -976,3 +976,128 @@ describe('parseFontShorthand - 개별 속성 우선 (cssResolver 연동)', () =>
     expect(result.fontFamily).toBe('"Pretendard", sans-serif');
   });
 });
+
+// ============================================
+// env() 함수 처리
+// ============================================
+
+describe('resolveCSSSizeValue - env() 함수', () => {
+  it('env(safe-area-inset-top) → 0', () => {
+    expect(resolveCSSSizeValue('env(safe-area-inset-top)')).toBe(0);
+  });
+
+  it('env(safe-area-inset-bottom) → 0', () => {
+    expect(resolveCSSSizeValue('env(safe-area-inset-bottom)')).toBe(0);
+  });
+
+  it('env(safe-area-inset-left) → 0', () => {
+    expect(resolveCSSSizeValue('env(safe-area-inset-left)')).toBe(0);
+  });
+
+  it('env(safe-area-inset-right) → 0', () => {
+    expect(resolveCSSSizeValue('env(safe-area-inset-right)')).toBe(0);
+  });
+
+  it('env(safe-area-inset-top, 20px) → 0 (알려진 변수는 fallback 무시)', () => {
+    expect(resolveCSSSizeValue('env(safe-area-inset-top, 20px)')).toBe(0);
+  });
+
+  it('env(unknown-name, 20px) → fallback 값 사용', () => {
+    expect(resolveCSSSizeValue('env(unknown-name, 20px)')).toBe(20);
+  });
+
+  it('env(unknown-name) → 0 (기본값)', () => {
+    expect(resolveCSSSizeValue('env(unknown-name)')).toBe(0);
+  });
+
+  it('env(unknown-name, 50%) with containerSize=800 → fallback 400', () => {
+    expect(resolveCSSSizeValue('env(unknown-name, 50%)', { containerSize: 800 })).toBe(400);
+  });
+});
+
+// ============================================
+// !important 우선순위
+// ============================================
+
+describe('preprocessImportant', () => {
+  it('!important 값을 important 객체로 분리', async () => {
+    const { preprocessImportant } = await import('../cssResolver');
+    const result = preprocessImportant({ color: 'red !important', fontSize: '14px' });
+    expect(result.normal).toEqual({ fontSize: '14px' });
+    expect(result.important).toEqual({ color: 'red' });
+  });
+
+  it('!important 없으면 전부 normal', async () => {
+    const { preprocessImportant } = await import('../cssResolver');
+    const result = preprocessImportant({ color: 'red', fontSize: '14px' });
+    expect(result.normal).toEqual({ color: 'red', fontSize: '14px' });
+    expect(result.important).toEqual({});
+  });
+
+  it('값에서 !important 앞의 공백까지 제거', async () => {
+    const { preprocessImportant } = await import('../cssResolver');
+    const result = preprocessImportant({ color: 'red !important' });
+    expect(result.important['color']).toBe('red');
+  });
+
+  it('공백 없이 붙은 !important도 처리', async () => {
+    const { preprocessImportant } = await import('../cssResolver');
+    const result = preprocessImportant({ color: 'red!important' });
+    expect(result.important['color']).toBe('red');
+  });
+
+  it('빈 객체 입력 → 빈 결과', async () => {
+    const { preprocessImportant } = await import('../cssResolver');
+    const result = preprocessImportant({});
+    expect(result.normal).toEqual({});
+    expect(result.important).toEqual({});
+  });
+
+  it('숫자 값은 !important 처리 안 됨 (normal)', async () => {
+    const { preprocessImportant } = await import('../cssResolver');
+    const result = preprocessImportant({ fontSize: 14 });
+    expect(result.normal['fontSize']).toBe(14);
+    expect(result.important).toEqual({});
+  });
+});
+
+describe('resolveStyle - !important 우선순위', () => {
+  it('!important 값이 normal 값을 덮어씀', async () => {
+    const { resolveStyle, ROOT_COMPUTED_STYLE } = await import('../cssResolver');
+    const result = resolveStyle(
+      { color: 'blue', fontSize: '20px !important' },
+      ROOT_COMPUTED_STYLE,
+    );
+    expect(result.color).toBe('blue');
+    expect(result.fontSize).toBe(20);
+  });
+
+  it('!important 색상이 normal 색상 덮어씀', async () => {
+    const { resolveStyle, ROOT_COMPUTED_STYLE } = await import('../cssResolver');
+    const result = resolveStyle(
+      { color: 'red !important', fontWeight: 'bold' },
+      ROOT_COMPUTED_STYLE,
+    );
+    expect(result.color).toBe('red');
+    expect(result.fontWeight).toBe('bold');
+  });
+
+  it('같은 속성에서 !important가 normal보다 우선', async () => {
+    const { resolveStyle, ROOT_COMPUTED_STYLE } = await import('../cssResolver');
+    const result = resolveStyle(
+      { color: 'blue !important', fontSize: '16px' },
+      { ...ROOT_COMPUTED_STYLE, color: 'green' },
+    );
+    expect(result.color).toBe('blue');
+  });
+
+  it('!important 없으면 기존 동작과 동일', async () => {
+    const { resolveStyle, ROOT_COMPUTED_STYLE } = await import('../cssResolver');
+    const result = resolveStyle(
+      { color: 'purple', fontSize: '18px' },
+      ROOT_COMPUTED_STYLE,
+    );
+    expect(result.color).toBe('purple');
+    expect(result.fontSize).toBe(18);
+  });
+});

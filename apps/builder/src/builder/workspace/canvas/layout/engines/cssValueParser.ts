@@ -215,6 +215,66 @@ function resolveVariableFromDOMDefault(varName: string): string {
 // 메인 파서
 // ============================================
 
+// ============================================
+// env() 해석
+// ============================================
+
+/**
+ * 캔버스 환경에서 알려진 safe-area-inset 변수 목록
+ *
+ * 캔버스 환경에서는 safe area가 없으므로 모두 0으로 처리한다.
+ */
+const KNOWN_ENV_VARS = new Set([
+  'safe-area-inset-top',
+  'safe-area-inset-bottom',
+  'safe-area-inset-left',
+  'safe-area-inset-right',
+]);
+
+/**
+ * CSS env() 함수를 해석하여 px 값으로 반환
+ *
+ * env(name) 또는 env(name, fallback) 형식을 지원한다.
+ * 캔버스 환경에서 safe-area-inset-* 변수는 0으로 처리한다.
+ * 알 수 없는 변수는 fallback 값을 사용하거나 0을 반환한다.
+ *
+ * @param envExpr - env() 전체 문자열 (예: "env(safe-area-inset-top, 20px)")
+ * @param ctx - 단위 해석 컨텍스트 (fallback 값 계산용)
+ * @returns px 값 또는 undefined
+ */
+function resolveEnv(envExpr: string, ctx: CSSValueContext): number | undefined {
+  // "env(" (4글자) ~ ")" (마지막 1글자) 제거
+  const inner = envExpr.slice(4, -1);
+  const commaIdx = inner.indexOf(',');
+
+  let varName: string;
+  let fallbackExpr: string | undefined;
+
+  if (commaIdx === -1) {
+    varName = inner.trim();
+  } else {
+    varName = inner.slice(0, commaIdx).trim();
+    fallbackExpr = inner.slice(commaIdx + 1).trim();
+  }
+
+  // 알려진 safe-area-inset-* 변수: 캔버스 환경에서 항상 0
+  if (KNOWN_ENV_VARS.has(varName)) {
+    return 0;
+  }
+
+  // 알 수 없는 변수: fallback 값 사용
+  if (fallbackExpr !== undefined) {
+    return resolveCSSSizeValue(fallbackExpr, ctx);
+  }
+
+  // fallback 없는 알 수 없는 변수: 0 반환
+  return 0;
+}
+
+// ============================================
+// 메인 파서
+// ============================================
+
 /**
  * CSS 크기 값을 px 숫자로 해석하는 통합 함수
  *
@@ -230,6 +290,7 @@ function resolveVariableFromDOMDefault(varName: string): string {
  * resolveCSSSizeValue('2rem', {}) // 32
  * resolveCSSSizeValue('calc(100% - 20px)', { containerSize: 800 }) // 780
  * resolveCSSSizeValue('fit-content', {}) // -2 (FIT_CONTENT sentinel)
+ * resolveCSSSizeValue('env(safe-area-inset-top)', {}) // 0
  */
 export function resolveCSSSizeValue(
   value: unknown,
@@ -261,6 +322,12 @@ export function resolveCSSSizeValue(
   if (trimmed === 'fit-content') return FIT_CONTENT;
   if (trimmed === 'min-content') return MIN_CONTENT;
   if (trimmed === 'max-content') return MAX_CONTENT;
+
+  // env() 함수
+  if (trimmed.startsWith('env(') && trimmed.endsWith(')')) {
+    const result = resolveEnv(trimmed, ctx);
+    return result ?? fallback;
+  }
 
   // calc() 표현식
   if (trimmed.startsWith('calc(') && trimmed.endsWith(')')) {

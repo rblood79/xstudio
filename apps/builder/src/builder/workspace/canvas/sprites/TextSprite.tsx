@@ -325,9 +325,13 @@ export const TextSprite = memo(function TextSprite({
         ...(style?.textOverflow ? { textOverflow: style.textOverflow as 'ellipsis' | 'clip' } : {}),
         // text-indent: 첫 줄 들여쓰기 (C-3)
         ...(style?.textIndent != null ? { textIndent: parseCSSSize(style.textIndent, undefined, 0) } : {}),
+        // font-variant: OpenType feature (예: small-caps)
+        ...(style?.fontVariant && style.fontVariant !== 'normal' ? { fontVariant: style.fontVariant } : {}),
+        // font-stretch: CanvasKit FontWidth (예: condensed, 75%)
+        ...(style?.fontStretch && style.fontStretch !== 'normal' ? { fontStretch: style.fontStretch } : {}),
       },
     };
-  }, [transform, textStyle, textContent, padding, skiaEffects, hasDecoration, textDecoration, style?.verticalAlign, style?.whiteSpace, style?.wordBreak, style?.overflowWrap, style?.wordSpacing, style?.textOverflow, style?.textDecorationStyle, style?.textDecorationColor, style?.textIndent]);
+  }, [transform, textStyle, textContent, padding, skiaEffects, hasDecoration, textDecoration, style?.verticalAlign, style?.whiteSpace, style?.wordBreak, style?.overflowWrap, style?.wordSpacing, style?.textOverflow, style?.textDecorationStyle, style?.textDecorationColor, style?.textIndent, style?.fontVariant, style?.fontStretch]);
 
   useSkiaNode(element.id, skiaNodeData);
 

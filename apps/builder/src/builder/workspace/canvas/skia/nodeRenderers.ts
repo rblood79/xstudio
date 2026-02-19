@@ -18,6 +18,7 @@ import { beginRenderEffects, endRenderEffects } from './effects';
 import { toSkiaBlendMode } from './blendModes';
 import { SkiaDisposable } from './disposable';
 import { colord } from 'colord';
+import { resolveFontVariantFeatures, resolveFontStretchWidth } from '../layout/engines/cssResolver';
 
 // ============================================
 // Text paragraph cache (Pencil-style)
@@ -138,6 +139,10 @@ export interface SkiaNodeData {
     decorationColor?: Float32Array;
     /** text-indent: 첫 줄 들여쓰기 (px) */
     textIndent?: number;
+    /** CSS font-variant 값 (예: 'small-caps', 'oldstyle-nums') */
+    fontVariant?: string;
+    /** CSS font-stretch 값 (예: 'condensed', '75%') */
+    fontStretch?: string;
   };
   /** Image 전용 */
   image?: {
@@ -830,6 +835,8 @@ function renderText(
     node.text.fontSize,
     node.text.fontWeight ?? 400,
     node.text.fontStyle ?? 0,
+    node.text.fontVariant ?? 'normal',
+    node.text.fontStretch ?? 'normal',
     node.text.letterSpacing ?? 0,
     node.text.wordSpacing ?? 0,
     heightMultiplier,
@@ -908,17 +915,39 @@ function renderText(
     };
     const fontSlant = fontSlantMap[node.text.fontStyle ?? 0] ?? ck.FontSlant.Upright;
 
+    // font-stretch → CanvasKit FontWidth enum
+    const fontStretchStr = node.text.fontStretch ?? 'normal';
+    const fontWidthIndex = resolveFontStretchWidth(fontStretchStr);
+    const fontWidthEnumValues = ck.FontWidth;
+    const fontWidthEntries: [string, EmbindEnumEntity][] = [
+      ['UltraCondensed', fontWidthEnumValues.UltraCondensed],
+      ['ExtraCondensed', fontWidthEnumValues.ExtraCondensed],
+      ['Condensed', fontWidthEnumValues.Condensed],
+      ['SemiCondensed', fontWidthEnumValues.SemiCondensed],
+      ['Normal', fontWidthEnumValues.Normal],
+      ['SemiExpanded', fontWidthEnumValues.SemiExpanded],
+      ['Expanded', fontWidthEnumValues.Expanded],
+      ['ExtraExpanded', fontWidthEnumValues.ExtraExpanded],
+      ['UltraExpanded', fontWidthEnumValues.UltraExpanded],
+    ];
+    const fontWidth = fontWidthEntries[fontWidthIndex - 1]?.[1] ?? fontWidthEnumValues.Normal;
+
+    // font-variant → OpenType fontFeatures
+    const fontVariantStr = node.text.fontVariant ?? 'normal';
+    const fontFeatureTags = resolveFontVariantFeatures(fontVariantStr);
+
     const heightMultiplierOpt = heightMultiplier > 0 ? heightMultiplier : undefined;
 
     const paraStyle = new ck.ParagraphStyle({
       textStyle: {
         fontFamilies: node.text.fontFamilies,
         fontSize: node.text.fontSize,
-        fontStyle: { weight: fontWeight, slant: fontSlant },
+        fontStyle: { weight: fontWeight, slant: fontSlant, width: fontWidth },
         color: node.text.color,
         letterSpacing: node.text.letterSpacing ?? 0,
         wordSpacing: node.text.wordSpacing ?? 0,
         ...(heightMultiplierOpt !== undefined ? { heightMultiplier: heightMultiplierOpt } : {}),
+        ...(fontFeatureTags.length > 0 ? { fontFeatures: fontFeatureTags } : {}),
         // textDecoration: CanvasKit TextDecoration 비트마스크
         ...(node.text.decoration ? {
           decoration: node.text.decoration,
